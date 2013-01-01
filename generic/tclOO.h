@@ -4,7 +4,7 @@
  *	This file contains the public API definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2008 by Donal K. Fellows
+ * Copyright (c) 2006-2010 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -14,17 +14,32 @@
 #define TCLOO_H_INCLUDED
 #include "tcl.h"
 
+#ifndef TCLOOAPI
+#   if defined(BUILD_tcl) || defined(BUILD_TclOO)
+#	define TCLOOAPI MODULE_SCOPE
+#   else
+#	define TCLOOAPI extern
+#	undef USE_TCLOO_STUBS
+#	define USE_TCLOO_STUBS 1
+#   endif
+#endif
+
+extern const char *TclOOInitializeStubs(
+	Tcl_Interp *, const char *version);
+#define Tcl_OOInitStubs(interp) TclOOInitializeStubs((interp), TCLOO_VERSION)
+
 /*
  * Be careful when it comes to versioning; need to make sure that the
  * standalone TclOO version matches. Also make sure that this matches the
  * version in the files:
  *
  * tests/oo.test
+ * tests/ooNext2.test
  * unix/tclooConfig.sh
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "0.6.3"
+#define TCLOO_VERSION "1.0"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*

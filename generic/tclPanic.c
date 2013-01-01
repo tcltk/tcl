@@ -14,7 +14,7 @@
  */
 
 #include "tclInt.h"
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
     MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
 #endif
 
@@ -23,7 +23,11 @@
  * procedure.
  */
 
+#if defined(__CYGWIN__)
+static Tcl_PanicProc *panicProc = tclWinDebugPanic;
+#else
 static Tcl_PanicProc *panicProc = NULL;
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -45,7 +49,7 @@ void
 Tcl_SetPanicProc(
     Tcl_PanicProc *proc)
 {
-#ifdef _WIN32
+#if defined(_WIN32)
     /* tclWinDebugPanic only installs if there is no panicProc yet. */
     if ((proc != tclWinDebugPanic) || (panicProc == NULL))
 #endif
@@ -98,22 +102,23 @@ Tcl_PanicVA(
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
-    }
-    /* In case the users panic proc does not abort, we do it here */
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
 #   if defined(__GNUC__)
-    __builtin_trap();
+	__builtin_trap();
 #   elif defined(_WIN64)
-    __debugbreak();
+	__debugbreak();
 #   elif defined(_MSC_VER)
-    _asm {int 3}
+	_asm {int 3}
 #   else
-    DebugBreak();
+	DebugBreak();
 #   endif
-    ExitProcess(1);
-#else
-    abort();
 #endif
+#if defined(_WIN32)
+	ExitProcess(1);
+#else
+	abort();
+#endif
+    }
 }
 
 /*

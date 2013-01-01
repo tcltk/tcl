@@ -4,7 +4,7 @@
  *	This file contains the implementation of the ::oo::define command,
  *	part of the object-system core (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2008 by Donal K. Fellows
+ * Copyright (c) 2006-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -17,12 +17,38 @@
 #include "tclOOInt.h"
 
 /*
+ * The maximum length of fully-qualified object name to use in an errorinfo
+ * message. Longer than this will be curtailed.
+ */
+
+#define OBJNAME_LENGTH_IN_ERRORINFO_LIMIT 30
+
+/*
+ * Some things that make it easier to declare a slot.
+ */
+
+struct DeclaredSlot {
+    const char *name;
+    const Tcl_MethodType getterType;
+    const Tcl_MethodType setterType;
+};
+
+#define SLOT(name,getter,setter)					\
+    {"::oo::" name,							\
+	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Getter", \
+		    getter, NULL, NULL},				\
+	    {TCL_OO_METHOD_VERSION_CURRENT, "core method: " name " Setter", \
+		    setter, NULL, NULL}}
+
+/*
  * Forward declarations.
  */
 
 static inline void	BumpGlobalEpoch(Tcl_Interp *interp, Class *classPtr);
 static Tcl_Command	FindCommand(Tcl_Interp *interp, Tcl_Obj *stringObj,
 			    Tcl_Namespace *const namespacePtr);
+static void		GenerateErrorInfo(Tcl_Interp *interp, Object *oPtr,
+			    Tcl_Obj *savedNameObj, const char *typeOfSubject);
 static inline Class *	GetClassInOuterContext(Tcl_Interp *interp,
 			    Tcl_Obj *className, const char *errMsg);
 static inline int	InitDefineContext(Tcl_Interp *interp,
@@ -32,6 +58,63 @@ static inline void	RecomputeClassCacheFlag(Object *oPtr);
 static int		RenameDeleteMethod(Tcl_Interp *interp, Object *oPtr,
 			    int useClass, Tcl_Obj *const fromPtr,
 			    Tcl_Obj *const toPtr);
+static int		ClassFilterGet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ClassFilterSet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ClassMixinGet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ClassMixinSet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ClassSuperGet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ClassSuperSet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ClassVarsGet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ClassVarsSet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ObjFilterGet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ObjFilterSet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ObjMixinGet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ObjMixinSet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ObjVarsGet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+static int		ObjVarsSet(ClientData clientData,
+			    Tcl_Interp *interp, Tcl_ObjectContext context,
+			    int objc, Tcl_Obj *const *objv);
+
+/*
+ * Now define the slots used in declarations.
+ */
+
+static const struct DeclaredSlot slots[] = {
+    SLOT("define::filter",      ClassFilterGet, ClassFilterSet),
+    SLOT("define::mixin",       ClassMixinGet,  ClassMixinSet),
+    SLOT("define::superclass",  ClassSuperGet,  ClassSuperSet),
+    SLOT("define::variable",    ClassVarsGet,   ClassVarsSet),
+    SLOT("objdefine::filter",   ObjFilterGet,   ObjFilterSet),
+    SLOT("objdefine::mixin",    ObjMixinGet,    ObjMixinSet),
+    SLOT("objdefine::variable", ObjVarsGet,     ObjVarsSet),
+    {NULL, {0, 0, 0, 0, 0}, {0, 0, 0, 0, 0}}
+};
 
 /*
  * ----------------------------------------------------------------------
@@ -340,8 +423,8 @@ RenameDeleteMethod(
     if (!useClass) {
 	if (!oPtr->methodsPtr) {
 	noSuchMethod:
-	    Tcl_AppendResult(interp, "method ", TclGetString(fromPtr),
-		    " does not exist", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "method %s does not exist", TclGetString(fromPtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(fromPtr), NULL);
 	    return TCL_ERROR;
@@ -355,14 +438,15 @@ RenameDeleteMethod(
 		    &isNew);
 	    if (hPtr == newHPtr) {
 	    renameToSelf:
-		Tcl_AppendResult(interp, "cannot rename method to itself",
-			NULL);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"cannot rename method to itself", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "RENAME_TO_SELF", NULL);
 		return TCL_ERROR;
 	    } else if (!isNew) {
 	    renameToExisting:
-		Tcl_AppendResult(interp, "method called ",
-			TclGetString(toPtr), " already exists", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"method called %s already exists",
+			TclGetString(toPtr)));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "RENAME_OVER", NULL);
 		return TCL_ERROR;
 	    }
@@ -430,7 +514,8 @@ TclOOUnknownDefinition(
     const char *soughtStr, *matchedStr = NULL;
 
     if (objc < 2) {
-	Tcl_AppendResult(interp, "bad call of unknown handler", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"bad call of unknown handler", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_UNKNOWN", NULL);
 	return TCL_ERROR;
     }
@@ -475,7 +560,8 @@ TclOOUnknownDefinition(
     }
 
   noMatch:
-    Tcl_AppendResult(interp, "invalid command name \"",soughtStr,"\"", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "invalid command name \"%s\"", soughtStr));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND", soughtStr, NULL);
     return TCL_ERROR;
 }
@@ -563,9 +649,9 @@ InitDefineContext(
     int result;
 
     if (namespacePtr == NULL) {
-	Tcl_AppendResult(interp,
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"cannot process definitions; support namespace deleted",
-		NULL);
+		-1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -599,16 +685,25 @@ TclOOGetDefineCmdContext(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
+    Tcl_Object object;
 
     if ((iPtr->varFramePtr == NULL)
 	    || (iPtr->varFramePtr->isProcCallFrame != FRAME_IS_OO_DEFINE)) {
-	Tcl_AppendResult(interp, "this command may only be called from within"
-		" the context of an ::oo::define or ::oo::objdefine command",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"this command may only be called from within the context of"
+		" an ::oo::define or ::oo::objdefine command", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return NULL;
     }
-    return (Tcl_Object) iPtr->varFramePtr->clientData;
+    object = iPtr->varFramePtr->clientData;
+    if (Tcl_ObjectDeleted(object)) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"this command cannot be called when the object has been"
+		" deleted", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return NULL;
+    }
+    return object;
 }
 
 /*
@@ -645,12 +740,50 @@ GetClassInOuterContext(
 	return NULL;
     }
     if (oPtr->classPtr == NULL) {
-	Tcl_AppendResult(interp, errMsg, NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(errMsg, -1));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		TclGetString(className), NULL);
 	return NULL;
     }
     return oPtr->classPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * GenerateErrorInfo --
+ *	Factored out code to generate part of the error trace messages.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+GenerateErrorInfo(
+    Tcl_Interp *interp,		/* Where to store the error info trace. */
+    Object *oPtr,		/* What object (or class) was being configured
+				 * when the error occurred? */
+    Tcl_Obj *savedNameObj,	/* Name of object saved from before script was
+				 * evaluated, which is needed if the object
+				 * goes away part way through execution. OTOH,
+				 * if the object isn't deleted then its
+				 * current name (post-execution) has to be
+				 * used. This matters, because the object
+				 * could have been renamed... */
+    const char *typeOfSubject)	/* Part of the message, saying whether it was
+				 * an object, class or class-as-object that
+				 * was being configured. */
+{
+    int length;
+    Tcl_Obj *realNameObj = Tcl_ObjectDeleted((Tcl_Object) oPtr)
+	    ? savedNameObj : TclOOObjectName(interp, oPtr);
+    const char *objName = Tcl_GetStringFromObj(realNameObj, &length);
+    int limit = OBJNAME_LENGTH_IN_ERRORINFO_LIMIT;
+    int overflow = (length > limit);
+
+    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+	    "\n    (in definition script for %s \"%.*s%s\" line %d)",
+	    typeOfSubject, (overflow ? limit : length), objName,
+	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
 }
 
 /*
@@ -687,8 +820,8 @@ TclOODefineObjCmd(
 	return TCL_ERROR;
     }
     if (oPtr->classPtr == NULL) {
-	Tcl_AppendResult(interp, TclGetString(objv[1]),
-		" does not refer to a class", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"%s does not refer to a class",TclGetString(objv[1])));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
 		TclGetString(objv[1]), NULL);
 	return TCL_ERROR;
@@ -705,19 +838,14 @@ TclOODefineObjCmd(
 
     AddRef(oPtr);
     if (objc == 3) {
+	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
+
+	Tcl_IncrRefCount(objNameObj);
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
-
 	if (result == TCL_ERROR) {
-	    int length;
-	    const char *objName = Tcl_GetStringFromObj(objv[1], &length);
-	    int limit = 60;
-	    int overflow = (length > limit);
-
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (in definition script for object \"%.*s%s\" line %d)",
-		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+	    GenerateErrorInfo(interp, oPtr, objNameObj, "class");
 	}
+	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
 	Interp *iPtr = (Interp *) interp;
@@ -823,19 +951,14 @@ TclOOObjDefObjCmd(
 
     AddRef(oPtr);
     if (objc == 3) {
+	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
+
+	Tcl_IncrRefCount(objNameObj);
 	result = Tcl_EvalObjEx(interp, objv[2], 0);
-
 	if (result == TCL_ERROR) {
-	    int length;
-	    const char *objName = Tcl_GetStringFromObj(objv[1], &length);
-	    int limit = 60;
-	    int overflow = (length > limit);
-
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (in definition script for object \"%.*s%s\" line %d)",
-		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+	    GenerateErrorInfo(interp, oPtr, objNameObj, "object");
 	}
+	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
 	Interp *iPtr = (Interp *) interp;
@@ -941,20 +1064,14 @@ TclOODefineSelfObjCmd(
 
     AddRef(oPtr);
     if (objc == 2) {
+	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
+
+	Tcl_IncrRefCount(objNameObj);
 	result = Tcl_EvalObjEx(interp, objv[1], 0);
-
 	if (result == TCL_ERROR) {
-	    int length;
-	    const char *objName = Tcl_GetStringFromObj(
-		    TclOOObjectName(interp, oPtr), &length);
-	    int limit = 60;
-	    int overflow = (length > limit);
-
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (in definition script for object \"%.*s%s\" line %d)",
-		    (overflow ? limit : length), objName,
-		    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
+	    GenerateErrorInfo(interp, oPtr, objNameObj, "class object");
 	}
+	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
 	Interp *iPtr = (Interp *) interp;
@@ -1045,14 +1162,14 @@ TclOODefineClassObjCmd(
 	return TCL_ERROR;
     }
     if (oPtr->flags & ROOT_OBJECT) {
-	Tcl_AppendResult(interp,
-		"may not modify the class of the root object class", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"may not modify the class of the root object class", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
     if (oPtr->flags & ROOT_CLASS) {
-	Tcl_AppendResult(interp,
-		"may not modify the class of the class of classes", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"may not modify the class of the class of classes", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -1078,9 +1195,10 @@ TclOODefineClassObjCmd(
      */
 
     if ((oPtr->classPtr==NULL) == TclOOIsReachable(fPtr->classCls, clsPtr)) {
-	Tcl_AppendResult(interp, "may not change a ",
-		(oPtr->classPtr==NULL ? "non-" : ""), "class object into a ",
-		(oPtr->classPtr==NULL ? "" : "non-"), "class object", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"may not change a %sclass object into a %sclass object",
+		(oPtr->classPtr==NULL ? "non-" : ""),
+		(oPtr->classPtr==NULL ? "" : "non-")));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "TRANSMUTATION", NULL);
 	return TCL_ERROR;
     }
@@ -1201,7 +1319,8 @@ TclOODefineDeleteMethodObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceDeleteMethod && !oPtr->classPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -1324,7 +1443,8 @@ TclOODefineExportObjCmd(
     }
     clsPtr = oPtr->classPtr;
     if (!isInstanceExport && !clsPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -1385,43 +1505,6 @@ TclOODefineExportObjCmd(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOODefineFilterObjCmd --
- *	Implementation of the "filter" subcommand of the "oo::define" and
- *	"oo::objdefine" commands.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclOODefineFilterObjCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    int isInstanceFilter = (clientData != NULL);
-    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (!isInstanceFilter && !oPtr->classPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
-	return TCL_ERROR;
-    }
-
-    if (!isInstanceFilter) {
-	TclOOClassSetFilters(interp, oPtr->classPtr, objc-1, objv+1);
-    } else {
-	TclOOObjectSetFilters(oPtr, objc-1, objv+1);
-    }
-    return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
  * TclOODefineForwardObjCmd --
  *	Implementation of the "forward" subcommand of the "oo::define" and
  *	"oo::objdefine" commands.
@@ -1452,7 +1535,8 @@ TclOODefineForwardObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceForward && !oPtr->classPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -1509,7 +1593,8 @@ TclOODefineMethodObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceMethod && !oPtr->classPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -1560,7 +1645,8 @@ TclOODefineMixinObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceMixin && !oPtr->classPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -1574,7 +1660,8 @@ TclOODefineMixinObjCmd(
 	    goto freeAndError;
 	}
 	if (!isInstanceMixin && TclOOIsReachable(oPtr->classPtr, clsPtr)) {
-	    Tcl_AppendResult(interp, "may not mix a class into itself", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "may not mix a class into itself", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "SELF_MIXIN", NULL);
 	    goto freeAndError;
 	}
@@ -1625,7 +1712,8 @@ TclOODefineRenameMethodObjCmd(
 	return TCL_ERROR;
     }
     if (!isInstanceRenameMethod && !oPtr->classPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -1647,112 +1735,6 @@ TclOODefineRenameMethodObjCmd(
     } else {
 	BumpGlobalEpoch(interp, oPtr->classPtr);
     }
-    return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * TclOODefineSuperclassObjCmd --
- *	Implementation of the "superclass" subcommand of the "oo::define"
- *	command.
- *
- * ----------------------------------------------------------------------
- */
-
-int
-TclOODefineSuperclassObjCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    Object *oPtr;
-    Class **superclasses, *superPtr;
-    int i, j;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "className ?className ...?");
-	return TCL_ERROR;
-    }
-
-    /*
-     * Get the class to operate on.
-     */
-
-    oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (oPtr->classPtr == NULL) {
-	Tcl_AppendResult(interp, "only classes may have superclasses defined",
-		NULL);
-	Tcl_SetErrorCode(interp, "TCL", "OO", "OBJECT_NOT_CLASS", NULL);
-	return TCL_ERROR;
-    }
-    if (oPtr->flags & ROOT_OBJECT) {
-	Tcl_AppendResult(interp,
-		"may not modify the superclass of the root object", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
-	return TCL_ERROR;
-    }
-
-    /*
-     * Allocate some working space.
-     */
-
-    superclasses = ckalloc(sizeof(Class *) * (objc-1));
-
-    /*
-     * Parse the arguments to get the class to use as superclasses.
-     */
-
-    for (i=0 ; i<objc-1 ; i++) {
-	Class *clsPtr = GetClassInOuterContext(interp, objv[i+1],
-		"only a class can be a superclass");
-
-	if (clsPtr == NULL) {
-	    goto failedAfterAlloc;
-	}
-	for (j=0 ; j<i ; j++) {
-	    if (superclasses[j] == clsPtr) {
-		Tcl_AppendResult(interp,
-			"class should only be a direct superclass once",NULL);
-		Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS", NULL);
-		goto failedAfterAlloc;
-	    }
-	}
-	if (TclOOIsReachable(oPtr->classPtr, clsPtr)) {
-	    Tcl_AppendResult(interp,
-		    "attempt to form circular dependency graph", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
-	failedAfterAlloc:
-	    ckfree(superclasses);
-	    return TCL_ERROR;
-	}
-	superclasses[i] = clsPtr;
-    }
-
-    /*
-     * Install the list of superclasses into the class. Note that this also
-     * involves splicing the class out of the superclasses' subclass list that
-     * it used to be a member of and splicing it into the new superclasses'
-     * subclass list.
-     */
-
-    if (oPtr->classPtr->superclasses.num != 0) {
-	FOREACH(superPtr, oPtr->classPtr->superclasses) {
-	    TclOORemoveFromSubclasses(oPtr->classPtr, superPtr);
-	}
-	ckfree(oPtr->classPtr->superclasses.list);
-    }
-    oPtr->classPtr->superclasses.list = superclasses;
-    oPtr->classPtr->superclasses.num = objc-1;
-    FOREACH(superPtr, oPtr->classPtr->superclasses) {
-	TclOOAddToSubclasses(oPtr->classPtr, superPtr);
-    }
-    BumpGlobalEpoch(interp, oPtr->classPtr);
-
     return TCL_OK;
 }
 
@@ -1791,7 +1773,8 @@ TclOODefineUnexportObjCmd(
     }
     clsPtr = oPtr->classPtr;
     if (!isInstanceUnexport && !clsPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
 	return TCL_ERROR;
     }
@@ -1852,99 +1835,13 @@ TclOODefineUnexportObjCmd(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOODefineVariablesObjCmd --
- *	Implementation of the "variable" subcommand of the "oo::define" and
- *	"oo::objdefine" commands.
+ * Tcl_ClassSetConstructor, Tcl_ClassSetDestructor --
+ *	How to install a constructor or destructor into a class; API to call
+ *	from C.
  *
  * ----------------------------------------------------------------------
  */
 
-int
-TclOODefineVariablesObjCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    int isInstanceVars = (clientData != NULL);
-    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
-    Tcl_Obj *variableObj;
-    int i;
-
-    if (oPtr == NULL) {
-	return TCL_ERROR;
-    }
-    if (!isInstanceVars && !oPtr->classPtr) {
-	Tcl_AppendResult(interp, "attempt to misuse API", NULL);
-	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
-	return TCL_ERROR;
-    }
-
-    for (i=1 ; i<objc ; i++) {
-	const char *varName = Tcl_GetString(objv[i]);
-
-	if (strstr(varName, "::") != NULL) {
-	    Tcl_AppendResult(interp, "invalid declared variable name \"",
-		    varName, "\": must not contain namespace separators",
-		    NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_DECLVAR", NULL);
-	    return TCL_ERROR;
-	}
-	if (Tcl_StringMatch(varName, "*(*)")) {
-	    Tcl_AppendResult(interp, "invalid declared variable name \"",
-		    varName, "\": must not refer to an array element", NULL);
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_DECLVAR", NULL);
-	    return TCL_ERROR;
-	}
-    }
-    for (i=1 ; i<objc ; i++) {
-	Tcl_IncrRefCount(objv[i]);
-    }
-
-    if (!isInstanceVars) {
-	FOREACH(variableObj, oPtr->classPtr->variables) {
-	    Tcl_DecrRefCount(variableObj);
-	}
-	if (i != objc-1) {
-	    if (objc == 1) {
-		ckfree(oPtr->classPtr->variables.list);
-	    } else if (i) {
-		oPtr->classPtr->variables.list =
-			ckrealloc(oPtr->classPtr->variables.list,
-			sizeof(Tcl_Obj *) * (objc-1));
-	    } else {
-		oPtr->classPtr->variables.list =
-			ckalloc(sizeof(Tcl_Obj *) * (objc-1));
-	    }
-	}
-	if (objc > 1) {
-	    memcpy(oPtr->classPtr->variables.list, objv+1,
-		    sizeof(Tcl_Obj *) * (objc-1));
-	}
-	oPtr->classPtr->variables.num = objc-1;
-    } else {
-	FOREACH(variableObj, oPtr->variables) {
-	    Tcl_DecrRefCount(variableObj);
-	}
-	if (i != objc-1) {
-	    if (objc == 1) {
-		ckfree(oPtr->variables.list);
-	    } else if (i) {
-		oPtr->variables.list = ckrealloc(oPtr->variables.list,
-			sizeof(Tcl_Obj *) * (objc-1));
-	    } else {
-		oPtr->variables.list =
-			ckalloc(sizeof(Tcl_Obj *) * (objc-1));
-	    }
-	}
-	if (objc > 1) {
-	    memcpy(oPtr->variables.list, objv+1, sizeof(Tcl_Obj *)*(objc-1));
-	}
-	oPtr->variables.num = objc-1;
-    }
-    return TCL_OK;
-}
-
 void
 Tcl_ClassSetConstructor(
     Tcl_Interp *interp,
@@ -1987,6 +1884,792 @@ Tcl_ClassSetDestructor(
 	}
 	BumpGlobalEpoch(interp, clsPtr);
     }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOODefineSlots --
+ *	Create the "::oo::Slot" class and its standard instances. Class
+ *	definition is empty at the stage (added by scripting).
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclOODefineSlots(
+    Foundation *fPtr)
+{
+    const struct DeclaredSlot *slotInfoPtr;
+    Tcl_Obj *getName = Tcl_NewStringObj("Get", -1);
+    Tcl_Obj *setName = Tcl_NewStringObj("Set", -1);
+    Class *slotCls;
+
+    slotCls = ((Object *) Tcl_NewObjectInstance(fPtr->interp, (Tcl_Class)
+	    fPtr->classCls, "::oo::Slot", NULL, -1, NULL, 0))->classPtr;
+    if (slotCls == NULL) {
+	return TCL_ERROR;
+    }
+    Tcl_IncrRefCount(getName);
+    Tcl_IncrRefCount(setName);
+    for (slotInfoPtr = slots ; slotInfoPtr->name ; slotInfoPtr++) {
+	Tcl_Object slotObject = Tcl_NewObjectInstance(fPtr->interp,
+		(Tcl_Class) slotCls, slotInfoPtr->name, NULL,-1,NULL,0);
+
+	if (slotObject == NULL) {
+	    continue;
+	}
+	Tcl_NewInstanceMethod(fPtr->interp, slotObject, getName, 0,
+		&slotInfoPtr->getterType, NULL);
+	Tcl_NewInstanceMethod(fPtr->interp, slotObject, setName, 0,
+		&slotInfoPtr->setterType, NULL);
+    }
+    Tcl_DecrRefCount(getName);
+    Tcl_DecrRefCount(setName);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ClassFilterGet, ClassFilterSet --
+ *	Implementation of the "filter" slot accessors of the "oo::define"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+ClassFilterGet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Tcl_Obj *resultObj, *filterObj;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		NULL);
+	return TCL_ERROR;
+    }
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (!oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    }
+
+    resultObj = Tcl_NewObj();
+    FOREACH(filterObj, oPtr->classPtr->filters) {
+	Tcl_ListObjAppendElement(NULL, resultObj, filterObj);
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+static int
+ClassFilterSet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    int filterc;
+    Tcl_Obj **filterv;
+
+    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"filterList");
+	return TCL_ERROR;
+    }
+    objv += Tcl_ObjectContextSkippedArgs(context);
+
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (!oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    } else if (Tcl_ListObjGetElements(interp, objv[0], &filterc,
+	    &filterv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    TclOOClassSetFilters(interp, oPtr->classPtr, filterc, filterv);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ClassMixinGet, ClassMixinSet --
+ *	Implementation of the "mixin" slot accessors of the "oo::define"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+ClassMixinGet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Tcl_Obj *resultObj;
+    Class *mixinPtr;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		NULL);
+	return TCL_ERROR;
+    }
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (!oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    }
+
+    resultObj = Tcl_NewObj();
+    FOREACH(mixinPtr, oPtr->classPtr->mixins) {
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		TclOOObjectName(interp, mixinPtr->thisPtr));
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+
+}
+
+static int
+ClassMixinSet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    int mixinc, i;
+    Tcl_Obj **mixinv;
+    Class **mixins;
+
+    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"mixinList");
+	return TCL_ERROR;
+    }
+    objv += Tcl_ObjectContextSkippedArgs(context);
+
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (!oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    } else if (Tcl_ListObjGetElements(interp, objv[0], &mixinc,
+	    &mixinv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
+
+    for (i=0 ; i<mixinc ; i++) {
+	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
+		"may only mix in classes");
+	if (mixins[i] == NULL) {
+	    goto freeAndError;
+	}
+	if (TclOOIsReachable(oPtr->classPtr, mixins[i])) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "may not mix a class into itself", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "SELF_MIXIN", NULL);
+	    goto freeAndError;
+	}
+    }
+
+    TclOOClassSetMixins(interp, oPtr->classPtr, mixinc, mixins);
+    TclStackFree(interp, mixins);
+    return TCL_OK;
+
+  freeAndError:
+    TclStackFree(interp, mixins);
+    return TCL_ERROR;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ClassSuperGet, ClassSuperSet --
+ *	Implementation of the "superclass" slot accessors of the "oo::define"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+ClassSuperGet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Tcl_Obj *resultObj;
+    Class *superPtr;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		NULL);
+	return TCL_ERROR;
+    }
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (!oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    }
+
+    resultObj = Tcl_NewObj();
+    FOREACH(superPtr, oPtr->classPtr->superclasses) {
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		TclOOObjectName(interp, superPtr->thisPtr));
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+static int
+ClassSuperSet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    int superc, i, j;
+    Tcl_Obj **superv;
+    Class **superclasses, *superPtr;
+
+    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"superclassList");
+	return TCL_ERROR;
+    }
+    objv += Tcl_ObjectContextSkippedArgs(context);
+
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (!oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    } else if (oPtr == oPtr->fPtr->objectCls->thisPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"may not modify the superclass of the root object", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    } else if (Tcl_ListObjGetElements(interp, objv[0], &superc,
+	    &superv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Allocate some working space.
+     */
+
+    superclasses = (Class **) ckalloc(sizeof(Class *) * superc);
+
+    /*
+     * Parse the arguments to get the class to use as superclasses.
+     */
+
+    for (i=0 ; i<superc ; i++) {
+	superclasses[i] = GetClassInOuterContext(interp, superv[i],
+		"only a class can be a superclass");
+	if (superclasses[i] == NULL) {
+	    goto failedAfterAlloc;
+	}
+	for (j=0 ; j<i ; j++) {
+	    if (superclasses[j] == superclasses[i]) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"class should only be a direct superclass once", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS", NULL);
+		goto failedAfterAlloc;
+	    }
+	}
+	if (TclOOIsReachable(oPtr->classPtr, superclasses[i])) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "attempt to form circular dependency graph", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
+	failedAfterAlloc:
+	    ckfree((char *) superclasses);
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * Install the list of superclasses into the class. Note that this also
+     * involves splicing the class out of the superclasses' subclass list that
+     * it used to be a member of and splicing it into the new superclasses'
+     * subclass list.
+     */
+
+    if (oPtr->classPtr->superclasses.num != 0) {
+	FOREACH(superPtr, oPtr->classPtr->superclasses) {
+	    TclOORemoveFromSubclasses(oPtr->classPtr, superPtr);
+	}
+	ckfree((char *) oPtr->classPtr->superclasses.list);
+    }
+    oPtr->classPtr->superclasses.list = superclasses;
+    oPtr->classPtr->superclasses.num = superc;
+    FOREACH(superPtr, oPtr->classPtr->superclasses) {
+	TclOOAddToSubclasses(oPtr->classPtr, superPtr);
+    }
+    BumpGlobalEpoch(interp, oPtr->classPtr);
+
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ClassVarsGet, ClassVarsSet --
+ *	Implementation of the "variable" slot accessors of the "oo::define"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+ClassVarsGet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Tcl_Obj *resultObj, *variableObj;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		NULL);
+	return TCL_ERROR;
+    }
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (!oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    }
+
+    resultObj = Tcl_NewObj();
+    FOREACH(variableObj, oPtr->classPtr->variables) {
+	Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+static int
+ClassVarsSet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    int varc;
+    Tcl_Obj **varv, *variableObj;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"filterList");
+	return TCL_ERROR;
+    }
+    objv += Tcl_ObjectContextSkippedArgs(context);
+
+    if (oPtr == NULL) {
+	return TCL_ERROR;
+    } else if (!oPtr->classPtr) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"attempt to misuse API", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OO", "MONKEY_BUSINESS", NULL);
+	return TCL_ERROR;
+    } else if (Tcl_ListObjGetElements(interp, objv[0], &varc,
+	    &varv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<varc ; i++) {
+	const char *varName = Tcl_GetString(varv[i]);
+
+	if (strstr(varName, "::") != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "invalid declared variable name \"%s\": must not %s",
+		    varName, "contain namespace separators"));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_DECLVAR", NULL);
+	    return TCL_ERROR;
+	}
+	if (Tcl_StringMatch(varName, "*(*)")) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "invalid declared variable name \"%s\": must not %s",
+		    varName, "refer to an array element"));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_DECLVAR", NULL);
+	    return TCL_ERROR;
+	}
+    }
+
+    for (i=0 ; i<varc ; i++) {
+	Tcl_IncrRefCount(varv[i]);
+    }
+    FOREACH(variableObj, oPtr->classPtr->variables) {
+	Tcl_DecrRefCount(variableObj);
+    }
+    if (i != varc) {
+	if (varc == 0) {
+	    ckfree((char *) oPtr->classPtr->variables.list);
+	} else if (i) {
+	    oPtr->classPtr->variables.list = (Tcl_Obj **)
+		    ckrealloc((char *) oPtr->classPtr->variables.list,
+		    sizeof(Tcl_Obj *) * varc);
+	} else {
+	    oPtr->classPtr->variables.list = (Tcl_Obj **)
+		    ckalloc(sizeof(Tcl_Obj *) * varc);
+	}
+    }
+
+    oPtr->classPtr->variables.num = 0;
+    if (varc > 0) {
+	int created, n;
+	Tcl_HashTable uniqueTable;
+
+	Tcl_InitObjHashTable(&uniqueTable);
+	for (i=n=0 ; i<varc ; i++) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
+	    if (created) {
+		oPtr->classPtr->variables.list[n++] = varv[i];
+	    } else {
+		Tcl_DecrRefCount(varv[i]);
+	    }
+	}
+	oPtr->classPtr->variables.num = n;
+
+	/*
+	 * Shouldn't be necessary, but maintain num/list invariant.
+	 */
+
+	oPtr->classPtr->variables.list = (Tcl_Obj **)
+		ckrealloc((char *) oPtr->classPtr->variables.list,
+		sizeof(Tcl_Obj *) * n);
+	Tcl_DeleteHashTable(&uniqueTable);
+    }
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectFilterGet, ObjectFilterSet --
+ *	Implementation of the "filter" slot accessors of the "oo::objdefine"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+ObjFilterGet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Tcl_Obj *resultObj, *filterObj;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		NULL);
+	return TCL_ERROR;
+    } else if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    resultObj = Tcl_NewObj();
+    FOREACH(filterObj, oPtr->filters) {
+	Tcl_ListObjAppendElement(NULL, resultObj, filterObj);
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+static int
+ObjFilterSet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    int filterc;
+    Tcl_Obj **filterv;
+
+    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"filterList");
+	return TCL_ERROR;
+    } else if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    objv += Tcl_ObjectContextSkippedArgs(context);
+    if (Tcl_ListObjGetElements(interp, objv[0], &filterc,
+	    &filterv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    TclOOObjectSetFilters(oPtr, filterc, filterv);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectMixinGet, ObjectMixinSet --
+ *	Implementation of the "mixin" slot accessors of the "oo::objdefine"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+ObjMixinGet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Tcl_Obj *resultObj;
+    Class *mixinPtr;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		NULL);
+	return TCL_ERROR;
+    } else if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    resultObj = Tcl_NewObj();
+    FOREACH(mixinPtr, oPtr->mixins) {
+	Tcl_ListObjAppendElement(NULL, resultObj,
+		TclOOObjectName(interp, mixinPtr->thisPtr));
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+static int
+ObjMixinSet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    int mixinc;
+    Tcl_Obj **mixinv;
+    Class **mixins;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"mixinList");
+	return TCL_ERROR;
+    } else if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    objv += Tcl_ObjectContextSkippedArgs(context);
+    if (Tcl_ListObjGetElements(interp, objv[0], &mixinc,
+	    &mixinv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    mixins = TclStackAlloc(interp, sizeof(Class *) * mixinc);
+
+    for (i=0 ; i<mixinc ; i++) {
+	mixins[i] = GetClassInOuterContext(interp, mixinv[i],
+		"may only mix in classes");
+	if (mixins[i] == NULL) {
+	    TclStackFree(interp, mixins);
+	    return TCL_ERROR;
+	}
+    }
+
+    TclOOObjectSetMixins(oPtr, mixinc, mixins);
+    TclStackFree(interp, mixins);
+    return TCL_OK;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ObjectVarsGet, ObjectVarsSet --
+ *	Implementation of the "variable" slot accessors of the "oo::objdefine"
+ *	command.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static int
+ObjVarsGet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    Tcl_Obj *resultObj, *variableObj;
+    int i;
+
+    if (Tcl_ObjectContextSkippedArgs(context) != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		NULL);
+	return TCL_ERROR;
+    } else if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    resultObj = Tcl_NewObj();
+    FOREACH(variableObj, oPtr->variables) {
+	Tcl_ListObjAppendElement(NULL, resultObj, variableObj);
+    }
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
+
+static int
+ObjVarsSet(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    Tcl_ObjectContext context,
+    int objc,
+    Tcl_Obj *const *objv)
+{
+    Object *oPtr = (Object *) TclOOGetDefineCmdContext(interp);
+    int varc, i;
+    Tcl_Obj **varv, *variableObj;
+
+    if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
+	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
+		"variableList");
+	return TCL_ERROR;
+    } else if (oPtr == NULL) {
+	return TCL_ERROR;
+    }
+    objv += Tcl_ObjectContextSkippedArgs(context);
+    if (Tcl_ListObjGetElements(interp, objv[0], &varc,
+	    &varv) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<varc ; i++) {
+	const char *varName = Tcl_GetString(varv[i]);
+
+	if (strstr(varName, "::") != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "invalid declared variable name \"%s\": must not %s",
+		    varName, "contain namespace separators"));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_DECLVAR", NULL);
+	    return TCL_ERROR;
+	}
+	if (Tcl_StringMatch(varName, "*(*)")) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "invalid declared variable name \"%s\": must not %s",
+		    varName, "refer to an array element"));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_DECLVAR", NULL);
+	    return TCL_ERROR;
+	}
+    }
+    for (i=0 ; i<varc ; i++) {
+	Tcl_IncrRefCount(varv[i]);
+    }
+
+    FOREACH(variableObj, oPtr->variables) {
+	Tcl_DecrRefCount(variableObj);
+    }
+    if (i != varc) {
+	if (varc == 0) {
+	    ckfree((char *) oPtr->variables.list);
+	} else if (i) {
+	    oPtr->variables.list = (Tcl_Obj **)
+		    ckrealloc((char *) oPtr->variables.list,
+		    sizeof(Tcl_Obj *) * varc);
+	} else {
+	    oPtr->variables.list = (Tcl_Obj **)
+		    ckalloc(sizeof(Tcl_Obj *) * varc);
+	}
+    }
+    oPtr->variables.num = 0;
+    if (varc > 0) {
+	int created, n;
+	Tcl_HashTable uniqueTable;
+
+	Tcl_InitObjHashTable(&uniqueTable);
+	for (i=n=0 ; i<varc ; i++) {
+	    Tcl_CreateHashEntry(&uniqueTable, varv[i], &created);
+	    if (created) {
+		oPtr->variables.list[n++] = varv[i];
+	    } else {
+		Tcl_DecrRefCount(varv[i]);
+	    }
+	}
+	oPtr->variables.num = n;
+
+	/*
+	 * Shouldn't be necessary, but maintain num/list invariant.
+	 */
+
+	oPtr->variables.list = (Tcl_Obj **)
+		ckrealloc((char *) oPtr->variables.list,
+		sizeof(Tcl_Obj *) * n);
+	Tcl_DeleteHashTable(&uniqueTable);
+    }
+    return TCL_OK;
 }
 
 /*

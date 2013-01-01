@@ -549,10 +549,7 @@ test format-18.2 {do not demote existing numeric values} {wideBiggerThanInt} {
     list [format %08x $a] [expr {$a == $b}]
 } {aaaaaaab 1}
 
-test format-19.1 {
-    regression test - tcl-core message by Brian Griffin on
-    26 0ctober 2004
-} -body {
+test format-19.1 {regression test - tcl-core message by Brian Griffin on 26 0ctober 2004} -body {
     set x 0x8fedc654
     list [expr { ~ $x }] [format %08x [expr { ~$x }]]
 } -match regexp -result {-2414724693 f*701239ab}
@@ -569,7 +566,7 @@ test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {
     format %s $x
     # After this, obj in $x should be a dict with a non-NULL bytes field
     tcl::unsupported::representation $x
-} -match glob -result {value is a dict with *, string representation "*".}
+} -match glob -result {value is a dict with *, string representation "*"}
 
 # cleanup
 catch {unset a}

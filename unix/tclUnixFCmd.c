@@ -62,6 +62,16 @@
 #define DOTREE_F	3	/* regular file */
 
 /*
+ * Fallback temporary file location the temporary file generation code. Can be
+ * overridden at compile time for when it is known that temp files can't be
+ * written to /tmp (hello, iOS!).
+ */
+
+#ifndef TCL_TEMPORARY_FILE_DIRECTORY
+#define TCL_TEMPORARY_FILE_DIRECTORY	"/tmp"
+#endif
+
+/*
  * Callbacks for file attributes code.
  */
 
@@ -967,11 +977,11 @@ TraverseUnixTree(
 	return result;
     }
 
-    Tcl_DStringAppend(sourcePtr, "/", 1);
+    TclDStringAppendLiteral(sourcePtr, "/");
     sourceLen = Tcl_DStringLength(sourcePtr);
 
     if (targetPtr != NULL) {
-	Tcl_DStringAppend(targetPtr, "/", 1);
+	TclDStringAppendLiteral(targetPtr, "/");
 	targetLen = Tcl_DStringLength(targetPtr);
     }
 
@@ -1320,9 +1330,9 @@ GetGroupAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1374,9 +1384,9 @@ GetOwnerAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1387,11 +1397,9 @@ GetOwnerAttribute(
 	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
     } else {
 	Tcl_DString ds;
-	const char *utf;
 
-	utf = Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, -1, &ds);
-	*attributePtrPtr = Tcl_NewStringObj(utf, Tcl_DStringLength(&ds));
-	Tcl_DStringFree(&ds);
+	(void) Tcl_ExternalToUtfDString(NULL, pwPtr->pw_name, -1, &ds);
+	*attributePtrPtr = TclDStringToObj(&ds);
     }
     return TCL_OK;
 }
@@ -1427,9 +1435,9 @@ GetPermissionsAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1480,9 +1488,10 @@ SetGroupAttribute(
 
 	if (groupPtr == NULL) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "could not set group for file \"",
-			TclGetString(fileName), "\": group \"", string,
-			"\" does not exist", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not set group for file \"%s\":"
+			" group \"%s\" does not exist",
+			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETGRP",
 			"NO_GROUP", NULL);
 	    }
@@ -1496,9 +1505,9 @@ SetGroupAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not set group for file \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set group for file \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1546,9 +1555,10 @@ SetOwnerAttribute(
 
 	if (pwPtr == NULL) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "could not set owner for file \"",
-			TclGetString(fileName), "\": user \"", string,
-			"\" does not exist", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not set owner for file \"%s\":"
+			" user \"%s\" does not exist",
+			TclGetString(fileName), string));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "SETOWN",
 			"NO_USER", NULL);
 	    }
@@ -1562,9 +1572,9 @@ SetOwnerAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not set owner for file \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set owner for file \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -1632,9 +1642,9 @@ SetPermissionsAttribute(
 	result = TclpObjStat(fileName, &buf);
 	if (result != 0) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "could not read \"",
-			TclGetString(fileName), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"could not read \"%s\": %s",
+			TclGetString(fileName), Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1642,8 +1652,9 @@ SetPermissionsAttribute(
 
 	if (GetModeFromPermString(NULL, modeStringPtr, &newMode) != TCL_OK) {
 	    if (interp != NULL) {
-		Tcl_AppendResult(interp, "unknown permission string format \"",
-			modeStringPtr, "\"", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unknown permission string format \"%s\"",
+			modeStringPtr));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "PERMISSION", NULL);
 	    }
 	    return TCL_ERROR;
@@ -1654,9 +1665,9 @@ SetPermissionsAttribute(
     result = chmod(native, newMode);		/* INTL: Native. */
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not set permissions for file \"",
-		    TclGetString(fileName), "\": ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set permissions for file \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -2092,7 +2103,7 @@ TclpObjNormalizePath(
 /*
  *----------------------------------------------------------------------
  *
- * TclpOpenTemporaryFile --
+ * TclpOpenTemporaryFile, TclUnixOpenTemporaryFile --
  *
  *	Creates a temporary file, possibly based on the supplied bits and
  *	pieces of template supplied in the first three arguments. If the
@@ -2102,7 +2113,12 @@ TclpObjNormalizePath(
  *	file to go away once it is no longer needed.
  *
  * Results:
- *	A read-write Tcl Channel open on the file.
+ *	A read-write Tcl Channel open on the file for TclpOpenTemporaryFile,
+ *	or a file descriptor (or -1 on failure) for TclUnixOpenTemporaryFile.
+ *
+ * Side effects:
+ *	Accesses the filesystem. Will set the contents of the Tcl_Obj fourth
+ *	argument (if that is non-NULL).
  *
  *----------------------------------------------------------------------
  */
@@ -2114,10 +2130,29 @@ TclpOpenTemporaryFile(
     Tcl_Obj *extensionObj,
     Tcl_Obj *resultingNameObj)
 {
-    Tcl_Channel chan;
+    int fd = TclUnixOpenTemporaryFile(dirObj, basenameObj, extensionObj,
+	    resultingNameObj);
+
+    if (fd == -1) {
+	return NULL;
+    }
+    return Tcl_MakeFileChannel(INT2PTR(fd), TCL_READABLE|TCL_WRITABLE);
+}
+
+int
+TclUnixOpenTemporaryFile(
+    Tcl_Obj *dirObj,
+    Tcl_Obj *basenameObj,
+    Tcl_Obj *extensionObj,
+    Tcl_Obj *resultingNameObj)
+{
     Tcl_DString template, tmp;
     const char *string;
     int len, fd;
+
+    /*
+     * We should also check against making more then TMP_MAX of these.
+     */
 
     if (dirObj) {
 	string = Tcl_GetStringFromObj(dirObj, &len);
@@ -2127,24 +2162,24 @@ TclpOpenTemporaryFile(
 	Tcl_DStringAppend(&template, DefaultTempDir(), -1); /* INTL: native */
     }
 
-    Tcl_DStringAppend(&template, "/", -1);
+    TclDStringAppendLiteral(&template, "/");
 
     if (basenameObj) {
 	string = Tcl_GetStringFromObj(basenameObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
-	Tcl_DStringAppend(&template, Tcl_DStringValue(&tmp), -1);
+	TclDStringAppendDString(&template, &tmp);
 	Tcl_DStringFree(&tmp);
     } else {
-	Tcl_DStringAppend(&template, "tcl", -1);
+	TclDStringAppendLiteral(&template, "tcl");
     }
 
-    Tcl_DStringAppend(&template, "_XXXXXX", -1);
+    TclDStringAppendLiteral(&template, "_XXXXXX");
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
 	string = Tcl_GetStringFromObj(extensionObj, &len);
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
-	Tcl_DStringAppend(&template, Tcl_DStringValue(&tmp), -1);
+	TclDStringAppendDString(&template, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&template), Tcl_DStringLength(&tmp));
 	Tcl_DStringFree(&tmp);
     } else
@@ -2154,9 +2189,10 @@ TclpOpenTemporaryFile(
     }
 
     if (fd == -1) {
-	return NULL;
+	Tcl_DStringFree(&template);
+	return -1;
     }
-    chan = Tcl_MakeFileChannel(INT2PTR(fd), TCL_READABLE|TCL_WRITABLE);
+
     if (resultingNameObj) {
 	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&template),
 		Tcl_DStringLength(&template), &tmp);
@@ -2175,7 +2211,7 @@ TclpOpenTemporaryFile(
     }
     Tcl_DStringFree(&template);
 
-    return chan;
+    return fd;
 }
 
 /*
@@ -2202,11 +2238,12 @@ DefaultTempDir(void)
 #endif
 
     /*
-     * Assume that "/tmp" is always an existing writable directory; we've no
-     * recovery mechanism if it isn't.
+     * Assume that the default location ("/tmp" if not overridden) is always
+     * an existing writable directory; we've no recovery mechanism if it
+     * isn't.
      */
 
-    return "/tmp";
+    return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)
@@ -2241,14 +2278,14 @@ GetReadOnlyAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj((statBuf.st_flags&UF_IMMUTABLE) != 0);
+    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags&UF_IMMUTABLE);
 
     return TCL_OK;
 }
@@ -2288,9 +2325,9 @@ SetReadOnlyAttribute(
 
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }
@@ -2305,9 +2342,9 @@ SetReadOnlyAttribute(
     result = chflags(native, statBuf.st_flags);		/* INTL: Native. */
     if (result != 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not set flags for file \"",
-		    TclGetString(fileName), "\": ", Tcl_PosixError(interp),
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not set flags for file \"%s\": %s",
+		    TclGetString(fileName), Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
     }

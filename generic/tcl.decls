@@ -774,10 +774,10 @@ declare 216 {
 declare 217 {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
-declare 218 generic {
+declare 218 {
     int Tcl_ScanElement(const char *src, int *flagPtr)
 }
-declare 219 generic {
+declare 219 {
     int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
 # Obsolete
@@ -2311,11 +2311,17 @@ declare 627 {
 		     Tcl_LoadHandle *handlePtr)
 }
 declare 628 {
-    void* Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
+    void *Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
 			 const char *symbol)
 }
 declare 629 {
     int Tcl_FSUnloadFile(Tcl_Interp *interp, Tcl_LoadHandle handlePtr)
+}
+
+# TIP #400
+declare 630 {
+    void Tcl_ZlibStreamSetCompressionDictionary(Tcl_ZlibStream zhandle,
+	    Tcl_Obj *compressionDictionaryObj)
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
@@ -2363,6 +2369,14 @@ declare 1 macosx {
 
 export {
     void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
+}
+export {
+    const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
+	int exact)
+}
+export {
+    const char *TclTomMathInitializeStubs(Tcl_Interp* interp,
+	const char* version, int epoch, int revision)
 }
 export {
     const char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, const char *version,

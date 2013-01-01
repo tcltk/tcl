@@ -3,7 +3,7 @@
  *
  *	This file contains code to create and manage methods.
  *
- * Copyright (c) 2005-2008 by Donal K. Fellows
+ * Copyright (c) 2005-2011 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1007,15 +1007,6 @@ ConstructorErrorHandler(
     const char *objectName, *kindName;
     int objectNameLen;
 
-    if (Tcl_GetErrorLine(interp) == (int) 0xDEADBEEF) {
-	/*
-	 * Horrible hack to deal with certain constructors that must not add
-	 * information to the error trace.
-	 */
-
-	return;
-    }
-
     if (mPtr->declaringObjectPtr != NULL) {
 	declarerPtr = mPtr->declaringObjectPtr;
 	kindName = "object";
@@ -1141,8 +1132,8 @@ TclOONewForwardInstanceMethod(
 	return NULL;
     }
     if (prefixLen < 1) {
-	Tcl_AppendResult(interp, "method forward prefix must be non-empty",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"method forward prefix must be non-empty", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
 	return NULL;
     }
@@ -1183,8 +1174,8 @@ TclOONewForwardMethod(
 	return NULL;
     }
     if (prefixLen < 1) {
-	Tcl_AppendResult(interp, "method forward prefix must be non-empty",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"method forward prefix must be non-empty", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "BAD_FORWARD", NULL);
 	return NULL;
     }

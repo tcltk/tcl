@@ -15,6 +15,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testwinclock [llength [info commands testwinclock]]
 
 # The next two tests will crash on Windows if the check for negative

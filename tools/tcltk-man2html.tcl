@@ -1,8 +1,12 @@
-#!/bin/sh
-# The next line is executed by /bin/sh, but not tcl \
-exec tclsh "$0" ${1+"$@"}
+#!/usr/bin/env tclsh
 
-package require Tcl 8.6
+if {[catch {package require Tcl 8.6} msg]} {
+    puts stderr "ERROR: $msg"
+    puts stderr "If running this script from 'make html', set the\
+	NATIVE_TCLSH environment\nvariable to point to an installed\
+	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
+    exit 1
+}
 
 # Convert Ousterhout format man pages into highly crosslinked hypertext.
 #
@@ -18,7 +22,7 @@ package require Tcl 8.6
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 
-regexp {\d+\.\d+} {$Revision: 1.49 $} ::Version
+set ::Version "50/8.6"
 set ::CSSFILE "docs.css"
 
 ##
@@ -261,364 +265,36 @@ proc make-man-pages {html args} {
     puts $manual(short-toc-fp) "<DL class=\"keylist\">"
     set manual(merge-copyrights) {}
 
-    set LQ \u201c
-    set RQ \u201d
-
     foreach arg $args {
 	# preprocess to set up subheader for the rest of the files
 	if {![llength $arg]} {
 	    continue
 	}
-	set name [lindex $arg 1]
-	set file [lindex $arg 2]
+	lassign $arg -> name file
+	if {[regexp {(.*)(?: Package)? Commands(?:, version .*)?} $name -> pkg]} {
+	    set name "$pkg Commands"
+	} elseif {[regexp {(.*)(?: Package)? C API(?:, version .*)?} $name -> pkg]} {
+	    set name "$pkg C API"
+	}
 	lappend manual(subheader) $name $file
     }
+
+    ##
+    ## parse the manpages in a section of the docs (split by
+    ## package) and construct formatted manpages
+    ##
     foreach arg $args {
-	if {![llength $arg]} {
-	    continue
+	if {[llength $arg]} {
+	    make-manpage-section $html $arg
 	}
-	set manual(wing-glob) [lindex $arg 0]
-	set manual(wing-name) [lindex $arg 1]
-	set manual(wing-file) [lindex $arg 2]
-	set manual(wing-description) [lindex $arg 3]
-	set manual(wing-copyrights) {}
-	makedirhier $html/$manual(wing-file)
-	set manual(wing-toc-fp) [open $html/$manual(wing-file)/[indexfile] w]
-	# whistle
-	puts stderr "scanning section $manual(wing-name)"
-	# put the entry for this section into the short table of contents
-	puts $manual(short-toc-fp) "<DT><A HREF=\"$manual(wing-file)/[indexfile]\">$manual(wing-name)</A></DT><DD>$manual(wing-description)</DD>"
-	# initialize the wing table of contents
-	puts $manual(wing-toc-fp) [htmlhead $manual(wing-name) \
-		$manual(wing-name) $overall_title "../[indexfile]"]
-	# initialize the short table of contents for this section
-	set manual(wing-toc) {}
-	# initialize the man directory for this section
-	makedirhier $html/$manual(wing-file)
-	# initialize the long table of contents for this section
-	set manual(long-toc-n) 1
-	# get the manual pages for this section
-	set manual(pages) [lsort -dictionary [glob -nocomplain $manual(wing-glob)]]
-	# Some pages have to go first so that their links override others
-	foreach pat $process_first_patterns {
-	    set n [lsearch -glob $manual(pages) $pat]
-	    if {$n >= 0} {
-		set f [lindex $manual(pages) $n]
-		puts stderr "shuffling [file tail $f] to front of processing queue"
-		set manual(pages) \
-		    [linsert [lreplace $manual(pages) $n $n] 0 $f]
-	    }
-	}
-	# set manual(pages) [lrange $manual(pages) 0 5]
-	foreach manual_page $manual(pages) {
-	    set manual(page) [file normalize $manual_page]
-	    # whistle
-	    if {$verbose} {
-		puts stderr "scanning page $manual(page)"
-	    } else {
-		puts -nonewline stderr .
-	    }
-	    set manual(tail) [file tail $manual(page)]
-	    set manual(name) [file root $manual(tail)]
-	    set manual(section) {}
-	    if {$manual(name) in $excluded_pages} {
-		# obsolete
-		if {!$verbose} {
-		    puts stderr ""
-		}
-		manerror "discarding $manual(name)"
-		continue
-	    }
-	    set manual(infp) [open $manual(page)]
-	    set manual(text) {}
-	    set manual(partial-text) {}
-	    foreach p {.RS .DS .CS .SO} {
-		set manual($p) 0
-	    }
-	    set manual(stack) {}
-	    set manual(section) {}
-	    set manual(section-toc) {}
-	    set manual(section-toc-n) 1
-	    set manual(copyrights) {}
-	    lappend manual(all-pages) $manual(wing-file)/$manual(tail)
-	    manreport 100 $manual(name)
-	    while {[gets $manual(infp) line] >= 0} {
-		manreport 100 $line
-		if {[regexp {^[`'][/\\]} $line]} {
-		    if {[regexp {Copyright (?:\(c\)|\\\(co).*$} $line copyright]} {
-			lappend manual(copyrights) $copyright
-		    }
-		    # comment
-		    continue
-		}
-		if {"$line" eq {'}} {
-		    # comment
-		    continue
-		}
-		if {![parse-directive $line code rest]} {
-		    addbuffer $line
-		    continue
-		}
-		switch -exact -- $code {
-		    .if - .nr - .ti - .in - .ie - .el -
-		    .ad - .na - .so - .ne - .AS - .VE - .VS - . {
-			# ignore
-			continue
-		    }
-		}
-		switch -exact -- $code {
-		    .SH - .SS {
-			flushbuffer
-			if {[llength $rest] == 0} {
-			    gets $manual(infp) rest
-			}
-			lappend manual(text) "$code [unquote $rest]"
-		    }
-		    .TH {
-			flushbuffer
-			lappend manual(text) "$code [unquote $rest]"
-		    }
-		    .QW {
-			lassign [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest] \
-			    inQuote afterwards
-			addbuffer $LQ [unquote $inQuote] $RQ [unquote $afterwards]
-		    }
-		    .PQ {
-			lassign [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest] \
-			    inQuote punctuation afterwards
-			addbuffer ( $LQ [unquote $inQuote] $RQ \
-			    [unquote $punctuation] ) \
-			    [unquote $afterwards]
-		    }
-		    .QR {
-			lassign [regexp -all -inline {\"(?:[^""]+)\"|\S+} $rest] \
-			    rangeFrom rangeTo afterwards
-			addbuffer $LQ [unquote $rangeFrom] "&ndash;" \
-			    [unquote $rangeTo] $RQ [unquote $afterwards]
-		    }
-		    .MT {
-			addbuffer $LQ$RQ
-		    }
-		    .HS - .UL - .ta {
-			flushbuffer
-			lappend manual(text) "$code [unquote $rest]"
-		    }
-		    .BS - .BE - .br - .fi - .sp - .nf {
-			flushbuffer
-			if {$rest ne ""} {
-			    if {!$verbose} {
-				puts stderr ""
-			    }
-			    manerror "unexpected argument: $line"
-			}
-			lappend manual(text) $code
-		    }
-		    .AP {
-			flushbuffer
-			lappend manual(text) [concat .IP [process-text "[lindex $rest 0] \\fB[lindex $rest 1]\\fR ([lindex $rest 2])"]]
-		    }
-		    .IP {
-			flushbuffer
-			regexp {^(.*) +\d+$} $rest all rest
-			lappend manual(text) ".IP [process-text [unquote [string trim $rest]]]"
-		    }
-		    .TP {
-			flushbuffer
-			while {[is-a-directive [set next [gets $manual(infp)]]]} {
-			    if {!$verbose} {
-				puts stderr ""
-			    }
-			    manerror "ignoring $next after .TP"
-			}
-			if {"$next" ne {'}} {
-			    lappend manual(text) ".IP [process-text $next]"
-			}
-		    }
-		    .OP {
-			flushbuffer
-			lassign $rest cmdName dbName dbClass
-			lappend manual(text) [concat .OP [process-text \
-				"\\fB$cmdName\\fR \\fB$dbName\\fR \\fB$dbClass\\fR"]]
-		    }
-		    .PP - .LP {
-			flushbuffer
-			lappend manual(text) {.PP}
-		    }
-		    .RS {
-			flushbuffer
-			incr manual(.RS)
-			lappend manual(text) $code
-		    }
-		    .RE {
-			flushbuffer
-			incr manual(.RS) -1
-			lappend manual(text) $code
-		    }
-		    .SO {
-			flushbuffer
-			incr manual(.SO)
-			if {[llength $rest] == 0} {
-			    lappend manual(text) "$code options"
-			} else {
-			    lappend manual(text) "$code [unquote $rest]"
-			}
-		    }
-		    .SE {
-			flushbuffer
-			incr manual(.SO) -1
-			lappend manual(text) $code
-		    }
-		    .DS {
-			flushbuffer
-			incr manual(.DS)
-			lappend manual(text) $code
-		    }
-		    .DE {
-			flushbuffer
-			incr manual(.DS) -1
-			lappend manual(text) $code
-		    }
-		    .CS {
-			flushbuffer
-			incr manual(.CS)
-			lappend manual(text) $code
-		    }
-		    .CE {
-			flushbuffer
-			incr manual(.CS) -1
-			lappend manual(text) $code
-		    }
-		    .de {
-			while {[gets $manual(infp) line] >= 0} {
-			    if {[string match "..*" $line]} {
-				break
-			    }
-			}
-		    }
-		    .. {
-			if {!$verbose} {
-			    puts stderr ""
-			}
-			error "found .. outside of .de"
-		    }
-		    default {
-			if {!$verbose} {
-			    puts stderr ""
-			}
-			flushbuffer
-			manerror "unrecognized format directive: $line"
-		    }
-		}
-	    }
-	    flushbuffer
-	    close $manual(infp)
-	    # fixups
-	    if {$manual(.RS) != 0} {
-		if {!$verbose} {
-		    puts stderr ""
-		}
-		puts "unbalanced .RS .RE"
-	    }
-	    if {$manual(.DS) != 0} {
-		if {!$verbose} {
-		    puts stderr ""
-		}
-		puts "unbalanced .DS .DE"
-	    }
-	    if {$manual(.CS) != 0} {
-		if {!$verbose} {
-		    puts stderr ""
-		}
-		puts "unbalanced .CS .CE"
-	    }
-	    if {$manual(.SO) != 0} {
-		if {!$verbose} {
-		    puts stderr ""
-		}
-		puts "unbalanced .SO .SE"
-	    }
-	    # output conversion
-	    open-text
-	    set haserror 0
-	    if {[next-op-is .HS rest]} {
-		set manual($manual(wing-file)-$manual(name)-title) \
-		    "[join [lrange $rest 1 end] { }] [lindex $rest 0] manual page"
-	    } elseif {[next-op-is .TH rest]} {
-		set manual($manual(wing-file)-$manual(name)-title) \
-		    "[lindex $rest 0] manual page - [join [lrange $rest 4 end] { }]"
-	    } else {
-		set haserror 1
-		if {!$verbose} {
-		    puts stderr ""
-		}
-		manerror "no .HS or .TH record found"
-	    }
-	    if {!$haserror} {
-		while {[more-text]} {
-		    set line [next-text]
-		    if {[is-a-directive $line]} {
-			output-directive $line
-		    } else {
-			man-puts $line
-		    }
-		}
-		man-puts [copyout $manual(copyrights) "../"]
-		set manual(wing-copyrights) [merge-copyrights \
-			$manual(wing-copyrights) $manual(copyrights)]
-	    }
-	    #
-	    # make the long table of contents for this page
-	    #
-	    set manual(toc-$manual(wing-file)-$manual(name)) \
-		    [concat <DL> $manual(section-toc) </DL>]
-	}
-	if {!$verbose} {
-	    puts stderr ""
-	}
-
-	#
-	# make the wing table of contents for the section
-	#
-	set width 0
-	foreach name $manual(wing-toc) {
-	    if {[string length $name] > $width} {
-		set width [string length $name]
-	    }
-	}
-	set perline [expr {118 / $width}]
-	set nrows [expr {([llength $manual(wing-toc)]+$perline)/$perline}]
-	set n 0
-        catch {unset rows}
-	foreach name [lsort -dictionary $manual(wing-toc)] {
-	    set tail $manual(name-$name)
-	    if {[llength $tail] > 1} {
-		manerror "$name is defined in more than one file: $tail"
-		set tail [lindex $tail [expr {[llength $tail]-1}]]
-	    }
-	    set tail [file tail $tail]
-	    append rows([expr {$n%$nrows}]) \
-		    "<td> <a href=\"$tail.htm\">$name</a> </td>"
-	    incr n
-	}
-	puts $manual(wing-toc-fp) <table>
-        foreach row [lsort -integer [array names rows]] {
-	    puts $manual(wing-toc-fp) <tr>$rows($row)</tr>
-	}
-	puts $manual(wing-toc-fp) </table>
-
-	#
-	# insert wing copyrights
-	#
-	puts $manual(wing-toc-fp) [copyout $manual(wing-copyrights) "../"]
-	puts $manual(wing-toc-fp) "</BODY></HTML>"
-	close $manual(wing-toc-fp)
-	set manual(merge-copyrights) [merge-copyrights \
-		$manual(merge-copyrights) $manual(wing-copyrights)]
     }
 
     ##
     ## build the keyword index.
     ##
+    if {!$verbose} {
+	puts stderr "Assembling index"
+    }
     file delete -force -- $html/Keywords
     makedirhier $html/Keywords
     set keyfp [open $html/Keywords/[indexfile] w]
@@ -658,7 +334,15 @@ proc make-man-pages {html args} {
 	    foreach man $manual(keyword-$k) {
 		set name [lindex $man 0]
 		set file [lindex $man 1]
-		lappend refs "<A HREF=\"../$file\">$name</A>"
+		if {[info exists manual(tooltip-$file)]} {
+		    set tooltip $manual(tooltip-$file)
+		    if {[string match {*[<>""]*} $tooltip]} {
+			manerror "bad tooltip for $file: \"$tooltip\""
+		    }
+		    lappend refs "<A HREF=\"../$file\" TITLE=\"$tooltip\">$name</A>"
+		} else {
+		    lappend refs "<A HREF=\"../$file\">$name</A>"
+		}
 	    }
 	    puts $afp "[join $refs {, }]</DD>"
 	}
@@ -688,9 +372,9 @@ proc make-man-pages {html args} {
     ##
     unset manual(section)
     if {!$verbose} {
-	puts stderr "Rescanning [llength $manual(all-pages)] pages to build cross links"
+	puts stderr "Rescanning [llength $manual(all-pages)] pages to build cross links and write out"
     }
-    foreach path $manual(all-pages) {
+    foreach path $manual(all-pages) wing_name $manual(all-page-domains) {
 	set manual(wing-file) [file dirname $path]
 	set manual(tail) [file tail $path]
 	set manual(name) [file root $manual(tail)]
@@ -714,7 +398,7 @@ proc make-man-pages {html args} {
 	    }
 	    set outfd [open $html/$manual(wing-file)/$manual(name).htm w]
 	    puts $outfd [htmlhead "$manual($manual(wing-file)-$manual(name)-title)" \
-		    $manual(name) $manual(wing-file) "[indexfile]" \
+		    $manual(name) $wing_name "[indexfile]" \
 		    $overall_title "../[indexfile]"]
 	    if {($ntext > 60) && ($ntoc > 32)} {
 		foreach item $toc {
@@ -750,9 +434,18 @@ proc make-man-pages {html args} {
 ##
 ## Helper for assembling the descriptions of base packages (i.e., Tcl and Tk).
 ##
-proc plus-base {var glob name dir desc} {
+proc plus-base {var root glob name dir desc} {
     global tcltkdir
     if {$var} {
+	if {[file exists $tcltkdir/$root/README]} {
+	    set f [open $tcltkdir/$root/README]
+	    set d [read $f]
+	    close $f
+	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
+	       append name ", version $version"
+	    }
+	}
+	set glob $root/$glob
 	return [list $tcltkdir/$glob $name $dir $desc]
     }
 }
@@ -767,17 +460,16 @@ proc plus-pkgs {type args} {
     }
     if {!$build_tcl} return
     set result {}
-    foreach {dir name} $args {
-	set globpat $tcltkdir/$tcldir/pkgs/$dir*/doc/*.$type
-	if {![llength [glob -nocomplain $globpat]]} {
+    set pkgsdir $tcltkdir/$tcldir/pkgs
+    foreach {dir name version} $args {
+	set globpat $pkgsdir/$dir/doc/*.$type
+	if {![llength [glob -type f -nocomplain $globpat]]} {
 	    # Fallback for manpages generated using doctools
-	    set globpat $tcltkdir/$tcldir/pkgs/$dir*/doc/man/*.$type
-	    if {![llength [glob -nocomplain $globpat]]} {
+	    set globpat $pkgsdir/$dir/doc/man/*.$type
+	    if {![llength [glob -type f -nocomplain $globpat]]} {
 		continue
 	    }
 	}
-	regexp "pkgs/${dir}(.*)/doc$" [glob $tcltkdir/$tcldir/pkgs/$dir*/doc] \
-	    -> version
 	switch $type {
 	    n {
 		set title "$name Package Commands"
@@ -789,7 +481,7 @@ proc plus-pkgs {type args} {
 		    "The additional commands provided by the $name package."
 	    }
 	    3 {
-		set title "$name Package Library"
+		set title "$name Package C API"
 		if {$version ne ""} {
 		    append title ", version $version"
 		}
@@ -955,6 +647,42 @@ try {
 	append appdir "$tkdir"
     }
 
+
+    # When building docs for Tcl, try to build docs for bundled packages too
+    set packageBuildList {}
+    if  {$build_tcl} {
+	set pkgsDir [file join $tcltkdir $tcldir pkgs]
+	set subdirs [glob -nocomplain -types d -tails -directory $pkgsDir *]
+
+	foreach dir [lsort $subdirs] {
+	    # Parse the subdir name into (name, version) as fallback...
+	    set description [split $dir -]
+	    if {2 != [llength $description]} {
+		regexp {([^0-9]*)(.*)} $dir -> n v
+		set description [list $n $v]
+	    }
+
+	    # ... but try to extract (name, version) from subdir contents
+	    try {
+		set f [open [file join $pkgsDir $dir configure.in]]
+		foreach line [split [read $f] \n] {
+		    if {2 == [scan $line \
+			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
+			set description [list $n $v]
+			break
+		    }
+		}
+	    } finally {
+		catch {close $f; unset f}
+	    }
+
+	    if {[file exists [file join $pkgsDir $dir configure]]} {
+		# Looks like a package, record our best extraction attempt
+		lappend packageBuildList $dir {*}$description
+	    }
+	}
+    }
+
     # Get the list of packages to try, and what their human-readable names
     # are. Note that the package directory list should be version-less.
     try {
@@ -979,29 +707,37 @@ try {
 	}
     }
 
+    # Convert to human readable names, if applicable
+    for {set idx 0} {$idx < [llength $packageBuildList]} {incr idx 3} {
+	lassign [lrange $packageBuildList $idx $idx+2] d n v
+	if {[dict exists $packageDirNameMap $n]} {
+	    lset packageBuildList $idx+1 [dict get $packageDirNameMap $n]
+	}
+    }
+
     #
     # Invoke the scraper/converter engine.
     #
     make-man-pages $webdir \
 	[list $tcltkdir/{$appdir}/doc/*.1 "$tcltkdesc Applications" UserCmd \
 	     "The interpreters which implement $cmdesc."] \
-	[plus-base $build_tcl $tcldir/doc/*.n {Tcl Commands} TclCmd \
+	[plus-base $build_tcl $tcldir doc/*.n {Tcl Commands} TclCmd \
 	     "The commands which the <B>tclsh</B> interpreter implements."] \
-	[plus-base $build_tk $tkdir/doc/*.n {Tk Commands} TkCmd \
+	[plus-base $build_tk $tkdir doc/*.n {Tk Commands} TkCmd \
 	     "The additional commands which the <B>wish</B> interpreter implements."] \
-	{*}[plus-pkgs n {*}$packageDirNameMap] \
-	[plus-base $build_tcl $tcldir/doc/*.3 {Tcl Library} TclLib \
+	{*}[plus-pkgs n {*}$packageBuildList] \
+	[plus-base $build_tcl $tcldir doc/*.3 {Tcl C API} TclLib \
 	     "The C functions which a Tcl extended C program may use."] \
-	[plus-base $build_tk $tkdir/doc/*.3 {Tk Library} TkLib \
+	[plus-base $build_tk $tkdir doc/*.3 {Tk C API} TkLib \
 	     "The additional C functions which a Tk extended C program may use."] \
-	{*}[plus-pkgs 3 {*}$packageDirNameMap]
+	{*}[plus-pkgs 3 {*}$packageBuildList]
 } on error {msg opts} {
     # On failure make sure we show what went wrong. We're not supposed
     # to get here though; it represents a bug in the script.
     puts $msg\n[dict get $opts -errorinfo]
     exit 1
 }
-
+
 # Local-Variables:
 # mode: tcl
 # End:

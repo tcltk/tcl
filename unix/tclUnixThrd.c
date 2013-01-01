@@ -15,8 +15,6 @@
 
 #ifdef TCL_THREADS
 
-#include <pthread.h>
-
 typedef struct ThreadSpecificData {
     char nabuf[16];
 } ThreadSpecificData;

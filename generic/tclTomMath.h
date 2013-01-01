@@ -15,7 +15,6 @@
 #ifndef BN_H_
 #define BN_H_
 
-#include "tclInt.h"
 #include "tclTomMathDecls.h"
 #ifndef MODULE_SCOPE
 #define MODULE_SCOPE extern

@@ -192,8 +192,6 @@ static int maxDigits;		/* The maximum number of digits to the left of
 				 * the decimal point of a double. */
 static int minDigits;		/* The maximum number of digits to the right
 				 * of the decimal point in a double. */
-static int mantDIGIT;		/* Number of mp_digit's needed to hold the
-				 * significand of a double. */
 static const double pow_10_2_n[] = {	/* Inexact higher powers of ten. */
     1.0,
     100.0,
@@ -4425,7 +4423,6 @@ TclInitDoubleConversion(void)
 	    + 0.5 * log(10.)) / log(10.));
     minDigits = (int) floor((DBL_MIN_EXP - DBL_MANT_DIG)
 	    * log((double) FLT_RADIX) / log(10.));
-    mantDIGIT = (mantBits + DIGIT_BIT-1) / DIGIT_BIT;
     log10_DIGIT_MAX = (int) floor(DIGIT_BIT * log(2.) / log(10.));
 
     /*

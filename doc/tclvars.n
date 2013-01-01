@@ -100,6 +100,17 @@ Tcl format, using
 as the path separator, regardless of platform.
 This variable is only used when initializing the \fBauto_path\fR variable.
 .TP
+\fBenv(TCL_TZ)\fR, \fBenv(TZ)\fR
+.
+These specify the default timezone used for parsing and formatting times and
+dates in the \fBclock\fR command. On many platforms, the TZ environment
+variable is set up by the operating system.
+.TP
+\fBenv(LC_ALL)\fR, \fBenv(LC_MESSAGES)\fR, \fBenv(LANG)\fR
+.
+These environment variables are used by the \fBmsgcat\fR package to
+determine what locale to format messages using.
+.TP
 \fBenv(TCL_INTERP_DEBUG_FRAME)\fR
 .
 If existing, it has the same effect as running \fBinterp debug\fR

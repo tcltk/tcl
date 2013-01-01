@@ -49,7 +49,7 @@ position after the end of file.
 The \fIorigin\fR argument defaults to \fBstart\fR.
 .PP
 The command flushes all buffered output for the channel before the command
-returns, even if the channel is in nonblocking mode.
+returns, even if the channel is in non-blocking mode.
 It also discards any buffered and unread input.
 This command returns an empty string.
 An error occurs if this command is applied to channels whose underlying
@@ -86,3 +86,7 @@ close $f
 file(n), open(n), close(n), gets(n), tell(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 access position, file, seek
+'\" Local Variables:
+'\" mode: nroff
+'\" fill-column: 78
+'\" End:
