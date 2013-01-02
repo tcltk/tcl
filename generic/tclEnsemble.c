@@ -39,9 +39,9 @@ static int		CompileToCompiledCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Tcl_Token *tokenPtr,
 			    int len, Tcl_Obj **elems, Command *cmdPtr,
 			    CompileEnv *envPtr);
-static int		CompileToInvokedCommand(Tcl_Interp *interp,
+static void		CompileToInvokedCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Tcl_Token *tokenPtr,
-			    int len, Tcl_Obj **elems, Command *cmdPtr,
+			    Tcl_Obj *replacements, Command *cmdPtr,
 			    CompileEnv *envPtr);
 
 /*
@@ -2739,24 +2739,24 @@ TclCompileEnsemble(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Token *tokenPtr;
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
+    Tcl_Obj *replaced = Tcl_NewObj(), *replacement;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
-    int len, result, flags = 0, i;
+    int len, result, flags = 0, i, depth = 1;
     unsigned numBytes;
     const char *word;
 
-    if (parsePtr->numWords < 2) {
-	return TCL_ERROR;
+    Tcl_IncrRefCount(replaced);
+    if (parsePtr->numWords < depth + 1) {
+	goto failed;
     }
-
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	/*
 	 * Too hard.
 	 */
 
-	return TCL_ERROR;
+	goto failed;
     }
 
     word = tokenPtr[1].start;
@@ -2775,7 +2775,7 @@ TclCompileEnsemble(
 	 * to proceed.
 	 */
 
-	return TCL_ERROR;
+	goto failed;
     }
 
     /*
@@ -2789,7 +2789,7 @@ TclCompileEnsemble(
 	 * Figuring out how to compile this has become too much. Bail out.
 	 */
 
-	return TCL_ERROR;
+	goto failed;
     }
 
     /*
@@ -2812,7 +2812,7 @@ TclCompileEnsemble(
 	Tcl_Obj *matchObj = NULL;
 
 	if (Tcl_ListObjGetElements(NULL, listObj, &len, &elems) != TCL_OK) {
-	    return TCL_ERROR;
+	    goto failed;
 	}
 	for (i=0 ; i<len ; i++) {
 	    str = Tcl_GetStringFromObj(elems[i], &sclen);
@@ -2823,8 +2823,9 @@ TclCompileEnsemble(
 
 		result = Tcl_DictObjGet(NULL, mapObj,elems[i], &targetCmdObj);
 		if (result != TCL_OK || targetCmdObj == NULL) {
-		    return TCL_ERROR;
+		    goto failed;
 		}
+		replacement = elems[i];
 		goto doneMapLookup;
 	    }
 
@@ -2840,18 +2841,19 @@ TclCompileEnsemble(
 	    if ((flags & TCL_ENSEMBLE_PREFIX)
 		    && strncmp(word, str, numBytes) == 0) {
 		if (matchObj != NULL) {
-		    return TCL_ERROR;
+		    goto failed;
 		}
 		matchObj = elems[i];
 	    }
 	}
 	if (matchObj == NULL) {
-	    return TCL_ERROR;
+	    goto failed;
 	}
 	result = Tcl_DictObjGet(NULL, mapObj, matchObj, &targetCmdObj);
 	if (result != TCL_OK || targetCmdObj == NULL) {
-	    return TCL_ERROR;
+	    goto failed;
 	}
+	replacement = matchObj;
     } else {
 	Tcl_DictSearch s;
 	int done, matched;
@@ -2863,14 +2865,15 @@ TclCompileEnsemble(
 
 	TclNewStringObj(subcmdObj, word, (int) numBytes);
 	result = Tcl_DictObjGet(NULL, mapObj, subcmdObj, &targetCmdObj);
-	TclDecrRefCount(subcmdObj);
 	if (result == TCL_OK && targetCmdObj != NULL) {
 	    /*
 	     * Got it. Skip the fiddling around with prefixes.
 	     */
 
+	    replacement = subcmdObj;
 	    goto doneMapLookup;
 	}
+	TclDecrRefCount(subcmdObj);
 
 	/*
 	 * We've not literally got a valid subcommand. But maybe we have a
@@ -2878,7 +2881,7 @@ TclCompileEnsemble(
 	 */
 
 	if (!(flags & TCL_ENSEMBLE_PREFIX)) {
-	    return TCL_ERROR;
+	    goto failed;
 	}
 
 	/*
@@ -2888,6 +2891,7 @@ TclCompileEnsemble(
 
 	Tcl_DictObjFirst(NULL, mapObj, &s, &subcmdObj, &tmpObj, &done);
 	matched = 0;
+	replacement = NULL;		/* Silence, fool compiler! */
 	while (!done) {
 	    if (strncmp(TclGetString(subcmdObj), word, numBytes) == 0) {
 		if (matched++) {
@@ -2898,6 +2902,7 @@ TclCompileEnsemble(
 
 		    break;
 		}
+		replacement = subcmdObj;
 		targetCmdObj = tmpObj;
 	    }
 	    Tcl_DictObjNext(&s, &subcmdObj, &tmpObj, &done);
@@ -2910,7 +2915,7 @@ TclCompileEnsemble(
 	 */
 
 	if (matched != 1) {
-	    return TCL_ERROR;
+	    goto failed;
 	}
     }
 
@@ -2924,11 +2929,12 @@ TclCompileEnsemble(
      */
 
   doneMapLookup:
+    Tcl_ListObjAppendElement(NULL, replaced, replacement);
     if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
-	return TCL_ERROR;
+	goto failed;
     }
     if (len > 1 || Tcl_IsSafe(interp)) {
-	return TCL_ERROR;
+	goto failed;
     }
     targetCmdObj = elems[0];
 
@@ -2944,7 +2950,12 @@ TclCompileEnsemble(
 	 * Cannot compile.
 	 */
 
-	return TCL_ERROR;
+	goto failed;
+    }
+    depth++;
+
+    if (cmdPtr->compileProc == TclCompileEnsemble) {
+	// TODO: Back round the loop to parse the next level down.
     }
 
     /*
@@ -2957,10 +2968,23 @@ TclCompileEnsemble(
     if (cmdPtr->compileProc != NULL &&
 	    CompileToCompiledCommand(interp, parsePtr, tokenPtr,
 		    len, elems, cmdPtr, envPtr) == TCL_OK) {
-	return TCL_OK;
+	goto succeeded;
+    } else if (len != 1) {
+	goto failed;
     }
-    return CompileToInvokedCommand(interp, parsePtr, tokenPtr,
-	    len, elems, cmdPtr, envPtr);
+    CompileToInvokedCommand(interp, parsePtr, tokenPtr, replaced,
+	    cmdPtr, envPtr);
+  succeeded:
+    if (replaced != NULL) {
+	Tcl_DecrRefCount(replaced);
+    }
+    return TCL_OK;
+
+  failed:
+    if (replaced != NULL) {
+	Tcl_DecrRefCount(replaced);
+    }
+    return TCL_ERROR;
 }
 
 /*
@@ -3038,39 +3062,52 @@ CompileToCompiledCommand(
     return result;
 }
 
-static int
+static void
 CompileToInvokedCommand(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
     Tcl_Token *tokenPtr,
-    int len,
-    Tcl_Obj **elems,
+    Tcl_Obj *replacements,
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Token *tokPtr;
+    Tcl_Obj *objPtr, **words;
     char *bytes;
-    int length, i, literal;
-
-    if (len != 1) {
-	return TCL_ERROR;
-    }
+    int length, i, numWords;
 
     // TODO: Generate magic (with new instruction) for setting up the ensemble
     // rewriting...
 
-    for (i=0,tokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
-	TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents, envPtr);
-	tokenPtr = TokenAfter(tokenPtr);
+    Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
+    for (i=0,tokPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+	if (i > 0 && i-1 < numWords) {
+	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
+	    PushLiteral(envPtr, bytes, length);
+	} else {
+	    TclCompileTokens(interp, tokPtr+1, tokPtr->numComponents, envPtr);
+	}
+	tokPtr = TokenAfter(tokPtr);
     }
+
+    /*
+     * Push the name of the command we're actually dispatching to as part of
+     * the implementation.
+     */
+
+    objPtr = Tcl_NewObj();
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     bytes = Tcl_GetStringFromObj(objPtr, &length);
-    literal = TclRegisterNewCmdLiteral(envPtr, bytes, length);
+    PushLiteral(envPtr, bytes, length);
     TclDecrRefCount(objPtr);
-    TclEmitPush(literal, envPtr);
+
+    /*
+     * Do the replacing dispatch.
+     */
+
     TclEmitInstInt4(INST_INVOKE_REPLACE, parsePtr->numWords, envPtr);
-    TclAdjustStackDepth(-1, envPtr);
-    return TCL_OK;
+    TclEmitInt1(numWords+1, envPtr);
+    TclAdjustStackDepth(-1, envPtr);	/* Correction to stack depth calcs. */
 }
 
 /*
