@@ -20,16 +20,6 @@ string \- Manipulate strings
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
-\fBstring bytelength \fIstring\fR
-Returns a decimal string giving the number of bytes used to represent
-\fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
-represent Unicode characters, the byte length will not be the same as
-the character length in general.  The cases where a script cares about
-the byte length are rare.  In almost all cases, you should use the
-\fBstring length\fR operation (including determining the length of a
-Tcl ByteArray object).  Refer to the \fBTcl_NumUtfChars\fR manual
-entry for more details on the UTF\-8 representation.
-.TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns \-1, 0, or 1, depending on whether
@@ -47,13 +37,13 @@ the first \fIlength\fR characters are used in the comparison.  If
 \fB\-length\fR is negative, it is ignored.  If \fB\-nocase\fR is
 specified, then the strings are compared in a case-insensitive manner.
 .TP
-\fBstring first \fIstring1 string2\fR ?\fIstartIndex\fR?
-Search \fIstring2\fR for a sequence of characters that exactly match
-the characters in \fIstring1\fR.  If found, return the index of the
-first character in the first such match within \fIstring2\fR.  If not
+\fBstring first \fIneedleString haystackString\fR ?\fIstartIndex\fR?
+Search \fIhaystackString\fR for a sequence of characters that exactly match
+the characters in \fIneedleString\fR.  If found, return the index of the
+first character in the first such match within \fIhaystackString\fR.  If not
 found, return \-1.  If \fIstartIndex\fR is specified (in any of the
 forms accepted by the \fBindex\fR method), then the search is
-constrained to start with the character in \fIstring2\fR specified by
+constrained to start with the character in \fIhaystackString\fR specified by
 the index.  For example,
 .RS
 .CS
@@ -80,17 +70,17 @@ The last char of the string minus the specified integer offset
 (e.g. \fBend\-1\fR would refer to the "c" in "abcd").
 .PP
 If \fIcharIndex\fR is less than 0 or greater than or equal to the
-length of the string then an empty string is returned.
+length of the string then this command returns an empty string.
 .RE
 .TP
 \fBstring is \fIclass\fR ?\fB\-strict\fR? ?\fB\-failindex \fIvarname\fR? \fIstring\fR
 Returns 1 if \fIstring\fR is a valid member of the specified character
 class, otherwise returns 0.  If \fB\-strict\fR is specified, then an
-empty string returns 0, otherwise and empty string will return 1 on
+empty string returns 0, otherwise an empty string will return 1 on
 any class.  If \fB\-failindex\fR is specified, then if the function
 returns 0, the index in the string where the class was no longer valid
 will be stored in the variable named \fIvarname\fR.  The \fIvarname\fR
-will not be set if the function returns 1.  The following character
+will not be set if \fBstring is\fR returns 1.  The following character
 classes are recognized (the class name can be abbreviated):
 .RS
 .IP \fBalnum\fR 12
@@ -144,13 +134,13 @@ function will return 0, then the \fIvarname\fR will always be set to
 0, due to the varied nature of a valid boolean value.
 .RE
 .TP
-\fBstring last \fIstring1 string2\fR ?\fIlastIndex\fR?
-Search \fIstring2\fR for a sequence of characters that exactly match
-the characters in \fIstring1\fR.  If found, return the index of the
-first character in the last such match within \fIstring2\fR.  If there
+\fBstring last \fIneedleString haystackString\fR ?\fIlastIndex\fR?
+Search \fIhaystackString\fR for a sequence of characters that exactly match
+the characters in \fIneedleString\fR.  If found, return the index of the
+first character in the last such match within \fIhaystackString\fR.  If there
 is no match, then return \-1.  If \fIlastIndex\fR is specified (in any
 of the forms accepted by the \fBindex\fR method), then only the
-characters in \fIstring2\fR at or before the specified \fIlastIndex\fR
+characters in \fIhaystackString\fR at or before the specified \fIlastIndex\fR
 will be considered by the search.  For example,
 .RS
 .CS
@@ -198,7 +188,7 @@ it will return the string \fB02c322c222c\fR.
 .TP
 \fBstring match\fR ?\fB\-nocase\fR? \fIpattern\fR \fIstring\fR
 See if \fIpattern\fR matches \fIstring\fR; return 1 if it does, 0 if
-it doesn't.  If \fB\-nocase\fR is specified, then the pattern attempts
+it does not.  If \fB\-nocase\fR is specified, then the pattern attempts
 to match against the string in a case insensitive manner.  For the two
 strings to match, their contents must be identical except that the
 following special sequences may appear in \fIpattern\fR:
@@ -278,21 +268,36 @@ specified as for the \fBindex\fR method.
 .TP
 \fBstring trim \fIstring\fR ?\fIchars\fR?
 Returns a value equal to \fIstring\fR except that any leading or
-trailing characters from the set given by \fIchars\fR are removed.  If
+trailing characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (spaces,
 tabs, newlines, and carriage returns).
 .TP
 \fBstring trimleft \fIstring\fR ?\fIchars\fR?
 Returns a value equal to \fIstring\fR except that any leading
-characters from the set given by \fIchars\fR are removed.  If
+characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (spaces,
 tabs, newlines, and carriage returns).
 .TP
 \fBstring trimright \fIstring\fR ?\fIchars\fR?
 Returns a value equal to \fIstring\fR except that any trailing
-characters from the set given by \fIchars\fR are removed.  If
+characters present in the string given by \fIchars\fR are removed.  If
 \fIchars\fR is not specified then white space is removed (spaces,
 tabs, newlines, and carriage returns).
+.SH "OBSOLETE SUBCOMMANDS"
+.PP
+These subcommands are currently supported, but are likely to go away in a
+future release as their functionality is either virtually never used or highly
+misleading.
+.TP
+\fBstring bytelength \fIstring\fR
+Returns a decimal string giving the number of bytes used to represent
+\fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
+represent Unicode characters, the byte length will not be the same as
+the character length in general.  The cases where a script cares about
+the byte length are rare.  In almost all cases, you should use the
+\fBstring length\fR operation (including determining the length of a
+Tcl ByteArray object).  Refer to the \fBTcl_NumUtfChars\fR manual
+entry for more details on the UTF\-8 representation.
 .TP
 \fBstring wordend \fIstring charIndex\fR
 Returns the index of the character just after the last one in the word
@@ -315,9 +320,9 @@ prefix of the string \fBfoobar\fR.
 .CS
 set length [\fBstring length\fR $string]
 if {$length == 0} {
-   set isPrefix 0
+    set isPrefix 0
 } else {
-   set isPrefix [\fBstring equal\fR -length $length $string "foobar"]
+    set isPrefix [\fBstring equal\fR -length $length $string "foobar"]
 }
 .CE
 
