@@ -1,3 +1,14 @@
+2012-12-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/string.n: Noted the obsolescence of the 'bytelength',
+	'wordstart' and 'wordend' subcommands, and moved them to later in the
+	file.
+
+2012-12-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclListObj.c: [Bug 3598580]: Tcl_ListObjReplace may release
+	deleted elements too early
+
 2012-12-22  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* generic/tclUtil.c: Stop leaking allocated space when objifying a
