@@ -420,7 +420,6 @@ TclCreateThread(interp, script, joinable)
 		 TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
         Tcl_AppendResult(interp,"can't create a new thread",NULL);
-	ckfree((void*)ctrl.script);
 	return TCL_ERROR;
     }
 
