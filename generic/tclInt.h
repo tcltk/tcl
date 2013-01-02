@@ -4010,7 +4010,6 @@ MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 
 #define USE_ZIPPY ((TCL_ALLOCATOR != aNATIVE) && (TCL_ALLOCATOR != aPURIFY))
 #define USE_OBJQ   (TCL_ALLOCATOR != aPURIFY)
-#define USE_NEW_PRESERVE ((TCL_ALLOCATOR == aZIPPY) && !defined(TCL_MEM_DEBUG))
 
 #if !USE_ZIPPY /* native or purify */
 #    define TclpAlloc(size) malloc(size)

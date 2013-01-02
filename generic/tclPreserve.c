@@ -14,7 +14,6 @@
 
 #include "tclInt.h"
 
-#if !USE_NEW_PRESERVE
 /*
  * Only use this file if we are NOT using the new code in tclAlloc.c
  */
@@ -281,7 +280,6 @@ Tcl_EventuallyFree(
 	freeProc(clientData);
     }
 }
-#endif /* !USE_NEW_PRESERVE */
 
 /*
  * The following data structure is used to keep track of whether an arbitrary

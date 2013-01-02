@@ -135,7 +135,6 @@ typedef struct Block {
 	    unsigned char magic2;	/* Second magic number. */
 	} s;
     } u;
-    long refCount;
 } Block;
 
 #define OFFSET      ALIGN(sizeof(Block))
@@ -728,7 +727,6 @@ Block2Ptr(
     }
     blockPtr->sourceBucket = bucket;
     ptr = (void *) (((char *)blockPtr) + OFFSET);
-    blockPtr->refCount = 0;
     return (char *) ptr;
 }
 
@@ -859,9 +857,6 @@ TclpFree(
     }
 
     blockPtr = Ptr2Block(ptr);
-    if (blockPtr->refCount != 0) {
-	/* Tcl_Panic("trying to free a preserved pointer");*/
-    }
     
     /*
      * Get the block back from the user pointer and call system free directly
@@ -948,9 +943,6 @@ TclpRealloc(
      */
 
     blockPtr = Ptr2Block(ptr);
-    if (blockPtr->refCount != 0) {
-	Tcl_Panic("trying to realloc a preserved pointer");
-    }
     
     size = reqSize + OFFSET;
     bucket = blockPtr->sourceBucket;
@@ -1349,230 +1341,6 @@ ChooseAllocator()
     }
 }
 #endif
-
-#if USE_NEW_PRESERVE
-
-typedef struct PreserveData {
-    struct PreserveData *nextPtr;
-    char *ptr;
-    Tcl_FreeProc *freeProc;	/* Function to call to free. */
-} PreserveData;
-
-static PreserveData *pdataPtr = NULL;
-TCL_DECLARE_MUTEX(preserveMutex) /* To protect the above statics */
-
-
-/*
- *----------------------------------------------------------------------
- *
- * TclFinalizePreserve --
- *
- *	Called during exit processing to clean up the reference array.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Frees the storage of the reference array.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-void
-TclFinalizePreserve(void)
-{
-    PreserveData *thisPtr;
-    
-    while (pdataPtr) {
-	Tcl_MutexLock(&preserveMutex);
-	if (!pdataPtr) {
-	    Tcl_MutexUnlock(&preserveMutex);
-	    break;
-	}   
-	thisPtr = pdataPtr;
-	pdataPtr = pdataPtr->nextPtr;
-	Tcl_MutexUnlock(&preserveMutex);
-	
-	thisPtr->freeProc(thisPtr->ptr);
-	TclSmallFree(thisPtr);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Preserve --
- *
- *	This function is used by a function to declare its interest in a
- *	particular block of memory, so that the block will not be reallocated
- *	until a matching call to Tcl_Release has been made.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Information is retained so that the block of memory will not be freed
- *	until at least the matching call to Tcl_Release.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_Preserve(
-    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
-{
-    char *ptr = (char *) clientData;
-    Block *blockPtr;
-    long refCount;
-
-    blockPtr = Ptr2Block(ptr);
-    refCount = blockPtr->refCount;
-    
-    if (refCount > 0) {
-	++blockPtr->refCount;
-    } else if (refCount < 0) {
-	/*
-	 * TclEventuallyFree has already been called on this with
-	 * (freeProc != TCL_DYNAMIC)
-	 */
-	
-	--blockPtr->refCount;
-    } else {
-	/*
-	 * First preserve call: add one refcount to signal that EventuallyFree
-	 * has not yet been called (role of the old '!mustFree')
-	 */
-  
-	blockPtr->refCount = 2;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_Release --
- *
- *	This function is called to cancel a previous call to Tcl_Preserve,
- *	thereby allowing a block of memory to be freed (if no one else cares
- *	about it).
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If Tcl_EventuallyFree has been called for clientData, and if no other
- *	call to Tcl_Preserve is still in effect, the block of memory is freed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_Release(
-    ClientData clientData)	/* Pointer to malloc'ed block of memory. */
-{
-    char *ptr = (char *) clientData;
-    Block *blockPtr = Ptr2Block(ptr);
-    long refCount = blockPtr->refCount;
-    int hasFreeProc = (refCount < 0);
-    
-    if (refCount > 0) {
-	refCount = --blockPtr->refCount;
-    } else if (refCount < 0) {
-	refCount = ++blockPtr->refCount;
-    } else {
-	Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
-    }
-    
-    if (refCount == 0) {
-	if (!hasFreeProc) {
-	    TclpFree(ptr);
-	} else {
-	    PreserveData *thisPtr = pdataPtr, *lastPtr = NULL;
-	    Tcl_MutexLock(&preserveMutex);
-	    while (thisPtr && (thisPtr->ptr != ptr)) {
-		lastPtr = thisPtr;
-		thisPtr = thisPtr->nextPtr;
-	    }
-	    if (!thisPtr) {
-		Tcl_Panic("Tcl_Release couldn't find reference for %p", clientData);
-	    }
-	    if (lastPtr) {
-		lastPtr->nextPtr = thisPtr->nextPtr;
-	    } else {
-		pdataPtr = thisPtr->nextPtr;
-	    }
-	    Tcl_MutexUnlock(&preserveMutex);
-	    
-	    thisPtr->freeProc(clientData);
-	    TclSmallFree(thisPtr);
-	}
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_EventuallyFree --
- *
- *	Free up a block of memory, unless a call to Tcl_Preserve is in effect
- *	for that block. In this case, defer the free until all calls to
- *	Tcl_Preserve have been undone by matching calls to Tcl_Release.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Ptr may be released by calling free().
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_EventuallyFree(
-    ClientData clientData,	/* Pointer to malloc'ed block of memory. */
-    Tcl_FreeProc *freeProc)	/* Function to actually do free. */
-{
-    char *ptr = (char *) clientData;
-    Block *blockPtr = Ptr2Block(ptr);
-    PreserveData *thisPtr;
-    long refCount = blockPtr->refCount;
-    int hasFreeProc = (refCount < 0);
-
-    if (hasFreeProc) {
-	Tcl_Panic("Tcl_EventuallyFree called twice for %p", clientData);
-    }
-
-    if (refCount < 2) {
-	/*
-	 * No other reference for this block.  Free it now.
-	 */
-
-	blockPtr->refCount = 0;
-	if (freeProc == TCL_DYNAMIC) {
-	    ckfree(clientData);
-	} else {
-	    freeProc(clientData);
-	}
-	return;
-    }
-
-    --blockPtr->refCount;
-    
-    if (freeProc != TCL_DYNAMIC) {	
-	blockPtr->refCount = -blockPtr->refCount;
-	TclCkSmallAlloc(sizeof(PreserveData), thisPtr);
-
-	thisPtr->ptr = ptr;
-	thisPtr->freeProc = freeProc;	
-	Tcl_MutexLock(&preserveMutex);
-	thisPtr->nextPtr = pdataPtr;
-	pdataPtr = thisPtr;
-	Tcl_MutexUnlock(&preserveMutex);
-    }
-}
-#endif /* USE_NEW_PRESERVE */
-
 #endif /* USE_ZIPPY */
 
 /*
