@@ -835,6 +835,35 @@ TclSubstCompile(
 	    TclEmitPush(literal, envPtr);
 	    count++;
 	    continue;
+	case TCL_TOKEN_VARIABLE:
+	    /*
+	     * Check for simple variable access; see if we can only generate
+	     * TCL_OK or TCL_ERROR from the substituted variable read; if so,
+	     * there is no need to generate elaborate exception-management
+	     * code. Note that the first component of TCL_TOKEN_VARIABLE is
+	     * always TCL_TOKEN_TEXT...
+	     */
+
+	    if (tokenPtr->numComponents > 1) {
+		int i, foundCommand = 0;
+
+		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
+		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND
+			    || tokenPtr[i].type == TCL_TOKEN_SCRIPT_SUBST) {
+			foundCommand = 1;
+			break;
+		    }
+		}
+		if (foundCommand) {
+		    break;
+		}
+	    }
+
+	    envPtr->line = bline;
+	    TclCompileVarSubst(interp, tokenPtr, envPtr);
+	    bline = envPtr->line;
+	    count++;
+	    continue;
 	}
 
 	while (count > 255) {
