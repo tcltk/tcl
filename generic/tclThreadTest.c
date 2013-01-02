@@ -61,8 +61,8 @@ static ThreadSpecificData *threadList = NULL;
  * "thread create" Tcl command or the ThreadCreate() C function.
  */
 
-typedef struct {
-    const char *script;		/* The Tcl command this thread should
+typedef struct ThreadCtrl {
+    const char *script;	/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the
 				 * ThreadSpecificData structure for the new
@@ -229,8 +229,8 @@ ThreadObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], threadOptions, "option", 0,
-	    &option) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], threadOptions,
+	    sizeof(char *), "option", 0, &option) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -513,7 +513,6 @@ ThreadCreate(
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
 	Tcl_AppendResult(interp, "can't create a new thread", NULL);
-	ckfree(ctrl.script);
 	return TCL_ERROR;
     }
 
