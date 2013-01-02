@@ -114,7 +114,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * Minimal data required to fully reconstruct the execution state.
  */
 
-typedef struct TEBCdata {
+typedef struct {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     const unsigned char *pc;	/* These fields are used on return TO this */

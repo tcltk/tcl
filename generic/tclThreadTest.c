@@ -61,7 +61,7 @@ static ThreadSpecificData *threadList = NULL;
  * "thread create" Tcl command or the ThreadCreate() C function.
  */
 
-typedef struct ThreadCtrl {
+typedef struct {
     char *script;		/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the

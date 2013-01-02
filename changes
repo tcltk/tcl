@@ -8117,11 +8117,49 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 --- Released 8.6b3, September 18, 2012 --- See ChangeLog for details ---
 
+2012-09-20 (enhancement) full Unicode support (nijtmans)
+=> dde 1.4.0
+
+2012-09-20 (enhancement) update bundled zlib to 1.2.7 (nijtmans)
+
 2012-10-03 (bug fix) exit panic on stacked std channel (griffin,porter)
 
 2012-10-14 (bug fix) [tcl::Bgerror] crash on non-dict options (nijtmans)
 
+2012-10-16 (TIP 400) New [zlib] options to set compression dict (fellows)
+
+2012-10-16 (TIP 405) New commands [lmap] and [dict map] (fellows)
+
+2012-10-24 (enhancement) [dict unset] now bytecompiled (fellows)
+
+2012-11-05 (TIP 413) Revisions to default [string trim*] trimset (nijtmans)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2012-11-05 (enhancement) Now bytecompiled: [array exists], [array set],
+[array unset], [dict create], [dict exists], [dict merge], [format],
+[info commands], [info coroutine], [info level], [info object],
+[namespace current], [namespace code], [namespace qualifiers], [namespace tail],
+[namespace which], [regsub], [self], [string first], [string last],
+[string map], [string range], [tailcall], [yield]. (fellows)
+
 2012-11-06 (bug fix)[3581754] avoid multiple callback on keep-alive (fellows)
 => http 2.8.5
 
---- Released 8.6.0, ??? ??, 2012 --- See ChangeLog for details ---
+2012-11-07 tzdata updated to Olson's tzdata2012i (kenny)
+
+2012-11-13 (bug fix)[3567063] thread fp settings from master (mistachkin)
+
+2012-11-14 (bug fix)[2933003] tempfile creation in $TMPDIR (fellows)
+
+2012-11-15 (TIP 416) New [load] options -global and -lazy (nijtmans)
+
+2012-11-20 (bug fix)[3033307] base64 trail whitespace (kovalenko,goth)
+
+2012-12-03 (bug fix) [configure] query broke init from argv (porter)
+=> tcltest 2.3.5
+
+2012-12-13 (bug fix)[3595576] crash: [catch {} -> noSuchNs::var] (sofer,porter)
+
+2012-12-13 (bug fix) crash: [zlib gunzip $data -header noSuchNs::var] (porter)
+
+--- Released 8.6.0, December 20, 2012 --- See ChangeLog for details ---

@@ -41,6 +41,30 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#undef TclPkgProvide
+
+#define TclPkgProvide pkgProvide
+static int TclPkgProvide(
+    Tcl_Interp *interp,		/* Interpreter in which package is now
+				 * available. */
+    const char *name,		/* Name of package. */
+    const char *version)	/* Version string for package. */
+{
+    /* In Tcl 9, Tcl_PkgProvide is a macro calling Tcl_PkgProvideEx.
+     * The only way this stub can be called is by an extension compiled
+     * against Tcl 8 headers. The Tcl_StubsInit() function already
+     * succeeded, so the extension author lied: It did something like:
+     *     Tcl_StubsInit(interp, "8.6-", 0)
+     * or
+     *     Tcl_StubsInit(interp, "8.6-9.1", 0)
+     *
+     * The best we can do is provide an error-message, as if the
+     * extension originally called:
+     *     Tcl_StubsInit(interp, "8", 0)
+     */
+	Tcl_PkgRequireEx(interp, "Tcl", "8", 0, NULL);
+	return TCL_ERROR;
+}
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
@@ -906,7 +930,7 @@ const TclStubs tclStubs = {
     Tcl_UpdateLinkedVar, /* 257 */
     Tcl_UpVar, /* 258 */
     Tcl_UpVar2, /* 259 */
-    Tcl_VarEval, /* 260 */
+    0, /* 260 */
     Tcl_VarTraceInfo, /* 261 */
     Tcl_VarTraceInfo2, /* 262 */
     Tcl_Write, /* 263 */
@@ -919,10 +943,10 @@ const TclStubs tclStubs = {
     Tcl_ParseVar, /* 270 */
     Tcl_PkgPresent, /* 271 */
     Tcl_PkgPresentEx, /* 272 */
-    Tcl_PkgProvide, /* 273 */
+    TclPkgProvide, /* 273 */
     Tcl_PkgRequire, /* 274 */
     Tcl_SetErrorCodeVA, /* 275 */
-    Tcl_VarEvalVA, /* 276 */
+    0, /* 276 */
     Tcl_WaitPid, /* 277 */
     Tcl_PanicVA, /* 278 */
     Tcl_GetVersion, /* 279 */

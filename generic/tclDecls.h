@@ -747,8 +747,7 @@ TCLAPI int		Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
 TCLAPI int		Tcl_UpVar2(Tcl_Interp *interp, const char *frameName,
 				const char *part1, const char *part2,
 				const char *localName, int flags);
-/* 260 */
-TCLAPI int		Tcl_VarEval(Tcl_Interp *interp, ...);
+/* Slot 260 is reserved */
 /* 261 */
 TCLAPI ClientData	Tcl_VarTraceInfo(Tcl_Interp *interp,
 				const char *varName, int flags,
@@ -787,7 +786,7 @@ TCLAPI const char *	Tcl_PkgPresentEx(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact, void *clientDataPtr);
 /* 273 */
-TCLAPI int		Tcl_PkgProvide(Tcl_Interp *interp, const char *name,
+TCLAPI int		TclPkgProvide(Tcl_Interp *interp, const char *name,
 				const char *version);
 /* 274 */
 TCLAPI const char *	Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
@@ -795,8 +794,7 @@ TCLAPI const char *	Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
 /* 275 */
 TCLAPI void		Tcl_SetErrorCodeVA(Tcl_Interp *interp,
 				va_list argList);
-/* 276 */
-TCLAPI int		Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
+/* Slot 276 is reserved */
 /* 277 */
 TCLAPI Tcl_Pid		Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options);
 /* 278 */
@@ -2063,7 +2061,7 @@ typedef struct TclStubs {
     void (*tcl_UpdateLinkedVar) (Tcl_Interp *interp, const char *varName); /* 257 */
     int (*tcl_UpVar) (Tcl_Interp *interp, const char *frameName, const char *varName, const char *localName, int flags); /* 258 */
     int (*tcl_UpVar2) (Tcl_Interp *interp, const char *frameName, const char *part1, const char *part2, const char *localName, int flags); /* 259 */
-    int (*tcl_VarEval) (Tcl_Interp *interp, ...); /* 260 */
+    void (*reserved260)(void);
     ClientData (*tcl_VarTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData); /* 261 */
     ClientData (*tcl_VarTraceInfo2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData); /* 262 */
     int (*tcl_Write) (Tcl_Channel chan, const char *s, int slen); /* 263 */
@@ -2076,10 +2074,10 @@ typedef struct TclStubs {
     const char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, const char **termPtr); /* 270 */
     const char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
     const char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
-    int (*tcl_PkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
+    int (*tclPkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
     const char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
     void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
-    int (*tcl_VarEvalVA) (Tcl_Interp *interp, va_list argList); /* 276 */
+    void (*reserved276)(void);
     Tcl_Pid (*tcl_WaitPid) (Tcl_Pid pid, int *statPtr, int options); /* 277 */
     void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
     void (*tcl_GetVersion) (int *major, int *minor, int *patchLevel, int *type); /* 279 */
@@ -2979,8 +2977,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UpVar) /* 258 */
 #define Tcl_UpVar2 \
 	(tclStubsPtr->tcl_UpVar2) /* 259 */
-#define Tcl_VarEval \
-	(tclStubsPtr->tcl_VarEval) /* 260 */
+/* Slot 260 is reserved */
 #define Tcl_VarTraceInfo \
 	(tclStubsPtr->tcl_VarTraceInfo) /* 261 */
 #define Tcl_VarTraceInfo2 \
@@ -3005,14 +3002,13 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_PkgPresent) /* 271 */
 #define Tcl_PkgPresentEx \
 	(tclStubsPtr->tcl_PkgPresentEx) /* 272 */
-#define Tcl_PkgProvide \
-	(tclStubsPtr->tcl_PkgProvide) /* 273 */
+#define TclPkgProvide \
+	(tclStubsPtr->tclPkgProvide) /* 273 */
 #define Tcl_PkgRequire \
 	(tclStubsPtr->tcl_PkgRequire) /* 274 */
 #define Tcl_SetErrorCodeVA \
 	(tclStubsPtr->tcl_SetErrorCodeVA) /* 275 */
-#define Tcl_VarEvalVA \
-	(tclStubsPtr->tcl_VarEvalVA) /* 276 */
+/* Slot 276 is reserved */
 #define Tcl_WaitPid \
 	(tclStubsPtr->tcl_WaitPid) /* 277 */
 #define Tcl_PanicVA \
@@ -3743,5 +3739,8 @@ extern const TclStubs *tclStubsPtr;
 TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
+
+#define Tcl_PkgProvide(interp, name, version) \
+	Tcl_PkgProvideEx(interp, name, version, NULL)
 
 #endif /* _TCLDECLS */

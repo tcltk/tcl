@@ -54,7 +54,7 @@ typedef struct FilesystemRecord {
  * this information each time the corresponding epoch counter changes.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;
     int cwdPathEpoch;
     int filesystemEpoch;
@@ -243,7 +243,7 @@ static Tcl_ThreadDataKey fsDataKey;
  * code.
  */
 
-typedef struct FsDivertLoad {
+typedef struct {
     Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;
