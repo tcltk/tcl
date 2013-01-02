@@ -57,7 +57,7 @@ static struct ThreadSpecificData *threadList;
  */
 
 typedef struct ThreadCtrl {
-    char *script;		/* The Tcl command this thread should
+    const char *script;	/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the
 				 * ThreadSpecificData structure for the new
@@ -120,11 +120,11 @@ EXTERN int		TclThread_Init(Tcl_Interp *interp);
 EXTERN int		Tcl_ThreadObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-EXTERN int		TclCreateThread(Tcl_Interp *interp, char *script,
+EXTERN int		TclCreateThread(Tcl_Interp *interp, const char *script,
 			    int joinable);
 EXTERN int		TclThreadList(Tcl_Interp *interp);
 EXTERN int		TclThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
-			    char *script, int wait);
+			    const char *script, int wait);
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
@@ -234,7 +234,7 @@ Tcl_ThreadObjCmd(
 
     switch ((enum options)option) {
     case THREAD_CREATE: {
-	char *script;
+	const char *script;
 	int joinable, len;
 
 	if (objc == 2) {
@@ -331,7 +331,7 @@ Tcl_ThreadObjCmd(
 	return TclThreadList(interp);
     case THREAD_SEND: {
 	long id;
-	char *script;
+	const char *script;
 	int wait, arg;
 
 	if ((objc != 4) && (objc != 5)) {
@@ -407,7 +407,7 @@ Tcl_ThreadObjCmd(
 int
 TclCreateThread(
     Tcl_Interp *interp,		/* Current interpreter. */
-    char *script,		/* Script to execute */
+    const char *script,		/* Script to execute */
     int joinable)		/* Flag, joinable thread or not */
 {
     ThreadCtrl ctrl;
@@ -424,7 +424,6 @@ TclCreateThread(
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
         Tcl_AppendResult(interp, "can't create a new thread", NULL);
-	ckfree((char *) ctrl.script);
 	return TCL_ERROR;
     }
 
@@ -705,7 +704,7 @@ int
 TclThreadSend(
     Tcl_Interp *interp,		/* The current interpreter. */
     Tcl_ThreadId id,		/* Thread Id of other interpreter. */
-    char *script,		/* The script to evaluate. */
+    const char *script,		/* The script to evaluate. */
     int wait)			/* If 1, we block for the result. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -1035,7 +1034,7 @@ ThreadExitProc(
 	     * going to call free on it.
 	     */
 
-	    char *msg = "target thread died";
+	    const char *msg = "target thread died";
 
 	    resultPtr->result = ckalloc(strlen(msg)+1);
 	    strcpy(resultPtr->result, msg);
