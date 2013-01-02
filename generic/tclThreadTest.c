@@ -61,8 +61,8 @@ static ThreadSpecificData *threadList = NULL;
  * "thread create" Tcl command or the ThreadCreate() C function.
  */
 
-typedef struct {
-    char *script;		/* The Tcl command this thread should
+typedef struct ThreadCtrl {
+    const char *script;	/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the
 				 * ThreadSpecificData structure for the new
@@ -122,7 +122,7 @@ TCL_DECLARE_MUTEX(threadMutex)
 static int		ThreadObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		ThreadCreate(Tcl_Interp *interp, char *script,
+static int		ThreadCreate(Tcl_Interp *interp, const char *script,
 			    int joinable);
 static int		ThreadList(Tcl_Interp *interp);
 static int		ThreadSend(Tcl_Interp *interp, Tcl_ThreadId id,
@@ -229,8 +229,8 @@ ThreadObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], threadOptions, "option", 0,
-	    &option) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], threadOptions,
+	    sizeof(char *), "option", 0, &option) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -276,7 +276,7 @@ ThreadObjCmd(
 	return ThreadCancel(interp, (Tcl_ThreadId) (size_t) id, result, flags);
     }
     case THREAD_CREATE: {
-	char *script;
+	const char *script;
 	int joinable, len;
 
 	if (objc == 2) {
@@ -496,7 +496,7 @@ ThreadObjCmd(
 static int
 ThreadCreate(
     Tcl_Interp *interp,		/* Current interpreter. */
-    char *script,		/* Script to execute */
+    const char *script,		/* Script to execute */
     int joinable)		/* Flag, joinable thread or not */
 {
     ThreadCtrl ctrl;
@@ -513,7 +513,6 @@ ThreadCreate(
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
 	Tcl_AppendResult(interp, "can't create a new thread", NULL);
-	ckfree(ctrl.script);
 	return TCL_ERROR;
     }
 
