@@ -1,3 +1,15 @@
+2012-11-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdAH.c (CatchObjCmdCallback): do not decrRefCount
+	the newValuePtr sent to Tcl_ObjSetVar2: TOSV2 is 'fire and
+	forget', it decrs on its own. Fix for [Bug 3595576], found by
+	andrewsh.
+
+2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h: Fix Tcl_DecrRefCount macro such that it
+	doesn't access its objPtr parameter twice any more.
+
 2012-12-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tools/tcltk-man2html.tcl (plus-pkgs): Increased robustness of
