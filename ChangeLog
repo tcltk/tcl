@@ -1,3 +1,92 @@
+2012-12-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tools/tcltk-man2html.tcl (plus-pkgs): Increased robustness of
+	version number detection code to deal with packages whose names are
+	prefixes of other packages.
+	* unix/Makefile.in (dist): Added pkgs/package.list.txt to distribution
+	builds to ensure that 'make html' will work better.
+
+2012-12-09  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* tests/chan.test: Clean up unwanted eofchar side-effect of chan-4.6
+	leading to a spurious "'" at end of chan.test under certain conditions
+	(see [Bug 3389289] and [Bug 3389251]).
+
+	* doc/expr.n: [Bug 3594188]: Clarifications about commas.
+
+2012-12-08  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclIO.c: Fix busyloop at exit under TCL_FINALIZE_ON_EXIT
+	when there are unflushed nonblocking channels.  Thanks Miguel for
+	spotting.
+
+2012-12-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkgb.c:  Turn pkgb.so into a Tcl9 interoperability test
+        library: Whatever Tcl9 looks like, loading pkgb.so in Tcl 9 should
+        either result in an error-message, either succeed, but never crash.
+
+2012-11-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibStreamSubcmd): [Bug 3590483]: Use a mechanism
+	for complex option resolution that has fewer problems with more
+	finicky compilers.
+
+2012-11-26  Reinhard Max  <max@suse.de>
+
+	* unix/tclUnixSock.c: Factor out creation of the -sockname and
+	-peername lists from TcpGetOptionProc() to TcpHostPortList().  Make it
+	robust against implementations of getnameinfo() that error out if
+	reverse mapping fails instead of falling back to the numeric
+	representation.
+
+2012-11-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (BinaryDecode64): [Bug 3033307]: Corrected
+	handling of trailing whitespace when decoding base64. Thanks to Anton
+	Kovalenko for reporting, and Andy Goth for the fix and tests.
+
+2012-11-19  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (INST_STR_RANGE_IMM): [Bug 3588366]: Corrected
+	implementation of bounds restriction for end-indexed compiled [string
+	range]. Thanks to Emiliano Gavilan for diagnosis and fix.
+
+2012-11-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	IMPLEMENTATION OF TIP#416
+
+	New Options for 'load': -global and -lazy
+
+	* generic/tcl.h:
+	* generic/tclLoad.c
+	* unix/tclLoadDl.c
+	* unix/tclLoadDyld.c
+	* tests/load.test
+	* doc/Load.3
+	* doc/load.n
+
+2012-11-14  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (TclUnixOpenTemporaryFile): [Bug 2933003]: Factor
+	out all the code to do temporary file creation so that it is possible
+	to make it correct in one place. Allow overriding of the back-stop
+	default temporary file location at compile time by setting the
+	TCL_TEMPORARY_FILE_DIRECTORY #def to a string containing the directory
+	name (defaults to "/tmp" as that is the most common default).
+
+2012-11-13  Joe Mistachkin  <joe@mistachkin.com>
+
+	* win/tclWinInit.c: also search for the library directory (init.tcl,
+	encodings, etc) relative to the build directory associated with the
+	source checkout.
+
+2012-11-10  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclBasic.c:   re-enable bcc-tailcall, after fixing an
+	* generic/tclExecute.c: infinite loop in the TCL_COMPILE_DEBUG mode
+
+
 2012-11-07  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Casablanca:

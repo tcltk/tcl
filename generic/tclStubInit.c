@@ -65,6 +65,7 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
+#   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
@@ -475,6 +476,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 27 */
     0, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
@@ -507,6 +509,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinFlushDirtyChannels, /* 27 */
     TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     TclGetAndDetachPids, /* 0 */
@@ -539,6 +542,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 27 */
     0, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* MACOSX */
 };
 

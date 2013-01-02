@@ -356,6 +356,10 @@ PkgRequireCore(
     char *script, *pkgVersionI;
     Tcl_DString command;
 
+    if (TCL_OK != CheckAllRequirements(interp, reqc, reqv)) {
+	return NULL;
+    }
+
     /*
      * It can take up to three passes to find the package: one pass to run the
      * "package unknown" script, one to run the "package ifneeded" script for
