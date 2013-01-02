@@ -37,12 +37,10 @@ static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
 static int		CompileToCompiledCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Tcl_Token *tokenPtr,
-			    int len, Tcl_Obj **elems, Command *cmdPtr,
-			    CompileEnv *envPtr);
+			    int depth, Command *cmdPtr, CompileEnv *envPtr);
 static void		CompileToInvokedCommand(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, Tcl_Token *tokenPtr,
-			    Tcl_Obj *replacements, Command *cmdPtr,
-			    CompileEnv *envPtr);
+			    Tcl_Parse *parsePtr, Tcl_Obj *replacements,
+			    Command *cmdPtr, CompileEnv *envPtr);
 
 /*
  * The lists of subcommands and options for the [namespace ensemble] command.
@@ -86,6 +84,26 @@ const Tcl_ObjType tclEnsembleCmdType = {
     StringOfEnsembleCmdRep,	/* updateStringProc */
     NULL			/* setFromAnyProc */
 };
+
+/*
+ * Copied from tclCompCmds.c
+ */
+
+#define DefineLineInformation \
+    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
+    int eclIndex = mapPtr->nuloc - 1
+#define CompileWord(envPtr, tokenPtr, interp, word) \
+    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
+	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
+		(tokenPtr)[1].size), (envPtr));				\
+    } else {								\
+	if (mapPtr->loc[eclIndex].next) {				\
+	    envPtr->line = mapPtr->loc[eclIndex].line[word];		\
+	    envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
+	}								\
+	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
+		(envPtr));						\
+    }
 
 static inline Tcl_Obj *
 NewNsObj(
@@ -2743,11 +2761,14 @@ TclCompileEnsemble(
     Tcl_Obj *mapObj, *subcmdObj, *targetCmdObj, *listObj, **elems;
     Tcl_Obj *replaced = Tcl_NewObj(), *replacement;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
-    int len, result, flags = 0, i, depth = 1;
+    Command *oldCmdPtr = cmdPtr, *newCmdPtr;
+    int len, result, flags = 0, i, depth = 1, invokeAnyway = 0;
+    int ourResult = TCL_ERROR;
     unsigned numBytes;
     const char *word;
 
     Tcl_IncrRefCount(replaced);
+  checkNextWord:
     if (parsePtr->numWords < depth + 1) {
 	goto failed;
     }
@@ -2915,6 +2936,7 @@ TclCompileEnsemble(
 	 */
 
 	if (matched != 1) {
+	    invokeAnyway = 1;
 	    goto failed;
 	}
     }
@@ -2933,29 +2955,33 @@ TclCompileEnsemble(
     if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	goto failed;
     }
-    if (len > 1 || Tcl_IsSafe(interp)) {
+    if (len != 1) {
 	goto failed;
     }
     targetCmdObj = elems[0];
 
+    oldCmdPtr = cmdPtr;
     Tcl_IncrRefCount(targetCmdObj);
-    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
+    newCmdPtr = (Command *) Tcl_GetCommandFromObj(interp, targetCmdObj);
     TclDecrRefCount(targetCmdObj);
-    if (cmdPtr == NULL
-	    || cmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION
-	    || cmdPtr->flags * CMD_HAS_EXEC_TRACES
+    if (newCmdPtr == NULL || Tcl_IsSafe(interp)
+	    || newCmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION
+	    || newCmdPtr->flags & CMD_HAS_EXEC_TRACES
 	    || ((Interp *)interp)->flags & DONT_COMPILE_CMDS_INLINE) {
 	/*
 	 * Maps to an undefined command or a command without a compiler.
 	 * Cannot compile.
 	 */
 
-	goto failed;
+	goto cleanup;
     }
+    cmdPtr = newCmdPtr;
     depth++;
 
     if (cmdPtr->compileProc == TclCompileEnsemble) {
-	// TODO: Back round the loop to parse the next level down.
+	tokenPtr = TokenAfter(tokenPtr);
+	ensemble = (Tcl_Command) cmdPtr;
+	goto checkNextWord;
     }
 
     /*
@@ -2965,26 +2991,44 @@ TclCompileEnsemble(
      * invoke at runtime.
      */
 
-    if (cmdPtr->compileProc != NULL &&
-	    CompileToCompiledCommand(interp, parsePtr, tokenPtr,
-		    len, elems, cmdPtr, envPtr) == TCL_OK) {
-	goto succeeded;
-    } else if (len != 1) {
-	goto failed;
+    invokeAnyway = 1;
+    if (cmdPtr->compileProc != NULL) {
+	if (CompileToCompiledCommand(interp, parsePtr, tokenPtr, depth,
+		cmdPtr, envPtr) == TCL_OK) {
+	    ourResult = TCL_OK;
+	    goto cleanup;
+	}
     }
-    CompileToInvokedCommand(interp, parsePtr, tokenPtr, replaced,
-	    cmdPtr, envPtr);
-  succeeded:
-    if (replaced != NULL) {
-	Tcl_DecrRefCount(replaced);
-    }
-    return TCL_OK;
+
+    /*
+     * Failed to do a full compile for some reason. Try to do a direct invoke
+     * instead of going through the ensemble lookup process again.
+     */
 
   failed:
+    if (len == 1 && depth < 250) {
+	if (depth > 1) {
+	    if (!invokeAnyway) {
+		cmdPtr = oldCmdPtr;
+		depth--;
+	    }
+	    (void) Tcl_ListObjReplace(NULL, replaced, depth, 2, 0, NULL);
+	}
+	CompileToInvokedCommand(interp, parsePtr, replaced, cmdPtr, envPtr);
+	ourResult = TCL_OK;
+    }
+
+    /*
+     * Release the memory we allocated. If we've got here, we've either done
+     * something useful or we're in a case that we can't compile at all and
+     * we're just giving up.
+     */
+
+  cleanup:
     if (replaced != NULL) {
 	Tcl_DecrRefCount(replaced);
     }
-    return TCL_ERROR;
+    return ourResult;
 }
 
 /*
@@ -2998,46 +3042,44 @@ CompileToCompiledCommand(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
     Tcl_Token *tokenPtr,
-    int len,
-    Tcl_Obj **elems,
+    int depth,
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Parse synthetic;
+    Tcl_Token *tokPtr;
     int result, i;
 
     TclParseInit(interp, NULL, 0, &synthetic);
-    synthetic.numWords = parsePtr->numWords - 2 + len;
-    TclGrowParseTokenArray(&synthetic, 2*len);
-    synthetic.numTokens = 2*len;
+    synthetic.numWords = parsePtr->numWords - depth + 1;
+    TclGrowParseTokenArray(&synthetic, 2);
+    synthetic.numTokens = 2;
 
     /*
-     * Now we have the space to work in, install something rewritten. Note
-     * that we are here praying for all our might that none of these words are
-     * a script; the error detection code will crash if that happens and there
-     * is nothing we can do to avoid it!
+     * Now we have the space to work in, install something rewritten. The
+     * first word will "officially" be the structured ensemble name.
      */
 
-    for (i=0 ; i<len ; i++) {
-	int sclen;
-	const char *str = Tcl_GetStringFromObj(elems[i], &sclen);
+    synthetic.tokenPtr[0].type = TCL_TOKEN_SIMPLE_WORD;
+    synthetic.tokenPtr[0].start = parsePtr->tokenPtr[0].start;
+    synthetic.tokenPtr[0].numComponents = 1;
+    synthetic.tokenPtr[1].type = TCL_TOKEN_TEXT;
+    synthetic.tokenPtr[1].start = parsePtr->tokenPtr[0].start;
+    synthetic.tokenPtr[1].numComponents = 0;
+    tokPtr = parsePtr->tokenPtr;
+    for (i=0 ; i<depth ; i++) {
+	int sclen = (tokPtr->start-synthetic.tokenPtr[0].start)+tokPtr->size;
 
-	synthetic.tokenPtr[2*i].type = TCL_TOKEN_SIMPLE_WORD;
-	synthetic.tokenPtr[2*i].start = str;
-	synthetic.tokenPtr[2*i].size = sclen;
-	synthetic.tokenPtr[2*i].numComponents = 1;
-
-	synthetic.tokenPtr[2*i+1].type = TCL_TOKEN_TEXT;
-	synthetic.tokenPtr[2*i+1].start = str;
-	synthetic.tokenPtr[2*i+1].size = sclen;
-	synthetic.tokenPtr[2*i+1].numComponents = 0;
+	synthetic.tokenPtr[0].size = sclen;
+	synthetic.tokenPtr[1].size = sclen;
+	tokPtr = TokenAfter(tokPtr);
     }
 
     /*
      * Copy over the real argument tokens.
      */
 
-    for (i=len; i<synthetic.numWords; i++) {
+    for (i=1; i<synthetic.numWords; i++) {
 	int toCopy;
 
 	tokenPtr = TokenAfter(tokenPtr);
@@ -3066,7 +3108,6 @@ static void
 CompileToInvokedCommand(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Tcl_Token *tokenPtr,
     Tcl_Obj *replacements,
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
@@ -3074,18 +3115,19 @@ CompileToInvokedCommand(
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     char *bytes;
-    int length, i, numWords;
+    int length, i, numWords, cmdLit;
+    DefineLineInformation;
 
     // TODO: Generate magic (with new instruction) for setting up the ensemble
     // rewriting...
 
     Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
     for (i=0,tokPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
-	if (i > 0 && i-1 < numWords) {
+	if (i > 0 && i < numWords+1) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
 	} else {
-	    TclCompileTokens(interp, tokPtr+1, tokPtr->numComponents, envPtr);
+	    CompileWord(envPtr, tokPtr, interp, i);
 	}
 	tokPtr = TokenAfter(tokPtr);
     }
@@ -3098,7 +3140,9 @@ CompileToInvokedCommand(
     objPtr = Tcl_NewObj();
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     bytes = Tcl_GetStringFromObj(objPtr, &length);
-    PushLiteral(envPtr, bytes, length);
+    cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length);
+    TclSetCmdNameObj(interp, envPtr->literalArrayPtr[cmdLit].objPtr, cmdPtr);
+    TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);
 
     /*
