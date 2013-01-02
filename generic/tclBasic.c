@@ -742,7 +742,8 @@ Tcl_CreateInterp(void)
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
     iPtr->deferredCallbacks = NULL;
 
-    iPtr->cmdSourcePtr = NULL;
+    iPtr->cmdSourcePtr = Tcl_NewObj();
+    TclInvalidateStringRep(iPtr->cmdSourcePtr);
 
     /*
      * Create the core commands. Do it here, rather than calling
@@ -1560,6 +1561,8 @@ DeleteInterpProc(
 
     Tcl_DeleteHashTable(&iPtr->varTraces);
     Tcl_DeleteHashTable(&iPtr->varSearches);
+
+    Tcl_DecrRefCount(iPtr->cmdSourcePtr);
 
     ckfree(iPtr);
 }
@@ -3284,7 +3287,7 @@ GetCommandSource(
 {
     Tcl_Obj *objPtr = Tcl_NewListObj(objc, objv);
 
-    if (iPtr->cmdSourcePtr) {
+    if (iPtr->cmdSourcePtr->typePtr) {
         char *command;
         int len;
         char *orig = iPtr->cmdSourcePtr->bytes;
@@ -4170,8 +4173,8 @@ TclNREvalObjv(
 	    return result;
 	}
     }
-    iPtr->cmdSourcePtr = NULL;
-
+    iPtr->cmdSourcePtr->bytes = NULL;
+    iPtr->cmdSourcePtr->typePtr = NULL;
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
@@ -4956,17 +4959,13 @@ Tcl_EvalEx(
 	     */
 
             {
-                Tcl_Obj *srcPtr = Tcl_NewObj();
+                Tcl_Obj *srcPtr = iPtr->cmdSourcePtr;
 
-                srcPtr->bytes = NULL;
                 srcPtr->typePtr = &scriptSourceType;
                 srcPtr->internalRep.twoPtrValue.ptr1 = (char *) script;
                 srcPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(numBytes);
-                iPtr->cmdSourcePtr = srcPtr;
 
                 code = Tcl_EvalObjv(interp, objectsUsed, objv, TCL_EVAL_NOERR);
-
-                Tcl_DecrRefCount(srcPtr);
             }
 
 	    if (code != TCL_OK) {

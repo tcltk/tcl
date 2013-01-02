@@ -76,13 +76,15 @@ typedef struct ObjData {
  * The structure defined below is used in this file only.
  */
 
-typedef struct ThreadSpecificData {
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
+typedef struct ThreadSpecificData {
     Tcl_HashTable *objThreadMap;/* Thread local table that is used to check
                                  * that a Tcl_Obj was not allocated by some
                                  * other thread. */
-#endif /* TCL_MEM_DEBUG && TCL_THREADS */
 } ThreadSpecificData;
+
+static Tcl_ThreadDataKey dataKey;
+#endif /* TCL_MEM_DEBUG && TCL_THREADS */
 
 /*
  * Nested Tcl_Obj deletion management support

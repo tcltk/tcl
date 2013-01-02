@@ -1993,10 +1993,6 @@ TEBCresume(
 #ifdef TCL_COMPILE_DEBUG
     traceInstructions = (tclTraceExec == 3);
 #endif
-    Tcl_Obj *srcPtr = Tcl_NewObj();
-    srcPtr->typePtr = &bcSourceType;
-    TclInvalidateStringRep(srcPtr);
-
     TEBC_DATA_DIG();
 
 #ifdef TCL_COMPILE_DEBUG
@@ -2758,9 +2754,10 @@ TEBCresume(
 	 */
 
 	if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	    Tcl_Obj *srcPtr = iPtr->cmdSourcePtr;
+	    srcPtr->typePtr = &bcSourceType;
 	    srcPtr->internalRep.twoPtrValue.ptr1 = (unsigned char *) pc;
 	    srcPtr->internalRep.twoPtrValue.ptr2 = codePtr;
-	    iPtr->cmdSourcePtr = srcPtr;
 	}
 
 	pc += pcAdjustment;
@@ -6895,7 +6892,6 @@ TEBCresume(
 	}
     }
 
-    TclDecrRefCount(srcPtr);
     if (--codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
