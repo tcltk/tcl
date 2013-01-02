@@ -1,3 +1,10 @@
+2013-01-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclEnsemble.c:  Remove stray calls to Tcl_Alloc and
+	* generic/tclExecute.c:   friends: the core should only use ckalloc
+	* generic/tclIORTrans.c:  to allow MEM_DEBUG to work properly
+	* generic/tclTomMathInterface.c:
+
 2012-12-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/string.n: Noted the obsolescence of the 'bytelength',

@@ -1579,7 +1579,7 @@ TclMakeEnsemble(
     Tcl_DStringFree(&buf);
     Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
-	Tcl_Free((char *) nameParts);
+	ckfree((char *) nameParts);
     }
     return ensemble;
 }
