@@ -108,8 +108,18 @@ TclInitStubs(
      * This is quicker to check for than calling Tcl_GetVersion() */
     if (sizeof(size_t) != sizeof(int)) {
 	if (stubsPtr->reserved77 != NULL) {
-	    iPtr->legacyResult = "incompatible stub library: have 9, need 8";
-	    iPtr->legacyFreeProc = 0; /* TCL_STATIC */
+	    /* Accessing iPtr->legacyResult doesn't work here as Tcl 8 doesn't
+	     * check this field after the Xxx_Init call. */
+	    char stripped[32]; /* Requested version stripped starting with '-' */
+	    char *p = stripped;
+
+	    while (*version && (*version != '-')) {
+		*p++ = *version++;
+	    }
+	    *p = '\0';
+	    stubsPtr->tcl_ResetResult(interp);
+	    stubsPtr->tcl_AppendResult(interp, "incompatible stub library: have ",
+		    tclversion, ", need ", stripped, NULL);
 	    return NULL;
 	}
     }
