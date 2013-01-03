@@ -728,7 +728,6 @@ Tcl_CreateInterp(void)
      * cache was already initialised by the call to alloc the interp struct.
      */
 
-    iPtr->pendingObjDataPtr = NULL;
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
     iPtr->deferredCallbacks = NULL;
 

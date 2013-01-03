@@ -916,14 +916,6 @@ Tcl_ListObjReplace(
     isShared = (listRepPtr->refCount > 1);
     numRequired = numElems - count + objc;
 
-    if (numRequired > listRepPtr->maxElemCount){
-	unsigned int allocSize = TclAllocMaximize(listRepPtr);
-	if (allocSize != UINT_MAX) {
-	    listRepPtr->maxElemCount = Size2Elems(allocSize);
-	}
-    }
-
-
     for (i = 0;  i < objc;  i++) {
 	Tcl_IncrRefCount(objv[i]);
     }

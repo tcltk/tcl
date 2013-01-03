@@ -2384,7 +2384,6 @@ TEBCresume(
 
 	    depth = tosPtr - initTosPtr;
 	    TD = ckrealloc(TD, size);
-	    size = TclAllocMaximize(TD);
 	    if (size == UINT_MAX) {
 		TD->capacity = reqWords;
 	    } else {

@@ -291,6 +291,7 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
+	tclAllocZippy.o \
 	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
 	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompCmdsSZ.o \
 	tclCompExpr.o tclCompile.o tclConfig.o tclDate.o tclDictObj.o \
@@ -385,6 +386,8 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/regfree.c \
 	$(GENERIC_DIR)/regerror.c \
 	$(GENERIC_DIR)/tclAlloc.c \
+	$(GENERIC_DIR)/tclAllocNative.c \
+	$(GENERIC_DIR)/tclAllocZippy.c \
 	$(GENERIC_DIR)/tclAssembly.c \
 	$(GENERIC_DIR)/tclAsync.c \
 	$(GENERIC_DIR)/tclBasic.c \
@@ -1021,6 +1024,12 @@ tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 
 tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
+
+tclAllocNative.o: $(GENERIC_DIR)/tclAllocNative.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAllocNative.c
+
+tclAllocZippy.o: $(GENERIC_DIR)/tclAllocZippy.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAllocZippy.c
 
 tclAssembly.o: $(GENERIC_DIR)/tclAssembly.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAssembly.c
