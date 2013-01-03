@@ -1582,21 +1582,23 @@ TclMakeEnsemble(
 			    NULL);
 		}
 		cmdPtr->compileProc = map[i].compileProc;
-		if (map[i].compileProc != NULL) {
-		    ensembleFlags |= ENSEMBLE_COMPILE;
-		}
 	    }
 	}
 	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
-	if (ensembleFlags & ENSEMBLE_COMPILE) {
-	    Tcl_SetEnsembleFlags(interp, ensemble, ensembleFlags);
-	}
+
+	/*
+	 * Switch on compilation always for core ensembles now that we can do
+	 * nice bytecode things with them.
+	 */
+
+	Tcl_SetEnsembleFlags(interp, ensemble,
+		ensembleFlags | ENSEMBLE_COMPILE);
     }
 
     Tcl_DStringFree(&buf);
     Tcl_DStringFree(&hiddenBuf);
     if (nameParts != NULL) {
-	Tcl_Free((char *) nameParts);
+	ckfree((char *) nameParts);
     }
     return ensemble;
 }
