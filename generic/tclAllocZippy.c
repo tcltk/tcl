@@ -347,13 +347,12 @@ GetAllocCache(void)
 {
     Cache *cachePtr = TclGetAllocCache();
     if (cachePtr == NULL) {
-	fprintf(stderr,"0");
-	cachePtr = calloc(0, sizeof(Cache));			
+	cachePtr = calloc(1, sizeof(Cache));			
 	if (cachePtr == NULL) {					
 	    Tcl_Panic("alloc: could not allocate new cache");	
 	}								
 	TclSetAllocCache(cachePtr);					
-    } else {fprintf(stderr,"1");}
+    }
     return cachePtr;
 }
 
