@@ -25,6 +25,22 @@ void   TclXpFreeAllocCache(void *ptr);
 
 
 /*
+ * These are utility functions (defined in tclAlloc.c) to give access to
+ * either per-thread or per-interp caches. They will return a pointer to which
+ * the allocator should attach the proper structure that it wishes to
+ * maintain. If the allocator doesn't want to use Tcl's resources, it will
+ * just never call them.
+ *
+ * If TclGetAllocCache returns NULL, it means that the value has not been
+ * initialized for this interp or thread and the corresponding Set function
+ * should be called. 
+ */
+
+void TclSetSharedAllocCache(void *allocCachePtr);
+void TclSetAllocCache(void *allocCachePtr);
+void *TclGetAllocCache(void);
+
+/*
  * The allocator should allow for "purify mode" by checking this variable. If
  * it is set to !0, it should just shunt to plain malloc.
  * This is used for debugging; the value can be treated as a constant, it does
@@ -46,19 +62,5 @@ int TCL_THREADED;
 #endif
 
 #define ALIGN(x)    (((x) + ALLOCALIGN - 1) & ~(ALLOCALIGN - 1))
-
-/*
- * These are utility functions (defined in tclAlloc.c) to give access to
- * either per-thread or per-interp caches. They will return a pointer to which
- * the allocator should attach the proper structure that it wishes to
- * maintain.
- *
- * If the content is NULL, it means that the value has not been initialized for
- * this interp or thread and the corresponding Set function should be called.
- */
-
-void TclSetSharedAllocCache(void *allocCachePtr);
-void TclSetAllocCache(void *allocCachePtr);
-void *TclGetAllocCache(void);
 
 #endif

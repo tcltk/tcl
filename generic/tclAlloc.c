@@ -30,9 +30,6 @@
 typedef struct Cache {
     Tcl_Obj *firstObjPtr;	/* List of free objects for thread */
     int numObjects;		/* Number of objects for thread */
-#if defined(TCL_THREADS)
-    struct Cache *nextPtr;	/* Linked list of cache entries */
-#endif
     void *allocCachePtr;
 } Cache;
 
@@ -41,8 +38,6 @@ static Cache sharedCache;
 
 #if defined(TCL_THREADS)
 static Tcl_Mutex *objLockPtr;
-static Tcl_Mutex *listLockPtr;
-static Cache *firstCachePtr = &sharedCache;
 
 static Cache *	GetCache(void);
 static void	MoveObjs(Cache *fromPtr, Cache *toPtr, int numMove);
@@ -107,10 +102,6 @@ GetCache(void)
 	    Tcl_Panic("alloc: could not allocate new cache");
 	}
 	cachePtr->allocCachePtr= NULL;
-	Tcl_MutexLock(listLockPtr);
-	cachePtr->nextPtr = firstCachePtr;
-	firstCachePtr = cachePtr;
-	Tcl_MutexUnlock(listLockPtr);
 	TclpSetAllocCache(cachePtr);
     }
     return cachePtr;
@@ -170,33 +161,29 @@ TclGetAllocCache(void)
 void
 TclInitAlloc(void)
 {
-#ifdef PURIFY
-    TCL_PURIFY = 1;
-#else
-    TCL_PURIFY   = (getenv("TCL_PURIFY") != NULL);
-#endif
-    TCL_THREADED = 0;
-    
     /*
      * Set the params for the correct allocator
      */
 
 #if defined(TCL_THREADS)
+    Tcl_Mutex *initLockPtr;
+
     TCL_THREADED = 1;
-    if (listLockPtr == NULL) {
-	Tcl_Mutex *initLockPtr;
-	initLockPtr = Tcl_GetAllocMutex();
-	Tcl_MutexLock(initLockPtr);
-	if (listLockPtr == NULL) {
-	    listLockPtr = TclpNewAllocMutex();
-	    objLockPtr = TclpNewAllocMutex();
-	    TclXpInitAlloc();
-	}
-	Tcl_MutexUnlock(initLockPtr);
-    }
+    initLockPtr = Tcl_GetAllocMutex();
+    Tcl_MutexLock(initLockPtr);
+    objLockPtr = TclpNewAllocMutex();
+    TclXpInitAlloc();
+    Tcl_MutexUnlock(initLockPtr);
 #else
+    TCL_THREADED = 0;
     TclXpInitAlloc();
 #endif /* THREADS */
+
+#ifdef PURIFY
+    TCL_PURIFY = 1;
+#else
+    TCL_PURIFY   = (getenv("TCL_PURIFY") != NULL);
+#endif
 }
 
 /*
@@ -223,9 +210,6 @@ TclFinalizeAlloc(void)
 
     TclpFreeAllocMutex(objLockPtr);
     objLockPtr = NULL;
-
-    TclpFreeAllocMutex(listLockPtr);
-    listLockPtr = NULL;
 
     TclpFreeAllocCache(NULL);
 #endif
@@ -271,20 +255,6 @@ TclFreeAllocCache(
      */
 
     TclXpFreeAllocCache(cachePtr->allocCachePtr);
-
-    /*
-     * Remove from pool list.
-     */
-
-    Tcl_MutexLock(listLockPtr);
-    nextPtrPtr = &firstCachePtr;
-    while (*nextPtrPtr != cachePtr) {
-	nextPtrPtr = &(*nextPtrPtr)->nextPtr;
-    }
-    *nextPtrPtr = cachePtr->nextPtr;
-    cachePtr->nextPtr = NULL;
-    Tcl_MutexUnlock(listLockPtr);
-    free(cachePtr);
 }
 #endif
 

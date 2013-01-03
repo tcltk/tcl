@@ -5,11 +5,12 @@
  *      without threads.
  *
  *      It is essentially the ex-tclThreadAlloc, aolserver's fast threaded
- *      allocator. Mods with respect to the original: 
+ *      allocator. Mods with respect to the original:
+ *            - it is split into two: the freeObj list is part of Tcl itself,
+ *              in tclAlloc.c, and the malloc() part is here
  *            - split blocks in the shared pool before mallocing again for
  *              improved cache usage
- *            - stats and Tcl_GetMemoryInfo disabled per default, enable with
- *              -DZIPPY_STATS
+ *            - stats and Tcl_GetMemoryInfo are gone
  *            - adapt for unthreaded usage as replacement of the ex tclAlloc
  *            - (TODO!) build zippy as a pre-loadable library to use with a
  *              native build as a malloc replacement. Difficulty is to make it
@@ -28,6 +29,10 @@
 
 #include "tclInt.h"
 #include "tclAlloc.h"
+
+#undef TclpAlloc
+#undef TclpRealloc
+#undef TclpFree
 
 /*
  * The following struct stores accounting information for each block including
@@ -49,8 +54,8 @@ typedef struct Block {
 	struct {
 	    unsigned char magic1;	/* First magic number. */
 	    unsigned char bucket;	/* Bucket block allocated from. */
-	    unsigned char inUse;	/* Block memory currently in use, see
-					 * details in TclpAlloc/Realloc. */
+	    unsigned char inUse;	/* Block memory currently in use, used
+					 * by realloc. */
 	    unsigned char magic2;	/* Second magic number. */
 	} s;
     } u;
@@ -91,14 +96,6 @@ typedef struct Block {
 typedef struct Bucket {
     Block *firstPtr;		/* First block available */
     long numFree;		/* Number of blocks available */
-#ifdef ZIPPY_STATS
-    /* All fields below for accounting only */
-
-    long numRemoves;		/* Number of removes from bucket */
-    long numInserts;		/* Number of inserts into bucket */
-    long numWaits;		/* Number of waits to acquire a lock */
-    long numLocks;		/* Number of locks acquired */
-#endif
 } Bucket;
 
 /*
@@ -120,14 +117,10 @@ static struct {
 
 typedef struct Cache {
     Bucket buckets[NBUCKETS];	/* The buckets for this thread */
-    struct Cache *nextPtr;	/* Linked list of cache entries */
 } Cache;
 
 static Cache sharedCache;
 #define sharedPtr (&sharedCache)
-
-static Tcl_Mutex *listLockPtr;
-static Cache *firstCachePtr = &sharedCache;
 
 static void InitBucketInfo(void);
 static inline char * Block2Ptr(Block *blockPtr,
@@ -137,8 +130,8 @@ static inline Block * Ptr2Block(char *ptr);
 static int  GetBlocks(Cache *cachePtr, int bucket);
 
 static void PutBlocks(Cache *cachePtr, int bucket, int numMove);
-static void LockBucket(Cache *cachePtr, int bucket);
-static void UnlockBucket(Cache *cachePtr, int bucket);
+static inline void LockBucket(int bucket);
+static inline void UnlockBucket(int bucket);
 
 
 /*
@@ -162,7 +155,7 @@ InitBucketInfo ()
 {
     int i;
     int shift = 0;
-    
+
     for (i = 0; i < NBUCKETS; ++i) {
 	bucketInfo[i].blockSize = MINALLOC << i;
 	while (((bucketInfo[i].blockSize -OFFSET) >> shift) > 255) {
@@ -221,9 +214,6 @@ TclXpFinalizeAlloc(void)
 	    TclpFreeAllocMutex(bucketInfo[i].lockPtr);
 	    bucketInfo[i].lockPtr = NULL;
 	}
-    
-	TclpFreeAllocMutex(listLockPtr);
-	listLockPtr = NULL;
     }
 }
 
@@ -232,7 +222,7 @@ TclXpFinalizeAlloc(void)
  *
  * TclXpFreeAllocCache --
  *
- *	Flush and delete a cache, removing from list of caches.
+ *	Flush and delete a cache
  *
  * Results:
  *	None.
@@ -248,7 +238,6 @@ TclXpFreeAllocCache(
     void *arg)
 {
     Cache *cachePtr = arg;
-    Cache **nextPtrPtr;
 
     register unsigned int bucket;
 
@@ -261,19 +250,6 @@ TclXpFreeAllocCache(
 	    PutBlocks(cachePtr, bucket, cachePtr->buckets[bucket].numFree);
 	}
     }
-
-    /*
-     * Remove from pool list.
-     */
-
-    Tcl_MutexLock(listLockPtr);
-    nextPtrPtr = &firstCachePtr;
-    while (*nextPtrPtr != cachePtr) {
-	nextPtrPtr = &(*nextPtrPtr)->nextPtr;
-    }
-    *nextPtrPtr = cachePtr->nextPtr;
-    cachePtr->nextPtr = NULL;
-    Tcl_MutexUnlock(listLockPtr);
     free(cachePtr);
 }
 
@@ -406,9 +382,6 @@ TclpAlloc(
 	    blockPtr = cachePtr->buckets[bucket].firstPtr;
 	    cachePtr->buckets[bucket].firstPtr = blockPtr->nextBlock;
 	    cachePtr->buckets[bucket].numFree--;
-#ifdef ZIPPY_STATS
-	    cachePtr->buckets[bucket].numRemoves++;
-#endif
 	}
 	if (blockPtr == NULL) {
 	    return NULL;
@@ -468,9 +441,6 @@ TclpFree(
     blockPtr->nextBlock = cachePtr->buckets[bucket].firstPtr;
     cachePtr->buckets[bucket].firstPtr = blockPtr;
     cachePtr->buckets[bucket].numFree++;
-#ifdef ZIPPY_STATS
-    cachePtr->buckets[bucket].numInserts++;
-#endif
     if (cachePtr != sharedPtr &&
 	    cachePtr->buckets[bucket].numFree > bucketInfo[bucket].maxBlocks) {
 	PutBlocks(cachePtr, bucket, bucketInfo[bucket].numMove);
@@ -573,58 +543,6 @@ TclpRealloc(
     }
     return newPtr;
 }
-#ifdef ZIPPY_STATS
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GetMemoryInfo --
- *
- *	Return a list-of-lists of memory stats.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	List appended to given dstring.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_GetMemoryInfo(
-    Tcl_DString *dsPtr)
-{
-    Cache *cachePtr;
-    char buf[200];
-    unsigned int n;
-
-    Tcl_MutexLock(listLockPtr);
-    cachePtr = firstCachePtr;
-    while (cachePtr != NULL) {
-	Tcl_DStringStartSublist(dsPtr);
-	if (cachePtr == sharedPtr) {
-	    Tcl_DStringAppendElement(dsPtr, "shared");
-	} else {
-	    sprintf(buf, "thread%p", cachePtr->owner);
-	    Tcl_DStringAppendElement(dsPtr, buf);
-	}
-	for (n = 0; n < NBUCKETS; ++n) {
-	    sprintf(buf, "%lu %ld %ld %ld %ld %ld %ld",
-		    (unsigned long) bucketInfo[n].blockSize,
-		    cachePtr->buckets[n].numFree,
-		    cachePtr->buckets[n].numRemoves,
-		    cachePtr->buckets[n].numInserts,
-		    cachePtr->buckets[n].numLocks,
-		    cachePtr->buckets[n].numWaits);
-	    Tcl_DStringAppendElement(dsPtr, buf);
-	}
-	Tcl_DStringEndSublist(dsPtr);
-	cachePtr = cachePtr->nextPtr;
-    }
-    Tcl_MutexUnlock(listLockPtr);
-}
-#endif /* ZIPPY_STATS */
 
 /*
  *----------------------------------------------------------------------
@@ -643,21 +561,15 @@ Tcl_GetMemoryInfo(
  *----------------------------------------------------------------------
  */
 
-static void
+static inline void
 LockBucket(
-    Cache *cachePtr,
     int bucket)
 {
     Tcl_MutexLock(bucketInfo[bucket].lockPtr);
-#ifdef ZIPPY_STATS
-    cachePtr->buckets[bucket].numLocks++;
-    sharedPtr->buckets[bucket].numLocks++;
-#endif
 }
 
-static void
+static inline void
 UnlockBucket(
-    Cache *cachePtr,
     int bucket)
 {
     Tcl_MutexUnlock(bucketInfo[bucket].lockPtr);
@@ -705,11 +617,11 @@ PutBlocks(
      * cache bucket.
      */
 
-    LockBucket(cachePtr, bucket);
+    LockBucket(bucket);
     lastPtr->nextBlock = sharedPtr->buckets[bucket].firstPtr;
     sharedPtr->buckets[bucket].firstPtr = firstPtr;
     sharedPtr->buckets[bucket].numFree += numMove;
-    UnlockBucket(cachePtr, bucket);
+    UnlockBucket(bucket);
 }
 
 /*
@@ -744,7 +656,7 @@ GetBlocks(
      */
 
     if (cachePtr != sharedPtr && sharedPtr->buckets[bucket].numFree > 0) {
-	LockBucket(cachePtr, bucket);
+	LockBucket(bucket);
 	if (sharedPtr->buckets[bucket].numFree > 0) {
 
 	    /*
@@ -772,7 +684,7 @@ GetBlocks(
 		blockPtr->nextBlock = NULL;
 	    }
 	}
-	UnlockBucket(cachePtr, bucket);
+	UnlockBucket(bucket);
     }
     
     if (cachePtr->buckets[bucket].numFree == 0) {
@@ -800,15 +712,15 @@ GetBlocks(
 	    while (--n > bucket) {
 		if (sharedPtr->buckets[n].numFree > 0) {
 		    size = bucketInfo[n].blockSize;
-		    LockBucket(cachePtr, n);
+		    LockBucket(n);
 		    if (sharedPtr->buckets[n].numFree > 0) {
 			blockPtr = sharedPtr->buckets[n].firstPtr;
 			sharedPtr->buckets[n].firstPtr = blockPtr->nextBlock;
 			sharedPtr->buckets[n].numFree--;
-			UnlockBucket(cachePtr, n);
+			UnlockBucket(n);
 			break;		
 		    }
-		    UnlockBucket(cachePtr, n);
+		    UnlockBucket(n);
 		}
 	    }
 	}
