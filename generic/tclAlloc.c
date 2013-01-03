@@ -238,7 +238,6 @@ TclFreeAllocCache(
     void *arg)
 {
     Cache *cachePtr = arg;
-    Cache **nextPtrPtr;
     
     /*
      * Flush objs.
