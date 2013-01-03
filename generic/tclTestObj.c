@@ -736,6 +736,17 @@ TestobjCmd(clientData, interp, objc, objv)
         }
         SetVarToObj(destIndex, varPtr[varIndex]);
 	Tcl_SetObjResult(interp, varPtr[destIndex]);
+    } else if (strcmp(subCmd, "bug3598580") == 0) {
+	Tcl_Obj *listObjPtr, *elemObjPtr;
+	if (objc != 2) {
+	    goto wrongNumArgs;
+	}
+	elemObjPtr = Tcl_NewIntObj(123);
+	listObjPtr = Tcl_NewListObj(1, &elemObjPtr);
+	/* Replace the single list element through itself, nonsense but legal. */
+	Tcl_ListObjReplace(interp, listObjPtr, 0, 1, 1, &elemObjPtr);
+	Tcl_SetObjResult(interp, listObjPtr);
+	return TCL_OK;
      } else if (strcmp(subCmd, "convert") == 0) {
         char *typeName;
         if (objc != 4) {
