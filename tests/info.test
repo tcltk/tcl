@@ -692,31 +692,31 @@ test info-21.5 {miscellaneous error conditions} -returnCodes error -body {
 ##
 # ### ### ### ######### ######### #########
 ## info frame
+
 ## Helper
 # For the more complex results we cut the file name down to remove path
 # dependencies, and we use only part of the first line of the reported
 # command. The latter is required because otherwise the whole test case may
 # appear in some results, but the result is part of the testcase. An infinite
 # string would be required to describe that. The cutting-down breaks this.
+
 proc reduce {frame} {
-    set  pos [lsearch -exact $frame cmd]
-    incr pos
-    set  cmd [lindex $frame $pos]
+    set cmd [dict get $frame cmd]
     if {[regexp \n $cmd]} {
-	set first [string range [lindex [split $cmd \n] 0] 0 end-4]
-	set frame [lreplace $frame $pos $pos $first]
+	dict set frame cmd \
+	    [string range [lindex [split $cmd \n] 0] 0 end-4]
     }
-    set pos [lsearch -exact $frame file]
-    if {$pos >=0} {
-	incr pos
-	set tail  [file tail [lindex $frame $pos]]
-	set frame [lreplace $frame $pos $pos $tail]
+    if {[dict exists $frame file]} {
+	dict set frame file \
+	    [file tail [dict get $frame file]]
     }
-    set frame
+    return $frame
 }
+
 proc subinterp {} { interp create sub ; interp debug sub -frame 1;
     interp eval sub [list proc reduce [info args reduce] [info body reduce]]
 }
+
 ## Helper
 # Generate a stacktrace from the current location to top.  This code
 # not only depends on the exact location of things, but also on the
@@ -1454,9 +1454,9 @@ test info-30.1 {bs+nl in literal words, procedure body, compiled} -body {
 test info-30.2 {bs+nl in literal words, namespace script} {
     namespace eval xxx {
 	variable res \
-	    [reduce [info frame 0]];# line 1457
+	    [info frame 0];# line 1457
     }
-    return $xxx::res
+    return [reduce $xxx::res]
 } {type source line 1457 file info.test cmd {info frame 0} level 0}
 
 test info-30.3 {bs+nl in literal words, namespace multi-word script} {

@@ -1,3 +1,11 @@
+2013-01-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (TEBCresume:INST_INVOKE_REPLACE):
+	* generic/tclEnsemble.c (TclCompileEnsemble): Added new mechanism to
+	allow for more efficient dispatch of non-bytecode-compiled subcommands
+	of bytecode-compiled ensembles. This can provide substantial speed
+	benefits in some cases.
+
 2013-01-02  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclEnsemble.c:  Remove stray calls to Tcl_Alloc and
