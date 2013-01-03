@@ -714,6 +714,8 @@ typedef struct ByteCode {
 #define INST_ARRAY_MAKE_IMM		162
 #define INST_TCLOO_NEXT			163
 
+#define INST_INVOKE_REPLACE		163
+
 /* The last opcode */
 #define LAST_INST_OPCODE		163
 
