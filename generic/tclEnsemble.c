@@ -4,7 +4,7 @@
  *	Contains support for ensembles (see TIP#112), which provide simple
  *	mechanism for creating composite commands on top of namespaces.
  *
- * Copyright (c) 2005-2010 Donal K. Fellows.
+ * Copyright (c) 2005-2013 Donal K. Fellows.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -36,8 +36,8 @@ static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
 static int		CompileToCompiledCommand(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, Tcl_Token *tokenPtr,
-			    int depth, Command *cmdPtr, CompileEnv *envPtr);
+			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
+			    CompileEnv *envPtr);
 static void		CompileToInvokedCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Tcl_Obj *replacements,
 			    Command *cmdPtr, CompileEnv *envPtr);
@@ -92,18 +92,9 @@ const Tcl_ObjType tclEnsembleCmdType = {
 #define DefineLineInformation \
     ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
     int eclIndex = mapPtr->nuloc - 1
-#define CompileWord(envPtr, tokenPtr, interp, word) \
-    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
-	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
-		(tokenPtr)[1].size), (envPtr));				\
-    } else {								\
-	if (mapPtr->loc[eclIndex].next) {				\
-	    envPtr->line = mapPtr->loc[eclIndex].line[word];		\
-	    envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
-	}								\
-	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-		(envPtr));						\
-    }
+#define SetLineInformation(word) \
+    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
+    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
 static inline Tcl_Obj *
 NewNsObj(
@@ -2768,6 +2759,12 @@ TclCompileEnsemble(
     const char *word;
 
     Tcl_IncrRefCount(replaced);
+
+    /*
+     * This is where we return to if we are parsing multiple nested compiled
+     * ensembles. [info object] is such a beast.
+     */
+
   checkNextWord:
     if (parsePtr->numWords < depth + 1) {
 	goto failed;
@@ -2978,6 +2975,11 @@ TclCompileEnsemble(
     cmdPtr = newCmdPtr;
     depth++;
 
+    /*
+     * See whether we have a nested ensemble. If we do, we can go round the
+     * mulberry bush again, consuming the next word.
+     */
+
     if (cmdPtr->compileProc == TclCompileEnsemble) {
 	tokenPtr = TokenAfter(tokenPtr);
 	ensemble = (Tcl_Command) cmdPtr;
@@ -2992,12 +2994,10 @@ TclCompileEnsemble(
      */
 
     invokeAnyway = 1;
-    if (cmdPtr->compileProc != NULL) {
-	if (CompileToCompiledCommand(interp, parsePtr, tokenPtr, depth,
-		cmdPtr, envPtr) == TCL_OK) {
-	    ourResult = TCL_OK;
-	    goto cleanup;
-	}
+    if (CompileToCompiledCommand(interp, parsePtr, depth, cmdPtr,
+	    envPtr) == TCL_OK) {
+	ourResult = TCL_OK;
+	goto cleanup;
     }
 
     /*
@@ -3025,9 +3025,7 @@ TclCompileEnsemble(
      */
 
   cleanup:
-    if (replaced != NULL) {
-	Tcl_DecrRefCount(replaced);
-    }
+    Tcl_DecrRefCount(replaced);
     return ourResult;
 }
 
@@ -3041,14 +3039,17 @@ static int
 CompileToCompiledCommand(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    Tcl_Token *tokenPtr,
     int depth,
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Parse synthetic;
-    Tcl_Token *tokPtr;
+    Tcl_Token *tokenPtr;
     int result, i;
+
+    if (cmdPtr->compileProc == NULL) {
+	return TCL_ERROR;
+    }
 
     TclParseInit(interp, NULL, 0, &synthetic);
     synthetic.numWords = parsePtr->numWords - depth + 1;
@@ -3057,7 +3058,9 @@ CompileToCompiledCommand(
 
     /*
      * Now we have the space to work in, install something rewritten. The
-     * first word will "officially" be the structured ensemble name.
+     * first word will "officially" be the bytes of the structured ensemble
+     * name. That's technically wrong, but nobody will care; we just need
+     * *something* here...
      */
 
     synthetic.tokenPtr[0].type = TCL_TOKEN_SIMPLE_WORD;
@@ -3066,13 +3069,13 @@ CompileToCompiledCommand(
     synthetic.tokenPtr[1].type = TCL_TOKEN_TEXT;
     synthetic.tokenPtr[1].start = parsePtr->tokenPtr[0].start;
     synthetic.tokenPtr[1].numComponents = 0;
-    tokPtr = parsePtr->tokenPtr;
-    for (i=0 ; i<depth ; i++) {
-	int sclen = (tokPtr->start-synthetic.tokenPtr[0].start)+tokPtr->size;
+    for (i=0,tokenPtr=parsePtr->tokenPtr ; i<depth ; i++) {
+	int sclen = (tokenPtr->start - synthetic.tokenPtr[0].start)
+		+ tokenPtr->size;
 
 	synthetic.tokenPtr[0].size = sclen;
 	synthetic.tokenPtr[1].size = sclen;
-	tokPtr = TokenAfter(tokPtr);
+	tokenPtr = TokenAfter(tokenPtr);
     }
 
     /*
@@ -3082,12 +3085,12 @@ CompileToCompiledCommand(
     for (i=1; i<synthetic.numWords; i++) {
 	int toCopy;
 
-	tokenPtr = TokenAfter(tokenPtr);
 	toCopy = tokenPtr->numComponents + 1;
 	TclGrowParseTokenArray(&synthetic, toCopy);
 	memcpy(synthetic.tokenPtr + synthetic.numTokens, tokenPtr,
 		sizeof(Tcl_Token) * toCopy);
 	synthetic.numTokens += toCopy;
+	tokenPtr = TokenAfter(tokenPtr);
     }
 
     /*
@@ -3104,6 +3107,11 @@ CompileToCompiledCommand(
     return result;
 }
 
+/*
+ * How to compile a subcommand to a _replacing_ invoke of its implementation
+ * command.
+ */
+
 static void
 CompileToInvokedCommand(
     Tcl_Interp *interp,
@@ -3118,16 +3126,33 @@ CompileToInvokedCommand(
     int length, i, numWords, cmdLit;
     DefineLineInformation;
 
-    // TODO: Generate magic (with new instruction) for setting up the ensemble
-    // rewriting...
+    /*
+     * Push the words of the command. Take care; the command words may be
+     * scripts that have backslashes in them, and [info frame 0] can see the
+     * difference. Hence the call to TclContinuationsEnterDerived...
+     */
 
     Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
     for (i=0,tokPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
 	if (i > 0 && i < numWords+1) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
+	} else if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    int literal = TclRegisterNewLiteral(envPtr,
+		    tokPtr[1].start, tokPtr[1].size);
+
+	    if (envPtr->clNext) {
+		TclContinuationsEnterDerived(
+			envPtr->literalArrayPtr[literal].objPtr,
+			tokPtr[1].start - envPtr->source,
+			mapPtr->loc[eclIndex].next[i]);
+	    }
+	    TclEmitPush(literal, envPtr);
 	} else {
-	    CompileWord(envPtr, tokPtr, interp, i);
+	    if (envPtr->clNext) {
+		SetLineInformation(i);
+	    }
+	    CompileTokens(envPtr, tokPtr, interp);
 	}
 	tokPtr = TokenAfter(tokPtr);
     }
