@@ -709,6 +709,12 @@ NativeReadReparse(
 	    FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
+	hFile = (*tclWinProcs->createFileProc)(linkDirPath, 0, 0,
+		NULL, OPEN_EXISTING,
+		FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
+    }
+
+    if (hFile == INVALID_HANDLE_VALUE) {
 	/*
 	 * Error creating directory.
 	 */
