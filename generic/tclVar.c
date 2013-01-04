@@ -4219,16 +4219,16 @@ TclInitArrayCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap arrayImplMap[] = {
-	{"anymore",	ArrayAnyMoreCmd,	NULL, NULL, NULL, 0},
-	{"donesearch",	ArrayDoneSearchCmd,	NULL, NULL, NULL, 0},
+	{"anymore",	ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"exists",	ArrayExistsCmd,		TclCompileArrayExistsCmd, NULL, NULL, 0},
-	{"get",		ArrayGetCmd,		NULL, NULL, NULL, 0},
-	{"names",	ArrayNamesCmd,		NULL, NULL, NULL, 0},
-	{"nextelement",	ArrayNextElementCmd,	NULL, NULL, NULL, 0},
+	{"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"names",	ArrayNamesCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+	{"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"set",		ArraySetCmd,		TclCompileArraySetCmd, NULL, NULL, 0},
-	{"size",	ArraySizeCmd,		NULL, NULL, NULL, 0},
-	{"startsearch",	ArrayStartSearchCmd,	NULL, NULL, NULL, 0},
-	{"statistics",	ArrayStatsCmd,		NULL, NULL, NULL, 0},
+	{"size",	ArraySizeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"startsearch",	ArrayStartSearchCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"statistics",	ArrayStatsCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"unset",	ArrayUnsetCmd,		TclCompileArrayUnsetCmd, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
