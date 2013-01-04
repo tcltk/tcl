@@ -10,8 +10,11 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#ifndef PURIFY
+
 #include "tclInt.h"
-#include "tclAlloc.h"
+
+static int purify = 0;
 
 /*
  * Parameters for the per-thread Tcl_Obj cache:
@@ -168,22 +171,14 @@ TclInitAlloc(void)
 #if defined(TCL_THREADS)
     Tcl_Mutex *initLockPtr;
 
-    TCL_THREADED = 1;
     initLockPtr = Tcl_GetAllocMutex();
     Tcl_MutexLock(initLockPtr);
     objLockPtr = TclpNewAllocMutex();
-    TclXpInitAlloc();
     Tcl_MutexUnlock(initLockPtr);
-#else
-    TCL_THREADED = 0;
-    TclXpInitAlloc();
-#endif /* THREADS */
-
-#ifdef PURIFY
-    TCL_PURIFY = 1;
-#else
-    TCL_PURIFY   = (getenv("TCL_PURIFY") != NULL);
 #endif
+
+    /* Make it possible to switch to purify mode without recompiling */
+    purify   = (getenv("TCL_PURIFY") != NULL);
 }
 
 /*
@@ -213,7 +208,6 @@ TclFinalizeAlloc(void)
 
     TclpFreeAllocCache(NULL);
 #endif
-    TclXpFinalizeAlloc();
 }
 
 /*
@@ -248,12 +242,6 @@ TclFreeAllocCache(
 	MoveObjs(cachePtr, sharedPtr, cachePtr->numObjects);
 	Tcl_MutexUnlock(objLockPtr);
     }
-
-    /*
-     * Flush the external allocator cache
-     */
-
-    TclXpFreeAllocCache(cachePtr->allocCachePtr);
 }
 #endif
 
@@ -301,7 +289,7 @@ TclSmallAlloc(void)
      * non-purify small allocs.
      */
     
-    if (TCL_PURIFY) {
+    if (purify) {
 	Tcl_Obj *objPtr = (Tcl_Obj *) TclpAlloc(sizeof(Tcl_Obj));
 	if (objPtr == NULL) {
 	    Tcl_Panic("alloc: could not allocate a new object");
@@ -365,7 +353,7 @@ TclSmallFree(
     Cache *cachePtr;
     Tcl_Obj *objPtr = ptr;
     
-    if (TCL_PURIFY) {
+    if (purify) {
 	TclpFree((char *) ptr);
 	return;
     }
@@ -442,6 +430,8 @@ MoveObjs(
     toPtr->firstObjPtr = fromFirstObjPtr;
 }
 #endif
+
+#endif /* PURIFY */
 
 /*
  * Local Variables:

@@ -725,8 +725,9 @@ TclpFreeAllocCache(
 	 * Called by the pthread lib when a thread exits
 	 */
 
+#ifndef PURIFY
 	TclFreeAllocCache(ptr);
-
+#endif
     } else if (initialized) {
 	/*
 	 * Called by us in TclFinalizeThreadAlloc() during the library

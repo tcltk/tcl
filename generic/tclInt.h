@@ -3742,10 +3742,6 @@ MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 #endif
 
-MODULE_SCOPE char * TclpAlloc(unsigned int size);
-MODULE_SCOPE char * TclpRealloc(char * ptr, unsigned int size);
-MODULE_SCOPE void   TclpFree(char * ptr);
-
 MODULE_SCOPE void * TclSmallAlloc();
 MODULE_SCOPE void   TclSmallFree(void *ptr);
 MODULE_SCOPE void   TclInitAlloc(void);
@@ -4402,15 +4398,29 @@ typedef struct NRE_callback {
 #define NRE_ASSERT(expr)
 #endif
 
+/* GET OUT OF THE ALLOCATOR BIZ! */
+#define TclpAlloc(size) malloc(size)
+#define TclpRealloc(ptr, size) realloc((ptr),(size))
+#define TclpFree(ptr)   free(ptr)
+
+#ifdef PURIFY
+#define TclSmallAlloc()    ckalloc(sizeof(Tcl_Obj))
+#define TclSmallFree(ptr)  ckfree(ptr)
+#define TclInitAlloc()
+#define TclFinalizeAlloc()
+#define TclFreeAllocCache(ptr) 
+#endif
+
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"
 
-#if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
+#if !defined(USE_TCL_STUBS)
 #define Tcl_AttemptAlloc(size)        TclpAlloc(size)
 #define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
 #define Tcl_Free(ptr)                 TclpFree(ptr)
 #endif
+
 
 #endif /* _TCLINT */
 
