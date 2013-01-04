@@ -1,5 +1,9 @@
 2013-01-03  Donal K. Fellows  <dkf@users.sf.net>
 
+	* doc/fconfigure.n, doc/CrtChannel.3: Updated to reflect the fact that
+	the minimum buffer size is one byte, not ten. Identified by Schelte
+	Bron on the Tcler's Chat.
+
 	* generic/tclExecute.c (TEBCresume:INST_INVOKE_REPLACE):
 	* generic/tclEnsemble.c (TclCompileEnsemble): Added new mechanism to
 	allow for more efficient dispatch of non-bytecode-compiled subcommands
