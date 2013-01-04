@@ -2956,9 +2956,14 @@ TclCompileEnsemble(
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
     if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	goto failed;
-    }
-    if (len != 1) {
-	goto failed;
+    } else if (len != 1) {
+	/*
+	 * Note that at this point we know we can't issue any special
+	 * instruction sequence as the mapping isn't one that we support at
+	 * the compiled level.
+	 */
+
+	goto cleanup;
     }
     targetCmdObj = elems[0];
 
@@ -3011,7 +3016,7 @@ TclCompileEnsemble(
      */
 
   failed:
-    if (len == 1 && depth < 250) {
+    if (depth < 250) {
 	if (depth > 1) {
 	    if (!invokeAnyway) {
 		cmdPtr = oldCmdPtr;
