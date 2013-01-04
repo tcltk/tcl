@@ -290,8 +290,42 @@ TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o
 
-GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
-	tclAllocZippy.o \
+#--------------------------------------------------------------------------
+# Choose the default allocator to link in. Override with the env-var 
+# TCL_ALLOCATOR if present. Note that all allocators will be compiled, 
+# changing them just requires relinking.
+#--------------------------------------------------------------------------
+
+PURIFY = tclAllocPurify.o
+PURIFY_FLAGS = -DPURIFY% -DTCL_ALLOCATOR=PURIFY
+
+NATIVE = tclAllocNative.o
+NATIVE_FLAGS = -DTCL_ALLOCATOR=NATIVE
+
+ZIPPY  = tclAllocZippy.o
+ZIPPY_FLAGS = -DUSE_THREAD_ALLOC% -DTCL_ALLOCATOR=ZIPPY
+
+ALLOCATOR_DEFAULT = $(NATIVE)
+ALLOCATORS = $(PURIFY) $(NATIVE) $(ZIPPY)
+
+WHERE = $(CC_SWITCHES) $(CFLAGS)
+
+ifdef TCL_ALLOCATOR
+  ALLOCATOR = $($(TCL_ALLOCATOR))
+else ifneq (,$(filter $(PURIFY_FLAGS), $(WHERE)))
+  ALLOCATOR = $(PURIFY)
+else ifneq (,$(filter $(NATIVE_FLAGS), $(WHERE)))
+  ALLOCATOR = $(NATIVE)
+else ifneq (,$(filter $(ZIPPY_FLAGS), $(WHERE)))
+  ALLOCATOR = $(ZIPPY)
+endif
+
+ifeq (,$(filter $(ALLOCATORS), $(ALLOCATOR)))
+  ALLOCATOR = $(ALLOCATOR_DEFAULT)
+endif
+
+GENERIC_OBJS = $(ALLOCATOR) \
+	regcomp.o regexec.o regfree.o regerror.o \
 	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
 	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompCmdsSZ.o \
 	tclCompExpr.o tclCompile.o tclConfig.o tclDate.o tclDictObj.o \
@@ -309,7 +343,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
 	tclTomMathInterface.o \
-	tclAssembly.o
+	tclAssembly.o 
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
@@ -385,8 +419,8 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/regexec.c \
 	$(GENERIC_DIR)/regfree.c \
 	$(GENERIC_DIR)/regerror.c \
-	$(GENERIC_DIR)/tclAlloc.c \
 	$(GENERIC_DIR)/tclAllocNative.c \
+	$(GENERIC_DIR)/tclAllocPurify.c \
 	$(GENERIC_DIR)/tclAllocZippy.c \
 	$(GENERIC_DIR)/tclAssembly.c \
 	$(GENERIC_DIR)/tclAsync.c \
@@ -613,7 +647,7 @@ doc:
 
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
-${LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
+${LIB_FILE}: $(ALLOCATORS) ${OBJS} ${STUB_LIB_FILE}
 	rm -f $@
 	@MAKE_LIB@
 	@if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
@@ -1022,11 +1056,11 @@ regerror.o: $(REGHDRS) $(GENERIC_DIR)/regerrs.h $(GENERIC_DIR)/regerror.c
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
 
-tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
-
-tclAllocNative.o: $(GENERIC_DIR)/tclAllocNative.c
+tclAllocNative.o: $(GENERIC_DIR)/tclAllocNative.c $(GENERIC_DIR)/tclAllocZippy.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAllocNative.c
+
+tclAllocPurify.o: $(GENERIC_DIR)/tclAllocPurify.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAllocPurify.c
 
 tclAllocZippy.o: $(GENERIC_DIR)/tclAllocZippy.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAllocZippy.c

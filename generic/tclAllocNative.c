@@ -1,7 +1,8 @@
 /*
- * tclAlloc.c --
+ * tclAllocNative.c --
  *
- *      This is the basic native allocator for Tcl.
+ *      This is the basic native allocator for Tcl, using zippy's per-thread
+ *      free obj lists.
  *
  * Copyright (c) 2013 by Miguel Sofer. All rights reserved.
  *
@@ -9,8 +10,8 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <stdlib.h>
-#include "tclAlloc.h"
+#define OBJQ_ONLY 1
+#include "tclAllocZippy.c"
 
 char *
 TclpAlloc(
@@ -33,20 +34,3 @@ TclpFree(
 {
     free(ptr);
 }
-
-void
-TclXpInitAlloc(void)
-{
-}
-
-void
-TclXpFinalizeAlloc(void)
-{
-}
-
-void
-TclXpFreeAllocCache(
-    void *ptr)
-{
-}
-
