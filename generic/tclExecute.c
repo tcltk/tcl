@@ -1536,10 +1536,10 @@ TclIncrObj(
 #define	initTosPtr	((Tcl_Obj **) &TD->stack[codePtr->maxExceptDepth - 1])
 
 #define capacity2size(cap)						\
-    (sizeof(TEBCdata) + sizeof(void *)*(cap + codePtr->maxExceptDepth - 1))
+    (offsetof(TEBCdata, stack) + sizeof(void *)*(cap + codePtr->maxExceptDepth))
 
 #define size2capacity(s) \
-    (((s - sizeof(TEBCdata))/sizeof(void *)) - codePtr->maxExceptDepth + 1)
+    (((s - offsetof(TEBCdata, stack))/sizeof(void *)) - codePtr->maxExceptDepth)
 
 int
 TclNRExecuteByteCode(
