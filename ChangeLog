@@ -1,3 +1,8 @@
+2013-01-04  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h:      Insure that PURIFY builds cannot exploit the
+	* generic/tclExecute.c:  Tcl stack to hide mem defects.
+
 2013-01-03  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/fconfigure.n, doc/CrtChannel.3: Updated to reflect the fact that
