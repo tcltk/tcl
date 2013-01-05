@@ -260,7 +260,7 @@ VarHashCreateVar(
 
 #if TCL_COMPILE_DEBUG
 #define CHECK_STACK()							\
-    //assert((auxObjList != NULL) || (CURR_DEPTH <= codePtr->maxStackDepth))
+    assert((auxObjList != NULL) || (CURR_DEPTH <= codePtr->maxStackDepth))
 #else
 #define CHECK_STACK()
 #endif
@@ -1470,8 +1470,20 @@ TclIncrObj(
 #define	catchStack	(TD->stack)
 #define	initTosPtr	((Tcl_Obj **) &TD->stack[codePtr->maxExceptDepth - 1])
 
+/*
+ * The execution uses a unified stack: first a TEBCdata, immediately
+ * above it the catch stack, then the execution stack.
+ *
+ * Make sure the catch stack is large enough to hold the maximum number of
+ * catch commands that could ever be executing at the same time (this will
+ * be no more than the exception range array's depth). Make sure the
+ * execution stack is large enough to execute this ByteCode.
+ */
+
+// FIXME! The "+1" should not be necessary, temporary until we fix BC issues
+
 #define capacity2size(cap)						\
-    (offsetof(TEBCdata, stack) + sizeof(void *)*(cap + codePtr->maxExceptDepth))
+    (offsetof(TEBCdata, stack) + sizeof(void *)*(cap + codePtr->maxExceptDepth + 1))
 
 int
 TclNRExecuteByteCode(
@@ -1480,7 +1492,6 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     TEBCdata *TD;
-    unsigned int size = capacity2size(codePtr->maxStackDepth);
     
     if (iPtr->execEnvPtr->rewind) {
 	return TCL_ERROR;
@@ -1490,17 +1501,9 @@ TclNRExecuteByteCode(
 
     /*
      * Reserve the stack, setup the TEBCdataPtr (TD) and CallFrame
-     *
-     * The execution uses a unified stack: first a TEBCdata, immediately
-     * above it the catch stack, then the execution stack.
-     *
-     * Make sure the catch stack is large enough to hold the maximum number of
-     * catch commands that could ever be executing at the same time (this will
-     * be no more than the exception range array's depth). Make sure the
-     * execution stack is large enough to execute this ByteCode.
      */
 
-    TD = ckalloc(size);
+    TD = ckalloc(capacity2size(codePtr->maxStackDepth));
 
     TD->codePtr     = codePtr;
     TD->tosPtr = initTosPtr;
