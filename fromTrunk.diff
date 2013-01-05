@@ -1,5 +1,6 @@
 DELETED  ChangeLog
 ADDED    README.mig-alloc-reform
+ADDED    fromTrunk.diff
 DELETED  generic/tclAlloc.c
 DELETED  generic/tclAssembly.c
 Index: generic/tclBasic.c
@@ -11254,8 +11255,6 @@ Index: generic/tclInterp.c
  	result = Tcl_EvalObjEx(slaveInterp, objPtr, 0);
  	Tcl_DecrRefCount(objPtr);
 
-Index: generic/tclListObj.c
-==================================================================
 Index: generic/tclNamesp.c
 ==================================================================
 --- generic/tclNamesp.c
@@ -12989,8 +12988,6 @@ Index: generic/tclParse.c
      }
      if (tokensLeftPtr != NULL) {
 
-Index: generic/tclPreserve.c
-==================================================================
 Index: generic/tclProc.c
 ==================================================================
 --- generic/tclProc.c
