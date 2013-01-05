@@ -495,16 +495,6 @@ Tcl_CreateInterp(void)
 
     TclInitSubsystems();
 
-    /*
-     * Panic if someone updated the CallFrame structure without also updating
-     * the Tcl_CallFrame structure (or vice versa).
-     */
-
-    if (sizeof(Tcl_CallFrame) < sizeof(CallFrame)) {
-	/*NOTREACHED*/
-	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
-    }
-
     if (cancelTableInitialized == 0) {
 	Tcl_MutexLock(&cancelLock);
 	if (cancelTableInitialized == 0) {
@@ -624,13 +614,11 @@ Tcl_CreateInterp(void)
     }
 
     /*
-     * Initialise the rootCallframe. It cannot be allocated on the stack, as
-     * it has to be in place before TclCreateExecEnv tries to use a variable.
+     * Initialise the rootCallframe.
      */
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
-    framePtr = ckalloc(sizeof(CallFrame));
-    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
+    result = TclPushStackFrame(interp, &framePtr,
 	    (Tcl_Namespace *) iPtr->globalNsPtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	Tcl_Panic("Tcl_CreateInterp: failed to push the root stack frame");
@@ -1476,8 +1464,7 @@ DeleteInterpProc(
     if ((iPtr->framePtr != iPtr->rootFramePtr) && !TclInExit()) {
 	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
     }
-    Tcl_PopCallFrame(interp);
-    ckfree(iPtr->rootFramePtr);
+    TclPopStackFrame(interp);
     iPtr->rootFramePtr = NULL;
     Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
 
@@ -5636,7 +5623,7 @@ TclObjInvokeNamespace(
 				 * or TCL_INVOKE_NO_TRACEBACK. */
 {
     int result;
-    Tcl_CallFrame *framePtr;
+    CallFrame *framePtr;
 
     /*
      * Make the specified namespace the current namespace and invoke the

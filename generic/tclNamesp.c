@@ -278,7 +278,7 @@ int
 Tcl_PushCallFrame(
     Tcl_Interp *interp,		/* Interpreter in which the new call frame is
 				 * to be pushed. */
-    Tcl_CallFrame *callFramePtr,/* Points to a call frame structure to push.
+    CallFrame *framePtr,     /* Points to a call frame structure to push.
 				 * Storage for this has already been allocated
 				 * by the caller; typically this is the
 				 * address of a CallFrame structure allocated
@@ -301,7 +301,6 @@ Tcl_PushCallFrame(
 				 * variables. */
 {
     Interp *iPtr = (Interp *) interp;
-    register CallFrame *framePtr = (CallFrame *) callFramePtr;
     register Namespace *nsPtr;
 
     if (namespacePtr == NULL) {
@@ -450,7 +449,7 @@ int
 TclPushStackFrame(
     Tcl_Interp *interp,		/* Interpreter in which the new call frame is
 				 * to be pushed. */
-    Tcl_CallFrame **framePtrPtr,/* Place to store a pointer to the stack
+    CallFrame **framePtrPtr,/* Place to store a pointer to the stack
 				 * allocated call frame. */
     Tcl_Namespace *namespacePtr,/* Points to the namespace in which the frame
 				 * will execute. If NULL, the interpreter's
@@ -2265,7 +2264,7 @@ TclGetNamespaceForQualName(
 	    if (entryPtr != NULL) {
 		nsPtr = Tcl_GetHashValue(entryPtr);
 	    } else if (flags & TCL_CREATE_NS_IF_UNKNOWN) {
-		Tcl_CallFrame *framePtr;
+		CallFrame *framePtr;
 
 		(void) TclPushStackFrame(interp, &framePtr,
 			(Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 0);
@@ -3274,7 +3273,7 @@ NRNamespaceEvalCmd(
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
     framePtrPtr = &framePtr;
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    result = TclPushStackFrame(interp, framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -3724,7 +3723,7 @@ NRNamespaceInscopeCmd(
 
     framePtrPtr = &framePtr;		/* This is needed to satisfy GCC's
 					 * strict aliasing rules. */
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    result = TclPushStackFrame(interp, framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
     if (result != TCL_OK) {
 	return result;

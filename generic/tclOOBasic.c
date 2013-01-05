@@ -415,7 +415,7 @@ TclOO_Object_Eval(
      * command(s).
      */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    result = TclPushStackFrame(interp, framePtrPtr,
 	    Tcl_GetObjectNamespace(object), 0);
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -706,7 +706,7 @@ TclOO_Object_VarName(
      */
 
     if (iPtr->varFramePtr == NULL) {
-	Tcl_CallFrame *dummyFrame;
+	CallFrame *dummyFrame;
 
 	TclPushStackFrame(interp, &dummyFrame,
 		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context)),0);

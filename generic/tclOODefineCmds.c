@@ -658,7 +658,7 @@ InitDefineContext(
 
     /* framePtrPtr is needed to satisfy GCC 3.3's strict aliasing rules */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    result = TclPushStackFrame(interp, framePtrPtr,
 	    namespacePtr, FRAME_IS_OO_DEFINE);
     if (result != TCL_OK) {
 	return TCL_ERROR;

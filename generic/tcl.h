@@ -905,43 +905,13 @@ typedef struct Tcl_Namespace {
 
 /*
  *----------------------------------------------------------------------------
- * The following structure represents a call frame, or activation record. A
- * call frame defines a naming context for a procedure call: its local scope
- * (for local variables) and its namespace scope (used for non-local
- * variables; often the global :: namespace). A call frame can also define the
- * naming context for a namespace eval or namespace inscope command: the
- * namespace in which the command's code should execute. The Tcl_CallFrame
- * structures exist only while procedures or namespace eval/inscope's are
- * being executed, and provide a Tcl call stack.
+ * DO NOT USE TCL CALL FRAMES!
  *
- * A call frame is initialized and pushed using Tcl_PushCallFrame and popped
- * using Tcl_PopCallFrame. Storage for a Tcl_CallFrame must be provided by the
- * Tcl_PushCallFrame caller, and callers typically allocate them on the C call
- * stack for efficiency. For this reason, Tcl_CallFrame is defined as a
- * structure and not as an opaque token. However, most Tcl_CallFrame fields
- * are hidden since applications should not access them directly; others are
- * declared as "dummyX".
- *
- * WARNING!! The structure definition must be kept consistent with the
- * CallFrame structure in tclInt.h. If you change one, change the other.
+ * The Tcl_CallFrame struct has been retired!
+ * This macro here to cause your compilation to fail and warn you.
  */
 
-typedef struct Tcl_CallFrame {
-    Tcl_Namespace *nsPtr;
-    int dummy1;
-    int dummy2;
-    void *dummy3;
-    void *dummy4;
-    void *dummy5;
-    int dummy6;
-    void *dummy7;
-    void *dummy8;
-    int dummy9;
-    void *dummy10;
-    void *dummy11;
-    void *dummy12;
-    void *dummy13;
-} Tcl_CallFrame;
+#define Tcl_CallFrame DO NOT USE Tcl_CallFrame!
 
 /*
  *----------------------------------------------------------------------------

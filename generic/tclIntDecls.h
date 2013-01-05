@@ -327,8 +327,8 @@ EXTERN int		Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
 EXTERN void		Tcl_PopCallFrame(Tcl_Interp *interp);
 /* 129 */
 EXTERN int		Tcl_PushCallFrame(Tcl_Interp *interp,
-				Tcl_CallFrame *framePtr,
-				Tcl_Namespace *nsPtr, int isProcCallFrame);
+				CallFrame *framePtr, Tcl_Namespace *nsPtr,
+				int isProcCallFrame);
 /* 130 */
 EXTERN int		Tcl_RemoveInterpResolvers(Tcl_Interp *interp,
 				const char *name);
@@ -506,7 +506,7 @@ EXTERN void		TclSetObjNameOfExecutable(Tcl_Obj *name,
 /* Slot 216 is reserved */
 /* 217 */
 EXTERN int		TclPushStackFrame(Tcl_Interp *interp,
-				Tcl_CallFrame **framePtrPtr,
+				CallFrame **framePtrPtr,
 				Tcl_Namespace *namespacePtr,
 				int isProcCallFrame);
 /* 218 */
@@ -725,7 +725,7 @@ typedef struct TclIntStubs {
     void (*tcl_GetVariableFullName) (Tcl_Interp *interp, Tcl_Var variable, Tcl_Obj *objPtr); /* 126 */
     int (*tcl_Import) (Tcl_Interp *interp, Tcl_Namespace *nsPtr, const char *pattern, int allowOverwrite); /* 127 */
     void (*tcl_PopCallFrame) (Tcl_Interp *interp); /* 128 */
-    int (*tcl_PushCallFrame) (Tcl_Interp *interp, Tcl_CallFrame *framePtr, Tcl_Namespace *nsPtr, int isProcCallFrame); /* 129 */
+    int (*tcl_PushCallFrame) (Tcl_Interp *interp, CallFrame *framePtr, Tcl_Namespace *nsPtr, int isProcCallFrame); /* 129 */
     int (*tcl_RemoveInterpResolvers) (Tcl_Interp *interp, const char *name); /* 130 */
     void (*tcl_SetNamespaceResolvers) (Tcl_Namespace *namespacePtr, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 131 */
     int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
@@ -813,7 +813,7 @@ typedef struct TclIntStubs {
     void (*tclSetObjNameOfExecutable) (Tcl_Obj *name, Tcl_Encoding encoding); /* 214 */
     void (*reserved215)(void);
     void (*reserved216)(void);
-    int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
+    int (*tclPushStackFrame) (Tcl_Interp *interp, CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
     void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */
     void (*reserved219)(void);
     void (*reserved220)(void);

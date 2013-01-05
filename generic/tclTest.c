@@ -4636,7 +4636,7 @@ TestgetvarfullnameCmd(
     const char *name, *arg;
     int flags = 0;
     Tcl_Namespace *namespacePtr;
-    Tcl_CallFrame *framePtr;
+    CallFrame *framePtr;
     Tcl_Var variable;
     int result;
 

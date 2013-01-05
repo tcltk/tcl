@@ -1543,7 +1543,7 @@ PushProcCallFrame(
      */
 
     framePtrPtr = &framePtr;
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    result = TclPushStackFrame(interp, (CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr,
 	    (isLambda? (FRAME_IS_PROC|FRAME_IS_LAMBDA) : FRAME_IS_PROC));
     if (result != TCL_OK) {
@@ -1851,7 +1851,7 @@ TclProcCompileProc(
     const char *procName)	/* Name of this procedure. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_CallFrame *framePtr;
+    CallFrame *framePtr;
     ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
 
     /*

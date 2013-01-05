@@ -1075,12 +1075,9 @@ typedef struct AssocData {
  * and its global naming scope (a namespace, perhaps the global :: namespace).
  * A call frame can also define the naming context for a namespace eval or
  * namespace inscope command: the namespace in which the command's code should
- * execute. The Tcl_CallFrame structures exist only while procedures or
+ * execute. The CallFrame structures exist only while procedures or
  * namespace eval/inscope's are being executed, and provide a kind of Tcl call
  * stack.
- *
- * WARNING!! The structure definition must be kept consistent with the
- * Tcl_CallFrame structure in tcl.h. If you change one, change the other.
  */
 
 /*

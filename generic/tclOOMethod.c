@@ -566,7 +566,7 @@ InvokeProcedureMethod(
 	int isFinished;
 
 	result = pmPtr->preCallProc(pmPtr->clientData, interp, context,
-		(Tcl_CallFrame *) fdPtr->framePtr, &isFinished);
+		(CallFrame *) fdPtr->framePtr, &isFinished);
 	if (isFinished || result != TCL_OK) {
 	    /*
 	     * Restore the old cmdPtr so that a subsequent use of [info frame]
@@ -575,8 +575,8 @@ InvokeProcedureMethod(
 
 	    pmPtr->procPtr->cmdPtr = fdPtr->oldCmdPtr;
 
-	    Tcl_PopCallFrame(interp);
-	    ckfree(fdPtr->framePtr);
+	    TclPopStackFrame(interp);
+	    //ckfree(fdPtr->framePtr);
 	    if (--pmPtr->refCount < 1) {
 		DeleteProcedureMethodRecord(pmPtr);
 	    }
@@ -730,7 +730,7 @@ PushMethodCallFrame(
      * This operation may fail.
      */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    result = TclPushStackFrame(interp, (CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC|FRAME_IS_METHOD);
     if (result != TCL_OK) {
 	goto failureReturn;

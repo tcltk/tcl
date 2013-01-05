@@ -519,7 +519,7 @@ declare 128 {
     void Tcl_PopCallFrame(Tcl_Interp *interp)
 }
 declare 129 {
-    int Tcl_PushCallFrame(Tcl_Interp *interp, Tcl_CallFrame *framePtr,
+    int Tcl_PushCallFrame(Tcl_Interp *interp, CallFrame *framePtr,
 	    Tcl_Namespace *nsPtr, int isProcCallFrame)
 }
 declare 130 {
@@ -877,7 +877,7 @@ declare 214 {
 #    void TclStackFree(Tcl_Interp *interp, void *freePtr)
 #}
 declare 217 {
-    int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
+    int TclPushStackFrame(Tcl_Interp *interp, CallFrame **framePtrPtr,
             Tcl_Namespace *namespacePtr, int isProcCallFrame)
 }
 declare 218 {

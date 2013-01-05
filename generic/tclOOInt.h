@@ -66,7 +66,7 @@ typedef struct Method {
  */
 
 typedef int (TclOO_PreCallProc)(ClientData clientData, Tcl_Interp *interp,
-	Tcl_ObjectContext context, Tcl_CallFrame *framePtr, int *isFinished);
+	Tcl_ObjectContext context, CallFrame *framePtr, int *isFinished);
 typedef int (TclOO_PostCallProc)(ClientData clientData, Tcl_Interp *interp,
 	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr, int result);
 typedef void (TclOO_PmCDDeleteProc)(ClientData clientData);
