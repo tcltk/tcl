@@ -390,19 +390,6 @@ TclInitObjSubsystem(void)
     Tcl_RegisterObjType(&tclWideIntType);
 #endif
 
-#ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&tclObjMutex);
-    tclObjsAlloced = 0;
-    tclObjsFreed = 0;
-    {
-	int i;
-
-	for (i=0 ; i<TCL_MAX_SHARED_OBJ_STATS ; i++) {
-	    tclObjsShared[i] = 0;
-	}
-    }
-    Tcl_MutexUnlock(&tclObjMutex);
-#endif
 }
 
 /*
@@ -3369,6 +3356,8 @@ Tcl_DbIsShared(
 # endif /* TCL_THREADS */
 #endif /* TCL_MEM_DEBUG */
 
+#if 0
+    // FIXME: reenable
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
     if ((objPtr)->refCount <= 1) {
@@ -3380,7 +3369,7 @@ Tcl_DbIsShared(
     }
     Tcl_MutexUnlock(&tclObjMutex);
 #endif /* TCL_COMPILE_STATS */
-
+#endif
     return ((objPtr)->refCount > 1);
 }
 
