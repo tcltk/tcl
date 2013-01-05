@@ -260,7 +260,7 @@ VarHashCreateVar(
 
 #if TCL_COMPILE_DEBUG
 #define CHECK_STACK()							\
-    assert((auxObjList != NULL) || (CURR_DEPTH <= codePtr->maxStackDepth))
+    //assert((auxObjList != NULL) || (CURR_DEPTH <= codePtr->maxStackDepth))
 #else
 #define CHECK_STACK()
 #endif
@@ -1473,9 +1473,6 @@ TclIncrObj(
 #define capacity2size(cap)						\
     (offsetof(TEBCdata, stack) + sizeof(void *)*(cap + codePtr->maxExceptDepth))
 
-#define size2capacity(s) \
-    (((s - offsetof(TEBCdata, stack))/sizeof(void *)) - codePtr->maxExceptDepth)
-
 int
 TclNRExecuteByteCode(
     Tcl_Interp *interp,		/* Token for command interpreter. */
@@ -2283,11 +2280,7 @@ TEBCresume(
 
 	    depth = tosPtr - initTosPtr;
 	    TD = ckrealloc(TD, size);
-	    if (size == UINT_MAX) {
-		TD->capacity = reqWords;
-	    } else {
-		TD->capacity = size2capacity(size);
-	    }
+	    TD->capacity = reqWords;
 	    tosPtr = initTosPtr + depth;
 	}
 
