@@ -79,7 +79,7 @@ TclInitStubs(
 	return NULL;
     }
 
-    if (iPtr->legacyResult) {
+    if (version) {
 	actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
 	if (actualVersion == NULL) {
 	    return NULL;

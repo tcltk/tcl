@@ -2234,8 +2234,8 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 TCLSOAPI Tcl_Interp *Tcl_FindExecutable(const void *argv0);
 TCLSOAPI void Tcl_MainEx(int argc, char **argv,
 	Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-#define Tcl_FindExecutable(argv0) Tcl_InitStubs( \
-	(Tcl_FindExecutable)(argv0), TCL_VERSION, 0)
+#define Tcl_FindExecutable(argv0) TclInitStubs( \
+	(Tcl_FindExecutable)(argv0), NULL, 0, TCL_VERSION, TCL_STUB_MAGIC)
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
