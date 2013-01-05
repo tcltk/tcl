@@ -711,8 +711,10 @@ typedef struct ByteCode {
 #define INST_ARRAY_MAKE_STK		161
 #define INST_ARRAY_MAKE_IMM		162
 
+#define INST_INVOKE_REPLACE		163
+
 /* The last opcode */
-#define LAST_INST_OPCODE		162
+#define LAST_INST_OPCODE		163
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

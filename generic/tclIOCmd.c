@@ -1929,25 +1929,25 @@ TclInitChanCmd(
      * function at the moment.
      */
     static const EnsembleImplMap initMap[] = {
-	{"blocked",	Tcl_FblockedObjCmd, NULL, NULL, NULL, 0},
-	{"close",	Tcl_CloseObjCmd, NULL, NULL, NULL, 0},
-	{"copy",	Tcl_FcopyObjCmd, NULL, NULL, NULL, 0},
-	{"create",	TclChanCreateObjCmd, NULL, NULL, NULL, 0},		/* TIP #219 */
-	{"eof",		Tcl_EofObjCmd, NULL, NULL, NULL, 0},
-	{"event",	Tcl_FileEventObjCmd, NULL, NULL, NULL, 0},
-	{"flush",	Tcl_FlushObjCmd, NULL, NULL, NULL, 0},
-	{"gets",	Tcl_GetsObjCmd, NULL, NULL, NULL, 0},
-	{"names",	TclChannelNamesCmd, NULL, NULL, NULL, 0},
-	{"pending",	ChanPendingObjCmd, NULL, NULL, NULL, 0},		/* TIP #287 */
-	{"pop",		TclChanPopObjCmd, NULL, NULL, NULL, 0},		/* TIP #230 */
-	{"postevent",	TclChanPostEventObjCmd, NULL, NULL, NULL, 0},	/* TIP #219 */
-	{"push",	TclChanPushObjCmd, NULL, NULL, NULL, 0},		/* TIP #230 */
-	{"puts",	Tcl_PutsObjCmd, NULL, NULL, NULL, 0},
-	{"read",	Tcl_ReadObjCmd, NULL, NULL, NULL, 0},
-	{"seek",	Tcl_SeekObjCmd, NULL, NULL, NULL, 0},
-	{"pipe",	ChanPipeObjCmd, NULL, NULL, NULL, 0},		/* TIP #304 */
-	{"tell",	Tcl_TellObjCmd, NULL, NULL, NULL, 0},
-	{"truncate",	ChanTruncateObjCmd, NULL, NULL, NULL, 0},		/* TIP #208 */
+	{"blocked",	Tcl_FblockedObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"close",	Tcl_CloseObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"copy",	Tcl_FcopyObjCmd,	NULL, NULL, NULL, 0},
+	{"create",	TclChanCreateObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #219 */
+	{"eof",		Tcl_EofObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"event",	Tcl_FileEventObjCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
+	{"flush",	Tcl_FlushObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"gets",	Tcl_GetsObjCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"names",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+	{"pending",	ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #287 */
+	{"pipe",	ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, NULL, 0},		/* TIP #304 */
+	{"pop",		TclChanPopObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},		/* TIP #230 */
+	{"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	/* TIP #219 */
+	{"push",	TclChanPushObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #230 */
+	{"puts",	Tcl_PutsObjCmd,		NULL, NULL, NULL, 0},
+	{"read",	Tcl_ReadObjCmd,		NULL, NULL, NULL, 0},
+	{"seek",	Tcl_SeekObjCmd,		TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
+	{"tell",	Tcl_TellObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},		/* TIP #208 */
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     static const char *const extras[] = {
