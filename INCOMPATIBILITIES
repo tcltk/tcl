@@ -16,10 +16,15 @@ GONE FOR GOOD (or so I hope)
 * There is no more direct evaluation, everything goes through bytecodes
   (except for canonical lists). TCL_EVAL_DIRECT is simply ignored.
 
+* [case]
+
+* parts of the 8.6 NRE public API (most of it will be recreated)
+
 
 GONE FOR NOW (or so I hope)
 ------------
 
 * TIP280 and [info frame] do not exist anymore. Some changes in tclInt.decls.
 
-* The complete Tcl_CmdInfo manipulation
+* The complete Tcl_CmdInfo manipulation. Functionality will be *partially*
+  reenabled, minus the ability to call *objProc "safely" (API will be provided)

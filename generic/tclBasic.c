@@ -728,44 +728,22 @@ Tcl_CreateInterp(void)
     TclInvalidateStringRep(iPtr->cmdSourcePtr);
 
     /*
-     * Create the core commands. Do it here, rather than calling
-     * Tcl_CreateCommand, because it's faster (there's no need to check for a
-     * pre-existing command by the same name). If a command has a Tcl_CmdProc
-     * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
-     * TclInvokeStringCommand. This is an object-based wrapper function that
-     * extracts strings, calls the string function, and creates an object for
-     * the result. Similarly, if a command has a Tcl_ObjCmdProc but no
-     * Tcl_CmdProc, set the Tcl_CmdProc to TclInvokeObjectCommand.
+     * Create the core commands by calling Tcl_CreateCommand.
+     *
+     * FIXME! do it directly for faster interp creation
      */
 
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
+        Command *cmdPtr;
 	if ((cmdInfoPtr->objProc == NULL)
 		&& (cmdInfoPtr->compileProc == NULL)
 		&& (cmdInfoPtr->nreProc == NULL)) {
 	    Tcl_Panic("builtin command with NULL object command proc and a NULL compile proc");
 	}
 
-	hPtr = Tcl_CreateHashEntry(&iPtr->globalNsPtr->cmdTable,
-		cmdInfoPtr->name, &isNew);
-	if (isNew) {
-	    cmdPtr = ckalloc(sizeof(Command));
-	    cmdPtr->hPtr = hPtr;
-	    cmdPtr->nsPtr = iPtr->globalNsPtr;
-	    cmdPtr->refCount = 1;
-	    cmdPtr->cmdEpoch = 0;
-	    cmdPtr->compileProc = cmdInfoPtr->compileProc;
-	    cmdPtr->proc = TclInvokeObjectCommand;
-	    cmdPtr->clientData = cmdPtr;
-	    cmdPtr->objProc = cmdInfoPtr->objProc;
-	    cmdPtr->objClientData = NULL;
-	    cmdPtr->deleteProc = NULL;
-	    cmdPtr->deleteData = NULL;
-	    cmdPtr->flags = 0;
-	    cmdPtr->importRefPtr = NULL;
-	    cmdPtr->tracePtr = NULL;
-	    cmdPtr->nreProc = cmdInfoPtr->nreProc;
-	    Tcl_SetHashValue(hPtr, cmdPtr);
-	}
+        cmdPtr = (Command *) Tcl_NRCreateCommand(interp, cmdInfoPtr->name, cmdInfoPtr->objProc,
+                cmdInfoPtr->nreProc, NULL, NULL);
+        cmdPtr->compileProc = cmdInfoPtr->compileProc;
     }
 
     /*
