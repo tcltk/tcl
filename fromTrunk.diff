@@ -7630,7 +7630,21 @@ Index: generic/tclExecute.c
  #define PUSH_TAUX_OBJ(objPtr) \
      do {							\
  	objPtr->internalRep.ptrAndLongRep.ptr = auxObjList;	\
-@@ -309,24 +310,10 @@
+@@ -257,12 +258,11 @@
+ 
+ /* Verify the stack depth, only when no expansion is in progress */
+ 
+ #if TCL_COMPILE_DEBUG
+ #define CHECK_STACK()							\
+-    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, \
+-	    /*checkStack*/ auxObjList == NULL)
++    assert((auxObjList != NULL) || (CURR_DEPTH <= codePtr->maxStackDepth))
+ #else
+ #define CHECK_STACK()
+ #endif
+ 
+ #define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling)	\
+@@ -310,24 +310,10 @@
  	} else {						\
  	    goto cleanupV;					\
  	}							\
@@ -7655,10 +7669,14 @@ Index: generic/tclExecute.c
   * increments the object's ref count since it makes the stack have another
   * reference pointing to the object. However, POP_OBJECT does not decrement
   * the ref count. This is because the stack may hold the only reference to the
-@@ -697,11 +684,10 @@
+@@ -695,14 +681,13 @@
+ static const char *	GetOpcodeName(const unsigned char *pc);
+ static void		PrintByteCodeInfo(ByteCode *codePtr);
+ static const char *	StringForResultCode(int result);
  static void		ValidatePcAndStackTop(ByteCode *codePtr,
  			    const unsigned char *pc, int stackTop,
- 			    int stackLowerBound, int checkStack);
+-			    int checkStack);
++			    int stackLowerBound, int checkStack);
  #endif /* TCL_COMPILE_DEBUG */
  static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 -static void		DeleteExecStack(ExecStack *esPtr);
@@ -7667,7 +7685,7 @@ Index: generic/tclExecute.c
  MODULE_SCOPE int	TclCompareTwoNumbers(Tcl_Obj *valuePtr,
  			    Tcl_Obj *value2Ptr);
  static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
-@@ -713,20 +699,14 @@
+@@ -714,20 +699,14 @@
  static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
  			    int catchOnly, ByteCode *codePtr);
  static const char *	GetSrcInfoForPc(const unsigned char *pc,
@@ -7688,7 +7706,7 @@ Index: generic/tclExecute.c
  
  static Tcl_NRPostProc   TEBCresume;
  
-@@ -790,10 +770,39 @@
+@@ -791,10 +770,39 @@
      dictPtr = objPtr->internalRep.twoPtrValue.ptr2;
      TclDecrRefCount(dictPtr);
  
@@ -7728,7 +7746,7 @@ Index: generic/tclExecute.c
   *----------------------------------------------------------------------
   *
   * InitByteCodeExecution --
-@@ -859,29 +868,20 @@
+@@ -860,29 +868,20 @@
  				 * environment is being created. */
      int size)			/* The initial stack size, in number of words
  				 * [sizeof(Tcl_Obj*)] */
@@ -7758,7 +7776,7 @@ Index: generic/tclExecute.c
  	TclInitAuxDataTypeTable();
  	InitByteCodeExecution(interp);
  	execInitialized = 1;
-@@ -906,48 +906,20 @@
+@@ -907,48 +906,20 @@
   *	stack) is freed.
   *
   *----------------------------------------------------------------------
@@ -7807,7 +7825,7 @@ Index: generic/tclExecute.c
      if (eePtr->callbackPtr && !cachedInExit) {
  	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
      }
-@@ -981,355 +953,10 @@
+@@ -982,355 +953,10 @@
      Tcl_MutexLock(&execMutex);
      execInitialized = 0;
      Tcl_MutexUnlock(&execMutex);
@@ -8163,7 +8181,7 @@ Index: generic/tclExecute.c
   *--------------------------------------------------------------
   *
   * Tcl_ExprObj --
-@@ -1498,18 +1125,14 @@
+@@ -1499,18 +1125,14 @@
  		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
  	    FreeExprCodeInternalRep(objPtr);
  	}
@@ -8183,7 +8201,7 @@ Index: generic/tclExecute.c
  	/*
  	 * Successful compilation. If the expression yielded no instructions,
  	 * push an zero object as the expression's result.
-@@ -1629,13 +1252,11 @@
+@@ -1630,13 +1252,11 @@
   */
  
  ByteCode *
@@ -8198,7 +8216,7 @@ Index: generic/tclExecute.c
      register ByteCode *codePtr;	/* Tcl Internal type of bytecode. */
      Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
  
-@@ -1685,114 +1306,17 @@
+@@ -1686,114 +1306,17 @@
  	if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED) &&
  		(codePtr->procPtr == NULL) &&
  		(codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)){
@@ -8314,7 +8332,7 @@ Index: generic/tclExecute.c
  	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
  	codePtr->localCachePtr->refCount++;
      }
-@@ -1941,73 +1465,56 @@
+@@ -1942,73 +1465,56 @@
   * Side effects:
   *	Almost certainly, depending on the ByteCode's instructions.
   *
@@ -8411,7 +8429,7 @@ Index: generic/tclExecute.c
      iPtr->stats.numExecutions++;
  #endif
  
-@@ -2068,15 +1575,15 @@
+@@ -2069,15 +1575,15 @@
       * used too frequently
       */
  
@@ -8430,7 +8448,7 @@ Index: generic/tclExecute.c
       * Globals: variables that store state, must remain valid at all times.
       */
  
-@@ -2108,11 +1615,10 @@
+@@ -2109,11 +1615,10 @@
  #endif
  
  #ifdef TCL_COMPILE_DEBUG
@@ -8442,7 +8460,7 @@ Index: generic/tclExecute.c
  #ifdef TCL_COMPILE_DEBUG
      if (!data[1] && (tclTraceExec >= 2)) {
  	PrintByteCodeInfo(codePtr);
-@@ -2123,21 +1629,16 @@
+@@ -2124,21 +1629,16 @@
  
      if (data[1] /* resume from invocation */) {
  	if (iPtr->execEnvPtr->rewind) {
@@ -8465,6 +8483,20 @@ Index: generic/tclExecute.c
  	    if (*pc == INST_POP) {
  		NEXT_INST_V(1, cleanup, 0);
  	    }
+@@ -2253,11 +1753,12 @@
+ #ifdef TCL_COMPILE_DEBUG
+     /*
+      * Skip the stack depth check if an expansion is in progress.
+      */
+ 
+-    CHECK_STACK();
++    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, 0,
++	    /*checkStack*/ auxObjList == NULL);
+     if (traceInstructions) {
+ 	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
+ 	TclPrintInstruction(codePtr, pc);
+ 	fflush(stdout);
+     }
 @@ -2271,33 +1772,32 @@
       * Check for asynchronous handlers [Bug 746722]; we do the check every
       * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-1).
@@ -9524,7 +9556,46 @@ Index: generic/tclExecute.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -8699,80 +8115,10 @@
+@@ -8569,14 +7985,15 @@
+     const unsigned char *pc,	/* Points to first byte of a bytecode
+ 				 * instruction. The program counter. */
+     int stackTop,		/* Current stack top. Must be between
+ 				 * stackLowerBound and stackUpperBound
+ 				 * (inclusive). */
++    int stackLowerBound,	/* Smallest legal value for stackTop. */
+     int checkStack)		/* 0 if the stack depth check should be
+ 				 * skipped. */
+ {
+-    int stackUpperBound = codePtr->maxStackDepth;
++    int stackUpperBound = stackLowerBound + codePtr->maxStackDepth;
+ 				/* Greatest legal value for stackTop. */
+     unsigned relativePc = (unsigned) (pc - codePtr->codeStart);
+     unsigned long codeStart = (unsigned long) codePtr->codeStart;
+     unsigned long codeEnd = (unsigned long)
+ 	    (codePtr->codeStart + codePtr->numCodeBytes);
+@@ -8590,17 +8007,17 @@
+     if ((unsigned) opCode > LAST_INST_OPCODE) {
+ 	fprintf(stderr, "\nBad opcode %d at pc %u in TclNRExecuteByteCode\n",
+ 		(unsigned) opCode, relativePc);
+ 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
+     }
+-    if (checkStack && 
+-	    ((stackTop < 0) || (stackTop > stackUpperBound))) {
++    if (checkStack &&
++	    ((stackTop < stackLowerBound) || (stackTop > stackUpperBound))) {
+ 	int numChars;
+ 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL);
+ 
+-	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min 0, max %i)",
+-		stackTop, relativePc, stackUpperBound);
++	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min %i, max %i)",
++		stackTop, relativePc, stackLowerBound, stackUpperBound);
+ 	if (cmd != NULL) {
+ 	    Tcl_Obj *message;
+ 
+ 	    TclNewLiteralStringObj(message, "\n executing ");
+ 	    Tcl_IncrRefCount(message);
+@@ -8698,80 +8115,10 @@
   *	The CmdFrame at *cfPtr is updated.
   *
   *----------------------------------------------------------------------
