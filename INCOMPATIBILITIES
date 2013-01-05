@@ -1,0 +1,13 @@
+This file documents the incompatibilities to Tcl8.6 in the published API,
+as seen by scripts, tcl.h, tcl.decls and tclInt.decls. Other changes in
+tclInt.h are not listed.
+
+* TIP280 and [info frame] do not exist anymore. Some changes in tclInt.decls.
+
+* compile flags USE_TCLALLOC and USE_THREAD_ALLOC are ignored
+
+* Tcl_CallFrame is gone (was in tcl.h!); some CallFrame manips (push, pop)
+  are gone from tclInt.decls (more to come)
+
+* allocator API is gone from tclInt.decls: no more obj or stack allocation
+  accessible from outside,TclpAlloc and friends are gone too

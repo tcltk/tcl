@@ -1,7 +1,64 @@
-ADDED    COMMIT
 DELETED  ChangeLog
+ADDED    INCOMPATIBILITIES
 ADDED    README.mig-alloc-reform
 ADDED    fromTrunk.diff
+Index: generic/tcl.h
+==================================================================
+--- generic/tcl.h
++++ generic/tcl.h
+@@ -903,47 +903,17 @@
+ 				 * namespace. */
+ } Tcl_Namespace;
+ 
+ /*
+  *----------------------------------------------------------------------------
+- * The following structure represents a call frame, or activation record. A
+- * call frame defines a naming context for a procedure call: its local scope
+- * (for local variables) and its namespace scope (used for non-local
+- * variables; often the global :: namespace). A call frame can also define the
+- * naming context for a namespace eval or namespace inscope command: the
+- * namespace in which the command's code should execute. The Tcl_CallFrame
+- * structures exist only while procedures or namespace eval/inscope's are
+- * being executed, and provide a Tcl call stack.
++ * DO NOT USE TCL CALL FRAMES!
+  *
+- * A call frame is initialized and pushed using Tcl_PushCallFrame and popped
+- * using Tcl_PopCallFrame. Storage for a Tcl_CallFrame must be provided by the
+- * Tcl_PushCallFrame caller, and callers typically allocate them on the C call
+- * stack for efficiency. For this reason, Tcl_CallFrame is defined as a
+- * structure and not as an opaque token. However, most Tcl_CallFrame fields
+- * are hidden since applications should not access them directly; others are
+- * declared as "dummyX".
+- *
+- * WARNING!! The structure definition must be kept consistent with the
+- * CallFrame structure in tclInt.h. If you change one, change the other.
++ * The Tcl_CallFrame struct has been retired!
++ * This macro here to cause your compilation to fail and warn you.
+  */
+ 
+-typedef struct Tcl_CallFrame {
+-    Tcl_Namespace *nsPtr;
+-    int dummy1;
+-    int dummy2;
+-    void *dummy3;
+-    void *dummy4;
+-    void *dummy5;
+-    int dummy6;
+-    void *dummy7;
+-    void *dummy8;
+-    int dummy9;
+-    void *dummy10;
+-    void *dummy11;
+-    void *dummy12;
+-    void *dummy13;
+-} Tcl_CallFrame;
++#define Tcl_CallFrame DO NOT USE Tcl_CallFrame!
+ 
+ /*
+  *----------------------------------------------------------------------------
+  * Information about commands that is returned by Tcl_GetCommandInfo and
+  * passed to Tcl_SetCommandInfo. objProc is an objc/objv object-based command
+
 DELETED  generic/tclAlloc.c
 DELETED  generic/tclAssembly.c
 Index: generic/tclBasic.c
@@ -66,7 +123,28 @@ Index: generic/tclBasic.c
   * Magical counts for the number of arguments accepted by a coroutine command
   * after particular kinds of [yield].
   */
-@@ -515,26 +536,10 @@
+@@ -472,20 +493,10 @@
+     CallFrame *framePtr;
+     int result;
+ 
+     TclInitSubsystems();
+ 
+-    /*
+-     * Panic if someone updated the CallFrame structure without also updating
+-     * the Tcl_CallFrame structure (or vice versa).
+-     */
+-
+-    if (sizeof(Tcl_CallFrame) < sizeof(CallFrame)) {
+-	/*NOTREACHED*/
+-	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
+-    }
+-
+     if (cancelTableInitialized == 0) {
+ 	Tcl_MutexLock(&cancelLock);
+ 	if (cancelTableInitialized == 0) {
+ 	    Tcl_InitHashTable(&cancelTable, TCL_ONE_WORD_KEYS);
+ 	    cancelTableInitialized = 1;
+@@ -515,26 +526,10 @@
      iPtr->numLevels = 0;
      iPtr->maxNestingDepth = MAX_NESTING_DEPTH;
      iPtr->framePtr = NULL;	/* Initialise as soon as :: is available */
@@ -93,7 +171,27 @@ Index: generic/tclBasic.c
      iPtr->returnOpts = NULL;
      iPtr->errorInfo = NULL;
      TclNewLiteralStringObj(iPtr->eiVar, "::errorInfo");
-@@ -726,19 +731,16 @@
+@@ -617,17 +612,15 @@
+     if (iPtr->globalNsPtr == NULL) {
+ 	Tcl_Panic("Tcl_CreateInterp: can't create global namespace");
+     }
+ 
+     /*
+-     * Initialise the rootCallframe. It cannot be allocated on the stack, as
+-     * it has to be in place before TclCreateExecEnv tries to use a variable.
++     * Initialise the rootCallframe.
+      */
+ 
+     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+-    framePtr = ckalloc(sizeof(CallFrame));
+-    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
++    result = TclPushStackFrame(interp, &framePtr,
+ 	    (Tcl_Namespace *) iPtr->globalNsPtr, /*isProcCallFrame*/ 0);
+     if (result != TCL_OK) {
+ 	Tcl_Panic("Tcl_CreateInterp: failed to push the root stack frame");
+     }
+     framePtr->objc = 0;
+@@ -726,19 +719,16 @@
      /*
       * Initialise the thread-specific data ekeko. Note that the thread's alloc
       * cache was already initialised by the call to alloc the interp struct.
@@ -116,7 +214,7 @@ Index: generic/tclBasic.c
       * Tcl_CreateCommand, because it's faster (there's no need to check for a
       * pre-existing command by the same name). If a command has a Tcl_CmdProc
       * but no Tcl_ObjCmdProc, set the Tcl_ObjCmdProc to
-@@ -822,16 +824,10 @@
+@@ -822,16 +812,10 @@
      Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
  	    Tcl_DisassembleObjCmd, NULL, NULL);
      Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
@@ -133,7 +231,7 @@ Index: generic/tclBasic.c
  
  #ifdef USE_DTRACE
      /*
-@@ -1346,11 +1342,10 @@
+@@ -1346,11 +1330,10 @@
      Interp *iPtr = (Interp *) interp;
      Tcl_HashEntry *hPtr;
      Tcl_HashSearch search;
@@ -145,7 +243,21 @@ Index: generic/tclBasic.c
       * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
  	 * unless we are exiting.
       */
-@@ -1545,103 +1540,19 @@
+@@ -1479,12 +1462,11 @@
+      */
+ 
+     if ((iPtr->framePtr != iPtr->rootFramePtr) && !TclInExit()) {
+ 	Tcl_Panic("DeleteInterpProc: popping rootCallFrame with other frames on top");
+     }
+-    Tcl_PopCallFrame(interp);
+-    ckfree(iPtr->rootFramePtr);
++    TclPopStackFrame(interp);
+     iPtr->rootFramePtr = NULL;
+     Tcl_DeleteNamespace((Tcl_Namespace *) iPtr->globalNsPtr);
+ 
+     /*
+      * Free up the result *after* deleting variables, since variable deletion
+@@ -1545,103 +1527,19 @@
       * interpreter.
       */
  
@@ -251,7 +363,7 @@ Index: generic/tclBasic.c
  }
  
  /*
-@@ -2359,12 +2270,11 @@
+@@ -2359,12 +2257,11 @@
      register int objc,		/* Number of arguments. */
      Tcl_Obj *const objv[])	/* Argument objects. */
  {
@@ -265,7 +377,7 @@ Index: generic/tclBasic.c
  	argv[i] = Tcl_GetString(objv[i]);
      }
      argv[objc] = 0;
-@@ -2373,11 +2283,11 @@
+@@ -2373,11 +2270,11 @@
       * Invoke the command's string-based Tcl_CmdProc.
       */
  
@@ -278,7 +390,7 @@ Index: generic/tclBasic.c
  
  /*
   *----------------------------------------------------------------------
-@@ -2408,12 +2318,11 @@
+@@ -2408,12 +2305,11 @@
      register const char **argv)	/* Argument strings. */
  {
      Command *cmdPtr = clientData;
@@ -292,7 +404,7 @@ Index: generic/tclBasic.c
  	length = strlen(argv[i]);
  	TclNewStringObj(objPtr, argv[i], length);
  	Tcl_IncrRefCount(objPtr);
-@@ -2445,11 +2354,11 @@
+@@ -2445,11 +2341,11 @@
  
      for (i = 0; i < argc; i++) {
  	objPtr = objv[i];
@@ -305,7 +417,7 @@ Index: generic/tclBasic.c
  
  /*
   *----------------------------------------------------------------------
-@@ -3360,38 +3269,30 @@
+@@ -3360,38 +3256,30 @@
      Interp *iPtr,
      int objc,
      Tcl_Obj *const objv[],
@@ -364,7 +476,7 @@ Index: generic/tclBasic.c
      return objPtr;
  }
  
-@@ -4256,11 +4157,12 @@
+@@ -4256,11 +4144,12 @@
  	}
  	if (result != TCL_OK) {
  	    return result;
@@ -378,7 +490,7 @@ Index: generic/tclBasic.c
      if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
  	const char *a[10];
  	int i = 0;
-@@ -4269,18 +4171,10 @@
+@@ -4269,18 +4158,10 @@
  	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
  	}
  	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
@@ -397,7 +509,7 @@ Index: generic/tclBasic.c
      }
      if (TCL_DTRACE_CMD_ENTRY_ENABLED()) {
  	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
-@@ -4576,11 +4470,11 @@
+@@ -4576,11 +4457,11 @@
       */
  
      Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
@@ -410,7 +522,7 @@ Index: generic/tclBasic.c
       * Copy command prefix from unknown handler and add on the real command's
       * full argument list. Note that we only use memcpy() once because we have
       * to increment the reference count of all the handler arguments anyway.
-@@ -4615,11 +4509,11 @@
+@@ -4615,11 +4496,11 @@
  	 */
  
  	for (i = 0; i < handlerObjc; ++i) {
@@ -423,7 +535,7 @@ Index: generic/tclBasic.c
  
      if (lookupNsPtr) {
  	savedNsPtr = varFramePtr->nsPtr;
-@@ -4653,11 +4547,11 @@
+@@ -4653,11 +4534,11 @@
       */
  
      for (i = 0; i < objc; ++i) {
@@ -436,7 +548,7 @@ Index: generic/tclBasic.c
  }
  
  static int
-@@ -4816,12 +4710,11 @@
+@@ -4816,12 +4697,11 @@
      Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
  				 * evaluate and concatenate. */
      int count)			/* Number of tokens to consider at tokenPtr.
@@ -450,7 +562,7 @@ Index: generic/tclBasic.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -4885,11 +4778,10 @@
+@@ -4885,11 +4765,10 @@
   *	TCL_ERROR. A result or error message is left in interp's result.
   *
   * Side effects:
@@ -462,7 +574,7 @@ Index: generic/tclBasic.c
  
  int
  Tcl_EvalEx(
-@@ -4901,48 +4793,15 @@
+@@ -4901,48 +4780,15 @@
  				 * first null character. */
      int flags)			/* Collection of OR-ed bits that control the
  				 * evaluation of the script. Only
@@ -512,7 +624,7 @@ Index: generic/tclBasic.c
      CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
  				 * TCL_EVAL_GLOBAL was set. */
      int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-@@ -4950,33 +4809,14 @@
+@@ -4950,33 +4796,14 @@
      unsigned int i, objectsUsed = 0;
  				/* These variables keep track of how much
  				 * state has been allocated while evaluating
@@ -549,7 +661,7 @@ Index: generic/tclBasic.c
  	numBytes = strlen(script);
      }
      Tcl_ResetResult(interp);
-@@ -4990,110 +4830,23 @@
+@@ -4990,110 +4817,23 @@
       * Each iteration through the following loop parses the next command from
       * the script and then executes it.
       */
@@ -660,7 +772,7 @@ Index: generic/tclBasic.c
  
  	    /*
  	     * Generate an array of objects for the words of the command.
-@@ -5100,43 +4853,19 @@
+@@ -5100,43 +4840,19 @@
  	     */
  
  	    if (numWords > minObjs) {
@@ -705,7 +817,7 @@ Index: generic/tclBasic.c
  
  		if (code != TCL_OK) {
  		    break;
-@@ -5165,33 +4894,26 @@
+@@ -5165,33 +4881,26 @@
  		} else {
  		    expand[objectsUsed] = 0;
  		    objectsNeeded++;
@@ -739,7 +851,7 @@ Index: generic/tclBasic.c
  		objectsUsed = 0;
  		while (wordIdx--) {
  		    if (expand[wordIdx]) {
-@@ -5200,58 +4922,39 @@
+@@ -5200,58 +4909,39 @@
  
  			Tcl_ListObjGetElements(NULL, temp, &numElements,
  				&elements);
@@ -805,7 +917,7 @@ Index: generic/tclBasic.c
  		goto error;
  	    }
  	    for (i = 0; i < objectsUsed; i++) {
-@@ -5259,12 +4962,10 @@
+@@ -5259,12 +4949,10 @@
  	    }
  	    objectsUsed = 0;
  	    if (objvSpace != stackObjArray) {
@@ -818,7 +930,7 @@ Index: generic/tclBasic.c
  	    /*
  	     * Free expand separately since objvSpace could have been
  	     * reallocated above.
-@@ -5276,19 +4977,15 @@
+@@ -5276,19 +4964,15 @@
  	    }
  	}
  
@@ -838,7 +950,7 @@ Index: generic/tclBasic.c
      } while (bytesLeft > 0);
      iPtr->varFramePtr = savedVarFramePtr;
      code = TCL_OK;
-@@ -5335,463 +5032,22 @@
+@@ -5335,463 +5019,22 @@
      if (gotParse) {
  	Tcl_FreeParse(parsePtr);
      }
@@ -1307,7 +1419,7 @@ Index: generic/tclBasic.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -5883,11 +5139,10 @@
+@@ -5883,11 +5126,10 @@
   * Side effects:
   *	The object is converted, if necessary, to a ByteCode object that holds
   *	the bytecode instructions for the commands. Executing the commands
@@ -1319,7 +1431,7 @@ Index: generic/tclBasic.c
  
  int
  Tcl_EvalObjEx(
-@@ -5897,43 +5152,26 @@
+@@ -5897,43 +5139,26 @@
  				 * execute. */
      int flags)			/* Collection of OR-ed bits that control the
  				 * evaluation of the script. Supported values
@@ -1365,7 +1477,7 @@ Index: generic/tclBasic.c
      int result;
  
      /*
-@@ -5942,11 +5180,10 @@
+@@ -5942,11 +5167,10 @@
       * finally direct evaluation. Precisely one of these blocks will be run.
       */
  
@@ -1377,7 +1489,7 @@ Index: generic/tclBasic.c
  
  	/*
  	 * Pure List Optimization (no string representation). In this case, we
-@@ -5976,57 +5213,20 @@
+@@ -5976,57 +5200,20 @@
  	Tcl_IncrRefCount(objPtr);
  	listPtr = TclListObjCopy(interp, objPtr);
  	Tcl_IncrRefCount(listPtr);
@@ -1436,7 +1548,7 @@ Index: generic/tclBasic.c
  	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
  	ByteCode *codePtr;
  	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
-@@ -6039,11 +5239,11 @@
+@@ -6039,11 +5226,11 @@
  	if (flags & TCL_EVAL_GLOBAL) {
  	    savedVarFramePtr = iPtr->varFramePtr;
  	    iPtr->varFramePtr = iPtr->rootFramePtr;
@@ -1449,7 +1561,7 @@ Index: generic/tclBasic.c
  		objPtr, INT2PTR(allowExceptions), NULL);
          return TclNRExecuteByteCode(interp, codePtr);
      }
-@@ -6052,125 +5252,18 @@
+@@ -6052,125 +5239,18 @@
  	/*
  	 * We're not supposed to use the compiler or byte-code
  	 * interpreter. Let Tcl_EvalEx evaluate the command directly (and
@@ -1577,7 +1689,7 @@ Index: generic/tclBasic.c
      }
  }
  
-@@ -6224,24 +5317,13 @@
+@@ -6224,24 +5304,13 @@
  TEOEx_ListCallback(
      ClientData data[],
      Tcl_Interp *interp,
@@ -1602,7 +1714,20 @@ Index: generic/tclBasic.c
  
  /*
   *----------------------------------------------------------------------
-@@ -7991,69 +7073,10 @@
+@@ -6552,11 +5621,11 @@
+     int flags)			/* Combination of flags controlling the call:
+ 				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
+ 				 * or TCL_INVOKE_NO_TRACEBACK. */
+ {
+     int result;
+-    Tcl_CallFrame *framePtr;
++    CallFrame *framePtr;
+ 
+     /*
+      * Make the specified namespace the current namespace and invoke the
+      * command.
+      */
+@@ -7991,69 +7060,10 @@
  }
  
  /*
@@ -1672,7 +1797,7 @@ Index: generic/tclBasic.c
   *	NR callback for DTrace command return probes.
   *
   * Results:
-@@ -8128,18 +7151,10 @@
+@@ -8128,18 +7138,10 @@
  	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
  	}
  	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
@@ -1691,7 +1816,7 @@ Index: generic/tclBasic.c
  	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
      }
      if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
-@@ -8213,11 +7228,11 @@
+@@ -8213,11 +7215,11 @@
  Tcl_NREvalObj(
      Tcl_Interp *interp,
      Tcl_Obj *objPtr,
@@ -1704,7 +1829,7 @@ Index: generic/tclBasic.c
  int
  Tcl_NREvalObjv(
      Tcl_Interp *interp,		/* Interpreter in which to evaluate the
-@@ -8622,11 +7637,10 @@
+@@ -8622,11 +7624,10 @@
  	 * the job here. The caller context has already been restored.
  	 */
  
@@ -1716,7 +1841,7 @@ Index: generic/tclBasic.c
      }
  
      NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
-@@ -8675,20 +7689,10 @@
+@@ -8675,20 +7676,10 @@
      TclDeleteExecEnv(corPtr->eePtr);
      corPtr->eePtr = NULL;
  
@@ -1737,7 +1862,7 @@ Index: generic/tclBasic.c
      iPtr->numLevels++;
  
      return result;
-@@ -8831,11 +7835,11 @@
+@@ -8831,11 +7822,11 @@
       * Add the callback to the coro's execEnv, so that it is the first thing
       * to happen when the coro is resumed.
       */
@@ -1750,7 +1875,7 @@ Index: generic/tclBasic.c
      return TCL_OK;
  }
  
-@@ -8973,46 +7977,16 @@
+@@ -8973,46 +7964,16 @@
      Tcl_DStringFree(&ds);
  
      corPtr->cmdPtr = cmdPtr;
@@ -9860,7 +9985,20 @@ Index: generic/tclInt.decls
  #	    Tcl_DString *errorPtr)
  #}
  #declare 83 {
-@@ -868,16 +868,16 @@
+@@ -517,11 +517,11 @@
+ }
+ declare 128 {
+     void Tcl_PopCallFrame(Tcl_Interp *interp)
+ }
+ declare 129 {
+-    int Tcl_PushCallFrame(Tcl_Interp *interp, Tcl_CallFrame *framePtr,
++    int Tcl_PushCallFrame(Tcl_Interp *interp, CallFrame *framePtr,
+ 	    Tcl_Namespace *nsPtr, int isProcCallFrame)
+ }
+ declare 130 {
+     int Tcl_RemoveInterpResolvers(Tcl_Interp *interp, const char *name)
+ }
+@@ -868,18 +868,18 @@
      Tcl_Obj *TclGetObjNameOfExecutable(void)
  }
  declare 214 {
@@ -9879,10 +10017,13 @@ Index: generic/tclInt.decls
 +#    void TclStackFree(Tcl_Interp *interp, void *freePtr)
 +#}
  declare 217 {
-     int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
+-    int TclPushStackFrame(Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr,
++    int TclPushStackFrame(Tcl_Interp *interp, CallFrame **framePtrPtr,
              Tcl_Namespace *namespacePtr, int isProcCallFrame)
  }
  declare 218 {
+     void TclPopStackFrame(Tcl_Interp *interp)
+ }
 @@ -892,13 +892,13 @@
  #
  declare 225 {
@@ -9957,7 +10098,25 @@ Index: generic/tclInt.h
   * this file, and for a DISCLAIMER OF ALL WARRANTIES.
   */
  
-@@ -1167,196 +1167,10 @@
+@@ -1073,16 +1073,13 @@
+  * The structure below defines a call frame. A call frame defines a naming
+  * context for a procedure call: its local naming scope (for local variables)
+  * and its global naming scope (a namespace, perhaps the global :: namespace).
+  * A call frame can also define the naming context for a namespace eval or
+  * namespace inscope command: the namespace in which the command's code should
+- * execute. The Tcl_CallFrame structures exist only while procedures or
++ * execute. The CallFrame structures exist only while procedures or
+  * namespace eval/inscope's are being executed, and provide a kind of Tcl call
+  * stack.
+- *
+- * WARNING!! The structure definition must be kept consistent with the
+- * Tcl_CallFrame structure in tcl.h. If you change one, change the other.
+  */
+ 
+ /*
+  * Will be grown to contain: pointers to the varnames (allocated at the end),
+  * plus the init values for each variable (suitable to be memcopied on init)
+@@ -1167,196 +1164,10 @@
  				 * the [oo::define] command; the clientData
  				 * field contains an Object reference that has
  				 * been confirmed to refer to a class. Part of
@@ -10154,7 +10313,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Data structures and procedures related to TclHandles, which are a very
   * lightweight method of preserving enough information to determine if an
-@@ -1391,17 +1205,10 @@
+@@ -1391,17 +1202,10 @@
   */
  
  #define TCL_TSD_INIT(keyPtr) \
@@ -10172,7 +10331,7 @@ Index: generic/tclInt.h
   * Tcl_Parse and CompileEnv are encountered in the procedure type CompileProc
   * declared below.
   */
-@@ -1439,23 +1246,10 @@
+@@ -1439,23 +1243,10 @@
   */
  
  typedef int (CompileHookProc)(Tcl_Interp *interp,
@@ -10196,7 +10355,7 @@ Index: generic/tclInt.h
   * There is one ExecEnv structure per Tcl interpreter. It holds the evaluation
   * stack that holds command operands and results. The stack grows towards
   * increasing addresses. The member stackPtr points to the stackItems of the
-@@ -1463,12 +1257,10 @@
+@@ -1463,12 +1254,10 @@
   */
  
  typedef struct CorContext {
@@ -10209,7 +10368,7 @@ Index: generic/tclInt.h
  typedef struct CoroutineData {
      struct Command *cmdPtr;	/* The command handle for the coroutine. */
      struct ExecEnv *eePtr;	/* The special execution environment (stacks,
-@@ -1489,12 +1281,10 @@
+@@ -1489,12 +1278,10 @@
  				 * coroutine; -2 means "0 or 1" (default), -1
  				 * means "any" */
  } CoroutineData;
@@ -10222,7 +10381,7 @@ Index: generic/tclInt.h
      struct NRE_callback *callbackPtr;
  				/* Top callback in NRE's stack. */
      struct CoroutineData *corPtr;
-@@ -1769,28 +1559,10 @@
+@@ -1769,28 +1556,10 @@
  
  enum PkgPreferOptions {
      PKG_PREFER_LATEST, PKG_PREFER_STABLE
@@ -10251,7 +10410,7 @@ Index: generic/tclInt.h
   * This structure defines an interpreter, which is a collection of commands
   * plus other state information related to interpreting commands, such as
   * variable storage. Primary responsibility for this data structure is in
-@@ -2045,58 +1817,10 @@
+@@ -2045,58 +1814,10 @@
  				 * This information, if present (chanMsg not
  				 * NULL), takes precedence over a POSIX error
  				 * code returned by a channel operation. */
@@ -10310,7 +10469,7 @@ Index: generic/tclInt.h
       */
  
      int packagePrefer;		/* Current package selection mode. */
-@@ -2120,14 +1844,10 @@
+@@ -2120,14 +1841,10 @@
       * inherit the value.
       *
       * They are used by the macros defined below.
@@ -10325,7 +10484,7 @@ Index: generic/tclInt.h
      /*
       * The pointer to the object system root ekeko. c.f. TIP #257.
       */
-@@ -2174,10 +1894,11 @@
+@@ -2174,10 +1891,11 @@
       */
  
      ByteCodeStats stats;	/* Holds compilation and execution statistics
@@ -10337,7 +10496,7 @@ Index: generic/tclInt.h
  /*
   * Macros that use the TSD-ekeko.
   */
-@@ -2352,21 +2073,10 @@
+@@ -2352,21 +2070,10 @@
   * isspace.
   */
  
@@ -10359,7 +10518,7 @@ Index: generic/tclInt.h
   * data structure in memory. Given a starting offset or size, it "rounds up"
   * or "aligns" the offset to the next 8-byte boundary so that any data
   * structure can be placed at the resulting offset without fear of an
-@@ -2749,17 +2459,10 @@
+@@ -2749,17 +2456,10 @@
  MODULE_SCOPE const Tcl_HashKeyType tclArrayHashKeyType;
  MODULE_SCOPE const Tcl_HashKeyType tclOneWordHashKeyType;
  MODULE_SCOPE const Tcl_HashKeyType tclStringHashKeyType;
@@ -10377,7 +10536,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE long	tclObjsFreed;
  #define TCL_MAX_SHARED_OBJ_STATS 5
  MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
-@@ -2806,11 +2509,11 @@
+@@ -2806,11 +2506,11 @@
  MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
  
  MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
@@ -10390,7 +10549,7 @@ Index: generic/tclInt.h
   * have more than the 4 client data entries we can provide directly thorugh
   * the callback API. It is the 'word' information which puts us over the
   * limit. It is needed because the loop body is argument 4 of 'for' and
-@@ -2821,11 +2524,10 @@
+@@ -2821,11 +2521,10 @@
  typedef struct ForIterData {
      Tcl_Obj *cond;		/* Loop condition expression. */
      Tcl_Obj *body;		/* Loop body. */
@@ -10402,7 +10561,7 @@ Index: generic/tclInt.h
  /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
   *            and Tcl_FindSymbol. This structure corresponds to an opaque
   *            typedef in tcl.h */
-@@ -2880,25 +2582,10 @@
+@@ -2880,25 +2579,10 @@
  MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
  			    const unsigned char *bytes, int len);
  MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -10428,7 +10587,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
  MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
  			    int strLen, const unsigned char *pattern,
-@@ -2909,24 +2596,13 @@
+@@ -2909,24 +2593,13 @@
  MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
  			    Tcl_Channel chan);
  MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
@@ -10453,7 +10612,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
-@@ -2940,11 +2616,10 @@
+@@ -2940,11 +2613,10 @@
  MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
  			    Tcl_Obj *objPtr);
  MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
@@ -10465,7 +10624,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
  MODULE_SCOPE void	TclFinalizeEnvironment(void);
  MODULE_SCOPE void	TclFinalizeEvaluation(void);
-@@ -2957,11 +2632,10 @@
+@@ -2957,11 +2629,10 @@
  MODULE_SCOPE void	TclFinalizeMemorySubsystem(void);
  MODULE_SCOPE void	TclFinalizeNotifier(void);
  MODULE_SCOPE void	TclFinalizeObjects(void);
@@ -10477,7 +10636,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclFloor(const mp_int *a);
  MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
  MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
-@@ -2981,11 +2655,10 @@
+@@ -2981,11 +2652,10 @@
  			    int *typePtr);
  MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
  			    const char *modeString, int *seekFlagPtr,
@@ -10489,7 +10648,7 @@ Index: generic/tclInt.h
  			    Tcl_GlobTypeData *types);
  MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
  			    Tcl_Obj *incrPtr);
-@@ -2993,18 +2666,16 @@
+@@ -2993,18 +2663,16 @@
  			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
  MODULE_SCOPE int	TclInfoExistsCmd(ClientData dummy, Tcl_Interp *interp,
  			    int objc, Tcl_Obj *const objv[]);
@@ -10508,7 +10667,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
  			    Tcl_Interp *interp);
  MODULE_SCOPE void	TclInitEncodingSubsystem(void);
-@@ -3136,28 +2807,24 @@
+@@ -3136,28 +2804,24 @@
  			    Command *cmdPtr);
  MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
  MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
@@ -10539,7 +10698,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
  			    const char *trim, int numTrim);
  MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
-@@ -3255,19 +2922,10 @@
+@@ -3255,19 +2919,10 @@
  MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
  			    int pathc, Tcl_Obj *const pathv[]);
  MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
@@ -10559,7 +10718,7 @@ Index: generic/tclInt.h
  			    Tcl_Obj *const objv[]);
  MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
  			    Tcl_Interp *interp, int objc,
-@@ -3994,14 +3652,14 @@
+@@ -3994,14 +3649,14 @@
  #  define TclIncrObjsAllocated()
  #  define TclIncrObjsFreed()
  #endif /* TCL_COMPILE_STATS */
@@ -10576,7 +10735,7 @@ Index: generic/tclInt.h
  # define TclNewObj(objPtr) \
      TclIncrObjsAllocated(); \
      TclAllocObjStorage(objPtr); \
-@@ -4032,116 +3690,10 @@
+@@ -4032,116 +3687,10 @@
  	} else { \
  	    TclFreeObj(objPtr); \
  	} \
@@ -10693,7 +10852,7 @@ Index: generic/tclInt.h
  			    int line);
  
  # define TclDbNewObj(objPtr, file, line) \
-@@ -4160,12 +3712,58 @@
+@@ -4160,12 +3709,58 @@
      Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
  
  # define TclNewListObjDirect(objc, objv) \
@@ -10753,7 +10912,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
   * copy of the "len" bytes starting at "bytePtr". This code works even if the
-@@ -4698,77 +4296,15 @@
+@@ -4698,77 +4293,15 @@
  
  #define TCL_CT_ASSERT(e) \
      {enum { ct_assert_value = 1/(!!(e)) };}
@@ -10833,7 +10992,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Parameters, structs and macros for the non-recursive engine (NRE)
   *----------------------------------------------------------------
-@@ -4837,12 +4373,12 @@
+@@ -4837,12 +4370,12 @@
  	((Interp *)interp)->deferredCallbacks = NULL;			\
      }
  
@@ -10848,7 +11007,7 @@ Index: generic/tclInt.h
      (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
  #define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
  #endif
-@@ -4850,20 +4386,34 @@
+@@ -4850,20 +4383,34 @@
  #if NRE_ENABLE_ASSERTS
  #define NRE_ASSERT(expr) assert((expr))
  #else
@@ -10936,7 +11095,22 @@ Index: generic/tclIntDecls.h
  /* Slot 84 is reserved */
  /* Slot 85 is reserved */
  /* Slot 86 is reserved */
-@@ -504,14 +500,12 @@
+@@ -329,12 +325,12 @@
+ 				const char *pattern, int allowOverwrite);
+ /* 128 */
+ EXTERN void		Tcl_PopCallFrame(Tcl_Interp *interp);
+ /* 129 */
+ EXTERN int		Tcl_PushCallFrame(Tcl_Interp *interp,
+-				Tcl_CallFrame *framePtr,
+-				Tcl_Namespace *nsPtr, int isProcCallFrame);
++				CallFrame *framePtr, Tcl_Namespace *nsPtr,
++				int isProcCallFrame);
+ /* 130 */
+ EXTERN int		Tcl_RemoveInterpResolvers(Tcl_Interp *interp,
+ 				const char *name);
+ /* 131 */
+ EXTERN void		Tcl_SetNamespaceResolvers(
+@@ -504,17 +500,15 @@
  /* 213 */
  EXTERN Tcl_Obj *	TclGetObjNameOfExecutable(void);
  /* 214 */
@@ -10950,9 +11124,13 @@ Index: generic/tclIntDecls.h
 +/* Slot 216 is reserved */
  /* 217 */
  EXTERN int		TclPushStackFrame(Tcl_Interp *interp,
- 				Tcl_CallFrame **framePtrPtr,
+-				Tcl_CallFrame **framePtrPtr,
++				CallFrame **framePtrPtr,
  				Tcl_Namespace *namespacePtr,
  				int isProcCallFrame);
+ /* 218 */
+ EXTERN void		TclPopStackFrame(Tcl_Interp *interp);
+ /* Slot 219 is reserved */
 @@ -526,12 +520,11 @@
  EXTERN TclPlatformType * TclGetPlatform(void);
  /* 225 */
@@ -11038,6 +11216,19 @@ Index: generic/tclIntDecls.h
      void (*reserved84)(void);
      void (*reserved85)(void);
      void (*reserved86)(void);
+@@ -733,11 +723,11 @@
+     Tcl_Namespace * (*tcl_GetCurrentNamespace) (Tcl_Interp *interp); /* 124 */
+     Tcl_Namespace * (*tcl_GetGlobalNamespace) (Tcl_Interp *interp); /* 125 */
+     void (*tcl_GetVariableFullName) (Tcl_Interp *interp, Tcl_Var variable, Tcl_Obj *objPtr); /* 126 */
+     int (*tcl_Import) (Tcl_Interp *interp, Tcl_Namespace *nsPtr, const char *pattern, int allowOverwrite); /* 127 */
+     void (*tcl_PopCallFrame) (Tcl_Interp *interp); /* 128 */
+-    int (*tcl_PushCallFrame) (Tcl_Interp *interp, Tcl_CallFrame *framePtr, Tcl_Namespace *nsPtr, int isProcCallFrame); /* 129 */
++    int (*tcl_PushCallFrame) (Tcl_Interp *interp, CallFrame *framePtr, Tcl_Namespace *nsPtr, int isProcCallFrame); /* 129 */
+     int (*tcl_RemoveInterpResolvers) (Tcl_Interp *interp, const char *name); /* 130 */
+     void (*tcl_SetNamespaceResolvers) (Tcl_Namespace *namespacePtr, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 131 */
+     int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
+     struct tm * (*tclpGetDate) (const time_t *time, int useGMT); /* 133 */
+     void (*reserved134)(void);
 @@ -819,37 +809,37 @@
      void (*reserved210)(void);
      void (*reserved211)(void);
@@ -11046,9 +11237,10 @@ Index: generic/tclIntDecls.h
      void (*tclSetObjNameOfExecutable) (Tcl_Obj *name, Tcl_Encoding encoding); /* 214 */
 -    void * (*tclStackAlloc) (Tcl_Interp *interp, int numBytes); /* 215 */
 -    void (*tclStackFree) (Tcl_Interp *interp, void *freePtr); /* 216 */
+-    int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
 +    void (*reserved215)(void);
 +    void (*reserved216)(void);
-     int (*tclPushStackFrame) (Tcl_Interp *interp, Tcl_CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
++    int (*tclPushStackFrame) (Tcl_Interp *interp, CallFrame **framePtrPtr, Tcl_Namespace *namespacePtr, int isProcCallFrame); /* 217 */
      void (*tclPopStackFrame) (Tcl_Interp *interp); /* 218 */
      void (*reserved219)(void);
      void (*reserved220)(void);
@@ -11260,7 +11452,45 @@ Index: generic/tclNamesp.c
 ==================================================================
 --- generic/tclNamesp.c
 +++ generic/tclNamesp.c
-@@ -463,11 +463,11 @@
+@@ -276,11 +276,11 @@
+ 
+ int
+ Tcl_PushCallFrame(
+     Tcl_Interp *interp,		/* Interpreter in which the new call frame is
+ 				 * to be pushed. */
+-    Tcl_CallFrame *callFramePtr,/* Points to a call frame structure to push.
++    CallFrame *framePtr,     /* Points to a call frame structure to push.
+ 				 * Storage for this has already been allocated
+ 				 * by the caller; typically this is the
+ 				 * address of a CallFrame structure allocated
+ 				 * on the caller's C stack. The call frame
+ 				 * will be initialized by this function. The
+@@ -299,11 +299,10 @@
+ 				 * inscope" command and var references are
+ 				 * treated as references to namespace
+ 				 * variables. */
+ {
+     Interp *iPtr = (Interp *) interp;
+-    register CallFrame *framePtr = (CallFrame *) callFramePtr;
+     register Namespace *nsPtr;
+ 
+     if (namespacePtr == NULL) {
+ 	nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+     } else {
+@@ -448,11 +447,11 @@
+ 
+ int
+ TclPushStackFrame(
+     Tcl_Interp *interp,		/* Interpreter in which the new call frame is
+ 				 * to be pushed. */
+-    Tcl_CallFrame **framePtrPtr,/* Place to store a pointer to the stack
++    CallFrame **framePtrPtr,/* Place to store a pointer to the stack
+ 				 * allocated call frame. */
+     Tcl_Namespace *namespacePtr,/* Points to the namespace in which the frame
+ 				 * will execute. If NULL, the interpreter's
+ 				 * current namespace will be used. */
+     int isProcCallFrame)	/* If nonzero, the frame represents a called
+@@ -463,11 +462,11 @@
  				 * for a "namespace eval" or "namespace
  				 * inscope" command and var references are
  				 * treated as references to namespace
@@ -11273,7 +11503,7 @@ Index: generic/tclNamesp.c
  }
  
  void
-@@ -475,11 +475,11 @@
+@@ -475,11 +474,11 @@
      Tcl_Interp *interp)		/* Interpreter with call frame to pop. */
  {
      CallFrame *freePtr = ((Interp *) interp)->framePtr;
@@ -11286,7 +11516,20 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -2639,12 +2639,11 @@
+@@ -2263,11 +2262,11 @@
+ 	    }
+ #endif
+ 	    if (entryPtr != NULL) {
+ 		nsPtr = Tcl_GetHashValue(entryPtr);
+ 	    } else if (flags & TCL_CREATE_NS_IF_UNKNOWN) {
+-		Tcl_CallFrame *framePtr;
++		CallFrame *framePtr;
+ 
+ 		(void) TclPushStackFrame(interp, &framePtr,
+ 			(Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 0);
+ 
+ 		nsPtr = (Namespace *)
+@@ -2639,12 +2638,11 @@
      Namespace *trailNsPtr, *shadowNsPtr;
      Namespace *globalNsPtr = (Namespace *) TclGetGlobalNamespace(interp);
      int found, i;
@@ -11300,7 +11543,7 @@ Index: generic/tclNamesp.c
       * Start at the namespace containing the new command, and work up through
       * the list of parents. Stop just before the global namespace, since the
       * global namespace can't "shadow" its own entries.
-@@ -2729,17 +2728,16 @@
+@@ -2729,17 +2727,16 @@
  
  	trailFront++;
  	if (trailFront == trailSize) {
@@ -11320,7 +11563,7 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -3237,12 +3235,10 @@
+@@ -3237,12 +3234,10 @@
      Tcl_Interp *interp,		/* Current interpreter. */
      int objc,			/* Number of arguments. */
      Tcl_Obj *const objv[])	/* Argument objects. */
@@ -11333,7 +11576,20 @@ Index: generic/tclNamesp.c
      Tcl_Obj *objPtr;
      int result;
  
-@@ -3292,37 +3288,24 @@
+@@ -3276,11 +3271,11 @@
+      * command(s).
+      */
+ 
+     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
+     framePtrPtr = &framePtr;
+-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
++    result = TclPushStackFrame(interp, framePtrPtr,
+ 	    namespacePtr, /*isProcCallFrame*/ 0);
+     if (result != TCL_OK) {
+ 	return TCL_ERROR;
+     }
+ 
+@@ -3292,37 +3287,24 @@
  		- iPtr->ensembleRewrite.numInsertedObjs;
  	framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
      }
@@ -11372,7 +11628,20 @@ Index: generic/tclNamesp.c
  static int
  NsEval_Callback(
      ClientData data[],
-@@ -3783,11 +3766,11 @@
+@@ -3739,11 +3721,11 @@
+      * Make the specified namespace the current namespace.
+      */
+ 
+     framePtrPtr = &framePtr;		/* This is needed to satisfy GCC's
+ 					 * strict aliasing rules. */
+-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
++    result = TclPushStackFrame(interp, framePtrPtr,
+ 	    namespacePtr, /*isProcCallFrame*/ 0);
+     if (result != TCL_OK) {
+ 	return result;
+     }
+ 
+@@ -3783,11 +3765,11 @@
  	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
      }
  
@@ -11385,7 +11654,7 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -3976,12 +3959,11 @@
+@@ -3976,12 +3958,11 @@
  
      if (TclListObjGetElements(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
  	goto badNamespace;
@@ -11399,7 +11668,7 @@ Index: generic/tclNamesp.c
  	    if (TclGetNamespaceFromObj(interp, nsObjv[i],
  		    &namespaceList[i]) != TCL_OK) {
  		goto badNamespace;
-@@ -3996,11 +3978,11 @@
+@@ -3996,11 +3977,11 @@
      TclSetNsPath(nsPtr, nsObjc, namespaceList);
  
      result = TCL_OK;
@@ -11429,6 +11698,19 @@ Index: generic/tclOOBasic.c
  	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
  	return TCL_ERROR;
      }
+@@ -414,11 +413,11 @@
+     /*
+      * Make the object's namespace the current namespace and evaluate the
+      * command(s).
+      */
+ 
+-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
++    result = TclPushStackFrame(interp, framePtrPtr,
+ 	    Tcl_GetObjectNamespace(object), 0);
+     if (result != TCL_OK) {
+ 	return TCL_ERROR;
+     }
+     framePtr->objc = objc;
 @@ -437,23 +436,21 @@
       * object when it decrements its refcount after eval'ing it.
       */
@@ -11454,6 +11736,19 @@ Index: generic/tclOOBasic.c
  static int
  FinalizeEval(
      ClientData data[],
+@@ -707,11 +704,11 @@
+      * comparison, and is only done when we'd otherwise interfere with the
+      * global namespace).
+      */
+ 
+     if (iPtr->varFramePtr == NULL) {
+-	Tcl_CallFrame *dummyFrame;
++	CallFrame *dummyFrame;
+ 
+ 	TclPushStackFrame(interp, &dummyFrame,
+ 		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context)),0);
+ 	varPtr = TclObjLookupVar(interp, objv[objc-1], NULL,
+ 		TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to",1,1,&aryVar);
 
 Index: generic/tclOOCall.c
 ==================================================================
@@ -11540,6 +11835,19 @@ Index: generic/tclOODefineCmds.c
  
    noMatch:
      Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+@@ -656,11 +656,11 @@
+ 	return TCL_ERROR;
+     }
+ 
+     /* framePtrPtr is needed to satisfy GCC 3.3's strict aliasing rules */
+ 
+-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
++    result = TclPushStackFrame(interp, framePtrPtr,
+ 	    namespacePtr, FRAME_IS_OO_DEFINE);
+     if (result != TCL_OK) {
+ 	return TCL_ERROR;
+     }
+     framePtr->clientData = oPtr;
 @@ -839,12 +839,11 @@
      AddRef(oPtr);
      if (objc == 3) {
@@ -11676,6 +11984,19 @@ Index: generic/tclOOInt.h
 ==================================================================
 --- generic/tclOOInt.h
 +++ generic/tclOOInt.h
+@@ -64,11 +64,11 @@
+  * Pre- and post-call callbacks, to allow procedure-like methods to be fine
+  * tuned in their behaviour.
+  */
+ 
+ typedef int (TclOO_PreCallProc)(ClientData clientData, Tcl_Interp *interp,
+-	Tcl_ObjectContext context, Tcl_CallFrame *framePtr, int *isFinished);
++	Tcl_ObjectContext context, CallFrame *framePtr, int *isFinished);
+ typedef int (TclOO_PostCallProc)(ClientData clientData, Tcl_Interp *interp,
+ 	Tcl_ObjectContext context, Tcl_Namespace *namespacePtr, int result);
+ typedef void (TclOO_PmCDDeleteProc)(ClientData clientData);
+ typedef ClientData (TclOO_PmCDCloneProc)(ClientData clientData);
+ 
 @@ -92,13 +92,10 @@
  				/* Callback to allow for additional setup
  				 * before the method executes. */
@@ -11936,14 +12257,26 @@ Index: generic/tclOOMethod.c
      pmPtr->refCount++;
  
      /*
-@@ -717,15 +574,15 @@
+@@ -707,25 +564,25 @@
+ 
+     if (pmPtr->preCallProc != NULL) {
+ 	int isFinished;
+ 
+ 	result = pmPtr->preCallProc(pmPtr->clientData, interp, context,
+-		(Tcl_CallFrame *) fdPtr->framePtr, &isFinished);
++		(CallFrame *) fdPtr->framePtr, &isFinished);
+ 	if (isFinished || result != TCL_OK) {
+ 	    /*
+ 	     * Restore the old cmdPtr so that a subsequent use of [info frame]
+ 	     * won't crash on us. [Bug 3001438]
  	     */
  
  	    pmPtr->procPtr->cmdPtr = fdPtr->oldCmdPtr;
  
- 	    Tcl_PopCallFrame(interp);
+-	    Tcl_PopCallFrame(interp);
 -	    TclStackFree(interp, fdPtr->framePtr);
-+	    ckfree(fdPtr->framePtr);
++	    TclPopStackFrame(interp);
++	    //ckfree(fdPtr->framePtr);
  	    if (--pmPtr->refCount < 1) {
  		DeleteProcedureMethodRecord(pmPtr);
  	    }
@@ -11982,6 +12315,19 @@ Index: generic/tclOOMethod.c
      /*
       * [Bug 2037727] Always call TclProcCompileProc so that we check not only
       * that we have bytecode, but also that it remains valid. Note that we set
+@@ -873,11 +728,11 @@
+     /*
+      * Make the stack frame and fill it out with information about this call.
+      * This operation may fail.
+      */
+ 
+-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
++    result = TclPushStackFrame(interp, (CallFrame **) framePtrPtr,
+ 	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC|FRAME_IS_METHOD);
+     if (result != TCL_OK) {
+ 	goto failureReturn;
+     }
+ 
 @@ -884,36 +739,10 @@
      fdPtr->framePtr->clientData = contextPtr;
      fdPtr->framePtr->objc = objc;
@@ -13268,6 +13614,19 @@ Index: generic/tclProc.c
  
      /*
       * Match and assign the call's actual parameters to the procedure's formal
+@@ -1656,11 +1541,11 @@
+      * its command, which can change if the command is renamed from one
+      * namespace to another.
+      */
+ 
+     framePtrPtr = &framePtr;
+-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
++    result = TclPushStackFrame(interp, (CallFrame **) framePtrPtr,
+ 	    (Tcl_Namespace *) nsPtr,
+ 	    (isLambda? (FRAME_IS_PROC|FRAME_IS_LAMBDA) : FRAME_IS_PROC));
+     if (result != TCL_OK) {
+ 	return result;
+     }
 @@ -1761,13 +1646,13 @@
  
      result = InitArgsAndLocals(interp, procNameObj, skip);
@@ -13319,6 +13678,19 @@ Index: generic/tclProc.c
  }
  
  /*
+@@ -1972,11 +1849,11 @@
+     Namespace *nsPtr,		/* Namespace containing procedure. */
+     const char *description,	/* string describing this body of code. */
+     const char *procName)	/* Name of this procedure. */
+ {
+     Interp *iPtr = (Interp *) interp;
+-    Tcl_CallFrame *framePtr;
++    CallFrame *framePtr;
+     ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
+ 
+     /*
+      * If necessary, compile the procedure's body. The compiler will allocate
+      * frame slots for the procedure's non-argument local variables. If the
 @@ -2013,12 +1890,10 @@
  	    TclFreeIntRep(bodyPtr);
  	}
@@ -13715,6 +14087,19 @@ Index: generic/tclTest.c
 ==================================================================
 --- generic/tclTest.c
 +++ generic/tclTest.c
+@@ -4634,11 +4634,11 @@
+     Tcl_Obj *const objv[])	/* The argument objects. */
+ {
+     const char *name, *arg;
+     int flags = 0;
+     Tcl_Namespace *namespacePtr;
+-    Tcl_CallFrame *framePtr;
++    CallFrame *framePtr;
+     Tcl_Var variable;
+     int result;
+ 
+     if (objc != 3) {
+ 	Tcl_WrongNumArgs(interp, 1, objv, "name scope");
 @@ -6782,11 +6782,11 @@
      Tcl_Obj *const objv[])
  {
