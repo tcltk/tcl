@@ -251,12 +251,15 @@ VarHashCreateVar(
  *	otherwise, push objResultPtr. If (result < 0), objResultPtr already
  *	has the correct reference count.
  *
- * We use the new compile-time assertions to cheack that nCleanup is constant
+ * We use the new compile-time assertions to check that nCleanup is constant
  * and within range.
  */
 
+/* Verify the stack depth, only when no expansion is in progress */
+
 #if TCL_COMPILE_DEBUG
-#define CHECK_STACK() assert(CURR_DEPTH <= codePtr->maxStackDepth)
+#define CHECK_STACK()							\
+    assert((auxObjList != NULL) || (CURR_DEPTH <= codePtr->maxStackDepth))
 #else
 #define CHECK_STACK()
 #endif
