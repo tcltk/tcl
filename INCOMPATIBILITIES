@@ -11,3 +11,6 @@ tclInt.h are not listed.
 
 * allocator API is gone from tclInt.decls: no more obj or stack allocation
   accessible from outside,TclpAlloc and friends are gone too
+
+* There is no more direct evaluation, averything goes through bytecodes
+  (except for canonical lists). TCL_EVAL_DIRECT is simply ignored.

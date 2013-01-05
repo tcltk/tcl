@@ -5115,8 +5115,8 @@ Tcl_GlobalEvalObj(
  * Tcl_EvalObjEx, TclEvalObjEx --
  *
  *	Execute Tcl commands stored in a Tcl object. These commands are
- *	compiled into bytecodes if necessary, unless TCL_EVAL_DIRECT is
- *	specified.
+ *	compiled into bytecodes, or run directly if the obj is a canonical
+ *	list.
  *
  * Results:
  *	The return value is one of the return codes defined in tcl.h (such as
@@ -5139,7 +5139,7 @@ Tcl_EvalObjEx(
 				 * execute. */
     int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
-				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
+				 * are TCL_EVAL_GLOBAL. */
 {
     int result = TCL_OK;
     NRE_callback *rootPtr = TOP_CB(interp);
@@ -5156,10 +5156,9 @@ TclNREvalObjEx(
 				 * execute. */
     int flags)			/* Collection of OR-ed bits that control the
 				 * evaluation of the script. Supported values
-				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
+				 * are TCL_EVAL_GLOBAL. */
 {
     Interp *iPtr = (Interp *) interp;
-    int result;
 
     /*
      * This function consists of three independent blocks for: direct
@@ -5207,9 +5206,7 @@ TclNREvalObjEx(
 
 	ListObjGetElements(listPtr, objc, objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
-    }
-
-    if (!(flags & TCL_EVAL_DIRECT)) {
+    } else {
 	/*
 	 * Let the compiler/engine subsystem do the evaluation.
 	 */
@@ -5233,24 +5230,6 @@ TclNREvalObjEx(
 	TclNRAddCallback(interp, TEOEx_ByteCodeCallback, savedVarFramePtr,
 		objPtr, INT2PTR(allowExceptions), NULL);
         return TclNRExecuteByteCode(interp, codePtr);
-    }
-
-    {
-	/*
-	 * We're not supposed to use the compiler or byte-code
-	 * interpreter. Let Tcl_EvalEx evaluate the command directly (and
-	 * probably more slowly).
-	 *
-	 */
-
-	const char *script;
-	int numSrcBytes;
-
-	Tcl_IncrRefCount(objPtr);
-        script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-        result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
-	TclDecrRefCount(objPtr);
-	return result;
     }
 }
 

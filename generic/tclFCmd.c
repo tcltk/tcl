@@ -701,7 +701,7 @@ CopyRenameOneFile(
 		Tcl_ListObjAppendElement(interp, copyCommand, target);
 		Tcl_IncrRefCount(copyCommand);
 		result = Tcl_EvalObjEx(interp, copyCommand,
-			TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
+			TCL_EVAL_GLOBAL);
 		Tcl_DecrRefCount(copyCommand);
 		if (result != TCL_OK) {
 		    /*

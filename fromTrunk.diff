@@ -1419,6 +1419,21 @@ Index: generic/tclBasic.c
  /*
   *----------------------------------------------------------------------
   *
+@@ -5870,12 +5113,12 @@
+  *----------------------------------------------------------------------
+  *
+  * Tcl_EvalObjEx, TclEvalObjEx --
+  *
+  *	Execute Tcl commands stored in a Tcl object. These commands are
+- *	compiled into bytecodes if necessary, unless TCL_EVAL_DIRECT is
+- *	specified.
++ *	compiled into bytecodes, or run directly if the obj is a canonical
++ *	list.
+  *
+  * Results:
+  *	The return value is one of the return codes defined in tcl.h (such as
+  *	TCL_OK), and the interpreter's result contains a value to supplement
+  *	the return code.
 @@ -5883,11 +5126,10 @@
   * Side effects:
   *	The object is converted, if necessary, to a ByteCode object that holds
@@ -1431,12 +1446,14 @@ Index: generic/tclBasic.c
  
  int
  Tcl_EvalObjEx(
-@@ -5897,43 +5139,26 @@
+@@ -5895,58 +5137,39 @@
+ 				 * a previous call to Tcl_CreateInterp). */
+     register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
  				 * execute. */
      int flags)			/* Collection of OR-ed bits that control the
  				 * evaluation of the script. Supported values
- 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
- {
+-				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
+-{
 -    return TclEvalObjEx(interp, objPtr, flags, NULL, 0);
 -}
 -
@@ -1451,7 +1468,8 @@ Index: generic/tclBasic.c
 -				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
 -    const CmdFrame *invoker,	/* Frame of the command doing the eval. */
 -    int word)			/* Index of the word which is in objPtr. */
--{
++				 * are TCL_EVAL_GLOBAL. */
+ {
      int result = TCL_OK;
      NRE_callback *rootPtr = TOP_CB(interp);
  
@@ -1469,15 +1487,17 @@ Index: generic/tclBasic.c
 -    int flags,			/* Collection of OR-ed bits that control the
 +    int flags)			/* Collection of OR-ed bits that control the
  				 * evaluation of the script. Supported values
- 				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
+-				 * are TCL_EVAL_GLOBAL and TCL_EVAL_DIRECT. */
 -    const CmdFrame *invoker,	/* Frame of the command doing the eval. */
 -    int word)			/* Index of the word which is in objPtr. */
++				 * are TCL_EVAL_GLOBAL. */
  {
      Interp *iPtr = (Interp *) interp;
-     int result;
+-    int result;
  
      /*
-@@ -5942,11 +5167,10 @@
+      * This function consists of three independent blocks for: direct
+      * evaluation of canonical lists, compilation and bytecode execution and
       * finally direct evaluation. Precisely one of these blocks will be run.
       */
  
@@ -1489,7 +1509,7 @@ Index: generic/tclBasic.c
  
  	/*
  	 * Pure List Optimization (no string representation). In this case, we
-@@ -5976,57 +5200,20 @@
+@@ -5976,57 +5199,18 @@
  	Tcl_IncrRefCount(objPtr);
  	listPtr = TclListObjCopy(interp, objPtr);
  	Tcl_IncrRefCount(listPtr);
@@ -1535,9 +1555,10 @@ Index: generic/tclBasic.c
  
  	ListObjGetElements(listPtr, objc, objv);
  	return TclNREvalObjv(interp, objc, objv, flags, NULL);
-     }
- 
-     if (!(flags & TCL_EVAL_DIRECT)) {
+-    }
+-
+-    if (!(flags & TCL_EVAL_DIRECT)) {
++    } else {
  	/*
  	 * Let the compiler/engine subsystem do the evaluation.
 -	 *
@@ -1548,7 +1569,7 @@ Index: generic/tclBasic.c
  	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
  	ByteCode *codePtr;
  	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
-@@ -6039,11 +5226,11 @@
+@@ -6039,141 +5223,16 @@
  	if (flags & TCL_EVAL_GLOBAL) {
  	    savedVarFramePtr = iPtr->varFramePtr;
  	    iPtr->varFramePtr = iPtr->rootFramePtr;
@@ -1561,12 +1582,13 @@ Index: generic/tclBasic.c
  		objPtr, INT2PTR(allowExceptions), NULL);
          return TclNRExecuteByteCode(interp, codePtr);
      }
-@@ -6052,125 +5239,18 @@
- 	/*
- 	 * We're not supposed to use the compiler or byte-code
- 	 * interpreter. Let Tcl_EvalEx evaluate the command directly (and
- 	 * probably more slowly).
- 	 *
+-
+-    {
+-	/*
+-	 * We're not supposed to use the compiler or byte-code
+-	 * interpreter. Let Tcl_EvalEx evaluate the command directly (and
+-	 * probably more slowly).
+-	 *
 -	 * TIP #280. Propagate context as much as we can. Especially if the
 -	 * script to evaluate is a single literal it makes sense to look if
 -	 * our context is one with absolute line numbers we can then track
@@ -1574,11 +1596,11 @@ Index: generic/tclBasic.c
 -	 *
 -	 * See also tclCompile.c, TclInitCompileEnv, for the equivalent code
 -	 * in the bytecode compiler.
- 	 */
- 
- 	const char *script;
- 	int numSrcBytes;
- 
+-	 */
+-
+-	const char *script;
+-	int numSrcBytes;
+-
 -	/*
 -	 * Now we check if we have data about invisible continuation lines for
 -	 * the script, and make it available to the direct script parser and
@@ -1606,7 +1628,7 @@ Index: generic/tclBasic.c
 -	    iPtr->scriptCLLocPtr = NULL;
 -	}
 -
- 	Tcl_IncrRefCount(objPtr);
+-	Tcl_IncrRefCount(objPtr);
 -	if (invoker == NULL) {
 -	    /*
 -	     * No context, force opening of our own.
@@ -1682,14 +1704,15 @@ Index: generic/tclBasic.c
 -	    Tcl_Release(iPtr->scriptCLLocPtr);
 -	}
 -	iPtr->scriptCLLocPtr = saveCLLocPtr;
-+        script = Tcl_GetStringFromObj(objPtr, &numSrcBytes);
-+        result = Tcl_EvalEx(interp, script, numSrcBytes, flags);
- 	TclDecrRefCount(objPtr);
- 	return result;
-     }
+-	TclDecrRefCount(objPtr);
+-	return result;
+-    }
  }
  
-@@ -6224,24 +5304,13 @@
+ static int
+ TEOEx_ByteCodeCallback(
+     ClientData data[],
+@@ -6224,24 +5283,13 @@
  TEOEx_ListCallback(
      ClientData data[],
      Tcl_Interp *interp,
@@ -1714,7 +1737,7 @@ Index: generic/tclBasic.c
  
  /*
   *----------------------------------------------------------------------
-@@ -6552,11 +5621,11 @@
+@@ -6552,11 +5600,11 @@
      int flags)			/* Combination of flags controlling the call:
  				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
  				 * or TCL_INVOKE_NO_TRACEBACK. */
@@ -1727,7 +1750,7 @@ Index: generic/tclBasic.c
       * Make the specified namespace the current namespace and invoke the
       * command.
       */
-@@ -7991,69 +7060,10 @@
+@@ -7991,69 +7039,10 @@
  }
  
  /*
@@ -1797,7 +1820,7 @@ Index: generic/tclBasic.c
   *	NR callback for DTrace command return probes.
   *
   * Results:
-@@ -8128,18 +7138,10 @@
+@@ -8128,18 +7117,10 @@
  	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
  	}
  	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
@@ -1816,7 +1839,7 @@ Index: generic/tclBasic.c
  	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
      }
      if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
-@@ -8213,11 +7215,11 @@
+@@ -8213,11 +7194,11 @@
  Tcl_NREvalObj(
      Tcl_Interp *interp,
      Tcl_Obj *objPtr,
@@ -1829,7 +1852,7 @@ Index: generic/tclBasic.c
  int
  Tcl_NREvalObjv(
      Tcl_Interp *interp,		/* Interpreter in which to evaluate the
-@@ -8622,11 +7624,10 @@
+@@ -8622,11 +7603,10 @@
  	 * the job here. The caller context has already been restored.
  	 */
  
@@ -1841,7 +1864,7 @@ Index: generic/tclBasic.c
      }
  
      NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
-@@ -8675,20 +7676,10 @@
+@@ -8675,20 +7655,10 @@
      TclDeleteExecEnv(corPtr->eePtr);
      corPtr->eePtr = NULL;
  
@@ -1862,7 +1885,7 @@ Index: generic/tclBasic.c
      iPtr->numLevels++;
  
      return result;
-@@ -8831,11 +7822,11 @@
+@@ -8831,11 +7801,11 @@
       * Add the callback to the coro's execEnv, so that it is the first thing
       * to happen when the coro is resumed.
       */
@@ -1875,7 +1898,7 @@ Index: generic/tclBasic.c
      return TCL_OK;
  }
  
-@@ -8973,46 +7964,16 @@
+@@ -8973,46 +7943,16 @@
      Tcl_DStringFree(&ds);
  
      corPtr->cmdPtr = cmdPtr;
@@ -9736,6 +9759,19 @@ Index: generic/tclFCmd.c
 ==================================================================
 --- generic/tclFCmd.c
 +++ generic/tclFCmd.c
+@@ -699,11 +699,11 @@
+ 		Tcl_ListObjAppendElement(interp, copyCommand, opObj);
+ 		Tcl_ListObjAppendElement(interp, copyCommand, source);
+ 		Tcl_ListObjAppendElement(interp, copyCommand, target);
+ 		Tcl_IncrRefCount(copyCommand);
+ 		result = Tcl_EvalObjEx(interp, copyCommand,
+-			TCL_EVAL_GLOBAL | TCL_EVAL_DIRECT);
++			TCL_EVAL_GLOBAL);
+ 		Tcl_DecrRefCount(copyCommand);
+ 		if (result != TCL_OK) {
+ 		    /*
+ 		     * There was an error in the Tcl-level copy. We will pass
+ 		     * on the Tcl error message and can ensure this by setting
 @@ -1005,11 +1005,11 @@
  
  	if (Tcl_ListObjLength(interp, objStrings, &numObjStrings) != TCL_OK) {
