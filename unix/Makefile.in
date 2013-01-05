@@ -307,8 +307,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclStrToD.o tclThread.o \
 	tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
-	tclTomMathInterface.o \
-	tclAssembly.o
+	tclTomMathInterface.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
@@ -385,7 +384,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/regfree.c \
 	$(GENERIC_DIR)/regerror.c \
 	$(GENERIC_DIR)/tclAlloc.c \
-	$(GENERIC_DIR)/tclAssembly.c \
 	$(GENERIC_DIR)/tclAsync.c \
 	$(GENERIC_DIR)/tclBasic.c \
 	$(GENERIC_DIR)/tclBinary.c \
@@ -453,7 +451,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclTrace.c \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c \
-	$(GENERIC_DIR)/tclAssembly.c \
 	$(GENERIC_DIR)/tclZlib.c
 
 OO_SRCS = \
@@ -1021,9 +1018,6 @@ tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 
 tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
-
-tclAssembly.o: $(GENERIC_DIR)/tclAssembly.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAssembly.c
 
 tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
