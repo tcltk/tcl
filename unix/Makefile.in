@@ -290,7 +290,7 @@ TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o
 
-GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
+GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o \
 	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
 	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompCmdsSZ.o \
 	tclCompExpr.o tclCompile.o tclConfig.o tclDate.o tclDictObj.o \
@@ -300,7 +300,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
 	tclLink.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
-	tclObj.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
+	tclObj.o tclObjAlloc.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
 	tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
@@ -383,7 +383,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/regexec.c \
 	$(GENERIC_DIR)/regfree.c \
 	$(GENERIC_DIR)/regerror.c \
-	$(GENERIC_DIR)/tclAlloc.c \
 	$(GENERIC_DIR)/tclAsync.c \
 	$(GENERIC_DIR)/tclBasic.c \
 	$(GENERIC_DIR)/tclBinary.c \
@@ -426,6 +425,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclNamesp.c \
 	$(GENERIC_DIR)/tclNotify.c \
 	$(GENERIC_DIR)/tclObj.c \
+	$(GENERIC_DIR)/tclObjAlloc.c \
 	$(GENERIC_DIR)/tclParse.c \
 	$(GENERIC_DIR)/tclPathObj.c \
 	$(GENERIC_DIR)/tclPipe.c \
@@ -1016,9 +1016,6 @@ regerror.o: $(REGHDRS) $(GENERIC_DIR)/regerrs.h $(GENERIC_DIR)/regerror.c
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
 
-tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
-
 tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
 
@@ -1132,6 +1129,9 @@ tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
 
 tclObj.o: $(GENERIC_DIR)/tclObj.c $(COMPILEHDR) $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
+
+tclObjAlloc.o: $(GENERIC_DIR)/tclObjAlloc.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObjAlloc.c
 
 tclLoad.o: $(GENERIC_DIR)/tclLoad.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLoad.c
