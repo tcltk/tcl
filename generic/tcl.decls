@@ -351,7 +351,7 @@ declare 93 {
     void Tcl_CreateExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
 declare 94 {
-    Tcl_Interp *TclCreateInterp(void)
+    Tcl_Interp *Tcl_CreateInterp(void)
 }
 #declare 95 {
 #    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,

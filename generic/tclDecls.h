@@ -294,7 +294,7 @@ TCLAPI void		Tcl_CreateEventSource(Tcl_EventSetupProc *setupProc,
 TCLAPI void		Tcl_CreateExitHandler(Tcl_ExitProc *proc,
 				ClientData clientData);
 /* 94 */
-TCLAPI Tcl_Interp *	TclCreateInterp(void);
+TCLAPI Tcl_Interp *	Tcl_CreateInterp(void);
 /* Slot 95 is reserved */
 /* 96 */
 TCLAPI Tcl_Command	Tcl_CreateObjCommand(Tcl_Interp *interp,
@@ -1887,7 +1887,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_CreateCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_CmdProc *proc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc); /* 91 */
     void (*tcl_CreateEventSource) (Tcl_EventSetupProc *setupProc, Tcl_EventCheckProc *checkProc, ClientData clientData); /* 92 */
     void (*tcl_CreateExitHandler) (Tcl_ExitProc *proc, ClientData clientData); /* 93 */
-    Tcl_Interp * (*tclCreateInterp) (void); /* 94 */
+    Tcl_Interp * (*tcl_CreateInterp) (void); /* 94 */
     void (*reserved95)(void);
     Tcl_Command (*tcl_CreateObjCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc); /* 96 */
     Tcl_Interp * (*tcl_CreateSlave) (Tcl_Interp *interp, const char *slaveName, int isSafe); /* 97 */
@@ -2647,8 +2647,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_CreateEventSource) /* 92 */
 #define Tcl_CreateExitHandler \
 	(tclStubsPtr->tcl_CreateExitHandler) /* 93 */
-#define TclCreateInterp \
-	(tclStubsPtr->tclCreateInterp) /* 94 */
+#define Tcl_CreateInterp \
+	(tclStubsPtr->tcl_CreateInterp) /* 94 */
 /* Slot 95 is reserved */
 #define Tcl_CreateObjCommand \
 	(tclStubsPtr->tcl_CreateObjCommand) /* 96 */
@@ -3715,13 +3715,6 @@ extern const TclStubs *tclStubsPtr;
 #endif /* !BUILD_tcl || USE_TCL_STUBS */
 
 /* !END!: Do not edit above this line. */
-
-#undef TclCreateInterp
-#if !defined(BUILD_tcl) || defined(USE_TCL_STUBS)
-#   undef Tcl_Init
-#   define Tcl_CreateInterp() (tclStubsPtr->tclCreateInterp())
-#   define Tcl_Init(interp) (Tcl_InitStubs(interp, TCL_VERSION, 0)?tclStubsPtr->tcl_Init(interp):TCL_ERROR)
-#endif
 
 #if defined(_WIN32) && defined(UNICODE)
 #   define Tcl_MainEx Tcl_MainExW

@@ -38,11 +38,8 @@
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
 #undef Tcl_Panic
-#undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
-#define TclCreateInterp Tcl_CreateInterp
-
 #undef TclPkgProvide
 
 #define TclPkgProvide pkgProvide
@@ -758,7 +755,7 @@ const TclStubs tclStubs = {
     Tcl_CreateCommand, /* 91 */
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
-    TclCreateInterp, /* 94 */
+    Tcl_CreateInterp, /* 94 */
     0, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateSlave, /* 97 */

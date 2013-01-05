@@ -1363,7 +1363,24 @@ Tcl_UtfToExternal(
  *
  *---------------------------------------------------------------------------
  */
-void
+
+MODULE_SCOPE const TclStubs tclStubs;
+
+/* Dummy const structure returned by Tcl_FindExecutable,
+ * which looks like an Tcl_Interp, but in reality is not.
+ * It contains just enough for Tcl_InitStubs to be able
+ * to initialize the stub table. */
+static const struct {
+    const char *unused1;
+    void (*unused2) (void);
+    int unused3;
+    const struct TclStubs *stubTable;
+} dummyInterp = {
+    0, 0, 0, &tclStubs
+};
+
+#undef Tcl_FindExecutable
+Tcl_Interp *
 Tcl_FindExecutable(
     const void *argv0)		/* The value of the application's argv[0]
 				 * (native). */
@@ -1371,6 +1388,7 @@ Tcl_FindExecutable(
     TclInitSubsystems();
     TclpSetInitialEncodings();
     TclpFindExecutable(argv0);
+    return (Tcl_Interp *)&dummyInterp;
 }
 
 /*

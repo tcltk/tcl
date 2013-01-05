@@ -54,7 +54,6 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
  *
  *----------------------------------------------------------------------
  */
-#undef Tcl_InitStubs
 MODULE_SCOPE const char *
 TclInitStubs(
     Tcl_Interp *interp,
@@ -64,7 +63,7 @@ TclInitStubs(
     int magic)
 {
     Interp *iPtr = (Interp *) interp;
-    const char *actualVersion = NULL;
+    const char *actualVersion = tclversion;
     ClientData pkgData = NULL;
     const TclStubs *stubsPtr = iPtr->stubTable;
 
@@ -74,44 +73,45 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
+    if (!stubsPtr || (stubsPtr->magic != magic)) {
 	iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";
 	iPtr->legacyFreeProc = 0; /* TCL_STATIC */
 	return NULL;
     }
 
-    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
-    if (actualVersion == NULL) {
-	return NULL;
-    }
-    if (exact) {
-	const char *p = version;
-	int count = 0;
-
-	while (*p) {
-	    count += !ISDIGIT(*p++);
+    if (iPtr->legacyResult) {
+	actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+	if (actualVersion == NULL) {
+	    return NULL;
 	}
-	if (count == 1) {
-	    const char *q = actualVersion;
+	if (exact) {
+	    const char *p = version;
+	    int count = 0;
 
-	    p = version;
-	    while (*p && (*p == *q)) {
-		p++; q++;
+	    while (*p) {
+		count += !ISDIGIT(*p++);
 	    }
-	    if (*p || ISDIGIT(*q)) {
-		/* Construct error message */
-		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
-		return NULL;
-	    }
-	} else {
-	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
-	    if (actualVersion == NULL) {
-		return NULL;
+	    if (count == 1) {
+		const char *q = actualVersion;
+
+		p = version;
+		while (*p && (*p == *q)) {
+		    p++; q++;
+		}
+		if (*p || ISDIGIT(*q)) {
+		    /* Construct error message */
+		    stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		    return NULL;
+		}
+	    } else {
+		actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		if (actualVersion == NULL) {
+		    return NULL;
+		}
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *) pkgData;
-
+    tclStubsPtr = stubsPtr;
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
 	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
@@ -121,7 +121,6 @@ TclInitStubs(
 	tclIntStubsPtr = NULL;
 	tclIntPlatStubsPtr = NULL;
     }
-
     return actualVersion;
 }
 
