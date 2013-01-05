@@ -253,13 +253,24 @@ VarHashCreateVar(
  *	otherwise, push objResultPtr. If (result < 0), objResultPtr already
  *	has the correct reference count.
  *
- * We use the new compile-time assertions to cheack that nCleanup is constant
+ * We use the new compile-time assertions to check that nCleanup is constant
  * and within range.
  */
 
-#define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling) \
+/* Verify the stack depth, only when no expansion is in progress */
+
+#if TCL_COMPILE_DEBUG
+#define CHECK_STACK()							\
+    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, \
+	    /*checkStack*/ auxObjList == NULL)
+#else
+#define CHECK_STACK()
+#endif
+
+#define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling)	\
     do {							\
 	TCL_CT_ASSERT((nCleanup >= 0) && (nCleanup <= 2));	\
+	CHECK_STACK();						\
 	if (nCleanup == 0) {					\
 	    if (resultHandling != 0) {				\
 		if ((resultHandling) > 0) {			\
@@ -288,7 +299,8 @@ VarHashCreateVar(
 	}							\
     } while (0)
 
-#define NEXT_INST_V(pcAdjustment, nCleanup, resultHandling) \
+#define NEXT_INST_V(pcAdjustment, nCleanup, resultHandling)	\
+    CHECK_STACK();						\
     do {							\
 	pc += (pcAdjustment);					\
 	cleanup = (nCleanup);					\
@@ -673,7 +685,7 @@ static void		PrintByteCodeInfo(ByteCode *codePtr);
 static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    const unsigned char *pc, int stackTop,
-			    int stackLowerBound, int checkStack);
+			    int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
 static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		DupExprCodeInternalRep(Tcl_Obj *srcPtr,
@@ -1535,11 +1547,20 @@ TclIncrObj(
 #define	catchStack	(TD->stack)
 #define	initTosPtr	((Tcl_Obj **) &TD->stack[codePtr->maxExceptDepth - 1])
 
-#define capacity2size(cap)						\
-    (offsetof(TEBCdata, stack) + sizeof(void *)*(cap + codePtr->maxExceptDepth))
+/*
+ * The execution uses a unified stack: first a TEBCdata, immediately
+ * above it the catch stack, then the execution stack.
+ *
+ * Make sure the catch stack is large enough to hold the maximum number of
+ * catch commands that could ever be executing at the same time (this will
+ * be no more than the exception range array's depth). Make sure the
+ * execution stack is large enough to execute this ByteCode.
+ */
 
-#define size2capacity(s) \
-    (((s - offsetof(TEBCdata, stack))/sizeof(void *)) - codePtr->maxExceptDepth)
+// FIXME! The "+1" should not be necessary, temporary until we fix BC issues
+
+#define capacity2size(cap)						\
+    (offsetof(TEBCdata, stack) + sizeof(void *)*(cap + codePtr->maxExceptDepth + 1))
 
 int
 TclNRExecuteByteCode(
@@ -1548,7 +1569,6 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     TEBCdata *TD;
-    unsigned int size = capacity2size(codePtr->maxStackDepth);
     
     if (iPtr->execEnvPtr->rewind) {
 	return TCL_ERROR;
@@ -1568,7 +1588,7 @@ TclNRExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    TD = ckalloc(size);
+    TD = ckalloc(capacity2size(codePtr->maxStackDepth));
 
     TD->codePtr     = codePtr;
     TD->tosPtr = initTosPtr;
@@ -1845,8 +1865,7 @@ TEBCresume(
      * Skip the stack depth check if an expansion is in progress.
      */
 
-    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, 0,
-	    /*checkStack*/ auxObjList == NULL);
+    CHECK_STACK();
     if (traceInstructions) {
 	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
@@ -2384,11 +2403,7 @@ TEBCresume(
 
 	    depth = tosPtr - initTosPtr;
 	    TD = ckrealloc(TD, size);
-	    if (size == UINT_MAX) {
-		TD->capacity = reqWords;
-	    } else {
-		TD->capacity = size2capacity(size);
-	    }
+	    TD->capacity = reqWords;
 	    tosPtr = initTosPtr + depth;
 	}
 
@@ -8110,11 +8125,10 @@ ValidatePcAndStackTop(
     int stackTop,		/* Current stack top. Must be between
 				 * stackLowerBound and stackUpperBound
 				 * (inclusive). */
-    int stackLowerBound,	/* Smallest legal value for stackTop. */
     int checkStack)		/* 0 if the stack depth check should be
 				 * skipped. */
 {
-    int stackUpperBound = stackLowerBound + codePtr->maxStackDepth;
+    int stackUpperBound = codePtr->maxStackDepth;
 				/* Greatest legal value for stackTop. */
     unsigned relativePc = (unsigned) (pc - codePtr->codeStart);
     unsigned long codeStart = (unsigned long) codePtr->codeStart;
@@ -8132,13 +8146,13 @@ ValidatePcAndStackTop(
 		(unsigned) opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
-    if (checkStack &&
-	    ((stackTop < stackLowerBound) || (stackTop > stackUpperBound))) {
+    if (checkStack && 
+	    ((stackTop < 0) || (stackTop > stackUpperBound))) {
 	int numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL);
 
-	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min %i, max %i)",
-		stackTop, relativePc, stackLowerBound, stackUpperBound);
+	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min 0, max %i)",
+		stackTop, relativePc, stackUpperBound);
 	if (cmd != NULL) {
 	    Tcl_Obj *message;
 
