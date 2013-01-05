@@ -761,10 +761,8 @@ Tcl_InterpObjCmd(
 	     */
 
 	    for (i = 0; ; i++) {
-		Tcl_CmdInfo cmdInfo;
-
 		sprintf(buf, "interp%d", i);
-		if (Tcl_GetCommandInfo(interp, buf, &cmdInfo) == 0) {
+		if (Tcl_FindCommand(interp, buf, NULL, 0) == 0) {
 		    break;
 		}
 	    }

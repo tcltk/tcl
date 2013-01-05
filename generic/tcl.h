@@ -915,42 +915,6 @@ typedef struct Tcl_Namespace {
 
 /*
  *----------------------------------------------------------------------------
- * Information about commands that is returned by Tcl_GetCommandInfo and
- * passed to Tcl_SetCommandInfo. objProc is an objc/objv object-based command
- * function while proc is a traditional Tcl argc/argv string-based function.
- * Tcl_CreateObjCommand and Tcl_CreateCommand ensure that both objProc and
- * proc are non-NULL and can be called to execute the command. However, it may
- * be faster to call one instead of the other. The member isNativeObjectProc
- * is set to 1 if an object-based function was registered by
- * Tcl_CreateObjCommand, and to 0 if a string-based function was registered by
- * Tcl_CreateCommand. The other function is typically set to a compatibility
- * wrapper that does string-to-object or object-to-string argument conversions
- * then calls the other function.
- */
-
-typedef struct Tcl_CmdInfo {
-    int isNativeObjectProc;	/* 1 if objProc was registered by a call to
-				 * Tcl_CreateObjCommand; 0 otherwise.
-				 * Tcl_SetCmdInfo does not modify this
-				 * field. */
-    Tcl_ObjCmdProc *objProc;	/* Command's object-based function. */
-    ClientData objClientData;	/* ClientData for object proc. */
-    Tcl_CmdProc *proc;		/* Command's string-based function. */
-    ClientData clientData;	/* ClientData for string proc. */
-    Tcl_CmdDeleteProc *deleteProc;
-				/* Function to call when command is
-				 * deleted. */
-    ClientData deleteData;	/* Value to pass to deleteProc (usually the
-				 * same as clientData). */
-    Tcl_Namespace *namespacePtr;/* Points to the namespace that contains this
-				 * command. Note that Tcl_SetCmdInfo will not
-				 * change a command's namespace; use
-				 * TclRenameCommand or Tcl_Eval (of 'rename')
-				 * to do that. */
-} Tcl_CmdInfo;
-
-/*
- *----------------------------------------------------------------------------
  * The structure defined below is used to hold dynamic strings. The only
  * fields that clients should use are string and length, accessible via the
  * macros Tcl_DStringValue and Tcl_DStringLength.

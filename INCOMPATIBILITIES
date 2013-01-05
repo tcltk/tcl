@@ -2,7 +2,8 @@ This file documents the incompatibilities to Tcl8.6 in the published API,
 as seen by scripts, tcl.h, tcl.decls and tclInt.decls. Other changes in
 tclInt.h are not listed.
 
-* TIP280 and [info frame] do not exist anymore. Some changes in tclInt.decls.
+GONE FOR GOOD (or so I hope)
+-------------
 
 * compile flags USE_TCLALLOC and USE_THREAD_ALLOC are ignored
 
@@ -10,7 +11,15 @@ tclInt.h are not listed.
   are gone from tclInt.decls (more to come)
 
 * allocator API is gone from tclInt.decls: no more obj or stack allocation
-  accessible from outside,TclpAlloc and friends are gone too
+  accessible from outside, TclpAlloc and friends are gone too
 
-* There is no more direct evaluation, averything goes through bytecodes
+* There is no more direct evaluation, everything goes through bytecodes
   (except for canonical lists). TCL_EVAL_DIRECT is simply ignored.
+
+
+GONE FOR NOW (or so I hope)
+------------
+
+* TIP280 and [info frame] do not exist anymore. Some changes in tclInt.decls.
+
+* The complete Tcl_CmdInfo manipulation

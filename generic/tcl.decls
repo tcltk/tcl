@@ -568,10 +568,10 @@ declare 157 {
 declare 158 {
     CONST86 Tcl_ChannelType *Tcl_GetChannelType(Tcl_Channel chan)
 }
-declare 159 {
-    int Tcl_GetCommandInfo(Tcl_Interp *interp, const char *cmdName,
-	    Tcl_CmdInfo *infoPtr)
-}
+#declare 159 {
+#    int Tcl_GetCommandInfo(Tcl_Interp *interp, const char *cmdName,
+#	    Tcl_CmdInfo *infoPtr)
+#}
 declare 160 {
     CONST84_RETURN char *Tcl_GetCommandName(Tcl_Interp *interp,
 	    Tcl_Command command)
@@ -801,10 +801,10 @@ declare 225 {
     int Tcl_SetChannelOption(Tcl_Interp *interp, Tcl_Channel chan,
 	    const char *optionName, const char *newValue)
 }
-declare 226 {
-    int Tcl_SetCommandInfo(Tcl_Interp *interp, const char *cmdName,
-	    const Tcl_CmdInfo *infoPtr)
-}
+#declare 226 {
+#    int Tcl_SetCommandInfo(Tcl_Interp *interp, const char *cmdName,
+#	    const Tcl_CmdInfo *infoPtr)
+#}
 declare 227 {
     void Tcl_SetErrno(int err)
 }
@@ -1726,13 +1726,13 @@ declare 483 {
 	    Tcl_CmdObjTraceProc *objProc, ClientData clientData,
 	    Tcl_CmdObjTraceDeleteProc *delProc)
 }
-declare 484 {
-    int Tcl_GetCommandInfoFromToken(Tcl_Command token, Tcl_CmdInfo *infoPtr)
-}
-declare 485 {
-    int Tcl_SetCommandInfoFromToken(Tcl_Command token,
-	    const Tcl_CmdInfo *infoPtr)
-}
+#declare 484 {
+#    int Tcl_GetCommandInfoFromToken(Tcl_Command token, Tcl_CmdInfo *infoPtr)
+#}
+#declare 485 {
+#    int Tcl_SetCommandInfoFromToken(Tcl_Command token,
+#	    const Tcl_CmdInfo *infoPtr)
+#}
 
 ### New functions on 64-bit dev branch ###
 # TIP#72 (64-bit values) dkf

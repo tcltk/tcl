@@ -488,9 +488,7 @@ EXTERN int		Tcl_GetChannelOption(Tcl_Interp *interp,
 				Tcl_DString *dsPtr);
 /* 158 */
 EXTERN CONST86 Tcl_ChannelType * Tcl_GetChannelType(Tcl_Channel chan);
-/* 159 */
-EXTERN int		Tcl_GetCommandInfo(Tcl_Interp *interp,
-				const char *cmdName, Tcl_CmdInfo *infoPtr);
+/* Slot 159 is reserved */
 /* 160 */
 EXTERN CONST84_RETURN char * Tcl_GetCommandName(Tcl_Interp *interp,
 				Tcl_Command command);
@@ -671,10 +669,7 @@ EXTERN void		Tcl_SetChannelBufferSize(Tcl_Channel chan, int sz);
 EXTERN int		Tcl_SetChannelOption(Tcl_Interp *interp,
 				Tcl_Channel chan, const char *optionName,
 				const char *newValue);
-/* 226 */
-EXTERN int		Tcl_SetCommandInfo(Tcl_Interp *interp,
-				const char *cmdName,
-				const Tcl_CmdInfo *infoPtr);
+/* Slot 226 is reserved */
 /* 227 */
 EXTERN void		Tcl_SetErrno(int err);
 /* 228 */
@@ -1389,12 +1384,8 @@ EXTERN Tcl_Trace	Tcl_CreateObjTrace(Tcl_Interp *interp, int level,
 				int flags, Tcl_CmdObjTraceProc *objProc,
 				ClientData clientData,
 				Tcl_CmdObjTraceDeleteProc *delProc);
-/* 484 */
-EXTERN int		Tcl_GetCommandInfoFromToken(Tcl_Command token,
-				Tcl_CmdInfo *infoPtr);
-/* 485 */
-EXTERN int		Tcl_SetCommandInfoFromToken(Tcl_Command token,
-				const Tcl_CmdInfo *infoPtr);
+/* Slot 484 is reserved */
+/* Slot 485 is reserved */
 /* 486 */
 EXTERN Tcl_Obj *	Tcl_DbNewWideIntObj(Tcl_WideInt wideValue,
 				const char *file, int line);
@@ -1997,7 +1988,7 @@ typedef struct TclStubs {
     CONST84_RETURN char * (*tcl_GetChannelName) (Tcl_Channel chan); /* 156 */
     int (*tcl_GetChannelOption) (Tcl_Interp *interp, Tcl_Channel chan, const char *optionName, Tcl_DString *dsPtr); /* 157 */
     CONST86 Tcl_ChannelType * (*tcl_GetChannelType) (Tcl_Channel chan); /* 158 */
-    int (*tcl_GetCommandInfo) (Tcl_Interp *interp, const char *cmdName, Tcl_CmdInfo *infoPtr); /* 159 */
+    void (*reserved159)(void);
     CONST84_RETURN char * (*tcl_GetCommandName) (Tcl_Interp *interp, Tcl_Command command); /* 160 */
     int (*tcl_GetErrno) (void); /* 161 */
     CONST84_RETURN char * (*tcl_GetHostName) (void); /* 162 */
@@ -2072,7 +2063,7 @@ typedef struct TclStubs {
     void (*tcl_SetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 223 */
     void (*tcl_SetChannelBufferSize) (Tcl_Channel chan, int sz); /* 224 */
     int (*tcl_SetChannelOption) (Tcl_Interp *interp, Tcl_Channel chan, const char *optionName, const char *newValue); /* 225 */
-    int (*tcl_SetCommandInfo) (Tcl_Interp *interp, const char *cmdName, const Tcl_CmdInfo *infoPtr); /* 226 */
+    void (*reserved226)(void);
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
@@ -2330,8 +2321,8 @@ typedef struct TclStubs {
     int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 481 */
     void (*tcl_GetTime) (Tcl_Time *timeBuf); /* 482 */
     Tcl_Trace (*tcl_CreateObjTrace) (Tcl_Interp *interp, int level, int flags, Tcl_CmdObjTraceProc *objProc, ClientData clientData, Tcl_CmdObjTraceDeleteProc *delProc); /* 483 */
-    int (*tcl_GetCommandInfoFromToken) (Tcl_Command token, Tcl_CmdInfo *infoPtr); /* 484 */
-    int (*tcl_SetCommandInfoFromToken) (Tcl_Command token, const Tcl_CmdInfo *infoPtr); /* 485 */
+    void (*reserved484)(void);
+    void (*reserved485)(void);
     Tcl_Obj * (*tcl_DbNewWideIntObj) (Tcl_WideInt wideValue, const char *file, int line); /* 486 */
     int (*tcl_GetWideIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_WideInt *widePtr); /* 487 */
     Tcl_Obj * (*tcl_NewWideIntObj) (Tcl_WideInt wideValue); /* 488 */
@@ -2823,8 +2814,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetChannelOption) /* 157 */
 #define Tcl_GetChannelType \
 	(tclStubsPtr->tcl_GetChannelType) /* 158 */
-#define Tcl_GetCommandInfo \
-	(tclStubsPtr->tcl_GetCommandInfo) /* 159 */
+/* Slot 159 is reserved */
 #define Tcl_GetCommandName \
 	(tclStubsPtr->tcl_GetCommandName) /* 160 */
 #define Tcl_GetErrno \
@@ -2962,8 +2952,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SetChannelBufferSize) /* 224 */
 #define Tcl_SetChannelOption \
 	(tclStubsPtr->tcl_SetChannelOption) /* 225 */
-#define Tcl_SetCommandInfo \
-	(tclStubsPtr->tcl_SetCommandInfo) /* 226 */
+/* Slot 226 is reserved */
 #define Tcl_SetErrno \
 	(tclStubsPtr->tcl_SetErrno) /* 227 */
 #define Tcl_SetErrorCode \
@@ -3477,10 +3466,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetTime) /* 482 */
 #define Tcl_CreateObjTrace \
 	(tclStubsPtr->tcl_CreateObjTrace) /* 483 */
-#define Tcl_GetCommandInfoFromToken \
-	(tclStubsPtr->tcl_GetCommandInfoFromToken) /* 484 */
-#define Tcl_SetCommandInfoFromToken \
-	(tclStubsPtr->tcl_SetCommandInfoFromToken) /* 485 */
+/* Slot 484 is reserved */
+/* Slot 485 is reserved */
 #define Tcl_DbNewWideIntObj \
 	(tclStubsPtr->tcl_DbNewWideIntObj) /* 486 */
 #define Tcl_GetWideIntFromObj \

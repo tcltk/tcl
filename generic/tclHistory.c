@@ -128,10 +128,10 @@ Tcl_RecordAndEvalObj(
 				 * in global variable context instead of the
 				 * current procedure. */
 {
-    int result, call = 1;
-    Tcl_CmdInfo info;
+    int result;
     HistoryObjs *histObjsPtr =
 	    Tcl_GetAssocData(interp, HISTORY_OBJS_KEY, NULL);
+    Tcl_Obj *list[3];
 
     /*
      * Create the references to the [::history add] command if necessary.
@@ -148,37 +148,23 @@ Tcl_RecordAndEvalObj(
     }
 
     /*
-     * Do not call [history] if it has been replaced by an empty proc
+     * Do recording by eval'ing a tcl history command: history add $cmd. 
      */
-
-    result = Tcl_GetCommandInfo(interp, "::history", &info);
-    if (result && (info.deleteProc == TclProcDeleteProc)) {
-	Proc *procPtr = (Proc *) info.objClientData;
-	call = (procPtr->cmdPtr->compileProc != TclCompileNoOp);
-    }
-
-    if (call) {
-	Tcl_Obj *list[3];
-
-	/*
-	 * Do recording by eval'ing a tcl history command: history add $cmd. 
-	 */
-
-	list[0] = histObjsPtr->historyObj;
-	list[1] = histObjsPtr->addObj;
-	list[2] = cmdPtr;
-
-	Tcl_IncrRefCount(cmdPtr);
-	(void) Tcl_EvalObjv(interp, 3, list, TCL_EVAL_GLOBAL);
-	Tcl_DecrRefCount(cmdPtr);
-
-	/*
-	 * One possible failure mode above: exceeding a resource limit.
-	 */
-	
-	if (Tcl_LimitExceeded(interp)) {
-	    return TCL_ERROR;
-	}
+    
+    list[0] = histObjsPtr->historyObj;
+    list[1] = histObjsPtr->addObj;
+    list[2] = cmdPtr;
+    
+    Tcl_IncrRefCount(cmdPtr);
+    (void) Tcl_EvalObjv(interp, 3, list, TCL_EVAL_GLOBAL);
+    Tcl_DecrRefCount(cmdPtr);
+    
+    /*
+     * One possible failure mode above: exceeding a resource limit.
+     */
+    
+    if (Tcl_LimitExceeded(interp)) {
+	return TCL_ERROR;
     }
 
     /*

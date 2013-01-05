@@ -1839,14 +1839,13 @@ Tcl_ForgetImport(
 
     for (hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search); (hPtr != NULL);
 	    hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_CmdInfo info;
 	Tcl_Command token = Tcl_GetHashValue(hPtr);
-	Tcl_Command origin = TclGetOriginalCommand(token);
+	Command *origin = (Command *) TclGetOriginalCommand(token);
 
-	if (Tcl_GetCommandInfoFromToken(origin, &info) == 0) {
+	if (origin == NULL) {
 	    continue;			/* Not an imported command. */
 	}
-	if (info.namespacePtr != (Tcl_Namespace *) sourceNsPtr) {
+	if (origin->nsPtr != sourceNsPtr) {
 	    /*
 	     * Original not in namespace we're matching. Check the first link
 	     * in the import chain.
@@ -1854,18 +1853,17 @@ Tcl_ForgetImport(
 
 	    Command *cmdPtr = (Command *) token;
 	    ImportedCmdData *dataPtr = cmdPtr->objClientData;
-	    Tcl_Command firstToken = (Tcl_Command) dataPtr->realCmdPtr;
+	    Command *firstToken = dataPtr->realCmdPtr;
 
 	    if (firstToken == origin) {
 		continue;
 	    }
-	    Tcl_GetCommandInfoFromToken(firstToken, &info);
-	    if (info.namespacePtr != (Tcl_Namespace *) sourceNsPtr) {
+	    if (firstToken->nsPtr != sourceNsPtr) {
 		continue;
 	    }
 	    origin = firstToken;
 	}
-	if (Tcl_StringMatch(Tcl_GetCommandName(NULL, origin), simplePattern)){
+	if (Tcl_StringMatch(Tcl_GetCommandName(NULL, (Tcl_Command) origin), simplePattern)){
 	    Tcl_DeleteCommandFromToken(interp, token);
 	}
     }

@@ -162,11 +162,7 @@ static Tcl_ThreadCreateType AsyncThreadProc(ClientData);
 #endif
 static void		CleanupTestSetassocdataTests(
 			    ClientData clientData, Tcl_Interp *interp);
-static void		CmdDelProc1(ClientData clientData);
-static void		CmdDelProc2(ClientData clientData);
 static int		CmdProc1(ClientData clientData,
-			    Tcl_Interp *interp, int argc, const char **argv);
-static int		CmdProc2(ClientData clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static void		CmdTraceDeleteProc(
 			    ClientData clientData, Tcl_Interp *interp,
@@ -218,8 +214,6 @@ static void		PrintParse(Tcl_Interp *interp, Tcl_Parse *parsePtr);
 static void		SpecialFree(char *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(ClientData dummy,
-			    Tcl_Interp *interp, int argc, const char **argv);
-static int		TestcmdinfoCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestcmdtokenCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
@@ -569,8 +563,6 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testchannelevent", TestChannelEventCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testcmdtoken", TestcmdtokenCmd, NULL,
-	    NULL);
-    Tcl_CreateCommand(interp, "testcmdinfo", TestcmdinfoCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testcmdtrace", TestcmdtraceCmd,
 	    NULL, NULL);
@@ -994,96 +986,7 @@ AsyncThreadProc(
 }
 #endif
 
-/*
- *----------------------------------------------------------------------
- *
- * TestcmdinfoCmd --
- *
- *	This procedure implements the "testcmdinfo" command.  It is used to
- *	test Tcl_GetCommandInfo, Tcl_SetCommandInfo, and command creation and
- *	deletion.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	Creates and deletes various commands and modifies their data.
- *
- *----------------------------------------------------------------------
- */
 
-	/* ARGSUSED */
-static int
-TestcmdinfoCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
-{
-    Tcl_CmdInfo info;
-
-    if (argc != 3) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" option cmdName\"", NULL);
-	return TCL_ERROR;
-    }
-    if (strcmp(argv[1], "create") == 0) {
-	Tcl_CreateCommand(interp, argv[2], CmdProc1, (ClientData) "original",
-		CmdDelProc1);
-    } else if (strcmp(argv[1], "delete") == 0) {
-	Tcl_DStringInit(&delString);
-	Tcl_DeleteCommand(interp, argv[2]);
-	Tcl_DStringResult(interp, &delString);
-    } else if (strcmp(argv[1], "get") == 0) {
-	if (Tcl_GetCommandInfo(interp, argv[2], &info) ==0) {
-	    Tcl_SetResult(interp, "??", TCL_STATIC);
-	    return TCL_OK;
-	}
-	if (info.proc == CmdProc1) {
-	    Tcl_AppendResult(interp, "CmdProc1", " ",
-		    (char *) info.clientData, NULL);
-	} else if (info.proc == CmdProc2) {
-	    Tcl_AppendResult(interp, "CmdProc2", " ",
-		    (char *) info.clientData, NULL);
-	} else {
-	    Tcl_AppendResult(interp, "unknown", NULL);
-	}
-	if (info.deleteProc == CmdDelProc1) {
-	    Tcl_AppendResult(interp, " CmdDelProc1", " ",
-		    (char *) info.deleteData, NULL);
-	} else if (info.deleteProc == CmdDelProc2) {
-	    Tcl_AppendResult(interp, " CmdDelProc2", " ",
-		    (char *) info.deleteData, NULL);
-	} else {
-	    Tcl_AppendResult(interp, " unknown", NULL);
-	}
-	Tcl_AppendResult(interp, " ", info.namespacePtr->fullName, NULL);
-	if (info.isNativeObjectProc) {
-	    Tcl_AppendResult(interp, " nativeObjectProc", NULL);
-	} else {
-	    Tcl_AppendResult(interp, " stringProc", NULL);
-	}
-    } else if (strcmp(argv[1], "modify") == 0) {
-	info.proc = CmdProc2;
-	info.clientData = (ClientData) "new_command_data";
-	info.objProc = NULL;
-	info.objClientData = NULL;
-	info.deleteProc = CmdDelProc2;
-	info.deleteData = (ClientData) "new_delete_data";
-	if (Tcl_SetCommandInfo(interp, argv[2], &info) == 0) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
-	}
-    } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, get, or modify", NULL);
-	return TCL_ERROR;
-    }
-    return TCL_OK;
-}
-
-	/*ARGSUSED*/
 static int
 CmdProc1(
     ClientData clientData,	/* String to return. */
@@ -1096,35 +999,6 @@ CmdProc1(
 }
 
 	/*ARGSUSED*/
-static int
-CmdProc2(
-    ClientData clientData,	/* String to return. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
-{
-    Tcl_AppendResult(interp, "CmdProc2 ", (char *) clientData, NULL);
-    return TCL_OK;
-}
-
-static void
-CmdDelProc1(
-    ClientData clientData)	/* String to save. */
-{
-    Tcl_DStringInit(&delString);
-    Tcl_DStringAppend(&delString, "CmdDelProc1 ", -1);
-    Tcl_DStringAppend(&delString, (char *) clientData, -1);
-}
-
-static void
-CmdDelProc2(
-    ClientData clientData)	/* String to save. */
-{
-    Tcl_DStringInit(&delString);
-    Tcl_DStringAppend(&delString, "CmdDelProc2 ", -1);
-    Tcl_DStringAppend(&delString, (char *) clientData, -1);
-}
-
 /*
  *----------------------------------------------------------------------
  *
@@ -1439,18 +1313,17 @@ CreatedCommandProc(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    Tcl_CmdInfo info;
-    int found;
+    Command *cmd;;
 
-    found = Tcl_GetCommandInfo(interp, "test_ns_basic::createdcommand",
-	    &info);
-    if (!found) {
+    cmd = (Command *) Tcl_FindCommand(interp, "test_ns_basic::createdcommand",
+	    NULL, 0);
+    if (cmd == NULL) {
 	Tcl_AppendResult(interp, "CreatedCommandProc could not get command info for test_ns_basic::createdcommand",
 		NULL);
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "CreatedCommandProc in ",
-	    info.namespacePtr->fullName, NULL);
+	    cmd->nsPtr->fullName, NULL);
     return TCL_OK;
 }
 
@@ -1461,17 +1334,16 @@ CreatedCommandProc2(
     int argc,			/* Number of arguments. */
     const char **argv)		/* Argument strings. */
 {
-    Tcl_CmdInfo info;
-    int found;
+    Command *cmd;;
 
-    found = Tcl_GetCommandInfo(interp, "value:at:", &info);
-    if (!found) {
+    cmd = (Command *) Tcl_FindCommand(interp, "value:at:", NULL, 0);
+    if (cmd == NULL) {
 	Tcl_AppendResult(interp, "CreatedCommandProc2 could not get command info for test_ns_basic::createdcommand",
 		NULL);
 	return TCL_ERROR;
     }
     Tcl_AppendResult(interp, "CreatedCommandProc2 in ",
-	    info.namespacePtr->fullName, NULL);
+	    cmd->nsPtr->fullName, NULL);
     return TCL_OK;
 }
 
