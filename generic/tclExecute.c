@@ -255,9 +255,16 @@ VarHashCreateVar(
  * and within range.
  */
 
-#define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling) \
+#if TCL_COMPILE_DEBUG
+#define CHECK_STACK() assert(CURR_DEPTH <= codePtr->maxStackDepth)
+#else
+#define CHECK_STACK()
+#endif
+
+#define NEXT_INST_F(pcAdjustment, nCleanup, resultHandling)	\
     do {							\
 	TCL_CT_ASSERT((nCleanup >= 0) && (nCleanup <= 2));	\
+	CHECK_STACK();						\
 	if (nCleanup == 0) {					\
 	    if (resultHandling != 0) {				\
 		if ((resultHandling) > 0) {			\
@@ -286,7 +293,8 @@ VarHashCreateVar(
 	}							\
     } while (0)
 
-#define NEXT_INST_V(pcAdjustment, nCleanup, resultHandling) \
+#define NEXT_INST_V(pcAdjustment, nCleanup, resultHandling)	\
+    CHECK_STACK();						\
     do {							\
 	pc += (pcAdjustment);					\
 	cleanup = (nCleanup);					\
