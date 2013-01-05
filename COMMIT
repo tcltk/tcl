@@ -1,0 +1,5 @@
+#! /bin/sh
+
+fossil diff --from trunk >fromTrunk.diff
+
+exec fossil commit $*
