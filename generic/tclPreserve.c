@@ -15,11 +15,6 @@
 #include "tclInt.h"
 
 /*
- * Only use this file if we are NOT using the new code in tclAlloc.c
- */
-
-
-/*
  * The following data structure is used to keep track of all the Tcl_Preserve
  * calls that are still in effect. It grows as needed to accommodate any
  * number of calls in effect.
@@ -50,6 +45,27 @@ TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
 
 #define INITIAL_SIZE	2	/* Initial number of reference slots to make */
 
+/*
+ * The following data structure is used to keep track of whether an arbitrary
+ * block of memory has been deleted. This is used by the TclHandle code to
+ * avoid the more time-expensive algorithm of Tcl_Preserve(). This mechanism
+ * is mainly used when we have lots of references to a few big, expensive
+ * objects that we don't want to live any longer than necessary.
+ */
+
+typedef struct HandleStruct {
+    void *ptr;			/* Pointer to the memory block being tracked.
+				 * This field will become NULL when the memory
+				 * block is deleted. This field must be the
+				 * first in the structure. */
+#ifdef TCL_MEM_DEBUG
+    void *ptr2;			/* Backup copy of the above pointer used to
+				 * ensure that the contents of the handle are
+				 * not changed by anyone else. */
+#endif
+    int refCount;		/* Number of TclHandlePreserve() calls in
+				 * effect on this handle. */
+} HandleStruct;
 
 /*
  *----------------------------------------------------------------------
@@ -280,28 +296,6 @@ Tcl_EventuallyFree(
 	freeProc(clientData);
     }
 }
-
-/*
- * The following data structure is used to keep track of whether an arbitrary
- * block of memory has been deleted. This is used by the TclHandle code to
- * avoid the more time-expensive algorithm of Tcl_Preserve(). This mechanism
- * is mainly used when we have lots of references to a few big, expensive
- * objects that we don't want to live any longer than necessary.
- */
-
-typedef struct HandleStruct {
-    void *ptr;			/* Pointer to the memory block being tracked.
-				 * This field will become NULL when the memory
-				 * block is deleted. This field must be the
-				 * first in the structure. */
-#ifdef TCL_MEM_DEBUG
-    void *ptr2;			/* Backup copy of the above pointer used to
-				 * ensure that the contents of the handle are
-				 * not changed by anyone else. */
-#endif
-    int refCount;		/* Number of TclHandlePreserve() calls in
-				 * effect on this handle. */
-} HandleStruct;
 
 /*
  *---------------------------------------------------------------------------
