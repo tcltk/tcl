@@ -11569,19 +11569,20 @@ Index: generic/tclInt.h
      struct NRE_callback *callbackPtr;
  				/* Top callback in NRE's stack. */
      struct CoroutineData *corPtr;
-@@ -1695,11 +1482,10 @@
+@@ -1695,11 +1482,11 @@
  				 * is used to remove all those imported
  				 * commands when deleting this "real"
  				 * command. */
      CommandTrace *tracePtr;	/* First in list of all traces set for this
  				 * command. */
 -    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
++    Tcl_ObjCmdProc *nreProc;
  } Command;
  
  /*
   * Flag bits for commands.
   *
-@@ -1769,28 +1555,10 @@
+@@ -1769,28 +1556,10 @@
  
  enum PkgPreferOptions {
      PKG_PREFER_LATEST, PKG_PREFER_STABLE
@@ -11610,7 +11611,7 @@ Index: generic/tclInt.h
   * This structure defines an interpreter, which is a collection of commands
   * plus other state information related to interpreting commands, such as
   * variable storage. Primary responsibility for this data structure is in
-@@ -2045,58 +1813,10 @@
+@@ -2045,58 +1814,10 @@
  				 * This information, if present (chanMsg not
  				 * NULL), takes precedence over a POSIX error
  				 * code returned by a channel operation. */
@@ -11669,7 +11670,7 @@ Index: generic/tclInt.h
       */
  
      int packagePrefer;		/* Current package selection mode. */
-@@ -2120,14 +1840,10 @@
+@@ -2120,14 +1841,10 @@
       * inherit the value.
       *
       * They are used by the macros defined below.
@@ -11684,7 +11685,7 @@ Index: generic/tclInt.h
      /*
       * The pointer to the object system root ekeko. c.f. TIP #257.
       */
-@@ -2174,10 +1890,11 @@
+@@ -2174,10 +1891,11 @@
       */
  
      ByteCodeStats stats;	/* Holds compilation and execution statistics
@@ -11696,7 +11697,7 @@ Index: generic/tclInt.h
  /*
   * Macros that use the TSD-ekeko.
   */
-@@ -2352,21 +2069,10 @@
+@@ -2352,21 +2070,10 @@
   * isspace.
   */
  
@@ -11718,7 +11719,7 @@ Index: generic/tclInt.h
   * data structure in memory. Given a starting offset or size, it "rounds up"
   * or "aligns" the offset to the next 8-byte boundary so that any data
   * structure can be placed at the resulting offset without fear of an
-@@ -2749,17 +2455,10 @@
+@@ -2749,17 +2456,10 @@
  MODULE_SCOPE const Tcl_HashKeyType tclArrayHashKeyType;
  MODULE_SCOPE const Tcl_HashKeyType tclOneWordHashKeyType;
  MODULE_SCOPE const Tcl_HashKeyType tclStringHashKeyType;
@@ -11736,7 +11737,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE long	tclObjsFreed;
  #define TCL_MAX_SHARED_OBJ_STATS 5
  MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
-@@ -2806,11 +2505,11 @@
+@@ -2806,11 +2506,11 @@
  MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
  
  MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
@@ -11749,7 +11750,7 @@ Index: generic/tclInt.h
   * have more than the 4 client data entries we can provide directly thorugh
   * the callback API. It is the 'word' information which puts us over the
   * limit. It is needed because the loop body is argument 4 of 'for' and
-@@ -2821,11 +2520,10 @@
+@@ -2821,11 +2521,10 @@
  typedef struct ForIterData {
      Tcl_Obj *cond;		/* Loop condition expression. */
      Tcl_Obj *body;		/* Loop body. */
@@ -11761,7 +11762,7 @@ Index: generic/tclInt.h
  /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
   *            and Tcl_FindSymbol. This structure corresponds to an opaque
   *            typedef in tcl.h */
-@@ -2880,25 +2578,10 @@
+@@ -2880,25 +2579,10 @@
  MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
  			    const unsigned char *bytes, int len);
  MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -11787,7 +11788,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
  MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
  			    int strLen, const unsigned char *pattern,
-@@ -2909,24 +2592,13 @@
+@@ -2909,24 +2593,13 @@
  MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
  			    Tcl_Channel chan);
  MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
@@ -11812,7 +11813,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
-@@ -2940,11 +2612,10 @@
+@@ -2940,11 +2613,10 @@
  MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
  			    Tcl_Obj *objPtr);
  MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
@@ -11824,7 +11825,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
  MODULE_SCOPE void	TclFinalizeEnvironment(void);
  MODULE_SCOPE void	TclFinalizeEvaluation(void);
-@@ -2957,11 +2628,10 @@
+@@ -2957,11 +2629,10 @@
  MODULE_SCOPE void	TclFinalizeMemorySubsystem(void);
  MODULE_SCOPE void	TclFinalizeNotifier(void);
  MODULE_SCOPE void	TclFinalizeObjects(void);
@@ -11836,7 +11837,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclFloor(const mp_int *a);
  MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
  MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
-@@ -2981,11 +2651,10 @@
+@@ -2981,11 +2652,10 @@
  			    int *typePtr);
  MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
  			    const char *modeString, int *seekFlagPtr,
@@ -11848,7 +11849,7 @@ Index: generic/tclInt.h
  			    Tcl_GlobTypeData *types);
  MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
  			    Tcl_Obj *incrPtr);
-@@ -2993,18 +2662,16 @@
+@@ -2993,18 +2663,16 @@
  			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
  MODULE_SCOPE int	TclInfoExistsCmd(ClientData dummy, Tcl_Interp *interp,
  			    int objc, Tcl_Obj *const objv[]);
@@ -11867,7 +11868,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
  			    Tcl_Interp *interp);
  MODULE_SCOPE void	TclInitEncodingSubsystem(void);
-@@ -3136,28 +2803,24 @@
+@@ -3136,28 +2804,24 @@
  			    Command *cmdPtr);
  MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
  MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
@@ -11898,7 +11899,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
  			    const char *trim, int numTrim);
  MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
-@@ -3255,19 +2918,10 @@
+@@ -3255,19 +2919,10 @@
  MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
  			    int pathc, Tcl_Obj *const pathv[]);
  MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
@@ -11918,7 +11919,7 @@ Index: generic/tclInt.h
  			    Tcl_Obj *const objv[]);
  MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
  			    Tcl_Interp *interp, int objc,
-@@ -3994,14 +3648,14 @@
+@@ -3994,14 +3649,14 @@
  #  define TclIncrObjsAllocated()
  #  define TclIncrObjsFreed()
  #endif /* TCL_COMPILE_STATS */
@@ -11935,7 +11936,7 @@ Index: generic/tclInt.h
  # define TclNewObj(objPtr) \
      TclIncrObjsAllocated(); \
      TclAllocObjStorage(objPtr); \
-@@ -4032,116 +3686,10 @@
+@@ -4032,116 +3687,10 @@
  	} else { \
  	    TclFreeObj(objPtr); \
  	} \
@@ -12052,7 +12053,7 @@ Index: generic/tclInt.h
  			    int line);
  
  # define TclDbNewObj(objPtr, file, line) \
-@@ -4160,12 +3708,58 @@
+@@ -4160,12 +3709,58 @@
      Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
  
  # define TclNewListObjDirect(objc, objv) \
@@ -12112,7 +12113,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
   * copy of the "len" bytes starting at "bytePtr". This code works even if the
-@@ -4698,77 +4292,15 @@
+@@ -4698,77 +4293,15 @@
  
  #define TCL_CT_ASSERT(e) \
      {enum { ct_assert_value = 1/(!!(e)) };}
@@ -12192,7 +12193,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Parameters, structs and macros for the non-recursive engine (NRE)
   *----------------------------------------------------------------
-@@ -4837,12 +4369,12 @@
+@@ -4837,12 +4370,12 @@
  	((Interp *)interp)->deferredCallbacks = NULL;			\
      }
  
@@ -12207,7 +12208,7 @@ Index: generic/tclInt.h
      (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
  #define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
  #endif
-@@ -4850,20 +4382,34 @@
+@@ -4850,20 +4383,34 @@
  #if NRE_ENABLE_ASSERTS
  #define NRE_ASSERT(expr) assert((expr))
  #else
