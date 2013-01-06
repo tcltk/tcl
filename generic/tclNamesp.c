@@ -101,8 +101,6 @@ static int		NamespaceDeleteCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceEvalCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		NRNamespaceEvalCmd(ClientData dummy,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceExistsCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceExportCmd(ClientData dummy,Tcl_Interp *interp,
@@ -113,8 +111,6 @@ static void		NamespaceFree(Namespace *nsPtr);
 static int		NamespaceImportCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		NamespaceInscopeCmd(ClientData dummy,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
-static int		NRNamespaceInscopeCmd(ClientData dummy,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceOriginCmd(ClientData dummy,Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -158,26 +154,26 @@ static const Tcl_ObjType nsNameType = {
  */
 
 static const EnsembleImplMap defaultNamespaceMap[] = {
-    {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
-    {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, 0},
-    {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, NULL, 0},
-    {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, NULL, 0},
-    {"eval",	   NamespaceEvalCmd,	NULL, NRNamespaceEvalCmd, NULL, 0},
-    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
-    {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, 0},
-    {"origin",	   NamespaceOriginCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, 0},
-    {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, NULL, 0},
-    {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-    {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, NULL, 0},
-    {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, NULL, 0},
-    {NULL, NULL, NULL, NULL, NULL, 0}
+    {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, 0},
+    {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, 0},
+    {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, 0},
+    {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
+    {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, 0},
+    {"eval",	   NamespaceEvalCmd,	NULL, NULL, 0},
+    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, 0},
+    {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
+    {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
+    {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
+    {"inscope",	   NamespaceInscopeCmd,	NULL, NULL, 0},
+    {"origin",	   NamespaceOriginCmd,	TclCompileBasic1ArgCmd, NULL, 0},
+    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
+    {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
+    {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, 0},
+    {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, 0},
+    {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, 0},
+    {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, 0},
+    {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, 0},
+    {NULL, NULL, NULL, NULL, 0}
 };
 
 /*
@@ -3207,17 +3203,6 @@ NamespaceEvalCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, NRNamespaceEvalCmd, clientData, objc,
-	    objv);
-}
-
-static int
-NRNamespaceEvalCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
     Interp *iPtr = (Interp *) interp;
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
@@ -3666,17 +3651,6 @@ NamespaceImportCmd(
 static int
 NamespaceInscopeCmd(
     ClientData clientData,	/* Arbitrary value passed to cmd. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, NRNamespaceInscopeCmd, clientData, objc,
-	    objv);
-}
-
-static int
-NRNamespaceInscopeCmd(
-    ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */

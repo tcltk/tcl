@@ -2690,6 +2690,52 @@ Index: generic/tclBasic.c
      /*
       * Create the coro's execEnv, switch to it to push the exit and coro
 
+Index: generic/tclBinary.c
+==================================================================
+--- generic/tclBinary.c
++++ generic/tclBinary.c
+@@ -130,27 +130,27 @@
+ /*
+  * How to construct the ensembles.
+  */
+ 
+ static const EnsembleImplMap binaryMap[] = {
+-    { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+-    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
+-    { "encode", NULL, NULL, NULL, NULL, 0 },
+-    { "decode", NULL, NULL, NULL, NULL, 0 },
+-    { NULL, NULL, NULL, NULL, NULL, 0 }
++    { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, 0 },
++    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, 0 },
++    { "encode", NULL, NULL, NULL, 0 },
++    { "decode", NULL, NULL, NULL, 0 },
++    { NULL, NULL, NULL, NULL, 0 }
+ };
+ static const EnsembleImplMap encodeMap[] = {
+-    { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, (ClientData)HexDigits, 0 },
+-    { "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
+-    { "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
+-    { NULL, NULL, NULL, NULL, NULL, 0 }
++    { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, (ClientData)HexDigits, 0 },
++    { "uuencode", BinaryEncode64,  NULL, (ClientData)UueDigits, 0 },
++    { "base64",   BinaryEncode64,  NULL, (ClientData)B64Digits, 0 },
++    { NULL, NULL, NULL, NULL, 0 }
+ };
+ static const EnsembleImplMap decodeMap[] = {
+-    { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
+-    { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
+-    { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
+-    { NULL, NULL, NULL, NULL, NULL, 0 }
++    { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, 0 },
++    { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, 0 },
++    { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, 0 },
++    { NULL, NULL, NULL, NULL, 0 }
+ };
+ 
+ /*
+  * The following object type represents an array of bytes. An array of bytes
+  * is not equivalent to an internationalized string. Conceptually, a string is
+
 Index: generic/tclCkalloc.c
 ==================================================================
 --- generic/tclCkalloc.c
@@ -2979,6 +3025,87 @@ Index: generic/tclCmdAH.c
      int objc,			/* Number of arguments. */
      Tcl_Obj *const objv[])	/* Argument objects. */
  {
+@@ -948,45 +763,45 @@
+      * the native filesystem or because they reveal information about the
+      * native filesystem.
+      */
+ 
+     static const EnsembleImplMap initMap[] = {
+-	{"atime",	FileAttrAccessTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-	{"attributes",	TclFileAttrsCmd,	NULL, NULL, NULL, 0},
+-	{"channels",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-	{"copy",	TclFileCopyCmd,		NULL, NULL, NULL, 0},
+-	{"delete",	TclFileDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+-	{"dirname",	PathDirNameCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"executable",	FileAttrIsExecutableCmd, TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"exists",	FileAttrIsExistingCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"extension",	PathExtensionCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"isdirectory",	FileAttrIsDirectoryCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"isfile",	FileAttrIsFileCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"join",	PathJoinCmd,		TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+-	{"link",	TclFileLinkCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+-	{"lstat",	FileAttrLinkStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"mtime",	FileAttrModifyTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-	{"mkdir",	TclFileMakeDirsCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+-	{"nativename",	PathNativeNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"normalize",	PathNormalizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"owned",	FileAttrIsOwnedCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"pathtype",	PathTypeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"readable",	FileAttrIsReadableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"readlink",	TclFileReadLinkCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"rename",	TclFileRenameCmd,	NULL, NULL, NULL, 0},
+-	{"rootname",	PathRootNameCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"separator",	FilesystemSeparatorCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-	{"size",	FileAttrSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"split",	PathSplitCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"stat",	FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"system",	PathFilesystemCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
+-	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 0},
+-	{"writable",	FileAttrIsWritableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{NULL, NULL, NULL, NULL, NULL, 0}
++	{"atime",	FileAttrAccessTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
++	{"attributes",	TclFileAttrsCmd,	NULL, NULL, 0},
++	{"channels",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
++	{"copy",	TclFileCopyCmd,		NULL, NULL, 0},
++	{"delete",	TclFileDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
++	{"dirname",	PathDirNameCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++	{"executable",	FileAttrIsExecutableCmd, TclCompileBasic1ArgCmd, NULL, 0},
++	{"exists",	FileAttrIsExistingCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"extension",	PathExtensionCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"isdirectory",	FileAttrIsDirectoryCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"isfile",	FileAttrIsFileCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"join",	PathJoinCmd,		TclCompileBasicMin1ArgCmd, NULL, 0},
++	{"link",	TclFileLinkCmd,		TclCompileBasic1To3ArgCmd, NULL, 0},
++	{"lstat",	FileAttrLinkStatCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{"mtime",	FileAttrModifyTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
++	{"mkdir",	TclFileMakeDirsCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
++	{"nativename",	PathNativeNameCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"normalize",	PathNormalizeCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"owned",	FileAttrIsOwnedCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"pathtype",	PathTypeCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++	{"readable",	FileAttrIsReadableCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"readlink",	TclFileReadLinkCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"rename",	TclFileRenameCmd,	NULL, NULL, 0},
++	{"rootname",	PathRootNameCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"separator",	FilesystemSeparatorCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
++	{"size",	FileAttrSizeCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"split",	PathSplitCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++	{"stat",	FileAttrStatCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{"system",	PathFilesystemCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
++	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, 0},
++	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, 0},
++	{"writable",	FileAttrIsWritableCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{NULL, NULL, NULL, NULL, 0}
+     };
+     return TclMakeEnsemble(interp, "file", initMap);
+ }
+ 
+ /*
 @@ -2396,42 +2211,25 @@
      ClientData dummy,		/* Not used. */
      Tcl_Interp *interp,		/* Current interpreter. */
@@ -3258,39 +3385,87 @@ Index: generic/tclCmdIL.c
  static int		InfoHostnameCmd(ClientData dummy, Tcl_Interp *interp,
  			    int objc, Tcl_Obj *const objv[]);
  static int		InfoLevelCmd(ClientData dummy, Tcl_Interp *interp,
-@@ -168,11 +165,10 @@
-     {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
-     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
-     {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, NULL, 0},
-     {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
+@@ -159,35 +156,34 @@
+  * Array of values describing how to implement each standard subcommand of the
+  * "info" command.
+  */
+ 
+ static const EnsembleImplMap defaultInfoMap[] = {
+-    {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+-    {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
+-    {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
+-    {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, NULL, 0},
+-    {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
 -    {"frame",		   InfoFrameCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-     {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-     {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
-     {"hostname",	   InfoHostnameCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-     {"level",		   InfoLevelCmd,	    TclCompileInfoLevelCmd, NULL, NULL, 0},
-     {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-@@ -214,20 +210,10 @@
-     ClientData dummy,		/* Not used. */
-     Tcl_Interp *interp,		/* Current interpreter. */
-     int objc,			/* Number of arguments. */
-     Tcl_Obj *const objv[])	/* Argument objects. */
- {
--    return Tcl_NRCallObjProc(interp, TclNRIfObjCmd, dummy, objc, objv);
--}
--
--int
--TclNRIfObjCmd(
+-    {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"hostname",	   InfoHostnameCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+-    {"level",		   InfoLevelCmd,	    TclCompileInfoLevelCmd, NULL, NULL, 0},
+-    {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+-    {"loaded",		   InfoLoadedCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"locals",		   TclInfoLocalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, NULL, 0},
+-    {"patchlevel",	   InfoPatchLevelCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+-    {"procs",		   InfoProcsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+-    {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+-    {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {NULL, NULL, NULL, NULL, NULL, 0}
++    {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, 0},
++    {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, 0},
++    {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, 0},
++    {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, 0},
++    {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, 0},
++    {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, 0},
++    {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, 0},
++    {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, 0},
++    {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"hostname",	   InfoHostnameCmd,	    TclCompileBasic0ArgCmd, NULL, 0},
++    {"level",		   InfoLevelCmd,	    TclCompileInfoLevelCmd, NULL, 0},
++    {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, 0},
++    {"loaded",		   InfoLoadedCmd,	    TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"locals",		   TclInfoLocalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, 0},
++    {"patchlevel",	   InfoPatchLevelCmd,	    TclCompileBasic0ArgCmd, NULL, 0},
++    {"procs",		   InfoProcsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, 0},
++    {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, 0},
++    {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {NULL, NULL, NULL, NULL, 0}
+ };
+ 
+ /*
+  *----------------------------------------------------------------------
+  *
+@@ -209,20 +205,10 @@
+  *----------------------------------------------------------------------
+  */
+ 
+ int
+ Tcl_IfObjCmd(
 -    ClientData dummy,		/* Not used. */
 -    Tcl_Interp *interp,		/* Current interpreter. */
 -    int objc,			/* Number of arguments. */
 -    Tcl_Obj *const objv[])	/* Argument objects. */
 -{
-     Tcl_Obj *boolObj;
- 
-     if (objc <= 1) {
- 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
- 		"wrong # args: no expression after \"%s\" argument",
+-    return Tcl_NRCallObjProc(interp, TclNRIfObjCmd, dummy, objc, objv);
+-}
+-
+-int
+-TclNRIfObjCmd(
+     ClientData dummy,		/* Not used. */
+     Tcl_Interp *interp,		/* Current interpreter. */
+     int objc,			/* Number of arguments. */
+     Tcl_Obj *const objv[])	/* Argument objects. */
+ {
 @@ -252,11 +238,10 @@
  IfConditionCallback(
      ClientData data[],
@@ -3902,6 +4077,63 @@ Index: generic/tclCmdMZ.c
  	Tcl_DecrRefCount(sourceObj);
      }
      return TCL_OK;
+@@ -3322,33 +3312,33 @@
+ Tcl_Command
+ TclInitStringCmd(
+     Tcl_Interp *interp)		/* Current interpreter. */
+ {
+     static const EnsembleImplMap stringImplMap[] = {
+-	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
+-	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
+-	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
+-	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, NULL, 0},
+-	{"is",		StringIsCmd,	NULL, NULL, NULL, 0},
+-	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, NULL, 0},
+-	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, NULL, 0},
+-	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
+-	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
+-	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
+-	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"replace",	StringRplcCmd,	NULL, NULL, NULL, 0},
+-	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"tolower",	StringLowerCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+-	{"toupper",	StringUpperCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+-	{"totitle",	StringTitleCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+-	{"trim",	StringTrimCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-	{"trimleft",	StringTrimLCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-	{"trimright",	StringTrimRCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{NULL, NULL, NULL, NULL, NULL, 0}
++	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, 0},
++	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, 0},
++	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, 0},
++	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, 0},
++	{"is",		StringIsCmd,	NULL, NULL, 0},
++	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, 0},
++	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, 0},
++	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, 0},
++	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, 0},
++	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, 0},
++	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{"replace",	StringRplcCmd,	NULL, NULL, 0},
++	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"tolower",	StringLowerCmd,	TclCompileBasic1To3ArgCmd, NULL, 0},
++	{"toupper",	StringUpperCmd,	TclCompileBasic1To3ArgCmd, NULL, 0},
++	{"totitle",	StringTitleCmd,	TclCompileBasic1To3ArgCmd, NULL, 0},
++	{"trim",	StringTrimCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
++	{"trimleft",	StringTrimLCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
++	{"trimright",	StringTrimRCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
++	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{NULL, NULL, NULL, NULL, 0}
+     };
+ 
+     return TclMakeEnsemble(interp, "string", stringImplMap);
+ }
+ 
 @@ -3415,20 +3405,10 @@
      ClientData dummy,		/* Not used. */
      Tcl_Interp *interp,		/* Current interpreter. */
@@ -8598,6 +8830,59 @@ Index: generic/tclDictObj.c
 ==================================================================
 --- generic/tclDictObj.c
 +++ generic/tclDictObj.c
+@@ -86,31 +86,31 @@
+ /*
+  * Table of dict subcommand names and implementations.
+  */
+ 
+ static const EnsembleImplMap implementationMap[] = {
+-    {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, NULL, 0 },
+-    {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, NULL, 0 },
+-    {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, NULL, 0 },
+-    {"filter",	DictFilterCmd,	NULL, NULL, NULL, 0 },
+-    {"for",	NULL,		TclCompileDictForCmd, DictForNRCmd, NULL, 0 },
+-    {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, NULL, 0 },
+-    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, NULL, 0 },
+-    {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
+-    {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
+-    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, NULL, 0 },
+-    {"map", 	NULL,       	TclCompileDictMapCmd, DictMapNRCmd, NULL, 0 },
+-    {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, NULL, 0 },
+-    {"remove",	DictRemoveCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+-    {"replace",	DictReplaceCmd, NULL, NULL, NULL, 0 },
+-    {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, NULL, 0 },
+-    {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0 },
+-    {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, NULL, 0 },
+-    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, NULL, 0 },
+-    {"values",	DictValuesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
+-    {"with",	DictWithCmd,	TclCompileDictWithCmd, NULL, NULL, 0 },
+-    {NULL, NULL, NULL, NULL, NULL, 0}
++    {"append",	DictAppendCmd,	TclCompileDictAppendCmd, NULL, 0 },
++    {"create",	DictCreateCmd,	TclCompileDictCreateCmd, NULL, 0 },
++    {"exists",	DictExistsCmd,	TclCompileDictExistsCmd, NULL, 0 },
++    {"filter",	DictFilterCmd,	NULL, NULL, 0 },
++    {"for",	DictForNRCmd,	TclCompileDictForCmd, NULL, 0 },
++    {"get",	DictGetCmd,	TclCompileDictGetCmd, NULL, 0 },
++    {"incr",	DictIncrCmd,	TclCompileDictIncrCmd, NULL, 0 },
++    {"info",	DictInfoCmd,	TclCompileBasic1ArgCmd, NULL, 0 },
++    {"keys",	DictKeysCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0 },
++    {"lappend",	DictLappendCmd,	TclCompileDictLappendCmd, NULL, 0 },
++    {"map", 	DictMapNRCmd,   TclCompileDictMapCmd, NULL, 0 },
++    {"merge",	DictMergeCmd,	TclCompileDictMergeCmd, NULL, 0 },
++    {"remove",	DictRemoveCmd,	TclCompileBasicMin1ArgCmd, NULL, 0 },
++    {"replace",	DictReplaceCmd, NULL, NULL, 0 },
++    {"set",	DictSetCmd,	TclCompileDictSetCmd, NULL, 0 },
++    {"size",	DictSizeCmd,	TclCompileBasic1ArgCmd, NULL, 0 },
++    {"unset",	DictUnsetCmd,	TclCompileDictUnsetCmd, NULL, 0 },
++    {"update",	DictUpdateCmd,	TclCompileDictUpdateCmd, NULL, 0 },
++    {"values",	DictValuesCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0 },
++    {"with",	DictWithCmd,	TclCompileDictWithCmd, NULL, 0 },
++    {NULL, NULL, NULL, NULL, 0}
+ };
+ 
+ /*
+  * Internal representation of the entries in the hash table that backs a
+  * dictionary.
 @@ -2375,11 +2375,10 @@
      ClientData dummy,
      Tcl_Interp *interp,
@@ -9130,7 +9415,7 @@ Index: generic/tclEnsemble.c
      return 1;
  }
  
-@@ -1544,11 +1533,12 @@
+@@ -1544,33 +1533,35 @@
       */
  
      if (ensemble != NULL) {
@@ -9144,17 +9429,21 @@ Index: generic/tclEnsemble.c
  	for (i=0 ; map[i].name != NULL ; i++) {
  	    fromObj = Tcl_NewStringObj(map[i].name, -1);
  	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
-@@ -1563,14 +1553,19 @@
+ 		    Tcl_DStringLength(&buf));
+ 	    Tcl_AppendToObj(toObj, map[i].name, -1);
+ 	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
+ 
+-	    if (map[i].proc || map[i].nreProc) {
++	    if (map[i].proc) {
+ 		/*
+ 		 * If the command is unsafe, hide it when we're in a safe
+ 		 * interpreter. The code to do this is really hokey! It also
  		 * doesn't work properly yet; this function is always
  		 * currently called before the safe-interp flag is set so the
  		 * Tcl_IsSafe check fails.
  		 */
  
-+		objProc = map[i].nreProc;
-+		if (objProc == NULL) {
-+		    objProc = map[i].proc;
-+		}
-+		
++		objProc = map[i].proc;
  		if (map[i].unsafe && Tcl_IsSafe(interp)) {
  		    cmdPtr = (Command *)
 -			    Tcl_NRCreateCommand(interp, "___tmp", map[i].proc,
@@ -9166,7 +9455,7 @@ Index: generic/tclEnsemble.c
  			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
  			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
  		    }
-@@ -1578,13 +1573,12 @@
+@@ -1578,13 +1569,12 @@
  		    /*
  		     * Not hidden, so just create it. Yay!
  		     */
@@ -9182,7 +9471,7 @@ Index: generic/tclEnsemble.c
  	    }
  	}
  	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
-@@ -1631,21 +1625,10 @@
+@@ -1631,21 +1621,10 @@
  static int
  NsEnsembleImplementationCmd(
      ClientData clientData,
@@ -9204,7 +9493,7 @@ Index: generic/tclEnsemble.c
      EnsembleConfig *ensemblePtr = clientData;
  				/* The ensemble itself. */
      Tcl_Obj *prefixObj;		/* An object containing the prefix words of
-@@ -1913,11 +1896,11 @@
+@@ -1913,11 +1892,11 @@
  	/*
  	 * Hand off to the target command.
  	 */
@@ -9217,7 +9506,7 @@ Index: generic/tclEnsemble.c
    unknownOrAmbiguousSubcommand:
      /*
       * Have not been able to match the subcommand asked for with a real
-@@ -3132,16 +3115,13 @@
+@@ -3132,16 +3111,13 @@
  {
      Tcl_Token *tokPtr;
      Tcl_Obj *objPtr, **words;
@@ -9235,7 +9524,7 @@ Index: generic/tclEnsemble.c
      Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
      for (i=0,tokPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
  	if (i > 0 && i < numWords+1) {
-@@ -3149,21 +3129,12 @@
+@@ -3149,21 +3125,12 @@
  	    PushLiteral(envPtr, bytes, length);
  	} else if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
  	    int literal = TclRegisterNewLiteral(envPtr,
@@ -9257,7 +9546,7 @@ Index: generic/tclEnsemble.c
  	tokPtr = TokenAfter(tokPtr);
      }
  
-@@ -3212,11 +3183,10 @@
+@@ -3212,11 +3179,10 @@
  {
      Tcl_Token *tokenPtr;
      Tcl_Obj *objPtr;
@@ -9269,7 +9558,7 @@ Index: generic/tclEnsemble.c
       * Push the name of the command we're actually dispatching to as part of
       * the implementation.
       */
-@@ -3233,13 +3203,10 @@
+@@ -3233,13 +3199,10 @@
       * Push the words of the command.
       */
  
@@ -11549,6 +11838,57 @@ Index: generic/tclIOCmd.c
  	return TCL_ERROR;
      }
  
+@@ -1950,30 +1950,30 @@
+      * (want overwriting of [fconfigure] to control that nicely), and [chan
+      * names] because the functionality isn't available as a separate command
+      * function at the moment.
+      */
+     static const EnsembleImplMap initMap[] = {
+-	{"blocked",	Tcl_FblockedObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"close",	Tcl_CloseObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-	{"copy",	Tcl_FcopyObjCmd,	NULL, NULL, NULL, 0},
+-	{"create",	TclChanCreateObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #219 */
+-	{"eof",		Tcl_EofObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"event",	Tcl_FileEventObjCmd,	TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
+-	{"flush",	Tcl_FlushObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"gets",	Tcl_GetsObjCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-	{"names",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-	{"pending",	ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #287 */
+-	{"pipe",	ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, NULL, 0},		/* TIP #304 */
+-	{"pop",		TclChanPopObjCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},		/* TIP #230 */
+-	{"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},	/* TIP #219 */
+-	{"push",	TclChanPushObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},		/* TIP #230 */
+-	{"puts",	Tcl_PutsObjCmd,		NULL, NULL, NULL, 0},
+-	{"read",	Tcl_ReadObjCmd,		NULL, NULL, NULL, 0},
+-	{"seek",	Tcl_SeekObjCmd,		TclCompileBasic2Or3ArgCmd, NULL, NULL, 0},
+-	{"tell",	Tcl_TellObjCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},		/* TIP #208 */
+-	{NULL, NULL, NULL, NULL, NULL, 0}
++	{"blocked",	Tcl_FblockedObjCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"close",	Tcl_CloseObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
++	{"copy",	Tcl_FcopyObjCmd,	NULL, NULL, 0},
++	{"create",	TclChanCreateObjCmd,	TclCompileBasic2ArgCmd, NULL, 0},		/* TIP #219 */
++	{"eof",		Tcl_EofObjCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++	{"event",	Tcl_FileEventObjCmd,	TclCompileBasic2Or3ArgCmd, NULL, 0},
++	{"flush",	Tcl_FlushObjCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"gets",	Tcl_GetsObjCmd,		TclCompileBasic1Or2ArgCmd, NULL, 0},
++	{"names",	TclChannelNamesCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
++	{"pending",	ChanPendingObjCmd,	TclCompileBasic2ArgCmd, NULL, 0},		/* TIP #287 */
++	{"pipe",	ChanPipeObjCmd,		TclCompileBasic0ArgCmd, NULL, 0},		/* TIP #304 */
++	{"pop",		TclChanPopObjCmd,	TclCompileBasic1ArgCmd, NULL, 0},		/* TIP #230 */
++	{"postevent",	TclChanPostEventObjCmd,	TclCompileBasic2ArgCmd, NULL, 0},	/* TIP #219 */
++	{"push",	TclChanPushObjCmd,	TclCompileBasic2ArgCmd, NULL, 0},		/* TIP #230 */
++	{"puts",	Tcl_PutsObjCmd,		NULL, NULL, 0},
++	{"read",	Tcl_ReadObjCmd,		NULL, NULL, 0},
++	{"seek",	Tcl_SeekObjCmd,		TclCompileBasic2Or3ArgCmd, NULL, 0},
++	{"tell",	Tcl_TellObjCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++	{"truncate",	ChanTruncateObjCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},		/* TIP #208 */
++	{NULL, NULL, NULL, NULL, 0}
+     };
+     static const char *const extras[] = {
+ 	"configure",	"::fconfigure",
+ 	NULL
+     };
 
 Index: generic/tclIOUtil.c
 ==================================================================
@@ -11597,6 +11937,25 @@ Index: generic/tclIndexObj.c
 ==================================================================
 --- generic/tclIndexObj.c
 +++ generic/tclIndexObj.c
+@@ -531,14 +531,14 @@
+ Tcl_Command
+ TclInitPrefixCmd(
+     Tcl_Interp *interp)		/* Current interpreter. */
+ {
+     static const EnsembleImplMap prefixImplMap[] = {
+-	{"all",	    PrefixAllObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"longest", PrefixLongestObjCmd,TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"match",   PrefixMatchObjCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
+-	{NULL, NULL, NULL, NULL, NULL, 0}
++	{"all",	    PrefixAllObjCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{"longest", PrefixLongestObjCmd,TclCompileBasic2ArgCmd, NULL, 0},
++	{"match",   PrefixMatchObjCmd,	TclCompileBasicMin2ArgCmd, NULL, 0},
++	{NULL, NULL, NULL, NULL, 0}
+     };
+     Tcl_Command prefixCmd;
+ 
+     prefixCmd = TclMakeEnsemble(interp, "::tcl::prefix", prefixImplMap);
+     Tcl_Export(interp, Tcl_FindNamespace(interp, "::tcl", NULL, 0),
 @@ -963,17 +963,16 @@
  	    }
  	    flags = 0;
@@ -12123,20 +12482,31 @@ Index: generic/tclInt.h
      struct NRE_callback *callbackPtr;
  				/* Top callback in NRE's stack. */
      struct CoroutineData *corPtr;
-@@ -1695,11 +1482,11 @@
+@@ -1599,11 +1386,10 @@
+ 
+ typedef struct {
+     const char *name;		/* The name of the subcommand. */
+     Tcl_ObjCmdProc *proc;	/* The implementation of the subcommand. */
+     CompileProc *compileProc;	/* The compiler for the subcommand. */
+-    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
+     ClientData clientData;	/* Any clientData to give the command. */
+     int unsafe;			/* Whether this command is to be hidden by
+ 				 * default in a safe interpreter. */
+ } EnsembleImplMap;
+ 
+@@ -1695,11 +1481,10 @@
  				 * is used to remove all those imported
  				 * commands when deleting this "real"
  				 * command. */
      CommandTrace *tracePtr;	/* First in list of all traces set for this
  				 * command. */
 -    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
-+    Tcl_ObjCmdProc *nreProc;
  } Command;
  
  /*
   * Flag bits for commands.
   *
-@@ -1769,28 +1556,10 @@
+@@ -1769,28 +1554,10 @@
  
  enum PkgPreferOptions {
      PKG_PREFER_LATEST, PKG_PREFER_STABLE
@@ -12165,7 +12535,7 @@ Index: generic/tclInt.h
   * This structure defines an interpreter, which is a collection of commands
   * plus other state information related to interpreting commands, such as
   * variable storage. Primary responsibility for this data structure is in
-@@ -2045,58 +1814,10 @@
+@@ -2045,58 +1812,10 @@
  				 * This information, if present (chanMsg not
  				 * NULL), takes precedence over a POSIX error
  				 * code returned by a channel operation. */
@@ -12224,7 +12594,7 @@ Index: generic/tclInt.h
       */
  
      int packagePrefer;		/* Current package selection mode. */
-@@ -2120,14 +1841,10 @@
+@@ -2120,14 +1839,10 @@
       * inherit the value.
       *
       * They are used by the macros defined below.
@@ -12239,7 +12609,7 @@ Index: generic/tclInt.h
      /*
       * The pointer to the object system root ekeko. c.f. TIP #257.
       */
-@@ -2174,10 +1891,11 @@
+@@ -2174,10 +1889,11 @@
       */
  
      ByteCodeStats stats;	/* Holds compilation and execution statistics
@@ -12251,7 +12621,7 @@ Index: generic/tclInt.h
  /*
   * Macros that use the TSD-ekeko.
   */
-@@ -2352,21 +2070,10 @@
+@@ -2352,21 +2068,10 @@
   * isspace.
   */
  
@@ -12273,7 +12643,7 @@ Index: generic/tclInt.h
   * data structure in memory. Given a starting offset or size, it "rounds up"
   * or "aligns" the offset to the next 8-byte boundary so that any data
   * structure can be placed at the resulting offset without fear of an
-@@ -2749,17 +2456,10 @@
+@@ -2749,17 +2454,10 @@
  MODULE_SCOPE const Tcl_HashKeyType tclArrayHashKeyType;
  MODULE_SCOPE const Tcl_HashKeyType tclOneWordHashKeyType;
  MODULE_SCOPE const Tcl_HashKeyType tclStringHashKeyType;
@@ -12291,7 +12661,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE long	tclObjsFreed;
  #define TCL_MAX_SHARED_OBJ_STATS 5
  MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
-@@ -2779,25 +2479,10 @@
+@@ -2779,25 +2477,10 @@
   * Procedures shared among Tcl modules but not used by the outside world,
   * introduced by/for NRE.
   *----------------------------------------------------------------
@@ -12317,7 +12687,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
  MODULE_SCOPE Tcl_NRPostProc TclNRTailcallEval;
  MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
-@@ -2806,11 +2491,11 @@
+@@ -2806,11 +2489,11 @@
  MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
  
  MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
@@ -12330,7 +12700,7 @@ Index: generic/tclInt.h
   * have more than the 4 client data entries we can provide directly thorugh
   * the callback API. It is the 'word' information which puts us over the
   * limit. It is needed because the loop body is argument 4 of 'for' and
-@@ -2821,11 +2506,10 @@
+@@ -2821,11 +2504,10 @@
  typedef struct ForIterData {
      Tcl_Obj *cond;		/* Loop condition expression. */
      Tcl_Obj *body;		/* Loop body. */
@@ -12342,7 +12712,7 @@ Index: generic/tclInt.h
  /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
   *            and Tcl_FindSymbol. This structure corresponds to an opaque
   *            typedef in tcl.h */
-@@ -2880,25 +2564,10 @@
+@@ -2880,25 +2562,10 @@
  MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
  			    const unsigned char *bytes, int len);
  MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -12368,7 +12738,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
  MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
  			    int strLen, const unsigned char *pattern,
-@@ -2909,24 +2578,13 @@
+@@ -2909,24 +2576,13 @@
  MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
  			    Tcl_Channel chan);
  MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
@@ -12393,7 +12763,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
-@@ -2940,11 +2598,10 @@
+@@ -2940,11 +2596,10 @@
  MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
  			    Tcl_Obj *objPtr);
  MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
@@ -12405,7 +12775,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
  MODULE_SCOPE void	TclFinalizeEnvironment(void);
  MODULE_SCOPE void	TclFinalizeEvaluation(void);
-@@ -2957,11 +2614,10 @@
+@@ -2957,11 +2612,10 @@
  MODULE_SCOPE void	TclFinalizeMemorySubsystem(void);
  MODULE_SCOPE void	TclFinalizeNotifier(void);
  MODULE_SCOPE void	TclFinalizeObjects(void);
@@ -12417,7 +12787,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclFloor(const mp_int *a);
  MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
  MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
-@@ -2981,11 +2637,10 @@
+@@ -2981,11 +2635,10 @@
  			    int *typePtr);
  MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
  			    const char *modeString, int *seekFlagPtr,
@@ -12429,7 +12799,7 @@ Index: generic/tclInt.h
  			    Tcl_GlobTypeData *types);
  MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
  			    Tcl_Obj *incrPtr);
-@@ -2993,18 +2648,16 @@
+@@ -2993,18 +2646,16 @@
  			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
  MODULE_SCOPE int	TclInfoExistsCmd(ClientData dummy, Tcl_Interp *interp,
  			    int objc, Tcl_Obj *const objv[]);
@@ -12448,7 +12818,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
  			    Tcl_Interp *interp);
  MODULE_SCOPE void	TclInitEncodingSubsystem(void);
-@@ -3136,28 +2789,24 @@
+@@ -3136,28 +2787,24 @@
  			    Command *cmdPtr);
  MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
  MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
@@ -12479,7 +12849,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
  			    const char *trim, int numTrim);
  MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
-@@ -3206,13 +2855,10 @@
+@@ -3206,13 +2853,10 @@
  MODULE_SCOPE Tcl_Command TclInitArrayCmd(Tcl_Interp *interp);
  MODULE_SCOPE Tcl_Command TclInitBinaryCmd(Tcl_Interp *interp);
  MODULE_SCOPE int	Tcl_BreakObjCmd(ClientData clientData,
@@ -12493,7 +12863,7 @@ Index: generic/tclInt.h
  			    Tcl_Obj *const objv[]);
  MODULE_SCOPE int	Tcl_CdObjCmd(ClientData clientData,
  			    Tcl_Interp *interp, int objc,
-@@ -3255,19 +2901,10 @@
+@@ -3255,19 +2899,10 @@
  MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
  			    int pathc, Tcl_Obj *const pathv[]);
  MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
@@ -12513,7 +12883,7 @@ Index: generic/tclInt.h
  			    Tcl_Obj *const objv[]);
  MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
  			    Tcl_Interp *interp, int objc,
-@@ -3994,14 +3631,14 @@
+@@ -3994,14 +3629,14 @@
  #  define TclIncrObjsAllocated()
  #  define TclIncrObjsFreed()
  #endif /* TCL_COMPILE_STATS */
@@ -12530,7 +12900,7 @@ Index: generic/tclInt.h
  # define TclNewObj(objPtr) \
      TclIncrObjsAllocated(); \
      TclAllocObjStorage(objPtr); \
-@@ -4032,116 +3669,10 @@
+@@ -4032,116 +3667,10 @@
  	} else { \
  	    TclFreeObj(objPtr); \
  	} \
@@ -12647,7 +13017,7 @@ Index: generic/tclInt.h
  			    int line);
  
  # define TclDbNewObj(objPtr, file, line) \
-@@ -4160,12 +3691,58 @@
+@@ -4160,12 +3689,58 @@
      Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
  
  # define TclNewListObjDirect(objc, objv) \
@@ -12707,7 +13077,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
   * copy of the "len" bytes starting at "bytePtr". This code works even if the
-@@ -4698,77 +4275,15 @@
+@@ -4698,77 +4273,15 @@
  
  #define TCL_CT_ASSERT(e) \
      {enum { ct_assert_value = 1/(!!(e)) };}
@@ -12787,7 +13157,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Parameters, structs and macros for the non-recursive engine (NRE)
   *----------------------------------------------------------------
-@@ -4837,12 +4352,12 @@
+@@ -4837,12 +4350,12 @@
  	((Interp *)interp)->deferredCallbacks = NULL;			\
      }
  
@@ -12802,7 +13172,7 @@ Index: generic/tclInt.h
      (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
  #define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
  #endif
-@@ -4850,20 +4365,34 @@
+@@ -4850,20 +4363,34 @@
  #if NRE_ENABLE_ASSERTS
  #define NRE_ASSERT(expr) assert((expr))
  #else
@@ -13354,7 +13724,84 @@ Index: generic/tclNamesp.c
  static int		NamespaceCodeCmd(ClientData dummy, Tcl_Interp *interp,
  			    int objc, Tcl_Obj *const objv[]);
  static int		NamespaceCurrentCmd(ClientData dummy,
-@@ -276,11 +274,11 @@
+@@ -101,12 +99,10 @@
+ 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+ static int		NamespaceDeleteCmd(ClientData dummy,Tcl_Interp *interp,
+ 			    int objc, Tcl_Obj *const objv[]);
+ static int		NamespaceEvalCmd(ClientData dummy, Tcl_Interp *interp,
+ 			    int objc, Tcl_Obj *const objv[]);
+-static int		NRNamespaceEvalCmd(ClientData dummy,
+-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+ static int		NamespaceExistsCmd(ClientData dummy,Tcl_Interp *interp,
+ 			    int objc, Tcl_Obj *const objv[]);
+ static int		NamespaceExportCmd(ClientData dummy,Tcl_Interp *interp,
+ 			    int objc, Tcl_Obj *const objv[]);
+ static int		NamespaceForgetCmd(ClientData dummy,Tcl_Interp *interp,
+@@ -113,12 +109,10 @@
+ 			    int objc, Tcl_Obj *const objv[]);
+ static void		NamespaceFree(Namespace *nsPtr);
+ static int		NamespaceImportCmd(ClientData dummy,Tcl_Interp *interp,
+ 			    int objc, Tcl_Obj *const objv[]);
+ static int		NamespaceInscopeCmd(ClientData dummy,
+-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+-static int		NRNamespaceInscopeCmd(ClientData dummy,
+ 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+ static int		NamespaceOriginCmd(ClientData dummy,Tcl_Interp *interp,
+ 			    int objc, Tcl_Obj *const objv[]);
+ static int		NamespaceParentCmd(ClientData dummy,Tcl_Interp *interp,
+ 			    int objc, Tcl_Obj *const objv[]);
+@@ -158,30 +152,30 @@
+  * Array of values describing how to implement each standard subcommand of the
+  * "namespace" command.
+  */
+ 
+ static const EnsembleImplMap defaultNamespaceMap[] = {
+-    {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
+-    {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, 0},
+-    {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, NULL, 0},
+-    {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+-    {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, NULL, 0},
+-    {"eval",	   NamespaceEvalCmd,	NULL, NRNamespaceEvalCmd, NULL, 0},
+-    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+-    {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+-    {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+-    {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, 0},
+-    {"origin",	   NamespaceOriginCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, 0},
+-    {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, NULL, 0},
+-    {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+-    {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, NULL, 0},
+-    {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, NULL, 0},
+-    {NULL, NULL, NULL, NULL, NULL, 0}
++    {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, 0},
++    {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, 0},
++    {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, 0},
++    {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
++    {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, 0},
++    {"eval",	   NamespaceEvalCmd,	NULL, NULL, 0},
++    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++    {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
++    {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
++    {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
++    {"inscope",	   NamespaceInscopeCmd,	NULL, NULL, 0},
++    {"origin",	   NamespaceOriginCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, 0},
++    {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, 0},
++    {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, 0},
++    {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, 0},
++    {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, 0},
++    {NULL, NULL, NULL, NULL, 0}
+ };
+ 
+ /*
+  *----------------------------------------------------------------------
+  *
+@@ -276,11 +270,11 @@
  
  int
  Tcl_PushCallFrame(
@@ -13367,7 +13814,7 @@ Index: generic/tclNamesp.c
  				 * address of a CallFrame structure allocated
  				 * on the caller's C stack. The call frame
  				 * will be initialized by this function. The
-@@ -299,11 +297,10 @@
+@@ -299,11 +293,10 @@
  				 * inscope" command and var references are
  				 * treated as references to namespace
  				 * variables. */
@@ -13379,7 +13826,7 @@ Index: generic/tclNamesp.c
      if (namespacePtr == NULL) {
  	nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
      } else {
-@@ -448,11 +445,11 @@
+@@ -448,11 +441,11 @@
  
  int
  TclPushStackFrame(
@@ -13392,7 +13839,7 @@ Index: generic/tclNamesp.c
  				 * will execute. If NULL, the interpreter's
  				 * current namespace will be used. */
      int isProcCallFrame)	/* If nonzero, the frame represents a called
-@@ -463,11 +460,11 @@
+@@ -463,11 +456,11 @@
  				 * for a "namespace eval" or "namespace
  				 * inscope" command and var references are
  				 * treated as references to namespace
@@ -13405,7 +13852,7 @@ Index: generic/tclNamesp.c
  }
  
  void
-@@ -475,11 +472,11 @@
+@@ -475,11 +468,11 @@
      Tcl_Interp *interp)		/* Interpreter with call frame to pop. */
  {
      CallFrame *freePtr = ((Interp *) interp)->framePtr;
@@ -13418,7 +13865,7 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -912,11 +909,11 @@
+@@ -912,11 +905,11 @@
       */
  
      for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
@@ -13431,7 +13878,7 @@ Index: generic/tclNamesp.c
  	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
  	} else {
  	    entryPtr = Tcl_NextHashEntry(&search);
-@@ -1693,13 +1690,12 @@
+@@ -1693,13 +1686,12 @@
  		}
  	    }
  	}
@@ -13447,7 +13894,7 @@ Index: generic/tclNamesp.c
  	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
  	Tcl_DStringFree(&ds);
  
-@@ -1838,37 +1834,35 @@
+@@ -1838,37 +1830,35 @@
       * The pattern was namespace-qualified.
       */
  
@@ -13491,7 +13938,7 @@ Index: generic/tclNamesp.c
      }
      return TCL_OK;
  }
-@@ -1933,11 +1927,11 @@
+@@ -1933,11 +1923,11 @@
   *
   *----------------------------------------------------------------------
   */
@@ -13504,7 +13951,7 @@ Index: generic/tclNamesp.c
      Tcl_Interp *interp,		/* Current interpreter. */
      int objc,			/* Number of arguments. */
      Tcl_Obj *const objv[])	/* The argument objects. */
-@@ -1946,22 +1940,10 @@
+@@ -1946,22 +1936,10 @@
      Command *realCmdPtr = dataPtr->realCmdPtr;
  
      ((Interp *) interp)->evalFlags |= TCL_EVAL_REDIRECT;
@@ -13527,7 +13974,7 @@ Index: generic/tclNamesp.c
   *----------------------------------------------------------------------
   *
   * DeleteImportedCmd --
-@@ -2263,11 +2245,11 @@
+@@ -2263,11 +2241,11 @@
  	    }
  #endif
  	    if (entryPtr != NULL) {
@@ -13540,7 +13987,7 @@ Index: generic/tclNamesp.c
  			(Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 0);
  
  		nsPtr = (Namespace *)
-@@ -2639,12 +2621,11 @@
+@@ -2639,12 +2617,11 @@
      Namespace *trailNsPtr, *shadowNsPtr;
      Namespace *globalNsPtr = (Namespace *) TclGetGlobalNamespace(interp);
      int found, i;
@@ -13554,7 +14001,7 @@ Index: generic/tclNamesp.c
       * Start at the namespace containing the new command, and work up through
       * the list of parents. Stop just before the global namespace, since the
       * global namespace can't "shadow" its own entries.
-@@ -2729,17 +2710,16 @@
+@@ -2729,17 +2706,16 @@
  
  	trailFront++;
  	if (trailFront == trailSize) {
@@ -13574,11 +14021,23 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -3237,12 +3217,10 @@
+@@ -3225,24 +3201,11 @@
+     ClientData clientData,	/* Arbitrary value passed to cmd. */
      Tcl_Interp *interp,		/* Current interpreter. */
      int objc,			/* Number of arguments. */
      Tcl_Obj *const objv[])	/* Argument objects. */
  {
+-    return Tcl_NRCallObjProc(interp, NRNamespaceEvalCmd, clientData, objc,
+-	    objv);
+-}
+-
+-static int
+-NRNamespaceEvalCmd(
+-    ClientData dummy,		/* Not used. */
+-    Tcl_Interp *interp,		/* Current interpreter. */
+-    int objc,			/* Number of arguments. */
+-    Tcl_Obj *const objv[])	/* Argument objects. */
+-{
      Interp *iPtr = (Interp *) interp;
 -    CmdFrame *invoker;
 -    int word;
@@ -13587,7 +14046,7 @@ Index: generic/tclNamesp.c
      Tcl_Obj *objPtr;
      int result;
  
-@@ -3276,11 +3254,11 @@
+@@ -3276,11 +3239,11 @@
       * command(s).
       */
  
@@ -13600,7 +14059,7 @@ Index: generic/tclNamesp.c
  	return TCL_ERROR;
      }
  
-@@ -3292,37 +3270,24 @@
+@@ -3292,37 +3255,24 @@
  		- iPtr->ensembleRewrite.numInsertedObjs;
  	framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
      }
@@ -13639,7 +14098,29 @@ Index: generic/tclNamesp.c
  static int
  NsEval_Callback(
      ClientData data[],
-@@ -3739,11 +3704,11 @@
+@@ -3703,21 +3653,10 @@
+     ClientData clientData,	/* Arbitrary value passed to cmd. */
+     Tcl_Interp *interp,		/* Current interpreter. */
+     int objc,			/* Number of arguments. */
+     Tcl_Obj *const objv[])	/* Argument objects. */
+ {
+-    return Tcl_NRCallObjProc(interp, NRNamespaceInscopeCmd, clientData, objc,
+-	    objv);
+-}
+-
+-static int
+-NRNamespaceInscopeCmd(
+-    ClientData dummy,		/* Not used. */
+-    Tcl_Interp *interp,		/* Current interpreter. */
+-    int objc,			/* Number of arguments. */
+-    Tcl_Obj *const objv[])	/* Argument objects. */
+-{
+     Tcl_Namespace *namespacePtr;
+     CallFrame *framePtr, **framePtrPtr;
+     register Interp *iPtr = (Interp *) interp;
+     int i, result;
+     Tcl_Obj *cmdObjPtr;
+@@ -3739,11 +3678,11 @@
       * Make the specified namespace the current namespace.
       */
  
@@ -13652,7 +14133,7 @@ Index: generic/tclNamesp.c
  	return result;
      }
  
-@@ -3783,11 +3748,11 @@
+@@ -3783,11 +3722,11 @@
  	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
      }
  
@@ -13665,7 +14146,7 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -3976,12 +3941,11 @@
+@@ -3976,12 +3915,11 @@
  
      if (TclListObjGetElements(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
  	goto badNamespace;
@@ -13679,7 +14160,7 @@ Index: generic/tclNamesp.c
  	    if (TclGetNamespaceFromObj(interp, nsObjv[i],
  		    &namespaceList[i]) != TCL_OK) {
  		goto badNamespace;
-@@ -3996,11 +3960,11 @@
+@@ -3996,11 +3934,11 @@
      TclSetNsPath(nsPtr, nsObjc, namespaceList);
  
      result = TCL_OK;
@@ -14091,6 +14572,83 @@ Index: generic/tclOODefineCmds.c
  
  /*
   * ----------------------------------------------------------------------
+
+Index: generic/tclOOInfo.c
+==================================================================
+--- generic/tclOOInfo.c
++++ generic/tclOOInfo.c
+@@ -46,44 +46,44 @@
+ /*
+  * List of commands that are used to implement the [info object] subcommands.
+  */
+ 
+ static const EnsembleImplMap infoObjectCmds[] = {
+-    {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-    {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, 0},
+-    {"definition", InfoObjectDefnCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-    {"filters",	   InfoObjectFiltersCmd,    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"forward",	   InfoObjectForwardCmd,    TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-    {"isa",	   InfoObjectIsACmd,	    TclCompileInfoObjectIsACmd, NULL, NULL, 0},
+-    {"methods",	   InfoObjectMethodsCmd,    TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+-    {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-    {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, NULL, 0},
+-    {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-    {NULL, NULL, NULL, NULL, NULL, 0}
++    {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, 0},
++    {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, 0},
++    {"definition", InfoObjectDefnCmd,	    TclCompileBasic2ArgCmd, NULL, 0},
++    {"filters",	   InfoObjectFiltersCmd,    TclCompileBasic1ArgCmd, NULL, 0},
++    {"forward",	   InfoObjectForwardCmd,    TclCompileBasic2ArgCmd, NULL, 0},
++    {"isa",	   InfoObjectIsACmd,	    TclCompileInfoObjectIsACmd, NULL, 0},
++    {"methods",	   InfoObjectMethodsCmd,    TclCompileBasicMin1ArgCmd, NULL, 0},
++    {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, 0},
++    {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, 0},
++    {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, 0},
++    {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1ArgCmd, NULL, 0},
++    {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, 0},
++    {NULL, NULL, NULL, NULL, 0}
+ };
+ 
+ /*
+  * List of commands that are used to implement the [info class] subcommands.
+  */
+ 
+ static const EnsembleImplMap infoClassCmds[] = {
+-    {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-    {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-    {"destructor",   InfoClassDestrCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"filters",	     InfoClassFiltersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"forward",	     InfoClassForwardCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-    {"instances",    InfoClassInstancesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-    {"methods",	     InfoClassMethodsCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+-    {"methodtype",   InfoClassMethodTypeCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-    {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-    {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {"variables",    InfoClassVariablesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-    {NULL, NULL, NULL, NULL, NULL, 0}
++    {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, 0},
++    {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++    {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, 0},
++    {"destructor",   InfoClassDestrCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++    {"filters",	     InfoClassFiltersCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++    {"forward",	     InfoClassForwardCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++    {"instances",    InfoClassInstancesCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
++    {"methods",	     InfoClassMethodsCmd,	TclCompileBasicMin1ArgCmd, NULL, 0},
++    {"methodtype",   InfoClassMethodTypeCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++    {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++    {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, 0},
++    {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++    {"variables",    InfoClassVariablesCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++    {NULL, NULL, NULL, NULL, 0}
+ };
+ 
+ /*
+  * ----------------------------------------------------------------------
+  *
 
 Index: generic/tclOOInt.h
 ==================================================================
@@ -16702,6 +17260,41 @@ Index: generic/tclVar.c
  		    Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
  		}
  		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+@@ -4220,22 +4217,22 @@
+ Tcl_Command
+ TclInitArrayCmd(
+     Tcl_Interp *interp)		/* Current interpreter. */
+ {
+     static const EnsembleImplMap arrayImplMap[] = {
+-	{"anymore",	ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"exists",	ArrayExistsCmd,		TclCompileArrayExistsCmd, NULL, NULL, 0},
+-	{"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+-	{"names",	ArrayNamesCmd,		TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+-	{"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+-	{"set",		ArraySetCmd,		TclCompileArraySetCmd, NULL, NULL, 0},
+-	{"size",	ArraySizeCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"startsearch",	ArrayStartSearchCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"statistics",	ArrayStatsCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+-	{"unset",	ArrayUnsetCmd,		TclCompileArrayUnsetCmd, NULL, NULL, 0},
+-	{NULL, NULL, NULL, NULL, NULL, 0}
++	{"anymore",	ArrayAnyMoreCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{"donesearch",	ArrayDoneSearchCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{"exists",	ArrayExistsCmd,		TclCompileArrayExistsCmd, NULL, 0},
++	{"get",		ArrayGetCmd,		TclCompileBasic1Or2ArgCmd, NULL, 0},
++	{"names",	ArrayNamesCmd,		TclCompileBasic1To3ArgCmd, NULL, 0},
++	{"nextelement",	ArrayNextElementCmd,	TclCompileBasic2ArgCmd, NULL, 0},
++	{"set",		ArraySetCmd,		TclCompileArraySetCmd, NULL, 0},
++	{"size",	ArraySizeCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++	{"startsearch",	ArrayStartSearchCmd,	TclCompileBasic1ArgCmd, NULL, 0},
++	{"statistics",	ArrayStatsCmd,		TclCompileBasic1ArgCmd, NULL, 0},
++	{"unset",	ArrayUnsetCmd,		TclCompileArrayUnsetCmd, NULL, 0},
++	{NULL, NULL, NULL, NULL, 0}
+     };
+ 
+     return TclMakeEnsemble(interp, "array", arrayImplMap);
+ }
+ 
 
 Index: generic/tclZlib.c
 ==================================================================

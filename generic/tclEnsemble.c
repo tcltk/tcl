@@ -1546,7 +1546,7 @@ TclMakeEnsemble(
 	    Tcl_AppendToObj(toObj, map[i].name, -1);
 	    Tcl_DictObjPut(NULL, mapDict, fromObj, toObj);
 
-	    if (map[i].proc || map[i].nreProc) {
+	    if (map[i].proc) {
 		/*
 		 * If the command is unsafe, hide it when we're in a safe
 		 * interpreter. The code to do this is really hokey! It also
@@ -1555,11 +1555,7 @@ TclMakeEnsemble(
 		 * Tcl_IsSafe check fails.
 		 */
 
-		objProc = map[i].nreProc;
-		if (objProc == NULL) {
-		    objProc = map[i].proc;
-		}
-		
+		objProc = map[i].proc;
 		if (map[i].unsafe && Tcl_IsSafe(interp)) {
 		    cmdPtr = (Command *)
 			    Tcl_CreateObjCommand(interp, "___tmp", objProc,
