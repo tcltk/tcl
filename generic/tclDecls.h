@@ -1667,12 +1667,7 @@ EXTERN int		Tcl_Canceled(Tcl_Interp *interp, int flags);
 EXTERN int		Tcl_CreatePipe(Tcl_Interp *interp,
 				Tcl_Channel *rchan, Tcl_Channel *wchan,
 				int flags);
-/* 583 */
-EXTERN Tcl_Command	Tcl_NRCreateCommand(Tcl_Interp *interp,
-				const char *cmdName, Tcl_ObjCmdProc *proc,
-				Tcl_ObjCmdProc *nreProc,
-				ClientData clientData,
-				Tcl_CmdDeleteProc *deleteProc);
+/* Slot 583 is reserved */
 /* 584 */
 EXTERN int		Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags);
@@ -2420,7 +2415,7 @@ typedef struct TclStubs {
     int (*tcl_CancelEval) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr, ClientData clientData, int flags); /* 580 */
     int (*tcl_Canceled) (Tcl_Interp *interp, int flags); /* 581 */
     int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 582 */
-    Tcl_Command (*tcl_NRCreateCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc); /* 583 */
+    void (*reserved583)(void);
     int (*tcl_NREvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 584 */
     int (*tcl_NREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 585 */
     int (*tcl_NRCmdSwap) (Tcl_Interp *interp, Tcl_Command cmd, int objc, Tcl_Obj *const objv[], int flags); /* 586 */
@@ -3662,8 +3657,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_Canceled) /* 581 */
 #define Tcl_CreatePipe \
 	(tclStubsPtr->tcl_CreatePipe) /* 582 */
-#define Tcl_NRCreateCommand \
-	(tclStubsPtr->tcl_NRCreateCommand) /* 583 */
+/* Slot 583 is reserved */
 #define Tcl_NREvalObj \
 	(tclStubsPtr->tcl_NREvalObj) /* 584 */
 #define Tcl_NREvalObjv \

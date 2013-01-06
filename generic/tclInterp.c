@@ -1480,8 +1480,8 @@ AliasCreate(
     Tcl_Preserve(masterInterp);
 
     if (slaveInterp == masterInterp) {
-	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
-		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr,
+	aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
+		TclGetString(namePtr), AliasNRCmd, aliasPtr,
 		AliasObjCmdDeleteProc);
     } else {
     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,

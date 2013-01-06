@@ -427,7 +427,7 @@ static const TclIntStubs tclIntStubs = {
     TclInitVarHashTable, /* 235 */
     0, /* 236 */
     TclResetCancellation, /* 237 */
-    TclNRInterpProc, /* 238 */
+    0, /* 238 */
     TclNRInterpProcCore, /* 239 */
     TclNRRunCallbacks, /* 240 */
     TclNREvalObjEx, /* 241 */
@@ -1244,7 +1244,7 @@ const TclStubs tclStubs = {
     Tcl_CancelEval, /* 580 */
     Tcl_Canceled, /* 581 */
     Tcl_CreatePipe, /* 582 */
-    Tcl_NRCreateCommand, /* 583 */
+    0, /* 583 */
     Tcl_NREvalObj, /* 584 */
     Tcl_NREvalObjv, /* 585 */
     Tcl_NRCmdSwap, /* 586 */

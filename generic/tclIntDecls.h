@@ -550,10 +550,7 @@ EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 /* Slot 236 is reserved */
 /* 237 */
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
-/* 238 */
-EXTERN int		TclNRInterpProc(ClientData clientData,
-				Tcl_Interp *interp, int objc,
-				Tcl_Obj *const objv[]);
+/* Slot 238 is reserved */
 /* 239 */
 EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
 				Tcl_Obj *procNameObj, int skip,
@@ -834,7 +831,7 @@ typedef struct TclIntStubs {
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
     void (*reserved236)(void);
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
-    int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
+    void (*reserved238)(void);
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
     int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 241 */
@@ -1236,8 +1233,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 236 is reserved */
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
-#define TclNRInterpProc \
-	(tclIntStubsPtr->tclNRInterpProc) /* 238 */
+/* Slot 238 is reserved */
 #define TclNRInterpProcCore \
 	(tclIntStubsPtr->tclNRInterpProcCore) /* 239 */
 #define TclNRRunCallbacks \

@@ -91,8 +91,6 @@ static int		GetNamespaceFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
 static int		InvokeImportedCmd(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
-static int		InvokeImportedNRCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceChildrenCmd(ClientData dummy,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NamespaceCodeCmd(ClientData dummy, Tcl_Interp *interp,
@@ -1694,9 +1692,8 @@ DoImport(
 	}
 
 	dataPtr = ckalloc(sizeof(ImportedCmdData));
-	importedCmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-		InvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
-		DeleteImportedCmd);
+	importedCmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
+		InvokeImportedCmd, dataPtr, DeleteImportedCmd);
 	dataPtr->realCmdPtr = cmdPtr;
 	dataPtr->selfPtr = (Command *) importedCmd;
 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
@@ -1932,7 +1929,7 @@ TclGetOriginalCommand(
  */
 
 static int
-InvokeImportedNRCmd(
+InvokeImportedCmd(
     ClientData clientData,	/* Points to the imported command's
 				 * ImportedCmdData structure. */
     Tcl_Interp *interp,		/* Current interpreter. */
@@ -1944,18 +1941,6 @@ InvokeImportedNRCmd(
 
     ((Interp *) interp)->evalFlags |= TCL_EVAL_REDIRECT;
     return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
-}
-
-static int
-InvokeImportedCmd(
-    ClientData clientData,	/* Points to the imported command's
-				 * ImportedCmdData structure. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* The argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, InvokeImportedNRCmd, clientData,
-	    objc, objv);
 }
 
 /*

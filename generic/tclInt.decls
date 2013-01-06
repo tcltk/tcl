@@ -952,10 +952,10 @@ declare 237 {
 
 # NRE functions for "rogue" extensions to exploit NRE; they will need to
 # include NRE.h too.
-declare 238 {
-    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
-	    int objc, Tcl_Obj *const objv[])
-}
+#declare 238 {
+#    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
+#	    int objc, Tcl_Obj *const objv[])
+#}
 declare 239 {
     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
 			    int skip, ProcErrorProc *errorProc)

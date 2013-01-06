@@ -2128,12 +2128,12 @@ declare 582 {
 }
 
 # TIP #322 (NRE public interface) msofer
-declare 583 {
-    Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp,
-	    const char *cmdName, Tcl_ObjCmdProc *proc,
-	    Tcl_ObjCmdProc *nreProc, ClientData clientData,
-	    Tcl_CmdDeleteProc *deleteProc)
-}
+#declare 583 {
+#    Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp,
+#	    const char *cmdName, Tcl_ObjCmdProc *proc,
+#	    Tcl_ObjCmdProc *nreProc, ClientData clientData,
+#	    Tcl_CmdDeleteProc *deleteProc)
+#}
 declare 584 {
     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
 }

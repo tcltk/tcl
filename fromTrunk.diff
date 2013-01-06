@@ -69,6 +69,29 @@ Index: generic/tcl.decls
  # TIP#72 (64-bit values) dkf
  declare 486 {
      Tcl_Obj *Tcl_DbNewWideIntObj(Tcl_WideInt wideValue,
+@@ -2126,16 +2126,16 @@
+     int Tcl_CreatePipe(Tcl_Interp  *interp, Tcl_Channel *rchan,
+ 	    Tcl_Channel *wchan, int flags)
+ }
+ 
+ # TIP #322 (NRE public interface) msofer
+-declare 583 {
+-    Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp,
+-	    const char *cmdName, Tcl_ObjCmdProc *proc,
+-	    Tcl_ObjCmdProc *nreProc, ClientData clientData,
+-	    Tcl_CmdDeleteProc *deleteProc)
+-}
++#declare 583 {
++#    Tcl_Command Tcl_NRCreateCommand(Tcl_Interp *interp,
++#	    const char *cmdName, Tcl_ObjCmdProc *proc,
++#	    Tcl_ObjCmdProc *nreProc, ClientData clientData,
++#	    Tcl_CmdDeleteProc *deleteProc)
++#}
+ declare 584 {
+     int Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
+ }
+ declare 585 {
+     int Tcl_NREvalObjv(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[],
 
 Index: generic/tcl.h
 ==================================================================
@@ -2311,7 +2334,72 @@ Index: generic/tclBasic.c
  	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
      }
      if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
-@@ -8213,11 +7005,11 @@
+@@ -8148,64 +6940,10 @@
+     }
+ #endif /* USE_DTRACE */
+     result = objProc(clientData, interp, objc, objv);
+     return TclNRRunCallbacks(interp, result, rootPtr);
+ }
+-
+-/*
+- *----------------------------------------------------------------------
+- *
+- * Tcl_NRCreateCommand --
+- *
+- *	Define a new NRE-enabled object-based command in a command table.
+- *
+- * Results:
+- *	The return value is a token for the command, which can be used in
+- *	future calls to Tcl_GetCommandName.
+- *
+- * Side effects:
+- *	If no command named "cmdName" already exists for interp, one is
+- *	created. Otherwise, if a command does exist, then if the object-based
+- *	Tcl_ObjCmdProc is TclInvokeStringCommand, we assume Tcl_CreateCommand
+- *	was called previously for the same command and just set its
+- *	Tcl_ObjCmdProc to the argument "proc"; otherwise, we delete the old
+- *	command.
+- *
+- *	In the future, during bytecode evaluation when "cmdName" is seen as
+- *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
+- *	Tcl_ObjCmdProc proc will be called. When the command is deleted from
+- *	the table, deleteProc will be called. See the manual entry for details
+- *	on the calling sequence.
+- *
+- *----------------------------------------------------------------------
+- */
+-
+-Tcl_Command
+-Tcl_NRCreateCommand(
+-    Tcl_Interp *interp,		/* Token for command interpreter (returned by
+-				 * previous call to Tcl_CreateInterp). */
+-    const char *cmdName,	/* Name of command. If it contains namespace
+-				 * qualifiers, the new command is put in the
+-				 * specified namespace; otherwise it is put in
+-				 * the global namespace. */
+-    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
+-				 * name, provides direct access for direct
+-				 * calls. */
+-    Tcl_ObjCmdProc *nreProc,	/* Object-based function to associate with
+-				 * name, provides NR implementation */
+-    ClientData clientData,	/* Arbitrary value to pass to object
+-				 * function. */
+-    Tcl_CmdDeleteProc *deleteProc)
+-				/* If not NULL, gives a function to call when
+-				 * this command is deleted. */
+-{
+-    Command *cmdPtr = (Command *)
+-	    Tcl_CreateObjCommand(interp,cmdName,proc,clientData,deleteProc);
+-
+-    cmdPtr->nreProc = nreProc;
+-    return (Tcl_Command) cmdPtr;
+-}
+ 
+ /****************************************************************************
+  * Stuff for the public api
+  ****************************************************************************/
+ 
+@@ -8213,11 +6951,11 @@
  Tcl_NREvalObj(
      Tcl_Interp *interp,
      Tcl_Obj *objPtr,
@@ -2324,7 +2412,7 @@ Index: generic/tclBasic.c
  int
  Tcl_NREvalObjv(
      Tcl_Interp *interp,		/* Interpreter in which to evaluate the
-@@ -8622,11 +7414,10 @@
+@@ -8622,11 +7360,10 @@
  	 * the job here. The caller context has already been restored.
  	 */
  
@@ -2336,7 +2424,7 @@ Index: generic/tclBasic.c
      }
  
      NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
-@@ -8675,20 +7466,10 @@
+@@ -8675,20 +7412,10 @@
      TclDeleteExecEnv(corPtr->eePtr);
      corPtr->eePtr = NULL;
  
@@ -2357,7 +2445,7 @@ Index: generic/tclBasic.c
      iPtr->numLevels++;
  
      return result;
-@@ -8809,11 +7590,11 @@
+@@ -8809,11 +7536,11 @@
  	Tcl_WrongNumArgs(interp, 1, objv, "coroName cmd ?arg1 arg2 ...?");
  	return TCL_ERROR;
      }
@@ -2370,7 +2458,7 @@ Index: generic/tclBasic.c
          Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
                  TclGetString(objv[1]), NULL);
          return TCL_ERROR;
-@@ -8831,11 +7612,11 @@
+@@ -8831,11 +7558,11 @@
       * Add the callback to the coro's execEnv, so that it is the first thing
       * to happen when the coro is resumed.
       */
@@ -2383,7 +2471,7 @@ Index: generic/tclBasic.c
      return TCL_OK;
  }
  
-@@ -8966,53 +7747,23 @@
+@@ -8966,53 +7693,23 @@
  	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
  	TclDStringAppendLiteral(&ds, "::");
      }
@@ -7820,7 +7908,25 @@ Index: generic/tclDecls.h
  				const char *file, int line);
  /* 487 */
  EXTERN int		Tcl_GetWideIntFromObj(Tcl_Interp *interp,
-@@ -1995,11 +1986,11 @@
+@@ -1674,16 +1665,11 @@
+ EXTERN int		Tcl_Canceled(Tcl_Interp *interp, int flags);
+ /* 582 */
+ EXTERN int		Tcl_CreatePipe(Tcl_Interp *interp,
+ 				Tcl_Channel *rchan, Tcl_Channel *wchan,
+ 				int flags);
+-/* 583 */
+-EXTERN Tcl_Command	Tcl_NRCreateCommand(Tcl_Interp *interp,
+-				const char *cmdName, Tcl_ObjCmdProc *proc,
+-				Tcl_ObjCmdProc *nreProc,
+-				ClientData clientData,
+-				Tcl_CmdDeleteProc *deleteProc);
++/* Slot 583 is reserved */
+ /* 584 */
+ EXTERN int		Tcl_NREvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+ 				int flags);
+ /* 585 */
+ EXTERN int		Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
+@@ -1995,11 +1981,11 @@
      ClientData (*tcl_GetChannelInstanceData) (Tcl_Channel chan); /* 154 */
      int (*tcl_GetChannelMode) (Tcl_Channel chan); /* 155 */
      CONST84_RETURN char * (*tcl_GetChannelName) (Tcl_Channel chan); /* 156 */
@@ -7833,7 +7939,7 @@ Index: generic/tclDecls.h
      CONST84_RETURN char * (*tcl_GetHostName) (void); /* 162 */
      int (*tcl_GetInterpPath) (Tcl_Interp *askInterp, Tcl_Interp *slaveInterp); /* 163 */
      Tcl_Interp * (*tcl_GetMaster) (Tcl_Interp *interp); /* 164 */
-@@ -2070,11 +2061,11 @@
+@@ -2070,11 +2056,11 @@
      int (*tcl_ServiceAll) (void); /* 221 */
      int (*tcl_ServiceEvent) (int flags); /* 222 */
      void (*tcl_SetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 223 */
@@ -7846,7 +7952,7 @@ Index: generic/tclDecls.h
      void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
      void (*tcl_SetPanicProc) (Tcl_PanicProc *panicProc); /* 230 */
      int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
-@@ -2328,12 +2319,12 @@
+@@ -2328,12 +2314,12 @@
      int (*tcl_OutputBuffered) (Tcl_Channel chan); /* 479 */
      void (*tcl_FSMountsChanged) (const Tcl_Filesystem *fsPtr); /* 480 */
      int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 481 */
@@ -7861,7 +7967,20 @@ Index: generic/tclDecls.h
      Tcl_Obj * (*tcl_NewWideIntObj) (Tcl_WideInt wideValue); /* 488 */
      void (*tcl_SetWideIntObj) (Tcl_Obj *objPtr, Tcl_WideInt wideValue); /* 489 */
      Tcl_StatBuf * (*tcl_AllocStatBuf) (void); /* 490 */
-@@ -2821,12 +2812,11 @@
+@@ -2427,11 +2413,11 @@
+     Tcl_Obj * (*tcl_ObjPrintf) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 578 */
+     void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 579 */
+     int (*tcl_CancelEval) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr, ClientData clientData, int flags); /* 580 */
+     int (*tcl_Canceled) (Tcl_Interp *interp, int flags); /* 581 */
+     int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 582 */
+-    Tcl_Command (*tcl_NRCreateCommand) (Tcl_Interp *interp, const char *cmdName, Tcl_ObjCmdProc *proc, Tcl_ObjCmdProc *nreProc, ClientData clientData, Tcl_CmdDeleteProc *deleteProc); /* 583 */
++    void (*reserved583)(void);
+     int (*tcl_NREvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 584 */
+     int (*tcl_NREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 585 */
+     int (*tcl_NRCmdSwap) (Tcl_Interp *interp, Tcl_Command cmd, int objc, Tcl_Obj *const objv[], int flags); /* 586 */
+     void (*tcl_NRAddCallback) (Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 587 */
+     int (*tcl_NRCallObjProc) (Tcl_Interp *interp, Tcl_ObjCmdProc *objProc, ClientData clientData, int objc, Tcl_Obj *const objv[]); /* 588 */
+@@ -2821,12 +2807,11 @@
  	(tclStubsPtr->tcl_GetChannelName) /* 156 */
  #define Tcl_GetChannelOption \
  	(tclStubsPtr->tcl_GetChannelOption) /* 157 */
@@ -7875,7 +7994,7 @@ Index: generic/tclDecls.h
  #define Tcl_GetErrno \
  	(tclStubsPtr->tcl_GetErrno) /* 161 */
  #define Tcl_GetHostName \
-@@ -2960,12 +2950,11 @@
+@@ -2960,12 +2945,11 @@
  	(tclStubsPtr->tcl_SetAssocData) /* 223 */
  #define Tcl_SetChannelBufferSize \
  	(tclStubsPtr->tcl_SetChannelBufferSize) /* 224 */
@@ -7889,7 +8008,7 @@ Index: generic/tclDecls.h
  #define Tcl_SetErrorCode \
  	(tclStubsPtr->tcl_SetErrorCode) /* 228 */
  #define Tcl_SetMaxBlockTime \
-@@ -3475,14 +3464,12 @@
+@@ -3475,14 +3459,12 @@
  	(tclStubsPtr->tcl_EvalTokensStandard) /* 481 */
  #define Tcl_GetTime \
  	(tclStubsPtr->tcl_GetTime) /* 482 */
@@ -7906,6 +8025,20 @@ Index: generic/tclDecls.h
  #define Tcl_GetWideIntFromObj \
  	(tclStubsPtr->tcl_GetWideIntFromObj) /* 487 */
  #define Tcl_NewWideIntObj \
+@@ -3673,12 +3655,11 @@
+ 	(tclStubsPtr->tcl_CancelEval) /* 580 */
+ #define Tcl_Canceled \
+ 	(tclStubsPtr->tcl_Canceled) /* 581 */
+ #define Tcl_CreatePipe \
+ 	(tclStubsPtr->tcl_CreatePipe) /* 582 */
+-#define Tcl_NRCreateCommand \
+-	(tclStubsPtr->tcl_NRCreateCommand) /* 583 */
++/* Slot 583 is reserved */
+ #define Tcl_NREvalObj \
+ 	(tclStubsPtr->tcl_NREvalObj) /* 584 */
+ #define Tcl_NREvalObjv \
+ 	(tclStubsPtr->tcl_NREvalObjv) /* 585 */
+ #define Tcl_NRCmdSwap \
 
 Index: generic/tclDictObj.c
 ==================================================================
@@ -11104,7 +11237,24 @@ Index: generic/tclInt.decls
  declare 234 {
      Var *TclVarHashCreateVar(TclVarHashTable *tablePtr, const char *key,
               int *newPtr)
-@@ -963,12 +963,11 @@
+@@ -950,25 +950,24 @@
+     int TclResetCancellation(Tcl_Interp *interp, int force)
+ }
+ 
+ # NRE functions for "rogue" extensions to exploit NRE; they will need to
+ # include NRE.h too.
+-declare 238 {
+-    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
+-	    int objc, Tcl_Obj *const objv[])
+-}
++#declare 238 {
++#    int TclNRInterpProc(ClientData clientData, Tcl_Interp *interp,
++#	    int objc, Tcl_Obj *const objv[])
++#}
+ declare 239 {
+     int TclNRInterpProcCore(Tcl_Interp *interp, Tcl_Obj *procNameObj,
+ 			    int skip, ProcErrorProc *errorProc)
+ }
  declare 240 {
      int TclNRRunCallbacks(Tcl_Interp *interp, int result,
  	      struct NRE_callback *rootPtr)
@@ -11419,7 +11569,19 @@ Index: generic/tclInt.h
      struct NRE_callback *callbackPtr;
  				/* Top callback in NRE's stack. */
      struct CoroutineData *corPtr;
-@@ -1769,28 +1556,10 @@
+@@ -1695,11 +1482,10 @@
+ 				 * is used to remove all those imported
+ 				 * commands when deleting this "real"
+ 				 * command. */
+     CommandTrace *tracePtr;	/* First in list of all traces set for this
+ 				 * command. */
+-    Tcl_ObjCmdProc *nreProc;	/* NRE implementation of this command. */
+ } Command;
+ 
+ /*
+  * Flag bits for commands.
+  *
+@@ -1769,28 +1555,10 @@
  
  enum PkgPreferOptions {
      PKG_PREFER_LATEST, PKG_PREFER_STABLE
@@ -11448,7 +11610,7 @@ Index: generic/tclInt.h
   * This structure defines an interpreter, which is a collection of commands
   * plus other state information related to interpreting commands, such as
   * variable storage. Primary responsibility for this data structure is in
-@@ -2045,58 +1814,10 @@
+@@ -2045,58 +1813,10 @@
  				 * This information, if present (chanMsg not
  				 * NULL), takes precedence over a POSIX error
  				 * code returned by a channel operation. */
@@ -11507,7 +11669,7 @@ Index: generic/tclInt.h
       */
  
      int packagePrefer;		/* Current package selection mode. */
-@@ -2120,14 +1841,10 @@
+@@ -2120,14 +1840,10 @@
       * inherit the value.
       *
       * They are used by the macros defined below.
@@ -11522,7 +11684,7 @@ Index: generic/tclInt.h
      /*
       * The pointer to the object system root ekeko. c.f. TIP #257.
       */
-@@ -2174,10 +1891,11 @@
+@@ -2174,10 +1890,11 @@
       */
  
      ByteCodeStats stats;	/* Holds compilation and execution statistics
@@ -11534,7 +11696,7 @@ Index: generic/tclInt.h
  /*
   * Macros that use the TSD-ekeko.
   */
-@@ -2352,21 +2070,10 @@
+@@ -2352,21 +2069,10 @@
   * isspace.
   */
  
@@ -11556,7 +11718,7 @@ Index: generic/tclInt.h
   * data structure in memory. Given a starting offset or size, it "rounds up"
   * or "aligns" the offset to the next 8-byte boundary so that any data
   * structure can be placed at the resulting offset without fear of an
-@@ -2749,17 +2456,10 @@
+@@ -2749,17 +2455,10 @@
  MODULE_SCOPE const Tcl_HashKeyType tclArrayHashKeyType;
  MODULE_SCOPE const Tcl_HashKeyType tclOneWordHashKeyType;
  MODULE_SCOPE const Tcl_HashKeyType tclStringHashKeyType;
@@ -11574,7 +11736,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE long	tclObjsFreed;
  #define TCL_MAX_SHARED_OBJ_STATS 5
  MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
-@@ -2806,11 +2506,11 @@
+@@ -2806,11 +2505,11 @@
  MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
  
  MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
@@ -11587,7 +11749,7 @@ Index: generic/tclInt.h
   * have more than the 4 client data entries we can provide directly thorugh
   * the callback API. It is the 'word' information which puts us over the
   * limit. It is needed because the loop body is argument 4 of 'for' and
-@@ -2821,11 +2521,10 @@
+@@ -2821,11 +2520,10 @@
  typedef struct ForIterData {
      Tcl_Obj *cond;		/* Loop condition expression. */
      Tcl_Obj *body;		/* Loop body. */
@@ -11599,7 +11761,7 @@ Index: generic/tclInt.h
  /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
   *            and Tcl_FindSymbol. This structure corresponds to an opaque
   *            typedef in tcl.h */
-@@ -2880,25 +2579,10 @@
+@@ -2880,25 +2578,10 @@
  MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
  			    const unsigned char *bytes, int len);
  MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -11625,7 +11787,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
  MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
  			    int strLen, const unsigned char *pattern,
-@@ -2909,24 +2593,13 @@
+@@ -2909,24 +2592,13 @@
  MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
  			    Tcl_Channel chan);
  MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
@@ -11650,7 +11812,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
-@@ -2940,11 +2613,10 @@
+@@ -2940,11 +2612,10 @@
  MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
  			    Tcl_Obj *objPtr);
  MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
@@ -11662,7 +11824,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
  MODULE_SCOPE void	TclFinalizeEnvironment(void);
  MODULE_SCOPE void	TclFinalizeEvaluation(void);
-@@ -2957,11 +2629,10 @@
+@@ -2957,11 +2628,10 @@
  MODULE_SCOPE void	TclFinalizeMemorySubsystem(void);
  MODULE_SCOPE void	TclFinalizeNotifier(void);
  MODULE_SCOPE void	TclFinalizeObjects(void);
@@ -11674,7 +11836,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclFloor(const mp_int *a);
  MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
  MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
-@@ -2981,11 +2652,10 @@
+@@ -2981,11 +2651,10 @@
  			    int *typePtr);
  MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
  			    const char *modeString, int *seekFlagPtr,
@@ -11686,7 +11848,7 @@ Index: generic/tclInt.h
  			    Tcl_GlobTypeData *types);
  MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
  			    Tcl_Obj *incrPtr);
-@@ -2993,18 +2663,16 @@
+@@ -2993,18 +2662,16 @@
  			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
  MODULE_SCOPE int	TclInfoExistsCmd(ClientData dummy, Tcl_Interp *interp,
  			    int objc, Tcl_Obj *const objv[]);
@@ -11705,7 +11867,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
  			    Tcl_Interp *interp);
  MODULE_SCOPE void	TclInitEncodingSubsystem(void);
-@@ -3136,28 +2804,24 @@
+@@ -3136,28 +2803,24 @@
  			    Command *cmdPtr);
  MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
  MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
@@ -11736,7 +11898,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
  			    const char *trim, int numTrim);
  MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
-@@ -3255,19 +2919,10 @@
+@@ -3255,19 +2918,10 @@
  MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
  			    int pathc, Tcl_Obj *const pathv[]);
  MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
@@ -11756,7 +11918,7 @@ Index: generic/tclInt.h
  			    Tcl_Obj *const objv[]);
  MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
  			    Tcl_Interp *interp, int objc,
-@@ -3994,14 +3649,14 @@
+@@ -3994,14 +3648,14 @@
  #  define TclIncrObjsAllocated()
  #  define TclIncrObjsFreed()
  #endif /* TCL_COMPILE_STATS */
@@ -11773,7 +11935,7 @@ Index: generic/tclInt.h
  # define TclNewObj(objPtr) \
      TclIncrObjsAllocated(); \
      TclAllocObjStorage(objPtr); \
-@@ -4032,116 +3687,10 @@
+@@ -4032,116 +3686,10 @@
  	} else { \
  	    TclFreeObj(objPtr); \
  	} \
@@ -11890,7 +12052,7 @@ Index: generic/tclInt.h
  			    int line);
  
  # define TclDbNewObj(objPtr, file, line) \
-@@ -4160,12 +3709,58 @@
+@@ -4160,12 +3708,58 @@
      Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
  
  # define TclNewListObjDirect(objc, objv) \
@@ -11950,7 +12112,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
   * copy of the "len" bytes starting at "bytePtr". This code works even if the
-@@ -4698,77 +4293,15 @@
+@@ -4698,77 +4292,15 @@
  
  #define TCL_CT_ASSERT(e) \
      {enum { ct_assert_value = 1/(!!(e)) };}
@@ -12030,7 +12192,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Parameters, structs and macros for the non-recursive engine (NRE)
   *----------------------------------------------------------------
-@@ -4837,12 +4370,12 @@
+@@ -4837,12 +4369,12 @@
  	((Interp *)interp)->deferredCallbacks = NULL;			\
      }
  
@@ -12045,7 +12207,7 @@ Index: generic/tclInt.h
      (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
  #define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
  #endif
-@@ -4850,20 +4383,34 @@
+@@ -4850,20 +4382,34 @@
  #if NRE_ENABLE_ASSERTS
  #define NRE_ASSERT(expr) assert((expr))
  #else
@@ -12183,7 +12345,7 @@ Index: generic/tclIntDecls.h
  				Tcl_Namespace *pathAry[]);
  /* Slot 228 is reserved */
  /* 229 */
-@@ -544,15 +537,12 @@
+@@ -544,38 +537,32 @@
  				const int createPart1, const int createPart2,
  				Var **arrayPtrPtr);
  /* 231 */
@@ -12201,7 +12363,19 @@ Index: generic/tclIntDecls.h
  				const char *key, int *newPtr);
  /* 235 */
  EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
-@@ -571,11 +561,11 @@
+ 				Namespace *nsPtr);
+ /* Slot 236 is reserved */
+ /* 237 */
+ EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
+-/* 238 */
+-EXTERN int		TclNRInterpProc(ClientData clientData,
+-				Tcl_Interp *interp, int objc,
+-				Tcl_Obj *const objv[]);
++/* Slot 238 is reserved */
+ /* 239 */
+ EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
+ 				Tcl_Obj *procNameObj, int skip,
+ 				ProcErrorProc *errorProc);
  /* 240 */
  EXTERN int		TclNRRunCallbacks(Tcl_Interp *interp, int result,
  				struct NRE_callback *rootPtr);
@@ -12214,7 +12388,7 @@ Index: generic/tclIntDecls.h
  				Tcl_Obj *const objv[], int flags,
  				Command *cmdPtr);
  /* 243 */
-@@ -607,11 +597,11 @@
+@@ -607,11 +594,11 @@
      void *hooks;
  
      void (*reserved0)(void);
@@ -12227,7 +12401,7 @@ Index: generic/tclIntDecls.h
      void (*tclCleanupCommand) (Command *cmdPtr); /* 6 */
      int (*tclCopyAndCollapse) (int count, const char *src, char *dst); /* 7 */
      int (*tclCopyChannelOld) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr); /* 8 */
-@@ -673,23 +663,23 @@
+@@ -673,23 +660,23 @@
      int (*tclObjInvoke) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 64 */
      void (*reserved65)(void);
      void (*reserved66)(void);
@@ -12254,7 +12428,7 @@ Index: generic/tclIntDecls.h
      void (*reserved84)(void);
      void (*reserved85)(void);
      void (*reserved86)(void);
-@@ -733,11 +723,11 @@
+@@ -733,11 +720,11 @@
      Tcl_Namespace * (*tcl_GetCurrentNamespace) (Tcl_Interp *interp); /* 124 */
      Tcl_Namespace * (*tcl_GetGlobalNamespace) (Tcl_Interp *interp); /* 125 */
      void (*tcl_GetVariableFullName) (Tcl_Interp *interp, Tcl_Var variable, Tcl_Obj *objPtr); /* 126 */
@@ -12267,7 +12441,7 @@ Index: generic/tclIntDecls.h
      int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
      struct tm * (*tclpGetDate) (const time_t *time, int useGMT); /* 133 */
      void (*reserved134)(void);
-@@ -819,37 +809,37 @@
+@@ -819,37 +806,37 @@
      void (*reserved210)(void);
      void (*reserved211)(void);
      void (*tclpFindExecutable) (const char *argv0); /* 212 */
@@ -12302,7 +12476,8 @@ Index: generic/tclIntDecls.h
      void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
      void (*reserved236)(void);
      int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
-     int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
+-    int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
++    void (*reserved238)(void);
      int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
      int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
 -    int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
@@ -12312,7 +12487,7 @@ Index: generic/tclIntDecls.h
      Tcl_HashTable * (*tclGetNamespaceChildTable) (Tcl_Namespace *nsPtr); /* 244 */
      Tcl_HashTable * (*tclGetNamespaceCommandTable) (Tcl_Namespace *nsPtr); /* 245 */
      int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
-@@ -874,12 +864,11 @@
+@@ -874,12 +861,11 @@
   */
  
  /* Slot 0 is reserved */
@@ -12326,7 +12501,7 @@ Index: generic/tclIntDecls.h
  	(tclIntStubsPtr->tclCleanupChildren) /* 5 */
  #define TclCleanupCommand \
  	(tclIntStubsPtr->tclCleanupCommand) /* 6 */
-@@ -979,29 +968,26 @@
+@@ -979,29 +965,26 @@
  	(tclIntStubsPtr->tclObjInvoke) /* 64 */
  /* Slot 65 is reserved */
  /* Slot 66 is reserved */
@@ -12359,7 +12534,7 @@ Index: generic/tclIntDecls.h
  /* Slot 84 is reserved */
  /* Slot 85 is reserved */
  /* Slot 86 is reserved */
-@@ -1214,14 +1200,12 @@
+@@ -1214,14 +1197,12 @@
  	(tclIntStubsPtr->tclpFindExecutable) /* 212 */
  #define TclGetObjNameOfExecutable \
  	(tclIntStubsPtr->tclGetObjNameOfExecutable) /* 213 */
@@ -12376,7 +12551,7 @@ Index: generic/tclIntDecls.h
  #define TclPopStackFrame \
  	(tclIntStubsPtr->tclPopStackFrame) /* 218 */
  /* Slot 219 is reserved */
-@@ -1231,25 +1215,22 @@
+@@ -1231,34 +1212,30 @@
  /* Slot 223 is reserved */
  #define TclGetPlatform \
  	(tclIntStubsPtr->tclGetPlatform) /* 224 */
@@ -12405,6 +12580,16 @@ Index: generic/tclIntDecls.h
  #define TclInitVarHashTable \
  	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
  /* Slot 236 is reserved */
+ #define TclResetCancellation \
+ 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
+-#define TclNRInterpProc \
+-	(tclIntStubsPtr->tclNRInterpProc) /* 238 */
++/* Slot 238 is reserved */
+ #define TclNRInterpProcCore \
+ 	(tclIntStubsPtr->tclNRInterpProcCore) /* 239 */
+ #define TclNRRunCallbacks \
+ 	(tclIntStubsPtr->tclNRRunCallbacks) /* 240 */
+ #define TclNREvalObjEx \
 
 Index: generic/tclInterp.c
 ==================================================================
@@ -12492,6 +12677,21 @@ Index: generic/tclInterp.c
  	nextAliasPtr = aliasCmdPtr->objClientData;
      }
  
+@@ -1477,12 +1478,12 @@
+ 
+     Tcl_Preserve(slaveInterp);
+     Tcl_Preserve(masterInterp);
+ 
+     if (slaveInterp == masterInterp) {
+-	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
+-		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr,
++	aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
++		TclGetString(namePtr), AliasNRCmd, aliasPtr,
+ 		AliasObjCmdDeleteProc);
+     } else {
+     aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
+ 	    TclGetString(namePtr), AliasObjCmd, aliasPtr,
+ 	    AliasObjCmdDeleteProc);
 @@ -1829,11 +1830,11 @@
      prefv = &aliasPtr->objPtr;
      cmdc = prefc + objc - 1;
@@ -12546,7 +12746,20 @@ Index: generic/tclNamesp.c
 ==================================================================
 --- generic/tclNamesp.c
 +++ generic/tclNamesp.c
-@@ -276,11 +276,11 @@
+@@ -89,12 +89,10 @@
+ static void		FreeNsNameInternalRep(Tcl_Obj *objPtr);
+ static int		GetNamespaceFromObj(Tcl_Interp *interp,
+ 			    Tcl_Obj *objPtr, Tcl_Namespace **nsPtrPtr);
+ static int		InvokeImportedCmd(ClientData clientData,
+ 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+-static int		InvokeImportedNRCmd(ClientData clientData,
+-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+ static int		NamespaceChildrenCmd(ClientData dummy,
+ 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+ static int		NamespaceCodeCmd(ClientData dummy, Tcl_Interp *interp,
+ 			    int objc, Tcl_Obj *const objv[]);
+ static int		NamespaceCurrentCmd(ClientData dummy,
+@@ -276,11 +274,11 @@
  
  int
  Tcl_PushCallFrame(
@@ -12559,7 +12772,7 @@ Index: generic/tclNamesp.c
  				 * address of a CallFrame structure allocated
  				 * on the caller's C stack. The call frame
  				 * will be initialized by this function. The
-@@ -299,11 +299,10 @@
+@@ -299,11 +297,10 @@
  				 * inscope" command and var references are
  				 * treated as references to namespace
  				 * variables. */
@@ -12571,7 +12784,7 @@ Index: generic/tclNamesp.c
      if (namespacePtr == NULL) {
  	nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
      } else {
-@@ -448,11 +447,11 @@
+@@ -448,11 +445,11 @@
  
  int
  TclPushStackFrame(
@@ -12584,7 +12797,7 @@ Index: generic/tclNamesp.c
  				 * will execute. If NULL, the interpreter's
  				 * current namespace will be used. */
      int isProcCallFrame)	/* If nonzero, the frame represents a called
-@@ -463,11 +462,11 @@
+@@ -463,11 +460,11 @@
  				 * for a "namespace eval" or "namespace
  				 * inscope" command and var references are
  				 * treated as references to namespace
@@ -12597,7 +12810,7 @@ Index: generic/tclNamesp.c
  }
  
  void
-@@ -475,11 +474,11 @@
+@@ -475,11 +472,11 @@
      Tcl_Interp *interp)		/* Interpreter with call frame to pop. */
  {
      CallFrame *freePtr = ((Interp *) interp)->framePtr;
@@ -12610,7 +12823,23 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -1838,37 +1837,35 @@
+@@ -1693,13 +1690,12 @@
+ 		}
+ 	    }
+ 	}
+ 
+ 	dataPtr = ckalloc(sizeof(ImportedCmdData));
+-	importedCmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
+-		InvokeImportedCmd, InvokeImportedNRCmd, dataPtr,
+-		DeleteImportedCmd);
++	importedCmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
++		InvokeImportedCmd, dataPtr, DeleteImportedCmd);
+ 	dataPtr->realCmdPtr = cmdPtr;
+ 	dataPtr->selfPtr = (Command *) importedCmd;
+ 	dataPtr->selfPtr->compileProc = cmdPtr->compileProc;
+ 	Tcl_DStringFree(&ds);
+ 
+@@ -1838,37 +1834,35 @@
       * The pattern was namespace-qualified.
       */
  
@@ -12654,7 +12883,43 @@ Index: generic/tclNamesp.c
      }
      return TCL_OK;
  }
-@@ -2263,11 +2260,11 @@
+@@ -1933,11 +1927,11 @@
+  *
+  *----------------------------------------------------------------------
+  */
+ 
+ static int
+-InvokeImportedNRCmd(
++InvokeImportedCmd(
+     ClientData clientData,	/* Points to the imported command's
+ 				 * ImportedCmdData structure. */
+     Tcl_Interp *interp,		/* Current interpreter. */
+     int objc,			/* Number of arguments. */
+     Tcl_Obj *const objv[])	/* The argument objects. */
+@@ -1946,22 +1940,10 @@
+     Command *realCmdPtr = dataPtr->realCmdPtr;
+ 
+     ((Interp *) interp)->evalFlags |= TCL_EVAL_REDIRECT;
+     return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
+ }
+-
+-static int
+-InvokeImportedCmd(
+-    ClientData clientData,	/* Points to the imported command's
+-				 * ImportedCmdData structure. */
+-    Tcl_Interp *interp,		/* Current interpreter. */
+-    int objc,			/* Number of arguments. */
+-    Tcl_Obj *const objv[])	/* The argument objects. */
+-{
+-    return Tcl_NRCallObjProc(interp, InvokeImportedNRCmd, clientData,
+-	    objc, objv);
+-}
+ 
+ /*
+  *----------------------------------------------------------------------
+  *
+  * DeleteImportedCmd --
+@@ -2263,11 +2245,11 @@
  	    }
  #endif
  	    if (entryPtr != NULL) {
@@ -12667,7 +12932,7 @@ Index: generic/tclNamesp.c
  			(Tcl_Namespace *) nsPtr, /*isProcCallFrame*/ 0);
  
  		nsPtr = (Namespace *)
-@@ -2639,12 +2636,11 @@
+@@ -2639,12 +2621,11 @@
      Namespace *trailNsPtr, *shadowNsPtr;
      Namespace *globalNsPtr = (Namespace *) TclGetGlobalNamespace(interp);
      int found, i;
@@ -12681,7 +12946,7 @@ Index: generic/tclNamesp.c
       * Start at the namespace containing the new command, and work up through
       * the list of parents. Stop just before the global namespace, since the
       * global namespace can't "shadow" its own entries.
-@@ -2729,17 +2725,16 @@
+@@ -2729,17 +2710,16 @@
  
  	trailFront++;
  	if (trailFront == trailSize) {
@@ -12701,7 +12966,7 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -3237,12 +3232,10 @@
+@@ -3237,12 +3217,10 @@
      Tcl_Interp *interp,		/* Current interpreter. */
      int objc,			/* Number of arguments. */
      Tcl_Obj *const objv[])	/* Argument objects. */
@@ -12714,7 +12979,7 @@ Index: generic/tclNamesp.c
      Tcl_Obj *objPtr;
      int result;
  
-@@ -3276,11 +3269,11 @@
+@@ -3276,11 +3254,11 @@
       * command(s).
       */
  
@@ -12727,7 +12992,7 @@ Index: generic/tclNamesp.c
  	return TCL_ERROR;
      }
  
-@@ -3292,37 +3285,24 @@
+@@ -3292,37 +3270,24 @@
  		- iPtr->ensembleRewrite.numInsertedObjs;
  	framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
      }
@@ -12766,7 +13031,7 @@ Index: generic/tclNamesp.c
  static int
  NsEval_Callback(
      ClientData data[],
-@@ -3739,11 +3719,11 @@
+@@ -3739,11 +3704,11 @@
       * Make the specified namespace the current namespace.
       */
  
@@ -12779,7 +13044,7 @@ Index: generic/tclNamesp.c
  	return result;
      }
  
-@@ -3783,11 +3763,11 @@
+@@ -3783,11 +3748,11 @@
  	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
      }
  
@@ -12792,7 +13057,7 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -3976,12 +3956,11 @@
+@@ -3976,12 +3941,11 @@
  
      if (TclListObjGetElements(interp, objv[1], &nsObjc, &nsObjv) != TCL_OK) {
  	goto badNamespace;
@@ -12806,7 +13071,7 @@ Index: generic/tclNamesp.c
  	    if (TclGetNamespaceFromObj(interp, nsObjv[i],
  		    &namespaceList[i]) != TCL_OK) {
  		goto badNamespace;
-@@ -3996,11 +3975,11 @@
+@@ -3996,11 +3960,11 @@
      TclSetNsPath(nsPtr, nsObjc, namespaceList);
  
      result = TCL_OK;
@@ -14552,6 +14817,21 @@ Index: generic/tclProc.c
  /*
   * Prototypes for static functions in this file
   */
+@@ -198,12 +197,12 @@
+ 	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
+ 	TclDStringAppendLiteral(&ds, "::");
+     }
+     Tcl_DStringAppend(&ds, procName, -1);
+ 
+-    cmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
+-	    TclNRInterpProc, procPtr, TclProcDeleteProc);
++    cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
++	    procPtr, TclProcDeleteProc);
+     Tcl_DStringFree(&ds);
+ 
+     /*
+      * Now initialize the new procedure's cmdPtr field. This will be used
+      * later when the procedure is called to determine what namespace the
 @@ -211,105 +210,10 @@
       * namespace if the proc was renamed into a different namespace.
       */
@@ -14778,7 +15058,35 @@ Index: generic/tclProc.c
      if (result != TCL_OK) {
  	return result;
      }
-@@ -1761,13 +1646,13 @@
+@@ -1689,27 +1574,10 @@
+  *----------------------------------------------------------------------
+  */
+ 
+ int
+ TclObjInterpProc(
+-    ClientData clientData,	/* Record describing procedure to be
+-				 * interpreted. */
+-    register Tcl_Interp *interp,/* Interpreter in which procedure was
+-				 * invoked. */
+-    int objc,			/* Count of number of arguments to this
+-				 * procedure. */
+-    Tcl_Obj *const objv[])	/* Argument value objects. */
+-{
+-    /*
+-     * Not used much in the core; external interface for iTcl
+-     */
+-
+-    return Tcl_NRCallObjProc(interp, TclNRInterpProc, clientData, objc, objv);
+-}
+-
+-int
+-TclNRInterpProc(
+     ClientData clientData,	/* Record describing procedure to be
+ 				 * interpreted. */
+     register Tcl_Interp *interp,/* Interpreter in which procedure was
+ 				 * invoked. */
+     int objc,			/* Count of number of arguments to this
+@@ -1761,13 +1629,13 @@
  
      result = InitArgsAndLocals(interp, procNameObj, skip);
      if (result != TCL_OK) {
@@ -14794,7 +15102,7 @@ Index: generic/tclProc.c
  
  #if defined(TCL_COMPILE_DEBUG)
      if (tclTraceExec >= 1) {
-@@ -1800,18 +1685,10 @@
+@@ -1800,18 +1668,10 @@
  	    l++;
  	}
  	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
@@ -14813,7 +15121,7 @@ Index: generic/tclProc.c
  
  	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
  		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
-@@ -1933,13 +1810,13 @@
+@@ -1933,13 +1793,13 @@
       * allocated later on the stack.
       */
  
@@ -14829,7 +15137,7 @@ Index: generic/tclProc.c
  }
  
  /*
-@@ -1972,11 +1849,11 @@
+@@ -1972,11 +1832,11 @@
      Namespace *nsPtr,		/* Namespace containing procedure. */
      const char *description,	/* string describing this body of code. */
      const char *procName)	/* Name of this procedure. */
@@ -14842,7 +15150,7 @@ Index: generic/tclProc.c
      /*
       * If necessary, compile the procedure's body. The compiler will allocate
       * frame slots for the procedure's non-argument local variables. If the
-@@ -2013,12 +1890,10 @@
+@@ -2013,12 +1873,10 @@
  	    TclFreeIntRep(bodyPtr);
  	}
      }
@@ -14855,7 +15163,7 @@ Index: generic/tclProc.c
  	    /*
  	     * Display a line summarizing the top level command we are about
  	     * to compile.
-@@ -2080,25 +1955,11 @@
+@@ -2080,25 +1938,11 @@
  	}
  
  	TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
@@ -14881,7 +15189,7 @@ Index: generic/tclProc.c
  	/*
  	 * The resolver epoch has changed, but we only need to invalidate the
  	 * resolver cache.
-@@ -2200,13 +2061,10 @@
+@@ -2200,13 +2044,10 @@
  {
      register CompiledLocal *localPtr;
      Tcl_Obj *bodyPtr = procPtr->bodyPtr;
@@ -14895,7 +15203,7 @@ Index: generic/tclProc.c
  	Tcl_DecrRefCount(bodyPtr);
      }
      for (localPtr = procPtr->firstLocalPtr; localPtr != NULL; ) {
-@@ -2227,38 +2085,10 @@
+@@ -2227,38 +2068,10 @@
  	}
  	ckfree(localPtr);
  	localPtr = nextPtr;
@@ -14934,7 +15242,7 @@ Index: generic/tclProc.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -2482,15 +2312,13 @@
+@@ -2482,15 +2295,13 @@
  static int
  SetLambdaFromAny(
      Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
@@ -14951,7 +15259,7 @@ Index: generic/tclProc.c
      if (interp == NULL) {
  	return TCL_ERROR;
      }
-@@ -2531,97 +2359,10 @@
+@@ -2531,97 +2342,10 @@
       * procPtr->refCount = 1;
       */
  
@@ -15049,7 +15357,7 @@ Index: generic/tclProc.c
       * global reference, or else global per default.
       */
  
-@@ -2752,31 +2493,15 @@
+@@ -2752,31 +2476,15 @@
      result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
      if (result != TCL_OK) {
  	return TCL_ERROR;
@@ -15082,7 +15390,7 @@ Index: generic/tclProc.c
  	iPtr->ensembleRewrite.sourceObjs = objv;
  	iPtr->ensembleRewrite.numRemovedObjs = 1;
  	iPtr->ensembleRewrite.numInsertedObjs = 0;
-@@ -2803,11 +2528,11 @@
+@@ -2803,11 +2511,11 @@
  
      if (extraPtr->isRootEnsemble) {
  	((Interp *) interp)->ensembleRewrite.sourceObjs = NULL;
@@ -15198,7 +15506,7 @@ Index: generic/tclStubInit.c
      0, /* 84 */
      0, /* 85 */
      0, /* 86 */
-@@ -402,29 +402,29 @@
+@@ -402,34 +402,34 @@
      0, /* 210 */
      0, /* 211 */
      TclpFindExecutable, /* 212 */
@@ -15232,7 +15540,13 @@ Index: generic/tclStubInit.c
      TclInitVarHashTable, /* 235 */
      0, /* 236 */
      TclResetCancellation, /* 237 */
-     TclNRInterpProc, /* 238 */
+-    TclNRInterpProc, /* 238 */
++    0, /* 238 */
+     TclNRInterpProcCore, /* 239 */
+     TclNRRunCallbacks, /* 240 */
+     TclNREvalObjEx, /* 241 */
+     TclNREvalObjv, /* 242 */
+     TclDbDumpActiveObjects, /* 243 */
 @@ -810,11 +810,11 @@
      Tcl_GetChannelInstanceData, /* 154 */
      Tcl_GetChannelMode, /* 155 */
@@ -15274,6 +15588,19 @@ Index: generic/tclStubInit.c
      Tcl_NewWideIntObj, /* 488 */
      Tcl_SetWideIntObj, /* 489 */
      Tcl_AllocStatBuf, /* 490 */
+@@ -1242,11 +1242,11 @@
+     Tcl_ObjPrintf, /* 578 */
+     Tcl_AppendPrintfToObj, /* 579 */
+     Tcl_CancelEval, /* 580 */
+     Tcl_Canceled, /* 581 */
+     Tcl_CreatePipe, /* 582 */
+-    Tcl_NRCreateCommand, /* 583 */
++    0, /* 583 */
+     Tcl_NREvalObj, /* 584 */
+     Tcl_NREvalObjv, /* 585 */
+     Tcl_NRCmdSwap, /* 586 */
+     Tcl_NRAddCallback, /* 587 */
+     Tcl_NRCallObjProc, /* 588 */
 
 Index: generic/tclTest.c
 ==================================================================

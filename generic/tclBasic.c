@@ -6943,60 +6943,6 @@ Tcl_NRCallObjProc(
     return TclNRRunCallbacks(interp, result, rootPtr);
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_NRCreateCommand --
- *
- *	Define a new NRE-enabled object-based command in a command table.
- *
- * Results:
- *	The return value is a token for the command, which can be used in
- *	future calls to Tcl_GetCommandName.
- *
- * Side effects:
- *	If no command named "cmdName" already exists for interp, one is
- *	created. Otherwise, if a command does exist, then if the object-based
- *	Tcl_ObjCmdProc is TclInvokeStringCommand, we assume Tcl_CreateCommand
- *	was called previously for the same command and just set its
- *	Tcl_ObjCmdProc to the argument "proc"; otherwise, we delete the old
- *	command.
- *
- *	In the future, during bytecode evaluation when "cmdName" is seen as
- *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
- *	Tcl_ObjCmdProc proc will be called. When the command is deleted from
- *	the table, deleteProc will be called. See the manual entry for details
- *	on the calling sequence.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Command
-Tcl_NRCreateCommand(
-    Tcl_Interp *interp,		/* Token for command interpreter (returned by
-				 * previous call to Tcl_CreateInterp). */
-    const char *cmdName,	/* Name of command. If it contains namespace
-				 * qualifiers, the new command is put in the
-				 * specified namespace; otherwise it is put in
-				 * the global namespace. */
-    Tcl_ObjCmdProc *proc,	/* Object-based function to associate with
-				 * name, provides direct access for direct
-				 * calls. */
-    Tcl_ObjCmdProc *nreProc,	/* Object-based function to associate with
-				 * name, provides NR implementation */
-    ClientData clientData,	/* Arbitrary value to pass to object
-				 * function. */
-    Tcl_CmdDeleteProc *deleteProc)
-				/* If not NULL, gives a function to call when
-				 * this command is deleted. */
-{
-    Command *cmdPtr = (Command *)
-	    Tcl_CreateObjCommand(interp,cmdName,proc,clientData,deleteProc);
-
-    cmdPtr->nreProc = nreProc;
-    return (Tcl_Command) cmdPtr;
-}
-
 /****************************************************************************
  * Stuff for the public api
  ****************************************************************************/

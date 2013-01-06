@@ -15,10 +15,13 @@ GONE FOR GOOD (or so I hope)
 
 * There is no more direct evaluation, everything goes through bytecodes
   (except for canonical lists). TCL_EVAL_DIRECT is simply ignored.
+  INCOMPLETE: Tcl_Eval is still there ...
 
 * [case]
 
-* parts of the 8.6 NRE public API (most of it will be recreated)
+* parts of the 8.6 NRE public API (most of it will be recreated).
+  Tcl_NRCreateCommand is gone for good (may come back for API compat, if
+  further breakage does not make the issue moot)
 
 
 GONE FOR NOW (or so I hope)

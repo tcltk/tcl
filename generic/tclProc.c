@@ -199,8 +199,8 @@ Tcl_ProcObjCmd(
     }
     Tcl_DStringAppend(&ds, procName, -1);
 
-    cmd = Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
-	    TclNRInterpProc, procPtr, TclProcDeleteProc);
+    cmd = Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds), TclObjInterpProc,
+	    procPtr, TclProcDeleteProc);
     Tcl_DStringFree(&ds);
 
     /*
@@ -1576,23 +1576,6 @@ PushProcCallFrame(
 
 int
 TclObjInterpProc(
-    ClientData clientData,	/* Record describing procedure to be
-				 * interpreted. */
-    register Tcl_Interp *interp,/* Interpreter in which procedure was
-				 * invoked. */
-    int objc,			/* Count of number of arguments to this
-				 * procedure. */
-    Tcl_Obj *const objv[])	/* Argument value objects. */
-{
-    /*
-     * Not used much in the core; external interface for iTcl
-     */
-
-    return Tcl_NRCallObjProc(interp, TclNRInterpProc, clientData, objc, objv);
-}
-
-int
-TclNRInterpProc(
     ClientData clientData,	/* Record describing procedure to be
 				 * interpreted. */
     register Tcl_Interp *interp,/* Interpreter in which procedure was
