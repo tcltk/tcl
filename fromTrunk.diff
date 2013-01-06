@@ -298,7 +298,7 @@ Index: generic/tclBasic.c
  	Tcl_Panic("Tcl_CreateInterp: failed to push the root stack frame");
      }
      framePtr->objc = 0;
-@@ -726,58 +719,33 @@
+@@ -726,58 +719,38 @@
      /*
       * Initialise the thread-specific data ekeko. Note that the thread's alloc
       * cache was already initialised by the call to alloc the interp struct.
@@ -332,6 +332,8 @@ Index: generic/tclBasic.c
  
      for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
 +        Command *cmdPtr;
++        Tcl_ObjCmdProc *objProc = cmdInfoPtr->nreProc;
++
  	if ((cmdInfoPtr->objProc == NULL)
  		&& (cmdInfoPtr->compileProc == NULL)
  		&& (cmdInfoPtr->nreProc == NULL)) {
@@ -359,15 +361,18 @@ Index: generic/tclBasic.c
 -	    cmdPtr->nreProc = cmdInfoPtr->nreProc;
 -	    Tcl_SetHashValue(hPtr, cmdPtr);
 -	}
-+        cmdPtr = (Command *) Tcl_NRCreateCommand(interp, cmdInfoPtr->name, cmdInfoPtr->objProc,
-+                cmdInfoPtr->nreProc, NULL, NULL);
++        if (objProc == NULL) {
++            objProc = cmdInfoPtr->objProc;
++        }
++        cmdPtr = (Command *) Tcl_CreateObjCommand(interp, cmdInfoPtr->name, objProc,
++                NULL, NULL);
 +        cmdPtr->compileProc = cmdInfoPtr->compileProc;
      }
  
      /*
       * Create the "array", "binary", "chan", "dict", "file", "info",
       * "namespace" and "string" ensembles. Note that all these commands (and
-@@ -822,16 +790,10 @@
+@@ -822,17 +795,11 @@
      Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
  	    Tcl_DisassembleObjCmd, NULL, NULL);
      Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
@@ -379,12 +384,14 @@ Index: generic/tclBasic.c
 -            TclNRAssembleObjCmd, NULL, NULL);
 -    cmdPtr->compileProc = &TclCompileAssembleCmd;
 -
-     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
+-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
++    Tcl_CreateObjCommand(interp, "::tcl::unsupported::inject",
  	    NRCoroInjectObjCmd, NULL, NULL);
  
  #ifdef USE_DTRACE
      /*
-@@ -1346,11 +1308,10 @@
+      * Register the tcl::dtrace command.
+@@ -1346,11 +1313,10 @@
      Interp *iPtr = (Interp *) interp;
      Tcl_HashEntry *hPtr;
      Tcl_HashSearch search;
@@ -396,7 +403,7 @@ Index: generic/tclBasic.c
       * Punt if there is an error in the Tcl_Release/Tcl_Preserve matchup,
  	 * unless we are exiting.
       */
-@@ -1479,12 +1440,11 @@
+@@ -1479,12 +1445,11 @@
       */
  
      if ((iPtr->framePtr != iPtr->rootFramePtr) && !TclInExit()) {
@@ -410,7 +417,7 @@ Index: generic/tclBasic.c
  
      /*
       * Free up the result *after* deleting variables, since variable deletion
-@@ -1545,103 +1505,19 @@
+@@ -1545,103 +1510,19 @@
       * interpreter.
       */
  
@@ -516,7 +523,61 @@ Index: generic/tclBasic.c
  }
  
  /*
-@@ -2359,12 +2235,11 @@
+@@ -2109,19 +1990,19 @@
+     cmdPtr->nsPtr = nsPtr;
+     cmdPtr->refCount = 1;
+     cmdPtr->cmdEpoch = 0;
+     cmdPtr->compileProc = NULL;
+     cmdPtr->objProc = TclInvokeStringCommand;
++    cmdPtr->nreProc = cmdPtr->objProc;
+     cmdPtr->objClientData = cmdPtr;
+     cmdPtr->proc = proc;
+     cmdPtr->clientData = clientData;
+     cmdPtr->deleteProc = deleteProc;
+     cmdPtr->deleteData = clientData;
+     cmdPtr->flags = 0;
+     cmdPtr->importRefPtr = NULL;
+     cmdPtr->tracePtr = NULL;
+-    cmdPtr->nreProc = NULL;
+ 
+     /*
+      * Plug in any existing import references found above. Be sure to update
+      * all of these references to point to the new command.
+      */
+@@ -2237,10 +2118,11 @@
+ 	 * argument "proc". Otherwise, we delete the old command.
+ 	 */
+ 
+ 	if (cmdPtr->objProc == TclInvokeStringCommand) {
+ 	    cmdPtr->objProc = proc;
++            cmdPtr->nreProc = cmdPtr->objProc;
+ 	    cmdPtr->objClientData = clientData;
+ 	    cmdPtr->deleteProc = deleteProc;
+ 	    cmdPtr->deleteData = clientData;
+ 	    return (Tcl_Command) cmdPtr;
+ 	}
+@@ -2293,19 +2175,19 @@
+     cmdPtr->nsPtr = nsPtr;
+     cmdPtr->refCount = 1;
+     cmdPtr->cmdEpoch = 0;
+     cmdPtr->compileProc = NULL;
+     cmdPtr->objProc = proc;
++    cmdPtr->nreProc = cmdPtr->objProc;
+     cmdPtr->objClientData = clientData;
+     cmdPtr->proc = TclInvokeObjectCommand;
+     cmdPtr->clientData = cmdPtr;
+     cmdPtr->deleteProc = deleteProc;
+     cmdPtr->deleteData = clientData;
+     cmdPtr->flags = 0;
+     cmdPtr->importRefPtr = NULL;
+     cmdPtr->tracePtr = NULL;
+-    cmdPtr->nreProc = NULL;
+ 
+     /*
+      * Plug in any existing import references found above. Be sure to update
+      * all of these references to point to the new command.
+      */
+@@ -2359,12 +2241,11 @@
      register int objc,		/* Number of arguments. */
      Tcl_Obj *const objv[])	/* Argument objects. */
  {
@@ -530,7 +591,7 @@ Index: generic/tclBasic.c
  	argv[i] = Tcl_GetString(objv[i]);
      }
      argv[objc] = 0;
-@@ -2373,11 +2248,11 @@
+@@ -2373,11 +2254,11 @@
       * Invoke the command's string-based Tcl_CmdProc.
       */
  
@@ -543,7 +604,7 @@ Index: generic/tclBasic.c
  
  /*
   *----------------------------------------------------------------------
-@@ -2408,12 +2283,11 @@
+@@ -2408,12 +2289,11 @@
      register const char **argv)	/* Argument strings. */
  {
      Command *cmdPtr = clientData;
@@ -557,26 +618,28 @@ Index: generic/tclBasic.c
  	length = strlen(argv[i]);
  	TclNewStringObj(objPtr, argv[i], length);
  	Tcl_IncrRefCount(objPtr);
-@@ -2423,14 +2297,15 @@
+@@ -2422,16 +2302,15 @@
+ 
      /*
       * Invoke the command's object-based Tcl_ObjCmdProc.
       */
  
-     if (cmdPtr->objProc != NULL) {
+-    if (cmdPtr->objProc != NULL) {
 -	result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
-+        result = Tcl_NRCallObjProc(interp, cmdPtr->objProc,
-+                cmdPtr->objClientData, argc, objv);
-     } else {
+-    } else {
 -	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
 -		cmdPtr->objClientData, argc, objv);
-+        result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-+                cmdPtr->objClientData, argc, objv);
++    if (cmdPtr->nreProc == NULL) {
++        cmdPtr->nreProc = cmdPtr->objProc;
      }
++    result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
++            cmdPtr->objClientData, argc, objv);
  
      /*
       * Move the interpreter's object result to the string result, then reset
       * the object result.
-@@ -2445,11 +2320,11 @@
+      */
+@@ -2445,11 +2324,11 @@
  
      for (i = 0; i < argc; i++) {
  	objPtr = objv[i];
@@ -589,7 +652,7 @@ Index: generic/tclBasic.c
  
  /*
   *----------------------------------------------------------------------
-@@ -2653,180 +2528,10 @@
+@@ -2653,180 +2532,10 @@
  
    done:
      TclDecrRefCount(oldFullName);
@@ -770,7 +833,7 @@ Index: generic/tclBasic.c
   *----------------------------------------------------------------------
   *
   * Tcl_GetCommandName --
-@@ -3360,38 +3065,30 @@
+@@ -3360,38 +3069,30 @@
      Interp *iPtr,
      int objc,
      Tcl_Obj *const objv[],
@@ -829,7 +892,7 @@ Index: generic/tclBasic.c
      return objPtr;
  }
  
-@@ -4256,11 +3953,12 @@
+@@ -4256,11 +3957,12 @@
  	}
  	if (result != TCL_OK) {
  	    return result;
@@ -843,7 +906,7 @@ Index: generic/tclBasic.c
      if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
  	const char *a[10];
  	int i = 0;
-@@ -4269,18 +3967,10 @@
+@@ -4269,18 +3971,10 @@
  	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
  	}
  	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
@@ -862,7 +925,7 @@ Index: generic/tclBasic.c
      }
      if (TCL_DTRACE_CMD_ENTRY_ENABLED()) {
  	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
-@@ -4298,17 +3988,13 @@
+@@ -4298,17 +3992,13 @@
      /*
       * Find the objProc to call: nreProc if available, objProc otherwise. Push
       * a callback to do the actual running.
@@ -883,24 +946,21 @@ Index: generic/tclBasic.c
  void
  TclPushTailcallPoint(
      Tcl_Interp *interp)
-@@ -4396,11 +4082,15 @@
+@@ -4396,10 +4086,13 @@
  
      Command* cmdPtr = data[0];
      int objc = PTR2INT(data[1]);
      Tcl_Obj **objv = data[2];
  
--    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-+    if (cmdPtr->nreProc) {
-+        return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-+    } else {
-+        return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
++    if (cmdPtr->nreProc == NULL) {
++        cmdPtr->nreProc = cmdPtr->objProc;
 +    }
+     return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
  }
  
  
  /*
-  *----------------------------------------------------------------------
-@@ -4576,11 +4266,11 @@
+@@ -4576,11 +4269,11 @@
       */
  
      Tcl_ListObjGetElements(NULL, currNsPtr->unknownHandlerPtr,
@@ -913,7 +973,7 @@ Index: generic/tclBasic.c
       * Copy command prefix from unknown handler and add on the real command's
       * full argument list. Note that we only use memcpy() once because we have
       * to increment the reference count of all the handler arguments anyway.
-@@ -4615,11 +4305,11 @@
+@@ -4615,11 +4308,11 @@
  	 */
  
  	for (i = 0; i < handlerObjc; ++i) {
@@ -926,7 +986,7 @@ Index: generic/tclBasic.c
  
      if (lookupNsPtr) {
  	savedNsPtr = varFramePtr->nsPtr;
-@@ -4653,11 +4343,11 @@
+@@ -4653,11 +4346,11 @@
       */
  
      for (i = 0; i < objc; ++i) {
@@ -939,7 +999,7 @@ Index: generic/tclBasic.c
  }
  
  static int
-@@ -4816,12 +4506,11 @@
+@@ -4816,12 +4509,11 @@
      Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
  				 * evaluate and concatenate. */
      int count)			/* Number of tokens to consider at tokenPtr.
@@ -953,7 +1013,7 @@ Index: generic/tclBasic.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -4885,11 +4574,10 @@
+@@ -4885,11 +4577,10 @@
   *	TCL_ERROR. A result or error message is left in interp's result.
   *
   * Side effects:
@@ -965,7 +1025,7 @@ Index: generic/tclBasic.c
  
  int
  Tcl_EvalEx(
-@@ -4901,48 +4589,15 @@
+@@ -4901,48 +4592,15 @@
  				 * first null character. */
      int flags)			/* Collection of OR-ed bits that control the
  				 * evaluation of the script. Only
@@ -1015,7 +1075,7 @@ Index: generic/tclBasic.c
      CallFrame *savedVarFramePtr;/* Saves old copy of iPtr->varFramePtr in case
  				 * TCL_EVAL_GLOBAL was set. */
      int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-@@ -4950,33 +4605,14 @@
+@@ -4950,33 +4608,14 @@
      unsigned int i, objectsUsed = 0;
  				/* These variables keep track of how much
  				 * state has been allocated while evaluating
@@ -1052,7 +1112,7 @@ Index: generic/tclBasic.c
  	numBytes = strlen(script);
      }
      Tcl_ResetResult(interp);
-@@ -4990,110 +4626,23 @@
+@@ -4990,110 +4629,23 @@
       * Each iteration through the following loop parses the next command from
       * the script and then executes it.
       */
@@ -1163,7 +1223,7 @@ Index: generic/tclBasic.c
  
  	    /*
  	     * Generate an array of objects for the words of the command.
-@@ -5100,43 +4649,19 @@
+@@ -5100,43 +4652,19 @@
  	     */
  
  	    if (numWords > minObjs) {
@@ -1208,7 +1268,7 @@ Index: generic/tclBasic.c
  
  		if (code != TCL_OK) {
  		    break;
-@@ -5165,33 +4690,26 @@
+@@ -5165,33 +4693,26 @@
  		} else {
  		    expand[objectsUsed] = 0;
  		    objectsNeeded++;
@@ -1242,7 +1302,7 @@ Index: generic/tclBasic.c
  		objectsUsed = 0;
  		while (wordIdx--) {
  		    if (expand[wordIdx]) {
-@@ -5200,58 +4718,39 @@
+@@ -5200,58 +4721,39 @@
  
  			Tcl_ListObjGetElements(NULL, temp, &numElements,
  				&elements);
@@ -1308,7 +1368,7 @@ Index: generic/tclBasic.c
  		goto error;
  	    }
  	    for (i = 0; i < objectsUsed; i++) {
-@@ -5259,12 +4758,10 @@
+@@ -5259,12 +4761,10 @@
  	    }
  	    objectsUsed = 0;
  	    if (objvSpace != stackObjArray) {
@@ -1321,7 +1381,7 @@ Index: generic/tclBasic.c
  	    /*
  	     * Free expand separately since objvSpace could have been
  	     * reallocated above.
-@@ -5276,19 +4773,15 @@
+@@ -5276,19 +4776,15 @@
  	    }
  	}
  
@@ -1341,7 +1401,7 @@ Index: generic/tclBasic.c
      } while (bytesLeft > 0);
      iPtr->varFramePtr = savedVarFramePtr;
      code = TCL_OK;
-@@ -5335,463 +4828,22 @@
+@@ -5335,463 +4831,22 @@
      if (gotParse) {
  	Tcl_FreeParse(parsePtr);
      }
@@ -1810,7 +1870,7 @@ Index: generic/tclBasic.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -5870,12 +4922,12 @@
+@@ -5870,12 +4925,12 @@
   *----------------------------------------------------------------------
   *
   * Tcl_EvalObjEx, TclEvalObjEx --
@@ -1825,7 +1885,7 @@ Index: generic/tclBasic.c
   *	The return value is one of the return codes defined in tcl.h (such as
   *	TCL_OK), and the interpreter's result contains a value to supplement
   *	the return code.
-@@ -5883,11 +4935,10 @@
+@@ -5883,11 +4938,10 @@
   * Side effects:
   *	The object is converted, if necessary, to a ByteCode object that holds
   *	the bytecode instructions for the commands. Executing the commands
@@ -1837,7 +1897,7 @@ Index: generic/tclBasic.c
  
  int
  Tcl_EvalObjEx(
-@@ -5895,58 +4946,39 @@
+@@ -5895,58 +4949,39 @@
  				 * a previous call to Tcl_CreateInterp). */
      register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
  				 * execute. */
@@ -1900,7 +1960,7 @@ Index: generic/tclBasic.c
  
  	/*
  	 * Pure List Optimization (no string representation). In this case, we
-@@ -5976,57 +5008,18 @@
+@@ -5976,57 +5011,18 @@
  	Tcl_IncrRefCount(objPtr);
  	listPtr = TclListObjCopy(interp, objPtr);
  	Tcl_IncrRefCount(listPtr);
@@ -1960,7 +2020,7 @@ Index: generic/tclBasic.c
  	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
  	ByteCode *codePtr;
  	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
-@@ -6039,141 +5032,16 @@
+@@ -6039,141 +5035,16 @@
  	if (flags & TCL_EVAL_GLOBAL) {
  	    savedVarFramePtr = iPtr->varFramePtr;
  	    iPtr->varFramePtr = iPtr->rootFramePtr;
@@ -2103,7 +2163,7 @@ Index: generic/tclBasic.c
  static int
  TEOEx_ByteCodeCallback(
      ClientData data[],
-@@ -6224,24 +5092,13 @@
+@@ -6224,24 +5095,13 @@
  TEOEx_ListCallback(
      ClientData data[],
      Tcl_Interp *interp,
@@ -2128,7 +2188,7 @@ Index: generic/tclBasic.c
  
  /*
   *----------------------------------------------------------------------
-@@ -6552,11 +5409,11 @@
+@@ -6552,11 +5412,11 @@
      int flags)			/* Combination of flags controlling the call:
  				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
  				 * or TCL_INVOKE_NO_TRACEBACK. */
@@ -2141,7 +2201,28 @@ Index: generic/tclBasic.c
       * Make the specified namespace the current namespace and invoke the
       * command.
       */
-@@ -7991,69 +6848,10 @@
+@@ -6642,16 +5502,15 @@
+     /*
+      * Invoke the command function.
+      */
+ 
+     iPtr->cmdCount++;
+-    if (cmdPtr->objProc != NULL) {
+-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+-    } else {
+-	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
+-		cmdPtr->objClientData, objc, objv);
++    if (cmdPtr->nreProc == NULL) {
++        cmdPtr->nreProc = cmdPtr->objProc;
+     }
++    result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
++            cmdPtr->objClientData, objc, objv);
+ 
+     /*
+      * If an error occurred, record information about what was being executed
+      * when the error occurred.
+      */
+@@ -7991,69 +6850,10 @@
  }
  
  /*
@@ -2211,7 +2292,7 @@ Index: generic/tclBasic.c
   *	NR callback for DTrace command return probes.
   *
   * Results:
-@@ -8128,18 +6926,10 @@
+@@ -8128,18 +6928,10 @@
  	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
  	}
  	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
@@ -2230,7 +2311,7 @@ Index: generic/tclBasic.c
  	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
      }
      if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
-@@ -8213,11 +7003,11 @@
+@@ -8213,11 +7005,11 @@
  Tcl_NREvalObj(
      Tcl_Interp *interp,
      Tcl_Obj *objPtr,
@@ -2243,7 +2324,7 @@ Index: generic/tclBasic.c
  int
  Tcl_NREvalObjv(
      Tcl_Interp *interp,		/* Interpreter in which to evaluate the
-@@ -8622,11 +7412,10 @@
+@@ -8622,11 +7414,10 @@
  	 * the job here. The caller context has already been restored.
  	 */
  
@@ -2255,7 +2336,7 @@ Index: generic/tclBasic.c
      }
  
      NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
-@@ -8675,20 +7464,10 @@
+@@ -8675,20 +7466,10 @@
      TclDeleteExecEnv(corPtr->eePtr);
      corPtr->eePtr = NULL;
  
@@ -2276,7 +2357,7 @@ Index: generic/tclBasic.c
      iPtr->numLevels++;
  
      return result;
-@@ -8809,11 +7588,11 @@
+@@ -8809,11 +7590,11 @@
  	Tcl_WrongNumArgs(interp, 1, objv, "coroName cmd ?arg1 arg2 ...?");
  	return TCL_ERROR;
      }
@@ -2289,7 +2370,7 @@ Index: generic/tclBasic.c
          Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
                  TclGetString(objv[1]), NULL);
          return TCL_ERROR;
-@@ -8831,11 +7610,11 @@
+@@ -8831,11 +7612,11 @@
       * Add the callback to the coro's execEnv, so that it is the first thing
       * to happen when the coro is resumed.
       */
@@ -2302,7 +2383,16 @@ Index: generic/tclBasic.c
      return TCL_OK;
  }
  
-@@ -8973,46 +7752,16 @@
+@@ -8966,53 +7747,23 @@
+ 	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
+ 	TclDStringAppendLiteral(&ds, "::");
+     }
+     Tcl_DStringAppend(&ds, procName, -1);
+ 
+-    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
+-	    /*objProc*/ NULL, TclNRInterpCoroutine, corPtr, DeleteCoroutine);
++    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
++	    TclNRInterpCoroutine, corPtr, DeleteCoroutine);
      Tcl_DStringFree(&ds);
  
      corPtr->cmdPtr = cmdPtr;

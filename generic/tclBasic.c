@@ -735,14 +735,19 @@ Tcl_CreateInterp(void)
 
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
         Command *cmdPtr;
+        Tcl_ObjCmdProc *objProc = cmdInfoPtr->nreProc;
+
 	if ((cmdInfoPtr->objProc == NULL)
 		&& (cmdInfoPtr->compileProc == NULL)
 		&& (cmdInfoPtr->nreProc == NULL)) {
 	    Tcl_Panic("builtin command with NULL object command proc and a NULL compile proc");
 	}
 
-        cmdPtr = (Command *) Tcl_NRCreateCommand(interp, cmdInfoPtr->name, cmdInfoPtr->objProc,
-                cmdInfoPtr->nreProc, NULL, NULL);
+        if (objProc == NULL) {
+            objProc = cmdInfoPtr->objProc;
+        }
+        cmdPtr = (Command *) Tcl_CreateObjCommand(interp, cmdInfoPtr->name, objProc,
+                NULL, NULL);
         cmdPtr->compileProc = cmdInfoPtr->compileProc;
     }
 
@@ -792,7 +797,7 @@ Tcl_CreateInterp(void)
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
 
-    Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::inject",
 	    NRCoroInjectObjCmd, NULL, NULL);
 
 #ifdef USE_DTRACE
@@ -1987,6 +1992,7 @@ Tcl_CreateCommand(
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = TclInvokeStringCommand;
+    cmdPtr->nreProc = cmdPtr->objProc;
     cmdPtr->objClientData = cmdPtr;
     cmdPtr->proc = proc;
     cmdPtr->clientData = clientData;
@@ -1995,7 +2001,6 @@ Tcl_CreateCommand(
     cmdPtr->flags = 0;
     cmdPtr->importRefPtr = NULL;
     cmdPtr->tracePtr = NULL;
-    cmdPtr->nreProc = NULL;
 
     /*
      * Plug in any existing import references found above. Be sure to update
@@ -2115,6 +2120,7 @@ Tcl_CreateObjCommand(
 
 	if (cmdPtr->objProc == TclInvokeStringCommand) {
 	    cmdPtr->objProc = proc;
+            cmdPtr->nreProc = cmdPtr->objProc;
 	    cmdPtr->objClientData = clientData;
 	    cmdPtr->deleteProc = deleteProc;
 	    cmdPtr->deleteData = clientData;
@@ -2171,6 +2177,7 @@ Tcl_CreateObjCommand(
     cmdPtr->cmdEpoch = 0;
     cmdPtr->compileProc = NULL;
     cmdPtr->objProc = proc;
+    cmdPtr->nreProc = cmdPtr->objProc;
     cmdPtr->objClientData = clientData;
     cmdPtr->proc = TclInvokeObjectCommand;
     cmdPtr->clientData = cmdPtr;
@@ -2179,7 +2186,6 @@ Tcl_CreateObjCommand(
     cmdPtr->flags = 0;
     cmdPtr->importRefPtr = NULL;
     cmdPtr->tracePtr = NULL;
-    cmdPtr->nreProc = NULL;
 
     /*
      * Plug in any existing import references found above. Be sure to update
@@ -2298,13 +2304,11 @@ TclInvokeObjectCommand(
      * Invoke the command's object-based Tcl_ObjCmdProc.
      */
 
-    if (cmdPtr->objProc != NULL) {
-        result = Tcl_NRCallObjProc(interp, cmdPtr->objProc,
-                cmdPtr->objClientData, argc, objv);
-    } else {
-        result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-                cmdPtr->objClientData, argc, objv);
+    if (cmdPtr->nreProc == NULL) {
+        cmdPtr->nreProc = cmdPtr->objProc;
     }
+    result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
+            cmdPtr->objClientData, argc, objv);
 
     /*
      * Move the interpreter's object result to the string result, then reset
@@ -4084,11 +4088,10 @@ NRRunObjProc(
     int objc = PTR2INT(data[1]);
     Tcl_Obj **objv = data[2];
 
-    if (cmdPtr->nreProc) {
-        return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-    } else {
-        return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    if (cmdPtr->nreProc == NULL) {
+        cmdPtr->nreProc = cmdPtr->objProc;
     }
+    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
 }
 
 
@@ -5501,12 +5504,11 @@ TclObjInvoke(
      */
 
     iPtr->cmdCount++;
-    if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-    } else {
-	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, objc, objv);
+    if (cmdPtr->nreProc == NULL) {
+        cmdPtr->nreProc = cmdPtr->objProc;
     }
+    result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
+            cmdPtr->objClientData, objc, objv);
 
     /*
      * If an error occurred, record information about what was being executed
@@ -7747,8 +7749,8 @@ TclNRCoroutineObjCmd(
     }
     Tcl_DStringAppend(&ds, procName, -1);
 
-    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, Tcl_DStringValue(&ds),
-	    /*objProc*/ NULL, TclNRInterpCoroutine, corPtr, DeleteCoroutine);
+    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, Tcl_DStringValue(&ds),
+	    TclNRInterpCoroutine, corPtr, DeleteCoroutine);
     Tcl_DStringFree(&ds);
 
     corPtr->cmdPtr = cmdPtr;
