@@ -849,16 +849,6 @@ Tcl_UplevelObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRUplevelObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRUplevelObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
 
     register Interp *iPtr = (Interp *) interp;
     int result;
@@ -2397,16 +2387,6 @@ SetLambdaFromAny(
 
 int
 Tcl_ApplyObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, TclNRApplyObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRApplyObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */

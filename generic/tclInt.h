@@ -2481,20 +2481,7 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNREvalObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRLmapCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSourceObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSubstObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRSwitchObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
-MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
 
 MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
 MODULE_SCOPE Tcl_NRPostProc TclNRCoroutineActivateCallback;
@@ -2870,9 +2857,6 @@ MODULE_SCOPE int	Tcl_ApplyObjCmd(ClientData clientData,
 MODULE_SCOPE Tcl_Command TclInitArrayCmd(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Command TclInitBinaryCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_BreakObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	Tcl_CaseObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_CatchObjCmd(ClientData clientData,

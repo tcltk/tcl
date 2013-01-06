@@ -132,143 +132,6 @@ Tcl_BreakObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_CaseObjCmd --
- *
- *	This procedure is invoked to process the "case" Tcl command. See the
- *	user documentation for details on what it does. THIS COMMAND IS
- *	OBSOLETE AND DEPRECATED. SLATED FOR REMOVAL IN TCL 9.0.
- *
- * Results:
- *	A standard Tcl object result.
- *
- * Side effects:
- *	See the user documentation.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-int
-Tcl_CaseObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    register int i;
-    int body, result, caseObjc;
-    const char *stringPtr, *arg;
-    Tcl_Obj *const *caseObjv;
-    Tcl_Obj *armPtr;
-
-    if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv,
-		"string ?in? ?pattern body ...? ?default body?");
-	return TCL_ERROR;
-    }
-
-    stringPtr = TclGetString(objv[1]);
-    body = -1;
-
-    arg = TclGetString(objv[2]);
-    if (strcmp(arg, "in") == 0) {
-	i = 3;
-    } else {
-	i = 2;
-    }
-    caseObjc = objc - i;
-    caseObjv = objv + i;
-
-    /*
-     * If all of the pattern/command pairs are lumped into a single argument,
-     * split them out again.
-     */
-
-    if (caseObjc == 1) {
-	Tcl_Obj **newObjv;
-
-	TclListObjGetElements(interp, caseObjv[0], &caseObjc, &newObjv);
-	caseObjv = newObjv;
-    }
-
-    for (i = 0;  i < caseObjc;  i += 2) {
-	int patObjc, j;
-	const char **patObjv;
-	const char *pat;
-	unsigned char *p;
-
-	if (i == caseObjc-1) {
-	    Tcl_ResetResult(interp);
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "extra case pattern with no body", -1));
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Check for special case of single pattern (no list) with no
-	 * backslash sequences.
-	 */
-
-	pat = TclGetString(caseObjv[i]);
-	for (p = (unsigned char *) pat; *p != '\0'; p++) {
-	    if (isspace(*p) || (*p == '\\')) {	/* INTL: ISO space, UCHAR */
-		break;
-	    }
-	}
-	if (*p == '\0') {
-	    if ((*pat == 'd') && (strcmp(pat, "default") == 0)) {
-		body = i + 1;
-	    }
-	    if (Tcl_StringMatch(stringPtr, pat)) {
-		body = i + 1;
-		goto match;
-	    }
-	    continue;
-	}
-
-	/*
-	 * Break up pattern lists, then check each of the patterns in the
-	 * list.
-	 */
-
-	result = Tcl_SplitList(interp, pat, &patObjc, &patObjv);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	for (j = 0; j < patObjc; j++) {
-	    if (Tcl_StringMatch(stringPtr, patObjv[j])) {
-		body = i + 1;
-		break;
-	    }
-	}
-	ckfree(patObjv);
-	if (j < patObjc) {
-	    break;
-	}
-    }
-
-  match:
-    if (body != -1) {
-	armPtr = caseObjv[body - 1];
-	result = Tcl_EvalObjEx(interp, caseObjv[body], 0);
-	if (result == TCL_ERROR) {
-	    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
-		    "\n    (\"%.50s\" arm line %d)",
-		    TclGetString(armPtr), Tcl_GetErrorLine(interp)));
-	}
-	return result;
-    }
-
-    /*
-     * Nothing matched: return nothing.
-     */
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_CatchObjCmd --
  *
  *	This object-based procedure is invoked to process the "catch" Tcl
@@ -286,16 +149,6 @@ Tcl_CaseObjCmd(
 	/* ARGSUSED */
 int
 Tcl_CatchObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, TclNRCatchObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRCatchObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -744,16 +597,6 @@ Tcl_EvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);    
-}
-
-int
-TclNREvalObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
     register Tcl_Obj *objPtr;
 
     if (objc < 2) {
@@ -845,16 +688,6 @@ Tcl_ExitObjCmd(
 	/* ARGSUSED */
 int
 Tcl_ExprObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, TclNRExprObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRExprObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2380,16 +2213,6 @@ Tcl_ForObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRForObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRForObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
     ForIterData *iterPtr;
 
     if (objc != 5) {
@@ -2537,7 +2360,7 @@ ForPostNextCallback(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_ForeachObjCmd, TclNRForeachCmd, EachloopCmd --
+ * Tcl_ForeachObjCmd, EachloopCmd --
  *
  *	This object-based procedure is invoked to process the "foreach" Tcl
  *	command. See the user documentation for details on what it does.
@@ -2559,16 +2382,6 @@ Tcl_ForeachObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRForeachCmd, dummy, objc, objv);
-}
-
-int
-TclNRForeachCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
     return EachloopCmd(interp, TCL_EACH_KEEP_NONE, objc, objv);
 }
 
@@ -2578,16 +2391,6 @@ Tcl_LmapObjCmd(
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, TclNRLmapCmd, dummy, objc, objv);
-}
-
-int
-TclNRLmapCmd(
-    ClientData dummy,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
 {
     return EachloopCmd(interp, TCL_EACH_COLLECT, objc, objv);
 }

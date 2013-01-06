@@ -977,16 +977,6 @@ Tcl_SourceObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRSourceObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRSourceObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
     const char *encodingName = NULL;
     Tcl_Obj *fileName;
 
@@ -3417,16 +3407,6 @@ Tcl_SubstObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNRSubstObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRSubstObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
     int flags;
 
     if (objc < 2) {
@@ -3460,15 +3440,6 @@ TclNRSubstObjCmd(
 
 int
 Tcl_SwitchObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, TclNRSwitchObjCmd, dummy, objc, objv);
-}
-int
-TclNRSwitchObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -4043,7 +4014,7 @@ Tcl_TimeObjCmd(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_TryObjCmd, TclNRTryObjCmd --
+ * Tcl_TryObjCmd --
  *
  *	This procedure is invoked to process the "try" Tcl command. See the
  *	user documentation (or TIP #329) for details on what it does.
@@ -4059,17 +4030,7 @@ Tcl_TimeObjCmd(
 
 int
 Tcl_TryObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, TclNRTryObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRTryObjCmd(
-    ClientData clientData,	/* Not used. */
+    ClientData clientData,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -4629,16 +4590,6 @@ TryPostFinal(
 
 int
 Tcl_WhileObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    return Tcl_NRCallObjProc(interp, TclNRWhileObjCmd, dummy, objc, objv);
-}
-
-int
-TclNRWhileObjCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
