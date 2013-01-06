@@ -2435,16 +2435,16 @@ TEBCresume(
 	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
 	Tcl_IncrRefCount(listPtr);
 	Tcl_IncrRefCount(nsObjPtr);
-	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
-		NULL, NULL);
 
 	/*
 	 * Unstitch ourselves and do a [return].
 	 */
 
-	tailcallPtr = TOP_CB(interp);
-	TOP_CB(interp) = tailcallPtr->nextPtr;
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
+		NULL, NULL);	
+	POP_CB(interp, tailcallPtr);
 	iPtr->varFramePtr->tailcallPtr = tailcallPtr;
+
 	result = TCL_RETURN;
 	cleanup = opnd;
 	goto processExceptionReturn;

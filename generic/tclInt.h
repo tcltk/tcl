@@ -2807,6 +2807,12 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
 	               struct NRE_callback *tailcallPtr);
+MODULE_SCOPE void  TclSpliceCallbacks(Tcl_Interp *interp,
+	               struct NRE_callback *topPtr);
+MODULE_SCOPE void  TclDeferCallback(Tcl_Interp *interp,
+	               Tcl_NRPostProc postProcPtr,
+                       ClientData data0, ClientData data1,
+                       ClientData data2, ClientData data3);
 
 /*
  * This structure holds the data for the various iteration callbacks used to
@@ -4774,8 +4780,8 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  *----------------------------------------------------------------
  */
 
-#define NRE_USE_SMALL_ALLOC	1  /* Only turn off for debugging purposes. */
 #define NRE_ENABLE_ASSERTS	1
+#define NRE_STACK_DEBUG         1
 
 /*
  * This is the main data struct for representing NR commands. It is designed
@@ -4792,59 +4798,40 @@ typedef struct NRE_callback {
 #define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
 
 /*
- * Inline version of Tcl_NRAddCallback.
+ * Inline versions of Tcl_NRAddCallback and friends
  */
 
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
+#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3)	\
     do {								\
-	NRE_callback *callbackPtr;					\
-	TCLNR_ALLOC((interp), (callbackPtr));				\
-	callbackPtr->procPtr = (postProcPtr);				\
-	callbackPtr->data[0] = (ClientData)(data0);			\
-	callbackPtr->data[1] = (ClientData)(data1);			\
-	callbackPtr->data[2] = (ClientData)(data2);			\
-	callbackPtr->data[3] = (ClientData)(data3);			\
-	callbackPtr->nextPtr = TOP_CB(interp);				\
-	TOP_CB(interp) = callbackPtr;					\
+	NRE_callback *cbPtr;						\
+	PUSH_CB(interp, cbPtr);						\
+	cbPtr->procPtr = (postProcPtr);					\
+	cbPtr->data[0] = (ClientData)(data0);				\
+	cbPtr->data[1] = (ClientData)(data1);				\
+	cbPtr->data[2] = (ClientData)(data2);				\
+	cbPtr->data[3] = (ClientData)(data3);				\
     } while (0)
 
-#define TclNRDeferCallback(interp,postProcPtr,data0,data1,data2,data3) \
-    do {								\
-	NRE_callback *callbackPtr;					\
-	TCLNR_ALLOC((interp), (callbackPtr));				\
-	callbackPtr->procPtr = (postProcPtr);				\
-	callbackPtr->data[0] = (ClientData)(data0);			\
-	callbackPtr->data[1] = (ClientData)(data1);			\
-	callbackPtr->data[2] = (ClientData)(data2);			\
-	callbackPtr->data[3] = (ClientData)(data3);			\
-	callbackPtr->nextPtr = ((Interp *)interp)->deferredCallbacks;	\
-	((Interp *)interp)->deferredCallbacks = callbackPtr;		\
-    } while (0)
-
-#define TclNRSpliceCallbacks(interp, topPtr) \
+#if NRE_STACK_DEBUG
+#define PUSH_CB(interp, cbPtr)			\
     do {					\
-	NRE_callback *bottomPtr = topPtr;	\
-	while (bottomPtr->nextPtr) {		\
-	    bottomPtr = bottomPtr->nextPtr;	\
-	}					\
-	bottomPtr->nextPtr = TOP_CB(interp);	\
-	TOP_CB(interp) = topPtr;		\
+        cbPtr = ckalloc(sizeof(NRE_callback));	\
+	cbPtr->nextPtr = TOP_CB(interp);	\
+	TOP_CB(interp) = cbPtr;			\
+    } while (0)
+	
+#define POP_CB(interp, cbPtr)                      \
+    do {                                           \
+        cbPtr = TOP_CB(interp);                    \
+        TOP_CB(interp) = cbPtr->nextPtr;           \
     } while (0)
 
-#define TclNRSpliceDeferred(interp)					\
-    if (((Interp *)interp)->deferredCallbacks) {			\
-	TclNRSpliceCallbacks(interp, ((Interp *)interp)->deferredCallbacks); \
-	((Interp *)interp)->deferredCallbacks = NULL;			\
-    }
+#define ALLOC_CB(interp, cbPtr)			\
+    cbPtr = ckalloc(sizeof(NRE_callback))
 
-#if NRE_USE_SMALL_ALLOC
-#define TCLNR_ALLOC(interp, ptr) \
-    TclSmallAllocEx(interp, sizeof(NRE_callback), (ptr))
-#define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
-#else
-#define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
-#define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
+#define FREE_CB(interp, ptr)			\
+    ckfree((char *) (ptr))
+#else /* not debugging the NRE stack */
 #endif
 
 #if NRE_ENABLE_ASSERTS

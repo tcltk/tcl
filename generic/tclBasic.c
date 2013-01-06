@@ -166,6 +166,10 @@ static void	        ClearTailcall(Tcl_Interp *interp,
 			    struct NRE_callback *tailcallPtr);
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
+static inline void SpliceDeferred(Tcl_Interp *interp);
+
+
+
 MODULE_SCOPE const TclStubs tclStubs;
 
 /*
@@ -4182,7 +4186,7 @@ TclNREvalObjv(
     }
     cmdPtrPtr = (Command **) &(TOP_CB(interp)->data[0]);
 
-    TclNRSpliceDeferred(interp);
+    SpliceDeferred(interp);
 
     iPtr->numLevels++;
     result = TclInterpReady(interp);
@@ -4326,7 +4330,7 @@ TclNRRunCallbacks(
 				 * are to be run. */
 {
     Interp *iPtr = (Interp *) interp;
-    NRE_callback *callbackPtr;
+    NRE_callback *cbPtr;
     Tcl_NRPostProc *procPtr;
 
     /*
@@ -4344,11 +4348,10 @@ TclNRRunCallbacks(
     }
 
     while (TOP_CB(interp) != rootPtr) {
-	callbackPtr = TOP_CB(interp);
-	procPtr = callbackPtr->procPtr;
-	TOP_CB(interp) = callbackPtr->nextPtr;
-	result = procPtr(callbackPtr->data, interp, result);
-	TCLNR_FREE(interp, callbackPtr);
+	POP_CB(interp, cbPtr);
+	procPtr = cbPtr->procPtr;
+	result = procPtr(cbPtr->data, interp, result);
+	FREE_CB(interp, cbPtr);
     }
     return result;
 }
@@ -4625,7 +4628,7 @@ TEOV_NotFound(
 	savedNsPtr = varFramePtr->nsPtr;
 	varFramePtr->nsPtr = lookupNsPtr;
     }
-    TclNRDeferCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
+    TclDeferCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
 	    newObjv, savedNsPtr, NULL);
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     return TclNREvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR, NULL);
@@ -6012,7 +6015,7 @@ TclNREvalObjEx(
 	    iPtr->cmdFramePtr = eoFramePtr;
 	}
 
-	TclNRDeferCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
+	TclDeferCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
 		NULL, NULL);
 
 	ListObjGetElements(listPtr, objc, objv);
@@ -8268,6 +8271,55 @@ Tcl_NRCmdSwap(
  * FIXME NRE!
  */
 
+#if NRE_STACK_DEBUG
+void
+TclSpliceCallbacks(
+    Tcl_Interp *interp,
+    struct NRE_callback *topPtr)
+{
+    NRE_callback *bottomPtr = topPtr;
+
+    while (bottomPtr->nextPtr) {
+        bottomPtr = bottomPtr->nextPtr;
+    }
+    bottomPtr->nextPtr = TOP_CB(interp);
+    TOP_CB(interp) = topPtr;
+}
+
+void
+TclDeferCallback(
+    Tcl_Interp *interp,
+    Tcl_NRPostProc *postProcPtr,
+    ClientData data0, ClientData data1,
+    ClientData data2, ClientData data3)
+{
+    NRE_callback *callbackPtr;
+    
+    ALLOC_CB((interp), (callbackPtr));
+
+    callbackPtr->procPtr = postProcPtr;
+    callbackPtr->data[0] = data0;
+    callbackPtr->data[1] = data1;
+    callbackPtr->data[2] = data2;
+    callbackPtr->data[3] = data3;
+
+    callbackPtr->nextPtr = ((Interp *)interp)->deferredCallbacks;
+    ((Interp *)interp)->deferredCallbacks = callbackPtr;
+}
+#else
+TODO!!
+#endif
+
+static void
+SpliceDeferred(
+    Tcl_Interp *interp)
+{
+    if (((Interp *)interp)->deferredCallbacks) {
+	TclSpliceCallbacks(interp, ((Interp *)interp)->deferredCallbacks);
+	((Interp *)interp)->deferredCallbacks = NULL;
+    }
+}
+
 void
 TclSpliceTailcall(
     Tcl_Interp *interp,
@@ -8388,7 +8440,7 @@ TclNRTailcallEval(
      * Perform the tailcall
      */
 
-    TclNRDeferCallback(interp, TailcallCleanup, listPtr, nsObjPtr, NULL,NULL);
+    TclDeferCallback(interp, TailcallCleanup, listPtr, nsObjPtr, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     ListObjGetElements(listPtr, objc, objv);
     return TclNREvalObjv(interp, objc, objv, 0, NULL);
@@ -8411,7 +8463,7 @@ ClearTailcall(
     NRE_callback *tailcallPtr)
 {
     TailcallCleanup(tailcallPtr->data, interp, TCL_OK);
-    TCLNR_FREE(interp, tailcallPtr);
+    FREE_CB(interp, tailcallPtr);
 }
 
 
