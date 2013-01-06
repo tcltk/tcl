@@ -122,7 +122,7 @@ TclOO_Class_Constructor(
      * trace, so use TCL_EVAL_NOERR.
      */
 
-    return TclNREvalObjv(interp, 3, invoke, TCL_EVAL_NOERR, NULL);
+    return Tcl_EvalObjv(interp, 3, invoke, TCL_EVAL_NOERR);
 }
 
 static int
