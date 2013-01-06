@@ -80,7 +80,7 @@ typedef enum {
 				 * to a catch PC offset. */
 } ExceptionRangeType;
 
-typedef struct ExceptionRange {
+typedef struct {
     ExceptionRangeType type;	/* The kind of ExceptionRange. */
     int nestingLevel;		/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
@@ -107,7 +107,7 @@ typedef struct ExceptionRange {
  * source offset is not monotonic.
  */
 
-typedef struct CmdLocation {
+typedef struct {
     int codeOffset;		/* Offset of first byte of command code. */
     int numCodeBytes;		/* Number of bytes for command's code. */
     int srcOffset;		/* Offset of first char of the command. */

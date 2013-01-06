@@ -33,16 +33,6 @@
 #endif
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the Dde_Init
- * declaration is in the source file itself, which is only accessed when we
- * are building a library. DO NOT MOVE BEFORE ANY #include LINES. ONLY USE
- * EXTERN TO INDICATE EXPORTED FUNCTIONS FROM NOW ON.
- */
-
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
  * The following structure is used to keep track of the interpreters
  * registered by this process.
  */
@@ -68,7 +58,7 @@ typedef struct Conversation {
     Tcl_Obj *returnPackagePtr;	/* The result package for this conversation. */
 } Conversation;
 
-typedef struct DdeEnumServices {
+typedef struct {
     Tcl_Interp *interp;
     int result;
     ATOM service;
@@ -76,7 +66,7 @@ typedef struct DdeEnumServices {
     HWND hwnd;
 } DdeEnumServices;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     Conversation *currentConversations;
 				/* A list of conversations currently being
 				 * processed. */
@@ -113,7 +103,7 @@ TCL_DECLARE_MUTEX(ddeMutex)
 
 static LRESULT CALLBACK	DdeClientWindowProc(HWND hwnd, UINT uMsg,
 			    WPARAM wParam, LPARAM lParam);
-static int		DdeCreateClient(struct DdeEnumServices *es);
+static int		DdeCreateClient(DdeEnumServices *es);
 static BOOL CALLBACK	DdeEnumWindowsCallback(HWND hwndTarget,
 			    LPARAM lParam);
 static void		DdeExitProc(ClientData clientData);
@@ -134,8 +124,8 @@ static int		DdeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
-EXTERN int		Dde_Init(Tcl_Interp *interp);
-EXTERN int		Dde_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int		Dde_Init(Tcl_Interp *interp);
+DLLEXPORT int		Dde_SafeInit(Tcl_Interp *interp);
 
 /*
  *----------------------------------------------------------------------
@@ -157,7 +147,7 @@ int
 Dde_Init(
     Tcl_Interp *interp)
 {
-    if (!Tcl_InitStubs(interp, "8.1", 0)) {
+    if (!Tcl_InitStubs(interp, TCL_VERSION, 0)) {
 	return TCL_ERROR;
     }
 
@@ -1038,7 +1028,7 @@ MakeDdeConnection(
 
 static int
 DdeCreateClient(
-    struct DdeEnumServices *es)
+    DdeEnumServices *es)
 {
     WNDCLASSEX wc;
     static const TCHAR *szDdeClientClassName = TEXT("TclEval client class");
@@ -1048,7 +1038,7 @@ DdeCreateClient(
     wc.cbSize = sizeof(wc);
     wc.lpfnWndProc = DdeClientWindowProc;
     wc.lpszClassName = szDdeClientClassName;
-    wc.cbWndExtra = sizeof(struct DdeEnumServices *);
+    wc.cbWndExtra = sizeof(DdeEnumServices *);
 
     /*
      * Register and create the callback window.
@@ -1070,8 +1060,8 @@ DdeClientWindowProc(
     switch (uMsg) {
     case WM_CREATE: {
 	LPCREATESTRUCT lpcs = (LPCREATESTRUCT) lParam;
-	struct DdeEnumServices *es =
-		(struct DdeEnumServices *) lpcs->lpCreateParams;
+	DdeEnumServices *es =
+		(DdeEnumServices *) lpcs->lpCreateParams;
 
 #ifdef _WIN64
 	SetWindowLongPtr(hwnd, GWLP_USERDATA, (LONG_PTR) es);
@@ -1096,14 +1086,14 @@ DdeServicesOnAck(
     HWND hwndRemote = (HWND)wParam;
     ATOM service = (ATOM)LOWORD(lParam);
     ATOM topic = (ATOM)HIWORD(lParam);
-    struct DdeEnumServices *es;
+    DdeEnumServices *es;
     TCHAR sz[255];
     Tcl_DString dString;
 
 #ifdef _WIN64
-    es = (struct DdeEnumServices *) GetWindowLongPtr(hwnd, GWLP_USERDATA);
+    es = (DdeEnumServices *) GetWindowLongPtr(hwnd, GWLP_USERDATA);
 #else
-    es = (struct DdeEnumServices *) GetWindowLong(hwnd, GWL_USERDATA);
+    es = (DdeEnumServices *) GetWindowLong(hwnd, GWL_USERDATA);
 #endif
 
     if ((es->service == (ATOM)0 || es->service == service)
@@ -1154,7 +1144,7 @@ DdeEnumWindowsCallback(
     LPARAM lParam)
 {
     DWORD_PTR dwResult = 0;
-    struct DdeEnumServices *es = (struct DdeEnumServices *) lParam;
+    DdeEnumServices *es = (DdeEnumServices *) lParam;
 
     SendMessageTimeout(hwndTarget, WM_DDE_INITIATE, (WPARAM)es->hwnd,
 	    MAKELONG(es->service, es->topic), SMTO_ABORTIFHUNG, 1000,
@@ -1168,7 +1158,7 @@ DdeGetServicesList(
     const TCHAR *serviceName,
     const TCHAR *topicName)
 {
-    struct DdeEnumServices es;
+    DdeEnumServices es;
 
     es.interp = interp;
     es.result = TCL_OK;

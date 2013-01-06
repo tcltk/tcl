@@ -41,18 +41,30 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#undef TclPkgProvide
 
-/* See bug 510001: TclSockMinimumBuffers needs plat imp */
-#ifdef _WIN64
-#   define TclSockMinimumBuffersOld 0
-#else
-#define TclSockMinimumBuffersOld sockMinimumBuffersOld
-static int TclSockMinimumBuffersOld(int sock, int size)
+#define TclPkgProvide pkgProvide
+static int TclPkgProvide(
+    Tcl_Interp *interp,		/* Interpreter in which package is now
+				 * available. */
+    const char *name,		/* Name of package. */
+    const char *version)	/* Version string for package. */
 {
-    return TclSockMinimumBuffers(INT2PTR(sock), size);
+    /* In Tcl 9, Tcl_PkgProvide is a macro calling Tcl_PkgProvideEx.
+     * The only way this stub can be called is by an extension compiled
+     * against Tcl 8 headers. The Tcl_StubsInit() function already
+     * succeeded, so the extension author lied: It did something like:
+     *     Tcl_StubsInit(interp, "8.6-", 0)
+     * or
+     *     Tcl_StubsInit(interp, "8.6-9.1", 0)
+     *
+     * The best we can do is provide an error-message, as if the
+     * extension originally called:
+     *     Tcl_StubsInit(interp, "8", 0)
+     */
+	Tcl_PkgRequireEx(interp, "Tcl", "8", 0, NULL);
+	return TCL_ERROR;
 }
-#endif
-
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
@@ -170,9 +182,6 @@ Tcl_WinTCharToUtf(
 	    string, len, dsPtr);
 }
 
-#else /* UNIX and MAC */
-#   define TclpLocaltime_unix TclpLocaltime
-#   define TclpGmtime_unix TclpGmtime
 #endif
 
 /*
@@ -197,7 +206,7 @@ static const TclIntStubs tclIntStubs = {
     TclCleanupChildren, /* 5 */
     TclCleanupCommand, /* 6 */
     TclCopyAndCollapse, /* 7 */
-    TclCopyChannelOld, /* 8 */
+    0, /* 8 */
     TclCreatePipeline, /* 9 */
     TclCreateProc, /* 10 */
     TclDeleteCompiledLocalVars, /* 11 */
@@ -266,7 +275,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 74 */
     TclpGetClicks, /* 75 */
     TclpGetSeconds, /* 76 */
-    TclpGetTime, /* 77 */
+    0, /* 77 */
     0, /* 78 */
     0, /* 79 */
     0, /* 80 */
@@ -293,7 +302,7 @@ static const TclIntStubs tclIntStubs = {
     TclSetPreInitScript, /* 101 */
     TclSetupEnv, /* 102 */
     TclSockGetPort, /* 103 */
-    TclSockMinimumBuffersOld, /* 104 */
+    0, /* 104 */
     0, /* 105 */
     0, /* 106 */
     0, /* 107 */
@@ -322,7 +331,7 @@ static const TclIntStubs tclIntStubs = {
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
     TclpHasSockets, /* 132 */
-    TclpGetDate, /* 133 */
+    0, /* 133 */
     0, /* 134 */
     0, /* 135 */
     0, /* 136 */
@@ -371,8 +380,8 @@ static const TclIntStubs tclIntStubs = {
     0, /* 179 */
     0, /* 180 */
     0, /* 181 */
-    TclpLocaltime, /* 182 */
-    TclpGmtime, /* 183 */
+    0, /* 182 */
+    0, /* 183 */
     0, /* 184 */
     0, /* 185 */
     0, /* 186 */
@@ -457,8 +466,8 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    TclpLocaltime_unix, /* 11 */
-    TclpGmtime_unix, /* 12 */
+    0, /* 11 */
+    0, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
     0, /* 15 */
@@ -480,7 +489,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
-    TclWinConvertWSAError, /* 1 */
+    0, /* 1 */
     TclWinGetServByName, /* 2 */
     TclWinGetSockOpt, /* 3 */
     TclWinGetTclInstance, /* 4 */
@@ -523,8 +532,8 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    TclpLocaltime_unix, /* 11 */
-    TclpGmtime_unix, /* 12 */
+    0, /* 11 */
+    0, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
     TclMacOSXGetFileAttribute, /* 15 */
@@ -730,7 +739,7 @@ const TclStubs tclStubs = {
     Tcl_AsyncMark, /* 74 */
     Tcl_AsyncReady, /* 75 */
     Tcl_BackgroundError, /* 76 */
-    Tcl_Backslash, /* 77 */
+    0, /* 77 */
     Tcl_BadChannelOption, /* 78 */
     Tcl_CallWhenDeleted, /* 79 */
     Tcl_CancelIdleCall, /* 80 */
@@ -748,7 +757,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEventSource, /* 92 */
     Tcl_CreateExitHandler, /* 93 */
     Tcl_CreateInterp, /* 94 */
-    Tcl_CreateMathFunc, /* 95 */
+    0, /* 95 */
     Tcl_CreateObjCommand, /* 96 */
     Tcl_CreateSlave, /* 97 */
     Tcl_CreateTimerHandler, /* 98 */
@@ -783,7 +792,7 @@ const TclStubs tclStubs = {
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
     Tcl_Eval, /* 129 */
-    Tcl_EvalFile, /* 130 */
+    0, /* 130 */
     0, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */
@@ -797,7 +806,7 @@ const TclStubs tclStubs = {
     Tcl_ExprObj, /* 141 */
     Tcl_ExprString, /* 142 */
     Tcl_Finalize, /* 143 */
-    Tcl_FindExecutable, /* 144 */
+    0, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
     Tcl_FreeResult, /* 147 */
@@ -838,7 +847,7 @@ const TclStubs tclStubs = {
     Tcl_GetStringResult, /* 174 */
     Tcl_GetVar, /* 175 */
     Tcl_GetVar2, /* 176 */
-    Tcl_GlobalEval, /* 177 */
+    0, /* 177 */
     0, /* 178 */
     Tcl_HideCommand, /* 179 */
     Tcl_Init, /* 180 */
@@ -881,7 +890,7 @@ const TclStubs tclStubs = {
     Tcl_ResetResult, /* 217 */
     Tcl_ScanElement, /* 218 */
     Tcl_ScanCountedElement, /* 219 */
-    Tcl_SeekOld, /* 220 */
+    0, /* 220 */
     Tcl_ServiceAll, /* 221 */
     Tcl_ServiceEvent, /* 222 */
     Tcl_SetAssocData, /* 223 */
@@ -907,7 +916,7 @@ const TclStubs tclStubs = {
     Tcl_SplitPath, /* 243 */
     Tcl_StaticPackage, /* 244 */
     Tcl_StringMatch, /* 245 */
-    Tcl_TellOld, /* 246 */
+    0, /* 246 */
     Tcl_TraceVar, /* 247 */
     Tcl_TraceVar2, /* 248 */
     Tcl_TranslateFileName, /* 249 */
@@ -921,7 +930,7 @@ const TclStubs tclStubs = {
     Tcl_UpdateLinkedVar, /* 257 */
     Tcl_UpVar, /* 258 */
     Tcl_UpVar2, /* 259 */
-    Tcl_VarEval, /* 260 */
+    0, /* 260 */
     Tcl_VarTraceInfo, /* 261 */
     Tcl_VarTraceInfo2, /* 262 */
     Tcl_Write, /* 263 */
@@ -934,10 +943,10 @@ const TclStubs tclStubs = {
     Tcl_ParseVar, /* 270 */
     Tcl_PkgPresent, /* 271 */
     Tcl_PkgPresentEx, /* 272 */
-    Tcl_PkgProvide, /* 273 */
+    TclPkgProvide, /* 273 */
     Tcl_PkgRequire, /* 274 */
     Tcl_SetErrorCodeVA, /* 275 */
-    Tcl_VarEvalVA, /* 276 */
+    0, /* 276 */
     Tcl_WaitPid, /* 277 */
     Tcl_PanicVA, /* 278 */
     Tcl_GetVersion, /* 279 */
@@ -1002,8 +1011,8 @@ const TclStubs tclStubs = {
     Tcl_WriteChars, /* 338 */
     Tcl_WriteObj, /* 339 */
     Tcl_GetString, /* 340 */
-    Tcl_GetDefaultEncodingDir, /* 341 */
-    Tcl_SetDefaultEncodingDir, /* 342 */
+    0, /* 341 */
+    0, /* 342 */
     Tcl_AlertNotifier, /* 343 */
     Tcl_ServiceModeHook, /* 344 */
     Tcl_UniCharIsAlnum, /* 345 */
@@ -1018,7 +1027,7 @@ const TclStubs tclStubs = {
     Tcl_UniCharToUtfDString, /* 354 */
     Tcl_UtfToUniCharDString, /* 355 */
     Tcl_GetRegExpFromObj, /* 356 */
-    Tcl_EvalTokens, /* 357 */
+    0, /* 357 */
     Tcl_FreeParse, /* 358 */
     Tcl_LogCommandInfo, /* 359 */
     Tcl_ParseBraces, /* 360 */
@@ -1096,8 +1105,8 @@ const TclStubs tclStubs = {
     Tcl_AttemptSetObjLength, /* 432 */
     Tcl_GetChannelThread, /* 433 */
     Tcl_GetUnicodeFromObj, /* 434 */
-    Tcl_GetMathFuncInfo, /* 435 */
-    Tcl_ListMathFuncs, /* 436 */
+    0, /* 435 */
+    0, /* 436 */
     Tcl_SubstObj, /* 437 */
     Tcl_DetachChannel, /* 438 */
     Tcl_IsStandardChannel, /* 439 */

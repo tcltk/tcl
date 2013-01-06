@@ -24,18 +24,15 @@ const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
 /*
- * Use our own isDigit to avoid linking to libc on windows
+ * Use our own ISDIGIT to avoid linking to libc on windows
  */
 
-static int isDigit(const int c)
-{
-    return (c >= '0' && c <= '9');
-}
+#define ISDIGIT(c) (((unsigned)((c)-'0')) <= 9)
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_InitStubs --
+ * TclInitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
@@ -51,10 +48,12 @@ static int isDigit(const int c)
  */
 #undef Tcl_InitStubs
 MODULE_SCOPE const char *
-Tcl_InitStubs(
+TclInitStubs(
     Tcl_Interp *interp,
     const char *version,
-    int exact)
+    int exact,
+    const char *tclversion,
+    int magic)
 {
     Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
@@ -68,8 +67,8 @@ Tcl_InitStubs(
      */
 
     if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
-	iPtr->result = "interpreter uses an incompatible stubs mechanism";
-	iPtr->freeProc = TCL_STATIC;
+	iPtr->legacyResult = "interpreter uses an incompatible stubs mechanism";
+	iPtr->legacyFreeProc = 0; /* TCL_STATIC */
 	return NULL;
     }
 
@@ -82,7 +81,7 @@ Tcl_InitStubs(
 	int count = 0;
 
 	while (*p) {
-	    count += !isDigit(*p++);
+	    count += !ISDIGIT(*p++);
 	}
 	if (count == 1) {
 	    const char *q = actualVersion;
@@ -91,7 +90,7 @@ Tcl_InitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p || isDigit(*q)) {
+	    if (*p || ISDIGIT(*q)) {
 		/* Construct error message */
 		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;

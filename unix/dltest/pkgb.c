@@ -11,7 +11,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tcl.h"
 
 /*
@@ -41,10 +40,6 @@ static int    Pkgb_DemoObjCmd(ClientData clientData,
  *
  *----------------------------------------------------------------------
  */
-
-#ifndef Tcl_GetErrorLine
-#   define Tcl_GetErrorLine(interp) ((interp)->errorLine)
-#endif
 
 static int
 Pkgb_SubObjCmd(

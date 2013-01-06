@@ -55,11 +55,15 @@ of integer digits, optionally signed and optionally preceded by
 white space.  If the first two characters of \fIsrc\fR
 after the optional white space and sign are
 .QW 0x
-then \fIsrc\fR is expected to be in hexadecimal form;  otherwise,
-if the first such character is
-.QW 0
+then \fIsrc\fR is expected to be in hexadecimal form.
+If the first two such characters are
+.QW 0o
 then \fIsrc\fR
-is expected to be in octal form;  otherwise, \fIsrc\fR is
+is expected to be in octal form.
+If the first two such characters are
+.QW 0b
+then \fIsrc\fR
+is expected to be in binary form;  otherwise, \fIsrc\fR is
 expected to be in decimal form.
 .PP
 \fBTcl_GetDouble\fR expects \fIsrc\fR to consist of a floating-point

@@ -51,10 +51,11 @@ declare 6 {
 declare 7 {
     int TclCopyAndCollapse(int count, const char *src, char *dst)
 }
-declare 8 {
-    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
-	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
-}
+# Removed in Tcl 9
+#declare 8 {
+#    int TclCopyChannelOld(Tcl_Interp *interp, Tcl_Channel inChan,
+#	    Tcl_Channel outChan, int toRead, Tcl_Obj *cmdPtr)
+#}
 
 # TclCreatePipeline unofficially exported for use by BLT.
 
@@ -184,11 +185,11 @@ declare 41 {
     Tcl_Command TclGetOriginalCommand(Tcl_Command command)
 }
 declare 42 {
-    CONST86 char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
+    const char *TclpGetUserHome(const char *name, Tcl_DString *bufferPtr)
 }
 # Removed in Tcl 8.5a2
 #declare 43 {
-#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 44 {
@@ -223,12 +224,12 @@ declare 51 {
 }
 # Removed in Tcl 8.5a2
 #declare 52 {
-#    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
+#    int TclInvoke(Tcl_Interp *interp, int argc, const char **argv,
 #	    int flags)
 #}
 declare 53 {
     int TclInvokeObjectCommand(ClientData clientData, Tcl_Interp *interp,
-	    int argc, CONST84 char **argv)
+	    int argc, const char **argv)
 }
 declare 54 {
     int TclInvokeStringCommand(ClientData clientData, Tcl_Interp *interp,
@@ -315,10 +316,10 @@ declare 76 {
     unsigned long TclpGetSeconds(void)
 }
 
-# deprecated
-declare 77 {
-    void TclpGetTime(Tcl_Time *time)
-}
+# Removed in 9.0:
+#declare 77 {
+#    void TclpGetTime(Tcl_Time *time)
+#}
 # Removed in 8.6:
 #declare 78 {
 #    int TclpGetTimeZone(unsigned long time)
@@ -411,7 +412,7 @@ declare 98 {
 #	    Tcl_Obj *objPtr, int flags)
 #}
 declare 101 {
-    CONST86 char *TclSetPreInitScript(const char *string)
+    const char *TclSetPreInitScript(const char *string)
 }
 declare 102 {
     void TclSetupEnv(Tcl_Interp *interp)
@@ -420,9 +421,10 @@ declare 103 {
     int TclSockGetPort(Tcl_Interp *interp, const char *str, const char *proto,
 	    int *portPtr)
 }
-declare 104 {
-    int TclSockMinimumBuffersOld(int sock, int size)
-}
+# Removed in Tcl 9
+#declare 104 {
+#    int TclSockMinimumBuffersOld(int sock, int size)
+#}
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
 #    int TclStat(const char *path, Tcl_StatBuf *buf)
@@ -533,9 +535,10 @@ declare 131 {
 declare 132 {
     int TclpHasSockets(Tcl_Interp *interp)
 }
-declare 133 {
-    struct tm *TclpGetDate(const time_t *time, int useGMT)
-}
+# Removed in 9.0
+#declare 133 {
+#    struct tm *TclpGetDate(const time_t *time, int useGMT)
+#}
 # Removed in 8.5
 #declare 134 {
 #    size_t TclpStrftime(char *s, size_t maxsize, const char *format,
@@ -551,7 +554,7 @@ declare 133 {
 #   int TclpChdir(const char *dirName)
 #}
 declare 138 {
-    CONST84_RETURN char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
+    const char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
 }
 #declare 139 {
 #    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
@@ -563,7 +566,7 @@ declare 138 {
 #}
 # This is used by TclX, but should otherwise be considered private
 declare 141 {
-    CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
+    const char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
 declare 142 {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -749,14 +752,14 @@ declare 177 {
 #	    const char *file, int line)
 #}
 
-# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
-
-declare 182 {
-     struct tm *TclpLocaltime(const time_t *clock)
-}
-declare 183 {
-     struct tm *TclpGmtime(const time_t *clock)
-}
+# Removed in 9.0
+#declare 182 {
+#     struct tm *TclpLocaltime(const time_t *clock)
+#}
+# Removed in 9.0
+#declare 183 {
+#     struct tm *TclpGmtime(const time_t *clock)
+#}
 
 # For the new "Thread Storage" subsystem.
 
@@ -1019,9 +1022,10 @@ interface tclIntPlat
 declare 0 win {
     void TclWinConvertError(DWORD errCode)
 }
-declare 1 win {
-    void TclWinConvertWSAError(DWORD errCode)
-}
+# Removed in Tcl 9.0
+#declare 1 win {
+#    void TclWinConvertWSAError(DWORD errCode)
+#}
 declare 2 win {
     struct servent *TclWinGetServByName(const char *nm,
 	    const char *proto)
@@ -1196,14 +1200,13 @@ declare 9 unix {
 declare 10 unix {
     Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
-# Slots 11 and 12 are forwarders for functions that were promoted to
-# generic Stubs
-declare 11 unix {
-    struct tm *TclpLocaltime_unix(const time_t *clock)
-}
-declare 12 unix {
-    struct tm *TclpGmtime_unix(const time_t *clock)
-}
+# Removed in Tcl 9.0
+#declare 11 unix {
+#    struct tm *TclpLocaltime_unix(const time_t *clock)
+#}
+#declare 12 unix {
+#    struct tm *TclpGmtime_unix(const time_t *clock)
+#}
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)
 }

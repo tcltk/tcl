@@ -8,7 +8,7 @@
 .TH Tcl_GetEncoding 3 "8.1" Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_WinTCharToUtf, Tcl_WinUtfToTChar, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath, Tcl_GetDefaultEncodingDir, Tcl_SetDefaultEncodingDir \- procedures for creating and using encodings
+Tcl_GetEncoding, Tcl_FreeEncoding, Tcl_GetEncodingFromObj, Tcl_ExternalToUtfDString, Tcl_ExternalToUtf, Tcl_UtfToExternalDString, Tcl_UtfToExternal, Tcl_WinTCharToUtf, Tcl_WinUtfToTChar, Tcl_GetEncodingName, Tcl_SetSystemEncoding, Tcl_GetEncodingNameFromEnvironment, Tcl_GetEncodingNames, Tcl_CreateEncoding, Tcl_GetEncodingSearchPath, Tcl_SetEncodingSearchPath \- procedures for creating and using encodings
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -62,12 +62,6 @@ Tcl_Obj *
 .sp
 int
 \fBTcl_SetEncodingSearchPath\fR(\fIsearchPath\fR)
-.sp
-const char *
-\fBTcl_GetDefaultEncodingDir\fR(\fIvoid\fR)
-.sp
-void
-\fBTcl_SetDefaultEncodingDir\fR(\fIpath\fR)
 .SH ARGUMENTS
 .AS "const Tcl_EncodingType" *dstWrotePtr in/out
 .AP Tcl_Interp *interp in
@@ -325,7 +319,7 @@ the encoding name to it.  The \fBTcl_DStringValue\fR is returned.
 \fBTcl_GetEncodingNames\fR sets the \fIinterp\fR result to a list
 consisting of the names of all the encodings that are currently defined
 or can be dynamically loaded, searching the encoding path specified by
-\fBTcl_SetDefaultEncodingDir\fR.  This procedure does not ensure that the
+\fBTcl_SetEncodingSearchPath\fR.  This procedure does not ensure that the
 dynamically-loadable encoding files contain valid data, but merely that they
 exist.
 .PP
@@ -440,15 +434,6 @@ are not verified as existing readable filesystem directories.  When
 searching for encoding data files takes place, and non-existent or
 non-readable filesystem directories on the \fIsearchPath\fR are silently
 ignored.
-.PP
-\fBTcl_GetDefaultEncodingDir\fR and \fBTcl_SetDefaultEncodingDir\fR
-are obsolete interfaces best replaced with calls to
-\fBTcl_GetEncodingSearchPath\fR and \fBTcl_SetEncodingSearchPath\fR.
-They are called to access and set the first element of the \fIsearchPath\fR
-list.  Since Tcl searches \fIsearchPath\fR for encoding data files in
-list order, these routines establish the
-.QW default
-directory in which to find encoding data files.
 .SH "ENCODING FILES"
 Space would prohibit precompiling into Tcl every possible encoding
 algorithm, so many encodings are stored on disk as dynamically-loadable
