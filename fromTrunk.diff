@@ -8209,7 +8209,20 @@ Index: generic/tclEnsemble.c
 ==================================================================
 --- generic/tclEnsemble.c
 +++ generic/tclEnsemble.c
-@@ -86,20 +86,12 @@
+@@ -21,12 +21,10 @@
+ static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
+ 			    EnsembleConfig *ensemblePtr, int objc,
+ 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
+ static int		NsEnsembleImplementationCmd(ClientData clientData,
+ 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+-static int		NsEnsembleImplementationCmdNR(ClientData clientData,
+-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
+ static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
+ static int		NsEnsembleStringOrder(const void *strPtr1,
+ 			    const void *strPtr2);
+ static void		DeleteEnsembleConfig(ClientData clientData);
+ static void		MakeCachedEnsembleCommand(Tcl_Obj *objPtr,
+@@ -86,20 +84,12 @@
      DupEnsembleCmdRep,		/* dupIntRepProc */
      StringOfEnsembleCmdRep,	/* updateStringProc */
      NULL			/* setFromAnyProc */
@@ -8231,7 +8244,23 @@ Index: generic/tclEnsemble.c
  NewNsObj(
      Tcl_Namespace *namespacePtr)
  {
-@@ -736,11 +728,11 @@
+@@ -684,13 +674,12 @@
+     ensemblePtr->subcommandDict = NULL;
+     ensemblePtr->flags = flags;
+     ensemblePtr->numParameters = 0;
+     ensemblePtr->parameterList = NULL;
+     ensemblePtr->unknownHandler = NULL;
+-    ensemblePtr->token = Tcl_NRCreateCommand(interp, name,
+-	    NsEnsembleImplementationCmd, NsEnsembleImplementationCmdNR,
+-	    ensemblePtr, DeleteEnsembleConfig);
++    ensemblePtr->token = Tcl_CreateObjCommand(interp, name,
++	    NsEnsembleImplementationCmd, ensemblePtr, DeleteEnsembleConfig);
+     ensemblePtr->next = (EnsembleConfig *) nsPtr->ensembles;
+     nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr;
+ 
+     /*
+      * Trigger an eventual recomputation of the ensemble command set. Note
+@@ -736,11 +725,11 @@
  {
      Command *cmdPtr = (Command *) token;
      EnsembleConfig *ensemblePtr;
@@ -8244,7 +8273,7 @@ Index: generic/tclEnsemble.c
  	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	return TCL_ERROR;
      }
-@@ -812,11 +804,11 @@
+@@ -812,11 +801,11 @@
      Command *cmdPtr = (Command *) token;
      EnsembleConfig *ensemblePtr;
      Tcl_Obj *oldList;
@@ -8257,7 +8286,7 @@ Index: generic/tclEnsemble.c
  	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	return TCL_ERROR;
      }
-@@ -888,11 +880,11 @@
+@@ -888,11 +877,11 @@
  {
      Command *cmdPtr = (Command *) token;
      EnsembleConfig *ensemblePtr;
@@ -8270,7 +8299,7 @@ Index: generic/tclEnsemble.c
  	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	return TCL_ERROR;
      }
-@@ -987,11 +979,11 @@
+@@ -987,11 +976,11 @@
  {
      Command *cmdPtr = (Command *) token;
      EnsembleConfig *ensemblePtr;
@@ -8283,7 +8312,7 @@ Index: generic/tclEnsemble.c
  	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	return TCL_ERROR;
      }
-@@ -1053,11 +1045,11 @@
+@@ -1053,11 +1042,11 @@
  {
      Command *cmdPtr = (Command *) token;
      EnsembleConfig *ensemblePtr;
@@ -8296,7 +8325,7 @@ Index: generic/tclEnsemble.c
  	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	return TCL_ERROR;
      }
-@@ -1129,11 +1121,11 @@
+@@ -1129,11 +1118,11 @@
      Tcl_Obj **subcmdListPtr)
  {
      Command *cmdPtr = (Command *) token;
@@ -8309,7 +8338,7 @@ Index: generic/tclEnsemble.c
  		    "command is not an ensemble", -1));
  	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	}
-@@ -1171,11 +1163,11 @@
+@@ -1171,11 +1160,11 @@
      Tcl_Obj **paramListPtr)
  {
      Command *cmdPtr = (Command *) token;
@@ -8322,7 +8351,7 @@ Index: generic/tclEnsemble.c
  		    "command is not an ensemble", -1));
  	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	}
-@@ -1213,11 +1205,11 @@
+@@ -1213,11 +1202,11 @@
      Tcl_Obj **mapDictPtr)
  {
      Command *cmdPtr = (Command *) token;
@@ -8335,7 +8364,7 @@ Index: generic/tclEnsemble.c
  		    "command is not an ensemble", -1));
  	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	}
-@@ -1254,11 +1246,11 @@
+@@ -1254,11 +1243,11 @@
      Tcl_Obj **unknownListPtr)
  {
      Command *cmdPtr = (Command *) token;
@@ -8348,7 +8377,7 @@ Index: generic/tclEnsemble.c
  		    "command is not an ensemble", -1));
  	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	}
-@@ -1295,11 +1287,11 @@
+@@ -1295,11 +1284,11 @@
      int *flagsPtr)
  {
      Command *cmdPtr = (Command *) token;
@@ -8361,7 +8390,7 @@ Index: generic/tclEnsemble.c
  		    "command is not an ensemble", -1));
  	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	}
-@@ -1336,11 +1328,11 @@
+@@ -1336,11 +1325,11 @@
      Tcl_Namespace **namespacePtrPtr)
  {
      Command *cmdPtr = (Command *) token;
@@ -8374,7 +8403,7 @@ Index: generic/tclEnsemble.c
  		    "command is not an ensemble", -1));
  	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
  	}
-@@ -1386,19 +1378,19 @@
+@@ -1386,19 +1375,19 @@
  	    Tcl_FindCommand(interp, TclGetString(cmdNameObj), NULL, flags);
      if (cmdPtr == NULL) {
  	return NULL;
@@ -8396,7 +8425,7 @@ Index: generic/tclEnsemble.c
  			"\"%s\" is not an ensemble command",
  			TclGetString(cmdNameObj)));
  		Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENSEMBLE",
-@@ -1432,15 +1424,15 @@
+@@ -1432,15 +1421,15 @@
  Tcl_IsEnsemble(
      Tcl_Command token)
  {
@@ -8414,7 +8443,81 @@ Index: generic/tclEnsemble.c
      return 1;
  }
  
-@@ -1913,11 +1905,11 @@
+@@ -1544,11 +1533,12 @@
+      */
+ 
+     if (ensemble != NULL) {
+ 	Tcl_Obj *mapDict, *fromObj, *toObj;
+ 	Command *cmdPtr;
+-
++	Tcl_ObjCmdProc *objProc;
++	
+ 	TclDStringAppendLiteral(&buf, "::");
+ 	TclNewObj(mapDict);
+ 	for (i=0 ; map[i].name != NULL ; i++) {
+ 	    fromObj = Tcl_NewStringObj(map[i].name, -1);
+ 	    TclNewStringObj(toObj, Tcl_DStringValue(&buf),
+@@ -1563,14 +1553,19 @@
+ 		 * doesn't work properly yet; this function is always
+ 		 * currently called before the safe-interp flag is set so the
+ 		 * Tcl_IsSafe check fails.
+ 		 */
+ 
++		objProc = map[i].nreProc;
++		if (objProc == NULL) {
++		    objProc = map[i].proc;
++		}
++		
+ 		if (map[i].unsafe && Tcl_IsSafe(interp)) {
+ 		    cmdPtr = (Command *)
+-			    Tcl_NRCreateCommand(interp, "___tmp", map[i].proc,
+-			    map[i].nreProc, map[i].clientData, NULL);
++			    Tcl_CreateObjCommand(interp, "___tmp", objProc,
++				    map[i].clientData, NULL);
+ 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
+ 		    if (Tcl_HideCommand(interp, "___tmp",
+ 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
+ 			Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
+ 		    }
+@@ -1578,13 +1573,12 @@
+ 		    /*
+ 		     * Not hidden, so just create it. Yay!
+ 		     */
+ 
+ 		    cmdPtr = (Command *)
+-			    Tcl_NRCreateCommand(interp, TclGetString(toObj),
+-			    map[i].proc, map[i].nreProc, map[i].clientData,
+-			    NULL);
++			    Tcl_CreateObjCommand(interp, TclGetString(toObj),
++			    objProc, map[i].clientData, NULL);
+ 		}
+ 		cmdPtr->compileProc = map[i].compileProc;
+ 	    }
+ 	}
+ 	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
+@@ -1631,21 +1625,10 @@
+ static int
+ NsEnsembleImplementationCmd(
+     ClientData clientData,
+     Tcl_Interp *interp,
+     int objc,
+-    Tcl_Obj *const objv[])
+-{
+-    return Tcl_NRCallObjProc(interp, NsEnsembleImplementationCmdNR,
+-	    clientData, objc, objv);
+-}
+-
+-static int
+-NsEnsembleImplementationCmdNR(
+-    ClientData clientData,
+-    Tcl_Interp *interp,
+-    int objc,
+     Tcl_Obj *const objv[])
+ {
+     EnsembleConfig *ensemblePtr = clientData;
+ 				/* The ensemble itself. */
+     Tcl_Obj *prefixObj;		/* An object containing the prefix words of
+@@ -1913,11 +1896,11 @@
  	/*
  	 * Hand off to the target command.
  	 */
@@ -8427,7 +8530,7 @@ Index: generic/tclEnsemble.c
    unknownOrAmbiguousSubcommand:
      /*
       * Have not been able to match the subcommand asked for with a real
-@@ -3132,16 +3124,13 @@
+@@ -3132,16 +3115,13 @@
  {
      Tcl_Token *tokPtr;
      Tcl_Obj *objPtr, **words;
@@ -8445,7 +8548,7 @@ Index: generic/tclEnsemble.c
      Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
      for (i=0,tokPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
  	if (i > 0 && i < numWords+1) {
-@@ -3149,21 +3138,12 @@
+@@ -3149,21 +3129,12 @@
  	    PushLiteral(envPtr, bytes, length);
  	} else if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
  	    int literal = TclRegisterNewLiteral(envPtr,
@@ -8467,7 +8570,7 @@ Index: generic/tclEnsemble.c
  	tokPtr = TokenAfter(tokPtr);
      }
  
-@@ -3212,11 +3192,10 @@
+@@ -3212,11 +3183,10 @@
  {
      Tcl_Token *tokenPtr;
      Tcl_Obj *objPtr;
@@ -8479,7 +8582,7 @@ Index: generic/tclEnsemble.c
       * Push the name of the command we're actually dispatching to as part of
       * the implementation.
       */
-@@ -3233,13 +3212,10 @@
+@@ -3233,13 +3203,10 @@
       * Push the words of the command.
       */
  

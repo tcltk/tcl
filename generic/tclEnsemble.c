@@ -23,8 +23,6 @@ static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
 static int		NsEnsembleImplementationCmd(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
-static int		NsEnsembleImplementationCmdNR(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
 static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
@@ -678,9 +676,8 @@ Tcl_CreateEnsemble(
     ensemblePtr->numParameters = 0;
     ensemblePtr->parameterList = NULL;
     ensemblePtr->unknownHandler = NULL;
-    ensemblePtr->token = Tcl_NRCreateCommand(interp, name,
-	    NsEnsembleImplementationCmd, NsEnsembleImplementationCmdNR,
-	    ensemblePtr, DeleteEnsembleConfig);
+    ensemblePtr->token = Tcl_CreateObjCommand(interp, name,
+	    NsEnsembleImplementationCmd, ensemblePtr, DeleteEnsembleConfig);
     ensemblePtr->next = (EnsembleConfig *) nsPtr->ensembles;
     nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr;
 
@@ -1538,7 +1535,8 @@ TclMakeEnsemble(
     if (ensemble != NULL) {
 	Tcl_Obj *mapDict, *fromObj, *toObj;
 	Command *cmdPtr;
-
+	Tcl_ObjCmdProc *objProc;
+	
 	TclDStringAppendLiteral(&buf, "::");
 	TclNewObj(mapDict);
 	for (i=0 ; map[i].name != NULL ; i++) {
@@ -1557,10 +1555,15 @@ TclMakeEnsemble(
 		 * Tcl_IsSafe check fails.
 		 */
 
+		objProc = map[i].nreProc;
+		if (objProc == NULL) {
+		    objProc = map[i].proc;
+		}
+		
 		if (map[i].unsafe && Tcl_IsSafe(interp)) {
 		    cmdPtr = (Command *)
-			    Tcl_NRCreateCommand(interp, "___tmp", map[i].proc,
-			    map[i].nreProc, map[i].clientData, NULL);
+			    Tcl_CreateObjCommand(interp, "___tmp", objProc,
+				    map[i].clientData, NULL);
 		    Tcl_DStringSetLength(&hiddenBuf, hiddenLen);
 		    if (Tcl_HideCommand(interp, "___tmp",
 			    Tcl_DStringAppend(&hiddenBuf, map[i].name, -1))) {
@@ -1572,9 +1575,8 @@ TclMakeEnsemble(
 		     */
 
 		    cmdPtr = (Command *)
-			    Tcl_NRCreateCommand(interp, TclGetString(toObj),
-			    map[i].proc, map[i].nreProc, map[i].clientData,
-			    NULL);
+			    Tcl_CreateObjCommand(interp, TclGetString(toObj),
+			    objProc, map[i].clientData, NULL);
 		}
 		cmdPtr->compileProc = map[i].compileProc;
 	    }
@@ -1622,17 +1624,6 @@ TclMakeEnsemble(
 
 static int
 NsEnsembleImplementationCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    return Tcl_NRCallObjProc(interp, NsEnsembleImplementationCmdNR,
-	    clientData, objc, objv);
-}
-
-static int
-NsEnsembleImplementationCmdNR(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
