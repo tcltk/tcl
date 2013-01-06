@@ -202,7 +202,8 @@ VarHashCreateVar(
 
 #if TCL_COMPILE_DEBUG
 #define CHECK_STACK()							\
-    assert((auxObjList != NULL) || (CURR_DEPTH <= codePtr->maxStackDepth))
+    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, \
+	    /*checkStack*/ auxObjList == NULL)
 #else
 #define CHECK_STACK()
 #endif
@@ -639,7 +640,7 @@ static void		PrintByteCodeInfo(ByteCode *codePtr);
 static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
 			    const unsigned char *pc, int stackTop,
-			    int stackLowerBound, int checkStack);
+			    int checkStack);
 #endif /* TCL_COMPILE_DEBUG */
 static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		DeleteExecStack(ExecStack *esPtr);
@@ -2197,8 +2198,7 @@ TEBCresume(
      * Skip the stack depth check if an expansion is in progress.
      */
 
-    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, 0,
-	    /*checkStack*/ auxObjList == NULL);
+    CHECK_STACK();
     if (traceInstructions) {
 	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
 	TclPrintInstruction(codePtr, pc);
@@ -8439,11 +8439,10 @@ ValidatePcAndStackTop(
     int stackTop,		/* Current stack top. Must be between
 				 * stackLowerBound and stackUpperBound
 				 * (inclusive). */
-    int stackLowerBound,	/* Smallest legal value for stackTop. */
     int checkStack)		/* 0 if the stack depth check should be
 				 * skipped. */
 {
-    int stackUpperBound = stackLowerBound + codePtr->maxStackDepth;
+    int stackUpperBound = codePtr->maxStackDepth;
 				/* Greatest legal value for stackTop. */
     unsigned relativePc = (unsigned) (pc - codePtr->codeStart);
     unsigned long codeStart = (unsigned long) codePtr->codeStart;
@@ -8461,13 +8460,13 @@ ValidatePcAndStackTop(
 		(unsigned) opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
-    if (checkStack &&
-	    ((stackTop < stackLowerBound) || (stackTop > stackUpperBound))) {
+    if (checkStack && 
+	    ((stackTop < 0) || (stackTop > stackUpperBound))) {
 	int numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL);
 
-	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min %i, max %i)",
-		stackTop, relativePc, stackLowerBound, stackUpperBound);
+	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min 0, max %i)",
+		stackTop, relativePc, stackUpperBound);
 	if (cmd != NULL) {
 	    Tcl_Obj *message;
 
