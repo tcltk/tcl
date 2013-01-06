@@ -12291,7 +12291,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE long	tclObjsFreed;
  #define TCL_MAX_SHARED_OBJ_STATS 5
  MODULE_SCOPE long	tclObjsShared[TCL_MAX_SHARED_OBJ_STATS];
-@@ -2779,24 +2479,11 @@
+@@ -2779,25 +2479,10 @@
   * Procedures shared among Tcl modules but not used by the outside world,
   * introduced by/for NRE.
   *----------------------------------------------------------------
@@ -12300,7 +12300,7 @@ Index: generic/tclInt.h
 -MODULE_SCOPE Tcl_ObjCmdProc TclNRApplyObjCmd;
 -MODULE_SCOPE Tcl_ObjCmdProc TclNREvalObjCmd;
 -MODULE_SCOPE Tcl_ObjCmdProc TclNRCatchObjCmd;
- MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
+-MODULE_SCOPE Tcl_ObjCmdProc TclNRExprObjCmd;
 -MODULE_SCOPE Tcl_ObjCmdProc TclNRForObjCmd;
 -MODULE_SCOPE Tcl_ObjCmdProc TclNRForeachCmd;
 -MODULE_SCOPE Tcl_ObjCmdProc TclNRIfObjCmd;
@@ -12311,12 +12311,13 @@ Index: generic/tclInt.h
 -MODULE_SCOPE Tcl_ObjCmdProc TclNRTryObjCmd;
 -MODULE_SCOPE Tcl_ObjCmdProc TclNRUplevelObjCmd;
 -MODULE_SCOPE Tcl_ObjCmdProc TclNRWhileObjCmd;
- 
+-
  MODULE_SCOPE Tcl_NRPostProc TclNRForIterCallback;
  MODULE_SCOPE Tcl_NRPostProc TclNRCoroutineActivateCallback;
  MODULE_SCOPE Tcl_ObjCmdProc TclNRTailcallObjCmd;
  MODULE_SCOPE Tcl_NRPostProc TclNRTailcallEval;
-@@ -2806,11 +2493,11 @@
+ MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
+@@ -2806,11 +2491,11 @@
  MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
  
  MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
@@ -12329,7 +12330,7 @@ Index: generic/tclInt.h
   * have more than the 4 client data entries we can provide directly thorugh
   * the callback API. It is the 'word' information which puts us over the
   * limit. It is needed because the loop body is argument 4 of 'for' and
-@@ -2821,11 +2508,10 @@
+@@ -2821,11 +2506,10 @@
  typedef struct ForIterData {
      Tcl_Obj *cond;		/* Loop condition expression. */
      Tcl_Obj *body;		/* Loop body. */
@@ -12341,7 +12342,7 @@ Index: generic/tclInt.h
  /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
   *            and Tcl_FindSymbol. This structure corresponds to an opaque
   *            typedef in tcl.h */
-@@ -2880,25 +2566,10 @@
+@@ -2880,25 +2564,10 @@
  MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
  			    const unsigned char *bytes, int len);
  MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -12367,7 +12368,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
  MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
  			    int strLen, const unsigned char *pattern,
-@@ -2909,24 +2580,13 @@
+@@ -2909,24 +2578,13 @@
  MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
  			    Tcl_Channel chan);
  MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
@@ -12392,7 +12393,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileLinkCmd;
  MODULE_SCOPE Tcl_ObjCmdProc TclFileMakeDirsCmd;
-@@ -2940,11 +2600,10 @@
+@@ -2940,11 +2598,10 @@
  MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
  			    Tcl_Obj *objPtr);
  MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
@@ -12404,7 +12405,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
  MODULE_SCOPE void	TclFinalizeEnvironment(void);
  MODULE_SCOPE void	TclFinalizeEvaluation(void);
-@@ -2957,11 +2616,10 @@
+@@ -2957,11 +2614,10 @@
  MODULE_SCOPE void	TclFinalizeMemorySubsystem(void);
  MODULE_SCOPE void	TclFinalizeNotifier(void);
  MODULE_SCOPE void	TclFinalizeObjects(void);
@@ -12416,7 +12417,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE double	TclFloor(const mp_int *a);
  MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
  MODULE_SCOPE int	TclFSFileAttrIndex(Tcl_Obj *pathPtr,
-@@ -2981,11 +2639,10 @@
+@@ -2981,11 +2637,10 @@
  			    int *typePtr);
  MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
  			    const char *modeString, int *seekFlagPtr,
@@ -12428,7 +12429,7 @@ Index: generic/tclInt.h
  			    Tcl_GlobTypeData *types);
  MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
  			    Tcl_Obj *incrPtr);
-@@ -2993,18 +2650,16 @@
+@@ -2993,18 +2648,16 @@
  			    Tcl_Obj *part2Ptr, Tcl_Obj *incrPtr, int flags);
  MODULE_SCOPE int	TclInfoExistsCmd(ClientData dummy, Tcl_Interp *interp,
  			    int objc, Tcl_Obj *const objv[]);
@@ -12447,7 +12448,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE void	TclInitEmbeddedConfigurationInformation(
  			    Tcl_Interp *interp);
  MODULE_SCOPE void	TclInitEncodingSubsystem(void);
-@@ -3136,28 +2791,24 @@
+@@ -3136,28 +2789,24 @@
  			    Command *cmdPtr);
  MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
  MODULE_SCOPE void	TclSetProcessGlobalValue(ProcessGlobalValue *pgvPtr,
@@ -12478,7 +12479,7 @@ Index: generic/tclInt.h
  MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
  			    const char *trim, int numTrim);
  MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
-@@ -3206,13 +2857,10 @@
+@@ -3206,13 +2855,10 @@
  MODULE_SCOPE Tcl_Command TclInitArrayCmd(Tcl_Interp *interp);
  MODULE_SCOPE Tcl_Command TclInitBinaryCmd(Tcl_Interp *interp);
  MODULE_SCOPE int	Tcl_BreakObjCmd(ClientData clientData,
@@ -12492,7 +12493,7 @@ Index: generic/tclInt.h
  			    Tcl_Obj *const objv[]);
  MODULE_SCOPE int	Tcl_CdObjCmd(ClientData clientData,
  			    Tcl_Interp *interp, int objc,
-@@ -3255,19 +2903,10 @@
+@@ -3255,19 +2901,10 @@
  MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
  			    int pathc, Tcl_Obj *const pathv[]);
  MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
@@ -12512,7 +12513,7 @@ Index: generic/tclInt.h
  			    Tcl_Obj *const objv[]);
  MODULE_SCOPE int	Tcl_EofObjCmd(ClientData clientData,
  			    Tcl_Interp *interp, int objc,
-@@ -3994,14 +3633,14 @@
+@@ -3994,14 +3631,14 @@
  #  define TclIncrObjsAllocated()
  #  define TclIncrObjsFreed()
  #endif /* TCL_COMPILE_STATS */
@@ -12529,7 +12530,7 @@ Index: generic/tclInt.h
  # define TclNewObj(objPtr) \
      TclIncrObjsAllocated(); \
      TclAllocObjStorage(objPtr); \
-@@ -4032,116 +3671,10 @@
+@@ -4032,116 +3669,10 @@
  	} else { \
  	    TclFreeObj(objPtr); \
  	} \
@@ -12646,7 +12647,7 @@ Index: generic/tclInt.h
  			    int line);
  
  # define TclDbNewObj(objPtr, file, line) \
-@@ -4160,12 +3693,58 @@
+@@ -4160,12 +3691,58 @@
      Tcl_DbDecrRefCount(objPtr, __FILE__, __LINE__)
  
  # define TclNewListObjDirect(objc, objv) \
@@ -12706,7 +12707,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Macro used by the Tcl core to set a Tcl_Obj's string representation to a
   * copy of the "len" bytes starting at "bytePtr". This code works even if the
-@@ -4698,77 +4277,15 @@
+@@ -4698,77 +4275,15 @@
  
  #define TCL_CT_ASSERT(e) \
      {enum { ct_assert_value = 1/(!!(e)) };}
@@ -12786,7 +12787,7 @@ Index: generic/tclInt.h
   *----------------------------------------------------------------
   * Parameters, structs and macros for the non-recursive engine (NRE)
   *----------------------------------------------------------------
-@@ -4837,12 +4354,12 @@
+@@ -4837,12 +4352,12 @@
  	((Interp *)interp)->deferredCallbacks = NULL;			\
      }
  
@@ -12801,7 +12802,7 @@ Index: generic/tclInt.h
      (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
  #define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
  #endif
-@@ -4850,20 +4367,34 @@
+@@ -4850,20 +4365,34 @@
  #if NRE_ENABLE_ASSERTS
  #define NRE_ASSERT(expr) assert((expr))
  #else
@@ -13417,6 +13418,19 @@ Index: generic/tclNamesp.c
  /*
   *----------------------------------------------------------------------
   *
+@@ -912,11 +909,11 @@
+      */
+ 
+     for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+ 	    entryPtr != NULL;) {
+ 	cmdPtr = Tcl_GetHashValue(entryPtr);
+-	if (cmdPtr->nreProc == TclNRInterpCoroutine) {
++	if (cmdPtr->objProc == TclNRInterpCoroutine) {
+ 	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
+ 		    (Tcl_Command) cmdPtr);
+ 	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+ 	} else {
+ 	    entryPtr = Tcl_NextHashEntry(&search);
 @@ -1693,13 +1690,12 @@
  		}
  	    }
@@ -13678,6 +13692,94 @@ Index: generic/tclNamesp.c
  }
  
  /*
+
+Index: generic/tclOO.c
+==================================================================
+--- generic/tclOO.c
++++ generic/tclOO.c
+@@ -85,19 +85,13 @@
+ static void		SquelchedNsFirst(ClientData clientData);
+ 
+ static int		PublicObjectCmd(ClientData clientData,
+ 			    Tcl_Interp *interp, int objc,
+ 			    Tcl_Obj *const *objv);
+-static int		PublicNRObjectCmd(ClientData clientData,
+-			    Tcl_Interp *interp, int objc,
+-			    Tcl_Obj *const *objv);
+ static int		PrivateObjectCmd(ClientData clientData,
+ 			    Tcl_Interp *interp, int objc,
+ 			    Tcl_Obj *const *objv);
+-static int		PrivateNRObjectCmd(ClientData clientData,
+-			    Tcl_Interp *interp, int objc,
+-			    Tcl_Obj *const *objv);
+ 
+ /*
+  * Methods in the oo::object and oo::class classes. First, we define a helper
+  * macro that makes building the method type declaration structure a lot
+  * easier. No point in making life harder than it has to be!
+@@ -671,11 +665,11 @@
+      * Add the NRE command and trace directly. While this breaks a number of
+      * abstractions, it is faster and we're inside Tcl here so we're allowed.
+      */
+ 
+     cmdPtr = (Command *) oPtr->command;
+-    cmdPtr->nreProc = PublicNRObjectCmd;
++    cmdPtr->objProc = PublicObjectCmd;
+     cmdPtr->tracePtr = tracePtr = ckalloc(sizeof(CommandTrace));
+     tracePtr->traceProc = ObjectRenamedTrace;
+     tracePtr->clientData = oPtr;
+     tracePtr->flags = TCL_TRACE_RENAME|TCL_TRACE_DELETE;
+     tracePtr->nextPtr = NULL;
+@@ -695,11 +689,11 @@
+     cmdPtr->objProc = PrivateObjectCmd;
+     cmdPtr->deleteProc = MyDeleted;
+     cmdPtr->objClientData = cmdPtr->deleteData = oPtr;
+     cmdPtr->proc = TclInvokeObjectCommand;
+     cmdPtr->clientData = cmdPtr;
+-    cmdPtr->nreProc = PrivateNRObjectCmd;
++    cmdPtr->objProc = PrivateObjectCmd;
+     Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
+     oPtr->myCommand = (Tcl_Command) cmdPtr;
+ 
+     return oPtr;
+ }
+@@ -2383,36 +2377,16 @@
+     ClientData clientData,
+     Tcl_Interp *interp,
+     int objc,
+     Tcl_Obj *const *objv)
+ {
+-    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
+-}
+-
+-static int
+-PublicNRObjectCmd(
+-    ClientData clientData,
+-    Tcl_Interp *interp,
+-    int objc,
+-    Tcl_Obj *const *objv)
+-{
+     return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
+ 	    NULL);
+ }
+ 
+ static int
+ PrivateObjectCmd(
+-    ClientData clientData,
+-    Tcl_Interp *interp,
+-    int objc,
+-    Tcl_Obj *const *objv)
+-{
+-    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
+-}
+-
+-static int
+-PrivateNRObjectCmd(
+     ClientData clientData,
+     Tcl_Interp *interp,
+     int objc,
+     Tcl_Obj *const *objv)
+ {
 
 Index: generic/tclOOBasic.c
 ==================================================================

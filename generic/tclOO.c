@@ -87,13 +87,7 @@ static void		SquelchedNsFirst(ClientData clientData);
 static int		PublicObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
-static int		PublicNRObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
 static int		PrivateObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static int		PrivateNRObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 
@@ -673,7 +667,7 @@ AllocObject(
      */
 
     cmdPtr = (Command *) oPtr->command;
-    cmdPtr->nreProc = PublicNRObjectCmd;
+    cmdPtr->objProc = PublicObjectCmd;
     cmdPtr->tracePtr = tracePtr = ckalloc(sizeof(CommandTrace));
     tracePtr->traceProc = ObjectRenamedTrace;
     tracePtr->clientData = oPtr;
@@ -697,7 +691,7 @@ AllocObject(
     cmdPtr->objClientData = cmdPtr->deleteData = oPtr;
     cmdPtr->proc = TclInvokeObjectCommand;
     cmdPtr->clientData = cmdPtr;
-    cmdPtr->nreProc = PrivateNRObjectCmd;
+    cmdPtr->objProc = PrivateObjectCmd;
     Tcl_SetHashValue(cmdPtr->hPtr, cmdPtr);
     oPtr->myCommand = (Tcl_Command) cmdPtr;
 
@@ -2385,32 +2379,12 @@ PublicObjectCmd(
     int objc,
     Tcl_Obj *const *objv)
 {
-    return Tcl_NRCallObjProc(interp, PublicNRObjectCmd, clientData,objc,objv);
-}
-
-static int
-PublicNRObjectCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
     return TclOOObjectCmdCore(clientData, interp, objc, objv, PUBLIC_METHOD,
 	    NULL);
 }
 
 static int
 PrivateObjectCmd(
-    ClientData clientData,
-    Tcl_Interp *interp,
-    int objc,
-    Tcl_Obj *const *objv)
-{
-    return Tcl_NRCallObjProc(interp, PrivateNRObjectCmd,clientData,objc,objv);
-}
-
-static int
-PrivateNRObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
