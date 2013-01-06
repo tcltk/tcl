@@ -248,6 +248,9 @@ static void		DeleteScriptLimitCallback(ClientData clientData);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
 static void		TimeLimitCallback(ClientData clientData);
+
+#define isAlias(cmdPtr) ((cmdPtr)->deleteProc == AliasObjCmdDeleteProc)
+
 
 /*
  *----------------------------------------------------------------------
@@ -1357,7 +1360,7 @@ TclPreventAliasLoop(
      * create or rename the command.
      */
 
-    if (cmdPtr->objProc != AliasObjCmd) {
+    if (!isAlias(cmdPtr)) {
 	return TCL_OK;
     }
 
@@ -1412,7 +1415,7 @@ TclPreventAliasLoop(
 	 * Otherwise we do not have a loop.
 	 */
 
-	if (aliasCmdPtr->objProc != AliasObjCmd) {
+	if (!isAlias(aliasCmdPtr)) {
 	    return TCL_OK;
 	}
 	nextAliasPtr = aliasCmdPtr->objClientData;

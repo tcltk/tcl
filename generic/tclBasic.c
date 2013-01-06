@@ -7589,7 +7589,7 @@ NRCoroInjectObjCmd(
     }
 
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[1]);
-    if ((!cmdPtr) || (cmdPtr->nreProc != TclNRInterpCoroutine)) {
+    if ((!cmdPtr) || (cmdPtr->deleteProc != DeleteCoroutine)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "can only inject a command into a coroutine", -1));
         Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
