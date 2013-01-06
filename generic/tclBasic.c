@@ -4871,40 +4871,6 @@ Tcl_Eval(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_EvalObj, Tcl_GlobalEvalObj --
- *
- *	These functions are deprecated but we keep them around for backwards
- *	compatibility reasons.
- *
- * Results:
- *	See the functions they call.
- *
- * Side effects:
- *	See the functions they call.
- *
- *----------------------------------------------------------------------
- */
-
-#undef Tcl_EvalObj
-int
-Tcl_EvalObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
-{
-    return Tcl_EvalObjEx(interp, objPtr, 0);
-}
-#undef Tcl_GlobalEvalObj
-int
-Tcl_GlobalEvalObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
-{
-    return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_EvalObjEx, TclEvalObjEx --
  *
  *	Execute Tcl commands stored in a Tcl object. These commands are

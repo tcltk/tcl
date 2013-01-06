@@ -1,3 +1,4 @@
+ADDED    COMMIT
 DELETED  ChangeLog
 ADDED    INCOMPATIBILITIES
 ADDED    README.mig-alloc-reform
@@ -6,6 +7,23 @@ Index: generic/tcl.decls
 ==================================================================
 --- generic/tcl.decls
 +++ generic/tcl.decls
+@@ -471,13 +471,13 @@
+ }
+ # This is obsolete, use Tcl_FSEvalFile
+ declare 130 {
+     int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
+ }
+-declare 131 {
+-    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+-}
++#declare 131 {
++#    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
++#}
+ declare 132 {
+     void Tcl_EventuallyFree(ClientData clientData, Tcl_FreeProc *freeProc)
+ }
+ declare 133 {
+     void Tcl_Exit(int status)
 @@ -566,14 +566,14 @@
  	    const char *optionName, Tcl_DString *dsPtr)
  }
@@ -25,6 +43,23 @@ Index: generic/tcl.decls
  	    Tcl_Command command)
  }
  declare 161 {
+@@ -634,13 +634,13 @@
+ 	    const char *part2, int flags)
+ }
+ declare 177 {
+     int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
+ }
+-declare 178 {
+-    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+-}
++#declare 178 {
++#    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
++#}
+ declare 179 {
+     int Tcl_HideCommand(Tcl_Interp *interp, const char *cmdName,
+ 	    const char *hiddenCmdToken)
+ }
+ declare 180 {
 @@ -799,14 +799,14 @@
  }
  declare 225 {
@@ -97,7 +132,109 @@ Index: generic/tcl.h
 ==================================================================
 --- generic/tcl.h
 +++ generic/tcl.h
-@@ -903,83 +903,17 @@
+@@ -139,23 +139,14 @@
+ 
+ /*
+  *----------------------------------------------------------------------------
+  * Support for functions with a variable number of arguments.
+  *
+- * The following TCL_VARARGS* macros are to support old extensions
+- * written for older versions of Tcl where the macros permitted
+- * support for the varargs.h system as well as stdarg.h .
+- *
+  * New code should just directly be written to use stdarg.h conventions.
+  */
+ 
+ #include <stdarg.h>
+-#ifndef TCL_NO_DEPRECATED
+-#    define TCL_VARARGS(type, name) (type name, ...)
+-#    define TCL_VARARGS_DEF(type, name) (type name, ...)
+-#    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
+-#endif
+ #if defined(__GNUC__) && (__GNUC__ > 2)
+ #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+ #else
+ #   define TCL_FORMAT_PRINTF(a,b)
+ #endif
+@@ -241,23 +232,10 @@
+ #   else
+ #      define TCL_STORAGE_CLASS DLLIMPORT
+ #   endif
+ #endif
+ 
+-/*
+- * The following _ANSI_ARGS_ macro is to support old extensions
+- * written for older versions of Tcl where it permitted support
+- * for compilers written in the pre-prototype era of C.
+- *
+- * New code should use prototypes.
+- */
+-
+-#ifndef TCL_NO_DEPRECATED
+-#   undef _ANSI_ARGS_
+-#   define _ANSI_ARGS_(x)	x
+-#endif
+-
+ /*
+  * Definitions that allow this header file to be used either with or without
+  * ANSI C features.
+  */
+ 
+@@ -487,52 +465,13 @@
+  * interpreter result is either an object or a string, and the two values are
+  * kept consistent unless some C code sets interp->result directly.
+  * Programmers should use either the function Tcl_GetObjResult() or
+  * Tcl_GetStringResult() to read the interpreter's result. See the SetResult
+  * man page for details.
+- *
+- * Note: any change to the Tcl_Interp definition below must be mirrored in the
+- * "real" definition in tclInt.h.
+- *
+- * Note: Tcl_ObjCmdProc functions do not directly set result and freeProc.
+- * Instead, they set a Tcl_Obj member in the "real" structure that can be
+- * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
+  */
+ 
+-typedef struct Tcl_Interp
+-#ifndef TCL_NO_DEPRECATED
+-{
+-    /* TIP #330: Strongly discourage extensions from using the string
+-     * result. */
+-#ifdef USE_INTERP_RESULT
+-    char *result TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
+-				/* If the last command returned a string
+-				 * result, this points to it. */
+-    void (*freeProc) (char *blockPtr)
+-	    TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
+-				/* Zero means the string result is statically
+-				 * allocated. TCL_DYNAMIC means it was
+-				 * allocated with ckalloc and should be freed
+-				 * with ckfree. Other values give the address
+-				 * of function to invoke to free the result.
+-				 * Tcl_Eval must free it before executing next
+-				 * command. */
+-#else
+-    char *resultDontUse; /* Don't use in extensions! */
+-    void (*freeProcDontUse) (char *); /* Don't use in extensions! */
+-#endif
+-#ifdef USE_INTERP_ERRORLINE
+-    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
+-				/* When TCL_ERROR is returned, this gives the
+-				 * line number within the command where the
+-				 * error occurred (1 if first line). */
+-#else
+-    int errorLineDontUse; /* Don't use in extensions! */
+-#endif
+-}
+-#endif /* TCL_NO_DEPRECATED */
+-Tcl_Interp;
++typedef struct Tcl_Interp Tcl_Interp;
+ 
+ typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
+ typedef struct Tcl_Channel_ *Tcl_Channel;
+ typedef struct Tcl_ChannelTypeVersion_ *Tcl_ChannelTypeVersion;
+ typedef struct Tcl_Command_ *Tcl_Command;
+@@ -903,83 +842,17 @@
  				 * namespace. */
  } Tcl_Namespace;
  
@@ -188,6 +325,54 @@ Index: generic/tcl.h
   *----------------------------------------------------------------------------
   * The structure defined below is used to hold dynamic strings. The only
   * fields that clients should use are string and length, accessible via the
+@@ -1125,14 +998,10 @@
+  * always parsed whenever the part2 is NULL. (This is to avoid a common error
+  * when converting code to use the new object based APIs and forgetting to
+  * give the flag)
+  */
+ 
+-#ifndef TCL_NO_DEPRECATED
+-#   define TCL_PARSE_PART1	0x400
+-#endif
+-
+ /*
+  * Types for linked variables:
+  */
+ 
+ #define TCL_LINK_INT		1
+@@ -2599,32 +2468,10 @@
+ /*
+  *----------------------------------------------------------------------------
+  * Deprecated Tcl functions:
+  */
+ 
+-#ifndef TCL_NO_DEPRECATED
+-#   undef  Tcl_EvalObj
+-#   define Tcl_EvalObj(interp,objPtr) \
+-	Tcl_EvalObjEx((interp),(objPtr),0)
+-#   undef  Tcl_GlobalEvalObj
+-#   define Tcl_GlobalEvalObj(interp,objPtr) \
+-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+-
+-/*
+- * These function have been renamed. The old names are deprecated, but we
+- * define these macros for backwards compatibilty.
+- */
+-
+-#   define Tcl_Ckalloc		Tcl_Alloc
+-#   define Tcl_Ckfree		Tcl_Free
+-#   define Tcl_Ckrealloc	Tcl_Realloc
+-#   define Tcl_Return		Tcl_SetResult
+-#   define Tcl_TildeSubst	Tcl_TranslateFileName
+-#   define panic		Tcl_Panic
+-#   define panicVA		Tcl_PanicVA
+-#endif /* !TCL_NO_DEPRECATED */
+-
+ /*
+  *----------------------------------------------------------------------------
+  * Convenience declaration of Tcl_AppInit for backwards compatibility. This
+  * function is not *implemented* by the tcl library, so the storage class is
+  * neither DLLEXPORT nor DLLIMPORT.
 
 DELETED  generic/tclAlloc.c
 DELETED  generic/tclAssembly.c
@@ -2057,9 +2242,46 @@ Index: generic/tclBasic.c
  /*
   *----------------------------------------------------------------------
   *
-@@ -5870,12 +4906,12 @@
+@@ -5833,49 +4869,15 @@
+ }
+ 
+ /*
   *----------------------------------------------------------------------
   *
+- * Tcl_EvalObj, Tcl_GlobalEvalObj --
+- *
+- *	These functions are deprecated but we keep them around for backwards
+- *	compatibility reasons.
+- *
+- * Results:
+- *	See the functions they call.
+- *
+- * Side effects:
+- *	See the functions they call.
+- *
+- *----------------------------------------------------------------------
+- */
+-
+-#undef Tcl_EvalObj
+-int
+-Tcl_EvalObj(
+-    Tcl_Interp *interp,
+-    Tcl_Obj *objPtr)
+-{
+-    return Tcl_EvalObjEx(interp, objPtr, 0);
+-}
+-#undef Tcl_GlobalEvalObj
+-int
+-Tcl_GlobalEvalObj(
+-    Tcl_Interp *interp,
+-    Tcl_Obj *objPtr)
+-{
+-    return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
+-}
+-
+-/*
+- *----------------------------------------------------------------------
+- *
   * Tcl_EvalObjEx, TclEvalObjEx --
   *
   *	Execute Tcl commands stored in a Tcl object. These commands are
@@ -2072,7 +2294,7 @@ Index: generic/tclBasic.c
   *	The return value is one of the return codes defined in tcl.h (such as
   *	TCL_OK), and the interpreter's result contains a value to supplement
   *	the return code.
-@@ -5883,11 +4919,10 @@
+@@ -5883,11 +4885,10 @@
   * Side effects:
   *	The object is converted, if necessary, to a ByteCode object that holds
   *	the bytecode instructions for the commands. Executing the commands
@@ -2084,7 +2306,7 @@ Index: generic/tclBasic.c
  
  int
  Tcl_EvalObjEx(
-@@ -5895,58 +4930,39 @@
+@@ -5895,58 +4896,39 @@
  				 * a previous call to Tcl_CreateInterp). */
      register Tcl_Obj *objPtr,	/* Pointer to object containing commands to
  				 * execute. */
@@ -2147,7 +2369,7 @@ Index: generic/tclBasic.c
  
  	/*
  	 * Pure List Optimization (no string representation). In this case, we
-@@ -5976,57 +4992,18 @@
+@@ -5976,57 +4958,18 @@
  	Tcl_IncrRefCount(objPtr);
  	listPtr = TclListObjCopy(interp, objPtr);
  	Tcl_IncrRefCount(listPtr);
@@ -2207,7 +2429,7 @@ Index: generic/tclBasic.c
  	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
  	ByteCode *codePtr;
  	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
-@@ -6039,141 +5016,16 @@
+@@ -6039,141 +4982,16 @@
  	if (flags & TCL_EVAL_GLOBAL) {
  	    savedVarFramePtr = iPtr->varFramePtr;
  	    iPtr->varFramePtr = iPtr->rootFramePtr;
@@ -2350,7 +2572,7 @@ Index: generic/tclBasic.c
  static int
  TEOEx_ByteCodeCallback(
      ClientData data[],
-@@ -6224,24 +5076,13 @@
+@@ -6224,24 +5042,13 @@
  TEOEx_ListCallback(
      ClientData data[],
      Tcl_Interp *interp,
@@ -2375,7 +2597,7 @@ Index: generic/tclBasic.c
  
  /*
   *----------------------------------------------------------------------
-@@ -6552,11 +5393,11 @@
+@@ -6552,11 +5359,11 @@
      int flags)			/* Combination of flags controlling the call:
  				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
  				 * or TCL_INVOKE_NO_TRACEBACK. */
@@ -2388,7 +2610,7 @@ Index: generic/tclBasic.c
       * Make the specified namespace the current namespace and invoke the
       * command.
       */
-@@ -6642,16 +5483,12 @@
+@@ -6642,16 +5449,12 @@
      /*
       * Invoke the command function.
       */
@@ -2407,7 +2629,7 @@ Index: generic/tclBasic.c
       * If an error occurred, record information about what was being executed
       * when the error occurred.
       */
-@@ -7991,69 +6828,10 @@
+@@ -7991,69 +6794,10 @@
  }
  
  /*
@@ -2477,7 +2699,7 @@ Index: generic/tclBasic.c
   *	NR callback for DTrace command return probes.
   *
   * Results:
-@@ -8128,18 +6906,10 @@
+@@ -8128,18 +6872,10 @@
  	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
  	}
  	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
@@ -2496,7 +2718,7 @@ Index: generic/tclBasic.c
  	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
      }
      if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
-@@ -8148,64 +6918,10 @@
+@@ -8148,64 +6884,10 @@
      }
  #endif /* USE_DTRACE */
      result = objProc(clientData, interp, objc, objv);
@@ -2561,7 +2783,7 @@ Index: generic/tclBasic.c
   * Stuff for the public api
   ****************************************************************************/
  
-@@ -8213,11 +6929,11 @@
+@@ -8213,11 +6895,11 @@
  Tcl_NREvalObj(
      Tcl_Interp *interp,
      Tcl_Obj *objPtr,
@@ -2574,7 +2796,7 @@ Index: generic/tclBasic.c
  int
  Tcl_NREvalObjv(
      Tcl_Interp *interp,		/* Interpreter in which to evaluate the
-@@ -8622,11 +7338,10 @@
+@@ -8622,11 +7304,10 @@
  	 * the job here. The caller context has already been restored.
  	 */
  
@@ -2586,7 +2808,7 @@ Index: generic/tclBasic.c
      }
  
      NRE_ASSERT(COR_IS_SUSPENDED(corPtr));
-@@ -8675,20 +7390,10 @@
+@@ -8675,20 +7356,10 @@
      TclDeleteExecEnv(corPtr->eePtr);
      corPtr->eePtr = NULL;
  
@@ -2607,7 +2829,7 @@ Index: generic/tclBasic.c
      iPtr->numLevels++;
  
      return result;
-@@ -8809,11 +7514,11 @@
+@@ -8809,11 +7480,11 @@
  	Tcl_WrongNumArgs(interp, 1, objv, "coroName cmd ?arg1 arg2 ...?");
  	return TCL_ERROR;
      }
@@ -2620,7 +2842,7 @@ Index: generic/tclBasic.c
          Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COROUTINE",
                  TclGetString(objv[1]), NULL);
          return TCL_ERROR;
-@@ -8831,11 +7536,11 @@
+@@ -8831,11 +7502,11 @@
       * Add the callback to the coro's execEnv, so that it is the first thing
       * to happen when the coro is resumed.
       */
@@ -2633,7 +2855,7 @@ Index: generic/tclBasic.c
      return TCL_OK;
  }
  
-@@ -8966,53 +7671,23 @@
+@@ -8966,53 +7637,23 @@
  	Tcl_DStringAppend(&ds, nsPtr->fullName, -1);
  	TclDStringAppendLiteral(&ds, "::");
      }
@@ -8644,7 +8866,21 @@ Index: generic/tclDecls.h
 ==================================================================
 --- generic/tclDecls.h
 +++ generic/tclDecls.h
-@@ -486,13 +486,11 @@
+@@ -405,12 +405,11 @@
+ /* 129 */
+ EXTERN int		Tcl_Eval(Tcl_Interp *interp, const char *script);
+ /* 130 */
+ EXTERN int		Tcl_EvalFile(Tcl_Interp *interp,
+ 				const char *fileName);
+-/* 131 */
+-EXTERN int		Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
++/* Slot 131 is reserved */
+ /* 132 */
+ EXTERN void		Tcl_EventuallyFree(ClientData clientData,
+ 				Tcl_FreeProc *freeProc);
+ /* 133 */
+ EXTERN void		Tcl_Exit(int status);
+@@ -486,13 +485,11 @@
  EXTERN int		Tcl_GetChannelOption(Tcl_Interp *interp,
  				Tcl_Channel chan, const char *optionName,
  				Tcl_DString *dsPtr);
@@ -8659,7 +8895,22 @@ Index: generic/tclDecls.h
  				Tcl_Command command);
  /* 161 */
  EXTERN int		Tcl_GetErrno(void);
-@@ -669,14 +667,11 @@
+@@ -542,13 +539,11 @@
+ 				const char *part1, const char *part2,
+ 				int flags);
+ /* 177 */
+ EXTERN int		Tcl_GlobalEval(Tcl_Interp *interp,
+ 				const char *command);
+-/* 178 */
+-EXTERN int		Tcl_GlobalEvalObj(Tcl_Interp *interp,
+-				Tcl_Obj *objPtr);
++/* Slot 178 is reserved */
+ /* 179 */
+ EXTERN int		Tcl_HideCommand(Tcl_Interp *interp,
+ 				const char *cmdName,
+ 				const char *hiddenCmdToken);
+ /* 180 */
+@@ -669,14 +664,11 @@
  EXTERN void		Tcl_SetChannelBufferSize(Tcl_Channel chan, int sz);
  /* 225 */
  EXTERN int		Tcl_SetChannelOption(Tcl_Interp *interp,
@@ -8675,7 +8926,7 @@ Index: generic/tclDecls.h
  /* 228 */
  EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
  /* 229 */
-@@ -1387,16 +1382,12 @@
+@@ -1387,16 +1379,12 @@
  /* 483 */
  EXTERN Tcl_Trace	Tcl_CreateObjTrace(Tcl_Interp *interp, int level,
  				int flags, Tcl_CmdObjTraceProc *objProc,
@@ -8694,7 +8945,7 @@ Index: generic/tclDecls.h
  				const char *file, int line);
  /* 487 */
  EXTERN int		Tcl_GetWideIntFromObj(Tcl_Interp *interp,
-@@ -1674,16 +1665,11 @@
+@@ -1674,16 +1662,11 @@
  EXTERN int		Tcl_Canceled(Tcl_Interp *interp, int flags);
  /* 582 */
  EXTERN int		Tcl_CreatePipe(Tcl_Interp *interp,
@@ -8712,7 +8963,20 @@ Index: generic/tclDecls.h
  				int flags);
  /* 585 */
  EXTERN int		Tcl_NREvalObjv(Tcl_Interp *interp, int objc,
-@@ -1995,11 +1981,11 @@
+@@ -1967,11 +1950,11 @@
+     int (*tcl_Eof) (Tcl_Channel chan); /* 126 */
+     CONST84_RETURN char * (*tcl_ErrnoId) (void); /* 127 */
+     CONST84_RETURN char * (*tcl_ErrnoMsg) (int err); /* 128 */
+     int (*tcl_Eval) (Tcl_Interp *interp, const char *script); /* 129 */
+     int (*tcl_EvalFile) (Tcl_Interp *interp, const char *fileName); /* 130 */
+-    int (*tcl_EvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 131 */
++    void (*reserved131)(void);
+     void (*tcl_EventuallyFree) (ClientData clientData, Tcl_FreeProc *freeProc); /* 132 */
+     void (*tcl_Exit) (int status); /* 133 */
+     int (*tcl_ExposeCommand) (Tcl_Interp *interp, const char *hiddenCmdToken, const char *cmdName); /* 134 */
+     int (*tcl_ExprBoolean) (Tcl_Interp *interp, const char *expr, int *ptr); /* 135 */
+     int (*tcl_ExprBooleanObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *ptr); /* 136 */
+@@ -1995,11 +1978,11 @@
      ClientData (*tcl_GetChannelInstanceData) (Tcl_Channel chan); /* 154 */
      int (*tcl_GetChannelMode) (Tcl_Channel chan); /* 155 */
      CONST84_RETURN char * (*tcl_GetChannelName) (Tcl_Channel chan); /* 156 */
@@ -8725,7 +8989,20 @@ Index: generic/tclDecls.h
      CONST84_RETURN char * (*tcl_GetHostName) (void); /* 162 */
      int (*tcl_GetInterpPath) (Tcl_Interp *askInterp, Tcl_Interp *slaveInterp); /* 163 */
      Tcl_Interp * (*tcl_GetMaster) (Tcl_Interp *interp); /* 164 */
-@@ -2070,11 +2056,11 @@
+@@ -2022,11 +2005,11 @@
+     Tcl_Channel (*tcl_GetStdChannel) (int type); /* 173 */
+     CONST84_RETURN char * (*tcl_GetStringResult) (Tcl_Interp *interp); /* 174 */
+     CONST84_RETURN char * (*tcl_GetVar) (Tcl_Interp *interp, const char *varName, int flags); /* 175 */
+     CONST84_RETURN char * (*tcl_GetVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 176 */
+     int (*tcl_GlobalEval) (Tcl_Interp *interp, const char *command); /* 177 */
+-    int (*tcl_GlobalEvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 178 */
++    void (*reserved178)(void);
+     int (*tcl_HideCommand) (Tcl_Interp *interp, const char *cmdName, const char *hiddenCmdToken); /* 179 */
+     int (*tcl_Init) (Tcl_Interp *interp); /* 180 */
+     void (*tcl_InitHashTable) (Tcl_HashTable *tablePtr, int keyType); /* 181 */
+     int (*tcl_InputBlocked) (Tcl_Channel chan); /* 182 */
+     int (*tcl_InputBuffered) (Tcl_Channel chan); /* 183 */
+@@ -2070,11 +2053,11 @@
      int (*tcl_ServiceAll) (void); /* 221 */
      int (*tcl_ServiceEvent) (int flags); /* 222 */
      void (*tcl_SetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc *proc, ClientData clientData); /* 223 */
@@ -8738,7 +9015,7 @@ Index: generic/tclDecls.h
      void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
      void (*tcl_SetPanicProc) (Tcl_PanicProc *panicProc); /* 230 */
      int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
-@@ -2328,12 +2314,12 @@
+@@ -2328,12 +2311,12 @@
      int (*tcl_OutputBuffered) (Tcl_Channel chan); /* 479 */
      void (*tcl_FSMountsChanged) (const Tcl_Filesystem *fsPtr); /* 480 */
      int (*tcl_EvalTokensStandard) (Tcl_Interp *interp, Tcl_Token *tokenPtr, int count); /* 481 */
@@ -8753,7 +9030,7 @@ Index: generic/tclDecls.h
      Tcl_Obj * (*tcl_NewWideIntObj) (Tcl_WideInt wideValue); /* 488 */
      void (*tcl_SetWideIntObj) (Tcl_Obj *objPtr, Tcl_WideInt wideValue); /* 489 */
      Tcl_StatBuf * (*tcl_AllocStatBuf) (void); /* 490 */
-@@ -2427,11 +2413,11 @@
+@@ -2427,11 +2410,11 @@
      Tcl_Obj * (*tcl_ObjPrintf) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 578 */
      void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 579 */
      int (*tcl_CancelEval) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr, ClientData clientData, int flags); /* 580 */
@@ -8766,7 +9043,21 @@ Index: generic/tclDecls.h
      int (*tcl_NRCmdSwap) (Tcl_Interp *interp, Tcl_Command cmd, int objc, Tcl_Obj *const objv[], int flags); /* 586 */
      void (*tcl_NRAddCallback) (Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 587 */
      int (*tcl_NRCallObjProc) (Tcl_Interp *interp, Tcl_ObjCmdProc *objProc, ClientData clientData, int objc, Tcl_Obj *const objv[]); /* 588 */
-@@ -2821,12 +2807,11 @@
+@@ -2765,12 +2748,11 @@
+ 	(tclStubsPtr->tcl_ErrnoMsg) /* 128 */
+ #define Tcl_Eval \
+ 	(tclStubsPtr->tcl_Eval) /* 129 */
+ #define Tcl_EvalFile \
+ 	(tclStubsPtr->tcl_EvalFile) /* 130 */
+-#define Tcl_EvalObj \
+-	(tclStubsPtr->tcl_EvalObj) /* 131 */
++/* Slot 131 is reserved */
+ #define Tcl_EventuallyFree \
+ 	(tclStubsPtr->tcl_EventuallyFree) /* 132 */
+ #define Tcl_Exit \
+ 	(tclStubsPtr->tcl_Exit) /* 133 */
+ #define Tcl_ExposeCommand \
+@@ -2821,12 +2803,11 @@
  	(tclStubsPtr->tcl_GetChannelName) /* 156 */
  #define Tcl_GetChannelOption \
  	(tclStubsPtr->tcl_GetChannelOption) /* 157 */
@@ -8780,7 +9071,21 @@ Index: generic/tclDecls.h
  #define Tcl_GetErrno \
  	(tclStubsPtr->tcl_GetErrno) /* 161 */
  #define Tcl_GetHostName \
-@@ -2960,12 +2945,11 @@
+@@ -2865,12 +2846,11 @@
+ 	(tclStubsPtr->tcl_GetVar) /* 175 */
+ #define Tcl_GetVar2 \
+ 	(tclStubsPtr->tcl_GetVar2) /* 176 */
+ #define Tcl_GlobalEval \
+ 	(tclStubsPtr->tcl_GlobalEval) /* 177 */
+-#define Tcl_GlobalEvalObj \
+-	(tclStubsPtr->tcl_GlobalEvalObj) /* 178 */
++/* Slot 178 is reserved */
+ #define Tcl_HideCommand \
+ 	(tclStubsPtr->tcl_HideCommand) /* 179 */
+ #define Tcl_Init \
+ 	(tclStubsPtr->tcl_Init) /* 180 */
+ #define Tcl_InitHashTable \
+@@ -2960,12 +2940,11 @@
  	(tclStubsPtr->tcl_SetAssocData) /* 223 */
  #define Tcl_SetChannelBufferSize \
  	(tclStubsPtr->tcl_SetChannelBufferSize) /* 224 */
@@ -8794,7 +9099,7 @@ Index: generic/tclDecls.h
  #define Tcl_SetErrorCode \
  	(tclStubsPtr->tcl_SetErrorCode) /* 228 */
  #define Tcl_SetMaxBlockTime \
-@@ -3475,14 +3459,12 @@
+@@ -3475,14 +3454,12 @@
  	(tclStubsPtr->tcl_EvalTokensStandard) /* 481 */
  #define Tcl_GetTime \
  	(tclStubsPtr->tcl_GetTime) /* 482 */
@@ -8811,7 +9116,7 @@ Index: generic/tclDecls.h
  #define Tcl_GetWideIntFromObj \
  	(tclStubsPtr->tcl_GetWideIntFromObj) /* 487 */
  #define Tcl_NewWideIntObj \
-@@ -3673,12 +3655,11 @@
+@@ -3673,12 +3650,11 @@
  	(tclStubsPtr->tcl_CancelEval) /* 580 */
  #define Tcl_Canceled \
  	(tclStubsPtr->tcl_Canceled) /* 581 */
@@ -16834,6 +17139,19 @@ Index: generic/tclStubInit.c
      TclNREvalObjEx, /* 241 */
      TclNREvalObjv, /* 242 */
      TclDbDumpActiveObjects, /* 243 */
+@@ -782,11 +782,11 @@
+     Tcl_Eof, /* 126 */
+     Tcl_ErrnoId, /* 127 */
+     Tcl_ErrnoMsg, /* 128 */
+     Tcl_Eval, /* 129 */
+     Tcl_EvalFile, /* 130 */
+-    Tcl_EvalObj, /* 131 */
++    0, /* 131 */
+     Tcl_EventuallyFree, /* 132 */
+     Tcl_Exit, /* 133 */
+     Tcl_ExposeCommand, /* 134 */
+     Tcl_ExprBoolean, /* 135 */
+     Tcl_ExprBooleanObj, /* 136 */
 @@ -810,11 +810,11 @@
      Tcl_GetChannelInstanceData, /* 154 */
      Tcl_GetChannelMode, /* 155 */
@@ -16847,6 +17165,19 @@ Index: generic/tclStubInit.c
      Tcl_GetHostName, /* 162 */
      Tcl_GetInterpPath, /* 163 */
      Tcl_GetMaster, /* 164 */
+@@ -837,11 +837,11 @@
+     Tcl_GetStdChannel, /* 173 */
+     Tcl_GetStringResult, /* 174 */
+     Tcl_GetVar, /* 175 */
+     Tcl_GetVar2, /* 176 */
+     Tcl_GlobalEval, /* 177 */
+-    Tcl_GlobalEvalObj, /* 178 */
++    0, /* 178 */
+     Tcl_HideCommand, /* 179 */
+     Tcl_Init, /* 180 */
+     Tcl_InitHashTable, /* 181 */
+     Tcl_InputBlocked, /* 182 */
+     Tcl_InputBuffered, /* 183 */
 @@ -885,11 +885,11 @@
      Tcl_ServiceAll, /* 221 */
      Tcl_ServiceEvent, /* 222 */

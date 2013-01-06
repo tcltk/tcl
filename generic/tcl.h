@@ -141,19 +141,10 @@ extern "C" {
  *----------------------------------------------------------------------------
  * Support for functions with a variable number of arguments.
  *
- * The following TCL_VARARGS* macros are to support old extensions
- * written for older versions of Tcl where the macros permitted
- * support for the varargs.h system as well as stdarg.h .
- *
  * New code should just directly be written to use stdarg.h conventions.
  */
 
 #include <stdarg.h>
-#ifndef TCL_NO_DEPRECATED
-#    define TCL_VARARGS(type, name) (type name, ...)
-#    define TCL_VARARGS_DEF(type, name) (type name, ...)
-#    define TCL_VARARGS_START(type, name, list) (va_start(list, name), name)
-#endif
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
 #else
@@ -241,19 +232,6 @@ extern "C" {
 #   else
 #      define TCL_STORAGE_CLASS DLLIMPORT
 #   endif
-#endif
-
-/*
- * The following _ANSI_ARGS_ macro is to support old extensions
- * written for older versions of Tcl where it permitted support
- * for compilers written in the pre-prototype era of C.
- *
- * New code should use prototypes.
- */
-
-#ifndef TCL_NO_DEPRECATED
-#   undef _ANSI_ARGS_
-#   define _ANSI_ARGS_(x)	x
 #endif
 
 /*
@@ -489,48 +467,9 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  * Programmers should use either the function Tcl_GetObjResult() or
  * Tcl_GetStringResult() to read the interpreter's result. See the SetResult
  * man page for details.
- *
- * Note: any change to the Tcl_Interp definition below must be mirrored in the
- * "real" definition in tclInt.h.
- *
- * Note: Tcl_ObjCmdProc functions do not directly set result and freeProc.
- * Instead, they set a Tcl_Obj member in the "real" structure that can be
- * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
  */
 
-typedef struct Tcl_Interp
-#ifndef TCL_NO_DEPRECATED
-{
-    /* TIP #330: Strongly discourage extensions from using the string
-     * result. */
-#ifdef USE_INTERP_RESULT
-    char *result TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
-				/* If the last command returned a string
-				 * result, this points to it. */
-    void (*freeProc) (char *blockPtr)
-	    TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
-				/* Zero means the string result is statically
-				 * allocated. TCL_DYNAMIC means it was
-				 * allocated with ckalloc and should be freed
-				 * with ckfree. Other values give the address
-				 * of function to invoke to free the result.
-				 * Tcl_Eval must free it before executing next
-				 * command. */
-#else
-    char *resultDontUse; /* Don't use in extensions! */
-    void (*freeProcDontUse) (char *); /* Don't use in extensions! */
-#endif
-#ifdef USE_INTERP_ERRORLINE
-    int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
-				/* When TCL_ERROR is returned, this gives the
-				 * line number within the command where the
-				 * error occurred (1 if first line). */
-#else
-    int errorLineDontUse; /* Don't use in extensions! */
-#endif
-}
-#endif /* TCL_NO_DEPRECATED */
-Tcl_Interp;
+typedef struct Tcl_Interp Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
@@ -1060,10 +999,6 @@ typedef struct Tcl_DString {
  * when converting code to use the new object based APIs and forgetting to
  * give the flag)
  */
-
-#ifndef TCL_NO_DEPRECATED
-#   define TCL_PARSE_PART1	0x400
-#endif
 
 /*
  * Types for linked variables:
@@ -2534,28 +2469,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  *----------------------------------------------------------------------------
  * Deprecated Tcl functions:
  */
-
-#ifndef TCL_NO_DEPRECATED
-#   undef  Tcl_EvalObj
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-#   undef  Tcl_GlobalEvalObj
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
-
-/*
- * These function have been renamed. The old names are deprecated, but we
- * define these macros for backwards compatibilty.
- */
-
-#   define Tcl_Ckalloc		Tcl_Alloc
-#   define Tcl_Ckfree		Tcl_Free
-#   define Tcl_Ckrealloc	Tcl_Realloc
-#   define Tcl_Return		Tcl_SetResult
-#   define Tcl_TildeSubst	Tcl_TranslateFileName
-#   define panic		Tcl_Panic
-#   define panicVA		Tcl_PanicVA
-#endif /* !TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------------
