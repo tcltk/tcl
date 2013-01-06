@@ -2299,10 +2299,11 @@ TclInvokeObjectCommand(
      */
 
     if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, argc, objv);
+        result = Tcl_NRCallObjProc(interp, cmdPtr->objProc,
+                cmdPtr->objClientData, argc, objv);
     } else {
-	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, argc, objv);
+        result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
+                cmdPtr->objClientData, argc, objv);
     }
 
     /*
@@ -3989,13 +3990,9 @@ TclNREvalObjv(
      * a callback to do the actual running.
      */
 
-    if (cmdPtr->nreProc) {
-        TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
-                INT2PTR(objc), (ClientData) objv, NULL);
-        return TCL_OK;
-    } else {
-	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-    }
+    TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
+            INT2PTR(objc), (ClientData) objv, NULL);
+    return TCL_OK;
 }
 
 void
@@ -4087,7 +4084,11 @@ NRRunObjProc(
     int objc = PTR2INT(data[1]);
     Tcl_Obj **objv = data[2];
 
-    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
+    if (cmdPtr->nreProc) {
+        return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
+    } else {
+        return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    }
 }
 
 
