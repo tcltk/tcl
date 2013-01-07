@@ -21,7 +21,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 # This doesn't catch all cases, for example threads of lower stacksize
 # can still squeak through.  A core check is really needed. -- JH
 
-if {[string equal $::tcl_platform(platform) "unix"]} {
+if {[string equal $::tcl_platform(platform) "unix"]
+	&& ![string equal $::tcl_platform(os) "Windows NT"]} {
     set stackSize [exec /bin/sh -c "ulimit -s"]
     if {[string is integer $stackSize] && ($stackSize < 2400)} {
         puts stderr "WARNING: the default application stacksize of $stackSize\
