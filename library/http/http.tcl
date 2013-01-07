@@ -11,7 +11,7 @@
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.5
+package provide http 2.8.6
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -1379,7 +1379,7 @@ proc http::mapReply {string} {
     }
     set converted [string map $formMap $string]
     if {[string match "*\[\u0100-\uffff\]*" $converted]} {
-	regexp {[\u0100-\uffff]} $converted badChar
+	regexp "\[\u0100-\uffff\]" $converted badChar
 	# Return this error message for maximum compatability... :^/
 	return -code error \
 	    "can't read \"formMap($badChar)\": no such element in array"
