@@ -249,7 +249,7 @@ static const CmdInfo builtInCmds[] = {
     {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	1},
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	1},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, 1},
-    {"tailcall",	NULL,			NULL,	TclNRTailcallObjCmd,	1},
+    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	1},
     {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	1},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	1},
@@ -8412,7 +8412,7 @@ TclNRTailcallObjCmd(
                 || (nsPtr != ns1Ptr)) {
             Tcl_Panic("Tailcall failed to find the proper namespace");
         }
-        Tcl_ListObjReplace(interp, listPtr, 0, 1, 1, &nsObjPtr);
+ 	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
         
         iPtr->varFramePtr->tailcallPtr = listPtr;
     }
@@ -8574,7 +8574,7 @@ TclNRYieldToObjCmd(
 	    || (nsPtr != ns1Ptr)) {
 	Tcl_Panic("yieldto failed to find the proper namespace");
     }
-    Tcl_ListObjReplace(interp, listPtr, 0, 1, 1, &nsObjPtr);
+    TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
 
 
     /*
