@@ -735,7 +735,7 @@ Tcl_CreateInterp(void)
 #endif
     iPtr->pendingObjDataPtr = NULL;
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
-    iPtr->deferredCallbacks = NULL;
+    iPtr->deferredCallbacks = 0;
 
     /*
      * Create the core commands. Do it here, rather than calling
@@ -4347,7 +4347,6 @@ TclNRRunCallbacks(
 	POP_CB(interp, cbPtr);
 	procPtr = cbPtr->procPtr;
 	result = procPtr(cbPtr->data, interp, result);
-	FREE_CB(interp, cbPtr);
     }
     return result;
 }
@@ -8286,32 +8285,93 @@ TclDeferCallback(
     
     TclNRAddCallback(interp, postProcPtr, data0, data1,
             data2, data3);
-    if (!iPtr->deferredCallbacks) {
-        iPtr->deferredCallbacks = TOP_CB(interp);
-    }
+    iPtr->deferredCallbacks++;
 }
 
-#if NRE_STACK_DEBUG
 static void
 SpliceDeferred(
     Tcl_Interp *interp)
 {
+#if 0
     Interp *iPtr = (Interp *) interp;
     NRE_callback *bottomPtr = iPtr->deferredCallbacks;
-    NRE_callback *topPtr;
+    NRE_callback saved, *runPtr;
 
     if (bottomPtr) {
-        POP_CB(interp, topPtr);
+        saved = *TOP_CB(interp);
+        
+        topPtr = TOP_CB(interp);
+        runPtr
 
-        topPtr->nextPtr = bottomPtr->nextPtr;
-        bottomPtr->nextPtr = topPtr;
-        iPtr->deferredCallbacks = NULL;
+            Swap de a uno .OJO!! Si bajo y encuentro NRStackBottom, saltar!
+        
+        while 
     }
+    iPtr->deferredCallbacks = 0;
+#endif
 }
 
-#else
-TODO!!
+static int
+NRStackBottom(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    NRE_stack *this = eePtr->NRStack;
+    NRE_stack *prev = data[0];
+
+ #if 0
+    if (!prev) {
+        Tcl_Panic("Reached the NRE-stack bottom, should not happen!");
+    }
 #endif
+    
+    /*
+     * Go back to the previous stack.
+     */
+
+    eePtr->NRStack = prev;
+    eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
+    
+    /*
+     * Keep this stack in reserve. If this one had a successor, free it: we
+     * always keep just one in reserve. 
+     */
+    
+    if (this->next) {
+        ckfree (this->next);
+        this->next = NULL;
+    }
+
+    return result;
+}
+
+NRE_callback *
+TclGetCallback(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    NRE_callback *cbPtr = eePtr->callbackPtr;
+    NRE_stack *this = eePtr->NRStack;
+
+    if (!this || (cbPtr == &this->items[NRE_STACK_SIZE-1])) {
+        if (this && this->next) {
+            eePtr->NRStack = this->next;
+        } else {
+            eePtr->NRStack = (NRE_stack *) ckalloc(sizeof(NRE_stack));
+            eePtr->NRStack->next = NULL;
+        }
+        eePtr->callbackPtr = &eePtr->NRStack->items[-1];
+
+        if (this) {
+            TclNRAddCallback(interp, NRStackBottom, this, NULL, NULL, NULL);
+        }
+    }
+    return ++eePtr->callbackPtr;
+}
 
 void
 TclSetTailcall(

@@ -871,6 +871,7 @@ TclCreateExecEnv(
     TclNewBooleanObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
     eePtr->interp = interp;
+    eePtr->NRStack = NULL;
     eePtr->callbackPtr = NULL;
     eePtr->corPtr = NULL;
     eePtr->rewind = 0;
@@ -889,6 +890,10 @@ TclCreateExecEnv(
     }
     Tcl_MutexUnlock(&execMutex);
 
+    /* Initialize the NRE stack */
+
+    eePtr->callbackPtr = TclGetCallback(interp);
+    eePtr->callbackPtr--;
     return eePtr;
 }
 
@@ -932,7 +937,7 @@ TclDeleteExecEnv(
 {
     ExecStack *esPtr = eePtr->execStackPtr, *tmpPtr;
 
-	cachedInExit = TclInExit();
+    cachedInExit = TclInExit();
 
     /*
      * Delete all stacks in this exec env.

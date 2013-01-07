@@ -1497,6 +1497,7 @@ typedef struct ExecEnv {
     struct Tcl_Interp *interp;
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
+    struct NRE_stack *NRStack;
     struct CoroutineData *corPtr;
     int rewind;
 } ExecEnv;
@@ -2137,8 +2138,7 @@ typedef struct Interp {
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
 
-    struct NRE_callback *deferredCallbacks;
-				/* Callbacks that are set previous to a call
+    int deferredCallbacks;      /* Callbacks that are set previous to a call
 				 * to some Eval function but that actually
 				 * belong to the command that is about to be
 				 * called - i.e., they should be run *before*
@@ -4777,7 +4777,6 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  */
 
 #define NRE_ENABLE_ASSERTS	1
-#define NRE_STACK_DEBUG         1
 
 /*
  * This is the main data struct for representing NR commands. It is designed
@@ -4793,6 +4792,15 @@ typedef struct NRE_callback {
 
 #define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
 
+#define NRE_STACK_SIZE 100
+
+typedef struct NRE_stack {
+    NRE_callback items[NRE_STACK_SIZE];
+    struct NRE_stack *next;
+} NRE_stack;
+
+MODULE_SCOPE NRE_callback *TclGetCallback(Tcl_Interp *interp);
+
 /*
  * Inline versions of Tcl_NRAddCallback and friends
  */
@@ -4801,7 +4809,6 @@ typedef struct NRE_callback {
     do {								\
 	NRE_callback *cbPtr;						\
 	ALLOC_CB(interp, cbPtr);					\
-	PUSH_CB(interp, cbPtr);						\
 	INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3);		\
     } while (0)
 
@@ -4814,26 +4821,25 @@ typedef struct NRE_callback {
 	cbPtr->data[3] = (ClientData)(data3);				\
     } while (0)
 
-#if NRE_STACK_DEBUG
-#define PUSH_CB(interp, cbPtr) \
-    do {					\
-	cbPtr->nextPtr = TOP_CB(interp);	\
-	TOP_CB(interp) = cbPtr;			\
-    } while (0)
-    
 #define POP_CB(interp, cbPtr)                      \
-    do {                                           \
-        cbPtr = TOP_CB(interp);                    \
-        TOP_CB(interp) = cbPtr->nextPtr;           \
-    } while (0)
+    (cbPtr) = TOP_CB(interp)--
 
 #define ALLOC_CB(interp, cbPtr)			\
-    cbPtr = ckalloc(sizeof(NRE_callback))
+    (cbPtr) = TclGetCallback(interp)
 
-#define FREE_CB(interp, ptr)			\
-    ckfree((char *) (ptr))
-#else /* not debugging the NRE stack */
+#if 0
+    do {								\
+            NRE_stack *this = ((Interp *)interp)->execEnvPtr->NRStack;	\
+	    NRE_callback *new = TOP_CB(interp);				\
+	    if (new != this->items[NRE_STACK_SIZE-1]) {			\
+	        new++;							\
+	    } else {							\
+	        new = TclGetCallback(interp); /* allocstack! */		\
+	    }								\
+	    (cbPtr) = TOP_CB(interp) = new;				\
+    } while (0)
 #endif
+
 
 #if NRE_ENABLE_ASSERTS
 #define NRE_ASSERT(expr) assert((expr))
