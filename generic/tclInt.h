@@ -2805,7 +2805,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
-MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
+MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp,
 	               struct NRE_callback *tailcallPtr);
 MODULE_SCOPE void  TclSpliceCallbacks(Tcl_Interp *interp,
 	               struct NRE_callback *topPtr);
@@ -4804,7 +4804,13 @@ typedef struct NRE_callback {
 #define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3)	\
     do {								\
 	NRE_callback *cbPtr;						\
+	ALLOC_CB(interp, cbPtr);					\
 	PUSH_CB(interp, cbPtr);						\
+	INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3);		\
+    } while (0)
+
+#define INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3)		\
+    do {								\
 	cbPtr->procPtr = (postProcPtr);					\
 	cbPtr->data[0] = (ClientData)(data0);				\
 	cbPtr->data[1] = (ClientData)(data1);				\
@@ -4813,13 +4819,12 @@ typedef struct NRE_callback {
     } while (0)
 
 #if NRE_STACK_DEBUG
-#define PUSH_CB(interp, cbPtr)			\
+#define PUSH_CB(interp, cbPtr) \
     do {					\
-        cbPtr = ckalloc(sizeof(NRE_callback));	\
 	cbPtr->nextPtr = TOP_CB(interp);	\
 	TOP_CB(interp) = cbPtr;			\
     } while (0)
-	
+    
 #define POP_CB(interp, cbPtr)                      \
     do {                                           \
         cbPtr = TOP_CB(interp);                    \

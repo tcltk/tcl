@@ -251,7 +251,7 @@ static const CmdInfo builtInCmds[] = {
     {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	1},
     {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	1},
     {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, 1},
-    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	1},
+    {"tailcall",	NULL,			NULL,	TclNRTailcallObjCmd,	1},
     {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	1},
     {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	1},
     {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	1},
@@ -4307,6 +4307,7 @@ TclNREvalObjv(
     if (cmdPtr->nreProc) {
         TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
                 INT2PTR(objc), (ClientData) objv, NULL);
+
         return TCL_OK;
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
@@ -4371,6 +4372,17 @@ NRCommand(
     }
     ((Interp *)interp)->numLevels--;
 
+    /*
+     * If there is a tailcall, schedule it
+     */
+
+    if (data[1] && (data[1] != INT2PTR(1))) {
+        NRE_callback *tailcallPtr = data[1];
+
+        tailcallPtr->nextPtr = TOP_CB(interp);
+        TOP_CB(interp) = tailcallPtr;
+    }
+    
     /* OPT ??
      * Do not interrupt a series of cleanups with async or limit checks:
      * just check at the end?
@@ -8321,7 +8333,7 @@ SpliceDeferred(
 }
 
 void
-TclSpliceTailcall(
+TclSetTailcall(
     Tcl_Interp *interp,
     NRE_callback *tailcallPtr)
 {
@@ -8342,8 +8354,15 @@ TclSpliceTailcall(
         Tcl_Panic("tailcall cannot find the right splicing spot: should not happen!");
     }
 
-    tailcallPtr->nextPtr = runPtr->nextPtr;
-    runPtr->nextPtr = tailcallPtr;
+    if (runPtr->data[1]) {
+        /*
+         * A tailcall was already scheduled: clear it!
+         */
+        NRE_callback *oldPtr = (NRE_callback *) runPtr->data[1];
+        TailcallCleanup(oldPtr->data, interp, TCL_OK);
+    }
+        
+    runPtr->data[1] = tailcallPtr;
 }
 
 int
@@ -8608,7 +8627,7 @@ YieldToCallback(
     cbPtr = TOP_CB(interp);
     TOP_CB(interp) = cbPtr->nextPtr;
 
-    TclSpliceTailcall(interp, cbPtr);
+    TclSetTailcall(interp, cbPtr);
     return TCL_OK;
 }
 
