@@ -4174,9 +4174,8 @@ TclNREvalObjv(
      * finishes the source command and not just the target.
      */
 
-    if (iPtr->evalFlags & TCL_EVAL_REDIRECT) {
+    if (flags & TCL_EVAL_REDIRECT) {
 	TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(1), INT2PTR(objc), objv);
-	iPtr->evalFlags &= ~TCL_EVAL_REDIRECT;
     } else {
 	TclNRAddCallback(interp, NRCommand, NULL, NULL, INT2PTR(objc), objv);
     }
@@ -4635,8 +4634,8 @@ TEOV_NotFound(
     }
     TclDeferCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
 	    newObjv, savedNsPtr, NULL);
-    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-    return TclNREvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR, NULL);
+    return TclNREvalObjv(interp, newObjc, newObjv, (TCL_EVAL_NOERR|TCL_EVAL_REDIRECT),
+            NULL);
 }
 
 static int

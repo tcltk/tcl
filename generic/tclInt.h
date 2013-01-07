@@ -2250,7 +2250,6 @@ typedef struct InterpList {
 #define TCL_ALLOW_EXCEPTIONS	4
 #define TCL_EVAL_FILE		2
 #define TCL_EVAL_CTX		8
-#define TCL_EVAL_REDIRECT	16
 
 /*
  * Flag bits for Interp structures:

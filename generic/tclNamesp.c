@@ -1945,8 +1945,8 @@ InvokeImportedNRCmd(
     ImportedCmdData *dataPtr = clientData;
     Command *realCmdPtr = dataPtr->realCmdPtr;
 
-    ((Interp *) interp)->evalFlags |= TCL_EVAL_REDIRECT;
-    return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
+    return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv,
+	    TCL_EVAL_REDIRECT);
 }
 
 static int

@@ -1068,6 +1068,8 @@ typedef struct Tcl_DString {
 #define TCL_EVAL_INVOKE		0x080000
 #define TCL_CANCEL_UNWIND	0x100000
 #define TCL_EVAL_NOERR          0x200000
+#define TCL_EVAL_REDIRECT	0x400000
+    
 
 /*
  * Special freeProc values that may be passed to Tcl_SetResult (see the man

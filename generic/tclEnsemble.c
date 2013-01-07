@@ -1914,8 +1914,8 @@ NsEnsembleImplementationCmdNR(
 	 * Hand off to the target command.
 	 */
 
-	iPtr->evalFlags |= TCL_EVAL_REDIRECT;
-	return TclNREvalObjEx(interp, copyPtr, TCL_EVAL_INVOKE, NULL,INT_MIN);
+	return TclNREvalObjEx(interp, copyPtr,
+		(TCL_EVAL_INVOKE|TCL_EVAL_REDIRECT), NULL,INT_MIN);
     }
 
   unknownOrAmbiguousSubcommand:
@@ -2122,8 +2122,7 @@ EnsembleUnknownCallback(
      */
 
     Tcl_Preserve(ensemblePtr);
-    ((Interp *) interp)->evalFlags |= TCL_EVAL_REDIRECT;
-    result = Tcl_EvalObjv(interp, paramc, paramv, 0);
+    result = Tcl_EvalObjv(interp, paramc, paramv, TCL_EVAL_REDIRECT);
     if ((result == TCL_OK) && (ensemblePtr->flags & ENSEMBLE_DEAD)) {
 	if (!Tcl_InterpDeleted(interp)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
