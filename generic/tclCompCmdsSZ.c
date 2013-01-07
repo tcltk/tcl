@@ -2737,7 +2737,7 @@ TclCompileUnsetCmd(
     flags = 1;
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     leadingWord = Tcl_NewObj();
-    if (TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
+    if (numWords > 0 && TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
 	int len;
 	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
 
