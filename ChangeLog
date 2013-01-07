@@ -1,3 +1,10 @@
+2013-01-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/http/http.tcl: Don't depend on Spencer-specific regexp
+	* tests/env.test: syntax (/u and /U) any more in unrelated places.
+	* tests/exec.test:
+	Bump http package to 2.8.6.
+
 2013-01-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclEnsemble.c (CompileBasicNArgCommand): Added very simple
