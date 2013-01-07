@@ -1,3 +1,10 @@
+2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls: Extend the public stub table with dummy NULL
+	entries, up to the size of the Tcl 8.6 stub tables. This makes it
+	easier to debug extensions which use Tcl 8.6 features but (erroneously)
+	are attempted to be loaded in Tcl 8.5.
+
 2013-01-02  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclEnsemble.c:  Remove stray calls to Tcl_Alloc and
