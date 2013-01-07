@@ -1795,6 +1795,10 @@ declare 573 {
 	    int objc, Tcl_Obj *const objv[], ClientData *clientDataPtr)
 }
 
+declare 630 {
+    void TclUnusedStubEntry(void)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
