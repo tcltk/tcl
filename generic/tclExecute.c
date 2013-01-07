@@ -892,7 +892,8 @@ TclCreateExecEnv(
 
     /* Initialize the NRE stack */
 
-    eePtr->callbackPtr = TclGetCallback(interp);
+    ((Interp *) interp)->execEnvPtr = eePtr;
+    eePtr->callbackPtr = TclNewCallback(interp);
     eePtr->callbackPtr--;
     return eePtr;
 }

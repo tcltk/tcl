@@ -2138,7 +2138,7 @@ typedef struct Interp {
 				 * tclOOInt.h and tclOO.c for real definition
 				 * and setup. */
 
-    int deferredCallbacks;      /* Callbacks that are set previous to a call
+    struct NRE_callback *deferredCallbacks;      /* Callbacks that are set previous to a call
 				 * to some Eval function but that actually
 				 * belong to the command that is about to be
 				 * called - i.e., they should be run *before*
@@ -4790,17 +4790,6 @@ typedef struct NRE_callback {
     struct NRE_callback *nextPtr;
 } NRE_callback;
 
-#define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
-
-#define NRE_STACK_SIZE 100
-
-typedef struct NRE_stack {
-    NRE_callback items[NRE_STACK_SIZE];
-    struct NRE_stack *next;
-} NRE_stack;
-
-MODULE_SCOPE NRE_callback *TclGetCallback(Tcl_Interp *interp);
-
 /*
  * Inline versions of Tcl_NRAddCallback and friends
  */
@@ -4821,24 +4810,49 @@ MODULE_SCOPE NRE_callback *TclGetCallback(Tcl_Interp *interp);
 	cbPtr->data[3] = (ClientData)(data3);				\
     } while (0)
 
+#define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
+
+#define NRE_STACK_SIZE 100
+
+MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
+MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);
+MODULE_SCOPE Tcl_NRPostProc TclNRStackBottom;
+
+#define NEW 0
+
+#if NEW
 #define POP_CB(interp, cbPtr)                      \
-    (cbPtr) = TOP_CB(interp)--
+    (cbPtr) = TclPopCallback(interp)
 
 #define ALLOC_CB(interp, cbPtr)			\
-    (cbPtr) = TclGetCallback(interp)
+    (cbPtr) = TclNewCallback(interp)
 
-#if 0
-    do {								\
-            NRE_stack *this = ((Interp *)interp)->execEnvPtr->NRStack;	\
-	    NRE_callback *new = TOP_CB(interp);				\
-	    if (new != this->items[NRE_STACK_SIZE-1]) {			\
-	        new++;							\
-	    } else {							\
-	        new = TclGetCallback(interp); /* allocstack! */		\
-	    }								\
-	    (cbPtr) = TOP_CB(interp) = new;				\
+#define FREE_CB(cbPtr)
+
+#else /* OLD */
+
+#define POP_CB(interp, cbPtr)			\
+    do {\
+	(cbPtr) = TOP_CB(interp);		\
+	TOP_CB(interp) = (cbPtr)->nextPtr;	\
     } while (0)
+
+
+#define ALLOC_CB(interp, cbPtr)		\
+    do {				\
+	(cbPtr) = (NRE_callback *)ckalloc(sizeof(Tcl_Obj));	\
+	(cbPtr)->nextPtr = TOP_CB(interp);			\
+	TOP_CB(interp) = (cbPtr);				\
+    } while (0)
+
+#define FREE_CB(cbPtr)			\
+    ckfree(cbPtr)
 #endif
+
+typedef struct NRE_stack {
+    struct NRE_callback items[NRE_STACK_SIZE];
+    struct NRE_stack *next;
+} NRE_stack;
 
 
 #if NRE_ENABLE_ASSERTS

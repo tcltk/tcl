@@ -735,7 +735,7 @@ Tcl_CreateInterp(void)
 #endif
     iPtr->pendingObjDataPtr = NULL;
     iPtr->asyncReadyPtr = TclGetAsyncReadyPtr();
-    iPtr->deferredCallbacks = 0;
+    iPtr->deferredCallbacks = NULL;
 
     /*
      * Create the core commands. Do it here, rather than calling
@@ -4347,6 +4347,7 @@ TclNRRunCallbacks(
 	POP_CB(interp, cbPtr);
 	procPtr = cbPtr->procPtr;
 	result = procPtr(cbPtr->data, interp, result);
+        FREE_CB(cbPtr);
     }
     return result;
 }
@@ -8274,6 +8275,9 @@ Tcl_NRCmdSwap(
  * FIXME NRE!
  */
 
+//#define PR(x) fprint(stdout, x)
+#define PR(x)
+
 void
 TclDeferCallback(
     Tcl_Interp *interp,
@@ -8282,37 +8286,55 @@ TclDeferCallback(
     ClientData data2, ClientData data3)
 {
     Interp *iPtr = (Interp *) interp;
+    NRE_callback *cbPtr;
     
     TclNRAddCallback(interp, postProcPtr, data0, data1,
             data2, data3);
-    iPtr->deferredCallbacks++;
+    cbPtr = TOP_CB(interp);
+    cbPtr->nextPtr = iPtr->deferredCallbacks;
+    iPtr->deferredCallbacks = cbPtr;    
 }
 
 static void
 SpliceDeferred(
     Tcl_Interp *interp)
 {
+    PR("CALLED SpliceDeferred\n");
+    return;
+    /* STUPID: optimize a bit */
 #if 0
     Interp *iPtr = (Interp *) interp;
-    NRE_callback *bottomPtr = iPtr->deferredCallbacks;
-    NRE_callback saved, *runPtr;
+    int deferred = iPtr->deferredCallbacks;
+    NRE_callback *tosPtr = TOP_CB(interp), *runPtr;
 
-    if (bottomPtr) {
-        saved = *TOP_CB(interp);
-        
-        topPtr = TOP_CB(interp);
-        runPtr
+    if (deferred) {
+        NRE_callback *tmp;
+        int i;
 
-            Swap de a uno .OJO!! Si bajo y encuentro NRStackBottom, saltar!
+        tmp = ckalloc(deferred*sizeof(NRE_callback));
         
-        while 
+        i = deferred;
+        while (i--) {
+            POP_CB(interp, runPtr);
+            tmp[i] = *runPtr;
+        }
+
+        ALLOC_CB(interp, runPtr);
+        *runPtr = *tosPtr;
+
+        i = deferred;
+        for (i=0; i < deferred; i++) {
+            ALLOC_CB(interp, runPtr);
+            *runPtr = tmp[i];
+        }
+        ckfree(tmp);
+        iPtr->deferredCallbacks = 0;
     }
-    iPtr->deferredCallbacks = 0;
 #endif
 }
 
-static int
-NRStackBottom(
+int
+TclNRStackBottom(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -8322,11 +8344,11 @@ NRStackBottom(
     NRE_stack *this = eePtr->NRStack;
     NRE_stack *prev = data[0];
 
- #if 0
+    PR("CALLED TclNRStackBottom\n");
+    
     if (!prev) {
         Tcl_Panic("Reached the NRE-stack bottom, should not happen!");
     }
-#endif
     
     /*
      * Go back to the previous stack.
@@ -8336,8 +8358,8 @@ NRStackBottom(
     eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
     
     /*
-     * Keep this stack in reserve. If this one had a successor, free it: we
-     * always keep just one in reserve. 
+     * Keep this stack in reserve. If this one had a successor, free that one:
+     * we always keep just one in reserve. 
      */
     
     if (this->next) {
@@ -8349,15 +8371,16 @@ NRStackBottom(
 }
 
 NRE_callback *
-TclGetCallback(
+TclNewCallback(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
     NRE_callback *cbPtr = eePtr->callbackPtr;
     NRE_stack *this = eePtr->NRStack;
-
+#if NEW
     if (!this || (cbPtr == &this->items[NRE_STACK_SIZE-1])) {
+        PR("ALLOC\n");
         if (this && this->next) {
             eePtr->NRStack = this->next;
         } else {
@@ -8366,13 +8389,33 @@ TclGetCallback(
         }
         eePtr->callbackPtr = &eePtr->NRStack->items[-1];
 
-        if (this) {
-            TclNRAddCallback(interp, NRStackBottom, this, NULL, NULL, NULL);
-        }
+        TclNRAddCallback(interp, TclNRStackBottom, this, NULL, NULL, NULL);
+    } else {
+        PR("PUSH\n");
     }
-    return ++eePtr->callbackPtr;
+    cbPtr++;
+    cbPtr->nextPtr = eePtr->callbackPtr;
+    eePtr->callbackPtr = cbPtr;
+#endif
+    return eePtr->callbackPtr;
 }
 
+NRE_callback *
+TclPopCallback(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    NRE_callback *cbPtr = eePtr->callbackPtr, *tmp;
+    NRE_stack *this = eePtr->NRStack;
+    int depth = cbPtr - &this->items[1];
+
+    PR("POP\n");
+    --eePtr->callbackPtr;
+    return cbPtr;
+}
+
+/* ***************************************** */
 void
 TclSetTailcall(
     Tcl_Interp *interp,
