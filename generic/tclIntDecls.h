@@ -505,6 +505,57 @@ EXTERN struct tm *	TclpGmtime _ANSI_ARGS_((TclpTime_t_CONST clock));
 /* Slot 198 is reserved */
 /* 199 */
 EXTERN int		TclMatchIsTrivial _ANSI_ARGS_((CONST char *pattern));
+/* Slot 200 is reserved */
+/* Slot 201 is reserved */
+/* Slot 202 is reserved */
+/* Slot 203 is reserved */
+/* Slot 204 is reserved */
+/* Slot 205 is reserved */
+/* Slot 206 is reserved */
+/* Slot 207 is reserved */
+/* Slot 208 is reserved */
+/* Slot 209 is reserved */
+/* Slot 210 is reserved */
+/* Slot 211 is reserved */
+/* Slot 212 is reserved */
+/* Slot 213 is reserved */
+/* Slot 214 is reserved */
+/* Slot 215 is reserved */
+/* Slot 216 is reserved */
+/* Slot 217 is reserved */
+/* Slot 218 is reserved */
+/* Slot 219 is reserved */
+/* Slot 220 is reserved */
+/* Slot 221 is reserved */
+/* Slot 222 is reserved */
+/* Slot 223 is reserved */
+/* Slot 224 is reserved */
+/* Slot 225 is reserved */
+/* Slot 226 is reserved */
+/* Slot 227 is reserved */
+/* Slot 228 is reserved */
+/* Slot 229 is reserved */
+/* Slot 230 is reserved */
+/* Slot 231 is reserved */
+/* Slot 232 is reserved */
+/* Slot 233 is reserved */
+/* Slot 234 is reserved */
+/* Slot 235 is reserved */
+/* Slot 236 is reserved */
+/* Slot 237 is reserved */
+/* Slot 238 is reserved */
+/* Slot 239 is reserved */
+/* Slot 240 is reserved */
+/* Slot 241 is reserved */
+/* Slot 242 is reserved */
+/* Slot 243 is reserved */
+/* Slot 244 is reserved */
+/* Slot 245 is reserved */
+/* Slot 246 is reserved */
+/* Slot 247 is reserved */
+/* Slot 248 is reserved */
+/* 249 */
+EXTERN void		TclUnusedStubEntry _ANSI_ARGS_((void));
 
 typedef struct TclIntStubs {
     int magic;
@@ -710,6 +761,56 @@ typedef struct TclIntStubs {
     VOID *reserved197;
     VOID *reserved198;
     int (*tclMatchIsTrivial) _ANSI_ARGS_((CONST char *pattern)); /* 199 */
+    VOID *reserved200;
+    VOID *reserved201;
+    VOID *reserved202;
+    VOID *reserved203;
+    VOID *reserved204;
+    VOID *reserved205;
+    VOID *reserved206;
+    VOID *reserved207;
+    VOID *reserved208;
+    VOID *reserved209;
+    VOID *reserved210;
+    VOID *reserved211;
+    VOID *reserved212;
+    VOID *reserved213;
+    VOID *reserved214;
+    VOID *reserved215;
+    VOID *reserved216;
+    VOID *reserved217;
+    VOID *reserved218;
+    VOID *reserved219;
+    VOID *reserved220;
+    VOID *reserved221;
+    VOID *reserved222;
+    VOID *reserved223;
+    VOID *reserved224;
+    VOID *reserved225;
+    VOID *reserved226;
+    VOID *reserved227;
+    VOID *reserved228;
+    VOID *reserved229;
+    VOID *reserved230;
+    VOID *reserved231;
+    VOID *reserved232;
+    VOID *reserved233;
+    VOID *reserved234;
+    VOID *reserved235;
+    VOID *reserved236;
+    VOID *reserved237;
+    VOID *reserved238;
+    VOID *reserved239;
+    VOID *reserved240;
+    VOID *reserved241;
+    VOID *reserved242;
+    VOID *reserved243;
+    VOID *reserved244;
+    VOID *reserved245;
+    VOID *reserved246;
+    VOID *reserved247;
+    VOID *reserved248;
+    void (*tclUnusedStubEntry) _ANSI_ARGS_((void)); /* 249 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -1334,6 +1435,59 @@ extern TclIntStubs *tclIntStubsPtr;
 #define TclMatchIsTrivial \
 	(tclIntStubsPtr->tclMatchIsTrivial) /* 199 */
 #endif
+/* Slot 200 is reserved */
+/* Slot 201 is reserved */
+/* Slot 202 is reserved */
+/* Slot 203 is reserved */
+/* Slot 204 is reserved */
+/* Slot 205 is reserved */
+/* Slot 206 is reserved */
+/* Slot 207 is reserved */
+/* Slot 208 is reserved */
+/* Slot 209 is reserved */
+/* Slot 210 is reserved */
+/* Slot 211 is reserved */
+/* Slot 212 is reserved */
+/* Slot 213 is reserved */
+/* Slot 214 is reserved */
+/* Slot 215 is reserved */
+/* Slot 216 is reserved */
+/* Slot 217 is reserved */
+/* Slot 218 is reserved */
+/* Slot 219 is reserved */
+/* Slot 220 is reserved */
+/* Slot 221 is reserved */
+/* Slot 222 is reserved */
+/* Slot 223 is reserved */
+/* Slot 224 is reserved */
+/* Slot 225 is reserved */
+/* Slot 226 is reserved */
+/* Slot 227 is reserved */
+/* Slot 228 is reserved */
+/* Slot 229 is reserved */
+/* Slot 230 is reserved */
+/* Slot 231 is reserved */
+/* Slot 232 is reserved */
+/* Slot 233 is reserved */
+/* Slot 234 is reserved */
+/* Slot 235 is reserved */
+/* Slot 236 is reserved */
+/* Slot 237 is reserved */
+/* Slot 238 is reserved */
+/* Slot 239 is reserved */
+/* Slot 240 is reserved */
+/* Slot 241 is reserved */
+/* Slot 242 is reserved */
+/* Slot 243 is reserved */
+/* Slot 244 is reserved */
+/* Slot 245 is reserved */
+/* Slot 246 is reserved */
+/* Slot 247 is reserved */
+/* Slot 248 is reserved */
+#ifndef TclUnusedStubEntry
+#define TclUnusedStubEntry \
+	(tclIntStubsPtr->tclUnusedStubEntry) /* 249 */
+#endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
@@ -1344,5 +1498,6 @@ extern TclIntStubs *tclIntStubsPtr;
 #   undef TclSockMinimumBuffers
 #   define TclSockMinimumBuffers(a,b) TclSockMinimumBuffersOld((int)(a),b)
 #endif
+#undef TclUnusedStubEntry
 
 #endif /* _TCLINTDECLS */
