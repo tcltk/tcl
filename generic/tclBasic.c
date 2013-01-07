@@ -162,8 +162,6 @@ static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	YieldToCallback;
 
-static void	        ClearTailcall(Tcl_Interp *interp,
-			    struct NRE_callback *tailcallPtr);
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
 static inline void SpliceDeferred(Tcl_Interp *interp);
@@ -4377,10 +4375,7 @@ NRCommand(
      */
 
     if (data[1] && (data[1] != INT2PTR(1))) {
-        NRE_callback *tailcallPtr = data[1];
-
-        tailcallPtr->nextPtr = TOP_CB(interp);
-        TOP_CB(interp) = tailcallPtr;
+        TclNRAddCallback(interp, TclNRTailcallEval, data[1], NULL, NULL, NULL);
     }
     
     /* OPT ??
@@ -8335,7 +8330,7 @@ SpliceDeferred(
 void
 TclSetTailcall(
     Tcl_Interp *interp,
-    NRE_callback *tailcallPtr)
+    Tcl_Obj *listPtr)
 {
     /*
      * Find the splicing spot: right before the NRCommand of the thing
@@ -8358,11 +8353,10 @@ TclSetTailcall(
         /*
          * A tailcall was already scheduled: clear it!
          */
-        NRE_callback *oldPtr = (NRE_callback *) runPtr->data[1];
-        TailcallCleanup(oldPtr->data, interp, TCL_OK);
+        Tcl_Obj *oldPtr = (Tcl_Obj *) runPtr->data[1];
+        Tcl_DecrRefCount(oldPtr);
     }
-        
-    runPtr->data[1] = tailcallPtr;
+    runPtr->data[1] = listPtr;
 }
 
 int
@@ -8392,7 +8386,7 @@ TclNRTailcallObjCmd(
      */
 
     if (iPtr->varFramePtr->tailcallPtr) {
-        ClearTailcall(interp, iPtr->varFramePtr->tailcallPtr);
+        Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
         iPtr->varFramePtr->tailcallPtr = NULL;
     }
 
@@ -8407,23 +8401,20 @@ TclNRTailcallObjCmd(
         Tcl_Obj *listPtr, *nsObjPtr;
         Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
         Tcl_Namespace *ns1Ptr;
-        NRE_callback *tailcallPtr;
 
-        listPtr = Tcl_NewListObj(objc-1, objv+1);
-        Tcl_IncrRefCount(listPtr);
+        /* The tailcall data is in a Tcl list: the first element is the
+         * namespace, the rest the command to be tailcalled. */
+        
+        listPtr = Tcl_NewListObj(objc, objv);
 
         nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
         if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
                 || (nsPtr != ns1Ptr)) {
             Tcl_Panic("Tailcall failed to find the proper namespace");
         }
-        Tcl_IncrRefCount(nsObjPtr);
-
-        TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
-                NULL, NULL);
-        tailcallPtr = TOP_CB(interp);
-        TOP_CB(interp) = tailcallPtr->nextPtr;
-        iPtr->varFramePtr->tailcallPtr = tailcallPtr;
+        Tcl_ListObjReplace(interp, listPtr, 0, 1, 1, &nsObjPtr);
+        
+        iPtr->varFramePtr->tailcallPtr = listPtr;
     }
     return TCL_RETURN;
 }
@@ -8435,12 +8426,14 @@ TclNRTailcallEval(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *listPtr = data[0];
-    Tcl_Obj *nsObjPtr = data[1];
+    Tcl_Obj *listPtr = data[0], *nsObjPtr;
     Tcl_Namespace *nsPtr;
     int objc;
     Tcl_Obj **objv;
 
+    Tcl_ListObjGetElements(interp, listPtr, &objc, &objv); 
+    nsObjPtr = objv[0];
+    
     if (result == TCL_OK) {
 	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
     }
@@ -8459,10 +8452,9 @@ TclNRTailcallEval(
      * Perform the tailcall
      */
 
-    TclDeferCallback(interp, TailcallCleanup, listPtr, nsObjPtr, NULL,NULL);
+    TclDeferCallback(interp, TailcallCleanup, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
-    ListObjGetElements(listPtr, objc, objv);
-    return TclNREvalObjv(interp, objc, objv, 0, NULL);
+    return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
 }
 
 static int
@@ -8472,19 +8464,8 @@ TailcallCleanup(
     int result)
 {
     Tcl_DecrRefCount((Tcl_Obj *) data[0]);
-    Tcl_DecrRefCount((Tcl_Obj *) data[1]);
     return result;
 }
-
-static void
-ClearTailcall(
-    Tcl_Interp *interp,
-    NRE_callback *tailcallPtr)
-{
-    TailcallCleanup(tailcallPtr->data, interp, TCL_OK);
-    FREE_CB(interp, tailcallPtr);
-}
-
 
 void
 Tcl_NRAddCallback(
@@ -8586,23 +8567,22 @@ TclNRYieldToObjCmd(
      * This is essentially code from TclNRTailcallObjCmd
      */
 
-    listPtr = Tcl_NewListObj(objc-1, objv+1);
-    Tcl_IncrRefCount(listPtr);
+    listPtr = Tcl_NewListObj(objc, objv);
 
     nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
     if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
 	    || (nsPtr != ns1Ptr)) {
 	Tcl_Panic("yieldto failed to find the proper namespace");
     }
-    Tcl_IncrRefCount(nsObjPtr);
+    Tcl_ListObjReplace(interp, listPtr, 0, 1, 1, &nsObjPtr);
+
 
     /*
      * Add the callback in the caller's env, then instruct TEBC to yield.
      */
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
-    TclNRAddCallback(interp, YieldToCallback, corPtr, listPtr, nsObjPtr,
-	    NULL);
+    TclNRAddCallback(interp, YieldToCallback, corPtr, listPtr, NULL, NULL);
     iPtr->execEnvPtr = corPtr->eePtr;
 
     return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
@@ -8614,20 +8594,7 @@ YieldToCallback(
     Tcl_Interp *interp,
     int result)
 {
-    /* CoroutineData *corPtr = data[0];*/
-    Tcl_Obj *listPtr = data[1];
-    ClientData nsPtr = data[2];
-    NRE_callback *cbPtr;
-
-    /*
-     * yieldTo: invoke the command using tailcall tech.
-     */
-
-    TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsPtr, NULL, NULL);
-    cbPtr = TOP_CB(interp);
-    TOP_CB(interp) = cbPtr->nextPtr;
-
-    TclSetTailcall(interp, cbPtr);
+    TclSetTailcall(interp, (Tcl_Obj *) data[1]);
     return TCL_OK;
 }
 
