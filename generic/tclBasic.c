@@ -166,8 +166,6 @@ static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
 static inline void SpliceDeferred(Tcl_Interp *interp);
 
-
-
 MODULE_SCOPE const TclStubs tclStubs;
 
 /*
@@ -8278,21 +8276,6 @@ Tcl_NRCmdSwap(
  * FIXME NRE!
  */
 
-#if NRE_STACK_DEBUG
-void
-TclSpliceCallbacks(
-    Tcl_Interp *interp,
-    struct NRE_callback *topPtr)
-{
-    NRE_callback *bottomPtr = topPtr;
-
-    while (bottomPtr->nextPtr) {
-        bottomPtr = bottomPtr->nextPtr;
-    }
-    bottomPtr->nextPtr = TOP_CB(interp);
-    TOP_CB(interp) = topPtr;
-}
-
 void
 TclDeferCallback(
     Tcl_Interp *interp,
@@ -8300,32 +8283,36 @@ TclDeferCallback(
     ClientData data0, ClientData data1,
     ClientData data2, ClientData data3)
 {
-    NRE_callback *callbackPtr;
+    Interp *iPtr = (Interp *) interp;
     
-    ALLOC_CB((interp), (callbackPtr));
-
-    callbackPtr->procPtr = postProcPtr;
-    callbackPtr->data[0] = data0;
-    callbackPtr->data[1] = data1;
-    callbackPtr->data[2] = data2;
-    callbackPtr->data[3] = data3;
-
-    callbackPtr->nextPtr = ((Interp *)interp)->deferredCallbacks;
-    ((Interp *)interp)->deferredCallbacks = callbackPtr;
+    TclNRAddCallback(interp, postProcPtr, data0, data1,
+            data2, data3);
+    if (!iPtr->deferredCallbacks) {
+        iPtr->deferredCallbacks = TOP_CB(interp);
+    }
 }
-#else
-TODO!!
-#endif
 
+#if NRE_STACK_DEBUG
 static void
 SpliceDeferred(
     Tcl_Interp *interp)
 {
-    if (((Interp *)interp)->deferredCallbacks) {
-	TclSpliceCallbacks(interp, ((Interp *)interp)->deferredCallbacks);
-	((Interp *)interp)->deferredCallbacks = NULL;
+    Interp *iPtr = (Interp *) interp;
+    NRE_callback *bottomPtr = iPtr->deferredCallbacks;
+    NRE_callback *topPtr;
+
+    if (bottomPtr) {
+        POP_CB(interp, topPtr);
+
+        topPtr->nextPtr = bottomPtr->nextPtr;
+        bottomPtr->nextPtr = topPtr;
+        iPtr->deferredCallbacks = NULL;
     }
 }
+
+#else
+TODO!!
+#endif
 
 void
 TclSetTailcall(

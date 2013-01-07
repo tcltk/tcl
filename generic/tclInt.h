@@ -2806,8 +2806,6 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
-MODULE_SCOPE void  TclSpliceCallbacks(Tcl_Interp *interp,
-	               struct NRE_callback *topPtr);
 MODULE_SCOPE void  TclDeferCallback(Tcl_Interp *interp,
 	               Tcl_NRPostProc postProcPtr,
                        ClientData data0, ClientData data1,
