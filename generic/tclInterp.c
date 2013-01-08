@@ -1798,7 +1798,8 @@ AliasNRCmd(
      */
 
     if (isRootEnsemble) {
-	TclNRDeferCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclDeferCallbacks(interp);
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
     iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     return Tcl_NREvalObj(interp, listPtr, flags);
