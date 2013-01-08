@@ -181,7 +181,7 @@ static int NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr, int checkLinks);
 static unsigned short NativeStatMode(DWORD attr, int checkLinks, int isExec);
 static int NativeIsExec(CONST TCHAR *path);
 static int NativeReadReparse(CONST TCHAR* LinkDirectory, 
-			     REPARSE_DATA_BUFFER* buffer);
+			     REPARSE_DATA_BUFFER* buffer, DWORD desiredAccess);
 static int NativeWriteReparse(CONST TCHAR* LinkDirectory, 
 			      REPARSE_DATA_BUFFER* buffer);
 static int NativeMatchType(int isDrive, DWORD attr, CONST TCHAR* nativeName, 
@@ -395,7 +395,7 @@ TclWinSymLinkCopyDirectory(LinkOriginal, LinkCopy)
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
     
-    if (NativeReadReparse(LinkOriginal, reparseBuffer)) {
+    if (NativeReadReparse(LinkOriginal, reparseBuffer, GENERIC_READ)) {
 	return -1;
     }
     return NativeWriteReparse(LinkCopy, reparseBuffer);
@@ -479,7 +479,7 @@ WinReadLinkDirectory(LinkDirectory)
 	Tcl_SetErrno(EINVAL);
 	return NULL;
     }
-    if (NativeReadReparse(LinkDirectory, reparseBuffer)) {
+    if (NativeReadReparse(LinkDirectory, reparseBuffer, 0)) {
         return NULL;
     }
     
@@ -585,14 +585,15 @@ WinReadLinkDirectory(LinkDirectory)
  *--------------------------------------------------------------------
  */
 static int 
-NativeReadReparse(LinkDirectory, buffer)
+NativeReadReparse(LinkDirectory, buffer, desiredAccess)
     CONST TCHAR* LinkDirectory;   /* The junction to read */
     REPARSE_DATA_BUFFER* buffer;  /* Pointer to buffer. Cannot be NULL */
+    DWORD desiredAccess;
 {
     HANDLE hFile;
     DWORD returnedLength;
    
-    hFile = (*tclWinProcs->createFileProc)(LinkDirectory, GENERIC_READ, 0,
+    hFile = (*tclWinProcs->createFileProc)(LinkDirectory, desiredAccess, 0,
 	NULL, OPEN_EXISTING, 
 	FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
