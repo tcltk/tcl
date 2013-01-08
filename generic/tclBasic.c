@@ -8363,9 +8363,9 @@ TclNewCallback(
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
     NRE_stack *this = eePtr->NRStack;
-    int init = (this == NULL);
+    NRE_stack *orig = this;
 
-    if (!init && (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
+    if (this && (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
         stackReady:
         return ++eePtr->callbackPtr;
     }
@@ -8379,10 +8379,10 @@ TclNewCallback(
     eePtr->NRStack = this;
     eePtr->callbackPtr = &this->items[-1];
 
-    TclNRAddCallback(interp, TclNRStackBottom, this, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRStackBottom, orig, NULL, NULL, NULL);
     NRE_ASSERT(eePtr->callbackPtr == &this->items[0]);
 
-    if (init) {
+    if (orig == NULL) {
         return NULL;
     }
     goto stackReady;
