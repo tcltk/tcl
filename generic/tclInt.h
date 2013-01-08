@@ -4778,7 +4778,7 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  */
 
 #define NRE_ENABLE_ASSERTS	1
-#define NRE_STACK_DEBUG         0
+#define NRE_STACK_DEBUG         1
 
 /*
  * This is the main data struct for representing NR commands. It is designed
@@ -4832,8 +4832,6 @@ typedef struct NRE_callback {
 #define FREE_CB(interp, ptr)			\
     ckfree((char *) (ptr))
 
-#define INIT_STACK(interp)
-
 #else /* not debugging the NRE stack */
 
 #define NRE_STACK_SIZE 100000
@@ -4856,14 +4854,6 @@ typedef struct NRE_stack {
     (cbPtr) = TclNewCallback(interp)
 
 #define FREE_CB(interp, cbPtr)
-
-/* BAD ... called from InitExecEnv */
-#define INIT_STACK(interp)			\
-    do {					\
-	((Interp *) interp)->execEnvPtr = eePtr;	\
-	eePtr->NRStack = NULL;				\
-	TclNewCallback(interp);				\
-    } while (0)
 
 MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
 MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);

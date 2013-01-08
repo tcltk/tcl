@@ -8300,7 +8300,6 @@ SpliceDeferred(
     NRE_callback *bottomPtr = iPtr->deferredCallbacks;
     NRE_callback *topPtr;
 
-    return; /* just for comparing until implemented in the stack version */
     if (bottomPtr) {
         POP_CB(interp, topPtr);
 
@@ -8311,8 +8310,6 @@ SpliceDeferred(
 }
 
 #else
-
-
 static void
 SpliceDeferred(
     Tcl_Interp *interp)
@@ -8320,7 +8317,10 @@ SpliceDeferred(
     return;
     /* STUPID: breaks tailcalls */
 }
+#endif
 
+
+#if !NRE_STACK_DEBUG
 int
 TclNRStackBottom(
     ClientData data[],
@@ -8333,7 +8333,11 @@ TclNRStackBottom(
     NRE_stack *prev = data[0];
 
     if (!prev) {
-        Tcl_Panic("Reached the NRE-stack bottom, should not happen!");
+        /* empty stack, free it */
+        ckfree(this);
+        eePtr->NRStack = NULL;
+        TOP_CB(interp) = NULL;
+        return result;
     }
     
     /*
@@ -8356,20 +8360,30 @@ TclNRStackBottom(
     return result;
 }
 
+int level = 0;
+    
 NRE_callback *
 TclNewCallback(
     Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
     ExecEnv *eePtr = iPtr->execEnvPtr;
-    NRE_stack *this = eePtr->NRStack;
-    NRE_stack *orig = this;
+    NRE_stack *this = eePtr->NRStack, *orig;
 
-    if (this && (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
+    if (eePtr->callbackPtr && this &&
+            (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
         stackReady:
+        //fprintf(stderr, "PUSH %i: %p -> %p\n", ++level, eePtr->callbackPtr, eePtr->callbackPtr+1);
         return ++eePtr->callbackPtr;
     }
-                         
+
+
+    //fprintf(stdout, "********************************************************");
+    if (!eePtr->callbackPtr) {
+        this = NULL;
+    }
+    orig = this;
+    
     if (this && this->next) {
         this = this->next;
     } else {
@@ -8378,13 +8392,10 @@ TclNewCallback(
     }
     eePtr->NRStack = this;
     eePtr->callbackPtr = &this->items[-1];
-
     TclNRAddCallback(interp, TclNRStackBottom, orig, NULL, NULL, NULL);
+
     NRE_ASSERT(eePtr->callbackPtr == &this->items[0]);
 
-    if (orig == NULL) {
-        return NULL;
-    }
     goto stackReady;
 }
 
@@ -8392,6 +8403,9 @@ NRE_callback *
 TclPopCallback(
     Tcl_Interp *interp)
 {
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    //fprintf(stderr, "POP %i: %p -> %p\n", --level, eePtr->callbackPtr, eePtr->callbackPtr-1);
     return ((Interp *)interp)->execEnvPtr->callbackPtr--;
 }
 
@@ -8409,7 +8423,7 @@ TclSetTailcall(
      * being tailcalled. Note that we skip NRCommands marked in data[1]
      * (used by command redirectors).
      */
- #if 0
+
     NRE_callback *runPtr;
 
     for (runPtr = TOP_CB(interp); runPtr; runPtr = runPtr->nextPtr) {
@@ -8429,7 +8443,6 @@ TclSetTailcall(
         Tcl_DecrRefCount(oldPtr);
     }
     runPtr->data[1] = listPtr;
-#endif
 }
 
 int
@@ -8441,7 +8454,6 @@ TclNRTailcallObjCmd(
 {
     Interp *iPtr = (Interp *) interp;
 
-    Tcl_Panic("no tailcalls yet!");
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?command? ?arg ...?");
 	return TCL_ERROR;
