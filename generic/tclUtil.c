@@ -871,9 +871,9 @@ Tcl_SplitList(
 
 int
 Tcl_ScanElement(
-    register const char *src,	/* String to convert to list element. */
-    register int *flagPtr)	/* Where to store information to guide
-				 * Tcl_ConvertCountedElement. */
+    const char *src,	/* String to convert to list element. */
+    char *flagPtr)	/* Where to store information to guide
+			 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, -1, flagPtr);
 }
@@ -905,10 +905,10 @@ int
 Tcl_ScanCountedElement(
     const char *src,		/* String to convert to Tcl list element. */
     int length,			/* Number of bytes in src, or -1. */
-    int *flagPtr)		/* Where to store information to guide
+    char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
-    int flags = CONVERT_ANY;
+    char flags = CONVERT_ANY;
     int numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
@@ -949,7 +949,7 @@ int
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
     int length,			/* Number of bytes in src, or -1. */
-    int *flagPtr)		/* Where to store information to guide
+    char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     const char *p = src;
@@ -1234,9 +1234,9 @@ TclScanElement(
 
 int
 Tcl_ConvertElement(
-    register const char *src,	/* Source information for list element. */
-    register char *dst,		/* Place to put list-ified element. */
-    register int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,	/* Source information for list element. */
+    char *dst,		/* Place to put list-ified element. */
+    char flags)		/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, -1, dst, flags);
 }
@@ -1267,7 +1267,7 @@ Tcl_ConvertCountedElement(
     register const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
-    int flags)			/* Flags produced by Tcl_ScanElement. */
+    char flags)			/* Flags produced by Tcl_ScanElement. */
 {
     int numBytes = TclConvertElement(src, length, dst, flags);
     dst[numBytes] = '\0';
@@ -1300,9 +1300,9 @@ TclConvertElement(
     register const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
-    int flags)			/* Flags produced by Tcl_ScanElement. */
+    char flags)			/* Flags produced by Tcl_ScanElement. */
 {
-    int conversion = flags & CONVERT_MASK;
+    char conversion = flags & CONVERT_MASK;
     char *p = dst;
 
     /*
@@ -1482,9 +1482,9 @@ Tcl_Merge(
     const char *const *argv)	/* Array of string values. */
 {
 #define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
+    char localFlags[LOCAL_SIZE];
     int i, bytesNeeded = 0;
-    char *result, *dst;
+    char *result, *dst, *flagPtr = NULL;
     const int maxFlags = UINT_MAX / sizeof(int);
 
     /*
@@ -1519,7 +1519,7 @@ Tcl_Merge(
 
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
-	flagPtr = ckalloc(argc * sizeof(int));
+	flagPtr = ckalloc(argc * sizeof(char));
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -2597,7 +2597,7 @@ Tcl_DStringAppendElement(
 {
     char *dst = dsPtr->string + dsPtr->length;
     int needSpace = TclNeedSpace(dsPtr->string, dst);
-    int flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
+    char flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
     int newSize = dsPtr->length + needSpace
 	    + TclScanElement(element, -1, &flags);
 
