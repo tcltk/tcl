@@ -1151,8 +1151,7 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    struct NRE_callback *tailcallPtr;
-				/* NULL if no tailcall is scheduled */
+    Tcl_Obj *tailcallPtr;       /* NULL if no tailcall is scheduled for this CF*/
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
@@ -1284,6 +1283,7 @@ typedef struct ExecEnv {
     struct Tcl_Interp *interp;
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
+    struct NRE_stack *NRStack;
     struct CoroutineData *corPtr;
     int rewind;
 } ExecEnv;
@@ -1826,12 +1826,8 @@ typedef struct Interp {
 				 * and setup. */
 
     struct NRE_callback *deferredCallbacks;
-				/* Callbacks that are set previous to a call
-				 * to some Eval function but that actually
-				 * belong to the command that is about to be
-				 * called - i.e., they should be run *before*
-				 * any tailcall is invoked. */
-
+                                /* First callback deferred for the next
+				 * call to EvalObjv */
     /*
      * TIP #285, Script cancellation support.
      */
@@ -2451,8 +2447,8 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
-MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
-	               struct NRE_callback *tailcallPtr);
+MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
+MODULE_SCOPE void  TclDeferCallbacks(Tcl_Interp *interp);
 
 /* //
  * This structure holds the data for the various iteration callbacks used to
@@ -4254,8 +4250,10 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  *----------------------------------------------------------------
  */
 
-#define NRE_USE_SMALL_ALLOC	1  /* Only turn off for debugging purposes. */
 #define NRE_ENABLE_ASSERTS	1
+#define NRE_STACK_DEBUG         0
+#define NRE_STACK_SIZE        100
+
 
 /*
  * This is the main data struct for representing NR commands. It is designed
@@ -4263,68 +4261,92 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  * available.
  */
 
+#define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
+
+/*
+ * Inline versions of Tcl_NRAddCallback and friends
+ */
+
+#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3)	\
+    do {								\
+	NRE_callback *cbPtr;						\
+	ALLOC_CB(interp, cbPtr);					\
+	INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3);		\
+    } while (0)
+
+#define INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3)		\
+    do {								\
+	cbPtr->procPtr = (postProcPtr);					\
+	cbPtr->data[0] = (ClientData)(data0);				\
+	cbPtr->data[1] = (ClientData)(data1);				\
+	cbPtr->data[2] = (ClientData)(data2);				\
+	cbPtr->data[3] = (ClientData)(data3);				\
+    } while (0)
+
+#if NRE_STACK_DEBUG
+
 typedef struct NRE_callback {
     Tcl_NRPostProc *procPtr;
     ClientData data[4];
     struct NRE_callback *nextPtr;
 } NRE_callback;
 
-#define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
-
-/*
- * Inline version of Tcl_NRAddCallback.
- */
-
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
-    do {								\
-	NRE_callback *callbackPtr;					\
-	TCLNR_ALLOC((interp), (callbackPtr));				\
-	callbackPtr->procPtr = (postProcPtr);				\
-	callbackPtr->data[0] = (ClientData)(data0);			\
-	callbackPtr->data[1] = (ClientData)(data1);			\
-	callbackPtr->data[2] = (ClientData)(data2);			\
-	callbackPtr->data[3] = (ClientData)(data3);			\
-	callbackPtr->nextPtr = TOP_CB(interp);				\
-	TOP_CB(interp) = callbackPtr;					\
+#define POP_CB(interp, cbPtr)                      \
+    do {                                           \
+        cbPtr = TOP_CB(interp);                    \
+        TOP_CB(interp) = cbPtr->nextPtr;           \
     } while (0)
 
-#define TclNRDeferCallback(interp,postProcPtr,data0,data1,data2,data3) \
-    do {								\
-	NRE_callback *callbackPtr;					\
-	TCLNR_ALLOC((interp), (callbackPtr));				\
-	callbackPtr->procPtr = (postProcPtr);				\
-	callbackPtr->data[0] = (ClientData)(data0);			\
-	callbackPtr->data[1] = (ClientData)(data1);			\
-	callbackPtr->data[2] = (ClientData)(data2);			\
-	callbackPtr->data[3] = (ClientData)(data3);			\
-	callbackPtr->nextPtr = ((Interp *)interp)->deferredCallbacks;	\
-	((Interp *)interp)->deferredCallbacks = callbackPtr;		\
-    } while (0)
-
-#define TclNRSpliceCallbacks(interp, topPtr) \
+#define ALLOC_CB(interp, cbPtr)			\
     do {					\
-	NRE_callback *bottomPtr = topPtr;	\
-	while (bottomPtr->nextPtr) {		\
-	    bottomPtr = bottomPtr->nextPtr;	\
-	}					\
-	bottomPtr->nextPtr = TOP_CB(interp);	\
-	TOP_CB(interp) = topPtr;		\
+	cbPtr = ckalloc(sizeof(NRE_callback));	\
+	cbPtr->nextPtr = TOP_CB(interp);	\
+	TOP_CB(interp) = cbPtr;			\
+    } while (0)
+    
+#define FREE_CB(interp, ptr)			\
+    ckfree((char *) (ptr))
+
+#define NEXT_CB(ptr)  (ptr)->nextPtr
+
+#else /* not debugging the NRE stack */
+
+typedef struct NRE_callback {
+    Tcl_NRPostProc *procPtr;
+    ClientData data[4];
+    struct NRE_callback *nextPtr;
+} NRE_callback;
+
+typedef struct NRE_stack {
+    struct NRE_callback items[NRE_STACK_SIZE];
+    struct NRE_stack *next;
+} NRE_stack;
+
+#define POP_CB(interp, cbPtr)			\
+    (cbPtr) = TOP_CB(interp)--
+
+#define ALLOC_CB(interp, cbPtr)					\
+    do {							\
+	ExecEnv *eePtr = ((Interp *) interp)->execEnvPtr;	\
+	NRE_stack *this = eePtr->NRStack;			\
+								\
+	if (eePtr->callbackPtr &&					\
+		(eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) { \
+	    (cbPtr) = ++eePtr->callbackPtr;				\
+	} else {							\
+	    (cbPtr) = TclNewCallback(interp);				\
+	}								\
     } while (0)
 
-#define TclNRSpliceDeferred(interp)					\
-    if (((Interp *)interp)->deferredCallbacks) {			\
-	TclNRSpliceCallbacks(interp, ((Interp *)interp)->deferredCallbacks); \
-	((Interp *)interp)->deferredCallbacks = NULL;			\
-    }
+#define FREE_CB(interp, cbPtr)
 
-#if NRE_USE_SMALL_ALLOC
-#define TCLNR_ALLOC(interp, ptr) \
-    TclCkSmallAlloc(sizeof(NRE_callback), (ptr))
-#define TCLNR_FREE(interp, ptr)  TclSmallFree(ptr)
-#else
-#define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
-#define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
+#define NEXT_CB(ptr) TclNextCallback(ptr)
+
+MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
+MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);
+MODULE_SCOPE NRE_callback *TclNextCallback(NRE_callback *ptr);
+MODULE_SCOPE Tcl_NRPostProc TclNRStackBottom;
+
 #endif
 
 #if NRE_ENABLE_ASSERTS

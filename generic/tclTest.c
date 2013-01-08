@@ -6501,7 +6501,7 @@ TestNRELevels(
 
     while (cbPtr) {
 	i++;
-	cbPtr = cbPtr->nextPtr;
+	cbPtr = NEXT_CB(cbPtr);
     }
     levels[3] = Tcl_NewIntObj(i);
 
