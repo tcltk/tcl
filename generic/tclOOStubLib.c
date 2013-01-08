@@ -2,19 +2,6 @@
  * ORIGINAL SOURCE: tk/generic/tkStubLib.c, version 1.9 2004/03/17
  */
 
-/*
- * We need to ensure that we use the tcl stub macros so that this file
- * contains no references to any of the tcl stub functions.
- */
-
-#undef USE_TCL_STUBS
-#define USE_TCL_STUBS
-
-#ifdef HAVE_CONFIG_H
-#include "config.h"
-#endif
-
-#define USE_TCLOO_STUBS 1
 #include "tclOOInt.h"
 
 MODULE_SCOPE const TclOOStubs *tclOOStubsPtr;
@@ -35,51 +22,48 @@ const TclOOIntStubs *tclOOIntStubsPtr = NULL;
  *	to indicate that an error occurred.
  *
  * Side effects:
- *	Sets the stub table pointer.
+ *	Sets the stub table pointers.
  *
  *----------------------------------------------------------------------
  */
 
 MODULE_SCOPE const char *
 TclOOInitializeStubs(
-    Tcl_Interp *interp, const char *version)
+    Tcl_Interp *interp,
+    const char *version)
 {
     int exact = 0;
     const char *packageName = "TclOO";
     const char *errMsg = NULL;
-    ClientData clientData = NULL;
-    const char *actualVersion =
-	    Tcl_PkgRequireEx(interp, packageName,version, exact, &clientData);
+    TclOOStubs *stubsPtr = NULL;
+    const char *actualVersion = tclStubsPtr->tcl_PkgRequireEx(interp,
+	    packageName, version, exact, &stubsPtr);
 
-    if (clientData == NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"error loading %s package; package not present or incomplete",
-		packageName));
-	return NULL;
-    } else {
-	const TclOOStubs * const stubsPtr = clientData;
-	const TclOOIntStubs * const intStubsPtr = stubsPtr->hooks ?
-		stubsPtr->hooks->tclOOIntStubs : NULL;
-
-	if (!actualVersion) {
-	    return NULL;
-	}
-
-	if (!stubsPtr || !intStubsPtr) {
-	    errMsg = "missing stub table pointer";
-	    goto error;
-	}
-
-	tclOOStubsPtr = stubsPtr;
-	tclOOIntStubsPtr = intStubsPtr;
-	return actualVersion;
-
-    error:
-	Tcl_ResetResult(interp);
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf("Error loading %s package"
-		" (requested version '%s', loaded version '%s'): %s",
-		packageName, version, actualVersion, errMsg));
+    if (actualVersion == NULL) {
 	return NULL;
     }
+    if (stubsPtr == NULL) {
+	errMsg = "missing stub table pointer";
+    } else {
+	tclOOStubsPtr = stubsPtr;
+	if (stubsPtr->hooks) {
+	    tclOOIntStubsPtr = stubsPtr->hooks->tclOOIntStubs;
+	} else {
+	    tclOOIntStubsPtr = NULL;
+	}
+	return actualVersion;
+    }
+    tclStubsPtr->tcl_ResetResult(interp);
+    tclStubsPtr->tcl_AppendResult(interp, "Error loading ", packageName,
+	    " (requested version ", version, ", actual version ",
+	    actualVersion, "): ", errMsg, NULL);
+    return NULL;
 }
+
+/*
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
+ */
