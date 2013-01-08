@@ -1,3 +1,41 @@
+2013-01-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3092089]: [file normalize] can remove path
+	components.	[Bug 3587096] win vista/7: "can't find init.tcl" when
+	called via junction.
+
+2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls: Extend the public and private stub tables with
+	* generic/tclInt.decls: dummy NULL entries, up to the size of the
+	Tcl 8.6 stub tables. This makes it easier to debug extensions which
+	use Tcl 8.5/8.6 features but (erroneously) are attempted to be loaded
+	in Tcl 8.4.
+
+2012-12-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/string.n: Noted the obsolescence of the 'bytelength',
+	'wordstart' and 'wordend' subcommands, and moved them to later in the
+	file.
+
+2012-12-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclListObj.c: [Bug 3598580]: Tcl_ListObjReplace may release
+	deleted elements too early
+
+2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkgb.c:  Turn pkgb.so into a Tcl9 interoperability test
+    library: Whatever Tcl9 looks like, loading pkgb.so in Tcl 9 should
+    either result in an error-message, either succeed, but never crash.
+	* generic/tclStubLib.c: Eliminate unnessarcy static HasStubSupport() and
+	isDigit() functions, just do the same inline.
+
+2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h: Fix Tcl_DecrRefCount macro such that it
+	doesn't access its objPtr parameter twice any more.
+
 2012-11-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixPipe.c (DefaultTempDir): [Bug 2933003]: Allow overriding

@@ -33,6 +33,7 @@
 #undef Tcl_CreateHashEntry
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#define TclUnusedStubEntry NULL
 
 /*
  * Keep a record of the original Notifier procedures, created in the
@@ -414,6 +415,56 @@ TclIntStubs tclIntStubs = {
     NULL, /* 197 */
     NULL, /* 198 */
     TclMatchIsTrivial, /* 199 */
+    NULL, /* 200 */
+    NULL, /* 201 */
+    NULL, /* 202 */
+    NULL, /* 203 */
+    NULL, /* 204 */
+    NULL, /* 205 */
+    NULL, /* 206 */
+    NULL, /* 207 */
+    NULL, /* 208 */
+    NULL, /* 209 */
+    NULL, /* 210 */
+    NULL, /* 211 */
+    NULL, /* 212 */
+    NULL, /* 213 */
+    NULL, /* 214 */
+    NULL, /* 215 */
+    NULL, /* 216 */
+    NULL, /* 217 */
+    NULL, /* 218 */
+    NULL, /* 219 */
+    NULL, /* 220 */
+    NULL, /* 221 */
+    NULL, /* 222 */
+    NULL, /* 223 */
+    NULL, /* 224 */
+    NULL, /* 225 */
+    NULL, /* 226 */
+    NULL, /* 227 */
+    NULL, /* 228 */
+    NULL, /* 229 */
+    NULL, /* 230 */
+    NULL, /* 231 */
+    NULL, /* 232 */
+    NULL, /* 233 */
+    NULL, /* 234 */
+    NULL, /* 235 */
+    NULL, /* 236 */
+    NULL, /* 237 */
+    NULL, /* 238 */
+    NULL, /* 239 */
+    NULL, /* 240 */
+    NULL, /* 241 */
+    NULL, /* 242 */
+    NULL, /* 243 */
+    NULL, /* 244 */
+    NULL, /* 245 */
+    NULL, /* 246 */
+    NULL, /* 247 */
+    NULL, /* 248 */
+    TclUnusedStubEntry, /* 249 */
 };
 
 TclIntPlatStubs tclIntPlatStubs = {
@@ -1170,6 +1221,30 @@ TclStubs tclStubs = {
     NULL, /* 604 */
     TclGetErrorLine, /* 605 */
     TclSetErrorLine, /* 606 */
+    NULL, /* 607 */
+    NULL, /* 608 */
+    NULL, /* 609 */
+    NULL, /* 610 */
+    NULL, /* 611 */
+    NULL, /* 612 */
+    NULL, /* 613 */
+    NULL, /* 614 */
+    NULL, /* 615 */
+    NULL, /* 616 */
+    NULL, /* 617 */
+    NULL, /* 618 */
+    NULL, /* 619 */
+    NULL, /* 620 */
+    NULL, /* 621 */
+    NULL, /* 622 */
+    NULL, /* 623 */
+    NULL, /* 624 */
+    NULL, /* 625 */
+    NULL, /* 626 */
+    NULL, /* 627 */
+    NULL, /* 628 */
+    NULL, /* 629 */
+    TclUnusedStubEntry, /* 630 */
 };
 
 /* !END!: Do not edit above this line. */

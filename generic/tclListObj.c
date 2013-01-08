@@ -655,6 +655,10 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
 	count = 0;
     }
     
+    for (i = 0;  i < objc;  i++) {
+	Tcl_IncrRefCount(objv[i]);
+    }
+
     numRequired = (numElems - count + objc);
     if (numRequired <= listRepPtr->maxElemCount) {
 	/*
@@ -689,7 +693,6 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
 
 	for (i = 0, j = first;  i < objc;  i++, j++) {
             elemPtrs[j] = objv[i];
-            Tcl_IncrRefCount(objv[i]);
         }
 
 	/*
@@ -745,7 +748,6 @@ Tcl_ListObjReplace(interp, listPtr, first, count, objc, objv)
 
 	for (i = 0, j = first;  i < objc;  i++, j++) {
 	    newPtrs[j] = objv[i];
-	    Tcl_IncrRefCount(objv[i]);
 	}
 
 	listRepPtr->elemCount = numRequired;

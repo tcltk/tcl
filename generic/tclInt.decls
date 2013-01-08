@@ -87,7 +87,7 @@ declare 14 {
 declare 16 {
     void TclExprFloatError(Tcl_Interp *interp, double value)
 }
-# Removed in 8.4
+# Removed in 8.4:
 #declare 17 {
 #    int TclFileAttrsCmd(Tcl_Interp *interp, int objc, Tcl_Obj *const objv[])
 #}
@@ -531,19 +531,9 @@ declare 135 {
     int TclpCheckStackSpace(void)
 }
 
-# Added in 8.1:
-
-#declare 137 {
-#   int TclpChdir(const char *dirName)
-#}
 declare 138 {
     CONST84_RETURN char *TclGetEnv(const char *name, Tcl_DString *valuePtr)
 }
-#declare 139 {
-#    int TclpLoadFile(Tcl_Interp *interp, char *fileName, char *sym1,
-#	    char *sym2, Tcl_PackageInitProc **proc1Ptr,
-#	    Tcl_PackageInitProc **proc2Ptr, ClientData *clientDataPtr)
-#}
 declare 140 {
     int TclLooksLikeInt(const char *bytes, int length)
 }
@@ -579,7 +569,7 @@ declare 149 {
     void TclHandleRelease(TclHandle handle)
 }
 
-# Added for Tcl 8.2
+# Added in 8.2:
 
 declare 150 {
     int TclRegAbout(Tcl_Interp *interp, Tcl_RegExp re)
@@ -595,7 +585,7 @@ declare 153 {
     Tcl_Obj *TclGetLibraryPath(void)
 }
 
-# moved to tclTest.c (static) in 8.3.2/8.4a2
+# moved to tclTest.c (static) in 8.3.2:
 #declare 154 {
 #    int TclTestChannelCmd(ClientData clientData,
 #    Tcl_Interp *interp, int argc, char **argv)
@@ -686,7 +676,7 @@ declare 172 {
     int TclInThreadExit(void)
 }
 
-# added for 8.4.2
+# Added in 8.4.2:
 
 declare 173 {
     int TclUniCharMatch(const Tcl_UniChar *string, int strLen,
@@ -706,6 +696,10 @@ declare 199 {
     int TclMatchIsTrivial(const char *pattern)
 }
 
+declare 249 {
+    void TclUnusedStubEntry(void)
+}
+
 ##############################################################################
 
 # Define the platform specific internal Tcl interface. These functions are
@@ -758,7 +752,7 @@ declare 9 win {
 declare 10 win {
     Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
-# Removed in 8.3.1 (for Win32s only)
+# Removed in 8.3.1 (for Win32s only):
 #declare 10 win {
 #    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
 #}
@@ -807,7 +801,7 @@ declare 20 win {
 declare 21 win {
     char *TclpInetNtoa(struct in_addr addr)
 }
-# removed permanently for 8.4
+# Removed in 8.4:
 #declare 21 win {
 #    void TclpAsyncMark(Tcl_AsyncHandler async)
 #}
@@ -829,19 +823,16 @@ declare 26 win {
     void TclWinSetInterfaces(int wide)
 }
 
-# Added in Tcl 8.3.3 / 8.4
+# Added in 8.3.3:
 
 declare 27 win {
     void TclWinFlushDirtyChannels(void)
 }
 
-# Added in 8.4.2
+# Added in 8.4.2:
 
 declare 28 win {
     void TclWinResetInterfaces(void)
-}
-declare 29 win {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
 ################################
@@ -903,7 +894,7 @@ declare 12 unix {
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)
 }
-declare 29 unix {
+declare 29 {win unix} {
     int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 

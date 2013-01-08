@@ -1665,6 +1665,31 @@ EXTERN int		TclGetErrorLine _ANSI_ARGS_((Tcl_Interp *interp));
 /* 606 */
 EXTERN void		TclSetErrorLine _ANSI_ARGS_((Tcl_Interp *interp,
 				int lineNum));
+/* Slot 607 is reserved */
+/* Slot 608 is reserved */
+/* Slot 609 is reserved */
+/* Slot 610 is reserved */
+/* Slot 611 is reserved */
+/* Slot 612 is reserved */
+/* Slot 613 is reserved */
+/* Slot 614 is reserved */
+/* Slot 615 is reserved */
+/* Slot 616 is reserved */
+/* Slot 617 is reserved */
+/* Slot 618 is reserved */
+/* Slot 619 is reserved */
+/* Slot 620 is reserved */
+/* Slot 621 is reserved */
+/* Slot 622 is reserved */
+/* Slot 623 is reserved */
+/* Slot 624 is reserved */
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
+/* Slot 627 is reserved */
+/* Slot 628 is reserved */
+/* Slot 629 is reserved */
+/* 630 */
+EXTERN void		TclUnusedStubEntry _ANSI_ARGS_((void));
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -2307,6 +2332,30 @@ typedef struct TclStubs {
     VOID *reserved604;
     int (*tclGetErrorLine) _ANSI_ARGS_((Tcl_Interp *interp)); /* 605 */
     void (*tclSetErrorLine) _ANSI_ARGS_((Tcl_Interp *interp, int lineNum)); /* 606 */
+    VOID *reserved607;
+    VOID *reserved608;
+    VOID *reserved609;
+    VOID *reserved610;
+    VOID *reserved611;
+    VOID *reserved612;
+    VOID *reserved613;
+    VOID *reserved614;
+    VOID *reserved615;
+    VOID *reserved616;
+    VOID *reserved617;
+    VOID *reserved618;
+    VOID *reserved619;
+    VOID *reserved620;
+    VOID *reserved621;
+    VOID *reserved622;
+    VOID *reserved623;
+    VOID *reserved624;
+    VOID *reserved625;
+    VOID *reserved626;
+    VOID *reserved627;
+    VOID *reserved628;
+    VOID *reserved629;
+    void (*tclUnusedStubEntry) _ANSI_ARGS_((void)); /* 630 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -4442,6 +4491,33 @@ extern TclStubs *tclStubsPtr;
 #define TclSetErrorLine \
 	(tclStubsPtr->tclSetErrorLine) /* 606 */
 #endif
+/* Slot 607 is reserved */
+/* Slot 608 is reserved */
+/* Slot 609 is reserved */
+/* Slot 610 is reserved */
+/* Slot 611 is reserved */
+/* Slot 612 is reserved */
+/* Slot 613 is reserved */
+/* Slot 614 is reserved */
+/* Slot 615 is reserved */
+/* Slot 616 is reserved */
+/* Slot 617 is reserved */
+/* Slot 618 is reserved */
+/* Slot 619 is reserved */
+/* Slot 620 is reserved */
+/* Slot 621 is reserved */
+/* Slot 622 is reserved */
+/* Slot 623 is reserved */
+/* Slot 624 is reserved */
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
+/* Slot 627 is reserved */
+/* Slot 628 is reserved */
+/* Slot 629 is reserved */
+#ifndef TclUnusedStubEntry
+#define TclUnusedStubEntry \
+	(tclStubsPtr->tclUnusedStubEntry) /* 630 */
+#endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
@@ -4449,6 +4525,7 @@ extern TclStubs *tclStubsPtr;
 
 #undef TclGetErrorLine
 #undef TclSetErrorLine
+#undef TclUnusedStubEntry
 
 #endif /* _TCLDECLS */
 

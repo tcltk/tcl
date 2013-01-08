@@ -1803,6 +1803,10 @@ declare 606 {
     void TclSetErrorLine(Tcl_Interp *interp, int lineNum)
 }
 
+declare 630 {
+    void TclUnusedStubEntry(void)
+}
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
