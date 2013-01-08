@@ -8341,7 +8341,7 @@ TclNewCallback(
     ExecEnv *eePtr = iPtr->execEnvPtr;
     NRE_stack *this = eePtr->NRStack, *orig;
 
-    if (eePtr->callbackPtr && this &&
+    if (eePtr->callbackPtr &&
             (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
         stackReady:
         return ++eePtr->callbackPtr;
