@@ -170,6 +170,9 @@ TclpDlopen(
     int result;
     Tcl_DString ds;
     const char *nativePath, *nativeFileName = NULL;
+#if TCL_DYLD_USE_DLFCN
+    int dlopenflags = 0;
+#endif /* TCL_DYLD_USE_DLFCN */
 
     /*
      * First try the full path the user gave us. This is particularly
@@ -183,20 +186,28 @@ TclpDlopen(
 
 #if TCL_DYLD_USE_DLFCN
     /*
-     * Use (RTLD_NOW|RTLD_LOCAL) always, see [Bug #3216070]
+     * Use (RTLD_NOW|RTLD_LOCAL) as default, see [Bug #3216070]
      */
 
-    dlHandle = dlopen(nativePath, RTLD_NOW | RTLD_LOCAL);
+    if (flags & TCL_LOAD_GLOBAL) {
+    	dlopenflags |= RTLD_GLOBAL;
+    } else {
+    	dlopenflags |= RTLD_LOCAL;
+    }
+    if (flags & TCL_LOAD_LAZY) {
+    	dlopenflags |= RTLD_LAZY;
+    } else {
+    	dlopenflags |= RTLD_NOW;
+    }
+    dlHandle = dlopen(nativePath, dlopenflags);
     if (!dlHandle) {
 	/*
 	 * Let the OS loader examine the binary search path for whatever string
 	 * the user gave us which hopefully refers to a file on the binary
 	 * path.
-	 *
-	 * Use (RTLD_NOW|RTLD_LOCAL) always, see [Bug #3216070]
 	 */
 
-	dlHandle = dlopen(nativeFileName, RTLD_NOW | RTLD_LOCAL);
+	dlHandle = dlopen(nativeFileName, dlopenflags);
 	if (!dlHandle) {
 	    errMsg = dlerror();
 	}
@@ -238,9 +249,10 @@ TclpDlopen(
 		err = NSCreateObjectFileImageFromFile(nativePath,
 			&dyldObjFileImage);
 		if (err == NSObjectFileImageSuccess && dyldObjFileImage) {
-		    module = NSLinkModule(dyldObjFileImage, nativePath,
-			    NSLINKMODULE_OPTION_BINDNOW | NSLINKMODULE_OPTION_PRIVATE
-			    | NSLINKMODULE_OPTION_RETURN_ON_ERROR);
+		    int nsflags = NSLINKMODULE_OPTION_RETURN_ON_ERROR;
+		    if (!(flags & 1)) nsflags |= NSLINKMODULE_OPTION_PRIVATE;
+		    if (!(flags & 2)) nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+		    module = NSLinkModule(dyldObjFileImage, nativePath, nsflags);
 		    NSDestroyObjectFileImage(dyldObjFileImage);
 		    if (module) {
 			modulePtr = ckalloc(sizeof(Tcl_DyldModuleHandle));
@@ -565,6 +577,7 @@ TclpLoadMemory(
     Tcl_DyldModuleHandle *modulePtr;
     NSModule module;
     const char *objFileImageErrMsg = NULL;
+    int nsflags = NSLINKMODULE_OPTION_RETURN_ON_ERROR;
 
     /*
      * Try to create an object file image that we can load from.
@@ -649,7 +662,7 @@ TclpLoadMemory(
 	vm_deallocate(mach_task_self(), (vm_address_t) buffer, size);
 	if (objFileImageErrMsg != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "NSCreateObjectFileImageFromMemory() error: ",
+		    "NSCreateObjectFileImageFromMemory() error: %s",
 		    objFileImageErrMsg));
 	}
 	return TCL_ERROR;
@@ -659,9 +672,9 @@ TclpLoadMemory(
      * Extract the module we want from the image of the object file.
      */
 
-    module = NSLinkModule(dyldObjFileImage, "[Memory Based Bundle]",
-	    NSLINKMODULE_OPTION_BINDNOW | NSLINKMODULE_OPTION_PRIVATE
-	    | NSLINKMODULE_OPTION_RETURN_ON_ERROR);
+    if (!(flags & 1)) nsflags |= NSLINKMODULE_OPTION_PRIVATE;
+    if (!(flags & 2)) nsflags |= NSLINKMODULE_OPTION_BINDNOW;
+    module = NSLinkModule(dyldObjFileImage, "[Memory Based Bundle]", nsflags);
     NSDestroyObjectFileImage(dyldObjFileImage);
     if (!module) {
 	NSLinkEditErrors editError;

@@ -836,6 +836,34 @@ TclSubstCompile(
 	    TclEmitPush(literal, envPtr);
 	    count++;
 	    continue;
+	case TCL_TOKEN_VARIABLE:
+	    /*
+	     * Check for simple variable access; see if we can only generate
+	     * TCL_OK or TCL_ERROR from the substituted variable read; if so,
+	     * there is no need to generate elaborate exception-management
+	     * code. Note that the first component of TCL_TOKEN_VARIABLE is
+	     * always TCL_TOKEN_TEXT...
+	     */
+
+	    if (tokenPtr->numComponents > 1) {
+		int i, foundCommand = 0;
+
+		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
+		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
+			foundCommand = 1;
+			break;
+		    }
+		}
+		if (foundCommand) {
+		    break;
+		}
+	    }
+
+	    envPtr->line = bline;
+	    TclCompileVarSubst(interp, tokenPtr, envPtr);
+	    bline = envPtr->line;
+	    count++;
+	    continue;
 	}
 
 	while (count > 255) {
@@ -1224,12 +1252,7 @@ TclCompileSwitchCmd(
 	    if (TCL_OK != TclFindElement(NULL, bytes, numBytes,
 		    &(bodyTokenArray[numWords].start), &bytes,
 		    &(bodyTokenArray[numWords].size), &literal) || !literal) {
-	    abort:
-		ckfree((char *) bodyToken);
-		ckfree((char *) bodyTokenArray);
-		ckfree((char *) bodyLines);
-		ckfree((char *) bodyContLines);
-		return TCL_ERROR;
+		goto abort;
 	    }
 
 	    bodyTokenArray[numWords].type = TCL_TOKEN_TEXT;
@@ -1254,7 +1277,12 @@ TclCompileSwitchCmd(
 	    numWords++;
 	}
 	if (numWords % 2) {
-	    goto abort;
+	abort:
+	    ckfree((char *) bodyToken);
+	    ckfree((char *) bodyTokenArray);
+	    ckfree((char *) bodyLines);
+	    ckfree((char *) bodyContLines);
+	    return TCL_ERROR;
 	}
     } else if (numWords % 2 || numWords == 0) {
 	/*
@@ -2709,7 +2737,7 @@ TclCompileUnsetCmd(
     flags = 1;
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     leadingWord = Tcl_NewObj();
-    if (TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
+    if (numWords > 0 && TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
 	int len;
 	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
 
