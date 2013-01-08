@@ -16,26 +16,10 @@
 #include <mach/mach_time.h>
 #endif
 
-#define TM_YEAR_BASE 1900
-#define IsLeapYear(x)	(((x)%4 == 0) && ((x)%100 != 0 || (x)%400 == 0))
-
-/*
- * If we fall back on the thread-unsafe versions of gmtime and localtime, use
- * this mutex to try to protect them.
- */
-
-TCL_DECLARE_MUTEX(tmMutex)
-
-static char *lastTZ = NULL;	/* Holds the last setting of the TZ
-				 * environment variable, or an empty string if
-				 * the variable was not set. */
-
 /*
  * Static functions declared in this file.
  */
 
-static void		SetTZIfNecessary(void);
-static void		CleanupMemory(ClientData clientData);
 static void		NativeScaleTime(Tcl_Time *timebuf,
 			    ClientData clientData);
 static void		NativeGetTime(Tcl_Time *timebuf,
@@ -349,70 +333,6 @@ NativeGetTime(
     (void) gettimeofday(&tv, NULL);
     timePtr->sec = tv.tv_sec;
     timePtr->usec = tv.tv_usec;
-}
-/*
- *----------------------------------------------------------------------
- *
- * SetTZIfNecessary --
- *
- *	Determines whether a call to 'tzset' is needed prior to the next call
- *	to 'localtime' or examination of the 'timezone' variable.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If 'tzset' has never been called in the current process, or if the
- *	value of the environment variable TZ has changed since the last call
- *	to 'tzset', then 'tzset' is called again.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-SetTZIfNecessary(void)
-{
-    const char *newTZ = getenv("TZ");
-
-    Tcl_MutexLock(&tmMutex);
-    if (newTZ == NULL) {
-	newTZ = "";
-    }
-    if (lastTZ == NULL || strcmp(lastTZ, newTZ)) {
-	tzset();
-	if (lastTZ == NULL) {
-	    Tcl_CreateExitHandler(CleanupMemory, NULL);
-	} else {
-	    Tcl_Free(lastTZ);
-	}
-	lastTZ = ckalloc(strlen(newTZ) + 1);
-	strcpy(lastTZ, newTZ);
-    }
-    Tcl_MutexUnlock(&tmMutex);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CleanupMemory --
- *
- *	Releases the private copy of the TZ environment variable upon exit
- *	from Tcl.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Frees allocated memory.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-CleanupMemory(
-    ClientData ignored)
-{
-    ckfree(lastTZ);
 }
 
 /*
