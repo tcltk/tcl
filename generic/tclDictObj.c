@@ -488,7 +488,7 @@ UpdateStringOfDict(
     Tcl_Obj *dictPtr)
 {
 #define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
+    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
     Dict *dict = dictPtr->internalRep.otherValuePtr;
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
@@ -520,7 +520,7 @@ UpdateStringOfDict(
     } else if (numElems > maxFlags) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
-	flagPtr = ckalloc(numElems * sizeof(int));
+	flagPtr = ckalloc(numElems * sizeof(char));
     }
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	/*
