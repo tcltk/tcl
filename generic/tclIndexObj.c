@@ -302,10 +302,6 @@ Tcl_GetIndexFromObjStruct(
 	    entryPtr = NEXT_ENTRY(entryPtr, offset), idx++) {
 	for (p1 = key, p2 = *entryPtr; *p1 == *p2; p1++, p2++) {
 	    if (*p1 == '\0') {
-		if (p1 == key) {
-		    /* empty keys never match */
-		    continue;
-		}
 		index = idx;
 		goto done;
 	    }
@@ -537,9 +533,9 @@ TclInitPrefixCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap prefixImplMap[] = {
-	{"all",		PrefixAllObjCmd, NULL, NULL, NULL, 0},
-	{"longest",	PrefixLongestObjCmd, NULL, NULL, NULL, 0},
-	{"match",	PrefixMatchObjCmd, NULL, NULL, NULL, 0},
+	{"all",	    PrefixAllObjCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"longest", PrefixLongestObjCmd,TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"match",   PrefixMatchObjCmd,	TclCompileBasicMin2ArgCmd, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
     Tcl_Command prefixCmd;

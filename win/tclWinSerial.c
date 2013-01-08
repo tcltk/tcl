@@ -376,7 +376,7 @@ SerialGetMilliseconds(void)
 {
     Tcl_Time time;
 
-    TclpGetTime(&time);
+    Tcl_GetTime(&time);
 
     return (time.sec * 1000 + time.usec / 1000);
 }
