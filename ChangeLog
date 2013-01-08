@@ -1,3 +1,9 @@
+2013-01-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3092089]: [file normalize] can remove path
+	components.	[Bug 3587096] win vista/7: "can't find init.tcl" when
+	called via junction.
+
 2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclOOStubLib.c: Restrict the stub library to only use
