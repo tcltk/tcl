@@ -3045,8 +3045,8 @@ TEBCresume(
 	pc += 6;
 	TEBC_YIELD();
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	return TclNREvalObjEx(interp, objPtr, (TCL_EVAL_INVOKE|TCL_EVAL_REDIRECT),
-		NULL, INT_MIN);
+	iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
 
     /*
      * -----------------------------------------------------------------

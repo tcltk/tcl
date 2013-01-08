@@ -4182,7 +4182,11 @@ TclNREvalObjv(
     }
     cmdPtrPtr = (Command **) &(callbackPtr->data[0]);
 
-    callbackPtr->data[1] = INT2PTR((flags & TCL_EVAL_REDIRECT) != 0);
+
+    if (iPtr->evalFlags & TCL_EVAL_REDIRECT) {
+        callbackPtr->data[1] = INT2PTR(1);
+        iPtr->evalFlags &= ~TCL_EVAL_REDIRECT;
+    }
     callbackPtr->data[2] = INT2PTR(objc);
     callbackPtr->data[3] = (ClientData) objv;
 
@@ -4637,8 +4641,8 @@ TEOV_NotFound(
     TclDeferCallbacks(interp);
     TclNRAddCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
 	    newObjv, savedNsPtr, NULL);
-    return TclNREvalObjv(interp, newObjc, newObjv, (TCL_EVAL_NOERR|TCL_EVAL_REDIRECT),
-            NULL);
+    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+    return TclNREvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR, NULL);
 }
 
 static int

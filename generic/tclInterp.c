@@ -1754,7 +1754,7 @@ AliasNRCmd(
     int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
     Tcl_Obj *listPtr;
     List *listRep;
-    int flags = (TCL_EVAL_INVOKE|TCL_EVAL_REDIRECT);
+    int flags = TCL_EVAL_INVOKE;
 
     /*
      * Append the arguments to the command prefix and invoke the command in
@@ -1801,6 +1801,7 @@ AliasNRCmd(
 	TclDeferCallbacks(interp);
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
+    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     return Tcl_NREvalObj(interp, listPtr, flags);
 }
 
