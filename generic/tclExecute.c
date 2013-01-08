@@ -889,6 +889,8 @@ TclCreateExecEnv(
     }
     Tcl_MutexUnlock(&execMutex);
 
+    INIT_STACK(interp);
+
     return eePtr;
 }
 
