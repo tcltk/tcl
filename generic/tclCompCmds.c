@@ -3017,7 +3017,7 @@ TclCompileFormatCmd(
      * after our attempt to spot a literal).
      */
 
-    for (; --i>=0 ;) {
+    for (; i>=0 ; i--) {
 	Tcl_DecrRefCount(objv[i]);
     }
     ckfree(objv);
@@ -5694,7 +5694,7 @@ TclCompileVariableCmd(
      */
 
     valueTokenPtr = parsePtr->tokenPtr;
-    for (i=2; i<=numWords; i+=2) {
+    for (i=1; i<numWords; i+=2) {
 	varTokenPtr = TokenAfter(valueTokenPtr);
 	valueTokenPtr = TokenAfter(varTokenPtr);
 
@@ -5707,7 +5707,7 @@ TclCompileVariableCmd(
 	CompileWord(envPtr, varTokenPtr, interp);
 	TclEmitInstInt4(	INST_VARIABLE, localIndex,	envPtr);
 
-	if (i != numWords) {
+	if (i+1 < numWords) {
 	    /*
 	     * A value has been given: set the variable, pop the value
 	     */

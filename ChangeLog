@@ -1,3 +1,52 @@
+2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclOOStubLib.c: Restrict the stub library to only use
+	* generic/tclTomMathStubLib.c: Tcl_PkgRequireEx, Tcl_ResetResult
+	and Tcl_AppendResult, not any other function. This puts least
+	restrictions on eventual Tcl 9 stubs re-organization, and it
+	works on the widest range of Tcl versions.
+
+2013-01-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/http/http.tcl: Don't depend on Spencer-specific regexp
+	* tests/env.test: syntax (/u and /U) any more in unrelated places.
+	* tests/exec.test:
+	Bump http package to 2.8.6.
+
+2013-01-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclEnsemble.c (CompileBasicNArgCommand): Added very simple
+	compiler (which just compiles to a normal invoke of the implementation
+	command) for many ensemble subcommands where we can prove that there
+	is no way for scripts to detect the difference even through error
+	handling or [info level]/[info frame]. This improves the code produced
+	from some ensembles (e.g., [info], [string]) to the point where the
+	ensemble is now not normally seen at the bytecode level at all.
+
+2013-01-04  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclInt.h:      Insure that PURIFY builds cannot exploit the
+	* generic/tclExecute.c:  Tcl stack to hide mem defects.
+
+2013-01-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/fconfigure.n, doc/CrtChannel.3: Updated to reflect the fact that
+	the minimum buffer size is one byte, not ten. Identified by Schelte
+	Bron on the Tcler's Chat.
+
+	* generic/tclExecute.c (TEBCresume:INST_INVOKE_REPLACE):
+	* generic/tclEnsemble.c (TclCompileEnsemble): Added new mechanism to
+	allow for more efficient dispatch of non-bytecode-compiled subcommands
+	of bytecode-compiled ensembles. This can provide substantial speed
+	benefits in some cases.
+
+2013-01-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclEnsemble.c:  Remove stray calls to Tcl_Alloc and friends:
+	* generic/tclExecute.c:   the core should only use ckalloc to allow
+	* generic/tclIORTrans.c:  MEM_DEBUG to work properly.
+	* generic/tclTomMathInterface.c:
+
 2012-12-31  Donal K. Fellows  <dkf@users.sf.net>
 
 	* doc/string.n: Noted the obsolescence of the 'bytelength',
@@ -7,7 +56,7 @@
 2012-12-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclListObj.c: [Bug 3598580]: Tcl_ListObjReplace may release
-	deleted elements too early
+	deleted elements too early.
 
 2012-12-22  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
@@ -17,8 +66,8 @@
 2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/dltest/pkgb.c:  Inline compat Tcl_GetDefaultEncodingDir.
-	* generic/tclStubLib.c: Eliminate unnecessary static HasStubSupport() and
-	isDigit() functions, just do the same inline.
+	* generic/tclStubLib.c: Eliminate unnecessary static HasStubSupport()
+	and isDigit() functions, just do the same inline.
 
 2012-12-18  Donal K. Fellows  <dkf@users.sf.net>
 
