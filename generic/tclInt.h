@@ -1154,8 +1154,7 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    Tcl_Obj *tailcallPtr;
-				/* NULL if no tailcall is scheduled */
+    Tcl_Obj *tailcallPtr;       /* NULL if no tailcall is scheduled for this CF*/
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
@@ -2139,12 +2138,8 @@ typedef struct Interp {
 				 * and setup. */
 
     struct NRE_callback *deferredCallbacks;
-				/* Callbacks that are set previous to a call
-				 * to some Eval function but that actually
-				 * belong to the command that is about to be
-				 * called - i.e., they should be run *before*
-				 * any tailcall is invoked. */
-
+                                /* First callback deferred for the next
+				 * call to EvalObjv */
     /*
      * TIP #285, Script cancellation support.
      */
@@ -2806,10 +2801,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
-MODULE_SCOPE void  TclDeferCallback(Tcl_Interp *interp,
-	               Tcl_NRPostProc postProcPtr,
-                       ClientData data0, ClientData data1,
-                       ClientData data2, ClientData data3);
+MODULE_SCOPE void  TclDeferCallbacks(Tcl_Interp *interp);
 
 /*
  * This structure holds the data for the various iteration callbacks used to
@@ -4778,7 +4770,7 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  */
 
 #define NRE_ENABLE_ASSERTS	1
-#define NRE_STACK_DEBUG         1
+#define NRE_STACK_DEBUG         0
 
 /*
  * This is the main data struct for representing NR commands. It is designed
@@ -4832,6 +4824,8 @@ typedef struct NRE_callback {
 #define FREE_CB(interp, ptr)			\
     ckfree((char *) (ptr))
 
+#define NEXT_CB(ptr)  (ptr)->nextPtr
+
 #else /* not debugging the NRE stack */
 
 #define NRE_STACK_SIZE 100000
@@ -4855,8 +4849,11 @@ typedef struct NRE_stack {
 
 #define FREE_CB(interp, cbPtr)
 
+#define NEXT_CB(ptr) TclNextCallback(ptr)
+
 MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
 MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);
+MODULE_SCOPE NRE_callback *TclNextCallback(NRE_callback *ptr);
 MODULE_SCOPE Tcl_NRPostProc TclNRStackBottom;
 
 #endif
