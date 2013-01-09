@@ -1509,9 +1509,12 @@ Tcl_Merge(
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	bytesNeeded += TclScanElement(argv[i], -1, &flagPtr[i]);
-	if ((bytesNeeded < 0) || (bytesNeeded > INT_MAX - argc + 1)) {
+	if (bytesNeeded < 0) {
 	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
 	}
+    }
+    if (bytesNeeded > INT_MAX - argc + 1) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
     bytesNeeded += argc;
 
