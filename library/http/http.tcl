@@ -981,7 +981,7 @@ proc http::Event {sock token} {
 	} elseif {$n == 0} {
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
-	    if {$state(http) == "" || [lindex $state(http) 1] == 100} {
+	    if {$state(http) == "" || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)} {
 		return
 	    }
 
