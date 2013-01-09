@@ -298,7 +298,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
-	tclLink.o tclListObj.o \
+	tclLink.o tclList.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
 	tclObj.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
@@ -421,6 +421,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclIORChan.c \
 	$(GENERIC_DIR)/tclIORTrans.c \
 	$(GENERIC_DIR)/tclLink.c \
+	$(GENERIC_DIR)/tclList.c \
 	$(GENERIC_DIR)/tclListObj.c \
 	$(GENERIC_DIR)/tclLiteral.c \
 	$(GENERIC_DIR)/tclLoad.c \
@@ -1130,6 +1131,9 @@ tclIORTrans.o: $(GENERIC_DIR)/tclIORTrans.c $(IOHDR)
 
 tclLink.o: $(GENERIC_DIR)/tclLink.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLink.c
+
+tclList.o: $(GENERIC_DIR)/tclList.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclList.c
 
 tclListObj.o: $(GENERIC_DIR)/tclListObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
