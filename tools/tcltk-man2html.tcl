@@ -148,6 +148,7 @@ proc parse_command_line {} {
 	# Use default packages dir.
 	set pkgsDir [file join $tcltkdir $tcldir pkgs]
     }
+    set pkgsDir [file normalize $pkgsDir] 
     puts "using Packages source directory $pkgsDir"
 
     puts "verbose messages are [expr {$verbose ? {on} : {off}}]"
@@ -474,10 +475,10 @@ proc plus-pkgs {type args} {
     if {!$build_tcl} return
     set result {}
     foreach {dir name version} $args {
-	set globpat $pkgsDir/$dir/doc/*.$type
+	set globpat [file join $pkgsDir $dir doc *.$type]
 	if {![llength [glob -type f -nocomplain $globpat]]} {
 	    # Fallback for manpages generated using doctools
-	    set globpat $pkgsDir/$dir/doc/man/*.$type
+	    set globpat [file join $pkgsDir $dir doc man *.$type]
 	    if {![llength [glob -type f -nocomplain $globpat]]} {
 		continue
 	    }
