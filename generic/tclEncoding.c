@@ -1411,7 +1411,7 @@ Tcl_UtfToExternal(
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_FindExecutable --
+ * Tcl_InitSubsystems/Tcl_FindExecutable --
  *
  *	This function computes the absolute path name of the current
  *	application, given its argv[0] value.
@@ -1425,6 +1425,64 @@ Tcl_UtfToExternal(
  *
  *---------------------------------------------------------------------------
  */
+MODULE_SCOPE const TclStubs tclStubs;
+
+/* Dummy const structure returned by Tcl_InitSubsystems,
+ * which looks like an Tcl_Interp, but in reality is not.
+ * It contains just enough for Tcl_InitStubs to be able
+ * to initialize the stub table. */
+static const struct {
+    const char *version; /* a real interpreter has interp->result here. */
+    void (*unused2) (void); /* a real interpreter has interp->freeProc here. */
+    int magic; /* a real interpreter has interp->errorLine here. */
+    const struct TclStubs *stubTable;
+} dummyInterp = {
+    TCL_PATCH_LEVEL, 0, TCL_STUB_MAGIC, &tclStubs
+};
+
+Tcl_Interp *
+Tcl_InitSubsystems(int flags, ...)
+{
+    va_list argList;
+
+    int argc = 0;
+    char **argv = NULL;
+
+    va_start(argList, flags);
+    if (flags & TCL_INIT_PANIC) {
+	Tcl_SetPanicProc(va_arg(argList, Tcl_PanicProc *));
+    }
+    if (flags & TCL_INIT_CREATE) {
+	argc = va_arg(argList, int);
+	argv = va_arg(argList, char **);
+    }
+    va_end (argList);
+
+    TclInitSubsystems();
+    TclpSetInitialEncodings();
+    TclpFindExecutable(argv ? argv[0] : NULL);
+    if (flags & TCL_INIT_CREATE) {
+	Tcl_Interp *interp = Tcl_CreateInterp();
+	if (argc > 0) {
+	    Tcl_Obj *argvPtr;
+	    argc--;
+	    argv++;
+
+	    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+	    argvPtr = Tcl_NewListObj(argc, NULL);
+	    while (argc--) {
+		Tcl_DString ds;
+
+		Tcl_ExternalToUtfDString(NULL, *argv++, -1, &ds);
+		Tcl_ListObjAppendElement(NULL, argvPtr, TclDStringToObj(&ds));
+	    }
+	    Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
+	}
+	return interp;
+    }
+    return (Tcl_Interp *) &dummyInterp;
+}
+
 #undef Tcl_FindExecutable
 void
 Tcl_FindExecutable(

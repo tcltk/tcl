@@ -8,7 +8,7 @@
 .TH Tcl_FindExecutable 3 8.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_FindExecutable, Tcl_GetNameOfExecutable \- identify or return the name of the binary file containing the application
+Tcl_FindExecutable, Tcl_GetNameOfExecutable, Tcl_InitSubsystems \- identify or return the name of the binary file containing the application
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -18,11 +18,18 @@ void
 .sp
 const char *
 \fBTcl_GetNameOfExecutable\fR()
+.sp
+Tcl_Interp *
+\fBTcl_InitSubsystems\fR(\fIflags\fR, \fI...\fR)
 .SH ARGUMENTS
 .AS char *argv0
 .AP char *argv0 in
 The first command-line argument to the program, which gives the
 application's name.
+.AP int flags in
+Any combination of TCL_INIT_PANIC or TCL_INIT_CREATE, which indicate
+whether a custom panicProc is registered and/or a real interpreter is created.
+The value 0 can be used if Tcl is used as utility library only.
 .BE
 
 .SH DESCRIPTION
@@ -58,6 +65,49 @@ internal full path name of the executable file as computed by
 equivalent to the \fBinfo nameofexecutable\fR command.  NULL
 is returned if the internal full path name has not been
 computed or unknown.
-
+.PP
+The \fBTcl_InitSubsystems\fR can be used as alternative to
+\fBTcl_FindExecutable\fR, when more flexibility is required.
+Its flags control exactly what is initialized.
+.PP
+The call \fBTcl_InitSubsystems(0)\fR does the same as
+\fBTcl_FindExecutable(NULL)\fR, except that a Tcl_Interp *
+is returned which can be used only by \fBTcl_InitStubs\fR
+to initialize the stub table. This opens up the Tcl Stub
+technology for Tcl embedders, which now can dynamically
+load the Tcl shared library and use functions in it
+without ever creating an interpreter. E.g. the
+following code can be compiled with -DUSE_TCL_STUBS:
+.CS
+    handle = dlopen("libtcl8.6.so", RTLD_NOW|RTLD_LOCAL);
+    initSubSystems = dlsym(handle, "Tcl_InitSubsystems");
+    interp = initSubSystems(0); /* not a real interpreter */
+    Tcl_InitStubs(interp, NULL, 0); /* initialize the stub table */
+    interp = Tcl_CreateInterp(); /* now we have a real interpreter */
+.CE
+The function \fBTcl_CreateInterp\fR, or any other Tcl function you
+would like to call, no longer needs to be searched for in the
+shared library. It can be called directly though the stub table. 
+.PP
+If you supply the flag TCL_INIT_PANIC to \fBTcl_InitSubsystems\fR,
+the function expects an additional argument, a custom panicProc.
+This is equivalent to calling \fBTcl_SetPanicProc\fR immediately
+before \fBTcl_InitSubsystems\fR.
+.PP
+If you supply the flag TCL_INIT_CREATE to \fBTcl_InitSubsystems\fR,
+the function gets two additional parameters, argc and argv. A real
+Tcl interpreter will be created and if argc > 0 then the variables
+"argc" and "argv" will be set in this interpreter. So, the above
+example code could be simplified to:
+.CS
+    handle = dlopen("libtcl8.6.so", RTLD_NOW|RTLD_LOCAL);
+    initSubSystems = dlsym(handle, "Tcl_InitSubsystems");
+    interp = initSubSystems(TCL_INIT_CREATE, 0, NULL); /* real interpreter */
+    Tcl_InitStubs(interp, NULL, 0); /* initialize the stub table */
+.CE
+.PP
+The interpreter returned by Tcl_InitSubsystems(0) cannot be passed to
+any other function than Tcl_InitStubs(). Tcl functions with an "interp"
+argument can only be called if this function supports passing NULL.
 .SH KEYWORDS
 binary, executable file
