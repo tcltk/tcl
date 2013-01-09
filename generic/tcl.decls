@@ -310,11 +310,11 @@ declare 83 {
     char *Tcl_Concat(int argc, const char *const *argv)
 }
 declare 84 {
-    int Tcl_ConvertElement(const char *src, char *dst, char flags)
+    int Tcl_ConvertElement(const char *src, char *dst, int flags)
 }
 declare 85 {
     int Tcl_ConvertCountedElement(const char *src, int length, char *dst,
-	    char flags)
+	    int flags)
 }
 declare 86 {
     int Tcl_CreateAlias(Tcl_Interp *slave, const char *slaveCmd,
@@ -778,10 +778,10 @@ declare 217 {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
 declare 218 {
-    int Tcl_ScanElement(const char *src, char *flagPtr)
+    int Tcl_ScanElement(const char *src, int *flagPtr)
 }
 declare 219 {
-    int Tcl_ScanCountedElement(const char *src, int length, char *flagPtr)
+    int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
 # Removed in Tcl 9
 #declare 220 {
