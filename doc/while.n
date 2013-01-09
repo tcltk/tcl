@@ -63,3 +63,6 @@ set lineCount 0
 break(n), continue(n), for(n), foreach(n)
 .SH KEYWORDS
 boolean, loop, test, while
+
+.SH CATEGORY
+Tcl Control Constructs

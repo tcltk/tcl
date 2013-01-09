@@ -561,6 +561,8 @@ eval(n), library(n), tclsh(1), tkvars(n), wish(1)
 .SH KEYWORDS
 arithmetic, bytecode, compiler, error, environment, POSIX, precision,
 subprocess, user, variables
+.SH CATEGORY
+Predefined variables
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

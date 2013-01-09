@@ -379,6 +379,8 @@ The message catalog code was developed by Mark Harrison.
 format(n), scan(n), namespace(n), package(n)
 .SH KEYWORDS
 internationalization, i18n, localization, l10n, message, text, translation
+.SH CATEGORY
+Tcl Library Procedures
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

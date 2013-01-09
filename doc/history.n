@@ -100,3 +100,6 @@ the \fBevent\fR operation to retrieve some event,
 and the \fBadd\fR operation to add it to history and execute it.
 .SH KEYWORDS
 event, history, record
+
+.SH CATEGORY
+Tcl Interpreter Routines

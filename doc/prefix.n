@@ -111,6 +111,8 @@ switch [\fBprefix match\fR {apa bepa cepa} $arg] {
 lsearch(n), namespace(n), string(n), Tcl_GetIndexFromObj(3)
 .SH "KEYWORDS"
 prefix, table lookup
+.SH CATEGORY
+Tcl String Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

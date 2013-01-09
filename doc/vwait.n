@@ -240,6 +240,8 @@ coroutine task-3 eval {
 global(n), update(n)
 .SH KEYWORDS
 asynchronous I/O, event, variable, wait
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

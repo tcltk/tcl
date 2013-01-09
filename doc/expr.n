@@ -464,6 +464,8 @@ array(n), for(n), if(n), mathfunc(n), mathop(n), namespace(n), proc(n),
 string(n), Tcl(n), while(n)
 .SH KEYWORDS
 arithmetic, boolean, compare, expression, fuzzy comparison
+.SH CATEGORY
+General
 .SH COPYRIGHT
 .nf
 Copyright (c) 1993 The Regents of the University of California.

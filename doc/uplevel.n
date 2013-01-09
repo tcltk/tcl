@@ -98,6 +98,8 @@ proc do {body while condition} {
 apply(n), namespace(n), upvar(n)
 .SH KEYWORDS
 context, level, namespace, stack frame, variable
+.SH CATEGORY
+Tcl Control Constructs
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

@@ -303,6 +303,8 @@ package(n), Tcl Improvement Proposal #189
 (online at http://tip.tcl.tk/190.html)
 .SH "KEYWORDS"
 modules, package
+.SH CATEGORY
+Tcl Packages and Source files
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

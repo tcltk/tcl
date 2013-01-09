@@ -203,6 +203,8 @@ characters) in a string, and is useful as a more powerful version of the
 re_syntax(n), regsub(n), string(n)
 .SH KEYWORDS
 match, parsing, pattern, regular expression, splitting, string
+.SH CATEGORY
+Tcl String Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

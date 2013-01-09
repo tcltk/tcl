@@ -51,6 +51,8 @@ lrepeat(n),
 lreplace(n), lsearch(n), lset(n), lsort(n)
 .SH KEYWORDS
 element, list, quoting
+.SH CATEGORY
+Tcl List Handling
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

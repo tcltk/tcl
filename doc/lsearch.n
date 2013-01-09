@@ -215,6 +215,8 @@ string(n)
 .SH KEYWORDS
 binary search, linear search,
 list, match, pattern, regular expression, search, string
+.SH CATEGORY
+Tcl List Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

@@ -59,3 +59,6 @@ while {1} {
 file(n), open(n), close(n), fblocked(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 channel, end of file
+
+.SH CATEGORY
+Tcl Input/Output

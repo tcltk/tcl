@@ -117,6 +117,8 @@ proc decr {varName {decrement 1}} {
 global(n), namespace(n), uplevel(n), variable(n)
 .SH KEYWORDS
 context, frame, global, level, namespace, procedure, upvar, variable
+.SH CATEGORY
+Tcl Variables and Procedures
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

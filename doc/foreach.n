@@ -102,3 +102,6 @@ for(n), while(n), break(n), continue(n)
 
 .SH KEYWORDS
 foreach, iteration, list, loop
+
+.SH CATEGORY
+Tcl Control Constructs

@@ -65,6 +65,8 @@ file(n), eof(n), fblocked(n), Tcl_StandardChannels(3)
 
 .SH KEYWORDS
 blocking, channel, end of file, end of line, line, non-blocking, read
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

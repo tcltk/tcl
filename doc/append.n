@@ -44,6 +44,9 @@ puts $var
 concat(n), lappend(n)
 .SH KEYWORDS
 append, variable
+.SH CATEGORY
+Tcl String Handling
 '\" Local Variables:
 '\" mode: nroff
+'\" End:
 '\" End:

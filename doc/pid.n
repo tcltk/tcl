@@ -46,3 +46,6 @@ exec(n), open(n)
 
 .SH KEYWORDS
 file, pipeline, process identifier
+
+.SH CATEGORY
+Tcl System Related

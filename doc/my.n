@@ -50,6 +50,8 @@ next(n), oo::object(n), self(n)
 .SH KEYWORDS
 method, method visibility, object, private method, public method
 
+.SH CATEGORY
+Tcl Object Orientation
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

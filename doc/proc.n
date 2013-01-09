@@ -105,6 +105,8 @@ defaults to \fB2\fR:
 info(n), unknown(n)
 .SH KEYWORDS
 argument, procedure
+.SH CATEGORY
+Tcl Variables and Procedures
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

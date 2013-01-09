@@ -234,6 +234,15 @@ proc css-stylesheet {} {
     css-style h4 {
 	font-size: 11px;
     }
+    css-style ul.multicolumn {
+	column-fill: balance;
+	column-count: 3;
+	-moz-column-count: 3;
+	-webkit-column-count: 3;
+        column-gap: 20px;
+	-moz-column-gap: 20px;
+	-webkit-column-gap: 20px;
+    }
     css-style ".keylist dt" ".arguments dt" {
 	width: 20em;
 	float: left;

@@ -98,6 +98,8 @@ Handle different reasons for a file to not be openable for reading:
 catch(n), error(n), return(n), throw(n)
 .SH "KEYWORDS"
 cleanup, error, exception, final, resource management
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

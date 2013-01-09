@@ -63,6 +63,8 @@ proc printList2 {theList} {
 apply(n), proc(n), uplevel(n)
 .SH KEYWORDS
 call, recursion, tail recursion
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

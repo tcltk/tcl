@@ -63,3 +63,6 @@ while {!$done} {
 after(n), interp(n)
 .SH KEYWORDS
 asynchronous I/O, event, flush, handler, idle, update
+
+.SH CATEGORY
+Tcl Control Constructs

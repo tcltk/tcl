@@ -421,6 +421,8 @@ x
 set(n), unset(n)
 .SH KEYWORDS
 read, command, rename, variable, write, trace, unset
+.SH CATEGORY
+Tcl Variables and Procedures
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

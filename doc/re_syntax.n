@@ -829,6 +829,8 @@ respectively; no other escapes are available.
 RegExp(3), regexp(n), regsub(n), lsearch(n), switch(n), text(n)
 .SH KEYWORDS
 match, regular expression, string
+.SH CATEGORY
+Tcl String Handling
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

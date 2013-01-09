@@ -118,6 +118,8 @@ documentation for the \fBreturn\fR command.
 break(n), continue(n), dict(n), error(n), info(n), return(n), tclvars(n)
 .SH KEYWORDS
 catch, error, exception
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

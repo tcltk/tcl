@@ -365,6 +365,8 @@ if {[catch {\fBpackage require\fR Snack}]} {
 msgcat(n), packagens(n), pkgMkIndex(n)
 .SH KEYWORDS
 package, version
+.SH CATEGORY
+Tcl Packages and Source files
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

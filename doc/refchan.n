@@ -406,6 +406,8 @@ puts [read $ch];   # Prints just the last word
 chan(n), transchan(n)
 .SH KEYWORDS
 API, channel, ensemble, prefix, reflection
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

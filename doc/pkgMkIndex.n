@@ -228,6 +228,8 @@ the binary file may mask the package defined by the scripts.
 package(n)
 .SH KEYWORDS
 auto-load, index, package, version
+.SH CATEGORY
+Tcl Packages and Source files
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

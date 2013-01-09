@@ -29,6 +29,8 @@ list(n), lsearch(n), lsort(n)
 
 .SH KEYWORDS
 element, list, reverse
+.SH CATEGORY
+Tcl List Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

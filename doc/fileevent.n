@@ -151,3 +151,6 @@ fconfigure(n), gets(n), interp(n), puts(n), read(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 asynchronous I/O, blocking, channel, event handler, nonblocking, readable,
 script, writable.
+
+.SH CATEGORY
+Tcl Input/Output

@@ -269,6 +269,8 @@ list(n), lappend(n), lindex(n), linsert(n), llength(n), lsearch(n),
 lset(n), lrange(n), lreplace(n)
 .SH KEYWORDS
 element, list, order, sort
+.SH CATEGORY
+Tcl List Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

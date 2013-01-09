@@ -444,6 +444,8 @@ expr(n), list(n)
 .SH KEYWORDS
 case conversion, compare, index, match, pattern, string, word, equal,
 ctype, character, reverse
+.SH CATEGORY
+Tcl String Handling
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

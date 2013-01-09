@@ -284,6 +284,8 @@ Tcl_StandardChannels(3)
 blocking, buffering, carriage return, end of line, flushing, linemode,
 newline, nonblocking, platform, translation, encoding, filter, byte array,
 binary
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

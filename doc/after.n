@@ -146,6 +146,8 @@ doOneStep
 concat(n), interp(n), update(n), vwait(n)
 .SH KEYWORDS
 cancel, delay, idle callback, sleep, time
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

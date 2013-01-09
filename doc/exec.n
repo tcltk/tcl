@@ -511,6 +511,8 @@ file mkdir $secureDir
 error(n), file(n), open(n)
 .SH KEYWORDS
 execute, pipeline, redirection, subprocess
+.SH CATEGORY
+Tcl System Related
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

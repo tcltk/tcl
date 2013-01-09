@@ -197,6 +197,8 @@ puts [demo compute  1 2 3]      \fI\(-> prints "7" after delay\fR
 oo::class(n), oo::define(n), oo::object(n), self(n)
 .SH KEYWORDS
 call, method, method chain
+.SH CATEGORY
+Tcl Object Orientation
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

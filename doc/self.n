@@ -146,6 +146,8 @@ a x     \fI\(-> Obj: {{method x object method} {method x ::c method}} 0\fR
 info(n), next(n)
 .SH KEYWORDS
 call, introspection, object
+.SH CATEGORY
+Tcl Object Orientation
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

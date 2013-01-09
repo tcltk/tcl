@@ -78,6 +78,8 @@ set var [linsert $var 0 {*}$args]
 catch(n), concat(n), error(n), interp(n), list(n), namespace(n), subst(n), tclvars(n), uplevel(n)
 .SH KEYWORDS
 concatenate, evaluate, script
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

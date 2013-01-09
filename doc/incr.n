@@ -59,3 +59,6 @@ an error if it is not):
 expr(n), set(n)
 .SH KEYWORDS
 add, increment, variable, value
+
+.SH CATEGORY
+Tcl Variables and Procedures

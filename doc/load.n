@@ -191,6 +191,8 @@ foo
 info sharedlibextension, package(n), Tcl_StaticPackage(3), safe(n)
 .SH KEYWORDS
 binary code, dynamic library, load, safe interpreter, shared library
+.SH CATEGORY
+Tcl Packages and Source files
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

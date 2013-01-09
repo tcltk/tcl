@@ -37,3 +37,6 @@ cd $savedDir
 file(n), cd(n), glob(n), filename(n)
 .SH KEYWORDS
 working directory
+
+.SH CATEGORY
+Tcl System Related

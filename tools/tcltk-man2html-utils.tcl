@@ -635,6 +635,8 @@ proc output-name {line} {
 	}
 	lappend manual(wing-toc) $name
 	lappend manual(name-$name) $manual(wing-file)/$manual(name)
+	set manual(descrip-$name) $tail
+	set manual(cat-master-$name) $manual(name)
     }
     set manual(tooltip-$manual(wing-file)/$manual(name).htm) $line
 }
@@ -1044,6 +1046,23 @@ proc output-directive {line} {
 			    lappend keys "<A href=\"../Keywords/$initial.htm\#$key\">$key</A>"
 			}
 			man-puts [join $keys {, }]
+		    }
+		    return
+		}
+		H:CATEGORY {
+		    while {[more-text]} {
+			if {[next-op-is .SH rest] || [next-op-is .SS rest]} {
+			    backup-text 1
+			    return
+			}
+			set more [next-text]
+			if {[is-a-directive $more]} {
+			    manerror "$more"
+			    backup-text 1
+			    return
+			}
+                        set manual(category-$manual(name)) $more
+			man-puts $more
 		    }
 		    return
 		}
@@ -1564,31 +1583,43 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     set perline [expr {118 / $width}]
     set nrows [expr {([llength $manual(wing-toc)]+$perline)/$perline}]
     set n 0
-    catch {unset rows}
-    foreach name [lsort -dictionary $manual(wing-toc)] {
+    catch { unset toc }
+    foreach name [lsort $manual(wing-toc)] {
 	set tail $manual(name-$name)
 	if {[llength $tail] > 1} {
 	    manerror "$name is defined in more than one file: $tail"
 	    set tail [lindex $tail [expr {[llength $tail]-1}]]
+	}
+	set category ""
+	set catMaster $name
+	if {[info exists manual(cat-master-$name)]} {
+	    set catMaster $manual(cat-master-$name)
+	}
+	if {[info exists manual(category-$catMaster)]} {
+#FIXME-TD we want to have the option to group contents by category, if enabled
+	    set category $manual(category-$catMaster)
 	}
 	set tail [file tail $tail]
 	if {[info exists manual(tooltip-$manual(wing-file)/$tail.htm)]} {
 	    set tooltip $manual(tooltip-$manual(wing-file)/$tail.htm)
 	    set tooltip [string map {[ {\[} ] {\]} $ {\$} \\ \\\\} $tooltip]
 	    regsub {^[^-]+-\s*(.)} $tooltip {[string totitle \1]} tooltip
-	    append rows([expr {$n%$nrows}]) \
-		"<td> <a href=\"$tail.htm\" title=\"[subst $tooltip]\">$name</a> </td>"
+	    lappend toc($category) \
+		"<li> <a href=\"$tail.htm\" title=\"[subst $tooltip]\">$name</a> $manual(descrip-$name)</li>"
 	} else {
-	    append rows([expr {$n%$nrows}]) \
-		"<td> <a href=\"$tail.htm\">$name</a> </td>"
+	    lappend toc($category) \
+		"<li> <a href=\"$tail.htm\">$name</a> $manual(descrip-$name)</li>"
 	}
 	incr n
     }
-    puts $manual(wing-toc-fp) <table>
-    foreach row [lsort -integer [array names rows]] {
-	puts $manual(wing-toc-fp) <tr>$rows($row)</tr>
+    foreach category [lsort [array names toc]] {
+	if { $category ne "" } {
+	    puts $manual(wing-toc-fp) "<H4>$category</H4>"
+        }
+	puts $manual(wing-toc-fp) {<ul class="multicolumn">}
+	puts $manual(wing-toc-fp) [join $toc($category) \n]
+	puts $manual(wing-toc-fp) </ul>
     }
-    puts $manual(wing-toc-fp) </table>
 
     #
     # insert wing copyrights

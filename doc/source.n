@@ -67,3 +67,6 @@ foreach scriptFile {foo.tcl bar.tcl} {
 file(n), cd(n), encoding(n), info(n)
 .SH KEYWORDS
 file, script
+
+.SH CATEGORY
+Tcl Packages and Source files

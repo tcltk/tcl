@@ -321,6 +321,8 @@ break(n), catch(n), continue(n), dict(n), error(n), proc(n),
 source(n), tclvars(n), throw(n), try(n)
 .SH KEYWORDS
 break, catch, continue, error, exception, procedure, result, return
+.SH CATEGORY
+Tcl Control Constructs
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

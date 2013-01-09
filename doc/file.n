@@ -537,6 +537,8 @@ fblocked(n), flush(n)
 .SH KEYWORDS
 attributes, copy files, delete files, directory, file, move files, name,
 rename files, stat, user
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

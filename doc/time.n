@@ -42,6 +42,8 @@ time {
 clock(n)
 .SH KEYWORDS
 script, time
+.SH CATEGORY
+Tcl System Related
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

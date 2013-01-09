@@ -436,6 +436,8 @@ puts $foo
 append(n), array(n), foreach(n), mapeach(n), incr(n), list(n), lappend(n), set(n)
 .SH KEYWORDS
 dictionary, create, update, lookup, iterate, filter, map
+.SH CATEGORY
+Tcl List Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

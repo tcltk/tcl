@@ -84,6 +84,8 @@ set lines [split $data \en]
 file(n), eof(n), fblocked(n), fconfigure(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, channel, end of line, end of file, nonblocking, read, translation, encoding
+.SH CATEGORY
+Tcl Input/Output
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

@@ -930,6 +930,8 @@ of a long month to a short month.
 msgcat(n)
 .SH KEYWORDS
 clock, date, time
+.SH CATEGORY
+Tcl System Related
 .SH "COPYRIGHT"
 Copyright (c) 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 '\" Local Variables:

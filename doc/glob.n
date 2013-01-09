@@ -268,6 +268,8 @@ or the sequence
 file(n)
 .SH KEYWORDS
 exist, file, glob, pattern
+.SH CATEGORY
+Tcl System Related
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

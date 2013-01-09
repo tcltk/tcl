@@ -53,6 +53,8 @@ values, as can be seen here:
 append(n), eval(n), join(n)
 .SH KEYWORDS
 concatenate, join, list
+.SH CATEGORY
+Tcl List Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:
