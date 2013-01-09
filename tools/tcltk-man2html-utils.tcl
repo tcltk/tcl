@@ -150,45 +150,42 @@ proc process-text {text} {
 	    {\.}	. \
 	    {\(bu}	"&#8226;" \
 	    {\*(qo}	"&ocirc;" \
+	    {\'}	"'" \
 	    ]
     lappend charmap {\-\|\-} --        ; # two hyphens
     lappend charmap {\-} -             ; # a hyphen
 
-    set text [htmlize-text $text $charmap]
+    set origtext [htmlize-text $text $charmap]
     # General quoted entity
-    regsub -all {\\N'(\d+)'} $text "\\&#\\1;" text
-    while {[string first "\\" $text] >= 0} {
-	# C R
-	if {[regsub {^([^\\]*)\\fC([^\\]*)\\fR(.*)$} $text \
-		{\1<TT>\2</TT>\3} text]} continue
-	# B R
-	if {[regsub {^([^\\]*)\\fB([^\\]*)\\fR(.*)$} $text \
-		{\1<B>\2</B>\3} text]} continue
-	# B I
-	if {[regsub {^([^\\]*)\\fB([^\\]*)\\fI(.*)$} $text \
-		{\1<B>\2</B>\\fI\3} text]} continue
-	# I R
-	if {[regsub {^([^\\]*)\\fI([^\\]*)\\fR(.*)$} $text \
-		{\1<I>\2</I>\3} text]} continue
-	# I B
-	if {[regsub {^([^\\]*)\\fI([^\\]*)\\fB(.*)$} $text \
-		{\1<I>\2</I>\\fB\3} text]} continue
-	# B B, I I, R R
-	if {
-	    [regsub {^([^\\]*)\\fB([^\\]*)\\fB(.*)$} $text \
-		{\1\\fB\2\3} ntext]
-	    || [regsub {^([^\\]*)\\fI([^\\]*)\\fI(.*)$} $text \
-		    {\1\\fI\2\3} ntext]
-	    || [regsub {^([^\\]*)\\fR([^\\]*)\\fR(.*)$} $text \
-		    {\1\\fR\2\3} ntext]
-	} {
-	    manerror "impotent font change: $text"
-	    set text $ntext
-	    continue
-	}
+    regsub -all {\\N'(\d+)'} $origtext "\\&#\\1;" text
+    
+    # Font changes
+    set parts {}
+    set endCurrentFont {}
+    set FONT_MAP {
+      R {"" ""}
+      B {"<B>" "</B>"}
+      I {"<I>" "</I>"}
+      C {"<TT>" "</TT>"}
+    }
+    while {[string first "\\f" $text] >= 0} {
+	if { ! [regexp -- {^([^\\]*)\\f(.|\(..)(.*)$} $text -> part font text] } {
+	    manerror "unrecognised font change \\f: $origtext"
+        }
+        if { ! [dict exists $FONT_MAP $font] } {
+	    manerror "unrecognised font change \\f${font}: $origtext"
+        }
+        lassign [dict get $FONT_MAP $font] startFontHtml endFontHtml
+        lappend parts $part $endCurrentFont $startFontHtml
+        set endCurrentFont $endFontHtml
+    }
+    lappend parts $text $endCurrentFont
+    set text [join $parts {}]
+    
+    if {[string first "\\" $text] >= 0} {
 	# unrecognized
-	manerror "uncaught backslash: $text"
 	set text [string map [list "\\" "&#92;"] $text]
+	manerror "uncaught backslash: $text"
     }
     return $text
 }
@@ -622,7 +619,9 @@ proc output-IP-list {context code rest} {
 proc output-name {line} {
     global manual
     # split name line into pieces
-    regexp {^([^-]+) - (.*)$} [regsub -all {[ \n\r\t]+} $line " "] -> head tail
+    if { ! [regexp {^([^-]+) -\s?(.*)$} [regsub -all {[ \n\r\t]+} $line " "] -> head tail] } {
+	    manerror "bad section name: $line"
+    }
     # output line to manual page untouched
     man-puts "$head &mdash; $tail"
     # output line to long table of contents
@@ -753,7 +752,7 @@ proc cross-reference {ref} {
 ##
 proc reference-error {msg text} {
     global manual
-    puts stderr "$manual(tail): $msg: {$text}"
+    puts stderr "$manual(tail): reference error: $msg: {$text}"
     return $text
 }
 
@@ -1202,9 +1201,9 @@ proc output-directive {line} {
 proc merge-copyrights {l1 l2} {
     set merge {}
     set re1 {^Copyright +(?:\(c\)|\\\(co|&copy;) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
-    set re2 {^(\d+) +(?:by +)?(\w.*)$}         ;# date who
-    set re3 {^(\d+)-(\d+) +(?:by +)?(\w.*)$}   ;# from to who
-    set re4 {^(\d+), *(\d+) +(?:by +)?(\w.*)$} ;# date1 date2 who
+    set re2 {^(\d+),? +(?:by +)?(\w.*)$}         ;# date who
+    set re3 {^(\d+)-(\d+),? +(?:by +)?(\w.*)$}   ;# from to who
+    set re4 {^(\d+),((?: *\d+,?)+) +(?:by +)?(\w.*)$} ;# date1 date2 who
     foreach copyright [concat $l1 $l2] {
 	if {[regexp -nocase -- $re1 $copyright -> info]} {
 	    set info [string trimright $info ". "] ; # remove extra period
@@ -1216,8 +1215,11 @@ proc merge-copyrights {l1 l2} {
 		    lappend dates($who) $date
 		}
 		continue
-	    } elseif {[regexp -- $re3 $info -> date1 date2 who]} {
-		lappend dates($who) $date1 $date2
+	    } elseif {[regexp -- $re4 $info -> date1 moredates who]} {
+		lappend dates($who) $date1
+		foreach date [lsort -integer [split [string trim $moredates ", "] ","]] {
+		    lappend dates($who) [string trim $date]
+		}
 		continue
 	    }
 	}
@@ -1344,7 +1346,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	    switch -exact -- $code {
 		.SH - .SS {
 		    flushbuffer
-		    if {[llength $rest] == 0} {
+		    if {$rest eq {}} {
 			gets $manual(infp) rest
 		    }
 		    lappend manual(text) "$code [unquote $rest]"
@@ -1460,7 +1462,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 		    lappend manual(text) $code
 		}
 		.CE {
-		    flushbuffer
+		    flushbuffer true
 		    incr manual(.CS) -1
 		    lappend manual(text) $code
 		}
@@ -1481,8 +1483,13 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 		    if {!$verbose} {
 			puts stderr ""
 		    }
-		    flushbuffer
-		    manerror "unrecognized format directive: $line"
+                    if { $manual(.CS) > 0 } {
+			addbuffer $line
+			manerror "unrecognized format directive in .CS (treating as text): $line"
+		    } else {
+			flushbuffer
+			manerror "unrecognized format directive: $line"
+		    }
 		}
 	    }
 	}
@@ -1617,9 +1624,9 @@ proc addbuffer {args} {
     }
     append manual(partial-text) [join $args ""]
 }
-proc flushbuffer {} {
+proc flushbuffer {{force false}} {
     global manual
-    if {$manual(partial-text) ne ""} {
+    if {$manual(partial-text) ne "" || $force} {
 	lappend manual(text) [process-text $manual(partial-text)]
 	set manual(partial-text) ""
     }
