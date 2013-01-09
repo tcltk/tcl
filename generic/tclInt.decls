@@ -961,8 +961,7 @@ declare 239 {
 			    int skip, ProcErrorProc *errorProc)
 }
 declare 240 {
-    int TclNRRunCallbacks(Tcl_Interp *interp, int result,
-	      struct NRE_callback *rootPtr)
+    int TclNRRunCallbacks(Tcl_Interp *interp, int result)
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,

@@ -4783,6 +4783,8 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
 
 #define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
 
+void TclNRSetRoot(Tcl_Interp *interp);
+
 /*
  * Inline versions of Tcl_NRAddCallback and friends
  */
@@ -4865,7 +4867,6 @@ typedef struct NRE_stack {
 MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
 MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);
 MODULE_SCOPE NRE_callback *TclNextCallback(NRE_callback *ptr);
-MODULE_SCOPE Tcl_NRPostProc TclNRStackBottom;
 
 #endif
 

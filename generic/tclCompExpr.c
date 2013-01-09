@@ -2190,7 +2190,6 @@ ExecConstantExprTree(
     ByteCode *byteCodePtr;
     int code;
     Tcl_Obj *byteCodeObj = Tcl_NewObj();
-    NRE_callback *rootPtr = TOP_CB(interp);
 
     /*
      * Note we are compiling an expression with literal arguments. This means
@@ -2198,6 +2197,7 @@ ExecConstantExprTree(
      * bytecode, so there's no need to tend to TIP 280 issues.
      */
 
+    TclNRSetRoot(interp);
     envPtr = TclStackAlloc(interp, sizeof(CompileEnv));
     TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
@@ -2209,7 +2209,7 @@ ExecConstantExprTree(
     TclStackFree(interp, envPtr);
     byteCodePtr = byteCodeObj->internalRep.otherValuePtr;
     TclNRExecuteByteCode(interp, byteCodePtr);
-    code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
+    code = TclNRRunCallbacks(interp, TCL_OK);
     Tcl_DecrRefCount(byteCodeObj);
     return code;
 }

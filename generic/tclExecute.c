@@ -1362,14 +1362,14 @@ Tcl_ExprObj(
     Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
 				 * result is stored if no errors occur. */
 {
-    NRE_callback *rootPtr = TOP_CB(interp);
     Tcl_Obj *resultPtr;
 
+    TclNRSetRoot(interp);
     TclNewObj(resultPtr);
     TclNRAddCallback(interp, CopyCallback, resultPtrPtr, resultPtr,
 	    NULL, NULL);
     Tcl_NRExprObj(interp, objPtr, resultPtr);
-    return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
+    return TclNRRunCallbacks(interp, TCL_OK);
 }
 
 static int

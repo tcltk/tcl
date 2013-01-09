@@ -134,6 +134,10 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
+static int NRRoot(ClientData data[], Tcl_Interp *interp, int result);
+#if !NRE_STACK_DEBUG
+static Tcl_NRPostProc NRStackBottom;
+#endif
 
 static Tcl_NRPostProc	NRRunObjProc;
 static Tcl_ObjCmdProc	OldMathFuncProc;
@@ -4134,10 +4138,10 @@ Tcl_EvalObjv(
 				 * TCL_EVAL_NOERR are currently supported. */
 {
     int result;
-    NRE_callback *rootPtr = TOP_CB(interp);
 
+    TclNRSetRoot(interp);
     result = TclNREvalObjv(interp, objc, objv, flags, NULL);
-    return TclNRRunCallbacks(interp, result, rootPtr);
+    return TclNRRunCallbacks(interp, result);
 }
 
 int
@@ -4327,10 +4331,7 @@ TclPushTailcallPoint(
 int
 TclNRRunCallbacks(
     Tcl_Interp *interp,
-    int result,
-    struct NRE_callback *rootPtr)
-				/* All callbacks down to rootPtr not inclusive
-				 * are to be run. */
+    int result) 	/* Callbacks are run until the first NRRoot.*/
 {
     Interp *iPtr = (Interp *) interp;
     NRE_callback *cbPtr;
@@ -4350,12 +4351,43 @@ TclNRRunCallbacks(
 	(void) Tcl_GetObjResult(interp);
     }
 
-    while (TOP_CB(interp) != rootPtr) {
+    while (TOP_CB(interp) && (TOP_CB(interp)->procPtr != NRRoot)) {
 	POP_CB(interp, cbPtr);
 	procPtr = cbPtr->procPtr;
 	result = procPtr(cbPtr->data, interp, result);
 	FREE_CB(interp, cbPtr);
     }
+    if (TOP_CB(interp)) {
+	POP_CB(interp, cbPtr);
+        FREE_CB(interp, cbPtr);
+    }
+    return result;
+}
+
+void
+TclNRSetRoot(
+    Tcl_Interp *interp)
+{
+#if NRE_STACK_DEBUG
+    int first = (TOP_CB(interp) == NULL);
+#else
+    int first = ((TOP_CB(interp) == NULL) ||
+            ((TOP_CB(interp)->procPtr == NRStackBottom) &&
+                    (TOP_CB(interp)->data[0] == NULL)));
+#endif
+    
+    if (!first) {
+        TclNRAddCallback(interp, NRRoot, NULL, NULL, NULL, NULL);
+    }
+}
+
+static int
+NRRoot(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    /* NOT CALLED */
     return result;
 }
 
@@ -5929,10 +5961,10 @@ TclEvalObjEx(
     int word)			/* Index of the word which is in objPtr. */
 {
     int result = TCL_OK;
-    NRE_callback *rootPtr = TOP_CB(interp);
 
+    TclNRSetRoot(interp);
     result = TclNREvalObjEx(interp, objPtr, flags, invoker, word);
-    return TclNRRunCallbacks(interp, result, rootPtr);
+    return TclNRRunCallbacks(interp, result);
 }
 
 int
@@ -8132,8 +8164,6 @@ Tcl_NRCallObjProc(
     Tcl_Obj *const objv[])
 {
     int result = TCL_OK;
-    NRE_callback *rootPtr = TOP_CB(interp);
-
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
@@ -8162,8 +8192,10 @@ Tcl_NRCallObjProc(
 		(Tcl_Obj **)(objv + 1));
     }
 #endif /* USE_DTRACE */
+
+    TclNRSetRoot(interp);
     result = objProc(clientData, interp, objc, objv);
-    return TclNRRunCallbacks(interp, result, rootPtr);
+    return TclNRRunCallbacks(interp, result);
 }
 
 /*
@@ -8296,8 +8328,8 @@ TclDeferCallbacks(
 }
 
 #if !NRE_STACK_DEBUG
-int
-TclNRStackBottom(
+static int
+NRStackBottom(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
@@ -8364,7 +8396,7 @@ TclNewCallback(
     }
     eePtr->NRStack = this;
     eePtr->callbackPtr = &this->items[-1];
-    TclNRAddCallback(interp, TclNRStackBottom, orig, NULL, NULL, NULL);
+    TclNRAddCallback(interp, NRStackBottom, orig, NULL, NULL, NULL);
 
     NRE_ASSERT(eePtr->callbackPtr == &this->items[0]);
 
@@ -8383,7 +8415,7 @@ TclNextCallback(
     NRE_callback *cbPtr)
 {
 
-    if (cbPtr->procPtr == TclNRStackBottom) {
+    if (cbPtr->procPtr == NRStackBottom) {
         NRE_stack *prev = cbPtr->data[0];
 
         if (!prev) {
@@ -8700,10 +8732,10 @@ DeleteCoroutine(
 {
     CoroutineData *corPtr = clientData;
     Tcl_Interp *interp = corPtr->eePtr->interp;
-    NRE_callback *rootPtr = TOP_CB(interp);
 
     if (COR_IS_SUSPENDED(corPtr)) {
-	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK), rootPtr);
+        TclNRSetRoot(interp);
+	TclNRRunCallbacks(interp, RewindCoroutine(corPtr,TCL_OK));
     }
 }
 
