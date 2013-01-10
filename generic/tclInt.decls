@@ -1046,9 +1046,10 @@ declare 5 win {
 #  declare 5 win {
 #      HINSTANCE TclWinLoadLibrary(char *name)
 #  }
-declare 6 win {
-    unsigned short TclWinNToHS(unsigned short ns)
-}
+# Removed in 8.1:
+#declare 6 win {
+#    unsigned short TclWinNToHS(unsigned short ns)
+#}
 declare 7 win {
     int TclWinSetSockOpt(SOCKET s, int level, int optname,
 	    const char *optval, int optlen)
