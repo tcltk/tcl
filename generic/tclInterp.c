@@ -1798,10 +1798,9 @@ AliasNRCmd(
      */
 
     if (isRootEnsemble) {
-	TclDeferCallbacks(interp);
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+    TclDeferCallbacks(interp, /* skip tailcalls */ 1);
     return Tcl_NREvalObj(interp, listPtr, flags);
 }
 

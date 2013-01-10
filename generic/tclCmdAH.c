@@ -317,7 +317,7 @@ TclNRCatchObjCmd(
 	optionVarNamePtr = objv[3];
     }
 
-    TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
+    Tcl_NRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
 	    varNamePtr, optionVarNamePtr, NULL);
 
     return TclNREvalObjEx(interp, objv[1], 0);
@@ -772,7 +772,7 @@ TclNREvalObjCmd(
 
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
     }
-    TclNRAddCallback(interp, EvalCmdErrMsg, NULL, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, EvalCmdErrMsg, NULL, NULL, NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0);
 }
 
@@ -871,10 +871,10 @@ TclNRExprObjCmd(
     Tcl_IncrRefCount(resultPtr);
     if (objc == 2) {
 	objPtr = objv[1];
-	TclNRAddCallback(interp, ExprCallback, resultPtr, NULL, NULL, NULL);
+	Tcl_NRAddCallback(interp, ExprCallback, resultPtr, NULL, NULL, NULL);
     } else {
 	objPtr = Tcl_ConcatObj(objc-1, objv+1);
-	TclNRAddCallback(interp, ExprCallback, resultPtr, objPtr, NULL, NULL);
+	Tcl_NRAddCallback(interp, ExprCallback, resultPtr, objPtr, NULL, NULL);
     }
 
     return Tcl_NRExprObj(interp, objPtr, resultPtr);
@@ -2403,7 +2403,7 @@ TclNRForObjCmd(
     iterPtr->next = objv[3];
     iterPtr->msg  = "\n    (\"for\" body line %d)";
 
-    TclNRAddCallback(interp, ForSetupCallback, iterPtr, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, ForSetupCallback, iterPtr, NULL, NULL, NULL);
     return TclNREvalObjEx(interp, objv[1], 0);
 }
 
@@ -2422,7 +2422,7 @@ ForSetupCallback(
 	TclSmallFreeEx(interp, iterPtr);
 	return result;
     }
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
     return TCL_OK;
 }
 
@@ -2446,7 +2446,7 @@ TclNRForIterCallback(
 
 	Tcl_ResetResult(interp);
 	TclNewObj(boolObj);
-	TclNRAddCallback(interp, ForCondCallback, iterPtr, boolObj, NULL,
+	Tcl_NRAddCallback(interp, ForCondCallback, iterPtr, boolObj, NULL,
 		NULL);
 	return Tcl_NRExprObj(interp, iterPtr->cond, boolObj);
     case TCL_BREAK:
@@ -2484,10 +2484,10 @@ ForCondCallback(
 
     if (value) {
 	if (iterPtr->next) {
-	    TclNRAddCallback(interp, ForNextCallback, iterPtr, NULL, NULL,
+	    Tcl_NRAddCallback(interp, ForNextCallback, iterPtr, NULL, NULL,
 		    NULL);
 	} else {
-	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
+	    Tcl_NRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
 		    NULL, NULL);
 	}
 	return TclNREvalObjEx(interp, iterPtr->body, 0);
@@ -2506,12 +2506,12 @@ ForNextCallback(
     Tcl_Obj *next = iterPtr->next;
 
     if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
-	TclNRAddCallback(interp, ForPostNextCallback, iterPtr, NULL, NULL,
+	Tcl_NRAddCallback(interp, ForPostNextCallback, iterPtr, NULL, NULL,
 		NULL);
 	return TclNREvalObjEx(interp, next, 0);
     }
 
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
     return result;
 }
 
@@ -2530,7 +2530,7 @@ ForPostNextCallback(
 	}
 	return result;
     }
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
     return result;
 }
 
@@ -2701,7 +2701,7 @@ EachloopCmd(
 	    goto done;
 	}
 
-	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
+	Tcl_NRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
 	return TclNREvalObjEx(interp, objv[objc-1], 0);
     }
 
@@ -2766,7 +2766,7 @@ ForeachLoopStep(
 	    goto done;
 	}
 
-	TclNRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
+	Tcl_NRAddCallback(interp, ForeachLoopStep, statePtr, NULL, NULL, NULL);
 	return TclNREvalObjEx(interp, statePtr->bodyPtr, 0);
     }
 

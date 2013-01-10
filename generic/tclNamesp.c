@@ -1945,7 +1945,7 @@ InvokeImportedNRCmd(
     ImportedCmdData *dataPtr = clientData;
     Command *realCmdPtr = dataPtr->realCmdPtr;
 
-    ((Interp *) interp)->evalFlags |= TCL_EVAL_REDIRECT;
+    TclDeferCallbacks(interp, /* skip tailcalls */ 1);
     return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
 }
 
@@ -3303,7 +3303,7 @@ NRNamespaceEvalCmd(
 	objPtr = Tcl_ConcatObj(objc-2, objv+2);
     }
 
-    TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
+    Tcl_NRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0);
 }
@@ -3768,7 +3768,7 @@ NRNamespaceInscopeCmd(
 	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
     }
 
-    TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
+    Tcl_NRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, cmdObjPtr, 0);
 }

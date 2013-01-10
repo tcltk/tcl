@@ -1154,7 +1154,8 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    Tcl_Obj *tailcallPtr;       /* NULL if no tailcall is scheduled for this CF*/
+    Tcl_Obj    *tailcallPtr;
+				/* NULL if no tailcall is scheduled */
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
@@ -2011,7 +2012,6 @@ typedef struct InterpList {
 #define TCL_ALLOW_EXCEPTIONS	4
 #define TCL_EVAL_FILE		2
 #define TCL_EVAL_CTX		8
-#define TCL_EVAL_REDIRECT	16
 
 /*
  * Flag bits for Interp structures:
@@ -2567,7 +2567,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
-MODULE_SCOPE void  TclDeferCallbacks(Tcl_Interp *interp);
+MODULE_SCOPE void  TclDeferCallbacks(Tcl_Interp *interp, int skipTailcall);
 
 /* //
  * This structure holds the data for the various iteration callbacks used to
@@ -4505,109 +4505,28 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  */
 
 #define NRE_ENABLE_ASSERTS	1
-#define NRE_STACK_DEBUG         0
-#define NRE_STACK_SIZE        100
-
-
-/*
- * This is the main data struct for representing NR commands. It is designed
- * to fit in sizeof(Tcl_Obj) in order to exploit the fastest memory allocator
- * available.
- */
-
-#define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
-
-/*
- * Inline versions of Tcl_NRAddCallback and friends
- */
-
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3)	\
-    do {								\
-	NRE_callback *cbPtr;						\
-	ALLOC_CB(interp, cbPtr);					\
-	INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3);		\
-    } while (0)
-
-#define INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3)		\
-    do {								\
-	cbPtr->procPtr = (postProcPtr);					\
-	cbPtr->data[0] = (ClientData)(data0);				\
-	cbPtr->data[1] = (ClientData)(data1);				\
-	cbPtr->data[2] = (ClientData)(data2);				\
-	cbPtr->data[3] = (ClientData)(data3);				\
-    } while (0)
-
-#if NRE_STACK_DEBUG
-
-typedef struct NRE_callback {
-    Tcl_NRPostProc *procPtr;
-    ClientData data[4];
-    struct NRE_callback *nextPtr;
-} NRE_callback;
-
-#define POP_CB(interp, cbPtr)                      \
-    do {                                           \
-        cbPtr = TOP_CB(interp);                    \
-        TOP_CB(interp) = cbPtr->nextPtr;           \
-    } while (0)
-
-#define ALLOC_CB(interp, cbPtr)			\
-    do {					\
-	cbPtr = ckalloc(sizeof(NRE_callback));	\
-	cbPtr->nextPtr = TOP_CB(interp);	\
-	TOP_CB(interp) = cbPtr;			\
-    } while (0)
-    
-#define FREE_CB(interp, ptr)			\
-    ckfree((char *) (ptr))
-
-#define NEXT_CB(ptr)  (ptr)->nextPtr
-
-#else /* not debugging the NRE stack */
-
-typedef struct NRE_callback {
-    Tcl_NRPostProc *procPtr;
-    ClientData data[4];
-    struct NRE_callback *nextPtr;
-} NRE_callback;
-
-typedef struct NRE_stack {
-    struct NRE_callback items[NRE_STACK_SIZE];
-    struct NRE_stack *next;
-} NRE_stack;
-
-#define POP_CB(interp, cbPtr)			\
-    (cbPtr) = TOP_CB(interp)--
-
-#define ALLOC_CB(interp, cbPtr)					\
-    do {							\
-	ExecEnv *eePtr = ((Interp *) interp)->execEnvPtr;	\
-	NRE_stack *this = eePtr->NRStack;			\
-								\
-	if (eePtr->callbackPtr &&					\
-		(eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) { \
-	    (cbPtr) = ++eePtr->callbackPtr;				\
-	} else {							\
-	    (cbPtr) = TclNewCallback(interp);				\
-	}								\
-    } while (0)
-
-#define FREE_CB(interp, cbPtr)
-
-#define NEXT_CB(ptr) TclNextCallback(ptr)
-
-MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
-MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);
-MODULE_SCOPE NRE_callback *TclNextCallback(NRE_callback *ptr);
-MODULE_SCOPE Tcl_NRPostProc TclNRStackBottom;
-
-#endif
 
 #if NRE_ENABLE_ASSERTS
+#include <assert.h>
 #define NRE_ASSERT(expr) assert((expr))
 #else
 #define NRE_ASSERT(expr)
 #endif
+
+void TclNRSetRoot(Tcl_Interp *interp);
+
+/* NOTE: this just needed by tclOOBasic.c for a legit operation that deserves
+ * a better API */
+
+#ifdef USE_TOP_CB
+#define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
+
+typedef struct NRE_callback {
+    Tcl_NRPostProc *procPtr;
+    ClientData data[4];
+} NRE_callback;
+#endif
+
 
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
