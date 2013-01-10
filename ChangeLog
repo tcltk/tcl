@@ -1,3 +1,14 @@
+2013-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/http/http.tcl: [Bug 3599395]: http assumes status line
+	is a proper tcl list.
+
+2013-01-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3092089]: [file normalize] can remove path
+	components.	[Bug 3587096] win vista/7: "can't find init.tcl" when
+	called via junction without folder list access.
+
 2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclOOStubLib.c: Restrict the stub library to only use
