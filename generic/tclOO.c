@@ -1768,7 +1768,7 @@ TclNRNewObjectInstance(
      */
 
     AddRef(oPtr);
-    TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
+    Tcl_NRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
 	    objectPtr);
     TclPushTailcallPoint(interp);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
@@ -2552,7 +2552,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
+    Tcl_NRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
@@ -2705,7 +2705,7 @@ TclNRObjectContextInvokeNext(
      * all) come through the same code.
      */
 
-    TclNRAddCallback(interp, FinalizeNext, contextPtr,
+    Tcl_NRAddCallback(interp, FinalizeNext, contextPtr,
 	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip), NULL);
     contextPtr->index++;
     contextPtr->skip = skip;

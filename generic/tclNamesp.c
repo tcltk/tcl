@@ -3268,7 +3268,7 @@ NamespaceEvalCmd(
 	objPtr = Tcl_ConcatObj(objc-2, objv+2);
     }
 
-    TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
+    Tcl_NRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0);
 }
@@ -3722,7 +3722,7 @@ NamespaceInscopeCmd(
 	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
     }
 
-    TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
+    Tcl_NRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, cmdObjPtr, 0);
 }

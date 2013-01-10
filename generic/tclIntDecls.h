@@ -535,8 +535,7 @@ TCLAPI int		TclNRInterpProcCore(Tcl_Interp *interp,
 				Tcl_Obj *procNameObj, int skip,
 				ProcErrorProc *errorProc);
 /* 240 */
-TCLAPI int		TclNRRunCallbacks(Tcl_Interp *interp, int result,
-				struct NRE_callback *rootPtr);
+TCLAPI int		TclNRRunCallbacks(Tcl_Interp *interp, int result);
 /* 241 */
 TCLAPI int		TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags);
@@ -812,7 +811,7 @@ typedef struct TclIntStubs {
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
     void (*reserved238)(void);
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
-    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
+    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 241 */
     int (*tclNREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags, Command *cmdPtr); /* 242 */
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
