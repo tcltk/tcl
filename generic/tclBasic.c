@@ -161,7 +161,6 @@ static Tcl_NRPostProc	TEOV_Exception;
 static Tcl_NRPostProc	TEOV_NotFoundCallback;
 static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
-static Tcl_NRPostProc	YieldToCallback;
 
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
@@ -4161,7 +4160,7 @@ TclNREvalObjv(
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
     Command **cmdPtrPtr;
     NRE_callback *callbackPtr;
-
+    
     iPtr->lookupNsPtr = NULL;
 
     /*
@@ -8309,17 +8308,17 @@ Tcl_NRCmdSwap(
 void
 TclDeferCallbacks(
     Tcl_Interp *interp,
-    int skipTailcall)
+    int skipTailcalls)
 {
     Interp *iPtr = (Interp *) interp;
-    void *skip = INT2PTR(skipTailcall != 0);
 
     if (iPtr->deferredCallbacks == NULL) {
-	TclNRAddCallback(interp, NRCommand, NULL, skip, NULL, NULL);
+	TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(skipTailcalls != 0),
+                NULL, NULL);
         iPtr->deferredCallbacks = TOP_CB(interp);
-    } else if (skipTailcall) {
-        iPtr->deferredCallbacks->data[1] = skip;
-    }        
+    } else if (skipTailcalls) {
+        iPtr->deferredCallbacks->data[1] = INT2PTR(skipTailcalls != 0);
+    }
 }
 
 #if !NRE_STACK_DEBUG
@@ -8429,7 +8428,7 @@ TclSetTailcall(
 {
     /*
      * Find the splicing spot: right before the NRCommand of the thing
-     * being tailcalled. Note that we skip NRCommands marked in data[1]
+     * being tailcalled. Note that we skip NRCommands marked by a 1 in data[1]
      * (used by command redirectors).
      */
 
@@ -8442,14 +8441,6 @@ TclSetTailcall(
     }
     if (!runPtr) {
         Tcl_Panic("tailcall cannot find the right splicing spot: should not happen!");
-    }
-
-    if (runPtr->data[1]) {
-        /*
-         * A tailcall was already scheduled: clear it!
-         */
-        Tcl_Obj *oldPtr = (Tcl_Obj *) runPtr->data[1];
-        Tcl_DecrRefCount(oldPtr);
     }
     runPtr->data[1] = listPtr;
 }
@@ -8678,20 +8669,10 @@ TclNRYieldToObjCmd(
      */
 
     iPtr->execEnvPtr = corPtr->callerEEPtr;
-    TclNRAddCallback(interp, YieldToCallback, corPtr, listPtr, NULL, NULL);
+    TclSetTailcall(interp, listPtr);
     iPtr->execEnvPtr = corPtr->eePtr;
 
     return TclNRYieldObjCmd(INT2PTR(CORO_ACTIVATE_YIELDM), interp, 1, objv);
-}
-
-static int
-YieldToCallback(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    TclSetTailcall(interp, (Tcl_Obj *) data[1]);
-    return TCL_OK;
 }
 
 static int

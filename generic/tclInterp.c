@@ -1797,10 +1797,10 @@ AliasNRCmd(
      * stuff ...
      */
 
-    TclDeferCallbacks(interp, /* skipTailcall */ 1);
     if (isRootEnsemble) {
 	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
+    TclDeferCallbacks(interp, /* skip tailcalls */ 1);
     return Tcl_NREvalObj(interp, listPtr, flags);
 }
 

@@ -2429,6 +2429,9 @@ TEBCresume(
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
 	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
 	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	if (iPtr->varFramePtr->tailcallPtr) {
+	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
+	}
 	iPtr->varFramePtr->tailcallPtr = listPtr;
 
 	result = TCL_RETURN;
@@ -3040,8 +3043,9 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 	pc += 6;
 	TEBC_YIELD();
+
 	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	TclDeferCallbacks(interp, /* skipTailcall */ 1);
+	TclDeferCallbacks(interp, /*skip tailcalls */ 1);
 	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
 
     /*

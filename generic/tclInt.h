@@ -1154,7 +1154,8 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    Tcl_Obj *tailcallPtr;       /* NULL if no tailcall is scheduled for this CF*/
+    Tcl_Obj    *tailcallPtr;
+				/* NULL if no tailcall is scheduled */
 } CallFrame;
 
 #define FRAME_IS_PROC	0x1
