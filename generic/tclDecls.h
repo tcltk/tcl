@@ -778,9 +778,7 @@ TCLAPI char *		Tcl_HashStats(Tcl_HashTable *tablePtr);
 /* 270 */
 TCLAPI const char *	Tcl_ParseVar(Tcl_Interp *interp, const char *start,
 				const char **termPtr);
-/* 271 */
-TCLAPI const char *	Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
-				const char *version, int exact);
+/* Slot 271 is reserved */
 /* 272 */
 TCLAPI const char *	Tcl_PkgPresentEx(Tcl_Interp *interp,
 				const char *name, const char *version,
@@ -788,9 +786,7 @@ TCLAPI const char *	Tcl_PkgPresentEx(Tcl_Interp *interp,
 /* 273 */
 TCLAPI int		TclPkgProvide(Tcl_Interp *interp, const char *name,
 				const char *version);
-/* 274 */
-TCLAPI const char *	Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
-				const char *version, int exact);
+/* Slot 274 is reserved */
 /* 275 */
 TCLAPI void		Tcl_SetErrorCodeVA(Tcl_Interp *interp,
 				va_list argList);
@@ -2072,10 +2068,10 @@ typedef struct TclStubs {
     void (*tcl_AppendStringsToObjVA) (Tcl_Obj *objPtr, va_list argList); /* 268 */
     char * (*tcl_HashStats) (Tcl_HashTable *tablePtr); /* 269 */
     const char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, const char **termPtr); /* 270 */
-    const char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
+    void (*reserved271)(void);
     const char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
     int (*tclPkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
-    const char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
+    void (*reserved274)(void);
     void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
     void (*reserved276)(void);
     Tcl_Pid (*tcl_WaitPid) (Tcl_Pid pid, int *statPtr, int options); /* 277 */
@@ -2998,14 +2994,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_HashStats) /* 269 */
 #define Tcl_ParseVar \
 	(tclStubsPtr->tcl_ParseVar) /* 270 */
-#define Tcl_PkgPresent \
-	(tclStubsPtr->tcl_PkgPresent) /* 271 */
+/* Slot 271 is reserved */
 #define Tcl_PkgPresentEx \
 	(tclStubsPtr->tcl_PkgPresentEx) /* 272 */
 #define TclPkgProvide \
 	(tclStubsPtr->tclPkgProvide) /* 273 */
-#define Tcl_PkgRequire \
-	(tclStubsPtr->tcl_PkgRequire) /* 274 */
+/* Slot 274 is reserved */
 #define Tcl_SetErrorCodeVA \
 	(tclStubsPtr->tcl_SetErrorCodeVA) /* 275 */
 /* Slot 276 is reserved */
@@ -3740,7 +3734,11 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 
+#define Tcl_PkgPresent(interp, name, version, exact) \
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL)
 #define Tcl_PkgProvide(interp, name, version) \
 	Tcl_PkgProvideEx(interp, name, version, NULL)
+#define Tcl_PkgRequire(interp, name, version, exact) \
+	Tcl_PkgRequireEx(interp, name, version, exact, NULL)
 
 #endif /* _TCLDECLS */

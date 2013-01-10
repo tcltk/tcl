@@ -199,7 +199,7 @@ Pkgua_Init(
     int code, cmdIndex = 0;
     Tcl_Command *cmdTokens;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
 
@@ -210,7 +210,7 @@ Pkgua_Init(
 
     PkguaInitTokensHashTable();
 
-    code = Tcl_PkgProvide(interp, "Pkgua", "1.0");
+    code = Tcl_PkgProvideEx(interp, "Pkgua", "1.0", NULL);
     if (code != TCL_OK) {
 	return code;
     }

@@ -941,10 +941,10 @@ const TclStubs tclStubs = {
     Tcl_AppendStringsToObjVA, /* 268 */
     Tcl_HashStats, /* 269 */
     Tcl_ParseVar, /* 270 */
-    Tcl_PkgPresent, /* 271 */
+    0, /* 271 */
     Tcl_PkgPresentEx, /* 272 */
     TclPkgProvide, /* 273 */
-    Tcl_PkgRequire, /* 274 */
+    0, /* 274 */
     Tcl_SetErrorCodeVA, /* 275 */
     0, /* 276 */
     Tcl_WaitPid, /* 277 */
