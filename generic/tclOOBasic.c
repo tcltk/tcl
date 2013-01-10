@@ -13,6 +13,8 @@
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
+
+#define USE_TOP_CB 1
 #include "tclInt.h"
 #include "tclOOInt.h"
 
