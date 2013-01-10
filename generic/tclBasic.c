@@ -4183,11 +4183,6 @@ TclNREvalObjv(
     }
     cmdPtrPtr = (Command **) &(callbackPtr->data[0]);
 
-
-    if (iPtr->evalFlags & TCL_EVAL_REDIRECT) {
-        callbackPtr->data[1] = INT2PTR(1);
-        iPtr->evalFlags &= ~TCL_EVAL_REDIRECT;
-    }
     callbackPtr->data[2] = INT2PTR(objc);
     callbackPtr->data[3] = (ClientData) objv;
 
@@ -4667,10 +4662,9 @@ TEOV_NotFound(
 	savedNsPtr = varFramePtr->nsPtr;
 	varFramePtr->nsPtr = lookupNsPtr;
     }
-    TclDeferCallbacks(interp);
+    TclDeferCallbacks(interp, 1);
     TclNRAddCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
 	    newObjv, savedNsPtr, NULL);
-    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
     return TclNREvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR, NULL);
 }
 
@@ -6055,7 +6049,7 @@ TclNREvalObjEx(
 	    iPtr->cmdFramePtr = eoFramePtr;
 	}
 
-	TclDeferCallbacks(interp);
+	TclDeferCallbacks(interp, 0);
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
 		NULL, NULL);
 
@@ -8314,14 +8308,18 @@ Tcl_NRCmdSwap(
 
 void
 TclDeferCallbacks(
-    Tcl_Interp *interp)
+    Tcl_Interp *interp,
+    int skipTailcall)
 {
     Interp *iPtr = (Interp *) interp;
+    void *skip = INT2PTR(skipTailcall != 0);
 
     if (iPtr->deferredCallbacks == NULL) {
-	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, NRCommand, NULL, skip, NULL, NULL);
         iPtr->deferredCallbacks = TOP_CB(interp);
-    }
+    } else if (skipTailcall) {
+        iPtr->deferredCallbacks->data[1] = skip;
+    }        
 }
 
 #if !NRE_STACK_DEBUG
@@ -8549,7 +8547,7 @@ TclNRTailcallEval(
      * Perform the tailcall
      */
 
-    TclDeferCallbacks(interp);
+    TclDeferCallbacks(interp, 0);
     TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
