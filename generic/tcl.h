@@ -2207,8 +2207,13 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #ifdef USE_TCL_STUBS
-#define Tcl_InitStubs(interp, version, exact) \
-    TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	    TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
+#else
+#   define Tcl_InitStubs(interp, version, exact) \
+	    TclInitStubs(interp, TCL_PATCH_LEVEL, 1, TCL_VERSION, TCL_STUB_MAGIC)
+#endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
