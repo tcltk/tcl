@@ -529,6 +529,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Forces the variable indexed by opnd to be an array. Does not touch
 	 * the stack. */
 
+    {"invokeReplace",	 6,	INT_MIN,  2,	{OPERAND_UINT4,OPERAND_UINT1}},
+	/* Invoke command named objv[0], replacing the first two words with
+	 * the word at the top of the stack;
+	 * <objc,objv> = <op4,top op4 after popping 1> */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 

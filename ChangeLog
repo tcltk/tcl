@@ -1,19 +1,85 @@
+2013-01-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/fconfigure.n, doc/CrtChannel.3: Updated to reflect the fact that
+	the minimum buffer size is one byte, not ten. Identified by Schelte
+	Bron on the Tcler's Chat.
+
+	* generic/tclExecute.c (TEBCresume:INST_INVOKE_REPLACE):
+	* generic/tclEnsemble.c (TclCompileEnsemble): Added new mechanism to
+	allow for more efficient dispatch of non-bytecode-compiled subcommands
+	of bytecode-compiled ensembles. This can provide substantial speed
+	benefits in some cases.
+
+2013-01-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclEnsemble.c:  Remove stray calls to Tcl_Alloc and
+	* generic/tclExecute.c:   friends: the core should only use ckalloc
+	* generic/tclIORTrans.c:  to allow MEM_DEBUG to work properly
+	* generic/tclTomMathInterface.c:
+
+2012-12-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/string.n: Noted the obsolescence of the 'bytelength',
+	'wordstart' and 'wordend' subcommands, and moved them to later in the
+	file.
+
+2012-12-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclListObj.c: [Bug 3598580]: Tcl_ListObjReplace may release
+	deleted elements too early
+
+2012-12-22  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* generic/tclUtil.c: Stop leaking allocated space when objifying a
+	zero-length DString. [Bug 3598150] spotted by afredd.
+
+2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkgb.c:  Inline compat Tcl_GetDefaultEncodingDir.
+	* generic/tclStubLib.c: Eliminate unnecessary static HasStubSupport() and
+	isDigit() functions, just do the same inline.
+
 2012-12-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmdsSZ.c (TclSubstCompile): Improved the sequence of
 	instructions issued for [subst] when dealing with simple variable
 	references.
 
-2012-11-13  Miguel Sofer  <msofer@users.sf.net>
+2012-12-14  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCmdAH.c (CatchObjCmdCallback): Do not decrRefCount the
-	newValuePtr sent to Tcl_ObjSetVar2: TOSV2 is 'fire and forget', it
-	decrs on its own. Fix for [Bug 3595576], found by andrewsh.
+	*** 8.6.0 TAGGED FOR RELEASE ***
+
+	* changes: updates for 8.6.0
+
+2012-12-13  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclZlib.c:	Repair same issue with misusing the
+	* tests/zlib.test:	'fire and forget' nature of Tcl_ObjSetVar2
+	in the new TIP 400 implementation.
+
+2012-12-13  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclCmdAH.c:	(CatchObjCmdCallback): do not decrRefCount
+	* tests/cmdAH.test:	the newValuePtr sent to Tcl_ObjSetVar2:
+	TOSV2 is 'fire and forget', it decrs on its own.
+	Fix for [Bug 3595576], found by andrewsh.
 
 2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tcl.h: Fix Tcl_DecrRefCount macro such that it doesn't
 	access its objPtr parameter twice any more.
+
+2012-12-11  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump version number to 8.6.0.
+	* library/init.tcl:
+	* unix/configure.in:
+	* win/configure.in:
+	* unix/tcl.spec:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
 
 2012-12-10  Donal K. Fellows  <dkf@users.sf.net>
 

@@ -4093,7 +4093,7 @@ typedef const char *TclDTraceStr;
  */
 
 #  define TclAllocObjStorageEx(interp, objPtr) \
-	(objPtr) = (Tcl_Obj *) Tcl_Alloc(sizeof(Tcl_Obj))
+	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj))
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
 	ckfree((char *) (objPtr))
