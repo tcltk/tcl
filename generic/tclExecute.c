@@ -21,10 +21,6 @@
 #include "tommath.h"
 #include <math.h>
 
-#if NRE_ENABLE_ASSERTS
-#include <assert.h>
-#endif
-
 /*
  * Hack to determine whether we may expect IEEE floating point. The hack is
  * formally incorrect in that non-IEEE platforms might have the same precision
@@ -190,7 +186,7 @@ typedef struct TEBCdata {
 	esPtr->tosPtr = tosPtr;						\
 	TD->pc = pc;							\
 	TD->cleanup = cleanup;						\
-	TclNRAddCallback(interp, TEBCresume, TD, INT2PTR(1), NULL, NULL); \
+	Tcl_NRAddCallback(interp, TEBCresume, TD, INT2PTR(1), NULL, NULL); \
     } while (0)
 
 #define TEBC_DATA_DIG() \
@@ -1366,7 +1362,7 @@ Tcl_ExprObj(
 
     TclNRSetRoot(interp);
     TclNewObj(resultPtr);
-    TclNRAddCallback(interp, CopyCallback, resultPtrPtr, resultPtr,
+    Tcl_NRAddCallback(interp, CopyCallback, resultPtrPtr, resultPtr,
 	    NULL, NULL);
     Tcl_NRExprObj(interp, objPtr, resultPtr);
     return TclNRRunCallbacks(interp, TCL_OK);
@@ -2016,7 +2012,7 @@ TclNRExecuteByteCode(
      * Push the callback for bytecode execution
      */
 
-    TclNRAddCallback(interp, TEBCresume, TD, /*resume*/ INT2PTR(0),
+    Tcl_NRAddCallback(interp, TEBCresume, TD, /*resume*/ INT2PTR(0),
 	    NULL, NULL);
     return TCL_OK;
 }
@@ -2391,7 +2387,7 @@ TEBCresume(
 	TEBC_YIELD();
 	
 	Tcl_SetObjResult(interp, OBJ_AT_TOS);
-	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
+	Tcl_NRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
 		INT2PTR(0), NULL, NULL);
 
 	return TCL_OK;
@@ -3044,7 +3040,7 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 	pc += 6;
 	TEBC_YIELD();
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
+	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
 	iPtr->evalFlags |= TCL_EVAL_REDIRECT;
 	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
 

@@ -4871,6 +4871,7 @@ MODULE_SCOPE NRE_callback *TclNextCallback(NRE_callback *ptr);
 #endif
 
 #if NRE_ENABLE_ASSERTS
+#include <assert.h>
 #define NRE_ASSERT(expr) assert((expr))
 #else
 #define NRE_ASSERT(expr)

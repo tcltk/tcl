@@ -3318,7 +3318,7 @@ NRNamespaceEvalCmd(
      * TIP #280: Make invoking context available to eval'd script.
      */
 
-    TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
+    Tcl_NRAddCallback(interp, NsEval_Callback, namespacePtr, "eval",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
 }
@@ -3783,7 +3783,7 @@ NRNamespaceInscopeCmd(
 	Tcl_DecrRefCount(listPtr);    /* We're done with the list object. */
     }
 
-    TclNRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
+    Tcl_NRAddCallback(interp, NsEval_Callback, namespacePtr, "inscope",
 	    NULL, NULL);
     return TclNREvalObjEx(interp, cmdObjPtr, 0, NULL, 0);
 }

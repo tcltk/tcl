@@ -732,7 +732,7 @@ InvokeProcedureMethod(
      * Now invoke the body of the method.
      */
 
-    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
+    Tcl_NRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
     return TclNRInterpProcCore(interp, fdPtr->nameObj,
 	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
 }

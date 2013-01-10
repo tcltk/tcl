@@ -4756,7 +4756,7 @@ TclNRWhileObjCmd(
     iterPtr->msg  = "\n    (\"while\" body line %d)";
     iterPtr->word = 2;
 
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
+    Tcl_NRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
 	    NULL, NULL);
     return TCL_OK;
 }

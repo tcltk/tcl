@@ -33,7 +33,7 @@ static int		RestoreFrame(ClientData data[],
  *
  * AddCreateCallback, FinalizeConstruction --
  *
- *	Special version of TclNRAddCallback that allows the caller to splice
+ *	Special version of Tcl_NRAddCallback that allows the caller to splice
  *	the object created later on. Always calls FinalizeConstruction, which
  *	converts the object into its name and stores that in the interpreter
  *	result. This is shared by all the construction methods (create,
@@ -50,7 +50,7 @@ static inline Tcl_Object *
 AddConstructionFinalizer(
     Tcl_Interp *interp)
 {
-    TclNRAddCallback(interp, FinalizeConstruction, NULL, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, FinalizeConstruction, NULL, NULL, NULL, NULL);
     return (Tcl_Object *) &(TOP_CB(interp)->data[0]);
 }
 
@@ -114,7 +114,7 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[0]);
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
-    TclNRAddCallback(interp, DecrRefsPostClassConstructor,
+    Tcl_NRAddCallback(interp, DecrRefsPostClassConstructor,
 	    invoke[0], invoke[1], invoke[2], NULL);
 
     /*
@@ -352,7 +352,7 @@ TclOO_Object_Destroy(
 	if (contextPtr != NULL) {
 	    contextPtr->callPtr->flags |= DESTRUCTOR;
 	    contextPtr->skip = 0;
-	    TclNRAddCallback(interp, AfterNRDestructor, contextPtr,
+	    Tcl_NRAddCallback(interp, AfterNRDestructor, contextPtr,
 		    NULL, NULL, NULL);
 	    TclPushTailcallPoint(interp);
 	    return TclOOInvokeContext(contextPtr, interp, 0, NULL);
@@ -450,7 +450,7 @@ TclOO_Object_Eval(
      * the script completes.
      */
 
-    TclNRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
     return TclNREvalObjEx(interp, scriptPtr, 0, invoker, skip);
 }
 
@@ -805,7 +805,7 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
-    TclNRAddCallback(interp, RestoreFrame, framePtr, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, RestoreFrame, framePtr, NULL, NULL, NULL);
     iPtr->varFramePtr = framePtr->callerVarPtr;
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
 }
@@ -874,7 +874,7 @@ TclOONextToObjCmd(
 	     * context. Note that this is like [uplevel 1] and not [eval].
 	     */
 
-	    TclNRAddCallback(interp, RestoreFrame, framePtr, contextPtr,
+	    Tcl_NRAddCallback(interp, RestoreFrame, framePtr, contextPtr,
 		    INT2PTR(contextPtr->index), NULL);
 	    contextPtr->index = i-1;
 	    iPtr->varFramePtr = framePtr->callerVarPtr;

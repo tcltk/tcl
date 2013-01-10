@@ -1945,7 +1945,7 @@ TclNREvalFile(
      */
 
     iPtr->evalFlags |= TCL_EVAL_FILE;
-    TclNRAddCallback(interp, EvalFileCallback, oldScriptFile, pathPtr, objPtr,
+    Tcl_NRAddCallback(interp, EvalFileCallback, oldScriptFile, pathPtr, objPtr,
 	    NULL);
     return TclNREvalObjEx(interp, objPtr, 0, NULL, INT_MIN);
 }
