@@ -513,7 +513,7 @@ expectMatch	9.40 eE		{a[\\]b}	"a\\b"	"a\\b"
 expectMatch	9.41 bE		{a[\\]b}	"a\\b"	"a\\b"
 expectError	9.42 -		{a[\Z]b}	EESCAPE
 expectMatch	9.43 &		{a[[b]c}	"a\[c"	"a\[c"
-expectMatch	9.44 EMP*	{a[\u00fe-\u0507][\u00ff-\u0300]b} \
+expectMatch	9.44 M*	"a\[\u00fe-\u0507\]\[\u00ff-\u0300\]b" \
 	"a\u0102\u02ffb"	"a\u0102\u02ffb"
 
 
@@ -624,25 +624,19 @@ expectMatch	13.12 P		"a\\fb"		"a\fb"	"a\fb"
 expectMatch	13.13 P		"a\\nb"		"a\nb"	"a\nb"
 expectMatch	13.14 P		"a\\rb"		"a\rb"	"a\rb"
 expectMatch	13.15 P		"a\\tb"		"a\tb"	"a\tb"
-expectMatch	13.16 P		"a\\u0008x"	"a\bx"	"a\bx"
-expectMatch	13.17 P		{a\u008x}	"a\bx"	"a\bx"
-expectMatch	13.18 P		"a\\u00088x"	"a\b8x"	"a\b8x"
-expectMatch	13.19 P		"a\\U00000008x"	"a\bx"	"a\bx"
-expectMatch	13.20 P		{a\U0000008x}	"a\bx"	"a\bx"
+expectMatch	13.16 -		"a\u0008x"	"a\bx"	"a\bx"
+expectMatch	13.19 -		"a\U00000008x"	"a\bx"	"a\bx"
+expectMatch	13.20 -		"a\U0000008x"	"a\bx"	"a\bx"
 expectMatch	13.21 P		"a\\vb"		"a\vb"	"a\vb"
 expectMatch	13.22 MP	"a\\x08x"	"a\bx"	"a\bx"
 expectError	13.23 -		{a\xq}		EESCAPE
 expectMatch	13.24 MP	"a\\x08x"	"a\bx"	"a\bx"
 expectError	13.25 -		{a\z}		EESCAPE
 expectMatch	13.26 MP	"a\\010b"	"a\bb"	"a\bb"
-expectMatch	13.27 P		"a\\U00001234x"	"a\u1234x"	"a\u1234x"
-expectMatch	13.28 P		{a\U00001234x}	"a\u1234x"	"a\u1234x"
-expectMatch	13.29 P		"a\\U0001234x"	"a\u1234x"	"a\u1234x"
-expectMatch	13.30 P		{a\U0001234x}	"a\u1234x"	"a\u1234x"
-expectMatch	13.31 P		"a\\U000012345x"	"a\u12345x"	"a\u12345x"
-expectMatch	13.32 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
-expectMatch	13.33 P		"a\\U1000000x"	"a\ufffd0x"	"a\ufffd0x"
-expectMatch	13.34 P		{a\U1000000x}	"a\ufffd0x"	"a\ufffd0x"
+expectMatch	13.27 -		"a\U00001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.29 -		"a\U0001234x"	"a\u1234x"	"a\u1234x"
+expectMatch	13.31 -		"a\U000012345x"	"a\u12345x"	"a\u12345x"
+expectMatch	13.33 -		"a\U1000000x"	"a\ufffd0x"	"a\ufffd0x"
 
 
 doing 14 "back references"

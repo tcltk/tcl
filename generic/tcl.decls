@@ -964,10 +964,11 @@ declare 270 {
     const char *Tcl_ParseVar(Tcl_Interp *interp, const char *start,
 	    const char **termPtr)
 }
-declare 271 {
-    const char *Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
-	    const char *version, int exact)
-}
+# Removed in 9.0, converted to macro
+#declare 271 {
+#    const char *Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
+#	    const char *version, int exact)
+#}
 declare 272 {
     const char *Tcl_PkgPresentEx(Tcl_Interp *interp,
 	    const char *name, const char *version, int exact,
@@ -978,10 +979,11 @@ declare 273 {
 	    const char *version)
 }
 # TIP #268: The internally used new Require function is in slot 573.
-declare 274 {
-    const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
-	    const char *version, int exact)
-}
+# Removed in 9.0, converted to macro
+#declare 274 {
+#    const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
+#	    const char *version, int exact)
+#}
 declare 275 {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 }

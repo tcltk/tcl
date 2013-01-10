@@ -2942,7 +2942,7 @@ ResultClear(
 	return;
     }
 
-    Tcl_Free((char *) rPtr->buf);
+    ckfree((char *) rPtr->buf);
     rPtr->buf = NULL;
     rPtr->allocated = 0;
 }
@@ -2977,10 +2977,10 @@ ResultAdd(
 
 	if (rPtr->allocated == 0) {
 	    rPtr->allocated = toWrite + RB_INCREMENT;
-	    rPtr->buf = UCHARP(Tcl_Alloc(rPtr->allocated));
+	    rPtr->buf = UCHARP(ckalloc(rPtr->allocated));
 	} else {
 	    rPtr->allocated += toWrite + RB_INCREMENT;
-	    rPtr->buf = UCHARP(Tcl_Realloc((char *) rPtr->buf,
+	    rPtr->buf = UCHARP(ckrealloc((char *) rPtr->buf,
 		    rPtr->allocated));
 	}
     }

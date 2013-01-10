@@ -147,20 +147,13 @@ int
 Dde_Init(
     Tcl_Interp *interp)
 {
-    if (!Tcl_InitStubs(interp, "8.5-", 0)) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
 
-#ifdef UNICODE
-    if (TclWinGetPlatformId() < VER_PLATFORM_WIN32_NT) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"Win32s and Windows 9x are not supported platforms", -1));
-	return TCL_ERROR;
-    }
-#endif
     Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
-    return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
+    return Tcl_PkgProvideEx(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION, NULL);
 }
 
 /*
@@ -385,9 +378,12 @@ DdeSetServerName(
 	    for (n = 0; n < srvCount; ++n) {
 		Tcl_Obj* namePtr;
 		Tcl_DString ds;
+		const char *nameStr;
+		int len;
 
 		Tcl_ListObjIndex(interp, srvPtrPtr[n], 1, &namePtr);
-	    Tcl_WinUtfToTChar(Tcl_GetString(namePtr), -1, &ds);
+		nameStr = Tcl_GetStringFromObj(namePtr, &len);
+		Tcl_WinUtfToTChar(nameStr, len, &ds);
 		if (_tcscmp(actualName, (TCHAR *)Tcl_DStringValue(&ds)) == 0) {
 		    suffix++;
 		    Tcl_DStringFree(&ds);
@@ -746,7 +742,7 @@ DdeServerProc(
 		} else {
 		    returnString = (char *)
 			    Tcl_GetUnicodeFromObj(convPtr->returnPackagePtr, &len);
-		    len = sizeof(TCHAR) * len + 1;
+		    len = 2 * len + 1;
 		}
 		ddeReturn = DdeCreateDataHandle(ddeInstance, (BYTE *)returnString,
 			(DWORD) len+1, 0, ddeItem, uFmt, 0);
@@ -767,7 +763,7 @@ DdeServerProc(
 			} else {
 			    returnString = (char *) Tcl_GetUnicodeFromObj(
 				    variableObjPtr, &len);
-			    len = sizeof(TCHAR) * len + 1;
+			    len = 2 * len + 1;
 			}
 			ddeReturn = DdeCreateDataHandle(ddeInstance,
 				(BYTE *)returnString, (DWORD) len+1, 0, ddeItem,
@@ -1298,16 +1294,16 @@ DdeObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], ddeCommands, "command", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], ddeCommands,
+	    sizeof(char *), "command", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
     switch ((enum DdeSubcommands) index) {
     case DDE_SERVERNAME:
 	for (i = 2; i < objc; i++) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], ddeSrvOptions,
-		    "option", 0, &argIndex) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], ddeSrvOptions,
+		    sizeof(char *), "option", 0, &argIndex) != TCL_OK) {
 		/*
 		 * If it is the last argument, it might be a server name
 		 * instead of a bad argument.
@@ -1355,8 +1351,8 @@ DdeObjCmd(
 	} else if (objc >= 6 && objc <= 7) {
 	    firstArg = objc - 3;
 	    for (i = 2; i < firstArg; i++) {
-		if (Tcl_GetIndexFromObj(interp, objv[i], ddeExecOptions,
-			"option", 0, &argIndex) != TCL_OK) {
+		if (Tcl_GetIndexFromObjStruct(interp, objv[i], ddeExecOptions,
+			sizeof(char *), "option", 0, &argIndex) != TCL_OK) {
 		    goto wrongDdeExecuteArgs;
 		}
 		if (argIndex == DDE_EXEC_ASYNC) {
@@ -1376,8 +1372,8 @@ DdeObjCmd(
 	if (objc == 6) {
 	    firstArg = 2;
 	    break;
-	} else if ((objc == 7) && (Tcl_GetIndexFromObj(NULL, objv[2],
-		ddeReqOptions, "option", 0, &argIndex) == TCL_OK)) {
+	} else if ((objc == 7) && (Tcl_GetIndexFromObjStruct(NULL, objv[2],
+		ddeReqOptions, sizeof(char *), "option", 0, &argIndex) == TCL_OK)) {
 	    flags |= DDE_FLAG_BINARY;
 	    firstArg = 3;
 	    break;
@@ -1394,8 +1390,8 @@ DdeObjCmd(
 	if (objc == 5) {
 	    firstArg = 2;
 	    break;
-	} else if ((objc == 6) && (Tcl_GetIndexFromObj(NULL, objv[2],
-		ddeReqOptions, "option", 0, &argIndex) == TCL_OK)) {
+	} else if ((objc == 6) && (Tcl_GetIndexFromObjStruct(NULL, objv[2],
+		ddeReqOptions, sizeof(char *), "option", 0, &argIndex) == TCL_OK)) {
 	    flags |= DDE_FLAG_BINARY;
 	    firstArg = 3;
 	    break;
@@ -1422,8 +1418,8 @@ DdeObjCmd(
 	    return TCL_ERROR;
 	} else {
 	    firstArg = 2;
-	    if (Tcl_GetIndexFromObj(NULL, objv[2], ddeEvalOptions, "option",
-		    0, &argIndex) == TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(NULL, objv[2], ddeEvalOptions,
+		    sizeof(char *), "option", 0, &argIndex) == TCL_OK) {
 		if (objc < 5) {
 		    goto wrongDdeEvalArgs;
 		}
@@ -1745,8 +1741,7 @@ DdeObjCmd(
 		    objPtr = Tcl_GetVar2Ex(sendInterp, "errorInfo", NULL,
 			    TCL_GLOBAL_ONLY);
 		    if (objPtr) {
-			string = Tcl_GetStringFromObj(objPtr, &length);
-			Tcl_AddObjErrorInfo(interp, string, length);
+			Tcl_AppendObjToErrorInfo(interp, objPtr);
 		    }
 
 		    objPtr = Tcl_GetVar2Ex(sendInterp, "errorCode", NULL,
@@ -1841,9 +1836,7 @@ DdeObjCmd(
 			Tcl_DecrRefCount(resultPtr);
 			goto invalidServerResponse;
 		    }
-		    length = -1;
-		    string = Tcl_GetStringFromObj(objPtr, &length);
-		    Tcl_AddObjErrorInfo(interp, string, length);
+		    Tcl_AppendObjToErrorInfo(interp, objPtr);
 
 		    Tcl_ListObjIndex(NULL, resultPtr, 2, &objPtr);
 		    Tcl_SetObjErrorCode(interp, objPtr);

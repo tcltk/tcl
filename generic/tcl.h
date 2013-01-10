@@ -637,7 +637,7 @@ typedef struct Tcl_ObjType {
  */
 
 typedef struct Tcl_Obj {
-    size_t refCount;	/* When 0 the object will be freed. */
+    int refCount;		/* When 0 the object will be freed. */
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
 				 * must be followed by a null byte (i.e., at
@@ -649,7 +649,7 @@ typedef struct Tcl_Obj {
 				 * should use Tcl_GetStringFromObj or
 				 * Tcl_GetString to get a pointer to the byte
 				 * array as a readonly value. */
-    size_t length;		/* The number of bytes at *bytes, not
+    int length;			/* The number of bytes at *bytes, not
 				 * including the terminating null. */
     const Tcl_ObjType *typePtr;	/* Denotes the object's type. Always
 				 * corresponds to the type of the object's
@@ -2202,18 +2202,19 @@ const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
+/*
+ * When not using stubs, make it a macro.
+ */
+
 #ifdef USE_TCL_STUBS
-    /* TODO: when merging to "novem", change != to == in the next line. */
-#   if TCL_RELEASE_LEVEL != TCL_FINAL_RELEASE
-#	define Tcl_InitStubs(interp, version, exact) \
-		TclInitStubs(interp, version, (exact | (int)sizeof(size_t)), \
-		TCL_VERSION, TCL_STUB_MAGIC)
-#   else
-	/* during alpha/beta, compiled extensions only match exact */
-#	define Tcl_InitStubs(interp, version, exact) \
-		TclInitStubs(interp, TCL_PATCH_LEVEL, (1 | (int)sizeof(size_t)), \
-		TCL_VERSION, TCL_STUB_MAGIC)
-#   endif
+/* TODO: when merging to "novem", change != to == in the next line. */
+#if TCL_RELEASE_LEVEL != TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	    TclInitStubs(interp, version,  (exact | (int)sizeof(size_t)), TCL_VERSION, TCL_STUB_MAGIC)
+#else
+#   define Tcl_InitStubs(interp, version, exact) \
+	    TclInitStubs(interp, TCL_PATCH_LEVEL,  (1 | (int)sizeof(size_t)), TCL_VERSION, TCL_STUB_MAGIC)
+#endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)

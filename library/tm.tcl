@@ -342,7 +342,6 @@ proc ::tcl::tm::Defaults {} {
 	    }
 	}
     }
-    }
     return
 }
 

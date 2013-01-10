@@ -115,7 +115,7 @@ Pkgc_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
+    code = Tcl_PkgProvideEx(interp, "Pkgc", "1.7.2", NULL);
     if (code != TCL_OK) {
 	return code;
     }
@@ -152,7 +152,7 @@ Pkgc_SafeInit(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
+    code = Tcl_PkgProvideEx(interp, "Pkgc", "1.7.2", NULL);
     if (code != TCL_OK) {
 	return code;
     }

@@ -41,6 +41,10 @@ static int    Pkgb_DemoObjCmd(ClientData clientData,
  *----------------------------------------------------------------------
  */
 
+#ifndef Tcl_GetErrorLine
+#   define Tcl_GetErrorLine(interp) ((interp)->errorLine)
+#endif
+
 static int
 Pkgb_SubObjCmd(
     ClientData dummy,		/* Not used. */
@@ -56,6 +60,9 @@ Pkgb_SubObjCmd(
     }
     if ((Tcl_GetIntFromObj(interp, objv[1], &first) != TCL_OK)
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
+	char buf[TCL_INTEGER_SPACE];
+	sprintf(buf, "%d", Tcl_GetErrorLine(interp));
+	Tcl_AppendResult(interp, " in line: ", buf, NULL);
 	return TCL_ERROR;
     }
     Tcl_SetObjResult(interp, Tcl_NewIntObj(first - second));

@@ -125,7 +125,7 @@ Pkga_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkga", "1.0");
+    code = Tcl_PkgProvideEx(interp, "Pkga", "1.0", NULL);
     if (code != TCL_OK) {
 	return code;
     }
