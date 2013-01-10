@@ -2412,7 +2412,9 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 /* Tcl_InitSubsystems, see TIP ??? */
 
 #define TCL_INIT_PANIC (1) /* Set Panic proc */
-#define TCL_INIT_CREATE (4) /* Call Tcl_CreateInterp(), and set argc/argv */
+#define TCL_INIT_CREATE (48) /* Call Tcl_CreateInterp(), and set argc/argv */
+#define TCL_INIT_CREATE_UNICODE (16) /* The same, but argv is in unicode */
+#define TCL_INIT_CREATE_UTF8 (32) /* The same, but argv is in utf-8 */
 
 EXTERN Tcl_Interp *Tcl_InitSubsystems(int flags, ...);
 
@@ -2422,8 +2424,7 @@ EXTERN Tcl_Interp *Tcl_InitSubsystems(int flags, ...);
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    Tcl_InitSubsystems(TCL_INIT_CREATE, argc, argv))
-//	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
