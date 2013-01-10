@@ -66,14 +66,6 @@ static int TclPkgProvide(
 	return TCL_ERROR;
 }
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#undef TclWinNToHS
-#define TclWinNToHS winNToHS
-static unsigned short TclWinNToHS(unsigned short ns) {
-	return ntohs(ns);
-}
-#endif
-
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -494,7 +486,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinGetSockOpt, /* 3 */
     TclWinGetTclInstance, /* 4 */
     TclUnixWaitForFile, /* 5 */
-    TclWinNToHS, /* 6 */
+    0, /* 6 */
     TclWinSetSockOpt, /* 7 */
     TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
