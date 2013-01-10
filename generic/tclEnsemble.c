@@ -41,6 +41,9 @@ static int		CompileToCompiledCommand(Tcl_Interp *interp,
 static void		CompileToInvokedCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Tcl_Obj *replacements,
 			    Command *cmdPtr, CompileEnv *envPtr);
+static int		CompileBasicNArgCommand(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    CompileEnv *envPtr);
 
 /*
  * The lists of subcommands and options for the [namespace ensemble] command.
@@ -2953,9 +2956,14 @@ TclCompileEnsemble(
     Tcl_ListObjAppendElement(NULL, replaced, replacement);
     if (Tcl_ListObjGetElements(NULL, targetCmdObj, &len, &elems) != TCL_OK) {
 	goto failed;
-    }
-    if (len != 1) {
-	goto failed;
+    } else if (len != 1) {
+	/*
+	 * Note that at this point we know we can't issue any special
+	 * instruction sequence as the mapping isn't one that we support at
+	 * the compiled level.
+	 */
+
+	goto cleanup;
     }
     targetCmdObj = elems[0];
 
@@ -3008,7 +3016,7 @@ TclCompileEnsemble(
      */
 
   failed:
-    if (len == 1 && depth < 250) {
+    if (depth < 250) {
 	if (depth > 1) {
 	    if (!invokeAnyway) {
 		cmdPtr = oldCmdPtr;
@@ -3179,6 +3187,339 @@ CompileToInvokedCommand(
     TclEmitInstInt4(INST_INVOKE_REPLACE, parsePtr->numWords, envPtr);
     TclEmitInt1(numWords+1, envPtr);
     TclAdjustStackDepth(-1, envPtr);	/* Correction to stack depth calcs. */
+}
+
+/*
+ * Helpers that do issuing of instructions for commands that "don't have
+ * compilers" (well, they do; these). They all work by just generating base
+ * code to invoke the command; they're intended for ensemble subcommands so
+ * that the costs of INST_INVOKE_REPLACE can be avoided where we can work out
+ * that they're not needed.
+ *
+ * Note that these are NOT suitable for commands where there's an argument
+ * that is a script, as an [info level] or [info frame] in the inner context
+ * can see the difference.
+ */
+
+static int
+CompileBasicNArgCommand(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    Tcl_Obj *objPtr;
+    char *bytes;
+    int length, i, literal;
+    DefineLineInformation;
+
+    /*
+     * Push the name of the command we're actually dispatching to as part of
+     * the implementation.
+     */
+
+    objPtr = Tcl_NewObj();
+    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
+    bytes = Tcl_GetStringFromObj(objPtr, &length);
+    literal = TclRegisterNewCmdLiteral(envPtr, bytes, length);
+    TclSetCmdNameObj(interp, envPtr->literalArrayPtr[literal].objPtr, cmdPtr);
+    TclEmitPush(literal, envPtr);
+    TclDecrRefCount(objPtr);
+
+    /*
+     * Push the words of the command.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    for (i=1 ; i<parsePtr->numWords ; i++) {
+	if (envPtr->clNext) {
+	    SetLineInformation(i);
+	}
+	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
+	} else {
+	    CompileTokens(envPtr, tokenPtr, interp);
+	}
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+
+    /*
+     * Do the standard dispatch.
+     */
+
+    if (i <= 255) {
+	TclEmitInstInt1(INST_INVOKE_STK1, i, envPtr);
+    } else {
+	TclEmitInstInt4(INST_INVOKE_STK4, i, envPtr);
+    }
+    return TCL_OK;
+}
+
+int
+TclCompileBasic0ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords != 1) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasic1ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasic2ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasic3ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasic0Or1ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords != 1 && parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasic1Or2ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasic2Or3ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords != 3 && parsePtr->numWords != 4) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasic0To2ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords < 1 || parsePtr->numWords > 3) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasic1To3ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 4) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasicMin0ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords < 1) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasicMin1ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords < 2) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
+}
+
+int
+TclCompileBasicMin2ArgCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * Verify that the number of arguments is correct; that's the only case
+     * that we know will avoid the call to Tcl_WrongNumArgs() at invoke time,
+     * which is the only code that sees the shenanigans of ensemble dispatch.
+     */
+
+    if (parsePtr->numWords < 3) {
+	return TCL_ERROR;
+    }
+
+    return CompileBasicNArgCommand(interp, parsePtr, cmdPtr, envPtr);
 }
 
 /*

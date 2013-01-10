@@ -3082,7 +3082,7 @@ TclCompileFormatCmd(
      * after our attempt to spot a literal).
      */
 
-    for (; --i>=0 ;) {
+    for (; i>=0 ; i--) {
 	Tcl_DecrRefCount(objv[i]);
     }
     ckfree(objv);
