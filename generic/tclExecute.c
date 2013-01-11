@@ -2301,6 +2301,10 @@ TEBCresume(
     TCL_DTRACE_INST_NEXT();
 
     while (*pc == INST_START_CMD) {
+	/*
+	 * Peephole: do not run INST_START_CMD, just skip it
+	 */
+	
 #ifdef TCL_COMPILE_STATS
 	iPtr->stats.instructionCount[*pc]++;
 #endif
@@ -7062,13 +7066,13 @@ TEBCresume(
 
     /*
      * INST_START_CMD failure case removed where it doesn't bother that much
-     */
-    /* case INST_START_CMD:
      *
      * Remark that if the interpreter is marked for deletion its
      * compileEpoch is modified, so that the epoch check also verifies
      * that the interp is not deleted. If no outside call has been made
      * since the last check, it is safe to omit the check.
+
+     * case INST_START_CMD:
      */
 
 	instStartCmdFailed:
