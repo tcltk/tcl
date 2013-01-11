@@ -2379,7 +2379,7 @@ TEBCresume(
 	pc += 6;
 	TEBC_YIELD();
 	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+	TclMarkTailcall(interp);
 	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE);
 	
     /*
