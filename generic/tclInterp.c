@@ -1800,7 +1800,7 @@ AliasNRCmd(
     if (isRootEnsemble) {
 	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-    TclDeferCallbacks(interp, /* skip tailcalls */ 1);
+    TclSkipTailcall(interp);
     return Tcl_NREvalObj(interp, listPtr, flags);
 }
 

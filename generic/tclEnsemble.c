@@ -1904,7 +1904,7 @@ NsEnsembleImplementationCmdNR(
 	 * Hand off to the target command.
 	 */
 
-	TclDeferCallbacks(interp, /* skip tailcalls */ 1);
+	TclSkipTailcall(interp);
 	return TclNREvalObjEx(interp, copyPtr, TCL_EVAL_INVOKE);
     }
 
@@ -2112,7 +2112,7 @@ EnsembleUnknownCallback(
      */
 
     Tcl_Preserve(ensemblePtr);
-    TclDeferCallbacks (interp, /*skip tailcalls */ 1);
+    TclSkipTailcall(interp);
     result = Tcl_EvalObjv(interp, paramc, paramv, 0);
     if ((result == TCL_OK) && (ensemblePtr->flags & ENSEMBLE_DEAD)) {
 	if (!Tcl_InterpDeleted(interp)) {

@@ -4219,14 +4219,6 @@ TclNREvalObjv(
     }
 }
 
-void
-TclPushTailcallPoint(
-    Tcl_Interp *interp)
-{
-    TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
-    ((Interp *) interp)->numLevels++;
-}
-
 int
 TclNRRunCallbacks(
     Tcl_Interp *interp,
@@ -4569,7 +4561,7 @@ TEOV_NotFound(
 	savedNsPtr = varFramePtr->nsPtr;
 	varFramePtr->nsPtr = lookupNsPtr;
     }
-    TclDeferCallbacks(interp, 1);
+    TclSkipTailcall(interp);
     TclNRAddCallback(interp, TEOV_NotFoundCallback, INT2PTR(handlerObjc),
 	    newObjv, savedNsPtr, NULL);
     return TclNREvalObjv(interp, newObjc, newObjv, TCL_EVAL_NOERR, NULL);
@@ -5265,7 +5257,7 @@ TclNREvalObjEx(
 	Tcl_IncrRefCount(listPtr);
 	TclDecrRefCount(objPtr);
 
-	TclDeferCallbacks(interp, 0);
+	TclMarkTailcall(interp);
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, NULL,
 		NULL, NULL);
 
@@ -7335,19 +7327,34 @@ Tcl_NRCmdSwap(
  */
 
 void
-TclDeferCallbacks(
-    Tcl_Interp *interp,
-    int skipTailcalls)
+TclMarkTailcall(
+    Tcl_Interp *interp)
 {
     Interp *iPtr = (Interp *) interp;
 
     if (iPtr->deferredCallbacks == NULL) {
-	TclNRAddCallback(interp, NRCommand, NULL, INT2PTR(skipTailcalls != 0),
+	TclNRAddCallback(interp, NRCommand, NULL, NULL,
                 NULL, NULL);
         iPtr->deferredCallbacks = TOP_CB(interp);
-    } else if (skipTailcalls) {
-        iPtr->deferredCallbacks->data[1] = INT2PTR(skipTailcalls != 0);
     }
+}
+
+void
+TclSkipTailcall(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+
+    TclMarkTailcall(interp);
+    iPtr->deferredCallbacks->data[1] = INT2PTR(1);
+}
+
+void
+TclPushTailcallPoint(
+    Tcl_Interp *interp)
+{
+    TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
+    ((Interp *) interp)->numLevels++;
 }
 
 #if !NRE_STACK_DEBUG
@@ -7567,7 +7574,7 @@ TclNRTailcallEval(
      * Perform the tailcall
      */
 
-    TclDeferCallbacks(interp, 0);
+    TclMarkTailcall(interp);
     TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
     return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
