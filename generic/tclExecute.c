@@ -2300,16 +2300,10 @@ TEBCresume(
 
     TCL_DTRACE_INST_NEXT();
 
-    /*
-     * These two instructions account for 26% of all instructions (according
-     * to measurements on tclbench by Ben Vitale
-     * [http://www.cs.toronto.edu/syslab/pubs/tcl2005-vitale-zaleski.pdf]
-     * Resolving them before the switch reduces the cost of branch
-     * mispredictions, seems to improve runtime by 5% to 15%, and (amazingly!)
-     * reduces total obj size.
-     */
-
-    if (*pc == INST_START_CMD) {
+    while (*pc == INST_START_CMD) {
+#ifdef TCL_COMPILE_STATS
+	iPtr->stats.instructionCount[*pc]++;
+#endif
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
 	if (checkInterp) {
 	    checkInterp = 0;
@@ -2321,6 +2315,15 @@ TEBCresume(
 	pc += 9;
     }
     
+    /*
+     * These two instructions account for 26% of all instructions (according
+     * to measurements on tclbench by Ben Vitale
+     * [http://www.cs.toronto.edu/syslab/pubs/tcl2005-vitale-zaleski.pdf]
+     * Resolving them before the switch reduces the cost of branch
+     * mispredictions, seems to improve runtime by 5% to 15%, and (amazingly!)
+     * reduces total obj size.
+     */
+
     if (*pc == INST_LOAD_SCALAR1) {
 	goto instLoadScalar1;
     } else if (*pc == INST_PUSH1) {
@@ -2503,19 +2506,10 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
-
-	/*
-	 * Runtime peephole optimisation: an INST_POP is scheduled at the end
-	 * of most commands. If the next instruction is an INST_START_CMD,
-	 * fall through to it.
-	 */
-
-	pc++;
-	NEXT_INST_F(0, 0, 0);
+	NEXT_INST_F(1, 0, 0);
 
     case INST_NOP:
-	pc += 1;
-	goto cleanup0;
+	NEXT_INST_F(1, 0, 0);
 
     case INST_DUP:
 	objResultPtr = OBJ_AT_TOS;
@@ -7081,6 +7075,7 @@ TEBCresume(
 	{
 	    const char *bytes;
 
+	    checkInterp = 1;
 	    length = 0;
 
 	    /*
