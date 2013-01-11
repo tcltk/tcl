@@ -1154,7 +1154,7 @@ typedef struct CallFrame {
 				 * meaning of the value is, which we do not
 				 * specify. */
     LocalCache *localCachePtr;
-    struct NRE_callback *tailcallPtr;
+    Tcl_Obj    *tailcallPtr;
 				/* NULL if no tailcall is scheduled */
 } CallFrame;
 
@@ -2206,7 +2206,6 @@ typedef struct InterpList {
 #define TCL_ALLOW_EXCEPTIONS	4
 #define TCL_EVAL_FILE		2
 #define TCL_EVAL_CTX		8
-#define TCL_EVAL_REDIRECT	16
 
 /*
  * Flag bits for Interp structures:
@@ -2743,8 +2742,12 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
-MODULE_SCOPE void  TclSpliceTailcall(Tcl_Interp *interp,
-	               struct NRE_callback *tailcallPtr);
+MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
+MODULE_SCOPE void  TclPushTailcallPoint(Tcl_Interp *interp);
+
+/* These two can be considered for the public api */
+MODULE_SCOPE void  TclMarkTailcall(Tcl_Interp *interp);
+MODULE_SCOPE void  TclSkipTailcall(Tcl_Interp *interp);
 
 /*
  * This structure holds the data for the various iteration callbacks used to
@@ -2819,7 +2822,6 @@ MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
-MODULE_SCOPE void	TclPushTailcallPoint(Tcl_Interp *interp);
 MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
 			    int loc);
 MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
@@ -4622,35 +4624,6 @@ typedef struct NRE_callback {
 	callbackPtr->nextPtr = TOP_CB(interp);				\
 	TOP_CB(interp) = callbackPtr;					\
     } while (0)
-
-#define TclNRDeferCallback(interp,postProcPtr,data0,data1,data2,data3) \
-    do {								\
-	NRE_callback *callbackPtr;					\
-	TCLNR_ALLOC((interp), (callbackPtr));				\
-	callbackPtr->procPtr = (postProcPtr);				\
-	callbackPtr->data[0] = (ClientData)(data0);			\
-	callbackPtr->data[1] = (ClientData)(data1);			\
-	callbackPtr->data[2] = (ClientData)(data2);			\
-	callbackPtr->data[3] = (ClientData)(data3);			\
-	callbackPtr->nextPtr = ((Interp *)interp)->deferredCallbacks;	\
-	((Interp *)interp)->deferredCallbacks = callbackPtr;		\
-    } while (0)
-
-#define TclNRSpliceCallbacks(interp, topPtr) \
-    do {					\
-	NRE_callback *bottomPtr = topPtr;	\
-	while (bottomPtr->nextPtr) {		\
-	    bottomPtr = bottomPtr->nextPtr;	\
-	}					\
-	bottomPtr->nextPtr = TOP_CB(interp);	\
-	TOP_CB(interp) = topPtr;		\
-    } while (0)
-
-#define TclNRSpliceDeferred(interp)					\
-    if (((Interp *)interp)->deferredCallbacks) {			\
-	TclNRSpliceCallbacks(interp, ((Interp *)interp)->deferredCallbacks); \
-	((Interp *)interp)->deferredCallbacks = NULL;			\
-    }
 
 #if NRE_USE_SMALL_ALLOC
 #define TCLNR_ALLOC(interp, ptr) \

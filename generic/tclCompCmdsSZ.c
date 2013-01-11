@@ -1953,11 +1953,13 @@ TclCompileTailcallCmd(
 	return TCL_ERROR;
     }
 
+    /* make room for the nsObjPtr */
+    CompileWord(envPtr, tokenPtr, interp, 0);
     for (i=1 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords-1,	envPtr);
+    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords,	envPtr);
     return TCL_OK;
 }
 

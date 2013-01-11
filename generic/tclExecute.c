@@ -2008,7 +2008,6 @@ TEBCresume(
 
     case INST_TAILCALL: {
 	Tcl_Obj *listPtr, *nsObjPtr;
-        NRE_callback *tailcallPtr;
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 
@@ -2042,18 +2041,12 @@ TEBCresume(
 
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
 	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
-	Tcl_IncrRefCount(listPtr);
-	Tcl_IncrRefCount(nsObjPtr);
-	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
-		NULL, NULL);
+	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	if (iPtr->varFramePtr->tailcallPtr) {
+	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
+	}
+	iPtr->varFramePtr->tailcallPtr = listPtr;
 
-	/*
-	 * Unstitch ourselves and do a [return].
-	 */
-
-	tailcallPtr = TOP_CB(interp);
-	TOP_CB(interp) = tailcallPtr->nextPtr;
-	iPtr->varFramePtr->tailcallPtr = tailcallPtr;
 	result = TCL_RETURN;
 	cleanup = opnd;
 	goto processExceptionReturn;
@@ -2659,8 +2652,9 @@ TEBCresume(
 	iPtr->ensembleRewrite.numInsertedObjs = 1;
 	pc += 6;
 	TEBC_YIELD();
+
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+	TclSkipTailcall(interp);
 	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
 	
     /*
