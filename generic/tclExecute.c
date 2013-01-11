@@ -3045,7 +3045,7 @@ TEBCresume(
 	TEBC_YIELD();
 
 	Tcl_NRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	TclDeferCallbacks(interp, /*skip tailcalls */ 1);
+	TclSkipTailcall(interp);
 	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
 
     /*

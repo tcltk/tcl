@@ -2802,7 +2802,11 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
-MODULE_SCOPE void  TclDeferCallbacks(Tcl_Interp *interp, int skipTailcall);
+MODULE_SCOPE void  TclPushTailcallPoint(Tcl_Interp *interp);
+
+/* These two can be considered for the public api */
+MODULE_SCOPE void  TclMarkTailcall(Tcl_Interp *interp);
+MODULE_SCOPE void  TclSkipTailcall(Tcl_Interp *interp);
 
 /*
  * This structure holds the data for the various iteration callbacks used to
@@ -2877,7 +2881,6 @@ MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
-MODULE_SCOPE void	TclPushTailcallPoint(Tcl_Interp *interp);
 MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
 			    int loc);
 MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,

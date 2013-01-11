@@ -1945,7 +1945,7 @@ InvokeImportedNRCmd(
     ImportedCmdData *dataPtr = clientData;
     Command *realCmdPtr = dataPtr->realCmdPtr;
 
-    TclDeferCallbacks(interp, /* skip tailcalls */ 1);
+    TclSkipTailcall(interp);
     return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
 }
 
