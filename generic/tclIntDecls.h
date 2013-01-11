@@ -541,7 +541,9 @@ EXTERN int		TclMatchIsTrivial _ANSI_ARGS_((CONST char *pattern));
 /* Slot 233 is reserved */
 /* Slot 234 is reserved */
 /* Slot 235 is reserved */
-/* Slot 236 is reserved */
+/* 236 */
+EXTERN void		TclBackgroundException _ANSI_ARGS_((
+				Tcl_Interp *interp, int code));
 /* Slot 237 is reserved */
 /* Slot 238 is reserved */
 /* Slot 239 is reserved */
@@ -797,7 +799,7 @@ typedef struct TclIntStubs {
     VOID *reserved233;
     VOID *reserved234;
     VOID *reserved235;
-    VOID *reserved236;
+    void (*tclBackgroundException) _ANSI_ARGS_((Tcl_Interp *interp, int code)); /* 236 */
     VOID *reserved237;
     VOID *reserved238;
     VOID *reserved239;
@@ -1471,7 +1473,10 @@ extern TclIntStubs *tclIntStubsPtr;
 /* Slot 233 is reserved */
 /* Slot 234 is reserved */
 /* Slot 235 is reserved */
-/* Slot 236 is reserved */
+#ifndef TclBackgroundException
+#define TclBackgroundException \
+	(tclIntStubsPtr->tclBackgroundException) /* 236 */
+#endif
 /* Slot 237 is reserved */
 /* Slot 238 is reserved */
 /* Slot 239 is reserved */
@@ -1499,5 +1504,6 @@ extern TclIntStubs *tclIntStubsPtr;
 #   define TclSockMinimumBuffers(a,b) TclSockMinimumBuffersOld((int)(a),b)
 #endif
 #undef TclUnusedStubEntry
+#undef TclBackgroundException
 
 #endif /* _TCLINTDECLS */

@@ -1636,7 +1636,9 @@ EXTERN int		Tcl_PkgRequireProc _ANSI_ARGS_((Tcl_Interp *interp,
 /* Slot 578 is reserved */
 /* Slot 579 is reserved */
 /* Slot 580 is reserved */
-/* Slot 581 is reserved */
+/* 581 */
+EXTERN int		TclCanceled _ANSI_ARGS_((Tcl_Interp *interp,
+				int flags));
 /* Slot 582 is reserved */
 /* Slot 583 is reserved */
 /* Slot 584 is reserved */
@@ -1667,7 +1669,9 @@ EXTERN void		TclSetErrorLine _ANSI_ARGS_((Tcl_Interp *interp,
 				int lineNum));
 /* Slot 607 is reserved */
 /* Slot 608 is reserved */
-/* Slot 609 is reserved */
+/* 609 */
+EXTERN void		TclBackgroundException _ANSI_ARGS_((
+				Tcl_Interp *interp, int code));
 /* Slot 610 is reserved */
 /* Slot 611 is reserved */
 /* Slot 612 is reserved */
@@ -2306,7 +2310,7 @@ typedef struct TclStubs {
     VOID *reserved578;
     VOID *reserved579;
     VOID *reserved580;
-    VOID *reserved581;
+    int (*tclCanceled) _ANSI_ARGS_((Tcl_Interp *interp, int flags)); /* 581 */
     VOID *reserved582;
     VOID *reserved583;
     VOID *reserved584;
@@ -2334,7 +2338,7 @@ typedef struct TclStubs {
     void (*tclSetErrorLine) _ANSI_ARGS_((Tcl_Interp *interp, int lineNum)); /* 606 */
     VOID *reserved607;
     VOID *reserved608;
-    VOID *reserved609;
+    void (*tclBackgroundException) _ANSI_ARGS_((Tcl_Interp *interp, int code)); /* 609 */
     VOID *reserved610;
     VOID *reserved611;
     VOID *reserved612;
@@ -4459,7 +4463,10 @@ extern TclStubs *tclStubsPtr;
 /* Slot 578 is reserved */
 /* Slot 579 is reserved */
 /* Slot 580 is reserved */
-/* Slot 581 is reserved */
+#ifndef TclCanceled
+#define TclCanceled \
+	(tclStubsPtr->tclCanceled) /* 581 */
+#endif
 /* Slot 582 is reserved */
 /* Slot 583 is reserved */
 /* Slot 584 is reserved */
@@ -4493,7 +4500,10 @@ extern TclStubs *tclStubsPtr;
 #endif
 /* Slot 607 is reserved */
 /* Slot 608 is reserved */
-/* Slot 609 is reserved */
+#ifndef TclBackgroundException
+#define TclBackgroundException \
+	(tclStubsPtr->tclBackgroundException) /* 609 */
+#endif
 /* Slot 610 is reserved */
 /* Slot 611 is reserved */
 /* Slot 612 is reserved */
@@ -4523,6 +4533,8 @@ extern TclStubs *tclStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#undef TclCanceled
+#undef TclBackgroundException
 #undef TclGetErrorLine
 #undef TclSetErrorLine
 #undef TclUnusedStubEntry

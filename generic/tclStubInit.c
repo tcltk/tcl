@@ -70,13 +70,31 @@ int TclSockMinimumBuffersOld(sock, size)
 }
 #endif
 
+#define TclBackgroundException backgroundException
+static void TclBackgroundException(interp, code)
+    Tcl_Interp *interp;
+    int code;
+{
+    Tcl_BackgroundError(interp);
+}
+#define TclCanceled canceled
+static int TclCanceled(interp)
+    Tcl_Interp *interp;
+{
+    return TCL_OK;
+}
 #define TclGetErrorLine getErrorLine
-static int TclGetErrorLine(Tcl_Interp *interp) {
-	return interp->errorLine;
+static int TclGetErrorLine(interp)
+    Tcl_Interp *interp;
+{
+    return interp->errorLine;
 }
 #define TclSetErrorLine setErrorLine
-static void TclSetErrorLine(Tcl_Interp *interp, int errorline) {
-	interp->errorLine = errorline;
+static void TclSetErrorLine(interp, lineNum)
+    Tcl_Interp *interp;
+    int lineNum;
+{
+    interp->errorLine = lineNum;
 }
 
 #ifdef __WIN32__
@@ -451,7 +469,7 @@ TclIntStubs tclIntStubs = {
     NULL, /* 233 */
     NULL, /* 234 */
     NULL, /* 235 */
-    NULL, /* 236 */
+    TclBackgroundException, /* 236 */
     NULL, /* 237 */
     NULL, /* 238 */
     NULL, /* 239 */
@@ -1195,7 +1213,7 @@ TclStubs tclStubs = {
     NULL, /* 578 */
     NULL, /* 579 */
     NULL, /* 580 */
-    NULL, /* 581 */
+    TclCanceled, /* 581 */
     NULL, /* 582 */
     NULL, /* 583 */
     NULL, /* 584 */
@@ -1223,7 +1241,7 @@ TclStubs tclStubs = {
     TclSetErrorLine, /* 606 */
     NULL, /* 607 */
     NULL, /* 608 */
-    NULL, /* 609 */
+    TclBackgroundException, /* 609 */
     NULL, /* 610 */
     NULL, /* 611 */
     NULL, /* 612 */

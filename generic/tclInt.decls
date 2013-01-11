@@ -695,7 +695,10 @@ declare 183 {
 declare 199 {
     int TclMatchIsTrivial(const char *pattern)
 }
-
+# TIP 337 made this one public
+declare 236 {
+    void TclBackgroundException(Tcl_Interp *interp, int code)
+}
 declare 249 {
     void TclUnusedStubEntry(void)
 }

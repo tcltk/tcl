@@ -1795,14 +1795,19 @@ declare 573 {
 	    int objc, Tcl_Obj *const objv[], ClientData *clientDataPtr)
 }
 
-# (Exposed starting with 8.6)
+# Public in Tcl 8.6:
+declare 581 {
+    int TclCanceled(Tcl_Interp *interp, int flags)
+}
 declare 605 {
     int TclGetErrorLine(Tcl_Interp *interp)
 }
 declare 606 {
     void TclSetErrorLine(Tcl_Interp *interp, int lineNum)
 }
-
+declare 609 {
+    void TclBackgroundException(Tcl_Interp *interp, int code)
+}
 declare 630 {
     void TclUnusedStubEntry(void)
 }
