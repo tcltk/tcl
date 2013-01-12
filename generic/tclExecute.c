@@ -2084,7 +2084,8 @@ TEBCresume(
     Tcl_Obj **tosPtr;		/* Cached pointer to top of evaluation
 				 * stack. */
     const unsigned char *pc;	/* The current program counter. */
-
+    unsigned char inst;         /* The currently running instruction */
+    
     /*
      * Transfer variables - needed only between opcodes, but not while
      * executing an instruction.
@@ -2290,6 +2291,8 @@ TEBCresume(
      * reduces total obj size.
      */
 
+    inst = *pc;
+    
     peepholeStart:
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.instructionCount[*pc]++;
@@ -2310,18 +2313,18 @@ TEBCresume(
 
     TCL_DTRACE_INST_NEXT();
     
-    if (*pc == INST_LOAD_SCALAR1) {
+    if (inst == INST_LOAD_SCALAR1) {
 	goto instLoadScalar1;
     }
 
-    if (*pc == INST_PUSH1) {
+    if (inst == INST_PUSH1) {
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
 	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), OBJ_AT_TOS);
-	pc += 2;
+	inst = *(pc += 2);
 	goto peepholeStart;
     }
 
-    if (*pc == INST_START_CMD) {
+    if (inst == INST_START_CMD) {
 	/*
 	 * Peephole: do not run INST_START_CMD, just skip it
 	 */
@@ -2334,11 +2337,11 @@ TEBCresume(
 		goto instStartCmdFailed;
 	    }
 	}
-	pc += 9;
+	inst = *(pc += 9);
 	goto peepholeStart;
     }
     
-    switch (*pc) {
+    switch (inst) {
     case INST_SYNTAX:
     case INST_RETURN_IMM: {
 	int code = TclGetInt4AtPtr(pc+1);
