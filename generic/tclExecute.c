@@ -2315,16 +2315,12 @@ TEBCresume(
     
     if (inst == INST_LOAD_SCALAR1) {
 	goto instLoadScalar1;
-    }
-
-    if (inst == INST_PUSH1) {
+    } else if (inst == INST_PUSH1) {
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
 	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), OBJ_AT_TOS);
 	inst = *(pc += 2);
 	goto peepholeStart;
-    }
-
-    if (inst == INST_START_CMD) {
+    } else if (inst == INST_START_CMD) {
 	/*
 	 * Peephole: do not run INST_START_CMD, just skip it
 	 */
