@@ -1,3 +1,9 @@
+2013-01-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: Put back TclBackgroundException in
+	internal stub table, so extensions using this, compiled
+	against 8.5 headers still run in Tcl 8.6.
+
 2013-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* library/http/http.tcl: [Bug 3599395]: http assumes status line
