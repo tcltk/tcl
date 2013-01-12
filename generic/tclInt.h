@@ -2669,6 +2669,18 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 #define TCL_TOKEN_ERROR         4096
 
 /*
+ * The refcounted token arrays used as intrep in the "tokens" Tcl object type.
+ */
+
+typedef struct TokenArray {
+    int refCount;
+    Tcl_Token *first, *last;
+} TokenArray;
+
+void TclHoldTokenArray(TokenArray *ta);
+void TclReleaseTokenArray(TokenArray *ta);
+
+/*
  *----------------------------------------------------------------
  * Data structures for process-global values.
  *----------------------------------------------------------------

@@ -6081,11 +6081,13 @@ TclNREvalObjEx(
 	if ((invoker == NULL) /* No context ... */
 		|| (invoker->nline <= word) || (invoker->line[word] < 0)) {
 	    /* ... or dynamic script, or dynamic context, force our own */
-
+            
 	    tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+            TclHoldTokenArray((TokenArray *)objPtr->internalRep.otherValuePtr);
 	    result = TclEvalScriptTokens(interp, tokensPtr,
 		    1 + (int)(lastTokenPtr - tokensPtr), flags, 1, NULL,
 		    tokensPtr[0].start);
+            TclReleaseTokenArray((TokenArray *)objPtr->internalRep.otherValuePtr);
 	} else {
 	    /*
 	     * We have an invoker, describing the command asking for the
@@ -6123,9 +6125,11 @@ TclNREvalObjEx(
 		iPtr->evalFlags |= TCL_EVAL_CTX;
 
 		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+                TclHoldTokenArray((TokenArray *)objPtr->internalRep.otherValuePtr);
 		result = TclEvalScriptTokens(interp, tokensPtr,
 			1 + (int)(lastTokenPtr - tokensPtr), flags,
 			ctxPtr->line[word], NULL, tokensPtr[0].start);
+                TclReleaseTokenArray((TokenArray *)objPtr->internalRep.otherValuePtr);
 
 		if (pc) {
 		    /*
@@ -6136,9 +6140,11 @@ TclNREvalObjEx(
 		}
 	    } else {
 		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+                TclHoldTokenArray((TokenArray *)objPtr->internalRep.otherValuePtr);
 		result = TclEvalScriptTokens(interp, tokensPtr,
 			1 + (int)(lastTokenPtr - tokensPtr), flags, 1,
 			NULL, tokensPtr[0].start);
+                TclReleaseTokenArray((TokenArray *)objPtr->internalRep.otherValuePtr);
 	    }
 	    TclStackFree(interp, ctxPtr);
 	}

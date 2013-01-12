@@ -203,6 +203,19 @@ static void             DupTokensInternalRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void             FreeTokensInternalRep(Tcl_Obj *objPtr);
 static int              SetTokensFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
+void TclHoldTokenArray(struct TokenArray *ta)
+{
+    ta->refCount++;
+}
+
+void TclReleaseTokenArray(struct TokenArray *ta)
+{
+    if (--ta->refCount<=0) {
+	ckfree(ta->first);
+	ckfree(ta);
+    }
+}
+
 /*
  * The structure below defines the "tokens" Tcl object type.
  */
@@ -237,8 +250,7 @@ static void
 FreeTokensInternalRep(objPtr)
     Tcl_Obj *objPtr;
 {
-    /* Free the Tcl_Token array */
-    ckfree(objPtr->internalRep.twoPtrValue.ptr1);
+    TclReleaseTokenArray((TokenArray *)objPtr->internalRep.twoPtrValue.ptr1);
 }
 
 /*
@@ -299,7 +311,7 @@ SetTokensFromAny (interp, objPtr)
 {
     int numBytes;
     CONST char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
-    Tcl_Token *tokenPtr;
+    TokenArray *ta;
 
     /*
      * Free the old internal rep, parse the string as a Tcl script, and
@@ -310,9 +322,10 @@ SetTokensFromAny (interp, objPtr)
 	    && (objPtr->typePtr->freeIntRepProc != NULL)) {
 	(*objPtr->typePtr->freeIntRepProc)(objPtr);
     }
-    objPtr->internalRep.twoPtrValue.ptr1 = 
-	    (VOID *) TclParseScript(interp, script, numBytes, 0, &tokenPtr, NULL);
-    objPtr->internalRep.twoPtrValue.ptr2 = tokenPtr;
+    ta = (TokenArray *) ckalloc(sizeof(TokenArray));
+    ta->refCount = 1;
+    ta->first = TclParseScript(interp, script, numBytes, 0, &ta->last, NULL);
+    objPtr->internalRep.otherValuePtr = (VOID *) ta;
     objPtr->typePtr = &tokensType;
     return TCL_OK;
 }
@@ -344,9 +357,9 @@ TclGetTokensFromObj(objPtr,lastTokenPtrPtr)
 	SetTokensFromAny(NULL, objPtr);
     }
     if (lastTokenPtrPtr != NULL) {
-	*lastTokenPtrPtr = (Tcl_Token *) objPtr->internalRep.twoPtrValue.ptr2;
+	*lastTokenPtrPtr = ((TokenArray *) objPtr->internalRep.otherValuePtr)->last;
     }
-    return (Tcl_Token *) objPtr->internalRep.twoPtrValue.ptr1;
+    return ((TokenArray *) objPtr->internalRep.otherValuePtr)->first;
 }
 
 /*
