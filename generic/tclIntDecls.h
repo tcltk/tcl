@@ -557,7 +557,8 @@ EXTERN Var *		TclVarHashCreateVar(TclVarHashTable *tablePtr,
 /* 235 */
 EXTERN void		TclInitVarHashTable(TclVarHashTable *tablePtr,
 				Namespace *nsPtr);
-/* Slot 236 is reserved */
+/* 236 */
+EXTERN void		TclBackgroundException(Tcl_Interp *interp, int code);
 /* 237 */
 EXTERN int		TclResetCancellation(Tcl_Interp *interp, int force);
 /* 238 */
@@ -842,7 +843,7 @@ typedef struct TclIntStubs {
     void (*tclGetSrcInfoForPc) (CmdFrame *contextPtr); /* 233 */
     Var * (*tclVarHashCreateVar) (TclVarHashTable *tablePtr, const char *key, int *newPtr); /* 234 */
     void (*tclInitVarHashTable) (TclVarHashTable *tablePtr, Namespace *nsPtr); /* 235 */
-    void (*reserved236)(void);
+    void (*tclBackgroundException) (Tcl_Interp *interp, int code); /* 236 */
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
     int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
@@ -1252,7 +1253,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclVarHashCreateVar) /* 234 */
 #define TclInitVarHashTable \
 	(tclIntStubsPtr->tclInitVarHashTable) /* 235 */
-/* Slot 236 is reserved */
+#define TclBackgroundException \
+	(tclIntStubsPtr->tclBackgroundException) /* 236 */
 #define TclResetCancellation \
 	(tclIntStubsPtr->tclResetCancellation) /* 237 */
 #define TclNRInterpProc \
@@ -1288,5 +1290,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
+#undef TclBackgroundException
 
 #endif /* _TCLINTDECLS */
