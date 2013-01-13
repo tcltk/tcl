@@ -1138,18 +1138,18 @@ TclStubs tclStubs = {
     NULL, /* 503 */
     NULL, /* 504 */
     NULL, /* 505 */
-    NULL, /* 506 */
-    NULL, /* 507 */
-    NULL, /* 508 */
-    NULL, /* 509 */
-    NULL, /* 510 */
-    NULL, /* 511 */
-    NULL, /* 512 */
-    NULL, /* 513 */
-    NULL, /* 514 */
-    NULL, /* 515 */
-    NULL, /* 516 */
-    NULL, /* 517 */
+    Tcl_CreateNamespace, /* 506 */
+    Tcl_DeleteNamespace, /* 507 */
+    Tcl_AppendExportList, /* 508 */
+    Tcl_Export, /* 509 */
+    Tcl_Import, /* 510 */
+    Tcl_ForgetImport, /* 511 */
+    Tcl_GetCurrentNamespace, /* 512 */
+    Tcl_GetGlobalNamespace, /* 513 */
+    Tcl_FindNamespace, /* 514 */
+    Tcl_FindCommand, /* 515 */
+    Tcl_GetCommandFromObj, /* 516 */
+    Tcl_GetCommandFullName, /* 517 */
     NULL, /* 518 */
     NULL, /* 519 */
     NULL, /* 520 */

@@ -1555,18 +1555,48 @@ EXTERN Tcl_DriverWideSeekProc * Tcl_ChannelWideSeekProc _ANSI_ARGS_((
 /* Slot 503 is reserved */
 /* Slot 504 is reserved */
 /* Slot 505 is reserved */
-/* Slot 506 is reserved */
-/* Slot 507 is reserved */
-/* Slot 508 is reserved */
-/* Slot 509 is reserved */
-/* Slot 510 is reserved */
-/* Slot 511 is reserved */
-/* Slot 512 is reserved */
-/* Slot 513 is reserved */
-/* Slot 514 is reserved */
-/* Slot 515 is reserved */
-/* Slot 516 is reserved */
-/* Slot 517 is reserved */
+/* 506 */
+EXTERN Tcl_Namespace *	Tcl_CreateNamespace _ANSI_ARGS_((Tcl_Interp *interp,
+				CONST char *name, ClientData clientData,
+				Tcl_NamespaceDeleteProc *deleteProc));
+/* 507 */
+EXTERN void		Tcl_DeleteNamespace _ANSI_ARGS_((
+				Tcl_Namespace *nsPtr));
+/* 508 */
+EXTERN int		Tcl_AppendExportList _ANSI_ARGS_((Tcl_Interp *interp,
+				Tcl_Namespace *nsPtr, Tcl_Obj *objPtr));
+/* 509 */
+EXTERN int		Tcl_Export _ANSI_ARGS_((Tcl_Interp *interp,
+				Tcl_Namespace *nsPtr, CONST char *pattern,
+				int resetListFirst));
+/* 510 */
+EXTERN int		Tcl_Import _ANSI_ARGS_((Tcl_Interp *interp,
+				Tcl_Namespace *nsPtr, CONST char *pattern,
+				int allowOverwrite));
+/* 511 */
+EXTERN int		Tcl_ForgetImport _ANSI_ARGS_((Tcl_Interp *interp,
+				Tcl_Namespace *nsPtr, CONST char *pattern));
+/* 512 */
+EXTERN Tcl_Namespace *	Tcl_GetCurrentNamespace _ANSI_ARGS_((
+				Tcl_Interp *interp));
+/* 513 */
+EXTERN Tcl_Namespace *	Tcl_GetGlobalNamespace _ANSI_ARGS_((
+				Tcl_Interp *interp));
+/* 514 */
+EXTERN Tcl_Namespace *	Tcl_FindNamespace _ANSI_ARGS_((Tcl_Interp *interp,
+				CONST char *name,
+				Tcl_Namespace *contextNsPtr, int flags));
+/* 515 */
+EXTERN Tcl_Command	Tcl_FindCommand _ANSI_ARGS_((Tcl_Interp *interp,
+				CONST char *name,
+				Tcl_Namespace *contextNsPtr, int flags));
+/* 516 */
+EXTERN Tcl_Command	Tcl_GetCommandFromObj _ANSI_ARGS_((
+				Tcl_Interp *interp, Tcl_Obj *objPtr));
+/* 517 */
+EXTERN void		Tcl_GetCommandFullName _ANSI_ARGS_((
+				Tcl_Interp *interp, Tcl_Command command,
+				Tcl_Obj *objPtr));
 /* Slot 518 is reserved */
 /* Slot 519 is reserved */
 /* Slot 520 is reserved */
@@ -2235,18 +2265,18 @@ typedef struct TclStubs {
     VOID *reserved503;
     VOID *reserved504;
     VOID *reserved505;
-    VOID *reserved506;
-    VOID *reserved507;
-    VOID *reserved508;
-    VOID *reserved509;
-    VOID *reserved510;
-    VOID *reserved511;
-    VOID *reserved512;
-    VOID *reserved513;
-    VOID *reserved514;
-    VOID *reserved515;
-    VOID *reserved516;
-    VOID *reserved517;
+    Tcl_Namespace * (*tcl_CreateNamespace) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)); /* 506 */
+    void (*tcl_DeleteNamespace) _ANSI_ARGS_((Tcl_Namespace *nsPtr)); /* 507 */
+    int (*tcl_AppendExportList) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Namespace *nsPtr, Tcl_Obj *objPtr)); /* 508 */
+    int (*tcl_Export) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Namespace *nsPtr, CONST char *pattern, int resetListFirst)); /* 509 */
+    int (*tcl_Import) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Namespace *nsPtr, CONST char *pattern, int allowOverwrite)); /* 510 */
+    int (*tcl_ForgetImport) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Namespace *nsPtr, CONST char *pattern)); /* 511 */
+    Tcl_Namespace * (*tcl_GetCurrentNamespace) _ANSI_ARGS_((Tcl_Interp *interp)); /* 512 */
+    Tcl_Namespace * (*tcl_GetGlobalNamespace) _ANSI_ARGS_((Tcl_Interp *interp)); /* 513 */
+    Tcl_Namespace * (*tcl_FindNamespace) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, Tcl_Namespace *contextNsPtr, int flags)); /* 514 */
+    Tcl_Command (*tcl_FindCommand) _ANSI_ARGS_((Tcl_Interp *interp, CONST char *name, Tcl_Namespace *contextNsPtr, int flags)); /* 515 */
+    Tcl_Command (*tcl_GetCommandFromObj) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *objPtr)); /* 516 */
+    void (*tcl_GetCommandFullName) _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Command command, Tcl_Obj *objPtr)); /* 517 */
     VOID *reserved518;
     VOID *reserved519;
     VOID *reserved520;
@@ -4382,18 +4412,54 @@ extern TclStubs *tclStubsPtr;
 /* Slot 503 is reserved */
 /* Slot 504 is reserved */
 /* Slot 505 is reserved */
-/* Slot 506 is reserved */
-/* Slot 507 is reserved */
-/* Slot 508 is reserved */
-/* Slot 509 is reserved */
-/* Slot 510 is reserved */
-/* Slot 511 is reserved */
-/* Slot 512 is reserved */
-/* Slot 513 is reserved */
-/* Slot 514 is reserved */
-/* Slot 515 is reserved */
-/* Slot 516 is reserved */
-/* Slot 517 is reserved */
+#ifndef Tcl_CreateNamespace
+#define Tcl_CreateNamespace \
+	(tclStubsPtr->tcl_CreateNamespace) /* 506 */
+#endif
+#ifndef Tcl_DeleteNamespace
+#define Tcl_DeleteNamespace \
+	(tclStubsPtr->tcl_DeleteNamespace) /* 507 */
+#endif
+#ifndef Tcl_AppendExportList
+#define Tcl_AppendExportList \
+	(tclStubsPtr->tcl_AppendExportList) /* 508 */
+#endif
+#ifndef Tcl_Export
+#define Tcl_Export \
+	(tclStubsPtr->tcl_Export) /* 509 */
+#endif
+#ifndef Tcl_Import
+#define Tcl_Import \
+	(tclStubsPtr->tcl_Import) /* 510 */
+#endif
+#ifndef Tcl_ForgetImport
+#define Tcl_ForgetImport \
+	(tclStubsPtr->tcl_ForgetImport) /* 511 */
+#endif
+#ifndef Tcl_GetCurrentNamespace
+#define Tcl_GetCurrentNamespace \
+	(tclStubsPtr->tcl_GetCurrentNamespace) /* 512 */
+#endif
+#ifndef Tcl_GetGlobalNamespace
+#define Tcl_GetGlobalNamespace \
+	(tclStubsPtr->tcl_GetGlobalNamespace) /* 513 */
+#endif
+#ifndef Tcl_FindNamespace
+#define Tcl_FindNamespace \
+	(tclStubsPtr->tcl_FindNamespace) /* 514 */
+#endif
+#ifndef Tcl_FindCommand
+#define Tcl_FindCommand \
+	(tclStubsPtr->tcl_FindCommand) /* 515 */
+#endif
+#ifndef Tcl_GetCommandFromObj
+#define Tcl_GetCommandFromObj \
+	(tclStubsPtr->tcl_GetCommandFromObj) /* 516 */
+#endif
+#ifndef Tcl_GetCommandFullName
+#define Tcl_GetCommandFullName \
+	(tclStubsPtr->tcl_GetCommandFullName) /* 517 */
+#endif
 /* Slot 518 is reserved */
 /* Slot 519 is reserved */
 /* Slot 520 is reserved */

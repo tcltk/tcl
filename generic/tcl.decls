@@ -1763,10 +1763,59 @@ declare 493 {
 	    Tcl_ChannelType *chanTypePtr)
 }
 
-# Slots 494 to 553 are taken already by 8.5
+# Slots 494 to 505 are taken already by 8.5
 # #111 - Dicts            (494 ... 504)
 #  #59 - Config           (505)
-# #139 - Namespace API    (506 ... 517)
+
+# TIP #139 (partial exposure of namespace API - transferred from tclInt.decls)
+# dkf, API by Brent Welch?
+declare 506 {
+    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
+	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
+}
+declare 507 {
+    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
+}
+declare 508 {
+    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+	    Tcl_Obj *objPtr)
+}
+declare 509 {
+    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+	    const char *pattern, int resetListFirst)
+}
+declare 510 {
+    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+	    const char *pattern, int allowOverwrite)
+}
+declare 511 {
+    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+	    const char *pattern)
+}
+declare 512 {
+    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
+}
+declare 513 {
+    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
+}
+declare 514 {
+    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, const char *name,
+	    Tcl_Namespace *contextNsPtr, int flags)
+}
+declare 515 {
+    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, const char *name,
+	    Tcl_Namespace *contextNsPtr, int flags)
+}
+declare 516 {
+    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+}
+declare 517 {
+    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
+	    Tcl_Obj *objPtr)
+}
+
+
+# Slots 518 to 553 are taken already by 8.5
 # #137 - source -encoding (518)
 # #121 - ExitProc         (519)
 # #121 - Resource Limits  (520 ... 534)
