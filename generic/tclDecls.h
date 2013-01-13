@@ -4603,6 +4603,19 @@ extern TclStubs *tclStubsPtr;
 #undef TclBackgroundException
 #undef TclGetErrorLine
 #undef TclSetErrorLine
+
+#undef Tcl_CreateNamespace
+#undef Tcl_DeleteNamespace
+#undef Tcl_AppendExportList
+#undef Tcl_Export
+#undef Tcl_Import
+#undef Tcl_ForgetImport
+#undef Tcl_GetCurrentNamespace
+#undef Tcl_GetGlobalNamespace
+#undef Tcl_FindNamespace
+#undef Tcl_FindCommand
+#undef Tcl_GetCommandFromObj
+#undef Tcl_GetCommandFullName
 #undef TclUnusedStubEntry
 
 #endif /* _TCLDECLS */
