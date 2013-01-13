@@ -1,3 +1,7 @@
+2013-01-13  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+	* doc/fileevent.n: Clarify readable fileevent "false positives" in
+	the case of multibyte encodings/transforms [Bug 3436609].
+
 2013-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIntDecls.h: If TCL_NO_DEPRECATED is defined, make
