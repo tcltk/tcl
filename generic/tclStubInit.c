@@ -75,7 +75,9 @@ static void TclBackgroundException(interp, code)
     Tcl_Interp *interp;
     int code;
 {
-    Tcl_BackgroundError(interp);
+    if (code != TCL_OK) {
+	Tcl_BackgroundError(interp);
+    }
 }
 #define TclCanceled canceled
 static int TclCanceled(interp)
