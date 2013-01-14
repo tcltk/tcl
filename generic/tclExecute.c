@@ -6233,8 +6233,8 @@ TEBCresume(
 	    const unsigned char *pcBeg;
 
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg);
-	    TclLogCommandInfo(interp, codePtr->source, bytes,
-		    bytes ? length : 0, pcBeg, tosPtr);
+	    Tcl_LogCommandInfo(interp, codePtr->source, bytes,
+		    bytes ? length : 0);
 	    checkInterp = 1;
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;

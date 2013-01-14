@@ -517,17 +517,6 @@ Tcl_CreateInterp(void)
     iPtr->errorInfo = NULL;
     TclNewLiteralStringObj(iPtr->eiVar, "::errorInfo");
     Tcl_IncrRefCount(iPtr->eiVar);
-    iPtr->errorStack = Tcl_NewListObj(0, NULL);
-    Tcl_IncrRefCount(iPtr->errorStack);
-    iPtr->resetErrorStack = 1;
-    TclNewLiteralStringObj(iPtr->upLiteral,"UP");
-    Tcl_IncrRefCount(iPtr->upLiteral);
-    TclNewLiteralStringObj(iPtr->callLiteral,"CALL");
-    Tcl_IncrRefCount(iPtr->callLiteral);
-    TclNewLiteralStringObj(iPtr->innerLiteral,"INNER");
-    Tcl_IncrRefCount(iPtr->innerLiteral);
-    iPtr->innerContext = Tcl_NewListObj(0, NULL);
-    Tcl_IncrRefCount(iPtr->innerContext);
     iPtr->errorCode = NULL;
     TclNewLiteralStringObj(iPtr->ecVar, "::errorCode");
     Tcl_IncrRefCount(iPtr->ecVar);
@@ -1436,12 +1425,6 @@ DeleteInterpProc(
 	Tcl_DecrRefCount(iPtr->errorInfo);
 	iPtr->errorInfo = NULL;
     }
-    Tcl_DecrRefCount(iPtr->errorStack);
-    iPtr->errorStack = NULL;
-    Tcl_DecrRefCount(iPtr->upLiteral);
-    Tcl_DecrRefCount(iPtr->callLiteral);
-    Tcl_DecrRefCount(iPtr->innerLiteral);
-    Tcl_DecrRefCount(iPtr->innerContext);
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
     }

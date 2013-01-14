@@ -5530,10 +5530,9 @@ TclCompileSyntaxError(
     int numBytes;
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
-    TclErrorStackResetIf(interp, bytes, numBytes);
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
-	    TclNoErrorStack(interp, Tcl_GetReturnOptions(interp, TCL_ERROR)));
+	    Tcl_GetReturnOptions(interp, TCL_ERROR));
 }
 
 /*
@@ -6100,7 +6099,6 @@ PushVarName(
 	/*
 	 * The var name isn't simple: compile and push it.
 	 */
-
 	CompileTokens(envPtr, varTokenPtr, interp);
     }
 
