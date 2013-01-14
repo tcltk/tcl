@@ -167,7 +167,7 @@ Tcl_ObjType tclEndOffsetType = {
  *	  separating whitespace, or a string terminator.  It is just
  *	  another character in a list element.
  *
- * The interpretaton of a formatted substring as a list element follows
+ * The interpretation of a formatted substring as a list element follows
  * rules similar to the parsing of the words of a command in a Tcl script.
  * Backslash substitution plays a key role, and is defined exactly as it is
  * in command parsing.  The same routine, TclParseBackslash() is used in both
@@ -180,7 +180,7 @@ Tcl_ObjType tclEndOffsetType = {
  * Backslash substitution replaces an "escape sequence" of one or more
  * characters starting with
  *		\u005c	\	BACKSLASH
- * with a single character.  The one character escape sequent case happens
+ * with a single character.  The one character escape sequence case happens
  * only when BACKSLASH is the last character in the string.  In all other
  * cases, the escape sequence is at least two characters long.
  *
