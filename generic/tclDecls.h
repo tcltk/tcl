@@ -3408,6 +3408,61 @@ EXTERN Tcl_Obj *	Tcl_ObjPrintf(CONST char *format, ...);
 EXTERN void		Tcl_AppendPrintfToObj(Tcl_Obj *objPtr,
 				CONST char *format, ...);
 #endif
+/* Slot 580 is reserved */
+/* Slot 581 is reserved */
+/* Slot 582 is reserved */
+/* Slot 583 is reserved */
+/* Slot 584 is reserved */
+/* Slot 585 is reserved */
+/* Slot 586 is reserved */
+/* Slot 587 is reserved */
+/* Slot 588 is reserved */
+/* Slot 589 is reserved */
+/* Slot 590 is reserved */
+/* Slot 591 is reserved */
+/* Slot 592 is reserved */
+/* Slot 593 is reserved */
+/* Slot 594 is reserved */
+/* Slot 595 is reserved */
+/* Slot 596 is reserved */
+/* Slot 597 is reserved */
+/* Slot 598 is reserved */
+/* Slot 599 is reserved */
+/* Slot 600 is reserved */
+/* Slot 601 is reserved */
+/* Slot 602 is reserved */
+/* Slot 603 is reserved */
+/* Slot 604 is reserved */
+/* Slot 605 is reserved */
+/* Slot 606 is reserved */
+/* Slot 607 is reserved */
+/* Slot 608 is reserved */
+/* Slot 609 is reserved */
+/* Slot 610 is reserved */
+/* Slot 611 is reserved */
+/* Slot 612 is reserved */
+/* Slot 613 is reserved */
+/* Slot 614 is reserved */
+/* Slot 615 is reserved */
+/* Slot 616 is reserved */
+/* Slot 617 is reserved */
+/* Slot 618 is reserved */
+/* Slot 619 is reserved */
+/* Slot 620 is reserved */
+/* Slot 621 is reserved */
+/* Slot 622 is reserved */
+/* Slot 623 is reserved */
+/* Slot 624 is reserved */
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
+/* Slot 627 is reserved */
+/* Slot 628 is reserved */
+/* Slot 629 is reserved */
+#ifndef TclUnusedStubEntry_TCL_DECLARED
+#define TclUnusedStubEntry_TCL_DECLARED
+/* 630 */
+EXTERN void		TclUnusedStubEntry(void);
+#endif
 
 typedef struct TclStubHooks {
     struct TclPlatStubs *tclPlatStubs;
@@ -4023,6 +4078,57 @@ typedef struct TclStubs {
     int (*tcl_AppendFormatToObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, CONST char *format, int objc, Tcl_Obj *CONST objv[]); /* 577 */
     Tcl_Obj * (*tcl_ObjPrintf) (CONST char *format, ...); /* 578 */
     void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, CONST char *format, ...); /* 579 */
+    VOID *reserved580;
+    VOID *reserved581;
+    VOID *reserved582;
+    VOID *reserved583;
+    VOID *reserved584;
+    VOID *reserved585;
+    VOID *reserved586;
+    VOID *reserved587;
+    VOID *reserved588;
+    VOID *reserved589;
+    VOID *reserved590;
+    VOID *reserved591;
+    VOID *reserved592;
+    VOID *reserved593;
+    VOID *reserved594;
+    VOID *reserved595;
+    VOID *reserved596;
+    VOID *reserved597;
+    VOID *reserved598;
+    VOID *reserved599;
+    VOID *reserved600;
+    VOID *reserved601;
+    VOID *reserved602;
+    VOID *reserved603;
+    VOID *reserved604;
+    VOID *reserved605;
+    VOID *reserved606;
+    VOID *reserved607;
+    VOID *reserved608;
+    VOID *reserved609;
+    VOID *reserved610;
+    VOID *reserved611;
+    VOID *reserved612;
+    VOID *reserved613;
+    VOID *reserved614;
+    VOID *reserved615;
+    VOID *reserved616;
+    VOID *reserved617;
+    VOID *reserved618;
+    VOID *reserved619;
+    VOID *reserved620;
+    VOID *reserved621;
+    VOID *reserved622;
+    VOID *reserved623;
+    VOID *reserved624;
+    VOID *reserved625;
+    VOID *reserved626;
+    VOID *reserved627;
+    VOID *reserved628;
+    VOID *reserved629;
+    void (*tclUnusedStubEntry) (void); /* 630 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -6377,10 +6483,66 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_AppendPrintfToObj \
 	(tclStubsPtr->tcl_AppendPrintfToObj) /* 579 */
 #endif
+/* Slot 580 is reserved */
+/* Slot 581 is reserved */
+/* Slot 582 is reserved */
+/* Slot 583 is reserved */
+/* Slot 584 is reserved */
+/* Slot 585 is reserved */
+/* Slot 586 is reserved */
+/* Slot 587 is reserved */
+/* Slot 588 is reserved */
+/* Slot 589 is reserved */
+/* Slot 590 is reserved */
+/* Slot 591 is reserved */
+/* Slot 592 is reserved */
+/* Slot 593 is reserved */
+/* Slot 594 is reserved */
+/* Slot 595 is reserved */
+/* Slot 596 is reserved */
+/* Slot 597 is reserved */
+/* Slot 598 is reserved */
+/* Slot 599 is reserved */
+/* Slot 600 is reserved */
+/* Slot 601 is reserved */
+/* Slot 602 is reserved */
+/* Slot 603 is reserved */
+/* Slot 604 is reserved */
+/* Slot 605 is reserved */
+/* Slot 606 is reserved */
+/* Slot 607 is reserved */
+/* Slot 608 is reserved */
+/* Slot 609 is reserved */
+/* Slot 610 is reserved */
+/* Slot 611 is reserved */
+/* Slot 612 is reserved */
+/* Slot 613 is reserved */
+/* Slot 614 is reserved */
+/* Slot 615 is reserved */
+/* Slot 616 is reserved */
+/* Slot 617 is reserved */
+/* Slot 618 is reserved */
+/* Slot 619 is reserved */
+/* Slot 620 is reserved */
+/* Slot 621 is reserved */
+/* Slot 622 is reserved */
+/* Slot 623 is reserved */
+/* Slot 624 is reserved */
+/* Slot 625 is reserved */
+/* Slot 626 is reserved */
+/* Slot 627 is reserved */
+/* Slot 628 is reserved */
+/* Slot 629 is reserved */
+#ifndef TclUnusedStubEntry
+#define TclUnusedStubEntry \
+	(tclStubsPtr->tclUnusedStubEntry) /* 630 */
+#endif
 
 #endif /* defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS) */
 
 /* !END!: Do not edit above this line. */
+
+#undef TclUnusedStubEntry
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT

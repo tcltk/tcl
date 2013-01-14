@@ -1,3 +1,46 @@
+2013-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclIntDecls.h: If TCL_NO_DEPRECATED is defined, make
+	sure that TIP #139 functions all are taken from the public stub
+	table, even if the inclusion is through tclInt.h.
+
+2013-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/http/http.tcl: [Bug 3599395]: http assumes status line
+	is a proper tcl list.
+	Bump http package to 2.7.11.
+
+2013-01-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3092089]: [file normalize] can remove path
+	components.	[Bug 3587096] win vista/7: "can't find init.tcl" when
+	called via junction without folder list access.
+
+2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls: Extend the public stub table with dummy NULL
+	entries, up to the size of the Tcl 8.6 stub tables. This makes it
+	easier to debug extensions which use Tcl 8.6 features but (erroneously)
+	are attempted to be loaded in Tcl 8.5.
+
+2013-01-02  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclEnsemble.c:  Remove stray calls to Tcl_Alloc and
+	* generic/tclExecute.c:   friends: the core should only use ckalloc
+	* generic/tclIORTrans.c:  to allow MEM_DEBUG to work properly
+	* generic/tclTomMathInterface.c:
+
+2012-12-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/string.n: Noted the obsolescence of the 'bytelength',
+	'wordstart' and 'wordend' subcommands, and moved them to later in the
+	file.
+
+2012-12-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclListObj.c: [Bug 3598580]: Tcl_ListObjReplace may release
+	deleted elements too early
+
 2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/dltest/pkgb.c:  Make pkgb.so loadable in Tcl 8.4 as well.
