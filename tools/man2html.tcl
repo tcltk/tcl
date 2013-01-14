@@ -2,7 +2,7 @@
 # \
 exec tclsh "$0" ${1+"$@"}
 
-package require Tcl 8.4-
+package require Tcl 8.4
 
 # man2html.tcl --
 #

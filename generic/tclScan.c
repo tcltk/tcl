@@ -28,7 +28,7 @@
  * character set.
  */
 
-typedef struct {
+typedef struct CharSet {
     int exclude;		/* 1 if this is an exclusion set. */
     int nchars;
     Tcl_UniChar *chars;

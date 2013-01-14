@@ -1045,8 +1045,9 @@ test parseExpr-22.13 {Bug 3401704} -constraints testexprparser -body {
 } -result {- {} 0 subexpr naner() 1 operator naner 0 {}}
 
 test parseExpr-22.14 {Bug 3401704} -constraints testexprparser -body {
-    testexprparser 08 -1
-} -result {- {} 0 subexpr 08 1 text 08 0 {}}
+    catch {testexprparser 08 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER OCTAL}
 test parseExpr-22.15 {Bug 3401704} -constraints testexprparser -body {
     catch {testexprparser 0o8 -1} m o
     dict get $o -errorcode

@@ -174,7 +174,7 @@ test execute-3.5 {TclExecuteByteCode, INST_ADD, op1 is string double} {testobj} 
 test execute-3.6 {TclExecuteByteCode, INST_ADD, op1 is non-numeric} {testobj} {
     set x [teststringobj set 0 foo]
     list [catch {expr {$x + 1}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test execute-3.7 {TclExecuteByteCode, INST_ADD, op2 is int} {testobj} {
     set x [testintobj set 0 1]
     expr {1 + $x}
@@ -199,7 +199,7 @@ test execute-3.11 {TclExecuteByteCode, INST_ADD, op2 is string double} {testobj}
 test execute-3.12 {TclExecuteByteCode, INST_ADD, op2 is non-numeric} {testobj} {
     set x [teststringobj set 0 foo]
     list [catch {expr {1 + $x}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 
 # INST_SUB is partially tested:
 test execute-3.13 {TclExecuteByteCode, INST_SUB, op1 is int} {testobj} {
@@ -226,7 +226,7 @@ test execute-3.17 {TclExecuteByteCode, INST_SUB, op1 is string double} {testobj}
 test execute-3.18 {TclExecuteByteCode, INST_SUB, op1 is non-numeric} {testobj} {
     set x [teststringobj set 0 foo]
     list [catch {expr {$x - 1}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "-"}}
+} {1 {can't use non-numeric string as operand of "-"}}
 test execute-3.19 {TclExecuteByteCode, INST_SUB, op2 is int} {testobj} {
     set x [testintobj set 0 1]
     expr {1 - $x}
@@ -251,7 +251,7 @@ test execute-3.23 {TclExecuteByteCode, INST_SUB, op2 is string double} {testobj}
 test execute-3.24 {TclExecuteByteCode, INST_SUB, op2 is non-numeric} {testobj} {
     set x [teststringobj set 0 foo]
     list [catch {expr {1 - $x}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "-"}}
+} {1 {can't use non-numeric string as operand of "-"}}
 
 # INST_MULT is partially tested:
 test execute-3.25 {TclExecuteByteCode, INST_MULT, op1 is int} {testobj} {
@@ -278,7 +278,7 @@ test execute-3.29 {TclExecuteByteCode, INST_MULT, op1 is string double} {testobj
 test execute-3.30 {TclExecuteByteCode, INST_MULT, op1 is non-numeric} {testobj} {
     set x [teststringobj set 1 foo]
     list [catch {expr {$x * 1}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "*"}}
+} {1 {can't use non-numeric string as operand of "*"}}
 test execute-3.31 {TclExecuteByteCode, INST_MULT, op2 is int} {testobj} {
     set x [testintobj set 1 1]
     expr {1 * $x}
@@ -303,7 +303,7 @@ test execute-3.35 {TclExecuteByteCode, INST_MULT, op2 is string double} {testobj
 test execute-3.36 {TclExecuteByteCode, INST_MULT, op2 is non-numeric} {testobj} {
     set x [teststringobj set 1 foo]
     list [catch {expr {1 * $x}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "*"}}
+} {1 {can't use non-numeric string as operand of "*"}}
 
 # INST_DIV is partially tested:
 test execute-3.37 {TclExecuteByteCode, INST_DIV, op1 is int} {testobj} {
@@ -330,7 +330,7 @@ test execute-3.41 {TclExecuteByteCode, INST_DIV, op1 is string double} {testobj}
 test execute-3.42 {TclExecuteByteCode, INST_DIV, op1 is non-numeric} {testobj} {
     set x [teststringobj set 1 foo]
     list [catch {expr {$x / 1}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "/"}}
+} {1 {can't use non-numeric string as operand of "/"}}
 test execute-3.43 {TclExecuteByteCode, INST_DIV, op2 is int} {testobj} {
     set x [testintobj set 1 1]
     expr {2 / $x}
@@ -355,7 +355,7 @@ test execute-3.47 {TclExecuteByteCode, INST_DIV, op2 is string double} {testobj}
 test execute-3.48 {TclExecuteByteCode, INST_DIV, op2 is non-numeric} {testobj} {
     set x [teststringobj set 1 foo]
     list [catch {expr {1 / $x}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "/"}}
+} {1 {can't use non-numeric string as operand of "/"}}
 
 # INST_UPLUS is partially tested:
 test execute-3.49 {TclExecuteByteCode, INST_UPLUS, op is int} {testobj} {
@@ -382,7 +382,7 @@ test execute-3.53 {TclExecuteByteCode, INST_UPLUS, op is string double} {testobj
 test execute-3.54 {TclExecuteByteCode, INST_UPLUS, op is non-numeric} {testobj} {
     set x [teststringobj set 1 foo]
     list [catch {expr {+ $x}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 
 # INST_UMINUS is partially tested:
 test execute-3.55 {TclExecuteByteCode, INST_UMINUS, op is int} {testobj} {
@@ -409,7 +409,7 @@ test execute-3.59 {TclExecuteByteCode, INST_UMINUS, op is string double} {testob
 test execute-3.60 {TclExecuteByteCode, INST_UMINUS, op is non-numeric} {testobj} {
     set x [teststringobj set 1 foo]
     list [catch {expr {- $x}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "-"}}
+} {1 {can't use non-numeric string as operand of "-"}}
 
 # INST_LNOT is partially tested:
 test execute-3.61 {TclExecuteByteCode, INST_LNOT, op is int} {testobj} {
@@ -457,7 +457,7 @@ test execute-3.70 {TclExecuteByteCode, INST_LNOT, op is string double} {testobj}
 test execute-3.71 {TclExecuteByteCode, INST_LNOT, op is non-numeric} {testobj} {
     set x [teststringobj set 1 foo]
     list [catch {expr {! $x}} msg] $msg
-} {1 {can't use non-numeric string "foo" as operand of "!"}}
+} {1 {can't use non-numeric string as operand of "!"}}
 
 # INST_BITNOT not tested
 # INST_CALL_BUILTIN_FUNC1 not tested

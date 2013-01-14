@@ -32,7 +32,7 @@ test while-1.2 {TclCompileWhileCmd: error in test expression} -body {
 } -match glob -result {*"while {$i<} break"}
 test while-1.3 {TclCompileWhileCmd: error in test expression} -body {
     while {"a"+"b"} {error "loop aborted"}
-} -returnCodes error -result {can't use non-numeric string "a" as operand of "+"}
+} -returnCodes error -result {can't use non-numeric string as operand of "+"}
 test while-1.4 {TclCompileWhileCmd: multiline test expr} -body {
     set value 1
     while {($tcl_platform(platform) != "foobar1") && \
@@ -343,7 +343,7 @@ test while-4.3 {while (not compiled): error in test expression} -body {
 test while-4.4 {while (not compiled): error in test expression} -body {
     set z while
     $z {"a"+"b"} {error "loop aborted"}
-} -returnCodes error -result {can't use non-numeric string "a" as operand of "+"}
+} -returnCodes error -result {can't use non-numeric string as operand of "+"}
 test while-4.5 {while (not compiled): multiline test expr} -body {
     set value 1
     set z while

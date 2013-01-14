@@ -31,7 +31,7 @@
  * and the (Tcl_Interp *) in which it is stored.
  */
 
-typedef struct {
+typedef struct QCCD {
     Tcl_Obj *pkg;
     Tcl_Interp *interp;
 } QCCD;

@@ -62,7 +62,7 @@ static ThreadSpecificData *threadList = NULL;
  */
 
 typedef struct ThreadCtrl {
-    const char *script;	/* The Tcl command this thread should
+    const char *script;		/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the
 				 * ThreadSpecificData structure for the new
@@ -229,8 +229,8 @@ ThreadObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObjStruct(interp, objv[1], threadOptions,
-	    sizeof(char *), "option", 0, &option) != TCL_OK) {
+    if (Tcl_GetIndexFromObj(interp, objv[1], threadOptions, "option", 0,
+	    &option) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -834,7 +834,7 @@ ThreadSend(
 
     if (threadId == Tcl_GetCurrentThread()) {
 	Tcl_MutexUnlock(&threadMutex);
-	return Tcl_EvalEx(interp, script, -1, TCL_EVAL_GLOBAL);
+	return Tcl_GlobalEval(interp, script);
     }
 
     /*
@@ -1028,7 +1028,7 @@ ThreadEventProc(
 	Tcl_Preserve(interp);
 	Tcl_ResetResult(interp);
 	Tcl_CreateThreadExitHandler(ThreadFreeProc, threadEventPtr->script);
-	code = Tcl_EvalEx(interp, threadEventPtr->script, -1, TCL_EVAL_GLOBAL);
+	code = Tcl_GlobalEval(interp, threadEventPtr->script);
 	Tcl_DeleteThreadExitHandler(ThreadFreeProc, threadEventPtr->script);
 	if (code != TCL_OK) {
 	    errorCode = Tcl_GetVar(interp, "errorCode", TCL_GLOBAL_ONLY);

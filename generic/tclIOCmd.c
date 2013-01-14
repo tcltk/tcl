@@ -15,7 +15,7 @@
  * Callback structure for accept callback in a TCP server.
  */
 
-typedef struct {
+typedef struct AcceptCallback {
     char *script;		/* Script to invoke. */
     Tcl_Interp *interp;		/* Interpreter in which to run it. */
 } AcceptCallback;
@@ -25,7 +25,7 @@ typedef struct {
  * It must be per-thread because of std channel limitations.
  */
 
-typedef struct {
+typedef struct ThreadSpecificData {
     int initialized;		/* Set to 1 when the module is initialized. */
     Tcl_Obj *stdoutObjPtr;	/* Cached stdout channel Tcl_Obj */
 } ThreadSpecificData;
@@ -139,6 +139,19 @@ Tcl_PutsObjCmd(
 	    chanObjPtr = objv[2];
 	    string = objv[3];
 	    break;
+#if TCL_MAJOR_VERSION < 9
+	} else if (strcmp(TclGetString(objv[3]), "nonewline") == 0) {
+	    /*
+	     * The code below provides backwards compatibility with an old
+	     * form of the command that is no longer recommended or
+	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
+	     * maybe even earlier.
+	     */
+
+	    chanObjPtr = objv[1];
+	    string = objv[2];
+	    break;
+#endif
 	}
 	/* Fall through */
     default:			/* [puts] or
@@ -416,11 +429,25 @@ Tcl_ReadObjCmd(
     if (i < objc) {
 	if ((TclGetIntFromObj(interp, objv[i], &toRead) != TCL_OK)
 		|| (toRead < 0)) {
+#if TCL_MAJOR_VERSION < 9
+	    /*
+	     * The code below provides backwards compatibility with an old
+	     * form of the command that is no longer recommended or
+	     * documented. See also [Bug #3151675]. Will be removed in Tcl 9,
+	     * maybe even earlier.
+	     */
+
+	    if (strcmp(TclGetString(objv[i]), "nonewline") != 0) {
+#endif
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"expected non-negative integer but got \"%s\"",
 			TclGetString(objv[i])));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "NUMBER", NULL);
 		return TCL_ERROR;
+#if TCL_MAJOR_VERSION < 9
+	    }
+	    newline = 1;
+#endif
 	}
     }
 
@@ -1324,11 +1351,11 @@ AcceptCallbackProc(
 
     if (acceptCallbackPtr->interp != NULL) {
 	char portBuf[TCL_INTEGER_SPACE];
-	Tcl_Obj *script = Tcl_NewStringObj(acceptCallbackPtr->script, -1);
+	char *script = acceptCallbackPtr->script;
 	Tcl_Interp *interp = acceptCallbackPtr->interp;
 	int result;
 
-	Tcl_IncrRefCount(script);
+	Tcl_Preserve(script);
 	Tcl_Preserve(interp);
 
 	TclFormatInt(portBuf, port);
@@ -1341,12 +1368,8 @@ AcceptCallbackProc(
 
 	Tcl_RegisterChannel(NULL, chan);
 
-	result = Tcl_ListObjAppendElement(interp, script, Tcl_NewStringObj(Tcl_GetChannelName(chan), -1));
-	if (result == TCL_OK) {
-	    Tcl_ListObjAppendElement(NULL, script, Tcl_NewStringObj(address, -1));
-	    Tcl_ListObjAppendElement(NULL, script, Tcl_NewStringObj(portBuf, -1));
-	    result = Tcl_EvalObjEx(interp, script, 0);
-	}
+	result = Tcl_VarEval(interp, script, " ", Tcl_GetChannelName(chan),
+		" ", address, " ", portBuf, NULL);
 	if (result != TCL_OK) {
 	    Tcl_BackgroundException(interp, result);
 	    Tcl_UnregisterChannel(interp, chan);
@@ -1360,7 +1383,7 @@ AcceptCallbackProc(
 	Tcl_UnregisterChannel(NULL, chan);
 
 	Tcl_Release(interp);
-	Tcl_DecrRefCount(script);
+	Tcl_Release(script);
     } else {
 	/*
 	 * The interpreter has been deleted, so there is no useful way to use

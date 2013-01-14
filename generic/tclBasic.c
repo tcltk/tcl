@@ -38,6 +38,18 @@
 #endif
 
 /*
+ * The following structure defines the client data for a math function
+ * registered with Tcl_CreateMathFunc
+ */
+
+typedef struct OldMathFuncData {
+    Tcl_MathProc *proc;		/* Handler function */
+    int numArgs;		/* Number of args expected */
+    Tcl_ValueType *argTypes;	/* Types of the args */
+    ClientData clientData;	/* Client data for the handler function */
+} OldMathFuncData;
+
+/*
  * This is the script cancellation struct and hash table. The hash table is
  * used to keep track of the information necessary to process script
  * cancellation requests, including the original interp, asynchronous handler
@@ -121,6 +133,8 @@ static Tcl_NRPostProc NRStackBottom;
 #endif
 
 static Tcl_NRPostProc	NRRunObjProc;
+static Tcl_ObjCmdProc	OldMathFuncProc;
+static void		OldMathFuncDeleteProc(ClientData clientData);
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
@@ -493,12 +507,9 @@ Tcl_CreateInterp(void)
     iPtr = ckalloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
-    iPtr->legacyResult = NULL;
-    /* Special invalid value: Any attempt to free the legacy result
-     * will cause a crash. */
-    iPtr->legacyFreeProc = (void (*) (void))-1;
+    iPtr->result = iPtr->resultSpace;
+    iPtr->freeProc = NULL;
     iPtr->errorLine = 0;
-    iPtr->stubTable = &tclStubs;
     iPtr->objResultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->objResultPtr);
     iPtr->handle = TclHandleCreate(iPtr);
@@ -525,6 +536,10 @@ Tcl_CreateInterp(void)
 
     iPtr->rootFramePtr = NULL;	/* Initialise as soon as :: is available */
     iPtr->lookupNsPtr = NULL;
+
+    iPtr->appendResult = NULL;
+    iPtr->appendAvl = 0;
+    iPtr->appendUsed = 0;
 
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
@@ -553,6 +568,7 @@ Tcl_CreateInterp(void)
     iPtr->emptyObjPtr = Tcl_NewObj();
 				/* Another empty object. */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
+    iPtr->resultSpace[0] = 0;
     iPtr->threadId = Tcl_GetCurrentThread();
 
     /* TIP #378 */
@@ -662,6 +678,12 @@ Tcl_CreateInterp(void)
     statsPtr->currentLitStringBytes = 0.0;
     memset(statsPtr->literalCount, 0, sizeof(statsPtr->literalCount));
 #endif /* TCL_COMPILE_STATS */
+
+    /*
+     * Initialise the stub table pointer.
+     */
+
+    iPtr->stubTable = &tclStubs;
 
     /*
      * Initialize the ensemble error message rewriting support.
@@ -1413,6 +1435,7 @@ DeleteInterpProc(
      */
 
     Tcl_FreeResult(interp);
+    iPtr->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -1427,6 +1450,10 @@ DeleteInterpProc(
     }
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
+    }
+    if (iPtr->appendResult != NULL) {
+	ckfree(iPtr->appendResult);
+	iPtr->appendResult = NULL;
     }
     TclFreePackageInfo(iPtr);
     while (iPtr->tracePtr != NULL) {
@@ -2214,7 +2241,7 @@ TclInvokeStringCommand(
  *	in the Command structure.
  *
  * Results:
- *	A standard Tcl result value.
+ *	A standard Tcl string result value.
  *
  * Side effects:
  *	Besides those side effects of the called Tcl_CmdProc,
@@ -2248,6 +2275,13 @@ TclInvokeObjectCommand(
 
     result = Tcl_NRCallObjProc(interp, cmdPtr->objProc,
             cmdPtr->objClientData, argc, objv);
+
+    /*
+     * Move the interpreter's object result to the string result, then reset
+     * the object result.
+     */
+
+    (void) Tcl_GetStringResult(interp);
 
     /*
      * Decrement the ref counts for the argument objects created above, then
@@ -3063,6 +3097,360 @@ TclCleanupCommand(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_CreateMathFunc --
+ *
+ *	Creates a new math function for expressions in a given interpreter.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The Tcl function defined by "name" is created or redefined. If the
+ *	function already exists then its definition is replaced; this includes
+ *	the builtin functions. Redefining a builtin function forces all
+ *	existing code to be invalidated since that code may be compiled using
+ *	an instruction specific to the replaced function. In addition,
+ *	redefioning a non-builtin function will force existing code to be
+ *	invalidated if the number of arguments has changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_CreateMathFunc(
+    Tcl_Interp *interp,		/* Interpreter in which function is to be
+				 * available. */
+    const char *name,		/* Name of function (e.g. "sin"). */
+    int numArgs,		/* Nnumber of arguments required by
+				 * function. */
+    Tcl_ValueType *argTypes,	/* Array of types acceptable for each
+				 * argument. */
+    Tcl_MathProc *proc,		/* C function that implements the math
+				 * function. */
+    ClientData clientData)	/* Additional value to pass to the
+				 * function. */
+{
+    Tcl_DString bigName;
+    OldMathFuncData *data = ckalloc(sizeof(OldMathFuncData));
+
+    data->proc = proc;
+    data->numArgs = numArgs;
+    data->argTypes = ckalloc(numArgs * sizeof(Tcl_ValueType));
+    memcpy(data->argTypes, argTypes, numArgs * sizeof(Tcl_ValueType));
+    data->clientData = clientData;
+
+    Tcl_DStringInit(&bigName);
+    TclDStringAppendLiteral(&bigName, "::tcl::mathfunc::");
+    Tcl_DStringAppend(&bigName, name, -1);
+
+    Tcl_CreateObjCommand(interp, Tcl_DStringValue(&bigName),
+	    OldMathFuncProc, data, OldMathFuncDeleteProc);
+    Tcl_DStringFree(&bigName);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OldMathFuncProc --
+ *
+ *	Dispatch to a math function created with Tcl_CreateMathFunc
+ *
+ * Results:
+ *	Returns a standard Tcl result.
+ *
+ * Side effects:
+ *	Whatever the math function does.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+OldMathFuncProc(
+    ClientData clientData,	/* Ponter to OldMathFuncData describing the
+				 * function being called */
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    int objc,			/* Actual parameter count */
+    Tcl_Obj *const *objv)	/* Parameter vector */
+{
+    Tcl_Obj *valuePtr;
+    OldMathFuncData *dataPtr = clientData;
+    Tcl_Value funcResult, *args;
+    int result;
+    int j, k;
+    double d;
+
+    /*
+     * Check argument count.
+     */
+
+    if (objc != dataPtr->numArgs + 1) {
+	MathFuncWrongNumArgs(interp, dataPtr->numArgs+1, objc, objv);
+	return TCL_ERROR;
+    }
+
+    /*
+     * Convert arguments from Tcl_Obj's to Tcl_Value's.
+     */
+
+    args = ckalloc(dataPtr->numArgs * sizeof(Tcl_Value));
+    for (j = 1, k = 0; j < objc; ++j, ++k) {
+	/* TODO: Convert to TclGetNumberFromObj? */
+	valuePtr = objv[j];
+	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
+#ifdef ACCEPT_NAN
+	if ((result != TCL_OK) && (valuePtr->typePtr == &tclDoubleType)) {
+	    d = valuePtr->internalRep.doubleValue;
+	    result = TCL_OK;
+	}
+#endif
+	if (result != TCL_OK) {
+	    /*
+	     * We have a non-numeric argument.
+	     */
+
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "argument to math function didn't have numeric value",
+		    -1));
+	    TclCheckBadOctal(interp, Tcl_GetString(valuePtr));
+	    ckfree(args);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Copy the object's numeric value to the argument record, converting
+	 * it if necessary.
+	 *
+	 * NOTE: no bignum support; use the new mathfunc interface for that.
+	 */
+
+	args[k].type = dataPtr->argTypes[k];
+	switch (args[k].type) {
+	case TCL_EITHER:
+	    if (Tcl_GetLongFromObj(NULL, valuePtr, &args[k].intValue)
+		    == TCL_OK) {
+		args[k].type = TCL_INT;
+		break;
+	    }
+	    if (Tcl_GetWideIntFromObj(interp, valuePtr, &args[k].wideValue)
+		    == TCL_OK) {
+		args[k].type = TCL_WIDE_INT;
+		break;
+	    }
+	    args[k].type = TCL_DOUBLE;
+	    /* FALLTHROUGH */
+
+	case TCL_DOUBLE:
+	    args[k].doubleValue = d;
+	    break;
+	case TCL_INT:
+	    if (ExprIntFunc(NULL, interp, 2, &objv[j-1]) != TCL_OK) {
+		ckfree(args);
+		return TCL_ERROR;
+	    }
+	    valuePtr = Tcl_GetObjResult(interp);
+	    Tcl_GetLongFromObj(NULL, valuePtr, &args[k].intValue);
+	    Tcl_ResetResult(interp);
+	    break;
+	case TCL_WIDE_INT:
+	    if (ExprWideFunc(NULL, interp, 2, &objv[j-1]) != TCL_OK) {
+		ckfree(args);
+		return TCL_ERROR;
+	    }
+	    valuePtr = Tcl_GetObjResult(interp);
+	    Tcl_GetWideIntFromObj(NULL, valuePtr, &args[k].wideValue);
+	    Tcl_ResetResult(interp);
+	    break;
+	}
+    }
+
+    /*
+     * Call the function.
+     */
+
+    errno = 0;
+    result = dataPtr->proc(dataPtr->clientData, interp, args, &funcResult);
+    ckfree(args);
+    if (result != TCL_OK) {
+	return result;
+    }
+
+    /*
+     * Return the result of the call.
+     */
+
+    if (funcResult.type == TCL_INT) {
+	TclNewLongObj(valuePtr, funcResult.intValue);
+    } else if (funcResult.type == TCL_WIDE_INT) {
+	valuePtr = Tcl_NewWideIntObj(funcResult.wideValue);
+    } else {
+	return CheckDoubleResult(interp, funcResult.doubleValue);
+    }
+    Tcl_SetObjResult(interp, valuePtr);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * OldMathFuncDeleteProc --
+ *
+ *	Cleans up after deleting a math function registered with
+ *	Tcl_CreateMathFunc
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Frees allocated memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+OldMathFuncDeleteProc(
+    ClientData clientData)
+{
+    OldMathFuncData *dataPtr = clientData;
+
+    ckfree(dataPtr->argTypes);
+    ckfree(dataPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GetMathFuncInfo --
+ *
+ *	Discovers how a particular math function was created in a given
+ *	interpreter.
+ *
+ * Results:
+ *	TCL_OK if it succeeds, TCL_ERROR else (leaving an error message in the
+ *	interpreter result if that happens.)
+ *
+ * Side effects:
+ *	If this function succeeds, the variables pointed to by the numArgsPtr
+ *	and argTypePtr arguments will be updated to detail the arguments
+ *	allowed by the function. The variable pointed to by the procPtr
+ *	argument will be set to NULL if the function is a builtin function,
+ *	and will be set to the address of the C function used to implement the
+ *	math function otherwise (in which case the variable pointed to by the
+ *	clientDataPtr argument will also be updated.)
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GetMathFuncInfo(
+    Tcl_Interp *interp,
+    const char *name,
+    int *numArgsPtr,
+    Tcl_ValueType **argTypesPtr,
+    Tcl_MathProc **procPtr,
+    ClientData *clientDataPtr)
+{
+    Tcl_Obj *cmdNameObj;
+    Command *cmdPtr;
+
+    /*
+     * Get the command that implements the math function.
+     */
+
+    TclNewLiteralStringObj(cmdNameObj, "tcl::mathfunc::");
+    Tcl_AppendToObj(cmdNameObj, name, -1);
+    Tcl_IncrRefCount(cmdNameObj);
+    cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdNameObj);
+    Tcl_DecrRefCount(cmdNameObj);
+
+    /*
+     * Report unknown functions.
+     */
+
+    if (cmdPtr == NULL) {
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+                "unknown math function \"%s\"", name));
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "MATHFUNC", name, NULL);
+	*numArgsPtr = -1;
+	*argTypesPtr = NULL;
+	*procPtr = NULL;
+	*clientDataPtr = NULL;
+	return TCL_ERROR;
+    }
+
+    /*
+     * Retrieve function info for user defined functions; return dummy
+     * information for builtins.
+     */
+
+    if (cmdPtr->objProc == &OldMathFuncProc) {
+	OldMathFuncData *dataPtr = cmdPtr->clientData;
+
+	*procPtr = dataPtr->proc;
+	*numArgsPtr = dataPtr->numArgs;
+	*argTypesPtr = dataPtr->argTypes;
+	*clientDataPtr = dataPtr->clientData;
+    } else {
+	*procPtr = NULL;
+	*numArgsPtr = -1;
+	*argTypesPtr = NULL;
+	*procPtr = NULL;
+	*clientDataPtr = NULL;
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_ListMathFuncs --
+ *
+ *	Produces a list of all the math functions defined in a given
+ *	interpreter.
+ *
+ * Results:
+ *	A pointer to a Tcl_Obj structure with a reference count of zero, or
+ *	NULL in the case of an error (in which case a suitable error message
+ *	will be left in the interpreter result.)
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_ListMathFuncs(
+    Tcl_Interp *interp,
+    const char *pattern)
+{
+    Tcl_Obj *script = Tcl_NewStringObj("::info functions ", -1);
+    Tcl_Obj *result;
+    Tcl_InterpState state;
+
+    if (pattern) {
+	Tcl_Obj *patternObj = Tcl_NewStringObj(pattern, -1);
+	Tcl_Obj *arg = Tcl_NewListObj(1, &patternObj);
+
+	Tcl_AppendObjToObj(script, arg);
+	Tcl_DecrRefCount(arg);	/* Should tear down patternObj too */
+    }
+
+    state = Tcl_SaveInterpState(interp, TCL_OK);
+    Tcl_IncrRefCount(script);
+    if (TCL_OK == Tcl_EvalObjEx(interp, script, 0)) {
+	result = Tcl_DuplicateObj(Tcl_GetObjResult(interp));
+    } else {
+	result = Tcl_NewObj();
+    }
+    Tcl_DecrRefCount(script);
+    Tcl_RestoreInterpState(interp, state);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclInterpReady --
  *
  *	Check if an interpreter is ready to eval commands or scripts, i.e., if
@@ -3073,7 +3461,7 @@ TclCleanupCommand(
  *	otherwise.
  *
  * Side effects:
- *	The interpreter's result is cleared.
+ *	The interpreters object and string results are cleared.
  *
  *----------------------------------------------------------------------
  */
@@ -3085,8 +3473,8 @@ TclInterpReady(
     register Interp *iPtr = (Interp *) interp;
 
     /*
-     * Reset the interpreter's result and clear out any previous error
-     * information.
+     * Reset both the interpreter's string and object results and clear out
+     * any previous error information.
      */
 
     Tcl_ResetResult(interp);
@@ -4105,6 +4493,54 @@ Tcl_EvalTokensStandard(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_EvalTokens --
+ *
+ *	Given an array of tokens parsed from a Tcl command (e.g., the tokens
+ *	that make up a word or the index for an array variable) this function
+ *	evaluates the tokens and concatenates their values to form a single
+ *	result value.
+ *
+ * Results:
+ *	The return value is a pointer to a newly allocated Tcl_Obj containing
+ *	the value of the array of tokens. The reference count of the returned
+ *	object has been incremented. If an error occurs in evaluating the
+ *	tokens then a NULL value is returned and an error message is left in
+ *	interp's result.
+ *
+ * Side effects:
+ *	A new object is allocated to hold the result.
+ *
+ *----------------------------------------------------------------------
+ *
+ * This uses a non-standard return convention; its use is now deprecated. It
+ * is a wrapper for the new function Tcl_EvalTokensStandard, and is not used
+ * in the core any longer. It is only kept for backward compatibility.
+ */
+
+Tcl_Obj *
+Tcl_EvalTokens(
+    Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
+				 * execute nested commands, and report
+				 * errors. */
+    Tcl_Token *tokenPtr,	/* Pointer to first in an array of tokens to
+				 * evaluate and concatenate. */
+    int count)			/* Number of tokens to consider at tokenPtr.
+				 * Must be at least 1. */
+{
+    Tcl_Obj *resPtr;
+
+    if (Tcl_EvalTokensStandard(interp, tokenPtr, count) != TCL_OK) {
+	return NULL;
+    }
+    resPtr = Tcl_GetObjResult(interp);
+    Tcl_IncrRefCount(resPtr);
+    Tcl_ResetResult(interp);
+    return resPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_EvalEx, TclEvalEx --
  *
  *	This function evaluates a Tcl script without using the compiler or
@@ -4415,7 +4851,16 @@ Tcl_Eval(
 				 * previous call to Tcl_CreateInterp). */
     const char *script)		/* Pointer to TCL command to execute. */
 {
-    return Tcl_EvalEx(interp, script, -1, 0);
+    int code = Tcl_EvalEx(interp, script, -1, 0);
+
+    /*
+     * For backwards compatibility with old C code that predates the object
+     * system in Tcl 8.0, we have to mirror the object result back into the
+     * string result (some callers may expect it there).
+     */
+
+    (void) Tcl_GetStringResult(interp);
+    return code;
 }
 
 /*
@@ -4685,6 +5130,9 @@ Tcl_ExprLong(
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprLongObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
+	if (result != TCL_OK) {
+	    (void) Tcl_GetStringResult(interp);
+	}
     }
     return result;
 }
@@ -4711,6 +5159,9 @@ Tcl_ExprDouble(
 	result = Tcl_ExprDoubleObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
 				/* Discard the expression object. */
+	if (result != TCL_OK) {
+	    (void) Tcl_GetStringResult(interp);
+	}
     }
     return result;
 }
@@ -4736,6 +5187,14 @@ Tcl_ExprBoolean(
 	Tcl_IncrRefCount(exprPtr);
 	result = Tcl_ExprBooleanObj(interp, exprPtr, ptr);
 	Tcl_DecrRefCount(exprPtr);
+	if (result != TCL_OK) {
+	    /*
+	     * Move the interpreter's object result to the string result, then
+	     * reset the object result.
+	     */
+
+	    (void) Tcl_GetStringResult(interp);
+	}
 	return result;
     }
 }
@@ -5057,6 +5516,12 @@ Tcl_ExprString(
 	    Tcl_DecrRefCount(resultPtr);
 	}
     }
+
+    /*
+     * Force the string rep of the interp result.
+     */
+
+    (void) Tcl_GetStringResult(interp);
     return code;
 }
 
@@ -5160,7 +5625,19 @@ Tcl_AddObjErrorInfo(
 
     iPtr->flags |= ERR_LEGACY_COPY;
     if (iPtr->errorInfo == NULL) {
-        iPtr->errorInfo = iPtr->objResultPtr;
+	if (iPtr->result[0] != 0) {
+	    /*
+	     * The interp's string result is set, apparently by some extension
+	     * making a deprecated direct write to it. That extension may
+	     * expect interp->result to continue to be set, so we'll take
+	     * special pains to avoid clearing it, until we drop support for
+	     * interp->result completely.
+	     */
+
+	    iPtr->errorInfo = Tcl_NewStringObj(iPtr->result, -1);
+	} else {
+	    iPtr->errorInfo = iPtr->objResultPtr;
+	}
 	Tcl_IncrRefCount(iPtr->errorInfo);
 	if (!iPtr->errorCode) {
 	    Tcl_SetErrorCode(interp, "NONE", NULL);
@@ -5179,6 +5656,122 @@ Tcl_AddObjErrorInfo(
 	}
 	Tcl_AppendToObj(iPtr->errorInfo, message, length);
     }
+}
+
+/*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_VarEvalVA --
+ *
+ *	Given a variable number of string arguments, concatenate them all
+ *	together and execute the result as a Tcl command.
+ *
+ * Results:
+ *	A standard Tcl return result. An error message or other result may be
+ *	left in the interp's result.
+ *
+ * Side effects:
+ *	Depends on what was done by the command.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+Tcl_VarEvalVA(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate command */
+    va_list argList)		/* Variable argument list. */
+{
+    Tcl_DString buf;
+    char *string;
+    int result;
+
+    /*
+     * Copy the strings one after the other into a single larger string. Use
+     * stack-allocated space for small commands, but if the command gets too
+     * large than call ckalloc to create the space.
+     */
+
+    Tcl_DStringInit(&buf);
+    while (1) {
+	string = va_arg(argList, char *);
+	if (string == NULL) {
+	    break;
+	}
+	Tcl_DStringAppend(&buf, string, -1);
+    }
+
+    result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
+    Tcl_DStringFree(&buf);
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_VarEval --
+ *
+ *	Given a variable number of string arguments, concatenate them all
+ *	together and execute the result as a Tcl command.
+ *
+ * Results:
+ *	A standard Tcl return result. An error message or other result may be
+ *	left in interp->result.
+ *
+ * Side effects:
+ *	Depends on what was done by the command.
+ *
+ *----------------------------------------------------------------------
+ */
+	/* ARGSUSED */
+int
+Tcl_VarEval(
+    Tcl_Interp *interp,
+    ...)
+{
+    va_list argList;
+    int result;
+
+    va_start(argList, interp);
+    result = Tcl_VarEvalVA(interp, argList);
+    va_end(argList);
+
+    return result;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GlobalEval --
+ *
+ *	Evaluate a command at global level in an interpreter.
+ *
+ * Results:
+ *	A standard Tcl result is returned, and the interp's result is modified
+ *	accordingly.
+ *
+ * Side effects:
+ *	The command string is executed in interp, and the execution is carried
+ *	out in the variable context of global level (no functions active),
+ *	just as if an "uplevel #0" command were being executed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_GlobalEval(
+    Tcl_Interp *interp,		/* Interpreter in which to evaluate
+				 * command. */
+    const char *command)	/* Command to evaluate. */
+{
+    register Interp *iPtr = (Interp *) interp;
+    int result;
+    CallFrame *savedVarFramePtr;
+
+    savedVarFramePtr = iPtr->varFramePtr;
+    iPtr->varFramePtr = iPtr->rootFramePtr;
+    result = Tcl_Eval(interp, command);
+    iPtr->varFramePtr = savedVarFramePtr;
+    return result;
 }
 
 /*

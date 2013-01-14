@@ -39,7 +39,7 @@ typedef struct PkgAvail {
  * "Tk" (no version number).
  */
 
-typedef struct {
+typedef struct Package {
     char *version;		/* Version that has been supplied in this
 				 * interpreter via "package provide"
 				 * (malloc'ed). NULL means the package doesn't
@@ -105,6 +105,16 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
  *
  *----------------------------------------------------------------------
  */
+
+int
+Tcl_PkgProvide(
+    Tcl_Interp *interp,		/* Interpreter in which package is now
+				 * available. */
+    const char *name,		/* Name of package. */
+    const char *version)	/* Version string for package. */
+{
+    return Tcl_PkgProvideEx(interp, name, version, NULL);
+}
 
 int
 Tcl_PkgProvideEx(

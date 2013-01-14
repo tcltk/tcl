@@ -37,7 +37,7 @@ typedef struct BgError {
  * pending background errors for the interpreter.
  */
 
-typedef struct {
+typedef struct ErrAssocData {
     Tcl_Interp *interp;		/* Interpreter in which error occurred. */
     Tcl_Obj *cmdPrefix;		/* First word(s) of the handler command */
     BgError *firstBgPtr;	/* First in list of all background errors

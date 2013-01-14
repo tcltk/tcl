@@ -6,7 +6,7 @@
 # Copyright (c) 2004 by Donal K. Fellows.
 # All rights reserved.
 
-package require Tcl 8.5-
+package require Tcl 8.5
 if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
@@ -202,11 +202,6 @@ proc genpaths {base} {
     set base [file normalize $base]
     foreach {major minor} [split [info tclversion] .] break
     set results {}
-    set base8 [file join $base tcl8]
-    lappend results [file join $base8 site-tcl]
-    for {set i 0} {$i <= 7} {incr i} {
-	lappend results [file join $base8 8.$i]
-    }
     set base [file join $base tcl$major]
     lappend results [file join $base site-tcl]
     for {set i 0} {$i <= $minor} {incr i} {

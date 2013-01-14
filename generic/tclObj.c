@@ -46,7 +46,7 @@ char *tclEmptyStringRep = &tclEmptyString;
  * for sanity checking purposes.
  */
 
-typedef struct {
+typedef struct ObjData {
     Tcl_Obj *objPtr;		/* The pointer to the allocated Tcl_Obj. */
     const char *file;		/* The name of the source file calling this
 				 * function; used for debugging. */
@@ -3278,7 +3278,7 @@ Tcl_DbDecrRefCount(
 	 * If the Tcl_Obj is going to be deleted, remove the entry.
 	 */
 
-	if (objPtr->refCount < 2) {
+	if ((objPtr->refCount - 1) <= 0) {
 	    ObjData *objData = Tcl_GetHashValue(hPtr);
 
 	    if (objData != NULL) {
@@ -3291,7 +3291,7 @@ Tcl_DbDecrRefCount(
 # endif /* TCL_THREADS */
 #endif /* TCL_MEM_DEBUG */
 
-    if ((objPtr)->refCount-- < 2) {
+    if (--(objPtr)->refCount <= 0) {
 	TclFreeObj(objPtr);
     }
 }

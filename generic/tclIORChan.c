@@ -256,7 +256,7 @@ typedef enum {
  * sharing problems.
  */
 
-typedef struct {
+typedef struct ForwardParamBase {
     int code;			/* O: Ok/Fail of the cmd handler */
     char *msgStr;		/* O: Error message for handler failure */
     int mustFree;		/* O: True if msgStr is allocated, false if
@@ -331,7 +331,7 @@ typedef struct ForwardingResult ForwardingResult;
  * General event structure, with reference to operation specific data.
  */
 
-typedef struct {
+typedef struct ForwardingEvent {
     Tcl_Event event;		/* Basic event data, has to be first item */
     ForwardingResult *resultPtr;
     ForwardedOperation op;	/* Forwarded driver operation */
@@ -368,7 +368,7 @@ struct ForwardingResult {
 				 * results. */
 };
 
-typedef struct {
+typedef struct ThreadSpecificData {
     /*
      * Table of all reflected channels owned by this thread. This is the
      * per-thread version of the per-interpreter map.
@@ -774,7 +774,7 @@ TclChanCreateObjCmd(
  *----------------------------------------------------------------------
  */
 
-typedef struct {
+typedef struct ReflectEvent {
     Tcl_Event header;
     ReflectedChannel *rcPtr;
     int events;

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.4-
+package require Tcl 8.4
 
 namespace eval genStubs {
     # libraryName --
@@ -1135,7 +1135,6 @@ proc genStubs::init {} {
     variable outDir
     variable interfaces
 
-variable scspec
     if {[llength $argv] < 2} {
 	puts stderr "usage: $argv0 outDir declFile ?declFile...?"
 	exit 1

@@ -111,7 +111,7 @@ static Tcl_ThreadDataKey dataKey;
  * the queue.
  */
 
-typedef struct {
+typedef struct WinCondition {
     CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
 				 * condition. */
     struct ThreadSpecificData *firstPtr;	/* Queue pointers */
@@ -126,7 +126,7 @@ typedef struct {
 static int once;
 static DWORD tlsKey;
 
-typedef struct {
+typedef struct allocMutex {
     Tcl_Mutex	     tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
@@ -948,9 +948,9 @@ TclpFinalizeCondition(
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    allocMutex *lockPtr;
+    struct allocMutex *lockPtr;
 
-    lockPtr = malloc(sizeof(allocMutex));
+    lockPtr = malloc(sizeof(struct allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }

@@ -5,7 +5,7 @@
 #
 # Copyright (c) 1996 by Sun Microsystems, Inc.
 
-package require Tcl 8.4-
+package require Tcl 8.4
 
 # Global variables used by these scripts:
 #

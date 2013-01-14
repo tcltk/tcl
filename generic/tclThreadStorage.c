@@ -47,7 +47,7 @@ static struct TSDMaster {
  * The type of the data held per thread in a system TSD.
  */
 
-typedef struct {
+typedef struct TSDTable {
     ClientData *tablePtr;	/* The table of Tcl TSDs. */
     sig_atomic_t allocated;	/* The size of the table in the current
 				 * thread. */

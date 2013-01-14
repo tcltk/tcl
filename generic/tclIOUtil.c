@@ -54,7 +54,7 @@ typedef struct FilesystemRecord {
  * this information each time the corresponding epoch counter changes.
  */
 
-typedef struct {
+typedef struct ThreadSpecificData {
     int initialized;
     int cwdPathEpoch;
     int filesystemEpoch;
@@ -243,7 +243,7 @@ static Tcl_ThreadDataKey fsDataKey;
  * code.
  */
 
-typedef struct {
+typedef struct FsDivertLoad {
     Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;
@@ -408,6 +408,22 @@ Tcl_GetCwd(
     TclDStringAppendObj(cwdPtr, cwd);
     Tcl_DecrRefCount(cwd);
     return Tcl_DStringValue(cwdPtr);
+}
+
+/* Obsolete */
+int
+Tcl_EvalFile(
+    Tcl_Interp *interp,		/* Interpreter in which to process file. */
+    const char *fileName)	/* Name of file to process. Tilde-substitution
+				 * will be performed on this name. */
+{
+    int ret;
+    Tcl_Obj *pathPtr = Tcl_NewStringObj(fileName,-1);
+
+    Tcl_IncrRefCount(pathPtr);
+    ret = Tcl_FSEvalFile(interp, pathPtr);
+    Tcl_DecrRefCount(pathPtr);
+    return ret;
 }
 
 /*

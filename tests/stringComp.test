@@ -339,11 +339,11 @@ test stringComp-5.16 {string index, bytearray object with string obj shimmering}
 test stringComp-5.17 {string index, bad integer} -body {
     proc foo {} {string index "abc" 0o8}
     list [catch {foo} msg] $msg
-} -match glob -result {1 {*}}
+} -match glob -result {1 {*invalid octal number*}}
 test stringComp-5.18 {string index, bad integer} -body {
     proc foo {} {string index "abc" end-0o0289}
     list [catch {foo} msg] $msg
-} -match glob -result {1 {*}}
+} -match glob -result {1 {*invalid octal number*}}
 test stringComp-5.19 {string index, bytearray object out of bounds} {
     proc foo {} {string index [binary format I* {0x50515253 0x52}] -1}
     foo

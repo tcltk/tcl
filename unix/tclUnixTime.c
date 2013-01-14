@@ -20,6 +20,18 @@
 #define IsLeapYear(x)	(((x)%4 == 0) && ((x)%100 != 0 || (x)%400 == 0))
 
 /*
+ * TclpGetDate is coded to return a pointer to a 'struct tm'. For thread
+ * safety, this structure must be in thread-specific data. The 'tmKey'
+ * variable is the key to this buffer.
+ */
+
+static Tcl_ThreadDataKey tmKey;
+typedef struct ThreadSpecificData {
+    struct tm gmtime_buf;
+    struct tm localtime_buf;
+} ThreadSpecificData;
+
+/*
  * If we fall back on the thread-unsafe versions of gmtime and localtime, use
  * this mutex to try to protect them.
  */
@@ -234,6 +246,114 @@ Tcl_GetTime(
     Tcl_Time *timePtr)		/* Location to store time information. */
 {
     tclGetTimeProcPtr(timePtr, tclTimeClientData);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGetDate --
+ *
+ *	This function converts between seconds and struct tm. If useGMT is
+ *	true, then the returned date will be in Greenwich Mean Time (GMT).
+ *	Otherwise, it will be in the local time zone.
+ *
+ * Results:
+ *	Returns a static tm structure.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+struct tm *
+TclpGetDate(
+    const time_t *time,
+    int useGMT)
+{
+    if (useGMT) {
+	return TclpGmtime(time);
+    } else {
+	return TclpLocaltime(time);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpGmtime --
+ *
+ *	Wrapper around the 'gmtime' library function to make it thread safe.
+ *
+ * Results:
+ *	Returns a pointer to a 'struct tm' in thread-specific data.
+ *
+ * Side effects:
+ *	Invokes gmtime or gmtime_r as appropriate.
+ *
+ *----------------------------------------------------------------------
+ */
+
+struct tm *
+TclpGmtime(
+    const time_t *timePtr)	/* Pointer to the number of seconds since the
+				 * local system's epoch */
+{
+    /*
+     * Get a thread-local buffer to hold the returned time.
+     */
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tmKey);
+
+#ifdef HAVE_GMTIME_R
+    gmtime_r(timePtr, &tsdPtr->gmtime_buf);
+#else
+    Tcl_MutexLock(&tmMutex);
+    memcpy(&tsdPtr->gmtime_buf, gmtime(timePtr), sizeof(struct tm));
+    Tcl_MutexUnlock(&tmMutex);
+#endif
+
+    return &tsdPtr->gmtime_buf;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpLocaltime --
+ *
+ *	Wrapper around the 'localtime' library function to make it thread
+ *	safe.
+ *
+ * Results:
+ *	Returns a pointer to a 'struct tm' in thread-specific data.
+ *
+ * Side effects:
+ *	Invokes localtime or localtime_r as appropriate.
+ *
+ *----------------------------------------------------------------------
+ */
+
+struct tm *
+TclpLocaltime(
+    const time_t *timePtr)	/* Pointer to the number of seconds since the
+				 * local system's epoch */
+{
+    /*
+     * Get a thread-local buffer to hold the returned time.
+     */
+
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&tmKey);
+
+    SetTZIfNecessary();
+#ifdef HAVE_LOCALTIME_R
+    localtime_r(timePtr, &tsdPtr->localtime_buf);
+#else
+    Tcl_MutexLock(&tmMutex);
+    memcpy(&tsdPtr->localtime_buf, localtime(timePtr), sizeof(struct tm));
+    Tcl_MutexUnlock(&tmMutex);
+#endif
+
+    return &tsdPtr->localtime_buf;
 }
 
 /*

@@ -104,7 +104,7 @@ const Tcl_ObjType tclStringType = {
  * tcl.h, but do not do that unless you are sure what you're doing!
  */
 
-typedef struct {
+typedef struct String {
     int numChars;		/* The number of chars in the string. -1 means
 				 * this value has not been calculated. >= 0
 				 * means that there is a valid Unicode rep, or

@@ -137,9 +137,6 @@ proc pkg_mkIndex {args} {
     } on error {msg opt} {
 	return -options $opt $msg
     }
-    if {[llength $fileList] == 0} {
-	return -code error "no files matched glob pattern \"$patternList\""
-    }
     foreach file $fileList {
 	# For each file, figure out what commands and packages it provides.
 	# To do this, create a child interpreter, load the file into the

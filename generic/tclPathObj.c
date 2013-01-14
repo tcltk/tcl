@@ -71,7 +71,7 @@ static const Tcl_ObjType tclFsPathType = {
  *
  */
 
-typedef struct {
+typedef struct FsPath {
     Tcl_Obj *translatedPathPtr; /* Name without any ~user sequences. If this
 				 * is NULL, then this is a pure normalized,
 				 * absolute path object, in which the parent

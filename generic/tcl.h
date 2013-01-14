@@ -53,13 +53,13 @@ extern "C" {
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
  */
 
-#define TCL_MAJOR_VERSION   9
-#define TCL_MINOR_VERSION   0
-#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
+#define TCL_MAJOR_VERSION   8
+#define TCL_MINOR_VERSION   6
+#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
 #define TCL_RELEASE_SERIAL  0
 
-#define TCL_VERSION	    "9.0"
-#define TCL_PATCH_LEVEL	    "9.0a0"
+#define TCL_VERSION	    "8.6"
+#define TCL_PATCH_LEVEL	    "8.6.0"
 
 /*
  *----------------------------------------------------------------------------
@@ -88,6 +88,20 @@ extern "C" {
 #	define STRICT
 #   endif
 #endif /* __WIN32__ */
+
+/*
+ * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
+ * quotation marks), JOIN joins two arguments.
+ */
+
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+#ifndef JOIN
+#  define JOIN(a,b) JOIN1(a,b)
+#  define JOIN1(a,b) a##b
+#endif
 
 /*
  * A special definition used to allow this header file to be included from
@@ -209,17 +223,108 @@ extern "C" {
  * be reset to DLLIMPORT.
  */
 
+#undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
-#   define TCLAPI DLLEXPORT
+#   define TCL_STORAGE_CLASS DLLEXPORT
 #else
-#   define TCLAPI DLLIMPORT
+#   ifdef USE_TCL_STUBS
+#      define TCL_STORAGE_CLASS
+#   else
+#      define TCL_STORAGE_CLASS DLLIMPORT
+#   endif
+#endif
+
+/*
+ * Definitions that allow this header file to be used either with or without
+ * ANSI C features.
+ */
+
+#ifndef INLINE
+#   define INLINE
+#endif
+
+#ifdef NO_CONST
+#   ifndef const
+#      define const
+#   endif
+#endif
+#ifndef CONST
+#   define CONST const
+#endif
+
+#ifdef USE_NON_CONST
+#   ifdef USE_COMPAT_CONST
+#      error define at most one of USE_NON_CONST and USE_COMPAT_CONST
+#   endif
+#   define CONST84
+#   define CONST84_RETURN
+#else
+#   ifdef USE_COMPAT_CONST
+#      define CONST84
+#      define CONST84_RETURN const
+#   else
+#      define CONST84 const
+#      define CONST84_RETURN const
+#   endif
+#endif
+
+#ifndef CONST86
+#      define CONST86 CONST84
+#endif
+
+/*
+ * Make sure EXTERN isn't defined elsewhere.
+ */
+
+#ifdef EXTERN
+#   undef EXTERN
+#endif /* EXTERN */
+
+#ifdef __cplusplus
+#   define EXTERN extern "C" TCL_STORAGE_CLASS
+#else
+#   define EXTERN extern TCL_STORAGE_CLASS
+#endif
+
+/*
+ *----------------------------------------------------------------------------
+ * The following code is copied from winnt.h. If we don't replicate it here,
+ * then <windows.h> can't be included after tcl.h, since tcl.h also defines
+ * VOID. This block is skipped under Cygwin and Mingw.
+ */
+
+#if defined(__WIN32__) && !defined(HAVE_WINNT_IGNORE_VOID)
+#ifndef VOID
+#define VOID void
+typedef char CHAR;
+typedef short SHORT;
+typedef long LONG;
+#endif
+#endif /* __WIN32__ && !HAVE_WINNT_IGNORE_VOID */
+
+/*
+ * Macro to use instead of "void" for arguments that must have type "void *"
+ * in ANSI C; maps them to type "char *" in non-ANSI systems.
+ */
+
+#ifndef NO_VOID
+#   define VOID void
+#else
+#   define VOID char
 #endif
 
 /*
  * Miscellaneous declarations.
  */
 
-typedef void *ClientData;
+#ifndef _CLIENTDATA
+#   ifndef NO_VOID
+	typedef void *ClientData;
+#   else
+	typedef int *ClientData;
+#   endif
+#   define _CLIENTDATA
+#endif
 
 /*
  * Darwin specific configure overrides (to support fat compiles, where
@@ -329,7 +434,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct _stat32i64 Tcl_StatBuf;
 #   endif /* _MSC_VER < 1400 */
 #elif defined(__CYGWIN__)
-    typedef struct {
+    typedef struct _stat32i64 {
 	dev_t st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
@@ -513,6 +618,8 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 
+#define TCL_RESULT_SIZE		200
+
 /*
  *----------------------------------------------------------------------------
  * Flags to control what substitutions are performed by Tcl_SubstObj():
@@ -524,13 +631,27 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_SUBST_ALL		007
 
 /*
+ * Argument descriptors for math function callbacks in expressions:
+ */
+
+typedef enum {
+    TCL_INT, TCL_DOUBLE, TCL_EITHER, TCL_WIDE_INT
+} Tcl_ValueType;
+
+typedef struct Tcl_Value {
+    Tcl_ValueType type;		/* Indicates intValue or doubleValue is valid,
+				 * or both. */
+    long intValue;		/* Integer value. */
+    double doubleValue;		/* Double-precision floating value. */
+    Tcl_WideInt wideValue;	/* Wide (min. 64-bit) integer value. */
+} Tcl_Value;
+
+/*
  * Forward declaration of Tcl_Obj to prevent an error when the forward
  * reference to Tcl_Obj is encountered in the function types declared below.
  */
 
 struct Tcl_Obj;
-
-typedef struct Tcl_Obj Tcl_Value;
 
 /*
  *----------------------------------------------------------------------------
@@ -544,10 +665,10 @@ typedef void (Tcl_ChannelProc) (ClientData clientData, int mask);
 typedef void (Tcl_CloseProc) (ClientData data);
 typedef void (Tcl_CmdDeleteProc) (ClientData clientData);
 typedef int (Tcl_CmdProc) (ClientData clientData, Tcl_Interp *interp,
-	int argc, const char *argv[]);
+	int argc, CONST84 char *argv[]);
 typedef void (Tcl_CmdTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, char *command, Tcl_CmdProc *proc,
-	ClientData cmdClientData, int argc, const char *argv[]);
+	ClientData cmdClientData, int argc, CONST84 char *argv[]);
 typedef int (Tcl_CmdObjTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	int level, const char *command, Tcl_Command commandInfo, int objc,
 	struct Tcl_Obj *const *objv);
@@ -570,6 +691,8 @@ typedef void (Tcl_FreeProc) (char *blockPtr);
 typedef void (Tcl_IdleProc) (ClientData clientData);
 typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
 	Tcl_Interp *interp);
+typedef int (Tcl_MathProc) (ClientData clientData, Tcl_Interp *interp,
+	Tcl_Value *args, Tcl_Value *resultPtr);
 typedef void (Tcl_NamespaceDeleteProc) (ClientData clientData);
 typedef int (Tcl_ObjCmdProc) (ClientData clientData, Tcl_Interp *interp,
 	int objc, struct Tcl_Obj *const *objv);
@@ -582,7 +705,7 @@ typedef void (Tcl_TimerProc) (ClientData clientData);
 typedef int (Tcl_SetFromAnyProc) (Tcl_Interp *interp, struct Tcl_Obj *objPtr);
 typedef void (Tcl_UpdateStringProc) (struct Tcl_Obj *objPtr);
 typedef char * (Tcl_VarTraceProc) (ClientData clientData, Tcl_Interp *interp,
-	const char *part1, const char *part2, int flags);
+	CONST84 char *part1, CONST84 char *part2, int flags);
 typedef void (Tcl_CommandTraceProc) (ClientData clientData, Tcl_Interp *interp,
 	const char *oldName, const char *newName, int flags);
 typedef void (Tcl_CreateFileHandlerProc) (int fd, int mask, Tcl_FileProc *proc,
@@ -685,7 +808,13 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
  */
 
 typedef struct Tcl_SavedResult {
+    char *result;
+    Tcl_FreeProc *freeProc;
     Tcl_Obj *objResultPtr;
+    char *appendResult;
+    int appendAvl;
+    int appendUsed;
+    char resultSpace[TCL_RESULT_SIZE+1];
 } Tcl_SavedResult;
 
 /*
@@ -745,6 +874,7 @@ typedef struct Tcl_DString {
 
 #define Tcl_DStringLength(dsPtr) ((dsPtr)->length)
 #define Tcl_DStringValue(dsPtr) ((dsPtr)->string)
+#define Tcl_DStringTrunc Tcl_DStringSetLength
 
 /*
  * Definitions for the maximum number of digits of precision that may be
@@ -862,6 +992,13 @@ typedef struct Tcl_DString {
 #define TCL_TRACE_DELETE	0x4000
 
 #define TCL_ALLOW_INLINE_COMPILATION 0x20000
+
+/*
+ * The TCL_PARSE_PART1 flag is deprecated and has no effect. The part1 is now
+ * always parsed whenever the part2 is NULL. (This is to avoid a common error
+ * when converting code to use the new object based APIs and forgetting to
+ * give the flag)
+ */
 
 /*
  * Types for linked variables:
@@ -1146,8 +1283,8 @@ typedef struct Tcl_Time {
     long usec;			/* Microseconds. */
 } Tcl_Time;
 
-typedef void (Tcl_SetTimerProc) (const Tcl_Time *timePtr);
-typedef int (Tcl_WaitForEventProc) (const Tcl_Time *timePtr);
+typedef void (Tcl_SetTimerProc) (CONST86 Tcl_Time *timePtr);
+typedef int (Tcl_WaitForEventProc) (CONST86 Tcl_Time *timePtr);
 
 /*
  * TIP #233 (Virtualized Time)
@@ -1221,14 +1358,14 @@ typedef int	(Tcl_DriverClose2Proc) (ClientData instanceData,
 typedef int	(Tcl_DriverInputProc) (ClientData instanceData, char *buf,
 			int toRead, int *errorCodePtr);
 typedef int	(Tcl_DriverOutputProc) (ClientData instanceData,
-			const char *buf, int toWrite, int *errorCodePtr);
+			CONST84 char *buf, int toWrite, int *errorCodePtr);
 typedef int	(Tcl_DriverSeekProc) (ClientData instanceData, long offset,
 			int mode, int *errorCodePtr);
 typedef int	(Tcl_DriverSetOptionProc) (ClientData instanceData,
 			Tcl_Interp *interp, const char *optionName,
 			const char *value);
 typedef int	(Tcl_DriverGetOptionProc) (ClientData instanceData,
-			Tcl_Interp *interp, const char *optionName,
+			Tcl_Interp *interp, CONST84 char *optionName,
 			Tcl_DString *dsPtr);
 typedef void	(Tcl_DriverWatchProc) (ClientData instanceData, int mask);
 typedef int	(Tcl_DriverGetHandleProc) (ClientData instanceData,
@@ -1419,7 +1556,7 @@ typedef int (Tcl_FSNormalizePathProc) (Tcl_Interp *interp, Tcl_Obj *pathPtr,
 	int nextCheckpoint);
 typedef int (Tcl_FSFileAttrsGetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj **objPtrRef);
-typedef const char *const * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
+typedef const char *CONST86 * (Tcl_FSFileAttrStringsProc) (Tcl_Obj *pathPtr,
 	Tcl_Obj **objPtrRef);
 typedef int (Tcl_FSFileAttrsSetProc) (Tcl_Interp *interp, int index,
 	Tcl_Obj *pathPtr, Tcl_Obj *objPtr);
@@ -2109,6 +2246,9 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  *----------------------------------------------------------------------------
  * The following constant is used to test for older versions of Tcl in the
  * stubs tables.
+ *
+ * Jan Nijtman's plus patch uses 0xFCA1BACF, so we need to pick a different
+ * value since the stubs tables don't match.
  */
 
 #define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
@@ -2120,8 +2260,8 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
-			    int exact, const char *tclversion, int magic);
+const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
+			    int exact);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
@@ -2129,13 +2269,14 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * When not using stubs, make it a macro.
  */
 
-#ifdef USE_TCL_STUBS
-#define Tcl_InitStubs(interp, version, exact) \
-    TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
-#else
+#ifndef USE_TCL_STUBS
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
 #endif
+
+/*
+ * TODO - tommath stubs export goes here!
+ */
 
 /*
  * Public functions that are not accessible via the stubs table.
@@ -2144,13 +2285,12 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
-TCLAPI void		Tcl_FindExecutable(const char *argv0);
-TCLAPI void		Tcl_MainEx(int argc, char **argv,
+EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
+EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
 
 /*
@@ -2178,15 +2318,15 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #ifdef TCL_MEM_DEBUG
 
 #   define ckalloc(x) \
-    ((void *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    ((VOID *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define ckfree(x) \
     Tcl_DbCkfree((char *)(x), __FILE__, __LINE__)
 #   define ckrealloc(x,y) \
-    ((void *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((VOID *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 #   define attemptckalloc(x) \
-    ((void *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    ((VOID *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define attemptckrealloc(x,y) \
-    ((void *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((VOID *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
 
@@ -2197,15 +2337,15 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #   define ckalloc(x) \
-    ((void *) Tcl_Alloc((unsigned)(x)))
+    ((VOID *) Tcl_Alloc((unsigned)(x)))
 #   define ckfree(x) \
     Tcl_Free((char *)(x))
 #   define ckrealloc(x,y) \
-    ((void *) Tcl_Realloc((char *)(x), (unsigned)(y)))
+    ((VOID *) Tcl_Realloc((char *)(x), (unsigned)(y)))
 #   define attemptckalloc(x) \
-    ((void *) Tcl_AttemptAlloc((unsigned)(x)))
+    ((VOID *) Tcl_AttemptAlloc((unsigned)(x)))
 #   define attemptckrealloc(x,y) \
-    ((void *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
+    ((VOID *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory
@@ -2228,15 +2368,11 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
      * http://c2.com/cgi/wiki?TrivialDoWhileLoop
-     *
-     * Decrement refCount AFTER checking it for 0 or 1 (<2), because
-     * we cannot assume anymore that refCount is a signed type; In
-     * Tcl8 it was but in Tcl9 it is subject to change.
      */
 #   define Tcl_DecrRefCount(objPtr) \
 	do { \
 	    Tcl_Obj *_objPtr = (objPtr); \
-	    if (_objPtr->refCount-- < 2) { \
+	    if (--(_objPtr)->refCount <= 0) { \
 		TclFreeObj(_objPtr); \
 	    } \
 	} while(0)
@@ -2328,6 +2464,20 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #undef  Tcl_ConditionFinalize
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
+
+/*
+ *----------------------------------------------------------------------------
+ * Deprecated Tcl functions:
+ */
+
+/*
+ *----------------------------------------------------------------------------
+ * Convenience declaration of Tcl_AppInit for backwards compatibility. This
+ * function is not *implemented* by the tcl library, so the storage class is
+ * neither DLLEXPORT nor DLLIMPORT.
+ */
+
+extern Tcl_AppInitProc Tcl_AppInit;
 
 #endif /* RC_INVOKED */
 

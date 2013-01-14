@@ -26,6 +26,12 @@ testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
 testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
 
+if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
+    testConstraint testmathfunctions 0
+} else {
+    testConstraint testmathfunctions 1
+}
+
 # Big test for correct ordering of data in [expr]
 
 proc testIEEE {} {
@@ -193,34 +199,34 @@ test expr-old-2.38 {floating-point operators} {
 
 test expr-old-3.1 {illegal floating-point operations} {
     list [catch {expr ~4.0} msg] $msg
-} {1 {can't use floating-point value "4.0" as operand of "~"}}
+} {1 {can't use floating-point value as operand of "~"}}
 test expr-old-3.2 {illegal floating-point operations} {
     list [catch {expr 27%4.0} msg] $msg
-} {1 {can't use floating-point value "4.0" as operand of "%"}}
+} {1 {can't use floating-point value as operand of "%"}}
 test expr-old-3.3 {illegal floating-point operations} {
     list [catch {expr 27.0%4} msg] $msg
-} {1 {can't use floating-point value "27.0" as operand of "%"}}
+} {1 {can't use floating-point value as operand of "%"}}
 test expr-old-3.4 {illegal floating-point operations} {
     list [catch {expr 1.0<<3} msg] $msg
-} {1 {can't use floating-point value "1.0" as operand of "<<"}}
+} {1 {can't use floating-point value as operand of "<<"}}
 test expr-old-3.5 {illegal floating-point operations} {
     list [catch {expr 3<<1.0} msg] $msg
-} {1 {can't use floating-point value "1.0" as operand of "<<"}}
+} {1 {can't use floating-point value as operand of "<<"}}
 test expr-old-3.6 {illegal floating-point operations} {
     list [catch {expr 24.0>>3} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of ">>"}}
+} {1 {can't use floating-point value as operand of ">>"}}
 test expr-old-3.7 {illegal floating-point operations} {
     list [catch {expr 24>>3.0} msg] $msg
-} {1 {can't use floating-point value "3.0" as operand of ">>"}}
+} {1 {can't use floating-point value as operand of ">>"}}
 test expr-old-3.8 {illegal floating-point operations} {
     list [catch {expr 24&3.0} msg] $msg
-} {1 {can't use floating-point value "3.0" as operand of "&"}}
+} {1 {can't use floating-point value as operand of "&"}}
 test expr-old-3.9 {illegal floating-point operations} {
     list [catch {expr 24.0|3} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of "|"}}
+} {1 {can't use floating-point value as operand of "|"}}
 test expr-old-3.10 {illegal floating-point operations} {
     list [catch {expr 24.0^3} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of "^"}}
+} {1 {can't use floating-point value as operand of "^"}}
 
 # Check the string operators individually.
 
@@ -261,46 +267,46 @@ test expr-old-4.32 {string operators} {expr {0?"foo":"bar"}} bar
 
 test expr-old-5.1 {illegal string operations} {
     list [catch {expr {-"a"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "-"}}
+} {1 {can't use non-numeric string as operand of "-"}}
 test expr-old-5.2 {illegal string operations} {
     list [catch {expr {+"a"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-5.3 {illegal string operations} {
     list [catch {expr {~"a"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "~"}}
+} {1 {can't use non-numeric string as operand of "~"}}
 test expr-old-5.4 {illegal string operations} {
     list [catch {expr {!"a"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "!"}}
+} {1 {can't use non-numeric string as operand of "!"}}
 test expr-old-5.5 {illegal string operations} {
     list [catch {expr {"a"*"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "*"}}
+} {1 {can't use non-numeric string as operand of "*"}}
 test expr-old-5.6 {illegal string operations} {
     list [catch {expr {"a"/"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "/"}}
+} {1 {can't use non-numeric string as operand of "/"}}
 test expr-old-5.7 {illegal string operations} {
     list [catch {expr {"a"%"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "%"}}
+} {1 {can't use non-numeric string as operand of "%"}}
 test expr-old-5.8 {illegal string operations} {
     list [catch {expr {"a"+"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-5.9 {illegal string operations} {
     list [catch {expr {"a"-"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "-"}}
+} {1 {can't use non-numeric string as operand of "-"}}
 test expr-old-5.10 {illegal string operations} {
     list [catch {expr {"a"<<"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "<<"}}
+} {1 {can't use non-numeric string as operand of "<<"}}
 test expr-old-5.11 {illegal string operations} {
     list [catch {expr {"a">>"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of ">>"}}
+} {1 {can't use non-numeric string as operand of ">>"}}
 test expr-old-5.12 {illegal string operations} {
     list [catch {expr {"a"&"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "&"}}
+} {1 {can't use non-numeric string as operand of "&"}}
 test expr-old-5.13 {illegal string operations} {
     list [catch {expr {"a"^"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "^"}}
+} {1 {can't use non-numeric string as operand of "^"}}
 test expr-old-5.14 {illegal string operations} {
     list [catch {expr {"a"|"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "|"}}
+} {1 {can't use non-numeric string as operand of "|"}}
 test expr-old-5.15 {illegal string operations} {
     list [catch {expr {"a"&&"b"}} msg] $msg
 } {1 {expected boolean value but got "a"}}
@@ -489,7 +495,7 @@ test expr-old-25.20 {type conversions} {expr 10.0} 10.0
 
 test expr-old-26.1 {error conditions} {
     list [catch {expr 2+"a"} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-26.2 {error conditions} -body {
     expr 2+4*
 } -returnCodes error -match glob -result *
@@ -503,10 +509,10 @@ test expr-old-26.4 {error conditions} {
 set a xx
 test expr-old-26.5 {error conditions} {
     list [catch {expr {2+$a}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-26.6 {error conditions} {
     list [catch {expr {2+[set a]}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-26.7 {error conditions} -body {
     expr {2+(4}
 } -returnCodes error -match glob -result *
@@ -530,7 +536,7 @@ test expr-old-26.12 {error conditions} -body {
 } -returnCodes error -match glob -result *
 test expr-old-26.13 {error conditions} {
     list [catch {expr {"a"/"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "/"}}
+} {1 {can't use non-numeric string as operand of "/"}}
 test expr-old-26.14 {error conditions} -body {
     expr 2:3
 } -returnCodes error -match glob -result *
@@ -843,6 +849,12 @@ test expr-old-32.41 {math functions in expressions} {
 test expr-old-32.42 {math functions in expressions} {
     list [catch {expr hypot(5*.8,3)} msg] $msg
 } {0 5.0}
+test expr-old-32.43 {math functions in expressions} testmathfunctions {
+    expr 2*T1()
+} 246
+test expr-old-32.44 {math functions in expressions} testmathfunctions {
+    expr T2()*3
+} 1035
 test expr-old-32.45 {math functions in expressions} {
     expr (0 <= rand()) && (rand() < 1)
 } {1}
@@ -942,6 +954,10 @@ test expr-old-34.15 {errors in math functions} {
 test expr-old-34.16 {errors in math functions} {
     expr round(-1.0e30)
 } -1000000000000000019884624838656
+test expr-old-34.17 {errors in math functions} -constraints testmathfunctions \
+    -body {
+        list [catch {expr T1(4)} msg] $msg
+    } -match glob -result {1 {too many arguments for math function*}}
 
 test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
     expr 0o289
@@ -949,7 +965,7 @@ test expr-old-36.1 {ExprLooksLikeInt procedure} -body {
 test expr-old-36.2 {ExprLooksLikeInt procedure} {
     set x 0o289
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use non-numeric string "0o289" as operand of "+"}}
+} {1 {can't use invalid octal number as operand of "+"}}
 test expr-old-36.3 {ExprLooksLikeInt procedure} {
     list [catch {expr 0289.1} msg] $msg
 } {0 289.1}
@@ -989,11 +1005,11 @@ test expr-old-36.11 {ExprLooksLikeInt procedure} {
 test expr-old-36.12 {ExprLooksLikeInt procedure} {
     set x "10;"
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use non-numeric string "10;" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-36.13 {ExprLooksLikeInt procedure} {
     set x " +"
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use non-numeric string " +" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test expr-old-36.14 {ExprLooksLikeInt procedure} {
     set x "123456789012345678901234567890 "
     expr {$x+1}
@@ -1001,7 +1017,7 @@ test expr-old-36.14 {ExprLooksLikeInt procedure} {
 test expr-old-36.15 {ExprLooksLikeInt procedure} {
     set x "0o99 "
     list [catch {expr {$x+1}} msg] $msg
-} {1 {can't use non-numeric string "0o99 " as operand of "+"}}
+} {1 {can't use invalid octal number as operand of "+"}}
 test expr-old-36.16 {ExprLooksLikeInt procedure} {
     set x " 0xffffffffffffffffffffffffffffffffffffff  "
     expr {$x+1}

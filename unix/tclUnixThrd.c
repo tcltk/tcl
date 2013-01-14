@@ -15,7 +15,7 @@
 
 #ifdef TCL_THREADS
 
-typedef struct {
+typedef struct ThreadSpecificData {
     char nabuf[16];
 } ThreadSpecificData;
 
@@ -682,7 +682,7 @@ TclpInetNtoa(
 static volatile int initialized = 0;
 static pthread_key_t key;
 
-typedef struct {
+typedef struct allocMutex {
     Tcl_Mutex tlock;
     pthread_mutex_t plock;
 } allocMutex;
@@ -690,10 +690,10 @@ typedef struct {
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    allocMutex *lockPtr;
+    struct allocMutex *lockPtr;
     register pthread_mutex_t *plockPtr;
 
-    lockPtr = malloc(sizeof(allocMutex));
+    lockPtr = malloc(sizeof(struct allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }

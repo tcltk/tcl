@@ -809,6 +809,9 @@ TclObjLookupVarEx(
  *    - Bug #696893 - variable is either proc-local or in the current
  *	namespace; never follow the second (global) resolution path
  *    - Bug #631741 - do not use special namespace or interp resolvers
+ *
+ * It should also not collide with the (deprecated) TCL_PARSE_PART1 flag
+ * (Bug #835020)
  */
 
 #define AVOID_RESOLVERS 0x40000

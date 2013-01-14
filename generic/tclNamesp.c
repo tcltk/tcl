@@ -31,7 +31,7 @@
  * limited to a single interpreter.
  */
 
-typedef struct {
+typedef struct ThreadSpecificData {
     long numNsCreated;		/* Count of the number of namespaces created
 				 * within the thread. This value is used as a
 				 * unique id for each namespace. Cannot be
@@ -52,7 +52,7 @@ static Tcl_ThreadDataKey dataKey;
  * with some information that is used to check the cached pointer's validity.
  */
 
-typedef struct {
+typedef struct ResolvedNsName {
     Namespace *nsPtr;		/* A cached pointer to the Namespace that the
 				 * name resolved to. */
     Namespace *refNsPtr;	/* Points to the namespace context in which

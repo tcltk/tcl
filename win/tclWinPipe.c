@@ -52,7 +52,7 @@ TCL_DECLARE_MUTEX(pipeMutex)
  * used in a pipeline.
  */
 
-typedef struct {
+typedef struct WinFile {
     int type;			/* One of the file types defined above. */
     HANDLE handle;		/* Open file handle. */
 } WinFile;
@@ -144,7 +144,7 @@ typedef struct PipeInfo {
 				 * synchronized with the readable object. */
 } PipeInfo;
 
-typedef struct {
+typedef struct ThreadSpecificData {
     /*
      * The following pointer refers to the head of the list of pipes that are
      * being watched for file events.
@@ -160,7 +160,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct {
+typedef struct PipeEvent {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     PipeInfo *infoPtr;		/* Pointer to pipe info structure. Note that

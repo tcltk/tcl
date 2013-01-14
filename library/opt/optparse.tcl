@@ -8,7 +8,7 @@
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
 
-package require Tcl 8.2-
+package require Tcl 8.2
 # When this version number changes, update the pkgIndex.tcl file
 # and the install directory in the Makefiles.
 package provide opt 0.4.6

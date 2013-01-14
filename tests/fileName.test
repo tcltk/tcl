@@ -696,9 +696,9 @@ test filename-10.24 {Tcl_TranslateFileName} -body {
     testtranslatefilename ~ouster/foo
 } -result {/home/ouster/foo} -constraints {nonPortable testtranslatefilename}
 
-test filename-11.1 {Tcl_GlobCmd} -body {
+test filename-11.1 {Tcl_GlobCmd} -returnCodes error -body {
     glob
-} -result {}
+} -result {no files matched glob patterns ""}
 test filename-11.2 {Tcl_GlobCmd} -returnCodes error -body {
     glob -gorp
 } -result {bad option "-gorp": must be -directory, -join, -nocomplain, -path, -tails, -types, or --}
@@ -714,9 +714,9 @@ test filename-11.5 {Tcl_GlobCmd} -returnCodes error -body {
 test filename-11.6 {Tcl_GlobCmd} -returnCodes error -body {
     glob ~xyqrszzz
 } -result {user "xyqrszzz" doesn't exist}
-test filename-11.7 {Tcl_GlobCmd} -body {
+test filename-11.7 {Tcl_GlobCmd} -returnCodes error -body {
     glob -- -nocomplain
-} -result {}
+} -result {no files matched glob pattern "-nocomplain"}
 test filename-11.8 {Tcl_GlobCmd} -body {
     glob -nocomplain -- -nocomplain
 } -result {}
@@ -1085,7 +1085,7 @@ test filename-12.1 {simple globbing} {unixOrPc} {
 } {.}
 test filename-12.1.1 {simple globbing} -constraints {unixOrPc} -body {
     glob -types f {}
-} -result {}
+} -returnCodes error -result {no files matched glob pattern ""}
 test filename-12.1.2 {simple globbing} {unixOrPc} {
     glob -types d {}
 } {.}
@@ -1247,10 +1247,10 @@ test filename-14.20 {asterisks, question marks, and brackets} {
 } {}
 test filename-14.21 {asterisks, question marks, and brackets} -body {
     glob globTest/*/gorp
-} -result {}
+} -returnCodes error -result {no files matched glob pattern "globTest/*/gorp"}
 test filename-14.22 {asterisks, question marks, and brackets} -body {
     glob goo/* x*z foo?q
-} -result {}
+} -returnCodes error -result {no files matched glob patterns "goo/* x*z foo?q"}
 test filename-14.23 {slash globbing} {unix} {
     glob /
 } /

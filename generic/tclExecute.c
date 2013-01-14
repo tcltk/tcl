@@ -103,6 +103,63 @@ long		tclObjsFreed = 0;
 long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
 #endif /* TCL_COMPILE_STATS */
 
+/*
+ * Support pre-8.5 bytecodes unless specifically requested otherwise.
+ */
+
+#ifndef TCL_SUPPORT_84_BYTECODE
+#define TCL_SUPPORT_84_BYTECODE 1
+#endif
+
+#if TCL_SUPPORT_84_BYTECODE
+/*
+ * We need to know the tclBuiltinFuncTable to support translation of pre-8.5
+ * math functions to the namespace-based ::tcl::mathfunc::op in 8.5+.
+ */
+
+typedef struct {
+    const char *name;		/* Name of function. */
+    int numArgs;		/* Number of arguments for function. */
+} BuiltinFunc;
+
+/*
+ * Table describing the built-in math functions. Entries in this table are
+ * indexed by the values of the INST_CALL_BUILTIN_FUNC instruction's
+ * operand byte.
+ */
+
+static BuiltinFunc const tclBuiltinFuncTable[] = {
+    {"acos", 1},
+    {"asin", 1},
+    {"atan", 1},
+    {"atan2", 2},
+    {"ceil", 1},
+    {"cos", 1},
+    {"cosh", 1},
+    {"exp", 1},
+    {"floor", 1},
+    {"fmod", 2},
+    {"hypot", 2},
+    {"log", 1},
+    {"log10", 1},
+    {"pow", 2},
+    {"sin", 1},
+    {"sinh", 1},
+    {"sqrt", 1},
+    {"tan", 1},
+    {"tanh", 1},
+    {"abs", 1},
+    {"double", 1},
+    {"int", 1},
+    {"rand", 0},
+    {"round", 1},
+    {"srand", 1},
+    {"wide", 1},
+    {NULL, 0},
+};
+
+#define LAST_BUILTIN_FUNC	25
+#endif
 
 /*
  * NR_TEBC
@@ -110,7 +167,7 @@ long		tclObjsShared[TCL_MAX_SHARED_OBJ_STATS] = { 0, 0, 0, 0, 0 };
  * Minimal data required to fully reconstruct the execution state.
  */
 
-typedef struct {
+typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
     Tcl_Obj **tosPtr;
@@ -2316,15 +2373,90 @@ TEBCresume(
 	return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR, NULL);
 
+#if TCL_SUPPORT_84_BYTECODE
+    case INST_CALL_BUILTIN_FUNC1:
+	/*
+	 * Call one of the built-in pre-8.5 Tcl math functions. This
+	 * translates to INST_INVOKE_STK1 with the first argument of
+	 * ::tcl::mathfunc::$objv[0]. We need to insert the named math
+	 * function into the stack.
+	 */
+
+	opnd = TclGetUInt1AtPtr(pc+1);
+	if ((opnd < 0) || (opnd > LAST_BUILTIN_FUNC)) {
+	    TRACE(("UNRECOGNIZED BUILTIN FUNC CODE %d\n", opnd));
+	    Tcl_Panic("TclNRExecuteByteCode: unrecognized builtin function code %d", opnd);
+	}
+
+	TclNewLiteralStringObj(objPtr, "::tcl::mathfunc::");
+	Tcl_AppendToObj(objPtr, tclBuiltinFuncTable[opnd].name, -1);
+
+	/*
+	 * Only 0, 1 or 2 args.
+	 */
+
+	{
+	    int numArgs = tclBuiltinFuncTable[opnd].numArgs;
+	    Tcl_Obj *tmpPtr1, *tmpPtr2;
+
+	    if (numArgs == 0) {
+		PUSH_OBJECT(objPtr);
+	    } else if (numArgs == 1) {
+		tmpPtr1 = POP_OBJECT();
+		PUSH_OBJECT(objPtr);
+		PUSH_OBJECT(tmpPtr1);
+		Tcl_DecrRefCount(tmpPtr1);
+	    } else {
+		tmpPtr2 = POP_OBJECT();
+		tmpPtr1 = POP_OBJECT();
+		PUSH_OBJECT(objPtr);
+		PUSH_OBJECT(tmpPtr1);
+		PUSH_OBJECT(tmpPtr2);
+		Tcl_DecrRefCount(tmpPtr1);
+		Tcl_DecrRefCount(tmpPtr2);
+	    }
+	    objc = numArgs + 1;
+	}
+	pcAdjustment = 2;
+	goto doInvocation;
+
+    case INST_CALL_FUNC1:
+	/*
+	 * Call a non-builtin Tcl math function previously registered by a
+	 * call to Tcl_CreateMathFunc pre-8.5. This is essentially
+	 * INST_INVOKE_STK1 converting the first arg to
+	 * ::tcl::mathfunc::$objv[0].
+	 */
+
+	objc = TclGetUInt1AtPtr(pc+1);	/* Number of arguments. The function
+					 * name is the 0-th argument. */
+
+	objPtr = OBJ_AT_DEPTH(objc-1);
+	TclNewLiteralStringObj(tmpPtr, "::tcl::mathfunc::");
+	Tcl_AppendObjToObj(tmpPtr, objPtr);
+	Tcl_DecrRefCount(objPtr);
+
+	/*
+	 * Variation of PUSH_OBJECT.
+	 */
+
+	OBJ_AT_DEPTH(objc-1) = tmpPtr;
+	Tcl_IncrRefCount(tmpPtr);
+
+	pcAdjustment = 2;
+	goto doInvocation;
+#else
     /*
      * INST_CALL_BUILTIN_FUNC1 and INST_CALL_FUNC1 were made obsolete by the
-     * changes to add a ::tcl::mathfunc namespace in 8.5.
+     * changes to add a ::tcl::mathfunc namespace in 8.5. Optional support
+     * remains for existing bytecode precompiled files.
      */
 
     case INST_CALL_BUILTIN_FUNC1:
 	Tcl_Panic("TclNRExecuteByteCode: obsolete INST_CALL_BUILTIN_FUNC1 found");
     case INST_CALL_FUNC1:
 	Tcl_Panic("TclNRExecuteByteCode: obsolete INST_CALL_FUNC1 found");
+#endif
 
     case INST_INVOKE_REPLACE:
 	objc = TclGetUInt4AtPtr(pc+1);
@@ -7922,7 +8054,16 @@ IllegalExprOperandType(
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
-	description = "non-numeric string";
+	int numBytes;
+	const char *bytes = Tcl_GetStringFromObj(opndPtr, &numBytes);
+
+	if (numBytes == 0) {
+	    description = "empty string";
+	} else if (TclCheckBadOctal(NULL, bytes)) {
+	    description = "invalid octal number";
+	} else {
+	    description = "non-numeric string";
+	}
     } else if (type == TCL_NUMBER_NAN) {
 	description = "non-numeric floating-point value";
     } else if (type == TCL_NUMBER_DOUBLE) {
@@ -7933,8 +8074,7 @@ IllegalExprOperandType(
     }
 
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "can't use %s \"%s\" as operand of \"%s\"", description,
-	    Tcl_GetString(opndPtr), operator));
+	    "can't use %s as operand of \"%s\"", description, operator));
     Tcl_SetErrorCode(interp, "ARITH", "DOMAIN", description, NULL);
 }
 

@@ -282,7 +282,7 @@ test compile-11.2 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
 } -returnCodes error -result {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}
 test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; string index a 0o9 }}
-} -returnCodes error -match glob -result {*}
+} -returnCodes error -match glob -result {*invalid octal number*}
 test compile-11.4 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; array set var {one two many} }}
 } -returnCodes error -result {list must have an even number of elements}

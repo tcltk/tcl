@@ -280,10 +280,10 @@ test string-5.16 {string index, bytearray object with string obj shimmering} {
 } 0
 test string-5.17 {string index, bad integer} -body {
     list [catch {string index "abc" 0o8} msg] $msg
-} -match glob -result {1 {*}}
+} -match glob -result {1 {*invalid octal number*}}
 test string-5.18 {string index, bad integer} -body {
     list [catch {string index "abc" end-0o0289} msg] $msg
-} -match glob -result {1 {*}}
+} -match glob -result {1 {*invalid octal number*}}
 test string-5.19 {string index, bytearray object out of bounds} {
     string index [binary format I* {0x50515253 0x52}] -1
 } {}

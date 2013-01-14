@@ -18,6 +18,13 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 ::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
+    testConstraint testmathfunctions 0
+} else {
+    testConstraint testmathfunctions 1
+}
 
 # Big test for correct ordering of data in [expr]
 
@@ -278,10 +285,10 @@ test compExpr-old-6.8 {CompileBitXorExpr: error compiling bitxor arm} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-6.9 {CompileBitXorExpr: runtime error in bitxor arm} {
     list [catch {expr {24.0^3}} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of "^"}}
+} {1 {can't use floating-point value as operand of "^"}}
 test compExpr-old-6.10 {CompileBitXorExpr: runtime error in bitxor arm} {
     list [catch {expr {"a"^"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "^"}}
+} {1 {can't use non-numeric string as operand of "^"}}
 
 test compExpr-old-7.1 {CompileBitAndExpr: just equality expr} {expr 3==2} 0
 test compExpr-old-7.2 {CompileBitAndExpr: just equality expr} {expr 2.0==2} 1
@@ -302,10 +309,10 @@ test compExpr-old-7.11 {CompileBitAndExpr: error compiling bitand arm} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-7.12 {CompileBitAndExpr: runtime error in bitand arm} {
     list [catch {expr {24.0&3}} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of "&"}}
+} {1 {can't use floating-point value as operand of "&"}}
 test compExpr-old-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
     list [catch {expr {"a"&"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "&"}}
+} {1 {can't use non-numeric string as operand of "&"}}
 
 test compExpr-old-8.1 {CompileEqualityExpr: just relational expr} {expr 3>=2} 1
 test compExpr-old-8.2 {CompileEqualityExpr: just relational expr} {expr 2<=2.1} 1
@@ -370,10 +377,10 @@ test compExpr-old-10.9 {CompileShiftExpr: error compiling shift arm} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-10.10 {CompileShiftExpr: runtime error} {
     list [catch {expr {24.0>>43}} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of ">>"}}
+} {1 {can't use floating-point value as operand of ">>"}}
 test compExpr-old-10.11 {CompileShiftExpr: runtime error} {
     list [catch {expr {"a"<<"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "<<"}}
+} {1 {can't use non-numeric string as operand of "<<"}}
 
 test compExpr-old-11.1 {CompileAddExpr: just multiply expr} {expr 4*-2} -8
 test compExpr-old-11.2 {CompileAddExpr: just multiply expr} {expr 0xff%2} 1
@@ -392,10 +399,10 @@ test compExpr-old-11.9 {CompileAddExpr: error compiling add arm} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-11.10 {CompileAddExpr: runtime error} {
     list [catch {expr {24.0+"xx"}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test compExpr-old-11.11 {CompileAddExpr: runtime error} {
     list [catch {expr {"a"-"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "-"}}
+} {1 {can't use non-numeric string as operand of "-"}}
 test compExpr-old-11.12 {CompileAddExpr: runtime error} {
     list [catch {expr {3/0}} msg] $msg
 } {1 {divide by zero}}
@@ -423,10 +430,10 @@ test compExpr-old-12.9 {CompileMultiplyExpr: error compiling multiply arm} -body
 } -returnCodes error -match glob -result *
 test compExpr-old-12.10 {CompileMultiplyExpr: runtime error} {
     list [catch {expr {24.0*"xx"}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "*"}}
+} {1 {can't use non-numeric string as operand of "*"}}
 test compExpr-old-12.11 {CompileMultiplyExpr: runtime error} {
     list [catch {expr {"a"/"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "/"}}
+} {1 {can't use non-numeric string as operand of "/"}}
 
 test compExpr-old-13.1 {CompileUnaryExpr: unary exprs} {expr -0xff} -255
 test compExpr-old-13.2 {CompileUnaryExpr: unary exprs} {expr +0o00123} 83
@@ -444,10 +451,10 @@ test compExpr-old-13.9 {CompileUnaryExpr: error compiling unary expr} -body {
 } -returnCodes error -match glob -result *
 test compExpr-old-13.10 {CompileUnaryExpr: runtime error} {
     list [catch {expr {~"xx"}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "~"}}
+} {1 {can't use non-numeric string as operand of "~"}}
 test compExpr-old-13.11 {CompileUnaryExpr: runtime error} {
     list [catch {expr ~4.0} msg] $msg
-} {1 {can't use floating-point value "4.0" as operand of "~"}}
+} {1 {can't use floating-point value as operand of "~"}}
 test compExpr-old-13.12 {CompileUnaryExpr: just primary expr} {expr 0x123} 291
 test compExpr-old-13.13 {CompileUnaryExpr: just primary expr} {
     set a 27
@@ -595,6 +602,21 @@ test compExpr-old-15.5 {CompileMathFuncCall: too few arguments} -body {
 test compExpr-old-15.6 {CompileMathFuncCall: missing ')'} -body {
     expr sin(1
 } -returnCodes error -match glob -result *
+test compExpr-old-15.7 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr 2*T1()
+} 246
+test compExpr-old-15.8 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T2()*3
+} 1035
+test compExpr-old-15.9 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(21, 37)
+} 37
+test compExpr-old-15.10 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(21.2, 37)
+} 37.0
+test compExpr-old-15.11 {CompileMathFuncCall: call registered math function} testmathfunctions {
+    expr T3(-21.2, -17.5)
+} -17.5
 
 test compExpr-old-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
     catch {unset a}

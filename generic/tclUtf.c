@@ -107,7 +107,7 @@ static int		UtfCount(int ch);
  *---------------------------------------------------------------------------
  */
 
-inline static int
+INLINE static int
 UtfCount(
     int ch)			/* The Tcl_UniChar whose size is returned. */
 {
@@ -152,7 +152,7 @@ UtfCount(
  *---------------------------------------------------------------------------
  */
 
-inline int
+INLINE int
 Tcl_UniCharToUtf(
     int ch,			/* The Tcl_UniChar to be stored in the
 				 * buffer. */

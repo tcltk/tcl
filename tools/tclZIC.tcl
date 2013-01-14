@@ -30,7 +30,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #----------------------------------------------------------------------
 
-package require Tcl 8.5-
+package require Tcl 8.5
 
 # Define the names of the Olson files that we need to load.
 # We avoid the solar time files and the leap seconds.

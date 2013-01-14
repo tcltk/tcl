@@ -59,6 +59,8 @@ test cmdAH-0.2 {Tcl_BreakObjCmd, success} {
     list [catch {break} msg] $msg
 } {3 {}}
 
+# Tcl_CaseObjCmd is tested in case.test
+
 test cmdAH-1.1 {Tcl_CatchObjCmd, errors} -returnCodes error -body {
     catch
 } -result {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}

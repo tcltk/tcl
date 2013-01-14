@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.6-
+package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
 package provide http 2.8.6

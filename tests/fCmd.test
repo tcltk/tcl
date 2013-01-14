@@ -745,12 +745,12 @@ test fCmd-7.4 {FileForceOption: bad option} -constraints {notRoot} -setup {
 } -result {bad option "-tf1": must be -force or --}
 test fCmd-7.5 {FileForceOption: multiple times through loop} -setup {
     cleanup
-} -constraints {notRoot} -body {
+} -constraints {notRoot} -returnCodes error -body {
     createfile --
     createfile -force
     file delete -force -force -- -- -force
     glob -- -- -force
-} -result {}
+} -result {no files matched glob patterns "-- -force"}
 
 test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
     -constraints {unix notRoot knownBug} -body {
@@ -938,9 +938,9 @@ test fCmd-9.10 {file rename: comprehensive: file to new name and dir} -setup {
     testchmod 444 tf2
     file rename tf1 [file join td1 tf3]
     file rename tf2 [file join td1 tf4]
-    list [glob tf*] [lsort [glob -directory td1 t*]] \
+    list [catch {glob tf*}] [lsort [glob -directory td1 t*]] \
     [file writable [file join td1 tf3]] [file writable [file join td1 tf4]]
-} -result [subst {{} {[file join td1 tf3] [file join td1 tf4]} 1 0}]
+} -result [subst {1 {[file join td1 tf3] [file join td1 tf4]} 1 0}]
 test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {

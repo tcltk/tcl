@@ -25,14 +25,14 @@ static const char *tclPreInitScript = NULL;
 struct Target;
 
 /*
- * Alias:
+ * struct Alias:
  *
  * Stores information about an alias. Is stored in the slave interpreter and
  * used by the source command to find the target command in the master when
  * the source command is invoked.
  */
 
-typedef struct {
+typedef struct Alias {
     Tcl_Obj *token;		/* Token for the alias command in the slave
 				 * interp. This used to be the command name in
 				 * the slave when the alias was first
@@ -73,7 +73,7 @@ typedef struct {
  * slave interpreter, e.g. what aliases are defined in it.
  */
 
-typedef struct {
+typedef struct Slave {
     Tcl_Interp *masterInterp;	/* Master interpreter for this slave. */
     Tcl_HashEntry *slaveEntryPtr;
 				/* Hash entry in masters slave table for this
@@ -84,7 +84,7 @@ typedef struct {
     Tcl_Interp	*slaveInterp;	/* The slave interpreter. */
     Tcl_Command interpCmd;	/* Interpreter object command. */
     Tcl_HashTable aliasTable;	/* Table which maps from names of commands in
-				 * slave interpreter to Alias defined
+				 * slave interpreter to struct Alias defined
 				 * below. */
 } Slave;
 
@@ -127,7 +127,7 @@ typedef struct Target {
  * only load safe extensions.
  */
 
-typedef struct {
+typedef struct Master {
     Tcl_HashTable slaveTable;	/* Hash table for slave interpreters. Maps
 				 * from command names to Slave records. */
     Target *targetsPtr;		/* The head of a doubly-linked list of all the
@@ -144,7 +144,7 @@ typedef struct {
  * on a per-interp basis.
  */
 
-typedef struct {
+typedef struct InterpInfo {
     Master master;		/* Keeps track of all interps for which this
 				 * interp is the Master. */
     Slave slave;		/* Information necessary for this interp to
@@ -158,7 +158,7 @@ typedef struct {
  * likely to work properly on 64-bit architectures.
  */
 
-typedef struct {
+typedef struct ScriptLimitCallback {
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * callback. */
     Tcl_Obj *scriptObj;		/* The script to execute to perform the
@@ -171,7 +171,7 @@ typedef struct {
 				 * table. */
 } ScriptLimitCallback;
 
-typedef struct {
+typedef struct ScriptLimitCallbackKey {
     Tcl_Interp *interp;		/* The interpreter that the limit callback was
 				 * attached to. This is not the interpreter
 				 * that the callback runs in! */

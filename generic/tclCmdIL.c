@@ -56,7 +56,7 @@ typedef int (*SortMemCmpFn_t) (const void *, const void *, size_t);
  * The following structure is used to pass this information.
  */
 
-typedef struct {
+typedef struct SortInfo {
     int isIncreasing;		/* Nonzero means sort in increasing order. */
     int sortMode;		/* The sort mode. One of SORTMODE_* values
 				 * defined below. */

@@ -16,7 +16,7 @@ namespace eval ::tcl::test::main {
     #   - tests use testing commands introduced in Tcltest 8.4
     testConstraint Tcltest [expr {
 	[llength [package provide Tcltest]]
-	&& [package vsatisfies [package provide Tcltest] 8.4-]}]
+	&& [package vsatisfies [package provide Tcltest] 8.4]}]
 
     # Procedure to simulate interactive typing of commands, line by line
     proc type {chan script} {

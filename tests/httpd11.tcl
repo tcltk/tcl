@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.6-
+package require Tcl 8.6
 
 proc ::tcl::dict::get? {dict key} {
     if {[dict exists $dict $key]} {

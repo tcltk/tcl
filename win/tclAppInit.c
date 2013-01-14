@@ -193,7 +193,7 @@ Tcl_AppInit(
      * specific startup file will be run under any conditions.
      */
 
-    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/tclshrc.tcl", TCL_GLOBAL_ONLY);
+    (Tcl_SetVar)(interp, "tcl_rcFileName", "~/tclshrc.tcl", TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 

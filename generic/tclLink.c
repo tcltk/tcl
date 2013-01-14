@@ -21,7 +21,7 @@
  * variable.
  */
 
-typedef struct {
+typedef struct Link {
     Tcl_Interp *interp;		/* Interpreter containing Tcl variable. */
     Tcl_Obj *varName;		/* Name of variable (must be global). This is
 				 * needed during trace callbacks, since the

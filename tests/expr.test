@@ -16,6 +16,11 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 ::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testmathfunctions [expr {
+    ([catch {expr T1()} msg] != 1) || ($msg ne {invalid command name "tcl::mathfunc::T1"})
+}]
 
 # Determine if "long int" type is a 32 bit number and if the wide
 # type is a 64 bit number on this machine.
@@ -252,7 +257,7 @@ test expr-4.9 {CompileLorExpr: long lor arm} {
 } 1
 test expr-4.10 {CompileLorExpr: error compiling ! operand} {
     list [catch {expr {!"a"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "!"}}
+} {1 {can't use non-numeric string as operand of "!"}}
 test expr-4.11 {CompileLorExpr: error compiling land arms} {
     list [catch {expr {"a"||0}} msg] $msg
 } {1 {expected boolean value but got "a"}}
@@ -299,10 +304,10 @@ test expr-6.8 {CompileBitXorExpr: error compiling bitxor arm} -body {
 } -returnCodes error -match glob -result *
 test expr-6.9 {CompileBitXorExpr: runtime error in bitxor arm} {
     list [catch {expr {24.0^3}} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of "^"}}
+} {1 {can't use floating-point value as operand of "^"}}
 test expr-6.10 {CompileBitXorExpr: runtime error in bitxor arm} {
     list [catch {expr {"a"^"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "^"}}
+} {1 {can't use non-numeric string as operand of "^"}}
 
 test expr-7.1 {CompileBitAndExpr: just equality expr} {expr 3==2} 0
 test expr-7.2 {CompileBitAndExpr: just equality expr} {expr 2.0==2} 1
@@ -323,10 +328,10 @@ test expr-7.11 {CompileBitAndExpr: error compiling bitand arm} -body {
 } -returnCodes error -match glob -result *
 test expr-7.12 {CompileBitAndExpr: runtime error in bitand arm} {
     list [catch {expr {24.0&3}} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of "&"}}
+} {1 {can't use floating-point value as operand of "&"}}
 test expr-7.13 {CompileBitAndExpr: runtime error in bitand arm} {
     list [catch {expr {"a"&"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "&"}}
+} {1 {can't use non-numeric string as operand of "&"}}
 test expr-7.14 {CompileBitAndExpr: equality expr} {expr 3eq2} 0
 test expr-7.18 {CompileBitAndExpr: equality expr} {expr {"abc" eq "abd"}} 0
 test expr-7.20 {CompileBitAndExpr: error in equality expr} -body {
@@ -451,10 +456,10 @@ test expr-10.9 {CompileShiftExpr: error compiling shift arm} -body {
 } -returnCodes error -match glob -result *
 test expr-10.10 {CompileShiftExpr: runtime error} {
     list [catch {expr {24.0>>43}} msg] $msg
-} {1 {can't use floating-point value "24.0" as operand of ">>"}}
+} {1 {can't use floating-point value as operand of ">>"}}
 test expr-10.11 {CompileShiftExpr: runtime error} {
     list [catch {expr {"a"<<"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "<<"}}
+} {1 {can't use non-numeric string as operand of "<<"}}
 
 test expr-11.1 {CompileAddExpr: just multiply expr} {expr 4*-2} -8
 test expr-11.2 {CompileAddExpr: just multiply expr} {expr 0xff%2} 1
@@ -473,10 +478,10 @@ test expr-11.9 {CompileAddExpr: error compiling add arm} -body {
 } -returnCodes error -match glob -result *
 test expr-11.10 {CompileAddExpr: runtime error} {
     list [catch {expr {24.0+"xx"}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "+"}}
+} {1 {can't use non-numeric string as operand of "+"}}
 test expr-11.11 {CompileAddExpr: runtime error} {
     list [catch {expr {"a"-"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "-"}}
+} {1 {can't use non-numeric string as operand of "-"}}
 test expr-11.12 {CompileAddExpr: runtime error} {
     list [catch {expr {3/0}} msg] $msg
 } {1 {divide by zero}}
@@ -504,10 +509,10 @@ test expr-12.9 {CompileMultiplyExpr: error compiling multiply arm} -body {
 } -returnCodes error -match glob -result *
 test expr-12.10 {CompileMultiplyExpr: runtime error} {
     list [catch {expr {24.0*"xx"}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "*"}}
+} {1 {can't use non-numeric string as operand of "*"}}
 test expr-12.11 {CompileMultiplyExpr: runtime error} {
     list [catch {expr {"a"/"b"}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "/"}}
+} {1 {can't use non-numeric string as operand of "/"}}
 
 test expr-13.1 {CompileUnaryExpr: unary exprs} {expr -0xff} -255
 test expr-13.2 {CompileUnaryExpr: unary exprs} {expr +0o00123} 83
@@ -524,10 +529,10 @@ test expr-13.9 {CompileUnaryExpr: error compiling unary expr} -body {
 } -returnCodes error -match glob -result *
 test expr-13.10 {CompileUnaryExpr: runtime error} {
     list [catch {expr {~"xx"}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "~"}}
+} {1 {can't use non-numeric string as operand of "~"}}
 test expr-13.11 {CompileUnaryExpr: runtime error} {
     list [catch {expr ~4.0} msg] $msg
-} {1 {can't use floating-point value "4.0" as operand of "~"}}
+} {1 {can't use floating-point value as operand of "~"}}
 test expr-13.12 {CompileUnaryExpr: just primary expr} {expr 0x123} 291
 test expr-13.13 {CompileUnaryExpr: just primary expr} {
     set a 27
@@ -680,6 +685,41 @@ test expr-15.5 {CompileMathFuncCall: too few arguments} -body {
 test expr-15.6 {CompileMathFuncCall: missing ')'} -body {
     expr sin(1
 } -returnCodes error -match glob -result *
+test expr-15.7 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
+    expr 2*T1()
+} 246
+test expr-15.8 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
+    expr T2()*3
+} 1035
+test expr-15.9 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
+    expr T3(21, 37)
+} 37
+test expr-15.10 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
+    expr T3(21.2, 37)
+} 37.0
+test expr-15.11 {CompileMathFuncCall: call registered math function} {testmathfunctions} {
+    expr T3(-21.2, -17.5)
+} -17.5
+test expr-15.12 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
+    expr T3(21, wide(37))
+} 37
+test expr=15.13 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
+    expr T3(wide(21), 37)
+} 37
+test expr=15.14 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
+    expr T3(wide(21), wide(37))
+} 37
+test expr-15.15 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
+    expr T3(21.0, wide(37))
+} 37.0
+test expr-15.16 {ExprCallMathFunc: call registered math function} {testmathfunctions} {
+    expr T3(wide(21), 37.0)
+} 37.0
+test expr-15.17 {ExprCallMathFunc: non-numeric arg} -constraints {
+    testmathfunctions
+} -body {
+    expr T3(0,"a")
+} -returnCodes error -result {argument to math function didn't have numeric value}
 
 
 test expr-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
@@ -804,15 +844,15 @@ test expr-21.13 {non-numeric boolean literals} -body {
 } -returnCodes error -match glob -result *
 test expr-21.14 {non-numeric boolean literals} {
     list [catch {expr !"truef"} err] $err
-} {1 {can't use non-numeric string "truef" as operand of "!"}}
+} {1 {can't use non-numeric string as operand of "!"}}
 test expr-21.15 {non-numeric boolean variables} {
     set v truef
     list [catch {expr {!$v}} err] $err
-} {1 {can't use non-numeric string "truef" as operand of "!"}}
+} {1 {can't use non-numeric string as operand of "!"}}
 test expr-21.16 {non-numeric boolean variables} {
     set v "true "
     list [catch {expr {!$v}} err] $err
-} {1 {can't use non-numeric string "true " as operand of "!"}}
+} {1 {can't use non-numeric string as operand of "!"}}
 test expr-21.17 {non-numeric boolean variables} {
     set v "tru"
     list [catch {expr {!$v}} err] $err
@@ -832,23 +872,23 @@ test expr-21.20 {non-numeric boolean variables} {
 test expr-21.21 {non-numeric boolean variables} {
     set v "o"
     list [catch {expr {!$v}} err] $err
-} {1 {can't use non-numeric string "o" as operand of "!"}}
+} {1 {can't use non-numeric string as operand of "!"}}
 test expr-21.22 {non-numeric boolean variables} {
     set v ""
     list [catch {expr {!$v}} err] $err
-} {1 {can't use non-numeric string "" as operand of "!"}}
+} {1 {can't use empty string as operand of "!"}}
 
 # Test for non-numeric float handling.
 test expr-22.1 {non-numeric floats} {
     list [catch {expr {NaN + 1}} msg] $msg
-} {1 {can't use non-numeric floating-point value "NaN" as operand of "+"}}
+} {1 {can't use non-numeric floating-point value as operand of "+"}}
 test expr-22.2 {non-numeric floats} !ieeeFloatingPoint {
     list [catch {expr {Inf + 1}} msg] $msg
 } {1 {can't use infinite floating-point value as operand of "+"}}
 test expr-22.3 {non-numeric floats} {
     set nan NaN
     list [catch {expr {$nan + 1}} msg] $msg
-} {1 {can't use non-numeric floating-point value "NaN" as operand of "+"}}
+} {1 {can't use non-numeric floating-point value as operand of "+"}}
 test expr-22.4 {non-numeric floats} !ieeeFloatingPoint {
     set inf Inf
     list [catch {expr {$inf + 1}} msg] $msg
@@ -861,7 +901,7 @@ test expr-22.6 {non-numeric floats} !ieeeFloatingPoint {
 } {1 {floating-point value too large to represent}}
 test expr-22.7 {non-numeric floats} {
     list [catch {expr {1 / NaN}} msg] $msg
-} {1 {can't use non-numeric floating-point value "NaN" as operand of "/"}}
+} {1 {can't use non-numeric floating-point value as operand of "/"}}
 test expr-22.8 {non-numeric floats} !ieeeFloatingPoint {
     list [catch {expr {1 / Inf}} msg] $msg
 } {1 {can't use infinite floating-point value as operand of "/"}}
@@ -888,10 +928,10 @@ test expr-23.8 {CompileExponentialExpr: error compiling expo arm} -body {
 } -returnCodes error -match glob -result *
 test expr-23.9 {CompileExponentialExpr: runtime error} {
     list [catch {expr {24.0**"xx"}} msg] $msg
-} {1 {can't use non-numeric string "xx" as operand of "**"}}
+} {1 {can't use non-numeric string as operand of "**"}}
 test expr-23.10 {CompileExponentialExpr: runtime error} {
     list [catch {expr {"a"**2}} msg] $msg
-} {1 {can't use non-numeric string "a" as operand of "**"}}
+} {1 {can't use non-numeric string as operand of "**"}}
 test expr-23.11 {CompileExponentialExpr: runtime error} {
     list [catch {expr {0**-1}} msg] $msg
 } {1 {exponentiation of zero by negative power}}
