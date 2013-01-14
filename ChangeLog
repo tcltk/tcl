@@ -1,3 +1,8 @@
+2013-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4: More flexible search for win32 tclConfig.sh,
+	backported from TEA (not actually used in Tcl, only for Tk)
+
 2013-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclIntDecls.h: If TCL_NO_DEPRECATED is defined, make
