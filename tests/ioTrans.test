@@ -44,7 +44,6 @@ set helperscript {
     # This forces the return options to be in the order that the test expects!
     variable optorder {
 	-code !?! -level !?! -errorcode !?! -errorline !?! -errorinfo !?!
-	-errorstack !?!
     }
     proc noteOpts opts {
 	variable optorder
@@ -1088,7 +1087,7 @@ proc inthread {chan script args} {
 	proc noteOpts opts {
 	    lappend ::notes [dict merge {
 		-code !?! -level !?! -errorcode !?! -errorline !?!
-		-errorinfo !?! -errorstack !?!
+		-errorinfo !?!
 	    } $opts]
 	}
     }

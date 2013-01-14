@@ -1918,16 +1918,6 @@ typedef struct Interp {
 				 * over the default error messages returned by
 				 * a script cancellation operation. */
 
-	/*
-	 * TIP #348 IMPLEMENTATION  -  Substituted error stack
-	 */
-    Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
-    Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
-    Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
-    Tcl_Obj *innerLiteral;	/* "INNER" literal for [info errorstack] */
-    Tcl_Obj *innerContext;	/* cached list for fast reallocation */
-    int resetErrorStack;        /* controls cleaning up of ::errorStack */
-
 #ifdef TCL_COMPILE_STATS
     /*
      * Statistical information about the bytecode compiler and interpreter's
@@ -2775,7 +2765,6 @@ MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
-MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -2918,8 +2907,6 @@ MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
-
-MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length);
 
 /*
  *----------------------------------------------------------------

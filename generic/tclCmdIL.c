@@ -119,9 +119,6 @@ static int		InfoCompleteCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoDefaultCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-/* TIP #348 - New 'info' subcommand 'errorstack' */
-static int		InfoErrorStackCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 static int		InfoFunctionsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoHostnameCmd(ClientData dummy, Tcl_Interp *interp,
@@ -165,7 +162,6 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
     {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, NULL, 0},
-    {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
     {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
@@ -1008,55 +1004,6 @@ InfoDefaultCmd(
 	    procName, argName));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ARGUMENT", argName, NULL);
     return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InfoErrorStackCmd --
- *
- *	Called to implement the "info errorstack" command that returns information
- *	about the last error's call stack. Handles the following syntax:
- *
- *	    info errorstack ?interp?
- *
- * Results:
- *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
- *
- * Side effects:
- *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InfoErrorStackCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    Tcl_Interp *target;
-    Interp *iPtr;
-
-    if ((objc != 1) && (objc != 2)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
-	return TCL_ERROR;
-    }
-
-    target = interp;
-    if (objc == 2) {
-	target = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
-	if (target == NULL) {
-	    return TCL_ERROR;
-	}
-    }
-
-    iPtr = (Interp *) target;
-    Tcl_SetObjResult(interp, iPtr->errorStack);
-
-    return TCL_OK;
 }
 
 /*

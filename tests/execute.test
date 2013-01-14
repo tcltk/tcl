@@ -972,7 +972,7 @@ test execute-8.5 {Bug 2038069} -setup {
     demo
 } -cleanup {
     rename demo {}
-} -match glob -result {-code 1 -level 0 -errorstack * -errorcode NONE -errorinfo {FOO
+} -match glob -result {-code 1 -level 0 -errorcode NONE -errorinfo {FOO
     while executing
 "error FOO"
     invoked from within

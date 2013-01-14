@@ -957,14 +957,6 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
-MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
-					  const char *script,
-					  const char *command, int length,
-					  const unsigned char *pc, Tcl_Obj **tosPtr); 
-MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
-					    const unsigned char *pc, Tcl_Obj **tosPtr);
-MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
-
 
 /*
  *----------------------------------------------------------------
