@@ -33,6 +33,7 @@
 #undef Tcl_CreateHashEntry
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#define TclUnusedStubEntry NULL
 
 /*
  * Keep a record of the original Notifier procedures, created in the
@@ -1254,6 +1255,57 @@ TclStubs tclStubs = {
     Tcl_AppendFormatToObj, /* 577 */
     Tcl_ObjPrintf, /* 578 */
     Tcl_AppendPrintfToObj, /* 579 */
+    NULL, /* 580 */
+    NULL, /* 581 */
+    NULL, /* 582 */
+    NULL, /* 583 */
+    NULL, /* 584 */
+    NULL, /* 585 */
+    NULL, /* 586 */
+    NULL, /* 587 */
+    NULL, /* 588 */
+    NULL, /* 589 */
+    NULL, /* 590 */
+    NULL, /* 591 */
+    NULL, /* 592 */
+    NULL, /* 593 */
+    NULL, /* 594 */
+    NULL, /* 595 */
+    NULL, /* 596 */
+    NULL, /* 597 */
+    NULL, /* 598 */
+    NULL, /* 599 */
+    NULL, /* 600 */
+    NULL, /* 601 */
+    NULL, /* 602 */
+    NULL, /* 603 */
+    NULL, /* 604 */
+    NULL, /* 605 */
+    NULL, /* 606 */
+    NULL, /* 607 */
+    NULL, /* 608 */
+    NULL, /* 609 */
+    NULL, /* 610 */
+    NULL, /* 611 */
+    NULL, /* 612 */
+    NULL, /* 613 */
+    NULL, /* 614 */
+    NULL, /* 615 */
+    NULL, /* 616 */
+    NULL, /* 617 */
+    NULL, /* 618 */
+    NULL, /* 619 */
+    NULL, /* 620 */
+    NULL, /* 621 */
+    NULL, /* 622 */
+    NULL, /* 623 */
+    NULL, /* 624 */
+    NULL, /* 625 */
+    NULL, /* 626 */
+    NULL, /* 627 */
+    NULL, /* 628 */
+    NULL, /* 629 */
+    TclUnusedStubEntry, /* 630 */
 };
 
 /* !END!: Do not edit above this line. */

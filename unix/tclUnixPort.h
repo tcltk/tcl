@@ -283,7 +283,7 @@ MODULE_SCOPE int TclUnixSetBlockingMode(int fd, int mode);
 #endif
 
 #ifdef GETTOD_NOT_DECLARED
-EXTERN int		gettimeofday (struct timeval *tp,
+extern int		gettimeofday (struct timeval *tp,
 			    struct timezone *tzp);
 #endif
 
@@ -627,8 +627,6 @@ typedef int socklen_t;
 
 #ifdef TCL_THREADS
 #  include <pthread.h>
-EXTERN struct tm *TclpLocaltime(CONST time_t *);
-EXTERN struct tm *TclpGmtime(CONST time_t *);
 /* #define localtime(x)	TclpLocaltime(x)
  * #define gmtime(x)	TclpGmtime(x)    */
 #   undef inet_ntoa
@@ -646,7 +644,7 @@ EXTERN struct tm *TclpGmtime(CONST time_t *);
 #	ifdef HAVE_PTHREAD_GETATTR_NP
 #	    define TclpPthreadGetAttrs	pthread_getattr_np
 #	    ifdef GETATTRNP_NOT_DECLARED
-EXTERN int pthread_getattr_np (pthread_t, pthread_attr_t *);
+extern int pthread_getattr_np (pthread_t, pthread_attr_t *);
 #	    endif
 #	endif /* HAVE_PTHREAD_GETATTR_NP */
 #   endif /* HAVE_PTHREAD_ATTR_GET_NP */
