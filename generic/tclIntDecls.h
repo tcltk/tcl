@@ -1300,8 +1300,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclBackgroundException
 
 #if defined(USE_TCL_STUBS) && defined(TCL_NO_DEPRECATED)
+#   undef Tcl_SetStartupScript
 #   define Tcl_SetStartupScript \
 	    (tclStubsPtr->tcl_SetStartupScript) /* 622 */
+#   undef Tcl_GetStartupScript
 #   define Tcl_GetStartupScript \
 	    (tclStubsPtr->tcl_GetStartupScript) /* 623 */
 #   undef Tcl_CreateNamespace
