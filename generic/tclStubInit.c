@@ -367,8 +367,8 @@ static const TclIntStubs tclIntStubs = {
     TclCallVarTraces, /* 175 */
     TclCleanupVar, /* 176 */
     TclVarErrMsg, /* 177 */
-    0, /* 178 */
-    0, /* 179 */
+    Tcl_SetStartupScript, /* 178 */
+    Tcl_GetStartupScript, /* 179 */
     0, /* 180 */
     0, /* 181 */
     TclpLocaltime, /* 182 */
