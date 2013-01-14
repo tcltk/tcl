@@ -3243,6 +3243,7 @@ MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int line,
 			    int* clNextOuter, const char* outerScript,
 			    int flags);
+MODULE_SCOPE Tcl_Obj *	TclTokensCopy(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,

@@ -202,6 +202,7 @@ static int		ParseWhiteSpace(const char *src, int numBytes,
 static void             DupTokensInternalRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void             FreeTokensInternalRep(Tcl_Obj *objPtr);
 static int              SetTokensFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+static void		UpdateStringOfTokens(Tcl_Obj *objPtr);
 
 /*
  * The structure below defines the "tokens" Tcl object type.
@@ -211,10 +212,17 @@ static Tcl_ObjType tokensType = {
     "tokens",                           /* name */
     FreeTokensInternalRep,              /* freeIntRepProc */
     DupTokensInternalRep,               /* dupIntRepProc */
-    (Tcl_UpdateStringProc *) NULL,      /* updateStringProc */
+    UpdateStringOfTokens,		/* updateStringProc */
     SetTokensFromAny                   /* setFromAnyProc */
 };
 
+/* Structure to hold the data of the "tokens" internal rep */
+typedef struct TokenIntRep {
+    int		refCount;
+    Tcl_Obj *	scriptObjPtr;
+    Tcl_Token *	tokenPtr;
+    Tcl_Token *	lastTokenPtr;
+} TokenIntRep;
 
 /*
  *----------------------------------------------------------------------
@@ -237,8 +245,32 @@ static void
 FreeTokensInternalRep(objPtr)
     Tcl_Obj *objPtr;
 {
-    /* Free the Tcl_Token array */
-    ckfree(objPtr->internalRep.twoPtrValue.ptr1);
+    TokenIntRep *tirPtr = objPtr->internalRep.otherValuePtr;
+
+    if (tirPtr->refCount) {
+	tirPtr->refCount--;
+	
+	if (tirPtr->refCount == 0) {
+	    /* Only one holder left.
+	     * If it's the original, break the reference cycle. */
+	    if (tirPtr->scriptObjPtr == objPtr) {
+
+		/* Make direct change to refCount.  Don't call
+		 * Tcl_DecrRefCount() so we avoid freeing the value
+		 * when dropping from refCount 1 to refCount 0.
+		 */
+		objPtr->refCount--;
+		tirPtr->scriptObjPtr = NULL;
+	    }
+	}
+	return;
+    }
+
+    if (tirPtr->scriptObjPtr) {
+	Tcl_DecrRefCount(tirPtr->scriptObjPtr);
+    }
+    ckfree(tirPtr->tokenPtr);
+    ckfree(tirPtr);
 }
 
 /*
@@ -266,6 +298,15 @@ DupTokensInternalRep(srcPtr, dupPtr)
     Tcl_Obj *srcPtr;            /* Object with internal rep to copy. */
     Tcl_Obj *dupPtr;            /* Object with internal rep to set. */
 {
+    TokenIntRep *tirPtr = srcPtr->internalRep.otherValuePtr;
+
+    if (tirPtr->refCount == 0) {
+	tirPtr->scriptObjPtr = srcPtr;
+	Tcl_IncrRefCount(srcPtr);
+    }
+    tirPtr->refCount++;
+    dupPtr->internalRep.otherValuePtr = tirPtr;
+    dupPtr->typePtr = &tokensType;
     return;
 }
 
@@ -300,23 +341,88 @@ SetTokensFromAny (interp, objPtr)
     int numBytes;
     CONST char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
     Tcl_Token *tokenPtr;
+    TokenIntRep *tirPtr = ckalloc(sizeof(TokenIntRep));
 
     /*
      * Free the old internal rep, parse the string as a Tcl script, and
      * save the Tcl_Token array as the new internal rep
      */
 
-    if ((objPtr->typePtr != NULL) 
-	    && (objPtr->typePtr->freeIntRepProc != NULL)) {
-	(*objPtr->typePtr->freeIntRepProc)(objPtr);
-    }
-    objPtr->internalRep.twoPtrValue.ptr1 = 
-	    (VOID *) TclParseScript(interp, script, numBytes, 0, &tokenPtr, NULL);
-    objPtr->internalRep.twoPtrValue.ptr2 = tokenPtr;
+    TclFreeIntRep(objPtr);
+    tirPtr->tokenPtr = TclParseScript(interp, script, numBytes, 0,
+	    &(tirPtr->lastTokenPtr), NULL);
+    tirPtr->scriptObjPtr = NULL;
+    tirPtr->refCount = 0;
+    objPtr->internalRep.otherValuePtr = tirPtr;
     objPtr->typePtr = &tokensType;
     return TCL_OK;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * UpdateStringOfTokens --
+ *
+ *      The Tcl_Obj returned by TclTokensCopy is pure -- it has no valid
+ *	string rep.  When we have to have one, this routine generates it.
+ *
+ * Results:
+ *      Returns TCL_OK.
+ *
+ * Side effects:
+ *	Allocates new string rep to hold copy of the original string
+ *	parsed to make the tokens.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+UpdateStringOfTokens(
+    Tcl_Obj *objPtr)
+{
+    TokenIntRep *tirPtr = objPtr->internalRep.otherValuePtr;
+    int length;
+    char *bytes;
+
+    if (tirPtr->scriptObjPtr == NULL) {
+	Tcl_Panic("WTF?!");
+    }
+    bytes = Tcl_GetStringFromObj(tirPtr->scriptObjPtr, &length);
+    TclInitStringRep(objPtr, bytes, length);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclTokensCopy --
+ *
+ *      Make a pure copy of a list value.  Cheap operation so caller can
+ *	call TclGetTokensFromObj without fear of shimmering.
+ *
+ * Results:
+ *      Returns pointer to new Tcl_Obj with refCount zero.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+Tcl_Obj *
+TclTokensCopy(
+    Tcl_Obj *objPtr)
+{
+    Tcl_Obj *copyPtr;
+
+    if (objPtr->typePtr != &tokensType) {
+	SetTokensFromAny(NULL, objPtr);
+    }
+
+    TclNewObj(copyPtr);
+    TclInvalidateStringRep(copyPtr);
+    DupTokensInternalRep(objPtr, copyPtr);
+    return copyPtr;
+}
+
 /*
  *-------------------------------------------------------------------------
  *
@@ -340,13 +446,16 @@ TclGetTokensFromObj(objPtr,lastTokenPtrPtr)
     Tcl_Token **lastTokenPtrPtr; /* If not NULL, fill with pointer to last
 				  * token in the token array */
 {
+    TokenIntRep *tirPtr;
+
     if (objPtr->typePtr != &tokensType) {
 	SetTokensFromAny(NULL, objPtr);
     }
+    tirPtr = objPtr->internalRep.otherValuePtr;
     if (lastTokenPtrPtr != NULL) {
-	*lastTokenPtrPtr = (Tcl_Token *) objPtr->internalRep.twoPtrValue.ptr2;
+	*lastTokenPtrPtr = tirPtr->lastTokenPtr;
     }
-    return (Tcl_Token *) objPtr->internalRep.twoPtrValue.ptr1;
+    return tirPtr->tokenPtr;
 }
 
 /*

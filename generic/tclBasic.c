@@ -6069,6 +6069,7 @@ TclNREvalObjEx(
 
 	ContLineLoc *saveCLLocPtr = iPtr->scriptCLLocPtr;
 	ContLineLoc *clLocPtr = TclContinuationsGet(objPtr);
+	Tcl_Obj *copyPtr = TclTokensCopy(objPtr);
 
 	if (clLocPtr) {
 	    iPtr->scriptCLLocPtr = clLocPtr;
@@ -6077,12 +6078,11 @@ TclNREvalObjEx(
 	    iPtr->scriptCLLocPtr = NULL;
 	}
 
-	Tcl_IncrRefCount(objPtr);
 	if ((invoker == NULL) /* No context ... */
 		|| (invoker->nline <= word) || (invoker->line[word] < 0)) {
 	    /* ... or dynamic script, or dynamic context, force our own */
 
-	    tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+	    tokensPtr = TclGetTokensFromObj(copyPtr, &lastTokenPtr);
 	    result = TclEvalScriptTokens(interp, tokensPtr,
 		    1 + (int)(lastTokenPtr - tokensPtr), flags, 1, NULL,
 		    tokensPtr[0].start);
@@ -6122,7 +6122,7 @@ TclNREvalObjEx(
 		iPtr->invokeCmdFramePtr = ctxPtr;
 		iPtr->evalFlags |= TCL_EVAL_CTX;
 
-		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+		tokensPtr = TclGetTokensFromObj(copyPtr, &lastTokenPtr);
 		result = TclEvalScriptTokens(interp, tokensPtr,
 			1 + (int)(lastTokenPtr - tokensPtr), flags,
 			ctxPtr->line[word], NULL, tokensPtr[0].start);
@@ -6135,7 +6135,7 @@ TclNREvalObjEx(
 		    Tcl_DecrRefCount(ctxPtr->data.eval.path);
 		}
 	    } else {
-		tokensPtr = TclGetTokensFromObj(objPtr, &lastTokenPtr);
+		tokensPtr = TclGetTokensFromObj(copyPtr, &lastTokenPtr);
 		result = TclEvalScriptTokens(interp, tokensPtr,
 			1 + (int)(lastTokenPtr - tokensPtr), flags, 1,
 			NULL, tokensPtr[0].start);
@@ -6152,7 +6152,7 @@ TclNREvalObjEx(
 	    Tcl_Release(iPtr->scriptCLLocPtr);
 	}
 	iPtr->scriptCLLocPtr = saveCLLocPtr;
-	TclDecrRefCount(objPtr);
+	Tcl_DecrRefCount(copyPtr);
 	return result;
     }
 }
