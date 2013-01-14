@@ -1,3 +1,9 @@
+2013-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: Put back Tcl_[GS]etStartupScript in
+	internal stub table, so extensions using this, compiled
+	against 8.5 headers still run in Tcl 8.6.
+
 2013-01-13  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 	* doc/fileevent.n: Clarify readable fileevent "false positives" in
 	the case of multibyte encodings/transforms [Bug 3436609].
