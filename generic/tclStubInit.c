@@ -41,7 +41,7 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
-#undef TclPkgProvide
+#define TclBackgroundException Tcl_BackgroundException
 
 #define TclPkgProvide pkgProvide
 static int TclPkgProvide(
@@ -434,7 +434,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 233 */
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
-    0, /* 236 */
+    TclBackgroundException, /* 236 */
     TclResetCancellation, /* 237 */
     0, /* 238 */
     TclNRInterpProcCore, /* 239 */
