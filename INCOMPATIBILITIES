@@ -28,6 +28,7 @@ GONE FOR NOW (or so I hope)
 ------------
 
 * TIP280 and [info frame] do not exist anymore. Some changes in tclInt.decls.
+  TIP348 and [info errorstack] are also gone.
 
 * The complete Tcl_CmdInfo manipulation. Functionality will be *partially*
   reenabled, minus the ability to call *objProc "safely" (API will be provided)
