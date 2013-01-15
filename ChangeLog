@@ -1,3 +1,13 @@
+2013-01-15  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPort.h: [Bug 3598300]: unix: tcl.h does not include
+	* unix/tclUnixPort.h: sys/stat.h
+
+2013-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4: More flexible search for win32 tclConfig.sh,
+	backported from TEA (not actually used in Tcl, only for Tk)
+
 2013-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclInt.decls: Put back Tcl_[GS]etStartupScript in
