@@ -3356,20 +3356,6 @@ Tcl_DbIsShared(
 # endif /* TCL_THREADS */
 #endif /* TCL_MEM_DEBUG */
 
-#if 0
-    // FIXME: reenable
-#ifdef TCL_COMPILE_STATS
-    Tcl_MutexLock(&tclObjMutex);
-    if ((objPtr)->refCount <= 1) {
-	tclObjsShared[1]++;
-    } else if ((objPtr)->refCount < TCL_MAX_SHARED_OBJ_STATS) {
-	tclObjsShared[(objPtr)->refCount]++;
-    } else {
-	tclObjsShared[0]++;
-    }
-    Tcl_MutexUnlock(&tclObjMutex);
-#endif /* TCL_COMPILE_STATS */
-#endif
     return ((objPtr)->refCount > 1);
 }
 

@@ -132,22 +132,22 @@ static const char B64Digits[65] = {
  */
 
 static const EnsembleImplMap binaryMap[] = {
-    { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, 0 },
-    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, 0 },
+    { "format", BinaryFormatCmd, NULL, NULL, 0 },
+    { "scan",   BinaryScanCmd, NULL, NULL, 0 },
     { "encode", NULL, NULL, NULL, 0 },
     { "decode", NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, 0 }
 };
 static const EnsembleImplMap encodeMap[] = {
-    { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, (ClientData)HexDigits, 0 },
+    { "hex",      BinaryEncodeHex, NULL, (ClientData)HexDigits, 0 },
     { "uuencode", BinaryEncode64,  NULL, (ClientData)UueDigits, 0 },
     { "base64",   BinaryEncode64,  NULL, (ClientData)B64Digits, 0 },
     { NULL, NULL, NULL, NULL, 0 }
 };
 static const EnsembleImplMap decodeMap[] = {
-    { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, 0 },
-    { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, 0 },
-    { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, 0 },
+    { "hex",      BinaryDecodeHex, NULL, NULL, 0 },
+    { "uuencode", BinaryDecodeUu,  NULL, NULL, 0 },
+    { "base64",   BinaryDecode64,  NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, 0 }
 };
 

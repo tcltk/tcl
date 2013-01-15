@@ -48,18 +48,18 @@ static Tcl_ObjCmdProc InfoClassVariablesCmd;
  */
 
 static const EnsembleImplMap infoObjectCmds[] = {
-    {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, 0},
-    {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, 0},
-    {"definition", InfoObjectDefnCmd,	    TclCompileBasic2ArgCmd, NULL, 0},
-    {"filters",	   InfoObjectFiltersCmd,    TclCompileBasic1ArgCmd, NULL, 0},
-    {"forward",	   InfoObjectForwardCmd,    TclCompileBasic2ArgCmd, NULL, 0},
-    {"isa",	   InfoObjectIsACmd,	    TclCompileInfoObjectIsACmd, NULL, 0},
-    {"methods",	   InfoObjectMethodsCmd,    TclCompileBasicMin1ArgCmd, NULL, 0},
-    {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, 0},
-    {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, 0},
-    {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, 0},
-    {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1ArgCmd, NULL, 0},
-    {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, 0},
+    {"call",	   InfoObjectCallCmd,	    NULL, NULL, 0},
+    {"class",	   InfoObjectClassCmd,	    NULL, NULL, 0},
+    {"definition", InfoObjectDefnCmd,	    NULL, NULL, 0},
+    {"filters",	   InfoObjectFiltersCmd,    NULL, NULL, 0},
+    {"forward",	   InfoObjectForwardCmd,    NULL, NULL, 0},
+    {"isa",	   InfoObjectIsACmd,	    NULL, NULL, 0},
+    {"methods",	   InfoObjectMethodsCmd,    NULL, NULL, 0},
+    {"methodtype", InfoObjectMethodTypeCmd, NULL, NULL, 0},
+    {"mixins",	   InfoObjectMixinsCmd,	    NULL, NULL, 0},
+    {"namespace",  InfoObjectNsCmd,	    NULL, NULL, 0},
+    {"variables",  InfoObjectVariablesCmd,  NULL, NULL, 0},
+    {"vars",	   InfoObjectVarsCmd,	    NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, 0}
 };
 
@@ -68,19 +68,19 @@ static const EnsembleImplMap infoObjectCmds[] = {
  */
 
 static const EnsembleImplMap infoClassCmds[] = {
-    {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, 0},
-    {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, 0},
-    {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, 0},
-    {"destructor",   InfoClassDestrCmd,		TclCompileBasic1ArgCmd, NULL, 0},
-    {"filters",	     InfoClassFiltersCmd,	TclCompileBasic1ArgCmd, NULL, 0},
-    {"forward",	     InfoClassForwardCmd,	TclCompileBasic2ArgCmd, NULL, 0},
-    {"instances",    InfoClassInstancesCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
-    {"methods",	     InfoClassMethodsCmd,	TclCompileBasicMin1ArgCmd, NULL, 0},
-    {"methodtype",   InfoClassMethodTypeCmd,	TclCompileBasic2ArgCmd, NULL, 0},
-    {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, 0},
-    {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, 0},
-    {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, 0},
-    {"variables",    InfoClassVariablesCmd,	TclCompileBasic1ArgCmd, NULL, 0},
+    {"call",	     InfoClassCallCmd,		NULL, NULL, 0},
+    {"constructor",  InfoClassConstrCmd,	NULL, NULL, 0},
+    {"definition",   InfoClassDefnCmd,		NULL, NULL, 0},
+    {"destructor",   InfoClassDestrCmd,		NULL, NULL, 0},
+    {"filters",	     InfoClassFiltersCmd,	NULL, NULL, 0},
+    {"forward",	     InfoClassForwardCmd,	NULL, NULL, 0},
+    {"instances",    InfoClassInstancesCmd,	NULL, NULL, 0},
+    {"methods",	     InfoClassMethodsCmd,	NULL, NULL, 0},
+    {"methodtype",   InfoClassMethodTypeCmd,	NULL, NULL, 0},
+    {"mixins",	     InfoClassMixinsCmd,	NULL, NULL, 0},
+    {"subclasses",   InfoClassSubsCmd,		NULL, NULL, 0},
+    {"superclasses", InfoClassSupersCmd,	NULL, NULL, 0},
+    {"variables",    InfoClassVariablesCmd,	NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, 0}
 };
 

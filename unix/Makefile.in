@@ -992,7 +992,7 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 REGHDRS=$(GENERIC_DIR)/regex.h $(GENERIC_DIR)/regguts.h \
 		$(GENERIC_DIR)/regcustom.h
 TCLREHDRS=$(GENERIC_DIR)/tclRegexp.h
-COMPILEHDR=$(GENERIC_DIR)/tclCompile.h
+COMPILEHDR=$(GENERIC_DIR)/tclCompileInt.h
 FSHDR=$(GENERIC_DIR)/tclFileSystem.h
 IOHDR=$(GENERIC_DIR)/tclIO.h
 MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
@@ -1064,7 +1064,7 @@ tclDictObj.o: $(GENERIC_DIR)/tclDictObj.c $(MATHHDRS)
 tclEncoding.o: $(GENERIC_DIR)/tclEncoding.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEncoding.c
 
-tclEnsemble.o: $(GENERIC_DIR)/tclEnsemble.c $(COMPILEHDR)
+tclEnsemble.o: $(GENERIC_DIR)/tclEnsemble.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnsemble.c
 
 tclEnv.o: $(GENERIC_DIR)/tclEnv.c
@@ -1127,7 +1127,7 @@ tclListObj.o: $(GENERIC_DIR)/tclListObj.c
 tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c
 
-tclObj.o: $(GENERIC_DIR)/tclObj.c $(COMPILEHDR) $(MATHHDRS)
+tclObj.o: $(GENERIC_DIR)/tclObj.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
 
 tclObjAlloc.o: $(GENERIC_DIR)/tclObjAlloc.c
@@ -1163,7 +1163,7 @@ tclLoadShl.o: $(UNIX_DIR)/tclLoadShl.c
 tclMain.o: $(GENERIC_DIR)/tclMain.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclMain.c
 
-tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c $(COMPILEHDR)
+tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c 
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNamesp.c
 
 tclNotify.o: $(GENERIC_DIR)/tclNotify.c
@@ -1184,7 +1184,7 @@ tclOODefineCmds.o: $(GENERIC_DIR)/tclOODefineCmds.c
 tclOOInfo.o: $(GENERIC_DIR)/tclOOInfo.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOInfo.c
 
-tclOOMethod.o: $(GENERIC_DIR)/tclOOMethod.c
+tclOOMethod.o: $(GENERIC_DIR)/tclOOMethod.c $(COMPILEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOMethod.c
 
 tclOOStubInit.o: $(GENERIC_DIR)/tclOOStubInit.c

@@ -32,3 +32,19 @@ GONE FOR NOW (or so I hope)
 
 * The complete Tcl_CmdInfo manipulation. Functionality will be *partially*
   reenabled, minus the ability to call *objProc "safely" (API will be provided)
+
+* all BC introspection and debugging; facilities will appear when we finish
+  replacing TEBC and friends
+
+* the ability to [yield] from within [subst]: we have 8.5 [subst], it is
+  recursive (and can blow the stack ... as can the compiler anyway)
+
+* command compilation: ALL commands are run from TEBC via EvalObjv. Only
+  expressions make a non-trivial use of TEBC.
+
+
+TO BE STUDIED
+-------------
+* Precise wording of error messages, is it worth working towards
+  reproducing them faithfully? Not losing time on that now - not even in
+  rewriting the tests.

@@ -2300,9 +2300,9 @@ declare 625 {
 }
 
 # TIP #356 (NR-enabled substitution) dgp
-declare 626 {
-    int Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
-}
+#declare 626 {
+#    int Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags)
+#}
 
 # TIP #357 (Export TclLoadFile and TclpFindSymbol) kbk
 declare 627 {

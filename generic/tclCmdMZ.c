@@ -3314,28 +3314,28 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, 0},
-	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, 0},
-	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, 0},
-	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, 0},
-	{"index",	StringIndexCmd,	TclCompileStringIndexCmd, NULL, 0},
+	{"bytelength",	StringBytesCmd,	NULL, NULL, 0},
+	{"compare",	StringCmpCmd,	NULL, NULL, 0},
+	{"equal",	StringEqualCmd,	NULL, NULL, 0},
+	{"first",	StringFirstCmd,	NULL, NULL, 0},
+	{"index",	StringIndexCmd,	NULL, NULL, 0},
 	{"is",		StringIsCmd,	NULL, NULL, 0},
-	{"last",	StringLastCmd,	TclCompileStringLastCmd, NULL, 0},
-	{"length",	StringLenCmd,	TclCompileStringLenCmd, NULL, 0},
-	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, 0},
-	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, 0},
-	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, 0},
-	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, 0},
+	{"last",	StringLastCmd,	NULL, NULL, 0},
+	{"length",	StringLenCmd,	NULL, NULL, 0},
+	{"map",		StringMapCmd,	NULL, NULL, 0},
+	{"match",	StringMatchCmd,	NULL, NULL, 0},
+	{"range",	StringRangeCmd,	NULL, NULL, 0},
+	{"repeat",	StringReptCmd,	NULL, NULL, 0},
 	{"replace",	StringRplcCmd,	NULL, NULL, 0},
-	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, 0},
-	{"tolower",	StringLowerCmd,	TclCompileBasic1To3ArgCmd, NULL, 0},
-	{"toupper",	StringUpperCmd,	TclCompileBasic1To3ArgCmd, NULL, 0},
-	{"totitle",	StringTitleCmd,	TclCompileBasic1To3ArgCmd, NULL, 0},
-	{"trim",	StringTrimCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
-	{"trimleft",	StringTrimLCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
-	{"trimright",	StringTrimRCmd,	TclCompileBasic1Or2ArgCmd, NULL, 0},
-	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, 0},
-	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, 0},
+	{"reverse",	StringRevCmd,	NULL, NULL, 0},
+	{"tolower",	StringLowerCmd,	NULL, NULL, 0},
+	{"toupper",	StringUpperCmd,	NULL, NULL, 0},
+	{"totitle",	StringTitleCmd,	NULL, NULL, 0},
+	{"trim",	StringTrimCmd,	NULL, NULL, 0},
+	{"trimleft",	StringTrimLCmd,	NULL, NULL, 0},
+	{"trimright",	StringTrimRCmd,	NULL, NULL, 0},
+	{"wordend",	StringEndCmd,	NULL, NULL, 0},
+	{"wordstart",	StringStartCmd,	NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, 0}
     };
 
@@ -3407,18 +3407,58 @@ Tcl_SubstObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int flags;
+    static const char *substOptions[] = {
+	"-nobackslashes", "-nocommands", "-novariables", NULL
+    };
+    enum substOptions {
+	SUBST_NOBACKSLASHES, SUBST_NOCOMMANDS, SUBST_NOVARS
+    };
+    Tcl_Obj *resultPtr;
+    int flags, i;
 
-    if (objc < 2) {
+    /*
+     * Parse command-line options.
+     */
+
+    flags = TCL_SUBST_ALL;
+    for (i = 1; i < (objc-1); i++) {
+	int optionIndex;
+
+	if (Tcl_GetIndexFromObj(interp, objv[i], substOptions, "switch", 0,
+		&optionIndex) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (optionIndex) {
+	case SUBST_NOBACKSLASHES:
+	    flags &= ~TCL_SUBST_BACKSLASHES;
+	    break;
+	case SUBST_NOCOMMANDS:
+	    flags &= ~TCL_SUBST_COMMANDS;
+	    break;
+	case SUBST_NOVARS:
+	    flags &= ~TCL_SUBST_VARIABLES;
+	    break;
+	default:
+	    Tcl_Panic("Tcl_SubstObjCmd: bad option index to SubstOptions");
+	}
+    }
+    if (i != objc-1) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-nobackslashes? ?-nocommands? ?-novariables? string");
 	return TCL_ERROR;
     }
 
-    if (TclSubstOptions(interp, objc-2, objv+1, &flags) != TCL_OK) {
+    /*
+     * Perform the substitution.
+     */
+
+    resultPtr = Tcl_SubstObj(interp, objv[i], flags);
+
+    if (resultPtr == NULL) {
 	return TCL_ERROR;
     }
-    return Tcl_NRSubstObj(interp, objv[objc-1], flags);
+    Tcl_SetObjResult(interp, resultPtr);
+    return TCL_OK;
 }
 
 /*

@@ -2082,6 +2082,254 @@ TclSubstParse(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_SubstObj --
+ *
+ *	This function performs the substitutions specified on the given string
+ *	as described in the user documentation for the "subst" Tcl command.
+ *
+ * Results:
+ *	A Tcl_Obj* containing the substituted string, or NULL to indicate that
+ *	an error occurred.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+Tcl_SubstObj(
+    Tcl_Interp *interp,		/* Interpreter in which substitution occurs */
+    Tcl_Obj *objPtr,		/* The value to be substituted. */
+    int flags)			/* What substitutions to do. */
+{
+    int length, tokensLeft, code;
+    Tcl_Token *endTokenPtr;
+    Tcl_Obj *result, *errMsg = NULL;
+    const char *p = TclGetStringFromObj(objPtr, &length);
+    Tcl_Parse *parsePtr = (Tcl_Parse *)	ckalloc(sizeof(Tcl_Parse));
+
+    TclParseInit(interp, p, length, parsePtr);
+
+    /*
+     * First parse the string rep of objPtr, as if it were enclosed as a
+     * "-quoted word in a normal Tcl command. Honor flags that selectively
+     * inhibit types of substitution.
+     */
+
+    if (TCL_OK != ParseTokens(p, length, /* mask */ 0, flags, parsePtr)) {
+	/*
+	 * There was a parse error. Save the error message for possible
+	 * reporting later.
+	 */
+
+	errMsg = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(errMsg);
+
+	/*
+	 * We need to re-parse to get the portion of the string we can [subst]
+	 * before the parse error. Sadly, all the Tcl_Token's created by the
+	 * first parse attempt are gone, freed according to the public spec
+	 * for the Tcl_Parse* routines. The only clue we have is parse.term,
+	 * which points to either the unmatched opener, or to characters that
+	 * follow a close brace or close quote.
+	 *
+	 * Call ParseTokens again, working on the string up to parse.term.
+	 * Keep repeating until we get a good parse on a prefix.
+	 */
+
+	do {
+	    parsePtr->numTokens = 0;
+	    parsePtr->tokensAvailable = NUM_STATIC_TOKENS;
+	    parsePtr->end = parsePtr->term;
+	    parsePtr->incomplete = 0;
+	    parsePtr->errorType = TCL_PARSE_SUCCESS;
+	} while (TCL_OK !=
+		ParseTokens(p, parsePtr->end - p, 0, flags, parsePtr));
+
+	/*
+	 * The good parse will have to be followed by {, (, or [.
+	 */
+
+	switch (*(parsePtr->term)) {
+	case '{':
+	    /*
+	     * Parse error was a missing } in a ${varname} variable
+	     * substitution at the toplevel. We will subst everything up to
+	     * that broken variable substitution before reporting the parse
+	     * error. Substituting the leftover '$' will have no side-effects,
+	     * so the current token stream is fine.
+	     */
+	    break;
+
+	case '(':
+	    /*
+	     * Parse error was during the parsing of the index part of an
+	     * array variable substitution at the toplevel.
+	     */
+
+	    if (*(parsePtr->term - 1) == '$') {
+		/*
+		 * Special case where removing the array index left us with
+		 * just a dollar sign (array variable with name the empty
+		 * string as its name), instead of with a scalar variable
+		 * reference.
+		 *
+		 * As in the previous case, existing token stream is OK.
+		 */
+	    } else {
+		/*
+		 * The current parse includes a successful parse of a scalar
+		 * variable substitution where there should have been an array
+		 * variable substitution. We remove that mistaken part of the
+		 * parse before moving on. A scalar variable substitution is
+		 * two tokens.
+		 */
+
+		Tcl_Token *varTokenPtr =
+			parsePtr->tokenPtr + parsePtr->numTokens - 2;
+
+		if (varTokenPtr->type != TCL_TOKEN_VARIABLE) {
+		    Tcl_Panic("Tcl_SubstObj: programming error");
+		}
+		if (varTokenPtr[1].type != TCL_TOKEN_TEXT) {
+		    Tcl_Panic("Tcl_SubstObj: programming error");
+		}
+		parsePtr->numTokens -= 2;
+	    }
+	    break;
+	case '[':
+	    /*
+	     * Parse error occurred during parsing of a toplevel command
+	     * substitution.
+	     */
+
+	    parsePtr->end = p + length;
+	    p = parsePtr->term + 1;
+	    length = parsePtr->end - p;
+	    if (length == 0) {
+		/*
+		 * No commands, just an unmatched [. As in previous cases,
+		 * existing token stream is OK.
+		 */
+	    } else {
+		/*
+		 * We want to add the parsing of as many commands as we can
+		 * within that substitution until we reach the actual parse
+		 * error. We'll do additional parsing to determine what length
+		 * to claim for the final TCL_TOKEN_COMMAND token.
+		 */
+
+		Tcl_Token *tokenPtr;
+		const char *lastTerm = parsePtr->term;
+		Tcl_Parse *nestedPtr = (Tcl_Parse *)
+			ckalloc(sizeof(Tcl_Parse));
+
+		while (TCL_OK ==
+			Tcl_ParseCommand(NULL, p, length, 0, nestedPtr)) {
+		    Tcl_FreeParse(nestedPtr);
+		    p = nestedPtr->term + (nestedPtr->term < nestedPtr->end);
+		    length = nestedPtr->end - p;
+		    if ((length == 0) && (nestedPtr->term == nestedPtr->end)) {
+			/*
+			 * If we run out of string, blame the missing close
+			 * bracket on the last command, and do not evaluate it
+			 * during substitution.
+			 */
+
+			break;
+		    }
+		    lastTerm = nestedPtr->term;
+		}
+		ckfree(nestedPtr);
+
+		if (lastTerm == parsePtr->term) {
+		    /*
+		     * Parse error in first command. No commands to subst, add
+		     * no more tokens.
+		     */
+		    break;
+		}
+
+		/*
+		 * Create a command substitution token for whatever commands
+		 * got parsed.
+		 */
+
+		TclGrowParseTokenArray(parsePtr, 1);
+		tokenPtr = &(parsePtr->tokenPtr[parsePtr->numTokens]);
+		tokenPtr->start = parsePtr->term;
+		tokenPtr->numComponents = 0;
+		tokenPtr->type = TCL_TOKEN_COMMAND;
+		tokenPtr->size = lastTerm - tokenPtr->start + 1;
+		parsePtr->numTokens++;
+	    }
+	    break;
+
+	default:
+	    Tcl_Panic("bad parse in Tcl_SubstObj: %c", p[length]);
+	}
+    }
+
+    /*
+     * Next, substitute the parsed tokens just as in normal Tcl evaluation.
+     */
+
+    endTokenPtr = parsePtr->tokenPtr + parsePtr->numTokens;
+    tokensLeft = parsePtr->numTokens;
+    code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
+	    &tokensLeft);
+    if (code == TCL_OK) {
+	Tcl_FreeParse(parsePtr);
+	ckfree(parsePtr);
+	if (errMsg != NULL) {
+	    Tcl_SetObjResult(interp, errMsg);
+	    Tcl_DecrRefCount(errMsg);
+	    return NULL;
+	}
+	return Tcl_GetObjResult(interp);
+    }
+
+    result = Tcl_NewObj();
+    while (1) {
+	switch (code) {
+	case TCL_ERROR:
+	    Tcl_FreeParse(parsePtr);
+	    ckfree(parsePtr);
+	    Tcl_DecrRefCount(result);
+	    if (errMsg != NULL) {
+		Tcl_DecrRefCount(errMsg);
+	    }
+	    return NULL;
+	case TCL_BREAK:
+	    tokensLeft = 0;		/* Halt substitution */
+	default:
+	    Tcl_AppendObjToObj(result, Tcl_GetObjResult(interp));
+	}
+
+	if (tokensLeft == 0) {
+	    Tcl_FreeParse(parsePtr);
+	    ckfree(parsePtr);
+	    if (errMsg != NULL) {
+		if (code != TCL_BREAK) {
+		    Tcl_DecrRefCount(result);
+		    Tcl_SetObjResult(interp, errMsg);
+		    Tcl_DecrRefCount(errMsg);
+		    return NULL;
+		}
+		Tcl_DecrRefCount(errMsg);
+	    }
+	    return result;
+	}
+
+	code = TclSubstTokens(interp, endTokenPtr - tokensLeft, tokensLeft,
+		&tokensLeft);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclSubstTokens --
  *
  *	Accepts an array of count Tcl_Token's, and creates a result value in

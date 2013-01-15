@@ -220,59 +220,59 @@ static const CmdInfo builtInCmds[] = {
      * Commands in the generic core.
      */
 
-    {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	1},
-    {"apply",		Tcl_ApplyObjCmd,	NULL,		       	1},
-    {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,    	1},
-    {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,    	1},
-    {"concat",		Tcl_ConcatObjCmd,	NULL,		      	1},
-    {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd, 	1},
-    {"coroutine",	TclNRCoroutineObjCmd,	NULL,		      	1},
-    {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,    	1},
-    {"eval",		Tcl_EvalObjCmd,		NULL,		       	1},
-    {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,     	1},
-    {"for",		Tcl_ForObjCmd,		TclCompileForCmd,      	1},
-    {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,  	1},
-    {"format",		Tcl_FormatObjCmd,	TclCompileFormatCmd,   	1},
-    {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,   	1},
-    {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,       	1},
-    {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,    	1},
-    {"join",		Tcl_JoinObjCmd,		NULL,		       	1},
-    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,  	1},
-    {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,  	1},
-    {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,   	1},
-    {"linsert",		Tcl_LinsertObjCmd,	NULL,		       	1},
-    {"list",		Tcl_ListObjCmd,		TclCompileListCmd,     	1},
-    {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,  	1},
-    {"lmap",		Tcl_LmapObjCmd,		TclCompileLmapCmd,    	1},
-    {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,   	1},
-    {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,		       	1},
-    {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd, 	1},
-    {"lreverse",	Tcl_LreverseObjCmd,	NULL,		       	1},
-    {"lsearch",		Tcl_LsearchObjCmd,	NULL,		       	1},
-    {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,     	1},
-    {"lsort",		Tcl_LsortObjCmd,	NULL,		       	1},
-    {"package",		Tcl_PackageObjCmd,	NULL,		       	1},
-    {"proc",		Tcl_ProcObjCmd,		NULL,		       	1},
-    {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,   	1},
-    {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,   	1},
-    {"rename",		Tcl_RenameObjCmd,	NULL,		       	1},
-    {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,   	1},
-    {"scan",		Tcl_ScanObjCmd,		NULL,		       	1},
-    {"set",		Tcl_SetObjCmd,		TclCompileSetCmd,      	1},
-    {"split",		Tcl_SplitObjCmd,	NULL,		       	1},
-    {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,    	1},
-    {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	1},
-    {"tailcall",	TclNRTailcallObjCmd,	TclCompileTailcallCmd, 	1},
-    {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,    	1},
-    {"trace",		Tcl_TraceObjCmd,	NULL,		       	1},
-    {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,      	1},
-    {"unset",		Tcl_UnsetObjCmd,	TclCompileUnsetCmd,   	1},
-    {"uplevel",		Tcl_UplevelObjCmd,	NULL,		       	1},
-    {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,   	1},
-    {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd, 	1},
-    {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,    	1},
-    {"yield",		TclNRYieldObjCmd,	TclCompileYieldCmd,    	1},
-    {"yieldto",		TclNRYieldToObjCmd,	NULL,		       	1},
+    {"append",		Tcl_AppendObjCmd,	NULL,	1},
+    {"apply",		Tcl_ApplyObjCmd,	NULL,   1},
+    {"break",		Tcl_BreakObjCmd,	NULL,   1},
+    {"catch",		Tcl_CatchObjCmd,	NULL,   1},
+    {"concat",		Tcl_ConcatObjCmd,	NULL, 	1},
+    {"continue",	Tcl_ContinueObjCmd,	NULL, 	1},
+    {"coroutine",	TclNRCoroutineObjCmd,	NULL,  	1},
+    {"error",		Tcl_ErrorObjCmd,	NULL,  	1},
+    {"eval",		Tcl_EvalObjCmd,		NULL,  	1},
+    {"expr",		Tcl_ExprObjCmd,		NULL,  	1},
+    {"for",		Tcl_ForObjCmd,		NULL,  	1},
+    {"foreach",		Tcl_ForeachObjCmd,	NULL,  	1},
+    {"format",		Tcl_FormatObjCmd,	NULL,  	1},
+    {"global",		Tcl_GlobalObjCmd,	NULL,  	1},
+    {"if",		Tcl_IfObjCmd,		NULL,  	1},
+    {"incr",		Tcl_IncrObjCmd,		NULL,  	1},
+    {"join",		Tcl_JoinObjCmd,		NULL,  	1},
+    {"lappend",		Tcl_LappendObjCmd,	NULL,  	1},
+    {"lassign",		Tcl_LassignObjCmd,	NULL,  	1},
+    {"lindex",		Tcl_LindexObjCmd,	NULL,  	1},
+    {"linsert",		Tcl_LinsertObjCmd,	NULL,  	1},
+    {"list",		Tcl_ListObjCmd,		NULL,  	1},
+    {"llength",		Tcl_LlengthObjCmd,	NULL,  	1},
+    {"lmap",		Tcl_LmapObjCmd,		NULL,  	1},
+    {"lrange",		Tcl_LrangeObjCmd,	NULL,  	1},
+    {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,  	1},
+    {"lreplace",	Tcl_LreplaceObjCmd,	NULL, 	1},
+    {"lreverse",	Tcl_LreverseObjCmd,	NULL,  	1},
+    {"lsearch",		Tcl_LsearchObjCmd,	NULL,  	1},
+    {"lset",		Tcl_LsetObjCmd,		NULL,  	1},
+    {"lsort",		Tcl_LsortObjCmd,	NULL,  	1},
+    {"package",		Tcl_PackageObjCmd,	NULL,  	1},
+    {"proc",		Tcl_ProcObjCmd,		NULL,  	1},
+    {"regexp",		Tcl_RegexpObjCmd,	NULL,   1},
+    {"regsub",		Tcl_RegsubObjCmd,	NULL,  	1},
+    {"rename",		Tcl_RenameObjCmd,	NULL,  	1},
+    {"return",		Tcl_ReturnObjCmd,	NULL,  	1},
+    {"scan",		Tcl_ScanObjCmd,		NULL,  	1},
+    {"set",		Tcl_SetObjCmd,		NULL, 	1},
+    {"split",		Tcl_SplitObjCmd,	NULL,  	1},
+    {"subst",		Tcl_SubstObjCmd,	NULL, 	1},
+    {"switch",		Tcl_SwitchObjCmd,	NULL,	1},
+    {"tailcall",	TclNRTailcallObjCmd,	NULL, 	1},
+    {"throw",		Tcl_ThrowObjCmd,	NULL, 	1},
+    {"trace",		Tcl_TraceObjCmd,	NULL,  	1},
+    {"try",		Tcl_TryObjCmd,		NULL,  	1},
+    {"unset",		Tcl_UnsetObjCmd,	NULL,  	1},
+    {"uplevel",		Tcl_UplevelObjCmd,	NULL,  	1},
+    {"upvar",		Tcl_UpvarObjCmd,	NULL,  	1},
+    {"variable",	Tcl_VariableObjCmd,	NULL, 	1},
+    {"while",		Tcl_WhileObjCmd,	NULL, 	1},
+    {"yield",		TclNRYieldObjCmd,	NULL, 	1},
+    {"yieldto",		TclNRYieldToObjCmd,	NULL,  	1},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
@@ -480,9 +480,6 @@ Tcl_CreateInterp(void)
 	char c[sizeof(short)];
 	short s;
     } order;
-#ifdef TCL_COMPILE_STATS
-    ByteCodeStats *statsPtr;
-#endif /* TCL_COMPILE_STATS */
     char mathFuncName[32];
     CallFrame *framePtr;
     int result;
@@ -553,7 +550,6 @@ Tcl_CreateInterp(void)
 
     iPtr->cmdCount = 0;
     TclInitLiteralTable(&iPtr->literalTable);
-    iPtr->compileEpoch = 0;
     iPtr->compiledProcPtr = NULL;
     iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
@@ -647,39 +643,6 @@ Tcl_CreateInterp(void)
     Tcl_MutexUnlock(&cancelLock);
 
     /*
-     * Initialize the compilation and execution statistics kept for this
-     * interpreter.
-     */
-
-#ifdef TCL_COMPILE_STATS
-    statsPtr = &iPtr->stats;
-    statsPtr->numExecutions = 0;
-    statsPtr->numCompilations = 0;
-    statsPtr->numByteCodesFreed = 0;
-    memset(statsPtr->instructionCount, 0,
-	    sizeof(statsPtr->instructionCount));
-
-    statsPtr->totalSrcBytes = 0.0;
-    statsPtr->totalByteCodeBytes = 0.0;
-    statsPtr->currentSrcBytes = 0.0;
-    statsPtr->currentByteCodeBytes = 0.0;
-    memset(statsPtr->srcCount, 0, sizeof(statsPtr->srcCount));
-    memset(statsPtr->byteCodeCount, 0, sizeof(statsPtr->byteCodeCount));
-    memset(statsPtr->lifetimeCount, 0, sizeof(statsPtr->lifetimeCount));
-
-    statsPtr->currentInstBytes = 0.0;
-    statsPtr->currentLitBytes = 0.0;
-    statsPtr->currentExceptBytes = 0.0;
-    statsPtr->currentAuxBytes = 0.0;
-    statsPtr->currentCmdMapBytes = 0.0;
-
-    statsPtr->numLiteralsCreated = 0;
-    statsPtr->totalLitStringBytes = 0.0;
-    statsPtr->currentLitStringBytes = 0.0;
-    memset(statsPtr->literalCount, 0, sizeof(statsPtr->literalCount));
-#endif /* TCL_COMPILE_STATS */
-
-    /*
      * Initialise the stub table pointer.
      */
 
@@ -770,8 +733,6 @@ Tcl_CreateInterp(void)
      * Create unsupported commands for debugging bytecode and objects.
      */
 
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
-	    Tcl_DisassembleObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
 
@@ -1254,7 +1215,6 @@ Tcl_DeleteInterp(
      */
 
     iPtr->flags |= DELETED;
-    iPtr->compileEpoch++;
 
     /*
      * Ensure that the interpreter is eventually deleted.
@@ -1652,18 +1612,6 @@ Tcl_HideCommand(
     cmdPtr->hPtr = hPtr;
     Tcl_SetHashValue(hPtr, cmdPtr);
 
-    /*
-     * If the command being hidden has a compile function, increment the
-     * interpreter's compileEpoch to invalidate its compiled code. This makes
-     * sure that we don't later try to execute old code compiled with
-     * command-specific (i.e., inline) bytecodes for the now-hidden command.
-     * This field is checked in Tcl_EvalObj and ObjInterpProc, and code whose
-     * compilation epoch doesn't match is recompiled.
-     */
-
-    if (cmdPtr->compileProc != NULL) {
-	iPtr->compileEpoch++;
-    }
     return TCL_OK;
 }
 
@@ -1823,18 +1771,6 @@ Tcl_ExposeCommand(
      * TclResetShadowedCmdRefs(interp, cmdPtr);
      */
 
-    /*
-     * If the command being exposed has a compile function, increment
-     * interpreter's compileEpoch to invalidate its compiled code. This makes
-     * sure that we don't later try to execute old code compiled assuming the
-     * command is hidden. This field is checked in Tcl_EvalObj and
-     * ObjInterpProc, and code whose compilation epoch doesn't match is
-     * recompiled.
-     */
-
-    if (cmdPtr->compileProc != NULL) {
-	iPtr->compileEpoch++;
-    }
     return TCL_OK;
 }
 
@@ -2478,17 +2414,6 @@ TclRenameCommand(
     cmdPtr->cmdEpoch++;
 
     /*
-     * If the command being renamed has a compile function, increment the
-     * interpreter's compileEpoch to invalidate its compiled code. This makes
-     * sure that we don't later try to execute old code compiled for the
-     * now-renamed command.
-     */
-
-    if (cmdPtr->compileProc != NULL) {
-	iPtr->compileEpoch++;
-    }
-
-    /*
      * Now free the Command structure, if the "oldName" command has been
      * deleted by invocation of rename traces.
      */
@@ -2734,19 +2659,6 @@ Tcl_DeleteCommandFromToken(
      */
 
     TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
-
-    /*
-     * If the command being deleted has a compile function, increment the
-     * interpreter's compileEpoch to invalidate its compiled code. This makes
-     * sure that we don't later try to execute old code compiled with
-     * command-specific (i.e., inline) bytecodes for the now-deleted command.
-     * This field is checked in Tcl_EvalObj and ObjInterpProc, and code whose
-     * compilation epoch doesn't match is recompiled.
-     */
-
-    if (cmdPtr->compileProc != NULL) {
-	iPtr->compileEpoch++;
-    }
 
     if (cmdPtr->deleteProc != NULL) {
 	/*
@@ -4967,7 +4879,7 @@ TclNREvalObjEx(
 	 */
 
 	int allowExceptions = (iPtr->evalFlags & TCL_ALLOW_EXCEPTIONS);
-	ByteCode *codePtr;
+	struct ByteCode *codePtr;
 	CallFrame *savedVarFramePtr = NULL;	/* Saves old copy of
 						 * iPtr->varFramePtr in case
 						 * TCL_EVAL_GLOBAL was set. */

@@ -1131,10 +1131,6 @@ Tcl_TraceCommand(
 	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
 	 */
 	
-	if ((cmdPtr->compileProc != NULL) && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)){
-	    Interp *iPtr = (Interp *) interp;
-	    iPtr->compileEpoch++;
-	}
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
 
@@ -1241,15 +1237,6 @@ Tcl_UntraceCommand(
 	 */
 
 	cmdPtr->flags &= ~CMD_HAS_EXEC_TRACES;
-
-        /*
-	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
-	 */
-	
-	if (cmdPtr->compileProc != NULL) {
-	    Interp *iPtr = (Interp *) interp;
-	    iPtr->compileEpoch++;
-	}
     }
 }
 
@@ -2142,24 +2129,6 @@ Tcl_CreateObjTrace(
      * Test if this trace allows inline compilation of commands.
      */
 
-    if (!(flags & TCL_ALLOW_INLINE_COMPILATION)) {
-	if (iPtr->tracesForbiddingInline == 0) {
-	    /*
-	     * When the first trace forbidding inline compilation is created,
-	     * invalidate existing compiled code for this interpreter and
-	     * arrange (by setting the DONT_COMPILE_CMDS_INLINE flag) that
-	     * when compiling new code, no commands will be compiled inline
-	     * (i.e., into an inline sequence of instructions). We do this
-	     * because commands that were compiled inline will never result in
-	     * a command trace being called.
-	     */
-
-	    iPtr->compileEpoch++;
-	    iPtr->flags |= DONT_COMPILE_CMDS_INLINE;
-	}
-	iPtr->tracesForbiddingInline++;
-    }
-
     tracePtr = ckalloc(sizeof(Trace));
     tracePtr->level = level;
     tracePtr->proc = proc;
@@ -2367,21 +2336,6 @@ Tcl_DeleteTrace(
 	    } else {
 		activePtr->nextTracePtr = tracePtr->nextPtr;
 	    }
-	}
-    }
-
-    /*
-     * If the trace forbids bytecode compilation, change the interpreter's
-     * state. If bytecode compilation is now permitted, flag the fact and
-     * advance the compilation epoch so that procs will be recompiled to take
-     * advantage of it.
-     */
-
-    if (!(tracePtr->flags & TCL_ALLOW_INLINE_COMPILATION)) {
-	iPtr->tracesForbiddingInline--;
-	if (iPtr->tracesForbiddingInline == 0) {
-	    iPtr->flags &= ~DONT_COMPILE_CMDS_INLINE;
-	    iPtr->compileEpoch++;
 	}
     }
 

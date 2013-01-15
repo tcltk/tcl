@@ -14,7 +14,7 @@
  */
 
 #include "tclInt.h"
-#include "tclCompile.h"
+#include "tclCompileInt.h"
 #include "tclOOInt.h"
 
 /*
@@ -130,7 +130,7 @@ Tcl_ProcObjCmd(
     register Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
     const char *fullName;
-    const char *procName, *procArgs, *procBody;
+    const char *procName;
     Namespace *nsPtr, *altNsPtr, *cxtNsPtr;
     Tcl_Command cmd;
     Tcl_DString ds;
@@ -211,61 +211,6 @@ Tcl_ProcObjCmd(
      */
 
     procPtr->cmdPtr = (Command *) cmd;
-
-    /*
-     * Optimize for no-op procs: if the body is not precompiled (like a TclPro
-     * procbody), and the argument list is just "args" and the body is empty,
-     * define a compileProc to compile a no-op.
-     *
-     * Notes:
-     *	 - cannot be done for any argument list without having different
-     *	   compiled/not-compiled behaviour in the "wrong argument #" case, or
-     *	   making this code much more complicated. In any case, it doesn't
-     *	   seem to make a lot of sense to verify the number of arguments we
-     *	   are about to ignore ...
-     *	 - could be enhanced to handle also non-empty bodies that contain only
-     *	   comments; however, parsing the body will slow down the compilation
-     *	   of all procs whose argument list is just _args_
-     */
-
-    if (objv[3]->typePtr == &tclProcBodyType) {
-	goto done;
-    }
-
-    procArgs = TclGetString(objv[2]);
-
-    while (*procArgs == ' ') {
-	procArgs++;
-    }
-
-    if ((procArgs[0] == 'a') && (strncmp(procArgs, "args", 4) == 0)) {
-	int numBytes;
-
-	procArgs +=4;
-	while (*procArgs != '\0') {
-	    if (*procArgs != ' ') {
-		goto done;
-	    }
-	    procArgs++;
-	}
-
-	/*
-	 * The argument list is just "args"; check the body
-	 */
-
-	procBody = Tcl_GetStringFromObj(objv[3], &numBytes);
-	if (TclParseAllWhiteSpace(procBody, numBytes) < numBytes) {
-	    goto done;
-	}
-
-	/*
-	 * The body is just spaces: link the compileProc
-	 */
-
-	((Command *) cmd)->compileProc = TclCompileNoOp;
-    }
-
-  done:
     return TCL_OK;
 }
 
@@ -1509,7 +1454,6 @@ PushProcCallFrame(
 
 	codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
-		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)) {
 	    goto doCompilation;
@@ -1627,56 +1571,6 @@ TclNRInterpProcCore(
 	return TCL_ERROR;
     }
 
-#if defined(TCL_COMPILE_DEBUG)
-    if (tclTraceExec >= 1) {
-	register CallFrame *framePtr = iPtr->varFramePtr;
-	register int i;
-
-	if (framePtr->isProcCallFrame & FRAME_IS_LAMBDA) {
-	    fprintf(stdout, "Calling lambda ");
-	} else {
-	    fprintf(stdout, "Calling proc ");
-	}
-	for (i = 0; i < framePtr->objc; i++) {
-	    TclPrintObject(stdout, framePtr->objv[i], 15);
-	    fprintf(stdout, " ");
-	}
-	fprintf(stdout, "\n");
-	fflush(stdout);
-    }
-#endif /*TCL_COMPILE_DEBUG*/
-
-#ifdef USE_DTRACE
-    if (TCL_DTRACE_PROC_ARGS_ENABLED()) {
-	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
-	const char *a[10];
-	int i;
-
-	for (i = 0 ; i < 10 ; i++) {
-	    a[i] = (l < iPtr->varFramePtr->objc ?
-		    TclGetString(iPtr->varFramePtr->objv[l]) : NULL);
-	    l++;
-	}
-	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
-		a[8], a[9]);
-    }
-    if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
-
-	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
-		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
-		iPtr->varFramePtr->objc - l - 1,
-		(Tcl_Obj **)(iPtr->varFramePtr->objv + l + 1));
-    }
-    if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
-	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
-
-	TCL_DTRACE_PROC_ENTRY(l < iPtr->varFramePtr->objc ?
-		TclGetString(iPtr->varFramePtr->objv[l]) : NULL,
-		iPtr->varFramePtr->objc - l - 1,
-		(Tcl_Obj **)(iPtr->varFramePtr->objv + l + 1));
-    }
-#endif /* USE_DTRACE */
 
     /*
      * Invoke the commands in the procedure's body.
@@ -1843,7 +1737,6 @@ TclProcCompileProc(
 
     if (bodyPtr->typePtr == &tclByteCodeType) {
 	if (((Interp *) *codePtr->interpHandle == iPtr)
-		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
 		&& (codePtr->nsEpoch == nsPtr->resolverEpoch)) {
 	    return TCL_OK;
@@ -1857,7 +1750,6 @@ TclProcCompileProc(
 			"CROSSINTERPBYTECODE", NULL);
 		return TCL_ERROR;
 	    }
-	    codePtr->compileEpoch = iPtr->compileEpoch;
 	    codePtr->nsPtr = nsPtr;
 	} else {
 	    TclFreeIntRep(bodyPtr);
@@ -1865,24 +1757,6 @@ TclProcCompileProc(
     }
 
     if (bodyPtr->typePtr != &tclByteCodeType) {
-#ifdef TCL_COMPILE_DEBUG
-	if (tclTraceCompile >= 1) {
-	    /*
-	     * Display a line summarizing the top level command we are about
-	     * to compile.
-	     */
-
-	    Tcl_Obj *message;
-
-	    TclNewLiteralStringObj(message, "Compiling ");
-	    Tcl_IncrRefCount(message);
-	    Tcl_AppendStringsToObj(message, description, " \"", NULL);
-	    Tcl_AppendLimitedToObj(message, procName, -1, 50, NULL);
-	    fprintf(stdout, "%s\"\n", TclGetString(message));
-	    Tcl_DecrRefCount(message);
-	}
-#endif
-
 	/*
 	 * Plug the current procPtr into the interpreter and coerce the code
 	 * body to byte codes. The interpreter needs to know which proc it's
@@ -2530,235 +2404,6 @@ MakeLambdaError(
 	    "\n    (lambda term \"%.*s%s\" line %d)",
 	    (overflow ? limit : nameLen), procName,
 	    (overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_DisassembleObjCmd --
- *
- *	Implementation of the "::tcl::unsupported::disassemble" command. This
- *	command is not documented, but will disassemble procedures, lambda
- *	terms and general scripts. Note that will compile terms if necessary
- *	in order to disassemble them.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_DisassembleObjCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    static const char *const types[] = {
-	"lambda", "method", "objmethod", "proc", "script", NULL
-    };
-    enum Types {
-	DISAS_LAMBDA, DISAS_CLASS_METHOD, DISAS_OBJECT_METHOD, DISAS_PROC,
-	DISAS_SCRIPT
-    };
-    int idx, result;
-    Tcl_Obj *codeObjPtr = NULL;
-    Proc *procPtr = NULL;
-    Tcl_HashEntry *hPtr;
-    Object *oPtr;
-
-    if (objc < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], types, "type", 0, &idx)!=TCL_OK){
-	return TCL_ERROR;
-    }
-
-    switch ((enum Types) idx) {
-    case DISAS_LAMBDA: {
-	Command cmd;
-	Tcl_Obj *nsObjPtr;
-	Tcl_Namespace *nsPtr;
-
-	/*
-	 * Compile (if uncompiled) and disassemble a lambda term.
-	 */
-
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "lambdaTerm");
-	    return TCL_ERROR;
-	}
-	if (objv[2]->typePtr == &lambdaType) {
-	    procPtr = objv[2]->internalRep.twoPtrValue.ptr1;
-	}
-	if (procPtr == NULL || procPtr->iPtr != (Interp *) interp) {
-	    result = SetLambdaFromAny(interp, objv[2]);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	    procPtr = objv[2]->internalRep.twoPtrValue.ptr1;
-	}
-
-	memset(&cmd, 0, sizeof(Command));
-	nsObjPtr = objv[2]->internalRep.twoPtrValue.ptr2;
-	result = TclGetNamespaceFromObj(interp, nsObjPtr, &nsPtr);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	cmd.nsPtr = (Namespace *) nsPtr;
-	procPtr->cmdPtr = &cmd;
-	result = PushProcCallFrame(procPtr, interp, objc, objv, 1);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	TclPopStackFrame(interp);
-	codeObjPtr = procPtr->bodyPtr;
-	break;
-    }
-    case DISAS_PROC:
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "procName");
-	    return TCL_ERROR;
-	}
-
-	procPtr = TclFindProc((Interp *) interp, TclGetString(objv[2]));
-	if (procPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" isn't a procedure", TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PROC",
-		    TclGetString(objv[2]), NULL);
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Compile (if uncompiled) and disassemble a procedure.
-	 */
-
-	result = PushProcCallFrame(procPtr, interp, 2, objv+1, 1);
-	if (result != TCL_OK) {
-	    return result;
-	}
-	TclPopStackFrame(interp);
-	codeObjPtr = procPtr->bodyPtr;
-	break;
-    case DISAS_SCRIPT:
-	/*
-	 * Compile and disassemble a script.
-	 */
-
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "script");
-	    return TCL_ERROR;
-	}
-	if (objv[2]->typePtr != &tclByteCodeType) {
-	    if (TclSetByteCodeFromAny(interp, objv[2], NULL, NULL) != TCL_OK){
-		return TCL_ERROR;
-	    }
-	}
-	codeObjPtr = objv[2];
-	break;
-
-    case DISAS_CLASS_METHOD:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "className methodName");
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Look up the body of a class method.
-	 */
-
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (oPtr == NULL) {
-	    return TCL_ERROR;
-	}
-	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "\"%s\" is not a class", TclGetString(objv[2])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "CLASS",
-		    TclGetString(objv[2]), NULL);
-	    return TCL_ERROR;
-	}
-	hPtr = Tcl_FindHashEntry(&oPtr->classPtr->classMethods,
-		(char *) objv[3]);
-	goto methodBody;
-    case DISAS_OBJECT_METHOD:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objectName methodName");
-	    return TCL_ERROR;
-	}
-
-	/*
-	 * Look up the body of an instance method.
-	 */
-
-	oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
-	if (oPtr == NULL) {
-	    return TCL_ERROR;
-	}
-	if (oPtr->methodsPtr == NULL) {
-	    goto unknownMethod;
-	}
-	hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char *) objv[3]);
-
-	/*
-	 * Compile (if necessary) and disassemble a method body.
-	 */
-
-    methodBody:
-	if (hPtr == NULL) {
-	unknownMethod:
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "unknown method \"%s\"", TclGetString(objv[3])));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
-		    TclGetString(objv[3]), NULL);
-	    return TCL_ERROR;
-	}
-	procPtr = TclOOGetProcFromMethod(Tcl_GetHashValue(hPtr));
-	if (procPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "body not available for this kind of method", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		    "METHODTYPE", NULL);
-	    return TCL_ERROR;
-	}
-	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
-	    Command cmd;
-
-	    /*
-	     * Yes, this is ugly, but we need to pass the namespace in to the
-	     * compiler in two places.
-	     */
-
-	    cmd.nsPtr = (Namespace *) oPtr->namespacePtr;
-	    procPtr->cmdPtr = &cmd;
-	    result = TclProcCompileProc(interp, procPtr, procPtr->bodyPtr,
-		    (Namespace *) oPtr->namespacePtr, "body of method",
-		    TclGetString(objv[3]));
-	    procPtr->cmdPtr = NULL;
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	}
-	codeObjPtr = procPtr->bodyPtr;
-	break;
-    default:
-	CLANG_ASSERT(0);
-    }
-
-    /*
-     * Do the actual disassembly.
-     */
-
-    if (((ByteCode *) codeObjPtr->internalRep.otherValuePtr)->flags
-	    & TCL_BYTECODE_PRECOMPILED) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not disassemble prebuilt bytecode", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		"BYTECODE", NULL);
-	return TCL_ERROR;
-    }
-    Tcl_SetObjResult(interp, TclDisassembleByteCodeObj(codeObjPtr));
-    return TCL_OK;
 }
 
 /*

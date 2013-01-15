@@ -2479,7 +2479,7 @@ test interp-29.3.1 {recursion limit} {
     }]
     interp delete $i
     set r
-} {1 {too many nested evaluations (infinite loop?)} 49}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 test interp-29.3.2 {recursion limit} {
     set i [interp create]
     interp recursionlimit $i 50
@@ -2490,7 +2490,7 @@ test interp-29.3.2 {recursion limit} {
     }]
    interp delete $i
    set r
-} {1 {too many nested evaluations (infinite loop?)} 49}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 test interp-29.3.3 {recursion limit} {
     set i [interp create]
     $i recursionlimit 50
@@ -2501,7 +2501,7 @@ test interp-29.3.3 {recursion limit} {
     }]
    interp delete $i
    set r
-} {1 {too many nested evaluations (infinite loop?)} 49}
+} {1 {too many nested evaluations (infinite loop?)} 48}
 test interp-29.3.4 {recursion limit error reporting} {
     interp create slave
     set r1 [slave eval {
@@ -2565,10 +2565,11 @@ test interp-29.3.6 {recursion limit error reporting} {
 #
 # Note that TEBC does not verify the interp's nesting level itself; the nesting
 # level will only be verified when it invokes a non-bcc'd command.
+# THIS IS WRONG IN THIS BRANCH!
 #
 test interp-29.3.7a {recursion limit error reporting} {
     interp create slave
-    after 0 {interp recursionlimit slave 5}
+    after 0 {interp recursionlimit slave 6}
     set r1 [slave eval {
         catch { 		# nesting level 1
 	    eval {		# 2
@@ -2589,7 +2590,7 @@ test interp-29.3.7a {recursion limit error reporting} {
 } {0 ok}
 test interp-29.3.7b {recursion limit error reporting} {
     interp create slave
-    after 0 {interp recursionlimit slave 5}
+    after 0 {interp recursionlimit slave 6}
     set r1 [slave eval {
         catch { 		# nesting level 1
 	    eval {		# 2
@@ -2632,7 +2633,7 @@ test interp-29.3.7c {recursion limit error reporting} {
 } {1 {too many nested evaluations (infinite loop?)}}
 test interp-29.3.8a {recursion limit error reporting} {
     interp create slave
-    after 0 {interp recursionlimit slave 4}
+    after 0 {interp recursionlimit slave 6}
     set r1 [slave eval {
         catch { 		# nesting level 1
 	    eval {		# 2
@@ -2716,7 +2717,7 @@ test interp-29.3.9b {recursion limit error reporting} {
 } {0 ok}
 test interp-29.3.10a {recursion limit error reporting} {
     interp create slave
-    after 0 {slave recursionlimit 4}
+    after 0 {slave recursionlimit 6}
     set r1 [slave eval {
         catch { 		# nesting level 1
 	    eval {		# 2
@@ -2758,7 +2759,7 @@ test interp-29.3.10b {recursion limit error reporting} {
 } {1 {too many nested evaluations (infinite loop?)}}
 test interp-29.3.11a {recursion limit error reporting} {
     interp create slave
-    after 0 {slave recursionlimit 5}
+    after 0 {slave recursionlimit 6}
     set r1 [slave eval {
         catch { 		# nesting level 1
 	    eval {		# 2
@@ -2856,7 +2857,7 @@ test interp-29.4.1 {recursion limit inheritance} {
     }]
    interp delete $i
    set r
-} 50
+} 48
 test interp-29.4.2 {recursion limit inheritance} {
     set i [interp create]
     $i recursionlimit 50
@@ -2869,7 +2870,7 @@ test interp-29.4.2 {recursion limit inheritance} {
     }]
    interp delete $i
    set r
-} 50
+} 48
 test interp-29.5.1 {does slave recursion limit affect master?} {
     set before [interp recursionlimit {}]
     set i [interp create]
@@ -3151,7 +3152,7 @@ test interp-34.4 {limits with callbacks: extending limits} -setup {
 	    -value [expr {$curlim+10}]
     $i eval {for {set i 0} {$i<10} {incr i} {foo}}
     list $a $b $c
-} -result {6 4 b} -cleanup {
+} -result {5 5 b} -cleanup {
     interp delete $i
     rename cb1 {}
     rename cb2 {}
@@ -3179,7 +3180,7 @@ test interp-34.5 {limits with callbacks: removing limits} -setup {
     $i limit command -command "cb2 {}" -value [expr {$curlim+10}]
     $i eval {for {set i 0} {$i<10} {incr i} {foo}}
     list $a $b $c
-} -result {6 4 b} -cleanup {
+} -result {5 5 b} -cleanup {
     interp delete $i
     rename cb1 {}
     rename cb2 {}
@@ -3204,7 +3205,7 @@ test interp-34.6 {limits with callbacks: removing limits and handlers} -setup {
     $i limit command -command cb2 -value [expr {$curlim+10}]
     $i eval {for {set i 0} {$i<10} {incr i} {foo}}
     list $a $b $c
-} -result {6 4 b} -cleanup {
+} -result {5 5 b} -cleanup {
     interp delete $i
     rename cb1 {}
     rename cb2 {}
@@ -3251,7 +3252,7 @@ test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
 	}
     }
     list $n [interp exists $i]
-} -result {4 0} -cleanup {
+} -result {5 0} -cleanup {
     rename cb3 {}
     rename cb4 {}
 }

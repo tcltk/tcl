@@ -154,25 +154,25 @@ static const Tcl_ObjType nsNameType = {
  */
 
 static const EnsembleImplMap defaultNamespaceMap[] = {
-    {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, 0},
-    {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, 0},
-    {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, 0},
-    {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
+    {"children",   NamespaceChildrenCmd, NULL, NULL, 0},
+    {"code",	   NamespaceCodeCmd,	NULL, NULL, 0},
+    {"current",	   NamespaceCurrentCmd,	NULL, NULL, 0},
+    {"delete",	   NamespaceDeleteCmd,	NULL, NULL, 0},
     {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, 0},
     {"eval",	   NamespaceEvalCmd,	NULL, NULL, 0},
-    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, 0},
-    {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
-    {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
-    {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, 0},
+    {"exists",	   NamespaceExistsCmd,	NULL, NULL, 0},
+    {"export",	   NamespaceExportCmd,	NULL, NULL, 0},
+    {"forget",	   NamespaceForgetCmd,	NULL, NULL, 0},
+    {"import",	   NamespaceImportCmd,	NULL, NULL, 0},
     {"inscope",	   NamespaceInscopeCmd,	NULL, NULL, 0},
-    {"origin",	   NamespaceOriginCmd,	TclCompileBasic1ArgCmd, NULL, 0},
-    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
-    {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, 0},
-    {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, 0},
-    {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, 0},
-    {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, 0},
-    {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, 0},
-    {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, 0},
+    {"origin",	   NamespaceOriginCmd,	NULL, NULL, 0},
+    {"parent",	   NamespaceParentCmd,	NULL, NULL, 0},
+    {"path",	   NamespacePathCmd,	NULL, NULL, 0},
+    {"qualifiers", NamespaceQualifiersCmd, NULL, NULL, 0},
+    {"tail",	   NamespaceTailCmd,	NULL, NULL, 0},
+    {"unknown",	   NamespaceUnknownCmd, NULL, NULL, 0},
+    {"upvar",	   NamespaceUpvarCmd,	NULL, NULL, 0},
+    {"which",	   NamespaceWhichCmd,	NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, 0}
 };
 

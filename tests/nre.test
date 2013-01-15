@@ -163,7 +163,7 @@ test nre-5.1 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -constraints {
     testnrelevels
-} -result {{0 2 2} 0}
+} -result {{0 3 2} 0}
 
 test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
@@ -176,7 +176,7 @@ test nre-5.2 {[namespace eval] is not recursive} -setup {
     namespace delete ::foo
 } -constraints {
     testnrelevels
-} -result {{0 2 2} 0}
+} -result {{0 3 2} 0}
 
 test nre-6.1 {[uplevel] is not recursive} -setup {
     proc a i [makebody {uplevel 1 [list a $i]}]
@@ -218,7 +218,7 @@ test nre-7.2 {[if] is not recursive} -setup {
     rename a {}
 } -constraints {
     testnrelevels
-} -result {{0 2 0} 0}
+} -result {{0 3 0} 0}
 test nre-7.3 {[while] is not recursive} -setup {
     setabs
     proc a i [makebody {uplevel 1 "while 1 {set res \[a $i\]; break}; set res"}]
@@ -228,7 +228,7 @@ test nre-7.3 {[while] is not recursive} -setup {
     rename a {}
 } -constraints {
     testnrelevels
-} -result {{0 2 0} 0}
+} -result {{0 3 0} 0}
 test nre-7.4 {[for] is not recursive} -setup {
     setabs
     proc a i [makebody {uplevel 1 "for {set j 0} {\$j < 10} {incr j} {set res \[a $i\]; break}; set res"}]
@@ -238,7 +238,7 @@ test nre-7.4 {[for] is not recursive} -setup {
     rename a {}
 } -constraints {
     testnrelevels
-} -result {{0 2 0} 0}
+} -result {{0 3 0} 0}
 test nre-7.5 {[foreach] is not recursive} -setup {
     #
     # Enable once [foreach] is NR-enabled

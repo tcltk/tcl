@@ -3,7 +3,11 @@
  * **********************************************
  */
 
+#ifdef TCL_NRE_DEBUG
+#define NRE_STACK_DEBUG         1
+#else
 #define NRE_STACK_DEBUG         0
+#endif
 #define NRE_STACK_SIZE        100
 
 

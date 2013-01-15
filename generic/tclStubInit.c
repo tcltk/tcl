@@ -1287,7 +1287,7 @@ const TclStubs tclStubs = {
     Tcl_GetStartupScript, /* 623 */
     Tcl_CloseEx, /* 624 */
     Tcl_NRExprObj, /* 625 */
-    Tcl_NRSubstObj, /* 626 */
+    0, /* 626 */
     Tcl_LoadFile, /* 627 */
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */

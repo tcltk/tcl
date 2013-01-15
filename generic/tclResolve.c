@@ -43,8 +43,6 @@ static void		BumpCmdRefEpochs(Namespace *nsPtr);
  *	cmdProcPtr, varProcPtr and compiledVarProcPtr arguments.
  *
  * Side effects:
- *	If a compiledVarProc is specified, this function bumps the
- *	compileEpoch for the interpreter, forcing all code to be recompiled.
  *	If a cmdProc is specified, this function bumps the cmdRefEpoch in all
  *	namespaces, forcing commands to be resolved again using the new rules.
  *
@@ -75,9 +73,6 @@ Tcl_AddInterpResolvers(
      * cmdRefEpoch in all namespaces.
      */
 
-    if (compiledVarProc) {
-	iPtr->compileEpoch++;
-    }
     if (cmdProc) {
 	BumpCmdRefEpochs(iPtr->globalNsPtr);
     }
@@ -175,9 +170,7 @@ Tcl_GetInterpResolvers(
  *	was deleted. Returns zero otherwise.
  *
  * Side effects:
- *	If a scheme with a compiledVarProc was deleted, this function bumps
- *	the compileEpoch for the interpreter, forcing all code to be
- *	recompiled. If a scheme with a cmdProc was deleted, this function
+ *	If a scheme with a cmdProc was deleted, this function
  *	bumps the cmdRefEpoch in all namespaces, forcing commands to be
  *	resolved again using the new rules.
  *
@@ -217,9 +210,6 @@ Tcl_RemoveInterpResolvers(
 	 * cmdRefEpoch in all namespaces.
 	 */
 
-	if (resPtr->compiledVarResProc) {
-	    iPtr->compileEpoch++;
-	}
 	if (resPtr->cmdResProc) {
 	    BumpCmdRefEpochs(iPtr->globalNsPtr);
 	}

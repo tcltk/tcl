@@ -1777,9 +1777,7 @@ EXTERN int		Tcl_CloseEx(Tcl_Interp *interp, Tcl_Channel chan,
 /* 625 */
 EXTERN int		Tcl_NRExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				Tcl_Obj *resultPtr);
-/* 626 */
-EXTERN int		Tcl_NRSubstObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-				int flags);
+/* Slot 626 is reserved */
 /* 627 */
 EXTERN int		Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 				const char *const symv[], int flags,
@@ -2455,7 +2453,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingPtr); /* 623 */
     int (*tcl_CloseEx) (Tcl_Interp *interp, Tcl_Channel chan, int flags); /* 624 */
     int (*tcl_NRExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr); /* 625 */
-    int (*tcl_NRSubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 626 */
+    void (*reserved626)(void);
     int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *const symv[], int flags, void *procPtrs, Tcl_LoadHandle *handlePtr); /* 627 */
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
@@ -3737,8 +3735,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_CloseEx) /* 624 */
 #define Tcl_NRExprObj \
 	(tclStubsPtr->tcl_NRExprObj) /* 625 */
-#define Tcl_NRSubstObj \
-	(tclStubsPtr->tcl_NRSubstObj) /* 626 */
+/* Slot 626 is reserved */
 #define Tcl_LoadFile \
 	(tclStubsPtr->tcl_LoadFile) /* 627 */
 #define Tcl_FindSymbol \

@@ -14,7 +14,7 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
-#include "tclCompile.h"
+#include "tclCompileInt.h"
 
 /*
  * Structure used to contain all the information needed about a call frame

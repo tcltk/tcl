@@ -12,7 +12,7 @@
  */
 
 #include "tclInt.h"
-#include "tclCompile.h"		/* CompileEnv */
+#include "tclCompileInt.h"		/* CompileEnv */
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a
@@ -2349,11 +2349,7 @@ CompileExprTree(
 		 * command with the correct number of arguments.
 		 */
 		
-		if (numWords < 255) {
-		    TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
-		} else {
-		    TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
-		}
+		TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
 
 		/*
 		 * Restore any saved numWords value.
