@@ -319,7 +319,7 @@ MODULE_SCOPE int	TclUnixSetBlockingMode(int fd, int mode);
 #endif
 
 #ifdef GETTOD_NOT_DECLARED
-MODULE_SCOPE int	gettimeofday(struct timeval *tp,
+extern int	gettimeofday(struct timeval *tp,
 			    struct timezone *tzp);
 #endif
 
