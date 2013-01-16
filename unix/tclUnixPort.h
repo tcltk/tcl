@@ -319,7 +319,7 @@ MODULE_SCOPE int	TclUnixSetBlockingMode(int fd, int mode);
 #endif
 
 #ifdef GETTOD_NOT_DECLARED
-MODULE_SCOPE int	gettimeofday(struct timeval *tp,
+extern int	gettimeofday(struct timeval *tp,
 			    struct timezone *tzp);
 #endif
 
@@ -744,8 +744,8 @@ MODULE_SCOPE struct group *	TclpGetGrGid(gid_t gid);
 MODULE_SCOPE struct hostent *	TclpGetHostByName(const char *name);
 MODULE_SCOPE struct hostent *	TclpGetHostByAddr(const char *addr,
 				    int length, int type);
-MODULE_SCOPE Tcl_Channel	TclpMakeTcpClientChannelMode(
-				    ClientData tcpSocket, int mode);
+MODULE_SCOPE void *TclpMakeTcpClientChannelMode(
+				    void *tcpSocket, int mode);
 
 #endif /* _TCLUNIXPORT */
 
