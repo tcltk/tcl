@@ -129,6 +129,11 @@ SHARED_LIBRARIES 	= $(TCL_DLL_FILE) $(TCL_STUB_LIB_FILE) \
 			  $(DDE_DLL_FILE) $(REG_DLL_FILE) $(PIPE_DLL_FILE)
 STATIC_LIBRARIES	= $(TCL_LIB_FILE) $(REG_LIB_FILE) $(DDE_LIB_FILE)
 
+# To compile without backward compatibility and deprecated code
+# uncomment the following
+NO_DEPRECATED_FLAGS	=
+#NO_DEPRECATED_FLAGS	= -DTCL_NO_DEPRECATED
+
 # TCL_EXE is the name of a tclsh executable that is available *BEFORE*
 # running make for the first time. Certain build targets (make genstubs)
 # need it to be available on the PATH. This executable should *NOT* be
@@ -184,7 +189,7 @@ COPY		= cp
 
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
 -I"${GENERIC_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
-${COMPILE_DEBUG_FLAGS}
+${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
