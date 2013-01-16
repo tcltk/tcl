@@ -1714,8 +1714,12 @@ EXTERN void		TclBackgroundException _ANSI_ARGS_((
 /* Slot 619 is reserved */
 /* Slot 620 is reserved */
 /* Slot 621 is reserved */
-/* Slot 622 is reserved */
-/* Slot 623 is reserved */
+/* 622 */
+EXTERN void		TclSetStartupScript _ANSI_ARGS_((Tcl_Obj *path,
+				CONST char *encoding));
+/* 623 */
+EXTERN Tcl_Obj *	TclGetStartupScript _ANSI_ARGS_((
+				CONST char **encodingPtr));
 /* Slot 624 is reserved */
 /* Slot 625 is reserved */
 /* Slot 626 is reserved */
@@ -2381,8 +2385,8 @@ typedef struct TclStubs {
     VOID *reserved619;
     VOID *reserved620;
     VOID *reserved621;
-    VOID *reserved622;
-    VOID *reserved623;
+    void (*tclSetStartupScript) _ANSI_ARGS_((Tcl_Obj *path, CONST char *encoding)); /* 622 */
+    Tcl_Obj * (*tclGetStartupScript) _ANSI_ARGS_((CONST char **encodingPtr)); /* 623 */
     VOID *reserved624;
     VOID *reserved625;
     VOID *reserved626;
@@ -4582,8 +4586,14 @@ extern TclStubs *tclStubsPtr;
 /* Slot 619 is reserved */
 /* Slot 620 is reserved */
 /* Slot 621 is reserved */
-/* Slot 622 is reserved */
-/* Slot 623 is reserved */
+#ifndef TclSetStartupScript
+#define TclSetStartupScript \
+	(tclStubsPtr->tclSetStartupScript) /* 622 */
+#endif
+#ifndef TclGetStartupScript
+#define TclGetStartupScript \
+	(tclStubsPtr->tclGetStartupScript) /* 623 */
+#endif
 /* Slot 624 is reserved */
 /* Slot 625 is reserved */
 /* Slot 626 is reserved */
@@ -4603,6 +4613,8 @@ extern TclStubs *tclStubsPtr;
 #undef TclBackgroundException
 #undef TclGetErrorLine
 #undef TclSetErrorLine
+#undef TclGetStartupScript
+#undef TclSetStartupScript
 
 #undef Tcl_CreateNamespace
 #undef Tcl_DeleteNamespace
@@ -4617,6 +4629,18 @@ extern TclStubs *tclStubsPtr;
 #undef Tcl_GetCommandFromObj
 #undef Tcl_GetCommandFullName
 #undef TclUnusedStubEntry
+
+/*
+ * Deprecated Tcl procedures:
+ */
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#   undef Tcl_EvalObj
+#   define Tcl_EvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),0)
+#   undef Tcl_GlobalEvalObj
+#   define Tcl_GlobalEvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#endif
 
 #endif /* _TCLDECLS */
 

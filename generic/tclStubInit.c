@@ -98,6 +98,20 @@ static void TclSetErrorLine(interp, lineNum)
 {
     interp->errorLine = lineNum;
 }
+#define TclSetStartupScript setStartupScript
+static void TclSetStartupScript(path, encoding)
+    Tcl_Obj *path;
+    CONST char *encoding;
+{
+    TclSetStartupScriptPath(path);
+}
+#define TclGetStartupScript getStartupScript
+static Tcl_Obj *TclGetStartupScript(encodingPtr)
+    CONST char **encodingPtr;
+{
+    if (encodingPtr) *encodingPtr = NULL;
+    return TclGetStartupScriptPath();
+}
 
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
@@ -413,8 +427,8 @@ TclIntStubs tclIntStubs = {
     NULL, /* 175 */
     NULL, /* 176 */
     NULL, /* 177 */
-    NULL, /* 178 */
-    NULL, /* 179 */
+    TclSetStartupScript, /* 178 */
+    TclGetStartupScript, /* 179 */
     NULL, /* 180 */
     NULL, /* 181 */
     TclpLocaltime, /* 182 */
@@ -1256,8 +1270,8 @@ TclStubs tclStubs = {
     NULL, /* 619 */
     NULL, /* 620 */
     NULL, /* 621 */
-    NULL, /* 622 */
-    NULL, /* 623 */
+    TclSetStartupScript, /* 622 */
+    TclGetStartupScript, /* 623 */
     NULL, /* 624 */
     NULL, /* 625 */
     NULL, /* 626 */

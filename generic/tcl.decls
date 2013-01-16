@@ -1857,6 +1857,12 @@ declare 606 {
 declare 609 {
     void TclBackgroundException(Tcl_Interp *interp, int code)
 }
+declare 622 {
+    void TclSetStartupScript(Tcl_Obj *path, const char *encoding)
+}
+declare 623 {
+    Tcl_Obj *TclGetStartupScript(const char **encodingPtr)
+}
 declare 630 {
     void TclUnusedStubEntry(void)
 }

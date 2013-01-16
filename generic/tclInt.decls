@@ -682,6 +682,12 @@ declare 173 {
     int TclUniCharMatch(const Tcl_UniChar *string, int strLen,
 	    const Tcl_UniChar *pattern, int ptnLen, int nocase)
 }
+declare 178 {
+    void TclSetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+}
+declare 179 {
+    Tcl_Obj *TclGetStartupScript(const char **encodingNamePtr)
+}
 
 # TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 

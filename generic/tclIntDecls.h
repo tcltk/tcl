@@ -480,8 +480,12 @@ EXTERN int		TclUniCharMatch _ANSI_ARGS_((
 /* Slot 175 is reserved */
 /* Slot 176 is reserved */
 /* Slot 177 is reserved */
-/* Slot 178 is reserved */
-/* Slot 179 is reserved */
+/* 178 */
+EXTERN void		TclSetStartupScript _ANSI_ARGS_((Tcl_Obj *pathPtr,
+				CONST char *encodingName));
+/* 179 */
+EXTERN Tcl_Obj *	TclGetStartupScript _ANSI_ARGS_((
+				CONST char **encodingNamePtr));
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 /* 182 */
@@ -741,8 +745,8 @@ typedef struct TclIntStubs {
     VOID *reserved175;
     VOID *reserved176;
     VOID *reserved177;
-    VOID *reserved178;
-    VOID *reserved179;
+    void (*tclSetStartupScript) _ANSI_ARGS_((Tcl_Obj *pathPtr, CONST char *encodingName)); /* 178 */
+    Tcl_Obj * (*tclGetStartupScript) _ANSI_ARGS_((CONST char **encodingNamePtr)); /* 179 */
     VOID *reserved180;
     VOID *reserved181;
     struct tm * (*tclpLocaltime) _ANSI_ARGS_((TclpTime_t_CONST clock)); /* 182 */
@@ -1406,8 +1410,14 @@ extern TclIntStubs *tclIntStubsPtr;
 /* Slot 175 is reserved */
 /* Slot 176 is reserved */
 /* Slot 177 is reserved */
-/* Slot 178 is reserved */
-/* Slot 179 is reserved */
+#ifndef TclSetStartupScript
+#define TclSetStartupScript \
+	(tclIntStubsPtr->tclSetStartupScript) /* 178 */
+#endif
+#ifndef TclGetStartupScript
+#define TclGetStartupScript \
+	(tclIntStubsPtr->tclGetStartupScript) /* 179 */
+#endif
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
 #ifndef TclpLocaltime
@@ -1505,5 +1515,7 @@ extern TclIntStubs *tclIntStubsPtr;
 #endif
 #undef TclUnusedStubEntry
 #undef TclBackgroundException
+#undef TclGetStartupScript
+#undef TclSetStartupScript
 
 #endif /* _TCLINTDECLS */
