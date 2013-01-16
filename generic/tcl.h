@@ -2278,17 +2278,6 @@ typedef unsigned short Tcl_UniChar;
 
 
 /*
- * Deprecated Tcl procedures:
- */
-#ifndef TCL_NO_DEPRECATED
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
-#endif
-
-
-/*
  * These function have been renamed. The old names are deprecated, but we
  * define these macros for backwards compatibilty.
  */

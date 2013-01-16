@@ -4923,7 +4923,6 @@ Tcl_Eval(interp, string)
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_EvalObj
 int
 Tcl_EvalObj(interp, objPtr)
     Tcl_Interp * interp;
@@ -4932,7 +4931,6 @@ Tcl_EvalObj(interp, objPtr)
     return Tcl_EvalObjEx(interp, objPtr, 0);
 }
 
-#undef Tcl_GlobalEvalObj
 int
 Tcl_GlobalEvalObj(interp, objPtr)
     Tcl_Interp * interp;
