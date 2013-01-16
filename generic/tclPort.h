@@ -19,11 +19,10 @@
 #endif
 #if defined(_WIN32)
 #   include "tclWinPort.h"
-#endif
-#include "tcl.h"
-#if !defined(_WIN32)
+#else
 #   include "tclUnixPort.h"
 #endif
+#include "tcl.h"
 
 #if !defined(LLONG_MIN)
 #   ifdef TCL_WIDE_INT_IS_LONG
