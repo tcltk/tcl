@@ -1,3 +1,11 @@
+2013-01-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* Makefile.in: Enable win32 build with -DTCL_NO_DEPRECATED, just
+	* generic/tcl.h: as the UNIX build. Define Tcl_EvalObj and
+	* generic/tclDecls.h: Tcl_GlobalEvalObj as macros, even when
+	* generic/tclBasic.c: TCL_NO_DEPRECATED is defined, so Tk
+	can benefit from it too.
+
 2013-01-08  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFile.c: [Bug 3092089]: [file normalize] can remove path
