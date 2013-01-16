@@ -731,13 +731,13 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-# TIP 338 made these public - now declared in tcl.h
-#declare 178 {
-#    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
-#}
-#declare 179 {
-#    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
-#}
+# TIP 338 made these public - now declared in tcl.h too
+declare 178 {
+    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+}
+declare 179 {
+    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
+}
 
 # REMOVED
 # Allocate lists without copying arrays
@@ -941,9 +941,9 @@ declare 235 {
 
 
 # TIP 337 made this one public
-#declare 236 {
-#    void TclBackgroundException(Tcl_Interp *interp, int code)
-#}
+declare 236 {
+    void TclBackgroundException(Tcl_Interp *interp, int code)
+}
 
 # TIP #285: Script cancellation support.
 declare 237 {
