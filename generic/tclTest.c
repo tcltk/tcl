@@ -19,6 +19,7 @@
 #ifndef USE_TCL_STUBS
 #   define USE_TCL_STUBS
 #endif
+#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclOO.h"
 #include <math.h>

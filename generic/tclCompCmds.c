@@ -51,6 +51,7 @@
  */
 
 #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
+#define TCL_NO_ELEMENT 2	/* Do not push the array element. */
 
 
 static void
@@ -79,10 +80,7 @@ TclCompileSyntaxError(
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
 	    Tcl_GetReturnOptions(interp, TCL_ERROR));
 }
-
-
 
-
 /*
  * Local Variables:
  * mode: c
