@@ -84,8 +84,8 @@ CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DUNICODE -D_UNICODE
 
 # To compile without backward compatibility and deprecated code uncomment the
 # following
-NO_DEPRECATED_FLAGS	=
-#NO_DEPRECATED_FLAGS	= -DTCL_NO_DEPRECATED
+#NO_DEPRECATED_FLAGS	=
+NO_DEPRECATED_FLAGS	= -DTCL_NO_DEPRECATED
 
 # To enable compilation debugging reverse the comment characters on one of the
 # following lines.

@@ -746,7 +746,7 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-# TIP 338 made these public - now declared in tcl.h too
+# TIP 338 made these public - now declared in tcl.h
 #declare 178 {
 #    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
 #}
