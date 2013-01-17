@@ -8,6 +8,7 @@
  * All rights reserved.
  */
 
+#include <sys/stat.h>
 #include "tclInt.h"
 #include <stddef.h>
 #include <locale.h>
