@@ -40,6 +40,7 @@
  * DAMAGE.
  */
 
+#include <sys/stat.h>
 #include "tclInt.h"
 #include <utime.h>
 #include <grp.h>
