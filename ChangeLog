@@ -1,29 +1,56 @@
+2013-01-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (PushVarName): [Bug 3600328]: Added mechanism
+	for suppressing compilation of variables when we couldn't cope with
+	the results. Useful for some [array] subcommands.
+	* generic/tclEnsemble.c (CompileToCompiledCommand): Must restore the
+	compilation environment when a command compiler fails.
+
+2013-01-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (TclZlibInit): [Bug 3601086]: Register the config
+	info in the iso8859-1 encoding as that is guaranteed to be present.
+
+2013-01-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* Makefile.in:   Allow win32 build with -DTCL_NO_DEPRECATED, just as
+	* generic/tcl.h: in the UNIX build. Define Tcl_EvalObj and
+	* generic/tclDecls.h: Tcl_GlobalEvalObj as macros, even when
+	* generic/tclBasic.c: TCL_NO_DEPRECATED is defined, so Tk can benefit
+	from it too.
+
 2013-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.decls: Put back Tcl_[GS]etStartupScript in
-	internal stub table, so extensions using this, compiled
-	against 8.5 headers still run in Tcl 8.6.
+	* win/tcl.m4: More flexible search for win32 tclConfig.sh, backported
+	from TEA (not actually used in Tcl, only for Tk)
+
+2013-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: Put back Tcl_[GS]etStartupScript in internal
+	stub table, so extensions using this, compiled against 8.5 headers
+	still run in Tcl 8.6.
 
 2013-01-13  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
-	* doc/fileevent.n: Clarify readable fileevent "false positives" in
-	the case of multibyte encodings/transforms [Bug 3436609].
+
+	* doc/fileevent.n: [Bug 3436609]: Clarify readable fileevent "false
+	positives" in the case of multibyte encodings/transforms.
 
 2013-01-13  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclIntDecls.h: If TCL_NO_DEPRECATED is defined, make
-	sure that TIP #139 functions all are taken from the public stub
-	table, even if the inclusion is through tclInt.h.
+	* generic/tclIntDecls.h: If TCL_NO_DEPRECATED is defined, make sure
+	that TIP #139 functions all are taken from the public stub table, even
+	if the inclusion is through tclInt.h.
 
 2013-01-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclInt.decls: Put back TclBackgroundException in
-	internal stub table, so extensions using this, compiled
-	against 8.5 headers still run in Tcl 8.6.
+	* generic/tclInt.decls: Put back TclBackgroundException in internal
+	stub table, so extensions using this, compiled against 8.5 headers
+	still run in Tcl 8.6.
 
 2013-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* library/http/http.tcl: [Bug 3599395]: http assumes status line
-	is a proper tcl list.
+	* library/http/http.tcl: [Bug 3599395]: http assumes status line is a
+	proper Tcl list.
 
 2013-01-08  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -34,10 +61,10 @@
 2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclOOStubLib.c: Restrict the stub library to only use
-	* generic/tclTomMathStubLib.c: Tcl_PkgRequireEx, Tcl_ResetResult
-	and Tcl_AppendResult, not any other function. This puts least
-	restrictions on eventual Tcl 9 stubs re-organization, and it
-	works on the widest range of Tcl versions.
+	* generic/tclTomMathStubLib.c: Tcl_PkgRequireEx, Tcl_ResetResult and
+	Tcl_AppendResult, not any other function. This puts least restrictions
+	on eventual Tcl 9 stubs re-organization, and it works on the widest
+	range of Tcl versions.
 
 2013-01-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -4134,6 +4161,7 @@
 	* generic/*Decls.h:   (regenerated)
 
 2010-08-18  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclBasic.c:   New redesign of [tailcall]: find
 	* generic/tclExecute.c: errors early on, so that errorInfo
 	* generic/tclInt.h:     contains the proper info [Bug 3047235]

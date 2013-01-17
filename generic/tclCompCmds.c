@@ -82,6 +82,7 @@ static int		CompileDictEachCmd(Tcl_Interp *interp,
  */
 
 #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
+#define TCL_NO_ELEMENT 2	/* Do not push the array element. */
 
 /*
  * The structures below define the AuxData types defined in this file.
@@ -232,7 +233,7 @@ TclCompileArrayExistsCmd(
     }
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarName(interp, tokenPtr, envPtr, 0,
+    PushVarName(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar);
     if (!isScalar) {
 	return TCL_ERROR;
@@ -266,7 +267,14 @@ TclCompileArraySetCmd(
     }
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarName(interp, tokenPtr, envPtr, 0,
+    if (envPtr->procPtr == NULL) {
+	Tcl_Token *tokPtr = TokenAfter(tokenPtr);
+
+	if (tokPtr->type != TCL_TOKEN_SIMPLE_WORD || tokPtr[1].size != 0) {
+	    return TCL_ERROR;
+	}
+    }
+    PushVarName(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar);
     if (!isScalar) {
 	return TCL_ERROR;
@@ -408,7 +416,7 @@ TclCompileArrayUnsetCmd(
 	return TCL_ERROR;
     }
 
-    PushVarName(interp, tokenPtr, envPtr, 0,
+    PushVarName(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar);
     if (!isScalar) {
 	return TCL_ERROR;
@@ -5908,7 +5916,7 @@ PushVarName(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int flags,			/* TCL_NO_LARGE_INDEX. */
+    int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
     int *localIndexPtr,		/* Must not be NULL. */
     int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr)		/* Must not be NULL. */
@@ -6086,10 +6094,11 @@ PushVarName(
 	}
 
 	/*
-	 * Compile the element script, if any.
+	 * Compile the element script, if any, and only if not inhibited. [Bug
+	 * 3600328]
 	 */
 
-	if (elName != NULL) {
+	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
 	    if (elNameChars) {
 		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);

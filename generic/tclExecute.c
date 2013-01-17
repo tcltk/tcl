@@ -254,8 +254,11 @@ VarHashCreateVar(
 
 #if TCL_COMPILE_DEBUG
 #define CHECK_STACK()							\
-    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, \
-	    /*checkStack*/ auxObjList == NULL)
+    do {								\
+	ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,			\
+		/*checkStack*/ !(starting || auxObjList));		\
+	starting = 0;							\
+    } while (0)
 #else
 #define CHECK_STACK()
 #endif
@@ -2012,6 +2015,7 @@ TEBCresume(
 #endif
 
 #ifdef TCL_COMPILE_DEBUG
+    int starting = 1;
     traceInstructions = (tclTraceExec == 3);
 #endif
     TEBC_DATA_DIG();
