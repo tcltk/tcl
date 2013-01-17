@@ -8940,7 +8940,9 @@ EvalStatsCmd(
     Tcl_Obj *const objv[])	/* The argument strings. */
 {
     Interp *iPtr = (Interp *) interp;
+#if 0
     LiteralTable *globalTablePtr = &iPtr->literalTable;
+#endif
     ByteCodeStats *statsPtr = &iPtr->stats;
     double totalCodeBytes, currentCodeBytes;
     double totalLiteralBytes, currentLiteralBytes;
@@ -8968,7 +8970,9 @@ EvalStatsCmd(
     }
 
     totalLiteralBytes = sizeof(LiteralTable)
+#if 0
 	    + iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)
+#endif
 	    + (statsPtr->numLiteralsCreated * sizeof(LiteralEntry))
 	    + (statsPtr->numLiteralsCreated * sizeof(Tcl_Obj))
 	    + statsPtr->totalLitStringBytes;
@@ -8979,10 +8983,15 @@ EvalStatsCmd(
     currentHeaderBytes = numCurrentByteCodes
 	    * (sizeof(ByteCode) - sizeof(size_t) - sizeof(Tcl_Time));
     literalMgmtBytes = sizeof(LiteralTable)
+#if 0
 	    + (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *))
-	    + (iPtr->literalTable.numEntries * sizeof(LiteralEntry));
+	    + (iPtr->literalTable.numEntries * sizeof(LiteralEntry))
+#endif
+;
     currentLiteralBytes = literalMgmtBytes
+#if 0
 	    + iPtr->literalTable.numEntries * sizeof(Tcl_Obj)
+#endif
 	    + statsPtr->currentLitStringBytes;
     currentCodeBytes = statsPtr->currentByteCodeBytes + currentLiteralBytes;
 
@@ -9021,7 +9030,11 @@ EvalStatsCmd(
 	    totalLiteralBytes);
     Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
+#if 0
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
+#else
+(unsigned long) 0,
+#endif
 	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(LiteralEntry)),
 	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(Tcl_Obj)),
 	    statsPtr->totalLitStringBytes);
@@ -9042,9 +9055,13 @@ EvalStatsCmd(
 	    currentLiteralBytes);
     Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
+#if 0
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
+#else
+(unsigned long)0, (unsigned long)0, (unsigned long)0,
+#endif
 	    statsPtr->currentLitStringBytes);
     Tcl_AppendPrintfToObj(objPtr, "  Mean code/source\t\t%.1f\n",
 	    currentCodeBytes / statsPtr->currentSrcBytes);
@@ -9086,6 +9103,7 @@ EvalStatsCmd(
     strBytesIfUnshared = 0.0;
     strBytesSharedMultX = 0.0;
     strBytesSharedOnce = 0.0;
+#if 0
     for (i = 0;  i < globalTablePtr->numBuckets;  i++) {
 	for (entryPtr = globalTablePtr->buckets[i];  entryPtr != NULL;
 		entryPtr = entryPtr->nextPtr) {
@@ -9105,6 +9123,7 @@ EvalStatsCmd(
 	    }
 	}
     }
+#endif
     sharingBytesSaved = (objBytesIfUnshared + strBytesIfUnshared)
 	    - currentLiteralBytes;
 
@@ -9116,15 +9135,19 @@ EvalStatsCmd(
 	    statsPtr->numLiteralsCreated);
 
     Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal objects\t\t%d (%0.1f%% of current objects)\n",
+#if 0
 	    globalTablePtr->numEntries,
 	    Percent(globalTablePtr->numEntries, tclObjsAlloced-tclObjsFreed));
+#else
+0, Percent(0, 1));
+#endif
     Tcl_AppendPrintfToObj(objPtr, "  ByteCode literals\t\t%ld (%0.1f%% of current literals)\n",
 	    numByteCodeLits,
-	    Percent(numByteCodeLits, globalTablePtr->numEntries));
+	    Percent(numByteCodeLits, /*globalTablePtr->numEntries*/1));
     Tcl_AppendPrintfToObj(objPtr, "  Literals reused > 1x\t\t%d\n",
 	    numSharedMultX);
     Tcl_AppendPrintfToObj(objPtr, "  Mean reference count\t\t%.2f\n",
-	    ((double) refCountSum) / globalTablePtr->numEntries);
+	    ((double) refCountSum) / /*globalTablePtr->numEntries*/ 1);
     Tcl_AppendPrintfToObj(objPtr, "  Mean len, str reused >1x \t%.2f\n",
 	    (numSharedMultX ? strBytesSharedMultX/numSharedMultX : 0.0));
     Tcl_AppendPrintfToObj(objPtr, "  Mean len, str used 1x\t\t%.2f\n",
@@ -9136,9 +9159,13 @@ EvalStatsCmd(
 	    currentLiteralBytes);
     Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
+#if 0
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
+#else
+(unsigned long)0, (unsigned long)0, (unsigned long)0,
+#endif
 	    statsPtr->currentLitStringBytes);
     Tcl_AppendPrintfToObj(objPtr, "    Bytes if no sharing\t\t%.6g = objects %.6g + strings %.6g\n",
 	    (objBytesIfUnshared + strBytesIfUnshared),
@@ -9151,8 +9178,13 @@ EvalStatsCmd(
 	    Percent(literalMgmtBytes, currentLiteralBytes));
     Tcl_AppendPrintfToObj(objPtr, "    table %lu + buckets %lu + entries %lu\n",
 	    (unsigned long) sizeof(LiteralTable),
+#if 0
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
-	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)));
+	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry))
+#else
+(unsigned long) 0, (unsigned long) 0
+#endif
+);
 
     /*
      * Breakdown of current ByteCode space requirements.
@@ -9210,10 +9242,12 @@ EvalStatsCmd(
 		decadeHigh, Percent(sum, statsPtr->numLiteralsCreated));
     }
 
+/*
     litTableStats = TclLiteralStats(globalTablePtr);
     Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal table statistics:\n%s\n",
 	    litTableStats);
     ckfree(litTableStats);
+*/
 
     /*
      * Source and ByteCode size distributions.

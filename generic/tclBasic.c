@@ -553,7 +553,6 @@ Tcl_CreateInterp(void)
     }
 
     iPtr->cmdCount = 0;
-    TclInitLiteralTable(&iPtr->literalTable);
     iPtr->compileEpoch = 0;
     iPtr->compiledProcPtr = NULL;
     iPtr->resolverPtr = NULL;
@@ -1506,13 +1505,6 @@ DeleteInterpProc(
 	ckfree(resPtr);
 	resPtr = nextResPtr;
     }
-
-    /*
-     * Free up literal objects created for scripts compiled by the
-     * interpreter.
-     */
-
-    TclDeleteLiteralTable(interp, &iPtr->literalTable);
 
     /*
      * TIP #280 - Release the arrays for ByteCode/Proc extension, and

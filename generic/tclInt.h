@@ -1888,11 +1888,6 @@ typedef struct Interp {
 				 * Normally zero, but may be set before
 				 * calling Tcl_Eval. See below for valid
 				 * values. */
-    LiteralTable literalTable;	/* Contains LiteralEntry's describing all Tcl
-				 * objects holding literals of scripts
-				 * compiled by the interpreter. Indexed by the
-				 * string representations of literals. Used to
-				 * avoid creating duplicate objects. */
     int compileEpoch;		/* Holds the current "compilation epoch" for
 				 * this interpreter. This is incremented to
 				 * invalidate existing ByteCodes when, e.g., a

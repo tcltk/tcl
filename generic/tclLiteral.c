@@ -180,43 +180,8 @@ TclCreateLiteral(
     int flags,
     LiteralEntry **globalPtrPtr)
 {
-    LiteralTable *globalTablePtr = &iPtr->literalTable;
-    LiteralEntry *globalPtr;
-    int globalHash;
     Tcl_Obj *objPtr;
 
-    /*
-     * Is it in the interpreter's global literal table?
-     */
-
-    if (hash == (unsigned) -1) {
-	hash = HashString(bytes, length);
-    }
-    globalHash = (hash & globalTablePtr->mask);
-    for (globalPtr=globalTablePtr->buckets[globalHash] ; globalPtr!=NULL;
-	    globalPtr = globalPtr->nextPtr) {
-	objPtr = globalPtr->objPtr;
-	if ((globalPtr->nsPtr == nsPtr)
-		&& (objPtr->length == length) && ((length == 0)
-		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
-	    /*
-	     * A literal was found: return it
-	     */
-
-	    if (newPtr) {
-		*newPtr = 0;
-	    }
-	    if (globalPtrPtr) {
-		*globalPtrPtr = globalPtr;
-	    }
-	    if (flags & LITERAL_ON_HEAP) {
-		ckfree(bytes);
-	    }
-	    globalPtr->refCount++;
-	    return objPtr;
-	}
-    }
     if (!newPtr) {
 	if (flags & LITERAL_ON_HEAP) {
 	    ckfree(bytes);
@@ -224,13 +189,7 @@ TclCreateLiteral(
 	return NULL;
     }
 
-    /*
-     * The literal is new to the interpreter. Add it to the global literal
-     * table.
-     */
-
     TclNewObj(objPtr);
-    Tcl_IncrRefCount(objPtr);
     if (flags & LITERAL_ON_HEAP) {
 	objPtr->bytes = bytes;
 	objPtr->length = length;
@@ -238,62 +197,6 @@ TclCreateLiteral(
 	TclInitStringRep(objPtr, bytes, length);
     }
 
-#ifdef TCL_COMPILE_DEBUG
-    if (TclLookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
-	Tcl_Panic("%s: literal \"%.*s\" found globally but shouldn't be",
-		"TclRegisterLiteral", (length>60? 60 : length), bytes);
-    }
-#endif
-
-    globalPtr = ckalloc(sizeof(LiteralEntry));
-    globalPtr->objPtr = objPtr;
-    globalPtr->refCount = 1;
-    globalPtr->nsPtr = nsPtr;
-    globalPtr->nextPtr = globalTablePtr->buckets[globalHash];
-    globalTablePtr->buckets[globalHash] = globalPtr;
-    globalTablePtr->numEntries++;
-
-    /*
-     * If the global literal table has exceeded a decent size, rebuild it with
-     * more buckets.
-     */
-
-    if (globalTablePtr->numEntries >= globalTablePtr->rebuildSize) {
-	RebuildLiteralTable(globalTablePtr);
-    }
-
-#ifdef TCL_COMPILE_DEBUG
-    TclVerifyGlobalLiteralTable(iPtr);
-    {
-	LiteralEntry *entryPtr;
-	int found, i;
-
-	found = 0;
-	for (i=0 ; i<globalTablePtr->numBuckets ; i++) {
-	    for (entryPtr=globalTablePtr->buckets[i]; entryPtr!=NULL ;
-		    entryPtr=entryPtr->nextPtr) {
-		if ((entryPtr == globalPtr) && (entryPtr->objPtr == objPtr)) {
-		    found = 1;
-		}
-	    }
-	}
-	if (!found) {
-	    Tcl_Panic("%s: literal \"%.*s\" wasn't global",
-		    "TclRegisterLiteral", (length>60? 60 : length), bytes);
-	}
-    }
-#endif /*TCL_COMPILE_DEBUG*/
-
-#ifdef TCL_COMPILE_STATS
-    iPtr->stats.numLiteralsCreated++;
-    iPtr->stats.totalLitStringBytes += (double) (length + 1);
-    iPtr->stats.currentLitStringBytes += (double) (length + 1);
-    iPtr->stats.literalCount[TclLog2(length)]++;
-#endif /*TCL_COMPILE_STATS*/
-
-    if (globalPtrPtr) {
-	*globalPtrPtr = globalPtr;
-    }
     *newPtr = 1;
     return objPtr;
 }
@@ -343,7 +246,7 @@ TclRegisterLiteral(
 {
     Interp *iPtr = envPtr->iPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    LiteralEntry *globalPtr, *localPtr;
+    LiteralEntry *localPtr;
     Tcl_Obj *objPtr;
     unsigned hash;
     int localHash, objIndex, new;
@@ -400,15 +303,10 @@ TclRegisterLiteral(
      */
 
     objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &new, nsPtr, flags,
-	    &globalPtr);
+	    NULL);
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
 
 #ifdef TCL_COMPILE_DEBUG
-    if (globalPtr->refCount < 1) {
-	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
-		"TclRegisterLiteral", (length>60? 60 : length), bytes,
-		globalPtr->refCount);
-    }
     TclVerifyLocalLiteralTable(envPtr);
 #endif /*TCL_COMPILE_DEBUG*/
     return objIndex;
@@ -439,20 +337,6 @@ TclLookupLiteralEntry(
 				 * that was previously created by a call to
 				 * TclRegisterLiteral. */
 {
-    Interp *iPtr = (Interp *) interp;
-    LiteralTable *globalTablePtr = &iPtr->literalTable;
-    register LiteralEntry *entryPtr;
-    const char *bytes;
-    int length, globalHash;
-
-    bytes = TclGetStringFromObj(objPtr, &length);
-    globalHash = (HashString(bytes, length) & globalTablePtr->mask);
-    for (entryPtr=globalTablePtr->buckets[globalHash] ; entryPtr!=NULL;
-	    entryPtr=entryPtr->nextPtr) {
-	if (entryPtr->objPtr == objPtr) {
-	    return entryPtr;
-	}
-    }
     return NULL;
 }
 
@@ -749,6 +633,7 @@ TclReleaseLiteral(
 				 * previously created by a call to
 				 * TclRegisterLiteral. */
 {
+#if 0
     Interp *iPtr = (Interp *) interp;
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     register LiteralEntry *entryPtr, *prevPtr;
@@ -793,6 +678,7 @@ TclReleaseLiteral(
 	    break;
 	}
     }
+#endif
 
     /*
      * Remove the reference corresponding to the local literal table entry.
@@ -1090,6 +976,7 @@ TclVerifyLocalLiteralTable(
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes, localPtr->refCount);
 	    }
+#if 0
 	    if (TclLookupLiteralEntry((Tcl_Interp *) envPtr->iPtr,
 		    localPtr->objPtr) == NULL) {
 		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
@@ -1097,6 +984,7 @@ TclVerifyLocalLiteralTable(
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes);
 	    }
+#endif
 	    if (localPtr->objPtr->bytes == NULL) {
 		Tcl_Panic("%s: literal has NULL string rep",
 			"TclVerifyLocalLiteralTable");
@@ -1131,6 +1019,7 @@ TclVerifyGlobalLiteralTable(
     Interp *iPtr)		/* Points to interpreter whose global literal
 				 * table is to be validated. */
 {
+#if 0
     register LiteralTable *globalTablePtr = &iPtr->literalTable;
     register LiteralEntry *globalPtr;
     char *bytes;
@@ -1159,6 +1048,8 @@ TclVerifyGlobalLiteralTable(
 		"TclVerifyGlobalLiteralTable", count,
 		globalTablePtr->numEntries);
     }
+#else
+#endif
 }
 #endif /*TCL_COMPILE_DEBUG*/
 
