@@ -577,9 +577,9 @@ declare 144 {
     void TclHideLiteral(Tcl_Interp *interp, struct CompileEnv *envPtr,
 	    int index)
 }
-declare 145 {
-    const struct AuxDataType *TclGetAuxDataType(const char *typeName)
-}
+#declare 145 {
+#    const struct AuxDataType *TclGetAuxDataType(const char *typeName)
+#}
 declare 146 {
     TclHandle TclHandleCreate(void *ptr)
 }

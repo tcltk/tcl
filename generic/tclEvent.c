@@ -1144,7 +1144,6 @@ Tcl_Finalize(void)
      */
 
     TclFinalizeEvaluation();
-    TclFinalizeExecution();
     TclFinalizeEnvironment();
 
     /*

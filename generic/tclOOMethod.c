@@ -14,7 +14,10 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
-#include "tclCompileInt.h"
+
+#define REQUIRE_BC_DEF 1
+#include "tclCompile.h"
+#undef REQUIRE_BC_DEF
 
 /*
  * Structure used to contain all the information needed about a call frame
@@ -714,7 +717,7 @@ PushMethodCallFrame(
      */
 
     if (pmPtr->procPtr->bodyPtr->typePtr == &tclByteCodeType) {
-	ByteCode *codePtr =
+	_ByteCode *codePtr =
 		pmPtr->procPtr->bodyPtr->internalRep.otherValuePtr;
 
 	codePtr->nsPtr = nsPtr;

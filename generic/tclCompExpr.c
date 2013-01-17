@@ -13,6 +13,45 @@
 
 #include "tclInt.h"
 #include "tclCompileInt.h"		/* CompileEnv */
+#include "tclCompExpr.h"
+
+/*
+ * Compilation of some Tcl constructs such as if commands and the logical or
+ * (||) and logical and (&&) operators in expressions requires the generation
+ * of forward jumps. Since the PC target of these jumps isn't known when the
+ * jumps are emitted, we record the offset of each jump in an array of
+ * JumpFixup structures. There is one array for each sequence of jumps to one
+ * target PC. When we learn the target PC, we update the jumps with the
+ * correct distance.
+ */
+
+typedef enum {
+    TCL_UNCONDITIONAL_JUMP,
+    TCL_TRUE_JUMP,
+    TCL_FALSE_JUMP
+} TclJumpType;
+
+typedef struct JumpFixup {
+    TclJumpType jumpType;	/* Indicates the kind of jump. */
+    int codeOffset;		/* Offset of the first byte of the one-byte
+				 * forward jump's code. */
+} JumpFixup;
+
+static void	EmitForwardJump(CompileEnv *envPtr,
+			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
+static void	FixupForwardJump(CompileEnv *envPtr,
+			    JumpFixup *jumpFixupPtr, int jumpDist);
+/*
+ * Macro to fix up a forward jump to point to the current code-generation
+ * position in the bytecode being created (the most common case). The ANSI C
+ * "prototypes" for this macro is:
+ *
+ * int FixupForwardJumpToHere(CompileEnv *envPtr, JumpFixup *fixupPtr);
+ */
+
+#define FixupForwardJumpToHere(envPtr, fixupPtr) \
+    FixupForwardJump((envPtr), (fixupPtr),				\
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset)
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a
@@ -481,19 +520,18 @@ static const unsigned char Lexeme[] = {
 
 /*
  * The JumpList struct is used to create a stack of data needed for the
- * TclEmitForwardJump() and TclFixupForwardJump() calls that are performed
+ * EmitForwardJump() and FixupForwardJump() calls that are performed
  * when compiling the short-circuiting operators QUESTION/COLON, AND, and OR.
  * Keeping a stack permits the CompileExprTree() routine to be non-recursive.
  */
 
 typedef struct JumpList {
     JumpFixup jump;		/* Pass this argument to matching calls of
-				 * TclEmitForwardJump() and 
-				 * TclFixupForwardJump(). */
+				 * EmitForwardJump() and FixupForwardJump(). */
     int depth;			/* Remember the currStackDepth of the
 				 * CompileEnv here. */
     int offset;			/* Data used to compute jump lengths to pass
-				 * to TclFixupForwardJump() */
+				 * to FixupForwardJump() */
     int convert;		/* Temporary storage used to compute whether
 				 * numeric conversion will be needed following
 				 * the operator we're compiling. */
@@ -504,13 +542,13 @@ typedef struct JumpList {
  * Declarations for local functions to this file:
  */
 
+static void		ConvertTreeToTokens(const char *start, int numBytes,
+			    OpNode *nodes, Tcl_Token *tokenPtr,
+			    Tcl_Parse *parsePtr);
 static void		CompileExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj *const **litObjvPtr,
 			    Tcl_Obj *const *funcObjv, Tcl_Token *tokenPtr,
 			    CompileEnv *envPtr, int optimize);
-static void		ConvertTreeToTokens(const char *start, int numBytes,
-			    OpNode *nodes, Tcl_Token *tokenPtr,
-			    Tcl_Parse *parsePtr);
 static int		ExecConstantExprTree(Tcl_Interp *interp, OpNode *nodes,
 			    int index, Tcl_Obj * const **litObjvPtr);
 static int		ParseExpr(Tcl_Interp *interp, const char *start,
@@ -2313,11 +2351,11 @@ CompileExprTree(
 		break;
 	    }
 	    case QUESTION:
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
+		EmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
 		break;
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
-		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+		EmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&jumpPtr->next->jump);
 		envPtr->currStackDepth = jumpPtr->depth;
 		jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
@@ -2325,10 +2363,10 @@ CompileExprTree(
 		convert = 1;
 		break;
 	    case AND:
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
+		EmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
 		break;
 	    case OR:
-		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP, &jumpPtr->jump);
+		EmitForwardJump(envPtr, TCL_TRUE_JUMP, &jumpPtr->jump);
 		break;
 	    }
 	} else {
@@ -2348,7 +2386,7 @@ CompileExprTree(
 		 * Use the numWords count we've kept to invoke the function
 		 * command with the correct number of arguments.
 		 */
-		
+
 		TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
 
 		/*
@@ -2367,13 +2405,11 @@ CompileExprTree(
 		break;
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
-		if (TclFixupForwardJump(envPtr, &jumpPtr->next->jump,
+		FixupForwardJump(envPtr, &jumpPtr->next->jump,
 			(envPtr->codeNext - envPtr->codeStart)
-			- jumpPtr->next->jump.codeOffset, 127)) {
-		    jumpPtr->offset += 3;
-		}
-		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
+			- jumpPtr->next->jump.codeOffset);
+		FixupForwardJump(envPtr, &jumpPtr->jump,
+			jumpPtr->offset - jumpPtr->jump.codeOffset);
 		convert |= jumpPtr->convert;
 		envPtr->currStackDepth = jumpPtr->depth + 1;
 		freePtr = jumpPtr;
@@ -2386,21 +2422,18 @@ CompileExprTree(
 	    case AND:
 	    case OR:
 		CLANG_ASSERT(jumpPtr);
-		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
+		EmitForwardJump(envPtr, (nodePtr->lexeme == AND)
 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP,
 			&jumpPtr->next->jump);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
-		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+		EmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&jumpPtr->next->next->jump);
-		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->jump, 127);
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
-		    jumpPtr->next->next->jump.codeOffset += 3;
-		}
+		FixupForwardJumpToHere(envPtr, &jumpPtr->next->jump);
+		FixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
-		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->next->jump,
-			127);
+		FixupForwardJumpToHere(envPtr, &jumpPtr->next->next->jump);
 		convert = 0;
 		envPtr->currStackDepth = jumpPtr->depth + 1;
 		freePtr = jumpPtr;
@@ -2815,6 +2848,103 @@ TclNoIdentOpCmd(
     }
     return TclVariadicOpCmd(clientData, interp, objc, objv);
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * EmitForwardJump --
+ *
+ *	Procedure to emit a two-byte forward jump of kind "jumpType". Since
+ *	the jump may later have to be grown to five bytes if the jump target
+ *	is more than, say, 127 bytes away, this procedure also initializes a
+ *	JumpFixup record with information about the jump.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The JumpFixup record pointed to by "jumpFixupPtr" is initialized with
+ *	information needed later if the jump is to be grown. Also, a two byte
+ *	jump of the designated type is emitted at the current point in the
+ *	bytecode stream.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+EmitForwardJump(
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
+				 * holds the resulting instruction. */
+    TclJumpType jumpType,	/* Indicates the kind of jump: if true or
+				 * false or unconditional. */
+    JumpFixup *jumpFixupPtr)	/* Points to the JumpFixup structure to
+				 * initialize with information about this
+				 * forward jump. */
+{
+    /*
+     * Initialize the JumpFixup structure:
+     *    - codeOffset is offset of first byte of jump below
+     */
+
+    jumpFixupPtr->jumpType = jumpType;
+    jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
+
+    switch (jumpType) {
+    case TCL_UNCONDITIONAL_JUMP:
+	TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+	break;
+    case TCL_TRUE_JUMP:
+	TclEmitInstInt4(INST_JUMP_TRUE4, 0, envPtr);
+	break;
+    default:
+	TclEmitInstInt4(INST_JUMP_FALSE4, 0, envPtr);
+	break;
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FixupForwardJump --
+ *
+ *	Procedure that updates a previously-emitted forward jump to jump a
+ *	specified number of bytes, "jumpDist". If necessary, the jump is grown
+ *	from two to five bytes; this is done if the jump distance is greater
+ *	than "distThreshold" (normally 127 bytes). The jump is described by a
+ *	JumpFixup record previously initialized by EmitForwardJump.
+ *
+ * Results: None
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+FixupForwardJump(
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
+				 * holds the resulting instruction. */
+    JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
+				 * describes the forward jump. */
+    int jumpDist)		/* Maximum distance before the two byte jump
+				 * is grown to five bytes. */
+{
+    unsigned char *jumpPc;
+
+    jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
+    switch (jumpFixupPtr->jumpType) {
+	case TCL_UNCONDITIONAL_JUMP:
+	    TclUpdateInstInt4AtPc(INST_JUMP4, jumpDist, jumpPc);
+	    break;
+	case TCL_TRUE_JUMP:
+	    TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDist, jumpPc);
+	    break;
+	default:
+	    TclUpdateInstInt4AtPc(INST_JUMP_FALSE4, jumpDist, jumpPc);
+	    break;
+    }
+}
+
+
 /*
  * Local Variables:
  * mode: c

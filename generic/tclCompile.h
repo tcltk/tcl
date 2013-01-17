@@ -52,3 +52,16 @@ MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
 
 
+#ifdef REQUIRE_BC_DEF
+typedef struct _ByteCode {
+    TclHandle interpHandle;	/* Handle for interpreter containing the
+				 * compiled code. Commands and their compile
+				 * procs are specific to an interpreter so the
+				 * code emitted will depend on the
+				 * interpreter. */
+    Namespace *nsPtr;		/* Namespace context in which this code was
+				 * compiled. If the code is executed if a
+				 * different namespace, it must be
+				 * recompiled. */
+} _ByteCode;
+#endif

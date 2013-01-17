@@ -263,9 +263,6 @@ static int		TestexprdoubleCmd(ClientData dummy,
 static int		TestexprdoubleobjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestexprparserObjCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 static int		TestexprstringCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestfileCmd(ClientData dummy,
@@ -598,8 +595,6 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testexprdouble", TestexprdoubleCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testexprdoubleobj", TestexprdoubleobjCmd,
-	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "testexprparser", TestexprparserObjCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexprstring", TestexprstringCmd,
 	    NULL, NULL);
@@ -3377,66 +3372,6 @@ TestparserObjCmd(
     }
     if (Tcl_ParseCommand(interp, script, length, 0, &parse) != TCL_OK) {
 	Tcl_AddErrorInfo(interp, "\n    (remainder of script: \"");
-	Tcl_AddErrorInfo(interp, parse.term);
-	Tcl_AddErrorInfo(interp, "\")");
-	return TCL_ERROR;
-    }
-
-    /*
-     * The parse completed successfully.  Just print out the contents
-     * of the parse structure into the interpreter's result.
-     */
-
-    PrintParse(interp, &parse);
-    Tcl_FreeParse(&parse);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestexprparserObjCmd --
- *
- *	This procedure implements the "testexprparser" command.  It is
- *	used for testing the new Tcl expression parser in Tcl 8.1.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-TestexprparserObjCmd(
-    ClientData clientData,	/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* The argument objects. */
-{
-    const char *script;
-    int length, dummy;
-    Tcl_Parse parse;
-
-    if (objc != 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "expr length");
-	return TCL_ERROR;
-    }
-    script = Tcl_GetStringFromObj(objv[1], &dummy);
-    if (Tcl_GetIntFromObj(interp, objv[2], &length)) {
-	return TCL_ERROR;
-    }
-    if (length == 0) {
-	length = dummy;
-    }
-    parse.commentStart = NULL;
-    parse.commentSize = 0;
-    parse.commandStart = NULL;
-    parse.commandSize = 0;
-    if (Tcl_ParseExpr(interp, script, length, &parse) != TCL_OK) {
-	Tcl_AddErrorInfo(interp, "\n    (remainder of expr: \"");
 	Tcl_AddErrorInfo(interp, parse.term);
 	Tcl_AddErrorInfo(interp, "\")");
 	return TCL_ERROR;

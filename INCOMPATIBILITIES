@@ -42,6 +42,8 @@ GONE FOR NOW (or so I hope)
 * command compilation: ALL commands are run from TEBC via EvalObjv. Only
   expressions make a non-trivial use of TEBC.
 
+* Tcl_ParseExpr
+
 
 TO BE STUDIED
 -------------

@@ -1280,7 +1280,6 @@ typedef struct CoroutineData {
 } CoroutineData;
 
 typedef struct ExecEnv {
-    Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
     struct Tcl_Interp *interp;
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
@@ -2539,7 +2538,6 @@ MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
 MODULE_SCOPE void	TclFinalizeEncodingSubsystem(void);
 MODULE_SCOPE void	TclFinalizeEnvironment(void);
 MODULE_SCOPE void	TclFinalizeEvaluation(void);
-MODULE_SCOPE void	TclFinalizeExecution(void);
 MODULE_SCOPE void	TclFinalizeIOSubsystem(void);
 MODULE_SCOPE void	TclFinalizeFilesystem(void);
 MODULE_SCOPE void	TclResetFilesystem(void);

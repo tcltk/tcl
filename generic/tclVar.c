@@ -3188,7 +3188,7 @@ ArrayAnyMoreCmd(
 	    break;
 	}
     }
-    Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[gotValue]);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(gotValue));
     return TCL_OK;
 }
 
@@ -3473,7 +3473,7 @@ ArrayExistsCmd(
 
     notArray = ((varPtr == NULL) || !TclIsVarArray(varPtr)
 	    || TclIsVarUndefined(varPtr));
-    Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[!notArray]);
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(!notArray));
     return TCL_OK;
 }
 

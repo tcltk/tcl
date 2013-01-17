@@ -365,8 +365,7 @@ EXTERN int		TclAddLiteralObj(struct CompileEnv *envPtr,
 /* 144 */
 EXTERN void		TclHideLiteral(Tcl_Interp *interp,
 				struct CompileEnv *envPtr, int index);
-/* 145 */
-EXTERN const struct AuxDataType * TclGetAuxDataType(const char *typeName);
+/* Slot 145 is reserved */
 /* 146 */
 EXTERN TclHandle	TclHandleCreate(void *ptr);
 /* 147 */
@@ -741,7 +740,7 @@ typedef struct TclIntStubs {
     int (*tclSetByteCodeFromAny) (Tcl_Interp *interp, Tcl_Obj *objPtr, CompileHookProc *hookProc, ClientData clientData); /* 142 */
     int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp *interp, struct CompileEnv *envPtr, int index); /* 144 */
-    const struct AuxDataType * (*tclGetAuxDataType) (const char *typeName); /* 145 */
+    void (*reserved145)(void);
     TclHandle (*tclHandleCreate) (void *ptr); /* 146 */
     void (*tclHandleFree) (TclHandle handle); /* 147 */
     TclHandle (*tclHandlePreserve) (TclHandle handle); /* 148 */
@@ -1092,8 +1091,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclAddLiteralObj) /* 143 */
 #define TclHideLiteral \
 	(tclIntStubsPtr->tclHideLiteral) /* 144 */
-#define TclGetAuxDataType \
-	(tclIntStubsPtr->tclGetAuxDataType) /* 145 */
+/* Slot 145 is reserved */
 #define TclHandleCreate \
 	(tclIntStubsPtr->tclHandleCreate) /* 146 */
 #define TclHandleFree \

@@ -15,24 +15,6 @@
 #include "tclInt.h"
 #include "tclCompileInt.h"
 
-/*
- * Table of all AuxData types.
- */
-
-static Tcl_HashTable auxDataTypeTable;
-static int auxDataTypeTableInitialized; /* 0 means not yet initialized. */
-
-TCL_DECLARE_MUTEX(tableMutex)
-
-/*
- * Variable that controls whether compilation tracing is enabled and, if so,
- * what level of tracing is desired:
- *    0: no compilation tracing
- *    1: summarize compilation of top level cmds and proc bodies
- *    2: display all instructions of each ByteCode compiled
- * This variable is linked to the Tcl variable "tcl_traceCompile".
- */
-
 
 /*
  * A table describing the Tcl bytecode instructions. Entries in this table
@@ -49,52 +31,51 @@ TCL_DECLARE_MUTEX(tableMutex)
 InstructionDesc const tclInstructionTable[] = {
     /* Name	      Bytes stackEffect #Opnds  Operand types */
     {"done",		  1,   -1,         0,	{OPERAND_NONE}},//0
-    {"push4",		  5,   +1,         1,	{OPERAND_UINT4}},//1
-    {"pop",		  1,   -1,         0,	{OPERAND_NONE}},//2
-    {"concat1",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},//3
-    {"invokeStk4",	  5,   INT_MIN,    1,	{OPERAND_UINT4}},//4
-    {"loadScalar4",	  5,   1,          1,	{OPERAND_LVT4}},//5
-    {"loadScalarStk",	  1,   0,          0,	{OPERAND_NONE}},//6
-    {"loadArray4",	  5,   0,          1,	{OPERAND_LVT4}},//7
-    {"loadArrayStk",	  1,   -1,         0,	{OPERAND_NONE}},//8
-    {"storeScalar4",	  5,   0,          1,	{OPERAND_LVT4}},//9    
-    {"jump4",		  5,   0,          1,	{OPERAND_INT4}},//10
-    {"jumpTrue4",	  5,   -1,         1,	{OPERAND_INT4}},//11
-    {"jumpFalse4",	  5,   -1,         1,	{OPERAND_INT4}},//12
-    {"bitor",		  1,   -1,         0,	{OPERAND_NONE}},//13
-    {"bitxor",		  1,   -1,         0,	{OPERAND_NONE}},//14
-    {"bitand",		  1,   -1,         0,	{OPERAND_NONE}},//15
-    {"eq",		  1,   -1,         0,	{OPERAND_NONE}},//16
-    {"neq",		  1,   -1,         0,	{OPERAND_NONE}},//17
-    {"lt",		  1,   -1,         0,	{OPERAND_NONE}},//18
-    {"gt",		  1,   -1,         0,	{OPERAND_NONE}},//19
-    {"le",		  1,   -1,         0,	{OPERAND_NONE}},//20
-    {"ge",		  1,   -1,         0,	{OPERAND_NONE}},//21
-    {"lshift",		  1,   -1,         0,	{OPERAND_NONE}},//22
-    {"rshift",		  1,   -1,         0,	{OPERAND_NONE}},//23
-    {"add",		  1,   -1,         0,	{OPERAND_NONE}},//24
-    {"sub",		  1,   -1,         0,	{OPERAND_NONE}},//25
-    {"mult",		  1,   -1,         0,	{OPERAND_NONE}},//26
-    {"div",		  1,   -1,         0,	{OPERAND_NONE}},//27
-    {"mod",		  1,   -1,         0,	{OPERAND_NONE}},//28
-    {"uplus",		  1,   0,          0,	{OPERAND_NONE}},//29
-    {"uminus",		  1,   0,          0,	{OPERAND_NONE}},//30
-    {"bitnot",		  1,   0,          0,	{OPERAND_NONE}},//31
-    {"not",		  1,   0,          0,	{OPERAND_NONE}},//32
-    {"tryCvtToNumeric",	  1,   0,          0,	{OPERAND_NONE}},//33
-    {"streq",		  1,   -1,         0,	{OPERAND_NONE}},//34
-    {"strneq",		  1,   -1,         0,	{OPERAND_NONE}},//35
-    {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},//36
-    {"expandStart",       1,    0,          0,	{OPERAND_NONE}},//37
-    {"expandStkTop",      5,    0,          1,	{OPERAND_UINT4}},//38
-    {"invokeExpanded",    1,    0,          0,	{OPERAND_NONE}},//39
+    {"syntax",		 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},//1
+    {"push4",		  5,   +1,         1,	{OPERAND_UINT4}},//2
+    {"pop",		  1,   -1,         0,	{OPERAND_NONE}},//3
+    {"concat1",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},//4
+    {"invokeStk4",	  5,   INT_MIN,    1,	{OPERAND_UINT4}},//5
+    {"expandStart",       1,    0,          0,	{OPERAND_NONE}},//6
+    {"expandStkTop",      5,    0,          1,	{OPERAND_UINT4}},//7
+    {"invokeExpanded",    1,    0,          0,	{OPERAND_NONE}},//8
+    {"loadScalar4",	  5,   1,          1,	{OPERAND_LVT4}},//9
+    {"loadScalarStk",	  1,   0,          0,	{OPERAND_NONE}},//10
+    {"loadArray4",	  5,   0,          1,	{OPERAND_LVT4}},//11
+    {"loadArrayStk",	  1,   -1,         0,	{OPERAND_NONE}},//12
+
+    {"instExpr",          1,    0,         0,	{OPERAND_NONE}},//13 NOT USED
+    
+    {"jump4",		  5,   0,          1,	{OPERAND_INT4}},//14
+    {"jumpTrue4",	  5,   -1,         1,	{OPERAND_INT4}},//15
+    {"jumpFalse4",	  5,   -1,         1,	{OPERAND_INT4}},//16
+    {"bitor",		  1,   -1,         0,	{OPERAND_NONE}},//17
+    {"bitxor",		  1,   -1,         0,	{OPERAND_NONE}},//18
+    {"bitand",		  1,   -1,         0,	{OPERAND_NONE}},//19
+    {"eq",		  1,   -1,         0,	{OPERAND_NONE}},//20
+    {"neq",		  1,   -1,         0,	{OPERAND_NONE}},//21
+    {"lt",		  1,   -1,         0,	{OPERAND_NONE}},//22
+    {"gt",		  1,   -1,         0,	{OPERAND_NONE}},//23
+    {"le",		  1,   -1,         0,	{OPERAND_NONE}},//24
+    {"ge",		  1,   -1,         0,	{OPERAND_NONE}},//25
+    {"lshift",		  1,   -1,         0,	{OPERAND_NONE}},//26
+    {"rshift",		  1,   -1,         0,	{OPERAND_NONE}},//27
+    {"add",		  1,   -1,         0,	{OPERAND_NONE}},//28
+    {"sub",		  1,   -1,         0,	{OPERAND_NONE}},//29
+    {"mult",		  1,   -1,         0,	{OPERAND_NONE}},//30
+    {"div",		  1,   -1,         0,	{OPERAND_NONE}},//31
+    {"mod",		  1,   -1,         0,	{OPERAND_NONE}},//32
+    {"uplus",		  1,   0,          0,	{OPERAND_NONE}},//33
+    {"uminus",		  1,   0,          0,	{OPERAND_NONE}},//34
+    {"bitnot",		  1,   0,          0,	{OPERAND_NONE}},//35
+    {"not",		  1,   0,          0,	{OPERAND_NONE}},//36
+    {"expon",		  1,   -1,	   0,	{OPERAND_NONE}},//37
+    {"streq",		  1,   -1,         0,	{OPERAND_NONE}},//38
+    {"strneq",		  1,   -1,         0,	{OPERAND_NONE}},//39
     {"listIn",		  1,	-1,	   0,	{OPERAND_NONE}},//40
     {"listNotIn",	  1,	-1,	   0,	{OPERAND_NONE}},//41
-    {"syntax",		 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},//42
+    {"tryCvtToNumeric",	  1,   0,          0,	{OPERAND_NONE}},//42
     {"reverse",		 5,    0,         1,	{OPERAND_UINT4}},//43
-    {"unsetScalar",	 6,    0,         2,	{OPERAND_UINT1, OPERAND_LVT4}},//44
-    {"currentNamespace", 1,    +1,	  0,	{OPERAND_NONE}},//45
-    {"tclooSelf",	 1,	+1,	  0,	{OPERAND_NONE}},//46
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -165,7 +146,6 @@ TclSetByteCodeFromAny(
 {
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    register const AuxData *auxDataPtr;
     LiteralEntry *entryPtr;
     register int i;
     int length, result = TCL_OK;
@@ -218,14 +198,6 @@ TclSetByteCodeFromAny(
 	for (i = 0;  i < compEnv.literalArrayNext;  i++) {
 	    TclReleaseLiteral(interp, entryPtr->objPtr);
 	    entryPtr++;
-	}
-
-	auxDataPtr = compEnv.auxDataArrayPtr;
-	for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-	    if (auxDataPtr->type->freeProc != NULL) {
-		auxDataPtr->type->freeProc(auxDataPtr->clientData);
-	    }
-	    auxDataPtr++;
 	}
     }
 
@@ -356,9 +328,7 @@ TclCleanupByteCode(
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     int numLitObjects = codePtr->numLitObjects;
-    int numAuxDataItems = codePtr->numAuxDataItems;
     register Tcl_Obj **objArrayPtr, *objPtr;
-    register const AuxData *auxDataPtr;
     int i;
     /*
      * A single heap object holds the ByteCode structure and its code, object,
@@ -408,14 +378,6 @@ TclCleanupByteCode(
 	}
     }
 
-    auxDataPtr = codePtr->auxDataArrayPtr;
-    for (i = 0;  i < numAuxDataItems;  i++) {
-	if (auxDataPtr->type->freeProc != NULL) {
-	    auxDataPtr->type->freeProc(auxDataPtr->clientData);
-	}
-	auxDataPtr++;
-    }
-
     if (codePtr->localCachePtr && (--codePtr->localCachePtr->refCount == 0)) {
 	TclFreeLocalCache(interp, codePtr->localCachePtr);
     }
@@ -458,8 +420,6 @@ TclInitCompileEnv(
     envPtr->procPtr = iPtr->compiledProcPtr;
     iPtr->compiledProcPtr = NULL;
     envPtr->numCommands = 0;
-    envPtr->exceptDepth = 0;
-    envPtr->maxExceptDepth = 0;
     envPtr->maxStackDepth = 0;
     envPtr->currStackDepth = 0;
     TclInitLiteralTable(&envPtr->localLitTable);
@@ -474,21 +434,10 @@ TclInitCompileEnv(
     envPtr->literalArrayEnd = COMPILEENV_INIT_NUM_OBJECTS;
     envPtr->mallocedLiteralArray = 0;
 
-    envPtr->exceptArrayPtr = envPtr->staticExceptArraySpace;
-    envPtr->exceptArrayNext = 0;
-    envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
-    envPtr->mallocedExceptArray = 0;
-
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
     envPtr->mallocedCmdMap = 0;
     envPtr->atCmdStart = 1;
-
-
-    envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
-    envPtr->auxDataArrayNext = 0;
-    envPtr->auxDataArrayEnd = COMPILEENV_INIT_AUX_DATA_SIZE;
-    envPtr->mallocedAuxDataArray = 0;
 }
 
 /*
@@ -527,14 +476,8 @@ TclFreeCompileEnv(
     if (envPtr->mallocedLiteralArray) {
 	ckfree(envPtr->literalArrayPtr);
     }
-    if (envPtr->mallocedExceptArray) {
-	ckfree(envPtr->exceptArrayPtr);
-    }
     if (envPtr->mallocedCmdMap) {
 	ckfree(envPtr->cmdMapPtr);
-    }
-    if (envPtr->mallocedAuxDataArray) {
-	ckfree(envPtr->auxDataArrayPtr);
     }
 }
 
@@ -1127,8 +1070,8 @@ TclInitByteCodeObj(
 				 * which to create a ByteCode structure. */
 {
     register ByteCode *codePtr;
-    size_t codeBytes, objArrayBytes, exceptArrayBytes, cmdLocBytes;
-    size_t auxDataArrayBytes, structureSize;
+    size_t codeBytes, objArrayBytes, cmdLocBytes;
+    size_t structureSize;
     register unsigned char *p;
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
@@ -1139,8 +1082,6 @@ TclInitByteCodeObj(
 
     codeBytes = envPtr->codeNext - envPtr->codeStart;
     objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
-    exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
-    auxDataArrayBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
     cmdLocBytes = GetCmdLocEncodingSize(envPtr);
 
     /*
@@ -1150,8 +1091,6 @@ TclInitByteCodeObj(
     structureSize = sizeof(ByteCode);
     structureSize += TCL_ALIGN(codeBytes);	  /* align object array */
     structureSize += TCL_ALIGN(objArrayBytes);	  /* align exc range arr */
-    structureSize += TCL_ALIGN(exceptArrayBytes); /* align AuxData array */
-    structureSize += auxDataArrayBytes;
     structureSize += cmdLocBytes;
 
     if (envPtr->iPtr->varFramePtr != NULL) {
@@ -1178,10 +1117,7 @@ TclInitByteCodeObj(
     codePtr->numSrcBytes = envPtr->numSrcBytes;
     codePtr->numCodeBytes = codeBytes;
     codePtr->numLitObjects = numLitObjects;
-    codePtr->numExceptRanges = envPtr->exceptArrayNext;
-    codePtr->numAuxDataItems = envPtr->auxDataArrayNext;
     codePtr->numCmdLocBytes = cmdLocBytes;
-    codePtr->maxExceptDepth = envPtr->maxExceptDepth;
     codePtr->maxStackDepth = envPtr->maxStackDepth;
 
     p += sizeof(ByteCode);
@@ -1214,23 +1150,7 @@ TclInitByteCodeObj(
 	}
     }
 
-    p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
-    if (exceptArrayBytes > 0) {
-	codePtr->exceptArrayPtr = (ExceptionRange *) p;
-	memcpy(p, envPtr->exceptArrayPtr, (size_t) exceptArrayBytes);
-    } else {
-	codePtr->exceptArrayPtr = NULL;
-    }
-
-    p += TCL_ALIGN(exceptArrayBytes);	/* align AuxData array */
-    if (auxDataArrayBytes > 0) {
-	codePtr->auxDataArrayPtr = (AuxData *) p;
-	memcpy(p, envPtr->auxDataArrayPtr, (size_t) auxDataArrayBytes);
-    } else {
-	codePtr->auxDataArrayPtr = NULL;
-    }
-
-    p += auxDataArrayBytes;
+    p += objArrayBytes;
     EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
 
     /*
@@ -1557,370 +1477,6 @@ EnterCmdExtentData(
 /*
  *----------------------------------------------------------------------
  *
- * TclCreateExceptRange --
- *
- *	Procedure that allocates and initializes a new ExceptionRange
- *	structure of the specified kind in a CompileEnv.
- *
- * Results:
- *	Returns the index for the newly created ExceptionRange.
- *
- * Side effects:
- *	If there is not enough room in the CompileEnv's ExceptionRange array,
- *	the array in expanded: a new array of double the size is allocated, if
- *	envPtr->mallocedExceptArray is non-zero the old array is freed, and
- *	ExceptionRange entries are copied from the old array to the new one.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclCreateExceptRange(
-    ExceptionRangeType type,	/* The kind of ExceptionRange desired. */
-    register CompileEnv *envPtr)/* Points to CompileEnv for which to create a
-				 * new ExceptionRange structure. */
-{
-    register ExceptionRange *rangePtr;
-    int index = envPtr->exceptArrayNext;
-
-    if (index >= envPtr->exceptArrayEnd) {
-	/*
-	 * Expand the ExceptionRange array. The currently allocated entries
-	 * are stored between elements 0 and (envPtr->exceptArrayNext - 1)
-	 * [inclusive].
-	 */
-
-	size_t currBytes =
-		envPtr->exceptArrayNext * sizeof(ExceptionRange);
-	int newElems = 2*envPtr->exceptArrayEnd;
-	size_t newBytes = newElems * sizeof(ExceptionRange);
-
-	if (envPtr->mallocedExceptArray) {
-	    envPtr->exceptArrayPtr =
-		    ckrealloc(envPtr->exceptArrayPtr, newBytes);
-	} else {
-	    /*
-	     * envPtr->exceptArrayPtr isn't a ckalloc'd pointer, so we must
-	     * code a ckrealloc equivalent for ourselves.
-	     */
-
-	    ExceptionRange *newPtr = ckalloc(newBytes);
-
-	    memcpy(newPtr, envPtr->exceptArrayPtr, currBytes);
-	    envPtr->exceptArrayPtr = newPtr;
-	    envPtr->mallocedExceptArray = 1;
-	}
-	envPtr->exceptArrayEnd = newElems;
-    }
-    envPtr->exceptArrayNext++;
-
-    rangePtr = &envPtr->exceptArrayPtr[index];
-    rangePtr->type = type;
-    rangePtr->nestingLevel = envPtr->exceptDepth;
-    rangePtr->codeOffset = -1;
-    rangePtr->numCodeBytes = -1;
-    rangePtr->breakOffset = -1;
-    rangePtr->continueOffset = -1;
-    rangePtr->catchOffset = -1;
-    return index;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclCreateAuxData --
- *
- *	Procedure that allocates and initializes a new AuxData structure in a
- *	CompileEnv's array of compilation auxiliary data records. These
- *	AuxData records hold information created during compilation by
- *	CompileProcs and used by instructions during execution.
- *
- * Results:
- *	Returns the index for the newly created AuxData structure.
- *
- * Side effects:
- *	If there is not enough room in the CompileEnv's AuxData array, the
- *	AuxData array in expanded: a new array of double the size is
- *	allocated, if envPtr->mallocedAuxDataArray is non-zero the old array
- *	is freed, and AuxData entries are copied from the old array to the new
- *	one.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclCreateAuxData(
-    ClientData clientData,	/* The compilation auxiliary data to store in
-				 * the new aux data record. */
-    const AuxDataType *typePtr,	/* Pointer to the type to attach to this
-				 * AuxData */
-    register CompileEnv *envPtr)/* Points to the CompileEnv for which a new
-				 * aux data structure is to be allocated. */
-{
-    int index;			/* Index for the new AuxData structure. */
-    register AuxData *auxDataPtr;
-				/* Points to the new AuxData structure */
-
-    index = envPtr->auxDataArrayNext;
-    if (index >= envPtr->auxDataArrayEnd) {
-	/*
-	 * Expand the AuxData array. The currently allocated entries are
-	 * stored between elements 0 and (envPtr->auxDataArrayNext - 1)
-	 * [inclusive].
-	 */
-
-	size_t currBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
-	int newElems = 2*envPtr->auxDataArrayEnd;
-	size_t newBytes = newElems * sizeof(AuxData);
-
-	if (envPtr->mallocedAuxDataArray) {
-	    envPtr->auxDataArrayPtr =
-		    ckrealloc(envPtr->auxDataArrayPtr, newBytes);
-	} else {
-	    /*
-	     * envPtr->auxDataArrayPtr isn't a ckalloc'd pointer, so we must
-	     * code a ckrealloc equivalent for ourselves.
-	     */
-
-	    AuxData *newPtr = ckalloc(newBytes);
-
-	    memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
-	    envPtr->auxDataArrayPtr = newPtr;
-	    envPtr->mallocedAuxDataArray = 1;
-	}
-	envPtr->auxDataArrayEnd = newElems;
-    }
-    envPtr->auxDataArrayNext++;
-
-    auxDataPtr = &envPtr->auxDataArrayPtr[index];
-    auxDataPtr->clientData = clientData;
-    auxDataPtr->type = typePtr;
-    return index;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInitJumpFixupArray --
- *
- *	Initializes a JumpFixupArray structure to hold some number of jump
- *	fixup entries.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The JumpFixupArray structure is initialized.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInitJumpFixupArray(
-    register JumpFixupArray *fixupArrayPtr)
-				/* Points to the JumpFixupArray structure to
-				 * initialize. */
-{
-    fixupArrayPtr->fixup = fixupArrayPtr->staticFixupSpace;
-    fixupArrayPtr->next = 0;
-    fixupArrayPtr->end = JUMPFIXUP_INIT_ENTRIES - 1;
-    fixupArrayPtr->mallocedArray = 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclExpandJumpFixupArray --
- *
- *	Procedure that uses malloc to allocate more storage for a jump fixup
- *	array.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The jump fixup array in *fixupArrayPtr is reallocated to a new array
- *	of double the size, and if fixupArrayPtr->mallocedArray is non-zero
- *	the old array is freed. Jump fixup structures are copied from the old
- *	array to the new one.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclExpandJumpFixupArray(
-    register JumpFixupArray *fixupArrayPtr)
-				/* Points to the JumpFixupArray structure to
-				 * enlarge. */
-{
-    /*
-     * The currently allocated jump fixup entries are stored from fixup[0] up
-     * to fixup[fixupArrayPtr->fixupNext] (*not* inclusive). We assume
-     * fixupArrayPtr->fixupNext is equal to fixupArrayPtr->fixupEnd.
-     */
-
-    size_t currBytes = fixupArrayPtr->next * sizeof(JumpFixup);
-    int newElems = 2*(fixupArrayPtr->end + 1);
-    size_t newBytes = newElems * sizeof(JumpFixup);
-
-    if (fixupArrayPtr->mallocedArray) {
-	fixupArrayPtr->fixup = ckrealloc(fixupArrayPtr->fixup, newBytes);
-    } else {
-	/*
-	 * fixupArrayPtr->fixup isn't a ckalloc'd pointer, so we must code a
-	 * ckrealloc equivalent for ourselves.
-	 */
-
-	JumpFixup *newPtr = ckalloc(newBytes);
-
-	memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
-	fixupArrayPtr->fixup = newPtr;
-	fixupArrayPtr->mallocedArray = 1;
-    }
-    fixupArrayPtr->end = newElems;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclFreeJumpFixupArray --
- *
- *	Free any storage allocated in a jump fixup array structure.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Allocated storage in the JumpFixupArray structure is freed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclFreeJumpFixupArray(
-    register JumpFixupArray *fixupArrayPtr)
-				/* Points to the JumpFixupArray structure to
-				 * free. */
-{
-    if (fixupArrayPtr->mallocedArray) {
-	ckfree(fixupArrayPtr->fixup);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclEmitForwardJump --
- *
- *	Procedure to emit a two-byte forward jump of kind "jumpType". Since
- *	the jump may later have to be grown to five bytes if the jump target
- *	is more than, say, 127 bytes away, this procedure also initializes a
- *	JumpFixup record with information about the jump.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The JumpFixup record pointed to by "jumpFixupPtr" is initialized with
- *	information needed later if the jump is to be grown. Also, a two byte
- *	jump of the designated type is emitted at the current point in the
- *	bytecode stream.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclEmitForwardJump(
-    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
-				 * holds the resulting instruction. */
-    TclJumpType jumpType,	/* Indicates the kind of jump: if true or
-				 * false or unconditional. */
-    JumpFixup *jumpFixupPtr)	/* Points to the JumpFixup structure to
-				 * initialize with information about this
-				 * forward jump. */
-{
-    /*
-     * Initialize the JumpFixup structure:
-     *    - codeOffset is offset of first byte of jump below
-     *    - cmdIndex is index of the command after the current one
-     *    - exceptIndex is the index of the first ExceptionRange after the
-     *	    current one.
-     */
-
-    jumpFixupPtr->jumpType = jumpType;
-    jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
-    jumpFixupPtr->cmdIndex = envPtr->numCommands;
-    jumpFixupPtr->exceptIndex = envPtr->exceptArrayNext;
-
-    switch (jumpType) {
-    case TCL_UNCONDITIONAL_JUMP:
-	TclEmitInstInt4(INST_JUMP4, 0, envPtr);
-	break;
-    case TCL_TRUE_JUMP:
-	TclEmitInstInt4(INST_JUMP_TRUE4, 0, envPtr);
-	break;
-    default:
-	TclEmitInstInt4(INST_JUMP_FALSE4, 0, envPtr);
-	break;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclFixupForwardJump --
- *
- *	Procedure that updates a previously-emitted forward jump to jump a
- *	specified number of bytes, "jumpDist". If necessary, the jump is grown
- *	from two to five bytes; this is done if the jump distance is greater
- *	than "distThreshold" (normally 127 bytes). The jump is described by a
- *	JumpFixup record previously initialized by TclEmitForwardJump.
- *
- * Results:
- *	1 if the jump was grown and subsequent instructions had to be moved;
- *	otherwise 0. This result is returned to allow callers to update any
- *	additional code offsets they may hold.
- *
- * Side effects:
- *	The jump may be grown and subsequent instructions moved. If this
- *	happens, the code offsets for any commands and any ExceptionRange
- *	records between the jump and the current code address will be updated
- *	to reflect the moved code. Also, the bytecode instruction array in the
- *	CompileEnv structure may be grown and reallocated.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclFixupForwardJump(
-    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
-				 * holds the resulting instruction. */
-    JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
-				 * describes the forward jump. */
-    int jumpDist,		/* Jump distance to set in jump instr. */
-    int distThreshold)		/* Maximum distance before the two byte jump
-				 * is grown to five bytes. */
-{
-    unsigned char *jumpPc;
-
-    jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
-    switch (jumpFixupPtr->jumpType) {
-	case TCL_UNCONDITIONAL_JUMP:
-	    TclUpdateInstInt4AtPc(INST_JUMP4, jumpDist, jumpPc);
-	    break;
-	case TCL_TRUE_JUMP:
-	    TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDist, jumpPc);
-	    break;
-	default:
-	    TclUpdateInstInt4AtPc(INST_JUMP_FALSE4, jumpDist, jumpPc);
-	    break;
-    }
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclGetInstructionTable --
  *
  *	Returns a pointer to the table describing Tcl bytecode instructions.
@@ -1941,162 +1497,6 @@ const void * /* == InstructionDesc* == */
 TclGetInstructionTable(void)
 {
     return &tclInstructionTable[0];
-}
-
-/*
- *--------------------------------------------------------------
- *
- * TclRegisterAuxDataType --
- *
- *	This procedure is called to register a new AuxData type in the table
- *	of all AuxData types supported by Tcl.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The type is registered in the AuxData type table. If there was already
- *	a type with the same name as in typePtr, it is replaced with the new
- *	type.
- *
- *--------------------------------------------------------------
- */
-
-void
-TclRegisterAuxDataType(
-    const AuxDataType *typePtr)	/* Information about object type; storage must
-				 * be statically allocated (must live forever;
-				 * will not be deallocated). */
-{
-    register Tcl_HashEntry *hPtr;
-    int isNew;
-
-    Tcl_MutexLock(&tableMutex);
-    if (!auxDataTypeTableInitialized) {
-	TclInitAuxDataTypeTable();
-    }
-
-    /*
-     * If there's already a type with the given name, remove it.
-     */
-
-    hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typePtr->name);
-    if (hPtr != NULL) {
-	Tcl_DeleteHashEntry(hPtr);
-    }
-
-    /*
-     * Now insert the new object type.
-     */
-
-    hPtr = Tcl_CreateHashEntry(&auxDataTypeTable, typePtr->name, &isNew);
-    if (isNew) {
-	Tcl_SetHashValue(hPtr, typePtr);
-    }
-    Tcl_MutexUnlock(&tableMutex);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGetAuxDataType --
- *
- *	This procedure looks up an Auxdata type by name.
- *
- * Results:
- *	If an AuxData type with name matching "typeName" is found, a pointer
- *	to its AuxDataType structure is returned; otherwise, NULL is returned.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-const AuxDataType *
-TclGetAuxDataType(
-    const char *typeName)	/* Name of AuxData type to look up. */
-{
-    register Tcl_HashEntry *hPtr;
-    const AuxDataType *typePtr = NULL;
-
-    Tcl_MutexLock(&tableMutex);
-    if (!auxDataTypeTableInitialized) {
-	TclInitAuxDataTypeTable();
-    }
-
-    hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typeName);
-    if (hPtr != NULL) {
-	typePtr = Tcl_GetHashValue(hPtr);
-    }
-    Tcl_MutexUnlock(&tableMutex);
-
-    return typePtr;
-}
-
-/*
- *--------------------------------------------------------------
- *
- * TclInitAuxDataTypeTable --
- *
- *	This procedure is invoked to perform once-only initialization of the
- *	AuxData type table. It also registers the AuxData types defined in
- *	this file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Initializes the table of defined AuxData types "auxDataTypeTable" with
- *	builtin AuxData types defined in this file.
- *
- *--------------------------------------------------------------
- */
-
-void
-TclInitAuxDataTypeTable(void)
-{
-    /*
-     * The table mutex must already be held before this routine is invoked.
-     */
-
-    auxDataTypeTableInitialized = 1;
-    Tcl_InitHashTable(&auxDataTypeTable, TCL_STRING_KEYS);
-
-    /*
-     * There are only two AuxData type at this time, so register them here.
-     */
-
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclFinalizeAuxDataTypeTable --
- *
- *	This procedure is called by Tcl_Finalize after all exit handlers have
- *	been run to free up storage associated with the table of AuxData
- *	types. This procedure is called by TclFinalizeExecution() which is
- *	called by Tcl_Finalize().
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Deletes all entries in the hash table of AuxData types.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclFinalizeAuxDataTypeTable(void)
-{
-    Tcl_MutexLock(&tableMutex);
-    if (auxDataTypeTableInitialized) {
-	Tcl_DeleteHashTable(&auxDataTypeTable);
-	auxDataTypeTableInitialized = 0;
-    }
-    Tcl_MutexUnlock(&tableMutex);
 }
 
 /*
@@ -2296,6 +1696,36 @@ EncodeCmdLocMap(
 
     return p;
 }
+
+
+static void
+CompileReturnInternal(
+    CompileEnv *envPtr,
+    unsigned char op,
+    int code,
+    int level,
+    Tcl_Obj *returnOpts)
+{
+    TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
+    TclEmitInstInt4(op, code, envPtr);
+    TclEmitInt4(level, envPtr);
+}
+
+void
+TclCompileSyntaxError(
+    Tcl_Interp *interp,
+    CompileEnv *envPtr)
+{
+    Tcl_Obj *msg = Tcl_GetObjResult(interp);
+    int numBytes;
+    const char *bytes = TclGetStringFromObj(msg, &numBytes);
+
+    TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
+    CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
+	    Tcl_GetReturnOptions(interp, TCL_ERROR));
+}
+
+
 
 /*
  * Local Variables:

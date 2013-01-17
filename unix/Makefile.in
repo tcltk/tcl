@@ -292,7 +292,7 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o \
 	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
-	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompCmdsSZ.o \
+	tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompExpr.o tclCompile.o tclConfig.o tclDate.o tclDictObj.o \
 	tclEncoding.o tclEnsemble.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
@@ -391,8 +391,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclCmdAH.c \
 	$(GENERIC_DIR)/tclCmdIL.c \
 	$(GENERIC_DIR)/tclCmdMZ.c \
-	$(GENERIC_DIR)/tclCompCmds.c \
-	$(GENERIC_DIR)/tclCompCmdsSZ.c \
 	$(GENERIC_DIR)/tclCompExpr.c \
 	$(GENERIC_DIR)/tclCompile.c \
 	$(GENERIC_DIR)/tclConfig.c \
@@ -998,6 +996,7 @@ IOHDR=$(GENERIC_DIR)/tclIO.h
 MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
 PARSEHDR=$(GENERIC_DIR)/tclParse.h
 NREHDR=$(GENERIC_DIR)/tclNRE.h
+EXPRHDR=$(GENERIC_DIR)/tclCompExpr.h
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
@@ -1043,13 +1042,7 @@ tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c $(TCLREHDRS)
 tclDate.o: $(GENERIC_DIR)/tclDate.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
-tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmds.c
-
-tclCompCmdsSZ.o: $(GENERIC_DIR)/tclCompCmdsSZ.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsSZ.c
-
-tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c $(COMPILEHDR)
+tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c $(COMPILEHDR) $(EXPRHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompExpr.c
 
 tclCompile.o: $(GENERIC_DIR)/tclCompile.c $(COMPILEHDR)
@@ -1073,7 +1066,7 @@ tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 tclEvent.o: $(GENERIC_DIR)/tclEvent.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
 
-tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS)
+tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS) $(EXPRHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclExecute.c
 
 tclFCmd.o: $(GENERIC_DIR)/tclFCmd.c
