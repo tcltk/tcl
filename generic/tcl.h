@@ -2411,14 +2411,6 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
 
-/*
- *----------------------------------------------------------------------------
- * Deprecated Tcl functions:
- */
-
-#ifndef TCL_NO_DEPRECATED
-#endif /* !TCL_NO_DEPRECATED */
-
 #endif /* RC_INVOKED */
 
 /*

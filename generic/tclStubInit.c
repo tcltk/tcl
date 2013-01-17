@@ -783,9 +783,9 @@ const TclStubs tclStubs = {
     Tcl_Eof, /* 126 */
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
-    Tcl_Eval, /* 129 */
+    0, /* 129 */
     0, /* 130 */
-    Tcl_EvalObj, /* 131 */
+    0, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */
     Tcl_ExposeCommand, /* 134 */

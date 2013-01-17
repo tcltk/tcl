@@ -5341,62 +5341,6 @@ TclArgumentGet(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Eval --
- *
- *	Execute a Tcl command in a string. This function executes the script
- *	directly, rather than compiling it to bytecodes. Before the arrival of
- *	the bytecode compiler in Tcl 8.0 Tcl_Eval was the main function used
- *	for executing Tcl commands, but nowadays it isn't used much.
- *
- * Results:
- *	The return value is one of the return codes defined in tcl.h (such as
- *	TCL_OK), and interp's result contains a value to supplement the return
- *	code. The value of the result will persist only until the next call to
- *	Tcl_Eval or Tcl_EvalObj: you must copy it or lose it!
- *
- * Side effects:
- *	Can be almost arbitrary, depending on the commands in the script.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_Eval(
-    Tcl_Interp *interp,		/* Token for command interpreter (returned by
-				 * previous call to Tcl_CreateInterp). */
-    const char *script)		/* Pointer to TCL command to execute. */
-{
-    return Tcl_EvalEx(interp, script, -1, 0);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_EvalObj --
- *
- *	These functions are deprecated but we keep them around for backwards
- *	compatibility reasons.
- *
- * Results:
- *	See the functions they call.
- *
- * Side effects:
- *	See the functions they call.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_EvalObj(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
-{
-    return Tcl_EvalObjEx(interp, objPtr, 0);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_EvalObjEx, TclEvalObjEx --
  *
  *	Execute Tcl commands stored in a Tcl object. These commands are

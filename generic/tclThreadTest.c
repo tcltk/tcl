@@ -613,7 +613,7 @@ NewTestThread(
      */
 
     Tcl_Preserve(tsdPtr->interp);
-    result = Tcl_Eval(tsdPtr->interp, threadEvalScript);
+    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, -1, 0);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }

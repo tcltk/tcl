@@ -1209,49 +1209,4 @@ extern const TclIntStubs *tclIntStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#if defined(USE_TCL_STUBS) && defined(TCL_NO_DEPRECATED)
-#   undef Tcl_SetStartupScript
-#   define Tcl_SetStartupScript \
-	    (tclStubsPtr->tcl_SetStartupScript) /* 622 */
-#   undef Tcl_GetStartupScript
-#   define Tcl_GetStartupScript \
-	    (tclStubsPtr->tcl_GetStartupScript) /* 623 */
-#   undef Tcl_CreateNamespace
-#   define Tcl_CreateNamespace \
-	   (tclStubsPtr->tcl_CreateNamespace) /* 506 */
-#   undef Tcl_DeleteNamespace
-#   define Tcl_DeleteNamespace \
-	   (tclStubsPtr->tcl_DeleteNamespace) /* 507 */
-#   undef Tcl_AppendExportList
-#   define Tcl_AppendExportList \
-	   (tclStubsPtr->tcl_AppendExportList) /* 508 */
-#   undef Tcl_Export
-#   define Tcl_Export \
-	   (tclStubsPtr->tcl_Export) /* 509 */
-#   undef Tcl_Import
-#   define Tcl_Import \
-	   (tclStubsPtr->tcl_Import) /* 510 */
-#   undef Tcl_ForgetImport
-#   define Tcl_ForgetImport \
-	   (tclStubsPtr->tcl_ForgetImport) /* 511 */
-#   undef Tcl_GetCurrentNamespace
-#   define Tcl_GetCurrentNamespace \
-	   (tclStubsPtr->tcl_GetCurrentNamespace) /* 512 */
-#   undef Tcl_GetGlobalNamespace
-#   define Tcl_GetGlobalNamespace \
-	   (tclStubsPtr->tcl_GetGlobalNamespace) /* 513 */
-#   undef Tcl_FindNamespace
-#   define Tcl_FindNamespace \
-	   (tclStubsPtr->tcl_FindNamespace) /* 514 */
-#   undef Tcl_FindCommand
-#   define Tcl_FindCommand \
-	   (tclStubsPtr->tcl_FindCommand) /* 515 */
-#   undef Tcl_GetCommandFromObj
-#   define Tcl_GetCommandFromObj \
-	   (tclStubsPtr->tcl_GetCommandFromObj) /* 516 */
-#   undef Tcl_GetCommandFullName
-#   define Tcl_GetCommandFullName \
-	   (tclStubsPtr->tcl_GetCommandFullName) /* 517 */
-#endif
-
 #endif /* _TCLINTDECLS */
