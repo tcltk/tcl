@@ -5386,7 +5386,6 @@ Tcl_Eval(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_EvalObj
 int
 Tcl_EvalObj(
     Tcl_Interp *interp,

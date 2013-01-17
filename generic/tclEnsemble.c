@@ -3056,6 +3056,9 @@ CompileToCompiledCommand(
     Tcl_Parse synthetic;
     Tcl_Token *tokenPtr;
     int result, i;
+    int savedNumCmds = envPtr->numCommands;
+    int savedStackDepth = envPtr->currStackDepth;
+    unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
@@ -3108,6 +3111,17 @@ CompileToCompiledCommand(
      */
 
     result = cmdPtr->compileProc(interp, &synthetic, cmdPtr, envPtr);
+
+    /*
+     * If our target fails to compile, revert the number of commands and the
+     * pointer to the place to issue the next instruction. [Bug 3600328]
+     */
+
+    if (result != TCL_OK) {
+	envPtr->numCommands = savedNumCmds;
+	envPtr->currStackDepth = savedStackDepth;
+	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+    }
 
     /*
      * Clean up if necessary.
