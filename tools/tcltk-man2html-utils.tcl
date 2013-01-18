@@ -1231,30 +1231,50 @@ proc output-directive {line} {
 ##
 proc merge-copyrights {l1 l2} {
     set merge {}
-    set re1 {^Copyright +(?:\(c\)|\\\(co|&copy;) +(\w.*?)(?:all rights reserved)?(?:\. )*$}
-    set re2 {^(\d+),? +(?:by +)?(\w.*)$}         ;# date who
-    set re3 {^(\d+)-(\d+),? +(?:by +)?(\w.*)$}   ;# from to who
-    set re4 {^(\d+),((?: *\d+,?)+) +(?:by +)?(\w.*)$} ;# date1 date2 who
+    # Preferred format
+    set re1 {^Copyright +(?:\(c\)|\\\(co|&copy;) +([0-9\-, ]+) +(?:by +)?(\w.*?)$}
+    # Relaxed format (will warn): allow \u2013 and '/' in dates, part clause
+    set re2 {^Copyright +(?:\(c\)|\\\(co|&copy;) +([0-9\-\u2013,/]+) +(?:\([^)]+\) +)?(?:by +)?(\w.*?)$}
+    # Single year date term
+    set re3 {^\s*(\d\d\d\d)\s*$}
+    # YYYY-YYYY or YYYY-Y date term
+    set re4 {^\s*(\d\d\d\d)[\-\u2013,/](\d+)\s*$}
+    # Recognised trailing copyright terms
+    set re5 {(.*)(all rights reserved|see license.txt for terms)\.?\s*$}
+
     foreach copyright [concat $l1 $l2] {
-	if {[regexp -nocase -- $re1 $copyright -> info]} {
-	    set info [string trimright $info ". "] ; # remove extra period
-	    if {[regexp -- $re2 $info -> date who]} {
+	# Parse into date and info; the copyright identifier must be present
+	# (but is ignored); a part clause (e.g. '(docs)') and/or 'by' are
+        # permissed before the info and are also ignored. 
+	if {! [regexp -nocase -- $re1 $copyright -> date info]} {
+	    if {! [regexp -nocase -- $re2 $copyright -> date info]} {
+		manerror "unrecognised format: $copyright"
+                continue
+            }
+	}
+	# Info consists of period-separated terms.  The first term identifies
+        # the copyright owner. 
+	while { [regexp -nocase -- $re5 $info -> info] } {
+	    # loop
+	}
+	set who [string trimright $info ". "]
+        # Date consists of single year dates or date ranges (YYYY-YYYY|YYYY-Y) 
+        # separated by comma.
+	foreach dateterm [split [string trimright $date ,] ,] {
+	    if {[regexp -- $re3 $dateterm -> date]} {
 		lappend dates($who) $date
 		continue
-	    } elseif {[regexp -- $re3 $info -> from to who]} {
+	    } elseif {[regexp -- $re4 $dateterm -> from to]} {
+		set to "[string range $from 0 \
+                  [expr {[string length $from]-[string length $to]-1}]]$to"
 		for {set date $from} {$date <= $to} {incr date} {
 		    lappend dates($who) $date
 		}
 		continue
-	    } elseif {[regexp -- $re4 $info -> date1 moredates who]} {
-		lappend dates($who) $date1
-		foreach date [lsort -integer [split [string trim $moredates ", "] ","]] {
-		    lappend dates($who) [string trim $date]
-		}
-		continue
-	    }
+	    } else { 
+		manerror "unrecognised date format: $copyright"
+	    } 
 	}
-	puts "oops: $copyright"
     }
     foreach who [array names dates] {
 	set list [lsort -dictionary $dates($who)]
