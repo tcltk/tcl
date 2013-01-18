@@ -6,6 +6,7 @@
 ## Copyright (c) 1995-1997 Roger E. Critchlow Jr
 ## Copyright (c) 2004-2011 Donal K. Fellows
 
+set ::STATUSOUT stdout ;# status outputs 
 set ::manual(report-level) 1
 
 proc manerror {msg} {
@@ -17,9 +18,9 @@ proc manerror {msg} {
 	set name $manual(name)
     }
     if {[info exists manual(section)] && [string length $manual(section)]} {
-	puts stderr "$name: $manual(section): $procname: $msg"
+	puts stderr "\n$name: $manual(section): $procname: $msg"
     } else {
-	puts stderr "$name: $procname: $msg"
+	puts stderr "\n$name: $procname: $msg"
     }
 }
 
@@ -721,7 +722,7 @@ proc cross-reference {ref} {
 	    set tcl_ref [lindex $manref $tcl_i]
 	    return "<A HREF=\"../$tcl_ref.htm\">$ref</A>"
 	}
-	puts stderr "multiple cross reference to $ref in $manref from $manual(wing-file)/$mantail"
+	puts stderr "\nmultiple cross reference to $ref in $manref from $manual(wing-file)/$mantail"
 	return $ref
     }
     ##
@@ -754,7 +755,7 @@ proc cross-reference {ref} {
 ##
 proc reference-error {msg text} {
     global manual
-    puts stderr "$manual(tail): reference error: $msg: {$text}"
+    puts stderr "\n$manual(tail): reference error: $msg: {$text}"
     return $text
 }
 
@@ -1276,7 +1277,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     makedirhier $outputDir/$manual(wing-file)
     set manual(wing-toc-fp) [open $outputDir/$manual(wing-file)/[indexfile] w]
     # whistle
-    puts stderr "scanning section $manual(wing-name)"
+    puts $::STATUSOUT "\nscanning section $manual(wing-name)"
     # put the entry for this section into the short table of contents
     if {[regexp {^(.+), version (.+)$} $manual(wing-name) -> name version]} {
 	puts $manual(short-toc-fp) "<DT><A HREF=\"$manual(wing-file)/[indexfile]\" TITLE=\"version $version\">$name</A></DT><DD>$manual(wing-description)</DD>"
@@ -1299,7 +1300,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	set n [lsearch -glob $manual(pages) $pat]
 	if {$n >= 0} {
 	    set f [lindex $manual(pages) $n]
-	    puts stderr "shuffling [file tail $f] to front of processing queue"
+	    puts $::STATUSOUT "shuffling [file tail $f] to front of processing queue"
 	    set manual(pages) \
 		[linsert [lreplace $manual(pages) $n $n] 0 $f]
 	}
@@ -1309,18 +1310,14 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	set manual(page) [file normalize $manual_page]
 	# whistle
 	if {$verbose} {
-	    puts stderr "scanning page $manual(page)"
+	    puts $::STATUSOUT "scanning page $manual(page)"
 	} else {
-	    puts -nonewline stderr .
+	    puts -nonewline $::STATUSOUT .
 	}
 	set manual(tail) [file tail $manual(page)]
 	set manual(name) [file root $manual(tail)]
 	set manual(section) {}
 	if {$manual(name) in $excluded_pages} {
-	    # obsolete
-	    if {!$verbose} {
-		puts stderr ""
-	    }
 	    manerror "discarding $manual(name)"
 	    continue
 	}
@@ -1401,9 +1398,6 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 		.BS - .BE - .br - .fi - .sp - .nf {
 		    flushbuffer
 		    if {$rest ne ""} {
-			if {!$verbose} {
-			    puts stderr ""
-			}
 			manerror "unexpected argument: $line"
 		    }
 		    lappend manual(text) $code
@@ -1422,9 +1416,6 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 		.TP {
 		    flushbuffer
 		    while {[is-a-directive [set next [gets $manual(infp)]]]} {
-			if {!$verbose} {
-			    puts stderr ""
-			}
 			manerror "ignoring $next after .TP"
 		    }
 		    if {"$next" ne {'}} {
@@ -1493,15 +1484,9 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 		    }
 		}
 		.. {
-		    if {!$verbose} {
-			puts stderr ""
-		    }
 		    error "found .. outside of .de"
 		}
 		default {
-		    if {!$verbose} {
-			puts stderr ""
-		    }
                     if { $manual(.CS) > 0 } {
 			addbuffer $line
 			manerror "unrecognized format directive in .CS (treating as text): $line"
@@ -1516,28 +1501,16 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	close $manual(infp)
 	# fixups
 	if {$manual(.RS) != 0} {
-	    if {!$verbose} {
-		puts stderr ""
-	    }
-	    puts "unbalanced .RS .RE"
+	    manerror "unbalanced .RS .RE"
 	}
 	if {$manual(.DS) != 0} {
-	    if {!$verbose} {
-		puts stderr ""
-	    }
-	    puts "unbalanced .DS .DE"
+	    manerror "unbalanced .DS .DE"
 	}
 	if {$manual(.CS) != 0} {
-	    if {!$verbose} {
-		puts stderr ""
-	    }
-	    puts "unbalanced .CS .CE"
+	    manerror "unbalanced .CS .CE"
 	}
 	if {$manual(.SO) != 0} {
-	    if {!$verbose} {
-		puts stderr ""
-	    }
-	    puts "unbalanced .SO .SE"
+	    manerror "unbalanced .SO .SE"
 	}
 	# output conversion
 	open-text
@@ -1550,9 +1523,6 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 		"[lindex $rest 0] manual page - [join [lrange $rest 4 end] { }]"
 	} else {
 	    set haserror 1
-	    if {!$verbose} {
-		puts stderr ""
-	    }
 	    manerror "no .HS or .TH record found"
 	}
 	if {!$haserror} {
@@ -1574,9 +1544,6 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	set manual(toc-$manual(wing-file)-$manual(name)) \
 	    [concat <DL> $manual(section-toc) </DL>]
     }
-    if {!$verbose} {
-	puts stderr ""
-    }
 
     #
     # make the wing table of contents for the section
@@ -1594,7 +1561,7 @@ proc make-manpage-section {outputDir sectionDescriptor} {
     foreach name [lsort $manual(wing-toc)] {
 	set tail $manual(name-$name)
 	if {[llength $tail] > 1} {
-	    manerror "$name is defined in more than one file: $tail"
+	    puts stderr "\n$name is defined in more than one file: $tail"
 	    set tail [lindex $tail [expr {[llength $tail]-1}]]
 	}
 	set category ""

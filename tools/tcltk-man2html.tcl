@@ -316,7 +316,7 @@ proc make-man-pages {html args} {
     ## build the keyword index.
     ##
     if {!$verbose} {
-	puts stderr "Assembling index"
+	puts $::STATUSOUT "\nAssembling index"
     }
     file delete -force -- $html/Keywords
     makedirhier $html/Keywords
@@ -395,7 +395,7 @@ proc make-man-pages {html args} {
     ##
     unset manual(section)
     if {!$verbose} {
-	puts stderr "Rescanning [llength $manual(all-pages)] pages to build cross links and write out"
+	puts $::STATUSOUT "\nRescanning [llength $manual(all-pages)] pages to build cross links and write out"
     }
     foreach path $manual(all-pages) wing_name $manual(all-page-domains) {
 	set manual(wing-file) [file dirname $path]
@@ -415,9 +415,9 @@ proc make-man-pages {html args} {
 		incr ntoc
 	    }
 	    if {$verbose} {
-		puts stderr "rescanning page $manual(name) $ntoc/$ntext"
+		puts $::STATUSOUT "rescanning page $manual(name) $ntoc/$ntext"
 	    } else {
-		puts -nonewline stderr .
+		puts -nonewline $::STATUSOUT .
 	    }
 	    set outfd [open $html/$manual(wing-file)/$manual(name).htm w]
 	    puts $outfd [htmlhead "$manual($manual(wing-file)-$manual(name)-title)" \
@@ -428,7 +428,6 @@ proc make-man-pages {html args} {
 		    puts $outfd $item
 		}
 	    } elseif {$manual(name) in $forced_index_pages} {
-		if {!$verbose} {puts stderr ""}
 		manerror "forcing index generation"
 		foreach item $toc {
 		    puts $outfd $item
@@ -449,7 +448,7 @@ proc make-man-pages {html args} {
 	}
     }
     if {!$verbose} {
-	puts stderr "\nDone"
+	puts $::STATUSOUT "\nDone"
     }
     return {}
 }
