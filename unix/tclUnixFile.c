@@ -1182,9 +1182,10 @@ TclpUtime(
 int
 TclOSstat(
     const char *name,
-    Tcl_StatBuf *statBuf)
+    void *cygstat)
 {
     struct stat buf;
+    Tcl_StatBuf *statBuf = cygstat;
     int result = stat(name, &buf);
 
     statBuf->st_mode = buf.st_mode;
@@ -1204,9 +1205,10 @@ TclOSstat(
 int
 TclOSlstat(
     const char *name,
-    Tcl_StatBuf *statBuf)
+    void *cygstat)
 {
     struct stat buf;
+    Tcl_StatBuf *statBuf = cygstat;
     int result = lstat(name, &buf);
 
     statBuf->st_mode = buf.st_mode;
