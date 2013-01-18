@@ -188,6 +188,10 @@ proc process-text {text} {
 	set text [string map [list "\\" "&#92;"] $text]
 	manerror "uncaught backslash: $text"
     }
+    if {[string match ".*" $text]} {
+	# leading period could get confused for a directive later
+	set text [string replace $text 0 0 "&#46;"]
+    }
     return $text
 }
 
@@ -907,8 +911,15 @@ proc insert-cross-references {text} {
 			      [expr {[lindex $range 1]+1}] end]
 		continue
 	    }
-	    end-anchor - end-bold - end-quote {
+	    end-anchor - end-bold {
 		return [reference-error "Out of place $invert([lindex $offsets 0])" $text]
+	    }
+	    end-quote {
+		# '' is valid text
+		append result ''
+		set text [string range $text[set text ""] \
+			      [expr {$offset(end-quote)+1}] end]
+		continue
 	    }
 	}
     }
@@ -1210,7 +1221,7 @@ proc output-directive {line} {
 	    manerror "ignoring $line"
 	}
 	default {
-	    manerror "unrecognized format directive: $line"
+	    manerror "unrecognized directive: $line"
 	}
     }
 }
