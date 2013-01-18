@@ -359,12 +359,8 @@ EXTERN CONST84_RETURN char * TclpGetCwd(Tcl_Interp *interp,
 EXTERN int		TclSetByteCodeFromAny(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, CompileHookProc *hookProc,
 				ClientData clientData);
-/* 143 */
-EXTERN int		TclAddLiteralObj(struct CompileEnv *envPtr,
-				Tcl_Obj *objPtr, LiteralEntry **litPtrPtr);
-/* 144 */
-EXTERN void		TclHideLiteral(Tcl_Interp *interp,
-				struct CompileEnv *envPtr, int index);
+/* Slot 143 is reserved */
+/* Slot 144 is reserved */
 /* Slot 145 is reserved */
 /* 146 */
 EXTERN TclHandle	TclHandleCreate(void *ptr);
@@ -738,8 +734,8 @@ typedef struct TclIntStubs {
     void (*reserved140)(void);
     CONST84_RETURN char * (*tclpGetCwd) (Tcl_Interp *interp, Tcl_DString *cwdPtr); /* 141 */
     int (*tclSetByteCodeFromAny) (Tcl_Interp *interp, Tcl_Obj *objPtr, CompileHookProc *hookProc, ClientData clientData); /* 142 */
-    int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
-    void (*tclHideLiteral) (Tcl_Interp *interp, struct CompileEnv *envPtr, int index); /* 144 */
+    void (*reserved143)(void);
+    void (*reserved144)(void);
     void (*reserved145)(void);
     TclHandle (*tclHandleCreate) (void *ptr); /* 146 */
     void (*tclHandleFree) (TclHandle handle); /* 147 */
@@ -1087,10 +1083,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpGetCwd) /* 141 */
 #define TclSetByteCodeFromAny \
 	(tclIntStubsPtr->tclSetByteCodeFromAny) /* 142 */
-#define TclAddLiteralObj \
-	(tclIntStubsPtr->tclAddLiteralObj) /* 143 */
-#define TclHideLiteral \
-	(tclIntStubsPtr->tclHideLiteral) /* 144 */
+/* Slot 143 is reserved */
+/* Slot 144 is reserved */
 /* Slot 145 is reserved */
 #define TclHandleCreate \
 	(tclIntStubsPtr->tclHandleCreate) /* 146 */

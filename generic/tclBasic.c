@@ -549,7 +549,6 @@ Tcl_CreateInterp(void)
     }
 
     iPtr->cmdCount = 0;
-    TclInitLiteralTable(&iPtr->literalTable);
     iPtr->compiledProcPtr = NULL;
     iPtr->resolverPtr = NULL;
     iPtr->evalFlags = 0;
@@ -1438,13 +1437,6 @@ DeleteInterpProc(
     }
 
     /*
-     * Free up literal objects created for scripts compiled by the
-     * interpreter.
-     */
-
-    TclDeleteLiteralTable(interp, &iPtr->literalTable);
-
-    /*
      * Squelch the tables of traces on variables and searches over arrays in
      * the in the interpreter.
      */
@@ -1724,18 +1716,6 @@ Tcl_ExposeCommand(
         Tcl_SetErrorCode(interp, "TCL", "EXPOSE", "COMMAND_EXISTS", NULL);
 	return TCL_ERROR;
     }
-
-    /*
-     * Command resolvers (per-interp, per-namespace) might have resolved to a
-     * command for the given namespace scope with this command not being
-     * registered with the namespace's command table. During BC compilation,
-     * the so-resolved command turns into a CmdName literal. Without
-     * invalidating a possible CmdName literal here explicitly, such literals
-     * keep being reused while pointing to overhauled commands.
-     */
-
-    TclInvalidateCmdLiteral(interp, cmdName, nsPtr);
-
     /*
      * The list of command exported from the namespace might have changed.
      * However, we do not need to recompute this just yet; next time we need
@@ -1871,18 +1851,6 @@ Tcl_CreateCommand(
 	    ckfree(Tcl_GetHashValue(hPtr));
 	}
     } else {
-	/*
-	 * Command resolvers (per-interp, per-namespace) might have resolved
-	 * to a command for the given namespace scope with this command not
-	 * being registered with the namespace's command table. During BC
-	 * compilation, the so-resolved command turns into a CmdName literal.
-	 * Without invalidating a possible CmdName literal here explicitly,
-	 * such literals keep being reused while pointing to overhauled
-	 * commands.
-	 */
-
-	TclInvalidateCmdLiteral(interp, tail, nsPtr);
-
 	/*
 	 * The list of command exported from the namespace might have changed.
 	 * However, we do not need to recompute this just yet; next time we
@@ -2055,18 +2023,6 @@ Tcl_CreateObjCommand(
 	    ckfree(Tcl_GetHashValue(hPtr));
 	}
     } else {
-	/*
-	 * Command resolvers (per-interp, per-namespace) might have resolved
-	 * to a command for the given namespace scope with this command not
-	 * being registered with the namespace's command table. During BC
-	 * compilation, the so-resolved command turns into a CmdName literal.
-	 * Without invalidating a possible CmdName literal here explicitly,
-	 * such literals keep being reused while pointing to overhauled
-	 * commands.
-	 */
-
-	TclInvalidateCmdLiteral(interp, tail, nsPtr);
-
 	/*
 	 * The list of command exported from the namespace might have changed.
 	 * However, we do not need to recompute this just yet; next time we
@@ -2369,17 +2325,6 @@ TclRenameCommand(
 
     TclInvalidateNsCmdLookup(cmdNsPtr);
     TclInvalidateNsCmdLookup(cmdPtr->nsPtr);
-
-    /*
-     * Command resolvers (per-interp, per-namespace) might have resolved to a
-     * command for the given namespace scope with this command not being
-     * registered with the namespace's command table. During BC compilation,
-     * the so-resolved command turns into a CmdName literal. Without
-     * invalidating a possible CmdName literal here explicitly, such literals
-     * keep being reused while pointing to overhauled commands.
-     */
-
-    TclInvalidateCmdLiteral(interp, newTail, cmdPtr->nsPtr);
 
     /*
      * Script for rename traces can delete the command "oldName". Therefore

@@ -1268,7 +1268,6 @@ typedef struct CoroutineData {
 				 * coroutine. */
     CorContext caller;
     CorContext running;
-    Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
     void *stackLevel;
     int auxNumLevels;		/* While the coroutine is running the
 				 * numLevels of the create/resume command is
@@ -1290,55 +1289,6 @@ typedef struct ExecEnv {
 
 #define COR_IS_SUSPENDED(corPtr) \
     ((corPtr)->stackLevel == NULL)
-
-/*
- * The definitions for the LiteralTable and LiteralEntry structures. Each
- * interpreter contains a LiteralTable. It is used to reduce the storage
- * needed for all the Tcl objects that hold the literals of scripts compiled
- * by the interpreter. A literal's object is shared by all the ByteCodes that
- * refer to the literal. Each distinct literal has one LiteralEntry entry in
- * the LiteralTable. A literal table is a specialized hash table that is
- * indexed by the literal's string representation, which may contain null
- * characters.
- *
- * Note that we reduce the space needed for literals by sharing literal
- * objects both within a ByteCode (each ByteCode contains a local
- * LiteralTable) and across all an interpreter's ByteCodes (with the
- * interpreter's global LiteralTable).
- */
-
-typedef struct LiteralEntry {
-    struct LiteralEntry *nextPtr;
-				/* Points to next entry in this hash bucket or
-				 * NULL if end of chain. */
-    Tcl_Obj *objPtr;		/* Points to Tcl object that holds the
-				 * literal's bytes and length. */
-    int refCount;		/* If in an interpreter's global literal
-				 * table, the number of ByteCode structures
-				 * that share the literal object; the literal
-				 * entry can be freed when refCount drops to
-				 * 0. If in a local literal table, -1. */
-    Namespace *nsPtr;		/* Namespace in which this literal is used. We
-				 * try to avoid sharing literal non-FQ command
-				 * names among different namespaces to reduce
-				 * shimmering. */
-} LiteralEntry;
-
-typedef struct LiteralTable {
-    LiteralEntry **buckets;	/* Pointer to bucket array. Each element
-				 * points to first entry in bucket's hash
-				 * chain, or NULL. */
-    LiteralEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
-				/* Bucket array used for small tables to avoid
-				 * mallocs and frees. */
-    int numBuckets;		/* Total number of buckets allocated at
-				 * **buckets. */
-    int numEntries;		/* Total number of entries present in
-				 * table. */
-    int rebuildSize;		/* Enlarge table when numEntries gets to be
-				 * this large. */
-    int mask;			/* Mask value used in hashing function. */
-} LiteralTable;
 
 /*
  * The following structure defines for each Tcl interpreter various
@@ -1648,11 +1598,6 @@ typedef struct Interp {
 				 * calling Tcl_Eval. See below for valid
 				 * values. */
     int unused1;		/* No longer used (was termOffset) */
-    LiteralTable literalTable;	/* Contains LiteralEntry's describing all Tcl
-				 * objects holding literals of scripts
-				 * compiled by the interpreter. Indexed by the
-				 * string representations of literals. Used to
-				 * avoid creating duplicate objects. */
     Proc *compiledProcPtr;	/* If a procedure is being compiled, a pointer
 				 * to its Proc structure; otherwise, this is
 				 * NULL. Set by ObjInterpProc in tclProc.c and

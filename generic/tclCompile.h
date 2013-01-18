@@ -36,13 +36,8 @@ MODULE_SCOPE int	TclNoIdentOpCmd(ClientData clientData,
 			    Tcl_Obj *const objv[]);
 
 
-MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
-MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
-			    LiteralTable *tablePtr);
-MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
-			    const char *name, Namespace *nsPtr);
 
 MODULE_SCOPE struct ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 

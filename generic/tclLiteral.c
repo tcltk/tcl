@@ -140,127 +140,6 @@ TclDeleteLiteralTable(
 /*
  *----------------------------------------------------------------------
  *
- * TclCreateLiteral --
- *
- *	Find, or if necessary create, an object in the interpreter's literal
- *	table that has a string representation matching the argument
- *	string. If nsPtr!=NULL then only literals stored for the namespace are
- *	considered.
- *
- * Results:
- *	The literal object. If it was created in this call *newPtr is set to
- *	1, else 0. NULL is returned if newPtr==NULL and no literal is found.
- *
- * Side effects:
- *	Increments the ref count of the global LiteralEntry since the caller
- *	now holds a reference. If LITERAL_ON_HEAP is set in flags, this
- *	function is given ownership of the string: if an object is created
- *	then its string representation is set directly from string, otherwise
- *	the string is freed. Typically, a caller sets LITERAL_ON_HEAP if
- *	"string" is an already heap-allocated buffer holding the result of
- *	backslash substitutions.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclCreateLiteral(
-    Interp *iPtr,
-    char *bytes,		/* The start of the string. Note that this is
-				 * not a NUL-terminated string. */
-    int length,			/* Number of bytes in the string. */
-    unsigned hash,		/* The string's hash. If -1, it will be
-				 * computed here. */
-    int *newPtr,
-    Namespace *nsPtr,
-    int flags,
-    LiteralEntry **globalPtrPtr)
-{
-    LiteralTable *globalTablePtr = &iPtr->literalTable;
-    LiteralEntry *globalPtr;
-    int globalHash;
-    Tcl_Obj *objPtr;
-
-    /*
-     * Is it in the interpreter's global literal table?
-     */
-
-    if (hash == (unsigned) -1) {
-	hash = HashString(bytes, length);
-    }
-    globalHash = (hash & globalTablePtr->mask);
-    for (globalPtr=globalTablePtr->buckets[globalHash] ; globalPtr!=NULL;
-	    globalPtr = globalPtr->nextPtr) {
-	objPtr = globalPtr->objPtr;
-	if ((globalPtr->nsPtr == nsPtr)
-		&& (objPtr->length == length) && ((length == 0)
-		|| ((objPtr->bytes[0] == bytes[0])
-		&& (memcmp(objPtr->bytes, bytes, (unsigned) length) == 0)))) {
-	    /*
-	     * A literal was found: return it
-	     */
-
-	    if (newPtr) {
-		*newPtr = 0;
-	    }
-	    if (globalPtrPtr) {
-		*globalPtrPtr = globalPtr;
-	    }
-	    if (flags & LITERAL_ON_HEAP) {
-		ckfree(bytes);
-	    }
-	    globalPtr->refCount++;
-	    return objPtr;
-	}
-    }
-    if (!newPtr) {
-	if (flags & LITERAL_ON_HEAP) {
-	    ckfree(bytes);
-	}
-	return NULL;
-    }
-
-    /*
-     * The literal is new to the interpreter. Add it to the global literal
-     * table.
-     */
-
-    TclNewObj(objPtr);
-    Tcl_IncrRefCount(objPtr);
-    if (flags & LITERAL_ON_HEAP) {
-	objPtr->bytes = bytes;
-	objPtr->length = length;
-    } else {
-	TclInitStringRep(objPtr, bytes, length);
-    }
-
-    globalPtr = ckalloc(sizeof(LiteralEntry));
-    globalPtr->objPtr = objPtr;
-    globalPtr->refCount = 1;
-    globalPtr->nsPtr = nsPtr;
-    globalPtr->nextPtr = globalTablePtr->buckets[globalHash];
-    globalTablePtr->buckets[globalHash] = globalPtr;
-    globalTablePtr->numEntries++;
-
-    /*
-     * If the global literal table has exceeded a decent size, rebuild it with
-     * more buckets.
-     */
-
-    if (globalTablePtr->numEntries >= globalTablePtr->rebuildSize) {
-	RebuildLiteralTable(globalTablePtr);
-    }
-
-    if (globalPtrPtr) {
-	*globalPtrPtr = globalPtr;
-    }
-    *newPtr = 1;
-    return objPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclRegisterLiteral --
  *
  *	Find, or if necessary create, an object in a CompileEnv literal array
@@ -301,13 +180,11 @@ TclRegisterLiteral(
 				 * the literal should not be shared accross
 				 * namespaces. */
 {
-    Interp *iPtr = envPtr->iPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
-    LiteralEntry *globalPtr, *localPtr;
+    LiteralEntry *localPtr;
     Tcl_Obj *objPtr;
     unsigned hash;
-    int localHash, objIndex, new;
-    Namespace *nsPtr;
+    int localHash, objIndex;
 
     if (length < 0) {
 	length = (bytes ? strlen(bytes) : 0);
@@ -335,138 +212,9 @@ TclRegisterLiteral(
 	}
     }
 
-    /*
-     * The literal is new to this CompileEnv. If it is a command name, avoid
-     * sharing it accross namespaces, and try not to share it with non-cmd
-     * literals. Note that FQ command names can be shared, so that we register
-     * the namespace as the interp's global NS.
-     */
-
-    if (flags & LITERAL_CMD_NAME) {
-	if ((length >= 2) && (bytes[0] == ':') && (bytes[1] == ':')) {
-	    nsPtr = iPtr->globalNsPtr;
-	} else {
-	    nsPtr = iPtr->varFramePtr->nsPtr;
-	}
-    } else {
-	nsPtr = NULL;
-    }
-    
-    /*
-     * Is it in the interpreter's global literal table? If not, create it.
-     */
-
-    objPtr = TclCreateLiteral(iPtr, bytes, length, hash, &new, nsPtr, flags,
-	    &globalPtr);
+    TclNewStringObj(objPtr, bytes, length);
     objIndex = AddLocalLiteralEntry(envPtr, objPtr, localHash);
-
     return objIndex;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclLookupLiteralEntry --
- *
- *	Finds the LiteralEntry that corresponds to a literal Tcl object
- *	holding a literal.
- *
- * Results:
- *	Returns the matching LiteralEntry if found, otherwise NULL.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-LiteralEntry *
-TclLookupLiteralEntry(
-    Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
-				 * hold a literal. */
-    register Tcl_Obj *objPtr)	/* Points to a Tcl object holding a literal
-				 * that was previously created by a call to
-				 * TclRegisterLiteral. */
-{
-    Interp *iPtr = (Interp *) interp;
-    LiteralTable *globalTablePtr = &iPtr->literalTable;
-    register LiteralEntry *entryPtr;
-    const char *bytes;
-    int length, globalHash;
-
-    bytes = TclGetStringFromObj(objPtr, &length);
-    globalHash = (HashString(bytes, length) & globalTablePtr->mask);
-    for (entryPtr=globalTablePtr->buckets[globalHash] ; entryPtr!=NULL;
-	    entryPtr=entryPtr->nextPtr) {
-	if (entryPtr->objPtr == objPtr) {
-	    return entryPtr;
-	}
-    }
-    return NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclHideLiteral --
- *
- *	Remove a literal entry from the literal hash tables, leaving it in the
- *	literal array so existing references continue to function. This makes
- *	it possible to turn a shared literal into a private literal that
- *	cannot be shared.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Removes the literal from the local hash table and decrements the
- *	global hash entry's reference count.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclHideLiteral(
-    Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
-				 * hold a literal. */
-    register CompileEnv *envPtr,/* Points to CompileEnv whose literal array
-				 * contains the entry being hidden. */
-    int index)			/* The index of the entry in the literal
-				 * array. */
-{
-    LiteralEntry **nextPtrPtr, *entryPtr, *lPtr;
-    LiteralTable *localTablePtr = &envPtr->localLitTable;
-    int localHash, length;
-    const char *bytes;
-    Tcl_Obj *newObjPtr;
-
-    lPtr = &envPtr->literalArrayPtr[index];
-
-    /*
-     * To avoid unwanted sharing we need to copy the object and remove it from
-     * the local and global literal tables. It still has a slot in the literal
-     * array so it can be referred to by byte codes, but it will not be
-     * matched by literal searches.
-     */
-
-    newObjPtr = Tcl_DuplicateObj(lPtr->objPtr);
-    Tcl_IncrRefCount(newObjPtr);
-    TclReleaseLiteral(interp, lPtr->objPtr);
-    lPtr->objPtr = newObjPtr;
-
-    bytes = TclGetStringFromObj(newObjPtr, &length);
-    localHash = (HashString(bytes, length) & localTablePtr->mask);
-    nextPtrPtr = &localTablePtr->buckets[localHash];
-
-    for (entryPtr=*nextPtrPtr ; entryPtr!=NULL ; entryPtr=*nextPtrPtr) {
-	if (entryPtr == lPtr) {
-	    *nextPtrPtr = lPtr->nextPtr;
-	    lPtr->nextPtr = NULL;
-	    localTablePtr->numEntries--;
-	    break;
-	}
-	nextPtrPtr = &entryPtr->nextPtr;
-    }
 }
 
 /*
@@ -674,52 +422,6 @@ TclReleaseLiteral(
 				 * previously created by a call to
 				 * TclRegisterLiteral. */
 {
-    Interp *iPtr = (Interp *) interp;
-    LiteralTable *globalTablePtr = &iPtr->literalTable;
-    register LiteralEntry *entryPtr, *prevPtr;
-    const char *bytes;
-    int length, index;
-
-    bytes = TclGetStringFromObj(objPtr, &length);
-    index = (HashString(bytes, length) & globalTablePtr->mask);
-
-    /*
-     * Check to see if the object is in the global literal table and remove
-     * this reference. The object may not be in the table if it is a hidden
-     * local literal.
-     */
-
-    for (prevPtr=NULL, entryPtr=globalTablePtr->buckets[index];
-	    entryPtr!=NULL ; prevPtr=entryPtr, entryPtr=entryPtr->nextPtr) {
-	if (entryPtr->objPtr == objPtr) {
-	    entryPtr->refCount--;
-
-	    /*
-	     * If the literal is no longer being used by any ByteCode, delete
-	     * the entry then remove the reference corresponding to the global
-	     * literal table entry (decrement the ref count of the object).
-	     */
-
-	    if (entryPtr->refCount == 0) {
-		if (prevPtr == NULL) {
-		    globalTablePtr->buckets[index] = entryPtr->nextPtr;
-		} else {
-		    prevPtr->nextPtr = entryPtr->nextPtr;
-		}
-		ckfree(entryPtr);
-		globalTablePtr->numEntries--;
-
-		TclDecrRefCount(objPtr);
-
-	    }
-	    break;
-	}
-    }
-
-    /*
-     * Remove the reference corresponding to the local literal table entry.
-     */
-
     Tcl_DecrRefCount(objPtr);
 }
 
@@ -855,46 +557,6 @@ RebuildLiteralTable(
 
     if (oldBuckets != tablePtr->staticBuckets) {
 	ckfree(oldBuckets);
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInvalidateCmdLiteral --
- *
- *	Invalidate a command literal entry, if present in the literal hash
- *	tables, by resetting its internal representation. This invalidation
- *	leaves it in the literal tables and in existing literal arrays. As a
- *	result, existing references continue to work but we force a fresh
- *	command look-up upon the next use (see, in particular,
- *	TclSetCmdNameObj()).
- *
- * Results:
- *	None.
- *
- * Side effects: 
- *	Resets the internal representation of the CmdName Tcl_Obj
- *	using TclFreeIntRep().
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclInvalidateCmdLiteral(
-    Tcl_Interp *interp,		/* Interpreter for which to invalidate a
-				 * command literal. */
-    const char *name,		/* Points to the start of the cmd literal
-				 * name. */
-    Namespace *nsPtr)		/* The namespace for which to lookup and
-				 * invalidate a cmd literal. */
-{
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name,
-	    strlen(name), -1, NULL, nsPtr, 0, NULL);
-
-    if (literalObjPtr != NULL && literalObjPtr->typePtr == &tclCmdNameType) {
-	TclFreeIntRep(literalObjPtr);
     }
 }
 

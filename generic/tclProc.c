@@ -1187,7 +1187,6 @@ static void
 InitLocalCache(
     Proc *procPtr)
 {
-    Interp *iPtr = procPtr->iPtr;
     ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
     int localCt = procPtr->numCompiledLocals;
     int numArgs = procPtr->numArgs, i = 0;
@@ -1196,7 +1195,6 @@ InitLocalCache(
     Var *varPtr;
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
-    int new;
 
     /*
      * Cache the names and initial values of local variables; store the
@@ -1215,9 +1213,8 @@ InitLocalCache(
 	if (TclIsVarTemporary(localPtr)) {
 	    *namePtr = NULL;
 	} else {
-	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
-		    localPtr->nameLength, /* hash */ (unsigned int) -1,
-		    &new, /* nsPtr */ NULL, 0, NULL);
+	    TclNewStringObj(*namePtr, localPtr->name,
+		    localPtr->nameLength);
 	    Tcl_IncrRefCount(*namePtr);
 	}
 

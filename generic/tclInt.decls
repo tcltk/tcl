@@ -569,14 +569,14 @@ declare 142 {
     int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    CompileHookProc *hookProc, ClientData clientData)
 }
-declare 143 {
-    int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
-	    LiteralEntry **litPtrPtr)
-}
-declare 144 {
-    void TclHideLiteral(Tcl_Interp *interp, struct CompileEnv *envPtr,
-	    int index)
-}
+#declare 143 {
+#    int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
+#	    LiteralEntry **litPtrPtr)
+#}
+#declare 144 {
+#    void TclHideLiteral(Tcl_Interp *interp, struct CompileEnv *envPtr,
+#	    int index)
+#}
 #declare 145 {
 #    const struct AuxDataType *TclGetAuxDataType(const char *typeName)
 #}
