@@ -199,6 +199,8 @@ made inner 1 context=:: name=::demo::coroEg
 apply(n), info(n), proc(n), return(n)
 .SH KEYWORDS
 coroutine, generator
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

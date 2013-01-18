@@ -81,6 +81,8 @@ load [file join $platLibDir support[info sharedlibextension]]
 .CE
 .SH KEYWORDS
 operating system, cpu architecture, platform, architecture
+.SH CATEGORY
+Tcl System Related
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

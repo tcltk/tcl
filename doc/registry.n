@@ -213,6 +213,8 @@ puts "$ext opens with $command"
 .CE
 .SH KEYWORDS
 registry
+.SH CATEGORY
+Tcl Platform-specific
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

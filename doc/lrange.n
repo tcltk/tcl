@@ -76,3 +76,6 @@ lset(n), lreplace(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, list, range, sublist
+
+.SH CATEGORY
+Tcl List Handling

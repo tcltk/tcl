@@ -42,3 +42,6 @@ set data {1 {2 3} 4 {5 {6 7} 8}}
 list(n), lappend(n), split(n)
 .SH KEYWORDS
 element, join, list, separator
+
+.SH CATEGORY
+Tcl List Handling

@@ -222,6 +222,8 @@ Support for IPv6 was added in Tcl 8.6.
 chan(n), flush(n), open(n), read(n)
 .SH KEYWORDS
 asynchronous I/O, bind, channel, connection, domain name, host, network address, socket, tcp
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

@@ -185,3 +185,6 @@ foreach color [lsort [\fBarray names\fR colorcount]] {
 list(n), string(n), variable(n), trace(n), foreach(n)
 .SH KEYWORDS
 array, element names, search
+
+.SH CATEGORY
+Tcl Variables and Procedures

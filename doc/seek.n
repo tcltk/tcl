@@ -86,6 +86,8 @@ close $f
 file(n), open(n), close(n), gets(n), tell(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 access position, file, seek
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

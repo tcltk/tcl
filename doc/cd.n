@@ -41,3 +41,6 @@ current one:
 filename(n), glob(n), pwd(n)
 .SH KEYWORDS
 working directory
+
+.SH CATEGORY
+Tcl System Related

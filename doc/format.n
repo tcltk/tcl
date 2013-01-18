@@ -280,6 +280,8 @@ puts $sep
 scan(n), sprintf(3), string(n)
 .SH KEYWORDS
 conversion specifier, format, sprintf, string, substitution
+.SH CATEGORY
+Tcl String Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

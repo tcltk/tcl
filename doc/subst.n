@@ -159,6 +159,8 @@ not
 Tcl(n), eval(n), break(n), continue(n)
 .SH KEYWORDS
 backslash substitution, command substitution, quoting, substitution, variable substitution
+.SH CATEGORY
+Tcl String Handling
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

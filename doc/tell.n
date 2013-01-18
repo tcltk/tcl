@@ -46,3 +46,6 @@ if {[read $chan 6] eq "foobar"} {
 file(n), open(n), close(n), gets(n), seek(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 access position, channel, seeking
+
+.SH CATEGORY
+Tcl Input/Output

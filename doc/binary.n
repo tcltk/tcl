@@ -887,6 +887,8 @@ puts [\fBbinary encode\fR base64 \-maxlen 64 $data]
 format(n), scan(n), tclvars(n)
 .SH KEYWORDS
 binary, format, scan
+.SH CATEGORY
+Tcl String Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

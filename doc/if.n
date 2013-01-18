@@ -83,6 +83,8 @@ good idea to use the optional \fBthen\fR keyword for clarity:
 expr(n), for(n), foreach(n)
 .SH KEYWORDS
 boolean, conditional, else, false, if, true
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

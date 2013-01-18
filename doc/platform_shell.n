@@ -55,3 +55,6 @@ This command returns the contents of \fBtcl_platform(platform)\fR for
 the specified Tcl shell.
 .SH KEYWORDS
 operating system, cpu architecture, platform, architecture
+
+.SH CATEGORY
+Tcl System Related

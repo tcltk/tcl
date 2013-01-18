@@ -42,6 +42,8 @@ for {set x 0} {$x<10} {incr x} {
 break(n), for(n), foreach(n), return(n), while(n)
 .SH KEYWORDS
 continue, iteration, loop
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

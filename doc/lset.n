@@ -141,6 +141,10 @@ lsort(n), lrange(n), lreplace(n),
 string(n)
 .SH KEYWORDS
 element, index, list, replace, set
+.SH CATEGORY
+Tcl List Handling
 '\"Local Variables:
 '\"mode: nroff
+'\"End:
+ff
 '\"End:

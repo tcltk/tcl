@@ -181,6 +181,8 @@ exactly matched is easily obtained using the \fB\-matchvar\fR option:
 for(n), if(n), regexp(n)
 .SH KEYWORDS
 switch, match, regular expression
+.SH CATEGORY
+Tcl Control Constructs
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

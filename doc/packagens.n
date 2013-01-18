@@ -48,3 +48,6 @@ At least one \fB\-load\fR or \fB\-source\fR parameter must be given.
 package(n)
 .SH KEYWORDS
 auto-load, index, package, version
+
+.SH CATEGORY
+Tcl Packages and Source files

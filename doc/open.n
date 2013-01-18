@@ -460,6 +460,8 @@ puts(n), exec(n), pid(n), fopen(3)
 .SH KEYWORDS
 access mode, append, create, file, non-blocking, open, permissions,
 pipeline, process, serial
+.SH CATEGORY
+Tcl Input/Output
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

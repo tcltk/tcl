@@ -153,3 +153,6 @@ vwait done
 eof(n), fblocked(n), fconfigure(n), file(n)
 .SH KEYWORDS
 blocking, channel, end of line, end of file, nonblocking, read, translation
+
+.SH CATEGORY
+Tcl Input/Output

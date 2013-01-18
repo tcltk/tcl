@@ -60,6 +60,8 @@ dst msg              \fI\(-> prints "foo"\fR
 oo::class(n), oo::define(n), oo::object(n)
 .SH KEYWORDS
 clone, copy, duplication, object
+.SH CATEGORY
+Tcl Object Orientation
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

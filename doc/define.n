@@ -398,6 +398,8 @@ inst m2              \fI\(-> prints "blue brick"\fR
 next(n), oo::class(n), oo::object(n)
 .SH KEYWORDS
 class, definition, method, object, slot
+.SH CATEGORY
+Tcl Object Orientation
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

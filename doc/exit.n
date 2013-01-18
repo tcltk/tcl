@@ -49,3 +49,6 @@ if {[catch {main} msg options]} {
 exec(n)
 .SH KEYWORDS
 abort, exit, process
+
+.SH CATEGORY
+Tcl System Related

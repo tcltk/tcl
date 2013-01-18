@@ -288,6 +288,8 @@ values determined by size modifiers:
 format(n), sscanf(3)
 .SH KEYWORDS
 conversion specifier, parse, scan
+.SH CATEGORY
+Tcl String Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

@@ -98,3 +98,6 @@ namespace eval foo {
 global(n), namespace(n), upvar(n)
 .SH KEYWORDS
 global, namespace, procedure, variable
+
+.SH CATEGORY
+Tcl Variables and Procedures

@@ -43,3 +43,6 @@ puts "Hello there, $name!"
 file(n), open(n), socket(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, buffer, channel, flush, nonblocking, output
+
+.SH CATEGORY
+Tcl Input/Output

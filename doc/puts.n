@@ -96,3 +96,6 @@ close $chan
 file(n), fileevent(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 channel, newline, output, write
+
+.SH CATEGORY
+Tcl Input/Output

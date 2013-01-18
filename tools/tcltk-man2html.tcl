@@ -36,13 +36,14 @@ proc parse_command_line {} {
 
     # These variables determine where the man pages come from and where
     # the converted pages go to.
-    global tcltkdir tkdir tcldir webdir build_tcl build_tk verbose
+    global tcltkdir tkdir tcldir webdir pkgsDir build_tcl build_tk verbose
 
     # Set defaults based on original code.
     set tcltkdir ../..
     set tkdir {}
     set tcldir {}
     set webdir ../html
+    set pkgsDir {}
     set build_tcl 0
     set build_tk 0
     set verbose 0
@@ -69,6 +70,7 @@ proc parse_command_line {} {
 		puts "  --version           print version number, then exit"
 		puts "  --srcdir=DIR        find tcl and tk source below DIR"
 		puts "  --htmldir=DIR       put generated HTML in DIR"
+                puts "  --pkgdir=DIR        find package sources below DIR"
 		puts "  --tcl               build tcl help"
 		puts "  --tk                build tk help"
 		puts "  --useversion        version of tcl/tk to search for"
@@ -85,6 +87,11 @@ proc parse_command_line {} {
 		# length of "--htmldir=" is 10
 		set webdir [string range $option 10 end]
 	    }
+            
+            --pkgdir=* {
+		# length of "--pkgdir=" is 9
+		set pkgsDir [string range $option 9 end]
+            }
 
 	    --useversion=* {
 		# length of "--useversion=" is 13
@@ -136,6 +143,13 @@ proc parse_command_line {} {
 	}
 	puts "using Tk source directory $tkdir"
     }
+    
+    if { $pkgsDir eq {} } {
+	# Use default packages dir.
+	set pkgsDir [file join $tcltkdir $tcldir pkgs]
+    }
+    set pkgsDir [file normalize $pkgsDir] 
+    puts "using Packages source directory $pkgsDir"
 
     puts "verbose messages are [expr {$verbose ? {on} : {off}}]"
 
@@ -219,6 +233,15 @@ proc css-stylesheet {} {
     }
     css-style h4 {
 	font-size: 11px;
+    }
+    css-style ul.multicolumn {
+	column-fill: balance;
+	column-count: 3;
+	-moz-column-count: 3;
+	-webkit-column-count: 3;
+        column-gap: 20px;
+	-moz-column-gap: 20px;
+	-webkit-column-gap: 20px;
     }
     css-style ".keylist dt" ".arguments dt" {
 	width: 20em;
@@ -454,18 +477,17 @@ proc plus-base {var root glob name dir desc} {
 ## Helper for assembling the descriptions of contributed packages.
 ##
 proc plus-pkgs {type args} {
-    global build_tcl tcltkdir tcldir
+    global build_tcl tcltkdir tcldir pkgsDir
     if {$type ni {n 3}} {
 	error "unknown type \"$type\": must be 3 or n"
     }
     if {!$build_tcl} return
     set result {}
-    set pkgsdir $tcltkdir/$tcldir/pkgs
     foreach {dir name version} $args {
-	set globpat $pkgsdir/$dir/doc/*.$type
+	set globpat [file join $pkgsDir $dir doc *.$type]
 	if {![llength [glob -type f -nocomplain $globpat]]} {
 	    # Fallback for manpages generated using doctools
-	    set globpat $pkgsdir/$dir/doc/man/*.$type
+	    set globpat [file join $pkgsDir $dir doc man *.$type]
 	    if {![llength [glob -type f -nocomplain $globpat]]} {
 		continue
 	    }
@@ -651,7 +673,6 @@ try {
     # When building docs for Tcl, try to build docs for bundled packages too
     set packageBuildList {}
     if  {$build_tcl} {
-	set pkgsDir [file join $tcltkdir $tcldir pkgs]
 	set subdirs [glob -nocomplain -types d -tails -directory $pkgsDir *]
 
 	foreach dir [lsort $subdirs] {
@@ -672,7 +693,9 @@ try {
 			break
 		    }
 		}
-	    } finally {
+	    } trap {POSIX ENOENT} {e} {
+		puts stderr "warning: no 'configure.in' in '[file nativename [file join $pkgsDir $dir]]'"
+            } finally {
 		catch {close $f; unset f}
 	    }
 

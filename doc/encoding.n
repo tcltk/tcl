@@ -93,3 +93,6 @@ which is the Hiragana letter HA.
 Tcl_GetEncoding(3)
 .SH KEYWORDS
 encoding, unicode
+
+.SH CATEGORY
+Tcl Library Procedures

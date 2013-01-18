@@ -293,6 +293,8 @@ is determined, and then the low order 64 bits of that integer value
 are returned as an integer value.  
 .SH "SEE ALSO"
 expr(n), mathop(n), namespace(n)
+.SH "CATEGORY"
+General
 .SH "COPYRIGHT"
 .nf
 Copyright (c) 1993 The Regents of the University of California.

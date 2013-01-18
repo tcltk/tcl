@@ -176,3 +176,6 @@ file(n), glob(n)
 .SH KEYWORDS
 current directory, absolute file name, relative file name,
 volume-relative file name, portability
+
+.SH CATEGORY
+General

@@ -905,6 +905,8 @@ set i [\fBinterp create\fR]
 bgerror(n), load(n), safe(n), Tcl_CreateSlave(3), Tcl_Eval(3), Tcl_BackgroundException(3)
 .SH KEYWORDS
 alias, master interpreter, safe interpreter, slave interpreter
+.SH CATEGORY
+Tcl Interpreter Routines
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

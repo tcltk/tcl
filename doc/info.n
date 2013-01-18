@@ -771,6 +771,8 @@ command, information, interpreter, introspection, level, namespace,
 object,
 .VE 8.6
 procedure, variable
+.SH CATEGORY
+Tcl Interpreter Routines
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

@@ -122,6 +122,8 @@ $obj foo             \fI\(-> error "unknown command obj"\fR
 my(n), oo::class(n)
 .SH KEYWORDS
 base class, class, object, root class
+.SH CATEGORY
+Tcl Object Orientation
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

@@ -55,6 +55,10 @@ set ::argv [\fBlassign\fR $::argv argumentToReadOff]
 lindex(n), list(n), lrange(n), lset(n), set(n)
 .SH KEYWORDS
 assign, element, list, multiple, set, variable
+.SH CATEGORY
+Tcl List Handling
 '\"Local Variables:
 '\"mode: nroff
+'\"End:
+ff
 '\"End:

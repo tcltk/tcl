@@ -50,6 +50,8 @@ lset(n), lsort(n), lrange(n), lreplace(n),
 string(n)
 .SH KEYWORDS
 element, insert, list
+.SH CATEGORY
+Tcl List Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

@@ -43,6 +43,8 @@ The following produces an error that is identical to that produced by
 catch(n), error(n), return(n), tclvars(n), try(n)
 .SH "KEYWORDS"
 error, exception
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

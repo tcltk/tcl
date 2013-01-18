@@ -167,6 +167,8 @@ without having to shut down the overall Tcl process.
 info sharedlibextension, load(n), safe(n)
 .SH KEYWORDS
 binary code, unloading, safe interpreter, shared library
+.SH CATEGORY
+Tcl Packages and Source files
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

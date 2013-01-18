@@ -187,6 +187,8 @@ set quoted [subst [string map {\en {\e\eu000a}} \e
 regexp(n), re_syntax(n), subst(n), string(n)
 .SH KEYWORDS
 match, pattern, quoting, regular expression, substitution
+.SH CATEGORY
+Tcl String Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

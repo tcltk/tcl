@@ -102,6 +102,8 @@ proc withOpenFile {filename channelVar script} {
 file(n), open(n), socket(n), eof(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, channel, close, nonblocking, half-close
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

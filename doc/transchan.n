@@ -155,6 +155,8 @@ and to defer the actual transformation until it has more data.
 chan(n), refchan(n)
 .SH KEYWORDS
 API, channel, ensemble, prefix, transformation
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

@@ -62,6 +62,8 @@ parray squares
 set(n), trace(n), upvar(n)
 .SH KEYWORDS
 remove, variable
+.SH CATEGORY
+Tcl Variables and Procedures
 '\" Local Variables:
 '\" mode: nroff
 '\" fill-column: 78

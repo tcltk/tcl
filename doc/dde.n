@@ -184,6 +184,8 @@ package require dde
 tk(n), winfo(n), send(n)
 .SH KEYWORDS
 application, dde, name, remote execution
+.SH CATEGORY
+Tcl Platform-specific
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

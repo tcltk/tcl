@@ -1252,6 +1252,8 @@ options to \fBtest\fR is useful only for pure Tcl applications
 that use \fBputs\fR to produce output. 
 .SH KEYWORDS
 test, test harness, test suite
+.SH CATEGORY
+General
 .\" Local Variables:
 .\" mode: nroff
 .\" End:

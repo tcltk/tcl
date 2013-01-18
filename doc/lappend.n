@@ -47,3 +47,6 @@ list(n), lindex(n), linsert(n), llength(n), lset(n),
 lsort(n), lrange(n)
 .SH KEYWORDS
 append, element, list, variable
+
+.SH CATEGORY
+Tcl List Handling Procedures

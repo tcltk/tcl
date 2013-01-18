@@ -831,6 +831,8 @@ fileevent(n), flush(n), gets(n), open(n), puts(n), read(n), seek(n),
 socket(n), tell(n), refchan(n), transchan(n)
 .SH KEYWORDS
 channel, input, output, events, offset
+.SH CATEGORY
+Tcl Input/Output
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

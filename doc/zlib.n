@@ -455,6 +455,8 @@ $\fIstrm \fBclose\fR
 binary(n), chan(n), encoding(n), Tcl_ZlibDeflate(3), RFC1950 \- RFC1952
 .SH "KEYWORDS"
 compress, decompress, deflate, gzip, inflate, zlib
+.SH CATEGORY
+Tcl Library Procedures
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

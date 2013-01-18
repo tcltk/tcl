@@ -43,3 +43,6 @@ proc ::source args {
 namespace(n), proc(n)
 .SH KEYWORDS
 command, delete, namespace, rename
+
+.SH CATEGORY
+Tcl Variables and Procedures

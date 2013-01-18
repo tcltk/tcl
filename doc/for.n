@@ -82,6 +82,8 @@ Print out the powers of two from 1 to 1024:
 break(n), continue(n), foreach(n), while(n)
 .SH KEYWORDS
 boolean, for, iteration, loop
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

@@ -88,3 +88,6 @@ proc bgerror {message} {
 after(n), interp(n), tclvars(n)
 .SH KEYWORDS
 background error, reporting
+
+.SH CATEGORY
+Tcl Interpreter Routines

@@ -56,3 +56,6 @@ proc accum {string} {
 namespace(n), upvar(n), variable(n)
 .SH KEYWORDS
 global, namespace, procedure, variable
+
+.SH CATEGORY
+Tcl Variables and Procedures

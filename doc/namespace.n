@@ -964,6 +964,8 @@ puts [do 1 plus [do 9 minus 7]]
 interp(n), upvar(n), variable(n)
 .SH KEYWORDS
 command, ensemble, exported, internal, variable
+.SH CATEGORY
+Tcl Variables and Procedures
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

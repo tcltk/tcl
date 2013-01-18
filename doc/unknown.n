@@ -89,3 +89,6 @@ proc \fBunknown\fR args {
 info(n), proc(n), interp(n), library(n), namespace(n)
 .SH KEYWORDS
 error, non-existent command, unknown
+
+.SH CATEGORY
+Tcl Interpreter Routines

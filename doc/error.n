@@ -73,6 +73,8 @@ if {1+2 != 3} {
 catch(n), return(n)
 .SH KEYWORDS
 error, exception
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

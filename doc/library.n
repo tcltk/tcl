@@ -309,6 +309,8 @@ Unix, words are comprised of numbers, letters or underscores.
 info(n), re_syntax(n), tclvars(n)
 .SH KEYWORDS
 auto-exec, auto-load, library, unknown, word, whitespace 
+.SH CATEGORY
+Tcl Packages and Source files
 '\"Local Variables:
 '\"mode: nroff
 '\"End:

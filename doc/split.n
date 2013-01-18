@@ -88,6 +88,8 @@ foreach rec $records {
 join(n), list(n), string(n)
 .SH KEYWORDS
 list, split, string
+.SH CATEGORY
+Tcl List Handling
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

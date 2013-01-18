@@ -641,6 +641,8 @@ proc httpCopyProgress {args} {
 safe(n), socket(n), safesock(n)
 .SH KEYWORDS
 internet, security policy, socket, www
+.SH CATEGORY
+Tcl Library Procedures
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

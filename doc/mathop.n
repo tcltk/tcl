@@ -305,6 +305,8 @@ set sorted [\fB<=\fR {*}$list]
 expr(n), mathfunc(n), namespace(n)
 .SH KEYWORDS
 command, expression, operator
+.SH CATEGORY
+General
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

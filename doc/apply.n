@@ -97,6 +97,8 @@ set vbl abc
 proc(n), uplevel(n)
 .SH KEYWORDS
 anonymous function, argument, lambda, procedure, 
+.SH CATEGORY
+Tcl Control Constructs
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

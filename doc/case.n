@@ -58,3 +58,6 @@ switch(n)
 
 .SH KEYWORDS
 case, match, regular expression
+
+.SH CATEGORY
+Tcl Control Constructs

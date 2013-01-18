@@ -73,3 +73,6 @@ practice instead of doing double-dereferencing):
 expr(n), global(n), namespace(n), proc(n), trace(n), unset(n), upvar(n), variable(n)
 .SH KEYWORDS
 read, write, variable
+
+.SH CATEGORY
+Tcl Variables and Procedures

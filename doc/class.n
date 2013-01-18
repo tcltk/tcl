@@ -130,6 +130,8 @@ $b eat               \fI\(-> error "unknown command"\fR
 oo::define(n), oo::object(n)
 .SH KEYWORDS
 class, metaclass, object
+.SH CATEGORY
+Tcl Object Orientation
 .\" Local variables:
 .\" mode: nroff
 .\" fill-column: 78

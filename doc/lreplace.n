@@ -84,3 +84,6 @@ lset(n), lrange(n), lsort(n),
 string(n)
 .SH KEYWORDS
 element, list, replace
+
+.SH CATEGORY
+Tcl List Handling

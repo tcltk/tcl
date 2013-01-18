@@ -36,3 +36,6 @@ list(n), lappend(n), linsert(n), llength(n), lset(n)
 
 .SH KEYWORDS
 element, index, list
+
+.SH CATEGORY
+Tcl List Handling
