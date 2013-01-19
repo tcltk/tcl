@@ -15,7 +15,7 @@
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6b2
+package require -exact Tcl 8.6.0
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -689,13 +689,14 @@ proc auto_execok name {
 	}
     }
 
-    foreach dir [split $path {;}] {
-	# Skip already checked directories
-	if {[info exists checked($dir)] || ($dir eq "")} {
-	    continue
-	}
-	set checked($dir) {}
-	foreach ext $execExtensions {
+    foreach ext $execExtensions {
+	unset -nocomplain checked
+	foreach dir [split $path {;}] {
+	    # Skip already checked directories
+	    if {[info exists checked($dir)] || ($dir eq "")} {
+		continue
+	    }
+	    set checked($dir) {}
 	    set file [file join $dir ${name}${ext}]
 	    if {[file exists $file] && ![file isdirectory $file]} {
 		return [set auto_execs($name) [list $file]]

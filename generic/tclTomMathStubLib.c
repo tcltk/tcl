@@ -11,15 +11,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-/*
- * We need to ensure that we use the stub macros so that this file contains no
- * references to any of the stub functions. This will make it possible to
- * build an extension that references Tcl_InitStubs but doesn't end up
- * including the rest of the stub functions.
- */
-
-#define USE_TCL_STUBS
-
 #include "tclInt.h"
 
 MODULE_SCOPE const TclTomMathStubs *tclTomMathStubsPtr;
@@ -55,31 +46,30 @@ TclTomMathInitializeStubs(
     int exact = 0;
     const char *packageName = "tcl::tommath";
     const char *errMsg = NULL;
-    ClientData pkgClientData = NULL;
-    const char *actualVersion =
-	Tcl_PkgRequireEx(interp, packageName, version, exact, &pkgClientData);
-    const TclTomMathStubs *stubsPtr = pkgClientData;
+    TclTomMathStubs *stubsPtr = NULL;
+    const char *actualVersion = tclStubsPtr->tcl_PkgRequireEx(interp,
+	    packageName, version, exact, &stubsPtr);
 
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (pkgClientData == NULL) {
+    if (stubsPtr == NULL) {
 	errMsg = "missing stub table pointer";
-    } else if ((stubsPtr->tclBN_epoch)() != epoch) {
+    } else if(stubsPtr->tclBN_epoch() != epoch) {
 	errMsg = "epoch number mismatch";
-    } else if ((stubsPtr->tclBN_revision)() != revision) {
+    } else if(stubsPtr->tclBN_revision() != revision) {
 	errMsg = "requires a later revision";
     } else {
 	tclTomMathStubsPtr = stubsPtr;
 	return actualVersion;
     }
-    Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "error loading ", packageName,
+    tclStubsPtr->tcl_ResetResult(interp);
+    tclStubsPtr->tcl_AppendResult(interp, "Error loading ", packageName,
 	    " (requested version ", version, ", actual version ",
 	    actualVersion, "): ", errMsg, NULL);
     return NULL;
 }
-
+
 /*
  * Local Variables:
  * mode: c

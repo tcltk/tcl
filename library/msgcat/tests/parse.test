@@ -16,6 +16,9 @@ if {[catch {package require tcltest 2.0.2}]} {
 namespace eval ::tcl::test::parse {
     namespace import ::tcltest::*
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testparser [llength [info commands testparser]]
 testConstraint testevalobjv [llength [info commands testevalobjv]]
 testConstraint testevalex [llength [info commands testevalex]]
@@ -23,6 +26,7 @@ testConstraint testparsevarname [llength [info commands testparsevarname]]
 testConstraint testparsevar [llength [info commands testparsevar]]
 testConstraint testasync [llength [info commands testasync]]
 testConstraint testcmdtrace [llength [info commands testcmdtrace]]
+testConstraint testevent [llength [info commands testevent]]
 
 test parse-1.1 {Tcl_ParseCommand procedure, computing string length} testparser {
     testparser [bytestring "foo\0 bar"] -1
@@ -1086,6 +1090,14 @@ test parse-20.11 {TclParseBackslash: truncated escape} testparser {
 test parse-20.12 {TclParseBackslash: truncated escape} testparser {
     testparser {\x12X} 5
 } {- {\x12X} 1 word {\x12X} 2 backslash {\x12} 0 text X 0 {}}
+
+test parse-21.0 {Bug 1884496} testevent {
+    set ::script {set a [p]; return -level 0 $a}
+    proc ::p {} {string first s $::script}
+    testevent queue a head $::script
+    update
+} {}
+
 
 cleanupTests
 }

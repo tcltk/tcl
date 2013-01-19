@@ -363,33 +363,43 @@ static int		ForwardProc(Tcl_Event *evPtr, int mask);
 static void		SrcExitProc(ClientData clientData);
 
 #define FreeReceivedError(p) \
-	if ((p)->base.mustFree) { \
-	    ckfree((p)->base.msgStr); \
-	}
+	do {								\
+	    if ((p)->base.mustFree) {					\
+		ckfree((p)->base.msgStr);				\
+	    }								\
+	} while (0)
 #define PassReceivedErrorInterp(i,p) \
-	if ((i) != NULL) { \
-	    Tcl_SetChannelErrorInterp((i), \
-		    Tcl_NewStringObj((p)->base.msgStr, -1)); \
-	} \
-	FreeReceivedError(p)
+	do {								\
+	    if ((i) != NULL) {						\
+		Tcl_SetChannelErrorInterp((i),				\
+			Tcl_NewStringObj((p)->base.msgStr, -1));	\
+	    }								\
+	    FreeReceivedError(p);					\
+	} while (0)
 #define PassReceivedError(c,p) \
-	Tcl_SetChannelError((c), Tcl_NewStringObj((p)->base.msgStr, -1)); \
-	FreeReceivedError(p)
+	do {								\
+	    Tcl_SetChannelError((c),					\
+		    Tcl_NewStringObj((p)->base.msgStr, -1));		\
+	    FreeReceivedError(p);					\
+	} while (0)
 #define ForwardSetStaticError(p,emsg) \
-	(p)->base.code = TCL_ERROR; \
-	(p)->base.mustFree = 0; \
-	(p)->base.msgStr = (char *) (emsg)
+	do {								\
+	    (p)->base.code = TCL_ERROR;					\
+	    (p)->base.mustFree = 0;					\
+	    (p)->base.msgStr = (char *) (emsg);				\
+	} while (0)
 #define ForwardSetDynamicError(p,emsg) \
-	(p)->base.code = TCL_ERROR; \
-	(p)->base.mustFree = 1; \
-	(p)->base.msgStr = (char *) (emsg)
+	do {								\
+	    (p)->base.code = TCL_ERROR;					\
+	    (p)->base.mustFree = 1;					\
+	    (p)->base.msgStr = (char *) (emsg);				\
+	} while (0)
 
 static void		ForwardSetObjError(ForwardParam *p,
 			    Tcl_Obj *objPtr);
-
 static ReflectedTransformMap *	GetThreadReflectedTransformMap(void);
-static void		DeleteThreadReflectedTransformMap(ClientData clientData);
-
+static void		DeleteThreadReflectedTransformMap(
+			    ClientData clientData);
 #endif /* TCL_THREADS */
 
 #define SetChannelErrorStr(c,msgStr) \
@@ -513,7 +523,6 @@ TclChanPushObjCmd(
     int result;			/* Result code for 'initialize' */
     Tcl_Obj *resObj;		/* Result data for 'initialize' */
     int methods;		/* Bitmask for supported methods. */
-    Tcl_Obj *err;		/* Error message */
     ReflectedTransformMap *rtmPtr;
 				/* Map of reflected transforms with handlers
 				 * in this interp. */
@@ -608,11 +617,10 @@ TclChanPushObjCmd(
     while (listc > 0) {
 	if (Tcl_GetIndexFromObj(interp, listv[listc-1], methodNames,
 		"method", TCL_EXACT, &methIndex) != TCL_OK) {
-	    TclNewLiteralStringObj(err, "chan handler \"");
-	    Tcl_AppendObjToObj(err, cmdObj);
-	    Tcl_AppendToObj(err, " initialize\" returned ", -1);
-	    Tcl_AppendObjToObj(err, Tcl_GetObjResult(interp));
-	    Tcl_SetObjResult(interp, err);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "chan handler \"%s initialize\" returned %s",
+		    Tcl_GetString(cmdObj),
+		    Tcl_GetString(Tcl_GetObjResult(interp))));
 	    Tcl_DecrRefCount(resObj);
 	    goto error;
 	}
@@ -695,13 +703,14 @@ TclChanPushObjCmd(
     rtmPtr = GetThreadReflectedTransformMap();
     hPtr = Tcl_CreateHashEntry(&rtmPtr->map, Tcl_GetString(rtId), &isNew);
     Tcl_SetHashValue(hPtr, rtPtr);
-#endif
+#endif /* TCL_THREADS */
 
     /*
      * Return the channel as the result of the command.
      */
 
-    Tcl_AppendResult(interp, Tcl_GetChannelName(rtPtr->chan), NULL);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+	    Tcl_GetChannelName(rtPtr->chan), -1));
     return TCL_OK;
 
   error:
@@ -710,7 +719,7 @@ TclChanPushObjCmd(
      * structure.
      */
 
-    Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+    Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
     return TCL_ERROR;
 
 #undef CHAN
@@ -913,9 +922,9 @@ ReflectClose(
 		FreeReceivedError(&p);
 	    }
 	}
-#endif
+#endif /* TCL_THREADS */
 
-	Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
 	return EOK;
     }
 
@@ -931,11 +940,11 @@ ReflectClose(
 	if (!TransformDrain(rtPtr, &errorCode)) {
 #ifdef TCL_THREADS
 	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
-		Tcl_EventuallyFree (rtPtr,
+		Tcl_EventuallyFree(rtPtr,
 			(Tcl_FreeProc *) FreeReflectedTransform);
 		return errorCode;
 	    } 
-#endif
+#endif /* TCL_THREADS */
 	    errorCodeSet = 1;
 	    goto cleanup;
 	}
@@ -945,11 +954,11 @@ ReflectClose(
 	if (!TransformFlush(rtPtr, &errorCode, FLUSH_WRITE)) {
 #ifdef TCL_THREADS
 	    if (rtPtr->thread != Tcl_GetCurrentThread()) {
-		Tcl_EventuallyFree (rtPtr,
+		Tcl_EventuallyFree(rtPtr,
 			(Tcl_FreeProc *) FreeReflectedTransform);
 		return errorCode;
 	    } 
-#endif
+#endif /* TCL_THREADS */
 	    errorCodeSet = 1;
 	    goto cleanup;
 	}
@@ -966,7 +975,7 @@ ReflectClose(
 	ForwardOpToOwnerThread(rtPtr, ForwardedClose, &p);
 	result = p.base.code;
 
-	Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
+	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
 
 	if (result != TCL_OK) {
 	    PassReceivedErrorInterp(interp, &p);
@@ -974,7 +983,7 @@ ReflectClose(
 	}
 	return EOK;
     }
-#endif
+#endif /* TCL_THREADS */
 
     /*
      * Do the actual invokation of "finalize" now; we're in the right thread.
@@ -1022,7 +1031,7 @@ ReflectClose(
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
-#endif
+#endif /* TCL_THREADS */
     }
 
     Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
@@ -1348,7 +1357,7 @@ ReflectSeekWide(
 	 * transformation.
 	 */
 
-	if ((rtPtr->methods & FLAG(METH_CLEAR))) {
+	if (rtPtr->methods & FLAG(METH_CLEAR)) {
 	    TransformClear(rtPtr);
 	}
 
@@ -2140,7 +2149,7 @@ DeleteReflectedTransformMap(
     ForwardingResult *resultPtr;
     ForwardingEvent *evPtr;
     ForwardParam *paramPtr;
-#endif
+#endif /* TCL_THREADS */
 
     /*
      * Delete all entries. The channels may have been closed already, or will
@@ -2232,8 +2241,7 @@ DeleteReflectedTransformMap(
 	Tcl_ConditionNotify(&resultPtr->done);
     }
     Tcl_MutexUnlock(&rtForwardMutex);
-
-#endif
+#endif /* TCL_THREADS */
 }
 
 #ifdef TCL_THREADS
@@ -2631,7 +2639,7 @@ ForwardProc(
 	break;
     }
 
-    case ForwardedDrain: {
+    case ForwardedDrain:
 	if (InvokeTclMethod(rtPtr, "drain", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->transform.size = -1;
@@ -2656,9 +2664,8 @@ ForwardProc(
 	    }
 	}
 	break;
-    }
 
-    case ForwardedFlush: {
+    case ForwardedFlush:
 	if (InvokeTclMethod(rtPtr, "flush", NULL, NULL, &resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->transform.size = -1;
@@ -2684,12 +2691,10 @@ ForwardProc(
 	    }
 	}
 	break;
-    }
 
-    case ForwardedClear: {
+    case ForwardedClear:
 	(void) InvokeTclMethod(rtPtr, "clear", NULL, NULL, NULL);
 	break;
-    }
 
     case ForwardedLimit:
 	if (InvokeTclMethod(rtPtr, "limit?", NULL, NULL, &resObj) != TCL_OK) {
@@ -2795,7 +2800,7 @@ ForwardSetObjError(
     ForwardSetDynamicError(paramPtr, ckalloc(len));
     memcpy(paramPtr->base.msgStr, msgStr, (unsigned) len);
 }
-#endif
+#endif /* TCL_THREADS */
 
 /*
  *----------------------------------------------------------------------
@@ -2937,7 +2942,7 @@ ResultClear(
 	return;
     }
 
-    Tcl_Free((char *) rPtr->buf);
+    ckfree((char *) rPtr->buf);
     rPtr->buf = NULL;
     rPtr->allocated = 0;
 }
@@ -2972,10 +2977,10 @@ ResultAdd(
 
 	if (rPtr->allocated == 0) {
 	    rPtr->allocated = toWrite + RB_INCREMENT;
-	    rPtr->buf = UCHARP(Tcl_Alloc(rPtr->allocated));
+	    rPtr->buf = UCHARP(ckalloc(rPtr->allocated));
 	} else {
 	    rPtr->allocated += toWrite + RB_INCREMENT;
-	    rPtr->buf = UCHARP(Tcl_Realloc((char *) rPtr->buf,
+	    rPtr->buf = UCHARP(ckrealloc((char *) rPtr->buf,
 		    rPtr->allocated));
 	}
     }
@@ -3092,7 +3097,7 @@ TransformRead(
 	ckfree(p.transform.buf);
 	return 1;
     }
-#endif
+#endif /* TCL_THREADS */
 
     /* ASSERT: rtPtr->method & FLAG(METH_READ) */
     /* ASSERT: rtPtr->mode & TCL_READABLE */
@@ -3153,7 +3158,7 @@ TransformWrite(
 		p.transform.size);
 	ckfree(p.transform.buf);
     } else
-#endif
+#endif /* TCL_THREADS */
     {
 	/* ASSERT: rtPtr->method & FLAG(METH_WRITE) */
 	/* ASSERT: rtPtr->mode & TCL_WRITABLE */
@@ -3215,7 +3220,7 @@ TransformDrain(
 	ResultAdd(&rtPtr->result, UCHARP(p.transform.buf), p.transform.size);
 	ckfree(p.transform.buf);
     } else
-#endif
+#endif /* TCL_THREADS */
     {
 	if (InvokeTclMethod(rtPtr, "drain", NULL, NULL, &resObj)!=TCL_OK) {
 	    Tcl_SetChannelError(rtPtr->chan, resObj);
@@ -3270,7 +3275,7 @@ TransformFlush(
 	}
 	ckfree(p.transform.buf);
     } else
-#endif
+#endif /* TCL_THREADS */
     {
 	if (InvokeTclMethod(rtPtr, "flush", NULL, NULL, &resObj)!=TCL_OK) {
 	    Tcl_SetChannelError(rtPtr->chan, resObj);
@@ -3311,7 +3316,7 @@ TransformClear(
 	ForwardOpToOwnerThread(rtPtr, ForwardedClear, &p);
 	return;
     }
-#endif
+#endif /* TCL_THREADS */
 
     /* ASSERT: rtPtr->method & FLAG(METH_READ) */
     /* ASSERT: rtPtr->mode & TCL_READABLE */

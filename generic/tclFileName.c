@@ -11,6 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include "tclFileSystem.h" /* For TclGetPathType() */
@@ -72,9 +73,9 @@ SetResultLength(
 {
     Tcl_DStringSetLength(resultPtr, offset);
     if (extended == 2) {
-	Tcl_DStringAppend(resultPtr, "//?/UNC/", 8);
+	TclDStringAppendLiteral(resultPtr, "//?/UNC/");
     } else if (extended == 1) {
-	Tcl_DStringAppend(resultPtr, "//?/", 4);
+	TclDStringAppendLiteral(resultPtr, "//?/");
     }
 }
 
@@ -131,7 +132,7 @@ ExtractWinRoot(
 	if (path[1] != '/' && path[1] != '\\') {
 	    SetResultLength(resultPtr, offset, extended);
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
-	    Tcl_DStringAppend(resultPtr, "/", 1);
+	    TclDStringAppendLiteral(resultPtr, "/");
 	    return &path[1];
 	}
 	host = &path[2];
@@ -161,7 +162,7 @@ ExtractWinRoot(
 	     */
 
 	    *typePtr = TCL_PATH_VOLUME_RELATIVE;
-	    Tcl_DStringAppend(resultPtr, "/", 1);
+	    TclDStringAppendLiteral(resultPtr, "/");
 	    return &path[2];
 	}
 	SetResultLength(resultPtr, offset, extended);
@@ -180,9 +181,9 @@ ExtractWinRoot(
 		break;
 	    }
 	}
-	Tcl_DStringAppend(resultPtr, "//", 2);
+	TclDStringAppendLiteral(resultPtr, "//");
 	Tcl_DStringAppend(resultPtr, host, hlen);
-	Tcl_DStringAppend(resultPtr, "/", 1);
+	TclDStringAppendLiteral(resultPtr, "/");
 	Tcl_DStringAppend(resultPtr, share, slen);
 
 	tail = &share[slen];
@@ -221,7 +222,7 @@ ExtractWinRoot(
 
 	    *typePtr = TCL_PATH_ABSOLUTE;
 	    Tcl_DStringAppend(resultPtr, path, 2);
-	    Tcl_DStringAppend(resultPtr, "/", 1);
+	    TclDStringAppendLiteral(resultPtr, "/");
 
 	    return tail;
 	}
@@ -411,25 +412,36 @@ TclpGetNativePathType(
 	     * Paths that begin with / are absolute.
 	     */
 
-#ifdef __QNX__
-	    /*
-	     * Check for QNX //<node id> prefix
-	     */
-	    if (*path && (pathLen > 3) && (path[0] == '/')
-		    && (path[1] == '/') && isdigit(UCHAR(path[2]))) {
-		path += 3;
-		while (isdigit(UCHAR(*path))) {
-		    path++;
-		}
-	    }
-#endif
 	    if (path[0] == '/') {
+		++path;
+#if defined(__CYGWIN__) || defined(__QNX__)
+		/*
+		 * Check for "//" network path prefix
+		 */
+		if ((*path == '/') && path[1] && (path[1] != '/')) {
+		    path += 2;
+		    while (*path && *path != '/') {
+			++path;
+		    }
+#if defined(__CYGWIN__)
+		    /* UNC paths need to be followed by a share name */
+		    if (*path++ && (*path && *path != '/')) {
+			++path;
+			while (*path && *path != '/') {
+			    ++path;
+			}
+		    } else {
+			path = origPath + 1;
+		    }
+#endif
+		}
+#endif
 		if (driveNameLengthPtr != NULL) {
 		    /*
-		     * We need this addition in case the QNX code was used.
+		     * We need this addition in case the QNX or Cygwin code was used.
 		     */
 
-		    *driveNameLengthPtr = (1 + path - origPath);
+		    *driveNameLengthPtr = (path - origPath);
 		}
 	    } else {
 		type = TCL_PATH_RELATIVE;
@@ -632,32 +644,43 @@ SplitUnixPath(
     const char *path)		/* Pointer to string containing a path. */
 {
     int length;
-    const char *p, *elementStart;
+    const char *origPath = path, *elementStart;
     Tcl_Obj *result = Tcl_NewObj();
 
     /*
      * Deal with the root directory as a special case.
      */
 
-#ifdef __QNX__
-    /*
-     * Check for QNX //<node id> prefix
-     */
-
-    if ((path[0] == '/') && (path[1] == '/')
-	    && isdigit(UCHAR(path[2]))) { /* INTL: digit */
-	path += 3;
-	while (isdigit(UCHAR(*path))) { /* INTL: digit */
-	    path++;
-	}
-    }
+    if (*path == '/') {
+	Tcl_Obj *rootElt;
+	++path;
+#if defined(__CYGWIN__) || defined(__QNX__)
+	/*
+	 * Check for "//" network path prefix
+	 */
+	if ((*path == '/') && path[1] && (path[1] != '/')) {
+	    path += 2;
+	    while (*path && *path != '/') {
+		++path;
+	    }
+#if defined(__CYGWIN__)
+	    /* UNC paths need to be followed by a share name */
+	    if (*path++ && (*path && *path != '/')) {
+		++path;
+		while (*path && *path != '/') {
+		    ++path;
+		}
+	    } else {
+		path = origPath + 1;
+	    }
 #endif
-
-    if (path[0] == '/') {
-	Tcl_ListObjAppendElement(NULL, result, Tcl_NewStringObj("/",1));
-	p = path+1;
-    } else {
-	p = path;
+	}
+#endif
+	rootElt = Tcl_NewStringObj(origPath, path - origPath);
+	Tcl_ListObjAppendElement(NULL, result, rootElt);
+	while (*path == '/') {
+	    ++path;
+	}
     }
 
     /*
@@ -666,14 +689,14 @@ SplitUnixPath(
      */
 
     for (;;) {
-	elementStart = p;
-	while ((*p != '\0') && (*p != '/')) {
-	    p++;
+	elementStart = path;
+	while ((*path != '\0') && (*path != '/')) {
+	    path++;
 	}
-	length = p - elementStart;
+	length = path - elementStart;
 	if (length > 0) {
 	    Tcl_Obj *nextElt;
-	    if ((elementStart[0] == '~') && (elementStart != path)) {
+	    if ((elementStart[0] == '~') && (elementStart != origPath)) {
 		TclNewLiteralStringObj(nextElt, "./");
 		Tcl_AppendToObj(nextElt, elementStart, length);
 	    } else {
@@ -681,7 +704,7 @@ SplitUnixPath(
 	    }
 	    Tcl_ListObjAppendElement(NULL, result, nextElt);
 	}
-	if (*p++ == '\0') {
+	if (*path++ == '\0') {
 	    break;
 	}
     }
@@ -1040,7 +1063,7 @@ Tcl_TranslateFileName(
     }
 
     Tcl_DStringInit(bufferPtr);
-    Tcl_DStringAppend(bufferPtr, Tcl_GetString(transPtr), -1);
+    TclDStringAppendObj(bufferPtr, transPtr);
     Tcl_DecrRefCount(path);
     Tcl_DecrRefCount(transPtr);
 
@@ -1157,9 +1180,10 @@ DoTildeSubst(
 	dir = TclGetEnv("HOME", &dirString);
 	if (dir == NULL) {
 	    if (interp) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't find HOME environment "
-			"variable to expand path", NULL);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"couldn't find HOME environment "
+			"variable to expand path", -1));
+		Tcl_SetErrorCode(interp, "TCL", "FILENAME", "NO_HOME", NULL);
 	    }
 	    return NULL;
 	}
@@ -1168,8 +1192,9 @@ DoTildeSubst(
     } else if (TclpGetUserHome(user, resultPtr) == NULL) {
 	if (interp) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "user \"", user, "\" doesn't exist",
-		    NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "user \"%s\" doesn't exist", user));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "USER", user, NULL);
 	}
 	return NULL;
     }
@@ -1312,9 +1337,9 @@ Tcl_GlobObjCmd(
 
   endOfForLoop:
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
-	Tcl_AppendResult(interp,
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"\"-tails\" must be used with either "
-		"\"-directory\" or \"-path\"", NULL);
+		"\"-directory\" or \"-path\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 		"BADOPTIONCOMBINATION", NULL);
 	return TCL_ERROR;
@@ -1396,7 +1421,7 @@ Tcl_GlobObjCmd(
 	    search = Tcl_DStringValue(&pref);
 	    while ((find = (strpbrk(search, "\\[]*?{}"))) != NULL) {
 		Tcl_DStringAppend(&prefix, search, find-search);
-		Tcl_DStringAppend(&prefix, "\\", 1);
+		TclDStringAppendLiteral(&prefix, "\\");
 		Tcl_DStringAppend(&prefix, find, 1);
 		search = find+1;
 		if (*search == '\0') {
@@ -1558,8 +1583,7 @@ Tcl_GlobObjCmd(
 	    Tcl_DStringInit(&prefix);
 	}
 	for (i = 0; i < objc; i++) {
-	    string = Tcl_GetStringFromObj(objv[i], &length);
-	    Tcl_DStringAppend(&prefix, string, length);
+	    TclDStringAppendObj(&prefix, objv[i]);
 	    if (i != objc -1) {
 		Tcl_DStringAppend(&prefix, separators, 1);
 	    }
@@ -1575,11 +1599,9 @@ Tcl_GlobObjCmd(
 	for (i = 0; i < objc; i++) {
 	    Tcl_DStringInit(&str);
 	    if (dir == PATH_GENERAL) {
-		Tcl_DStringAppend(&str, Tcl_DStringValue(&prefix),
-			Tcl_DStringLength(&prefix));
+		TclDStringAppendDString(&str, &prefix);
 	    }
-	    string = Tcl_GetStringFromObj(objv[i], &length);
-	    Tcl_DStringAppend(&str, string, length);
+	    TclDStringAppendObj(&str, objv[i]);
 	    if (TclGlob(interp, Tcl_DStringValue(&str), pathOrDir, globFlags,
 		    globTypes) != TCL_OK) {
 		result = TCL_ERROR;
@@ -1611,20 +1633,23 @@ Tcl_GlobObjCmd(
 	}
 
 	if (length == 0) {
-	    Tcl_AppendResult(interp, "no files matched glob pattern",
-		    (join || (objc == 1)) ? " \"" : "s \"", NULL);
+	    Tcl_Obj *errorMsg =
+		    Tcl_ObjPrintf("no files matched glob pattern%s \"",
+			    (join || (objc == 1)) ? "" : "s");
+
 	    if (join) {
-		Tcl_AppendResult(interp, Tcl_DStringValue(&prefix), NULL);
+		Tcl_AppendToObj(errorMsg, Tcl_DStringValue(&prefix), -1);
 	    } else {
 		const char *sep = "";
 
 		for (i = 0; i < objc; i++) {
-		    string = Tcl_GetString(objv[i]);
-		    Tcl_AppendResult(interp, sep, string, NULL);
+		    Tcl_AppendPrintfToObj(errorMsg, "%s%s",
+			    sep, Tcl_GetString(objv[i]));
 		    sep = " ";
 		}
 	    }
-	    Tcl_AppendResult(interp, "\"", NULL);
+	    Tcl_AppendToObj(errorMsg, "\"", -1);
+	    Tcl_SetObjResult(interp, errorMsg);
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "NOMATCH",
 		    NULL);
 	    result = TCL_ERROR;
@@ -1755,6 +1780,7 @@ TclGlob(
 	    if (c != '\0') {
 		tail++;
 	    }
+	    Tcl_DStringFree(&buffer);
 	} else {
 	    tail = pattern;
 	}
@@ -2192,15 +2218,15 @@ DoGlob(
 		closeBrace = p;
 		break;
 	    }
-	    Tcl_SetResult(interp, "unmatched open-brace in file name",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unmatched open-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
 
 	} else if (*p == '}') {
-	    Tcl_SetResult(interp, "unmatched close-brace in file name",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unmatched close-brace in file name", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB", "BALANCE",
 		    NULL);
 	    return TCL_ERROR;
@@ -2384,9 +2410,9 @@ DoGlob(
 	    if (length == 0 && (Tcl_DStringLength(&append) == 0)) {
 		if (((*name == '\\') && (name[1] == '/' ||
 			name[1] == '\\')) || (*name == '/')) {
-		    Tcl_DStringAppend(&append, "/", 1);
+		    TclDStringAppendLiteral(&append, "/");
 		} else {
-		    Tcl_DStringAppend(&append, ".", 1);
+		    TclDStringAppendLiteral(&append, ".");
 		}
 	    }
 
@@ -2395,22 +2421,11 @@ DoGlob(
 	case TCL_PLATFORM_UNIX:
 	    if (length == 0 && (Tcl_DStringLength(&append) == 0)) {
 		if ((*name == '\\' && name[1] == '/') || (*name == '/')) {
-		    Tcl_DStringAppend(&append, "/", 1);
+		    TclDStringAppendLiteral(&append, "/");
 		} else {
-		    Tcl_DStringAppend(&append, ".", 1);
+		    TclDStringAppendLiteral(&append, ".");
 		}
 	    }
-#if defined(__CYGWIN__) && !defined(__WIN32__)
-	    {
-		DLLIMPORT extern int cygwin_conv_to_posix_path(const char *,
-			char *);
-		char winbuf[MAXPATHLEN+1];
-
-		cygwin_conv_to_posix_path(Tcl_DStringValue(&append), winbuf);
-		Tcl_DStringFree(&append);
-		Tcl_DStringAppend(&append, winbuf, -1);
-	    }
-#endif /* __CYGWIN__ && __WIN32__ */
 	    break;
 	}
 

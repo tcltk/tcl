@@ -51,7 +51,7 @@ if {![file exists $httpdFile]} {
     set removeHttpd 1
 }
 
-catch {package require Thread 2.6}
+catch {package require Thread 2.7-}
 if {[catch {package present Thread}] == 0 && [file exists $httpdFile]} {
     set httpthread [thread::create -preserved]
     thread::send $httpthread [list source $httpdFile]
@@ -135,6 +135,7 @@ set fullurl http://user:pass@[info hostname]:$port/a/b/c
 set binurl //[info hostname]:$port/binary
 set posturl //[info hostname]:$port/post
 set badposturl //[info hostname]:$port/droppost
+set ipv6url http://\[::1\]:$port/
 test http-3.4 {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
@@ -390,6 +391,20 @@ Connection close
 Content-Type {text/plain;charset=utf-8}
 Accept-Encoding .*
 Content-Length 5}
+test http-3.29 "http::geturl $ipv6url" -body {
+    # We only want to see if the URL gets parsed correctly. This is
+    # the case if http::geturl succeeds or returns a socket related
+    # error. If the parsing is wrong, we'll get a parse error.
+    # It'd be better to separate the URL parser from http::geturl, so
+    # that it can be tested without also trying to make a connection.
+    set error [catch {http::geturl $ipv6url -validate 1} token]
+    if {$error && [string match "couldn't open socket: *" $token]} {
+            set error 0
+    }
+    set error
+} -cleanup {
+    catch { http::cleanup $token }
+} -result 0
 
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]

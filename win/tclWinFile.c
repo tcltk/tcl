@@ -12,10 +12,10 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <sys/stat.h>
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
-#include <sys/stat.h>
 #include <shlobj.h>
 #include <lm.h>		/* For TclpGetUserHome(). */
 
@@ -160,7 +160,7 @@ static unsigned short	NativeStatMode(DWORD attr, int checkLinks,
 			    int isExec);
 static int		NativeIsExec(const TCHAR *path);
 static int		NativeReadReparse(const TCHAR *LinkDirectory,
-			    REPARSE_DATA_BUFFER *buffer);
+			    REPARSE_DATA_BUFFER *buffer, DWORD desiredAccess);
 static int		NativeWriteReparse(const TCHAR *LinkDirectory,
 			    REPARSE_DATA_BUFFER *buffer);
 static int		NativeMatchType(int isDrive, DWORD attr,
@@ -444,7 +444,7 @@ TclWinSymLinkCopyDirectory(
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER *) &dummy;
 
-    if (NativeReadReparse(linkOrigPath, reparseBuffer)) {
+    if (NativeReadReparse(linkOrigPath, reparseBuffer, GENERIC_READ)) {
 	return -1;
     }
     return NativeWriteReparse(linkCopyPath, reparseBuffer);
@@ -542,7 +542,7 @@ WinReadLinkDirectory(
     if (!(attr & FILE_ATTRIBUTE_REPARSE_POINT)) {
 	goto invalidError;
     }
-    if (NativeReadReparse(linkDirPath, reparseBuffer)) {
+    if (NativeReadReparse(linkDirPath, reparseBuffer, 0)) {
 	return NULL;
     }
 
@@ -663,12 +663,13 @@ WinReadLinkDirectory(
 static int
 NativeReadReparse(
     const TCHAR *linkDirPath,	/* The junction to read */
-    REPARSE_DATA_BUFFER *buffer)/* Pointer to buffer. Cannot be NULL */
+    REPARSE_DATA_BUFFER *buffer,/* Pointer to buffer. Cannot be NULL */
+    DWORD desiredAccess)
 {
     HANDLE hFile;
     DWORD returnedLength;
 
-    hFile = CreateFile(linkDirPath, GENERIC_READ, 0, NULL, OPEN_EXISTING,
+    hFile = CreateFile(linkDirPath, desiredAccess, 0, NULL, OPEN_EXISTING,
 	    FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -819,6 +820,16 @@ tclWinDebugPanic(
 	MessageBoxW(NULL, msgString, L"Fatal Error",
 		MB_ICONSTOP | MB_OK | MB_TASKMODAL | MB_SETFOREGROUND);
     }
+#if defined(__GNUC__)
+    __builtin_trap();
+#elif defined(_WIN64)
+    __debugbreak();
+#elif defined(_MSC_VER)
+    _asm {int 3}
+#else
+    DebugBreak();
+#endif
+    abort();
 }
 
 /*
@@ -986,7 +997,7 @@ TclpMatchInDirectory(
 
 	lastChar = dirName[dirLength -1];
 	if ((lastChar != '\\') && (lastChar != '/') && (lastChar != ':')) {
-	    Tcl_DStringAppend(&dsOrig, "/", 1);
+	    TclDStringAppendLiteral(&dsOrig, "/");
 	    dirLength++;
 	}
 	dirName = Tcl_DStringValue(&dsOrig);
@@ -1006,7 +1017,7 @@ TclpMatchInDirectory(
 
 	    dirName = Tcl_DStringAppend(&dsOrig, pattern, -1);
 	} else {
-	    dirName = Tcl_DStringAppend(&dsOrig, "*.*", 3);
+	    dirName = TclDStringAppendLiteral(&dsOrig, "*.*");
 	}
 
 	native = Tcl_WinUtfToTChar(dirName, -1, &ds);
@@ -1038,10 +1049,9 @@ TclpMatchInDirectory(
 
 	    TclWinConvertError(err);
 	    if (interp != NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't read directory \"",
-			Tcl_DStringValue(&dsOrig), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read directory \"%s\": %s",
+			Tcl_DStringValue(&dsOrig), Tcl_PosixError(interp)));
 	    }
 	    Tcl_DStringFree(&dsOrig);
 	    return TCL_ERROR;
@@ -1457,7 +1467,7 @@ TclpGetUserHome(
 
 		GetWindowsDirectoryW(buf, MAX_PATH);
 		Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
-		Tcl_DStringAppend(bufferPtr, "/users/default", -1);
+		TclDStringAppendLiteral(bufferPtr, "/users/default");
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
 	    NetApiBufferFree((void *) uiPtr);
@@ -1775,7 +1785,7 @@ NativeIsExec(
 	return 0;
     }
 
-    if (path[len-4] != TEXT('.')) {
+    if (path[len-4] != '.') {
 	return 0;
     }
 
@@ -1856,8 +1866,9 @@ TclpGetCwd(
     if (GetCurrentDirectory(MAX_PATH, buffer) == 0) {
 	TclWinConvertError(GetLastError());
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "error getting working directory name: ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error getting working directory name: %s",
+		    Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
@@ -2066,7 +2077,7 @@ NativeDev(
 	     * won't work.
 	     */
 
-	    fullPath = Tcl_DStringAppend(&ds, "\\", 1);
+	    fullPath = TclDStringAppendLiteral(&ds, "\\");
 	    p = fullPath + Tcl_DStringLength(&ds);
 	} else {
 	    p++;
@@ -2526,7 +2537,7 @@ TclpObjNormalizePath(
 			     * string.
 			     */
 
-			    Tcl_DStringAppend(&dsNorm,"/", 1);
+			    TclDStringAppendLiteral(&dsNorm, "/");
 			} else {
 			    char *nativeName;
 
@@ -2536,8 +2547,8 @@ TclpObjNormalizePath(
 				nativeName = fData.cAlternateFileName;
 			    }
 			    FindClose(handle);
-			    Tcl_DStringAppend(&dsNorm,"/", 1);
-			    Tcl_DStringAppend(&dsNorm,nativeName,-1);
+			    TclDStringAppendLiteral(&dsNorm, "/");
+			    Tcl_DStringAppend(&dsNorm, nativeName, -1);
 			}
 		    }
 		}

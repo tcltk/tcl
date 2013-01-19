@@ -2296,7 +2296,7 @@ CompileExprTree(
 		int length;
 
 		Tcl_DStringInit(&cmdName);
-		Tcl_DStringAppend(&cmdName, "tcl::mathfunc::", -1);
+		TclDStringAppendLiteral(&cmdName, "tcl::mathfunc::");
 		p = TclGetStringFromObj(*funcObjv, &length);
 		funcObjv++;
 		Tcl_DStringAppend(&cmdName, p, length);

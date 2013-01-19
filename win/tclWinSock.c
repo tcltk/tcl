@@ -72,7 +72,6 @@
 
 #undef getservbyname
 #undef getsockopt
-#undef ntohs
 #undef setsockopt
 
 /*
@@ -163,7 +162,7 @@ struct SocketInfo {
  * socket event occurs.
  */
 
-typedef struct SocketEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     SOCKET socket;		/* Socket descriptor that is ready. Used to
@@ -191,7 +190,7 @@ typedef struct SocketEvent {
 #define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
 					 * socket */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     HWND hwnd;			/* Handle to window for socket messages. */
     HANDLE socketThread;	/* Thread handling the window */
     Tcl_ThreadId threadId;	/* Parent thread. */
@@ -220,7 +219,7 @@ static void		SocketExitHandler(ClientData clientData);
 static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 			    LPARAM lParam);
 static int		SocketsEnabled(void);
-static void		TcpAccept(TcpFdList *fds);
+static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
 static int		WaitForSocketEvent(SocketInfo *infoPtr, int events,
 			    int *errorCodePtr);
 static DWORD WINAPI	SocketThread(LPVOID arg);
@@ -558,8 +557,8 @@ TclpHasSockets(
 	return TCL_OK;
     }
     if (interp != NULL) {
-	Tcl_AppendResult(interp, "sockets are not available on this system",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"sockets are not available on this system", -1));
     }
     return TCL_ERROR;
 }
@@ -692,6 +691,9 @@ SocketEventProc(
     int mask = 0, events;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
     TcpFdList *fds;
+    SOCKET newSocket;
+    address addr;
+    int len;
 
     if (!(flags & TCL_FILE_EVENTS)) {
 	return 0;
@@ -708,13 +710,13 @@ SocketEventProc(
 	    break;
 	}
     }
-    SetEvent(tsdPtr->socketListLock);
 
     /*
      * Discard events that have gone stale.
      */
 
     if (!infoPtr) {
+        SetEvent(tsdPtr->socketListLock);
 	return 1;
     }
 
@@ -726,10 +728,64 @@ SocketEventProc(
 
     if (infoPtr->readyEvents & FD_ACCEPT) {
 	for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
-	    TcpAccept(fds);
+
+	    /*
+	    * Accept the incoming connection request.
+	    */
+	    len = sizeof(address);
+
+	    newSocket = accept(fds->fd, &(addr.sa), &len);
+
+	    /* On Tcl server sockets with multiple OS fds we loop over the fds trying
+	     * an accept() on each, so we expect INVALID_SOCKET.  There are also other
+	     * network stack conditions that can result in FD_ACCEPT but a subsequent
+	     * failure on accept() by the time we get around to it.
+	     * Access to sockets (acceptEventCount, readyEvents) in socketList
+	     * is still protected by the lock (prevents reintroduction of 
+	     * SF Tcl Bug 3056775.
+	     */
+
+	    if (newSocket == INVALID_SOCKET) {
+		/* int err = WSAGetLastError(); */
+		continue;
+	    }
+
+	    /*
+	     * It is possible that more than one FD_ACCEPT has been sent, so an extra
+	     * count must be kept. Decrement the count, and reset the readyEvent bit
+	     * if the count is no longer > 0.
+	     */
+	    infoPtr->acceptEventCount--;
+
+	    if (infoPtr->acceptEventCount <= 0) {
+		infoPtr->readyEvents &= ~(FD_ACCEPT);
+	    }
+
+	    SetEvent(tsdPtr->socketListLock);
+
+	    /* Caution: TcpAccept() has the side-effect of evaluating the server
+	     * accept script (via AcceptCallbackProc() in tclIOCmd.c), which can
+	     * close the server socket and invalidate infoPtr and fds.
+	     * If TcpAccept() accepts a socket we must return immediately and let
+	     * SocketCheckProc queue additional FD_ACCEPT events.
+	     */
+	    TcpAccept(fds, newSocket, addr);
+	    return 1;
 	}
+
+	/* Loop terminated with no sockets accepted; clear the ready mask so 
+	 * we can detect the next connection request. Note that connection 
+	 * requests are level triggered, so if there is a request already 
+	 * pending, a new event will be generated.
+	 */
+	infoPtr->acceptEventCount = 0;
+	infoPtr->readyEvents &= ~(FD_ACCEPT);
+
+	SetEvent(tsdPtr->socketListLock);
 	return 1;
     }
+
+    SetEvent(tsdPtr->socketListLock);
 
     /*
      * Mask off unwanted events and compute the read/write mask so we can
@@ -872,9 +928,15 @@ TcpCloseProc(
 	 * background.
 	 */
 
-	if (closesocket(infoPtr->sockets->fd) == SOCKET_ERROR) {
-	    TclWinConvertError((DWORD) WSAGetLastError());
-	    errorCode = Tcl_GetErrno();
+	while ( infoPtr->sockets != NULL ) {
+	    TcpFdList *thisfd = infoPtr->sockets;
+	    infoPtr->sockets = thisfd->next;
+
+	    if (closesocket(thisfd->fd) == SOCKET_ERROR) {
+		TclWinConvertError((DWORD) WSAGetLastError());
+		errorCode = Tcl_GetErrno();
+	    }
+	    ckfree(thisfd);
 	}
     }
 
@@ -928,12 +990,14 @@ TcpClose2Proc(
 	break;
     default:
 	if (interp) {
-	    Tcl_AppendResult(interp,
-		    "Socket close2proc called bidirectionally", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "Socket close2proc called bidirectionally", -1));
 	}
 	return TCL_ERROR;
     }
 
+    /* single fd operation: Tcl_OpenTcpServer() does not set TCL_READABLE or
+     * TCL_WRITABLE so this should never be called for a server socket. */
     if (shutdown(infoPtr->sockets->fd, sd) == SOCKET_ERROR) {
 	TclWinConvertError((DWORD) WSAGetLastError());
 	errorCode = Tcl_GetErrno();
@@ -942,6 +1006,51 @@ TcpClose2Proc(
     return errorCode;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * AddSocketInfoFd --
+ *
+ *	This function adds a SOCKET file descriptor to the 'sockets' linked 
+ *	list of a SocketInfo structure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None, except for allocation of memory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AddSocketInfoFd(
+    SocketInfo *infoPtr, 
+    SOCKET socket)
+{
+    TcpFdList *fds = infoPtr->sockets;
+
+    if ( fds == NULL ) {
+	/* Add the first FD */
+	infoPtr->sockets = ckalloc(sizeof(TcpFdList));
+	fds = infoPtr->sockets;
+    } else {
+	/* Find end of list and append FD */
+	while ( fds->next != NULL ) {
+	    fds = fds->next;
+	}
+    
+	fds->next = ckalloc(sizeof(TcpFdList));
+	fds = fds->next;
+    }
+
+    /* Populate new FD */
+    fds->fd = socket;
+    fds->infoPtr = infoPtr;
+    fds->next = NULL;
+}
+
+    
 /*
  *----------------------------------------------------------------------
  *
@@ -963,14 +1072,10 @@ NewSocketInfo(
     SOCKET socket)
 {
     SocketInfo *infoPtr = ckalloc(sizeof(SocketInfo));
-    TcpFdList *fds = ckalloc(sizeof(TcpFdList));
 
-    fds->fd = socket;
-    fds->next = NULL;
-    fds->infoPtr = infoPtr;
     /* ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey); */
     infoPtr->channel = 0;
-    infoPtr->sockets = fds;
+    infoPtr->sockets = NULL;
     infoPtr->flags = 0;
     infoPtr->watchEvents = 0;
     infoPtr->readyEvents = 0;
@@ -987,6 +1092,8 @@ NewSocketInfo(
      */
 
     infoPtr->nextPtr = NULL;
+
+    AddSocketInfoFd(infoPtr, socket);
 
     return infoPtr;
 }
@@ -1057,7 +1164,6 @@ CreateSocket(
     }
 
     if (server) {
-	TcpFdList *fds = NULL, *newfds;
 
 	for (addrPtr = addrlist; addrPtr != NULL; addrPtr = addrPtr->ai_next) {
 	    sock = socket(addrPtr->ai_family, SOCK_STREAM, 0);
@@ -1140,7 +1246,6 @@ CreateSocket(
 		 */
 
 		infoPtr = NewSocketInfo(sock);
-		fds = infoPtr->sockets;
 
 		/*
 		 * Set up the select mask for connection request events.
@@ -1150,13 +1255,7 @@ CreateSocket(
 		infoPtr->watchEvents |= FD_ACCEPT;
 
 	    } else {
-		newfds = ckalloc(sizeof(TcpFdList));
-		memset(newfds, (int) 0, sizeof(TcpFdList));
-		newfds->fd = sock;
-		newfds->infoPtr = infoPtr;
-		newfds->next = NULL;
-		fds->next = newfds;
-		fds = newfds;
+		AddSocketInfoFd( infoPtr, sock );
 	    }
 	}
     } else {
@@ -1280,9 +1379,11 @@ CreateSocket(
     }
 
     if (interp != NULL) {
-	Tcl_AppendResult(interp, "couldn't open socket: ",
-		Tcl_PosixError(interp), NULL);
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't open socket: %s",
+		(errorMsg ? errorMsg : Tcl_PosixError(interp))));
     }
+
     if (sock != INVALID_SOCKET) {
 	closesocket(sock);
     }
@@ -1398,7 +1499,7 @@ Tcl_OpenTcpClient(
 	return NULL;
     }
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
@@ -1461,7 +1562,7 @@ Tcl_MakeTcpClientChannel(
     infoPtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM)SELECT, (LPARAM)infoPtr);
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
@@ -1514,7 +1615,7 @@ Tcl_OpenTcpServer(
     infoPtr->acceptProc = acceptProc;
     infoPtr->acceptProcData = acceptProcData;
 
-    sprintf(channelName, "sock%Id", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, 0);
@@ -1532,8 +1633,9 @@ Tcl_OpenTcpServer(
  *
  * TcpAccept --
  *
- *	Accept a TCP socket connection. This is called by SocketEventProc and
- *	it in turns calls the registered accept function.
+ *	Creates a channel for a newly accepted socket connection. This is 
+ *	called by SocketEventProc and it in turns calls the registered 
+ *	accept function.
  *
  * Results:
  *	None.
@@ -1546,58 +1648,16 @@ Tcl_OpenTcpServer(
 
 static void
 TcpAccept(
-    TcpFdList *fds)	/* Socket to accept. */
+    TcpFdList *fds,	/* Server socket that accepted newSocket. */
+    SOCKET newSocket,   /* Newly accepted socket. */
+    address addr)       /* Address of new socket. */
 {
-    SOCKET newSocket;
     SocketInfo *newInfoPtr;
     SocketInfo *infoPtr = fds->infoPtr;
-    SOCKADDR_IN addr;
-    int len;
+    int len = sizeof(addr);
     char channelName[16 + TCL_INTEGER_SPACE];
+    char host[NI_MAXHOST], port[NI_MAXSERV];
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-
-    /*
-     * Accept the incoming connection request.
-     */
-
-    len = sizeof(SOCKADDR_IN);
-
-    newSocket = accept(fds->fd, (SOCKADDR *) &addr, &len);
-
-    /*
-     * Protect access to sockets (acceptEventCount, readyEvents) in socketList
-     * by the lock.  Fix for SF Tcl Bug 3056775.
-     */
-
-    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-
-    /*
-     * Clear the ready mask so we can detect the next connection request. Note
-     * that connection requests are level triggered, so if there is a request
-     * already pending, a new event will be generated.
-     */
-
-    if (newSocket == INVALID_SOCKET) {
-	infoPtr->acceptEventCount = 0;
-	infoPtr->readyEvents &= ~(FD_ACCEPT);
-
-	SetEvent(tsdPtr->socketListLock);
-	return;
-    }
-
-    /*
-     * It is possible that more than one FD_ACCEPT has been sent, so an extra
-     * count must be kept. Decrement the count, and reset the readyEvent bit
-     * if the count is no longer > 0.
-     */
-
-    infoPtr->acceptEventCount--;
-
-    if (infoPtr->acceptEventCount <= 0) {
-	infoPtr->readyEvents &= ~(FD_ACCEPT);
-    }
-
-    SetEvent(tsdPtr->socketListLock);
 
     /*
      * Win-NT has a misfeature that sockets are inherited in child processes
@@ -1620,7 +1680,7 @@ TcpAccept(
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 	    (LPARAM) newInfoPtr);
 
-    sprintf(channelName, "sock%Id", (size_t) newInfoPtr->sockets->fd);
+    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) newInfoPtr->sockets->fd);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
@@ -1639,8 +1699,10 @@ TcpAccept(
      */
 
     if (infoPtr->acceptProc != NULL) {
+	getnameinfo(&(addr.sa), len, host, sizeof(host), port, sizeof(port),
+                    NI_NUMERICHOST|NI_NUMERICSERV);
 	infoPtr->acceptProc(infoPtr->acceptProcData, newInfoPtr->channel,
-		inet_ntoa(addr.sin_addr), ntohs(addr.sin_port));
+			    host, atoi(port));
     }
 }
 
@@ -1715,6 +1777,7 @@ TcpInputProc(
     while (1) {
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 		(WPARAM) UNSELECT, (LPARAM) infoPtr);
+	/* single fd operation: this proc is only called for a connected socket. */
 	bytesRead = recv(infoPtr->sockets->fd, buf, toRead, 0);
 	infoPtr->readyEvents &= ~(FD_READ);
 
@@ -1835,6 +1898,7 @@ TcpOutputProc(
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 		(WPARAM) UNSELECT, (LPARAM) infoPtr);
 
+	/* single fd operation: this proc is only called for a connected socket. */
 	bytesWritten = send(infoPtr->sockets->fd, buf, toWrite, 0);
 	if (bytesWritten != SOCKET_ERROR) {
 	    /*
@@ -1924,12 +1988,14 @@ TcpSetOptionProc(
 
     if (!SocketsEnabled()) {
 	if (interp) {
-	    Tcl_AppendResult(interp, "winsock is not initialized", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "winsock is not initialized", -1));
 	}
 	return TCL_ERROR;
     }
 
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
+    #error "TCL_FEATURE_KEEPALIVE_NAGLE not reviewed for whether to treat infoPtr->sockets as single fd or list"
     sock = infoPtr->sockets->fd;
 
     if (!strcasecmp(optionName, "-keepalive")) {
@@ -1947,8 +2013,9 @@ TcpSetOptionProc(
 	if (rtn != 0) {
 	    TclWinConvertError(WSAGetLastError());
 	    if (interp) {
-		Tcl_AppendResult(interp, "couldn't set socket option: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set socket option: %s",
+			Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -1968,8 +2035,9 @@ TcpSetOptionProc(
 	if (rtn != 0) {
 	    TclWinConvertError(WSAGetLastError());
 	    if (interp) {
-		Tcl_AppendResult(interp, "couldn't set socket option: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't set socket option: %s",
+			Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -2027,7 +2095,8 @@ TcpGetOptionProc(
 
     if (!SocketsEnabled()) {
 	if (interp) {
-	    Tcl_AppendResult(interp, "winsock is not initialized", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "winsock is not initialized", -1));
 	}
 	return TCL_ERROR;
     }
@@ -2094,8 +2163,9 @@ TcpGetOptionProc(
 	    if (len) {
 		TclWinConvertError((DWORD) WSAGetLastError());
 		if (interp) {
-		    Tcl_AppendResult(interp, "can't get peername: ",
-			    Tcl_PosixError(interp), NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "can't get peername: %s",
+			    Tcl_PosixError(interp)));
 		}
 		return TCL_ERROR;
 	    }
@@ -2159,8 +2229,8 @@ TcpGetOptionProc(
 	} else {
 	    if (interp) {
 		TclWinConvertError((DWORD) WSAGetLastError());
-		Tcl_AppendResult(interp, "can't get sockname: ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"can't get sockname: %s", Tcl_PosixError(interp)));
 	    }
 	    return TCL_ERROR;
 	}
@@ -2393,6 +2463,7 @@ SocketProc(
     int event, error;
     SOCKET socket;
     SocketInfo *infoPtr;
+    TcpFdList *fds = NULL;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 #ifdef _WIN64
 	    GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -2437,58 +2508,60 @@ SocketProc(
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 		infoPtr = infoPtr->nextPtr) {
-	    if (infoPtr->sockets->fd == socket) {
-		/*
-		 * Update the socket state.
-		 *
-		 * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
-		 * happens, then clear the FD_ACCEPT count. Otherwise,
-		 * increment the count if the current event is an FD_ACCEPT.
-		 */
-
-		if (event & FD_CLOSE) {
-		    infoPtr->acceptEventCount = 0;
-		    infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
-		} else if (event & FD_ACCEPT) {
-		    infoPtr->acceptEventCount++;
-		}
-
-		if (event & FD_CONNECT) {
+	    for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
+		if (fds->fd == socket) {
 		    /*
-		     * The socket is now connected, clear the async connect
-		     * flag.
+		     * Update the socket state.
+		     *
+		     * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
+		     * happens, then clear the FD_ACCEPT count. Otherwise,
+		     * increment the count if the current event is an FD_ACCEPT.
 		     */
 
-		    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+		    if (event & FD_CLOSE) {
+			infoPtr->acceptEventCount = 0;
+			infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
+		    } else if (event & FD_ACCEPT) {
+			infoPtr->acceptEventCount++;
+		    }
+
+		    if (event & FD_CONNECT) {
+			/*
+			 * The socket is now connected, clear the async connect
+			 * flag.
+			 */
+
+			infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+
+			/*
+			 * Remember any error that occurred so we can report
+			 * connection failures.
+			 */
+
+			if (error != ERROR_SUCCESS) {
+			    TclWinConvertError((DWORD) error);
+			    infoPtr->lastError = Tcl_GetErrno();
+			}
+		    }
+
+		    if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
+			infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+			if (error != ERROR_SUCCESS) {
+			    TclWinConvertError((DWORD) error);
+			    infoPtr->lastError = Tcl_GetErrno();
+			}
+			infoPtr->readyEvents |= FD_WRITE;
+		    }
+		    infoPtr->readyEvents |= event;
 
 		    /*
-		     * Remember any error that occurred so we can report
-		     * connection failures.
+		     * Wake up the Main Thread.
 		     */
 
-		    if (error != ERROR_SUCCESS) {
-			TclWinConvertError((DWORD) error);
-			infoPtr->lastError = Tcl_GetErrno();
-		    }
+		    SetEvent(tsdPtr->readyEvent);
+		    Tcl_ThreadAlert(tsdPtr->threadId);
+		    break;
 		}
-
-		if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
-		    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-		    if (error != ERROR_SUCCESS) {
-			TclWinConvertError((DWORD) error);
-			infoPtr->lastError = Tcl_GetErrno();
-		    }
-		    infoPtr->readyEvents |= FD_WRITE;
-		}
-		infoPtr->readyEvents |= event;
-
-		/*
-		 * Wake up the Main Thread.
-		 */
-
-		SetEvent(tsdPtr->readyEvent);
-		Tcl_ThreadAlert(tsdPtr->threadId);
-		break;
 	    }
 	}
 	SetEvent(tsdPtr->socketListLock);
@@ -2496,15 +2569,18 @@ SocketProc(
 
     case SOCKET_SELECT:
 	infoPtr = (SocketInfo *) lParam;
-	if (wParam == SELECT) {
-	    WSAAsyncSelect(infoPtr->sockets->fd, hwnd,
-		    SOCKET_MESSAGE, infoPtr->selectEvents);
-	} else {
-	    /*
-	     * Clear the selection mask
-	     */
+	for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
+	    infoPtr = (SocketInfo *) lParam;
+	    if (wParam == SELECT) {
+		WSAAsyncSelect(fds->fd, hwnd,
+			SOCKET_MESSAGE, infoPtr->selectEvents);
+	    } else {
+		/*
+		 * Clear the selection mask
+		 */
 
-	    WSAAsyncSelect(infoPtr->sockets->fd, hwnd, 0, 0);
+		WSAAsyncSelect(fds->fd, hwnd, 0, 0);
+	    }
 	}
 	break;
 
@@ -2574,22 +2650,18 @@ InitializeHostName(
 	Tcl_DStringInit(&ds);
 	if (TclpHasSockets(NULL) == TCL_OK) {
 	    /*
-	     * Buffer length of 255 copied slavishly from previous version of
-	     * this routine. Presumably there's a more "correct" macro value
-	     * for a properly sized buffer for a gethostname() call.
-	     * Maintainers are welcome to supply it.
+	     * The buffer size of 256 is recommended by the MSDN page that
+	     * documents gethostname() as being always adequate.
 	     */
 
 	    Tcl_DString inDs;
 
 	    Tcl_DStringInit(&inDs);
-	    Tcl_DStringSetLength(&inDs, 255);
+	    Tcl_DStringSetLength(&inDs, 256);
 	    if (gethostname(Tcl_DStringValue(&inDs),
-			    Tcl_DStringLength(&inDs)) == 0) {
-		Tcl_DStringSetLength(&ds, 0);
-	    } else {
-		Tcl_ExternalToUtfDString(NULL,
-			Tcl_DStringValue(&inDs), -1, &ds);
+		    Tcl_DStringLength(&inDs)) == 0) {
+		Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&inDs), -1,
+			&ds);
 	    }
 	    Tcl_DStringFree(&inDs);
 	}
@@ -2661,23 +2733,6 @@ TclWinSetSockOpt(
     }
 
     return setsockopt(s, level, optname, optval, optlen);
-}
-
-unsigned short
-TclWinNToHS(
-    unsigned short netshort)
-{
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return (unsigned short) -1;
-    }
-
-    return ntohs(netshort);
 }
 
 char *

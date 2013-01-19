@@ -1243,6 +1243,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    if test "$ac_cv_cygwin" = "no"; then
 		AC_MSG_ERROR([${CC} is not a cygwin compiler.])
 	    fi
+	    if test "x${TCL_THREADS}" = "x0"; then
+		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
+	    fi
+	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde14.dll" -a ! -f "../win/tk86.dll"; then
+		AC_MSG_ERROR([Please configure and make the ../win directory first.])
+	    fi
 	    ;;
 	dgux*)
 	    SHLIB_CFLAGS="-K PIC"
@@ -1962,7 +1968,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$GCC" = yes],[use_sunmath=no],[
 		arch=`isainfo`
 		AC_MSG_CHECKING([whether to use -lsunmath for fp rounding control])
-		AS_IF([test "$arch" = "amd64 i386"], [
+		AS_IF([test "$arch" = "amd64 i386" -o "$arch" = "i386"], [
 			AC_MSG_RESULT([yes])
 			MATH_LIBS="-lsunmath $MATH_LIBS"
 			AC_CHECK_HEADER(sunmath.h)
@@ -1995,7 +2001,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    ], [
 		AS_IF([test "$use_sunmath" = yes], [textmode=textoff],[textmode=text])
 		case $system in
-		    SunOS-5.[[1-9]][[0-9]]*)
+		    SunOS-5.[[1-9]][[0-9]]*|SunOS-5.[[7-9]])
 			SHLIB_LD="\${CC} -G -z $textmode \${LDFLAGS}";;
 		    *)
 			SHLIB_LD="/usr/ccs/bin/ld -G -z $textmode";;
@@ -2092,22 +2098,22 @@ dnl # preprocessing tests use only CPPFLAGS.
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${TCL_SHLIB_LD_EXTRAS} ${SHLIB_LD_LIBS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)"/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
         ], [
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)"/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         ])
     ], [
         LIB_SUFFIX=${UNSHARED_LIB_SUFFIX}
 
         AS_IF([test "$RANLIB" = ""], [
             MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)"/$(LIB_FILE)'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         ], [
             MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)"/$(LIB_FILE) ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
         ])
     ])
 
@@ -2117,7 +2123,7 @@ dnl # preprocessing tests use only CPPFLAGS.
         INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
     ], [
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)"/$(STUB_LIB_FILE) ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE))'
+        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE))'
     ])
 
     # Define TCL_LIBS now that we know what DL_LIBS is.

@@ -188,30 +188,18 @@ TclFile
 TclpCreateTempFile(
     const char *contents)	/* String to write into temp file, or NULL. */
 {
-    char fileName[L_tmpnam + 9];
-    const char *native;
-    Tcl_DString dstring;
-    int fd;
+    int fd = TclUnixOpenTemporaryFile(NULL, NULL, NULL, NULL);
 
-    /*
-     * We should also check against making more then TMP_MAX of these.
-     */
-
-    strcpy(fileName, P_tmpdir);				/* INTL: Native. */
-    if (fileName[strlen(fileName) - 1] != '/') {
-	strcat(fileName, "/");				/* INTL: Native. */
-    }
-    strcat(fileName, "tclXXXXXX");
-    fd = mkstemp(fileName);				/* INTL: Native. */
     if (fd == -1) {
 	return NULL;
     }
     fcntl(fd, F_SETFD, FD_CLOEXEC);
-    unlink(fileName);					/* INTL: Native. */
-
     if (contents != NULL) {
+	Tcl_DString dstring;
+	char *native;
+
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
-	if (write(fd, native, strlen(native)) == -1) {
+	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
 	    Tcl_DStringFree(&dstring);
 	    return NULL;
@@ -241,61 +229,51 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    char fileName[L_tmpnam + 9];
-    Tcl_Obj *result = NULL;
+    Tcl_Obj *nameObj = Tcl_NewObj();
     int fd;
 
-    /*
-     * We should also check against making more then TMP_MAX of these.
-     */
-
-    strcpy(fileName, P_tmpdir);		/* INTL: Native. */
-    if (fileName[strlen(fileName) - 1] != '/') {
-	strcat(fileName, "/");		/* INTL: Native. */
-    }
-    strcat(fileName, "tclXXXXXX");
-    fd = mkstemp(fileName);		/* INTL: Native. */
+    Tcl_IncrRefCount(nameObj);
+    fd = TclUnixOpenTemporaryFile(NULL, NULL, NULL, nameObj);
     if (fd == -1) {
+	Tcl_DecrRefCount(nameObj);
 	return NULL;
     }
-    fcntl(fd, F_SETFD, FD_CLOEXEC);
-    unlink(fileName);			/* INTL: Native. */
 
-    result = TclpNativeToNormalized(fileName);
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    TclpObjDeleteFile(nameObj);
     close(fd);
-    return result;
+    return nameObj;
 }
 
 /*
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------
  *
  * TclpTempFileNameForLibrary --
  *
- *	Constructs a file name in the native file system where a
- *	dynamically loaded library may be placed.
+ *	Constructs a file name in the native file system where a dynamically
+ *	loaded library may be placed.
  *
  * Results:
- *	Returns the constructed file name. If an error occurs,
- *	returns NULL and leaves an error message in the interpreter
- *	result.
+ *	Returns the constructed file name. If an error occurs, returns NULL
+ *	and leaves an error message in the interpreter result.
  *
- * On Unix, it works to load a shared object from a file of any
- * name, so this function is merely a thin wrapper around
- * TclpTempFileName().
+ * On Unix, it works to load a shared object from a file of any name, so this
+ * function is merely a thin wrapper around TclpTempFileName().
  *	
- *-----------------------------------------------------------------------------
+ *----------------------------------------------------------------------------
  */
 
-Tcl_Obj*
-TclpTempFileNameForLibrary(Tcl_Interp* interp, /* Tcl interpreter */
-			   Tcl_Obj* path)      /* Path name of the library
-						* in the VFS */
+Tcl_Obj *
+TclpTempFileNameForLibrary(
+    Tcl_Interp *interp,		/* Tcl interpreter. */
+    Tcl_Obj *path)		/* Path name of the library in the VFS. */
 {
-    Tcl_Obj* retval;
-    retval = TclpTempFileName();
+    Tcl_Obj *retval = TclpTempFileName();
+
     if (retval == NULL) {
-	Tcl_AppendResult(interp, "couldn't create temporary file: ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't create temporary file: %s",
+		Tcl_PosixError(interp)));
     }
     return retval;
 }
@@ -442,8 +420,8 @@ TclpCreateProcess(
      */
 
     if (TclpCreatePipe(&errPipeIn, &errPipeOut) == 0) {
-	Tcl_AppendResult(interp, "couldn't create pipe: ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't create pipe: %s", Tcl_PosixError(interp)));
 	goto error;
     }
 
@@ -463,8 +441,9 @@ TclpCreateProcess(
     /*
      * After vfork(), do not call code in the child that changes global state,
      * because it is using the parent's memory space at that point and writes
-     * might corrupt the parent: so ensure standard channels are initialized in
-     * the parent, otherwise SetupStdFile() might initialize them in the child.
+     * might corrupt the parent: so ensure standard channels are initialized
+     * in the parent, otherwise SetupStdFile() might initialize them in the
+     * child.
      */
 
     if (!inputFile) {
@@ -495,7 +474,7 @@ TclpCreateProcess(
 		|| (joinThisError &&
 			((dup2(1,2) == -1) || (fcntl(2, F_SETFD, 0) != 0)))) {
 	    sprintf(errSpace,
-		    "%dforked process couldn't set up input/output: ", errno);
+		    "%dforked process couldn't set up input/output", errno);
 	    len = strlen(errSpace);
 	    if (len != (size_t) write(fd, errSpace, len)) {
 		    Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
@@ -509,11 +488,11 @@ TclpCreateProcess(
 
 	RestoreSignals();
 	execvp(newArgv[0], newArgv);			/* INTL: Native. */
-	sprintf(errSpace, "%dcouldn't execute \"%.150s\": ", errno, argv[0]);
+	sprintf(errSpace, "%dcouldn't execute \"%.150s\"", errno, argv[0]);
 	len = strlen(errSpace);
-    if (len != (size_t) write(fd, errSpace, len)) {
+	if (len != (size_t) write(fd, errSpace, len)) {
 	    Tcl_Panic("TclpCreateProcess: unable to write to errPipeOut");
-    }
+	}
 	_exit(1);
     }
 
@@ -528,8 +507,8 @@ TclpCreateProcess(
     TclStackFree(interp, dsArray);
 
     if (pid == -1) {
-	Tcl_AppendResult(interp, "couldn't fork child process: ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't fork child process: %s", Tcl_PosixError(interp)));
 	goto error;
     }
 
@@ -546,9 +525,11 @@ TclpCreateProcess(
     count = read(fd, errSpace, (size_t) (sizeof(errSpace) - 1));
     if (count > 0) {
 	char *end;
+
 	errSpace[count] = 0;
 	errno = strtol(errSpace, &end, 10);
-	Tcl_AppendResult(interp, end, Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("%s: %s",
+		end, Tcl_PosixError(interp)));
 	goto error;
     }
 
@@ -832,8 +813,8 @@ Tcl_CreatePipe(
     int fileNums[2];
 
     if (pipe(fileNums) < 0) {
-	Tcl_AppendResult(interp, "pipe creation failed: ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf("pipe creation failed: %s",
+		Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
 
@@ -874,8 +855,8 @@ TclGetAndDetachPids(
 {
     PipeState *pipePtr;
     const Tcl_ChannelType *chanTypePtr;
+    Tcl_Obj *pidsObj;
     int i;
-    char buf[TCL_INTEGER_SPACE];
 
     /*
      * Punt if the channel is not a command channel.
@@ -886,12 +867,14 @@ TclGetAndDetachPids(
 	return;
     }
 
-    pipePtr = (PipeState *) Tcl_GetChannelInstanceData(chan);
+    pipePtr = Tcl_GetChannelInstanceData(chan);
+    TclNewObj(pidsObj);
     for (i = 0; i < pipePtr->numPids; i++) {
-	TclFormatInt(buf, (long) TclpGetPid(pipePtr->pidPtr[i]));
-	Tcl_AppendElement(interp, buf);
-	Tcl_DetachPids(1, &(pipePtr->pidPtr[i]));
+	Tcl_ListObjAppendElement(NULL, pidsObj, Tcl_NewIntObj(
+		PTR2INT(pipePtr->pidPtr[i])));
+	Tcl_DetachPids(1, &pipePtr->pidPtr[i]);
     }
+    Tcl_SetObjResult(interp, pidsObj);
     if (pipePtr->numPids > 0) {
 	ckfree(pipePtr->pidPtr);
 	pipePtr->numPids = 0;
@@ -1275,7 +1258,7 @@ Tcl_PidObjCmd(
     Tcl_Channel chan;
     PipeState *pipePtr;
     int i;
-    Tcl_Obj *resultPtr, *longObjPtr;
+    Tcl_Obj *resultPtr;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?channelId?");
@@ -1301,11 +1284,11 @@ Tcl_PidObjCmd(
 	 * Extract the process IDs from the pipe structure.
 	 */
 
-	pipePtr = (PipeState *) Tcl_GetChannelInstanceData(chan);
+	pipePtr = Tcl_GetChannelInstanceData(chan);
 	resultPtr = Tcl_NewObj();
 	for (i = 0; i < pipePtr->numPids; i++) {
-	    longObjPtr = Tcl_NewLongObj((long) TclpGetPid(pipePtr->pidPtr[i]));
-	    Tcl_ListObjAppendElement(NULL, resultPtr, longObjPtr);
+	    Tcl_ListObjAppendElement(NULL, resultPtr,
+		    Tcl_NewIntObj(PTR2INT(TclpGetPid(pipePtr->pidPtr[i]))));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
     }

@@ -13,9 +13,9 @@
  */
 
 #undef STATIC_BUILD
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
+#undef USE_TCL_STUBS
+#define USE_TCL_STUBS
+
 #include "tclInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
@@ -24,20 +24,20 @@
 
 #ifndef UNICODE
 #   undef Tcl_WinTCharToUtf
-#   define Tcl_WinTCharToUtf(a,b,c) Tcl_ExternalToUtfDString(NULL,a,b,c)
+#   define Tcl_WinTCharToUtf(a,b,c)	Tcl_ExternalToUtfDString(NULL,a,b,c)
 #   undef Tcl_WinUtfToTChar
-#   define Tcl_WinUtfToTChar(a,b,c) Tcl_UtfToExternalDString(NULL,a,b,c)
-#endif
+#   define Tcl_WinUtfToTChar(a,b,c)	Tcl_UtfToExternalDString(NULL,a,b,c)
+#endif /* !UNICODE */
 
 /*
  * Ensure that we can say which registry is being accessed.
  */
 
 #ifndef KEY_WOW64_64KEY
-#define KEY_WOW64_64KEY		(0x0100)
+#   define KEY_WOW64_64KEY	(0x0100)
 #endif
 #ifndef KEY_WOW64_32KEY
-#define KEY_WOW64_32KEY		(0x0200)
+#   define KEY_WOW64_32KEY	(0x0200)
 #endif
 
 /*
@@ -45,7 +45,7 @@
  */
 
 #ifndef MAX_KEY_LENGTH
-#define MAX_KEY_LENGTH		256
+#   define MAX_KEY_LENGTH	256
 #endif
 
 /*
@@ -56,14 +56,6 @@
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
- * The maximum length of a sub-key name.
- */
-
-#ifndef MAX_KEY_LENGTH
-#define MAX_KEY_LENGTH		256
-#endif
 
 /*
  * The following macros convert between different endian ints.
@@ -173,7 +165,7 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
 	return TCL_ERROR;
     }
 
@@ -535,9 +527,9 @@ DeleteValue(
     result = RegDeleteValue(key, (const TCHAR *)Tcl_DStringValue(&ds));
     Tcl_DStringFree(&ds);
     if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult(interp, "unable to delete value \"",
-		Tcl_GetString(valueNameObj), "\" from key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unable to delete value \"%s\" from key \"%s\": ",
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -575,7 +567,8 @@ GetKeyNames(
 {
     const char *pattern;	/* Pattern being matched against subkeys */
     HKEY key;			/* Handle to the key being examined */
-    TCHAR buffer[MAX_KEY_LENGTH];		/* Buffer to hold the subkey name */
+    TCHAR buffer[MAX_KEY_LENGTH];
+				/* Buffer to hold the subkey name */
     DWORD bufSize;		/* Size of the buffer */
     DWORD index;		/* Position of the current subkey */
     char *name;			/* Subkey name */
@@ -611,9 +604,9 @@ GetKeyNames(
 	    if (result == ERROR_NO_MORE_ITEMS) {
 		result = TCL_OK;
 	    } else {
-		Tcl_SetObjResult(interp, Tcl_NewObj());
-		Tcl_AppendResult(interp, "unable to enumerate subkeys of \"",
-			Tcl_GetString(keyNameObj), "\": ", NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unable to enumerate subkeys of \"%s\": ",
+			Tcl_GetString(keyNameObj)));
 		AppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
@@ -694,9 +687,9 @@ GetType(
     RegCloseKey(key);
 
     if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult(interp, "unable to get type of value \"",
-		Tcl_GetString(valueNameObj), "\" from key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unable to get type of value \"%s\" from key \"%s\": ",
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -780,7 +773,7 @@ GetValue(
 	 * HKEY_PERFORMANCE_DATA
 	 */
 
-	length *= 2;
+	length = Tcl_DStringLength(&data) * (2 / sizeof(TCHAR));
 	Tcl_DStringSetLength(&data, (int) length * sizeof(TCHAR));
 	result = RegQueryValueEx(key, nativeValue,
 		NULL, &type, (BYTE *) Tcl_DStringValue(&data), &length);
@@ -788,9 +781,9 @@ GetValue(
     Tcl_DStringFree(&buf);
     RegCloseKey(key);
     if (result != ERROR_SUCCESS) {
-	Tcl_AppendResult(interp, "unable to get value \"",
-		Tcl_GetString(valueNameObj), "\" from key \"",
-		Tcl_GetString(keyNameObj), "\": ", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unable to get value \"%s\" from key \"%s\": ",
+		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
@@ -817,16 +810,16 @@ GetValue(
 	 * we get bogus data.
 	 */
 
-	while ((p < end)
-		&& (*((Tcl_UniChar *) p)) != 0) {
+	while ((p < end) && *((Tcl_UniChar *) p) != 0) {
 	    Tcl_UniChar *up;
+
 	    Tcl_WinTCharToUtf((TCHAR *) p, -1, &buf);
 	    Tcl_ListObjAppendElement(interp, resultPtr,
 		    Tcl_NewStringObj(Tcl_DStringValue(&buf),
 			    Tcl_DStringLength(&buf)));
 	    up = (Tcl_UniChar *) p;
 
-	    while (*up++ != 0) {}
+	    while (*up++ != 0) {/* empty body */}
 	    p = (char *) up;
 	    Tcl_DStringFree(&buf);
 	}
@@ -889,8 +882,7 @@ GetValueNames(
 
     resultPtr = Tcl_NewObj();
     Tcl_DStringInit(&buffer);
-    Tcl_DStringSetLength(&buffer,
-	    (int) (MAX_KEY_LENGTH*sizeof(TCHAR)));
+    Tcl_DStringSetLength(&buffer, (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
     index = 0;
     result = TCL_OK;
 
@@ -1112,8 +1104,8 @@ ParseKeyName(
 	rootName = name;
     }
     if (!rootName) {
-	Tcl_AppendResult(interp, "bad key \"", name,
-		"\": must start with a valid root", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"bad key \"%s\": must start with a valid root", name));
 	Tcl_SetErrorCode(interp, "WIN_REG", "NO_ROOT_KEY", NULL);
 	return TCL_ERROR;
     }
@@ -1192,8 +1184,7 @@ RecursiveDeleteKey(
     }
 
     Tcl_DStringInit(&subkey);
-    Tcl_DStringSetLength(&subkey,
-	    (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
+    Tcl_DStringSetLength(&subkey, (int) (MAX_KEY_LENGTH * sizeof(TCHAR)));
 
     mode = saveMode;
     while (result == ERROR_SUCCESS) {
@@ -1228,8 +1219,8 @@ RecursiveDeleteKey(
 	    }
 	    break;
 	} else if (result == ERROR_SUCCESS) {
-	    result = RecursiveDeleteKey(hKey, (const TCHAR *) Tcl_DStringValue(&subkey),
-		    mode);
+	    result = RecursiveDeleteKey(hKey,
+		    (const TCHAR *) Tcl_DStringValue(&subkey), mode);
 	}
     }
     Tcl_DStringFree(&subkey);
@@ -1296,8 +1287,8 @@ SetValue(
 	    return TCL_ERROR;
 	}
 
-	value = ConvertDWORD((DWORD)type, (DWORD)value);
-	result = RegSetValueEx(key, (TCHAR *)valueName, 0,
+	value = ConvertDWORD((DWORD) type, (DWORD) value);
+	result = RegSetValueEx(key, (TCHAR *) valueName, 0,
 		(DWORD) type, (BYTE *) &value, sizeof(DWORD));
     } else if (type == REG_MULTI_SZ) {
 	Tcl_DString data, buf;
@@ -1318,21 +1309,20 @@ SetValue(
 
 	Tcl_DStringInit(&data);
 	for (i = 0; i < objc; i++) {
-	    Tcl_DStringAppend(&data, Tcl_GetString(objv[i]), -1);
+	    const char *bytes = Tcl_GetStringFromObj(objv[i], &length);
+
+	    Tcl_DStringAppend(&data, bytes, length);
 
 	    /*
-	     * Add a null character to separate this value from the next. We
-	     * accomplish this by growing the string by one byte. Since the
-	     * DString always tacks on an extra null byte, the new byte will
-	     * already be set to null.
+	     * Add a null character to separate this value from the next.
 	     */
 
-	    Tcl_DStringSetLength(&data, Tcl_DStringLength(&data)+1);
+	    Tcl_DStringAppend(&data, "", 1);	/* NUL-terminated string */
 	}
 
 	Tcl_WinUtfToTChar(Tcl_DStringValue(&data), Tcl_DStringLength(&data)+1,
 		&buf);
-	result = RegSetValueEx(key, (TCHAR *)valueName, 0,
+	result = RegSetValueEx(key, (TCHAR *) valueName, 0,
 		(DWORD) type, (BYTE *) Tcl_DStringValue(&buf),
 		(DWORD) Tcl_DStringLength(&buf));
 	Tcl_DStringFree(&data);
@@ -1341,7 +1331,7 @@ SetValue(
 	Tcl_DString buf;
 	const char *data = Tcl_GetStringFromObj(dataObj, &length);
 
-	data = (char *)Tcl_WinUtfToTChar(data, length, &buf);
+	data = (char *) Tcl_WinUtfToTChar(data, length, &buf);
 
 	/*
 	 * Include the null in the length, padding if needed for Unicode.
@@ -1350,7 +1340,7 @@ SetValue(
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf)+1);
 	length = Tcl_DStringLength(&buf) + 1;
 
-	result = RegSetValueEx(key, (TCHAR *)valueName, 0,
+	result = RegSetValueEx(key, (TCHAR *) valueName, 0,
 		(DWORD) type, (BYTE *) data, (DWORD) length);
 	Tcl_DStringFree(&buf);
     } else {
@@ -1361,7 +1351,7 @@ SetValue(
 	 */
 
 	data = (BYTE *) Tcl_GetByteArrayFromObj(dataObj, &length);
-	result = RegSetValueEx(key, (TCHAR *)valueName, 0,
+	result = RegSetValueEx(key, (TCHAR *) valueName, 0,
 		(DWORD) type, data, (DWORD) length);
     }
 
@@ -1532,14 +1522,15 @@ ConvertDWORD(
     DWORD type,			/* Either REG_DWORD or REG_DWORD_BIG_ENDIAN */
     DWORD value)		/* The value to be converted. */
 {
-    DWORD order = 1;
+    const DWORD order = 1;
     DWORD localType;
 
     /*
      * Check to see if the low bit is in the first byte.
      */
 
-    localType = (*((char *) &order) == 1) ? REG_DWORD : REG_DWORD_BIG_ENDIAN;
+    localType = (*((const char *) &order) == 1)
+	    ? REG_DWORD : REG_DWORD_BIG_ENDIAN;
     return (type != localType) ? (DWORD) SWAPLONG(value) : value;
 }
 

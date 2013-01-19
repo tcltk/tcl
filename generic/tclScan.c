@@ -261,6 +261,10 @@ ValidateFormat(
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
     char buf[TCL_UTF_MAX+1];
+    Tcl_Obj *errorMsg;		/* Place to build an error messages. Note that
+				 * these are messy operations because we do
+				 * not want to use the formatting engine;
+				 * we're inside there! */
 
     /*
      * Initialize an array that records the number of times a variable is
@@ -328,9 +332,9 @@ ValidateFormat(
 	gotSequential = 1;
 	if (gotXpg) {
 	mixedXPG:
-	    Tcl_SetResult(interp,
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "cannot mix \"%\" and \"%n$\" conversion specifiers",
-		    TCL_STATIC);
+		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "MIXEDSPECTYPES", NULL);
 	    goto error;
 	}
@@ -375,9 +379,9 @@ ValidateFormat(
 	switch (ch) {
 	case 'c':
 	    if (flags & SCAN_WIDTH) {
-		Tcl_SetResult(interp,
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"field width may not be specified in %c conversion",
-			TCL_STATIC);
+			-1));
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADWIDTH", NULL);
 		goto error;
 	    }
@@ -389,9 +393,11 @@ ValidateFormat(
 	    if (flags & (SCAN_LONGER|SCAN_BIG)) {
 	    invalidFieldSize:
 		buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-		Tcl_AppendResult(interp,
-			"field size modifier may not be specified in %", buf,
-			" conversion", NULL);
+		errorMsg = Tcl_NewStringObj(
+			"field size modifier may not be specified in %", -1);
+		Tcl_AppendToObj(errorMsg, buf, -1);
+		Tcl_AppendToObj(errorMsg, " conversion", -1);
+		Tcl_SetObjResult(interp, errorMsg);
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADSIZE", NULL);
 		goto error;
 	    }
@@ -409,8 +415,8 @@ ValidateFormat(
 	    break;
 	case 'u':
 	    if (flags & SCAN_BIG) {
-		Tcl_SetResult(interp,
-			"unsigned bignum scans are invalid", TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"unsigned bignum scans are invalid", -1));
 		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADUNSIGNED",NULL);
 		goto error;
 	    }
@@ -446,15 +452,18 @@ ValidateFormat(
 	    }
 	    break;
 	badSet:
-	    Tcl_SetResult(interp, "unmatched [ in format string",
-		    TCL_STATIC);
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "unmatched [ in format string", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BRACKET", NULL);
 	    goto error;
 	default:
 	    buf[Tcl_UniCharToUtf(ch, buf)] = '\0';
-	    Tcl_AppendResult(interp, "bad scan conversion character \"", buf,
-		    "\"", NULL);
-		Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
+	    errorMsg = Tcl_NewStringObj(
+		    "bad scan conversion character \"", -1);
+	    Tcl_AppendToObj(errorMsg, buf, -1);
+	    Tcl_AppendToObj(errorMsg, "\"", -1);
+	    Tcl_SetObjResult(interp, errorMsg);
+	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "BADTYPE", NULL);
 	    goto error;
 	}
 	if (!(flags & SCAN_SUPPRESS)) {
@@ -498,9 +507,9 @@ ValidateFormat(
     }
     for (i = 0; i < numVars; i++) {
 	if (nassign[i] > 1) {
-	    Tcl_SetResult(interp,
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is assigned by multiple \"%n$\" conversion specifiers",
-		    TCL_STATIC);
+		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "POLYASSIGNED", NULL);
 	    goto error;
 	} else if (!xpgSize && (nassign[i] == 0)) {
@@ -509,9 +518,9 @@ ValidateFormat(
 	     * and/or numVars != 0), then too many vars were given
 	     */
 
-	    Tcl_SetResult(interp,
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "variable is not assigned by any conversion specifiers",
-		    TCL_STATIC);
+		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "FORMAT", "UNASSIGNED", NULL);
 	    goto error;
 	}
@@ -522,13 +531,13 @@ ValidateFormat(
 
   badIndex:
     if (gotXpg) {
-	Tcl_SetResult(interp, "\"%n$\" argument index out of range",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"\"%n$\" argument index out of range", -1));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "INDEXRANGE", NULL);
     } else {
-	Tcl_SetResult(interp,
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"different numbers of variable names and field specifiers",
-		TCL_STATIC);
+		-1));
 	Tcl_SetErrorCode(interp, "TCL", "FORMAT", "FIELDVARMISMATCH", NULL);
     }
 

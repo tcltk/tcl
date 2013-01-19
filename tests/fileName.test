@@ -15,6 +15,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testtranslatefilename [llength [info commands testtranslatefilename]]
 testConstraint linkDirectory 1
@@ -196,7 +199,7 @@ test filename-4.12 {Tcl_SplitPath: unix} {testsetplatform} {
 test filename-4.13 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split //foo
-} {/ foo}
+} "/ foo"
 test filename-4.14 {Tcl_SplitPath: unix} {testsetplatform} {
     testsetplatform unix
     file split foo//bar
@@ -433,11 +436,11 @@ test filename-7.16 {Tcl_JoinPath: unix} {testsetplatform} {
 test filename-7.17 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join //a b
-} {/a/b}
+} "/a/b"
 test filename-7.18 {Tcl_JoinPath: unix} {testsetplatform} {
     testsetplatform unix
     file join /// a b
-} {/a/b}
+} "/a/b"
 
 test filename-9.1 {Tcl_JoinPath: win} {testsetplatform} {
     testsetplatform win
@@ -746,7 +749,7 @@ test filename-11.13 {Tcl_GlobCmd} {
 } [file join $env(HOME)]
 set oldpwd [pwd]
 set oldhome $env(HOME)
-cd [temporaryDirectory]
+catch {cd [makeDirectory tcl[pid]]}
 set env(HOME) [pwd]
 file delete -force globTest
 file mkdir globTest/a1/b1
@@ -1613,6 +1616,7 @@ catch {file delete -force C:/globTest}
 cd [temporaryDirectory]
 file delete -force globTest
 cd $oldpwd
+catch {removeDirectory tcl[pid]}
 set env(HOME) $oldhome
 if {[testConstraint testsetplatform]} {
     testsetplatform $platform

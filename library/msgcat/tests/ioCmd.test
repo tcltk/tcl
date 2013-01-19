@@ -18,10 +18,13 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 # Custom constraints used in this file
 testConstraint fcopy		[llength [info commands fcopy]]
 testConstraint testchannel	[llength [info commands testchannel]]
-testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 #----------------------------------------------------------------------
 

@@ -20,10 +20,13 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 # Some tests require the testobj command
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
-
+
 test stringComp-1.1 {error conditions} {
     proc foo {} {string gorp a b}
     list [catch {foo} msg] $msg
@@ -674,7 +677,11 @@ test stringComp-11.54 {string match, failure} {
 } {0 1 1 1 0 0}
 
 ## string range
-## not yet bc
+test stringComp-12.1 {Bug 3588366: end-offsets before start} {
+    apply {s {
+	string range $s 0 end-5
+    }} 12345
+} {}
 
 ## string repeat
 ## not yet bc
@@ -696,8 +703,12 @@ test stringComp-11.54 {string match, failure} {
 
 ## string word*
 ## not yet bc
-
+
 # cleanup
 catch {rename foo {}}
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

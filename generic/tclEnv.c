@@ -772,9 +772,9 @@ TclCygwinPutenv(
 	} else {
 	    int size;
 
-	    size = cygwin_posix_to_win32_path_list_buf_size(value);
+	    size = cygwin_conv_path_list(0, value, NULL, 0);
 	    buf = alloca(size + 1);
-	    cygwin_posix_to_win32_path_list(value, buf);
+	    cygwin_conv_path_list(0, value, buf, size);
 	}
 
 	SetEnvironmentVariableA(name, buf);

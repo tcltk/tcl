@@ -14,7 +14,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL="b2"
+TCL_PATCH_LEVEL=".0"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -120,19 +120,19 @@ esac
 #	as we just assume that the platform hasn't got a usable z.lib
 #------------------------------------------------------------------------
 
-AS_IF([test "$do64bit" = "yes"], [
-  tcl_ok=no
-], [
 AS_IF([test "${enable_shared+set}" = "set"], [
   enableval="$enable_shared"
   tcl_ok=$enableval
 ], [
   tcl_ok=yes
 ])
-])
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
-  AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
+  AS_IF([test "$do64bit" = "yes"], [
+    AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win64/zdll.lib])
+  ], [
+    AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
+  ])
 ], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_DEFINE_UNQUOTED(NO_VIZ, 1)
@@ -219,7 +219,7 @@ if test "$tcl_cv_intrinsics" = "yes"; then
             [Defined when the compilers supports intrinsics])
 fi
 
-# See if the <wspiapi.h> header file is present    
+# See if the <wspiapi.h> header file is present
 
 AC_CACHE_CHECK(for wspiapi.h,
     tcl_cv_wspiapi_h,

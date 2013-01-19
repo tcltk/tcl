@@ -15,6 +15,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testinterpdelete [llength [info commands testinterpdelete]]
 
 set hidden_cmds {cd encoding exec exit fconfigure file glob load open pwd socket source tcl:file:atime tcl:file:attributes tcl:file:copy tcl:file:delete tcl:file:dirname tcl:file:executable tcl:file:exists tcl:file:extension tcl:file:isdirectory tcl:file:isfile tcl:file:link tcl:file:lstat tcl:file:mkdir tcl:file:mtime tcl:file:nativename tcl:file:normalize tcl:file:owned tcl:file:readable tcl:file:readlink tcl:file:rename tcl:file:rootname tcl:file:size tcl:file:stat tcl:file:tail tcl:file:tempfile tcl:file:type tcl:file:volumes tcl:file:writable unload}

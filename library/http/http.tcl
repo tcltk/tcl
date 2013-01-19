@@ -11,7 +11,7 @@
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.4
+package provide http 2.8.6
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -205,15 +205,13 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     if {[info exists state(after)]} {
 	after cancel $state(after)
     }
-    if {[info exists state(-command)] && !$skipCB} {
-	if {[catch {eval $state(-command) {$token}} err]} {
-	    if {$errormsg eq ""} {
-		set state(error) [list $err $errorInfo $errorCode]
-		set state(status) error
-	    }
+    if {[info exists state(-command)] && !$skipCB
+	    && ![info exists state(done-command-cb)]} {
+	set state(done-command-cb) yes
+	if {[catch {eval $state(-command) {$token}} err] && $errormsg eq ""} {
+	    set state(error) [list $err $errorInfo $errorCode]
+	    set state(status) error
 	}
-	# Command callback may already have unset our state
-	unset -nocomplain state(-command)
     }
 }
 
@@ -419,7 +417,6 @@ proc http::geturl {url args} {
     # Note that the RE actually combines the user and password parts, as
     # recommended in RFC 3986. Indeed, that RFC states that putting passwords
     # in URLs is a Really Bad Idea, something with which I would agree utterly.
-    # Also note that we do not currently support IPv6 addresses.
     #
     # From a validation perspective, we need to ensure that the parts of the
     # URL that are going to the server are correctly encoded.  This is only
@@ -434,7 +431,10 @@ proc http::geturl {url args} {
 		    [^@/\#?]+		# <userinfo part of authority>
 		) @
 	    )?
-	    ( [^/:\#?]+ )		# <host part of authority>
+	    (				# <host part of authority>
+		[^/:\#?]+ |		# host name or IPv4 address
+		\[ [^/\#?]+ \]		# IPv6 address in square brackets
+	    )
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
 	( / [^\#]*)?			# <path> (including query)
@@ -448,6 +448,7 @@ proc http::geturl {url args} {
 	return -code error "Unsupported URL: $url"
     }
     # Phase two: validate
+    set host [string trim $host {[]}]; # strip square brackets from IPv6 address
     if {$host eq ""} {
 	# Caller has to provide a host name; we do not have a "default host"
 	# that would enable us to handle relative URLs.
@@ -980,7 +981,7 @@ proc http::Event {sock token} {
 	} elseif {$n == 0} {
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
-	    if {$state(http) == "" || [lindex $state(http) 1] == 100} {
+	    if {$state(http) == "" || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)} {
 		return
 	    }
 
@@ -1378,7 +1379,7 @@ proc http::mapReply {string} {
     }
     set converted [string map $formMap $string]
     if {[string match "*\[\u0100-\uffff\]*" $converted]} {
-	regexp {[\u0100-\uffff]} $converted badChar
+	regexp "\[\u0100-\uffff\]" $converted badChar
 	# Return this error message for maximum compatability... :^/
 	return -code error \
 	    "can't read \"formMap($badChar)\": no such element in array"

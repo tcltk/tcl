@@ -9,7 +9,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-next \- invoke superclass method implementations
+next, nextto \- invoke superclass method implementations
 .SH SYNOPSIS
 .nf
 package require TclOO

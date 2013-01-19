@@ -64,7 +64,7 @@ package require tcltest 2
 namespace import -force ::tcltest::*
 
 # Some tests require the Thread package or exec command
-testConstraint thread [expr {0 == [catch {package require Thread 2.6.6}]}]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 testConstraint exec [llength [info commands exec]]
 
 # Produce a random port number in the Dynamic/Private range

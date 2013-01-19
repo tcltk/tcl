@@ -134,7 +134,7 @@ typedef int (\fBTcl_ArgvFuncProc\fR)(
 .PP
 The result is a boolean value indicating whether to consume the following
 argument. The \fIclientData\fR is the value from the table entry, the
-\fIobjPtr\fR is the object that represents the following argument or NULL if
+\fIobjPtr\fR is the value that represents the following argument or NULL if
 there are no following arguments at all, and the \fIdstPtr\fR argument to the
 \fBTcl_ArgvFuncProc\fR is the location to write the parsed value to.
 .RE
@@ -186,7 +186,7 @@ marks all following arguments to be left unprocessed. The \fIsrcPtr\fR,
 .
 This argument takes a following string value argument. A pointer to the string
 will be stored at \fIdstPtr\fR; the string inside will have a lifetime linked
-to the lifetime of the string representation of the argument object that it
+to the lifetime of the string representation of the argument value that it
 came from, and so should be copied if it needs to be retained. The
 \fIsrcPtr\fR and \fIclientData\fR fields are ignored.
 .SH "SEE ALSO"

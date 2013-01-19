@@ -51,17 +51,15 @@ extern "C" {
  * win/README		(not patchlevel) (sections 0 and 2)
  * unix/tcl.spec	(1 LOC patch)
  * tools/tcl.hpj.in	(not patchlevel, for windows installer)
- * tools/tcl.wse.in	(for windows installer)
- * tools/tclSplash.bmp	(not patchlevel)
  */
 
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   6
-#define TCL_RELEASE_LEVEL   TCL_BETA_RELEASE
-#define TCL_RELEASE_SERIAL  2
+#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
+#define TCL_RELEASE_SERIAL  0
 
 #define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6b2"
+#define TCL_PATCH_LEVEL	    "8.6.0"
 
 /*
  *----------------------------------------------------------------------------
@@ -500,7 +498,9 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
  * accessed with Tcl_GetObjResult() and Tcl_SetObjResult().
  */
 
-typedef struct Tcl_Interp {
+typedef struct Tcl_Interp
+#ifndef TCL_NO_DEPRECATED
+{
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
 #ifdef USE_INTERP_RESULT
@@ -517,8 +517,8 @@ typedef struct Tcl_Interp {
 				 * Tcl_Eval must free it before executing next
 				 * command. */
 #else
-    char *unused3 TCL_DEPRECATED_API("bad field access");
-    void (*unused4) (char *) TCL_DEPRECATED_API("bad field access");
+    char *resultDontUse; /* Don't use in extensions! */
+    void (*freeProcDontUse) (char *); /* Don't use in extensions! */
 #endif
 #ifdef USE_INTERP_ERRORLINE
     int errorLine TCL_DEPRECATED_API("use Tcl_GetErrorLine/Tcl_SetErrorLine");
@@ -526,9 +526,11 @@ typedef struct Tcl_Interp {
 				 * line number within the command where the
 				 * error occurred (1 if first line). */
 #else
-    int unused5 TCL_DEPRECATED_API("bad field access");
+    int errorLineDontUse; /* Don't use in extensions! */
 #endif
-} Tcl_Interp;
+}
+#endif /* TCL_NO_DEPRECATED */
+Tcl_Interp;
 
 typedef struct Tcl_AsyncHandler_ *Tcl_AsyncHandler;
 typedef struct Tcl_Channel_ *Tcl_Channel;
@@ -852,10 +854,7 @@ typedef struct Tcl_Obj {
  * whether an object is shared (i.e. has reference count > 1). Note: clients
  * should use Tcl_DecrRefCount() when they are finished using an object, and
  * should never call TclFreeObj() directly. TclFreeObj() is only defined and
- * made public in tcl.h to support Tcl_DecrRefCount's macro definition. Note
- * also that Tcl_DecrRefCount() refers to the parameter "obj" twice. This
- * means that you should avoid calling it with an expression that is expensive
- * to compute or has side effects.
+ * made public in tcl.h to support Tcl_DecrRefCount's macro definition.
  */
 
 void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
@@ -2360,6 +2359,14 @@ typedef int (Tcl_ArgvGenFuncProc)(ClientData clientData, Tcl_Interp *interp,
 
 /*
  *----------------------------------------------------------------------------
+ * Definitions needed for the Tcl_LoadFile function. [TIP #416]
+ */
+
+#define TCL_LOAD_GLOBAL 1
+#define TCL_LOAD_LAZY 2
+
+/*
+ *----------------------------------------------------------------------------
  * Single public declaration for NRE.
  */
 
@@ -2494,7 +2501,12 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
      * http://c2.com/cgi/wiki?TrivialDoWhileLoop
      */
 #   define Tcl_DecrRefCount(objPtr) \
-	do { if (--(objPtr)->refCount <= 0) TclFreeObj(objPtr); } while(0)
+	do { \
+	    Tcl_Obj *_objPtr = (objPtr); \
+	    if (--(_objPtr)->refCount <= 0) { \
+		TclFreeObj(_objPtr); \
+	    } \
+	} while(0)
 #   define Tcl_IsShared(objPtr) \
 	((objPtr)->refCount > 1)
 #endif
@@ -2590,13 +2602,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #ifndef TCL_NO_DEPRECATED
-#   undef  Tcl_EvalObj
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-#   undef  Tcl_GlobalEvalObj
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
-
 /*
  * These function have been renamed. The old names are deprecated, but we
  * define these macros for backwards compatibilty.

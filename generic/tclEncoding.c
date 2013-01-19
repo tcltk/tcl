@@ -9,6 +9,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <sys/stat.h>
 #include "tclInt.h"
 
 typedef size_t (LengthProc)(const char *src);
@@ -1542,7 +1543,8 @@ OpenEncodingFileChannel(
     }
 
     if ((NULL == chan) && (interp != NULL)) {
-	Tcl_AppendResult(interp, "unknown encoding \"", name, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"unknown encoding \"%s\"", name));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
     }
     Tcl_DecrRefCount(fileNameObj);
@@ -1616,7 +1618,8 @@ LoadEncodingFile(
 	break;
     }
     if ((encoding == NULL) && (interp != NULL)) {
-	Tcl_AppendResult(interp, "invalid encoding file \"", name, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"invalid encoding file \"%s\"", name));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "ENCODING", name, NULL);
     }
     Tcl_Close(NULL, chan);
@@ -1872,9 +1875,9 @@ LoadTableEncoding(
      * Read lines from the encoding until EOF.
      */
 
-    for (Tcl_DStringSetLength(&lineString, 0);
+    for (TclDStringClear(&lineString);
 	    (len = Tcl_Gets(chan, &lineString)) >= 0;
-	    Tcl_DStringSetLength(&lineString, 0)) {
+	    TclDStringClear(&lineString)) {
 	const unsigned char *p;
 	int to, from;
 

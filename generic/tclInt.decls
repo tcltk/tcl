@@ -731,13 +731,13 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-# TIP 338 made these public - now declared in tcl.h
-#declare 178 {
-#    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
-#}
-#declare 179 {
-#    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
-#}
+# TIP 338 made these public - now declared in tcl.h too
+declare 178 {
+    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+}
+declare 179 {
+    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
+}
 
 # REMOVED
 # Allocate lists without copying arrays
@@ -941,9 +941,9 @@ declare 235 {
 
 
 # TIP 337 made this one public
-#declare 236 {
-#    void TclBackgroundException(Tcl_Interp *interp, int code)
-#}
+declare 236 {
+    void TclBackgroundException(Tcl_Interp *interp, int code)
+}
 
 # TIP #285: Script cancellation support.
 declare 237 {
@@ -1095,6 +1095,11 @@ declare 16 win {
 #  declare 17 win {
 #      char *TclpGetTZName(void)
 #  }
+# new for 8.5.12+ Cygwin only
+declare 17 win {
+    int TclUnixCopyFile(const char *src, const char *dst,
+	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
+}
 declare 18 win {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
@@ -1142,9 +1147,6 @@ declare 27 win {
 
 declare 28 win {
     void TclWinResetInterfaces(void)
-}
-declare 29 win {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
 ################################
@@ -1237,9 +1239,17 @@ declare 18 macosx {
 declare 19 macosx {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
-declare 29 unix {
+
+declare 29 {win unix} {
     int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
+# Added in 8.6; core of TclpOpenTemporaryFile
+declare 30 {win unix} {
+    int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
+	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
+}
+
+
 
 # Local Variables:
 # mode: tcl

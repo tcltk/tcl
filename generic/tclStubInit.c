@@ -41,6 +41,7 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#define TclBackgroundException Tcl_BackgroundException
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
@@ -53,8 +54,19 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
+
+#if defined(_WIN32) || defined(__CYGWIN__)
+#undef TclWinNToHS
+#define TclWinNToHS winNToHS
+static unsigned short TclWinNToHS(unsigned short ns) {
+	return ntohs(ns);
+}
+#endif
+
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
+#   define TclUnixCopyFile 0
+#   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
@@ -86,12 +98,6 @@ void *TclWinGetTclInstance()
     GetModuleHandleExW(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS,
 	    (const char *)&winTCharEncoding, &hInstance);
     return hInstance;
-}
-
-unsigned short
-TclWinNToHS(unsigned short ns)
-{
-    return ntohs(ns);
 }
 
 int
@@ -164,14 +170,6 @@ Tcl_WinTCharToUtf(
     return Tcl_ExternalToUtfDString(winTCharEncoding,
 	    string, len, dsPtr);
 }
-
-#define TclMacOSXGetFileAttribute (int (*) (Tcl_Interp *,  \
-		int, Tcl_Obj *, Tcl_Obj **)) TclpCreateProcess
-#define TclMacOSXMatchType (int (*) (Tcl_Interp *, const char *, \
-		const char *, Tcl_StatBuf *, Tcl_GlobTypeData *)) TclpMakeFile
-#define TclMacOSXNotifierAddRunLoopMode (void (*) (const void *)) TclpOpenFile
-#define TclpLocaltime_unix (struct tm *(*) (const time_t *)) TclGetAndDetachPids
-#define TclpGmtime_unix (struct tm *(*) (const time_t *)) TclpCloseFile
 
 #else /* UNIX and MAC */
 #   define TclpLocaltime_unix TclpLocaltime
@@ -370,8 +368,8 @@ static const TclIntStubs tclIntStubs = {
     TclCallVarTraces, /* 175 */
     TclCleanupVar, /* 176 */
     TclVarErrMsg, /* 177 */
-    0, /* 178 */
-    0, /* 179 */
+    Tcl_SetStartupScript, /* 178 */
+    Tcl_GetStartupScript, /* 179 */
     0, /* 180 */
     0, /* 181 */
     TclpLocaltime, /* 182 */
@@ -428,7 +426,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetSrcInfoForPc, /* 233 */
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
-    0, /* 236 */
+    TclBackgroundException, /* 236 */
     TclResetCancellation, /* 237 */
     TclNRInterpProc, /* 238 */
     TclNRInterpProcCore, /* 239 */
@@ -479,6 +477,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 27 */
     0, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
@@ -498,7 +497,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpCreatePipe, /* 14 */
     TclpCreateProcess, /* 15 */
     TclpIsAtty, /* 16 */
-    0, /* 17 */
+    TclUnixCopyFile, /* 17 */
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
     TclWinAddProcess, /* 20 */
@@ -511,6 +510,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinFlushDirtyChannels, /* 27 */
     TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     TclGetAndDetachPids, /* 0 */
@@ -543,6 +543,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 27 */
     0, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* MACOSX */
 };
 
@@ -1291,6 +1292,7 @@ const TclStubs tclStubs = {
     Tcl_LoadFile, /* 627 */
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
+    Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
 };
 
 /* !END!: Do not edit above this line. */

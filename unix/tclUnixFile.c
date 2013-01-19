@@ -10,6 +10,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
@@ -42,19 +43,18 @@ TclpFindExecutable(
     Tcl_Encoding encoding;
 #ifdef __CYGWIN__
     int length;
-    char buf[PATH_MAX * TCL_UTF_MAX + 1];
+    char buf[PATH_MAX * 2];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
-    GetModuleFileNameW(NULL, name, PATH_MAX);
-    WideCharToMultiByte(CP_UTF8, 0, name, -1, buf, PATH_MAX, NULL, NULL);
-    cygwin_conv_to_full_posix_path(buf, name);
+    GetModuleFileNameW(NULL, buf, PATH_MAX);
+    cygwin_conv_path(3, buf, name, PATH_MAX);
     length = strlen(name);
     if ((length > 4) && !strcasecmp(name + length - 4, ".exe")) {
 	/* Strip '.exe' part. */
 	length -= 4;
     }
-	encoding = Tcl_GetEncoding(NULL, NULL);
-	TclSetObjNameOfExecutable(
-		Tcl_NewStringObj(name, length), encoding);
+    encoding = Tcl_GetEncoding(NULL, NULL);
+    TclSetObjNameOfExecutable(
+	    Tcl_NewStringObj(name, length), encoding);
 #else
     const char *name, *p;
     Tcl_StatBuf statBuf;
@@ -106,11 +106,11 @@ TclpFindExecutable(
 	while ((*p != ':') && (*p != 0)) {
 	    p++;
 	}
-	Tcl_DStringSetLength(&buffer, 0);
+	TclDStringClear(&buffer);
 	if (p != name) {
 	    Tcl_DStringAppend(&buffer, name, p - name);
 	    if (p[-1] != '/') {
-		Tcl_DStringAppend(&buffer, "/", 1);
+		TclDStringAppendLiteral(&buffer, "/");
 	    }
 	}
 	name = Tcl_DStringAppend(&buffer, argv0, -1);
@@ -175,11 +175,10 @@ TclpFindExecutable(
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&cwd),
 	    Tcl_DStringLength(&cwd), &buffer);
     if (Tcl_DStringValue(&cwd)[Tcl_DStringLength(&cwd) -1] != '/') {
-	Tcl_DStringAppend(&buffer, "/", 1);
+	TclDStringAppendLiteral(&buffer, "/");
     }
     Tcl_DStringFree(&cwd);
-    Tcl_DStringAppend(&buffer, Tcl_DStringValue(&nameString),
-	    Tcl_DStringLength(&nameString));
+    TclDStringAppendDString(&buffer, &nameString);
     Tcl_DStringFree(&nameString);
 
     encoding = Tcl_GetEncoding(NULL, NULL);
@@ -289,7 +288,7 @@ TclpMatchInDirectory(
 	     */
 
 	    if (dirName[dirLength-1] != '/') {
-		dirName = Tcl_DStringAppend(&dsOrig, "/", 1);
+		dirName = TclDStringAppendLiteral(&dsOrig, "/");
 		dirLength++;
 	    }
 	}
@@ -312,10 +311,9 @@ TclpMatchInDirectory(
 	if (d == NULL) {
 	    Tcl_DStringFree(&ds);
 	    if (interp != NULL) {
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "couldn't read directory \"",
-			Tcl_DStringValue(&dsOrig), "\": ",
-			Tcl_PosixError(interp), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"couldn't read directory \"%s\": %s",
+			Tcl_DStringValue(&dsOrig), Tcl_PosixError(interp)));
 	    }
 	    Tcl_DStringFree(&dsOrig);
 	    Tcl_DecrRefCount(fileNamePtr);
@@ -473,7 +471,7 @@ NativeMatchType(
 #ifndef MAC_OSX_TCL
 	    || ((types->perm & TCL_GLOB_PERM_HIDDEN) &&
 		(*nativeName != '.'))
-#endif
+#endif /* MAC_OSX_TCL */
 		) {
 	    return 0;
 	}
@@ -491,12 +489,10 @@ NativeMatchType(
 		 * check that here:
 		 */
 
-		if (types->type & TCL_GLOB_TYPE_LINK) {
-		    if (TclOSlstat(nativeEntry, &buf) == 0) {
-			if (S_ISLNK(buf.st_mode)) {
-			    return 1;
-			}
-		    }
+		if ((types->type & TCL_GLOB_TYPE_LINK)
+			&& (TclOSlstat(nativeEntry, &buf) == 0)
+			&& S_ISLNK(buf.st_mode)) {
+		    return 1;
 		}
 		return 0;
 	    }
@@ -519,12 +515,10 @@ NativeMatchType(
 	     */
 	} else {
 #ifdef S_ISLNK
-	    if (types->type & TCL_GLOB_TYPE_LINK) {
-		if (TclOSlstat(nativeEntry, &buf) == 0) {
-		    if (S_ISLNK(buf.st_mode)) {
-			goto filetypeOK;
-		    }
-		}
+	    if ((types->type & TCL_GLOB_TYPE_LINK)
+		    && (TclOSlstat(nativeEntry, &buf) == 0)
+		    && S_ISLNK(buf.st_mode)) {
+		goto filetypeOK;
 	    }
 #endif /* S_ISLNK */
 	    return 0;
@@ -720,9 +714,9 @@ TclpGetNativeCwd(
     if (getcwd(buffer, MAXPATHLEN+1) == NULL) {		/* INTL: Native. */
 	return NULL;
     }
-#endif
+#endif /* USEGETWD */
 
-    if ((clientData == NULL) || strcmp(buffer, (const char*)clientData)) {
+    if ((clientData == NULL) || strcmp(buffer, (const char *) clientData)) {
 	char *newCd = ckalloc(strlen(buffer) + 1);
 
 	strcpy(newCd, buffer);
@@ -770,12 +764,12 @@ TclpGetCwd(
     if (getwd(buffer) == NULL)				/* INTL: Native. */
 #else
     if (getcwd(buffer, MAXPATHLEN+1) == NULL)		/* INTL: Native. */
-#endif
+#endif /* USEGETWD */
     {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp,
-		    "error getting working directory name: ",
-		    Tcl_PosixError(interp), NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "error getting working directory name: %s",
+		    Tcl_PosixError(interp)));
 	}
 	return NULL;
     }
@@ -826,7 +820,7 @@ TclpReadlink(
     return Tcl_DStringValue(linkPtr);
 #else
     return NULL;
-#endif
+#endif /* !DJGPP */
 }
 
 /*
@@ -860,7 +854,7 @@ TclpObjStat(
 
 #ifdef S_IFLNK
 
-Tcl_Obj*
+Tcl_Obj *
 TclpObjLink(
     Tcl_Obj *pathPtr,
     Tcl_Obj *toPtr,
@@ -1182,10 +1176,17 @@ TclpUtime(
 {
     return utime(Tcl_FSGetNativePath(pathPtr), tval);
 }
+
 #ifdef __CYGWIN__
-int TclOSstat(const char *name, Tcl_StatBuf *statBuf) {
+
+int
+TclOSstat(
+    const char *name,
+    Tcl_StatBuf *statBuf)
+{
     struct stat buf;
     int result = stat(name, &buf);
+
     statBuf->st_mode = buf.st_mode;
     statBuf->st_ino = buf.st_ino;
     statBuf->st_dev = buf.st_dev;
@@ -1199,9 +1200,15 @@ int TclOSstat(const char *name, Tcl_StatBuf *statBuf) {
     statBuf->st_ctime = buf.st_ctime;
     return result;
 }
-int TclOSlstat(const char *name, Tcl_StatBuf *statBuf) {
+
+int
+TclOSlstat(
+    const char *name,
+    Tcl_StatBuf *statBuf)
+{
     struct stat buf;
     int result = lstat(name, &buf);
+
     statBuf->st_mode = buf.st_mode;
     statBuf->st_ino = buf.st_ino;
     statBuf->st_dev = buf.st_dev;
@@ -1215,7 +1222,7 @@ int TclOSlstat(const char *name, Tcl_StatBuf *statBuf) {
     statBuf->st_ctime = buf.st_ctime;
     return result;
 }
-#endif
+#endif /* CYGWIN */
 
 /*
  * Local Variables:

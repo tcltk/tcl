@@ -1807,8 +1807,12 @@ EXTERN void *		Tcl_FindSymbol(Tcl_Interp *interp,
 /* 629 */
 EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 				Tcl_LoadHandle handlePtr);
+/* 630 */
+EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
+				Tcl_ZlibStream zhandle,
+				Tcl_Obj *compressionDictionaryObj);
 
-typedef struct TclStubHooks {
+typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
     const struct TclIntStubs *tclIntStubs;
     const struct TclIntPlatStubs *tclIntPlatStubs;
@@ -1816,7 +1820,7 @@ typedef struct TclStubHooks {
 
 typedef struct TclStubs {
     int magic;
-    const struct TclStubHooks *hooks;
+    const TclStubHooks *hooks;
 
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
@@ -2472,6 +2476,7 @@ typedef struct TclStubs {
     int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *const symv[], int flags, void *procPtrs, Tcl_LoadHandle *handlePtr); /* 627 */
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
+    void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3764,6 +3769,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FindSymbol) /* 628 */
 #define Tcl_FSUnloadFile \
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
+#define Tcl_ZlibStreamSetCompressionDictionary \
+	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3795,5 +3802,17 @@ extern const TclStubs *tclStubsPtr;
 
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
+
+/*
+ * Deprecated Tcl procedures:
+ */
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#   undef Tcl_EvalObj
+#   define Tcl_EvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),0)
+#   undef Tcl_GlobalEvalObj
+#   define Tcl_GlobalEvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#endif
 
 #endif /* _TCLDECLS */

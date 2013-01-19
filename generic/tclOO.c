@@ -3,7 +3,7 @@
  *
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright (c) 2005-2011 by Donal K. Fellows
+ * Copyright (c) 2005-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -81,6 +81,7 @@ static void		ObjectRenamedTrace(ClientData clientData,
 			    Tcl_Interp *interp, const char *oldName,
 			    const char *newName, int flags);
 static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
+static inline void	SquelchCachedName(Object *oPtr);
 static void		SquelchedNsFirst(ClientData clientData);
 
 static int		PublicObjectCmd(ClientData clientData,
@@ -313,6 +314,7 @@ InitFoundation(
     Foundation *fPtr = ckalloc(sizeof(Foundation));
     Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
     Tcl_DString buffer;
+    Command *cmdPtr;
     int i;
 
     /*
@@ -356,14 +358,14 @@ InitFoundation(
 
     Tcl_DStringInit(&buffer);
     for (i=0 ; defineCmds[i].name ; i++) {
-	Tcl_DStringAppend(&buffer, "::oo::define::", 14);
+	TclDStringAppendLiteral(&buffer, "::oo::define::");
 	Tcl_DStringAppend(&buffer, defineCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		defineCmds[i].objProc, INT2PTR(defineCmds[i].flag), NULL);
 	Tcl_DStringFree(&buffer);
     }
     for (i=0 ; objdefCmds[i].name ; i++) {
-	Tcl_DStringAppend(&buffer, "::oo::objdefine::", 17);
+	TclDStringAppendLiteral(&buffer, "::oo::objdefine::");
 	Tcl_DStringAppend(&buffer, objdefCmds[i].name, -1);
 	Tcl_CreateObjCommand(interp, Tcl_DStringValue(&buffer),
 		objdefCmds[i].objProc, INT2PTR(objdefCmds[i].flag), NULL);
@@ -439,8 +441,9 @@ InitFoundation(
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::Helpers::nextto", TclOONextToObjCmd,
 	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::self", TclOOSelfObjCmd, NULL,
-	    NULL);
+    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, "::oo::Helpers::self",
+	    TclOOSelfObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectSelfCmd;
     Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::objdefine", TclOOObjDefObjCmd, NULL,
@@ -657,7 +660,7 @@ AllocObject(
 	Tcl_DStringInit(&buffer);
 	Tcl_DStringAppend(&buffer,
 		Tcl_GetCurrentNamespace(interp)->fullName, -1);
-	Tcl_DStringAppend(&buffer, "::", 2);
+	TclDStringAppendLiteral(&buffer, "::");
 	Tcl_DStringAppend(&buffer, nameStr, -1);
 	oPtr->command = Tcl_CreateObjCommand(interp,
 		Tcl_DStringValue(&buffer), PublicObjectCmd, oPtr, NULL);
@@ -699,6 +702,27 @@ AllocObject(
     oPtr->myCommand = (Tcl_Command) cmdPtr;
 
     return oPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * SquelchCachedName --
+ *
+ *	Encapsulates how to throw away a cached object name. Called from
+ *	object rename traces and at object destruction.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static inline void
+SquelchCachedName(
+    Object *oPtr)
+{
+    if (oPtr->cachedNameObj) {
+	Tcl_DecrRefCount(oPtr->cachedNameObj);
+	oPtr->cachedNameObj = NULL;
+    }
 }
 
 /*
@@ -778,10 +802,7 @@ ObjectRenamedTrace(
      */
 
     if (flags & TCL_TRACE_RENAME) {
-	if (oPtr->cachedNameObj) {
-	    TclDecrRefCount(oPtr->cachedNameObj);
-	    oPtr->cachedNameObj = NULL;
-	}
+	SquelchCachedName(oPtr);
 	return;
     }
 
@@ -1138,10 +1159,7 @@ ObjectNamespaceDeleted(
 	TclOODeleteChainCache(oPtr->chainCache);
     }
 
-    if (oPtr->cachedNameObj) {
-	TclDecrRefCount(oPtr->cachedNameObj);
-	oPtr->cachedNameObj = NULL;
-    }
+    SquelchCachedName(oPtr);
 
     if (oPtr->metadataPtr != NULL) {
 	Tcl_ObjectMetadataType *metadataTypePtr;
@@ -1566,8 +1584,9 @@ Tcl_NewObjectInstance(
 
     if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
 	    TCL_NAMESPACE_ONLY)) {
-	Tcl_AppendResult(interp, "can't create object \"", nameStr,
-		"\": command already exists with that name", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create object \"%s\": command already exists with"
+		" that name", nameStr));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
 	return NULL;
     }
@@ -1633,8 +1652,8 @@ Tcl_NewObjectInstance(
 	     */
 
 	    if (result != TCL_ERROR && Deleted(oPtr)) {
-		Tcl_SetResult(interp, "object deleted in constructor",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"object deleted in constructor", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 		result = TCL_ERROR;
 	    }
@@ -1689,8 +1708,9 @@ TclNRNewObjectInstance(
 
     if (nameStr && Tcl_FindCommand(interp, nameStr, NULL,
 	    TCL_NAMESPACE_ONLY)) {
-	Tcl_AppendResult(interp, "can't create object \"", nameStr,
-		"\": command already exists with that name", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create object \"%s\": command already exists with"
+		" that name", nameStr));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "OVERWRITE_OBJECT", NULL);
 	return TCL_ERROR;
     }
@@ -1778,7 +1798,8 @@ FinalizeAlloc(
      */
 
     if (result != TCL_ERROR && Deleted(oPtr)) {
-	Tcl_SetResult(interp, "object deleted in constructor", TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"object deleted in constructor", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "STILLBORN", NULL);
 	result = TCL_ERROR;
     }
@@ -1835,7 +1856,8 @@ Tcl_CopyObjectInstance(
      */
 
     if (IsRootClass(oPtr)) {
-	Tcl_AppendResult(interp, "may not clone the class of classes", NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"may not clone the class of classes", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "CLONING_CLASS", NULL);
 	return NULL;
     }
@@ -2498,9 +2520,9 @@ TclOOObjectCmdCore(
 		flags | (oPtr->flags & FILTER_HANDLING), methodNamePtr);
 	TclDecrRefCount(mappedMethodName);
 	if (contextPtr == NULL) {
-	    Tcl_AppendResult(interp, "impossible to invoke method \"",
-		    TclGetString(methodNamePtr),
-		    "\": no defined method or unknown method", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "impossible to invoke method \"%s\": no defined method or"
+		    " unknown method", TclGetString(methodNamePtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD_MAPPED",
 		    TclGetString(methodNamePtr), NULL);
 	    return TCL_ERROR;
@@ -2514,9 +2536,9 @@ TclOOObjectCmdCore(
 	contextPtr = TclOOGetCallContext(oPtr, methodNamePtr,
 		flags | (oPtr->flags & FILTER_HANDLING), NULL);
 	if (contextPtr == NULL) {
-	    Tcl_AppendResult(interp, "impossible to invoke method \"",
-		    TclGetString(methodNamePtr),
-		    "\": no defined method or unknown method", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "impossible to invoke method \"%s\": no defined method or"
+		    " unknown method", TclGetString(methodNamePtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), NULL);
 	    return TCL_ERROR;
@@ -2542,8 +2564,8 @@ TclOOObjectCmdCore(
 	    }
 	}
 	if (contextPtr->index >= contextPtr->callPtr->numChain) {
-	    Tcl_SetResult(interp, "no valid method implementation",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "no valid method implementation", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "METHOD",
 		    TclGetString(methodNamePtr), NULL);
 	    TclOODeleteContext(contextPtr);
@@ -2624,8 +2646,8 @@ Tcl_ObjectContextInvokeNext(
 	    methodType = "method";
 	}
 
-	Tcl_AppendResult(interp, "no next ", methodType, " implementation",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"no next %s implementation", methodType));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
 	return TCL_ERROR;
     }
@@ -2693,8 +2715,8 @@ TclNRObjectContextInvokeNext(
 	    methodType = "method";
 	}
 
-	Tcl_AppendResult(interp, "no next ", methodType, " implementation",
-		NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"no next %s implementation", methodType));
 	Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
 	return TCL_ERROR;
     }
@@ -2771,8 +2793,8 @@ Tcl_GetObjectFromObj(
     return cmdPtr->objClientData;
 
   notAnObject:
-    Tcl_AppendResult(interp, TclGetString(objPtr),
-	    " does not refer to an object", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "%s does not refer to an object", TclGetString(objPtr)));
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "OBJECT", TclGetString(objPtr),
 	    NULL);
     return NULL;

@@ -35,12 +35,14 @@
 #include "tclInt.h"
 #include <sys/types.h>
 #include <loader.h>
-
-/* Static functions defined within this file */
 
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-		       const char* symbol);
-static void UnloadFile(Tcl_LoadHandle handle);
+/*
+ * Static functions defined within this file.
+ */
+
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char* symbol);
+static void		UnloadFile(Tcl_LoadHandle handle);
 
 /*
  *----------------------------------------------------------------------
@@ -68,10 +70,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     Tcl_LoadHandle newHandle;
     ldr_module_t lm;
@@ -103,8 +106,9 @@ TclpDlopen(
     }
 
     if (lm == LDR_NULL_MODULE) {
-	Tcl_AppendResult(interp, "couldn't load file \"", fileName, "\": ",
-		Tcl_PosixError(interp), NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't load file \"%s\": %s",
+		fileName, Tcl_PosixError(interp)));
 	return TCL_ERROR;
     }
 
@@ -155,10 +159,11 @@ FindSymbol(
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
-    void* retval = ldr_lookup_package((char *)loadHandle, symbol);
+    void *retval = ldr_lookup_package((char *) loadHandle, symbol);
+
     if (retval == NULL && interp != NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "cannot find symbol\"", symbol, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\"", symbol));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
     }
     return retval;

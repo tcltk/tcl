@@ -16,10 +16,9 @@
 
 /* Static procedures defined within this file */
 
-static void* FindSymbol(Tcl_Interp* interp, Tcl_LoadHandle loadHandle,
-			const char* symbol);
-static void UnloadFile(Tcl_LoadHandle loadHandle);
-
+static void *		FindSymbol(Tcl_Interp *interp,
+			    Tcl_LoadHandle loadHandle, const char* symbol);
+static void		UnloadFile(Tcl_LoadHandle loadHandle);
 
 /*
  *----------------------------------------------------------------------
@@ -47,10 +46,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     Tcl_LoadHandle newHandle;
     struct mach_header *header;
@@ -93,15 +93,15 @@ TclpDlopen(
 	char *data;
 	int len, maxlen;
 
-	NXGetMemoryBuffer(errorStream,&data,&len,&maxlen);
-	Tcl_AppendResult(interp, "couldn't load file \"", fileName, "\": ",
-		data, NULL);
+	NXGetMemoryBuffer(errorStream, &data, &len, &maxlen);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't load file \"%s\": %s", fileName, data));
 	NXCloseMemory(errorStream, NX_FREEBUFFER);
 	return TCL_ERROR;
     }
     NXCloseMemory(errorStream, NX_FREEBUFFER);
 
-    newHandle = ckalloc(sizeof(*newHandle));
+    newHandle = ckalloc(sizeof(Tcl_LoadHandle));
     newHandle->clientData = INT2PTR(1);
     newHandle->findSymbolProcPtr = &FindSymbol;
     newHandle->unloadFileProcPtr = &UnloadFile;
@@ -127,25 +127,25 @@ TclpDlopen(
  *----------------------------------------------------------------------
  */
 
-static void*
+static void *
 FindSymbol(
     Tcl_Interp *interp,
     Tcl_LoadHandle loadHandle,
     const char *symbol)
 {
     Tcl_PackageInitProc *proc = NULL;
+
     if (symbol) {
 	char sym[strlen(symbol) + 2];
 
 	sym[0] = '_';
 	sym[1] = 0;
 	strcat(sym, symbol);
-	rld_lookup(NULL, sym, (unsigned long *)&proc);
+	rld_lookup(NULL, sym, (unsigned long *) &proc);
     }
     if (proc == NULL && interp != NULL) {
-	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "cannot find symbol \"", symbol,
-			 "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"cannot find symbol \"%s\"", symbol));
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "LOAD_SYMBOL", symbol, NULL);
     }
     return proc;

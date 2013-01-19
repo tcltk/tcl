@@ -1125,9 +1125,9 @@ DoRemoveJustDirectory(
 		len = strlen(path);
 		find = Tcl_DStringAppend(&buffer, path, len);
 		if ((len > 0) && (find[len - 1] != '\\')) {
-		    Tcl_DStringAppend(&buffer, "\\", 1);
+		    TclDStringAppendLiteral(&buffer, "\\");
 		}
-		find = Tcl_DStringAppend(&buffer, "*.*", 3);
+		find = TclDStringAppendLiteral(&buffer, "*.*");
 		handle = FindFirstFileA(find, &data);
 		if (handle != INVALID_HANDLE_VALUE) {
 		    while (1) {
@@ -1530,8 +1530,8 @@ StatError(
 				 * error. */
 {
     TclWinConvertError(GetLastError());
-    Tcl_AppendResult(interp, "could not read \"", TclGetString(fileName),
-	    "\": ", Tcl_PosixError(interp), (char *) NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("could not read \"%s\": %s",
+	    TclGetString(fileName), Tcl_PosixError(interp)));
 }
 
 /*
@@ -1649,9 +1649,9 @@ ConvertFileNameFormat(
 
     if (splitPath == NULL || pathc == 0) {
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "could not read \"",
-		    Tcl_GetString(fileName), "\": no such file or directory",
-		    (char *) NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "could not read \"%s\": no such file or directory",
+		    Tcl_GetString(fileName)));
 	    errno = ENOENT;
 	    Tcl_PosixError(interp);
 	}
@@ -1738,11 +1738,11 @@ ConvertFileNameFormat(
 	    }
 	    nativeName = data.cAlternateFileName;
 	    if (longShort) {
-		if (data.cFileName[0] != TEXT('\0')) {
+		if (data.cFileName[0] != '\0') {
 		    nativeName = data.cFileName;
 		}
 	    } else {
-		if (data.cAlternateFileName[0] == TEXT('\0')) {
+		if (data.cAlternateFileName[0] == '\0') {
 		    nativeName = (TCHAR *) data.cFileName;
 		}
 	    }
@@ -1941,9 +1941,9 @@ CannotSetAttribute(
     Tcl_Obj *fileName,		/* The name of the file. */
     Tcl_Obj *attributePtr)	/* The new value of the attribute. */
 {
-    Tcl_AppendResult(interp, "cannot set attribute \"",
-	    tclpFileAttrStrings[objIndex], "\" for file \"",
-	    Tcl_GetString(fileName), "\": attribute is readonly", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "cannot set attribute \"%s\" for file \"%s\": attribute is readonly",
+	    tclpFileAttrStrings[objIndex], Tcl_GetString(fileName)));
     errno = EINVAL;
     Tcl_PosixError(interp);
     return TCL_ERROR;

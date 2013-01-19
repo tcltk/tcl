@@ -19,6 +19,9 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testupvar [llength [info commands testupvar]]
 testConstraint testgetvarfullname [llength [info commands testgetvarfullname]]
 testConstraint testsetnoerr [llength [info commands testsetnoerr]]

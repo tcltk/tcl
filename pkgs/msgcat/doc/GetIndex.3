@@ -26,16 +26,22 @@ int
 Interpreter to use for error reporting; if NULL, then no message is
 provided on errors.
 .AP Tcl_Obj *objPtr in/out
-The string value of this object is used to search through \fItablePtr\fR.
+The string value of this value is used to search through \fItablePtr\fR.
 The internal representation is modified to hold the index of the matching
 table entry.
 .AP "const char *const" *tablePtr in
 An array of null-terminated strings.  The end of the array is marked
 by a NULL string pointer.
+Note that references to the \fItablePtr\fR may be retained in the
+internal representation of \fIobjPtr\fR, so this should represent the
+address of a statically-allocated array.
 .AP "const void" *structTablePtr in
 An array of arbitrary type, typically some \fBstruct\fR type.
 The first member of the structure must be a null-terminated string.
 The size of the structure is given by \fIoffset\fR.
+Note that references to the \fIstructTablePtr\fR may be retained in the
+internal representation of \fIobjPtr\fR, so this should represent the
+address of a statically-allocated array of structures.
 .AP int offset in
 The offset to add to structTablePtr to get to the next entry.
 The end of the array is marked by a NULL string pointer.
@@ -51,10 +57,10 @@ The index of the string in \fItablePtr\fR that matches the value of
 .BE
 .SH DESCRIPTION
 .PP
-This procedure provides an efficient way for looking up keywords,
-switch names, option names, and similar things where the value of
-an object must be one of a predefined set of values.
-\fIObjPtr\fR is compared against each of
+These procedures provide an efficient way for looking up keywords,
+switch names, option names, and similar things where the literal value of
+a Tcl value must be chosen from a predefined set.
+\fBTcl_GetIndexFromObj\fR compares \fIobjPtr\fR against each of
 the strings in \fItablePtr\fR to find a match.  A match occurs if
 \fIobjPtr\fR's string value is identical to one of the strings in
 \fItablePtr\fR, or if it is a non-empty unique abbreviation
@@ -95,4 +101,4 @@ each of several array elements.
 .SH "SEE ALSO"
 prefix(n), Tcl_WrongNumArgs(3)
 .SH KEYWORDS
-index, object, table lookup
+index, option, value, table lookup

@@ -37,7 +37,7 @@ TCL_DECLARE_MUTEX(tableMutex)
 int tclTraceCompile = 0;
 static int traceInitialized = 0;
 #endif
-
+
 /*
  * A table describing the Tcl bytecode instructions. Entries in this table
  * must correspond to the instruction opcode definitions in tclCompile.h. The
@@ -372,13 +372,13 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... value => ...
 	 * Note that the jump table contains offsets relative to the PC when
 	 * it points to this instruction; the code is relocatable. */
-    {"upvar",            5,     0,        1,   {OPERAND_LVT4}},
+    {"upvar",            5,    -1,        1,   {OPERAND_LVT4}},
 	/* finds level and otherName in stack, links to local variable at
 	 * index op1. Leaves the level on stack. */
-    {"nsupvar",          5,     0,        1,   {OPERAND_LVT4}},
+    {"nsupvar",          5,    -1,        1,   {OPERAND_LVT4}},
 	/* finds namespace and otherName in stack, links to local variable at
 	 * index op1. Leaves the namespace on stack. */
-    {"variable",         5,     0,        1,   {OPERAND_LVT4}},
+    {"variable",         5,    -1,        1,   {OPERAND_LVT4}},
 	/* finds namespace and otherName in stack, links to local variable at
 	 * index op1. Leaves the namespace on stack. */
     {"syntax",		 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
@@ -434,6 +434,105 @@ InstructionDesc const tclInstructionTable[] = {
         /* Map variable contents back into a dictionary in the local variable
          * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
+    {"dictExists",	 5,	INT_MIN,  1,	{OPERAND_UINT4}},
+	/* The top op4 words (min 1) are a key path into the dictionary just
+	 * below the keys on the stack, and all those values are replaced by a
+	 * boolean indicating whether it is possible to read out a value from
+	 * that key-path (like [dict exists]).
+	 * Stack:  ... dict key1 ... keyN => ... boolean */
+    {"verifyDict",	 1,    -1,	  0,	{OPERAND_NONE}},
+	/* Verifies that the word on the top of the stack is a dictionary,
+	 * popping it if it is and throwing an error if it is not.
+	 * Stack:  ... value => ... */
+
+    {"strmap",		 1,    -2,	  0,	{OPERAND_NONE}},
+	/* Simplified version of [string map] that only applies one change
+	 * string, and only case-sensitively.
+	 * Stack:  ... from to string => ... changedString */
+    {"strfind",		 1,    -1,	  0,	{OPERAND_NONE}},
+	/* Find the first index of a needle string in a haystack string,
+	 * producing the index (integer) or -1 if nothing found.
+	 * Stack:  ... needle haystack => ... index */
+    {"strrfind",	 1,    -1,	  0,	{OPERAND_NONE}},
+	/* Find the last index of a needle string in a haystack string,
+	 * producing the index (integer) or -1 if nothing found.
+	 * Stack:  ... needle haystack => ... index */
+    {"strrangeImm",	 9,	0,	  2,	{OPERAND_IDX4, OPERAND_IDX4}},
+	/* String Range: push (string range stktop op4 op4) */
+    {"strrange",	 1,    -2,	  0,	{OPERAND_NONE}},
+	/* String Range with non-constant arguments.
+	 * Stack:  ... string idxA idxB => ... substring */
+
+    {"yield",		 1,	0,	  0,	{OPERAND_NONE}},
+	/* Makes the current coroutine yield the value at the top of the
+	 * stack, and places the response back on top of the stack when it
+	 * resumes.
+	 * Stack:  ... valueToYield => ... resumeValue */
+    {"coroName",         1,    +1,	  0,	{OPERAND_NONE}},
+	/* Push the name of the interpreter's current coroutine as an object
+	 * on the stack. */
+    {"tailcall",	 2,    INT_MIN,	  1,	{OPERAND_UINT1}},
+	/* Do a tailcall with the opnd items on the stack as the thing to
+	 * tailcall to; opnd must be greater than 0 for the semantics to work
+	 * right. */
+
+    {"currentNamespace", 1,    +1,	  0,	{OPERAND_NONE}},
+	/* Push the name of the interpreter's current namespace as an object
+	 * on the stack. */
+    {"infoLevelNumber",  1,    +1,	  0,	{OPERAND_NONE}},
+	/* Push the stack depth (i.e., [info level]) of the interpreter as an
+	 * object on the stack. */
+    {"infoLevelArgs",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Push the argument words to a stack depth (i.e., [info level <n>])
+	 * of the interpreter as an object on the stack.
+	 * Stack:  ... depth => ... argList */
+    {"resolveCmd",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Resolves the command named on the top of the stack to its fully
+	 * qualified version, or produces the empty string if no such command
+	 * exists. Never generates errors.
+	 * Stack:  ... cmdName => ... fullCmdName */
+    {"tclooSelf",	 1,	+1,	  0,	{OPERAND_NONE}},
+	/* Push the identity of the current TclOO object (i.e., the name of
+	 * its current public access command) on the stack. */
+    {"tclooClass",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Push the class of the TclOO object named at the top of the stack
+	 * onto the stack.
+	 * Stack:  ... object => ... class */
+    {"tclooNamespace",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Push the namespace of the TclOO object named at the top of the
+	 * stack onto the stack.
+	 * Stack:  ... object => ... namespace */
+    {"tclooIsObject",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Push whether the value named at the top of the stack is a TclOO
+	 * object (i.e., a boolean). Can corrupt the interpreter result
+	 * despite not throwing, so not safe for use in a post-exception
+	 * context.
+	 * Stack:  ... value => ... boolean */
+
+    {"arrayExistsStk",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Looks up the element on the top of the stack and tests whether it
+	 * is an array. Pushes a boolean describing whether this is the
+	 * case. Also runs the whole-array trace on the named variable, so can
+	 * throw anything.
+	 * Stack:  ... varName => ... boolean */
+    {"arrayExistsImm",	 5,	+1,	  1,	{OPERAND_UINT4}},
+	/* Looks up the variable indexed by opnd and tests whether it is an
+	 * array. Pushes a boolean describing whether this is the case. Also
+	 * runs the whole-array trace on the named variable, so can throw
+	 * anything.
+	 * Stack:  ... => ... boolean */
+    {"arrayMakeStk",	 1,	-1,	  0,	{OPERAND_NONE}},
+	/* Forces the element on the top of the stack to be the name of an
+	 * array.
+	 * Stack:  ... varName => ... */
+    {"arrayMakeImm",	 5,	0,	  1,	{OPERAND_UINT4}},
+	/* Forces the variable indexed by opnd to be an array. Does not touch
+	 * the stack. */
+
+    {"invokeReplace",	 6,	INT_MIN,  2,	{OPERAND_UINT4,OPERAND_UINT1}},
+	/* Invoke command named objv[0], replacing the first two words with
+	 * the word at the top of the stack;
+	 * <objc,objv> = <op4,top op4 after popping 1> */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -1661,8 +1760,8 @@ TclCompileScript(
 		     * have side effects that rely on the unmodified string.
 		     */
 
-		    Tcl_DStringSetLength(&ds, 0);
-		    Tcl_DStringAppend(&ds, tokenPtr[1].start,tokenPtr[1].size);
+		    TclDStringClear(&ds);
+		    TclDStringAppendToken(&ds, &tokenPtr[1]);
 
 		    cmdPtr = (Command *) Tcl_FindCommand(interp,
 			    Tcl_DStringValue(&ds),
@@ -1673,10 +1772,13 @@ TclCompileScript(
 			    && !(cmdPtr->nsPtr->flags&NS_SUPPRESS_COMPILATION)
 			    && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)
 			    && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
-			int savedNumCmds = envPtr->numCommands;
+			int code, savedNumCmds = envPtr->numCommands;
 			unsigned savedCodeNext =
 				envPtr->codeNext - envPtr->codeStart;
-			int update = 0, code;
+			int update = 0;
+#ifdef TCL_COMPILE_DEBUG
+			int startStackDepth = envPtr->currStackDepth;
+#endif
 
 			/*
 			 * Mark the start of the command; the proper bytecode
@@ -1720,6 +1822,25 @@ TclCompileScript(
 				envPtr);
 
 			if (code == TCL_OK) {
+			    /*
+			     * Confirm that the command compiler generated a
+			     * single value on the stack as its result. This
+			     * is only done in debugging mode, as it *should*
+			     * be correct and normal users have no reasonable
+			     * way to fix it anyway.
+			     */
+
+#ifdef TCL_COMPILE_DEBUG
+			    int diff = envPtr->currStackDepth-startStackDepth;
+
+			    if (diff != 1 && (diff != 0 ||
+				   *(envPtr->codeNext-1) != INST_DONE)) {
+				Tcl_Panic("bad stack adjustment when compiling"
+					" %.*s (was %d instead of 1)",
+					parsePtr->tokenPtr->size,
+					parsePtr->tokenPtr->start, diff);
+			    }
+#endif
 			    if (update) {
 				/*
 				 * Fix the bytecode length.
@@ -2044,7 +2165,7 @@ TclCompileTokens(
     for ( ;  count > 0;  count--, tokenPtr++) {
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
-	    Tcl_DStringAppend(&textBuffer, tokenPtr->start, tokenPtr->size);
+	    TclDStringAppendToken(&textBuffer, tokenPtr);
 	    TclAdvanceLines(&envPtr->line, tokenPtr->start,
 		    tokenPtr->start + tokenPtr->size);
 	    break;
@@ -2091,9 +2212,7 @@ TclCompileTokens(
 	     */
 
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		int literal = TclRegisterNewLiteral(envPtr,
-			Tcl_DStringValue(&textBuffer),
-			Tcl_DStringLength(&textBuffer));
+		int literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
 
 		TclEmitPush(literal, envPtr);
 		numObjsToConcat++;
@@ -2120,9 +2239,7 @@ TclCompileTokens(
 	    if (Tcl_DStringLength(&textBuffer) > 0) {
 		int literal;
 
-		literal = TclRegisterNewLiteral(envPtr,
-			Tcl_DStringValue(&textBuffer),
-			Tcl_DStringLength(&textBuffer));
+		literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
 		TclEmitPush(literal, envPtr);
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
@@ -2145,13 +2262,10 @@ TclCompileTokens(
      */
 
     if (Tcl_DStringLength(&textBuffer) > 0) {
-	int literal;
+	int literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
 
-	literal = TclRegisterNewLiteral(envPtr, Tcl_DStringValue(&textBuffer),
-		Tcl_DStringLength(&textBuffer));
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
-
 	if (numCL) {
 	    TclContinuationsEnter(envPtr->literalArrayPtr[literal].objPtr,
 		    numCL, clPosition);
@@ -4627,6 +4741,5 @@ RecordByteCodeStats(
  * c-basic-offset: 4
  * fill-column: 78
  * tab-width: 8
- * indent-tabs-mode: nil
  * End:
  */

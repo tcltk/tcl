@@ -4,7 +4,7 @@
  *	This file contains the public API definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2008 by Donal K. Fellows
+ * Copyright (c) 2006-2010 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -34,11 +34,12 @@ extern const char *TclOOInitializeStubs(
  * version in the files:
  *
  * tests/oo.test
+ * tests/ooNext2.test
  * unix/tclooConfig.sh
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "0.6.3"
+#define TCLOO_VERSION "1.0"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*

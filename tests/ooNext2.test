@@ -2,16 +2,14 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 2006-2008 Donal K. Fellows
+# Copyright (c) 2006-2011 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: oo.test,v 1.59 2011/01/18 16:10:48 dkf Exp $
 
-package require -exact TclOO 0.6.3 ;# Must match value in configure.in
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+package require TclOO 1.0
+package require tcltest 2
+if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
 }
 

@@ -82,6 +82,11 @@ CFLAGS_OPTIMIZE	= @CFLAGS_OPTIMIZE@
 #CFLAGS = 		$(CFLAGS_DEBUG) $(CFLAGS_OPTIMIZE)
 CFLAGS = 		@CFLAGS@ @CFLAGS_DEFAULT@ -DUNICODE -D_UNICODE
 
+# To compile without backward compatibility and deprecated code uncomment the
+# following
+NO_DEPRECATED_FLAGS	=
+#NO_DEPRECATED_FLAGS	= -DTCL_NO_DEPRECATED
+
 # To enable compilation debugging reverse the comment characters on one of the
 # following lines.
 COMPILE_DEBUG_FLAGS =
@@ -90,7 +95,7 @@ COMPILE_DEBUG_FLAGS =
 
 SRC_DIR			= @srcdir@
 ROOT_DIR		= @srcdir@/..
-TOP_DIR			= $(shell cd @srcdir@/..; pwd)
+TOP_DIR			= $(shell cd @srcdir@/..; pwd -P)
 GENERIC_DIR		= $(TOP_DIR)/generic
 TOMMATH_DIR		= $(TOP_DIR)/libtommath
 WIN_DIR			= $(TOP_DIR)/win
@@ -112,7 +117,7 @@ ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's!\\!/!g')
 
 # Fully qualify library path so that `make test`
 # does not depend on the current directory.
-LIBRARY_DIR1		= $(shell cd '$(ROOT_DIR_NATIVE)/library' ; pwd)
+LIBRARY_DIR1		= $(shell cd '$(ROOT_DIR_NATIVE)/library' ; pwd -P)
 LIBRARY_DIR             = $(shell $(CYGPATH) '$(LIBRARY_DIR1)' | sed 's!\\!/!g')
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
@@ -137,10 +142,9 @@ TEST_LIB_FILE		= @LIBPREFIX@tcltest$(VER)${LIBSUFFIX}
 ZLIB_DLL_FILE		= zlib1.dll
 
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
-STATIC_LIBRARIES	= $(TCL_LIB_FILE) $(REG_LIB_FILE) $(DDE_LIB_FILE)
+STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
-TCLTEST			= tcltest${EXEEXT}
 CAT32			= cat32$(EXEEXT)
 MAN2TCL			= man2tcl$(EXEEXT)
 
@@ -188,7 +192,7 @@ COPY		= cp
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} -I"${ZLIB_DIR}" \
 -I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" \
 -I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
-${COMPILE_DEBUG_FLAGS}
+${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
@@ -403,7 +407,7 @@ TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
 all: binaries libraries doc packages
 
-tcltest: $(TCLTEST)
+tcltest: $(TCLSH) $(TEST_DLL_FILE)
 
 binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ $(DDE_DLL_FILE) $(REG_DLL_FILE) $(TCLSH)
 
@@ -413,11 +417,6 @@ doc:
 
 $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
-        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
-	@VC_MANIFEST_EMBED_EXE@
-
-$(TCLTEST): testMain.$(OBJEXT) ${TEST_DLL_FILE} @LIBRARIES@ $(TCL_STUB_LIB_FILE) $(CAT32) tclsh.$(RES)
-	$(CC) $(CFLAGS) testMain.$(OBJEXT) ${TEST_LIB_FILE} $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 
@@ -440,50 +439,28 @@ ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@
 	@MAKE_DLL@ ${TCL_OBJS} tcl.$(RES) $(SHLIB_LD_LIBS)
 	@VC_MANIFEST_EMBED_DLL@
 
-${TCL_LIB_FILE}: ${TCL_OBJS}
+${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@$(RM) ${TCL_LIB_FILE}
-	@MAKE_LIB@ ${TCL_OBJS}
+	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
-# assume GNU make
-
-# To enable concurrent parallel make of tcl<x>.dll and tcl<x>.lib, the tcl<x>.dll
-# targets have to depend on tcl<x>.lib, this ensures that linking of tcl<x>.dll
-# does not execute concurrently with the renaming and recompiling of tcl<x>.lib
-
-${DDE_DLL_FILE}: ${DDE_OBJS} ${DDE_LIB_FILE} ${TCL_STUB_LIB_FILE}
-	@-$(RM) ${DDE_DLL_FILE} ${DDE_LIB_FILE}.sav
-	@-$(COPY) ${DDE_LIB_FILE} ${DDE_LIB_FILE}.sav
+${DDE_DLL_FILE}: ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	@-$(RM) ${DDE_LIB_FILE}
-	@-$(COPY) ${DDE_LIB_FILE}.sav ${DDE_LIB_FILE}
-	@-$(RM) ${DDE_LIB_FILE}.sav
 
-${DDE_LIB_FILE}: ${DDE_OBJS}
-	@$(RM) ${DDE_LIB_FILE}
-	@MAKE_LIB@ ${DDE_OBJS}
-	@POST_MAKE_LIB@
-
-${REG_DLL_FILE}: ${REG_OBJS} ${REG_LIB_FILE} ${TCL_STUB_LIB_FILE}
-	@-$(RM) ${REG_DLL_FILE} ${REG_LIB_FILE}.sav
-	@-$(COPY) ${REG_LIB_FILE} ${REG_LIB_FILE}.sav
+${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
-	@-$(RM) ${REG_LIB_FILE}
-	@-$(COPY) ${REG_LIB_FILE}.sav ${REG_LIB_FILE}
-	@-$(RM) ${REG_LIB_FILE}.sav
-
-${REG_LIB_FILE}: ${REG_OBJS}
-	@$(RM) ${REG_LIB_FILE}
-	@MAKE_LIB@ ${REG_OBJS}
-	@POST_MAKE_LIB@
 
 ${TEST_DLL_FILE}: ${TCLTEST_OBJS} ${TCL_STUB_LIB_FILE}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
 # use pre-built zlib1.dll
-${ZLIB_DLL_FILE}: $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE}
-	@$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}
+${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
+	@if test "@ZLIB_LIBS@set" == "${ZLIB_DIR}/win64/zdll.libset" ; then \
+		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	else \
+		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+	fi;
 
 # Add the object extension to the implicit rules. By default .obj is not
 # automatically added.
@@ -566,9 +543,9 @@ gendate:
 # run (and the results checked) after updating to a new release of libtommath.
 
 gentommath_h:
-	$(TCL_EXE) "$(ROOT_DIR_NATIVE)\tools\fix_tommath_h.tcl" \
-		"$(TOMMATH_DIR_NATIVE)\tommath.h" \
-		> "$(GENERIC_DIR_NATIVE)\tclTomMath.h"
+	$(TCL_EXE) "$(ROOT_DIR_NATIVE)/tools/fix_tommath_h.tcl" \
+		"$(TOMMATH_DIR_NATIVE)/tommath.h" \
+		> "$(GENERIC_DIR_NATIVE)/tclTomMath.h"
 
 install: all install-binaries install-libraries install-doc install-packages
 
@@ -662,17 +639,17 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing package http 2.8.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.8.4.tm;
+	@echo "Installing package http 2.8.6 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.8.6.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing package msgcat 1.4.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.4.4.tm;
-	@echo "Installing package tcltest 2.3.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.4.tm;
+	@echo "Installing package msgcat 1.5.0 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.0.tm;
+	@echo "Installing package tcltest 2.3.5 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.5.tm;
 	@echo "Installing package platform 1.0.10 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.10.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
@@ -719,17 +696,19 @@ install-private-headers: libraries
 
 test: test-tcl test-packages
 
-test-tcl: binaries $(TCLTEST)
+test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLTEST) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
-	-load "set ::ddelib [file normalize ${DDE_DLL_FILE}]; \
-	set ::reglib [file normalize ${REG_DLL_FILE}]" | ./$(CAT32)
+	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
+	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
+	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
+	package ifneeded registry 1.3.0 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
 
-# Useful target to launch a built tcltest with the proper path,...
-runtest: binaries $(TCLTEST)
+# Useful target to launch a built tclsh with the proper path,...
+runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
-	./$(TCLTEST) $(TESTFLAGS) -load "set ::ddelib [file normalize ${DDE_DLL_FILE}]; \
-	set ::reglib [file normalize ${REG_DLL_FILE}]" $(SCRIPT)
+	./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
+	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
+	package ifneeded registry 1.3.0 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory via
 # `make shell SCRIPT=foo.tcl`
@@ -753,7 +732,7 @@ cleanhelp:
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(TCLTEST) $(CAT32)
+	$(RM) $(TCLSH) $(CAT32)
 	$(RM) *.pch *.ilk *.pdb
 
 distclean: distclean-packages clean
@@ -768,7 +747,7 @@ PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 PKG_DIR			= ./pkgs
 
 packages:
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ] ; then \
 	    if [ -x $$i/configure ] ; then \
@@ -776,8 +755,8 @@ packages:
 	      mkdir -p $(PKG_DIR)/$$pkg; \
 	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	        ( cd $(PKG_DIR)/$$pkg; \
-	          echo "Configuring package '$$i' wd = `pwd`"; \
-	          $$i/configure --with-tcl=$(PWD) --with-tclinclude=$(GENERIC_DIR) $(PKG_CFG_ARGS) --enable-shared --enable-threads; ) \
+	          echo "Configuring package '$$i' wd = `pwd -P`"; \
+	          $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR) $(PKG_CFG_ARGS) --enable-shared --enable-threads; ) \
 	      fi ; \
 	      echo "Building package '$$pkg'"; \
 	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) \
@@ -787,7 +766,7 @@ packages:
 	cd $$builddir
 
 install-packages: packages
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
@@ -800,20 +779,20 @@ install-packages: packages
 	cd $$builddir
 
 test-packages: tcltest packages
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
 	    if [ -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	        echo "Testing package '$$pkg'"; \
-	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/tcltest"; ) \
+	        ( cd $(PKG_DIR)/$$pkg; $(MAKE) "LD_LIBRARY_PATH=$$builddir:${LD_LIBRARY_PATH}" "TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" "TCLLIBPATH=$$builddir/pkgs" test "TCLSH_PROG=$$builddir/${TCLSH}"; ) \
 	    fi; \
 	  fi; \
 	done; \
 	cd $$builddir
 
 clean-packages:
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
@@ -825,7 +804,7 @@ clean-packages:
 	cd $$builddir
 
 distclean-packages:
-	@builddir=`pwd`; \
+	@builddir=`pwd -P`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
