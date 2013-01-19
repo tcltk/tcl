@@ -294,7 +294,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o tclClock.o \
 	tclCmdAH.o tclCmdIL.o tclCmdMZ.o tclCompCmds.o tclCompCmdsSZ.o \
 	tclCompExpr.o tclCompile.o tclConfig.o tclDate.o tclDictObj.o \
-	tclEncoding.o tclEnsemble.o \
+	tclEncoding.o tclEnsemble.o tclCompEnsemble.o\
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
@@ -403,6 +403,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclDictObj.c \
 	$(GENERIC_DIR)/tclEncoding.c \
 	$(GENERIC_DIR)/tclEnsemble.c \
+	$(GENERIC_DIR)/tclCompEnsemble.c \
 	$(GENERIC_DIR)/tclEnv.c \
 	$(GENERIC_DIR)/tclEvent.c \
 	$(GENERIC_DIR)/tclExecute.c \
@@ -996,12 +997,13 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 REGHDRS=$(GENERIC_DIR)/regex.h $(GENERIC_DIR)/regguts.h \
 		$(GENERIC_DIR)/regcustom.h
 TCLREHDRS=$(GENERIC_DIR)/tclRegexp.h
-COMPILEHDR=$(GENERIC_DIR)/tclCompile.h
+ENGINEHDR=$(GENERIC_DIR)/tclEngine.h
+ENGINEINTHDR=$(ENGINEHDR) $(GENERIC_DIR)/tclEngineInt.h
+NREHDR=$(GENERIC_DIR)/tclNRE.h
 FSHDR=$(GENERIC_DIR)/tclFileSystem.h
 IOHDR=$(GENERIC_DIR)/tclIO.h
 MATHHDRS=$(GENERIC_DIR)/tommath.h $(GENERIC_DIR)/tclTomMath.h
 PARSEHDR=$(GENERIC_DIR)/tclParse.h
-NREHDR=$(GENERIC_DIR)/tclNRE.h
 
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
@@ -1023,13 +1025,13 @@ tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
 tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
 
-tclAssembly.o: $(GENERIC_DIR)/tclAssembly.c $(COMPILEHDR)
+tclAssembly.o: $(GENERIC_DIR)/tclAssembly.c $(ENGINEINTHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAssembly.c
 
 tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
 
-tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
+tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(ENGINEHDR) $(MATHHDRS) $(NREHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBasic.c
 
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
@@ -1053,16 +1055,16 @@ tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c $(TCLREHDRS)
 tclDate.o: $(GENERIC_DIR)/tclDate.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
-tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR)
+tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(ENGINEINTHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmds.c
 
-tclCompCmdsSZ.o: $(GENERIC_DIR)/tclCompCmdsSZ.c $(COMPILEHDR)
+tclCompCmdsSZ.o: $(GENERIC_DIR)/tclCompCmdsSZ.c $(ENGINEINTHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsSZ.c
 
-tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c $(COMPILEHDR)
+tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c $(ENGINEINTHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompExpr.c
 
-tclCompile.o: $(GENERIC_DIR)/tclCompile.c $(COMPILEHDR)
+tclCompile.o: $(GENERIC_DIR)/tclCompile.c $(ENGINEINTHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompile.c
 
 tclConfig.o: $(GENERIC_DIR)/tclConfig.c
@@ -1074,8 +1076,11 @@ tclDictObj.o: $(GENERIC_DIR)/tclDictObj.c $(MATHHDRS)
 tclEncoding.o: $(GENERIC_DIR)/tclEncoding.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEncoding.c
 
-tclEnsemble.o: $(GENERIC_DIR)/tclEnsemble.c $(COMPILEHDR)
+tclEnsemble.o: $(GENERIC_DIR)/tclEnsemble.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnsemble.c
+
+tclCompEnsemble.o: $(GENERIC_DIR)/tclCompEnsemble.c $(ENGINEINTHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompEnsemble.c
 
 tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnv.c
@@ -1083,7 +1088,7 @@ tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 tclEvent.o: $(GENERIC_DIR)/tclEvent.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
 
-tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS)
+tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(ENGINEINTHDR) $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclExecute.c
 
 tclFCmd.o: $(GENERIC_DIR)/tclFCmd.c
@@ -1134,10 +1139,10 @@ tclLink.o: $(GENERIC_DIR)/tclLink.c
 tclListObj.o: $(GENERIC_DIR)/tclListObj.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
 
-tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
+tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(ENGINEINTHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c
 
-tclObj.o: $(GENERIC_DIR)/tclObj.c $(COMPILEHDR) $(MATHHDRS)
+tclObj.o: $(GENERIC_DIR)/tclObj.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
 
 tclLoad.o: $(GENERIC_DIR)/tclLoad.c
@@ -1170,7 +1175,7 @@ tclLoadShl.o: $(UNIX_DIR)/tclLoadShl.c
 tclMain.o: $(GENERIC_DIR)/tclMain.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclMain.c
 
-tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c $(COMPILEHDR)
+tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c 
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNamesp.c
 
 tclNotify.o: $(GENERIC_DIR)/tclNotify.c
@@ -1242,7 +1247,7 @@ tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
 tclPreserve.o: $(GENERIC_DIR)/tclPreserve.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPreserve.c
 
-tclProc.o: $(GENERIC_DIR)/tclProc.c $(COMPILEHDR)
+tclProc.o: $(GENERIC_DIR)/tclProc.c $(ENGINEHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProc.c
 
 tclRegexp.o: $(GENERIC_DIR)/tclRegexp.c $(TCLREHDRS)
@@ -1281,7 +1286,7 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
 
-tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS) $(NREHDR)
+tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS) $(NREHDR) $(ENGINEINTHDR)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
 
 tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c $(MATHHDRS)

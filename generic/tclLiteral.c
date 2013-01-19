@@ -14,8 +14,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
-#include "tclCompile.h"
+#include "tclEngineInt.h"
 
 /*
  * When there are this many entries per bucket, on average, rebuild a

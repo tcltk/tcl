@@ -11,8 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
-#include "tclCompile.h"		/* CompileEnv */
+#include "tclEngineInt.h"		/* CompileEnv */
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a

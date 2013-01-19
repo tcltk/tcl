@@ -18,8 +18,9 @@
  */
 
 #include "tclInt.h"
+#include "tclEngine.h"
+
 #include "tclOOInt.h"
-#include "tclCompile.h"
 #include "tommath.h"
 #include <math.h>
 #include "tclNRE.h"
@@ -128,9 +129,6 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 static int NRRoot(ClientData data[], Tcl_Interp *interp, int result);
-#if !NRE_STACK_DEBUG
-static Tcl_NRPostProc NRStackBottom;
-#endif
 
 static Tcl_NRPostProc	NRRunObjProc;
 static Tcl_ObjCmdProc	OldMathFuncProc;
@@ -814,8 +812,6 @@ Tcl_CreateInterp(void)
      * Create unsupported commands for debugging bytecode and objects.
      */
 
-    Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
-	    Tcl_DisassembleObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
 
@@ -4242,13 +4238,7 @@ void
 TclNRSetRoot(
     Tcl_Interp *interp)
 {
-#if NRE_STACK_DEBUG
     int first = (TOP_CB(interp) == NULL);
-#else
-    int first = ((TOP_CB(interp) == NULL) ||
-            ((TOP_CB(interp)->procPtr == NRStackBottom) &&
-                    (TOP_CB(interp)->data[0] == NULL)));
-#endif
     
     if (!first) {
         TclNRAddCallback(interp, NRRoot, NULL, NULL, NULL, NULL);
@@ -7338,106 +7328,6 @@ TclPushTailcallPoint(
     ((Interp *) interp)->numLevels++;
 }
 
-#if !NRE_STACK_DEBUG
-static int
-NRStackBottom(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr = iPtr->execEnvPtr;
-    NRE_stack *this = eePtr->NRStack;
-    NRE_stack *prev = data[0];
-
-    if (!prev) {
-        /* empty stack, free it */
-        ckfree(this);
-        eePtr->NRStack = NULL;
-        TOP_CB(interp) = NULL;
-        return result;
-    }
-    
-    /*
-     * Go back to the previous stack.
-     */
-
-    eePtr->NRStack = prev;
-    eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
-    
-    /*
-     * Keep this stack in reserve. If this one had a successor, free that one:
-     * we always keep just one in reserve. 
-     */
-    
-    if (this->next) {
-        ckfree (this->next);
-        this->next = NULL;
-    }
-
-    return result;
-}
-
-int level = 0;
-    
-NRE_callback *
-TclNewCallback(
-    Tcl_Interp *interp)
-{
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr = iPtr->execEnvPtr;
-    NRE_stack *this = eePtr->NRStack, *orig;
-
-    if (eePtr->callbackPtr &&
-            (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
-        stackReady:
-        return ++eePtr->callbackPtr;
-    }
-
-    if (!eePtr->callbackPtr) {
-        this = NULL;
-    }
-    orig = this;
-    
-    if (this && this->next) {
-        this = this->next;
-    } else {
-        this = (NRE_stack *) ckalloc(sizeof(NRE_stack));
-        this->next = NULL;
-    }
-    eePtr->NRStack = this;
-    eePtr->callbackPtr = &this->items[-1];
-    TclNRAddCallback(interp, NRStackBottom, orig, NULL, NULL, NULL);
-
-    NRE_ASSERT(eePtr->callbackPtr == &this->items[0]);
-
-    goto stackReady;
-}
-
-NRE_callback *
-TclPopCallback(
-    Tcl_Interp *interp)
-{
-    return ((Interp *)interp)->execEnvPtr->callbackPtr--;
-}
-
-NRE_callback *
-TclNextCallback(
-    NRE_callback *cbPtr)
-{
-
-    if (cbPtr->procPtr == NRStackBottom) {
-        NRE_stack *prev = cbPtr->data[0];
-
-        if (!prev) {
-            return NULL;
-        }
-        cbPtr = &prev->items[NRE_STACK_SIZE];
-    }
-    return --cbPtr;
-}
-
-#endif
 void
 TclSetTailcall(
     Tcl_Interp *interp,

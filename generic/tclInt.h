@@ -19,6 +19,8 @@
 #ifndef _TCLINT
 #define _TCLINT
 
+#include "tclInt.h"
+
 /*
  * Some numerics configuration options.
  */
@@ -1207,75 +1209,6 @@ MODULE_SCOPE void	TclThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
 #define TCL_TSD_INIT(keyPtr) \
   (ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
 
-/*
- *----------------------------------------------------------------
- * Data structures related to bytecode compilation and execution. These are
- * used primarily in tclCompile.c, tclExecute.c, and tclBasic.c.
- *----------------------------------------------------------------
- */
-
-/*
- * Forward declaration to prevent errors when the forward references to
- * Tcl_Parse and CompileEnv are encountered in the procedure type CompileProc
- * declared below.
- */
-
-struct CompileEnv;
-
-/*
- * The type of procedures called by the Tcl bytecode compiler to compile
- * commands. Pointers to these procedures are kept in the Command structure
- * describing each command. The integer value returned by a CompileProc must
- * be one of the following:
- *
- * TCL_OK		Compilation completed normally.
- * TCL_ERROR 		Compilation could not be completed. This can be just a
- * 			judgment by the CompileProc that the command is too
- * 			complex to compile effectively, or it can indicate
- * 			that in the current state of the interp, the command
- * 			would raise an error. The bytecode compiler will not
- * 			do any error reporting at compiler time. Error
- * 			reporting is deferred until the actual runtime,
- * 			because by then changes in the interp state may allow
- * 			the command to be successfully evaluated.
- * TCL_OUT_LINE_COMPILE	A source-compatible alias for TCL_ERROR, kept for the
- * 			sake of old code only.
- */
-
-#define TCL_OUT_LINE_COMPILE	TCL_ERROR
-
-typedef int (CompileProc)(Tcl_Interp *interp, Tcl_Parse *parsePtr,
-	struct Command *cmdPtr, struct CompileEnv *compEnvPtr);
-
-/*
- * The type of procedure called from the compilation hook point in
- * SetByteCodeFromAny.
- */
-
-typedef int (CompileHookProc)(Tcl_Interp *interp,
-	struct CompileEnv *compEnvPtr, ClientData clientData);
-
-/*
- * The data structure for a (linked list of) execution stacks.
- */
-
-typedef struct ExecStack {
-    struct ExecStack *prevPtr;
-    struct ExecStack *nextPtr;
-    Tcl_Obj **markerPtr;
-    Tcl_Obj **endPtr;
-    Tcl_Obj **tosPtr;
-    Tcl_Obj *stackWords[1];
-} ExecStack;
-
-/*
- * The data structure defining the execution environment for ByteCode's.
- * There is one ExecEnv structure per Tcl interpreter. It holds the evaluation
- * stack that holds command operands and results. The stack grows towards
- * increasing addresses. The member stackPtr points to the stackItems of the
- * currently active execution stack.
- */
-
 typedef struct CorContext {
     struct CallFrame *framePtr;
     struct CallFrame *varFramePtr;
@@ -1301,20 +1234,27 @@ typedef struct CoroutineData {
 				 * means "any" */
 } CoroutineData;
 
+#define COR_IS_SUSPENDED(corPtr) \
+    ((corPtr)->stackLevel == NULL)
+
+/*
+ * The data structure defining the execution environment for ByteCode's.
+ * There is one ExecEnv structure per Tcl interpreter. It holds the evaluation
+ * stack that holds command operands and results. The stack grows towards
+ * increasing addresses. The member stackPtr points to the stackItems of the
+ * currently active execution stack.
+ */
+
 typedef struct ExecEnv {
-    ExecStack *execStackPtr;	/* Points to the first item in the evaluation
-				 * stack on the heap. */
-    Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
     struct Tcl_Interp *interp;
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
-    struct NRE_stack *NRStack;
     struct CoroutineData *corPtr;
     int rewind;
+    Tcl_Obj *constants[2];	/* Pointers to constant "0" and "1" objs. */
+    struct ExecStack *execStackPtr;	/* Points to the first item in the evaluation
+				 * stack on the heap. */
 } ExecEnv;
-
-#define COR_IS_SUSPENDED(corPtr) \
-    ((corPtr)->stackLevel == NULL)
 
 /*
  * The definitions for the LiteralTable and LiteralEntry structures. Each
@@ -1366,48 +1306,13 @@ typedef struct LiteralTable {
 } LiteralTable;
 
 /*
- * The following structure defines for each Tcl interpreter various
- * statistics-related information about the bytecode compiler and
- * interpreter's operation in that interpreter.
- */
-
-#ifdef TCL_COMPILE_STATS
-typedef struct ByteCodeStats {
-    long numExecutions;		/* Number of ByteCodes executed. */
-    long numCompilations;	/* Number of ByteCodes created. */
-    long numByteCodesFreed;	/* Number of ByteCodes destroyed. */
-    long instructionCount[256];	/* Number of times each instruction was
-				 * executed. */
-
-    double totalSrcBytes;	/* Total source bytes ever compiled. */
-    double totalByteCodeBytes;	/* Total bytes for all ByteCodes. */
-    double currentSrcBytes;	/* Src bytes for all current ByteCodes. */
-    double currentByteCodeBytes;/* Code bytes in all current ByteCodes. */
-
-    long srcCount[32];		/* Source size distribution: # of srcs of
-				 * size [2**(n-1)..2**n), n in [0..32). */
-    long byteCodeCount[32];	/* ByteCode size distribution. */
-    long lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
-
-    double currentInstBytes;	/* Instruction bytes-current ByteCodes. */
-    double currentLitBytes;	/* Current literal bytes. */
-    double currentExceptBytes;	/* Current exception table bytes. */
-    double currentAuxBytes;	/* Current auxiliary information bytes. */
-    double currentCmdMapBytes;	/* Current src<->code map bytes. */
-
-    long numLiteralsCreated;	/* Total literal objects ever compiled. */
-    double totalLitStringBytes;	/* Total string bytes in all literals. */
-    double currentLitStringBytes;
-				/* String bytes in current literals. */
-    long literalCount[32];	/* Distribution of literal string sizes. */
-} ByteCodeStats;
-#endif /* TCL_COMPILE_STATS */
-
-/*
  * Structure used in implementation of those core ensembles which are
  * partially compiled. Used as an array of these, with a terminating field
  * whose 'name' is NULL.
  */
+struct CompileEnv;
+typedef int (CompileProc)(Tcl_Interp *interp, Tcl_Parse *parsePtr,
+	struct Command *cmdPtr, struct CompileEnv *compEnvPtr);
 
 typedef struct {
     const char *name;		/* The name of the subcommand. */
@@ -1916,7 +1821,6 @@ typedef struct Interp {
 				 * (asyncCancelMsg not NULL), takes precedence
 				 * over the default error messages returned by
 				 * a script cancellation operation. */
-
 #ifdef TCL_COMPILE_STATS
     /*
      * Statistical information about the bytecode compiler and interpreter's
@@ -2900,7 +2804,6 @@ MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 MODULE_SCOPE Tcl_WideInt TclpGetWideClicks(void);
 MODULE_SCOPE double	TclpWideClicksToNanoseconds(Tcl_WideInt clicks);
 #endif
-MODULE_SCOPE Tcl_Obj *	TclDisassembleByteCodeObj(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclZlibInit(Tcl_Interp *interp);
 MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
@@ -2973,9 +2876,6 @@ MODULE_SCOPE int	TclDictWithFinish(Tcl_Interp *interp, Var *varPtr,
 			    Tcl_Obj *const pathv[], Tcl_Obj *keysPtr);
 MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 			    int pathc, Tcl_Obj *const pathv[]);
-MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
 			    
 /* Assemble command function */			    
 MODULE_SCOPE int	Tcl_AssembleObjCmd(ClientData clientData,
@@ -4526,6 +4426,51 @@ typedef struct NRE_callback {
 #define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
 #define Tcl_Free(ptr)                 TclpFree(ptr)
 #endif
+
+/*
+ * ADDENDA
+ */
+
+/*
+ * The following structure defines for each Tcl interpreter various
+ * statistics-related information about the bytecode compiler and
+ * interpreter's operation in that interpreter.
+ */
+
+#ifdef TCL_COMPILE_STATS
+typedef struct ByteCodeStats {
+    long numExecutions;		/* Number of ByteCodes executed. */
+    long numCompilations;	/* Number of ByteCodes created. */
+    long numByteCodesFreed;	/* Number of ByteCodes destroyed. */
+    long instructionCount[256];	/* Number of times each instruction was
+				 * executed. */
+
+    double totalSrcBytes;	/* Total source bytes ever compiled. */
+    double totalByteCodeBytes;	/* Total bytes for all ByteCodes. */
+    double currentSrcBytes;	/* Src bytes for all current ByteCodes. */
+    double currentByteCodeBytes;/* Code bytes in all current ByteCodes. */
+
+    long srcCount[32];		/* Source size distribution: # of srcs of
+				 * size [2**(n-1)..2**n), n in [0..32). */
+    long byteCodeCount[32];	/* ByteCode size distribution. */
+    long lifetimeCount[32];	/* ByteCode lifetime distribution (ms). */
+
+    double currentInstBytes;	/* Instruction bytes-current ByteCodes. */
+    double currentLitBytes;	/* Current literal bytes. */
+    double currentExceptBytes;	/* Current exception table bytes. */
+    double currentAuxBytes;	/* Current auxiliary information bytes. */
+    double currentCmdMapBytes;	/* Current src<->code map bytes. */
+
+    long numLiteralsCreated;	/* Total literal objects ever compiled. */
+    double totalLitStringBytes;	/* Total string bytes in all literals. */
+    double currentLitStringBytes;
+				/* String bytes in current literals. */
+    long literalCount[32];	/* Distribution of literal string sizes. */
+} ByteCodeStats;
+#endif /* TCL_COMPILE_STATS */
+
+MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
+MODULE_SCOPE void TclForceBodyNS(Tcl_Obj *bodyPtr, Namespace *nsPtr);
 
 #endif /* _TCLINT */
 

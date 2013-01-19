@@ -565,10 +565,10 @@ declare 138 {
 declare 141 {
     CONST84_RETURN char *TclpGetCwd(Tcl_Interp *interp, Tcl_DString *cwdPtr)
 }
-declare 142 {
-    int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    CompileHookProc *hookProc, ClientData clientData)
-}
+#declare 142 {
+#    int TclSetByteCodeFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr,
+#	    CompileHookProc *hookProc, ClientData clientData)
+#}
 declare 143 {
     int TclAddLiteralObj(struct CompileEnv *envPtr, Tcl_Obj *objPtr,
 	    LiteralEntry **litPtrPtr)

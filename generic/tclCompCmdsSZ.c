@@ -15,8 +15,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
-#include "tclCompile.h"
+#include "tclEngineInt.h"
 
 /*
  * Prototypes for procedures defined later in this file:

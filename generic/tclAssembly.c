@@ -28,8 +28,7 @@
  *-   returnCodeBranch
  */
 
-#include "tclInt.h"
-#include "tclCompile.h"
+#include "tclEngineInt.h"
 #include "tclOOInt.h"
 
 /*

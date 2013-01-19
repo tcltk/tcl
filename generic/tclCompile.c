@@ -12,8 +12,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
-#include "tclCompile.h"
+#include "tclEngineInt.h"
 
 /*
  * Table of all AuxData types.
@@ -589,6 +588,17 @@ static const Tcl_ObjType substCodeType = {
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
 };
+
+
+void TclForceBodyNS(
+    Tcl_Obj *bodyPtr,
+    Namespace *nsPtr)
+{
+    if (bodyPtr->typePtr == &tclByteCodeType) {
+	((ByteCode *)bodyPtr->internalRep.otherValuePtr)->nsPtr = nsPtr;
+    }
+}
+
 
 
 /*

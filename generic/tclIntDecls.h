@@ -359,10 +359,7 @@ EXTERN CONST84_RETURN char * TclGetEnv(const char *name,
 /* 141 */
 EXTERN CONST84_RETURN char * TclpGetCwd(Tcl_Interp *interp,
 				Tcl_DString *cwdPtr);
-/* 142 */
-EXTERN int		TclSetByteCodeFromAny(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, CompileHookProc *hookProc,
-				ClientData clientData);
+/* Slot 142 is reserved */
 /* 143 */
 EXTERN int		TclAddLiteralObj(struct CompileEnv *envPtr,
 				Tcl_Obj *objPtr, LiteralEntry **litPtrPtr);
@@ -749,7 +746,7 @@ typedef struct TclIntStubs {
     void (*reserved139)(void);
     void (*reserved140)(void);
     CONST84_RETURN char * (*tclpGetCwd) (Tcl_Interp *interp, Tcl_DString *cwdPtr); /* 141 */
-    int (*tclSetByteCodeFromAny) (Tcl_Interp *interp, Tcl_Obj *objPtr, CompileHookProc *hookProc, ClientData clientData); /* 142 */
+    void (*reserved142)(void);
     int (*tclAddLiteralObj) (struct CompileEnv *envPtr, Tcl_Obj *objPtr, LiteralEntry **litPtrPtr); /* 143 */
     void (*tclHideLiteral) (Tcl_Interp *interp, struct CompileEnv *envPtr, int index); /* 144 */
     const struct AuxDataType * (*tclGetAuxDataType) (const char *typeName); /* 145 */
@@ -1101,8 +1098,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 /* Slot 140 is reserved */
 #define TclpGetCwd \
 	(tclIntStubsPtr->tclpGetCwd) /* 141 */
-#define TclSetByteCodeFromAny \
-	(tclIntStubsPtr->tclSetByteCodeFromAny) /* 142 */
+/* Slot 142 is reserved */
 #define TclAddLiteralObj \
 	(tclIntStubsPtr->tclAddLiteralObj) /* 143 */
 #define TclHideLiteral \

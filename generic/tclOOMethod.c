@@ -14,7 +14,6 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
-#include "tclCompile.h"
 
 /*
  * Structure used to contain all the information needed about a call frame
@@ -713,12 +712,8 @@ PushMethodCallFrame(
      * alternative is *so* slow...
      */
 
-    if (pmPtr->procPtr->bodyPtr->typePtr == &tclByteCodeType) {
-	ByteCode *codePtr =
-		pmPtr->procPtr->bodyPtr->internalRep.otherValuePtr;
+    TclForceBodyNS(pmPtr->procPtr->bodyPtr, nsPtr);
 
-	codePtr->nsPtr = nsPtr;
-    }
     result = TclProcCompileProc(interp, pmPtr->procPtr,
 	    pmPtr->procPtr->bodyPtr, nsPtr, "body of method", namePtr);
     if (result != TCL_OK) {

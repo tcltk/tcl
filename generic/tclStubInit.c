@@ -332,7 +332,7 @@ static const TclIntStubs tclIntStubs = {
     0, /* 139 */
     0, /* 140 */
     TclpGetCwd, /* 141 */
-    TclSetByteCodeFromAny, /* 142 */
+    0, /* 142 */
     TclAddLiteralObj, /* 143 */
     TclHideLiteral, /* 144 */
     TclGetAuxDataType, /* 145 */
