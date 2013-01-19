@@ -2776,7 +2776,7 @@ AC_DEFUN([SC_TCL_EARLY_FLAGS],[
 #		TCL_WIDE_INT_IS_LONG
 #		TCL_WIDE_INT_TYPE
 #		HAVE_STRUCT_DIRENT64
-#		HAVE_STRUCT_STAT64
+#		HAVE_NO_STRUCT_STAT64
 #		HAVE_TYPE_OFF64_T
 #
 #--------------------------------------------------------------------
@@ -2815,8 +2815,8 @@ AC_DEFUN([SC_TCL_64BIT_FLAGS], [
 	    AC_TRY_COMPILE([#include <sys/stat.h>],[struct stat64 p;
 ],
 		tcl_cv_struct_stat64=yes,tcl_cv_struct_stat64=no)])
-	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
-	    AC_DEFINE(HAVE_STRUCT_STAT64, 1, [Is 'struct stat64' in <sys/stat.h>?])
+	if test "x${tcl_cv_struct_stat64}" != "xyes" ; then
+	    AC_DEFINE(HAVE_NO_STRUCT_STAT64, 1, [Is 'struct stat64' missing from <sys/stat.h>?])
 	fi
 
 	AC_CHECK_FUNCS(open64 lseek64)

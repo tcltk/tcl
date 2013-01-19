@@ -208,8 +208,8 @@
 /* Define to 1 if the system has the type `struct sockaddr_storage'. */
 #undef HAVE_STRUCT_SOCKADDR_STORAGE
 
-/* Is 'struct stat64' in <sys/stat.h>? */
-#undef HAVE_STRUCT_STAT64
+/* Is 'struct stat64' missing from <sys/stat.h>? */
+#undef HAVE_NO_STRUCT_STAT64
 
 /* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
