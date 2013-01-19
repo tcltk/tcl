@@ -259,8 +259,11 @@ VarHashCreateVar(
 
 #if TCL_COMPILE_DEBUG
 #define CHECK_STACK()							\
-    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH, \
-	    /*checkStack*/ auxObjList == NULL)
+    do {								\
+	ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,			\
+		/*checkStack*/ !(starting || auxObjList));		\
+	starting = 0;							\
+    } while (0)
 #else
 #define CHECK_STACK()
 #endif
@@ -1089,7 +1092,7 @@ GrowEvaluationStack(
     if (move) {
 	moveWords = esPtr->tosPtr - MEMSTART(markerPtr) + 1;
     }
-    needed = growth + moveWords + WALLOCALIGN - 1;
+    needed = growth + moveWords + WALLOCALIGN;
 
     
     /*
@@ -2084,7 +2087,8 @@ TEBCresume(
     Tcl_Obj **tosPtr;		/* Cached pointer to top of evaluation
 				 * stack. */
     const unsigned char *pc;	/* The current program counter. */
-
+    unsigned char inst;         /* The currently running instruction */
+    
     /*
      * Transfer variables - needed only between opcodes, but not while
      * executing an instruction.
@@ -2109,6 +2113,7 @@ TEBCresume(
 #endif
 
 #ifdef TCL_COMPILE_DEBUG
+    int starting = 1;
     traceInstructions = (tclTraceExec == 3);
 #endif
 
@@ -2250,23 +2255,6 @@ TEBCresume(
     }
   cleanup0:
 
-#ifdef TCL_COMPILE_DEBUG
-    /*
-     * Skip the stack depth check if an expansion is in progress.
-     */
-
-    CHECK_STACK();
-    if (traceInstructions) {
-	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
-	TclPrintInstruction(codePtr, pc);
-	fflush(stdout);
-    }
-#endif /* TCL_COMPILE_DEBUG */
-
-#ifdef TCL_COMPILE_STATS
-    iPtr->stats.instructionCount[*pc]++;
-#endif
-
     /*
      * Check for asynchronous handlers [Bug 746722]; we do the check every
      * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-1).
@@ -2298,8 +2286,6 @@ TEBCresume(
 	CACHE_STACK_INFO();
     }
 
-    TCL_DTRACE_INST_NEXT();
-
     /*
      * These two instructions account for 26% of all instructions (according
      * to measurements on tclbench by Ben Vitale
@@ -2309,13 +2295,53 @@ TEBCresume(
      * reduces total obj size.
      */
 
-    if (*pc == INST_LOAD_SCALAR1) {
-	goto instLoadScalar1;
-    } else if (*pc == INST_PUSH1) {
-	goto instPush1Peephole;
-    }
+    inst = *pc;
+    
+    peepholeStart:
+#ifdef TCL_COMPILE_STATS
+    iPtr->stats.instructionCount[*pc]++;
+#endif
 
-    switch (*pc) {
+#ifdef TCL_COMPILE_DEBUG
+    /*
+     * Skip the stack depth check if an expansion is in progress.
+     */
+
+    CHECK_STACK();
+    if (traceInstructions) {
+	fprintf(stdout, "%2d: %2d ", iPtr->numLevels, (int) CURR_DEPTH);
+	TclPrintInstruction(codePtr, pc);
+	fflush(stdout);
+    }
+#endif /* TCL_COMPILE_DEBUG */
+
+    TCL_DTRACE_INST_NEXT();
+    
+    if (inst == INST_LOAD_SCALAR1) {
+	goto instLoadScalar1;
+    } else if (inst == INST_PUSH1) {
+	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
+	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), OBJ_AT_TOS);
+	inst = *(pc += 2);
+	goto peepholeStart;
+    } else if (inst == INST_START_CMD) {
+	/*
+	 * Peephole: do not run INST_START_CMD, just skip it
+	 */
+	
+	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
+	if (checkInterp) {
+	    checkInterp = 0;
+	    if ((codePtr->compileEpoch != iPtr->compileEpoch)
+		    || (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) {
+		goto instStartCmdFailed;
+	    }
+	}
+	inst = *(pc += 9);
+	goto peepholeStart;
+    }
+    
+    switch (inst) {
     case INST_SYNTAX:
     case INST_RETURN_IMM: {
 	int code = TclGetInt4AtPtr(pc+1);
@@ -2399,7 +2425,6 @@ TEBCresume(
 
     case INST_TAILCALL: {
 	Tcl_Obj *listPtr, *nsObjPtr;
-        NRE_callback *tailcallPtr;
 
 	opnd = TclGetUInt1AtPtr(pc+1);
 
@@ -2433,18 +2458,12 @@ TEBCresume(
 
 	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
 	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
-	Tcl_IncrRefCount(listPtr);
-	Tcl_IncrRefCount(nsObjPtr);
-	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
-		NULL, NULL);
+	TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
+	if (iPtr->varFramePtr->tailcallPtr) {
+	    Tcl_DecrRefCount(iPtr->varFramePtr->tailcallPtr);
+	}
+	iPtr->varFramePtr->tailcallPtr = listPtr;
 
-	/*
-	 * Unstitch ourselves and do a [return].
-	 */
-
-	tailcallPtr = TOP_CB(interp);
-	TOP_CB(interp) = tailcallPtr->nextPtr;
-	iPtr->varFramePtr->tailcallPtr = tailcallPtr;
 	result = TCL_RETURN;
 	cleanup = opnd;
 	goto processExceptionReturn;
@@ -2472,23 +2491,6 @@ TEBCresume(
 	(void) POP_OBJECT();
 	goto abnormalReturn;
 
-    case INST_PUSH1:
-    instPush1Peephole:
-	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
-	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), OBJ_AT_TOS);
-	pc += 2;
-#if !TCL_COMPILE_DEBUG
-	/*
-	 * Runtime peephole optimisation: check if we are pushing again.
-	 */
-
-	if (*pc == INST_PUSH1) {
-	    TCL_DTRACE_INST_NEXT();
-	    goto instPush1Peephole;
-	}
-#endif
-	NEXT_INST_F(0, 0, 0);
-
     case INST_PUSH4:
 	objResultPtr = codePtr->objArrayPtr[TclGetUInt4AtPtr(pc+1)];
 	TRACE_WITH_OBJ(("%u => ", TclGetUInt4AtPtr(pc+1)), objResultPtr);
@@ -2498,68 +2500,10 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
-
-	/*
-	 * Runtime peephole optimisation: an INST_POP is scheduled at the end
-	 * of most commands. If the next instruction is an INST_START_CMD,
-	 * fall through to it.
-	 */
-
-	pc++;
-#if !TCL_COMPILE_DEBUG
-	if (*pc == INST_START_CMD) {
-	    TCL_DTRACE_INST_NEXT();
-	    goto instStartCmdPeephole;
-	}
-#endif
-	NEXT_INST_F(0, 0, 0);
-
-    case INST_START_CMD:
-#if !TCL_COMPILE_DEBUG
-    instStartCmdPeephole:
-#endif
-	/*
-	 * Remark that if the interpreter is marked for deletion its
-	 * compileEpoch is modified, so that the epoch check also verifies
-	 * that the interp is not deleted. If no outside call has been made
-	 * since the last check, it is safe to omit the check.
-	 */
-
-	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
-	if (!checkInterp) {
-	    goto instStartCmdOK;
-	} else if (((codePtr->compileEpoch == iPtr->compileEpoch)
-		&& (codePtr->nsEpoch == iPtr->varFramePtr->nsPtr->resolverEpoch))
-		|| (codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
-	    checkInterp = 0;
-	instStartCmdOK:
-	    NEXT_INST_F(9, 0, 0);
-	} else {
-	    const char *bytes;
-
-	    length = 0;
-
-	    /*
-	     * We used to switch to direct eval; for NRE-awareness we now
-	     * compile and eval the command so that this evaluation does not
-	     * add a new TEBC instance. [Bug 2910748]
-	     */
-
-	    if (TclInterpReady(interp) == TCL_ERROR) {
-		goto gotError;
-	    }
-
-	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL);
-	    opnd = TclGetUInt4AtPtr(pc+1);
-	    pc += (opnd-1);
-	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
-	    goto instEvalStk;
-	}
+	NEXT_INST_F(1, 0, 0);
 
     case INST_NOP:
-	pc += 1;
-	goto cleanup0;
+	NEXT_INST_F(1, 0, 0);
 
     case INST_DUP:
 	objResultPtr = OBJ_AT_TOS;
@@ -3054,8 +2998,9 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 	pc += 6;
 	TEBC_YIELD();
+
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+	TclSkipTailcall(interp);
 	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
 
     /*
@@ -7108,6 +7053,43 @@ TEBCresume(
     TclStackFree(interp, TD);	/* free my stack */
 
     return result;
+
+    /*
+     * INST_START_CMD failure case removed where it doesn't bother that much
+     *
+     * Remark that if the interpreter is marked for deletion its
+     * compileEpoch is modified, so that the epoch check also verifies
+     * that the interp is not deleted. If no outside call has been made
+     * since the last check, it is safe to omit the check.
+
+     * case INST_START_CMD:
+     */
+
+	instStartCmdFailed:
+	{
+	    const char *bytes;
+
+	    checkInterp = 1;
+	    length = 0;
+
+	    /*
+	     * We used to switch to direct eval; for NRE-awareness we now
+	     * compile and eval the command so that this evaluation does not
+	     * add a new TEBC instance. [Bug 2910748]
+	     */
+
+	    if (TclInterpReady(interp) == TCL_ERROR) {
+		goto gotError;
+	    }
+
+	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL);
+	    opnd = TclGetUInt4AtPtr(pc+1);
+	    pc += (opnd-1);
+	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
+	    goto instEvalStk;
+	    NEXT_INST_F(9, 0, 0);
+	}
 }
 
 #undef codePtr
