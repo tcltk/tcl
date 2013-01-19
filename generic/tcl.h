@@ -436,7 +436,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	struct {long tv_sec;} st_ctim;
 	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64)
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
