@@ -14,11 +14,6 @@
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
 
-#if !defined(_WIN64) && defined(BUILD_tcl)
-/* See [Bug 3354324]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
-#endif
-
 /*
  * We must specify the lower version we intend to support.
  *
@@ -115,7 +110,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #endif /* __MWERKS__ */
 
 #include <time.h>
-
 /*
  * The following defines redefine the Windows Socket errors as
  * BSD errors so Tcl_PosixError can do the right thing.
