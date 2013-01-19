@@ -10,7 +10,6 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclFileSystem.h"
 
@@ -1182,9 +1181,10 @@ TclpUtime(
 int
 TclOSstat(
     const char *name,
-    Tcl_StatBuf *statBuf)
+    void *cygstat)
 {
     struct stat buf;
+    Tcl_StatBuf *statBuf = cygstat;
     int result = stat(name, &buf);
 
     statBuf->st_mode = buf.st_mode;
@@ -1204,9 +1204,10 @@ TclOSstat(
 int
 TclOSlstat(
     const char *name,
-    Tcl_StatBuf *statBuf)
+    void *cygstat)
 {
     struct stat buf;
+    Tcl_StatBuf *statBuf = cygstat;
     int result = lstat(name, &buf);
 
     statBuf->st_mode = buf.st_mode;
