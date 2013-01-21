@@ -6778,8 +6778,8 @@ TEBCresume(
 
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg);
 	    DECACHE_STACK_INFO();
-	    TclLogCommandInfo(interp, codePtr->source, bytes,
-		    bytes ? length : 0, pcBeg, tosPtr);
+	    Tcl_LogCommandInfo(interp, codePtr->source, bytes,
+		    bytes ? length : 0);
 	    CACHE_STACK_INFO();
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
