@@ -1,3 +1,10 @@
+2013-01-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: Put back Tcl[GS]etStartupScript(Path|FileName)
+	in private stub table, so extensions using this (like Tk 8.4) will
+	continue to work in all Tcl 8.x versions. Extensions using this
+	still cannot be compiled against Tcl 8.6 headers.
+
 2013-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPort.h: [Bug 3598300]: unix: tcl.h does not include
