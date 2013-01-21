@@ -15,7 +15,6 @@
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
-#include <sys/stat.h>
 #include <shlobj.h>
 #include <lm.h>		/* For TclpGetUserHome(). */
 

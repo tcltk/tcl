@@ -32,7 +32,7 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 /*
  *----------------------------------------------------------------------
  *
- * TclInitStubs --
+ * Tcl_InitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
@@ -46,8 +46,9 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
  *
  *----------------------------------------------------------------------
  */
+#undef Tcl_InitStubs
 MODULE_SCOPE const char *
-TclInitStubs(
+Tcl_InitStubs(
     Tcl_Interp *interp,
     const char *version,
     int exact,
@@ -59,13 +60,20 @@ TclInitStubs(
     ClientData pkgData = NULL;
     const TclStubs *stubsPtr = iPtr->stubTable;
 
+    /* Compatibility with Tcl8. If "exact" has the value 0 or 1, then parameters
+     * tclversion and magic are not used, so fill in the right Tcl8 values. */
+    if ((exact|1) == 1) {
+	tclversion = "8";
+	magic = TCL_STUB_MAGIC;
+	exact |= (int)sizeof(int);
+    }
     /*
      * We can't optimize this check by caching tclStubsPtr because that
      * prevents apps from being able to load/unload Tcl dynamically multiple
      * times. [Bug 615304]
      */
 
-    if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
+    if (!stubsPtr || (stubsPtr->magic != magic)) {
 	/* This can only be executed in a Tcl < 8.1 interpreter, because
 	 * the magic values are kept the same in later versions. */
 	iPtr->objResultPtr = (Tcl_Obj *)
@@ -112,23 +120,21 @@ TclInitStubs(
      */
     if ((exact & MASK) != (int)
 	    ((stubsPtr->reserved77)?sizeof(int):sizeof(size_t))) {
-	char *msg = stubsPtr->tcl_Alloc(64 + strlen(tclversion) + strlen(version));
+	char msg[32], *p = msg;
 
-	strcpy(msg, "incompatible stub library: have ");
-	strcat(msg, tclversion);
-	strcat(msg, ", need ");
 	if (stubsPtr->reserved77) {
 	    /* Take "version", but strip off everything after '-' */
-	    char *p = msg + strlen(msg);
 	    while (*version && *version != '-') {
 		*p++ = *version++;
 	    }
 	    *p = '\0';
+
 	} else {
-	    strcat(msg, "9");
+	    msg[0] = '9';
+	    msg[1] = '\0';
 	}
-	stubsPtr->tcl_SetObjResult(interp, stubsPtr->tcl_NewStringObj(msg, -1));
-	stubsPtr->tcl_Free(msg);
+	stubsPtr->tcl_AppendResult(interp, "incompatible stub library: have ",
+		tclversion, ", need ", msg);
 	return NULL;
     }
     tclStubsPtr = (TclStubs *)pkgData;

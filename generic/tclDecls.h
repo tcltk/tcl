@@ -385,11 +385,9 @@ TCLAPI int		Tcl_Eof(Tcl_Channel chan);
 TCLAPI const char *	Tcl_ErrnoId(void);
 /* 128 */
 TCLAPI const char *	Tcl_ErrnoMsg(int err);
-/* 129 */
-TCLAPI int		Tcl_Eval(Tcl_Interp *interp, const char *script);
+/* Slot 129 is reserved */
 /* Slot 130 is reserved */
-/* 131 */
-TCLAPI int		Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+/* Slot 131 is reserved */
 /* 132 */
 TCLAPI void		Tcl_EventuallyFree(ClientData clientData,
 				Tcl_FreeProc *freeProc);
@@ -1918,9 +1916,9 @@ typedef struct TclStubs {
     int (*tcl_Eof) (Tcl_Channel chan); /* 126 */
     const char * (*tcl_ErrnoId) (void); /* 127 */
     const char * (*tcl_ErrnoMsg) (int err); /* 128 */
-    int (*tcl_Eval) (Tcl_Interp *interp, const char *script); /* 129 */
+    void (*reserved129)(void);
     void (*reserved130)(void);
-    int (*tcl_EvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 131 */
+    void (*reserved131)(void);
     void (*tcl_EventuallyFree) (ClientData clientData, Tcl_FreeProc *freeProc); /* 132 */
     void (*tcl_Exit) (int status); /* 133 */
     int (*tcl_ExposeCommand) (Tcl_Interp *interp, const char *hiddenCmdToken, const char *cmdName); /* 134 */
@@ -2712,11 +2710,9 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ErrnoId) /* 127 */
 #define Tcl_ErrnoMsg \
 	(tclStubsPtr->tcl_ErrnoMsg) /* 128 */
-#define Tcl_Eval \
-	(tclStubsPtr->tcl_Eval) /* 129 */
+/* Slot 129 is reserved */
 /* Slot 130 is reserved */
-#define Tcl_EvalObj \
-	(tclStubsPtr->tcl_EvalObj) /* 131 */
+/* Slot 131 is reserved */
 #define Tcl_EventuallyFree \
 	(tclStubsPtr->tcl_EventuallyFree) /* 132 */
 #define Tcl_Exit \
@@ -3740,5 +3736,20 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	Tcl_PkgProvideEx(interp, name, version, NULL)
 #define Tcl_PkgRequire(interp, name, version, exact) \
 	Tcl_PkgRequireEx(interp, name, version, exact, NULL)
+#define Tcl_Eval(interp,objPtr) \
+	Tcl_EvalEx((interp),(objPtr),-1,0)
+#define Tcl_GlobalEval(interp,objPtr) \
+	Tcl_EvalEx((interp),(objPtr),-1,TCL_EVAL_GLOBAL)
+
+/*
+ * Deprecated Tcl procedures:
+ */
+
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_EvalObj(interp,objPtr) \
+	    Tcl_EvalObjEx((interp),(objPtr),0)
+#   define Tcl_GlobalEvalObj(interp,objPtr) \
+	    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* _TCLDECLS */

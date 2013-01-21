@@ -448,7 +448,6 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
-	$(TMP_DIR)\tclStubLibCompat.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
 	$(TMP_DIR)\tclOOStubLib.obj
 

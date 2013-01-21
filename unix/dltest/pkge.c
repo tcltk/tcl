@@ -41,5 +41,5 @@ Pkge_Init(
     if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    return Tcl_Eval(interp, script);
+    return Tcl_EvalEx(interp, script, -1, 0);
 }
