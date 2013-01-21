@@ -11,7 +11,7 @@
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.5
+package provide http 2.8.6
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -981,7 +981,7 @@ proc http::Event {sock token} {
 	} elseif {$n == 0} {
 	    # We have now read all headers
 	    # We ignore HTTP/1.1 100 Continue returns. RFC2616 sec 8.2.3
-	    if {$state(http) == "" || [lindex $state(http) 1] == 100} {
+	    if {$state(http) == "" || ([regexp {^\S+\s(\d+)} $state(http) {} x] && $x == 100)} {
 		return
 	    }
 
@@ -1379,7 +1379,7 @@ proc http::mapReply {string} {
     }
     set converted [string map $formMap $string]
     if {[string match "*\[\u0100-\uffff\]*" $converted]} {
-	regexp {[\u0100-\uffff]} $converted badChar
+	regexp "\[\u0100-\uffff\]" $converted badChar
 	# Return this error message for maximum compatability... :^/
 	return -code error \
 	    "can't read \"formMap($badChar)\": no such element in array"
