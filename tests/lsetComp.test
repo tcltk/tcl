@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -423,8 +423,7 @@ test lsetComp-3.9 {lset, compiled, flat args, error - is string preserved} {
 } "{ { 1 2 } { 3 4 } } { 3 4 }"
 
 catch { rename evalInProc {} }
-catch { unset ::x }
-catch { unset ::y }
+unset -nocomplain ::x ::y
 
 # cleanup
 ::tcltest::cleanupTests

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -20,8 +20,8 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [llength [info commands testobj]]
-testConstraint longIs32bit	[expr {int(0x80000000) < 0}]
-testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
+testConstraint longIs32bit	[expr { ( int (0x80000000) ) < 0}]
+testConstraint wideBiggerThanInt [expr { ( wide (0x80000000) ) != ( int (0x80000000) )}]
 
 test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} testobj {
     set r 1
@@ -550,7 +550,6 @@ test obj-30.1 {Ref counting and object deletion, simple types} testobj {
     lappend result [testobj refcount 1]
     lappend result [testobj refcount 2]
 } {{} 1024 1024 int 4 4 0 int 3 2}
-
 
 test obj-31.1 {regenerate string rep of "end"} testobj {
     testobj freeallvars

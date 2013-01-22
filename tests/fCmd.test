@@ -53,20 +53,20 @@ if {[testConstraint unix]} {
 	testConstraint foundGroup 1
     }
 
-    proc dev dir {
+    proc dev {dir} {
 	file stat $dir stat
 	return $stat(dev)
     }
 
-    if {[catch {makeDirectory tcl[pid] /tmp} tmpspace] == 0} {
-	testConstraint xdev [expr {([dev .] != [dev $tmpspace])}]
+    if {[catch {::tcltest::makeDirectory tcl[pid] /tmp} tmpspace] == 0} {
+	::tcltest::testConstraint xdev [expr {([dev .] != [dev $tmpspace])}]
     }
 }
 
 # Also used in winFCmd...
 if {[testConstraint win]} {
     set major [string index $tcl_platform(osVersion) 0]
-    if {[testConstraint nt] && $major > 4} {
+    if {[testConstraint nt] && ($major > 4)} {
         if {$major > 5} {
             testConstraint winVista 1
         } elseif {$major == 5} {
@@ -76,9 +76,9 @@ if {[testConstraint win]} {
 }
 
 testConstraint darwin9 [expr {
-    [testConstraint unix]
-    && $tcl_platform(os) eq "Darwin"
-    && [package vsatisfies 1.$tcl_platform(osVersion) 1.9]
+    [testConstraint unix] && 
+    ($tcl_platform(os) eq "Darwin") && 
+    [package vsatisfies 1.$tcl_platform(osVersion) 1.9]
 }]
 testConstraint notDarwin9 [expr {![testConstraint darwin9]}]
 
@@ -95,7 +95,7 @@ if {[testConstraint unix]} {
     }
     if {$user eq ""} {
 	catch {
-	    regexp {^[^(]*\(([^)]*)\)} [exec id] -> user
+	    regexp {^[^(]*\(([^)]*)\)} [exec id] ___ user
 	}
     }
     if {$user eq ""} {
@@ -117,10 +117,11 @@ proc createfile {file {string a}} {
 #  if the file does not exist, or has a different content
 #
 proc checkcontent {file matchString} {
+    set fileString ""
     try {
 	set f [open $file]
-	set fileString [read $f]
-	close $f
+	set fileString [chan read $f]
+	chan close $f
     } on error {} {
 	return 0
     }
@@ -149,7 +150,7 @@ proc cleanup {args} {
 	    if {
 		[catch {file delete -force -- $file}]
 		&& [testConstraint testchmod]
-	    } then {
+	    } {
 		catch {openup $file}
 		catch {file delete -force -- $file}
 	    }
@@ -159,11 +160,10 @@ proc cleanup {args} {
 
 proc contents {file} {
     set f [open $file]
-    set r [read $f]
-    close $f
+    set r [chan read $f]
+    chan close $f
     return $r
 }
-
 
 set root [lindex [file split [pwd]] 0]
 
@@ -2314,10 +2314,10 @@ test fCmd-27.6 {TclFileAttrsCmd - setting more than one option} -setup {
 } -result {}
 
 if {
-    [testConstraint win] &&
-    ([string index $tcl_platform(osVersion) 0] < 5
-     || [lindex [file system [temporaryDirectory]] 1] ne "NTFS")
-} then {
+    [testConstraint win] && 
+    (([string index $tcl_platform(osVersion) 0] < 5) || 
+     ([lindex [file system [temporaryDirectory]] 1] ne "NTFS"))
+} {
     testConstraint linkDirectory 0
     testConstraint linkFile 0
 }
@@ -2334,12 +2334,12 @@ test fCmd-28.3 {file link} -returnCodes error -body {
 test fCmd-28.4 {file link} -returnCodes error -body {
     file link -abc b c
 } -result {bad switch "-abc": must be -symbolic or -hard}
-cd [workingDirectory]
-makeDirectory abc.dir
-makeDirectory abc2.dir
-makeFile contents abc.file
-makeFile contents abc2.file
-cd [temporaryDirectory]
+cd [::tcltest::workingDirectory]
+::tcltest::makeDirectory abc.dir
+::tcltest::makeDirectory abc2.dir
+::tcltest::makeFile contents abc.file
+::tcltest::makeFile contents abc2.file
+cd [::tcltest::temporaryDirectory]
 test fCmd-28.5 {file link: source already exists} -setup {
     cd [temporaryDirectory]
 } -constraints {linkDirectory} -body {
@@ -2388,9 +2388,9 @@ test fCmd-28.9.1 {file link: success with file} -setup {
 } -cleanup {
     cd [workingDirectory]
 } -result {1 0 abc.file 2}
-cd [temporaryDirectory]
+cd [::tcltest::temporaryDirectory]
 catch {file delete -force abc.link}
-cd [workingDirectory]
+cd [::tcltest::workingDirectory]
 test fCmd-28.10 {file link: linking to nonexistent path} -setup {
     cd [temporaryDirectory]
     file delete -force abc.link
@@ -2481,7 +2481,7 @@ test fCmd-28.15.2 {file link: copies link not dir} -setup {
 } -cleanup {
     cd [workingDirectory]
 } -result {link abc.dir}
-cd [temporaryDirectory]
+cd [::tcltest::temporaryDirectory]
 file delete -force abc.link
 file delete -force abc2.link
 cd abc.dir
@@ -2490,7 +2490,7 @@ file delete -force abc2.file
 cd ..
 file copy abc.file abc.dir
 file copy abc2.file abc.dir
-cd [workingDirectory]
+cd [::tcltest::workingDirectory]
 test fCmd-28.16 {file link: glob inside link} -setup {
     cd [temporaryDirectory]
     file delete -force abc.link
@@ -2559,10 +2559,10 @@ try {
 } finally {
     cd [workingDirectory]
 }
-removeFile abc2.file
-removeFile abc.file
-removeDirectory abc2.dir
-removeDirectory abc.dir
+::tcltest::removeFile abc2.file
+::tcltest::removeFile abc.file
+::tcltest::removeDirectory abc2.dir
+::tcltest::removeDirectory abc.dir
 
 test fCmd-29.1 {weird memory corruption fault} -body {
     open [file join ~a_totally_bogus_user_id/foo bar]
@@ -2592,8 +2592,8 @@ test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win} -body {
 
 # cleanup
 cleanup
-if {[testConstraint unix]} {
-    removeDirectory tcl[pid] /tmp
+if {[::tcltest::testConstraint unix]} {
+    ::tcltest::removeDirectory tcl[pid] /tmp
 }
 ::tcltest::cleanupTests
 return

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -21,14 +21,14 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testobj [llength [info commands testobj]]
 
-catch {unset x}
+unset -nocomplain x
 test listobj-1.1 {Tcl_GetListObjType} emptyTest {
     # Test removed; tested an internal detail
     # that's no longer correct, and duplicated test obj-1.1
 } {}
 
 test listobj-2.1 {Tcl_SetListObj, use in lappend} {
-    catch {unset x}
+    unset -nocomplain x
     list [lappend x 1 abc def] [lappend x 1 ghi jkl] $x
 } {{1 abc def} {1 abc def 1 ghi jkl} {1 abc def 1 ghi jkl}}
 test listobj-2.2 {Tcl_SetListObj, use in ObjInterpProc} {
@@ -42,7 +42,7 @@ test listobj-2.3 {Tcl_SetListObj, zero element count} {
 } {}
 
 test listobj-3.1 {Tcl_ListObjAppend, list conversion} {
-    catch {unset x}
+    unset -nocomplain x
     list [lappend x 1 2 abc "long string"] $x
 } {{1 2 abc {long string}} {1 2 abc {long string}}}
 test listobj-3.2 {Tcl_ListObjAppend, list conversion} {
@@ -64,7 +64,7 @@ test listobj-3.5 {Tcl_ListObjAppend, force internal rep array to grow} {
 } {{1 1} {1 1 2 2} {1 1 2 2 3 3} {1 1 2 2 3 3 4 4} {1 1 2 2 3 3 4 4 5 5} {1 1 2 2 3 3 4 4 5 5 6 6} {1 1 2 2 3 3 4 4 5 5 6 6 7 7} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8} {1 1 2 2 3 3 4 4 5 5 6 6 7 7 8 8}}
 
 test listobj-4.1 {Tcl_ListObjAppendElement, list conversion} {
-    catch {unset x}
+    unset -nocomplain x
     list [lappend x 1] $x
 } {1 1}
 test listobj-4.2 {Tcl_ListObjAppendElement, list conversion} {

@@ -38,11 +38,12 @@ proc make-chunk-generator {data {size 4096}} {
     return $name
 }
 
-proc get-chunks {data {compression gzip}} {
+proc get-chunks {a_data {compression gzip}} {
     switch -exact -- $compression {
-        gzip     { set data [zlib gzip $data] }
-        deflate  { set data [zlib deflate $data] }
-        compress { set data [zlib compress $data] }
+        gzip     { set data [zlib gzip $a_data] }
+        deflate  { set data [zlib deflate $a_data] }
+        compress { set data [zlib compress $a_data] }
+        default  { set data [zlib gzip $a_data] }
     }
     
     set data ""
@@ -53,11 +54,12 @@ proc get-chunks {data {compression gzip}} {
     return $data
 }
 
-proc blow-chunks {data {ochan stdout} {compression gzip}} {
+proc blow-chunks {a_data {ochan stdout} {compression gzip}} {
     switch -exact -- $compression {
-        gzip     { set data [zlib gzip $data] }
-        deflate  { set data [zlib deflate $data] }
-        compress { set data [zlib compress $data] }
+        gzip     { set data [zlib gzip $a_data] }
+        deflate  { set data [zlib deflate $a_data] }
+        compress { set data [zlib compress $a_data] }
+        default  { set data [zlib gzip $a_data] }
     }
     
     set chunker [make-chunk-generator $data 512]
@@ -78,31 +80,42 @@ proc mime-type {filename} {
         .xhtml {return {text  application/xml+html} }
         .svg { return {text image/svg+xml} }
         .txt - .tcl - .c - .h { return {text text/plain}}
+        default {return {binary text/plain}}
     }
-    return {binary text/plain}
 }
 
-proc Puts {chan s} {puts $chan $s; puts $s}
+proc Puts {chan s} {
+  puts $chan $s
+  puts $s
+}
 
 proc Service {chan addr port} {
     chan event $chan readable [info coroutine]
     while {1} {
-        set meta {}
+        set meta [list]
         chan configure $chan -buffering line -encoding iso8859-1 -translation crlf
         chan configure $chan -blocking 0
         yield
-        while {[gets $chan line] < 0} {
-            if {[eof $chan]} {chan event $chan readable {}; close $chan; return}
+        while {[chan gets $chan line] < 0} {
+            if {[chan eof $chan]} {
+	        chan event $chan readable {}
+	        chan close $chan
+	        return
+	    }
             yield
         }
-        if {[eof $chan]} {chan event $chan readable {}; close $chan; return}
-        foreach {req url protocol} {GET {} HTTP/1.1} break
-        regexp {^(\S+)\s+(.*)\s(\S+)?$} $line -> req url protocol
+        if {[eof $chan]} {
+	    chan event $chan readable {}
+	    chan close $chan
+	    return
+	}
+        lassign {GET {} HTTP/1.1} req url protocol
+        regexp {^(\S+)\s+(.*)\s(\S+)?$} $line ___ req url protocol
 
-        puts $line
-        while {[gets $chan line] > 0} {
-            if {[regexp {^([^:]+):(.*)$} $line -> key val]} {
-                puts [list $key [string trim $val]]
+        chan puts $line
+        while {[chan gets $chan line] > 0} {
+            if {[regexp {^([^:]+):(.*)$} $line ___ key val]} {
+                chan puts [list $key [string trim $val]]
                 lappend meta [string tolower $key] [string trim $val]
             }
             yield
@@ -129,7 +142,7 @@ proc Service {chan addr port} {
                 if {[string is integer -strict $qlen]} {
                     chan configure $chan -buffering none -translation binary
                     while {[string length $query] < $qlen} {
-                        append query [read $chan $qlen]
+                        append query [chan read $chan $qlen]
                         if {[string length $query] < $qlen} {yield}
                     }
                     # Check for excess query bytes [Bug 2715421]
@@ -148,11 +161,11 @@ proc Service {chan addr port} {
         set path [string trimleft $path /]
         set path [file join [pwd] $path]
         if {[file exists $path] && [file isfile $path]} {
-            foreach {what type} [mime-type $path] break
+            lassign [mime-type $path] what type
             set f [open $path r]
             if {$what eq "binary"} {chan configure $f -translation binary}
-            set data [read $f]
-            close $f
+            set data [chan read $f]
+            chan close $f
             set code "200 OK"
             set close [expr {[dict get? $meta connection] eq "close"}]
         }
@@ -173,9 +186,13 @@ proc Service {chan addr port} {
         foreach pair [split $query &] {
             if {[scan $pair {%[^=]=%s} key val] != 2} {set val ""}
             switch -exact -- $key {
-                close        {set close 1 ; set transfer 0}
+                close        {
+		    set close 1
+		    set transfer 0
+		}
                 transfer     {set transfer $val}
                 content-type {set type $val}
+	        default {}
             }
         }
 
@@ -197,27 +214,27 @@ proc Service {chan addr port} {
         if {$transfer eq "chunked"} {
             Puts $chan "transfer-encoding: chunked"
         }
-        puts $chan ""
-        flush $chan
+        chan puts $chan ""
+        chan flush $chan
 
         chan configure $chan -buffering full -translation binary
         if {$transfer eq "chunked"} {
             blow-chunks $data $chan $encoding
         } elseif {$encoding ne "identity"} {
-            puts -nonewline $chan [zlib $encoding $data]
+            chan puts -nonewline $chan [zlib $encoding $data]
         } else {
-            puts -nonewline $chan $data
+            chan puts -nonewline $chan $data
         }
         
         if {$close} {
             chan event $chan readable {}
-            close $chan
-            puts "close $chan"
+            chan close $chan
+            chan puts "close $chan"
             return
         } else {
-            flush $chan
+            chan flush $chan
         }
-        puts "pipeline $chan"
+        chan puts "pipeline $chan"
     }
 }
 

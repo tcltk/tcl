@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -2678,7 +2678,7 @@ test binary-74.4 {binary encode uuencode} -body {
 } -result [string repeat 86)C 20]
 test binary-74.5 {binary encode uuencode} -body {
     binary encode uuencode \0\1\2\3\4\0\1\2\3
-} -result "``\$\"`P0``0(#"
+} -result "``\$\"`P0``0\(#"
 test binary-74.6 {binary encode uuencode} -body {
     binary encode uuencode \0
 } -result {````}
@@ -2708,10 +2708,10 @@ test binary-75.3 {binary decode uuencode} -body {
     binary decode uuencode {}
 } -result {}
 test binary-75.4 {binary decode uuencode} -body {
-    binary decode uuencode [string repeat "86)C" 20]
+    binary decode uuencode [string repeat "86\)C" 20]
 } -result [string repeat abc 20]
 test binary-75.5 {binary decode uuencode} -body {
-    binary decode uuencode "``\$\"`P0``0(#"
+    binary decode uuencode "``\$\"`P0``0\(#"
 } -result "\0\1\2\3\4\0\1\2\3"
 test binary-75.6 {binary decode uuencode} -body {
     string length [binary decode uuencode {`}]
@@ -2734,7 +2734,7 @@ test binary-75.11 {binary decode uuencode} -body {
     binary decode uuencode $s
 } -result [string repeat abc 20]
 test binary-75.12 {binary decode uuencode} -body {
-    binary decode uuencode -strict "|86)C"
+    binary decode uuencode -strict "|86\)C"
 } -returnCodes error -match glob -result {invalid uuencode character "|" at position 0}
 test binary-75.13 {binary decode uuencode} -body {
     set s "[string repeat 86)C 10]|[string repeat 86)C 10]"
@@ -2761,11 +2761,11 @@ test binary-75.23 {binary decode uuencode} -body {
     list [string length $r] $r
 } -result {3 abc}
 test binary-75.24 {binary decode uuencode} -body {
-    set s "04)\# "
+    set s "04\)\# "
     binary decode uuencode $s
 } -result ABC
 test binary-75.25 {binary decode uuencode} -body {
-    set s "04)\#z"
+    set s "04\)\#z"
     binary decode uuencode $s
 } -returnCodes error -match glob -result {invalid uuencode character "z" at position 4}
 test binary-75.26 {binary decode uuencode} -body {

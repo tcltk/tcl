@@ -11,13 +11,13 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
 testConstraint wideIs64bit \
-	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+	[expr {( ( wide (0x80000000) ) > 0) && ( ( wide (0x8000000000000000) ) < 0)}]
 
 test scan-1.1 {BuildCharSet, CharInSet} {
     list [scan foo {%[^o]} x] $x
@@ -44,7 +44,7 @@ test scan-1.8 {BuildCharSet, CharInSet} {
     list [scan def-abc {%[^c-a]} x] $x
 } {1 def-}
 test scan-1.9 {BuildCharSet, CharInSet no match} {
-    catch {unset x}
+    unset -nocomplain x
     list [scan {= f} {= %[TF]} x] [info exists x]
 } {0 0}
 
@@ -243,7 +243,7 @@ test scan-4.40.1 {Tcl_ScanObjCmd, base-16 integer scanning} {
     list [scan {0xF 0x00A0B 0X0XF} {%x %x %x} x y z] $x $y $z
 } {3 15 2571 0}
 test scan-4.40.2 {Tcl_ScanObjCmd, base-16 integer scanning} {
-    catch {unset x}
+    unset -nocomplain x
     list [scan {xF} {%x} x] [info exists x]
 } {0 0}
 test scan-4.40.3 {Tcl_ScanObjCmd, base-2 integer scanning} {
@@ -321,9 +321,10 @@ test scan-4.59 {Tcl_ScanObjCmd, float scanning} {
 } {1 6}
 
 test scan-4.60 {Tcl_ScanObjCmd, set errors} {
-    set x {}
-    set y {}
-    catch {unset z}; array set z {}
+    set x ""
+    set y ""
+    unset -nocomplain z
+    array set z {}
     set result [list [catch {scan {abc def ghi} {%s%s%s} x z y} msg] \
 	    $msg $x $y]
     unset z
@@ -331,8 +332,10 @@ test scan-4.60 {Tcl_ScanObjCmd, set errors} {
 } {1 {can't set "z": variable is array} abc ghi}
 test scan-4.61 {Tcl_ScanObjCmd, set errors} {
     set x {}
-    catch {unset y}; array set y {}
-    catch {unset z}; array set z {}
+    unset -nocomplain y
+    array set y {}
+    unset -nocomplain z
+    array set z {}
     set result [list [catch {scan {abc def ghi} {%s%s%s} x z y} msg] \
 	    $msg $x]
     unset y
@@ -346,19 +349,19 @@ proc int_range {} {
     for { set MIN_INT 1 } { int($MIN_INT) > 0 } {} {
 	set MIN_INT [expr { $MIN_INT << 1 }]
     }
-    set MIN_INT [expr {int($MIN_INT)}]
+    set MIN_INT [expr { int ($MIN_INT)}]
     set MAX_INT [expr { ~ $MIN_INT }]
     return [list $MIN_INT $MAX_INT]
 }
 
 test scan-4.62 {scanning of large and negative octal integers} {
-    foreach { MIN_INT MAX_INT } [int_range] {}
+    lassign [int_range] MIN_INT MAX_INT
     set scanstring [format {%o %o %o} -1 $MIN_INT $MAX_INT]
     list [scan $scanstring {%o %o %o} a b c] \
 	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
 } {3 1 1 1}
 test scan-4.63 {scanning of large and negative hex integers} {
-    foreach { MIN_INT MAX_INT } [int_range] {}
+    lassign [int_range] MIN_INT MAX_INT
     set scanstring [format {%x %x %x} -1 $MIN_INT $MAX_INT]
     list [scan $scanstring {%x %x %x} a b c] \
 	[expr { $a == -1 }] [expr { $b == $MIN_INT }] [expr { $c == $MAX_INT }]
@@ -542,31 +545,31 @@ test scan-8.11 {error conditions} {
     list [scan "1 2" "%d %d %d %d" a b c d] $a $b $c $d
 } {2 1 2 {} {}}
 test scan-8.12 {error conditions} {
-    catch {unset a}
+    unset -nocomplain a
     set a(0) 44
     list [catch {scan 44 %d a} msg] $msg
 } {1 {can't set "a": variable is array}}
 test scan-8.13 {error conditions} {
-    catch {unset a}
+    unset -nocomplain a
     set a(0) 44
     list [catch {scan 44 %c a} msg] $msg
 } {1 {can't set "a": variable is array}}
 test scan-8.14 {error conditions} {
-    catch {unset a}
+    unset -nocomplain a
     set a(0) 44
     list [catch {scan 44 %s a} msg] $msg
 } {1 {can't set "a": variable is array}}
 test scan-8.15 {error conditions} {
-    catch {unset a}
+    unset -nocomplain a
     set a(0) 44
     list [catch {scan 44 %f a} msg] $msg
 } {1 {can't set "a": variable is array}}
 test scan-8.16 {error conditions} {
-    catch {unset a}
+    unset -nocomplain a
     set a(0) 44
     list [catch {scan 44 %f a} msg] $msg
 } {1 {can't set "a": variable is array}}
-catch {unset a}
+unset -nocomplain a
 test scan-8.17 {error conditions} {
     list [catch {scan 44 %2c a} msg] $msg
 } {1 {field width may not be specified in %c conversion}}
@@ -608,7 +611,7 @@ test scan-10.4 {miscellaneous tests} {
     list [catch {scan ab%c14 ab%%c%d a} msg] $msg $a
 } {0 1 14}
 test scan-10.5 {miscellaneous tests} {
-    catch {unset arr}
+    unset -nocomplain arr
     set arr(2) {}
     list [catch {scan ab%c14 ab%%c%d arr(2)} msg] $msg $arr(2)
 } {0 1 14}

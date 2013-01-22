@@ -92,12 +92,12 @@ test encoding-3.1 {Tcl_GetEncodingName, NULL} -setup {
     encoding system $old
 } -result {shiftjis}
 test encoding-3.2 {Tcl_GetEncodingName, non-null} -setup {
-    set old [fconfigure stdout -encoding]
+    set old [chan configure stdout -encoding]
 } -body {
-    fconfigure stdout -encoding jis0208
-    fconfigure stdout -encoding
+    chan configure stdout -encoding jis0208
+    chan configure stdout -encoding
 } -cleanup {
-    fconfigure stdout -encoding $old
+    chan configure stdout -encoding $old
 } -result {jis0208}
 
 test encoding-4.1 {Tcl_GetEncodingNames} -constraints {testencoding} -setup {
@@ -105,8 +105,7 @@ test encoding-4.1 {Tcl_GetEncodingNames} -constraints {testencoding} -setup {
     makeDirectory [file join tmp encoding]
     set path [encoding dirs]
     encoding dirs {}
-    catch {unset encodings}
-    catch {unset x}
+    unset -nocomplain encodings x
 } -body {
     foreach encoding [encoding names] {
 	set encodings($encoding) 1
@@ -178,11 +177,11 @@ test encoding-7.2 {Tcl_UtfToExternalDString: big buffer} {
 
 test encoding-8.1 {Tcl_ExternalToUtf} {
     set f [open [file join [temporaryDirectory] dummy] w]
-    fconfigure $f -translation binary -encoding iso8859-1
+    chan configure $f -translation binary -encoding iso8859-1
     puts -nonewline $f "ab\x8c\xc1g"
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding shiftjis    
+    chan configure $f -translation binary -encoding shiftjis    
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
@@ -206,11 +205,11 @@ test encoding-9.2 {Tcl_UtfToExternalDString: big buffer} {
 
 test encoding-10.1 {Tcl_UtfToExternal} {
     set f [open [file join [temporaryDirectory] dummy] w]
-    fconfigure $f -translation binary -encoding shiftjis
+    chan configure $f -translation binary -encoding shiftjis
     puts -nonewline $f "ab\u4e4eg"
     close $f
     set f [open [file join [temporaryDirectory] dummy] r]
-    fconfigure $f -translation binary -encoding iso8859-1
+    chan configure $f -translation binary -encoding iso8859-1
     set x [read $f]
     close $f
     file delete [file join [temporaryDirectory] dummy]
@@ -219,7 +218,7 @@ test encoding-10.1 {Tcl_UtfToExternal} {
 
 proc viewable {str} {
     set res ""
-    foreach c [split $str {}] {
+    foreach c [split $str ""] {
 	if {[string is print $c] && [string is ascii $c]} {
 	    append res $c
 	} else {
@@ -265,7 +264,7 @@ test encoding-11.6 {LoadEncodingFile: invalid file} -constraints {testencoding} 
     makeDirectory tmp
     makeDirectory [file join tmp encoding]
     set f [open [file join tmp encoding splat.enc] w]
-    fconfigure $f -translation binary 
+    chan configure $f -translation binary 
     puts $f "abcdefghijklmnop"
     close $f
     encoding convertto splat \u4e4e
@@ -366,7 +365,7 @@ set iso2022uniData2 "\u79c1\u3069\u3082\u3067\u306f\u3001\u30c1\u30c3\u30d7\u305
 
 cd [temporaryDirectory]
 set fid [open iso2022.txt w]
-fconfigure $fid -encoding binary
+chan configure $fid -encoding binary
 puts -nonewline $fid $iso2022encData
 close $fid
 
@@ -377,7 +376,7 @@ test encoding-23.2 {iso2022-jp escape encoding test} {
     # This checks that 'gets' isn't resetting the encoding inappropriately.
     # [Bug #523988]
     set fid [open iso2022.txt r]
-    fconfigure $fid -encoding iso2022-jp
+    chan configure $fid -encoding iso2022-jp
     set out ""
     set count 0
     while {[set num [gets $fid line]] >= 0} {
@@ -397,12 +396,12 @@ test encoding-23.2 {iso2022-jp escape encoding test} {
 test encoding-23.3 {iso2022-jp escape encoding test} {
     # read $fis <size> reads size in chars, not raw bytes.
     set fid [open iso2022.txt r]
-    fconfigure $fid -encoding iso2022-jp
+    chan configure $fid -encoding iso2022-jp
     set data [read $fid 50]
     close $fid
     return $data
 } [string range $iso2022uniData 0 49] ; # 0 .. 49 inclusive == 50
-cd [workingDirectory]
+cd [::tcltest::workingDirectory]
 
 # Code to make the next few tests more intelligible; the code being tested
 # should be in the body of the test!
@@ -418,7 +417,7 @@ proc runInSubprocess {contents {filename iso2022.tcl}} {
 test encoding-24.1 {EscapeFreeProc on open channels} exec {
     runInSubprocess {
 	set f [open [file join [file dirname [info script]] iso2022.txt]]
-	fconfigure $f -encoding iso2022-jp
+	chan configure $f -encoding iso2022-jp
 	gets $f
     }
 } {}
@@ -426,7 +425,7 @@ test encoding-24.2 {EscapeFreeProc on open channels} {exec} {
     # Bug #524674 output
     viewable [runInSubprocess {
 	encoding system cp1252;	# Bug #2891556 crash revelator
-	fconfigure stdout -encoding iso2022-jp
+	chan configure stdout -encoding iso2022-jp
 	puts ab\u4e4e\u68d9g
 	set env(TCL_FINALIZE_ON_EXIT) 1
 	exit
@@ -441,14 +440,14 @@ test encoding-24.3 {EscapeFreeProc on open channels} {stdio} {
 	puts $a
     } iso2022.tcl]
     set f [open "|[list [interpreter] $file]"]
-    fconfigure $f -encoding iso2022-jp
+    chan configure $f -encoding iso2022-jp
     set count [gets $f line]
     close $f
     removeFile iso2022.tcl
     list $count [viewable $line]
 } [list 3 "\u4e4e\u4e5e\u4e5f (\\u4e4e\\u4e5e\\u4e5f)"]
 
-file delete [file join [temporaryDirectory] iso2022.txt]
+file delete -- [file join [temporaryDirectory] iso2022.txt]
 
 #
 # Begin jajp encoding round-trip conformity tests
@@ -478,17 +477,17 @@ proc foreach-jisx0208 {varName command} {
     } {
 	if {[llength $range] == 2} {
 	    # for adhoc range. simple {first last}. inclusive.
-	    scan $range %x%x first last
+	    scan $range "%x%x" first last
 	    for {set i $first} {$i <= $last} {incr i} {
 		set code $i
 		uplevel 1 $command
 	    }
 	} elseif {[llength $range] == 4} {
 	    # for uniform range.
-	    scan $range %x%x%x%x h0 l0 hend lend
+	    scan $range "%x%x%x%x" h0 l0 hend lend
 	    for {set hi $h0} {$hi <= $hend} {incr hi} {
 		for {set lo $l0} {$lo <= $lend} {incr lo} {
-		    set code [expr {$hi << 8 | ($lo & 0xff)}]
+		    set code [expr {($hi << 8) | ($lo & 0xff)}]
 		    uplevel 1 $command
 		}
 	    }
@@ -507,20 +506,20 @@ proc gen-jisx0208-iso2022-jp {code} {
 }
 proc gen-jisx0208-cp932 {code} {
     set c1 [expr {($code >> 8) | 0x80}]
-    set c2 [expr {($code & 0xff)| 0x80}]
+    set c2 [expr {($code & 0xff) | 0x80}]
     if {$c1 % 2} {
-	set c1 [expr {($c1 >> 1) + ($c1 < 0xdf ? 0x31 : 0x71)}]
+	set c1 [expr {($c1 >> 1) + (($c1 < 0xdf) ? 0x31 : 0x71)}]
 	incr c2 [expr {- (0x60 + ($c2 < 0xe0))}]
     } else {
-	set c1 [expr {($c1 >> 1) + ($c1 < 0xdf ? 0x30 : 0x70)}]
+	set c1 [expr {($c1 >> 1) + (($c1 < 0xdf) ? 0x30 : 0x70)}]
 	incr c2 -2
     }
     binary format cc $c1 $c2
 }
 proc channel-diff {fa fb} {
     set diff {}
-    while {[gets $fa la] >= 0 && [gets $fb lb] >= 0} {
-	if {[string compare $la $lb] == 0} continue
+    while {([chan gets $fa la] >= 0) && ([chan gets $fb lb] >= 0)} {
+	if {$la eq $lb} continue
 	# lappend diff $la $lb
 
 	# For more readable (easy to analyze) output.
@@ -536,7 +535,7 @@ proc channel-diff {fa fb} {
 cd [temporaryDirectory]
 foreach enc {cp932 euc-jp iso2022-jp} {
     set f [open $enc.chars w]
-    fconfigure $f -encoding binary
+    chan configure $f -encoding binary
     foreach-jisx0208 code {
 	puts $f [format "%04X %s" $code [gen-jisx0208-$enc $code]]
     }
@@ -552,9 +551,9 @@ foreach from {cp932 shiftjis euc-jp iso2022-jp} {
 	    cd [temporaryDirectory]
 	} -body {
 	    set f [open $from.chars]
-	    fconfigure $f -encoding $from
+	    chan configure $f -encoding $from
 	    set out [open $from.$to.tcltestout w]
-	    fconfigure $out -encoding $to
+	    chan configure $out -encoding $to
 	    puts -nonewline $out [read $f]
 	    close $out
 	    close $f

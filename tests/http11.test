@@ -17,21 +17,21 @@ variable httpd_output
 proc create_httpd {} {
     proc httpd_read {chan} {
         variable httpd_output
-        if {[gets $chan line] != -1} {
+        if {[chan gets $chan line] != -1} {
             #puts stderr "read '$line'"
             set httpd_output $line
         }
-        if {[eof $chan]} {
-            puts stderr "eof from httpd"
-            fileevent $chan readable {}
-            close $chan
+        if {[chan eof $chan]} {
+            chan puts stderr "eof from httpd"
+            chan event $chan readable ""
+            chan close $chan
         }
     }
     variable httpd_output
     set httpd_script [file join [pwd] [file dirname [info script]] httpd11.tcl]
     set httpd [open "|[list [interpreter] -encoding utf-8 $httpd_script]" r+]
-    fconfigure $httpd -buffering line -blocking 0
-    fileevent $httpd readable [list httpd_read $httpd]
+    chan configure $httpd -buffering line -blocking 0
+    chan event $httpd readable [list httpd_read $httpd]
     vwait httpd_output
     variable httpd_port [lindex $httpd_output 2]
     return $httpd

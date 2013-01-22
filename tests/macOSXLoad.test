@@ -10,15 +10,16 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 set oldTSF $::tcltest::testSingleFile
 set ::tcltest::testSingleFile false
 
-if {[testConstraint unix] && $tcl_platform(os) eq "Darwin" &&
-	![string match *pkga* [info loaded]]} {
+if {[testConstraint unix] && 
+    ($tcl_platform(os) eq "Darwin") && 
+    (![string match "*pkga*" [info loaded]])} {
     # On Darwin, test .bundle (un)loading in addition to .dylib
     set ext .bundle
     source [file join [file dirname [info script]] load.test]

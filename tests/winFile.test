@@ -26,7 +26,7 @@ testConstraint win2000 0
 if {[testConstraint testvolumetype]} {
     testConstraint notNTFS [expr {[testvolumetype] eq "NTFS"}]
 }
-if {[testConstraint nt] && $::tcl_platform(osVersion) >= 5.0} {
+if {[testConstraint nt] && ($::tcl_platform(osVersion) >= 5.0)} {
     testConstraint win2000 1
 }
 
@@ -86,7 +86,7 @@ test winFile-3.1 {file system} -constraints {win testvolumetype} -setup {
 	}
     }
     set res
-} -result {}
+} -result ""
 
 proc cacls {fname args} {
     string trim [eval [list exec cacls [file nativename $fname]] $args <<y]
@@ -106,7 +106,7 @@ proc getuser {fname} {
     }
     set owner ""
     set tail [file tail $tryname]
-    if {[info exists env(OSTYPE)] && $env(OSTYPE) eq "msys"} {
+    if {[info exists env(OSTYPE)] && ($env(OSTYPE) eq "msys")} {
         set dirtext [exec ls -l $fname]
         foreach line [split $dirtext "\n"] {
             set owner [lindex $line 2]
@@ -131,26 +131,26 @@ proc test_read {fname} {
     if {[catch {open $fname r} ifs]} {
 	return 0
     }
-    set readfailed [catch {read $ifs}]
-    return [expr {![catch {close $ifs}] && !$readfailed}]
+    set readfailed [catch {chan read $ifs}]
+    return [expr {(![catch {chan close $ifs}]) && (!$readfailed)}]
 }
 
 proc test_writ {fname} {
     if {[catch {open $fname w} ofs]} {
 	return 0
     }
-    set writefailed [catch {puts $ofs "Hello"}]
-    return [expr {![catch {close $ofs}] && !$writefailed}]
+    set writefailed [catch {chan puts $ofs "Hello"}]
+    return [expr {(![catch {chan close $ofs}]) && (!$writefailed)}]
 }
 
 proc test_access {fname read writ} {
-    set problem {}
+    set problem [list]
     foreach type {read writ} {
-	if {[set $type] != [file ${type}able $fname]} {
-	    lappend problem "[set $type] != \[file ${type}able $fname\]"
+        if {[set [set type]] != [file ${type}able $fname]} {
+	    lappend problem "[set [set type]] != \[file ${type}able $fname\]"
 	}
-	if {[set $type] != [test_${type} $fname]} {
-	    lappend problem "[set $type] != \[test_${type} $fname\]"
+	if {[set [set type]] != [test_${type} $fname]} {
+	    lappend problem "[set [set type]] != \[test_${type} $fname\]"
 	}
     }
     if {![llength $problem]} {
@@ -165,8 +165,8 @@ if {[testConstraint win]} {
     # creation in a particular filesystem?  If not, try [makeFile]
     # in a -setup script.
     set fname test.dat
-    file delete $fname
-    close [open $fname w]
+    file delete -- $fname
+    chan close [open $fname w]
 }
 
 test winFile-4.0 {
@@ -183,7 +183,7 @@ test winFile-4.0 {
     catch {cacls $fname /E /R $owner} result
     cacls $fname /E /P $user:N
     test_access $fname 0 0
-} -result {}
+} -result ""
 test winFile-4.1 {
     Enhanced NTFS user/group permissions: test readable only
 } -constraints {
@@ -194,7 +194,7 @@ test winFile-4.1 {
     cacls $fname /E /P $user:N
     cacls $fname /E /G $user:R
     test_access $fname 1 0
-} -result {}
+} -result ""
 test winFile-4.2 {
     Enhanced NTFS user/group permissions: test writable only
 } -constraints {
@@ -206,7 +206,7 @@ test winFile-4.2 {
     cacls $fname /E /P $user:N
     cacls $fname /E /G $user:W
     test_access $fname 0 1
-} -result {}
+} -result ""
 test winFile-4.3 {
     Enhanced NTFS user/group permissions: test read+write
 } -constraints {
@@ -219,7 +219,7 @@ test winFile-4.3 {
     cacls $fname /E /G $user:R
     cacls $fname /E /G $user:W
     test_access $fname 1 1
-} -result {}
+} -result ""
 test winFile-4.4 {
     Enhanced NTFS user/group permissions: test full access
 } -constraints {
@@ -231,10 +231,10 @@ test winFile-4.4 {
     cacls $fname /E /P $user:N
     cacls $fname /E /G $user:F
     test_access $fname 1 1
-} -result {}
+} -result ""
 
 if {[testConstraint win]} {
-    file delete $fname
+    file delete -- $fname
 }
 
 # cleanup

@@ -91,6 +91,7 @@ proc ::platform::generic {} {
 		append cpu _32
 	    }
 	}
+        default {}
     }
 
     switch -- $plat {
@@ -142,6 +143,7 @@ proc ::platform::generic {} {
 	osf1 {
 	    set plat tru64
 	}
+        default {}
     }
 
     return "${plat}-${cpu}"
@@ -158,11 +160,11 @@ proc ::platform::identify {} {
     global tcl_platform
 
     set id [generic]
-    regexp {^([^-]+)-([^-]+)$} $id -> plat cpu
+    regexp {^([^-]+)-([^-]+)$} $id ___ plat cpu
 
     switch -- $plat {
 	solaris {
-	    regsub {^5} $tcl_platform(osVersion) 2 text
+	    regsub "^5" $tcl_platform(osVersion) 2 text
 	    append plat $text
 	    return "${plat}-${cpu}"
 	}
@@ -236,6 +238,7 @@ proc ::platform::identify {} {
 	    append plat -$v
 	    return "${plat}-${cpu}"
 	}
+        default {}
     }
 
     return $id
@@ -254,10 +257,10 @@ proc ::platform::LibcVersion {base _->_ vv} {
     # information.
 
     if {![catch {
-	set vdata [lindex [split [exec $libc] \n] 0]
+	set vdata [lindex [split [exec -- $libc] \n] 0]
     }]} {
-	regexp {([0-9]+(\.[0-9]+)*)} $vdata -> v
-	foreach {major minor} [split $v .] break
+	regexp {([0-9]+(\.[0-9]+)*)} $vdata ___ v
+	lassign [split $v "."] major minor
 	set v glibc${major}.${minor}
 	return 1
     } else {
@@ -265,7 +268,7 @@ proc ::platform::LibcVersion {base _->_ vv} {
 	# inspecting its name to determine the version
 	# number. This code by Larry McVoy.
 
-	if {[regexp -- {libc-([0-9]+)\.([0-9]+)} $libc -> major minor]} {
+	if {[regexp -- {libc-([0-9]+)\.([0-9]+)} $libc ___ major minor]} {
 	    set v glibc${major}.${minor}
 	    return 1
 	}
@@ -295,9 +298,9 @@ proc ::platform::patterns {id} {
 
     switch -glob --  $id {
 	solaris*-* {
-	    if {[regexp {solaris([^-]*)-(.*)} $id -> v cpu]} {
+	    if {[regexp {solaris([^-]*)-(.*)} $id ___ v cpu]} {
 		if {$v eq ""} {return $id}
-		foreach {major minor} [split $v .] break
+		lassign [split $v "."] major minor
 		incr minor -1
 		for {set j $minor} {$j >= 6} {incr j -1} {
 		    lappend res solaris${major}.${j}-${cpu}
@@ -305,8 +308,8 @@ proc ::platform::patterns {id} {
 	    }
 	}
 	linux*-* {
-	    if {[regexp {linux-glibc([^-]*)-(.*)} $id -> v cpu]} {
-		foreach {major minor} [split $v .] break
+	    if {[regexp {linux-glibc([^-]*)-(.*)} $id ___ v cpu]} {
+		lassign [split $v "."] major minor
 		incr minor -1
 		for {set j $minor} {$j >= 0} {incr j -1} {
 		    lappend res linux-glibc${major}.${j}-${cpu}
@@ -315,19 +318,19 @@ proc ::platform::patterns {id} {
 	}
 	macosx*-*    {
 	    # 10.5+ 
-	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
+	    if {[regexp {macosx([^-]*)-(.*)} $id ___ v cpu]} {
 
 		switch -exact -- $cpu {
 		    ix86    -
 		    x86_64  { set alt i386-x86_64 }
-		    default { set alt {} }
+		    default { set alt "" }
 		}
 
 		if {$v ne ""} {
-		    foreach {major minor} [split $v .] break
+		    lassign [split $v "."] major minor
 
 		    # Add 10.5 to 10.minor to patterns.
-		    set res {}
+		    set res [list]
 		    for {set j $minor} {$j >= 5} {incr j -1} {
 			lappend res macosx${major}.${j}-${cpu}
 			lappend res macosx${major}.${j}-universal
@@ -359,6 +362,7 @@ proc ::platform::patterns {id} {
 	macosx-ix86 {
 	    lappend res macosx-universal macosx-i386-x86_64
 	}
+        default {}
     }
     lappend res tcl ; # Pure tcl packages are always compatible.
     return $res

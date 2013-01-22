@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -94,7 +94,7 @@ test while-old-4.4 {errors in while loops} {
     list $err $msg
 } {1 {can't use non-numeric string as operand of "+"}}
 test while-old-4.5 {errors in while loops} {
-    catch {unset x}
+    unset -nocomplain x
     set x 1
     set err [catch {while {$x} {set x foo}} msg]
     list $err $msg

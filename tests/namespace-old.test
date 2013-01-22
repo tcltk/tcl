@@ -606,11 +606,11 @@ test namespace-old-9.5 {empty import list in "namespace import" command} {
 test namespace-old-9.7 {empty forget list for "namespace forget" command} {
     namespace forget
 } {}
-catch {rename cmd1 {}}
-catch {rename cmd2 {}}
-catch {rename ncmd {}}
-catch {rename ncmd1 {}}
-catch {rename ncmd2 {}}
+catch {rename cmd1 ""}
+catch {rename cmd2 ""}
+catch {rename ncmd ""}
+catch {rename ncmd1 ""}
+catch {rename ncmd2 ""}
 test namespace-old-9.8 {only exported commands are imported} {
     namespace import test_ns_import::cmd*
     set x [lsort [info commands cmd*]]
@@ -725,20 +725,13 @@ test namespace-old-10.8 {scoped commands execute in namespace context} {
 foreach cmd [info commands test_ns_*] {
     rename $cmd ""
 }
-catch {rename cmd {}}
-catch {rename cmd1 {}}
-catch {rename cmd2 {}}
-catch {rename ncmd {}}
-catch {rename ncmd1 {}}
-catch {rename ncmd2 {}}
-catch {unset cref}
-catch {unset trigger}
-catch {unset trigger2}
-catch {unset sval}
-catch {unset msg}
-catch {unset x}
-catch {unset test_ns_var_global}
-catch {unset cmd}
+catch {rename cmd ""}
+catch {rename cmd1 ""}
+catch {rename cmd2 ""}
+catch {rename ncmd ""}
+catch {rename ncmd1 ""}
+catch {rename ncmd2 ""}
+unset -nocomplain cref trigger trigger2 sval msg x test_ns_var_global cmd
 eval namespace delete [namespace children :: test_ns_*]
 
 # cleanup

@@ -37,7 +37,7 @@ set path(cat) [makeFile {
     if {$argv eq ""} {
 	set argv -
     }
-    fconfigure stdout -translation binary
+    chan configure stdout -translation binary
     foreach name $argv {
 	if {$name eq "-"} {
 	    set f stdin
@@ -45,8 +45,8 @@ set path(cat) [makeFile {
 	    puts stderr $f
 	    continue
 	}
-	fconfigure $f -translation binary
-	while {[eof $f] == 0} {
+	chan configure $f -translation binary
+	while {[chan eof $f] == 0} {
 	    puts -nonewline [read $f]
 	}
 	if {$f ne "stdin"} {
@@ -108,10 +108,10 @@ set path(exit) [makeFile {
     exit $argv
 } exit]
 
-proc readfile filename {
+proc readfile {filename} {
     set f [open $filename]
-    set d [read $f]
-    close $f
+    set d [chan read $f]
+    chan close $f
     return [string trimright $d \n]
 }
 
@@ -174,7 +174,7 @@ test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
 # I/O redirection: output to file.
 
 set path(gorp.file) [makeFile {} gorp.file]
-file delete $path(gorp.file)
+file delete -- $path(gorp.file)
 
 test exec-3.1 {redirecting output to file} {exec} {
     exec [interpreter] $path(echo) "Some simple words" > $path(gorp.file)
@@ -215,7 +215,7 @@ test exec-3.7 {redirecting output to file} {exec} {
 
 # I/O redirection: output and stderr to file.
 
-file delete $path(gorp.file)
+file delete -- $path(gorp.file)
 
 test exec-4.1 {redirecting output and stderr to file} {exec} {
     exec [interpreter] $path(echo) "test output" >& $path(gorp.file)
@@ -254,7 +254,7 @@ test exec-4.5 {redirecting output and stderr to file} {exec} {
 # I/O redirection: input from file.
 
 if {[testConstraint exec]} {
-    exec [interpreter] $path(echo) "Just a few thoughts" > $path(gorp.file)
+    exec -- [interpreter] $path(echo) "Just a few thoughts" > $path(gorp.file)
 }
 test exec-5.1 {redirecting input from file} {exec} {
     exec [interpreter] $path(cat) < $path(gorp.file)
@@ -299,8 +299,8 @@ test exec-6.3 {redirecting stderr through a pipeline} {exec stdio} {
 
 # I/O redirection: combinations.
 
-set path(gorp.file2) [makeFile {} gorp.file2]
-file delete $path(gorp.file2)
+set path(gorp.file2) [makeFile "" gorp.file2]
+file delete -- $path(gorp.file2)
 
 test exec-7.1 {multiple I/O redirections} {exec} {
     exec << "command input" > $path(gorp.file2) [interpreter] $path(cat) < $path(gorp.file)
@@ -465,7 +465,7 @@ test exec-11.5 {commands in background} {exec} {
 
 if {[testConstraint exec] && [testConstraint nonPortable]} {
     after 1300
-    exec [interpreter] $path(sleep) 1
+    exec -- [interpreter] $path(sleep) 1
 }
 test exec-12.1 {reaping background processes} {exec unix nonPortable} {
     for {set i 0} {$i < 20} {incr i} {

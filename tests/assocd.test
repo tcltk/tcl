@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -19,9 +19,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-testConstraint testgetassocdata [llength [info commands testgetassocdata]]
-testConstraint testsetassocdata [llength [info commands testsetassocdata]]
-testConstraint testdelassocdata [llength [info commands testdelassocdata]]
+::tcltest::testConstraint testgetassocdata [llength [info commands testgetassocdata]]
+::tcltest::testConstraint testsetassocdata [llength [info commands testsetassocdata]]
+::tcltest::testConstraint testdelassocdata [llength [info commands testdelassocdata]]
 
 test assocd-1.1 {testing setting assoc data} testsetassocdata {
    testsetassocdata a 1

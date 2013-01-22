@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.2
     namespace import -force ::tcltest::*
 }
@@ -42,11 +42,11 @@ set threadSuperKillScript {
 proc getThreadErrorFromInfo { info } {
     set list [split $info \n]
     set idx [lsearch -glob $list "*eval*unwound*"]
-    if {$idx != -1} then {
+    if {$idx != -1} {
         return [lindex $list $idx]
     }
     set idx [lsearch -glob $list "*eval*canceled*"]
-    if {$idx != -1} then {
+    if {$idx != -1} {
         return [lindex $list $idx]
     }
     return ""; # some other error we do not care about.
@@ -55,7 +55,7 @@ proc getThreadErrorFromInfo { info } {
 proc findThreadError { info } {
     foreach error [lreverse $info] {
         set error [getThreadErrorFromInfo $error]
-        if {[string length $error] > 0} then {
+        if {[string length $error] > 0} {
             return $error
         }
     }
@@ -64,7 +64,7 @@ proc findThreadError { info } {
 
 proc ThreadError {id info} {
     global threadSawError
-    if {[string length [getThreadErrorFromInfo $info]] > 0} then {
+    if {[string length [getThreadErrorFromInfo $info]] > 0} {
         global threadId threadError
         set threadId $id
         lappend threadError($id) $info
@@ -159,7 +159,7 @@ test thread-1.15 {Tcl_ThreadObjCmd: wait} {thread} {
 # ThreadErrorProc, except for printing to standard error
 
 test thread-2.1 {ListUpdateInner and ListRemove} {thread} {
-    catch {unset tid}
+    unset -nocomplain tid
     foreach t {0 1 2} {
 	upvar #0 t$t tid
 	set tid [thread::create -preserved]
@@ -172,7 +172,7 @@ test thread-2.1 {ListUpdateInner and ListRemove} {thread} {
 } 1
 
 test thread-3.1 {TclThreadList} {thread} {
-    catch {unset tid}
+    unset -nocomplain tid
     set len [llength [thread::names]]
     set l1  {}
     foreach t {0 1 2} {
@@ -187,7 +187,7 @@ test thread-3.1 {TclThreadList} {thread} {
 } {1 0}
 
 test thread-4.1 {TclThreadSend to self} {thread} {
-    catch {unset x}
+    unset -nocomplain x
     thread::send [thread::id] {
 	set x 4
     }
@@ -233,7 +233,6 @@ test thread-4.5 {TclThreadSend preserve errorCode} {thread} {
     list $x $msg $savedErrorCode
 } {1 ERR CODE}
 
-
 test thread-5.0 {Joining threads} {thread} {
     set serverthread [thread::create -joinable -preserved]
     thread::send -async $serverthread {after 1000 ; thread::release}
@@ -275,7 +274,7 @@ test thread-7.4 {cancel: pure bytecode loop} -constraints {thread drainEventQueu
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -306,7 +305,7 @@ test thread-7.5 {cancel: pure inside-command loop} -constraints {thread drainEve
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -338,7 +337,7 @@ test thread-7.6 {cancel: pure bytecode loop -unwind} -constraints {thread drainE
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -369,7 +368,7 @@ test thread-7.7 {cancel: pure inside-command loop -unwind} -constraints {thread 
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -401,7 +400,7 @@ test thread-7.8 {cancel: pure bytecode loop custom result} -constraints {thread 
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -435,7 +434,7 @@ test thread-7.9 {cancel: pure inside-command loop custom result} -constraints {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -470,7 +469,7 @@ test thread-7.10 {cancel: pure bytecode loop custom result -unwind} -constraints
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -504,7 +503,7 @@ test thread-7.11 {cancel: pure inside-command loop custom result -unwind} -const
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -535,7 +534,7 @@ test thread-7.12 {cancel: after} -constraints {thread drainEventQueue} -setup {
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
-	if {![info exists foo]} then {
+	if {![info exists foo]} {
 	    # signal the primary thread that we are ready
 	    # to be canceled now (we are running).
 	    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -561,7 +560,7 @@ test thread-7.13 {cancel: after -unwind} -constraints {thread drainEventQueue} -
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
-	if {![info exists foo]} then {
+	if {![info exists foo]} {
 	    # signal the primary thread that we are ready
 	    # to be canceled now (we are running).
 	    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -587,7 +586,7 @@ test thread-7.14 {cancel: vwait} -constraints {thread drainEventQueue} -setup {
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID [thread::id]] {
-	if {![info exists foo]} then {
+	if {![info exists foo]} {
 	    # signal the primary thread that we are ready
 	    # to be canceled now (we are running).
 	    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -613,7 +612,7 @@ test thread-7.15 {cancel: vwait -unwind} -constraints {thread drainEventQueue} -
 } -body {
     set serverthread [thread::create -joinable \
 	    [string map [list %ID% [thread::id]] {
-	if {![info exists foo]} then {
+	if {![info exists foo]} {
 	    # signal the primary thread that we are ready
 	    # to be canceled now (we are running).
 	    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -642,7 +641,7 @@ test thread-7.16 {cancel: expr} -constraints {thread drainEventQueue} -setup {
 	set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
 	$i eval {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 
@@ -673,7 +672,7 @@ test thread-7.17 {cancel: expr -unwind} -constraints {thread drainEventQueue} -s
 	set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
 	$i eval {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -702,7 +701,7 @@ test thread-7.18 {cancel: expr bignum} {thread drainEventQueue knownBug} {
         set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
         $i eval {
-            if {![info exists foo]} then {
+            if {![info exists foo]} {
                 # signal the primary thread that we are ready
                 # to be canceled now (we are running).
                 thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -734,7 +733,7 @@ test thread-7.19 {cancel: expr bignum -unwind} {thread drainEventQueue knownBug}
         set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
         $i eval {
-            if {![info exists foo]} then {
+            if {![info exists foo]} {
                 # signal the primary thread that we are ready
                 # to be canceled now (we are running).
                 thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -767,7 +766,7 @@ test thread-7.20 {cancel: subst} -constraints {thread drainEventQueue} -setup {
 	set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
 	$i eval {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -797,7 +796,7 @@ test thread-7.21 {cancel: subst -unwind} -constraints {thread drainEventQueue} -
 	set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
 	$i eval {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -827,7 +826,7 @@ test thread-7.22 {cancel: slave interp} -constraints {thread drainEventQueue} -s
 	set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
 	$i eval {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -857,7 +856,7 @@ test thread-7.23 {cancel: slave interp -unwind} -constraints {thread drainEventQ
 	set i [interp create]
 	$i eval "package require -exact Thread [package present Thread]"
 	$i eval {
-	    if {![info exists foo]} then {
+	    if {![info exists foo]} {
 		# signal the primary thread that we are ready
 		# to be canceled now (we are running).
 		thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -885,7 +884,7 @@ test thread-7.24 {cancel: nested catch inside pure bytecode loop} {thread drainE
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -927,7 +926,7 @@ test thread-7.25 {cancel: nested catch inside pure inside-command loop} {thread 
 	    set catch catch
 	    set while while
 	    $while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -967,7 +966,7 @@ test thread-7.26 {cancel: send async cancel bad interp path} {thread drainEventQ
 	[string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -996,7 +995,7 @@ test thread-7.27 {cancel: send async cancel -- switch} -constraints {thread drai
 	$i eval {
 	    proc foobar {} {
 		while {1} {
-		    if {![info exists foo]} then {
+		    if {![info exists foo]} {
 			# signal the primary thread that we are ready
 			# to be canceled now (we are running).
 			thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1027,7 +1026,7 @@ test thread-7.28 {cancel: send async cancel nested catch inside pure bytecode lo
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1069,7 +1068,7 @@ test thread-7.29 {cancel: send async cancel nested catch pure inside-command loo
 	    set catch catch
 	    set while while
 	    $while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1109,7 +1108,7 @@ test thread-7.30 {cancel: send async thread cancel nested catch inside pure byte
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1151,7 +1150,7 @@ test thread-7.31 {cancel: send async thread cancel nested catch pure inside-comm
 	    set catch catch
 	    set while while
 	    $while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1192,7 +1191,7 @@ test thread-7.32 {cancel: nested catch inside pure bytecode loop -unwind} -const
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1233,7 +1232,7 @@ test thread-7.33 {cancel: nested catch inside pure inside-command loop -unwind} 
 	    set catch catch
 	    set while while
 	    $while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1272,7 +1271,7 @@ test thread-7.34 {cancel: send async cancel nested catch inside pure bytecode lo
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1315,7 +1314,7 @@ test thread-7.35 {cancel: send async cancel nested catch inside pure inside-comm
 	    set catch catch
 	    set while while
 	    $while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1356,7 +1355,7 @@ test thread-7.36 {cancel: send async thread cancel nested catch inside pure byte
 	    [string map [list %ID% [thread::id]] {
 	proc foobar {} {
 	    while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]
@@ -1399,7 +1398,7 @@ test thread-7.37 {cancel: send async thread cancel nested catch inside pure insi
 	    set catch catch
 	    set while while
 	    $while {1} {
-		if {![info exists foo]} then {
+		if {![info exists foo]} {
 		    # signal the primary thread that we are ready
 		    # to be canceled now (we are running).
 		    thread::send %ID% [list set ::threadIdStarted [thread::id]]

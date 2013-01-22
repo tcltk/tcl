@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -34,7 +34,7 @@ if {[catch {package require http 1.0}]} {
 }
 
 set bindata "This is binary data\x0d\x0amore\x0dmore\x0amore\x00null"
-catch {unset data}
+unset -nocomplain data
 
 ## 
 ## The httpd script implement a stub http server
@@ -42,7 +42,7 @@ catch {unset data}
 source [file join [file dirname [info script]] httpd]
 
 set port 8010
-if [catch {httpd_init $port} listen] {
+if {[catch {httpd_init $port} listen]} {
     puts "Cannot start http server, http test skipped"
     unset port
     ::tcltest::cleanupTests
@@ -156,7 +156,6 @@ test httpold-3.9 {http_get} {
     http_code $token
 } "HTTP/1.0 200 OK"
 
-
 test httpold-4.1 {httpEvent} {
     set token [http_get $url]
     upvar #0 $token data
@@ -207,7 +206,7 @@ test httpold-4.6 {httpEvent} {
     set token [http_get $binurl -channel $out]
     close $out
     set in [open $testfile]
-    fconfigure $in -translation binary
+    chan configure $in -translation binary
     set x [read $in]
     close $in
     removeFile $testfile
@@ -221,7 +220,7 @@ proc myProgress {token total current} {
     }
     set progress [list $total $current]
 }
-if 0 {
+if {0} {
     # This test hangs on Windows95 because the client never gets EOF
     set httpLog 1
     test httpold-4.6 {httpEvent} {
@@ -285,9 +284,7 @@ test httpold-6.1 {httpProxyRequired} {
 </body></html>"
 
 # cleanup
-catch {unset url}
-catch {unset port}
-catch {unset data}
-close $listen
+unset -nocomplain url port data
+chan close $listen
 ::tcltest::cleanupTests
 return

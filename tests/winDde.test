@@ -31,10 +31,10 @@ if {[testConstraint win]} {
 # Setup a script for a test server
 #
 
-set scriptName [makeFile {} script1.tcl]
+set scriptName [makeFile "" script1.tcl]
 
 proc createChildProcess {ddeServerName args} {
-    file delete -force $::scriptName
+    file delete -force -- $::scriptName
 
     set f [open $::scriptName w+]
     puts $f [list set ddeServerName $ddeServerName]
@@ -60,7 +60,7 @@ proc createChildProcess {ddeServerName args} {
         # Define a restricted handler.
         proc Handler1 {cmd} {
             if {$cmd eq "stop"} {set ::done 1}
-            if {$cmd == ""} {
+            if {$cmd eq ""} {
                 set cmd "null data"
             }
             puts $cmd ; flush stdout
@@ -96,8 +96,8 @@ proc createChildProcess {ddeServerName args} {
 
     # run the child server script.
     set f [open |[list [interpreter] $::scriptName] r]
-    fconfigure $f -buffering line
-    gets $f line
+    chan configure $f -buffering line
+    chan gets $f line
     return $f
 }
 
@@ -482,7 +482,7 @@ test winDde-9.4 {External safe DDE check null data passing} -constraints {dde st
 
 #cleanup
 #catch {interp delete $slave};           # ensure we clean up the slave.
-file delete -force $::scriptName
+file delete -force -- $::scriptName
 ::tcltest::cleanupTests
 return
 

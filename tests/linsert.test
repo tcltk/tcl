@@ -11,12 +11,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-catch {unset lis}
+unset -nocomplain lis
 catch {rename p ""}
 
 test linsert-1.1 {linsert command} {
@@ -107,13 +107,13 @@ test linsert-3.1 {linsert won't modify shared argument objects} {
     p
 } "a b c"
 test linsert-3.2 {linsert won't modify shared argument objects} {
-    catch {unset lis}
+    unset -nocomplain lis
     set lis [format "a \"%s\" c" "b"]
     linsert $lis 0 [string length $lis]
 } "7 a b c"
 
 # cleanup
-catch {unset lis}
+unset -nocomplain lis
 catch {rename p ""}
 ::tcltest::cleanupTests
 return

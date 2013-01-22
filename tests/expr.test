@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
@@ -25,10 +25,10 @@ testConstraint testmathfunctions [expr {
 # Determine if "long int" type is a 32 bit number and if the wide
 # type is a 64 bit number on this machine.
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
+testConstraint longIs32bit [expr { ( int (0x80000000) ) < 0}]
+testConstraint longIs64bit [expr { ( int (0x8000000000000000) ) < 0}]
 testConstraint wideIs64bit \
-	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
+	[expr {( ( wide (0x80000000) ) > 0) && ( ( wide (0x8000000000000000) ) < 0)}]
 
 # Big test for correct ordering of data in [expr]
 
@@ -103,32 +103,34 @@ proc hello_world {} {
     global a
     set a ""
     set L1 [set l0 [set h_1 [set q 0]]]
-    for {put_hello_char [expr [put_hello_char [expr [set h 7]*10+2]]+29]} {$l0?[put_hello_char $l0]
-        :!$h_1} {put_hello_char $ll;expr {$L1==2?[set ll [expr 32+0-0+[set bar 0]]]:0}} {expr {[incr L1]==[expr 1+([string length "abc"]-[string length "abc"])]
-        ?[set ll [set l0 [expr 54<<1]]]:$ll==108&&$L1<3?
-        [incr ll [expr 1|1<<1]; set ll $ll; set ll $ll; set ll $ll; set ll $ll; set l0 [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]; set l0; set l0 $l0; set l0; set l0]:$L1==4&&$ll==32?[set ll [expr 19+$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+[set foo [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]]]]
-        :[set q [expr $q-$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]};expr {$L1==5?[incr ll -8; set ll $ll; set ll]:$q&&$h1&&1};expr {$L1==4+2
-        ?[incr ll 3]:[expr ([string length "abc"]-[string length "abc"])+1]};expr {$ll==($h<<4)+2+0&&$L1!=6?[incr ll -6]:[set h1 [expr 100+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]}
-        expr {$L1!=1<<3?[incr q [expr ([string length "abc"]-[string length "abc"])-1]]:[set h_1 [set ll $h1]]}
+    for {put_hello_char [expr {[put_hello_char [expr {([set h 7] * 10) + 2}]] + 29}]} {$l0 ? [put_hello_char $l0] : (!$h_1)} {put_hello_char $ll;expr {($L1 == 2) ? [set ll [expr {((32 + 0) - 0) + [set bar 0]}]] : 0}} {
+      expr {([incr L1] == [expr {1 + ([string length "abc"] - [string length "abc"])}]) 
+	    ? [set ll [set l0 [expr {54 << 1}]]] : (($ll == 108) && ($L1 < 3)) ? 
+	    [incr ll [expr {1 | (1 << 1)}]; set ll $ll; set ll $ll; set ll $ll; set ll $ll; set l0 [expr {((([string length "abc"] - [string length "abc"]) + ([string length "abc"] - [string length "abc"])) - ([string length "abc"] - [string length "abc"])) + ([string length "abc"] - [string length "abc"])}]; set l0; set l0 $l0; set l0; set l0] : (($L1 == 4) && ($ll == 32)) ? [set ll [expr {(((19 + $h1 + ([string length "abc"] - [string length "abc"])) - ([string length "abc"] - [string length "abc"])) + ([string length "abc"] - [string length "abc"])) - ([string length "abc"] - [string length "abc"]) + [set foo [expr {([string length "abc"] - [string length "abc"]) + ([string length "abc"] - [string length "abc"]) + ([string length "abc"] - [string length "abc"])}]]}]]
+	    : [set q [expr {(($q - $h1) + ([string length "abc"] - [string length "abc"])) - ([string length "abc"] - [string length "abc"])}]]}
+        expr {($L1 == 5) ? [incr ll -8; set ll $ll; set ll] : ($q && $h1 && 1)}
+        expr {($L1 == (4 + 2)) ? [incr ll 3] : [expr {([string length "abc"] - [string length "abc"]) + 1}]}
+        expr {(($ll == (($h << 4) + 2 + 0)) && ($L1 != 6)) ? [incr ll -6] : [set h1 [expr {(100 + ([string length "abc"] - [string length "abc"])) - ([string length "abc"] - [string length "abc"])}]]}
+        expr {($L1 != (1 << 3)) ? [incr q [expr {([string length "abc"] - [string length "abc"]) - 1}]] : [set h_1 [set ll $h1]]}
     }
     set a
 }
 
 proc 12days {a b c} {
     global xxx
-    expr {1<$a?[expr {$a<3?[12days -79 -13 [string range $c [12days -87 \
-	[expr 1-$b] [string range $c [12days -86 0 [string range $c 1 end]] \
-	end]] end]]:1};expr {$a<$b?[12days [expr $a+1] $b $c]:3};expr {[12days \
-	-94 [expr $a-27] $c]&&$a==2?$b<13?[12days 2 [expr $b+1] "%s %d %d\n"]:9
-	:16}]:$a<0?$a<-72?[12days $b $a "@n'+,#'/*\{\}w+/w#cdnr/+,\{\}r/*de\}+,/*\{*+,/w\{%+,/w#q#n+,/#\{l+,/n\{n+,/+#n+,/#;#q#n+,/+k#;*+,/'r :'d*'3,\}\{w+K w'K:'+\}e#';dq#'l q#'+d'K#!/+k#;q#'r\}eKK#\}w'r\}eKK\{nl\]'/#;#q#n')\{)#\}w')\{)\{nl\]'/+#n';d\}rw' i;# )\{nl\]!/n\{n#'; r\{#w'r nc\{nl\]'/#\{l,+'K \{rw' iK\{;\[\{nl\]'/w#q#n'wk nw' iwk\{KK\{nl\]!/w\{%'l##w#' i; :\{nl\]'/*\{q#'ld;r'\}\{nlwb!/*de\}'c ;;\{nl'-\{\}rw\]'/+,\}##'*\}#nc,',#nw\]'/+kd'+e\}+;#'rdq#w! nr'/ ') \}+\}\{rl#'\{n' ')# \}'+\}##(!!/"]
-	:$a<-50?[string compare [format %c $b] [string index $c 0]]==0?[append \
+    expr {(1 < $a) ? [expr {($a < 3) ? [12days -79 -13 [string range $c [12days -87 \
+	[expr {1 - $b}] [string range $c [12days -86 0 [string range $c 1 end]] \
+	end]] end]] : 1};expr {($a < $b) ? [12days [expr {$a + 1}] $b $c] : 3};expr {(([12days \
+	-94 [expr {$a - 27}] $c]) && ($a == 2)) ? ($b < 13) ? [12days 2 [expr {$b + 1}] "%s %d %d\n"] : 9
+	: 16}] : ($a < 0) ? ($a < -72) ? [12days $b $a "@n'+,#'/*\{\}w+/w#cdnr/+,\{\}r/*de\}+,/*\{*+,/w\{%+,/w#q#n+,/#\{l+,/n\{n+,/+#n+,/#;#q#n+,/+k#;*+,/'r :'d*'3,\}\{w+K w'K:'+\}e#';dq#'l q#'+d'K#!/+k#;q#'r\}eKK#\}w'r\}eKK\{nl\]'/#;#q#n')\{)#\}w')\{)\{nl\]'/+#n';d\}rw' i;# )\{nl\]!/n\{n#'; r\{#w'r nc\{nl\]'/#\{l,+'K \{rw' iK\{;\[\{nl\]'/w#q#n'wk nw' iwk\{KK\{nl\]!/w\{%'l##w#' i; :\{nl\]'/*\{q#'ld;r'\}\{nlwb!/*de\}'c ;;\{nl'-\{\}rw\]'/+,\}##'*\}#nc,',#nw\]'/+kd'+e\}+;#'rdq#w! nr'/ ') \}+\}\{rl#'\{n' ')# \}'+\}##(!!/"]
+	: ($a < -50) ? ([format %c $b] eq [string index $c 0]) ? [append \
 	xxx [string index $c 31];scan [string index $c 31] %c x;set x]
-	:[12days -65 $b [string range $c 1 end]]:[12days [expr ([string compare \
-	[string index $c 0] "/"]==0)+$a] $b [string range $c 1 end]]:0<$a
-	?[12days 2 2 "%s"]:[string compare [string index $c 0] "/"]==0||
+	: [12days -65 $b [string range $c 1 end]] : [12days [expr {([string compare \
+	[string index $c 0] "/"] == 0) + $a}] $b [string range $c 1 end]] : (0 < $a)
+	? [12days 2 2 "%s"] : (([string compare [string index $c 0] "/"] == 0) || 
 	[12days 0 [12days -61 [scan [string index $c 0] %c x; set x] \
 	"!ek;dc i@bK'(q)-\[w\]*%n+r3#l,\{\}:\nuwloca-O;m .vpbks,fxntdCeghiry"] \
-	[string range $c 1 end]]}
+	[string range $c 1 end]])}
 }
 proc do_twelve_days {} {
     global xxx
@@ -141,7 +143,7 @@ proc do_twelve_days {} {
 
 # start of tests
 
-catch {unset a b i x}
+unset -nocomplain a b i x
 
 test expr-1.1 {TclCompileExprCmd: no expression} {
     list [catch {expr  } msg] $msg
@@ -573,13 +575,13 @@ test expr-14.12 {CompilePrimaryExpr: var reference primary} {
     list [expr {$i}] [expr $i]
 } {789 789}
 test expr-14.13 {CompilePrimaryExpr: var reference primary} {
-    catch {unset a}
+    unset -nocomplain a
     set a(foo) foo
     set a(bar) bar
     set a(123) 123
     set result ""
     lappend result [expr $a(123)] [expr {$a(bar)<$a(foo)}]
-    catch {unset a}
+    unset -nocomplain a
     set result
 } {123 1}
 test expr-14.14 {CompilePrimaryExpr: var reference primary} {
@@ -721,13 +723,12 @@ test expr-15.17 {ExprCallMathFunc: non-numeric arg} -constraints {
     expr T3(0,"a")
 } -returnCodes error -result {argument to math function didn't have numeric value}
 
-
 test expr-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
-    catch {unset a}
+    unset -nocomplain a
     set a(VALUE) ff15
     set i 123
     if {[expr 0x$a(VALUE)] & 16} {
-        set i {}
+        set i ""
     }
     set i
 } {}
@@ -779,11 +780,7 @@ test expr-19.1 {expr and interpreter result object resetting} {
 # Test for incorrect "double evaluation" semantics
 
 test expr-20.1 {wrong brace matching} {
-    catch {unset l}
-    catch {unset r}
-    catch {unset q}
-    catch {unset cmd}
-    catch {unset a}
+    unset -nocomplain l r q cmd a
     set l "\{"; set r "\}"; set q "\""
     set cmd "expr $l$q|$q == $q$r$q$r"
     list [catch $cmd a] $a
@@ -812,7 +809,7 @@ test expr-20.3 {broken substitution of integer digits} {
     list [set a 000; expr 0x1$a] [set a 1; expr ${a}000]
 } {4096 1000}
 test expr-20.4 {proper double evaluation compilation, error case} {
-    catch {unset a}; # make sure $a doesn't exist
+    unset -nocomplain a; # make sure $a doesn't exist
     list [catch {expr 1?{$a}:0} msg] $msg
 } {1 {can't read "a": no such variable}}
 test expr-20.5 {proper double evaluation compilation, working case} {
@@ -969,17 +966,17 @@ test expr-23.38 {INST_EXPON: big integer} {expr {10**19}} 1[string repeat 0 19]
 test expr-23.39 {INST_EXPON: big integer} {
     expr 1[string repeat 0 30]**2
 } 1[string repeat 0 60]
-test expr-23.40 {INST_EXPON: overflow to big integer} {expr {(-10)**3}} -1000
-test expr-23.41 {INST_EXPON: overflow to big integer} {expr 2**64} [expr 1<<64]
-test expr-23.42 {INST_EXPON: overflow to big integer} {expr 4**32} [expr 1<<64]
-test expr-23.43 {INST_EXPON: overflow to big integer} {expr 16**16} [expr 1<<64]
-test expr-23.44 {INST_EXPON: overflow to big integer} {expr 256**8} [expr 1<<64]
-test expr-23.45 {INST_EXPON: Bug 1555371} {expr 2**1} 2
+test expr-23.40 {INST_EXPON: overflow to big integer} {expr {(-10) ** 3}} -1000
+test expr-23.41 {INST_EXPON: overflow to big integer} {expr {2 ** 64}} [expr {1 << 64}]
+test expr-23.42 {INST_EXPON: overflow to big integer} {expr {4 ** 32}} [expr {1 << 64}]
+test expr-23.43 {INST_EXPON: overflow to big integer} {expr {16 ** 16}} [expr {1 << 64}]
+test expr-23.44 {INST_EXPON: overflow to big integer} {expr {256 ** 8}} [expr {1 << 64}]
+test expr-23.45 {INST_EXPON: Bug 1555371} {expr {2 ** 1}} 2
 test expr-23.46 {INST_EXPON: Bug 1561260} -body {
-    expr 5**28
+    expr {5 ** 28}
 } -match glob -result *5
 test expr-23.47 {INST_EXPON: Bug 1561260} {
-    expr 2**32*5**32
+   expr {(2 ** 32) * (5 ** 32)}
 } 1[string repeat 0 32]
 test expr-23.48 {INST_EXPON: TIP 274: right assoc} {
 expr 2**3**4
@@ -5684,7 +5681,7 @@ foreach s {yes true on} {
     test expr-31.$i.2 {boolean conversion} {expr bool("$s")} 1
     test expr-31.$i.3 {boolean conversion} {expr bool(!"$s")} 0
     set j 1
-    while {$j < [string length $s]-1} {
+    while {$j < ([string length $s] - 1)} {
 	test expr-31.$i.4.$j {boolean conversion} {
 	    expr bool([string range $s 0 $j])
 	} 1
@@ -5711,7 +5708,7 @@ foreach s {no false off} {
     test expr-31.$i.2 {boolean conversion} {expr bool("$s")} 0
     test expr-31.$i.3 {boolean conversion} {expr bool(!"$s")} 1
     set j 1
-    while {$j < [string length $s]-1} {
+    while {$j < ([string length $s] - 1)} {
 	test expr-31.$i.4.$j {boolean conversion} {
 	    expr bool([string range $s 0 $j])
 	} 0
@@ -5818,17 +5815,17 @@ test expr-32.2 {expr div basics} {
     ]
 
 test expr-32.3 {Bug 1585704} {
-    expr 1%(1<<63)
+    expr {1 % (1 << 63)}
 } 1
 test expr-32.4 {Bug 1585704} {
-    expr -1%(1<<63)
-} [expr (1<<63)-1]
+    expr {-1 % (1 << 63)}
+} [expr {(1 << 63) - 1}]
 test expr-32.5 {Bug 1585704} {
-    expr (1<<32)%(1<<63)
-} [expr 1<<32]
+    expr {(1 << 32) % (1 << 63)}
+} [expr {1 << 32}]
 test expr-32.6 {Bug 1585704} {
-    expr -(1<<32)%(1<<63)
-} [expr (1<<63)-(1<<32)]
+    expr {-(1 << 32) % (1 << 63)}
+} [expr {(1 << 63) - (1 << 32)}]
 
 test expr-33.1 {parse largest long value} longIs32bit {
     set max_long_str 2147483647
@@ -5844,7 +5841,7 @@ test expr-33.1 {parse largest long value} longIs32bit {
         [expr {$max_long + 0}] \
         [expr {2147483647 + 0}] \
         [expr {$max_long == $max_long_hex}] \
-        [expr {int(2147483647 + 1) < 0}] \
+        [expr { int (2147483647 + 1) < 0}] \
 
 } {2147483647 2147483647 2147483647 2147483647 1 1}
 test expr-33.2 {parse smallest long value} longIs32bit {
@@ -5864,7 +5861,7 @@ test expr-33.2 {parse smallest long value} longIs32bit {
         [expr {$min_long + 0}] \
         [expr {-2147483648 + 0}] \
         [expr {$min_long == $min_long_hex}] \
-        [expr {int(-2147483648 - 1) == 0x7FFFFFFF}] \
+        [expr { int (-2147483648 - 1) == 0x7FFFFFFF}] \
 
 } {-2147483648 -2147483648 -2147483648 -2147483648 1 1}
 test expr-33.3 {parse largest wide value} wideIs64bit {
@@ -5881,7 +5878,7 @@ test expr-33.3 {parse largest wide value} wideIs64bit {
         [expr {$max_wide + 0}] \
         [expr {9223372036854775807 + 0}] \
         [expr {$max_wide == $max_wide_hex}] \
-        [expr {wide(9223372036854775807 + 1) < 0}] \
+        [expr { wide (9223372036854775807 + 1) < 0}] \
 
 } {9223372036854775807 9223372036854775807 9223372036854775807 9223372036854775807 1 1}
 test expr-33.4 {parse smallest wide value} wideIs64bit {
@@ -5901,7 +5898,7 @@ test expr-33.4 {parse smallest wide value} wideIs64bit {
         [expr {$min_wide + 0}] \
         [expr {-9223372036854775808 + 0}] \
         [expr {$min_wide == $min_wide_hex}] \
-        [expr {wide(-9223372036854775808 - 1) == 0x7FFFFFFFFFFFFFFF}] \
+        [expr { wide (-9223372036854775808 - 1) == 0x7FFFFFFFFFFFFFFF}] \
 
 } {-9223372036854775808 -9223372036854775808 -9223372036854775808 -9223372036854775808 1 1}
 
@@ -6814,48 +6811,48 @@ test expr-39.25 {Tcl_ExprDoubleObj and NaN} \
     } {1 {domain error: argument not in valid range}}
 
 test expr-40.1 {large octal shift} {
-    expr 0o100000000000000000000000000000000
-} [expr 0x1000000000000000000000000]
+    expr {0o100000000000000000000000000000000}
+} [expr {0x1000000000000000000000000}]
 test expr-40.2 {large octal shift} {
-    expr 0o100000000000000000000000000000001
-} [expr 0x1000000000000000000000001]
+    expr {0o100000000000000000000000000000001}
+} [expr {0x1000000000000000000000001}]
 
 test expr-41.1 {exponent overflow} {
-    expr 1.0e2147483630
+    expr {1.0e2147483630}
 } Inf
 test expr-41.2 {exponent underflow} {
-    expr 1.0e-2147483630
+    expr {1.0e-2147483630}
 } 0.0
 
 test expr-42.1 {denormals} ieeeFloatingPoint {
-    expr 7e-324
+    expr {7e-324}
 } 5e-324
 
 # TIP 114
 
 test expr-43.1 {0b notation} {
-    expr 0b0
+    expr {0b0}
 } 0
 test expr-43.2 {0b notation} {
-    expr 0b1
+    expr {0b1}
 } 1
 test expr-43.3 {0b notation} {
-    expr 0b10
+    expr {0b10}
 } 2
 test expr-43.4 {0b notation} {
-    expr 0b11
+    expr {0b11}
 } 3
 test expr-43.5 {0b notation} {
-    expr 0b100
+    expr {0b100}
 } 4
 test expr-43.6 {0b notation} {
-    expr 0b101
+    expr {0b101}
 } 5
 test expr-43.7 {0b notation} {
-    expr 0b1000
+    expr {0b1000}
 } 8
 test expr-43.8 {0b notation} {
-    expr 0b1001
+    expr {0b1001}
 } 9
 test expr-43.9 {0b notation} {
     expr 0b1[string repeat 0 31]
@@ -6874,31 +6871,31 @@ test expr-43.13 {0b notation} {
 } 18446744073709551617
 
 test expr-44.1 {0o notation} {
-    expr 0o0
+    expr {0o0}
 } 0
 test expr-44.2 {0o notation} {
-    expr 0o1
+    expr {0o1}
 } 1
 test expr-44.3 {0o notation} {
-    expr 0o7
+    expr {0o7}
 } 7
 test expr-44.4 {0o notation} {
-    expr 0o10
+    expr {0o10}
 } 8
 test expr-44.5 {0o notation} {
-    expr 0o11
+    expr {0o11}
 } 9
 test expr-44.6 {0o notation} {
-    expr 0o100
+    expr {0o100}
 } 64
 test expr-44.7 {0o notation} {
-    expr 0o101
+    expr {0o101}
 } 65
 test expr-44.8 {0o notation} {
-    expr 0o1000
+    expr {0o1000}
 } 512
 test expr-44.9 {0o notation} {
-    expr 0o1001
+    expr {0o1001}
 } 513
 test expr-44.10 {0o notation} {
     expr 0o1[string repeat 7 21]
@@ -6913,25 +6910,25 @@ test expr-44.12 {0o notation} {
 # TIP 237 again
 
 test expr-45.1 {entier} {
-    expr entier(0)
+    expr {entier(0)}
 } 0
 test expr-45.2 {entier} {
-    expr entier(0.5)
+    expr {entier(0.5)}
 } 0
 test expr-45.3 {entier} {
-    expr entier(1.0)
+    expr {entier(1.0)}
 } 1
 test expr-45.4 {entier} {
-    expr entier(1.5)
+    expr {entier(1.5)}
 } 1
 test expr-45.5 {entier} {
-    expr entier(2.0)
+    expr {entier(2.0)}
 } 2
 test expr-45.6 {entier} {
-    expr entier(1e+22)
+    expr {entier(1e+22)}
 } 10000000000000000000000
 test expr-45.7 {entier} {
-    list [catch {expr entier(Inf)} result] $result
+    list [catch {expr { entier (Inf)}} result] $result
 } {1 {integer value too large to represent}}
 test expr-45.8 {entier} ieeeFloatingPoint {
     list [catch {expr {entier($ieeeValues(NaN))}} result] $result
@@ -6941,7 +6938,7 @@ test expr-45.9 {entier} ieeeFloatingPoint {
 } {1 {floating point value is Not a Number}}
 
 test expr-46.1 {round() rounds to +-infinity} {
-    expr round(0.5)
+  expr {round(0.5)}
 } 1
 test expr-46.2 {round() rounds to +-infinity} {
     expr round(1.5)
@@ -7021,7 +7018,7 @@ test expr-46.14 {round() boundary case - round up} {
 
 test expr-46.15 {round() boundary case - round up to wide} {
     expr {round(2147483647 + 0.50)}
-} [expr {wide(2147483647) + 1}]
+} [expr { ( wide (2147483647) ) + 1}]
 
 test expr-46.16 {round() boundary case - round up} {
     expr {round(-2147483648 + 0.51)}
@@ -7032,7 +7029,7 @@ test expr-46.17 {round() boundary case - round down} {
 } -2147483648
 test expr-46.18 {round() boundary case - round down to wide} {
     expr {round(-2147483648 - 0.50)}
-} [expr {wide(-2147483648) - 1}]
+} [expr { ( wide (-2147483648) ) - 1}]
 
 test expr-46.19 {round() handling of long/bignum boundary} {
     expr {round(double(0x7fffffffffffffff))}
@@ -7171,7 +7168,7 @@ test expr-49.1 {Bug 2823282} {
 } 1
 
 test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
-    expr {sqrt("1[string repeat 0 616]") == 1e308}
+    expr { sqrt ("1[string repeat 0 616]") == 1e308}
 } 1
 
 
@@ -7180,8 +7177,7 @@ test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
 if {[info exists a]} {
     unset a
 }
-catch {unset min}
-catch {unset max}
+unset -nocomplain min max
 ::tcltest::cleanupTests
 return
 

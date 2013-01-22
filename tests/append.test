@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -92,7 +92,7 @@ test append-4.7 {lappend command} {
 test append-4.8 {lappend command} {
     set x "\\\{"
     lappend x abc
-} "\\{ abc"
+} "\\\{ abc"
 test append-4.9 {lappend command} -returnCodes error -body {
     set x " \{"
     lappend x abc

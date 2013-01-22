@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -470,11 +470,9 @@ test lset-16.8 {lset - append to inner list} testevalex {
     testevalex {lset x end end end+1 4}
 } {test {1 2 {3 4}}}
 
-catch {unset noRead}
-catch {unset noWrite}
-catch {rename failTrace {}}
-catch {unset ::x}
-catch {unset ::y}
+unset -nocomplain noRead noWrite
+catch {rename failTrace ""}
+unset -nocomplain ::x ::y
 
 # cleanup
 ::tcltest::cleanupTests

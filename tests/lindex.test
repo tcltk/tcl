@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.2
     namespace import -force ::tcltest::*
 }
@@ -447,7 +447,7 @@ test lindex-17.1 {Bug 1718580} {*}{
     -returnCodes 1
 }
 
-catch { unset minus }
+unset -nocomplain minus
 
 # cleanup
 ::tcltest::cleanupTests

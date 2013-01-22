@@ -11,11 +11,11 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
-catch {unset x}
+unset -nocomplain x
 
 test appendComp-1.1 {append command} -setup {
     unset -nocomplain x
@@ -132,7 +132,7 @@ test appendComp-4.8 {lappend command} {
 	lappend x abc
     }
     foo
-} "\\{ abc"
+} "\\\{ abc"
 test appendComp-4.9 {lappend command} -returnCodes error -body {
     proc foo {} {
 	set x " \{"
@@ -439,7 +439,7 @@ test appendComp-9.3 {bug 3057639, append direct eval, read trace on non-existing
     unset -nocomplain ::env(__DUMMY__)
 } -result {0 {new value}}
 
-catch {unset i x result y}
+unset -nocomplain i x result y
 catch {rename foo ""}
 catch {rename bar ""}
 catch {rename check ""}

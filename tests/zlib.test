@@ -150,22 +150,22 @@ test zlib-8.2 {zlib transformation} -constraints zlib -setup {
     close $f
     removeFile $file
 } -result ok
-test zlib-8.3 {zlib transformation and fileevent} -constraints zlib -setup {
+test zlib-8.3 {zlib transformation and chan event} -constraints zlib -setup {
     set srv [socket -myaddr localhost -server {apply {{c a p} {
-        fconfigure $c -translation binary -buffering none -blocking 0
+        chan configure $c -translation binary -buffering none -blocking 0
         puts -nonewline $c [zlib gzip [string repeat a 81920]]
         close $c
     }}} 0]
-    set port [lindex [fconfigure $srv -sockname] 2]
+    set port [lindex [chan configure $srv -sockname] 2]
     set file [makeFile {} test.gz]
     set fout [open $file wb]
 } -body {
     set sin [socket localhost $port]
     try {
-	fconfigure $sin -translation binary
+	chan configure $sin -translation binary
 	zlib push gunzip $sin
 	after 1000 {set total timeout}
-	fcopy $sin $fout -command {apply {{c {e {}}} {
+	chan copy $sin $fout -command {apply {{c {e {}}} {
 	    set ::total [expr {$e eq {} ? $c : $e}]
 	}}}
 	vwait total
@@ -185,46 +185,46 @@ test zlib-8.4 {transformation and flushing: Bug 3517696} -setup {
 } -constraints zlib -body {
     zlib push compress $fd
     puts $fd "qwertyuiop"
-    fconfigure $fd -flush sync
+    chan configure $fd -flush sync
     puts $fd "qwertyuiop"
 } -cleanup {
     catch {close $fd}
     removeFile $file
 } -result {}
-test zlib-8.5 {transformation and flushing and fileevents: Bug 3525907} -setup {
-    foreach {r w} [chan pipe] break
+test zlib-8.5 {transformation and flushing and chan events: Bug 3525907} -setup {
+    lassign [chan pipe] r w
 } -constraints zlib -body {
     set ::res {}
-    fconfigure $w -buffering none
+    chan configure $w -buffering none
     zlib push compress $w
     puts -nonewline $w qwertyuiop
     chan configure $w -flush sync
     after 500 {puts -nonewline $w asdfghjkl;close $w}
-    fconfigure $r -blocking 0 -buffering none
+    chan configure $r -blocking 0 -buffering none
     zlib push decompress $r
-    fileevent $r readable {set msg [read $r];lappend ::res $msg;if {[eof $r]} {set ::done 1}}
+    chan event $r readable {set msg [read $r];lappend ::res $msg;if {[eof $r]} {set ::done 1}}
     after 250 {lappend ::res MIDDLE}
     vwait ::done
     set ::res
 } -cleanup {
     catch {close $r}
 } -result {qwertyuiop MIDDLE asdfghjkl}
-test zlib-8.6 {transformation and fconfigure} -setup {
+test zlib-8.6 {transformation and chan configure} -setup {
     set file [makeFile {} test.z]
     set fd [open $file wb]
 } -constraints zlib -body {
-    list [fconfigure $fd] [zlib push compress $fd; fconfigure $fd] \
-	[chan pop $fd; fconfigure $fd]
+    list [chan configure $fd] [zlib push compress $fd; chan configure $fd] \
+	[chan pop $fd; chan configure $fd]
 } -cleanup {
     catch {close $fd}
     removeFile $file
 } -result {{-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf -checksum 1 -dictionary {}} {-blocking 1 -buffering full -buffersize 4096 -encoding binary -eofchar {} -translation lf}}
-test zlib-8.7 {transformation and fconfigure} -setup {
+test zlib-8.7 {transformation and chan configure} -setup {
     set file [makeFile {} test.gz]
     set fd [open $file wb]
 } -constraints zlib -body {
-    list [fconfigure $fd] [zlib push gzip $fd; fconfigure $fd] \
-	[chan pop $fd; fconfigure $fd]
+    list [chan configure $fd] [zlib push gzip $fd; chan configure $fd] \
+	[chan pop $fd; chan configure $fd]
 } -cleanup {
     catch {close $fd}
     removeFile $file
@@ -233,12 +233,12 @@ test zlib-8.7 {transformation and fconfigure} -setup {
 # Dictionary is that which is proposed _in_ SPDY draft
 set spdyHeaders "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nX-Robots-Tag: noarchive\r\nLast-Modified: Tue, 05 Jun 2012 02:43:25 GMT\r\nETag: \"1338864205129|#public|0|en|||0\"\r\nExpires: Tue, 05 Jun 2012 16:17:11 GMT\r\nDate: Tue, 05 Jun 2012 16:17:06 GMT\r\nCache-Control: public, max-age=5\r\nX-Content-Type-Options: nosniff\r\nX-XSS-Protection: 1; mode=block\r\nServer: GSE\r\n"
 set spdyDict "optionsgetheadpostputdeletetraceacceptaccept-charsetaccept-encodingaccept-languageauthorizationexpectfromhostif-modified-sinceif-matchif-none-matchif-rangeif-unmodifiedsincemax-forwardsproxy-authorizationrangerefererteuser-agent100101200201202203204205206300301302303304305306307400401402403404405406407408409410411412413414415416417500501502503504505accept-rangesageetaglocationproxy-authenticatepublicretry-afterservervarywarningwww-authenticateallowcontent-basecontent-encodingcache-controlconnectiondatetrailertransfer-encodingupgradeviawarningcontent-languagecontent-lengthcontent-locationcontent-md5content-rangecontent-typeetagexpireslast-modifiedset-cookieMondayTuesdayWednesdayThursdayFridaySaturdaySundayJanFebMarAprMayJunJulAugSepOctNovDecchunkedtext/htmlimage/pngimage/jpgimage/gifapplication/xmlapplication/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1.1statusversionurl"
-test zlib-8.8 {transformtion and fconfigure} -setup {
+test zlib-8.8 {transformtion and chan configure} -setup {
     lassign [chan pipe] inSide outSide
 } -constraints zlib -body {
     zlib push compress $outSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    chan configure $outSide -blocking 0 -translation binary -buffering none
+    chan configure $inSide -blocking 0 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
     set compressed [read $inSide]
@@ -250,15 +250,15 @@ test zlib-8.8 {transformtion and fconfigure} -setup {
     catch {close $outSide}
     catch {close $inSide}
 } -result {260 222 {need dictionary} {TCL ZLIB NEED_DICT 2381337010} 2381337010}
-test zlib-8.9 {transformtion and fconfigure} -setup {
+test zlib-8.9 {transformtion and chan configure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream decompress]
 } -constraints zlib -body {
     zlib push compress $outSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    chan configure $outSide -blocking 0 -translation binary -buffering none
+    chan configure $inSide -blocking 0 -translation binary
     puts -nonewline $outSide $spdyHeaders
-    set result [fconfigure $outSide -checksum]
+    set result [chan configure $outSide -checksum]
     chan pop $outSide
     $strm put -dictionary $spdyDict [read $inSide]
     lappend result [string length $spdyHeaders] [string length [$strm get]]
@@ -267,12 +267,12 @@ test zlib-8.9 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {3064818174 358 358}
-test zlib-8.10 {transformtion and fconfigure} -setup {
+test zlib-8.10 {transformtion and chan configure} -setup {
     lassign [chan pipe] inSide outSide
 } -constraints zlib -body {
     zlib push deflate $outSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    chan configure $outSide -blocking 0 -translation binary -buffering none
+    chan configure $inSide -blocking 0 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
     set compressed [read $inSide]
@@ -284,13 +284,13 @@ test zlib-8.10 {transformtion and fconfigure} -setup {
     catch {close $outSide}
     catch {close $inSide}
 } -result {254 212 {data error} {TCL ZLIB DATA}}
-test zlib-8.11 {transformtion and fconfigure} -setup {
+test zlib-8.11 {transformtion and chan configure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream inflate]
 } -constraints zlib -body {
     zlib push deflate $outSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary -buffering none
-    fconfigure $inSide -blocking 0 -translation binary
+    chan configure $outSide -blocking 0 -translation binary -buffering none
+    chan configure $inSide -blocking 0 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
     $strm put -dictionary $spdyDict [read $inSide]
@@ -300,48 +300,48 @@ test zlib-8.11 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358}
-test zlib-8.12 {transformtion and fconfigure} -setup {
+test zlib-8.12 {transformtion and chan configure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream compress]
 } -constraints zlib -body {
     $strm put -dictionary $spdyDict -finalize $spdyHeaders
     zlib push decompress $inSide
-    fconfigure $outSide -blocking 0 -translation binary
-    fconfigure $inSide -translation binary -dictionary $spdyDict
+    chan configure $outSide -blocking 0 -translation binary
+    chan configure $inSide -translation binary -dictionary $spdyDict
     puts -nonewline $outSide [$strm get]
     close $outSide
     list [string length $spdyHeaders] [string length [read $inSide]] \
-	[fconfigure $inSide -checksum]
+	[chan configure $inSide -checksum]
 } -cleanup {
     catch {close $outSide}
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358 3064818174}
-test zlib-8.13 {transformtion and fconfigure} -setup {
+test zlib-8.13 {transformtion and chan configure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream compress]
 } -constraints zlib -body {
     $strm put -dictionary $spdyDict -finalize $spdyHeaders
     zlib push decompress $inSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -translation binary
-    fconfigure $inSide -translation binary
+    chan configure $outSide -blocking 0 -translation binary
+    chan configure $inSide -translation binary
     puts -nonewline $outSide [$strm get]
     close $outSide
     list [string length $spdyHeaders] [string length [read $inSide]] \
-	[fconfigure $inSide -checksum]
+	[chan configure $inSide -checksum]
 } -cleanup {
     catch {close $outSide}
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358 3064818174}
-test zlib-8.14 {transformtion and fconfigure} -setup {
+test zlib-8.14 {transformtion and chan configure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream deflate]
 } -constraints zlib -body {
     $strm put -finalize -dictionary $spdyDict $spdyHeaders
     zlib push inflate $inSide
-    fconfigure $outSide -blocking 0 -buffering none -translation binary
-    fconfigure $inSide -translation binary -dictionary $spdyDict
+    chan configure $outSide -blocking 0 -buffering none -translation binary
+    chan configure $inSide -translation binary -dictionary $spdyDict
     puts -nonewline $outSide [$strm get]
     close $outSide
     list [string length $spdyHeaders] [string length [read $inSide]]
@@ -350,14 +350,14 @@ test zlib-8.14 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358}
-test zlib-8.15 {transformtion and fconfigure} -setup {
+test zlib-8.15 {transformtion and chan configure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream deflate]
 } -constraints zlib -body {
     $strm put -finalize -dictionary $spdyDict $spdyHeaders
     zlib push inflate $inSide -dictionary $spdyDict
-    fconfigure $outSide -blocking 0 -buffering none -translation binary
-    fconfigure $inSide -translation binary
+    chan configure $outSide -blocking 0 -buffering none -translation binary
+    chan configure $inSide -translation binary
     puts -nonewline $outSide [$strm get]
     close $outSide
     list [string length $spdyHeaders] [string length [read $inSide]]
@@ -367,7 +367,7 @@ test zlib-8.15 {transformtion and fconfigure} -setup {
     catch {$strm close}
 } -result {358 358}
 
-test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
+test zlib-9.1 "check chan copy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
     set file [makeFile {} test.gz]
     set f [open $sfile wb]
@@ -376,14 +376,14 @@ test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
 } -body {
     set fin [zlib push gunzip [open $sfile rb]]
     set fout [open $file wb]
-    set total [fcopy $fin $fout]
+    set total [chan copy $fin $fout]
     close $fin ; close $fout
     list copied $total size [file size $file]
 } -cleanup {
     removeFile $file
     removeFile $sfile
 } -result {copied 81920 size 81920}
-test zlib-9.2 "socket fcopy with push" -constraints zlib -setup {
+test zlib-9.2 "socket chan copy with push" -constraints zlib -setup {
     set srv [socket -myaddr localhost -server {apply {{c a p} {
         chan configure $c -translation binary -buffering none -blocking 0
         puts -nonewline $c [zlib gzip [string repeat a 81920]]
@@ -396,7 +396,7 @@ test zlib-9.2 "socket fcopy with push" -constraints zlib -setup {
     chan configure $sin -translation binary
     zlib push gunzip $sin
     update
-    set total [fcopy $sin [set fout [open $file wb]]]
+    set total [chan copy $sin [set fout [open $file wb]]]
     close $sin
     close $fout
     list read $total size [file size $file]
@@ -404,7 +404,7 @@ test zlib-9.2 "socket fcopy with push" -constraints zlib -setup {
     close $srv
     removeFile $file
 } -result {read 81920 size 81920}
-test zlib-9.3 "socket fcopy bg (identity)" -constraints {tempNotWin zlib} -setup {
+test zlib-9.3 "socket chan copy bg (identity)" -constraints {tempNotWin zlib} -setup {
     set srv [socket -myaddr localhost -server {apply {{c a p} {
         #puts "connection from $a:$p on $c"
         chan configure $c -translation binary -buffering none -blocking 0
@@ -420,7 +420,7 @@ test zlib-9.3 "socket fcopy bg (identity)" -constraints {tempNotWin zlib} -setup
     update
     set fout [open $file wb]
     after 1000 {set ::total timeout}
-    fcopy $sin $fout -command {apply {{c {e {}}} {
+    chan copy $sin $fout -command {apply {{c {e {}}} {
         set ::total [expr {$e eq {} ? $c : $e}]
     }}}
     vwait ::total
@@ -431,7 +431,7 @@ test zlib-9.3 "socket fcopy bg (identity)" -constraints {tempNotWin zlib} -setup
     close $srv
     removeFile $file
 } -returnCodes {ok error} -result {read 81920 size 81920}
-test zlib-9.4 "socket fcopy bg (gzip)" -constraints zlib -setup {
+test zlib-9.4 "socket chan copy bg (gzip)" -constraints zlib -setup {
     set srv [socket -myaddr localhost -server {apply {{c a p} {
         chan configure $c -translation binary -buffering none -blocking 0
         puts -nonewline $c [zlib gzip [string repeat a 81920]]
@@ -446,7 +446,7 @@ test zlib-9.4 "socket fcopy bg (gzip)" -constraints zlib -setup {
     update
     set fout [open $file wb]
     after 1000 {set ::total timeout}
-    fcopy $sin $fout -command {apply {{c {e {}}} {
+    chan copy $sin $fout -command {apply {{c {e {}}} {
         set ::total [expr {$e eq {} ? $c : $e}]
     }}}
     vwait ::total
@@ -457,7 +457,7 @@ test zlib-9.4 "socket fcopy bg (gzip)" -constraints zlib -setup {
     close $srv
     removeFile $file
 } -result {read 81920 size 81920}
-test zlib-9.5 "socket fcopy incremental (gzip)" -constraints zlib -setup {
+test zlib-9.5 "socket chan copy incremental (gzip)" -constraints zlib -setup {
     set srv [socket -myaddr localhost -server {apply {{c a p} {
         chan configure $c -translation binary -buffering none -blocking 0
         puts -nonewline $c [zlib gzip [string repeat a 81920]]
@@ -470,7 +470,7 @@ test zlib-9.5 "socket fcopy incremental (gzip)" -constraints zlib -setup {
         } elseif {[eof $i]} {
             set ::total [list eof $t]
         } else {
-            fcopy $i $o -size 8192 -command [list zlib95copy $i $o $t]
+            chan copy $i $o -size 8192 -command [list zlib95copy $i $o $t]
         }
     }
     set file [makeFile {} test.gz]
@@ -482,7 +482,7 @@ test zlib-9.5 "socket fcopy incremental (gzip)" -constraints zlib -setup {
     update
     set fout [open $file wb]
     after 1000 {set ::total timeout}
-    fcopy $sin $fout -size 8192 -command [list zlib95copy $sin $fout 0]
+    chan copy $sin $fout -size 8192 -command [list zlib95copy $sin $fout 0]
     vwait ::total
     after cancel {set ::total timeout}
     close $sin; close $fout

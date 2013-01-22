@@ -56,8 +56,8 @@ namespace eval ::msgcat::test {
 		set result [string tolower \
 			[msgcat::ConvertLocale $::tcl::mac::locale]]
 	    } else {
-		if {([info sharedlibextension] == ".dll")
-			&& ![catch {package require registry}]} {
+		if {([info sharedlibextension] eq ".dll") && 
+		    (![catch {package require registry}])} {
 		    # Windows and Cygwin have other ways to determine the
 		    # locale when the environment variables are missing
 		    # and the registry package is present
@@ -72,7 +72,7 @@ namespace eval ::msgcat::test {
 	    variable var
 	    foreach var $envVars {
 		catch {variable $var $::env($var)}
-		catch {unset ::env($var)}
+		unset -nocomplain ::env($var)
 	    }
 	    foreach var $setVars {
 		set ::env($var) $var
@@ -84,13 +84,13 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    interp delete [namespace current]::i
 	    foreach var $envVars {
-		catch {unset ::env($var)}
+		unset -nocomplain ::env($var)
 		catch {set ::env($var) [set [namespace current]::$var]}
 	    }
 	} -body {i eval msgcat::mclocale} -result $result
 	incr count
     }
-    catch {unset result}
+    unset -nocomplain result
     
     # Could add tests of initialization from Windows registry here.
     # Use a fake registry package.
@@ -324,7 +324,7 @@ namespace eval ::msgcat::test {
 	    incr count
 	}
     }
-    catch {unset result}
+    unset -nocomplain result
 
     # Tests msgcat-4.*: [mcunknown]
 
@@ -417,7 +417,7 @@ namespace eval ::msgcat::test {
 	    mclocale $locale
 	} -body {
 	    mcload $msgdir
-	} -result [expr { $count+1 }]
+	} -result [expr { $count + 1 }]
 	incr count
     }
 

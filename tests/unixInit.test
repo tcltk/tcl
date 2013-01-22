@@ -44,11 +44,11 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     set pipe1 [open "|[list [interpreter]]" r+]
     puts $pipe1 {
 	proc accept {channel host port} {
-	    puts $channel {puts [fconfigure stdin -peername]; exit}
+	    puts $channel {puts [chan configure stdin -peername]; exit}
 	    close $channel
 	    exit
 	}
-	puts [fconfigure [socket -server accept -myaddr 127.0.0.1 0] -sockname]
+	puts [chan configure [socket -server accept -myaddr 127.0.0.1 0] -sockname]
 	vwait forever \
 	    }
     # Note the backslash above; this is important to make sure that the whole
@@ -64,8 +64,8 @@ test unixInit-1.2 {initialisation: standard channel type deduction} {unix stdio}
     set pipe2 [open "|[list [interpreter] <@$sock]" r]
     set result [gets $pipe2]
     # Clear any pending data; stops certain kinds of (non-important) errors
-    fconfigure $pipe1 -blocking 0; gets $pipe1
-    fconfigure $pipe2 -blocking 0; gets $pipe2
+    chan configure $pipe1 -blocking 0; gets $pipe1
+    chan configure $pipe2 -blocking 0; gets $pipe2
     # Close the pipes and the socket.
     close $pipe2
     close $pipe1
@@ -172,13 +172,13 @@ test unixInit-2.6 {TclpInitLibraryPath: executable relative} -setup {
     makeDirectory tmp
     makeDirectory [file join tmp sparkly]
     makeDirectory [file join tmp sparkly bin]
-    file copy [interpreter] [file join [temporaryDirectory] tmp sparkly \
+    file copy [interpreter] [file join [::tcltest::temporaryDirectory] tmp sparkly \
 	    bin tcltest]
     makeDirectory [file join tmp sparkly lib]
     makeDirectory [file join tmp sparkly lib tcl[info tclversion]]
     makeFile {} [file join tmp sparkly lib tcl[info tclversion] init.tcl]
 } -body {
-    lrange [getlibpath [file join [temporaryDirectory] tmp sparkly \
+    lrange [getlibpath [file join [::tcltest::temporaryDirectory] tmp sparkly \
 	    bin tcltest]] 1 2
 } -cleanup {
     removeFile [file join tmp sparkly lib tcl[info tclversion] init.tcl]
@@ -192,14 +192,14 @@ test unixInit-2.6 {TclpInitLibraryPath: executable relative} -setup {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
     }
-} -result [list [temporaryDirectory]/tmp/sparkly/lib/tcl[info tclversion] [temporaryDirectory]/tmp/lib/tcl[info tclversion]]
+} -result [list [::tcltest::temporaryDirectory]/tmp/sparkly/lib/tcl[info tclversion] [::tcltest::temporaryDirectory]/tmp/lib/tcl[info tclversion]]
 test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} {
     # would need test command to get defaultLibDir and compare it to
     # [lindex $auto_path end]
 } {}
 #
 # The following two tests write to the directory /tmp/sparkly instead of to
-# [temporaryDirectory].  This is because the failures tested by these tests
+# [::tcltest::temporaryDirectory].  This is because the failures tested by these tests
 # need paths near the "root" of the file system to present themselves.
 #
 test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} -setup {
@@ -321,15 +321,15 @@ test unixInit-2.10 {TclpInitLibraryPath: executable relative} -setup {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
     }
-} -result [list [file join [temporaryDirectory] tmp sparkly library] \
-	[file join [temporaryDirectory] tmp library] ]
+} -result [list [file join [::tcltest::temporaryDirectory] tmp sparkly library] \
+	[file join [::tcltest::temporaryDirectory] tmp library] ]
 
 test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
 	unix stdio
 } -body {
     set env(LANG) C
     set f [open "|[list [interpreter]]" w+]
-    fconfigure $f -buffering none
+    chan configure $f -buffering none
     puts $f {puts [encoding system]; exit}
     set enc [gets $f]
     close $f
@@ -344,7 +344,7 @@ test unixInit-3.2 {TclpSetInitialEncodings} -setup {
     set env(LANG) japanese
     set env(LC_ALL) japanese
     set f [open "|[list [interpreter]]" w+]
-    fconfigure $f -buffering none
+    chan configure $f -buffering none
     puts $f {puts [encoding system]; exit}
     set enc [gets $f]
     close $f
@@ -390,7 +390,7 @@ test unixInit-7.1 {closed standard channel: Bug 772288} -constraints {
 } -returnCodes 0
 
 # cleanup
-catch {unset env(LANG)}
+unset -nocomplain env(LANG)
 catch {set env(LANG) $oldlang}
 unset -nocomplain path
 ::tcltest::cleanupTests

@@ -11,13 +11,13 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
 proc a {x y} {
-    newset z [expr $x+$y]
+    newset z [expr {$x + $y}]
     return $z
 }
 proc newset {name value} {
@@ -103,7 +103,7 @@ test uplevel-4.4 {error: not enough args} -returnCodes error -body {
 } -result {wrong # args: should be "uplevel ?level? command ?arg ...?"}
 
 proc a2 {} {
-    uplevel a3
+    uplevel 1 a3
 }
 proc a3 {} {
     global x y
@@ -114,11 +114,11 @@ a2
 test uplevel-5.1 {info level} {set x} 1
 test uplevel-5.2 {info level} {set y} a3
 
-namespace eval ns1 {
-    proc set args {return ::ns1}
+namespace eval {ns1} {
+    proc set {args} {return ::ns1}
 }
 proc a2 {} {
-    uplevel {set x ::}
+    uplevel 1 {set x ::}
 }
 test uplevel-6.1 {uplevel and shadowed cmds} {
     set res [namespace eval ns1 a2]

@@ -23,7 +23,7 @@ package require Tcl 8.4
 proc sarray {file args} {
     set file [open $file w]
     foreach a $args {
-	upvar $a array
+	upvar 1 $a array
 	if {![array exists array]} {
 	    puts "sarray: \"$a\" isn't an array"
 	    break
@@ -47,12 +47,12 @@ proc sarray {file args} {
 
 proc footer {packages} {
     lappend f "<HR>"
-    set h {[}
+    set h "\["
     foreach package $packages {
 	lappend h "<A HREF=\"../$package/contents.html\">$package</A>"
 	lappend h "|"
     }
-    lappend f [join [lreplace $h end end {]} ] " "]
+    lappend f [join [lreplace $h end end "\]" ] " "]
     lappend f "<HR>"
     lappend f "<PRE>Copyright &#169; 1989-1994 The Regents of the University of California."
     lappend f "Copyright &#169; 1994-1996 Sun Microsystems, Inc."
@@ -69,7 +69,7 @@ proc footer {packages} {
 # Arguments:
 # dir -			Name of the directory.
 
-proc doDir dir {
+proc doDir {dir} {
     foreach f [lsort [glob -directory $dir "*.\[13n\]"]] {
 	do $f	;# defined in man2html1.tcl & man2html2.tcl
     }
@@ -84,14 +84,14 @@ proc doDir dir {
 # argv -		List of arguments to this script.
 
 proc main {argv} {
-    global html_dir
+    global html_dir argv0
     # Global vars used in man2html1.tcl and man2html2.tcl
     global NAME_file KEY_file lib state curFile file inDT textState nestStk
     global curFont fontStart fontEnd noFillCount footer
 
     if {[llength $argv] < 2} {
-	puts stderr "usage: $::argv0 html_dir tcl_dir packages..."
-	puts stderr "usage: $::argv0 -clean html_dir"
+	puts stderr "usage: $argv0 html_dir tcl_dir packages..."
+	puts stderr "usage: $argv0 -clean html_dir"
 	exit 1
     }
 
@@ -101,14 +101,12 @@ proc main {argv} {
 	flush stdout
 	if {[gets stdin] eq "y"} {
 	    puts "removing: $html_dir"
-	    file delete -force $html_dir
+	    file delete -force -- $html_dir
 	}
 	exit 0
     }
 
-    set html_dir [lindex $argv 0]
-    set tcl_dir  [lindex $argv 1]
-    set packages [lrange $argv 2 end]
+    set packages [lassign $argv html_dir tcl_dir]
     set homeDir  [file dirname [info script]]
 
     #### need to add glob capability to packages ####
@@ -116,11 +114,12 @@ proc main {argv} {
     # make sure there are doc directories for each package
 
     foreach i $packages {
-	if {![file exists $tcl_dir/$i/doc]} {
+	set filename [file join $tcl_dir $i doc]
+	if {![file exists $filename]} {
 	    puts stderr "Error: doc directory for package $i is missing"
 	    exit 1
 	}
-	if {![file isdirectory $tcl_dir/$i/doc]} {
+	if {![file isdirectory $filename]} {
 	    puts stderr "Error: $tcl_dir/$i/doc is not a directory"
 	    exit 1
 	}
@@ -140,18 +139,18 @@ proc main {argv} {
     # make the hyperlink arrays and contents.html for all packages
 
     foreach package $packages {
-	file mkdir $html_dir/$package
+	file mkdir [file join $html_dir $package]
     
 	# build hyperlink database arrays: NAME_file and KEY_file
 	#
 	puts "\nScanning man pages in $tcl_dir/$package/doc..."
-	uplevel \#0 [list source $homeDir/man2html1.tcl]
+	uplevel \#0 [list source [file join $homeDir man2html1.tcl]]
     
-	doDir $tcl_dir/$package/doc
+	doDir [file join $tcl_dir $package doc]
 
 	# clean up the NAME_file and KEY_file database arrays
 	#
-	catch {unset KEY_file()}
+	unset -nocomplain KEY_file()
 	foreach name [lsort [array names NAME_file]] {
 	    set file_name $NAME_file($name)
 	    if {[llength $file_name] > 1} {
@@ -178,8 +177,7 @@ proc main {argv} {
     }
 }
 
-
-if [catch { main $argv } result] {
+if {[catch { main $argv } result]} {
     global errorInfo
     puts stderr $result
     puts stderr "in"

@@ -308,13 +308,13 @@ test interp-9.4 {testing aliases and namespace commands} {
     interp alias {} a {} p
     set res [a]
     lappend res [namespace eval tst a]
-    rename p {}
-    rename a {}
+    rename p ""
+    rename a ""
     namespace delete tst
     set res
  } {GLOBAL GLOBAL}
 
-if {[info command nonexistent-command-in-master] != ""} {
+if {[info command nonexistent-command-in-master] ne ""} {
     rename nonexistent-command-in-master {}
 }
 

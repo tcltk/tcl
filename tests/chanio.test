@@ -51,11 +51,11 @@ namespace eval ::tcl::test::io {
     set umaskValue 0
     testConstraint umask [expr {![catch {set umaskValue [scan [exec /bin/sh -c umask] %o]}]}]
 
-    testConstraint makeFileInHome [expr {![file exists ~/_test_] && [file writable ~]}]
+    testConstraint makeFileInHome [expr {(![file exists ~/_test_]) && [file writable ~]}]
 
     # set up a long data file for some of the following tests
 
-    set path(longfile) [makeFile {} longfile]
+    set path(longfile) [tcltest::makeFile {} longfile]
     set f [open $path(longfile) w]
     chan configure $f -eofchar {} -translation lf
     for { set i 0 } { $i < 100 } { incr i} {
@@ -65,9 +65,9 @@ namespace eval ::tcl::test::io {
     }
     chan close $f
 
-    set path(cat) [makeFile {
+    set path(cat) [tcltest::makeFile {
 	set f stdin
-	if {$argv != ""} {
+	if {$argv ne ""} {
 	    set f [open [lindex $argv 0]]
 	}
 	chan configure $f -encoding binary -translation lf -blocking 0 -eofchar \x1a
@@ -102,7 +102,7 @@ namespace eval ::tcl::test::io {
 test chan-io-1.5 {Tcl_WriteChars: CheckChannelErrors} {emptyTest} {
     # no test, need to cause an async error.
 } {}
-set path(test1) [makeFile {} test1]
+set path(test1) [tcltest::makeFile {} test1]
 test chan-io-1.6 {Tcl_WriteChars: WriteBytes} {
     set f [open $path(test1) w]
     chan configure $f -encoding binary
@@ -117,7 +117,7 @@ test chan-io-1.7 {Tcl_WriteChars: WriteChars} {
     chan close $f
     contents $path(test1)
 } "a\x93\xe1\x00"
-set path(test2) [makeFile {} test2]
+set path(test2) [tcltest::makeFile {} test2]
 test chan-io-1.8 {Tcl_WriteChars: WriteChars} {
     # This test written for SF bug #506297.
     #
@@ -129,7 +129,7 @@ test chan-io-1.8 {Tcl_WriteChars: WriteChars} {
     chan puts -nonewline $f [format %s%c [string repeat " " 4] 12399] 
     chan close           $f 
     contents $path(test2)
-} "    \x1b\$B\$O\x1b(B"
+} "    \x1b\$B\$O\x1b\(B"
 test chan-io-1.9 {Tcl_WriteChars: WriteChars} {
     # When closing a channel with an encoding that appends escape bytes, check
     # for the case where the escape bytes overflow the current IO buffer. The
@@ -1363,7 +1363,7 @@ test chan-io-12.4 {ReadChars: split-up char} -setup {
 test chan-io-12.5 {ReadChars: chan events on partial characters} -setup {
     variable x {}
 } -constraints {stdio openpipe fileevent} -body {
-    set path(test1) [makeFile {
+    set path(test1) [tcltest::makeFile {
 	chan configure stdout -encoding binary -buffering none
 	chan gets stdin; chan puts -nonewline "\xe7"
 	chan gets stdin; chan puts -nonewline "\x89"
@@ -1573,7 +1573,7 @@ test chan-io-14.2 {Tcl_SetStdChannel and Tcl_GetStdChannel} -setup {
 } -cleanup {
     interp delete x
 } -result {line line none}
-set path(test3) [makeFile {} test3]
+set path(test3) [tcltest::makeFile {} test3]
 test chan-io-14.3 {Tcl_SetStdChannel & Tcl_GetStdChannel} -constraints {exec openpipe} -body {
     set f [open $path(test1) w]
     chan puts -nonewline $f {
@@ -1667,7 +1667,7 @@ test chan-io-14.7 {Tcl_GetChannel: stdio name translation} -setup {
 } -cleanup {
     interp delete z
 } -result {{} {} {can not find channel named "stderr"}}
-set path(script) [makeFile {} script]
+set path(script) [tcltest::makeFile {} script]
 test chan-io-14.8 {reuse of stdio special channels} -setup {
     file delete $path(script)
     file delete $path(test1)
@@ -1877,7 +1877,7 @@ test chan-io-20.3 {Tcl_CreateChannel: initial settings} -constraints {unix} -bod
     chan close $f
 } -result {{{} {}} {auto lf}}
 test chan-io-20.5 {Tcl_CreateChannel: install channel in empty slot} -setup {
-    set path(stdout) [makeFile {} stdout]
+    set path(stdout) [tcltest::makeFile {} stdout]
 } -constraints {stdio openpipe} -body {
     set f [open $path(script) w]
     chan puts -nonewline $f {
@@ -2033,8 +2033,8 @@ test chan-io-27.5 {FlushChannel, implicit flush when buffer fills and on chan cl
     chan close $f
     lappend l [file size $path(test1)]
 } -result {0 60 72}
-set path(pipe)   [makeFile {} pipe]
-set path(output) [makeFile {} output]
+set path(pipe)   [tcltest::makeFile {} pipe]
+set path(output) [tcltest::makeFile {} output]
 test chan-io-27.6 {FlushChannel, async flushing, async chan close} -setup {
     file delete $path(pipe)
     file delete $path(output)
@@ -2175,8 +2175,8 @@ test chan-io-28.5 {Tcl_Chan Close vs standard handles} -setup {
     lsort $l
 } -result {file1 file2}
 test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} -setup {
-    set cat [makeFile {
-	fconfigure stdout -buffering line
+    set cat [tcltest::makeFile {
+	chan configure stdout -buffering line
 	while {[gets stdin line] >= 0} {puts $line}
 	puts DONE
 	exit 0
@@ -2203,13 +2203,13 @@ test chan-io-28.6 {Tcl_CloseEx (half-close) pipe} -setup {
     removeFile cat.tcl
 } -result {Succeeded {Hey DONE}}
 test chan-io-28.7 {Tcl_CloseEx (half-close) socket} -setup {
-    set echo [makeFile {
+    set echo [tcltest::makeFile {
 	proc accept {s args} {set ::sok $s}
 	set s [socket -server accept 0]
-	puts [lindex [fconfigure $s -sockname] 2]
+	puts [lindex [chan configure $s -sockname] 2]
 	flush stdout
 	vwait ::sok
-	fconfigure $sok -buffering line
+	chan configure $sok -buffering line
 	while {[gets $sok line]>=0} {puts $sok $line}
 	puts $sok DONE
 	exit 0
@@ -3038,7 +3038,7 @@ test chan-io-30.13 {Tcl_Write crlf on block boundary, Tcl_Read auto} -setup {
     string length [chan read $f]
 } -cleanup {
     chan close $f
-} -result [expr 700*15+1]
+} -result [expr {(700 * 15) + 1}]
 test chan-io-30.14 {Tcl_Write crlf on block boundary, Tcl_Read crlf} -setup {
     file delete $path(test1)
 } -body {
@@ -3055,7 +3055,7 @@ test chan-io-30.14 {Tcl_Write crlf on block boundary, Tcl_Read crlf} -setup {
     string length [chan read $f]
 } -cleanup {
     chan close $f
-} -result [expr 700*15+1]
+} -result [expr {(700 * 15) + 1}]
 test chan-io-30.15 {Tcl_Write mixed, Tcl_Read auto} -setup {
     file delete $path(test1)
 } -body {
@@ -3897,7 +3897,7 @@ test chan-io-31.31 {Tcl_Write crlf on block boundary, Tcl_Gets crlf} -setup {
     }
     chan close $f
     string length $c
-} -result [expr 700*15+1]
+} -result [expr {(700 * 15) + 1}]
 test chan-io-31.32 {Tcl_Write crlf on block boundary, Tcl_Gets auto} -setup {
     file delete $path(test1)
     set c ""
@@ -3917,7 +3917,7 @@ test chan-io-31.32 {Tcl_Write crlf on block boundary, Tcl_Gets auto} -setup {
     }
     chan close $f
     string length $c
-} -result [expr 700*15+1]
+} -result [expr {(700 * 15) + 1}]
 
 # Test Tcl_Read and buffering.
 
@@ -4178,7 +4178,7 @@ test chan-io-33.7 {Tcl_Gets and bad variable} -setup {
     chan puts $f "Line 1"
     chan puts $f "Line 2"
     chan close $f
-    catch {unset x}
+    unset -nocomplain x
     set f [open $path(test3) r]
 } -body {
     set x 24
@@ -4355,7 +4355,7 @@ test chan-io-34.9 {Tcl_Seek, testing buffered input flushing} -setup {
 } -cleanup {
     chan close $f
 } -result {a d a l Y {} b}
-set path(test3) [makeFile {} test3]
+set path(test3) [tcltest::makeFile {} test3]
 test chan-io-34.10 {Tcl_Seek testing flushing of buffered input} {
     set f [open $path(test3) w]
     chan configure $f -translation lf
@@ -5335,7 +5335,7 @@ test chan-io-40.3 {POSIX open access modes: CREAT} -setup {
     chan close [open $path(test3) {WRONLY CREAT}]
     file stat $path(test3) stats
     format "0%o" [expr $stats(mode)&0o777]
-} -result [format %04o [expr {0o666 & ~ $umaskValue}]]
+} -result [format %04o [expr {0o666 & ( ~ $umaskValue)}]]
 test chan-io-40.4 {POSIX open access modes: CREAT} -setup {
     file delete $path(test3)
 } -body {
@@ -5435,7 +5435,7 @@ test chan-io-40.12 {POSIX open access modes: WRONLY} -match regexp -body {
     open $path(test3) WRONLY
 } -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
 test chan-io-40.13 {POSIX open access modes: WRONLY} -body {
-    makeFile xyzzy test3
+    tcltest::makeFile xyzzy test3
     set f [open $path(test3) WRONLY]
     chan configure $f -eofchar {}
     chan puts -nonewline $f "ab"
@@ -5449,7 +5449,7 @@ test chan-io-40.14 {POSIX open access modes: RDWR} -match regexp -body {
     open $path(test3) RDWR
 } -returnCodes error -result {(?i)couldn't open ".*test3": no such file or directory}
 test chan-io-40.15 {POSIX open access modes: RDWR} {
-    makeFile xyzzy test3
+    tcltest::makeFile xyzzy test3
     set f [open $path(test3) RDWR]
     chan puts -nonewline $f "ab"
     chan seek $f 0 current
@@ -5458,7 +5458,7 @@ test chan-io-40.15 {POSIX open access modes: RDWR} {
     lappend x [viewFile test3]
 } {zzy abzzy}
 test chan-io-40.16 {tilde substitution in open} -constraints makeFileInHome -setup {
-    makeFile {Some text} _test_ ~
+    tcltest::makeFile {Some text} _test_ ~
 } -body {
     file exists [file join $::env(HOME) _test_]
 } -cleanup {
@@ -5493,7 +5493,7 @@ test chan-io-41.5 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
 # Test chan event on a file
 #
 
-set path(foo) [makeFile {} foo]
+set path(foo) [tcltest::makeFile {} foo]
 set f [open $path(foo) w+]
 
 test chan-io-42.1 {Tcl_FileeventCmd: creating, deleting, querying} {fileevent} {
@@ -5645,7 +5645,7 @@ test chan-io-44.5 {FileEventProc procedure: end of file} {stdio unixExecs openpi
 } {initial foo eof}
 
 chan close $f
-makeFile "foo bar" foo
+tcltest::makeFile "foo bar" foo
 
 test chan-io-45.1 {DeleteFileEvent, cleanup on chan close} {fileevent} {
     set f [open $path(foo) r]
@@ -5849,7 +5849,7 @@ test chan-io-47.6 {file events on shared files, deleting file events} -setup {
     chan close $f
 } -result {{script 1} {}}
 
-set path(bar) [makeFile {} bar]
+set path(bar) [tcltest::makeFile {} bar]
 
 test chan-io-48.1 {testing readability conditions} {fileevent} {
     set f [open $path(bar) w]
@@ -5898,7 +5898,7 @@ test chan-io-48.2 {testing readability conditions} {nonBlockFiles fileevent} {
     vwait [namespace which -variable x]
     list $x $l
 } {done {called called called called called called called}}
-set path(my_script) [makeFile {} my_script]
+set path(my_script) [tcltest::makeFile {} my_script]
 test chan-io-48.3 {testing readability conditions} -setup {
     set l ""
 } -constraints {stdio unix nonBlockFiles openpipe fileevent} -body {
@@ -6714,9 +6714,9 @@ test chan-io-52.8 {TclCopyChannel} -setup {
     list $s0 [file size $path(test1)]
 } -result {40 40}
 # Empty files, to register them with the test facility
-set path(kyrillic.txt)   [makeFile {} kyrillic.txt]
-set path(utf8-fcopy.txt) [makeFile {} utf8-fcopy.txt]
-set path(utf8-rp.txt)    [makeFile {} utf8-rp.txt]
+set path(kyrillic.txt)   [tcltest::makeFile {} kyrillic.txt]
+set path(utf8-fcopy.txt) [tcltest::makeFile {} utf8-fcopy.txt]
+set path(utf8-rp.txt)    [tcltest::makeFile {} utf8-rp.txt]
 # Create kyrillic file, use lf translation to avoid os eol issues
 set out [open $path(kyrillic.txt) w]
 chan configure $out -encoding koi8-r -translation lf
@@ -6871,10 +6871,10 @@ test chan-io-53.4 {CopyData: background write overflow} -setup {
     vwait [namespace which -variable x]
     return $x
 } -cleanup {
-    set big {}
+    set big ""
     chan close $f1
 } -result done
-set result {}
+set result ""
 proc FcopyTestAccept {sock args} {
     after 1000 "chan close $sock"
 }
@@ -6891,7 +6891,7 @@ test chan-io-53.5 {CopyData: error during chan copy} {socket fcopy} {
     set listen [socket -server [namespace code FcopyTestAccept] -myaddr 127.0.0.1 0]
     set in [open $thisScript]	;# 126 K
     set out [socket 127.0.0.1 [lindex [chan configure $listen -sockname] 2]]
-    catch {unset fcopyTestDone}
+    unset -nocomplain fcopyTestDone
     chan close $listen	;# This means the socket open never really succeeds
     chan copy $in $out -command [namespace code FcopyTestDone]
     variable fcopyTestDone
@@ -6906,7 +6906,7 @@ test chan-io-53.6 {CopyData: error during chan copy} -setup {
     variable fcopyTestDone
     file delete $path(pipe)
     file delete $path(test1)
-    catch {unset fcopyTestDone}
+    unset -nocomplain fcopyTestDone
 } -constraints {stdio openpipe fcopy} -body {
     set f1 [open $path(pipe) w]
     chan puts $f1 "exit 1"
@@ -6940,7 +6940,7 @@ proc doFcopy {in out {bytes 0} {error {}}} {
 test chan-io-53.7 {CopyData: Flooding chan copy from pipe} -setup {
     variable fcopyTestDone
     file delete $path(pipe)
-    catch {unset fcopyTestDone}
+    unset -nocomplain fcopyTestDone
 } -constraints {stdio openpipe fcopy} -body {
     set fcopyTestCount 0
     set f1 [open $path(pipe) w]
@@ -6986,11 +6986,11 @@ test chan-io-53.8 {CopyData: async callback and error handling, Bug 1932639} -se
 	return
     }
     # Files we use for our channels
-    set foo [makeFile ashgdfashdgfasdhgfasdhgf foo]
-    set bar [makeFile {} bar]
+    set foo [tcltest::makeFile ashgdfashdgfasdhgfasdhgf foo]
+    set bar [tcltest::makeFile {} bar]
     # Channels to copy between
-    set f [open $foo r] ; fconfigure $f -translation binary
-    set g [open $bar w] ; fconfigure $g -translation binary -buffering none
+    set f [open $foo r] ; chan configure $f -translation binary
+    set g [open $bar w] ; chan configure $g -translation binary -buffering none
 } -constraints {stdio openpipe fcopy} -body {
     # Record input size, so that result is always defined
     lappend ::RES [file size $bar]
@@ -7012,9 +7012,8 @@ test chan-io-53.8 {CopyData: async callback and error handling, Bug 1932639} -se
 } -cleanup {
     chan close $f
     chan close $g
-    catch {unset ::RES}
-    catch {unset ::forever}
-    rename ::bgerror {}
+    unset -nocomplain ::RES ::forever
+    rename ::bgerror ""
     removeFile foo
     removeFile bar
 } -result {0 sync/OK 0 {CMD 2} {bgerror/OK !STOP}}
@@ -7026,8 +7025,8 @@ test chan-io-53.8a {CopyData: async callback and error handling, Bug 1932639, at
 	return
     }
     # Files we use for our channels
-    set foo [makeFile ashgdfashdgfasdhgfasdhgf foo]
-    set bar [makeFile {} bar]
+    set foo [tcltest::makeFile ashgdfashdgfasdhgfasdhgf foo]
+    set bar [tcltest::makeFile {} bar]
     # Channels to copy between
     set f [open $foo r] ; chan configure $f -translation binary
     set g [open $bar w] ; chan configure $g -translation binary -buffering none
@@ -7052,14 +7051,13 @@ test chan-io-53.8a {CopyData: async callback and error handling, Bug 1932639, at
 } -cleanup {
     chan close $f
     chan close $g
-    catch {unset ::RES}
-    catch {unset ::forever}
+    unset -nocomplain ::RES ::forever
     removeFile foo
     removeFile bar
 } -result {1 sync/OK {CMD 0}}
 test chan-io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
-    set out [makeFile {} out]
-    set err [makeFile {} err]
+    set out [tcltest::makeFile {} out]
+    set err [tcltest::makeFile {} err]
     set pipe [open "|[list [info nameofexecutable] 2> $err]" r+]
     chan configure $pipe -translation binary -buffering line
     chan puts $pipe {
@@ -7107,10 +7105,10 @@ test chan-io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     catch {close $out}
     catch {removeFile out}
     catch {removeFile err}
-    catch {unset ::forever}
+    unset -nocomplain ::forever
 } -result OK
 test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
-    set err [makeFile {} err]
+    set err [tcltest::makeFile {} err]
     set pipe [open "|[list [info nameofexecutable] 2> $err]" r+]
     chan configure $pipe -translation binary -buffering line
     chan puts $pipe {
@@ -7133,7 +7131,7 @@ test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	    lappend l $sok
 	    if {[llength $l] == 2} {
 		chan close $srv
-		foreach {a b} $l break
+		lassign $l a b
 		chan copy $a $b -command [list geof $a]
 		chan copy $b $a -command [list geof $b]
 		chan puts stderr 2COPY
@@ -7178,7 +7176,7 @@ test chan-io-53.10 {Bug 1350564, multi-directional fcopy} -setup {
 	after 1000		;# Give Windows time to kill the process
     }
     removeFile err
-    catch {unset ::forever}
+    unset -nocomplain ::forever
 } -result {AB BA}
 
 test chan-io-54.1 {Recursive channel events} {socket fileevent} {
@@ -7285,7 +7283,7 @@ test chan-io-54.2 {Testing for busy-wait in recursive channel events} -setup {
     if {$accept ne {}} {chan close $accept}
 } -result 1
 
-set path(fooBar) [makeFile {} fooBar]
+set path(fooBar) [tcltest::makeFile {} fooBar]
 
 test chan-io-55.1 {ChannelEventScriptInvoker: deletion} -constraints {
     fileevent
@@ -7452,7 +7450,7 @@ test chan-io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
 } {1 {gets {} catch {error writing "stdout": invalid argument}}}
 
 test chan-io-61.1 {Reset eof state after changing the eof char} -setup {
-    set datafile [makeFile {} eofchar]
+    set datafile [tcltest::makeFile {} eofchar]
     set f [open $datafile w]
     chan configure $f -translation binary
     chan puts -nonewline $f [string repeat "Ho hum\n" 11]
@@ -7483,7 +7481,7 @@ test chan-io-61.1 {Reset eof state after changing the eof char} -setup {
 # used for that here.
 
 test chan-io-70.0 {Cutting & Splicing channels} -setup {
-    set f [makeFile {... dummy ...} cutsplice]
+    set f [tcltest::makeFile {... dummy ...} cutsplice]
     set res {}
 } -constraints {testchannel} -body {
     set c [open $f r]
@@ -7498,7 +7496,7 @@ test chan-io-70.0 {Cutting & Splicing channels} -setup {
 } -result {0 1 0}
 
 test chan-io-70.1 {Transfer channel} -setup {
-    set f [makeFile {... dummy ...} cutsplice]
+    set f [tcltest::makeFile {... dummy ...} cutsplice]
     set res {}
 } -constraints {testchannel thread} -body {
     set c [open $f r]
@@ -7683,7 +7681,7 @@ foreach {n msg expected} {
     f3 {-code boss  -code 0 -level X -f ba}       {-code 1 -level 0 -f ba}
 } {
     test chan-io-71.$n {Tcl_SetChannelError} -setup {
-	set f [makeFile {... dummy ...} cutsplice]
+	set f [tcltest::makeFile {... dummy ...} cutsplice]
     } -constraints {testchannel} -body {
 	set c [open $f r]
 	testchannel setchannelerror $c [lrange $msg 0 end]
@@ -7692,7 +7690,7 @@ foreach {n msg expected} {
 	removeFile cutsplice
     } -result [lrange $expected 0 end]
     test chan-io-72.$n {Tcl_SetChannelErrorInterp} -setup {
-	set f [makeFile {... dummy ...} cutsplice]
+	set f [tcltest::makeFile {... dummy ...} cutsplice]
     } -constraints {testchannel} -body {
 	set c [open $f r]
 	testchannel setchannelerrorinterp $c [lrange $msg 0 end]
@@ -7712,8 +7710,8 @@ test chan-io-73.1 {channel Tcl_Obj SetChannelFromAny} -body {
 # cleanup
 foreach file [list fooBar longfile script output test1 pipe my_script \
 	test2 test3 cat kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
-    removeFile $file
+    tcltest::removeFile $file
 }
-cleanupTests
+tcltest::cleanupTests
 }
 namespace delete ::tcl::test::io

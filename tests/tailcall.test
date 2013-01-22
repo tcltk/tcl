@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -34,9 +34,9 @@ if {[testConstraint testnrelevels]} {
 	proc depthDiff {} {
 	    variable last
 	    set depth [testnrelevels]
-	    set res {}
+	    set res [list]
 	    foreach t $depth l $last {
-		lappend res [expr {$t-$l}]
+		lappend res [expr {$t - $l}]
 	    }
 	    set last $depth
 	    return $res
@@ -46,7 +46,7 @@ if {[testConstraint testnrelevels]} {
     namespace import testnre::*
 }
 
-proc errorcode options {
+proc errorcode {options} {
     dict get [dict merge {-errorcode NONE} $options] -errorcode
 }
 
@@ -222,7 +222,6 @@ test tailcall-1 {tailcall} -body {
     namespace delete a b
 } -result {1::b | 0:: *::a *::b | {{1 ::b::moo} {2 xset}}}
 
-
 test tailcall-2 {tailcall in non-proc} -body {
     namespace eval a [list tailcall set x 1]
 } -match glob -result *tailcall* -returnCodes error
@@ -232,7 +231,7 @@ test tailcall-3 {tailcall falls off tebc} -body {
     proc foo {} {tailcall set x 1}
     list [catch foo msg] $msg [set x]
 } -cleanup {
-    rename foo {}
+    rename foo ""
     unset x
 } -result {0 1 1}
 

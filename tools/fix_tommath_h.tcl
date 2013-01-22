@@ -10,18 +10,18 @@
 #----------------------------------------------------------------------
 
 set f [open [lindex $argv 0] r]
-set data [read $f]
-close $f
+set data [chan read $f]
+chan close $f
 
 set eat_endif 0
 set eat_semi 0
 set def_count 0
 foreach line [split $data \n] {
-    if {!$eat_semi && !$eat_endif} {
+    if {(!$eat_semi) && (!$eat_endif)} {
 	switch -regexp -- $line {
-	    {#define BN_H_} {
+	    "#define BN_H_" {
 		puts $line
-		puts {}
+		puts ""
 		puts "\#include \"tclInt.h\""
 		puts "\#include \"tclTomMathDecls.h\""
 		puts "\#ifndef MODULE_SCOPE"
@@ -64,7 +64,7 @@ foreach line [split $data \n] {
 	    }
 	    {^extern (int|const)} {
 		puts "\#if defined(BUILD_tcl) || !defined(_WIN32)"
-		puts [regsub {^extern} $line "MODULE_SCOPE"]
+		puts [regsub "^extern" $line "MODULE_SCOPE"]
 		set eat_semi 1
 		set after_semi "\#endif"
 	    }
@@ -94,8 +94,8 @@ foreach line [split $data \n] {
 	}
     }
     if {$eat_endif} {
-	if {[regexp {^\#endif} $line]} {
-	    puts "\#endif"
+	if {[string match "#endif*" $line]} {
+	    puts "#endif"
 	    set eat_endif 0
 	}
     }

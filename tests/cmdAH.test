@@ -22,9 +22,9 @@ testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
 testConstraint testvolumetype  [llength [info commands testvolumetype]]
 testConstraint linkDirectory [expr {
-    ![testConstraint win] ||
-    ([string index $tcl_platform(osVersion) 0] >= 5
-     && [lindex [file system [temporaryDirectory]] 1] eq "NTFS")
+    (![testConstraint win]) || 
+    (([string index $tcl_platform(osVersion) 0] >= 5) && 
+     ([lindex [file system [tcltest::temporaryDirectory]] 1] eq "NTFS"))
 }]
 
 global env
@@ -36,15 +36,15 @@ proc waitForEvenSecondForFAT {} {
     # data in its timestamps for even per-second-accurate timings. :^(
     # This procedure based on work by Helmut Giese
     if {
-	[testConstraint win] &&
-	[lindex [file system [temporaryDirectory]] 1] ne "NTFS"
-    } then {
+	[tcltest::testConstraint win] && 
+	([lindex [file system [tcltest::temporaryDirectory]] 1] ne "NTFS")
+    } {
 	# Assume non-NTFS means FAT{12,16,32} and hence in need of special
 	# help...
 	set start [clock seconds]
 	while {1} {
 	    set now [clock seconds]
-	    if {$now!=$start && !($now & 1)} {
+	    if {($now != $start) && (!($now & 1))} {
 		break
 	    }
 	    after 50
@@ -80,7 +80,7 @@ test cmdAH-1.5 {Bug 3595576} {
 test cmdAH-2.1 {Tcl_CdObjCmd} -returnCodes error -body {
     cd foo bar
 } -result {wrong # args: should be "cd ?dirName?"}
-set foodir [file join [temporaryDirectory] foo]
+set foodir [file join [::tcltest::temporaryDirectory] foo]
 test cmdAH-2.2 {Tcl_CdObjCmd} -setup {
     file delete -force $foodir
     set oldpwd [pwd]
@@ -649,10 +649,10 @@ test cmdAH-10.34 {Tcl_FileObjCmd: rootname} testsetplatform {
     file rootname a\\b.c\\
 } a\\b.c\\
 set num 35
-foreach outer { {} a .a a. a.a } {
-    foreach inner { {} a .a a. a.a } {
+foreach outer { "" a .a a. a.a } {
+    foreach inner { "" a .a a. a.a } {
 	set thing [format %s/%s $outer $inner]
-	;test cmdAH-10.$num {Tcl_FileObjCmd: rootname and extension options} testsetplatform "
+	test cmdAH-10.$num {Tcl_FileObjCmd: rootname and extension options} testsetplatform "
 	    testsetplatform unix
 	    [list format %s%s [file rootname $thing] [file ext $thing]]
 	" $thing
@@ -817,8 +817,8 @@ test cmdAH-15.1 {Tcl_FileObjCmd} -constraints testsetplatform -body {
 catch {testsetplatform $platform}
 
 # readable
-set gorpfile [makeFile abcde gorp.file]
-set dirfile [makeDirectory dir.file]
+set gorpfile [tcltest::makeFile abcde gorp.file]
+set dirfile [tcltest::makeDirectory dir.file]
 test cmdAH-16.1 {Tcl_FileObjCmd: readable} {
     -returnCodes error
     -body   {file readable a b}
@@ -857,10 +857,10 @@ test cmdAH-17.3 {Tcl_FileObjCmd: writable} {
 }
 
 # executable
-removeFile $gorpfile
-removeDirectory $dirfile
-set dirfile [makeDirectory dir.file]
-set gorpfile [makeFile abcde gorp.file]
+tcltest::removeFile $gorpfile
+tcltest::removeDirectory $dirfile
+set dirfile [tcltest::makeDirectory dir.file]
+set gorpfile [tcltest::makeFile abcde gorp.file]
 test cmdAH-18.1 {Tcl_FileObjCmd: executable} -returnCodes error -body {
     file executable a b
 } -result {wrong # args: should be "file executable name"}
@@ -894,10 +894,10 @@ test cmdAH-18.6 {Tcl_FileObjCmd: executable} {} {
     file exe $dirfile
 } 1
 
-removeDirectory $dirfile
-removeFile $gorpfile
-set linkfile [file join [temporaryDirectory] link.file]
-file delete $linkfile
+tcltest::removeDirectory $dirfile
+tcltest::removeFile $gorpfile
+set linkfile [file join [tcltest::temporaryDirectory] link.file]
+file delete -- $linkfile
 
 # exists
 test cmdAH-19.1 {Tcl_FileObjCmd: exists} -returnCodes error -body {
@@ -905,12 +905,12 @@ test cmdAH-19.1 {Tcl_FileObjCmd: exists} -returnCodes error -body {
 } -result {wrong # args: should be "file exists name"}
 test cmdAH-19.2 {Tcl_FileObjCmd: exists} {file exists $gorpfile} 0
 test cmdAH-19.3 {Tcl_FileObjCmd: exists} {
-    file exists [file join [temporaryDirectory] dir.file gorp.file]
+    file exists [file join [tcltest::temporaryDirectory] dir.file gorp.file]
 } 0
 catch {
-    set gorpfile [makeFile abcde gorp.file]
-    set dirfile [makeDirectory dir.file]
-    set subgorp [makeFile 12345 [file join $dirfile gorp.file]]
+    set gorpfile [tcltest::makeFile abcde gorp.file]
+    set dirfile [tcltest::makeDirectory dir.file]
+    set subgorp [tcltest::makeFile 12345 [file join $dirfile gorp.file]]
 }
 test cmdAH-19.4 {Tcl_FileObjCmd: exists} {
     file exists $gorpfile
@@ -958,15 +958,15 @@ test cmdAH-19.11 {Tcl_FileObjCmd: exists} -constraints {unix notRoot} -setup {
 # Stat related commands
 
 catch {testsetplatform $platform}
-removeFile $gorpfile
-set gorpfile [makeFile "Test string" gorp.file]
+tcltest::removeFile $gorpfile
+set gorpfile [tcltest::makeFile "Test string" gorp.file]
 catch {file attributes $gorpfile -permissions 0765}
 
 # avoid problems with non-local filesystems
-if {[testConstraint unix] && [file exists /tmp]} {
-    set file [makeFile "data" touch.me /tmp]
+if {[tcltest::testConstraint unix] && [file exists /tmp]} {
+    set file [tcltest::makeFile "data" touch.me /tmp]
 } else {
-    set file [makeFile "data" touch.me]
+    set file [tcltest::makeFile "data" touch.me]
 }
 
 # atime
@@ -1012,10 +1012,10 @@ test cmdAH-20.6 {Tcl_FileObjCmd: atime touch} -setup {
     expr {$newatime == $modatime ? 1 : "$newatime != $modatime"}
 } -result 1
 
-if {[testConstraint unix] && [file exists /tmp]} {
-    removeFile touch.me /tmp
+if {[::tcltest::testConstraint unix] && [file exists /tmp]} {
+    ::tcltest::removeFile touch.me /tmp
 } else {
-    removeFile touch.me
+    ::tcltest::removeFile touch.me
 }
 
 # isdirectory
@@ -1065,8 +1065,8 @@ test cmdAH-23.6 {Tcl_FileObjCmd: lstat errors} -setup {
 } -result {1 {can't set "x(dev)": variable isn't array} {TCL LOOKUP VARNAME x}}
 unset -nocomplain stat
 # mkdir
-set dirA [file join [temporaryDirectory] a]
-set dirB [file join [temporaryDirectory] a]
+set dirA [file join [::tcltest::temporaryDirectory] a]
+set dirB [file join [::tcltest::temporaryDirectory] a]
 test cmdAH-23.7 {Tcl_FileObjCmd: mkdir} -setup {
     catch {file delete -force $dirA}
 } -body {
@@ -1106,7 +1106,7 @@ test cmdAH-23.11 {Tcl_FileObjCmd: mkdir} {
     file mkdir
 } {}
 
-set file [makeFile "data" touch.me]
+set file [::tcltest::makeFile "data" touch.me]
 # mtime
 test cmdAH-24.1 {Tcl_FileObjCmd: mtime} -returnCodes error -body {
     file mtime a b c
@@ -1283,7 +1283,7 @@ test cmdAH-27.1 {Tcl_FileObjCmd: size} -returnCodes error -body {
 test cmdAH-27.2 {Tcl_FileObjCmd: size} {
     set oldsize [file size $gorpfile]
     set f [open $gorpfile a]
-    fconfigure $f -translation lf -eofchar {}
+    chan configure $f -translation lf -eofchar {}
     puts $f "More text"
     close $f
     expr {[file size $gorpfile] - $oldsize}
@@ -1572,10 +1572,10 @@ unset -nocomplain platform
 # Tcl_ForObjCmd is tested in for.test
 
 catch {file attributes $dirfile -permissions 0777}
-removeDirectory $dirfile
-removeFile $gorpfile
+tcltest::removeDirectory $dirfile
+tcltest::removeFile $gorpfile
 # No idea how well [removeFile] copes with links...
-file delete $linkfile
+file delete -- $linkfile
 
 cd $cmdAHwd
 

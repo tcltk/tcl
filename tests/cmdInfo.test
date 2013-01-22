@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -73,8 +73,8 @@ test cmdinfo-4.1 {Tcl_GetCommandName/Tcl_GetCommandFullName procedures} \
     lappend y {*}[testcmdtoken name $x]
 } {newName ::newName x1 ::x1}
 
-catch {rename newTestCmd {}}
-catch {rename newTestCmd2 {}}
+catch {rename newTestCmd ""}
+catch {rename newTestCmd2 ""}
 
 test cmdinfo-5.1 {Names for commands created when inside namespaces} \
 	{testcmdtoken} {

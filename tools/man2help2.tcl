@@ -47,10 +47,10 @@ proc initGlobals {} {
     set state(paragraph) 0
     set state(textState) 0
     set state(curFont) ""
-    set state(startCode) "{\\b "
-    set state(startEmphasis) "{\\i "
-    set state(endCode) "}"
-    set state(endEmphasis) "}"
+    set state(startCode) "\{\\b "
+    set state(startEmphasis) "\{\\i "
+    set state(endCode) "\}"
+    set state(endEmphasis) "\}"
     set state(noFill) 0
     set state(charCnt) 0
     set state(offset) [getTwips 0.5i]
@@ -117,16 +117,16 @@ proc endFont {} {
 proc textSetup {} {
     global file state
 
-    if $state(breakPending) {
+    if {$state(breakPending)} {
 	puts $file "\\line"
     }
-    if $state(paragraphPending) {
+    if {$state(paragraphPending)} {
 	puts $file [format "\\par\n\\pard\\fi%.0f\\li%.0f" \
 			$state(firstIndent) $state(leftIndent)]
 	foreach tab $state(tabs) {
 	    puts $file [format "\\tx%.0f" $tab]
 	}
-	set state(tabs) {}
+        set state(tabs) [list]
 	if {$state(sb)} {
 	    puts $file "\\sb$state(sb)"
 	    set state(sb) 0
@@ -175,7 +175,7 @@ proc text {string} {
 	set state(intl) 0
     }
 
-    switch $state(textState) {
+    switch -- $state(textState) {
 	REF {
 	    if {$state(inTP) == 0} {
 		set string [insertRef $string]
@@ -188,15 +188,16 @@ proc text {string} {
 		    continue
 		}
 		if {![catch {set ref $topics($curPkg,$curSect,$i)} ]} {
-		    regsub $i $string [link $i $ref] string
+		    regsub -- $i $string [link $i $ref] string
 		}
 	    }
 	}
 	KEY {
 	    return
 	}
+        default {}
     }
-    puts -nonewline $file "$string"
+    puts -nonewline $file $string
 }
 
 
@@ -212,9 +213,9 @@ proc text {string} {
 
 proc insertRef {string} {
     global NAME_file curPkg curSect topics curID
-    set path {}
+    set path ""
     set string [string trim $string]
-    set ref {}
+    set ref ""
     if {[info exists topics($curPkg,$curSect,$string)]} {
 	set ref $topics($curPkg,$curSect,$string)
     } else {
@@ -231,7 +232,7 @@ proc insertRef {string} {
 	}
     }
 
-    if {($ref != "") && ($ref != $curID)} {
+    if {($ref ne "") && ($ref != $curID)} {
 	set string [link $string $ref]
     }
     return $string
@@ -250,9 +251,9 @@ proc insertRef {string} {
 
 proc macro {name args} {
     global state file
-    switch $name {
+    switch -- $name {
 	AP {
-	    if {[llength $args] != 3 && [llength $args] != 2} {
+	    if {([llength $args] != 3) && ([llength $args] != 2)} {
 		puts stderr "Bad .AP macro: .$name [join $args " "]"
 	    }
 	    newPara 3.75i -3.75i
@@ -278,7 +279,7 @@ proc macro {name args} {
 	BS {}
 	BE {}
 	CE {
-	    puts -nonewline $::file "\\f0\\fs20 "
+	    puts -nonewline $file "\\f0\\fs20 "
 	    set state(noFill) 0
 	    set state(breakPending) 0
 	    newPara ""
@@ -291,7 +292,7 @@ proc macro {name args} {
 	    newPara ""
 	    set state(leftIndent) [expr {$state(leftIndent) + $state(offset)}]
 	    set state(sb) 80
-	    puts -nonewline $::file "\\f1\\fs18 "
+	    puts -nonewline $file "\\f1\\fs18 "
 	}
 	DE {
 	    set state(noFill) 0
@@ -413,9 +414,9 @@ proc macro {name args} {
 	    TPmacro $args
 	}
 	UL {					;# underline
-	    puts -nonewline $file "{\\ul "
+	    puts -nonewline $file "\{\\ul "
 	    text [lindex $args 0]
-	    puts -nonewline $file "}"
+	    puts -nonewline $file "\}"
 	    if {[llength $args] == 2} {
 		text [lindex $args 1]
 	    }
@@ -468,7 +469,7 @@ proc link {label id} {
 
 proc font {type} {
     global state
-    switch $type {
+    switch -- $type {
 	P -
 	R {
 	    endFont
@@ -513,31 +514,31 @@ proc formattedText {text} {
 	    text $text
 	    return
 	}
-	text [string range $text 0 [expr {$index-1}]]
-	set c [string index $text [expr {$index+1}]]
+	text [string range $text 0 [expr {$index - 1}]]
+	set c [string index $text [expr {$index + 1}]]
 	switch -- $c {
 	    f {
-		font [string index $text [expr {$index+2}]]
-		set text [string range $text [expr {$index+3}] end]
+		font [string index $text [expr {$index + 2}]]
+		set text [string range $text [expr {$index + 3}] end]
 	    }
 	    e {
 		text "\\"
-		set text [string range $text [expr {$index+2}] end]
+		set text [string range $text [expr {$index + 2}] end]
 	    }
 	    - {
 		dash
-		set text [string range $text [expr {$index+2}] end]
+		set text [string range $text [expr {$index + 2}] end]
 	    }
 	    & - | {
-		set text [string range $text [expr {$index+2}] end]
+		set text [string range $text [expr {$index + 2}] end]
 	    }
-	    ( {
-		char [string range $text $index [expr {$index+3}]]
-		set text [string range $text [expr {$index+4}] end]
+	    \( {
+		char [string range $text $index [expr {$index + 3}]]
+		set text [string range $text [expr {$index + 4}] end]
 	    }
 	    default {
 		puts stderr "Unknown sequence: \\$c"
-		set text [string range $text [expr {$index+2}] end]
+		set text [string range $text [expr {$index + 2}] end]
 	    }
 	}
     }
@@ -587,9 +588,9 @@ proc tab {} {
 proc setTabs {tabList} {
     global file state
 
-    set state(tabs) {}
+    set state(tabs) [list]
     foreach arg $tabList {
-	if {[string match +* $arg]} {
+	if {[string match "+*" $arg]} {
 	    set relativeTo [lindex $state(tabs) end]
 	    set arg [string range $arg 1 end]
 	} else {
@@ -597,13 +598,13 @@ proc setTabs {tabList} {
 	    set relativeTo [expr {$state(leftMargin) \
 		    + ($state(offset) * $state(nestingLevel))}]
 	}
-	if {[regexp {^\\w'([^']*)'u$} $arg -> submatch]} {
+	if {[regexp {^\\w'([^']*)'u$} $arg ___ submatch]} {
 	    # Magic factor!
 	    set distance [expr {[string length $submatch] * 86.4}]
 	} else {
 	    set distance [getTwips $arg]
 	}
-	lappend state(tabs) [expr {round($distance + $relativeTo)}]
+	lappend state(tabs) [expr { round ($distance + $relativeTo)}]
     }
 }
 
@@ -675,7 +676,7 @@ proc pageBreak {} {
 proc char {name} {
     global file state
 
-    switch -exact $name {
+    switch -exact -- $name {
         {\o} {
 	    set state(intl) 1
 	}
@@ -765,13 +766,17 @@ proc SHmacro {argList {style section}} {
 
     # control what the text proc does with text
 
-    switch $args {
+    switch -- $args {
 	NAME {set state(textState) NAME}
 	DESCRIPTION {set state(textState) INSERT}
 	INTRODUCTION {set state(textState) INSERT}
 	"WIDGET-SPECIFIC OPTIONS" {set state(textState) INSERT}
 	"SEE ALSO" {set state(textState) SEE}
-	KEYWORDS {set state(textState) KEY; return}
+	KEYWORDS {
+	    set state(textState) KEY
+	    return
+	}
+        default {}
     }
 
     if {$state(breakPending) != -1} {
@@ -780,7 +785,7 @@ proc SHmacro {argList {style section}} {
 	set state(breakPending) 0
     }
     set state(noFill) 0
-    if {[string compare "subsection" $style] == 0} {
+    if {"subsection" eq $style} {
 	nextPara .25i
     } else {
 	nextPara 0i
@@ -812,7 +817,7 @@ proc IPmacro {argList} {
     global file state
 
     set length [llength $argList]
-    foreach {text indent} $argList break
+    lassign $argList text indent
     if {$length > 2} {
 	puts stderr "Bad .IP macro: .IP [join $argList " "]"
     }
@@ -823,11 +828,11 @@ proc IPmacro {argList} {
     } elseif {$length == 1} {
 	set indent 5
     }
-    if {$text == {\(bu}} {
+    if {$text eq "\(bu\}"} {
 	set text "\u00b7"
     }
 
-    set tab [expr $indent * 0.1]i
+    set tab [expr {$indent * 0.1}]i
     newPara $tab -$tab
     set state(sb) 80
     setTabs $tab
@@ -856,7 +861,7 @@ proc TPmacro {argList} {
     if {$length == 0} {
 	set val 0.5i
     } else {
-	set val [expr {([lindex $argList 0] * 100.0)/1440}]i
+	set val [expr {([lindex $argList 0] * 100.0) / 1440}]i
     }
     newPara $val -$val
     setTabs $val
@@ -884,18 +889,15 @@ proc THmacro {argList} {
 	puts stderr "Bad .TH macro: .TH $args"
     }
     incr curID
-    set name	[lindex $argList 0]		;# Tcl_UpVar
-    set page	[lindex $argList 1]		;# 3
-    set curVer	[lindex $argList 2]		;# 7.4
-    set curPkg	[lindex $argList 3]		;# Tcl
-    set curSect	[lindex $argList 4]		;# {Tcl Library Procedures}
+    # Tcl_UpVar / 3 / 7.4 / Tcl / {Tcl Library Procedures}
+    lassign $argList name page curVer curPkg curSect
 
-    regsub -all {\\ } $curSect { } curSect	;# Clean up for [incr\ Tcl]
+    regsub -all {\\ } $curSect " " curSect	;# Clean up for [incr\ Tcl]
 
     puts $file "#{\\footnote $curID}"		;# Context string
     puts $file "\${\\footnote $name}"		;# Topic title
     set browse "${curSect}${name}"
-    regsub -all {[ _-]} $browse {} browse
+    regsub -all {[ _-]} $browse "" browse
     puts $file "+{\\footnote $browse}"		;# Browse sequence
 
     # Suppress duplicates
@@ -951,7 +953,7 @@ proc nextPara {leftIndent {firstIndent 0i}} {
 
 proc newPara {leftIndent {firstIndent 0i}} {
     global state file
-    if $state(paragraph) {
+    if {$state(paragraph)} {
 	puts -nonewline $file "\\line\n"
     }
     if {$leftIndent ne ""} {

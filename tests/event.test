@@ -18,7 +18,6 @@ catch {
     set ::tcltestlib [lindex [package ifneeded Tcltest [info patchlevel]] 1]
 }
 
-
 testConstraint testfilehandler [llength [info commands testfilehandler]]
 testConstraint testexithandler [llength [info commands testexithandler]]
 testConstraint testfilewait [llength [info commands testfilewait]]
@@ -514,7 +513,7 @@ test event-11.2 {Tcl_VwaitCmd procedure} -returnCodes error -body {
     vwait a b
 } -result {wrong # args: should be "vwait name"}
 test event-11.3 {Tcl_VwaitCmd procedure} -setup {
-    catch {unset x}
+    unset -nocomplain x
 } -body {
     set x 1
     vwait x(1)
@@ -549,7 +548,7 @@ test event-11.5 {Tcl_VwaitCmd procedure: round robin scheduling, 2 sources} -set
     }
     set s1 [socket -server accept -myaddr 127.0.0.1 0]
     after 1000
-    set s2 [socket 127.0.0.1 [lindex [fconfigure $s1 -sockname] 2]]
+    set s2 [socket 127.0.0.1 [lindex [chan configure $s1 -sockname] 2]]
     close $s1
     set x 0
     set y 0

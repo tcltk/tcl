@@ -24,17 +24,15 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 catch {rename foo ""}
-catch {unset x}
-catch {unset y}
-catch {unset msg}
+unset -nocomplain x y msg
 
 testConstraint testobj [expr {
-    [llength [info commands testobj]]
-    && [llength [info commands testdoubleobj]]
-    && [llength [info commands teststringobj]]
+    [llength [info commands testobj]]       && 
+    [llength [info commands testdoubleobj]] && 
+    [llength [info commands teststringobj]]
 }]
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
+testConstraint longIs32bit [expr { ( int (0x80000000) ) < 0}]
 testConstraint testexprlongobj [llength [info commands testexprlongobj]]
 
 # Tests for the omnibus TclExecuteByteCode function:
@@ -1053,9 +1051,7 @@ catch {rename foo ""}
 catch {rename p ""}
 catch {rename {} ""}
 catch {rename { } ""}
-catch {unset x}
-catch {unset y}
-catch {unset msg}
+unset -nocomplain x y msg
 ::tcltest::cleanupTests
 return
 

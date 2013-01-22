@@ -13,12 +13,12 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-catch {unset x}
+unset -nocomplain x
 
 test incr-old-1.1 {basic incr operation} {
     set x 23
@@ -44,7 +44,7 @@ test incr-old-2.2 {incr errors} {
     list [catch {incr a b c} msg] $msg
 } {1 {wrong # args: should be "incr varName ?increment?"}}
 test incr-old-2.3 {incr errors} {
-    catch {unset x}
+    unset -nocomplain x
     incr x
 } 1
 test incr-old-2.4 {incr errors} {
@@ -69,7 +69,7 @@ test incr-old-2.6 {incr errors} -body {
     while executing
 *
 "incr x 1"}}
-catch {unset x}
+unset -nocomplain x
 test incr-old-2.7 {incr errors} {
     set x -
     list [catch {incr x 1} msg] $msg

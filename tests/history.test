@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
   
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -129,7 +129,7 @@ test history-4.6 {change option} history {
     catch {history change Foo [expr {[history n]-4}]}
 } 1
 if {[testConstraint history]} {
-    set num [expr {[history n]-4}]
+    set num [expr {[history n] - 4}]
 }
 test history-4.7 {change option} history {
     catch {history change Foo $num} msg
@@ -149,11 +149,11 @@ test history-5.1 {info option} history {history info} [format {%6d  set a {b
 %6d  set b 1234
 %6d  set c {a
 	b
-	c}} $num [expr $num+1] [expr $num+2]]
+	c}} $num [expr {$num + 1}] [expr {$num + 2}]]
 test history-5.2 {info option} history {history i 2} [format {%6d  set b 1234
 %6d  set c {a
 	b
-	c}} [expr $num+1] [expr $num+2]]
+	c}} [expr {$num + 1}] [expr {$num + 2}]]
 test history-5.3 {info option} history {catch {history i 2 3}} 1
 test history-5.4 {info option} history {
     catch {history i 2 3} msg
@@ -164,7 +164,7 @@ test history-5.5 {info option} history {history} [format {%6d  set a {b
 %6d  set b 1234
 %6d  set c {a
 	b
-	c}} $num [expr $num+1] [expr $num+2]]
+	c}} $num [expr {$num + 1}] [expr {$num + 2}]]
 
 # "history keep"
 
@@ -174,7 +174,7 @@ if {[testConstraint history]} {
     history add "foo3"
     history keep 2
 }
-test history-6.1 {keep option} history {history event [expr [history n]-1]} foo3
+test history-6.1 {keep option} history {history event [expr {[history n] - 1}]} foo3
 test history-6.2 {keep option} history {history event -1} foo2
 test history-6.3 {keep option} history {catch {history event -3}} 1
 test history-6.4 {keep option} history {
@@ -216,7 +216,7 @@ if {[testConstraint history]} {
     history add "Testing2"
 }
 test history-7.1 {nextid option} history {history event} "Testing"
-test history-7.2 {nextid option} history {history next} [expr $num+2]
+test history-7.2 {nextid option} history {history next} [expr {$num + 2}]
 test history-7.3 {nextid option} history {catch {history nextid garbage}} 1
 test history-7.4 {nextid option} history {
     catch {history nextid garbage} msg

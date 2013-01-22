@@ -17,6 +17,8 @@
 #----------------------------------------------------------------------
 
 proc main {argc argv} {
+    global errorCode
+    global tcl_platform
 
     if {$argc != 1} {
 	puts stderr "syntax is: [info script] libtcl"
@@ -24,7 +26,7 @@ proc main {argc argv} {
     }
 
 
-    switch -exact -- $::tcl_platform(platform) {
+    switch -exact -- $tcl_platform(platform) {
 	unix -
 	macosx {
 	    set status [catch {
@@ -36,8 +38,9 @@ proc main {argc argv} {
 		exec dumpbin /exports [lindex $argv 0]
 	    } result]
 	}
+        default {}
     }
-    if {$status != 0 && $::errorCode ne "NONE"} {
+    if {($status != 0) && ($errorCode ne "NONE")} {
 	puts $result
 	return 1
     }

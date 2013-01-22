@@ -10,14 +10,14 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
 # Basic "if" operation.
 
-catch {unset a}
+unset -nocomplain a
 test if-1.1 {TclCompileIfCmd: missing if/elseif test} -body {
     if
 } -returnCodes error -result {wrong # args: no expression after "if" argument}
@@ -46,8 +46,8 @@ test if-1.5 {TclCompileIfCmd: if/elseif test not in braces} -body {
 test if-1.6 {TclCompileIfCmd: multiline test expr} -setup {
     set a {}
 } -body {
-    if {($tcl_platform(platform) != "foobar1") && \
-	($tcl_platform(platform) != "foobar2")} {set a 3} else {set a 4}
+    if {($tcl_platform(platform) ne "foobar1") && 
+	($tcl_platform(platform) ne "foobar2")} {set a 3} else {set a 4}
     return $a
 } -cleanup {
     unset a
@@ -75,7 +75,7 @@ test if-1.9 {TclCompileIfCmd: missing "then" body} -setup {
 } -returnCodes error -result {wrong # args: no script following "then" argument}
 test if-1.10 {TclCompileIfCmd: error in "then" body} -body {
     set a {}
-    list [catch {if {$a!="xxx"} then {set}} msg] $msg $::errorInfo
+    list [catch {if {$a ne "xxx"} then {set}} msg] $msg $::errorInfo
 } -match glob -cleanup {
     unset a msg
 } -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
@@ -92,8 +92,7 @@ test if-1.12 {TclCompileIfCmd: "then" body in quotes} -body {
     unset a
 } -result {x}
 test if-1.13 {TclCompileIfCmd: computed "then" body} -setup {
-    catch {unset x1}
-    catch {unset x2}
+    unset -nocomplain x1 x2
 } -body {
     set x1 {append a x1}
     set x2 {; append a x2}
@@ -104,7 +103,7 @@ test if-1.13 {TclCompileIfCmd: computed "then" body} -setup {
     unset a x1 x2
 } -result {x1x2}
 test if-1.14 {TclCompileIfCmd: taking proper branch} -body {
-    set a {}
+    set a ""
     if 1<2 {set a 1}
     return $a
 } -cleanup {
@@ -118,12 +117,12 @@ test if-1.15 {TclCompileIfCmd: taking proper branch} -body {
     unset a
 } -result {}
 test if-1.16 {TclCompileIfCmd: test jumpFalse instruction replacement after long "then" body} -setup {
-    catch {unset i}
-    set a {}
+    unset -nocomplain i
+    set a ""
 } -body {
     if 1<2 {
 	set a 1
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -142,11 +141,11 @@ test if-1.16 {TclCompileIfCmd: test jumpFalse instruction replacement after long
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 2
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -165,7 +164,7 @@ test if-1.16 {TclCompileIfCmd: test jumpFalse instruction replacement after long
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 3
@@ -215,12 +214,12 @@ test if-2.4 {TclCompileIfCmd: error in expression after "elseif"} -setup {
     unset a msg
 } -result {1 * {*"if 3>4 {set a 1} elseif {1>}"}}
 test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long "elseif" body} -setup {
-    catch {unset i}
+    unset -nocomplain i
     set a {}
 } -body {
     if 1>2 {
 	set a 1
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -239,11 +238,11 @@ test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 2
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -262,13 +261,13 @@ test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 3
     } elseif 1<2 then { #; this if arm should be taken
 	set a 4
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -287,11 +286,11 @@ test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 5
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -310,7 +309,7 @@ test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 6
@@ -323,7 +322,7 @@ test if-2.5 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 
 test if-3.1 {TclCompileIfCmd: "else" clause} -body {
     set a {}
-    if 3>4 {set a 1} elseif {$a == "foo"} {set a 2} else {set a 3}
+    if 3>4 {set a 1} elseif {$a eq "foo"} {set a 2} else {set a 3}
     return $a
 } -cleanup {
     unset a
@@ -365,12 +364,12 @@ test if-3.5 {TclCompileIfCmd: extra arguments after "else" argument} -setup {
 # commands are properly relocated because a short jump must be replaced
 # by a "long distance" one.
 test if-3.6 {TclCompileIfCmd: test jumpFalse instruction replacement after long "else" clause} -setup {
-    catch {unset i}
-    set a {}
+    unset -nocomplain i
+    set a ""
 } -body {
     if 1>2 {
 	set a 1
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -389,11 +388,11 @@ test if-3.6 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 2
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -412,13 +411,13 @@ test if-3.6 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 3
     } elseif 1==2 then { #; this if arm should be taken
 	set a 4
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -437,11 +436,11 @@ test if-3.6 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 5
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -460,13 +459,13 @@ test if-3.6 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 6
     } else {
 	set a 7
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -485,11 +484,11 @@ test if-3.6 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 8
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		if {[string compare $a "bar"] < 0} {
@@ -508,7 +507,7 @@ test if-3.6 {TclCompileIfCmd: test jumpFalse instruction replacement after long 
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 9
@@ -600,8 +599,8 @@ test if-5.5 {if cmd with computed command names: if/elseif test not in braces} -
 } -result {1}
 test if-5.6 {if cmd with computed command names: multiline test expr} -body {
     set z if
-    $z {($tcl_platform(platform) != "foobar1") && \
-	($tcl_platform(platform) != "foobar2")} {set a 3} else {set a 4}
+    $z {($tcl_platform(platform) ne "foobar1") && 
+	($tcl_platform(platform) ne "foobar2")} {set a 3} else {set a 4}
     return $a
 } -cleanup {
     unset a z
@@ -634,14 +633,14 @@ test if-5.9 {if cmd with computed command names: missing "then" body} -setup {
 test if-5.10 {if cmd with computed command names: error in "then" body} -body {
     set z if
     set a {}
-    list [catch {$z {$a!="xxx"} then {set}} msg] $msg $::errorInfo
+    list [catch {$z {$a ne "xxx"} then {set}} msg] $msg $::errorInfo
 } -match glob -cleanup {
     unset a z msg
 } -result {1 {wrong # args: should be "set varName ?newValue?"} {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"
     invoked from within
-"$z {$a!="xxx"} then {set}"}}
+"$z {$a ne "xxx"} then {set}"}}
 test if-5.11 {if cmd with computed command names: error in "then" body} -body {
     set z if
     $z 2 then {[error "error in then clause"]}
@@ -658,8 +657,7 @@ test if-5.12 {if cmd with computed command names: "then" body in quotes} -setup 
     unset a z
 } -result {x}
 test if-5.13 {if cmd with computed command names: computed "then" body} -setup {
-    catch {unset x1}
-    catch {unset x2}
+    unset -nocomplain x1 x2
 } -body {
     set z if
     set x1 {append a x1}
@@ -688,13 +686,13 @@ test if-5.15 {if cmd with computed command names: taking proper branch} -body {
     unset a z
 } -result {}
 test if-5.16 {if cmd with computed command names: test jumpFalse instruction replacement after long "then" body} -setup {
-    catch {unset i}
+    unset -nocomplain i
     set a {}
 } -body {
     set z if
     $z 1<2 {
 	set a 1
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -713,11 +711,11 @@ test if-5.16 {if cmd with computed command names: test jumpFalse instruction rep
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 2
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -736,7 +734,7 @@ test if-5.16 {if cmd with computed command names: test jumpFalse instruction rep
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 3
@@ -791,13 +789,13 @@ test if-6.4 {if cmd with computed command names: error in expression after "else
     unset a z
 } -result {1 {*"$z 3>4 {set a 1} elseif {1>}"}}
 test if-6.5 {if cmd with computed command names: test jumpFalse instruction replacement after long "elseif" body} -setup {
-    catch {unset i}
+    unset -nocomplain i
     set a {}
 } -body {
     set z if
     $z 1>2 {
 	set a 1
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -816,11 +814,11 @@ test if-6.5 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 2
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -839,13 +837,13 @@ test if-6.5 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 3
     } elseif 1<2 then { #; this if arm should be taken
 	set a 4
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -864,11 +862,11 @@ test if-6.5 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 5
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -887,7 +885,7 @@ test if-6.5 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 6
@@ -902,7 +900,7 @@ test if-7.1 {if cmd with computed command names: "else" clause} -setup {
     set a {}
 } -body {
     set z if
-    $z 3>4 {set a 1} elseif {$a == "foo"} {set a 2} else {set a 3}
+    $z 3>4 {set a 1} elseif {$a eq "foo"} {set a 2} else {set a 3}
     return $a
 } -cleanup {
     unset a z
@@ -950,13 +948,13 @@ test if-7.5 {if cmd with computed command names: extra arguments after "else" ar
 # commands are properly relocated because a short jump must be replaced
 # by a "long distance" one.
 test if-7.6 {if cmd with computed command names: test jumpFalse instruction replacement after long "else" clause} -setup {
-    catch {unset i}
+    unset -nocomplain i
     set a {}
 } -body {
     set z if
     $z 1>2 {
 	set a 1
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -975,11 +973,11 @@ test if-7.6 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 2
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -998,13 +996,13 @@ test if-7.6 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 3
     } elseif 1==2 then { #; this if arm should be taken
 	set a 4
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -1023,11 +1021,11 @@ test if-7.6 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 5
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -1046,13 +1044,13 @@ test if-7.6 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 6
     } else {
 	set a 7
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -1071,11 +1069,11 @@ test if-7.6 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 8
-	while {$a != "xxx"} {
+	while {$a ne "xxx"} {
 	    break;
 	    while {$i >= 0} {
 		$z {[string compare $a "bar"] < 0} {
@@ -1094,7 +1092,7 @@ test if-7.6 {if cmd with computed command names: test jumpFalse instruction repl
 		    set i $i
 		    set i [lindex $s $i]
 		}
-		set i [expr $i-1]
+	        set i [expr {$i - 1}]
 	    }
 	}
 	set a 9

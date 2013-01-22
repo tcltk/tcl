@@ -33,11 +33,11 @@ namespace eval ::safe {
 # by -noStatics or -statics 0)
 proc ::safe::InterpStatics {} {
     foreach v {Args statics noStatics} {
-	upvar $v $v
+        upvar 1 $v [set v]
     }
     set flag [::tcl::OptProcArgGiven -noStatics]
-    if {$flag && (!$noStatics == !$statics)
-	&& ([::tcl::OptProcArgGiven -statics])} {
+    if {$flag && ((!$noStatics) == (!$statics)) && 
+	([::tcl::OptProcArgGiven -statics])} {
 	return -code error\
 	    "conflicting values given for -statics and -noStatics"
     }
@@ -52,12 +52,12 @@ proc ::safe::InterpStatics {} {
 # (either by -nestedLoadOk or -nested 1)
 proc ::safe::InterpNested {} {
     foreach v {Args nested nestedLoadOk} {
-	upvar $v $v
+        upvar 1 $v [set v]
     }
     set flag [::tcl::OptProcArgGiven -nestedLoadOk]
     # note that the test here is the opposite of the "InterpStatics" one
     # (it is not -noNested... because of the wanted default value)
-    if {$flag && (!$nestedLoadOk != !$nested)
+    if {$flag && ((!$nestedLoadOk) != (!$nested))
 	&& ([::tcl::OptProcArgGiven -nested])} {
 	return -code error\
 	    "conflicting values given for -nested and -nestedLoadOk"
@@ -95,7 +95,7 @@ proc ::safe::interpInit {args} {
 # Check that the given slave is "one of us"
 proc ::safe::CheckInterp {slave} {
     namespace upvar ::safe S$slave state
-    if {![info exists state] || ![::interp exists $slave]} {
+    if {(![info exists state]) || (![::interp exists $slave])} {
 	return -code error \
 	    "\"$slave\" is not an interpreter managed by ::safe::"
     }
@@ -115,7 +115,7 @@ proc ::safe::CheckInterp {slave} {
 # So this will be hopefully written and some integrated with opt1.0
 # (hopefully for tcl8.1 ?)
 proc ::safe::interpConfigure {args} {
-    switch [llength $args] {
+    switch -- [llength $args] {
 	1 {
 	    # If we have exactly 1 argument the semantic is to return all
 	    # the current configuration. We still call OptKeyParse though
@@ -198,17 +198,17 @@ proc ::safe::interpConfigure {args} {
 		set doreset 0
 	    }
 	    if {
-		![::tcl::OptProcArgGiven -statics]
-		&& ![::tcl::OptProcArgGiven -noStatics]
-	    } then {
+		(![::tcl::OptProcArgGiven -statics])
+		&& (![::tcl::OptProcArgGiven -noStatics])
+	    } {
 		set statics    $state(staticsok)
 	    } else {
 		set statics    [InterpStatics]
 	    }
 	    if {
-		[::tcl::OptProcArgGiven -nested] ||
+		[::tcl::OptProcArgGiven -nested] || 
 		[::tcl::OptProcArgGiven -nestedLoadOk]
-	    } then {
+	    } {
 		set nested     [InterpNested]
 	    } else {
 		set nested     $state(nestedok)
@@ -265,7 +265,7 @@ proc ::safe::InterpCreate {
 		       } {
     # Create the slave.
     if {$slave ne ""} {
-	::interp create -safe $slave
+	::interp create -safe -- $slave
     } else {
 	# empty argument: generate slave name
 	set slave [::interp create -safe]
@@ -680,9 +680,11 @@ proc ::safe::CheckFileName {slave file} {
 # interpreters that are *almost* safe. In particular, it just acts to
 # prevent discovery of what home directories exist.
 
-proc ::safe::AliasFileSubcommand {slave subcommand name} {
-    if {[string match ~* $name]} {
-	set name ./$name
+proc ::safe::AliasFileSubcommand {slave subcommand a_name} {
+    if {[string match "~*" $a_name]} {
+	set name ./$a_name
+    } else {
+	set name $a_name
     }
     tailcall ::interp invokehidden $slave tcl:file:$subcommand $name
 }
@@ -690,6 +692,7 @@ proc ::safe::AliasFileSubcommand {slave subcommand name} {
 # AliasGlob is the target of the "glob" alias in safe interpreters.
 
 proc ::safe::AliasGlob {slave args} {
+    global tcl_platform
     Log $slave "GLOB ! $args" NOTICE
     set cmd {}
     set at 0
@@ -701,7 +704,7 @@ proc ::safe::AliasGlob {slave args} {
 	-- 0
     }
 
-    if {$::tcl_platform(platform) eq "windows"} {
+    if {$tcl_platform(platform) eq "windows"} {
 	set dirPartRE {^(.*)[\\/]([^\\/]*)$}
     } else {
 	set dirPartRE {^(.*)/([^/]*)$}
@@ -771,13 +774,13 @@ proc ::safe::AliasGlob {slave args} {
     # Process remaining pattern arguments
     set firstPattern [llength $cmd]
     foreach opt [lrange $args $at end] {
-	if {![regexp $dirPartRE $opt -> thedir thefile]} {
+	if {![regexp -- $dirPartRE $opt ___ thedir thefile]} {
 	    set thedir .
-	} elseif {[string match ~* $thedir]} {
+	} elseif {[string match "~*" $thedir]} {
 	    set thedir ./$thedir
 	}
-	if {$thedir eq "*" &&
-		($thefile eq "pkgIndex.tcl" || $thefile eq "*.tm")} {
+	if {($thedir eq "*") && 
+	    ($thefile in "pkgIndex.tcl *.tm")} {
 	    set mapped 0
 	    foreach d [glob -directory [TranslatePath $slave $virtualdir] \
 			   -types d -tails *] {
@@ -803,9 +806,10 @@ proc ::safe::AliasGlob {slave args} {
 
     Log $slave "GLOB = $cmd" NOTICE
 
-    if {$got(-nocomplain) && [llength $cmd] eq $firstPattern} {
+    if {$got(-nocomplain) && ([llength $cmd] eq $firstPattern)} {
 	return
     }
+    set entries [list]
     try {
 	set entries [::interp invokehidden $slave glob {*}$cmd]
     } on error msg {
@@ -816,11 +820,11 @@ proc ::safe::AliasGlob {slave args} {
     Log $slave "GLOB < $entries" NOTICE
 
     # Translate path back to what the slave should see.
-    set res {}
+    set res [list]
     set l [string length $dir]
     foreach p $entries {
 	if {[string equal -length $l $dir $p]} {
-	    set p [string replace $p 0 [expr {$l-1}] $virtualdir]
+	    set p [string replace $p 0 [expr {$l - 1}] $virtualdir]
 	}
 	lappend res $p
     }
@@ -845,7 +849,7 @@ proc ::safe::AliasSource {slave args} {
 	}
     } else {
 	set at 0
-	set encoding {}
+	set encoding ""
     }
     if {$argc != 1} {
 	set msg "wrong # args: should be \"source ?-encoding E? fileName\""
@@ -885,12 +889,12 @@ proc ::safe::AliasSource {slave args} {
     set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
-	fconfigure $f -eofchar \032
+	chan configure $f -eofchar \032
 	if {$encoding ne ""} {
-	    fconfigure $f -encoding $encoding
+	    chan configure $f -encoding $encoding
 	}
-	set contents [read $f]
-	close $f
+	set contents [chan read $f]
+	chan close $f
 	::interp eval $slave [list info script $file]
     } msg opt]
     if {$code == 0} {

@@ -4,7 +4,7 @@
 package require msgcat
 set d [file dirname [file dirname [info script]]]
 puts "getting transition data from [file join $d library tzdata America Detroit]"
-source [file join $d library/tzdata/America/Detroit]
+source [file join $d library tzdata America Detroit]
 
 namespace eval ::tcl::clock {
     ::msgcat::mcmset en_US_roman {
@@ -86,14 +86,14 @@ proc listYears { startOfYearArray } {
     set s 0
     set dw 4 ;# Thursday
     while { $y < 2100 } {
-	if { $y % 4 == 0 && $y % 100 != 0 || $y % 400 == 0 } {
+	if { (($y % 4) == 0) && (($y % 100) != 0) || (($y % 400) == 0)  } {
 	    set l 1
 	    incr dw 366
-	    set s2 [expr { $s + wide( 366 * 86400 ) }]
+	    set s2 [expr { $s + ( wide ( 366 * 86400 ) ) }]
 	} else {
 	    set l 0
 	    incr dw 365
-	    set s2 [expr { $s + wide( 365 * 86400 ) }]
+	    set s2 [expr { $s + ( wide ( 365 * 86400 ) ) }]
 	}
 	set x [expr { $y >= 2037 }]
 	set dw [expr {$dw % 7}]
@@ -116,14 +116,14 @@ proc listYears { startOfYearArray } {
 	set s0 $s
 	incr dw 371
 	incr y -1
-	if { $y % 4 == 0 && $y % 100 != 0 || $y % 400 == 0 } {
+	if { (($y % 4) == 0) && (($y % 100) != 0) || (($y % 400) == 0) } {
 	    set l 1
 	    incr dw -366
-	    set s [expr { $s - wide(366 * 86400) }]
+	    set s [expr { $s - ( wide (366 * 86400) ) }]
 	} else {
 	    set l 0
 	    incr dw -365
-	    set s [expr { $s - wide(365 * 86400) }]
+	    set s [expr { $s - ( wide (365 * 86400) ) }]
 	}
 	set dw [expr {$dw % 7}]
 	set c [expr { $y / 100 }]
@@ -154,18 +154,18 @@ proc processFile {d} {
 
     # Open two files
     
-    set f1 [open [file join $d tests/clock.test] r]
-    set f2 [open [file join $d tests/clock.new] w]
+    set f1 [open [file join $d [file join tests clock.test]] r]
+    set f2 [open [file join $d [file join tests clock.new]] w]
 
     # Copy leading portion of the test file
 
-    set state {}
-    while { [gets $f1 line] >= 0 } {
+    set state ""
+    while { [chan gets $f1 line] >= 0 } {
 	switch -exact -- $state {
-	    {} {
+	    "" {
 		puts $f2 $line
-		if { [regexp "^\# BEGIN (.*)" $line -> cases] 
-		     && [string compare {} [info commands $cases]] } {
+		if { [regexp "^\# BEGIN (.*)" $line ___ cases] && 
+		     [string compare "" [info commands $cases]] } {
 		    set state inCaseSet
 		    $cases $f2
 		}
@@ -173,9 +173,10 @@ proc processFile {d} {
 	    inCaseSet {
 		if { [regexp "^\#\ END $cases\$" $line] } {
 		    puts $f2 $line
-		    set state {}
+		    set state ""
 		}
 	    }
+	    default {}
 	}
     }
 
@@ -183,10 +184,10 @@ proc processFile {d} {
 
     close $f1
     close $f2
-    file delete -force [file join $d tests/clock.bak]
-    file rename -force [file join $d tests/clock.test] \
-	[file join $d tests/clock.bak]
-    file rename [file join $d tests/clock.new] [file join $d tests/clock.test]
+    file delete -force -- [file join $d tests clock.bak]
+    file rename -force -- [file join $d tests clock.test] \
+	[file join $d tests clock.bak]
+    file rename -- [file join $d tests clock.new] [file join $d tests clock.test]
 
 }
 
@@ -236,9 +237,9 @@ proc testcases2 { f2 } {
 
     # Names of the months
     
-    set short {{} Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec}
+    set short {"" Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec}
     set long {
-	{} January February March April May June July August September
+	"" January February March April May June July August September
 	October November December
     }
     
@@ -253,13 +254,13 @@ proc testcases2 { f2 } {
     # from 1896 to 2045
 
     set n 0
-    foreach { y } [lsort -integer [array names startOfYear]] {
-	set s [expr { $startOfYear($y) + wide(12*3600 + 34*60 + 56) }]
+    foreach y [lsort -integer [array names startOfYear]] {
+	set s [expr { $startOfYear($y) + ( wide ( (12 * 3600) + (34 * 60) + 56) ) }]
 	set m 0
 	set yd 1
 	foreach hath { 31 28 31 30 31 30 31 31 30 31 30 31 } {
 	    incr m
-	    if { $m == 2 && ( $y%4 == 0 && $y%100 != 0 || $y%400 == 0 ) } {
+	    if { ($m == 2) && ( (($y % 4) == 0) && (($y % 100) != 0) || (($y % 400) == 0) ) } {
 		incr hath
 	    }
 	    
@@ -291,11 +292,11 @@ proc testcases2 { f2 } {
 		[lindex $romanc [expr { $y / 100 }]] \
 		[lindex $roman [expr { $y % 100 }]]	\
 		" " $yy " " [lindex $roman [expr { $y % 100 }]] " " $y
-	    puts $f2 "test clock-2.[incr n] {conversion of $dt} {"
+	    puts $f2 "test clock-2.[incr n] \{conversion of $dt\} \{"
 	    puts $f2 "    clock format $s \\"
 	    puts $f2 "\t-format {%b %B %c %Ec %C %EC %d %Od %e %Oe %h %j %J %m %Om %N %x %Ex %y %Oy %Y} \\"
 	    puts $f2 "\t-gmt true -locale en_US_roman"
-	    puts $f2 "} {$result}"
+	    puts $f2 "\} \{$result\}"
 	    
 	    set hm1 [expr { $hath - 1 }]
 	    incr s [expr { 86400 * ( $hath - 1 ) }]
@@ -327,11 +328,11 @@ proc testcases2 { f2 } {
 		[lindex $romanc [expr { $y / 100 }]] \
 		[lindex $roman [expr { $y % 100 }]]	\
 		" " $yy " " [lindex $roman [expr { $y % 100 }]] " " $y
-	    puts $f2 "test clock-2.[incr n] {conversion of $dt} {"
+	    puts $f2 "test clock-2.[incr n] \{conversion of $dt\} \{"
 	    puts $f2 "    clock format $s \\"
 	    puts $f2 "\t-format {%b %B %c %Ec %C %EC %d %Od %e %Oe %h %j %J %m %Om %N %x %Ex %y %Oy %Y} \\"
 	    puts $f2 "\t-gmt true -locale en_US_roman"
-	    puts $f2 "} {$result}"
+	    puts $f2 "\} \{$result\}"
 	    
 	    incr s 86400
 	    incr yd
@@ -364,11 +365,11 @@ proc testcases3 { f2 } {
     listYears startOfYear
 
     set case 0
-    foreach { y } [lsort -integer [array names startOfYear]] {
+    foreach y [lsort -integer [array names startOfYear]] {
 	set secs $startOfYear($y)
 	set ym1 [expr { $y - 1 }]
-	set dow [expr { ( $secs / 86400  + 4 ) % 7}]
-	switch -exact $dow {
+	set dow [expr { ( ( $secs / 86400 ) + 4 ) % 7}]
+	switch -exact -- $dow {
 	    0 {
 		# Year starts on a Sunday.
 		# Prior year started on a Friday or Saturday, and was
@@ -377,13 +378,13 @@ proc testcases3 { f2 } {
 		# begins ISO week 1 of the current year.
 		# 1 January is week 1 according to %U. According to %W,
 		# week 1 begins on 2 January
-		testISO $f2 $ym1 52 1 [expr { $secs - 6*86400 }]
+		testISO $f2 $ym1 52 1 [expr { $secs - (6 * 86400) }]
 		testISO $f2 $ym1 52 6 [expr { $secs - 86400 }]
 		testISO $f2 $ym1 52 7 $secs
 		testISO $f2 $y 1 1 [expr { $secs + 86400 }]
-		testISO $f2 $y 1 6 [expr { $secs + 6*86400}]
-		testISO $f2 $y 1 7 [expr { $secs + 7*86400 }]
-		testISO $f2 $y 2 1 [expr { $secs + 8*86400 }]
+		testISO $f2 $y 1 6 [expr { $secs + (6 * 86400)}]
+		testISO $f2 $y 1 7 [expr { $secs + (7 * 86400) }]
+		testISO $f2 $y 2 1 [expr { $secs + (8 * 86400) }]
 	    }
 	    1 {
 		# Year starts on a Monday.
@@ -392,71 +393,72 @@ proc testcases3 { f2 } {
 		# 1 January is ISO week 1 of the current year
 		# According to %U, it's week 0 until 7 January
 		# 1 January is week 1 according to %W
-		testISO $f2 $ym1 52 1 [expr { $secs - 7*86400 }]
-		testISO $f2 $ym1 52 6 [expr {$secs - 2*86400}]
+		testISO $f2 $ym1 52 1 [expr { $secs - (7 * 86400) }]
+		testISO $f2 $ym1 52 6 [expr {$secs - (2 * 86400)}]
 		testISO $f2 $ym1 52 7 [expr { $secs - 86400 }]
 		testISO $f2 $y 1 1 $secs
-		testISO $f2 $y 1 6 [expr {$secs + 5*86400}]
-		testISO $f2 $y 1 7 [expr { $secs + 6*86400 }]
-		testISO $f2 $y 2 1 [expr { $secs + 7*86400 }]
+		testISO $f2 $y 1 6 [expr {$secs + (5 * 86400)}]
+		testISO $f2 $y 1 7 [expr { $secs + (6 * 86400)}]
+		testISO $f2 $y 2 1 [expr { $secs + (7 * 86400)}]
 	    }
 	    2 {
 		# Year starts on a Tuesday.
-		testISO $f2 $ym1 52 1 [expr { $secs - 8*86400 }]
-		testISO $f2 $ym1 52 6 [expr {$secs - 3*86400}]
-		testISO $f2 $ym1 52 7 [expr { $secs - 2*86400 }]
+		testISO $f2 $ym1 52 1 [expr { $secs - (8 * 86400) }]
+		testISO $f2 $ym1 52 6 [expr {$secs - (3 * 86400)}]
+		testISO $f2 $ym1 52 7 [expr { $secs - (2 * 86400) }]
 		testISO $f2 $y 1 1 [expr { $secs - 86400 }]
 		testISO $f2 $y 1 2 $secs
-		testISO $f2 $y 1 6 [expr {$secs + 4*86400}]
-		testISO $f2 $y 1 7 [expr { $secs + 5*86400 }]
-		testISO $f2 $y 2 1 [expr { $secs + 6*86400 }]
+		testISO $f2 $y 1 6 [expr {$secs + (4 * 86400)}]
+		testISO $f2 $y 1 7 [expr { $secs + (5 * 86400) }]
+		testISO $f2 $y 2 1 [expr { $secs + (6 * 86400) }]
 	    }
 	    3 {
-		testISO $f2 $ym1 52 1 [expr { $secs - 9*86400 }]
-		testISO $f2 $ym1 52 6 [expr {$secs - 4*86400}]
-		testISO $f2 $ym1 52 7 [expr { $secs - 3*86400 }]
-		testISO $f2 $y 1 1 [expr { $secs - 2*86400 }]
+		testISO $f2 $ym1 52 1 [expr { $secs - (9 * 86400) }]
+		testISO $f2 $ym1 52 6 [expr {$secs - (4 * 86400)}]
+		testISO $f2 $ym1 52 7 [expr { $secs - (3 * 86400) }]
+		testISO $f2 $y 1 1 [expr { $secs - (2 * 86400) }]
 		testISO $f2 $y 1 3 $secs
-		testISO $f2 $y 1 6 [expr {$secs + 3*86400}]
-		testISO $f2 $y 1 7 [expr { $secs + 4*86400 }]
-		testISO $f2 $y 2 1 [expr { $secs + 5*86400 }]
+		testISO $f2 $y 1 6 [expr {$secs + (3 * 86400)}]
+		testISO $f2 $y 1 7 [expr { $secs + (4 * 86400) }]
+		testISO $f2 $y 2 1 [expr { $secs + (5 * 86400) }]
 	    }
 	    4 {
-		testISO $f2 $ym1 52 1 [expr { $secs - 10*86400 }]
-		testISO $f2 $ym1 52 6 [expr {$secs - 5*86400}]
-		testISO $f2 $ym1 52 7 [expr { $secs - 4*86400 }]
-		testISO $f2 $y 1 1 [expr { $secs - 3*86400 }]
+		testISO $f2 $ym1 52 1 [expr { $secs - (10 * 86400) }]
+		testISO $f2 $ym1 52 6 [expr {$secs - (5 * 86400)}]
+		testISO $f2 $ym1 52 7 [expr { $secs - (4 * 86400) }]
+		testISO $f2 $y 1 1 [expr { $secs - (3 * 86400) }]
 		testISO $f2 $y 1 4 $secs
-		testISO $f2 $y 1 6 [expr {$secs + 2*86400}]
-		testISO $f2 $y 1 7 [expr { $secs + 3*86400 }]
-		testISO $f2 $y 2 1 [expr { $secs + 4*86400 }]
+		testISO $f2 $y 1 6 [expr {$secs + (2 * 86400)}]
+		testISO $f2 $y 1 7 [expr { $secs + (3 * 86400) }]
+		testISO $f2 $y 2 1 [expr { $secs + (4 * 86400) }]
 	    }
 	    5 {
-		testISO $f2 $ym1 53 1 [expr { $secs - 4*86400 }]
+		testISO $f2 $ym1 53 1 [expr { $secs - (4 * 86400) }]
 		testISO $f2 $ym1 53 5 $secs
 		testISO $f2 $ym1 53 6 [expr {$secs + 86400}]
-		testISO $f2 $ym1 53 7 [expr { $secs + 2*86400 }]
-		testISO $f2 $y 1 1 [expr { $secs + 3*86400 }]
-		testISO $f2 $y 1 6 [expr {$secs + 8*86400}]
-		testISO $f2 $y 1 7 [expr { $secs + 9*86400 }]
-		testISO $f2 $y 2 1 [expr { $secs + 10*86400 }]
+		testISO $f2 $ym1 53 7 [expr { $secs + (2 * 86400) }]
+		testISO $f2 $y 1 1 [expr { $secs + (3 * 86400) }]
+		testISO $f2 $y 1 6 [expr {$secs + (8 * 86400)}]
+		testISO $f2 $y 1 7 [expr { $secs + (9 * 86400) }]
+		testISO $f2 $y 2 1 [expr { $secs + (10 * 86400) }]
 	    }
 	    6 {
 		# messy case because previous year may have had 52 or 53 weeks
-		if { $y%4 == 1 } {
-		    testISO $f2 $ym1 53 1 [expr { $secs - 5*86400 }]
+		if { ($y % 4) == 1 } {
+		    testISO $f2 $ym1 53 1 [expr { $secs - (5 * 86400) }]
 		    testISO $f2 $ym1 53 6 $secs
 		    testISO $f2 $ym1 53 7 [expr { $secs + 86400 }]
 		} else {
-		    testISO $f2 $ym1 52 1 [expr { $secs - 5*86400 }]
+		    testISO $f2 $ym1 52 1 [expr { $secs - (5 * 86400) }]
 		    testISO $f2 $ym1 52 6 $secs
 		    testISO $f2 $ym1 52 7 [expr { $secs + 86400 }]
 		}		    
-		testISO $f2 $y 1 1 [expr { $secs + 2*86400 }]
-		testISO $f2 $y 1 6 [expr { $secs + 7*86400 }]
-		testISO $f2 $y 1 7 [expr { $secs + 8*86400 }]
-		testISO $f2 $y 2 1 [expr { $secs + 9*86400 }]
+		testISO $f2 $y 1 1 [expr { $secs + (2 * 86400) }]
+		testISO $f2 $y 1 6 [expr { $secs + (7 * 86400) }]
+		testISO $f2 $y 1 7 [expr { $secs + (8 * 86400) }]
+		testISO $f2 $y 2 1 [expr { $secs + (9 * 86400) }]
 	    }
+	    default {}
 	}
     }
     puts "testcases3: $case test cases."
@@ -464,20 +466,19 @@ proc testcases3 { f2 } {
 }
 
 proc testISO { f2 G V u secs } {
-
     upvar 1 case case
     
-    set longdays {Sunday Monday Tuesday Wednesday Thursday Friday Saturday Sunday}
-    set shortdays {Sun Mon Tue Wed Thu Fri Sat Sun}
+    set longdays [list Sunday Monday Tuesday Wednesday Thursday Friday Saturday Sunday]
+    set shortdays [list Sun Mon Tue Wed Thu Fri Sat Sun]
     
-    puts $f2 "test clock-3.[incr case] {ISO week-based calendar [format %04d-W%02d-%d $G $V $u]} {"
+    puts $f2 "test clock-3.[incr case] \{ISO week-based calendar [format %04d-W%02d-%d $G $V $u]\} \{"
     puts $f2 "    clock format $secs -format {%a %A %g %G %u %U %V %w %W} -gmt true; \# $G-W[format %02d $V]-$u"
-    puts $f2 "} {[lindex $shortdays $u] [lindex $longdays $u]\
+    puts $f2 "\} \{[lindex $shortdays $u] [lindex $longdays $u]\
              [format %02d [expr { $G % 100 }]] $G\
              $u\
              [clock format $secs -format %U -gmt true]\
              [format %02d $V] [expr { $u % 7 }]\
-             [clock format $secs -format %W -gmt true]}"
+             [clock format $secs -format %W -gmt true]\}"
     
 }
 
@@ -500,10 +501,10 @@ proc testISO { f2 G V u secs } {
 
 proc testcases4 { f2 } {
 
-    puts $f2 {}
+    puts $f2 ""
     puts $f2 "\# Test formatting of time of day"
     puts $f2 "\# Format groups tested: %H %OH %I %OI %k %Ok %l %Ol %M %OM %p %P %r %R %S %OS %T %X %EX %+"
-    puts $f2 {}
+    puts $f2 ""
     
     set i 0
     set fmt "%H %OH %I %OI %k %Ok %l %Ol %M %OM %p %P %r %R %S %OS %T %X %EX %+"
@@ -523,7 +524,7 @@ proc testcases4 { f2 } {
 	    set mm [format %02d $m]
 	    foreach { s romanS } { 0 ? 1 i 58 lviii 59 lix } {
 		set ss [format %02d $s]
-		set x [expr { ( $h * 60 + $m ) * 60 + $s }]
+		set x [expr { ( ( ($h * 60) + $m ) * 60 ) + $s }]
 		set result ""
 		append result $hh " " $romanH " " $II " " $romanI " " \
 		    $hs " " $romanH " " $Is " " $romanI " " $mm " " $romanM " " \
@@ -535,12 +536,12 @@ proc testcases4 { f2 } {
 		    $hh ":" $mm ":" $ss " " \
 		    $romanH " h " $romanM " m " $romanS " s " \
 		    "Thu Jan  1 " $hh : $mm : $ss " GMT 1970"
-		puts $f2 "test clock-4.[incr i] { format time of day $hh:$mm:$ss } {"
+		puts $f2 "test clock-4.[incr i] \{ format time of day $hh:$mm:$ss \} \{"
 		puts $f2 "    clock format $x \\"
 		puts $f2 "        -format [list $fmt] \\"
 		puts $f2 "	  -locale en_US_roman \\"
 		puts $f2 "        -gmt true"
-		puts $f2 "} {$result}"
+		puts $f2 "\} \{$result\}"
 	    }
 	}
     }
@@ -569,59 +570,59 @@ proc testcases4 { f2 } {
 proc testcases5 { f2 } {
     variable TZData
 
-    puts $f2 {}
+    puts $f2 ""
     puts $f2 "\# Test formatting of Daylight Saving Time"
-    puts $f2 {}
+    puts $f2 ""
     
-    set fmt {%H:%M:%S %z %Z}
+    set fmt "%H:%M:%S %z %Z"
     
     set i 0
-    puts $f2 "test clock-5.[incr i] {does Detroit exist} {"
-    puts $f2 "    clock format 0 -format {} -timezone :America/Detroit"
+    puts $f2 "test clock-5.[incr i] \{does Detroit exist\} \{"
+    puts $f2 "    clock format 0 -format \{\} -timezone :America/Detroit"
     puts $f2 "    concat"
-    puts $f2 "} {}"
-    puts $f2 "test clock-5.[incr i] {does Detroit have a Y2038 problem} detroit {"
-    puts $f2 "    if { \[clock format 2158894800 -format %z -timezone :America/Detroit\] ne {-0400} } {"
-    puts $f2 "        concat {y2038 problem}"
-    puts $f2 "    } else {"
-    puts $f2 "        concat {ok}"
-    puts $f2 "    }"
-    puts $f2 "} ok"
+    puts $f2 "\} \{\}"
+    puts $f2 "test clock-5.[incr i] \{does Detroit have a Y2038 problem\} detroit \{"
+    puts $f2 "    if \{ \[clock format 2158894800 -format %z -timezone :America/Detroit\] ne \{-0400\} \} \{"
+    puts $f2 "        concat \{y2038 problem\}"
+    puts $f2 "    \} else \{"
+    puts $f2 "        concat \{ok\}"
+    puts $f2 "    \}"
+    puts $f2 "\} ok"
   
     foreach row $TZData(:America/Detroit) {
-	foreach { t offset isdst tzname } $row break
+	lassign $row t offset isdst tzname
 	if { $t > -4000000000000 } {
 	    set conds [list detroit]
 	    if { $t > wide(0x7fffffff) } {
 		set conds [list detroit y2038]
 	    }
 	    incr t -1
-	    set x [clock format $t -format {%Y-%m-%d %H:%M:%S} \
+	    set x [clock format $t -format "%Y-%m-%d %H:%M:%S" \
 		       -timezone :America/Detroit]
 	    set r [clock format $t -format $fmt \
 		       -timezone :America/Detroit]
-	    puts $f2 "test clock-5.[incr i] {time zone boundary case $x} [list $conds] {"
+	    puts $f2 "test clock-5.[incr i] \{time zone boundary case $x\} [list $conds] \{"
 	    puts $f2 "    clock format $t -format [list $fmt] \\"
 	    puts $f2 "        -timezone :America/Detroit"
-	    puts $f2 "} [list $r]"
+	    puts $f2 "\} [list $r]"
 	    incr t
-	    set x [clock format $t -format {%Y-%m-%d %H:%M:%S} \
+	    set x [clock format $t -format "%Y-%m-%d %H:%M:%S" \
 		       -timezone :America/Detroit]
 	    set r [clock format $t -format $fmt \
 		       -timezone :America/Detroit]
-	    puts $f2 "test clock-5.[incr i] {time zone boundary case $x} [list $conds] {"
+	    puts $f2 "test clock-5.[incr i] \{time zone boundary case $x\} [list $conds] \{"
 	    puts $f2 "    clock format $t -format [list $fmt] \\"
 	    puts $f2 "        -timezone :America/Detroit"
-	    puts $f2 "} [list $r]"
+	    puts $f2 "\} [list $r]"
 	    incr t
-	    set x [clock format $t -format {%Y-%m-%d %H:%M:%S} \
+	    set x [clock format $t -format "%Y-%m-%d %H:%M:%S" \
 		       -timezone :America/Detroit]
 	    set r [clock format $t -format $fmt \
 		       -timezone :America/Detroit]
-	    puts $f2 "test clock-5.[incr i] {time zone boundary case $x} [list $conds] {"
+	    puts $f2 "test clock-5.[incr i] \{time zone boundary case $x\} [list $conds] \{"
 	    puts $f2 "    clock format $t -format [list $fmt] \\"
 	    puts $f2 "        -timezone :America/Detroit"
-	    puts $f2 "} [list $r]"
+	    puts $f2 "\} [list $r]"
 	}
     }
     puts "testcases5: $i test cases"
@@ -665,9 +666,9 @@ proc testcases8 { f2 } {
 					    -format "$ccyy $mm $dd" \
 					    -locale en_US_roman \
 					    -gmt true]
-			    puts $f2 "test clock-8.[incr n] {parse ccyymmdd} {"
+			    puts $f2 "test clock-8.[incr n] \{parse ccyymmdd\} \{"
 			    puts $f2 "    [list clock scan $string -format [list $ccyy $mm $dd] -locale en_US_roman -gmt 1]"
-			    puts $f2 "} $scanned"
+			    puts $f2 "\} $scanned"
 			}
 		    }
 		}	
@@ -676,9 +677,9 @@ proc testcases8 { f2 } {
 				    -format $fmt \
 				    -locale en_US_roman \
 				    -gmt true]
-		    puts $f2 "test clock-8.[incr n] {parse ccyymmdd} {"
+		    puts $f2 "test clock-8.[incr n] \{parse ccyymmdd\} \{"
 		    puts $f2 "    [list clock scan $string -format $fmt -locale en_US_roman -gmt 1]"
-		    puts $f2 "} $scanned"
+		    puts $f2 "\} $scanned"
 		}
 	    }
 	}
@@ -738,13 +739,14 @@ proc testcases11 { f2 } {
 		j {
 		    set value 86400
 		}
+	        default {}
 	    }
 	}
 	set format "%$a%$b%$c%$d"
 	set string "$v($a)$v($b)$v($c)$v($d)"
-	puts $f2 "test clock-11.[incr n] {precedence of ccyyddd and ccyymmdd} {"
+	puts $f2 "test clock-11.[incr n] \{precedence of ccyyddd and ccyymmdd\} \{"
 	puts $f2 "    [list clock scan $string -format $format -gmt 1]"
-	puts $f2 "} $value"
+	puts $f2 "\} $value"
     }
 
     puts "testcases11: $n test cases"
@@ -786,9 +788,9 @@ proc testcases12 { f2 } {
 				    -format "%G W%V $d" \
 				    -locale en_US_roman \
 				    -gmt true]
-		    puts $f2 "test clock-12.[incr n] {parse ccyyWwwd} {"
+		    puts $f2 "test clock-12.[incr n] \{parse ccyyWwwd\} \{"
 		    puts $f2 "    [list clock scan $string -format [list %G W%V $d] -locale en_US_roman -gmt 1]"
-		    puts $f2 "} $scanned"
+		    puts $f2 "\} $scanned"
 		}
 	    }
 	}
@@ -834,9 +836,9 @@ proc testcases14 { f2 } {
 					    -format "$yy $mm $dd" \
 					    -locale en_US_roman \
 					    -gmt true]
-			    puts $f2 "test clock-14.[incr n] {parse yymmdd} {"
+			    puts $f2 "test clock-14.[incr n] \{parse yymmdd\} \{"
 			    puts $f2 "    [list clock scan $string -format [list $yy $mm $dd] -locale en_US_roman -gmt 1]"
-			    puts $f2 "} $scanned"
+			    puts $f2 "\} $scanned"
 			}
 		    }
 		}	
@@ -883,9 +885,9 @@ proc testcases17 { f2 } {
 				    -format "%g W%V $d" \
 				    -locale en_US_roman \
 				    -gmt true]
-		    puts $f2 "test clock-17.[incr n] {parse yyWwwd} {"
+		    puts $f2 "test clock-17.[incr n] \{parse yyWwwd\} \{"
 		    puts $f2 "    [list clock scan $string -format [list %g W%V $d] -locale en_US_roman -gmt 1]"
-		    puts $f2 "} $scanned"
+		    puts $f2 "\} $scanned"
 		}
 	    }
 	}
@@ -931,9 +933,9 @@ proc testcases19 { f2 } {
 					-format "$mm $dd" \
 					-locale en_US_roman \
 					-gmt true]
-			puts $f2 "test clock-19.[incr n] {parse mmdd} {"
+			puts $f2 "test clock-19.[incr n] \{parse mmdd\} \{"
 			puts $f2 "    [list clock scan $string -format [list $mm $dd] -locale en_US_roman -base $base -gmt 1]"
-			puts $f2 "} $scanned"
+			puts $f2 "\} $scanned"
 		    }
 		}	
 	    }
@@ -980,9 +982,9 @@ proc testcases22 { f2 } {
 				    -format "W%V $d" \
 				    -locale en_US_roman \
 				    -gmt true]
-		    puts $f2 "test clock-22.[incr n] {parse Wwwd} {"
+		    puts $f2 "test clock-22.[incr n] \{parse Wwwd\} \{"
 		    puts $f2 "    [list clock scan $string -format [list W%V $d] -locale en_US_roman -gmt 1] -base $base"
-		    puts $f2 "} $scanned"
+		    puts $f2 "\} $scanned"
 		}
 	    }
 	}
@@ -1024,12 +1026,12 @@ proc testcases24 { f2 } {
 		set scanned [clock scan $year$month$day -gmt true]
 		foreach dd {%d %Od %e %Oe} {
 		    set string [clock format $scanned \
-				    -format "$dd" \
+				    -format $dd \
 				    -locale en_US_roman \
 				    -gmt true]
-		    puts $f2 "test clock-24.[incr n] {parse naked day of month} {"
+		    puts $f2 "test clock-24.[incr n] \{parse naked day of month\} \{"
 		    puts $f2 "    [list clock scan $string -format $dd -locale en_US_roman -base $base -gmt 1]"
-		    puts $f2 "} $scanned"
+		    puts $f2 "\} $scanned"
 		}	
 	    }
 	}
@@ -1074,12 +1076,12 @@ proc testcases26 { f2 } {
 				 -format %GW%V%u -gmt true]
 		foreach d {%a %A %u %w %Ou %Ow} {
 		    set string [clock format $scanned \
-				    -format "$d" \
+				    -format $d \
 				    -locale en_US_roman \
 				    -gmt true]
-		    puts $f2 "test clock-26.[incr n] {parse naked day of week} {"
+		    puts $f2 "test clock-26.[incr n] \{parse naked day of week\} \{"
 		    puts $f2 "    [list clock scan $string -format $d -locale en_US_roman -gmt 1] -base $base"
-		    puts $f2 "} $scanned"
+		    puts $f2 "\} $scanned"
 		}
 	    }
 	}
@@ -1126,15 +1128,15 @@ proc testcases29 { f2 } {
 	    set AMPMind [string toupper $ampmind]
 	    foreach minute {00 01 59} lminute {? i lix} {
 		foreach second {00 01 59} lsecond {? i lix} {
-		    set time [expr { ( 60 * $hour + $minute ) * 60 + $second }]
+		    set time [expr { ( ( (60 * $hour) + $minute ) * 60 ) + $second }]
 		    foreach {hfmt afmt} [list \
-					     %H {} %k {} %OH {} %Ok {} \
+					     %H "" %k "" %OH "" %Ok "" \
 					     %I %p %l %p \
 					     %OI %p %Ol %p \
 					     %I %P %l %P \
 					     %OI %P %Ol %P] \
 			{hfld afld} [list \
-					 $2dhr {} $sphr {} $lhour {} $lhour {} \
+					 $2dhr "" $sphr "" $lhour "" $lhour "" \
 					 $2dhampm $AMPMind $sphampm $AMPMind \
 					 $lhampm $AMPMind $lhampm $AMPMind \
 					 $2dhampm $ampmind $sphampm $ampmind \
@@ -1142,33 +1144,33 @@ proc testcases29 { f2 } {
 			{
 			    if { $second eq "00" } {
 				if { $minute eq "00" } {
-				    puts $f2 "test clock-29.[incr n] {time parsing} {"
+				    puts $f2 "test clock-29.[incr n] \{time parsing\} \{"
 				    puts $f2 "    clock scan {2440588 $hfld $afld} \\"
 				    puts $f2 "        -gmt true -locale en_US_roman \\"
 				    puts $f2 "        -format {%J $hfmt $afmt}"
-				    puts $f2 "} $time"
+				    puts $f2 "\} $time"
 				}
-				puts $f2 "test clock-29.[incr n] {time parsing} {"
+				puts $f2 "test clock-29.[incr n] \{time parsing\} \{"
 				puts $f2 "    clock scan {2440588 $hfld:$minute $afld} \\"
 				puts $f2 "        -gmt true -locale en_US_roman \\"
 				puts $f2 "        -format {%J $hfmt:%M $afmt}"
-				puts $f2 "} $time"
-				puts $f2 "test clock-29.[incr n] {time parsing} {"
+				puts $f2 "\} $time"
+				puts $f2 "test clock-29.[incr n] \{time parsing\} \{"
 				puts $f2 "    clock scan {2440588 $hfld:$lminute $afld} \\"
 				puts $f2 "        -gmt true -locale en_US_roman \\"
 				puts $f2 "        -format {%J $hfmt:%OM $afmt}"
-				puts $f2 "} $time"
+				puts $f2 "\} $time"
 			    }
-			    puts $f2 "test clock-29.[incr n] {time parsing} {"
+			    puts $f2 "test clock-29.[incr n] \{time parsing\} \{"
 			    puts $f2 "    clock scan {2440588 $hfld:$minute:$second $afld} \\"
 			    puts $f2 "        -gmt true -locale en_US_roman \\"
 			    puts $f2 "        -format {%J $hfmt:%M:%S $afmt}"
-			    puts $f2 "} $time"
-			    puts $f2 "test clock-29.[incr n] {time parsing} {"
+			    puts $f2 "\} $time"
+			    puts $f2 "test clock-29.[incr n] \{time parsing\} \{"
 			    puts $f2 "    clock scan {2440588 $hfld:$lminute:$lsecond $afld} \\"
 			    puts $f2 "        -gmt true -locale en_US_roman \\"
 			    puts $f2 "        -format {%J $hfmt:%OM:%OS $afmt}"
-			    puts $f2 "} $time"
+			    puts $f2 "\} $time"
 			}
 		}
 	    }

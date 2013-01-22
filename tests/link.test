@@ -21,9 +21,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testlink [llength [info commands testlink]]
 
-foreach i {int real bool string} {
-    unset -nocomplain $i
-}
+unset -nocomplain int real bool string
 
 test link-1.1 {reading C variables from Tcl} -constraints {testlink} -setup {
     testlink delete
@@ -296,9 +294,7 @@ test link-8.3 {Tcl_UpdateLinkedVar procedure, read-only variable} {testlink} {
 
 catch {testlink set 0 0 0 - 0 0 0 0 0 0 0 0 0 0}
 catch {testlink delete}
-foreach i {int real bool string wide} {
-    unset -nocomplain $i
-}
+unset -nocomplain int real bool string wide
 
 # cleanup
 ::tcltest::cleanupTests

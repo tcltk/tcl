@@ -37,7 +37,7 @@ proc httpdAccept {newsock ipaddr port} {
     global httpd
     upvar #0 httpd$newsock data
 
-    fconfigure $newsock -blocking 0 -translation {auto crlf}
+    chan configure $newsock -blocking 0 -translation {auto crlf}
     httpd_log $newsock Connect $ipaddr $port
     set data(ipaddr) $ipaddr
     fileevent $newsock readable [list httpdRead $newsock]
@@ -65,7 +65,7 @@ proc httpdRead { sock } {
 	    httpdSockDone $sock
 	}
 	return
-    } elseif {$data(state) == "mime"} {
+    } elseif {$data(state) eq "mime"} {
 
 	# Read the HTTP headers
 
@@ -74,7 +74,7 @@ proc httpdRead { sock } {
             lappend data(meta) $key [string trim $val]
         }
 
-    } elseif {$data(state) == "query"} {
+    } elseif {$data(state) eq "query"} {
 
 	# Read the query data
 
@@ -194,7 +194,7 @@ proc httpdRespond { sock } {
 		append html "<h2>Query</h2>\n<dl>\n"
 		foreach {key value} [split $data(query) &=] {
 		    append html "<dt>$key<dd>$value\n"
-		    if {$key == "timeout"} {
+		    if {$key eq "timeout"} {
 			after $value	;# pause
 		    }
 		}
@@ -207,7 +207,7 @@ proc httpdRespond { sock } {
     # Catch errors from premature client closes
     
     catch {
-	if {$data(proto) == "HEAD"} {
+	if {$data(proto) eq "HEAD"} {
 	    puts $sock "HTTP/1.0 200 OK"
 	} else {
             # Split the response to test for [Bug 26245326]
@@ -226,8 +226,8 @@ proc httpdRespond { sock } {
         }
 	puts $sock ""
 	flush $sock
-	if {$data(proto) != "HEAD"} {
-	    fconfigure $sock -translation binary
+	if {$data(proto) ne "HEAD"} {
+	    chan configure $sock -translation binary
 	    puts -nonewline $sock $html
 	}
     }

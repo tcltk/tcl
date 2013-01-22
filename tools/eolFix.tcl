@@ -13,7 +13,7 @@ namespace eval ::EOL {
     variable outMode crlf
 }
 
-proc EOL::fix {filename {newfilename {}}} {
+proc EOL::fix {filename {newfilename ""}} {
     variable outMode
 
     if {![file exists $filename]} {
@@ -21,23 +21,23 @@ proc EOL::fix {filename {newfilename {}}} {
     }
     puts "EOL Fixing: $filename"
 
-    file rename ${filename} ${filename}.o
-    set fhnd [open ${filename}.o r]
+    file rename -- $filename $filename.o
+    set fhnd [open $filename.o r]
 
     if {$newfilename ne ""} {
-	set newfhnd [open ${newfilename} w]
+	set newfhnd [open $newfilename w]
     } else {
-	set newfhnd [open ${filename} w]
+	set newfhnd [open $filename w]
     }
 
-    fconfigure $newfhnd -translation [list auto $outMode]
+    chan configure $newfhnd -translation [list auto $outMode]
     seek $fhnd 0 end
-    set theEnd [tell $fhnd]
-    seek $fhnd 0 start
+    set theEnd [chan tell $fhnd]
+    chan seek $fhnd 0 start
 
-    fconfigure $fhnd -translation binary -buffersize $theEnd
-    set rawFile [read $fhnd $theEnd]
-    close $fhnd
+    chan configure $fhnd -translation binary -buffersize $theEnd
+    set rawFile [chan read $fhnd $theEnd]
+    chan close $fhnd
 
     regsub -all {(\r)|(\r){1,2}(\n)} $rawFile "\n" rawFile
 
@@ -47,12 +47,12 @@ proc EOL::fix {filename {newfilename {}}} {
 	puts $newfhnd $line
     }
 
-    close $newfhnd
-    file delete ${filename}.o
+    chan close $newfhnd
+    file delete -- ${filename}.o
 }
 
 proc EOL::fixall {args} {
-    if {[llength $args] == 0} {
+    if {![llength $args]} {
 	puts stderr "no files to fix"
 	exit 1
     } else {
@@ -64,13 +64,16 @@ proc EOL::fixall {args} {
     }
 }
 
-if {$tcl_interactive == 0 && $argc > 0} {
+if {($tcl_interactive == 0) && ($argc > 0)} {
     if {[string index [lindex $argv 0] 0] eq "-"} {
 	switch -- [lindex $argv 0] {
 	    -cr   {set ::EOL::outMode cr}
 	    -crlf {set ::EOL::outMode crlf}
 	    -lf   {set ::EOL::outMode lf}
-	    default {puts stderr "improper mode switch"; exit 1}
+	    default {
+	        puts stderr "improper mode switch"
+	        exit 1
+	    }
         }
 	set argv [lrange $argv 1 end]
     }

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -28,7 +28,7 @@ set n $::tcl::OptDescN
 
 test opt-1.1 {OptKeyRegister / check that auto allocation is skipping existing keys} {
     list [::tcl::OptKeyRegister {} $n] [::tcl::OptKeyRegister {} [expr $n+1]] [::tcl::OptKeyRegister {}]
-} "$n [expr $n+1] [expr $n+2]"
+} "$n [expr {$n + 1}] [expr {$n + 2}]"
 
 test opt-2.1 {OptKeyDelete} {
     list [::tcl::OptKeyRegister {} testkey] \
@@ -131,21 +131,21 @@ test opt-8.10 {List utilities} {
     set l
 } {{b c 7 e} f}
 test opt-8.11 {List utilities} {
-    catch {unset x}
+    unset -nocomplain x
     set l {a {b c 7 e} f}
     list [::tcl::Lassign $l u v w x] \
 	    $u $v $w [info exists x]
 } {3 a {b c 7 e} f 0}
 
 test opt-9.1 {Misc utilities} {
-    catch {unset v}
+    unset -nocomplain v
     ::tcl::SetMax v 3
     ::tcl::SetMax v 7
     ::tcl::SetMax v 6
     set v
 } 7
 test opt-9.2 {Misc utilities} {
-    catch {unset v}
+    unset -nocomplain v
     ::tcl::SetMin v 3
     ::tcl::SetMin v -7
     ::tcl::SetMin v 1

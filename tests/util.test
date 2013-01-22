@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -96,26 +96,26 @@ proc convertDouble { x } {
     return $result
 }
 
-proc verdonk_test {sig binexp shouldbe exp} {
-    regexp {([-+]?)([0-9a-f]+)} $sig -> signum sig
+proc verdonk_test {a_sig a_binexp shouldbe exp} {
+    regexp {([-+]?)([0-9a-f]+)} $a_sig ___ signum sig
     scan $sig %llx sig
-    if {$signum eq {-}} {
-	set signum [expr 1<<63]
+    if {$signum eq "-"} {
+        set signum [expr {1 << 63}]
     } else {
 	set signum 0
     }
-    regexp {E([-+]?[0-9]+)} $binexp -> binexp
-    set word [expr {$signum | (($binexp + 0x3ff)<<52)|($sig & ~(1<<52))}]
+    regexp {E([-+]?[0-9]+)} $a_binexp ___ binexp
+    set word [expr {$signum | (($binexp + 0x3ff) << 52) | ($sig & ( ~ (1 << 52)))}]
     binary scan [binary format w $word] q double
-    regexp {([-+])(\d+)_(\d+)\&} $shouldbe -> signum digits1 digits2
-    regexp {E([-+]\d+)} $exp -> decexp
+    regexp {([-+])(\d+)_(\d+)&} $shouldbe ___ signum digits1 digits2
+    regexp {E([-+]\d+)} $exp ___ decexp
     incr decexp [expr {[string length $digits1] - 1}]
     lassign [testdoubledigits $double [string length $digits1] e] \
 	outdigits decpt outsign
     if {[string index $digits2 0] >= 5} {
 	incr digits1
     }
-    if {$outsign != $signum || $outdigits != $digits1 || $decpt != $decexp} {
+    if {($outsign != $signum) || ($outdigits != $digits1) || ($decpt != $decexp)} {
 	return -code error "result is ${outsign}0.${outdigits}E$decpt\
                             should be ${signum}0.${digits1}E$decexp"
     }
@@ -2153,8 +2153,8 @@ foreach ::tcl_precision {0 12} {
 	1.1
     for {set e 1} {$e < 17} {incr e} {
 	test util-16.1.$::tcl_precision.$e {shortening of numbers} \
-	    "expr 11[string repeat 0 [expr {$e-1}]].0" \
-	    11[string repeat 0 [expr {$e-1}]].0
+	    "expr 11[string repeat 0 [expr {$e - 1}]].0" \
+	    11[string repeat 0 [expr {$e - 1}]].0
     }
     for {set e 17} {$e < 309} {incr e} {
 	test util-16.1.$::tcl_precision.$e {shortening of numbers} \

@@ -14,7 +14,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-makeFile {# Test file for:
+::tcltest::makeFile {# Test file for:
 #   auto_mkindex
 #
 # This file provides example cases for testing the Tcl autoloading facility.
@@ -324,7 +324,7 @@ if {[info exists saveCommands]} {
 }
 rename AutoMkindexTestReset ""
 
-removeFile autoMkindex.tcl
+::tcltest::removeFile autoMkindex.tcl
 if {[file exists tclIndex]} {
     file delete -force tclIndex
 }

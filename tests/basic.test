@@ -31,7 +31,7 @@ catch {interp delete test_interp}
 catch {rename p ""}
 catch {rename q ""}
 catch {rename cmd ""}
-catch {unset x}
+unset -nocomplain x
 
 test basic-1.1 {Tcl_CreateInterp, creates interp's global namespace} {
     catch {interp delete test_interp}
@@ -302,7 +302,7 @@ test basic-20.1 {Tcl_GetCommandInfo, names for commands created inside namespace
     catch {namespace delete {*}[namespace children :: test_ns_*]}
     catch {rename p ""}
     catch {rename q ""}
-    catch {unset x}
+    unset -nocomplain x
     set x [namespace eval test_ns_basic::test_ns_basic2 {
         # the following creates a cmd in the global namespace
         testcmdtoken create p
@@ -355,7 +355,7 @@ test basic-23.1 {Tcl_DeleteCommand} {emptyTest} {
 
 test basic-24.1 {Tcl_DeleteCommandFromToken, invalidate all compiled code if cmd has compile proc} {
     catch {interp delete test_interp}
-    catch {unset x}
+    unset -nocomplain x
     interp create test_interp
     interp eval test_interp {
         proc useSet {} {
@@ -427,7 +427,7 @@ test basic-26.1 {Tcl_EvalObj: preserve object while evaling it} -setup {
     # string would have been freed, leaving garbage bytes for the error
     # message.
     set f [open $fName w]
-    fileevent $f writable "fileevent $f writable {}; error foo"
+    chan event $f writable "chan event $f writable {}; error foo"
     set x {}
     vwait x
     close $f
@@ -547,8 +547,8 @@ test basic-46.1 {Tcl_AllowExceptions: exception return not allowed} {stdio} {
     catch {close $f}
     set res [catch {
 	set f [open |[list [interpreter]] w+]
-	fconfigure $f -buffering line
-	puts $f {fconfigure stdout -buffering line}
+	chan configure $f -buffering line
+	puts $f {chan configure stdout -buffering line}
 	puts $f continue
 	puts $f {puts $::errorInfo}
 	puts $f {puts DONE}
@@ -613,7 +613,7 @@ test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} -setup {
     removeFile BREAKtest
 } -returnCodes error -match glob -result {invoked "break" outside of a loop
     while executing*
-"foo \[set a 1] \[break]"
+"foo \[set a 1\] \[break\]"
     (file "*BREAKtest" line 2)}
 
 test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} -setup {
@@ -647,12 +647,12 @@ proc l3 {} {
 # Do all tests once byte compiled and once with direct string evaluation
 for {set noComp 0} {$noComp <= 1} {incr noComp} {
 
-if $noComp {
-    interp alias {} run {} testevalex
+if {$noComp} {
+    interp alias "" run "" testevalex
     set constraints testevalex
 } else {
-    interp alias {} run {} if 1
-    set constraints {}
+    interp alias "" run "" if 1
+    set constraints ""
 }
 
 test basic-47.2.$noComp {Tcl_EvalEx: error during word expansion} -body {
@@ -961,8 +961,8 @@ test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
 
 # Clean up after expand tests
 unset noComp l1 l2 constraints
-rename l3 {}
-rename run {}
+rename l3 ""
+rename run ""
 
  #cleanup
 catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -972,6 +972,6 @@ catch {rename p ""}
 catch {rename q ""}
 catch {rename cmd ""}
 catch {rename value:at: ""}
-catch {unset x}
+unset -nocomplain x
 ::tcltest::cleanupTests
 return

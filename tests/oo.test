@@ -104,10 +104,10 @@ test oo-0.9 {various types of presence of the TclOO package} {
 } [list TclOO $::oo::version $::oo::version]
 
 test oo-1.1 {basic test of OO functionality: no classes} {
-    set result {}
+    set result [list]
     lappend result [oo::object create foo]
     lappend result [oo::objdefine foo {
-	method bar args {
+        method bar {args} {
 	    global result
 	    lappend result {*}$args
 	    return [llength $args]
@@ -3330,7 +3330,7 @@ test oo-34.1 {TIP 380: slots - presence} -setup {
 test oo-34.2 {TIP 380: slots - presence} {
     lsort [info class instances oo::Slot]
 } {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable}
-proc getMethods obj {
+proc getMethods {obj} {
     list [lsort [info object methods $obj -all]] \
 	[lsort [info object methods $obj -private]]
 }

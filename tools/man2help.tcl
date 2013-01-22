@@ -22,18 +22,18 @@ proc generateContents {basename version files} {
 	doFile $f
     }
     set fd [open [file join [file dirname [info script]] $basename$version.cnt] w]
-    fconfigure $fd -translation crlf
+    chan configure $fd -translation crlf
     puts $fd ":Base $basename$version.hlp"
     foreach package [getPackages] {
 	foreach section [getSections $package] {
             if {![info exists lastSection]} {
-	        set lastSection {}
+	        set lastSection ""
             }
             if {[string compare $lastSection $section]} {
 	    puts $fd "1 $section"
             }
             set lastSection $section
-	    set lastTopic {}
+	    set lastTopic ""
 	    foreach topic [getTopics $package $section] {
 		if {[string compare $lastTopic $topic]} {
 		    set id $topics($package,$section,$topic) 
@@ -62,7 +62,7 @@ proc generateHelp {basename files} {
     }
 
     set file [open [file join [file dirname [info script]] $basename.rtf] w]
-    fconfigure $file -translation crlf
+    chan configure $file -translation crlf
     puts $file "\{\\rtf1\\ansi \\deff0\\deflang1033\{\\fonttbl\{\\f0\\froman\\fcharset0\\fprq2 Times New Roman\;\}\{\\f1\\fmodern\\fcharset0\\fprq1 Courier New\;\}\}"
     foreach f $files {
 	puts "Pass 2 -- $f"
@@ -85,7 +85,7 @@ proc generateHelp {basename files} {
 
 proc doFile {file} {
     global man2tclprog
-    if {[catch {eval [exec $man2tclprog [glob $file]]} msg]} {
+    if {[catch {eval [exec -- $man2tclprog [glob -- $file]]} msg]} {
 	global errorInfo
 	puts stderr $msg
 	puts "in"
@@ -102,7 +102,7 @@ proc doFile {file} {
 # Arguments:
 # dir -			Name of the directory.
 
-proc doDir dir {
+proc doDir {dir} {
     puts "Generating man pages for $dir..."
     foreach f [lsort [glob -directory $dir "*.\[13n\]"]] {
 	doFile $f
@@ -124,7 +124,7 @@ if {![string compare [lindex $argv $arg] "-bitmap"]} {
 }
 set baseName [lindex $argv $arg]
 set version [lindex $argv [incr arg]]
-set files {}
+set files [list]
 foreach i [lrange $argv [incr arg] end] {
     set i [file join $i]
     if {[file isdir $i]} {

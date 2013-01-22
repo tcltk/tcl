@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -50,7 +50,7 @@ proc cleanup {args} {
 	catch {
 	    set x [glob -directory $p tf* td*]
 	}
-	if {$x != ""} {
+	if {$x ne ""} {
 	    catch {file delete -force -- {*}$x}
 	}
     }
@@ -58,7 +58,7 @@ proc cleanup {args} {
 
 if {[testConstraint winOnly]} {
     set major [string index $tcl_platform(osVersion) 0]
-    if {[testConstraint nt] && $major > 4} {
+    if {[testConstraint nt] && ($major > 4)} {
         if {$major > 5} {
             testConstraint winVista 1
         } elseif {$major == 5} {
@@ -86,7 +86,7 @@ proc findfile {dir} {
 
 if {[testConstraint testvolumetype]} {
     foreach p {d e f g h i j k l m n o p q r s t u v w x y z} {
-        if {![catch {testvolumetype ${p}:} result] && $result in {CDFS UDF}} {
+        if {(![catch {testvolumetype ${p}:} result]) && ($result in {CDFS UDF})} {
             set cdrom ${p}:
 	    set cdfile [findfile $cdrom]
 	    testConstraint cdrom 1
@@ -424,13 +424,12 @@ test winFCmd-1.38 {TclpRenameFile: check rename of conflicting inodes} -setup {
     cleanup
 } -constraints {win winNonZeroInodes} -body {
     file mkdir td1
-    foreach {a b} [MakeFiles td1] break
+    lassign [MakeFiles td1] a b
     file rename -force $a $b
     file exists $a
 } -cleanup {
     cleanup
 } -result {0}
-
 
 test winFCmd-2.1 {TclpCopyFile: errno: EACCES} -setup {
     cleanup

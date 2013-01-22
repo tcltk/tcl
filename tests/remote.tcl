@@ -12,7 +12,7 @@
 # Initialize message delimitor
 
 # Initialize command array
-catch {unset command}
+unset -nocomplain command
 set command(0) ""
 set callerSocket ""
 
@@ -22,7 +22,7 @@ if {![info exists VERBOSE]} {
 }
 
 proc __doCommands__ {l s} {
-    global callerSocket VERBOSE
+    global callerSocket VERBOSE errorInfo
 
     if {$VERBOSE} {
 	puts "--- Server executing the following for socket $s:"
@@ -30,22 +30,22 @@ proc __doCommands__ {l s} {
 	puts "---"
     }
     set callerSocket $s
-    set ::errorInfo ""
+    set errorInfo ""
     set code [catch {uplevel "#0" $l} msg]
-    return [list $code $::errorInfo $msg]
+    return [list $code $errorInfo $msg]
 }
 
 proc __readAndExecute__ {s} {
     global command VERBOSE
 
     set l [gets $s]
-    if {[string compare $l "--Marker--Marker--Marker--"] == 0} {
+    if {$l eq "--Marker--Marker--Marker--"} {
         puts $s [__doCommands__ $command($s) $s]
 	puts $s "--Marker--Marker--Marker--"
         set command($s) ""
 	return
     }
-    if {[string compare $l ""] == 0} {
+    if {$l eq ""} {
 	if {[eof $s]} {
 	    if {$VERBOSE} {
 		puts "Server closing $s, eof from client"
@@ -72,13 +72,13 @@ proc __accept__ {s a p} {
 	puts "Server accepts new connection from $a:$p on $s"
     }
     set command($s) ""
-    fconfigure $s -buffering line -translation crlf
-    fileevent $s readable [list __readAndExecute__ $s]
+    chan configure $s -buffering line -translation crlf
+    chan event $s readable [list __readAndExecute__ $s]
 }
 
 set serverIsSilent 0
 for {set i 0} {$i < $argc} {incr i} {
-    if {[string compare -serverIsSilent [lindex $argv $i]] == 0} {
+    if {"-serverIsSilent" eq [lindex $argv $i]} {
 	set serverIsSilent 1
 	break
     }
@@ -90,9 +90,9 @@ if {![info exists serverPort]} {
 }
 if {![info exists serverPort]} {
     for {set i 0} {$i < $argc} {incr i} {
-	if {[string compare -port [lindex $argv $i]] == 0} {
-	    if {$i < [expr $argc - 1]} {
-		set serverPort [lindex $argv [expr $i + 1]]
+	if {"-port" eq [lindex $argv $i]} {
+	    if {$i < ($argc - 1)} {
+	        set serverPort [lindex $argv [expr {$i + 1}]]
 	    }
 	    break
 	}
@@ -109,9 +109,9 @@ if {![info exists serverAddress]} {
 }
 if {![info exists serverAddress]} {
     for {set i 0} {$i < $argc} {incr i} {
-	if {[string compare -address [lindex $argv $i]] == 0} {
-	    if {$i < [expr $argc - 1]} {
-		set serverAddress [lindex $argv [expr $i + 1]]
+	if {"-address" eq [lindex $argv $i]} {
+	    if {$i < ($argc - 1)} {
+	        set serverAddress [lindex $argv [expr {$i + 1}]]
 	    }
 	    break
 	}
@@ -146,8 +146,8 @@ if {$serverIsSilent == 0} {
     flush stdout
 }
 
-proc getPort sock {
-    lindex [fconfigure $sock -sockname] 2
+proc getPort {sock} {
+    lindex [chan configure $sock -sockname] 2
 }
 
 if {[catch {set serverSocket \

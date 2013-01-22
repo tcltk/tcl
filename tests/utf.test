@@ -8,7 +8,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -16,7 +16,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-catch {unset x}
+unset -nocomplain x
 
 test utf-1.1 {Tcl_UniCharToUtf: 1 byte sequences} {
     set x \x01
@@ -119,7 +119,6 @@ test utf-9.1 {Tcl_UtfAtIndex: index = 0} {
 test utf-9.2 {Tcl_UtfAtIndex: index > 0} {
     string range \u4e4e\u25a\xff\u543klmnop 1 5
 } "\u25a\xff\u543kl"
-
 
 test utf-10.1 {Tcl_UtfBackslash: dst == NULL} {
     set x \n

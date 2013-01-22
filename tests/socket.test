@@ -69,7 +69,7 @@ testConstraint exec [llength [info commands exec]]
 
 # Produce a random port number in the Dynamic/Private range
 # from 49152 through 65535.
-proc randport {} { expr {int(rand()*16383+49152)} }
+proc randport {} { expr { int ( ( ( rand () ) * 16383) + 49152)} }
 
 # Test the latency of tcp connections over the loopback interface. Some OSes
 # (e.g. NetBSD) seem to use the Nagle algorithm and delayed ACKs, so it takes
@@ -77,16 +77,20 @@ proc randport {} { expr {int(rand()*16383+49152)} }
 # here, so that OSes that don't have this problem can run the tests at full
 # speed.
 set server [socket -server {apply {{s a p} {set ::s1 $s}}} 0]
-set s2 [socket localhost [lindex [fconfigure $server -sockname] 2]]
-vwait s1; close $server
-fconfigure $s1 -buffering line
-fconfigure $s2 -buffering line
+set s2 [socket localhost [lindex [chan configure $server -sockname] 2]]
+vwait s1
+close $server
+chan configure $s1 -buffering line
+chan configure $s2 -buffering line
 set t1 [clock milliseconds]
-puts $s2 test1; gets $s1
-puts $s2 test2; gets $s1
-close $s1; close $s2
+puts $s2 test1
+gets $s1
+puts $s2 test2
+gets $s1
+close $s1
+close $s2
 set t2 [clock milliseconds]
-set latency [expr {($t2-$t1)*2}]; # doubled as a safety margin
+set latency [expr {($t2 - $t1) * 2}]; # doubled as a safety margin
 unset t1 t2 s1 s2 server
 
 # If remoteServerIP or remoteServerPort are not set, check in the environment
@@ -108,11 +112,11 @@ if {![info exists remoteServerPort]} {
     }
 }
 
-if 0 {
+if {0} {
     # activate this to time the tests
     proc test {args} {
         set name [lindex $args 0]
-        puts "[lindex [time {uplevel [linsert $args 0 tcltest::test]}] 0] @@@ $name"
+        puts "[lindex [time {uplevel 1 [linsert $args 0 tcltest::test]}] 0] @@@ $name"
     }
 }
 
@@ -127,11 +131,10 @@ foreach {af localhost} {
 testConstraint supported_any [expr {[testConstraint supported_inet] || [testConstraint supported_inet6]}]
 
 set sock [socket -server foo -myaddr localhost 0]
-set sockname [fconfigure $sock -sockname]
+set sockname [chan configure $sock -sockname]
 close $sock
 testConstraint localhost_v4 [expr {"127.0.0.1" in $sockname}]
 testConstraint localhost_v6 [expr {"::1" in $sockname}]
-
 
 foreach {af localhost} {
     any 127.0.0.1
@@ -161,11 +164,11 @@ if {($doTestsWithRemoteServer == 1) && (![info exists remoteServerPort])} {
 set remoteProcChan ""
 set commandSocket ""
 if {$doTestsWithRemoteServer} {
-    catch {close $commandSocket}
+    catch {chan close $commandSocket}
     if {![catch {
 	set commandSocket [socket $remoteServerIP $remoteServerPort]
-    }]} then {
-	fconfigure $commandSocket -translation crlf -buffering line
+    }]} {
+	chan configure $commandSocket -translation crlf -buffering line
     } elseif {![testConstraint exec]} {
 	set noRemoteTestReason "can't exec"
 	set doTestsWithRemoteServer 0
@@ -179,12 +182,12 @@ if {$doTestsWithRemoteServer} {
 	    set remoteProcChan [open "|[list \
 		    [interpreter] $remoteFile -serverIsSilent \
 		    -port $remoteServerPort -address $remoteServerIP]" w+]
-	} msg]} then {
+	} msg]} {
 	    gets $remoteProcChan
 	    if {[catch {
 		set commandSocket [socket $remoteServerIP $remoteServerPort]
-	    } msg] == 0} then {
-		fconfigure $commandSocket -translation crlf -buffering line
+	    } msg] == 0} {
+		chan configure $commandSocket -translation crlf -buffering line
 	    } else {
 		set noRemoteTestReason $msg
 		set doTestsWithRemoteServer 0
@@ -224,9 +227,10 @@ if {[testConstraint doTestsWithRemoteServer]} {
 	    error "remote server disappeared: $msg"
 	}
 
+        set result ""
 	while {1} {
-	    set line [gets $commandSocket]
-	    if {[eof $commandSocket]} {
+	    set line [chan gets $commandSocket]
+	    if {[chan eof $commandSocket]} {
 		error "remote server disappaered"
 	    }
 	    if {$line eq "--Marker--Marker--Marker--"} {
@@ -238,8 +242,8 @@ if {[testConstraint doTestsWithRemoteServer]} {
     }
 }
 
-proc getPort sock {
-    lindex [fconfigure $sock -sockname] 2
+proc getPort {sock} {
+    lindex [chan configure $sock -sockname] 2
 }
 
 
@@ -302,7 +306,7 @@ test socket_$af-2.1 {tcp connection} -constraints [list socket supported_$af std
             close $file
 	}
 	puts ready
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -335,7 +339,7 @@ test socket_$af-2.2 {tcp connection with client port specified} -setup {
             set x done
 	}
 	puts ready
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -368,7 +372,7 @@ test socket_$af-2.3 {tcp connection with client interface specified} -setup {
             close $file
             set x done
 	}
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	puts ready
 	vwait x
 	after cancel $timer
@@ -403,7 +407,7 @@ test socket_$af-2.4 {tcp connection with server interface specified} -setup {
             set x done
 	}
 	puts ready
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -436,7 +440,7 @@ test socket_$af-2.5 {tcp connection with redundant server port} -setup {
             set x done
 	}
 	puts ready
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -473,8 +477,8 @@ test socket_$af-2.7 {echo server, one line} -constraints [list socket supported_
 	set timer [after 10000 "set x timeout"]
 	set f [socket -server accept 0]
 	proc accept {s a p} {
-            fileevent $s readable [list echo $s]
-	    fconfigure $s -translation lf -buffering line
+            chan event $s readable [list echo $s]
+	    chan configure $s -translation lf -buffering line
         }
 	proc echo {s} {
 	     set l [gets $s]
@@ -487,7 +491,7 @@ test socket_$af-2.7 {echo server, one line} -constraints [list socket supported_
              }
 	}
 	puts ready
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	vwait x
 	after cancel $timer
 	close $f
@@ -499,7 +503,7 @@ test socket_$af-2.7 {echo server, one line} -constraints [list socket supported_
     gets $f listen
 } -body {
     set s [socket $localhost $listen]
-    fconfigure $s -buffering line -translation lf
+    chan configure $s -buffering line -translation lf
     puts $s "hello abcdefghijklmnop"
     set x [gets $s]
     close $s
@@ -512,8 +516,8 @@ test socket_$af-2.8 {echo server, loop 50 times, single connection} -setup {
     set path(script) [makeFile {
 	set f [socket -server accept 0]
 	proc accept {s a p} {
-            fileevent $s readable [list echo $s]
-            fconfigure $s -buffering line
+            chan event $s readable [list echo $s]
+            chan configure $s -buffering line
         }
 	proc echo {s} {
 	     global i
@@ -529,7 +533,7 @@ test socket_$af-2.8 {echo server, loop 50 times, single connection} -setup {
 	}
 	set i 0
 	puts ready
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	set timer [after 20000 "set x done"]
 	vwait x
 	after cancel $timer
@@ -541,7 +545,7 @@ test socket_$af-2.8 {echo server, loop 50 times, single connection} -setup {
     gets $f listen
 } -constraints [list socket supported_$af stdio] -body {
     set s [socket $localhost $listen]
-    fconfigure $s -buffering line
+    chan configure $s -buffering line
     catch {
 	for {set x 0} {$x < 50} {incr x} {
 	    puts $s "hello abcdefghijklmnop"
@@ -561,7 +565,7 @@ test socket_$af-2.9 {socket conflict} -constraints [list socket supported_$af st
     file delete $path(script)
     set f [open $path(script) w]
     puts $f [list set ::tcl::unsupported::socketAF $::tcl::unsupported::socketAF]
-    puts $f "socket -server accept [lindex [fconfigure $s -sockname] 2]"
+    puts $f "socket -server accept [lindex [chan configure $s -sockname] 2]"
     close $f
     set f [open "|[list [interpreter] $path(script)]" r]
     gets $f
@@ -578,8 +582,8 @@ test socket_$af-2.10 {close on accept, accepted socket lives} -setup {
     proc accept {s a p} {
 	global ss
 	close $ss
-	fileevent $s readable "readit $s"
-	fconfigure $s -trans lf
+	chan event $s readable "readit $s"
+	chan configure $s -trans lf
     }
     proc readit {s} {
 	global done
@@ -587,7 +591,7 @@ test socket_$af-2.10 {close on accept, accepted socket lives} -setup {
 	close $s
 	set done 1
     }
-    set cs [socket $localhost [lindex [fconfigure $ss -sockname] 2]]
+    set cs [socket $localhost [lindex [chan configure $ss -sockname] 2]]
     puts $cs hello
     close $cs
     vwait done
@@ -603,24 +607,24 @@ test socket_$af-2.11 {detecting new data} -constraints [list socket supported_$a
     set s [socket -server accept 0]
     set sock ""
 } -body {
-    set s2 [socket $localhost [lindex [fconfigure $s -sockname] 2]]
+    set s2 [socket $localhost [lindex [chan configure $s -sockname] 2]]
     vwait sock
     puts $s2 one
     flush $s2
     after idle {set x 1}
     vwait x
-    fconfigure $sock -blocking 0
+    chan configure $sock -blocking 0
     set result a:[gets $sock]
     lappend result b:[gets $sock]
-    fconfigure $sock -blocking 1
+    chan configure $sock -blocking 1
     puts $s2 two
     flush $s2
     after $latency {set x 1}; # NetBSD fails here if we do [after idle]
     vwait x
-    fconfigure $sock -blocking 0
+    chan configure $sock -blocking 0
     lappend result c:[gets $sock]
 } -cleanup {
-    fconfigure $sock -blocking 1
+    chan configure $sock -blocking 1
     close $s2
     close $s
     close $sock
@@ -633,7 +637,7 @@ test socket_$af-3.1 {socket conflict} -constraints [list socket supported_$af st
     puts $f {
 	set f [socket -server accept -myaddr $localhost 0]
 	puts ready
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	gets stdin
 	close $f
     }
@@ -658,8 +662,8 @@ test socket_$af-3.2 {server with several clients} -setup {
 	set counter 0
 	set s [socket -server accept -myaddr $localhost 0]
 	proc accept {s a p} {
-	    fileevent $s readable [list echo $s]
-	    fconfigure $s -buffering line
+	    chan event $s readable [list echo $s]
+	    chan configure $s -buffering line
 	}
 	proc echo {s} {
 	     global x
@@ -672,7 +676,7 @@ test socket_$af-3.2 {server with several clients} -setup {
              }
 	}
 	puts ready
-	puts [lindex [fconfigure $s -sockname] 2]
+	puts [lindex [chan configure $s -sockname] 2]
 	vwait x
 	after cancel $t1
 	vwait x
@@ -689,11 +693,11 @@ test socket_$af-3.2 {server with several clients} -setup {
 } -constraints [list socket supported_$af stdio] -body {
     # $x == "ready" here
     set s1 [socket $localhost $listen]
-    fconfigure $s1 -buffering line
+    chan configure $s1 -buffering line
     set s2 [socket $localhost $listen]
-    fconfigure $s2 -buffering line
+    chan configure $s2 -buffering line
     set s3 [socket $localhost $listen]
-    fconfigure $s3 -buffering line
+    chan configure $s3 -buffering line
     for {set i 0} {$i < 100} {incr i} {
 	puts $s1 hello,s1
 	gets $s1
@@ -717,7 +721,7 @@ test socket_$af-4.1 {server with several clients} -setup {
     puts $f {
 	set port [gets stdin]
 	set s [socket $localhost $port]
-	fconfigure $s -buffering line
+	chan configure $s -buffering line
 	for {set i 0} {$i < 100} {incr i} {
 	    puts $s hello
 	    gets $s
@@ -728,15 +732,15 @@ test socket_$af-4.1 {server with several clients} -setup {
     }
     close $f
     set p1 [open "|[list [interpreter] $path(script)]" r+]
-    fconfigure $p1 -buffering line
+    chan configure $p1 -buffering line
     set p2 [open "|[list [interpreter] $path(script)]" r+]
-    fconfigure $p2 -buffering line
+    chan configure $p2 -buffering line
     set p3 [open "|[list [interpreter] $path(script)]" r+]
-    fconfigure $p3 -buffering line
+    chan configure $p3 -buffering line
 } -constraints [list socket supported_$af stdio] -body {
     proc accept {s a p} {
-	fconfigure $s -buffering line
-	fileevent $s readable [list echo $s]
+	chan configure $s -buffering line
+	chan event $s readable [list echo $s]
     }
     proc echo {s} {
 	global x
@@ -752,7 +756,7 @@ test socket_$af-4.1 {server with several clients} -setup {
     set t2 [after 31000 "set x timed_out"]
     set t3 [after 32000 "set x timed_out"]
     set s [socket -server accept -myaddr $localhost 0]
-    set listen [lindex [fconfigure $s -sockname] 2]
+    set listen [lindex [chan configure $s -sockname] 2]
     puts $p1 $listen
     puts $p2 $listen
     puts $p3 $listen
@@ -820,7 +824,7 @@ test socket_$af-6.1 {accept callback error} -constraints [list socket supported_
     set f [open "|[list [interpreter] $path(script)]" r+]
     proc accept {s a p} {expr 10 / 0}
     set s [socket -server accept -myaddr $localhost 0]
-    puts $f [lindex [fconfigure $s -sockname] 2]
+    puts $f [lindex [chan configure $s -sockname] 2]
     close $f
     set timer [after 10000 "set x timed_out"]
     vwait x
@@ -832,19 +836,19 @@ test socket_$af-6.1 {accept callback error} -constraints [list socket supported_
 } -result {divide by zero}
 
 test socket_$af-6.2 {
-    readable fileevent on server socket
+    readable chan event on server socket
 } -setup {
     set sock [socket -server dummy 0]
 } -constraints [list socket supported_$af] -body {
-    fileevent $sock readable dummy
+    chan event $sock readable dummy
 } -cleanup {
     close $sock
 } -returnCodes 1 -result "channel is not readable"
 
-test socket_$af-6.3 {writable fileevent on server socket} -setup {
+test socket_$af-6.3 {writable chan event on server socket} -setup {
     set sock [socket -server dummy 0]
 } -constraints [list socket supported_$af] -body {
-    fileevent $sock writable dummy
+    chan event $sock writable dummy
 } -cleanup {
     close $sock
 } -returnCodes 1 -result "channel is not writable"
@@ -859,7 +863,7 @@ test socket_$af-7.1 {testing socket specific options} -setup {
 	    set x done
 	}
 	puts ready
-	puts [lindex [fconfigure $ss -sockname] 2]
+	puts [lindex [chan configure $ss -sockname] 2]
 	set timer [after 10000 "set x timed_out"]
 	vwait x
 	after cancel $timer
@@ -871,7 +875,7 @@ test socket_$af-7.1 {testing socket specific options} -setup {
     set l ""
 } -constraints [list socket supported_$af stdio] -body {
     set s [socket $localhost $listen]
-    set p [fconfigure $s -peername]
+    set p [chan configure $s -peername]
     close $s
     lappend l [string compare [lindex $p 0] $localhost]
     lappend l [string compare [lindex $p 2] $listen]
@@ -890,7 +894,7 @@ test socket_$af-7.2 {testing socket specific options} -setup {
 	    set x done
 	}
 	puts ready
-	puts [lindex [fconfigure $ss -sockname] 2]
+	puts [lindex [chan configure $ss -sockname] 2]
 	set timer [after 10000 "set x timed_out"]
 	vwait x
 	after cancel $timer
@@ -901,7 +905,7 @@ test socket_$af-7.2 {testing socket specific options} -setup {
     gets $f listen
 } -constraints [list socket supported_$af stdio] -body {
     set s [socket $localhost $listen]
-    set p [fconfigure $s -sockname]
+    set p [chan configure $s -sockname]
     close $s
     list [llength $p] \
 	    [regexp {^(127\.0\.0\.1|0\.0\.0\.0|::1)$} [lindex $p 0]] \
@@ -911,7 +915,7 @@ test socket_$af-7.2 {testing socket specific options} -setup {
 } -result {3 1 0}
 test socket_$af-7.3 {testing socket specific options} -constraints [list socket supported_$af] -body {
     set s [socket -server accept -myaddr $localhost 0]
-    set l [fconfigure $s]
+    set l [chan configure $s]
     close $s
     update
     llength $l
@@ -923,10 +927,10 @@ test socket_$af-7.4 {testing socket specific options} -constraints [list socket 
     set s [socket -server accept -myaddr $localhost 0]
     proc accept {s a p} {
 	global x
-	set x [fconfigure $s -sockname]
+	set x [chan configure $s -sockname]
 	close $s
     }
-    set listen [lindex [fconfigure $s -sockname] 2]
+    set listen [lindex [chan configure $s -sockname] 2]
     set s1 [socket $localhost $listen]
     vwait x
     lappend l [expr {[lindex $x 2] == $listen}] [llength $x]
@@ -942,10 +946,10 @@ test socket_$af-7.5 {testing socket specific options} -setup {
     set s [socket -server accept 0]
     proc accept {s a p} {
 	global x
-	set x [fconfigure $s -sockname]
+	set x [chan configure $s -sockname]
 	close $s
     }
-    set listen [lindex [fconfigure $s -sockname] 2]
+    set listen [lindex [chan configure $s -sockname] 2]
     set s1 [socket $localhost $listen]
     vwait x
     lappend l [lindex $x 0] [expr {[lindex $x 2] == $listen}] [llength $x]
@@ -977,7 +981,7 @@ test socket_$af-8.1 {testing -async flag on sockets} -constraints [list socket s
 	close $s
 	set x done
     }
-    set s1 [socket -async $localhost [lindex [fconfigure $s -sockname] 2]]
+    set s1 [socket -async $localhost [lindex [chan configure $s -sockname] 2]]
     vwait x
     gets $s1
 } -cleanup {
@@ -1006,11 +1010,11 @@ test socket_$af-9.1 {testing spurious events} -constraints [list socket supporte
 	}
     }
     proc accept {s a p} {
-	fconfigure $s -buffering none -blocking off
-	fileevent $s readable [list readlittle $s]
+	chan configure $s -buffering none -blocking off
+	chan event $s readable [list readlittle $s]
     }
     set s [socket -server accept -myaddr $localhost 0]
-    set c [socket $localhost [lindex [fconfigure $s -sockname] 2]]
+    set c [socket $localhost [lindex [chan configure $s -sockname] 2]]
     puts -nonewline $c 01234567890123456789012345678901234567890123456789
     close $c
     vwait done
@@ -1019,7 +1023,7 @@ test socket_$af-9.1 {testing spurious events} -constraints [list socket supporte
 } -cleanup {
     after cancel $timer
 } -result {0 50}
-test socket_$af-9.2 {testing async write, fileevents, flush on close} -constraints [list socket supported_$af] -setup {
+test socket_$af-9.2 {testing async write, chan events, flush on close} -constraints [list socket supported_$af] -setup {
     set firstblock ""
     for {set i 0} {$i < 5} {incr i} {set firstblock "a$firstblock$firstblock"}
     set secondblock ""
@@ -1029,13 +1033,13 @@ test socket_$af-9.2 {testing async write, fileevents, flush on close} -constrain
     set timer [after 10000 "set done timed_out"]
     set l [socket -server accept -myaddr $localhost 0]
     proc accept {s a p} {
-	fconfigure $s -blocking 0 -translation lf -buffersize 16384 \
+	chan configure $s -blocking 0 -translation lf -buffersize 16384 \
 		-buffering line
-	fileevent $s readable "readable $s"
+	chan event $s readable "readable $s"
     }
     proc readable {s} {
 	set l [gets $s]
-	fileevent $s readable {}
+	chan event $s readable {}
 	after idle respond $s
     }
     proc respond {s} {
@@ -1049,8 +1053,8 @@ test socket_$af-9.2 {testing async write, fileevents, flush on close} -constrain
 	close $s
     }
 } -body {
-    set s [socket $localhost [lindex [fconfigure $l -sockname] 2]]
-    fconfigure $s -blocking 0 -trans lf -buffering line
+    set s [socket $localhost [lindex [chan configure $l -sockname] 2]]
+    chan configure $s -blocking 0 -trans lf -buffering line
     set count 0
     puts $s hello
     proc readit {s} {
@@ -1062,7 +1066,7 @@ test socket_$af-9.2 {testing async write, fileevents, flush on close} -constrain
 	    set done 1
 	}
     }
-    fileevent $s readable "readit $s"
+    chan event $s readable "readit $s"
     vwait done
     return $count
 } -cleanup {
@@ -1073,12 +1077,12 @@ test socket_$af-9.3 {testing EOF stickyness} -constraints [list socket supported
     set count 0
     set done false
     proc write_then_close {s} {
-	puts $s bye
-	close $s
+	chan puts $s bye
+	chan close $s
     }
     proc accept {s a p} {
-	fconfigure $s -buffering line -translation lf
-	fileevent $s writable "write_then_close $s"
+	chan configure $s -buffering line -translation lf
+	chan event $s writable "write_then_close $s"
     }
     set s [socket -server accept -myaddr $localhost 0]
 } -body {
@@ -1100,9 +1104,9 @@ test socket_$af-9.3 {testing EOF stickyness} -constraints [list socket supported
 	set count {timer went off, eof is not sticky}
 	close $s
     }
-    set c [socket $localhost [lindex [fconfigure $s -sockname] 2]]
-    fconfigure $c -blocking off -buffering line -translation lf
-    fileevent $c readable "count_to_eof $c"
+    set c [socket $localhost [lindex [chan configure $s -sockname] 2]]
+    chan configure $c -blocking off -buffering line -translation lf
+    chan event $c readable "count_to_eof $c"
     set timer [after 1000 timerproc $c]
     vwait done
     return $count
@@ -1124,7 +1128,7 @@ test socket_$af-10.1 {testing socket accept callback error handling} \
 } -body {
     set s [socket -server accept -myaddr $localhost 0]
     proc accept {s a p} {close $s; error}
-    set c [socket $localhost [lindex [fconfigure $s -sockname] 2]]
+    set c [socket $localhost [lindex [chan configure $s -sockname] 2]]
     vwait goterror
     close $s
     close $c
@@ -1162,7 +1166,7 @@ test socket_$af-11.2 {client specifies its port} -setup {
 } -constraints [list socket supported_$af doTestsWithRemoteServer] -body {
     set s [socket -myport $lport $remoteServerIP $rport]
     set r [gets $s]
-    expr {$r==$lport ? "ok" : "broken: $r != $port"}
+    expr {($r == $lport) ? "ok" : "broken: $r != $port"}
 } -cleanup {
     close $s
     sendCommand {close $server}
@@ -1181,8 +1185,8 @@ test socket_$af-11.4 {remote echo, one line} -setup {
     set port [sendCommand {
 	set server [socket -server accept 0]
 	proc accept {s a p} {
-	    fileevent $s readable [list echo $s]
-	    fconfigure $s -buffering line -translation crlf
+	    chan event $s readable [list echo $s]
+	    chan configure $s -buffering line -translation crlf
 	}
 	proc echo {s} {
 	    set l [gets $s]
@@ -1196,7 +1200,7 @@ test socket_$af-11.4 {remote echo, one line} -setup {
     }]
 } -constraints [list socket supported_$af doTestsWithRemoteServer] -body {
     set f [socket $remoteServerIP $port]
-    fconfigure $f -translation crlf -buffering line
+    chan configure $f -translation crlf -buffering line
     puts $f hello
     gets $f
 } -cleanup {
@@ -1207,8 +1211,8 @@ test socket_$af-11.5 {remote echo, 50 lines} -setup {
     set port [sendCommand {
 	set server [socket -server accept 0]
 	proc accept {s a p} {
-	    fileevent $s readable [list echo $s]
-	    fconfigure $s -buffering line -translation crlf
+	    chan event $s readable [list echo $s]
+	    chan configure $s -buffering line -translation crlf
 	}
 	proc echo {s} {
 	    set l [gets $s]
@@ -1222,10 +1226,10 @@ test socket_$af-11.5 {remote echo, 50 lines} -setup {
     }]
 } -constraints [list socket supported_$af doTestsWithRemoteServer] -body {
     set f [socket $remoteServerIP $port]
-    fconfigure $f -translation crlf -buffering line
+    chan configure $f -translation crlf -buffering line
     for {set cnt 0} {$cnt < 50} {incr cnt} {
 	puts $f "hello, $cnt"
-	if {[gets $f] != "hello, $cnt"} {
+	if {[gets $f] ne "hello, $cnt"} {
 	    break
 	}
     }
@@ -1246,8 +1250,8 @@ test socket_$af-11.7 {server with several clients} -setup {
     set port [sendCommand {
 	set server [socket -server accept 0]
 	proc accept {s a p} {
-	    fconfigure $s -buffering line
-	    fileevent $s readable [list echo $s]
+	    chan configure $s -buffering line
+	    chan event $s readable [list echo $s]
 	}
 	proc echo {s} {
 	    set l [gets $s]
@@ -1261,11 +1265,11 @@ test socket_$af-11.7 {server with several clients} -setup {
     }]
 } -constraints [list socket supported_$af doTestsWithRemoteServer] -body {
     set s1 [socket $remoteServerIP $port]
-    fconfigure $s1 -buffering line
+    chan configure $s1 -buffering line
     set s2 [socket $remoteServerIP $port]
-    fconfigure $s2 -buffering line
+    chan configure $s2 -buffering line
     set s3 [socket $remoteServerIP $port]
-    fconfigure $s3 -buffering line
+    chan configure $s3 -buffering line
     for {set i 0} {$i < 100} {incr i} {
 	puts $s1 hello,s1
 	gets $s1
@@ -1321,11 +1325,11 @@ test socket_$af-11.9 {accept callback error} -constraints [list socket supported
     sendCommand "set port [getPort $s]"
     if {[catch {
 	sendCommand {
-	    set peername [fconfigure $callerSocket -peername]
+	    set peername [chan configure $callerSocket -peername]
 	    set s [socket [lindex $peername 0] $port]
 	    close $s
     	 }
-    } msg]} then {
+    } msg]} {
 	close $s
 	error $msg
     }
@@ -1344,8 +1348,8 @@ test socket_$af-11.10 {testing socket specific options} -setup {
     }]
 } -constraints [list socket supported_$af doTestsWithRemoteServer] -body {
     set s [socket $remoteServerIP $port]
-    set p [fconfigure $s -peername]
-    set n [fconfigure $s -sockname]
+    set p [chan configure $s -peername]
+    set n [chan configure $s -sockname]
     list [expr {[lindex $p 2] == $port}] [llength $p] [llength $n]
 } -cleanup {
     close $s
@@ -1355,7 +1359,7 @@ test socket_$af-11.11 {testing spurious events} -setup {
     set port [sendCommand {
 	set server [socket -server accept 0]
 	proc accept {s a p} {
-	    fconfigure $s -translation "auto lf"
+	    chan configure $s -translation "auto lf"
 	    after idle writesome $s
 	}
 	proc writesome {s} {
@@ -1386,7 +1390,7 @@ test socket_$af-11.11 {testing spurious events} -setup {
 	}
     }
     set c [socket $remoteServerIP $port]
-    fileevent $c readable "readlittle $c"
+    chan event $c readable "readlittle $c"
     vwait done
     list $spurious $len $done
 } -cleanup {
@@ -1422,7 +1426,7 @@ test socket_$af-11.12 {testing EOF stickyness} -constraints [list socket support
 	}
     }
     set c [socket $remoteServerIP $port]
-    fileevent $c readable [list count_up $c]
+    chan event $c readable [list count_up $c]
     vwait done
     return $done
 } -cleanup {
@@ -1441,13 +1445,13 @@ test socket_$af-11.13 {testing async write, async flush, async close} -setup {
 	}
 	set l [socket -server accept 0]
 	proc accept {s a p} {
-	    fconfigure $s -blocking 0 -translation lf -buffersize 16384 \
+	    chan configure $s -blocking 0 -translation lf -buffersize 16384 \
 		-buffering line
-	    fileevent $s readable "readable $s"
+	    chan event $s readable "readable $s"
 	}
 	proc readable {s} {
 	    set l [gets $s]
-	    fileevent $s readable {}
+	    chan event $s readable {}
 	    after idle respond $s
 	}
 	proc respond {s} {
@@ -1474,10 +1478,10 @@ test socket_$af-11.13 {testing async write, async flush, async close} -setup {
 	}
     }
     set s [socket $remoteServerIP $port]
-    fconfigure $s -blocking 0 -trans lf -buffering line
+    chan configure $s -blocking 0 -trans lf -buffering line
     set count 0
     puts $s hello
-    fileevent $s readable "readit $s"
+    chan event $s readable "readit $s"
     vwait done
     return $count
 } -cleanup {
@@ -1495,7 +1499,7 @@ test socket_$af-12.1 {testing inheritance of server sockets} -setup {
     # will be held open for 10 seconds
     set f [open $path(script1) w]
     puts $f {
-	fileevent stdin readable exit
+	chan event stdin readable exit
 	after 10000 exit
 	vwait forever
     }
@@ -1512,7 +1516,7 @@ test socket_$af-12.1 {testing inheritance of server sockets} -setup {
 	    close $file
 	}
 	exec $tcltest $delay &
-	puts [lindex [fconfigure $f -sockname] 2]
+	puts [lindex [chan configure $f -sockname] 2]
 	close $f
         exit
     }
@@ -1537,7 +1541,7 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
     # will be held open for 20 seconds
     set f [open $path(script1) w]
     puts $f {
-	fileevent stdin readable exit
+	chan event stdin readable exit
 	after 20000 exit
 	vwait forever
     }
@@ -1569,8 +1573,8 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
 	# When the client connects, establish the read handler
 	global server
 	close $server
-	fileevent $file readable [list getdata $file]
-	fconfigure $file -buffering line -blocking 0
+	chan event $file readable [list getdata $file]
+	chan configure $file -buffering line -blocking 0
     }
     proc getdata { file } {
 	# Read handler on the accepted socket.
@@ -1580,7 +1584,7 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
 	    set x {read failed, error was $data}
 	    catch { close $file }
 	} elseif {$data ne ""} {
-	} elseif {[fblocked $file]} {
+	} elseif {[chan blocked $file]} {
 	} elseif {[eof $file]} {
 	    if {$failed} {
 		set x {client socket was inherited}
@@ -1596,7 +1600,7 @@ test socket_$af-12.2 {testing inheritance of client sockets} -setup {
     # Launch the script2 process
     ### exec [interpreter] script2 &
     set p [open "|[list [interpreter] $path(script2)]" w]
-    puts $p [lindex [fconfigure $server -sockname] 2] ; flush $p
+    puts $p [lindex [chan configure $server -sockname] 2] ; flush $p
     vwait x
     return $x
 } -cleanup {
@@ -1608,7 +1612,7 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     file delete $path(script2)
     set f [open $path(script1) w]
     puts $f {
-	fileevent stdin readable exit
+	chan event stdin readable exit
 	after 10000 exit
 	vwait forever
     }
@@ -1625,7 +1629,7 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
 	    exec $tcltest $delay &
             after idle exit
 	}
-	puts stdout [lindex [fconfigure $server -sockname] 2]
+	puts stdout [lindex [chan configure $server -sockname] 2]
 	vwait forever
     }
     close $f
@@ -1636,8 +1640,8 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
     set p [open "|[list [interpreter] $path(script2)]" r]
     gets $p listen
     set f [socket $localhost $listen]
-    fconfigure $f -buffering full -blocking 0
-    fileevent $f readable [list getdata $f]
+    chan configure $f -buffering full -blocking 0
+    chan event $f readable [list getdata $f]
     # If the socket is still open after 5 seconds, the script1 process must
     # have inherited the accepted socket.
     set failed 0
@@ -1650,9 +1654,9 @@ test socket_$af-12.3 {testing inheritance of accepted sockets} -setup {
 	if {$status != 0} {
 	    set x {read failed, error was $data}
 	    catch { close $file }
-	} elseif {[string compare {} $data]} {
-	} elseif {[fblocked $file]} {
-	} elseif {[eof $file]} {
+	} elseif {[string compare "" $data]} {
+	} elseif {[chan blocked $file]} {
+	} elseif {[chan eof $file]} {
 	    if {$failed} {
 		set x {accepted socket was inherited}
 	    } else {
@@ -1676,10 +1680,10 @@ test socket_$af-13.1 {Testing use of shared socket between two threads} -body {
     # create a thread
     set serverthread [thread::create -preserved [string map [list @localhost@ $localhost] {
         set f [socket -server accept -myaddr @localhost@ 0]
-        set listen [lindex [fconfigure $f -sockname] 2]
+        set listen [lindex [chan configure $f -sockname] 2]
         proc accept {s a p} {
-            fileevent $s readable [list echo $s]
-            fconfigure $s -buffering line
+            chan event $s readable [list echo $s]
+            chan configure $s -buffering line
         }
         proc echo {s} {
              global i
@@ -1700,7 +1704,7 @@ test socket_$af-13.1 {Testing use of shared socket between two threads} -body {
     }]]
     set port [thread::send $serverthread {set listen}]
     set s [socket $localhost $port]
-    fconfigure $s -buffering line
+    chan configure $s -buffering line
     catch {
         puts $s "hello"
         gets $s result
@@ -1733,10 +1737,10 @@ test socket-14.0 {[socket -async] when server only listens on IPv4} \
             set x ok
         }
         set server [socket -server accept -myaddr 127.0.0.1 0]
-        set port [lindex [fconfigure $server -sockname] 2]
+        set port [lindex [chan configure $server -sockname] 2]
     } -body {
         set client [socket -async localhost $port]
-        set after [after 1000 {set x [fconfigure $client -error]}]
+        set after [after 1000 {set x [chan configure $client -error]}]
         vwait x
         set x
     } -cleanup {
@@ -1745,7 +1749,7 @@ test socket-14.0 {[socket -async] when server only listens on IPv4} \
         close $client
         unset x
     } -result ok
-test socket-14.1 {[socket -async] fileevent while still connecting} \
+test socket-14.1 {[socket -async] chan event while still connecting} \
     -constraints [list socket supported_any] \
     -setup {
         proc accept {s a p} {
@@ -1755,13 +1759,13 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
 	    lappend x ok
         }
         set server [socket -server accept -myaddr localhost 0]
-        set port [lindex [fconfigure $server -sockname] 2]
+        set port [lindex [chan configure $server -sockname] 2]
         set x ""
     } -body {
         set client [socket -async localhost $port]
-        fileevent $client writable {
-            lappend x [fconfigure $client -error]
-	    fileevent $client writable {}
+        chan event $client writable {
+            lappend x [chan configure $client -error]
+	    chan event $client writable {}
         }
         set after [after 1000 {lappend x timeout}]
         while {[llength $x] < 2 && "timeout" ni $x} {
@@ -1774,18 +1778,18 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
         close $client
         unset x
     } -result {{} ok}
-test socket-14.2 {[socket -async] fileevent connection refused} \
+test socket-14.2 {[socket -async] chan event connection refused} \
     -constraints [list socket supported_any] \
     -body {
         if {[catch {socket -async localhost [randport]} client]} {
 	    regexp {[^:]*: (.*)} $client -> x
 	} else {
-            fileevent $client writable {set x [fconfigure $client -error]}
+            chan event $client writable {set x [chan configure $client -error]}
             set after [after 1000 {set x timeout}]
             vwait x
 	    after cancel $after
             if {$x eq "timeout"} {
-                append x ": [fconfigure $client -error]"
+                append x ": [chan configure $client -error]"
             }
 	    close $client
 	}
@@ -1803,10 +1807,10 @@ test socket-14.3 {[socket -async] when server only listens on IPv6} \
             set x ok
         }
         set server [socket -server accept -myaddr ::1 0]
-        set port [lindex [fconfigure $server -sockname] 2]
+        set port [lindex [chan configure $server -sockname] 2]
     } -body {
         set client [socket -async localhost $port]
-        set after [after 1000 {set x [fconfigure $client -error]}]
+        set after [after 1000 {set x [chan configure $client -error]}]
         vwait x
         set x
     } -cleanup {
@@ -1815,7 +1819,7 @@ test socket-14.3 {[socket -async] when server only listens on IPv6} \
         close $client
         unset x
     } -result ok
-test socket-14.4 {[socket -async] and both, readdable and writable fileevents} \
+test socket-14.4 {[socket -async] and both, readdable and writable chan events} \
     -constraints [list socket supported_any] \
     -setup {
         proc accept {s a p} {
@@ -1823,17 +1827,17 @@ test socket-14.4 {[socket -async] and both, readdable and writable fileevents} \
             close $s
         }
         set server [socket -server accept -myaddr localhost 0]
-        set port [lindex [fconfigure $server -sockname] 2]
+        set port [lindex [chan configure $server -sockname] 2]
         set x ""
     } -body {
         set client [socket -async localhost $port]
-        fileevent $client writable {
-            lappend x [fconfigure $client -error]
-            fileevent $client writable {}
+        chan event $client writable {
+            lappend x [chan configure $client -error]
+            chan event $client writable ""
         }
-        fileevent $client readable {lappend x [gets $client]}
+        chan event $client readable {lappend x [gets $client]}
         set after [after 1000 {lappend x timeout}]
-        while {[llength $x] < 2 && "timeout" ni $x} {
+        while {([llength $x] < 2) && ("timeout" ni $x)} {
             vwait x
         }
         lsort $x

@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -20,8 +20,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testset2 [llength [info commands testset2]]
 
-catch {unset x}
-catch {unset i}
+unset -nocomplain x i
 
 test set-1.1 {TclCompileSetCmd: missing variable name} {
     list [catch {set} msg] $msg
@@ -40,12 +39,12 @@ test set-1.4 {TclCompileSetCmd: simple variable name in quotes} {
     list [set "i"] $i
 } {17 17}
 test set-1.5 {TclCompileSetCmd: simple variable name in braces} {
-    catch {unset {a simple var}}
+    unset -nocomplain {a simple var}
     set {a simple var} 27
     list [set {a simple var}] ${a simple var}
 } {27 27}
 test set-1.6 {TclCompileSetCmd: simple array variable name} {
-    catch {unset a}
+    unset -nocomplain a
     set a(foo) 37
     list [set a(foo)] $a(foo)
 } {37 37}
@@ -150,19 +149,19 @@ test set-1.14 {TclCompileSetCmd: simple local name, >255 locals} {
     260locals
 } {1234}
 test set-1.15 {TclCompileSetCmd: variable is array} {
-    catch {unset a}
+    unset -nocomplain a
     set x 27
     set x [set a(foo) 11]
-    catch {unset a}
+    unset -nocomplain a
     set x
 } 11
 test set-1.16 {TclCompileSetCmd: variable is array, elem substitutions} {
-    catch {unset a}
+    unset -nocomplain a
     set i 5
     set x 789
     set a(foo5) 27
     set x [set a(foo$i)]
-    catch {unset a}
+    unset -nocomplain a
     set x
 } 27
 
@@ -205,7 +204,7 @@ test set-1.24 {TclCompileSetCmd: too many arguments} {
 
 test set-1.25 {TclCompileSetCmd: var is array, braced (no subs)} {
     # This was a known error in 8.1a* - 8.2.1
-    catch {unset array}
+    unset -nocomplain array
     set {array($foo)} 5
 } 5
 test set-1.26 {TclCompileSetCmd: various array constructs} {
@@ -242,12 +241,12 @@ test set-2.1 {set command: runtime error, bad variable name} {
     while executing
 "set {"foo}"}}
 test set-2.2 {set command: runtime error, not array variable} {
-    catch {unset b}
+    unset -nocomplain b
     set b 44
     list [catch {set b(123)} msg] $msg
 } {1 {can't read "b(123)": variable isn't array}}
 test set-2.3 {set command: runtime error, errors in reading variables} {
-    catch {unset a}
+    unset -nocomplain a
     set a(6) 44
     list [catch {set a(18)} msg] $msg
 } {1 {can't read "a(18)": no such element in array}}
@@ -269,10 +268,7 @@ test set-2.6 {set command: runtime error, basic array operations} {
 
 # Test the uncompiled version of set
 
-catch {unset a}
-catch {unset b}
-catch {unset i}
-catch {unset x}
+unset -nocomplain a b i x
 
 test set-3.1 {uncompiled set command: missing variable name} {
     set z set
@@ -296,13 +292,13 @@ test set-3.4 {uncompiled set command: simple variable name in quotes} {
 } {17 17}
 test set-3.5 {uncompiled set command: simple variable name in braces} {
     set z set
-    catch {unset {a simple var}}
+    unset -nocomplain {a simple var}
     $z {a simple var} 27
     list [$z {a simple var}] ${a simple var}
 } {27 27}
 test set-3.6 {uncompiled set command: simple array variable name} {
     set z set
-    catch {unset a}
+    unset -nocomplain a
     $z a(foo) 37
     list [$z a(foo)] $a(foo)
 } {37 37}
@@ -417,20 +413,20 @@ test set-3.14 {uncompiled set command: simple local name, >255 locals} {
 } {1234}
 test set-3.15 {uncompiled set command: variable is array} {
     set z set
-    catch {unset a}
+    unset -nocomplain a
     $z x 27
     $z x [$z a(foo) 11]
-    catch {unset a}
+    unset -nocomplain a
     $z x
 } 11
 test set-3.16 {uncompiled set command: variable is array, elem substitutions} {
     set z set
-    catch {unset a}
+    unset -nocomplain a
     $z i 5
     $z x 789
     $z a(foo5) 27
     $z x [$z a(foo$i)]
-    catch {unset a}
+    unset -nocomplain a
     $z x
 } 27
 
@@ -488,13 +484,13 @@ test set-4.1 {uncompiled set command: runtime error, bad variable name} {
 "$z {"foo}"}}
 test set-4.2 {uncompiled set command: runtime error, not array variable} {
     set z set
-    catch {unset b}
+    unset -nocomplain b
     $z b 44
     list [catch {$z b(123)} msg] $msg
 } {1 {can't read "b(123)": variable isn't array}}
 test set-4.3 {uncompiled set command: runtime error, errors in reading variables} {
      set z set
-   catch {unset a}
+   unset -nocomplain a
     $z a(6) 44
     list [catch {$z a(18)} msg] $msg
 } {1 {can't read "a(18)": no such element in array}}
@@ -525,10 +521,6 @@ test set-5.1 {error on malformed array name} testset2 {
 } {{can't read "z(a)(b)": variable isn't array} {can't read "z(b)(a)": variable isn't array}}
 
 # cleanup
-catch {unset a}
-catch {unset b}
-catch {unset i}
-catch {unset x}
-catch {unset z}
+unset -nocomplain a b i x z
 ::tcltest::cleanupTests
 return 

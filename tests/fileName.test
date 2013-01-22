@@ -23,8 +23,8 @@ testConstraint testtranslatefilename [llength [info commands testtranslatefilena
 testConstraint linkDirectory 1
 testConstraint symbolicLinkFile 1
 if {[testConstraint win]} {
-    if {[string index $tcl_platform(osVersion) 0] < 5 \
-	    || [lindex [file system [temporaryDirectory]] 1] ne "NTFS"} {
+    if {([string index $tcl_platform(osVersion) 0] < 5) || 
+	([lindex [file system [temporaryDirectory]] 1] ne "NTFS")} {
 	testConstraint linkDirectory 0
     }
     testConstraint symbolicLinkFile 0
@@ -38,7 +38,7 @@ customMatch compareWords {apply {{a b} {
     expr {$a eq "equal" ? $w1 eq $w2 : $w1 ne $w2}
 }}}
 
-proc touch filename {catch {close [open $filename w]}}
+proc touch {filename} {catch {chan close [open $filename w]}}
 global env
 if {[testConstraint testsetplatform]} {
     set platform [testgetplatform]
@@ -915,7 +915,7 @@ test filename-11.21.1 {Tcl_GlobCmd} -body {
 # Get rid of file/dir if it exists, since it will have been left behind by a
 # previous failed run.
 if {[file exists $horribleglobname]} {
-    file delete -force $horribleglobname
+    file delete -force -- $horribleglobname
 }
 file rename globTest $horribleglobname
 set globname $horribleglobname
@@ -1076,24 +1076,24 @@ test filename-11.49 {Tcl_GlobCmd} -returnCodes error -body {
     glob -types abcde -path foo -join * *
 } -result {bad argument to "-types": abcde}
 
-file rename $horribleglobname globTest
+file rename -- $horribleglobname globTest
 set globname globTest
 unset horribleglobname
 
 test filename-12.1 {simple globbing} {unixOrPc} {
-    glob {}
+    glob ""
 } {.}
 test filename-12.1.1 {simple globbing} -constraints {unixOrPc} -body {
-    glob -types f {}
+    glob -types f ""
 } -returnCodes error -result {no files matched glob pattern ""}
 test filename-12.1.2 {simple globbing} {unixOrPc} {
-    glob -types d {}
+    glob -types d ""
 } {.}
 test filename-12.1.3 {simple globbing} {unix} {
-    glob -types hidden {}
+    glob -types hidden ""
 } {.}
 test filename-12.1.4 {simple globbing} -constraints {win} -body {
-    glob -types hidden {}
+    glob -types hidden ""
 } -returnCodes error -result {no files matched glob pattern ""}
 test filename-12.1.5 {simple globbing} -constraints {win} -body {
     glob -types hidden c:/
@@ -1141,7 +1141,7 @@ test filename-12.10 {globbing with volume relative paths} -setup {
 
 test filename-13.1 {globbing with brace substitution} {
     glob globTest/\{\}
-} "$globPreResult"
+} $globPreResult
 test filename-13.2 {globbing with brace substitution} -body {
     glob globTest/\{
 } -returnCodes error -result {unmatched open-brace in file name}
@@ -1620,9 +1620,9 @@ catch {removeDirectory tcl[pid]}
 set env(HOME) $oldhome
 if {[testConstraint testsetplatform]} {
     testsetplatform $platform
-    catch {unset platform}
+    unset -nocomplain platform
 }
-catch {unset oldhome temp result globPreResult}
+unset -nocomplain oldhome temp result globPreResult
 ::tcltest::cleanupTests
 return
 

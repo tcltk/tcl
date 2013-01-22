@@ -16,7 +16,7 @@ namespace eval ::tcl::test::fileSystem {
     catch {
 	file delete -force link.file
 	file delete -force dir.link
-	file delete -force [file join dir.dir linkinside.file]
+	file delete -force -- [file join dir.dir linkinside.file]
     }
 
 testConstraint loaddll 0
@@ -252,7 +252,7 @@ file delete -force dir2.file
 file delete -force dir2.link
 file delete -force link.file dir.link
 file delete -force dir2
-file delete -force [file join dir.dir dirinside.link]
+file delete -force -- [file join dir.dir dirinside.link]
 removeFile [file join dir.dir inside.file]
 removeDirectory [file join dir.dir dirinside.dir]
 removeDirectory dir.dir

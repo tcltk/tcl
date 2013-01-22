@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.2
     namespace import -force ::tcltest::*
 }
@@ -21,7 +21,7 @@ if {[info commands ::apply] eq {}} {
     return
 }
 
-testConstraint memory [llength [info commands memory]]
+tcltest::testConstraint memory [llength [info commands memory]]
 
 # Tests for wrong number of arguments
 
@@ -163,7 +163,7 @@ test apply-6.3 {info level} {
 # Tests for correct namespace scope
 
 namespace eval ::testApply {
-    proc testApply args {return testApply}
+    proc testApply {args} {return testApply}
 }
 
 test apply-7.1 {namespace access} {

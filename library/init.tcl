@@ -12,7 +12,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
-if {[info commands package] == ""} {
+if {[info commands package] eq ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
 package require -exact Tcl 8.6.0
@@ -84,7 +84,7 @@ namespace eval tcl {
 	    foreach arg $args {
 		# This will handle forcing the numeric value without
 		# ruining the internal type of a numeric object
-		if {[catch {expr {double($arg)}} err]} {
+		if {[catch {expr { double ($arg) }} err]} {
 		    return -code error $err
 		}
 		if {$arg < $val} {set val $arg}
@@ -100,7 +100,7 @@ namespace eval tcl {
 	    foreach arg $args {
 		# This will handle forcing the numeric value without
 		# ruining the internal type of a numeric object
-		if {[catch {expr {double($arg)}} err]} {
+		if {[catch {expr { double ($arg) }} err]} {
 		    return -code error $err
 		}
 		if {$arg > $val} {set val $arg}
@@ -116,9 +116,10 @@ namespace eval tcl {
 if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
     namespace eval tcl {
 	proc EnvTraceProc {lo n1 n2 op} {
-	    set x $::env($n2)
-	    set ::env($lo) $x
-	    set ::env([string toupper $lo]) $x
+	    global env
+	    set x $env($n2)
+	    set env($lo) $x
+	    set env([string toupper $lo]) $x
 	}
 	proc InitWinEnv {} {
 	    global env tcl_platform
@@ -136,6 +137,7 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 			    trace add variable env($u) write \
 				    [namespace code [list EnvTraceProc $p]]
 			}
+  		        default {}
 		    }
 		}
 	    }
@@ -153,14 +155,13 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 
 # Setup the unknown package handler
 
-
 if {[interp issafe]} {
     package unknown {::tcl::tm::UnknownHandler ::tclPkgUnknown}
 } else {
     # Set up search for Tcl Modules (TIP #189).
     # and setup platform specific unknown package handlers
-    if {$::tcl_platform(os) eq "Darwin"
-	    && $::tcl_platform(platform) eq "unix"} {
+    if {($::tcl_platform(os) eq "Darwin") && 
+	($::tcl_platform(platform) eq "unix")} {
 	package unknown {::tcl::tm::UnknownHandler \
 		{::tcl::MacOSXPkgUnknown ::tclPkgUnknown}}
     } else {
@@ -171,7 +172,7 @@ if {[interp issafe]} {
 
     namespace eval ::tcl::clock [list variable TclLibDir $::tcl_library]
 
-    proc clock args {
+    proc clock {args} {
 	namespace eval ::tcl::clock [list namespace ensemble create -command \
 		[uplevel 1 [list namespace origin [lindex [info level 0] 0]]] \
 		-subcommands {
@@ -181,7 +182,7 @@ if {[interp issafe]} {
 	# Auto-loading stubs for 'clock.tcl'
 
 	foreach cmd {add format scan} {
-	    proc ::tcl::clock::$cmd args {
+	    proc ::tcl::clock::$cmd {args} {
 		variable TclLibDir
 		source -encoding utf-8 [file join $TclLibDir clock.tcl]
 		return [uplevel 1 [info level 0]]
@@ -231,16 +232,16 @@ if {[namespace which -command tclLog] eq ""} {
 # args -	A list whose elements are the words of the original
 #		command, including the command name.
 
-proc unknown args {
+proc unknown {args} {
     variable ::tcl::UnknownPending
-    global auto_noexec auto_noload env tcl_interactive
+    global auto_noexec auto_noload env tcl_interactive errorInfo errorCode
 
 
-    if {[info exists ::errorInfo]} {
-	set savedErrorInfo $::errorInfo
+    if {[info exists errorInfo]} {
+	set savedErrorInfo $errorInfo
     }
-    if {[info exists ::errorCode]} {
-	set savedErrorCode $::errorCode
+    if {[info exists errorCode]} {
+	set savedErrorCode $errorCode
     }
 
     set name [lindex $args 0]
@@ -266,14 +267,14 @@ proc unknown args {
 	}
 	if {$msg} {
 	    if {[info exists savedErrorCode]} {
-		set ::errorCode $savedErrorCode
+		set errorCode $savedErrorCode
 	    } else {
-		unset -nocomplain ::errorCode
+		unset -nocomplain errorCode
 	    }
 	    if {[info exists savedErrorInfo]} {
-		set ::errorInfo $savedErrorInfo
+		set errorInfo $savedErrorInfo
 	    } else {
-		unset -nocomplain ::errorInfo
+		unset -nocomplain errorInfo
 	    }
 	    set code [catch {uplevel 1 $args} msg opts]
 	    if {$code ==  1} {
@@ -335,8 +336,8 @@ proc unknown args {
 	}
     }
 
-    if {([info level] == 1) && ([info script] eq "") \
-	    && [info exists tcl_interactive] && $tcl_interactive} {
+    if {([info level] == 1) && ([info script] eq "")  && 
+	[info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
 	    if {$new ne ""} {
@@ -353,9 +354,9 @@ proc unknown args {
 	}
 	if {$name eq "!!"} {
 	    set newcmd [history event]
-	} elseif {[regexp {^!(.+)$} $name -> event]} {
+	} elseif {[regexp {^!(.+)$} $name ___ event]} {
 	    set newcmd [history event $event]
-	} elseif {[regexp {^\^([^^]*)\^([^^]*)\^?$} $name -> old new]} {
+	} elseif {[regexp {^\^([^^]*)\^([^^]*)\^?$} $name ___ old new]} {
 	    set newcmd [history event -1]
 	    catch {regsub -all -- $old $newcmd $new newcmd}
 	}
@@ -537,7 +538,7 @@ proc auto_qualify {cmd namespace} {
 
     # count separators and clean them up
     # (making sure that foo:::::bar will be treated as foo::bar)
-    set n [regsub -all {::+} $cmd :: cmd]
+    set n [regsub -all "::+" $cmd :: cmd]
 
     # Ignore namespace if the name starts with ::
     # Handle special case of only leading ::
@@ -546,7 +547,7 @@ proc auto_qualify {cmd namespace} {
     # with the following form :
     # (inputCmd, inputNameSpace) -> output
 
-    if {[string match ::* $cmd]} {
+    if {[string match "::*" $cmd]} {
 	if {$n > 1} {
 	    # (::foo::bar , *) -> ::foo::bar
 	    return [list $cmd]
@@ -630,7 +631,7 @@ if {$tcl_platform(platform) eq "windows"} {
 # may be in the Path or PATH environment variables, and path
 # components are separated with semicolons, not colons as under Unix.
 #
-proc auto_execok name {
+proc auto_execok {name} {
     global auto_execs env tcl_platform
 
     if {[info exists auto_execs($name)]} {
@@ -648,7 +649,7 @@ proc auto_execok name {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
     } else {
-	set execExtensions [list {} .com .exe .bat .cmd]
+	set execExtensions [list "" .com .exe .bat .cmd]
     }
 
     if {[string tolower $name] in $shellBuiltins} {
@@ -665,7 +666,7 @@ proc auto_execok name {
     if {[llength [file split $name]] != 1} {
 	foreach ext $execExtensions {
 	    set file ${name}${ext}
-	    if {[file exists $file] && ![file isdirectory $file]} {
+	    if {[file exists $file] && (![file isdirectory $file])} {
 		return [set auto_execs($name) [list $file]]
 	    }
 	}
@@ -691,14 +692,14 @@ proc auto_execok name {
 
     foreach ext $execExtensions {
 	unset -nocomplain checked
-	foreach dir [split $path {;}] {
+	foreach dir [split $path ";"] {
 	    # Skip already checked directories
 	    if {[info exists checked($dir)] || ($dir eq "")} {
 		continue
 	    }
-	    set checked($dir) {}
+	    set checked($dir) ""
 	    set file [file join $dir ${name}${ext}]
-	    if {[file exists $file] && ![file isdirectory $file]} {
+	    if {[file exists $file] && (![file isdirectory $file])} {
 		return [set auto_execs($name) [list $file]]
 	    }
 	}
@@ -709,7 +710,7 @@ proc auto_execok name {
 } else {
 # Unix version.
 #
-proc auto_execok name {
+proc auto_execok {name} {
     global auto_execs env
 
     if {[info exists auto_execs($name)]} {
@@ -717,7 +718,7 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
     if {[llength [file split $name]] != 1} {
-	if {[file executable $name] && ![file isdirectory $name]} {
+	if {[file executable $name] && (![file isdirectory $name])} {
 	    set auto_execs($name) [list $name]
 	}
 	return $auto_execs($name)
@@ -727,7 +728,7 @@ proc auto_execok name {
 	    set dir .
 	}
 	set file [file join $dir $name]
-	if {[file executable $file] && ![file isdirectory $file]} {
+	if {[file executable $file] && (![file isdirectory $file])} {
 	    set auto_execs($name) [list $file]
 	    return $auto_execs($name)
 	}
@@ -788,7 +789,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    lappend existing {*}[glob -nocomplain -directory $dest \
 		    -type hidden * .*]
 	    foreach s $existing {
-		if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
+		if {[file tail $s] ni ". .."} {
 		    return -code error "error $action \"$src\" to\
 		      \"$dest\": file already exists"
 		}
@@ -796,7 +797,7 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     } else {
 	if {[string first $nsrc $ndest] != -1} {
-	    set srclen [expr {[llength [file split $nsrc]] -1}]
+	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
 		return -code error "error $action \"$src\" to\
@@ -816,15 +817,15 @@ proc tcl::CopyDirectory {action src dest} {
       [glob -nocomplain -directory $src -types hidden *]]
 
     foreach s [lsort -unique $filelist] {
-	if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
-	    file copy -force $s [file join $dest [file tail $s]]
+	if {[file tail $s] ni ". .."} {
+	    file copy -force -- $s [file join $dest [file tail $s]]
 	}
     }
     return
 }
 
 # TIP 131
-if 0 {
+if {0} {
 proc tcl::rmmadwiw {} {
     set magic {
         42 83 fe f6 ff f8 f1 e5 c6 f9 eb fd ff fb f1 e5 cc f5 ec f5 e3 fd fe
@@ -840,11 +841,11 @@ proc tcl::rmmadwiw {} {
 }
 
 proc tcl::mathfunc::rmmadwiw {} {
-    set age [expr {9*6}]
+    set age [expr {9 * 6}]
     set mind ""
     while {$age} {
-        lappend mind [expr {$age%13}]
-        set age [expr {$age/13}]
+        lappend mind [expr {$age % 13}]
+        set age [expr {$age / 13}]
     }
     set matter [lreverse $mind]
     return [join $matter ""]

@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -92,13 +92,12 @@ test lreplace-1.25 {lreplace command} {
     concat \"[lreplace {\}\     hello} end end]\"
 } {"\}\ "}
 test lreplace-1.26 {lreplace command} {
-    catch {unset foo}
+    unset -nocomplain foo
     set foo {a b}
     list [set foo [lreplace $foo end end]] \
         [set foo [lreplace $foo end end]] \
         [set foo [lreplace $foo end end]]
 } {a {} {}}
-
 
 test lreplace-2.1 {lreplace errors} {
     list [catch lreplace msg] $msg
@@ -131,6 +130,6 @@ test lreplace-3.1 {lreplace won't modify shared argument objects} {
 } "a b c"
 
 # cleanup
-catch {unset foo}
+unset -nocomplain foo
 ::tcltest::cleanupTests
 return

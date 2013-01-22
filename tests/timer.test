@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -466,7 +466,7 @@ test timer-7.5 {GetAfterEvent procedure} -returnCodes error -body {
 } -result "event \"after#${lastId}x\" doesn't exist"
 test timer-7.6 {GetAfterEvent procedure} -returnCodes error -body {
     after info afterx[expr {$lastId+1}]
-} -result "event \"afterx[expr {$lastId+1}]\" doesn't exist"
+} -result "event \"afterx[expr {$lastId + 1}]\" doesn't exist"
 after cancel $event
 
 test timer-8.1 {AfterProc procedure} {

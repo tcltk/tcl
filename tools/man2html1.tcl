@@ -37,10 +37,10 @@ package require Tcl 8.4
 # Arguments:
 # string -		Text to index.
 
-proc text string {
+proc text {string} {
     global state curFile NAME_file KEY_file inDT
 
-    switch $state {
+    switch -- $state {
 	NAME {
 	    foreach i [split $string ","] {
 		lappend NAME_file([string trim $i]) $curFile
@@ -71,11 +71,11 @@ proc text string {
 # args -	Any additional arguments to the macro.
 
 proc macro {name args} {
-    switch $name {
+    switch -- $name {
 	SH - SS {
 	    global state
 
-	    switch $args {
+	    switch -- $args {
 		NAME {
 		    if {$state eq "INIT"} {
 			set state NAME
@@ -102,9 +102,9 @@ proc macro {name args} {
 	    }
 	    set lib [lindex $args 3]				;# Tcl or Tk
 	}
+        default {}
     }
 }
-
 
 # dash --
 #
@@ -145,8 +145,8 @@ proc newline {} {
 
 proc initGlobals {} {}
 proc tab {} {}
-proc font type {}
-proc char name {}
+proc font {type} {}
+proc char {name} {}
 proc macro2 {name args} {}
 
 
@@ -165,37 +165,38 @@ proc doListing {file pattern} {
     set max_len 0
     foreach name [lsort [array names NAME_file]] {
 	set ref $NAME_file($name)
-	    if [string match $pattern $ref] {
+        if {[string match $pattern $ref]} {
 		lappend type $name
 		if {[string length $name] > $max_len} {
 		set max_len [string length $name]
 	    }
 	}
     }
-    if [catch {llength $type} ] {
+    if {[catch {llength $type} ]} {
 	puts stderr "       doListing: no names matched pattern ($pattern)"
 	return
     }
     incr max_len
-    set ncols [expr {90/$max_len}]
-    set nrows [expr {int(ceil([llength $type] / double($ncols)))} ]
+    set ncols [expr {90 / $max_len}]
+    set nrows [expr { int ( ceil ([llength $type] / ($ncols * 1.0)))} ]
 
 #	? max_len ncols nrows
 
     set index 0
+    array set row {}
     foreach f $type {
 	lappend row([expr {$index % $nrows}]) $f
 	incr index
     }
 
     puts -nonewline $file "<PRE>"
-    for {set i 0} {$i<$nrows} {incr i} {
+    for {set i 0} {$i < $nrows} {incr i} {
 	foreach name $row($i) {
 	    set str [format "%-*s" $max_len $name]
-	    regsub $name $str "<A HREF=\"$NAME_file($name).html\">$name</A>" str
+	    regsub -- $name $str "<A HREF=\"$NAME_file($name).html\">$name</A>" str
 	    puts -nonewline $file $str
 	}
-	puts $file {}
+	puts $file ""
     }
     puts $file "</PRE>"
 }
@@ -244,13 +245,13 @@ proc doContents {file packageName} {
 # Arguments:
 # fileName -		Name of the file to scan.
 
-proc do fileName {
+proc do {fileName} {
     global curFile
     set curFile [file tail $fileName]
     set file stdout
     puts "  Pass 1 -- $fileName"
     flush stdout
-    if [catch {eval [exec man2tcl [glob $fileName]]} msg] {
+    if {[catch {eval [exec man2tcl [glob -- $fileName]]} msg]} {
 	global errorInfo
 	puts stderr $msg
 	puts "in"

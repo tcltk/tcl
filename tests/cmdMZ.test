@@ -289,8 +289,8 @@ test cmdMZ-4.9 {Tcl_SplitObjCmd: basic split commands} {
 } {{} {} {} {}}
 test cmdMZ-4.10 {Tcl_SplitObjCmd: basic split commands} {
     apply {{} {
-        set x {}
-        foreach f [split {]\n} {}] {
+        set x ""
+        foreach f [split {]\n} ""] {
             append x $f
         }
         return $x

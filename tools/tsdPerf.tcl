@@ -19,6 +19,6 @@ set curdir [file dirname [info script]]
 load [file join $curdir tsdPerf[info sharedlibextension]]
 
 tsdPerfSet 1234
-while 1 {
+while {1} {
     puts "TIME:[time {set value [tsdPerfGet]} 1000] VALUE:$value"
 }

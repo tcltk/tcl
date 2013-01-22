@@ -895,7 +895,7 @@ test regexp-23.11 {regexp -all and -line} {
 } {{1 1} {2 2} {4 4}}
 
 test regexp-24.1 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string ""
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -903,7 +903,7 @@ test regexp-24.1 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } {1 <> 1 <> 1 <>}
 test regexp-24.2 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "\n"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -911,7 +911,7 @@ test regexp-24.2 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } [list 2 "<>\n<>" 2 "<>\n<>" 2 "<>\n<>"]
 test regexp-24.3 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "\n\n"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -919,7 +919,7 @@ test regexp-24.3 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } [list 3 "<>\n<>\n<>" 3 "<>\n<>\n<>" 3 "<>\n<>\n<>"]
 test regexp-24.4 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "a"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -927,7 +927,7 @@ test regexp-24.4 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } [list 1 "<>a" 1 "<a>" 1 "a<>"]
 test regexp-24.5 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "a\n"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -935,7 +935,7 @@ test regexp-24.5 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } [list 2 "<>a\n<>" 2 "<a>\n<>" 2 "a<>\n<>"]
 test regexp-24.6 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "\na"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -943,7 +943,7 @@ test regexp-24.6 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } [list 2 "<>\n<>a" 2 "<>\n<a>" 2 "<>\na<>"]
 test regexp-24.7 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "ab\n"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -951,7 +951,7 @@ test regexp-24.7 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } [list 2 "<>ab\n<>" 2 "<ab>\n<>" 2 "ab<>\n<>"]
 test regexp-24.8 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "a\nb"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -959,7 +959,7 @@ test regexp-24.8 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } [list 2 "<>a\n<>b" 2 "<a>\n<b>" 2 "a<>\nb<>"]
 test regexp-24.9 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "a\nb\n"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \
@@ -967,7 +967,7 @@ test regexp-24.9 {regsub -all and -line} {
 	[regsub -line -all {$} $string {<&>} v3] $v3
 } [list 3 "<>a\n<>b\n<>" 3 "<a>\n<b>\n<>" 3 "a<>\nb<>\n<>"]
 test regexp-24.10 {regsub -all and -line} {
-    foreach {v1 v2 v3} {{} {} {}} {}
+    lassign "" v1 v2 v3
     set string "a\nb\nc"
     list \
 	[regsub -line -all {^} $string {<&>} v1] $v1 \

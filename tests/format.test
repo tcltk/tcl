@@ -10,17 +10,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
 # %u output depends on word length, so this test is not portable.
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
+testConstraint longIs32bit [expr { ( int (0x80000000) ) < 0}]
+testConstraint longIs64bit [expr { ( int (0x8000000000000000) ) < 0}]
 testConstraint wideIs64bit \
-	[expr {(wide(0x80000000) > 0) && (wide(0x8000000000000000) < 0)}]
-testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
+	[expr {( ( wide (0x80000000) ) > 0) && ( ( wide (0x8000000000000000) ) < 0)}]
+testConstraint wideBiggerThanInt [expr { ( wide (0x80000000) ) != ( int (0x80000000) )}]
 
 test format-1.1 {integer formatting} {
     format "%*d %d %d %d" 6 34 16923 -12 -1
@@ -429,10 +429,7 @@ test format-12.1 {negative width specifiers} {
 } {25                                             }
 
 test format-13.1 {tcl_precision fuzzy comparison} {
-    catch {unset a}
-    catch {unset b}
-    catch {unset c}
-    catch {unset d}
+    unset -nocomplain a b c d
     set a 0.0000000000001
     set b 0.00000000000001
     set c 0.00000000000000001
@@ -440,10 +437,7 @@ test format-13.1 {tcl_precision fuzzy comparison} {
     format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
 } {0.0000000000 0.000000000000 0.000000000000110 0.00000000000011001}
 test format-13.2 {tcl_precision fuzzy comparison} {
-    catch {unset a}
-    catch {unset b}
-    catch {unset c}
-    catch {unset d}
+    unset -nocomplain a b c d
     set a 0.000000000001
     set b 0.000000000000005
     set c 0.0000000000000008
@@ -451,27 +445,21 @@ test format-13.2 {tcl_precision fuzzy comparison} {
     format {%0.10f %0.12f %0.15f %0.17f} $d $d $d $d
 } {0.0000000000 0.000000000001 0.000000000001006 0.00000000000100580}
 test format-13.3 {tcl_precision fuzzy comparison} {
-    catch {unset a}
-    catch {unset b}
-    catch {unset c}
+    unset -nocomplain a b c
     set a 0.00000000000099
     set b 0.000000000000011
     set c [expr $a + $b]
     format {%0.10f %0.12f %0.15f %0.17f} $c $c $c $c
 } {0.0000000000 0.000000000001 0.000000000001001 0.00000000000100100}
 test format-13.4 {tcl_precision fuzzy comparison} {
-    catch {unset a}
-    catch {unset b}
-    catch {unset c}
+    unset -nocomplain a b c
     set a 0.444444444444
     set b 0.33333333333333
     set c [expr $a + $b]
     format {%0.10f %0.12f %0.15f %0.16f} $c $c $c $c
 } {0.7777777778 0.777777777777 0.777777777777330 0.7777777777773300}
 test format-13.5 {tcl_precision fuzzy comparison} {
-    catch {unset a}
-    catch {unset b}
-    catch {unset c}
+    unset -nocomplain a b c
     set a 0.444444444444
     set b 0.99999999999999
     set c [expr $a + $b]
@@ -510,7 +498,7 @@ for {set i 0} {$i < 290} {incr i} {
     append b $a
 }
 for {set i 290} {$i < 400} {incr i} {
-    test format-16.[expr $i -289] {testing MAX_FLOAT_SIZE} {
+    test format-16.[expr {$i - 289}] {testing MAX_FLOAT_SIZE} {
         format {%s} $b
     } $b
     append b "x"
@@ -569,10 +557,7 @@ test format-20.1 {Bug 2932421: plain %s caused intrep change of args} -body {
 } -match glob -result {value is a dict with *, string representation "*"}
 
 # cleanup
-catch {unset a}
-catch {unset b}
-catch {unset c}
-catch {unset d}
+unset -nocomplain a b c d
 ::tcltest::cleanupTests
 return
 

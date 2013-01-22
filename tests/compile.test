@@ -26,13 +26,11 @@ testConstraint testevalex [llength [info commands testevalex]]
 
 catch {rename p ""}
 catch {namespace delete test_ns_compile}
-catch {unset x}
-catch {unset y}
-catch {unset a}
+unset -nocomplain x y a
 
 test compile-1.1 {TclCompileString: look up cmds in proc ns, not current ns} -setup {
     catch {namespace delete test_ns_compile}
-    catch {unset x}
+    unset -nocomplain x
 } -body {
     set x 123
     namespace eval test_ns_compile {
@@ -52,13 +50,13 @@ test compile-1.2 {TclCompileString, error result is reset if TclGetLong determin
 } {1 {wrong # args: should be "p x"}}
 
 test compile-2.1 {TclCompileDollarVar: global scalar name with ::s} -setup {
-    catch {unset x}
+    unset -nocomplain x
 } -body {
     set x 123
     list $::x [expr {"x" in [info globals]}]
 } -result {123 1}
 test compile-2.2 {TclCompileDollarVar: global scalar name with ::s} -setup {
-    catch {unset y}
+    unset -nocomplain y
 } -body {
     proc p {} {
         set ::y 789
@@ -67,13 +65,13 @@ test compile-2.2 {TclCompileDollarVar: global scalar name with ::s} -setup {
     list [p] $::y [expr {"y" in [info globals]}]
 } -result {789 789 1}
 test compile-2.3 {TclCompileDollarVar: global array name with ::s} -setup {
-    catch {unset a}
+    unset -nocomplain a
 } -body {
     set ::a(1) 2
     list $::a(1) [set ::a($::a(1)) 3] $::a(2) [expr {"a" in [info globals]}]
 } -result {2 3 3 1}
 test compile-2.4 {TclCompileDollarVar: global scalar name with ::s} -setup {
-    catch {unset a}
+    unset -nocomplain a
 } -body {
     proc p {} {
         set ::a(1) 1
@@ -82,7 +80,7 @@ test compile-2.4 {TclCompileDollarVar: global scalar name with ::s} -setup {
     list [p] $::a(1) [expr {"a" in [info globals]}]
 } -result {1 1 1}
 test compile-2.5 {TclCompileDollarVar: global array, called as ${arrName(0)}} -setup {
-    catch {unset a}
+    unset -nocomplain a
 } -body {
     proc p {} {
 	global a
@@ -93,7 +91,7 @@ test compile-2.5 {TclCompileDollarVar: global array, called as ${arrName(0)}} -s
 } -result {111 1 1}
 
 test compile-3.1 {TclCompileCatchCmd: only catch cmds with scalar vars are compiled inline} -setup {
-    catch {unset a}
+    unset -nocomplain a
 } -body {
     set a(1) xyzzyx
     proc p {} {
@@ -196,8 +194,7 @@ test compile-5.2 {TclCompileForeachCmd: non-local variables} {
 } 3
 
 test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} -setup {
-    catch {unset x}
-    catch {unset y}
+    unset -nocomplain x y
 } -body {
     set x 123
     proc p {} {
@@ -208,7 +205,7 @@ test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} -setup {
          [p] $::y [expr {"y" in [info globals]}]
 } -result {123 1 789 789 1}
 test compile-6.2 {TclCompileSetCmd: global array names with ::s} -setup {
-    catch {unset a}
+    unset -nocomplain a
 } -body {
     set ::a(1) 2
     proc p {} {
@@ -219,7 +216,7 @@ test compile-6.2 {TclCompileSetCmd: global array names with ::s} -setup {
 } -result {2 1 3 3 1}
 test compile-6.3 {TclCompileSetCmd: namespace var names with ::s} -setup {
     catch {namespace delete test_ns_compile}
-    catch {unset x}
+    unset -nocomplain x
 } -body {
     namespace eval test_ns_compile {
         variable v hello
@@ -248,14 +245,14 @@ test compile-8.2 {CollectArgInfo: binary data} {
     list [catch "string length foo\000" msg] $msg
 } {0 4}
 test compile-8.3 {CollectArgInfo: handle "]" at end of command properly} {
-    set x ]
-} {]}
+    set x "\]"
+} "\]"
 
 test compile-9.1 {UpdateStringOfByteCode: called for duplicate of compiled empty object} {
     proc p {} {
-        set x {}
+        set x ""
         eval $x
-        append x { }
+        append x " "
         eval $x
     }
     p
@@ -349,7 +346,7 @@ test compile-12.2 {testing error on literal deletion} -constraints {memory exec}
 # Test to catch buffer overrun in TclCompileTokens from buf 530320
 test compile-12.3 {check for a buffer overrun} -body {
     proc crash {} {
-	puts $array([expr {a+2}])
+	puts $array([expr {a + 2}])
     }
     crash
 } -returnCodes error -cleanup {
@@ -452,12 +449,12 @@ test compile-15.5 {proper TCL_RETURN code from [return]} {
 
 for {set noComp 0} {$noComp <= 1} {incr noComp} {
 
-if $noComp {
-    interp alias {} run {} testevalex
+if {$noComp} {
+    interp alias "" run "" testevalex
     set constraints testevalex
 } else {
-    interp alias {} run {} if 1
-    set constraints {}
+    interp alias "" run "" if 1
+    set constraints ""
 }
 
 test compile-16.1.$noComp {TclCompileScript: word expansion} $constraints {
@@ -534,30 +531,30 @@ test compile-16.17.$noComp {TclCompileScript: word expansion} $constraints {
 # suite.
 #
 test compile-16.18.$noComp {TclCompileScript: word expansion} -body {
-    proc LongList {} {return [lrepeat [expr {1<<10}] x]}
-    llength [run "list [string repeat {{*}[LongList] } [expr {1<<10}]]"]
+    proc LongList {} {return [lrepeat [expr {1 << 10}] x]}
+    llength [run "list [string repeat {{*}[LongList] } [expr {1 << 10}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {1<<20}]
+} -returnCodes ok  -result [expr {1 << 20}]
 test compile-16.19.$noComp {TclCompileScript: word expansion} -body {
-    proc LongList {} {return [lrepeat [expr {1<<11}] x]}
-    llength [run "list [string repeat {{*}[LongList] } [expr {1<<11}]]"]
+    proc LongList {} {return [lrepeat [expr {1 << 11}] x]}
+    llength [run "list [string repeat {{*}[LongList] } [expr {1 << 11}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {1<<22}]
+} -returnCodes ok  -result [expr {1 << 22}]
 test compile-16.20.$noComp {TclCompileScript: word expansion} -body {
-    proc LongList {} {return [lrepeat [expr {1<<12}] x]}
-    llength [run "list [string repeat {{*}[LongList] } [expr {1<<12}]]"]
+    proc LongList {} {return [lrepeat [expr {1 << 12}] x]}
+    llength [run "list [string repeat {{*}[LongList] } [expr {1 << 12}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
-    rename LongList {}
-} -returnCodes ok  -result [expr {1<<24}]
+    rename LongList ""
+} -returnCodes ok  -result [expr {1 << 24}]
 # This is the one that should cause overflow
 test compile-16.21.$noComp {TclCompileScript: word expansion} -body {
-    proc LongList {} {return [lrepeat [expr {1<<16}] x]}
-    llength [run "list [string repeat {{*}[LongList] } [expr {1<<16}]]"]
+    proc LongList {} {return [lrepeat [expr {1 << 16}] x]}
+    llength [run "list [string repeat {{*}[LongList] } [expr {1 << 16}]]"]
 } -constraints [linsert $constraints 0 knownBug] -cleanup {
     rename LongList {}
-} -returnCodes ok  -result [expr {wide(1)<<32}]
+} -returnCodes ok  -result [expr { ( wide (1) ) << 32}]
 test compile-16.22.$noComp {
     Bug 845412: TclCompileScript: word expansion not mandatory
 } -body {
@@ -712,9 +709,7 @@ test compile-18.19 {disassembler - basics} -setup {
 # cleanup
 catch {rename p ""}
 catch {namespace delete test_ns_compile}
-catch {unset x}
-catch {unset y}
-catch {unset a}
+unset -nocomplain x y a
 ::tcltest::cleanupTests
 return
 

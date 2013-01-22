@@ -45,7 +45,7 @@ test source-1.2 {source command} -setup {
 test source-1.3 {source command} -setup {
     set sourcefile [makeFile {} source.file]
     set fd [open $sourcefile w]
-    fconfigure $fd -translation lf
+    chan configure $fd -translation lf
     puts $fd "list a b c \\"
     puts $fd "d e f"
     close $fd
@@ -111,7 +111,7 @@ test source-2.7 {utf-8 with BOM} -setup {
     set sourcefile [makeFile {} source.file]
 } -body {
     set out [open $sourcefile w]
-    fconfigure $out -encoding utf-8
+    chan configure $out -encoding utf-8
     puts $out "\ufeffset y new-y"
     close $out
     set y old-y
@@ -212,7 +212,7 @@ test source-7.1 {source -encoding test} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]
-    fconfigure $f -encoding utf-8
+    chan configure $f -encoding utf-8
     puts $f "set symbol(square-root) \u221A; set x correct"
     close $f
 } -body {
@@ -231,7 +231,7 @@ test source-7.2 {source -encoding test} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]
-    fconfigure $f -encoding unicode
+    chan configure $f -encoding unicode
     puts $f "set symbol(square-root) \u221A; set x correct"
     close $f
 } -body {
@@ -256,7 +256,7 @@ test source-7.5 {source -encoding: correct operation} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]
-    fconfigure $f -encoding utf-8
+    chan configure $f -encoding utf-8
     puts $f "proc \u20ac {} {return foo}"
     close $f
 } -body {
@@ -270,7 +270,7 @@ test source-7.6 {source -encoding: mismatch encoding error} -setup {
     set sourcefile [makeFile {} source.file]
     file delete $sourcefile
     set f [open $sourcefile w]
-    fconfigure $f -encoding utf-8
+    chan configure $f -encoding utf-8
     puts $f "proc \u20ac {} {return foo}"
     close $f
 } -body {

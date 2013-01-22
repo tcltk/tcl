@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -37,7 +37,7 @@ if {[testConstraint testnrelevels]} {
 	    set depth [testnrelevels]
 	    set res {}
 	    foreach t $depth l $last {
-		lappend res [expr {$t-$l}]
+		lappend res [expr {$t - $l}]
 	    }
 	    set last $depth
 	    return $res
@@ -55,7 +55,7 @@ if {[testConstraint testnrelevels]} {
 		return [list [lrange $x 0 3] $abs]
 	    }
 	}
-	proc makebody txt {
+        proc makebody {txt} {
 	    variable body0
 	    return "$body0; $txt"
 	}
@@ -298,10 +298,9 @@ test nre-7.8 {bug #2910748: switch out of stale BC is not nre-aware} -setup {
 
     list [bar] [bar] [bar]
 } -cleanup {
-    rename bar {}
-    rename foo {}
+    rename bar ""
+    rename foo ""
 } -result {1 2 3}
-
 
 test nre-8.1 {nre and {*}} -body {
     # force an expansion that grows the evaluation stack, check that nre
@@ -314,8 +313,8 @@ test nre-8.1 {nre and {*}} -body {
     proc outer {} inner
     lrange [outer] 0 2
 } -cleanup {
-    rename inner {}
-    rename outer {}
+    rename inner ""
+    rename outer ""
 } -result {1 1 1} 
 test nre-8.2 {nre and {*}, [Bug 2415422]} -body {
     # force an expansion that grows the evaluation stack, check that nre
@@ -331,10 +330,9 @@ test nre-8.2 {nre and {*}, [Bug 2415422]} -body {
 
     crash
 } -cleanup {
-    rename nop {}
-    rename crash {}
+    rename nop ""
+    rename crash ""
 }
-
 
 #
 #  Basic TclOO tests

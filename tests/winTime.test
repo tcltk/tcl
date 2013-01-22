@@ -10,7 +10,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -45,18 +45,18 @@ test winTime-2.1 {Synchronization of Tcl and Windows clocks} {testwinclock} {
     # http://support.microsoft.com/default.aspx?scid=kb;en-us;274323
     set failed {}
     set ok 1
-    foreach start_sec [testwinclock] break
+    lassign [testwinclock] start_sec
     while { 1 } {
-	foreach { sys_sec sys_usec tcl_sec tcl_usec } [testwinclock] break
+	lassign [testwinclock] sys_sec sys_usec tcl_sec tcl_usec
 	set diff [expr { $tcl_sec - $sys_sec
-			 + 1.0e-6 * ( $tcl_usec - $sys_usec ) }]
+			 + (1.0e-6 * ( $tcl_usec - $sys_usec )) }]
         if { abs($diff) > 0.06 } {
 	    set failed "Tcl clock differs from system clock by $diff sec"
 	    break
 	} else {
 	    testwinsleep 1
 	}
-	if { $sys_sec - $start_sec >= 30 } break
+	if { ($sys_sec - $start_sec) >= 30 } break
     }
     set failed
 } {}

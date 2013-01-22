@@ -31,7 +31,6 @@ testConstraint AllocConsole [catch {puts console1 ""}]
 testConstraint RealConsole  [expr {![testConstraint AllocConsole]}]
 testConstraint testexcept   [llength [info commands testexcept]]
 
-
 set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
 append big $big
 append big $big	
@@ -42,8 +41,8 @@ append big $big
 
 set path(little) [makeFile {} little]
 set f [open $path(little) w] 
-puts -nonewline $f "little"
-close $f
+chan puts -nonewline $f "little"
+chan close $f
 
 set path(big) [makeFile {} big]
 set f [open $path(big) w]
@@ -191,8 +190,8 @@ test winpipe-4.1 {Tcl_WaitPid} {win nt exec cat32} {
 	}
     }
     set f [open "|[list $cat32] < $path(big) 2> $path(stderr)" r]
-    fconfigure $f  -buffering none -blocking 0
-    fileevent $f readable "readResults $f"
+    chan configure $f  -buffering none -blocking 0
+    chan event $f readable "readResults $f"
     set x 0
     set result ""
     vwait x
@@ -284,12 +283,12 @@ test winpipe-5.4 {TclpCreateTempFile: TEMP specifies non-existent directory} \
 test winpipe-6.1 {PipeSetupProc & PipeCheckProc: read threads} \
 	{win exec cat32} {
     set f [open "|[list $cat32]" r+]
-    fconfigure $f -blocking 0
-    fileevent $f writable { set x writable }
-    set x {}
+    chan configure $f -blocking 0
+    chan event $f writable { set x writable }
+    set x ""
     vwait x
-    fileevent $f writable {}
-    fileevent $f readable { lappend x readable }
+    chan event $f writable {}
+    chan event $f readable { lappend x readable }
     after 100 { lappend x timeout }
     vwait x
     puts $f foobar
@@ -298,16 +297,16 @@ test winpipe-6.1 {PipeSetupProc & PipeCheckProc: read threads} \
     lappend x [read $f]
     after 100 { lappend x timeout }
     vwait x
-    fconfigure $f -blocking 1
+    chan configure $f -blocking 1
     lappend x [catch {close $f} msg] $msg
 } {writable timeout readable {foobar
 } timeout 1 stderr32}
 test winpipe-6.2 {PipeSetupProc & PipeCheckProc: write threads} \
 	{win exec cat32} {
     set f [open "|[list $cat32]" r+]
-    fconfigure $f -blocking 0
-    fileevent $f writable { set x writable }
-    set x {}
+    chan configure $f -blocking 0
+    chan event $f writable { set x writable }
+    set x ""
     vwait x
     puts -nonewline $f $big$big$big$big
     flush $f

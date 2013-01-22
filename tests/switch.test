@@ -327,14 +327,70 @@ test switch-10.5 {compiled -exact switch} {
 } 1
 test switch-10.6 {compiled -exact switch} {
     if 1 {switch -exact -- b {a {
-	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
-	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
-	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
-	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
-	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
-	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
-	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
-	set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1;set x 1
+	set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+	set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+	set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+	set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+	set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+	set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+	set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+	set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
+        set x 1
     } b {subst 2}}}
 } 2
 
@@ -342,118 +398,146 @@ test switch-10.6 {compiled -exact switch} {
 #    c* are compiled switches, i* are interpreted
 #    *-glob use glob matching, *-exact use exact matching
 #    *2* include a default clause (different results too.)
-proc cswtest-glob s {
-    set x 0; set y 0
-    foreach c [split $s {}] {
-	switch -glob $c {
+proc cswtest-glob {s} {
+    set x 0
+    set y 0
+    foreach c [split $s ""] {
+	switch -glob -- $c {
 	    a {incr x}
 	    b {incr y}
 	}
     }
-    set x [expr {$x*100}]; set y [expr {$y*100}]
-    foreach c [split $s {}] {
+    set x [expr {$x * 100}]
+    set y [expr {$y * 100}]
+    foreach c [split $s ""] {
 	switch -glob -- $c a {incr x} b {incr y}
     }
     return $x,$y
 }
-proc iswtest-glob s {
-    set x 0; set y 0; set switch switch
-    foreach c [split $s {}] {
-	$switch -glob $c {
+proc iswtest-glob {s} {
+    set x 0
+    set y 0
+    set switch switch
+    foreach c [split $s ""] {
+	$switch -glob -- $c {
 	    a {incr x}
 	    b {incr y}
 	}
     }
-    set x [expr {$x*100}]; set y [expr {$y*100}]
-    foreach c [split $s {}] {
+    set x [expr {$x * 100}]
+    set y [expr {$y * 100}]
+    foreach c [split $s ""] {
 	$switch -glob -- $c a {incr x} b {incr y}
     }
     return $x,$y
 }
-proc cswtest-exact s {
-    set x 0; set y 0
-    foreach c [split $s {}] {
-	switch -exact $c {
+proc cswtest-exact {s} {
+    set x 0
+    set y 0
+    foreach c [split $s ""] {
+	switch -exact -- $c {
 	    a {incr x}
 	    b {incr y}
 	}
     }
-    set x [expr {$x*100}]; set y [expr {$y*100}]
+    set x [expr {$x * 100}]
+    set y [expr {$y * 100}]
     foreach c [split $s {}] {
 	switch -exact -- $c a {incr x} b {incr y}
     }
     return $x,$y
 }
-proc iswtest-exact s {
-    set x 0; set y 0; set switch switch
-    foreach c [split $s {}] {
-	$switch -exact $c {
+proc iswtest-exact {s} {
+    set x 0
+    set y 0
+    set switch switch
+    foreach c [split $s ""] {
+	$switch -exact -- $c {
 	    a {incr x}
 	    b {incr y}
 	}
     }
-    set x [expr {$x*100}]; set y [expr {$y*100}]
-    foreach c [split $s {}] {
+    set x [expr {$x * 100}]
+    set y [expr {$y * 100}]
+    foreach c [split $s ""] {
 	$switch -exact -- $c a {incr x} b {incr y}
     }
     return $x,$y
 }
-proc cswtest2-glob s {
-    set x 0; set y 0; set z 0
-    foreach c [split $s {}] {
-	switch -glob $c {
+proc cswtest2-glob {s} {
+    set x 0
+    set y 0
+    set z 0
+    foreach c [split $s ""] {
+	switch -glob -- $c {
 	    a {incr x}
 	    b {incr y}
 	    default {incr z}
 	}
     }
-    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
-    foreach c [split $s {}] {
+    set x [expr {$x * 100}]
+    set y [expr {$y * 100}]
+    set z [expr {$z * 100}]
+    foreach c [split $s ""] {
 	switch -glob -- $c a {incr x} b {incr y} default {incr z}
     }
     return $x,$y,$z
 }
-proc iswtest2-glob s {
-    set x 0; set y 0; set z 0; set switch switch
-    foreach c [split $s {}] {
-	$switch -glob $c {
+proc iswtest2-glob {s} {
+    set x 0
+    set y 0
+    set z 0
+    set switch switch
+    foreach c [split $s ""] {
+	$switch -glob -- $c {
 	    a {incr x}
 	    b {incr y}
 	    default {incr z}
 	}
     }
-    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
-    foreach c [split $s {}] {
+    set x [expr {$x * 100}]
+    set y [expr {$y * 100}]
+    set z [expr {$z * 100}]
+    foreach c [split $s ""] {
 	$switch -glob -- $c a {incr x} b {incr y} default {incr z}
     }
     return $x,$y,$z
 }
-proc cswtest2-exact s {
-    set x 0; set y 0; set z 0
-    foreach c [split $s {}] {
-	switch -exact $c {
+proc cswtest2-exact {s} {
+    set x 0
+    set y 0
+    set z 0
+    foreach c [split $s ""] {
+	switch -exact -- $c {
 	    a {incr x}
 	    b {incr y}
 	    default {incr z}
 	}
     }
-    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
-    foreach c [split $s {}] {
+    set x [expr {$x * 100}]
+    set y [expr {$y * 100}]
+    set z [expr {$z * 100}]
+    foreach c [split $s ""] {
 	switch -exact -- $c a {incr x} b {incr y} default {incr z}
     }
     return $x,$y,$z
 }
-proc iswtest2-exact s {
-    set x 0; set y 0; set z 0; set switch switch
-    foreach c [split $s {}] {
-	$switch -exact $c {
+proc iswtest2-exact {s} {
+    set x 0
+    set y 0
+    set z 0
+    set switch switch
+    foreach c [split $s ""] {
+	$switch -exact -- $c {
 	    a {incr x}
 	    b {incr y}
 	    default {incr z}
 	}
     }
-    set x [expr {$x*100}]; set y [expr {$y*100}]; set z [expr {$z*100}]
-    foreach c [split $s {}] {
+    set x [expr {$x * 100}]
+    set y [expr {$y * 100}]
+    set z [expr {$z * 100}]
+    foreach c [split $s ""] {
 	$switch -exact -- $c a {incr x} b {incr y} default {incr z}
     }
     return $x,$y,$z

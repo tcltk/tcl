@@ -74,9 +74,9 @@ proc ::tcl::HistAdd {event {exec {}}} {
     variable history
 
     if {
-	[prefix longest {exec {}} $exec] eq ""
-	&& [llength [info level 0]] == 3
-    } then {
+	([::tcl::prefix longest {exec {}} $exec] eq "") && 
+	([llength [info level 0]] == 3)
+    } {
 	return -code error "bad argument \"$exec\": should be \"exec\""
     }
 
@@ -114,7 +114,7 @@ proc ::tcl::HistKeep {{count {}}} {
     if {[llength [info level 0]] == 1} {
 	return $history(keep)
     }
-    if {![string is integer -strict $count] || ($count < 0)} {
+    if {(![string is integer -strict $count]) || ($count < 0)} {
 	return -code error "illegal keep count \"$count\""
     }
     set oldold $history(oldest)
@@ -124,7 +124,7 @@ proc ::tcl::HistKeep {{count {}}} {
     }
     set history(keep) $count
 }
-
+
 # tcl::HistClear --
 #
 #	Erase the history list
@@ -166,9 +166,9 @@ proc ::tcl::HistInfo {{count {}}} {
     } elseif {![string is integer -strict $count]} {
 	return -code error "bad integer \"$count\""
     }
-    set result {}
+    set result ""
     set newline ""
-    for {set i [expr {$history(nextid) - $count + 1}]} \
+    for {set i [expr {($history(nextid) - $count) + 1}]} \
 	    {$i <= $history(nextid)} {incr i} {
 	if {![info exists history($i)]} {
 	    continue
@@ -179,7 +179,7 @@ proc ::tcl::HistInfo {{count {}}} {
     }
     return $result
 }
-
+
 # tcl::HistRedo --
 #
 #	Fetch the previous or specified event, execute it, and then replace
@@ -225,7 +225,7 @@ proc ::tcl::HistRedo {{event -1}} {
 proc ::tcl::HistIndex {event} {
     variable history
     if {![string is integer -strict $event]} {
-	for {set i [expr {$history(nextid)-1}]} {[info exists history($i)]} \
+	for {set i [expr {$history(nextid) - 1}]} {[info exists history($i)]} \
 		{incr i -1} {
 	    if {[string match $event* $history($i)]} {
 		return $i

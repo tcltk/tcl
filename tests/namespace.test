@@ -37,7 +37,7 @@ test namespace-1.1 {TclInitNamespaces, GetNamespaceFromObj, NamespaceChildrenCmd
     namespace children :: test_ns_*
 } {}
 
-catch {unset l}
+unset -nocomplain l
 test namespace-2.1 {Tcl_GetCurrentNamespace} {
     list [namespace current] [namespace eval {} {namespace current}] \
         [namespace eval {} {namespace current}]
@@ -192,8 +192,7 @@ test namespace-7.7 {Bug 1655305} -setup {
     slave invokehidden infocommands
 } -cleanup {
     interp delete slave
-} -result {}
-
+} -result ""
 
 test namespace-8.1 {TclTeardownNamespace, delete global namespace} {
     catch {interp delete test_interp}
@@ -623,7 +622,7 @@ test namespace-14.9 {TclGetNamespaceForQualName, extra ::s are significant for v
     lappend l [set test_ns_1::test_ns_2::]
 } {1 {can't read "test_ns_1::test_ns_2::": no such variable} 2525}
 test namespace-14.10 {TclGetNamespaceForQualName, extra ::s are significant for vars} {
-    catch {unset test_ns_1::test_ns_2::}
+    unset -nocomplain test_ns_1::test_ns_2::
     set l {}
     lappend l [catch {set test_ns_1::test_ns_2::} msg] $msg
     set test_ns_1::test_ns_2:: 314159
@@ -747,7 +746,7 @@ test namespace-16.11 {Tcl_FindCommand, relative name not found} {
     }
 } {1 {invalid command name "cmd3"}}
 
-catch {unset x}
+unset -nocomplain x
 test namespace-17.1 {Tcl_FindNamespaceVar, absolute name found} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
     set x 314159
@@ -813,18 +812,15 @@ test namespace-17.10 {Tcl_FindNamespaceVar, interference with cached varNames} {
 	set ::test_ns_1::a 0
     }
     test_ns
-    rename test_ns {}
+    rename test_ns ""
     namespace eval test_ns_1 unset a
     set a 0
     namespace eval test_ns_1 set a 1
     namespace delete test_ns_1
     return $a
 } 1
-catch {unset a}
-catch {unset x}
-
-catch {unset l}
-catch {rename foo {}}
+unset -nocomplain a x l
+catch {rename foo ""}
 test namespace-18.1 {TclResetShadowedCmdRefs, one-level check for command shadowing} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
     proc foo {} {return "global foo"}
@@ -861,8 +857,8 @@ test namespace-18.2 {TclResetShadowedCmdRefs, multilevel check for command shado
     }
     lappend l [test_ns_1::trigger]
 } {{foo in ::test_ns_2} {foo in ::test_ns_1::test_ns_2}}
-catch {unset l}
-catch {rename foo {}}
+unset -nocomplain l
+catch {rename foo ""}
 
 test namespace-19.1 {GetNamespaceFromObj, global name found} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -1017,7 +1013,7 @@ test namespace-25.1 {NamespaceEvalCmd, bad args} {
 test namespace-25.2 {NamespaceEvalCmd, bad args} -body {
     namespace test_ns_1
 } -returnCodes error -match glob -result {unknown or ambiguous subcommand "test_ns_1": must be *}
-catch {unset v}
+unset -nocomplain v
 test namespace-25.3 {NamespaceEvalCmd, new namespace} {
     set v 123
     namespace eval test_ns_1 {
@@ -1058,7 +1054,7 @@ test namespace-25.8 {NamespaceEvalCmd, error in eval'd script} {
     (in namespace eval "::test_ns_1" script line 1)
     invoked from within
 "namespace eval test_ns_1 error foo bar baz"}}
-catch {unset v}
+unset -nocomplain v
 test namespace-25.9 {NamespaceEvalCmd, 545325} {
     namespace eval test_ns_1 info level 0
 } {namespace eval test_ns_1 info level 0}
@@ -1192,7 +1188,6 @@ test namespace-29.5 {NamespaceInscopeCmd, has lappend semantics} {
 test namespace-29.6 {NamespaceInscopeCmd, 1400572} {
     namespace inscope test_ns_1 {info level 0}
 } {namespace inscope test_ns_1 {info level 0}}
-
 
 test namespace-30.1 {NamespaceOriginCmd, bad args} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -1374,16 +1369,14 @@ test namespace-35.2 {FreeNsNameInternalRep, resulting ref count == 0} {
          [catch {test_ns_1::q} msg] $msg
 } {::test_ns_1 {} 1 {invalid command name "test_ns_1::q"}}
 
-catch {unset x}
-catch {unset y}
+unset -nocomplain x y
 test namespace-36.1 {DupNsNameInternalRep} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
     namespace eval test_ns_1 {}
     set x "::test_ns_1"
     list [namespace parent $x] [set y $x] [namespace parent $y]
 } {:: ::test_ns_1 ::}
-catch {unset x}
-catch {unset y}
+unset -nocomplain x y
 
 test namespace-37.1 {SetNsNameFromAny, ns name found} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -2934,10 +2927,8 @@ test namespace-54.1 {leak on namespace deletion} -constraints {memory} \
 } -result 0
 
 # cleanup
-catch {rename cmd1 {}}
-catch {unset l}
-catch {unset msg}
-catch {unset trigger}
+catch {rename cmd1 ""}
+unset -nocomplain l msg trigger
 namespace delete {*}[namespace children :: test_ns_*]
 ::tcltest::cleanupTests
 return

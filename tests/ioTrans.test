@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -36,7 +36,7 @@ testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 # can access this variable.
 
 set helperscript {
-    if {[lsearch [namespace children] ::tcltest] == -1} {
+    if {"::tcltest" ni [namespace children]} {
 	package require tcltest 2
 	namespace import -force ::tcltest::*
     }
@@ -967,7 +967,7 @@ test iortrans-11.0 {origin interpreter of moved transform gone} -setup {
 	    return
 	}
 	set chan [chan push $tempchan foo]
-	fconfigure $chan -buffering none
+	chan configure $chan -buffering none
 	set chan
     }]
     # Move channel to 2nd interpreter, transform goes with it.
@@ -1008,7 +1008,7 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
 	    interp delete {}
 	    return}
 	set chan [chan push [tempchan] foo]
-	fconfigure $chan -buffering none
+	chan configure $chan -buffering none
 	set chan
     }]
     # Move channel to 2nd thread, transform goes with it.
@@ -1801,7 +1801,7 @@ test iortrans.tf-11.0 {origin thread of moved transform gone} -setup {
 	    return
 	}
 	set chan [chan push [tempchan] foo]
-	fconfigure $chan -buffering none
+	chan configure $chan -buffering none
 	set chan
     }]
 
@@ -1846,7 +1846,7 @@ test iortrans.tf-11.1 {origin thread of moved transform destroyed during access}
 	    thread::exit
 	}
 	set chan [chan push [tempchan] foo]
-	fconfigure $chan -buffering none
+	chan configure $chan -buffering none
 	set chan
     }]
 

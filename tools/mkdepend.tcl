@@ -28,12 +28,12 @@
 #==============================================================================
 
 array set mode_data {}
-set mode_data(vc32) {cl -nologo -E}
+set mode_data(vc32) "cl -nologo -E"
 
 set source_extensions [list .c .cpp .cxx .cc]
 
 set excludes [list]
-if [info exists env(INCLUDE)] {
+if {[info exists env(INCLUDE)]} {
     set rawExcludes [split [string trim $env(INCLUDE) ";"] ";"]
     foreach exclude $rawExcludes {
 	lappend excludes [file normalize $exclude]
@@ -104,7 +104,7 @@ proc readDepends {chan} {
         }
     }
 
-    set result {}
+    set result [list]
     foreach n [array names depends] {
         set pair [split $n "|"]
         lappend result [list [lindex $pair 0] [lindex $pair 1]]
@@ -159,14 +159,14 @@ proc stringStartsWith {str prefix} {
 #	the processed dependency list.
 
 proc filterExcludes {depends excludes} {
-    set filtered {}
+    set filtered [list]
 
     foreach pair $depends {
         set excluded 0
         set file [lindex $pair 1]
 
         foreach dir $excludes {
-            if [stringStartsWith $file $dir] {
+	    if {[stringStartsWith $file $dir]} {
                 set excluded 1
                 break;
             }
@@ -195,7 +195,7 @@ proc replacePrefix {file} {
     global srcPathList srcPathReplaceList
 
     foreach was $srcPathList is $srcPathReplaceList {
-	regsub $was $file $is file
+	regsub -- $was $file $is file
     }
     return $file
 }
@@ -211,7 +211,7 @@ proc replacePrefix {file} {
 #	The processed dependency pair list.
 
 proc rebaseFiles {depends} {
-    set rebased {}
+    set rebased [list]
     foreach pair $depends {
         lappend rebased [list \
                 [replacePrefix [lindex $pair 0]] \
@@ -336,12 +336,12 @@ proc readInputListFile {objectListFile} {
 
 proc main {} {
     global argc argv mode mode_data srcFileList srcPathList excludes
-    global remove_prefix target_prefix output env
+    global remove_prefix target_prefix output env errorCode
 
     set srcPathList [list]
     set srcFileList [list]
 
-    if {$argc == 1} {displayUsage}
+    if {$argc == 1} {displayUsage }
 
     # Parse mkdepend input
     for {set i 0} {$i < [llength $argv]} {incr i} {
@@ -363,7 +363,7 @@ proc main {} {
 	    }
 	    -passthru:* {
 		set passthru [string range $arg 10 end]
-		regsub -all {"} $passthru {\"} passthru
+		regsub -all "\"" $passthru {\"} passthru
 		regsub -all {\\} $passthru {/} passthru
 	    }
 	    -out:* {
@@ -396,15 +396,15 @@ proc main {} {
 	    set input [open |$command r]
 	    set depends [readDepends $input]
 	    set status [catch {close $input} result]
-	    if {$status == 1 && [lindex $::errorCode 0] eq "CHILDSTATUS"} {
-		foreach { - pid code } $::errorCode break
+	    if {($status == 1) && ([lindex $errorCode 0] eq "CHILDSTATUS")} {
+		lassign $errorCode ___ pid code
 		if {$code == 2} {
 		    # preprocessor died a cruel death.
 		    error $result
 		}
 	    }
 	} err]} {
-	    puts stderr "error ocurred: $err\n"
+	    puts stderr "error occured: $err\n"
 	    continue
 	}
 	set depends [filterExcludes $depends $excludes]

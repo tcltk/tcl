@@ -31,8 +31,8 @@ proc fillTables {} {
     return $s
 }
 
-testConstraint memory [llength [info commands memory]]
-if {[testConstraint memory]} {
+tcltest::testConstraint memory [llength [info commands memory]]
+if {[tcltest::testConstraint memory]} {
     proc getbytes {} {
 	set lines [split [memory info] \n]
 	return [lindex $lines 3 3]
@@ -1882,7 +1882,7 @@ test assemble-17.15 {multiple passes of code resizing} {
 	for {set i 0} {$i < 15} {incr i} {
 	    append body "label b" $i \
 		"; push b; concat 2; nop; nop; jump a" \
-		[expr {$i+1}] \n
+		[expr {$i + 1}] \n
 	}
 	append body {label c; push -; concat 2; nop; nop; nop; jump d} \n
 	append body {label b15; push b; concat 2; nop; nop; jump c} \n
@@ -1893,8 +1893,8 @@ test assemble-17.15 {multiple passes of code resizing} {
 	x
     }
     -cleanup {
-	catch {unset body}
-	catch {rename x {}}
+	unset -nocomplain body
+	catch {rename x ""}
     }
     -result -abababababababababababababababab-
 }

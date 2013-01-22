@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -83,8 +83,7 @@ test upvar-2.2 {writing variables with upvar} {
     list $x1 $x2
 } {newbits morebits}
 test upvar-2.3 {writing variables with upvar} {
-    catch {unset x1}
-    catch {unset x2}
+    unset -nocomplain x1 x2
     proc p1 {x1 x2} {
 	upvar #0 x1 a
 	upvar x2 b
@@ -156,11 +155,15 @@ test upvar-3.6 {unsetting then resetting array elements with upvar} {
 	set a(0) zeroth
 	set a(1) first
 	set a(2) second
-	p2
+	p2 
 	list [lsort [array names a]] [catch {set a(0)} msg] $msg
     }
-    proc p2 {} {upvar a(0) x; unset x; set x 12345}
-    p1
+    proc p2 {} {
+      upvar a(0) x
+      unset x
+      set x 12345
+    }
+    p1 
 } {{0 1 2} 0 12345}
 
 test upvar-4.1 {nested upvars} {
@@ -185,10 +188,21 @@ test upvar-4.2 {nested upvars} {
     list [p1 14 15] $x1
 } {{14 15 bar 33} foo}
 
-proc tproc {args} {global x; set x [list $args [uplevel info vars]]}
+proc tproc {args} {
+    global x
+    set x [list $args [uplevel 1 info vars]]
+}
 test upvar-5.1 {traces involving upvars} {
-    proc p1 {a b} {set c 22; set d 33; trace var c rw tproc; p2}
-    proc p2 {} {upvar c x1; set x1 22}
+    proc p1 {a b} {
+        set c 22
+        set d 33
+        trace var c rw tproc
+        p2
+    }
+    proc p2 {} {
+        upvar 1 c x1
+        set x1 22
+    }
     set x ---
     p1 foo bar
     set x
@@ -252,7 +266,7 @@ test upvar-6.3 {retargeting an upvar} {
 test upvar-7.1 {upvar to same level} {
     set x 44
     set y 55
-    catch {unset uv}
+    unset -nocomplain uv
     upvar #0 x uv
     set uv abc
     upvar 0 y uv
@@ -322,7 +336,7 @@ test upvar-8.7 {errors in upvar command} -returnCodes error -body {
 } -result {variable "a" has traces: can't use for upvar}
 test upvar-8.8 {create nested array with upvar} -body {
     proc p1 {} {upvar x(a) b; set b(2) 44}
-    catch {unset x}
+    unset -nocomplain x
     p1
 } -returnCodes error -cleanup {
     unset x
@@ -341,13 +355,13 @@ test upvar-8.9 {upvar won't create namespace variable that refers to procedure v
     MakeLink 1
 } -result {bad variable name "a": upvar won't create namespace variable that refers to procedure variable}
 test upvar-8.10 {upvar will create element alias for new array element} -setup {
-    catch {unset upvarArray}
+    unset -nocomplain upvarArray
 } -body {
     array set upvarArray {}
     catch {upvar 0 upvarArray(elem) upvarArrayElemAlias}
 } -result {0}
 test upvar-8.11 {upvar will not create a variable that looks like an array} -setup {
-    catch {unset upvarArray}
+    unset -nocomplain upvarArray
 } -body {
     array set upvarArray {}
     upvar 0 upvarArray(elem) upvarArrayElemAlias(elem)
@@ -357,8 +371,7 @@ test upvar-9.1 {Tcl_UpVar2 procedure} testupvar {
     list [catch {testupvar xyz a {} x global} msg] $msg
 } {1 {bad level "xyz"}}
 test upvar-9.2 {Tcl_UpVar2 procedure} testupvar {
-    catch {unset a}
-    catch {unset x}
+    unset -nocomplain a x
     set a 44
     list [catch "testupvar #0 a 1 x global" msg] $msg
 } {1 {can't access "a(1)": variable isn't array}}
@@ -367,8 +380,7 @@ test upvar-9.3 {Tcl_UpVar2 procedure} testupvar {
 	testupvar 1 a {} x local
 	set x
     }
-    catch {unset a}
-    catch {unset x}
+    unset -nocomplain a x
     set a 44
     foo
 } {44}
@@ -377,8 +389,7 @@ test upvar-9.4 {Tcl_UpVar2 procedure} testupvar {
 	testupvar 1 a {} _up_ global
 	list [catch {set x} msg] $msg
     }
-    catch {unset a}
-    catch {unset _up_}
+    unset -nocomplain a _up_
     set a 44
     concat [foo] $_up_
 } {1 {can't read "x": no such variable} 44}
@@ -387,8 +398,7 @@ test upvar-9.5 {Tcl_UpVar2 procedure} testupvar {
 	testupvar 1 a b x local
 	set x
     }
-    catch {unset a}
-    catch {unset x}
+    unset -nocomplain a x
     set a(b) 1234
     foo
 } {1234}
@@ -397,8 +407,7 @@ test upvar-9.6 {Tcl_UpVar procedure} testupvar {
 	testupvar 1 a x local
 	set x
     }
-    catch {unset a}
-    catch {unset x}
+    unset -nocomplain a x
     set a xyzzy
     foo
 } {xyzzy}
@@ -407,12 +416,11 @@ test upvar-9.7 {Tcl_UpVar procedure} testupvar {
 	testupvar #0 a(b) x local
 	set x
     }
-    catch {unset a}
-    catch {unset x}
+    unset -nocomplain a x
     set a(b) 1234
     foo
 } {1234}
-catch {unset a}
+unset -nocomplain a
 
 #
 # Tests for 'namespace upvar'. As the implementation is essentially the same as

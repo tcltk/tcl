@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -20,7 +20,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
+if {[catch {expr T1()} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"})} {
     testConstraint testmathfunctions 0
 } else {
     testConstraint testmathfunctions 1
@@ -84,8 +84,8 @@ proc testIEEE {} {
 }
 testConstraint ieeeFloatingPoint [testIEEE]
 
-testConstraint longIs32bit [expr {int(0x80000000) < 0}]
-testConstraint longIs64bit [expr {int(0x8000000000000000) < 0}]
+testConstraint longIs32bit [expr { ( int (0x80000000) ) < 0}]
+testConstraint longIs64bit [expr { ( int (0x8000000000000000) ) < 0}]
 
 # procedures used below
 
@@ -98,32 +98,33 @@ proc hello_world {} {
     global a
     set a ""
     set L1 [set l0 [set h_1 [set q 0]]]
-    for {put_hello_char [expr [put_hello_char [expr [set h 7]*10+2]]+29]} {$l0?[put_hello_char $l0]
-        :!$h_1} {put_hello_char $ll;expr {$L1==2?[set ll [expr 32+0-0+[set bar 0]]]:0}} {expr {[incr L1]==[expr 1+([string length "abc"]-[string length "abc"])]
-        ?[set ll [set l0 [expr 54<<1]]]:$ll==108&&$L1<3?
-        [incr ll [expr 1|1<<1]; set ll $ll; set ll $ll; set ll $ll; set ll $ll; set l0 [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]; set l0; set l0 $l0; set l0; set l0]:$L1==4&&$ll==32?[set ll [expr 19+$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])+[set foo [expr ([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])+([string length "abc"]-[string length "abc"])]]]]
-        :[set q [expr $q-$h1+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]};expr {$L1==5?[incr ll -8; set ll $ll; set ll]:$q&&$h1&&1};expr {$L1==4+2
-        ?[incr ll 3]:[expr ([string length "abc"]-[string length "abc"])+1]};expr {$ll==($h<<4)+2+0&&$L1!=6?[incr ll -6]:[set h1 [expr 100+([string length "abc"]-[string length "abc"])-([string length "abc"]-[string length "abc"])]]}
-        expr {$L1!=1<<3?[incr q [expr ([string length "abc"]-[string length "abc"])-1]]:[set h_1 [set ll $h1]]}
+    for {put_hello_char [expr [put_hello_char [expr [set h 7] * 10 + 2]]+29]} {$l0 ? [put_hello_char $l0]
+        : (!$h_1)} {put_hello_char $ll;expr {($L1 == 2) ? [set ll [expr 32 + 0 - 0 + [set bar 0]]] : 0}} {
+        expr {([incr L1] == [expr 1 + ([string length "abc"] - [string length "abc"])]) 
+        ? [set ll [set l0 [expr 54 << 1]]] : (($ll == 108) && ($L1 < 3)) ? 
+        [incr ll [expr 1 | 1 << 1]; set ll $ll; set ll $ll; set ll $ll; set ll $ll; set l0 [expr ([string length "abc"] - [string length "abc"]) + ([string length "abc"] - [string length "abc"]) - ([string length "abc"] - [string length "abc"]) + ([string length "abc"] - [string length "abc"])]; set l0; set l0 $l0; set l0; set l0] : (($L1 == 4) && ($ll == 32)) ? [set ll [expr 19 + $h1 + ([string length "abc"] - [string length "abc"]) - ([string length "abc"] - [string length "abc"]) + ([string length "abc"] - [string length "abc"]) - ([string length "abc"] - [string length "abc"]) + [set foo [expr ([string length "abc"] - [string length "abc"]) + ([string length "abc"] - [string length "abc"]) + ([string length "abc"] - [string length "abc"])]]]]
+        : [set q [expr $q - $h1 + ([string length "abc"] - [string length "abc"]) - ([string length "abc"] - [string length "abc"])]]};expr {($L1 == 5) ? [incr ll -8; set ll $ll; set ll] : ($q && $h1 && 1)};expr {($L1 == (4 + 2)) 
+        ? [incr ll 3] : [expr ([string length "abc"] - [string length "abc"]) + 1]};expr {(($ll == (($h << 4) + 2 + 0)) && ($L1 != 6)) ? [incr ll -6] : [set h1 [expr 100 + ([string length "abc"] - [string length "abc"]) - ([string length "abc"] - [string length "abc"])]]}
+        expr {($L1 != (1 << 3)) ? [incr q [expr ([string length "abc"] - [string length "abc"]) - 1]] : [set h_1 [set ll $h1]]}
     }
     set a
 }
 
 proc 12days {a b c} {
     global xxx
-    expr {1<$a?[expr {$a<3?[12days -79 -13 [string range $c [12days -87 \
-	[expr 1-$b] [string range $c [12days -86 0 [string range $c 1 end]] \
-	end]] end]]:1};expr {$a<$b?[12days [expr $a+1] $b $c]:3};expr {[12days \
-	-94 [expr $a-27] $c]&&$a==2?$b<13?[12days 2 [expr $b+1] "%s %d %d\n"]:9
-	:16}]:$a<0?$a<-72?[12days $b $a "@n'+,#'/*\{\}w+/w#cdnr/+,\{\}r/*de\}+,/*\{*+,/w\{%+,/w#q#n+,/#\{l+,/n\{n+,/+#n+,/#;#q#n+,/+k#;*+,/'r :'d*'3,\}\{w+K w'K:'+\}e#';dq#'l q#'+d'K#!/+k#;q#'r\}eKK#\}w'r\}eKK\{nl\]'/#;#q#n')\{)#\}w')\{)\{nl\]'/+#n';d\}rw' i;# )\{nl\]!/n\{n#'; r\{#w'r nc\{nl\]'/#\{l,+'K \{rw' iK\{;\[\{nl\]'/w#q#n'wk nw' iwk\{KK\{nl\]!/w\{%'l##w#' i; :\{nl\]'/*\{q#'ld;r'\}\{nlwb!/*de\}'c ;;\{nl'-\{\}rw\]'/+,\}##'*\}#nc,',#nw\]'/+kd'+e\}+;#'rdq#w! nr'/ ') \}+\}\{rl#'\{n' ')# \}'+\}##(!!/"]
-	:$a<-50?[string compare [format %c $b] [string index $c 0]]==0?[append \
+    expr {(1 < $a) ? [expr {($a < 3) ? [12days -79 -13 [string range $c [12days -87 \
+	[expr 1 - $b] [string range $c [12days -86 0 [string range $c 1 end]] \
+	end]] end]] : 1}; expr {($a < $b) ? [12days [expr ($a + 1)] $b $c] : 3}; expr {([12days \
+	-94 [expr $a - 27] $c] && ($a == 2)) ? ($b < 13) ? [12days 2 [expr $b + 1] "%s %d %d\n"] : 9
+	: 16}] : ($a < 0) ? ($a < -72) ? [12days $b $a "@n'+,#'/*\{\}w+/w#cdnr/+,\{\}r/*de\}+,/*\{*+,/w\{%+,/w#q#n+,/#\{l+,/n\{n+,/+#n+,/#;#q#n+,/+k#;*+,/'r :'d*'3,\}\{w+K w'K:'+\}e#';dq#'l q#'+d'K#!/+k#;q#'r\}eKK#\}w'r\}eKK\{nl\]'/#;#q#n')\{)#\}w')\{)\{nl\]'/+#n';d\}rw' i;# )\{nl\]!/n\{n#'; r\{#w'r nc\{nl\]'/#\{l,+'K \{rw' iK\{;\[\{nl\]'/w#q#n'wk nw' iwk\{KK\{nl\]!/w\{%'l##w#' i; :\{nl\]'/*\{q#'ld;r'\}\{nlwb!/*de\}'c ;;\{nl'-\{\}rw\]'/+,\}##'*\}#nc,',#nw\]'/+kd'+e\}+;#'rdq#w! nr'/ ') \}+\}\{rl#'\{n' ')# \}'+\}##(!!/"] 
+	: ($a < -50) ? ([string compare [format %c $b] [string index $c 0]] == 0) ? [append \
 	xxx [string index $c 31];scan [string index $c 31] %c x;set x]
-	:[12days -65 $b [string range $c 1 end]]:[12days [expr ([string compare \
-	[string index $c 0] "/"]==0)+$a] $b [string range $c 1 end]]:0<$a
-	?[12days 2 2 "%s"]:[string compare [string index $c 0] "/"]==0||
+	:[12days -65 $b [string range $c 1 end]] : [12days [expr ([string compare \
+	[string index $c 0] "/"] == 0) + $a] $b [string range $c 1 end]] : (0 < $a) 
+	? [12days 2 2 "%s"] : (([string compare [string index $c 0] "/"] == 0) || 
 	[12days 0 [12days -61 [scan [string index $c 0] %c x; set x] \
 	"!ek;dc i@bK'(q)-\[w\]*%n+r3#l,\{\}:\nuwloca-O;m .vpbks,fxntdCeghiry"] \
-	[string range $c 1 end]]}
+	[string range $c 1 end]])}
 }
 proc do_twelve_days {} {
     global xxx
@@ -136,7 +137,7 @@ proc do_twelve_days {} {
 
 # start of tests
 
-catch {unset a b i x}
+unset -nocomplain a b i x
 
 test compExpr-old-1.1 {TclCompileExprCmd: no expression} {
     list [catch {expr  } msg] $msg
@@ -332,7 +333,6 @@ test compExpr-old-8.11 {CompileEqualityExpr: error compiling equality arm} -body
     expr 2!=x
 } -returnCodes error -match glob -result *
 
-
 test compExpr-old-9.1 {CompileRelationalExpr: just shift expr} {expr 3<<2} 12
 test compExpr-old-9.2 {CompileRelationalExpr: just shift expr} {expr 0xff>>2} 63
 test compExpr-old-9.3 {CompileRelationalExpr: just shift expr} {expr -1>>2} -1
@@ -490,13 +490,13 @@ test compExpr-old-14.12 {CompilePrimaryExpr: var reference primary} {
     list [expr {$i}] [expr $i]
 } {789 789}
 test compExpr-old-14.13 {CompilePrimaryExpr: var reference primary} {
-    catch {unset a}
+    unset -nocomplain a
     set a(foo) foo
     set a(bar) bar
     set a(123) 123
     set result ""
     lappend result [expr $a(123)] [expr {$a(bar)<$a(foo)}]
-    catch {unset a}
+    unset -nocomplain a
     set result
 } {123 1}
 test compExpr-old-14.14 {CompilePrimaryExpr: var reference primary} {
@@ -619,11 +619,11 @@ test compExpr-old-15.11 {CompileMathFuncCall: call registered math function} tes
 } -17.5
 
 test compExpr-old-16.1 {GetToken: checks whether integer token starting with "0x" (e.g., "0x$") is invalid} {
-    catch {unset a}
+    unset -nocomplain a
     set a(VALUE) ff15
     set i 123
     if {[expr 0x$a(VALUE)] & 16} {
-        set i {}
+        set i ""
     }
     set i
 } {}

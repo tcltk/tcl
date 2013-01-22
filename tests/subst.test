@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
@@ -55,13 +55,13 @@ test subst-4.2 {variable substitutions} {
     subst {x$a.y{$a}.z}
 } {x44.y{44}.z}
 test subst-4.3 {variable substitutions} -setup {
-    catch {unset a}
+    unset -nocomplain a
 } -body {
     set a(13) 82
     set i 13
     subst {x.$a($i)}
 } -result {x.82}
-catch {unset a}
+unset -nocomplain a
 set long {This is a very long string, intentionally made so long that it
 	will overflow the static character size for dstrings, so that
 	additional memory will have to be allocated by subst.  That way,
@@ -113,7 +113,7 @@ test subst-5.10 {command substitutions} {
 } {1 {missing close-bracket}}
 
 test subst-6.1 {clear the result after command substitution} -body {
-    catch {unset a}
+    unset -nocomplain a
     subst {[concat foo] $a}
 } -returnCodes error -result {can't read "a": no such variable}
 
@@ -178,7 +178,7 @@ test subst-9.2 {error in a subst} -body {
     subst {[if 1 { error foo; bogus code}]bar}
 } -returnCodes error -result foo
 test subst-9.3 {error in a variable subst} -setup {
-    catch {unset var}
+    unset -nocomplain var
 } -body {
     subst {foo $var([error foo]) bar}
 } -returnCodes error -result foo

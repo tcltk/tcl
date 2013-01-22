@@ -37,7 +37,7 @@ proc getPackages {} {
     global topics
     foreach i [array names topics] {
 	regsub {^(.*),.*,.*$} $i {\1} i
-	set temp($i) {}
+	set temp($i) ""
     }
     lsort [array names temp]
 }
@@ -55,7 +55,7 @@ proc getSections {pkg} {
     regsub -all {[][*?\\]} $pkg {\\&} pkg
     foreach i [array names topics "${pkg},*"] {
 	regsub {^.*,(.*),.*$} $i {\1} i
-	set temp($i) {}
+	set temp($i) ""
     }
     lsort [array names temp]
 }
@@ -75,7 +75,7 @@ proc getTopics {pkg sect} {
     regsub -all {[][*?\\]} $sect {\\&} sect
     foreach i [array names topics "${pkg},${sect},*"] {
 	regsub {^.*,.*,(.*)$} $i {\1} i
-	set temp($i) {}
+	set temp($i) ""
     }
     lsort [array names temp]
 }
@@ -88,16 +88,16 @@ proc getTopics {pkg sect} {
 # string -		Text to index.
 
 
-proc text string {
+proc text {string} {
     global state curID curPkg curSect topics keywords
 
-    switch $state {
+    switch -- $state {
 	NAME {
 	    foreach i [split $string ","] {
 		set topic [string trim $i]
 		set index "$curPkg,$curSect,$topic"
 		if {[info exists topics($index)]
-		    && [string compare $topics($index) $curID] != 0} {
+		    && ($topics($index) ne $curID)} {
 		    puts stderr "duplicate topic $topic in $curPkg"
 		}
 		set topics($index) $curID
@@ -129,11 +129,11 @@ proc text string {
 # args -	Any additional arguments to the macro.
 
 proc macro {name args} {
-    switch $name {
+    switch -- $name {
 	SH - SS {
 	    global state
 
-	    switch $args {
+	    switch -- $args {
 		NAME {
 		    if {$state eq "INIT" } {
 			set state NAME
@@ -157,11 +157,12 @@ proc macro {name args} {
 	    set topic	[lindex $args 0]	;# Tcl_UpVar
 	    set curPkg	[lindex $args 3]	;# Tcl
 	    set curSect	[lindex $args 4]	;# {Tcl Library Procedures}
-	    regsub -all {\\ } $curSect { } curSect
+	    regsub -all {\\ } $curSect " " curSect
 	    set index "$curPkg,$curSect,$topic"
 	    set topics($index) $curID
 	    lappend keywords($topic) $curID
 	}
+        default {}
     }
 }
 
@@ -193,7 +194,7 @@ proc dash {} {
 proc initGlobals {} {}
 proc newline {} {}
 proc tab {} {}
-proc font type {}
-proc char name {}
+proc font {type} {}
+proc char {name} {}
 proc macro2 {name args} {}
 

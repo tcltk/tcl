@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -28,7 +28,6 @@ test pkgconfig-1.3 {query value multiple times} {
 	    [::tcl::pkgconfig get bindir,install] \
 	    [::tcl::pkgconfig get bindir,install]
 } 0
-
 
 test pkgconfig-2.0 {error: missing subcommand} {
     catch {::tcl::pkgconfig} msg

@@ -12,7 +12,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -22,8 +22,8 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 # Some tests require the testobj command
 
-testConstraint testobj [expr {[info commands testobj] != {}}]
-testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
+testConstraint testobj [expr {[info commands testobj] ne ""}]
+testConstraint testindexobj [expr {[info commands testindexobj] ne ""}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -291,14 +291,13 @@ test string-5.20 {string index, bytearray object out of bounds} {
     string index [binary format I* {0x50515253 0x52}] 20
 } {}
 
-
 proc largest_int {} {
     # This will give us what the largest valid int on this machine is,
     # so we can test for overflow properly below on >32 bit systems
     set int 1
     set exp 7; # assume we get at least 8 bits
-    while {wide($int) > 0} { set int [expr {wide(1) << [incr exp]}] }
-    return [expr {$int-1}]
+    while { ( wide ($int) ) > 0} { set int [expr { ( wide (1) ) << [incr exp]}] }
+    return [expr {$int - 1}]
 }
 
 test string-6.1 {string is, too few args} {
@@ -326,7 +325,7 @@ test string-6.8 {string is, error in var} {
     list [string is alpha -failindex var abc5def] $var
 } {0 3}
 test string-6.9 {string is, var shouldn't get set} {
-    catch {unset var}
+    unset -nocomplain var
     list [catch {string is alpha -failindex var abc; set var} msg] $msg
 } {1 {can't read "var": no such variable}}
 test string-6.10 {string is, ok on empty} {
@@ -444,11 +443,11 @@ test string-6.45 {string is false, false} {
     list [string is false -fail var abc] $var
 } {0 0}
 test string-6.46 {string is false, false} {
-    catch {unset var}
+    unset -nocomplain var
     list [string is false -fail var Y] $var
 } {0 0}
 test string-6.47 {string is false, false} {
-    catch {unset var}
+    unset -nocomplain var
     list [string is false -fail var offensive] $var
 } {0 0}
 test string-6.48 {string is integer, true} {
@@ -530,11 +529,11 @@ test string-6.72 {string is true, false} {
     list [string is true -fail var onto] $var
 } {0 0}
 test string-6.73 {string is true, false} {
-    catch {unset var}
+    unset -nocomplain var
     list [string is true -fail var 25] $var
 } {0 0}
 test string-6.74 {string is true, false} {
-    catch {unset var}
+    unset -nocomplain var
     list [string is true -fail var no] $var
 } {0 0}
 test string-6.75 {string is upper, true} {

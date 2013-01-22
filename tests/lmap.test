@@ -142,7 +142,7 @@ unset -nocomplain a
 # "lmap" with "continue" and "break" (non-compiled)
 test lmap-3.1 {continue tests} {
     lmap i {a b c d} {
-	if {[string compare $i "b"] == 0} continue
+	if {$i eq "b"} continue
 	set i
     }
 } {a c d}
@@ -150,7 +150,7 @@ test lmap-3.2 {continue tests} {
     set x 0
     list [lmap i {a b c d} {
     	incr x
-    	if {[string compare $i "b"] != 0} continue
+    	if {$i ne "b"} continue
     	set i
     }] $x
 } {b 4}
@@ -158,7 +158,7 @@ test lmap-3.3 {break tests} {
     set x 0
     list [lmap i {a b c d} {
 	incr x
-    	if {[string compare $i "c"] == 0} break
+    	if {$i eq "c"} break
     	set i
     }] $x
 } {{a b} 3}
@@ -308,7 +308,7 @@ test lmap-5.10 {lmap only supports local scalar variables} {
 test lmap-6.1 {continue tests} {
     apply {{} {
 	lmap i {a b c d} {
-	    if {[string compare $i "b"] == 0} continue
+	    if {$i eq "b"} continue
 	    set i
 	}
     }}
@@ -317,7 +317,7 @@ test lmap-6.2 {continue tests} {
     apply {{} {
 	list [lmap i {a b c d} {
 	    incr x
-	    if {[string compare $i "b"] != 0} continue
+	    if {$i ne "b"} continue
 	    set i
 	}] $x
     }}
@@ -326,7 +326,7 @@ test lmap-6.3 {break tests} {
     apply {{} {
 	list [lmap i {a b c d} {
 	    incr x
-	    if {[string compare $i "c"] == 0} break
+	    if {$i eq "c"} break
 	    set i
 	}] $x
     }}

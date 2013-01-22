@@ -29,12 +29,12 @@
 
 # Calculate the Chinese numerals from zero to ninety-nine.
 
-set zhDigits [list {} \u4e00 \u4e8c \u4e09 \u56db \
+set zhDigits [list "" \u4e00 \u4e8c \u4e09 \u56db \
 		  \u4e94 \u516d \u4e03 \u516b \u4e5d]
 set t 0
 foreach zt $zhDigits {
     if { $t == 0 } {
-	set zt {}
+	set zt ""
     } elseif { $t == 10 } {
 	set zt \u5341
     } else {
@@ -42,11 +42,11 @@ foreach zt $zhDigits {
     }
     set d 0
     foreach zd $zhDigits {
-	if { $t == 0 && $d == 0 } {
+	if { ($t == 0) && ($d == 0) } {
 	    set zd \u3007
-	} elseif { $t == 20 && $d != 0 } {
+	} elseif { ($t == 20) && ($d != 0) } {
 	    set zt \u5eff
-	} elseif { $t == 30 && $d != 0 } {
+	} elseif { ($t == 30) && ($d != 0) } {
 	    set zt \u5345
 	}
 	lappend zhNumbers $zt$zd
@@ -73,185 +73,185 @@ set format(ko,LOCALE_TIME_FORMAT) "%H\uc2dc%M\ubd84%S\ucd08"
 set format(zh,LOCALE_DATE_TIME_FORMAT) "%A %Y\u5e74%B%Od\u65E5%OH\u65f6%OM\u5206%OS\u79d2 %z"
 set format(ja,LOCALE_DATE_TIME_FORMAT) "%EY\u5e74%m\u6708%d\u65E5 (%a) %H\u6642%M\u5206%S\u79d2 %z"
 set format(ko,LOCALE_DATE_TIME_FORMAT) "%A %Y\ub144%B%Od\uc77c%H\uc2dc%M\ubd84%S\ucd08 %z"
-set format(ja,TIME_FORMAT_12) {%P %I:%M:%S}
+set format(ja,TIME_FORMAT_12) "%P %I:%M:%S"
 
 # The next set of format overrides were obtained from the glibc
 # localization strings.
 
-set format(cs_CZ,DATE_FORMAT) %d.%m.%Y
-set format(cs_CZ,DATE_TIME_FORMAT) {%a %e. %B %Y, %H:%M:%S %z}
-set format(cs_CZ,TIME_FORMAT) %H:%M:%S
-set format(cs_CZ,TIME_FORMAT_12) %I:%M:%S
-set format(da_DK,DATE_FORMAT) %d-%m-%Y
-set format(da_DK,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
-set format(da_DK,TIME_FORMAT) %T
-set format(da_DK,TIME_FORMAT_12) %T
-set format(de_AT,DATE_FORMAT) %Y-%m-%d
-set format(de_AT,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
-set format(de_AT,TIME_FORMAT) %T
-set format(de_AT,TIME_FORMAT_12) %T
-set format(de_BE,DATE_FORMAT) %Y-%m-%d
-set format(de_BE,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
-set format(de_BE,TIME_FORMAT) %T
-set format(de_BE,TIME_FORMAT_12) %T
-set format(de_CH,DATE_FORMAT) %Y-%m-%d
-set format(de_CH,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
-set format(de_CH,TIME_FORMAT) %T
-set format(de_CH,TIME_FORMAT_12) %T
-set format(de_DE,DATE_FORMAT) %Y-%m-%d
-set format(de_DE,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
-set format(de_DE,TIME_FORMAT) %T
-set format(de_DE,TIME_FORMAT_12) %T
-set format(de_LU,DATE_FORMAT) %Y-%m-%d
-set format(de_LU,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
-set format(de_LU,TIME_FORMAT) %T
-set format(de_LU,TIME_FORMAT_12) %T
-set format(en_CA,DATE_FORMAT) %d/%m/%y
-set format(en_CA,DATE_TIME_FORMAT) {%a %d %b %Y %r %z}
-set format(en_CA,TIME_FORMAT) %r
-set format(en_CA,TIME_FORMAT_12) {%I:%M:%S %p}
-set format(en_DK,DATE_FORMAT) %Y-%m-%d
-set format(en_DK,DATE_TIME_FORMAT) {%Y-%m-%dT%T %z}
-set format(en_DK,TIME_FORMAT) %T
+set format(cs_CZ,DATE_FORMAT) "%d.%m.%Y"
+set format(cs_CZ,DATE_TIME_FORMAT) "%a %e. %B %Y, %H:%M:%S %z"
+set format(cs_CZ,TIME_FORMAT) "%H:%M:%S"
+set format(cs_CZ,TIME_FORMAT_12) "%I:%M:%S"
+set format(da_DK,DATE_FORMAT) "%d-%m-%Y"
+set format(da_DK,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
+set format(da_DK,TIME_FORMAT) "%T"
+set format(da_DK,TIME_FORMAT_12) "%T"
+set format(de_AT,DATE_FORMAT) "%Y-%m-%d"
+set format(de_AT,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
+set format(de_AT,TIME_FORMAT) "%T"
+set format(de_AT,TIME_FORMAT_12) "%T"
+set format(de_BE,DATE_FORMAT) "%Y-%m-%d"
+set format(de_BE,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
+set format(de_BE,TIME_FORMAT) "%T"
+set format(de_BE,TIME_FORMAT_12) "%T"
+set format(de_CH,DATE_FORMAT) "%Y-%m-%d"
+set format(de_CH,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
+set format(de_CH,TIME_FORMAT) "%T"
+set format(de_CH,TIME_FORMAT_12) "%T"
+set format(de_DE,DATE_FORMAT) "%Y-%m-%d"
+set format(de_DE,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
+set format(de_DE,TIME_FORMAT) "%T"
+set format(de_DE,TIME_FORMAT_12) "%T"
+set format(de_LU,DATE_FORMAT) "%Y-%m-%d"
+set format(de_LU,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
+set format(de_LU,TIME_FORMAT) "%T"
+set format(de_LU,TIME_FORMAT_12) "%T"
+set format(en_CA,DATE_FORMAT) "%d/%m/%y"
+set format(en_CA,DATE_TIME_FORMAT) "%a %d %b %Y %r %z"
+set format(en_CA,TIME_FORMAT) "%r"
+set format(en_CA,TIME_FORMAT_12) "%I:%M:%S %p"
+set format(en_DK,DATE_FORMAT) "%Y-%m-%d"
+set format(en_DK,DATE_TIME_FORMAT) "%Y-%m-%dT%T %z"
+set format(en_DK,TIME_FORMAT) "%T"
 set format(en_DK,TIME_FORMAT_12) %T
 set format(en_GB,DATE_FORMAT) %d/%m/%y
-set format(en_GB,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(en_GB,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(en_GB,TIME_FORMAT) %T
 set format(en_GB,TIME_FORMAT_12) %T
 set format(en_IE,DATE_FORMAT) %d/%m/%y
-set format(en_IE,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(en_IE,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(en_IE,TIME_FORMAT) %T
 set format(en_IE,TIME_FORMAT_12) %T
 set format(en_US,DATE_FORMAT) %m/%d/%y
-set format(en_US,DATE_TIME_FORMAT) {%a %d %b %Y %r %z}
+set format(en_US,DATE_TIME_FORMAT) "%a %d %b %Y %r %z"
 set format(en_US,TIME_FORMAT) %r
-set format(en_US,TIME_FORMAT_12) {%I:%M:%S %p}
+set format(en_US,TIME_FORMAT_12) "%I:%M:%S %p"
 set format(es_ES,DATE_FORMAT) %d/%m/%y
-set format(es_ES,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
-set format(es_ES,TIME_FORMAT) %T
-set format(es_ES,TIME_FORMAT_12) %T
-set format(et_EE,DATE_FORMAT) %d.%m.%Y
-set format(et_EE,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(es_ES,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
+set format(es_ES,TIME_FORMAT) "%T"
+set format(es_ES,TIME_FORMAT_12) "%T"
+set format(et_EE,DATE_FORMAT) "%d.%m.%Y"
+set format(et_EE,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(et_EE,TIME_FORMAT) %T
 set format(et_EE,TIME_FORMAT_12) %T
-set format(eu_ES,DATE_FORMAT) {%a, %Yeko %bren %da}
-set format(eu_ES,DATE_TIME_FORMAT) {%y-%m-%d %T %z}
+set format(eu_ES,DATE_FORMAT) "%a, %Yeko %bren %da"
+set format(eu_ES,DATE_TIME_FORMAT) "%y-%m-%d %T %z"
 set format(eu_ES,TIME_FORMAT) %T
 set format(eu_ES,TIME_FORMAT_12) %T
 set format(fi_FI,DATE_FORMAT) %d.%m.%Y
-set format(fi_FI,DATE_TIME_FORMAT) {%a %e %B %Y %T}
+set format(fi_FI,DATE_TIME_FORMAT) "%a %e %B %Y %T"
 set format(fi_FI,TIME_FORMAT) %T
 set format(fi_FI,TIME_FORMAT_12) %T
 set format(fo_FO,DATE_FORMAT) %d/%m-%Y
-set format(fo_FO,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(fo_FO,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(fo_FO,TIME_FORMAT) %T
 set format(fo_FO,TIME_FORMAT_12) %T
 set format(fr_BE,DATE_FORMAT) %d/%m/%y
-set format(fr_BE,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(fr_BE,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(fr_BE,TIME_FORMAT) %T
 set format(fr_BE,TIME_FORMAT_12) %T
 set format(fr_CA,DATE_FORMAT) %Y-%m-%d
-set format(fr_CA,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(fr_CA,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(fr_CA,TIME_FORMAT) %T
 set format(fr_CA,TIME_FORMAT_12) %T
-set format(fr_CH,DATE_FORMAT) {%d. %m. %y}
-set format(fr_CH,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(fr_CH,DATE_FORMAT) "%d. %m. %y"
+set format(fr_CH,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(fr_CH,TIME_FORMAT) %T
 set format(fr_CH,TIME_FORMAT_12) %T
 set format(fr_FR,DATE_FORMAT) %d.%m.%Y
-set format(fr_FR,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(fr_FR,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(fr_FR,TIME_FORMAT) %T
 set format(fr_FR,TIME_FORMAT_12) %T
 set format(fr_LU,DATE_FORMAT) %d.%m.%Y
-set format(fr_LU,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(fr_LU,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(fr_LU,TIME_FORMAT) %T
 set format(fr_LU,TIME_FORMAT_12) %T
 set format(ga_IE,DATE_FORMAT) %d.%m.%y
-set format(ga_IE,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(ga_IE,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(ga_IE,TIME_FORMAT) %T
 set format(ga_IE,TIME_FORMAT_12) %T
 set format(gr_GR,DATE_FORMAT) %d/%m/%Y
-set format(gr_GR,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(gr_GR,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(gr_GR,TIME_FORMAT) %T
 set format(gr_GR,TIME_FORMAT_12) %T
 set format(hr_HR,DATE_FORMAT) %d.%m.%y
-set format(hr_HR,DATE_TIME_FORMAT) {%a %d %b %Y %T}
+set format(hr_HR,DATE_TIME_FORMAT) "%a %d %b %Y %T"
 set format(hr_HR,TIME_FORMAT) %T
 set format(hr_HR,TIME_FORMAT_12) %T
 set format(hu_HU,DATE_FORMAT) %Y-%m-%d
-set format(hu_HU,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(hu_HU,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(hu_HU,TIME_FORMAT) %T
 set format(hu_HU,TIME_FORMAT_12) %T
-set format(is_IS,DATE_FORMAT) {%a %e.%b %Y}
-set format(is_IS,DATE_TIME_FORMAT) {%a %e.%b %Y, %T %z}
+set format(is_IS,DATE_FORMAT) "%a %e.%b %Y"
+set format(is_IS,DATE_TIME_FORMAT) "%a %e.%b %Y, %T %z"
 set format(is_IS,TIME_FORMAT) %T
 set format(is_IS,TIME_FORMAT_12) %T
 set format(it_IT,DATE_FORMAT) %d/%m/%Y
-set format(it_IT,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(it_IT,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(it_IT,TIME_FORMAT) %T
 set format(it_IT,TIME_FORMAT_12) %T
 set format(iw_IL,DATE_FORMAT) %d/%m/%y
-set format(iw_IL,DATE_TIME_FORMAT) {%z %H:%M:%S %Y %b %d %a}
+set format(iw_IL,DATE_TIME_FORMAT) "%z %H:%M:%S %Y %b %d %a"
 set format(iw_IL,TIME_FORMAT) %H:%M:%S
-set format(iw_IL,TIME_FORMAT_12) {%I:%M:%S %P}
-set format(kl_GL,DATE_FORMAT) {%d %b %Y}
-set format(kl_GL,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(iw_IL,TIME_FORMAT_12) "%I:%M:%S %P"
+set format(kl_GL,DATE_FORMAT) "%d %b %Y"
+set format(kl_GL,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(kl_GL,TIME_FORMAT) %T
 set format(kl_GL,TIME_FORMAT_12) %T
 set format(lt_LT,DATE_FORMAT) %Y.%m.%d
-set format(lt_LT,DATE_TIME_FORMAT) {%Y m. %B %d d. %T}
+set format(lt_LT,DATE_TIME_FORMAT) "%Y m. %B %d d. %T"
 set format(lt_LT,TIME_FORMAT) %T
 set format(lt_LT,TIME_FORMAT_12) %T
 set format(lv_LV,DATE_FORMAT) %Y.%m.%d.
-set format(lv_LV,DATE_TIME_FORMAT) {%A, %Y. gada %e. %B, plkst. %H un %M}
+set format(lv_LV,DATE_TIME_FORMAT) "%A, %Y. gada %e. %B, plkst. %H un %M"
 set format(lv_LV,TIME_FORMAT) %T
 set format(lv_LV,TIME_FORMAT_12) %T
 set format(nl_BE,DATE_FORMAT) %d-%m-%y
-set format(nl_BE,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(nl_BE,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(nl_BE,TIME_FORMAT) %T
 set format(nl_BE,TIME_FORMAT_12) %T
 set format(nl_NL,DATE_FORMAT) %d-%m-%y
-set format(nl_NL,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(nl_NL,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(nl_NL,TIME_FORMAT) %T
 set format(nl_NL,TIME_FORMAT_12) %T
 set format(no_NO,DATE_FORMAT) %d-%m-%Y
-set format(no_NO,DATE_TIME_FORMAT) {%a %d-%m-%Y %T %z}
+set format(no_NO,DATE_TIME_FORMAT) "%a %d-%m-%Y %T %z"
 set format(no_NO,TIME_FORMAT) %T
 set format(no_NO,TIME_FORMAT_12) %T
 set format(pl_PL,DATE_FORMAT) %Y-%m-%d
-set format(pl_PL,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(pl_PL,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(pl_PL,TIME_FORMAT) %T
 set format(pl_PL,TIME_FORMAT_12) %T
 set format(pt_BR,DATE_FORMAT) %d-%m-%Y
-set format(pt_BR,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(pt_BR,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(pt_BR,TIME_FORMAT) %T
 set format(pt_BR,TIME_FORMAT_12) %T
 set format(pt_PT,DATE_FORMAT) %d-%m-%Y
-set format(pt_PT,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(pt_PT,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(pt_PT,TIME_FORMAT) %T
 set format(pt_PT,TIME_FORMAT_12) %T
 set format(ro_RO,DATE_FORMAT) %Y-%m-%d
-set format(ro_RO,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(ro_RO,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(ro_RO,TIME_FORMAT) %T
 set format(ro_RO,TIME_FORMAT_12) %T
 set format(ru_RU,DATE_FORMAT) %d.%m.%Y
-set format(ru_RU,DATE_TIME_FORMAT) {%a %d %b %Y %T}
+set format(ru_RU,DATE_TIME_FORMAT) "%a %d %b %Y %T"
 set format(ru_RU,TIME_FORMAT) %T
 set format(ru_RU,TIME_FORMAT_12) %T
 set format(sl_SI,DATE_FORMAT) %d.%m.%Y
-set format(sl_SI,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(sl_SI,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(sl_SI,TIME_FORMAT) %T
 set format(sl_SI,TIME_FORMAT_12) %T
 set format(sv_FI,DATE_FORMAT) %Y-%m-%d
-set format(sv_FI,DATE_TIME_FORMAT) {%a %e %b %Y %H.%M.%S}
+set format(sv_FI,DATE_TIME_FORMAT) "%a %e %b %Y %H.%M.%S"
 set format(sv_FI,TIME_FORMAT) %H.%M.%S
 set format(sv_FI,TIME_FORMAT_12) %H.%M.%S
 set format(sv_SE,DATE_FORMAT) %Y-%m-%d
-set format(sv_SE,DATE_TIME_FORMAT) {%a %e %b %Y %H.%M.%S}
+set format(sv_SE,DATE_TIME_FORMAT) "%a %e %b %Y %H.%M.%S"
 set format(sv_SE,TIME_FORMAT) %H.%M.%S
 set format(sv_SE,TIME_FORMAT_12) %H.%M.%S
 set format(tr_TR,DATE_FORMAT) %Y-%m-%d
-set format(tr_TR,DATE_TIME_FORMAT) {%a %d %b %Y %T %z}
+set format(tr_TR,DATE_TIME_FORMAT) "%a %d %b %Y %T %z"
 set format(tr_TR,TIME_FORMAT) %T
 set format(tr_TR,TIME_FORMAT_12) %T
 
@@ -276,20 +276,21 @@ set format(tr_TR,TIME_FORMAT_12) %T
 
 proc handleLocaleFile { localeName fileName msgFileName } {
     variable format
+    global argv0
 
     # Get the content of the ICU file
 
     set f [open $fileName r]
-    fconfigure $f -encoding utf-8
-    set data [read $f]
-    close $f
+    chan configure $f -encoding utf-8
+    set data [chan read $f]
+    chan close $f
 
     # Parse the ICU data
 
-    set state {}
+    set state ""
     foreach line [split $data \n] {
 	switch -exact -- $state {
-	    {} {
+	    "" {
 
 		# Look for the beginnings of data blocks
 
@@ -322,26 +323,28 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 			set state data
 			set key MonthNames
 		    }
+		    default {}
 		}
 	    }
 	    data {
-
-
 		# Inside a data block, collect the strings, doing backslash
 		# expansion to pick up the Unicodes
 
-		if { [regexp {"(.*)",} $line -> item] } {
+		if { [regexp {"(.*)",} $line ___ item] } {
 		    lappend items($key) [subst -nocommands -novariables $item]
 		} elseif { [regexp {^[[:space:]]*[\}][[:space:]]*$} $line] } {
-		    set state {}
+		    set state ""
 		}
 	    }
+	    default {}
 	}
     }
 
     # Skip locales that don't change time strings.
 
-    if {![array exists items]} return
+    if {![array exists items]} {
+        return
+    }
 
     # Write the Tcl message catalog
 
@@ -349,7 +352,7 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 
     # Write a header
 
-    puts $f "\# created by $::argv0 -- do not edit"
+    puts $f "\# created by $argv0 -- do not edit"
     puts $f "namespace eval ::tcl::clock \{"
 
     # Do ordinary sets of strings (weekday and month names)
@@ -375,7 +378,7 @@ proc handleLocaleFile { localeName fileName msgFileName } {
     # Do the eras, B.C.E., and C.E.
 
     if { [info exists items(Eras)] } {
-	foreach { bce ce } $items(Eras) break
+	lassign $items(Eras) bce ce
 	set cmd "    ::msgcat::mcset "
 	append cmd $localeName " " BCE " \"" [backslashify $bce] \"
 	puts $f $cmd
@@ -387,7 +390,7 @@ proc handleLocaleFile { localeName fileName msgFileName } {
     # Do the AM and PM markers
 
     if { [info exists items(AmPmMarkers)] } {
-	foreach { am pm } $items(AmPmMarkers) break
+	lassign $items(AmPmMarkers) am pm
 	set cmd "    ::msgcat::mcset "
 	append cmd $localeName " " AM " \"" [backslashify $am] \"
 	puts $f $cmd
@@ -441,7 +444,7 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 		set fmt \
 		    [backslashify \
 			 [percentify [lindex $items(DateTimePatterns) $i]]]
-		regsub { %Z} $fmt {} format($localeName,TIME_FORMAT)
+		regsub " %Z" $fmt "" format($localeName,TIME_FORMAT)
 	    }
 	}
 
@@ -473,7 +476,7 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 		set fmt \
 		    [backslashify \
 			 [percentify [lindex $items(DateTimePatterns) $i]]]
-		regsub { %Z} $fmt {} format($localeName,TIME_FORMAT_12)
+		regsub " %Z" $fmt "" format($localeName,TIME_FORMAT_12)
 	    }
 	}
 
@@ -489,17 +492,17 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 
     # Date and time... Prefer 24-hour format to 12-hour format.
 
-    if { ![info exists format($localeName,DATE_TIME_FORMAT)] 
-	 && [info exists format($localeName,DATE_FORMAT)]
-	 && [info exists format($localeName,TIME_FORMAT)]} {
+    if { (![info exists format($localeName,DATE_TIME_FORMAT)])	&& 
+	 [info exists format($localeName,DATE_FORMAT)]		&& 
+	 [info exists format($localeName,TIME_FORMAT)]} {
 	set format($localeName,DATE_TIME_FORMAT) \
 	    $format($localeName,DATE_FORMAT)
 	append format($localeName,DATE_TIME_FORMAT) \
 	    " " $format($localeName,TIME_FORMAT) " %z"
     }
-    if { ![info exists format($localeName,DATE_TIME_FORMAT)] 
-	 && [info exists format($localeName,DATE_FORMAT)]
-	 && [info exists format($localeName,TIME_FORMAT_12)]} {
+    if { (![info exists format($localeName,DATE_TIME_FORMAT)])	&& 
+	 [info exists format($localeName,DATE_FORMAT)]		&& 
+	 [info exists format($localeName,TIME_FORMAT_12)]} {
 	set format($localeName,DATE_TIME_FORMAT) \
 	    $format($localeName,DATE_FORMAT)
 	append format($localeName,DATE_TIME_FORMAT) \
@@ -553,8 +556,8 @@ proc handleLocaleFile { localeName fileName msgFileName } {
 #----------------------------------------------------------------------
 
 proc percentify { string } {
-    set retval {}
-    foreach { unquoted quoted } [split $string '] {
+    set retval ""
+    foreach { unquoted quoted } [split $string "'"] {
 	append retval [string map {
 	    EEEE %A MMMM %B yyyy %Y
 	    MMM %b EEE %a
@@ -585,15 +588,13 @@ proc percentify { string } {
 
 proc backslashify { string } {
 
-    set retval {}
-    foreach char [split $string {}] {
+    set retval ""
+    foreach char [split $string ""] {
 	scan $char %c ccode
-	if { $ccode >= 0x0020 && $ccode < 0x007f && $char ne "\"" 
-	     && $char ne "\{" && $char ne "\}" && $char ne "\["
-	     && $char ne "\]" && $char ne "\\" && $char ne "\$" } {
+	if { ($ccode >= 0x0020) && ($ccode < 0x007f) && ($char ni "\" \{ \} \[ \] \\ \$") } {
 	    append retval $char
 	} else {
-	    append retval \\u [format %04x $ccode]
+	    append retval "\\u" [format %04x $ccode]
 	}
     }
     return $retval
@@ -607,7 +608,7 @@ proc backslashify { string } {
 
 # Extract directories from command line
 
-foreach { icudir msgdir } $argv break
+lassign $argv icudir msgdir
 
 # Walk the ICU files and create corresponding Tcl message catalogs
 

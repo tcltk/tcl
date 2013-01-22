@@ -11,7 +11,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -135,11 +135,11 @@ test error-3.2 {errors in catch command} {
     list [catch {catch a b c} msg] $msg
 } {0 1}
 test error-3.3 {errors in catch command} {
-    catch {unset a}
+    unset -nocomplain a
     set a(0) 22
     list [catch {catch {format 44} a} msg] $msg
 } {1 {can't set "a": variable is array}}
-catch {unset a}
+unset -nocomplain a
 
 # More tests related to errorInfo and errorCode
 
@@ -532,7 +532,7 @@ foreach level {0 1 2 3} {
 
 	# Following cases have different -errorinfo; avoid false alarms
 	# TODO: examine whether these difference are as they ought to be.
-	if {$level == 0 && $code == 1} continue
+	if {($level == 0) && ($code == 1)} continue
 
 	foreach extras {{} {-bar soom}} {
 
@@ -823,7 +823,7 @@ test error-19.5 {multiple unrelated fallthroughs #2} {
     }
     set RES
 } {err}
-proc addmsg msg {
+proc addmsg {msg} {
     variable RES
     lappend RES $msg
 }

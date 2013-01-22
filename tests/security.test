@@ -30,7 +30,6 @@ proc CB {} {
     return $ret
 }
 
-
 test security-1.1 {tcl_endOfPreviousWord} {
     catch {tcl_startOfPreviousWord x {[BUG]}}
     CB

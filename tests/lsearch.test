@@ -112,11 +112,11 @@ test lsearch-4.2 {binary data} {
 } 1
 
 # Make a sorted list
-set l {}
-set l2 {}
+set l [list]
+set l2 [list]
 for {set i 0} {$i < 100} {incr i} {
     lappend l $i
-    lappend l2 [expr {double($i)/2}]
+    lappend l2 [expr {($i * 1.0) / 2}]
 }
 set increasingIntegers [lsort -integer $l]
 set decreasingIntegers [lsort -decreasing -integer $l]
@@ -127,7 +127,7 @@ set decreasingStrings [lsort -decreasing {48 6a 18b 22a 21aa 35 36}]
 set increasingDictionary [lsort -dictionary {48 6a 18b 22a 21aa 35 36}]
 set decreasingDictionary [lsort -dictionary -decreasing $increasingDictionary]
 
-set l {}
+set l [list]
 for {set i 0} {$i < 10} {incr i} {
     lappend l $i $i $i $i $i
 }
@@ -135,14 +135,14 @@ set repeatingIncreasingIntegers [lsort -integer $l]
 set repeatingDecreasingIntegers [lsort -integer -decreasing $l]
 
 test lsearch-5.1 {binary search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -integer -sorted $increasingIntegers $i]
     }
     set res
 } $increasingIntegers
 test lsearch-5.2 {binary search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -integer -decreasing -sorted \
 		$decreasingIntegers $i]
@@ -150,14 +150,14 @@ test lsearch-5.2 {binary search} {
     set res
 } $decreasingIntegers
 test lsearch-5.3 {binary search finds leftmost occurances} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 10} {incr i} {
 	lappend res [lsearch -integer -sorted $repeatingIncreasingIntegers $i]
     }
     set res
 } [list 0 5 10 15 20 25 30 35 40 45]
 test lsearch-5.4 {binary search -decreasing finds leftmost occurances} {
-    set res {}
+    set res [list]
     for {set i 9} {$i >= 0} {incr i -1} {
 	lappend res [lsearch -sorted -integer -decreasing \
 		$repeatingDecreasingIntegers $i]
@@ -166,14 +166,14 @@ test lsearch-5.4 {binary search -decreasing finds leftmost occurances} {
 } [list 0 5 10 15 20 25 30 35 40 45]
 
 test lsearch-6.1 {integer search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -exact -integer $increasingIntegers $i]
     }
     set res
 } [lrange $increasingIntegers 0 99]
 test lsearch-6.2 {decreasing integer search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -exact -integer -decreasing \
 		$decreasingIntegers $i]
@@ -181,14 +181,14 @@ test lsearch-6.2 {decreasing integer search} {
     set res
 } [lrange $decreasingIntegers 0 99]
 test lsearch-6.3 {sorted integer search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -sorted -integer $increasingIntegers $i]
     }
     set res
 } [lrange $increasingIntegers 0 99]
 test lsearch-6.4 {sorted decreasing integer search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -integer -sorted -decreasing \
 		$decreasingIntegers $i]
@@ -197,7 +197,7 @@ test lsearch-6.4 {sorted decreasing integer search} {
 } [lrange $decreasingIntegers 0 99]
 
 test lsearch-7.1 {double search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -exact -real $increasingDoubles \
 		[expr {double($i)/2}]]
@@ -205,7 +205,7 @@ test lsearch-7.1 {double search} {
     set res
 } [lrange $increasingIntegers 0 99]
 test lsearch-7.2 {decreasing double search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -exact -real -decreasing \
 		$decreasingDoubles [expr {double($i)/2}]]
@@ -213,7 +213,7 @@ test lsearch-7.2 {decreasing double search} {
     set res
 } [lrange $decreasingIntegers 0 99]
 test lsearch-7.3 {sorted double search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -sorted -real \
 		$increasingDoubles [expr {double($i)/2}]]
@@ -221,7 +221,7 @@ test lsearch-7.3 {sorted double search} {
     set res
 } [lrange $increasingIntegers 0 99]
 test lsearch-7.4 {sorted decreasing double search} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -sorted -real -decreasing \
 		$decreasingDoubles [expr {double($i)/2}]]
@@ -230,28 +230,28 @@ test lsearch-7.4 {sorted decreasing double search} {
 } [lrange $decreasingIntegers 0 99]
 
 test lsearch-8.1 {dictionary search} {
-    set res {}
+    set res [list]
     foreach val {6a 18b 21aa 22a 35 36 48} {
 	lappend res [lsearch -exact -dictionary $increasingDictionary $val]
     }
     set res
 } [list 0 1 2 3 4 5 6]
 test lsearch-8.2 {decreasing dictionary search} {
-    set res {}
+    set res [list]
     foreach val {6a 18b 21aa 22a 35 36 48} {
 	lappend res [lsearch -exact -dictionary $decreasingDictionary $val]
     }
     set res
 } [list 6 5 4 3 2 1 0]
 test lsearch-8.3 {sorted dictionary search} {
-    set res {}
+    set res [list]
     foreach val {6a 18b 21aa 22a 35 36 48} {
 	lappend res [lsearch -sorted -dictionary $increasingDictionary $val]
     }
     set res
 } [list 0 1 2 3 4 5 6]
 test lsearch-8.4 {decreasing sorted dictionary search} {
-    set res {}
+    set res [list]
     foreach val {6a 18b 21aa 22a 35 36 48} {
 	lappend res [lsearch -decreasing -sorted -dictionary \
 		$decreasingDictionary $val]
@@ -260,28 +260,28 @@ test lsearch-8.4 {decreasing sorted dictionary search} {
 } [list 6 5 4 3 2 1 0]
 
 test lsearch-9.1 {ascii search} {
-    set res {}
+    set res [list]
     foreach val {18b 21aa 22a 35 36 48 6a} {
 	lappend res [lsearch -exact -ascii $increasingStrings $val]
     }
     set res
 } [list 0 1 2 3 4 5 6]
 test lsearch-9.2 {decreasing ascii search} {
-    set res {}
+    set res [list]
     foreach val {18b 21aa 22a 35 36 48 6a} {
 	lappend res [lsearch -exact -ascii $decreasingStrings $val]
     }
     set res
 } [list 6 5 4 3 2 1 0]
 test lsearch-9.3 {sorted ascii search} {
-    set res {}
+    set res [list]
     foreach val {18b 21aa 22a 35 36 48 6a} {
 	lappend res [lsearch -sorted -ascii $increasingStrings $val]
     }
     set res
 } [list 0 1 2 3 4 5 6]
 test lsearch-9.4 {decreasing sorted ascii search} {
-    set res {}
+    set res [list]
     foreach val {18b 21aa 22a 35 36 48 6a} {
 	lappend res [lsearch -decreasing -sorted -ascii \
 		$decreasingStrings $val]
@@ -305,7 +305,7 @@ test lsearch-10.5 {offset searching} -returnCodes error -body {
     lsearch -start 1 2
 } -result {missing starting index}
 test lsearch-10.6 {binary search with offset} {
-    set res {}
+    set res [list]
     for {set i 0} {$i < 100} {incr i} {
 	lappend res [lsearch -integer -start 2 -sorted $increasingIntegers $i]
     }
@@ -471,7 +471,7 @@ test lsearch-21.2 {lsearch shimmering crash} {
 } 0
 
 test lsearch-22.1 {lsearch -bisect} -setup {
-    set res {}
+    set res [list]
 } -body {
     foreach i {0 1 5 6 7 8 15 16} {
 	lappend res [lsearch -bisect -integer {1 4 5 7 9 15} $i]
@@ -479,7 +479,7 @@ test lsearch-22.1 {lsearch -bisect} -setup {
     return $res
 } -result {-1 0 2 2 3 3 5 5}
 test lsearch-22.2 {lsearch -bisect, last of equals} -setup {
-    set res {}
+    set res [list]
 } -body {
     foreach i {0 1 2 3} {
 	lappend res [lsearch -bisect -integer {0 0 1 1 1 2 2 2 3 3 3} $i]
@@ -487,7 +487,7 @@ test lsearch-22.2 {lsearch -bisect, last of equals} -setup {
     return $res
 } -result {1 4 7 10}
 test lsearch-22.3 {lsearch -bisect decreasing order} -setup {
-    set res {}
+    set res [list]
 } -body {
     foreach i {0 1 5 6 7 8 15 16} {
 	lappend res [lsearch -bisect -integer -decreasing {15 9 7 5 4 1} $i]
@@ -495,7 +495,7 @@ test lsearch-22.3 {lsearch -bisect decreasing order} -setup {
     return $res
 } -result {5 5 3 2 2 1 0 -1}
 test lsearch-22.4 {lsearch -bisect, last of equals, decreasing} -setup {
-    set res {}
+    set res [list]
 } -body {
     foreach i {0 1 2 3} {
 	lappend res [lsearch -bisect -integer -decreasing \
@@ -511,15 +511,7 @@ test lsearch-22.6 {lsearch -sorted, all equal} {
 } {0}
 
 # cleanup
-catch {unset res}
-catch {unset increasingIntegers}
-catch {unset decreasingIntegers}
-catch {unset increasingDoubles}
-catch {unset decreasingDoubles}
-catch {unset increasingStrings}
-catch {unset decreasingStrings}
-catch {unset increasingDictionary}
-catch {unset decreasingDictionary}
+unset -nocomplain res increasingIntegers decreasingIntegers increasingDoubles decreasingDoubles increasingStrings decreasingStrings increasingDictionary decreasingDictionary
 ::tcltest::cleanupTests
 return
 

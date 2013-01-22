@@ -10,18 +10,17 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
-catch {unset a}
-catch {unset x}
+unset -nocomplain a x
 
 # Basic "foreach" operation.
 
 test foreach-1.1 {basic foreach tests} {
-    set a {}
+    set a ""
     foreach i {a b c d} {
 	set a [concat $a $i]
     }
@@ -67,9 +66,9 @@ test foreach-1.12 {foreach errors} {
 test foreach-1.13 {foreach errors} {
     list [catch {foreach a {{1 2}3} {}} msg] $msg
 } {1 {list element in braces followed by "3" instead of space}}
-catch {unset a}
+unset -nocomplain a
 test foreach-1.14 {foreach errors} {
-    catch {unset a}
+    unset -nocomplain a
     set a(0) 44
     list [catch {foreach a {1 2 3} {}} msg o] $msg $::errorInfo
 } {1 {can't set "a": variable is array} {can't set "a": variable is array
@@ -79,7 +78,7 @@ test foreach-1.14 {foreach errors} {
 test foreach-1.15 {foreach errors} {
     list [catch {foreach {} {} {}} msg] $msg
 } {1 {foreach varlist is empty}}
-catch {unset a}
+unset -nocomplain a
 
 test foreach-2.1 {parallel foreach tests} {
     set x {}
@@ -148,7 +147,7 @@ test foreach-2.9 {foreach only supports local scalar variables} {
 } {1 2 3 4}
 
 test foreach-3.1 {compiled foreach backward jump works correctly} {
-    catch {unset x}
+    unset -nocomplain x
     proc foo {arrayName} {
         upvar 1 $arrayName a
         set l {}
@@ -162,7 +161,7 @@ test foreach-3.1 {compiled foreach backward jump works correctly} {
 } [lsort {{0 zero} {1 one} {2 two} {3 three}}]
 
 test foreach-4.1 {noncompiled foreach and shared variable or value list objects that are converted to another type} {
-    catch {unset x}
+    unset -nocomplain x
     foreach {12.0} {a b c} {
         set x 12.0
         set x [expr $x + 1]
@@ -176,7 +175,7 @@ test foreach-5.1 {continue tests} {catch continue} 4
 test foreach-5.2 {continue tests} {
     set a {}
     foreach i {a b c d} {
-	if {[string compare $i "b"] == 0} continue
+	if {$i eq "b"} continue
 	set a [concat $a $i]
     }
     set a
@@ -184,7 +183,7 @@ test foreach-5.2 {continue tests} {
 test foreach-5.3 {continue tests} {
     set a {}
     foreach i {a b c d} {
-	if {[string compare $i "b"] != 0} continue
+	if {$i ne "b"} continue
 	set a [concat $a $i]
     }
     set a
@@ -201,7 +200,7 @@ test foreach-6.1 {break tests} {catch break} 3
 test foreach-6.2 {break tests} {
     set a {}
     foreach i {a b c d} {
-	if {[string compare $i "c"] == 0} break
+	if {$i eq "c"} break
 	set a [concat $a $i]
     }
     set a
@@ -276,8 +275,7 @@ test foreach-11.2 {error then dereference loop var (dev bug)} {
 } 1
 
 # cleanup
-catch {unset a}
-catch {unset x}
-catch {rename foo {}}
+unset -nocomplain a x
+catch {rename foo ""}
 ::tcltest::cleanupTests
 return

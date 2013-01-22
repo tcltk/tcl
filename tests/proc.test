@@ -24,7 +24,7 @@ testConstraint memory	    [llength [info commands memory]]
 catch {namespace delete {*}[namespace children :: test_ns_*]}
 catch {rename p ""}
 catch {rename {} ""}
-catch {unset msg}
+unset -nocomplain msg
 
 test proc-1.1 {Tcl_ProcObjCmd, put proc in namespace specified in name, if any} -setup {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -196,7 +196,7 @@ catch {namespace delete {*}[namespace children :: test_ns_*]}
 catch {rename p ""}
 catch {rename {} ""}
 catch {rename {a b  c} {}}
-catch {unset msg}
+unset -nocomplain msg
 
 catch {rename p ""}
 catch {rename t ""}

@@ -47,15 +47,15 @@ set maxyear 2100
 
 # Determine how big a wide integer is.
 
-set MAXWIDE [expr {wide(1)}]
-while 1 {
-    set next [expr {wide($MAXWIDE + $MAXWIDE + 1)}]
+set MAXWIDE [expr { wide (1) }]
+while {1} {
+    set next [expr { wide ($MAXWIDE + $MAXWIDE + 1) }]
     if {$next < 0} {
 	break
     }
     set MAXWIDE $next
 }
-set MINWIDE [expr {-$MAXWIDE-1}]
+set MINWIDE [expr {-$MAXWIDE - 1}]
 
 #----------------------------------------------------------------------
 #
@@ -156,7 +156,7 @@ proc loadZIC {fileName} {
 
 	# Break a line of input into words.
 
-	regsub {\s*(\#.*)?$} $line {} line
+	regsub {\s*(#.*)?$} $line {} line
 	if {$line eq ""} {
 	    continue
 	}
@@ -358,7 +358,7 @@ proc parseON {on} {
 	  # third possibility - lastWeekday - field 5
 	  last([[:alpha:]]+)
 	)$
-    } $on -> dom1 wday2 dir2 num2 wday3]} {
+    } $on ___ dom1 wday2 dir2 num2 wday3]} {
 	error "can't parse ON field \"$on\""
     }
     if {$dom1 ne ""} {
@@ -442,6 +442,7 @@ proc onWeekdayInMonth {dayOfWeek relation dayOfMonth year month} {
 	    return [::tcl::clock::WeekdayOnOrBefore $dayOfWeek \
 		    [expr {[dict get $date julianDay] + 6}]]
 	}
+        default {}
     }
 }
 
@@ -497,20 +498,14 @@ proc onLastWeekdayInMonth {dayOfWeek year month} {
 #----------------------------------------------------------------------
 
 proc parseTOD {tod} {
-    if {![regexp -expanded {
-	^
-	([[:digit:]]{1,2})		# field 1 - hour
-	(?:
-	    :([[:digit:]]{2})		# field 2 - minute
-	    (?:
-		:([[:digit:]]{2})	# field 3 - second
-	    )?
-	)?
-	(?:
-	    ([wsugz])			# field 4 - type indicator
-	)?
-    } $tod -> hour minute second ind]} {
-	puts stderr "$fileName:$lno:can't parse time field \"$tod\""
+    # field 1 - hour
+    # field 2 - minute
+    # field 3 - second
+    # field 4 - type indicator
+    if {![regexp -expanded {^([[:digit:]]{1,2})(?::([[:digit:]]{2})(?::([[:digit:]]{2}))?)?(?:([wsugz]))?} $tod ___ hour minute second ind]} {
+        # Undefined vars 'fileName' and 'lno' !!!
+        # puts stderr "$fileName:$lno:can't parse time field \"$tod\""
+	puts stderr "can't parse time field \"$tod\""
 	incr errorCount
     }
     scan $hour %d hour
@@ -527,7 +522,7 @@ proc parseTOD {tod} {
     if {$ind eq ""} {
 	set ind w
     }
-    return [list [expr {($hour * 60 + $minute) * 60 + $second}] $ind]
+    return [list [expr {((($hour * 60) + $minute) * 60) + $second}] $ind]
 }
 
 #----------------------------------------------------------------------
@@ -558,8 +553,10 @@ proc parseOffsetTime {offset} {
 		:([[:digit:]]{2})	# field 4 - second
 	    )?
 	)?
-    } $offset -> signum hour minute second]} {
-	puts stderr "$fileName:$lno:can't parse offset time \"$offset\""
+    } $offset ___ signum hour minute second]} {
+        # Undefined vars 'fileName' and 'lno' !!!
+	# puts stderr "$fileName:$lno:can't parse offset time \"$offset\""
+	puts stderr "can't parse offset time \"$offset\""
 	incr errorCount
     }
     append signum 1
@@ -574,7 +571,7 @@ proc parseOffsetTime {offset} {
     } else {
 	set second 0
     }
-    return [expr {(($hour * 60 + $minute) * 60 + $second) * $signum}]
+    return [expr {(((($hour * 60) + $minute) * 60) + $second) * $signum}]
 
 }
 
@@ -723,7 +720,7 @@ proc parseUntil {words} {
 	if {![string is integer $year]} {
 	    error "can't parse UNTIL field \"$words\""
 	}
-	if {![info exists firstYear] || $year < $firstYear} {
+	if {(![info exists firstYear]) || ($year < $firstYear)} {
 	    set firstYear $year
 	}
     } else {
@@ -919,8 +916,8 @@ proc applyRules {ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset
 
     set origStartSecs $startSecs
 
-    while {($until ne "" && $startSecs < $untilSecs)
-	    || ($until eq "" && ($nSunsetRules > 0 || $year < $maxyear))} {
+    while {(($until ne "") && ($startSecs < $untilSecs)) || 
+	   (($until eq "") && (($nSunsetRules > 0) || ($year < $maxyear)))} {
 	set remainingRules $currentRules
 	while {[llength $remainingRules] > 0} {
 
@@ -937,14 +934,13 @@ proc applyRules {ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset
 
 	    # Test if the rule is in effect.
 
-	    if {
-		$earliestSecs > $startSecs &&
-		($until eq "" || $earliestSecs < $untilSecs)
+	    if {($earliestSecs > $startSecs) && 
+		(($until eq "") || ($earliestSecs < $untilSecs))
 	    } {
 		# Test if the initial transition has been done.
 		# If not, do it now.
 
-		if {!$didTransitionIn && $earliestSecs > $origStartSecs} {
+		if {(!$didTransitionIn) && ($earliestSecs > $origStartSecs)} {
 		    set nm [convertNamePattern $namePattern $prevLetter]
 		    lappend points \
 			    $origStartSecs \
@@ -1026,16 +1022,16 @@ proc applyRules {ruleSet year startSecs stdGMTOffset DSTOffset nextGMTOffset
 proc divideRules {ruleSet year} {
     variable rules
 
-    set currentRules {}
+    set currentRules [list]
     set nSunsetRules 0
 
     foreach {
 	fromYear toYear yearType monthIn daySpecOn timeAt save letter
     } $rules($ruleSet) {
-	if {$toYear ne "maximum" && $year > $toYear} {
+	if {($toYear ne "maximum") && ($year > $toYear)} {
 	    # ignore - rule is in the past
 	} else {
-	    if {$fromYear eq "minimum" || $fromYear <= $year} {
+	    if {($fromYear eq "minimum") || ($fromYear <= $year)} {
 		lappend currentRules $fromYear $toYear $yearType $monthIn \
 			$daySpecOn $timeAt $save $letter
 	    }
@@ -1079,7 +1075,7 @@ proc findEarliestRule {remainingRules year stdGMTOffset DSTOffset} {
     } $remainingRules {
 	lappend daySpecOn $year $monthIn
 	set dayIn [eval $daySpecOn]
-	set secs [expr {wide(86400) * wide($dayIn) - 210866803200}]
+	set secs [expr {( ( wide (86400) ) * ( wide ($dayIn) ) ) - 210866803200}]
 	set secs [convertTimeOfDay $secs \
 		$stdGMTOffset $DSTOffset {*}$timeAt]
 	if {$secs < $earliest} {
@@ -1112,7 +1108,7 @@ proc findEarliestRule {remainingRules year stdGMTOffset DSTOffset} {
 #----------------------------------------------------------------------
 
 proc convertNamePattern {pattern flag} {
-    if {[regexp {(.*)/(.*)} $pattern -> standard daylight]} {
+    if {[regexp {(.*)/(.*)} $pattern ___ standard daylight]} {
 	if {$flag ne ""} {
 	    set pattern $daylight
 	} else {
@@ -1148,7 +1144,7 @@ proc convertNamePattern {pattern flag} {
 
 proc convertTimeOfDay {seconds stdGMTOffset DSTOffset timeOfDay flag} {
     incr seconds $timeOfDay
-    switch -exact $flag {
+    switch -exact -- $flag {
 	g - u - z {
 	}
 	w {
@@ -1158,6 +1154,7 @@ proc convertTimeOfDay {seconds stdGMTOffset DSTOffset timeOfDay flag} {
 	s {
 	    incr seconds [expr {-$stdGMTOffset}]
 	}
+        default {}
     }
     return $seconds
 }
@@ -1205,7 +1202,7 @@ proc processTimeZone {zoneName zoneData} {
 	    lassign $startTime year month dayRule timeOfDay
 	    lappend dayRule $year $month
 	    set startDay [eval $dayRule]
-	    set secs [expr {wide(86400) * wide($startDay) -210866803200}]
+	    set secs [expr { ( wide (86400) * wide ($startDay) ) - 210866803200}]
 	    set secs [convertTimeOfDay $secs \
 		    $stdGMTOffset $DSTOffset {*}$timeOfDay]
 	}
@@ -1236,7 +1233,7 @@ proc processTimeZone {zoneName zoneData} {
 #----------------------------------------------------------------------
 
 proc writeZones {outDir} {
-    variable zones
+    variable zones argv0
 
     # Walk the zones
 
@@ -1265,8 +1262,8 @@ proc writeZones {outDir} {
 	# Write the data to the information file
 
 	set f [open $fileName w]
-	fconfigure $f -translation lf
-	puts $f "\# created by $::argv0 - do not edit"
+	chan configure $f -translation lf
+	puts $f "\# created by $argv0 - do not edit"
 	puts $f ""
 	puts $f [list set TZData(:$zoneName) $data]
 	close $f
@@ -1292,7 +1289,7 @@ proc writeZones {outDir} {
 #	Creates a file for each link.
 
 proc writeLinks {outDir} {
-    variable links
+    variable links argv0
 
     # Walk the links
 
@@ -1318,11 +1315,11 @@ proc writeLinks {outDir} {
 	# Write the file
 
 	set f [open $fileName w]
-	fconfigure $f -translation lf
-	puts $f "\# created by $::argv0 - do not edit"
-	puts $f $ifCmd
-	puts $f $setCmd
-	close $f
+	chan configure $f -translation lf
+	chan puts $f "\# created by $argv0 - do not edit"
+	chan puts $f $ifCmd
+	chan puts $f $setCmd
+	chan close $f
     }
 
     return

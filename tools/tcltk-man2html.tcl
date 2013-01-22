@@ -40,8 +40,8 @@ proc parse_command_line {} {
 
     # Set defaults based on original code.
     set tcltkdir ../..
-    set tkdir {}
-    set tcldir {}
+    set tkdir ""
+    set tcldir ""
     set webdir ../html
     set build_tcl 0
     set build_tk 0
@@ -110,8 +110,8 @@ proc parse_command_line {} {
 	}
     }
 
-    if {!$build_tcl && !$build_tk} {
-	set build_tcl 1;
+    if {(!$build_tcl) && (!$build_tk)} {
+	set build_tcl 1
 	set build_tk 1
     }
 
@@ -161,7 +161,7 @@ proc capitalize {string} {
 ##
 ## Returns the style sheet.
 ##
-proc css-style args {
+proc css-style {args} {
     upvar 1 style style
     set body [uplevel 1 [list subst [lindex $args end]]]
     set tokens [join [lrange $args 0 end-1] ", "]
@@ -256,24 +256,24 @@ proc make-man-pages {html args} {
     global excluded_pages forced_index_pages process_first_patterns
 
     makedirhier $html
-    set cssfd [open $html/$::CSSFILE w]
+    set cssfd [open [file join $html $::CSSFILE] w]
     puts $cssfd [css-stylesheet]
     close $cssfd
     set manual(short-toc-n) 1
-    set manual(short-toc-fp) [open $html/[indexfile] w]
+    set manual(short-toc-fp) [open [file join $html [indexfile]] w]
     puts $manual(short-toc-fp) [htmlhead $overall_title $overall_title]
     puts $manual(short-toc-fp) "<DL class=\"keylist\">"
-    set manual(merge-copyrights) {}
+    set manual(merge-copyrights) ""
 
     foreach arg $args {
 	# preprocess to set up subheader for the rest of the files
 	if {![llength $arg]} {
 	    continue
 	}
-	lassign $arg -> name file
-	if {[regexp {(.*)(?: Package)? Commands(?:, version .*)?} $name -> pkg]} {
+	lassign $arg ___ name file
+	if {[regexp {(.*)(?: Package)? Commands(?:, version .*)?} $name ___ pkg]} {
 	    set name "$pkg Commands"
-	} elseif {[regexp {(.*)(?: Package)? C API(?:, version .*)?} $name -> pkg]} {
+	} elseif {[regexp {(.*)(?: Package)? C API(?:, version .*)?} $name ___ pkg]} {
 	    set name "$pkg C API"
 	}
 	lappend manual(subheader) $name $file
@@ -295,14 +295,14 @@ proc make-man-pages {html args} {
     if {!$verbose} {
 	puts stderr "Assembling index"
     }
-    file delete -force -- $html/Keywords
-    makedirhier $html/Keywords
-    set keyfp [open $html/Keywords/[indexfile] w]
+    file delete -force -- [file join $html Keywords]
+    makedirhier [file join $html Keywords]
+    set keyfp [open [file join $html Keywords [indexfile]] w]
     puts $keyfp [htmlhead "$tcltkdesc Keywords" "$tcltkdesc Keywords" \
 		     $overall_title "../[indexfile]"]
-    set letters {A B C D E F G H I J K L M N O P Q R S T U V W X Y Z}
+    set letters [list A B C D E F G H I J K L M N O P Q R S T U V W X Y Z]
     # Create header first
-    set keyheader {}
+    set keyheader [list]
     foreach a $letters {
 	set keys [array names manual "keyword-\[[string totitle $a$a]\]*"]
 	if {[llength $keys]} {
@@ -320,7 +320,7 @@ proc make-man-pages {html args} {
 	    continue
 	}
 	# Per-keyword page
-	set afp [open $html/Keywords/$a.htm w]
+        set afp [open [file join $html Keywords $a.htm] w]
 	puts $afp [htmlhead "$tcltkdesc Keywords - $a" \
 		       "$tcltkdesc Keywords - $a" \
 		       $overall_title "../[indexfile]"]
@@ -330,7 +330,7 @@ proc make-man-pages {html args} {
 	    set k [string range $k 8 end]
 	    puts $afp "<DT><A NAME=\"$k\">$k</A></DT>"
 	    puts $afp "<DD>"
-	    set refs {}
+  	    set refs [list]
 	    foreach man $manual(keyword-$k) {
 		set name [lindex $man 0]
 		set file [lindex $man 1]
@@ -428,7 +428,7 @@ proc make-man-pages {html args} {
     if {!$verbose} {
 	puts stderr "\nDone"
     }
-    return {}
+    return ""
 }
 
 ##
@@ -437,11 +437,11 @@ proc make-man-pages {html args} {
 proc plus-base {var root glob name dir desc} {
     global tcltkdir
     if {$var} {
-	if {[file exists $tcltkdir/$root/README]} {
-	    set f [open $tcltkdir/$root/README]
+        if {[file exists [file join $tcltkdir $root README]]} {
+	    set f [open [file join $tcltkdir $root README]]
 	    set d [read $f]
 	    close $f
-	    if {[regexp {This is the \w+ (\S+) source distribution} $d -> version]} {
+	    if {[regexp {This is the \w+ (\S+) source distribution} $d ___ version]} {
 	       append name ", version $version"
 	    }
 	}
@@ -459,18 +459,18 @@ proc plus-pkgs {type args} {
 	error "unknown type \"$type\": must be 3 or n"
     }
     if {!$build_tcl} return
-    set result {}
+    set result ""
     set pkgsdir $tcltkdir/$tcldir/pkgs
     foreach {dir name version} $args {
 	set globpat $pkgsdir/$dir/doc/*.$type
-	if {![llength [glob -type f -nocomplain $globpat]]} {
+	if {![llength [glob -type f -nocomplain -- $globpat]]} {
 	    # Fallback for manpages generated using doctools
 	    set globpat $pkgsdir/$dir/doc/man/*.$type
-	    if {![llength [glob -type f -nocomplain $globpat]]} {
+	    if {![llength [glob -type f -nocomplain -- $globpat]]} {
 		continue
 	    }
 	}
-	switch $type {
+	switch -- $type {
 	    n {
 		set title "$name Package Commands"
 		if {$version ne ""} {
@@ -489,6 +489,7 @@ proc plus-pkgs {type args} {
 		set desc \
 		    "The additional C functions provided by the $name package."
 	    }
+	    default {}
 	}
 	lappend result [list $globpat $title $dir $desc]
     }

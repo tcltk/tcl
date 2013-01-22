@@ -139,17 +139,17 @@ proc compare {list1 list2} {
 # the results to the file.
 
 proc filter {code docs dir pkg {outFile stdout}} {
-    set apis  {}
+    set apis  [list]
 
     # A list of Tcl command APIs.  These are not documented.
     # This list should just be verified for accuracy.
 
-    set cmds  {}
+    set cmds  [list]
 
     # A list of proc pointer structs.  These are not documented.
     # This list should just be verified for accuracy.
 
-    set procs {}
+    set procs [list]
 
     # A list of internal declarations.  These are not documented.
     # This list should just be verified for accuracy.
@@ -161,23 +161,23 @@ proc filter {code docs dir pkg {outFile stdout}} {
 
     set misc [grepMisc $dir $pkg]
 
-    set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+    set pat1 ".*\(${pkg}_\[A-z0-9\]+\).*$"
 
     # A list of APIs in the source, not in the docs.
     # This list should just be verified for accuracy.
 
     foreach x $code {
-	if {[string match *Cmd $x]} {
-	    if {[string match ${pkg}* $x]} {
+	if {[string match "*Cmd" $x]} {
+	    if {[string match "${pkg}*" $x]} {
 		lappend cmds $x
 	    }
-	} elseif {[string match *Proc $x]} {
-	    if {[string match ${pkg}* $x]} {
+	} elseif {[string match "*Proc" $x]} {
+	    if {[string match "${pkg}*" $x]} {
 		lappend procs $x
 	    }
-	} elseif {[lsearch -exact $decls $x] >= 0} {
+	} elseif {$x in $decls} {
 	    # No Op.
-	} elseif {[lsearch -exact $misc $x] >= 0} {
+	} elseif {$x in $misc} {
 	    # No Op.
 	} else {
 	    lappend apis $x
@@ -211,7 +211,7 @@ proc dump {list title file} {
 
 proc grepCode {dir pkg} {
     set apis [myGrep "${pkg}_\.\*" "${dir}/\*/\*\.\[ch\]"]
-    set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+    set pat1 ".*\(${pkg}_\[A-z0-9\]+\).*$"
 
     foreach a $apis {
 	if {[regexp --  $pat1 $a main n1]} {
@@ -226,7 +226,7 @@ proc grepCode {dir pkg} {
 
 proc grepDocs {dir pkg} {
     set apis [myGrep "\\fB${pkg}_\.\*\\fR" "${dir}/doc/\*\.3"]
-    set pat1 ".*(${pkg}_\[A-z0-9]+)\\\\fR.*$"
+    set pat1 ".*\(${pkg}_\[A-z0-9\]+\)\\\\fR.*$"
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
@@ -242,7 +242,7 @@ proc grepDocs {dir pkg} {
 proc grepDecl {dir pkg} {
     set file [file join $dir generic "[string tolower $pkg]IntDecls.h"]
     set apis [myGrep "^EXTERN.*\[ \t\]${pkg}_.*" $file]
-    set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+    set pat1 ".*\(${pkg}_\[A-z0-9\]+\).*$"
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
@@ -260,7 +260,7 @@ proc grepMisc {dir pkg} {
     global StructList
 
     set apis [myGrep "^EXTERN.*\[ \t\]${pkg}_Db.*" "${dir}/\*/\*\.\[ch\]"]
-    set pat1 ".*(${pkg}_\[A-z0-9]+).*$"
+    set pat1 ".*\(${pkg}_\[A-z0-9\]+\).*$"
 
     foreach a $apis {
 	if {[regexp -- $pat1 $a main n1]} {
@@ -268,7 +268,8 @@ proc grepMisc {dir pkg} {
 	}
     }
 
-    set result {}
+    set result [list]
+    # Question: Use {*} instead of eval ?
     eval {lappend result} $StructList
     eval {lappend result} [lsort [array names dbg]]
     eval {lappend result} $CommentList
@@ -276,11 +277,11 @@ proc grepMisc {dir pkg} {
 }
 
 proc myGrep {searchPat globPat} {
-    set result {}
-    foreach file [glob -nocomplain $globPat] {
+    set result [list]
+    foreach file [glob -nocomplain -- $globPat] {
 	set file [open $file r]
-	set data [read $file]
-	close $file
+	set data [chan read $file]
+	chan close $file
 	foreach line [split $data "\n"] {
 	    if {[regexp "^.*${searchPat}.*\$" $line]} {
 		lappend result $line

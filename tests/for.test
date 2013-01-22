@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -24,7 +24,7 @@ test for-1.2 {TclCompileForCmd: error in initial command} -body {
 } -match glob -result {1 {wrong # args: should be "for start test next command"} {wrong # args: should be "for start test next command"
     while *ing
 "for {set}"}}
-catch {unset i}
+unset -nocomplain i
 test for-1.3 {TclCompileForCmd: missing test expression} {
     catch {for {set i 0}} msg
     set msg
@@ -53,7 +53,7 @@ test for-1.8 {TclCompileForCmd: error compiling command body} -body {
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"*}
-catch {unset a}
+unset -nocomplain a
 test for-1.9 {TclCompileForCmd: simple command body} {
     set a {}
     for {set i 1} {$i<6} {set i [expr $i+1]} {
@@ -68,9 +68,7 @@ test for-1.10 {TclCompileForCmd: command body in quotes} {
     set a
 } {xxxxx}
 test for-1.11 {TclCompileForCmd: computed command body} {
-    catch {unset x1}
-    catch {unset bb}
-    catch {unset x2}
+    unset -nocomplain x1 bb x2
     set x1 {append a x1; }
     set bb {break}
     set x2 {; append a x2}
@@ -89,27 +87,27 @@ test for-1.13 {TclCompileForCmd: long command body} {
     for {set i 1} {$i<6} {set i [expr $i+1]} {
 	if $i==4 break
 	if $i>5 continue
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
@@ -168,27 +166,27 @@ test for-2.6 {continue tests, long command body} {
 	if $i==2 continue
 	if $i==4 break
 	if $i>5 continue
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
@@ -244,28 +242,28 @@ test for-3.5 {break tests, long command body} {
 	if $i==2 continue
 	if $i==5 break
 	if $i>5 continue
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
 	if $i==4 break
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
@@ -356,9 +354,7 @@ proc formatMail {} {
 	set quote 0
     }
     set breakrange {6.42 78.0}
-    set F1 [lindex $breakrange 0]
-    set F2 [lindex $breakrange 1]
-    set breakrange [lrange $breakrange 2 end]
+    set breakrange [lassign $breakrange F1 F2]
     if {[string length $F1] == 0} {
 	set F1 -1
 	set break 0
@@ -382,7 +378,7 @@ proc formatMail {} {
 		continue
 	    }
 	}
-	if $inheaders {
+	if {$inheaders} {
 	    set limit 55
 	} else {
 	    set limit 55
@@ -390,18 +386,16 @@ proc formatMail {} {
 	    # Decide whether or not to break the body line
 
 	    if {$plen > 0} {
-		if {[string first {> } $line] == 0} {
+		if {[string first "> " $line] == 0} {
 		    # This is quoted text from previous message, don't reformat
 		    append result $line $NL
-		    if {$quote && !$inheaders} {
+		    if {$quote && (!$inheaders)} {
 			# Fix from <sarr@umich.edu> to handle text/enriched
-			if {$L > $L1 && $L < $L2 && $line != {}} {
+			if {(($L > $L1) && ($L < $L2) && $line) ne ""} {
 			    # enriched requires two newlines for each one.
 			    append result $NL
 			} elseif {$L > $L2} {
-			    set L1 [lindex $ranges 0]
-			    set L2 [lindex $ranges 1]
-			    set ranges [lrange $ranges 2 end]
+			    set ranges [lassign $ranges L1 L2]
 			    set quote [llength $L1]
 			}
 		    }
@@ -418,9 +412,7 @@ proc formatMail {} {
 		continue
 	    } elseif {$L > $F2} {
 		# Past formatted block
-		set F1 [lindex $breakrange 0]
-		set F2 [lindex $breakrange 1]
-		set breakrange [lrange $breakrange 2 end]
+		set breakrange [lassign $breakrange F1 F2]
 		append result $line $NL
 		if {[string length $F1] == 0} {
 		    set F1 -1
@@ -428,23 +420,23 @@ proc formatMail {} {
 		continue
 	    }
 	}
-	set climit [expr $limit-1]
+        set climit [expr {$limit - 1}]
 	set cutoff 50
 	set continuation 0
 	
 	while {[string length $line] > $limit} {
-	    for {set c [expr $limit-1]} {$c >= $cutoff} {incr c -1} {
+	    for {set c [expr {$limit - 1}]} {$c >= $cutoff} {incr c -1} {
 		set char [string index $line $c]
-		if {$char == " " || $char == "\t"} {
+		if {($char eq " ") || ($char eq "\t")} {
 		    break
 		}
-		if {$char == ">"} {	;# Hack for enriched formatting
+		if {$char eq ">"} {	;# Hack for enriched formatting
 		    break
 		}
 	    }
 	    if {$c < $cutoff} {
-		if {! $inheaders} {
-		    set c [expr $limit-1]
+		if {!$inheaders} {
+		    set c [expr {$limit - 1}]
 		} else {
 		    set c [string length $line]
 		}
@@ -468,14 +460,12 @@ proc formatMail {} {
 	    }
 	} else {
 	    append result $line $NL
-	    if {$quote && !$inheaders} {
-		if {$L > $L1 && $L < $L2 && $line != {}} {
+	    if {$quote && (!$inheaders)} {
+		if {($L > $L1) && ($L < $L2) && ($line ne "")} {
 		    # enriched requires two newlines for each one.
 		    append result "" $NL
 		} elseif {$L > $L2} {
-		    set L1 [lindex $ranges 0]
-		    set L2 [lindex $ranges 1]
-		    set ranges [lrange $ranges 2 end]
+		    set ranges [lassign $ranges L1 L2]
 		    set quote [llength $L1]
 		}
 	    }
@@ -594,10 +584,9 @@ test for-4.1 {break must reset the interp result} {
 
 test for-5.1 {possible delayed substitution of increment command} {
     # Increment should be 5, and lappend should always append $a
-    catch {unset a}
-    catch {unset i}
+    unset -nocomplain a i
     set a 5
-    set i {}
+    set i [list]
     for {set a 1} {$a < 12} "incr a $a" {lappend i $a}
     set i
 } {1 6 11}
@@ -607,7 +596,7 @@ test for-5.2 {possible delayed substitution of increment command} {
     catch {rename p ""}
     proc p {} {
 	set a 5
-	set i {}
+	set i [list]
 	for {set a 1} {$a < 12} "incr a $a" {lappend i $a}
 	set i
     }
@@ -616,7 +605,7 @@ test for-5.2 {possible delayed substitution of increment command} {
 test for-5.3 {possible delayed substitution of body command} {
     # Increment should be $a, and lappend should always append 5
     set a 5
-    set i {}
+    set i ""
     for {set a 1} {$a < 12} {incr a $a} "lappend i $a"
     set i
 } {5 5 5 5}
@@ -625,7 +614,7 @@ test for-5.4 {possible delayed substitution of body command} {
     catch {rename p ""}
     proc p {} {
 	set a 5
-	set i {}
+        set i [list]
 	for {set a 1} {$a < 12} {incr a $a} "lappend i $a"
 	set i
     }
@@ -708,14 +697,12 @@ test for-6.11 {Tcl_ForObjCmd: command body in quotes} {
 } {xxxxx}
 test for-6.12 {Tcl_ForObjCmd: computed command body} {
     set z for
-    catch {unset x1}
-    catch {unset bb}
-    catch {unset x2}
+    unset -nocomplain x1 bb x2
     set x1 {append a x1; }
     set bb {break}
     set x2 {; append a x2}
-    set a {}
-    $z {set i 1} {$i<6} {set i [expr $i+1]} $x1$bb$x2
+    set a ""
+    $z {set i 1} {$i < 6} {set i [expr {$i + 1}]} $x1$bb$x2
     set a
 } {x1}
 test for-6.13 {Tcl_ForObjCmd: error in "next" command} -body {
@@ -734,27 +721,27 @@ test for-6.14 {Tcl_ForObjCmd: long command body} {
     $z {set i 1} {$i<6} {set i [expr $i+1]} {
 	if $i==4 break
 	if $i>5 continue
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg
 	}
-	if {$i>6 && $tcl_platform(machine)=="xxx"} {
+	if {($i > 6) && ($tcl_platform(machine) eq "xxx")} {
 	    catch {set a $a} msg
 	    catch {incr i 5} msg
 	    catch {incr i -5} msg

@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
@@ -21,9 +21,9 @@ cd [temporaryDirectory]
 
 # check whether macosx file attributes are supported
 testConstraint macosxFileAttr 0
-if {[testConstraint unix] && $tcl_platform(os) eq "Darwin"} {
+if {[testConstraint unix] && ($tcl_platform(os) eq "Darwin")} {
     catch {file delete -force -- foo.test}
-    close [open foo.test w]
+    chan close [open foo.test w]
     catch {
 	file attributes foo.test -creator
 	testConstraint macosxFileAttr 1
@@ -104,7 +104,7 @@ test macOSXFCmd-2.7 {MacOSXSetFileAttribute - rsrclength} {macosxFileAttr notRoo
     close [open foo.test w]
     catch {
 	set f [open foo.test/..namedfork/rsrc w]
-	fconfigure $f -translation lf -eofchar {}
+	chan configure $f -translation lf -eofchar {}
 	puts -nonewline $f "foo"
 	close $f
     }
@@ -121,7 +121,7 @@ test macOSXFCmd-3.1 {MacOSXCopyFileAttributes} {macosxFileAttr notRoot} {
     catch {
 	file attributes foo.test -creator FOOC -type FOOT -hidden 1
 	set f [open foo.test/..namedfork/rsrc w]
-	fconfigure $f -translation lf -eofchar {}
+	chan configure $f -translation lf -eofchar {}
 	puts -nonewline $f "foo"
 	close $f
 	file copy foo.test bar.test

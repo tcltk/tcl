@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -109,7 +109,7 @@ test chan-15.1 {chan command: truncate subcommand} -body {
 test chan-15.2 {chan command: truncate subcommand} -setup {
     set file [makeFile {} testTruncate]
     set f [open $file w+]
-    fconfigure $f -translation binary
+    chan configure $f -translation binary
 } -body {
     seek $f 0
     puts -nonewline $f 12345
@@ -190,7 +190,7 @@ test chan-16.9 {chan command: pending input subcommand} -setup {
     }
 
     set ::server [socket -server chan-16.9-accept -myaddr 127.0.0.1 0]
-    set ::client [socket 127.0.0.1 [lindex [fconfigure $::server -sockname] 2]]
+    set ::client [socket 127.0.0.1 [lindex [chan configure $::server -sockname] 2]]
     set ::chan-16.9-data [list]
     set ::chan-16.9-done 0
 } -body {
@@ -245,8 +245,8 @@ test chan-17.2 {chan command: pipe subcommand} -body {
 
 test chan-17.3 {chan command: pipe subcommand} -body {
 	set l [chan pipe]
-    foreach {pr pw} $l break
-    list [llength $l] [fconfigure $pr -blocking] [fconfigure $pw -blocking]
+    lassign $l pr pw
+    list [llength $l] [chan configure $pr -blocking] [chan configure $pw -blocking]
 } -result [list 2 1 1] -cleanup {
     close $pw
     close $pr
@@ -254,7 +254,7 @@ test chan-17.3 {chan command: pipe subcommand} -body {
 
 test chan-17.4 {chan command: pipe subcommand} -body {
     set ::done 0
-    foreach {::pr ::pw} [chan pipe] break
+    lassign [chan pipe] ::pr ::pw
     after 100 {puts $::pw foo;flush $::pw}
     fileevent $::pr readable {set ::done 1}
     after 500 {set ::done -1}
@@ -267,7 +267,7 @@ test chan-17.4 {chan command: pipe subcommand} -body {
     close $::pr
 }
 
-cleanupTests
+::tcltest::cleanupTests
 return
 
 # Local Variables:

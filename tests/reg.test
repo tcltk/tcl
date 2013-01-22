@@ -9,7 +9,7 @@
 #
 # Copyright (c) 1998, 1999 Henry Spencer.  All rights reserved.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
 }
 
@@ -229,12 +229,12 @@ namespace eval RETest {
 	    }
 	    lappend names $name
 	    append refs " \$$name"
-	    set $name ""
+	    set [set name] ""
 	}
-	if {[string match *o* $flags]} {	;# REG_NOSUB kludge
+	if {[string match "*o*" $flags]} {	;# REG_NOSUB kludge
 	    set nsub 0				;# unsigned value cannot be -1
 	}
-	if {[string match *t* $flags]} {	;# REG_EXPECT
+	if {[string match "*t*" $flags]} {	;# REG_EXPECT
 	    incr nsub -1			;# the extra does not count
 	}
 	set erun "list \[[concat $ecmd $names]\] $refs"
@@ -340,12 +340,10 @@ namespace import RETest::*
     list [catch {regexp (*) ign} msg] $msg
 } {1 {couldn't compile regular expression pattern: quantifier operand invalid}}
 
-
 doing 1 "basic sanity checks"
 expectMatch	1.1 &		abc	abc		abc
 expectNomatch	1.2 &		abc	def
 expectMatch	1.3 &		abc	xyabxabce	abc
-
 
 doing 2 "invalid option combinations"
 expectError	2.1 qe		a	INVARG
@@ -354,7 +352,6 @@ expectError	2.3 qx		a	INVARG
 expectError	2.4 qn		a	INVARG
 expectError	2.5 ba		a	INVARG
 
-
 doing 3 "basic syntax"
 expectIndices	3.1 &NS		""	a	{0 -1}
 expectMatch	3.2 NS		a|	a	a
@@ -362,7 +359,6 @@ expectMatch	3.3 -		a|b	a	a
 expectMatch	3.4 -		a|b	b	b
 expectMatch	3.5 NS		a||b	b	b
 expectMatch	3.6 &		ab	ab	ab
-
 
 doing 4 "parentheses"
 expectMatch	4.1  -		(a)e		ae	ae	a
@@ -384,7 +380,6 @@ expectMatch	4.14 SP		a(?:)b		ab	ab
 expectIndices	4.15 S		a(|b)c		ac	{0 1}	{1 0}
 expectMatch	4.16 S		a(b|)c		abc	abc	b
 
-
 doing 5 "simple one-char matching"
 # general case of brackets done later
 expectMatch	5.1 &		a.b		axb	axb
@@ -395,7 +390,6 @@ expectNomatch	5.5 &		{a[bc]d}	aed
 expectNomatch	5.6 &		{a[^bc]d}	abd
 expectMatch	5.7 &		{a[^bc]d}	aed	aed
 expectNomatch	5.8 &p		"a\[^bc]d"	"a\nd"
-
 
 doing 6 "context-dependent syntax"
 # plus odds and ends
@@ -420,7 +414,6 @@ expectMatch	6.18 n		"x\$\n"	"x\n"	"x\n"
 expectError	6.19 -		+	BADRPT
 expectError	6.20 -		?	BADRPT
 
-
 doing 7 "simple quantifiers"
 expectMatch	7.1  &N		a*	aa	aa
 expectIndices	7.2  &N		a*	b	{0 -1}
@@ -437,7 +430,6 @@ expectError	7.12 -		a?+	BADRPT
 expectError	7.13 -		a?*	BADRPT
 expectError	7.14 -		a+*	BADRPT
 expectError	7.15 -		a*+	BADRPT
-
 
 doing 8 "braces"
 expectMatch	8.1  NQ		"a{0,1}"	""	""
@@ -467,7 +459,6 @@ expectNomatch	8.24 Q		"a{2,3}b"	ab
 expectMatch	8.25 Q		"a{2,3}b"	aaaab	aaab
 expectNomatch	8.26 Q		"a{2,}b"	ab
 expectMatch	8.27 Q		"a{2,}b"	aaaab	aaaab
-
 
 doing 9 "brackets"
 expectMatch	9.1  &		{a[bc]}		ac	ac
@@ -516,7 +507,6 @@ expectMatch	9.43 &		{a[[b]c}	"a\[c"	"a\[c"
 expectMatch	9.44 EMP*	{a[\u00fe-\u0507][\u00ff-\u0300]b} \
 	"a\u0102\u02ffb"	"a\u0102\u02ffb"
 
-
 doing 10 "anchors and newlines"
 expectMatch	10.1  &		^a	a	a
 expectNomatch	10.2  &^	^a	a
@@ -550,7 +540,6 @@ expectError	10.29 -		^*	BADRPT
 expectError	10.30 -		{$*}	BADRPT
 expectError	10.31 -		{\A*}	BADRPT
 expectError	10.32 -		{\Z*}	BADRPT
-
 
 doing 11 "boundary constraints"
 expectMatch	11.1  &LP	{[[:<:]]a}	a	a
@@ -586,7 +575,6 @@ expectNomatch	11.30 LP	{a\M}		ab
 expectNomatch	11.31 ILP	{\Ma}		a
 expectNomatch	11.32 ILP	{a\m}		a
 
-
 doing 12 "character classes"
 expectMatch	12.1  LP	{a\db}		a0b	a0b
 expectNomatch	12.2  LP	{a\db}		axb
@@ -606,7 +594,6 @@ expectMatch	12.15 LP	{\y\w+z\y}	adze-guz	guz
 expectMatch	12.16 LPE	{a[\d]b}	a1b	a1b
 expectMatch	12.17 LPE	"a\[\\s]b"	"a b"	"a b"
 expectMatch	12.18 LPE	{a[\w]b}	axb	axb
-
 
 doing 13 "escapes"
 expectError	13.1  &		"a\\"		EESCAPE
@@ -644,7 +631,6 @@ expectMatch	13.32 P		{a\U000012345x}	"a\u12345x"	"a\u12345x"
 expectMatch	13.33 P		"a\\U1000000x"	"a\ufffd0x"	"a\ufffd0x"
 expectMatch	13.34 P		{a\U1000000x}	"a\ufffd0x"	"a\ufffd0x"
 
-
 doing 14 "back references"
 # ugh
 expectMatch	14.1  RP	{a(b*)c\1}	abbcbb	abbcbb	bb
@@ -671,7 +657,6 @@ expectMatch	14.21 RP	{^([bc])\1*$}	bbb	bbb	b
 expectMatch	14.22 RP	{^([bc])\1*$}	ccc	ccc	c
 knownBug expectNomatch 14.23 R	{^([bc])\1*$}	bcb
 
-
 doing 15 "octal escapes vs back references"
 # initial zero is always octal
 expectMatch	15.1  MP	"a\\010b"	"a\bb"	"a\bb"
@@ -694,7 +679,6 @@ expectError	15.11 b		{a\12b}		ESUBREG
 expectMatch	15.12 eAS	{a\12b}		a12b	a12b
 expectMatch	15.13 MP	{a\701b}	a\u00381b	a\u00381b
 
-
 doing 16 "expanded syntax"
 expectMatch	16.1 xP		"a b c"		"abc"	"abc"
 expectMatch	16.2 xP		"a b #oops\nc\td"	"abcd"	"abcd"
@@ -706,14 +690,11 @@ expectMatch	16.7 xP		"a b\[c#d]e"	"abde"	"abde"
 expectMatch	16.8 xSPB	"ab{ d"		"ab\{d"	"ab\{d"
 expectMatch	16.9 xPQ	"ab{ 1 , 2 }c"	"abc"	"abc"
 
-
 doing 17 "misc syntax"
 expectMatch	17.1 P	a(?#comment)b	ab	ab
 
-
 doing 18 "unmatchable REs"
 expectNomatch	18.1 I	a^b		ab
-
 
 doing 19 "case independence"
 expectMatch	19.1 &i		ab		Ab	Ab
@@ -721,7 +702,6 @@ expectMatch	19.2 &i		{a[bc]}		aC	aC
 expectNomatch	19.3 &i		{a[^bc]}	aB
 expectMatch	19.4 &iM	{a[b-d]}	aC	aC
 expectNomatch	19.5 &iM	{a[^b-d]}	aC
-
 
 doing 20 "directors and embedded options"
 expectError	20.1  &		***?		BADPAT
@@ -760,7 +740,6 @@ expectMatch	20.33 xP	"(?q)a b"	"a b"	"a b"
 expectMatch	20.34 P		"(?qx)a b"	"a b"	"a b"
 expectMatch	20.35 P		(?qi)ab		Ab	Ab
 
-
 doing 21 "capturing"
 expectMatch	21.1  -		a(b)c		abc	abc	b
 expectMatch	21.2  P		a(?:b)c		xabc	abc
@@ -797,7 +776,6 @@ expectMatch	21.32 -		a((b|c)d+)+	abacdbd	acdbd	bd	b
 expectMatch	21.33 N		(.*).*		abc	abc	abc
 expectMatch	21.34 N		(a*)*		bc	""	""
 
-
 doing 22 "multicharacter collating elements"
 # again ugh
 expectMatch	22.1  &+L	{a[c]e}		ace	ace
@@ -823,7 +801,6 @@ expectMatch	22.20 &+L	{a[^b]}		ace	ac
 expectMatch	22.21 &+L	{a[^b]}		ach	ach
 expectNomatch	22.22 &+L	{a[^b]}		abe
 
-
 doing 23 "lookahead constraints"
 expectMatch	23.1 HP		a(?=b)b*	ab	ab
 expectNomatch	23.2 HP		a(?=b)b*	a
@@ -833,7 +810,6 @@ expectNomatch	23.5 HP		a(?!b)b*	ab
 expectMatch	23.6 HP		a(?!b)b*	a	a
 expectMatch	23.7 HP		(?=b)b		b	b
 expectNomatch	23.8 HP		(?=b)b		a
-
 
 doing 24 "non-greedy quantifiers"
 expectMatch	24.1  PT	ab+?		abb	ab
@@ -849,14 +825,12 @@ expectMatch	24.10 PT	3z*?		123zzzz456	3
 expectMatch	24.11 -		z*4		123zzzz456	zzzz4
 expectMatch	24.12 PT	z*?4		123zzzz456	zzzz4
 
-
 doing 25 "mixed quantifiers"
 # this is very incomplete as yet
 # should include |
 expectMatch	25.1 PNT	{^(.*?)(a*)$}	"xyza"	xyza	xyz	a
 expectMatch	25.2 PNT	{^(.*?)(a*)$}	"xyzaa"	xyzaa	xyz	aa
 expectMatch	25.3 PNT	{^(.*?)(a*)$}	"xyz"	xyz	xyz	""
-
 
 doing 26 "tricky cases"
 # attempts to trick the matcher into accepting a short match
@@ -865,7 +839,6 @@ expectMatch	26.1 -		(week|wee)(night|knights) \
 expectMatch	26.2 RP		{a(bc*).*\1}	abccbccb abccbccb	b
 expectMatch	26.3 -		{a(b.[bc]*)+}	abcbd	abcbd	bd
 
-
 doing 27 "implementation misc."
 # duplicate arcs are suppressed
 expectMatch	27.1 P		a(?:b|b)c	abc	abc
@@ -873,7 +846,6 @@ expectMatch	27.1 P		a(?:b|b)c	abc	abc
 expectMatch	27.2 &		{[ab][ab][ab]}	aba	aba
 expectMatch	27.3 &		{[ab][ab][ab][ab][ab][ab][ab]} \
 	"abababa" abababa
-
 
 doing 28 "boundary busters etc."
 # color-descriptor allocation changes at 10
@@ -902,7 +874,6 @@ expectIndices	28.11 %LP	{\w+(abcdefgh)?} xyzabcdefg	{0 9}	{-1 -1}
 expectIndices	28.12 %LP	{\w+(abcdefghijklmnopqrst)?} \
 	"xyzabcdefghijklmnopqrs" {0 21} {-1 -1}
 
-
 doing 29 "incomplete matches"
 expectPartial		29.1  t		def	abc	{3 2}	""
 expectPartial		29.2  t		bcd	abc	{1 2}	""
@@ -923,7 +894,6 @@ expectIndices		29.15 tPT	abc+?	xyabcdd	{2 4}	{7 6}
 expectIndices		29.16 t		abcd|bc	xyabc	{3 4}	{2 4}
 expectPartial		29.17 tn	.*k	"xx\nyyy"	{3 5}	""
 
-
 doing 30 "misc. oddities and old bugs"
 expectError	30.1 &		***	BADRPT
 expectMatch	30.2 N		a?b*	abb	abb
@@ -938,7 +908,6 @@ expectNomatch	30.8 s		abc	xabcd
 # back to normal stuff
 expectMatch	30.9 HLP	{(?n)^(?![t#])\S+} \
 	"tk\n\n#\n#\nit0"	it0
-
 
 # Now for tests *not* written by Henry Spencer
 

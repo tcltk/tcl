@@ -92,11 +92,11 @@ proc uni::addPage {info} {
 proc uni::buildTables {data} {
     variable shift
 
-    variable pMap {}
-    variable pages {}
-    variable groups {{0 0 0 0}}
+    variable pMap ""
+    variable pages ""
+    variable groups [list {0 0 0 0}]
     variable next 0
-    set info {}			;# temporary page info
+    set info [list]			;# temporary page info
 
     set mask [expr {(1 << $shift) - 1}]
 
@@ -107,14 +107,14 @@ proc uni::buildTables {data} {
 		continue
 	    }
 	    # fill remaining page
-	    set line [format %X [expr {($next-1)|$mask}]]
+	    set line [format %X [expr {($next - 1) | $mask}]]
 	    append line ";;Cn;0;ON;;;;;N;;;;;\n"
 	}
 
 	set items [split $line \;]
 
 	scan [lindex $items 0] %x index
-	if {$index > 0x2ffff} then {
+	if {$index > 0x2ffff} {
 	    # Ignore non-BMP characters, as long as Tcl doesn't support them
 	    continue
 	}
@@ -128,13 +128,13 @@ proc uni::buildTables {data} {
 	# These are indicated as such in the character name.
 
 	# Enter all unassigned characters up to the current character.
-	if {($index > $next) \
-		&& ![regexp "Last>$" [lindex $items 1]]} {
+	if {($index > $next) && 
+	    (![regexp "Last>$" [lindex $items 1]])} {
 	    for {} {$next < $index} {incr next} {
 		lappend info 0
 		if {($next & $mask) == $mask} {
 		    addPage $info
-		    set info {}
+		    set info ""
 		}
 	    }
 	}
@@ -147,7 +147,7 @@ proc uni::buildTables {data} {
 	    # If this is the last entry in the page, add the page
 	    if {($i & $mask) == $mask} {
 		addPage $info
-		set info {}
+		set info ""
 	    }
 	}
 	set next [expr {$index + 1}]
@@ -173,11 +173,11 @@ proc uni::main {} {
 
     buildTables $data
     puts "X = [llength $pMap]  Y= [llength $pages]  A= [llength $groups]"
-    set size [expr {[llength $pMap]*2 + ([llength $pages]<<$shift)}]
+    set size [expr {([llength $pMap] * 2) + ([llength $pages] << $shift)}]
     puts "shift = $shift, space = $size"
 
     set f [open [file join [lindex $argv 1] tclUniData.c] w]
-    fconfigure $f -translation lf
+    chan configure $f -translation lf
     puts $f "/*
  * tclUniData.c --
  *
@@ -203,11 +203,11 @@ proc uni::main {} {
  * to the same alternate page number.
  */
 
-static const unsigned short pageMap\[\] = {"
+static const unsigned short pageMap\[\] = \{"
     set line "    "
     set last [expr {[llength $pMap] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
-	if {$i == [expr {0x10000 >> $shift}]} {
+	if {$i == (0x10000 >> $shift)} {
 	    set line [string trimright $line " \t,"]
 	    puts $f $line
 	    set lastpage [expr {[lindex $line end] >> $shift}]
@@ -226,7 +226,7 @@ static const unsigned short pageMap\[\] = {"
     }
     puts $f $line
     puts $f "#endif /* TCL_UTF_MAX > 3 */"
-    puts $f "};
+    puts $f "\};
 
 /*
  * The groupMap is indexed by combining the alternate page number with
@@ -234,7 +234,7 @@ static const unsigned short pageMap\[\] = {"
  * set of character attributes.
  */
 
-static const unsigned char groupMap\[\] = {"
+static const unsigned char groupMap\[\] = \{"
     set line "    "
     set lasti [expr {[llength $pages] - 1}]
     for {set i 0} {$i <= $lasti} {incr i} {
@@ -247,7 +247,7 @@ static const unsigned char groupMap\[\] = {"
 	}
 	for {set j 0} {$j <= $lastj} {incr j} {
 	    append line [lindex $page $j]
-	    if {$j != $lastj || $i != $lasti} {
+	    if {($j != $lastj) || ($i != $lasti)} {
 		append line ", "
 	    }
 	    if {[string length $line] > 70} {
@@ -258,7 +258,7 @@ static const unsigned char groupMap\[\] = {"
     }
     puts $f $line
     puts $f "#endif /* TCL_UTF_MAX > 3 */"
-    puts $f "};
+    puts $f "\};
 
 /*
  * Each group represents a unique set of character attributes.  The attributes
@@ -277,11 +277,11 @@ static const unsigned char groupMap\[\] = {"
  *			    highest field so we can easily sign extend.
  */
 
-static const int groups\[\] = {"
+static const int groups\[\] = \{"
     set line "    "
     set last [expr {[llength $groups] - 1}]
     for {set i 0} {$i <= $last} {incr i} {
-	foreach {type toupper tolower totitle} [lindex $groups $i] {}
+	lassign [lindex $groups $i] type toupper tolower totitle
 
 	# Compute the case conversion type and delta
 
@@ -335,7 +335,7 @@ static const int groups\[\] = {"
 	}
     }
     puts $f $line
-    puts -nonewline $f "};
+    puts -nonewline $f "\};
 
 #if TCL_UTF_MAX > 3
 #   define UNICODE_OUT_OF_RANGE(ch) (((ch) & 0x1fffff) >= [format 0x%x $next])

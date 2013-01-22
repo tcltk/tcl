@@ -26,7 +26,7 @@ proc ::platform::shell::generic {shell} {
     CHECK $shell
     LOCATE base out
 
-    set     code {}
+    set     code [list]
     # Forget any pre-existing platform package, it might be in
     # conflict with this one.
     lappend code {package forget platform}
@@ -39,7 +39,7 @@ proc ::platform::shell::generic {shell} {
 
     set arch [RUN $shell [join $code \n]]
 
-    if {$out} {file delete -force $base}
+    if {$out} {file delete -force -- $base}
     return $arch
 }
 
@@ -51,7 +51,7 @@ proc ::platform::shell::identify {shell} {
     CHECK $shell
     LOCATE base out
 
-    set     code {}
+    set     code [list]
     # Forget any pre-existing platform package, it might be in
     # conflict with this one.
     lappend code {package forget platform}
@@ -64,7 +64,7 @@ proc ::platform::shell::identify {shell} {
 
     set arch [RUN $shell [join $code \n]]
 
-    if {$out} {file delete -force $base}
+    if {$out} {file delete -force -- $base}
     return $arch
 }
 
@@ -75,7 +75,7 @@ proc ::platform::shell::platform {shell} {
 
     CHECK $shell
 
-    set     code {}
+    set     code [list]
     lappend code {puts $tcl_platform(platform)}
     lappend code {exit 0}
 
@@ -115,34 +115,34 @@ proc ::platform::shell::LOCATE {bv ov} {
     set out 0
     if {[lindex [file system $base]] ne "native"} {
 	set temp [TEMP]
-	file copy -force $base $temp
+	file copy -force -- $base $temp
 	set base $temp
 	set out 1
     }
     return
 }
 
-proc ::platform::shell::RUN {shell code} {
+proc ::platform::shell::RUN {shell a_code} {
     set     c [TEMP]
     set    cc [open $c w]
-    puts  $cc $code
+    puts  $cc $a_code
     close $cc
 
     set e [TEMP]
 
     set code [catch {
-        exec $shell $c 2> $e
+        exec -- $shell $c 2> $e
     } res]
 
-    file delete $c
+    file delete -- $c
 
     if {$code} {
 	append res \n[read [set chan [open $e r]]][close $chan]
-	file delete $e
+	file delete -- $e
 	return -code error "Shell \"$shell\" is not executable ($res)"
     }
 
-    file delete $e
+    file delete -- $e
     return $res
 }
 
@@ -166,7 +166,7 @@ proc ::platform::shell::TEMP {} {
  	set newname $prefix
  	for {set j 0} {$j < $nrand_chars} {incr j} {
  	    append newname [string index $chars \
-		    [expr {int(rand()*62)}]]
+		   [expr { int ( ( rand ()) * 62)}]]
  	}
 	set newname [file join $tmpdir $newname]
  	if {[file exists $newname]} {
@@ -182,12 +182,12 @@ proc ::platform::shell::TEMP {} {
  		}
  	    } else {
  		# Success
-		close $channel
+		chan close $channel
  		return [file normalize $newname]
  	    }
  	}
     }
-    if {$channel != ""} {
+    if {$channel ne ""} {
  	return -code error "Failed to open a temporary file: $channel"
     } else {
  	return -code error "Failed to find an unused temporary file name"
@@ -208,7 +208,7 @@ proc ::platform::shell::DIR {} {
 	}
     }
 
-    switch $tcl_platform(platform) {
+    switch -- $tcl_platform(platform) {
 	windows {
 	    lappend attempdirs "C:\\TEMP" "C:\\TMP" "\\TEMP" "\\TMP"
 	}

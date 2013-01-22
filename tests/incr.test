@@ -16,7 +16,7 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 unset -nocomplain x i
-proc readonly varName {
+proc readonly {varName} {
     upvar 1 $varName var
     trace add variable var write \
 	{apply {{args} {error "variable is read-only"}}}
@@ -230,7 +230,7 @@ test incr-1.29 {TclCompileIncrCmd: runtime error, bad variable value} -body {
     incr x 1
 } -returnCodes error -result {expected integer but got "  -  "}
 test incr-1.30 {TclCompileIncrCmd: array var, braced (no subs)} -setup {
-    catch {unset array}
+    unset -nocomplain array
 } -body {
     set array(\$foo) 4
     incr {array($foo)}

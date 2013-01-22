@@ -9,7 +9,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -28,10 +28,10 @@ cd [temporaryDirectory]
 set user {}
 if {[testConstraint unix]} {
     catch {set user [exec whoami]}
-    if {$user == ""} {
+    if {$user eq ""} {
 	catch {regexp {^[^(]*\(([^)]*)\)} [exec id] dummy user}
     }
-    if {$user == ""} {
+    if {$user eq ""} {
 	set user "root"
     }
 }
@@ -77,9 +77,9 @@ proc cleanup {args} {
 	}
 	foreach file $x {
 	    if {
-		[catch {file delete -force -- $file}]
-		&& [testConstraint testchmod]
-	    } then {
+		[catch {file delete -force -- $file}] && 
+		[testConstraint testchmod]
+	    } {
 		openup $file
 		file delete -force -- $file
 	    }

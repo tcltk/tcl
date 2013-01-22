@@ -13,7 +13,7 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
@@ -185,11 +185,10 @@ test notify-2.5 {remove last element} \
     } \
     -result {one}
 
-
 test notify-2.6 {remove and replace last element} \
     -constraints {testevent} \
     -body {
-	set delivered {}
+	set delivered ""
 	after 10 set done 1
 	testevent queue one tail {lappend delivered one; expr 1}
 	testevent queue two tail {lappend delivered two; expr 1}

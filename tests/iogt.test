@@ -21,16 +21,16 @@ catch [list package require -exact Tcltest [info patchlevel]]
 namespace eval ::tcl::test::iogt {
     namespace import ::tcltest::*
 
-testConstraint testchannel [llength [info commands testchannel]]
+tcltest::testConstraint testchannel [llength [info commands testchannel]]
 
-set path(dummy) [makeFile {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=
+set path(dummy) [tcltest::makeFile {abcdefghijklmnopqrstuvwxyz0123456789,./?><;'\|":[]\}\{`~!@#$%^&*()_+-=
 } dummy]
 
 # " capture coloring of quotes
 
-set path(dummyout) [makeFile {} dummyout]
+set path(dummyout) [tcltest::makeFile {} dummyout]
 
-set path(__echo_srv__.tcl) [makeFile {
+set path(__echo_srv__.tcl) [tcltest::makeFile {
 #!/usr/local/bin/tclsh
 # -*- tcl -*-
 # echo server
@@ -60,8 +60,8 @@ proc newconn {sock rhost rport} {
     set conn(data) ""
     set conn(delay) $fdelay
 
-    fileevent $sock readable [list echoGet $c $sock]
-    fconfigure $sock -translation binary -buffering none -blocking 0
+    chan event $sock readable [list echoGet $c $sock]
+    chan configure $sock -translation binary -buffering none -blocking 0
 }
 
 proc echoGet {c sock} {
@@ -76,7 +76,7 @@ proc echoGet {c sock} {
 
     #puts stdout "G $c $sock $conn(data) <<$conn(data)>>" ; flush stdout
 
-    if {$conn(after) == {}} {
+    if {$conn(after) eq ""} {
 	set conn(after) [after $conn(delay) [list echoPut $c $sock]]
     }
 }
@@ -118,7 +118,7 @@ proc echoPut {c sock} {
     set conn(after) [after $conn(delay) [list echoPut $c $sock]]
 }
 
-#fileevent stdin readable {exit ;#cut}
+#chan event stdin readable {exit ;#cut}
 
 # main
 socket -server newconn -myaddr 127.0.0.1 $port
@@ -143,8 +143,8 @@ proc fevent {fdelay idelay blocks script data} {
     #puts stdout "> $port"; flush stdout
 
     set sk [socket localhost $port]
-    fconfigure $sk -blocking 0 -buffering full \
-	-buffersize [expr {10+[llength $data]}]
+    chan configure $sk -blocking 0 -buffering full \
+	-buffersize [expr {10 + [llength $data]}]
     puts -nonewline $sk $data
 
     # The channel is prepared to go off.
@@ -152,7 +152,7 @@ proc fevent {fdelay idelay blocks script data} {
     #puts stdout ">>>>>"; flush stdout
 
     set res [uplevel 1 $script]
-    catch {close $sk}
+    catch {chan close $sk}
     return $res
 }
 
@@ -170,11 +170,12 @@ proc id {op data} {
 	query/maxRead {
 	    return -1
 	}
+        default {}
     }
 }
 
 proc id_optrail {var op data} {
-    variable $var
+    variable [set var]
     upvar 0 $var trail
 
     lappend trail $op
@@ -197,7 +198,7 @@ proc id_optrail {var op data} {
 }
 
 proc id_fulltrail {var op data} {
-    namespace upvar [namespace current] $var trail
+    namespace upvar [namespace current] [set var] trail
 
     #puts stdout ">> $var $op $data" ; flush stdout
 
@@ -211,6 +212,7 @@ proc id_fulltrail {var op data} {
 	query/maxRead {
 	    set res -1
 	}
+        default {}
     }
 
     #catch {puts stdout "\t>* $res" ; flush stdout}
@@ -221,7 +223,7 @@ proc id_fulltrail {var op data} {
 }
 
 proc counter {var op data} {
-    namespace upvar [namespace current] $var n
+    namespace upvar [namespace current] [set var] n
 
     switch -- $op {
 	create/write - create/read - delete/write - delete/read - clear_read {
@@ -245,11 +247,12 @@ proc counter {var op data} {
 	query/maxRead {
 	    return $n
 	}
+        default {}
     }
 }
 
 proc counter_audit {var vtrail op data} {
-    namespace upvar [namespace current] $var n $vtrail trail
+    namespace upvar [namespace current] [set var] n [set vtrail] trail
 
     switch -- $op {
 	create/write - create/read - delete/write - delete/read - clear_read {
@@ -273,6 +276,7 @@ proc counter_audit {var vtrail op data} {
 	query/maxRead {
 	    set res $n
 	}
+        default {}
     }
 
     lappend trail [list counter:$op $data $res]
@@ -280,19 +284,19 @@ proc counter_audit {var vtrail op data} {
 }
 
 proc rblocks {var vtrail n op data} {
-    namespace upvar [namespace current] $var n $vtrail trail
+    namespace upvar [namespace current] [set var] n [set vtrail] trail
 
-    set res {}
+    set res ""
 
     switch -- $op {
 	create/write - create/read - delete/write - delete/read - clear_read {
-	    set buf {}
+	    set buf ""
 	}
 	flush/write {
 	}
 	flush/read {
 	    set res $buf
-	    set buf {}
+	    set buf ""
 	}
 	write {
 	    set data
@@ -308,6 +312,7 @@ proc rblocks {var vtrail n op data} {
 	query/maxRead {
 	    set res -1
 	}
+        default {}
     }
 
     lappend trail [list rblock | $op $data $res | $buf]
@@ -327,12 +332,12 @@ proc audit_flow {var -attach channel} {
     testchannel transform $channel -command [namespace code [list id_fulltrail $var]]
 }
 proc stopafter {var n -attach channel} {
-    namespace upvar [namespace current] $var vn
+    namespace upvar [namespace current] [set var] n
     set vn $n
     testchannel transform $channel -command [namespace code [list counter $var]]
 }
 proc stopafter_audit {var trail n -attach channel} {
-    namespace upvar [namespace current] $var vn
+    namespace upvar [namespace current] [set var] n
     set vn $n
     testchannel transform $channel -command [namespace code [list counter_audit $var $trail]]
 }
@@ -344,7 +349,7 @@ proc rblocks_t {var trail n -attach channel} {
 # serialize an array, with keys in sorted order.
 
 proc array_sget {v} {
-    upvar $v a
+    upvar 1 $v a
     set res [list]
     foreach n [lsort [array names a]] {
 	lappend res $n $a($n)
@@ -372,11 +377,11 @@ test iogt-1.2 {stack/close} testchannel {
 } {}
 test iogt-1.3 {stack/unstack, configuration, options} testchannel {
     set fh [open $path(dummy) r]
-    set ca [asort [fconfigure $fh]]
+    set ca [asort [chan configure $fh]]
     identity -attach $fh
-    set cb [asort [fconfigure $fh]]
+    set cb [asort [chan configure $fh]]
     testchannel unstack $fh
-    set cc [asort [fconfigure $fh]]
+    set cc [asort [chan configure $fh]]
     close $fh
     # With this system none of the buffering, translation and encoding option
     # may change their values with channels stacked upon each other or not.
@@ -386,13 +391,13 @@ test iogt-1.3 {stack/unstack, configuration, options} testchannel {
 test iogt-1.4 {stack/unstack, configuration} -setup {
     set fh [open $path(dummy) r]
 } -constraints testchannel -body {
-    set ca [asort [fconfigure $fh]]
+    set ca [asort [chan configure $fh]]
     identity -attach $fh
-    fconfigure $fh -buffering line -translation cr -encoding shiftjis
+    chan configure $fh -buffering line -translation cr -encoding shiftjis
     testchannel unstack $fh
-    set cc [asort [fconfigure $fh]]
-    list [string equal $ca $cc] [fconfigure $fh -buffering] \
-	[fconfigure $fh -translation] [fconfigure $fh -encoding]
+    set cc [asort [chan configure $fh]]
+    list [string equal $ca $cc] [chan configure $fh -buffering] \
+	[chan configure $fh -translation] [chan configure $fh -encoding]
 } -cleanup {
     close $fh
 } -result {0 line cr shiftjis}
@@ -403,7 +408,7 @@ test iogt-2.0 {basic I/O going through transform} -setup {
 } -constraints testchannel -body {
     identity -attach $fin
     identity -attach $fout
-    fcopy $fin $fout
+    chan copy $fin $fout
     close $fin
     close $fout
     set fin [open $path(dummy) r]
@@ -420,9 +425,9 @@ test iogt-2.1 {basic I/O, operation trail} {testchannel unix} {
     set ain [list]; set aout [list]
     audit_ops ain -attach $fin
     audit_ops aout -attach $fout
-    fconfigure $fin -buffersize 10
-    fconfigure $fout -buffersize 10
-    fcopy $fin $fout
+    chan configure $fin -buffersize 10
+    chan configure $fout -buffersize 10
+    chan copy $fin $fout
     close $fin
     close $fout
     set res "[join $ain \n]\n--------\n[join $aout \n]"
@@ -464,9 +469,9 @@ test iogt-2.2 {basic I/O, data trail} {testchannel unix} {
     set ain [list]; set aout [list]
     audit_flow ain -attach $fin
     audit_flow aout -attach $fout
-    fconfigure $fin -buffersize 10
-    fconfigure $fout -buffersize 10
-    fcopy $fin $fout
+    chan configure $fin -buffersize 10
+    chan configure $fout -buffersize 10
+    chan copy $fin $fout
     close $fin
     close $fout
     set res "[join $ain \n]\n--------\n[join $aout \n]"
@@ -512,9 +517,9 @@ test iogt-2.3 {basic I/O, mixed trail} {testchannel unix} {
     set trail [list]
     audit_flow trail -attach $fin
     audit_flow trail -attach $fout
-    fconfigure $fin -buffersize 20
-    fconfigure $fout -buffersize 10
-    fcopy $fin $fout
+    chan configure $fin -buffersize 20
+    chan configure $fout -buffersize 10
+    chan copy $fin $fout
     close $fin
     close $fout
     join $trail \n
@@ -552,23 +557,23 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} -setup {
     }
 } -constraints {testchannel hangs} -body {
     # This test to check the validity of aquired Tcl_Channel references is not
-    # possible because even a backgrounded fcopy will immediately start to
+    # possible because even a backgrounded chan copy will immediately start to
     # copy data, without waiting for the event loop. This is done only in case
     # of an underflow on the read size!. So stacking transforms after the
-    # fcopy will miss information, or are not used at all.
+    # chan copy will miss information, or are not used at all.
     #
     # I was able to circumvent this by using the echo.tcl server with a big
-    # delay, causing the fcopy to underflow immediately.
+    # delay, causing the chan copy to underflow immediately.
     set fin [open $path(dummy) r]
     fevent 1000 500 {20 20 20 10 1 1} {
 	close $fin
 	set fout [open dummyout w]
-	flush $sock;	# now, or fcopy will error us out
+	flush $sock;	# now, or chan copy will error us out
 	# But the 1 second delay should be enough to initialize everything
 	# else here.
-	fcopy $sock $fout -command [namespace code DoneCopy]
-	# Transform after fcopy got its handles!  They should be still valid
-	# for fcopy.
+	chan copy $sock $fout -command [namespace code DoneCopy]
+	# Transform after chan copy got its handles!  They should be still valid
+	# for chan copy.
 	set trail [list]
 	audit_ops trail -attach $fout
 	vwait [namespace which -variable copy]
@@ -585,7 +590,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} -setup {
     rename DoneCopy {}
 } -result {1 {create/write create/read write flush/write flush/read delete/write delete/read}}
 
-test iogt-4.0 {fileevent readable, after transform} -setup {
+test iogt-4.0 {chan event readable, after transform} -setup {
     set fin [open $path(dummy) r]
     set data [read $fin]
     close $fin
@@ -598,7 +603,7 @@ test iogt-4.0 {fileevent readable, after transform} -setup {
     fevent 1000 500 {20 20 20 10 1} {
 	audit_flow trail -attach $sock
 	rblocks_t rbuf trail 23 -attach $sock
-	fileevent $sock readable [namespace code {
+	chan event $sock readable [namespace code {
 	    if {[eof $sock]} {
 		Done
 		lappend trail "xxxxxxxxxxxxx"
@@ -611,7 +616,7 @@ test iogt-4.0 {fileevent readable, after transform} -setup {
 		#read $sock
 	    }
 	}]
-	flush $sock;		# Now, or fcopy will error us out
+	flush $sock;		# Now, or chan copy will error us out
 	# But the 1 second delay should be enough to initialize everything
 	# else here.
 	vwait [namespace which -variable stop]
@@ -710,13 +715,13 @@ test iogt-5.0 {EOF simulation} -setup {
     audit_flow trail -attach $fin
     stopafter_audit d trail 20 -attach $fin
     audit_flow trail -attach $fout
-    fconfigure $fin -buffersize 20
-    fconfigure $fout -buffersize 10
-    fcopy $fin $fout
+    chan configure $fin -buffersize 20
+    chan configure $fout -buffersize 10
+    chan copy $fin $fout
     testchannel unstack $fin
     # now copy the rest in the channel
     lappend trail {**after unstack**}
-    fcopy $fin $fout
+    chan copy $fin $fout
     close $fin
     close $fout
     join $trail \n
@@ -763,6 +768,7 @@ proc constX {op data} {
 	query/maxRead {
 	    return -1
 	}
+        default {}
     }
 }
 proc constx {-attach channel} {

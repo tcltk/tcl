@@ -1260,12 +1260,12 @@ test package-15.4 {set stable, rejected} {
     prefer latest stable
 } {stable latest latest}
 
-rename prefer {}
+rename prefer ""
 
 set auto_path $oldPath
 package unknown $oldPkgUnknown
 
-cleanupTests
+cleanupTests 
 }
 
 # cleanup

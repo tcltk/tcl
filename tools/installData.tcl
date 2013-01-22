@@ -19,7 +19,7 @@ exec tclsh "$0" ${1+"$@"}
 
 proc copyDir {d1 d2} {
 
-    puts [format {%*sCreating %s} [expr {4 * [info level]}] {} \
+    puts [format "%*sCreating %s" [expr {4 * [info level]}] "" \
 	      [file tail $d2]]
 
     file delete -force -- $d2
@@ -30,7 +30,7 @@ proc copyDir {d1 d2} {
 	if {[file isdirectory $f] && [string compare CVS $ftail]} {
 	    copyDir $f [file join $d2 $ftail]
 	} elseif {[file isfile $f]} {
-	    file copy -force $f [file join $d2 $ftail]
+	    file copy -force -- $f [file join $d2 $ftail]
 	    if {$::tcl_platform(platform) eq {unix}} {
 		file attributes [file join $d2 $ftail] -permissions 0644
 	    } else {

@@ -65,9 +65,9 @@ test tcltest-1.3 {tcltest -h} {exec} {
 proc slave {msgVar args} {
     upvar 1 $msgVar msg
 
-    interp create [namespace current]::i
+    interp create -- [namespace current]::i
     # Fake the slave interp into dumping output to a file
-    i eval {namespace eval ::tcltest {}}
+    i eval {namespace eval ::tcltest ""}
     i eval "set tcltest::outputChannel\
 	    \[[list open [set of [makeFile {} output]] w]]"
     i eval "set tcltest::errorChannel\
@@ -81,7 +81,7 @@ proc slave {msgVar args} {
     # Need to capture output in msg
 
     set code [catch {i eval {source $argv0}} foo]
-if $code {
+if {$code} {
 #puts "$code: $foo\n$::errorInfo"
 }
     i eval {close $tcltest::outputChannel}
@@ -520,10 +520,10 @@ set a [makeFile {
     exit
 } a.tcl]
 
-set tdiaf [makeFile {} thisdirectoryisafile]
+set tdiaf [::tcltest::makeFile {} thisdirectoryisafile]
 
-set normaldirectory [makeDirectory normaldirectory]
-normalizePath normaldirectory
+set normaldirectory [::tcltest::makeDirectory normaldirectory]
+::tcltest::normalizePath normaldirectory
 
 # -tmpdir, [temporaryDirectory]
 test tcltest-8.1 {tcltest a.tcl -tmpdir a} -constraints unixOrPc -setup {
@@ -716,7 +716,7 @@ test tcltest-8.60 {::workingDirectory}  {
 
 # clean up from directory testing
 
-switch $::tcl_platform(platform) {
+switch -- $::tcl_platform(platform) {
     "unix" {
 	file attributes $notReadableDir -permissions 777
 	file attributes $notWriteableDir -permissions 777
@@ -727,7 +727,7 @@ switch $::tcl_platform(platform) {
     }
 }
 
-file delete -force $notReadableDir $notWriteableDir
+file delete -force -- $notReadableDir $notWriteableDir
 removeFile a.tcl
 removeFile thisdirectoryisafile
 removeDirectory normaldirectory
@@ -1150,7 +1150,7 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} -setup {
     } -cleanup {
 	interp delete slave2
 	interp delete slave1
-	if {$oldoptions == "none"} {
+	if {$oldoptions eq "none"} {
 	    unset ::env(TCLTEST_OPTIONS) 
 	} else {
 	    set ::env(TCLTEST_OPTIONS) $oldoptions

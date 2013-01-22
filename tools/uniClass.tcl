@@ -15,8 +15,8 @@ exec tclsh "$0" ${1+"$@"}
 proc emitRange {first last} {
     global ranges numranges chars numchars extchars extranges
 
-    if {$first < ($last-1)} {
-	if {!$extranges && ($first) > 0xffff} {
+    if {$first < ($last - 1)} {
+	if {(!$extranges) && ($first > 0xffff)} {
 	    set extranges 1
 	    set numranges 0
 	    set ranges [string trimright $ranges " \n\r\t,"]
@@ -24,12 +24,12 @@ proc emitRange {first last} {
 	}
 	append ranges [format "{0x%x, 0x%x}, " \
 		$first $last]
-	if {[incr numranges] % 4 == 0} {
+	if {([incr numranges] % 4) == 0} {
 	    set ranges [string trimright $ranges]
 	    append ranges "\n    "
 	}
     } else {
-	if {!$extchars && ($first) > 0xffff} {
+	if {(!$extchars) && ($first > 0xffff)} {
 	    set extchars 1
 	    set numchars 0
 	    set chars [string trimright $chars " \n\r\t,"]
@@ -37,14 +37,14 @@ proc emitRange {first last} {
 	}
 	append chars [format "0x%x, " $first]
 	incr numchars
-	if {$numchars % 9 == 0} {
+	if {($numchars % 9) == 0} {
 	    set chars [string trimright $chars]
 	    append chars "\n    "
 	}
 	if {$first != $last} {
 	    append chars [format "0x%x, " $last]
 	    incr numchars
-	    if {$numchars % 9 == 0} {
+	    if {($numchars % 9) == 0} {
 		append chars "\n    "
 	    }
 	}
