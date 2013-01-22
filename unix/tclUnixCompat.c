@@ -1000,7 +1000,7 @@ TclWinCPUID(
                  "mov %%ebx, %%esi   \n\t" /* save what cpuid just put in %ebx */
                  "mov %%edi, %%ebx  \n\t" /* restore the old %ebx */
                  : "=a"(regsPtr[0]), "=S"(regsPtr[1]), "=c"(regsPtr[2]), "=d"(regsPtr[3])
-                 : "a"(index) : "edi");
+                 : "a"(index) : "edi","ebx");
     status = TCL_OK;
 #endif
     return status;
