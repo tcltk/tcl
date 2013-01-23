@@ -626,14 +626,14 @@ declare 156 {
 declare 157 {
     Var *TclVarTraceExists(Tcl_Interp *interp, const char *varName)
 }
-# REMOVED - use public Tcl_SetStartupScript()
-#declare 158 {
-#    void TclSetStartupScriptFileName(const char *filename)
-#}
-# REMOVED - use public Tcl_GetStartupScript()
-#declare 159 {
-#    const char *TclGetStartupScriptFileName(void)
-#}
+# REMOVED (except from stub table) - use public Tcl_SetStartupScript()
+declare 158 {
+    void TclSetStartupScriptFileName(const char *filename)
+}
+# REMOVED (except from stub table) - use public Tcl_GetStartupScript()
+declare 159 {
+    const char *TclGetStartupScriptFileName(void)
+}
 #declare 160 {
 #    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *dirPtr, char *pattern, char *tail,
@@ -678,14 +678,14 @@ declare 166 {
 }
 
 # VFS-aware versions of Tcl*StartupScriptFileName (158 and 159 above)
-# REMOVED - use public Tcl_SetStartupScript()
-#declare 167 {
-#    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
-#}
-# REMOVED - use public Tcl_GetStartupScript()
-#declare 168 {
-#    Tcl_Obj *TclGetStartupScriptPath(void)
-#}
+# REMOVED (except from stub table) - use public Tcl_SetStartupScript()
+declare 167 {
+    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
+}
+# REMOVED (except from stub table) - use public Tcl_GetStartupScript()
+declare 168 {
+    Tcl_Obj *TclGetStartupScriptPath(void)
+}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
     int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
@@ -731,13 +731,13 @@ declare 177 {
     void TclVarErrMsg(Tcl_Interp *interp, const char *part1, const char *part2,
 	    const char *operation, const char *reason)
 }
-# TIP 338 made these public - now declared in tcl.h
-#declare 178 {
-#    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
-#}
-#declare 179 {
-#    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
-#}
+# TIP 338 made these public - now declared in tcl.h too
+declare 178 {
+    void Tcl_SetStartupScript(Tcl_Obj *pathPtr, const char *encodingName)
+}
+declare 179 {
+    Tcl_Obj *Tcl_GetStartupScript(const char **encodingNamePtr)
+}
 
 # REMOVED
 # Allocate lists without copying arrays
@@ -941,9 +941,9 @@ declare 235 {
 
 
 # TIP 337 made this one public
-#declare 236 {
-#    void TclBackgroundException(Tcl_Interp *interp, int code)
-#}
+declare 236 {
+    void TclBackgroundException(Tcl_Interp *interp, int code)
+}
 
 # TIP #285: Script cancellation support.
 declare 237 {
