@@ -1,3 +1,11 @@
+2013-01-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (http::geturl): [Bug 2911139]: Do not do vwait
+	for connect to avoid reentrancy problems (except when operating
+	without a -command option). Internally, this means that all sockets
+	created by the http package will always be operated in asynchronous
+	mode.
+
 2013-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclPort.h: [Bug 3598300]: unix: tcl.h does not include
