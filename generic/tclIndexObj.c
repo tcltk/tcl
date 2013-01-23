@@ -144,7 +144,7 @@ Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr)
  *	returned and an error message is left in interp's result (unless
  *	interp is NULL).  The msg argument is used in the error
  *	message; for example, if msg has the value "option" then the
- *	error message will say something flag 'bad option "foo": must be
+ *	error message will say something like 'bad option "foo": must be
  *	...'
  *
  * Side effects:
@@ -176,6 +176,10 @@ Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, offset, msg, flags,
     Tcl_Obj *resultPtr;
     IndexRep *indexRep;
 
+    /* Protect against invalid values, like -1 or 0. */
+    if (offset < (int)sizeof(char *)) {
+	offset = (int)sizeof(char *);
+    }
     /*
      * See if there is a valid cached result from a previous lookup.
      */
