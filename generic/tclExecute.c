@@ -173,6 +173,7 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
 
 typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
+    Tcl_Obj *srcPtr;
 				/* -----------------------------------------*/
     const unsigned char *pc;	/* These fields are used on return TO this */
     ptrdiff_t *catchTop;	/* this level: they record the state when a */
@@ -1911,6 +1912,10 @@ TclNRExecuteByteCode(
     esPtr->tosPtr = initTosPtr;
 
     TD->codePtr     = codePtr;
+    TD->srcPtr      = Tcl_NewObj();
+    TD->srcPtr->typePtr = &bcSourceType;
+    TclInvalidateStringRep(TD->srcPtr);
+
     TD->pc	    = codePtr->codeStart;
     TD->catchTop    = initCatchTop;
     TD->cleanup     = 0;
@@ -1982,6 +1987,7 @@ TEBCresume(
 #define auxObjList	(TD->auxObjList)
 #define catchTop	(TD->catchTop)
 #define codePtr		(TD->codePtr)
+#define srcPtr          (TD->srcPtr)    
 #define checkInterp	(TD->checkInterp)
 			/* Indicates when a check of interp readyness is
 			 * necessary. Set by CACHE_STACK_INFO() */
@@ -2022,10 +2028,6 @@ TEBCresume(
     int starting = 1;
     traceInstructions = (tclTraceExec == 3);
 #endif
-    Tcl_Obj *srcPtr = Tcl_NewObj();
-    srcPtr->typePtr = &bcSourceType;
-    TclInvalidateStringRep(srcPtr);
-
     TEBC_DATA_DIG();
 
 #ifdef TCL_COMPILE_DEBUG
@@ -6967,6 +6969,7 @@ TEBCresume(
 }
 
 #undef codePtr
+#undef srcPtr
 #undef iPtr
 #undef initTosPtr
 #undef auxObjList
