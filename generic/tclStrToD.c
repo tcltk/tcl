@@ -2038,7 +2038,9 @@ RequiredPrecision(
     if (w == 0) {
 	return 0;
     }
-    return 1 + TclMSB(w);
+    if (sizeof(Tcl_WideUInt) <= sizeof(size_t)) {
+	return 1 + TclMSB(w);
+    }
 
     if (w & ((Tcl_WideUInt) 0xffffffff << 32)) {
 	wi = (unsigned long) (w >> 32); rv = 32;

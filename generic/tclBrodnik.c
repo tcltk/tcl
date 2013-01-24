@@ -63,10 +63,10 @@ TclMSB(
 #define LEAD(n) (C1 & (n | (C2 + (n & C2))))
 #define SUM(t) (0x7 & (int)((LEAD(t) >> 8) * P >> 54));
 
-	size_t t = B & P * (Q * LEAD(n) >> 56);
+	size_t b, t = B & P * (Q * LEAD(n) >> 56);
 	int k = 1 + 9 * SUM(t);
-	size_t b = n >> k & 0xff;
 
+	b = n >> k & 0xff;
 	t = B & P * b;
 	return k - (b == 0) + SUM(t);
 
