@@ -7088,7 +7088,6 @@ TEBCresume(
 	    pc += (opnd-1);
 	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
 	    goto instEvalStk;
-	    NEXT_INST_F(9, 0, 0);
 	}
 }
 
