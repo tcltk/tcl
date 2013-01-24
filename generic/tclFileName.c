@@ -1784,13 +1784,17 @@ TclDoGlob(interp, separators, headPtr, tail, types)
     int baseLength, quoted, count;
     int result = TCL_OK;
     char *name, *p, *openBrace, *closeBrace, *firstSpecialChar, savedChar;
+    /*
     char lastChar = 0;
+    */
     
     int length = Tcl_DStringLength(headPtr);
 
+    /*
     if (length > 0) {
 	lastChar = Tcl_DStringValue(headPtr)[length-1];
     }
+    */
 
     /*
      * Consume any leading directory separators, leaving tail pointing

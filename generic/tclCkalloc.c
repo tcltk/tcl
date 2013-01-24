@@ -149,6 +149,10 @@ TclInitDbCkalloc()
     if (!ckallocInit) {
 	ckallocInit = 1;
 	ckallocMutexPtr = Tcl_GetAllocMutex();
+#ifndef TCL_THREADS
+	/* Silence compiler warning */
+	(void)ckallocMutexPtr;
+#endif
     }
 }
 
