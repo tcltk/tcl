@@ -5118,6 +5118,9 @@ VerifyExprObjType(interp, objPtr)
 	    long i;
 	    Tcl_WideInt w;
 	    GET_WIDE_OR_INT(result, objPtr, i, w);
+	    /* Quiet cranky old compilers that complain about
+	     * setting i, but not using it. */
+	   (void)i;
 	} else {
 	    double d;
 	    result = Tcl_GetDoubleFromObj((Tcl_Interp *) NULL, objPtr, &d);
