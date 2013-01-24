@@ -133,10 +133,7 @@ TCLAPI int		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 /* 35 */
 TCLAPI int		Tcl_GetDoubleFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, double *doublePtr);
-/* 36 */
-TCLAPI int		Tcl_GetIndexFromObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, const char *const *tablePtr,
-				const char *msg, int flags, int *indexPtr);
+/* Slot 36 is reserved */
 /* 37 */
 TCLAPI int		Tcl_GetInt(Tcl_Interp *interp, const char *src,
 				int *intPtr);
@@ -1823,7 +1820,7 @@ typedef struct TclStubs {
     unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
-    int (*tcl_GetIndexFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, const char *const *tablePtr, const char *msg, int flags, int *indexPtr); /* 36 */
+    void (*reserved36)(void);
     int (*tcl_GetInt) (Tcl_Interp *interp, const char *src, int *intPtr); /* 37 */
     int (*tcl_GetIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 38 */
     int (*tcl_GetLongFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr); /* 39 */
@@ -2526,8 +2523,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetDouble) /* 34 */
 #define Tcl_GetDoubleFromObj \
 	(tclStubsPtr->tcl_GetDoubleFromObj) /* 35 */
-#define Tcl_GetIndexFromObj \
-	(tclStubsPtr->tcl_GetIndexFromObj) /* 36 */
+/* Slot 36 is reserved */
 #define Tcl_GetInt \
 	(tclStubsPtr->tcl_GetInt) /* 37 */
 #define Tcl_GetIntFromObj \
@@ -3740,7 +3736,9 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	Tcl_EvalEx((interp),(objPtr),-1,0)
 #define Tcl_GlobalEval(interp,objPtr) \
 	Tcl_EvalEx((interp),(objPtr),-1,TCL_EVAL_GLOBAL)
-
+#define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
+	Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, (int)sizeof(char *), \
+	msg, flags, indexPtr)
 /*
  * Deprecated Tcl procedures:
  */

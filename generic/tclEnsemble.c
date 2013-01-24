@@ -162,8 +162,8 @@ TclNamespaceEnsembleCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], ensembleSubcommands,
-	    "subcommand", 0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], ensembleSubcommands,
+	    sizeof(char *), "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -207,8 +207,8 @@ TclNamespaceEnsembleCmd(
 	 */
 
 	for (; objc>1 ; objc-=2,objv+=2) {
-	    if (Tcl_GetIndexFromObj(interp, objv[0], ensembleCreateOptions,
-		    "option", 0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[0], ensembleCreateOptions,
+		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		if (allocatedMapFlag) {
 		    Tcl_DecrRefCount(mapObj);
 		}
@@ -381,8 +381,8 @@ TclNamespaceEnsembleCmd(
 	if (objc == 4) {
 	    Tcl_Obj *resultObj = NULL;		/* silence gcc 4 warning */
 
-	    if (Tcl_GetIndexFromObj(interp, objv[3], ensembleConfigOptions,
-		    "option", 0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[3], ensembleConfigOptions,
+		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum EnsConfigOpts) index) {
@@ -502,8 +502,8 @@ TclNamespaceEnsembleCmd(
 	     */
 
 	    for (; objc>0 ; objc-=2,objv+=2) {
-		if (Tcl_GetIndexFromObj(interp, objv[0],ensembleConfigOptions,
-			"option", 0, &index) != TCL_OK) {
+		if (Tcl_GetIndexFromObjStruct(interp, objv[0],ensembleConfigOptions,
+			sizeof(char *), "option", 0, &index) != TCL_OK) {
 		freeMapAndError:
 		    if (allocatedMapFlag) {
 			Tcl_DecrRefCount(mapObj);

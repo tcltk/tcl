@@ -1256,8 +1256,8 @@ Tcl_GlobObjCmd(
     dir = PATH_NONE;
     typePtr = NULL;
     for (i = 1; i < objc; i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    string = Tcl_GetStringFromObj(objv[i], &length);
 	    if (string[0] == '-') {
 		/*

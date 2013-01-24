@@ -159,8 +159,8 @@ Tcl_RegexpObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", TCL_EXACT,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "switch", TCL_EXACT, &index) != TCL_OK) {
 	    goto optionError;
 	}
 	switch ((enum options) index) {
@@ -517,8 +517,8 @@ Tcl_RegsubObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[idx], options, "switch",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[idx], options,
+		sizeof(char *), "switch", TCL_EXACT, &index) != TCL_OK) {
 	    goto optionError;
 	}
 	switch ((enum options) index) {
@@ -1003,8 +1003,8 @@ TclNRSourceObjCmd(
 	};
 	int index;
 
-	if (TCL_ERROR == Tcl_GetIndexFromObj(interp, objv[1], options,
-		"option", TCL_EXACT, &index)) {
+	if (TCL_ERROR == Tcl_GetIndexFromObjStruct(interp, objv[1], options,
+		sizeof(char *), "option", TCL_EXACT, &index)) {
 	    return TCL_ERROR;
 	}
 	encodingName = TclGetString(objv[2]);
@@ -1485,8 +1485,8 @@ StringIsCmd(
 		"class ?-strict? ?-failindex var? str");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], isClasses, "class", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], isClasses,
+	    sizeof(char *), "class", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1494,8 +1494,8 @@ StringIsCmd(
 	for (i = 2; i < objc-1; i++) {
 	    int idx2;
 
-	    if (Tcl_GetIndexFromObj(interp, objv[i], isOptions, "option", 0,
-		    &idx2) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], isOptions,
+		    sizeof(char *), "option", 0, &idx2) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum isOptions) idx2) {
@@ -3388,8 +3388,8 @@ TclSubstOptions(
     for (i = 0; i < numOpts; i++) {
 	int optionIndex;
 
-	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "switch", 0,
-		&optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, opts[i], substOptions,
+		sizeof(char *), "switch", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {
@@ -3513,8 +3513,8 @@ TclNRSwitchObjCmd(
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum options) index) {
@@ -4190,8 +4190,8 @@ TclNRTryObjCmd(
 	int type;
 	Tcl_Obj *info[5];
 
-	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
-		0, &type) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], handlerNames,
+		sizeof(char *), "handler type", 0, &type) != TCL_OK) {
 	    Tcl_DecrRefCount(handlersObj);
 	    return TCL_ERROR;
 	}

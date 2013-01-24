@@ -2962,8 +2962,8 @@ Tcl_LsearchObjCmd(
     }
 
     for (i = 1; i < objc-2; i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0, &index)
-		!= TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    if (startPtr != NULL) {
 		Tcl_DecrRefCount(startPtr);
 	    }
@@ -3691,8 +3691,8 @@ Tcl_LsortObjCmd(
     groupOffset = 0;
     indexPtr = NULL;
     for (i = 1; i < objc-1; i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], switches,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    sortInfo.resultCode = TCL_ERROR;
 	    goto done2;
 	}

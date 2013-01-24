@@ -680,8 +680,8 @@ Tcltest_Init(
 	if (Tcl_ListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	if (objc && (Tcl_GetIndexFromObj(NULL, objv[0], specialOptions, NULL,
-		TCL_EXACT, &index) == TCL_OK)) {
+	if (objc && (Tcl_GetIndexFromObjStruct(NULL, objv[0], specialOptions,
+		sizeof(char *), NULL, TCL_EXACT, &index) == TCL_OK)) {
 	    switch (index) {
 	    case 0:
 		return TCL_ERROR;
@@ -885,7 +885,7 @@ TestasyncCmd(
 
 static int
 AsyncHandlerProc(
-    ClientData clientData,	/* If of TestAsyncHandler structure. 
+    ClientData clientData,	/* If of TestAsyncHandler structure.
                                  * in global list. */
     Tcl_Interp *interp,		/* Interpreter in which command was
 				 * executed, or NULL. */
@@ -1693,8 +1693,8 @@ TestdoubledigitsObjCmd(ClientData unused,
     }
     if (status != TCL_OK
 	|| Tcl_GetIntFromObj(interp, objv[2], &ndigits) != TCL_OK
-	|| Tcl_GetIndexFromObj(interp, objv[3], options, "conversion type",
-			       TCL_EXACT, &type) != TCL_OK) {
+	|| Tcl_GetIndexFromObjStruct(interp, objv[3], options,
+		sizeof(char *), "conversion type", TCL_EXACT, &type) != TCL_OK) {
 	fprintf(stderr, "bad value? %g\n", d);
 	return TCL_ERROR;
     }
@@ -1880,8 +1880,8 @@ TestencodingObjCmd(
 	ENC_CREATE,	ENC_DELETE
     };
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], optionStrings,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2140,8 +2140,8 @@ TesteventObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcommands, "subcommand",
-	    TCL_EXACT, &subCmdIndex) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcommands,
+	    sizeof(char *), "subcommand", TCL_EXACT, &subCmdIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     switch (subCmdIndex) {
@@ -2150,8 +2150,8 @@ TesteventObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "name position script");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[3], positions,
-		"position specifier", TCL_EXACT, &posIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[3], positions,
+		sizeof(char *), "position specifier", TCL_EXACT, &posIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	ev = ckalloc(sizeof(TestEvent));
@@ -3254,8 +3254,8 @@ TestlocaleCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], optionStrings,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -3662,8 +3662,8 @@ TestregexpObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", TCL_EXACT,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "switch", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum options) index) {
@@ -4880,8 +4880,8 @@ TestsaveresultCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "type script discard");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], optionStrings,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
     if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
@@ -7158,8 +7158,8 @@ TestInterpResolverCmd(
         Tcl_WrongNumArgs(interp, 1, objv, "up|down");
  	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], table, "operation", TCL_EXACT,
-            &idx) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], table,
+	    sizeof(char *), "operation", TCL_EXACT, &idx) != TCL_OK) {
         return TCL_ERROR;
     }
     switch (idx) {

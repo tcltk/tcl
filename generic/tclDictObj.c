@@ -621,7 +621,7 @@ SetDictFromAny(
 	}
 
 	for (i=0 ; i<objc ; i+=2) {
-	
+
 	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, objv[i], &isNew);
 	    if (!isNew) {
@@ -2913,8 +2913,8 @@ DictFilterCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",
-	     0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[2], filters,
+	    sizeof(char *), "filterType", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

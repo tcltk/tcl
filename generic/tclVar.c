@@ -2106,7 +2106,7 @@ TclPtrIncrObjVar(
     if (Tcl_IsShared(varValuePtr)) {
 	/* Copy on write */
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
-	
+
 	if (TCL_OK == TclIncrObj(interp, varValuePtr, incrPtr)) {
 	    return TclPtrSetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
 		    varValuePtr, flags, index);
@@ -3729,8 +3729,8 @@ ArrayNamesCmd(
      * Finish parsing the arguments.
      */
 
-    if ((objc == 4) && Tcl_GetIndexFromObj(interp, objv[2], options, "option",
-	    0, &mode) != TCL_OK) {
+    if ((objc == 4) && Tcl_GetIndexFromObjStruct(interp, objv[2], options,
+	    sizeof(char *), "option", 0, &mode) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -4372,7 +4372,7 @@ TclPtrMakeUpvar(
 }
 
 /* Callers must Incr myNamePtr if they plan to Decr it. */
- 
+
 int
 TclPtrObjMakeUpvar(
     Tcl_Interp *interp,		/* Interpreter containing variables. Used for
