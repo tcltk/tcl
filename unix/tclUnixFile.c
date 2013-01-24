@@ -1183,8 +1183,9 @@ TclpUtime(
     return utime(Tcl_FSGetNativePath(pathPtr), tval);
 }
 #ifdef __CYGWIN__
-int TclOSstat(const char *name, Tcl_StatBuf *statBuf) {
+int TclOSstat(const char *name, void *cygstat) {
     struct stat buf;
+    Tcl_StatBuf *statBuf = cygstat;
     int result = stat(name, &buf);
     statBuf->st_mode = buf.st_mode;
     statBuf->st_ino = buf.st_ino;
@@ -1199,8 +1200,9 @@ int TclOSstat(const char *name, Tcl_StatBuf *statBuf) {
     statBuf->st_ctime = buf.st_ctime;
     return result;
 }
-int TclOSlstat(const char *name, Tcl_StatBuf *statBuf) {
+int TclOSlstat(const char *name, void *cygstat) {
     struct stat buf;
+    Tcl_StatBuf *statBuf = cygstat;
     int result = lstat(name, &buf);
     statBuf->st_mode = buf.st_mode;
     statBuf->st_ino = buf.st_ino;
