@@ -249,6 +249,16 @@ proc ::http::CloseSocket {s {token {}}} {
 	} else {
 	    Log "Cannot close connection $conn_id - no socket in socket map"
 	}
+	# reset states of all tokens shared this connection :
+	variable sockettokenmap
+	if {[info exists sockettokenmap(s-$s)]} {
+	    foreach token $sockettokenmap(s-$s) {
+		if {[info exists $token]} {
+		    reset $token "closed"
+		}
+	    }
+	    unset sockettokenmap(s-$s)
+	}
     }
 }
 
@@ -585,6 +595,9 @@ proc http::geturl {url args} {
         [expr {$state(-keepalive)?"keepalive":""}]
     if {$state(-keepalive)} {
         set socketmap($state(socketinfo)) $sock
+        # share connection via keepalive token map
+        variable sockettokenmap
+        lappend sockettokenmap(s-$sock) $token
     }
 
     if {![info exists phost]} {
@@ -1285,6 +1298,16 @@ proc http::wait {token} {
     variable $token
     upvar 0 $token state
 
+    # check connection was closed (ex. file event by keepalive connection) :
+    if {$state(-keepalive)} {
+	set conn_id $state(socketinfo)
+	variable socketmap
+	if {![info exists socketmap($conn_id)]} {
+	    Log "Wait: connection \"$conn_id\" was closed unexpectedly"
+	    return [status $token]
+	}
+    }
+    
     if {![info exists state(status)] || $state(status) eq ""} {
 	# We must wait on the original variable name, not the upvar alias
 	vwait ${token}(status)
