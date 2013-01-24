@@ -2035,6 +2035,11 @@ RequiredPrecision(
     int rv;
     unsigned long wi;
 
+    if (w == 0) {
+	return 0;
+    }
+    return 1 + TclMSB(w);
+
     if (w & ((Tcl_WideUInt) 0xffffffff << 32)) {
 	wi = (unsigned long) (w >> 32); rv = 32;
     } else {
