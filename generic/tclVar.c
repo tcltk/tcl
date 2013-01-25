@@ -2036,8 +2036,8 @@ TclIncrObjVar2(
     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "read",
 	    1, 1, &arrayPtr);
     if (varPtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
+	Tcl_AddErrorInfo(interp,
+		"\n    (reading value of variable to increment)");
 	return NULL;
     }
     return TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
