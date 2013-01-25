@@ -2307,18 +2307,15 @@ typedef unsigned short Tcl_UniChar;
  * linked into an application.
  */
 
-EXTERN CONST char *	Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
-			    CONST char *version, int exact));
+EXTERN CONST char *Tcl_InitStubs _ANSI_ARGS_((Tcl_Interp *interp,
+	CONST char *version, int exact, CONST char *tclversion, int magic));
 
-#ifndef USE_TCL_STUBS
-
-/*
- * When not using stubs, make it a macro.
- */
-
+#ifdef USE_TCL_STUBS
+#define Tcl_InitStubs(interp, version, exact) \
+    (Tcl_InitStubs)((interp), (version), (exact)|(int)sizeof(int), TCL_VERSION, TCL_STUB_MAGIC)
+#else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgRequire(interp, "Tcl", version, exact)
-
 #endif
 
 
