@@ -1722,7 +1722,7 @@ install-packages: packages
 	  fi; \
 	done
 
-test-packages: tcltest packages
+test-packages: ${TCLTEST_EXE} packages
 	@for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ]; then \
 	    pkg=`basename $$i`; \
