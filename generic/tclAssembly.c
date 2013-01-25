@@ -801,7 +801,6 @@ TclNRAssembleObjCmd(
 	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
 	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
-	Tcl_IncrRefCount(backtrace);
 	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
