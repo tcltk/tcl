@@ -64,15 +64,15 @@ TclMSB(
 #define SUM(t) (0x7 & (int)((LEAD(t) >> 8) * P >> 54));
 
 	size_t b, t = B & P * (Q * LEAD(n) >> 56);
-	int k = 1 + 9 * SUM(t);
+	int k = 9 * SUM(t);
 
-	b = n >> k & 0xff;
+	b = n >> k >> 1 & 0xff;
 	t = B & P * b;
-	return k - (b == 0) + SUM(t);
+	return k + (b != 0) + SUM(t);
 
 	/* Total operations:
-	 * 11 bit-ands, 6 multiplies, 6 adds, 6 rightshifts,
-	 * 4 assignments, 3 bit-ors, 2 typecasts, and 1 test for zero.
+	 * 11 bit-ands, 6 multiplies, 5 adds, 7 rightshifts,
+	 * 4 assignments, 3 bit-ors, 2 typecasts, and 1 test for nonzero.
 	 *
 	 * The whole task is one direct computation.
 	 * No branches. No loops.
@@ -162,10 +162,17 @@ TclMSB(
 	 * size_t).  We can handle the corner case where we leave ourselves
 	 * seeking the MSB of 0.
 	 */
-	int k = 1 + 9 /* S */ * sum;
+	int k = 9 /* S */ * sum;
 
 	/* Shift and mask to do so. */
-	size_t block = (n >> k) & 0xff /* (2^T) - 1 */;
+	/* Trickiness here in that we must split into two shifts.
+	 * Otherwise we might attempt a single shift of 64-bits and
+	 * at least the C compilers I use, if not the language itself
+	 * seems to define a right shift of a 64-bit size_t by 64-bits
+	 * as a no-op, and not as a set to zero as this algorithm expects
+	 * and as the concatentation of two shift produces.
+	 */
+	size_t block = ((n >> k) >> 1) & 0xff /* (2^T) - 1 */;
 
 	/*
 	 * Now compute MSB of the T-bit value in block 0.
@@ -178,11 +185,13 @@ TclMSB(
 	sum = 0x7 & (int) (((tally >> 8) * P) >> 54);
 
 	/*
+	 * We want to add to k the extra bit of shift we didn't count
+	 * before, but only when (block != 0).
 	 * When (block == 0) our extra shift went a step too far, and
 	 * we have to take it back.  In that case sum==0 so adding it
-	 * does no harm.  When (block!=0), the value k+sum is correct.
+	 * does no harm.  
 	 */
-	return k - (block == 0) + sum;
+	return k + (block != 0) + sum;
 #endif
     } else if (M == 32) {
 
@@ -201,7 +210,7 @@ TclMSB(
 	size_t b, t = B & P * ((Q * (C3 & (LEAD(n) + C4))) >> 27);
 	int k = 6 * SUM(t);
 
-	b = (n >> k) >> 1 & 0x1f;	
+	b = n >> k >> 1 & 0x1f;	
 	t = B & P * b;
 	return k + SUM(t);
 
