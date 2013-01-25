@@ -307,6 +307,9 @@ static int		TestsetmainloopCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestexitmainloopCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestmsbObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestpanicCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestparseargsCmd(ClientData dummy, Tcl_Interp *interp,
@@ -631,6 +634,7 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testlink", TestlinkCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testlocale", TestlocaleCmd, NULL,
 	    NULL);
+    Tcl_CreateObjCommand(interp, "testmsb", TestmsbObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testpanic", TestpanicCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testparseargs", TestparseargsCmd,NULL,NULL);
     Tcl_CreateObjCommand(interp, "testparser", TestparserObjCmd,
@@ -3461,6 +3465,51 @@ CleanupTestSetassocdataTests(
     Tcl_Interp *interp)		/* Interpreter being deleted. */
 {
     ckfree(clientData);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestmsbObjCmd --
+ *
+ *	This procedure implements the "testmsb" command.  It is
+ *	used for testing the TclMSB() routine.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestmsbObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    Tcl_WideInt w = 0;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "integer");
+	return TCL_ERROR;
+    }
+    if (sizeof(Tcl_WideUInt) <= sizeof(size_t)) {
+	if (TCL_OK != Tcl_GetWideIntFromObj(interp, objv[1], &w)) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB(w)));
+    } else {
+	int i;
+	if (TCL_OK != Tcl_GetIntFromObj(interp, objv[1], &i)) {
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(TclMSB(i)));
+    }
+    return TCL_OK;
 }
 
 /*
