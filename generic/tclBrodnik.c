@@ -82,7 +82,6 @@ TclMSB(
 	 */
 
 #undef SUM
-#undef LEAD
 
 #if 0
 	/*
@@ -187,82 +186,32 @@ TclMSB(
 #endif
     } else if (M == 32) {
 
-	/* S = 6; T = 6;
-	 * C1 =	10 100000 |100000 10|0000 1000|00 100000
-	 * C2 =	01 011111 |011111 01|1111 0111|11 011111
-	 */
+	/* Same scheme as above, with adjustments to the 32-bit size */
+
 	const size_t C1 = 0xA0820820;
-	const size_t C2 = 0x5F7DF7DF;	/* Complement of C1 */
-
-	size_t lead = C1 & (n | (C2 + (n & C2)));
-
-	/* Q = 1 + 2^6 + 2^11 + 2^16 */
-	/* Q =	00 000000 |000000 01|0000 1000|01 000001 */
-	const size_t Q  = 0x00010841;
+	const size_t C2 = 0x5F7DF7DF;
 	const size_t C3 = 0xC0820820;
-	size_t compress = (Q * (C3 & (lead+(1<<29))))>>27;
-
-	/*
-	 * Now compute the MSB of T-bit value compress to determine
-	 * which block holds the MSB of M-bit value n.
-	 * Make a copy of compress in each full block by another tricky
-	 * multiply.
-	 * P =	00 000001 |000001 00|0001 0000|01 000001
-	 */
+	const size_t C4 = 0x20000000;
+	const size_t Q  = 0x00010841;
 	const size_t P = 0x01041041;
-	size_t copies = P * compress;
-
-	/*
-	 * With T-1 copies we can filter on T-1 masks at once.
-	 * In block i (0 <= i < T-1), we compute whether the
-	 * MSB of compress is >= T-1-i.  Mask away all but the
-	 * top i+1 bits and apply the same indicator computation
-	 * that produced lead.  Filter mask:
-	 * B =	00 011111 |011110 01|1100 0110|00 010000
-	 */
 	const size_t B = 0x1F79C610;
-	size_t filtered = B & copies;
-	size_t tally = C1 & (filtered | (C2 + (filtered & C2)));
 
-	/* 
-	 * Now the sum of all the tally bits is the index
-	 * of the MSB of compress.  Use another tricky multiply
-	 * and shift to compute it in one go.  How this works:
-	 * The multiply by P is a multiply by a sum of bits, each
-	 * causing a left shift.  Written out like a long multiplication
-	 * by hand, we get several columns to sum, and they are separated
-	 * by design so there are no carries.  This means one block of
-	 * the result of the multiply is the sum we seek, and we just
-	 * shift it into place and mask it.
+#define SUM(t) (0x7 & ((LEAD(t) >> 5) * P >> 24));
+
+	size_t b, t = B & P * ((Q * (C3 & (LEAD(n) + C4))) >> 27);
+	int k = 6 * SUM(t);
+
+	b = (n >> k) >> 1 & 0x1f;	
+	t = B & P * b;
+	return k + SUM(t);
+
+	/* Total operations: 37
+	 * 12 bit-ands, 6 multiplies, 5 adds, 7 rightshifts,
+	 * 4 assignments, 3 bit-ors.
 	 */
-	int sum = 0x7 /* T - 1 */ & (int)
-		(((tally >> 5 /* S - 1 */) * P) >> 24 /* S*(T-2) */);
 
-	/*
-	 * Compute corresponding bit shift in n to get the block holding
-	 * MSB into block 0.  Note the one extra bit of shift so we put
-	 * the top T bits out of the S in the block into the bottom T bits.
-	 * This is required since we are only equipped to compute MSB over
-	 * T bits, not S (without assuming compute registers larger than
-	 * size_t).  We can handle the corner case where we leave ourselves
-	 * seeking the MSB of 0.
-	 */
-	int k = 6 /* S */ * sum;
-
-	/* Shift and mask to do so. */
-	size_t block = ((n >> k) >> 1) & 0x1f /* (2^(S-1)) - 1 */;
-
-	/*
-	 * Now compute MSB of the T-bit value in block 0.
-	 * Do it just like we did before.
-	 */
-	copies = P * block;
-	filtered = B & copies;
-	tally = C1 & (filtered | (C2 + (filtered & C2)));
-	sum = 0x7 & (int)
-		(((tally >> 5 /* S - 1 */) * P) >> 24 /* S*(T-2) */);
-
-	return k + sum;
+#undef SUM
+#undef LEAD
 
     } else {
 	/* Simple and slow fallback for cases we haven't done yet. */
