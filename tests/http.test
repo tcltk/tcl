@@ -547,11 +547,10 @@ test http-4.14 {http::Event} -body {
 	error "bogus return from http::geturl"
     }
     http::wait $token
-    http::status $token
-    # error code varies among platforms.
-} -returnCodes 1 -match regexp -cleanup {
+    lindex [http::error $token] 0
+} -cleanup {
     catch {http::cleanup $token}
-} -result {(connect failed|couldn't open socket)}
+} -result {connect failed connection refused}
 # Bogus host
 test http-4.15 {http::Event} -body {
     # This test may fail if you use a proxy server. That is to be
