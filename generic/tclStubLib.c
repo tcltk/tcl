@@ -32,7 +32,7 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 /*
  *----------------------------------------------------------------------
  *
- * TclInitStubs --
+ * Tcl_InitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
@@ -48,7 +48,7 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
  */
 #undef Tcl_InitStubs
 MODULE_SCOPE const char *
-TclInitStubs(
+Tcl_InitStubs(
     Tcl_Interp *interp,
     const char *version,
     int exact,
@@ -76,7 +76,7 @@ TclInitStubs(
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (exact) {
+    if (exact&1) {
 	const char *p = version;
 	int count = 0;
 
@@ -102,7 +102,14 @@ TclInitStubs(
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *)pkgData;
+
+    if (stubsPtr->reserved77) {
+	/* We are running Tcl 8. Do some additional checks here. */
+	tclStubsPtr = (TclStubs *)pkgData;
+    } else {
+	/* We are running Tcl 9. Do some additional checks here. */
+	tclStubsPtr = stubsPtr;
+    }
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
