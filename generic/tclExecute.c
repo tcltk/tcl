@@ -3464,8 +3464,8 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "read", 1, 1, &arrayPtr);
 	if (!varPtr) {
-	    Tcl_AddObjErrorInfo(interp,
-		    "\n    (reading value of variable to increment)", -1);
+	    Tcl_AddErrorInfo(interp,
+		    "\n    (reading value of variable to increment)");
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    Tcl_DecrRefCount(incrPtr);
 	    goto gotError;
