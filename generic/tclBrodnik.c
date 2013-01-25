@@ -196,12 +196,11 @@ TclMSB(
 
 	size_t lead = C1 & (n | (C2 + (n & C2)));
 
-	/*
-	 * = Q = (1 + 2^1 + 2^6 + 2^11 + 2^16 + 2^20)* 2^6;
-	 * Q =	00 000100 |010000 10|0001 0000|11 000000
-	 */
-	const size_t Q = 0x044210C0;
-	size_t compress = (Q * (1+(lead>>5))>>1) >> 27;
+	/* Q = 1 + 2^6 + 2^11 + 2^16 */
+	/* Q =	00 000000 |000000 01|0000 1000|01 000001 */
+	const size_t Q  = 0x00010841;
+	const size_t C3 = 0xC0820820;
+	size_t compress = (Q * (C3 & (lead+(1<<29))))>>27;
 
 	/*
 	 * Now compute the MSB of T-bit value compress to determine
@@ -257,7 +256,6 @@ TclMSB(
 	 * Now compute MSB of the T-bit value in block 0.
 	 * Do it just like we did before.
 	 */
-
 	copies = P * block;
 	filtered = B & copies;
 	tally = C1 & (filtered | (C2 + (filtered & C2)));
