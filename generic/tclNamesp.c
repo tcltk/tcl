@@ -160,23 +160,23 @@ static const Tcl_ObjType nsNameType = {
  */
 
 static const EnsembleImplMap defaultNamespaceMap[] = {
-    {"children",   NamespaceChildrenCmd, NULL, NULL, NULL, 0},
+    {"children",   NamespaceChildrenCmd, TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
     {"code",	   NamespaceCodeCmd,	TclCompileNamespaceCodeCmd, NULL, NULL, 0},
     {"current",	   NamespaceCurrentCmd,	TclCompileNamespaceCurrentCmd, NULL, NULL, 0},
-    {"delete",	   NamespaceDeleteCmd,	NULL, NULL, NULL, 0},
+    {"delete",	   NamespaceDeleteCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"ensemble",   TclNamespaceEnsembleCmd, NULL, NULL, NULL, 0},
     {"eval",	   NamespaceEvalCmd,	NULL, NRNamespaceEvalCmd, NULL, 0},
-    {"exists",	   NamespaceExistsCmd,	NULL, NULL, NULL, 0},
-    {"export",	   NamespaceExportCmd,	NULL, NULL, NULL, 0},
-    {"forget",	   NamespaceForgetCmd,	NULL, NULL, NULL, 0},
-    {"import",	   NamespaceImportCmd,	NULL, NULL, NULL, 0},
+    {"exists",	   NamespaceExistsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"export",	   NamespaceExportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+    {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
+    {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, 0},
-    {"origin",	   NamespaceOriginCmd,	NULL, NULL, NULL, 0},
-    {"parent",	   NamespaceParentCmd,	NULL, NULL, NULL, 0},
-    {"path",	   NamespacePathCmd,	NULL, NULL, NULL, 0},
+    {"origin",	   NamespaceOriginCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, 0},
     {"tail",	   NamespaceTailCmd,	TclCompileNamespaceTailCmd, NULL, NULL, 0},
-    {"unknown",	   NamespaceUnknownCmd, NULL, NULL, NULL, 0},
+    {"unknown",	   NamespaceUnknownCmd, TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"upvar",	   NamespaceUpvarCmd,	TclCompileNamespaceUpvarCmd, NULL, NULL, 0},
     {"which",	   NamespaceWhichCmd,	TclCompileNamespaceWhichCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
@@ -343,7 +343,7 @@ Tcl_PushCallFrame(
     framePtr->clientData = NULL;
     framePtr->localCachePtr = NULL;
     framePtr->tailcallPtr = NULL;
-    
+
     /*
      * Push the new call frame onto the interpreter's stack of procedure call
      * frames making it the current frame.
@@ -423,7 +423,7 @@ Tcl_PopCallFrame(
     framePtr->nsPtr = NULL;
 
     if (framePtr->tailcallPtr) {
-	TclSpliceTailcall(interp, framePtr->tailcallPtr);
+	TclSetTailcall(interp, framePtr->tailcallPtr);
     }
 }
 
@@ -1945,7 +1945,7 @@ InvokeImportedNRCmd(
     ImportedCmdData *dataPtr = clientData;
     Command *realCmdPtr = dataPtr->realCmdPtr;
 
-    ((Interp *) interp)->evalFlags |= TCL_EVAL_REDIRECT;
+    TclSkipTailcall(interp);
     return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
 }
 
@@ -3025,7 +3025,7 @@ NamespaceCodeCmd(
      */
 
     arg = TclGetStringFromObj(objv[1], &length);
-    if (*arg==':' && length > 20 
+    if (*arg==':' && length > 20
 	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
@@ -4570,8 +4570,8 @@ NamespaceWhichCmd(
 	 * Look for a flag controlling the lookup.
 	 */
 
-	if (Tcl_GetIndexFromObj(interp, objv[1], opts, "option", 0,
-		&lookupType) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[1], opts,
+		sizeof(char *), "option", 0, &lookupType) != TCL_OK) {
 	    /*
 	     * Preserve old style of error message!
 	     */
@@ -4918,7 +4918,7 @@ TclLogCommandInfo(
 
     if (Tcl_IsShared(iPtr->errorStack)) {
 	Tcl_Obj *newObj;
-	    
+
 	newObj = Tcl_DuplicateObj(iPtr->errorStack);
 	Tcl_DecrRefCount(iPtr->errorStack);
 	Tcl_IncrRefCount(newObj);
@@ -4950,7 +4950,7 @@ TclLogCommandInfo(
 	    Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
 		    Tcl_NewStringObj(command, length));
 	}
-    } 
+    }
 
     if (!iPtr->framePtr->objc) {
 	/*
@@ -5003,7 +5003,7 @@ TclErrorStackResetIf(
 
     if (Tcl_IsShared(iPtr->errorStack)) {
 	Tcl_Obj *newObj;
-	    
+
 	newObj = Tcl_DuplicateObj(iPtr->errorStack);
 	Tcl_DecrRefCount(iPtr->errorStack);
 	Tcl_IncrRefCount(newObj);
@@ -5023,7 +5023,7 @@ TclErrorStackResetIf(
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
 		Tcl_NewStringObj(msg, length));
-    } 
+    }
 }
 
 /*

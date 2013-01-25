@@ -1664,6 +1664,7 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetStringFromObj
 char *
 Tcl_GetStringFromObj(
     register Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should

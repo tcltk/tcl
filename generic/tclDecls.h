@@ -133,10 +133,7 @@ TCLAPI int		Tcl_GetDouble(Tcl_Interp *interp, const char *src,
 /* 35 */
 TCLAPI int		Tcl_GetDoubleFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, double *doublePtr);
-/* 36 */
-TCLAPI int		Tcl_GetIndexFromObj(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, const char *const *tablePtr,
-				const char *msg, int flags, int *indexPtr);
+/* Slot 36 is reserved */
 /* 37 */
 TCLAPI int		Tcl_GetInt(Tcl_Interp *interp, const char *src,
 				int *intPtr);
@@ -385,11 +382,9 @@ TCLAPI int		Tcl_Eof(Tcl_Channel chan);
 TCLAPI const char *	Tcl_ErrnoId(void);
 /* 128 */
 TCLAPI const char *	Tcl_ErrnoMsg(int err);
-/* 129 */
-TCLAPI int		Tcl_Eval(Tcl_Interp *interp, const char *script);
+/* Slot 129 is reserved */
 /* Slot 130 is reserved */
-/* 131 */
-TCLAPI int		Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
+/* Slot 131 is reserved */
 /* 132 */
 TCLAPI void		Tcl_EventuallyFree(ClientData clientData,
 				Tcl_FreeProc *freeProc);
@@ -778,9 +773,7 @@ TCLAPI char *		Tcl_HashStats(Tcl_HashTable *tablePtr);
 /* 270 */
 TCLAPI const char *	Tcl_ParseVar(Tcl_Interp *interp, const char *start,
 				const char **termPtr);
-/* 271 */
-TCLAPI const char *	Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
-				const char *version, int exact);
+/* Slot 271 is reserved */
 /* 272 */
 TCLAPI const char *	Tcl_PkgPresentEx(Tcl_Interp *interp,
 				const char *name, const char *version,
@@ -788,9 +781,7 @@ TCLAPI const char *	Tcl_PkgPresentEx(Tcl_Interp *interp,
 /* 273 */
 TCLAPI int		TclPkgProvide(Tcl_Interp *interp, const char *name,
 				const char *version);
-/* 274 */
-TCLAPI const char *	Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
-				const char *version, int exact);
+/* Slot 274 is reserved */
 /* 275 */
 TCLAPI void		Tcl_SetErrorCodeVA(Tcl_Interp *interp,
 				va_list argList);
@@ -1829,7 +1820,7 @@ typedef struct TclStubs {
     unsigned char * (*tcl_GetByteArrayFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 33 */
     int (*tcl_GetDouble) (Tcl_Interp *interp, const char *src, double *doublePtr); /* 34 */
     int (*tcl_GetDoubleFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, double *doublePtr); /* 35 */
-    int (*tcl_GetIndexFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, const char *const *tablePtr, const char *msg, int flags, int *indexPtr); /* 36 */
+    void (*reserved36)(void);
     int (*tcl_GetInt) (Tcl_Interp *interp, const char *src, int *intPtr); /* 37 */
     int (*tcl_GetIntFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *intPtr); /* 38 */
     int (*tcl_GetLongFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, long *longPtr); /* 39 */
@@ -1922,9 +1913,9 @@ typedef struct TclStubs {
     int (*tcl_Eof) (Tcl_Channel chan); /* 126 */
     const char * (*tcl_ErrnoId) (void); /* 127 */
     const char * (*tcl_ErrnoMsg) (int err); /* 128 */
-    int (*tcl_Eval) (Tcl_Interp *interp, const char *script); /* 129 */
+    void (*reserved129)(void);
     void (*reserved130)(void);
-    int (*tcl_EvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 131 */
+    void (*reserved131)(void);
     void (*tcl_EventuallyFree) (ClientData clientData, Tcl_FreeProc *freeProc); /* 132 */
     void (*tcl_Exit) (int status); /* 133 */
     int (*tcl_ExposeCommand) (Tcl_Interp *interp, const char *hiddenCmdToken, const char *cmdName); /* 134 */
@@ -2072,10 +2063,10 @@ typedef struct TclStubs {
     void (*tcl_AppendStringsToObjVA) (Tcl_Obj *objPtr, va_list argList); /* 268 */
     char * (*tcl_HashStats) (Tcl_HashTable *tablePtr); /* 269 */
     const char * (*tcl_ParseVar) (Tcl_Interp *interp, const char *start, const char **termPtr); /* 270 */
-    const char * (*tcl_PkgPresent) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 271 */
+    void (*reserved271)(void);
     const char * (*tcl_PkgPresentEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 272 */
     int (*tclPkgProvide) (Tcl_Interp *interp, const char *name, const char *version); /* 273 */
-    const char * (*tcl_PkgRequire) (Tcl_Interp *interp, const char *name, const char *version, int exact); /* 274 */
+    void (*reserved274)(void);
     void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
     void (*reserved276)(void);
     Tcl_Pid (*tcl_WaitPid) (Tcl_Pid pid, int *statPtr, int options); /* 277 */
@@ -2532,8 +2523,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetDouble) /* 34 */
 #define Tcl_GetDoubleFromObj \
 	(tclStubsPtr->tcl_GetDoubleFromObj) /* 35 */
-#define Tcl_GetIndexFromObj \
-	(tclStubsPtr->tcl_GetIndexFromObj) /* 36 */
+/* Slot 36 is reserved */
 #define Tcl_GetInt \
 	(tclStubsPtr->tcl_GetInt) /* 37 */
 #define Tcl_GetIntFromObj \
@@ -2716,11 +2706,9 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ErrnoId) /* 127 */
 #define Tcl_ErrnoMsg \
 	(tclStubsPtr->tcl_ErrnoMsg) /* 128 */
-#define Tcl_Eval \
-	(tclStubsPtr->tcl_Eval) /* 129 */
+/* Slot 129 is reserved */
 /* Slot 130 is reserved */
-#define Tcl_EvalObj \
-	(tclStubsPtr->tcl_EvalObj) /* 131 */
+/* Slot 131 is reserved */
 #define Tcl_EventuallyFree \
 	(tclStubsPtr->tcl_EventuallyFree) /* 132 */
 #define Tcl_Exit \
@@ -2998,14 +2986,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_HashStats) /* 269 */
 #define Tcl_ParseVar \
 	(tclStubsPtr->tcl_ParseVar) /* 270 */
-#define Tcl_PkgPresent \
-	(tclStubsPtr->tcl_PkgPresent) /* 271 */
+/* Slot 271 is reserved */
 #define Tcl_PkgPresentEx \
 	(tclStubsPtr->tcl_PkgPresentEx) /* 272 */
 #define TclPkgProvide \
 	(tclStubsPtr->tclPkgProvide) /* 273 */
-#define Tcl_PkgRequire \
-	(tclStubsPtr->tcl_PkgRequire) /* 274 */
+/* Slot 274 is reserved */
 #define Tcl_SetErrorCodeVA \
 	(tclStubsPtr->tcl_SetErrorCodeVA) /* 275 */
 /* Slot 276 is reserved */
@@ -3740,7 +3726,27 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 
+#define Tcl_PkgPresent(interp, name, version, exact) \
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL)
 #define Tcl_PkgProvide(interp, name, version) \
 	Tcl_PkgProvideEx(interp, name, version, NULL)
+#define Tcl_PkgRequire(interp, name, version, exact) \
+	Tcl_PkgRequireEx(interp, name, version, exact, NULL)
+#define Tcl_Eval(interp,objPtr) \
+	Tcl_EvalEx((interp),(objPtr),-1,0)
+#define Tcl_GlobalEval(interp,objPtr) \
+	Tcl_EvalEx((interp),(objPtr),-1,TCL_EVAL_GLOBAL)
+#define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
+	Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, (int)sizeof(char *), \
+	msg, flags, indexPtr)
+/*
+ * Deprecated Tcl procedures:
+ */
 
+#ifndef TCL_NO_DEPRECATED
+#   define Tcl_EvalObj(interp,objPtr) \
+	    Tcl_EvalObjEx((interp),(objPtr),0)
+#   define Tcl_GlobalEvalObj(interp,objPtr) \
+	    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#endif /* !TCL_NO_DEPRECATED */
 #endif /* _TCLDECLS */

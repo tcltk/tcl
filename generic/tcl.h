@@ -349,7 +349,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	struct {long tv_sec;} st_ctim;
 	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64)
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
@@ -2197,18 +2197,21 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
+const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact, const char *tclversion, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
-/*
- * When not using stubs, make it a macro.
- */
-
 #ifdef USE_TCL_STUBS
-#define Tcl_InitStubs(interp, version, exact) \
-    TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)((interp), (version), (exact)|(int)sizeof(size_t), \
+	TCL_VERSION, TCL_STUB_MAGIC)
+#else
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, 1|(int)sizeof(size_t), \
+	TCL_VERSION, TCL_STUB_MAGIC)
+#endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
@@ -2411,18 +2414,6 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #undef  Tcl_ConditionFinalize
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
-
-/*
- *----------------------------------------------------------------------------
- * Deprecated Tcl functions:
- */
-
-#ifndef TCL_NO_DEPRECATED
-#   undef  Tcl_EvalObj
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-
-#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 

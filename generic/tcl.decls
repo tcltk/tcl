@@ -152,10 +152,11 @@ declare 35 {
     int Tcl_GetDoubleFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 	    double *doublePtr)
 }
-declare 36 {
-    int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const char *const *tablePtr, const char *msg, int flags, int *indexPtr)
-}
+# Removed in 9.0
+#declare 36 {
+#    int Tcl_GetIndexFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+#	    const char *const *tablePtr, const char *msg, int flags, int *indexPtr)
+#}
 declare 37 {
     int Tcl_GetInt(Tcl_Interp *interp, const char *src, int *intPtr)
 }
@@ -467,16 +468,18 @@ declare 127 {
 declare 128 {
     const char *Tcl_ErrnoMsg(int err)
 }
-declare 129 {
-    int Tcl_Eval(Tcl_Interp *interp, const char *script)
-}
+# Removed in 9.0:
+#declare 129 {
+#    int Tcl_Eval(Tcl_Interp *interp, const char *script)
+#}
 # Removed in 9.0:
 #declare 130 {
 #    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 #}
-declare 131 {
-    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
+# Removed in 9.0:
+#declare 131 {
+#    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
 declare 132 {
     void Tcl_EventuallyFree(ClientData clientData, Tcl_FreeProc *freeProc)
 }
@@ -639,6 +642,7 @@ declare 176 {
 #declare 177 {
 #    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 #}
+# Removed in 9.0
 #declare 178 {
 #    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 #}
@@ -962,10 +966,11 @@ declare 270 {
     const char *Tcl_ParseVar(Tcl_Interp *interp, const char *start,
 	    const char **termPtr)
 }
-declare 271 {
-    const char *Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
-	    const char *version, int exact)
-}
+# Removed in 9.0, converted to macro
+#declare 271 {
+#    const char *Tcl_PkgPresent(Tcl_Interp *interp, const char *name,
+#	    const char *version, int exact)
+#}
 declare 272 {
     const char *Tcl_PkgPresentEx(Tcl_Interp *interp,
 	    const char *name, const char *version, int exact,
@@ -977,10 +982,11 @@ declare 273 {
 	    const char *version)
 }
 # TIP #268: The internally used new Require function is in slot 573.
-declare 274 {
-    const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
-	    const char *version, int exact)
-}
+# Removed in 9.0, converted to macro
+#declare 274 {
+#    const char *Tcl_PkgRequire(Tcl_Interp *interp, const char *name,
+#	    const char *version, int exact)
+#}
 declare 275 {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 }

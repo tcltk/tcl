@@ -1322,7 +1322,7 @@ TraceCommandProc(
 		Tcl_DStringLength(&cmd), 0);
 	if (code != TCL_OK) {
 	    /* We ignore errors in these traced commands */
-	    /*** QUESTION: Use Tcl_BackgroundError(interp); instead? ***/
+	    /*** QUESTION: Use Tcl_BackgroundException(interp, code); instead? ***/
 	}
 	Tcl_DStringFree(&cmd);
     }
@@ -1885,7 +1885,7 @@ TraceExecutionProc(
 	     * interpreter.
 	     */
 
-	    traceCode = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
+	    traceCode = Tcl_EvalEx(interp, Tcl_DStringValue(&cmd), -1, 0);
 	    tcmdPtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
 
 	    /*
@@ -1975,7 +1975,7 @@ TraceVarProc(
     int rewind = ((Interp *)interp)->execEnvPtr->rewind;
 
     /*
-     * We might call Tcl_Eval() below, and that might evaluate [trace vdelete]
+     * We might call Tcl_EvalEx() below, and that might evaluate [trace vdelete]
      * which might try to free tvarPtr. We want to use tvarPtr until the end
      * of this function, so we use Tcl_Preserve() and Tcl_Release() to be sure
      * it is not freed while we still need it.

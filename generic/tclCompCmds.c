@@ -107,6 +107,7 @@ static int		CompileDictEachCmd(Tcl_Interp *interp,
  */
 
 #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
+#define TCL_NO_ELEMENT 2	/* Do not push the array element. */
 
 /*
  * The structures below define the AuxData types defined in this file.
@@ -259,7 +260,7 @@ TclCompileArrayExistsCmd(
     }
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, tokenPtr, envPtr, 0,
+    PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar, 1);
     if (!isScalar) {
 	return TCL_ERROR;
@@ -294,7 +295,14 @@ TclCompileArraySetCmd(
     }
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, tokenPtr, envPtr, 0,
+    if (envPtr->procPtr == NULL) {
+	Tcl_Token *tokPtr = TokenAfter(tokenPtr);
+
+	if (tokPtr->type != TCL_TOKEN_SIMPLE_WORD || tokPtr[1].size != 0) {
+	    return TCL_ERROR;
+	}
+    }
+    PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar, 1);
     if (!isScalar) {
 	return TCL_ERROR;
@@ -437,7 +445,7 @@ TclCompileArrayUnsetCmd(
 	return TCL_ERROR;
     }
 
-    PushVarNameWord(interp, tokenPtr, envPtr, 0,
+    PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar, 1);
     if (!isScalar) {
 	return TCL_ERROR;
@@ -3082,7 +3090,7 @@ TclCompileFormatCmd(
      * after our attempt to spot a literal).
      */
 
-    for (; --i>=0 ;) {
+    for (; i>=0 ; i--) {
 	Tcl_DecrRefCount(objv[i]);
     }
     ckfree(objv);
@@ -5791,7 +5799,7 @@ TclCompileVariableCmd(
      */
 
     valueTokenPtr = parsePtr->tokenPtr;
-    for (i=2; i<=numWords; i+=2) {
+    for (i=1; i<numWords; i+=2) {
 	varTokenPtr = TokenAfter(valueTokenPtr);
 	valueTokenPtr = TokenAfter(varTokenPtr);
 
@@ -5801,15 +5809,15 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
-	CompileWord(envPtr, varTokenPtr, interp, 1);
+	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(	INST_VARIABLE, localIndex,	envPtr);
 
-	if (i != numWords) {
+	if (i+1 < numWords) {
 	    /*
 	     * A value has been given: set the variable, pop the value
 	     */
 
-	    CompileWord(envPtr, valueTokenPtr, interp, 1);
+	    CompileWord(envPtr, valueTokenPtr, interp, i+1);
 	    Emit14Inst(		INST_STORE_SCALAR, localIndex,	envPtr);
 	    TclEmitOpcode(	INST_POP,			envPtr);
 	}
@@ -6006,7 +6014,7 @@ PushVarName(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int flags,			/* TCL_NO_LARGE_INDEX. */
+    int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
     int *localIndexPtr,		/* Must not be NULL. */
     int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr,		/* Must not be NULL. */
@@ -6187,10 +6195,11 @@ PushVarName(
 	}
 
 	/*
-	 * Compile the element script, if any.
+	 * Compile the element script, if any, and only if not inhibited. [Bug
+	 * 3600328]
 	 */
 
-	if (elName != NULL) {
+	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
 	    if (elNameChars) {
 		envPtr->line = line;
 		envPtr->clNext = clNext;

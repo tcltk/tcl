@@ -66,14 +66,6 @@ static int TclPkgProvide(
 	return TCL_ERROR;
 }
 
-#if defined(_WIN32) || defined(__CYGWIN__)
-#undef TclWinNToHS
-#define TclWinNToHS winNToHS
-static unsigned short TclWinNToHS(unsigned short ns) {
-	return ntohs(ns);
-}
-#endif
-
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
@@ -310,22 +302,22 @@ static const TclIntStubs tclIntStubs = {
     TclUpdateReturnInfo, /* 109 */
     TclSockMinimumBuffers, /* 110 */
     Tcl_AddInterpResolvers, /* 111 */
-    Tcl_AppendExportList, /* 112 */
-    Tcl_CreateNamespace, /* 113 */
-    Tcl_DeleteNamespace, /* 114 */
-    Tcl_Export, /* 115 */
-    Tcl_FindCommand, /* 116 */
-    Tcl_FindNamespace, /* 117 */
+    0, /* 112 */
+    0, /* 113 */
+    0, /* 114 */
+    0, /* 115 */
+    0, /* 116 */
+    0, /* 117 */
     Tcl_GetInterpResolvers, /* 118 */
     Tcl_GetNamespaceResolvers, /* 119 */
     Tcl_FindNamespaceVar, /* 120 */
-    Tcl_ForgetImport, /* 121 */
-    Tcl_GetCommandFromObj, /* 122 */
-    Tcl_GetCommandFullName, /* 123 */
-    Tcl_GetCurrentNamespace, /* 124 */
-    Tcl_GetGlobalNamespace, /* 125 */
+    0, /* 121 */
+    0, /* 122 */
+    0, /* 123 */
+    0, /* 124 */
+    0, /* 125 */
     Tcl_GetVariableFullName, /* 126 */
-    Tcl_Import, /* 127 */
+    0, /* 127 */
     Tcl_PopCallFrame, /* 128 */
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
@@ -494,7 +486,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinGetSockOpt, /* 3 */
     TclWinGetTclInstance, /* 4 */
     TclUnixWaitForFile, /* 5 */
-    TclWinNToHS, /* 6 */
+    0, /* 6 */
     TclWinSetSockOpt, /* 7 */
     TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
@@ -698,7 +690,7 @@ const TclStubs tclStubs = {
     Tcl_GetByteArrayFromObj, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
-    Tcl_GetIndexFromObj, /* 36 */
+    0, /* 36 */
     Tcl_GetInt, /* 37 */
     Tcl_GetIntFromObj, /* 38 */
     Tcl_GetLongFromObj, /* 39 */
@@ -791,9 +783,9 @@ const TclStubs tclStubs = {
     Tcl_Eof, /* 126 */
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
-    Tcl_Eval, /* 129 */
+    0, /* 129 */
     0, /* 130 */
-    Tcl_EvalObj, /* 131 */
+    0, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */
     Tcl_ExposeCommand, /* 134 */
@@ -941,10 +933,10 @@ const TclStubs tclStubs = {
     Tcl_AppendStringsToObjVA, /* 268 */
     Tcl_HashStats, /* 269 */
     Tcl_ParseVar, /* 270 */
-    Tcl_PkgPresent, /* 271 */
+    0, /* 271 */
     Tcl_PkgPresentEx, /* 272 */
     TclPkgProvide, /* 273 */
-    Tcl_PkgRequire, /* 274 */
+    0, /* 274 */
     Tcl_SetErrorCodeVA, /* 275 */
     0, /* 276 */
     Tcl_WaitPid, /* 277 */

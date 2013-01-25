@@ -457,29 +457,35 @@ declare 111 {
 	    Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc,
 	    Tcl_ResolveCompiledVarProc *compiledVarProc)
 }
-declare 112 {
-    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    Tcl_Obj *objPtr)
-}
-declare 113 {
-    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
-	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
-}
-declare 114 {
-    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
-}
-declare 115 {
-    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    const char *pattern, int resetListFirst)
-}
-declare 116 {
-    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, const char *name,
-	    Tcl_Namespace *contextNsPtr, int flags)
-}
-declare 117 {
-    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, const char *name,
-	    Tcl_Namespace *contextNsPtr, int flags)
-}
+# Removed in 9.0:
+#declare 112 {
+#    int Tcl_AppendExportList(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    Tcl_Obj *objPtr)
+#}
+# Removed in 9.0:
+#declare 113 {
+#    Tcl_Namespace *Tcl_CreateNamespace(Tcl_Interp *interp, const char *name,
+#	    ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc)
+#}
+# Removed in 9.0:
+#declare 114 {
+#    void Tcl_DeleteNamespace(Tcl_Namespace *nsPtr)
+#}
+# Removed in 9.0:
+#declare 115 {
+#    int Tcl_Export(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern, int resetListFirst)
+#}
+# Removed in 9.0:
+#declare 116 {
+#    Tcl_Command Tcl_FindCommand(Tcl_Interp *interp, const char *name,
+#	    Tcl_Namespace *contextNsPtr, int flags)
+#}
+# Removed in 9.0:
+#declare 117 {
+#    Tcl_Namespace *Tcl_FindNamespace(Tcl_Interp *interp, const char *name,
+#	    Tcl_Namespace *contextNsPtr, int flags)
+#}
 declare 118 {
     int Tcl_GetInterpResolvers(Tcl_Interp *interp, const char *name,
 	    Tcl_ResolverInfo *resInfo)
@@ -492,31 +498,37 @@ declare 120 {
     Tcl_Var Tcl_FindNamespaceVar(Tcl_Interp *interp, const char *name,
 	    Tcl_Namespace *contextNsPtr, int flags)
 }
-declare 121 {
-    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    const char *pattern)
-}
-declare 122 {
-    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
-declare 123 {
-    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
-	    Tcl_Obj *objPtr)
-}
-declare 124 {
-    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
-}
-declare 125 {
-    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
-}
+# Removed in 9.0:
+#declare 121 {
+#    int Tcl_ForgetImport(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern)
+#}
+# Removed in 9.0:
+#declare 122 {
+#    Tcl_Command Tcl_GetCommandFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
+# Removed in 9.0:
+#declare 123 {
+#    void Tcl_GetCommandFullName(Tcl_Interp *interp, Tcl_Command command,
+#	    Tcl_Obj *objPtr)
+#}
+# Removed in 9.0:
+#declare 124 {
+#    Tcl_Namespace *Tcl_GetCurrentNamespace(Tcl_Interp *interp)
+#}
+# Removed in 9.0:
+#declare 125 {
+#    Tcl_Namespace *Tcl_GetGlobalNamespace(Tcl_Interp *interp)
+#}
 declare 126 {
     void Tcl_GetVariableFullName(Tcl_Interp *interp, Tcl_Var variable,
 	    Tcl_Obj *objPtr)
 }
-declare 127 {
-    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
-	    const char *pattern, int allowOverwrite)
-}
+# Removed in 9.0:
+#declare 127 {
+#    int Tcl_Import(Tcl_Interp *interp, Tcl_Namespace *nsPtr,
+#	    const char *pattern, int allowOverwrite)
+#}
 declare 128 {
     void Tcl_PopCallFrame(Tcl_Interp *interp)
 }
@@ -1046,9 +1058,10 @@ declare 5 win {
 #  declare 5 win {
 #      HINSTANCE TclWinLoadLibrary(char *name)
 #  }
-declare 6 win {
-    unsigned short TclWinNToHS(unsigned short ns)
-}
+# Removed in 8.1:
+#declare 6 win {
+#    unsigned short TclWinNToHS(unsigned short ns)
+#}
 declare 7 win {
     int TclWinSetSockOpt(SOCKET s, int level, int optname,
 	    const char *optval, int optlen)

@@ -211,7 +211,7 @@ TestvolumetypeCmd(
 	TclWinConvertError(GetLastError());
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, volType, TCL_VOLATILE);
+    Tcl_AppendResult(interp, volType, NULL);
     return TCL_OK;
 #undef VOL_BUF_SIZE
 }
@@ -368,8 +368,8 @@ TestExceptionCmd(
 	Tcl_WrongNumArgs(interp, 0, objv, "<type-of-exception>");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0,
-	    &cmd) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], cmds,
+	    sizeof(char *), "command", 0, &cmd) != TCL_OK) {
 	return TCL_ERROR;
     }
 

@@ -18,9 +18,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if defined(HAVE_SYS_STAT_H) && !defined _WIN32
-#   include <sys/stat.h>
-#endif
 #include "tclInt.h"
 #ifdef __WIN32__
 #   include "tclWinInt.h"
@@ -2475,8 +2472,8 @@ TclFSFileAttrIndex(
 	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, -1);
 	int result;
 
-	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
-		indexPtr);
+	result = Tcl_GetIndexFromObjStruct(NULL, tmpObj, attrTable,
+		sizeof(char *), NULL, TCL_EXACT, indexPtr);
 	TclDecrRefCount(tmpObj);
 	if (listObj != NULL) {
 	    TclDecrRefCount(listObj);
@@ -3360,7 +3357,7 @@ Tcl_LoadFile(
     return retVal;
 
   resolveSymbols:
-    /* 
+    /*
      * At this point, *handlePtr is already set up to the handle for the
      * loaded library. We now try to resolve the symbols.
      */
@@ -3369,7 +3366,7 @@ Tcl_LoadFile(
 	for (i=0 ; symbols[i] != NULL; i++) {
 	    procPtrs[i] = Tcl_FindSymbol(interp, *handlePtr, symbols[i]);
 	    if (procPtrs[i] == NULL) {
-		/* 
+		/*
 		 * At least one symbol in the list was not found.  Unload the
 		 * file, and report the problem back to the caller.
 		 * (Tcl_FindSymbol should already have left an appropriate
@@ -3389,7 +3386,7 @@ Tcl_LoadFile(
  *----------------------------------------------------------------------
  *
  * DivertFindSymbol --
- *	
+ *
  *	Find a symbol in a shared library loaded by copy-from-VFS.
  *
  *----------------------------------------------------------------------

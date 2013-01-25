@@ -32,7 +32,7 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 /*
  *----------------------------------------------------------------------
  *
- * TclInitStubs --
+ * Tcl_InitStubs --
  *
  *	Tries to initialise the stub table pointers and ensures that the
  *	correct version of Tcl is loaded.
@@ -48,7 +48,7 @@ const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
  */
 #undef Tcl_InitStubs
 MODULE_SCOPE const char *
-TclInitStubs(
+Tcl_InitStubs(
     Tcl_Interp *interp,
     const char *version,
     int exact,
@@ -76,7 +76,7 @@ TclInitStubs(
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (exact) {
+    if (exact&1) {
 	const char *p = version;
 	int count = 0;
 
@@ -103,27 +103,13 @@ TclInitStubs(
 	}
     }
 
-    /* The field reserved77 is the old (Tcl 8.x) location for Tcl_Backslash.
-     * Being not NULL means that we are running Tcl 8.x.
-     * This is quicker to check for than calling Tcl_GetVersion() */
-    if (sizeof(size_t) != sizeof(int)) {
-	if (stubsPtr->reserved77 != NULL) {
-	    /* Accessing iPtr->legacyResult doesn't work here as Tcl 8 doesn't
-	     * check this field after the Xxx_Init call. */
-	    char stripped[32]; /* Requested version stripped starting with '-' */
-	    char *p = stripped;
-
-	    while (*version && (*version != '-')) {
-		*p++ = *version++;
-	    }
-	    *p = '\0';
-	    stubsPtr->tcl_ResetResult(interp);
-	    stubsPtr->tcl_AppendResult(interp, "incompatible stub library: have ",
-		    tclversion, ", need ", stripped, NULL);
-	    return NULL;
-	}
+    if (stubsPtr->reserved77) {
+	/* We are running Tcl 8. Do some additional checks here. */
+	tclStubsPtr = (TclStubs *)pkgData;
+    } else {
+	/* We are running Tcl 9. Do some additional checks here. */
+	tclStubsPtr = stubsPtr;
     }
-    tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;

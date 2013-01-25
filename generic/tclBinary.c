@@ -128,6 +128,30 @@ static const char B64Digits[65] = {
 };
 
 /*
+ * How to construct the ensembles.
+ */
+
+static const EnsembleImplMap binaryMap[] = {
+    { "format", BinaryFormatCmd, TclCompileBasicMin1ArgCmd, NULL, NULL, 0 },
+    { "scan",   BinaryScanCmd, TclCompileBasicMin2ArgCmd, NULL, NULL, 0 },
+    { "encode", NULL, NULL, NULL, NULL, 0 },
+    { "decode", NULL, NULL, NULL, NULL, 0 },
+    { NULL, NULL, NULL, NULL, NULL, 0 }
+};
+static const EnsembleImplMap encodeMap[] = {
+    { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, (ClientData)HexDigits, 0 },
+    { "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
+    { "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
+    { NULL, NULL, NULL, NULL, NULL, 0 }
+};
+static const EnsembleImplMap decodeMap[] = {
+    { "hex",      BinaryDecodeHex, TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
+    { "uuencode", BinaryDecodeUu,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
+    { "base64",   BinaryDecode64,  TclCompileBasic1Or2ArgCmd, NULL, NULL, 0 },
+    { NULL, NULL, NULL, NULL, NULL, 0 }
+};
+
+/*
  * The following object type represents an array of bytes. An array of bytes
  * is not equivalent to an internationalized string. Conceptually, a string is
  * an array of 16-bit quantities organized as a sequence of properly formed
@@ -687,26 +711,6 @@ TclAppendBytesToByteArray(
  *
  *----------------------------------------------------------------------
  */
-
-static const EnsembleImplMap binaryMap[] = {
-{ "format", BinaryFormatCmd, NULL, NULL, NULL, 0 },
-{ "scan",   BinaryScanCmd, NULL, NULL, NULL, 0 },
-{ "encode", NULL, NULL, NULL, NULL, 0 },
-{ "decode", NULL, NULL, NULL, NULL, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
-};
-static const EnsembleImplMap encodeMap[] = {
-{ "hex",      BinaryEncodeHex, NULL, NULL, (ClientData)HexDigits, 0 },
-{ "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
-{ "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
-};
-static const EnsembleImplMap decodeMap[] = {
-{ "hex",      BinaryDecodeHex, NULL, NULL, NULL, 0 },
-{ "uuencode", BinaryDecodeUu,  NULL, NULL, NULL, 0 },
-{ "base64",   BinaryDecode64,  NULL, NULL, NULL, 0 },
-{ NULL, NULL, NULL, NULL, NULL, 0 }
-};
 
 Tcl_Command
 TclInitBinaryCmd(
@@ -2357,12 +2361,12 @@ BinaryDecodeHex(
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; ++i) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], optStrings,
+		sizeof(char *), "option", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -2481,8 +2485,8 @@ BinaryEncode64(
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; i += 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], optStrings,
+		sizeof(char *), "option", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -2571,12 +2575,12 @@ BinaryDecodeUu(
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; ++i) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], optStrings,
+		sizeof(char *), "option", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -2667,12 +2671,12 @@ BinaryDecode64(
     static const char *const optStrings[] = { "-strict", NULL };
 
     if (objc < 2 || objc > 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "data");
+	Tcl_WrongNumArgs(interp, 1, objv, "?options? data");
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; ++i) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], optStrings,
+		sizeof(char *), "option", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
