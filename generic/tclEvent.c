@@ -891,7 +891,7 @@ Tcl_SetExitProc(
  *----------------------------------------------------------------------
  */
 static void
-InvokeExitHandlers(void) 
+InvokeExitHandlers(void)
 {
     ExitHandler *exitPtr;
 
@@ -967,22 +967,22 @@ Tcl_Exit(
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
-	    
+
 	    InvokeExitHandlers();
-	    
+
 	    /*
 	     * Ensure the thread-specific data is initialised as it is used in
 	     * Tcl_FinalizeThread()
 	     */
-	    
+
 	    (void) TCL_TSD_INIT(&dataKey);
-	    
+
 	    /*
 	     * Now finalize the calling thread only (others are not safely
 	     * reachable).  Among other things, this triggers a flush of the
 	     * Tcl_Channels that may have data enqueued.
 	     */
-	    
+
 	    Tcl_FinalizeThread();
 	}
 	TclpExit(status);
@@ -1094,7 +1094,7 @@ Tcl_Finalize(void)
      * Invoke exit handlers first.
      */
 
-    InvokeExitHandlers();   
+    InvokeExitHandlers();
 
     TclpInitLock();
     if (subsystemsInitialized == 0) {
@@ -1498,8 +1498,8 @@ Tcl_UpdateObjCmd(
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
     } else if (objc == 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[1], updateOptions,
-		"option", 0, &optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[1], updateOptions,
+		sizeof(char *), "option", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum updateOptions) optionIndex) {

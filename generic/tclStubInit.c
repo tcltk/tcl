@@ -690,7 +690,7 @@ const TclStubs tclStubs = {
     Tcl_GetByteArrayFromObj, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
-    Tcl_GetIndexFromObj, /* 36 */
+    0, /* 36 */
     Tcl_GetInt, /* 37 */
     Tcl_GetIntFromObj, /* 38 */
     Tcl_GetLongFromObj, /* 39 */

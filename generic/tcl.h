@@ -2202,20 +2202,16 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
-/*
- * When not using stubs, make it a macro.
- */
-
 #ifdef USE_TCL_STUBS
 /* TODO: when merging to "novem", change != to == in the next line. */
 #if TCL_RELEASE_LEVEL != TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
-	    (Tcl_InitStubs)((interp), (version), (exact)|(int)sizeof(int), \
-	    TCL_VERSION, TCL_STUB_MAGIC)
+	(Tcl_InitStubs)((interp), (version), (exact)|(int)sizeof(size_t), \
+	TCL_VERSION, TCL_STUB_MAGIC)
 #else
 #   define Tcl_InitStubs(interp, version, exact) \
-	    (Tcl_InitStubs)((interp), TCL_PATCH_LEVEL, 1|(int)sizeof(int), \
-	    TCL_VERSION, TCL_STUB_MAGIC)
+	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, 1|(int)sizeof(size_t), \
+	TCL_VERSION, TCL_STUB_MAGIC)
 #endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \

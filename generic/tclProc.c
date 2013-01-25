@@ -2881,7 +2881,8 @@ Tcl_DisassembleObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], types, "type", 0, &idx)!=TCL_OK){
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], types,
+	    sizeof(char *), "type", 0, &idx) != TCL_OK){
 	return TCL_ERROR;
     }
 

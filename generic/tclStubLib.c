@@ -82,62 +82,68 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
-    if (actualVersion == NULL) {
-	return NULL;
-    }
-    if (exact&1) {
-	const char *p = version;
-	int count = 0;
-
-	while (*p) {
-	    count += !ISDIGIT(*p++);
+    if(iPtr->errorLine == TCL_STUB_MAGIC) {
+	actualVersion = (const char *)iPtr->objResultPtr;
+	tclStubsPtr = stubsPtr;
+    } else {
+	actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+	if (actualVersion == NULL) {
+	    return NULL;
 	}
-	if (count == 1) {
-	    const char *q = actualVersion;
+	if (exact&1) {
+	    const char *p = version;
+	    int count = 0;
 
-	    p = version;
-	    while (*p && (*p == *q)) {
-		p++; q++;
+	    while (*p) {
+		count += !ISDIGIT(*p++);
 	    }
-	    if (*p || ISDIGIT(*q)) {
-		/* Construct error message */
-		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
-		return NULL;
-	    }
-	} else {
-	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
-	    if (actualVersion == NULL) {
-		return NULL;
+	    if (count == 1) {
+		const char *q = actualVersion;
+
+		p = version;
+		while (*p && (*p == *q)) {
+		    p++; q++;
+		}
+		if (*p || ISDIGIT(*q)) {
+		    /* Construct error message */
+		    stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		    return NULL;
+		}
+		} else {
+		actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		if (actualVersion == NULL) {
+		    return NULL;
+		}
 	    }
 	}
-    }
 
 #define MASK (4+8+16) /* possible values of sizeof(size_t) */
 
-    /* reserved77 is the location of Tcl_Backslash, which was removed
-     * in Tcl 9.0. If this value is NULL, we know that we have Tcl > 8
-     */
-    if ((exact & MASK) != (int)
-	    ((stubsPtr->reserved77)?sizeof(int):sizeof(size_t))) {
-	char msg[32], *p = msg;
-
 	if (stubsPtr->reserved77) {
-	    /* Take "version", but strip off everything after '-' */
-	    while (*version && *version != '-') {
-		*p++ = *version++;
-	    }
-	    *p = '\0';
+	    /* We are running Tcl 8. */
+	    if ((exact & MASK) != (int)sizeof(int)) {
+		char msg[32], *p = msg;
 
+		/* Take "version", but strip off everything after '-' */
+		while (*version && *version != '-') {
+		    *p++ = *version++;
+		}
+		*p = '\0';
+		stubsPtr->tcl_AppendResult(interp, "incompatible stub library: have ",
+			tclversion, ", need ", msg, NULL);
+		return NULL;
+	    }
+	    tclStubsPtr = (TclStubs *)pkgData;
 	} else {
-	    msg[0] = '9';
-	    msg[1] = '\0';
+	    /* We are running Tcl 9. */
+	    if ((exact & MASK) != (int)sizeof(size_t)) {
+		stubsPtr->tcl_AppendResult(interp, "incompatible stub library: have ",
+			tclversion, ", need 9", NULL);
+		return NULL;
+	    }
+	    tclStubsPtr = stubsPtr;
 	}
-	stubsPtr->tcl_AppendResult(interp, "incompatible stub library: have ",
-		tclversion, ", need ", msg);
-	return NULL;
     }
-    tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;

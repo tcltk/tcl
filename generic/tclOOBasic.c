@@ -979,8 +979,8 @@ TclOOSelfObjCmd(
 	return TCL_ERROR;
     } else if (objc == 1) {
 	index = SELF_OBJECT;
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "subcommand", 0,
-	    &index) != TCL_OK) {
+    } else if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcmds,
+	    sizeof(char *), "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

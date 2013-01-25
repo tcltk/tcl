@@ -2365,8 +2365,8 @@ BinaryDecodeHex(
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; ++i) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], optStrings,
+		sizeof(char *), "option", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -2485,8 +2485,8 @@ BinaryEncode64(
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; i += 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], optStrings,
+		sizeof(char *), "option", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -2579,8 +2579,8 @@ BinaryDecodeUu(
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; ++i) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], optStrings,
+		sizeof(char *), "option", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -2675,8 +2675,8 @@ BinaryDecode64(
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; ++i) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], optStrings,
+		sizeof(char *), "option", TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {

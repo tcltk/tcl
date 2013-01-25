@@ -69,74 +69,12 @@ typedef struct {
  * The following macros greatly simplify moving through a table...
  */
 
-#define STRING_AT(table, offset, index) \
-	(*((const char *const *)(((char *)(table)) + ((offset) * (index)))))
+#define STRING_AT(table, offset) \
+	(*((const char *const *)(((char *)(table)) + (offset))))
 #define NEXT_ENTRY(table, offset) \
-	(&(STRING_AT(table, offset, 1)))
+	(&(STRING_AT(table, offset)))
 #define EXPAND_OF(indexRep) \
-	STRING_AT((indexRep)->tablePtr, (indexRep)->offset, (indexRep)->index)
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_GetIndexFromObj --
- *
- *	This function looks up an object's value in a table of strings and
- *	returns the index of the matching string, if any.
- *
- * Results:
- *	If the value of objPtr is identical to or a unique abbreviation for
- *	one of the entries in tablePtr, then the return value is TCL_OK and the
- *	index of the matching entry is stored at *indexPtr. If there isn't a
- *	proper match, then TCL_ERROR is returned and an error message is left
- *	in interp's result (unless interp is NULL). The msg argument is used
- *	in the error message; for example, if msg has the value "option" then
- *	the error message will say something flag 'bad option "foo": must be
- *	...'
- *
- * Side effects:
- *	The result of the lookup is cached as the internal rep of objPtr, so
- *	that repeated lookups can be done quickly.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_GetIndexFromObj(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr,		/* Object containing the string to lookup. */
-    const char *const*tablePtr,	/* Array of strings to compare against the
-				 * value of objPtr; last entry must be NULL
-				 * and there must not be duplicate entries. */
-    const char *msg,		/* Identifying word to use in error
-				 * messages. */
-    int flags,			/* 0 or TCL_EXACT */
-    int *indexPtr)		/* Place to store resulting integer index. */
-{
-
-    /*
-     * See if there is a valid cached result from a previous lookup (doing the
-     * check here saves the overhead of calling Tcl_GetIndexFromObjStruct in
-     * the common case where the result is cached).
-     */
-
-    if (objPtr->typePtr == &indexType) {
-	IndexRep *indexRep = objPtr->internalRep.otherValuePtr;
-
-	/*
-	 * Here's hoping we don't get hit by unfortunate packing constraints
-	 * on odd platforms like a Cray PVP...
-	 */
-
-	if (indexRep->tablePtr == (void *) tablePtr
-		&& indexRep->offset == sizeof(char *)) {
-	    *indexPtr = indexRep->index;
-	    return TCL_OK;
-	}
-    }
-    return Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, sizeof(char *),
-	    msg, flags, indexPtr);
-}
+	STRING_AT((indexRep)->tablePtr, (indexRep)->offset*(indexRep)->index)
 
 /*
  *----------------------------------------------------------------------
@@ -238,7 +176,7 @@ GetIndexFromObjList(
  *	a proper match, then TCL_ERROR is returned and an error message is
  *	left in interp's result (unless interp is NULL). The msg argument is
  *	used in the error message; for example, if msg has the value "option"
- *	then the error message will say something flag 'bad option "foo": must
+ *	then the error message will say something like 'bad option "foo": must
  *	be ...'
  *
  * Side effects:
@@ -270,6 +208,10 @@ Tcl_GetIndexFromObjStruct(
     Tcl_Obj *resultPtr;
     IndexRep *indexRep;
 
+    /* Protect against invalid values, like -1 or 0. */
+    if (offset < (int)sizeof(char *)) {
+	offset = (int)sizeof(char *);
+    }
     /*
      * See if there is a valid cached result from a previous lookup.
      */
@@ -587,8 +529,8 @@ PrefixMatchObjCmd(
     }
 
     for (i = 1; i < (objc - 2); i++) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], matchOptions, "option", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], matchOptions,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum matchOptions) index) {
@@ -1460,8 +1402,8 @@ TclGetCompletionCodeFromObj(
 	    && TclGetIntFromObj(NULL, value, codePtr) == TCL_OK) {
 	return TCL_OK;
     }
-    if (Tcl_GetIndexFromObj(NULL, value, returnCodes, NULL, TCL_EXACT,
-	    codePtr) == TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(NULL, value, returnCodes,
+	    sizeof(char *), NULL, TCL_EXACT, codePtr) == TCL_OK) {
 	return TCL_OK;
     }
 

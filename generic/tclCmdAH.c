@@ -395,8 +395,8 @@ Tcl_EncodingObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], optionStrings,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -612,7 +612,7 @@ Tcl_EvalObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);    
+    return Tcl_NRCallObjProc(interp, TclNREvalObjCmd, dummy, objc, objv);
 }
 
 int

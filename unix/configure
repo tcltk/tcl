@@ -7138,7 +7138,7 @@ echo "$as_me: error: ${CC} is not a cygwin compiler." >&2;}
 echo "$as_me: error: CYGWIN compile is only supported with --enable-threads" >&2;}
    { (exit 1); exit 1; }; }
 	    fi
-	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde14.dll" -a ! -f "../win/tk86.dll"; then
+	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/dde.dll" -a ! -f "../win/tk86.dll"; then
 		{ { echo "$as_me:$LINENO: error: Please configure and make the ../win directory first." >&5
 echo "$as_me: error: Please configure and make the ../win directory first." >&2;}
    { (exit 1); exit 1; }; }
