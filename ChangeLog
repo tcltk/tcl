@@ -1,3 +1,8 @@
+2013-01-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixCompat.c: [Bug 3601804]: platformCPUID segmentation
+	fault on Darwin.
+
 2013-01-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/http/http.tcl (http::geturl): [Bug 2911139]: Do not do vwait
