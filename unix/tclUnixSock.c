@@ -180,7 +180,7 @@ static ProcessGlobalValue hostName =
 static void
 InitializeHostName(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     const char *native = NULL;
@@ -249,7 +249,7 @@ InitializeHostName(
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
     *lengthPtr = strlen(native);
     *valuePtr = ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, native, (size_t)(*lengthPtr)+1);
+    memcpy(*valuePtr, native, (*lengthPtr)+1);
 }
 
 /*
@@ -545,7 +545,7 @@ TcpCloseProc(
      * handlers are already deleted in the generic IO channel closing code
      * that called this function, so we do not have to delete them here.
      */
-    
+
     for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
 	if (fds->fd < 0) {
 	    continue;
@@ -554,7 +554,7 @@ TcpCloseProc(
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
 	}
-    
+
     }
     fds = statePtr->fds.next;
     while (fds != NULL) {
@@ -858,7 +858,7 @@ TcpWatchProc(
          */
     	return;
     }
-     
+
     if (statePtr->flags & TCP_ASYNC_CONNECT) {
         /* Async sockets use a FileHandler internally while connecting, so we
          * need to cache this request until the connection has succeeded. */
@@ -974,7 +974,7 @@ CreateClientSocket(
         for (state->myaddr = state->myaddrlist; state->myaddr != NULL;
                 state->myaddr = state->myaddr->ai_next) {
             int reuseaddr;
-            
+
 	    /*
 	     * No need to try combinations of local and remote addresses of
 	     * different families.
@@ -1003,15 +1003,15 @@ CreateClientSocket(
 	     * Set the close-on-exec flag so that the socket will not get
 	     * inherited by child processes.
 	     */
-	    
+
 	    fcntl(state->fds.fd, F_SETFD, FD_CLOEXEC);
-	    
+
 	    /*
 	     * Set kernel space buffering
 	     */
-	    
+
 	    TclSockMinimumBuffers(INT2PTR(state->fds.fd), SOCKET_BUFSIZE);
-    
+
 	    if (async) {
 		status = TclUnixSetBlockingMode(state->fds.fd,
                         TCL_MODE_NONBLOCKING);
@@ -1035,7 +1035,7 @@ CreateClientSocket(
 	     * will set up a file handler on the socket if she is interested
 	     * in being informed when the connect completes.
 	     */
-	    
+
 	    status = connect(state->fds.fd, state->addr->ai_addr,
                     state->addr->ai_addrlen);
 	    if (status < 0 && errno == EINPROGRESS) {
@@ -1305,28 +1305,28 @@ Tcl_OpenTcpServer(
 	    }
 	    continue;
 	}
-	
+
 	/*
 	 * Set the close-on-exec flag so that the socket will not get
 	 * inherited by child processes.
 	 */
-	
+
 	fcntl(sock, F_SETFD, FD_CLOEXEC);
-	
+
 	/*
 	 * Set kernel space buffering
 	 */
-	
+
 	TclSockMinimumBuffers(INT2PTR(sock), SOCKET_BUFSIZE);
-	
+
 	/*
 	 * Set up to reuse server addresses automatically and bind to the
 	 * specified port.
 	 */
-	
+
 	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, 
 		(char *) &reuseaddr, sizeof(reuseaddr));
-	
+
         /*
          * Make sure we use the same port number when opening two server
          * sockets for IPv4 and IPv6 on a random port.
@@ -1355,7 +1355,7 @@ Tcl_OpenTcpServer(
 	    if (howfar < BIND) {
 		howfar = BIND;
 		my_errno = errno;
-	    }       
+	    }
             close(sock);
             continue;
         }
@@ -1385,7 +1385,7 @@ Tcl_OpenTcpServer(
             /*
              * Allocate a new TcpState for this socket.
              */
-            
+
             statePtr = ckalloc(sizeof(TcpState));
             memset(statePtr, 0, sizeof(TcpState));
             statePtr->acceptProc = acceptProc;
@@ -1400,12 +1400,12 @@ Tcl_OpenTcpServer(
         newfds->fd = sock;
         newfds->statePtr = statePtr;
         fds = newfds;
-	
+
         /*
          * Set up the callback mechanism for accepting connections from new
          * clients.
          */
-        
+
         Tcl_CreateFileHandler(sock, TCL_READABLE, TcpAccept, fds);
     }
 
@@ -1464,7 +1464,7 @@ TcpAccept(
     socklen_t len;		/* For accept interface */
     char channelName[SOCK_CHAN_LENGTH];
     char host[NI_MAXHOST], port[NI_MAXSERV];
-    
+
     len = sizeof(addr);
     newsock = accept(fds->fd, &addr.sa, &len);
     if (newsock < 0) {

@@ -1664,7 +1664,6 @@ Tcl_GetString(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_GetStringFromObj
 char *
 Tcl_GetStringFromObj(
     register Tcl_Obj *objPtr,	/* Object whose string rep byte pointer should
@@ -1676,7 +1675,7 @@ Tcl_GetStringFromObj(
     (void) TclGetString(objPtr);
 
     if (lengthPtr != NULL) {
-	*lengthPtr = objPtr->length;
+	*lengthPtr = (objPtr->length < INT_MAX)? objPtr->length: INT_MAX;
     }
     return objPtr->bytes;
 }

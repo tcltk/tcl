@@ -1067,7 +1067,7 @@ Tcl_MemAlloc(
      */
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to alloc %u bytes", size);
+	Tcl_Panic("unable to alloc %" TCL_LL_MODIFIER "u bytes", (Tcl_WideInt)size);
     }
     return result;
 }
@@ -1084,7 +1084,8 @@ Tcl_DbCkalloc(
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to alloc %" TCL_LL_MODIFIER "u bytes, %s line %d",
+		(Tcl_WideInt)size, file, line);
     }
     return result;
 }
@@ -1143,7 +1144,7 @@ Tcl_MemRealloc(
     result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to realloc %u bytes", size);
+	Tcl_Panic("unable to realloc %" TCL_LL_MODIFIER "u bytes", (Tcl_WideInt)size);
     }
     return result;
 }
@@ -1161,7 +1162,8 @@ Tcl_DbCkrealloc(
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to realloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to realloc %" TCL_LL_MODIFIER "u bytes, %s line %d",
+		(Tcl_WideInt)size, file, line);
     }
     return result;
 }

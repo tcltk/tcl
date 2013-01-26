@@ -17,15 +17,6 @@
 #include <dde.h>
 #include <ddeml.h>
 
-#ifndef UNICODE
-#   undef CP_WINUNICODE
-#   define CP_WINUNICODE CP_WINANSI
-#   undef Tcl_WinTCharToUtf
-#   define Tcl_WinTCharToUtf(a,b,c) Tcl_ExternalToUtfDString(NULL,a,b,c)
-#   undef Tcl_WinUtfToTChar
-#   define Tcl_WinUtfToTChar(a,b,c) Tcl_UtfToExternalDString(NULL,a,b,c)
-#endif
-
 #if !defined(NDEBUG)
     /* test POKE server Implemented for debug mode only */
 #   undef CBF_FAIL_POKES
@@ -379,11 +370,10 @@ DdeSetServerName(
 		Tcl_Obj* namePtr;
 		Tcl_DString ds;
 		const char *nameStr;
-		int len;
 
 		Tcl_ListObjIndex(interp, srvPtrPtr[n], 1, &namePtr);
-		nameStr = Tcl_GetStringFromObj(namePtr, &len);
-		Tcl_WinUtfToTChar(nameStr, len, &ds);
+		nameStr = Tcl_GetString(namePtr);
+		Tcl_WinUtfToTChar(nameStr, namePtr->length, &ds);
 		if (_tcscmp(actualName, (TCHAR *)Tcl_DStringValue(&ds)) == 0) {
 		    suffix++;
 		    Tcl_DStringFree(&ds);
@@ -621,7 +611,7 @@ DdeServerProc(
 				/* Transaction-dependent data. */
 {
     Tcl_DString dString;
-    int len;
+    size_t len;
     DWORD dlen;
     TCHAR *utilString;
     Tcl_Obj *ddeObjectPtr;
@@ -738,11 +728,13 @@ DdeServerProc(
 	    if (_tcsicmp(utilString, TCL_DDE_EXECUTE_RESULT) == 0) {
 		if (uFmt == CF_TEXT) {
 		    returnString =
-			    Tcl_GetStringFromObj(convPtr->returnPackagePtr, &len);
+			    Tcl_GetString(convPtr->returnPackagePtr);
+		    len = convPtr->returnPackagePtr->length;
 		} else {
+		    int tmp;
 		    returnString = (char *)
-			    Tcl_GetUnicodeFromObj(convPtr->returnPackagePtr, &len);
-		    len = 2 * len + 1;
+			    Tcl_GetUnicodeFromObj(convPtr->returnPackagePtr, &tmp);
+		    len = 2 * tmp + 1;
 		}
 		ddeReturn = DdeCreateDataHandle(ddeInstance, (BYTE *)returnString,
 			(DWORD) len+1, 0, ddeItem, uFmt, 0);
@@ -758,12 +750,14 @@ DdeServerProc(
 			    TCL_GLOBAL_ONLY);
 		    if (variableObjPtr != NULL) {
 			if (uFmt == CF_TEXT) {
-			    returnString = Tcl_GetStringFromObj(
-				    variableObjPtr, &len);
+			    returnString = Tcl_GetString(
+				    variableObjPtr);
+			    len = variableObjPtr->length;
 			} else {
+			    int tmp;
 			    returnString = (char *) Tcl_GetUnicodeFromObj(
-				    variableObjPtr, &len);
-			    len = 2 * len + 1;
+				    variableObjPtr, &tmp);
+			    len = 2 * tmp + 1;
 			}
 			ddeReturn = DdeCreateDataHandle(ddeInstance,
 				(BYTE *)returnString, (DWORD) len+1, 0, ddeItem,
@@ -1433,11 +1427,7 @@ DdeObjCmd(
     Initialize();
 
     if (firstArg != 1) {
-#ifdef UNICODE
 	serviceName = Tcl_GetUnicodeFromObj(objv[firstArg], &length);
-#else
-	serviceName = Tcl_GetStringFromObj(objv[firstArg], &length);
-#endif
     } else {
 	length = 0;
     }
@@ -1450,11 +1440,7 @@ DdeObjCmd(
     }
 
     if ((index != DDE_SERVERNAME) && (index != DDE_EVAL)) {
-#ifdef UNICODE
 	topicName = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 1], &length);
-#else
-	topicName = Tcl_GetStringFromObj(objv[firstArg + 1], &length);
-#endif
 	if (length == 0) {
 	    topicName = NULL;
 	} else {
@@ -1531,13 +1517,8 @@ DdeObjCmd(
 	break;
     }
     case DDE_REQUEST: {
-#ifdef UNICODE
 	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
-#else
-	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
-		&length);
-#endif
 
 	if (length == 0) {
 	    Tcl_SetObjResult(interp,
@@ -1591,13 +1572,8 @@ DdeObjCmd(
 	break;
     }
     case DDE_POKE: {
-#ifdef UNICODE
 	const TCHAR *itemString = (TCHAR *) Tcl_GetUnicodeFromObj(objv[firstArg + 2],
 		&length);
-#else
-	const TCHAR *itemString = Tcl_GetStringFromObj(objv[firstArg + 2],
-		&length);
-#endif
 	BYTE *dataString;
 
 	if (length == 0) {

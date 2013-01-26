@@ -3749,4 +3749,14 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 #   define Tcl_GlobalEvalObj(interp,objPtr) \
 	    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 #endif /* !TCL_NO_DEPRECATED */
+
+#if defined(USE_TCL_STUBS) && !defined(TCL_COMPAT_8)
+#   undef Tcl_GetString
+#   define Tcl_GetString(obj) \
+	((obj)->bytes?(obj)->bytes:tclStubsPtr->tcl_GetString(obj))
+#   undef Tcl_GetStringFromObj
+#   define Tcl_GetStringFromObj(obj, lengthPtr) \
+	(Tcl_GetString(obj),(*(lengthPtr) = (obj)->length), (obj)->bytes)
+#endif
+
 #endif /* _TCLDECLS */

@@ -928,11 +928,12 @@ TclpMatchInDirectory(
 	     * Match a single file directly.
 	     */
 
-	    int len;
+	    size_t len;
 	    DWORD attr;
 	    WIN32_FILE_ATTRIBUTE_DATA data;
-	    const char *str = Tcl_GetStringFromObj(norm,&len);
+	    const char *str = Tcl_GetString(norm);
 
+	    len = norm->length;
 	    native = Tcl_FSGetNativePath(pathPtr);
 
 	    if (GetFileAttributesEx(native,
@@ -952,7 +953,7 @@ TclpMatchInDirectory(
 	WIN32_FIND_DATA data;
 	const char *dirName;	/* UTF-8 dir name, later with pattern
 				 * appended. */
-	int dirLength;
+	size_t dirLength;
 	int matchSpecialDots;
 	Tcl_DString ds;		/* Native encoding of dir, also used
 				 * temporarily for other things. */
@@ -991,7 +992,8 @@ TclpMatchInDirectory(
 	 */
 
 	Tcl_DStringInit(&dsOrig);
-	dirName = Tcl_GetStringFromObj(fileNamePtr, &dirLength);
+	dirName = Tcl_GetString(fileNamePtr);
+	dirLength = fileNamePtr->length;
 	Tcl_DStringAppend(&dsOrig, dirName, dirLength);
 
 	lastChar = dirName[dirLength -1];
@@ -2820,15 +2822,14 @@ TclpObjNormalizePath(
 	     * Not the end of the string.
 	     */
 
-	    int len;
 	    char *path;
 	    Tcl_Obj *tmpPathPtr;
 
 	    tmpPathPtr = Tcl_NewStringObj(Tcl_DStringValue(&ds),
 		    nextCheckpoint);
 	    Tcl_AppendToObj(tmpPathPtr, lastValidPathEnd, -1);
-	    path = Tcl_GetStringFromObj(tmpPathPtr, &len);
-	    Tcl_SetStringObj(pathPtr, path, len);
+	    path = Tcl_GetString(tmpPathPtr);
+	    Tcl_SetStringObj(pathPtr, path, tmpPathPtr->length);
 	    Tcl_DecrRefCount(tmpPathPtr);
 	} else {
 	    /*
@@ -2911,11 +2912,12 @@ TclWinVolumeRelativeNormalize(
 	 * also on drive C.
 	 */
 
-	int cwdLen;
+	size_t cwdLen;
 	const char *drive =
-		Tcl_GetStringFromObj(useThisCwd, &cwdLen);
+		Tcl_GetString(useThisCwd);
 	char drive_cur = path[0];
 
+	cwdLen = useThisCwd->length;
 	if (drive_cur >= 'a') {
 	    drive_cur -= ('a' - 'A');
 	}
@@ -3048,7 +3050,7 @@ TclNativeCreateNativeRep(
     char *nativePathPtr, *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
-    int len;
+    size_t len;
 
     if (TclFSCwdIsNative()) {
 	/*
@@ -3073,7 +3075,8 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
+    str = Tcl_GetString(validPathPtr);
+    len = validPathPtr->length;
     if (str[0] == '/' && str[1] == '/' && str[2] == '?' && str[3] == '/') {
 	char *p;
 
