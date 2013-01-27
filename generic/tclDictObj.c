@@ -138,6 +138,8 @@ typedef struct ChainEntry {
  */
 
 typedef struct Dict {
+    int numChars;		/* The number of chars in the string. -1 means
+				 * this value has not been calculated. */
     Tcl_HashTable table;	/* Object hash table to store mapping in. */
     ChainEntry *entryChainHead;	/* Linked list of all entries in the
 				 * dictionary. Used for doing traversal of the
@@ -388,6 +390,7 @@ DupDictInternalRep(
      * Initialise other fields.
      */
 
+    newDict->numChars = -1;
     newDict->epoch = 0;
     newDict->chain = NULL;
     newDict->refcount = 1;
@@ -709,6 +712,7 @@ SetDictFromAny(
      */
 
     TclFreeIntRep(objPtr);
+    dict->numChars = -1;
     dict->epoch = 0;
     dict->chain = NULL;
     dict->refcount = 1;
@@ -1397,6 +1401,7 @@ Tcl_NewDictObj(void)
     Tcl_InvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
+    dict->numChars = -1;
     dict->epoch = 0;
     dict->chain = NULL;
     dict->refcount = 1;
@@ -1446,6 +1451,7 @@ Tcl_DbNewDictObj(
     Tcl_InvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
+    dict->numChars = -1;
     dict->epoch = 0;
     dict->chain = NULL;
     dict->refcount = 1;

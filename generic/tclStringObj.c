@@ -483,6 +483,17 @@ Tcl_GetCharLength(
 	return length;
     }
 
+    if ((objPtr->typePtr == &tclDictType)
+           || (objPtr->typePtr == &tclListType)) {
+	List *list = objPtr->internalRep.twoPtrValue.ptr1;
+	if (list->numChars == -1) {
+	    (void) TclGetString(objPtr);
+	    TclNumUtfChars(numChars, objPtr->bytes, objPtr->length);
+	    list->numChars = numChars;
+	}
+	return list->numChars;
+    }
+
     /*
      * OK, need to work with the object as a string.
      */

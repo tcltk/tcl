@@ -2406,6 +2406,8 @@ typedef enum TclEolTranslation {
  */
 
 typedef struct List {
+    int numChars;		/* The number of chars in the string. -1 means
+				 * this value has not been calculated. */
     int refCount;
     int maxElemCount;		/* Total number of element array slots. */
     int elemCount;		/* Current number of list elements. */

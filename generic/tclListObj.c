@@ -109,6 +109,7 @@ NewListIntRep(
 	return NULL;
     }
 
+    listRepPtr->numChars = -1;
     listRepPtr->canonicalFlag = 0;
     listRepPtr->refCount = 0;
     listRepPtr->maxElemCount = objc;
