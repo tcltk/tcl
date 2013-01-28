@@ -304,10 +304,10 @@ TclCompileArraySetCmd(
     }
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar, 1);
+    tokenPtr = TokenAfter(tokenPtr);
     if (!isScalar) {
 	return TCL_ERROR;
     }
-    tokenPtr = TokenAfter(tokenPtr);
 
     /*
      * Special case: literal empty value argument is just an "ensure array"
@@ -333,13 +333,33 @@ TclCompileArraySetCmd(
 	return TCL_OK;
     }
 
+    if (envPtr->procPtr == NULL) {
+	/*
+	 * Right number of arguments, but not compilable as we can't allocate
+	 * (unnamed) local variables to manage the internal iteration.
+	 */
+
+	Tcl_Obj *objPtr = Tcl_NewObj();
+	char *bytes;
+	int length, cmdLit;
+
+	Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
+	bytes = Tcl_GetStringFromObj(objPtr, &length);
+	cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length);
+	TclSetCmdNameObj(interp, envPtr->literalArrayPtr[cmdLit].objPtr,
+		cmdPtr);
+	TclEmitPush(cmdLit, envPtr);
+	TclDecrRefCount(objPtr);
+	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
+	CompileWord(envPtr, tokenPtr, interp, 2);
+	TclEmitInstInt1(INST_INVOKE_STK1, 3,			envPtr);
+	return TCL_OK;
+    }
+
     /*
      * Prepare for the internal foreach.
      */
 
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
     dataVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     iterVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     keyVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
@@ -442,7 +462,7 @@ TclCompileArrayUnsetCmd(
     int simpleVarName, isScalar, localIndex, savedStackDepth;
 
     if (parsePtr->numWords != 2) {
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
