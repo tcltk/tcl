@@ -31,14 +31,23 @@ namespace eval ::tcl::test::brodnik {
 	}
     }
 
-    variable i 0
+    # Tests for values with MSB in the low block
+    variable v 0
+    while {$v < 1<<8} {
+	test brodnik-1.$v {TclMSB correctness} testmsb {
+	    testmsb $v
+	} [expr {int(log2($v))}]
+	incr v
+    }
+
+    variable i 8
     while {$i < 8*$::tcl_platform(pointerSize)} {
 
-	variable j 0
-	while {$j < 30} {
-	    variable v [expr {(1<<$i) + $j}]
+	variable j -1 
+	while {$j < 2} {
+	    set v [expr {(1<<$i) + $j}]
 
-	    test brodnik-1.$i.$j {TclMSB correctness} testmsb {
+	    test brodnik-2.$i.$j {TclMSB correctness} testmsb {
 		testmsb $v
 	    } [expr {int(log2($v))}]
 
