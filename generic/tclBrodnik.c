@@ -94,7 +94,7 @@ TclMSB(
 
 #define SUM(t) (0x7 & ((LEAD(t) >> 5) * P >> 24));
 
-	size_t b, t = B & P * ((Q * (C3 & (LEAD(n) + C4))) >> 27);
+	size_t t = B & P * ((Q * (C3 & (LEAD(n) + C4))) >> 27);
 	int k = 6 * SUM(t);
 
 	t = B & P * (n >> k >> 1 & 0x1f);
