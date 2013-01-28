@@ -412,7 +412,7 @@ TclCompileStringMatchCmd(
 
     if (parsePtr->numWords == 4) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TCL_ERROR;
+	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
 	str = tokenPtr[1].start;
 	length = tokenPtr[1].size;
@@ -421,7 +421,7 @@ TclCompileStringMatchCmd(
 	     * Fail at run time, not in compilation.
 	     */
 
-	    return TCL_ERROR;
+	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
 	nocase = 1;
 	tokenPtr = TokenAfter(tokenPtr);
@@ -538,13 +538,13 @@ TclCompileStringMapCmd(
     Tcl_IncrRefCount(mapObj);
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (Tcl_ListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (len != 2) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
