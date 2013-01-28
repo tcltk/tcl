@@ -472,7 +472,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	struct {long tv_sec;} st_ctim;
 	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64)
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
@@ -2602,13 +2602,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #ifndef TCL_NO_DEPRECATED
-#   undef  Tcl_EvalObj
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-#   undef  Tcl_GlobalEvalObj
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
-
 /*
  * These function have been renamed. The old names are deprecated, but we
  * define these macros for backwards compatibilty.
