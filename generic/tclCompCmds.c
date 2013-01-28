@@ -295,19 +295,12 @@ TclCompileArraySetCmd(
     }
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (envPtr->procPtr == NULL) {
-	Tcl_Token *tokPtr = TokenAfter(tokenPtr);
-
-	if (tokPtr->type != TCL_TOKEN_SIMPLE_WORD || tokPtr[1].size != 0) {
-	    return TCL_ERROR;
-	}
-    }
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar, 1);
+    tokenPtr = TokenAfter(tokenPtr);
     if (!isScalar) {
 	return TCL_ERROR;
     }
-    tokenPtr = TokenAfter(tokenPtr);
 
     /*
      * Special case: literal empty value argument is just an "ensure array"
@@ -333,13 +326,33 @@ TclCompileArraySetCmd(
 	return TCL_OK;
     }
 
+    if (envPtr->procPtr == NULL) {
+	/*
+	 * Right number of arguments, but not compilable as we can't allocate
+	 * (unnamed) local variables to manage the internal iteration.
+	 */
+
+	Tcl_Obj *objPtr = Tcl_NewObj();
+	char *bytes;
+	int length, cmdLit;
+
+	Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
+	bytes = Tcl_GetStringFromObj(objPtr, &length);
+	cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length);
+	TclSetCmdNameObj(interp, envPtr->literalArrayPtr[cmdLit].objPtr,
+		cmdPtr);
+	TclEmitPush(cmdLit, envPtr);
+	TclDecrRefCount(objPtr);
+	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
+	CompileWord(envPtr, tokenPtr, interp, 2);
+	TclEmitInstInt1(INST_INVOKE_STK1, 3,			envPtr);
+	return TCL_OK;
+    }
+
     /*
      * Prepare for the internal foreach.
      */
 
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
     dataVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     iterVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     keyVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
@@ -442,7 +455,7 @@ TclCompileArrayUnsetCmd(
     int simpleVarName, isScalar, localIndex, savedStackDepth;
 
     if (parsePtr->numWords != 2) {
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
@@ -936,7 +949,7 @@ TclCompileDictIncrCmd(
 
 	incrTokenPtr = TokenAfter(keyTokenPtr);
 	if (incrTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TCL_ERROR;
+	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr,cmdPtr, envPtr);
 	}
 	word = incrTokenPtr[1].start;
 	numBytes = incrTokenPtr[1].size;
@@ -946,7 +959,7 @@ TclCompileDictIncrCmd(
 	code = TclGetIntFromObj(NULL, intObj, &incrAmount);
 	TclDecrRefCount(intObj);
 	if (code != TCL_OK) {
-	    return TCL_ERROR;
+	    return TclCompileBasic2Or3ArgCmd(interp, parsePtr,cmdPtr, envPtr);
 	}
     } else {
 	incrAmount = 1;
@@ -959,16 +972,16 @@ TclCompileDictIncrCmd(
      */
 
     if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
+	return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     name = varTokenPtr[1].start;
     nameChars = varTokenPtr[1].size;
     if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
+	return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
     if (dictVarIndex < 0) {
-	return TCL_ERROR;
+	return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -1086,16 +1099,16 @@ TclCompileDictUnsetCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     name = tokenPtr[1].start;
     nameChars = tokenPtr[1].size;
     if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
     if (dictVarIndex < 0) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -1186,7 +1199,7 @@ TclCompileDictCreateCmd(
   nonConstant:
     worker = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     if (worker < 0) {
-	return TCL_ERROR;
+	return TclCompileBasicMin0ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     PushLiteral(envPtr,		"", 0);
@@ -1247,7 +1260,7 @@ TclCompileDictMergeCmd(
 
     workerIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     if (workerIndex < 0) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     infoIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
 
@@ -1373,11 +1386,11 @@ CompileDictEachCmd(
     Tcl_DString buffer;
 
     /*
-     * There must be at least three argument after the command.
+     * There must be three arguments after the command.
      */
 
     if (parsePtr->numWords != 4) {
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     varsTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1385,7 +1398,7 @@ CompileDictEachCmd(
     bodyTokenPtr = TokenAfter(dictTokenPtr);
     if (varsTokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
 	    bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -1397,7 +1410,7 @@ CompileDictEachCmd(
 	collectVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1,
 		envPtr);
 	if (collectVar < 0) {
-	    return TCL_ERROR;
+	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
     }
 
@@ -1411,31 +1424,31 @@ CompileDictEachCmd(
     if (Tcl_SplitList(NULL, Tcl_DStringValue(&buffer), &numVars,
 	    &argv) != TCL_OK) {
 	Tcl_DStringFree(&buffer);
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     Tcl_DStringFree(&buffer);
     if (numVars != 2) {
 	ckfree(argv);
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     nameChars = strlen(argv[0]);
     if (!TclIsLocalScalar(argv[0], nameChars)) {
 	ckfree(argv);
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, envPtr);
 
     nameChars = strlen(argv[1]);
     if (!TclIsLocalScalar(argv[1], nameChars)) {
 	ckfree(argv);
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, envPtr);
     ckfree(argv);
 
     if ((keyVarIndex < 0) || (valueVarIndex < 0)) {
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -1447,7 +1460,7 @@ CompileDictEachCmd(
 
     infoIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     if (infoIndex < 0) {
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -1644,16 +1657,16 @@ TclCompileDictUpdateCmd(
 
     dictVarTokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (dictVarTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     name = dictVarTokenPtr[1].start;
     nameChars = dictVarTokenPtr[1].size;
     if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     dictIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
     if (dictIndex < 0) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -1704,7 +1717,7 @@ TclCompileDictUpdateCmd(
     failedUpdateInfoAssembly:
 	ckfree(duiPtr);
 	TclStackFree(interp, keyTokenPtrs);
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     bodyTokenPtr = tokenPtr;
 
@@ -1802,17 +1815,17 @@ TclCompileDictAppendCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else {
 	register const char *name = tokenPtr[1].start;
 	register int nameChars = tokenPtr[1].size;
 
 	if (!TclIsLocalScalar(name, nameChars)) {
-	    return TCL_ERROR;
+	    return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
 	}
 	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
 	if (dictVarIndex < 0) {
-	    return TCL_ERROR;
+	    return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
 	}
     }
 
@@ -1863,16 +1876,16 @@ TclCompileDictLappendCmd(
     keyTokenPtr = TokenAfter(varTokenPtr);
     valueTokenPtr = TokenAfter(keyTokenPtr);
     if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     name = varTokenPtr[1].start;
     nameChars = varTokenPtr[1].size;
     if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
     if (dictVarIndex < 0) {
-	return TCL_ERROR;
+	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
     CompileWord(envPtr, keyTokenPtr, interp, 3);
     CompileWord(envPtr, valueTokenPtr, interp, 4);
@@ -1916,7 +1929,7 @@ TclCompileDictWithCmd(
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -1928,7 +1941,8 @@ TclCompileDictWithCmd(
     for (ptr=tokenPtr[1].start,end=ptr+tokenPtr[1].size ; ptr!=end ; ptr++) {
 	if (*ptr!=' ' && *ptr!='\t' && *ptr!='\n' && *ptr!='\r') {
 	    if (envPtr->procPtr == NULL) {
-		return TCL_ERROR;
+		return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr,
+			envPtr);
 	    }
 	    bodyIsEmpty = 0;
 	    break;
@@ -3755,7 +3769,9 @@ TclCompileInfoCommandsCmd(
      * We require one compile-time known argument for the case we can compile.
      */
 
-    if (parsePtr->numWords != 2) {
+    if (parsePtr->numWords == 1) {
+	return TclCompileBasic0ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    } else if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -3792,7 +3808,7 @@ TclCompileInfoCommandsCmd(
 
   notCompilable:
     Tcl_DecrRefCount(objPtr);
-    return TCL_ERROR;
+    return TclCompileBasic1ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 }
 
 int
