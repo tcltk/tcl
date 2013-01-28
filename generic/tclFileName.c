@@ -11,6 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclRegexp.h"
 #include "tclFileSystem.h" /* For TclGetPathType() */

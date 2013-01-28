@@ -40,6 +40,7 @@
  * DAMAGE.
  */
 
+#include <sys/stat.h>
 #include "tclInt.h"
 #include <utime.h>
 #include <grp.h>
@@ -244,7 +245,7 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
-#ifdef HAVE_STRUCT_STAT64
+#if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
 /* fts doesn't do stat64 */
 #   define noFtsStat	1
 #elif defined(__APPLE__) && defined(__LP64__) && \
