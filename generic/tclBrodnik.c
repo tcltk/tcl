@@ -53,30 +53,107 @@ TclMSB(
 
     if (M == 64) {
 
-	/* First the formula.  Continue on for the explanation. */
+	/*
+	 * For a byte, consider two masks, C1 = 10000000 selecting just
+	 * the high bit, and C2 = 01111111 selecting all other bits.
+	 * Then for any byte value n, the computation
+	 *	LEAD(n) = C1 & (n | (C2 + (n & C2)))
+	 * will leave all bits but the high bit unset, and will have the
+	 * high bit set iff n!=0.  The whole thing is an 8-bit test
+	 * for being non-zero.  For an 8-byte size_t, each byte can have
+	 * the test applied all at once, with combined masks.
+	 */
 	const size_t C1 = 0x8080808080808080;
 	const size_t C2 = 0x7F7F7F7F7F7F7F7F;
-	const size_t  Q = 0x0000040810204081;
-	const size_t  P = 0x0001010101010101;
-	const size_t  B = 0x007F7E7C78706040;
-	
 #define LEAD(n) (C1 & (n | (C2 + (n & C2))))
-#define SUM(t) (0x7 & (int)((LEAD(t) >> 7) * P >> 48));
 
-	size_t t = B & P * ((Q * LEAD(n)) >> 57);
+	/*
+	 * To shift a bit to a new place, multiplication by 2^k will do.
+	 * To shift the top 7 bits produced by the LEAD test to the high
+	 * 7 bits of the entire size_t, multiply by the right sum of
+	 * powers of 2.  In this case
+	 * Q = 1 + 2^7 + 2^14 + 2^21 + 2^28 + 2^35 + 2^42
+	 * Then shift those 7 bits down to the low 7 bits of the size_t.
+	 * The key to making this work is that none of the shifted bits
+	 * collide with each other in the top 7-bit destination.
+	 * Note that we lose the bit that indicates whether the low byte
+	 * is non-zero.  That doesn't matter because we require the original
+	 * value n to be non-zero, so if all other bytes signal to be zero,
+	 * we know the low byte is non-zero, and it one of the other bytes
+	 * signals non-zero, we just don't care what the low byte is.
+	 */
+	const size_t  Q = 0x0000040810204081;
+
+	/*
+	 * To place a copy of a 7-bit value in each of 7 bytes in
+	 * a size_t, just multply by the right value.  In this case
+	 *  P = 0x00 01 01 01 01 01 01 01
+	 * We don't put a copy in the high byte since analysis of the
+	 * remaining steps in the algorithm indicates we do no need it.
+	 */
+	const size_t  P = 0x0001010101010101;
+
+	/*
+	 * With 7 copies of the LEAD value, we can now apply 7 masks
+	 * to it in a single step by an & against the right value.
+	 * B =	00000000 01111111 01111110 01111100
+	 *	01111000 01110000 01100000 01000000
+	 * The higher the MSB of the copied value is, the more of the
+	 * B-masked bytes stored in t will be non-zero.
+	 */
+	const size_t  B = 0x007F7E7C78706040;
+	size_t t = B & P * (LEAD(n) * Q >> 57);
+
+	/*
+	 * We want to get a count of the non-zero bytes stored in t.
+	 * First use LEAD(t) to create a set of high bits signaling
+	 * non-zero values as before.  Call this value
+	 * X = x6*2^55 +x5*2^47 +x4*2^39 +x3*2^31 +x2*2^23 +x1*2^15 +x0*2^7
+	 * Then notice what multiplication by.
+	 * P =    2^48 +   2^40 +   2^32 +   2^24 +   2^16 +   2^8 + 1
+	 * P*X = x0*2^7 + (x0 + x1)*2^15 + ...
+	 *       ... + (x0 + x1 + x2 + x3 + x4 + x5 + x6) * 2^55 + ...
+	 *	 ... + (x5 + x6)*2^95 + x6*2^103
+	 * The high terms of this product are going to overflow the size_t
+	 * and get lost, but we don't care about them.  What we care is that
+	 * the 2^55 term is exactly the sum we seek.  We shift the product
+	 * down by 55 bits and then mask away all but the bottom 3 bits
+	 * (Max sum can be 7) we get exactly the count of non-zero B-masked
+	 * bytes.  By design of the mask, this count is the index of the
+	 * MSB of the LEAD value.  It indicates which byte of the original
+	 * value contains the MSB of the original value.
+	 */
+#define SUM(t) (0x7 & (int)(LEAD(t) * P >> 55));
+
+	/*
+	 * Multiply by 8 to get the number of bits to shift to place
+	 * that MSB-containing byte in the low byte.
+	 */
 	int k = 8 * SUM(t);
 
-	t = B & P * (n >> k >> 1 & 0x7f);
+	/*
+	 * Shift the MSB byte to the low byte.  Then shift one more byte.
+	 * Since we know the MSB byte is non-zero we only need to compute
+	 * the MSB of the top 7 bits.  If all top 7 bits are zero, we know
+	 * the bottom bit is the 1 and the correct index is 0.  Compute the
+	 * MSB of that value by the same steps we did before.
+	 */
+	t = B & P * (n >> k >> 1);
+
+	/*
+	 * Add the index of the MSB of the byte to the index of the low
+	 * bit of that byte computed before to get the final answer.
+	 */
 	return k + SUM(t);
 
-	/* Total operations: 36
-	 * 11 bit-ands, 6 multiplies, 4 adds, 7 rightshifts,
+	/* Total operations: 33
+	 * 10 bit-ands, 6 multiplies, 4 adds, 5 rightshifts,
 	 * 3 assignments, 3 bit-ors, 2 typecasts.
 	 *
 	 * The whole task is one direct computation.
 	 * No branches. No loops.
 	 *
-	 * 36 operations cannot beat one instruction, so assembly
+	 * 33 operations cannot beat one instruction, so assembly
 	 * wins and should be used wherever possible, but this isn't bad.
 	 */
 
@@ -92,153 +169,22 @@ TclMSB(
 	const size_t P = 0x01041041;
 	const size_t B = 0x1F79C610;
 
-#define SUM(t) (0x7 & ((LEAD(t) >> 5) * P >> 24));
+#define SUM(t) (0x7 & (LEAD(t) * P >> 29));
 
-	size_t t = B & P * ((Q * (C3 & (LEAD(n) + C4))) >> 27);
+	size_t t = B & P * ((C3 & (LEAD(n) + C4)) * Q >> 27);
 	int k = 6 * SUM(t);
 
-	t = B & P * (n >> k >> 1 & 0x1f);
+	t = B & P * (n >> k >> 1);
 	return k + SUM(t);
 
-	/* Total operations: 36
-	 * 12 bit-ands, 6 multiplies, 5 adds, 7 rightshifts,
+	/* Total operations: 33
+	 * 11 bit-ands, 6 multiplies, 5 adds, 5 rightshifts,
 	 * 3 assignments, 3 bit-ors.
 	 */
 
 #undef SUM
 #undef LEAD
 
-
-#if 0
-	/* 
-	 * C1 =	10000000| 10000000| 10000000| 10000000|
-	 *	10000000| 10000000| 10000000| 10000000
-	 */
-
-	/* 
-	 *  1 +2^7 +2^14 +2^21 +2^28 +2^35 +2^42
-	 *  Q =	00000000| 00000000| 00000100| 00001000|
-	 *	00010000| 00100000| 01000000| 10000001
-	 */
-
-	/*
-	 *  P =	00000000| 00000001| 00000001| 00000001|
-	 *	00000001| 00000001| 00000001| 00000001
-	 */
-
-	/*
-	 *  B =	00000000| 01111111| 01111110| 01111100|
-	 *	01111000| 01110000| 01100000| 01000000
-	 */
-	/*
-	 * Let S = ceil(1 + sqrt(M)), that is, S = 9.
-	 * Let T = ceil(M/S), that is, T = 8.
-	 * Masks to view a size_t as T blocks of up to S bits each.
-	 * Whitespace separates blocks. Pipes separate bytes.
-	 * C1 =	1 1000000|00 100000|000 10000|0000
-	 *	1000|00000 100|000000 10|0000000 1|00000000
-	 * C2 =	0 0111111|11 011111|111 01111|1111
-	 *	0111|11111 011|111111 01|1111111 0|11111111
-	 */
-	const size_t C1 = 0xC020100804020100;
-	const size_t C2 = 0x3FDFEFF7FBFDFEFF;	/* Complement of C1 */
-
-	/*
-	 * Compute one lead bit per block that is set iff the block
-	 * is non-zero.
-	 */
-	size_t lead = C1 & (n | (C2 + (n & C2)));
-
-	/*
-	 * Tricky multiply and shift to put all the lead bits 
-	 * together as one T-bit value held in block 0.
-	 *
-	 * Multiply by sum 2^(i*(s-1)) for i=0 to T-2
-	 * = Q = 1 + 2^8 + 2^16 + 2^24 + 2^32 + 2^40 + 2^48
-	 * to move all C1 bits into the leftmost T bits.
-	 * Then shift right by M-T to set them in the rightmost T bits.
-	 */
-	const size_t Q = 0x0001010101010101;
-	size_t compress = (Q * lead) >> 56 /* M - T */;
-
-	/*
-	 * Now compute the MSB of T-bit value compress to determine
-	 * which block holds the MSB of M-bit value n.
-	 * Make a copy of compress in each full block by another tricky
-	 * multiply.
-	 * P =	0 0000000|01 000000|001 00000|0001
-	 *	0000|00001 000|000001 00|0000001 0|00000001
-	 */
-	const size_t P = 0x0040201008040201; /* C1 >> T (mostly) */
-	size_t copies = P * compress;
-
-	/*
-	 * With T-1 copies we can filter on T-1 masks at once.
-	 * In block i (0 <= i < T-1), we compute whether the
-	 * MSB of compress is >= T-1-i.  Mask away all but the
-	 * top i+1 bits and apply the same indicator computation
-	 * that produced lead.  Filter mask:
-	 * B =	0 0111111|10 011111|100 01111|1000
-	 *	0111|10000 011|100000 01|1000000 0|10000000
-	 */
-	const size_t B = 0x3f9f8f8783818080;
-	size_t filtered = B & copies;
-	size_t tally = C1 & (filtered | (C2 + (filtered & C2)));
-
-	/* 
-	 * Now the sum of all the tally bits is the index
-	 * of the MSB of compress.  Use another tricky multiply
-	 * and shift to compute it in one go.  How this works:
-	 * The multiply by P is a multiply by a sum of bits, each
-	 * causing a left shift.  Written out like a long multiplication
-	 * by hand, we get several columns to sum, and they are separated
-	 * by design so there are no carries.  This means one block of
-	 * the result of the multiply is the sum we seek, and we just
-	 * shift it into place and mask it.
-	 */
-	int sum = 0x7 /* T - 1 */ & (int)
-		(((tally >> 8 /* T */) * P) >> 54 /* S*(T-2) */);
-
-	/*
-	 * Compute corresponding bit shift in n to get the block holding
-	 * MSB into block 0.  Note the one extra bit of shift so we put
-	 * the top T bits out of the S in the block into the bottom T bits.
-	 * This is required since we are only equipped to compute MSB over
-	 * T bits, not S (without assuming compute registers larger than
-	 * size_t).  We can handle the corner case where we leave ourselves
-	 * seeking the MSB of 0.
-	 */
-	int k = 9 /* S */ * sum;
-
-	/* Shift and mask to do so. */
-	/* Trickiness here in that we must split into two shifts.
-	 * Otherwise we might attempt a single shift of 64-bits and
-	 * at least the C compilers I use, if not the language itself
-	 * seems to define a right shift of a 64-bit size_t by 64-bits
-	 * as a no-op, and not as a set to zero as this algorithm expects
-	 * and as the concatentation of two shift produces.
-	 */
-	size_t block = ((n >> k) >> 1) & 0xff /* (2^T) - 1 */;
-
-	/*
-	 * Now compute MSB of the T-bit value in block 0.
-	 * Do it just like we did before.
-	 */
-
-	copies = P * block;
-	filtered = B & copies;
-	tally = C1 & (filtered | (C2 + (filtered & C2)));
-	sum = 0x7 & (int) (((tally >> 8) * P) >> 54);
-
-	/*
-	 * We want to add to k the extra bit of shift we didn't count
-	 * before, but only when (block != 0).
-	 * When (block == 0) our extra shift went a step too far, and
-	 * we have to take it back.  In that case sum==0 so adding it
-	 * does no harm.  
-	 */
-	return k + (block != 0) + sum;
-#endif
     } else {
 	/* Simple and slow fallback for cases we haven't done yet. */
 	int k = 0;
