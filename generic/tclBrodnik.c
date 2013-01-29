@@ -11,6 +11,15 @@
 
 #include "tclInt.h"
 
+#if defined(HAVE_INTRIN_H)
+#    include <intrin.h>
+#ifdef _WIN64
+#    pragma intrinsic(_BitScanReverse64)
+#else
+#    pragma intrinsic(_BitScanReverse)
+#endif
+#endif
+
 /*
  *----------------------------------------------------------------------
  *
@@ -53,6 +62,19 @@ TclMSB(
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4)))
 	return M - 1 - __builtin_clzll(n);
 #endif
+
+#if defined(_MSC_VER) && _MSCVER >= 1300
+	unsigned long result;
+
+#ifdef _WIN64
+	(void) _BitScanReverse64(&result, n)
+#else
+	(void) _BitScanReverse(&result, n)
+#endif
+
+	return result;
+#endif
+
 
     if (M == 64) {
 
