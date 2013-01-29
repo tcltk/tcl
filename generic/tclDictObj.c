@@ -401,9 +401,12 @@ FreeDictInternalRep(
     if (dict->refcount <= 0) {
 	DeleteDict(dict);
     }
+	if (dictPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(dictPtr->internalRep.twoPtrValue.ptr2);
+	    dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 
     dictPtr->internalRep.twoPtrValue.ptr1 = NULL;	/* Belt and braces! */
-    dictPtr->internalRep.twoPtrValue.ptr2 = NULL;	/* Belt and braces! */
     dictPtr->typePtr = NULL;
 }
 

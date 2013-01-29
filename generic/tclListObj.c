@@ -1631,8 +1631,12 @@ FreeListInternalRep(
 	ckfree((char *) listRepPtr);
     }
 
+	if (listPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(listPtr->internalRep.twoPtrValue.ptr2);
+	    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
+
     listPtr->internalRep.twoPtrValue.ptr1 = NULL;
-    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
     listPtr->typePtr = NULL;
 }
 

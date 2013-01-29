@@ -400,6 +400,26 @@ Tcl_GetCharLength(
 {
     String *stringPtr;
 
+    if ((objPtr->typePtr == &tclByteArrayType) ||
+	    (objPtr->typePtr == &tclDictType) ||
+	    (objPtr->typePtr == &tclListType)) {
+	/* Try to convert object to String type, but remember old intRep. */
+	int length;
+	Tcl_ObjType *prevtype =  objPtr->typePtr;
+	void *prevdata = objPtr->internalRep.twoPtrValue.ptr1;
+
+	objPtr->internalRep.twoPtrValue.ptr1 = objPtr->internalRep.twoPtrValue.ptr2;
+	objPtr->typePtr = objPtr->internalRep.twoPtrValue.ptr1 ? &tclStringType: NULL;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	/* Now calculate the length. */
+	length = Tcl_GetCharLength(objPtr);
+	/* Convert obj back to old type, but keep stringRep in ptr2 */
+	objPtr->typePtr = prevtype;
+	objPtr->internalRep.twoPtrValue.ptr2 = objPtr->internalRep.twoPtrValue.ptr1;
+	objPtr->internalRep.twoPtrValue.ptr1 = prevdata;
+	return length;
+    }
+
     SetStringFromAny(NULL, objPtr);
     stringPtr = GET_STRING(objPtr);
 

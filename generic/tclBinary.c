@@ -442,6 +442,10 @@ static void
 FreeByteArrayInternalRep(
     Tcl_Obj *objPtr)		/* Object with internal rep to free. */
 {
+	if (objPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(objPtr->internalRep.twoPtrValue.ptr2);
+	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
     ckfree((char *) GET_BYTEARRAY(objPtr));
     objPtr->typePtr = NULL;
 }
