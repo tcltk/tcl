@@ -79,7 +79,7 @@ TclMSB(
 	 * Note that we lose the bit that indicates whether the low byte
 	 * is non-zero.  That doesn't matter because we require the original
 	 * value n to be non-zero, so if all other bytes signal to be zero,
-	 * we know the low byte is non-zero, and it one of the other bytes
+	 * we know the low byte is non-zero, and if one of the other bytes
 	 * signals non-zero, we just don't care what the low byte is.
 	 */
 	const size_t  Q = 0x0000040810204081;
@@ -89,7 +89,7 @@ TclMSB(
 	 * a size_t, just multply by the right value.  In this case
 	 *  P = 0x00 01 01 01 01 01 01 01
 	 * We don't put a copy in the high byte since analysis of the
-	 * remaining steps in the algorithm indicates we do no need it.
+	 * remaining steps in the algorithm indicates we do not need it.
 	 */
 	const size_t  P = 0x0001010101010101;
 
@@ -109,8 +109,9 @@ TclMSB(
 	 * First use LEAD(t) to create a set of high bits signaling
 	 * non-zero values as before.  Call this value
 	 * X = x6*2^55 +x5*2^47 +x4*2^39 +x3*2^31 +x2*2^23 +x1*2^15 +x0*2^7
-	 * Then notice what multiplication by.
+	 * Then notice what multiplication by
 	 * P =    2^48 +   2^40 +   2^32 +   2^24 +   2^16 +   2^8 + 1
+	 * produces:
 	 * P*X = x0*2^7 + (x0 + x1)*2^15 + ...
 	 *       ... + (x0 + x1 + x2 + x3 + x4 + x5 + x6) * 2^55 + ...
 	 *	 ... + (x5 + x6)*2^95 + x6*2^103
@@ -132,7 +133,7 @@ TclMSB(
 	int k = 8 * SUM(t);
 
 	/*
-	 * Shift the MSB byte to the low byte.  Then shift one more byte.
+	 * Shift the MSB byte to the low byte.  Then shift one more bit.
 	 * Since we know the MSB byte is non-zero we only need to compute
 	 * the MSB of the top 7 bits.  If all top 7 bits are zero, we know
 	 * the bottom bit is the 1 and the correct index is 0.  Compute the
