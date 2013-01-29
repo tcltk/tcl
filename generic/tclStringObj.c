@@ -128,9 +128,11 @@ typedef struct String {
 	(String *) attemptckrealloc((char *) ptr, \
 		(unsigned) STRING_SIZE(STRING_UALLOC(numChars)) )
 #define GET_STRING(objPtr) \
-	((String *) (objPtr)->internalRep.otherValuePtr)
-#define SET_STRING(objPtr, stringPtr) \
-	((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
+	((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
+#define SET_STRING(objPtr, stringPtr) do { \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = NULL; \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr); \
+    } while(0)
 
 /*
  * TCL STRING GROWTH ALGORITHM

@@ -124,9 +124,11 @@ typedef struct ByteArray {
 #define BYTEARRAY_SIZE(len) \
 		((unsigned) (sizeof(ByteArray) - 4 + (len)))
 #define GET_BYTEARRAY(objPtr) \
-		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
-#define SET_BYTEARRAY(objPtr, baPtr) \
-		(objPtr)->internalRep.otherValuePtr = (VOID *) (baPtr)
+		((ByteArray *) (objPtr)->internalRep.twoPtrValue.ptr1)
+#define SET_BYTEARRAY(objPtr, baPtr) do { \
+		(objPtr)->internalRep.twoPtrValue.ptr2 = NULL; \
+		(objPtr)->internalRep.twoPtrValue.ptr1 = (VOID *) (baPtr); \
+	} while(0)
 
 
 /*

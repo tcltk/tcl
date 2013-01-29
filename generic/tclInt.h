@@ -369,7 +369,7 @@ struct NamespacePathEntry {
 
 /*
  * The data cached in an ensemble subcommand's Tcl_Obj rep (reference in
- * otherValuePtr field). This structure is not shared between Tcl_Objs
+ * twoPtrValue.ptr1 field). This structure is not shared between Tcl_Objs
  * referring to the same subcommand, even where one is a duplicate of another.
  */
 
@@ -3539,12 +3539,12 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 	} \
 	(objPtr) = tclFreeObjList; \
 	tclFreeObjList = (Tcl_Obj *) \
-		tclFreeObjList->internalRep.otherValuePtr; \
+		tclFreeObjList->internalRep.twoPtrValue.ptr1; \
 	Tcl_MutexUnlock(&tclObjMutex)
 
 #  define TclFreeObjStorage(objPtr) \
 	Tcl_MutexLock(&tclObjMutex); \
-	(objPtr)->internalRep.otherValuePtr = (void *) tclFreeObjList; \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) tclFreeObjList; \
 	tclFreeObjList = (objPtr); \
 	Tcl_MutexUnlock(&tclObjMutex)
 #endif

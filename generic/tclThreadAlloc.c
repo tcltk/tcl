@@ -556,7 +556,8 @@ TclThreadAllocObj(void)
 	    }
 	    while (--numMove >= 0) {
 		objPtr = &newObjsPtr[numMove];
-		objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
+		objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		cachePtr->firstObjPtr = objPtr;
 	    }
 	}
@@ -567,7 +568,7 @@ TclThreadAllocObj(void)
      */
 
     objPtr = cachePtr->firstObjPtr;
-    cachePtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
+    cachePtr->firstObjPtr = objPtr->internalRep.twoPtrValue.ptr1;
     --cachePtr->numObjects;
     return objPtr;
 }
@@ -602,7 +603,8 @@ TclThreadFreeObj(
      * Get this thread's list and push on the free Tcl_Obj.
      */
 
-    objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     cachePtr->firstObjPtr = objPtr;
     ++cachePtr->numObjects;
 
@@ -703,16 +705,17 @@ MoveObjs(
      */
 
     while (--numMove) {
-	objPtr = objPtr->internalRep.otherValuePtr;
+	objPtr = objPtr->internalRep.twoPtrValue.ptr1;
     }
-    fromPtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
+    fromPtr->firstObjPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * Move all objects as a block - they are already linked to each other, we
      * just have to update the first and last.
      */
 
-    objPtr->internalRep.otherValuePtr = toPtr->firstObjPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = toPtr->firstObjPtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     toPtr->firstObjPtr = fromFirstObjPtr;
 }
 

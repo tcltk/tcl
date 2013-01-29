@@ -676,14 +676,15 @@ FreeByteCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
     register ByteCode *codePtr = (ByteCode *)
-	    objPtr->internalRep.otherValuePtr;
+	    objPtr->internalRep.twoPtrValue.ptr1;
 
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
+    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 }
 
 /*
@@ -700,7 +701,7 @@ FreeByteCodeInternalRep(
  *
  * Side effects:
  *	Frees objPtr's bytecode internal representation and sets its type and
- *	objPtr->internalRep.otherValuePtr NULL. Also releases its literals and
+ *	objPtr->internalRep.twoPtrValue.ptr1 NULL. Also releases its literals and
  *	frees its auxiliary data items.
  *
  *----------------------------------------------------------------------
@@ -2223,7 +2224,8 @@ TclInitByteCodeObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.otherValuePtr = (void *) codePtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = (void *) codePtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclByteCodeType;
 
     /*
@@ -3609,7 +3611,7 @@ Tcl_Obj *
 TclDisassembleByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;

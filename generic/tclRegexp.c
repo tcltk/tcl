@@ -578,7 +578,7 @@ Tcl_GetRegExpFromObj(
      * TclRegexp* when the type is tclRegexpType.
      */
 
-    regexpPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
+    regexpPtr = (TclRegexp *) objPtr->internalRep.twoPtrValue.ptr1;
 
     if ((objPtr->typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
 	pattern = TclGetStringFromObj(objPtr, &length);
@@ -601,7 +601,8 @@ Tcl_GetRegExpFromObj(
 	 */
 
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep.otherValuePtr = (void *) regexpPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = (void *) regexpPtr;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	objPtr->typePtr = &tclRegexpType;
     }
     return (Tcl_RegExp) regexpPtr;
@@ -747,7 +748,7 @@ static void
 FreeRegexpInternalRep(
     Tcl_Obj *objPtr)		/* Regexp object with internal rep to free. */
 {
-    TclRegexp *regexpRepPtr = (TclRegexp *) objPtr->internalRep.otherValuePtr;
+    TclRegexp *regexpRepPtr = (TclRegexp *) objPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * If this is the last reference to the regexp, free it.
@@ -781,10 +782,11 @@ DupRegexpInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    TclRegexp *regexpPtr = (TclRegexp *) srcPtr->internalRep.otherValuePtr;
+    TclRegexp *regexpPtr = (TclRegexp *) srcPtr->internalRep.twoPtrValue.ptr1;
 
     regexpPtr->refCount++;
-    copyPtr->internalRep.otherValuePtr = srcPtr->internalRep.otherValuePtr;
+    copyPtr->internalRep.twoPtrValue.ptr1 = srcPtr->internalRep.twoPtrValue.ptr1;
+    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &tclRegexpType;
 }
 

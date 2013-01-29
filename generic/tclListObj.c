@@ -624,10 +624,12 @@ Tcl_ListObjAppendElement(
 	listRepPtr->refCount++;
 	oldListRepPtr->refCount--;
 	listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
     } else if (newSize) {
 	listRepPtr = (List *) ckrealloc((char *)listRepPtr, (size_t)newSize);
 	listRepPtr->maxElemCount = newMax;
 	listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
     }
 
     /*
@@ -918,6 +920,7 @@ Tcl_ListObjReplace(
 	}
 
 	listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	listRepPtr->refCount++;
 
 	elemPtrs = &listRepPtr->elements;
@@ -1568,6 +1571,7 @@ TclListObjSetElement(
 	listRepPtr->refCount++;
 	listRepPtr->elemCount = elemCount;
 	listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	oldListRepPtr->refCount--;
     }
 

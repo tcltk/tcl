@@ -1272,7 +1272,8 @@ TclAllocateFreeObjects(void)
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
     for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
-	objPtr->internalRep.otherValuePtr = (void *) prevPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = (void *) prevPtr;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	prevPtr = objPtr;
 	objPtr++;
     }
@@ -4288,7 +4289,7 @@ SetCmdNameFromAny(
 
     if (cmdPtr) {
 	cmdPtr->refCount++;
-	resPtr = (ResolvedCmdName *) objPtr->internalRep.otherValuePtr;
+	resPtr = (ResolvedCmdName *) objPtr->internalRep.twoPtrValue.ptr1;
 	if ((objPtr->typePtr == &tclCmdNameType)
 		&& resPtr && (resPtr->refCount == 1)) {
 	    /*

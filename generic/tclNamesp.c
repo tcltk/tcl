@@ -4646,6 +4646,7 @@ DupNsNameInternalRep(
 	    srcPtr->internalRep.twoPtrValue.ptr1;
 
     copyPtr->internalRep.twoPtrValue.ptr1 = resNamePtr;
+    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     resNamePtr->refCount++;
     copyPtr->typePtr = &nsNameType;
 }
@@ -4722,6 +4723,7 @@ SetNsNameFromAny(
     resNamePtr->refCount = 1;
     TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = resNamePtr;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &nsNameType;
     return TCL_OK;
 }
@@ -6066,7 +6068,7 @@ NsEnsembleImplementationCmd(
 	 */
 
 	if (objv[1]->typePtr == &tclEnsembleCmdType) {
-	    EnsembleCmdRep *ensembleCmd = objv[1]->internalRep.otherValuePtr;
+	    EnsembleCmdRep *ensembleCmd = objv[1]->internalRep.twoPtrValue.ptr1;
 
 	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
 		    ensembleCmd->epoch == ensemblePtr->epoch &&
@@ -6412,7 +6414,7 @@ MakeCachedEnsembleCommand(
     int length;
 
     if (objPtr->typePtr == &tclEnsembleCmdType) {
-	ensembleCmd = objPtr->internalRep.otherValuePtr;
+	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
 	Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
 	ensembleCmd->nsPtr->refCount--;
 	if ((ensembleCmd->nsPtr->refCount == 0)
@@ -6428,7 +6430,8 @@ MakeCachedEnsembleCommand(
 
 	TclFreeIntRep(objPtr);
 	ensembleCmd = (EnsembleCmdRep *) ckalloc(sizeof(EnsembleCmdRep));
-	objPtr->internalRep.otherValuePtr = ensembleCmd;
+	objPtr->internalRep.twoPtrValue.ptr1 = ensembleCmd;
+	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	objPtr->typePtr = &tclEnsembleCmdType;
     }
 
@@ -6820,7 +6823,7 @@ static void
 FreeEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.otherValuePtr;
+    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
 
     Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
     ckfree(ensembleCmd->fullSubcmdName);
@@ -6855,13 +6858,14 @@ DupEnsembleCmdRep(
     Tcl_Obj *objPtr,
     Tcl_Obj *copyPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.otherValuePtr;
+    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
     EnsembleCmdRep *ensembleCopy = (EnsembleCmdRep *)
 	    ckalloc(sizeof(EnsembleCmdRep));
     int length = strlen(ensembleCmd->fullSubcmdName);
 
     copyPtr->typePtr = &tclEnsembleCmdType;
-    copyPtr->internalRep.otherValuePtr = ensembleCopy;
+    copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
+    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     ensembleCopy->nsPtr = ensembleCmd->nsPtr;
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
@@ -6894,7 +6898,7 @@ static void
 StringOfEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.otherValuePtr;
+    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
     int length = strlen(ensembleCmd->fullSubcmdName);
 
     objPtr->length = length;
