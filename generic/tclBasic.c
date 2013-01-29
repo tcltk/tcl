@@ -135,7 +135,6 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
-static Tcl_NRPostProc	NRRunObjProc;
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
@@ -4293,14 +4292,11 @@ TclNREvalObjv(
     cmdPtr->refCount++;
 
     /*
-     * Find the objProc to call: nreProc if available, objProc otherwise. Push
-     * a callback to do the actual running.
+     * Find the objProc to call: nreProc if available, objProc otherwise. 
      */
 
     if (cmdPtr->nreProc) {
-        TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
-                INT2PTR(objc), (ClientData) objv, NULL);
-        return TCL_OK;
+	return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
     }
@@ -4382,22 +4378,6 @@ NRCommand(
 
     return result;
 }
-
-static int
-NRRunObjProc(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    /* OPT: do not call? */
-
-    Command* cmdPtr = data[0];
-    int objc = PTR2INT(data[1]);
-    Tcl_Obj **objv = data[2];
-
-    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -9007,7 +8987,6 @@ TclNRCoroutineObjCmd(
     corPtr->running.varFramePtr = iPtr->rootFramePtr;
     corPtr->running.cmdFramePtr = NULL;
     corPtr->running.lineLABCPtr = corPtr->lineLABCPtr;
-    corPtr->stackLevel = NULL;
     corPtr->auxNumLevels = 0;
 
     /*
@@ -9027,11 +9006,15 @@ TclNRCoroutineObjCmd(
     TclNRAddCallback(interp, NRCoroutineExitCallback, corPtr,
 	    NULL, NULL, NULL);
 
+    /* Mark the coro as 'not suspended' while scheduling the command */
+    corPtr->stackLevel = INT2PTR(1);
+
     /* insure that the command is looked up in the correct namespace */
     iPtr->lookupNsPtr = lookupNsPtr;
     Tcl_NREvalObj(interp, Tcl_NewListObj(objc-2, objv+2), 0);
     iPtr->numLevels--;
 
+    corPtr->stackLevel = NULL;
     SAVE_CONTEXT(corPtr->running);
     RESTORE_CONTEXT(corPtr->caller);
     iPtr->execEnvPtr = corPtr->callerEEPtr;

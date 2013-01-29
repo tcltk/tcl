@@ -2393,6 +2393,7 @@ TEBCresume(
 		    NULL);
 	    goto gotError;
 	}
+	NRE_ASSERT(!COR_IS_SUSPENDED(corPtr));
 
 #ifdef TCL_COMPILE_DEBUG
 	TRACE_WITH_OBJ(("yield, result="), iPtr->objResultPtr);
