@@ -43,13 +43,16 @@ int
 TclMSB(
     size_t n)
 {
+    const int M = CHAR_BIT * sizeof(size_t);	/* Bits in a size_t */
+
     /*
      * TODO: This function corresponds to a processor instruction on
      * many platforms.  Add here the various platform and compiler
      * specific incantations to invoke those assembly instructions.
      */
-
-    const int M = CHAR_BIT * sizeof(size_t);	/* Bits in a size_t */
+#if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4)))
+	return M - 1 - __builtin_clzll(n);
+#endif
 
     if (M == 64) {
 
