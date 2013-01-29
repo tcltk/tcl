@@ -1,3 +1,21 @@
+2013-01-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileArraySetCmd)
+	(TclCompileArrayUnsetCmd, TclCompileDictAppendCmd)
+	(TclCompileDictCreateCmd, CompileDictEachCmd, TclCompileDictIncrCmd)
+	(TclCompileDictLappendCmd, TclCompileDictMergeCmd)
+	(TclCompileDictUnsetCmd, TclCompileDictUpdateCmd)
+	(TclCompileDictWithCmd, TclCompileInfoCommandsCmd):
+	* generic/tclCompCmdsSZ.c (TclCompileStringMatchCmd)
+	(TclCompileStringMapCmd): Improve the code generation in cases where
+	full compilation is impossible but a full ensemble invoke is provably
+	not necessary.
+
+2013-01-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixCompat.c: [Bug 3601804]: platformCPUID segmentation
+	fault on Darwin.
+
 2013-01-23  Donal K. Fellows  <dkf@users.sf.net>
 
 	* library/http/http.tcl (http::geturl): [Bug 2911139]: Do not do vwait

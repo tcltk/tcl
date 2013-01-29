@@ -3790,9 +3790,6 @@ TclNREvalObjv(
     }
     cmdPtrPtr = (Command **) &(callbackPtr->data[0]);
 
-    callbackPtr->data[2] = INT2PTR(objc);
-    callbackPtr->data[3] = (ClientData) objv;
-
     iPtr->numLevels++;
     result = TclInterpReady(interp);
 
