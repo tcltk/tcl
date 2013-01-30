@@ -1096,8 +1096,8 @@ test parse-21.0 {Bug 1884496} testevent {
     proc ::p {} {string first s $::script}
     testevent queue a head $::script
     update
+    testevent delete a
 } {}
-
 
 cleanupTests
 }
