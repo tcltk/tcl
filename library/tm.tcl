@@ -58,7 +58,7 @@ namespace eval ::tcl::tm {
     # Export the public API
 
     namespace export path
-    namespace ensemble create -command path -subcommand {add remove list}
+    namespace ensemble create -command path -subcommands {add remove list}
 }
 
 # ::tcl::tm::path implementations --
@@ -273,10 +273,8 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    # the regular package search to complete the
 		    # processing.
 
-		    if {
-			($pkgname eq $name) &&
-			[package vsatisfies $pkgversion {*}$args]
-		    } then {
+		    if {($pkgname eq $name)
+			    && [package vsatisfies $pkgversion {*}$args]} {
 			set satisfied 1
 			# We do not abort the loop, and keep adding
 			# provide scripts for every candidate in the
@@ -359,7 +357,7 @@ proc ::tcl::tm::Defaults {} {
 #	Calls 'path add' to paths to the list of module search paths.
 
 proc ::tcl::tm::roots {paths} {
-    foreach {major minor} [split [info tclversion] .] break
+    lassign [split [package present Tcl] .] major minor
     foreach pa $paths {
 	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {
