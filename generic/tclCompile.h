@@ -1460,6 +1460,14 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     TclPushVarName(interp,(v),envPtr,0,(l),(s),(sc),			\
 	    mapPtr->loc[eclIndex].line[(word)],				\
 	    mapPtr->loc[eclIndex].next[(word)])
+#define PUSH_OBJ(obj) \
+    do {								\
+	int objLength;							\
+	char *objBytes = Tcl_GetStringFromObj((obj), &objLength);	\
+	PushLiteral(envPtr, objBytes, objLength);			\
+    } while (0)
+#define PUSH_DSTRING(dsPtr) \
+    PushLiteral(envPtr, Tcl_DStringValue((dsPtr)), Tcl_DStringLength((dsPtr)))
 #define LABEL(var) \
     ((var) = CurrentOffset(envPtr))
 #define BACKJUMP(var,name) \
@@ -1473,7 +1481,12 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	TclEmitInstInt4(INST_##name, 0, envPtr);	\
     } while (0)
 #define FIXJUMP(var) \
-    TclStoreInt4AtPtr(CurrentOffset(envPtr)-(var),envPtr->codeStart+(var)+1)
+    do {							\
+	if ((var) >= 0) {					\
+	    TclStoreInt4AtPtr(CurrentOffset(envPtr)-(var),	\
+		    envPtr->codeStart+(var)+1);			\
+	}							\
+    } while (0)
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).

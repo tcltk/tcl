@@ -445,11 +445,10 @@ TclCompileStringLenCmd(
 	 * byte) length.
 	 */
 
-	char buf[TCL_INTEGER_SPACE];
-	int len = Tcl_GetCharLength(objPtr);
+	Tcl_Obj *lenObj = Tcl_NewIntObj(Tcl_GetCharLength(objPtr));
 
-	len = sprintf(buf, "%d", len);
-	PushLiteral(envPtr, buf, len);
+	PUSH_OBJ(lenObj);
+	TclDecrRefCount(lenObj);
     } else {
 	PUSH_SUBST_WORD(tokenPtr, 1);
 	OP(STR_LEN);
@@ -470,7 +469,6 @@ TclCompileStringMapCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *mapTokenPtr, *stringTokenPtr;
     Tcl_Obj *mapObj, **objv;
-    char *bytes;
     int len;
 
     /*
@@ -507,13 +505,12 @@ TclCompileStringMapCmd(
      * correct semantics for mapping.
      */
 
-    bytes = Tcl_GetStringFromObj(objv[0], &len);
+    (void) Tcl_GetStringFromObj(objv[0], &len);
     if (len == 0) {
 	PUSH_SUBST_WORD(stringTokenPtr, 2);
     } else {
-	PushLiteral(envPtr, bytes, len);
-	bytes = Tcl_GetStringFromObj(objv[1], &len);
-	PushLiteral(envPtr, bytes, len);
+	PUSH_OBJ(objv[0]);
+	PUSH_OBJ(objv[1]);
 	PUSH_SUBST_WORD(stringTokenPtr, 2);
 	OP(	STR_MAP);
     }
@@ -707,7 +704,7 @@ TclSubstCompile(
     CompileEnv *envPtr)
 {
     Tcl_Token *endTokenPtr, *tokenPtr;
-    int breakOffset = 0, count = 0, bline = line;
+    int breakOffset = -1, count = 0, bline = line;
     Tcl_Parse parse;
     Tcl_InterpState state = NULL;
 
@@ -731,8 +728,7 @@ TclSubstCompile(
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
 	int length, literal, catchRange;
 	char buf[TCL_UTF_MAX];
-	JumpFixup startFixup, okFixup, returnFixup, breakFixup;
-	JumpFixup continueFixup, otherFixup, endFixup;
+	int gotOK, gotReturn, gotBreak, gotContinue, gotOther, toEnd;
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
@@ -761,18 +757,17 @@ TclSubstCompile(
 	    count = 1;
 	}
 
-	if (breakOffset == 0) {
+	if (breakOffset == -1) {
+	    int start;
+
 	    /* Jump to the start (jump over the jump to end) */
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &startFixup);
+	    JUMP(start,		JUMP);
 
 	    /* Jump to the end (all BREAKs land here) */
 	    JUMP(breakOffset,	JUMP);
 
 	    /* Start */
-	    if (TclFixupForwardJumpToHere(envPtr, &startFixup, 127)) {
-		Tcl_Panic("TclCompileSubstCmd: bad start jump distance %d",
-			(int) (CurrentOffset(envPtr) - startFixup.codeOffset));
-	    }
+	    FIXJUMP(start);
 	}
 
 	envPtr->line = bline;
@@ -798,8 +793,8 @@ TclSubstCompile(
 	ExceptionRangeEnds(envPtr, catchRange);
 
 	/* Substitution produced TCL_OK */
-	OP(	END_CATCH);
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &okFixup);
+	OP(			END_CATCH);
+	JUMP(gotOK,		JUMP);
 
 	/* Exceptional return codes processed here */
 	ExceptionRangeTarget(envPtr, catchRange, catchOffset);
@@ -817,44 +812,29 @@ TclSubstCompile(
 	OP(			NOP);
 
 	/* RETURN */
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &returnFixup);
-
+	JUMP(gotReturn,		JUMP);
 	/* BREAK */
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &breakFixup);
-
+	JUMP(gotBreak,		JUMP);
 	/* CONTINUE */
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &continueFixup);
-
+	JUMP(gotContinue,	JUMP);
 	/* OTHER */
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &otherFixup);
+	JUMP(gotOther,		JUMP);
 
 	/* BREAK destination */
-	if (TclFixupForwardJumpToHere(envPtr, &breakFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
-		    (int) (CurrentOffset(envPtr) - breakFixup.codeOffset));
-	}
+	FIXJUMP(gotBreak);
 	OP(			POP);
 	OP(			POP);
 	BACKJUMP(breakOffset,	JUMP);
 
 	/* CONTINUE destination */
-	if (TclFixupForwardJumpToHere(envPtr, &continueFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %d",
-		    (int) (CurrentOffset(envPtr) - continueFixup.codeOffset));
-	}
+	FIXJUMP(gotContinue);
 	OP(			POP);
 	OP(			POP);
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
+	JUMP(toEnd,		JUMP);
 
 	/* RETURN + other destination */
-	if (TclFixupForwardJumpToHere(envPtr, &returnFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %d",
-		    (int) (CurrentOffset(envPtr) - returnFixup.codeOffset));
-	}
-	if (TclFixupForwardJumpToHere(envPtr, &otherFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %d",
-		    (int) (CurrentOffset(envPtr) - otherFixup.codeOffset));
-	}
+	FIXJUMP(gotReturn);
+	FIXJUMP(gotOther);
 
 	/*
 	 * Pull the result to top of stack, discard options dict.
@@ -875,20 +855,14 @@ TclSubstCompile(
 	TclAdjustStackDepth(5, envPtr);
 
 	/* OK destination */
-	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad ok jump distance %d",
-		    (int) (CurrentOffset(envPtr) - okFixup.codeOffset));
-	}
+	FIXJUMP(gotOK);
 	if (count > 1) {
 	    OP1(		CONCAT, count);
 	    count = 1;
 	}
 
 	/* CONTINUE jump to here */
-	if (TclFixupForwardJumpToHere(envPtr, &endFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad end jump distance %d",
-		    (int) (CurrentOffset(envPtr) - endFixup.codeOffset));
-	}
+	FIXJUMP(toEnd);
 	bline = envPtr->line;
     }
 
@@ -909,9 +883,7 @@ TclSubstCompile(
     }
 
     /* Final target of the multi-jump from all BREAKs */
-    if (breakOffset > 0) {
-	FIXJUMP(breakOffset);
-    }
+    FIXJUMP(breakOffset);
 }
 
 /*
@@ -1352,7 +1324,7 @@ IssueSwitchChainedTests(
 			 * when the RE == "".
 			 */
 
-			PushLiteral(envPtr, "1", 1);
+			PUSH("1");
 			break;
 		    }
 
@@ -1364,8 +1336,7 @@ IssueSwitchChainedTests(
 		    if (TclReToGlob(NULL, bodyToken[i]->start,
 			    bodyToken[i]->size, &ds, &exact) == TCL_OK) {
 			simple = 1;
-			PushLiteral(envPtr, Tcl_DStringValue(&ds),
-				Tcl_DStringLength(&ds));
+			PUSH_DSTRING(&ds);
 			Tcl_DStringFree(&ds);
 		    }
 		}
@@ -1872,7 +1843,6 @@ TclCompileThrowCmd(
     Tcl_IncrRefCount(objPtr);
     if (TclWordKnownAtCompileTime(codeToken, objPtr)) {
 	Tcl_Obj *errPtr, *dictPtr;
-	const char *string;
 	int len;
 
 	/*
@@ -1904,14 +1874,14 @@ TclCompileThrowCmd(
 	TclNewLiteralStringObj(errPtr, "-errorcode");
 	TclNewObj(dictPtr);
 	Tcl_DictObjPut(NULL, dictPtr, errPtr, objPtr);
-	Tcl_IncrRefCount(dictPtr);
-	string = Tcl_GetStringFromObj(dictPtr, &len);
 	PUSH_SUBST_WORD(msgToken, 2);
-	PushLiteral(envPtr, string, len);
+	PUSH_OBJ(dictPtr);
 	TclDecrRefCount(dictPtr);
 	OP44(				RETURN_IMM, 1, 0);
 	envPtr->currStackDepth = savedStackDepth + 1;
     } else {
+	int badThrowCode;
+
 	/*
 	 * When the code token is not known at compilation time, we need to do
 	 * a little bit more work. The main tricky bit here is that the error
@@ -1925,9 +1895,10 @@ TclCompileThrowCmd(
 	OP4(				REVERSE, 3);
 	OP(				DUP);
 	OP(				LIST_LENGTH);
-	OP4(				JUMP_FALSE, 19);
+	JUMP(badThrowCode,		JUMP_FALSE);
 	OP4(				LIST, 2);
 	OP44(				RETURN_IMM, 1, 0);
+	FIXJUMP(badThrowCode);
 
 	/*
 	 * Generate an error for being an empty list. Can't leverage anything
@@ -2208,7 +2179,7 @@ IssueTryInstructions(
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
     int savedStackDepth = envPtr->currStackDepth;
-    int i, j, len, forwardsNeedFixing = 0;
+    int i, j, len, forwardsNeedFixing = 0, pushBodyOpts;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
 
@@ -2232,10 +2203,11 @@ IssueTryInstructions(
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
     OP(					EXCH);
-    OP4(				JUMP, 7);
+    JUMP(pushBodyOpts,			JUMP);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
     OP(					PUSH_RESULT);
+    FIXJUMP(pushBodyOpts);
     OP(					PUSH_RETURN_OPTIONS);
     OP(					END_CATCH);
     OP4(				STORE_SCALAR, optionsVar);
@@ -2364,6 +2336,7 @@ IssueTryFinallyInstructions(
     int savedStackDepth = envPtr->currStackDepth;
     int range, resultVar, optionsVar, i, j, len, forwardsNeedFixing = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
+    int pushBodyOpts, saveResultForLater;
     char buf[TCL_INTEGER_SPACE];
 
     resultVar = NewUnnamedLocal(envPtr);
@@ -2385,10 +2358,11 @@ IssueTryFinallyInstructions(
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
     OP(					EXCH);
-    OP4(				JUMP, 7);
+    JUMP(pushBodyOpts,			JUMP);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
     OP(					PUSH_RESULT);
+    FIXJUMP(pushBodyOpts);
     OP(					PUSH_RETURN_OPTIONS);
     OP(					END_CATCH);
     OP4(				STORE_SCALAR, optionsVar);
@@ -2467,6 +2441,7 @@ IssueTryFinallyInstructions(
 		    OP(			END_CATCH);
 		    forwardsNeedFixing = 1;
 		    JUMP(forwardsToFix[i], JUMP);
+		    saveResultForLater = -1;
 		    goto finishTrapCatchHandling;
 		}
 	    } else if (!handlerTokens[i]) {
@@ -2490,9 +2465,6 @@ IssueTryFinallyInstructions(
 		forwardsNeedFixing = 0;
 		OP4(			JUMP, 10);
 		for (j=0 ; j<i ; j++) {
-		    if (forwardsToFix[j] == -1) {
-			continue;
-		    }
 		    FIXJUMP(forwardsToFix[j]);
 		    forwardsToFix[j] = -1;
 		}
@@ -2503,7 +2475,7 @@ IssueTryFinallyInstructions(
 	    ExceptionRangeEnds(envPtr, range);
 	    OP(				PUSH_RETURN_OPTIONS);
 	    OP(				EXCH);
-	    OP4(			JUMP, 7);
+	    JUMP(saveResultForLater,	JUMP);
 	    forwardsToFix[i] = -1;
 
 	    /*
@@ -2517,6 +2489,7 @@ IssueTryFinallyInstructions(
 	    ExceptionRangeTarget(envPtr, range, catchOffset);
 	    OP(				PUSH_RETURN_OPTIONS);
 	    OP(				PUSH_RESULT);
+	    FIXJUMP(saveResultForLater);
 	    OP(				END_CATCH);
 	    OP4(			STORE_SCALAR, resultVar);
 	    OP(				POP);

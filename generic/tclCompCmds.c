@@ -1038,8 +1038,7 @@ TclCompileDictCreateCmd(
     int worker;			/* Temp var for building the value in. */
     Tcl_Token *tokenPtr;
     Tcl_Obj *keyObj, *valueObj, *dictObj;
-    const char *bytes;
-    int i, len;
+    int i;
 
     if ((parsePtr->numWords & 1) == 0) {
 	return TCL_ERROR;
@@ -1079,8 +1078,7 @@ TclCompileDictCreateCmd(
      * We did! Excellent. The "verifyDict" is to do type forcing.
      */
 
-    bytes = Tcl_GetStringFromObj(dictObj, &len);
-    PushLiteral(envPtr, bytes, len);
+    PUSH_OBJ(	dictObj);
     OP(		DUP);
     OP(		DICT_VERIFY);
     Tcl_DecrRefCount(dictObj);
@@ -2924,8 +2922,7 @@ TclCompileFormatCmd(
      * literal. Job done.
      */
 
-    bytes = Tcl_GetStringFromObj(tmpObj, &len);
-    PushLiteral(envPtr, bytes, len);
+    PUSH_OBJ(tmpObj);
     Tcl_DecrRefCount(tmpObj);
     return TCL_OK;
 
@@ -2995,7 +2992,7 @@ TclCompileFormatCmd(
 	    if (*++bytes == '%') {
 		Tcl_AppendToObj(tmpObj, "%", 1);
 	    } else {
-		char *b = Tcl_GetStringFromObj(tmpObj, &len);
+		(void) Tcl_GetStringFromObj(tmpObj, &len);
 
 		/*
 		 * If there is a non-empty literal from the format string,
@@ -3003,7 +3000,7 @@ TclCompileFormatCmd(
 		 */
 
 		if (len > 0) {
-		    PushLiteral(envPtr, b, len);
+		    PUSH_OBJ(tmpObj);
 		    Tcl_DecrRefCount(tmpObj);
 		    tmpObj = Tcl_NewObj();
 		    i++;
@@ -3029,9 +3026,9 @@ TclCompileFormatCmd(
      */
 
     Tcl_AppendToObj(tmpObj, start, bytes - start);
-    bytes = Tcl_GetStringFromObj(tmpObj, &len);
+    (void) Tcl_GetStringFromObj(tmpObj, &len);
     if (len > 0) {
-	PushLiteral(envPtr, bytes, len);
+	PUSH_OBJ(tmpObj);
 	i++;
     }
     Tcl_DecrRefCount(tmpObj);
@@ -5062,7 +5059,7 @@ TclCompileRegexpCmd(
 	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact)
 		== TCL_OK) {
 	    simple = 1;
-	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
+	    PUSH_DSTRING(&ds);
 	    Tcl_DStringFree(&ds);
 	}
     }
@@ -5257,8 +5254,7 @@ TclCompileRegsubCmd(
     result = TCL_OK;
     bytes = Tcl_DStringValue(&pattern) + 1;
     PushLiteral(envPtr,	bytes, len);
-    bytes = Tcl_GetStringFromObj(replacementObj, &len);
-    PushLiteral(envPtr,	bytes, len);
+    PUSH_OBJ(replacementObj);
     PUSH_SUBST_WORD(stringTokenPtr, parsePtr->numWords-2);
     OP(		STR_MAP);
 
