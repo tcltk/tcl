@@ -986,13 +986,7 @@ proc tcltest::interpreter { {interp ""} } {
     if {[llength [info level 0]] == 1} {
 	return $tcltest
     }
-
-if {$interp eq {}} {
-set tcltest {}
-} else {
-set tcltest $interp
-}
-#    set tcltest $interp
+    set tcltest $interp
 }
 
 #####################################################################
@@ -2874,10 +2868,6 @@ proc tcltest::runAllTests { {shell ""} } {
 #     none.
 
 proc tcltest::loadTestedCommands {} {
-variable l
-if {[loadScript] eq {}} {
-return
-}
     return [uplevel 1 [loadScript]]
 }
 
