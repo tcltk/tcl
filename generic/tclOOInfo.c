@@ -48,18 +48,18 @@ static Tcl_ObjCmdProc InfoClassVariablesCmd;
  */
 
 static const EnsembleImplMap infoObjectCmds[] = {
-    {"call",	   InfoObjectCallCmd,	    NULL, NULL, NULL, 0},
+    {"call",	   InfoObjectCallCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"class",	   InfoObjectClassCmd,	    TclCompileInfoObjectClassCmd, NULL, NULL, 0},
-    {"definition", InfoObjectDefnCmd,	    NULL, NULL, NULL, 0},
-    {"filters",	   InfoObjectFiltersCmd,    NULL, NULL, NULL, 0},
-    {"forward",	   InfoObjectForwardCmd,    NULL, NULL, NULL, 0},
+    {"definition", InfoObjectDefnCmd,	    TclCompileBasic2ArgCmd, NULL, NULL, 0},
+    {"filters",	   InfoObjectFiltersCmd,    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"forward",	   InfoObjectForwardCmd,    TclCompileBasic2ArgCmd, NULL, NULL, 0},
     {"isa",	   InfoObjectIsACmd,	    TclCompileInfoObjectIsACmd, NULL, NULL, 0},
-    {"methods",	   InfoObjectMethodsCmd,    NULL, NULL, NULL, 0},
-    {"methodtype", InfoObjectMethodTypeCmd, NULL, NULL, NULL, 0},
-    {"mixins",	   InfoObjectMixinsCmd,	    NULL, NULL, NULL, 0},
+    {"methods",	   InfoObjectMethodsCmd,    TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+    {"methodtype", InfoObjectMethodTypeCmd, TclCompileBasic2ArgCmd, NULL, NULL, 0},
+    {"mixins",	   InfoObjectMixinsCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"namespace",  InfoObjectNsCmd,	    TclCompileInfoObjectNamespaceCmd, NULL, NULL, 0},
-    {"variables",  InfoObjectVariablesCmd,  NULL, NULL, NULL, 0},
-    {"vars",	   InfoObjectVarsCmd,	    NULL, NULL, NULL, 0},
+    {"variables",  InfoObjectVariablesCmd,  TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"vars",	   InfoObjectVarsCmd,	    TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -68,19 +68,19 @@ static const EnsembleImplMap infoObjectCmds[] = {
  */
 
 static const EnsembleImplMap infoClassCmds[] = {
-    {"call",	     InfoClassCallCmd,		NULL, NULL, NULL, 0},
-    {"constructor",  InfoClassConstrCmd,	NULL, NULL, NULL, 0},
-    {"definition",   InfoClassDefnCmd,		NULL, NULL, NULL, 0},
-    {"destructor",   InfoClassDestrCmd,		NULL, NULL, NULL, 0},
-    {"filters",	     InfoClassFiltersCmd,	NULL, NULL, NULL, 0},
-    {"forward",	     InfoClassForwardCmd,	NULL, NULL, NULL, 0},
-    {"instances",    InfoClassInstancesCmd,	NULL, NULL, NULL, 0},
-    {"methods",	     InfoClassMethodsCmd,	NULL, NULL, NULL, 0},
-    {"methodtype",   InfoClassMethodTypeCmd,	NULL, NULL, NULL, 0},
-    {"mixins",	     InfoClassMixinsCmd,	NULL, NULL, NULL, 0},
-    {"subclasses",   InfoClassSubsCmd,		NULL, NULL, NULL, 0},
-    {"superclasses", InfoClassSupersCmd,	NULL, NULL, NULL, 0},
-    {"variables",    InfoClassVariablesCmd,	NULL, NULL, NULL, 0},
+    {"call",	     InfoClassCallCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
+    {"constructor",  InfoClassConstrCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"definition",   InfoClassDefnCmd,		TclCompileBasic2ArgCmd, NULL, NULL, 0},
+    {"destructor",   InfoClassDestrCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"filters",	     InfoClassFiltersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"forward",	     InfoClassForwardCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+    {"instances",    InfoClassInstancesCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+    {"methods",	     InfoClassMethodsCmd,	TclCompileBasicMin1ArgCmd, NULL, NULL, 0},
+    {"methodtype",   InfoClassMethodTypeCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+    {"mixins",	     InfoClassMixinsCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"subclasses",   InfoClassSubsCmd,		TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+    {"superclasses", InfoClassSupersCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"variables",    InfoClassVariablesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -100,6 +100,7 @@ TclOOInitInfo(
     Tcl_Interp *interp)
 {
     Tcl_Command infoCmd;
+    Tcl_Obj *mapDict;
 
     /*
      * Build the ensembles used to implement [info object] and [info class].
@@ -113,25 +114,12 @@ TclOOInitInfo(
      */
 
     infoCmd = Tcl_FindCommand(interp, "info", NULL, TCL_GLOBAL_ONLY);
-    if (infoCmd != NULL && Tcl_IsEnsemble(infoCmd)) {
-	Tcl_Obj *mapDict, *objectObj, *classObj;
-
-	Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
-	if (mapDict != NULL) {
-	    objectObj = Tcl_NewStringObj("object", -1);
-	    classObj = Tcl_NewStringObj("class", -1);
-
-	    Tcl_IncrRefCount(objectObj);
-	    Tcl_IncrRefCount(classObj);
-	    Tcl_DictObjPut(NULL, mapDict, objectObj,
-		    Tcl_NewStringObj("::oo::InfoObject", -1));
-	    Tcl_DictObjPut(NULL, mapDict, classObj,
-		    Tcl_NewStringObj("::oo::InfoClass", -1));
-	    Tcl_DecrRefCount(objectObj);
-	    Tcl_DecrRefCount(classObj);
-	    Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
-	}
-    }
+    Tcl_GetEnsembleMappingDict(NULL, infoCmd, &mapDict);
+    Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("object", -1),
+	    Tcl_NewStringObj("::oo::InfoObject", -1));
+    Tcl_DictObjPut(NULL, mapDict, Tcl_NewStringObj("class", -1),
+	    Tcl_NewStringObj("::oo::InfoClass", -1));
+    Tcl_SetEnsembleMappingDict(interp, infoCmd, mapDict);
 }
 
 /*

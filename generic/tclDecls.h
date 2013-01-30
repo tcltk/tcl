@@ -3744,4 +3744,16 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 
+/*
+ * Deprecated Tcl procedures:
+ */
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#   undef Tcl_EvalObj
+#   define Tcl_EvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),0)
+#   undef Tcl_GlobalEvalObj
+#   define Tcl_GlobalEvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
+#endif
+
 #endif /* _TCLDECLS */

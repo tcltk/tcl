@@ -9,6 +9,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include <sys/stat.h>
 #include "tclInt.h"
 
 typedef size_t (LengthProc)(const char *src);

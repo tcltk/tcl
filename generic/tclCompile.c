@@ -498,6 +498,10 @@ InstructionDesc const tclInstructionTable[] = {
     {"under",		1,	+1,	  0,	{OPERAND_NONE}},
 	/* Duplicates the item under the top of the stack.
 	 * Stack:  ... a b => ... a b a */
+    {"invokeReplace",	 6,	INT_MIN,  2,	{OPERAND_UINT4,OPERAND_UINT1}},
+	/* Invoke command named objv[0], replacing the first two words with
+	 * the word at the top of the stack;
+	 * <objc,objv> = <op4,top op4 after popping 1> */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -2420,7 +2424,7 @@ TclPushVarName(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int flags,			/* TCL_NO_LARGE_INDEX. */
+    int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
     int *localIndexPtr,		/* Must not be NULL. */
     int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr,		/* Must not be NULL. */
@@ -2604,7 +2608,7 @@ TclPushVarName(
 	 * Compile the element script, if any.
 	 */
 
-	if (elName != NULL) {
+	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
 	    if (elNameChars) {
 		envPtr->line = line;
 		envPtr->clNext = clNext;

@@ -364,7 +364,7 @@ TclCompileStringMatchCmd(
 
     if (parsePtr->numWords == 4) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TCL_ERROR;
+	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
 	str = tokenPtr[1].start;
 	length = tokenPtr[1].size;
@@ -373,7 +373,7 @@ TclCompileStringMatchCmd(
 	     * Fail at run time, not in compilation.
 	     */
 
-	    return TCL_ERROR;
+	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
 	nocase = 1;
 	tokenPtr = TokenAfter(tokenPtr);
@@ -490,13 +490,13 @@ TclCompileStringMapCmd(
     Tcl_IncrRefCount(mapObj);
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (Tcl_ListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (len != 2) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -744,6 +744,34 @@ TclSubstCompile(
 		    NULL, buf);
 	    literal = TclRegisterNewLiteral(envPtr, buf, length);
 	    TclEmitPush(literal, envPtr);
+	    count++;
+	    continue;
+	case TCL_TOKEN_VARIABLE:
+	    /*
+	     * Check for simple variable access; see if we can only generate
+	     * TCL_OK or TCL_ERROR from the substituted variable read; if so,
+	     * there is no need to generate elaborate exception-management
+	     * code. Note that the first component of TCL_TOKEN_VARIABLE is
+	     * always TCL_TOKEN_TEXT...
+	     */
+
+	    if (tokenPtr->numComponents > 1) {
+		int i, foundCommand = 0;
+
+		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
+		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND) {
+			foundCommand = 1;
+			break;
+		    }
+		}
+		if (foundCommand) {
+		    break;
+		}
+	    }
+
+	    envPtr->line = bline;
+	    TclCompileVarSubst(interp, tokenPtr, envPtr);
+	    bline = envPtr->line;
 	    count++;
 	    continue;
 	}
@@ -1787,16 +1815,18 @@ TclCompileTailcallCmd(
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     int i;
 
-    if (parsePtr->numWords < 2 || parsePtr->numWords > 256
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 255
 	    || envPtr->procPtr == NULL) {
 	return TCL_ERROR;
     }
 
+    /* make room for the nsObjPtr */
+    CompileWord(envPtr, tokenPtr, interp, 0);
     for (i=1 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	PUSH_SUBST_WORD(tokenPtr, i);
     }
-    OP1(	TAILCALL, parsePtr->numWords-1);
+    OP1(	TAILCALL, parsePtr->numWords);
     return TCL_OK;
 }
 
@@ -2579,7 +2609,7 @@ TclCompileUnsetCmd(
     flags = 1;
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     leadingWord = Tcl_NewObj();
-    if (TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
+    if (numWords > 0 && TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
 	int len;
 	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
 

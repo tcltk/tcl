@@ -41,6 +41,31 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#define TclSetStartupScriptPath setStartupScriptPath
+static void TclSetStartupScriptPath(Tcl_Obj *path)
+{
+    Tcl_SetStartupScript(path, NULL);
+}
+#define TclGetStartupScriptPath getStartupScriptPath
+static Tcl_Obj *TclGetStartupScriptPath(void)
+{
+    return Tcl_GetStartupScript(NULL);
+}
+#define TclSetStartupScriptFileName setStartupScriptFileName
+static void TclSetStartupScriptFileName(
+    const char *fileName)
+{
+    Tcl_SetStartupScript(Tcl_NewStringObj(fileName,-1), NULL);
+}
+#define TclGetStartupScriptFileName getStartupScriptFileName
+static const char *TclGetStartupScriptFileName(void)
+{
+    Tcl_Obj *path = Tcl_GetStartupScript(NULL);
+    if (path == NULL) {
+	return NULL;
+    }
+    return Tcl_GetStringFromObj(path, NULL);
+}
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
@@ -53,6 +78,7 @@ static unsigned short TclWinNToHS(unsigned short ns) {
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
+#   define TclUnixOpenTemporaryFile 0
 #   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
@@ -331,8 +357,8 @@ static const TclIntStubs tclIntStubs = {
     0, /* 155 */
     TclRegError, /* 156 */
     TclVarTraceExists, /* 157 */
-    0, /* 158 */
-    0, /* 159 */
+    TclSetStartupScriptFileName, /* 158 */
+    TclGetStartupScriptFileName, /* 159 */
     0, /* 160 */
     TclChannelTransform, /* 161 */
     TclChannelEventScriptInvoker, /* 162 */
@@ -340,8 +366,8 @@ static const TclIntStubs tclIntStubs = {
     TclExpandCodeArray, /* 164 */
     TclpSetInitialEncodings, /* 165 */
     TclListObjSetElement, /* 166 */
-    0, /* 167 */
-    0, /* 168 */
+    TclSetStartupScriptPath, /* 167 */
+    TclGetStartupScriptPath, /* 168 */
     TclpUtfNcmp2, /* 169 */
     TclCheckInterpTraces, /* 170 */
     TclCheckExecutionTraces, /* 171 */
@@ -351,8 +377,8 @@ static const TclIntStubs tclIntStubs = {
     TclCallVarTraces, /* 175 */
     TclCleanupVar, /* 176 */
     TclVarErrMsg, /* 177 */
-    0, /* 178 */
-    0, /* 179 */
+    Tcl_SetStartupScript, /* 178 */
+    Tcl_GetStartupScript, /* 179 */
     0, /* 180 */
     0, /* 181 */
     0, /* 182 */
@@ -450,7 +476,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 17 */
     0, /* 18 */
     0, /* 19 */
-    TclUnixOpenTemporaryFile, /* 20 */
+    0, /* 20 */
     0, /* 21 */
     0, /* 22 */
     0, /* 23 */
@@ -460,6 +486,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 27 */
     0, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* UNIX */
 #if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
@@ -492,6 +519,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinFlushDirtyChannels, /* 27 */
     TclWinResetInterfaces, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     TclGetAndDetachPids, /* 0 */
@@ -514,7 +542,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclMacOSXCopyFileAttributes, /* 17 */
     TclMacOSXMatchType, /* 18 */
     TclMacOSXNotifierAddRunLoopMode, /* 19 */
-    TclUnixOpenTemporaryFile, /* 20 */
+    0, /* 20 */
     0, /* 21 */
     0, /* 22 */
     0, /* 23 */
@@ -524,6 +552,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     0, /* 27 */
     0, /* 28 */
     TclWinCPUID, /* 29 */
+    TclUnixOpenTemporaryFile, /* 30 */
 #endif /* MACOSX */
 };
 

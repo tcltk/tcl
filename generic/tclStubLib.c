@@ -11,15 +11,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-/*
- * We need to ensure that we use the stub macros so that this file contains no
- * references to any of the stub functions. This will make it possible to
- * build an extension that references Tcl_InitStubs but doesn't end up
- * including the rest of the stub functions.
- */
-
-#define USE_TCL_STUBS
-
 #include "tclInt.h"
 
 MODULE_SCOPE const TclStubs *tclStubsPtr;
@@ -32,28 +23,8 @@ const TclPlatStubs *tclPlatStubsPtr = NULL;
 const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
-static const TclStubs *
-HasStubSupport(
-    Tcl_Interp *interp,
-    const char *tclversion,
-    int magic)
-{
-    /* TODO: Whatever additional checks using tclversion
-     * and/or magic should be done here. */
-
-    Interp *iPtr = (Interp *) interp;
-
-    if (iPtr->stubTable && iPtr->stubTable->magic == magic) {
-	return iPtr->stubTable;
-    }
-    iPtr->legacyResult
-	    = "interpreter uses an incompatible stubs mechanism";
-    iPtr->legacyFreeProc = 0; /* TCL_STATIC */
-    return NULL;
-}
-
 /*
- * Use our own isdigit to avoid linking to libc on windows
+ * Use our own isDigit to avoid linking to libc on windows
  */
 
 static int isDigit(const int c)
@@ -78,7 +49,7 @@ static int isDigit(const int c)
  *
  *----------------------------------------------------------------------
  */
-
+#undef Tcl_InitStubs
 MODULE_SCOPE const char *
 TclInitStubs(
     Tcl_Interp *interp,
@@ -87,8 +58,10 @@ TclInitStubs(
     const char *tclversion,
     int magic)
 {
+    Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
+    const TclStubs *stubsPtr = iPtr->stubTable;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -96,12 +69,14 @@ TclInitStubs(
      * times. [Bug 615304]
      */
 
-    tclStubsPtr = HasStubSupport(interp, tclversion, magic);
-    if (!tclStubsPtr) {
+    if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
+	iPtr->legacyResult =
+		"interpreter uses an incompatible stubs mechanism";
+	iPtr->legacyFreeProc = 0;	/* TCL_STATIC */
 	return NULL;
     }
 
-    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -119,19 +94,19 @@ TclInitStubs(
 	    while (*p && (*p == *q)) {
 		p++; q++;
 	    }
-	    if (*p) {
+	    if (*p || isDigit(*q)) {
 		/* Construct error message */
-		Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
 	    }
 	} else {
-	    actualVersion = Tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
 	    if (actualVersion == NULL) {
 		return NULL;
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *) pkgData;
+    tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;

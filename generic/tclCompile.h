@@ -667,9 +667,10 @@ typedef struct ByteCode {
 
 #define INST_EXCH			145
 #define INST_UNDER			146
+#define INST_INVOKE_REPLACE		147
 
 /* The last opcode */
-#define LAST_INST_OPCODE		146
+#define LAST_INST_OPCODE		147
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -1411,6 +1412,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  */
 
 #define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
+#define TCL_NO_ELEMENT 2	/* Do not push the array element. */
 
 /*
  * Shorthand macros for instruction issuing. Note that these assume that there
