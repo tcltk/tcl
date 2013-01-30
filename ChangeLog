@@ -1,3 +1,12 @@
+2013-01-30  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl (::platform::LibcVersion): See
+	* library/platform/pkgIndex.tcl: [Bug 3599098]: Fixed the RE
+	* unix/Makefile.in: extracting the version to avoid issues with
+	* win/Makefile.in: recent changes to the glibc banner. Now
+	  targeting a less variable part of the string. Bumped package to
+	  version 1.0.11.
+
 2013-01-28  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmds.c (TclCompileArraySetCmd)
