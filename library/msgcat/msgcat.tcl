@@ -238,7 +238,7 @@ proc msgcat::mclocale {args} {
 		    could be path to unsafe code."
 	}
 	set Locale [string tolower $newLocale]
-        set Loclist [list]
+	set Loclist {}
 	set word ""
 	foreach part [split $Locale _] {
 	    set word [string trim "${word}_${part}" _]
@@ -246,7 +246,7 @@ proc msgcat::mclocale {args} {
 		set Loclist [linsert $Loclist 0 $word]
 	    }
 	}
-	lappend Loclist ""
+	lappend Loclist {}
 	set Locale [lindex $Loclist 0]
     }
     return $Locale
@@ -465,7 +465,7 @@ proc msgcat::mcmax {args} {
     foreach string $args {
 	set translated [uplevel 1 [list [namespace origin mc] $string]]
 	set len [string length $translated]
-	if {$len > $max} {
+	if {$len>$max} {
 	    set max $len
 	}
     }
@@ -488,7 +488,7 @@ proc msgcat::ConvertLocale {value} {
     #	$		# Match all the way to the end
     # } $value -> language _ territory _ codeset _ modifier
     if {![regexp {^([^_.@]+)(_([^.@]*))?([.]([^@]*))?(@(.*))?$} $value \
-	    ___ language _ territory _ codeset _ modifier]} {
+	    -> language _ territory _ codeset _ modifier]} {
 	return -code error "invalid locale '$value': empty language part"
     }
     set ret $language
@@ -520,7 +520,7 @@ proc msgcat::Init {} {
     #
     # On Darwin, fallback to current CFLocale identifier if available.
     #
-    if {[info exists ::tcl::mac::locale] && ($::tcl::mac::locale ne "")} {
+    if {[info exists ::tcl::mac::locale] && $::tcl::mac::locale ne ""} {
 	if {![catch {
 	    mclocale [ConvertLocale $::tcl::mac::locale]
 	}]} {

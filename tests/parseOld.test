@@ -13,10 +13,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest
-    namespace import -force ::tcltest::*
-}
+package require tcltest
+namespace import ::tcltest::*
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -34,7 +32,7 @@ proc fourArgs {a b c d} {
     set arg4 $d
 }
 
-proc getArgs {args} {
+proc getArgs args {
     global argv
     set argv $args
 }
@@ -110,7 +108,7 @@ test parseOld-3.6 {braces} {
     set argv
 } "a{{}}b"
 test parseOld-3.7 {braces} {
-    set a [format "last\]"]
+    set a [format "last]"]
     set a
 } {last]}
 
@@ -510,10 +508,11 @@ test parseOld-14.17 {TclWordEnd procedure} {testwordend} {
 } {c}
 test parseOld-14.18 {TclWordEnd procedure} {testwordend} {
     testwordend \[a\000\]
-} {\]}
+} {]}
 test parseOld-14.19 {TclWordEnd procedure} {testwordend} {
     testwordend \"a\000\"
-} {\"}
+} {"}
+#" Emacs formatting :^(
 test parseOld-14.20 {TclWordEnd procedure} {testwordend} {
     testwordend a{\000}b
 } {b}

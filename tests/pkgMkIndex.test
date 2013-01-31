@@ -8,10 +8,8 @@
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import ::tcltest::*
 
 set fullPkgPath [makeDirectory pkg]
 
@@ -45,7 +43,7 @@ proc pkgtest::parseArgs { args } {
 	set a [lindex $args $iarg]
 	if {[regexp {^-} $a]} {
 	    lappend options $a
-	    if {"-load" eq $a} {
+	    if {$a eq "-load"} {
 		incr iarg
 		lappend options [lindex $args $iarg]
 	    }
@@ -75,7 +73,7 @@ proc pkgtest::parseArgs { args } {
 
 proc pkgtest::parseIndex { filePath } {
     # create a slave interpreter, where we override "package ifneeded"
-    global errorCode errorInfo
+
     set slave [interp create]
     if {[catch {
 	$slave eval {
@@ -111,9 +109,9 @@ proc pkgtest::parseIndex { filePath } {
 	foreach k [lsort [array names P]] {
 	    lappend PKGS $k $P($k)
 	}
-    } err]} {
-	set ei $errorInfo
-	set ec $errorCode
+    } err opts]} {
+	set ei [dict get $opts -errorinfo]
+	set ec [dict get $opts -errorcode]
 
 	catch {interp delete $slave}
 
@@ -153,7 +151,7 @@ proc pkgtest::createIndex { args } {
     file mkdir $dirPath
 
     if {[catch {
-	file delete -- [file join $dirPath pkgIndex.tcl]
+	file delete [file join $dirPath pkgIndex.tcl]
 	pkg_mkIndex {*}$options $dirPath {*}$patternList
     } err]} {
 	return [list 1 $err]
@@ -184,7 +182,7 @@ proc makePkgList { inList } {
     set pkgList ""
 
     foreach {k v} $inList {
-	switch -- [lindex $v 0] {
+	switch [lindex $v 0] {
 	    tclPkgSetup {
 		set l tclPkgSetup
 		foreach s [lindex $v 4] {
@@ -234,7 +232,7 @@ proc pkgtest::runCreatedIndex {rv args} {
 	} err]} {
 	    set result [list 1 $err]
 	} 
-	file delete -- $idxFile
+	file delete $idxFile
     } else {
 	set result $rv
     }
@@ -358,7 +356,7 @@ proc direct1::pd2 { stg } {
     return [string toupper $stg]
 }
 } [file join direct1 direct1.tcl]
-pkg_mkIndex -direct -- $direct1 direct1.tcl
+pkg_mkIndex -direct $direct1 direct1.tcl
 
 makeFile {
 #  Does a package require of direct1, whose pkgIndex.tcl entry is created
@@ -382,7 +380,7 @@ test pkgMkIndex-5.1 {requires -direct package} {
 } {0 {{std:1.0 {tclPkgSetup {std.tcl source {::std::p1 ::std::p2}}}}}}
 
 removeFile [file join direct1 direct1.tcl]
-file delete -- [file join $direct1 pkgIndex.tcl]
+file delete [file join $direct1 pkgIndex.tcl]
 removeDirectory direct1
 removeFile [file join pkg std.tcl]
 
@@ -565,7 +563,7 @@ proc pkga_neq { x } {
     return [expr {! [pkgq_eq $x]}]
 }
 } [file join pkg pkga.tcl]
-    file copy -force -- $x $fullPkgPath
+    file copy -force $x $fullPkgPath
 }
 testConstraint exec [llength [info commands ::exec]]
 
@@ -592,7 +590,7 @@ test pkgMkIndex-10.2 {package in DLL hidden by -load} [list exec $dll] {
 } {0 {}}
 
 if {[testConstraint $dll]} {
-    file delete -force -- [file join $fullPkgPath [file tail $x]]
+    file delete -force [file join $fullPkgPath [file tail $x]]
     removeFile [file join pkg pkga.tcl]
 }
 

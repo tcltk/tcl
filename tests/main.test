@@ -618,7 +618,7 @@ namespace eval ::tcl::test::main {
 	after cancel $id
 	set wait
     } -cleanup {
-	if {("timeout" eq $wait) && [testConstraint unix]} {
+	if {$wait eq "timeout" && [testConstraint unix]} {
 	    exec kill [pid $f]
 	}
 	close $f
@@ -641,7 +641,7 @@ namespace eval ::tcl::test::main {
 	after cancel $id
 	set wait
     } -cleanup {
-	if {("timeout" eq $wait) && [testConstraint unix]} {
+	if {$wait eq "timeout" && [testConstraint unix]} {
 	    exec kill [pid $f]
 	}
 	close $f

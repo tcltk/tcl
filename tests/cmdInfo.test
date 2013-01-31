@@ -13,10 +13,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import ::tcltest::*
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -73,8 +71,8 @@ test cmdinfo-4.1 {Tcl_GetCommandName/Tcl_GetCommandFullName procedures} \
     lappend y {*}[testcmdtoken name $x]
 } {newName ::newName x1 ::x1}
 
-catch {rename newTestCmd ""}
-catch {rename newTestCmd2 ""}
+catch {rename newTestCmd {}}
+catch {rename newTestCmd2 {}}
 
 test cmdinfo-5.1 {Names for commands created when inside namespaces} \
 	{testcmdtoken} {
@@ -101,7 +99,7 @@ test cmdinfo-6.1 {Names for commands created when outside namespaces} \
 # cleanup
 catch {namespace delete cmdInfoNs1::cmdInfoNs2 cmdInfoNs1}
 catch {rename x1 ""}
-::tcltest::cleanupTests
+cleanupTests
 return
 
 # Local Variables:

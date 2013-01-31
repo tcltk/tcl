@@ -125,7 +125,6 @@ proc pkg_mkIndex {args} {
 	}
     }
 
-    set fileList [list]
     set dir [lindex $args $idx]
     set patternList [lrange $args [expr {$idx + 1}] end]
     if {![llength $patternList]} {
@@ -395,13 +394,13 @@ proc pkg_mkIndex {args} {
     append index "# full path name of this file's directory.\n"
 
     foreach pkg [lsort [array names files]] {
-        set cmd [list]
+	set cmd {}
 	lassign $pkg name version
 	lappend cmd ::tcl::Pkg::Create -name $name -version $version
 	foreach spec [lsort -index 0 $files($pkg)] {
 	    foreach {file type procs} $spec {
 		if {$direct} {
-		    set procs ""
+		    set procs {}
 		}
 		lappend cmd "-$type" [list $file $procs]
 	    }
@@ -410,8 +409,8 @@ proc pkg_mkIndex {args} {
     }
 
     set f [open [file join $dir pkgIndex.tcl] w]
-    chan puts $f $index
-    chan close $f
+    puts $f $index
+    close $f
 }
 
 # tclPkgSetup --
@@ -543,7 +542,7 @@ proc tclPkgUnknown {name args} {
 	# Don't add directories we've already seen, or ones already on the
 	# $use_path.
 	foreach dir [lrange $auto_path $index end] {
-	    if {(![info exists tclSeenPath($dir)]) && ($dir ni $use_path)} {
+	    if {![info exists tclSeenPath($dir)] && ($dir ni $use_path)} {
 		lappend use_path $dir
 	    }
 	}
@@ -626,7 +625,7 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 	# Don't add directories we've already seen, or ones already on the
 	# $use_path.
 	foreach dir [lrange $auto_path $index end] {
-	    if {(![info exists tclSeenPath($dir)]) && ($dir ni $use_path)} {
+	    if {![info exists tclSeenPath($dir)] && ($dir ni $use_path)} {
 		lappend use_path $dir
 	    }
 	}
@@ -678,7 +677,7 @@ proc ::tcl::Pkg::Create {args} {
     }
 
     # Initialize parameters
-    array set opts {-name ""  -version ""  -source ""  -load ""}
+    array set opts {-name {} -version {} -source {} -load {}}
 
     # process parameters
     for {set i 0} {$i < $len} {incr i} {
@@ -720,16 +719,15 @@ proc ::tcl::Pkg::Create {args} {
     # OK, now everything is good.  Generate the package ifneeded statment.
     set cmdline "package ifneeded $opts(-name) $opts(-version) "
 
-    set cmdList [list]
-    set lazyFileList [list]
+    set cmdList {}
+    set lazyFileList {}
 
     # Handle -load and -source specs
     foreach key {load source} {
 	foreach filespec $opts(-$key) {
-	    lassign ""        filename proclist
 	    lassign $filespec filename proclist
-
-	    if {![llength $proclist]} {
+	    
+	    if { [llength $proclist] == 0 } {
 		set cmd "\[list $key \[file join \$dir [list $filename]\]\]"
 		lappend cmdList $cmd
 	    } else {
@@ -746,4 +744,4 @@ proc ::tcl::Pkg::Create {args} {
     return $cmdline
 }
 
-interp alias "" ::pkg::create "" ::tcl::Pkg::Create
+interp alias {} ::pkg::create {} ::tcl::Pkg::Create

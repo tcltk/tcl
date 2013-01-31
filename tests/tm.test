@@ -40,6 +40,7 @@ test tm-2.3 {tm: roots command syntax} -returnCodes error -body {
     ::tcl::tm::roots foo bar
 } -result "wrong # args: should be \"::tcl::tm::roots paths\""
 
+
 test tm-3.1 {tm: module path management, input validation} -setup {
     # Save and clear the list
     set defaults [::tcl::tm::path list]
@@ -195,11 +196,12 @@ test tm-3.11 {tm: module path management, remove ignores unknown path} -setup {
     ::tcl::tm::path list
 } -result {geode snarf foo}
 
-proc genpaths {a_base} {
+
+proc genpaths {base} {
     # Normalizing picks up drive letters on windows [Bug 1053568]
-    set base [file normalize $a_base]
-    lassign [split [info tclversion] "."] major minor
-    set results [list]
+    set base [file normalize $base]
+    lassign [split [package present Tcl] .] major minor 
+    set results {}
     set base [file join $base tcl$major]
     lappend results [file join $base site-tcl]
     for {set i 0} {$i <= $minor} {incr i} {

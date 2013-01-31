@@ -45,7 +45,7 @@
 namespace eval ::tcl::tm {
     # Default paths. None yet.
 
-    variable paths [list]
+    variable paths {}
 
     # The regex pattern a file name has to match to make it a Tcl Module.
 
@@ -203,11 +203,11 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 
 	set satisfied 0
 	foreach path $paths {
-	    if {(![interp issafe]) && (![file exists $path])} {
+	    if {![interp issafe] && ![file exists $path]} {
 		continue
 	    }
 	    set currentsearchpath [file join $path $pkgroot]
-	    if {(![interp issafe]) && (![file exists $currentsearchpath])} {
+	    if {![interp issafe] && ![file exists $currentsearchpath]} {
 		continue
 	    }
 	    set strip [llength [file split $path]]
@@ -225,7 +225,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		foreach file [glob -nocomplain -directory $currentsearchpath *.tm] {
 		    set pkgfilename [join [lrange [file split $file] $strip end] ::]
 
-		    if {![regexp -- $pkgpattern $pkgfilename ___ pkgname pkgversion]} {
+		    if {![regexp -- $pkgpattern $pkgfilename --> pkgname pkgversion]} {
 			# Ignore everything not matching our pattern for
 			# package names.
 			continue
@@ -260,10 +260,8 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 		    # Otherwise we still have to fallback to the regular
 		    # package search to complete the processing.
 
-		    if {
-			($pkgname eq $name) && 
-			[package vsatisfies $pkgversion {*}$args]
-		    } {
+		    if {($pkgname eq $name)
+			    && [package vsatisfies $pkgversion {*}$args]} {
 			set satisfied 1
 
 			# We do not abort the loop, and keep adding provide
@@ -347,7 +345,7 @@ proc ::tcl::tm::Defaults {} {
 #	Calls 'path add' to paths to the list of module search paths.
 
 proc ::tcl::tm::roots {paths} {
-    lassign [split [info tclversion] "."] major minor
+    lassign [split [package present Tcl] .] major minor
     foreach pa $paths {
 	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {

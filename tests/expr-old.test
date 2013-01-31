@@ -13,10 +13,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest 2.1
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2.1
+namespace import ::tcltest::*
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -24,9 +22,9 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testexprlong   [llength [info commands testexprlong]]
 testConstraint testexprdouble [llength [info commands testexprdouble]]
 testConstraint testexprstring [llength [info commands testexprstring]]
-testConstraint longIs32bit    [expr { ( int (0x80000000) ) < 0}]
+testConstraint longIs32bit    [expr {int(0x80000000) < 0}]
 
-if {[catch {expr T1()} msg] && ($msg eq {invalid command name "tcl::mathfunc::T1"})} {
+if {[catch {expr T1()} msg] && $msg eq {invalid command name "tcl::mathfunc::T1"}} {
     testConstraint testmathfunctions 0
 } else {
     testConstraint testmathfunctions 1
@@ -1016,11 +1014,11 @@ test expr-old-36.14 {ExprLooksLikeInt procedure} {
 } 123456789012345678901234567891
 test expr-old-36.15 {ExprLooksLikeInt procedure} {
     set x "0o99 "
-    list [catch {expr {$x + 1}} msg] $msg
+    list [catch {expr {$x+1}} msg] $msg
 } {1 {can't use invalid octal number as operand of "+"}}
 test expr-old-36.16 {ExprLooksLikeInt procedure} {
     set x " 0xffffffffffffffffffffffffffffffffffffff  "
-    expr {$x + 1}
+    expr {$x+1}
 } [expr 0x100000000000000000000000000000000000000]
 
 test expr-old-37.1 {Check that Tcl_ExprLong doesn't modify interpreter result if no error} testexprlong {
@@ -1165,7 +1163,7 @@ test expr-old-40.3 {min math function} -body {
 } -result {1 {too few arguments to math function "min"}}
 test expr-old-40.4 {min math function} -body {
     expr {min(wide(-1) << 30, 4.5, -10)}
-} -result [expr { ( wide (-1) ) << 30}]
+} -result [expr {wide(-1) << 30}]
 test expr-old-40.5 {min math function} -body {
     expr {min("a", 0)}
 } -returnCodes error -match glob -result *
@@ -1184,7 +1182,7 @@ test expr-old-41.3 {max math function} -body {
 } -result {1 {too few arguments to math function "max"}}
 test expr-old-41.4 {max math function} -body {
     expr {max(wide(1) << 30, 4.5, -10)}
-} -result [expr { ( wide(1) ) << 30}]
+} -result [expr {wide(1) << 30}]
 test expr-old-41.5 {max math function} -body {
     expr {max("a", 0)}
 } -returnCodes error -match glob -result *
@@ -1194,7 +1192,7 @@ test expr-old-41.6 {max math function} -body {
 
 # Special test for Pentium arithmetic bug of 1994:
 
-if {(4195835.0 - ((4195835.0 / 3145727.0) * 3145727.0)) == 256.0} {
+if {(4195835.0 - (4195835.0/3145727.0)*3145727.0) == 256.0} {
     puts "Warning: this machine contains a defective Pentium processor"
     puts "that performs arithmetic incorrectly.  I recommend that you"
     puts "call Intel customer service immediately at 1-800-628-8686"

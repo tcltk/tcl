@@ -11,7 +11,7 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 package require tcltest 2.2
-namespace import -force ::tcltest::*
+namespace import ::tcltest::*
 unset -nocomplain path
 catch {set oldlang $env(LANG)}
 set env(LANG) C
@@ -172,13 +172,13 @@ test unixInit-2.6 {TclpInitLibraryPath: executable relative} -setup {
     makeDirectory tmp
     makeDirectory [file join tmp sparkly]
     makeDirectory [file join tmp sparkly bin]
-    file copy [interpreter] [file join [::tcltest::temporaryDirectory] tmp sparkly \
+    file copy [interpreter] [file join [temporaryDirectory] tmp sparkly \
 	    bin tcltest]
     makeDirectory [file join tmp sparkly lib]
     makeDirectory [file join tmp sparkly lib tcl[info tclversion]]
     makeFile {} [file join tmp sparkly lib tcl[info tclversion] init.tcl]
 } -body {
-    lrange [getlibpath [file join [::tcltest::temporaryDirectory] tmp sparkly \
+    lrange [getlibpath [file join [temporaryDirectory] tmp sparkly \
 	    bin tcltest]] 1 2
 } -cleanup {
     removeFile [file join tmp sparkly lib tcl[info tclversion] init.tcl]
@@ -192,14 +192,14 @@ test unixInit-2.6 {TclpInitLibraryPath: executable relative} -setup {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
     }
-} -result [list [::tcltest::temporaryDirectory]/tmp/sparkly/lib/tcl[info tclversion] [::tcltest::temporaryDirectory]/tmp/lib/tcl[info tclversion]]
+} -result [list [temporaryDirectory]/tmp/sparkly/lib/tcl[info tclversion] [temporaryDirectory]/tmp/lib/tcl[info tclversion]]
 test unixInit-2.7 {TclpInitLibraryPath: compiled-in library path} {
     # would need test command to get defaultLibDir and compare it to
     # [lindex $auto_path end]
 } {}
 #
 # The following two tests write to the directory /tmp/sparkly instead of to
-# [::tcltest::temporaryDirectory].  This is because the failures tested by these tests
+# [temporaryDirectory].  This is because the failures tested by these tests
 # need paths near the "root" of the file system to present themselves.
 #
 test unixInit-2.8 {TclpInitLibraryPath: all absolute pathtype} -setup {
@@ -321,8 +321,8 @@ test unixInit-2.10 {TclpInitLibraryPath: executable relative} -setup {
 	set env(TCL_LIBRARY) $oldlibrary
 	unset oldlibrary
     }
-} -result [list [file join [::tcltest::temporaryDirectory] tmp sparkly library] \
-	[file join [::tcltest::temporaryDirectory] tmp library] ]
+} -result [list [file join [temporaryDirectory] tmp sparkly library] \
+	[file join [temporaryDirectory] tmp library] ]
 
 test unixInit-3.1 {TclpSetInitialEncodings} -constraints {
 	unix stdio

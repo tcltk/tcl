@@ -12,7 +12,7 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 
-package require Tcl 8.2
+package require Tcl 8.5
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
@@ -56,8 +56,8 @@ namespace eval ::msgcat::test {
 		set result [string tolower \
 			[msgcat::ConvertLocale $::tcl::mac::locale]]
 	    } else {
-		if {([info sharedlibextension] eq ".dll") && 
-		    (![catch {package require registry}])} {
+		if {([info sharedlibextension] eq ".dll")
+			&& ![catch {package require registry}]} {
 		    # Windows and Cygwin have other ways to determine the
 		    # locale when the environment variables are missing
 		    # and the registry package is present
@@ -417,7 +417,7 @@ namespace eval ::msgcat::test {
 	    mclocale $locale
 	} -body {
 	    mcload $msgdir
-	} -result [expr { $count + 1 }]
+	} -result [expr { $count+1 }]
 	incr count
     }
 

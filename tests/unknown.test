@@ -11,10 +11,8 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {"::tcltest" ni [namespace children]} {
-    package require tcltest
-    namespace import -force ::tcltest::*
-}
+package require tcltest 2
+namespace import ::tcltest::*
 
 unset -nocomplain x
 catch {rename unknown unknown.old}
@@ -49,7 +47,7 @@ test unknown-3.1 {argument quoting in calls to "unknown"} {
     set x
 } "foobar \\{ \\} a\\{b {;} \\\\ {\$a} {a\[b} \\]"
 
-proc unknown {args} {
+proc unknown args {
     error "unknown failed"
 }
 test unknown-4.1 {errors in "unknown" procedure} {
@@ -57,9 +55,9 @@ test unknown-4.1 {errors in "unknown" procedure} {
 } {1 {unknown failed} NONE}
 
 # cleanup
-catch {rename unknown ""}
+catch {rename unknown {}}
 catch {rename unknown.old unknown}
-::tcltest::cleanupTests
+cleanupTests
 return 
 
 # Local Variables:

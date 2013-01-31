@@ -156,15 +156,15 @@ namespace eval tcltest {
     # rather than go through command interfaces.
     #
     proc ArrayDefault {varName value} {
-	variable [set varName]
-	if {[array exists [set varName]]} {
+	variable $varName
+	if {[array exists $varName]} {
 	    return
 	}
-	if {[info exists [set varName]]} {
+	if {[info exists $varName]} {
 	    # Pre-initialized value is a scalar: destroy it!
-	    unset -- [set varName]
+	    unset $varName
 	}
-	array set [set varName] $value
+	array set $varName $value
     }
 
     # save the original environment so that it can be restored later
@@ -177,7 +177,7 @@ namespace eval tcltest {
     # createdNewFiles will store test files as indices and the list of
     # files (that should not have been) left behind by the test files
     # as values.
-    ArrayDefault createdNewFiles ""
+    ArrayDefault createdNewFiles {}
 
     # initialize skippedBecause array to keep track of constraints that
     # kept tests from running; a constraint name of "userSpecifiedSkip"
@@ -186,12 +186,12 @@ namespace eval tcltest {
     # the test didn't match the argument given to the -match flag; both
     # of these constraints are counted only if tcltest::debug is set to
     # true.
-    ArrayDefault skippedBecause ""
+    ArrayDefault skippedBecause {}
 
     # initialize the testConstraints array to keep track of valid
     # predefined constraints (see the explanation for the
     # InitConstraints proc for more details).
-    ArrayDefault testConstraints ""
+    ArrayDefault testConstraints {}
 
 ##### Initialize internal variables of tcltest, but only if the caller
     # has not already pre-initialized them.  This is done to support
@@ -199,18 +199,18 @@ namespace eval tcltest {
     # rather than go through command interfaces.
     #
     proc Default {varName value {verify AcceptAll}} {
-	variable [set varName]
-	if {![info exists [set varName]]} {
-	    variable [set varName] [$verify $value]
+	variable $varName
+	if {![info exists $varName]} {
+	    variable $varName [$verify $value]
 	} else {
-	    variable [set varName] [$verify [set [set varName]]]
+	    variable $varName [$verify [set $varName]]
 	}
     }
 
     # Save any arguments that we might want to pass through to other
     # programs.  This is used by the -args flag.
     # FINDUSER
-    Default parameters ""
+    Default parameters {}
 
     # Count the number of files tested (0 if runAllTests wasn't called).
     # runAllTests will set testSingleFile to false, so stats will
@@ -221,7 +221,7 @@ namespace eval tcltest {
     Default numTestFiles 0 AcceptInteger
     Default testSingleFile true AcceptBoolean
     Default currentFailure false AcceptBoolean
-    Default failFiles "" AcceptList
+    Default failFiles {} AcceptList
 
     # Tests should remove all files they create.  The test suite will
     # check the current working dir for files created by the tests.
@@ -231,8 +231,8 @@ namespace eval tcltest {
     #
     # Note that $filesExisted lists only those files that exist in
     # the original [temporaryDirectory].
-    Default filesMade "" AcceptList
-    Default filesExisted "" AcceptList
+    Default filesMade {} AcceptList
+    Default filesExisted {} AcceptList
     proc FillFilesExisted {} {
 	variable filesExisted
 
@@ -242,20 +242,20 @@ namespace eval tcltest {
 	}
 
 	# After successful filling, turn this into a no-op.
-        proc FillFilesExisted {args} {}
+	proc FillFilesExisted args {}
     }
 
     # Kept only for compatibility
-    Default constraintsSpecified "" AcceptList
-    trace add variable constraintsSpecified read \
-      {set ::tcltest::constraintsSpecified [array names ::tcltest::testConstraints] ;# }
+    Default constraintsSpecified {} AcceptList
+    trace add variable constraintsSpecified read [namespace code {
+	    set constraintsSpecified [array names testConstraints] ;#}]
 
     # tests that use threads need to know which is the main thread
     Default mainThread 1
     variable mainThread
-    if {[info commands thread::id] ne ""} {
+    if {[info commands thread::id] ne {}} {
 	set mainThread [thread::id]
-    } elseif {[info commands testthread] ne ""} {
+    } elseif {[info commands testthread] ne {}} {
 	set mainThread [testthread id]
     }
 
@@ -264,7 +264,7 @@ namespace eval tcltest {
     # change to that directory.
     variable workingDirectory
     trace add variable workingDirectory write \
-      [namespace code {cd $workingDirectory ;#}]
+	    [namespace code {cd $workingDirectory ;#}]
 
     Default workingDirectory [pwd] AcceptAbsolutePath
     proc workingDirectory { {dir ""} } {
@@ -290,15 +290,15 @@ namespace eval tcltest {
     }
 
     # stdout and stderr buffers for use when we want to store them
-    Default outData ""
-    Default errData ""
+    Default outData {}
+    Default errData {}
 
     # keep track of test level for nested test commands
     variable testLevel 0
 
     # the variables and procs that existed when saveState was called are
     # stored in a variable of the same name
-    Default saveState ""
+    Default saveState {}
 
     # Internationalization support -- used in [SetIso8859_1_Locale] and
     # [RestoreLocale]. Those commands are used in cmdIL.test.
@@ -334,12 +334,10 @@ namespace eval tcltest {
 	    "windows" {
 		set isoLocale French
 	    }
-	    default {}
 	}
     }
 
-    variable ChannelsWeOpened
-    array set ChannelsWeOpened {}
+    variable ChannelsWeOpened; array set ChannelsWeOpened {}
     # output goes to stdout by default
     Default outputChannel stdout
     proc outputChannel { {filename ""} } {
@@ -466,16 +464,13 @@ namespace eval tcltest {
 ##### Set up the configurable options
     #
     # The configurable options of the package
-    variable Option
-    array set Option ""
+    variable Option; array set Option {}
 
     # Usage strings for those options
-    variable Usage
-    array set Usage ""
+    variable Usage; array set Usage {}
 
     # Verification commands for those options
-    variable Verify
-    array set Verify ""
+    variable Verify; array set Verify {}
 
     # Initialize the default values of the configurable options that are
     # historically associated with an exported variable.  If that variable
@@ -498,14 +493,14 @@ namespace eval tcltest {
 	    set Option($option) $msg
 	}
 	if {[string length $varName]} {
-	    variable [set varName]
-	    if {[info exists [set varName]]} {
-		if {[catch {$verify [set [set varName]]} msg]} {
+	    variable $varName
+	    if {[info exists $varName]} {
+		if {[catch {$verify [set $varName]} msg]} {
 		    return -code error $msg
 		} else {
 		    set Option($option) $msg
 		}
-		unset -- [set varName]
+		unset $varName
 	    }
 	    namespace eval [namespace current] \
 	    	    [list upvar 0 Option($option) $varName]
@@ -553,20 +548,21 @@ namespace eval tcltest {
     proc EstablishAutoConfigureTraces {} {
 	variable OptionControlledVariables
 	foreach varName [concat $OptionControlledVariables Option] {
-	    variable [set varName]
-	    trace add variable [set varName] read [namespace code {ProcessCmdLineArgs ;#}]
+	    variable $varName
+	    trace add variable $varName read [namespace code {
+		    ProcessCmdLineArgs ;#}]
 	}
     }
 
     proc RemoveAutoConfigureTraces {} {
 	variable OptionControlledVariables
 	foreach varName [concat $OptionControlledVariables Option] {
-	    variable [set varName]
-	    foreach pair [trace info variable [set varName]] {
+	    variable $varName
+	    foreach pair [trace info variable $varName] {
 		lassign $pair op cmd
-		if {("read" eq $op) && 
-		    [string match "*ProcessCmdLineArgs*" $cmd]} {
-		    trace remove variable [set varName] $op $cmd
+		if {($op eq "read") &&
+			[string match *ProcessCmdLineArgs* $cmd]} {
+		    trace remove variable $varName $op $cmd
 		}
 	    }
 	}
@@ -574,7 +570,7 @@ namespace eval tcltest {
 	proc RemoveAutoConfigureTraces {} {}
     }
 
-    proc Configure {args} {
+    proc Configure args {
 	variable Option
 	variable Verify
 	set n [llength $args]
@@ -605,7 +601,7 @@ namespace eval tcltest {
 	    return -code error "missing value for option $option"
 	}
     }
-    proc configure {args} {
+    proc configure args {
 	if {[llength $args] > 1} {
 	    RemoveAutoConfigureTraces
 	}
@@ -619,7 +615,7 @@ namespace eval tcltest {
 	    if {![regexp {^(pass|body|skip|start|error|line)$} $level]} {
 		# translate single characters abbreviations to expanded list
 		set level [string map {p pass b body s skip t start e error l line} \
-			[split $level ""]]
+			[split $level {}]]
 	    }
 	}
 	set valid [list]
@@ -694,7 +690,7 @@ namespace eval tcltest {
 	Internal debug level 
     } AcceptInteger debug
 
-    proc SetSelectedConstraints {args} {
+    proc SetSelectedConstraints args {
 	variable Option
 	foreach c $Option(-constraints) {
 	    testConstraint $c 1
@@ -704,10 +700,10 @@ namespace eval tcltest {
 	Do not skip the listed constraints listed in -constraints.
     } AcceptList
     trace add variable Option(-constraints) write \
-	    [namespace code {SetSelectedConstraints  ;#}]
+	    [namespace code {SetSelectedConstraints ;#}]
 
     # Don't run only the "-constraint" specified tests by default
-    proc ClearUnselectedConstraints {args} {
+    proc ClearUnselectedConstraints args {
 	variable Option
 	variable testConstraints
 	if {!$Option(-limitconstraints)} {return}
@@ -768,13 +764,13 @@ namespace eval tcltest {
 	    [namespace code {normalizePath Option(-testdir) ;#}]
 
     proc AcceptLoadFile { file } {
-	if {"" eq $file} {return $file}
+	if {$file eq {}} {return $file}
 	set file [file join [temporaryDirectory] $file]
 	return [AcceptReadable $file]
     }
     proc ReadLoadScript {args} {
 	variable Option
-	if {"" eq $Option(-loadfile)} {return}
+	if {$Option(-loadfile) eq {}} {return}
 	set tmp [open $Option(-loadfile) r]
 	loadScript [read $tmp]
 	close $tmp
@@ -785,7 +781,8 @@ namespace eval tcltest {
     trace add variable Option(-loadfile) write [namespace code ReadLoadScript]
 
     proc AcceptOutFile { file } {
-	if {$file in "stderr stdout"} {return $file}
+	if {[string equal stderr $file]} {return $file}
+	if {[string equal stdout $file]} {return $file}
 	return [file join [temporaryDirectory] $file]
     }
 
@@ -808,7 +805,7 @@ namespace eval tcltest {
 	interp eval $slave [package ifneeded tcltest $Version]
 	interp eval $slave "tcltest::configure {*}{$args}"
 	interp alias $slave ::tcltest::ReportToMaster \
-	    "" ::tcltest::ReportedFromSlave
+	    {} ::tcltest::ReportedFromSlave
     }
     proc ReportedFromSlave {total passed skipped failed because newfiles} {
 	variable numTests
@@ -881,7 +878,7 @@ proc tcltest::DebugPArray {level arrayvar} {
     variable debug
 
     if {$debug >= $level} {
-        catch {upvar 1 $arrayvar [set arrayvar]}
+	catch {upvar 1 $arrayvar $arrayvar}
 	parray $arrayvar
     }
     return
@@ -965,8 +962,7 @@ proc tcltest::testConstraint {constraint {value ""}} {
     if {[catch {expr {$value && $value}} msg]} {
 	return -code error $msg
     }
-    if {[limitConstraints] && 
-	($constraint ni $Option(-constraints))} {
+    if {[limitConstraints] && ($constraint ni $Option(-constraints))} {
 	set value 0
     }
     set testConstraints($constraint) $value
@@ -990,11 +986,7 @@ proc tcltest::interpreter { {interp ""} } {
     if {[llength [info level 0]] == 1} {
 	return $tcltest
     }
-    if {"" eq $interp} {
-	set tcltest ""
-    } else {
-	set tcltest $interp
-    }
+    set tcltest $interp
 }
 
 #####################################################################
@@ -1059,7 +1051,7 @@ proc tcltest::PrintError {errorMsg} {
 		[expr {80 - $InitialMsgLen}]]]
 	puts [errorChannel] [string range $errorMsg 0 $beginningIndex]
 
-	while {"end" ne $beginningIndex} {
+	while {$beginningIndex ne "end"} {
 	    puts -nonewline [errorChannel] \
 		    [string repeat " " $InitialMsgLen]
 	    if {($endingIndex - $beginningIndex)
@@ -1112,7 +1104,7 @@ proc tcltest::PrintError {errorMsg} {
 proc tcltest::SafeFetch {n1 n2 op} {
     variable testConstraints
     DebugPuts 3 "entering SafeFetch $n1 $n2 $op"
-    if {"" eq $n2} {return}
+    if {$n2 eq {}} {return}
     if {![info exists testConstraints($n2)]} {
 	if {[catch {testConstraint $n2 [eval [ConstraintInitializer $n2]]}]} {
 	    testConstraint $n2 0
@@ -1182,13 +1174,13 @@ proc tcltest::DefineConstraintInitializers {} {
     # constraints.
 
     ConstraintInitializer unixOnly \
-	    {string equal $::tcl_platform(platform) "unix"}
+	    {string equal $::tcl_platform(platform) unix}
     ConstraintInitializer macOnly \
-	    {string equal $::tcl_platform(platform) "macintosh"}
+	    {string equal $::tcl_platform(platform) macintosh}
     ConstraintInitializer pcOnly \
-	    {string equal $::tcl_platform(platform) "windows"}
+	    {string equal $::tcl_platform(platform) windows}
     ConstraintInitializer winOnly \
-	    {string equal $::tcl_platform(platform) "windows"}
+	    {string equal $::tcl_platform(platform) windows}
 
     ConstraintInitializer unix {testConstraint unixOnly}
     ConstraintInitializer mac {testConstraint macOnly}
@@ -1257,9 +1249,8 @@ proc tcltest::DefineConstraintInitializers {} {
     # are running as root on Unix.
 
     ConstraintInitializer root {expr \
-	    {("unix" eq $::tcl_platform(platform)) && 
-	      (("root" eq $::tcl_platform(user)) || 
-	       ("" eq $::tcl_platform(user)))}}
+	    {($::tcl_platform(platform) eq "unix") &&
+		    ($::tcl_platform(user) in {root {}})}}
     ConstraintInitializer notRoot {expr {![testConstraint root]}}
 
     # Set nonBlockFiles constraint: 1 means this platform supports
@@ -1268,7 +1259,7 @@ proc tcltest::DefineConstraintInitializers {} {
     ConstraintInitializer nonBlockFiles {
 	    set code [expr {[catch {set f [open defs r]}] 
 		    || [catch {chan configure $f -blocking off}]}]
-	    catch {chan close $f}
+	    catch {close $f}
 	    set code
     }
 
@@ -1293,10 +1284,10 @@ proc tcltest::DefineConstraintInitializers {} {
 
     ConstraintInitializer unixExecs {
 	set code 1
-        if {"macintosh" eq $::tcl_platform(platform)} {
+        if {$::tcl_platform(platform) eq "macintosh"} {
 	    set code 0
         }
-        if {"windows" eq $::tcl_platform(platform)} {
+        if {$::tcl_platform(platform) eq "windows"} {
 	    if {[catch {
 	        set file _tcl_test_remove_me.txt
 	        makeFile {hello} $file
@@ -1400,7 +1391,7 @@ proc tcltest::Usage { {option ""} } {
 	    append msg \n$line($opt)
 	    append msg [string repeat " " [expr {$max - $length($opt)}]]
 	    set u [string trim $usage($opt)]
-	    catch {append u "  (default: \[[Configure $opt]\])"}
+	    catch {append u "  (default: \[[Configure $opt]])"}
 	    regsub -all {\s*\n\s*} $u " " u
 	    while {[string length $u] > $rest} {
 		set break [string wordstart $u $rest]
@@ -1414,7 +1405,7 @@ proc tcltest::Usage { {option ""} } {
 	    append msg $u
 	}
 	return $msg\n
-    } elseif {"-help" eq $option} {
+    } elseif {$option eq "-help"} {
 	return [list -help "" "Display this usage information."]
     } else {
 	set type [lindex [info args $Verify($option)] 0]
@@ -1441,15 +1432,15 @@ proc tcltest::Usage { {option ""} } {
 proc tcltest::ProcessFlags {flagArray} {
     # Process -help first
     if {"-help" in $flagArray} {
-	PrintUsageInfo 
+	PrintUsageInfo
 	exit 1
     }
 
-    if {![llength $flagArray]} {
-	RemoveAutoConfigureTraces 
+    if {[llength $flagArray] == 0} {
+	RemoveAutoConfigureTraces
     } else {
 	set args $flagArray
-	while {([llength $args] > 1) && [catch {configure {*}$args} msg]} {
+	while {[llength $args] > 1 && [catch {configure {*}$args} msg]} {
 
 	    # Something went wrong parsing $args for tcltest options
 	    # Check whether the problem is "unknown option"
@@ -1572,7 +1563,7 @@ namespace eval tcltest::Replace {
 proc tcltest::Replace::puts {args} {
     variable [namespace parent]::outData
     variable [namespace parent]::errData
-    switch -- [llength $args] {
+    switch [llength $args] {
 	1 {
 	    # Only the string to be printed is specified
 	    append outData [lindex $args 0]\n
@@ -1581,7 +1572,7 @@ proc tcltest::Replace::puts {args} {
 	}
 	2 {
 	    # Either -nonewline or channelId has been specified
-	    if {"-nonewline" eq [lindex $args 0]} {
+	    if {[lindex $args 0] eq "-nonewline"} {
 		append outData [lindex $args end]
 		return
 		# return [Puts -nonewline [lindex $args end]]
@@ -1591,23 +1582,20 @@ proc tcltest::Replace::puts {args} {
 	    }
 	}
 	3 {
-	    if {"-nonewline" eq [lindex $args 0]} {
+	    if {[lindex $args 0] eq "-nonewline"} {
 		# Both -nonewline and channelId are specified, unless
 		# it's an error.  -nonewline is supposed to be argv[0].
 		set channel [lindex $args 1]
 		set newline ""
 	    }
 	}
-        default {}
     }
 
     if {[info exists channel]} {
-	if {($channel eq [[namespace parent]::outputChannel]) || 
-	    ($channel eq "stdout")} {
+	if {$channel in [list [[namespace parent]::outputChannel] stdout]} {
 	    append outData [lindex $args end]$newline
 	    return
-	} elseif {($channel eq [[namespace parent]::errorChannel]) || 
-		  ($channel eq "stderr")} {
+	} elseif {$channel in [list [[namespace parent]::errorChannel] stderr]} {
 	    append errData [lindex $args end]$newline
 	    return
 	}
@@ -1641,8 +1629,8 @@ proc tcltest::Eval {script {ignoreOutput 1}} {
     variable errData
     DebugPuts 3 "[lindex [info level 0] 0] called"
     if {!$ignoreOutput} {
-	set outData ""
-	set errData ""
+	set outData {}
+	set errData {}
 	rename ::puts [namespace current]::Replace::Puts
 	namespace eval :: [list namespace import [namespace origin Replace::puts]]
 	namespace import Replace::puts
@@ -1750,11 +1738,11 @@ proc tcltest::SubstArguments {argList} {
     # separated strings as it throws away the whitespace which maybe
     # important so we have to do it all by hand.
 
-    set result ""
+    set result {}
     set token ""
 
     while {[string length $argList]} {
-        # Look for the next word containing a quote: \" \{ \}
+        # Look for the next word containing a quote: " { }
         if {[regexp -indices {[^ \t\n]*[\"\{\}]+[^ \t\n]*} \
 		$argList all]} {
             # Get the text leading up to this word, but not including
@@ -1772,11 +1760,11 @@ proc tcltest::SubstArguments {argList} {
         } else {
             # Take everything up to the end of the argList.
             set text $argList
-            set word ""
-            set argList [list]
+            set word {}
+            set argList {}
         }
 
-        if {$token ne ""} {
+        if {$token ne {}} {
             # If we saw a word with quote before, then there is a
             # multi-word token starting with that word.  In this case,
             # add the text and the current word to this token.
@@ -1791,11 +1779,11 @@ proc tcltest::SubstArguments {argList} {
             set token $word
         }
 
-        if { ([catch {llength $token} length] == 0) && ($length == 1)} {
+        if { [catch {llength $token} length] == 0 && $length == 1} {
             # The token is a valid list so add it to the result.
             # lappend result [string trim $token]
             append result \{$token\}
-            set token ""
+            set token {}
         }
     }
 
@@ -1883,7 +1871,7 @@ proc tcltest::test {name description args} {
     # Pre-define everything to null except output and errorOutput.  We
     # determine whether or not to trap output based on whether or not
     # these variables (output & errorOutput) are defined.
-    lassign "" constraints setup cleanup body result returnCodes match
+    lassign {} constraints setup cleanup body result returnCodes match
 
     # Set the default match mode
     set match exact
@@ -1895,8 +1883,7 @@ proc tcltest::test {name description args} {
 
     # The old test format can't have a 3rd argument (constraints or
     # script) that starts with '-'.
-    if {[string match -* [lindex $args 0]] || 
-	([llength $args] <= 1)} {
+    if {[string match -* [lindex $args 0]] || ([llength $args] <= 1)} {
 	if {[llength $args] == 1} {
 	    set list [SubstArguments [lindex $args 0]]
 	    foreach {element value} $list {
@@ -2037,7 +2024,7 @@ proc tcltest::test {name description args} {
 		    [file join [workingDirectory] core] \
 		    [file join [temporaryDirectory] core-$name]
 		} msg
-		if {$msg ne ""} {
+		if {$msg ne {}} {
 		    append coreMsg "\nError:\
 			Problem renaming core file: $msg"
 		}
@@ -2047,7 +2034,7 @@ proc tcltest::test {name description args} {
 
     # check if the return code matched the expected return code
     set codeFailure 0
-    if {(!$setupFailure) && ($returnCode ni $returnCodes)} {
+    if {!$setupFailure && ($returnCode ni $returnCodes)} {
 	set codeFailure 1
     }
 
@@ -2055,7 +2042,7 @@ proc tcltest::test {name description args} {
     # them.  If the comparison fails, then so did the test.
     set outputFailure 0
     variable outData
-    if {[info exists output] && (!$codeFailure)} {
+    if {[info exists output] && !$codeFailure} {
 	if {[set outputCompare [catch {
 	    CompareStrings $outData $output $match
 	} outputMatch]] == 0} {
@@ -2067,7 +2054,7 @@ proc tcltest::test {name description args} {
 
     set errorFailure 0
     variable errData
-    if {[info exists errorOutput] && (!$codeFailure)} {
+    if {[info exists errorOutput] && !$codeFailure} {
 	if {[set errorCompare [catch {
 	    CompareStrings $errData $errorOutput $match
 	} errorMatch]] == 0} {
@@ -2116,8 +2103,8 @@ proc tcltest::test {name description args} {
     }	
     puts [outputChannel] "\n"
     if {[IsVerbose line]} {
-	if {(![catch {set testFrame [info frame -1]}]) && 
-	    ([dict get $testFrame type] eq "source")} {
+	if {![catch {set testFrame [info frame -1]}] &&
+		[dict get $testFrame type] eq "source"} {
 	    set testFile [dict get $testFrame file]
 	    set testLine [dict get $testFrame line]
 	} else {
@@ -2171,7 +2158,7 @@ proc tcltest::test {name description args} {
 	puts [outputChannel] "---- Return code should have been\
 		one of: $returnCodes"
 	if {[IsVerbose error]} {
-	    if {[info exists errorInfo(body)] && ([lsearch $returnCodes 1] < 0)} {
+	    if {[info exists errorInfo(body)] && (1 ni $returnCodes)} {
 		puts [outputChannel] "---- errorInfo: $errorInfo(body)"
 		puts [outputChannel] "---- errorCode: $errorCode(body)"
 	    }
@@ -2252,7 +2239,7 @@ proc tcltest::Skipped {name constraints} {
 	}
 	return 1
     }
-    if {"" eq $constraints} {
+    if {$constraints eq {}} {
 	# If we're limited to the listed constraints and there aren't
 	# any listed, then we shouldn't run the test.
 	if {[limitConstraints]} {
@@ -2269,7 +2256,7 @@ proc tcltest::Skipped {name constraints} {
 	set doTest 0
 	if {[string match {*[$\[]*} $constraints] != 0} {
 	    # full expression, e.g. {$foo > [info tclversion]}
-	    catch {set doTest [uplevel \#0 [list expr $constraints]]}
+	    catch {set doTest [uplevel #0 [list expr $constraints]]}
 	} elseif {[regexp {[^.:_a-zA-Z0-9 \n\r\t]+} $constraints] != 0} {
 	    # something like {a || b} should be turned into
 	    # $testConstraints(a) || $testConstraints(b).
@@ -2384,7 +2371,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
     set testFileName [file tail [info script]]
 
     # Hook to handle reporting to a parent interpreter
-    if {[llength [info commands "[namespace current]::ReportToMaster"]]} {
+    if {[llength [info commands [namespace current]::ReportToMaster]]} {
 	ReportToMaster $numTests(Total) $numTests(Passed) $numTests(Skipped) \
 	    $numTests(Failed) [array get skippedBecause] \
 	    [array get createdNewFiles]
@@ -2406,12 +2393,12 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 		catch {file delete -force -- $file}
 	    }
 	}
-        set currentFiles [list]
+	set currentFiles {}
 	foreach file [glob -nocomplain \
 		-directory [temporaryDirectory] *] {
 	    lappend currentFiles [file tail $file]
 	}
-	set newFiles [list]
+	set newFiles {}
 	foreach file $currentFiles {
 	    if {$file ni $filesExisted} {
 		lappend newFiles $file
@@ -2444,7 +2431,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    if {[llength $failFiles] > 0} {
 		puts [outputChannel] \
 			"Files with failing tests: $failFiles"
-	        set failFiles [list]
+		set failFiles {}
 	    }
 	}
 
@@ -2487,7 +2474,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	# loop is running, which is the real issue.
 	# Actually, this doesn't belong here at all.  A package
 	# really has no business [exit]-ing an application.
-	if {(![catch {package present Tk}]) && (![testConstraint interactive])} {
+	if {![catch {package present Tk}] && ![testConstraint interactive]} {
 	    exit
 	}
     } else {
@@ -2560,7 +2547,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 			[file join [workingDirectory] core] \
 			[file join [temporaryDirectory] core-$testFileName]
 		} msg
-		if {$msg ne ""} {
+		if {$msg ne {}} {
 		    PrintError "Problem renaming file: $msg"
 		}
 	    } else {
@@ -2605,9 +2592,7 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 #       None
 
 # a lower case version is needed for compatibility with tcltest 1.0
-proc tcltest::getMatchingFiles {args} {
-    GetMatchingFiles {*}$args
-}
+proc tcltest::getMatchingFiles args {GetMatchingFiles {*}$args}
 
 proc tcltest::GetMatchingFiles { args } {
     if {[llength $args]} {
@@ -2739,8 +2724,8 @@ proc tcltest::runAllTests { {shell ""} } {
 	    [temporaryDirectory]"
 
     # [file system] first available in Tcl 8.4
-    if {(![catch {file system [testsDirectory]} result]) && 
-	("native" ne [lindex $result 0])} {
+    if {![catch {file system [testsDirectory]} result]
+	    && ([lindex $result 0] ne "native")} {
 	# If we aren't running in the native filesystem, then we must
 	# run the tests in a single process (via 'source'), because
 	# trying to run then via a pipe will fail since the files don't
@@ -2800,7 +2785,7 @@ proc tcltest::runAllTests { {shell ""} } {
 		incr numTestFiles
 		set pipeFd [open $cmd "r"]
 		while {[gets $pipeFd line] >= 0} {
-		    if {[regexp -- [join {
+		    if {[regexp [join {
 			    {^([^:]+):\t}
 			    {Total\t([0-9]+)\t}
 			    {Passed\t([0-9]+)\t}
@@ -2809,12 +2794,12 @@ proc tcltest::runAllTests { {shell ""} } {
 			    } ""] $line null testFile \
 			    Total Passed Skipped Failed]} {
 			foreach index {Total Passed Skipped Failed} {
-			    incr numTests($index) [set [set index]]
+			    incr numTests($index) [set $index]
 			}
 			if {$Failed > 0} {
 			    lappend failFiles $testFile
 			}
-		    } elseif {[regexp -- [join {
+		    } elseif {[regexp [join {
 			    {^Number of tests skipped }
 			    {for each constraint:}
 			    {|^\t(\d+)\t(.+)$}
@@ -2883,11 +2868,6 @@ proc tcltest::runAllTests { {shell ""} } {
 #     none.
 
 proc tcltest::loadTestedCommands {} {
-    variable l
-    if {"" eq [loadScript]} {
-	return
-    }
-
     return [uplevel 1 [loadScript]]
 }
 
@@ -2930,8 +2910,7 @@ proc tcltest::saveState {} {
 proc tcltest::restoreState {} {
     variable saveState
     foreach p [uplevel 1 {::info procs}] {
-	if {($p ni [lindex $saveState 0]) && 
-	    ("[namespace current]::$p" ne \
+	if {($p ni [lindex $saveState 0]) && ("[namespace current]::$p" ne
 		[uplevel 1 [list ::namespace origin $p]])} {
 
 	    DebugPuts 2 "[lindex [info level 0] 0]: Removing proc $p"
@@ -3212,9 +3191,9 @@ proc tcltest::OpenFiles {} {
 
 proc tcltest::LeakFiles {old} {
     if {[catch {testchannel open} new]} {
-	return ""
+	return {}
     }
-    set leak [list]
+    set leak {}
     foreach p $new {
 	if {$p ni $old} {
 	    lappend leak $p
@@ -3287,7 +3266,7 @@ proc tcltest::RestoreLocale {} {
 #
 
 proc tcltest::threadReap {} {
-    if {[info commands testthread] ne ""} {
+    if {[info commands testthread] ne {}} {
 
 	# testthread built into tcltest
 
@@ -3307,7 +3286,7 @@ proc tcltest::threadReap {} {
 	}
 	testthread errorproc ThreadError
 	return [llength [testthread names]]
-    } elseif {[info commands thread::id] ne ""} {
+    } elseif {[info commands thread::id] ne {}} {
 	
 	# Thread extension
 
@@ -3346,7 +3325,7 @@ namespace eval tcltest {
     # for compatibility support.  The modern way to add a custom
     # test constraint is to just call the [testConstraint] command
     # straight away, without all this "hook" nonsense.
-    if {[namespace current] eq \
+    if {[namespace current] eq
 	    [namespace qualifiers [namespace which initConstraintsHook]]} {
 	InitConstraints
     } else {
@@ -3391,11 +3370,11 @@ namespace eval tcltest {
 	}
 	foreach hook { PrintUsageInfoHook processCmdLineArgsHook
 			processCmdLineArgsAddFlagsHook } {
-	    if {[namespace current] eq [namespace qualifiers \
-		    [namespace which $hook]]} {
+	    if {[namespace current] eq
+		    [namespace qualifiers [namespace which $hook]]} {
 		set required true
 	    } else {
-	        proc $hook {args} {}
+		proc $hook args {}
 	    }
 	}
 	return $required

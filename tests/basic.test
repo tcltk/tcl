@@ -16,7 +16,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 package require tcltest 2
-namespace import -force ::tcltest::*
+namespace import ::tcltest::*
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
@@ -613,7 +613,7 @@ test basic-46.4 {Tcl_AllowExceptions: exception return not allowed} -setup {
     removeFile BREAKtest
 } -returnCodes error -match glob -result {invoked "break" outside of a loop
     while executing*
-"foo \[set a 1\] \[break\]"
+"foo \[set a 1] \[break]"
     (file "*BREAKtest" line 2)}
 
 test basic-46.5 {Tcl_AllowExceptions: exception return not allowed} -setup {
@@ -647,12 +647,12 @@ proc l3 {} {
 # Do all tests once byte compiled and once with direct string evaluation
 for {set noComp 0} {$noComp <= 1} {incr noComp} {
 
-if {$noComp} {
-    interp alias "" run "" testevalex
+if $noComp {
+    interp alias {} run {} testevalex
     set constraints testevalex
 } else {
-    interp alias "" run "" if 1
-    set constraints ""
+    interp alias {} run {} if 1
+    set constraints {}
 }
 
 test basic-47.2.$noComp {Tcl_EvalEx: error during word expansion} -body {
@@ -961,8 +961,8 @@ test basic-49.2 {Tcl_EvalEx: verify TCL_EVAL_GLOBAL operation} testevalex {
 
 # Clean up after expand tests
 unset noComp l1 l2 constraints
-rename l3 ""
-rename run ""
+rename l3 {}
+rename run {}
 
  #cleanup
 catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -973,5 +973,5 @@ catch {rename q ""}
 catch {rename cmd ""}
 catch {rename value:at: ""}
 unset -nocomplain x
-::tcltest::cleanupTests
+cleanupTests
 return
