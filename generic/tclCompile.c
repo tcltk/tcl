@@ -488,6 +488,7 @@ TclSetByteCodeFromAny(
     int length, result = TCL_OK;
     const char *stringPtr;
     ContLineLoc* clLocPtr;
+    void *stringIntRep = NULL;
 
 #ifdef TCL_COMPILE_DEBUG
     if (!traceInitialized) {
@@ -553,7 +554,13 @@ TclSetByteCodeFromAny(
     TclVerifyLocalLiteralTable(&compEnv);
 #endif /*TCL_COMPILE_DEBUG*/
 
+	/* If previous objType was string, keep the internal representation */
+	if(objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
     TclInitByteCodeObj(objPtr, &compEnv);
+    objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
 #ifdef TCL_COMPILE_DEBUG
     if (tclTraceCompile >= 2) {
 	TclPrintByteCodeObj(interp, objPtr);
@@ -682,9 +689,10 @@ FreeByteCodeInternalRep(
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
+    if (objPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(objPtr->internalRep.twoPtrValue.ptr2);
+    }
     objPtr->typePtr = NULL;
-    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 }
 
 /*
@@ -2111,6 +2119,7 @@ TclInitByteCodeObj(
     size_t codeBytes, objArrayBytes, exceptArrayBytes, cmdLocBytes;
     size_t auxDataArrayBytes, structureSize;
     register unsigned char *p;
+    void *stringIntRep = NULL;
 #ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
 #endif
@@ -2218,6 +2227,11 @@ TclInitByteCodeObj(
     RecordByteCodeStats(codePtr);
 #endif /* TCL_COMPILE_STATS */
 
+	/* If previous objType was string, keep the internal representation */
+	if (objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
     /*
      * Free the old internal rep then convert the object to a bytecode object
      * by making its internal rep point to the just compiled ByteCode.
@@ -2225,7 +2239,7 @@ TclInitByteCodeObj(
 
     TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = (void *) codePtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
     objPtr->typePtr = &tclByteCodeType;
 
     /*

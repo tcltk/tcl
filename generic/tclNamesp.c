@@ -229,7 +229,7 @@ static void		UnlinkNsPath(Namespace *nsPtr);
  * the object.
  */
 
-static Tcl_ObjType nsNameType = {
+Tcl_ObjType tclNsNameType = {
     "nsName",			/* the type's name */
     FreeNsNameInternalRep,	/* freeIntRepProc */
     DupNsNameInternalRep,	/* dupIntRepProc */
@@ -2700,7 +2700,7 @@ GetNamespaceFromObj(
     ResolvedNsName *resNamePtr;
     Namespace *nsPtr, *refNsPtr;
 
-    if (objPtr->typePtr == &nsNameType) {
+    if (objPtr->typePtr == &tclNsNameType) {
 	/*
 	 * Check that the ResolvedNsName is still valid; avoid letting the ref 
 	 * cross interps.
@@ -4615,6 +4615,9 @@ FreeNsNameInternalRep(
 	}
 	ckfree((char *) resNamePtr);
     }
+    if (objPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(objPtr->internalRep.twoPtrValue.ptr2);
+	}
     objPtr->typePtr = NULL;
 }
 
@@ -4648,7 +4651,7 @@ DupNsNameInternalRep(
     copyPtr->internalRep.twoPtrValue.ptr1 = resNamePtr;
     copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     resNamePtr->refCount++;
-    copyPtr->typePtr = &nsNameType;
+    copyPtr->typePtr = &tclNsNameType;
 }
 
 /*
@@ -4684,6 +4687,7 @@ SetNsNameFromAny(
     Namespace *nsPtr, *dummy1Ptr, *dummy2Ptr;
     register ResolvedNsName *resNamePtr;
     const char *name;
+    void *stringIntRep = NULL;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -4705,7 +4709,7 @@ SetNsNameFromAny(
 	 * it, nor time determining its invalidity again and again.
 	 */
 
-	if (objPtr->typePtr == &nsNameType) {
+	if (objPtr->typePtr == &tclNsNameType) {
 	    TclFreeIntRep(objPtr);
 	    objPtr->typePtr = NULL;
 	}
@@ -4721,10 +4725,15 @@ SetNsNameFromAny(
 	resNamePtr->refNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     }
     resNamePtr->refCount = 1;
+	/* If previous objType was string, keep the internal representation */
+	if (objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
     TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = resNamePtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-    objPtr->typePtr = &nsNameType;
+    objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
+    objPtr->typePtr = &tclNsNameType;
     return TCL_OK;
 }
 
@@ -6423,6 +6432,11 @@ MakeCachedEnsembleCommand(
 	}
 	ckfree(ensembleCmd->fullSubcmdName);
     } else {
+	/* If previous objType was string, keep the internal representation */
+	if (objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	/*
 	 * Kill the old internal rep, and replace it with a brand new one of
 	 * our own.

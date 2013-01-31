@@ -35,7 +35,7 @@ static int		MakePathFromNormalized(Tcl_Interp *interp,
  * internally.
  */
 
-static Tcl_ObjType tclFsPathType = {
+Tcl_ObjType tclFsPathType = {
     "path",				/* name */
     FreeFsPathInternalRep,		/* freeIntRepProc */
     DupFsPathInternalRep,		/* dupIntRepProc */
@@ -2586,6 +2586,9 @@ FreeFsPathInternalRep(
     }
 
     ckfree((char *) fsPathPtr);
+    if (pathPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(pathPtr->internalRep.twoPtrValue.ptr2);
+    }
     pathPtr->typePtr = NULL;
 }
 

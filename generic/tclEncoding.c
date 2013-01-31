@@ -276,7 +276,7 @@ static int		Iso88591ToUtfProc(ClientData clientData,
  * See concerns raised in [Bug 1077262].
  */
 
-static Tcl_ObjType encodingType = {
+Tcl_ObjType tclEncodingType = {
     "encoding", FreeEncodingIntRep, DupEncodingIntRep, NULL, NULL
 };
 
@@ -306,16 +306,22 @@ Tcl_GetEncodingFromObj(
     Tcl_Encoding *encodingPtr)
 {
     const char *name = Tcl_GetString(objPtr);
-    if (objPtr->typePtr != &encodingType) {
+    if (objPtr->typePtr != &tclEncodingType) {
+	void *stringIntRep = NULL;
 	Tcl_Encoding encoding = Tcl_GetEncoding(interp, name);
 
 	if (encoding == NULL) {
 	    return TCL_ERROR;
 	}
+	/* If previous objType was string, keep the internal representation */
+	if (objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	TclFreeIntRep(objPtr);
 	objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) encoding;
-	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	objPtr->typePtr = &encodingType;
+	objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
+	objPtr->typePtr = &tclEncodingType;
     }
     *encodingPtr = Tcl_GetEncoding(NULL, name);
     return TCL_OK;
@@ -336,6 +342,9 @@ FreeEncodingIntRep(
     Tcl_Obj *objPtr)
 {
     Tcl_FreeEncoding((Tcl_Encoding) objPtr->internalRep.twoPtrValue.ptr1);
+    if (objPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(objPtr->internalRep.twoPtrValue.ptr2);
+    }
     objPtr->typePtr = NULL;
 }
 

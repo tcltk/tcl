@@ -402,6 +402,8 @@ SetByteArrayFromAny(
     Tcl_UniChar ch;
 
     if (objPtr->typePtr != &tclByteArrayType) {
+	void *stringIntRep = NULL;
+
 	src = TclGetStringFromObj(objPtr, &length);
 	srcEnd = src + length;
 
@@ -414,9 +416,15 @@ SetByteArrayFromAny(
 	byteArrayPtr->used = dst - byteArrayPtr->bytes;
 	byteArrayPtr->allocated = length;
 
+	/* If previous objType was string, keep the internal representation */
+	if(objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	TclFreeIntRep(objPtr);
 	objPtr->typePtr = &tclByteArrayType;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
+	objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
     }
     return TCL_OK;
 }
@@ -444,7 +452,6 @@ FreeByteArrayInternalRep(
 {
 	if (objPtr->internalRep.twoPtrValue.ptr2) {
 	    ckfree(objPtr->internalRep.twoPtrValue.ptr2);
-	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	}
     ckfree((char *) GET_BYTEARRAY(objPtr));
     objPtr->typePtr = NULL;

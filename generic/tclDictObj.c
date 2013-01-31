@@ -403,10 +403,7 @@ FreeDictInternalRep(
     }
 	if (dictPtr->internalRep.twoPtrValue.ptr2) {
 	    ckfree(dictPtr->internalRep.twoPtrValue.ptr2);
-	    dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	}
-
-    dictPtr->internalRep.twoPtrValue.ptr1 = NULL;	/* Belt and braces! */
     dictPtr->typePtr = NULL;
 }
 
@@ -580,6 +577,7 @@ SetDictFromAny(
     Tcl_HashEntry *hPtr;
     int isNew, result;
     Dict *dict = (Dict *) ckalloc(sizeof(Dict));
+	void *stringIntRep = NULL;
 
     InitChainTable(dict);
 
@@ -681,7 +679,13 @@ SetDictFromAny(
 	}
     }
 
-    /*
+	/* If previous objType was string, keep the internal representation */
+	if (objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
+
+	/*
      * Free the old internalRep before setting the new one. We do this as late
      * as possible to allow the conversion code, in particular
      * Tcl_GetStringFromObj, to use that old internalRep.
@@ -692,7 +696,7 @@ SetDictFromAny(
     dict->chain = NULL;
     dict->refcount = 1;
     objPtr->internalRep.twoPtrValue.ptr1 = dict;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
     objPtr->typePtr = &tclDictType;
     return TCL_OK;
 

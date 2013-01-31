@@ -27,7 +27,7 @@ static void		FreeIndex(Tcl_Obj *objPtr);
  * that can be invoked by generic object code.
  */
 
-static Tcl_ObjType indexType = {
+Tcl_ObjType tclIndexType = {
     "index",				/* name */
     FreeIndex,				/* freeIntRepProc */
     DupIndex,				/* dupIntRepProc */
@@ -104,7 +104,7 @@ Tcl_GetIndexFromObj(
      * the common case where the result is cached).
      */
 
-    if (objPtr->typePtr == &indexType) {
+    if (objPtr->typePtr == &tclIndexType) {
 	IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 
 	/*
@@ -178,7 +178,7 @@ Tcl_GetIndexFromObjStruct(
      * See if there is a valid cached result from a previous lookup.
      */
 
-    if (objPtr->typePtr == &indexType) {
+    if (objPtr->typePtr == &tclIndexType) {
 	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
 	    *indexPtr = indexRep->index;
@@ -239,14 +239,20 @@ Tcl_GetIndexFromObjStruct(
      * operation.
      */
 
-    if (objPtr->typePtr == &indexType) {
+    if (objPtr->typePtr == &tclIndexType) {
  	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
     } else {
+	void *stringIntRep = NULL;
+	/* If previous objType was string, keep the internal representation */
+	if (objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	TclFreeIntRep(objPtr);
  	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
  	objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
- 	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
- 	objPtr->typePtr = &indexType;
+ 	objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
+ 	objPtr->typePtr = &tclIndexType;
     }
     indexRep->tablePtr = (void *) tablePtr;
     indexRep->offset = offset;
@@ -382,7 +388,7 @@ DupIndex(
 
     memcpy(dupIndexRep, srcIndexRep, sizeof(IndexRep));
     dupPtr->internalRep.twoPtrValue.ptr1 = dupIndexRep;
-    dupPtr->typePtr = &indexType;
+    dupPtr->typePtr = &tclIndexType;
 }
 
 /*
@@ -407,6 +413,9 @@ FreeIndex(
     Tcl_Obj *objPtr)
 {
     ckfree((char *) objPtr->internalRep.twoPtrValue.ptr1);
+    if (objPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(objPtr->internalRep.twoPtrValue.ptr2);
+    }
     objPtr->typePtr = NULL;
 }
 
@@ -532,7 +541,7 @@ Tcl_WrongNumArgs(
 	     * Add the element, quoting it if necessary.
 	     */
 
-	    if (origObjv[i]->typePtr == &indexType) {
+	    if (origObjv[i]->typePtr == &tclIndexType) {
 		register IndexRep *indexRep =
 			origObjv[i]->internalRep.twoPtrValue.ptr1;
 
@@ -588,7 +597,7 @@ Tcl_WrongNumArgs(
 	 * Otherwise, just use the string rep.
 	 */
 
-	if (objv[i]->typePtr == &indexType) {
+	if (objv[i]->typePtr == &tclIndexType) {
 	    register IndexRep *indexRep = objv[i]->internalRep.twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);

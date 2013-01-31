@@ -401,8 +401,16 @@ Tcl_GetCharLength(
     String *stringPtr;
 
     if ((objPtr->typePtr == &tclByteArrayType) ||
+	    (objPtr->typePtr == &tclByteCodeType) ||
 	    (objPtr->typePtr == &tclDictType) ||
-	    (objPtr->typePtr == &tclListType)) {
+	    (objPtr->typePtr == &tclEncodingType) ||
+	    (objPtr->typePtr == &tclEndOffsetType) ||
+	    (objPtr->typePtr == &tclExprCodeType) ||
+	    (objPtr->typePtr == &tclFsPathType) ||
+	    (objPtr->typePtr == &tclIndexType) ||
+	    /*(objPtr->typePtr == &tclListType) || This one causes cmdIL-1.29 failure */
+	    (objPtr->typePtr == &tclNsNameType) ||
+	    (objPtr->typePtr == &tclProcBodyType)) {
 	/* Try to convert object to String type, but remember old intRep. */
 	int length;
 	Tcl_ObjType *prevtype =  objPtr->typePtr;

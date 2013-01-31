@@ -635,7 +635,7 @@ static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
  * compiled bytecode for Tcl expressions.
  */
 
-static Tcl_ObjType exprCodeType = {
+Tcl_ObjType tclExprCodeType = {
     "exprcode",
     FreeExprCodeInternalRep,	/* freeIntRepProc */
     DupExprCodeInternalRep,	/* dupIntRepProc */
@@ -1197,7 +1197,7 @@ Tcl_ExprObj(
      * Get the expression ByteCode from the object. If it exists, make sure it
      * is valid in the current context.
      */
-    if (objPtr->typePtr == &exprCodeType) {
+    if (objPtr->typePtr == &tclExprCodeType) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
 	codePtr = (ByteCode *) objPtr->internalRep.twoPtrValue.ptr1;
@@ -1209,7 +1209,7 @@ Tcl_ExprObj(
 	    objPtr->typePtr = (Tcl_ObjType *) NULL;
 	}
     }
-    if (objPtr->typePtr != &exprCodeType) {
+    if (objPtr->typePtr != &tclExprCodeType) {
 	/*
 	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
@@ -1238,7 +1238,7 @@ Tcl_ExprObj(
 
 	TclEmitOpcode(INST_DONE, &compEnv);
 	TclInitByteCodeObj(objPtr, &compEnv);
-	objPtr->typePtr = &exprCodeType;
+	objPtr->typePtr = &tclExprCodeType;
 	TclFreeCompileEnv(&compEnv);
 	codePtr = (ByteCode *) objPtr->internalRep.twoPtrValue.ptr1;
 #ifdef TCL_COMPILE_DEBUG
@@ -1344,9 +1344,10 @@ FreeExprCodeInternalRep(
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
+    if (objPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(objPtr->internalRep.twoPtrValue.ptr2);
+    }
     objPtr->typePtr = NULL;
-    objPtr->internalRep.twoPtrValue.ptr1 = NULL;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 }
 
 /*
