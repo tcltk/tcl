@@ -2391,8 +2391,7 @@ ProcBodyFree(
 {
     Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    procPtr->refCount--;
-    if (procPtr->refCount <= 0) {
+    if (procPtr->refCount-- < 2) {
 	TclProcCleanupProc(procPtr);
     }
 }
@@ -2672,7 +2671,6 @@ Tcl_ApplyObjCmd(
     else {
 	/*
 	 * Joe English's suggestion to allow cmdNames to function as lambdas.
-	 * Also requires making tclCmdNameType non-static in tclObj.c
 	 */
 
 	Tcl_Obj *elemPtr;

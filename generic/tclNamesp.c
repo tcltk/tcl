@@ -4725,12 +4725,12 @@ SetNsNameFromAny(
 	resNamePtr->refNsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     }
     resNamePtr->refCount = 1;
-	/* If previous objType was string, keep the internal representation */
-	if (objPtr->typePtr == &tclStringType) {
-		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
-		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	}
-    TclFreeIntRep(objPtr);
+    /* If previous objType was string, keep the internal representation */
+    if (objPtr->typePtr == &tclStringType) {
+	stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+    } else {
+	TclFreeIntRep(objPtr);
+    }
     objPtr->internalRep.twoPtrValue.ptr1 = resNamePtr;
     objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
     objPtr->typePtr = &tclNsNameType;
@@ -6433,19 +6433,15 @@ MakeCachedEnsembleCommand(
 	ckfree(ensembleCmd->fullSubcmdName);
     } else {
 	/* If previous objType was string, keep the internal representation */
+	void *stringIntRep = NULL;
 	if (objPtr->typePtr == &tclStringType) {
-		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
-		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	    stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    TclFreeIntRep(objPtr);
 	}
-	/*
-	 * Kill the old internal rep, and replace it with a brand new one of
-	 * our own.
-	 */
-
-	TclFreeIntRep(objPtr);
 	ensembleCmd = (EnsembleCmdRep *) ckalloc(sizeof(EnsembleCmdRep));
 	objPtr->internalRep.twoPtrValue.ptr1 = ensembleCmd;
-	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
 	objPtr->typePtr = &tclEnsembleCmdType;
     }
 

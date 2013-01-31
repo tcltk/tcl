@@ -2463,6 +2463,7 @@ MODULE_SCOPE Tcl_ObjType tclBignumType;
 MODULE_SCOPE Tcl_ObjType tclBooleanType;
 MODULE_SCOPE Tcl_ObjType tclByteArrayType;
 MODULE_SCOPE Tcl_ObjType tclByteCodeType;
+MODULE_SCOPE Tcl_ObjType tclCmdNameType;
 MODULE_SCOPE Tcl_ObjType tclDictType;
 MODULE_SCOPE Tcl_ObjType tclDoubleType;
 MODULE_SCOPE Tcl_ObjType tclEndOffsetType;

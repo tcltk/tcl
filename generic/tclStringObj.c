@@ -130,8 +130,8 @@ typedef struct String {
 #define GET_STRING(objPtr) \
 	((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_STRING(objPtr, stringPtr) do { \
-	(objPtr)->internalRep.twoPtrValue.ptr2 = NULL; \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr); \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = NULL; \
     } while(0)
 
 /*
@@ -402,6 +402,7 @@ Tcl_GetCharLength(
 
     if ((objPtr->typePtr == &tclByteArrayType) ||
 	    (objPtr->typePtr == &tclByteCodeType) ||
+	    (objPtr->typePtr == &tclCmdNameType) ||
 	    (objPtr->typePtr == &tclDictType) ||
 	    (objPtr->typePtr == &tclEncodingType) ||
 	    (objPtr->typePtr == &tclEndOffsetType) ||

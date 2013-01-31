@@ -1636,7 +1636,6 @@ FreeListInternalRep(
 	    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
 	}
 
-    listPtr->internalRep.twoPtrValue.ptr1 = NULL;
     listPtr->typePtr = NULL;
 }
 
@@ -1693,6 +1692,7 @@ SetListFromAny(
 {
     List *listRepPtr;
     Tcl_Obj **elemPtrs;
+    void *stringIntRep = NULL;
 
     /*
      * Dictionaries are a special case; they have a string representation such
@@ -1786,14 +1786,14 @@ SetListFromAny(
  	listRepPtr->elemCount = elemPtrs - &listRepPtr->elements;
     }
 
-    /*
-     * Free the old internalRep before setting the new one. We do this as late
-     * as possible to allow the conversion code, in particular
-     * Tcl_GetStringFromObj, to use that old internalRep.
-     */
-
-    TclFreeIntRep(objPtr);
+	/* If previous objType was string, keep the internal representation */
+	if (objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    TclFreeIntRep(objPtr);
+	}
     ListSetIntRep(objPtr, listRepPtr);
+    objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
     return TCL_OK;
 }
 

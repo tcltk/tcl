@@ -319,7 +319,7 @@ Tcl_HashKeyType tclObjHashKeyType = {
  * own purposes.
  */
 
-static Tcl_ObjType tclCmdNameType = {
+Tcl_ObjType tclCmdNameType = {
     "cmdName",				/* name */
     FreeCmdNameInternalRep,		/* freeIntRepProc */
     DupCmdNameInternalRep,		/* dupIntRepProc */
@@ -1243,7 +1243,7 @@ Tcl_DbNewObj(
  * Side effects:
  *	tclFreeObjList, the head of the list of free Tcl_Objs, is set to the
  *	first of a number of free Tcl_Obj's linked together by their
- *	internalRep.otherValuePtrs.
+ *	internalRep.twoPtrValue.ptr1's.
  *
  *----------------------------------------------------------------------
  */
@@ -4110,6 +4110,7 @@ TclSetCmdNameObj(
     register ResolvedCmdName *resPtr;
     register Namespace *currNsPtr;
     char *name;
+    void *stringIntRep = NULL;
 
     if (objPtr->typePtr == &tclCmdNameType) {
 	return;
@@ -4141,9 +4142,14 @@ TclSetCmdNameObj(
 	resPtr->refNsCmdEpoch = currNsPtr->cmdRefEpoch;
     }
 
-    TclFreeIntRep(objPtr);
+	/* If previous objType was string, keep the internal representation */
+	if(objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    TclFreeIntRep(objPtr);
+	}
     objPtr->internalRep.twoPtrValue.ptr1 = (void *) resPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
     objPtr->typePtr = &tclCmdNameType;
 }
 
@@ -4194,6 +4200,9 @@ FreeCmdNameInternalRep(
 	    TclCleanupCommandMacro(cmdPtr);
 	    ckfree((char *) resPtr);
 	}
+    }
+    if (objPtr->internalRep.twoPtrValue.ptr2) {
+	    ckfree(objPtr->internalRep.twoPtrValue.ptr2);
     }
     objPtr->typePtr = NULL;
 }
@@ -4301,11 +4310,17 @@ SetCmdNameFromAny(
 		TclCleanupCommandMacro(oldCmdPtr);
 	    }
 	} else {
-	    TclFreeIntRep(objPtr);
+	    void *stringIntRep = NULL;
+	    /* If previous objType was string, keep the internal representation */
+	    if(objPtr->typePtr == &tclStringType) {
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+	    } else {
+		TclFreeIntRep(objPtr);
+	    }
 	    resPtr = (ResolvedCmdName *) ckalloc(sizeof(ResolvedCmdName));
 	    resPtr->refCount = 1;
 	    objPtr->internalRep.twoPtrValue.ptr1 = (void *) resPtr;
-	    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	    objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
 	    objPtr->typePtr = &tclCmdNameType;
 	}
 	resPtr->cmdPtr = cmdPtr;

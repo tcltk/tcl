@@ -557,7 +557,6 @@ TclThreadAllocObj(void)
 	    while (--numMove >= 0) {
 		objPtr = &newObjsPtr[numMove];
 		objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
-		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		cachePtr->firstObjPtr = objPtr;
 	    }
 	}
@@ -604,7 +603,6 @@ TclThreadFreeObj(
      */
 
     objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     cachePtr->firstObjPtr = objPtr;
     ++cachePtr->numObjects;
 
@@ -715,7 +713,6 @@ MoveObjs(
      */
 
     objPtr->internalRep.twoPtrValue.ptr1 = toPtr->firstObjPtr;
-    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     toPtr->firstObjPtr = fromFirstObjPtr;
 }
 

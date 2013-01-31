@@ -679,19 +679,12 @@ SetDictFromAny(
 	}
     }
 
-	/* If previous objType was string, keep the internal representation */
-	if (objPtr->typePtr == &tclStringType) {
-		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
-		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	}
-
-	/*
-     * Free the old internalRep before setting the new one. We do this as late
-     * as possible to allow the conversion code, in particular
-     * Tcl_GetStringFromObj, to use that old internalRep.
-     */
-
-    TclFreeIntRep(objPtr);
+    /* If previous objType was string, keep the internal representation */
+    if (objPtr->typePtr == &tclStringType) {
+        stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+    } else {
+	    TclFreeIntRep(objPtr);
+    }
     dict->epoch = 0;
     dict->chain = NULL;
     dict->refcount = 1;

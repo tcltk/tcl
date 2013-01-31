@@ -315,10 +315,10 @@ Tcl_GetEncodingFromObj(
 	}
 	/* If previous objType was string, keep the internal representation */
 	if (objPtr->typePtr == &tclStringType) {
-		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
-		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+	    stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    TclFreeIntRep(objPtr);
 	}
-	TclFreeIntRep(objPtr);
 	objPtr->internalRep.twoPtrValue.ptr1 = (VOID *) encoding;
 	objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
 	objPtr->typePtr = &tclEncodingType;

@@ -245,14 +245,14 @@ Tcl_GetIndexFromObjStruct(
 	void *stringIntRep = NULL;
 	/* If previous objType was string, keep the internal representation */
 	if (objPtr->typePtr == &tclStringType) {
-		stringIntRep = objPtr->internalRep.twoPtrValue.ptr2;
-		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
+		stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+	} else {
+	    TclFreeIntRep(objPtr);
 	}
-	TclFreeIntRep(objPtr);
- 	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
- 	objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
- 	objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
- 	objPtr->typePtr = &tclIndexType;
+	indexRep = (IndexRep *) ckalloc(sizeof(IndexRep));
+	objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
+	objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
+	objPtr->typePtr = &tclIndexType;
     }
     indexRep->tablePtr = (void *) tablePtr;
     indexRep->offset = offset;
@@ -388,6 +388,7 @@ DupIndex(
 
     memcpy(dupIndexRep, srcIndexRep, sizeof(IndexRep));
     dupPtr->internalRep.twoPtrValue.ptr1 = dupIndexRep;
+    dupPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dupPtr->typePtr = &tclIndexType;
 }
 
