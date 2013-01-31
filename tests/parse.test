@@ -1092,11 +1092,10 @@ test parse-20.12 {TclParseBackslash: truncated escape} testparser {
 } {- {\x12X} 1 word {\x12X} 2 backslash {\x12} 0 text X 0 {}}
 
 test parse-21.0 {Bug 1884496} testevent {
-    set ::script {set a [p]; return -level 0 $a}
+    set ::script {testevent delete a; set a [p]; set ::done $a}
     proc ::p {} {string first s $::script}
     testevent queue a head $::script
-    update
-    testevent delete a
+    vwait done
 } {}
 
 cleanupTests
