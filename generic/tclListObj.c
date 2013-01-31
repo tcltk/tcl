@@ -1736,8 +1736,6 @@ FreeListInternalRep(
 	ckfree(listRepPtr);
     }
 
-    listPtr->internalRep.twoPtrValue.ptr1 = NULL;
-    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
     listPtr->typePtr = NULL;
 }
 
