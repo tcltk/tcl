@@ -2111,7 +2111,7 @@ ExecConstantExprTree(
     TclInitByteCodeObj(byteCodeObj, envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
-    byteCodePtr = (ByteCode *) byteCodeObj->internalRep.otherValuePtr;
+    byteCodePtr = (ByteCode *) byteCodeObj->internalRep.twoPtrValue.ptr1;
     code = TclExecuteByteCode(interp, byteCodePtr);
     Tcl_DecrRefCount(byteCodeObj);
     return code;
