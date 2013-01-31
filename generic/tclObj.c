@@ -84,6 +84,8 @@ typedef struct ThreadSpecificData {
 #endif /* TCL_MEM_DEBUG && TCL_THREADS */
 } ThreadSpecificData;
 
+static Tcl_ThreadDataKey dataKey;
+
 /*
  * Nested Tcl_Obj deletion management support
  *
