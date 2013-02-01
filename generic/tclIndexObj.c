@@ -53,7 +53,7 @@ static const Tcl_ObjType indexType = {
 
 /*
  * The definition of the internal representation of the "index" object; The
- * internalRep.otherValuePtr field of an object of "index" type will be a
+ * internalRep.twoPtrValue.ptr1 field of an object of "index" type will be a
  * pointer to one of these structures.
  *
  * Keep this structure declaration in sync with tclTestObj.c
@@ -121,7 +121,7 @@ Tcl_GetIndexFromObj(
      */
 
     if (objPtr->typePtr == &indexType) {
-	IndexRep *indexRep = objPtr->internalRep.otherValuePtr;
+	IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 
 	/*
 	 * Here's hoping we don't get hit by unfortunate packing constraints
@@ -279,7 +279,7 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (objPtr->typePtr == &indexType) {
-	indexRep = objPtr->internalRep.otherValuePtr;
+	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
 	if (indexRep->tablePtr==tablePtr && indexRep->offset==offset) {
 	    *indexPtr = indexRep->index;
 	    return TCL_OK;
@@ -340,11 +340,11 @@ Tcl_GetIndexFromObjStruct(
      */
 
     if (objPtr->typePtr == &indexType) {
-	indexRep = objPtr->internalRep.otherValuePtr;
+	indexRep = objPtr->internalRep.twoPtrValue.ptr1;
     } else {
 	TclFreeIntRep(objPtr);
 	indexRep = ckalloc(sizeof(IndexRep));
-	objPtr->internalRep.otherValuePtr = indexRep;
+	objPtr->internalRep.twoPtrValue.ptr1 = indexRep;
 	objPtr->typePtr = &indexType;
     }
     indexRep->tablePtr = (void *) tablePtr;
@@ -447,7 +447,7 @@ static void
 UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
-    IndexRep *indexRep = objPtr->internalRep.otherValuePtr;
+    IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
     register char *buf;
     register unsigned len;
     register const char *indexStr = EXPAND_OF(indexRep);
@@ -482,11 +482,11 @@ DupIndex(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    IndexRep *srcIndexRep = srcPtr->internalRep.otherValuePtr;
+    IndexRep *srcIndexRep = srcPtr->internalRep.twoPtrValue.ptr1;
     IndexRep *dupIndexRep = ckalloc(sizeof(IndexRep));
 
     memcpy(dupIndexRep, srcIndexRep, sizeof(IndexRep));
-    dupPtr->internalRep.otherValuePtr = dupIndexRep;
+    dupPtr->internalRep.twoPtrValue.ptr1 = dupIndexRep;
     dupPtr->typePtr = &indexType;
 }
 
@@ -511,7 +511,7 @@ static void
 FreeIndex(
     Tcl_Obj *objPtr)
 {
-    ckfree(objPtr->internalRep.otherValuePtr);
+    ckfree(objPtr->internalRep.twoPtrValue.ptr1);
     objPtr->typePtr = NULL;
 }
 
@@ -952,13 +952,13 @@ Tcl_WrongNumArgs(
 
 	    if (origObjv[i]->typePtr == &indexType) {
 		register IndexRep *indexRep =
-			origObjv[i]->internalRep.otherValuePtr;
+			origObjv[i]->internalRep.twoPtrValue.ptr1;
 
 		elementStr = EXPAND_OF(indexRep);
 		elemLen = strlen(elementStr);
 	    } else if (origObjv[i]->typePtr == &tclEnsembleCmdType) {
 		register EnsembleCmdRep *ecrPtr =
-			origObjv[i]->internalRep.otherValuePtr;
+			origObjv[i]->internalRep.twoPtrValue.ptr1;
 
 		elementStr = ecrPtr->fullSubcmdName;
 		elemLen = strlen(elementStr);
@@ -1007,12 +1007,12 @@ Tcl_WrongNumArgs(
 	 */
 
 	if (objv[i]->typePtr == &indexType) {
-	    register IndexRep *indexRep = objv[i]->internalRep.otherValuePtr;
+	    register IndexRep *indexRep = objv[i]->internalRep.twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, EXPAND_OF(indexRep), NULL);
 	} else if (objv[i]->typePtr == &tclEnsembleCmdType) {
 	    register EnsembleCmdRep *ecrPtr =
-		    objv[i]->internalRep.otherValuePtr;
+		    objv[i]->internalRep.twoPtrValue.ptr1;
 
 	    Tcl_AppendStringsToObj(objPtr, ecrPtr->fullSubcmdName, NULL);
 	} else {
