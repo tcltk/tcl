@@ -204,9 +204,10 @@ typedef struct ByteArray {
 #define BYTEARRAY_SIZE(len) \
 		((unsigned) (TclOffset(ByteArray, bytes) + (len)))
 #define GET_BYTEARRAY(objPtr) \
-		((ByteArray *) (objPtr)->internalRep.otherValuePtr)
+		((ByteArray *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_BYTEARRAY(objPtr, baPtr) \
-		(objPtr)->internalRep.otherValuePtr = (void *) (baPtr)
+		(objPtr)->internalRep.twoPtrValue.ptr1 = (VOID *) (baPtr)
+
 
 /*
  *----------------------------------------------------------------------
