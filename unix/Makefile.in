@@ -851,8 +851,8 @@ install-libraries: libraries
 	@echo "Installing package tcltest 2.3.5 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.5.tm;
 
-	@echo "Installing package platform 1.0.10 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.10.tm;
+	@echo "Installing package platform 1.0.11 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.11.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
 
@@ -866,10 +866,39 @@ install-libraries: libraries
 	        "$(SCRIPT_INSTALL_DIR)"/tm.tcl; \
 	fi
 
-install-tzdata: ${NATIVE_TCLSH}
+install-tzdata:
+	@for i in tzdata; \
+	    do \
+	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
+		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
+		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
+		else true; \
+		fi; \
+	    done;
 	@echo "Installing time zone files to $(SCRIPT_INSTALL_DIR)/tzdata/"
-	@${NATIVE_TCLSH} $(TOOL_DIR)/installData.tcl \
-	    $(TOP_DIR)/library/tzdata "$(SCRIPT_INSTALL_DIR)"/tzdata
+	@for i in $(TOP_DIR)/library/tzdata/* ; do \
+	    if [ -d $$i ] ; then \
+		ii=`basename $$i`; \
+		if [ ! -d "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii ] ; then \
+		    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii; \
+		fi; \
+		for j in $$i/* ; do \
+		    if [ -d $$j ] ; then \
+			jj=`basename $$j`; \
+			if [ ! -d "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj ] ; then \
+			    $(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj; \
+			fi; \
+			for k in $$j/* ; do \
+			    $(INSTALL_DATA) $$k "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii/$$jj; \
+			done; \
+		    else \
+			$(INSTALL_DATA) $$j "$(SCRIPT_INSTALL_DIR)"/tzdata/$$ii; \
+		    fi; \
+		done; \
+	    else \
+		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/tzdata; \
+	    fi; \
+	done;
 
 install-msgs:
 	@for i in msgs; \
