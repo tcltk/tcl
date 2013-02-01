@@ -325,7 +325,7 @@ TclCreateProc(
 	 * will be holding a reference to it.
 	 */
 
-	procPtr = bodyPtr->internalRep.otherValuePtr;
+	procPtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 	procPtr->iPtr = iPtr;
 	procPtr->refCount++;
 	precompiled = 1;
@@ -1083,7 +1083,7 @@ TclInitCompiledLocals(
     if (bodyPtr->typePtr != &tclByteCodeType) {
 	Tcl_Panic("body object for proc attached to frame is not a byte code type");
     }
-    codePtr = bodyPtr->internalRep.otherValuePtr;
+    codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 
     if (framePtr->numCompiledLocals) {
 	if (!codePtr->localCachePtr) {
@@ -1254,7 +1254,7 @@ InitLocalCache(
     Proc *procPtr)
 {
     Interp *iPtr = procPtr->iPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
     int localCt = procPtr->numCompiledLocals;
     int numArgs = procPtr->numArgs, i = 0;
 
@@ -1331,7 +1331,7 @@ InitArgsAndLocals(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
     register Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
@@ -1518,7 +1518,7 @@ PushProcCallFrame(
 	 * commands and/or resolver changes are considered).
 	 */
 
-	codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+	codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1711,7 +1711,7 @@ TclNRInterpProcCore(
      */
 
     procPtr->refCount++;
-    codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
 	    NULL, NULL);
@@ -1853,7 +1853,7 @@ TclProcCompileProc(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_CallFrame *framePtr;
-    ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
@@ -2196,7 +2196,7 @@ TclNewProcBodyObj(
     TclNewObj(objPtr);
     if (objPtr) {
 	objPtr->typePtr = &tclProcBodyType;
-	objPtr->internalRep.otherValuePtr = procPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
 
 	procPtr->refCount++;
     }
@@ -2226,10 +2226,10 @@ ProcBodyDup(
     Tcl_Obj *srcPtr,		/* Object to copy. */
     Tcl_Obj *dupPtr)		/* Target object for the duplication. */
 {
-    Proc *procPtr = srcPtr->internalRep.otherValuePtr;
+    Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
 
     dupPtr->typePtr = &tclProcBodyType;
-    dupPtr->internalRep.otherValuePtr = procPtr;
+    dupPtr->internalRep.twoPtrValue.ptr1 = procPtr;
     procPtr->refCount++;
 }
 
@@ -2256,10 +2256,9 @@ static void
 ProcBodyFree(
     Tcl_Obj *objPtr)		/* The object to clean up. */
 {
-    Proc *procPtr = objPtr->internalRep.otherValuePtr;
+    Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    procPtr->refCount--;
-    if (procPtr->refCount <= 0) {
+    if (procPtr->refCount-- < 2) {
 	TclProcCleanupProc(procPtr);
     }
 }
@@ -2787,7 +2786,7 @@ Tcl_DisassembleObjCmd(
      * Do the actual disassembly.
      */
 
-    if (((ByteCode *) codeObjPtr->internalRep.otherValuePtr)->flags
+    if (((ByteCode *) codeObjPtr->internalRep.twoPtrValue.ptr1)->flags
 	    & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not disassemble prebuilt bytecode", -1));

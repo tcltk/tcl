@@ -715,7 +715,7 @@ PushMethodCallFrame(
 
     if (pmPtr->procPtr->bodyPtr->typePtr == &tclByteCodeType) {
 	ByteCode *codePtr =
-		pmPtr->procPtr->bodyPtr->internalRep.otherValuePtr;
+		pmPtr->procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
 	codePtr->nsPtr = nsPtr;
     }
