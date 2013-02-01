@@ -844,10 +844,9 @@ static void
 FreeByteCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
@@ -867,9 +866,8 @@ FreeByteCodeInternalRep(
  *	None.
  *
  * Side effects:
- *	Frees objPtr's bytecode internal representation and sets its type and
- *	objPtr->internalRep.otherValuePtr NULL. Also releases its literals and
- *	frees its auxiliary data items.
+ *	Frees objPtr's bytecode internal representation and sets its type NULL
+ *	Also releases its literals and frees its auxiliary data items.
  *
  *----------------------------------------------------------------------
  */
@@ -1144,7 +1142,7 @@ CompileSubstObj(
 	objPtr->typePtr = &substCodeType;
 	TclFreeCompileEnv(&compEnv);
 
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	objPtr->internalRep.ptrAndLongRep.ptr = codePtr;
 	objPtr->internalRep.ptrAndLongRep.value = flags;
 	if (iPtr->varFramePtr->localCachePtr) {
@@ -1183,7 +1181,6 @@ FreeSubstCodeInternalRep(
     register ByteCode *codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
 
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
@@ -2639,7 +2636,7 @@ TclInitByteCodeObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.otherValuePtr = codePtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
     objPtr->typePtr = &tclByteCodeType;
 
     /*
@@ -4058,7 +4055,7 @@ Tcl_Obj *
 TclDisassembleByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;

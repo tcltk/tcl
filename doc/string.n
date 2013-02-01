@@ -19,7 +19,7 @@ string \- Manipulate strings
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
-\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns \-1, 0, or 1, depending on whether
@@ -29,7 +29,7 @@ first \fIlength\fR characters are used in the comparison.  If
 \fB\-length\fR is negative, it is ignored.  If \fB\-nocase\fR is
 specified, then the strings are compared in a case-insensitive manner.
 .TP
-\fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns 1 if \fIstring1\fR and \fIstring2\fR are
