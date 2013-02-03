@@ -221,9 +221,9 @@ static const Tcl_ObjType tclChannelType = {
 };
 
 #define GET_CHANNELSTATE(objPtr) \
-    ((ChannelState *) (objPtr)->internalRep.otherValuePtr)
+    ((ChannelState *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_CHANNELSTATE(objPtr, storePtr) \
-    ((objPtr)->internalRep.otherValuePtr = (void *) (storePtr))
+    ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (storePtr))
 #define GET_CHANNELINTERP(objPtr) \
     ((Interp *) (objPtr)->internalRep.twoPtrValue.ptr2)
 #define SET_CHANNELINTERP(objPtr, storePtr) \

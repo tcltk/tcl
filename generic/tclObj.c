@@ -1255,7 +1255,7 @@ Tcl_DbNewObj(
  * Side effects:
  *	tclFreeObjList, the head of the list of free Tcl_Objs, is set to the
  *	first of a number of free Tcl_Obj's linked together by their
- *	internalRep.otherValuePtrs.
+ *	internalRep.twoPtrValue.ptr1's.
  *
  *----------------------------------------------------------------------
  */
@@ -1284,7 +1284,7 @@ TclAllocateFreeObjects(void)
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
     for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
-	objPtr->internalRep.otherValuePtr = prevPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = prevPtr;
 	prevPtr = objPtr;
 	objPtr++;
     }
@@ -4390,7 +4390,7 @@ SetCmdNameFromAny(
 
     if (cmdPtr) {
 	cmdPtr->refCount++;
-	resPtr = objPtr->internalRep.otherValuePtr;
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if ((objPtr->typePtr == &tclCmdNameType)
 		&& resPtr && (resPtr->refCount == 1)) {
 	    /*
