@@ -3753,10 +3753,10 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 #if defined(USE_TCL_STUBS) && !defined(TCL_COMPAT_8)
 #   undef Tcl_GetString
 #   define Tcl_GetString(obj) \
-	((obj)->bytes?(obj)->bytes:tclStubsPtr->tcl_GetString(obj))
+	((obj)?((obj)->bytes?(obj)->bytes:tclStubsPtr->tcl_GetString(obj)):NULL)
 #   undef Tcl_GetStringFromObj
 #   define Tcl_GetStringFromObj(obj, lengthPtr) \
-	(Tcl_GetString(obj),(*(lengthPtr) = (obj)->length), (obj)->bytes)
+	((obj)?(Tcl_GetString(obj),(*(lengthPtr)=(obj)->length),(obj)->bytes):((*(lengthPtr)=0),NULL))
 #endif
 
 #endif /* _TCLDECLS */
