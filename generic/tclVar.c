@@ -475,6 +475,7 @@ TclObjLookupVar(
 
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
+	Tcl_IncrRefCount(part2Ptr);
     }
 
     resPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
@@ -1324,8 +1325,10 @@ Tcl_GetVar2Ex(
 {
     Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
+    Tcl_IncrRefCount(part1Ptr);
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
+	Tcl_IncrRefCount(part2Ptr);
     }
 
     resPtr = Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags);
@@ -2218,8 +2221,10 @@ Tcl_UnsetVar2(
     int result;
     Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
+    Tcl_IncrRefCount(part1Ptr);
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
+	Tcl_IncrRefCount(part2Ptr);
     }
 
     /*
@@ -3088,7 +3093,7 @@ ArrayStartSearchCmd(
 	    Tcl_ObjPrintf("s-%d-%s", searchPtr->id, varName));
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3194,7 +3199,7 @@ ArrayAnyMoreCmd(
     Tcl_SetObjResult(interp, iPtr->execEnvPtr->constants[gotValue]);
     return TCL_OK;
 }
-
+
 /*
  *----------------------------------------------------------------------
  *
@@ -5778,6 +5783,7 @@ Tcl_FindNamespaceVar(
     Tcl_Obj *namePtr = Tcl_NewStringObj(name, -1);
     Tcl_Var var;
 
+    Tcl_IncrRefCount(namePtr);
     var = ObjFindNamespaceVar(interp, namePtr, contextNsPtr, flags);
     Tcl_DecrRefCount(namePtr);
     return var;
@@ -5872,6 +5878,7 @@ ObjFindNamespaceVar(
     varPtr = NULL;
     if (simpleName != name) {
 	simpleNamePtr = Tcl_NewStringObj(simpleName, -1);
+	Tcl_IncrRefCount(simpleNamePtr);
     } else {
 	simpleNamePtr = namePtr;
     }
