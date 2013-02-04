@@ -70,6 +70,9 @@ VarHashCreateVar(
     }
 }
 
+/*
+ * Callers must Incr key if they plan to Decr it.
+ */
 #define VarHashFindVar(tablePtr, key) \
     VarHashCreateVar((tablePtr), (key), NULL)
 #define VarHashInvalidateEntry(varPtr) \
@@ -473,6 +476,9 @@ TclObjLookupVar(
 
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
+	if (createPart2) {
+	    Tcl_IncrRefCount(part2Ptr);
+	}
     }
 
     resPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
@@ -485,6 +491,12 @@ TclObjLookupVar(
     return resPtr;
 }
 
+/*
+ *	When createPart1 is 1, callers must IncrRefCount part1Ptr if they
+ *	plan to DecrRefCount it.
+ *	When createPart2 is 1, callers must IncrRefCount part2Ptr if they
+ *	plan to DecrRefCount it.
+ */
 Var *
 TclObjLookupVarEx(
     Tcl_Interp *interp,		/* Interpreter to use for lookup. */
@@ -625,7 +637,9 @@ TclObjLookupVarEx(
 	    part2 = newPart2 = part1Ptr->internalRep.twoPtrValue.ptr2;
 	    if (newPart2) {
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
-		Tcl_IncrRefCount(part2Ptr);
+		if (createPart2) {
+		    Tcl_IncrRefCount(part2Ptr);
+		}
 	    }
 	    part1Ptr = part1Ptr->internalRep.twoPtrValue.ptr1;
 	    typePtr = part1Ptr->typePtr;
@@ -669,7 +683,9 @@ TclObjLookupVarEx(
 		*(newPart2+len2) = '\0';
 		part2 = newPart2;
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
-		Tcl_IncrRefCount(part2Ptr);
+		if (createPart2) {
+		    Tcl_IncrRefCount(part2Ptr);
+		}
 
 		/*
 		 * Free the internal rep of the original part1Ptr, now renamed
@@ -1076,6 +1092,8 @@ TclLookupSimpleVar(
  *	The variable at arrayPtr may be converted to be an array if
  *	createPart1 is 1. A new hashtable entry may be created if createPart2
  *	is 1.
+ *	When createElem is 1, callers must incr elNamePtr if they plan
+ *	to decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1289,6 +1307,7 @@ Tcl_GetVar2Ex(
 
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
+	Tcl_IncrRefCount(part2Ptr);
     }
 
     resPtr = Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags);
@@ -1320,6 +1339,8 @@ Tcl_GetVar2Ex(
  *	The ref count for the returned object is _not_ incremented to reflect
  *	the returned reference; if you want to keep a reference to the object
  *	you must increment its ref count yourself.
+ *
+ *	Callers must incr part2Ptr if they plan to decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1669,6 +1690,7 @@ Tcl_SetVar2Ex(
  *	The value of the given variable is set. If either the array or the
  *	entry didn't exist then a new variable is created.
  *	Callers must Incr part1Ptr if they plan to Decr it.
+ *	Callers must Incr part2Ptr if they plan to Decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1957,6 +1979,7 @@ TclPtrSetVar(
  *	incremented to reflect the returned reference; if you want to keep a
  *	reference to the object you must increment its ref count yourself.
  *	Callers must Incr part1Ptr if they plan to Decr it.
+ *	Callers must Incr part2Ptr if they plan to Decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -4964,11 +4987,13 @@ Tcl_FindNamespaceVar(
     Tcl_Obj *namePtr = Tcl_NewStringObj(name, -1);
     Tcl_Var var;
 
+    Tcl_IncrRefCount(namePtr);
     var = ObjFindNamespaceVar(interp, namePtr, contextNsPtr, flags);
     Tcl_DecrRefCount(namePtr);
     return var;
 }
 
+/* Callers must incr namePtr if they plan to decr it. */
 static Tcl_Var
 ObjFindNamespaceVar(
     Tcl_Interp *interp,		/* The interpreter in which to find the
@@ -5438,6 +5463,7 @@ TclInfoLocalsCmd(
  *
  * Side effects:
  *	None.
+ *	Caller must incr patternPtr if they plan to decr it.
  *
  *----------------------------------------------------------------------
  */
