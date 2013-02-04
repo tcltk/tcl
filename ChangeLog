@@ -1,3 +1,10 @@
+2013-02-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileArraySetCmd): [Bug 3603163]: Stop
+	crash in weird case where [eval] is used to make [array set] get
+	confused about whether there is a local variable table or not. Thanks
+	to Poor Yorick for identifying a reproducible crashing case.
+
 2013-01-30  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl (::platform::LibcVersion): See
