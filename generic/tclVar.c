@@ -70,9 +70,6 @@ VarHashCreateVar(
     }
 }
 
-/*
- * Callers must Incr key if they plan to Decr it.
- */
 #define VarHashFindVar(tablePtr, key) \
     VarHashCreateVar((tablePtr), (key), NULL)
 #define VarHashInvalidateEntry(varPtr) \
@@ -4987,13 +4984,11 @@ Tcl_FindNamespaceVar(
     Tcl_Obj *namePtr = Tcl_NewStringObj(name, -1);
     Tcl_Var var;
 
-    Tcl_IncrRefCount(namePtr);
     var = ObjFindNamespaceVar(interp, namePtr, contextNsPtr, flags);
     Tcl_DecrRefCount(namePtr);
     return var;
 }
 
-/* Callers must incr namePtr if they plan to decr it. */
 static Tcl_Var
 ObjFindNamespaceVar(
     Tcl_Interp *interp,		/* The interpreter in which to find the
@@ -5463,7 +5458,6 @@ TclInfoLocalsCmd(
  *
  * Side effects:
  *	None.
- *	Caller must incr patternPtr if they plan to decr it.
  *
  *----------------------------------------------------------------------
  */
