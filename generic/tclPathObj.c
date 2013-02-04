@@ -1156,7 +1156,7 @@ Tcl_FSConvertToPathType(
 	FreeFsPathInternalRep(pathPtr);
     }
 
-    return Tcl_ConvertToType(interp, pathPtr, &tclFsPathType);
+    return SetFsPathFromAny(interp, pathPtr);
 
     /*
      * We used to have more complex code here:
@@ -1873,7 +1873,7 @@ Tcl_FSGetNormalizedPath(
 		UpdateStringOfFsPath(pathPtr);
 	    }
 	    FreeFsPathInternalRep(pathPtr);
-	    if (Tcl_ConvertToType(interp, pathPtr, &tclFsPathType) != TCL_OK) {
+	    if (SetFsPathFromAny(interp, pathPtr) != TCL_OK) {
 		return NULL;
 	    }
 	    fsPathPtr = PATHOBJ(pathPtr);
