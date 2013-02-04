@@ -86,7 +86,7 @@ declare 15 {
     void Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
 }
 declare 16 {
-    void Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes, int length)
+    void Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes, size_t length)
 }
 declare 17 {
     Tcl_Obj *Tcl_ConcatObj(int objc, Tcl_Obj *const objv[])
@@ -126,7 +126,7 @@ declare 27 {
     Tcl_Obj *Tcl_DbNewObj(const char *file, int line)
 }
 declare 28 {
-    Tcl_Obj *Tcl_DbNewStringObj(const char *bytes, int length,
+    Tcl_Obj *Tcl_DbNewStringObj(const char *bytes, size_t length,
 	    const char *file, int line)
 }
 declare 29 {
@@ -227,11 +227,11 @@ declare 57 {
     void Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue)
 }
 declare 58 {
-    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length)
+    unsigned char *Tcl_SetByteArrayLength(Tcl_Obj *objPtr, size_t length)
 }
 declare 59 {
     void Tcl_SetByteArrayObj(Tcl_Obj *objPtr, const unsigned char *bytes,
-	    int length)
+	    size_t length)
 }
 declare 60 {
     void Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue)
@@ -246,10 +246,10 @@ declare 63 {
     void Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue)
 }
 declare 64 {
-    void Tcl_SetObjLength(Tcl_Obj *objPtr, int length)
+    void Tcl_SetObjLength(Tcl_Obj *objPtr, size_t length)
 }
 declare 65 {
-    void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, int length)
+    void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, size_t length)
 }
 declare 66 {
     void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
@@ -1110,7 +1110,7 @@ declare 304 {
 	    int *indexPtr)
 }
 declare 305 {
-    void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, int size)
+    void *Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr, size_t size)
 }
 declare 306 {
     Tcl_Obj *Tcl_GetVar2Ex(Tcl_Interp *interp, const char *part1,
@@ -1360,10 +1360,10 @@ declare 378 {
 }
 declare 379 {
     void Tcl_SetUnicodeObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-	    int numChars)
+	    size_t numChars)
 }
 declare 380 {
-    int Tcl_GetCharLength(Tcl_Obj *objPtr)
+    size_t Tcl_GetCharLength(Tcl_Obj *objPtr)
 }
 declare 381 {
     Tcl_UniChar Tcl_GetUniChar(Tcl_Obj *objPtr, int index)
@@ -1376,7 +1376,7 @@ declare 383 {
 }
 declare 384 {
     void Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr, const Tcl_UniChar *unicode,
-	    int length)
+	    size_t length)
 }
 declare 385 {
     int Tcl_RegExpMatchObj(Tcl_Interp *interp, Tcl_Obj *textObj,
@@ -1549,7 +1549,7 @@ declare 431 {
 	    const char *file, int line)
 }
 declare 432 {
-    int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length)
+    int Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, size_t length)
 }
 
 # TIP#10 (thread-aware channels) akupries
@@ -2107,8 +2107,8 @@ declare 574 {
     void Tcl_AppendObjToErrorInfo(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 575 {
-    void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, const char *bytes, int length,
-	    int limit, const char *ellipsis)
+    void Tcl_AppendLimitedToObj(Tcl_Obj *objPtr, const char *bytes, size_t length,
+	    size_t limit, const char *ellipsis)
 }
 declare 576 {
     Tcl_Obj *Tcl_Format(Tcl_Interp *interp, const char *format, int objc,

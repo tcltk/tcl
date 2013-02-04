@@ -5110,7 +5110,8 @@ ParseSearchId(
      * Parse the id.
      */
 
-    if (Tcl_ConvertToType(interp, handleObj, &tclArraySearchType) != TCL_OK) {
+    if ((handleObj->typePtr != &tclArraySearchType)
+	    && (SetArraySearchObj(interp, handleObj) != TCL_OK)) {
 	return NULL;
     }
 

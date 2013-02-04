@@ -2095,7 +2095,7 @@ TclProcCompileProc(
 
 	iPtr->invokeWord = 0;
 	iPtr->invokeCmdFramePtr = (hePtr ? Tcl_GetHashValue(hePtr) : NULL);
-	tclByteCodeType.setFromAnyProc(interp, bodyPtr);
+	TclSetByteCodeFromAny(interp, bodyPtr, NULL, NULL);
 	iPtr->invokeCmdFramePtr = NULL;
 	TclPopStackFrame(interp);
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
@@ -2720,7 +2720,6 @@ TclNRApplyObjCmd(
     else {
 	/*
 	 * Joe English's suggestion to allow cmdNames to function as lambdas.
-	 * Also requires making tclCmdNameType non-static in tclObj.c
 	 */
 
 	Tcl_Obj *elemPtr;
@@ -2961,10 +2960,9 @@ Tcl_DisassembleObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "script");
 	    return TCL_ERROR;
 	}
-	if (objv[2]->typePtr != &tclByteCodeType) {
-	    if (TclSetByteCodeFromAny(interp, objv[2], NULL, NULL) != TCL_OK){
-		return TCL_ERROR;
-	    }
+	if ((objv[2]->typePtr != &tclByteCodeType)
+		&& (TclSetByteCodeFromAny(interp, objv[2], NULL, NULL) != TCL_OK)) {
+	    return TCL_ERROR;
 	}
 	codeObjPtr = objv[2];
 	break;

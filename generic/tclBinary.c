@@ -192,9 +192,9 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct {
-    int used;			/* The number of bytes used in the byte
+    size_t used;			/* The number of bytes used in the byte
 				 * array. */
-    int allocated;		/* The amount of space actually allocated
+    size_t allocated;		/* The amount of space actually allocated
 				 * minus 1 byte. */
     unsigned char bytes[1];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
@@ -317,7 +317,7 @@ Tcl_SetByteArrayObj(
     Tcl_Obj *objPtr,		/* Object to initialize as a ByteArray. */
     const unsigned char *bytes,	/* The array of bytes to use as the new
 				   value. May be NULL even if length > 0. */
-    int length)			/* Length of the array of bytes, which must
+    size_t length)			/* Length of the array of bytes, which must
 				   be >= 0. */
 {
     ByteArray *byteArrayPtr;
@@ -404,7 +404,7 @@ Tcl_GetByteArrayFromObj(
 unsigned char *
 Tcl_SetByteArrayLength(
     Tcl_Obj *objPtr,		/* The ByteArray object. */
-    int length)			/* New length for internal byte array. */
+    size_t length)			/* New length for internal byte array. */
 {
     ByteArray *byteArrayPtr;
 
@@ -447,14 +447,15 @@ SetByteArrayFromAny(
     Tcl_Interp *interp,		/* Not used. */
     Tcl_Obj *objPtr)		/* The object to convert to type ByteArray. */
 {
-    int length;
+    size_t length;
     const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
     Tcl_UniChar ch;
 
     if (objPtr->typePtr != &tclByteArrayType) {
-	src = TclGetStringFromObj(objPtr, &length);
+	src = TclGetString(objPtr);
+	length = objPtr->length;
 	srcEnd = src + length;
 
 	byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
@@ -520,7 +521,7 @@ DupByteArrayInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    int length;
+    size_t length;
     ByteArray *srcArrayPtr, *copyArrayPtr;
 
     srcArrayPtr = GET_BYTEARRAY(srcPtr);
@@ -529,7 +530,7 @@ DupByteArrayInternalRep(
     copyArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
     copyArrayPtr->used = length;
     copyArrayPtr->allocated = length;
-    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, (size_t) length);
+    memcpy(copyArrayPtr->bytes, srcArrayPtr->bytes, length);
     SET_BYTEARRAY(copyPtr, copyArrayPtr);
 
     copyPtr->typePtr = &tclByteArrayType;
@@ -562,7 +563,7 @@ UpdateStringOfByteArray(
     Tcl_Obj *objPtr)		/* ByteArray object whose string rep to
 				 * update. */
 {
-    int i, length, size;
+    size_t i, length, size;
     unsigned char *src;
     char *dst;
     ByteArray *byteArrayPtr;
@@ -576,12 +577,12 @@ UpdateStringOfByteArray(
      */
 
     size = length;
-    for (i = 0; i < length && size >= 0; i++) {
+    for (i = 0; (i < length) && (size != (size_t)-1); i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
     }
-    if (size < 0) {
+    if (size == (size_t)-1) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
@@ -590,7 +591,7 @@ UpdateStringOfByteArray(
     objPtr->length = size;
 
     if (size == length) {
-	memcpy(dst, src, (size_t) size);
+	memcpy(dst, src, size);
 	dst[size] = '\0';
     } else {
 	for (i = 0; i < length; i++) {
@@ -625,14 +626,14 @@ void
 TclAppendBytesToByteArray(
     Tcl_Obj *objPtr,
     const unsigned char *bytes,
-    int len)
+    size_t len)
 {
     ByteArray *byteArrayPtr;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
     }
-    if (len < 0) {
+    if (len == (size_t)-1) {
 	Tcl_Panic("%s must be called with definite number of bytes to append",
 		"TclAppendBytesToByteArray");
     }
@@ -646,7 +647,7 @@ TclAppendBytesToByteArray(
      */
 
     if (byteArrayPtr->used + len > byteArrayPtr->allocated) {
-	unsigned int attempt, used = byteArrayPtr->used;
+	size_t attempt, used = byteArrayPtr->used;
 	ByteArray *tmpByteArrayPtr = NULL;
 
 	attempt = byteArrayPtr->allocated;
@@ -689,7 +690,7 @@ TclAppendBytesToByteArray(
      * Do the append if there's any point.
      */
 
-    if (len > 0) {
+    if ((len > 0) && (len != (size_t)-1)) {
 	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
 	byteArrayPtr->used += len;
 	Tcl_InvalidateStringRep(objPtr);

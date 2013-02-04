@@ -2844,7 +2844,7 @@ struct Tcl_LoadHandle_ {
  */
 
 MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
-			    const unsigned char *bytes, int len);
+			    const unsigned char *bytes, size_t len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
 MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
@@ -3092,6 +3092,7 @@ MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *cmdPrefix);
 MODULE_SCOPE void	TclSetBignumIntRep(Tcl_Obj *objPtr,
 			    mp_int *bignumValue);
+MODULE_SCOPE int	TclSetBooleanFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSetCmdNameObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    Command *cmdPtr);
 MODULE_SCOPE void	TclSetDuplicateObj(Tcl_Obj *dupPtr, Tcl_Obj *objPtr);
