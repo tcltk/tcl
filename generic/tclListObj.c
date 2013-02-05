@@ -647,6 +647,10 @@ Tcl_ListObjAppendElement(
      * representation has changed.
      */
 
+    if ((listPtr)->internalRep.twoPtrValue.ptr2) {
+	ckfree((listPtr)->internalRep.twoPtrValue.ptr2);
+	(listPtr)->internalRep.twoPtrValue.ptr2 = NULL;
+    }
     Tcl_InvalidateStringRep(listPtr);
     return TCL_OK;
 }
@@ -997,6 +1001,10 @@ Tcl_ListObjReplace(
      * reflects the list's internal representation.
      */
 
+    if ((listPtr)->internalRep.twoPtrValue.ptr2) {
+	ckfree((listPtr)->internalRep.twoPtrValue.ptr2);
+	(listPtr)->internalRep.twoPtrValue.ptr2 = NULL;
+    }
     Tcl_InvalidateStringRep(listPtr);
     return TCL_OK;
 }
@@ -1440,6 +1448,10 @@ TclLsetFlat(
 	     * of all containing lists.
 	     */
 
+	    if ((objPtr)->internalRep.twoPtrValue.ptr2) {
+		ckfree((objPtr)->internalRep.twoPtrValue.ptr2);
+		(objPtr)->internalRep.twoPtrValue.ptr2 = NULL;
+	    }
 	    Tcl_InvalidateStringRep(objPtr);
 	}
 

@@ -409,7 +409,7 @@ Tcl_GetCharLength(
 	    (objPtr->typePtr == &tclExprCodeType) ||
 	    (objPtr->typePtr == &tclFsPathType) ||
 	    (objPtr->typePtr == &tclIndexType) ||
-	    /*(objPtr->typePtr == &tclListType) || This one causes cmdIL-1.29 failure */
+	    (objPtr->typePtr == &tclListType) ||
 	    (objPtr->typePtr == &tclNsNameType) ||
 	    (objPtr->typePtr == &tclProcBodyType)) {
 	/* Try to convert object to String type, but remember old intRep. */
@@ -417,6 +417,7 @@ Tcl_GetCharLength(
 	Tcl_ObjType *prevtype =  objPtr->typePtr;
 	void *prevdata = objPtr->internalRep.twoPtrValue.ptr1;
 
+	(void)Tcl_GetString(objPtr);
 	objPtr->internalRep.twoPtrValue.ptr1 = objPtr->internalRep.twoPtrValue.ptr2;
 	objPtr->typePtr = objPtr->internalRep.twoPtrValue.ptr1 ? &tclStringType: NULL;
 	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
