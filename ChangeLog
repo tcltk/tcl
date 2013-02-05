@@ -1,3 +1,10 @@
+2013-02-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLoadNone.c (TclpLoadMemory): [Bug 3433012]: Added dummy
+	version of this function to use in the event that a platform thinks it
+	can load from memory but cannot actually do so due to it being
+	disabled at configuration time.
+
 2013-01-30  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl (::platform::LibcVersion): See
