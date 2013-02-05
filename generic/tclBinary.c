@@ -268,17 +268,11 @@ Tcl_SetByteArrayObj(
 				 * >= 0. */
 {
     ByteArray *byteArrayPtr;
-    void *stringIntRep = NULL;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayObj");
     }
-    /* If previous objType was string, keep the internal representation */
-    if (objPtr->typePtr == &tclStringType) {
-	stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
-    } else {
-	TclFreeIntRep(objPtr);
-    }
+    TclFreeIntRep(objPtr);
     Tcl_InvalidateStringRep(objPtr);
 
     if (length < 0) {
@@ -293,7 +287,6 @@ Tcl_SetByteArrayObj(
     }
     objPtr->typePtr = &tclByteArrayType;
     SET_BYTEARRAY(objPtr, byteArrayPtr);
-    objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
 }
 
 /*
@@ -375,6 +368,10 @@ Tcl_SetByteArrayLength(
 		(char *) byteArrayPtr, BYTEARRAY_SIZE(length));
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
+    }
+    if ((objPtr)->internalRep.twoPtrValue.ptr2) {
+	ckfree((objPtr)->internalRep.twoPtrValue.ptr2);
+	(objPtr)->internalRep.twoPtrValue.ptr2 = NULL;
     }
     Tcl_InvalidateStringRep(objPtr);
     byteArrayPtr->used = length;

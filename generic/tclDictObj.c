@@ -842,6 +842,10 @@ InvalidateDictChain(
     Dict *dict = dictObj->internalRep.twoPtrValue.ptr1;
 
     do {
+	if ((dictObj)->internalRep.twoPtrValue.ptr2) {
+	    ckfree((dictObj)->internalRep.twoPtrValue.ptr2);
+	    (dictObj)->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	Tcl_InvalidateStringRep(dictObj);
 	dict->epoch++;
 	dictObj = dict->chain;
@@ -896,6 +900,10 @@ Tcl_DictObjPut(
     }
 
     if (dictPtr->bytes != NULL) {
+	if ((dictPtr)->internalRep.twoPtrValue.ptr2) {
+	    ckfree((dictPtr)->internalRep.twoPtrValue.ptr2);
+	    (dictPtr)->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	Tcl_InvalidateStringRep(dictPtr);
     }
     dict = dictPtr->internalRep.twoPtrValue.ptr1;
@@ -998,6 +1006,10 @@ Tcl_DictObjRemove(
     }
 
     if (dictPtr->bytes != NULL) {
+	if ((dictPtr)->internalRep.twoPtrValue.ptr2) {
+	    ckfree((dictPtr)->internalRep.twoPtrValue.ptr2);
+	    (dictPtr)->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	Tcl_InvalidateStringRep(dictPtr);
     }
     dict = dictPtr->internalRep.twoPtrValue.ptr1;
@@ -2150,6 +2162,10 @@ DictIncrCmd(
 	}
     }
     if (code == TCL_OK) {
+	if ((dictPtr)->internalRep.twoPtrValue.ptr2) {
+	    ckfree((dictPtr)->internalRep.twoPtrValue.ptr2);
+	    (dictPtr)->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	Tcl_InvalidateStringRep(dictPtr);
 	valuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL,
 		dictPtr, TCL_LEAVE_ERR_MSG);
@@ -2239,6 +2255,10 @@ DictLappendCmd(
     if (allocatedValue) {
 	Tcl_DictObjPut(interp, dictPtr, objv[2], valuePtr);
     } else if (dictPtr->bytes != NULL) {
+	if ((dictPtr)->internalRep.twoPtrValue.ptr2) {
+	    ckfree((dictPtr)->internalRep.twoPtrValue.ptr2);
+	    (dictPtr)->internalRep.twoPtrValue.ptr2 = NULL;
+	}
 	Tcl_InvalidateStringRep(dictPtr);
     }
 

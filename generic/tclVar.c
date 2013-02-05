@@ -473,7 +473,9 @@ TclObjLookupVar(
 
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
-	Tcl_IncrRefCount(part2Ptr);
+	if (createPart2) {
+	    Tcl_IncrRefCount(part2Ptr);
+	}
     }
 
     resPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
@@ -486,6 +488,12 @@ TclObjLookupVar(
     return resPtr;
 }
 
+/*
+ *	When createPart1 is 1, callers must IncrRefCount part1Ptr if they
+ *	plan to DecrRefCount it.
+ *	When createPart2 is 1, callers must IncrRefCount part2Ptr if they
+ *	plan to DecrRefCount it.
+ */
 Var *
 TclObjLookupVarEx(
     Tcl_Interp *interp,		/* Interpreter to use for lookup. */
@@ -626,7 +634,9 @@ TclObjLookupVarEx(
 	    part2 = newPart2 = part1Ptr->internalRep.twoPtrValue.ptr2;
 	    if (newPart2) {
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
-		Tcl_IncrRefCount(part2Ptr);
+		if (createPart2) {
+		    Tcl_IncrRefCount(part2Ptr);
+		}
 	    }
 	    part1Ptr = part1Ptr->internalRep.twoPtrValue.ptr1;
 	    typePtr = part1Ptr->typePtr;
@@ -670,7 +680,9 @@ TclObjLookupVarEx(
 		*(newPart2+len2) = '\0';
 		part2 = newPart2;
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
-		Tcl_IncrRefCount(part2Ptr);
+		if (createPart2) {
+		    Tcl_IncrRefCount(part2Ptr);
+		}
 
 		/*
 		 * Free the internal rep of the original part1Ptr, now renamed
@@ -1077,6 +1089,8 @@ TclLookupSimpleVar(
  *	The variable at arrayPtr may be converted to be an array if
  *	createPart1 is 1. A new hashtable entry may be created if createPart2
  *	is 1.
+ *	When createElem is 1, callers must incr elNamePtr if they plan
+ *	to decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1205,17 +1219,7 @@ Tcl_GetVar(
 				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
 				 * bits. */
 {
-    Tcl_Obj *varNamePtr, *resultPtr;
-
-    varNamePtr = Tcl_NewStringObj(varName, -1);
-    Tcl_IncrRefCount(varNamePtr);
-    resultPtr = Tcl_ObjGetVar2(interp, varNamePtr, NULL, flags);
-    TclDecrRefCount(varNamePtr);
-
-    if (resultPtr == NULL) {
-	return NULL;
-    }
-    return TclGetString(resultPtr);
+    return Tcl_GetVar2(interp, varName, NULL, flags);
 }
 
 /*
@@ -1253,27 +1257,13 @@ Tcl_GetVar2(
 				 * TCL_NAMESPACE_ONLY and TCL_LEAVE_ERR_MSG *
 				 * bits. */
 {
-    Tcl_Obj *resultPtr, *part1Ptr, *part2Ptr;
+    Tcl_Obj *objPtr;
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
-    Tcl_IncrRefCount(part1Ptr);
-    if (part2) {
-	part2Ptr = Tcl_NewStringObj(part2, -1);
-	Tcl_IncrRefCount(part2Ptr);
-    } else {
-	part2Ptr = NULL;
-    }
-
-    resultPtr = Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags);
-
-    Tcl_DecrRefCount(part1Ptr);
-    if (part2Ptr) {
-	Tcl_DecrRefCount(part2Ptr);
-    }
-    if (resultPtr == NULL) {
+    objPtr = Tcl_GetVar2Ex(interp, part1, part2, flags);
+    if (objPtr == NULL) {
 	return NULL;
     }
-    return TclGetString(resultPtr);
+    return TclGetString(objPtr);
 }
 
 /*
@@ -1312,7 +1302,6 @@ Tcl_GetVar2Ex(
 {
     Tcl_Obj *resPtr, *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
-    Tcl_IncrRefCount(part1Ptr);
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
 	Tcl_IncrRefCount(part2Ptr);
@@ -1347,6 +1336,8 @@ Tcl_GetVar2Ex(
  *	The ref count for the returned object is _not_ incremented to reflect
  *	the returned reference; if you want to keep a reference to the object
  *	you must increment its ref count yourself.
+ *
+ *	Callers must incr part2Ptr if they plan to decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1552,21 +1543,7 @@ Tcl_SetVar(
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Tcl_Obj *valuePtr, *varNamePtr, *varValuePtr;
-
-    varNamePtr = Tcl_NewStringObj(varName, -1);
-    Tcl_IncrRefCount(varNamePtr);
-    valuePtr = Tcl_NewStringObj(newValue, -1);
-    Tcl_IncrRefCount(valuePtr);
-
-    varValuePtr = Tcl_ObjSetVar2(interp, varNamePtr, NULL, valuePtr, flags);
-
-    Tcl_DecrRefCount(varNamePtr);
-    Tcl_DecrRefCount(valuePtr);
-    if (varValuePtr == NULL) {
-	return NULL;
-    }
-    return TclGetString(varValuePtr);
+    return Tcl_SetVar2(interp, varName, NULL, newValue, flags);
 }
 
 /*
@@ -1710,6 +1687,7 @@ Tcl_SetVar2Ex(
  *	The value of the given variable is set. If either the array or the
  *	entry didn't exist then a new variable is created.
  *	Callers must Incr part1Ptr if they plan to Decr it.
+ *	Callers must Incr part2Ptr if they plan to Decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1998,6 +1976,7 @@ TclPtrSetVar(
  *	incremented to reflect the returned reference; if you want to keep a
  *	reference to the object you must increment its ref count yourself.
  *	Callers must Incr part1Ptr if they plan to Decr it.
+ *	Callers must Incr part2Ptr if they plan to Decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -2191,10 +2170,8 @@ Tcl_UnsetVar2(
     int result;
     Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
-    Tcl_IncrRefCount(part1Ptr);
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
-	Tcl_IncrRefCount(part2Ptr);
     }
 
     /*
@@ -4738,10 +4715,8 @@ TclVarErrMsg(
 {
     Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
-    Tcl_IncrRefCount(part1Ptr);
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
-	Tcl_IncrRefCount(part2Ptr);
     }
 
     TclObjVarErrMsg(interp, part1Ptr, part2Ptr, operation, reason, -1);
@@ -5009,7 +4984,6 @@ Tcl_FindNamespaceVar(
     Tcl_Obj *namePtr = Tcl_NewStringObj(name, -1);
     Tcl_Var var;
 
-    Tcl_IncrRefCount(namePtr);
     var = ObjFindNamespaceVar(interp, namePtr, contextNsPtr, flags);
     Tcl_DecrRefCount(namePtr);
     return var;
