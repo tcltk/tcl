@@ -1,3 +1,9 @@
+2013-02-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinFile.c:	[Bug 3603434] Make sure TclpObjNormalizePath() 
+	properly declares "a:/" to be normalized, even when no "A:" drive is
+	present on the system.
+
 2013-02-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclLoadNone.c (TclpLoadMemory): [Bug 3433012]: Added dummy
