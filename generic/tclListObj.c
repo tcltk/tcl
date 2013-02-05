@@ -1448,10 +1448,6 @@ TclLsetFlat(
 	     * of all containing lists.
 	     */
 
-	    if ((objPtr)->internalRep.twoPtrValue.ptr2) {
-		ckfree((objPtr)->internalRep.twoPtrValue.ptr2);
-		(objPtr)->internalRep.twoPtrValue.ptr2 = NULL;
-	    }
 	    Tcl_InvalidateStringRep(objPtr);
 	}
 
@@ -1643,11 +1639,10 @@ FreeListInternalRep(
 	ckfree((char *) listRepPtr);
     }
 
-	if (listPtr->internalRep.twoPtrValue.ptr2) {
-	    ckfree(listPtr->internalRep.twoPtrValue.ptr2);
-	    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
-	}
-
+    if (listPtr->internalRep.twoPtrValue.ptr2) {
+	ckfree(listPtr->internalRep.twoPtrValue.ptr2);
+	listPtr->internalRep.twoPtrValue.ptr2 = NULL;
+    }
     listPtr->typePtr = NULL;
 }
 
@@ -1798,12 +1793,12 @@ SetListFromAny(
  	listRepPtr->elemCount = elemPtrs - &listRepPtr->elements;
     }
 
-	/* If previous objType was string, keep the internal representation */
-	if (objPtr->typePtr == &tclStringType) {
-		stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
-	} else {
-	    TclFreeIntRep(objPtr);
-	}
+    /* If previous objType was string, keep the internal representation */
+    if (objPtr->typePtr == &tclStringType) {
+	stringIntRep = objPtr->internalRep.twoPtrValue.ptr1;
+    } else {
+	TclFreeIntRep(objPtr);
+    }
     ListSetIntRep(objPtr, listRepPtr);
     objPtr->internalRep.twoPtrValue.ptr2 = stringIntRep;
     return TCL_OK;

@@ -417,7 +417,7 @@ Tcl_GetCharLength(
 	Tcl_ObjType *prevtype =  objPtr->typePtr;
 	void *prevdata = objPtr->internalRep.twoPtrValue.ptr1;
 
-	(void)Tcl_GetString(objPtr);
+	(void)TclGetString(objPtr);
 	objPtr->internalRep.twoPtrValue.ptr1 = objPtr->internalRep.twoPtrValue.ptr2;
 	objPtr->typePtr = objPtr->internalRep.twoPtrValue.ptr1 ? &tclStringType: NULL;
 	objPtr->internalRep.twoPtrValue.ptr2 = NULL;
