@@ -1,3 +1,23 @@
+2013-02-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinFile.c:	[Bug 3603434] Make sure TclpObjNormalizePath() 
+	properly declares "a:/" to be normalized, even when no "A:" drive is
+	present on the system.
+
+2013-02-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLoadNone.c (TclpLoadMemory): [Bug 3433012]: Added dummy
+	version of this function to use in the event that a platform thinks it
+	can load from memory but cannot actually do so due to it being
+	disabled at configuration time.
+
+2013-02-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileArraySetCmd): [Bug 3603163]: Stop
+	crash in weird case where [eval] is used to make [array set] get
+	confused about whether there is a local variable table or not. Thanks
+	to Poor Yorick for identifying a reproducible crashing case.
+
 2013-01-30  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl (::platform::LibcVersion): See
