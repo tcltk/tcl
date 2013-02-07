@@ -6865,7 +6865,7 @@ TclExecuteByteCode(
 		}
 		result = TclIncrObj(interp, valPtr, incrPtr);
 		if (result == TCL_OK) {
-		    Tcl_InvalidateStringRep(dictPtr);
+		    TclInvalidateStringRep(dictPtr);
 		}
 		TclDecrRefCount(incrPtr);
 	    }
