@@ -326,7 +326,7 @@ Tcl_SetByteArrayObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayObj");
     }
     TclFreeIntRep(objPtr);
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
 
     if (length < 0) {
 	length = 0;
@@ -421,7 +421,7 @@ Tcl_SetByteArrayLength(
 	byteArrayPtr->allocated = length;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     byteArrayPtr->used = length;
     return byteArrayPtr->bytes;
 }
@@ -692,7 +692,7 @@ TclAppendBytesToByteArray(
     if (len > 0) {
 	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
 	byteArrayPtr->used += len;
-	Tcl_InvalidateStringRep(objPtr);
+	TclInvalidateStringRep(objPtr);
     }
 }
 
