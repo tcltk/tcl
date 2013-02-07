@@ -102,8 +102,10 @@ static BA_ ## T *							\
 BA_ ## T ## _Shrink(							\
     BA_ ## T *a)							\
 {									\
+    size_t dbsize = 1 << ((TclMSB(a->used + 1) + 1) >> 1);		\
     a->dbused--;							\
     ckfree(a->store[a->dbused]);					\
+    a->avail = a->used + dbsize;					\
     if (a->dbavail / a->dbused >= 4) {					\
 	a->dbavail /= 2;						\
 	a = ckrealloc(a, sizeof(BA_ ## T)+(a->dbavail-1)*sizeof(T *));	\

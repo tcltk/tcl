@@ -13,6 +13,7 @@
  */
 
 #include "tclInt.h"
+#include "tclBrodnik.h"
 
 /*
  * The following data structure is used to keep track of all the Tcl_Preserve
@@ -36,11 +37,9 @@ typedef struct {
  * These variables are protected by "preserveMutex".
  */
 
-static Reference *refArray = NULL;	/* First in array of references. */
-static int spaceAvl = 0;	/* Total number of structures available at
-				 * *firstRefPtr. */
-static int inUse = 0;		/* Count of structures currently in use in
-				 * refArray. */
+TclBrodnikArray(Reference);
+
+static BA_Reference *refArray = NULL;
 TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
 
 #define INITIAL_SIZE	2	/* Initial number of reference slots to make */
@@ -88,11 +87,8 @@ void
 TclFinalizePreserve(void)
 {
     Tcl_MutexLock(&preserveMutex);
-    if (spaceAvl != 0) {
-	ckfree(refArray);
-	refArray = NULL;
-	inUse = 0;
-	spaceAvl = 0;
+    if (refArray) {
+	BA_Reference_Destroy(refArray);
     }
     Tcl_MutexUnlock(&preserveMutex);
 }
@@ -120,8 +116,7 @@ void
 Tcl_Preserve(
     ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
-    Reference *refPtr;
-    int i;
+    Reference *refPtr, newRef;
 
     /*
      * See if there is already a reference for this pointer. If so, just
@@ -129,34 +124,28 @@ Tcl_Preserve(
      */
 
     Tcl_MutexLock(&preserveMutex);
-    for (i=0, refPtr=refArray ; i<inUse ; i++, refPtr++) {
-	if (refPtr->clientData == clientData) {
-	    refPtr->refCount++;
-	    Tcl_MutexUnlock(&preserveMutex);
-	    return;
+    if (refArray == NULL) {
+	refArray = BA_Reference_Create();
+    } else {
+	int i = 0;
+	while (refPtr = BA_Reference_At(refArray, i++)) {
+	    if (refPtr->clientData == clientData) {
+		refPtr->refCount++;
+		Tcl_MutexUnlock(&preserveMutex);
+		return;
+	    }
 	}
-    }
-
-    /*
-     * Make a reference array if it doesn't already exist, or make it bigger
-     * if it is full.
-     */
-
-    if (inUse == spaceAvl) {
-	spaceAvl = spaceAvl ? 2*spaceAvl : INITIAL_SIZE;
-	refArray = ckrealloc(refArray, spaceAvl * sizeof(Reference));
     }
 
     /*
      * Make a new entry for the new reference.
      */
 
-    refPtr = &refArray[inUse];
-    refPtr->clientData = clientData;
-    refPtr->refCount = 1;
-    refPtr->mustFree = 0;
-    refPtr->freeProc = TCL_STATIC;
-    inUse += 1;
+    newRef.clientData = clientData;
+    newRef.refCount = 1;
+    newRef.mustFree = 0;
+    newRef.freeProc = TCL_STATIC;
+    refArray = BA_Reference_Append(refArray, &newRef);
     Tcl_MutexUnlock(&preserveMutex);
 }
 
@@ -184,12 +173,17 @@ Tcl_Release(
     ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
-    int i;
+    int i = 0;
 
     Tcl_MutexLock(&preserveMutex);
-    for (i=0, refPtr=refArray ; i<inUse ; i++, refPtr++) {
+    if (refArray == NULL) {
+	refArray = BA_Reference_Create();
+    }
+
+    while (refPtr = BA_Reference_At(refArray, i++)) {
 	int mustFree;
 	Tcl_FreeProc *freeProc;
+	Reference lastRef;
 
 	if (refPtr->clientData != clientData) {
 	    continue;
@@ -209,9 +203,9 @@ Tcl_Release(
 
 	freeProc = refPtr->freeProc;
 	mustFree = refPtr->mustFree;
-	inUse--;
-	if (i < inUse) {
-	    refArray[i] = refArray[inUse];
+	refArray = BA_Reference_Detach(refArray, &lastRef);
+	if (lastRef.clientData != clientData) {
+	    *refPtr = lastRef;
 	}
 
 	/*
@@ -264,15 +258,18 @@ Tcl_EventuallyFree(
     Tcl_FreeProc *freeProc)	/* Function to actually do free. */
 {
     Reference *refPtr;
-    int i;
+    int i = 0;
 
     /*
      * See if there is a reference for this pointer. If so, set its "mustFree"
      * flag (the flag had better not be set already!).
      */
-
     Tcl_MutexLock(&preserveMutex);
-    for (i = 0, refPtr = refArray; i < inUse; i++, refPtr++) {
+    if (refArray == NULL) {
+	refArray = BA_Reference_Create();
+    }
+
+    while (refPtr = BA_Reference_At(refArray, i++)) {
 	if (refPtr->clientData != clientData) {
 	    continue;
 	}
