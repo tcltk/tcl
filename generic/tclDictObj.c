@@ -868,7 +868,7 @@ InvalidateDictChain(
     Dict *dict = dictObj->internalRep.twoPtrValue.ptr1;
 
     do {
-	Tcl_InvalidateStringRep(dictObj);
+	TclInvalidateStringRep(dictObj);
 	dict->epoch++;
 	dictObj = dict->chain;
 	if (dictObj == NULL) {
@@ -922,7 +922,7 @@ Tcl_DictObjPut(
     }
 
     if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
     }
     dict = dictPtr->internalRep.twoPtrValue.ptr1;
     hPtr = CreateChainEntry(dict, keyPtr, &isNew);
@@ -1024,7 +1024,7 @@ Tcl_DictObjRemove(
     }
 
     if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
     }
     dict = dictPtr->internalRep.twoPtrValue.ptr1;
     if (DeleteChainEntry(dict, keyPtr)) {
@@ -1392,7 +1392,7 @@ Tcl_NewDictObj(void)
     Dict *dict;
 
     TclNewObj(dictPtr);
-    Tcl_InvalidateStringRep(dictPtr);
+    TclInvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
@@ -1441,7 +1441,7 @@ Tcl_DbNewDictObj(
     Dict *dict;
 
     TclDbNewObj(dictPtr, file, line);
-    Tcl_InvalidateStringRep(dictPtr);
+    TclInvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
@@ -2174,7 +2174,7 @@ DictIncrCmd(
 	}
     }
     if (code == TCL_OK) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
 	valuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL,
 		dictPtr, TCL_LEAVE_ERR_MSG);
 	if (valuePtr == NULL) {
@@ -2263,7 +2263,7 @@ DictLappendCmd(
     if (allocatedValue) {
 	Tcl_DictObjPut(interp, dictPtr, objv[2], valuePtr);
     } else if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
     }
 
     resultPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
