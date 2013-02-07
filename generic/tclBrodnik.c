@@ -9,7 +9,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
+#include "tclBrodnik.h"
 
 #if defined(HAVE_INTRIN_H)
 #    include <intrin.h>
@@ -222,45 +222,9 @@ TclMSB(
 }
 
 /*
- * The routines that follow implement a BrodnikArray of T elements, where
- * T is the type of the elements to be stored.  Here T is char, but simple
- * text substitution should allow any type at all.  The idea is to convert
- * these routines into either preprocessor macros, or the ouput of some
- * code-generating template operation.
- *
- * The BroknikArray data structure is adapted from Andrej Brodnik et al.,
- * "Resizable Arrays in Optimal Time and Space", from the Proceedings of
- * the 1999 Workshop on Algorithms and Data Structures, Lecture Notes
- * in Computer Science (LNCS) vol. 1663, pp. 37-48.
- *
- * The BrodnikArray is an indexed sequence of values.  The routines
- * Append() and Detach() permit inserting and deleting an element at
- * the end of the sequence, with allocated memory growing and shrinking
- * as needed.  The At(index) routine returns a (T *) pointing to the
- * index'th element in the sequence.  Indices are size_t values and
- * array elements have indices starting with 0.  Through the pointer
- * elements may be read or (over)written.  These routines provide
- * stack-like access as well as random access to the elements stored
- * in the array.
- *
- * The memory allocation management is such that for N elements stored
- * in the array, the amount of memory allocated, but not used
- * is O(sqrt(N)).  This is more efficient than the traditional Tcl
- * array growth algorithm that has O(N) memory waste.  The longest
- * contiguous span of allocated memory is also O(sqrt(N)) so longer
- * sequences should be possible without failure due to lack of a
- * long enough contiguous span of memory.  The main drawback of the
- * BrodnikArray is that it is a two-level storage structure, so two
- * pointer derefences are required to get an element, when a plain
- * array gets the job done in only one.  The other potential trouble
- * is the need for frequent reallocs as small arrays grow, though that's
- * not hard to remedy if it's a problem in practice.
- */
-
-/*
  *----------------------------------------------------------------------
  *
- * BA_ConvertIndices --
+ * TclBAConvertIndices --
  *
  *	Given a size_t index into the sequence, convert into the
  *	corresponding index pair of the store[] of a BrodnikArray.
@@ -280,8 +244,8 @@ TclMSB(
  *----------------------------------------------------------------------
  */
 
-static void
-BA_ConvertIndices(
+void
+TclBAConvertIndices(
     size_t	index,
     size_t	*hiPtr,
     size_t	*loPtr)
@@ -289,141 +253,11 @@ BA_ConvertIndices(
     size_t	r = index + 1;
     int		k = TclMSB(r);
     int		shift = (k + 1) >> 1;
-    size_t	lobits = (1 << shift) - 1;
-    size_t	hibits = 1 << (k - shift);
+    size_t	lobits = (((size_t)1) << shift) - 1;
+    size_t	hibits = ((size_t)1) << (k - shift);
 
     *hiPtr	= (lobits << 1) - ((k & 1) * hibits)
 			+ ((r >> shift) & (hibits - 1));
     *loPtr	= r & lobits;
-}
-
-/*
- * The rest of the BrodnikArray routines have to care about what the
- * element type is, since C has little  provision for generic programming.
- */
-
-typedef char T;
-
-typedef struct BrodnikArray_T BA_T;
-
-struct BrodnikArray_T {
-    size_t	used;
-    size_t	avail;
-    size_t	dbused;
-    size_t	dbavail;
-    T *		store[1];
-};
-
-/*
- * Initial creation makes a BA with no elements in it, but room for 1
- * before a need to call Grow().
- */
-BA_T *
-BA_T_Create()
-{
-    BA_T *newPtr = ckalloc(sizeof(BA_T));
-
-    newPtr->used = 0;
-    newPtr->avail = 1;
-    newPtr->dbused = 1;
-    newPtr->dbavail = 1;
-    newPtr->store[0] = ckalloc(sizeof(T));
-    return newPtr;
-}
-
-void
-BA_T_Destroy(
-    BA_T *a)
-{
-    size_t i = a->dbused;
-
-    while (i--) {
-	ckfree(a->store[i]);
-    }
-    ckfree(a);
-}
-
-BA_T *
-BA_T_Grow(
-    BA_T *a)
-{
-    size_t dbsize = 1 << ((TclMSB(a->avail + 1) + 1) >> 1);
-
-    if (a->dbused == a->dbavail) {
-	/* Have to grow the index block */
-	a->dbavail *= 2;
-	a = ckrealloc(a, sizeof(BA_T) + (a->dbavail - 1) * sizeof(T *));
-    }
-    a->store[a->dbused] = ckalloc(dbsize * sizeof(T));
-    a->dbused++;
-    a->avail += dbsize;
-    return a;
-}
-
-BA_T *
-BA_T_Shrink(
-    BA_T *a)
-{
-    a->dbused--;
-    ckfree(a->store[a->dbused]);
-    if (a->dbavail / a->dbused >= 4) {
-	a->dbavail /= 2;
-	a = ckrealloc(a, sizeof(BA_T) + (a->dbavail - 1) * sizeof(T *));
-    }
-    return a;
-}
-
-BA_T *
-BA_T_Append(
-    BA_T *a,
-    T *elemPtr)
-{
-    size_t hi, lo;
-
-    if (a->used == a->avail) {
-	a = BA_T_Grow(a);
-    }
-    BA_ConvertIndices(a->used, &hi, &lo);
-    a->store[hi][lo] = *elemPtr;
-    a->used++;
-    return a;
-}
-
-BA_T *
-BA_T_Detach(
-    BA_T *a,
-    T *elemPtr)
-{
-    size_t hi, lo;
-
-    if (a->used == 0) {
-	/*
-	 * Detaching the last element from an empty array is not
-	 * well defined.  Here we do nothing.  Might consider a
-	 * panic, or some error-raising convention.
-	 */
-	return a;
-    }
-    a->used--;
-    BA_ConvertIndices(a->used, &hi, &lo);
-    *elemPtr = a->store[hi][lo];
-    if (lo || (hi == a->dbused - 1)) {
-	return a;
-    }
-    return BA_T_Shrink(a);
-}
-
-T *
-BA_T_At(
-    BA_T *a,
-    size_t index)
-{
-    size_t hi, lo;
-
-    if (index >= a->used) {
-	return NULL;
-    }
-    BA_ConvertIndices(index, &hi, &lo);
-    return a->store[hi] + lo;
 }
 
