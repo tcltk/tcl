@@ -2475,6 +2475,12 @@ TclpObjNormalizePath(
 				}
 				Tcl_DStringAppend(&dsNorm, nativePath, len);
 				lastValidPathEnd = currentPathEndPosition;
+			    } else if (nextCheckpoint == 0) {
+				/* Path starts with a drive designation
+				 * that's not actually on the system.
+				 * We still must normalize up past the
+				 * first separator.  [Bug 3603434] */
+				currentPathEndPosition++;
 			    }
 			}
 			Tcl_DStringFree(&ds);
@@ -2615,6 +2621,12 @@ TclpObjNormalizePath(
 				    (const char *)nativePath,
 				    (int)(sizeof(WCHAR) * len));
 			    lastValidPathEnd = currentPathEndPosition;
+			} else if (nextCheckpoint == 0) {
+			    /* Path starts with a drive designation
+			     * that's not actually on the system.
+			     * We still must normalize up past the
+			     * first separator.  [Bug 3603434] */
+			    currentPathEndPosition++;
 			}
 		    }
 		    Tcl_DStringFree(&ds);
