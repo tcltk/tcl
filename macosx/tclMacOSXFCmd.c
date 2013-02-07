@@ -588,7 +588,7 @@ NewOSTypeObj(
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     objPtr->internalRep.longValue = (long) osType;
     objPtr->typePtr = &tclOSTypeType;
     return objPtr;
