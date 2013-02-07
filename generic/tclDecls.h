@@ -3737,8 +3737,8 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 #define Tcl_GlobalEval(interp,objPtr) \
 	Tcl_EvalEx((interp),(objPtr),-1,TCL_EVAL_GLOBAL)
 #define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
-	Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, (int)sizeof(char *), \
-	msg, flags, indexPtr)
+	Tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), \
+	sizeof(char *), (msg), (flags), (indexPtr))
 /*
  * Deprecated Tcl procedures:
  */
