@@ -1540,7 +1540,8 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (TCL_OK != Tcl_ConvertToType(NULL, objPtr, &tclBooleanType)) {
+	if ((objPtr->typePtr != &tclBooleanType)
+		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
 	    } else {

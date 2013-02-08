@@ -579,7 +579,7 @@ GetOSTypeFromObj(
     int result = TCL_OK;
 
     if (objPtr->typePtr != &tclOSTypeType) {
-	result = tclOSTypeType.setFromAnyProc(interp, objPtr);
+	result = SetOSTypeFromAny(interp, objPtr);
     }
     *osTypePtr = (OSType) objPtr->internalRep.longValue;
     return result;
@@ -609,7 +609,7 @@ NewOSTypeObj(
     Tcl_Obj *objPtr;
 
     TclNewObj(objPtr);
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
     objPtr->internalRep.longValue = (long) osType;
     objPtr->typePtr = &tclOSTypeType;
     return objPtr;

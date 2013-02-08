@@ -751,8 +751,7 @@ SetByteCodeFromAny(
     if (interp == NULL) {
 	return TCL_ERROR;
     }
-    TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
-    return TCL_OK;
+    return TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
 }
 
 /*

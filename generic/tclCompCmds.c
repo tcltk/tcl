@@ -256,7 +256,7 @@ TclCompileArraySetCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Token *tokenPtr;
+    Tcl_Token *varTokenPtr, *dataTokenPtr;
     int simpleVarName, isScalar, localIndex;
     int dataVar, iterVar, keyVar, valVar, infoIndex;
     int back, fwd, offsetBack, offsetFwd, savedStackDepth;
@@ -266,10 +266,10 @@ TclCompileArraySetCmd(
 	return TCL_ERROR;
     }
 
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarName(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    PushVarName(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar);
-    tokenPtr = TokenAfter(tokenPtr);
+    dataTokenPtr = TokenAfter(varTokenPtr);
     if (!isScalar) {
 	return TCL_ERROR;
     }
@@ -279,7 +279,8 @@ TclCompileArraySetCmd(
      * operation.
      */
 
-    if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD && tokenPtr[1].size == 0) {
+    if (dataTokenPtr->type == TCL_TOKEN_SIMPLE_WORD
+	    && dataTokenPtr[1].size == 0) {
 	if (localIndex >= 0) {
 	    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
 	    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
@@ -298,7 +299,16 @@ TclCompileArraySetCmd(
 	return TCL_OK;
     }
 
-    if (envPtr->procPtr == NULL) {
+    /*
+     * Prepare for the internal foreach.
+     */
+
+    dataVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    iterVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    keyVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    valVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+
+    if (dataVar < 0) {
 	/*
 	 * Right number of arguments, but not compilable as we can't allocate
 	 * (unnamed) local variables to manage the internal iteration.
@@ -315,20 +325,15 @@ TclCompileArraySetCmd(
 		cmdPtr);
 	TclEmitPush(cmdLit, envPtr);
 	TclDecrRefCount(objPtr);
-	TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
-	CompileWord(envPtr, tokenPtr, interp);
+	if (localIndex >= 0) {
+	    CompileWord(envPtr, varTokenPtr, interp);
+	} else {
+	    TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
+	}
+	CompileWord(envPtr, dataTokenPtr, interp);
 	TclEmitInstInt1(INST_INVOKE_STK1, 3,			envPtr);
 	return TCL_OK;
     }
-
-    /*
-     * Prepare for the internal foreach.
-     */
-
-    dataVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    iterVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    keyVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    valVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
 
     infoPtr = ckalloc(sizeof(ForeachInfo) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
@@ -344,7 +349,7 @@ TclCompileArraySetCmd(
      * Start issuing instructions to write to the array.
      */
 
-    CompileWord(envPtr, tokenPtr, interp);
+    CompileWord(envPtr, dataTokenPtr, interp);
     TclEmitOpcode(	INST_DUP,				envPtr);
     TclEmitOpcode(	INST_LIST_LENGTH,			envPtr);
     PushLiteral(envPtr, "1", 1);

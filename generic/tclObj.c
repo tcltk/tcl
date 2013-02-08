@@ -193,7 +193,6 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 static int		ParseBoolean(Tcl_Obj *objPtr);
-static int		SetBooleanFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
@@ -235,14 +234,14 @@ static const Tcl_ObjType oldBooleanType = {
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclBooleanType = {
     "booleanString",		/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclDoubleType = {
     "double",			/* name */
@@ -1517,7 +1516,7 @@ Tcl_GetBooleanFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * SetBooleanFromAny --
+ * TclSetBooleanFromAny --
  *
  *	Attempt to generate a boolean internal form for the Tcl object
  *	"objPtr".
@@ -1534,8 +1533,8 @@ Tcl_GetBooleanFromObj(
  *----------------------------------------------------------------------
  */
 
-static int
-SetBooleanFromAny(
+int
+TclSetBooleanFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
@@ -3777,7 +3776,7 @@ Tcl_GetCommandFromObj(
      * had is invalid one way or another.
      */
 
-    if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
+    if (SetCmdNameFromAny(interp, objPtr) != TCL_OK) {
         return NULL;
     }
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;
