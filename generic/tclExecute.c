@@ -812,9 +812,9 @@ TclCreateExecEnv(
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
-    TclNewBooleanObj(eePtr->constants[0], 0);
+    TclNewLongObj(eePtr->constants[0], 0);
     Tcl_IncrRefCount(eePtr->constants[0]);
-    TclNewBooleanObj(eePtr->constants[1], 1);
+    TclNewLongObj(eePtr->constants[1], 1);
     Tcl_IncrRefCount(eePtr->constants[1]);
     eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
@@ -4164,7 +4164,7 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
     }
     case INST_INFO_LEVEL_NUM:
-	TclNewIntObj(objResultPtr, iPtr->varFramePtr->level);
+	TclNewLongObj(objResultPtr, iPtr->varFramePtr->level);
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
     case INST_INFO_LEVEL_ARGS: {
@@ -4293,7 +4293,7 @@ TEBCresume(
 		    Tcl_GetObjResult(interp));
 	    goto gotError;
 	}
-	TclNewIntObj(objResultPtr, length);
+	TclNewLongObj(objResultPtr, length);
 	TRACE(("%.20s => %d\n", O2S(valuePtr), length));
 	NEXT_INST_F(1, 1, 1);
 
@@ -4760,7 +4760,7 @@ TEBCresume(
 	    }
 	}
 	if (match < 0) {
-	    TclNewIntObj(objResultPtr, -1);
+	    TclNewLongObj(objResultPtr, -1);
 	} else {
 	    objResultPtr = TCONST(match > 0);
 	}
@@ -4771,7 +4771,7 @@ TEBCresume(
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
 	length = Tcl_GetCharLength(valuePtr);
-	TclNewIntObj(objResultPtr, length);
+	TclNewLongObj(objResultPtr, length);
 	TRACE(("%.20s => %d\n", O2S(valuePtr), length));
 	NEXT_INST_F(1, 1, 1);
 
@@ -4959,7 +4959,7 @@ TEBCresume(
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
 
-	TclNewIntObj(objResultPtr, match);
+	TclNewLongObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
 
     case INST_STR_FIND_LAST:
@@ -4980,7 +4980,7 @@ TEBCresume(
 	TRACE(("%.20s %.20s => %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
 
-	TclNewIntObj(objResultPtr, match);
+	TclNewLongObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
     }
 
@@ -5320,7 +5320,7 @@ TEBCresume(
 			if (l1 > 0L) {
 			    objResultPtr = TCONST(0);
 			} else {
-			    TclNewIntObj(objResultPtr, -1);
+			    TclNewLongObj(objResultPtr, -1);
 			}
 			TRACE(("%s\n", O2S(objResultPtr)));
 			NEXT_INST_F(1, 2, 1);
@@ -6002,7 +6002,7 @@ TEBCresume(
 	NEXT_INST_F(1, 0, -1);
 
     case INST_PUSH_RETURN_CODE:
-	TclNewIntObj(objResultPtr, result);
+	TclNewLongObj(objResultPtr, result);
 	TRACE(("=> %u\n", result));
 	NEXT_INST_F(1, 0, 1);
 
