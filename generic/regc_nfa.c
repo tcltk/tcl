@@ -759,7 +759,9 @@ duptraverse(
      * Arbitrary depth limit. Needs tuning, but this value is sufficient to
      * make all normal tests (not reg-33.14) pass.
      */
-#define DUPTRAVERSE_MAX_DEPTH 500
+#ifndef DUPTRAVERSE_MAX_DEPTH
+#define DUPTRAVERSE_MAX_DEPTH 700
+#endif
 
     if (depth++ > DUPTRAVERSE_MAX_DEPTH) {
 	NERR(REG_ESPACE);
