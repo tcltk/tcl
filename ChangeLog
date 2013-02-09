@@ -1,3 +1,10 @@
+2013-02-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOO_Object_VarName): [Bug 3603695]: Change
+	the way that the 'varname' method is implemented so that there are no
+	longer problems with interactions due to the resolver. Thanks to
+	Taylor Venable <tcvena@gmail.com> for identifying the problem.
+
 2013-02-08  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/regc_nfa.c (duptraverse): [Bug 3603557]: Increase the
