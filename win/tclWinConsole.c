@@ -14,7 +14,6 @@
 
 #include <fcntl.h>
 #include <io.h>
-#include <sys/stat.h>
 
 /*
  * The following variable is used to tell whether this module has been
