@@ -15,13 +15,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifndef _WIN64
-/* See [Bug 3354324]: file mtime sets wrong time */
-#   define _USE_32BIT_TIME_T
-#endif
-
 #define TCL_TEST
-#include <sys/stat.h>
 #include "tclInt.h"
 
 #include <math.h>
