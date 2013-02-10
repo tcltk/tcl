@@ -2206,6 +2206,25 @@ test oo-19.2 {OO: varname method: Bug 2883857} -setup {
 } -cleanup {
     SpecialClass destroy
 } -result ::oo_test::x(y)
+test oo-19.3 {OO: varname method and variable decl: Bug 3603695} -setup {
+    oo::class create testClass {
+	variable foo
+	export varname
+	constructor {} {
+	    variable foo x
+	}
+	method bar {obj} {
+	    my varname foo
+	    $obj varname foo
+	}
+    }
+} -body {
+    testClass create A
+    testClass create B
+    lsearch [list [A varname foo] [B varname foo]] [B bar A]
+} -cleanup {
+    testClass destroy
+} -result 0
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
