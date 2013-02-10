@@ -12,7 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include <sys/stat.h>
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
