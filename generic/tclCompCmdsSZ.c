@@ -641,7 +641,7 @@ TclCompileStringRangeCmd(
 	    if (idx1 >= 0) {
 		result = TCL_OK;
 	    }
-	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx1) == TCL_OK) {
+	} else if (TclGetIntForIndex(NULL, tmpObj, -2, &idx1) == TCL_OK) {
 	    if (idx1 <= -2) {
 		result = TCL_OK;
 	    }
@@ -665,7 +665,7 @@ TclCompileStringRangeCmd(
 	    if (idx2 >= 0) {
 		result = TCL_OK;
 	    }
-	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx2) == TCL_OK) {
+	} else if (TclGetIntForIndex(NULL, tmpObj, -2, &idx2) == TCL_OK) {
 	    if (idx2 <= -2) {
 		result = TCL_OK;
 	    }

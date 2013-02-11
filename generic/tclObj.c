@@ -19,14 +19,6 @@
 #include <math.h>
 
 /*
- * Table of all object types.
- */
-
-static Tcl_HashTable typeTable;
-static int typeTableInitialized = 0;	/* 0 means not yet initialized. */
-TCL_DECLARE_MUTEX(tableMutex)
-
-/*
  * Head of the list of free Tcl_Obj structs we maintain.
  */
 
@@ -209,12 +201,10 @@ static Tcl_ThreadDataKey pendingObjDataKey;
 
 static int		ParseBoolean(Tcl_Obj *objPtr);
 static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
 static void		UpdateStringOfInt(Tcl_Obj *objPtr);
 #ifndef NO_WIDE_TYPE
 static void		UpdateStringOfWideInt(Tcl_Obj *objPtr);
-static int		SetWideIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 #endif
 static void		FreeBignum(Tcl_Obj *objPtr);
 static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
@@ -244,33 +234,26 @@ static int		SetCmdNameFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
  * implementations.
  */
 
-static const Tcl_ObjType oldBooleanType = {
-    "boolean",			/* name */
-    NULL,			/* freeIntRepProc */
-    NULL,			/* dupIntRepProc */
-    NULL,			/* updateStringProc */
-    TclSetBooleanFromAny		/* setFromAnyProc */
-};
 const Tcl_ObjType tclBooleanType = {
-    "booleanString",		/* name */
+    "boolean",		/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    TclSetBooleanFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 const Tcl_ObjType tclDoubleType = {
     "double",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfDouble,	/* updateStringProc */
-    SetDoubleFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 const Tcl_ObjType tclIntType = {
     "int",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfInt,		/* updateStringProc */
-    SetIntFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 #ifndef NO_WIDE_TYPE
 const Tcl_ObjType tclWideIntType = {
@@ -278,7 +261,7 @@ const Tcl_ObjType tclWideIntType = {
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfWideInt,	/* updateStringProc */
-    SetWideIntFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 #endif
 const Tcl_ObjType tclBignumType = {
@@ -330,7 +313,7 @@ Tcl_ObjType tclCmdNameType = {
     FreeCmdNameInternalRep,	/* freeIntRepProc */
     DupCmdNameInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetCmdNameFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 
 /*
@@ -375,14 +358,13 @@ typedef struct ResolvedCmdName {
  * TclInitObjectSubsystem --
  *
  *	This function is invoked to perform once-only initialization of the
- *	type table. It also registers the object types defined in this file.
+ *	things needed when Tcl is compiled with the TCL_COMPILE_STATS option.
  *
  * Results:
  *	None.
  *
  * Side effects:
- *	Initializes the table of defined object types "typeTable" with builtin
- *	object types defined in this file.
+ *	None
  *
  *-------------------------------------------------------------------------
  */
@@ -390,30 +372,6 @@ typedef struct ResolvedCmdName {
 void
 TclInitObjSubsystem(void)
 {
-    Tcl_MutexLock(&tableMutex);
-    typeTableInitialized = 1;
-    Tcl_InitHashTable(&typeTable, TCL_STRING_KEYS);
-    Tcl_MutexUnlock(&tableMutex);
-
-    Tcl_RegisterObjType(&tclByteArrayType);
-    Tcl_RegisterObjType(&tclDoubleType);
-    Tcl_RegisterObjType(&tclEndOffsetType);
-    Tcl_RegisterObjType(&tclIntType);
-    Tcl_RegisterObjType(&tclStringType);
-    Tcl_RegisterObjType(&tclListType);
-    Tcl_RegisterObjType(&tclDictType);
-    Tcl_RegisterObjType(&tclByteCodeType);
-    Tcl_RegisterObjType(&tclArraySearchType);
-    Tcl_RegisterObjType(&tclCmdNameType);
-    Tcl_RegisterObjType(&tclRegexpType);
-    Tcl_RegisterObjType(&tclProcBodyType);
-
-    /* For backward compatibility only ... */
-    Tcl_RegisterObjType(&oldBooleanType);
-#ifndef NO_WIDE_TYPE
-    Tcl_RegisterObjType(&tclWideIntType);
-#endif
-
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
     tclObjsAlloced = 0;
@@ -492,13 +450,6 @@ TclFinalizeThreadObjects(void)
 void
 TclFinalizeObjects(void)
 {
-    Tcl_MutexLock(&tableMutex);
-    if (typeTableInitialized) {
-	Tcl_DeleteHashTable(&typeTable);
-	typeTableInitialized = 0;
-    }
-    Tcl_MutexUnlock(&tableMutex);
-
     /*
      * All we do here is reset the head pointer of the linked list of free
      * Tcl_Obj's to NULL; the memory finalization will take care of releasing
@@ -845,97 +796,6 @@ ContLineLocFree(
 }
 
 /*
- *--------------------------------------------------------------
- *
- * Tcl_RegisterObjType --
- *
- *	This function is called to register a new Tcl object type in the table
- *	of all object types supported by Tcl.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The type is registered in the Tcl type table. If there was already a
- *	type with the same name as in typePtr, it is replaced with the new
- *	type.
- *
- *--------------------------------------------------------------
- */
-
-void
-Tcl_RegisterObjType(
-    const Tcl_ObjType *typePtr)	/* Information about object type; storage must
-				 * be statically allocated (must live
-				 * forever). */
-{
-    int isNew;
-
-    Tcl_MutexLock(&tableMutex);
-    Tcl_SetHashValue(
-	    Tcl_CreateHashEntry(&typeTable, typePtr->name, &isNew), typePtr);
-    Tcl_MutexUnlock(&tableMutex);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_AppendAllObjTypes --
- *
- *	This function appends onto the argument object the name of each object
- *	type as a list element. This includes the builtin object types (e.g.
- *	int, list) as well as those added using Tcl_NewObj. These names can be
- *	used, for example, with Tcl_GetObjType to get pointers to the
- *	corresponding Tcl_ObjType structures.
- *
- * Results:
- *	The return value is normally TCL_OK; in this case the object
- *	referenced by objPtr has each type name appended to it. If an error
- *	occurs, TCL_ERROR is returned and the interpreter's result holds an
- *	error message.
- *
- * Side effects:
- *	If necessary, the object referenced by objPtr is converted into a list
- *	object.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_AppendAllObjTypes(
-    Tcl_Interp *interp,		/* Interpreter used for error reporting. */
-    Tcl_Obj *objPtr)		/* Points to the Tcl object onto which the
-				 * name of each registered type is appended as
-				 * a list element. */
-{
-    register Tcl_HashEntry *hPtr;
-    Tcl_HashSearch search;
-    int numElems;
-
-    /*
-     * Get the test for a valid list out of the way first.
-     */
-
-    if (TclListObjLength(interp, objPtr, &numElems) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Type names are NUL-terminated, not counted strings. This code relies on
-     * that.
-     */
-
-    Tcl_MutexLock(&tableMutex);
-    for (hPtr = Tcl_FirstHashEntry(&typeTable, &search);
-	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
-	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewStringObj(Tcl_GetHashKey(&typeTable, hPtr), -1));
-    }
-    Tcl_MutexUnlock(&tableMutex);
-    return TCL_OK;
-}
-
-/*
  *----------------------------------------------------------------------
  *
  * Tcl_GetObjType --
@@ -956,59 +816,7 @@ const Tcl_ObjType *
 Tcl_GetObjType(
     const char *typeName)	/* Name of Tcl object type to look up. */
 {
-    register Tcl_HashEntry *hPtr;
-    const Tcl_ObjType *typePtr = NULL;
-
-    Tcl_MutexLock(&tableMutex);
-    hPtr = Tcl_FindHashEntry(&typeTable, typeName);
-    if (hPtr != NULL) {
-	typePtr = Tcl_GetHashValue(hPtr);
-    }
-    Tcl_MutexUnlock(&tableMutex);
-    return typePtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_ConvertToType --
- *
- *	Convert the Tcl object "objPtr" to have type "typePtr" if possible.
- *
- * Results:
- *	The return value is TCL_OK on success and TCL_ERROR on failure. If
- *	TCL_ERROR is returned, then the interpreter's result contains an error
- *	message unless "interp" is NULL. Passing a NULL "interp" allows this
- *	function to be used as a test whether the conversion could be done
- *	(and in fact was done).
- *
- * Side effects:
- *	Any internal representation for the old type is freed.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_ConvertToType(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr,		/* The object to convert. */
-    const Tcl_ObjType *typePtr)	/* The target type. */
-{
-    if (objPtr->typePtr == typePtr) {
-	return TCL_OK;
-    }
-
-    /*
-     * Use the target type's Tcl_SetFromAnyProc to set "objPtr"s internal form
-     * as appropriate for the target type. This frees the old internal
-     * representation.
-     */
-
-    if (typePtr->setFromAnyProc == NULL) {
-	Tcl_Panic("may not convert object to type %s", typePtr->name);
-    }
-
-    return typePtr->setFromAnyProc(interp, objPtr);
+    return NULL;
 }
 
 /*
@@ -1771,80 +1579,6 @@ Tcl_GetBooleanFromObj(
     return TCL_ERROR;
 }
 
-/*
- *----------------------------------------------------------------------
- *
- * TclSetBooleanFromAny --
- *
- *	Attempt to generate a boolean internal form for the Tcl object
- *	"objPtr".
- *
- * Results:
- *	The return value is a standard Tcl result. If an error occurs during
- *	conversion, an error message is left in the interpreter's result
- *	unless "interp" is NULL.
- *
- * Side effects:
- *	If no error occurs, an integer 1 or 0 is stored as "objPtr"s internal
- *	representation and the type of "objPtr" is set to boolean.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclSetBooleanFromAny(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    register Tcl_Obj *objPtr)	/* The object to convert. */
-{
-    /*
-     * For some "pure" numeric Tcl_ObjTypes (no string rep), we can determine
-     * whether a boolean conversion is possible without generating the string
-     * rep.
-     */
-
-    if (objPtr->bytes == NULL) {
-	if (objPtr->typePtr == &tclIntType) {
-	    switch (objPtr->internalRep.longValue) {
-	    case 0L: case 1L:
-		return TCL_OK;
-	    }
-	    goto badBoolean;
-	}
-
-	if (objPtr->typePtr == &tclBignumType) {
-	    goto badBoolean;
-	}
-
-#ifndef NO_WIDE_TYPE
-	if (objPtr->typePtr == &tclWideIntType) {
-	    goto badBoolean;
-	}
-#endif
-
-	if (objPtr->typePtr == &tclDoubleType) {
-	    goto badBoolean;
-	}
-    }
-
-    if (ParseBoolean(objPtr) == TCL_OK) {
-	return TCL_OK;
-    }
-
-  badBoolean:
-    if (interp != NULL) {
-	int length;
-	const char *str = Tcl_GetStringFromObj(objPtr, &length);
-	Tcl_Obj *msg;
-
-	TclNewLiteralStringObj(msg, "expected boolean value but got \"");
-	Tcl_AppendLimitedToObj(msg, str, length, 50, "");
-	Tcl_AppendToObj(msg, "\"", -1);
-	Tcl_SetObjResult(interp, msg);
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "BOOLEAN", NULL);
-    }
-    return TCL_ERROR;
-}
-
 static int
 ParseBoolean(
     register Tcl_Obj *objPtr)	/* The object to parse/convert. */
@@ -1858,21 +1592,6 @@ ParseBoolean(
          * Longest valid boolean string rep. is "false".
          */
 
-	return TCL_ERROR;
-    }
-
-    switch (str[0]) {
-    case '0':
-	if (length == 1) {
-	    newBool = 0;
-	    goto numericBoolean;
-	}
-	return TCL_ERROR;
-    case '1':
-	if (length == 1) {
-	    newBool = 1;
-	    goto numericBoolean;
-	}
 	return TCL_ERROR;
     }
 
@@ -1952,12 +1671,6 @@ ParseBoolean(
     TclFreeIntRep(objPtr);
     objPtr->internalRep.longValue = newBool;
     objPtr->typePtr = &tclBooleanType;
-    return TCL_OK;
-
-  numericBoolean:
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = newBool;
-    objPtr->typePtr = &tclIntType;
     return TCL_OK;
 }
 
@@ -2275,32 +1988,7 @@ Tcl_GetIntFromObj(
     return TCL_OK;
 #endif
 }
-
-/*
- *----------------------------------------------------------------------
- *
- * SetIntFromAny --
- *
- *	Attempts to force the internal representation for a Tcl object to
- *	tclIntType, specifically.
- *
- * Results:
- *	The return value is a standard object Tcl result. If an error occurs
- *	during conversion, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
- *
- *----------------------------------------------------------------------
- */
 
-static int
-SetIntFromAny(
-    Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Obj *objPtr)		/* Pointer to the object to convert */
-{
-    long l;
-
-    return TclGetLongFromObj(interp, objPtr, &l);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -2892,33 +2580,6 @@ Tcl_GetWideIntFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
-#ifndef NO_WIDE_TYPE
-
-/*
- *----------------------------------------------------------------------
- *
- * SetWideIntFromAny --
- *
- *	Attempts to force the internal representation for a Tcl object to
- *	tclWideIntType, specifically.
- *
- * Results:
- *	The return value is a standard object Tcl result. If an error occurs
- *	during conversion, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetWideIntFromAny(
-    Tcl_Interp *interp,		/* Tcl interpreter */
-    Tcl_Obj *objPtr)		/* Pointer to the object to convert */
-{
-    Tcl_WideInt w;
-    return Tcl_GetWideIntFromObj(interp, objPtr, &w);
-}
-#endif /* !NO_WIDE_TYPE */
 
 /*
  *----------------------------------------------------------------------

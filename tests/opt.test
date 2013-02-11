@@ -88,7 +88,7 @@ test opt-7.1 {OptCheckType} {
 	    [::tcl::OptCheckType {a b c} list] \
 	    [::tcl::OptCheckType maYbe choice {yes maYbe no}] \
 	    [catch {::tcl::OptCheckType "-blah" string}] \
-	    [catch {::tcl::OptCheckType 6 boolean}] \
+	    [::tcl::OptCheckType 6 boolean] \
 	    [catch {::tcl::OptCheckType x float}] \
 	    [catch {::tcl::OptCheckType "a \{ c" list}] \
 	    [catch {::tcl::OptCheckType 2.3 int}] \

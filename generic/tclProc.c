@@ -61,7 +61,7 @@ static Tcl_NRPostProc Uplevel_Callback;
  * The ProcBodyObjType type
  */
 
-const Tcl_ObjType tclProcBodyType = {
+static const Tcl_ObjType procBodyType = {
     "procbody",			/* name for this type */
     ProcBodyFree,		/* FreeInternalRep function */
     ProcBodyDup,		/* DupInternalRep function */
@@ -100,7 +100,7 @@ static const Tcl_ObjType lambdaType = {
     FreeLambdaInternalRep,	/* freeIntRepProc */
     DupLambdaInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetLambdaFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 
 /*
@@ -324,7 +324,7 @@ Tcl_ProcObjCmd(
      *	   of all procs whose argument list is just _args_
      */
 
-    if (objv[3]->typePtr == &tclProcBodyType) {
+    if (objv[3]->typePtr == &procBodyType) {
 	goto done;
     }
 
@@ -408,7 +408,7 @@ TclCreateProc(
     Tcl_Obj *defPtr;
     int precompiled = 0;
 
-    if (bodyPtr->typePtr == &tclProcBodyType) {
+    if (bodyPtr->typePtr == &procBodyType) {
 	/*
 	 * Because the body is a TclProProcBody, the actual body is already
 	 * compiled, and it is not shared with anyone else, so it's OK not to
@@ -2364,7 +2364,7 @@ TclNewProcBodyObj(
 
     TclNewObj(objPtr);
     if (objPtr) {
-	objPtr->typePtr = &tclProcBodyType;
+	objPtr->typePtr = &procBodyType;
 	objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
 
 	procPtr->refCount++;
@@ -2397,7 +2397,7 @@ ProcBodyDup(
 {
     Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
 
-    dupPtr->typePtr = &tclProcBodyType;
+    dupPtr->typePtr = &procBodyType;
     dupPtr->internalRep.twoPtrValue.ptr1 = procPtr;
     procPtr->refCount++;
 }

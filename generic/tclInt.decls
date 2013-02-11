@@ -153,10 +153,11 @@ declare 32 {
 #declare 33 {
 #    TclCmdProcType TclGetInterpProc(void)
 #}
-declare 34 {
-    int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    int endValue, int *indexPtr)
-}
+# Removed in 9.0:
+#declare 34 {
+#    int TclGetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+#	    int endValue, int *indexPtr)
+#}
 # Removed in 8.4b2:
 #declare 35 {
 #    Tcl_Obj *TclGetIndexedScalar(Tcl_Interp *interp, int localIndex,

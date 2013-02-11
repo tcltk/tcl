@@ -93,19 +93,18 @@ static void		FreeRegexpInternalRep(Tcl_Obj *objPtr);
 static int		RegExpExecUniChar(Tcl_Interp *interp, Tcl_RegExp re,
 			    const Tcl_UniChar *uniString, int numChars,
 			    int nmatches, int flags);
-static int		SetRegexpFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 
 /*
  * The regular expression Tcl object type. This serves as a cache of the
  * compiled form of the regular expression.
  */
 
-const Tcl_ObjType tclRegexpType = {
+static const Tcl_ObjType regexpType = {
     "regexp",				/* name */
     FreeRegexpInternalRep,		/* freeIntRepProc */
     DupRegexpInternalRep,		/* dupIntRepProc */
     NULL,				/* updateStringProc */
-    SetRegexpFromAny			/* setFromAnyProc */
+    NULL			/* setFromAnyProc */
 };
 
 /*
@@ -575,12 +574,12 @@ Tcl_GetRegExpFromObj(
 
     /*
      * This is OK because we only actually interpret this value properly as a
-     * TclRegexp* when the type is tclRegexpType.
+     * TclRegexp* when the type is regexpType.
      */
 
     regexpPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    if ((objPtr->typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
+    if ((objPtr->typePtr != &regexpType) || (regexpPtr->flags != flags)) {
 	pattern = TclGetStringFromObj(objPtr, &length);
 
 	regexpPtr = CompileRegexp(interp, pattern, length, flags);
@@ -602,7 +601,7 @@ Tcl_GetRegExpFromObj(
 
 	TclFreeIntRep(objPtr);
 	objPtr->internalRep.twoPtrValue.ptr1 = regexpPtr;
-	objPtr->typePtr = &tclRegexpType;
+	objPtr->typePtr = &regexpType;
     }
     return (Tcl_RegExp) regexpPtr;
 }
@@ -787,38 +786,7 @@ DupRegexpInternalRep(
 
     regexpPtr->refCount++;
     copyPtr->internalRep.twoPtrValue.ptr1 = srcPtr->internalRep.twoPtrValue.ptr1;
-    copyPtr->typePtr = &tclRegexpType;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetRegexpFromAny --
- *
- *	Attempt to generate a compiled regular expression for the Tcl object
- *	"objPtr".
- *
- * Results:
- *	The return value is TCL_OK or TCL_ERROR. If an error occurs during
- *	conversion, an error message is left in the interpreter's result
- *	unless "interp" is NULL.
- *
- * Side effects:
- *	If no error occurs, a regular expression is stored as "objPtr"s
- *	internal representation.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetRegexpFromAny(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    Tcl_Obj *objPtr)		/* The object to convert. */
-{
-    if (Tcl_GetRegExpFromObj(interp, objPtr, REG_ADVANCED) == NULL) {
-	return TCL_ERROR;
-    }
-    return TCL_OK;
+    copyPtr->typePtr = &regexpType;
 }
 
 /*

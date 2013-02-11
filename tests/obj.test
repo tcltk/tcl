@@ -23,27 +23,6 @@ testConstraint testobj [llength [info commands testobj]]
 testConstraint longIs32bit	[expr {int(0x80000000) < 0}]
 testConstraint wideBiggerThanInt [expr {wide(0x80000000) != int(0x80000000)}]
 
-test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} testobj {
-    set r 1
-    foreach {t} {
-	{array search} 
-	bytearray
-	bytecode
-	cmdName
-	dict
-	end-offset
-	regexp
-	string
-    } {
-        set first [string first $t [testobj types]]
-        set r [expr {$r && ($first != -1)}]
-    }
-    set result $r
-} {1}
-
-test obj-2.1 {Tcl_GetObjType error} testobj {
-    list [testintobj set 1 0] [catch {testobj convert 1 foo} msg] $msg
-} {0 1 {no type foo found}}
 test obj-2.2 {Tcl_GetObjType and Tcl_ConvertToType} testobj {
     set result ""
     lappend result [testobj freeallvars]
@@ -55,12 +34,12 @@ test obj-2.2 {Tcl_GetObjType and Tcl_ConvertToType} testobj {
 
 test obj-3.1 {Tcl_ConvertToType error} testobj {
     list [testdoubleobj set 1 12.34] \
-	[catch {testobj convert 1 end-offset} msg] \
+	[catch {testobj convert 1 index} msg] \
 	 $msg
-} {12.34 1 {bad index "12.34": must be end?[+-]integer?}}
+} {12.34 1 {bad index "12.34": must be integer?[+-]integer? or end?[+-]integer?}}
 test obj-3.2 {Tcl_ConvertToType error, "empty string" object} testobj {
-    list [testobj newobj 1] [catch {testobj convert 1 end-offset} msg] $msg
-} {{} 1 {bad index "": must be end?[+-]integer?}}
+    list [testobj newobj 1] [catch {testobj convert 1 index} msg] $msg
+} {{} 1 {bad index "": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test obj-4.1 {Tcl_NewObj and AllocateFreeObjects} testobj {
     set result ""
@@ -555,39 +534,39 @@ test obj-30.1 {Ref counting and object deletion, simple types} testobj {
 test obj-31.1 {regenerate string rep of "end"} testobj {
     testobj freeallvars
     teststringobj set 1 end
-    testobj convert 1 end-offset
+    testobj convert 1 index
     testobj invalidateStringRep 1
 } end
 test obj-31.2 {regenerate string rep of "end-1"} testobj {
     testobj freeallvars
     teststringobj set 1 end-0x1
-    testobj convert 1 end-offset
+    testobj convert 1 index
     testobj invalidateStringRep 1
 } end-1
 test obj-31.3 {regenerate string rep of "end--1"} testobj {
     testobj freeallvars
     teststringobj set 1 end--0x1
-    testobj convert 1 end-offset
+    testobj convert 1 index
     testobj invalidateStringRep 1
-} end--1
+} end+1
 test obj-31.4 {regenerate string rep of "end-bigInteger"} testobj {
     testobj freeallvars
     teststringobj set 1 end-0x7fffffff
-    testobj convert 1 end-offset
+    testobj convert 1 index
     testobj invalidateStringRep 1
 } end-2147483647
 test obj-31.5 {regenerate string rep of "end--bigInteger"} testobj {
     testobj freeallvars
     teststringobj set 1 end--0x7fffffff
-    testobj convert 1 end-offset
+    testobj convert 1 index
     testobj invalidateStringRep 1
-} end--2147483647
+} -1
 test obj-31.6 {regenerate string rep of "end--bigInteger"} {testobj longIs32bit} {
     testobj freeallvars
-    teststringobj set 1 end--0x80000000
-    testobj convert 1 end-offset
+    teststringobj set 1 end--0x7fffffff
+    testobj convert 1 index
     testobj invalidateStringRep 1
-} end--2147483648
+} -1
 
 test obj-32.1 {freeing very large object trees} {
     set x {}

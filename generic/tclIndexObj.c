@@ -22,7 +22,6 @@
 static int		GetIndexFromObjList(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, Tcl_Obj *tableObjPtr,
 			    const char *msg, int flags, int *indexPtr);
-static int		SetIndexFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 static void		DupIndex(Tcl_Obj *srcPtr, Tcl_Obj *dupPtr);
 static void		FreeIndex(Tcl_Obj *objPtr);
@@ -48,7 +47,7 @@ static const Tcl_ObjType indexType = {
     FreeIndex,			/* freeIntRepProc */
     DupIndex,			/* dupIntRepProc */
     UpdateStringOfIndex,	/* updateStringProc */
-    SetIndexFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 
 /*
@@ -327,39 +326,6 @@ Tcl_GetIndexFromObjStruct(
 	}
 	Tcl_SetObjResult(interp, resultPtr);
 	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", msg, key, NULL);
-    }
-    return TCL_ERROR;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetIndexFromAny --
- *
- *	This function is called to convert a Tcl object to index internal
- *	form. However, this doesn't make sense (need to have a table of
- *	keywords in order to do the conversion) so the function always
- *	generates an error.
- *
- * Results:
- *	The return value is always TCL_ERROR, and an error message is left in
- *	interp's result if interp isn't NULL.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetIndexFromAny(
-    Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
-    register Tcl_Obj *objPtr)	/* The object to convert. */
-{
-    if (interp) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-	    "can't convert value to index except via Tcl_GetIndexFromObj API",
-	    -1));
     }
     return TCL_ERROR;
 }

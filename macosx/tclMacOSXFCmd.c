@@ -88,7 +88,7 @@ static const Tcl_ObjType tclOSTypeType = {
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     UpdateStringOfOSType,		/* updateStringProc */
-    SetOSTypeFromAny			/* setFromAnyProc */
+    NULL			/* setFromAnyProc */
 };
 
 enum {

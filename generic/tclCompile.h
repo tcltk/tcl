@@ -229,7 +229,7 @@ typedef struct CompileEnv {
 				 * are specific to an interpreter so the code
 				 * emitted will depend on the interpreter. */
     const char *source;		/* The source string being compiled by
-				 * SetByteCodeFromAny. This pointer is not
+				 * TclSetByteCodeFromAny. This pointer is not
 				 * owned by the CompileEnv and must not be
 				 * freed or changed by it. */
     int numSrcBytes;		/* Number of bytes in source. */

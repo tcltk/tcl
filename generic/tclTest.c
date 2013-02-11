@@ -1684,7 +1684,9 @@ TestdoubledigitsObjCmd(ClientData unused,
     }
     status = Tcl_GetDoubleFromObj(interp, objv[1], &d);
     if (status != TCL_OK) {
-	doubleType = Tcl_GetObjType("double");
+	Tcl_Obj *doubleObj = Tcl_NewDoubleObj(0.0);
+	doubleType = doubleObj->typePtr;
+	Tcl_DecrRefCount(doubleObj);
 	if (objv[1]->typePtr == doubleType
 	    || TclIsNaN(objv[1]->internalRep.doubleValue)) {
 	    status = TCL_OK;
