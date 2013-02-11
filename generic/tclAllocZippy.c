@@ -106,7 +106,7 @@ typedef struct Bucket {
     long numFree;		/* Number of blocks available */
 
     /* All fields below for accounting only */
-#ifdef TCL_THREADS
+#if ZIPPY
     long numRemoves;		/* Number of removes from bucket */
     long numInserts;		/* Number of inserts into bucket */
     long numWaits;		/* Number of waits to acquire a lock */
