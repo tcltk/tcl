@@ -1,3 +1,22 @@
+2013-02-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinFile.c:	[Bug 3603434] Make sure TclpObjNormalizePath() 
+	properly declares "a:/" to be normalized, even when no "A:" drive is
+	present on the system.
+
+2013-01-30  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl (::platform::LibcVersion): See
+	* library/platform/pkgIndex.tcl: [Bug 3599098]: Fixed the RE
+	  extracting the version to avoid issues with recent changes to
+	  the glibc banner. Now targeting a less variable part of the
+	  string. Bumped package to version 1.0.11.
+
+2013-01-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixCompat.c: [Bug 3601804]: platformCPUID segmentation
+	fault on Darwin.
+
 2013-01-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* Makefile.in: Enable win32 build with -DTCL_NO_DEPRECATED, just
