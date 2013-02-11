@@ -197,11 +197,11 @@ InfoObjectClassCmd(
 
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    if (TclOOIsReachable(o2clsPtr, mixinPtr)) {
-		Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+		Tcl_SetObjResult(interp, Tcl_NewLongObj(1));
 		return TCL_OK;
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(
 		TclOOIsReachable(o2clsPtr, oPtr->selfCls)));
 	return TCL_OK;
     }
@@ -418,7 +418,7 @@ InfoObjectIsACmd(
 	if (!ok) {
 	    Tcl_ResetResult(interp);
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(ok ? 1 : 0));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(ok!=0));
 	return TCL_OK;
     }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
@@ -432,7 +432,7 @@ InfoObjectIsACmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(oPtr->classPtr ? 1 : 0));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(oPtr->classPtr!=NULL));
 	return TCL_OK;
     case IsMetaclass:
 	if (objc != 3) {
@@ -440,12 +440,12 @@ InfoObjectIsACmd(
 	    return TCL_ERROR;
 	}
 	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 	} else {
 	    Class *classCls = TclOOGetFoundation(interp)->classCls;
 
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(
-		    TclOOIsReachable(classCls, oPtr->classPtr) ? 1 : 0));
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(
+		    TclOOIsReachable(classCls, oPtr->classPtr)!=0));
 	}
 	return TCL_OK;
     case IsMixin:
@@ -467,12 +467,12 @@ InfoObjectIsACmd(
 
 	    FOREACH(mixinPtr, oPtr->mixins) {
 		if (mixinPtr == o2Ptr->classPtr) {
-		    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+		    Tcl_SetObjResult(interp, Tcl_NewLongObj(1));
 		    return TCL_OK;
 		}
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 	return TCL_OK;
     case IsType:
 	if (objc != 4) {
@@ -490,9 +490,9 @@ InfoObjectIsACmd(
 	    return TCL_ERROR;
 	}
 	if (TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(1));
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 	}
 	return TCL_OK;
     case IsObject:

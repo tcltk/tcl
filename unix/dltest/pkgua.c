@@ -138,7 +138,7 @@ PkguaEqObjCmd(
     } else {
 	result = 0;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
     return TCL_OK;
 }
 

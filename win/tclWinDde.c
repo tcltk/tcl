@@ -568,7 +568,7 @@ ExecuteRemoteObject(
     returnPackagePtr = Tcl_NewListObj(0, NULL);
 
     Tcl_ListObjAppendElement(NULL, returnPackagePtr,
-	    Tcl_NewIntObj(result));
+	    Tcl_NewLongObj(result));
     Tcl_ListObjAppendElement(NULL, returnPackagePtr,
 	    Tcl_GetObjResult(riPtr->interp));
 

@@ -368,7 +368,7 @@ ThreadObjCmd(
 
 	result = Tcl_JoinThread((Tcl_ThreadId)(size_t)id, &status);
 	if (result == TCL_OK) {
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), status);
+	    Tcl_SetLongObj(Tcl_GetObjResult(interp), status);
 	} else {
 	    char buf[20];
 
@@ -415,7 +415,7 @@ ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(
 		Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
 	return TCL_OK;
     }

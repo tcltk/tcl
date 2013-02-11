@@ -3128,7 +3128,7 @@ TclPrecTraceProc(
 
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewLongObj(*precisionPtr!=0),
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewLongObj(*precisionPtr),
 		flags & TCL_GLOBAL_ONLY);
 	return NULL;
     }
