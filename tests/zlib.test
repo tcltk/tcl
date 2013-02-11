@@ -368,7 +368,7 @@ test zlib-8.15 {transformtion and fconfigure} -setup {
 } -result {358 358}
 test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
     # Actual data isn't very important; needs to be substantially larger than
-    # the internal buffer (8kB) and incompressible.
+    # the internal buffer (32kB) and incompressible.
     set largeData {}
     for {set i 0;expr srand(1)} {$i < 100000} {incr i} {
 	append largeData [lindex "a b c d e f g h i j k l m n o p" \
