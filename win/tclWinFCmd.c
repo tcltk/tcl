@@ -1607,7 +1607,7 @@ GetWinFileAttributes(
 	}
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(attr);
+    *attributePtrPtr = Tcl_NewLongObj(attr!=0);
     return TCL_OK;
 }
 

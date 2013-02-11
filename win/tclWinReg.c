@@ -693,7 +693,7 @@ GetType(
      */
 
     if (type > lastType) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) type));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((int) type));
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeNames[type], -1));
     }
@@ -791,7 +791,7 @@ GetValue(
      */
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) ConvertDWORD(type,
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) ConvertDWORD(type,
 		*((DWORD *) Tcl_DStringValue(&data)))));
     } else if (type == REG_MULTI_SZ) {
 	char *p = Tcl_DStringValue(&data);

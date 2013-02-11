@@ -1845,7 +1845,7 @@ TraceExecutionProc(
 		 * Append result code.
 		 */
 
-		resultCode = Tcl_NewIntObj(code);
+		resultCode = Tcl_NewLongObj(code);
 		resultCodeStr = Tcl_GetString(resultCode);
 		Tcl_DStringAppendElement(&cmd, resultCodeStr);
 		Tcl_DecrRefCount(resultCode);

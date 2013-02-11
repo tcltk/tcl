@@ -2396,11 +2396,11 @@ Tcl_NewLongObj(
  * Tcl_DbNewLongObj --
  *
  *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
- *	Tcl_NewIntObj and Tcl_NewLongObj to create new integer or long integer
- *	objects end up calling the debugging function Tcl_DbNewLongObj
- *	instead. We provide two implementations of Tcl_DbNewLongObj so that
- *	whether the Tcl core is compiled to do memory debugging of the core is
- *	independent of whether a client requests debugging for itself.
+ *	Tcl_NewLongObj to create new long integer objects end up calling the
+ *	debugging function Tcl_DbNewLongObj instead. We provide two
+ *	implementations of Tcl_DbNewLongObj so that whether the Tcl core is
+ *	compiled to do memory debugging of the core is independent of whether
+ *	a client requests debugging for itself.
  *
  *	When the core is compiled with TCL_MEM_DEBUG defined, Tcl_DbNewLongObj
  *	calls Tcl_DbCkalloc directly with the file name and line number from
