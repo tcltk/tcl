@@ -3387,7 +3387,7 @@ NamespaceExistsCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(
 	    GetNamespaceFromObj(interp, objv[1], &namespacePtr) == TCL_OK));
     return TCL_OK;
 }
@@ -4962,7 +4962,7 @@ TclLogCommandInfo(
 	 */
 
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->upLiteral);
-	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewIntObj(
+	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, Tcl_NewLongObj(
 		iPtr->framePtr->level - iPtr->varFramePtr->level));
     } else if (iPtr->framePtr != iPtr->rootFramePtr) {
 	/*

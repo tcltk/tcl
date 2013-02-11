@@ -2112,7 +2112,7 @@ TclPtrIncrObjVar(
 	VarHashRefCount(varPtr)--;
     }
     if (varValuePtr == NULL) {
-	varValuePtr = Tcl_NewIntObj(0);
+	varValuePtr = Tcl_NewLongObj(0);
     }
     if (Tcl_IsShared(varValuePtr)) {
 	/* Copy on write */
@@ -3953,7 +3953,7 @@ ArraySizeCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(size));
     return TCL_OK;
 }
 

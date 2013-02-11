@@ -335,7 +335,7 @@ Tcl_RegexpObjCmd(
 		 */
 
 		if (!doinline) {
-		    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+		    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 		}
 		return TCL_OK;
 	    }
@@ -457,7 +457,7 @@ Tcl_RegexpObjCmd(
     if (doinline) {
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(all ? all-1 : 1));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(all ? all-1 : 1));
     }
     return TCL_OK;
 }
@@ -847,7 +847,7 @@ Tcl_RegsubObjCmd(
 	     * holding the number of matches.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(numMatches));
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(numMatches));
 	}
     } else {
 	/*
@@ -1260,7 +1260,7 @@ StringFirstCmd(
     }
 
   str_first_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(match));
     return TCL_OK;
 }
 
@@ -1358,7 +1358,7 @@ StringLastCmd(
     }
 
   str_last_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(match));
     return TCL_OK;
 }
 
@@ -1798,11 +1798,11 @@ StringIsCmd(
 
  str_is_done:
     if ((result == 0) && (failVarObj != NULL) &&
-	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(failat),
+	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewLongObj(failat),
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(result!=0));
     return TCL_OK;
 }
 
@@ -2137,8 +2137,8 @@ StringMatchCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(
+		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)!=0));
     return TCL_OK;
 }
 
@@ -2468,7 +2468,7 @@ StringStartCmd(
 	    cur += 1;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(cur));
     return TCL_OK;
 }
 
@@ -2530,7 +2530,7 @@ StringEndCmd(
     } else {
 	cur = numChars;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(cur));
     return TCL_OK;
 }
 
@@ -2612,7 +2612,7 @@ StringEqualCmd(
 	 * Always match at 0 chars of if it is the same obj.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(1));
 	return TCL_OK;
     }
 
@@ -2680,7 +2680,7 @@ StringEqualCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(match==0));
     return TCL_OK;
 }
 
@@ -2762,7 +2762,7 @@ StringCmpCmd(
 	 * Always match at 0 chars of if it is the same obj.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 	return TCL_OK;
     }
 
@@ -2827,7 +2827,7 @@ StringCmpCmd(
     }
 
     Tcl_SetObjResult(interp,
-	    Tcl_NewIntObj((match > 0) ? 1 : (match < 0) ? -1 : 0));
+	    Tcl_NewLongObj((match > 0) ? 1 : (match < 0) ? -1 : 0));
     return TCL_OK;
 }
 
@@ -2865,7 +2865,7 @@ StringBytesCmd(
     }
 
     (void) TclGetStringFromObj(objv[1], &length);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(length));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(length));
     return TCL_OK;
 }
 
@@ -2899,7 +2899,7 @@ StringLenCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_GetCharLength(objv[1])));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(Tcl_GetCharLength(objv[1])));
     return TCL_OK;
 }
 
@@ -3791,7 +3791,7 @@ TclNRSwitchObjCmd(
 		    rangeObjAry[0] = Tcl_NewLongObj(info.matches[j].start);
 		    rangeObjAry[1] = Tcl_NewLongObj(info.matches[j].end-1);
 		} else {
-		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewIntObj(-1);
+		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewLongObj(-1);
 		}
 
 		/*
@@ -4111,7 +4111,7 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : (int) totalMicroSec);
+	objs[0] = Tcl_NewLongObj((count <= 0) ? 0 : (int) totalMicroSec);
     } else {
 	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
     }

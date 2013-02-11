@@ -3111,7 +3111,7 @@ ZlibTransformOutput(
 	e = deflate(&cd->outStream, Z_NO_FLUSH);
 	produced = cd->outAllocated - cd->outStream.avail_out;
 
-	if (e == Z_OK && cd->outStream.avail_out > 0) {
+	if (e == Z_OK && produced > 0) {
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
 		*errorCodePtr = Tcl_GetErrno();
 		return -1;
