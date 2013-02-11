@@ -72,9 +72,7 @@ TCLAPI void		Tcl_SetTimer(const Tcl_Time *timePtr);
 TCLAPI void		Tcl_Sleep(int ms);
 /* 13 */
 TCLAPI int		Tcl_WaitForEvent(const Tcl_Time *timePtr);
-/* 14 */
-TCLAPI int		Tcl_AppendAllObjTypes(Tcl_Interp *interp,
-				Tcl_Obj *objPtr);
+/* Slot 14 is reserved */
 /* 15 */
 TCLAPI void		Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...);
 /* 16 */
@@ -82,9 +80,7 @@ TCLAPI void		Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes,
 				int length);
 /* 17 */
 TCLAPI Tcl_Obj *	Tcl_ConcatObj(int objc, Tcl_Obj *const objv[]);
-/* 18 */
-TCLAPI int		Tcl_ConvertToType(Tcl_Interp *interp,
-				Tcl_Obj *objPtr, const Tcl_ObjType *typePtr);
+/* Slot 18 is reserved */
 /* 19 */
 TCLAPI void		Tcl_DbDecrRefCount(Tcl_Obj *objPtr, const char *file,
 				int line);
@@ -591,8 +587,7 @@ TCLAPI int		Tcl_RecordAndEvalObj(Tcl_Interp *interp,
 /* 210 */
 TCLAPI void		Tcl_RegisterChannel(Tcl_Interp *interp,
 				Tcl_Channel chan);
-/* 211 */
-TCLAPI void		Tcl_RegisterObjType(const Tcl_ObjType *typePtr);
+/* Slot 211 is reserved */
 /* 212 */
 TCLAPI Tcl_RegExp	Tcl_RegExpCompile(Tcl_Interp *interp,
 				const char *pattern);
@@ -1747,6 +1742,9 @@ TCLAPI int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 TCLAPI void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
+/* 631 */
+TCLAPI int		Tcl_GetIntForIndex(Tcl_Interp *interp,
+				Tcl_Obj *objPtr, int endValue, int *indexPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -1788,11 +1786,11 @@ typedef struct TclStubs {
     void (*tcl_SetTimer) (const Tcl_Time *timePtr); /* 11 */
     void (*tcl_Sleep) (int ms); /* 12 */
     int (*tcl_WaitForEvent) (const Tcl_Time *timePtr); /* 13 */
-    int (*tcl_AppendAllObjTypes) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 14 */
+    void (*reserved14)(void);
     void (*tcl_AppendStringsToObj) (Tcl_Obj *objPtr, ...); /* 15 */
     void (*tcl_AppendToObj) (Tcl_Obj *objPtr, const char *bytes, int length); /* 16 */
     Tcl_Obj * (*tcl_ConcatObj) (int objc, Tcl_Obj *const objv[]); /* 17 */
-    int (*tcl_ConvertToType) (Tcl_Interp *interp, Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 18 */
+    void (*reserved18)(void);
     void (*tcl_DbDecrRefCount) (Tcl_Obj *objPtr, const char *file, int line); /* 19 */
     void (*tcl_DbIncrRefCount) (Tcl_Obj *objPtr, const char *file, int line); /* 20 */
     int (*tcl_DbIsShared) (Tcl_Obj *objPtr, const char *file, int line); /* 21 */
@@ -1993,7 +1991,7 @@ typedef struct TclStubs {
     int (*tcl_RecordAndEval) (Tcl_Interp *interp, const char *cmd, int flags); /* 208 */
     int (*tcl_RecordAndEvalObj) (Tcl_Interp *interp, Tcl_Obj *cmdPtr, int flags); /* 209 */
     void (*tcl_RegisterChannel) (Tcl_Interp *interp, Tcl_Channel chan); /* 210 */
-    void (*tcl_RegisterObjType) (const Tcl_ObjType *typePtr); /* 211 */
+    void (*reserved211)(void);
     Tcl_RegExp (*tcl_RegExpCompile) (Tcl_Interp *interp, const char *pattern); /* 212 */
     int (*tcl_RegExpExec) (Tcl_Interp *interp, Tcl_RegExp regexp, const char *text, const char *start); /* 213 */
     int (*tcl_RegExpMatch) (Tcl_Interp *interp, const char *text, const char *pattern); /* 214 */
@@ -2413,6 +2411,7 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
+    int (*tcl_GetIntForIndex) (Tcl_Interp *interp, Tcl_Obj *objPtr, int endValue, int *indexPtr); /* 631 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -2469,16 +2468,14 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_Sleep) /* 12 */
 #define Tcl_WaitForEvent \
 	(tclStubsPtr->tcl_WaitForEvent) /* 13 */
-#define Tcl_AppendAllObjTypes \
-	(tclStubsPtr->tcl_AppendAllObjTypes) /* 14 */
+/* Slot 14 is reserved */
 #define Tcl_AppendStringsToObj \
 	(tclStubsPtr->tcl_AppendStringsToObj) /* 15 */
 #define Tcl_AppendToObj \
 	(tclStubsPtr->tcl_AppendToObj) /* 16 */
 #define Tcl_ConcatObj \
 	(tclStubsPtr->tcl_ConcatObj) /* 17 */
-#define Tcl_ConvertToType \
-	(tclStubsPtr->tcl_ConvertToType) /* 18 */
+/* Slot 18 is reserved */
 #define Tcl_DbDecrRefCount \
 	(tclStubsPtr->tcl_DbDecrRefCount) /* 19 */
 #define Tcl_DbIncrRefCount \
@@ -2852,8 +2849,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_RecordAndEvalObj) /* 209 */
 #define Tcl_RegisterChannel \
 	(tclStubsPtr->tcl_RegisterChannel) /* 210 */
-#define Tcl_RegisterObjType \
-	(tclStubsPtr->tcl_RegisterObjType) /* 211 */
+/* Slot 211 is reserved */
 #define Tcl_RegExpCompile \
 	(tclStubsPtr->tcl_RegExpCompile) /* 212 */
 #define Tcl_RegExpExec \
@@ -3680,6 +3676,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
+#define Tcl_GetIntForIndex \
+	(tclStubsPtr->tcl_GetIntForIndex) /* 631 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3734,6 +3732,11 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), -1))
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), length))
+#define Tcl_AppendAllObjTypes(interp, objPtr) (TCL_OK)
+#define Tcl_RegisterObjType(typePtr) /* Do Nothing */
+#define Tcl_ConvertToType(interp, objPtr, type) \
+	(Tcl_ResetResult(interp),Tcl_AppendResult((interp), "cannot convert to ", \
+	(type)->name, NULL), TCL_ERROR)
 
 /*
  * Deprecated Tcl procedures:

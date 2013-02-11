@@ -936,7 +936,6 @@ TestobjCmd(
 {
     int varIndex, destIndex, i;
     const char *index, *subCmd, *string;
-    const Tcl_ObjType *targetType;
     Tcl_Obj **varPtr;
 
     if (objc < 2) {
@@ -989,13 +988,34 @@ TestobjCmd(
 	    return TCL_ERROR;
 	}
 	typeName = Tcl_GetString(objv[3]);
-	if ((targetType = Tcl_GetObjType(typeName)) == NULL) {
+	if (!strcmp(typeName, "bytearray")) {
+	    int len;
+	    (void)Tcl_GetByteArrayFromObj(varPtr[varIndex], &len);
+	} else if (!strcmp(typeName, "double")) {
+	    double d;
+	    if (Tcl_GetDoubleFromObj(interp, varPtr[varIndex], &d) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else if (!strcmp(typeName, "index")) {
+	    int index;
+	    if (Tcl_GetIntForIndex(interp, varPtr[varIndex], 0, &index) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else if (!strcmp(typeName, "list")) {
+	    int objc;
+	    Tcl_Obj **objv;
+	    if (Tcl_ListObjGetElements(interp, varPtr[varIndex], &objc, &objv) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else if (!strcmp(typeName, "string")) {
+	    if (Tcl_GetUnicodeFromObj(varPtr[varIndex], NULL) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	} else {
 	    Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
-		    "no type ", typeName, " found", NULL);
-	    return TCL_ERROR;
-	}
-	if (Tcl_ConvertToType(interp, varPtr[varIndex], targetType)
-		!= TCL_OK) {
+		    "bad typename \"", typeName,
+		    "\": must be bytearray, double, index, list, "
+		    "or string", NULL);
 	    return TCL_ERROR;
 	}
 	Tcl_SetObjResult(interp, varPtr[varIndex]);
@@ -1095,19 +1115,11 @@ TestobjCmd(
 	    Tcl_AppendToObj(Tcl_GetObjResult(interp),
 		    varPtr[varIndex]->typePtr->name, -1);
 	}
-    } else if (strcmp(subCmd, "types") == 0) {
-	if (objc != 2) {
-	    goto wrongNumArgs;
-	}
-	if (Tcl_AppendAllObjTypes(interp,
-		Tcl_GetObjResult(interp)) != TCL_OK) {
-	    return TCL_ERROR;
-	}
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
 		"\": must be assign, convert, duplicate, freeallvars, "
-		"newobj, objcount, objtype, refcount, type, or types", NULL);
+		"newobj, objcount, objtype, refcount, or type", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1249,8 +1261,7 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
+		(void)Tcl_GetUnicodeFromObj(varPtr[varIndex], &i);
 		strPtr = varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
 		length = (int) strPtr->allocated;
 	    } else {
@@ -1303,8 +1314,7 @@ TeststringobjCmd(
 		goto wrongNumArgs;
 	    }
 	    if (varPtr[varIndex] != NULL) {
-		Tcl_ConvertToType(NULL, varPtr[varIndex],
-			Tcl_GetObjType("string"));
+		(void)Tcl_GetUnicodeFromObj(varPtr[varIndex], &i);
 		strPtr = varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
 		length = strPtr->maxChars;
 	    } else {

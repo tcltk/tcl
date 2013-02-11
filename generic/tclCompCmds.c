@@ -4273,7 +4273,7 @@ TclCompileLindexCmd(
 		result = TCL_ERROR;
 	    }
 	} else {
-	    result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
+	    result = TclGetIntForIndex(NULL, tmpObj, -2, &idx);
 	    if (result == TCL_OK && idx > -2) {
 		result = TCL_ERROR;
 	    }
@@ -4474,7 +4474,7 @@ TclCompileLrangeCmd(
 	    result = TCL_ERROR;
 	}
     } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
+	result = TclGetIntForIndex(NULL, tmpObj, -2, &idx1);
 	if (result == TCL_OK && idx1 > -2) {
 	    result = TCL_ERROR;
 	}
@@ -4501,7 +4501,7 @@ TclCompileLrangeCmd(
 	    result = TCL_ERROR;
 	}
     } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
+	result = TclGetIntForIndex(NULL, tmpObj, -2, &idx2);
 	if (result == TCL_OK && idx2 > -2) {
 	    result = TCL_ERROR;
 	}
@@ -4573,7 +4573,7 @@ TclCompileLreplaceCmd(
 	    result = TCL_ERROR;
 	}
     } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
+	result = TclGetIntForIndex(NULL, tmpObj, -2, &idx1);
 	if (result == TCL_OK && idx1 > -2) {
 	    result = TCL_ERROR;
 	}
@@ -4600,7 +4600,7 @@ TclCompileLreplaceCmd(
 	    result = TCL_ERROR;
 	}
     } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
+	result = TclGetIntForIndex(NULL, tmpObj, -2, &idx2);
 	if (result == TCL_OK && idx2 > -2) {
 	    result = TCL_ERROR;
 	}

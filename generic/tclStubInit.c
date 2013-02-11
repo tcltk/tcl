@@ -222,7 +222,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetExtension, /* 31 */
     TclGetFrame, /* 32 */
     0, /* 33 */
-    TclGetIntForIndex, /* 34 */
+    0, /* 34 */
     0, /* 35 */
     0, /* 36 */
     TclGetLoadedPackages, /* 37 */
@@ -666,11 +666,11 @@ const TclStubs tclStubs = {
     Tcl_SetTimer, /* 11 */
     Tcl_Sleep, /* 12 */
     Tcl_WaitForEvent, /* 13 */
-    Tcl_AppendAllObjTypes, /* 14 */
+    0, /* 14 */
     Tcl_AppendStringsToObj, /* 15 */
     Tcl_AppendToObj, /* 16 */
     Tcl_ConcatObj, /* 17 */
-    Tcl_ConvertToType, /* 18 */
+    0, /* 18 */
     Tcl_DbDecrRefCount, /* 19 */
     Tcl_DbIncrRefCount, /* 20 */
     Tcl_DbIsShared, /* 21 */
@@ -871,7 +871,7 @@ const TclStubs tclStubs = {
     Tcl_RecordAndEval, /* 208 */
     Tcl_RecordAndEvalObj, /* 209 */
     Tcl_RegisterChannel, /* 210 */
-    Tcl_RegisterObjType, /* 211 */
+    0, /* 211 */
     Tcl_RegExpCompile, /* 212 */
     Tcl_RegExpExec, /* 213 */
     Tcl_RegExpMatch, /* 214 */
@@ -1291,6 +1291,7 @@ const TclStubs tclStubs = {
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
+    Tcl_GetIntForIndex, /* 631 */
 };
 
 /* !END!: Do not edit above this line. */

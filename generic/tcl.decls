@@ -79,9 +79,10 @@ declare 12 {
 declare 13 {
     int Tcl_WaitForEvent(const Tcl_Time *timePtr)
 }
-declare 14 {
-    int Tcl_AppendAllObjTypes(Tcl_Interp *interp, Tcl_Obj *objPtr)
-}
+# Removed in 9.0:
+#declare 14 {
+#    int Tcl_AppendAllObjTypes(Tcl_Interp *interp, Tcl_Obj *objPtr)
+#}
 declare 15 {
     void Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...)
 }
@@ -91,10 +92,11 @@ declare 16 {
 declare 17 {
     Tcl_Obj *Tcl_ConcatObj(int objc, Tcl_Obj *const objv[])
 }
-declare 18 {
-    int Tcl_ConvertToType(Tcl_Interp *interp, Tcl_Obj *objPtr,
-	    const Tcl_ObjType *typePtr)
-}
+# Remove in 9.0:
+#declare 18 {
+#    int Tcl_ConvertToType(Tcl_Interp *interp, Tcl_Obj *objPtr,
+#	    const Tcl_ObjType *typePtr)
+#}
 declare 19 {
     void Tcl_DbDecrRefCount(Tcl_Obj *objPtr, const char *file, int line)
 }
@@ -764,9 +766,10 @@ declare 209 {
 declare 210 {
     void Tcl_RegisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 211 {
-    void Tcl_RegisterObjType(const Tcl_ObjType *typePtr)
-}
+# Removed in 9.0:
+#declare 211 {
+#    void Tcl_RegisterObjType(const Tcl_ObjType *typePtr)
+#}
 declare 212 {
     Tcl_RegExp Tcl_RegExpCompile(Tcl_Interp *interp, const char *pattern)
 }
@@ -2347,6 +2350,12 @@ declare 630 {
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
+
+declare 631 {
+    int Tcl_GetIntForIndex(Tcl_Interp *interp, Tcl_Obj *objPtr,
+	    int endValue, int *indexPtr)
+}
+
 
 ##############################################################################
 

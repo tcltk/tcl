@@ -43,7 +43,7 @@ const Tcl_ObjType tclListType = {
     FreeListInternalRep,	/* freeIntRepProc */
     DupListInternalRep,		/* dupIntRepProc */
     UpdateStringOfList,		/* updateStringProc */
-    SetListFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 
 #ifndef TCL_MIN_ELEMENT_GROWTH
@@ -1099,7 +1099,7 @@ TclLindexList(
      */
 
     if (argPtr->typePtr != &tclListType
-	    && TclGetIntForIndexM(NULL , argPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndex(NULL , argPtr, 0, &index) == TCL_OK) {
 	/*
 	 * argPtr designates a single index.
 	 */
@@ -1207,7 +1207,7 @@ TclLindexFlat(
 	}
 	TclListObjGetElements(NULL, sublistCopy, &listLen, &elemPtrs);
 
-	if (TclGetIntForIndexM(interp, indexArray[i], /*endValue*/ listLen-1,
+	if (TclGetIntForIndex(interp, indexArray[i], /*endValue*/ listLen-1,
 		&index) == TCL_OK) {
 	    if (index<0 || index>=listLen) {
 		/*
@@ -1216,7 +1216,7 @@ TclLindexFlat(
 		 */
 
 		while (++i < indexCount) {
-		    if (TclGetIntForIndexM(interp, indexArray[i], -1, &index)
+		    if (TclGetIntForIndex(interp, indexArray[i], -1, &index)
 			!= TCL_OK) {
 			Tcl_DecrRefCount(sublistCopy);
 			return NULL;
@@ -1284,7 +1284,7 @@ TclLsetList(
      */
 
     if (indexArgPtr->typePtr != &tclListType
-	    && TclGetIntForIndexM(NULL, indexArgPtr, 0, &index) == TCL_OK) {
+	    && TclGetIntForIndex(NULL, indexArgPtr, 0, &index) == TCL_OK) {
 	/*
 	 * indexArgPtr designates a single index.
 	 */
@@ -1422,11 +1422,11 @@ TclLsetFlat(
 	}
 
 	/*
-	 * WARNING: the macro TclGetIntForIndexM is not safe for
+	 * WARNING: the macro TclGetIntForIndex is not safe for
 	 * post-increments, avoid '*indexArray++' here.
 	 */
 
-	if (TclGetIntForIndexM(interp, *indexArray, elemCount - 1, &index)
+	if (TclGetIntForIndex(interp, *indexArray, elemCount - 1, &index)
 		!= TCL_OK)  {
 	    /* ...the index we're trying to use isn't an index at all. */
 	    result = TCL_ERROR;

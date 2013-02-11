@@ -107,23 +107,22 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
-static int		SetEndOffsetFromAny(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
-static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
+static int		SetIndexFromAny(Tcl_Obj *objPtr);
+static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
 
 /*
  * The following is the Tcl object type definition for an object that
- * represents a list index in the form, "end-offset". It is used as a
- * performance optimization in TclGetIntForIndex. The internal rep is an
- * integer, so no memory management is required for it.
+ * represents a list index in the form, "offset[+-]offset" or "end-offset".
+ * It is used as a performance optimization in TclGetIntForIndex. The
+ * internal rep is an integer, so no memory management is required for it.
  */
 
-const Tcl_ObjType tclEndOffsetType = {
-    "end-offset",			/* name */
+static const Tcl_ObjType indexType = {
+    "index",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
-    UpdateStringOfEndOffset,		/* updateStringProc */
-    SetEndOffsetFromAny
+    UpdateStringOfIndex,		/* updateStringProc */
+    NULL
 };
 
 /*
@@ -3330,7 +3329,7 @@ TclFormatInt(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetIntForIndex --
+ * Tcl_GetIntForIndex --
  *
  *	This function returns an integer corresponding to the list index held
  *	in a Tcl object. The Tcl object's value is expected to be in the
@@ -3352,7 +3351,7 @@ TclFormatInt(
  */
 
 int
-TclGetIntForIndex(
+Tcl_GetIntForIndex(
     Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
 				 * NULL, then no error message is left after
 				 * errors. */
@@ -3371,13 +3370,17 @@ TclGetIntForIndex(
 	return TCL_OK;
     }
 
-    if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
+    if (SetIndexFromAny(objPtr) == TCL_OK) {
 	/*
 	 * If the object is already an offset from the end of the list, or can
 	 * be converted to one, use it.
 	 */
 
-	*indexPtr = endValue + objPtr->internalRep.longValue;
+   	if (objPtr->internalRep.wideValue > -2) {
+	*indexPtr = objPtr->internalRep.wideValue;
+   	} else {
+	*indexPtr = endValue + objPtr->internalRep.wideValue + 3;
+   	}
 	return TCL_OK;
     }
 
@@ -3417,6 +3420,19 @@ TclGetIntForIndex(
 	} else {
 	    *indexPtr = first - second;
 	}
+    /*
+     * The conversion succeeded. Free the old internal rep and set the new
+     * one.
+     */
+
+    TclFreeIntRep(objPtr);
+    if (*indexPtr > -1) {
+	objPtr->internalRep.wideValue = *indexPtr;
+    } else {
+	objPtr->internalRep.wideValue = -1;
+    }
+    objPtr->typePtr = &indexType;
+
 	return TCL_OK;
     }
 
@@ -3442,10 +3458,10 @@ TclGetIntForIndex(
 /*
  *----------------------------------------------------------------------
  *
- * UpdateStringOfEndOffset --
+ * UpdateStringOfIndex --
  *
- *	Update the string rep of a Tcl object holding an "end-offset"
- *	expression.
+ *	Update the string rep of a Tcl object holding an "offset[+-]offset" or
+ *	"end-offset" expression.
  *
  * Results:
  *	None.
@@ -3460,17 +3476,25 @@ TclGetIntForIndex(
  */
 
 static void
-UpdateStringOfEndOffset(
+UpdateStringOfIndex(
     register Tcl_Obj *objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + 5];
     register int len;
 
-    memcpy(buffer, "end", 4);
-    len = sizeof("end") - 1;
-    if (objPtr->internalRep.longValue != 0) {
-	buffer[len++] = '-';
-	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
+    if (objPtr->internalRep.wideValue < -1) {
+	memcpy(buffer, "end", 4);
+	len = sizeof("end") - 1;
+	if (objPtr->internalRep.wideValue == -2) {
+	    buffer[len++] = '+';
+	    buffer[len++] = '1';
+	    buffer[len] = 0;
+	} else if (objPtr->internalRep.wideValue != -3) {
+	    buffer[len++] = '-';
+	    len += TclFormatInt(buffer+len, (long)-(objPtr->internalRep.wideValue+3));
+	}
+    } else {
+	len = TclFormatInt(buffer, objPtr->internalRep.wideValue);
     }
     objPtr->bytes = ckalloc((unsigned) len+1);
     memcpy(objPtr->bytes, buffer, (unsigned) len+1);
@@ -3480,10 +3504,14 @@ UpdateStringOfEndOffset(
 /*
  *----------------------------------------------------------------------
  *
- * SetEndOffsetFromAny --
+ * SetIndexFromAny --
  *
- *	Look for a string of the form "end[+-]offset" and convert it to an
- *	internal representation holding the offset.
+ *	Look for a string of the form "offset[+-]offset" or "end[+-]offset"
+ *	and convert it to an internal representation holding the offset.
+ *	If the resulting offset is < "-1" or > "end+1", the index is still
+ *	considered valid but it points to a list element which is not
+ *	valid. The value stored in internalRep.wideValue will be -1.
+ *	For values <= "end+1", internalRep.wideValue will be set to offset-3.
  *
  * Results:
  *	Returns TCL_OK if ok, TCL_ERROR if the string was badly formed.
@@ -3496,8 +3524,7 @@ UpdateStringOfEndOffset(
  */
 
 static int
-SetEndOffsetFromAny(
-    Tcl_Interp *interp,		/* Tcl interpreter or NULL */
+SetIndexFromAny(
     Tcl_Obj *objPtr)		/* Pointer to the object to parse */
 {
     int offset;			/* Offset in the "end-offset" expression */
@@ -3508,7 +3535,7 @@ SetEndOffsetFromAny(
      * If it's already the right type, we're fine.
      */
 
-    if (objPtr->typePtr == &tclEndOffsetType) {
+    if (objPtr->typePtr == &indexType) {
 	return TCL_OK;
     }
 
@@ -3519,11 +3546,6 @@ SetEndOffsetFromAny(
     bytes = TclGetStringFromObj(objPtr, &length);
     if ((*bytes != 'e') || (strncmp(bytes, "end",
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad index \"%s\": must be end?[+-]integer?", bytes));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
-	}
 	return TCL_ERROR;
     }
 
@@ -3540,25 +3562,15 @@ SetEndOffsetFromAny(
 	 */
 
 	if (TclIsSpaceProc(bytes[4])) {
-	    goto badIndexFormat;
+	    return TCL_ERROR;
 	}
-	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
+	if (Tcl_GetInt(NULL, bytes+4, &offset) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	if (bytes[3] == '-') {
 	    offset = -offset;
 	}
     } else {
-	/*
-	 * Conversion failed. Report the error.
-	 */
-
-    badIndexFormat:
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad index \"%s\": must be end?[+-]integer?", bytes));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
-	}
 	return TCL_ERROR;
     }
 
@@ -3568,8 +3580,12 @@ SetEndOffsetFromAny(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = offset;
-    objPtr->typePtr = &tclEndOffsetType;
+    if (offset < 2) {
+	objPtr->internalRep.wideValue = ((Tcl_WideInt)offset) - 3;
+    } else {
+	objPtr->internalRep.wideValue = -1;
+    }
+    objPtr->typePtr = &indexType;
 
     return TCL_OK;
 }

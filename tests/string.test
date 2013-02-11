@@ -531,7 +531,7 @@ test string-6.72 {string is true, false} {
 } {0 0}
 test string-6.73 {string is true, false} {
     catch {unset var}
-    list [string is true -fail var 25] $var
+    list [string is true -fail var 25x] $var
 } {0 0}
 test string-6.74 {string is true, false} {
     catch {unset var}
@@ -1603,7 +1603,7 @@ test string-23.0 {string is boolean, Bug 1187123} testindexobj {
     set x 5
     catch {testindexobj $x foo bar soom}
     string is boolean $x
-} 0
+} 1
 test string-23.1 {string is command with empty string} {
     set s ""
     list \

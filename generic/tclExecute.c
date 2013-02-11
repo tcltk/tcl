@@ -4307,7 +4307,7 @@ TEBCresume(
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
 		&& (value2Ptr->typePtr != &tclListType)
-		&& (TclGetIntForIndexM(NULL , value2Ptr, objc-1,
+		&& (TclGetIntForIndex(NULL , value2Ptr, objc-1,
 			&index) == TCL_OK)) {
 	    TclDecrRefCount(value2Ptr);
 	    tosPtr--;
@@ -4784,7 +4784,7 @@ TEBCresume(
 	 */
 
 	length = Tcl_GetCharLength(valuePtr);
-	if (TclGetIntForIndexM(interp, value2Ptr, length-1, &index)!=TCL_OK) {
+	if (TclGetIntForIndex(interp, value2Ptr, length-1, &index)!=TCL_OK) {
 	    goto gotError;
 	}
 
@@ -4818,9 +4818,9 @@ TEBCresume(
 	TRACE(("\"%.20s\" %s %s =>",
 		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
 	length = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
-	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+	if (TclGetIntForIndex(interp, OBJ_UNDER_TOS, length,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
+	    || TclGetIntForIndex(interp, OBJ_AT_TOS, length,
 		    &toIdx) != TCL_OK) {
 	    goto gotError;
 	}

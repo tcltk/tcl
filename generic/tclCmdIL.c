@@ -2371,7 +2371,7 @@ Tcl_LinsertObjCmd(
      * appended to the list.
      */
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ len, &index);
+    result = TclGetIntForIndex(interp, objv[2], /*end*/ len, &index);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2527,7 +2527,7 @@ Tcl_LrangeObjCmd(
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[2], /*endValue*/ listLen - 1,
+    result = TclGetIntForIndex(interp, objv[2], /*endValue*/ listLen - 1,
 	    &first);
     if (result != TCL_OK) {
 	return result;
@@ -2536,7 +2536,7 @@ Tcl_LrangeObjCmd(
 	first = 0;
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*endValue*/ listLen - 1,
+    result = TclGetIntForIndex(interp, objv[3], /*endValue*/ listLen - 1,
 	    &last);
     if (result != TCL_OK) {
 	return result;
@@ -2737,12 +2737,12 @@ Tcl_LreplaceObjCmd(
      * included for deletion.
      */
 
-    result = TclGetIntForIndexM(interp, objv[2], /*end*/ listLen-1, &first);
+    result = TclGetIntForIndex(interp, objv[2], /*end*/ listLen-1, &first);
     if (result != TCL_OK) {
 	return result;
     }
 
-    result = TclGetIntForIndexM(interp, objv[3], /*end*/ listLen-1, &last);
+    result = TclGetIntForIndex(interp, objv[3], /*end*/ listLen-1, &last);
     if (result != TCL_OK) {
 	return result;
     }
@@ -2754,7 +2754,7 @@ Tcl_LreplaceObjCmd(
     /*
      * Complain if the user asked for a start element that is greater than the
      * list length. This won't ever trigger for the "end-*" case as that will
-     * be properly constrained by TclGetIntForIndex because we use listLen-1
+     * be properly constrained by Tcl_GetIntForIndex because we use listLen-1
      * (to allow for replacing the last elem).
      */
 
@@ -3105,7 +3105,7 @@ Tcl_LsearchObjCmd(
 	     */
 
 	    for (j=0 ; j<sortInfo.indexc ; j++) {
-		if (TclGetIntForIndexM(interp, indices[j], SORTIDX_END,
+		if (TclGetIntForIndex(interp, indices[j], SORTIDX_END,
 			&sortInfo.indexv[j]) != TCL_OK) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
@@ -3190,7 +3190,7 @@ Tcl_LsearchObjCmd(
      */
 
     if (startPtr) {
-	result = TclGetIntForIndexM(interp, startPtr, listc-1, &offset);
+	result = TclGetIntForIndex(interp, startPtr, listc-1, &offset);
 	Tcl_DecrRefCount(startPtr);
 	if (result != TCL_OK) {
 	    goto done;
@@ -3749,7 +3749,7 @@ Tcl_LsortObjCmd(
 	     */
 
 	    for (j=0 ; j<indexc ; j++) {
-		if (TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
+		if (TclGetIntForIndex(interp, indexv[j], SORTIDX_END,
 			&dummy) != TCL_OK) {
 		    Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 			    "\n    (-index option item number %d)", j));
@@ -3830,7 +3830,7 @@ Tcl_LsortObjCmd(
 					 * might be decreased by 1 later. */
 	}
 	for (j=0 ; j<sortInfo.indexc ; j++) {
-	    TclGetIntForIndexM(interp, indexv[j], SORTIDX_END,
+	    TclGetIntForIndex(interp, indexv[j], SORTIDX_END,
 		    &sortInfo.indexv[j]);
 	}
     }

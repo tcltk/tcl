@@ -557,8 +557,6 @@ static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
-static int		SetByteCodeFromAny(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
@@ -584,7 +582,7 @@ const Tcl_ObjType tclByteCodeType = {
     FreeByteCodeInternalRep,	/* freeIntRepProc */
     DupByteCodeInternalRep,	/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetByteCodeFromAny		/* setFromAnyProc */
+    NULL		/* setFromAnyProc */
 };
 
 /*
@@ -661,7 +659,7 @@ TclSetByteCodeFromAny(
     if (!traceInitialized) {
 	if (Tcl_LinkVar(interp, "tcl_traceCompile",
 		(char *) &tclTraceCompile, TCL_LINK_INT) != TCL_OK) {
-	    Tcl_Panic("SetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
+	    Tcl_Panic("TclSetByteCodeFromAny: unable to create link for tcl_traceCompile variable");
 	}
 	traceInitialized = 1;
     }
@@ -755,41 +753,6 @@ TclSetByteCodeFromAny(
 
     TclFreeCompileEnv(&compEnv);
     return result;
-}
-
-/*
- *-----------------------------------------------------------------------
- *
- * SetByteCodeFromAny --
- *
- *	Part of the bytecode Tcl object type implementation. Attempts to
- *	generate an byte code internal form for the Tcl object "objPtr" by
- *	compiling its string representation.
- *
- * Results:
- *	The return value is a standard Tcl object result. If an error occurs
- *	during compilation, an error message is left in the interpreter's
- *	result unless "interp" is NULL.
- *
- * Side effects:
- *	Frees the old internal representation. If no error occurs, then the
- *	compiled code is stored as "objPtr"s bytecode representation. Also, if
- *	debugging, initializes the "tcl_traceCompile" Tcl variable used to
- *	trace compilations.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-SetByteCodeFromAny(
-    Tcl_Interp *interp,		/* The interpreter for which the code is being
-				 * compiled. Must not be NULL. */
-    Tcl_Obj *objPtr)		/* The object to make a ByteCode object. */
-{
-    if (interp == NULL) {
-	return TCL_ERROR;
-    }
-    return TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
 }
 
 /*

@@ -181,7 +181,7 @@ const Tcl_ObjType tclByteArrayType = {
     FreeByteArrayInternalRep,
     DupByteArrayInternalRep,
     UpdateStringOfByteArray,
-    SetByteArrayFromAny
+    NULL
 };
 
 /*

@@ -23,12 +23,6 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testobj [llength [info commands testobj]]
 testConstraint testdstring [llength [info commands testdstring]]
 
-test stringObj-1.1 {string type registration} testobj {
-    set t [testobj types]
-    set first [string first "string" $t]
-    set result [expr {$first != -1}]
-} {1}
-
 test stringObj-2.1 {Tcl_NewStringObj} testobj {
     set result ""
     lappend result [testobj freeallvars]
@@ -203,7 +197,7 @@ test stringObj-8.1 {DupStringInternalRep procedure} testobj {
 	    [teststringobj maxchars 1] [teststringobj get 1] \
 	    [teststringobj length 2] [teststringobj length2 2] \
 	    [teststringobj maxchars 2] [teststringobj get 2]
-} {5 10 0 abcde 5 5 0 abcde}
+} {5 10 5 abcde 5 5 5 abcde}
 test stringObj-8.2 {DupUnicodeInternalRep, mixed width chars} testobj {
     set x abc\u00ef\u00bf\u00aeghi
     string length $x
