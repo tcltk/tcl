@@ -12,7 +12,7 @@
 # Note that after running these tests, entries will be left behind in the
 # message catalogs for locales foo, foo_BAR, and foo_BAR_baz.
 
-package require Tcl 8.2
+package require Tcl 8.5
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
@@ -56,7 +56,7 @@ namespace eval ::msgcat::test {
 		set result [string tolower \
 			[msgcat::ConvertLocale $::tcl::mac::locale]]
 	    } else {
-		if {([info sharedlibextension] == ".dll")
+		if {([info sharedlibextension] eq ".dll")
 			&& ![catch {package require registry}]} {
 		    # Windows and Cygwin have other ways to determine the
 		    # locale when the environment variables are missing
@@ -72,7 +72,7 @@ namespace eval ::msgcat::test {
 	    variable var
 	    foreach var $envVars {
 		catch {variable $var $::env($var)}
-		catch {unset ::env($var)}
+		unset -nocomplain ::env($var)
 	    }
 	    foreach var $setVars {
 		set ::env($var) $var
@@ -84,13 +84,13 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    interp delete [namespace current]::i
 	    foreach var $envVars {
-		catch {unset ::env($var)}
+		unset -nocomplain ::env($var)
 		catch {set ::env($var) [set [namespace current]::$var]}
 	    }
 	} -body {i eval msgcat::mclocale} -result $result
 	incr count
     }
-    catch {unset result}
+    unset -nocomplain result
     
     # Could add tests of initialization from Windows registry here.
     # Use a fake registry package.
@@ -324,7 +324,7 @@ namespace eval ::msgcat::test {
 	    incr count
 	}
     }
-    catch {unset result}
+    unset -nocomplain result
 
     # Tests msgcat-4.*: [mcunknown]
 

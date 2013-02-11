@@ -1718,7 +1718,7 @@ NsEnsembleImplementationCmdNR(
 
 	if (objv[1+ensemblePtr->numParameters]->typePtr==&tclEnsembleCmdType){
 	    EnsembleCmdRep *ensembleCmd = objv[1+ensemblePtr->numParameters]
-		    ->internalRep.otherValuePtr;
+		    ->internalRep.twoPtrValue.ptr1;
 
 	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
 		    ensembleCmd->epoch == ensemblePtr->epoch &&
@@ -2196,7 +2196,7 @@ EnsembleUnknownCallback(
 	    }
 	    Tcl_AddErrorInfo(interp, "\n    result of "
 		    "ensemble unknown subcommand handler: ");
-	    Tcl_AddErrorInfo(interp, TclGetString(unknownCmd));
+	    Tcl_AppendObjToErrorInfo(interp, unknownCmd);
 	    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "UNKNOWN_RESULT",
 		    NULL);
 	} else {
@@ -2238,7 +2238,7 @@ MakeCachedEnsembleCommand(
     int length;
 
     if (objPtr->typePtr == &tclEnsembleCmdType) {
-	ensembleCmd = objPtr->internalRep.otherValuePtr;
+	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
 	Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
 	TclNsDecrRefCount(ensembleCmd->nsPtr);
 	ckfree(ensembleCmd->fullSubcmdName);
@@ -2250,7 +2250,7 @@ MakeCachedEnsembleCommand(
 
 	TclFreeIntRep(objPtr);
 	ensembleCmd = ckalloc(sizeof(EnsembleCmdRep));
-	objPtr->internalRep.otherValuePtr = ensembleCmd;
+	objPtr->internalRep.twoPtrValue.ptr1 = ensembleCmd;
 	objPtr->typePtr = &tclEnsembleCmdType;
     }
 
@@ -2645,7 +2645,7 @@ static void
 FreeEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.otherValuePtr;
+    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
 
     Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
     ckfree(ensembleCmd->fullSubcmdName);
@@ -2677,12 +2677,12 @@ DupEnsembleCmdRep(
     Tcl_Obj *objPtr,
     Tcl_Obj *copyPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.otherValuePtr;
+    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
     EnsembleCmdRep *ensembleCopy = ckalloc(sizeof(EnsembleCmdRep));
     int length = strlen(ensembleCmd->fullSubcmdName);
 
     copyPtr->typePtr = &tclEnsembleCmdType;
-    copyPtr->internalRep.otherValuePtr = ensembleCopy;
+    copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
     ensembleCopy->nsPtr = ensembleCmd->nsPtr;
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
@@ -2715,7 +2715,7 @@ static void
 StringOfEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
-    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.otherValuePtr;
+    EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
     int length = strlen(ensembleCmd->fullSubcmdName);
 
     objPtr->length = length;
@@ -3056,6 +3056,9 @@ CompileToCompiledCommand(
     Tcl_Parse synthetic;
     Tcl_Token *tokenPtr;
     int result, i;
+    int savedNumCmds = envPtr->numCommands;
+    int savedStackDepth = envPtr->currStackDepth;
+    unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
@@ -3108,6 +3111,17 @@ CompileToCompiledCommand(
      */
 
     result = cmdPtr->compileProc(interp, &synthetic, cmdPtr, envPtr);
+
+    /*
+     * If our target fails to compile, revert the number of commands and the
+     * pointer to the place to issue the next instruction. [Bug 3600328]
+     */
+
+    if (result != TCL_OK) {
+	envPtr->numCommands = savedNumCmds;
+	envPtr->currStackDepth = savedStackDepth;
+	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+    }
 
     /*
      * Clean up if necessary.
