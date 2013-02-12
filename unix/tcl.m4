@@ -517,7 +517,7 @@ AC_DEFUN([SC_BUILD_TCLSH], [
 AC_DEFUN([SC_ENABLE_SHARED], [
     AC_MSG_CHECKING([how to build libraries])
     AC_ARG_ENABLE(shared,
-	[  --enable-shared         build and link with shared libraries [--enable-shared]],
+	[  --enable-shared         build and link with shared libraries (default: on)],
 	[tcl_ok=$enableval], [tcl_ok=yes])
 
     if test "${enable_shared+set}" = set; then
@@ -558,7 +558,7 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
     if test "`uname -s`" = "Darwin" ; then
 	AC_MSG_CHECKING([how to package libraries])
 	AC_ARG_ENABLE(framework,
-	    [  --enable-framework      package shared libraries in MacOSX frameworks [--disable-framework]],
+	    [  --enable-framework      package shared libraries in MacOSX frameworks (default: off)],
 	    [enable_framework=$enableval], [enable_framework=no])
 	if test $enable_framework = yes; then
 	    if test $SHARED_BUILD = 0; then
@@ -610,7 +610,7 @@ AC_DEFUN([SC_ENABLE_FRAMEWORK], [
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_THREADS], [
-    AC_ARG_ENABLE(threads, [  --enable-threads        build with threads],
+    AC_ARG_ENABLE(threads, [  --enable-threads        build with threads (default: off)],
 	[tcl_ok=$enableval], [tcl_ok=no])
 
     if test "${TCL_THREADS}" = 1; then
@@ -687,7 +687,7 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 	    AC_MSG_RESULT([yes])
 	fi
     else
-	AC_MSG_RESULT([no])
+	AC_MSG_RESULT([no (default)])
     fi
 
     AC_SUBST(TCL_THREADS)
@@ -725,7 +725,7 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 
 AC_DEFUN([SC_ENABLE_SYMBOLS], [
     AC_MSG_CHECKING([for build with symbols])
-    AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols [--disable-symbols]],    [tcl_ok=$enableval], [tcl_ok=no])
+    AC_ARG_ENABLE(symbols, [  --enable-symbols        build with debugging symbols (default: off)],    [tcl_ok=$enableval], [tcl_ok=no])
 # FIXME: Currently, LDFLAGS_DEFAULT is not used, it should work like CFLAGS_DEFAULT.
     if test "$tcl_ok" = "no"; then
 	CFLAGS_DEFAULT='$(CFLAGS_OPTIMIZE)'
@@ -784,7 +784,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 AC_DEFUN([SC_ENABLE_LANGINFO], [
     AC_ARG_ENABLE(langinfo,
 	[  --enable-langinfo	  use nl_langinfo if possible to determine
-			  encoding at startup, otherwise use old heuristic],
+			  encoding at startup, otherwise use old heuristic (default: on)],
 	[langinfo_ok=$enableval], [langinfo_ok=yes])
 
     HAVE_LANGINFO=0
@@ -835,7 +835,7 @@ AC_DEFUN([SC_ENABLE_LANGINFO], [
 AC_DEFUN([SC_CONFIG_MANPAGES], [
     AC_MSG_CHECKING([whether to use symlinks for manpages])
     AC_ARG_ENABLE(man-symlinks,
-	    [  --enable-man-symlinks   use symlinks for the manpages],
+	    [  --enable-man-symlinks   use symlinks for the manpages (default: off)],
 	test "$enableval" != "no" && MAN_FLAGS="$MAN_FLAGS --symlinks",
 	enableval="no")
     AC_MSG_RESULT([$enableval])
@@ -843,7 +843,7 @@ AC_DEFUN([SC_CONFIG_MANPAGES], [
     AC_MSG_CHECKING([whether to compress the manpages])
     AC_ARG_ENABLE(man-compression,
 	    [  --enable-man-compression=PROG
-		      compress the manpages with PROG],
+		      compress the manpages with PROG (default: off)],
 	[case $enableval in
 	    yes) AC_MSG_ERROR([missing argument to --enable-man-compression]);;
 	    no)  ;;
