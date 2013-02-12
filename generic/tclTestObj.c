@@ -996,7 +996,7 @@ TestobjCmd(
 	    if (Tcl_GetDoubleFromObj(interp, varPtr[varIndex], &d) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	} else if (!strcmp(typeName, "index")) {
+	} else if (!strcmp(typeName, "lindex")) {
 	    int index;
 	    if (Tcl_GetIntForIndex(interp, varPtr[varIndex], 0, &index) != TCL_OK) {
 		return TCL_ERROR;

@@ -118,7 +118,7 @@ static void		UpdateStringOfIndex(Tcl_Obj *objPtr);
  */
 
 static const Tcl_ObjType indexType = {
-    "index",			/* name */
+    "lindex",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
     UpdateStringOfIndex,		/* updateStringProc */
@@ -3376,10 +3376,10 @@ Tcl_GetIntForIndex(
 	 * be converted to one, use it.
 	 */
 
-   	if (objPtr->internalRep.wideValue > -2) {
-	*indexPtr = objPtr->internalRep.wideValue;
+   	if (objPtr->internalRep.longValue > -2) {
+	*indexPtr = objPtr->internalRep.longValue;
    	} else {
-	*indexPtr = endValue + objPtr->internalRep.wideValue + 3;
+	*indexPtr = endValue + objPtr->internalRep.longValue + 3;
    	}
 	return TCL_OK;
     }
@@ -3427,9 +3427,9 @@ Tcl_GetIntForIndex(
 
     TclFreeIntRep(objPtr);
     if (*indexPtr > -1) {
-	objPtr->internalRep.wideValue = *indexPtr;
+	objPtr->internalRep.longValue = *indexPtr;
     } else {
-	objPtr->internalRep.wideValue = -1;
+	objPtr->internalRep.longValue = -1;
     }
     objPtr->typePtr = &indexType;
 
@@ -3482,19 +3482,19 @@ UpdateStringOfIndex(
     char buffer[TCL_INTEGER_SPACE + 5];
     register int len;
 
-    if (objPtr->internalRep.wideValue < -1) {
+    if (objPtr->internalRep.longValue < -1) {
 	memcpy(buffer, "end", 4);
 	len = sizeof("end") - 1;
-	if (objPtr->internalRep.wideValue == -2) {
+	if (objPtr->internalRep.longValue == -2) {
 	    buffer[len++] = '+';
 	    buffer[len++] = '1';
 	    buffer[len] = 0;
-	} else if (objPtr->internalRep.wideValue != -3) {
+	} else if (objPtr->internalRep.longValue != -3) {
 	    buffer[len++] = '-';
-	    len += TclFormatInt(buffer+len, (long)-(objPtr->internalRep.wideValue+3));
+	    len += TclFormatInt(buffer+len, (long)-(objPtr->internalRep.longValue+3));
 	}
     } else {
-	len = TclFormatInt(buffer, objPtr->internalRep.wideValue);
+	len = TclFormatInt(buffer, objPtr->internalRep.longValue);
     }
     objPtr->bytes = ckalloc((unsigned) len+1);
     memcpy(objPtr->bytes, buffer, (unsigned) len+1);
@@ -3510,8 +3510,8 @@ UpdateStringOfIndex(
  *	and convert it to an internal representation holding the offset.
  *	If the resulting offset is < "-1" or > "end+1", the index is still
  *	considered valid but it points to a list element which is not
- *	valid. The value stored in internalRep.wideValue will be -1.
- *	For values <= "end+1", internalRep.wideValue will be set to offset-3.
+ *	valid. The value stored in internalRep.longValue will be -1.
+ *	For values <= "end+1", internalRep.longValue will be set to offset-3.
  *
  * Results:
  *	Returns TCL_OK if ok, TCL_ERROR if the string was badly formed.
@@ -3581,9 +3581,9 @@ SetIndexFromAny(
 
     TclFreeIntRep(objPtr);
     if (offset < 2) {
-	objPtr->internalRep.wideValue = ((Tcl_WideInt)offset) - 3;
+	objPtr->internalRep.longValue = offset - 3;
     } else {
-	objPtr->internalRep.wideValue = -1;
+	objPtr->internalRep.longValue = -1;
     }
     objPtr->typePtr = &indexType;
 
