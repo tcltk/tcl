@@ -34,11 +34,11 @@ test obj-2.2 {Tcl_GetObjType and Tcl_ConvertToType} testobj {
 
 test obj-3.1 {Tcl_ConvertToType error} testobj {
     list [testdoubleobj set 1 12.34] \
-	[catch {testobj convert 1 index} msg] \
+	[catch {testobj convert 1 lindex} msg] \
 	 $msg
 } {12.34 1 {bad index "12.34": must be integer?[+-]integer? or end?[+-]integer?}}
 test obj-3.2 {Tcl_ConvertToType error, "empty string" object} testobj {
-    list [testobj newobj 1] [catch {testobj convert 1 index} msg] $msg
+    list [testobj newobj 1] [catch {testobj convert 1 lindex} msg] $msg
 } {{} 1 {bad index "": must be integer?[+-]integer? or end?[+-]integer?}}
 
 test obj-4.1 {Tcl_NewObj and AllocateFreeObjects} testobj {
@@ -534,37 +534,37 @@ test obj-30.1 {Ref counting and object deletion, simple types} testobj {
 test obj-31.1 {regenerate string rep of "end"} testobj {
     testobj freeallvars
     teststringobj set 1 end
-    testobj convert 1 index
+    testobj convert 1 lindex
     testobj invalidateStringRep 1
 } end
 test obj-31.2 {regenerate string rep of "end-1"} testobj {
     testobj freeallvars
     teststringobj set 1 end-0x1
-    testobj convert 1 index
+    testobj convert 1 lindex
     testobj invalidateStringRep 1
 } end-1
 test obj-31.3 {regenerate string rep of "end--1"} testobj {
     testobj freeallvars
     teststringobj set 1 end--0x1
-    testobj convert 1 index
+    testobj convert 1 lindex
     testobj invalidateStringRep 1
 } end+1
 test obj-31.4 {regenerate string rep of "end-bigInteger"} testobj {
     testobj freeallvars
-    teststringobj set 1 end-0x7fffffff
-    testobj convert 1 index
+    teststringobj set 1 end-0x7ffffffd
+    testobj convert 1 lindex
     testobj invalidateStringRep 1
-} end-2147483647
+} end-2147483645
 test obj-31.5 {regenerate string rep of "end--bigInteger"} testobj {
     testobj freeallvars
     teststringobj set 1 end--0x7fffffff
-    testobj convert 1 index
+    testobj convert 1 lindex
     testobj invalidateStringRep 1
 } -1
 test obj-31.6 {regenerate string rep of "end--bigInteger"} {testobj longIs32bit} {
     testobj freeallvars
     teststringobj set 1 end--0x7fffffff
-    testobj convert 1 index
+    testobj convert 1 lindex
     testobj invalidateStringRep 1
 } -1
 
