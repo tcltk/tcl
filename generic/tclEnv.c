@@ -14,13 +14,15 @@
  */
 
 #include "tclInt.h"
+#include "tclBrodnik.h"
+
+typedef char * pchar;
+TclBrodnikArray(pchar);
 
 TCL_DECLARE_MUTEX(envMutex)	/* To serialize access to environ. */
 
 static struct {
-    int cacheSize;		/* Number of env strings in cache. */
-    char **cache;		/* Array containing all of the environment
-				 * strings that Tcl has allocated. */
+    BA_pchar *cachePtr;		/* Cache of the env strings we alloc'd */
 #ifndef USE_PUTENV
     char **ourEnviron;		/* Cache of the array that we allocate. We
 				 * need to track this in case another
@@ -604,50 +606,36 @@ ReplaceString(
     const char *oldStr,		/* Old environment string. */
     char *newStr)		/* New environment string. */
 {
-    int i;
+    if (env.cachePtr == NULL) {
+	env.cachePtr = BA_pchar_Create();
+    }
 
-    /*
-     * Check to see if the old value was allocated by Tcl. If so, it needs to
-     * be deallocated to avoid memory leaks. Note that this algorithm is O(n),
-     * not O(1). This will result in n-squared behavior if lots of environment
-     * changes are being made.
-     */
+    if (oldStr) {
+	int i = 0;
+	pchar *p;
 
-    for (i = 0; i < env.cacheSize; i++) {
-	if (env.cache[i]==oldStr || env.cache[i]==NULL) {
-	    break;
+	while ((p = BA_pchar_At(env.cachePtr, i++))) {
+	    if (*p == oldStr) {
+		pchar lastString = NULL;
+
+		ckfree(*p);
+
+		if (newStr) {
+		    *p = newStr;
+		    return;
+		}
+
+		env.cachePtr = BA_pchar_Detach(env.cachePtr, &lastString);
+		if (lastString != oldStr) {
+		    *p = lastString;
+		}
+		return;
+	    }
 	}
     }
-    if (i < env.cacheSize) {
-	/*
-	 * Replace or delete the old value.
-	 */
 
-	if (env.cache[i]) {
-	    ckfree(env.cache[i]);
-	}
-
-	if (newStr) {
-	    env.cache[i] = newStr;
-	} else {
-	    for (; i < env.cacheSize-1; i++) {
-		env.cache[i] = env.cache[i+1];
-	    }
-	    env.cache[env.cacheSize-1] = NULL;
-	}
-    } else {
-	/*
-	 * We need to grow the cache in order to hold the new string.
-	 */
-
-	const int growth = 5;
-
-	env.cache = ckrealloc(env.cache,
-		(env.cacheSize + growth) * sizeof(char *));
-	env.cache[env.cacheSize] = newStr;
-	(void) memset(env.cache+env.cacheSize+1, 0,
-		(size_t) (growth-1) * sizeof(char *));
-	env.cacheSize += growth;
+    if (newStr) {
+	env.cachePtr = BA_pchar_Append(env.cachePtr, &newStr);
     }
 }
 
@@ -680,14 +668,17 @@ TclFinalizeEnvironment(void)
      * unlikely, so we don't bother.
      */
 
-    if (env.cache) {
-	ckfree(env.cache);
-	env.cache = NULL;
-	env.cacheSize = 0;
-#ifndef USE_PUTENV
-	env.ourEnvironSize = 0;
-#endif
+    if (env.cachePtr) {
+	BA_pchar_Destroy(env.cachePtr);
+	env.cachePtr = NULL;
     }
+#ifndef USE_PUTENV
+    if (env.ourEnviron && (env.ourEnviron != environ)) {
+	ckfree(env.ourEnviron);
+    }
+    env.ourEnviron = NULL;
+    env.ourEnvironSize = 0;
+#endif
 }
 
 #if defined(__CYGWIN__)
