@@ -3146,7 +3146,8 @@ echo "${ECHO_T}shared" >&6
 	echo "$as_me:$LINENO: result: static" >&5
 echo "${ECHO_T}static" >&6
 	SHARED_BUILD=0
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define STATIC_BUILD 1
 _ACEOF
 
