@@ -550,24 +550,20 @@ proc msgcat::Init {} {
     # Those are translated to local strings.
     # Examples: de-CH -> de_ch, sr-Latn-CS -> sr_cs@latin, es-419 -> es
     #
-    if {[catch {
-	set key {HKEY_CURRENT_USER\Control Panel\International}
-	if {([registry values $key "LocaleName"] ne "")
-    		&& [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
-    		[string tolower [registry get $key "LocaleName"]] match locale\
-    		script territory]} {
-	    if {"" ne $territory} {
-		append locale _ $territory
-	    }
-	    set modifierDict [dict create latn latin cyrl cyrillic]
-	    if {[dict exists $modifierDict $script]} {
-		append locale @ [dict get $modifierDict $script]
-	    }
-	    mclocale [ConvertLocale $locale]
+    set key {HKEY_CURRENT_USER\Control Panel\International}
+    if { ![catch {registry get $key "LocaleName"} localeName]
+	    && [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
+	    [string tolower $localeName] match locale script territory]} {
+	if {"" ne $territory} {
+	    append locale _ $territory
 	}
-    }]} {
-	mclocale C
-	return
+	set modifierDict [dict create latn latin cyrl cyrillic]
+	if {[dict exists $modifierDict $script]} {
+	    append locale @ [dict get $modifierDict $script]
+	}
+	if {![catch { mclocale [ConvertLocale $locale] }]} {
+	    return
+	}
     }
 
     # then check key locale which contains a numerical language ID
