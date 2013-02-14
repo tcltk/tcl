@@ -1139,6 +1139,7 @@ FILE *f;			/* for debug output; NULL none */
 {
 	struct state *s;
 	struct state *nexts;
+	struct state *to;
 	struct arc *a;
 	struct arc *nexta;
 	int progress;
@@ -1146,14 +1147,41 @@ FILE *f;			/* for debug output; NULL none */
 	/* find and eliminate empties until there are no more */
 	do {
 		progress = 0;
-		for (s = nfa->states; s != NULL && !NISERR()
-			&& s->no != FREESTATE; s = nexts) {
+		for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
 			nexts = s->next;
-			for (a = s->outs; a != NULL && !NISERR(); a = nexta) {
+			for (a = s->outs; a != NULL && !NISERR();
+				a = a->outchain)
+				if (a->type == EMPTY)
+					/* Mark a for deletion; copy arcs
+					 * to preserve graph connectivity
+					 * after it is gone. */
+					unempty(nfa, a);
+
+			/* Now pass through and delete the marked arcs.
+			 * Doing all the deletion after all the marking
+			 * prevents arc copying from resurrecting deleted
+			 * arcs which can cause failure to converge.
+			 * [Tcl Bug 3604074] */
+			for (a = s->outs; a != NULL; a = nexta) {
 				nexta = a->outchain;
-				if (a->type == EMPTY && unempty(nfa, a))
+				if (a->from == NULL) {
 					progress = 1;
-				assert(nexta == NULL || s->no != FREESTATE);
+		    			to = a->to;
+					a->from = s;
+					freearc(nfa, a);
+					if (to->nins == 0) {
+						while ((a = to->outs))
+							freearc(nfa, a);
+						if (nexts == to)
+							nexts = to->next;
+						freestate(nfa, to);
+					}
+					if (s->nouts == 0) {
+						while ((a = s->ins))
+							freearc(nfa, a);
+						freestate(nfa, s);
+					}
+				}
 			}
 		}
 		if (progress && f != NULL)
@@ -1174,7 +1202,6 @@ struct arc *a;
 {
 	struct state *from = a->from;
 	struct state *to = a->to;
-	int usefrom;		/* work on from, as opposed to to? */
 
 	assert(a->type == EMPTY);
 	assert(from != nfa->pre && to != nfa->post);
@@ -1184,33 +1211,26 @@ struct arc *a;
 		return 1;
 	}
 
-	/* decide which end to work on */
-	usefrom = 1;			/* default:  attack from */
-	if (from->nouts > to->nins)
-		usefrom = 0;
-	else if (from->nouts == to->nins) {
-		/* decide on secondary issue:  move/copy fewest arcs */
-		if (from->nins > to->nouts)
-			usefrom = 0;
+	/* Mark arc for deletion */
+	a->from = NULL;
+
+	if (from->nouts > to->nins) {
+		copyouts(nfa, to, from);
+		return 1;
 	}
-		
-	freearc(nfa, a);
-	if (usefrom) {
-		if (from->nouts == 0) {
-			/* was the state's only outarc */
-			moveins(nfa, from, to);
-			freestate(nfa, from);
-		} else
-			copyins(nfa, from, to);
-	} else {
-		if (to->nins == 0) {
-			/* was the state's only inarc */
-			moveouts(nfa, to, from);
-			freestate(nfa, to);
-		} else
-			copyouts(nfa, to, from);
+	if (from->nouts < to->nins) {
+		copyins(nfa, from, to);
+		return 1;
 	}
 
+	/* from->nouts == to->nins */
+	/* decide on secondary issue:  move/copy fewest arcs */
+	if (from->nins > to->nouts) {
+		copyouts(nfa, to, from);
+		return 1;
+	}
+
+	copyins(nfa, from, to);
 	return 1;
 }
 
