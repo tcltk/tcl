@@ -13,7 +13,7 @@
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.5.0
+package provide msgcat 1.5.1
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -550,23 +550,24 @@ proc msgcat::Init {} {
     # Those are translated to local strings.
     # Examples: de-CH -> de_ch, sr-Latn-CS -> sr_cs@latin, es-419 -> es
     #
-    set key {HKEY_CURRENT_USER\Control Panel\International}
-    if {([registry values $key "LocaleName"] ne "")
-	    && [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
-	    [string tolower [registry get $key "LocaleName"]] match locale\
-	    script territory]} {
-	if {"" ne $territory} {
-	    append locale _ $territory
-	}
-	set modifierDict [dict create latn latin cyrl cyrillic]
-	if {[dict exists $modifierDict $script]} {
-	    append locale @ [dict get $modifierDict $script]
-	}
-	if {![catch {
+    if {[catch {
+	set key {HKEY_CURRENT_USER\Control Panel\International}
+	if {([registry values $key "LocaleName"] ne "")
+    		&& [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
+    		[string tolower [registry get $key "LocaleName"]] match locale\
+    		script territory]} {
+	    if {"" ne $territory} {
+		append locale _ $territory
+	    }
+	    set modifierDict [dict create latn latin cyrl cyrillic]
+	    if {[dict exists $modifierDict $script]} {
+		append locale @ [dict get $modifierDict $script]
+	    }
 	    mclocale [ConvertLocale $locale]
-	}]} {
-	    return
 	}
+    }]} {
+	mclocale C
+	return
     }
 
     # then check key locale which contains a numerical language ID
