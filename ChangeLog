@@ -1,3 +1,8 @@
+2013-02-14  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3604576]: msgcat-1.5.0.tm error
+	on windows XP
+
 2013-02-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinFile.c:	[Bug 3603434] Make sure TclpObjNormalizePath() 
