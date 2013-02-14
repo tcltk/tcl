@@ -74,6 +74,10 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 		for i in `ls -d ${libdir} 2>/dev/null` \
 			`ls -d ${exec_prefix}/lib 2>/dev/null` \
 			`ls -d ${prefix}/lib 2>/dev/null` \
+			`ls -d /cygdrive/c/Tcl/lib 2>/dev/null` \
+			`ls -d /cygdrive/c/Progra~1/Tcl/lib 2>/dev/null` \
+			`ls -d /c/Tcl/lib 2>/dev/null` \
+			`ls -d /c/Progra~1/Tcl/lib 2>/dev/null` \
 			`ls -d C:/Tcl/lib 2>/dev/null` \
 			`ls -d C:/Progra~1/Tcl/lib 2>/dev/null` \
 			; do
@@ -185,6 +189,10 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 		for i in `ls -d ${libdir} 2>/dev/null` \
 			`ls -d ${exec_prefix}/lib 2>/dev/null` \
 			`ls -d ${prefix}/lib 2>/dev/null` \
+			`ls -d /cygdrive/c/Tcl/lib 2>/dev/null` \
+			`ls -d /cygdrive/c/Progra~1/Tcl/lib 2>/dev/null` \
+			`ls -d /c/Tcl/lib 2>/dev/null` \
+			`ls -d /c/Progra~1/Tcl/lib 2>/dev/null` \
 			`ls -d C:/Tcl/lib 2>/dev/null` \
 			`ls -d C:/Progra~1/Tcl/lib 2>/dev/null` \
 			; do
