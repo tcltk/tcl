@@ -2022,7 +2022,8 @@ NormalizeRightward(
  *	Determines the number of bits needed to hold an intger.
  *
  * Results:
- *	Returns the position of the most significant bit (0 - 63).  Returns 0
+ *	Returns the position of the most significant bit (1 - 64), starting
+ * 	the counting at 1 for the LSB.  (RP(1) -> 1).  Returns 0
  *	if the number is zero.
  *
  *----------------------------------------------------------------------

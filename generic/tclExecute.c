@@ -9043,14 +9043,10 @@ TclLog2(
     register int value)		/* The integer for which to compute the log
 				 * base 2. */
 {
-    register int n = value;
-    register int result = 0;
-
-    while (n > 1) {
-	n = n >> 1;
-	result++;
+    if (value == 0) {
+	return 0;
     }
-    return result;
+    return TclMSB(value);
 }
 
 /*
