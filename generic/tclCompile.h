@@ -100,21 +100,6 @@ typedef struct ExceptionRange {
 } ExceptionRange;
 
 /*
- * Structure used to map between instruction pc and source locations. It
- * defines for each compiled Tcl command its code's starting offset and its
- * source's starting offset and length. Note that the code offset increases
- * monotonically: that is, the table is sorted in code offset order. The
- * source offset is not monotonic.
- */
-
-typedef struct CmdLocation {
-    int codeOffset;		/* Offset of first byte of command code. */
-    int numCodeBytes;		/* Number of bytes for command's code. */
-    int srcOffset;		/* Offset of first char of the command. */
-    int numSrcBytes;		/* Number of command source chars. */
-} CmdLocation;
-
-/*
  * TIP #280
  * Structure to record additional location information for byte code. This
  * information is internal and not saved. i.e. tbcload'ed code will not have
@@ -211,6 +196,9 @@ typedef struct AuxData {
     ClientData clientData;	/* The compilation data itself. */
 } AuxData;
 
+/* Forward declaration for the cmdMap field below */
+struct BrodnikArray_CmdLocation;
+
 /*
  * Structure defining the compilation environment. After compilation, fields
  * describing bytecode instructions are copied out into the more compact
@@ -220,7 +208,6 @@ typedef struct AuxData {
 #define COMPILEENV_INIT_CODE_BYTES    250
 #define COMPILEENV_INIT_NUM_OBJECTS    60
 #define COMPILEENV_INIT_EXCEPT_RANGES   5
-#define COMPILEENV_INIT_CMD_MAP_SIZE   40
 #define COMPILEENV_INIT_AUX_DATA_SIZE   5
 
 typedef struct CompileEnv {
@@ -275,13 +262,11 @@ typedef struct CompileEnv {
 				 * entry. */
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
 				 * exceptArrayPtr points in heap, else 0. */
-    CmdLocation *cmdMapPtr;	/* Points to start of CmdLocation array.
+    struct BrodnikArray_CmdLocation
+		*cmdMap;	/* Points to array of CmdLocation.
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
 				 * for the last command. */
-    int cmdMapEnd;		/* Index after last CmdLocation entry. */
-    int mallocedCmdMap;		/* 1 if command map array was expanded and
-				 * cmdMapPtr points in the heap, else 0. */
     AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
     int auxDataArrayNext;	/* Next free compile aux data array index.
 				 * auxDataArrayNext is the number of aux data
@@ -296,8 +281,6 @@ typedef struct CompileEnv {
 				/* Initial storage of LiteralEntry array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
-    CmdLocation staticCmdMapSpace[COMPILEENV_INIT_CMD_MAP_SIZE];
-				/* Initial storage for cmd location map. */
     AuxData staticAuxDataArraySpace[COMPILEENV_INIT_AUX_DATA_SIZE];
 				/* Initial storage for aux data array. */
     /* TIP #280 */

@@ -14,6 +14,23 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclBrodnik.h"
+
+/*
+ * Structure used to map between instruction pc and source locations. It
+ * defines for each compiled Tcl command its code's starting offset and its
+ * source's starting offset and length. Note that the code offset increases
+ * monotonically: that is, the table is sorted in code offset order. The
+ * source offset is not monotonic.
+ */
+
+typedef struct CmdLocation {
+    int codeOffset;		/* Offset of first byte of command code. */
+    int numCodeBytes;		/* Number of bytes for command's code. */
+    int srcOffset;		/* Offset of first char of the command. */
+    int numSrcBytes;		/* Number of command source chars. */
+} CmdLocation;
+TclBrodnikArray(CmdLocation);
 
 /*
  * Table of all AuxData types.
@@ -1247,9 +1264,7 @@ TclInitCompileEnv(
     envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
     envPtr->mallocedExceptArray = 0;
 
-    envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
-    envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
-    envPtr->mallocedCmdMap = 0;
+    envPtr->cmdMap = BA_CmdLocation_Create();
     envPtr->atCmdStart = 1;
 
     /*
@@ -1430,9 +1445,7 @@ TclFreeCompileEnv(
     if (envPtr->mallocedExceptArray) {
 	ckfree(envPtr->exceptArrayPtr);
     }
-    if (envPtr->mallocedCmdMap) {
-	ckfree(envPtr->cmdMapPtr);
-    }
+    BA_CmdLocation_Destroy(envPtr->cmdMap);
     if (envPtr->mallocedAuxDataArray) {
 	ckfree(envPtr->auxDataArrayPtr);
     }
@@ -1633,7 +1646,8 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 
 	if (!isFirstCmd) {
 	    TclEmitOpcode(INST_POP, envPtr);
-	    envPtr->cmdMapPtr[lastTopLevelCmdIndex].numCodeBytes =
+	    BA_CmdLocation_At(envPtr->cmdMap,
+		    lastTopLevelCmdIndex)->numCodeBytes =
 		    (envPtr->codeNext - envPtr->codeStart) - startCodeOffset;
 	}
 	lastTopLevelCmdIndex = cmdIndex;
@@ -2847,52 +2861,14 @@ EnterCmdStartData(
     int srcOffset,		/* Offset of first char of the command. */
     int codeOffset)		/* Offset of first byte of command code. */
 {
-    CmdLocation *cmdLocPtr;
+    CmdLocation cmdLoc;
 
-    if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	Tcl_Panic("EnterCmdStartData: bad command index %d", cmdIndex);
-    }
+    cmdLoc.codeOffset = codeOffset;
+    cmdLoc.srcOffset = srcOffset;
+    cmdLoc.numSrcBytes = -1;
+    cmdLoc.numCodeBytes = -1;
+    envPtr->cmdMap = BA_CmdLocation_Append(envPtr->cmdMap, &cmdLoc);
 
-    if (cmdIndex >= envPtr->cmdMapEnd) {
-	/*
-	 * Expand the command location array by allocating more storage from
-	 * the heap. The currently allocated CmdLocation entries are stored
-	 * from cmdMapPtr[0] up to cmdMapPtr[envPtr->cmdMapEnd] (inclusive).
-	 */
-
-	size_t currElems = envPtr->cmdMapEnd;
-	size_t newElems = 2 * currElems;
-	size_t currBytes = currElems * sizeof(CmdLocation);
-	size_t newBytes = newElems * sizeof(CmdLocation);
-
-	if (envPtr->mallocedCmdMap) {
-	    envPtr->cmdMapPtr = ckrealloc(envPtr->cmdMapPtr, newBytes);
-	} else {
-	    /*
-	     * envPtr->cmdMapPtr isn't a ckalloc'd pointer, so we must code a
-	     * ckrealloc equivalent for ourselves.
-	     */
-
-	    CmdLocation *newPtr = ckalloc(newBytes);
-
-	    memcpy(newPtr, envPtr->cmdMapPtr, currBytes);
-	    envPtr->cmdMapPtr = newPtr;
-	    envPtr->mallocedCmdMap = 1;
-	}
-	envPtr->cmdMapEnd = newElems;
-    }
-
-    if (cmdIndex > 0) {
-	if (codeOffset < envPtr->cmdMapPtr[cmdIndex-1].codeOffset) {
-	    Tcl_Panic("EnterCmdStartData: cmd map not sorted by code offset");
-	}
-    }
-
-    cmdLocPtr = &envPtr->cmdMapPtr[cmdIndex];
-    cmdLocPtr->codeOffset = codeOffset;
-    cmdLocPtr->srcOffset = srcOffset;
-    cmdLocPtr->numSrcBytes = -1;
-    cmdLocPtr->numCodeBytes = -1;
 }
 
 /*
@@ -2926,18 +2902,8 @@ EnterCmdExtentData(
     int numSrcBytes,		/* Number of command source chars. */
     int numCodeBytes)		/* Offset of last byte of command code. */
 {
-    CmdLocation *cmdLocPtr;
+    CmdLocation *cmdLocPtr = BA_CmdLocation_At(envPtr->cmdMap, cmdIndex);
 
-    if ((cmdIndex < 0) || (cmdIndex >= envPtr->numCommands)) {
-	Tcl_Panic("EnterCmdExtentData: bad command index %d", cmdIndex);
-    }
-
-    if (cmdIndex > envPtr->cmdMapEnd) {
-	Tcl_Panic("EnterCmdExtentData: missing start data for command %d",
-		cmdIndex);
-    }
-
-    cmdLocPtr = &envPtr->cmdMapPtr[cmdIndex];
     cmdLocPtr->numSrcBytes = numSrcBytes;
     cmdLocPtr->numCodeBytes = numCodeBytes;
 }
@@ -3427,7 +3393,7 @@ TclFixupForwardJump(
     lastCmd = envPtr->numCommands - 1;
     if (firstCmd < lastCmd) {
 	for (k = firstCmd;  k <= lastCmd;  k++) {
-	    envPtr->cmdMapPtr[k].codeOffset += 3;
+	    BA_CmdLocation_At(envPtr->cmdMap, k)->codeOffset += 3;
 	}
     }
 
@@ -3726,7 +3692,6 @@ GetCmdLocEncodingSize(
 				 * containing the CmdLocation structure to
 				 * encode. */
 {
-    register CmdLocation *mapPtr = envPtr->cmdMapPtr;
     int numCmds = envPtr->numCommands;
     int codeDelta, codeLen, srcDelta, srcLen;
     int codeDeltaNext, codeLengthNext, srcDeltaNext, srcLengthNext;
@@ -3734,11 +3699,14 @@ GetCmdLocEncodingSize(
 				 * sequences where the next encoded offset or
 				 * length should go. */
     int prevCodeOffset, prevSrcOffset, i;
+    BA_CmdLocation *map = envPtr->cmdMap;
 
     codeDeltaNext = codeLengthNext = srcDeltaNext = srcLengthNext = 0;
     prevCodeOffset = prevSrcOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
-	codeDelta = mapPtr[i].codeOffset - prevCodeOffset;
+	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
+
+	codeDelta = cmdLocPtr->codeOffset - prevCodeOffset;
 	if (codeDelta < 0) {
 	    Tcl_Panic("GetCmdLocEncodingSize: bad code offset");
 	} else if (codeDelta <= 127) {
@@ -3746,9 +3714,9 @@ GetCmdLocEncodingSize(
 	} else {
 	    codeDeltaNext += 5;	/* 1 byte for 0xFF, 4 for positive delta */
 	}
-	prevCodeOffset = mapPtr[i].codeOffset;
+	prevCodeOffset = cmdLocPtr->codeOffset;
 
-	codeLen = mapPtr[i].numCodeBytes;
+	codeLen = cmdLocPtr->numCodeBytes;
 	if (codeLen < 0) {
 	    Tcl_Panic("GetCmdLocEncodingSize: bad code length");
 	} else if (codeLen <= 127) {
@@ -3757,15 +3725,15 @@ GetCmdLocEncodingSize(
 	    codeLengthNext += 5;/* 1 byte for 0xFF, 4 for length */
 	}
 
-	srcDelta = mapPtr[i].srcOffset - prevSrcOffset;
+	srcDelta = cmdLocPtr->srcOffset - prevSrcOffset;
 	if ((-127 <= srcDelta) && (srcDelta <= 127) && (srcDelta != -1)) {
 	    srcDeltaNext++;
 	} else {
 	    srcDeltaNext += 5;	/* 1 byte for 0xFF, 4 for delta */
 	}
-	prevSrcOffset = mapPtr[i].srcOffset;
+	prevSrcOffset = cmdLocPtr->srcOffset;
 
-	srcLen = mapPtr[i].numSrcBytes;
+	srcLen = cmdLocPtr->numSrcBytes;
 	if (srcLen < 0) {
 	    Tcl_Panic("GetCmdLocEncodingSize: bad source length");
 	} else if (srcLen <= 127) {
@@ -3810,11 +3778,11 @@ EncodeCmdLocMap(
 				 * memory block where the location information
 				 * is to be stored. */
 {
-    register CmdLocation *mapPtr = envPtr->cmdMapPtr;
     int numCmds = envPtr->numCommands;
     register unsigned char *p = startPtr;
     int codeDelta, codeLen, srcDelta, srcLen, prevOffset;
     register int i;
+    BA_CmdLocation *map = envPtr->cmdMap;
 
     /*
      * Encode the code offset for each command as a sequence of deltas.
@@ -3823,7 +3791,9 @@ EncodeCmdLocMap(
     codePtr->codeDeltaStart = p;
     prevOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
-	codeDelta = mapPtr[i].codeOffset - prevOffset;
+	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
+
+	codeDelta = cmdLocPtr->codeOffset - prevOffset;
 	if (codeDelta < 0) {
 	    Tcl_Panic("EncodeCmdLocMap: bad code offset");
 	} else if (codeDelta <= 127) {
@@ -3835,7 +3805,7 @@ EncodeCmdLocMap(
 	    TclStoreInt4AtPtr(codeDelta, p);
 	    p += 4;
 	}
-	prevOffset = mapPtr[i].codeOffset;
+	prevOffset = cmdLocPtr->codeOffset;
     }
 
     /*
@@ -3844,7 +3814,9 @@ EncodeCmdLocMap(
 
     codePtr->codeLengthStart = p;
     for (i = 0;  i < numCmds;  i++) {
-	codeLen = mapPtr[i].numCodeBytes;
+	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
+
+	codeLen = cmdLocPtr->numCodeBytes;
 	if (codeLen < 0) {
 	    Tcl_Panic("EncodeCmdLocMap: bad code length");
 	} else if (codeLen <= 127) {
@@ -3865,7 +3837,9 @@ EncodeCmdLocMap(
     codePtr->srcDeltaStart = p;
     prevOffset = 0;
     for (i = 0;  i < numCmds;  i++) {
-	srcDelta = mapPtr[i].srcOffset - prevOffset;
+	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
+
+	srcDelta = cmdLocPtr->srcOffset - prevOffset;
 	if ((-127 <= srcDelta) && (srcDelta <= 127) && (srcDelta != -1)) {
 	    TclStoreInt1AtPtr(srcDelta, p);
 	    p++;
@@ -3875,7 +3849,7 @@ EncodeCmdLocMap(
 	    TclStoreInt4AtPtr(srcDelta, p);
 	    p += 4;
 	}
-	prevOffset = mapPtr[i].srcOffset;
+	prevOffset = cmdLocPtr->srcOffset;
     }
 
     /*
@@ -3884,7 +3858,9 @@ EncodeCmdLocMap(
 
     codePtr->srcLengthStart = p;
     for (i = 0;  i < numCmds;  i++) {
-	srcLen = mapPtr[i].numSrcBytes;
+	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
+
+	srcLen = cmdLocPtr->numSrcBytes;
 	if (srcLen < 0) {
 	    Tcl_Panic("EncodeCmdLocMap: bad source length");
 	} else if (srcLen <= 127) {
