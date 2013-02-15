@@ -504,11 +504,11 @@ typedef struct Tcl_Interp
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
 #ifdef USE_INTERP_RESULT
-    char *result TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
+    char *result TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
 				/* If the last command returned a string
 				 * result, this points to it. */
     void (*freeProc) (char *blockPtr)
-	    TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
+	    TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
 				/* Zero means the string result is statically
 				 * allocated. TCL_DYNAMIC means it was
 				 * allocated with ckalloc and should be freed
