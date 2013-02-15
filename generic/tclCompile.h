@@ -777,18 +777,6 @@ typedef struct JumpFixup {
 				 * to 5 bytes. */
 } JumpFixup;
 
-#define JUMPFIXUP_INIT_ENTRIES	10
-
-typedef struct JumpFixupArray {
-    JumpFixup *fixup;		/* Points to start of jump fixup array. */
-    int next;			/* Index of next free array entry. */
-    int end;			/* Index of last usable entry in array. */
-    int mallocedArray;		/* 1 if array was expanded and fixups points
-				 * into the heap, else 0. */
-    JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
-				/* Initial storage for jump fixup array. */
-} JumpFixupArray;
-
 /*
  * The structure describing one variable list of a foreach command. Note that
  * only foreach commands inside procedure bodies are compiled inline so a
@@ -934,7 +922,6 @@ MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
-MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
@@ -946,7 +933,6 @@ MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
-MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
 MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    CompileEnv *envPtr);
@@ -954,7 +940,6 @@ MODULE_SCOPE void	TclInitCompilation(void);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
 			    int numBytes, const CmdFrame *invoker, int word);
-MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
