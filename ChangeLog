@@ -1,3 +1,18 @@
+2013-02-14  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3604576]: Catch missing registry entry
+	"HCU\Control Panel\International".
+	Bumped msgcat version to 1.5.1
+
+2013-02-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibTransformOutput): [Bug 3603553]: Ensure that
+	data gets written to the underlying stream by compressing transforms
+	when the amount of data to be written is one buffer's-worth; problem
+	was particularly likely to occur when compressing large quantities of
+	not-very-compressible data. Many thanks to Piera Poggio (vampiera) for
+	reporting.
+
 2013-02-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOBasic.c (TclOO_Object_VarName): [Bug 3603695]: Change
