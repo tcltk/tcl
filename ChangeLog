@@ -1,3 +1,9 @@
+2013-02-14  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3604576]: Catch missing registry entry
+	"HCU\Control Panel\International".
+	Bumped msgcat version to 1.5.1
+
 2013-02-11  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclZlib.c (ZlibTransformOutput): [Bug 3603553]: Ensure that
