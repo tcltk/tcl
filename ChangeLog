@@ -1,3 +1,9 @@
+2013-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_nfa.c:	[Bug 3604074] Fix regexp optimization to
+	* tests/regexp.test:	stop hanging on the expression
+	((((((((a)*)*)*)*)*)*)*)* .  Thanks to Bjørn Grathwohl for discovery.
+
 2013-02-14  Harald Oehlmann  <oehhar@users.sf.net>
 
 	* library/msgcat/msgcat.tcl: [Bug 3604576]: Catch missing registry entry
