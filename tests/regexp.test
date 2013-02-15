@@ -630,7 +630,10 @@ test regexp-21.13 {multiple matches handle newlines} {
 test regexp-22.1 {Bug 1810038} {
     regexp ($|^X)* {}
 } 1
-
+test regexp-22.2 {Bug 3604074} {
+    # This will hang in interps where the bug is not fixed
+    regexp ((((((((a)*)*)*)*)*)*)*)* a
+} 1
 
 # cleanup
 ::tcltest::cleanupTests
