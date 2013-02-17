@@ -1413,15 +1413,16 @@ Tcl_UtfToExternal(
  *
  * Tcl_InitSubsystems/Tcl_FindExecutable --
  *
- *	This function computes the absolute path name of the current
- *	application, given its argv[0] value.
+ *	This function initializes everything needed for the Tcl library
+ *	to be able to operate.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	The absolute pathname for the application is computed and stored to be
- *	returned later be [info nameofexecutable].
+ *	returned later by [info nameofexecutable]. The system encoding is
+ *	determined and stored to be returned later by [encoding system]
  *
  *---------------------------------------------------------------------------
  */
@@ -1433,11 +1434,11 @@ MODULE_SCOPE const TclStubs tclStubs;
  * to initialize the stub table. */
 static const struct {
     const char *version; /* a real interpreter has interp->result here. */
-    void (*unused2) (void); /* a real interpreter has interp->freeProc here. */
-    int magic; /* a real interpreter has interp->errorLine here. */
+    void (*magic) (void); /* a real interpreter has interp->freeProc here. */
+    int errorLine;
     const struct TclStubs *stubTable;
 } dummyInterp = {
-    TCL_PATCH_LEVEL, 0, TCL_STUB_MAGIC, &tclStubs
+    TCL_PATCH_LEVEL, INT2PTR(TCL_STUB_MAGIC), 0, &tclStubs
 };
 
 Tcl_Interp *
