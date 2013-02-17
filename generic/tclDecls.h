@@ -3783,6 +3783,7 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_Init
 #   undef Tcl_SetPanicProc
 #   undef Tcl_SetVar
+#   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
 #   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
@@ -3791,6 +3792,8 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_SetVar(interp, varName, newValue, flags) \
 	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
+#   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
+	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)
