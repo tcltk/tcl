@@ -73,7 +73,7 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    if(iPtr->errorLine == TCL_STUB_MAGIC) {
+    if(iPtr->freeProc == INT2PTR(TCL_STUB_MAGIC)) {
 	actualVersion = iPtr->result;
 	tclStubsPtr = stubsPtr;
     } else {

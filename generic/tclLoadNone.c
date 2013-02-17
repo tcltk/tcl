@@ -107,8 +107,8 @@ TclpLoadMemory(
     Tcl_FSUnloadFileProc **unloadProcPtr)
 				/* Dummy: unused by this implementation */
 {
-    Tcl_SetResult(interp, "dynamic loading from memory is not available "
-	    "on this system", TCL_STATIC);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "
+	    "is not available on this system", -1));
     return TCL_ERROR;
 }
 
