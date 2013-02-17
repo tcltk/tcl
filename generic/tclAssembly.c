@@ -798,12 +798,10 @@ TclNRAssembleObjCmd(
 
     if (codePtr == NULL) {
 	Tcl_AddErrorInfo(interp, "\n    (\"");
-	Tcl_AddErrorInfo(interp, Tcl_GetString(objv[0]));
+	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
 	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
-	Tcl_IncrRefCount(backtrace);
-	Tcl_AddErrorInfo(interp, Tcl_GetString(backtrace));
-	Tcl_DecrRefCount(backtrace);
+	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
     }
@@ -860,7 +858,7 @@ CompileAssembleObj(
 
     if (objPtr->typePtr == &assembleCodeType) {
 	namespacePtr = iPtr->varFramePtr->nsPtr;
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == namespacePtr)
@@ -945,7 +943,7 @@ CompileAssembleObj(
      * Record the local variable context to which the bytecode pertains
      */
 
-    codePtr = objPtr->internalRep.otherValuePtr;
+    codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -4270,11 +4268,11 @@ AddBasicBlockRangeToErrorInfo(
     Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
     lineNo = Tcl_NewIntObj(bbPtr->startLine);
     Tcl_IncrRefCount(lineNo);
-    Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+    Tcl_AppendObjToErrorInfo(interp, lineNo);
     Tcl_AddErrorInfo(interp, " and ");
     if (bbPtr->successor1 != NULL) {
 	Tcl_SetIntObj(lineNo, bbPtr->successor1->startLine);
-	Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+	Tcl_AppendObjToErrorInfo(interp, lineNo);
     } else {
 	Tcl_AddErrorInfo(interp, "end of assembly code");
     }
@@ -4338,14 +4336,13 @@ static void
 FreeAssembleCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*

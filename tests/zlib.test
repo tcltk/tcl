@@ -366,6 +366,25 @@ test zlib-8.15 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358}
+test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
+    # Actual data isn't very important; needs to be substantially larger than
+    # the internal buffer (32kB) and incompressible.
+    set largeData {}
+    for {set i 0;expr srand(1)} {$i < 100000} {incr i} {
+	append largeData [lindex "a b c d e f g h i j k l m n o p" \
+		[expr {int(16*rand())}]]
+    }
+    set file [makeFile {} test.gz]
+} -constraints zlib -body {
+    set f [open $file wb]
+    fconfigure $f -buffering none
+    zlib push gzip $f
+    puts -nonewline $f $largeData
+    close $f
+    file size $file
+} -cleanup {
+    removeFile $file
+} -result 57647
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
@@ -826,6 +845,20 @@ test zlib-11.2 "Bug #3390073: mis-appled gzip filtering" -setup {
 } -cleanup {
     removeFile $file
 } -result {1000 /foo/bar 0}
+test zlib-11.3 {Bug 3595576 variant} -setup {
+    set file [makeFile {} test.input]
+} -constraints zlib -body {
+    set f [open $file wb]
+    puts -nonewline [zlib push gzip $f -header {filename /foo/bar}] \
+	[string repeat "hello" 1000]
+    close $f
+    set f [open $file rb]
+    set d [read $f]
+    close $f
+    zlib gunzip $d -header noSuchNs::foo
+} -cleanup {
+    removeFile $file
+} -returnCodes error -result {can't set "noSuchNs::foo": parent namespace doesn't exist}
 
 ::tcltest::cleanupTests
 return

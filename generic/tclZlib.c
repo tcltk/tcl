@@ -507,7 +507,7 @@ GenerateHeader(
  * ExtractHeader --
  *
  *	Take the values out of a gzip header and store them in a dictionary.
- *	SetValue is a helper function.
+ *	SetValue is a helper macro.
  *
  * Results:
  *	None.
@@ -518,18 +518,8 @@ GenerateHeader(
  *----------------------------------------------------------------------
  */
 
-static inline void
-SetValue(
-    Tcl_Obj *dictObj,
-    const char *key,
-    Tcl_Obj *value)
-{
-    Tcl_Obj *keyObj = Tcl_NewStringObj(key, -1);
-
-    Tcl_IncrRefCount(keyObj);
-    Tcl_DictObjPut(NULL, dictObj, keyObj, value);
-    TclDecrRefCount(keyObj);
-}
+#define SetValue(dictObj, key, value) \
+	Tcl_DictObjPut(NULL, (dictObj), Tcl_NewStringObj((key), -1), (value))
 
 static void
 ExtractHeader(
@@ -2119,9 +2109,6 @@ ZlibCmd(
 	}
 	if (headerVarObj != NULL && Tcl_ObjSetVar2(interp, headerVarObj, NULL,
 		headerDictObj, TCL_LEAVE_ERR_MSG) == NULL) {
-	    if (headerDictObj) {
-		TclDecrRefCount(headerDictObj);
-	    }
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -2177,29 +2164,36 @@ ZlibStreamSubcmd(
 	FMT_INFLATE
     };
     int i, format, mode = 0, option, level;
+    enum objIndices {
+	OPT_COMPRESSION_DICTIONARY = 0,
+	OPT_GZIP_HEADER = 1,
+	OPT_COMPRESSION_LEVEL = 2,
+	OPT_END = -1
+    };
+    Tcl_Obj *obj[3] = { NULL, NULL, NULL };
+#define compDictObj	obj[OPT_COMPRESSION_DICTIONARY]
+#define gzipHeaderObj	obj[OPT_GZIP_HEADER]
+#define levelObj	obj[OPT_COMPRESSION_LEVEL]
     typedef struct {
 	const char *name;
-	Tcl_Obj **valueVar;
+	enum objIndices offset;
     } OptDescriptor;
-    Tcl_Obj *compDictObj = NULL;
-    Tcl_Obj *gzipHeaderObj = NULL;
-    Tcl_Obj *levelObj = NULL;
-    const OptDescriptor compressionOpts[] = {
-	{ "-dictionary", &compDictObj },
-	{ "-level", &levelObj },
-	{ NULL, NULL }
+    static const OptDescriptor compressionOpts[] = {
+	{ "-dictionary", OPT_COMPRESSION_DICTIONARY },
+	{ "-level",	 OPT_COMPRESSION_LEVEL },
+	{ NULL, OPT_END }
     };
-    const OptDescriptor gzipOpts[] = {
-	{ "-header", &gzipHeaderObj },
-	{ "-level", &levelObj },
-	{ NULL, NULL }
+    static const OptDescriptor gzipOpts[] = {
+	{ "-header",	 OPT_GZIP_HEADER },
+	{ "-level",	 OPT_COMPRESSION_LEVEL },
+	{ NULL, OPT_END }
     };
-    const OptDescriptor expansionOpts[] = {
-	{ "-dictionary", &compDictObj },
-	{ NULL, NULL }
+    static const OptDescriptor expansionOpts[] = {
+	{ "-dictionary", OPT_COMPRESSION_DICTIONARY },
+	{ NULL, OPT_END }
     };
-    const OptDescriptor gunzipOpts[] = {
-	{ NULL, NULL }
+    static const OptDescriptor gunzipOpts[] = {
+	{ NULL, OPT_END }
     };
     const OptDescriptor *desc = NULL;
     Tcl_ZlibStream zh;
@@ -2262,13 +2256,7 @@ ZlibStreamSubcmd(
 		sizeof(OptDescriptor), "option", 0, &option) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	*desc[option].valueVar = objv[i+1];
-
-	/*
-	 * Drop the cache on the option name; table address not constant.
-	 */
-
-	TclFreeIntRep(objv[i]);
+	obj[desc[option].offset] = objv[i+1];
     }
 
     /*
@@ -2300,6 +2288,9 @@ ZlibStreamSubcmd(
     }
     Tcl_SetObjResult(interp, Tcl_ZlibStreamGetCommandName(zh));
     return TCL_OK;
+#undef compDictObj
+#undef gzipHeaderObj
+#undef levelObj
 }
 
 /*
@@ -3120,7 +3111,7 @@ ZlibTransformOutput(
 	e = deflate(&cd->outStream, Z_NO_FLUSH);
 	produced = cd->outAllocated - cd->outStream.avail_out;
 
-	if (e == Z_OK && cd->outStream.avail_out > 0) {
+	if (e == Z_OK && produced > 0) {
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
 		*errorCodePtr = Tcl_GetErrno();
 		return -1;
@@ -3874,7 +3865,7 @@ TclZlibInit(
     cfg[0].key = "zlibVersion";
     cfg[0].value = zlibVersion();
     cfg[1].key = NULL;
-    Tcl_RegisterConfig(interp, "zlib", cfg, "ascii");
+    Tcl_RegisterConfig(interp, "zlib", cfg, "iso8859-1");
 
     /*
      * Formally provide the package as a Tcl built-in.

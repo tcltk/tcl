@@ -3783,6 +3783,7 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_Init
 #   undef Tcl_SetPanicProc
 #   undef Tcl_SetVar
+#   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
 #   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
@@ -3791,6 +3792,8 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_SetVar(interp, varName, newValue, flags) \
 	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
+#   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
+	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)
@@ -3811,8 +3814,58 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_GetMathFuncInfo
 #   undef Tcl_ListMathFuncs
 #   undef Tcl_Backslash
-#	undef Tcl_GetDefaultEncodingDir
+#   undef Tcl_GetDefaultEncodingDir
 #   undef Tcl_SetDefaultEncodingDir
+#   undef Tcl_PkgPresent
+#   define Tcl_PkgPresent(interp, name, version, exact) \
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL)
+#   undef Tcl_PkgProvide
+#   define Tcl_PkgProvide(interp, name, version) \
+	Tcl_PkgProvideEx(interp, name, version, NULL)
+#   undef Tcl_PkgRequire
+#   define Tcl_PkgRequire(interp, name, version, exact) \
+	Tcl_PkgRequireEx(interp, name, version, exact, NULL)
+#   undef Tcl_Eval
+#   define Tcl_Eval(interp,objPtr) \
+	Tcl_EvalEx((interp),(objPtr),-1,0)
+#   undef Tcl_GlobalEval
+#   define Tcl_GlobalEval(interp,objPtr) \
+	Tcl_EvalEx((interp),(objPtr),-1,TCL_EVAL_GLOBAL)
+#   undef Tcl_GetIndexFromObj
+#   define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
+	Tcl_GetIndexFromObjStruct((interp), (objPtr), (tablePtr), \
+	sizeof(char *), (msg), (flags), (indexPtr))
+#   undef Tcl_NewIntObj
+#   define Tcl_NewIntObj Tcl_NewLongObj
+#   undef Tcl_SetIntObj
+#   define Tcl_SetIntObj Tcl_SetLongObj
+#   undef Tcl_NewBooleanObj
+#   define Tcl_NewBooleanObj(boolValue) \
+	Tcl_NewLongObj((boolValue)!=0)
+#   undef Tcl_DbNewBooleanObj
+#   define Tcl_DbNewBooleanObj(boolValue, file, line) \
+	Tcl_DbNewLongObj((boolValue)!=0, file, line)
+#   undef Tcl_SetBooleanObj
+#   define Tcl_SetBooleanObj(objPtr, boolValue) \
+	Tcl_SetLongObj((objPtr), (boolValue)!=0)
+#   undef Tcl_AddErrorInfo
+#   define Tcl_AddErrorInfo(interp, message) \
+	Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), -1))
+#   undef Tcl_AddObjErrorInfo
+#   define Tcl_AddObjErrorInfo(interp, message, length) \
+	Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), length))
+#endif
+
+/*
+ * Deprecated Tcl procedures:
+ */
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#   undef Tcl_EvalObj
+#   define Tcl_EvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),0)
+#   undef Tcl_GlobalEvalObj
+#   define Tcl_GlobalEvalObj(interp,objPtr) \
+	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 #endif
 
 #endif /* _TCLDECLS */

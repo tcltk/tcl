@@ -529,6 +529,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Forces the variable indexed by opnd to be an array. Does not touch
 	 * the stack. */
 
+    {"invokeReplace",	 6,	INT_MIN,  2,	{OPERAND_UINT4,OPERAND_UINT1}},
+	/* Invoke command named objv[0], replacing the first two words with
+	 * the word at the top of the stack;
+	 * <objc,objv> = <op4,top op4 after popping 1> */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -784,8 +789,7 @@ SetByteCodeFromAny(
     if (interp == NULL) {
 	return TCL_ERROR;
     }
-    TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
-    return TCL_OK;
+    return TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
 }
 
 /*
@@ -839,10 +843,9 @@ static void
 FreeByteCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
@@ -862,9 +865,8 @@ FreeByteCodeInternalRep(
  *	None.
  *
  * Side effects:
- *	Frees objPtr's bytecode internal representation and sets its type and
- *	objPtr->internalRep.otherValuePtr NULL. Also releases its literals and
- *	frees its auxiliary data items.
+ *	Frees objPtr's bytecode internal representation and sets its type NULL
+ *	Also releases its literals and frees its auxiliary data items.
  *
  *----------------------------------------------------------------------
  */
@@ -1139,7 +1141,7 @@ CompileSubstObj(
 	objPtr->typePtr = &substCodeType;
 	TclFreeCompileEnv(&compEnv);
 
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	objPtr->internalRep.ptrAndLongRep.ptr = codePtr;
 	objPtr->internalRep.ptrAndLongRep.value = flags;
 	if (iPtr->varFramePtr->localCachePtr) {
@@ -1178,7 +1180,6 @@ FreeSubstCodeInternalRep(
     register ByteCode *codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
 
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
@@ -2634,7 +2635,7 @@ TclInitByteCodeObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.otherValuePtr = codePtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
     objPtr->typePtr = &tclByteCodeType;
 
     /*
@@ -4053,7 +4054,7 @@ Tcl_Obj *
 TclDisassembleByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
@@ -4558,7 +4559,11 @@ TclGetInnerContext(
         if (!objPtr) {
             Tcl_Panic("InnerContext: bad tos -- appending null object");
         }
-        if (objPtr->refCount<=0 || objPtr->refCount==0x61616161) {
+        if ((objPtr->refCount<=0)
+#ifdef TCL_MEM_DEBUG
+                || (objPtr->refCount==0x61616161)
+#endif
+        ) {
             Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
                     objPtr);
         }

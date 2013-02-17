@@ -627,6 +627,74 @@ TcpClose2Proc(
 /*
  *----------------------------------------------------------------------
  *
+ * TcpHostPortList --
+ *
+ *	This function is called by the -gethostname and -getpeername
+ *	switches of TcpGetOptionProc() to add three list elements
+ *	with the textual representation of the given address to the
+ *	given DString.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Adds three elements do dsPtr
+ *
+ *----------------------------------------------------------------------
+ */
+static void
+TcpHostPortList(
+    Tcl_Interp *interp,
+    Tcl_DString *dsPtr,
+    address addr,
+    socklen_t salen)
+{
+#define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
+    char host[NI_MAXHOST], nhost[NI_MAXHOST], nport[NI_MAXSERV];
+    int flags = 0;
+
+    getnameinfo(&addr.sa, salen,
+                nhost, sizeof(nhost), nport, sizeof(nport),
+                NI_NUMERICHOST | NI_NUMERICSERV);
+    Tcl_DStringAppendElement(dsPtr, nhost);
+    /*
+     * We don't want to resolve INADDR_ANY and sin6addr_any; they
+     * can sometimes cause problems (and never have a name).
+     */
+    if (addr.sa.sa_family == AF_INET) {
+        if (addr.sa4.sin_addr.s_addr == INADDR_ANY) {
+            flags |= NI_NUMERICHOST;
+        }
+#ifndef NEED_FAKE_RFC2553
+    } else if (addr.sa.sa_family == AF_INET6) {
+        if ((IN6_ARE_ADDR_EQUAL(&addr.sa6.sin6_addr,
+                                &in6addr_any))
+            || (IN6_IS_ADDR_V4MAPPED(&addr.sa6.sin6_addr) &&
+                addr.sa6.sin6_addr.s6_addr[12] == 0 &&
+                addr.sa6.sin6_addr.s6_addr[13] == 0 &&
+                addr.sa6.sin6_addr.s6_addr[14] == 0 &&
+                addr.sa6.sin6_addr.s6_addr[15] == 0)) {
+            flags |= NI_NUMERICHOST;
+        }
+#endif /* NEED_FAKE_RFC2553 */
+    }
+    /* Check if reverse DNS has been switched off globally */
+    if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
+        flags |= NI_NUMERICHOST;
+    }
+    if (getnameinfo(&addr.sa, salen, host, sizeof(host), NULL, 0, flags) == 0) {
+        /* Reverse mapping worked */
+        Tcl_DStringAppendElement(dsPtr, host);
+    } else {
+        /* Reverse mappong failed - use the numeric rep once more */
+        Tcl_DStringAppendElement(dsPtr, nhost);
+    }
+    Tcl_DStringAppendElement(dsPtr, nport);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TcpGetOptionProc --
  *
  *	Computes an option value for a TCP socket based channel, or a list of
@@ -656,10 +724,7 @@ TcpGetOptionProc(
 				 * initialized by caller. */
 {
     TcpState *statePtr = instanceData;
-    char host[NI_MAXHOST], port[NI_MAXSERV];
     size_t len = 0;
-    int reverseDNS = 0;
-#define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
     if (optionName != NULL) {
 	len = strlen(optionName);
@@ -686,10 +751,6 @@ TcpGetOptionProc(
 	return TCL_OK;
     }
 
-    if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
-        reverseDNS = NI_NUMERICHOST;
-    }
-    
     if ((len == 0) || ((len > 1) && (optionName[1] == 'p') &&
 	    (strncmp(optionName, "-peername", len) == 0))) {
         address peername;
@@ -700,14 +761,7 @@ TcpGetOptionProc(
 		Tcl_DStringAppendElement(dsPtr, "-peername");
 		Tcl_DStringStartSublist(dsPtr);
 	    }
-            
-	    getnameinfo(&peername.sa, size, host, sizeof(host), NULL, 0,
-                    NI_NUMERICHOST);
-	    Tcl_DStringAppendElement(dsPtr, host);
-	    getnameinfo(&peername.sa, size, host, sizeof(host), port,
-                    sizeof(port), reverseDNS | NI_NUMERICSERV);
-	    Tcl_DStringAppendElement(dsPtr, host);
-	    Tcl_DStringAppendElement(dsPtr, port);
+            TcpHostPortList(interp, dsPtr, peername, size);
 	    if (len) {
                 return TCL_OK;
             }
@@ -745,40 +799,8 @@ TcpGetOptionProc(
 	for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
 	    size = sizeof(sockname);
 	    if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
-                int flags = reverseDNS;
-
 		found = 1;
-                getnameinfo(&sockname.sa, size, host, sizeof(host), NULL, 0,
-                        NI_NUMERICHOST);
-                Tcl_DStringAppendElement(dsPtr, host);
-
-                /*
-                 * We don't want to resolve INADDR_ANY and sin6addr_any; they
-                 * can sometimes cause problems (and never have a name).
-                 */
-
-                flags |= NI_NUMERICSERV;
-                if (sockname.sa.sa_family == AF_INET) {
-                    if (sockname.sa4.sin_addr.s_addr == INADDR_ANY) {
-                        flags |= NI_NUMERICHOST;
-                    }
-#ifndef NEED_FAKE_RFC2553
-                } else if (sockname.sa.sa_family == AF_INET6) {
-                    if ((IN6_ARE_ADDR_EQUAL(&sockname.sa6.sin6_addr,
-                                &in6addr_any))
-                        || (IN6_IS_ADDR_V4MAPPED(&sockname.sa6.sin6_addr) &&
-                            sockname.sa6.sin6_addr.s6_addr[12] == 0 &&
-                            sockname.sa6.sin6_addr.s6_addr[13] == 0 &&
-                            sockname.sa6.sin6_addr.s6_addr[14] == 0 &&
-                            sockname.sa6.sin6_addr.s6_addr[15] == 0)) {
-                        flags |= NI_NUMERICHOST;
-                    }
-#endif /* NEED_FAKE_RFC2553 */
-                }
-		getnameinfo(&sockname.sa, size, host, sizeof(host), port,
-                        sizeof(port), flags);
-		Tcl_DStringAppendElement(dsPtr, host);
-		Tcl_DStringAppendElement(dsPtr, port);
+                TcpHostPortList(interp, dsPtr, sockname, size);
 	    }
 	}
         if (found) {
@@ -1180,7 +1202,7 @@ Tcl_Channel
 Tcl_MakeTcpClientChannel(
     ClientData sock)		/* The socket to wrap up into a channel. */
 {
-    return TclpMakeTcpClientChannelMode(sock, (TCL_READABLE | TCL_WRITABLE));
+    return (Tcl_Channel) TclpMakeTcpClientChannelMode(sock, (TCL_READABLE | TCL_WRITABLE));
 }
 
 /*
@@ -1200,9 +1222,9 @@ Tcl_MakeTcpClientChannel(
  *----------------------------------------------------------------------
  */
 
-Tcl_Channel
+void *
 TclpMakeTcpClientChannelMode(
-    ClientData sock,		/* The socket to wrap up into a channel. */
+    void *sock,		/* The socket to wrap up into a channel. */
     int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {

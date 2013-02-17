@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require -exact TclOO 0.7 ;# Must match value in generic/tclOO.h
+package require TclOO 1.0
 package require tcltest 2
 if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
@@ -2204,6 +2204,25 @@ test oo-19.2 {OO: varname method: Bug 2883857} -setup {
 } -cleanup {
     SpecialClass destroy
 } -result ::oo_test::x(y)
+test oo-19.3 {OO: varname method and variable decl: Bug 3603695} -setup {
+    oo::class create testClass {
+	variable foo
+	export varname
+	constructor {} {
+	    variable foo x
+	}
+	method bar {obj} {
+	    my varname foo
+	    $obj varname foo
+	}
+    }
+} -body {
+    testClass create A
+    testClass create B
+    lsearch [list [A varname foo] [B varname foo]] [B bar A]
+} -cleanup {
+    testClass destroy
+} -result 0
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
