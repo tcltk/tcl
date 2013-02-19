@@ -871,9 +871,9 @@ Tcl_SplitList(
 
 int
 Tcl_ScanElement(
-    register const char *src,	/* String to convert to list element. */
-    register int *flagPtr)	/* Where to store information to guide
-				 * Tcl_ConvertCountedElement. */
+    const char *src,	/* String to convert to list element. */
+    int *flagPtr)	/* Where to store information to guide
+			 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, -1, flagPtr);
 }
@@ -908,7 +908,7 @@ Tcl_ScanCountedElement(
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
-    int flags = CONVERT_ANY;
+    char flags = CONVERT_ANY;
     int numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
@@ -949,7 +949,7 @@ int
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
     int length,			/* Number of bytes in src, or -1. */
-    int *flagPtr)		/* Where to store information to guide
+    char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     const char *p = src;
@@ -1234,9 +1234,9 @@ TclScanElement(
 
 int
 Tcl_ConvertElement(
-    register const char *src,	/* Source information for list element. */
-    register char *dst,		/* Place to put list-ified element. */
-    register int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,	/* Source information for list element. */
+    char *dst,		/* Place to put list-ified element. */
+    int flags)		/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, -1, dst, flags);
 }
@@ -1300,9 +1300,9 @@ TclConvertElement(
     register const char *src,	/* Source information for list element. */
     int length,			/* Number of bytes in src, or -1. */
     char *dst,			/* Place to put list-ified element. */
-    int flags)			/* Flags produced by Tcl_ScanElement. */
+    char flags)			/* Flags produced by Tcl_ScanElement. */
 {
-    int conversion = flags & CONVERT_MASK;
+    char conversion = flags & CONVERT_MASK;
     char *p = dst;
 
     /*
@@ -1481,11 +1481,10 @@ Tcl_Merge(
     int argc,			/* How many strings to merge. */
     const char *const *argv)	/* Array of string values. */
 {
-#define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
+#define LOCAL_SIZE 64
+    char localFlags[LOCAL_SIZE];
     int i, bytesNeeded = 0;
-    char *result, *dst;
-    const int maxFlags = UINT_MAX / sizeof(int);
+    char *result, *dst, *flagPtr = NULL;
 
     /*
      * Handle empty list case first, so logic of the general case can be
@@ -1504,22 +1503,8 @@ Tcl_Merge(
 
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
-    } else if (argc > maxFlags) {
-	/*
-	 * We cannot allocate a large enough flag array to format this list in
-	 * one pass.  We could imagine converting this routine to a multi-pass
-	 * implementation, but for sizeof(int) == 4, the limit is a max of
-	 * 2^30 list elements and since each element is at least one byte
-	 * formatted, and requires one byte space between it and the next one,
-	 * that a minimum space requirement of 2^31 bytes, which is already
-	 * INT_MAX. If we tried to format a list of > maxFlags elements, we're
-	 * just going to overflow the size limits on the formatted string
-	 * anyway, so just issue that same panic early.
-	 */
-
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
-	flagPtr = ckalloc(argc * sizeof(int));
+	flagPtr = ckalloc(argc);
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -2597,7 +2582,7 @@ Tcl_DStringAppendElement(
 {
     char *dst = dsPtr->string + dsPtr->length;
     int needSpace = TclNeedSpace(dsPtr->string, dst);
-    int flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
+    char flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
     int newSize = dsPtr->length + needSpace
 	    + TclScanElement(element, -1, &flags);
 
@@ -3143,7 +3128,7 @@ TclPrecTraceProc(
 
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(*precisionPtr),
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewLongObj(*precisionPtr),
 		flags & TCL_GLOBAL_ONLY);
 	return NULL;
     }

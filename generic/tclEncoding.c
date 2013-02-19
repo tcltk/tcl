@@ -270,7 +270,7 @@ static int		Iso88591ToUtfProc(ClientData clientData,
 			    int *dstCharsPtr);
 
 /*
- * A Tcl_ObjType for holding a cached Tcl_Encoding in the otherValuePtr field
+ * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
  * of the intrep. This should help the lifetime of encodings be more useful.
  * See concerns raised in [Bug 1077262].
  */
@@ -313,7 +313,7 @@ Tcl_GetEncodingFromObj(
 	    return TCL_ERROR;
 	}
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep.otherValuePtr = encoding;
+	objPtr->internalRep.twoPtrValue.ptr1 = encoding;
 	objPtr->typePtr = &encodingType;
     }
     *encodingPtr = Tcl_GetEncoding(NULL, name);
@@ -334,7 +334,7 @@ static void
 FreeEncodingIntRep(
     Tcl_Obj *objPtr)
 {
-    Tcl_FreeEncoding(objPtr->internalRep.otherValuePtr);
+    Tcl_FreeEncoding(objPtr->internalRep.twoPtrValue.ptr1);
     objPtr->typePtr = NULL;
 }
 
@@ -353,7 +353,7 @@ DupEncodingIntRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    dupPtr->internalRep.otherValuePtr = Tcl_GetEncoding(NULL, srcPtr->bytes);
+    dupPtr->internalRep.twoPtrValue.ptr1 = Tcl_GetEncoding(NULL, srcPtr->bytes);
 }
 
 /*
@@ -1363,20 +1363,19 @@ Tcl_UtfToExternal(
  *
  *---------------------------------------------------------------------------
  */
-
 MODULE_SCOPE const TclStubs tclStubs;
 
-/* Dummy const structure returned by Tcl_FindExecutable,
+/* Dummy const structure returned by Tcl_InitSubsystems,
  * which looks like an Tcl_Interp, but in reality is not.
  * It contains just enough for Tcl_InitStubs to be able
  * to initialize the stub table. */
 static const struct {
-    const char *unused1;
-    void (*unused2) (void);
-    int unused3;
+    const char *version; /* a real interpreter has interp->result here. */
+    void (*magic) (void); /* a real interpreter has interp->freeProc here. */
+    int errorLine;
     const struct TclStubs *stubTable;
 } dummyInterp = {
-    0, 0, 0, &tclStubs
+    TCL_PATCH_LEVEL, INT2PTR(TCL_STUB_MAGIC), 0, &tclStubs
 };
 
 #undef Tcl_FindExecutable

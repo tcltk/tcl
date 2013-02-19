@@ -46,7 +46,10 @@ static void setargv(int *argcPtr, TCHAR ***argvPtr);
 #ifndef TCL_LOCAL_APPINIT
 #define TCL_LOCAL_APPINIT Tcl_AppInit
 #endif
-extern int TCL_LOCAL_APPINIT(Tcl_Interp *interp);
+#ifndef MODULE_SCOPE
+#   define MODULE_SCOPE extern
+#endif
+MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 
 /*
  * The following #if block allows you to change how Tcl finds the startup
@@ -55,7 +58,7 @@ extern int TCL_LOCAL_APPINIT(Tcl_Interp *interp);
  */
 
 #ifdef TCL_LOCAL_MAIN_HOOK
-extern int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
+MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 #endif
 
 /*
@@ -194,7 +197,8 @@ Tcl_AppInit(
      * specific startup file will be run under any conditions.
      */
 
-    Tcl_SetVar2(interp, "tcl_rcFileName", NULL, "~/tclshrc.tcl", TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
 

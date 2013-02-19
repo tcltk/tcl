@@ -120,7 +120,7 @@ FileCopyRename(
     }
     i++;
     if ((objc - i) < 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, 
+	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-option value ...? source ?source ...? target");
 	return TCL_ERROR;
     }
@@ -831,8 +831,8 @@ FileForceOption(
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", TCL_EXACT,
-		&idx) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "option", TCL_EXACT, &idx) != TCL_OK) {
 	    return -1;
 	}
 	if (idx == 0 /* -force */) {
@@ -1081,8 +1081,8 @@ TclFileAttrsCmd(
 	    goto end;
 	}
 
-	if (Tcl_GetIndexFromObj(interp, objv[0], attributeStrings,
-		"option", 0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[0], attributeStrings,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    goto end;
 	}
 	if (attributeStringsAllocated != NULL) {
@@ -1109,8 +1109,8 @@ TclFileAttrsCmd(
 	}
 
 	for (i = 0; i < objc ; i += 2) {
-	    if (Tcl_GetIndexFromObj(interp, objv[i], attributeStrings,
-		    "option", 0, &index) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], attributeStrings,
+		    sizeof(char *), "option", 0, &index) != TCL_OK) {
 		goto end;
 	    }
 	    if (attributeStringsAllocated != NULL) {
@@ -1199,8 +1199,8 @@ TclFileLinkCmd(
 	    static const char *const linkTypes[] = {
 		"-symbolic", "-hard", NULL
 	    };
-	    if (Tcl_GetIndexFromObj(interp, objv[1], linkTypes, "switch", 0,
-		    &linkAction) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[1], linkTypes,
+		    sizeof(char *), "switch", 0, &linkAction) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (linkAction == 0) {

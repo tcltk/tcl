@@ -361,7 +361,7 @@ DupDictInternalRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *copyPtr)
 {
-    Dict *oldDict = srcPtr->internalRep.otherValuePtr;
+    Dict *oldDict = srcPtr->internalRep.twoPtrValue.ptr1;
     Dict *newDict = ckalloc(sizeof(Dict));
     ChainEntry *cPtr;
 
@@ -396,7 +396,7 @@ DupDictInternalRep(
      * Store in the object.
      */
 
-    copyPtr->internalRep.otherValuePtr = newDict;
+    copyPtr->internalRep.twoPtrValue.ptr1 = newDict;
     copyPtr->typePtr = &tclDictType;
 }
 
@@ -422,14 +422,12 @@ static void
 FreeDictInternalRep(
     Tcl_Obj *dictPtr)
 {
-    Dict *dict = dictPtr->internalRep.otherValuePtr;
+    Dict *dict = dictPtr->internalRep.twoPtrValue.ptr1;
 
     dict->refcount--;
     if (dict->refcount <= 0) {
 	DeleteDict(dict);
     }
-
-    dictPtr->internalRep.otherValuePtr = NULL;	/* Belt and braces! */
     dictPtr->typePtr = NULL;
 }
 
@@ -487,15 +485,14 @@ static void
 UpdateStringOfDict(
     Tcl_Obj *dictPtr)
 {
-#define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
-    Dict *dict = dictPtr->internalRep.otherValuePtr;
+#define LOCAL_SIZE 64
+    char localFlags[LOCAL_SIZE], *flagPtr = NULL;
+    Dict *dict = dictPtr->internalRep.twoPtrValue.ptr1;
     ChainEntry *cPtr;
     Tcl_Obj *keyPtr, *valuePtr;
     int i, length, bytesNeeded = 0;
     const char *elem;
     char *dst;
-    const int maxFlags = UINT_MAX / sizeof(int);
 
     /*
      * This field is the most useful one in the whole hash structure, and it
@@ -517,10 +514,8 @@ UpdateStringOfDict(
 
     if (numElems <= LOCAL_SIZE) {
 	flagPtr = localFlags;
-    } else if (numElems > maxFlags) {
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
-	flagPtr = ckalloc(numElems * sizeof(int));
+	flagPtr = ckalloc(numElems);
     }
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	/*
@@ -624,7 +619,7 @@ SetDictFromAny(
 	}
 
 	for (i=0 ; i<objc ; i+=2) {
-	
+
 	    /* Store key and value in the hash table we're building. */
 	    hPtr = CreateChainEntry(dict, objv[i], &isNew);
 	    if (!isNew) {
@@ -715,7 +710,7 @@ SetDictFromAny(
     dict->epoch = 0;
     dict->chain = NULL;
     dict->refcount = 1;
-    objPtr->internalRep.otherValuePtr = dict;
+    objPtr->internalRep.twoPtrValue.ptr1 = dict;
     objPtr->typePtr = &tclDictType;
     return TCL_OK;
 
@@ -784,7 +779,7 @@ TclTraceDictPath(
 	    return NULL;
 	}
     }
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
     if (flags & DICT_PATH_UPDATE) {
 	dict->chain = NULL;
     }
@@ -827,7 +822,7 @@ TclTraceDictPath(
 	    }
 	}
 
-	newDict = tmpObj->internalRep.otherValuePtr;
+	newDict = tmpObj->internalRep.twoPtrValue.ptr1;
 	if (flags & DICT_PATH_UPDATE) {
 	    if (Tcl_IsShared(tmpObj)) {
 		TclDecrRefCount(tmpObj);
@@ -835,7 +830,7 @@ TclTraceDictPath(
 		Tcl_IncrRefCount(tmpObj);
 		Tcl_SetHashValue(hPtr, tmpObj);
 		dict->epoch++;
-		newDict = tmpObj->internalRep.otherValuePtr;
+		newDict = tmpObj->internalRep.twoPtrValue.ptr1;
 	    }
 
 	    newDict->chain = dictPtr;
@@ -870,17 +865,17 @@ static void
 InvalidateDictChain(
     Tcl_Obj *dictObj)
 {
-    Dict *dict = dictObj->internalRep.otherValuePtr;
+    Dict *dict = dictObj->internalRep.twoPtrValue.ptr1;
 
     do {
-	Tcl_InvalidateStringRep(dictObj);
+	TclInvalidateStringRep(dictObj);
 	dict->epoch++;
 	dictObj = dict->chain;
 	if (dictObj == NULL) {
 	    break;
 	}
 	dict->chain = NULL;
-	dict = dictObj->internalRep.otherValuePtr;
+	dict = dictObj->internalRep.twoPtrValue.ptr1;
     } while (dict != NULL);
 }
 
@@ -927,9 +922,9 @@ Tcl_DictObjPut(
     }
 
     if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
     }
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
     hPtr = CreateChainEntry(dict, keyPtr, &isNew);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {
@@ -980,7 +975,7 @@ Tcl_DictObjGet(
 	}
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
     hPtr = Tcl_FindHashEntry(&dict->table, keyPtr);
     if (hPtr == NULL) {
 	*valuePtrPtr = NULL;
@@ -1029,9 +1024,9 @@ Tcl_DictObjRemove(
     }
 
     if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
     }
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
     if (DeleteChainEntry(dict, keyPtr)) {
 	dict->epoch++;
     }
@@ -1071,7 +1066,7 @@ Tcl_DictObjSize(
 	}
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
     *sizePtr = dict->table.numEntries;
     return TCL_OK;
 }
@@ -1126,7 +1121,7 @@ Tcl_DictObjFirst(
 	}
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
     cPtr = dict->entryChainHead;
     if (cPtr == NULL) {
 	searchPtr->epoch = -1;
@@ -1301,7 +1296,7 @@ Tcl_DictObjPutKeyList(
 	return TCL_ERROR;
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
     hPtr = CreateChainEntry(dict, keyv[keyc-1], &isNew);
     Tcl_IncrRefCount(valuePtr);
     if (!isNew) {
@@ -1357,7 +1352,7 @@ Tcl_DictObjRemoveKeyList(
 	return TCL_ERROR;
     }
 
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
     DeleteChainEntry(dict, keyv[keyc-1]);
     InvalidateDictChain(dictPtr);
     return TCL_OK;
@@ -1397,13 +1392,13 @@ Tcl_NewDictObj(void)
     Dict *dict;
 
     TclNewObj(dictPtr);
-    Tcl_InvalidateStringRep(dictPtr);
+    TclInvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
     dict->refcount = 1;
-    dictPtr->internalRep.otherValuePtr = dict;
+    dictPtr->internalRep.twoPtrValue.ptr1 = dict;
     dictPtr->typePtr = &tclDictType;
     return dictPtr;
 #endif
@@ -1446,13 +1441,13 @@ Tcl_DbNewDictObj(
     Dict *dict;
 
     TclDbNewObj(dictPtr, file, line);
-    Tcl_InvalidateStringRep(dictPtr);
+    TclInvalidateStringRep(dictPtr);
     dict = ckalloc(sizeof(Dict));
     InitChainTable(dict);
     dict->epoch = 0;
     dict->chain = NULL;
     dict->refcount = 1;
-    dictPtr->internalRep.otherValuePtr = dict;
+    dictPtr->internalRep.twoPtrValue.ptr1 = dict;
     dictPtr->typePtr = &tclDictType;
     return dictPtr;
 #else /* !TCL_MEM_DEBUG */
@@ -1974,7 +1969,7 @@ DictSizeCmd(
     }
     result = Tcl_DictObjSize(interp, objv[1], &size);
     if (result == TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(size));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(size));
     }
     return result;
 }
@@ -2016,9 +2011,9 @@ DictExistsCmd(
     if (dictPtr == NULL || dictPtr == DICT_PATH_NON_EXISTENT
 	    || Tcl_DictObjGet(interp, dictPtr, objv[objc-1],
 		    &valuePtr) != TCL_OK) {
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(valuePtr != NULL));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(valuePtr != NULL));
     }
     return TCL_OK;
 }
@@ -2064,7 +2059,7 @@ DictInfoCmd(
 	    return result;
 	}
     }
-    dict = dictPtr->internalRep.otherValuePtr;
+    dict = dictPtr->internalRep.twoPtrValue.ptr1;
 
     statsStr = Tcl_HashStats(&dict->table);
     Tcl_SetObjResult(interp, Tcl_NewStringObj(statsStr, -1));
@@ -2157,7 +2152,7 @@ DictIncrCmd(
 		Tcl_DictObjPut(interp, dictPtr, objv[2], objv[3]);
 	    }
 	} else {
-	    Tcl_DictObjPut(interp, dictPtr, objv[2], Tcl_NewIntObj(1));
+	    Tcl_DictObjPut(interp, dictPtr, objv[2], Tcl_NewLongObj(1));
 	}
     } else {
 	/*
@@ -2171,7 +2166,7 @@ DictIncrCmd(
 	if (objc == 4) {
 	    code = TclIncrObj(interp, valuePtr, objv[3]);
 	} else {
-	    Tcl_Obj *incrPtr = Tcl_NewIntObj(1);
+	    Tcl_Obj *incrPtr = Tcl_NewLongObj(1);
 
 	    Tcl_IncrRefCount(incrPtr);
 	    code = TclIncrObj(interp, valuePtr, incrPtr);
@@ -2179,7 +2174,7 @@ DictIncrCmd(
 	}
     }
     if (code == TCL_OK) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
 	valuePtr = Tcl_ObjSetVar2(interp, objv[1], NULL,
 		dictPtr, TCL_LEAVE_ERR_MSG);
 	if (valuePtr == NULL) {
@@ -2268,7 +2263,7 @@ DictLappendCmd(
     if (allocatedValue) {
 	Tcl_DictObjPut(interp, dictPtr, objv[2], valuePtr);
     } else if (dictPtr->bytes != NULL) {
-	Tcl_InvalidateStringRep(dictPtr);
+	TclInvalidateStringRep(dictPtr);
     }
 
     resultPtr = Tcl_ObjSetVar2(interp, objv[1], NULL, dictPtr,
@@ -2916,8 +2911,8 @@ DictFilterCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary filterType ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[2], filters, "filterType",
-	     0, &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[2], filters,
+	    sizeof(char *), "filterType", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

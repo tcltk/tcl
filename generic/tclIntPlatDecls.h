@@ -101,8 +101,7 @@ TCLAPI int		TclWinGetSockOpt(SOCKET s, int level, int optname,
 TCLAPI HINSTANCE	TclWinGetTclInstance(void);
 /* 5 */
 TCLAPI int		TclUnixWaitForFile(int fd, int mask, int timeout);
-/* 6 */
-TCLAPI unsigned short	TclWinNToHS(unsigned short ns);
+/* Slot 6 is reserved */
 /* 7 */
 TCLAPI int		TclWinSetSockOpt(SOCKET s, int level, int optname,
 				const char *optval, int optlen);
@@ -278,7 +277,7 @@ typedef struct TclIntPlatStubs {
     int (*tclWinGetSockOpt) (SOCKET s, int level, int optname, char *optval, int *optlen); /* 3 */
     HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 5 */
-    unsigned short (*tclWinNToHS) (unsigned short ns); /* 6 */
+    void (*reserved6)(void);
     int (*tclWinSetSockOpt) (SOCKET s, int level, int optname, const char *optval, int optlen); /* 7 */
     int (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
@@ -412,8 +411,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclWinGetTclInstance) /* 4 */
 #define TclUnixWaitForFile \
 	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 5 */
-#define TclWinNToHS \
-	(tclIntPlatStubsPtr->tclWinNToHS) /* 6 */
+/* Slot 6 is reserved */
 #define TclWinSetSockOpt \
 	(tclIntPlatStubsPtr->tclWinSetSockOpt) /* 7 */
 #define TclpGetPid \
@@ -518,10 +516,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
-#   undef TclWinNToHS
-#   define TclWinNToHS ntohs
-#else
+#if !defined(__WIN32__) && !defined(__CYGWIN__)
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
 #endif

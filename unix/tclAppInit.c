@@ -50,7 +50,7 @@ MODULE_SCOPE int main(int, char **);
  */
 
 #ifdef TCL_LOCAL_MAIN_HOOK
-extern int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
+MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
 #endif
 
 /*
@@ -154,9 +154,11 @@ Tcl_AppInit(
      */
 
 #ifdef DJGPP
-    Tcl_SetVar2(interp, "tcl_rcFileName", NULL, "~/tclsh.rc", TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+	    Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
 #else
-    Tcl_SetVar2(interp, "tcl_rcFileName", NULL, "~/.tclshrc", TCL_GLOBAL_ONLY);
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+	    Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
 #endif
 
     return TCL_OK;

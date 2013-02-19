@@ -62,7 +62,7 @@ Pkga_EqObjCmd(
     } else {
 	result = 0;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(result));
     return TCL_OK;
 }
 
@@ -122,10 +122,10 @@ Pkga_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkga", "1.0");
+    code = Tcl_PkgProvideEx(interp, "Pkga", "1.0", NULL);
     if (code != TCL_OK) {
 	return code;
     }

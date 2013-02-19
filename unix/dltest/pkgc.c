@@ -56,7 +56,7 @@ Pkgc_SubObjCmd(
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(first - second));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(first - second));
     return TCL_OK;
 }
 
@@ -112,10 +112,10 @@ Pkgc_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
+    code = Tcl_PkgProvideEx(interp, "Pkgc", "1.7.2", NULL);
     if (code != TCL_OK) {
 	return code;
     }
@@ -149,10 +149,10 @@ Pkgc_SafeInit(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
+    code = Tcl_PkgProvideEx(interp, "Pkgc", "1.7.2", NULL);
     if (code != TCL_OK) {
 	return code;
     }

@@ -221,9 +221,9 @@ static const Tcl_ObjType tclChannelType = {
 };
 
 #define GET_CHANNELSTATE(objPtr) \
-    ((ChannelState *) (objPtr)->internalRep.otherValuePtr)
+    ((ChannelState *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_CHANNELSTATE(objPtr, storePtr) \
-    ((objPtr)->internalRep.otherValuePtr = (void *) (storePtr))
+    ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (storePtr))
 #define GET_CHANNELINTERP(objPtr) \
     ((Interp *) (objPtr)->internalRep.twoPtrValue.ptr2)
 #define SET_CHANNELINTERP(objPtr, storePtr) \
@@ -398,11 +398,11 @@ TclFinalizeIOSubsystem(void)
     int active = 1;		/* Flag == 1 while there's still work to do */
     int doflushnb;
 
-    /* Fetch the pre-TIP#398 compatibility flag */ 
+    /* Fetch the pre-TIP#398 compatibility flag */
     {
         const char *s;
         Tcl_DString ds;
-        
+
         s = TclGetEnv("TCL_FLUSH_NONBLOCKING_ON_EXIT", &ds);
         doflushnb = ((s != NULL) && strcmp(s, "0"));
         if (s != NULL) {
@@ -454,9 +454,9 @@ TclFinalizeIOSubsystem(void)
                     /* Set the channel back into blocking mode to ensure that we wait
                      * for all data to flush out.
                      */
-                
+
                 (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
-                                            "-blocking", "on");                    
+                                            "-blocking", "on");
             }
 
 	    if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
@@ -8860,8 +8860,8 @@ Tcl_FileEventObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId event ?script?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[2], modeOptions, "event name", 0,
-	    &modeIndex) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[2], modeOptions,
+	    sizeof(char *), "event name", 0, &modeIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     mask = maskArray[modeIndex];

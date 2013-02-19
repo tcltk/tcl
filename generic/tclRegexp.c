@@ -578,7 +578,7 @@ Tcl_GetRegExpFromObj(
      * TclRegexp* when the type is tclRegexpType.
      */
 
-    regexpPtr = objPtr->internalRep.otherValuePtr;
+    regexpPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     if ((objPtr->typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
 	pattern = TclGetStringFromObj(objPtr, &length);
@@ -601,7 +601,7 @@ Tcl_GetRegExpFromObj(
 	 */
 
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep.otherValuePtr = regexpPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = regexpPtr;
 	objPtr->typePtr = &tclRegexpType;
     }
     return (Tcl_RegExp) regexpPtr;
@@ -672,7 +672,7 @@ TclRegAbout(
 
     resultObj = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, resultObj,
-	    Tcl_NewIntObj((int) regexpPtr->re.re_nsub));
+	    Tcl_NewLongObj((long) regexpPtr->re.re_nsub));
 
     /*
      * Now append a list of all the bit-flags set for the RE.
@@ -749,7 +749,7 @@ static void
 FreeRegexpInternalRep(
     Tcl_Obj *objPtr)		/* Regexp object with internal rep to free. */
 {
-    TclRegexp *regexpRepPtr = objPtr->internalRep.otherValuePtr;
+    TclRegexp *regexpRepPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * If this is the last reference to the regexp, free it.
@@ -783,10 +783,10 @@ DupRegexpInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    TclRegexp *regexpPtr = srcPtr->internalRep.otherValuePtr;
+    TclRegexp *regexpPtr = srcPtr->internalRep.twoPtrValue.ptr1;
 
     regexpPtr->refCount++;
-    copyPtr->internalRep.otherValuePtr = srcPtr->internalRep.otherValuePtr;
+    copyPtr->internalRep.twoPtrValue.ptr1 = srcPtr->internalRep.twoPtrValue.ptr1;
     copyPtr->typePtr = &tclRegexpType;
 }
 

@@ -25,10 +25,8 @@
 #undef Tcl_Alloc
 #undef Tcl_Free
 #undef Tcl_Realloc
-#undef Tcl_NewBooleanObj
 #undef Tcl_NewByteArrayObj
 #undef Tcl_NewDoubleObj
-#undef Tcl_NewIntObj
 #undef Tcl_NewListObj
 #undef Tcl_NewLongObj
 #undef Tcl_NewObj
@@ -64,14 +62,6 @@ static int TclPkgProvide(
 	Tcl_PkgRequireEx(interp, "Tcl", "8", 0, NULL);
 	return TCL_ERROR;
 }
-
-#if defined(_WIN32) || defined(__CYGWIN__)
-#undef TclWinNToHS
-#define TclWinNToHS winNToHS
-static unsigned short TclWinNToHS(unsigned short ns) {
-	return ntohs(ns);
-}
-#endif
 
 #ifdef __WIN32__
 #   define TclUnixWaitForFile 0
@@ -309,22 +299,22 @@ static const TclIntStubs tclIntStubs = {
     TclUpdateReturnInfo, /* 109 */
     TclSockMinimumBuffers, /* 110 */
     Tcl_AddInterpResolvers, /* 111 */
-    Tcl_AppendExportList, /* 112 */
-    Tcl_CreateNamespace, /* 113 */
-    Tcl_DeleteNamespace, /* 114 */
-    Tcl_Export, /* 115 */
-    Tcl_FindCommand, /* 116 */
-    Tcl_FindNamespace, /* 117 */
+    0, /* 112 */
+    0, /* 113 */
+    0, /* 114 */
+    0, /* 115 */
+    0, /* 116 */
+    0, /* 117 */
     Tcl_GetInterpResolvers, /* 118 */
     Tcl_GetNamespaceResolvers, /* 119 */
     Tcl_FindNamespaceVar, /* 120 */
-    Tcl_ForgetImport, /* 121 */
-    Tcl_GetCommandFromObj, /* 122 */
-    Tcl_GetCommandFullName, /* 123 */
-    Tcl_GetCurrentNamespace, /* 124 */
-    Tcl_GetGlobalNamespace, /* 125 */
+    0, /* 121 */
+    0, /* 122 */
+    0, /* 123 */
+    0, /* 124 */
+    0, /* 125 */
     Tcl_GetVariableFullName, /* 126 */
-    Tcl_Import, /* 127 */
+    0, /* 127 */
     Tcl_PopCallFrame, /* 128 */
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
@@ -493,7 +483,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinGetSockOpt, /* 3 */
     TclWinGetTclInstance, /* 4 */
     TclUnixWaitForFile, /* 5 */
-    TclWinNToHS, /* 6 */
+    0, /* 6 */
     TclWinSetSockOpt, /* 7 */
     TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
@@ -683,7 +673,7 @@ const TclStubs tclStubs = {
     Tcl_DbDecrRefCount, /* 19 */
     Tcl_DbIncrRefCount, /* 20 */
     Tcl_DbIsShared, /* 21 */
-    Tcl_DbNewBooleanObj, /* 22 */
+    0, /* 22 */
     Tcl_DbNewByteArrayObj, /* 23 */
     Tcl_DbNewDoubleObj, /* 24 */
     Tcl_DbNewListObj, /* 25 */
@@ -697,7 +687,7 @@ const TclStubs tclStubs = {
     Tcl_GetByteArrayFromObj, /* 33 */
     Tcl_GetDouble, /* 34 */
     Tcl_GetDoubleFromObj, /* 35 */
-    Tcl_GetIndexFromObj, /* 36 */
+    0, /* 36 */
     Tcl_GetInt, /* 37 */
     Tcl_GetIntFromObj, /* 38 */
     Tcl_GetLongFromObj, /* 39 */
@@ -710,25 +700,25 @@ const TclStubs tclStubs = {
     Tcl_ListObjIndex, /* 46 */
     Tcl_ListObjLength, /* 47 */
     Tcl_ListObjReplace, /* 48 */
-    Tcl_NewBooleanObj, /* 49 */
+    0, /* 49 */
     Tcl_NewByteArrayObj, /* 50 */
     Tcl_NewDoubleObj, /* 51 */
-    Tcl_NewIntObj, /* 52 */
+    0, /* 52 */
     Tcl_NewListObj, /* 53 */
     Tcl_NewLongObj, /* 54 */
     Tcl_NewObj, /* 55 */
     Tcl_NewStringObj, /* 56 */
-    Tcl_SetBooleanObj, /* 57 */
+    0, /* 57 */
     Tcl_SetByteArrayLength, /* 58 */
     Tcl_SetByteArrayObj, /* 59 */
     Tcl_SetDoubleObj, /* 60 */
-    Tcl_SetIntObj, /* 61 */
+    0, /* 61 */
     Tcl_SetListObj, /* 62 */
     Tcl_SetLongObj, /* 63 */
     Tcl_SetObjLength, /* 64 */
     Tcl_SetStringObj, /* 65 */
-    Tcl_AddErrorInfo, /* 66 */
-    Tcl_AddObjErrorInfo, /* 67 */
+    0, /* 66 */
+    0, /* 67 */
     Tcl_AllowExceptions, /* 68 */
     Tcl_AppendElement, /* 69 */
     Tcl_AppendResult, /* 70 */
@@ -790,9 +780,9 @@ const TclStubs tclStubs = {
     Tcl_Eof, /* 126 */
     Tcl_ErrnoId, /* 127 */
     Tcl_ErrnoMsg, /* 128 */
-    Tcl_Eval, /* 129 */
+    0, /* 129 */
     0, /* 130 */
-    Tcl_EvalObj, /* 131 */
+    0, /* 131 */
     Tcl_EventuallyFree, /* 132 */
     Tcl_Exit, /* 133 */
     Tcl_ExposeCommand, /* 134 */
@@ -940,10 +930,10 @@ const TclStubs tclStubs = {
     Tcl_AppendStringsToObjVA, /* 268 */
     Tcl_HashStats, /* 269 */
     Tcl_ParseVar, /* 270 */
-    Tcl_PkgPresent, /* 271 */
+    0, /* 271 */
     Tcl_PkgPresentEx, /* 272 */
     TclPkgProvide, /* 273 */
-    Tcl_PkgRequire, /* 274 */
+    0, /* 274 */
     Tcl_SetErrorCodeVA, /* 275 */
     0, /* 276 */
     Tcl_WaitPid, /* 277 */
@@ -959,7 +949,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEncoding, /* 287 */
     Tcl_CreateThreadExitHandler, /* 288 */
     Tcl_DeleteThreadExitHandler, /* 289 */
-    Tcl_DiscardResult, /* 290 */
+    0, /* 290 */
     Tcl_EvalEx, /* 291 */
     Tcl_EvalObjv, /* 292 */
     Tcl_EvalObjEx, /* 293 */
@@ -983,8 +973,8 @@ const TclStubs tclStubs = {
     Tcl_ConditionWait, /* 311 */
     Tcl_NumUtfChars, /* 312 */
     Tcl_ReadChars, /* 313 */
-    Tcl_RestoreResult, /* 314 */
-    Tcl_SaveResult, /* 315 */
+    0, /* 314 */
+    0, /* 315 */
     Tcl_SetSystemEncoding, /* 316 */
     Tcl_SetVar2Ex, /* 317 */
     Tcl_ThreadAlert, /* 318 */

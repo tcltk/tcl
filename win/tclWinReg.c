@@ -161,7 +161,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.3.0");
+    return Tcl_PkgProvideEx(interp, "registry", "1.3.0", NULL);
 }
 
 /*
@@ -279,9 +279,9 @@ RegistryObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetString(objv[n])[0] == '-') {
-	if (Tcl_GetIndexFromObj(interp, objv[n++], modes, "mode", 0,
-		&index) != TCL_OK) {
+    if (Tcl_GetStringFromObj(objv[n], NULL)[0] == '-') {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[n++], modes,
+		sizeof(char *), "mode", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (index) {
@@ -297,8 +297,8 @@ RegistryObjCmd(
 	}
     }
 
-    if (Tcl_GetIndexFromObj(interp, objv[n++], subcommands, "option", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[n++], subcommands,
+	    sizeof(char *), "option", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -518,7 +518,8 @@ DeleteValue(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to delete value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetStringFromObj(valueNameObj, NULL),
+		Tcl_GetStringFromObj(keyNameObj, NULL)));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -566,7 +567,7 @@ GetKeyNames(
     Tcl_DString ds;		/* Buffer to translate subkey name to UTF-8 */
 
     if (patternObj) {
-	pattern = Tcl_GetString(patternObj);
+	pattern = Tcl_GetStringFromObj(patternObj, NULL);
     } else {
 	pattern = NULL;
     }
@@ -595,7 +596,7 @@ GetKeyNames(
 	    } else {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unable to enumerate subkeys of \"%s\": ",
-			Tcl_GetString(keyNameObj)));
+			Tcl_GetStringFromObj(keyNameObj, NULL)));
 		AppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
@@ -678,7 +679,8 @@ GetType(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get type of value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetStringFromObj(valueNameObj, NULL),
+		Tcl_GetStringFromObj(keyNameObj, NULL)));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -689,7 +691,7 @@ GetType(
      */
 
     if (type > lastType) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) type));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((int) type));
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeNames[type], -1));
     }
@@ -772,7 +774,8 @@ GetValue(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get value \"%s\" from key \"%s\": ",
-		Tcl_GetString(valueNameObj), Tcl_GetString(keyNameObj)));
+		Tcl_GetStringFromObj(valueNameObj, NULL),
+		Tcl_GetStringFromObj(keyNameObj, NULL)));
 	AppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
@@ -786,7 +789,7 @@ GetValue(
      */
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) ConvertDWORD(type,
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) ConvertDWORD(type,
 		*((DWORD *) Tcl_DStringValue(&data)))));
     } else if (type == REG_MULTI_SZ) {
 	char *p = Tcl_DStringValue(&data);
@@ -876,7 +879,7 @@ GetValueNames(
     result = TCL_OK;
 
     if (patternObj) {
-	pattern = Tcl_GetString(patternObj);
+	pattern = Tcl_GetStringFromObj(patternObj, NULL);
     } else {
 	pattern = NULL;
     }
@@ -1116,8 +1119,8 @@ ParseKeyName(
      */
 
     rootObj = Tcl_NewStringObj(rootName, -1);
-    result = Tcl_GetIndexFromObj(interp, rootObj, rootKeyNames, "root name",
-	    TCL_EXACT, &index);
+    result = Tcl_GetIndexFromObjStruct(interp, rootObj, rootKeyNames,
+	    sizeof(char *), "root name", TCL_EXACT, &index);
     Tcl_DecrRefCount(rootObj);
     if (result != TCL_OK) {
 	return TCL_ERROR;
@@ -1252,8 +1255,8 @@ SetValue(
 
     if (typeObj == NULL) {
 	type = REG_SZ;
-    } else if (Tcl_GetIndexFromObj(interp, typeObj, typeNames, "type",
-	    0, (int *) &type) != TCL_OK) {
+    } else if (Tcl_GetIndexFromObjStruct(interp, typeObj, typeNames,
+	    sizeof(char *), "type", 0, (int *) &type) != TCL_OK) {
 	if (Tcl_GetIntFromObj(NULL, typeObj, (int *) &type) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1406,7 +1409,7 @@ BroadcastValue(
      * Use the ignore the result.
      */
 
-    result = SendMessageTimeoutA(HWND_BROADCAST, WM_SETTINGCHANGE,
+    result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
 	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, &sendResult);
 
     objPtr = Tcl_NewObj();

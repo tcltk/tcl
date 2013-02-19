@@ -371,7 +371,7 @@ ConvertErrorToList(
 
     default:
 	TclNewLiteralStringObj(objv[2], "UNKNOWN");
-	TclNewIntObj(objv[3], code);
+	TclNewLongObj(objv[3], code);
 	return Tcl_NewListObj(4, objv);
     }
 }
@@ -545,7 +545,7 @@ ExtractHeader(
 		&tmp);
 	SetValue(dictObj, "comment", TclDStringToObj(&tmp));
     }
-    SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
+    SetValue(dictObj, "crc", Tcl_NewLongObj(headerPtr->hcrc!=0));
     if (headerPtr->name != Z_NULL) {
 	if (latin1enc == NULL) {
 	    /*
@@ -563,7 +563,7 @@ ExtractHeader(
 	SetValue(dictObj, "filename", TclDStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
-	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
+	SetValue(dictObj, "os", Tcl_NewLongObj(headerPtr->os));
     }
     if (headerPtr->time != 0 /* magic - no time */) {
 	SetValue(dictObj, "time", Tcl_NewLongObj((long) headerPtr->time));
@@ -763,7 +763,7 @@ Tcl_ZlibStreamInit(
      */
 
     if (interp != NULL) {
-	if (Tcl_Eval(interp, "::incr ::tcl::zlib::cmdcounter") != TCL_OK) {
+	if (Tcl_EvalEx(interp, "::incr ::tcl::zlib::cmdcounter", -1, 0) != TCL_OK) {
 	    goto error;
 	}
 	Tcl_DStringInit(&cmdname);
@@ -2581,7 +2581,7 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_ZlibStreamEof(zstream)));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(Tcl_ZlibStreamEof(zstream)));
 	return TCL_OK;
     case zs_checksum:		/* $strm checksum */
 	if (objc != 2) {
@@ -3111,7 +3111,7 @@ ZlibTransformOutput(
 	e = deflate(&cd->outStream, Z_NO_FLUSH);
 	produced = cd->outAllocated - cd->outStream.avail_out;
 
-	if (e == Z_OK && cd->outStream.avail_out > 0) {
+	if (e == Z_OK && produced > 0) {
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
 		*errorCodePtr = Tcl_GetErrno();
 		return -1;
@@ -3847,7 +3847,7 @@ TclZlibInit(
      * commands.
      */
 
-    Tcl_Eval(interp, "namespace eval ::tcl::zlib {variable cmdcounter 0}");
+    Tcl_EvalEx(interp, "namespace eval ::tcl::zlib {variable cmdcounter 0}", -1, 0);
 
     /*
      * Create the public scripted interface to this file's functionality.
@@ -3865,7 +3865,7 @@ TclZlibInit(
     cfg[0].key = "zlibVersion";
     cfg[0].value = zlibVersion();
     cfg[1].key = NULL;
-    Tcl_RegisterConfig(interp, "zlib", cfg, "ascii");
+    Tcl_RegisterConfig(interp, "zlib", cfg, "iso8859-1");
 
     /*
      * Formally provide the package as a Tcl built-in.

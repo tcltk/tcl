@@ -1,3 +1,168 @@
+2013-02-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclTrace.c:  [Bug 2438181]: Incorrect error reporting in
+	* tests/trace.test:    traces. Test-case and fix provided by Poor Yorick.
+
+2013-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_nfa.c:	[Bug 3604074] Fix regexp optimization to
+	* tests/regexp.test:	stop hanging on the expression
+	((((((((a)*)*)*)*)*)*)*)* .  Thanks to Bjørn Grathwohl for discovery.
+
+2013-02-14  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3604576]: Catch missing registry entry
+	"HCU\Control Panel\International".
+	Bumped msgcat version to 1.5.1
+
+2013-02-11  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (ZlibTransformOutput): [Bug 3603553]: Ensure that
+	data gets written to the underlying stream by compressing transforms
+	when the amount of data to be written is one buffer's-worth; problem
+	was particularly likely to occur when compressing large quantities of
+	not-very-compressible data. Many thanks to Piera Poggio (vampiera) for
+	reporting.
+
+2013-02-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOBasic.c (TclOO_Object_VarName): [Bug 3603695]: Change
+	the way that the 'varname' method is implemented so that there are no
+	longer problems with interactions due to the resolver. Thanks to
+	Taylor Venable <tcvena@gmail.com> for identifying the problem.
+
+2013-02-08  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/regc_nfa.c (duptraverse): [Bug 3603557]: Increase the
+	maximum depth of recursion used when duplicating an automaton in
+	response to encountering a "wild" RE that hit the previous limit.
+	Allow the limit (DUPTRAVERSE_MAX_DEPTH) to be set by defining its
+	value in the Makefile. Problem reported by Jonathan Mills.
+
+2013-02-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinFile.c:	[Bug 3603434] Make sure TclpObjNormalizePath() 
+	properly declares "a:/" to be normalized, even when no "A:" drive is
+	present on the system.
+
+2013-02-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclLoadNone.c (TclpLoadMemory): [Bug 3433012]: Added dummy
+	version of this function to use in the event that a platform thinks it
+	can load from memory but cannot actually do so due to it being
+	disabled at configuration time.
+
+2013-02-04  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileArraySetCmd): [Bug 3603163]: Stop
+	crash in weird case where [eval] is used to make [array set] get
+	confused about whether there is a local variable table or not. Thanks
+	to Poor Yorick for identifying a reproducible crashing case.
+
+2013-01-30  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl (::platform::LibcVersion): See
+	* library/platform/pkgIndex.tcl: [Bug 3599098]: Fixed the RE
+	* unix/Makefile.in: extracting the version to avoid issues with
+	* win/Makefile.in: recent changes to the glibc banner. Now
+	  targeting a less variable part of the string. Bumped package to
+	  version 1.0.11.
+
+2013-01-28  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileArraySetCmd)
+	(TclCompileArrayUnsetCmd, TclCompileDictAppendCmd)
+	(TclCompileDictCreateCmd, CompileDictEachCmd, TclCompileDictIncrCmd)
+	(TclCompileDictLappendCmd, TclCompileDictMergeCmd)
+	(TclCompileDictUnsetCmd, TclCompileDictUpdateCmd)
+	(TclCompileDictWithCmd, TclCompileInfoCommandsCmd):
+	* generic/tclCompCmdsSZ.c (TclCompileStringMatchCmd)
+	(TclCompileStringMapCmd): Improve the code generation in cases where
+	full compilation is impossible but a full ensemble invoke is provably
+	not necessary.
+
+2013-01-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixCompat.c: [Bug 3601804]: platformCPUID segmentation
+	fault on Darwin.
+
+2013-01-23  Donal K. Fellows  <dkf@users.sf.net>
+
+	* library/http/http.tcl (http::geturl): [Bug 2911139]: Do not do vwait
+	for connect to avoid reentrancy problems (except when operating
+	without a -command option). Internally, this means that all sockets
+	created by the http package will always be operated in asynchronous
+	mode.
+
+2013-01-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclPort.h: [Bug 3598300]: unix: tcl.h does not include
+	sys/stat.h
+
+2013-01-17  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (PushVarName): [Bug 3600328]: Added mechanism
+	for suppressing compilation of variables when we couldn't cope with
+	the results. Useful for some [array] subcommands.
+	* generic/tclEnsemble.c (CompileToCompiledCommand): Must restore the
+	compilation environment when a command compiler fails.
+
+2013-01-16  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclZlib.c (TclZlibInit): [Bug 3601086]: Register the config
+	info in the iso8859-1 encoding as that is guaranteed to be present.
+
+2013-01-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* Makefile.in:   Allow win32 build with -DTCL_NO_DEPRECATED, just as
+	* generic/tcl.h: in the UNIX build. Define Tcl_EvalObj and
+	* generic/tclDecls.h: Tcl_GlobalEvalObj as macros, even when
+	* generic/tclBasic.c: TCL_NO_DEPRECATED is defined, so Tk can benefit
+	from it too.
+
+2013-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tcl.m4: More flexible search for win32 tclConfig.sh, backported
+	from TEA (not actually used in Tcl, only for Tk)
+
+2013-01-14  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclInt.decls: Put back Tcl_[GS]etStartupScript in internal
+	stub table, so extensions using this, compiled against 8.5 headers
+	still run in Tcl 8.6.
+
+2013-01-13  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
+
+	* doc/fileevent.n: [Bug 3436609]: Clarify readable fileevent "false
+	positives" in the case of multibyte encodings/transforms.
+
+2013-01-09  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/http/http.tcl: [Bug 3599395]: http assumes status line is a
+	proper Tcl list.
+
+2013-01-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3092089]: [file normalize] can remove path
+	components.	[Bug 3587096] win vista/7: "can't find init.tcl" when
+	called via junction without folder list access.
+
+2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclOOStubLib.c: Restrict the stub library to only use
+	* generic/tclTomMathStubLib.c: Tcl_PkgRequireEx, Tcl_ResetResult and
+	Tcl_AppendResult, not any other function. This puts least restrictions
+	on eventual Tcl 9 stubs re-organization, and it works on the widest
+	range of Tcl versions.
+
+2013-01-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* library/http/http.tcl: Don't depend on Spencer-specific regexp
+	* tests/env.test: syntax (/u and /U) any more.
+	* tests/exec.test:
+	* tests/reg.test:
+	Bump http package to 2.8.6.
+
 2013-01-04  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclEnsemble.c (CompileBasicNArgCommand): Added very simple
@@ -4086,6 +4251,7 @@
 	* generic/*Decls.h:   (regenerated)
 
 2010-08-18  Miguel Sofer  <msofer@users.sf.net>
+
 	* generic/tclBasic.c:   New redesign of [tailcall]: find
 	* generic/tclExecute.c: errors early on, so that errorInfo
 	* generic/tclInt.h:     contains the proper info [Bug 3047235]

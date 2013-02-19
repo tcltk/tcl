@@ -210,106 +210,6 @@ Tcl_DiscardInterpState(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_SaveResult --
- *
- *	Takes a snapshot of the current result state of the interpreter. The
- *	snapshot can be restored at any point by Tcl_RestoreResult. Note that
- *	this routine does not preserve the errorCode, errorInfo, or flags
- *	fields so it should not be used if an error is in progress.
- *
- *	Once a snapshot is saved, it must be restored by calling
- *	Tcl_RestoreResult, or discarded by calling Tcl_DiscardResult.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Resets the interpreter result.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SaveResult(
-    Tcl_Interp *interp,		/* Interpreter to save. */
-    Tcl_SavedResult *statePtr)	/* Pointer to state structure. */
-{
-    Interp *iPtr = (Interp *) interp;
-
-    /*
-     * Move the result object into the save state. Note that we don't need to
-     * change its refcount because we're moving it, not adding a new
-     * reference. Put an empty object into the interpreter.
-     */
-
-    statePtr->objResultPtr = iPtr->objResultPtr;
-    iPtr->objResultPtr = Tcl_NewObj();
-    Tcl_IncrRefCount(iPtr->objResultPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_RestoreResult --
- *
- *	Restores the state of the interpreter to a snapshot taken by
- *	Tcl_SaveResult. After this call, the token for the interpreter state
- *	is no longer valid.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Restores the interpreter result.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_RestoreResult(
-    Tcl_Interp *interp,		/* Interpreter being restored. */
-    Tcl_SavedResult *statePtr)	/* State returned by Tcl_SaveResult. */
-{
-    Interp *iPtr = (Interp *) interp;
-
-    Tcl_ResetResult(interp);
-
-    /*
-     * Restore the object result.
-     */
-
-    Tcl_DecrRefCount(iPtr->objResultPtr);
-    iPtr->objResultPtr = statePtr->objResultPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_DiscardResult --
- *
- *	Frees the memory associated with an interpreter snapshot taken by
- *	Tcl_SaveResult. If the snapshot is not restored, this function must be
- *	called to discard it, or the memory will be lost.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_DiscardResult(
-    Tcl_SavedResult *statePtr)	/* State returned by Tcl_SaveResult. */
-{
-    TclDecrRefCount(statePtr->objResultPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_SetResult --
  *
  *	Arrange for "result" to be the Tcl return value.
@@ -1278,7 +1178,7 @@ Tcl_GetReturnOptions(
     }
 
     if (result == TCL_ERROR) {
-	Tcl_AddObjErrorInfo(interp, "", -1);
+	Tcl_AddErrorInfo(interp, "");
         Tcl_DictObjPut(NULL, options, keys[KEY_ERRORSTACK], iPtr->errorStack);
     }
     if (iPtr->errorCode) {

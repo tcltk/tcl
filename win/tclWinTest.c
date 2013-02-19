@@ -209,7 +209,7 @@ TestvolumetypeCmd(
 	TclWinConvertError(GetLastError());
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, volType, TCL_VOLATILE);
+    Tcl_AppendResult(interp, volType, NULL);
     return TCL_OK;
 #undef VOL_BUF_SIZE
 }
@@ -275,11 +275,11 @@ TestwinclockCmd(
 
     result = Tcl_NewObj();
     Tcl_ListObjAppendElement(interp, result,
-	    Tcl_NewIntObj((int) (t2.QuadPart / 10000000)));
+	    Tcl_NewLongObj((int) (t2.QuadPart / 10000000)));
     Tcl_ListObjAppendElement(interp, result,
-	    Tcl_NewIntObj((int) ((t2.QuadPart / 10) % 1000000)));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(tclTime.sec));
-    Tcl_ListObjAppendElement(interp, result, Tcl_NewIntObj(tclTime.usec));
+	    Tcl_NewLongObj((int) ((t2.QuadPart / 10) % 1000000)));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewLongObj(tclTime.sec));
+    Tcl_ListObjAppendElement(interp, result, Tcl_NewLongObj(tclTime.usec));
 
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p1.QuadPart));
     Tcl_ListObjAppendElement(interp, result, Tcl_NewWideIntObj(p2.QuadPart));
@@ -366,8 +366,8 @@ TestExceptionCmd(
 	Tcl_WrongNumArgs(interp, 0, objv, "<type-of-exception>");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], cmds, "command", 0,
-	    &cmd) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], cmds,
+	    sizeof(char *), "command", 0, &cmd) != TCL_OK) {
 	return TCL_ERROR;
     }
 

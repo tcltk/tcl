@@ -213,14 +213,14 @@ typedef struct {
     void *hCursor;
     void *hbrBackground;
     void *lpszMenuName;
-    void *lpszClassName;
+    const void *lpszClassName;
 } WNDCLASS;
 
 extern void __stdcall	CloseHandle(void *);
 extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
-extern void * __stdcall	CreateWindowExW(void *, void *, void *, DWORD, int,
-			    int, int, int, void *, void *, void *, void *);
+extern void * __stdcall	CreateWindowExW(void *, const void *, const void *,
+			    DWORD, int, int, int, int, void *, void *, void *, void *);
 extern DWORD __stdcall	DefWindowProcW(void *, int, void *, void *);
 extern unsigned char __stdcall	DestroyWindow(void *);
 extern int __stdcall	DispatchMessageW(const MSG *);

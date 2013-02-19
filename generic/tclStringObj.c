@@ -140,9 +140,9 @@ typedef struct {
 #define stringAttemptRealloc(ptr, numChars) \
     (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
 #define GET_STRING(objPtr) \
-	((String *) (objPtr)->internalRep.otherValuePtr)
+	((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_STRING(objPtr, stringPtr) \
-	((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
+	((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -2069,7 +2069,7 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewIntObj((int) s);
+		    pure = Tcl_NewLongObj((long) s);
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
 		} else if (useBig) {
@@ -2543,7 +2543,7 @@ AppendPrintfToObjVA(
 		break;
 	    case '*':
 		lastNum = (int) va_arg(argList, int);
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(lastNum));
 		p++;
 		break;
 	    case '0': case '1': case '2': case '3': case '4':

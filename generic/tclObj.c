@@ -208,7 +208,6 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 static int		ParseBoolean(Tcl_Obj *objPtr);
-static int		SetBooleanFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
@@ -250,14 +249,14 @@ static const Tcl_ObjType oldBooleanType = {
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclBooleanType = {
     "booleanString",		/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclDoubleType = {
     "double",			/* name */
@@ -1255,7 +1254,7 @@ Tcl_DbNewObj(
  * Side effects:
  *	tclFreeObjList, the head of the list of free Tcl_Objs, is set to the
  *	first of a number of free Tcl_Obj's linked together by their
- *	internalRep.otherValuePtrs.
+ *	internalRep.twoPtrValue.ptr1's.
  *
  *----------------------------------------------------------------------
  */
@@ -1284,7 +1283,7 @@ TclAllocateFreeObjects(void)
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
     for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
-	objPtr->internalRep.otherValuePtr = prevPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = prevPtr;
 	prevPtr = objPtr;
 	objPtr++;
     }
@@ -1709,142 +1708,6 @@ Tcl_InvalidateStringRep(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_NewBooleanObj --
- *
- *	This function is normally called when not debugging: i.e., when
- *	TCL_MEM_DEBUG is not defined. It creates a new Tcl_Obj and
- *	initializes it from the argument boolean value. A nonzero "boolValue"
- *	is coerced to 1.
- *
- *	When TCL_MEM_DEBUG is defined, this function just returns the result
- *	of calling the debugging version Tcl_DbNewBooleanObj.
- *
- * Results:
- *	The newly created object is returned. This object will have an invalid
- *	string representation. The returned object has ref count 0.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef TCL_MEM_DEBUG
-#undef Tcl_NewBooleanObj
-
-Tcl_Obj *
-Tcl_NewBooleanObj(
-    register int boolValue)	/* Boolean used to initialize new object. */
-{
-    return Tcl_DbNewBooleanObj(boolValue, "unknown", 0);
-}
-
-#else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewBooleanObj(
-    register int boolValue)	/* Boolean used to initialize new object. */
-{
-    register Tcl_Obj *objPtr;
-
-    TclNewBooleanObj(objPtr, boolValue);
-    return objPtr;
-}
-#endif /* TCL_MEM_DEBUG */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_DbNewBooleanObj --
- *
- *	This function is normally called when debugging: i.e., when
- *	TCL_MEM_DEBUG is defined. It creates new boolean objects. It is the
- *	same as the Tcl_NewBooleanObj function above except that it calls
- *	Tcl_DbCkalloc directly with the file name and line number from its
- *	caller. This simplifies debugging since then the [memory active]
- *	command will report the correct file name and line number when
- *	reporting objects that haven't been freed.
- *
- *	When TCL_MEM_DEBUG is not defined, this function just returns the
- *	result of calling Tcl_NewBooleanObj.
- *
- * Results:
- *	The newly created object is returned. This object will have an invalid
- *	string representation. The returned object has ref count 0.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef TCL_MEM_DEBUG
-
-Tcl_Obj *
-Tcl_DbNewBooleanObj(
-    register int boolValue,	/* Boolean used to initialize new object. */
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
-{
-    register Tcl_Obj *objPtr;
-
-    TclDbNewObj(objPtr, file, line);
-    objPtr->bytes = NULL;
-
-    objPtr->internalRep.longValue = (boolValue? 1 : 0);
-    objPtr->typePtr = &tclIntType;
-    return objPtr;
-}
-
-#else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_DbNewBooleanObj(
-    register int boolValue,	/* Boolean used to initialize new object. */
-    const char *file,		/* The name of the source file calling this
-				 * function; used for debugging. */
-    int line)			/* Line number in the source file; used for
-				 * debugging. */
-{
-    return Tcl_NewBooleanObj(boolValue);
-}
-#endif /* TCL_MEM_DEBUG */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SetBooleanObj --
- *
- *	Modify an object to be a boolean object and to have the specified
- *	boolean value. A nonzero "boolValue" is coerced to 1.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's old string rep, if any, is freed. Also, any old internal
- *	rep is freed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SetBooleanObj(
-    register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
-    register int boolValue)	/* Boolean used to set object's value. */
-{
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
-    }
-
-    TclSetBooleanObj(objPtr, boolValue);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetBooleanFromObj --
  *
  *	Attempt to return a boolean from the Tcl object "objPtr". This
@@ -1911,7 +1774,7 @@ Tcl_GetBooleanFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * SetBooleanFromAny --
+ * TclSetBooleanFromAny --
  *
  *	Attempt to generate a boolean internal form for the Tcl object
  *	"objPtr".
@@ -1928,8 +1791,8 @@ Tcl_GetBooleanFromObj(
  *----------------------------------------------------------------------
  */
 
-static int
-SetBooleanFromAny(
+int
+TclSetBooleanFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
@@ -2362,89 +2225,6 @@ UpdateStringOfDouble(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_NewIntObj --
- *
- *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
- *	Tcl_NewIntObj to create a new integer object end up calling the
- *	debugging function Tcl_DbNewLongObj instead.
- *
- *	Otherwise, if the client is compiled without TCL_MEM_DEBUG defined,
- *	calls to Tcl_NewIntObj result in a call to one of the two
- *	Tcl_NewIntObj implementations below. We provide two implementations so
- *	that the Tcl core can be compiled to do memory debugging of the core
- *	even if a client does not request it for itself.
- *
- *	Integer and long integer objects share the same "integer" type
- *	implementation. We store all integers as longs and Tcl_GetIntFromObj
- *	checks whether the current value of the long can be represented by an
- *	int.
- *
- * Results:
- *	The newly created object is returned. This object will have an invalid
- *	string representation. The returned object has ref count 0.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-#ifdef TCL_MEM_DEBUG
-#undef Tcl_NewIntObj
-
-Tcl_Obj *
-Tcl_NewIntObj(
-    register int intValue)	/* Int used to initialize the new object. */
-{
-    return Tcl_DbNewLongObj((long)intValue, "unknown", 0);
-}
-
-#else /* if not TCL_MEM_DEBUG */
-
-Tcl_Obj *
-Tcl_NewIntObj(
-    register int intValue)	/* Int used to initialize the new object. */
-{
-    register Tcl_Obj *objPtr;
-
-    TclNewIntObj(objPtr, intValue);
-    return objPtr;
-}
-#endif /* if TCL_MEM_DEBUG */
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_SetIntObj --
- *
- *	Modify an object to be an integer and to have the specified integer
- *	value.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's old string rep, if any, is freed. Also, any old internal
- *	rep is freed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_SetIntObj(
-    register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
-    register int intValue)	/* Integer used to set object's value. */
-{
-    if (Tcl_IsShared(objPtr)) {
-	Tcl_Panic("%s called with shared object", "Tcl_SetIntObj");
-    }
-
-    TclSetIntObj(objPtr, intValue);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetIntFromObj --
  *
  *	Attempt to return an int from the Tcl object "objPtr". If the object
@@ -2616,11 +2396,11 @@ Tcl_NewLongObj(
  * Tcl_DbNewLongObj --
  *
  *	If a client is compiled with TCL_MEM_DEBUG defined, calls to
- *	Tcl_NewIntObj and Tcl_NewLongObj to create new integer or long integer
- *	objects end up calling the debugging function Tcl_DbNewLongObj
- *	instead. We provide two implementations of Tcl_DbNewLongObj so that
- *	whether the Tcl core is compiled to do memory debugging of the core is
- *	independent of whether a client requests debugging for itself.
+ *	Tcl_NewLongObj to create new long integer objects end up calling the
+ *	debugging function Tcl_DbNewLongObj instead. We provide two
+ *	implementations of Tcl_DbNewLongObj so that whether the Tcl core is
+ *	compiled to do memory debugging of the core is independent of whether
+ *	a client requests debugging for itself.
  *
  *	When the core is compiled with TCL_MEM_DEBUG defined, Tcl_DbNewLongObj
  *	calls Tcl_DbCkalloc directly with the file name and line number from
@@ -4171,7 +3951,7 @@ Tcl_GetCommandFromObj(
      * had is invalid one way or another.
      */
 
-    if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
+    if (SetCmdNameFromAny(interp, objPtr) != TCL_OK) {
         return NULL;
     }
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;
@@ -4390,7 +4170,7 @@ SetCmdNameFromAny(
 
     if (cmdPtr) {
 	cmdPtr->refCount++;
-	resPtr = objPtr->internalRep.otherValuePtr;
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if ((objPtr->typePtr == &tclCmdNameType)
 		&& resPtr && (resPtr->refCount == 1)) {
 	    /*

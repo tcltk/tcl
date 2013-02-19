@@ -198,7 +198,7 @@ TestfilehandlerCmd(
 	    return TCL_ERROR;
 	}
 	sprintf(buf, "%d %d", pipePtr->readCount, pipePtr->writeCount);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "create") == 0) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -215,8 +215,8 @@ TestfilehandlerCmd(
 	    fcntl(GetFd(pipePtr->readFile), F_SETFL, O_NONBLOCK);
 	    fcntl(GetFd(pipePtr->writeFile), F_SETFL, O_NONBLOCK);
 #else
-	    Tcl_SetResult(interp, "can't make pipes non-blocking",
-		    TCL_STATIC);
+	    Tcl_AppendResult(interp, "can't make pipes non-blocking",
+		    NULL);
 	    return TCL_ERROR;
 #endif
 	}
@@ -279,7 +279,7 @@ TestfilehandlerCmd(
 
 	memset(buffer, 'b', 10);
 	TclFormatInt(buf, write(GetFd(pipePtr->writeFile), buffer, 10));
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "oneevent") == 0) {
 	Tcl_DoOneEvent(TCL_FILE_EVENTS|TCL_DONT_WAIT);
     } else if (strcmp(argv[1], "wait") == 0) {
@@ -388,7 +388,7 @@ TestfilewaitCmd(
     if (Tcl_GetChannelHandle(channel,
 	    (mask & TCL_READABLE) ? TCL_READABLE : TCL_WRITABLE,
 	    (ClientData*) &data) != TCL_OK) {
-	Tcl_SetResult(interp, "couldn't get channel file", TCL_STATIC);
+	Tcl_AppendResult(interp, "couldn't get channel file", NULL);
 	return TCL_ERROR;
     }
     fd = PTR2INT(data);

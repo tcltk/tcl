@@ -615,8 +615,8 @@ TclChanPushObjCmd(
 
     methods = 0;
     while (listc > 0) {
-	if (Tcl_GetIndexFromObj(interp, listv[listc-1], methodNames,
-		"method", TCL_EXACT, &methIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, listv[listc-1], methodNames,
+		sizeof(char *), "method", TCL_EXACT, &methIndex) != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "chan handler \"%s initialize\" returned %s",
 		    Tcl_GetString(cmdObj),
@@ -943,7 +943,7 @@ ReflectClose(
 		Tcl_EventuallyFree(rtPtr,
 			(Tcl_FreeProc *) FreeReflectedTransform);
 		return errorCode;
-	    } 
+	    }
 #endif /* TCL_THREADS */
 	    errorCodeSet = 1;
 	    goto cleanup;
@@ -957,7 +957,7 @@ ReflectClose(
 		Tcl_EventuallyFree(rtPtr,
 			(Tcl_FreeProc *) FreeReflectedTransform);
 		return errorCode;
-	    } 
+	    }
 #endif /* TCL_THREADS */
 	    errorCodeSet = 1;
 	    goto cleanup;
