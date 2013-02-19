@@ -1063,9 +1063,10 @@ declare 288 {
 declare 289 {
     void Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
-declare 290 {
-    void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
-}
+# Removed in 9.0:
+#declare 290 {
+#    void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
+#}
 declare 291 {
     int Tcl_EvalEx(Tcl_Interp *interp, const char *script, int numBytes,
 	    int flags)
@@ -1146,12 +1147,14 @@ declare 313 {
     int Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead,
 	    int appendFlag)
 }
-declare 314 {
-    void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
-}
-declare 315 {
-    void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
-}
+# Removed in 9.0:
+#declare 314 {
+#    void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
+#}
+# Removed in 9.0:
+#declare 315 {
+#    void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
+#}
 declare 316 {
     int Tcl_SetSystemEncoding(Tcl_Interp *interp, const char *name)
 }
