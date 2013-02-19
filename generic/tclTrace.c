@@ -1481,7 +1481,11 @@ TclCheckExecutionTraces(
     }
     iPtr->activeCmdTracePtr = active.nextPtr;
     if (state) {
-	(void) Tcl_RestoreInterpState(interp, state);
+	if (traceCode == TCL_OK) {
+	    traceCode = Tcl_RestoreInterpState(interp, state);
+	} else {
+	    Tcl_DiscardInterpState(state);
+	}
     }
 
     return(traceCode);
@@ -1628,7 +1632,7 @@ TclCheckInterpTraces(
     iPtr->activeInterpTracePtr = active.nextPtr;
     if (state) {
 	if (traceCode == TCL_OK) {
-	    (void) Tcl_RestoreInterpState(interp, state);
+	    traceCode = Tcl_RestoreInterpState(interp, state);
 	} else {
 	    Tcl_DiscardInterpState(state);
 	}
@@ -2722,7 +2726,7 @@ TclCallVarTraces(
 	    iPtr->flags &= ~(ERR_ALREADY_LOGGED);
 	    Tcl_DiscardInterpState(state);
 	} else {
-	    (void) Tcl_RestoreInterpState((Tcl_Interp *)iPtr, state);
+	    code = Tcl_RestoreInterpState((Tcl_Interp *)iPtr, state);
 	}
 	DisposeTraceResult(disposeFlags,result);
     } else if (state) {
