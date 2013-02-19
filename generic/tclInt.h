@@ -265,17 +265,10 @@ typedef struct Namespace {
     TclVarHashTable varTable;	/* Contains all the (global) variables
 				 * currently in this namespace. Indexed by
 				 * strings; values have type (Var *). */
-    char **exportArrayPtr;	/* Points to an array of string patterns
-				 * specifying which commands are exported. A
-				 * pattern may include "string match" style
-				 * wildcard characters to specify multiple
-				 * commands; however, no namespace qualifiers
-				 * are allowed. NULL if no export patterns are
-				 * registered. */
-    int numExportPatterns;	/* Number of export patterns currently
-				 * registered using "namespace export". */
-    int maxExportPatterns;	/* Mumber of export patterns for which space
-				 * is currently allocated. */
+    Tcl_Obj *exportPatternList;
+				/* Set of "string match" style patterns that
+				 * specify which commands are exported. 
+				 * No namespace qualifiers are allowed. */
     int cmdRefEpoch;		/* Incremented if a newly added command
 				 * shadows a command for which this namespace
 				 * has already cached a Command* pointer; this
@@ -4498,7 +4491,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateNsCmdLookup(nsPtr) \
-    if ((nsPtr)->numExportPatterns) {		\
+    if ((nsPtr)->exportPatternList) {		\
 	(nsPtr)->exportLookupEpoch++;		\
     }						\
     if ((nsPtr)->commandPathLength) {		\
