@@ -1,3 +1,8 @@
+2013-02-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclTrace.c:  [Bug 2438181]: Incorrect error reporting in
+	* tests/trace.test:    traces. Test-case and fix provided by Poor Yorick.
+
 2013-02-15  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/regc_nfa.c:	[Bug 3604074] Fix regexp optimization to
