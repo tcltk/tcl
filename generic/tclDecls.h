@@ -809,8 +809,7 @@ TCLAPI void		Tcl_CreateThreadExitHandler(Tcl_ExitProc *proc,
 /* 289 */
 TCLAPI void		Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc,
 				ClientData clientData);
-/* 290 */
-TCLAPI void		Tcl_DiscardResult(Tcl_SavedResult *statePtr);
+/* Slot 290 is reserved */
 /* 291 */
 TCLAPI int		Tcl_EvalEx(Tcl_Interp *interp, const char *script,
 				int numBytes, int flags);
@@ -874,12 +873,8 @@ TCLAPI int		Tcl_NumUtfChars(const char *src, int length);
 /* 313 */
 TCLAPI int		Tcl_ReadChars(Tcl_Channel channel, Tcl_Obj *objPtr,
 				int charsToRead, int appendFlag);
-/* 314 */
-TCLAPI void		Tcl_RestoreResult(Tcl_Interp *interp,
-				Tcl_SavedResult *statePtr);
-/* 315 */
-TCLAPI void		Tcl_SaveResult(Tcl_Interp *interp,
-				Tcl_SavedResult *statePtr);
+/* Slot 314 is reserved */
+/* Slot 315 is reserved */
 /* 316 */
 TCLAPI int		Tcl_SetSystemEncoding(Tcl_Interp *interp,
 				const char *name);
@@ -2072,7 +2067,7 @@ typedef struct TclStubs {
     Tcl_Encoding (*tcl_CreateEncoding) (const Tcl_EncodingType *typePtr); /* 287 */
     void (*tcl_CreateThreadExitHandler) (Tcl_ExitProc *proc, ClientData clientData); /* 288 */
     void (*tcl_DeleteThreadExitHandler) (Tcl_ExitProc *proc, ClientData clientData); /* 289 */
-    void (*tcl_DiscardResult) (Tcl_SavedResult *statePtr); /* 290 */
+    void (*reserved290)(void);
     int (*tcl_EvalEx) (Tcl_Interp *interp, const char *script, int numBytes, int flags); /* 291 */
     int (*tcl_EvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 292 */
     int (*tcl_EvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 293 */
@@ -2096,8 +2091,8 @@ typedef struct TclStubs {
     void (*tcl_ConditionWait) (Tcl_Condition *condPtr, Tcl_Mutex *mutexPtr, const Tcl_Time *timePtr); /* 311 */
     int (*tcl_NumUtfChars) (const char *src, int length); /* 312 */
     int (*tcl_ReadChars) (Tcl_Channel channel, Tcl_Obj *objPtr, int charsToRead, int appendFlag); /* 313 */
-    void (*tcl_RestoreResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 314 */
-    void (*tcl_SaveResult) (Tcl_Interp *interp, Tcl_SavedResult *statePtr); /* 315 */
+    void (*reserved314)(void);
+    void (*reserved315)(void);
     int (*tcl_SetSystemEncoding) (Tcl_Interp *interp, const char *name); /* 316 */
     Tcl_Obj * (*tcl_SetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, Tcl_Obj *newValuePtr, int flags); /* 317 */
     void (*tcl_ThreadAlert) (Tcl_ThreadId threadId); /* 318 */
@@ -3003,8 +2998,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_CreateThreadExitHandler) /* 288 */
 #define Tcl_DeleteThreadExitHandler \
 	(tclStubsPtr->tcl_DeleteThreadExitHandler) /* 289 */
-#define Tcl_DiscardResult \
-	(tclStubsPtr->tcl_DiscardResult) /* 290 */
+/* Slot 290 is reserved */
 #define Tcl_EvalEx \
 	(tclStubsPtr->tcl_EvalEx) /* 291 */
 #define Tcl_EvalObjv \
@@ -3051,10 +3045,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_NumUtfChars) /* 312 */
 #define Tcl_ReadChars \
 	(tclStubsPtr->tcl_ReadChars) /* 313 */
-#define Tcl_RestoreResult \
-	(tclStubsPtr->tcl_RestoreResult) /* 314 */
-#define Tcl_SaveResult \
-	(tclStubsPtr->tcl_SaveResult) /* 315 */
+/* Slot 314 is reserved */
+/* Slot 315 is reserved */
 #define Tcl_SetSystemEncoding \
 	(tclStubsPtr->tcl_SetSystemEncoding) /* 316 */
 #define Tcl_SetVar2Ex \
@@ -3691,15 +3683,15 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_GetStringResult
 #   undef Tcl_Init
 #   undef Tcl_SetPanicProc
-#   undef Tcl_SetVar2
+#   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
 #   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
 #   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
-#   define Tcl_SetVar2(interp, part1, part2, newValue, flags) \
-	    (tclStubsPtr->tcl_SetVar2(interp, part1, part2, newValue, flags))
+#   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
+	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif
 
 #if defined(_WIN32) && defined(UNICODE)
@@ -3734,6 +3726,20 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), -1))
 #define Tcl_AddObjErrorInfo(interp, message, length) \
 	Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), length))
+#define Tcl_SaveResult(interp, statePtr) \
+	do { \
+	    *(statePtr) = Tcl_GetObjResult(interp); \
+	    Tcl_IncrRefCount(*(statePtr)); \
+	    Tcl_SetObjResult((interp), Tcl_NewObj()); \
+	} while(0)
+#define Tcl_RestoreResult(interp, statePtr) \
+	do { \
+	    Tcl_ResetResult(interp); \
+   	    Tcl_SetObjResult((interp), *(statePtr)); \
+   	    Tcl_DecrRefCount(*(statePtr)); \
+	} while(0)
+#define Tcl_DiscardResult(statePtr) \
+	Tcl_DecrRefCount(*(statePtr))
 
 /*
  * Deprecated Tcl procedures:

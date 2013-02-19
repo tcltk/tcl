@@ -690,14 +690,11 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following structure contains the state needed by Tcl_SaveResult. No-one
- * outside of Tcl should access any of these fields. This structure is
- * typically allocated on the stack.
+ * The following type contains the state needed by Tcl_SaveResult. This
+ * structure is typically allocated on the stack.
  */
 
-typedef struct Tcl_SavedResult {
-    Tcl_Obj *objResultPtr;
-} Tcl_SavedResult;
+typedef Tcl_Obj *Tcl_SavedResult;
 
 /*
  *----------------------------------------------------------------------------

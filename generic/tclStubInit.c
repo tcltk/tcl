@@ -950,7 +950,7 @@ const TclStubs tclStubs = {
     Tcl_CreateEncoding, /* 287 */
     Tcl_CreateThreadExitHandler, /* 288 */
     Tcl_DeleteThreadExitHandler, /* 289 */
-    Tcl_DiscardResult, /* 290 */
+    0, /* 290 */
     Tcl_EvalEx, /* 291 */
     Tcl_EvalObjv, /* 292 */
     Tcl_EvalObjEx, /* 293 */
@@ -974,8 +974,8 @@ const TclStubs tclStubs = {
     Tcl_ConditionWait, /* 311 */
     Tcl_NumUtfChars, /* 312 */
     Tcl_ReadChars, /* 313 */
-    Tcl_RestoreResult, /* 314 */
-    Tcl_SaveResult, /* 315 */
+    0, /* 314 */
+    0, /* 315 */
     Tcl_SetSystemEncoding, /* 316 */
     Tcl_SetVar2Ex, /* 317 */
     Tcl_ThreadAlert, /* 318 */
