@@ -2861,13 +2861,13 @@ EnterCmdStartData(
     int srcOffset,		/* Offset of first char of the command. */
     int codeOffset)		/* Offset of first byte of command code. */
 {
-    CmdLocation cmdLoc;
+    CmdLocation *cmdLocPtr;
 
-    cmdLoc.codeOffset = codeOffset;
-    cmdLoc.srcOffset = srcOffset;
-    cmdLoc.numSrcBytes = -1;
-    cmdLoc.numCodeBytes = -1;
-    envPtr->cmdMap = BA_CmdLocation_Append(envPtr->cmdMap, &cmdLoc);
+    envPtr->cmdMap = BA_CmdLocation_Append(envPtr->cmdMap, &cmdLocPtr);
+    cmdLocPtr->codeOffset = codeOffset;
+    cmdLocPtr->srcOffset = srcOffset;
+    cmdLocPtr->numSrcBytes = -1;
+    cmdLocPtr->numCodeBytes = -1;
 
 }
 

@@ -110,7 +110,7 @@ void
 Tcl_Preserve(
     ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
-    Reference *refPtr, newRef;
+    Reference *refPtr;
 
     /*
      * See if there is already a reference for this pointer. If so, just
@@ -135,10 +135,10 @@ Tcl_Preserve(
      * Make a new entry for the new reference.
      */
 
-    newRef.clientData = clientData;
-    newRef.refCount = 1;
-    newRef.freeProc = NULL;
-    refArray = BA_Reference_Append(refArray, &newRef);
+    refArray = BA_Reference_Append(refArray, &refPtr);
+    refPtr->clientData = clientData;
+    refPtr->refCount = 1;
+    refPtr->freeProc = NULL;
     Tcl_MutexUnlock(&preserveMutex);
 }
 
@@ -175,7 +175,7 @@ Tcl_Release(
 
     while ((refPtr = BA_Reference_At(refArray, i++))) {
 	Tcl_FreeProc *freeProc;
-	Reference lastRef;
+	Reference *lastRefPtr;
 
 	if (refPtr->clientData != clientData) {
 	    continue;
@@ -194,9 +194,9 @@ Tcl_Release(
 	 */
 
 	freeProc = refPtr->freeProc;
-	refArray = BA_Reference_Detach(refArray, &lastRef);
-	if (lastRef.clientData != clientData) {
-	    *refPtr = lastRef;
+	refArray = BA_Reference_Detach(refArray, &lastRefPtr);
+	if (refPtr != lastRefPtr) {
+	    *refPtr = *lastRefPtr;
 	}
 
 	/*

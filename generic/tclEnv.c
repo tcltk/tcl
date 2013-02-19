@@ -616,7 +616,7 @@ ReplaceString(
 
 	while ((p = BA_pchar_At(env.cachePtr, i++))) {
 	    if (*p == oldStr) {
-		pchar lastString = NULL;
+		pchar *lastPtr;
 
 		ckfree(*p);
 
@@ -625,9 +625,9 @@ ReplaceString(
 		    return;
 		}
 
-		env.cachePtr = BA_pchar_Detach(env.cachePtr, &lastString);
-		if (lastString != oldStr) {
-		    *p = lastString;
+		env.cachePtr = BA_pchar_Detach(env.cachePtr, &lastPtr);
+		if (p != lastPtr) {
+		    *p = *lastPtr;
 		}
 		return;
 	    }
@@ -635,7 +635,9 @@ ReplaceString(
     }
 
     if (newStr) {
-	env.cachePtr = BA_pchar_Append(env.cachePtr, &newStr);
+	pchar *newPtr;
+	env.cachePtr = BA_pchar_Append(env.cachePtr, &newPtr);
+	*newPtr = newStr;
     }
 }
 

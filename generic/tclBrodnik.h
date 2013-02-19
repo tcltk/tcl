@@ -16,7 +16,7 @@
  * T is the type of the elements to be stored, which is the argument of
  * the macro.  
  *
- * The BroknikArray data structure is adapted from Andrej Brodnik et al.,
+ * The BrodnikArray data structure is adapted from Andrej Brodnik et al.,
  * "Resizable Arrays in Optimal Time and Space", from the Proceedings of
  * the 1999 Workshop on Algorithms and Data Structures, Lecture Notes
  * in Computer Science (LNCS) vol. 1663, pp. 37-48.
@@ -116,7 +116,7 @@ BA_ ## T ## _Shrink(							\
 static BA_ ## T *							\
 BA_ ## T ## _Append(							\
     BA_ ## T *a,							\
-    T *elemPtr)								\
+    T **elemPtrPtr)							\
 {									\
     size_t hi, lo;							\
 									\
@@ -124,7 +124,7 @@ BA_ ## T ## _Append(							\
 	a = BA_ ## T ## _Grow(a);					\
     }									\
     TclBAConvertIndices(a->used, &hi, &lo);				\
-    a->store[hi][lo] = *elemPtr;					\
+    *elemPtrPtr = a->store[hi] + lo;					\
     a->used++;								\
     return a;								\
 }									\
@@ -132,16 +132,17 @@ BA_ ## T ## _Append(							\
 static BA_ ## T *							\
 BA_ ## T ## _Detach(							\
     BA_ ## T *a,							\
-    T *elemPtr)								\
+    T **elemPtrPtr)							\
 {									\
     size_t hi, lo;							\
 									\
     if (a->used == 0) {							\
+	*elemPtrPtr = NULL;						\
 	return a;							\
     }									\
     a->used--;								\
     TclBAConvertIndices(a->used, &hi, &lo);				\
-    *elemPtr = a->store[hi][lo];					\
+    *elemPtrPtr = a->store[hi] + lo;					\
     if (lo || (hi == a->dbused - 1)) {					\
 	return a;							\
     }									\
