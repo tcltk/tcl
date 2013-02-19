@@ -1453,6 +1453,70 @@ Tcl_AppendExportList(
 /*
  *----------------------------------------------------------------------
  *
+ * TclFillTableWithExports --
+ *
+ *	Discover what commands are actually exported by *nsPtr.
+ *	What we have is an array of patterns and a hash table whose keys
+ *	are the command names defined in the namespace (the contents do
+ *	not matter here.) We must find out what commands are actually
+ *	exported by filtering each command in the namespace against each of
+ *	the patterns in the export list.  Store the exported command
+ * 	set in hash, with fully qualified command prefix as value.
+ *
+ *	Suggestion for future enhancement: compute the unique prefixes and
+ *	place them in the hash too, which should make for even faster
+ *	matching.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFillTableWithExports(
+    Namespace *nsPtr,
+    Tcl_HashTable *hash)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+
+    for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+	char *nsCmdName = Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+	int i;
+
+        for (i = 0; i < nsPtr->numExportPatterns; i++) {
+	    if (Tcl_StringMatch(nsCmdName, nsPtr->exportArrayPtr[i])) {
+		int isNew;
+		Tcl_HashEntry *exportPtr = Tcl_CreateHashEntry(hash,
+			nsCmdName, &isNew);
+
+		/*
+		 * Remember, hash entries have a full reference to the
+		 * substituted part of the command (as a list) as their
+		 * content!
+		 */
+
+		if (isNew) {
+		    Tcl_Obj *cmdObj, *cmdPrefixObj;
+
+		    TclNewObj(cmdObj);
+		    Tcl_AppendStringsToObj(cmdObj, nsPtr->fullName,
+			    (nsPtr->parentPtr ? "::" : ""), nsCmdName, NULL);
+		    cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
+		    Tcl_SetHashValue(exportPtr, cmdPrefixObj);
+		    Tcl_IncrRefCount(cmdPrefixObj);
+		}
+		break;
+	    }
+	}
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_Import --
  *
  *	Imports all of the commands matching a pattern into the namespace
