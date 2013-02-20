@@ -3157,8 +3157,7 @@ NamespaceExportCmd(dummy, interp, objc, objv)
      */
 
     firstArg = 2;
-    if ((objc > firstArg)
-	    && (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0)) {
+    if (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0) {
 	Tcl_Export(interp, NULL, "::", 1);
 	Tcl_ResetResult(interp);
 	firstArg++;
