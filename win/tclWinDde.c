@@ -385,7 +385,8 @@ DdeSetServerName(
 		    Tcl_DStringSetLength(&dString, offset + sizeof(TCHAR) * TCL_INTEGER_SPACE);
 		    actualName = (TCHAR *) Tcl_DStringValue(&dString);
 		}
-		_stprintf((TCHAR *) (Tcl_DStringValue(&dString) + offset), TEXT("%d"), suffix);
+		_sntprintf((TCHAR *) (Tcl_DStringValue(&dString) + offset),
+			TCL_INTEGER_SPACE, TEXT("%d"), suffix);
 	    }
 
 	    /*
