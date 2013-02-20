@@ -1,3 +1,8 @@
+2013-02-20  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c: [Bug 3605401]: Compiler error with latest mingw-w64
+	headers.
+
 2013-02-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclTrace.c:  [Bug 2438181]: Incorrect error reporting in
