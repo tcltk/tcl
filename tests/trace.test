@@ -1670,6 +1670,16 @@ test trace-21.11 {trace execution and alias} -setup {
     rename ::x {}
 } -result {:: ::}
 
+proc set2 args {
+    set {*}$args
+}
+
+test trace-21.12 {bug 2438181} -setup {
+    trace add execution set2 leave {puts one two three #;}
+} -body {
+    set2 a hello
+} -returnCodes 1 -result {wrong # args: should be "puts ?-nonewline? ?channelId? string"}
+
 proc factorial {n} {
     if {$n != 1} { return [expr {$n * [factorial [expr {$n -1 }]]}] }
     return 1
