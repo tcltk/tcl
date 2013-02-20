@@ -1032,7 +1032,7 @@ Tcl_AppendExportList(interp, namespacePtr, objPtr)
      */
 
     if (namespacePtr == NULL) {
-        nsPtr = (Namespace *) (Namespace *) Tcl_GetCurrentNamespace(interp);
+        nsPtr = (Namespace *) Tcl_GetCurrentNamespace(interp);
     } else {
         nsPtr = (Namespace *) namespacePtr;
     }
@@ -3131,10 +3131,7 @@ NamespaceExportCmd(dummy, interp, objc, objv)
     int objc;			/* Number of arguments. */
     Tcl_Obj *CONST objv[];	/* Argument objects. */
 {
-    Namespace *currNsPtr = (Namespace*) Tcl_GetCurrentNamespace(interp);
-    char *pattern, *string;
-    int resetListFirst = 0;
-    int firstArg, patternCt, i, result;
+    int firstArg, i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 2, objv,
@@ -3143,37 +3140,28 @@ NamespaceExportCmd(dummy, interp, objc, objv)
     }
 
     /*
-     * Process the optional "-clear" argument.
-     */
-
-    firstArg = 2;
-    if (firstArg < objc) {
-	string = Tcl_GetString(objv[firstArg]);
-	if (strcmp(string, "-clear") == 0) {
-	    resetListFirst = 1;
-	    firstArg++;
-	}
-    }
-
-    /*
      * If no pattern arguments are given, and "-clear" isn't specified,
      * return the namespace's current export pattern list.
      */
 
-    patternCt = (objc - firstArg);
-    if (patternCt == 0) {
-	if (firstArg > 2) {
-	    return TCL_OK;
-	} else {		/* create list with export patterns */
-	    Tcl_Obj *listPtr = Tcl_NewListObj(0, (Tcl_Obj **) NULL);
-	    result = Tcl_AppendExportList(interp,
-		    (Tcl_Namespace *) currNsPtr, listPtr);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	    Tcl_SetObjResult(interp, listPtr);
-	    return TCL_OK;
-	}
+    if (objc == 2) {
+	Tcl_Obj *listPtr = Tcl_NewObj();
+
+	(void) Tcl_AppendExportList(interp, NULL, listPtr);
+	Tcl_SetObjResult(interp, listPtr);
+	return TCL_OK;
+    }
+
+    /*
+     * Process the optional "-clear" argument.
+     */
+
+    firstArg = 2;
+    if ((objc > firstArg)
+	    && (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0)) {
+	Tcl_Export(interp, NULL, "::", 1);
+	Tcl_ResetResult(interp);
+	firstArg++;
     }
 
     /*
@@ -3181,9 +3169,7 @@ NamespaceExportCmd(dummy, interp, objc, objv)
      */
     
     for (i = firstArg;  i < objc;  i++) {
-	pattern = Tcl_GetString(objv[i]);
-	result = Tcl_Export(interp, (Tcl_Namespace *) currNsPtr, pattern,
-		((i == firstArg)? resetListFirst : 0));
+	int result = Tcl_Export(interp, NULL, Tcl_GetString(objv[i]), 0);
         if (result != TCL_OK) {
             return result;
         }
