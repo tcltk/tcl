@@ -5,7 +5,7 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 .so man.macros
-.TH Tcl_InitSubsystems 3 8.6 Tcl "Tcl Library Procedures"
+.TH Tcl_InitSubsystems 3 8.6.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
 Tcl_InitSubsystems \- initialize the Tcl library.
@@ -25,7 +25,7 @@ The value 0 can be used if Tcl is used as utility library only.
 
 .SH DESCRIPTION
 .PP
-The \fBfBTcl_InitSubsystems\fR procedure initializes the Tcl
+The \fBTcl_InitSubsystems\fR procedure initializes the Tcl
 library. This procedure is typically invoked as the very
 first thing in the application's main program.
 Its \fBflags\fR argument controls exactly what is initialized,
@@ -40,23 +40,23 @@ load the Tcl shared library and use functions in it
 without ever creating an interpreter. E.g. the
 following code can be compiled with -DUSE_TCL_STUBS:
 .CS
-    Tcl_Interp *interp, *(*initSubSystems)(int, ...);
-    const char *version;
-    void *handle = dlopen("libtcl8.6.so", RTLD_NOW|RTLD_LOCAL);
-    initSubSystems = dlsym(handle, "Tcl_InitSubsystems");
-    version = Tcl_InitStubs(initSubSystems(0), NULL, 0);
-    /* At this point, Tcl C API calls without interp are ready for use */
-    interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
-    Tcl_InitStubs(interp, version, 0); /* Initialize the stub table again */
+Tcl_Interp *interp, *(*initSubSystems)(int, ...);
+const char *version;
+void *handle = dlopen("libtcl8.6.so", RTLD_NOW|RTLD_LOCAL);
+initSubSystems = dlsym(handle, "Tcl_InitSubsystems");
+version = Tcl_InitStubs(initSubSystems(0), NULL, 0);
+/* At this point, Tcl C API calls without interp are ready for use */
+interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
+Tcl_InitStubs(interp, version, 0); /* Initialize the stub table again */
 .CE
 This is equivalent to (without dynamical loading)
 .CS
-    Tcl_Interp *interp;
-    const char *version;
-    version = Tcl_InitStubs(Tcl_InitSubSystems(0), NULL, 0);
-    /* At this point, Tcl C API calls without interp are ready for use */
-    interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
-    Tcl_InitStubs(interp, version, 0); /* Initialize the stub table again */
+Tcl_Interp *interp;
+const char *version;
+version = Tcl_InitStubs(Tcl_InitSubSystems(0), NULL, 0);
+/* At this point, Tcl C API calls without interp are ready for use */
+interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
+Tcl_InitStubs(interp, version, 0); /* Initialize the stub table again */
 .CE
 The function \fBTcl_CreateInterp\fR, or any other Tcl function you
 would like to call, no longer needs to be searched for in the
@@ -83,18 +83,18 @@ variants assume a different encoding for the arguments, except for
 \fIargv[0]\fR which is always assumed to be in the system encoding.
 So, the above example code could be simplified to:
 .CS
-    Tcl_Interp *interp = Tcl_InitSubSystems(TCL_INIT_CREATE, 0, NULL);
-    Tcl_InitStubs(interp, TCL_VERSION, 0); /* initialize the stub table */
+Tcl_Interp *interp = Tcl_InitSubSystems(TCL_INIT_CREATE, 0, NULL);
+Tcl_InitStubs(interp, TCL_VERSION, 0); /* initialize the stub table */
 .CE
 .PP
 If the \fBTCL_INIT_PANIC\fR and one of the \fBTCL_INIT_CREATE\fR
 flags are used in combination, the \fBpanicProc\fR argument comes
-before the \fBargc\fR/\fBargv\fR arguments.
+before the argc/argv arguments.
 .PP
-The reason for \fBargv0\fR always using the system encoding is that this way,
-argv0 can be derived directly from the main() (or mainw, on Windows)
+The reason for \fBargv[0]\fR always using the system encoding is that this way,
+argv[0] can be derived directly from the main() (or mainw, on Windows)
 arguments without any processing. \fBTCL_INIT_CREATE_UNICODE\fR is really only
-useful on Windows. But on Windows, the argv0 parameter is not used for
+useful on Windows. But on Windows, the argv[0] parameter is not used for
 determining the value of [info executable] anyway. Modern UNIX system already
 have UTF-8 as system encoding, so \fBTCL_INIT_CREATE_UTF8\fR would have the same
 effect as \fBTCL_INIT_CREATE\fR, only slightly faster. Other parameters can be

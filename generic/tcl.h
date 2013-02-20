@@ -2409,7 +2409,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * TODO - tommath stubs export goes here!
  */
 
-/* Tcl_InitSubsystems, see TIP ??? */
+/* Tcl_InitSubsystems, see TIP 414 */
 
 #define TCL_INIT_PANIC (1) /* Set Panic proc */
 #define TCL_INIT_CREATE (48) /* Call Tcl_CreateInterp(), and set argc/argv */
