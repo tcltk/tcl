@@ -499,9 +499,7 @@ TCLAPI Tcl_Interp *	Tcl_GetSlave(Tcl_Interp *interp,
 TCLAPI Tcl_Channel	Tcl_GetStdChannel(int type);
 /* 174 */
 TCLAPI const char *	Tcl_GetStringResult(Tcl_Interp *interp);
-/* 175 */
-TCLAPI const char *	Tcl_GetVar(Tcl_Interp *interp, const char *varName,
-				int flags);
+/* Slot 175 is reserved */
 /* 176 */
 TCLAPI const char *	Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 				const char *part2, int flags);
@@ -656,9 +654,7 @@ TCLAPI void		Tcl_SetObjResult(Tcl_Interp *interp,
 				Tcl_Obj *resultObjPtr);
 /* 236 */
 TCLAPI void		Tcl_SetStdChannel(Tcl_Channel channel, int type);
-/* 237 */
-TCLAPI const char *	Tcl_SetVar(Tcl_Interp *interp, const char *varName,
-				const char *newValue, int flags);
+/* Slot 237 is reserved */
 /* 238 */
 TCLAPI const char *	Tcl_SetVar2(Tcl_Interp *interp, const char *part1,
 				const char *part2, const char *newValue,
@@ -684,10 +680,7 @@ TCLAPI void		Tcl_StaticPackage(Tcl_Interp *interp,
 /* 245 */
 TCLAPI int		Tcl_StringMatch(const char *str, const char *pattern);
 /* Slot 246 is reserved */
-/* 247 */
-TCLAPI int		Tcl_TraceVar(Tcl_Interp *interp, const char *varName,
-				int flags, Tcl_VarTraceProc *proc,
-				ClientData clientData);
+/* Slot 247 is reserved */
 /* 248 */
 TCLAPI int		Tcl_TraceVar2(Tcl_Interp *interp, const char *part1,
 				const char *part2, int flags,
@@ -705,9 +698,7 @@ TCLAPI void		Tcl_UnlinkVar(Tcl_Interp *interp,
 /* 252 */
 TCLAPI int		Tcl_UnregisterChannel(Tcl_Interp *interp,
 				Tcl_Channel chan);
-/* 253 */
-TCLAPI int		Tcl_UnsetVar(Tcl_Interp *interp, const char *varName,
-				int flags);
+/* Slot 253 is reserved */
 /* 254 */
 TCLAPI int		Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1,
 				const char *part2, int flags);
@@ -1952,7 +1943,7 @@ typedef struct TclStubs {
     Tcl_Interp * (*tcl_GetSlave) (Tcl_Interp *interp, const char *slaveName); /* 172 */
     Tcl_Channel (*tcl_GetStdChannel) (int type); /* 173 */
     const char * (*tcl_GetStringResult) (Tcl_Interp *interp); /* 174 */
-    const char * (*tcl_GetVar) (Tcl_Interp *interp, const char *varName, int flags); /* 175 */
+    void (*reserved175)(void);
     const char * (*tcl_GetVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 176 */
     void (*reserved177)(void);
     void (*reserved178)(void);
@@ -2014,7 +2005,7 @@ typedef struct TclStubs {
     void (*tcl_SetObjErrorCode) (Tcl_Interp *interp, Tcl_Obj *errorObjPtr); /* 234 */
     void (*tcl_SetObjResult) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr); /* 235 */
     void (*tcl_SetStdChannel) (Tcl_Channel channel, int type); /* 236 */
-    const char * (*tcl_SetVar) (Tcl_Interp *interp, const char *varName, const char *newValue, int flags); /* 237 */
+    void (*reserved237)(void);
     const char * (*tcl_SetVar2) (Tcl_Interp *interp, const char *part1, const char *part2, const char *newValue, int flags); /* 238 */
     const char * (*tcl_SignalId) (int sig); /* 239 */
     const char * (*tcl_SignalMsg) (int sig); /* 240 */
@@ -2024,13 +2015,13 @@ typedef struct TclStubs {
     void (*tcl_StaticPackage) (Tcl_Interp *interp, const char *pkgName, Tcl_PackageInitProc *initProc, Tcl_PackageInitProc *safeInitProc); /* 244 */
     int (*tcl_StringMatch) (const char *str, const char *pattern); /* 245 */
     void (*reserved246)(void);
-    int (*tcl_TraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 247 */
+    void (*reserved247)(void);
     int (*tcl_TraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 248 */
     char * (*tcl_TranslateFileName) (Tcl_Interp *interp, const char *name, Tcl_DString *bufferPtr); /* 249 */
     int (*tcl_Ungets) (Tcl_Channel chan, const char *str, int len, int atHead); /* 250 */
     void (*tcl_UnlinkVar) (Tcl_Interp *interp, const char *varName); /* 251 */
     int (*tcl_UnregisterChannel) (Tcl_Interp *interp, Tcl_Channel chan); /* 252 */
-    int (*tcl_UnsetVar) (Tcl_Interp *interp, const char *varName, int flags); /* 253 */
+    void (*reserved253)(void);
     int (*tcl_UnsetVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 254 */
     void (*tcl_UntraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 255 */
     void (*tcl_UntraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 256 */
@@ -2778,8 +2769,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetStdChannel) /* 173 */
 #define Tcl_GetStringResult \
 	(tclStubsPtr->tcl_GetStringResult) /* 174 */
-#define Tcl_GetVar \
-	(tclStubsPtr->tcl_GetVar) /* 175 */
+/* Slot 175 is reserved */
 #define Tcl_GetVar2 \
 	(tclStubsPtr->tcl_GetVar2) /* 176 */
 /* Slot 177 is reserved */
@@ -2898,8 +2888,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SetObjResult) /* 235 */
 #define Tcl_SetStdChannel \
 	(tclStubsPtr->tcl_SetStdChannel) /* 236 */
-#define Tcl_SetVar \
-	(tclStubsPtr->tcl_SetVar) /* 237 */
+/* Slot 237 is reserved */
 #define Tcl_SetVar2 \
 	(tclStubsPtr->tcl_SetVar2) /* 238 */
 #define Tcl_SignalId \
@@ -2917,8 +2906,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_StringMatch \
 	(tclStubsPtr->tcl_StringMatch) /* 245 */
 /* Slot 246 is reserved */
-#define Tcl_TraceVar \
-	(tclStubsPtr->tcl_TraceVar) /* 247 */
+/* Slot 247 is reserved */
 #define Tcl_TraceVar2 \
 	(tclStubsPtr->tcl_TraceVar2) /* 248 */
 #define Tcl_TranslateFileName \
@@ -2929,8 +2917,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UnlinkVar) /* 251 */
 #define Tcl_UnregisterChannel \
 	(tclStubsPtr->tcl_UnregisterChannel) /* 252 */
-#define Tcl_UnsetVar \
-	(tclStubsPtr->tcl_UnsetVar) /* 253 */
+/* Slot 253 is reserved */
 #define Tcl_UnsetVar2 \
 	(tclStubsPtr->tcl_UnsetVar2) /* 254 */
 #define Tcl_UntraceVar \
@@ -3740,6 +3727,14 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	} while(0)
 #define Tcl_DiscardResult(statePtr) \
 	Tcl_DecrRefCount(*(statePtr))
+#define Tcl_SetVar(interp, varName, newValue, flags) \
+	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
+#define Tcl_UnsetVar(interp, varName, flags) \
+	Tcl_UnsetVar2(interp, varName, NULL, flags)
+#define Tcl_GetVar(interp, varName, flags) \
+	Tcl_GetVar2(interp, varName, NULL, flags)
+#define Tcl_TraceVar(interp, varName, flags, proc, clientData) \
+	Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData)
 
 /*
  * Deprecated Tcl procedures:
