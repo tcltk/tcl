@@ -11,8 +11,9 @@
  */
 
 #undef STATIC_BUILD
-#undef USE_TCL_STUBS
-#define USE_TCL_STUBS
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
