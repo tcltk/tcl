@@ -454,8 +454,7 @@ Tcl_CreateNamespace(interp, name, clientData, deleteProc)
 	 * Find the parent for the new namespace.
 	 */
 
-	TclGetNamespaceForQualName(interp, name, (Namespace *) NULL,
-		/*flags*/ (CREATE_NS_IF_UNKNOWN | TCL_LEAVE_ERR_MSG),
+	TclGetNamespaceForQualName(interp, name, NULL, CREATE_NS_IF_UNKNOWN,
 		&parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
 
 	/*
@@ -930,8 +929,7 @@ Tcl_Export(interp, namespacePtr, pattern, resetListFirst)
      * Check that the pattern doesn't have namespace qualifiers.
      */
 
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &exportNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
@@ -1158,8 +1156,7 @@ Tcl_Import(interp, namespacePtr, pattern, allowOverwrite)
 	        "empty import pattern", -1);
         return TCL_ERROR;
     }
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &importNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (importNsPtr == NULL) {
@@ -1363,8 +1360,7 @@ Tcl_ForgetImport(interp, namespacePtr, pattern)
      * and the simple pattern.
      */
 
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &sourceNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (sourceNsPtr == NULL) {
