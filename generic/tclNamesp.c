@@ -3472,7 +3472,10 @@ NamespaceExportCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int firstArg, i;
+    Namespace *nsPtr;
+    Tcl_Obj *dict, *value;
+    int startSize, endSize, firstArg, i, changed = 0;
+    int code = TCL_OK;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-clear? ?pattern pattern...?");
@@ -3484,11 +3487,12 @@ NamespaceExportCmd(
      * the namespace's current export pattern list.
      */
 
+    nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     if (objc == 1) {
-	Tcl_Obj *listPtr = Tcl_NewObj();
-
-	(void) Tcl_AppendExportList(interp, NULL, listPtr);
-	Tcl_SetObjResult(interp, listPtr);
+	if (nsPtr->exportPatternList) {
+	    Tcl_SetObjResult(interp,
+		    TclListObjCopy(NULL, nsPtr->exportPatternList));
+	}
 	return TCL_OK;
     }
 
@@ -3498,25 +3502,81 @@ NamespaceExportCmd(
 
     firstArg = 1;
     if (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0) {
-	Tcl_Export(interp, NULL, "::", 1);
-	Tcl_ResetResult(interp);
+	if (nsPtr->exportPatternList) {
+	    Tcl_DecrRefCount(nsPtr->exportPatternList);
+	    nsPtr->exportPatternList = NULL;
+	    changed = 1;
+	}
 	firstArg++;
     }
 
     /*
      * Add each pattern to the namespace's export pattern list.
+     * Use a dict as a simple way to screen out duplicates.
      */
 
-    /* TODO: rewrite to append all in one step; stop calling impoverished
-     * string-based Tcl_Export().  Bleah. */
+    dict = Tcl_NewDictObj();
+    value = Tcl_NewObj();
+    Tcl_IncrRefCount(value);
+    if (nsPtr->exportPatternList) {
+	int epc;
+	Tcl_Obj **epv;
 
-    for (i = firstArg;  i < objc;  i++) {
-	int result = Tcl_Export(interp, NULL, Tcl_GetString(objv[i]), 0);
-	if (result != TCL_OK) {
-	    return result;
+	Tcl_ListObjGetElements(NULL, nsPtr->exportPatternList, &epc, &epv);
+	while (epc--) {
+	    Tcl_DictObjPut(NULL, dict, *epv++, value);
 	}
     }
-    return TCL_OK;
+    Tcl_DictObjSize(NULL, dict, &startSize);
+
+    for (i = firstArg;  i < objc;  i++) {
+	Namespace *exportNsPtr, *dummyPtr;
+	const char *simplePattern, *pattern = Tcl_GetString(objv[i]);
+
+	TclGetNamespaceForQualName(interp, pattern, nsPtr,
+		TCL_NAMESPACE_ONLY, &exportNsPtr, &dummyPtr, &dummyPtr,
+		&simplePattern);
+
+	if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("invalid export pattern"
+		    " \"%s\": pattern can't specify a namespace", pattern));
+	    Tcl_SetErrorCode(interp, "TCL", "EXPORT", "INVALID", NULL);
+	    code = TCL_ERROR;
+	    break;
+	}
+
+	Tcl_DictObjPut(NULL, dict, objv[i], value);
+    }
+    Tcl_DictObjSize(NULL, dict, &endSize);
+    changed |= (endSize > startSize);
+
+    if (endSize > startSize) {
+	int done;
+	Tcl_Obj *ep;
+	Tcl_DictSearch search;
+
+	if (nsPtr->exportPatternList == NULL) {
+	    nsPtr->exportPatternList = Tcl_NewObj();
+	    Tcl_IncrRefCount(nsPtr->exportPatternList);
+	}
+
+	i = 0;
+	Tcl_DictObjFirst(NULL, dict, &search, &ep, NULL, &done);
+	for (; !done; i++, Tcl_DictObjNext(&search, &ep, NULL, &done)) {
+	    if (i < startSize) {
+		continue;
+	    }
+	    Tcl_ListObjAppendElement(NULL, nsPtr->exportPatternList, ep);
+	}
+	Tcl_DictObjDone(&search);
+    }
+    Tcl_DecrRefCount(value);
+    Tcl_DecrRefCount(dict);
+
+    if (changed) {
+	TclInvalidateNsCmdLookup(nsPtr);
+    }
+    return code;
 }
 
 /*
