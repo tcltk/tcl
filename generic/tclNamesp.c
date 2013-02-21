@@ -760,8 +760,7 @@ Tcl_CreateNamespace(
 	 * Find the parent for the new namespace.
 	 */
 
-	TclGetNamespaceForQualName(interp, name, NULL,
-		/*flags*/ (TCL_CREATE_NS_IF_UNKNOWN | TCL_LEAVE_ERR_MSG),
+	TclGetNamespaceForQualName(interp, name, NULL, TCL_CREATE_NS_IF_UNKNOWN,
 		&parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
 
 	/*
@@ -1277,8 +1276,7 @@ Tcl_Export(
      * Check that the pattern doesn't have namespace qualifiers.
      */
 
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &exportNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
@@ -1491,8 +1489,7 @@ Tcl_Import(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty import pattern", -1));
 	return TCL_ERROR;
     }
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &importNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (importNsPtr == NULL) {
@@ -1730,8 +1727,7 @@ Tcl_ForgetImport(
      * simple pattern.
      */
 
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &sourceNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (sourceNsPtr == NULL) {
@@ -3401,10 +3397,7 @@ NamespaceExportCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    char *pattern, *string;
-    int resetListFirst = 0;
-    int firstArg, patternCt, i, result;
+    int firstArg, i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 2, objv, "?-clear? ?pattern pattern...?");
@@ -3412,41 +3405,27 @@ NamespaceExportCmd(
     }
 
     /*
-     * Process the optional "-clear" argument.
-     */
-
-    firstArg = 2;
-    if (firstArg < objc) {
-	string = TclGetString(objv[firstArg]);
-	if (strcmp(string, "-clear") == 0) {
-	    resetListFirst = 1;
-	    firstArg++;
-	}
-    }
-
-    /*
      * If no pattern arguments are given, and "-clear" isn't specified, return
      * the namespace's current export pattern list.
      */
 
-    patternCt = (objc - firstArg);
-    if (patternCt == 0) {
-	if (firstArg > 2) {
-	    return TCL_OK;
-	} else {
-	    /*
-	     * Create list with export patterns.
-	     */
+    if (objc == 2) {
+	Tcl_Obj *listPtr = Tcl_NewObj();
 
-	    Tcl_Obj *listPtr = Tcl_NewListObj(0, NULL);
-	    result = Tcl_AppendExportList(interp, (Tcl_Namespace *) currNsPtr,
-		    listPtr);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	    Tcl_SetObjResult(interp, listPtr);
-	    return TCL_OK;
-	}
+	(void) Tcl_AppendExportList(interp, NULL, listPtr);
+	Tcl_SetObjResult(interp, listPtr);
+	return TCL_OK;
+    }
+
+    /*
+     * Process the optional "-clear" argument.
+     */
+
+    firstArg = 2;
+    if (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0) {
+	Tcl_Export(interp, NULL, "::", 1);
+	Tcl_ResetResult(interp);
+	firstArg++;
     }
 
     /*
@@ -3454,9 +3433,7 @@ NamespaceExportCmd(
      */
 
     for (i = firstArg;  i < objc;  i++) {
-	pattern = TclGetString(objv[i]);
-	result = Tcl_Export(interp, (Tcl_Namespace *) currNsPtr, pattern,
-		((i == firstArg)? resetListFirst : 0));
+	int result = Tcl_Export(interp, NULL, Tcl_GetString(objv[i]), 0);
 	if (result != TCL_OK) {
 	    return result;
 	}
