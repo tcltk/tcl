@@ -13,6 +13,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
+#include "tclBrodnik.h"
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a
@@ -499,6 +500,8 @@ typedef struct JumpList {
 				 * the operator we're compiling. */
     struct JumpList *next;	/* Point to next item on the stack */
 } JumpList;
+
+TclBrodnikArray(JumpList);
 
 /*
  * Declarations for local functions to this file:
@@ -2252,21 +2255,26 @@ CompileExprTree(
     OpNode *rootPtr = nodePtr;
     int numWords = 0;
     JumpList *jumpPtr = NULL;
+    BA_JumpList *stack = NULL;
     int convert = 1;
 
     while (1) {
 	int next;
-	JumpList *freePtr, *newJump;
 
 	if (nodePtr->mark == MARK_LEFT) {
+	    JumpList *newJump;
+
 	    next = nodePtr->left;
 
 	    switch (nodePtr->lexeme) {
 	    case QUESTION:
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		if (stack == NULL) {
+		    stack = BA_JumpList_Create();
+		}
+		stack = BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		stack = BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		jumpPtr->depth = envPtr->currStackDepth;
@@ -2274,13 +2282,16 @@ CompileExprTree(
 		break;
 	    case AND:
 	    case OR:
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		if (stack == NULL) {
+		    stack = BA_JumpList_Create();
+		}
+		stack = BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		stack = BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		stack = BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		jumpPtr->depth = envPtr->currStackDepth;
@@ -2384,12 +2395,9 @@ CompileExprTree(
 			jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
 		convert |= jumpPtr->convert;
 		envPtr->currStackDepth = jumpPtr->depth + 1;
-		freePtr = jumpPtr;
+		stack = BA_JumpList_Detach(stack, &jumpPtr);
+		stack = BA_JumpList_Detach(stack, &jumpPtr);
 		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
 		break;
 	    case AND:
 	    case OR:
@@ -2411,15 +2419,10 @@ CompileExprTree(
 			127);
 		convert = 0;
 		envPtr->currStackDepth = jumpPtr->depth + 1;
-		freePtr = jumpPtr;
+		stack = BA_JumpList_Detach(stack, &jumpPtr);
+		stack = BA_JumpList_Detach(stack, &jumpPtr);
+		stack = BA_JumpList_Detach(stack, &jumpPtr);
 		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
 		break;
 	    default:
 		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
@@ -2429,6 +2432,9 @@ CompileExprTree(
 	    if (nodePtr == rootPtr) {
 		/* We're done */
 
+		if (stack) {
+		    BA_JumpList_Destroy(stack);
+		}
 		return;
 	    }
 	    nodePtr = nodes + nodePtr->p.parent;
