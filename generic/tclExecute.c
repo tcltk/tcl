@@ -2729,7 +2729,6 @@ TEBCresume(
 	if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 	    srcPtr->internalRep.twoPtrValue.ptr1 = (unsigned char *) pc;
 	    srcPtr->internalRep.twoPtrValue.ptr2 = codePtr;
-	    TclInvalidateStringRep(srcPtr);
 	    iPtr->cmdSourcePtr = srcPtr;
 	}
 
