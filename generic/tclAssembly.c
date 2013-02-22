@@ -886,44 +886,6 @@ CompileAssembleObj(
 	/*
 	 * Assembly failed. Clean up and report the error.
 	 */
-
-	/*
-	 * Free any literals that were constructed for the assembly.
-	 */
-	for (i = 0; i < compEnv.literalArrayNext; i++) {
-	    TclReleaseLiteral(interp, compEnv.literalArrayPtr[i].objPtr);
-	}
-
-	/*
-	 * Free any auxiliary data that was attached to the bytecode
-	 * under construction.
-	 */
-
-	for (i = 0; i < compEnv.auxDataArrayNext; i++) {
-	    auxDataPtr = compEnv.auxDataArrayPtr + i;
-	    if (auxDataPtr->type->freeProc != NULL) {
-		(auxDataPtr->type->freeProc)(auxDataPtr->clientData);
-	    }
-	}
-
-	/*
-	 * TIP 280. If there is extended command line information,
-	 * we need to clean it up.
-	 */
-
-	if (compEnv.extCmdMapPtr != NULL) {
-	    if (compEnv.extCmdMapPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(compEnv.extCmdMapPtr->path);
-	    }
-	    for (i = 0; i < compEnv.extCmdMapPtr->nuloc; ++i) {
-		ckfree(compEnv.extCmdMapPtr->loc[i].line);
-	    }
-	    if (compEnv.extCmdMapPtr->loc != NULL) {
-		ckfree(compEnv.extCmdMapPtr->loc);
-	    }
-	    Tcl_DeleteHashTable(&(compEnv.extCmdMapPtr->litInfo));
-	}
-
 	TclFreeCompileEnv(&compEnv);
 	return NULL;
     }
