@@ -922,7 +922,7 @@ void
 TclFreeCompileEnv(envPtr)
     register CompileEnv *envPtr; /* Points to the CompileEnv structure. */
 {
-    if (envPtr->source) {
+    if (envPtr->iPtr) {
 	/* 
 	 * We never converted to Bytecode, so free the things we would
 	 * have transferred to it.
@@ -1089,7 +1089,7 @@ TclCompileScript(interp, script, numBytes, nested, envPtr)
     int* clNext;
 #endif
 
-    if (envPtr->source == NULL) {
+    if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
     }
 
@@ -1996,7 +1996,7 @@ TclInitByteCodeObj(objPtr, envPtr)
 #endif
     Interp *iPtr;
 
-    if (envPtr->source == NULL) {
+    if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclInitByteCodeObj() called on uninitialized CompileEnv");
     }
 
@@ -2121,7 +2121,7 @@ TclInitByteCodeObj(objPtr, envPtr)
 #endif
 
     /* We've used up the CompileEnv.  Mark as uninitialized. */
-    envPtr->source = NULL;
+    envPtr->iPtr = NULL;
 }
 
 /*
