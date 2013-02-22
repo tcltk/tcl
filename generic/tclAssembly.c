@@ -3052,7 +3052,7 @@ ResolveJumpTableTargets(
     auxDataIndex = TclGetInt4AtPtr(envPtr->codeStart + bbPtr->jumpOffset + 1);
     DEBUG_PRINT("bbPtr = %p jumpOffset = %d auxDataIndex = %d\n",
 	    bbPtr, bbPtr->jumpOffset, auxDataIndex);
-    realJumpTablePtr = envPtr->auxDataArrayPtr[auxDataIndex].clientData;
+    realJumpTablePtr = TclFetchAuxData(envPtr, auxDataIndex);
     realJumpHashPtr = &realJumpTablePtr->hashTable;
 
     /*

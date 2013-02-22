@@ -3085,6 +3085,31 @@ TclCreateExceptRange(
 /*
  *----------------------------------------------------------------------
  *
+ * TclFetchAuxData --
+ *
+ *	Fetch back from the CompileEnv an item of AuxData stored at
+ *	index.
+ *
+ * Results:
+ *	The ClientData previously stored by TclCreatAuxData().
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+ClientData
+TclFetchAuxData(
+    CompileEnv *envPtr,		/* CompileEnv from which to fetch */
+    int index)			/* Index of AuxData to fetch */
+{
+    return envPtr->auxDataArrayPtr[index].clientData;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCreateAuxData --
  *
  *	Procedure that allocates and initializes a new AuxData structure in a
