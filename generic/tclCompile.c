@@ -573,6 +573,7 @@ static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd, int len,
 			    int numWords, int line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
+static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
 /*
  * The structure below defines the bytecode Tcl object type by means of
@@ -650,9 +651,6 @@ TclSetByteCodeFromAny(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    register const AuxData *auxDataPtr;
-    LiteralEntry *entryPtr;
-    register int i;
     int length, result = TCL_OK;
     const char *stringPtr;
     ContLineLoc *clLocPtr;
@@ -722,35 +720,14 @@ TclSetByteCodeFromAny(
     TclVerifyLocalLiteralTable(&compEnv);
 #endif /*TCL_COMPILE_DEBUG*/
 
-    TclInitByteCodeObj(objPtr, &compEnv);
+    if (result == TCL_OK) {
+	TclInitByteCodeObj(objPtr, &compEnv);
 #ifdef TCL_COMPILE_DEBUG
-    if (tclTraceCompile >= 2) {
-	TclPrintByteCodeObj(interp, objPtr);
-	fflush(stdout);
-    }
+	if (tclTraceCompile >= 2) {
+	    TclPrintByteCodeObj(interp, objPtr);
+	    fflush(stdout);
+	}
 #endif /* TCL_COMPILE_DEBUG */
-
-    if (result != TCL_OK) {
-	/*
-	 * Handle any error from the hookProc
-	 */
-
-	entryPtr = compEnv.literalArrayPtr;
-	for (i = 0;  i < compEnv.literalArrayNext;  i++) {
-	    TclReleaseLiteral(interp, entryPtr->objPtr);
-	    entryPtr++;
-	}
-#ifdef TCL_COMPILE_DEBUG
-	TclVerifyGlobalLiteralTable(iPtr);
-#endif /*TCL_COMPILE_DEBUG*/
-
-	auxDataPtr = compEnv.auxDataArrayPtr;
-	for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-	    if (auxDataPtr->type->freeProc != NULL) {
-		auxDataPtr->type->freeProc(auxDataPtr->clientData);
-	    }
-	    auxDataPtr++;
-	}
     }
 
     TclFreeCompileEnv(&compEnv);
@@ -989,22 +966,7 @@ TclCleanupByteCode(
 		(char *) codePtr);
 
 	if (hePtr) {
-	    ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-
-	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(eclPtr->path);
-	    }
-	    for (i=0 ; i<eclPtr->nuloc ; i++) {
-		ckfree(eclPtr->loc[i].line);
-	    }
-
-	    if (eclPtr->loc != NULL) {
-		ckfree(eclPtr->loc);
-	    }
-
-	    Tcl_DeleteHashTable(&eclPtr->litInfo);
-
-	    ckfree(eclPtr);
+	    ReleaseCmdWordData(Tcl_GetHashValue(hePtr));
 	    Tcl_DeleteHashEntry(hePtr);
 	}
     }
@@ -1184,6 +1146,28 @@ FreeSubstCodeInternalRep(
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
+}
+
+static void
+ReleaseCmdWordData(
+    ExtCmdLoc *eclPtr)
+{
+    int i;
+
+    if (eclPtr->type == TCL_LOCATION_SOURCE) {
+	Tcl_DecrRefCount(eclPtr->path);
+    }
+    for (i=0 ; i<eclPtr->nuloc ; i++) {
+	ckfree((char *) eclPtr->loc[i].line);
+    }
+
+    if (eclPtr->loc != NULL) {
+	ckfree((char *) eclPtr->loc);
+    }
+
+    Tcl_DeleteHashTable (&eclPtr->litInfo);
+
+    ckfree((char *) eclPtr);
 }
 
 /*
@@ -1418,6 +1402,32 @@ TclFreeCompileEnv(
 	ckfree(envPtr->localLitTable.buckets);
 	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
     }
+    if (envPtr->iPtr) {
+	/* 
+	 * We never converted to Bytecode, so free the things we would
+	 * have transferred to it.
+	 */
+
+	int i;
+	LiteralEntry *entryPtr = envPtr->literalArrayPtr;
+	AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
+
+	for (i = 0;  i < envPtr->literalArrayNext;  i++) {
+	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, entryPtr->objPtr);
+	    entryPtr++;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	TclVerifyGlobalLiteralTable(envPtr->iPtr);
+#endif /*TCL_COMPILE_DEBUG*/
+
+	for (i = 0;  i < envPtr->auxDataArrayNext;  i++) {
+	    if (auxDataPtr->type->freeProc != NULL) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	    auxDataPtr++;
+	}
+    }
     if (envPtr->mallocedCodeArray) {
 	ckfree(envPtr->codeStart);
     }
@@ -1434,7 +1444,8 @@ TclFreeCompileEnv(
 	ckfree(envPtr->auxDataArrayPtr);
     }
     if (envPtr->extCmdMapPtr) {
-	ckfree(envPtr->extCmdMapPtr);
+	ReleaseCmdWordData(envPtr->extCmdMapPtr);
+	envPtr->extCmdMapPtr = NULL;
     }
 
     /*
@@ -1575,6 +1586,10 @@ TclCompileScript(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int *wlines, wlineat, cmdLine, *clNext;
     Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+
+    if (envPtr->iPtr == NULL) {
+	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
+    }
 
     Tcl_DStringInit(&ds);
 
@@ -2510,6 +2525,10 @@ TclInitByteCodeObj(
     int i, isNew;
     Interp *iPtr;
 
+    if (envPtr->iPtr == NULL) {
+	Tcl_Panic("TclInitByteCodeObj() called on uninitialized CompileEnv");
+    }
+
     iPtr = envPtr->iPtr;
 
     codeBytes = envPtr->codeNext - envPtr->codeStart;
@@ -2646,6 +2665,9 @@ TclInitByteCodeObj(
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
 	    &isNew), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
+
+    /* We've used up the CompileEnv.  Mark as uninitialized. */
+    envPtr->iPtr = NULL;
 
     codePtr->localCachePtr = NULL;
 }
