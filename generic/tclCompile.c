@@ -431,6 +431,7 @@ static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd, int len,
 			    int numWords, int line, int* clNext, int **lines,
 			    CompileEnv* envPtr);
+static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
 /*
  * The structure below defines the bytecode Tcl object type by means of
@@ -797,23 +798,7 @@ TclCleanupByteCode(
 	Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr,
 		(char *) codePtr);
 	if (hePtr) {
-	    ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-	    int i;
-
-	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(eclPtr->path);
-	    }
-	    for (i=0 ; i<eclPtr->nuloc ; i++) {
-		ckfree((char *) eclPtr->loc[i].line);
-	    }
-
-	    if (eclPtr->loc != NULL) {
-		ckfree((char *) eclPtr->loc);
-	    }
-
-	    Tcl_DeleteHashTable (&eclPtr->litInfo);
-
-	    ckfree((char *) eclPtr);
+	    ReleaseCmdWordData(Tcl_GetHashValue(hePtr));
 	    Tcl_DeleteHashEntry(hePtr);
 	}
     }
@@ -824,6 +809,28 @@ TclCleanupByteCode(
 
     TclHandleRelease(codePtr->interpHandle);
     ckfree((char *) codePtr);
+}
+
+static void
+ReleaseCmdWordData(
+    ExtCmdLoc *eclPtr)
+{
+    int i;
+
+    if (eclPtr->type == TCL_LOCATION_SOURCE) {
+	Tcl_DecrRefCount(eclPtr->path);
+    }
+    for (i=0 ; i<eclPtr->nuloc ; i++) {
+	ckfree((char *) eclPtr->loc[i].line);
+    }
+
+    if (eclPtr->loc != NULL) {
+	ckfree((char *) eclPtr->loc);
+    }
+
+    Tcl_DeleteHashTable (&eclPtr->litInfo);
+
+    ckfree((char *) eclPtr);
 }
 
 /*
@@ -1068,7 +1075,8 @@ TclFreeCompileEnv(
 	ckfree((char *) envPtr->auxDataArrayPtr);
     }
     if (envPtr->extCmdMapPtr) {
-	ckfree((char *) envPtr->extCmdMapPtr);
+	ReleaseCmdWordData(envPtr->extCmdMapPtr);
+	envPtr->extCmdMapPtr = NULL;
     }
 
     /*
