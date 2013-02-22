@@ -2801,38 +2801,6 @@ DisposeTraceResult(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UntraceVar --
- *
- *	Remove a previously-created trace for a variable.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If there exists a trace for the variable given by varName with the
- *	given flags, proc, and clientData, then that trace is removed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_UntraceVar(
-    Tcl_Interp *interp,		/* Interpreter containing variable. */
-    const char *varName,	/* Name of variable; may end with "(index)" to
-				 * signify an array reference. */
-    int flags,			/* OR-ed collection of bits describing current
-				 * trace, including any of TCL_TRACE_READS,
-				 * TCL_TRACE_WRITES, TCL_TRACE_UNSETS,
-				 * TCL_GLOBAL_ONLY and TCL_NAMESPACE_ONLY. */
-    Tcl_VarTraceProc *proc,	/* Function assocated with trace. */
-    ClientData clientData)	/* Arbitrary argument to pass to proc. */
-{
-    Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_UntraceVar2 --
  *
  *	Remove a previously-created trace for a variable.

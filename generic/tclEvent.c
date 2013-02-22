@@ -1420,7 +1420,7 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
     }
-    Tcl_UntraceVar(interp, nameString,
+    Tcl_UntraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done);
 

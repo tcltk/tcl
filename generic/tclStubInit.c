@@ -915,7 +915,7 @@ const TclStubs tclStubs = {
     Tcl_UnregisterChannel, /* 252 */
     0, /* 253 */
     Tcl_UnsetVar2, /* 254 */
-    Tcl_UntraceVar, /* 255 */
+    0, /* 255 */
     Tcl_UntraceVar2, /* 256 */
     Tcl_UpdateLinkedVar, /* 257 */
     Tcl_UpVar, /* 258 */

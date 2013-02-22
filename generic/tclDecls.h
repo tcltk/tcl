@@ -702,11 +702,7 @@ TCLAPI int		Tcl_UnregisterChannel(Tcl_Interp *interp,
 /* 254 */
 TCLAPI int		Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1,
 				const char *part2, int flags);
-/* 255 */
-TCLAPI void		Tcl_UntraceVar(Tcl_Interp *interp,
-				const char *varName, int flags,
-				Tcl_VarTraceProc *proc,
-				ClientData clientData);
+/* Slot 255 is reserved */
 /* 256 */
 TCLAPI void		Tcl_UntraceVar2(Tcl_Interp *interp,
 				const char *part1, const char *part2,
@@ -2023,7 +2019,7 @@ typedef struct TclStubs {
     int (*tcl_UnregisterChannel) (Tcl_Interp *interp, Tcl_Channel chan); /* 252 */
     void (*reserved253)(void);
     int (*tcl_UnsetVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 254 */
-    void (*tcl_UntraceVar) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 255 */
+    void (*reserved255)(void);
     void (*tcl_UntraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 256 */
     void (*tcl_UpdateLinkedVar) (Tcl_Interp *interp, const char *varName); /* 257 */
     int (*tcl_UpVar) (Tcl_Interp *interp, const char *frameName, const char *varName, const char *localName, int flags); /* 258 */
@@ -2920,8 +2916,7 @@ extern const TclStubs *tclStubsPtr;
 /* Slot 253 is reserved */
 #define Tcl_UnsetVar2 \
 	(tclStubsPtr->tcl_UnsetVar2) /* 254 */
-#define Tcl_UntraceVar \
-	(tclStubsPtr->tcl_UntraceVar) /* 255 */
+/* Slot 255 is reserved */
 #define Tcl_UntraceVar2 \
 	(tclStubsPtr->tcl_UntraceVar2) /* 256 */
 #define Tcl_UpdateLinkedVar \
@@ -3735,6 +3730,8 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	Tcl_GetVar2(interp, varName, NULL, flags)
 #define Tcl_TraceVar(interp, varName, flags, proc, clientData) \
 	Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData)
+#define Tcl_UntraceVar(interp, varName, flags, proc, clientData) \
+	Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData)
 
 /*
  * Deprecated Tcl procedures:
