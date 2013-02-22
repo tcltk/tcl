@@ -13,7 +13,7 @@ Tcl_FindExecutable, Tcl_GetNameOfExecutable \- identify or return the name of th
 .nf
 \fB#include <tcl.h>\fR
 .sp
-Tcl_Interp *
+const char *
 \fBTcl_FindExecutable\fR(\fIargv0\fR)
 .sp
 const char *
@@ -35,9 +35,9 @@ Tcl.  For example, it is needed on some platforms in the
 implementation of the \fBload\fR command.
 It is also returned by the \fBinfo nameofexecutable\fR command.
 .PP
-The \fBTcl_FindExecutable\fR procedure returns a pointer which
-can be used by \fBTcl_InitStubs\fR to initialize the stubs
-table, without realy needing a real Tcl_Interp structure.
+The \fBTcl_FindExecutable\fR procedure returns a string containing
+the actual version of the Tcl library the \fBTcl_FindExecutable\fR
+procedure belongs to.
 .PP
 On UNIX platforms this procedure is typically invoked as the very
 first thing in the application's main program;  it must be passed
