@@ -13,7 +13,9 @@
  */
 
 #undef STATIC_BUILD
-#define USE_TCL_STUBS
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
@@ -154,7 +156,7 @@ Registry_Init(
 {
     Tcl_Command cmd;
 
-    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
 	return TCL_ERROR;
     }
 
