@@ -1433,14 +1433,16 @@ MODULE_SCOPE const TclStubs tclStubs;
  * It contains just enough for Tcl_InitStubs to be able
  * to initialize the stub table. */
 static const struct {
-    const char *version; /* a real interpreter has interp->result here. */
-    void (*magic) (void); /* a real interpreter has interp->freeProc here. */
+	/* a real interpreter has */
+	/* interp->result / interp->freeProc here: */
+	const char version[2*sizeof(void *)];
     int errorLine;
     const struct TclStubs *stubTable;
 } dummyInterp = {
-    TCL_PATCH_LEVEL, INT2PTR(TCL_STUB_MAGIC), 0, &tclStubs
+    TCL_PATCH_LEVEL, TCL_STUB_MAGIC, &tclStubs
 };
 
+#undef Tcl_FindExecutable
 Tcl_Interp *
 Tcl_InitSubsystems(int flags, ...)
 {
@@ -1494,7 +1496,6 @@ Tcl_InitSubsystems(int flags, ...)
     return (Tcl_Interp *) &dummyInterp;
 }
 
-#undef Tcl_FindExecutable
 void
 Tcl_FindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
