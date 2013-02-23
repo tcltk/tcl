@@ -82,6 +82,13 @@ BA_ ## T ## _Destroy(							\
     ckfree(a);								\
 }									\
 									\
+static size_t								\
+BA_ ## T ## _Size(							\
+    BA_ ## T *a)							\
+{									\
+    return a->used;							\
+}									\
+									\
 static BA_ ## T *							\
 BA_ ## T ## _Grow(							\
     BA_ ## T *a)							\
@@ -111,6 +118,27 @@ BA_ ## T ## _Shrink(							\
 	a = ckrealloc(a, sizeof(BA_ ## T)+(a->dbavail-1)*sizeof(T *));	\
     }									\
     return a;								\
+}									\
+									\
+static void								\
+BA_ ## T ## _Copy(							\
+    T *p,								\
+    BA_ ## T *a)							\
+{									\
+    size_t i = 0, n = 1, m = 0, hi, lo;					\
+    if (a->used == 0) {							\
+	return;								\
+    }									\
+    TclBAConvertIndices(a->used - 1, &hi, &lo);				\
+    while (i < hi) {							\
+	memcpy(p, a->store[i++], n * sizeof(T));			\
+	p += n;								\
+	if (m == 0) {							\
+	    m = n; n *= 2; m += n;					\
+	}								\
+	m--;								\
+    }									\
+    memcpy(p, a->store[hi], (lo + 1) * sizeof(T));				\
 }									\
 									\
 static BA_ ## T *							\

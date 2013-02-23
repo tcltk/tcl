@@ -196,8 +196,9 @@ typedef struct AuxData {
     ClientData clientData;	/* The compilation data itself. */
 } AuxData;
 
-/* Forward declaration for the cmdMap field below */
+/* Forward declarations for fields below */
 struct BrodnikArray_CmdLocation;
+struct BrodnikArray_AuxData;
 
 /*
  * Structure defining the compilation environment. After compilation, fields
@@ -208,7 +209,6 @@ struct BrodnikArray_CmdLocation;
 #define COMPILEENV_INIT_CODE_BYTES    250
 #define COMPILEENV_INIT_NUM_OBJECTS    60
 #define COMPILEENV_INIT_EXCEPT_RANGES   5
-#define COMPILEENV_INIT_AUX_DATA_SIZE   5
 
 typedef struct CompileEnv {
     Interp *iPtr;		/* Interpreter containing the code being
@@ -262,27 +262,19 @@ typedef struct CompileEnv {
 				 * entry. */
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
 				 * exceptArrayPtr points in heap, else 0. */
-    struct BrodnikArray_CmdLocation
-		*cmdMap;	/* Points to array of CmdLocation.
+    struct BrodnikArray_CmdLocation *cmdMap;
+				/* Points to array of CmdLocation.
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
 				 * for the last command. */
-    AuxData *auxDataArrayPtr;	/* Points to auxiliary data array start. */
-    int auxDataArrayNext;	/* Next free compile aux data array index.
-				 * auxDataArrayNext is the number of aux data
-				 * items and (auxDataArrayNext-1) is index of
-				 * current aux data array entry. */
-    int auxDataArrayEnd;	/* Index after last aux data array entry. */
-    int mallocedAuxDataArray;	/* 1 if aux data array was expanded and
-				 * auxDataArrayPtr points in heap else 0. */
+    struct BrodnikArray_AuxData *auxData;
+				/* Points to array of AuxData */
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
 				/* Initial storage for code. */
     LiteralEntry staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
 				/* Initial storage of LiteralEntry array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
-    AuxData staticAuxDataArraySpace[COMPILEENV_INIT_AUX_DATA_SIZE];
-				/* Initial storage for aux data array. */
     /* TIP #280 */
     ExtCmdLoc *extCmdMapPtr;	/* Extended command location information for
 				 * 'info frame'. */

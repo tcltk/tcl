@@ -31,6 +31,7 @@ typedef struct CmdLocation {
     int numSrcBytes;		/* Number of command source chars. */
 } CmdLocation;
 TclBrodnikArray(CmdLocation);
+TclBrodnikArray(AuxData);
 
 /*
  * Table of all AuxData types.
@@ -1384,10 +1385,7 @@ TclInitCompileEnv(
     envPtr->clLoc = NULL;
     envPtr->clNext = NULL;
 
-    envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
-    envPtr->auxDataArrayNext = 0;
-    envPtr->auxDataArrayEnd = COMPILEENV_INIT_AUX_DATA_SIZE;
-    envPtr->mallocedAuxDataArray = 0;
+    envPtr->auxData = NULL;
 }
 
 /*
@@ -1428,7 +1426,6 @@ TclFreeCompileEnv(
 
 	int i;
 	LiteralEntry *entryPtr = envPtr->literalArrayPtr;
-	AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
 
 	for (i = 0;  i < envPtr->literalArrayNext;  i++) {
 	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, entryPtr->objPtr);
@@ -1439,11 +1436,19 @@ TclFreeCompileEnv(
 	TclVerifyGlobalLiteralTable(envPtr->iPtr);
 #endif /*TCL_COMPILE_DEBUG*/
 
-	for (i = 0;  i < envPtr->auxDataArrayNext;  i++) {
-	    if (auxDataPtr->type->freeProc != NULL) {
-		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	if (envPtr->auxData) {
+	    BA_AuxData *adArray = envPtr->auxData;
+	    AuxData *auxDataPtr;
+
+	    envPtr->auxData = NULL;
+	    adArray = BA_AuxData_Detach(adArray, &auxDataPtr);
+	    while (auxDataPtr) {
+		if (auxDataPtr->type->freeProc != NULL) {
+		    auxDataPtr->type->freeProc(auxDataPtr->clientData);
+		}
+		adArray = BA_AuxData_Detach(adArray, &auxDataPtr);
 	    }
-	    auxDataPtr++;
+	    BA_AuxData_Destroy(adArray);
 	}
     }
     if (envPtr->mallocedCodeArray) {
@@ -1456,9 +1461,6 @@ TclFreeCompileEnv(
 	ckfree(envPtr->exceptArrayPtr);
     }
     BA_CmdLocation_Destroy(envPtr->cmdMap);
-    if (envPtr->mallocedAuxDataArray) {
-	ckfree(envPtr->auxDataArrayPtr);
-    }
     if (envPtr->extCmdMapPtr) {
 	ReleaseCmdWordData(envPtr->extCmdMapPtr);
 	envPtr->extCmdMapPtr = NULL;
@@ -2518,7 +2520,7 @@ TclInitByteCodeObj(
 {
     register ByteCode *codePtr;
     size_t codeBytes, objArrayBytes, exceptArrayBytes, cmdLocBytes;
-    size_t auxDataArrayBytes, structureSize;
+    size_t auxDataCount, auxDataArrayBytes, structureSize;
     register unsigned char *p;
 #ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
@@ -2537,7 +2539,11 @@ TclInitByteCodeObj(
     codeBytes = envPtr->codeNext - envPtr->codeStart;
     objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
-    auxDataArrayBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
+    auxDataCount = 0;
+    if (envPtr->auxData) {
+	auxDataCount = BA_AuxData_Size(envPtr->auxData);
+    }
+    auxDataArrayBytes = auxDataCount * sizeof(AuxData);
     cmdLocBytes = GetCmdLocEncodingSize(envPtr);
 
     /*
@@ -2577,7 +2583,7 @@ TclInitByteCodeObj(
     codePtr->numCodeBytes = codeBytes;
     codePtr->numLitObjects = numLitObjects;
     codePtr->numExceptRanges = envPtr->exceptArrayNext;
-    codePtr->numAuxDataItems = envPtr->auxDataArrayNext;
+    codePtr->numAuxDataItems = auxDataCount;
     codePtr->numCmdLocBytes = cmdLocBytes;
     codePtr->maxExceptDepth = envPtr->maxExceptDepth;
     codePtr->maxStackDepth = envPtr->maxStackDepth;
@@ -2623,7 +2629,9 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(exceptArrayBytes);	/* align AuxData array */
     if (auxDataArrayBytes > 0) {
 	codePtr->auxDataArrayPtr = (AuxData *) p;
-	memcpy(p, envPtr->auxDataArrayPtr, (size_t) auxDataArrayBytes);
+	BA_AuxData_Copy(codePtr->auxDataArrayPtr, envPtr->auxData);
+	BA_AuxData_Destroy(envPtr->auxData);
+	envPtr->auxData = NULL;
     } else {
 	codePtr->auxDataArrayPtr = NULL;
     }
@@ -3104,7 +3112,10 @@ TclFetchAuxData(
     CompileEnv *envPtr,		/* CompileEnv from which to fetch */
     int index)			/* Index of AuxData to fetch */
 {
-    return envPtr->auxDataArrayPtr[index].clientData;
+    if (envPtr->auxData == NULL) {
+	return NULL;
+    }
+    return BA_AuxData_At(envPtr->auxData, index)->clientData;
 }
 
 /*
@@ -3139,45 +3150,16 @@ TclCreateAuxData(
     register CompileEnv *envPtr)/* Points to the CompileEnv for which a new
 				 * aux data structure is to be allocated. */
 {
-    int index;			/* Index for the new AuxData structure. */
-    register AuxData *auxDataPtr;
-				/* Points to the new AuxData structure */
+    AuxData *auxDataPtr;	/* Points to the new AuxData structure */
 
-    index = envPtr->auxDataArrayNext;
-    if (index >= envPtr->auxDataArrayEnd) {
-	/*
-	 * Expand the AuxData array. The currently allocated entries are
-	 * stored between elements 0 and (envPtr->auxDataArrayNext - 1)
-	 * [inclusive].
-	 */
-
-	size_t currBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
-	int newElems = 2*envPtr->auxDataArrayEnd;
-	size_t newBytes = newElems * sizeof(AuxData);
-
-	if (envPtr->mallocedAuxDataArray) {
-	    envPtr->auxDataArrayPtr =
-		    ckrealloc(envPtr->auxDataArrayPtr, newBytes);
-	} else {
-	    /*
-	     * envPtr->auxDataArrayPtr isn't a ckalloc'd pointer, so we must
-	     * code a ckrealloc equivalent for ourselves.
-	     */
-
-	    AuxData *newPtr = ckalloc(newBytes);
-
-	    memcpy(newPtr, envPtr->auxDataArrayPtr, currBytes);
-	    envPtr->auxDataArrayPtr = newPtr;
-	    envPtr->mallocedAuxDataArray = 1;
-	}
-	envPtr->auxDataArrayEnd = newElems;
+    if (envPtr->auxData == NULL) {
+	envPtr->auxData = BA_AuxData_Create();
     }
-    envPtr->auxDataArrayNext++;
 
-    auxDataPtr = &envPtr->auxDataArrayPtr[index];
+    envPtr->auxData = BA_AuxData_Append(envPtr->auxData, &auxDataPtr);
     auxDataPtr->clientData = clientData;
     auxDataPtr->type = typePtr;
-    return index;
+    return (int) (BA_AuxData_Size(envPtr->auxData) - 1);
 }
 
 /*
