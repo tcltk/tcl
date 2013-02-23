@@ -1433,9 +1433,8 @@ MODULE_SCOPE const TclStubs tclStubs;
  * It contains just enough for Tcl_InitStubs to be able
  * to initialize the stub table. */
 static const struct {
-	/* a real interpreter has */
-	/* interp->result / interp->freeProc here: */
-	const char version[2*sizeof(void *)];
+    /* A real interpreter has interp->result/freeProc here: */
+    const char version[sizeof(struct {char *r; void (*f)(void);})];
     int errorLine;
     const struct TclStubs *stubTable;
 } dummyInterp = {
@@ -1447,7 +1446,6 @@ Tcl_Interp *
 Tcl_InitSubsystems(int flags, ...)
 {
     va_list argList;
-
     int argc = 0;
     void **argv = NULL;
 
@@ -1459,7 +1457,7 @@ Tcl_InitSubsystems(int flags, ...)
 	argc = va_arg(argList, int);
 	argv = va_arg(argList, void **);
     }
-    va_end (argList);
+    va_end(argList);
 
     TclInitSubsystems();
     TclpSetInitialEncodings();
