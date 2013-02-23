@@ -1,3 +1,8 @@
+2013-02-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/fake-rfc2553.c: [Bug 3599194]: compat/fake-rfc2553.c is
+	broken.
+
 2013-02-22  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclAssembly.c:	Shift more burden of smart cleanup
