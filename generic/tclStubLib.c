@@ -73,8 +73,8 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    if(iPtr->freeProc == INT2PTR(TCL_STUB_MAGIC)) {
-	actualVersion = iPtr->result;
+    if(iPtr->errorLine == TCL_STUB_MAGIC) {
+	actualVersion = (const char *)interp;
 	tclStubsPtr = stubsPtr;
     } else {
 	actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
