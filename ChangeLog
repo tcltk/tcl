@@ -1,3 +1,9 @@
+2013-02-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclAssembly.c:	Shift more burden of smart cleanup
+	* generic/tclCompile.c:		onto the TclFreeCompileEnv() routine.
+	Stop crashes when the hookProc raises an error.
+
 2013-02-20  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclNamesp.c:	[Bug 3605447] Make sure the -clear option
