@@ -840,16 +840,11 @@ CompileAssembleObj(
     CompileEnv compEnv;		/* Compilation environment structure */
     register ByteCode *codePtr = NULL;
 				/* Bytecode resulting from the assembly */
-    register const AuxData * auxDataPtr;
-				/* Pointer to an auxiliary data element
-				 * in a compilation environment being
-				 * destroyed. */
     Namespace* namespacePtr;	/* Namespace in which variable and command
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
     int sourceLen;		/* Length of the source code in bytes */
-    int i;
 
 
     /*
@@ -884,26 +879,6 @@ CompileAssembleObj(
     if (status != TCL_OK) {
 	
 	/* Assembly failed. Clean up and report the error */
-
-	/*
-	 * Free any literals that were constructed for the assembly.
-	 */
-	for (i = 0; i < compEnv.literalArrayNext; i++) {
-	    TclReleaseLiteral(interp, compEnv.literalArrayPtr[i].objPtr);
-	}
-
-	/*
-	 * Free any auxiliary data that was attached to the bytecode
-	 * under construction.
-	 */
-
-	for (i = 0; i < compEnv.auxDataArrayNext; i++) {
-	    auxDataPtr = compEnv.auxDataArrayPtr + i;
-	    if (auxDataPtr->type->freeProc != NULL) {
-		(auxDataPtr->type->freeProc)(auxDataPtr->clientData);
-	    }
-	}
-
 	TclFreeCompileEnv(&compEnv);
 	return NULL;
     }
