@@ -2218,6 +2218,15 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 	TCL_VERSION, TCL_STUB_MAGIC)
 #endif
 
+/* Tcl_InitSubsystems, see TIP 414 */
+
+#define TCL_INIT_PANIC (1) /* Set Panic proc */
+#define TCL_INIT_CREATE (48) /* Call Tcl_CreateInterp(), and set argc/argv */
+#define TCL_INIT_CREATE_UNICODE (16) /* The same, but argv is in unicode */
+#define TCL_INIT_CREATE_UTF8 (32) /* The same, but argv is in utf-8 */
+
+TCLSOAPI Tcl_Interp *Tcl_InitSubsystems(int flags, ...);
+
 /*
  * Public functions that are not accessible via the stubs table.
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]

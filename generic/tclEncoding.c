@@ -1370,9 +1370,8 @@ MODULE_SCOPE const TclStubs tclStubs;
  * It contains just enough for Tcl_InitStubs to be able
  * to initialize the stub table. */
 static const struct {
-	/* a real interpreter has */
-	/* interp->result / interp->freeProc here: */
-	const char version[2*sizeof(void *)];
+    /* A real interpreter has interp->result/freeProc here: */
+    const char version[sizeof(struct {char *r; void (*f)(void);})];
     int errorLine;
     const struct TclStubs *stubTable;
 } dummyInterp = {
@@ -1380,6 +1379,58 @@ static const struct {
 };
 
 #undef Tcl_FindExecutable
+Tcl_Interp *
+Tcl_InitSubsystems(int flags, ...)
+{
+    va_list argList;
+    int argc = 0;
+    void **argv = NULL;
+
+    va_start(argList, flags);
+    if (flags & TCL_INIT_PANIC) {
+	Tcl_SetPanicProc(va_arg(argList, Tcl_PanicProc *));
+    }
+    if (flags & TCL_INIT_CREATE) {
+	argc = va_arg(argList, int);
+	argv = va_arg(argList, void **);
+    }
+    va_end(argList);
+
+    TclInitSubsystems();
+    TclpSetInitialEncodings();
+    TclpFindExecutable(argv ? argv[0] : NULL);
+    if (flags & TCL_INIT_CREATE) {
+	Tcl_Interp *interp = Tcl_CreateInterp();
+	if (--argc >= 0) {
+	    Tcl_Obj *argvPtr;
+
+	    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+	    argvPtr = Tcl_NewListObj(argc, NULL);
+	    if ((flags & TCL_INIT_CREATE) == TCL_INIT_CREATE_UTF8) {
+		while (argc--) {
+		    Tcl_ListObjAppendElement(NULL, argvPtr,
+			    Tcl_NewStringObj(*++argv, -1));
+		}
+	    } else if ((flags & TCL_INIT_CREATE) == TCL_INIT_CREATE_UNICODE) {
+		while (argc--) {
+		    Tcl_ListObjAppendElement(NULL, argvPtr,
+			    Tcl_NewUnicodeObj(*++argv, -1));
+		}
+	    } else {
+		Tcl_DString ds;
+
+		while (argc--) {
+		    Tcl_ExternalToUtfDString(NULL, *++argv, -1, &ds);
+		    Tcl_ListObjAppendElement(NULL, argvPtr, TclDStringToObj(&ds));
+		}
+	    }
+	    Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
+	}
+	return interp;
+    }
+    return (Tcl_Interp *) &dummyInterp;
+}
+
 Tcl_Interp *
 Tcl_FindExecutable(
     const void *argv0)		/* The value of the application's argv[0]
