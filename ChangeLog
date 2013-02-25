@@ -1,3 +1,8 @@
+2013-02-25  Don Porter  <dgp@users.sourceforge.net>
+
+	* tests/assocd.test:	[Bugs 3605719,3605720] Test independence.
+	* tests/basic.test:	Thanks Rolf Ade for patches.
+
 2013-02-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* compat/fake-rfc2553.c: [Bug 3599194]: compat/fake-rfc2553.c is
