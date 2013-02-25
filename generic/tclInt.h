@@ -2275,35 +2275,6 @@ typedef struct Interp {
 #define MAX_NESTING_DEPTH	1000
 
 /*
- * TIP#143 limit handler internal representation.
- */
-
-struct LimitHandler {
-    int flags;			/* The state of this particular handler. */
-    Tcl_LimitHandlerProc *handlerProc;
-				/* The handler callback. */
-    ClientData clientData;	/* Opaque argument to the handler callback. */
-    Tcl_LimitHandlerDeleteProc *deleteProc;
-				/* How to delete the clientData. */
-    LimitHandler *prevPtr;	/* Previous item in linked list of
-				 * handlers. */
-    LimitHandler *nextPtr;	/* Next item in linked list of handlers. */
-};
-
-/*
- * Values for the LimitHandler flags field.
- *	LIMIT_HANDLER_ACTIVE - Whether the handler is currently being
- *		processed; handlers are never to be entered reentrantly.
- *	LIMIT_HANDLER_DELETED - Whether the handler has been deleted. This
- *		should not normally be observed because when a handler is
- *		deleted it is also spliced out of the list of handlers, but
- *		even so we will be careful.
- */
-
-#define LIMIT_HANDLER_ACTIVE	0x01
-#define LIMIT_HANDLER_DELETED	0x02
-
-/*
  * The macro below is used to modify a "char" value (e.g. by casting it to an
  * unsigned character) so that it can be used safely with macros such as
  * isspace.
