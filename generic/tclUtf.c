@@ -1671,18 +1671,20 @@ int
 Tcl_UniCharIsSpace(
     int ch)			/* Unicode character to test. */
 {
+	/* Ignore upper 11 bits. */
+	ch &= 0x1fffff;
+
     /*
      * If the character is within the first 127 characters, just use the
      * standard C function, otherwise consult the Unicode table.
      */
 
-    if ((ch & 0x1fffff) < 0x80) {
+    if (ch < 0x80) {
 	return isspace(UCHAR(ch)); /* INTL: ISO space */
     } else if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
-    } else if ((Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x180e
-	    || (Tcl_UniChar) ch == 0x200b || (Tcl_UniChar) ch == 0x2060
-	    || (Tcl_UniChar) ch == 0xfeff) {
+    } else if (ch == 0x0085 || ch == 0x180e || ch == 0x200b
+	    || ch == 0x2060 || ch == 0xfeff) {
 	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);
