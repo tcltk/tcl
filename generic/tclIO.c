@@ -44,6 +44,18 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 
 /*
+ * Structure to record a close callback. One such record exists for
+ * each close callback registered for a channel.
+ */
+
+typedef struct CloseCallback {
+    Tcl_CloseProc *proc;		/* The procedure to call. */
+    ClientData clientData;		/* Arbitrary one-word data to pass
+					 * to the callback. */
+    struct CloseCallback *nextPtr;	/* For chaining close callbacks. */
+} CloseCallback;
+
+/*
  * Static functions in this file:
  */
 
@@ -563,6 +575,8 @@ Tcl_DeleteCloseHandler(
 	if ((cbPtr->proc == proc) && (cbPtr->clientData == clientData)) {
 	    if (cbPrevPtr == NULL) {
 		statePtr->closeCbPtr = cbPtr->nextPtr;
+	    } else {
+		cbPrevPtr->nextPtr = cbPtr->nextPtr;
 	    }
 	    ckfree((char *) cbPtr);
 	    break;
