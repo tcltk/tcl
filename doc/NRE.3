@@ -57,7 +57,7 @@ is \fBNULL\fR, then no procedure is called before the command is deleted.
 .AP int objc in
 Count of parameters provided to the implementation of a command.
 .AP Tcl_Obj **objv in
-Pointer to an array of Tcl objects. Each object holds the value of a
+Pointer to an array of Tcl values. Each value holds the value of a
 single word in the command to execute.
 .AP Tcl_Obj *objPtr in
 Pointer to a Tcl_Obj whose value is a script or expression to execute.
@@ -141,7 +141,7 @@ trampoline.
 .PP
 \fBTcl_NRCmdSwap\fR allows for trampoline evaluation of a command whose
 resolution is already known.  The \fIcmd\fR parameter gives a
-\fBTcl_Command\fR object (returned from \fBTcl_CreateObjCommand\fR or
+\fBTcl_Command\fR token (returned from \fBTcl_CreateObjCommand\fR or
 \fBTcl_GetCommandFromObj\fR) identifying the command to be invoked in
 the trampoline; this command must match the word in \fIobjv[0]\fR.
 The remaining arguments are as for \fBTcl_NREvalObj\fR.
@@ -295,7 +295,7 @@ int
     int result)
 {
     /* \fIdata[0] .. data[3]\fR are the four words of data
-     * passed to \fBTcl_NREvalObj\fR */
+     * passed to \fBTcl_NRAddCallback\fR */
 
     \fI... postprocessing ...\fR
 
@@ -323,6 +323,6 @@ and the second is for use when there is already a trampoline in place.
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3), Tcl_ExprObj(3)
 .SH KEYWORDS
-stackless, nonrecursive, execute, command, global, object, result, script
+stackless, nonrecursive, execute, command, global, value, result, script
 .SH COPYRIGHT
 Copyright (c) 2008 by Kevin B. Kenny

@@ -70,6 +70,12 @@ test cmdAH-1.2 {Tcl_CatchObjCmd, errors} {
 test cmdAH-1.3 {Tcl_CatchObjCmd, errors} -returnCodes error -body {
     catch foo bar baz spaz
 } -result {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}
+test cmdAH-1.4 {Bug 3595576} {
+    catch {catch {} -> noSuchNs::var}
+} 1
+test cmdAH-1.5 {Bug 3595576} {
+    catch {catch error -> noSuchNs::var}
+} 1
 
 test cmdAH-2.1 {Tcl_CdObjCmd} -returnCodes error -body {
     cd foo bar

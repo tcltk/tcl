@@ -31,7 +31,8 @@ Array of names of symbols to be resolved during the load of the library, or
 NULL if no symbols are to be resolved. If an array is given, the last entry in
 the array must be NULL.
 .AP int flags in
-Reserved for future expansion. Must be 0.
+The value should normally be 0, but \fITCL_LOAD_GLOBAL\fR or \fITCL_LOAD_LAZY\fR
+or a combination of those two is allowed as well.
 .AP void *procPtrs out
 Points to an array that will hold the addresses of the functions described in
 the \fIsymbols\fR argument. Should be NULL if no symbols are to be resolved.

@@ -62,6 +62,16 @@
 #define DOTREE_F	3	/* regular file */
 
 /*
+ * Fallback temporary file location the temporary file generation code. Can be
+ * overridden at compile time for when it is known that temp files can't be
+ * written to /tmp (hello, iOS!).
+ */
+
+#ifndef TCL_TEMPORARY_FILE_DIRECTORY
+#define TCL_TEMPORARY_FILE_DIRECTORY	"/tmp"
+#endif
+
+/*
  * Callbacks for file attributes code.
  */
 
@@ -234,7 +244,7 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
-#ifdef HAVE_STRUCT_STAT64
+#if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
 /* fts doesn't do stat64 */
 #   define noFtsStat	1
 #elif defined(__APPLE__) && defined(__LP64__) && \
@@ -2093,7 +2103,7 @@ TclpObjNormalizePath(
 /*
  *----------------------------------------------------------------------
  *
- * TclpOpenTemporaryFile --
+ * TclpOpenTemporaryFile, TclUnixOpenTemporaryFile --
  *
  *	Creates a temporary file, possibly based on the supplied bits and
  *	pieces of template supplied in the first three arguments. If the
@@ -2103,7 +2113,12 @@ TclpObjNormalizePath(
  *	file to go away once it is no longer needed.
  *
  * Results:
- *	A read-write Tcl Channel open on the file.
+ *	A read-write Tcl Channel open on the file for TclpOpenTemporaryFile,
+ *	or a file descriptor (or -1 on failure) for TclUnixOpenTemporaryFile.
+ *
+ * Side effects:
+ *	Accesses the filesystem. Will set the contents of the Tcl_Obj fourth
+ *	argument (if that is non-NULL).
  *
  *----------------------------------------------------------------------
  */
@@ -2115,10 +2130,29 @@ TclpOpenTemporaryFile(
     Tcl_Obj *extensionObj,
     Tcl_Obj *resultingNameObj)
 {
-    Tcl_Channel chan;
+    int fd = TclUnixOpenTemporaryFile(dirObj, basenameObj, extensionObj,
+	    resultingNameObj);
+
+    if (fd == -1) {
+	return NULL;
+    }
+    return Tcl_MakeFileChannel(INT2PTR(fd), TCL_READABLE|TCL_WRITABLE);
+}
+
+int
+TclUnixOpenTemporaryFile(
+    Tcl_Obj *dirObj,
+    Tcl_Obj *basenameObj,
+    Tcl_Obj *extensionObj,
+    Tcl_Obj *resultingNameObj)
+{
     Tcl_DString template, tmp;
     const char *string;
     int len, fd;
+
+    /*
+     * We should also check against making more then TMP_MAX of these.
+     */
 
     if (dirObj) {
 	string = Tcl_GetStringFromObj(dirObj, &len);
@@ -2155,9 +2189,10 @@ TclpOpenTemporaryFile(
     }
 
     if (fd == -1) {
-	return NULL;
+	Tcl_DStringFree(&template);
+	return -1;
     }
-    chan = Tcl_MakeFileChannel(INT2PTR(fd), TCL_READABLE|TCL_WRITABLE);
+
     if (resultingNameObj) {
 	Tcl_ExternalToUtfDString(NULL, Tcl_DStringValue(&template),
 		Tcl_DStringLength(&template), &tmp);
@@ -2176,7 +2211,7 @@ TclpOpenTemporaryFile(
     }
     Tcl_DStringFree(&template);
 
-    return chan;
+    return fd;
 }
 
 /*
@@ -2203,11 +2238,12 @@ DefaultTempDir(void)
 #endif
 
     /*
-     * Assume that "/tmp" is always an existing writable directory; we've no
-     * recovery mechanism if it isn't.
+     * Assume that the default location ("/tmp" if not overridden) is always
+     * an existing writable directory; we've no recovery mechanism if it
+     * isn't.
      */
 
-    return "/tmp";
+    return TCL_TEMPORARY_FILE_DIRECTORY;
 }
 
 #if defined(HAVE_CHFLAGS) && defined(UF_IMMUTABLE)

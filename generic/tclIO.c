@@ -221,9 +221,9 @@ static const Tcl_ObjType tclChannelType = {
 };
 
 #define GET_CHANNELSTATE(objPtr) \
-    ((ChannelState *) (objPtr)->internalRep.otherValuePtr)
+    ((ChannelState *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_CHANNELSTATE(objPtr, storePtr) \
-    ((objPtr)->internalRep.otherValuePtr = (void *) (storePtr))
+    ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (storePtr))
 #define GET_CHANNELINTERP(objPtr) \
     ((Interp *) (objPtr)->internalRep.twoPtrValue.ptr2)
 #define SET_CHANNELINTERP(objPtr, storePtr) \
@@ -879,19 +879,25 @@ CheckForStdChannelsBeingClosed(
     ChannelState *statePtr = ((Channel *) chan)->state;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    if ((chan == tsdPtr->stdinChannel) && tsdPtr->stdinInitialized) {
+    if (tsdPtr->stdinInitialized
+	    && tsdPtr->stdinChannel != NULL
+	    && statePtr == ((Channel *)tsdPtr->stdinChannel)->state) {
 	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stdinChannel = NULL;
 	    return;
 	}
-    } else if ((chan == tsdPtr->stdoutChannel) && tsdPtr->stdoutInitialized) {
+    } else if (tsdPtr->stdoutInitialized
+	    && tsdPtr->stdoutChannel != NULL
+	    && statePtr == ((Channel *)tsdPtr->stdoutChannel)->state) {
 	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stdoutChannel = NULL;
 	    return;
 	}
-    } else if ((chan == tsdPtr->stderrChannel) && tsdPtr->stderrInitialized) {
+    } else if (tsdPtr->stderrInitialized
+	    && tsdPtr->stderrChannel != NULL
+	    && statePtr == ((Channel *)tsdPtr->stderrChannel)->state) {
 	if (statePtr->refCount < 2) {
 	    statePtr->refCount = 0;
 	    tsdPtr->stderrChannel = NULL;
@@ -2466,7 +2472,7 @@ FlushChannel(
 		 * it's a tty channel (dup'ed underneath)
 		 */
 
-		if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+		if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED) && !TclInExit()) {
 		    SetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		    UpdateInterest(chanPtr);
 		}
