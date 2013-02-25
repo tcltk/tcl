@@ -85,18 +85,8 @@ typedef struct ChannelBuffer {
 
 #define CHANNELBUFFER_DEFAULT_SIZE	(1024 * 4)
 
-/*
- * Structure to record a close callback. One such record exists for each close
- * callback registered for a channel.
- */
-
-typedef struct CloseCallback {
-    Tcl_CloseProc *proc;	/* The procedure to call. */
-    ClientData clientData;	/* Arbitrary one-word data to pass to the
-				 * callback. */
-    struct CloseCallback *nextPtr;
-				/* For chaining close callbacks. */
-} CloseCallback;
+/* Foward declaration */
+struct CloseCallback;
 
 /*
  * The following structure describes the information saved from a call to
@@ -195,7 +185,8 @@ typedef struct ChannelState {
 				 * value is the POSIX error code. */
     int refCount;		/* How many interpreters hold references to
 				 * this IO channel? */
-    CloseCallback *closeCbPtr;	/* Callbacks registered to be called when the
+    struct CloseCallback *closeCbPtr;
+				/* Callbacks registered to be called when the
 				 * channel is closed. */
     char *outputStage;		/* Temporary staging buffer used when
 				 * translating EOL before converting from
