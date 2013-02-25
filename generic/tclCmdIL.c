@@ -161,30 +161,30 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  */
 
 static const EnsembleImplMap defaultInfoMap[] = {
-    {"args",		   InfoArgsCmd,		    NULL, NULL, NULL, 0},
-    {"body",		   InfoBodyCmd,		    NULL, NULL, NULL, 0},
-    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL, 0},
-    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL, 0},
-    {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL, 0},
-    {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL, 0},
-    {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL, 0},
-    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, NULL, 0},
+    {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
+    {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
+    {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, NULL, 0},
+    {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
-    {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL, 0},
-    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL, 0},
-    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, NULL, 0},
-    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, NULL, 0},
-    {"level",		   InfoLevelCmd,	    NULL, NULL, NULL, 0},
-    {"library",		   InfoLibraryCmd,	    NULL, NULL, NULL, 0},
-    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, NULL, 0},
-    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, NULL, 0},
-    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, NULL, 0},
-    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, NULL, 0},
-    {"procs",		   InfoProcsCmd,	    NULL, NULL, NULL, 0},
-    {"script",		   InfoScriptCmd,	    NULL, NULL, NULL, 0},
-    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, NULL, 0},
-    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, NULL, 0},
-    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, NULL, 0},
+    {"frame",		   InfoFrameCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"hostname",	   InfoHostnameCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"level",		   InfoLevelCmd,	    TclCompileInfoLevelCmd, NULL, NULL, 0},
+    {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"loaded",		   InfoLoadedCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"locals",		   TclInfoLocalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"patchlevel",	   InfoPatchLevelCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"procs",		   InfoProcsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -1492,19 +1492,42 @@ InfoFunctionsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *pattern;
+    Tcl_Obj *script;
+    int code;
 
-    if (objc == 1) {
-	pattern = NULL;
-    } else if (objc == 2) {
-	pattern = TclGetString(objv[1]);
-    } else {
+    if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_ListMathFuncs(interp, pattern));
-    return TCL_OK;
+    script = Tcl_NewStringObj(
+"	    ::apply [::list {{pattern *}} {\n"
+"		::set cmds {}\n"
+"		::foreach cmd [::info commands ::tcl::mathfunc::$pattern] {\n"
+"		    ::lappend cmds [::namespace tail $cmd]\n"
+"		}\n"
+"		::foreach cmd [::info commands tcl::mathfunc::$pattern] {\n"
+"		    ::set cmd [::namespace tail $cmd]\n"
+"		    ::if {$cmd ni $cmds} {\n"
+"			::lappend cmds $cmd\n"
+"		    }\n"
+"		}\n"
+"		::return $cmds\n"
+"	    } [::namespace current]] ", -1);
+
+    if (objc == 2) {
+	Tcl_Obj *arg = Tcl_NewListObj(1, &(objv[1]));
+
+	Tcl_AppendObjToObj(script, arg);
+	Tcl_DecrRefCount(arg);
+    }
+
+    Tcl_IncrRefCount(script);
+    code = Tcl_EvalObjEx(interp, script, 0);
+
+    Tcl_DecrRefCount(script);
+
+    return code;
 }
 
 /*

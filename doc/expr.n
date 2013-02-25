@@ -39,9 +39,9 @@ additional operators not found in C.
 .SS OPERANDS
 .PP
 A Tcl expression consists of a combination of operands, operators,
-and parentheses.
+parentheses and commas.
 White space may be used between the operands and operators and
-parentheses; it is ignored by the expression's instructions.
+parentheses (or commas); it is ignored by the expression's instructions.
 Where possible, operands are interpreted as integer values.
 Integer values may be specified in decimal (the normal case), in binary
 (if the first two characters of the operand are \fB0b\fR), in octal
@@ -282,6 +282,18 @@ rules for resolving functions in namespaces. Either
 \fB::tcl::mathfunc::sin\fR or \fB[namespace
 current]::tcl::mathfunc::sin\fR will satisfy the request, and others
 may as well (depending on the current \fBnamespace path\fR setting).
+.PP
+Some mathematical functions have several arguments, separated by commas like in C. Thus:
+.PP
+.CS
+\fBexpr\fR {hypot($x,$y)}
+.CE
+.PP
+ends up as
+.PP
+.CS
+tcl::mathfunc::hypot $x $y
+.CE
 .PP
 See the \fBmathfunc\fR(n) manual page for the math functions that are
 available by default.

@@ -749,7 +749,7 @@ test filename-11.13 {Tcl_GlobCmd} {
 } [file join $env(HOME)]
 set oldpwd [pwd]
 set oldhome $env(HOME)
-cd [temporaryDirectory]
+catch {cd [makeDirectory tcl[pid]]}
 set env(HOME) [pwd]
 file delete -force globTest
 file mkdir globTest/a1/b1
@@ -1616,6 +1616,7 @@ catch {file delete -force C:/globTest}
 cd [temporaryDirectory]
 file delete -force globTest
 cd $oldpwd
+catch {removeDirectory tcl[pid]}
 set env(HOME) $oldhome
 if {[testConstraint testsetplatform]} {
     testsetplatform $platform

@@ -14,8 +14,6 @@
 
 #include "tclWinInt.h"
 
-#include <sys/stat.h>
-
 /*
  * The following variable is used to tell whether this module has been
  * initialized.
@@ -376,7 +374,7 @@ SerialGetMilliseconds(void)
 {
     Tcl_Time time;
 
-    TclpGetTime(&time);
+    Tcl_GetTime(&time);
 
     return (time.sec * 1000 + time.usec / 1000);
 }

@@ -11,8 +11,9 @@
  */
 
 #undef STATIC_BUILD
-#undef USE_TCL_STUBS
-#define USE_TCL_STUBS
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
@@ -96,7 +97,7 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.4.0b2"
+#define TCL_DDE_VERSION		"1.4.0"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	TEXT("TclEval")
 #define TCL_DDE_EXECUTE_RESULT	TEXT("$TCLEVAL$EXECUTE$RESULT")
@@ -385,7 +386,8 @@ DdeSetServerName(
 		    Tcl_DStringSetLength(&dString, offset + sizeof(TCHAR) * TCL_INTEGER_SPACE);
 		    actualName = (TCHAR *) Tcl_DStringValue(&dString);
 		}
-		_stprintf((TCHAR *) (Tcl_DStringValue(&dString) + offset), TEXT("%d"), suffix);
+		_sntprintf((TCHAR *) (Tcl_DStringValue(&dString) + offset),
+			TCL_INTEGER_SPACE, TEXT("%d"), suffix);
 	    }
 
 	    /*

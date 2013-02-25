@@ -381,7 +381,8 @@ static Tcl_FSRenameFileProc TestReportRenameFile;
 static Tcl_FSCreateDirectoryProc TestReportCreateDirectory;
 static Tcl_FSCopyDirectoryProc TestReportCopyDirectory;
 static Tcl_FSRemoveDirectoryProc TestReportRemoveDirectory;
-static Tcl_FSLoadFileProc TestReportLoadFile;
+static int TestReportLoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
+	Tcl_LoadHandle *handlePtr, Tcl_FSUnloadFileProc **unloadProcPtr);
 static Tcl_FSLinkProc TestReportLink;
 static Tcl_FSFileAttrStringsProc TestReportFileAttrStrings;
 static Tcl_FSFileAttrsGetProc TestReportFileAttrsGet;
@@ -414,7 +415,7 @@ static int		TestInterpResolverCmd(ClientData clientData,
 #if defined(HAVE_CPUID) || defined(__WIN32__)
 static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Interp* interp, int objc,
-			    Tcl_Obj *CONST objv[]);
+			    Tcl_Obj *const objv[]);
 #endif
 
 static const Tcl_Filesystem testReportingFilesystem = {
@@ -446,7 +447,7 @@ static const Tcl_Filesystem testReportingFilesystem = {
     TestReportRenameFile,
     TestReportCopyDirectory,
     TestReportLstat,
-    TestReportLoadFile,
+    (Tcl_FSLoadFileProc *) TestReportLoadFile,
     NULL /* cwd */,
     TestReportChdir
 };

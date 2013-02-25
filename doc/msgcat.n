@@ -5,7 +5,7 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 .so man.macros
-.TH "msgcat" n 1.4 msgcat "Tcl Bundled Packages"
+.TH "msgcat" n 1.5 msgcat "Tcl Bundled Packages"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -13,7 +13,7 @@ msgcat \- Tcl message catalog
 .SH SYNOPSIS
 \fBpackage require Tcl 8.5\fR
 .sp
-\fBpackage require msgcat 1.5.0\fR
+\fBpackage require msgcat 1.5\fR
 .sp
 \fB::msgcat::mc \fIsrc-string\fR ?\fIarg arg ...\fR?
 .sp

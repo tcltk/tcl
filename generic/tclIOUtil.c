@@ -18,9 +18,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if defined(HAVE_SYS_STAT_H) && !defined _WIN32
-#   include <sys/stat.h>
-#endif
 #include "tclInt.h"
 #ifdef __WIN32__
 #   include "tclWinInt.h"
@@ -182,8 +179,8 @@ const Tcl_Filesystem tclNativeFilesystem = {
     TclpObjRenameFile,
     TclpObjCopyDirectory,
     TclpObjLstat,
-    TclpDlopen,
-    /* Needs a cast since we're using version_2. */
+    /* Needs casts since we're using version_2. */
+    (Tcl_FSLoadFileProc *) TclpDlopen,
     (Tcl_FSGetCwdProc *) TclpGetNativeCwd,
     TclpObjChdir
 };
@@ -3120,7 +3117,7 @@ Tcl_LoadFile(
 				 * code. */
     const char *const symbols[],/* Names of functions to look up in the file's
 				 * symbol table. */
-    int flags,			/* Flags (unused) */
+    int flags,			/* Flags */
     void *procVPtrs,		/* Where to return the addresses corresponding
 				 * to symbols[]. */
     Tcl_LoadHandle *handlePtr)	/* Filled with token for shared library
@@ -3145,8 +3142,8 @@ Tcl_LoadFile(
     }
 
     if (fsPtr->loadFileProc != NULL) {
-	int retVal = fsPtr->loadFileProc(interp, pathPtr, handlePtr,
-		&unloadProcPtr);
+	int retVal = ((Tcl_FSLoadFileProc2 *)(fsPtr->loadFileProc))
+		(interp, pathPtr, handlePtr, &unloadProcPtr, flags);
 
 	if (retVal == TCL_OK) {
 	    if (*handlePtr == NULL) {
@@ -3212,7 +3209,7 @@ Tcl_LoadFile(
 	ret = Tcl_Read(data, buffer, size);
 	Tcl_Close(interp, data);
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
-		&unloadProcPtr);
+		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
 	    goto resolveSymbols;
 	}
@@ -3283,7 +3280,7 @@ Tcl_LoadFile(
 
     Tcl_ResetResult(interp);
 
-    retVal = Tcl_LoadFile(interp, copyToPtr, symbols, 0, procPtrs,
+    retVal = Tcl_LoadFile(interp, copyToPtr, symbols, flags, procPtrs,
 	    &newLoadHandle);
     if (retVal != TCL_OK) {
 	/*
@@ -3512,50 +3509,6 @@ DivertUnloadFile(
 
     ckfree(tvdlPtr);
     ckfree(loadHandle);
-}
-
-/*
- * This function used to be in the platform specific directories, but it has
- * now been made to work cross-platform.
- */
-
-int
-TclpLoadFile(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Obj *pathPtr,		/* Name of the file containing the desired
-				 * code (UTF-8). */
-    const char *sym1, const char *sym2,
-				/* Names of two functions to look up in the
-				 * file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, Tcl_PackageInitProc **proc2Ptr,
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr,	/* Filled with token for dynamically loaded
-				 * file which will be passed back to
-				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
-				/* Filled with address of Tcl_FSUnloadFileProc
-				 * function which should be used for this
-				 * file. */
-{
-    Tcl_LoadHandle handle = NULL;
-    int res;
-
-    res = TclpDlopen(interp, pathPtr, &handle, unloadProcPtr);
-
-    if (res != TCL_OK) {
-	return res;
-    }
-
-    if (handle == NULL) {
-	return TCL_ERROR;
-    }
-
-    *clientDataPtr = handle;
-
-    *proc1Ptr = (Tcl_PackageInitProc*) Tcl_FindSymbol(interp, handle, sym1);
-    *proc2Ptr = (Tcl_PackageInitProc*) Tcl_FindSymbol(interp, handle, sym2);
-    return TCL_OK;
 }
 
 /*

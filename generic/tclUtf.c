@@ -1680,6 +1680,10 @@ Tcl_UniCharIsSpace(
 	return isspace(UCHAR(ch)); /* INTL: ISO space */
     } else if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
+    } else if ((Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x180e
+	    || (Tcl_UniChar) ch == 0x200b || (Tcl_UniChar) ch == 0x2060
+	    || (Tcl_UniChar) ch == 0xfeff) {
+	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);
     }
