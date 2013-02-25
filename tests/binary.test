@@ -1582,38 +1582,46 @@ test binary-40.4 {ScanNumber: NaN} -body {
     list [binary scan \xff\xff\xff\xff\xff\xff\xff\xff d arg1] $arg1
 } -match glob -result {1 -NaN*}
 
-test binary-41.1 {ScanNumber: word alignment} {
-    unset -nocomplain arg1; unset arg2
+test binary-41.1 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
     list [binary scan \x01\x01\x00 c1s1 arg1 arg2] $arg1 $arg2
-} {2 1 1}
-test binary-41.2 {ScanNumber: word alignment} {
-    unset -nocomplain arg1; unset arg2
+} -result {2 1 1}
+test binary-41.2 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
     list [binary scan \x01\x00\x01 c1S1 arg1 arg2] $arg1 $arg2
-} {2 1 1}
-test binary-41.3 {ScanNumber: word alignment} {
-    unset -nocomplain arg1; unset arg2
+} -result {2 1 1}
+test binary-41.3 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
     list [binary scan \x01\x01\x00\x00\x00 c1i1 arg1 arg2] $arg1 $arg2
-} {2 1 1}
-test binary-41.4 {ScanNumber: word alignment} {
-    unset -nocomplain arg1; unset arg2
+} -result {2 1 1}
+test binary-41.4 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -body {
     list [binary scan \x01\x00\x00\x00\x01 c1I1 arg1 arg2] $arg1 $arg2
-} {2 1 1}
-test binary-41.5 {ScanNumber: word alignment} bigEndian {
-    unset -nocomplain arg1; unset arg2
+} -result {2 1 1}
+test binary-41.5 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -constraints bigEndian -body {
     list [binary scan \x01\x3f\xcc\xcc\xcd c1f1 arg1 arg2] $arg1 $arg2
-} {2 1 1.600000023841858}
-test binary-41.6 {ScanNumber: word alignment} littleEndian {
-    unset -nocomplain arg1; unset arg2
+} -result {2 1 1.600000023841858}
+test binary-41.6 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -constraints littleEndian -body {
     list [binary scan \x01\xcd\xcc\xcc\x3f c1f1 arg1 arg2] $arg1 $arg2
-} {2 1 1.600000023841858}
-test binary-41.7 {ScanNumber: word alignment} bigEndian {
-    unset -nocomplain arg1; unset arg2
+} -result {2 1 1.600000023841858}
+test binary-41.7 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -constraints bigEndian -body {
     list [binary scan \x01\x3f\xf9\x99\x99\x99\x99\x99\x9a c1d1 arg1 arg2] $arg1 $arg2
-} {2 1 1.6}
-test binary-41.8 {ScanNumber: word alignment} littleEndian {
-    unset -nocomplain arg1; unset arg2
+} -result {2 1 1.6}
+test binary-41.8 {ScanNumber: word alignment} -setup {
+    unset -nocomplain arg1 arg2
+} -constraints littleEndian -body {
     list [binary scan \x01\x9a\x99\x99\x99\x99\x99\xf9\x3f c1d1 arg1 arg2] $arg1 $arg2
-} {2 1 1.6}
+} -result {2 1 1.6}
 
 test binary-42.1 {Tcl_BinaryObjCmd: bad arguments} -constraints {} -body {
     binary ?
