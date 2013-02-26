@@ -342,31 +342,6 @@ typedef struct ChannelHandler {
 } ChannelHandler;
 
 /*
- * This structure keeps track of the current ChannelHandler being invoked in
- * the current invocation of ChannelHandlerEventProc. There is a potential
- * problem if a ChannelHandler is deleted while it is the current one, since
- * ChannelHandlerEventProc needs to look at the nextPtr field. To handle this
- * problem, structures of the type below indicate the next handler to be
- * processed for any (recursively nested) dispatches in progress. The
- * nextHandlerPtr field is updated if the handler being pointed to is deleted.
- * The nextPtr field is used to chain together all recursive invocations, so
- * that Tcl_DeleteChannelHandler can find all the recursively nested
- * invocations of ChannelHandlerEventProc and compare the handler being
- * deleted against the NEXT handler to be invoked in that invocation; when it
- * finds such a situation, Tcl_DeleteChannelHandler updates the nextHandlerPtr
- * field of the structure to the next handler.
- */
-
-typedef struct NextChannelHandler {
-    ChannelHandler *nextHandlerPtr;	/* The next handler to be invoked in
-                                         * this invocation. */
-    struct NextChannelHandler *nestedHandlerPtr;
-    /* Next nested invocation of
-     * ChannelHandlerEventProc. */
-} NextChannelHandler;
-
-
-/*
  * The following structure describes the event that is added to the Tcl
  * event queue by the channel handler check procedure.
  */
