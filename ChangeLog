@@ -1,3 +1,8 @@
+2013-02-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclObj.c: Don't panic if Tcl_ConvertToType is called for a
+	type that doesn't have a setFromAnyProc, create a proper error message.
+
 2013-02-25  Donal K. Fellows  <dkf@users.sf.net>
 
 	* tests/binary.test (binary-41.*): [Bug 3605721]: Test independence
