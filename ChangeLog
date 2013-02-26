@@ -1,3 +1,18 @@
+2013-02-26  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/chanio.test (chan-io-28.7): [Bug 3605120]: Stop test from
+	hanging when run standalone.
+
+2013-02-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclObj.c: Don't panic if Tcl_ConvertToType is called for a
+	type that doesn't have a setFromAnyProc, create a proper error message.
+
+2013-02-25  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/binary.test (binary-41.*): [Bug 3605721]: Test independence
+	fixes. Thanks to Rolf Ade for pointing out the problem.
+
 2013-02-25  Don Porter  <dgp@users.sourceforge.net>
 
 	* tests/assocd.test:	[Bugs 3605719,3605720] Test independence.
