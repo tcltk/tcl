@@ -22,6 +22,23 @@
 
 
 /*
+ * For each channel handler registered in a call to Tcl_CreateChannelHandler,
+ * there is one record of the following type. All of records for a specific
+ * channel are chained together in a singly linked list which is stored in
+ * the channel structure.
+ */
+
+typedef struct ChannelHandler {
+    Channel *chanPtr;		/* The channel structure for this channel. */
+    int mask;			/* Mask of desired events. */
+    Tcl_ChannelProc *proc;	/* Procedure to call in the type of
+				 * Tcl_CreateChannelHandler. */
+    ClientData clientData;	/* Argument to pass to procedure. */
+    struct ChannelHandler *nextPtr;
+				/* Next one in list of registered handlers. */
+} ChannelHandler;
+
+/*
  * This structure keeps track of the current ChannelHandler being invoked in
  * the current invocation of ChannelHandlerEventProc. There is a potential
  * problem if a ChannelHandler is deleted while it is the current one, since
@@ -44,6 +61,67 @@ typedef struct NextChannelHandler {
 					/* Next nested invocation of
 					 * ChannelHandlerEventProc. */
 } NextChannelHandler;
+
+/*
+ * The following structure describes the event that is added to the Tcl
+ * event queue by the channel handler check procedure.
+ */
+
+typedef struct ChannelHandlerEvent {
+    Tcl_Event header;		/* Standard header for all events. */
+    Channel *chanPtr;		/* The channel that is ready. */
+    int readyMask;		/* Events that have occurred. */
+} ChannelHandlerEvent;
+
+/*
+ * The following structure is used by Tcl_GetsObj() to encapsulates the
+ * state for a "gets" operation.
+ */
+
+typedef struct GetsState {
+    Tcl_Obj *objPtr;		/* The object to which UTF-8 characters
+				 * will be appended. */
+    char **dstPtr;		/* Pointer into objPtr's string rep where
+				 * next character should be stored. */
+    Tcl_Encoding encoding;	/* The encoding to use to convert raw bytes
+				 * to UTF-8.  */
+    ChannelBuffer *bufPtr;	/* The current buffer of raw bytes being
+				 * emptied. */
+    Tcl_EncodingState state;	/* The encoding state just before the last
+				 * external to UTF-8 conversion in
+				 * FilterInputBytes(). */
+    int rawRead;		/* The number of bytes removed from bufPtr
+				 * in the last call to FilterInputBytes(). */
+    int bytesWrote;		/* The number of bytes of UTF-8 data
+				 * appended to objPtr during the last call to
+				 * FilterInputBytes(). */
+    int charsWrote;		/* The corresponding number of UTF-8
+				 * characters appended to objPtr during the
+				 * last call to FilterInputBytes(). */
+    int totalChars;		/* The total number of UTF-8 characters
+				 * appended to objPtr so far, just before the
+				 * last call to FilterInputBytes(). */
+} GetsState;
+
+/*
+ * The following structure encapsulates the state for a background channel
+ * copy.  Note that the data buffer for the copy will be appended to this
+ * structure.
+ */
+
+typedef struct CopyState {
+    struct Channel *readPtr;	/* Pointer to input channel. */
+    struct Channel *writePtr;	/* Pointer to output channel. */
+    int readFlags;		/* Original read channel flags. */
+    int writeFlags;		/* Original write channel flags. */
+    int toRead;			/* Number of bytes to copy, or -1. */
+    int total;			/* Total bytes transferred (written). */
+    Tcl_Interp *interp;		/* Interp that started the copy. */
+    Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
+    int bufSize;		/* Size of appended buffer. */
+    char buffer[1];		/* Copy buffer, this must be the last
+                                 * field. */
+} CopyState;
 
 /*
  * All static variables used in this file are collected into a single
