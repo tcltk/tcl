@@ -918,10 +918,10 @@ const TclStubs tclStubs = {
     0, /* 255 */
     Tcl_UntraceVar2, /* 256 */
     Tcl_UpdateLinkedVar, /* 257 */
-    Tcl_UpVar, /* 258 */
+    0, /* 258 */
     Tcl_UpVar2, /* 259 */
     0, /* 260 */
-    Tcl_VarTraceInfo, /* 261 */
+    0, /* 261 */
     Tcl_VarTraceInfo2, /* 262 */
     Tcl_Write, /* 263 */
     Tcl_WrongNumArgs, /* 264 */

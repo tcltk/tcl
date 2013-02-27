@@ -931,10 +931,11 @@ declare 256 {
 declare 257 {
     void Tcl_UpdateLinkedVar(Tcl_Interp *interp, const char *varName)
 }
-declare 258 {
-    int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
-	    const char *varName, const char *localName, int flags)
-}
+# Removed in 9.0
+#declare 258 {
+#    int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
+#	    const char *varName, const char *localName, int flags)
+#}
 declare 259 {
     int Tcl_UpVar2(Tcl_Interp *interp, const char *frameName, const char *part1,
 	    const char *part2, const char *localName, int flags)
@@ -943,10 +944,11 @@ declare 259 {
 #declare 260 {
 #    int Tcl_VarEval(Tcl_Interp *interp, ...)
 #}
-declare 261 {
-    ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
-	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
-}
+# Removed in 9.0
+#declare 261 {
+#    ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
+#	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
+#}
 declare 262 {
     ClientData Tcl_VarTraceInfo2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags, Tcl_VarTraceProc *procPtr,

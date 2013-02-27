@@ -711,20 +711,13 @@ TCLAPI void		Tcl_UntraceVar2(Tcl_Interp *interp,
 /* 257 */
 TCLAPI void		Tcl_UpdateLinkedVar(Tcl_Interp *interp,
 				const char *varName);
-/* 258 */
-TCLAPI int		Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
-				const char *varName, const char *localName,
-				int flags);
+/* Slot 258 is reserved */
 /* 259 */
 TCLAPI int		Tcl_UpVar2(Tcl_Interp *interp, const char *frameName,
 				const char *part1, const char *part2,
 				const char *localName, int flags);
 /* Slot 260 is reserved */
-/* 261 */
-TCLAPI ClientData	Tcl_VarTraceInfo(Tcl_Interp *interp,
-				const char *varName, int flags,
-				Tcl_VarTraceProc *procPtr,
-				ClientData prevClientData);
+/* Slot 261 is reserved */
 /* 262 */
 TCLAPI ClientData	Tcl_VarTraceInfo2(Tcl_Interp *interp,
 				const char *part1, const char *part2,
@@ -2022,10 +2015,10 @@ typedef struct TclStubs {
     void (*reserved255)(void);
     void (*tcl_UntraceVar2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *proc, ClientData clientData); /* 256 */
     void (*tcl_UpdateLinkedVar) (Tcl_Interp *interp, const char *varName); /* 257 */
-    int (*tcl_UpVar) (Tcl_Interp *interp, const char *frameName, const char *varName, const char *localName, int flags); /* 258 */
+    void (*reserved258)(void);
     int (*tcl_UpVar2) (Tcl_Interp *interp, const char *frameName, const char *part1, const char *part2, const char *localName, int flags); /* 259 */
     void (*reserved260)(void);
-    ClientData (*tcl_VarTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData); /* 261 */
+    void (*reserved261)(void);
     ClientData (*tcl_VarTraceInfo2) (Tcl_Interp *interp, const char *part1, const char *part2, int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData); /* 262 */
     int (*tcl_Write) (Tcl_Channel chan, const char *s, int slen); /* 263 */
     void (*tcl_WrongNumArgs) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], const char *message); /* 264 */
@@ -2921,13 +2914,11 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UntraceVar2) /* 256 */
 #define Tcl_UpdateLinkedVar \
 	(tclStubsPtr->tcl_UpdateLinkedVar) /* 257 */
-#define Tcl_UpVar \
-	(tclStubsPtr->tcl_UpVar) /* 258 */
+/* Slot 258 is reserved */
 #define Tcl_UpVar2 \
 	(tclStubsPtr->tcl_UpVar2) /* 259 */
 /* Slot 260 is reserved */
-#define Tcl_VarTraceInfo \
-	(tclStubsPtr->tcl_VarTraceInfo) /* 261 */
+/* Slot 261 is reserved */
 #define Tcl_VarTraceInfo2 \
 	(tclStubsPtr->tcl_VarTraceInfo2) /* 262 */
 #define Tcl_Write \
@@ -3732,6 +3723,10 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData)
 #define Tcl_UntraceVar(interp, varName, flags, proc, clientData) \
 	Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData)
+#define Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData) \
+	Tcl_VarTraceInfo2(interp, varName, NULL, flags, proc, prevClientData)
+#define Tcl_UpVar(interp, frameName, varName, localName, flags) \
+	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
 
 /*
  * Deprecated Tcl procedures:
