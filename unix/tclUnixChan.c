@@ -14,9 +14,8 @@
 #include "tclInt.h"	/* Internal definitions for Tcl. */
 #include "tclIO.h"	/* To get Channel type declaration. */
 
-#define SUPPORTS_TTY
-
 #ifdef USE_TERMIOS
+#   define SUPPORTS_TTY
 #   include <termios.h>
 #   ifdef HAVE_SYS_IOCTL_H
 #	include <sys/ioctl.h>
@@ -59,10 +58,7 @@
 #	define PAREXT CMSPAR
 #   endif /* !PAREXT&&CMSPAR */
 #else	/* !USE_TERMIOS */
-
-
 #   undef SUPPORTS_TTY
-
 #endif	/* !USE_TERMIOS */
 
 /*
@@ -550,7 +546,6 @@ FileGetHandleProc(
 }
 
 #ifdef SUPPORTS_TTY
-#ifdef USE_TERMIOS
 /*
  *----------------------------------------------------------------------
  *
@@ -583,7 +578,6 @@ TtyModemStatusStr(
     Tcl_DStringAppendElement(dsPtr, (status & TIOCM_CD) ? "1" : "0");
 #endif /* TIOCM_CD */
 }
-#endif /* USE_TERMIOS */
 
 /*
  *----------------------------------------------------------------------
@@ -613,11 +607,9 @@ TtySetOptionProc(
     FileState *fsPtr = instanceData;
     unsigned int len, vlen;
     TtyAttrs tty;
-#ifdef USE_TERMIOS
     int flag, control, argc;
     const char **argv;
     IOSTATE iostate;
-#endif /* USE_TERMIOS */
 
     len = strlen(optionName);
     vlen = strlen(value);
@@ -640,7 +632,6 @@ TtySetOptionProc(
 	return TCL_OK;
     }
 
-#ifdef USE_TERMIOS
 
     /*
      * Option -handshake none|xonxoff|rtscts|dtrdsr
@@ -820,9 +811,6 @@ TtySetOptionProc(
     return Tcl_BadChannelOption(interp, optionName,
 	    "mode handshake timeout ttycontrol xchar");
 
-#else /* !USE_TERMIOS */
-    return Tcl_BadChannelOption(interp, optionName, "mode");
-#endif /* USE_TERMIOS */
 }
 
 /*
@@ -876,7 +864,6 @@ TtyGetOptionProc(
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
-#ifdef USE_TERMIOS
     /*
      * Get option -xchar
      */
@@ -943,15 +930,12 @@ TtyGetOptionProc(
 	GETCONTROL(fsPtr->fd, &status);
 	TtyModemStatusStr(status, dsPtr);
     }
-#endif /* USE_TERMIOS */
 
     if (valid) {
 	return TCL_OK;
     }
     return Tcl_BadChannelOption(interp, optionName, "mode"
-#ifdef USE_TERMIOS
 	    " queue ttystatus xchar"
-#endif /* USE_TERMIOS */
 	    );
 }
 
@@ -1152,7 +1136,6 @@ TtyGetAttributes(
 
     GETIOSTATE(fd, &iostate);
 
-#ifdef USE_TERMIOS
     baud = TtyGetBaud(cfgetospeed(&iostate));
 
     parity = 'n';
@@ -1174,7 +1157,6 @@ TtyGetAttributes(
     data = (data == CS5) ? 5 : (data == CS6) ? 6 : (data == CS7) ? 7 : 8;
 
     stop = (iostate.c_cflag & CSTOPB) ? 2 : 1;
-#endif /* USE_TERMIOS */
 
 
 
@@ -1209,7 +1191,6 @@ TtySetAttributes(
 {
     IOSTATE iostate;
 
-#ifdef USE_TERMIOS
     int parity, data, flag;
 
     GETIOSTATE(fd, &iostate);
@@ -1242,7 +1223,6 @@ TtySetAttributes(
     CLEAR_BITS(iostate.c_cflag, PARENB | PARODD | CSIZE | CSTOPB);
     SET_BITS(iostate.c_cflag, flag);
 
-#endif	/* USE_TERMIOS */
 
 
 
