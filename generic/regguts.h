@@ -366,7 +366,7 @@ struct subre {
  */
 
 struct fns {
-    VOID FUNCPTR(free, (regex_t *));
+    void FUNCPTR(free, (regex_t *));
 };
 
 /*
