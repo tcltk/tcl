@@ -1282,20 +1282,20 @@ TtyParseMode(
      */
 
     if (
-#if defined(PAREXT) || defined(USE_TERMIO)
+#if defined(PAREXT)
         strchr("noems", parity)
 #else
         strchr("noe", parity)
-#endif /* PAREXT|USE_TERMIO */
+#endif /* PAREXT */
                                == NULL) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s parity: should be %s", bad,
-#if defined(PAREXT) || defined(USE_TERMIO)
+#if defined(PAREXT)
 		    "n, o, e, m, or s"
 #else
 		    "n, o, or e"
-#endif /* PAREXT|USE_TERMIO */
+#endif /* PAREXT */
 		    ));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "SERIALMODE", NULL);
 	}
@@ -1357,7 +1357,6 @@ TtyInit(
     if (initialize) {
 	IOSTATE iostate = ttyPtr->savedState;
 
-#if defined(USE_TERMIOS) || defined(USE_TERMIO)
 	if (iostate.c_iflag != IGNBRK
 		|| iostate.c_oflag != 0
 		|| iostate.c_lflag != 0
@@ -1372,8 +1371,6 @@ TtyInit(
 	SET_BITS(iostate.c_cflag, CREAD);
 	iostate.c_cc[VMIN] = 1;
 	iostate.c_cc[VTIME] = 0;
-#endif	/* USE_TERMIOS|USE_TERMIO */
-
 
 	/*
 	 * Only update if we're changing anything to avoid possible blocking.
