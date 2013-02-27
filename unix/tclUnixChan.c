@@ -23,9 +23,6 @@
 #   ifdef HAVE_SYS_MODEM_H
 #	include <sys/modem.h>
 #   endif /* HAVE_SYS_MODEM_H */
-#   define IOSTATE			struct termios
-#   define GETIOSTATE(fd, statePtr)	tcgetattr((fd), (statePtr))
-#   define SETIOSTATE(fd, statePtr)	tcsetattr((fd), TCSADRAIN, (statePtr))
 #   define GETCONTROL(fd, intPtr)	ioctl((fd), TIOCMGET, (intPtr))
 #   define SETCONTROL(fd, intPtr)	ioctl((fd), TIOCMSET, (intPtr))
 
@@ -92,7 +89,7 @@ typedef struct FileState {
 typedef struct TtyState {
     FileState fs;		/* Per-instance state of the file descriptor.
 				 * Must be the first field. */
-    IOSTATE savedState;		/* Initial state of device. Used to reset
+    struct termios savedState;	/* Initial state of device. Used to reset
 				 * state when device closed. */
 } TtyState;
 
@@ -609,7 +606,7 @@ TtySetOptionProc(
     TtyAttrs tty;
     int flag, control, argc;
     const char **argv;
-    IOSTATE iostate;
+    struct termios iostate;
 
     len = strlen(optionName);
     vlen = strlen(value);
@@ -642,7 +639,7 @@ TtySetOptionProc(
 	 * Reset all handshake options. DTR and RTS are ON by default.
 	 */
 
-	GETIOSTATE(fsPtr->fd, &iostate);
+	tcgetattr(fsPtr->fd, &iostate);
 	CLEAR_BITS(iostate.c_iflag, IXON | IXOFF | IXANY);
 #ifdef CRTSCTS
 	CLEAR_BITS(iostate.c_cflag, CRTSCTS);
@@ -673,7 +670,7 @@ TtySetOptionProc(
 	    }
 	    return TCL_ERROR;
 	}
-	SETIOSTATE(fsPtr->fd, &iostate);
+	tcsetattr(fsPtr->fd, TCSADRAIN, &iostate);
 	return TCL_OK;
     }
 
@@ -698,7 +695,7 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	}
 
-	GETIOSTATE(fsPtr->fd, &iostate);
+	tcgetattr(fsPtr->fd, &iostate);
 
 	Tcl_UtfToExternalDString(NULL, argv[0], -1, &ds);
 	iostate.c_cc[VSTART] = *(const cc_t *) Tcl_DStringValue(&ds);
@@ -709,7 +706,7 @@ TtySetOptionProc(
 	Tcl_DStringFree(&ds);
 	ckfree(argv);
 
-	SETIOSTATE(fsPtr->fd, &iostate);
+	tcsetattr(fsPtr->fd, TCSADRAIN, &iostate);
 	return TCL_OK;
     }
 
@@ -720,13 +717,13 @@ TtySetOptionProc(
     if ((len > 2) && (strncmp(optionName, "-timeout", len) == 0)) {
 	int msec;
 
-	GETIOSTATE(fsPtr->fd, &iostate);
+	tcgetattr(fsPtr->fd, &iostate);
 	if (Tcl_GetInt(interp, value, &msec) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	iostate.c_cc[VMIN] = 0;
 	iostate.c_cc[VTIME] = (msec==0) ? 0 : (msec<100) ? 1 : (msec+50)/100;
-	SETIOSTATE(fsPtr->fd, &iostate);
+	tcsetattr(fsPtr->fd, TCSADRAIN, &iostate);
 	return TCL_OK;
     }
 
@@ -873,11 +870,11 @@ TtyGetOptionProc(
 	Tcl_DStringStartSublist(dsPtr);
     }
     if (len==0 || (len>1 && strncmp(optionName, "-xchar", len)==0)) {
-	IOSTATE iostate;
+	struct termios iostate;
 	Tcl_DString ds;
 
 	valid = 1;
-	GETIOSTATE(fsPtr->fd, &iostate);
+	tcgetattr(fsPtr->fd, &iostate);
 	Tcl_DStringInit(&ds);
 
 	Tcl_ExternalToUtfDString(NULL, (char *) &iostate.c_cc[VSTART], 1, &ds);
@@ -1131,10 +1128,10 @@ TtyGetAttributes(
     TtyAttrs *ttyPtr)		/* Buffer filled with serial port
 				 * attributes. */
 {
-    IOSTATE iostate;
+    struct termios iostate;
     int baud, parity, data, stop;
 
-    GETIOSTATE(fd, &iostate);
+    tcgetattr(fd, &iostate);
 
     baud = TtyGetBaud(cfgetospeed(&iostate));
 
@@ -1189,11 +1186,10 @@ TtySetAttributes(
     TtyAttrs *ttyPtr)		/* Buffer containing new attributes for serial
 				 * port. */
 {
-    IOSTATE iostate;
-
+    struct termios iostate;
     int parity, data, flag;
 
-    GETIOSTATE(fd, &iostate);
+    tcgetattr(fd, &iostate);
     cfsetospeed(&iostate, TtyGetSpeed(ttyPtr->baud));
     cfsetispeed(&iostate, TtyGetSpeed(ttyPtr->baud));
 
@@ -1223,10 +1219,7 @@ TtySetAttributes(
     CLEAR_BITS(iostate.c_cflag, PARENB | PARODD | CSIZE | CSTOPB);
     SET_BITS(iostate.c_cflag, flag);
 
-
-
-
-    SETIOSTATE(fd, &iostate);
+    tcsetattr(fd, TCSADRAIN, &iostate);
 }
 
 /*
@@ -1353,9 +1346,9 @@ TtyInit(
     TtyState *ttyPtr = ckalloc(sizeof(TtyState));
     int stateUpdated = 0;
 
-    GETIOSTATE(fd, &ttyPtr->savedState);
+    tcgetattr(fd, &ttyPtr->savedState);
     if (initialize) {
-	IOSTATE iostate = ttyPtr->savedState;
+	struct termios iostate = ttyPtr->savedState;
 
 	if (iostate.c_iflag != IGNBRK
 		|| iostate.c_oflag != 0
@@ -1377,7 +1370,7 @@ TtyInit(
 	 */
 
 	if (stateUpdated) {
-	    SETIOSTATE(fd, &iostate);
+	    tcsetattr(fd, TCSADRAIN, &iostate);
 	}
     }
 
