@@ -139,8 +139,8 @@ static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
 static int		TtyGetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-static int		TtyGetBaud(unsigned long speed);
-static unsigned long	TtyGetSpeed(int baud);
+static int		TtyGetBaud(speed_t speed);
+static speed_t		TtyGetSpeed(int baud);
 static FileState *	TtyInit(int fd, int initialize);
 static void		TtyModemStatusStr(int status, Tcl_DString *dsPtr);
 static int		TtyParseMode(Tcl_Interp *interp, const char *mode,
@@ -937,7 +937,7 @@ TtyGetOptionProc(
 }
 
 
-static const struct {int baud; unsigned long speed;} speeds[] = {
+static const struct {int baud; speed_t speed;} speeds[] = {
 #ifdef B0
     {0, B0},
 #endif
@@ -1033,20 +1033,16 @@ static const struct {int baud; unsigned long speed;} speeds[] = {
  *
  * TtyGetSpeed --
  *
- *	Given a baud rate, get the mask value that should be stored in the
- *	termios, termio, or sgttyb structure in order to select that baud
- *	rate.
+ *	Given an integer baud rate, get the speed_t value that should be
+ *	used to select that baud rate.
  *
  * Results:
  *	As above.
  *
- * Side effects:
- *	None.
- *
  *---------------------------------------------------------------------------
  */
 
-static unsigned long
+static speed_t
 TtyGetSpeed(
     int baud)			/* The baud rate to look up. */
 {
@@ -1079,21 +1075,17 @@ TtyGetSpeed(
  *
  * TtyGetBaud --
  *
- *	Given a speed mask value from a termios, termio, or sgttyb structure,
- *	get the baus rate that corresponds to that mask value.
+ *	Return the integer baud rate corresponding to a given speed_t value.
  *
  * Results:
  *	As above. If the mask value was not recognized, 0 is returned.
- *
- * Side effects:
- *	None.
  *
  *---------------------------------------------------------------------------
  */
 
 static int
 TtyGetBaud(
-    unsigned long speed)	/* Speed mask value to look up. */
+    speed_t speed)		/* Speed mask value to look up. */
 {
     int i;
 
