@@ -155,8 +155,8 @@ typedef struct StringTraceData {
 
 #define FOREACH_VAR_TRACE(interp, name, clientData) \
     (clientData) = NULL; \
-    while (((clientData) = Tcl_VarTraceInfo((interp), (name), 0, \
-	    TraceVarProc, (clientData))) != NULL)
+    while (((clientData) = Tcl_VarTraceInfo2((interp), (name), NULL, \
+	    0, TraceVarProc, (clientData))) != NULL)
 
 #define FOREACH_COMMAND_TRACE(interp, name, clientData) \
     (clientData) = NULL; \
@@ -2815,6 +2815,7 @@ DisposeTraceResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UntraceVar
 void
 Tcl_UntraceVar(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
@@ -2983,6 +2984,7 @@ Tcl_UntraceVar2(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_VarTraceInfo
 ClientData
 Tcl_VarTraceInfo(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
