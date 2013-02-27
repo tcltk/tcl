@@ -16,13 +16,6 @@
 
 #define SUPPORTS_TTY
 
-#undef DIRECT_BAUD
-#ifdef B4800
-#   if (B4800 == 4800)
-#	define DIRECT_BAUD
-#   endif /* B4800 == 4800 */
-#endif /* B4800 */
-
 #ifdef USE_TERMIOS
 #   include <termios.h>
 #   ifdef HAVE_SYS_IOCTL_H
@@ -153,10 +146,8 @@ static void		TtyGetAttributes(int fd, TtyAttrs *ttyPtr);
 static int		TtyGetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
-#ifndef DIRECT_BAUD
 static int		TtyGetBaud(unsigned long speed);
 static unsigned long	TtyGetSpeed(int baud);
-#endif /* DIRECT_BAUD */
 static FileState *	TtyInit(int fd, int initialize);
 static void		TtyModemStatusStr(int status, Tcl_DString *dsPtr);
 static int		TtyParseMode(Tcl_Interp *interp, const char *mode,
@@ -964,10 +955,6 @@ TtyGetOptionProc(
 	    );
 }
 
-#ifdef DIRECT_BAUD
-#   define TtyGetSpeed(baud)	((unsigned) (baud))
-#   define TtyGetBaud(speed)	((int) (speed))
-#else /* !DIRECT_BAUD */
 
 static const struct {int baud; unsigned long speed;} speeds[] = {
 #ifdef B0
@@ -1136,7 +1123,6 @@ TtyGetBaud(
     }
     return 0;
 }
-#endif /* !DIRECT_BAUD */
 
 /*
  *---------------------------------------------------------------------------
