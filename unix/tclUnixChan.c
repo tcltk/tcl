@@ -67,23 +67,9 @@
 #   endif /* !PAREXT&&CMSPAR */
 #else	/* !USE_TERMIOS */
 
-#ifdef USE_TERMIO
-#   include <termio.h>
-#   define IOSTATE			struct termio
-#   define GETIOSTATE(fd, statePtr)	ioctl((fd), TCGETA, (statePtr))
-#   define SETIOSTATE(fd, statePtr)	ioctl((fd), TCSETAW, (statePtr))
-#else	/* !USE_TERMIO */
 
-#ifdef USE_SGTTY
-#   include <sgtty.h>
-#   define IOSTATE			struct sgttyb
-#   define GETIOSTATE(fd, statePtr)	ioctl((fd), TIOCGETP, (statePtr))
-#   define SETIOSTATE(fd, statePtr)	ioctl((fd), TIOCSETP, (statePtr))
-#else	/* !USE_SGTTY */
 #   undef SUPPORTS_TTY
-#endif	/* !USE_SGTTY */
 
-#endif	/* !USE_TERMIO */
 #endif	/* !USE_TERMIOS */
 
 /*
@@ -1204,37 +1190,7 @@ TtyGetAttributes(
     stop = (iostate.c_cflag & CSTOPB) ? 2 : 1;
 #endif /* USE_TERMIOS */
 
-#ifdef USE_TERMIO
-    baud = TtyGetBaud(iostate.c_cflag & CBAUD);
 
-    parity = 'n';
-    switch (iostate.c_cflag & (PARENB | PARODD | PAREXT)) {
-    case PARENB			  : parity = 'e'; break;
-    case PARENB | PARODD	  : parity = 'o'; break;
-    case PARENB |	   PAREXT : parity = 's'; break;
-    case PARENB | PARODD | PAREXT : parity = 'm'; break;
-    }
-
-    data = iostate.c_cflag & CSIZE;
-    data = (data == CS5) ? 5 : (data == CS6) ? 6 : (data == CS7) ? 7 : 8;
-
-    stop = (iostate.c_cflag & CSTOPB) ? 2 : 1;
-#endif /* USE_TERMIO */
-
-#ifdef USE_SGTTY
-    baud = TtyGetBaud(iostate.sg_ospeed);
-
-    parity = 'n';
-    if (iostate.sg_flags & EVENP) {
-	parity = 'e';
-    } else if (iostate.sg_flags & ODDP) {
-	parity = 'o';
-    }
-
-    data = (iostate.sg_flags & (EVENP | ODDP)) ? 7 : 8;
-
-    stop = 1;
-#endif /* USE_SGTTY */
 
     ttyPtr->baud    = baud;
     ttyPtr->parity  = parity;
@@ -1302,54 +1258,7 @@ TtySetAttributes(
 
 #endif	/* USE_TERMIOS */
 
-#ifdef USE_TERMIO
-    int parity, data, flag;
 
-    GETIOSTATE(fd, &iostate);
-    CLEAR_BITS(iostate.c_cflag, CBAUD);
-    SET_BITS(iostate.c_cflag, TtyGetSpeed(ttyPtr->baud));
-
-    flag = 0;
-    parity = ttyPtr->parity;
-    if (parity != 'n') {
-	SET_BITS(flag, PARENB);
-	if ((parity == 'm') || (parity == 's')) {
-	    SET_BITS(flag, PAREXT);
-	}
-	if ((parity == 'm') || (parity == 'o')) {
-	    SET_BITS(flag, PARODD);
-	}
-    }
-    data = ttyPtr->data;
-    SET_BITS(flag,
-	    (data == 5) ? CS5 :
-	    (data == 6) ? CS6 :
-	    (data == 7) ? CS7 : CS8);
-    if (ttyPtr->stop == 2) {
-	SET_BITS(flag, CSTOPB);
-    }
-
-    CLEAR_BITS(iostate.c_cflag, PARENB | PARODD | PAREXT | CSIZE | CSTOPB);
-    SET_BITS(iostate.c_cflag, flag);
-
-#endif	/* USE_TERMIO */
-
-#ifdef USE_SGTTY
-    int parity;
-
-    GETIOSTATE(fd, &iostate);
-    iostate.sg_ospeed = TtyGetSpeed(ttyPtr->baud);
-    iostate.sg_ispeed = TtyGetSpeed(ttyPtr->baud);
-
-    parity = ttyPtr->parity;
-    if (parity == 'e') {
-	CLEAR_BITS(iostate.sg_flags, ODDP);
-	SET_BITS(iostate.sg_flags, EVENP);
-    } else if (parity == 'o') {
-	CLEAR_BITS(iostate.sg_flags, EVENP);
-	SET_BITS(iostate.sg_flags, ODDP);
-    }
-#endif	/* USE_SGTTY */
 
     SETIOSTATE(fd, &iostate);
 }
@@ -1499,14 +1408,6 @@ TtyInit(
 	iostate.c_cc[VTIME] = 0;
 #endif	/* USE_TERMIOS|USE_TERMIO */
 
-#ifdef USE_SGTTY
-	if ((iostate.sg_flags & (EVENP | ODDP))
-		|| !(iostate.sg_flags & RAW)) {
-	    ttyPtr->stateUpdated = 1;
-	}
-	iostate.sg_flags &= EVENP | ODDP;
-	SET_BITS(iostate.sg_flags, RAW);
-#endif	/* USE_SGTTY */
 
 	/*
 	 * Only update if we're changing anything to avoid possible blocking.
