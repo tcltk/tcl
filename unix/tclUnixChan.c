@@ -822,12 +822,8 @@ TtySetOptionProc(
  *
  * Results:
  *	A standard Tcl result. Also sets the supplied DString to the string
- *	value of the option(s) returned.
- *
- * Side effects:
- *	The string returned by this function is in static storage and may be
- *	reused at any time subsequent to the call. Sets error message if
- *	needed (by calling Tcl_BadChannelOption).
+ *	value of the option(s) returned.  Sets error message if needed 
+ *	(by calling Tcl_BadChannelOption).
  *
  *----------------------------------------------------------------------
  */
