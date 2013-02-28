@@ -3093,6 +3093,7 @@ Tcl_VarTraceInfo2(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_TraceVar
 int
 Tcl_TraceVar(
     Tcl_Interp *interp,		/* Interpreter in which variable is to be
