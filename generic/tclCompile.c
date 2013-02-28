@@ -918,7 +918,7 @@ TclCleanupByteCode(
      * released.
      */
 
-    if ((codePtr->flags & TCL_BYTECODE_PRECOMPILED) || (interp == NULL)) {
+    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 
 	objArrayPtr = codePtr->objArrayPtr;
 	for (i = 0;  i < numLitObjects;  i++) {
@@ -931,17 +931,9 @@ TclCleanupByteCode(
 	codePtr->numLitObjects = 0;
     } else {
 	objArrayPtr = codePtr->objArrayPtr;
-	for (i = 0;  i < numLitObjects;  i++) {
-	    /*
-	     * TclReleaseLiteral sets a ByteCode's object array entry NULL to
-	     * indicate that it has already freed the literal.
-	     */
-
-	    objPtr = *objArrayPtr;
-	    if (objPtr != NULL) {
-		TclReleaseLiteral(interp, objPtr);
-	    }
-	    objArrayPtr++;
+	while (numLitObjects--) {
+	    /* TclReleaseLiteral calls Tcl_DecrRefCount() for us */
+	    TclReleaseLiteral(interp, *objArrayPtr++);
 	}
     }
 

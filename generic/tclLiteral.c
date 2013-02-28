@@ -750,11 +750,16 @@ TclReleaseLiteral(
 				 * TclRegisterLiteral. */
 {
     Interp *iPtr = (Interp *) interp;
-    LiteralTable *globalTablePtr = &iPtr->literalTable;
+    LiteralTable *globalTablePtr;
     register LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
     int length, index;
 
+    if (iPtr == NULL) {
+	goto done;
+    }
+
+    globalTablePtr = &iPtr->literalTable;
     bytes = TclGetStringFromObj(objPtr, &length);
     index = (HashString(bytes, length) & globalTablePtr->mask);
 
@@ -798,6 +803,7 @@ TclReleaseLiteral(
      * Remove the reference corresponding to the local literal table entry.
      */
 
+    done:
     Tcl_DecrRefCount(objPtr);
 }
 
