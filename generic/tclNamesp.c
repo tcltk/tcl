@@ -505,9 +505,9 @@ EstablishErrorCodeTraces(
     const char *name2,
     int flags)
 {
-    Tcl_TraceVar(interp, "errorCode", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
+    Tcl_TraceVar2(interp, "errorCode", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_READS,
 	    ErrorCodeRead, NULL);
-    Tcl_TraceVar(interp, "errorCode", TCL_GLOBAL_ONLY | TCL_TRACE_UNSETS,
+    Tcl_TraceVar2(interp, "errorCode", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_UNSETS,
 	    EstablishErrorCodeTraces, NULL);
     return NULL;
 }
@@ -579,9 +579,9 @@ EstablishErrorInfoTraces(
     const char *name2,
     int flags)
 {
-    Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
+    Tcl_TraceVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_READS,
 	    ErrorInfoRead, NULL);
-    Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_UNSETS,
+    Tcl_TraceVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_UNSETS,
 	    EstablishErrorInfoTraces, NULL);
     return NULL;
 }

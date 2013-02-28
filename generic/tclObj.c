@@ -655,7 +655,12 @@ Tcl_ConvertToType(
      */
 
     if (typePtr->setFromAnyProc == NULL) {
-	Tcl_Panic("may not convert object to type %s", typePtr->name);
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't convert value to type %s", typePtr->name));
+	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", NULL);
+	}
+	return TCL_ERROR;
     }
 
     return typePtr->setFromAnyProc(interp, objPtr);
@@ -1334,8 +1339,8 @@ Tcl_InvalidateStringRep(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewBooleanObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
@@ -1383,6 +1388,7 @@ Tcl_NewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DbNewBooleanObj
 #ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
@@ -1435,6 +1441,7 @@ Tcl_DbNewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetBooleanObj
 void
 Tcl_SetBooleanObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
@@ -1994,8 +2001,8 @@ UpdateStringOfDouble(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewIntObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewIntObj(
@@ -2035,6 +2042,7 @@ Tcl_NewIntObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetIntObj
 void
 Tcl_SetIntObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */

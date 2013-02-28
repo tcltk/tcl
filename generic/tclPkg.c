@@ -106,6 +106,7 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgProvide
 int
 Tcl_PkgProvide(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -188,6 +189,7 @@ Tcl_PkgProvideEx(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgRequire
 const char *
 Tcl_PkgRequire(
     Tcl_Interp *interp,		/* Interpreter in which package is now
@@ -670,6 +672,7 @@ PkgRequireCore(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgPresent
 const char *
 Tcl_PkgPresent(
     Tcl_Interp *interp,		/* Interpreter in which package is now

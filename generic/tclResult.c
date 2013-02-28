@@ -212,6 +212,7 @@ Tcl_DiscardInterpState(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SaveResult
 void
 Tcl_SaveResult(
     Tcl_Interp *interp,		/* Interpreter to save. */
@@ -286,6 +287,7 @@ Tcl_SaveResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_RestoreResult
 void
 Tcl_RestoreResult(
     Tcl_Interp *interp,		/* Interpreter being restored. */
@@ -354,6 +356,7 @@ Tcl_RestoreResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DiscardResult
 void
 Tcl_DiscardResult(
     Tcl_SavedResult *statePtr)	/* State returned by Tcl_SaveResult. */

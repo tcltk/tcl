@@ -144,6 +144,30 @@ static const char *isArrayElement =
 #define HasLocalVars(framePtr) ((framePtr)->isProcCallFrame & FRAME_IS_PROC)
 
 /*
+ * The following structure describes an enumerative search in progress on an
+ * array variable; this are invoked with options to the "array" command.
+ */
+
+typedef struct ArraySearch {
+    int id;			/* Integer id used to distinguish among
+				 * multiple concurrent searches for the same
+				 * array. */
+    struct Var *varPtr;		/* Pointer to array variable that's being
+				 * searched. */
+    Tcl_HashSearch search;	/* Info kept by the hash module about progress
+				 * through the array. */
+    Tcl_HashEntry *nextEntry;	/* Non-null means this is the next element to
+				 * be enumerated (it's leftover from the
+				 * Tcl_FirstHashEntry call or from an "array
+				 * anymore" command). NULL means must call
+				 * Tcl_NextHashEntry to get value to
+				 * return. */
+    struct ArraySearch *nextPtr;/* Next in list of all active searches for
+				 * this variable, or NULL if this is the last
+				 * one. */
+} ArraySearch;
+
+/*
  * Forward references to functions defined later in this file:
  */
 
@@ -1223,6 +1247,7 @@ TclLookupArrayElement(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetVar
 const char *
 Tcl_GetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -1565,6 +1590,7 @@ Tcl_SetObjCmd(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetVar
 const char *
 Tcl_SetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -2164,6 +2190,7 @@ TclPtrIncrObjVar(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UnsetVar
 int
 Tcl_UnsetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -4523,6 +4550,7 @@ TclPtrObjMakeUpvar(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UpVar
 int
 Tcl_UpVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to

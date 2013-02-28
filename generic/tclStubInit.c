@@ -42,6 +42,7 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #define TclBackgroundException Tcl_BackgroundException
+#undef Tcl_SetIntObj
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
