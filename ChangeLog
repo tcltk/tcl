@@ -1,3 +1,11 @@
+2013-02-28  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclLiteral.c:	Revise TclReleaseLiteral() to tolerate a
+	NULL interp argument.
+
+	* generic/tclCompile.c:	Update callers and revise mistaken comments.
+	* generic/tclProc.c:
+
 2013-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/regcomp.c:	[Bug 3606139]: missing error check allows
