@@ -14,8 +14,10 @@
 #include "tclInt.h"	/* Internal definitions for Tcl. */
 #include "tclIO.h"	/* To get Channel type declaration. */
 
-#ifdef USE_TERMIOS
-#   define SUPPORTS_TTY
+#undef SUPPORTS_TTY
+#if defined(HAVE_TERMIOS_H) || defined(USE_TERMIOS)
+    /* [1 Mar 2013] USE_TERMIOS: temporarily left in, to be removed */
+#   define SUPPORTS_TTY 1
 #   include <termios.h>
 #   ifdef HAVE_SYS_IOCTL_H
 #	include <sys/ioctl.h>
@@ -39,9 +41,8 @@
 #   if !defined(PAREXT) && defined(CMSPAR)
 #	define PAREXT CMSPAR
 #   endif /* !PAREXT&&CMSPAR */
-#else	/* !USE_TERMIOS */
-#   undef SUPPORTS_TTY
-#endif	/* !USE_TERMIOS */
+
+#endif	/* HAVE_TERMIOS_H */
 
 /*
  * Helper macros to make parts of this file clearer. The macros do exactly
