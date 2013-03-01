@@ -23,8 +23,6 @@
 #   ifdef HAVE_SYS_MODEM_H
 #	include <sys/modem.h>
 #   endif /* HAVE_SYS_MODEM_H */
-#   define GETCONTROL(fd, intPtr)	ioctl((fd), TIOCMGET, (intPtr))
-#   define SETCONTROL(fd, intPtr)	ioctl((fd), TIOCMSET, (intPtr))
 
 #   ifdef FIONREAD
 #	define GETREADQUEUE(fd, int)	ioctl((fd), FIONREAD, &(int))
@@ -34,20 +32,7 @@
 #   ifdef TIOCOUTQ
 #	define GETWRITEQUEUE(fd, int)	ioctl((fd), TIOCOUTQ, &(int))
 #   endif /* TIOCOUTQ */
-#   if defined(TIOCSBRK) && defined(TIOCCBRK)
 
-/*
- * Can't use ?: operator below because that messes up types on either Linux or
- * Solaris (the two are mutually exclusive!)
- */
-
-#	define SETBREAK(fd, flag) \
-		if (flag) {				\
-		    ioctl((fd), TIOCSBRK, NULL);	\
-		} else {				\
-		    ioctl((fd), TIOCCBRK, NULL);	\
-		}
-#   endif /* TIOCSBRK&TIOCCBRK */
 #   if !defined(CRTSCTS) && defined(CNEW_RTSCTS)
 #	define CRTSCTS CNEW_RTSCTS
 #   endif /* !CRTSCTS&CNEW_RTSCTS */
@@ -604,7 +589,7 @@ TtySetOptionProc(
     FileState *fsPtr = instanceData;
     unsigned int len, vlen;
     TtyAttrs tty;
-    int flag, control, argc;
+    int argc;
     const char **argv;
     struct termios iostate;
 
@@ -730,9 +715,9 @@ TtySetOptionProc(
     /*
      * Option -ttycontrol {DTR 1 RTS 0 BREAK 0}
      */
-
     if ((len > 4) && (strncmp(optionName, "-ttycontrol", len) == 0)) {
-	int i;
+#if defined(TIOCMGET) && defined(TIOCMSET)
+	int i, control, flag;
 
 	if (Tcl_SplitList(interp, value, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -749,44 +734,36 @@ TtySetOptionProc(
 	    return TCL_ERROR;
 	}
 
-	GETCONTROL(fsPtr->fd, &control);
+	ioctl(fsPtr->fd, TIOCMGET, &control);
 	for (i = 0; i < argc-1; i += 2) {
 	    if (Tcl_GetBoolean(interp, argv[i+1], &flag) == TCL_ERROR) {
 		ckfree(argv);
 		return TCL_ERROR;
 	    }
 	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
-#ifdef TIOCM_DTR
 		if (flag) {
 		    SET_BITS(control, TIOCM_DTR);
 		} else {
 		    CLEAR_BITS(control, TIOCM_DTR);
 		}
-#else /* !TIOCM_DTR */
-		UNSUPPORTED_OPTION("-ttycontrol DTR");
-		ckfree(argv);
-		return TCL_ERROR;
-#endif /* TIOCM_DTR */
 	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
-#ifdef TIOCM_RTS
 		if (flag) {
 		    SET_BITS(control, TIOCM_RTS);
 		} else {
 		    CLEAR_BITS(control, TIOCM_RTS);
 		}
-#else /* !TIOCM_RTS*/
-		UNSUPPORTED_OPTION("-ttycontrol RTS");
-		ckfree(argv);
-		return TCL_ERROR;
-#endif /* TIOCM_RTS*/
 	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
-#ifdef SETBREAK
-		SETBREAK(fsPtr->fd, flag);
-#else /* !SETBREAK */
+#if defined(TIOCSBRK) && defined(TIOCCBRK)
+		if (flag) {
+		    ioctl(fsPtr->fd, TIOCSBRK, NULL);
+		} else {
+		    ioctl(fsPtr->fd, TIOCCBRK, NULL);
+		}
+#else /* TIOCSBRK & TIOCCBRK */
 		UNSUPPORTED_OPTION("-ttycontrol BREAK");
 		ckfree(argv);
 		return TCL_ERROR;
-#endif /* SETBREAK */
+#endif /* TIOCSBRK & TIOCCBRK */
 	    } else {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -800,14 +777,16 @@ TtySetOptionProc(
 	    }
 	} /* -ttycontrol options loop */
 
-	SETCONTROL(fsPtr->fd, &control);
+	ioctl(fsPtr->fd, TIOCMSET, &control);
 	ckfree(argv);
 	return TCL_OK;
+#else /* TIOCMGET&TIOCMSET */
+	UNSUPPORTED_OPTION("-ttycontrol");
+#endif /* TIOCMGET&TIOCMSET */
     }
 
     return Tcl_BadChannelOption(interp, optionName,
 	    "mode handshake timeout ttycontrol xchar");
-
 }
 
 /*
@@ -910,19 +889,20 @@ TtyGetOptionProc(
 	Tcl_DStringAppendElement(dsPtr, buf);
     }
 
+#if defined(TIOCMGET)
     /*
      * Get option -ttystatus
      * Option is readonly and returned by [fconfigure chan -ttystatus] but not
      * returned by unnamed [fconfigure chan].
      */
-
     if ((len > 4) && (strncmp(optionName, "-ttystatus", len) == 0)) {
 	int status;
 
 	valid = 1;
-	GETCONTROL(fsPtr->fd, &status);
+	ioctl(fsPtr->fd, TIOCMGET, &status);
 	TtyModemStatusStr(status, dsPtr);
     }
+#endif /* TIOCMGET */
 
     if (valid) {
 	return TCL_OK;
