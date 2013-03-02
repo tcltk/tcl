@@ -73,16 +73,6 @@ typedef struct FileState {
 #ifdef SUPPORTS_TTY
 
 /*
- * The following structure describes per-instance state of a tty-based
- * channel.
- */
-
-typedef struct TtyState {
-    FileState fs;		/* Per-instance state of the file descriptor.
-				 * Must be the first field. */
-} TtyState;
-
-/*
  * The following structure is used to set or get the serial port attributes in
  * a platform-independant manner.
  */
@@ -130,7 +120,7 @@ static int		TtyGetOptionProc(ClientData instanceData,
 			    Tcl_DString *dsPtr);
 static int		TtyGetBaud(speed_t speed);
 static speed_t		TtyGetSpeed(int baud);
-static FileState *	TtyInit(int fd, int initialize);
+static void		TtyInit(int fd);
 static void		TtyModemStatusStr(int status, Tcl_DString *dsPtr);
 static int		TtyParseMode(Tcl_Interp *interp, const char *mode,
 			    TtyAttrs *ttyPtr);
@@ -1282,53 +1272,38 @@ TtyParseMode(
  *
  *	Given file descriptor that refers to a serial port, initialize the
  *	serial port to a set of sane values so that Tcl can talk to a device
- *	located on the serial port. Note that no initialization happens if the
- *	initialize flag is not set; this is necessary for the correct handling
- *	of UNIX console TTYs at startup.
- *
- * Results:
- *	A pointer to a FileState suitable for use with Tcl_CreateChannel and
- *	the ttyChannelType structure.
+ *	located on the serial port.
  *
  * Side effects:
  *	Serial device initialized to non-blocking raw mode, similar to sockets
- *	(if initialize flag is non-zero.) All other modes can be simulated on
- *	top of this in Tcl.
+ *	All other modes can be simulated on top of this in Tcl.
  *
  *---------------------------------------------------------------------------
  */
 
-static FileState *
+static void
 TtyInit(
-    int fd,			/* Open file descriptor for serial port to be
-				 * initialized. */
-    int initialize)
+    int fd)	/* Open file descriptor for serial port to be initialized. */
 {
-    TtyState *ttyPtr = ckalloc(sizeof(TtyState));
+    struct termios iostate;
+    tcgetattr(fd, &iostate);
 
-    if (initialize) {
-	struct termios iostate;
-	tcgetattr(fd, &iostate);
+    if (iostate.c_iflag != IGNBRK
+	    || iostate.c_oflag != 0
+	    || iostate.c_lflag != 0
+	    || iostate.c_cflag & CREAD
+	    || iostate.c_cc[VMIN] != 1
+	    || iostate.c_cc[VTIME] != 0) 
+    {
+	iostate.c_iflag = IGNBRK;
+	iostate.c_oflag = 0;
+	iostate.c_lflag = 0;
+	iostate.c_cflag |= CREAD;
+	iostate.c_cc[VMIN] = 1;
+	iostate.c_cc[VTIME] = 0;
 
-	if (iostate.c_iflag != IGNBRK
-		|| iostate.c_oflag != 0
-		|| iostate.c_lflag != 0
-		|| iostate.c_cflag & CREAD
-		|| iostate.c_cc[VMIN] != 1
-		|| iostate.c_cc[VTIME] != 0) 
-	{
-	    iostate.c_iflag = IGNBRK;
-	    iostate.c_oflag = 0;
-	    iostate.c_lflag = 0;
-	    iostate.c_cflag |= CREAD;
-	    iostate.c_cc[VMIN] = 1;
-	    iostate.c_cc[VTIME] = 0;
-
-	    tcsetattr(fd, TCSADRAIN, &iostate);
-	}
+	tcsetattr(fd, TCSADRAIN, &iostate);
     }
-
-    return &ttyPtr->fs;
 }
 #endif	/* SUPPORTS_TTY */
 
@@ -1432,15 +1407,15 @@ TclpOpenFileChannel(
 
 	translation = "auto crlf";
 	channelTypePtr = &ttyChannelType;
-	fsPtr = TtyInit(fd, 1);
+	TtyInit(fd);
     } else
 #endif	/* SUPPORTS_TTY */
     {
 	translation = NULL;
 	channelTypePtr = &fileChannelType;
-	fsPtr = ckalloc(sizeof(FileState));
     }
 
+    fsPtr = ckalloc(sizeof(FileState));
     fsPtr->validMask = channelPermissions | TCL_EXCEPTION;
     fsPtr->fd = fd;
 
@@ -1503,7 +1478,6 @@ Tcl_MakeFileChannel(
 
 #ifdef SUPPORTS_TTY
     if (isatty(fd)) {
-	fsPtr = TtyInit(fd, 0);
 	channelTypePtr = &ttyChannelType;
 	sprintf(channelName, "serial%d", fd);
     } else
@@ -1514,10 +1488,10 @@ Tcl_MakeFileChannel(
 	return TclpMakeTcpClientChannelMode(INT2PTR(fd), mode);
     } else {
 	channelTypePtr = &fileChannelType;
-	fsPtr = ckalloc(sizeof(FileState));
 	sprintf(channelName, "file%d", fd);
     }
 
+    fsPtr = ckalloc(sizeof(FileState));
     fsPtr->fd = fd;
     fsPtr->validMask = mode | TCL_EXCEPTION;
     fsPtr->channel = Tcl_CreateChannel(channelTypePtr, channelName,
