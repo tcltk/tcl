@@ -630,20 +630,20 @@ TtySetOptionProc(
 #ifdef CRTSCTS
 	CLEAR_BITS(iostate.c_cflag, CRTSCTS);
 #endif /* CRTSCTS */
-	if (strncasecmp(value, "NONE", vlen) == 0) {
+	if (Tcl_UtfNcasecmp(value, "NONE", vlen) == 0) {
 	    /*
 	     * Leave all handshake options disabled.
 	     */
-	} else if (strncasecmp(value, "XONXOFF", vlen) == 0) {
+	} else if (Tcl_UtfNcasecmp(value, "XONXOFF", vlen) == 0) {
 	    SET_BITS(iostate.c_iflag, IXON | IXOFF | IXANY);
-	} else if (strncasecmp(value, "RTSCTS", vlen) == 0) {
+	} else if (Tcl_UtfNcasecmp(value, "RTSCTS", vlen) == 0) {
 #ifdef CRTSCTS
 	    SET_BITS(iostate.c_cflag, CRTSCTS);
 #else /* !CRTSTS */
 	    UNSUPPORTED_OPTION("-handshake RTSCTS");
 	    return TCL_ERROR;
 #endif /* CRTSCTS */
-	} else if (strncasecmp(value, "DTRDSR", vlen) == 0) {
+	} else if (Tcl_UtfNcasecmp(value, "DTRDSR", vlen) == 0) {
 	    UNSUPPORTED_OPTION("-handshake DTRDSR");
 	    return TCL_ERROR;
 	} else {
@@ -741,19 +741,19 @@ TtySetOptionProc(
 		ckfree(argv);
 		return TCL_ERROR;
 	    }
-	    if (strncasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
+	    if (Tcl_UtfNcasecmp(argv[i], "DTR", strlen(argv[i])) == 0) {
 		if (flag) {
 		    SET_BITS(control, TIOCM_DTR);
 		} else {
 		    CLEAR_BITS(control, TIOCM_DTR);
 		}
-	    } else if (strncasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
+	    } else if (Tcl_UtfNcasecmp(argv[i], "RTS", strlen(argv[i])) == 0) {
 		if (flag) {
 		    SET_BITS(control, TIOCM_RTS);
 		} else {
 		    CLEAR_BITS(control, TIOCM_RTS);
 		}
-	    } else if (strncasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
+	    } else if (Tcl_UtfNcasecmp(argv[i], "BREAK", strlen(argv[i])) == 0) {
 #if defined(TIOCSBRK) && defined(TIOCCBRK)
 		if (flag) {
 		    ioctl(fsPtr->fd, TIOCSBRK, NULL);
