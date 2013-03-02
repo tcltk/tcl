@@ -80,8 +80,6 @@ typedef struct FileState {
 typedef struct TtyState {
     FileState fs;		/* Per-instance state of the file descriptor.
 				 * Must be the first field. */
-    struct termios savedState;	/* Initial state of device. Used to reset
-				 * state when device closed. */
 } TtyState;
 
 /*
@@ -1307,32 +1305,25 @@ TtyInit(
     int initialize)
 {
     TtyState *ttyPtr = ckalloc(sizeof(TtyState));
-    int stateUpdated = 0;
 
-    tcgetattr(fd, &ttyPtr->savedState);
     if (initialize) {
-	struct termios iostate = ttyPtr->savedState;
+	struct termios iostate;
+	tcgetattr(fd, &iostate);
 
 	if (iostate.c_iflag != IGNBRK
 		|| iostate.c_oflag != 0
 		|| iostate.c_lflag != 0
 		|| iostate.c_cflag & CREAD
 		|| iostate.c_cc[VMIN] != 1
-		|| iostate.c_cc[VTIME] != 0) {
-	    stateUpdated = 1;
-	}
-	iostate.c_iflag = IGNBRK;
-	iostate.c_oflag = 0;
-	iostate.c_lflag = 0;
-	SET_BITS(iostate.c_cflag, CREAD);
-	iostate.c_cc[VMIN] = 1;
-	iostate.c_cc[VTIME] = 0;
+		|| iostate.c_cc[VTIME] != 0) 
+	{
+	    iostate.c_iflag = IGNBRK;
+	    iostate.c_oflag = 0;
+	    iostate.c_lflag = 0;
+	    iostate.c_cflag |= CREAD;
+	    iostate.c_cc[VMIN] = 1;
+	    iostate.c_cc[VTIME] = 0;
 
-	/*
-	 * Only update if we're changing anything to avoid possible blocking.
-	 */
-
-	if (stateUpdated) {
 	    tcsetattr(fd, TCSADRAIN, &iostate);
 	}
     }
