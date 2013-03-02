@@ -135,8 +135,7 @@ static speed_t		TtyGetSpeed(int baud);
 static FileState *	TtyInit(int fd, int initialize);
 static void		TtyModemStatusStr(int status, Tcl_DString *dsPtr);
 static int		TtyParseMode(Tcl_Interp *interp, const char *mode,
-			    int *speedPtr, int *parityPtr, int *dataPtr,
-			    int *stopPtr);
+			    TtyAttrs *ttyPtr);
 static void		TtySetAttributes(int fd, TtyAttrs *ttyPtr);
 static int		TtySetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
@@ -607,8 +606,7 @@ TtySetOptionProc(
      */
 
     if ((len > 2) && (strncmp(optionName, "-mode", len) == 0)) {
-	if (TtyParseMode(interp, value, &tty.baud, &tty.parity, &tty.data,
-		&tty.stop) != TCL_OK) {
+	if (TtyParseMode(interp, value, &tty) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
@@ -1125,8 +1123,6 @@ TtyGetAttributes(
 
     stop = (iostate.c_cflag & CSTOPB) ? 2 : 1;
 
-
-
     ttyPtr->baud    = baud;
     ttyPtr->parity  = parity;
     ttyPtr->data    = data;
@@ -1205,9 +1201,6 @@ TtySetAttributes(
  *	TCL_ERROR otherwise. If TCL_ERROR is returned, an error message is
  *	left in the interp's result (if interp is non-NULL).
  *
- * Side effects:
- *	None.
- *
  *---------------------------------------------------------------------------
  */
 
@@ -1215,17 +1208,17 @@ static int
 TtyParseMode(
     Tcl_Interp *interp,		/* If non-NULL, interp for error return. */
     const char *mode,		/* Mode string to be parsed. */
-    int *speedPtr,		/* Filled with baud rate from mode string. */
-    int *parityPtr,		/* Filled with parity from mode string. */
-    int *dataPtr,		/* Filled with data bits from mode string. */
-    int *stopPtr)		/* Filled with stop bits from mode string. */
+    TtyAttrs *ttyPtr)		/* Filled with data from mode string */
 {
     int i, end;
     char parity;
-    static const char *bad = "bad value for -mode";
+    const char *bad = "bad value for -mode";
 
-    i = sscanf(mode, "%d,%c,%d,%d%n", speedPtr, &parity, dataPtr,
-	    stopPtr, &end);
+    i = sscanf(mode, "%d,%c,%d,%d%n", 
+	    &ttyPtr->baud,
+	    &parity,
+	    &ttyPtr->data,
+	    &ttyPtr->stop, &end);
     if ((i != 4) || (mode[end] != '\0')) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1264,8 +1257,8 @@ TtyParseMode(
 	}
 	return TCL_ERROR;
     }
-    *parityPtr = parity;
-    if ((*dataPtr < 5) || (*dataPtr > 8)) {
+    ttyPtr->parity = parity;
+    if ((ttyPtr->data < 5) || (ttyPtr->data > 8)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s data: should be 5, 6, 7, or 8", bad));
@@ -1273,7 +1266,7 @@ TtyParseMode(
 	}
 	return TCL_ERROR;
     }
-    if ((*stopPtr < 0) || (*stopPtr > 2)) {
+    if ((ttyPtr->stop < 0) || (ttyPtr->stop > 2)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "%s stop: should be 1 or 2", bad));
