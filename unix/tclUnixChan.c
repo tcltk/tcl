@@ -30,10 +30,15 @@
 #	define GETREADQUEUE(fd, int)	ioctl((fd), FIONREAD, &(int))
 #   elif defined(FIORDCHK)
 #	define GETREADQUEUE(fd, int)	int = ioctl((fd), FIORDCHK, NULL)
-#   endif /* FIONREAD */
+#   else
+#       define GETREADQUEUE(fd, int)    int = 0
+#   endif
+
 #   ifdef TIOCOUTQ
 #	define GETWRITEQUEUE(fd, int)	ioctl((fd), TIOCOUTQ, &(int))
-#   endif /* TIOCOUTQ */
+#   else
+#	define GETWRITEQUEUE(fd, int)	int = 0
+#   endif
 
 #   if !defined(CRTSCTS) && defined(CNEW_RTSCTS)
 #	define CRTSCTS CNEW_RTSCTS
@@ -875,12 +880,8 @@ TtyGetOptionProc(
 	int inQueue=0, outQueue=0, inBuffered, outBuffered;
 
 	valid = 1;
-#ifdef GETREADQUEUE
 	GETREADQUEUE(fsPtr->fd, inQueue);
-#endif /* GETREADQUEUE */
-#ifdef GETWRITEQUEUE
 	GETWRITEQUEUE(fsPtr->fd, outQueue);
-#endif /* GETWRITEQUEUE */
 	inBuffered = Tcl_InputBuffered(fsPtr->channel);
 	outBuffered = Tcl_OutputBuffered(fsPtr->channel);
 
