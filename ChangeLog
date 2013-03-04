@@ -1,3 +1,38 @@
+2013-03-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	New scheme for keeping the per-process
+	tcl_precision value in sync without the need for mutex locks on
+	every read.  Uses adapted ProcessGlobalValue machinery backported
+	from Tcl 8.5 where it's been working without reported problems.
+	Thanks to Phil Brooks for reporting on tests which highlight the
+	thread performance problems raised by the old scheme, and to Clif
+	Flynt for further testing pointing the finger at tcl_precision
+	locks as the main culprit.
+
+2013-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regcomp.c:	[Bug 3606139]: missing error check allows
+	* tests/regexp.test:    regexp to crash Tcl. Thanks to Tom Lane
+	for providing the test-case and the patch.
+
+2013-02-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	Shift more burden of smart cleanup onto the
+	* generic/tclExecute.c:	TclFreeCompileEnv() routine.  Stop crashes
+	when the hookProc raises an error.
+
+2013-02-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c:	[Bug 3605447] Make sure the -clear option
+	* tests/namespace.test:	to [namespace export] always clears, whether
+	or not new export patterns are specified.
+
+2013-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_nfa.c:	[Bug 3604074] Fix regexp optimization to
+	* tests/regexp.test:	stop hanging on the expression
+	((((((((a)*)*)*)*)*)*)*)* .  Thanks to Bjørn Grathwohl for discovery.
+
 2013-02-05  Don Porter  <dgp@users.sourceforge.net>
 
 	* win/tclWinFile.c:	[Bug 3603434] Make sure TclpObjNormalizePath() 

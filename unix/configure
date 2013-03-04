@@ -12,18 +12,18 @@ ac_help=
 ac_default_prefix=/usr/local
 # Any additions from configure.in:
 ac_help="$ac_help
-  --enable-man-symlinks   use symlinks for the manpages"
+  --enable-man-symlinks   use symlinks for the manpages (default: off)"
 ac_help="$ac_help
   --enable-man-compression=PROG
-		      compress the manpages with PROG"
+		      compress the manpages with PROG (default: off)"
 ac_help="$ac_help
   --enable-man-suffix=STRING
 		      use STRING as a suffix to manpage file names
 		      (default: tcl)"
 ac_help="$ac_help
-  --enable-threads        build with threads"
+  --enable-threads        build with threads (default: off)"
 ac_help="$ac_help
-  --enable-shared         build and link with shared libraries [--enable-shared]"
+  --enable-shared         build and link with shared libraries (default: on)"
 ac_help="$ac_help
   --enable-64bit          enable 64bit support (where applicable)"
 ac_help="$ac_help
@@ -35,14 +35,14 @@ ac_help="$ac_help
 ac_help="$ac_help
   --disable-load          disallow dynamic loading and "load" command"
 ac_help="$ac_help
-  --enable-symbols        build with debugging symbols [--disable-symbols]"
+  --enable-symbols        build with debugging symbols (default: off)"
 ac_help="$ac_help
   --enable-langinfo	  use nl_langinfo if possible to determine
-			  encoding at startup, otherwise use old heuristic"
+			  encoding at startup, otherwise use old heuristic (default: on)"
 ac_help="$ac_help
   --enable-dtrace         build with DTrace support [--disable-dtrace]"
 ac_help="$ac_help
-  --enable-framework      package shared libraries in MacOSX frameworks [--disable-framework]"
+  --enable-framework      package shared libraries in MacOSX frameworks (default: off)"
 
 # Initialize some variables set by options.
 # The variables have the same names as the options, with
@@ -1884,7 +1884,7 @@ EOF
 	    echo "$ac_t""yes" 1>&6
 	fi
     else
-	echo "$ac_t""no" 1>&6
+	echo "$ac_t""no (default)" 1>&6
     fi
 
     

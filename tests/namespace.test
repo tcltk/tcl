@@ -1056,6 +1056,14 @@ test namespace-26.7 {NamespaceExportCmd, -clear resets export list} {
     }
     list [lsort [info commands test_ns_2::*]] [test_ns_2::cmd4 hello]
 } [list [lsort {::test_ns_2::cmd4 ::test_ns_2::cmd1 ::test_ns_2::cmd3}] {cmd4: hello}]
+test namespace-26.8 {NamespaceExportCmd, -clear resets export list} {
+    catch {namespace delete foo}
+    namespace eval foo {
+	namespace export x
+	namespace export -clear
+    }
+    list [namespace eval foo namespace export] [namespace delete foo]
+} {{} {}}
 
 test namespace-27.1 {NamespaceForgetCmd, no args} {
     catch {eval namespace delete [namespace children :: test_ns_*]}
