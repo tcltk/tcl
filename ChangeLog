@@ -1,3 +1,14 @@
+2013-03-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	New scheme for keeping the per-process
+	tcl_precision value in sync without the need for mutex locks on
+	every read.  Uses adapted ProcessGlobalValue machinery backported
+	from Tcl 8.5 where it's been working without reported problems.
+	Thanks to Phil Brooks for reporting on tests which highlight the
+	thread performance problems raised by the old scheme, and to Clif
+	Flynt for further testing pointing the finger at tcl_precision
+	locks as the main culprit.
+
 2013-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/regcomp.c:	[Bug 3606139]: missing error check allows

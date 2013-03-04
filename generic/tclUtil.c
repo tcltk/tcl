@@ -47,27 +47,59 @@ char *tclNativeExecutableName = NULL;
 #define BRACES_UNMATCHED	4
 
 /*
+ * Data structures for process-global values.
+ */
+
+typedef void (InitPGVProc) _ANSI_ARGS_ ((char **valuePtr, int *lengthPtr));
+
+/*
+ * A ProcessGlobalValue struct exists for each internal value in Tcl that is
+ * to be shared among several threads. Each thread sees a (Tcl_Obj) copy of
+ * the value, and the master is kept as a counted string, with epoch and mutex
+ * control. Each ProcessGlobalValue struct should be a static variable in some
+ * file.
+ */
+
+typedef struct ProcessGlobalValue {
+    int epoch;			/* Epoch counter to detect changes in the
+				 * master value. */
+    int numBytes;		/* Length of the master string. */
+    char *value;		/* The master string value. */
+    InitPGVProc *proc;		/* A procedure to initialize the master string
+				 * copy when a "get" request comes in before
+				 * any "set" request has been received. */
+    Tcl_Mutex mutex;		/* Enforce orderly access from multiple
+				 * threads. */
+    Tcl_ThreadDataKey key;	/* Key for per-thread data holding the
+				 * (Tcl_Obj) copy for each thread. */
+} PGV;
+
+/*
  * The following values determine the precision used when converting
  * floating-point values to strings.  This information is linked to all
  * of the tcl_precision variables in all interpreters via the procedure
  * TclPrecTraceProc.
  */
 
-static char precisionString[10] = "12";
-				/* The string value of all the tcl_precision
-				 * variables. */
-static char precisionFormat[10] = "%.12g";
-				/* The format string actually used in calls
-				 * to sprintf. */
-TCL_DECLARE_MUTEX(precisionMutex)
+static InitPGVProc InitPrecision;
+static PGV precision = {
+    0, 0, NULL, InitPrecision, NULL, NULL
+};
 
 /*
  * Prototypes for procedures defined later in this file.
  */
 
+static void ClearHash _ANSI_ARGS_((Tcl_HashTable *tablePtr));
+static void FreePGV _ANSI_ARGS_((ClientData clientData));
+static void FreeThreadHash _ANSI_ARGS_((ClientData clientData));
+static Tcl_HashTable * GetThreadHash _ANSI_ARGS_((
+		Tcl_ThreadDataKey *keyPtr));
 static void UpdateStringOfEndOffset _ANSI_ARGS_((Tcl_Obj* objPtr));
 static int SetEndOffsetFromAny _ANSI_ARGS_((Tcl_Interp* interp,
 					    Tcl_Obj* objPtr));
+static void SetPGV _ANSI_ARGS_((PGV *pgvPtr, Tcl_Obj *newValue));
+static Tcl_Obj * GetPGV _ANSI_ARGS_((PGV *pgvPtr));
 
 /*
  * The following is the Tcl object type definition for an object
@@ -1874,6 +1906,32 @@ Tcl_DStringEndSublist(dsPtr)
 /*
  *----------------------------------------------------------------------
  *
+ * InitPrecision --
+ *
+ *	Set the default value for tcl_precision to 12.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+InitPrecision(valuePtr, lengthPtr)
+    char **valuePtr;
+    int *lengthPtr;
+{
+    *lengthPtr = 2;
+    *valuePtr = ckalloc(3);
+    memcpy(*valuePtr, "12", 3);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_PrintDouble --
  *
  *	Given a floating-point value, this procedure converts it to
@@ -1902,11 +1960,12 @@ Tcl_PrintDouble(interp, value, dst)
 					 * characters. */
 {
     char *p, c;
+    char format[10];
     Tcl_UniChar ch;
+    Tcl_Obj *precisionObj = GetPGV(&precision);
 
-    Tcl_MutexLock(&precisionMutex);
-    sprintf(dst, precisionFormat, value);
-    Tcl_MutexUnlock(&precisionMutex);
+    sprintf(format, "%%.%sg", Tcl_GetString(precisionObj));
+    sprintf(dst, format, value);
 
     /*
      * If the ASCII result looks like an integer, add ".0" so that it
@@ -1984,12 +2043,9 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
      * out of date.
      */
 
-    Tcl_MutexLock(&precisionMutex);
-
     if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2(interp, name1, name2, precisionString,
+	Tcl_SetVar2Ex(interp, name1, name2, GetPGV(&precision),
 		flags & TCL_GLOBAL_ONLY);
-	Tcl_MutexUnlock(&precisionMutex);
 	return (char *) NULL;
     }
 
@@ -2001,9 +2057,8 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
      */
 
     if (Tcl_IsSafe(interp)) {
-	Tcl_SetVar2(interp, name1, name2, precisionString,
+	Tcl_SetVar2Ex(interp, name1, name2, GetPGV(&precision),
 		flags & TCL_GLOBAL_ONLY);
-	Tcl_MutexUnlock(&precisionMutex);
 	return "can't modify precision from a safe interpreter";
     }
     value = Tcl_GetVar2(interp, name1, name2, flags & TCL_GLOBAL_ONLY);
@@ -2011,16 +2066,13 @@ TclPrecTraceProc(clientData, interp, name1, name2, flags)
 	value = "";
     }
     prec = strtoul(value, &end, 10);
-    if ((prec <= 0) || (prec > TCL_MAX_PREC) || (prec > 100) ||
-	    (end == value) || (*end != 0)) {
-	Tcl_SetVar2(interp, name1, name2, precisionString,
+    if ((prec <= 0) || (prec > TCL_MAX_PREC)
+	    || (end == value) || (*end != 0)) {
+	Tcl_SetVar2Ex(interp, name1, name2, GetPGV(&precision),
 		flags & TCL_GLOBAL_ONLY);
-	Tcl_MutexUnlock(&precisionMutex);
 	return "improper value for precision";
     }
-    TclFormatInt(precisionString, prec);
-    sprintf(precisionFormat, "%%.%dg", prec);
-    Tcl_MutexUnlock(&precisionMutex);
+    SetPGV(&precision, Tcl_NewIntObj(prec));
     return (char *) NULL;
 }
 
@@ -2517,6 +2569,227 @@ TclCheckBadOctal(interp, value)
 	}
     }
     return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ClearHash --
+ *
+ *	Remove all the entries in the hash table *tablePtr.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ClearHash(tablePtr)
+    Tcl_HashTable *tablePtr;
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
+	    hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_Obj *objPtr = (Tcl_Obj *) Tcl_GetHashValue(hPtr);
+	Tcl_DecrRefCount(objPtr);
+	Tcl_DeleteHashEntry(hPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetThreadHash --
+ *
+ *	Get a thread-specific (Tcl_HashTable *) associated with a thread data
+ *	key.
+ *
+ * Results:
+ *	The Tcl_HashTable * corresponding to *keyPtr.
+ *
+ * Side effects:
+ *	The first call on a keyPtr in each thread creates a new Tcl_HashTable,
+ *	and registers a thread exit handler to dispose of it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_HashTable *
+GetThreadHash(keyPtr)
+    Tcl_ThreadDataKey *keyPtr;
+{
+    Tcl_HashTable **tablePtrPtr = (Tcl_HashTable **)
+	    Tcl_GetThreadData(keyPtr, (int) sizeof(Tcl_HashTable *));
+
+    if (NULL == *tablePtrPtr) {
+	*tablePtrPtr = (Tcl_HashTable *)ckalloc(sizeof(Tcl_HashTable));
+	Tcl_CreateThreadExitHandler(FreeThreadHash, (ClientData)*tablePtrPtr);
+	Tcl_InitHashTable(*tablePtrPtr, TCL_ONE_WORD_KEYS);
+    }
+    return *tablePtrPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreeThreadHash --
+ *
+ *	Thread exit handler used by GetThreadHash to dispose of a thread hash
+ *	table.
+ *
+ * Side effects:
+ *	Frees a Tcl_HashTable.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreeThreadHash(clientData)
+    ClientData clientData;
+{
+    Tcl_HashTable *tablePtr = (Tcl_HashTable *) clientData;
+
+    ClearHash(tablePtr);
+    Tcl_DeleteHashTable(tablePtr);
+    ckfree((char *) tablePtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FreePGV --
+ *
+ *	Exit handler used by (Set|Get)PGV to cleanup a PGV at exit.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+FreePGV(clientData)
+    ClientData clientData;
+{
+    PGV *pgvPtr = (PGV *) clientData;
+
+    pgvPtr->epoch++;
+    pgvPtr->numBytes = 0;
+    ckfree(pgvPtr->value);
+    pgvPtr->value = NULL;
+    Tcl_MutexFinalize(&pgvPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * SetPGV --
+ *
+ *	Utility routine to set a global value shared by all threads in the
+ *	process while keeping a thread-local copy as well.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+SetPGV(pgvPtr, newValue)
+    PGV *pgvPtr;
+    Tcl_Obj *newValue;
+{
+    CONST char *bytes;
+    Tcl_HashTable *cacheMap;
+    Tcl_HashEntry *hPtr;
+    int dummy;
+
+    Tcl_MutexLock(&pgvPtr->mutex);
+
+    /*
+     * Fill the global string value.
+     */
+
+    pgvPtr->epoch++;
+    if (NULL != pgvPtr->value) {
+	ckfree(pgvPtr->value);
+    } else {
+	Tcl_CreateExitHandler(FreePGV, (ClientData) pgvPtr);
+    }
+    bytes = Tcl_GetStringFromObj(newValue, &pgvPtr->numBytes);
+    pgvPtr->value = ckalloc((unsigned) pgvPtr->numBytes + 1);
+    memcpy(pgvPtr->value, bytes, (unsigned) pgvPtr->numBytes + 1);
+
+    /*
+     * Fill the local thread copy directly with the Tcl_Obj value to avoid
+     * loss of the intrep. Increment newValue refCount early to handle case
+     * where we set a PGV to itself.
+     */
+
+    Tcl_IncrRefCount(newValue);
+    cacheMap = GetThreadHash(&pgvPtr->key);
+    ClearHash(cacheMap);
+    hPtr = Tcl_CreateHashEntry(cacheMap, (char *) pgvPtr->epoch, &dummy);
+    Tcl_SetHashValue(hPtr, (ClientData) newValue);
+    Tcl_MutexUnlock(&pgvPtr->mutex);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetPGV --
+ *
+ *	Retrieve a global value shared among all threads of the process,
+ *	preferring a thread-local copy as long as it remains valid.
+ *
+ * Results:
+ *	Returns a (Tcl_Obj *) that holds a copy of the global value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj *
+GetPGV(pgvPtr)
+    PGV *pgvPtr;
+{
+    Tcl_Obj *value = NULL;
+    Tcl_HashTable *cacheMap;
+    Tcl_HashEntry *hPtr;
+    int epoch = pgvPtr->epoch;
+
+    cacheMap = GetThreadHash(&pgvPtr->key);
+    hPtr = Tcl_FindHashEntry(cacheMap, (char *) epoch);
+    if (NULL == hPtr) {
+	int dummy;
+
+	/*
+	 * No cache for the current epoch - must be a new one.
+	 *
+	 * First, clear the cacheMap, as anything in it must refer to some
+	 * expired epoch.
+	 */
+
+	ClearHash(cacheMap);
+
+	/*
+	 * If no thread has set the shared value, call the initializer.
+	 */
+
+	Tcl_MutexLock(&pgvPtr->mutex);
+	if ((NULL == pgvPtr->value) && (pgvPtr->proc)) {
+	    pgvPtr->epoch++;
+	    (*(pgvPtr->proc))(&pgvPtr->value, &pgvPtr->numBytes);
+	    if (pgvPtr->value == NULL) {
+		Tcl_Panic("PGV Initializer did not initialize");
+	    }
+	    Tcl_CreateExitHandler(FreePGV, (ClientData) pgvPtr);
+	}
+
+	/*
+	 * Store a copy of the shared value in our epoch-indexed cache.
+	 */
+
+	value = Tcl_NewStringObj(pgvPtr->value, pgvPtr->numBytes);
+	hPtr = Tcl_CreateHashEntry(cacheMap, (char *) pgvPtr->epoch, &dummy);
+	Tcl_MutexUnlock(&pgvPtr->mutex);
+	Tcl_SetHashValue(hPtr, (ClientData) value);
+	Tcl_IncrRefCount(value);
+    }
+    return (Tcl_Obj *) Tcl_GetHashValue(hPtr);
 }
 
 /*
