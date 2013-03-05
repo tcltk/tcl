@@ -908,8 +908,6 @@ MODULE_SCOPE int	TclExecuteByteCode(Tcl_Interp *interp,
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(CONST char *name, int nameChars,
 			    int create, Proc *procPtr);
-MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
 			    int distThreshold);
@@ -937,7 +935,6 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    CONST char *string, int maxChars);
-MODULE_SCOPE void	TclRegisterAuxDataType(AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
