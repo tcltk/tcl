@@ -1896,8 +1896,7 @@ TclCompileScript(
 			    tokenPtr[1].start, tokenPtr[1].size);
 		    if (cmdPtr != NULL) {
 			TclSetCmdNameObj(interp,
-				envPtr->literalArrayPtr[objIndex].objPtr,
-				cmdPtr);
+				TclFetchLiteral(envPtr, objIndex), cmdPtr);
 		    }
 		} else {
 		    /*
@@ -1914,7 +1913,7 @@ TclCompileScript(
 
 		    if (envPtr->clNext) {
 			TclContinuationsEnterDerived(
-				envPtr->literalArrayPtr[objIndex].objPtr,
+				TclFetchLiteral(envPtr, objIndex),
 				tokenPtr[1].start - envPtr->source,
 				eclPtr->loc[wlineat].next[wordIdx]);
 		    }
@@ -2223,9 +2222,8 @@ TclCompileTokens(
 		Tcl_DStringFree(&textBuffer);
 
 		if (numCL) {
-		    TclContinuationsEnter(
-			    envPtr->literalArrayPtr[literal].objPtr, numCL,
-			    clPosition);
+		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
+			    numCL, clPosition);
 		}
 		numCL = 0;
 	    }
@@ -2271,7 +2269,7 @@ TclCompileTokens(
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
 	if (numCL) {
-	    TclContinuationsEnter(envPtr->literalArrayPtr[literal].objPtr,
+	    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
 		    numCL, clPosition);
 	}
 	numCL = 0;
@@ -2579,7 +2577,9 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	if (objPtr == envPtr->literalArrayPtr[i].objPtr) {
+	Tcl_Obj *fetched = TclFetchLiteral(envPtr, i);
+
+	if (objPtr == fetched) {
 	    /*
 	     * Prevent circular reference where the bytecode intrep of
 	     * a value contains a literal which is that same value.
@@ -2598,7 +2598,7 @@ TclInitByteCodeObj(
 	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
 	    Tcl_DecrRefCount(objPtr);
 	} else {
-	    codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	    codePtr->objArrayPtr[i] = fetched;
 	}
     }
 
