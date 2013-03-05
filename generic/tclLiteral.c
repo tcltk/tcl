@@ -305,6 +305,33 @@ TclCreateLiteral(
 /*
  *----------------------------------------------------------------------
  *
+ * TclFetchLiteral --
+ *
+ *	Fetch from a CompileEnv the literal value identified by an index
+ *	value, as returned by a prior call to TclRegisterLiteral().
+ *
+ * Results:
+ *	The literal value, or NULL if the index is out of range.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclFetchLiteral(
+    CompileEnv *envPtr,		/* Points to the CompileEnv from which to
+				 * fetch the registered literal value. */
+    unsigned int index)		/* Index of the desired literal, as returned
+				 * by prior call to TclRegisterLiteral() */
+{
+    if (index >= envPtr->literalArrayNext) {
+	return NULL;
+    }
+    return envPtr->literalArrayPtr[index].objPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclRegisterLiteral --
  *
  *	Find, or if necessary create, an object in a CompileEnv literal array
