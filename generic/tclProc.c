@@ -1233,17 +1233,9 @@ TclFreeLocalCache(
     for (i = 0; i < localCachePtr->numVars; i++, namePtrPtr++) {
 	register Tcl_Obj *objPtr = *namePtrPtr;
 
-	/*
-	 * Note that this can be called with interp==NULL, on interp deletion.
-	 * In that case, the literal table and objects go away on their own.
-	 */
-
 	if (objPtr) {
-	    if (interp) {
-		TclReleaseLiteral(interp, objPtr);
-	    } else {
-		Tcl_DecrRefCount(objPtr);
-	    }
+	    /* TclReleaseLiteral calls Tcl_DecrRefCount for us */
+	    TclReleaseLiteral(interp, objPtr);
 	}
     }
     ckfree(localCachePtr);

@@ -578,19 +578,6 @@ extern char **		environ;
 
 /*
  *---------------------------------------------------------------------------
- * The termios configure test program relies on the configure script being run
- * from a terminal, which is not the case e.g., when configuring from Xcode.
- * Since termios is known to be present on all Mac OS X releases since 10.0,
- * override the configure defines for serial API here. [Bug 497147]
- *---------------------------------------------------------------------------
- */
-
-#   define USE_TERMIOS 1
-#   undef USE_TERMIO
-#   undef USE_SGTTY
-
-/*
- *---------------------------------------------------------------------------
  * Include AvailabilityMacros.h here (when available) to ensure any symbolic
  * MAC_OS_X_VERSION_* constants passed on the command line are translated.
  *---------------------------------------------------------------------------

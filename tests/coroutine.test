@@ -440,7 +440,7 @@ test coroutine-4.5 {bug #2724403} -constraints {memory} \
 } -result 0
 
 test coroutine-4.6 {compile context, bug #3282869} -setup {
-    unset ::x
+    unset -nocomplain ::x
     proc f x {
 	coroutine D eval {yield X$x;yield Y}
     }
