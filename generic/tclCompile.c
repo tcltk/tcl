@@ -557,6 +557,7 @@ static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
+static void		RegisterAuxDataType(const AuxDataType *typePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
@@ -3573,7 +3574,7 @@ TclGetInstructionTable(void)
 /*
  *--------------------------------------------------------------
  *
- * TclRegisterAuxDataType --
+ * RegisterAuxDataType --
  *
  *	This procedure is called to register a new AuxData type in the table
  *	of all AuxData types supported by Tcl.
@@ -3589,8 +3590,8 @@ TclGetInstructionTable(void)
  *--------------------------------------------------------------
  */
 
-void
-TclRegisterAuxDataType(
+static void
+RegisterAuxDataType(
     const AuxDataType *typePtr)	/* Information about object type; storage must
 				 * be statically allocated (must live forever;
 				 * will not be deallocated). */
@@ -3694,9 +3695,9 @@ TclInitAuxDataTypeTable(void)
      * There are only two AuxData type at this time, so register them here.
      */
 
-    TclRegisterAuxDataType(&tclForeachInfoType);
-    TclRegisterAuxDataType(&tclJumptableInfoType);
-    TclRegisterAuxDataType(&tclDictUpdateInfoType);
+    RegisterAuxDataType(&tclForeachInfoType);
+    RegisterAuxDataType(&tclJumptableInfoType);
+    RegisterAuxDataType(&tclDictUpdateInfoType);
 }
 
 /*
