@@ -578,6 +578,7 @@ static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
+static void		RegisterAuxDataType(const AuxDataType *typePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
@@ -1737,7 +1738,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	     */
 	    int objIndex = TclRegisterNewCmdLiteral(envPtr, tokenPtr[1].start,
 		    tokenPtr[1].size);
-	    Tcl_Obj *cmdName = envPtr->literalArrayPtr[objIndex].objPtr;
+	    Tcl_Obj *cmdName = TclFetchLiteral(envPtr, objIndex);
 	    Command *cmdPtr = 
 		    (Command *) Tcl_GetCommandFromObj(interp, cmdName);
 	    int savedNumCmds = envPtr->numCommands;
@@ -1889,7 +1890,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 
 		if (envPtr->clNext) {
 		    TclContinuationsEnterDerived(
-			    envPtr->literalArrayPtr[objIndex].objPtr,
+			    TclFetchLiteral(envPtr, objIndex),
 			    tokenPtr[1].start - envPtr->source,
 			    eclPtr->loc[wlineat].next [wordIndex]);
 		}
@@ -2194,9 +2195,8 @@ TclCompileTokens(
 		Tcl_DStringFree(&textBuffer);
 
 		if (numCL) {
-		    TclContinuationsEnter(
-			    envPtr->literalArrayPtr[literal].objPtr, numCL,
-			    clPosition);
+		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
+			    numCL, clPosition);
 		}
 		numCL = 0;
 	    }
@@ -2274,7 +2274,7 @@ TclCompileTokens(
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
 	if (numCL) {
-	    TclContinuationsEnter(envPtr->literalArrayPtr[literal].objPtr,
+	    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
 		    numCL, clPosition);
 	}
 	numCL = 0;
@@ -2587,7 +2587,9 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	if (objPtr == envPtr->literalArrayPtr[i].objPtr) {
+	Tcl_Obj *fetched = TclFetchLiteral(envPtr, i);
+
+	if (objPtr == fetched) {
 	    /*
 	     * Prevent circular reference where the bytecode intrep of
 	     * a value contains a literal which is that same value.
@@ -2606,7 +2608,7 @@ TclInitByteCodeObj(
 	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
 	    Tcl_DecrRefCount(objPtr);
 	} else {
-	    codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	    codePtr->objArrayPtr[i] = fetched;
 	}
     }
 
@@ -3426,7 +3428,7 @@ TclGetInstructionTable(void)
 /*
  *--------------------------------------------------------------
  *
- * TclRegisterAuxDataType --
+ * RegisterAuxDataType --
  *
  *	This procedure is called to register a new AuxData type in the table
  *	of all AuxData types supported by Tcl.
@@ -3442,8 +3444,8 @@ TclGetInstructionTable(void)
  *--------------------------------------------------------------
  */
 
-void
-TclRegisterAuxDataType(
+static void
+RegisterAuxDataType(
     const AuxDataType *typePtr)	/* Information about object type; storage must
 				 * be statically allocated (must live forever;
 				 * will not be deallocated). */
@@ -3547,9 +3549,9 @@ TclInitAuxDataTypeTable(void)
      * There are only two AuxData type at this time, so register them here.
      */
 
-    TclRegisterAuxDataType(&tclForeachInfoType);
-    TclRegisterAuxDataType(&tclJumptableInfoType);
-    TclRegisterAuxDataType(&tclDictUpdateInfoType);
+    RegisterAuxDataType(&tclForeachInfoType);
+    RegisterAuxDataType(&tclJumptableInfoType);
+    RegisterAuxDataType(&tclDictUpdateInfoType);
 }
 
 /*

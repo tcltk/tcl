@@ -350,8 +350,7 @@ TclCompileArraySetCmd(
 	Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
 	bytes = Tcl_GetStringFromObj(objPtr, &length);
 	cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length);
-	TclSetCmdNameObj(interp, envPtr->literalArrayPtr[cmdLit].objPtr,
-		cmdPtr);
+	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
 	TclEmitPush(cmdLit, envPtr);
 	TclDecrRefCount(objPtr);
 	if (localIndex >= 0) {

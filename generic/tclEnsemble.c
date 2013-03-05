@@ -3121,7 +3121,7 @@ CompileToInvokedCommand(
 
 	    if (envPtr->clNext) {
 		TclContinuationsEnterDerived(
-			envPtr->literalArrayPtr[literal].objPtr,
+			TclFetchLiteral(envPtr, literal),
 			tokPtr[1].start - envPtr->source,
 			mapPtr->loc[eclIndex].next[i]);
 	    }
@@ -3144,7 +3144,7 @@ CompileToInvokedCommand(
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length);
-    TclSetCmdNameObj(interp, envPtr->literalArrayPtr[cmdLit].objPtr, cmdPtr);
+    TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
     TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);
 
@@ -3193,7 +3193,7 @@ CompileBasicNArgCommand(
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     literal = TclRegisterNewCmdLiteral(envPtr, bytes, length);
-    TclSetCmdNameObj(interp, envPtr->literalArrayPtr[literal].objPtr, cmdPtr);
+    TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, literal), cmdPtr);
     TclEmitPush(literal, envPtr);
     TclDecrRefCount(objPtr);
 
