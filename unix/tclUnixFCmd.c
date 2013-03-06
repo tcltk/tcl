@@ -41,8 +41,6 @@
  */
 
 #include "tclInt.h"
-#include <utime.h>
-#include <grp.h>
 #ifndef HAVE_STRUCT_STAT_ST_BLKSIZE
 #ifndef NO_FSTATFS
 #include <sys/statfs.h>
@@ -244,7 +242,7 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
-#ifdef HAVE_STRUCT_STAT64
+#if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
 /* fts doesn't do stat64 */
 #   define noFtsStat	1
 #elif defined(__APPLE__) && defined(__LP64__) && \
@@ -1340,7 +1338,7 @@ GetGroupAttribute(
     groupPtr = TclpGetGrGid(statBuf.st_gid);
 
     if (groupPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_gid);
+	*attributePtrPtr = Tcl_NewLongObj((long) statBuf.st_gid);
     } else {
 	Tcl_DString ds;
 	const char *utf;
@@ -1394,7 +1392,7 @@ GetOwnerAttribute(
     pwPtr = TclpGetPwUid(statBuf.st_uid);
 
     if (pwPtr == NULL) {
-	*attributePtrPtr = Tcl_NewIntObj((int) statBuf.st_uid);
+	*attributePtrPtr = Tcl_NewLongObj((long) statBuf.st_uid);
     } else {
 	Tcl_DString ds;
 
@@ -2285,7 +2283,7 @@ GetReadOnlyAttribute(
 	return TCL_ERROR;
     }
 
-    *attributePtrPtr = Tcl_NewBooleanObj(statBuf.st_flags&UF_IMMUTABLE);
+    *attributePtrPtr = Tcl_NewLongObj((statBuf.st_flags&UF_IMMUTABLE)!=0);
 
     return TCL_OK;
 }

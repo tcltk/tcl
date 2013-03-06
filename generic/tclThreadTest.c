@@ -62,7 +62,7 @@ static ThreadSpecificData *threadList = NULL;
  */
 
 typedef struct ThreadCtrl {
-    const char *script;		/* The Tcl command this thread should
+    const char *script;	/* The Tcl command this thread should
 				 * execute */
     int flags;			/* Initial value of the "flags" field in the
 				 * ThreadSpecificData structure for the new
@@ -229,8 +229,8 @@ ThreadObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "option ?arg ...?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], threadOptions, "option", 0,
-	    &option) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], threadOptions,
+	    sizeof(char *), "option", 0, &option) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -368,7 +368,7 @@ ThreadObjCmd(
 
 	result = Tcl_JoinThread((Tcl_ThreadId)(size_t)id, &status);
 	if (result == TCL_OK) {
-	    Tcl_SetIntObj(Tcl_GetObjResult(interp), status);
+	    Tcl_SetLongObj(Tcl_GetObjResult(interp), status);
 	} else {
 	    char buf[20];
 
@@ -415,7 +415,7 @@ ThreadObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(
 		Tcl_DoOneEvent(TCL_ALL_EVENTS | TCL_DONT_WAIT)));
 	return TCL_OK;
     }
@@ -513,7 +513,6 @@ ThreadCreate(
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
 	Tcl_AppendResult(interp, "can't create a new thread", NULL);
-	ckfree(ctrl.script);
 	return TCL_ERROR;
     }
 
@@ -614,7 +613,7 @@ NewTestThread(
      */
 
     Tcl_Preserve(tsdPtr->interp);
-    result = Tcl_Eval(tsdPtr->interp, threadEvalScript);
+    result = Tcl_EvalEx(tsdPtr->interp, threadEvalScript, -1, 0);
     if (result != TCL_OK) {
 	ThreadErrorProc(tsdPtr->interp);
     }
@@ -927,10 +926,11 @@ ThreadSend(
 	    ckfree(resultPtr->errorInfo);
 	}
     }
-    Tcl_SetResult(interp, resultPtr->result, TCL_DYNAMIC);
+    Tcl_AppendResult(interp, resultPtr->result, NULL);
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
+    ckfree(resultPtr->result);
     ckfree(resultPtr);
 
     return code;

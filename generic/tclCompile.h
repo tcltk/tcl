@@ -80,7 +80,7 @@ typedef enum {
 				 * to a catch PC offset. */
 } ExceptionRangeType;
 
-typedef struct ExceptionRange {
+typedef struct {
     ExceptionRangeType type;	/* The kind of ExceptionRange. */
     int nestingLevel;		/* Static depth of the exception range. Used
 				 * to find the most deeply-nested range
@@ -107,7 +107,7 @@ typedef struct ExceptionRange {
  * source offset is not monotonic.
  */
 
-typedef struct CmdLocation {
+typedef struct {
     int codeOffset;		/* Offset of first byte of command code. */
     int numCodeBytes;		/* Number of bytes for command's code. */
     int srcOffset;		/* Offset of first char of the command. */
@@ -125,7 +125,7 @@ typedef struct CmdLocation {
  * frame and associated information, like the path of a sourced file.
  */
 
-typedef struct ECL {
+typedef struct {
     int srcOffset;		/* Command location to find the entry. */
     int nline;			/* Number of words in the command */
     int *line;			/* Line information for all words in the
@@ -135,7 +135,7 @@ typedef struct ECL {
 				 * lines. */
 } ECL;
 
-typedef struct ExtCmdLoc {
+typedef struct {
     int type;			/* Context type. */
     int start;			/* Starting line for compiled script. Needed
 				 * for the extended recompile check in
@@ -711,8 +711,10 @@ typedef struct ByteCode {
 #define INST_ARRAY_MAKE_STK		161
 #define INST_ARRAY_MAKE_IMM		162
 
+#define INST_INVOKE_REPLACE		163
+
 /* The last opcode */
-#define LAST_INST_OPCODE		162
+#define LAST_INST_OPCODE		163
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -952,11 +954,10 @@ MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
+MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
-MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
 			    int distThreshold);
@@ -965,7 +966,6 @@ MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
 MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclInitCompilation(void);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
 			    int numBytes, const CmdFrame *invoker, int word);
@@ -985,7 +985,6 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, int maxChars);
-MODULE_SCOPE void	TclRegisterAuxDataType(const AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);

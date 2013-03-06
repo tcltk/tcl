@@ -31,7 +31,7 @@
  * and the (Tcl_Interp *) in which it is stored.
  */
 
-typedef struct QCCD {
+typedef struct {
     Tcl_Obj *pkg;
     Tcl_Interp *interp;
 } QCCD;
@@ -223,8 +223,8 @@ QueryConfigObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], subcmdStrings, "subcommand", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcmdStrings,
+	    sizeof(char *), "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 

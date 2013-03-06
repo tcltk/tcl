@@ -13,9 +13,6 @@
 
 #include "tclWinInt.h"
 
-#include <float.h>
-#include <sys/stat.h>
-
 /* Workaround for mingw versions which don't provide this in float.h */
 #ifndef _MCW_EM
 #   define	_MCW_EM		0x0008001F	/* Error masks */
@@ -111,7 +108,7 @@ static Tcl_ThreadDataKey dataKey;
  * the queue.
  */
 
-typedef struct WinCondition {
+typedef struct {
     CRITICAL_SECTION condLock;	/* Lock to serialize queuing on the
 				 * condition. */
     struct ThreadSpecificData *firstPtr;	/* Queue pointers */
@@ -126,7 +123,7 @@ typedef struct WinCondition {
 static int once;
 static DWORD tlsKey;
 
-typedef struct allocMutex {
+typedef struct {
     Tcl_Mutex	     tlock;
     CRITICAL_SECTION wlock;
 } allocMutex;
@@ -948,9 +945,9 @@ TclpFinalizeCondition(
 Tcl_Mutex *
 TclpNewAllocMutex(void)
 {
-    struct allocMutex *lockPtr;
+    allocMutex *lockPtr;
 
-    lockPtr = malloc(sizeof(struct allocMutex));
+    lockPtr = malloc(sizeof(allocMutex));
     if (lockPtr == NULL) {
 	Tcl_Panic("could not allocate lock");
     }

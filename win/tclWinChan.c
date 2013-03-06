@@ -43,7 +43,7 @@ typedef struct FileInfo {
 				 * pending on the channel. */
 } FileInfo;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * List of all file channels currently open.
      */
@@ -58,7 +58,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct FileEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     FileInfo *infoPtr;		/* Pointer to file info structure. Note that

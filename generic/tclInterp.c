@@ -25,14 +25,14 @@ static const char *tclPreInitScript = NULL;
 struct Target;
 
 /*
- * struct Alias:
+ * Alias:
  *
  * Stores information about an alias. Is stored in the slave interpreter and
  * used by the source command to find the target command in the master when
  * the source command is invoked.
  */
 
-typedef struct Alias {
+typedef struct {
     Tcl_Obj *token;		/* Token for the alias command in the slave
 				 * interp. This used to be the command name in
 				 * the slave when the alias was first
@@ -73,7 +73,7 @@ typedef struct Alias {
  * slave interpreter, e.g. what aliases are defined in it.
  */
 
-typedef struct Slave {
+typedef struct {
     Tcl_Interp *masterInterp;	/* Master interpreter for this slave. */
     Tcl_HashEntry *slaveEntryPtr;
 				/* Hash entry in masters slave table for this
@@ -84,7 +84,7 @@ typedef struct Slave {
     Tcl_Interp	*slaveInterp;	/* The slave interpreter. */
     Tcl_Command interpCmd;	/* Interpreter object command. */
     Tcl_HashTable aliasTable;	/* Table which maps from names of commands in
-				 * slave interpreter to struct Alias defined
+				 * slave interpreter to Alias defined
 				 * below. */
 } Slave;
 
@@ -127,7 +127,7 @@ typedef struct Target {
  * only load safe extensions.
  */
 
-typedef struct Master {
+typedef struct {
     Tcl_HashTable slaveTable;	/* Hash table for slave interpreters. Maps
 				 * from command names to Slave records. */
     Target *targetsPtr;		/* The head of a doubly-linked list of all the
@@ -144,7 +144,7 @@ typedef struct Master {
  * on a per-interp basis.
  */
 
-typedef struct InterpInfo {
+typedef struct {
     Master master;		/* Keeps track of all interps for which this
 				 * interp is the Master. */
     Slave slave;		/* Information necessary for this interp to
@@ -158,7 +158,7 @@ typedef struct InterpInfo {
  * likely to work properly on 64-bit architectures.
  */
 
-typedef struct ScriptLimitCallback {
+typedef struct {
     Tcl_Interp *interp;		/* The interpreter in which to execute the
 				 * callback. */
     Tcl_Obj *scriptObj;		/* The script to execute to perform the
@@ -171,12 +171,43 @@ typedef struct ScriptLimitCallback {
 				 * table. */
 } ScriptLimitCallback;
 
-typedef struct ScriptLimitCallbackKey {
+typedef struct {
     Tcl_Interp *interp;		/* The interpreter that the limit callback was
 				 * attached to. This is not the interpreter
 				 * that the callback runs in! */
     long type;			/* The type of callback that this is. */
 } ScriptLimitCallbackKey;
+
+/*
+ * TIP#143 limit handler internal representation.
+ */
+
+struct LimitHandler {
+    int flags;			/* The state of this particular handler. */
+    Tcl_LimitHandlerProc *handlerProc;
+				/* The handler callback. */
+    ClientData clientData;	/* Opaque argument to the handler callback. */
+    Tcl_LimitHandlerDeleteProc *deleteProc;
+				/* How to delete the clientData. */
+    LimitHandler *prevPtr;	/* Previous item in linked list of
+				 * handlers. */
+    LimitHandler *nextPtr;	/* Next item in linked list of handlers. */
+};
+
+/*
+ * Values for the LimitHandler flags field.
+ *      LIMIT_HANDLER_ACTIVE - Whether the handler is currently being
+ *              processed; handlers are never to be entered reentrantly.
+ *      LIMIT_HANDLER_DELETED - Whether the handler has been deleted. This
+ *              should not normally be observed because when a handler is
+ *              deleted it is also spliced out of the list of handlers, but
+ *              even so we will be careful.
+ */
+
+#define LIMIT_HANDLER_ACTIVE    0x01
+#define LIMIT_HANDLER_DELETED   0x02
+
+
 
 /*
  * Prototypes for local static functions:
@@ -299,7 +330,7 @@ Tcl_Init(
     Tcl_Interp *interp)		/* Interpreter to initialize. */
 {
     if (tclPreInitScript != NULL) {
-	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
+	if (Tcl_EvalEx(interp, tclPreInitScript, -1, 0) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
     }
@@ -345,7 +376,7 @@ Tcl_Init(
      * alternate tclInit command before calling Tcl_Init().
      */
 
-    return Tcl_Eval(interp,
+    return Tcl_EvalEx(interp,
 "if {[namespace which -command tclInit] eq \"\"} {\n"
 "  proc tclInit {} {\n"
 "    global tcl_libPath tcl_library env tclDefaultLibrary\n"
@@ -407,7 +438,7 @@ Tcl_Init(
 "    error $msg\n"
 "  }\n"
 "}\n"
-"tclInit");
+"tclInit", -1, 0);
 }
 
 /*
@@ -1798,9 +1829,9 @@ AliasNRCmd(
      */
 
     if (isRootEnsemble) {
-	TclNRDeferCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-    iPtr->evalFlags |= TCL_EVAL_REDIRECT;
+    TclSkipTailcall(interp);
     return Tcl_NREvalObj(interp, listPtr, flags);
 }
 
@@ -3141,8 +3172,8 @@ Tcl_MakeSafe(
 	 * Assume these functions all work. [Bug 2895741]
 	 */
 
-	(void) Tcl_Eval(interp,
-		"namespace eval ::tcl {namespace eval mathfunc {}}");
+	(void) Tcl_EvalEx(interp,
+		"namespace eval ::tcl {namespace eval mathfunc {}}", -1, 0);
 	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::min", master,
 		"::tcl::mathfunc::min", 0, NULL);
 	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::max", master,

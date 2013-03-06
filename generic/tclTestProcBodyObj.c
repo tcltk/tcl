@@ -34,7 +34,7 @@ static const char procCommand[] = "proc";
  * procs
  */
 
-typedef struct CmdTable {
+typedef struct {
     const char *cmdName;		/* command name */
     Tcl_ObjCmdProc *proc;	/* command proc */
     int exportIt;		/* if 1, export the command */
@@ -143,7 +143,7 @@ RegisterCommand(
     if (cmdTablePtr->exportIt) {
 	sprintf(buf, "namespace eval %s { namespace export %s }",
 		namespace, cmdTablePtr->cmdName);
-	if (Tcl_Eval(interp, buf) != TCL_OK) {
+	if (Tcl_EvalEx(interp, buf, -1, 0) != TCL_OK) {
 	    return TCL_ERROR;
 	}
     }
@@ -185,7 +185,7 @@ ProcBodyTestInitInternal(
 	}
     }
 
-    return Tcl_PkgProvide(interp, packageName, packageVersion);
+    return Tcl_PkgProvideEx(interp, packageName, packageVersion, NULL);
 }
 
 /*
