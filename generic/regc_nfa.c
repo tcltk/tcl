@@ -1319,15 +1319,15 @@ fixempties(
      */
     for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
 	nexts = s->next;
-	if (s->nouts == 1 && !s->flag) {
-	    a = s->outs;
-	    assert(a != NULL && a->outchain == NULL);
-	    if (a->type == EMPTY) {
-		if (s != a->to)
-		    moveins(nfa, s, a->to);
-		dropstate(nfa, s);
-	    }
-	}
+	if (s->flag || s->nouts != 1)
+	    continue;
+	a = s->outs;
+	assert(a != NULL && a->outchain == NULL);
+	if (a->type != EMPTY)
+	    continue;
+	if (s != a->to)
+	    moveins(nfa, s, a->to);
+	dropstate(nfa, s);
     }
 
     /*
@@ -1337,16 +1337,16 @@ fixempties(
     for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
 	nexts = s->next;
 	/* while we're at it, ensure tmp fields are clear for next step */
-	s->tmp = NULL;
-	if (s->nins == 1 && !s->flag) {
-	    a = s->ins;
-	    assert(a != NULL && a->inchain == NULL);
-	    if (a->type == EMPTY) {
-		if (s != a->from)
-		    moveouts(nfa, s, a->from);
-		dropstate(nfa, s);
-	    }
-	}
+	assert(s->tmp = NULL);
+	if (s->flag || s->nins != 1)
+	    continue;
+	a = s->ins;
+	assert(a != NULL && a->inchain == NULL);
+	if (a->type != EMPTY)
+	    continue;
+	if (s != a->from)
+	    moveouts(nfa, s, a->from);
+	dropstate(nfa, s);
     }
 
     /*
