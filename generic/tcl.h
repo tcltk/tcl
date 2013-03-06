@@ -321,7 +321,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct _stat32i64 Tcl_StatBuf;
 #   endif /* _MSC_VER < 1400 */
 #elif defined(__CYGWIN__)
-    typedef struct _stat32i64 {
+    typedef struct {
 	dev_t st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
@@ -337,7 +337,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	struct {long tv_sec;} st_ctim;
 	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64)
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
@@ -678,14 +678,11 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following structure contains the state needed by Tcl_SaveResult. No-one
- * outside of Tcl should access any of these fields. This structure is
- * typically allocated on the stack.
+ * The following type contains the state needed by Tcl_SaveResult. This
+ * structure is typically allocated on the stack.
  */
 
-typedef struct Tcl_SavedResult {
-    Tcl_Obj *objResultPtr;
-} Tcl_SavedResult;
+typedef Tcl_Obj *Tcl_SavedResult;
 
 /*
  *----------------------------------------------------------------------------
@@ -2185,18 +2182,21 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
+const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact, const char *tclversion, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
-/*
- * When not using stubs, make it a macro.
- */
-
 #ifdef USE_TCL_STUBS
-#define Tcl_InitStubs(interp, version, exact) \
-    TclInitStubs(interp, version, exact, TCL_VERSION, TCL_STUB_MAGIC)
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)((interp), (version), (exact)|(int)sizeof(size_t), \
+	TCL_VERSION, TCL_STUB_MAGIC)
+#else
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, 1|(int)sizeof(size_t), \
+	TCL_VERSION, TCL_STUB_MAGIC)
+#endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
@@ -2328,9 +2328,6 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #  undef  Tcl_NewDoubleObj
 #  define Tcl_NewDoubleObj(val) \
      Tcl_DbNewDoubleObj(val, __FILE__, __LINE__)
-#  undef  Tcl_NewIntObj
-#  define Tcl_NewIntObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewListObj
 #  define Tcl_NewListObj(objc, objv) \
      Tcl_DbNewListObj(objc, objv, __FILE__, __LINE__)
@@ -2393,18 +2390,6 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #undef  Tcl_ConditionFinalize
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
-
-/*
- *----------------------------------------------------------------------------
- * Deprecated Tcl functions:
- */
-
-#ifndef TCL_NO_DEPRECATED
-#   undef  Tcl_EvalObj
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-
-#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 

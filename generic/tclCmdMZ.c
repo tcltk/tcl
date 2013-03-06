@@ -159,8 +159,8 @@ Tcl_RegexpObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", TCL_EXACT,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "switch", TCL_EXACT, &index) != TCL_OK) {
 	    goto optionError;
 	}
 	switch ((enum options) index) {
@@ -335,7 +335,7 @@ Tcl_RegexpObjCmd(
 		 */
 
 		if (!doinline) {
-		    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+		    Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 		}
 		return TCL_OK;
 	    }
@@ -457,7 +457,7 @@ Tcl_RegexpObjCmd(
     if (doinline) {
 	Tcl_SetObjResult(interp, resultPtr);
     } else {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(all ? all-1 : 1));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(all ? all-1 : 1));
     }
     return TCL_OK;
 }
@@ -517,8 +517,8 @@ Tcl_RegsubObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[idx], options, "switch",
-		TCL_EXACT, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[idx], options,
+		sizeof(char *), "switch", TCL_EXACT, &index) != TCL_OK) {
 	    goto optionError;
 	}
 	switch ((enum options) index) {
@@ -847,7 +847,7 @@ Tcl_RegsubObjCmd(
 	     * holding the number of matches.
 	     */
 
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(numMatches));
+	    Tcl_SetObjResult(interp, Tcl_NewLongObj(numMatches));
 	}
     } else {
 	/*
@@ -1003,8 +1003,8 @@ TclNRSourceObjCmd(
 	};
 	int index;
 
-	if (TCL_ERROR == Tcl_GetIndexFromObj(interp, objv[1], options,
-		"option", TCL_EXACT, &index)) {
+	if (TCL_ERROR == Tcl_GetIndexFromObjStruct(interp, objv[1], options,
+		sizeof(char *), "option", TCL_EXACT, &index)) {
 	    return TCL_ERROR;
 	}
 	encodingName = TclGetString(objv[2]);
@@ -1260,7 +1260,7 @@ StringFirstCmd(
     }
 
   str_first_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(match));
     return TCL_OK;
 }
 
@@ -1358,7 +1358,7 @@ StringLastCmd(
     }
 
   str_last_done:
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(match));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(match));
     return TCL_OK;
 }
 
@@ -1485,8 +1485,8 @@ StringIsCmd(
 		"class ?-strict? ?-failindex var? str");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], isClasses, "class", 0,
-	    &index) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], isClasses,
+	    sizeof(char *), "class", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1494,8 +1494,8 @@ StringIsCmd(
 	for (i = 2; i < objc-1; i++) {
 	    int idx2;
 
-	    if (Tcl_GetIndexFromObj(interp, objv[i], isOptions, "option", 0,
-		    &idx2) != TCL_OK) {
+	    if (Tcl_GetIndexFromObjStruct(interp, objv[i], isOptions,
+		    sizeof(char *), "option", 0, &idx2) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    switch ((enum isOptions) idx2) {
@@ -1540,7 +1540,8 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (TCL_OK != Tcl_ConvertToType(NULL, objPtr, &tclBooleanType)) {
+	if ((objPtr->typePtr != &tclBooleanType)
+		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
 	    } else {
@@ -1797,11 +1798,11 @@ StringIsCmd(
 
  str_is_done:
     if ((result == 0) && (failVarObj != NULL) &&
-	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewIntObj(failat),
+	Tcl_ObjSetVar2(interp, failVarObj, NULL, Tcl_NewLongObj(failat),
 		TCL_LEAVE_ERR_MSG) == NULL) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(result!=0));
     return TCL_OK;
 }
 
@@ -2136,8 +2137,8 @@ StringMatchCmd(
 	    return TCL_ERROR;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(
+		TclStringMatchObj(objv[objc-1], objv[objc-2], nocase)!=0));
     return TCL_OK;
 }
 
@@ -2467,7 +2468,7 @@ StringStartCmd(
 	    cur += 1;
 	}
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(cur));
     return TCL_OK;
 }
 
@@ -2529,7 +2530,7 @@ StringEndCmd(
     } else {
 	cur = numChars;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(cur));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(cur));
     return TCL_OK;
 }
 
@@ -2611,7 +2612,7 @@ StringEqualCmd(
 	 * Always match at 0 chars of if it is the same obj.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(1));
 	return TCL_OK;
     }
 
@@ -2679,7 +2680,7 @@ StringEqualCmd(
 	}
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(match ? 0 : 1));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(match==0));
     return TCL_OK;
 }
 
@@ -2761,7 +2762,7 @@ StringCmpCmd(
 	 * Always match at 0 chars of if it is the same obj.
 	 */
 
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(0));
 	return TCL_OK;
     }
 
@@ -2826,7 +2827,7 @@ StringCmpCmd(
     }
 
     Tcl_SetObjResult(interp,
-	    Tcl_NewIntObj((match > 0) ? 1 : (match < 0) ? -1 : 0));
+	    Tcl_NewLongObj((match > 0) ? 1 : (match < 0) ? -1 : 0));
     return TCL_OK;
 }
 
@@ -2864,7 +2865,7 @@ StringBytesCmd(
     }
 
     (void) TclGetStringFromObj(objv[1], &length);
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(length));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(length));
     return TCL_OK;
 }
 
@@ -2898,7 +2899,7 @@ StringLenCmd(
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_GetCharLength(objv[1])));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(Tcl_GetCharLength(objv[1])));
     return TCL_OK;
 }
 
@@ -3324,7 +3325,7 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-	{"bytelength",	StringBytesCmd,	NULL, NULL, NULL, 0},
+	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
 	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
@@ -3335,17 +3336,17 @@ TclInitStringCmd(
 	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
 	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
 	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
-	{"repeat",	StringReptCmd,	NULL, NULL, NULL, 0},
+	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"replace",	StringRplcCmd,	NULL, NULL, NULL, 0},
-	{"reverse",	StringRevCmd,	NULL, NULL, NULL, 0},
-	{"tolower",	StringLowerCmd,	NULL, NULL, NULL, 0},
-	{"toupper",	StringUpperCmd,	NULL, NULL, NULL, 0},
-	{"totitle",	StringTitleCmd,	NULL, NULL, NULL, 0},
-	{"trim",	StringTrimCmd,	NULL, NULL, NULL, 0},
-	{"trimleft",	StringTrimLCmd,	NULL, NULL, NULL, 0},
-	{"trimright",	StringTrimRCmd,	NULL, NULL, NULL, 0},
-	{"wordend",	StringEndCmd,	NULL, NULL, NULL, 0},
-	{"wordstart",	StringStartCmd,	NULL, NULL, NULL, 0},
+	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"tolower",	StringLowerCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+	{"toupper",	StringUpperCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+	{"totitle",	StringTitleCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+	{"trim",	StringTrimCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"trimleft",	StringTrimLCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"trimright",	StringTrimRCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
 
@@ -3388,8 +3389,8 @@ TclSubstOptions(
     for (i = 0; i < numOpts; i++) {
 	int optionIndex;
 
-	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "switch", 0,
-		&optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, opts[i], substOptions,
+		sizeof(char *), "switch", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch (optionIndex) {
@@ -3513,8 +3514,8 @@ TclNRSwitchObjCmd(
 	if (TclGetString(objv[i])[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "option", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum options) index) {
@@ -3790,7 +3791,7 @@ TclNRSwitchObjCmd(
 		    rangeObjAry[0] = Tcl_NewLongObj(info.matches[j].start);
 		    rangeObjAry[1] = Tcl_NewLongObj(info.matches[j].end-1);
 		} else {
-		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewIntObj(-1);
+		    rangeObjAry[0] = rangeObjAry[1] = Tcl_NewLongObj(-1);
 		}
 
 		/*
@@ -4110,7 +4111,7 @@ Tcl_TimeObjCmd(
 	 * Use int obj since we know time is not fractional. [Bug 1202178]
 	 */
 
-	objs[0] = Tcl_NewIntObj((count <= 0) ? 0 : (int) totalMicroSec);
+	objs[0] = Tcl_NewLongObj((count <= 0) ? 0 : (int) totalMicroSec);
     } else {
 	objs[0] = Tcl_NewDoubleObj(totalMicroSec/count);
     }
@@ -4190,8 +4191,8 @@ TclNRTryObjCmd(
 	int type;
 	Tcl_Obj *info[5];
 
-	if (Tcl_GetIndexFromObj(interp, objv[i], handlerNames, "handler type",
-		0, &type) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], handlerNames,
+		sizeof(char *), "handler type", 0, &type) != TCL_OK) {
 	    Tcl_DecrRefCount(handlersObj);
 	    return TCL_ERROR;
 	}
@@ -4264,7 +4265,7 @@ TclNRTryObjCmd(
 	    }
 
 	    info[0] = objv[i];			/* type */
-	    TclNewIntObj(info[1], code);	/* returnCode */
+	    TclNewLongObj(info[1], code);	/* returnCode */
 	    if (info[2] == NULL) {		/* errorCodePrefix */
 		TclNewObj(info[2]);
 	    }

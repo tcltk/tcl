@@ -12,8 +12,6 @@
 
 #include "tclWinInt.h"
 
-#include <sys/stat.h>
-
 /*
  * The following variable is used to tell whether this module has been
  * initialized.
@@ -52,7 +50,7 @@ TCL_DECLARE_MUTEX(pipeMutex)
  * used in a pipeline.
  */
 
-typedef struct WinFile {
+typedef struct {
     int type;			/* One of the file types defined above. */
     HANDLE handle;		/* Open file handle. */
 } WinFile;
@@ -144,7 +142,7 @@ typedef struct PipeInfo {
 				 * synchronized with the readable object. */
 } PipeInfo;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * The following pointer refers to the head of the list of pipes that are
      * being watched for file events.
@@ -160,7 +158,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct PipeEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     PipeInfo *infoPtr;		/* Pointer to pipe info structure. Note that

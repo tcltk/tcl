@@ -33,7 +33,7 @@
  * "memory tag" command is invoked, to hold the current tag.
  */
 
-typedef struct MemTag {
+typedef struct {
     int refCount;		/* Number of mem_headers referencing this
 				 * tag. */
     char string[1];		/* Actual size of string will be as large as
@@ -156,6 +156,10 @@ TclInitDbCkalloc(void)
     if (!ckallocInit) {
 	ckallocInit = 1;
 	ckallocMutexPtr = Tcl_GetAllocMutex();
+#ifndef TCL_THREADS
+	/* Silence compiler warning */
+	(void)ckallocMutexPtr;
+#endif
     }
 }
 

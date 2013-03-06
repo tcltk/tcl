@@ -39,7 +39,7 @@ typedef struct FileHandler {
  * handlers are ready to fire.
  */
 
-typedef struct FileHandlerEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     int fd;			/* File descriptor that is ready. Used to find
@@ -54,7 +54,7 @@ typedef struct FileHandlerEvent {
  * writable, and exception conditions.
  */
 
-typedef struct SelectMasks {
+typedef struct {
     fd_set readable;
     fd_set writable;
     fd_set exception;
@@ -213,14 +213,14 @@ typedef struct {
     void *hCursor;
     void *hbrBackground;
     void *lpszMenuName;
-    void *lpszClassName;
+    const void *lpszClassName;
 } WNDCLASS;
 
 extern void __stdcall	CloseHandle(void *);
 extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
-extern void * __stdcall	CreateWindowExW(void *, void *, void *, DWORD, int,
-			    int, int, int, void *, void *, void *, void *);
+extern void * __stdcall	CreateWindowExW(void *, const void *, const void *,
+			    DWORD, int, int, int, int, void *, void *, void *, void *);
 extern DWORD __stdcall	DefWindowProcW(void *, int, void *, void *);
 extern unsigned char __stdcall	DestroyWindow(void *);
 extern int __stdcall	DispatchMessageW(const MSG *);
