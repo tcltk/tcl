@@ -611,41 +611,25 @@ moveins(
 }
 
 /*
- - copyins - copy all in arcs of a state to another state
- ^ static VOID copyins(struct nfa *, struct state *, struct state *);
+ - copyins - copy in arcs of a state to another state
+ * Either all arcs, or only non-empty ones as determined by all value.
+ ^ static VOID copyins(struct nfa *, struct state *, struct state *, int);
  */
 static void
 copyins(
     struct nfa *nfa,
     struct state *oldState,
-    struct state *newState)
+    struct state *newState,
+    int all)
 {
     struct arc *a;
 
     assert(oldState != newState);
 
     for (a=oldState->ins ; a!=NULL ; a=a->inchain) {
-	cparc(nfa, a, a->from, newState);
-    }
-}
-
-/*
- - copynonemptyins - as above, but ignore empty arcs
- ^ static void copynonemptyins(struct nfa *, struct state *, struct state *);
- */
-static void
-copynonemptyins(
-    struct nfa *nfa,
-    struct state *oldState,
-    struct state *newState)
-{
-    struct arc *a;
-
-    assert(oldState != newState);
-
-    for (a=oldState->ins ; a!=NULL ; a=a->inchain) {
-	if (a->type != EMPTY)
+	if (all || a->type != EMPTY) {
 	    cparc(nfa, a, a->from, newState);
+	}
     }
 }
 
@@ -670,41 +654,25 @@ moveouts(
 }
 
 /*
- - copyouts - copy all out arcs of a state to another state
- ^ static VOID copyouts(struct nfa *, struct state *, struct state *);
+ - copyouts - copy out arcs of a state to another state
+ * Either all arcs, or only non-empty ones as determined by all value.
+ ^ static VOID copyouts(struct nfa *, struct state *, struct state *, int);
  */
 static void
 copyouts(
     struct nfa *nfa,
     struct state *oldState,
-    struct state *newState)
+    struct state *newState,
+    int all)
 {
     struct arc *a;
 
     assert(oldState != newState);
 
     for (a=oldState->outs ; a!=NULL ; a=a->outchain) {
-	cparc(nfa, a, newState, a->to);
-    }
-}
-
-/*
- - copynonemptyouts - as above, but ignore empty arcs
- ^ static void copynonemptyouts(struct nfa *, struct state *, struct state *);
- */
-static void
-copynonemptyouts(
-    struct nfa *nfa,
-    struct state *oldState,
-    struct state *newState)
-{
-    struct arc *a;
-
-    assert(oldState != newState);
-
-    for (a=oldState->outs ; a!=NULL ; a=a->outchain) {
-	if (a->type != EMPTY)
+	if (all || a->type != EMPTY) {
 	    cparc(nfa, a, newState, a->to);
+	}
     }
 }
 
@@ -1049,9 +1017,9 @@ pull(
 	if (NISERR()) {
 	    return 0;
 	}
-	assert(to != from);	/* con is not an inarc */
-	copyins(nfa, from, s);	/* duplicate inarcs */
-	cparc(nfa, con, s, to);	/* move constraint arc */
+	assert(to != from);		/* con is not an inarc */
+	copyins(nfa, from, s, 1);	/* duplicate inarcs */
+	cparc(nfa, con, s, to);		/* move constraint arc */
 	freearc(nfa, con);
 	from = s;
 	con = from->outs;
@@ -1209,7 +1177,7 @@ push(
 	if (NISERR()) {
 	    return 0;
 	}
-	copyouts(nfa, to, s);	/* duplicate outarcs */
+	copyouts(nfa, to, s, 1);	/* duplicate outarcs */
 	cparc(nfa, con, from, s);	/* move constraint */
 	freearc(nfa, con);
 	to = s;
@@ -1489,11 +1457,11 @@ replaceempty(
     toins = (fromouts == 0) ? 1 : nonemptyins(to);
 
     if (fromouts > toins) {
-	copynonemptyouts(nfa, to, from);
+	copyouts(nfa, to, from, 0);
 	return;
     }
     if (fromouts < toins) {
-	copynonemptyins(nfa, from, to);
+	copyins(nfa, from, to, 0);
 	return;
     }
 
@@ -1505,10 +1473,10 @@ replaceempty(
      * resulting graph much.
      */
     if (from->nins > to->nouts) {
-	copynonemptyouts(nfa, to, from);
+	copyouts(nfa, to, from, 0);
 	return;
     } else {
-	copynonemptyins(nfa, from, to);
+	copyins(nfa, from, to, 0);
 	return;
     }
 }
