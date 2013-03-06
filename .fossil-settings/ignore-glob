@@ -1,0 +1,15 @@
+*.a
+*.dll
+*.exe
+*.o
+*.obj
+*.so
+*/Makefile
+*/config.cache
+*/config.log
+*/config.status
+*/tclConfig.sh
+*/tclsh*
+*/tcltest*
+unix/dltest.marker
+win/tcl.hpj
