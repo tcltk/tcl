@@ -121,6 +121,7 @@ static void destroystate(struct nfa *, struct state *);
 static void newarc(struct nfa *, int, pcolor, struct state *, struct state *);
 static struct arc *allocarc(struct nfa *, struct state *);
 static void freearc(struct nfa *, struct arc *);
+static int hasnonemptyout(struct state *);
 static int nonemptyouts(struct state *);
 static int nonemptyins(struct state *);
 static struct arc *findarc(struct state *, int, pcolor);
