@@ -129,11 +129,9 @@ static int nonemptyins _ANSI_ARGS_((struct state *));
 static struct arc *findarc _ANSI_ARGS_((struct state *, int, pcolor));
 static VOID cparc _ANSI_ARGS_((struct nfa *, struct arc *, struct state *, struct state *));
 static VOID moveins _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
-static VOID copyins _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
-static VOID copynonemptyins _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
+static VOID copyins _ANSI_ARGS_((struct nfa *, struct state *, struct state *, int));
 static VOID moveouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
-static VOID copyouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
-static VOID copynonemptyouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
+static VOID copyouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *, int));
 static VOID cloneouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *, struct state *, int));
 static VOID delsub _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
 static VOID deltraverse _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
@@ -558,7 +556,7 @@ struct nfa *nfa;
 	/* do the splits */
 	for (s = slist; s != NULL; s = s2) {
 		s2 = newstate(nfa);
-		copyouts(nfa, s, s2);
+		copyouts(nfa, s, s2, 1);
 		for (a = s->ins; a != NULL; a = b) {
 			b = a->inchain;
 			if (a->from != pre) {
