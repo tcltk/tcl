@@ -32,6 +32,10 @@ static int		AddLocalLiteralEntry(CompileEnv *envPtr,
 			    Tcl_Obj *objPtr, int localHash);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
 static unsigned		HashString(const char *string, int length);
+#ifdef TCL_COMPILE_DEBUG
+static LiteralEntry *	LookupLiteralEntry(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
+#endif
 static void		RebuildLiteralTable(LiteralTable *tablePtr);
 
 /*
@@ -239,7 +243,7 @@ TclCreateLiteral(
     }
 
 #ifdef TCL_COMPILE_DEBUG
-    if (TclLookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
+    if (LookupLiteralEntry((Tcl_Interp *) iPtr, objPtr) != NULL) {
 	Tcl_Panic("%s: literal \"%.*s\" found globally but shouldn't be",
 		"TclRegisterLiteral", (length>60? 60 : length), bytes);
     }
@@ -296,6 +300,33 @@ TclCreateLiteral(
     }
     *newPtr = 1;
     return objPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFetchLiteral --
+ *
+ *	Fetch from a CompileEnv the literal value identified by an index
+ *	value, as returned by a prior call to TclRegisterLiteral().
+ *
+ * Results:
+ *	The literal value, or NULL if the index is out of range.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclFetchLiteral(
+    CompileEnv *envPtr,		/* Points to the CompileEnv from which to
+				 * fetch the registered literal value. */
+    unsigned int index)		/* Index of the desired literal, as returned
+				 * by prior call to TclRegisterLiteral() */
+{
+    if (index >= envPtr->literalArrayNext) {
+	return NULL;
+    }
+    return envPtr->literalArrayPtr[index].objPtr;
 }
 
 /*
@@ -414,10 +445,11 @@ TclRegisterLiteral(
     return objIndex;
 }
 
+#ifdef TCL_COMPILE_DEBUG
 /*
  *----------------------------------------------------------------------
  *
- * TclLookupLiteralEntry --
+ * LookupLiteralEntry --
  *
  *	Finds the LiteralEntry that corresponds to a literal Tcl object
  *	holding a literal.
@@ -431,8 +463,8 @@ TclRegisterLiteral(
  *----------------------------------------------------------------------
  */
 
-LiteralEntry *
-TclLookupLiteralEntry(
+static LiteralEntry *
+LookupLiteralEntry(
     Tcl_Interp *interp,		/* Interpreter for which objPtr was created to
 				 * hold a literal. */
     register Tcl_Obj *objPtr)	/* Points to a Tcl object holding a literal
@@ -456,6 +488,7 @@ TclLookupLiteralEntry(
     return NULL;
 }
 
+#endif
 /*
  *----------------------------------------------------------------------
  *
@@ -750,11 +783,16 @@ TclReleaseLiteral(
 				 * TclRegisterLiteral. */
 {
     Interp *iPtr = (Interp *) interp;
-    LiteralTable *globalTablePtr = &iPtr->literalTable;
+    LiteralTable *globalTablePtr;
     register LiteralEntry *entryPtr, *prevPtr;
     const char *bytes;
     int length, index;
 
+    if (iPtr == NULL) {
+	goto done;
+    }
+
+    globalTablePtr = &iPtr->literalTable;
     bytes = TclGetStringFromObj(objPtr, &length);
     index = (HashString(bytes, length) & globalTablePtr->mask);
 
@@ -798,6 +836,7 @@ TclReleaseLiteral(
      * Remove the reference corresponding to the local literal table entry.
      */
 
+    done:
     Tcl_DecrRefCount(objPtr);
 }
 
@@ -1090,7 +1129,7 @@ TclVerifyLocalLiteralTable(
 			"TclVerifyLocalLiteralTable",
 			(length>60? 60 : length), bytes, localPtr->refCount);
 	    }
-	    if (TclLookupLiteralEntry((Tcl_Interp *) envPtr->iPtr,
+	    if (LookupLiteralEntry((Tcl_Interp *) envPtr->iPtr,
 		    localPtr->objPtr) == NULL) {
 		bytes = Tcl_GetStringFromObj(localPtr->objPtr, &length);
 		Tcl_Panic("%s: local literal \"%.*s\" is not global",

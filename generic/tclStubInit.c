@@ -40,6 +40,7 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #undef TclPkgProvide
+#undef Tcl_SetIntObj
 
 #define TclPkgProvide pkgProvide
 static int TclPkgProvide(
