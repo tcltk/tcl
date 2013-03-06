@@ -501,15 +501,17 @@ freearc(
  ^ static int hasnonemptyout(struct state *);
  */
 static int
-hasnonemptyout(s)
-struct state *s;
+hasnonemptyout(
+    struct state *s)
 {
-	struct arc *a;
+    struct arc *a;
 
-	for (a = s->outs; a != NULL; a = a->outchain)
-		if (a->type != EMPTY)
-			return 1;
-	return 0;
+    for (a = s->outs; a != NULL; a = a->outchain) {
+	if (a->type != EMPTY) {
+	    return 1;
+	}
+    }
+    return 0;
 }
 
 /*
@@ -524,8 +526,9 @@ nonemptyouts(
     struct arc *a;
 
     for (a = s->outs; a != NULL; a = a->outchain) {
-	if (a->type != EMPTY)
+	if (a->type != EMPTY) {
 	    n++;
+	}
     }
     return n;
 }
@@ -542,8 +545,9 @@ nonemptyins(
     struct arc *a;
 
     for (a = s->ins; a != NULL; a = a->inchain) {
-	if (a->type != EMPTY)
+	if (a->type != EMPTY) {
 	    n++;
+	}
     }
     return n;
 }
@@ -1300,67 +1304,78 @@ fixempties(
     struct arc *nexta;
 
     /*
-     * First, get rid of any states whose sole out-arc is an EMPTY, since
-     * they're basically just aliases for their successor.  The parsing
-     * algorithm creates enough of these that it's worth special-casing this.
+     * First, get rid of any states whose sole out-arc is an EMPTY,
+     * since they're basically just aliases for their successor.  The
+     * parsing algorithm creates enough of these that it's worth
+     * special-casing this.
      */
     for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
 	nexts = s->next;
-	if (s->flag || s->nouts != 1)
+	if (s->flag || s->nouts != 1) {
 	    continue;
+	}
 	a = s->outs;
 	assert(a != NULL && a->outchain == NULL);
-	if (a->type != EMPTY)
+	if (a->type != EMPTY) {
 	    continue;
-	if (s != a->to)
+	}
+	if (s != a->to) {
 	    moveins(nfa, s, a->to);
+	}
 	dropstate(nfa, s);
     }
 
     /*
-     * Similarly, get rid of any state with a single EMPTY in-arc, by folding
-     * it into its predecessor.
+     * Similarly, get rid of any state with a single EMPTY in-arc, by
+     * folding it into its predecessor.
      */
     for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
 	nexts = s->next;
-	/* while we're at it, ensure tmp fields are clear for next step */
+	/* Ensure tmp fields are clear for next step */
 	assert(s->tmp = NULL);
-	if (s->flag || s->nins != 1)
+	if (s->flag || s->nins != 1) {
 	    continue;
+	}
 	a = s->ins;
 	assert(a != NULL && a->inchain == NULL);
-	if (a->type != EMPTY)
+	if (a->type != EMPTY) {
 	    continue;
-	if (s != a->from)
+	}
+	if (s != a->from) {
 	    moveouts(nfa, s, a->from);
+	}
 	dropstate(nfa, s);
     }
 
     /*
-     * For each remaining NFA state, find all other states that are reachable
-     * from it by a chain of one or more EMPTY arcs.  Then generate new arcs
-     * that eliminate the need for each such chain.
+     * For each remaining NFA state, find all other states that are
+     * reachable from it by a chain of one or more EMPTY arcs.  Then
+     * generate new arcs that eliminate the need for each such chain.
      *
      * If we just do this straightforwardly, the algorithm gets slow in
-     * complex graphs, because the same arcs get copied to all intermediate
-     * states of an EMPTY chain, and then uselessly pushed repeatedly to the
-     * chain's final state; we waste a lot of time in newarc's duplicate
-     * checking.  To improve matters, we decree that any state with only EMPTY
-     * out-arcs is "doomed" and will not be part of the final NFA. That can be
-     * ensured by not adding any new out-arcs to such a state. Having ensured
-     * that, we need not update the state's in-arcs list either; all arcs that
-     * might have gotten pushed forward to it will just get pushed directly to
-     * successor states.  This eliminates most of the useless duplicate arcs.
+     * complex graphs, because the same arcs get copied to all
+     * intermediate states of an EMPTY chain, and then uselessly pushed
+     * repeatedly to the chain's final state; we waste a lot of time in
+     * newarc's duplicate checking.  To improve matters, we decree that
+     * any state with only EMPTY out-arcs is "doomed" and will not be
+     * part of the final NFA. That can be ensured by not adding any new
+     * out-arcs to such a state. Having ensured that, we need not update
+     * the state's in-arcs list either; all arcs that might have gotten
+     * pushed forward to it will just get pushed directly to successor
+     * states.  This eliminates most of the useless duplicate arcs.
      */
     for (s = nfa->states; s != NULL && !NISERR(); s = s->next) {
-	for (s2 = emptyreachable(s, s); s2 != s && !NISERR(); s2 = nexts) {
+	for (s2 = emptyreachable(s, s); s2 != s && !NISERR();
+		s2 = nexts) {
 	    /*
-	     * If s2 is doomed, we decide that (1) we will always push arcs
-	     * forward to it, not pull them back to s; and (2) we can optimize
-	     * away the push-forward, per comment above.  So do nothing.
+	     * If s2 is doomed, we decide that (1) we will always push
+	     * arcs forward to it, not pull them back to s; and (2) we
+	     * can optimize away the push-forward, per comment above.
+	     * So do nothing.
 	     */
-	    if (s2->flag || hasnonemptyout(s2))
+	    if (s2->flag || hasnonemptyout(s2)) {
 		replaceempty(nfa, s, s2);
+	    }
 
 	    /* Reset the tmp fields as we walk back */
 	    nexts = s2->tmp;
@@ -1370,29 +1385,33 @@ fixempties(
     }
 
     /*
-     * Now remove all the EMPTY arcs, since we don't need them anymore.
+     * Remove all the EMPTY arcs, since we don't need them anymore.
      */
-    for (s = nfa->states; s != NULL && !NISERR(); s = s->next) {
+    for (s = nfa->states; s != NULL; s = s->next) {
 	for (a = s->outs; a != NULL; a = nexta) {
 	    nexta = a->outchain;
-	    if (a->type == EMPTY)
+	    if (a->type == EMPTY) {
 		freearc(nfa, a);
+	    }
 	}
     }
 
     /*
-     * And remove any states that have become useless.  (This cleanup is not
-     * very thorough, and would be even less so if we tried to combine it with
-     * the previous step; but cleanup() will take care of anything we miss.)
+     * And remove any states that have become useless.  (This cleanup is
+     * not very thorough, and would be even less so if we tried to
+     * combine it with the previous step; but cleanup() will take care
+     * of anything we miss.)
      */
     for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
 	nexts = s->next;
-	if ((s->nins == 0 || s->nouts == 0) && !s->flag)
+	if ((s->nins == 0 || s->nouts == 0) && !s->flag) {
 	    dropstate(nfa, s);
+	}
     }
 
-    if (f != NULL && !NISERR())
+    if (f != NULL && !NISERR()) {
 	dumpnfa(nfa, f);
+    }
 }
 
 /*
@@ -1415,8 +1434,9 @@ emptyreachable(
     s->tmp = lastfound;
     lastfound = s;
     for (a = s->outs; a != NULL; a = a->outchain) {
-	if (a->type == EMPTY && a->to->tmp == NULL)
+	if (a->type == EMPTY && a->to->tmp == NULL) {
 	    lastfound = emptyreachable(a->to, lastfound);
+	}
     }
     return lastfound;
 }
@@ -1475,10 +1495,9 @@ replaceempty(
     if (from->nins > to->nouts) {
 	copyouts(nfa, to, from, 0);
 	return;
-    } else {
-	copyins(nfa, from, to, 0);
-	return;
     }
+
+    copyins(nfa, from, to, 0);
 }
 
 /*
