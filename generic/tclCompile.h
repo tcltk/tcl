@@ -839,7 +839,6 @@ EXTERN void		TclFreeJumpFixupArray _ANSI_ARGS_((
 EXTERN void		TclInitAuxDataTypeTable _ANSI_ARGS_((void));
 EXTERN void		TclInitByteCodeObj _ANSI_ARGS_((Tcl_Obj *objPtr,
 			    CompileEnv *envPtr));
-EXTERN void		TclInitCompilation _ANSI_ARGS_((void));
 #ifndef TCL_TIP280
 EXTERN void		TclInitCompileEnv _ANSI_ARGS_((Tcl_Interp *interp,
 			    CompileEnv *envPtr, char *string,
