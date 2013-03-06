@@ -1383,6 +1383,9 @@ fixempties(
 	}
 	s->tmp = NULL;
     }
+    if (NISERR()) {
+	return;
+    }
 
     /*
      * Remove all the EMPTY arcs, since we don't need them anymore.
@@ -1402,14 +1405,14 @@ fixempties(
      * combine it with the previous step; but cleanup() will take care
      * of anything we miss.)
      */
-    for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
+    for (s = nfa->states; s != NULL; s = nexts) {
 	nexts = s->next;
 	if ((s->nins == 0 || s->nouts == 0) && !s->flag) {
 	    dropstate(nfa, s);
 	}
     }
 
-    if (f != NULL && !NISERR()) {
+    if (f != NULL) {
 	dumpnfa(nfa, f);
     }
 }
