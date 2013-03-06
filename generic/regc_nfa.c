@@ -497,6 +497,22 @@ freearc(
 }
 
 /*
+ - hasnonemptyout - Does state have a non-EMPTY out arc?
+ ^ static int hasnonemptyout(struct state *);
+ */
+static int
+hasnonemptyout(s)
+struct state *s;
+{
+	struct arc *a;
+
+	for (a = s->outs; a != NULL; a = a->outchain)
+		if (a->type != EMPTY)
+			return 1;
+	return 0;
+}
+
+/*
  - nonemptyouts - count non-EMPTY out arcs of a state
  ^ static int nonemptyouts(struct state *);
  */
@@ -1375,7 +1391,7 @@ fixempties(
 	     * forward to it, not pull them back to s; and (2) we can optimize
 	     * away the push-forward, per comment above.  So do nothing.
 	     */
-	    if (s2->flag || nonemptyouts(s2) > 0)
+	    if (s2->flag || hasnonemptyout(s2))
 		replaceempty(nfa, s, s2);
 
 	    /* Reset the tmp fields as we walk back */
