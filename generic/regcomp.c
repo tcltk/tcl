@@ -123,6 +123,7 @@ static VOID destroystate _ANSI_ARGS_((struct nfa *, struct state *));
 static VOID newarc _ANSI_ARGS_((struct nfa *, int, pcolor, struct state *, struct state *));
 static struct arc *allocarc _ANSI_ARGS_((struct nfa *, struct state *));
 static VOID freearc _ANSI_ARGS_((struct nfa *, struct arc *));
+static int hasnonemptyout _ANSI_ARGS_((struct state *));
 static int nonemptyouts _ANSI_ARGS_((struct state *));
 static int nonemptyins _ANSI_ARGS_((struct state *));
 static struct arc *findarc _ANSI_ARGS_((struct state *, int, pcolor));
