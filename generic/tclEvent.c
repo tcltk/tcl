@@ -1402,7 +1402,7 @@ Tcl_VwaitObjCmd(
 	return TCL_ERROR;
     }
     nameString = Tcl_GetString(objv[1]);
-    if (Tcl_TraceVar(interp, nameString,
+    if (Tcl_TraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done) != TCL_OK) {
 	return TCL_ERROR;
@@ -1420,7 +1420,7 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
     }
-    Tcl_UntraceVar(interp, nameString,
+    Tcl_UntraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done);
 

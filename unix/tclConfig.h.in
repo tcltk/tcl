@@ -433,15 +433,6 @@
 /* Should we use FIONBIO? */
 #undef USE_FIONBIO
 
-/* Use the sgtty API for serial lines */
-#undef USE_SGTTY
-
-/* Use the termio API for serial lines */
-#undef USE_TERMIO
-
-/* Use the termios API for serial lines */
-#undef USE_TERMIOS
-
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC
 
