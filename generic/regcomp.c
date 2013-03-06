@@ -127,11 +127,9 @@ static int nonemptyins(struct state *);
 static struct arc *findarc(struct state *, int, pcolor);
 static void cparc(struct nfa *, struct arc *, struct state *, struct state *);
 static void moveins(struct nfa *, struct state *, struct state *);
-static void copyins(struct nfa *, struct state *, struct state *);
-static void copynonemptyins(struct nfa *, struct state *, struct state *);
+static void copyins(struct nfa *, struct state *, struct state *, int);
 static void moveouts(struct nfa *, struct state *, struct state *);
-static void copyouts(struct nfa *, struct state *, struct state *);
-static void copynonemptyouts(struct nfa *, struct state *, struct state *);
+static void copyouts(struct nfa *, struct state *, struct state *, int);
 static void cloneouts(struct nfa *, struct state *, struct state *, struct state *, int);
 static void delsub(struct nfa *, struct state *, struct state *);
 static void deltraverse(struct nfa *, struct state *, struct state *);
@@ -613,7 +611,7 @@ makesearch(
     for (s=slist ; s!=NULL ; s=s2) {
 	s2 = newstate(nfa);
 
-	copyouts(nfa, s, s2);
+	copyouts(nfa, s, s2, 1);
 	for (a=s->ins ; a!=NULL ; a=b) {
 	    b = a->inchain;
 
