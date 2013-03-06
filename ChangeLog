@@ -1,3 +1,10 @@
+2013-03-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_nfa.c:	[Bugs 3604074,3606683] Rewrite of the
+	* generic/regcomp.c:	fixempties() routine (and supporting
+	routines) to completely eliminate the infinite loop hazard.
+	Thanks to Tom Lane for the much improved solution.
+
 2013-02-28  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclLiteral.c:	Revise TclReleaseLiteral() to tolerate a
