@@ -1204,7 +1204,7 @@ TclInitCompileEnv(
     envPtr->maxExceptDepth = 0;
     envPtr->maxStackDepth = 0;
     envPtr->currStackDepth = 0;
-    TclInitLiteralTable(&envPtr->localLitTable);
+    Tcl_InitHashTable(&envPtr->litMap, TCL_ONE_WORD_KEYS);
 
     envPtr->codeStart = envPtr->staticCodeSpace;
     envPtr->codeNext = envPtr->codeStart;
@@ -1391,10 +1391,7 @@ void
 TclFreeCompileEnv(
     register CompileEnv *envPtr)/* Points to the CompileEnv structure. */
 {
-    if (envPtr->localLitTable.buckets != envPtr->localLitTable.staticBuckets){
-	ckfree(envPtr->localLitTable.buckets);
-	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
-    }
+    Tcl_DeleteHashTable(&envPtr->litMap);
     if (envPtr->iPtr) {
 	/* 
 	 * We never converted to Bytecode, so free the things we would

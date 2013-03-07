@@ -247,11 +247,9 @@ typedef struct CompileEnv {
 				 * execute the code. Set by compilation
 				 * procedures before returning. */
     int currStackDepth;		/* Current stack depth. */
-    LiteralTable localLitTable;	/* Contains LiteralEntry's describing all Tcl
-				 * objects referenced by this compiled code.
-				 * Indexed by the string representations of
-				 * the literals. Used to avoid creating
-				 * duplicate objects. */
+    Tcl_HashTable litMap;	/* Map from literal value to int index where
+				 * that value is stored in literalArrayPtr.
+				 * Used to prevent dup value refs. */
     unsigned char *codeStart;	/* Points to the first byte of the code. */
     unsigned char *codeNext;	/* Points to next code array byte to use. */
     unsigned char *codeEnd;	/* Points just after the last allocated code
@@ -941,9 +939,7 @@ MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
-			    int length, unsigned int hash, int *newPtr,
-			    Namespace *nsPtr, int flags,
-			    LiteralEntry **globalPtrPtr);
+			    int length, Namespace *nsPtr, int flags);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
