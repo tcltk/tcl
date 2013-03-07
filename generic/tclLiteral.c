@@ -176,6 +176,7 @@ TclCreateLiteral(
     char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
     int length,			/* Number of bytes in the string. */
+    int *newPtr,
     Namespace *nsPtr,
     int flags)
 {
@@ -203,6 +204,9 @@ TclCreateLiteral(
 	     * A literal was found: return it
 	     */
 
+	    if (newPtr) {
+		*newPtr = 0;
+	    }
 	    if (flags & LITERAL_ON_HEAP) {
 		ckfree(bytes);
 	    }
@@ -216,6 +220,12 @@ TclCreateLiteral(
 #endif
 	    return objPtr;
 	}
+    }
+    if (newPtr == NULL) {
+	if (flags & LITERAL_ON_HEAP) {
+	    ckfree(bytes);
+	}
+	return NULL;
     }
 
     /*
@@ -285,6 +295,7 @@ TclCreateLiteral(
     iPtr->stats.literalCount[TclLog2(length)]++;
 #endif /*TCL_COMPILE_STATS*/
 
+    *newPtr = 1;
     return objPtr;
 }
 
@@ -360,6 +371,7 @@ TclRegisterLiteral(
 {
     Interp *iPtr = envPtr->iPtr;
     Namespace *nsPtr = NULL;
+    int new;
 
     /*
      * If the literal is a command name, avoid sharing it across namespaces,
@@ -377,7 +389,7 @@ TclRegisterLiteral(
     }
     
     return AddLocalLiteralEntry(envPtr, TclCreateLiteral(iPtr,
-	    bytes, length, nsPtr, flags));
+	    bytes, length, &new, nsPtr, flags));
 }
 
 #ifdef TCL_COMPILE_DEBUG
@@ -870,8 +882,8 @@ TclInvalidateCmdLiteral(
 				 * invalidate a cmd literal. */
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name,
-	    -1, nsPtr, 0);
+    Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name, -1,
+	    NULL, nsPtr, 0);
 
     if (literalObjPtr != NULL) {
 	if (literalObjPtr->typePtr == &tclCmdNameType) {
