@@ -343,7 +343,7 @@ TclFetchLiteral(
     if (index >= envPtr->literalArrayNext) {
 	return NULL;
     }
-    return envPtr->literalArrayPtr[index].objPtr;
+    return envPtr->literalArrayPtr[index];
 }
 
 /*
@@ -500,7 +500,7 @@ TclHideLiteral(
     int index)			/* The index of the entry in the literal
 				 * array. */
 {
-    LiteralEntry *lPtr;
+    Tcl_Obj **lPtr;
     Tcl_Obj *newObjPtr;
     Tcl_HashEntry *hePtr;
 
@@ -513,15 +513,15 @@ TclHideLiteral(
      * matched by literal searches.
      */
 
-    hePtr = Tcl_FindHashEntry(&envPtr->litMap, lPtr->objPtr);
+    hePtr = Tcl_FindHashEntry(&envPtr->litMap, *lPtr);
     if (hePtr) {
 	Tcl_DeleteHashEntry(hePtr);
     }
 
-    newObjPtr = Tcl_DuplicateObj(lPtr->objPtr);
+    newObjPtr = Tcl_DuplicateObj(*lPtr);
     Tcl_IncrRefCount(newObjPtr);
-    TclReleaseLiteral(interp, lPtr->objPtr);
-    lPtr->objPtr = newObjPtr;
+    TclReleaseLiteral(interp, *lPtr);
+    *lPtr = newObjPtr;
 }
 
 /*
@@ -553,7 +553,6 @@ TclAddLiteralObj(
 				 * in the internal stubs table, and use by
 				 * tclcompiler. */
 {
-    register LiteralEntry *lPtr;
     int objIndex;
 
     if (envPtr->literalArrayNext >= envPtr->literalArrayEnd) {
@@ -562,11 +561,8 @@ TclAddLiteralObj(
     objIndex = envPtr->literalArrayNext;
     envPtr->literalArrayNext++;
 
-    lPtr = &envPtr->literalArrayPtr[objIndex];
-    lPtr->objPtr = objPtr;
+    envPtr->literalArrayPtr[objIndex] = objPtr;
     Tcl_IncrRefCount(objPtr);
-    lPtr->refCount = -1;	/* i.e., unused */
-    lPtr->nextPtr = NULL;
 
     return objIndex;
 }
@@ -602,9 +598,9 @@ ExpandLocalLiteralArray(
      */
 
     int currElems = envPtr->literalArrayNext;
-    size_t currBytes = (currElems * sizeof(LiteralEntry));
-    LiteralEntry *currArrayPtr = envPtr->literalArrayPtr;
-    LiteralEntry *newArrayPtr;
+    size_t currBytes = (currElems * sizeof(Tcl_Obj *));
+    Tcl_Obj **currArrayPtr = envPtr->literalArrayPtr;
+    Tcl_Obj **newArrayPtr;
 
     if (envPtr->mallocedLiteralArray) {
 	newArrayPtr = ckrealloc(currArrayPtr, 2 * currBytes);

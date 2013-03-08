@@ -901,7 +901,7 @@ TclCleanupByteCode(
     /*
      * A single heap object holds the ByteCode structure and its code, object,
      * command location, and auxiliary data arrays. This means we only need to
-     * 1) decrement the ref counts of the LiteralEntry's in its literal array,
+     * 1) decrement the ref counts of the literal values in its literal array,
      * 2) call the free procs for the auxiliary data items, 3) free the
      * localCache if it is unused, and finally 4) free the ByteCode
      * structure's heap object.
@@ -1399,12 +1399,11 @@ TclFreeCompileEnv(
 	 */
 
 	int i;
-	LiteralEntry *entryPtr = envPtr->literalArrayPtr;
+	Tcl_Obj **litPtr = envPtr->literalArrayPtr;
 	AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
 
 	for (i = 0;  i < envPtr->literalArrayNext;  i++) {
-	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, entryPtr->objPtr);
-	    entryPtr++;
+	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, *litPtr++);
 	}
 
 #ifdef TCL_COMPILE_DEBUG

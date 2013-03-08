@@ -256,8 +256,8 @@ typedef struct CompileEnv {
 				 * array byte. */
     int mallocedCodeArray;	/* Set 1 if code array was expanded and
 				 * codeStart points into the heap.*/
-    LiteralEntry *literalArrayPtr;
-    				/* Points to start of LiteralEntry array. */
+    Tcl_Obj **literalArrayPtr;
+    				/* Points of array of literal values. */
     int literalArrayNext;	/* Index of next free object array entry. */
     int literalArrayEnd;	/* Index just after last obj array entry. */
     int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
@@ -290,8 +290,8 @@ typedef struct CompileEnv {
 				 * auxDataArrayPtr points in heap else 0. */
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
 				/* Initial storage for code. */
-    LiteralEntry staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
-				/* Initial storage of LiteralEntry array. */
+    Tcl_Obj *staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
+				/* Initial storage of literal value array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
     CmdLocation staticCmdMapSpace[COMPILEENV_INIT_CMD_MAP_SIZE];
