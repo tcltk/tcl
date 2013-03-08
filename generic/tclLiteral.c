@@ -28,6 +28,9 @@
  * Function prototypes for static functions in this file:
  */
 
+static Tcl_Obj *	CreateLiteral(Interp *iPtr, char *bytes, int length,
+			    int *newPtr, Namespace *nsPtr, int flags,
+			    LiteralEntry **globalPtrPtr);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
 static unsigned		HashString(const char *string, int length);
 #ifdef TCL_COMPILE_DEBUG
@@ -170,6 +173,17 @@ TclDeleteLiteralTable(
 
 Tcl_Obj *
 TclCreateLiteral(
+    Interp *iPtr,
+    char *bytes,		/* The start of the string. Note that this is
+				 * not a NUL-terminated string. */
+    int length)			/* Number of bytes in the string. */
+{
+    int new;
+    return CreateLiteral(iPtr, bytes, length, &new, NULL, 0, NULL);
+}
+
+static Tcl_Obj *
+CreateLiteral(
     Interp *iPtr,
     char *bytes,		/* The start of the string. Note that this is
 				 * not a NUL-terminated string. */
@@ -397,7 +411,7 @@ TclRegisterLiteral(
 	}
     }
 
-    objPtr = TclCreateLiteral(iPtr, bytes, length, &globalNew, nsPtr,
+    objPtr = CreateLiteral(iPtr, bytes, length, &globalNew, nsPtr,
 	    flags, &globalPtr);
     
     hePtr = Tcl_CreateHashEntry(&envPtr->litMap, objPtr, &new);
@@ -864,7 +878,7 @@ TclInvalidateCmdLiteral(
 {
     Interp *iPtr = (Interp *) interp;
     LiteralEntry *globalPtr;
-    Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name, -1,
+    Tcl_Obj *literalObjPtr = CreateLiteral(iPtr, (char *) name, -1,
 	    NULL, nsPtr, 0, &globalPtr);
 
     if (literalObjPtr && (literalObjPtr->typePtr == &tclCmdNameType)) {

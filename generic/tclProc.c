@@ -1386,10 +1386,8 @@ InitLocalCache(
 	if (TclIsVarTemporary(localPtr)) {
 	    *namePtr = NULL;
 	} else {
-	    int new;
-
-	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
-		    localPtr->nameLength, &new, /* nsPtr */ NULL, 0, NULL);
+	    *namePtr = TclCreateLiteral(iPtr,
+		    localPtr->name, localPtr->nameLength);
 	    Tcl_IncrRefCount(*namePtr);
 	}
 
