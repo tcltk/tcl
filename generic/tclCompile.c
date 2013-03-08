@@ -2592,7 +2592,7 @@ TclInitByteCodeObj(
 
 	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
 	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
-	    Tcl_DecrRefCount(objPtr);
+	    TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
 	} else {
 	    codePtr->objArrayPtr[i] = fetched;
 	}
