@@ -1389,7 +1389,7 @@ InitLocalCache(
 	    int new;
 
 	    *namePtr = TclCreateLiteral(iPtr, localPtr->name,
-		    localPtr->nameLength, &new, /* nsPtr */ NULL, 0);
+		    localPtr->nameLength, &new, /* nsPtr */ NULL, 0, NULL);
 	    Tcl_IncrRefCount(*namePtr);
 	}
 

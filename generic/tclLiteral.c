@@ -28,8 +28,6 @@
  * Function prototypes for static functions in this file:
  */
 
-static int		AddLocalLiteralEntry(CompileEnv *envPtr,
-			    Tcl_Obj *objPtr);
 static void		ExpandLocalLiteralArray(CompileEnv *envPtr);
 static unsigned		HashString(const char *string, int length);
 #ifdef TCL_COMPILE_DEBUG
@@ -178,7 +176,8 @@ TclCreateLiteral(
     int length,			/* Number of bytes in the string. */
     int *newPtr,
     Namespace *nsPtr,
-    int flags)
+    int flags,
+    LiteralEntry **globalPtrPtr)
 {
     LiteralTable *globalTablePtr = &iPtr->literalTable;
     LiteralEntry *globalPtr;
@@ -210,7 +209,10 @@ TclCreateLiteral(
 	    if (flags & LITERAL_ON_HEAP) {
 		ckfree(bytes);
 	    }
-	    globalPtr->refCount++;
+	    if (globalPtrPtr) {
+		*globalPtrPtr = globalPtr;
+	    } else {
+		globalPtr->refCount++;
 #ifdef TCL_COMPILE_DEBUG
     if (globalPtr->refCount < 1) {
 	Tcl_Panic("%s: global literal \"%.*s\" had bad refCount %d",
@@ -218,6 +220,7 @@ TclCreateLiteral(
 		globalPtr->refCount);
     }
 #endif
+	    }
 	    return objPtr;
 	}
     }
@@ -295,6 +298,9 @@ TclCreateLiteral(
     iPtr->stats.literalCount[TclLog2(length)]++;
 #endif /*TCL_COMPILE_STATS*/
 
+    if (globalPtrPtr) {
+	*globalPtrPtr = globalPtr;
+    } 
     *newPtr = 1;
     return objPtr;
 }
@@ -371,7 +377,10 @@ TclRegisterLiteral(
 {
     Interp *iPtr = envPtr->iPtr;
     Namespace *nsPtr = NULL;
-    int new;
+    Tcl_Obj *objPtr;
+    LiteralEntry *globalPtr;
+    Tcl_HashEntry *hePtr;
+    int objIndex, globalNew, new = 0;
 
     /*
      * If the literal is a command name, avoid sharing it across namespaces,
@@ -387,9 +396,21 @@ TclRegisterLiteral(
 	    nsPtr = iPtr->varFramePtr->nsPtr;
 	}
     }
+
+    objPtr = TclCreateLiteral(iPtr, bytes, length, &globalNew, nsPtr,
+	    flags, &globalPtr);
     
-    return AddLocalLiteralEntry(envPtr, TclCreateLiteral(iPtr,
-	    bytes, length, &new, nsPtr, flags));
+    hePtr = Tcl_CreateHashEntry(&envPtr->litMap, objPtr, &new);
+    if (new) {
+	objIndex = TclAddLiteralObj(envPtr, objPtr, NULL);
+	Tcl_SetHashValue(hePtr, INT2PTR(objIndex));
+	if (!globalNew) {
+	    globalPtr->refCount++;
+	}
+    } else {
+	objIndex = PTR2INT(Tcl_GetHashValue(hePtr));
+    }
+    return objIndex;
 }
 
 #ifdef TCL_COMPILE_DEBUG
@@ -532,46 +553,6 @@ TclAddLiteralObj(
     Tcl_IncrRefCount(objPtr);
     lPtr->refCount = -1;	/* i.e., unused */
     lPtr->nextPtr = NULL;
-
-    return objIndex;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * AddLocalLiteralEntry --
- *
- *	Insert a new literal into a CompileEnv's local literal array.
- *
- * Results:
- *	The index in the CompileEnv's literal array that references the
- *	literal.
- *
- * Side effects:
- *	Expands the literal array if necessary. May rebuild the hash bucket
- *	array of the CompileEnv's literal array if it becomes too large.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-AddLocalLiteralEntry(
-    register CompileEnv *envPtr,/* Points to CompileEnv in whose literal array
-				 * the object is to be inserted. */
-    Tcl_Obj *objPtr)		/* The literal to add to the CompileEnv. */
-{
-    int objIndex, new = 0;
-    Tcl_HashTable *mapPtr = &envPtr->litMap;
-    Tcl_HashEntry *hePtr = Tcl_CreateHashEntry(mapPtr, objPtr, &new);
-
-    if (new) {
-	objIndex = TclAddLiteralObj(envPtr, objPtr, NULL);
-	Tcl_SetHashValue(hePtr, INT2PTR(objIndex));
-    } else {
-	objIndex = PTR2INT(Tcl_GetHashValue(hePtr));
-	Tcl_IncrRefCount(objPtr);
-	TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, objPtr);
-    }
 
     return objIndex;
 }
@@ -882,16 +863,12 @@ TclInvalidateCmdLiteral(
 				 * invalidate a cmd literal. */
 {
     Interp *iPtr = (Interp *) interp;
+    LiteralEntry *globalPtr;
     Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name, -1,
-	    NULL, nsPtr, 0);
+	    NULL, nsPtr, 0, &globalPtr);
 
-    if (literalObjPtr != NULL) {
-	if (literalObjPtr->typePtr == &tclCmdNameType) {
-	    TclFreeIntRep(literalObjPtr);
-	}
-	/* Balance the refcount effects of TclCreateLiteral() above */
-	Tcl_IncrRefCount(literalObjPtr);
-	TclReleaseLiteral(interp, literalObjPtr);
+    if (literalObjPtr && (literalObjPtr->typePtr == &tclCmdNameType)) {
+	TclFreeIntRep(literalObjPtr);
     }
 }
 
