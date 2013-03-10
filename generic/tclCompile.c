@@ -2514,7 +2514,7 @@ TclInitByteCodeObj(
     Namespace *namespacePtr;
     int isNew;
     Interp *iPtr;
-    Tcl_Obj **objPtrPtr;
+    Tcl_HashEntry *hePtr = NULL;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclInitByteCodeObj() called on uninitialized CompileEnv");
@@ -2576,6 +2576,28 @@ TclInitByteCodeObj(
     memcpy(p, envPtr->codeStart, (size_t) codeBytes);
     p += TCL_ALIGN(codeBytes);		/* align object array */
 
+    hePtr = Tcl_FindHashEntry(&envPtr->litMap, objPtr);
+    if (hePtr) {
+	/*
+	 * Prevent circular reference where the bytecode intrep of
+	 * a value contains a literal which is that same value.
+	 * If this is allowed to happen, refcount decrements may not
+	 * reach zero, and memory may leak.  Bugs 467523, 3357771
+	 *
+	 * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
+	 * on the string value, and do not call Tcl_DuplicateObj() so we
+         * can be sure we do not have any lingering cycles hiding in
+	 * the intrep.
+	 */
+
+	int numBytes, i = PTR2INT(Tcl_GetHashValue(hePtr));
+	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+
+	envPtr->literalArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
+	Tcl_IncrRefCount(envPtr->literalArrayPtr[i]);
+	TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
+    }
+
     if (envPtr->mallocedLiteralArray) {
 	codePtr->objArrayPtr = envPtr->literalArrayPtr;
 	codePtr->flags |= TCL_BYTECODE_FREE_LITERALS;
@@ -2583,36 +2605,6 @@ TclInitByteCodeObj(
 	codePtr->objArrayPtr = (Tcl_Obj **) p;
 	memcpy(p, envPtr->literalArrayPtr, (size_t) objArrayBytes);
 	p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
-    }
-
-    objPtrPtr = codePtr->objArrayPtr;
-    while (numLitObjects--) {
-	if (*objPtrPtr == objPtr) {
-	    /*
-	     * Prevent circular reference where the bytecode intrep of
-	     * a value contains a literal which is that same value.
-	     * If this is allowed to happen, refcount decrements may not
-	     * reach zero, and memory may leak.  Bugs 467523, 3357771
-	     *
-	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
-	     * on the string value, and do not call Tcl_DuplicateObj() so we
-             * can be sure we do not have any lingering cycles hiding in
-	     * the intrep.
-	     */
-	    int numBytes;
-	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
-
-	    *objPtrPtr = Tcl_NewStringObj(bytes, numBytes);
-	    Tcl_IncrRefCount(*objPtrPtr);
-	    TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
-	    
-	    /*
-	     * Each (Tcl_Obj *) value appears at most once in objArrayPtr,
-	     * so once we find and fix the circular reference, we can
-	     * stop searching.
-	     */
-	    break;
-	}
     }
 
     if (exceptArrayBytes > 0) {
