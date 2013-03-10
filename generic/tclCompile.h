@@ -341,6 +341,8 @@ typedef struct CompileEnv {
 
 #define TCL_BYTECODE_RECOMPILE			0x0004
 
+#define TCL_BYTECODE_FREE_LITERALS		0x0008
+
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
 				 * compiled code. Commands and their compile

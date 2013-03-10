@@ -937,6 +937,9 @@ TclCleanupByteCode(
 	    TclReleaseLiteral(interp, *objArrayPtr++);
 	}
     }
+    if (codePtr->flags & TCL_BYTECODE_FREE_LITERALS) {
+	ckfree(codePtr->objArrayPtr);
+    }
 
     auxDataPtr = codePtr->auxDataArrayPtr;
     for (i = 0;  i < numAuxDataItems;  i++) {
@@ -1420,7 +1423,7 @@ TclFreeCompileEnv(
     if (envPtr->mallocedCodeArray) {
 	ckfree(envPtr->codeStart);
     }
-    if (envPtr->mallocedLiteralArray) {
+    if (envPtr->mallocedLiteralArray && envPtr->iPtr) {
 	ckfree(envPtr->literalArrayPtr);
     }
     if (envPtr->mallocedExceptArray) {
@@ -2509,8 +2512,9 @@ TclInitByteCodeObj(
 #endif
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i, isNew;
+    int isNew;
     Interp *iPtr;
+    Tcl_Obj **objPtrPtr;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclInitByteCodeObj() called on uninitialized CompileEnv");
@@ -2519,7 +2523,8 @@ TclInitByteCodeObj(
     iPtr = envPtr->iPtr;
 
     codeBytes = envPtr->codeNext - envPtr->codeStart;
-    objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
+    objArrayBytes = envPtr->mallocedLiteralArray ? 0 :
+	    envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
     auxDataArrayBytes = envPtr->auxDataArrayNext * sizeof(AuxData);
     cmdLocBytes = GetCmdLocEncodingSize(envPtr);
@@ -2569,13 +2574,20 @@ TclInitByteCodeObj(
     p += sizeof(ByteCode);
     codePtr->codeStart = p;
     memcpy(p, envPtr->codeStart, (size_t) codeBytes);
-
     p += TCL_ALIGN(codeBytes);		/* align object array */
-    codePtr->objArrayPtr = (Tcl_Obj **) p;
-    for (i = 0;  i < numLitObjects;  i++) {
-	Tcl_Obj *fetched = TclFetchLiteral(envPtr, i);
 
-	if (objPtr == fetched) {
+    if (envPtr->mallocedLiteralArray) {
+	codePtr->objArrayPtr = envPtr->literalArrayPtr;
+	codePtr->flags |= TCL_BYTECODE_FREE_LITERALS;
+    } else {
+	codePtr->objArrayPtr = (Tcl_Obj **) p;
+	memcpy(p, envPtr->literalArrayPtr, (size_t) objArrayBytes);
+	p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
+    }
+
+    objPtrPtr = codePtr->objArrayPtr;
+    while (numLitObjects--) {
+	if (*objPtrPtr == objPtr) {
 	    /*
 	     * Prevent circular reference where the bytecode intrep of
 	     * a value contains a literal which is that same value.
@@ -2590,15 +2602,19 @@ TclInitByteCodeObj(
 	    int numBytes;
 	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 
-	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
-	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
+	    *objPtrPtr = Tcl_NewStringObj(bytes, numBytes);
+	    Tcl_IncrRefCount(*objPtrPtr);
 	    TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
-	} else {
-	    codePtr->objArrayPtr[i] = fetched;
+	    
+	    /*
+	     * Each (Tcl_Obj *) value appears at most once in objArrayPtr,
+	     * so once we find and fix the circular reference, we can
+	     * stop searching.
+	     */
+	    break;
 	}
     }
 
-    p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
     if (exceptArrayBytes > 0) {
 	codePtr->exceptArrayPtr = (ExceptionRange *) p;
 	memcpy(p, envPtr->exceptArrayPtr, (size_t) exceptArrayBytes);
