@@ -234,19 +234,17 @@ typedef struct CompileEnv {
 				 * execute the code. Set by compilation
 				 * procedures before returning. */
     int currStackDepth;		/* Current stack depth. */
-    LiteralTable localLitTable;	/* Contains LiteralEntry's describing all Tcl
-				 * objects referenced by this compiled code.
-				 * Indexed by the string representations of
-				 * the literals. Used to avoid creating
-				 * duplicate objects. */
+    Tcl_HashTable litMap;	/* Map from literal value to int index where
+				 * that value is stored in literalArrayPtr.
+				 * Used to prevent dup value refs. */
     unsigned char *codeStart;	/* Points to the first byte of the code. */
     unsigned char *codeNext;	/* Points to next code array byte to use. */
     unsigned char *codeEnd;	/* Points just after the last allocated code
 				 * array byte. */
     int mallocedCodeArray;	/* Set 1 if code array was expanded and
 				 * codeStart points into the heap.*/
-    LiteralEntry *literalArrayPtr;
-    				/* Points to start of LiteralEntry array. */
+    Tcl_Obj **literalArrayPtr;
+    				/* Points of array of literal values. */
     int literalArrayNext;	/* Index of next free object array entry. */
     int literalArrayEnd;	/* Index just after last obj array entry. */
     int mallocedLiteralArray;	/* 1 if object array was expanded and objArray
@@ -271,8 +269,8 @@ typedef struct CompileEnv {
 				/* Points to array of AuxData */
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
 				/* Initial storage for code. */
-    LiteralEntry staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
-				/* Initial storage of LiteralEntry array. */
+    Tcl_Obj *staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
+				/* Initial storage of literal value array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
     /* TIP #280 */
@@ -317,6 +315,8 @@ typedef struct CompileEnv {
 #define TCL_BYTECODE_RESOLVE_VARS		0x0002
 
 #define TCL_BYTECODE_RECOMPILE			0x0004
+
+#define TCL_BYTECODE_FREE_LITERALS		0x0008
 
 typedef struct ByteCode {
     TclHandle interpHandle;	/* Handle for interpreter containing the
@@ -903,10 +903,7 @@ MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
 			    CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
-MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
-			    int length, unsigned int hash, int *newPtr,
-			    Namespace *nsPtr, int flags,
-			    LiteralEntry **globalPtrPtr);
+MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes, int length);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);

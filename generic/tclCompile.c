@@ -922,7 +922,7 @@ TclCleanupByteCode(
     /*
      * A single heap object holds the ByteCode structure and its code, object,
      * command location, and auxiliary data arrays. This means we only need to
-     * 1) decrement the ref counts of the LiteralEntry's in its literal array,
+     * 1) decrement the ref counts of the literal values in its literal array,
      * 2) call the free procs for the auxiliary data items, 3) free the
      * localCache if it is unused, and finally 4) free the ByteCode
      * structure's heap object.
@@ -957,6 +957,9 @@ TclCleanupByteCode(
 	    /* TclReleaseLiteral calls Tcl_DecrRefCount() for us */
 	    TclReleaseLiteral(interp, *objArrayPtr++);
 	}
+    }
+    if (codePtr->flags & TCL_BYTECODE_FREE_LITERALS) {
+	ckfree(codePtr->objArrayPtr);
     }
 
     auxDataPtr = codePtr->auxDataArrayPtr;
@@ -1225,7 +1228,7 @@ TclInitCompileEnv(
     envPtr->maxExceptDepth = 0;
     envPtr->maxStackDepth = 0;
     envPtr->currStackDepth = 0;
-    TclInitLiteralTable(&envPtr->localLitTable);
+    Tcl_InitHashTable(&envPtr->litMap, TCL_ONE_WORD_KEYS);
 
     envPtr->codeStart = envPtr->staticCodeSpace;
     envPtr->codeNext = envPtr->codeStart;
@@ -1407,10 +1410,7 @@ void
 TclFreeCompileEnv(
     register CompileEnv *envPtr)/* Points to the CompileEnv structure. */
 {
-    if (envPtr->localLitTable.buckets != envPtr->localLitTable.staticBuckets){
-	ckfree(envPtr->localLitTable.buckets);
-	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
-    }
+    Tcl_DeleteHashTable(&envPtr->litMap);
     if (envPtr->iPtr) {
 	/* 
 	 * We never converted to Bytecode, so free the things we would
@@ -1418,11 +1418,10 @@ TclFreeCompileEnv(
 	 */
 
 	int i;
-	LiteralEntry *entryPtr = envPtr->literalArrayPtr;
+	Tcl_Obj **litPtr = envPtr->literalArrayPtr;
 
 	for (i = 0;  i < envPtr->literalArrayNext;  i++) {
-	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, entryPtr->objPtr);
-	    entryPtr++;
+	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, *litPtr++);
 	}
 
 #ifdef TCL_COMPILE_DEBUG
@@ -1447,7 +1446,7 @@ TclFreeCompileEnv(
     if (envPtr->mallocedCodeArray) {
 	ckfree(envPtr->codeStart);
     }
-    if (envPtr->mallocedLiteralArray) {
+    if (envPtr->mallocedLiteralArray && envPtr->iPtr) {
 	ckfree(envPtr->literalArrayPtr);
     }
     if (envPtr->mallocedExceptArray) {
@@ -2519,8 +2518,9 @@ TclInitByteCodeObj(
 #endif
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i, isNew;
+    int isNew;
     Interp *iPtr;
+    Tcl_HashEntry *hePtr = NULL;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclInitByteCodeObj() called on uninitialized CompileEnv");
@@ -2529,7 +2529,8 @@ TclInitByteCodeObj(
     iPtr = envPtr->iPtr;
 
     codeBytes = envPtr->codeNext - envPtr->codeStart;
-    objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
+    objArrayBytes = envPtr->mallocedLiteralArray ? 0 :
+	    envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
     auxDataCount = 0;
     if (envPtr->auxData) {
@@ -2583,36 +2584,39 @@ TclInitByteCodeObj(
     p += sizeof(ByteCode);
     codePtr->codeStart = p;
     memcpy(p, envPtr->codeStart, (size_t) codeBytes);
-
     p += TCL_ALIGN(codeBytes);		/* align object array */
-    codePtr->objArrayPtr = (Tcl_Obj **) p;
-    for (i = 0;  i < numLitObjects;  i++) {
-	Tcl_Obj *fetched = TclFetchLiteral(envPtr, i);
 
-	if (objPtr == fetched) {
-	    /*
-	     * Prevent circular reference where the bytecode intrep of
-	     * a value contains a literal which is that same value.
-	     * If this is allowed to happen, refcount decrements may not
-	     * reach zero, and memory may leak.  Bugs 467523, 3357771
-	     *
-	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
-	     * on the string value, and do not call Tcl_DuplicateObj() so we
-             * can be sure we do not have any lingering cycles hiding in
-	     * the intrep.
-	     */
-	    int numBytes;
-	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+    hePtr = Tcl_FindHashEntry(&envPtr->litMap, objPtr);
+    if (hePtr) {
+	/*
+	 * Prevent circular reference where the bytecode intrep of
+	 * a value contains a literal which is that same value.
+	 * If this is allowed to happen, refcount decrements may not
+	 * reach zero, and memory may leak.  Bugs 467523, 3357771
+	 *
+	 * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
+	 * on the string value, and do not call Tcl_DuplicateObj() so we
+         * can be sure we do not have any lingering cycles hiding in
+	 * the intrep.
+	 */
 
-	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
-	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
-	    Tcl_DecrRefCount(objPtr);
-	} else {
-	    codePtr->objArrayPtr[i] = fetched;
-	}
+	int numBytes, i = PTR2INT(Tcl_GetHashValue(hePtr));
+	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+
+	envPtr->literalArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
+	Tcl_IncrRefCount(envPtr->literalArrayPtr[i]);
+	TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
     }
 
-    p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
+    if (envPtr->mallocedLiteralArray) {
+	codePtr->objArrayPtr = envPtr->literalArrayPtr;
+	codePtr->flags |= TCL_BYTECODE_FREE_LITERALS;
+    } else {
+	codePtr->objArrayPtr = (Tcl_Obj **) p;
+	memcpy(p, envPtr->literalArrayPtr, (size_t) objArrayBytes);
+	p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
+    }
+
     if (exceptArrayBytes > 0) {
 	codePtr->exceptArrayPtr = (ExceptionRange *) p;
 	memcpy(p, envPtr->exceptArrayPtr, (size_t) exceptArrayBytes);
