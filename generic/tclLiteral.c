@@ -323,7 +323,7 @@ TclFetchLiteral(
     unsigned int index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
-    if (index >= envPtr->literalArrayNext) {
+    if (index >= (unsigned int) envPtr->literalArrayNext) {
 	return NULL;
     }
     return envPtr->literalArrayPtr[index].objPtr;
