@@ -7417,7 +7417,7 @@ fi
 fi
 
 	    ;;
-	Linux*)
+	Linux*|GNU*|NetBSD-Debian)
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
 
@@ -7520,21 +7520,6 @@ fi
 
 	    if test x"${USE_COMPAT}" != x; then
   CFLAGS="$CFLAGS -fno-inline"
-fi
-
-	    ;;
-	GNU*)
-	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_SUFFIX=".so"
-
-	    SHLIB_LD='${CC} -shared'
-	    DL_OBJS=""
-	    DL_LIBS="-ldl"
-	    LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
-	    CC_SEARCH_FLAGS=""
-	    LD_SEARCH_FLAGS=""
-	    if test "`uname -m`" = "alpha"; then
-  CFLAGS="$CFLAGS -mieee"
 fi
 
 	    ;;
