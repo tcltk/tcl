@@ -1393,7 +1393,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	        fi
 	    fi
 	    ;;
-	Linux*)
+	Linux*|GNU*|NetBSD-Debian)
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_SUFFIX=".so"
 
@@ -1449,29 +1449,6 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    AC_DEFINE(PEEK_XCLOSEIM, 1,
 		[XIM peeking works under XFree86])
 
-	    ;;
-	GNU*)
-	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_SUFFIX=".so"
-
-	    if test "$have_dl" = yes; then
-		SHLIB_LD='${CC} -shared'
-		DL_OBJS=""
-		DL_LIBS="-ldl"
-		LDFLAGS="$LDFLAGS -Wl,--export-dynamic"
-		CC_SEARCH_FLAGS=""
-		LD_SEARCH_FLAGS=""
-	    else
-		AC_CHECK_HEADER(dld.h, [
-		    SHLIB_LD="ld -shared"
-		    DL_OBJS=""
-		    DL_LIBS="-ldld"
-		    CC_SEARCH_FLAGS=""
-		    LD_SEARCH_FLAGS=""])
-	    fi
-	    if test "`uname -m`" = "alpha" ; then
-		CFLAGS="$CFLAGS -mieee"
-	    fi
 	    ;;
 	Lynx*)
 	    SHLIB_CFLAGS="-fPIC"
