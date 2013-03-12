@@ -1,3 +1,8 @@
+2013-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: Patch by Andrew Shadura, providing better support for
+	* three architectures they have in Debian.
+
 2013-03-06  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/regc_nfa.c:	[Bugs 3604074,3606683] Rewrite of the
