@@ -4182,9 +4182,6 @@ TclNREvalObjv(
     }
     cmdPtrPtr = (Command **) &(callbackPtr->data[0]);
 
-    callbackPtr->data[2] = INT2PTR(objc);
-    callbackPtr->data[3] = (ClientData) objv;
-
     iPtr->numLevels++;
     result = TclInterpReady(interp);
 
@@ -5815,6 +5812,7 @@ TclArgumentGet(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_Eval
 int
 Tcl_Eval(
     Tcl_Interp *interp,		/* Token for command interpreter (returned by
@@ -6778,6 +6776,7 @@ Tcl_AppendObjToErrorInfo(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_AddErrorInfo
 void
 Tcl_AddErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
@@ -6808,6 +6807,7 @@ Tcl_AddErrorInfo(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_AddObjErrorInfo
 void
 Tcl_AddObjErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
@@ -6958,6 +6958,7 @@ Tcl_VarEval(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GlobalEval
 int
 Tcl_GlobalEval(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate

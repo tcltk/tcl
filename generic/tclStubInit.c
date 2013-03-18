@@ -42,6 +42,7 @@
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
 #define TclBackgroundException Tcl_BackgroundException
+#undef Tcl_SetIntObj
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
@@ -54,6 +55,31 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
+#define TclSetStartupScriptPath setStartupScriptPath
+static void TclSetStartupScriptPath(Tcl_Obj *path)
+{
+    Tcl_SetStartupScript(path, NULL);
+}
+#define TclGetStartupScriptPath getStartupScriptPath
+static Tcl_Obj *TclGetStartupScriptPath(void)
+{
+    return Tcl_GetStartupScript(NULL);
+}
+#define TclSetStartupScriptFileName setStartupScriptFileName
+static void TclSetStartupScriptFileName(
+    const char *fileName)
+{
+    Tcl_SetStartupScript(Tcl_NewStringObj(fileName,-1), NULL);
+}
+#define TclGetStartupScriptFileName getStartupScriptFileName
+static const char *TclGetStartupScriptFileName(void)
+{
+    Tcl_Obj *path = Tcl_GetStartupScript(NULL);
+    if (path == NULL) {
+	return NULL;
+    }
+    return Tcl_GetStringFromObj(path, NULL);
+}
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
@@ -348,8 +374,8 @@ static const TclIntStubs tclIntStubs = {
     0, /* 155 */
     TclRegError, /* 156 */
     TclVarTraceExists, /* 157 */
-    0, /* 158 */
-    0, /* 159 */
+    TclSetStartupScriptFileName, /* 158 */
+    TclGetStartupScriptFileName, /* 159 */
     0, /* 160 */
     TclChannelTransform, /* 161 */
     TclChannelEventScriptInvoker, /* 162 */
@@ -357,8 +383,8 @@ static const TclIntStubs tclIntStubs = {
     TclExpandCodeArray, /* 164 */
     TclpSetInitialEncodings, /* 165 */
     TclListObjSetElement, /* 166 */
-    0, /* 167 */
-    0, /* 168 */
+    TclSetStartupScriptPath, /* 167 */
+    TclGetStartupScriptPath, /* 168 */
     TclpUtfNcmp2, /* 169 */
     TclCheckInterpTraces, /* 170 */
     TclCheckExecutionTraces, /* 171 */

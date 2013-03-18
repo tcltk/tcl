@@ -104,7 +104,7 @@ typedef off_t		Tcl_SeekOffset;
     extern char **__cygwin_environ;
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
-#elif defined(HAVE_STRUCT_STAT64)
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
 #   define TclOSstat		stat64
 #   define TclOSlstat		lstat64
 #else
@@ -575,19 +575,6 @@ extern char **		environ;
 #	    define HAVE_PUTENV_THAT_COPIES	1
 #	endif
 #   endif /* __DARWIN_UNIX03 */
-
-/*
- *---------------------------------------------------------------------------
- * The termios configure test program relies on the configure script being run
- * from a terminal, which is not the case e.g., when configuring from Xcode.
- * Since termios is known to be present on all Mac OS X releases since 10.0,
- * override the configure defines for serial API here. [Bug 497147]
- *---------------------------------------------------------------------------
- */
-
-#   define USE_TERMIOS 1
-#   undef USE_TERMIO
-#   undef USE_SGTTY
 
 /*
  *---------------------------------------------------------------------------

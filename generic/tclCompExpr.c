@@ -2207,7 +2207,7 @@ ExecConstantExprTree(
     TclInitByteCodeObj(byteCodeObj, envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
-    byteCodePtr = byteCodeObj->internalRep.otherValuePtr;
+    byteCodePtr = byteCodeObj->internalRep.twoPtrValue.ptr1;
     TclNRExecuteByteCode(interp, byteCodePtr);
     code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
     Tcl_DecrRefCount(byteCodeObj);
@@ -2445,14 +2445,11 @@ CompileExprTree(
 	    Tcl_Obj *literal = *litObjv;
 
 	    if (optimize) {
-		int length, index;
+		int length;
 		const char *bytes = TclGetStringFromObj(literal, &length);
-		LiteralEntry *lePtr;
-		Tcl_Obj *objPtr;
-
-		index = TclRegisterNewLiteral(envPtr, bytes, length);
-		lePtr = envPtr->literalArrayPtr + index;
-		objPtr = lePtr->objPtr;
+		int index = TclRegisterNewLiteral(envPtr, bytes, length);
+		Tcl_Obj *objPtr = TclFetchLiteral(envPtr, index);
+		
 		if ((objPtr->typePtr == NULL) && (literal->typePtr != NULL)) {
 		    /*
 		     * Would like to do this:
@@ -2511,7 +2508,7 @@ CompileExprTree(
 
 			index = TclRegisterNewLiteral(envPtr, objPtr->bytes,
 				objPtr->length);
-			tableValue = envPtr->literalArrayPtr[index].objPtr;
+			tableValue = TclFetchLiteral(envPtr, index);
 			if ((tableValue->typePtr == NULL) &&
 				(objPtr->typePtr != NULL)) {
 			    /*

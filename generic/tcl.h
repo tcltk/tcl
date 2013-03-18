@@ -472,7 +472,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	struct {long tv_sec;} st_ctim;
 	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64)
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
@@ -504,11 +504,11 @@ typedef struct Tcl_Interp
     /* TIP #330: Strongly discourage extensions from using the string
      * result. */
 #ifdef USE_INTERP_RESULT
-    char *result TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
+    char *result TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
 				/* If the last command returned a string
 				 * result, this points to it. */
     void (*freeProc) (char *blockPtr)
-	    TCL_DEPRECATED_API("use Tcl_GetResult/Tcl_SetResult");
+	    TCL_DEPRECATED_API("use Tcl_GetStringResult/Tcl_SetResult");
 				/* Zero means the string result is statically
 				 * allocated. TCL_DYNAMIC means it was
 				 * allocated with ckalloc and should be freed
@@ -2449,15 +2449,15 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #ifdef TCL_MEM_DEBUG
 
 #   define ckalloc(x) \
-    ((VOID *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    ((void *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define ckfree(x) \
     Tcl_DbCkfree((char *)(x), __FILE__, __LINE__)
 #   define ckrealloc(x,y) \
-    ((VOID *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((void *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 #   define attemptckalloc(x) \
-    ((VOID *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    ((void *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define attemptckrealloc(x,y) \
-    ((VOID *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((void *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
 
@@ -2468,15 +2468,15 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #   define ckalloc(x) \
-    ((VOID *) Tcl_Alloc((unsigned)(x)))
+    ((void *) Tcl_Alloc((unsigned)(x)))
 #   define ckfree(x) \
     Tcl_Free((char *)(x))
 #   define ckrealloc(x,y) \
-    ((VOID *) Tcl_Realloc((char *)(x), (unsigned)(y)))
+    ((void *) Tcl_Realloc((char *)(x), (unsigned)(y)))
 #   define attemptckalloc(x) \
-    ((VOID *) Tcl_AttemptAlloc((unsigned)(x)))
+    ((void *) Tcl_AttemptAlloc((unsigned)(x)))
 #   define attemptckrealloc(x,y) \
-    ((VOID *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
+    ((void *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory

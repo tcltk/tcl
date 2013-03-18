@@ -1494,7 +1494,7 @@ CompileExprObj(
     if (objPtr->typePtr == &exprCodeType) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
@@ -1534,7 +1534,7 @@ CompileExprObj(
 	TclInitByteCodeObj(objPtr, &compEnv);
 	objPtr->typePtr = &exprCodeType;
 	TclFreeCompileEnv(&compEnv);
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1606,10 +1606,9 @@ static void
 FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
@@ -1667,7 +1666,7 @@ TclCompileObj(
 	 * here.
 	 */
 
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
@@ -1795,7 +1794,7 @@ TclCompileObj(
     iPtr->invokeWord = word;
     TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     iPtr->invokeCmdFramePtr = NULL;
-    codePtr = objPtr->internalRep.otherValuePtr;
+    codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -3464,8 +3463,8 @@ TEBCresume(
 	varPtr = TclObjLookupVarEx(interp, objPtr, part2Ptr,
 		TCL_LEAVE_ERR_MSG, "read", 1, 1, &arrayPtr);
 	if (!varPtr) {
-	    Tcl_AddObjErrorInfo(interp,
-		    "\n    (reading value of variable to increment)", -1);
+	    Tcl_AddErrorInfo(interp,
+		    "\n    (reading value of variable to increment)");
 	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	    Tcl_DecrRefCount(incrPtr);
 	    goto gotError;
@@ -7088,7 +7087,6 @@ TEBCresume(
 	    pc += (opnd-1);
 	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
 	    goto instEvalStk;
-	    NEXT_INST_F(9, 0, 0);
 	}
 }
 
