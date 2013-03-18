@@ -711,8 +711,10 @@ typedef struct ByteCode {
 #define INST_ARRAY_MAKE_STK		161
 #define INST_ARRAY_MAKE_IMM		162
 
+#define INST_INVOKE_REPLACE		163
+
 /* The last opcode */
-#define LAST_INST_OPCODE		162
+#define LAST_INST_OPCODE		163
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -952,11 +954,10 @@ MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
+MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
-MODULE_SCOPE LiteralEntry * TclLookupLiteralEntry(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
 			    int distThreshold);
@@ -965,7 +966,6 @@ MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
 MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclInitCompilation(void);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr, const char *string,
 			    int numBytes, const CmdFrame *invoker, int word);
@@ -985,7 +985,6 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, int maxChars);
-MODULE_SCOPE void	TclRegisterAuxDataType(const AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);

@@ -448,7 +448,7 @@ TclCompileStringMatchCmd(
 
     if (parsePtr->numWords == 4) {
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TCL_ERROR;
+	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
 	str = tokenPtr[1].start;
 	length = tokenPtr[1].size;
@@ -457,7 +457,7 @@ TclCompileStringMatchCmd(
 	     * Fail at run time, not in compilation.
 	     */
 
-	    return TCL_ERROR;
+	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
 	nocase = 1;
 	tokenPtr = TokenAfter(tokenPtr);
@@ -578,13 +578,13 @@ TclCompileStringMapCmd(
     Tcl_IncrRefCount(mapObj);
     if (!TclWordKnownAtCompileTime(mapTokenPtr, mapObj)) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (Tcl_ListObjGetElements(NULL, mapObj, &len, &objv) != TCL_OK) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (len != 2) {
 	Tcl_DecrRefCount(mapObj);
-	return TCL_ERROR;
+	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     /*
@@ -1953,11 +1953,13 @@ TclCompileTailcallCmd(
 	return TCL_ERROR;
     }
 
+    /* make room for the nsObjPtr */
+    CompileWord(envPtr, tokenPtr, interp, 0);
     for (i=1 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
     }
-    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords-1,	envPtr);
+    TclEmitInstInt1(	INST_TAILCALL, parsePtr->numWords,	envPtr);
     return TCL_OK;
 }
 
@@ -2737,7 +2739,7 @@ TclCompileUnsetCmd(
     flags = 1;
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     leadingWord = Tcl_NewObj();
-    if (TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
+    if (numWords > 0 && TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
 	int len;
 	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
 
