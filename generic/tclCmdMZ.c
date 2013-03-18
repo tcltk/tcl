@@ -1540,7 +1540,8 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (TCL_OK != Tcl_ConvertToType(NULL, objPtr, &tclBooleanType)) {
+	if ((objPtr->typePtr != &tclBooleanType)
+		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
 	    } else {
@@ -3324,7 +3325,7 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-	{"bytelength",	StringBytesCmd,	NULL, NULL, NULL, 0},
+	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
 	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
@@ -3335,17 +3336,17 @@ TclInitStringCmd(
 	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
 	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
 	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
-	{"repeat",	StringReptCmd,	NULL, NULL, NULL, 0},
+	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"replace",	StringRplcCmd,	NULL, NULL, NULL, 0},
-	{"reverse",	StringRevCmd,	NULL, NULL, NULL, 0},
-	{"tolower",	StringLowerCmd,	NULL, NULL, NULL, 0},
-	{"toupper",	StringUpperCmd,	NULL, NULL, NULL, 0},
-	{"totitle",	StringTitleCmd,	NULL, NULL, NULL, 0},
-	{"trim",	StringTrimCmd,	NULL, NULL, NULL, 0},
-	{"trimleft",	StringTrimLCmd,	NULL, NULL, NULL, 0},
-	{"trimright",	StringTrimRCmd,	NULL, NULL, NULL, 0},
-	{"wordend",	StringEndCmd,	NULL, NULL, NULL, 0},
-	{"wordstart",	StringStartCmd,	NULL, NULL, NULL, 0},
+	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"tolower",	StringLowerCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+	{"toupper",	StringUpperCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+	{"totitle",	StringTitleCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
+	{"trim",	StringTrimCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"trimleft",	StringTrimLCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"trimright",	StringTrimRCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
 

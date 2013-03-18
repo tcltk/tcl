@@ -529,6 +529,11 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Forces the variable indexed by opnd to be an array. Does not touch
 	 * the stack. */
 
+    {"invokeReplace",	 6,	INT_MIN,  2,	{OPERAND_UINT4,OPERAND_UINT1}},
+	/* Invoke command named objv[0], replacing the first two words with
+	 * the word at the top of the stack;
+	 * <objc,objv> = <op4,top op4 after popping 1> */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -552,6 +557,7 @@ static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
+static void		RegisterAuxDataType(const AuxDataType *typePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
@@ -568,6 +574,7 @@ static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
 			    Tcl_Token *tokenPtr, const char *cmd, int len,
 			    int numWords, int line, int *clNext, int **lines,
 			    CompileEnv *envPtr);
+static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
 
 /*
  * The structure below defines the bytecode Tcl object type by means of
@@ -645,9 +652,6 @@ TclSetByteCodeFromAny(
     Interp *iPtr = (Interp *) interp;
     CompileEnv compEnv;		/* Compilation environment structure allocated
 				 * in frame. */
-    register const AuxData *auxDataPtr;
-    LiteralEntry *entryPtr;
-    register int i;
     int length, result = TCL_OK;
     const char *stringPtr;
     ContLineLoc *clLocPtr;
@@ -717,35 +721,14 @@ TclSetByteCodeFromAny(
     TclVerifyLocalLiteralTable(&compEnv);
 #endif /*TCL_COMPILE_DEBUG*/
 
-    TclInitByteCodeObj(objPtr, &compEnv);
+    if (result == TCL_OK) {
+	TclInitByteCodeObj(objPtr, &compEnv);
 #ifdef TCL_COMPILE_DEBUG
-    if (tclTraceCompile >= 2) {
-	TclPrintByteCodeObj(interp, objPtr);
-	fflush(stdout);
-    }
+	if (tclTraceCompile >= 2) {
+	    TclPrintByteCodeObj(interp, objPtr);
+	    fflush(stdout);
+	}
 #endif /* TCL_COMPILE_DEBUG */
-
-    if (result != TCL_OK) {
-	/*
-	 * Handle any error from the hookProc
-	 */
-
-	entryPtr = compEnv.literalArrayPtr;
-	for (i = 0;  i < compEnv.literalArrayNext;  i++) {
-	    TclReleaseLiteral(interp, entryPtr->objPtr);
-	    entryPtr++;
-	}
-#ifdef TCL_COMPILE_DEBUG
-	TclVerifyGlobalLiteralTable(iPtr);
-#endif /*TCL_COMPILE_DEBUG*/
-
-	auxDataPtr = compEnv.auxDataArrayPtr;
-	for (i = 0;  i < compEnv.auxDataArrayNext;  i++) {
-	    if (auxDataPtr->type->freeProc != NULL) {
-		auxDataPtr->type->freeProc(auxDataPtr->clientData);
-	    }
-	    auxDataPtr++;
-	}
     }
 
     TclFreeCompileEnv(&compEnv);
@@ -784,8 +767,7 @@ SetByteCodeFromAny(
     if (interp == NULL) {
 	return TCL_ERROR;
     }
-    TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
-    return TCL_OK;
+    return TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
 }
 
 /*
@@ -839,10 +821,9 @@ static void
 FreeByteCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
@@ -862,9 +843,8 @@ FreeByteCodeInternalRep(
  *	None.
  *
  * Side effects:
- *	Frees objPtr's bytecode internal representation and sets its type and
- *	objPtr->internalRep.otherValuePtr NULL. Also releases its literals and
- *	frees its auxiliary data items.
+ *	Frees objPtr's bytecode internal representation and sets its type NULL
+ *	Also releases its literals and frees its auxiliary data items.
  *
  *----------------------------------------------------------------------
  */
@@ -939,7 +919,7 @@ TclCleanupByteCode(
      * released.
      */
 
-    if ((codePtr->flags & TCL_BYTECODE_PRECOMPILED) || (interp == NULL)) {
+    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 
 	objArrayPtr = codePtr->objArrayPtr;
 	for (i = 0;  i < numLitObjects;  i++) {
@@ -952,17 +932,9 @@ TclCleanupByteCode(
 	codePtr->numLitObjects = 0;
     } else {
 	objArrayPtr = codePtr->objArrayPtr;
-	for (i = 0;  i < numLitObjects;  i++) {
-	    /*
-	     * TclReleaseLiteral sets a ByteCode's object array entry NULL to
-	     * indicate that it has already freed the literal.
-	     */
-
-	    objPtr = *objArrayPtr;
-	    if (objPtr != NULL) {
-		TclReleaseLiteral(interp, objPtr);
-	    }
-	    objArrayPtr++;
+	while (numLitObjects--) {
+	    /* TclReleaseLiteral calls Tcl_DecrRefCount() for us */
+	    TclReleaseLiteral(interp, *objArrayPtr++);
 	}
     }
 
@@ -987,22 +959,7 @@ TclCleanupByteCode(
 		(char *) codePtr);
 
 	if (hePtr) {
-	    ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-
-	    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(eclPtr->path);
-	    }
-	    for (i=0 ; i<eclPtr->nuloc ; i++) {
-		ckfree(eclPtr->loc[i].line);
-	    }
-
-	    if (eclPtr->loc != NULL) {
-		ckfree(eclPtr->loc);
-	    }
-
-	    Tcl_DeleteHashTable(&eclPtr->litInfo);
-
-	    ckfree(eclPtr);
+	    ReleaseCmdWordData(Tcl_GetHashValue(hePtr));
 	    Tcl_DeleteHashEntry(hePtr);
 	}
     }
@@ -1139,7 +1096,7 @@ CompileSubstObj(
 	objPtr->typePtr = &substCodeType;
 	TclFreeCompileEnv(&compEnv);
 
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	objPtr->internalRep.ptrAndLongRep.ptr = codePtr;
 	objPtr->internalRep.ptrAndLongRep.value = flags;
 	if (iPtr->varFramePtr->localCachePtr) {
@@ -1178,11 +1135,32 @@ FreeSubstCodeInternalRep(
     register ByteCode *codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
 
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
+}
+
+static void
+ReleaseCmdWordData(
+    ExtCmdLoc *eclPtr)
+{
+    int i;
+
+    if (eclPtr->type == TCL_LOCATION_SOURCE) {
+	Tcl_DecrRefCount(eclPtr->path);
+    }
+    for (i=0 ; i<eclPtr->nuloc ; i++) {
+	ckfree((char *) eclPtr->loc[i].line);
+    }
+
+    if (eclPtr->loc != NULL) {
+	ckfree((char *) eclPtr->loc);
+    }
+
+    Tcl_DeleteHashTable (&eclPtr->litInfo);
+
+    ckfree((char *) eclPtr);
 }
 
 /*
@@ -1417,6 +1395,32 @@ TclFreeCompileEnv(
 	ckfree(envPtr->localLitTable.buckets);
 	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
     }
+    if (envPtr->iPtr) {
+	/* 
+	 * We never converted to Bytecode, so free the things we would
+	 * have transferred to it.
+	 */
+
+	int i;
+	LiteralEntry *entryPtr = envPtr->literalArrayPtr;
+	AuxData *auxDataPtr = envPtr->auxDataArrayPtr;
+
+	for (i = 0;  i < envPtr->literalArrayNext;  i++) {
+	    TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, entryPtr->objPtr);
+	    entryPtr++;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	TclVerifyGlobalLiteralTable(envPtr->iPtr);
+#endif /*TCL_COMPILE_DEBUG*/
+
+	for (i = 0;  i < envPtr->auxDataArrayNext;  i++) {
+	    if (auxDataPtr->type->freeProc != NULL) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	    auxDataPtr++;
+	}
+    }
     if (envPtr->mallocedCodeArray) {
 	ckfree(envPtr->codeStart);
     }
@@ -1433,7 +1437,8 @@ TclFreeCompileEnv(
 	ckfree(envPtr->auxDataArrayPtr);
     }
     if (envPtr->extCmdMapPtr) {
-	ckfree(envPtr->extCmdMapPtr);
+	ReleaseCmdWordData(envPtr->extCmdMapPtr);
+	envPtr->extCmdMapPtr = NULL;
     }
 
     /*
@@ -1574,6 +1579,10 @@ TclCompileScript(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int *wlines, wlineat, cmdLine, *clNext;
     Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+
+    if (envPtr->iPtr == NULL) {
+	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
+    }
 
     Tcl_DStringInit(&ds);
 
@@ -1887,8 +1896,7 @@ TclCompileScript(
 			    tokenPtr[1].start, tokenPtr[1].size);
 		    if (cmdPtr != NULL) {
 			TclSetCmdNameObj(interp,
-				envPtr->literalArrayPtr[objIndex].objPtr,
-				cmdPtr);
+				TclFetchLiteral(envPtr, objIndex), cmdPtr);
 		    }
 		} else {
 		    /*
@@ -1905,7 +1913,7 @@ TclCompileScript(
 
 		    if (envPtr->clNext) {
 			TclContinuationsEnterDerived(
-				envPtr->literalArrayPtr[objIndex].objPtr,
+				TclFetchLiteral(envPtr, objIndex),
 				tokenPtr[1].start - envPtr->source,
 				eclPtr->loc[wlineat].next[wordIdx]);
 		    }
@@ -2214,9 +2222,8 @@ TclCompileTokens(
 		Tcl_DStringFree(&textBuffer);
 
 		if (numCL) {
-		    TclContinuationsEnter(
-			    envPtr->literalArrayPtr[literal].objPtr, numCL,
-			    clPosition);
+		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
+			    numCL, clPosition);
 		}
 		numCL = 0;
 	    }
@@ -2262,7 +2269,7 @@ TclCompileTokens(
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
 	if (numCL) {
-	    TclContinuationsEnter(envPtr->literalArrayPtr[literal].objPtr,
+	    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
 		    numCL, clPosition);
 	}
 	numCL = 0;
@@ -2509,6 +2516,10 @@ TclInitByteCodeObj(
     int i, isNew;
     Interp *iPtr;
 
+    if (envPtr->iPtr == NULL) {
+	Tcl_Panic("TclInitByteCodeObj() called on uninitialized CompileEnv");
+    }
+
     iPtr = envPtr->iPtr;
 
     codeBytes = envPtr->codeNext - envPtr->codeStart;
@@ -2566,7 +2577,9 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	if (objPtr == envPtr->literalArrayPtr[i].objPtr) {
+	Tcl_Obj *fetched = TclFetchLiteral(envPtr, i);
+
+	if (objPtr == fetched) {
 	    /*
 	     * Prevent circular reference where the bytecode intrep of
 	     * a value contains a literal which is that same value.
@@ -2583,9 +2596,9 @@ TclInitByteCodeObj(
 
 	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
 	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
-	    Tcl_DecrRefCount(objPtr);
+	    TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
 	} else {
-	    codePtr->objArrayPtr[i] = envPtr->literalArrayPtr[i].objPtr;
+	    codePtr->objArrayPtr[i] = fetched;
 	}
     }
 
@@ -2634,7 +2647,7 @@ TclInitByteCodeObj(
      */
 
     TclFreeIntRep(objPtr);
-    objPtr->internalRep.otherValuePtr = codePtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
     objPtr->typePtr = &tclByteCodeType;
 
     /*
@@ -2645,6 +2658,9 @@ TclInitByteCodeObj(
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
 	    &isNew), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
+
+    /* We've used up the CompileEnv.  Mark as uninitialized. */
+    envPtr->iPtr = NULL;
 
     codePtr->localCachePtr = NULL;
 }
@@ -3558,7 +3574,7 @@ TclGetInstructionTable(void)
 /*
  *--------------------------------------------------------------
  *
- * TclRegisterAuxDataType --
+ * RegisterAuxDataType --
  *
  *	This procedure is called to register a new AuxData type in the table
  *	of all AuxData types supported by Tcl.
@@ -3574,8 +3590,8 @@ TclGetInstructionTable(void)
  *--------------------------------------------------------------
  */
 
-void
-TclRegisterAuxDataType(
+static void
+RegisterAuxDataType(
     const AuxDataType *typePtr)	/* Information about object type; storage must
 				 * be statically allocated (must live forever;
 				 * will not be deallocated). */
@@ -3679,9 +3695,9 @@ TclInitAuxDataTypeTable(void)
      * There are only two AuxData type at this time, so register them here.
      */
 
-    TclRegisterAuxDataType(&tclForeachInfoType);
-    TclRegisterAuxDataType(&tclJumptableInfoType);
-    TclRegisterAuxDataType(&tclDictUpdateInfoType);
+    RegisterAuxDataType(&tclForeachInfoType);
+    RegisterAuxDataType(&tclJumptableInfoType);
+    RegisterAuxDataType(&tclDictUpdateInfoType);
 }
 
 /*
@@ -4053,7 +4069,7 @@ Tcl_Obj *
 TclDisassembleByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
@@ -4558,7 +4574,11 @@ TclGetInnerContext(
         if (!objPtr) {
             Tcl_Panic("InnerContext: bad tos -- appending null object");
         }
-        if (objPtr->refCount<=0 || objPtr->refCount==0x61616161) {
+        if ((objPtr->refCount<=0)
+#ifdef TCL_MEM_DEBUG
+                || (objPtr->refCount==0x61616161)
+#endif
+        ) {
             Tcl_Panic("InnerContext: bad tos -- appending freed object %p",
                     objPtr);
         }

@@ -513,7 +513,6 @@ ThreadCreate(
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
 	Tcl_AppendResult(interp, "can't create a new thread", NULL);
-	ckfree(ctrl.script);
 	return TCL_ERROR;
     }
 
@@ -927,10 +926,11 @@ ThreadSend(
 	    ckfree(resultPtr->errorInfo);
 	}
     }
-    Tcl_SetResult(interp, resultPtr->result, TCL_DYNAMIC);
+    Tcl_AppendResult(interp, resultPtr->result, NULL);
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
+    ckfree(resultPtr->result);
     ckfree(resultPtr);
 
     return code;

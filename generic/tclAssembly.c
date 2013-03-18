@@ -798,12 +798,10 @@ TclNRAssembleObjCmd(
 
     if (codePtr == NULL) {
 	Tcl_AddErrorInfo(interp, "\n    (\"");
-	Tcl_AddErrorInfo(interp, Tcl_GetString(objv[0]));
+	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
 	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
-	Tcl_IncrRefCount(backtrace);
-	Tcl_AddErrorInfo(interp, Tcl_GetString(backtrace));
-	Tcl_DecrRefCount(backtrace);
+	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
     }
@@ -841,16 +839,11 @@ CompileAssembleObj(
     CompileEnv compEnv;		/* Compilation environment structure */
     register ByteCode *codePtr = NULL;
 				/* Bytecode resulting from the assembly */
-    register const AuxData * auxDataPtr;
-				/* Pointer to an auxiliary data element
-				 * in a compilation environment being
-				 * destroyed. */
     Namespace* namespacePtr;	/* Namespace in which variable and command
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
     int sourceLen;		/* Length of the source code in bytes */
-    int i;
 
 
     /*
@@ -860,7 +853,7 @@ CompileAssembleObj(
 
     if (objPtr->typePtr == &assembleCodeType) {
 	namespacePtr = iPtr->varFramePtr->nsPtr;
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == namespacePtr)
@@ -888,44 +881,6 @@ CompileAssembleObj(
 	/*
 	 * Assembly failed. Clean up and report the error.
 	 */
-
-	/*
-	 * Free any literals that were constructed for the assembly.
-	 */
-	for (i = 0; i < compEnv.literalArrayNext; i++) {
-	    TclReleaseLiteral(interp, compEnv.literalArrayPtr[i].objPtr);
-	}
-
-	/*
-	 * Free any auxiliary data that was attached to the bytecode
-	 * under construction.
-	 */
-
-	for (i = 0; i < compEnv.auxDataArrayNext; i++) {
-	    auxDataPtr = compEnv.auxDataArrayPtr + i;
-	    if (auxDataPtr->type->freeProc != NULL) {
-		(auxDataPtr->type->freeProc)(auxDataPtr->clientData);
-	    }
-	}
-
-	/*
-	 * TIP 280. If there is extended command line information,
-	 * we need to clean it up.
-	 */
-
-	if (compEnv.extCmdMapPtr != NULL) {
-	    if (compEnv.extCmdMapPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(compEnv.extCmdMapPtr->path);
-	    }
-	    for (i = 0; i < compEnv.extCmdMapPtr->nuloc; ++i) {
-		ckfree(compEnv.extCmdMapPtr->loc[i].line);
-	    }
-	    if (compEnv.extCmdMapPtr->loc != NULL) {
-		ckfree(compEnv.extCmdMapPtr->loc);
-	    }
-	    Tcl_DeleteHashTable(&(compEnv.extCmdMapPtr->litInfo));
-	}
-
 	TclFreeCompileEnv(&compEnv);
 	return NULL;
     }
@@ -945,7 +900,7 @@ CompileAssembleObj(
      * Record the local variable context to which the bytecode pertains
      */
 
-    codePtr = objPtr->internalRep.otherValuePtr;
+    codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -4270,11 +4225,11 @@ AddBasicBlockRangeToErrorInfo(
     Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
     lineNo = Tcl_NewIntObj(bbPtr->startLine);
     Tcl_IncrRefCount(lineNo);
-    Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+    Tcl_AppendObjToErrorInfo(interp, lineNo);
     Tcl_AddErrorInfo(interp, " and ");
     if (bbPtr->successor1 != NULL) {
 	Tcl_SetIntObj(lineNo, bbPtr->successor1->startLine);
-	Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+	Tcl_AppendObjToErrorInfo(interp, lineNo);
     } else {
 	Tcl_AddErrorInfo(interp, "end of assembly code");
     }
@@ -4338,14 +4293,13 @@ static void
 FreeAssembleCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*
