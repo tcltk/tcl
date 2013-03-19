@@ -481,7 +481,7 @@ test scan-7.3 {string and character scanning} {
     list [scan "123456 test " "%*c%*s %s %s %s" a b c] $a $b $c
 } {1 test {} {}}
 test scan-7.4 {string and character scanning} {
-    set a {}; set b {}; set c {}; set d
+    set a {}; set b {}; set c {}; set d {}
     list [scan "ababcd01234  f 123450" {%4[abcd] %4[abcd] %[^abcdef] %[^0]} a b c d] $a $b $c $d
 } {4 abab cd {01234  } {f 12345}}
 test scan-7.5 {string and character scanning} {
