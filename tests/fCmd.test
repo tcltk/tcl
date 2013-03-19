@@ -2407,6 +2407,28 @@ cd [temporaryDirectory]
 file delete -force abc.link
 cd [workingDirectory]
 
+test fCmd-30.1 {file writable on 'My Documents'} -setup {
+    # Get the localized version of the folder name by looking in the registry.
+    set mydocsname [registry get {HKEY_CURRENT_USER\SOFTWARE\Microsoft\Windows\CurrentVersion\Explorer\Shell Folders} Personal]
+} -constraints {win reg} -body {
+    file writable $mydocsname
+} -result 1
+test fCmd-30.2 {file readable on 'NTUSER.DAT'} -constraints {win} -body {
+    expr {[info exists env(USERPROFILE)]
+          && [file exists $env(USERPROFILE)/NTUSER.DAT]
+          && [file readable $env(USERPROFILE)/NTUSER.DAT]}
+} -result {1}
+test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win} -body {
+    set r {}
+    if {[info exists env(SystemDrive)]} {
+        set path $env(SystemDrive)/pagefile.sys
+        lappend r exists [file exists $path]
+        lappend r readable [file readable $path]
+        lappend r stat [catch {file stat $path a} e] $e
+    }
+    return $r
+} -result {exists 1 readable 0 stat 0 {}}
+
 removeFile abc2.file
 removeFile abc.file
 removeDirectory abc2.dir
