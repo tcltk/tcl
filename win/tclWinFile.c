@@ -1543,11 +1543,14 @@ NativeAccess(
 
     if (attr == 0xffffffff) {
 	/*
-	 * File doesn't exist.
+	 * File might not exist.
 	 */
 
-	TclWinConvertError(GetLastError());
-	return -1;
+	DWORD lasterror = GetLastError();
+	if (lasterror != ERROR_SHARING_VIOLATION) {
+	    TclWinConvertError(lasterror);
+	    return -1;
+	}
     }
 
     if (mode == F_OK) {
@@ -2046,8 +2049,17 @@ NativeStat(
 
 	if ((*tclWinProcs->getFileAttributesExProc)(nativePath,
 		GetFileExInfoStandard, &data) != TRUE) {
-	    Tcl_SetErrno(ENOENT);
-	    return -1;
+	    HANDLE hFind;
+	    WIN32_FIND_DATAT ffd;
+	    DWORD lasterror = GetLastError();
+
+	    if (lasterror != ERROR_SHARING_VIOLATION) {
+		TclWinConvertError(lasterror);
+		return -1;
+		}
+	    hFind = (*tclWinProcs->findFirstFileProc)(nativePath, &ffd);
+	    memcpy(&data, &ffd, sizeof(data));
+	    FindClose(hFind);
 	}
 
 	attr = data.dwFileAttributes;
