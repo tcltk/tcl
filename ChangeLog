@@ -1,3 +1,8 @@
+2013-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFCmd.c: [Bug 3597000] Consistent [file copy] result.
+	* tests/fileSystem.test:
+
 2013-03-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinFile.c: [Bug 2893771]: file stat fails on locked files

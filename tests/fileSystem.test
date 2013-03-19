@@ -827,7 +827,7 @@ test filesystem-7.4 {cross-filesystem file copy with -force} testsimplefilesyste
     file delete -force file2
     cd $dir
     set res
-} {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
+} {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
 test filesystem-7.5 {cross-filesystem file copy with -force} {testsimplefilesystem unix} {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -851,7 +851,7 @@ test filesystem-7.5 {cross-filesystem file copy with -force} {testsimplefilesyst
     file delete -force file2
     cd $dir
     set res
-} {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
+} {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
 test filesystem-7.6 {cross-filesystem dir copy with -force} testsimplefilesystem {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
