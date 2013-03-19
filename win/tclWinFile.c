@@ -2058,6 +2058,10 @@ NativeStat(
 		return -1;
 		}
 	    hFind = (*tclWinProcs->findFirstFileProc)(nativePath, &ffd);
+	    if (hFind == INVALID_HANDLE_VALUE) {
+		TclWinConvertError(lasterror);
+		return -1;
+	    }
 	    memcpy(&data, &ffd, sizeof(data));
 	    FindClose(hFind);
 	}
