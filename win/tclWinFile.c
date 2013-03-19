@@ -1534,19 +1534,11 @@ NativeAccess(
 
     if (attr == INVALID_FILE_ATTRIBUTES) {
 	/*
-	 * File might not exist.
+	 * File doesn't exist.
 	 */
 
-	WIN32_FIND_DATA ffd;
-	HANDLE hFind;
-	hFind = FindFirstFile(nativePath, &ffd);
-	if (hFind != INVALID_HANDLE_VALUE) {
-	    attr = ffd.dwFileAttributes;
-	    FindClose(hFind);
-	} else {
-	    TclWinConvertError(GetLastError());
-	    return -1;
-	}
+	TclWinConvertError(GetLastError());
+	return -1;
     }
 
     if (mode == F_OK) {
@@ -2002,19 +1994,8 @@ NativeStat(
 
 	if (GetFileAttributesEx(nativePath,
 		GetFileExInfoStandard, &data) != TRUE) {
-	    /*
-	     * We might have just been denied access
-	     */
-
-	    WIN32_FIND_DATA ffd;
-	    HANDLE hFind = FindFirstFile(nativePath, &ffd);
-
-	    if (hFind == INVALID_HANDLE_VALUE) {
-		Tcl_SetErrno(ENOENT);
-		return -1;
-	    }
-	    memcpy(&data, &ffd, sizeof(data));
-	    FindClose(hFind);
+	    Tcl_SetErrno(ENOENT);
+	    return -1;
 	}
 
 	attr = data.dwFileAttributes;
