@@ -1538,13 +1538,24 @@ NativeAccess(
 	 */
 
 	WIN32_FIND_DATA ffd;
-	HANDLE hFind;
-	hFind = FindFirstFile(nativePath, &ffd);
-	if (hFind != INVALID_HANDLE_VALUE) {
-	    attr = ffd.dwFileAttributes;
-	    FindClose(hFind);
-	} else {
+	HANDLE hFind = FindFirstFile(nativePath, &ffd);
+
+	if (hFind == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
+	    return -1;
+	}
+
+	attr = ffd.dwFileAttributes;
+	FindClose(hFind);
+
+	/*
+	 * Take care! Some characters are illegal in a filename, but legal in
+	 * a search for a filename because they are wildcards. If there's one
+	 * of those, we are still in an error case! [Bug 3608360]
+	 */
+
+	if (_tcspbrk(nativePath, _T("?*")) != NULL) {
+	    Tcl_SetErrno(EEXIST);
 	    return -1;
 	}
     }
