@@ -18,4 +18,6 @@
 */tcltest*
 */versions.vc
 unix/dltest.marker
+unix/pkgs/*
+win/pkgs/*
 win/tcl.hpj

@@ -1,7 +1,7 @@
 2013-03-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tclWinFile.c: [Bug 3608360]: Back out bug fix
-	for [Bug 2893771], because it was the cause of the regression.
+	* win/tclWinFile.c: [Bug 3608360]: Incompatible behaviour of "file
+	exists".
 
 2013-03-18  Donal K. Fellows  <dkf@users.sf.net>
 
