@@ -1892,11 +1892,17 @@ NativeStat(nativePath, statPtr, checkLinks)
 	if((*tclWinProcs->getFileAttributesExProc)(nativePath,
 						   GetFileExInfoStandard,
 						   &data) != TRUE) {
+	    HANDLE hFind;
+	    WIN32_FIND_DATAT ffd;
 	    DWORD lasterror = GetLastError();
+
 	    if (lasterror != ERROR_SHARING_VIOLATION) {
 		TclWinConvertError(lasterror);
 		return -1;
 		}
+	    hFind = (*tclWinProcs->findFirstFileProc)(nativePath, &ffd);
+	    memcpy(&data, &ffd, sizeof(data));
+	    FindClose(hFind);
 	}
 
     
