@@ -2059,7 +2059,7 @@ NativeStat(
 		}
 	    hFind = (*tclWinProcs->findFirstFileProc)(nativePath, &ffd);
 	    if (hFind == INVALID_HANDLE_VALUE) {
-		TclWinConvertError(lasterror);
+		TclWinConvertError(GetLastError());
 		return -1;
 	    }
 	    memcpy(&data, &ffd, sizeof(data));
