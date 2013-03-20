@@ -2599,7 +2599,28 @@ test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win} -body {
     }
     return $r
 } -result {exists 1 readable 0 stat 0 {}}
-
+
+test fCmd-30.4 {file writable on 'My Documents'} -constraints {win 2000orNewer} -body {
+    set mydocsname "~/My Documents"
+    # Would be good to localise this name, since this test will only function
+    # on english-speaking windows otherwise
+    if {[file exists $mydocsname]} {
+	return [file writable $mydocsname]
+    }
+    return 1
+} -result {1}
+test fCmd-30.5 {file readable on 'NTUSER.DAT'} -constraints {win 2000orNewer knownBug} -body {
+    # Apparently the OS has this file open with exclusive permissions Windows
+    # doesn't provide any way to determine that fact without actually trying
+    # to open the file (open NTUSER.dat r), which fails. Hence this isn't
+    # really a knownBug in Tcl, but an OS limitation. But, perhaps in the
+    # future that limitation will be lifted.
+    if {[file exists "~/NTUSER.DAT"]} {
+	return [file readable "~/NTUSER.DAT"]
+    }
+    return 0
+} -result {0}
+
 # cleanup
 cleanup
 if {[testConstraint unix]} {
