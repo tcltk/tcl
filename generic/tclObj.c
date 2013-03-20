@@ -983,9 +983,21 @@ TclFreeObj(
 
     ObjInitDeletionContext(context);
 
+    /*
+     * Check for a double free of the same value.  This is slightly tricky
+     * because it is customary to free a Tcl_Obj when its refcount falls
+     * either from 1 to 0, or from 0 to -1.  Falling from -1 to -2, though,
+     * and so on, is always a sign of a botch in the caller.
+     */
     if (objPtr->refCount < -1) {
 	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
+    /*
+     * Now, in case we just approved drop from 1 to 0 as acceptable, make
+     * sure we do not accept a second free when falling from 0 to -1.
+     * Skip that possibility so any double free will trigger the panic.
+     */
+    objPtr->refCount = -1;
 
     /*
      * Invalidate the string rep first so we can use the bytes value for our
