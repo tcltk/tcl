@@ -253,7 +253,7 @@ namespace eval wok {
 
 } ensemblecommands.tcl
 
-test autoMkindex-3.3 {ensemble commands in tclIndex} {
+test autoMkindex-3.4 {ensemble commands in tclIndex} {
     file delete tclIndex
     auto_mkindex . ensemblecommands.tcl
     set f [open tclIndex r]
@@ -267,6 +267,7 @@ test autoMkindex-3.3 {ensemble commands in tclIndex} {
     close $f
     set result
 } {{set auto_index(::wok::commands) [list source [file join $dir ensemblecommands.tcl]]} {set auto_index(::wok::vars) [list source [file join $dir ensemblecommands.tcl]]} {set auto_index(wok) [list source [file join $dir ensemblecommands.tcl]]}}
+removeFile ensemblecommands.tcl
 
 test autoMkindex-4.1 {platform independent source commands} -setup {
     file delete tclIndex
