@@ -2393,7 +2393,7 @@ test fCmd-28.12 {file link: cd into a link} -setup {
     cd ..
     set up [pwd]
     cd $orig
-    # now '$up' should be either $orig or [file dirname abc.dir], depending on
+    # Now '$up' should be either $orig or [file dirname abc.dir], depending on
     # whether 'cd' actually moves to the destination of a link, or simply
     # treats the link as a directory. (On windows the former, on unix the
     # latter, I believe)
@@ -2528,16 +2528,22 @@ test fCmd-28.22 {file link: relative paths} -setup {
     catch {file delete -force d1}
     cd [workingDirectory]
 } -result d2/d3
+try {
+    cd [temporaryDirectory]
+    file delete -force abc.link
+    file delete -force d1/d2
+    file delete -force d1
+} finally {
+    cd [workingDirectory]
+}
+removeFile abc2.file
+removeFile abc.file
+removeDirectory abc2.dir
+removeDirectory abc.dir
 
 test fCmd-29.1 {weird memory corruption fault} -body {
     open [file join ~a_totally_bogus_user_id/foo bar]
 } -returnCodes error -match glob -result *
-
-cd [temporaryDirectory]
-file delete -force abc.link
-file delete -force d1/d2
-file delete -force d1
-cd [workingDirectory]
 
 test fCmd-30.1 {file writable on 'My Documents'} -setup {
     # Get the localized version of the folder name by looking in the registry.
@@ -2561,32 +2567,6 @@ test fCmd-30.3 {file readable on 'pagefile.sys'} -constraints {win} -body {
     return $r
 } -result {exists 1 readable 0 stat 0 {}}
 
-removeFile abc2.file
-removeFile abc.file
-removeDirectory abc2.dir
-removeDirectory abc.dir
-
-test fCmd-30.4 {file writable on 'My Documents'} -constraints {win 2000orNewer} -body {
-    set mydocsname "~/My Documents"
-    # Would be good to localise this name, since this test will only function
-    # on english-speaking windows otherwise
-    if {[file exists $mydocsname]} {
-	return [file writable $mydocsname]
-    }
-    return 1
-} -result {1}
-test fCmd-30.5 {file readable on 'NTUSER.DAT'} -constraints {win 2000orNewer knownBug} -body {
-    # Apparently the OS has this file open with exclusive permissions Windows
-    # doesn't provide any way to determine that fact without actually trying
-    # to open the file (open NTUSER.dat r), which fails. Hence this isn't
-    # really a knownBug in Tcl, but an OS limitation. But, perhaps in the
-    # future that limitation will be lifted.
-    if {[file exists "~/NTUSER.DAT"]} {
-	return [file readable "~/NTUSER.DAT"]
-    }
-    return 0
-} -result {0}
-
 # cleanup
 cleanup
 if {[testConstraint unix]} {
@@ -2594,3 +2574,8 @@ if {[testConstraint unix]} {
 }
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:
