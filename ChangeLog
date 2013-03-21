@@ -1,3 +1,8 @@
+2013-03-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl: [Bug 2102614] Add ensemble indexing support
+	* tests/autoMkindex.test: to [auto_mkindex].  Thanks Brian Griffin.
+
 2013-03-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFCmd.c: [Bug 3597000] Consistent [file copy] result.
