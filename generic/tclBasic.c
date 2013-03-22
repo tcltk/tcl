@@ -6742,6 +6742,7 @@ Tcl_ExprString(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_AddObjErrorInfo
 void
 Tcl_AppendObjToErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
@@ -6806,7 +6807,6 @@ Tcl_AddErrorInfo(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_AddObjErrorInfo
 void
 Tcl_AddObjErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
