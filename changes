@@ -6526,3 +6526,153 @@ over-consumption of resources (drewry,lane,ormandy,fellows)
 2008-04-10 (bug fix)[1557855] crash on some [fcopy -size] values (ferrieux)
 
 --- Released 8.4.19, April 18, 2008 --- See ChangeLog for details ---
+
+2008-05-23 (bug fix)[1965787] 32-bit overflow in [tell] result (ferrieux)
+
+2008-06-12 (platform support) Solaris static build with DTrace (steffen)
+
+2008-06-12 (platform support) Solaris/amd64 gcc 64bit support (steffen)
+
+2008-06-23 (bug fix)[1972879] bad path intrep caching (porter)
+
+2008-07-03 (bug fix)[1969717] fix package finding on Samba shares (jos)
+
+2008-12-02 (bug fix)[2270477] hang in channel finalization (ferrieux,kupries)
+
+2008-12-04 (bug fix)[2385549] [file normalize] failed on some paths (porter)
+
+2009-02-20 (bug fix)[2571597] [file pathtype /a] wrong result (nadkarni,porter)
+
+2009-03-18 (bug fix)[2688184] memleak in [file normalize] (mistachkin)
+
+2009-03-20 (bug fix)[2597185] crash in Tcl_AppendStringToObj (porter)
+
+2009-03-27 (bug fix)[2710920] [file dirname|tail /foo/] errors (epler,porter)
+
+2009-03-30 (bug fix)[2603158] Tcl_AppendObjToObj: append to self crash (porter)
+
+2009-04-07 (bug fix)[2494093,2553906] string overflow (porter)
+
+2009-04-08 (bug fix)[2570363] unsafe [eval]s in tcltest (bron,porter)
+=> tcltest 2.2.10
+
+2009-04-27 (bug fix)[2446662] uniformly declare EOF on RST on sockets (ferrieux)
+
+2009-04-27 (bug fix)[1028264] delay WSACleanup() from under our feet (ferrieux)
+
+2009-06-13 (bug fix)[2802881] corrected compile env context (tasada,porter)
+
+2009-07-23 (bug fix)[2820349] plug event leak in notifier (mistachkin)
+
+2009-08-21 (bug fix)[2837800] [glob */foo] return ./~x/foo (porter)
+
+2009-10-04 (bug fix)[2569449] Core Foundation memory bug in Tiger (steffen)
+
+2009-10-21 (bug fix)[2882561] Haiku OS signal support (morrison,fellows)
+
+2009-11-12 (bug fix)[2895565] [fcopy -size] miscounts when converting encodings
+(kupries)
+
+2009-11-16 (bug fix)[2891556] encoding finalization crash (mistachkin,ferrieux)
+
+2010-02-01 (bug fix)[2942697] faster match: some pathological regexp patterns
+(lane,fellows)
+
+2010-02-11 (bug fix)[2954959] get sign of abs($zero) right (nijtmans)
+
+2010-06-28 (bug fix)[3019634] support errno.h changes in MSVC++ 2010 (nijtmans)
+
+2010-09-01 (bug fix)[3057639] no read traces [lappend arr(elem) ...] (hobbs)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2010-09-24 (bug fix)[3056775] race condition in Win sockets (twylite,kupries)
+
+2010-10-23 (update)[3085863] Update Unicode data to 6.0 (nijtmans)
+
+2010-11-03 (enhancement) Win [load] use LOAD_WITH_ALTERED_SEARCH_PATH (hobbs)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2011-03-06 (bug fix)[3200987,3192636] parser buffer overruns (porter)
+
+2011-04-13 (bug fix)[2662380] crash when variable append trace unsets (sofer)
+
+2011-08-15 (bug fix)[3390272] leak of [info script] value (porter)
+
+2011-08-18 (bug fix)[3393714] [string toupper] overflow (nijtmans)
+
+2011-09-13 (bug fix)[3390638] solaris studio cc workaround (kechel,porter)
+
+2011-09-13 (bug fix)[3405652] DTrace workaround (michelson,porter)
+
+2011-10-11 (bug fix)[2935503] [file stat] returns bad mode (nadkarni,nijtmans)
+
+2011-11-22 (bug fix)[3354324] Win: [file mtime] sets wrong time (nijtmans)
+
+2011-12-07 (bug fix)[3444754] fix [string tolower \u01C5] (nijtmans)
+
+2011-12-24 (bug fix)[3464428] fix [string is graph \u0120] (nijtmans)
+
+2012-01-13 (bug fix)[3472316] fix retrieval of socket error (fellows)
+=> http 2.5.6
+
+2012-01-21 (bug fix)[3475667] [regexp] buffer read overflow (sebres)
+
+2012-02-02 (bug fix)[2974459,2879351,1951574,1852572,1661378,1613456] Fix
+problems where [file *able] would return false results on Win/Samba (porter)
+
+2012-02-02 (update)[3464401] Support Unicode 6.1 (nijtmans)
+
+2012-02-06 (bug fix)[3484621] bump bytecode epoch on exec traces (kuhn,sofer)
+
+2012-02-09 (bug fix)[3484402] mem corrupt OBOE in unicode append (porter)
+
+2012-02-29 (bug fix)[3466099] BOM in Unicode (nijtmans)
+
+2012-03-07 (bug fix)[3498327] RFC 3986 compliance (kupries)
+=> http 2.5.7
+
+2012-05-10 (bug fix)[473946] correct send of special characters (nijtmans)
+=> dde 1.2.5
+
+2012-06-29 (enhancement) Add tn, ro_MO, ru_MO to msgcat (nijtmans)
+=> msgcat 1.3.5
+
+2012-07-05 (bug fix)[1189293] make "<<" redirect binary safe (porter)
+
+2012-07-25 (bug fix)[3546275] [auto_execok] search match [exec] (danckaert)
+
+2012-07-27 (update)[3464401] Support Unicode 6.2 (nijtmans)
+
+2012-10-03 (bug fix) exit panic on stacked std channel (griffin,porter)
+
+2012-11-07 (bug fix)[3574493] hang in Windows socket finalization (fassel)
+
+2012-11-13 (enhancement)[360894] Threads inherit floating point from creator.
+
+2012-11-14 (enhancement)[2933003] compile setting: TCL_TEMPORARY_FILE_DIRECTORY
+
+2012-12-03 (bug fix) tcltest: Correct legacy auto-init fom $::argv (porter)
+=> tcltest 2.2.11
+
+2012-12-27 (bug fix)[3598580] Tcl_ListObjReplace() refcount fix (nijtmans)
+
+2013-01-08 (bug fix)[3092089,3587096] [file normalize] on junction points
+
+2013-02-05 (bug fix)[3603434] [file normalize a:/] flaw in VFS (porter,griffin)
+
+2013-02-19 (bug fix)[2438181] report errors in trace handlers (yorick)
+
+2013-02-21 (bug fix)[3605447] unbreak [namespace export -clear] (porter)
+
+2013-02-27 (bug fix)[3606139] stop crash in [regexp] (lane)
+
+2013-03-06 (bug fix)[3606683] [regexp (((((a)*)*)*)*)* {}] hangs
+(grathwohl,lane,porter)
+
+2013-03-12 (enhancement) better build support for Debian arch (shadura)
+
+2013-03-19 (bug fix)[2893771] [file stat] on locked files (thoyts,nijtmans)
+
+New package: platform 1.0.11
+
+--- Released 8.4.20, 2013 --- See ChangeLog for details ---
