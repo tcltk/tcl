@@ -3806,6 +3806,9 @@ extern const TclStubs *tclStubsPtr;
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
+#undef Tcl_SeekOld
+#undef Tcl_TellOld
+
 /*
  * Deprecated Tcl procedures:
  */
