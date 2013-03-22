@@ -810,9 +810,7 @@ typedef struct Tcl_Obj {
  * Note: clients should use Tcl_DecrRefCount() when they are finished using
  * an object, and should never call TclFreeObj() directly. TclFreeObj() is
  * only defined and made public in tcl.h to support Tcl_DecrRefCount's macro
- * definition. Note also that Tcl_DecrRefCount() refers to the parameter
- * "obj" twice. This means that you should avoid calling it with an
- * expression that is expensive to compute or has side effects.
+ * definition.
  */
 void		Tcl_IncrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
 void		Tcl_DecrRefCount _ANSI_ARGS_((Tcl_Obj *objPtr));
@@ -833,7 +831,12 @@ int		Tcl_IsShared _ANSI_ARGS_((Tcl_Obj *objPtr));
      * http://c2.com/cgi/wiki?TrivialDoWhileLoop
      */
 #   define Tcl_DecrRefCount(objPtr) \
-	do { if (--(objPtr)->refCount <= 0) TclFreeObj(objPtr); } while(0)
+	do { \
+	    Tcl_Obj *_objPtr = (objPtr); \
+	    if (--(_objPtr)->refCount <= 0) { \
+		TclFreeObj(_objPtr); \
+	    } \
+	} while(0)
 #   define Tcl_IsShared(objPtr) \
 	((objPtr)->refCount > 1)
 #endif
@@ -2271,17 +2274,6 @@ typedef struct Tcl_Parse {
 typedef unsigned int Tcl_UniChar;
 #else
 typedef unsigned short Tcl_UniChar;
-#endif
-
-
-/*
- * Deprecated Tcl procedures:
- */
-#ifndef TCL_NO_DEPRECATED
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 #endif
 
 

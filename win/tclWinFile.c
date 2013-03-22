@@ -117,6 +117,7 @@ typedef struct _REPARSE_DATA_BUFFER {
             WORD   SubstituteNameLength;
             WORD   PrintNameOffset;
             WORD   PrintNameLength;
+            ULONG Flags;
             WCHAR PathBuffer[1];
         } SymbolicLinkReparseBuffer;
         struct {
@@ -181,7 +182,7 @@ static int NativeStat(CONST TCHAR *path, Tcl_StatBuf *statPtr, int checkLinks);
 static unsigned short NativeStatMode(DWORD attr, int checkLinks, int isExec);
 static int NativeIsExec(CONST TCHAR *path);
 static int NativeReadReparse(CONST TCHAR* LinkDirectory, 
-			     REPARSE_DATA_BUFFER* buffer);
+			     REPARSE_DATA_BUFFER* buffer, DWORD desiredAccess);
 static int NativeWriteReparse(CONST TCHAR* LinkDirectory, 
 			      REPARSE_DATA_BUFFER* buffer);
 static int NativeMatchType(int isDrive, DWORD attr, CONST TCHAR* nativeName, 
@@ -359,18 +360,18 @@ WinSymLinkDirectory(LinkDirectory, LinkTarget)
     /* Build the reparse info */
     memset(reparseBuffer, 0, sizeof(DUMMY_REPARSE_BUFFER));
     reparseBuffer->ReparseTag = IO_REPARSE_TAG_MOUNT_POINT;
-    reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength = 
+    reparseBuffer->MountPointReparseBuffer.SubstituteNameLength =
       wcslen(nativeTarget) * sizeof(WCHAR);
     reparseBuffer->Reserved = 0;
-    reparseBuffer->SymbolicLinkReparseBuffer.PrintNameLength = 0;
-    reparseBuffer->SymbolicLinkReparseBuffer.PrintNameOffset = 
-      reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength 
+    reparseBuffer->MountPointReparseBuffer.PrintNameLength = 0;
+    reparseBuffer->MountPointReparseBuffer.PrintNameOffset =
+      reparseBuffer->MountPointReparseBuffer.SubstituteNameLength
       + sizeof(WCHAR);
-    memcpy(reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, nativeTarget, 
+    memcpy(reparseBuffer->MountPointReparseBuffer.PathBuffer, nativeTarget,
       sizeof(WCHAR) 
-      + reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength);
+      + reparseBuffer->MountPointReparseBuffer.SubstituteNameLength);
     reparseBuffer->ReparseDataLength = 
-      reparseBuffer->SymbolicLinkReparseBuffer.SubstituteNameLength + 12;
+      reparseBuffer->MountPointReparseBuffer.SubstituteNameLength + 12;
 	
     return NativeWriteReparse(LinkDirectory, reparseBuffer);
 }
@@ -395,7 +396,7 @@ TclWinSymLinkCopyDirectory(LinkOriginal, LinkCopy)
     DUMMY_REPARSE_BUFFER dummy;
     REPARSE_DATA_BUFFER *reparseBuffer = (REPARSE_DATA_BUFFER*)&dummy;
     
-    if (NativeReadReparse(LinkOriginal, reparseBuffer)) {
+    if (NativeReadReparse(LinkOriginal, reparseBuffer, GENERIC_READ)) {
 	return -1;
     }
     return NativeWriteReparse(LinkCopy, reparseBuffer);
@@ -479,7 +480,7 @@ WinReadLinkDirectory(LinkDirectory)
 	Tcl_SetErrno(EINVAL);
 	return NULL;
     }
-    if (NativeReadReparse(LinkDirectory, reparseBuffer)) {
+    if (NativeReadReparse(LinkDirectory, reparseBuffer, 0)) {
         return NULL;
     }
     
@@ -505,10 +506,10 @@ WinReadLinkDirectory(LinkDirectory)
 	     * that changes in the future, this code will have to be
 	     * generalised.
 	     */
-	    if (reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer[0] 
+	    if (reparseBuffer->MountPointReparseBuffer.PathBuffer[0]
 		                                                 == L'\\') {
 		/* Check whether this is a mounted volume */
-		if (wcsncmp(reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, 
+		if (wcsncmp(reparseBuffer->MountPointReparseBuffer.PathBuffer,
 			    L"\\??\\Volume{",11) == 0) {
 		    char drive;
 		    /* 
@@ -516,14 +517,14 @@ WinReadLinkDirectory(LinkDirectory)
 		     * we have to fix here.  It doesn't seem very well
 		     * documented.
 		     */
-		    reparseBuffer->SymbolicLinkReparseBuffer
+		    reparseBuffer->MountPointReparseBuffer
 		                                      .PathBuffer[1] = L'\\';
 		    /* 
 		     * Check if a corresponding drive letter exists, and
 		     * use that if it is found
 		     */
 		    drive = TclWinDriveLetterForVolMountPoint(reparseBuffer
-					->SymbolicLinkReparseBuffer.PathBuffer);
+					->MountPointReparseBuffer.PathBuffer);
 		    if (drive != -1) {
 			char driveSpec[3] = {
 			    drive, ':', '\0'
@@ -544,11 +545,11 @@ WinReadLinkDirectory(LinkDirectory)
 		     */
 		    Tcl_SetErrno(EINVAL);
 		    return NULL;
-		} else if (wcsncmp(reparseBuffer->SymbolicLinkReparseBuffer
+		} else if (wcsncmp(reparseBuffer->MountPointReparseBuffer
 				   .PathBuffer, L"\\\\?\\",4) == 0) {
 		    /* Strip off the prefix */
 		    offset = 4;
-		} else if (wcsncmp(reparseBuffer->SymbolicLinkReparseBuffer
+		} else if (wcsncmp(reparseBuffer->MountPointReparseBuffer
 				   .PathBuffer, L"\\??\\",4) == 0) {
 		    /* Strip off the prefix */
 		    offset = 4;
@@ -556,8 +557,8 @@ WinReadLinkDirectory(LinkDirectory)
 	    }
 	    
 	    Tcl_WinTCharToUtf(
-		(CONST char*)reparseBuffer->SymbolicLinkReparseBuffer.PathBuffer, 
-		(int)reparseBuffer->SymbolicLinkReparseBuffer
+		(CONST char*)reparseBuffer->MountPointReparseBuffer.PathBuffer,
+		(int)reparseBuffer->MountPointReparseBuffer
 		.SubstituteNameLength, &ds);
 	
 	    copy = Tcl_DStringValue(&ds)+offset;
@@ -585,14 +586,15 @@ WinReadLinkDirectory(LinkDirectory)
  *--------------------------------------------------------------------
  */
 static int 
-NativeReadReparse(LinkDirectory, buffer)
+NativeReadReparse(LinkDirectory, buffer, desiredAccess)
     CONST TCHAR* LinkDirectory;   /* The junction to read */
     REPARSE_DATA_BUFFER* buffer;  /* Pointer to buffer. Cannot be NULL */
+    DWORD desiredAccess;
 {
     HANDLE hFile;
     DWORD returnedLength;
    
-    hFile = (*tclWinProcs->createFileProc)(LinkDirectory, GENERIC_READ, 0,
+    hFile = (*tclWinProcs->createFileProc)(LinkDirectory, desiredAccess, 0,
 	NULL, OPEN_EXISTING, 
 	FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -1335,11 +1337,14 @@ NativeAccess(
 
     if (attr == 0xffffffff) {
 	/*
-	 * File doesn't exist.
+	 * File might not exist.
 	 */
 
-	TclWinConvertError(GetLastError());
-	return -1;
+	DWORD lasterror = GetLastError();
+	if (lasterror != ERROR_SHARING_VIOLATION) {
+	    TclWinConvertError(lasterror);
+	    return -1;
+	}
     }
 
     if (mode == F_OK) {
@@ -1887,8 +1892,21 @@ NativeStat(nativePath, statPtr, checkLinks)
 	if((*tclWinProcs->getFileAttributesExProc)(nativePath,
 						   GetFileExInfoStandard,
 						   &data) != TRUE) {
-	    Tcl_SetErrno(ENOENT);
-	    return -1;
+	    HANDLE hFind;
+	    WIN32_FIND_DATAT ffd;
+	    DWORD lasterror = GetLastError();
+
+	    if (lasterror != ERROR_SHARING_VIOLATION) {
+		TclWinConvertError(lasterror);
+		return -1;
+		}
+	    hFind = (*tclWinProcs->findFirstFileProc)(nativePath, &ffd);
+	    if (hFind == INVALID_HANDLE_VALUE) {
+		TclWinConvertError(GetLastError());
+		return -1;
+	    }
+	    memcpy(&data, &ffd, sizeof(data));
+	    FindClose(hFind);
 	}
 
     
@@ -2333,6 +2351,12 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 				}
 				Tcl_DStringAppend(&dsNorm, nativePath, len);
 				lastValidPathEnd = currentPathEndPosition;
+			    } else if (nextCheckpoint == 0) {
+				/* Path starts with a drive designation
+				 * that's not actually on the system.
+				 * We still must normalize up past the
+				 * first separator.  [Bug 3603434] */
+				currentPathEndPosition++;
 			    }
 			}
 			Tcl_DStringFree(&ds);
@@ -2415,6 +2439,12 @@ TclpObjNormalizePath(interp, pathPtr, nextCheckpoint)
 			    Tcl_DStringAppend(&dsNorm, nativePath,
 					      sizeof(WCHAR)*len);
 			    lastValidPathEnd = currentPathEndPosition;
+			} else if (nextCheckpoint == 0) {
+			    /* Path starts with a drive designation
+			     * that's not actually on the system.
+			     * We still must normalize up past the
+			     * first separator.  [Bug 3603434] */
+			    currentPathEndPosition++;
 			}
 		    }
 		    Tcl_DStringFree(&ds);

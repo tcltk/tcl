@@ -1,3 +1,129 @@
+2013-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFCmd.c: [Bug 3597000] Consistent [file copy] result.
+
+2013-03-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 2893771]: file stat fails on locked files
+	on win32.
+
+2013-03-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/cmdAH.test (cmdAH-19.12): [Bug 3608360]: Added test to ensure
+	that we never ever allow [file exists] to do globbing.
+
+2013-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: Patch by Andrew Shadura, providing better support for
+	three architectures they have in Debian.
+
+2013-03-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_nfa.c:	[Bugs 3604074,3606683] Rewrite of the
+	* generic/regcomp.c:	fixempties() routine (and supporting
+	routines) to completely eliminate the infinite loop hazard.
+	Thanks to Tom Lane for the much improved solution.
+
+2013-03-04  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclUtil.c:	New scheme for keeping the per-process
+	tcl_precision value in sync without the need for mutex locks on
+	every read.  Uses adapted ProcessGlobalValue machinery backported
+	from Tcl 8.5 where it's been working without reported problems.
+	Thanks to Phil Brooks for reporting on tests which highlight the
+	thread performance problems raised by the old scheme, and to Clif
+	Flynt for further testing pointing the finger at tcl_precision
+	locks as the main culprit.
+
+2013-02-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regcomp.c:	[Bug 3606139]: missing error check allows
+	* tests/regexp.test:    regexp to crash Tcl. Thanks to Tom Lane
+	for providing the test-case and the patch.
+
+2013-02-22  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclCompile.c:	Shift more burden of smart cleanup onto the
+	* generic/tclExecute.c:	TclFreeCompileEnv() routine.  Stop crashes
+	when the hookProc raises an error.
+
+2013-02-20  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclNamesp.c:	[Bug 3605447] Make sure the -clear option
+	* tests/namespace.test:	to [namespace export] always clears, whether
+	or not new export patterns are specified.
+
+2013-02-15  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_nfa.c:	[Bug 3604074] Fix regexp optimization to
+	* tests/regexp.test:	stop hanging on the expression
+	((((((((a)*)*)*)*)*)*)*)* .  Thanks to Bjørn Grathwohl for discovery.
+
+2013-02-05  Don Porter  <dgp@users.sourceforge.net>
+
+	* win/tclWinFile.c:	[Bug 3603434] Make sure TclpObjNormalizePath() 
+	properly declares "a:/" to be normalized, even when no "A:" drive is
+	present on the system.
+
+2013-01-30  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl (::platform::LibcVersion): See
+	* library/platform/pkgIndex.tcl: [Bug 3599098]: Fixed the RE
+	  extracting the version to avoid issues with recent changes to
+	  the glibc banner. Now targeting a less variable part of the
+	  string. Bumped package to version 1.0.11.
+
+2013-01-26  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixCompat.c: [Bug 3601804]: platformCPUID segmentation
+	fault on Darwin.
+
+2013-01-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* Makefile.in: Enable win32 build with -DTCL_NO_DEPRECATED, just
+	* generic/tcl.h: as the UNIX build. Define Tcl_EvalObj and
+	* generic/tclDecls.h: Tcl_GlobalEvalObj as macros, even when
+	* generic/tclBasic.c: TCL_NO_DEPRECATED is defined, so Tk
+	can benefit from it too.
+
+2013-01-08  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3092089]: [file normalize] can remove path
+	components.	[Bug 3587096] win vista/7: "can't find init.tcl" when
+	called via junction.
+
+2013-01-07  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.decls: Extend the public and private stub tables with
+	* generic/tclInt.decls: dummy NULL entries, up to the size of the
+	Tcl 8.6 stub tables. This makes it easier to debug extensions which
+	use Tcl 8.5/8.6 features but (erroneously) are attempted to be loaded
+	in Tcl 8.4.
+
+2012-12-31  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/string.n: Noted the obsolescence of the 'bytelength',
+	'wordstart' and 'wordend' subcommands, and moved them to later in the
+	file.
+
+2012-12-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclListObj.c: [Bug 3598580]: Tcl_ListObjReplace may release
+	deleted elements too early
+
+2012-12-21  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/dltest/pkgb.c:  Turn pkgb.so into a Tcl9 interoperability test
+    library: Whatever Tcl9 looks like, loading pkgb.so in Tcl 9 should
+    either result in an error-message, either succeed, but never crash.
+	* generic/tclStubLib.c: Eliminate unnessarcy static HasStubSupport() and
+	isDigit() functions, just do the same inline.
+
+2012-12-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tcl.h: Fix Tcl_DecrRefCount macro such that it
+	doesn't access its objPtr parameter twice any more.
+
 2012-11-14  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixPipe.c (DefaultTempDir): [Bug 2933003]: Allow overriding

@@ -460,6 +460,56 @@ struct arc *victim;
 }
 
 /*
+ - hasnonemptyout - Does state have a non-EMPTY out arc?
+ ^ static int hasnonemptyout(struct state *);
+ */
+static int
+hasnonemptyout(s)
+struct state *s;
+{
+	struct arc *a;
+
+	for (a = s->outs; a != NULL; a = a->outchain)
+		if (a->type != EMPTY)
+			return 1;
+	return 0;
+}
+
+/*
+ - nonemptyouts - count non-EMPTY out arcs of a state
+ ^ static int nonemptyouts(struct state *);
+ */
+static int
+nonemptyouts(s)
+struct state *s;
+{
+	int n = 0;
+	struct arc *a;
+
+	for (a = s->outs; a != NULL; a = a->outchain)
+		if (a->type != EMPTY)
+			n++;
+	return n;
+}
+
+/*
+ - nonemptyins - count non-EMPTY in arcs of a state
+ ^ static int nonemptyins(struct state *);
+ */
+static int
+nonemptyins(s)
+struct state *s;
+{
+	int n = 0;
+	struct arc *a;
+
+	for (a = s->ins; a != NULL; a = a->inchain)
+		if (a->type != EMPTY)
+			n++;
+	return n;
+}
+
+/*
  - findarc - find arc, if any, from given source with given type and color
  * If there is more than one such arc, the result is random.
  ^ static struct arc *findarc(struct state *, int, pcolor);
@@ -520,21 +570,24 @@ struct state *new;
 }
 
 /*
- - copyins - copy all in arcs of a state to another state
- ^ static VOID copyins(struct nfa *, struct state *, struct state *);
+ - copyins - copy in arcs of a state to another state
+ * Either all arcs, or only non-empty ones as determined by all value.
+ ^ static VOID copyins(struct nfa *, struct state *, struct state *, int);
  */
 static VOID
-copyins(nfa, old, new)
+copyins(nfa, old, new, all)
 struct nfa *nfa;
 struct state *old;
 struct state *new;
+int all;
 {
 	struct arc *a;
 
 	assert(old != new);
 
 	for (a = old->ins; a != NULL; a = a->inchain)
-		cparc(nfa, a, a->from, new);
+		if (all || a->type != EMPTY)
+			cparc(nfa, a, a->from, new);
 }
 
 /*
@@ -558,21 +611,24 @@ struct state *new;
 }
 
 /*
- - copyouts - copy all out arcs of a state to another state
- ^ static VOID copyouts(struct nfa *, struct state *, struct state *);
+ - copyouts - copy out arcs of a state to another state
+ * Either all arcs, or only non-empty ones as determined by all value.
+ ^ static VOID copyouts(struct nfa *, struct state *, struct state *, int);
  */
 static VOID
-copyouts(nfa, old, new)
+copyouts(nfa, old, new, all)
 struct nfa *nfa;
 struct state *old;
 struct state *new;
+int all;
 {
 	struct arc *a;
 
 	assert(old != new);
 
 	for (a = old->outs; a != NULL; a = a->outchain)
-		cparc(nfa, a, new, a->to);
+		if (all || a->type != EMPTY)
+			cparc(nfa, a, new, a->to);
 }
 
 /*
@@ -891,7 +947,7 @@ struct arc *con;
 		if (NISERR())
 			return 0;
 		assert(to != from);		/* con is not an inarc */
-		copyins(nfa, from, s);		/* duplicate inarcs */
+		copyins(nfa, from, s, 1);	/* duplicate inarcs */
 		cparc(nfa, con, s, to);		/* move constraint arc */
 		freearc(nfa, con);
 		from = s;
@@ -1031,7 +1087,7 @@ struct arc *con;
 		s = newstate(nfa);
 		if (NISERR())
 			return 0;
-		copyouts(nfa, to, s);		/* duplicate outarcs */
+		copyouts(nfa, to, s, 1);	/* duplicate outarcs */
 		cparc(nfa, con, from, s);	/* move constraint */
 		freearc(nfa, con);
 		to = s;
@@ -1138,80 +1194,198 @@ struct nfa *nfa;
 FILE *f;			/* for debug output; NULL none */
 {
 	struct state *s;
+	struct state *s2;
 	struct state *nexts;
 	struct arc *a;
 	struct arc *nexta;
-	int progress;
 
-	/* find and eliminate empties until there are no more */
-	do {
-		progress = 0;
-		for (s = nfa->states; s != NULL && !NISERR()
-			&& s->no != FREESTATE; s = nexts) {
-			nexts = s->next;
-			for (a = s->outs; a != NULL && !NISERR(); a = nexta) {
-				nexta = a->outchain;
-				if (a->type == EMPTY && unempty(nfa, a))
-					progress = 1;
-				assert(nexta == NULL || s->no != FREESTATE);
-			}
+	/*
+	 * First, get rid of any states whose sole out-arc is an EMPTY,
+	 * since they're basically just aliases for their successor.
+	 * The parsing algorithm creates enough of these that it's worth
+	 * special-casing this.
+	 */
+	for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
+		nexts = s->next;
+		if (s->flag || s->nouts != 1)
+			continue;
+		a = s->outs;
+		assert(a != NULL && a->outchain == NULL);
+		if (a->type != EMPTY)
+			continue;
+		if (s != a->to)
+			moveins(nfa, s, a->to);
+		dropstate(nfa, s);
+	}
+
+	/*
+	 * Similarly, get rid of any state with a single EMPTY in-arc,
+	 * by folding it into its predecessor.
+	 */
+	for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
+		nexts = s->next;
+		/* Ensure tmp fields are clear for next step */
+		assert(s->tmp = NULL);
+		if (s->flag || s->nins != 1)
+			continue;
+		a = s->ins;
+		assert(a != NULL && a->inchain == NULL);
+		if (a->type != EMPTY)
+			continue;
+		if (s != a->from)
+			moveouts(nfa, s, a->from);
+		dropstate(nfa, s);
+	}
+
+	/*
+	 * For each remaining NFA state, find all other states that are
+	 * reachable from it by a chain of one or more EMPTY arcs.  Then
+	 * generate new arcs that eliminate the need for each such chain.
+	 *
+	 * If we just do this straightforwardly, the algorithm gets slow
+	 * in complex graphs, because the same arcs get copied to all
+	 * intermediate states of an EMPTY chain, and then uselessly
+	 * pushed repeatedly to the chain's final state; we waste a lot
+	 * of time in newarc's duplicate checking.  To improve matters,
+	 * we decree that any state with only EMPTY out-arcs is "doomed"
+	 * and will not be part of the final NFA. That can be ensured by
+	 * not adding any new out-arcs to such a state. Having ensured
+	 * that, we need not update the state's in-arcs list either; all
+	 * arcs that might have gotten pushed forward to it will just get
+	 * pushed directly to successor states.  This eliminates most of
+	 * the useless duplicate arcs.
+	 */
+	for (s = nfa->states; s != NULL && !NISERR(); s = s->next) {
+		for (s2 = emptyreachable(s, s); s2 != s && !NISERR();
+				s2 = nexts) {
+			/*
+			 * If s2 is doomed, we decide that (1) we will
+			 * always push arcs forward to it, not pull them
+			 * back to s; and (2) we can optimize away the
+			 * push-forward, per comment above.
+			 * So do nothing.
+			 */
+			if (s2->flag || hasnonemptyout(s2))
+				replaceempty(nfa, s, s2);
+
+			/* Reset the tmp fields as we walk back */
+			nexts = s2->tmp;
+			s2->tmp = NULL;
 		}
-		if (progress && f != NULL)
-			dumpnfa(nfa, f);
-	} while (progress && !NISERR());
+		s->tmp = NULL;
+	}
+	if (NISERR())
+		return;
+
+	/*
+	 * Remove all the EMPTY arcs, since we don't need them anymore.
+	 */
+	for (s = nfa->states; s != NULL; s = s->next)
+		for (a = s->outs; a != NULL; a = nexta) {
+			nexta = a->outchain;
+			if (a->type == EMPTY)
+				freearc(nfa, a);
+		}
+
+	/*
+	 * And remove any states that have become useless.  (This
+	 * cleanup is not very thorough, and would be even less so if we
+	 * tried to combine it with the previous step; but cleanup()
+	 * will take care of anything we miss.)
+	 */
+	for (s = nfa->states; s != NULL; s = nexts) {
+		nexts = s->next;
+		if ((s->nins == 0 || s->nouts == 0) && !s->flag)
+			dropstate(nfa, s);
+	}
+
+	if (f != NULL)
+		dumpnfa(nfa, f);
 }
 
 /*
- - unempty - optimize out an EMPTY arc, if possible
- * Actually, as it stands this function always succeeds, but the return
- * value is kept with an eye on possible future changes.
- ^ static int unempty(struct nfa *, struct arc *);
+ - emptyreachable - recursively find all states reachable from s by EMPTY arcs
+ * The return value is the last such state found.  Its tmp field links back
+ * to the next-to-last such state, and so on back to s, so that all these
+ * states can be located without searching the whole NFA.
+ * The maximum recursion depth here is equal to the length of the longest
+ * loop-free chain of EMPTY arcs, which is surely no more than the size of
+ * the NFA, and in practice will be a lot less than that.
+ ^ static struct state *emptyreachable(struct state *, struct state *);
  */
-static int			/* 0 couldn't, 1 could */
-unempty(nfa, a)
-struct nfa *nfa;
-struct arc *a;
+static struct state *
+emptyreachable(s, lastfound)
+struct state *s;
+struct state *lastfound;
 {
-	struct state *from = a->from;
-	struct state *to = a->to;
-	int usefrom;		/* work on from, as opposed to to? */
+	struct arc *a;
 
-	assert(a->type == EMPTY);
-	assert(from != nfa->pre && to != nfa->post);
+	s->tmp = lastfound;
+	lastfound = s;
+	for (a = s->outs; a != NULL; a = a->outchain)
+		if (a->type == EMPTY && a->to->tmp == NULL)
+			lastfound = emptyreachable(a->to, lastfound);
+	return lastfound;
+}
 
-	if (from == to) {		/* vacuous loop */
-		freearc(nfa, a);
-		return 1;
+/*
+ - replaceempty - replace an EMPTY arc chain with some non-empty arcs
+ * The EMPTY arc(s) should be deleted later, but we can't do it here because
+ * they may still be needed to identify other arc chains during fixempties().
+ ^ static void replaceempty(struct nfa *, struct state *, struct state *);
+ */
+static VOID
+replaceempty(nfa, from, to)
+struct nfa *nfa;
+struct state *from;
+struct state *to;
+{
+	int fromouts;
+	int toins;
+
+	assert(from != to);
+
+	/*
+	 * Create replacement arcs that bypass the need for the EMPTY
+	 * chain.  We can do this either by pushing arcs forward
+	 * (linking directly from predecessors of "from" to "to") or by
+	 * pulling them back (linking directly from "from" to the
+	 * successors of "to").  In general, we choose whichever way
+	 * creates greater fan-out or fan-in, so as to improve the odds
+	 * of reducing the other state to zero in-arcs or out-arcs and
+	 * thereby being able to delete it.  However, if "from" is
+	 * doomed (has no non-EMPTY out-arcs), we must keep it so, so
+	 * always push forward in that case.
+	 *
+	 * The fan-out/fan-in comparison should count only non-EMPTY
+	 * arcs.  If "from" is doomed, we can skip counting "to"'s arcs,
+	 * since we want to force taking the copyins path in that case.
+	 */
+	fromouts = nonemptyouts(from);
+	toins = (fromouts == 0) ? 1 : nonemptyins(to);
+
+	if (fromouts > toins) {
+		copyouts(nfa, to, from, 0);
+		return;
+	}
+	if (fromouts < toins) {
+		copyins(nfa, from, to, 0);
+		return;
 	}
 
-	/* decide which end to work on */
-	usefrom = 1;			/* default:  attack from */
-	if (from->nouts > to->nins)
-		usefrom = 0;
-	else if (from->nouts == to->nins) {
-		/* decide on secondary issue:  move/copy fewest arcs */
-		if (from->nins > to->nouts)
-			usefrom = 0;
-	}
-		
-	freearc(nfa, a);
-	if (usefrom) {
-		if (from->nouts == 0) {
-			/* was the state's only outarc */
-			moveins(nfa, from, to);
-			freestate(nfa, from);
-		} else
-			copyins(nfa, from, to);
-	} else {
-		if (to->nins == 0) {
-			/* was the state's only inarc */
-			moveouts(nfa, to, from);
-			freestate(nfa, to);
-		} else
-			copyouts(nfa, to, from);
+	/*
+	 * fromouts == toins.  Secondary decision: copy fewest arcs.
+	 *
+	 * Doesn't seem to be worth the trouble to exclude empties from
+	 * these comparisons; that takes extra time and doesn't seem to
+	 * improve the resulting graph much.
+	 */
+	if (from->nins > to->nouts) {
+		copyouts(nfa, to, from, 0);
+		return;
 	}
 
-	return 1;
+	copyins(nfa, from, to, 0);
 }
 
 /*

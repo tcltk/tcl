@@ -123,12 +123,15 @@ static VOID destroystate _ANSI_ARGS_((struct nfa *, struct state *));
 static VOID newarc _ANSI_ARGS_((struct nfa *, int, pcolor, struct state *, struct state *));
 static struct arc *allocarc _ANSI_ARGS_((struct nfa *, struct state *));
 static VOID freearc _ANSI_ARGS_((struct nfa *, struct arc *));
+static int hasnonemptyout _ANSI_ARGS_((struct state *));
+static int nonemptyouts _ANSI_ARGS_((struct state *));
+static int nonemptyins _ANSI_ARGS_((struct state *));
 static struct arc *findarc _ANSI_ARGS_((struct state *, int, pcolor));
 static VOID cparc _ANSI_ARGS_((struct nfa *, struct arc *, struct state *, struct state *));
 static VOID moveins _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
-static VOID copyins _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
+static VOID copyins _ANSI_ARGS_((struct nfa *, struct state *, struct state *, int));
 static VOID moveouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
-static VOID copyouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
+static VOID copyouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *, int));
 static VOID cloneouts _ANSI_ARGS_((struct nfa *, struct state *, struct state *, struct state *, int));
 static VOID delsub _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
 static VOID deltraverse _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
@@ -146,7 +149,8 @@ static int push _ANSI_ARGS_((struct nfa *, struct arc *));
 #define	COMPATIBLE	3	/* compatible but not satisfied yet */
 static int combine _ANSI_ARGS_((struct arc *, struct arc *));
 static VOID fixempties _ANSI_ARGS_((struct nfa *, FILE *));
-static int unempty _ANSI_ARGS_((struct nfa *, struct arc *));
+static struct state *emptyreachable _ANSI_ARGS_((struct state *, struct state *));
+static VOID replaceempty _ANSI_ARGS_((struct nfa *, struct state *, struct state *));
 static VOID cleanup _ANSI_ARGS_((struct nfa *));
 static VOID markreachable _ANSI_ARGS_((struct nfa *, struct state *, struct state *, struct state *));
 static VOID markcanreach _ANSI_ARGS_((struct nfa *, struct state *, struct state *, struct state *));
@@ -552,7 +556,7 @@ struct nfa *nfa;
 	/* do the splits */
 	for (s = slist; s != NULL; s = s2) {
 		s2 = newstate(nfa);
-		copyouts(nfa, s, s2);
+		copyouts(nfa, s, s2, 1);
 		for (a = s->ins; a != NULL; a = b) {
 			b = a->inchain;
 			if (a->from != pre) {
@@ -675,6 +679,7 @@ int partial;			/* is this only part of a branch? */
 
 		/* NB, recursion in parseqatom() may swallow rest of branch */
 		parseqatom(v, stopper, type, lp, right, t);
+		NOERRN();
 	}
 
 	if (!seencontent) {		/* empty branch */
@@ -1084,6 +1089,7 @@ struct subre *top;		/* subtree top */
 		EMPTYARC(atom->end, rp);
 		t->right = subre(v, '=', 0, atom->end, rp);
 	}
+	NOERR();
 	assert(SEE('|') || SEE(stopper) || SEE(EOS));
 	t->flags |= COMBINE(t->flags, t->right->flags);
 	top->flags |= COMBINE(top->flags, t->flags);
