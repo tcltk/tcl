@@ -323,7 +323,7 @@ TclFetchLiteral(
     unsigned int index)		/* Index of the desired literal, as returned
 				 * by prior call to TclRegisterLiteral() */
 {
-    if (index >= envPtr->literalArrayNext) {
+    if (index >= (unsigned int) envPtr->literalArrayNext) {
 	return NULL;
     }
     return envPtr->literalArrayPtr[index].objPtr;
@@ -1010,8 +1010,13 @@ TclInvalidateCmdLiteral(
     Tcl_Obj *literalObjPtr = TclCreateLiteral(iPtr, (char *) name,
 	    strlen(name), -1, NULL, nsPtr, 0, NULL);
 
-    if (literalObjPtr != NULL && literalObjPtr->typePtr == &tclCmdNameType) {
-	TclFreeIntRep(literalObjPtr);
+    if (literalObjPtr != NULL) {
+	if (literalObjPtr->typePtr == &tclCmdNameType) {
+	    TclFreeIntRep(literalObjPtr);
+	}
+	/* Balance the refcount effects of TclCreateLiteral() above */
+	Tcl_IncrRefCount(literalObjPtr);
+	TclReleaseLiteral(interp, literalObjPtr);
     }
 }
 

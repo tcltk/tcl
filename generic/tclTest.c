@@ -5998,7 +5998,7 @@ TestReport(
 	 * API, but there you go. We should convert it to objects.
 	 */
 
-	Tcl_SavedResult savedResult;
+	Tcl_Obj *savedResult;
 	Tcl_DString ds;
 
 	Tcl_DStringInit(&ds);
@@ -6012,11 +6012,15 @@ TestReport(
 	    Tcl_DStringAppendElement(&ds, Tcl_GetString(arg2));
 	}
 	Tcl_DStringEndSublist(&ds);
-	Tcl_SaveResult(interp, &savedResult);
-	Tcl_EvalEx(interp, Tcl_DStringValue(&ds), -1, 0);
+	savedResult = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(savedResult);
+	Tcl_SetObjResult(interp, Tcl_NewObj());
+	Tcl_Eval(interp, Tcl_DStringValue(&ds));
 	Tcl_DStringFree(&ds);
-	Tcl_RestoreResult(interp, &savedResult);
-   }
+	Tcl_ResetResult(interp);
+	Tcl_SetObjResult(interp, savedResult);
+	Tcl_DecrRefCount(savedResult);
+    }
 }
 
 static int

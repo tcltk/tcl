@@ -138,13 +138,18 @@ test filesystem-1.9 {link normalisation} -setup {
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
 	[file normalize [file join dir.link inside.file foo]]
 } -result ok
-test filesystem-1.10 {link normalisation: double link} {unix hasLinks} {
+test filesystem-1.10 {link normalisation: double link} -constraints {
+    unix hasLinks
+} -body {
     file link dir2.link dir.link
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
 	[file normalize [file join dir2.link inside.file foo]]
-} ok
+} -cleanup {
+    file delete dir2.link
+} -result ok 
 makeDirectory dir2.file
 test filesystem-1.11 {link normalisation: double link, back in tree} {unix hasLinks} {
+    file link dir2.link dir.link
     file link [file join dir2.file dir2.link] [file join .. dir2.link]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
 	[file normalize [file join dir2.file dir2.link inside.file foo]]
@@ -373,7 +378,9 @@ test filesystem-2.0 {new native path} {unix} {
 
 # Make sure the testfilesystem hasn't been registered.
 if {[testConstraint testfilesystem]} {
+  proc resetfs {} {
     while {![catch {testfilesystem 0}]} {}
+  }
 }
 
 test filesystem-3.1 {Tcl_FSRegister & Tcl_FSUnregister} testfilesystem {
@@ -388,12 +395,14 @@ test filesystem-3.3 {Tcl_FSRegister} testfilesystem {
     testfilesystem 0
     testfilesystem 0
 } {unregistered}
-test filesystem-3.4 {Tcl_FSRegister} testfilesystem {
+test filesystem-3.4 {Tcl_FSRegister} -constraints testfilesystem -body {
     testfilesystem 1
     file system bar
-} {reporting}
-test filesystem-3.5 {Tcl_FSUnregister} testfilesystem {
+} -cleanup {
     testfilesystem 0
+} -result {reporting}
+test filesystem-3.5 {Tcl_FSUnregister} testfilesystem {
+    resetfs
     lindex [file system bar] 0
 } {native}
 
@@ -632,7 +641,7 @@ test filesystem-7.4 {cross-filesystem file copy with -force} -setup {
     file delete -force simplefile
     file delete -force file2
     cd $dir
-} -result {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
 test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]
@@ -657,7 +666,7 @@ test filesystem-7.5 {cross-filesystem file copy with -force} -setup {
     file delete -force simplefile
     file delete -force file2
     cd $dir
-} -result {0 10 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 10 1}
+} -result {0 {} 1 {error copying "simplefs:/simplefile" to "file2": file already exists} 0 {} 1}
 test filesystem-7.6 {cross-filesystem dir copy with -force} -setup {
     set dir [pwd]
     cd [tcltest::temporaryDirectory]

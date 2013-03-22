@@ -3728,6 +3728,9 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
 
+#undef Tcl_SeekOld
+#undef Tcl_TellOld
+
 /*
  * Deprecated Tcl procedures:
  */

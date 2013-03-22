@@ -1209,4 +1209,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
+#undef TclCopyChannelOld
+#undef TclSockMinimumBuffersOld
+
 #endif /* _TCLINTDECLS */
