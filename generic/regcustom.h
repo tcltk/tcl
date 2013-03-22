@@ -36,10 +36,9 @@
  * Overrides for regguts.h definitions, if any.
  */
 
-#define	FUNCPTR(name, args)	(*name)args
-#define	MALLOC(n)		VS(attemptckalloc(n))
-#define	FREE(p)			ckfree(VS(p))
-#define	REALLOC(p,n)		VS(attemptckrealloc(VS(p),n))
+#define	MALLOC(n)		((void*)(attemptckalloc(n)))
+#define	FREE(p)			ckfree((void*)(p))
+#define	REALLOC(p,n)		((void*)(attemptckrealloc((void*)(p),n)))
 
 /*
  * Do not insert extras between the "begin" and "end" lines - this chunk is
@@ -60,9 +59,6 @@
 #ifdef __REG_REGOFF_T
 #undef __REG_REGOFF_T
 #endif
-#ifdef __REG_VOID_T
-#undef __REG_VOID_T
-#endif
 #ifdef __REG_NOFRONT
 #undef __REG_NOFRONT
 #endif
@@ -72,7 +68,6 @@
 /* Interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
 #define	__REG_REGOFF_T	long	/* Not really right, but good enough... */
-#define	__REG_VOID_T	void
 /* Names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
 #define	__REG_WIDE_EXEC		TclReExec

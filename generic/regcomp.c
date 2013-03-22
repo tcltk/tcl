@@ -82,9 +82,9 @@ static int lexescape(struct vars *);
 static int lexdigits(struct vars *, int, int, int);
 static int brenext(struct vars *, pchr);
 static void skip(struct vars *);
-static chr newline(NOPARMS);
+static chr newline(void);
 #ifdef REG_DEBUG
-static const chr *ch(NOPARMS);
+static const chr *ch(void);
 #endif
 static chr chrnamed(struct vars *, const chr *, const chr *, pchr);
 /* === regc_color.c === */
@@ -328,13 +328,13 @@ compile(
     re->re_info = 0;		/* bits get set during parse */
     re->re_csize = sizeof(chr);
     re->re_guts = NULL;
-    re->re_fns = VS(&functions);
+    re->re_fns = (void*)(&functions);
 
     /*
      * More complex setup, malloced things.
      */
 
-    re->re_guts = VS(MALLOC(sizeof(struct guts)));
+    re->re_guts = (void*)(MALLOC(sizeof(struct guts)));
     if (re->re_guts == NULL) {
 	return freev(v, REG_ESPACE);
     }
@@ -421,7 +421,7 @@ compile(
      * Can sacrifice main NFA now, so use it as work area.
      */
 
-    (DISCARD) optimize(v->nfa, debug);
+    (void) optimize(v->nfa, debug);
     CNOERR();
     makesearch(v, v->nfa);
     CNOERR();
@@ -1874,10 +1874,10 @@ nfatree(
     assert(t != NULL && t->begin != NULL);
 
     if (t->left != NULL) {
-	(DISCARD) nfatree(v, t->left, f);
+	(void) nfatree(v, t->left, f);
     }
     if (t->right != NULL) {
-	(DISCARD) nfatree(v, t->right, f);
+	(void) nfatree(v, t->right, f);
     }
 
     return nfanode(v, t, f);

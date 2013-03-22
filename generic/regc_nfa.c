@@ -617,7 +617,7 @@ moveins(
 /*
  - copyins - copy in arcs of a state to another state
  * Either all arcs, or only non-empty ones as determined by all value.
- ^ static VOID copyins(struct nfa *, struct state *, struct state *, int);
+ ^ static void copyins(struct nfa *, struct state *, struct state *, int);
  */
 static void
 copyins(
@@ -660,7 +660,7 @@ moveouts(
 /*
  - copyouts - copy out arcs of a state to another state
  * Either all arcs, or only non-empty ones as determined by all value.
- ^ static VOID copyouts(struct nfa *, struct state *, struct state *, int);
+ ^ static void copyouts(struct nfa *, struct state *, struct state *, int);
  */
 static void
 copyouts(
