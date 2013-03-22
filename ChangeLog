@@ -1,3 +1,18 @@
+2013-03-22  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.5.14 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump to 8.5.14 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2013-03-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/auto.tcl: [Bug 2102614] Add ensemble indexing support
