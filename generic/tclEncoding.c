@@ -1448,10 +1448,14 @@ Tcl_InitSubsystems(int flags, ...)
     va_list argList;
     int argc = 0;
     void **argv = NULL;
+    const char *encodingpath = NULL;
 
     va_start(argList, flags);
     if (flags & TCL_INIT_PANIC) {
 	Tcl_SetPanicProc(va_arg(argList, Tcl_PanicProc *));
+    }
+    if (flags & TCL_INIT_ENCODINGPATH) {
+	encodingpath = va_arg(argList, const char *);
     }
     if (flags & TCL_INIT_CREATE) {
 	argc = va_arg(argList, int);
@@ -1460,6 +1464,9 @@ Tcl_InitSubsystems(int flags, ...)
     va_end(argList);
 
     TclInitSubsystems();
+    if(encodingpath) {
+	Tcl_SetEncodingSearchPath(Tcl_NewStringObj(encodingpath, -1));
+    }
     TclpSetInitialEncodings();
     TclpFindExecutable(argv ? argv[0] : NULL);
     if (flags & TCL_INIT_CREATE) {
