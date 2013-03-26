@@ -1451,9 +1451,14 @@ Tcl_InitSubsystems(int flags, ...)
     if (flags & TCL_INIT_PANIC) {
 	Tcl_SetPanicProc(va_arg(argList, Tcl_PanicProc *));
     }
+    TclInitSubsystems();
+    if (flags & TCL_INIT_STUFF) {
+	ClientData clientData = va_arg(argList, ClientData);
+	void (*fn)() = va_arg(argList, void (*)(ClientData));
+	fn(clientData);
+    }
     va_end(argList);
 
-    TclInitSubsystems();
     TclpSetInitialEncodings();
     TclpFindExecutable(NULL);
     return (Tcl_Interp *) &dummyInterp;
