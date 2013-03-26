@@ -1356,4 +1356,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	   (tclStubsPtr->tcl_GetCommandFullName) /* 517 */
 #endif
 
+#undef TclCopyChannelOld
+#undef TclSockMinimumBuffersOld
+
 #endif /* _TCLINTDECLS */
