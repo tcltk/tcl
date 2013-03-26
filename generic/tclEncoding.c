@@ -1454,7 +1454,6 @@ Tcl_InitSubsystems(int flags, ...)
     va_end(argList);
 
     TclInitSubsystems();
-    TclpSetInitialEncodings();
     TclpFindExecutable(NULL);
     return (Tcl_Interp *) &dummyInterp;
 }

@@ -32,12 +32,12 @@ Its \fBflags\fR argument controls exactly what is initialized,
 and what additional arguments are expected.
 .PP
 The call \fBTcl_InitSubsystems(0)\fR does the same as
-\fBTcl_FindExecutable(NULL)\fR, except that a Tcl_Interp *
-is returned which can be used only by \fBTcl_InitStubs\fR
-to initialize the stub table. This opens up the Tcl Stub
-technology for Tcl embedders, which now can dynamically
-load the Tcl shared library and use functions in it
-without ever creating an interpreter. E.g. the
+\fBTcl_FindExecutable(NULL)\fR, except the encoding system
+is not initialized, and a Tcl_Interp *is returned which can
+be used only by \fBTcl_InitStubs\fR to initialize the stub
+table. This opens up the Tcl Stub technology for Tcl embedders,
+which now can dynamically load the Tcl shared library and use
+functions in it without ever creating an interpreter. E.g. the
 following code can be compiled with -DUSE_TCL_STUBS:
 .CS
 Tcl_Interp *interp, *(*initSubSystems)(int, ...);
