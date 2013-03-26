@@ -1,3 +1,20 @@
+2013-03-26  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.4.20 TAGGED FOR RELEASE ***
+
+	* README:		Bump version number to 8.4.20
+	* generic/tcl.h:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/README.binary:
+	* win/configure.in:
+
+	* unix/configure:	autoconf-2.13
+	* win/configure:
+
+	* changes:		updates for 8.4.20 release.
+
 2013-03-19  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclFCmd.c: [Bug 3597000] Consistent [file copy] result.
