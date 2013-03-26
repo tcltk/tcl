@@ -2412,7 +2412,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 /* Tcl_InitSubsystems, see TIP #414 */
 
 #define TCL_INIT_PANIC (1) /* Set Panic proc */
-#define TCL_INIT_STUFF (2) /* Do any stuff before initializing the encoding */
+#define TCL_INIT_CUSTOM (2) /* Do any stuff before initializing the encoding */
 
 EXTERN Tcl_Interp *Tcl_InitSubsystems(int flags, ...);
 

@@ -19,7 +19,7 @@ Tcl_Interp *
 .AS int flags
 .AP int flags in
 Any combination of flags which might modify the initialization sequence.
-At this moment, only 0, \fBTCL_INIT_PANIC\fR and \fBTCL_INIT_STUFF\fR
+At this moment, only 0, \fBTCL_INIT_PANIC\fR and \fBTCL_INIT_CUSTOM\fR
 (or a combination) are supported.
 The value 0 can be used if Tcl is used as utility library only.
 .BE
@@ -75,13 +75,15 @@ could call \fBTcl_SetPanicProc\fR immediately after \fBTcl_InitSubsystems\fR,
 but then panics which could be produced by the initialization
 itself still use the default panic procedure. 
 .PP
-If you supply the flag \fBTCL_INIT_STUFF\fR to \fBTcl_InitSubsystems\fR,
+If you supply the flag \fBTCL_INIT_CUSTOM\fR to \fBTcl_InitSubsystems\fR,
 the function expects two additional arguments: ClientData and a
-custom proc with has ClientData as its only argument. The given
-function will be executed just before the encodings are initialized.
+custom proc. The proc will be supplied two arguments, the (pseudo)
+Tcl interpreter and ClientData. The given function will be executed
+just before the encodings are initialized.
 .PP
-The interpreter returned by Tcl_InitSubsystems(0) cannot be passed to
-any other function than Tcl_InitStubs(). Tcl functions with an "interp"
-argument can only be called if the function supports passing NULL.
+The interpreter returned by Tcl_InitSubsystems(0) or passed to the
+TCL_INIT_CUSTOM function cannot be passed to any other function than
+Tcl_InitStubs(). Tcl functions with an "interp" argument can only
+be called if the function supports passing NULL.
 .SH KEYWORDS
 binary, executable file
