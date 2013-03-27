@@ -75,12 +75,6 @@ could call \fBTcl_SetPanicProc\fR immediately after \fBTcl_InitSubsystems\fR,
 but then panics which could be produced by the initialization
 itself still use the default panic procedure. 
 .PP
-If you supply the flag \fBTCL_INIT_CUSTOM\fR to \fBTcl_InitSubsystems\fR,
-the function expects two additional arguments: ClientData and a
-custom proc. The proc will be supplied two arguments, the (pseudo
-or real) Tcl interpreter and ClientData. The given function will
-be executed just before the encodings are initialized.
-.PP
 If you supply one of the flags \fBTCL_INIT_CREATE\fR, \fBTCL_INIT_CREATE_UTF8\fR or
 \fBTCL_INIT_CREATE_UNICODE\fR to \fBTcl_InitSubsystems\fR, the function
 gets two additional parameters, argc and argv. Then a real
@@ -94,9 +88,21 @@ Tcl_Interp *interp = Tcl_InitSubSystems(TCL_INIT_CREATE, 0, NULL);
 Tcl_InitStubs(interp, TCL_VERSION, 0); /* initialize the stub table */
 .CE
 .PP
-If the \fBTCL_INIT_PANIC\fR and one of the \fBTCL_INIT_CREATE\fR
-flags are used in combination, the \fBpanicProc\fR argument comes
-before the argc/argv arguments.
+If you supply the flag \fBTCL_INIT_CUSTOM\fR to \fBTcl_InitSubsystems\fR,
+the function expects two additional arguments: ClientData and a
+custom proc. The proc will be supplied two arguments, the (pseudo
+or real) Tcl interpreter and ClientData. The given function will
+be executed just before the encodings are initialized. Remember that
+encodings other than UTF-8, unicode and iso8859-1 are not yet
+available when the customProc is run, the system encoding is not
+determined, and no variables are set in the interpreter yet. This
+means that no libaries/packages can be found yet, it is typically
+only used for calling functions like \fBTcl_SetEncodingSearchPath\fR
+and \fBTcl_FSRegister\fR.
+.PP
+If multiple flags are combined, the \fBpanicProc\fR argument always comes
+first, followed by argc/argv followed by clientData and the custon proc
+in that order.
 .PP
 The reason for \fBargv[0]\fR always using the system encoding is that this way,
 argv[0] can be derived directly from the main() (or mainw, on Windows)
