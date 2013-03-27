@@ -624,8 +624,7 @@ Tcl_CreateInterp()
 #ifdef Tcl_InitStubs
 #undef Tcl_InitStubs
 #endif
-    Tcl_InitStubs(interp, TCL_VERSION, 1|(int)sizeof(int), TCL_VERSION,
-	    TCL_STUB_MAGIC);
+    Tcl_InitStubs(interp, TCL_VERSION, 1);
 
     return interp;
 }

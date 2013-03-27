@@ -44,12 +44,10 @@ TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
  */
 #undef Tcl_InitStubs
 CONST char *
-Tcl_InitStubs(interp, version, exact, tclversion, magic)
+Tcl_InitStubs(interp, version, exact)
     Tcl_Interp *interp;
     CONST char *version;
     int exact;
-    CONST char *tclversion; /* not used */
-    int magic; /* not used */
 {
     Interp *iPtr = (Interp *) interp;
     CONST char *actualVersion = NULL;
@@ -72,7 +70,7 @@ Tcl_InitStubs(interp, version, exact, tclversion, magic)
     if (actualVersion == NULL) {
 	return NULL;
     }
-    if (exact&1) {
+    if (exact) {
 	CONST char *p = version;
 	int count = 0;
 
@@ -98,13 +96,6 @@ Tcl_InitStubs(interp, version, exact, tclversion, magic)
 	    }
 	}
     }
-
-    if (stubsPtr->tcl_Backslash == NULL) {
-	stubsPtr->tcl_AppendResult(interp, "incompatible stub library: have ",
-		TCL_VERSION ", need 9");
-	return NULL;
-    }
-
     tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {

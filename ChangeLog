@@ -1,3 +1,29 @@
+2013-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFCmd.c: [Bug 3597000] Consistent [file copy] result.
+
+2013-03-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 2893771]: file stat fails on locked files
+	on win32.
+
+2013-03-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/cmdAH.test (cmdAH-19.12): [Bug 3608360]: Added test to ensure
+	that we never ever allow [file exists] to do globbing.
+
+2013-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: Patch by Andrew Shadura, providing better support for
+	three architectures they have in Debian.
+
+2013-03-06  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_nfa.c:	[Bugs 3604074,3606683] Rewrite of the
+	* generic/regcomp.c:	fixempties() routine (and supporting
+	routines) to completely eliminate the infinite loop hazard.
+	Thanks to Tom Lane for the much improved solution.
+
 2013-03-04  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tclUtil.c:	New scheme for keeping the per-process

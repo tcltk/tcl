@@ -909,6 +909,19 @@ test cmdAH-19.11 {Tcl_FileObjCmd: exists} {unixOnly notRoot} {
     removeDirectory /tmp/tcl.foo.dir
     set result
 } 0
+test cmdAH-19.12 {Bug 3608360: [file exists] mustn't do globbing} -setup {
+    set newdirfile [makeDirectory newdir.file]
+    set cwd [pwd]
+    cd $newdirfile
+    # Content of file is totally unimportant; name is *not*
+    set innocentBystander [makeFile "abc" [file join $newdirfile foo.bar]]
+} -body {
+    list [file exists foo.bar] [file exists *.bar]
+} -cleanup {
+    cd $cwd
+    removeFile $innocentBystander
+    removeDirectory $newdirfile
+} -result {1 0}
 
 # Stat related commands
 
