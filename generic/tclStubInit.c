@@ -76,13 +76,6 @@ MODULE_SCOPE TclPlatStubs tclPlatStubs;
 MODULE_SCOPE TclStubs tclStubs;
 MODULE_SCOPE TclTomMathStubs tclTomMathStubs;
 
-#define TclCanceled canceled
-static int TclCanceled(interp)
-    Tcl_Interp *interp;
-{
-    return TCL_OK;
-}
-
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
 unsigned short TclWinNToHS(unsigned short ns) {
@@ -1263,7 +1256,7 @@ TclStubs tclStubs = {
     Tcl_ObjPrintf, /* 578 */
     Tcl_AppendPrintfToObj, /* 579 */
     NULL, /* 580 */
-    TclCanceled, /* 581 */
+    NULL, /* 581 */
     NULL, /* 582 */
     NULL, /* 583 */
     NULL, /* 584 */

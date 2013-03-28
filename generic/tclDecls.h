@@ -3409,11 +3409,7 @@ EXTERN void		Tcl_AppendPrintfToObj(Tcl_Obj *objPtr,
 				CONST char *format, ...);
 #endif
 /* Slot 580 is reserved */
-#ifndef TclCanceled_TCL_DECLARED
-#define TclCanceled_TCL_DECLARED
-/* 581 */
-EXTERN int		TclCanceled(Tcl_Interp *interp, int flags);
-#endif
+/* Slot 581 is reserved */
 /* Slot 582 is reserved */
 /* Slot 583 is reserved */
 /* Slot 584 is reserved */
@@ -4083,7 +4079,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_ObjPrintf) (CONST char *format, ...); /* 578 */
     void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, CONST char *format, ...); /* 579 */
     VOID *reserved580;
-    int (*tclCanceled) (Tcl_Interp *interp, int flags); /* 581 */
+    VOID *reserved581;
     VOID *reserved582;
     VOID *reserved583;
     VOID *reserved584;
@@ -6488,10 +6484,7 @@ extern TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AppendPrintfToObj) /* 579 */
 #endif
 /* Slot 580 is reserved */
-#ifndef TclCanceled
-#define TclCanceled \
-	(tclStubsPtr->tclCanceled) /* 581 */
-#endif
+/* Slot 581 is reserved */
 /* Slot 582 is reserved */
 /* Slot 583 is reserved */
 /* Slot 584 is reserved */
@@ -6549,7 +6542,6 @@ extern TclStubs *tclStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#undef TclCanceled
 #undef TclUnusedStubEntry
 
 #undef TCL_STORAGE_CLASS
