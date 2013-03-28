@@ -7708,7 +7708,7 @@ Many revisions to better support a Cygwin environment (nijtmans)
 2013-01-23 (bug fix)[2911139] repair async connection management (fellows)
 => http 2.7.11
 
-2013-01-30 (bug fix)[3599098] update to handle glibs banner changes (kupries)
+2013-01-30 (bug fix)[3599098] update to handle glibc banner changes (kupries)
 => platform 1.0.11
 
 2013-02-05 (bug fix)[3603434] [file normalize a:/] flaw in VFS (porter,griffin)
@@ -7726,8 +7726,6 @@ Many revisions to better support a Cygwin environment (nijtmans)
 (grathwohl,lane,porter)
 
 2013-03-12 (enhancement) better build support for Debian arch (shadura)
-
-2013-03-18 (bug fix)[3608360] [file exists] must not glob (schmitz,fellows)
 
 2013-03-19 (bug fix)[2893771] [file stat] on locked files (thoyts,nijtmans)
 
