@@ -2108,11 +2108,6 @@ declare 578 {
 declare 579 {
     void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, const char *format, ...)
 }
-
-# Public in Tcl 8.6:
-declare 581 {
-    int TclCanceled(Tcl_Interp *interp, int flags)
-}
 declare 630 {
     void TclUnusedStubEntry(void)
 }
