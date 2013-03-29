@@ -37,11 +37,8 @@ If you supply one of the flags \fBTCL_INIT_CREATE\fR, \fBTCL_INIT_CREATE_UTF8\fR
 gets two additional parameters, argc and argv, immediatly following
 the flags parameter. Then a Tcl interpreter will be created. If
 argc > 0 then the variables \fBargc\fR and \fBargv\fR will be set
-in this interpreter. If argv is specified, irrespective of the value
-of argc, the variable \fBargv0\fR will be set in the interpreter, and
-this value will be used to determine the value returned by
-"info executable". The 3 flag variants assume a different encoding for
-the arguments, except for \fIargv0\fR which is always assumed to
+in this interpreter. The 3 variants assume a different encoding for
+the arguments, except for \fIargv[0]\fR which is always assumed to
 be in the system encoding.
 .PP
 If you supply the flag \fBTCL_INIT_CUSTOM\fR to \fBTcl_InitSubsystems\fR,
@@ -63,7 +60,7 @@ The reason for \fBargv[0]\fR always using the system encoding is that this way,
 argv[0] can be derived directly from the main() (or mainw, on Windows)
 arguments without any processing. \fBTCL_INIT_CREATE_UNICODE\fR is really only
 useful on Windows. But on Windows, the argv[0] parameter is not used for
-determining the value of "info executable" anyway. Modern UNIX system already
+determining the value of [info executable] anyway. Modern UNIX system already
 have UTF-8 as system encoding, so \fBTCL_INIT_CREATE_UTF8\fR would have the same
 effect as \fBTCL_INIT_CREATE\fR, only slightly faster. Other parameters can be
 preprocessed at will by the application, and if the application uses unicode
