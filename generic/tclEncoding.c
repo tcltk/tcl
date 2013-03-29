@@ -1456,7 +1456,7 @@ Tcl_InitSubsystems(int flags, ...)
 
     TclpSetInitialEncodings();
     TclpFindExecutable(argv0);
-    if ((flags&TCL_INIT_CREATE) && (--argc >= 0)) {
+    if (flags&TCL_INIT_CREATE) {
 	Tcl_Obj *argvPtr;
 	Tcl_DString ds;
 
@@ -1465,26 +1465,28 @@ Tcl_InitSubsystems(int flags, ...)
 	    Tcl_SetVar2Ex(interp, "argv0", NULL, TclDStringToObj(&ds),
 		    TCL_GLOBAL_ONLY);
 	}
-	Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc),
-		TCL_GLOBAL_ONLY);
-	argvPtr = Tcl_NewListObj(argc, NULL);
-	if ((flags & TCL_INIT_CREATE) == TCL_INIT_CREATE_UTF8) {
-	    while (argc--) {
-		Tcl_ListObjAppendElement(NULL, argvPtr,
-			Tcl_NewStringObj(*++argv, -1));
+	if(--argc >= 0) {
+	    Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc),
+		    TCL_GLOBAL_ONLY);
+	    argvPtr = Tcl_NewListObj(argc, NULL);
+	    if ((flags & TCL_INIT_CREATE) == TCL_INIT_CREATE_UTF8) {
+		while (argc--) {
+		    Tcl_ListObjAppendElement(NULL, argvPtr,
+			    Tcl_NewStringObj(*++argv, -1));
+		}
+	    } else if ((flags & TCL_INIT_CREATE) == TCL_INIT_CREATE_UNICODE) {
+		while (argc--) {
+		    Tcl_ListObjAppendElement(NULL, argvPtr,
+			    Tcl_NewUnicodeObj(*++argv, -1));
+		}
+	    } else {
+		while (argc--) {
+		    Tcl_ExternalToUtfDString(NULL, *++argv, -1, &ds);
+		    Tcl_ListObjAppendElement(NULL, argvPtr, TclDStringToObj(&ds));
+		}
 	    }
-	} else if ((flags & TCL_INIT_CREATE) == TCL_INIT_CREATE_UNICODE) {
-	    while (argc--) {
-		Tcl_ListObjAppendElement(NULL, argvPtr,
-			Tcl_NewUnicodeObj(*++argv, -1));
-	    }
-	} else {
-	    while (argc--) {
-		Tcl_ExternalToUtfDString(NULL, *++argv, -1, &ds);
-		Tcl_ListObjAppendElement(NULL, argvPtr, TclDStringToObj(&ds));
-	    }
+	    Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
 	}
-	Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
     }
     return interp;
 }
