@@ -1426,21 +1426,6 @@ Tcl_UtfToExternal(
  *
  *---------------------------------------------------------------------------
  */
-MODULE_SCOPE const TclStubs tclStubs;
-
-/* Dummy const structure returned by Tcl_InitSubsystems,
- * which looks like an Tcl_Interp, but in reality is not.
- * It contains just enough for Tcl_InitStubs to be able
- * to initialize the stub table. */
-static const struct {
-    /* A real interpreter has interp->result/freeProc here: */
-    const char version[sizeof(struct {char *r; void (*f)(void);})];
-    int errorLine;
-    const struct TclStubs *stubTable;
-} dummyInterp = {
-    TCL_PATCH_LEVEL, TCL_STUB_MAGIC, &tclStubs
-};
-
 #undef Tcl_FindExecutable
 Tcl_Interp *
 Tcl_InitSubsystems(int flags, ...)
@@ -1448,13 +1433,10 @@ Tcl_InitSubsystems(int flags, ...)
     va_list argList;
     int argc = 0;
     void **argv = NULL;
-    Tcl_Interp *interp = (Tcl_Interp *) &dummyInterp;
+    Tcl_Interp *interp = NULL;
 
-    va_start(argList, flags);
-    if (flags & TCL_INIT_PANIC) {
-	Tcl_SetPanicProc(va_arg(argList, Tcl_PanicProc *));
-    }
     TclInitSubsystems();
+    va_start(argList, flags);
     if (flags & TCL_INIT_CREATE) {
 	argc = va_arg(argList, int);
 	argv = va_arg(argList, void **);

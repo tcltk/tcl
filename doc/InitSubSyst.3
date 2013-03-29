@@ -1,9 +1,9 @@
 '\"
-'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2013 Tcl Core Team.
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .so man.macros
 .TH Tcl_InitSubsystems 3 8.6.1 Tcl "Tcl Library Procedures"
 .BS
@@ -18,9 +18,8 @@ Tcl_Interp *
 .SH ARGUMENTS
 .AS int flags
 .AP int flags in
-Any combination of flags which indicate whether a custom panicProc
-is registered, a custom initialization function is executed and/or
-a real interpreter is created.
+Any combination of flags which indicate whether an interpreter
+is created and/or a custom initialization function will be executed.
 The value 0 can be used if Tcl is used as utility library only.
 .BE
 
@@ -30,79 +29,32 @@ The \fBTcl_InitSubsystems\fR procedure initializes the Tcl
 library. This procedure is typically invoked as the very
 first thing in the application's main program.
 Its \fBflags\fR argument controls exactly what is initialized,
-and what additional arguments are expected.
-.PP
-The call \fBTcl_InitSubsystems(0)\fR does the same as
-\fBTcl_FindExecutable(NULL)\fR, except that a Tcl_Interp *
-is returned which can be used only by \fBTcl_InitStubs\fR
-to initialize the stub table. This opens up the Tcl Stub
-technology for Tcl embedders, which now can dynamically
-load the Tcl shared library and use functions in it
-without ever creating an interpreter. E.g. the
-following code can be compiled with -DUSE_TCL_STUBS:
-.CS
-Tcl_Interp *interp, *(*initSubSystems)(int, ...);
-const char *version;
-void *handle = dlopen("libtcl8.6.so", RTLD_NOW|RTLD_LOCAL);
-initSubSystems = dlsym(handle, "Tcl_InitSubsystems");
-version = Tcl_InitStubs(initSubSystems(0), NULL, 0);
-/* At this point, Tcl C API calls without interp are ready for use */
-interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
-Tcl_InitStubs(interp, version, 0); /* Initialize the stub table again */
-.CE
-This is equivalent to (without dynamical loading)
-.CS
-Tcl_Interp *interp;
-const char *version;
-version = Tcl_InitStubs(Tcl_InitSubSystems(0), NULL, 0);
-/* At this point, Tcl C API calls without interp are ready for use */
-interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
-Tcl_InitStubs(interp, version, 0); /* Initialize the stub table again */
-.CE
-The function \fBTcl_CreateInterp\fR, or any other Tcl function you
-would like to call, no longer needs to be searched for in the
-shared library. It can be called directly through the stub table.
-Note that the stub table needs to be initialized twice, in order
-to be sure that you can call all functions without limitations
-after the real interpreter is created.
-.PP
-If you supply the flag \fBTCL_INIT_PANIC\fR to \fBTcl_InitSubsystems\fR,
-the function expects an additional argument, a custom panicProc.
-This is equivalent to calling \fBTcl_SetPanicProc\fR immediately
-before \fBTcl_InitSubsystems\fR, except that you possibly cannot do
-that yet if it requires an initialized stub table. Of course you
-could call \fBTcl_SetPanicProc\fR immediately after \fBTcl_InitSubsystems\fR,
-but then panics which could be produced by the initialization
-itself still use the default panic procedure. 
+and what additional arguments are expected. The call
+\fBTcl_InitSubsystems(0)\fR does the same as \fBTcl_FindExecutable(NULL)\fR.
 .PP
 If you supply one of the flags \fBTCL_INIT_CREATE\fR, \fBTCL_INIT_CREATE_UTF8\fR or
 \fBTCL_INIT_CREATE_UNICODE\fR to \fBTcl_InitSubsystems\fR, the function
-gets two additional parameters, argc and argv. Then a real
-Tcl interpreter will be created. If argc > 0 then the variables
-\fBargc\fR and \fBargv\fR will be set in this interpreter. The 3
-variants assume a different encoding for the arguments, except for
-\fIargv[0]\fR which is always assumed to be in the system encoding.
-So, the above example code could be simplified to:
-.CS
-Tcl_Interp *interp = Tcl_InitSubSystems(TCL_INIT_CREATE, 0, NULL);
-Tcl_InitStubs(interp, TCL_VERSION, 0); /* initialize the stub table */
-.CE
+gets two additional parameters, argc and argv, immediatly following
+the flags parameter. Then a Tcl interpreter will be created. If
+argc > 0 then the variables \fBargc\fR and \fBargv\fR will be set
+in this interpreter. The 3 variants assume a different encoding for
+the arguments, except for \fIargv[0]\fR which is always assumed to
+be in the system encoding.
 .PP
 If you supply the flag \fBTCL_INIT_CUSTOM\fR to \fBTcl_InitSubsystems\fR,
 the function expects two additional arguments: ClientData and a
-custom proc. The proc will be supplied two arguments, the (pseudo
-or real) Tcl interpreter and ClientData. The given function will
-be executed just before the encodings are initialized. Remember that
-encodings other than UTF-8, unicode and iso8859-1 are not yet
-available when the customProc is run, the system encoding is not
-determined, and no variables are set in the interpreter yet. This
-means that no libaries/packages can be found yet, it is typically
-only used for calling functions like \fBTcl_SetEncodingSearchPath\fR
+custom proc. The proc will be supplied two arguments, the Tcl interpreter
+(or NULL if none of the \fBTCL_INIT_CREATE???\fR flags is set) and
+ClientData. The custom function will be executed just before the encodings
+are initialized. Remember that encodings other than UTF-8, unicode and
+iso8859-1 are not yet available when the custom function is run, the system
+encoding is not determined, and no variables are set in the interpreter
+yet. This means that no libaries/packages can be found yet, it is typically
+used only for calling functions like \fBTcl_SetEncodingSearchPath\fR
 and \fBTcl_FSRegister\fR.
 .PP
-If multiple flags are combined, the \fBpanicProc\fR argument always comes
-first, followed by argc/argv followed by clientData and the custom proc
-in that order.
+If multiple flags are combined, the \fBargc/argv\fR arguments always come
+first, followed by clientData and the custom proc.
 .PP
 The reason for \fBargv[0]\fR always using the system encoding is that this way,
 argv[0] can be derived directly from the main() (or mainw, on Windows)
@@ -113,10 +65,5 @@ have UTF-8 as system encoding, so \fBTCL_INIT_CREATE_UTF8\fR would have the same
 effect as \fBTCL_INIT_CREATE\fR, only slightly faster. Other parameters can be
 preprocessed at will by the application, and if the application uses unicode
 or UTF-8 internally there is no need to convert it back to the system encoding.
-.PP
-The interpreter returned by Tcl_InitSubsystems(0) or passed to the
-TCL_INIT_CUSTOM function cannot be passed to any other function than
-Tcl_InitStubs(). Tcl functions with an "interp" argument can only
-be called if the function supports passing NULL.
 .SH KEYWORDS
 binary, executable file

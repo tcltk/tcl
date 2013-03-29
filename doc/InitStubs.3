@@ -83,10 +83,6 @@ non-zero means that only the specified \fIversion\fR is acceptable.
 \fBTcl_InitStubs\fR returns a string containing the actual version
 of Tcl satisfying the request, or NULL if the Tcl version is not
 acceptable, does not support stubs, or any other error condition occurred.
-.PP
-If \fBTcl_InitStubs\fR is called with as first argument the
-pseudo interpreter returned by \fBTcl_InitSubsystems(0)\fR, then
-the \fIversion\fR and \fIexact\fR parameters have no effect. 
 .SH "SEE ALSO"
 Tk_InitStubs
 .SH KEYWORDS

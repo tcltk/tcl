@@ -2411,11 +2411,10 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 /* Tcl_InitSubsystems, see TIP #414 */
 
-#define TCL_INIT_PANIC (1) /* Set Panic proc */
-#define TCL_INIT_CREATE (6) /* Call Tcl_CreateInterp(), and set argc/argv */
+#define TCL_INIT_CREATE (3) /* Call Tcl_CreateInterp(), and set argc/argv */
+#define TCL_INIT_CREATE_UTF8 (1) /* The same, but argv is in utf-8 */
 #define TCL_INIT_CREATE_UNICODE (2) /* The same, but argv is in unicode */
-#define TCL_INIT_CREATE_UTF8 (4) /* The same, but argv is in utf-8 */
-#define TCL_INIT_CUSTOM (8) /* Do custom initialization. */
+#define TCL_INIT_CUSTOM (4) /* Do custom initialization. */
 
 EXTERN Tcl_Interp *Tcl_InitSubsystems(int flags, ...);
 

@@ -73,42 +73,37 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    if(iPtr->errorLine == TCL_STUB_MAGIC) {
-	actualVersion = (const char *)interp;
-	tclStubsPtr = stubsPtr;
-    } else {
-	actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
-	if (actualVersion == NULL) {
-	    return NULL;
-	}
-	if (exact) {
-	    const char *p = version;
-	    int count = 0;
-
-	    while (*p) {
-		count += !isDigit(*p++);
-	    }
-	    if (count == 1) {
-		const char *q = actualVersion;
-
-		p = version;
-		while (*p && (*p == *q)) {
-		    p++; q++;
-		}
-		if (*p || isDigit(*q)) {
-		    /* Construct error message */
-		    stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
-		    return NULL;
-		}
-	    } else {
-		actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
-		if (actualVersion == NULL) {
-		    return NULL;
-		}
-	    }
-	}
-	tclStubsPtr = (const TclStubs *)pkgData;
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    if (actualVersion == NULL) {
+	return NULL;
     }
+    if (exact) {
+	const char *p = version;
+	int count = 0;
+
+	while (*p) {
+	    count += !isDigit(*p++);
+	}
+	if (count == 1) {
+	    const char *q = actualVersion;
+
+	    p = version;
+	    while (*p && (*p == *q)) {
+		p++; q++;
+	    }
+	    if (*p || isDigit(*q)) {
+		/* Construct error message */
+		stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+		return NULL;
+	    }
+	} else {
+	    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 1, NULL);
+	    if (actualVersion == NULL) {
+		return NULL;
+	    }
+	}
+    }
+    tclStubsPtr = (TclStubs *)pkgData;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
