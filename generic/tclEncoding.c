@@ -1433,6 +1433,7 @@ Tcl_InitSubsystems(int flags, ...)
     va_list argList;
     int argc = 0;
     void **argv = NULL;
+    const char *argv0 = NULL;
     Tcl_Interp *interp = NULL;
 
     TclInitSubsystems();
@@ -1440,6 +1441,9 @@ Tcl_InitSubsystems(int flags, ...)
     if (flags & TCL_INIT_CREATE) {
 	argc = va_arg(argList, int);
 	argv = va_arg(argList, void **);
+	if (argv) {
+	    argv0 = argv[0];
+	}
 	interp = Tcl_CreateInterp();
     }
     if (flags & TCL_INIT_CUSTOM) {
@@ -1451,11 +1455,18 @@ Tcl_InitSubsystems(int flags, ...)
     va_end(argList);
 
     TclpSetInitialEncodings();
-    TclpFindExecutable(argv ? argv[0] : NULL);
+    TclpFindExecutable(argv0);
     if ((flags&TCL_INIT_CREATE) && (--argc >= 0)) {
 	Tcl_Obj *argvPtr;
+	Tcl_DString ds;
 
-	Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+	if (argv0) {
+	    Tcl_ExternalToUtfDString(NULL, argv0, -1, &ds);
+	    Tcl_SetVar2Ex(interp, "argv0", NULL, TclDStringToObj(&ds),
+		    TCL_GLOBAL_ONLY);
+	}
+	Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc),
+		TCL_GLOBAL_ONLY);
 	argvPtr = Tcl_NewListObj(argc, NULL);
 	if ((flags & TCL_INIT_CREATE) == TCL_INIT_CREATE_UTF8) {
 	    while (argc--) {
@@ -1468,8 +1479,6 @@ Tcl_InitSubsystems(int flags, ...)
 			Tcl_NewUnicodeObj(*++argv, -1));
 	    }
 	} else {
-	    Tcl_DString ds;
-
 	    while (argc--) {
 		Tcl_ExternalToUtfDString(NULL, *++argv, -1, &ds);
 		Tcl_ListObjAppendElement(NULL, argvPtr, TclDStringToObj(&ds));
