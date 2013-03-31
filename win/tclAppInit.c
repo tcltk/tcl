@@ -13,6 +13,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#define USE_TCL_STUBS
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -196,7 +197,7 @@ Tcl_AppInit(
      * specific startup file will be run under any conditions.
      */
 
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }

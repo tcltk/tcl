@@ -313,6 +313,8 @@ Tcl_MainEx(
     Tcl_Channel chan;
     InteractiveState is;
 
+    TclpSetInitialEncodings();
+    TclpFindExecutable(argv[0]);
     Tcl_InitMemory(interp);
 
     is.interp = interp;

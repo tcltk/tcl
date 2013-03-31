@@ -1442,28 +1442,14 @@ static const struct {
 };
 
 #undef Tcl_FindExecutable
-Tcl_Interp *
-Tcl_InitSubsystems(int flags, ...)
+const char *
+Tcl_InitSubsystems(Tcl_PanicProc *panicProc)
 {
-    va_list argList;
-    Tcl_Interp *interp = (Tcl_Interp *) &dummyInterp;
-
-    va_start(argList, flags);
-    if (flags & TCL_INIT_PANIC) {
-	Tcl_SetPanicProc(va_arg(argList, Tcl_PanicProc *));
+    if (panicProc) {
+	Tcl_SetPanicProc(panicProc);
     }
     TclInitSubsystems();
-    if (flags & TCL_INIT_CUSTOM) {
-	ClientData clientData = va_arg(argList, ClientData);
-	void (*fn)(Tcl_Interp *, ClientData) = va_arg(argList,
-		void (*)(Tcl_Interp *, ClientData));
-	fn(interp, clientData);
-    }
-    va_end(argList);
-
-    TclpSetInitialEncodings();
-    TclpFindExecutable(NULL);
-    return interp;
+    return dummyInterp.version;
 }
 
 void
