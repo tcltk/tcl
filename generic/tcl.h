@@ -2416,9 +2416,6 @@ void Tcl_ConsolePanic(const char *format, ...);
 
 /* Tcl_InitSubsystems, see TIP #414 */
 
-#define TCL_INIT_PANIC (1) /* Set Panic proc */
-#define TCL_INIT_CUSTOM (2) /* Do any stuff before initializing the encoding */
-
 #ifdef USE_TCL_STUBS
 EXTERN Tcl_Interp *Tcl_InitSubsystems(Tcl_PanicProc *panicProc);
 #define Tcl_InitSubsystems(panicProc) Tcl_InitStubs((Tcl_InitSubsystems)(panicProc), NULL, 0)
