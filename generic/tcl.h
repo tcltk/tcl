@@ -2419,9 +2419,14 @@ void Tcl_ConsolePanic(const char *format, ...);
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
  */
 
+#ifdef _WIN32
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    (Tcl_SetPanicProc(Tcl_ConsolePanic), \
-			Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+	    Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+#else
+#define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
+	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+#endif
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,

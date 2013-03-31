@@ -23,7 +23,11 @@
  * procedure.
  */
 
+#if defined(__CYGWIN__)
+static Tcl_PanicProc *panicProc = tclWinDebugPanic;
+#else
 static Tcl_PanicProc *panicProc = NULL;
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -45,6 +49,10 @@ void
 Tcl_SetPanicProc(
     Tcl_PanicProc *proc)
 {
+#if defined(_WIN32)
+    /* tclWinDebugPanic only installs if there is no panicProc yet. */
+    if ((proc != tclWinDebugPanic) || (panicProc == NULL))
+#endif
     panicProc = proc;
 }
 
@@ -85,15 +93,15 @@ Tcl_PanicVA(
 
     if (panicProc != NULL) {
 	panicProc(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-    } else {
-#if defined(_WIN32) || defined(__CYGWIN__)
+#ifdef _WIN32
+    } else if (IsDebuggerPresent()) {
 	tclWinDebugPanic(format, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-#else
+#endif
+    } else {
 	fprintf(stderr, format, arg1, arg2, arg3, arg4, arg5, arg6, arg7,
 		arg8);
 	fprintf(stderr, "\n");
 	fflush(stderr);
-#endif
 #if defined(_WIN32) || defined(__CYGWIN__)
 #   if defined(__GNUC__)
 	__builtin_trap();
