@@ -1,11 +1,11 @@
 '\"
-'\" Copyright (c) 1995-1996 Sun Microsystems, Inc.
+'\" Copyright (c) 2013 Tcl Core Team
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 .so man.macros
-.TH Tcl_InitSubsystems 3 8.6.1 Tcl "Tcl Library Procedures"
+.TH Tcl_InitSubsystems 3 8.7 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
 Tcl_InitSubsystems \- initialize the Tcl library.
@@ -13,15 +13,13 @@ Tcl_InitSubsystems \- initialize the Tcl library.
 .nf
 \fB#include <tcl.h>\fR
 .sp
-Tcl_Interp *
-\fBTcl_InitSubsystems\fR(\fIflags\fR, \fI...\fR)
+const char *
+\fBTcl_InitSubsystems\fR(\fIpanicProc\fR)
 .SH ARGUMENTS
-.AS int flags
-.AP int flags in
-Any combination of flags which might modify the initialization sequence.
-At this moment, only 0, \fBTCL_INIT_PANIC\fR and \fBTCL_INIT_CUSTOM\fR
-(or a combination) are supported.
-The value 0 can be used if Tcl is used as utility library only.
+.AS "Tcl_PanicProc *" panicProc
+.AP "Tcl_PanicProc *" panicProc
+PanicProc. The value NULL is used when the default panicProc is
+desired.
 .BE
 
 .SH DESCRIPTION
@@ -29,61 +27,25 @@ The value 0 can be used if Tcl is used as utility library only.
 The \fBTcl_InitSubsystems\fR procedure initializes the Tcl
 library. This procedure is typically invoked as the very
 first thing in the application's main program.
-Its \fBflags\fR argument controls exactly what is initialized,
-and what additional arguments are expected.
+This function is almost the same as Tcl_SetPanicProc, except
+that Tcl_SetPanicProc is in the stub table, meant for Tcl
+extenders, and can be called at any time to change the
+panic proc. \fBTcl_InitSubsystems\fR is only meant to be
+called once, and does all initializations necessary such
+that Tcl_CreateInterp() can be called.
 .PP
-The call \fBTcl_InitSubsystems(0)\fR does the same as
-\fBTcl_FindExecutable(NULL)\fR, except that a Tcl_Interp *
-is returned which can be used only by \fBTcl_InitStubs\fR
-to initialize the stub table. This opens up the Tcl Stub
-technology for Tcl embedders, which now can dynamically
-load the Tcl shared library and use functions in it
-without ever creating an interpreter. E.g. the
-following code can be compiled with -DUSE_TCL_STUBS:
+The return value is the Tcl version.
+.PP
+If \fBTcl_InitSubsystems()\fR is called while -DUSE_TCL_STUBS
+is set, it does one additional thing: initialize the Stub
+table for using Tcl as utility library, without needing
+a Tcl interpreter. For example:
 .CS
-Tcl_Interp *interp, *(*initSubSystems)(int, ...);
-const char *version;
-void *handle = dlopen("libtcl8.6.so", RTLD_NOW|RTLD_LOCAL);
-initSubSystems = dlsym(handle, "Tcl_InitSubsystems");
-version = Tcl_InitStubs(initSubSystems(0), NULL, 0);
+const char *version = Tcl_InitSubSystems(0);
 /* At this point, Tcl C API calls without interp are ready for use */
-interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
+Tcl_Interp *interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
 Tcl_InitStubs(interp, version, 0); /* Initialize the stub table again */
 .CE
-This is equivalent to (without dynamical loading)
-.CS
-Tcl_Interp *interp;
-const char *version;
-version = Tcl_InitStubs(Tcl_InitSubSystems(0), NULL, 0);
-/* At this point, Tcl C API calls without interp are ready for use */
-interp = Tcl_CreateInterp(); /* Now we have a real interpreter */
-Tcl_InitStubs(interp, version, 0); /* Initialize the stub table again */
-.CE
-The function \fBTcl_CreateInterp\fR, or any other Tcl function you
-would like to call, no longer needs to be searched for in the
-shared library. It can be called directly through the stub table.
-Note that the stub table needs to be initialized twice, in order
-to be sure that you can call all functions without limitations
-after the real interpreter is created.
-.PP
-If you supply the flag \fBTCL_INIT_PANIC\fR to \fBTcl_InitSubsystems\fR,
-the function expects an additional argument, a custom panicProc.
-This is equivalent to calling \fBTcl_SetPanicProc\fR immediately
-before \fBTcl_InitSubsystems\fR, except that you possibly cannot do
-that yet if it requires an initialized stub table. Of course you
-could call \fBTcl_SetPanicProc\fR immediately after \fBTcl_InitSubsystems\fR,
-but then panics which could be produced by the initialization
-itself still use the default panic procedure. 
-.PP
-If you supply the flag \fBTCL_INIT_CUSTOM\fR to \fBTcl_InitSubsystems\fR,
-the function expects two additional arguments: ClientData and a
-custom proc. The proc will be supplied two arguments, the (pseudo)
-Tcl interpreter and ClientData. The given function will be executed
-just before the encodings are initialized.
-.PP
-The interpreter returned by Tcl_InitSubsystems(0) or passed to the
-TCL_INIT_CUSTOM function cannot be passed to any other function than
-Tcl_InitStubs(). Tcl functions with an "interp" argument can only
-be called if the function supports passing NULL.
+This will work as expected even when -DUSE_TCL_STUBS is set.
 .SH KEYWORDS
 binary, executable file
