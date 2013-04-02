@@ -1111,7 +1111,7 @@ TclpGetCStackParams(
 	 * Not initialised!
 	 */
 
-	stackGrowsDown = StackGrowsDown(&result);
+	stackGrowsDown = StackGrowsDown(NULL);
     }
 #endif
     
@@ -1186,6 +1186,9 @@ StackGrowsDown(
     int *parent)
 {
     int here;
+    if (!parent) {
+	return StackGrowsDown(&here);
+    }
     return (&here < parent);
 }
 #endif
