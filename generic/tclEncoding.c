@@ -1428,10 +1428,12 @@ Tcl_UtfToExternal(
  */
 MODULE_SCOPE const TclStubs tclStubs;
 
-/* Dummy const structure returned by Tcl_InitSubsystems,
- * which looks like an Tcl_Interp, but in reality is not.
- * It contains just enough for Tcl_InitStubs to be able
- * to initialize the stub table. */
+/* Dummy const structure returned by Tcl_InitSubsystems when
+ * using stubs, which looks like an Tcl_Interp, but in reality
+ * is not. It contains just enough for Tcl_InitStubs to be able
+ * to initialize the stub table. The first bytes of this structure
+ * are filled with the Tcl version string, so it can be cast to a
+ * "const char *" holding the Tcl version as well. */
 static const struct {
     /* A real interpreter has interp->result/freeProc here: */
     const char version[sizeof(struct {char *r; void (*f)(void);})];

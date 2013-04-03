@@ -5,7 +5,7 @@
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
 .so man.macros
-.TH Tcl_InitSubsystems 3 8.7 Tcl "Tcl Library Procedures"
+.TH Tcl_InitSubsystems 3 8.6.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
 Tcl_InitSubsystems \- initialize the Tcl library.
@@ -19,9 +19,8 @@ const char *
 .SH ARGUMENTS
 .AS Tcl_PanicProc *panicProc
 .AP Tcl_PanicProc *panicProc in
-Desired panic function, for error reporting. The value NULL is used
-when the default panicProc is desired, which normally writes the
-message to stderr.
+Desired panic function, for error reporting. If NULL, the default
+panicProc is used, which normally writes the message to stderr.
 .BE
 
 .SH DESCRIPTION
@@ -35,11 +34,12 @@ called once by Tcl embedders. Tcl_SetPanicProc is in the stub
 table, meant for Tcl extenders, and can be called at any time
 later to change the panic proc.
 .PP
-\fBTcl_InitSubsystems\fR can be used in stead of
-\fBTcl_FindExecutable\fR when Tcl is used as utility library
-only, and no other encodings than utf8, iso8859-1 or unicode
-are used. The system encoding will not be determined
-correctly but being set to iso8859-1.
+\fBTcl_InitSubsystems\fR is very similar to
+\fBTcl_FindExecutable\fR as well. It can be used when Tcl is
+used as utility library, no other encodings than utf8,
+iso8859-1 or unicode are used, and no interest exists in the
+value of \fBinfo nameofexecutable\fR. The system encoding will not
+be extracted from the environment, but falls back to iso8859-1.
 .PP
 The return value is the Tcl version.
 .PP
@@ -53,8 +53,6 @@ const char *version = Tcl_InitSubSystems(NULL);
 int major, minor, patch;
 Tcl_GetVersion(&major, &minor, &patch);
 .CE
-This will work as expected, both with and without stubs. When
-using stubs, this code must be linked with both the normal
-Tcl library (static or shared) and the stub library.
+This will work as expected, both with and without stubs.
 .SH KEYWORDS
 binary, executable file
