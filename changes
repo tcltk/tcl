@@ -7686,3 +7686,51 @@ Many revisions to better support a Cygwin environment (nijtmans)
 2012-11-07 tzdata updated to Olson's tzdata2012i (kenny)
 
 --- Released 8.5.13, November 12, 2012 --- See ChangeLog for details ---
+
+2012-11-13 (enhancement)[360894] Threads inherit floating point from creator.
+
+2012-11-14 (enhancement)[2933003] compile setting: TCL_TEMPORARY_FILE_DIRECTORY
+
+2012-11-16 (bug fix)[3587651] [info functions] returns complete set. (porter)
+
+2012-12-03 (bug fix) tcltest: Correct legacy auto-init fom $::argv (porter)
+=> tcltest 2.3.5
+
+2012-12-06 (bug fix) Tcl_InitStubs("8.5",1) must reject 8.50. (porter)
+
+2012-12-13 (bug fix)[3595576] mem flaw in [catch {} -> no-such-ns::v] (porter)
+
+2012-12-27 (bug fix)[3598580] Tcl_ListObjReplace() refcount fix (nijtmans)
+
+2013-01-08 (bug fix)[3092089,3587096] [file normalize] on junction points
+
+2013-01-09 (bug fix)[3599395] status line processing (nijtmans)
+2013-01-23 (bug fix)[2911139] repair async connection management (fellows)
+=> http 2.7.11
+
+2013-01-30 (bug fix)[3599098] update to handle glibc banner changes (kupries)
+=> platform 1.0.11
+
+2013-02-05 (bug fix)[3603434] [file normalize a:/] flaw in VFS (porter,griffin)
+
+2013-02-14 (bug fix)[3604576] msgcat use of Windows registry (oehlmann,nijtmans)
+=> msgcat 1.5.1
+
+2013-02-19 (bug fix)[2438181] report errors in trace handlers (yorick)
+
+2013-02-21 (bug fix)[3605447] unbreak [namespace export -clear] (porter)
+
+2013-02-27 (bug fix)[3606139] stop crash in [regexp] (lane)
+
+2013-03-06 (bug fix)[3606683] [regexp (((((a)*)*)*)*)* {}] hangs
+(grathwohl,lane,porter)
+
+2013-03-12 (enhancement) better build support for Debian arch (shadura)
+
+2013-03-19 (bug fix)[2893771] [file stat] on locked files (thoyts,nijtmans)
+
+2013-03-21 (bug fix)[2102614] [auto_mkindex] ensemble support (griffin)
+
+2013-03-22 tzdata updated to Olson's tzdata2013b (venkat)
+
+--- Released 8.5.14, April 3, 2013 --- See ChangeLog for details ---
