@@ -1,4 +1,10 @@
-2013-03-29  Don Porter  <dgp@users.sourceforge.net>
+2013-04-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclUnixInit.c: [Bug 3205320]: stack space detection
+	defeated by inlining. Now fixed in the cross-compile
+	case as well.
+
+2013-04-03  Don Porter  <dgp@users.sourceforge.net>
 
 	*** 8.5.14 TAGGED FOR RELEASE ***
 
