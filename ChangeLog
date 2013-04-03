@@ -1,3 +1,30 @@
+2013-03-22  Venkat Iyer <venkat@comit.com>
+	* library/tzdata/Africa/Cairo: Update to tzdata2013b.
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/Africa/Gaborone:
+	* library/tzdata/Africa/Tripoli:
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/America/Barbados:
+	* library/tzdata/America/Bogota:
+	* library/tzdata/America/Costa_Rica:
+	* library/tzdata/America/Curacao:
+	* library/tzdata/America/Nassau:
+	* library/tzdata/America/Port-au-Prince:
+	* library/tzdata/America/Santiago:
+	* library/tzdata/Antarctica/Palmer:
+	* library/tzdata/Asia/Aden:
+	* library/tzdata/Asia/Hong_Kong:
+	* library/tzdata/Asia/Muscat:
+	* library/tzdata/Asia/Rangoon:
+	* library/tzdata/Asia/Shanghai:
+	* library/tzdata/Atlantic/Bermuda:
+	* library/tzdata/Europe/Vienna:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/Pacific/Fiji:
+	* library/tzdata/Asia/Khandyga: (new)
+	* library/tzdata/Asia/Ust-Nera: (new)
+	* library/tzdata/Europe/Busingen: (new)
+
 2013-03-21  Don Porter  <dgp@users.sourceforge.net>
 
 	* library/auto.tcl: [Bug 2102614] Add ensemble indexing support
