@@ -1,3 +1,9 @@
+2013-04-04  Reinhard Max  <max@suse.de>
+
+        * library/http/http.tcl (http::geturl): Allow URLs that don't have
+        a path, but a query query, e.g. http://example.com?foo=bar .
+        * Bump the http package to 2.7.12.
+
 2013-04-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclUnixInit.c: [Bug 3205320]: stack space detection
