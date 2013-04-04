@@ -1,3 +1,8 @@
+2013-04-04  Reinhard Max  <max@suse.de>
+
+	* library/http/http.tcl (http::geturl): Allow URLs that don't have
+	a path, but a query query, e.g. http://example.com?foo=bar .
+
 2013-03-22  Venkat Iyer <venkat@comit.com>
 	* library/tzdata/Africa/Cairo: Update to tzdata2013b.
 	* library/tzdata/Africa/Casablanca:
