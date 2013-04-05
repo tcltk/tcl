@@ -15,7 +15,6 @@
 #include "tclWinInt.h"
 #include "tclFileSystem.h"
 #include <winioctl.h>
-#include <sys/stat.h>
 #include <shlobj.h>
 #include <lm.h>		/* For TclpGetUserHome(). */
 
@@ -1538,14 +1537,9 @@ NativeAccess(
 	 * File might not exist.
 	 */
 
-	WIN32_FIND_DATA ffd;
-	HANDLE hFind;
-	hFind = FindFirstFile(nativePath, &ffd);
-	if (hFind != INVALID_HANDLE_VALUE) {
-	    attr = ffd.dwFileAttributes;
-	    FindClose(hFind);
-	} else {
-	    TclWinConvertError(GetLastError());
+	DWORD lasterror = GetLastError();
+	if (lasterror != ERROR_SHARING_VIOLATION) {
+	    TclWinConvertError(lasterror);
 	    return -1;
 	}
     }
@@ -2003,15 +1997,17 @@ NativeStat(
 
 	if (GetFileAttributesEx(nativePath,
 		GetFileExInfoStandard, &data) != TRUE) {
-	    /*
-	     * We might have just been denied access
-	     */
-
+	    HANDLE hFind;
 	    WIN32_FIND_DATA ffd;
-	    HANDLE hFind = FindFirstFile(nativePath, &ffd);
+	    DWORD lasterror = GetLastError();
 
+	    if (lasterror != ERROR_SHARING_VIOLATION) {
+		TclWinConvertError(lasterror);
+		return -1;
+		}
+	    hFind = FindFirstFile(nativePath, &ffd);
 	    if (hFind == INVALID_HANDLE_VALUE) {
-		Tcl_SetErrno(ENOENT);
+		TclWinConvertError(GetLastError());
 		return -1;
 	    }
 	    memcpy(&data, &ffd, sizeof(data));
@@ -2476,6 +2472,12 @@ TclpObjNormalizePath(
 				}
 				Tcl_DStringAppend(&dsNorm, nativePath, len);
 				lastValidPathEnd = currentPathEndPosition;
+			    } else if (nextCheckpoint == 0) {
+				/* Path starts with a drive designation
+				 * that's not actually on the system.
+				 * We still must normalize up past the
+				 * first separator.  [Bug 3603434] */
+				currentPathEndPosition++;
 			    }
 			}
 			Tcl_DStringFree(&ds);
@@ -2616,6 +2618,12 @@ TclpObjNormalizePath(
 				    (const char *)nativePath,
 				    (int)(sizeof(WCHAR) * len));
 			    lastValidPathEnd = currentPathEndPosition;
+			} else if (nextCheckpoint == 0) {
+			    /* Path starts with a drive designation
+			     * that's not actually on the system.
+			     * We still must normalize up past the
+			     * first separator.  [Bug 3603434] */
+			    currentPathEndPosition++;
 			}
 		    }
 		    Tcl_DStringFree(&ds);

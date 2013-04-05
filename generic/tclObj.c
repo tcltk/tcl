@@ -208,7 +208,6 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 static int		ParseBoolean(Tcl_Obj *objPtr);
-static int		SetBooleanFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
@@ -250,14 +249,14 @@ static const Tcl_ObjType oldBooleanType = {
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclBooleanType = {
     "booleanString",		/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclDoubleType = {
     "double",			/* name */
@@ -1006,7 +1005,12 @@ Tcl_ConvertToType(
      */
 
     if (typePtr->setFromAnyProc == NULL) {
-	Tcl_Panic("may not convert object to type %s", typePtr->name);
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't convert value to type %s", typePtr->name));
+	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", NULL);
+	}
+	return TCL_ERROR;
     }
 
     return typePtr->setFromAnyProc(interp, objPtr);
@@ -1255,7 +1259,7 @@ Tcl_DbNewObj(
  * Side effects:
  *	tclFreeObjList, the head of the list of free Tcl_Objs, is set to the
  *	first of a number of free Tcl_Obj's linked together by their
- *	internalRep.otherValuePtrs.
+ *	internalRep.twoPtrValue.ptr1's.
  *
  *----------------------------------------------------------------------
  */
@@ -1284,7 +1288,7 @@ TclAllocateFreeObjects(void)
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
     for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
-	objPtr->internalRep.otherValuePtr = prevPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = prevPtr;
 	prevPtr = objPtr;
 	objPtr++;
     }
@@ -1329,9 +1333,21 @@ TclFreeObj(
 
     ObjInitDeletionContext(context);
 
+    /*
+     * Check for a double free of the same value.  This is slightly tricky
+     * because it is customary to free a Tcl_Obj when its refcount falls
+     * either from 1 to 0, or from 0 to -1.  Falling from -1 to -2, though,
+     * and so on, is always a sign of a botch in the caller.
+     */
     if (objPtr->refCount < -1) {
 	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
+    /*
+     * Now, in case we just approved drop from 1 to 0 as acceptable, make
+     * sure we do not accept a second free when falling from 0 to -1.
+     * Skip that possibility so any double free will trigger the panic.
+     */
+    objPtr->refCount = -1;
 
     /*
      * Invalidate the string rep first so we can use the bytes value for our
@@ -1729,8 +1745,8 @@ Tcl_InvalidateStringRep(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewBooleanObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
@@ -1778,6 +1794,7 @@ Tcl_NewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DbNewBooleanObj
 #ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
@@ -1830,6 +1847,7 @@ Tcl_DbNewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetBooleanObj
 void
 Tcl_SetBooleanObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
@@ -1911,7 +1929,7 @@ Tcl_GetBooleanFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * SetBooleanFromAny --
+ * TclSetBooleanFromAny --
  *
  *	Attempt to generate a boolean internal form for the Tcl object
  *	"objPtr".
@@ -1928,8 +1946,8 @@ Tcl_GetBooleanFromObj(
  *----------------------------------------------------------------------
  */
 
-static int
-SetBooleanFromAny(
+int
+TclSetBooleanFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
@@ -2389,8 +2407,8 @@ UpdateStringOfDouble(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewIntObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewIntObj(
@@ -2430,6 +2448,7 @@ Tcl_NewIntObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetIntObj
 void
 Tcl_SetIntObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
@@ -4171,7 +4190,7 @@ Tcl_GetCommandFromObj(
      * had is invalid one way or another.
      */
 
-    if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
+    if (SetCmdNameFromAny(interp, objPtr) != TCL_OK) {
         return NULL;
     }
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;
@@ -4390,7 +4409,7 @@ SetCmdNameFromAny(
 
     if (cmdPtr) {
 	cmdPtr->refCount++;
-	resPtr = objPtr->internalRep.otherValuePtr;
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if ((objPtr->typePtr == &tclCmdNameType)
 		&& resPtr && (resPtr->refCount == 1)) {
 	    /*
