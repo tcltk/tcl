@@ -4188,10 +4188,6 @@ TclNREvalObjv(
 	return result;
     }
 
-    if (cmdPtr) {
-	goto commandFound;
-    }
-
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
      * needed, the exception handlers (as they should happen last).
@@ -4199,6 +4195,10 @@ TclNREvalObjv(
 
     if (!(flags & TCL_EVAL_NOERR)) {
 	TEOV_PushExceptionHandlers(interp, objc, objv, flags);
+    }
+
+    if (cmdPtr) {
+	goto commandFound;
     }
 
     /*
@@ -6620,9 +6620,11 @@ TclObjInvoke(
 	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
     }
 
+#if 1
     if (TclInterpReady(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+#endif
 
     cmdName = TclGetString(objv[0]);
     hTblPtr = iPtr->hiddenCmdTablePtr;
@@ -6638,6 +6640,7 @@ TclObjInvoke(
     }
     cmdPtr = Tcl_GetHashValue(hPtr);
 
+#if 1
     /*
      * Invoke the command function.
      */
@@ -6669,6 +6672,9 @@ TclObjInvoke(
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
     }
     return result;
+#else
+
+#endif
 }
 
 /*
@@ -8243,7 +8249,8 @@ Tcl_NRCmdSwap(
     Tcl_Obj *const objv[],
     int flags)
 {
-    return TclNREvalObjv(interp, objc, objv, flags, (Command *) cmd);
+    return TclNREvalObjv(interp, objc, objv, flags|TCL_EVAL_NOERR,
+	    (Command *) cmd);
 }
 
 /*****************************************************************************
