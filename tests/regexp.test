@@ -689,7 +689,7 @@ test regexp-22.5 {Bug 3610026} -setup {
     regexp -about $e
 } -cleanup {
     unset -nocomplain e cp
-} -returnCodes error  -match glob -result * 
+} -returnCodes error  -match glob -result {*too many colors*}
 
 # cleanup
 ::tcltest::cleanupTests
