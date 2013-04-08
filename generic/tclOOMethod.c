@@ -1429,7 +1429,7 @@ InvokeForwardMethod(
 		contextPtr->oPtr->namespacePtr, 0 /* normal lookup */);
     }
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
-    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE, cmdPtr);
+    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, cmdPtr);
 }
 
 static int
