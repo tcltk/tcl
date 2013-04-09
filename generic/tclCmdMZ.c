@@ -2351,7 +2351,7 @@ StringRplcCmd(
 	return TCL_ERROR;
     }
 
-    if ((last < first) || (last < 0) || (first > length)) {
+    if (first > length+1) {
 	Tcl_SetObjResult(interp, objv[1]);
     } else {
 	Tcl_Obj *resultPtr;
@@ -2368,6 +2368,9 @@ StringRplcCmd(
 	    Tcl_AppendObjToObj(resultPtr, objv[4]);
 	}
 	if (last < length) {
+	    if (last < first) {
+		last = first - 1;
+	    }
 	    Tcl_AppendUnicodeToObj(resultPtr, ustring + last + 1,
 		    length - last);
 	}
