@@ -1,3 +1,9 @@
+2013-04-09  Reinhard Max  <max@suse.de>
+
+	* library/http/http.tcl (http::geturl): Allow URLs that don't have
+	a path, but a query query, e.g. http://example.com?foo=bar .
+	* Bump the http package to 2.5.8.
+
 2013-04-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/regc_color.c:	[Bug 3610026] Stop crash when the number of
