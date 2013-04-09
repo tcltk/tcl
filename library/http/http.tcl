@@ -22,7 +22,7 @@
 package require Tcl 8.4
 # Keep this in sync with pkgIndex.tcl and with the install directories
 # in Makefiles
-package provide http 2.5.7
+package provide http 2.5.8
 
 namespace eval http {
     variable http
@@ -346,7 +346,7 @@ proc http::geturl { url args } {
 	    ( [^/:\#?]+ )		# <host part of authority>
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
-	( / [^\#?]* (?: \? [^\#?]* )?)?	# <path> (including query)
+	( [/\?] [^\#]*)?		# <path> (including query)
 	(?: \# (.*) )?			# <fragment>
 	$
     }
@@ -389,6 +389,12 @@ proc http::geturl { url args } {
 	}
     }
     if {$srvurl ne ""} {
+	# RFC 3986 allows empty paths (not even a /), but servers
+	# return 400 if the path in the HTTP request doesn't start
+	# with / , so add it here if needed.
+	if {[string index $srvurl 0] ne "/"} {
+	    set srvurl /$srvurl
+	}
 	# Check for validity according to RFC 3986, Appendix A
 	set validityRE {(?xi)
 	    ^
