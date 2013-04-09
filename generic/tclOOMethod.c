@@ -1422,14 +1422,10 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
 
-    if (fmPtr->fullyQualified) {
-	cmdPtr = NULL;
-    } else {
-	cmdPtr = (Command *) Tcl_FindCommand(interp, TclGetString(argObjs[0]),
-		contextPtr->oPtr->namespacePtr, 0 /* normal lookup */);
-    }
+    Tcl_CallFrame *framePtr;
+    TclPushStackFrame(interp, &framePtr, contextPtr->oPtr->namespacePtr, 0);
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
-    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE, cmdPtr);
+    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);
 }
 
 static int
@@ -1439,7 +1435,8 @@ FinalizeForwardCall(
     int result)
 {
     Tcl_Obj **argObjs = data[0];
-    
+   
+    TclPopStackFrame(interp);
     TclStackFree(interp, argObjs);
     return result;
 }
