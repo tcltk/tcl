@@ -162,6 +162,7 @@ static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
+static Tcl_NRPostProc NRPostInvoke;
 
 MODULE_SCOPE const TclStubs tclStubs;
 
@@ -6599,32 +6600,32 @@ TclObjInvoke(
 				 * TCL_INVOKE_HIDDEN, TCL_INVOKE_NO_UNKNOWN,
 				 * or TCL_INVOKE_NO_TRACEBACK. */
 {
-    register Interp *iPtr = (Interp *) interp;
-    Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
-    const char *cmdName;	/* Name of the command from objv[0]. */
-    Tcl_HashEntry *hPtr = NULL;
-    Command *cmdPtr;
-    int result;
-
     if (interp == NULL) {
 	return TCL_ERROR;
     }
-
     if ((objc < 1) || (objv == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
                 "illegal argument vector", -1));
 	return TCL_ERROR;
     }
-
     if ((flags & TCL_INVOKE_HIDDEN) == 0) {
 	Tcl_Panic("TclObjInvoke: called without TCL_INVOKE_HIDDEN");
     }
+    return Tcl_NRCallObjProc(interp, TclNRInvoke, NULL, objc, objv);
+}
 
-#if 1
-    if (TclInterpReady(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-#endif
+int
+TclNRInvoke(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    register Interp *iPtr = (Interp *) interp;
+    Tcl_HashTable *hTblPtr;	/* Table of hidden commands. */
+    const char *cmdName;	/* Name of the command from objv[0]. */
+    Tcl_HashEntry *hPtr = NULL;
+    Command *cmdPtr;
 
     cmdName = TclGetString(objv[0]);
     hTblPtr = iPtr->hiddenCmdTablePtr;
@@ -6640,41 +6641,23 @@ TclObjInvoke(
     }
     cmdPtr = Tcl_GetHashValue(hPtr);
 
-#if 1
-    /*
-     * Invoke the command function.
-     */
+    /* Avoid the exception-handling brain damage when numLevels == 0 . */
+    iPtr->numLevels++;
+    Tcl_NRAddCallback(interp, NRPostInvoke, NULL, NULL, NULL, NULL);
+ 
+    /* TODO: how to get re-resolution right */
+    return TclNREvalObjv(interp, objc, objv, 0, cmdPtr);
+}
 
-    iPtr->cmdCount++;
-    if (cmdPtr->objProc != NULL) {
-	result = cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-    } else {
-	result = Tcl_NRCallObjProc(interp, cmdPtr->nreProc,
-		cmdPtr->objClientData, objc, objv);
-    }
-
-    /*
-     * If an error occurred, record information about what was being executed
-     * when the error occurred.
-     */
-
-    if ((result == TCL_ERROR)
-	    && ((flags & TCL_INVOKE_NO_TRACEBACK) == 0)
-	    && ((iPtr->flags & ERR_ALREADY_LOGGED) == 0)) {
-	int length;
-	Tcl_Obj *command = Tcl_NewListObj(objc, objv);
-	const char *cmdString;
-
-	Tcl_IncrRefCount(command);
-	cmdString = Tcl_GetStringFromObj(command, &length);
-	Tcl_LogCommandInfo(interp, cmdString, cmdString, length);
-	Tcl_DecrRefCount(command);
-	iPtr->flags &= ~ERR_ALREADY_LOGGED;
-    }
+static int
+NRPostInvoke(
+    ClientData clientData[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *)interp;
+    iPtr->numLevels--;
     return result;
-#else
-
-#endif
 }
 
 /*

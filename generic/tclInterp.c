@@ -3052,7 +3052,12 @@ SlaveInvokeHidden(
     Tcl_AllowExceptions(slaveInterp);
 
     if (namespaceName == NULL) {
-	result = TclObjInvoke(slaveInterp, objc, objv, TCL_INVOKE_HIDDEN);
+	if (interp == slaveInterp) {
+	    Tcl_Release(slaveInterp);
+	    return TclNRInvoke(NULL, slaveInterp, objc, objv);
+	} else {
+	    result = TclObjInvoke(slaveInterp, objc, objv, TCL_INVOKE_HIDDEN);
+	}
     } else {
 	Namespace *nsPtr, *dummy1, *dummy2;
 	const char *tail;
