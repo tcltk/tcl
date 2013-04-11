@@ -1,3 +1,11 @@
+2013-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_color.c:	[Bug 3610026] Stop crash when the number of
+	* generic/regerrs.h:	"colors" in a regular expression overflows
+	* generic/regex.h:	a short int.  Thanks to Heikki Linnakangas
+	* generic/regguts.h:	for the report and the patch.
+	* tests/regexp.test:
+
 2013-04-04  Reinhard Max  <max@suse.de>
 
 	* library/http/http.tcl (http::geturl): Allow URLs that don't have
