@@ -279,6 +279,7 @@ static void		DeleteScriptLimitCallback(ClientData clientData);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
 static void		TimeLimitCallback(ClientData clientData);
+static Tcl_NRPostProc	NRPostInvokeHidden;
 
 /*
  *----------------------------------------------------------------------
@@ -3056,7 +3057,9 @@ SlaveInvokeHidden(
 	    Tcl_Release(slaveInterp);
 	    return TclNRInvoke(NULL, slaveInterp, objc, objv);
 	} else {
-	    result = TclObjInvoke(slaveInterp, objc, objv, TCL_INVOKE_HIDDEN);
+	    Tcl_NRAddCallback(interp, NRPostInvokeHidden, slaveInterp,
+		    NULL, NULL, NULL);
+	    return TclNRInvoke(NULL, slaveInterp, objc, objv);
 	}
     } else {
 	Namespace *nsPtr, *dummy1, *dummy2;
@@ -3073,6 +3076,19 @@ SlaveInvokeHidden(
 
     Tcl_TransferResult(slaveInterp, result, interp);
 
+    Tcl_Release(slaveInterp);
+    return result;
+}
+
+static int
+NRPostInvokeHidden(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Interp *slaveInterp = (Tcl_Interp *)data[0];
+
+    Tcl_TransferResult(slaveInterp, result, interp);
     Tcl_Release(slaveInterp);
     return result;
 }
