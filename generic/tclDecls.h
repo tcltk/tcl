@@ -4516,6 +4516,16 @@ extern TclStubs *tclStubsPtr;
 
 #undef TclUnusedStubEntry
 
+#undef Tcl_PkgPresent
+#define Tcl_PkgPresent(interp, name, version, exact) \
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL)
+#undef Tcl_PkgProvide
+#define Tcl_PkgProvide(interp, name, version) \
+	Tcl_PkgProvideEx(interp, name, version, NULL)
+#undef Tcl_PkgRequire
+#define Tcl_PkgRequire(interp, name, version, exact) \
+	Tcl_PkgRequireEx(interp, name, version, exact, NULL)
+
 /*
  * Deprecated Tcl procedures:
  */
