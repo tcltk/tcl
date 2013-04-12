@@ -124,7 +124,7 @@ Pkgb_Init(interp)
 	}
 	Tcl_ResetResult(interp);
     }
-    code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
+    code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
     if (code != TCL_OK) {
 	return code;
     }
@@ -165,7 +165,7 @@ Pkgb_SafeInit(interp)
 	}
 	Tcl_ResetResult(interp);
     }
-    code = Tcl_PkgProvideEx(interp, "Pkgb", "2.3", NULL);
+    code = Tcl_PkgProvide(interp, "Pkgb", "2.3");
     if (code != TCL_OK) {
 	return code;
     }
