@@ -119,6 +119,7 @@
 
 typedef short color;		/* colors of characters */
 typedef int pcolor;		/* what color promotes to */
+#define MAX_COLOR	SHRT_MAX /* max color value */
 #define	COLORLESS	(-1)	/* impossible color */
 #define	WHITE		0	/* default color, parent of all others */
 

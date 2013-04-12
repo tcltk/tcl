@@ -1,3 +1,22 @@
+2013-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_Pkg* functions as
+	(faster/stack-saving) macros around Tcl_Pkg*Ex functions.
+
+2013-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_color.c:	[Bug 3610026] Stop crash when the number of
+	* generic/regerrs.h:	"colors" in a regular expression overflows
+	* generic/regex.h:	a short int.  Thanks to Heikki Linnakangas
+	* generic/regguts.h:	for the report and the patch.
+	* tests/regexp.test:
+
+2013-04-04  Reinhard Max  <max@suse.de>
+
+	* library/http/http.tcl (http::geturl): Allow URLs that don't have
+	a path, but a query query, e.g. http://example.com?foo=bar .
+	* Bump the http package to 2.8.7.
+
 2013-03-22  Venkat Iyer <venkat@comit.com>
 	* library/tzdata/Africa/Cairo: Update to tzdata2013b.
 	* library/tzdata/Africa/Casablanca:
