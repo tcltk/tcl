@@ -119,6 +119,7 @@ static CONST char *	PkgRequireCore(Tcl_Interp *interp, CONST char *name,
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgProvide
 int
 Tcl_PkgProvide(interp, name, version)
      Tcl_Interp *interp;	/* Interpreter in which package is now
@@ -223,6 +224,7 @@ Tcl_PkgRequireProc(interp,name,reqc,reqv,clientDataPtr)
 }
 #endif
 
+#undef Tcl_PkgRequire
 CONST char *
 Tcl_PkgRequire(interp, name, version, exact)
     Tcl_Interp *interp;	        /* Interpreter in which package is now
@@ -827,6 +829,7 @@ PkgRequireCore(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_PkgPresent
 CONST char *
 Tcl_PkgPresent(interp, name, version, exact)
      Tcl_Interp *interp;	/* Interpreter in which package is now
@@ -1127,7 +1130,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 	    }
 	}
 #endif
-	Tcl_PkgPresent(interp, name, version, exact);
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL);
 	return TCL_ERROR;
 	break;
     }
@@ -1155,7 +1158,7 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 #endif
 	    return TCL_ERROR;
 	}
-	return Tcl_PkgProvide(interp, argv2, argv3);
+	return Tcl_PkgProvideEx(interp, argv2, argv3, NULL);
     }
     case PKG_REQUIRE: {
     require:
@@ -1187,9 +1190,9 @@ Tcl_PackageObjCmd(dummy, interp, objc, objv)
 	}
 	if (exact) {
 	    argv3 =  Tcl_GetString(objv[3]);
-	    version = Tcl_PkgRequire(interp, argv3, version, exact);
+	    version = Tcl_PkgRequireEx(interp, argv3, version, exact, NULL);
 	} else {
-	    version = Tcl_PkgRequire(interp, argv2, version, exact);
+	    version = Tcl_PkgRequireEx(interp, argv2, version, exact, NULL);
 	}
 	if (version == NULL) {
 	    return TCL_ERROR;
