@@ -3652,6 +3652,7 @@ TclEvalObjvInternal(
 	    checkTraces = 0;
 	    if (commandPtr) {
 		Tcl_DecrRefCount(commandPtr);
+		commandPtr = NULL;
 	    }
 	    goto reparseBecauseOfTraces;
 	}
