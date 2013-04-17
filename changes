@@ -6629,7 +6629,6 @@ problems where [file *able] would return false results on Win/Samba (porter)
 2012-02-29 (bug fix)[3466099] BOM in Unicode (nijtmans)
 
 2012-03-07 (bug fix)[3498327] RFC 3986 compliance (kupries)
-=> http 2.5.7
 
 2012-05-10 (bug fix)[473946] correct send of special characters (nijtmans)
 => dde 1.2.5
@@ -6672,6 +6671,11 @@ problems where [file *able] would return false results on Win/Samba (porter)
 2013-03-12 (enhancement) better build support for Debian arch (shadura)
 
 2013-03-19 (bug fix)[2893771] [file stat] on locked files (thoyts,nijtmans)
+
+2013-04-08 (bug fix)[3610026] regexp surplus colors crash (linnakangas)
+
+2013-04-09 (bug fix) Allow http://example.com?foo=bar (max)
+=> http 2.5.8
 
 New package: platform 1.0.11
 

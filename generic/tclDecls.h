@@ -4516,17 +4516,25 @@ extern TclStubs *tclStubsPtr;
 
 #undef TclUnusedStubEntry
 
+#undef Tcl_PkgPresent
+#define Tcl_PkgPresent(interp, name, version, exact) \
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL)
+#undef Tcl_PkgProvide
+#define Tcl_PkgProvide(interp, name, version) \
+	Tcl_PkgProvideEx(interp, name, version, NULL)
+#undef Tcl_PkgRequire
+#define Tcl_PkgRequire(interp, name, version, exact) \
+	Tcl_PkgRequireEx(interp, name, version, exact, NULL)
+
 /*
  * Deprecated Tcl procedures:
  */
-#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
-#   undef Tcl_EvalObj
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-#   undef Tcl_GlobalEvalObj
-#   define Tcl_GlobalEvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
-#endif
+#undef Tcl_EvalObj
+#define Tcl_EvalObj(interp,objPtr) \
+    Tcl_EvalObjEx((interp),(objPtr),0)
+#undef Tcl_GlobalEvalObj
+#define Tcl_GlobalEvalObj(interp,objPtr) \
+    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 
 #endif /* _TCLDECLS */
 

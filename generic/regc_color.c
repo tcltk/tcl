@@ -223,7 +223,6 @@ newcolor(cm)
 struct colormap *cm;
 {
 	struct colordesc *cd;
-	struct colordesc *new;
 	size_t n;
 
 	if (CISERR())
@@ -241,21 +240,29 @@ struct colormap *cm;
 		cd = &cm->cd[cm->max];
 	} else {
 		/* oops, must allocate more */
+		struct colordesc *newCd;
+
+		if (cm->max == MAX_COLOR) {
+			CERR(REG_ECOLORS);
+			return COLORLESS;	/* too many colors */
+		}
 		n = cm->ncds * 2;
+		if (n < MAX_COLOR + 1)
+			n = MAX_COLOR + 1;
 		if (cm->cd == cm->cdspace) {
-			new = (struct colordesc *)MALLOC(n *
+			newCd = (struct colordesc *)MALLOC(n *
 						sizeof(struct colordesc));
-			if (new != NULL)
-				memcpy(VS(new), VS(cm->cdspace), cm->ncds *
+			if (newCd != NULL)
+				memcpy(VS(newCd), VS(cm->cdspace), cm->ncds *
 						sizeof(struct colordesc));
 		} else
-			new = (struct colordesc *)REALLOC(cm->cd,
+			newCd = (struct colordesc *)REALLOC(cm->cd,
 						n * sizeof(struct colordesc));
-		if (new == NULL) {
+		if (newCd == NULL) {
 			CERR(REG_ESPACE);
 			return COLORLESS;
 		}
-		cm->cd = new;
+		cm->cd = newCd;
 		cm->ncds = n;
 		assert(cm->max < cm->ncds - 1);
 		cm->max++;
