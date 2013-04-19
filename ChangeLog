@@ -1,3 +1,9 @@
+2013-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement many Tcl_*Var* functions and
+	Tcl_GetIndexFromObj as (faster/stack-saving) macros around resp
+	their Tcl_*Var*2 equivalent and Tcl_GetIndexFromObjStruct.
+
 2013-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclDecls.h: Implement Tcl_Pkg* functions as
