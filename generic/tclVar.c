@@ -1234,6 +1234,7 @@ TclLookupArrayElement(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetVar
 const char *
 Tcl_GetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -1556,6 +1557,7 @@ Tcl_SetObjCmd(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetVar
 const char *
 Tcl_SetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -2146,6 +2148,7 @@ TclPtrIncrObjVar(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UnsetVar
 int
 Tcl_UnsetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -3785,6 +3788,7 @@ TclPtrObjMakeUpvar(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UpVar
 int
 Tcl_UpVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
