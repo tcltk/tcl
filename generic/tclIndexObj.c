@@ -90,6 +90,7 @@ typedef struct {
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetIndexFromObj
 int
 Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr)
     Tcl_Interp *interp; 	/* Used for error reporting if not NULL. */
