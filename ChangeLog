@@ -1,8 +1,3 @@
-2013-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
-
-	* generic/tclDecls.h: Implement Tcl_Pkg* functions as
-	(faster/stack-saving) macros around Tcl_Pkg*Ex functions.
-
 2013-04-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/regc_color.c:	[Bug 3610026] Stop crash when the number of
