@@ -2801,6 +2801,7 @@ DisposeTraceResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UntraceVar
 void
 Tcl_UntraceVar(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
@@ -2970,6 +2971,7 @@ Tcl_UntraceVar2(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_VarTraceInfo
 ClientData
 Tcl_VarTraceInfo(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
@@ -3080,6 +3082,7 @@ Tcl_VarTraceInfo2(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_TraceVar
 int
 Tcl_TraceVar(
     Tcl_Interp *interp,		/* Interpreter in which variable is to be
