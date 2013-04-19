@@ -1,3 +1,11 @@
+2013-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_Pkg* functions as
+	(faster/stack-saving) macros around Tcl_Pkg*Ex functions.
+	The same for many Tcl_*Var* functions around their
+	Tcl_*Var*2 equivalent and Tcl_GetIndexFromObj around
+	Tcl_GetIndexFromObjStruct.
+
 2013-04-09  Reinhard Max  <max@suse.de>
 
 	* library/http/http.tcl (http::geturl): Allow URLs that don't have

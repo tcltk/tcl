@@ -1006,6 +1006,7 @@ TclLookupArrayElement(interp, arrayName, elName, flags, msg, createArray, create
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetVar
 CONST char *
 Tcl_GetVar(interp, varName, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
@@ -1320,6 +1321,7 @@ Tcl_SetObjCmd(dummy, interp, objc, objv)
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetVar
 CONST char *
 Tcl_SetVar(interp, varName, newValue, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
@@ -1918,6 +1920,7 @@ TclPtrIncrVar(interp, varPtr, arrayPtr, part1, part2, incrAmount, flags)
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UnsetVar
 int
 Tcl_UnsetVar(interp, varName, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
@@ -2222,6 +2225,7 @@ UnsetVarStruct(varPtr, arrayPtr, iPtr, part1, part2, flags)
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_TraceVar
 int
 Tcl_TraceVar(interp, varName, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter in which variable is
@@ -2340,6 +2344,7 @@ Tcl_TraceVar2(interp, part1, part2, flags, proc, clientData)
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UntraceVar
 void
 Tcl_UntraceVar(interp, varName, flags, proc, clientData)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
@@ -2485,6 +2490,7 @@ Tcl_UntraceVar2(interp, part1, part2, flags, proc, clientData)
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_VarTraceInfo
 ClientData
 Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData)
     Tcl_Interp *interp;		/* Interpreter containing variable. */
@@ -3690,6 +3696,7 @@ ObjMakeUpvar(interp, framePtr, otherP1Ptr, otherP2, otherFlags, myName, myFlags,
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UpVar
 int
 Tcl_UpVar(interp, frameName, varName, localName, flags)
     Tcl_Interp *interp;		/* Command interpreter in which varName is
