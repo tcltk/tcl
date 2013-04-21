@@ -675,7 +675,7 @@ const TclStubs tclStubs = {
     Tcl_DbDecrRefCount, /* 19 */
     Tcl_DbIncrRefCount, /* 20 */
     Tcl_DbIsShared, /* 21 */
-    0, /* 22 */
+    Tcl_DbNewBooleanObj, /* 22 */
     Tcl_DbNewByteArrayObj, /* 23 */
     Tcl_DbNewDoubleObj, /* 24 */
     Tcl_DbNewListObj, /* 25 */
@@ -702,19 +702,19 @@ const TclStubs tclStubs = {
     Tcl_ListObjIndex, /* 46 */
     Tcl_ListObjLength, /* 47 */
     Tcl_ListObjReplace, /* 48 */
-    0, /* 49 */
+    Tcl_NewBooleanObj, /* 49 */
     Tcl_NewByteArrayObj, /* 50 */
     Tcl_NewDoubleObj, /* 51 */
-    0, /* 52 */
+    Tcl_NewIntObj, /* 52 */
     Tcl_NewListObj, /* 53 */
     Tcl_NewLongObj, /* 54 */
     Tcl_NewObj, /* 55 */
     Tcl_NewStringObj, /* 56 */
-    0, /* 57 */
+    Tcl_SetBooleanObj, /* 57 */
     Tcl_SetByteArrayLength, /* 58 */
     Tcl_SetByteArrayObj, /* 59 */
     Tcl_SetDoubleObj, /* 60 */
-    0, /* 61 */
+    Tcl_SetIntObj, /* 61 */
     Tcl_SetListObj, /* 62 */
     Tcl_SetLongObj, /* 63 */
     Tcl_SetObjLength, /* 64 */
