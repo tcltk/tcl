@@ -6560,6 +6560,15 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
 	Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, \
 	sizeof(char *), msg, flags, indexPtr)
+#undef Tcl_NewBooleanObj
+#define Tcl_NewBooleanObj(boolValue) \
+	Tcl_NewIntObj((boolValue)!=0)
+#undef Tcl_DbNewBooleanObj
+#define Tcl_DbNewBooleanObj(boolValue, file, line) \
+	Tcl_DbNewLongObj((boolValue)!=0, file, line)
+#undef Tcl_SetBooleanObj
+#define Tcl_SetBooleanObj(objPtr, boolValue) \
+	Tcl_SetIntObj((objPtr), (boolValue)!=0)
 #undef Tcl_SetVar
 #define Tcl_SetVar(interp, varName, newValue, flags) \
 	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
@@ -6585,6 +6594,7 @@ extern TclStubs *tclStubsPtr;
 /*
  * Deprecated Tcl procedures:
  */
+
 #undef Tcl_EvalObj
 #define Tcl_EvalObj(interp,objPtr) \
     Tcl_EvalObjEx((interp),(objPtr),0)
@@ -6593,4 +6603,3 @@ extern TclStubs *tclStubsPtr;
     Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 
 #endif /* _TCLDECLS */
-
