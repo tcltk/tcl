@@ -1,3 +1,23 @@
+2013-04-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_NewBooleanObj, Tcl_DbNewBooleanObj
+	and Tcl_SetBooleanObj as macros using Tcl_NewIntObj, Tcl_DbNewLongObj
+	and Tcl_SetIntObj. Starting with Tcl 8.5, this is exactly the same,
+	it only eliminates code duplication.
+	* generic/tclInt.h: Eliminate use of NO_WIDE_TYPE everywhere: It's
+	exactly the same as TCL_WIDE_INT_IS_LONG
+
+2013-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement many Tcl_*Var* functions and
+	Tcl_GetIndexFromObj as (faster/stack-saving) macros around resp
+	their Tcl_*Var*2 equivalent and Tcl_GetIndexFromObjStruct.
+
+2013-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_Pkg* functions as
+	(faster/stack-saving) macros around Tcl_Pkg*Ex functions.
+
 2013-04-08  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/regc_color.c:	[Bug 3610026] Stop crash when the number of
