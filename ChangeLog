@@ -1,3 +1,12 @@
+2013-04-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_NewBooleanObj, Tcl_DbNewBooleanObj
+	and Tcl_SetBooleanObj as macros using Tcl_NewIntObj, Tcl_DbNewLongObj
+	and Tcl_SetIntObj. Starting with Tcl 8.5, this is exactly the same,
+	it only eliminates code duplication.
+	* generic/tclInt.h: Eliminate use of NO_WIDE_TYPE everywhere: It's
+	exactly the same as TCL_WIDE_INT_IS_LONG
+
 2013-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclDecls.h: Implement many Tcl_*Var* functions and
@@ -8600,15 +8609,14 @@
 	implementation of the mkstemp() function, which is apparently needed
 	on some platforms.
 
-        ******************************************************************
-        *** CHANGELOG ENTRIES FOR 2008 IN "ChangeLog.2008"             ***
-        *** CHANGELOG ENTRIES FOR 2006-2007 IN "ChangeLog.2007"        ***
-        *** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"             ***
-        *** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"             ***
-        *** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"             ***
-        *** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"             ***
-        *** CHANGELOG ENTRIES FOR 2001 IN "ChangeLog.2001"             ***
-        *** CHANGELOG ENTRIES FOR 2000 IN "ChangeLog.2000"             ***
-        *** CHANGELOG ENTRIES FOR 1999 AND EARLIER IN "ChangeLog.1999" ***
-        ******************************************************************
-
+	******************************************************************
+	*** CHANGELOG ENTRIES FOR 2008 IN "ChangeLog.2008"             ***
+	*** CHANGELOG ENTRIES FOR 2006-2007 IN "ChangeLog.2007"        ***
+	*** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"             ***
+	*** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"             ***
+	*** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"             ***
+	*** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"             ***
+	*** CHANGELOG ENTRIES FOR 2001 IN "ChangeLog.2001"             ***
+	*** CHANGELOG ENTRIES FOR 2000 IN "ChangeLog.2000"             ***
+	*** CHANGELOG ENTRIES FOR 1999 AND EARLIER IN "ChangeLog.1999" ***
+	******************************************************************
