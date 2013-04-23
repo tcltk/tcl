@@ -1700,14 +1700,14 @@ Tcl_InvalidateStringRep(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewBooleanObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
     register int boolValue)	/* Boolean used to initialize new object. */
 {
-    return Tcl_DbNewBooleanObj(boolValue, "unknown", 0);
+    return Tcl_DbNewLongObj(boolValue!=0, "unknown", 0);
 }
 
 #else /* if not TCL_MEM_DEBUG */
@@ -1718,7 +1718,7 @@ Tcl_NewBooleanObj(
 {
     register Tcl_Obj *objPtr;
 
-    TclNewBooleanObj(objPtr, boolValue);
+    TclNewIntObj(objPtr, boolValue!=0);
     return objPtr;
 }
 #endif /* TCL_MEM_DEBUG */
@@ -1749,6 +1749,7 @@ Tcl_NewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DbNewBooleanObj
 #ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
@@ -1801,6 +1802,7 @@ Tcl_DbNewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetBooleanObj
 void
 Tcl_SetBooleanObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
@@ -1810,7 +1812,7 @@ Tcl_SetBooleanObj(
 	Tcl_Panic("%s called with shared object", "Tcl_SetBooleanObj");
     }
 
-    TclSetBooleanObj(objPtr, boolValue);
+    TclSetIntObj(objPtr, boolValue!=0);
 }
 
 /*
