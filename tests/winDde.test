@@ -2,7 +2,7 @@
 #
 # This file contains a collection of tests for one or more of the Tcl
 # built-in commands.  Sourcing this file into Tcl runs the tests and
-# generates output for errors.  No output means no errors were found.
+# generates output for errors. No output means no errors were found.
 #
 # Copyright (c) 1999 by Scriptics Corporation.
 #
@@ -66,6 +66,8 @@ proc createChildProcess { ddeServerName } {
     return $f
 }
 
+# -------------------------------------------------------------------------
+
 test winDde-1.1 {Settings the server's topic name} {pcOnly} {
     list [dde servername foobar] [dde servername] [dde servername self]
 }  {foobar foobar self}
@@ -83,6 +85,8 @@ test winDde-2.3 {Checking for existence, with only the service specified} \
 	{pcOnly} {
     expr [llength [dde services TclEval {}]] >= 1
 } 1
+
+# -------------------------------------------------------------------------
 
 test winDde-3.1 {DDE execute locally} {pcOnly} {
     set a ""
@@ -114,47 +118,48 @@ test winDde-3.5 {DDE request locally} {pcOnly} {
     dde request -binary TclEval self a
 } "foo\x00"
 
+# -------------------------------------------------------------------------
+
 test winDde-4.1 {DDE execute remotely} {stdio pcOnly} {
-    list [catch {
-        set a ""
-        set child [createChildProcess child]
-        dde execute TclEval child {set a "foo"}
-        dde execute TclEval child {set done 1}
-        set a
-    } err] $err
-} [list 0 ""]
+    set a ""
+    set name child-4.1
+    set child [createChildProcess $name]
+    dde execute TclEval $name {set a "foo"}
+    dde execute TclEval $name {set done 1}
+    update
+    set a
+} ""
+test winDde-4.2 {DDE execute async remotely} {stdio pcOnly} {
+    set a ""
+    set name child-4.2
+    set child [createChildProcess $name]
+    dde execute -async TclEval $name {set a "foo"}
+    update
+    dde execute TclEval $name {set done 1}
+    update
+    set a
+} ""
+test winDde-4.3 {DDE request remotely} {stdio pcOnly} {
+    set a ""
+    set name chile-4.3
+    set child [createChildProcess $name]
+    dde execute TclEval $name {set a "foo"}
+    set a [dde request TclEval $name a]
+    dde execute TclEval $name {set done 1}
+    update
+    set a
+} foo
+test winDde-4.4 {DDE eval remotely} {stdio pcOnly} {
+    set a ""
+    set name child-4.4
+    set child [createChildProcess $name]
+    set a [dde eval $name set a "foo"]
+    dde execute TclEval $name {set done 1}
+    update
+    set a
+} foo
 
-test winDde-4.2 {DDE execute remotely} {stdio pcOnly} {
-    list [catch {
-        set a ""
-        set child [createChildProcess child]
-        dde execute -async TclEval child {set a "foo"}
-        after 400 {set ::_dde_forever 1} ; vwait ::_dde_forever; #update
-        dde execute TclEval child {set done 1}
-        set a
-    } err] $err
-} [list 0 ""]
-
-test winDde-4.3 {DDE request locally} {stdio pcOnly} {
-    list [catch {
-        set a ""
-        set child [createChildProcess child]
-        dde execute TclEval child {set a "foo"}
-        set a [dde request TclEval child a]
-        dde execute TclEval child {set done 1}
-        set a
-    } err] $err
-} [list 0 foo]
-
-test winDde-4.4 {DDE eval locally} {stdio pcOnly} {
-    list [catch {
-        set a ""
-        set child [createChildProcess child]
-        set a [dde eval child set a "foo"]
-        dde execute TclEval child {set done 1}
-        set a
-    } err] $err
-} [list 0 foo]
+# -------------------------------------------------------------------------
 
 test winDde-5.1 {check for bad arguments} {pcOnly} {
     catch {dde execute "" "" "" ""} result
@@ -175,7 +180,14 @@ test winDde-5.4 {DDE eval bad arguments} {pcOnly} {
     list [catch {dde eval "" "foo"} msg] $msg
 } {1 {invalid service name ""}}
 
+# -------------------------------------------------------------------------
+
 #cleanup
+#catch {interp delete $slave};           # ensure we clean up the slave.
 file delete -force $::scriptName
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:
