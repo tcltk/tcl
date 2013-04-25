@@ -11,6 +11,7 @@
  */
 
 #include "tclInt.h"
+#include "tclPort.h"
 #include <dde.h>
 #include <ddeml.h>
 
@@ -78,7 +79,6 @@ static DWORD ddeInstance;	/* The application instance handle given to us
 				 * by DdeInitialize. */
 static int ddeIsServer = 0;
 
-#define TCL_DDE_VERSION		"1.3.3"
 #define TCL_DDE_PACKAGE_NAME	"dde"
 #define TCL_DDE_SERVICE_NAME	"TclEval"
 #define TCL_DDE_EXECUTE_RESULT	"$TCLEVAL$EXECUTE$RESULT"
@@ -145,7 +145,7 @@ Dde_Init(
 
     Tcl_CreateObjCommand(interp, "dde", DdeObjCmd, NULL, NULL);
     Tcl_CreateExitHandler(DdeExitProc, NULL);
-    return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, TCL_DDE_VERSION);
+    return Tcl_PkgProvide(interp, TCL_DDE_PACKAGE_NAME, "1.3.3");
 }
 
 /*
