@@ -1229,7 +1229,7 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    if test "x${TCL_THREADS}" = "x0"; then
 		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
 	    fi
-	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde12.dll" -a ! -f "../win/tk84.dll"; then
+	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde13.dll" -a ! -f "../win/tk84.dll"; then
 		AC_MSG_ERROR([Please configure and make the ../win directory first.])
 	    fi
 	    ;;
