@@ -81,8 +81,6 @@ TCL_DECLARE_MUTEX(exitMutex)
  */
 
 static int inFinalize = 0;
-static int subsystemsInitialized = 0;
-
 /*
  * This variable contains the application wide exit handler. It will be
  * called by Tcl_Exit instead of the C-runtime exit if this variable is set
@@ -934,27 +932,36 @@ Tcl_Exit(
  *-------------------------------------------------------------------------
  */
 
+#define INITDEBUG 1
+typedef enum {
+    DOWN, CHANGING, UP
+} State;
+
+static State initState = DOWN;
+static Tcl_ThreadId changer = NULL;
+
 void
 TclInitSubsystems(void)
 {
-    if (inFinalize != 0) {
-	Tcl_Panic("TclInitSubsystems called while finalizing");
+  start:
+    if (initState == UP) {
+	goto done;
     }
 
-    if (subsystemsInitialized == 0) {
+    if (initState == DOWN) {
 	/*
-	 * Double check inside the mutex. There are definitly calls back into
-	 * this routine from some of the functions below.
+	 * Enter the race to become the thread to change initState from
+	 * DOWN to UP.
 	 */
 
 	TclpInitLock();
-	if (subsystemsInitialized == 0) {
-	    /*
-	     * Have to set this bit here to avoid deadlock with the routines
-	     * below us that call into TclInitSubsystems.
-	     */
 
-	    subsystemsInitialized = 1;
+	/* Did we win? */
+	if (initState == DOWN) {
+
+	    /* Yes! Record that we are CHANGING the state */
+	    initState = CHANGING;
+	    changer = Tcl_GetCurrentThread();
 
 	    /*
 	     * Initialize locks used by the memory allocators before anything
@@ -980,9 +987,39 @@ TclInitSubsystems(void)
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclpSetInterfaces();
     	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+
+	    /* Record that the state is now UP */
+	    initState = UP;
+	    changer = NULL;
 	}
 	TclpInitUnlock();
+    } else {
+	/* initState != DOWN */
+	if (changer == Tcl_GetCurrentThread()) {
+	    /*
+	     * We're the thread changing state and must have reached here via
+	     * a recursive call.  Return as a no-op to avoid deadlock.
+	     * NOTE: This really should not be happening, and the caller
+	     * responsible for this recursion is in danger of seeing a
+	     * call to TclInitSubsystems() return even though initialization
+	     * is not complete.  Consider adding a panic here, at least in
+	     * some build configurations to hunt down and eliminate such
+	     * things. 
+	     */
+#if INITDEBUG
+	    Tcl_Panic("recursion in TclInitSubsystems");
+#endif
+	    return;
+	}
+	/*
+	 * A change of state is in progress in another thread.  Make
+	 * sure we wait for it to finish before trying again.
+	 */
+	TclpInitLock();
+	TclpInitUnlock();
+	goto start;
     }
+  done:
     TclInitNotifier();
 }
 
@@ -1031,11 +1068,17 @@ Tcl_Finalize(void)
     firstExitPtr = NULL;
     Tcl_MutexUnlock(&exitMutex);
 
-    TclpInitLock();
-    if (subsystemsInitialized == 0) {
+    start:
+    if (initState == DOWN) {
 	goto alreadyFinalized;
     }
-    subsystemsInitialized = 0;
+
+    if (initState == UP) {
+
+	TclpInitLock();
+	if (initState == UP) {
+	    initState = CHANGING;
+	    changer = Tcl_GetCurrentThread();
 
     /*
      * Ensure the thread-specific data is initialised as it is used in
@@ -1184,7 +1227,22 @@ Tcl_Finalize(void)
      */
 
     TclFinalizeMemorySubsystem();
-    inFinalize = 0;
+
+    initState = DOWN;
+    changer = NULL;
+    }
+    TclpInitUnlock();
+    } else {
+	if (changer == Tcl_GetCurrentThread()) {
+#if INITDEBUG
+	    Tcl_Panic("recursion in Tcl_Finalize()");
+#endif
+	    return;
+	}
+	TclpInitLock();
+	TclpInitUnlock();
+	goto start;
+    }
 
   alreadyFinalized:
     TclFinalizeLock();
