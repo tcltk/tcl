@@ -605,6 +605,15 @@ auto_mkindex_parser::command namespace {op args} {
             }
             catch {$parser eval "_%@namespace import $args"}
         }
+	ensemble {
+	    variable parser
+	    variable contextStack
+	    if {[lindex $args 0] eq "create"} {
+		set name ::[join [lreverse $contextStack] ::]
+		# create artifical proc to force an entry in the tclIndex
+		$parser eval [list ::proc $name {} {}]
+	    }
+	}
     }
 }
 

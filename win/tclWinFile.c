@@ -1537,14 +1537,9 @@ NativeAccess(
 	 * File might not exist.
 	 */
 
-	WIN32_FIND_DATA ffd;
-	HANDLE hFind;
-	hFind = FindFirstFile(nativePath, &ffd);
-	if (hFind != INVALID_HANDLE_VALUE) {
-	    attr = ffd.dwFileAttributes;
-	    FindClose(hFind);
-	} else {
-	    TclWinConvertError(GetLastError());
+	DWORD lasterror = GetLastError();
+	if (lasterror != ERROR_SHARING_VIOLATION) {
+	    TclWinConvertError(lasterror);
 	    return -1;
 	}
     }
@@ -2002,15 +1997,17 @@ NativeStat(
 
 	if (GetFileAttributesEx(nativePath,
 		GetFileExInfoStandard, &data) != TRUE) {
-	    /*
-	     * We might have just been denied access
-	     */
-
+	    HANDLE hFind;
 	    WIN32_FIND_DATA ffd;
-	    HANDLE hFind = FindFirstFile(nativePath, &ffd);
+	    DWORD lasterror = GetLastError();
 
+	    if (lasterror != ERROR_SHARING_VIOLATION) {
+		TclWinConvertError(lasterror);
+		return -1;
+		}
+	    hFind = FindFirstFile(nativePath, &ffd);
 	    if (hFind == INVALID_HANDLE_VALUE) {
-		Tcl_SetErrno(ENOENT);
+		TclWinConvertError(GetLastError());
 		return -1;
 	    }
 	    memcpy(&data, &ffd, sizeof(data));
