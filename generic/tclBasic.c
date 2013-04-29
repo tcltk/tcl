@@ -5848,6 +5848,7 @@ Tcl_Eval(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_EvalObj
 int
 Tcl_EvalObj(
     Tcl_Interp *interp,
@@ -5855,6 +5856,7 @@ Tcl_EvalObj(
 {
     return Tcl_EvalObjEx(interp, objPtr, 0);
 }
+#undef Tcl_GlobalEvalObj
 int
 Tcl_GlobalEvalObj(
     Tcl_Interp *interp,
@@ -6743,6 +6745,7 @@ Tcl_ExprString(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_AddObjErrorInfo
 void
 Tcl_AppendObjToErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
@@ -6807,7 +6810,6 @@ Tcl_AddErrorInfo(
  *----------------------------------------------------------------------
  */
 
-#undef Tcl_AddObjErrorInfo
 void
 Tcl_AddObjErrorInfo(
     Tcl_Interp *interp,		/* Interpreter to which error information
@@ -7477,7 +7479,7 @@ ExprAbsFunc(
 	return TCL_OK;
     }
 
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
     if (type == TCL_NUMBER_WIDE) {
 	Tcl_WideInt w = *((const Tcl_WideInt *) ptr);
 

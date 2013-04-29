@@ -449,11 +449,44 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 
 AC_DEFUN([SC_PROG_TCLSH], [
     AC_MSG_CHECKING([for tclsh])
+
     AC_CACHE_VAL(ac_cv_path_tclsh, [
 	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
-	for dir in $search_path ; do
-	    for j in `ls -r $dir/tclsh[[8-9]]* 2> /dev/null` \
-		    `ls -r $dir/tclsh* 2> /dev/null` ; do
+        # Attempt to find Tcl8.6
+
+        for dir in $search_path ; do
+          for j in \
+            `ls -r $dir/tclsh8[[6-9]] 2> /dev/null` \
+            ; do
+              if test x"$ac_cv_path_tclsh" = x ; then
+                  if test -f "$j" ; then
+                      ac_cv_path_tclsh=$j
+                      break
+                  fi
+              fi
+          done
+        done
+        if test -e "$ac_cv_path_tclsh" ; then
+          # Attempt to find Tcl9+ or later
+          for dir in $search_path ; do
+            for j in \
+              `ls -r $dir/tclsh9* 2> /dev/null` \
+              ; do
+                if test x"$ac_cv_path_tclsh" = x ; then
+                    if test -f "$j" ; then
+                        ac_cv_path_tclsh=$j
+                        break
+                    fi
+                fi
+            done
+          done
+        fi
+        if test -e "$ac_cv_path_tclsh" ; then
+          # Attempt to find any tclsh8.5 on the system
+	  for dir in $search_path ; do
+	    for j in \
+              `ls -r $dir/tclsh8[[5-9]] 2> /dev/null` \
+              ; do
 		if test x"$ac_cv_path_tclsh" = x ; then
 		    if test -f "$j" ; then
 			ac_cv_path_tclsh=$j
@@ -461,12 +494,28 @@ AC_DEFUN([SC_PROG_TCLSH], [
 		    fi
 		fi
 	    done
-	done
+	  done
+        fi
+        if test -e "$ac_cv_path_tclsh" ; then
+          # Attempt to find any tclsh on the system
+          for dir in $search_path ; do
+              for j in \
+                `ls -r $dir/tclsh* 2> /dev/null` \
+                ; do
+                  if test x"$ac_cv_path_tclsh" = x ; then
+                      if test -f "$j" ; then
+                          ac_cv_path_tclsh=$j
+                          break
+                      fi
+                  fi
+              done
+          done
+        fi
     ])
 
     if test -f "$ac_cv_path_tclsh" ; then
 	TCLSH_PROG="$ac_cv_path_tclsh"
-	AC_MSG_RESULT([$TCLSH_PROG])
+	AC_MSG_RESULT($TCLSH_PROG)
     else
 	# It is not an error if an installed version of Tcl can't be located.
 	TCLSH_PROG=""

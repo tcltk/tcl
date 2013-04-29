@@ -11,7 +11,7 @@
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.6
+package provide http 2.8.7
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -394,13 +394,16 @@ proc http::geturl {url args} {
     # First, before the colon, is the protocol scheme (e.g. http)
     # Second, for HTTP-like protocols, is the authority
     #	The authority is preceded by // and lasts up to (but not including)
-    #	the following / and it identifies up to four parts, of which only one,
-    #	the host, is required (if an authority is present at all). All other
-    #	parts of the authority (user name, password, port number) are optional.
+    #	the following / or ? and it identifies up to four parts, of which
+    #	only one, the host, is required (if an authority is present at all).
+    #	All other parts of the authority (user name, password, port number)
+    #	are optional.
     # Third is the resource name, which is split into two parts at a ?
     #	The first part (from the single "/" up to "?") is the path, and the
     #	second part (from that "?" up to "#") is the query. *HOWEVER*, we do
     #	not need to separate them; we send the whole lot to the server.
+    #	Both, path and query are allowed to be missing, including their
+    #	delimiting character.
     # Fourth is the fragment identifier, which is everything after the first
     #	"#" in the URL. The fragment identifier MUST NOT be sent to the server
     #	and indeed, we don't bother to validate it (it could be an error to
@@ -437,7 +440,7 @@ proc http::geturl {url args} {
 	    )
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
-	( / [^\#]*)?			# <path> (including query)
+	( [/\?] [^\#]*)?		# <path> (including query)
 	(?: \# (.*) )?			# <fragment>
 	$
     }
@@ -481,6 +484,12 @@ proc http::geturl {url args} {
 	}
     }
     if {$srvurl ne ""} {
+	# RFC 3986 allows empty paths (not even a /), but servers
+	# return 400 if the path in the HTTP request doesn't start
+	# with / , so add it here if needed.
+	if {[string index $srvurl 0] ne "/"} {
+	    set srvurl /$srvurl
+	}
 	# Check for validity according to RFC 3986, Appendix A
 	set validityRE {(?xi)
 	    ^

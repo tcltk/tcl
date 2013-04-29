@@ -1156,9 +1156,40 @@ AC_DEFUN([SC_PROG_TCLSH], [
 
     AC_CACHE_VAL(ac_cv_path_tclsh, [
 	search_path=`echo ${PATH} | sed -e 's/:/ /g'`
-	for dir in $search_path ; do
-	    for j in `ls -r $dir/tclsh[[8-9]]*.exe 2> /dev/null` \
-		    `ls -r $dir/tclsh* 2> /dev/null` ; do
+        # Attempt to find Tcl8.6
+        for dir in $search_path ; do
+          for j in \
+            `ls -r $dir/tclsh8[[6-9]]*.exe 2> /dev/null` \
+            ; do
+              if test x"$ac_cv_path_tclsh" = x ; then
+                  if test -f "$j" ; then
+                      ac_cv_path_tclsh=$j
+                      break
+                  fi
+              fi
+          done
+        done
+        if test -e "$ac_cv_path_tclsh" ; then
+          # Attempt to find Tcl9+ or later
+          for dir in $search_path ; do
+            for j in \
+              `ls -r $dir/tclsh9*.exe 2> /dev/null` \
+              ; do
+                if test x"$ac_cv_path_tclsh" = x ; then
+                    if test -f "$j" ; then
+                        ac_cv_path_tclsh=$j
+                        break
+                    fi
+                fi
+            done
+          done
+        fi
+        if test -e "$ac_cv_path_tclsh" ; then
+          # Attempt to find any tclsh8.5 on the system
+	  for dir in $search_path ; do
+	    for j in \
+              `ls -r $dir/tclsh8[[5-9]]*.exe 2> /dev/null` \
+              ; do
 		if test x"$ac_cv_path_tclsh" = x ; then
 		    if test -f "$j" ; then
 			ac_cv_path_tclsh=$j
@@ -1166,7 +1197,23 @@ AC_DEFUN([SC_PROG_TCLSH], [
 		    fi
 		fi
 	    done
-	done
+	  done
+        fi
+        if test -e "$ac_cv_path_tclsh" ; then
+          # Attempt to find any tclsh on the system
+          for dir in $search_path ; do
+              for j in \
+                `ls -r $dir/tclsh* 2> /dev/null` \
+                ; do
+                  if test x"$ac_cv_path_tclsh" = x ; then
+                      if test -f "$j" ; then
+                          ac_cv_path_tclsh=$j
+                          break
+                      fi
+                  fi
+              done
+          done
+        fi
     ])
 
     if test -f "$ac_cv_path_tclsh" ; then

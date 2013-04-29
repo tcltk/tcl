@@ -1,7 +1,93 @@
+2013-04-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileArraySetCmd): Generate better code
+	when the list of things to set is a literal.
+
+2013-04-23  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_NewBooleanObj, Tcl_DbNewBooleanObj
+	and Tcl_SetBooleanObj as macros using Tcl_NewIntObj, Tcl_DbNewLongObj
+	and Tcl_SetIntObj. Starting with Tcl 8.5, this is exactly the same,
+	it only eliminates code duplication.
+	* generic/tclInt.h: Eliminate use of NO_WIDE_TYPE everywhere: It's
+	exactly the same as TCL_WIDE_INT_IS_LONG
+
+2013-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement many Tcl_*Var* functions and
+	Tcl_GetIndexFromObj as (faster/stack-saving) macros around resp
+	their Tcl_*Var*2 equivalent and Tcl_GetIndexFromObjStruct.
+
+2013-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_Pkg* functions as
+	(faster/stack-saving) macros around Tcl_Pkg*Ex functions.
+
+2013-04-08  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/regc_color.c:	[Bug 3610026] Stop crash when the number of
+	* generic/regerrs.h:	"colors" in a regular expression overflows
+	* generic/regex.h:	a short int.  Thanks to Heikki Linnakangas
+	* generic/regguts.h:	for the report and the patch.
+	* tests/regexp.test:
+
+2013-04-04  Reinhard Max  <max@suse.de>
+
+	* library/http/http.tcl (http::geturl): Allow URLs that don't have
+	a path, but a query query, e.g. http://example.com?foo=bar .
+	* Bump the http package to 2.8.7.
+
+2013-03-22  Venkat Iyer <venkat@comit.com>
+	* library/tzdata/Africa/Cairo: Update to tzdata2013b.
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/Africa/Gaborone:
+	* library/tzdata/Africa/Tripoli:
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/America/Barbados:
+	* library/tzdata/America/Bogota:
+	* library/tzdata/America/Costa_Rica:
+	* library/tzdata/America/Curacao:
+	* library/tzdata/America/Nassau:
+	* library/tzdata/America/Port-au-Prince:
+	* library/tzdata/America/Santiago:
+	* library/tzdata/Antarctica/Palmer:
+	* library/tzdata/Asia/Aden:
+	* library/tzdata/Asia/Hong_Kong:
+	* library/tzdata/Asia/Muscat:
+	* library/tzdata/Asia/Rangoon:
+	* library/tzdata/Asia/Shanghai:
+	* library/tzdata/Atlantic/Bermuda:
+	* library/tzdata/Europe/Vienna:
+	* library/tzdata/Pacific/Easter:
+	* library/tzdata/Pacific/Fiji:
+	* library/tzdata/Asia/Khandyga: (new)
+	* library/tzdata/Asia/Ust-Nera: (new)
+	* library/tzdata/Europe/Busingen: (new)
+
+2013-03-21  Don Porter  <dgp@users.sourceforge.net>
+
+	* library/auto.tcl: [Bug 2102614] Add ensemble indexing support
+	* tests/autoMkindex.test: to [auto_mkindex].  Thanks Brian Griffin.
+
+2013-03-19  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tclFCmd.c: [Bug 3597000] Consistent [file copy] result.
+	* tests/fileSystem.test:
+
+2013-03-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinFile.c: [Bug 3608360]: Incompatible behaviour of "file
+	exists".
+
+2013-03-18  Donal K. Fellows  <dkf@users.sf.net>
+
+	* tests/cmdAH.test (cmdAH-19.12): [Bug 3608360]: Added test to ensure
+	that we never ever allow [file exists] to do globbing.
+
 2013-03-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4: Patch by Andrew Shadura, providing better support for
-	* three architectures they have in Debian.
+	three architectures they have in Debian.
 
 2013-03-11  Don Porter  <dgp@users.sourceforge.net>
 
@@ -8532,15 +8618,14 @@
 	implementation of the mkstemp() function, which is apparently needed
 	on some platforms.
 
-        ******************************************************************
-        *** CHANGELOG ENTRIES FOR 2008 IN "ChangeLog.2008"             ***
-        *** CHANGELOG ENTRIES FOR 2006-2007 IN "ChangeLog.2007"        ***
-        *** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"             ***
-        *** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"             ***
-        *** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"             ***
-        *** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"             ***
-        *** CHANGELOG ENTRIES FOR 2001 IN "ChangeLog.2001"             ***
-        *** CHANGELOG ENTRIES FOR 2000 IN "ChangeLog.2000"             ***
-        *** CHANGELOG ENTRIES FOR 1999 AND EARLIER IN "ChangeLog.1999" ***
-        ******************************************************************
-
+	******************************************************************
+	*** CHANGELOG ENTRIES FOR 2008 IN "ChangeLog.2008"             ***
+	*** CHANGELOG ENTRIES FOR 2006-2007 IN "ChangeLog.2007"        ***
+	*** CHANGELOG ENTRIES FOR 2005 IN "ChangeLog.2005"             ***
+	*** CHANGELOG ENTRIES FOR 2004 IN "ChangeLog.2004"             ***
+	*** CHANGELOG ENTRIES FOR 2003 IN "ChangeLog.2003"             ***
+	*** CHANGELOG ENTRIES FOR 2002 IN "ChangeLog.2002"             ***
+	*** CHANGELOG ENTRIES FOR 2001 IN "ChangeLog.2001"             ***
+	*** CHANGELOG ENTRIES FOR 2000 IN "ChangeLog.2000"             ***
+	*** CHANGELOG ENTRIES FOR 1999 AND EARLIER IN "ChangeLog.1999" ***
+	******************************************************************
