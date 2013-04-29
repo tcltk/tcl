@@ -1,3 +1,8 @@
+2013-04-29  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileArraySetCmd): Generate better code
+	when the list of things to set is a literal.
+
 2013-04-23  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclDecls.h: Implement Tcl_NewBooleanObj, Tcl_DbNewBooleanObj
