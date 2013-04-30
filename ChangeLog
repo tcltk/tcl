@@ -1,3 +1,11 @@
+2013-04-30  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl (::platform::LibcVersion):
+	* library/platform/pkgIndex.tcl: Followup to the 2013-01-30
+	  change. The RE become too restrictive again. SuSe added a
+	  timestamp after the version. Loosened up a bit. Bumped package
+	  to version 1.0.12.
+
 2013-04-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* win/tclWinDde.c:		Update dde to version 1.3.3.
