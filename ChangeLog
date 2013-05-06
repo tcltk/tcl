@@ -1,3 +1,12 @@
+2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit
+	* generic/tclDecls.h: "long" type. Binary compatibility with win64
+	requires that all stub entries use 32-bit long's, therefore the
+	need for various wrapper functions/macros. For Tcl 9 a better
+	solution is needed, but that cannot be done without introducing
+	binary incompatibility.
+
 2013-04-30  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl (::platform::LibcVersion):
