@@ -594,7 +594,7 @@ Tcl_RegsubObjCmd(
 	 */
 
 	int slen, nocase;
-	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long);
+	int (*strCmpFn)(const Tcl_UniChar*,const Tcl_UniChar*,size_t);
 	Tcl_UniChar *p, wsrclc;
 
 	numMatches = 0;
@@ -629,7 +629,7 @@ Tcl_RegsubObjCmd(
 		if ((*wstring == *wsrc ||
 			(nocase && Tcl_UniCharToLower(*wstring)==wsrclc)) &&
 			(slen==1 || (strCmpFn(wstring, wsrc,
-				(unsigned long) slen) == 0))) {
+				(size_t)slen) == 0))) {
 		    if (numMatches == 0) {
 			resultPtr = Tcl_NewUnicodeObj(wstring, 0);
 			Tcl_IncrRefCount(resultPtr);
@@ -1845,7 +1845,7 @@ StringMapCmd(
     int nocase = 0, mapWithDict = 0, copySource = 0;
     Tcl_Obj **mapElemv, *sourceObj, *resultPtr;
     Tcl_UniChar *ustring1, *ustring2, *p, *end;
-    int (*strCmpFn)(const Tcl_UniChar*, const Tcl_UniChar*, unsigned long);
+    int (*strCmpFn)(const Tcl_UniChar*, const Tcl_UniChar*, size_t);
 
     if (objc < 3 || objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-nocase? charMap string");
@@ -1986,7 +1986,7 @@ StringMapCmd(
 		if (((*ustring1 == *ustring2) ||
 			(nocase&&Tcl_UniCharToLower(*ustring1)==u2lc)) &&
 			(length2==1 || strCmpFn(ustring1, ustring2,
-				(unsigned long) length2) == 0)) {
+				(size_t) length2) == 0)) {
 		    if (p != ustring1) {
 			Tcl_AppendUnicodeToObj(resultPtr, p, ustring1-p);
 			p = ustring1 + length2;
@@ -2034,7 +2034,7 @@ StringMapCmd(
 			(Tcl_UniCharToLower(*ustring1) == u2lc[index/2]))) &&
 			/* Restrict max compare length. */
 			(end-ustring1 >= length2) && ((length2 == 1) ||
-			!strCmpFn(ustring2, ustring1, (unsigned) length2))) {
+			!strCmpFn(ustring2, ustring1, (size_t) length2))) {
 		    if (p != ustring1) {
 			/*
 			 * Put the skipped chars onto the result first.
@@ -2563,7 +2563,7 @@ StringEqualCmd(
 
     const char *string1, *string2;
     int length1, length2, i, match, length, nocase = 0, reqlength = -1;
-    typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
+    typedef int (*strCmpFn_t)(const char *, const char *, size_t);
     strCmpFn_t strCmpFn;
 
     if (objc < 3 || objc > 6) {
@@ -2713,7 +2713,7 @@ StringCmpCmd(
 
     const char *string1, *string2;
     int length1, length2, i, match, length, nocase = 0, reqlength = -1;
-    typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
+    typedef int (*strCmpFn_t)(const char *, const char *, size_t);
     strCmpFn_t strCmpFn;
 
     if (objc < 3 || objc > 6) {
@@ -2797,11 +2797,11 @@ StringCmpCmd(
 	string1 = (char *) TclGetStringFromObj(objv[0], &length1);
 	string2 = (char *) TclGetStringFromObj(objv[1], &length2);
 	if ((reqlength < 0) && !nocase) {
-	    strCmpFn = (strCmpFn_t) TclpUtfNcmp2;
+	    strCmpFn = TclpUtfNcmp2;
 	} else {
 	    length1 = Tcl_NumUtfChars(string1, length1);
 	    length2 = Tcl_NumUtfChars(string2, length2);
-	    strCmpFn = (strCmpFn_t) (nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp);
+	    strCmpFn = nocase ? Tcl_UtfNcasecmp : Tcl_UtfNcmp;
 	}
     }
 
@@ -2817,7 +2817,7 @@ StringCmpCmd(
 	reqlength = length + 1;
     }
 
-    match = strCmpFn(string1, string2, (unsigned) length);
+    match = strCmpFn(string1, string2, (size_t) length);
     if ((match == 0) && (reqlength > length)) {
 	match = length1 - length2;
     }

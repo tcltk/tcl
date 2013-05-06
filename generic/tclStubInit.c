@@ -209,9 +209,8 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
-	    Tcl_SetResult(interp,
-		    "integer value too large to represent as non-long integer",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "integer value too large to represent as non-long integer", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -226,31 +225,14 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
-	    Tcl_SetResult(interp,
-		    "integer value too large to represent as non-long integer",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "integer value too large to represent as non-long integer", -1));
 	    result = TCL_ERROR;
 	}
     }
     return result;
 }
 #define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
-static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcmp
-static int utfNcmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))utfNcmp
-static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
-   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
-}
-#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
-static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
-   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
-}
-#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
 static int formatInt(char *buffer, int n){
    return TclFormatInt(buffer, (long)n);
 }

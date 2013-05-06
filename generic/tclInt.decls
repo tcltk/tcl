@@ -703,7 +703,7 @@ declare 166 {
 #}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
-    int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
+    int TclpUtfNcmp2(const char *s1, const char *s2, size_t n)
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,

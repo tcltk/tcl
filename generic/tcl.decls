@@ -1278,7 +1278,7 @@ declare 352 {
 }
 declare 353 {
     int Tcl_UniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    unsigned long numChars)
+	    size_t numChars)
 }
 declare 354 {
     char *Tcl_UniCharToUtfDString(const Tcl_UniChar *uniStr,
@@ -1340,10 +1340,10 @@ declare 368 {
     int Tcl_Stat(const char *path, struct stat *bufPtr)
 }
 declare 369 {
-    int Tcl_UtfNcmp(const char *s1, const char *s2, unsigned long n)
+    int Tcl_UtfNcmp(const char *s1, const char *s2, size_t n)
 }
 declare 370 {
-    int Tcl_UtfNcasecmp(const char *s1, const char *s2, unsigned long n)
+    int Tcl_UtfNcasecmp(const char *s1, const char *s2, size_t n)
 }
 declare 371 {
     int Tcl_StringCaseMatch(const char *str, const char *pattern, int nocase)
@@ -1514,7 +1514,7 @@ declare 418 {
 }
 declare 419 {
     int Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct,
-	    unsigned long numChars)
+	    size_t numChars)
 }
 declare 420 {
     int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
