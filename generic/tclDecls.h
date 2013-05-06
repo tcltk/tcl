@@ -3740,6 +3740,54 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 #define Tcl_UpVar(interp, frameName, varName, localName, flags) \
 	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
 
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
+/* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
+ * we have to make sure that all stub entries on Cygwin64 follow the
+ * Win64 signature. Cygwin64 stubbed extensions cannot use those stub
+ * entries any more, they should use the 64-bit alternatives where
+ * possible. Tcl 9 must find a better solution, but that cannot be done
+ * without introducing a binary incompatibility.
+ */
+#	undef Tcl_DbNewLongObj
+#	undef Tcl_GetLongFromObj
+#	undef Tcl_NewLongObj
+#	undef Tcl_SetLongObj
+#	undef Tcl_ExprLong
+#	undef Tcl_ExprLongObj
+#	undef Tcl_UniCharNcmp
+#	undef Tcl_UtfNcmp
+#	undef Tcl_UtfNcasecmp
+#	undef Tcl_UniCharNcasecmp
+#	define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))Tcl_DbNewWideIntObj)
+#	define Tcl_GetLongFromObj ((int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetWideIntFromObj)
+#	define Tcl_NewLongObj ((Tcl_Obj*(*)(long))Tcl_NewWideIntObj)
+#	define Tcl_SetLongObj ((void(*)(Tcl_Obj*,long))Tcl_SetWideIntObj)
+#	define Tcl_ExprLong TclExprLong
+	static inline int TclExprLong(Tcl_Interp *interp, const char *string, long *ptr){
+	    int intValue;
+	    int result = tclStubsPtr->tcl_ExprLong(interp, string, (long *)&intValue);
+	    if (result == TCL_OK) *ptr = (long)intValue;
+	    return result;
+	}
+#	define Tcl_ExprLongObj TclExprLongObj
+	static inline int TclExprLongObj(Tcl_Interp *interp, Tcl_Obj *obj, long *ptr){
+	    int intValue;
+	    int result = tclStubsPtr->tcl_ExprLongObj(interp, obj, (long *)&intValue);
+	    if (result == TCL_OK) *ptr = (long)intValue;
+	    return result;
+	}
+#	define Tcl_UniCharNcmp(ucs,uct,n) \
+		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcmp)(ucs,uct,(unsigned int)(n))
+#	define Tcl_UtfNcmp(s1,s2,n) \
+		((int(*)(const char*,const char*,unsigned int))tclStubsPtr->tcl_UtfNcmp)(s1,s2,(unsigned int)(n))
+#	define Tcl_UtfNcasecmp(s1,s2,n) \
+		((int(*)(const char*,const char*,unsigned int))tclStubsPtr->tcl_UtfNcasecmp)(s1,s2,(unsigned int)(n))
+#	define Tcl_UniCharNcasecmp(ucs,uct,n) \
+		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcasecmp)(ucs,uct,(unsigned int)(n))
+#   endif
+#endif
+
 /*
  * Deprecated Tcl procedures:
  */

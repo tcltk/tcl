@@ -1565,9 +1565,7 @@ StringIsCmd(
 	/* TODO */
 	if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
-#ifndef TCL_WIDE_INT_IS_LONG
 		(objPtr->typePtr == &tclWideIntType) ||
-#endif
 		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
@@ -1602,9 +1600,7 @@ StringIsCmd(
 	goto failedIntParse;
     case STR_IS_ENTIER:
 	if ((objPtr->typePtr == &tclIntType) ||
-#ifndef TCL_WIDE_INT_IS_LONG
 		(objPtr->typePtr == &tclWideIntType) ||
-#endif
 		(objPtr->typePtr == &tclBignumType)) {
 	    break;
 	}
