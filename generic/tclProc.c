@@ -731,7 +731,7 @@ TclObjGetFrame(
 	}
 	/* TODO: Consider skipping the typePtr checks */
     } else if (objPtr->typePtr == &tclIntType
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	    || objPtr->typePtr == &tclWideIntType
 #endif
 	    ) {
