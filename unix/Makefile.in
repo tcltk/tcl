@@ -614,9 +614,6 @@ doc:
 ${LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f $@
 	@MAKE_LIB@
-	@if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
-	    cp ${ZLIB_DIR}/win32/zlib1.dll .;\
-	fi
 
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
@@ -787,11 +784,6 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
-	    echo "Installing zlib1.dll to $(BIN_INSTALL_DIR)/";\
-	    $(INSTALL_LIBRARY) zlib1.dll "$(BIN_INSTALL_DIR)";\
-	    chmod 555 "$(BIN_INSTALL_DIR)/zlib1.dll";\
-	fi
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"

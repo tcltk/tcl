@@ -35,10 +35,7 @@
 #undef Tcl_ValidateAllMemory
 #undef Tcl_FindHashEntry
 #undef Tcl_CreateHashEntry
-#undef Tcl_Panic
-#undef Tcl_FindExecutable
 #undef TclpGetPid
-#undef TclSockMinimumBuffers
 #undef TclPkgProvide
 #undef Tcl_SetIntObj
 
