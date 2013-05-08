@@ -8163,3 +8163,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 2012-12-13 (bug fix) crash: [zlib gunzip $data -header noSuchNs::var] (porter)
 
 --- Released 8.6.0, December 20, 2012 --- See ChangeLog for details ---
+
+2013-05-08 (bug fix)[3036566] Honor language packs on Vista+ to get initial locale (oehlmann)
+=> msgcat 1.5.2
+
