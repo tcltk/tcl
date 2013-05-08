@@ -35,7 +35,7 @@ msgcat \- Tcl message catalog
 \fB::msgcat::mcflmset \fIsrc-trans-list\fR
 .VE "TIP 404"
 .sp
-\fB::msgcat::mcunknown \fIlocale src-string \fR?\fargs\fR?
+\fB::msgcat::mcunknown \fIlocale src-string\fR ?\fIarg arg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -157,7 +157,7 @@ translate-string\fR ?\fIsrc-string translate-string ...\fR?}
 of \fB::msgcat::mcflset\fR. The function returns the number of translations set.
 .VE "TIP 404"
 .TP
-\fB::msgcat::mcunknown \fIlocale src-string \fR?\fargs\fR?
+\fB::msgcat::mcunknown \fIlocale src-string\fR ?\fIarg arg ...\fR?
 .
 This routine is called by \fB::msgcat::mc\fR in the case when
 a translation for \fIsrc-string\fR is not defined in the
