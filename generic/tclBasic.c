@@ -6268,7 +6268,7 @@ ProcessUnexpectedResult(
 				 * result code was returned. */
     int returnCode)		/* The unexpected result code. */
 {
-    char buf[TCL_INTEGER_SPACE];
+    Tcl_Obj *errorObj = Tcl_NewObj();
 
     Tcl_ResetResult(interp);
     if (returnCode == TCL_BREAK) {
@@ -6281,8 +6281,11 @@ ProcessUnexpectedResult(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"command returned bad code: %d", returnCode));
     }
-    sprintf(buf, "%d", returnCode);
-    Tcl_SetErrorCode(interp, "TCL", "UNEXPECTED_RESULT_CODE", buf, NULL);
+    Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj("TCL", -1));
+    Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewStringObj(
+	    "UNEXPECTED_RESULT_CODE", -1));
+    Tcl_ListObjAppendElement(NULL, errorObj, Tcl_NewIntObj(returnCode));
+    Tcl_SetObjErrorCode(interp, errorObj);
 }
 
 /*
