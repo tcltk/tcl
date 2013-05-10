@@ -309,7 +309,9 @@ typedef struct CompileEnv {
     int atCmdStart;		/* Flag to say whether an INST_START_CMD
 				 * should be issued; they should never be
 				 * issued repeatedly, as that is significantly
-				 * inefficient. */
+				 * inefficient. If set to 2, that instruction
+				 * should not be issued at all (by the generic
+				 * part of the command compiler). */
     ContLineLoc *clLoc;		/* If not NULL, the table holding the
 				 * locations of the invisible continuation
 				 * lines in the input script, to adjust the
@@ -713,8 +715,11 @@ typedef struct ByteCode {
 
 #define INST_INVOKE_REPLACE		163
 
+#define INST_LIST_CONCAT		164
+#define INST_LIST_EXPANDED		165
+
 /* The last opcode */
-#define LAST_INST_OPCODE		163
+#define LAST_INST_OPCODE		165
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -848,6 +853,9 @@ typedef struct ForeachInfo {
 
 MODULE_SCOPE const AuxDataType tclForeachInfoType;
 
+#define FOREACHINFO(envPtr, index) \
+    ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
+
 /*
  * Structure used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
@@ -860,6 +868,9 @@ typedef struct JumptableInfo {
 } JumptableInfo;
 
 MODULE_SCOPE const AuxDataType tclJumptableInfoType;
+
+#define JUMPTABLEINFO(envPtr, index) \
+    ((JumptableInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
 
 /*
  * Structure used to hold information about a [dict update] command that is
@@ -878,6 +889,9 @@ typedef struct {
 } DictUpdateInfo;
 
 MODULE_SCOPE const AuxDataType tclDictUpdateInfoType;
+
+#define DICTUPDATEINFO(envPtr, index) \
+    ((DictUpdateInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
 
 /*
  * ClientData type used by the math operator commands.
@@ -1090,6 +1104,18 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     } while (0)
 
 /*
+ * Macros used to update the flag that indicates if we are at the start of a
+ * command, based on whether the opcode is INST_START_COMMAND.
+ *
+ * void TclUpdateAtCmdStart(unsigned char op, CompileEnv *envPtr);
+ */
+
+#define TclUpdateAtCmdStart(op, envPtr) \
+    if ((envPtr)->atCmdStart < 2) {				     \
+	(envPtr)->atCmdStart = ((op) == INST_START_CMD ? 1 : 0);     \
+    }
+
+/*
  * Macro to emit an opcode byte into a CompileEnv's code array. The ANSI C
  * "prototype" for this macro is:
  *
@@ -1102,7 +1128,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	    TclExpandCodeArray(envPtr);				\
 	}							\
 	*(envPtr)->codeNext++ = (unsigned char) (op);		\
-	(envPtr)->atCmdStart = ((op) == INST_START_CMD);	\
+	TclUpdateAtCmdStart(op, envPtr);			\
 	TclUpdateStackReqs(op, 0, envPtr);			\
     } while (0)
 
@@ -1154,7 +1180,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
 	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
-	(envPtr)->atCmdStart = ((op) == INST_START_CMD);		\
+	TclUpdateAtCmdStart(op, envPtr);				\
 	TclUpdateStackReqs(op, i, envPtr);				\
     } while (0)
 
@@ -1172,7 +1198,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 		(unsigned char) ((unsigned int) (i) >>  8);	\
 	*(envPtr)->codeNext++ =					\
 		(unsigned char) ((unsigned int) (i)      );	\
-	(envPtr)->atCmdStart = ((op) == INST_START_CMD);	\
+	TclUpdateAtCmdStart(op, envPtr);			\
 	TclUpdateStackReqs(op, i, envPtr);			\
     } while (0)
 

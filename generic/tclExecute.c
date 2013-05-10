@@ -2338,6 +2338,14 @@ TEBCresume(
 	}
 	inst = *(pc += 9);
 	goto peepholeStart;
+    } else if (inst == INST_NOP) {
+#ifndef TCL_COMPILE_DEBUG
+	while (inst == INST_NOP)
+#endif
+	{
+	    inst = *++pc;
+	}
+	goto peepholeStart;
     }
     
     switch (inst) {
@@ -2369,14 +2377,28 @@ TEBCresume(
 	TRACE(("=> "));
 	objResultPtr = POP_OBJECT();
 	result = Tcl_SetReturnOptions(interp, OBJ_AT_TOS);
-	Tcl_DecrRefCount(OBJ_AT_TOS);
-	OBJ_AT_TOS = objResultPtr;
 	if (result == TCL_OK) {
+	    Tcl_DecrRefCount(OBJ_AT_TOS);
+	    OBJ_AT_TOS = objResultPtr;
 	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
 		    O2S(objResultPtr)));
 	    NEXT_INST_F(1, 0, 0);
+	} else if (result == TCL_ERROR) {
+	    /*
+	     * BEWARE! Must do this in this order, because an error in the
+	     * option dictionary overrides the result (and can be verified by
+	     * test).
+	     */
+
+	    Tcl_SetObjResult(interp, objResultPtr);
+	    Tcl_SetReturnOptions(interp, OBJ_AT_TOS);
+	    Tcl_DecrRefCount(OBJ_AT_TOS);
+	    OBJ_AT_TOS = objResultPtr;
+	} else {
+	    Tcl_DecrRefCount(OBJ_AT_TOS);
+	    OBJ_AT_TOS = objResultPtr;
+	    Tcl_SetObjResult(interp, objResultPtr);
 	}
-	Tcl_SetObjResult(interp, objResultPtr);
 	cleanup = 1;
 	goto processExceptionReturn;
 
@@ -2499,9 +2521,6 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> discarding "), OBJ_AT_TOS);
 	objPtr = POP_OBJECT();
 	TclDecrRefCount(objPtr);
-	NEXT_INST_F(1, 0, 0);
-
-    case INST_NOP:
 	NEXT_INST_F(1, 0, 0);
 
     case INST_DUP:
@@ -4418,6 +4437,14 @@ TEBCresume(
 	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
 	NEXT_INST_V(5, opnd, 1);
 
+    case INST_LIST_EXPANDED:
+	CLANG_ASSERT(auxObjList);
+	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
+	POP_TAUX_OBJ();
+	objResultPtr = Tcl_NewListObj(objc, &OBJ_AT_DEPTH(objc-1));
+	TRACE_WITH_OBJ(("(%u) => ", objc), objResultPtr);
+	NEXT_INST_V(1, objc, 1);
+
     case INST_LIST_LENGTH:
 	valuePtr = OBJ_AT_TOS;
 	if (TclListObjLength(interp, valuePtr, &length) != TCL_OK) {
@@ -4762,6 +4789,29 @@ TEBCresume(
 #endif
 	objResultPtr = TCONST(match);
 	NEXT_INST_F(0, 2, 1);
+
+    case INST_LIST_CONCAT:
+	value2Ptr = OBJ_AT_TOS;
+	valuePtr = OBJ_UNDER_TOS;
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
+	if (Tcl_IsShared(valuePtr)) {
+	    objResultPtr = Tcl_DuplicateObj(valuePtr);
+	    if (Tcl_ListObjAppendList(interp, objResultPtr,
+		    value2Ptr) != TCL_OK) {
+		TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+		TclDecrRefCount(objResultPtr);
+		goto gotError;
+	    }
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 2, 1);
+	} else {
+	    if (Tcl_ListObjAppendList(interp, valuePtr, value2Ptr) != TCL_OK){
+		TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 1, 0);
+	}
 
     /*
      *	   End of INST_LIST and related instructions.
