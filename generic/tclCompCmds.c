@@ -287,8 +287,10 @@ TclCompileArraySetCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
     int simpleVarName, isScalar, localIndex;
+    int isDataLiteral, isDataValid, isDataEven, len;
     int dataVar, iterVar, keyVar, valVar, infoIndex;
     int back, fwd, offsetBack, offsetFwd, savedStackDepth;
+    Tcl_Obj *literalObj;
     ForeachInfo *infoPtr;
 
     if (parsePtr->numWords != 3) {
@@ -298,18 +300,22 @@ TclCompileArraySetCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar, 1);
-    dataTokenPtr = TokenAfter(varTokenPtr);
     if (!isScalar) {
 	return TCL_ERROR;
     }
+    dataTokenPtr = TokenAfter(varTokenPtr);
+    literalObj = Tcl_NewObj();
+    isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
+    isDataValid = (isDataLiteral
+	    && Tcl_ListObjLength(NULL, literalObj, &len) == TCL_OK);
+    isDataEven = (isDataValid && (len & 1) == 0);
 
     /*
      * Special case: literal empty value argument is just an "ensure array"
      * operation.
      */
 
-    if (dataTokenPtr->type == TCL_TOKEN_SIMPLE_WORD
-	    && dataTokenPtr[1].size == 0) {
+    if (isDataEven && len == 0) {
 	if (localIndex >= 0) {
 	    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
 	    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
@@ -325,7 +331,24 @@ TclCompileArraySetCmd(
 	    TclEmitOpcode(  INST_POP,				envPtr);
 	}
 	PushLiteral(envPtr, "", 0);
-	return TCL_OK;
+	goto done;
+    }
+
+    /*
+     * Special case: literal odd-length argument is always an error.
+     */
+
+    if (isDataValid && !isDataEven) {
+	savedStackDepth = envPtr->currStackDepth;
+	PushLiteral(envPtr, "list must have an even number of elements",
+		strlen("list must have an even number of elements"));
+	PushLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}",
+		strlen("-errorCode {TCL ARGUMENT FORMAT}"));
+	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
+	TclEmitInt4(		0,				envPtr);
+	envPtr->currStackDepth = savedStackDepth;
+	PushLiteral(envPtr, "", 0);
+	goto done;
     }
 
     /*
@@ -360,7 +383,7 @@ TclCompileArraySetCmd(
 	}
 	CompileWord(envPtr, dataTokenPtr, interp, 2);
 	TclEmitInstInt1(INST_INVOKE_STK1, 3,			envPtr);
-	return TCL_OK;
+	goto done;
     }
 
     infoPtr = ckalloc(sizeof(ForeachInfo) + sizeof(ForeachVarList *));
@@ -378,22 +401,31 @@ TclCompileArraySetCmd(
      */
 
     CompileWord(envPtr, dataTokenPtr, interp, 2);
-    TclEmitOpcode(	INST_DUP,				envPtr);
-    TclEmitOpcode(	INST_LIST_LENGTH,			envPtr);
-    PushLiteral(envPtr, "1", 1);
-    TclEmitOpcode(	INST_BITAND,				envPtr);
-    offsetFwd = CurrentOffset(envPtr);
-    TclEmitInstInt1(	INST_JUMP_FALSE1, 0,			envPtr);
-    savedStackDepth = envPtr->currStackDepth;
-    PushLiteral(envPtr, "list must have an even number of elements",
-	    strlen("list must have an even number of elements"));
-    PushLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}",
-	    strlen("-errorCode {TCL ARGUMENT FORMAT}"));
-    TclEmitInstInt4(	INST_RETURN_IMM, 1,			envPtr);
-    TclEmitInt4(		0,				envPtr);
-    envPtr->currStackDepth = savedStackDepth;
-    fwd = CurrentOffset(envPtr) - offsetFwd;
-    TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
+    if (!isDataLiteral || !isDataValid) {
+	/*
+	 * Only need this safety check if we're handling a non-literal or list
+	 * containing an invalid literal; with valid list literals, we've
+	 * already checked (worth it because literals are a very common
+	 * use-case with [array set]).
+	 */
+
+	TclEmitOpcode(	INST_DUP,				envPtr);
+	TclEmitOpcode(	INST_LIST_LENGTH,			envPtr);
+	PushLiteral(envPtr, "1", 1);
+	TclEmitOpcode(	INST_BITAND,				envPtr);
+	offsetFwd = CurrentOffset(envPtr);
+	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
+	savedStackDepth = envPtr->currStackDepth;
+	PushLiteral(envPtr, "list must have an even number of elements",
+		strlen("list must have an even number of elements"));
+	PushLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}",
+		strlen("-errorCode {TCL ARGUMENT FORMAT}"));
+	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
+	TclEmitInt4(		0,				envPtr);
+	envPtr->currStackDepth = savedStackDepth;
+	fwd = CurrentOffset(envPtr) - offsetFwd;
+	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
+    }
     Emit14Inst(		INST_STORE_SCALAR, dataVar,		envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
 
@@ -440,9 +472,13 @@ TclCompileArraySetCmd(
 	envPtr->currStackDepth = savedStackDepth;
 	TclEmitOpcode(	INST_POP,				envPtr);
     }
-    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(		dataVar,			envPtr);
+    if (!isDataLiteral) {
+	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
+	TclEmitInt4(		dataVar,			envPtr);
+    }
     PushLiteral(envPtr,	"", 0);
+  done:
+    Tcl_DecrRefCount(literalObj);
     return TCL_OK;
 }
 

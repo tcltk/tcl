@@ -14384,11 +14384,7 @@ _ACEOF
 #	lack blkcnt_t.
 #--------------------------------------------------------------------
 
-if test "$ac_cv_cygwin" = "yes"; then
-    if test "x${SHARED_BUILD}" = "x1"; then
-	TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
-    fi
-else
+if test "$ac_cv_cygwin" != "yes"; then
     echo "$as_me:$LINENO: checking for struct stat.st_blocks" >&5
 echo $ECHO_N "checking for struct stat.st_blocks... $ECHO_C" >&6
 if test "${ac_cv_member_struct_stat_st_blocks+set}" = set; then
