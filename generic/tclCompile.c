@@ -1434,7 +1434,7 @@ TclInitCompileEnv(
 {
     Interp *iPtr = (Interp *) interp;
 
-    assert(tclInstructionTable[LAST_INST_OPCODE].name == NULL);
+    assert(tclInstructionTable[LAST_INST_OPCODE+1].name == NULL);
 
     envPtr->iPtr = iPtr;
     envPtr->source = stringPtr;
