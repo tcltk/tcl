@@ -1879,6 +1879,13 @@ TclCompileScript(
 	if (parsePtr->numWords > 0) {
 	    int expand = 0;	/* Set if there are dynamic expansions to
 				 * handle */
+	    int expandIgnoredWords = 0;
+				/* The number of *apparent* words that we are
+				 * generating code from directly during
+				 * expansion processing. For [list {*}blah]
+				 * expansion, we set this to one because we
+				 * ignore the first word and generate code
+				 * directly. */
 
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -2156,6 +2163,7 @@ TclCompileScript(
 			     */
 
 			    expand = INST_LIST_EXPANDED;
+			    expandIgnoredWords = 1;
 			    continue;
 			}
 		    }
@@ -2208,7 +2216,7 @@ TclCompileScript(
 		 */
 
 		TclEmitOpcode(expand, envPtr);
-		TclAdjustStackDepth((1-wordIdx), envPtr);
+		TclAdjustStackDepth(1 + expandIgnoredWords - wordIdx, envPtr);
 	    } else if (wordIdx > 0) {
 		/*
 		 * Save PC -> command map for the TclArgumentBC* functions.
