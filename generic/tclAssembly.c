@@ -20,7 +20,7 @@
  *-   break and continue - if exception ranges can be sorted out.
  *-   foreach_start4, foreach_step4
  *-   returnImm, returnStk
- *-   expandStart, expandStkTop, invokeExpanded
+ *-   expandStart, expandStkTop, invokeExpanded, listExpanded
  *-   dictFirst, dictNext, dictDone
  *-   dictUpdateStart, dictUpdateEnd
  *-   jumpTable testing
@@ -437,6 +437,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"lindexMulti",	ASSEM_LINDEX_MULTI,
 					INST_LIST_INDEX_MULTI,	INT_MIN,1},
     {"list",		ASSEM_LIST,	INST_LIST,		INT_MIN,1},
+    {"listConcat",	ASSEM_1BYTE,	INST_LIST_CONCAT,	2,	1},
     {"listIn",		ASSEM_1BYTE,	INST_LIST_IN,		2,	1},
     {"listIndex",	ASSEM_1BYTE,	INST_LIST_INDEX,	2,	1},
     {"listIndexImm",	ASSEM_INDEX,	INST_LIST_INDEX_IMM,	1,	1},

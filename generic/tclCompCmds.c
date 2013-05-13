@@ -156,7 +156,7 @@ TclCompileAppendCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords;
+    int simpleVarName, isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
@@ -170,10 +170,11 @@ TclCompileAppendCmd(
 	return TclCompileSetCmd(interp, parsePtr, cmdPtr, envPtr);
     } else if (numWords > 3) {
 	/*
-	 * APPEND instructions currently only handle one value.
+	 * APPEND instructions currently only handle one value, but we can
+	 * handle some multi-value cases by stringing them together.
 	 */
 
-	return TCL_ERROR;
+	goto appendMultiple;
     }
 
     /*
@@ -220,6 +221,42 @@ TclCompileAppendCmd(
 	}
     } else {
 	TclEmitOpcode(INST_APPEND_STK, envPtr);
+    }
+
+    return TCL_OK;
+
+  appendMultiple:
+    /*
+     * Can only handle the case where we are appending to a local scalar when
+     * there are multiple values to append.  Fortunately, this is common.
+     */
+
+    if (envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
+	    &localIndex, &simpleVarName, &isScalar, 1);
+    if (!isScalar || localIndex < 0) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Definitely appending to a local scalar; generate the words and append
+     * them.
+     */
+
+    valueTokenPtr = TokenAfter(varTokenPtr);
+    for (i = 2 ; i < numWords ; i++) {
+	CompileWord(envPtr, valueTokenPtr, interp, i);
+	valueTokenPtr = TokenAfter(valueTokenPtr);
+    }
+    TclEmitInstInt4(	  INST_REVERSE, numWords-2,		envPtr);
+    for (i = 2 ; i < numWords ;) {
+	Emit14Inst(	  INST_APPEND_SCALAR, localIndex,	envPtr);
+	if (++i < numWords) {
+	    TclEmitOpcode(INST_POP,				envPtr);
+	}
     }
 
     return TCL_OK;
@@ -4061,8 +4098,8 @@ TclCompileLappendCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Token *varTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords;
+    Tcl_Token *varTokenPtr, *valueTokenPtr;
+    int simpleVarName, isScalar, localIndex, numWords, i, fwd, offsetFwd;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -4079,10 +4116,11 @@ TclCompileLappendCmd(
     }
     if (numWords != 3) {
 	/*
-	 * LAPPEND instructions currently only handle one value appends.
+	 * LAPPEND instructions currently only handle one value, but we can
+	 * handle some multi-value cases by stringing them together.
 	 */
 
-	return TCL_ERROR;
+	goto lappendMultiple;
     }
 
     /*
@@ -4133,6 +4171,45 @@ TclCompileLappendCmd(
 	    Emit14Inst(		INST_LAPPEND_ARRAY, localIndex,	envPtr);
 	}
     }
+
+    return TCL_OK;
+
+  lappendMultiple:
+    /*
+     * Can only handle the case where we are appending to a local scalar when
+     * there are multiple values to append.  Fortunately, this is common.
+     */
+
+    if (envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
+	    &localIndex, &simpleVarName, &isScalar, 1);
+    if (!isScalar || localIndex < 0) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Definitely appending to a local scalar; generate the words and append
+     * them.
+     */
+
+    valueTokenPtr = TokenAfter(varTokenPtr);
+    for (i = 2 ; i < numWords ; i++) {
+	CompileWord(envPtr, valueTokenPtr, interp, i);
+	valueTokenPtr = TokenAfter(valueTokenPtr);
+    }
+    TclEmitInstInt4(	  INST_LIST, numWords-2,		envPtr);
+    TclEmitInstInt4(	  INST_EXIST_SCALAR, localIndex,	envPtr);
+    offsetFwd = CurrentOffset(envPtr);
+    TclEmitInstInt1(	  INST_JUMP_FALSE1, 0,			envPtr);
+    Emit14Inst(		  INST_LOAD_SCALAR, localIndex,		envPtr);
+    TclEmitInstInt4(	  INST_REVERSE, 2,			envPtr);
+    TclEmitOpcode(	  INST_LIST_CONCAT,			envPtr);
+    fwd = CurrentOffset(envPtr) - offsetFwd;
+    TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
+    Emit14Inst(		  INST_STORE_SCALAR, localIndex,	envPtr);
 
     return TCL_OK;
 }
@@ -4384,14 +4461,7 @@ TclCompileListCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *valueTokenPtr;
     int i, numWords;
-
-    /*
-     * If we're not in a procedure, don't compile.
-     */
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
+    Tcl_Obj *listObj, *objPtr;
 
     if (parsePtr->numWords == 1) {
 	/*
@@ -4399,20 +4469,57 @@ TclCompileListCmd(
 	 */
 
 	PushLiteral(envPtr, "", 0);
-    } else {
-	/*
-	 * Push the all values onto the stack.
-	 */
-
-	numWords = parsePtr->numWords;
-	valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
-	for (i = 1; i < numWords; i++) {
-	    CompileWord(envPtr, valueTokenPtr, interp, i);
-	    valueTokenPtr = TokenAfter(valueTokenPtr);
-	}
-	TclEmitInstInt4(	INST_LIST, numWords - 1,	envPtr);
+	return TCL_OK;
     }
 
+    /*
+     * Test if all arguments are compile-time known. If they are, we can
+     * implement with a simple push.
+     */
+
+    numWords = parsePtr->numWords;
+    valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    listObj = Tcl_NewObj();
+    for (i = 1; i < numWords && listObj != NULL; i++) {
+	objPtr = Tcl_NewObj();
+	if (TclWordKnownAtCompileTime(valueTokenPtr, objPtr)) {
+	    (void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
+	} else {
+	    Tcl_DecrRefCount(objPtr);
+	    Tcl_DecrRefCount(listObj);
+	    listObj = NULL;
+	}
+	valueTokenPtr = TokenAfter(valueTokenPtr);
+    }
+    if (listObj != NULL) {
+	int len;
+	const char *bytes = Tcl_GetStringFromObj(listObj, &len);
+
+	PushLiteral(envPtr, bytes, len);
+	Tcl_DecrRefCount(listObj);
+	if (len > 0) {
+	    /*
+	     * Force list interpretation!
+	     */
+
+	    TclEmitOpcode(	INST_DUP,		envPtr);
+	    TclEmitOpcode(	INST_LIST_LENGTH,	envPtr);
+	    TclEmitOpcode(	INST_POP,		envPtr);
+	}
+	return TCL_OK;
+    }
+
+    /*
+     * Push the all values onto the stack.
+     */
+
+    numWords = parsePtr->numWords;
+    valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    for (i = 1; i < numWords; i++) {
+	CompileWord(envPtr, valueTokenPtr, interp, i);
+	valueTokenPtr = TokenAfter(valueTokenPtr);
+    }
+    TclEmitInstInt4(	INST_LIST, numWords - 1,	envPtr);
     return TCL_OK;
 }
 
@@ -5572,15 +5679,20 @@ TclCompileReturnCmd(
 	objv[objc] = Tcl_NewObj();
 	Tcl_IncrRefCount(objv[objc]);
 	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
-	    objc++;
-	    status = TCL_ERROR;
-	    goto cleanup;
+	    /*
+	     * Non-literal, so punt to run-time.
+	     */
+
+	    for (; objc>=0 ; objc--) {
+		TclDecrRefCount(objv[objc]);
+	    }
+	    TclStackFree(interp, objv);
+	    goto issueRuntimeReturn;
 	}
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
     status = TclMergeReturnOptions(interp, objc, objv,
 	    &returnOpts, &code, &level);
-  cleanup:
     while (--objc >= 0) {
 	TclDecrRefCount(objv[objc]);
     }
@@ -5660,6 +5772,35 @@ TclCompileReturnCmd(
      */
 
     CompileReturnInternal(envPtr, INST_RETURN_IMM, code, level, returnOpts);
+    return TCL_OK;
+
+  issueRuntimeReturn:
+    /*
+     * Assemble the option dictionary (as a list as that's good enough).
+     */
+
+    wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    for (objc=1 ; objc<=numOptionWords ; objc++) {
+	CompileWord(envPtr, wordTokenPtr, interp, objc);
+	wordTokenPtr = TokenAfter(wordTokenPtr);
+    }
+    TclEmitInstInt4(INST_LIST, numOptionWords, envPtr);
+
+    /*
+     * Push the result.
+     */
+
+    if (explicitResult) {
+	CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+    } else {
+	PushLiteral(envPtr, "", 0);
+    }
+
+    /*
+     * Issue the RETURN itself.
+     */
+
+    TclEmitOpcode(INST_RETURN_STK, envPtr);
     return TCL_OK;
 }
 
