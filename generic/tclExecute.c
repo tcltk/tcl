@@ -2244,8 +2244,9 @@ TEBCresume(
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
 	if (checkInterp) {
 	    checkInterp = 0;
-	    if ((codePtr->compileEpoch != iPtr->compileEpoch)
-		    || (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) {
+	    if (((codePtr->compileEpoch != iPtr->compileEpoch) ||
+		 (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) &&
+		!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 		goto instStartCmdFailed;
 	    }
 	}
