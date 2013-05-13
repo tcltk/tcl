@@ -251,10 +251,9 @@ declare 64 {
 declare 65 {
     void Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes, int length)
 }
-# Removed in 9.0:
-#declare 66 {
-#    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
-#}
+declare 66 {
+    void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
+}
 # Removed in 9.0:
 #declare 67 {
 #    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,

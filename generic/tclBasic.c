@@ -6179,6 +6179,35 @@ Tcl_ExprString(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_AddErrorInfo --
+ *
+ *	Add information to the errorInfo field that describes the current
+ *	error.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The contents of message are appended to the errorInfo field. If we are
+ *	just starting to log an error, errorInfo is initialized from the error
+ *	message in the interpreter's result.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#undef Tcl_AddErrorInfo
+void
+Tcl_AddErrorInfo(
+    Tcl_Interp *interp,		/* Interpreter to which error information
+				 * pertains. */
+    const char *message)	/* Message to record. */
+{
+    Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), -1));
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_AppendObjToErrorInfo --
  *
  *	Add a Tcl_Obj value to the errorInfo field that describes the current

@@ -208,7 +208,9 @@ TCLAPI void		Tcl_SetObjLength(Tcl_Obj *objPtr, int length);
 /* 65 */
 TCLAPI void		Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes,
 				int length);
-/* Slot 66 is reserved */
+/* 66 */
+TCLAPI void		Tcl_AddErrorInfo(Tcl_Interp *interp,
+				const char *message);
 /* Slot 67 is reserved */
 /* 68 */
 TCLAPI void		Tcl_AllowExceptions(Tcl_Interp *interp);
@@ -1818,7 +1820,7 @@ typedef struct TclStubs {
     void (*tcl_SetLongObj) (Tcl_Obj *objPtr, long longValue); /* 63 */
     void (*tcl_SetObjLength) (Tcl_Obj *objPtr, int length); /* 64 */
     void (*tcl_SetStringObj) (Tcl_Obj *objPtr, const char *bytes, int length); /* 65 */
-    void (*reserved66)(void);
+    void (*tcl_AddErrorInfo) (Tcl_Interp *interp, const char *message); /* 66 */
     void (*reserved67)(void);
     void (*tcl_AllowExceptions) (Tcl_Interp *interp); /* 68 */
     void (*tcl_AppendElement) (Tcl_Interp *interp, const char *element); /* 69 */
@@ -2550,7 +2552,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SetObjLength) /* 64 */
 #define Tcl_SetStringObj \
 	(tclStubsPtr->tcl_SetStringObj) /* 65 */
-/* Slot 66 is reserved */
+#define Tcl_AddErrorInfo \
+	(tclStubsPtr->tcl_AddErrorInfo) /* 66 */
 /* Slot 67 is reserved */
 #define Tcl_AllowExceptions \
 	(tclStubsPtr->tcl_AllowExceptions) /* 68 */
@@ -3704,6 +3707,7 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 #undef Tcl_SetBooleanObj
 #define Tcl_SetBooleanObj(objPtr, boolValue) \
 	Tcl_SetIntObj((objPtr), (boolValue)!=0)
+#undef Tcl_AddErrorInfo
 #define Tcl_AddErrorInfo(interp, message) \
 	Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), -1))
 #define Tcl_AddObjErrorInfo(interp, message, length) \

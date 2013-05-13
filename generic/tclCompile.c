@@ -14,6 +14,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include <assert.h>
 
 /*
  * Table of all AuxData types.
@@ -50,7 +51,7 @@ static int traceInitialized = 0;
  * existence of a procedure call frame to distinguish these.
  */
 
-InstructionDesc const tclInstructionTable[] = {
+const InstructionDesc const tclInstructionTable[] = {
     /* Name	      Bytes stackEffect #Opnds  Operand types */
     {"done",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */
@@ -279,12 +280,12 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Binary exponentiation operator: push (stknext ** stktop) */
 
     /*
-     * NOTE: the stack effects of expandStkTop and invokeExpanded are wrong -
-     * but it cannot be done right at compile time, the stack effect is only
-     * known at run time. The value for invokeExpanded is estimated better at
-     * compile time.
+     * NOTE: the stack effects of expandStkTop, invokeExpanded and
+     * listExpanded are wrong - but it cannot be done right at compile time,
+     * the stack effect is only known at run time. The value for both
+     * invokeExpanded and listExpanded are estimated better at compile time.
      * See the comments further down in this file, where INST_INVOKE_EXPANDED
-     * is emitted.
+     * and INST_LIST_EXPANDED are emitted.
      */
     {"expandStart",       1,    0,          0,	{OPERAND_NONE}},
 	/* Start of command with {*} (expanded) arguments */
@@ -534,6 +535,13 @@ InstructionDesc const tclInstructionTable[] = {
 	 * the word at the top of the stack;
 	 * <objc,objv> = <op4,top op4 after popping 1> */
 
+    {"listConcat",	 1,	-1,	  0,	{OPERAND_NONE}},
+	/* Concatenates the two lists at the top of the stack into a single
+	 * list and pushes that resulting list onto the stack.
+	 * Stack: ... list1 list2 => ... [lconcat list1 list2] */
+    {"listExpanded",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Construct a list from the words marked by the last 'expandStart' */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -554,6 +562,9 @@ static void		EnterCmdStartData(CompileEnv *envPtr,
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
+static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
+			    CompileEnv *envPtr);
+static void		PeepholeOptimize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
@@ -654,6 +665,7 @@ TclSetByteCodeFromAny(
 				 * in frame. */
     int length, result = TCL_OK;
     const char *stringPtr;
+    Proc *procPtr = iPtr->compiledProcPtr;
     ContLineLoc *clLocPtr;
 
 #ifdef TCL_COMPILE_DEBUG
@@ -703,6 +715,38 @@ TclSetByteCodeFromAny(
      */
 
     TclEmitOpcode(INST_DONE, &compEnv);
+
+    /*
+     * Check for optimizations!
+     *
+     * Test if the generated code is free of most hazards; if so, recompile
+     * but with generation of INST_START_CMD disabled. This produces somewhat
+     * faster code in some cases, and more compact code in more.
+     */
+
+    if (Tcl_GetMaster(interp) == NULL &&
+	    !Tcl_LimitTypeEnabled(interp, TCL_LIMIT_COMMANDS|TCL_LIMIT_TIME)
+	    && IsCompactibleCompileEnv(interp, &compEnv)) {
+	TclFreeCompileEnv(&compEnv);
+	iPtr->compiledProcPtr = procPtr;
+	TclInitCompileEnv(interp, &compEnv, stringPtr, length,
+		iPtr->invokeCmdFramePtr, iPtr->invokeWord);
+	if (clLocPtr) {
+	    compEnv.clLoc = clLocPtr;
+	    compEnv.clNext = &compEnv.clLoc->loc[0];
+	    Tcl_Preserve(compEnv.clLoc);
+	}
+	compEnv.atCmdStart = 2;		/* The disabling magic. */
+	TclCompileScript(interp, stringPtr, length, &compEnv);
+	TclEmitOpcode(INST_DONE, &compEnv);
+    }
+
+    /*
+     * Apply some peephole optimizations that can cross specific/generic
+     * instruction generator boundaries.
+     */
+
+    PeepholeOptimize(&compEnv);
 
     /*
      * Invoke the compilation hook procedure if one exists.
@@ -973,6 +1017,202 @@ TclCleanupByteCode(
 }
 
 /*
+ * ---------------------------------------------------------------------
+ *
+ * IsCompactibleCompileEnv --
+ *
+ *	Checks to see if we may apply some basic compaction optimizations to a
+ *	piece of bytecode. Idempotent.
+ *
+ * ---------------------------------------------------------------------
+ */
+
+static int
+IsCompactibleCompileEnv(
+    Tcl_Interp *interp,
+    CompileEnv *envPtr)
+{
+    unsigned char *pc;
+    int size;
+
+    /*
+     * Special: procedures in the '::tcl' namespace (or its children) are
+     * considered to be well-behaved and so can have compaction applied even
+     * if it would otherwise be invalid.
+     */
+
+    if (envPtr->procPtr != NULL && envPtr->procPtr->cmdPtr != NULL
+	    && envPtr->procPtr->cmdPtr->nsPtr != NULL) {
+	Namespace *nsPtr = envPtr->procPtr->cmdPtr->nsPtr;
+
+	if (strcmp(nsPtr->fullName, "::tcl") == 0
+		|| strncmp(nsPtr->fullName, "::tcl::", 7) == 0) {
+	    return 1;
+	}
+    }
+
+    /*
+     * Go through and ensure that no operation involved can cause a desired
+     * change of bytecode sequence during running. This comes down to ensuring
+     * that there are no mapped variables (due to traces) or calls to external
+     * commands (traces, [uplevel] trickery). This is actually a very
+     * conservative check; it turns down a lot of code that is OK in practice.
+     */
+
+    for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
+	switch (*pc) {
+	    /* Invokes */
+	case INST_INVOKE_STK1:
+	case INST_INVOKE_STK4:
+	case INST_INVOKE_EXPANDED:
+	case INST_INVOKE_REPLACE:
+	    return 0;
+	    /* Runtime evals */
+	case INST_EVAL_STK:
+	case INST_EXPR_STK:
+	case INST_YIELD:
+	    return 0;
+	    /* Upvars */
+	case INST_UPVAR:
+	case INST_NSUPVAR:
+	case INST_VARIABLE:
+	    return 0;
+	}
+	size = tclInstructionTable[*pc].numBytes;
+	assert (size > 0);
+    }
+
+    return 1;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * PeepholeOptimize --
+ *
+ *	A very simple peephole optimizer for bytecode.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+PeepholeOptimize(
+    CompileEnv *envPtr)
+{
+    unsigned char *pc, *prev1 = NULL, *prev2 = NULL, *target;
+    int size, isNew;
+    Tcl_HashTable targets;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch hSearch;
+
+    /*
+     * Find places where we should be careful about replacing instructions
+     * because they are the targets of various types of jumps.
+     */
+
+    Tcl_InitHashTable(&targets, TCL_ONE_WORD_KEYS);
+    for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
+	size = tclInstructionTable[*pc].numBytes;
+	switch (*pc) {
+	case INST_JUMP1:
+	case INST_JUMP_TRUE1:
+	case INST_JUMP_FALSE1:
+	    target = pc + TclGetInt1AtPtr(pc+1);
+	    goto storeTarget;
+	case INST_JUMP4:
+	case INST_JUMP_TRUE4:
+	case INST_JUMP_FALSE4:
+	    target = pc + TclGetInt4AtPtr(pc+1);
+	    goto storeTarget;
+	case INST_BEGIN_CATCH4:
+	    target = envPtr->codeStart + envPtr->exceptArrayPtr[
+		    TclGetUInt4AtPtr(pc+1)].codeOffset;
+	storeTarget:
+	    (void) Tcl_CreateHashEntry(&targets, (void *) target, &isNew);
+	    break;
+	case INST_JUMP_TABLE:
+	    hPtr = Tcl_FirstHashEntry(
+		    &JUMPTABLEINFO(envPtr, pc+1)->hashTable, &hSearch);
+	    for (; hPtr ; hPtr = Tcl_NextHashEntry(&hSearch)) {
+		target = pc + PTR2INT(Tcl_GetHashValue(hPtr));
+		(void) Tcl_CreateHashEntry(&targets, (void *) target, &isNew);
+	    }
+	    break;
+	}
+    }
+
+    /*
+     * Replace PUSH/POP sequences (when non-hazardous) with NOPs.
+     */
+
+    (void) Tcl_CreateHashEntry(&targets, (void *) pc, &isNew);
+    for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
+	int blank = 0, i;
+
+	size = tclInstructionTable[*pc].numBytes;
+	prev2 = prev1;
+	prev1 = pc;
+	if (Tcl_FindHashEntry(&targets, (void *) (pc + size))) {
+	    continue;
+	}
+	switch (*pc) {
+	case INST_PUSH1:
+	    while (*(pc+size) == INST_NOP) {
+		size++;
+	    }
+	    if (*(pc+size) == INST_POP) {
+		blank = size + 1;
+	    } else if (*(pc+size) == INST_CONCAT1
+		    && TclGetUInt1AtPtr(pc + size + 1) == 2) {
+		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
+			TclGetUInt1AtPtr(pc + 1));
+		int numBytes;
+
+		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
+		if (numBytes == 0) {
+		    blank = size + 2;
+		}
+	    }
+	    break;
+	case INST_PUSH4:
+	    while (*(pc+size) == INST_NOP) {
+		size++;
+	    }
+	    if (*(pc+size) == INST_POP) {
+		blank = size + 1;
+	    } else if (*(pc+size) == INST_CONCAT1
+		    && TclGetUInt1AtPtr(pc + size + 1) == 2) {
+		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
+			TclGetUInt4AtPtr(pc + 1));
+		int numBytes;
+
+		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
+		if (numBytes == 0) {
+		    blank = size + 2;
+		}
+	    }
+	    break;
+	}
+	if (blank > 0) {
+	    for (i=0 ; i<blank ; i++) {
+		*(pc + i) = INST_NOP;
+	    }
+	    size = blank;
+	}
+    }
+
+    /*
+     * Trim a trailing double DONE.
+     */
+
+    if (prev1 && prev2 && *prev1 == INST_DONE && *prev2 == INST_DONE
+	    && !Tcl_FindHashEntry(&targets, (void *) prev1)) {
+	envPtr->codeNext--;
+    }
+    Tcl_DeleteHashTable(&targets);
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * Tcl_SubstObj --
@@ -1193,6 +1433,8 @@ TclInitCompileEnv(
 				 * compiled */
 {
     Interp *iPtr = (Interp *) interp;
+
+    assert(tclInstructionTable[LAST_INST_OPCODE+1].name == NULL);
 
     envPtr->iPtr = iPtr;
     envPtr->source = stringPtr;
@@ -1637,6 +1879,13 @@ TclCompileScript(
 	if (parsePtr->numWords > 0) {
 	    int expand = 0;	/* Set if there are dynamic expansions to
 				 * handle */
+	    int expandIgnoredWords = 0;
+				/* The number of *apparent* words that we are
+				 * generating code from directly during
+				 * expansion processing. For [list {*}blah]
+				 * expansion, we set this to one because we
+				 * ignore the first word and generate code
+				 * directly. */
 
 	    /*
 	     * If not the first command, pop the previous command's result
@@ -1689,7 +1938,7 @@ TclCompileScript(
 		    wordIdx < parsePtr->numWords;
 		    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		    expand = 1;
+		    expand = INST_INVOKE_EXPANDED;
 		    break;
 		}
 	    }
@@ -1802,7 +2051,7 @@ TclCompileScript(
 			 * command.
 			 */
 
-			if (envPtr->atCmdStart) {
+			if (envPtr->atCmdStart == 1) {
 			    if (savedCodeNext != 0) {
 				/*
 				 * Increase the number of commands being
@@ -1816,7 +2065,7 @@ TclCompileScript(
 				TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)+1,
 					fixPtr);
 			    }
-			} else {
+			} else if (envPtr->atCmdStart == 0) {
 			    TclEmitInstInt4(INST_START_CMD, 0, envPtr);
 			    TclEmitInt4(1, envPtr);
 			    update = 1;
@@ -1860,7 +2109,7 @@ TclCompileScript(
 			    goto finishCommand;
 			}
 
-			if (envPtr->atCmdStart && savedCodeNext != 0) {
+			if (envPtr->atCmdStart == 1 && savedCodeNext != 0) {
 			    /*
 			     * Decrease the number of commands being started
 			     * at the current point. Note that this depends on
@@ -1899,6 +2148,26 @@ TclCompileScript(
 				TclFetchLiteral(envPtr, objIndex), cmdPtr);
 		    }
 		} else {
+		    if (wordIdx == 0 && expand) {
+			TclDStringClear(&ds);
+			TclDStringAppendToken(&ds, &tokenPtr[1]);
+			cmdPtr = (Command *) Tcl_FindCommand(interp,
+				Tcl_DStringValue(&ds),
+				(Tcl_Namespace *) cmdNsPtr, /*flags*/ 0);
+			if ((cmdPtr != NULL) &&
+				(cmdPtr->compileProc == TclCompileListCmd)) {
+			    /*
+			     * Special case! [list] command can be expanded
+			     * directly provided the first word is not the
+			     * expanded one.
+			     */
+
+			    expand = INST_LIST_EXPANDED;
+			    expandIgnoredWords = 1;
+			    continue;
+			}
+		    }
+
 		    /*
 		     * Simple argument word of a command. We reach this if and
 		     * only if the command word was not compiled for whatever
@@ -1941,10 +2210,13 @@ TclCompileScript(
 		 * Note that the estimates are not correct while the command
 		 * is being prepared and run, INST_EXPAND_STKTOP is not
 		 * stack-neutral in general.
+		 *
+		 * The opcodes that may be issued here (both assumed to be
+		 * non-zero) are INST_INVOKE_EXPANDED and INST_LIST_EXPANDED.
 		 */
 
-		TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
-		TclAdjustStackDepth((1-wordIdx), envPtr);
+		TclEmitOpcode(expand, envPtr);
+		TclAdjustStackDepth(1 + expandIgnoredWords - wordIdx, envPtr);
 	    } else if (wordIdx > 0) {
 		/*
 		 * Save PC -> command map for the TclArgumentBC* functions.
@@ -3692,7 +3964,7 @@ TclInitAuxDataTypeTable(void)
     Tcl_InitHashTable(&auxDataTypeTable, TCL_STRING_KEYS);
 
     /*
-     * There are only two AuxData type at this time, so register them here.
+     * There are only three AuxData types at this time, so register them here.
      */
 
     RegisterAuxDataType(&tclForeachInfoType);

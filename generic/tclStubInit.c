@@ -783,7 +783,7 @@ const TclStubs tclStubs = {
     Tcl_SetLongObj, /* 63 */
     Tcl_SetObjLength, /* 64 */
     Tcl_SetStringObj, /* 65 */
-    0, /* 66 */
+    Tcl_AddErrorInfo, /* 66 */
     0, /* 67 */
     Tcl_AllowExceptions, /* 68 */
     Tcl_AppendElement, /* 69 */

@@ -1,3 +1,20 @@
+2013-05-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/*: Upgrade to zlib 1.2.8
+
+2013-05-10  Donal K. Fellows  <dkf@users.sf.net>
+
+	Optimizations and general bytecode generation improvements.
+	* generic/tclCompCmds.c (TclCompileAppendCmd, TclCompileLappendCmd):
+	(TclCompileReturnCmd): Make these generate bytecode in more cases.
+	(TclCompileListCmd): Make this able to push a literal when it can.
+	* generic/tclCompile.c (TclSetByteCodeFromAny, PeepholeOptimize):
+	Added checks to see if we can apply some simple cross-command-boundary
+	optimizations, and defined a small number of such optimizations.
+	(TclCompileScript): Added the special ability to compile the list
+	command with expansion ([list {*}blah]) into bytecode that does not
+	call an external command.
+
 2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit
