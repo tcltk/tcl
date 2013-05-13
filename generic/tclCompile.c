@@ -745,7 +745,7 @@ TclSetByteCodeFromAny(
      * faster code in some cases, and more compact code in more.
      */
 
-    if (0 && Tcl_GetMaster(interp) == NULL &&
+    if (Tcl_GetMaster(interp) == NULL &&
 	    !Tcl_LimitTypeEnabled(interp, TCL_LIMIT_COMMANDS|TCL_LIMIT_TIME)
 	    && IsCompactibleCompileEnv(interp, &compEnv)) {
 	TclFreeCompileEnv(&compEnv);
@@ -758,6 +758,7 @@ TclSetByteCodeFromAny(
 	    Tcl_Preserve(compEnv.clLoc);
 	}
 	compEnv.atCmdStart = 2;		/* The disabling magic. */
+	Tcl_ResetResult(interp);
 	TclCompileScript(interp, stringPtr, length, &compEnv);
 	TclEmitOpcode(INST_DONE, &compEnv);
     }
