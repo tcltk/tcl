@@ -1134,7 +1134,7 @@ PeepholeOptimize(
 	    hPtr = Tcl_FirstHashEntry(
 		    &JUMPTABLEINFO(envPtr, pc+1)->hashTable, &hSearch);
 	    for (; hPtr ; hPtr = Tcl_NextHashEntry(&hSearch)) {
-		target = pc + (int) Tcl_GetHashValue(hPtr);
+		target = pc + PTR2INT(Tcl_GetHashValue(hPtr));
 		(void) Tcl_CreateHashEntry(&targets, (void *) target, &isNew);
 	    }
 	    break;
