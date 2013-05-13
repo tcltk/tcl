@@ -4443,7 +4443,11 @@ TEBCresume(
 	POP_TAUX_OBJ();
 	objResultPtr = Tcl_NewListObj(objc, &OBJ_AT_DEPTH(objc-1));
 	TRACE_WITH_OBJ(("(%u) => ", objc), objResultPtr);
-	NEXT_INST_V(1, objc, 1);
+	while (objc--) {
+	    valuePtr = POP_OBJECT();
+	    TclDecrRefCount(valuePtr);
+	}
+	NEXT_INST_F(1, 0, 1);
 
     case INST_LIST_LENGTH:
 	valuePtr = OBJ_AT_TOS;

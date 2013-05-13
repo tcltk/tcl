@@ -1458,7 +1458,7 @@ TclInitCompileEnv(
 {
     Interp *iPtr = (Interp *) interp;
 
-    assert(tclInstructionTable[LAST_INST_OPCODE].name == NULL);
+    assert(tclInstructionTable[LAST_INST_OPCODE+1].name == NULL);
 
     envPtr->iPtr = iPtr;
     envPtr->source = stringPtr;
@@ -1876,8 +1876,13 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	const char * commandStart = tokenPtr->start;
 	int cmdIndex = envPtr->numCommands;
 	int wordIndex = 0;
-	int expand = 0;		/* Set if there are dynamic expansions to
-				 * handle */
+	int expand = 0;		/* Set if there are dynamic expansions to handle */
+	int expandIgnoredWords = 0;
+				/* The number of *apparent* words that we are
+				 * generating code from directly during expansion
+				 * processing. For [list {*}blah] expansion, we set
+				 * this to one because we ignore the first word and
+				 * generate code directly. */
 
 	if (tokenPtr > lastTokenPtr) {
 	    Tcl_Panic("CompileScriptTokens: overran token array");
@@ -2112,6 +2117,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		 * the first word is not the expanded one.
 		 */
 		expand = INST_LIST_EXPANDED;
+		expandIgnoredWords = 1;
 	    } else {
 		TclEmitPush(objIndex, envPtr);
 	    }
@@ -2191,7 +2197,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	     */
 
 	    TclEmitOpcode(expand, envPtr);
-	    TclAdjustStackDepth((1-numWords), envPtr);
+	    TclAdjustStackDepth((1 + expandIgnoredWords - numWords), envPtr);
 	} else if (numWords > 0) {
 	    /*
 	     * Save PC -> command map for the TclArgumentBC* functions.

@@ -5755,6 +5755,7 @@ TclCompileReturnCmd(
 
 	    Tcl_DecrRefCount(returnOpts);
 	    TclEmitOpcode(INST_DONE, envPtr);
+	    envPtr->currStackDepth = savedStackDepth;
 	    return TCL_OK;
 	}
     }
@@ -5772,6 +5773,7 @@ TclCompileReturnCmd(
      */
 
     CompileReturnInternal(envPtr, INST_RETURN_IMM, code, level, returnOpts);
+    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 
   issueRuntimeReturn:
@@ -5801,6 +5803,7 @@ TclCompileReturnCmd(
      */
 
     TclEmitOpcode(INST_RETURN_STK, envPtr);
+    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
