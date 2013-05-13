@@ -2099,6 +2099,25 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		tokenPtr += tokenPtr->numComponents + 1;
 	    }
 	}
+	if (expand && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    int objIndex = TclRegisterNewCmdLiteral(envPtr, tokenPtr[1].start,
+		    tokenPtr[1].size);
+	    Tcl_Obj *cmdName = TclFetchLiteral(envPtr, objIndex);
+	    Command *cmdPtr = 
+		    (Command *) Tcl_GetCommandFromObj(interp, cmdName);
+
+	    if (cmdPtr && (cmdPtr->compileProc == TclCompileListCmd)) {
+		/*
+		 * Special case! [list] command can be expanded directly provided
+		 * the first word is not the expanded one.
+		 */
+		expand = INST_LIST_EXPANDED;
+	    } else {
+		TclEmitPush(objIndex, envPtr);
+	    }
+	    wordIndex++;
+	    tokenPtr += tokenPtr->numComponents + 1;
+	}
 
 	for (; wordIndex < numWords; wordIndex++,
 		tokenPtr += tokenPtr->numComponents + 1) {
