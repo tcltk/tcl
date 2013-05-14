@@ -15,6 +15,38 @@
 
 	* changes:		updates for 8.4.20 release.
 
+2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit
+	* generic/tclDecls.h: "long" type. Binary compatibility with win64
+	requires that all stub entries use 32-bit long's, therefore the
+	need for various wrapper functions/macros. For Tcl 9 a better
+	solution is needed, but that cannot be done without introducing
+	binary incompatibility.
+
+2013-04-30  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl (::platform::LibcVersion):
+	* library/platform/pkgIndex.tcl: Followup to the 2013-01-30
+	  change. The RE become too restrictive again. SuSe added a
+	  timestamp after the version. Loosened up a bit. Bumped package
+	  to version 1.0.12.
+
+2013-04-25  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* win/tclWinDde.c:		Update dde to version 1.3.3.
+	* library/dde/pkgIndex.tcl:
+	* win/tclWinReg.c:		Update registry to version 1.2.2.
+	* library/reg/pkgIndex.tcl:
+
+2013-04-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclDecls.h: Implement Tcl_Pkg* functions as
+	(faster/stack-saving) macros around Tcl_Pkg*Ex functions.
+	The same for many Tcl_*Var* functions around their
+	Tcl_*Var*2 equivalent and Tcl_GetIndexFromObj around
+	Tcl_GetIndexFromObjStruct.
+
 2013-04-09  Reinhard Max  <max@suse.de>
 
 	* library/http/http.tcl (http::geturl): Allow URLs that don't have

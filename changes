@@ -6677,6 +6677,8 @@ problems where [file *able] would return false results on Win/Samba (porter)
 2013-04-09 (bug fix) Allow http://example.com?foo=bar (max)
 => http 2.5.8
 
-New package: platform 1.0.11
+Updated packages: dde 1.3.3, registry 1.2.2.
+
+New package: platform 1.0.12
 
 --- Released 8.4.20, June 1, 2013 --- See ChangeLog for details ---

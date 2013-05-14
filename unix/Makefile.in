@@ -648,7 +648,7 @@ install-binaries: binaries
 	    @INSTALL_STUB_LIB@ ; \
 	fi
 	@if test "x$(DLL_INSTALL_DIR)" = "x$(BIN_INSTALL_DIR)"; then\
-	    for i in dde1.2 reg1.1; do \
+	    for i in dde1.3 reg1.2; do \
 		if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
 	 	   echo "Making directory $(LIB_INSTALL_DIR)/$$i";\
 	 	   mkdir -p $(LIB_INSTALL_DIR)/$$i;\
@@ -656,14 +656,14 @@ install-binaries: binaries
 	 	   else true;\
 		fi;\
 	    done;\
-	    echo "Installing tcldde12.dll";\
-		$(INSTALL_DATA) "$(TOP_DIR)/library/dde/pkgIndex.tcl" "$(LIB_INSTALL_DIR)/dde1.2";\
-	    $(INSTALL_LIBRARY) "$(TOP_DIR)/win/tcldde12.dll" "$(LIB_INSTALL_DIR)/dde1.2";\
-	    chmod 555 "$(LIB_INSTALL_DIR)/dde1.2/tcldde12.dll";\
-	    echo "Installing tclreg11.dll";\
-		$(INSTALL_DATA) "$(TOP_DIR)/library/reg/pkgIndex.tcl" "$(LIB_INSTALL_DIR)/reg1.1";\
-	    $(INSTALL_LIBRARY) "$(TOP_DIR)/win/tclreg11.dll" "$(LIB_INSTALL_DIR)/reg1.1";\
-	    chmod 555 "$(LIB_INSTALL_DIR)/reg1.1/tclreg11.dll";\
+	    echo "Installing tcldde13.dll";\
+		$(INSTALL_DATA) "$(TOP_DIR)/library/dde/pkgIndex.tcl" "$(LIB_INSTALL_DIR)/dde1.3";\
+	    $(INSTALL_LIBRARY) "$(TOP_DIR)/win/tcldde13.dll" "$(LIB_INSTALL_DIR)/dde1.3";\
+	    chmod 555 "$(LIB_INSTALL_DIR)/dde1.3/tcldde13.dll";\
+	    echo "Installing tclreg12.dll";\
+		$(INSTALL_DATA) "$(TOP_DIR)/library/reg/pkgIndex.tcl" "$(LIB_INSTALL_DIR)/reg1.2";\
+	    $(INSTALL_LIBRARY) "$(TOP_DIR)/win/tclreg12.dll" "$(LIB_INSTALL_DIR)/reg1.2";\
+	    chmod 555 "$(LIB_INSTALL_DIR)/reg1.2/tclreg12.dll";\
 	fi
 	@EXTRA_INSTALL_BINARIES@
 

@@ -2884,7 +2884,7 @@ echo "$ac_t""$ac_cv_cygwin" 1>&6
 	    if test "x${TCL_THREADS}" = "x0"; then
 		{ echo "configure: error: CYGWIN compile is only supported with --enable-threads" 1>&2; exit 1; }
 	    fi
-	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde12.dll" -a ! -f "../win/tk84.dll"; then
+	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde13.dll" -a ! -f "../win/tk84.dll"; then
 		{ echo "configure: error: Please configure and make the ../win directory first." 1>&2; exit 1; }
 	    fi
 	    ;;
