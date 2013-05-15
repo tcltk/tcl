@@ -171,10 +171,15 @@ typedef struct {
     Tcl_ObjCmdProc *objProc;	/* Object-based function for command. */
     CompileProc *compileProc;	/* Function called to compile command. */
     Tcl_ObjCmdProc *nreProc;	/* NR-based function for command */
-    int isSafe;			/* If non-zero, command will be present in
-				 * safe interpreter. Otherwise it will be
-				 * hidden. */
+    int flags;			/* Various flag bits, as defined below. */
 } CmdInfo;
+
+#define CMD_IS_SAFE         1   /* Whether this command is part of the set of
+                                 * commands present by default in a safe
+                                 * interpreter. */
+/* CMD_COMPILES_EXPANDED - Whether the compiler for this command can handle
+ * expansion for itself rather than needing the generic layer to take care of
+ * it for it. Defined in tclInt.h. */
 
 /*
  * The built-in commands, and the functions that implement them:
@@ -185,92 +190,92 @@ static const CmdInfo builtInCmds[] = {
      * Commands in the generic core.
      */
 
-    {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	1},
-    {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	1},
-    {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	1},
-    {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	1},
-    {"concat",		Tcl_ConcatObjCmd,	NULL,			NULL,	1},
-    {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	1},
-    {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	1},
-    {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	NULL,	1},
-    {"eval",		Tcl_EvalObjCmd,		NULL,			TclNREvalObjCmd,	1},
-    {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	TclNRExprObjCmd,	1},
-    {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	TclNRForObjCmd,	1},
-    {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	TclNRForeachCmd,	1},
-    {"format",		Tcl_FormatObjCmd,	TclCompileFormatCmd,	NULL,	1},
-    {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	1},
-    {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	1},
-    {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	1},
-    {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	1},
-    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	1},
-    {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	1},
-    {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	1},
-    {"linsert",		Tcl_LinsertObjCmd,	NULL,			NULL,	1},
-    {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	1},
-    {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	NULL,	1},
-    {"lmap",		Tcl_LmapObjCmd,		TclCompileLmapCmd,	TclNRLmapCmd,	1},
-    {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,	NULL,	1},
-    {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	1},
-    {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	1},
-    {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	1},
-    {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	1},
-    {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	1},
-    {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	1},
-    {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	1},
-    {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	1},
-    {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	1},
-    {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	1},
-    {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	1},
-    {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	NULL,	1},
-    {"scan",		Tcl_ScanObjCmd,		NULL,			NULL,	1},
-    {"set",		Tcl_SetObjCmd,		TclCompileSetCmd,	NULL,	1},
-    {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	1},
-    {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	1},
-    {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, 1},
-    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	1},
-    {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	1},
-    {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	1},
-    {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	1},
-    {"unset",		Tcl_UnsetObjCmd,	TclCompileUnsetCmd,	NULL,	1},
-    {"uplevel",		Tcl_UplevelObjCmd,	NULL,			TclNRUplevelObjCmd,	1},
-    {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	1},
-    {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	1},
-    {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	1},
-    {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	1},
-    {"yieldto",		NULL,			NULL,			TclNRYieldToObjCmd,	1},
+    {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
+    {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	CMD_IS_SAFE},
+    {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
+    {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
+    {"concat",		Tcl_ConcatObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	CMD_IS_SAFE},
+    {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	CMD_IS_SAFE},
+    {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	NULL,	CMD_IS_SAFE},
+    {"eval",		Tcl_EvalObjCmd,		NULL,			TclNREvalObjCmd,	CMD_IS_SAFE},
+    {"expr",		Tcl_ExprObjCmd,		TclCompileExprCmd,	TclNRExprObjCmd,	CMD_IS_SAFE},
+    {"for",		Tcl_ForObjCmd,		TclCompileForCmd,	TclNRForObjCmd,	CMD_IS_SAFE},
+    {"foreach",		Tcl_ForeachObjCmd,	TclCompileForeachCmd,	TclNRForeachCmd,	CMD_IS_SAFE},
+    {"format",		Tcl_FormatObjCmd,	TclCompileFormatCmd,	NULL,	CMD_IS_SAFE},
+    {"global",		Tcl_GlobalObjCmd,	TclCompileGlobalCmd,	NULL,	CMD_IS_SAFE},
+    {"if",		Tcl_IfObjCmd,		TclCompileIfCmd,	TclNRIfObjCmd,	CMD_IS_SAFE},
+    {"incr",		Tcl_IncrObjCmd,		TclCompileIncrCmd,	NULL,	CMD_IS_SAFE},
+    {"join",		Tcl_JoinObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"lappend",		Tcl_LappendObjCmd,	TclCompileLappendCmd,	NULL,	CMD_IS_SAFE},
+    {"lassign",		Tcl_LassignObjCmd,	TclCompileLassignCmd,	NULL,	CMD_IS_SAFE},
+    {"lindex",		Tcl_LindexObjCmd,	TclCompileLindexCmd,	NULL,	CMD_IS_SAFE},
+    {"linsert",		Tcl_LinsertObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"list",		Tcl_ListObjCmd,		TclCompileListCmd,	NULL,	CMD_IS_SAFE|CMD_COMPILES_EXPANDED},
+    {"llength",		Tcl_LlengthObjCmd,	TclCompileLlengthCmd,	NULL,	CMD_IS_SAFE},
+    {"lmap",		Tcl_LmapObjCmd,		TclCompileLmapCmd,	TclNRLmapCmd,	CMD_IS_SAFE},
+    {"lrange",		Tcl_LrangeObjCmd,	TclCompileLrangeCmd,	NULL,	CMD_IS_SAFE},
+    {"lrepeat",		Tcl_LrepeatObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"lreplace",	Tcl_LreplaceObjCmd,	TclCompileLreplaceCmd,	NULL,	CMD_IS_SAFE},
+    {"lreverse",	Tcl_LreverseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"lsearch",		Tcl_LsearchObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"lset",		Tcl_LsetObjCmd,		TclCompileLsetCmd,	NULL,	CMD_IS_SAFE},
+    {"lsort",		Tcl_LsortObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"package",		Tcl_PackageObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"proc",		Tcl_ProcObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"regexp",		Tcl_RegexpObjCmd,	TclCompileRegexpCmd,	NULL,	CMD_IS_SAFE},
+    {"regsub",		Tcl_RegsubObjCmd,	TclCompileRegsubCmd,	NULL,	CMD_IS_SAFE},
+    {"rename",		Tcl_RenameObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"return",		Tcl_ReturnObjCmd,	TclCompileReturnCmd,	NULL,	CMD_IS_SAFE},
+    {"scan",		Tcl_ScanObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"set",		Tcl_SetObjCmd,		TclCompileSetCmd,	NULL,	CMD_IS_SAFE},
+    {"split",		Tcl_SplitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"subst",		Tcl_SubstObjCmd,	TclCompileSubstCmd,	TclNRSubstObjCmd,	CMD_IS_SAFE},
+    {"switch",		Tcl_SwitchObjCmd,	TclCompileSwitchCmd,	TclNRSwitchObjCmd, CMD_IS_SAFE},
+    {"tailcall",	NULL,			TclCompileTailcallCmd,	TclNRTailcallObjCmd,	CMD_IS_SAFE},
+    {"throw",		Tcl_ThrowObjCmd,	TclCompileThrowCmd,	NULL,	CMD_IS_SAFE},
+    {"trace",		Tcl_TraceObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"try",		Tcl_TryObjCmd,		TclCompileTryCmd,	TclNRTryObjCmd,	CMD_IS_SAFE},
+    {"unset",		Tcl_UnsetObjCmd,	TclCompileUnsetCmd,	NULL,	CMD_IS_SAFE},
+    {"uplevel",		Tcl_UplevelObjCmd,	NULL,			TclNRUplevelObjCmd,	CMD_IS_SAFE},
+    {"upvar",		Tcl_UpvarObjCmd,	TclCompileUpvarCmd,	NULL,	CMD_IS_SAFE},
+    {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	CMD_IS_SAFE},
+    {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	CMD_IS_SAFE},
+    {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	CMD_IS_SAFE},
+    {"yieldto",		NULL,			NULL,			TclNRYieldToObjCmd,	CMD_IS_SAFE},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
      */
 
-    {"after",		Tcl_AfterObjCmd,	NULL,			NULL,	1},
+    {"after",		Tcl_AfterObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"cd",		Tcl_CdObjCmd,		NULL,			NULL,	0},
-    {"close",		Tcl_CloseObjCmd,	NULL,			NULL,	1},
-    {"eof",		Tcl_EofObjCmd,		NULL,			NULL,	1},
+    {"close",		Tcl_CloseObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"eof",		Tcl_EofObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"encoding",	Tcl_EncodingObjCmd,	NULL,			NULL,	0},
     {"exec",		Tcl_ExecObjCmd,		NULL,			NULL,	0},
     {"exit",		Tcl_ExitObjCmd,		NULL,			NULL,	0},
-    {"fblocked",	Tcl_FblockedObjCmd,	NULL,			NULL,	1},
+    {"fblocked",	Tcl_FblockedObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"fconfigure",	Tcl_FconfigureObjCmd,	NULL,			NULL,	0},
-    {"fcopy",		Tcl_FcopyObjCmd,	NULL,			NULL,	1},
-    {"fileevent",	Tcl_FileEventObjCmd,	NULL,			NULL,	1},
-    {"flush",		Tcl_FlushObjCmd,	NULL,			NULL,	1},
-    {"gets",		Tcl_GetsObjCmd,		NULL,			NULL,	1},
+    {"fcopy",		Tcl_FcopyObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"fileevent",	Tcl_FileEventObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"flush",		Tcl_FlushObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"gets",		Tcl_GetsObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"glob",		Tcl_GlobObjCmd,		NULL,			NULL,	0},
     {"load",		Tcl_LoadObjCmd,		NULL,			NULL,	0},
     {"open",		Tcl_OpenObjCmd,		NULL,			NULL,	0},
-    {"pid",		Tcl_PidObjCmd,		NULL,			NULL,	1},
-    {"puts",		Tcl_PutsObjCmd,		NULL,			NULL,	1},
+    {"pid",		Tcl_PidObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"puts",		Tcl_PutsObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"pwd",		Tcl_PwdObjCmd,		NULL,			NULL,	0},
-    {"read",		Tcl_ReadObjCmd,		NULL,			NULL,	1},
-    {"seek",		Tcl_SeekObjCmd,		NULL,			NULL,	1},
+    {"read",		Tcl_ReadObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"seek",		Tcl_SeekObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"socket",		Tcl_SocketObjCmd,	NULL,			NULL,	0},
     {"source",		Tcl_SourceObjCmd,	NULL,			TclNRSourceObjCmd,	0},
-    {"tell",		Tcl_TellObjCmd,		NULL,			NULL,	1},
-    {"time",		Tcl_TimeObjCmd,		NULL,			NULL,	1},
+    {"tell",		Tcl_TellObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
+    {"time",		Tcl_TimeObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"unload",		Tcl_UnloadObjCmd,	NULL,			NULL,	0},
-    {"update",		Tcl_UpdateObjCmd,	NULL,			NULL,	1},
-    {"vwait",		Tcl_VwaitObjCmd,	NULL,			NULL,	1},
+    {"update",		Tcl_UpdateObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"vwait",		Tcl_VwaitObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {NULL,		NULL,			NULL,			NULL,	0}
 };
 
@@ -743,6 +748,9 @@ Tcl_CreateInterp(void)
 	    cmdPtr->deleteProc = NULL;
 	    cmdPtr->deleteData = NULL;
 	    cmdPtr->flags = 0;
+            if (cmdInfoPtr->flags & CMD_COMPILES_EXPANDED) {
+                cmdPtr->flags |= CMD_COMPILES_EXPANDED;
+            }
 	    cmdPtr->importRefPtr = NULL;
 	    cmdPtr->tracePtr = NULL;
 	    cmdPtr->nreProc = cmdInfoPtr->nreProc;
@@ -975,7 +983,7 @@ TclHideUnsafeCommands(
 	return TCL_ERROR;
     }
     for (cmdInfoPtr = builtInCmds; cmdInfoPtr->name != NULL; cmdInfoPtr++) {
-	if (!cmdInfoPtr->isSafe) {
+	if (!(cmdInfoPtr->flags & CMD_IS_SAFE)) {
 	    Tcl_HideCommand(interp, cmdInfoPtr->name, cmdInfoPtr->name);
 	}
     }
