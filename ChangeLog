@@ -1,3 +1,7 @@
+2013-05-13  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* compat/zlib/*: Upgrade to zlib 1.2.8
+
 2013-05-10  Donal K. Fellows  <dkf@users.sf.net>
 
 	Optimizations and general bytecode generation improvements.
