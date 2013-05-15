@@ -4498,6 +4498,7 @@ TclCompileListCmd(
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
     if (listObj != NULL) {
+#if 0
 	int len;
 	const char *bytes = Tcl_GetStringFromObj(listObj, &len);
 
@@ -4512,6 +4513,9 @@ TclCompileListCmd(
 	    TclEmitOpcode(	INST_LIST_LENGTH,	envPtr);
 	    TclEmitOpcode(	INST_POP,		envPtr);
 	}
+#else
+	TclEmitPush(TclAddLiteralObj(envPtr, listObj, NULL), envPtr);
+#endif
 	return TCL_OK;
     }
 
