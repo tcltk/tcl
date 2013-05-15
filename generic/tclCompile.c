@@ -283,8 +283,9 @@ const InstructionDesc const tclInstructionTable[] = {
      * NOTE: the stack effects of expandStkTop and invokeExpanded are wrong -
      * but it cannot be done right at compile time, the stack effect is only
      * known at run time. The value for invokeExpanded is estimated better at
-     * compile time.  See the comments further down in this file, where
-     * INST_INVOKE_EXPANDED is emitted.
+     * compile time.
+     * See the comments further down in this file, where INST_INVOKE_EXPANDED
+     * is emitted.
      */
     {"expandStart",       1,    0,          0,	{OPERAND_NONE}},
 	/* Start of command with {*} (expanded) arguments */
@@ -1916,8 +1917,7 @@ TclCompileScript(
 		parsePtr->commandStart - envPtr->source);
 
 	if (parsePtr->numWords > 0) {
-	    int expand = 0;	/* Set to the relevant expansion instruction
-				 * if there are dynamic expansions to
+	    int expand = 0;	/* Set if there are dynamic expansions to
 				 * handle */
 
 	    /*
@@ -1971,7 +1971,7 @@ TclCompileScript(
 		    wordIdx < parsePtr->numWords;
 		    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
 		if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		    expand = INST_INVOKE_EXPANDED;
+		    expand = 1;
 		    break;
 		}
 	    }
@@ -2225,12 +2225,9 @@ TclCompileScript(
 		 * Note that the estimates are not correct while the command
 		 * is being prepared and run, INST_EXPAND_STKTOP is not
 		 * stack-neutral in general.
-		 *
-		 * The opcode that may be issued here (assumed to be non-zero)
-		 * is INST_INVOKE_EXPANDED.
 		 */
 
-		TclEmitOpcode(expand, envPtr);
+		TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
 		TclAdjustStackDepth(1 - wordIdx, envPtr);
 	    } else if (wordIdx > 0) {
 		/*
