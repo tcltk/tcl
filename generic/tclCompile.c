@@ -1855,7 +1855,7 @@ TclCompileScript(
 				 * code. Init. to avoid compiler warning. */
     unsigned char *entryCodeNext = envPtr->codeNext;
     const char *p, *next;
-    Namespace *cmdNsPtr;
+    Namespace *cmdNsPtr = NULL;
     Command *cmdPtr;
     Tcl_Token *tokenPtr;
     int bytesLeft, isFirstCmd, wordIdx, currCmdIndex, commandLength, objIndex;
@@ -1874,11 +1874,13 @@ TclCompileScript(
     Tcl_ResetResult(interp);
     isFirstCmd = 1;
 
+#if 0
     if (envPtr->procPtr != NULL) {
 	cmdNsPtr = envPtr->procPtr->cmdPtr->nsPtr;
     } else {
 	cmdNsPtr = NULL;	/* use current NS */
     }
+#endif
 
     /*
      * Each iteration through the following loop compiles the next command
