@@ -298,12 +298,12 @@ const InstructionDesc const tclInstructionTable[] = {
 	/* Binary exponentiation operator: push (stknext ** stktop) */
 
     /*
-     * NOTE: the stack effects of expandStkTop, invokeExpanded and
-     * listExpanded are wrong - but it cannot be done right at compile time,
-     * the stack effect is only known at run time. The value for both
-     * invokeExpanded and listExpanded are estimated better at compile time.
+     * NOTE: the stack effects of expandStkTop and invokeExpanded are wrong -
+     * but it cannot be done right at compile time, the stack effect is only
+     * known at run time. The value for invokeExpanded is estimated better at
+     * compile time.
      * See the comments further down in this file, where INST_INVOKE_EXPANDED
-     * and INST_LIST_EXPANDED are emitted.
+     * is emitted.
      */
     {"expandStart",       1,    0,          0,	{OPERAND_NONE}},
 	/* Start of command with {*} (expanded) arguments */
@@ -557,8 +557,6 @@ const InstructionDesc const tclInstructionTable[] = {
 	/* Concatenates the two lists at the top of the stack into a single
 	 * list and pushes that resulting list onto the stack.
 	 * Stack: ... list1 list2 => ... [lconcat list1 list2] */
-    {"listExpanded",	 1,	0,	  0,	{OPERAND_NONE}},
-	/* Construct a list from the words marked by the last 'expandStart' */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -580,6 +578,8 @@ static void		EnterCmdExtentData(CompileEnv *envPtr,
 			    int cmdNumber, int numSrcBytes, int numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
 			    int cmdNumber, int srcOffset, int codeOffset);
+static Command *	FindCommandFromToken(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, Tcl_Namespace *namespacePtr);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -1793,6 +1793,49 @@ TclWordKnownAtCompileTime(
 }
 
 /*
+ * ---------------------------------------------------------------------
+ *
+ * FindCommandFromToken --
+ *
+ *	A simple helper that looks up a command's compiler from its token.
+ *
+ * ---------------------------------------------------------------------
+ */
+
+static Command *
+FindCommandFromToken(
+    Tcl_Interp *interp,
+    Tcl_Token *tokenPtr,
+    Tcl_Namespace *namespacePtr)
+{
+    Tcl_DString ds;
+    Command *cmdPtr;
+
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	return NULL;
+    }
+
+    /*
+     * We copy the string before trying to find the command by name. We used
+     * to modify the string in place, but this is not safe because the name
+     * resolution handlers could have side effects that rely on the unmodified
+     * string.
+     */
+
+    Tcl_DStringInit(&ds);
+    TclDStringAppendToken(&ds, &tokenPtr[1]);
+    cmdPtr = (Command *) Tcl_FindCommand(interp, Tcl_DStringValue(&ds),
+	    namespacePtr, /*flags*/ 0);
+    if (cmdPtr != NULL && (cmdPtr->compileProc == NULL
+	    || (cmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION)
+	    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES))) {
+	cmdPtr = NULL;
+    }
+    Tcl_DStringFree(&ds);
+    return cmdPtr;
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * TclCompileScript --
@@ -1877,13 +1920,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	const char * commandStart = tokenPtr->start;
 	int cmdIndex = envPtr->numCommands;
 	int wordIndex = 0;
-	int expand = 0;		/* Set if there are dynamic expansions to handle */
-	int expandIgnoredWords = 0;
-				/* The number of *apparent* words that we are
-				 * generating code from directly during expansion
-				 * processing. For [list {*}blah] expansion, we set
-				 * this to one because we ignore the first word and
-				 * generate code directly. */
+	int expand = 0;	/* Set if there are dynamic expansions to handle */
 
 	if (tokenPtr > lastTokenPtr) {
 	    Tcl_Panic("CompileScriptTokens: overran token array");
@@ -1930,7 +1967,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	for (wordIndex = 0; wordIndex <numWords;
 		wordIndex++, tokenPtr += tokenPtr->numComponents + 1) {
 	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-		expand = INST_INVOKE_EXPANDED;
+		expand = 1;
 		break;
 	    }
 	}
@@ -2105,26 +2142,6 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		tokenPtr += tokenPtr->numComponents + 1;
 	    }
 	}
-	if (expand && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    int objIndex = TclRegisterNewCmdLiteral(envPtr, tokenPtr[1].start,
-		    tokenPtr[1].size);
-	    Tcl_Obj *cmdName = TclFetchLiteral(envPtr, objIndex);
-	    Command *cmdPtr = 
-		    (Command *) Tcl_GetCommandFromObj(interp, cmdName);
-
-	    if (cmdPtr && (cmdPtr->compileProc == TclCompileListCmd)) {
-		/*
-		 * Special case! [list] command can be expanded directly provided
-		 * the first word is not the expanded one.
-		 */
-		expand = INST_LIST_EXPANDED;
-		expandIgnoredWords = 1;
-	    } else {
-		TclEmitPush(objIndex, envPtr);
-	    }
-	    wordIndex++;
-	    tokenPtr += tokenPtr->numComponents + 1;
-	}
 
 	for (; wordIndex < numWords; wordIndex++,
 		tokenPtr += tokenPtr->numComponents + 1) {
@@ -2192,13 +2209,10 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	     * Note that the estimates are not correct while the command
 	     * is being prepared and run, INST_EXPAND_STKTOP is not
 	     * stack-neutral in general. 
-	     *
-	     * The opcodes that may be issued here (both assumed to be
-	     * non-zero) are INST_INVOKE_EXPANDED and INST_LIST_EXPANDED.
 	     */
 
-	    TclEmitOpcode(expand, envPtr);
-	    TclAdjustStackDepth((1 + expandIgnoredWords - numWords), envPtr);
+	    TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
+	    TclAdjustStackDepth((1 - numWords), envPtr);
 	} else if (numWords > 0) {
 	    /*
 	     * Save PC -> command map for the TclArgumentBC* functions.

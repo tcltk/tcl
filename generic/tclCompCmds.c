@@ -4460,7 +4460,7 @@ TclCompileListCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *valueTokenPtr;
-    int i, numWords;
+    int i, numWords, concat, build;
     Tcl_Obj *listObj, *objPtr;
 
     if (parsePtr->numWords == 1) {
@@ -4515,11 +4515,46 @@ TclCompileListCmd(
 
     numWords = parsePtr->numWords;
     valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    concat = build = 0;
     for (i = 1; i < numWords; i++) {
+	if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD && build > 0) {
+	    TclEmitInstInt4(	INST_LIST, build,	envPtr);
+	    if (concat) {
+		TclEmitOpcode(	INST_LIST_CONCAT,	envPtr);
+	    }
+	    build = 0;
+	    concat = 1;
+	}
 	CompileWord(envPtr, valueTokenPtr, interp, i);
+	if (valueTokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    if (concat) {
+		TclEmitOpcode(	INST_LIST_CONCAT,	envPtr);
+	    } else {
+		concat = 1;
+	    }
+	} else {
+	    build++;
+	}
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
-    TclEmitInstInt4(	INST_LIST, numWords - 1,	envPtr);
+    if (build > 0) {
+	TclEmitInstInt4(	INST_LIST, build,	envPtr);
+	if (concat) {
+	    TclEmitOpcode(	INST_LIST_CONCAT,	envPtr);
+	}
+    }
+
+    /*
+     * If there was just one expanded word, we must ensure that it is a list
+     * at this point. We use an [lrange ... 0 end] for this (instead of
+     * [llength], as with literals) as we must drop any string representation
+     * that might be hanging around.
+     */
+
+    if (concat && numWords == 2) {
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,	envPtr);
+	TclEmitInt4(			-2,		envPtr);
+    }
     return TCL_OK;
 }
 
