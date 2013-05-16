@@ -1744,6 +1744,9 @@ echo "$ac_t""$tcl_cv_seh" 1>&6
 	    cat >> confdefs.h <<\EOF
 #define HAVE_NO_SEH 1
 EOF
+	    cat >> confdefs.h <<\EOF
+#define _HAVE_32BIT_TIME_T 1
+EOF
 
 	fi
 
