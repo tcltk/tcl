@@ -1,10 +1,7 @@
 2013-05-16  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* win/tcl.m4: Add support for the latest mingw-4.0-rc1.
-	* win/configure: (regenerated)
 	* generic/tclBasic.c: Add panic in order to detect
 	incompatible mingw32 sys/stat.h and sys/time.h headers,
-	(which is fixed by defining _HAVE_32BIT_TIME_T).
 
 2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
