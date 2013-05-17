@@ -557,8 +557,8 @@ static void		EnterCmdExtentData(CompileEnv *envPtr,
 			    int cmdNumber, int numSrcBytes, int numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
 			    int cmdNumber, int srcOffset, int codeOffset);
-static Command *	FindCommandFromToken(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, Tcl_Namespace *namespacePtr);
+static Command *	FindCompiledCommandFromToken(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -625,6 +625,13 @@ static const Tcl_ObjType tclInstNameType = {
     UpdateStringOfInstName,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
 };
+
+/*
+ * Helper macros.
+ */
+
+#define TclIncrUInt4AtPtr(ptr, delta) \
+    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr));
 
 /*
  *----------------------------------------------------------------------
@@ -1777,7 +1784,7 @@ TclWordKnownAtCompileTime(
 /*
  * ---------------------------------------------------------------------
  *
- * FindCommandFromToken --
+ * FindCompiledCommandFromToken --
  *
  *	A simple helper that looks up a command's compiler from its token.
  *
@@ -1785,15 +1792,20 @@ TclWordKnownAtCompileTime(
  */
 
 static Command *
-FindCommandFromToken(
+FindCompiledCommandFromToken(
     Tcl_Interp *interp,
-    Tcl_Token *tokenPtr,
-    Tcl_Namespace *namespacePtr)
+    Tcl_Token *tokenPtr)
 {
     Tcl_DString ds;
     Command *cmdPtr;
 
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    /*
+     * If we have a non-trivial token or are suppressing compilation, we stop
+     * right now.
+     */
+
+    if ((tokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
+	    || (((Interp *) interp)->flags & DONT_COMPILE_CMDS_INLINE)) {
 	return NULL;
     }
 
@@ -1806,8 +1818,8 @@ FindCommandFromToken(
 
     Tcl_DStringInit(&ds);
     TclDStringAppendToken(&ds, &tokenPtr[1]);
-    cmdPtr = (Command *) Tcl_FindCommand(interp, Tcl_DStringValue(&ds),
-	    namespacePtr, /*flags*/ 0);
+    cmdPtr = (Command *) Tcl_FindCommand(interp, Tcl_DStringValue(&ds), NULL,
+	    /*flags*/ 0);
     if (cmdPtr != NULL && (cmdPtr->compileProc == NULL
 	    || (cmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION)
 	    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES))) {
@@ -1846,7 +1858,6 @@ TclCompileScript(
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Interp *iPtr = (Interp *) interp;
     int lastTopLevelCmdIndex = -1;
 				/* Index of most recent toplevel command in
 				 * the command location table. Initialized to
@@ -1855,7 +1866,6 @@ TclCompileScript(
 				 * code. Init. to avoid compiler warning. */
     unsigned char *entryCodeNext = envPtr->codeNext;
     const char *p, *next;
-    Namespace *cmdNsPtr;
     Command *cmdPtr;
     Tcl_Token *tokenPtr;
     int bytesLeft, isFirstCmd, wordIdx, currCmdIndex, commandLength, objIndex;
@@ -1873,12 +1883,6 @@ TclCompileScript(
     }
     Tcl_ResetResult(interp);
     isFirstCmd = 1;
-
-    if (envPtr->procPtr != NULL) {
-	cmdNsPtr = envPtr->procPtr->cmdPtr->nsPtr;
-    } else {
-	cmdNsPtr = NULL;	/* use current NS */
-    }
 
     /*
      * Each iteration through the following loop compiles the next command
@@ -1980,13 +1984,13 @@ TclCompileScript(
 	     * If expansion was requested, check if the command declares that
 	     * it knows how to compile it. Note that if expansion is requested
 	     * for the first word, this check will fail as the token type will
-	     * inhibit it. (That check is done inside FindCommandFromToken.)
-	     * This is as it should be.
+	     * inhibit it. (Checked inside FindCompiledCommandFromToken.) This
+	     * is as it should be.
 	     */
 
 	    if (expand) {
-		cmdPtr = FindCommandFromToken(interp, parsePtr->tokenPtr,
-			(Tcl_Namespace *) cmdNsPtr);
+		cmdPtr = FindCompiledCommandFromToken(interp,
+			parsePtr->tokenPtr);
 		if (cmdPtr && (cmdPtr->flags & CMD_COMPILES_EXPANDED)) {
 		    expand = 0;
 		}
@@ -2030,9 +2034,13 @@ TclCompileScript(
 	    for (wordIdx = 0, tokenPtr = parsePtr->tokenPtr;
 		    wordIdx < parsePtr->numWords; wordIdx++,
 		    tokenPtr += tokenPtr->numComponents + 1) {
+		/*
+		 * Note the parse location information.
+		 */
 
 		envPtr->line = eclPtr->loc[wlineat].line[wordIdx];
 		envPtr->clNext = eclPtr->loc[wlineat].next[wordIdx];
+
 		if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 		    /*
 		     * The word is not a simple string of characters.
@@ -2055,12 +2063,9 @@ TclCompileScript(
 		 */
 
 		if ((wordIdx == 0) && !expand) {
-		    cmdPtr = FindCommandFromToken(interp, tokenPtr,
-			    (Tcl_Namespace *) cmdNsPtr);
-
-		    if ((cmdPtr != NULL)
-			    && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
-			int code, savedNumCmds = envPtr->numCommands;
+		    cmdPtr = FindCompiledCommandFromToken(interp, tokenPtr);
+		    if (cmdPtr) {
+			int savedNumCmds = envPtr->numCommands;
 			unsigned savedCodeNext =
 				envPtr->codeNext - envPtr->codeStart;
 			int update = 0;
@@ -2073,8 +2078,8 @@ TclCompileScript(
 			 * length will be updated later. There is no need to
 			 * do this for the first bytecode in the compile env,
 			 * as the check is done before calling
-			 * TclNRExecuteByteCode(). Do emit an INST_START_CMD in
-			 * special cases where the first bytecode is in a
+			 * TclNRExecuteByteCode(). Do emit an INST_START_CMD
+			 * in special cases where the first bytecode is in a
 			 * loop, to insure that the corresponding command is
 			 * counted properly. Compilers for commands able to
 			 * produce such a beast (currently 'while 1' only) set
@@ -2095,10 +2100,7 @@ TclCompileScript(
 				 * INST_START_CMD's operands, so be careful!
 				 */
 
-				unsigned char *fixPtr = envPtr->codeNext - 4;
-
-				TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)+1,
-					fixPtr);
+				TclIncrUInt4AtPtr(envPtr->codeNext - 4, 1)
 			    }
 			} else if (envPtr->atCmdStart == 0) {
 			    TclEmitInstInt4(INST_START_CMD, 0, envPtr);
@@ -2106,10 +2108,8 @@ TclCompileScript(
 			    update = 1;
 			}
 
-			code = cmdPtr->compileProc(interp, parsePtr, cmdPtr,
-				envPtr);
-
-			if (code == TCL_OK) {
+			if (cmdPtr->compileProc(interp, parsePtr, cmdPtr,
+				envPtr) == TCL_OK) {
 			    /*
 			     * Confirm that the command compiler generated a
 			     * single value on the stack as its result. This
@@ -2152,10 +2152,7 @@ TclCompileScript(
 			     * operands, so be careful!
 			     */
 
-			    unsigned char *fixPtr = envPtr->codeNext - 4;
-
-			    TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)-1,
-				    fixPtr);
+			    TclIncrUInt4AtPtr(envPtr->codeNext - 4, -1);
 			}
 
 			/*
@@ -2178,7 +2175,7 @@ TclCompileScript(
 
 		    objIndex = TclRegisterNewCmdLiteral(envPtr,
 			    tokenPtr[1].start, tokenPtr[1].size);
-		    if (cmdPtr != NULL) {
+		    if (cmdPtr) {
 			TclSetCmdNameObj(interp,
 				TclFetchLiteral(envPtr, objIndex), cmdPtr);
 		    }
