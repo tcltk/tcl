@@ -106,12 +106,12 @@ typedef off_t		Tcl_SeekOffset;
 #   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
-#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-#   define TclOSstat		stat64
-#   define TclOSlstat		lstat64
-#else
+#elif defined(HAVE_NO_STRUCT_STAT64)
 #   define TclOSstat		stat
 #   define TclOSlstat		lstat
+#else
+#   define TclOSstat		stat64
+#   define TclOSlstat		lstat64
 #endif
 
 /*

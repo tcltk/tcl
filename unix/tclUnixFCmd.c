@@ -242,7 +242,7 @@ MODULE_SCOPE long tclMacOSXDarwinRelease;
 #endif /* NO_REALPATH */
 
 #ifdef HAVE_FTS
-#if defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
+#if !defined(HAVE_NO_STRUCT_STAT64)
 /* fts doesn't do stat64 */
 #   define noFtsStat	1
 #elif defined(__APPLE__) && defined(__LP64__) && \

@@ -144,8 +144,8 @@ typedef struct {
  * Other typedefs required by this code.
  */
 
-static time_t		ToCTime(FILETIME fileTime);
-static void		FromCTime(time_t posixTime, FILETIME *fileTime);
+static __time64_t		ToCTime(FILETIME fileTime);
+static void		FromCTime(__time64_t posixTime, FILETIME *fileTime);
 
 /*
  * Declarations for local functions defined in this file:
@@ -2152,7 +2152,7 @@ NativeStatMode(
  *
  * ToCTime --
  *
- *	Converts a Windows FILETIME to a time_t in UTC.
+ *	Converts a Windows FILETIME to a __time64_t in UTC.
  *
  * Results:
  *	Returns the count of seconds from the Posix epoch.
@@ -2160,7 +2160,7 @@ NativeStatMode(
  *------------------------------------------------------------------------
  */
 
-static time_t
+static __time64_t
 ToCTime(
     FILETIME fileTime)		/* UTC time */
 {
@@ -2169,7 +2169,7 @@ ToCTime(
     convertedTime.LowPart = fileTime.dwLowDateTime;
     convertedTime.HighPart = (LONG) fileTime.dwHighDateTime;
 
-    return (time_t) ((convertedTime.QuadPart -
+    return (__time64_t) ((convertedTime.QuadPart -
 	    (Tcl_WideInt) POSIX_EPOCH_AS_FILETIME) / (Tcl_WideInt) 10000000);
 }
 
@@ -2178,7 +2178,7 @@ ToCTime(
  *
  * FromCTime --
  *
- *	Converts a time_t to a Windows FILETIME
+ *	Converts a __time64_t to a Windows FILETIME
  *
  * Results:
  *	Returns the count of 100-ns ticks seconds from the Windows epoch.
@@ -2188,7 +2188,7 @@ ToCTime(
 
 static void
 FromCTime(
-    time_t posixTime,
+    __time64_t posixTime,
     FILETIME *fileTime)		/* UTC Time */
 {
     LARGE_INTEGER convertedTime;

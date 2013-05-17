@@ -240,7 +240,6 @@ typedef void *ClientData;
 #	undef TCL_WIDE_INT_IS_LONG
 #	undef TCL_CFG_DO64BIT
 #    endif /* __LP64__ */
-#    undef HAVE_STRUCT_STAT64
 #endif /* __APPLE__ */
 
 /*
@@ -323,15 +322,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #endif /* TCL_WIDE_INT_IS_LONG */
 
 #if defined(__WIN32__)
-#   ifdef __BORLANDC__
-	typedef struct stati64 Tcl_StatBuf;
-#   elif defined(_WIN64)
-	typedef struct __stat64 Tcl_StatBuf;
-#   elif (defined(_MSC_VER) && (_MSC_VER < 1400)) || defined(_USE_32BIT_TIME_T)
-	typedef struct _stati64	Tcl_StatBuf;
-#   else
-	typedef struct _stat32i64 Tcl_StatBuf;
-#   endif /* _MSC_VER < 1400 */
+    typedef struct __stat64 Tcl_StatBuf;
 #elif defined(__CYGWIN__)
     typedef struct {
 	dev_t st_dev;
@@ -344,15 +335,14 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	dev_t st_rdev;
 	/* Here is a 4-byte gap */
 	long long st_size;
-	struct {long tv_sec;} st_atim;
-	struct {long tv_sec;} st_mtim;
-	struct {long tv_sec;} st_ctim;
-	/* Here is a 4-byte gap */
+	struct {long long tv_sec;} st_atim;
+	struct {long long tv_sec;} st_mtim;
+	struct {long long tv_sec;} st_ctim;
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
-    typedef struct stat64 Tcl_StatBuf;
-#else
+#elif defined(HAVE_NO_STRUCT_STAT64)
     typedef struct stat Tcl_StatBuf;
+#else
+    typedef struct stat64 Tcl_StatBuf;
 #endif
 
 /*

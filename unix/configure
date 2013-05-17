@@ -9959,10 +9959,10 @@ rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
 fi
 echo "$as_me:$LINENO: result: $tcl_cv_struct_stat64" >&5
 echo "${ECHO_T}$tcl_cv_struct_stat64" >&6
-	if test "x${tcl_cv_struct_stat64}" = "xyes" ; then
+	if test "x${tcl_cv_struct_stat64}" != "xyes" ; then
 
 cat >>confdefs.h <<\_ACEOF
-#define HAVE_STRUCT_STAT64 1
+#define HAVE_NO_STRUCT_STAT64 1
 _ACEOF
 
 	fi
