@@ -486,6 +486,17 @@ Tcl_CreateInterp(void)
 	Tcl_Panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
 
+#if defined(_WIN32) && !defined(_WIN64)
+    if (sizeof(time_t) != 4) {
+	/*NOTREACHED*/
+	Tcl_Panic("sys/time.h is not compatible with MSVC");
+    }
+    if (sizeof(Tcl_StatBuf) != 48) {
+	/*NOTREACHED*/
+	Tcl_Panic("sys/stat.h is not compatible with MSVC");
+    }
+#endif
+
     if (cancelTableInitialized == 0) {
 	Tcl_MutexLock(&cancelLock);
 	if (cancelTableInitialized == 0) {
