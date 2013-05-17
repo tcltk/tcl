@@ -578,8 +578,8 @@ static void		EnterCmdExtentData(CompileEnv *envPtr,
 			    int cmdNumber, int numSrcBytes, int numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
 			    int cmdNumber, int srcOffset, int codeOffset);
-static Command *	FindCommandFromToken(Tcl_Interp *interp,
-			    Tcl_Token *tokenPtr, Tcl_Namespace *namespacePtr);
+static Command *	FindCompiledCommandFromToken(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -646,6 +646,13 @@ static const Tcl_ObjType tclInstNameType = {
     UpdateStringOfInstName,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
 };
+
+/*
+ * Helper macros.
+ */
+
+#define TclIncrUInt4AtPtr(ptr, delta) \
+    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr));
 
 /*
  *----------------------------------------------------------------------
@@ -1795,7 +1802,7 @@ TclWordKnownAtCompileTime(
 /*
  * ---------------------------------------------------------------------
  *
- * FindCommandFromToken --
+ * FindCompiledCommandFromToken --
  *
  *	A simple helper that looks up a command's compiler from its token.
  *
@@ -1803,15 +1810,20 @@ TclWordKnownAtCompileTime(
  */
 
 static Command *
-FindCommandFromToken(
+FindCompiledCommandFromToken(
     Tcl_Interp *interp,
-    Tcl_Token *tokenPtr,
-    Tcl_Namespace *namespacePtr)
+    Tcl_Token *tokenPtr)
 {
     Tcl_DString ds;
     Command *cmdPtr;
 
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    /*
+     * If we have a non-trivial token or are suppressing compilation, we stop
+     * right now.
+     */
+
+    if ((tokenPtr->type != TCL_TOKEN_SIMPLE_WORD)
+	    || (((Interp *) interp)->flags & DONT_COMPILE_CMDS_INLINE)) {
 	return NULL;
     }
 
@@ -1824,8 +1836,8 @@ FindCommandFromToken(
 
     Tcl_DStringInit(&ds);
     TclDStringAppendToken(&ds, &tokenPtr[1]);
-    cmdPtr = (Command *) Tcl_FindCommand(interp, Tcl_DStringValue(&ds),
-	    namespacePtr, /*flags*/ 0);
+    cmdPtr = (Command *) Tcl_FindCommand(interp, Tcl_DStringValue(&ds), NULL,
+	    /*flags*/ 0);
     if (cmdPtr != NULL && (cmdPtr->compileProc == NULL
 	    || (cmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION)
 	    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES))) {
@@ -2063,9 +2075,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 			 * INST_START_CMD's operands, so be careful!
 			 */
 
-			unsigned char *fixPtr = envPtr->codeNext - 4;
-
-			TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)+1, fixPtr);
+			TclIncrUInt4AtPtr(envPtr->codeNext - 4, 1);
 		    }
 		} else if (envPtr->atCmdStart == 0) {
 		    TclEmitInstInt4(INST_START_CMD, 0, envPtr);
@@ -2123,9 +2133,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		     * layout of the INST_START_CMD's operands, so be careful!
 		     */
 
-		    unsigned char *fixPtr = envPtr->codeNext - 4;
-
-		    TclStoreInt4AtPtr(TclGetUInt4AtPtr(fixPtr)-1, fixPtr);
+		    TclIncrUInt4AtPtr(envPtr->codeNext - 4, -1);
 		}
 
 		/*
@@ -2160,7 +2168,6 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 		Tcl_Panic("TclCompileScript: overran token array");
 	    }
 #endif
-
 	    /*
 	     * DGP - Note special handling to preserve line numbers of
 	     * literal argument words later processed as scripts, for
