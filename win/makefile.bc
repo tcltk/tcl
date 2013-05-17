@@ -533,7 +533,7 @@ $(TMPDIR)\tclTomMathStubLib.obj : $(GENERICDIR)\tclTomMathStubLib.c
 $(TMPDIR)\tclOOStubLib.obj : $(GENERICDIR)\tclOOStubLib.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
 
-$(TMPDIR)\tclWinPanic.obj : $(GENERICDIR)\tclWinPanic.c
+$(TMPDIR)\tclWinPanic.obj : $(WINDIR)\tclWinPanic.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
 
 
