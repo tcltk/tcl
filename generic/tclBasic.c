@@ -19,6 +19,7 @@
 #   define _USE_32BIT_TIME_T
 #endif
 
+#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclCompile.h"
 #ifndef TCL_GENERIC_ONLY
