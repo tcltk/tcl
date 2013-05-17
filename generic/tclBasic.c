@@ -17,9 +17,9 @@
 
 #if defined(_WIN32) && !defined(_WIN64)
 #   define _USE_32BIT_TIME_T
+#   include <sys/stat.h>
 #endif
 
-#include <sys/stat.h>
 #include "tclInt.h"
 #include "tclCompile.h"
 #ifndef TCL_GENERIC_ONLY
