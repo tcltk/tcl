@@ -4031,11 +4031,6 @@ cat >>confdefs.h <<\_ACEOF
 #define HAVE_NO_SEH 1
 _ACEOF
 
-
-cat >>confdefs.h <<\_ACEOF
-#define _HAVE_32BIT_TIME_T 1
-_ACEOF
-
 	fi
 
 	#
