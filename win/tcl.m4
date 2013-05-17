@@ -1018,8 +1018,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	if test "$tcl_cv_seh" = "no" ; then
 	    AC_DEFINE(HAVE_NO_SEH, 1,
 		    [Defined when mingw does not support SEH])
-	    AC_DEFINE(_HAVE_32BIT_TIME_T, 1,
-		    [Defined for mingw to use pre-2005 time API])
 	fi
 
 	#
