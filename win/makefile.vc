@@ -274,6 +274,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclCmdIL.obj \
 	$(TMP_DIR)\tclCmdMZ.obj \
 	$(TMP_DIR)\tclCompCmds.obj \
+	$(TMP_DIR)\tclCompCmdsGR.obj \
 	$(TMP_DIR)\tclCompCmdsSZ.obj \
 	$(TMP_DIR)\tclCompExpr.obj \
 	$(TMP_DIR)\tclCompile.obj \
