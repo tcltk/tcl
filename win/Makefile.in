@@ -225,6 +225,7 @@ GENERIC_OBJS = \
 	tclCmdIL.$(OBJEXT) \
 	tclCmdMZ.$(OBJEXT) \
 	tclCompCmds.$(OBJEXT) \
+	tclCompCmdsGR.$(OBJEXT) \
 	tclCompCmdsSZ.$(OBJEXT) \
 	tclCompExpr.$(OBJEXT) \
 	tclCompile.$(OBJEXT) \
