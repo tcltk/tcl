@@ -1,3 +1,8 @@
+2013-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:     Fix for FreeBSD, and remove support for older
+	* unix/configure:  FreeBSD versions. Patch by Pietro Cerutti.
+
 2013-05-18  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmdsGR.c: Split tclCompCmds.c again to keep size of
