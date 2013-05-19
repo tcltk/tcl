@@ -641,7 +641,7 @@ static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
-static inline int	OFFSET(void *ptr);
+static inline int	wordSkip(void *ptr);
 static void		ReleaseDictIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
@@ -918,13 +918,13 @@ TclFinalizeExecution(void)
     (TCL_ALLOCALIGN/sizeof(Tcl_Obj *))
 
 /*
- * OFFSET computes how many words have to be skipped until the next aligned
+ * wordSkip computes how many words have to be skipped until the next aligned
  * word. Note that we are only interested in the low order bits of ptr, so
  * that any possible information loss in PTR2INT is of no consequence.
  */
 
 static inline int
-OFFSET(
+wordSkip(
     void *ptr)
 {
     int mask = TCL_ALLOCALIGN-1;
@@ -937,7 +937,7 @@ OFFSET(
  */
 
 #define MEMSTART(markerPtr) \
-    ((markerPtr) + OFFSET(markerPtr))
+    ((markerPtr) + wordSkip(markerPtr))
 
 /*
  *----------------------------------------------------------------------
@@ -982,7 +982,7 @@ GrowEvaluationStack(
     } else {
 #ifndef PURIFY
 	Tcl_Obj **tmpMarkerPtr = esPtr->tosPtr + 1;
-	int offset = OFFSET(tmpMarkerPtr);
+	int offset = wordSkip(tmpMarkerPtr);
 
 	if (needed + offset < 0) {
 	    /*
