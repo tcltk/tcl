@@ -32,13 +32,6 @@ static int		PushVarName(Tcl_Interp *interp,
 			    int flags, int *localIndexPtr,
 			    int *simpleVarNamePtr, int *isScalarPtr,
 			    int line, int *clNext);
-static int		CompileEachloopCmd(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, Command *cmdPtr,
-			    CompileEnv *envPtr, int collect);
-static int		CompileDictEachCmd(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, Command *cmdPtr,
-			    struct CompileEnv *envPtr, int collect);
-
 
 /*
  * Macro that encapsulates an efficiency trick that avoids a function call for
