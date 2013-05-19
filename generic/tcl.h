@@ -293,10 +293,12 @@ typedef long LONG;
  * in ANSI C; maps them to type "char *" in non-ANSI systems.
  */
 
-#ifndef NO_VOID
-#define VOID	void
-#else
-#define VOID	char
+#ifndef __VXWORKS__
+#   ifndef NO_VOID
+#	define VOID void
+#   else
+#	define VOID char
+#   endif
 #endif
 
 /*
