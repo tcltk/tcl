@@ -1,3 +1,8 @@
+2013-05-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (DefaultTempDir): [Bug 3613567]: Corrected logic
+	for checking return code of access() system call, which was inverted.
+
 2013-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4:     Fix for FreeBSD, and remove support for older
