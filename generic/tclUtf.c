@@ -1101,6 +1101,33 @@ Tcl_UtfNcasecmp(
     }
     return 0;
 }
+
+
+/* Replacement for strcasecmp in Tcl core, in places where UTF-8 should be handled. */
+int
+TclUtfCasecmp(
+    CONST char *cs,		/* UTF string to compare to ct. */
+    CONST char *ct)		/* UTF string cs is compared to. */
+{
+    Tcl_UniChar ch1, ch2;
+    char c;
+
+    do {
+
+	/* If c == '\0', loop should end. */
+   	c = *cs;
+
+	cs += TclUtfToUniChar(cs, &ch1);
+	ct += TclUtfToUniChar(ct, &ch2);
+	if (ch1 != ch2) {
+	    ch1 = Tcl_UniCharToLower(ch1);
+	    ch2 = Tcl_UniCharToLower(ch2);
+	    if (ch1 != ch2) break;
+	}
+    } while (c);
+    return (ch1 - ch2);
+}
+
 
 /*
  *----------------------------------------------------------------------
