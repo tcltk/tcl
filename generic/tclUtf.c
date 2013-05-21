@@ -1110,12 +1110,12 @@ TclUtfCasecmp(
     CONST char *ct)		/* UTF string cs is compared to. */
 {
     Tcl_UniChar ch1, ch2;
-    char c;
+    int goOn;
 
     do {
 
-	/* If c == '\0', loop should end. */
-   	c = *cs;
+	/* If *cs == '\0' or *ct == '\0', loop should end. */
+	goOn = *cs && *ct;
 
 	cs += TclUtfToUniChar(cs, &ch1);
 	ct += TclUtfToUniChar(ct, &ch2);
@@ -1124,7 +1124,7 @@ TclUtfCasecmp(
 	    ch2 = Tcl_UniCharToLower(ch2);
 	    if (ch1 != ch2) break;
 	}
-    } while (c);
+    } while (goOn);
     return (ch1 - ch2);
 }
 
