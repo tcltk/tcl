@@ -394,6 +394,9 @@ test cmdIL-4.34 {SortCompare procedure, -ascii option with -nocase option} {
 test cmdIL-4.35 {SortCompare procedure, -ascii option with -nocase option} {
     lsort -ascii -nocase {d E c B a D35 d300 100 20}
 } {100 20 a B c d d300 D35 E}
+test cmdIL-4.36 {SortCompare procedure, UTF-8 with -nocase option} {
+    lsort -ascii -nocase [list \u101 \u100]
+} [list \u101 \u100]
 
 test cmdIL-5.1 {lsort with list style index} {
     lsort -ascii -decreasing -index {0 1} {
