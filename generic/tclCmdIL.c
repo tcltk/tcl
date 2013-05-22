@@ -3645,7 +3645,8 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int i, j, index, indices, length, nocase = 0, sortMode, indexc;
+    int i, j, index, indices, length, nocase = 0, indexc;
+    int sortMode = SORTMODE_ASCII;
     int group, groupSize, groupOffset, idx, allocatedIndexVector = 0;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
