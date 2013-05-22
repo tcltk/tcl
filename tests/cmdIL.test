@@ -400,6 +400,9 @@ test cmdIL-4.36 {SortCompare procedure, UTF-8 with -nocase option} {
 test cmdIL-4.37 {SortCompare procedure, UTF-8 with -nocase option} {
     scan [lsort -ascii -nocase [list a\u0000a a]] %c%c%c%c%c
 } {97 32 97 0 97}
+test cmdIL-4.38 {SortCompare procedure, UTF-8 with -nocase option} {
+    scan [lsort -ascii -nocase [list a a\u0000a]] %c%c%c%c%c
+} {97 32 97 0 97}
 
 test cmdIL-5.1 {lsort with list style index} {
     lsort -ascii -decreasing -index {0 1} {
