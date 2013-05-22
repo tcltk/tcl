@@ -1,3 +1,8 @@
+2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n: [Bug 3613671]: Added note to portability section on the
+	fact that [file owned] does not produce useful results on Windows.
+
 2013-05-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixFCmd.c (DefaultTempDir): [Bug 3613567]: Corrected logic
