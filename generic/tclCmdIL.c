@@ -3005,7 +3005,7 @@ Tcl_LsearchObjCmd(
 	    dataType = INTEGER;
 	    break;
 	case LSEARCH_NOCASE:		/* -nocase */
-	    strCmpFn = strcasecmp;
+	    strCmpFn = TclUtfCasecmp;
 	    noCase = 1;
 	    break;
 	case LSEARCH_NOT:		/* -not */
@@ -3400,7 +3400,7 @@ Tcl_LsearchObjCmd(
 			 */
 
 			if (noCase) {
-			    match = (strcasecmp(bytes, patternBytes) == 0);
+			    match = (TclUtfCasecmp(bytes, patternBytes) == 0);
 			} else {
 			    match = (memcmp(bytes, patternBytes,
 				    (size_t) length) == 0);
@@ -3991,7 +3991,7 @@ Tcl_LsortObjCmd(
 		goto done1;
 	    }
 	    elementArray[i].collationKey.intValue = a;
-	} else if (sortInfo.sortMode == SORTMODE_REAL) {
+	} else if (sortMode == SORTMODE_REAL) {
 	    double a;
 
 	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr,
@@ -4088,7 +4088,7 @@ Tcl_LsortObjCmd(
     TclStackFree(interp, elementArray);
 
   done:
-    if (sortInfo.sortMode == SORTMODE_COMMAND) {
+    if (sortMode == SORTMODE_COMMAND) {
 	TclDecrRefCount(sortInfo.compareCmdPtr);
 	TclDecrRefCount(listObj);
 	sortInfo.compareCmdPtr = NULL;
@@ -4233,7 +4233,7 @@ SortCompare(
 	order = strcmp(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_ASCII_NC) {
-	order = strcasecmp(elemPtr1->collationKey.strValuePtr,
+	order = TclUtfCasecmp(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
 	order = DictionaryCompare(elemPtr1->collationKey.strValuePtr,
