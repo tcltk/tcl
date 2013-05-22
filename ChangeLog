@@ -1,3 +1,8 @@
+2013-05-22  Andreas Kupries  <andreask@activestate.com>
+
+	* tclCompile.c: Removed duplicate const qualifier causing the HP
+	  native cc to error out.
+
 2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclUtf.c (TclUtfCasecmp): [Bug 3613609]: Replace problematic
