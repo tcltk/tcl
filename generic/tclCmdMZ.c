@@ -3527,7 +3527,7 @@ TclNRSwitchObjCmd(
 	    i++;
 	    goto finishedOptions;
 	case OPT_NOCASE:
-	    strCmpFn = strcasecmp;
+	    strCmpFn = TclUtfCasecmp;
 	    noCase = 1;
 	    break;
 
