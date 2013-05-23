@@ -956,6 +956,11 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, int maxChars);
+MODULE_SCOPE int	TclPushVarName(Tcl_Interp *interp,
+			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
+			    int flags, int *localIndexPtr,
+			    int *simpleVarNamePtr, int *isScalarPtr,
+			    int line, int *clNext);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -1384,6 +1389,66 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 #define TclRegisterDStringLiteral(envPtr, dsPtr) \
     TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr), \
 	    Tcl_DStringLength(dsPtr), /*flags*/ 0)
+
+/*
+ * Macro that encapsulates an efficiency trick that avoids a function call for
+ * the simplest of compiles. The ANSI C "prototype" for this macro is:
+ *
+ * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
+ *			    Tcl_Interp *interp, int word);
+ */
+
+#define CompileWord(envPtr, tokenPtr, interp, word) \
+    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
+	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
+		(tokenPtr)[1].size), (envPtr));				\
+    } else {								\
+	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
+	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
+	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
+		(envPtr));						\
+    }
+
+/*
+ * TIP #280: Remember the per-word line information of the current command. An
+ * index is used instead of a pointer as recursive compilation may reallocate,
+ * i.e. move, the array. This is also the reason to save the nuloc now, it may
+ * change during the course of the function.
+ *
+ * Macro to encapsulate the variable definition and setup.
+ */
+
+#define DefineLineInformation \
+    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
+    int eclIndex = mapPtr->nuloc - 1
+
+#define SetLineInformation(word) \
+    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
+    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
+
+#define PushVarNameWord(i,v,e,f,l,s,sc,word) \
+    TclPushVarName(i,v,e,f,l,s,sc,						\
+	    mapPtr->loc[eclIndex].line[(word)],				\
+	    mapPtr->loc[eclIndex].next[(word)])
+
+/*
+ * Often want to issue one of two versions of an instruction based on whether
+ * the argument will fit in a single byte or not. This makes it much clearer.
+ */
+
+#define Emit14Inst(nm,idx,envPtr) \
+    if (idx <= 255) {							\
+	TclEmitInstInt1(nm##1,idx,envPtr);				\
+    } else {								\
+	TclEmitInstInt4(nm##4,idx,envPtr);				\
+    }
+
+/*
+ * Flags bits used by TclPushVarName.
+ */
+
+#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
+#define TCL_NO_ELEMENT 2	/* Do not push the array element. */
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).
