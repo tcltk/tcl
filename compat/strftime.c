@@ -44,6 +44,9 @@
  * SUCH DAMAGE.
  */
 
+#if defined(_WIN32) && !defined(_WIN64)
+#   define _USE_32BIT_TIME_T
+#endif
 #include <time.h>
 #include <string.h>
 #include <locale.h>
