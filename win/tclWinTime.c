@@ -10,6 +10,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#if defined(_WIN32) && !defined(_WIN64)
+#   define _USE_32BIT_TIME_T
+#endif
 #include "tclWinInt.h"
 
 #define SECSPERDAY (60L * 60L * 24L)
