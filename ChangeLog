@@ -1,3 +1,19 @@
+2013-05-22  Andreas Kupries  <andreask@activestate.com>
+
+	* tclCompile.c: Removed duplicate const qualifier causing the HP
+	  native cc to error out.
+
+2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtf.c (TclUtfCasecmp): [Bug 3613609]: Replace problematic
+	uses of strcasecmp with a proper UTF-8-aware version. Affects both
+	[lsearch -nocase] and [lsort -nocase].
+
+2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n: [Bug 3613671]: Added note to portability section on the
+	fact that [file owned] does not produce useful results on Windows.
+
 2013-05-20  Donal K. Fellows  <dkf@users.sf.net>
 
 	* unix/tclUnixFCmd.c (DefaultTempDir): [Bug 3613567]: Corrected logic

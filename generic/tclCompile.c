@@ -69,7 +69,7 @@ static int traceInitialized = 0;
  * existence of a procedure call frame to distinguish these.
  */
 
-const InstructionDesc const tclInstructionTable[] = {
+InstructionDesc const tclInstructionTable[] = {
     /* Name	      Bytes stackEffect #Opnds  Operand types */
     {"done",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */

@@ -481,6 +481,13 @@ Returns \fB1\fR if file \fIname\fR is writable by the current user,
 .
 These commands always operate using the real user and group identifiers,
 not the effective ones. 
+.TP
+\fBWindows\fR\0\0\0\0
+.
+The \fbfile owned\fR subcommand currently always reports that the current user
+is the owner of the file, without regard for what the operating system
+believes to be true, making an ownership test useless. This issue (#3613671)
+may be fixed in a future release of Tcl.
 .SH EXAMPLES
 .PP
 This procedure shows how to search for C files in a given directory
