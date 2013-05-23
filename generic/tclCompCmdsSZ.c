@@ -88,7 +88,7 @@ const AuxDataType tclJumptableInfoType = {
 #define BODY(token,index) \
     SetLineInformation((index));CompileBody(envPtr,(token),interp)
 #define PUSH(str) \
-    PushLiteral(envPtr,(str),strlen(str))
+    PushStringLiteral(envPtr, str)
 #define JUMP(var,name) \
     (var) = CurrentOffset(envPtr);TclEmitInstInt4(INST_##name,0,envPtr)
 #define FIXJUMP(var) \
@@ -757,7 +757,7 @@ TclSubstCompile(
 
     tokenPtr = parse.tokenPtr;
     if (tokenPtr->type != TCL_TOKEN_TEXT && tokenPtr->type != TCL_TOKEN_BS) {
-	PushLiteral(envPtr, "", 0);
+	PUSH("");
 	count++;
     }
 
@@ -1420,7 +1420,7 @@ IssueSwitchChainedTests(
 			 * when the RE == "".
 			 */
 
-			PushLiteral(envPtr, "1", 1);
+			PUSH("1");
 			break;
 		    }
 
@@ -1545,7 +1545,7 @@ IssueSwitchChainedTests(
 
     if (!foundDefault) {
 	OP(	POP);
-	PushLiteral(envPtr, "", 0);
+	PUSH("");
     }
 
     /*
@@ -1764,7 +1764,7 @@ IssueSwitchJumpTable(
 	envPtr->currStackDepth = savedStackDepth;
 	TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
 		envPtr->codeStart+jumpToDefault+1);
-	PushLiteral(envPtr, "", 0);
+	PUSH("");
     }
 
     /*
@@ -2338,10 +2338,11 @@ IssueTryInstructions(
     for (i=0 ; i<numHandlers ; i++) {
 	sprintf(buf, "%d", matchCodes[i]);
 	OP(				DUP);
-	PUSH(				buf);
+	PushLiteral(envPtr, buf, strlen(buf));
 	OP(				EQ);
 	JUMP(notCodeJumpSource,		JUMP_FALSE4);
 	if (matchClauses[i]) {
+	    const char *p;
 	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
 
 	    /*
@@ -2353,7 +2354,8 @@ IssueTryInstructions(
 	    OP4(			DICT_GET, 1);
 	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
-	    PUSH(			TclGetString(matchClauses[i]));
+	    p = Tcl_GetStringFromObj(matchClauses[i], &len);
+	    PushLiteral(envPtr, p, len);
 	    OP(				STR_EQ);
 	    JUMP(notECJumpSource,	JUMP_FALSE4);
 	} else {
@@ -2493,10 +2495,11 @@ IssueTryFinallyInstructions(
 	for (i=0 ; i<numHandlers ; i++) {
 	    sprintf(buf, "%d", matchCodes[i]);
 	    OP(				DUP);
-	    PUSH(			buf);
+	    PushLiteral(envPtr,	buf, strlen(buf));
 	    OP(				EQ);
 	    JUMP(notCodeJumpSource,	JUMP_FALSE4);
 	    if (matchClauses[i]) {
+		const char *p;
 		Tcl_ListObjLength(NULL, matchClauses[i], &len);
 
 		/*
@@ -2508,7 +2511,8 @@ IssueTryFinallyInstructions(
 		OP4(			DICT_GET, 1);
 		TclAdjustStackDepth(-1, envPtr);
 		OP44(			LIST_RANGE_IMM, 0, len-1);
-		PUSH(			TclGetString(matchClauses[i]));
+		p = Tcl_GetStringFromObj(matchClauses[i], &len);
+		PushLiteral(envPtr, p, len);
 		OP(			STR_EQ);
 		JUMP(notECJumpSource,	JUMP_FALSE4);
 	    } else {
@@ -2744,7 +2748,7 @@ TclCompileUnsetCmd(
 
 	varTokenPtr = TokenAfter(varTokenPtr);
     }
-    PushLiteral(envPtr, "", 0);
+    PUSH("");
     return TCL_OK;
 }
 
@@ -2923,7 +2927,7 @@ TclCompileWhileCmd(
 
   pushResult:
     envPtr->currStackDepth = savedStackDepth;
-    PushLiteral(envPtr, "", 0);
+    PUSH("");
     return TCL_OK;
 }
 
@@ -2959,7 +2963,7 @@ TclCompileYieldCmd(
     }
 
     if (parsePtr->numWords == 1) {
-	PushLiteral(envPtr, "", 0);
+	PUSH("");
     } else {
 	DefineLineInformation;	/* TIP #280 */
 	Tcl_Token *valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -3125,7 +3129,7 @@ CompileComparisonOpCmd(
     DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords < 3) {
-	PushLiteral(envPtr, "1", 1);
+	PUSH("1");
     } else if (parsePtr->numWords == 3) {
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, 1);
@@ -3296,7 +3300,7 @@ TclCompilePowOpCmd(
 	CompileWord(envPtr, tokenPtr, interp, words);
     }
     if (parsePtr->numWords <= 2) {
-	PushLiteral(envPtr, "1", 1);
+	PUSH("1");
 	words++;
     }
     while (--words > 1) {
@@ -3514,7 +3518,7 @@ TclCompileDivOpCmd(
 	return TCL_ERROR;
     }
     if (parsePtr->numWords == 2) {
-	PushLiteral(envPtr, "1.0", 3);
+	PUSH("1.0");
     }
     for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);

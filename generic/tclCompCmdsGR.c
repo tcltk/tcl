@@ -77,7 +77,7 @@ TclCompileGlobalCmd(
      * Push the namespace
      */
 
-    PushLiteral(envPtr, "::", 2);
+    PushStringLiteral(envPtr, "::");
 
     /*
      * Loop over the variables.
@@ -100,7 +100,7 @@ TclCompileGlobalCmd(
      */
 
     TclEmitOpcode(		INST_POP,			envPtr);
-    PushLiteral(envPtr, "", 0);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
@@ -376,7 +376,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    PushLiteral(envPtr, "", 0);
+	    PushStringLiteral(envPtr, "");
 	}
     }
 
@@ -1203,7 +1203,7 @@ TclCompileListCmd(
 	 * [list] without arguments just pushes an empty object.
 	 */
 
-	PushLiteral(envPtr, "", 0);
+	PushStringLiteral(envPtr, "");
 	return TCL_OK;
     }
 
@@ -1545,7 +1545,7 @@ TclCompileLreplaceCmd(
     if (guaranteedDropAll) {
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
-	PushLiteral(envPtr, "", 0);
+	PushStringLiteral(envPtr, "");
     } else {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx1,	envPtr);
 	TclEmitInt4(		idx2,				envPtr);
@@ -1811,8 +1811,8 @@ TclCompileNamespaceCodeCmd(
      * the value needs to be determined at runtime for safety.
      */
 
-    PushLiteral(envPtr,		"::namespace",		11);
-    PushLiteral(envPtr,		"inscope",		7);
+    PushStringLiteral(envPtr,		"::namespace");
+    PushStringLiteral(envPtr,		"inscope");
     TclEmitOpcode(		INST_NS_CURRENT,	envPtr);
     CompileWord(envPtr,		tokenPtr,		interp, 1);
     TclEmitInstInt4(		INST_LIST, 4,		envPtr);
@@ -1837,17 +1837,17 @@ TclCompileNamespaceQualifiersCmd(
     }
 
     CompileWord(envPtr, tokenPtr, interp, 1);
-    PushLiteral(envPtr, "0", 1);
-    PushLiteral(envPtr, "::", 2);
+    PushStringLiteral(envPtr, "0");
+    PushStringLiteral(envPtr, "::");
     TclEmitInstInt4(	INST_OVER, 2,			envPtr);
     TclEmitOpcode(	INST_STR_FIND_LAST,		envPtr);
     off = CurrentOffset(envPtr);
-    PushLiteral(envPtr, "1", 1);
+    PushStringLiteral(envPtr, "1");
     TclEmitOpcode(	INST_SUB,			envPtr);
     TclEmitInstInt4(	INST_OVER, 2,			envPtr);
     TclEmitInstInt4(	INST_OVER, 1,			envPtr);
     TclEmitOpcode(	INST_STR_INDEX,			envPtr);
-    PushLiteral(envPtr, ":", 1);
+    PushStringLiteral(envPtr, ":");
     TclEmitOpcode(	INST_STR_EQ,			envPtr);
     off = off - CurrentOffset(envPtr);
     TclEmitInstInt1(	INST_JUMP_TRUE1, off,		envPtr);
@@ -1877,17 +1877,17 @@ TclCompileNamespaceTailCmd(
      */
 
     CompileWord(envPtr, tokenPtr, interp, 1);
-    PushLiteral(envPtr, "::", 2);
+    PushStringLiteral(envPtr, "::");
     TclEmitInstInt4(	INST_OVER, 1,			envPtr);
     TclEmitOpcode(	INST_STR_FIND_LAST,		envPtr);
     TclEmitOpcode(	INST_DUP,			envPtr);
-    PushLiteral(envPtr, "0", 1);
+    PushStringLiteral(envPtr, "0");
     TclEmitOpcode(	INST_GE,			envPtr);
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFixup);
-    PushLiteral(envPtr, "2", 1);
+    PushStringLiteral(envPtr, "2");
     TclEmitOpcode(	INST_ADD,			envPtr);
     TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
-    PushLiteral(envPtr, "end", 3);
+    PushStringLiteral(envPtr, "end");
     TclEmitOpcode(	INST_STR_RANGE,			envPtr);
     return TCL_OK;
 }
@@ -1951,7 +1951,7 @@ TclCompileNamespaceUpvarCmd(
      */
 
     TclEmitOpcode(		INST_POP,			envPtr);
-    PushLiteral(envPtr, "", 0);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
@@ -2117,7 +2117,7 @@ TclCompileRegexpCmd(
 	     * The semantics of regexp are always match on re == "".
 	     */
 
-	    PushLiteral(envPtr, "1", 1);
+	    PushStringLiteral(envPtr, "1");
 	    return TCL_OK;
 	}
 
@@ -2459,7 +2459,7 @@ TclCompileReturnCmd(
 	 * No explict result argument, so default result is empty string.
 	 */
 
-	PushLiteral(envPtr, "", 0);
+	PushStringLiteral(envPtr, "");
     }
 
     /*
@@ -2534,7 +2534,7 @@ TclCompileReturnCmd(
     if (explicitResult) {
 	CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
     } else {
-	PushLiteral(envPtr, "", 0);
+	PushStringLiteral(envPtr, "");
     }
 
     /*
@@ -2646,7 +2646,7 @@ TclCompileUpvarCmd(
 	    if (!(numWords%2)) {
 		return TCL_ERROR;
 	    }
-	    PushLiteral(envPtr, "1", 1);
+	    PushStringLiteral(envPtr, "1");
 	    otherTokenPtr = tokenPtr;
 	    i = 3;
 	}
@@ -2679,7 +2679,7 @@ TclCompileUpvarCmd(
      */
 
     TclEmitOpcode(		INST_POP,			envPtr);
-    PushLiteral(envPtr, "", 0);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
@@ -2760,7 +2760,7 @@ TclCompileVariableCmd(
      * Set the result to empty
      */
 
-    PushLiteral(envPtr, "", 0);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
