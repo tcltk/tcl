@@ -263,11 +263,6 @@ TclCompileArraySetCmd(
     }
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
-    if (!isScalar) {
-	return TCL_ERROR;
-    }
     dataTokenPtr = TokenAfter(varTokenPtr);
     literalObj = Tcl_NewObj();
     isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
@@ -275,6 +270,23 @@ TclCompileArraySetCmd(
 	    && Tcl_ListObjLength(NULL, literalObj, &len) == TCL_OK);
     isDataEven = (isDataValid && (len & 1) == 0);
 
+    /*
+     * Special case: literal odd-length argument is always an error.
+     */
+
+    if (isDataValid && !isDataEven) {
+	PushStringLiteral(envPtr, "list must have an even number of elements");
+	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
+	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
+	TclEmitInt4(		0,				envPtr);
+	goto done;
+    }
+
+    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
+	    &localIndex, &simpleVarName, &isScalar, 1);
+    if (!isScalar) {
+	return TCL_ERROR;
+    }
     /*
      * Special case: literal empty value argument is just an "ensure array"
      * operation.
@@ -295,21 +307,6 @@ TclCompileArraySetCmd(
 	    envPtr->currStackDepth = savedStackDepth;
 	    TclEmitOpcode(  INST_POP,				envPtr);
 	}
-	PushStringLiteral(envPtr, "");
-	goto done;
-    }
-
-    /*
-     * Special case: literal odd-length argument is always an error.
-     */
-
-    if (isDataValid && !isDataEven) {
-	savedStackDepth = envPtr->currStackDepth;
-	PushStringLiteral(envPtr, "list must have an even number of elements");
-	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
-	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
-	TclEmitInt4(		0,				envPtr);
-	envPtr->currStackDepth = savedStackDepth;
 	PushStringLiteral(envPtr, "");
 	goto done;
     }
