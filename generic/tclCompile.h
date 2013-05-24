@@ -1316,15 +1316,19 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
 	    (envPtr));
 /*
- * Convenience macro for use when pushing literals. The ANSI C "prototype" for
- * this macro is:
+ * Convenience macros for use when pushing literals. The ANSI C "prototype" for
+ * these macros are:
  *
  * static void		PushLiteral(CompileEnv *envPtr,
  *			    const char *string, int length);
+ * static void		PushStringLiteral(CompileEnv *envPtr,
+ *			    const char *string);
  */
 
 #define PushLiteral(envPtr, string, length) \
     TclEmitPush(TclRegisterNewLiteral((envPtr), (string), (length)), (envPtr))
+#define PushStringLiteral(envPtr, string) \
+    PushLiteral((envPtr), (string), (int) (sizeof(string "") - 1))
 
 /*
  * Macro to advance to the next token; it is more mnemonic than the address
