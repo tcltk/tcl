@@ -938,7 +938,7 @@ TclSubstCompile(
 	 * that is too low.  Here we manually fix that up.
 	 */
 
-	TclAdjustStackDepth(5, envPtr);
+	TclAdjustStackDepth(4, envPtr);
 
 	/* OK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
