@@ -1329,6 +1329,7 @@ TclCompileDictMergeCmd(
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			infoIndex,		envPtr);
     TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+    TclAdjustStackDepth(-1, envPtr);
 
     return TCL_OK;
 }

@@ -2375,7 +2375,6 @@ TclCompileReturnCmd(
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
-    int savedStackDepth = envPtr->currStackDepth;
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     DefineLineInformation;	/* TIP #280 */
@@ -2398,7 +2397,6 @@ TclCompileReturnCmd(
 	CompileWord(envPtr, optsTokenPtr, interp, 2);
 	CompileWord(envPtr, msgTokenPtr,  interp, 3);
 	TclEmitOpcode(INST_RETURN_STK, envPtr);
-	envPtr->currStackDepth = savedStackDepth + 1;
 	return TCL_OK;
     }
 
@@ -2494,7 +2492,6 @@ TclCompileReturnCmd(
 
 	    Tcl_DecrRefCount(returnOpts);
 	    TclEmitOpcode(INST_DONE, envPtr);
-	    envPtr->currStackDepth = savedStackDepth;
 	    return TCL_OK;
 	}
     }
@@ -2512,7 +2509,6 @@ TclCompileReturnCmd(
      */
 
     CompileReturnInternal(envPtr, INST_RETURN_IMM, code, level, returnOpts);
-    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 
   issueRuntimeReturn:
@@ -2542,7 +2538,6 @@ TclCompileReturnCmd(
      */
 
     TclEmitOpcode(INST_RETURN_STK, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
