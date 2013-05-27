@@ -51,6 +51,13 @@
 	command with expansion ([list {*}blah]) into bytecode that does not
 	call an external command.
 
+2013-05-08 Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from
+	registry key HCU\Control Panel\Desktop : PreferredUILanguages to
+	honor installed language packs on Vista+.
+	Bumped msgcat version to 1.5.2
+
 2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit
