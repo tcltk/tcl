@@ -1322,7 +1322,7 @@ dist:
 	mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http1.0 http opt msgcat reg dde tcltest; \
+	for i in http1.0 http opt msgcat reg dde tcltest platform; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \

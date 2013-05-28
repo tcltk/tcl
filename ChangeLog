@@ -15,6 +15,16 @@
 
 	* changes:		updates for 8.4.20 release.
 
+2013-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:     Fix for FreeBSD, and remove support for older
+	* unix/configure:  FreeBSD versions. Patch by Pietro Cerutti.
+
+2013-05-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: Add panic in order to detect
+	incompatible mingw32 sys/stat.h and sys/time.h headers,
+
 2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit

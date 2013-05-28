@@ -15,6 +15,11 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#if defined(_WIN32) && !defined(_WIN64)
+#   define _USE_32BIT_TIME_T
+#   include <sys/stat.h>
+#endif
+
 #include "tclInt.h"
 #include "tclCompile.h"
 #ifndef TCL_GENERIC_ONLY
@@ -311,6 +316,17 @@ Tcl_CreateInterp()
 	/*NOTREACHED*/
 	panic("Tcl_CallFrame must not be smaller than CallFrame");
     }
+
+#if defined(_WIN32) && !defined(_WIN64)
+    if (sizeof(time_t) != 4) {
+	/*NOTREACHED*/
+	Tcl_Panic("sys/time.h is not compatible with MSVC");
+    }
+    if (sizeof(Tcl_StatBuf) != 48) {
+	/*NOTREACHED*/
+	Tcl_Panic("sys/stat.h is not compatible with MSVC");
+    }
+#endif
 
     /*
      * Initialize support for namespaces and create the global namespace

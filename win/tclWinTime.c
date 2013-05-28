@@ -10,6 +10,9 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#if defined(_WIN32) && !defined(_WIN64)
+#   define _USE_32BIT_TIME_T
+#endif
 #include "tclWinInt.h"
 
 #define SECSPERDAY (60L * 60L * 24L)
@@ -258,7 +261,7 @@ void
 Tcl_GetTime(timePtr)
     Tcl_Time *timePtr;		/* Location to store time information. */
 {
-    struct timeb t;
+    struct _timeb t;
 
     int useFtime = 1;		/* Flag == TRUE if we need to fall back
 				 * on ftime rather than using the perf
@@ -431,7 +434,7 @@ Tcl_GetTime(timePtr)
     if ( useFtime ) {
 	/* High resolution timer is not available.  Just use ftime */
 
-	ftime(&t);
+	_ftime(&t);
 	timePtr->sec = (long)t.time;
 	timePtr->usec = t.millitm * 1000;
     }
