@@ -251,7 +251,7 @@ TclCompileArraySetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
-    int simpleVarName, isScalar, localIndex;
+    int simpleVarName, isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven, len;
     int dataVar, iterVar, keyVar, valVar, infoIndex;
     int back, fwd, offsetBack, offsetFwd, savedStackDepth;
@@ -282,11 +282,21 @@ TclCompileArraySetCmd(
 	goto done;
     }
 
+    /*
+     * Except for the special "ensure array" case below, when we're not in
+     * a proc, we cannot do a better compile than generic.
+     */
+
+    if (envPtr->procPtr == NULL && !(isDataEven && len == 0)) {
+	code = TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	goto done;
+    }
+
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar, 1);
     if (!isScalar) {
-	Tcl_DecrRefCount(literalObj);
-	return TCL_ERROR;
+	code = TCL_ERROR;
+	goto done;
     }
     /*
      * Special case: literal empty value argument is just an "ensure array"
@@ -302,10 +312,10 @@ TclCompileArraySetCmd(
 	    TclEmitOpcode(  INST_DUP,				envPtr);
 	    TclEmitOpcode(  INST_ARRAY_EXISTS_STK,		envPtr);
 	    TclEmitInstInt1(INST_JUMP_TRUE1, 5,			envPtr);
-	    savedStackDepth = envPtr->currStackDepth;
 	    TclEmitOpcode(  INST_ARRAY_MAKE_STK,		envPtr);
 	    TclEmitInstInt1(INST_JUMP1, 3,			envPtr);
-	    envPtr->currStackDepth = savedStackDepth;
+	    /* Each branch decrements stack depth, but we only take one. */
+	    TclAdjustStackDepth(1, envPtr);
 	    TclEmitOpcode(  INST_POP,				envPtr);
 	}
 	PushStringLiteral(envPtr, "");
@@ -320,32 +330,6 @@ TclCompileArraySetCmd(
     iterVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     keyVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     valVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-
-    if (dataVar < 0) {
-	/*
-	 * Right number of arguments, but not compilable as we can't allocate
-	 * (unnamed) local variables to manage the internal iteration.
-	 */
-
-	Tcl_Obj *objPtr = Tcl_NewObj();
-	char *bytes;
-	int length, cmdLit;
-
-	Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-	bytes = Tcl_GetStringFromObj(objPtr, &length);
-	cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length);
-	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
-	TclEmitPush(cmdLit, envPtr);
-	TclDecrRefCount(objPtr);
-	if (localIndex >= 0) {
-	    CompileWord(envPtr, varTokenPtr, interp, 1);
-	} else {
-	    TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
-	}
-	CompileWord(envPtr, dataTokenPtr, interp, 2);
-	TclEmitInstInt1(INST_INVOKE_STK1, 3,			envPtr);
-	goto done;
-    }
 
     infoPtr = ckalloc(sizeof(ForeachInfo) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
@@ -418,7 +402,6 @@ TclCompileArraySetCmd(
 	TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex,		envPtr);
 	offsetFwd = CurrentOffset(envPtr);
 	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
-	savedStackDepth = envPtr->currStackDepth;
 	TclEmitOpcode(	INST_DUP,				envPtr);
 	Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
 	Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
@@ -428,7 +411,6 @@ TclCompileArraySetCmd(
 	TclEmitInstInt1(INST_JUMP1, back,			envPtr);
 	fwd = CurrentOffset(envPtr) - offsetFwd;
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-	envPtr->currStackDepth = savedStackDepth;
 	TclEmitOpcode(	INST_POP,				envPtr);
     }
     if (!isDataLiteral) {
@@ -438,7 +420,7 @@ TclCompileArraySetCmd(
     PushStringLiteral(envPtr,	"");
   done:
     Tcl_DecrRefCount(literalObj);
-    return TCL_OK;
+    return code;
 }
 
 int
