@@ -1,3 +1,10 @@
+2013-05-27 Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from
+	registry key HCU\Control Panel\Desktop : PreferredUILanguages to
+	honor installed language packs on Vista+.
+	Bumped msgcat version to 1.5.2
+
 2013-05-22  Andreas Kupries  <andreask@activestate.com>
 
 	* tclCompile.c: Removed duplicate const qualifier causing the HP
@@ -50,13 +57,6 @@
 	(TclCompileScript): Added the special ability to compile the list
 	command with expansion ([list {*}blah]) into bytecode that does not
 	call an external command.
-
-2013-05-08 Harald Oehlmann  <oehhar@users.sf.net>
-
-	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from
-	registry key HCU\Control Panel\Desktop : PreferredUILanguages to
-	honor installed language packs on Vista+.
-	Bumped msgcat version to 1.5.2
 
 2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
 
