@@ -285,6 +285,7 @@ TclCompileArraySetCmd(
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &simpleVarName, &isScalar, 1);
     if (!isScalar) {
+	Tcl_DecrRefCount(literalObj);
 	return TCL_ERROR;
     }
     /*
