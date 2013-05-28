@@ -51,7 +51,7 @@ static int traceInitialized = 0;
  * existence of a procedure call frame to distinguish these.
  */
 
-const InstructionDesc const tclInstructionTable[] = {
+InstructionDesc const tclInstructionTable[] = {
     /* Name	      Bytes stackEffect #Opnds  Operand types */
     {"done",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */
@@ -310,7 +310,7 @@ const InstructionDesc const tclInstructionTable[] = {
     {"pushReturnOpts",	  1,	+1,	   0,	{OPERAND_NONE}},
 	/* Push the interpreter's return option dictionary as an object on the
 	 * stack. */
-    {"returnStk",	  1,	-2,	   0,	{OPERAND_NONE}},
+    {"returnStk",	  1,	-1,	   0,	{OPERAND_NONE}},
 	/* Compiled [return]; options and result are on the stack, code and
 	 * level are in the options. */
 

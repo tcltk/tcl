@@ -27,71 +27,7 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
-static int		PushVarName(Tcl_Interp *interp,
-			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
-			    int flags, int *localIndexPtr,
-			    int *simpleVarNamePtr, int *isScalarPtr,
-			    int line, int *clNext);
 
-/*
- * Macro that encapsulates an efficiency trick that avoids a function call for
- * the simplest of compiles. The ANSI C "prototype" for this macro is:
- *
- * static void		CompileWord(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp, int word);
- */
-
-#define CompileWord(envPtr, tokenPtr, interp, word) \
-    if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
-	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
-		(tokenPtr)[1].size), (envPtr));				\
-    } else {								\
-	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
-	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
-	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-		(envPtr));						\
-    }
-
-/*
- * TIP #280: Remember the per-word line information of the current command. An
- * index is used instead of a pointer as recursive compilation may reallocate,
- * i.e. move, the array. This is also the reason to save the nuloc now, it may
- * change during the course of the function.
- *
- * Macro to encapsulate the variable definition and setup.
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
-
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
-
-#define PushVarNameWord(i,v,e,f,l,s,sc,word) \
-    PushVarName(i,v,e,f,l,s,sc,						\
-	    mapPtr->loc[eclIndex].line[(word)],				\
-	    mapPtr->loc[eclIndex].next[(word)])
-
-/*
- * Often want to issue one of two versions of an instruction based on whether
- * the argument will fit in a single byte or not. This makes it much clearer.
- */
-
-#define Emit14Inst(nm,idx,envPtr) \
-    if (idx <= 255) {							\
-	TclEmitInstInt1(nm##1,idx,envPtr);				\
-    } else {								\
-	TclEmitInstInt4(nm##4,idx,envPtr);				\
-    }
-
-/*
- * Flags bits used by PushVarName.
- */
-
-#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
-#define TCL_NO_ELEMENT 2	/* Do not push the array element. */
 
 /*
  *----------------------------------------------------------------------
@@ -141,7 +77,7 @@ TclCompileGlobalCmd(
      * Push the namespace
      */
 
-    PushLiteral(envPtr, "::", 2);
+    PushStringLiteral(envPtr, "::");
 
     /*
      * Loop over the variables.
@@ -164,7 +100,7 @@ TclCompileGlobalCmd(
      */
 
     TclEmitOpcode(		INST_POP,			envPtr);
-    PushLiteral(envPtr, "", 0);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
@@ -440,7 +376,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    PushLiteral(envPtr, "", 0);
+	    PushStringLiteral(envPtr, "");
 	}
     }
 
@@ -1267,7 +1203,7 @@ TclCompileListCmd(
 	 * [list] without arguments just pushes an empty object.
 	 */
 
-	PushLiteral(envPtr, "", 0);
+	PushStringLiteral(envPtr, "");
 	return TCL_OK;
     }
 
@@ -1609,7 +1545,7 @@ TclCompileLreplaceCmd(
     if (guaranteedDropAll) {
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
-	PushLiteral(envPtr, "", 0);
+	PushStringLiteral(envPtr, "");
     } else {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx1,	envPtr);
 	TclEmitInt4(		idx2,				envPtr);
@@ -1875,8 +1811,8 @@ TclCompileNamespaceCodeCmd(
      * the value needs to be determined at runtime for safety.
      */
 
-    PushLiteral(envPtr,		"::namespace",		11);
-    PushLiteral(envPtr,		"inscope",		7);
+    PushStringLiteral(envPtr,		"::namespace");
+    PushStringLiteral(envPtr,		"inscope");
     TclEmitOpcode(		INST_NS_CURRENT,	envPtr);
     CompileWord(envPtr,		tokenPtr,		interp, 1);
     TclEmitInstInt4(		INST_LIST, 4,		envPtr);
@@ -1901,17 +1837,17 @@ TclCompileNamespaceQualifiersCmd(
     }
 
     CompileWord(envPtr, tokenPtr, interp, 1);
-    PushLiteral(envPtr, "0", 1);
-    PushLiteral(envPtr, "::", 2);
+    PushStringLiteral(envPtr, "0");
+    PushStringLiteral(envPtr, "::");
     TclEmitInstInt4(	INST_OVER, 2,			envPtr);
     TclEmitOpcode(	INST_STR_FIND_LAST,		envPtr);
     off = CurrentOffset(envPtr);
-    PushLiteral(envPtr, "1", 1);
+    PushStringLiteral(envPtr, "1");
     TclEmitOpcode(	INST_SUB,			envPtr);
     TclEmitInstInt4(	INST_OVER, 2,			envPtr);
     TclEmitInstInt4(	INST_OVER, 1,			envPtr);
     TclEmitOpcode(	INST_STR_INDEX,			envPtr);
-    PushLiteral(envPtr, ":", 1);
+    PushStringLiteral(envPtr, ":");
     TclEmitOpcode(	INST_STR_EQ,			envPtr);
     off = off - CurrentOffset(envPtr);
     TclEmitInstInt1(	INST_JUMP_TRUE1, off,		envPtr);
@@ -1941,17 +1877,17 @@ TclCompileNamespaceTailCmd(
      */
 
     CompileWord(envPtr, tokenPtr, interp, 1);
-    PushLiteral(envPtr, "::", 2);
+    PushStringLiteral(envPtr, "::");
     TclEmitInstInt4(	INST_OVER, 1,			envPtr);
     TclEmitOpcode(	INST_STR_FIND_LAST,		envPtr);
     TclEmitOpcode(	INST_DUP,			envPtr);
-    PushLiteral(envPtr, "0", 1);
+    PushStringLiteral(envPtr, "0");
     TclEmitOpcode(	INST_GE,			envPtr);
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFixup);
-    PushLiteral(envPtr, "2", 1);
+    PushStringLiteral(envPtr, "2");
     TclEmitOpcode(	INST_ADD,			envPtr);
     TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
-    PushLiteral(envPtr, "end", 3);
+    PushStringLiteral(envPtr, "end");
     TclEmitOpcode(	INST_STR_RANGE,			envPtr);
     return TCL_OK;
 }
@@ -2015,7 +1951,7 @@ TclCompileNamespaceUpvarCmd(
      */
 
     TclEmitOpcode(		INST_POP,			envPtr);
-    PushLiteral(envPtr, "", 0);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
@@ -2181,7 +2117,7 @@ TclCompileRegexpCmd(
 	     * The semantics of regexp are always match on re == "".
 	     */
 
-	    PushLiteral(envPtr, "1", 1);
+	    PushStringLiteral(envPtr, "1");
 	    return TCL_OK;
 	}
 
@@ -2439,7 +2375,6 @@ TclCompileReturnCmd(
     int numWords = parsePtr->numWords;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
-    int savedStackDepth = envPtr->currStackDepth;
     Tcl_Obj *returnOpts, **objv;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     DefineLineInformation;	/* TIP #280 */
@@ -2462,7 +2397,6 @@ TclCompileReturnCmd(
 	CompileWord(envPtr, optsTokenPtr, interp, 2);
 	CompileWord(envPtr, msgTokenPtr,  interp, 3);
 	TclEmitOpcode(INST_RETURN_STK, envPtr);
-	envPtr->currStackDepth = savedStackDepth + 1;
 	return TCL_OK;
     }
 
@@ -2523,7 +2457,7 @@ TclCompileReturnCmd(
 	 * No explict result argument, so default result is empty string.
 	 */
 
-	PushLiteral(envPtr, "", 0);
+	PushStringLiteral(envPtr, "");
     }
 
     /*
@@ -2558,7 +2492,6 @@ TclCompileReturnCmd(
 
 	    Tcl_DecrRefCount(returnOpts);
 	    TclEmitOpcode(INST_DONE, envPtr);
-	    envPtr->currStackDepth = savedStackDepth;
 	    return TCL_OK;
 	}
     }
@@ -2576,7 +2509,6 @@ TclCompileReturnCmd(
      */
 
     CompileReturnInternal(envPtr, INST_RETURN_IMM, code, level, returnOpts);
-    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 
   issueRuntimeReturn:
@@ -2598,7 +2530,7 @@ TclCompileReturnCmd(
     if (explicitResult) {
 	CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
     } else {
-	PushLiteral(envPtr, "", 0);
+	PushStringLiteral(envPtr, "");
     }
 
     /*
@@ -2606,7 +2538,6 @@ TclCompileReturnCmd(
      */
 
     TclEmitOpcode(INST_RETURN_STK, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
@@ -2710,7 +2641,7 @@ TclCompileUpvarCmd(
 	    if (!(numWords%2)) {
 		return TCL_ERROR;
 	    }
-	    PushLiteral(envPtr, "1", 1);
+	    PushStringLiteral(envPtr, "1");
 	    otherTokenPtr = tokenPtr;
 	    i = 3;
 	}
@@ -2743,7 +2674,7 @@ TclCompileUpvarCmd(
      */
 
     TclEmitOpcode(		INST_POP,			envPtr);
-    PushLiteral(envPtr, "", 0);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
@@ -2824,7 +2755,7 @@ TclCompileVariableCmd(
      * Set the result to empty
      */
 
-    PushLiteral(envPtr, "", 0);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
@@ -2984,247 +2915,6 @@ TclCompileObjectSelfCmd(
     TclEmitOpcode(		INST_TCLOO_SELF,		envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
     TclEmitOpcode(		INST_NS_CURRENT,		envPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * PushVarName --
- *
- *	Procedure used in the compiling where pushing a variable name is
- *	necessary (append, lappend, set).
- *
- * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
- *
- * Side effects:
- *	Instructions are added to envPtr to execute the "set" command at
- *	runtime.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-PushVarName(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Token *varTokenPtr,	/* Points to a variable token. */
-    CompileEnv *envPtr,		/* Holds resulting instructions. */
-    int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
-    int *localIndexPtr,		/* Must not be NULL. */
-    int *simpleVarNamePtr,	/* Must not be NULL. */
-    int *isScalarPtr,		/* Must not be NULL. */
-    int line,			/* Line the token starts on. */
-    int *clNext)		/* Reference to offset of next hidden cont.
-				 * line. */
-{
-    register const char *p;
-    const char *name, *elName;
-    register int i, n;
-    Tcl_Token *elemTokenPtr = NULL;
-    int nameChars, elNameChars, simpleVarName, localIndex;
-    int elemTokenCount = 0, allocedTokens = 0, removedParen = 0;
-
-    /*
-     * Decide if we can use a frame slot for the var/array name or if we need
-     * to emit code to compute and push the name at runtime. We use a frame
-     * slot (entry in the array of local vars) if we are compiling a procedure
-     * body and if the name is simple text that does not include namespace
-     * qualifiers.
-     */
-
-    simpleVarName = 0;
-    name = elName = NULL;
-    nameChars = elNameChars = 0;
-    localIndex = -1;
-
-    /*
-     * Check not only that the type is TCL_TOKEN_SIMPLE_WORD, but whether
-     * curly braces surround the variable name. This really matters for array
-     * elements to handle things like
-     *    set {x($foo)} 5
-     * which raises an undefined var error if we are not careful here.
-     */
-
-    if ((varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
-	    (varTokenPtr->start[0] != '{')) {
-	/*
-	 * A simple variable name. Divide it up into "name" and "elName"
-	 * strings. If it is not a local variable, look it up at runtime.
-	 */
-
-	simpleVarName = 1;
-
-	name = varTokenPtr[1].start;
-	nameChars = varTokenPtr[1].size;
-	if (name[nameChars-1] == ')') {
-	    /*
-	     * last char is ')' => potential array reference.
-	     */
-
-	    for (i=0,p=name ; i<nameChars ; i++,p++) {
-		if (*p == '(') {
-		    elName = p + 1;
-		    elNameChars = nameChars - i - 2;
-		    nameChars = i;
-		    break;
-		}
-	    }
-
-	    if ((elName != NULL) && elNameChars) {
-		/*
-		 * An array element, the element name is a simple string:
-		 * assemble the corresponding token.
-		 */
-
-		elemTokenPtr = TclStackAlloc(interp, sizeof(Tcl_Token));
-		allocedTokens = 1;
-		elemTokenPtr->type = TCL_TOKEN_TEXT;
-		elemTokenPtr->start = elName;
-		elemTokenPtr->size = elNameChars;
-		elemTokenPtr->numComponents = 0;
-		elemTokenCount = 1;
-	    }
-	}
-    } else if (((n = varTokenPtr->numComponents) > 1)
-	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
-	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
-	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
-	/*
-	 * Check for parentheses inside first token.
-	 */
-
-	simpleVarName = 0;
-	for (i = 0, p = varTokenPtr[1].start;
-		i < varTokenPtr[1].size; i++, p++) {
-	    if (*p == '(') {
-		simpleVarName = 1;
-		break;
-	    }
-	}
-	if (simpleVarName) {
-	    int remainingChars;
-
-	    /*
-	     * Check the last token: if it is just ')', do not count it.
-	     * Otherwise, remove the ')' and flag so that it is restored at
-	     * the end.
-	     */
-
-	    if (varTokenPtr[n].size == 1) {
-		n--;
-	    } else {
-		varTokenPtr[n].size--;
-		removedParen = n;
-	    }
-
-	    name = varTokenPtr[1].start;
-	    nameChars = p - varTokenPtr[1].start;
-	    elName = p + 1;
-	    remainingChars = (varTokenPtr[2].start - p) - 1;
-	    elNameChars = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 2;
-
-	    if (remainingChars) {
-		/*
-		 * Make a first token with the extra characters in the first
-		 * token.
-		 */
-
-		elemTokenPtr = TclStackAlloc(interp, n * sizeof(Tcl_Token));
-		allocedTokens = 1;
-		elemTokenPtr->type = TCL_TOKEN_TEXT;
-		elemTokenPtr->start = elName;
-		elemTokenPtr->size = remainingChars;
-		elemTokenPtr->numComponents = 0;
-		elemTokenCount = n;
-
-		/*
-		 * Copy the remaining tokens.
-		 */
-
-		memcpy(elemTokenPtr+1, varTokenPtr+2,
-			(n-1) * sizeof(Tcl_Token));
-	    } else {
-		/*
-		 * Use the already available tokens.
-		 */
-
-		elemTokenPtr = &varTokenPtr[2];
-		elemTokenCount = n - 1;
-	    }
-	}
-    }
-
-    if (simpleVarName) {
-	/*
-	 * See whether name has any namespace separators (::'s).
-	 */
-
-	int hasNsQualifiers = 0;
-
-	for (i = 0, p = name;  i < nameChars;  i++, p++) {
-	    if ((*p == ':') && ((i+1) < nameChars) && (*(p+1) == ':')) {
-		hasNsQualifiers = 1;
-		break;
-	    }
-	}
-
-	/*
-	 * Look up the var name's index in the array of local vars in the proc
-	 * frame. If retrieving the var's value and it doesn't already exist,
-	 * push its name and look it up at runtime.
-	 */
-
-	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameChars,
-		    1, envPtr);
-	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > 255)) {
-		/*
-		 * We'll push the name.
-		 */
-
-		localIndex = -1;
-	    }
-	}
-	if (localIndex < 0) {
-	    PushLiteral(envPtr, name, nameChars);
-	}
-
-	/*
-	 * Compile the element script, if any, and only if not inhibited. [Bug
-	 * 3600328]
-	 */
-
-	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
-	    if (elNameChars) {
-		envPtr->line = line;
-		envPtr->clNext = clNext;
-		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
-			envPtr);
-	    } else {
-		PushLiteral(envPtr, "", 0);
-	    }
-	}
-    } else {
-	/*
-	 * The var name isn't simple: compile and push it.
-	 */
-
-	envPtr->line = line;
-	envPtr->clNext = clNext;
-	CompileTokens(envPtr, varTokenPtr, interp);
-    }
-
-    if (removedParen) {
-	varTokenPtr[removedParen].size++;
-    }
-    if (allocedTokens) {
-	TclStackFree(interp, elemTokenPtr);
-    }
-    *localIndexPtr = localIndex;
-    *simpleVarNamePtr = simpleVarName;
-    *isScalarPtr = (elName == NULL);
     return TCL_OK;
 }
 

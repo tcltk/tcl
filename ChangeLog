@@ -1,3 +1,31 @@
+2013-05-27 Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from
+	registry key HCU\Control Panel\Desktop : PreferredUILanguages to
+	honor installed language packs on Vista+.
+	Bumped msgcat version to 1.5.2
+
+2013-05-22  Andreas Kupries  <andreask@activestate.com>
+
+	* tclCompile.c: Removed duplicate const qualifier causing the HP
+	  native cc to error out.
+
+2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtf.c (TclUtfCasecmp): [Bug 3613609]: Replace problematic
+	uses of strcasecmp with a proper UTF-8-aware version. Affects both
+	[lsearch -nocase] and [lsort -nocase].
+
+2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* doc/file.n: [Bug 3613671]: Added note to portability section on the
+	fact that [file owned] does not produce useful results on Windows.
+
+2013-05-20  Donal K. Fellows  <dkf@users.sf.net>
+
+	* unix/tclUnixFCmd.c (DefaultTempDir): [Bug 3613567]: Corrected logic
+	for checking return code of access() system call, which was inverted.
+
 2013-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4:     Fix for FreeBSD, and remove support for older
