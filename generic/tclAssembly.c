@@ -324,29 +324,6 @@ static const Tcl_ObjType assembleCodeType = {
 };
 
 /*
- * TIP #280: Remember the per-word line information of the current command. An
- * index is used instead of a pointer as recursive compilation may reallocate,
- * i.e. move, the array. This is also the reason to save the nuloc now, it may
- * change during the course of the function.
- *
- * Macro to encapsulate the variable definition and setup.
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
-
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
-
-/*
- * Flags bits used by PushVarName.
- */
-
-#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
-
-/*
  * Source instructions recognized in the Tcl Assembly Language (TAL)
  */
 
