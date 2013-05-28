@@ -7734,3 +7734,7 @@ Many revisions to better support a Cygwin environment (nijtmans)
 2013-03-22 tzdata updated to Olson's tzdata2013b (venkat)
 
 --- Released 8.5.14, April 3, 2013 --- See ChangeLog for details ---
+
+2013-05-08 (bug fix)[3036566] Honor language packs on Vista+ to get initial locale (oehlmann)
+=> msgcat 1.5.2
+
