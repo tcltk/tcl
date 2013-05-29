@@ -2376,7 +2376,7 @@ TclCompileVarSubst(
 
     if (tokenPtr->numComponents == 1) {
 	if (localVar < 0) {
-	    TclEmitOpcode(INST_LOAD_SCALAR_STK, envPtr);
+	    TclEmitOpcode(INST_LOAD_STK, envPtr);
 	} else if (localVar <= 255) {
 	    TclEmitInstInt1(INST_LOAD_SCALAR1, localVar, envPtr);
 	} else {
