@@ -2040,9 +2040,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    int savedNumCmds = envPtr->numCommands;
 	    unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
 	    int update = 0, code = TCL_ERROR;
-#ifdef TCL_COMPILE_DEBUG
 	    int startStackDepth = envPtr->currStackDepth;
-#endif
 
 	    if ((cmdPtr != NULL) && (cmdPtr->compileProc != NULL)
 		    && !(cmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION)
@@ -2091,7 +2089,6 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    }
 
 	    if (code == TCL_OK) {
-#ifdef TCL_COMPILE_DEBUG
 	        int diff = envPtr->currStackDepth-startStackDepth;
 
 	        if (diff != 1 && (diff != 0 ||
@@ -2100,7 +2097,6 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 			    " %.*s (was %d instead of 1)", tokenPtr->size,
 			    tokenPtr->start, diff);
 	        }
-#endif
 		if (update) {
 		    /*
 		     * Fix the bytecode length.
@@ -2145,6 +2141,12 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 
 		envPtr->numCommands = savedNumCmds;
 		envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+
+		/*
+		 * And the stack depth too!!  [Bug 3614102].
+		 */
+
+		envPtr->currStackDepth = startStackDepth;
 		TclEmitPush(objIndex, envPtr);
 		wordIndex++;
 		tokenPtr += tokenPtr->numComponents + 1;
