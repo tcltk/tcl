@@ -124,10 +124,8 @@ TclCompileAppendCmd(
      * each argument.
      */
 
-    if (numWords > 2) {
 	valueTokenPtr = TokenAfter(varTokenPtr);
 	CompileWord(envPtr, valueTokenPtr, interp, 2);
-    }
 
     /*
      * Emit instructions to set/get the variable.
@@ -155,9 +153,6 @@ TclCompileAppendCmd(
      * there are multiple values to append.  Fortunately, this is common.
      */
 
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
 	    &localIndex, &isScalar, 1);
@@ -250,7 +245,7 @@ TclCompileArraySetCmd(
     int isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven, len;
     int dataVar, iterVar, keyVar, valVar, infoIndex;
-    int back, fwd, offsetBack, offsetFwd, savedStackDepth;
+    int back, fwd, offsetBack, offsetFwd;
     Tcl_Obj *literalObj;
     ForeachInfo *infoPtr;
 
@@ -356,12 +351,11 @@ TclCompileArraySetCmd(
 	TclEmitOpcode(	INST_BITAND,				envPtr);
 	offsetFwd = CurrentOffset(envPtr);
 	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
-	savedStackDepth = envPtr->currStackDepth;
 	PushStringLiteral(envPtr, "list must have an even number of elements");
 	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
 	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
 	TclEmitInt4(		0,				envPtr);
-	envPtr->currStackDepth = savedStackDepth;
+	TclAdjustStackDepth(-1, envPtr);
 	fwd = CurrentOffset(envPtr) - offsetFwd;
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
     }
@@ -377,7 +371,6 @@ TclCompileArraySetCmd(
 	TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex,		envPtr);
 	offsetFwd = CurrentOffset(envPtr);
 	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
-	savedStackDepth = envPtr->currStackDepth;
 	Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
 	Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
 	Emit14Inst(	INST_STORE_ARRAY, localIndex,		envPtr);
@@ -386,7 +379,6 @@ TclCompileArraySetCmd(
 	TclEmitInstInt1(INST_JUMP1, back,			envPtr);
 	fwd = CurrentOffset(envPtr) - offsetFwd;
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-	envPtr->currStackDepth = savedStackDepth;
     } else {
 	TclEmitOpcode(	INST_DUP,				envPtr);
 	TclEmitOpcode(	INST_ARRAY_EXISTS_STK,			envPtr);
@@ -430,7 +422,7 @@ TclCompileArrayUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int isScalar, localIndex, savedStackDepth;
+    int isScalar, localIndex;
 
     if (parsePtr->numWords != 2) {
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
@@ -451,10 +443,10 @@ TclCompileArrayUnsetCmd(
 	TclEmitOpcode(	INST_DUP,				envPtr);
 	TclEmitOpcode(	INST_ARRAY_EXISTS_STK,			envPtr);
 	TclEmitInstInt1(INST_JUMP_FALSE1, 6,			envPtr);
-	savedStackDepth = envPtr->currStackDepth;
 	TclEmitInstInt1(INST_UNSET_STK, 1,			envPtr);
 	TclEmitInstInt1(INST_JUMP1, 3,				envPtr);
-	envPtr->currStackDepth = savedStackDepth;
+	/* Each branch decrements stack depth, but we only take one. */
+	TclAdjustStackDepth(1, envPtr);
 	TclEmitOpcode(	INST_POP,				envPtr);
     }
     PushStringLiteral(envPtr,	"");
@@ -497,7 +489,14 @@ TclCompileBreakCmd(
      */
 
     TclEmitOpcode(INST_BREAK, envPtr);
-    PushStringLiteral(envPtr, "");	/* Evil hack! */
+#ifdef TCL_COMPILE_DEBUG
+    /*
+     * Instructions that raise exceptions don't really have to follow
+     * the usual stack management rules.  But the checker wants them
+     * followed, so lie about stack usage to make it happy.
+     */
+    TclAdjustStackDepth(1, envPtr);
+#endif
     return TCL_OK;
 }
 
