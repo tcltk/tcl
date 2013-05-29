@@ -6738,8 +6738,8 @@ Tcl_Tell(
     outputBuffered = Tcl_OutputBuffered(chan);
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
-	//Tcl_SetErrno(EFAULT);
-	//return Tcl_LongAsWide(-1);
+	/*Tcl_SetErrno(EFAULT);*/
+	/*return Tcl_LongAsWide(-1);*/
     }
 
     /*
