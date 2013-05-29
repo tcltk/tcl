@@ -2069,9 +2069,7 @@ TclCompileScript(
 			unsigned savedCodeNext =
 				envPtr->codeNext - envPtr->codeStart;
 			int update = 0;
-#ifdef TCL_COMPILE_DEBUG
 			int startStackDepth = envPtr->currStackDepth;
-#endif
 
 			/*
 			 * Mark the start of the command; the proper bytecode
@@ -2164,6 +2162,12 @@ TclCompileScript(
 
 			envPtr->numCommands = savedNumCmds;
 			envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+
+			/*
+			 * And the stack depth too!!  [Bug 3614102].
+			 */
+
+			envPtr->currStackDepth = startStackDepth;
 		    }
 
 		    /*
