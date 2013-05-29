@@ -84,7 +84,7 @@ TclCompileAppendCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords, i;
+    int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
@@ -116,7 +116,7 @@ TclCompileAppendCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
 
     /*
      * We are doing an assignment, otherwise TclCompileSetCmd was called, so
@@ -133,7 +133,6 @@ TclCompileAppendCmd(
      * Emit instructions to set/get the variable.
      */
 
-    if (simpleVarName) {
 	if (isScalar) {
 	    if (localIndex < 0) {
 		TclEmitOpcode(INST_APPEND_STK, envPtr);
@@ -147,9 +146,6 @@ TclCompileAppendCmd(
 		Emit14Inst(INST_APPEND_ARRAY, localIndex, envPtr);
 	    }
 	}
-    } else {
-	TclEmitOpcode(INST_APPEND_STK, envPtr);
-    }
 
     return TCL_OK;
 
@@ -164,7 +160,7 @@ TclCompileAppendCmd(
     }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
     if (!isScalar || localIndex < 0) {
 	return TCL_ERROR;
     }
@@ -219,7 +215,7 @@ TclCompileArrayExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int simpleVarName, isScalar, localIndex;
+    int isScalar, localIndex;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
@@ -227,7 +223,7 @@ TclCompileArrayExistsCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
     if (!isScalar) {
 	return TCL_ERROR;
     }
@@ -251,7 +247,7 @@ TclCompileArraySetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
-    int simpleVarName, isScalar, localIndex, code = TCL_OK;
+    int isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven, len;
     int dataVar, iterVar, keyVar, valVar, infoIndex;
     int back, fwd, offsetBack, offsetFwd, savedStackDepth;
@@ -293,7 +289,7 @@ TclCompileArraySetCmd(
     }
 
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
     if (!isScalar) {
 	code = TCL_ERROR;
 	goto done;
@@ -434,14 +430,14 @@ TclCompileArrayUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int simpleVarName, isScalar, localIndex, savedStackDepth;
+    int isScalar, localIndex, savedStackDepth;
 
     if (parsePtr->numWords != 2) {
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
     if (!isScalar) {
 	return TCL_ERROR;
     }
@@ -3246,24 +3242,33 @@ TclCompileFormatCmd(
  *	necessary (append, lappend, set).
  *
  * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
+ *	The values written to *localIndexPtr and *isScalarPtr signal to
+ *	the caller what the instructions emitted by this routine will do:
+ *
+ *	*isScalarPtr	(*localIndexPtr < 0)
+ *	1		1	Push the varname on the stack. (Stack +1)
+ *	1		0	*localIndexPtr is the index of the compiled
+ *				local for this varname.  No instructions
+ *				emitted.	(Stack +0)
+ *	0		1	Push part1 and part2 names of array element
+ *				on the stack.	(Stack +2)
+ *	0		0	*localIndexPtr is the index of the compiled
+ *				local for this array.  Element name is pushed
+ *				on the stack.	(Stack +1)
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "set" command at
- *	runtime.
+ *	Instructions are added to envPtr.
  *
  *----------------------------------------------------------------------
  */
 
-int
+void
 TclPushVarName(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
     int *localIndexPtr,		/* Must not be NULL. */
-    int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr,		/* Must not be NULL. */
     int line,			/* Line the token starts on. */
     int *clNext)		/* Reference to offset of next hidden cont.
@@ -3473,9 +3478,7 @@ TclPushVarName(
 	TclStackFree(interp, elemTokenPtr);
     }
     *localIndexPtr = localIndex;
-    *simpleVarNamePtr = simpleVarName;
     *isScalarPtr = (elName == NULL);
-    return TCL_OK;
 }
 
 /*
