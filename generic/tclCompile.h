@@ -956,11 +956,10 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, int maxChars);
-MODULE_SCOPE int	TclPushVarName(Tcl_Interp *interp,
+MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
-			    int *simpleVarNamePtr, int *isScalarPtr,
-			    int line, int *clNext);
+			    int *isScalarPtr, int line, int *clNext);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -1430,8 +1429,8 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
     envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
-#define PushVarNameWord(i,v,e,f,l,s,sc,word) \
-    TclPushVarName(i,v,e,f,l,s,sc,						\
+#define PushVarNameWord(i,v,e,f,l,sc,word) \
+    TclPushVarName(i,v,e,f,l,sc,						\
 	    mapPtr->loc[eclIndex].line[(word)],				\
 	    mapPtr->loc[eclIndex].next[(word)])
 

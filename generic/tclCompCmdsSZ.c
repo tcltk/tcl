@@ -126,7 +126,7 @@ TclCompileSetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isAssignment, isScalar, simpleVarName, localIndex, numWords;
+    int isAssignment, isScalar, localIndex, numWords;
     DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
@@ -145,7 +145,7 @@ TclCompileSetCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
 
     /*
      * If we are doing an assignment, push the new value.
@@ -160,12 +160,10 @@ TclCompileSetCmd(
      * Emit instructions to set/get the variable.
      */
 
-    if (simpleVarName) {
 	if (isScalar) {
 	    if (localIndex < 0) {
 		TclEmitOpcode((isAssignment?
-			INST_STORE_SCALAR_STK : INST_LOAD_SCALAR_STK),
-			envPtr);
+			INST_STORE_STK : INST_LOAD_STK), envPtr);
 	    } else if (localIndex <= 255) {
 		TclEmitInstInt1((isAssignment?
 			INST_STORE_SCALAR1 : INST_LOAD_SCALAR1),
@@ -189,9 +187,6 @@ TclCompileSetCmd(
 			localIndex, envPtr);
 	    }
 	}
-    } else {
-	TclEmitOpcode((isAssignment? INST_STORE_STK : INST_LOAD_STK), envPtr);
-    }
 
     return TCL_OK;
 }
@@ -943,7 +938,7 @@ TclSubstCompile(
 	 * that is too low.  Here we manually fix that up.
 	 */
 
-	TclAdjustStackDepth(5, envPtr);
+	TclAdjustStackDepth(4, envPtr);
 
 	/* OK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
@@ -2686,7 +2681,7 @@ TclCompileUnsetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
-    int isScalar, simpleVarName, localIndex, numWords, flags, i;
+    int isScalar, localIndex, numWords, flags, i;
     Tcl_Obj *leadingWord;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2727,15 +2722,13 @@ TclCompileUnsetCmd(
 	 */
 
 	PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-		&localIndex, &simpleVarName, &isScalar, 1);
+		&localIndex, &isScalar, 1);
 
 	/*
 	 * Emit instructions to unset the variable.
 	 */
 
-	if (!simpleVarName) {
-	    OP1(	UNSET_STK, flags);
-	} else if (isScalar) {
+	if (isScalar) {
 	    if (localIndex < 0) {
 		OP1(	UNSET_STK, flags);
 	    } else {

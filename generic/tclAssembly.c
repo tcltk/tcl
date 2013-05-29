@@ -324,29 +324,6 @@ static const Tcl_ObjType assembleCodeType = {
 };
 
 /*
- * TIP #280: Remember the per-word line information of the current command. An
- * index is used instead of a pointer as recursive compilation may reallocate,
- * i.e. move, the array. This is also the reason to save the nuloc now, it may
- * change during the course of the function.
- *
- * Macro to encapsulate the variable definition and setup.
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
-
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
-
-/*
- * Flags bits used by PushVarName.
- */
-
-#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
-
-/*
  * Source instructions recognized in the Tcl Assembly Language (TAL)
  */
 
@@ -410,9 +387,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"incrArrayStkImm", ASSEM_SINT1,	INST_INCR_ARRAY_STK_IMM,2,	1},
     {"incrImm",		ASSEM_LVT1_SINT1,
 					INST_INCR_SCALAR1_IMM,	0,	1},
-    {"incrStk",		ASSEM_1BYTE,	INST_INCR_SCALAR_STK,	2,	1},
-    {"incrStkImm",	ASSEM_SINT1,	INST_INCR_SCALAR_STK_IMM,
-								1,	1},
+    {"incrStk",		ASSEM_1BYTE,	INST_INCR_STK,		2,	1},
+    {"incrStkImm",	ASSEM_SINT1,	INST_INCR_STK_IMM,	1,	1},
     {"infoLevelArgs",	ASSEM_1BYTE,	INST_INFO_LEVEL_ARGS,	1,	1},
     {"infoLevelNumber",	ASSEM_1BYTE,	INST_INFO_LEVEL_NUM,	0,	1},
     {"invokeStk",	ASSEM_INVOKE,	(INST_INVOKE_STK1 << 8
@@ -448,7 +424,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"loadArray",	ASSEM_LVT,	(INST_LOAD_ARRAY1<<8
 					 | INST_LOAD_ARRAY4),	1,	1},
     {"loadArrayStk",	ASSEM_1BYTE,	INST_LOAD_ARRAY_STK,	2,	1},
-    {"loadStk",		ASSEM_1BYTE,	INST_LOAD_SCALAR_STK,	1,	1},
+    {"loadStk",		ASSEM_1BYTE,	INST_LOAD_STK,		1,	1},
     {"lor",		ASSEM_1BYTE,	INST_LOR,		2,	1},
     {"lsetFlat",	ASSEM_LSET_FLAT,INST_LSET_FLAT,		INT_MIN,1},
     {"lsetList",	ASSEM_1BYTE,	INST_LSET_LIST,		3,	1},
@@ -475,7 +451,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"storeArray",	ASSEM_LVT,	(INST_STORE_ARRAY1<<8
 					 | INST_STORE_ARRAY4),	2,	1},
     {"storeArrayStk",	ASSEM_1BYTE,	INST_STORE_ARRAY_STK,	3,	1},
-    {"storeStk",	ASSEM_1BYTE,	INST_STORE_SCALAR_STK,	2,	1},
+    {"storeStk",	ASSEM_1BYTE,	INST_STORE_STK,		2,	1},
     {"strcmp",		ASSEM_1BYTE,	INST_STR_CMP,		2,	1},
     {"streq",		ASSEM_1BYTE,	INST_STR_EQ,		2,	1},
     {"strfind",		ASSEM_1BYTE,	INST_STR_FIND,		2,	1},

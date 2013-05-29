@@ -328,7 +328,7 @@ InstructionDesc const tclInstructionTable[] = {
     {"pushReturnOpts",	  1,	+1,	   0,	{OPERAND_NONE}},
 	/* Push the interpreter's return option dictionary as an object on the
 	 * stack. */
-    {"returnStk",	  1,	-2,	   0,	{OPERAND_NONE}},
+    {"returnStk",	  1,	-1,	   0,	{OPERAND_NONE}},
 	/* Compiled [return]; options and result are on the stack, code and
 	 * level are in the options. */
 
@@ -2360,7 +2360,7 @@ TclCompileVarSubst(
 
     if (tokenPtr->numComponents == 1) {
 	if (localVar < 0) {
-	    TclEmitOpcode(INST_LOAD_SCALAR_STK, envPtr);
+	    TclEmitOpcode(INST_LOAD_STK, envPtr);
 	} else if (localVar <= 255) {
 	    TclEmitInstInt1(INST_LOAD_SCALAR1, localVar, envPtr);
 	} else {

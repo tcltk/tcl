@@ -84,7 +84,7 @@ TclCompileAppendCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords, i;
+    int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
@@ -116,7 +116,7 @@ TclCompileAppendCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
 
     /*
      * We are doing an assignment, otherwise TclCompileSetCmd was called, so
@@ -133,7 +133,6 @@ TclCompileAppendCmd(
      * Emit instructions to set/get the variable.
      */
 
-    if (simpleVarName) {
 	if (isScalar) {
 	    if (localIndex < 0) {
 		TclEmitOpcode(INST_APPEND_STK, envPtr);
@@ -147,9 +146,6 @@ TclCompileAppendCmd(
 		Emit14Inst(INST_APPEND_ARRAY, localIndex, envPtr);
 	    }
 	}
-    } else {
-	TclEmitOpcode(INST_APPEND_STK, envPtr);
-    }
 
     return TCL_OK;
 
@@ -164,7 +160,7 @@ TclCompileAppendCmd(
     }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
     if (!isScalar || localIndex < 0) {
 	return TCL_ERROR;
     }
@@ -219,7 +215,7 @@ TclCompileArrayExistsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int simpleVarName, isScalar, localIndex;
+    int isScalar, localIndex;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
@@ -227,7 +223,7 @@ TclCompileArrayExistsCmd(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
     if (!isScalar) {
 	return TCL_ERROR;
     }
@@ -251,7 +247,7 @@ TclCompileArraySetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
-    int simpleVarName, isScalar, localIndex;
+    int isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven, len;
     int dataVar, iterVar, keyVar, valVar, infoIndex;
     int back, fwd, offsetBack, offsetFwd, savedStackDepth;
@@ -263,11 +259,6 @@ TclCompileArraySetCmd(
     }
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
-    if (!isScalar) {
-	return TCL_ERROR;
-    }
     dataTokenPtr = TokenAfter(varTokenPtr);
     literalObj = Tcl_NewObj();
     isDataLiteral = TclWordKnownAtCompileTime(dataTokenPtr, literalObj);
@@ -275,6 +266,34 @@ TclCompileArraySetCmd(
 	    && Tcl_ListObjLength(NULL, literalObj, &len) == TCL_OK);
     isDataEven = (isDataValid && (len & 1) == 0);
 
+    /*
+     * Special case: literal odd-length argument is always an error.
+     */
+
+    if (isDataValid && !isDataEven) {
+	PushStringLiteral(envPtr, "list must have an even number of elements");
+	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
+	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
+	TclEmitInt4(		0,				envPtr);
+	goto done;
+    }
+
+    /*
+     * Except for the special "ensure array" case below, when we're not in
+     * a proc, we cannot do a better compile than generic.
+     */
+
+    if (envPtr->procPtr == NULL && !(isDataEven && len == 0)) {
+	code = TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	goto done;
+    }
+
+    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
+	    &localIndex, &isScalar, 1);
+    if (!isScalar) {
+	code = TCL_ERROR;
+	goto done;
+    }
     /*
      * Special case: literal empty value argument is just an "ensure array"
      * operation.
@@ -289,27 +308,12 @@ TclCompileArraySetCmd(
 	    TclEmitOpcode(  INST_DUP,				envPtr);
 	    TclEmitOpcode(  INST_ARRAY_EXISTS_STK,		envPtr);
 	    TclEmitInstInt1(INST_JUMP_TRUE1, 5,			envPtr);
-	    savedStackDepth = envPtr->currStackDepth;
 	    TclEmitOpcode(  INST_ARRAY_MAKE_STK,		envPtr);
 	    TclEmitInstInt1(INST_JUMP1, 3,			envPtr);
-	    envPtr->currStackDepth = savedStackDepth;
+	    /* Each branch decrements stack depth, but we only take one. */
+	    TclAdjustStackDepth(1, envPtr);
 	    TclEmitOpcode(  INST_POP,				envPtr);
 	}
-	PushStringLiteral(envPtr, "");
-	goto done;
-    }
-
-    /*
-     * Special case: literal odd-length argument is always an error.
-     */
-
-    if (isDataValid && !isDataEven) {
-	savedStackDepth = envPtr->currStackDepth;
-	PushStringLiteral(envPtr, "list must have an even number of elements");
-	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
-	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
-	TclEmitInt4(		0,				envPtr);
-	envPtr->currStackDepth = savedStackDepth;
 	PushStringLiteral(envPtr, "");
 	goto done;
     }
@@ -322,32 +326,6 @@ TclCompileArraySetCmd(
     iterVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     keyVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
     valVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-
-    if (dataVar < 0) {
-	/*
-	 * Right number of arguments, but not compilable as we can't allocate
-	 * (unnamed) local variables to manage the internal iteration.
-	 */
-
-	Tcl_Obj *objPtr = Tcl_NewObj();
-	char *bytes;
-	int length, cmdLit;
-
-	Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-	bytes = Tcl_GetStringFromObj(objPtr, &length);
-	cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length);
-	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
-	TclEmitPush(cmdLit, envPtr);
-	TclDecrRefCount(objPtr);
-	if (localIndex >= 0) {
-	    CompileWord(envPtr, varTokenPtr, interp, 1);
-	} else {
-	    TclEmitInstInt4(INST_REVERSE, 2,			envPtr);
-	}
-	CompileWord(envPtr, dataTokenPtr, interp, 2);
-	TclEmitInstInt1(INST_INVOKE_STK1, 3,			envPtr);
-	goto done;
-    }
 
     infoPtr = ckalloc(sizeof(ForeachInfo) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
@@ -420,7 +398,6 @@ TclCompileArraySetCmd(
 	TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex,		envPtr);
 	offsetFwd = CurrentOffset(envPtr);
 	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
-	savedStackDepth = envPtr->currStackDepth;
 	TclEmitOpcode(	INST_DUP,				envPtr);
 	Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
 	Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
@@ -430,7 +407,6 @@ TclCompileArraySetCmd(
 	TclEmitInstInt1(INST_JUMP1, back,			envPtr);
 	fwd = CurrentOffset(envPtr) - offsetFwd;
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-	envPtr->currStackDepth = savedStackDepth;
 	TclEmitOpcode(	INST_POP,				envPtr);
     }
     if (!isDataLiteral) {
@@ -440,7 +416,7 @@ TclCompileArraySetCmd(
     PushStringLiteral(envPtr,	"");
   done:
     Tcl_DecrRefCount(literalObj);
-    return TCL_OK;
+    return code;
 }
 
 int
@@ -454,14 +430,14 @@ TclCompileArrayUnsetCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int simpleVarName, isScalar, localIndex, savedStackDepth;
+    int isScalar, localIndex, savedStackDepth;
 
     if (parsePtr->numWords != 2) {
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
 
     PushVarNameWord(interp, tokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
     if (!isScalar) {
 	return TCL_ERROR;
     }
@@ -1332,6 +1308,7 @@ TclCompileDictMergeCmd(
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			infoIndex,		envPtr);
     TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+    TclAdjustStackDepth(-1, envPtr);
 
     return TCL_OK;
 }
@@ -3265,24 +3242,33 @@ TclCompileFormatCmd(
  *	necessary (append, lappend, set).
  *
  * Results:
- *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- *	evaluation to runtime.
+ *	The values written to *localIndexPtr and *isScalarPtr signal to
+ *	the caller what the instructions emitted by this routine will do:
+ *
+ *	*isScalarPtr	(*localIndexPtr < 0)
+ *	1		1	Push the varname on the stack. (Stack +1)
+ *	1		0	*localIndexPtr is the index of the compiled
+ *				local for this varname.  No instructions
+ *				emitted.	(Stack +0)
+ *	0		1	Push part1 and part2 names of array element
+ *				on the stack.	(Stack +2)
+ *	0		0	*localIndexPtr is the index of the compiled
+ *				local for this array.  Element name is pushed
+ *				on the stack.	(Stack +1)
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "set" command at
- *	runtime.
+ *	Instructions are added to envPtr.
  *
  *----------------------------------------------------------------------
  */
 
-int
+void
 TclPushVarName(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Token *varTokenPtr,	/* Points to a variable token. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
     int *localIndexPtr,		/* Must not be NULL. */
-    int *simpleVarNamePtr,	/* Must not be NULL. */
     int *isScalarPtr,		/* Must not be NULL. */
     int line,			/* Line the token starts on. */
     int *clNext)		/* Reference to offset of next hidden cont.
@@ -3492,9 +3478,7 @@ TclPushVarName(
 	TclStackFree(interp, elemTokenPtr);
     }
     *localIndexPtr = localIndex;
-    *simpleVarNamePtr = simpleVarName;
     *isScalarPtr = (elName == NULL);
-    return TCL_OK;
 }
 
 /*
