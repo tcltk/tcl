@@ -2715,6 +2715,7 @@ TEBCresume(
 
 	TclNewObj(objPtr);
 	objPtr->internalRep.ptrAndLongRep.value = CURR_DEPTH;
+	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
 	NEXT_INST_F(1, 0, 0);
 
@@ -2743,7 +2744,14 @@ TEBCresume(
 	 * stack depth, as seen by the compiler.
 	 */
 
+	auxObjList->length += objc;
+
+/*
 	length = objc + (codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1));
+*/
+	length = auxObjList->length /* Total expansion room we need */
+		+ codePtr->maxStackDepth /* Beyond the original max */
+		- CURR_DEPTH;	/* Relative to where we are */
 	DECACHE_STACK_INFO();
 	moved = GrowEvaluationStack(iPtr->execEnvPtr, length, 1)
 		- (Tcl_Obj **) TD;
