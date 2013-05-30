@@ -2726,6 +2726,18 @@ TEBCresume(
 	int i;
 	ptrdiff_t moved;
 
+#ifdef TCL_COMPILE_DEBUG
+	/*
+	 * This is how deep the compiler thought the stack would be,
+	 * assuming no expansion.
+	 */
+	int estimate = TclGetInt4AtPtr(pc+1);
+
+	if (CURR_DEPTH != estimate + auxObjList->length) {
+	    Tcl_Panic("Bad stack estimate = %d; truth = %ld", estimate,
+		    CURR_DEPTH - auxObjList->length);
+	}
+#endif
 	/*
 	 * Make sure that the element at stackTop is a list; if not, just
 	 * leave with an error. Note that the element from the expand list
@@ -2747,8 +2759,8 @@ TEBCresume(
 	 * stack depth, as seen by the compiler.
 	 */
 
-    if (objc > 1) {
 	auxObjList->length += objc - 1;
+    if ((objc > 1) && (auxObjList->length > 0)) {
 	length = auxObjList->length /* Total expansion room we need */
 		+ codePtr->maxStackDepth /* Beyond the original max */
 		- CURR_DEPTH;	/* Relative to where we are */
