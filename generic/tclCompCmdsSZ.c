@@ -2859,7 +2859,7 @@ TclCompileWhileCmd(
 	 * INST_START_CMD, and hence counted properly. [Bug 1752146]
 	 */
 
-	envPtr->atCmdStart = 0;
+	envPtr->atCmdStart &= ~1;
 	testCodeOffset = CurrentOffset(envPtr);
     }
 
