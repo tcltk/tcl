@@ -2869,6 +2869,10 @@ TclCompileWhileCmd(
 
     SetLineInformation(2);
     bodyCodeOffset = ExceptionRangeStarts(envPtr, range);
+    if (!loopMayEnd) {
+	envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
+	envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
+    }
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
     envPtr->currStackDepth = savedStackDepth + 1;
