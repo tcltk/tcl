@@ -562,7 +562,7 @@ static Command *	FindCompiledCommandFromToken(Tcl_Interp *interp,
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
-/* static */ int		IsCompactibleCompileEnv(Tcl_Interp *interp,
+static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 static void		PeepholeOptimize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
@@ -1036,7 +1036,7 @@ TclCleanupByteCode(
  * ---------------------------------------------------------------------
  */
 
-/* static */ int
+static int
 IsCompactibleCompileEnv(
     Tcl_Interp *interp,
     CompileEnv *envPtr)
