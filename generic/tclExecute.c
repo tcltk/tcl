@@ -2747,7 +2747,8 @@ TEBCresume(
 	 * stack depth, as seen by the compiler.
 	 */
 
-	auxObjList->length += objc;
+    if (objc > 1) {
+	auxObjList->length += objc - 1;
 	length = auxObjList->length /* Total expansion room we need */
 		+ codePtr->maxStackDepth /* Beyond the original max */
 		- CURR_DEPTH;	/* Relative to where we are */
@@ -2767,6 +2768,7 @@ TEBCresume(
 	    catchTop += moved;
 	    tosPtr += moved;
 	}
+    }
 
 	/*
 	 * Expand the list at stacktop onto the stack; free the list. Knowing
