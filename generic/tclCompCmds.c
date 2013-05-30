@@ -480,8 +480,42 @@ TclCompileBreakCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    int i, exnIdx;
+    ExceptionRange *rangePtr;
+
     if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
+    }
+
+    /*
+     * Find the innermost exception range that contains this command. Relies
+     * on the fact that the range has a numCodeBytes = -1 when it is being
+     * populated and that inner ranges come after outer ranges.
+     */
+
+    exnIdx = -1;
+    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
+	rangePtr = &envPtr->exceptArrayPtr[i];
+	if (envPtr->codeStart+rangePtr->codeOffset <= envPtr->codeNext
+		&& rangePtr->numCodeBytes == -1) {
+	    exnIdx = i;
+	}
+    }
+    if (exnIdx != -1) {
+	rangePtr = &envPtr->exceptArrayPtr[exnIdx];
+	if (rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	    int toPop = envPtr->currStackDepth -
+		    envPtr->exnStackDepthArrayPtr[exnIdx];
+
+	    /*
+	     * Pop off the extra stack frames.
+	     */
+
+	    while (toPop > 0) {
+		TclEmitOpcode(INST_POP, envPtr);
+		toPop--;
+	    }
+	}
     }
 
     /*
@@ -790,12 +824,59 @@ TclCompileContinueCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    int i, exnIdx;
+    ExceptionRange *rangePtr;
+
     /*
      * There should be no argument after the "continue".
      */
 
     if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
+    }
+
+    /*
+     * See if we can find a valid continueOffset (i.e., not -1) in the
+     * innermost containing exception range. Relies on the fact that the range
+     * has a numCodeBytes = -1 when it is being populated and that inner
+     * ranges come after outer ranges.
+     */
+
+    exnIdx = -1;
+    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
+	rangePtr = &envPtr->exceptArrayPtr[i];
+	if (envPtr->codeStart+rangePtr->codeOffset <= envPtr->codeNext
+		&& rangePtr->numCodeBytes == -1) {
+	    exnIdx = i;
+	}
+    }
+    if (exnIdx >= 0) {
+	rangePtr = &envPtr->exceptArrayPtr[exnIdx];
+	if (rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	    int toPop = envPtr->currStackDepth -
+		    envPtr->exnStackDepthArrayPtr[exnIdx];
+
+	    /*
+	     * Pop off the extra stack frames.
+	     */
+
+	    while (toPop > 0) {
+		TclEmitOpcode(INST_POP, envPtr);
+		toPop--;
+	    }
+	}
+	if (rangePtr->type == LOOP_EXCEPTION_RANGE
+		&& rangePtr->continueOffset != -1) {
+	    int offset = (rangePtr->continueOffset - CurrentOffset(envPtr));
+
+	    /*
+	     * Found the target! No need for a nasty INST_CONTINUE here.
+	     */
+
+	    TclEmitInstInt4(INST_JUMP4, offset, envPtr);
+	    PushStringLiteral(envPtr, "");	/* Evil hack! */
+	    return TCL_OK;
+	}
     }
 
     /*

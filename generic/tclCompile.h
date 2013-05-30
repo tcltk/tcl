@@ -275,6 +275,9 @@ typedef struct CompileEnv {
 				 * entry. */
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
 				 * exceptArrayPtr points in heap, else 0. */
+    int *exnStackDepthArrayPtr;	/* Array of stack depths to restore to when
+				 * processing BREAK/CONTINUE exceptions. Must
+				 * be the same size as the exceptArrayPtr. */
     CmdLocation *cmdMapPtr;	/* Points to start of CmdLocation array.
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
@@ -296,6 +299,9 @@ typedef struct CompileEnv {
 				/* Initial storage of LiteralEntry array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
+    int staticExnStackDepthArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
+				/* Initial static except stack depth array
+				 * storage. */
     CmdLocation staticCmdMapSpace[COMPILEENV_INIT_CMD_MAP_SIZE];
 				/* Initial storage for cmd location map. */
     AuxData staticAuxDataArraySpace[COMPILEENV_INIT_AUX_DATA_SIZE];
