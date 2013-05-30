@@ -35,8 +35,8 @@ TCL_DECLARE_MUTEX(tableMutex)
  */
 
 #ifdef TCL_COMPILE_DEBUG
-int tclTraceCompile = 0;
-static int traceInitialized = 0;
+int tclTraceCompile = 2;
+static int traceInitialized = 1;
 #endif
 
 /*
@@ -539,6 +539,9 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Concatenates the two lists at the top of the stack into a single
 	 * list and pushes that resulting list onto the stack.
 	 * Stack: ... list1 list2 => ... [lconcat list1 list2] */
+    {"verify",		 5,	 0,	  1,	{OPERAND_UINT4}},
+	/* Verify the predicted stack depth (operand) is true during
+	 * bytecode execution. */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };

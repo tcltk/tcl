@@ -67,7 +67,7 @@ static int cachedInExit = 0;
  * This variable is linked to the Tcl variable "tcl_traceExec".
  */
 
-int tclTraceExec = 0;
+int tclTraceExec = 3;
 #endif
 
 /*
@@ -2721,6 +2721,23 @@ TEBCresume(
 	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
 	NEXT_INST_F(1, 0, 0);
+
+    case INST_VERIFY : {
+#ifdef TCL_COMPILE_DEBUG
+	/*
+	 * This is how deep the compiler thought the stack would be,
+	 * assuming no expansion.
+	 */
+	int estimate = TclGetUInt4AtPtr(pc+1);
+
+	if (CURR_DEPTH != estimate + (auxObjList ? auxObjList->length : 0)) {
+	    Tcl_Panic("Bad stack estimate = %d; truth = %ld", estimate,
+		    CURR_DEPTH - (auxObjList ? auxObjList->length : 0));
+	}
+#endif
+	NEXT_INST_F(5, 0, 0);
+    }
+
 
     case INST_EXPAND_STKTOP: {
 	int i;

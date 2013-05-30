@@ -716,9 +716,10 @@ typedef struct ByteCode {
 #define INST_INVOKE_REPLACE		163
 
 #define INST_LIST_CONCAT		164
+#define INST_VERIFY			165
 
 /* The last opcode */
-#define LAST_INST_OPCODE		164
+#define LAST_INST_OPCODE		165
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -1075,6 +1076,27 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * void TclAdjustStackDepth(int delta, CompileEnv *envPtr);
  */
 
+#ifdef TCL_COMPILE_DEBUG
+#define VerifyStackDepth(envPtr) \
+    do {							\
+	int i = (envPtr)->currStackDepth;			\
+	if (((envPtr)->codeNext + 5) > (envPtr)->codeEnd) {	\
+	    TclExpandCodeArray(envPtr);				\
+	}							\
+	*(envPtr)->codeNext++ = (unsigned char) INST_VERIFY;	\
+	*(envPtr)->codeNext++ =					\
+		(unsigned char) ((unsigned int) (i) >> 24);	\
+	*(envPtr)->codeNext++ =					\
+		(unsigned char) ((unsigned int) (i) >> 16);	\
+	*(envPtr)->codeNext++ =					\
+		(unsigned char) ((unsigned int) (i) >>  8);	\
+	*(envPtr)->codeNext++ =					\
+		(unsigned char) ((unsigned int) (i)      );	\
+    } while (0)
+#else
+#define VerifyStackDepth(envPtr)
+#endif
+
 #define TclAdjustStackDepth(delta, envPtr) \
     do {								\
 	if ((delta) < 0) {						\
@@ -1083,6 +1105,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	    }								\
 	}								\
 	(envPtr)->currStackDepth += (delta);				\
+	VerifyStackDepth(envPtr);					\
     } while (0)
 
 /*
