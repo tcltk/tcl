@@ -562,7 +562,7 @@ static Command *	FindCompiledCommandFromToken(Tcl_Interp *interp,
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
-static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
+/* static */ int		IsCompactibleCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
 static void		PeepholeOptimize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
@@ -745,7 +745,9 @@ TclSetByteCodeFromAny(
 	}
 	compEnv.atCmdStart = 2;		/* The disabling magic. */
 	TclCompileScript(interp, stringPtr, length, &compEnv);
+	assert (compEnv.atCmdStart > 1);
 	TclEmitOpcode(INST_DONE, &compEnv);
+	assert (compEnv.atCmdStart > 1);
     }
 
     /*
@@ -1034,7 +1036,7 @@ TclCleanupByteCode(
  * ---------------------------------------------------------------------
  */
 
-static int
+/* static */ int
 IsCompactibleCompileEnv(
     Tcl_Interp *interp,
     CompileEnv *envPtr)
@@ -1084,9 +1086,11 @@ IsCompactibleCompileEnv(
 	case INST_NSUPVAR:
 	case INST_VARIABLE:
 	    return 0;
+	default:
+	    size = tclInstructionTable[*pc].numBytes;
+	    assert (size > 0);
+	    break;
 	}
-	size = tclInstructionTable[*pc].numBytes;
-	assert (size > 0);
     }
 
     return 1;
@@ -1145,31 +1149,39 @@ PeepholeOptimize(
 		(void) Tcl_CreateHashEntry(&targets, (void *) target, &isNew);
 	    }
 	    break;
+	case INST_START_CMD:
+	    assert (envPtr->atCmdStart < 2);
 	}
     }
 
     /*
-     * Replace PUSH/POP sequences (when non-hazardous) with NOPs.
+     * Replace PUSH/POP sequences (when non-hazardous) with NOPs. Also replace
+     * PUSH empty/CONCAT and TRY_CVT_NUMERIC (when followed by an operation
+     * that guarantees the check for arithmeticity).
      */
 
     (void) Tcl_CreateHashEntry(&targets, (void *) pc, &isNew);
     for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
-	int blank = 0, i;
+	int blank = 0, i, inst;
 
 	size = tclInstructionTable[*pc].numBytes;
 	prev2 = prev1;
 	prev1 = pc;
+	while (*(pc+size) == INST_NOP) {
+	    if (Tcl_FindHashEntry(&targets, (void *) (pc + size))) {
+		break;
+	    }
+	    size += tclInstructionTable[INST_NOP].numBytes;
+	}
 	if (Tcl_FindHashEntry(&targets, (void *) (pc + size))) {
 	    continue;
 	}
+	inst = *(pc + size);
 	switch (*pc) {
 	case INST_PUSH1:
-	    while (*(pc+size) == INST_NOP) {
-		size++;
-	    }
-	    if (*(pc+size) == INST_POP) {
-		blank = size + 1;
-	    } else if (*(pc+size) == INST_CONCAT1
+	    if (inst == INST_POP) {
+		blank = size + tclInstructionTable[inst].numBytes;
+	    } else if (inst == INST_CONCAT1
 		    && TclGetUInt1AtPtr(pc + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt1AtPtr(pc + 1));
@@ -1177,17 +1189,14 @@ PeepholeOptimize(
 
 		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
-		    blank = size + 2;
+		    blank = size + tclInstructionTable[inst].numBytes;
 		}
 	    }
 	    break;
 	case INST_PUSH4:
-	    while (*(pc+size) == INST_NOP) {
-		size++;
-	    }
-	    if (*(pc+size) == INST_POP) {
+	    if (inst == INST_POP) {
 		blank = size + 1;
-	    } else if (*(pc+size) == INST_CONCAT1
+	    } else if (inst == INST_CONCAT1
 		    && TclGetUInt1AtPtr(pc + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt4AtPtr(pc + 1));
@@ -1195,8 +1204,47 @@ PeepholeOptimize(
 
 		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
-		    blank = size + 2;
+		    blank = size + tclInstructionTable[inst].numBytes;
 		}
+	    }
+	    break;
+	case INST_TRY_CVT_TO_NUMERIC:
+	    switch (inst) {
+	    case INST_JUMP_TRUE1:
+	    case INST_JUMP_TRUE4:
+	    case INST_JUMP_FALSE1:
+	    case INST_JUMP_FALSE4:
+	    case INST_INCR_SCALAR1:
+	    case INST_INCR_ARRAY1:
+	    case INST_INCR_ARRAY_STK:
+	    case INST_INCR_SCALAR_STK:
+	    case INST_INCR_STK:
+	    case INST_LOR:
+	    case INST_LAND:
+	    case INST_EQ:
+	    case INST_NEQ:
+	    case INST_LT:
+	    case INST_LE:
+	    case INST_GT:
+	    case INST_GE:
+	    case INST_MOD:
+	    case INST_LSHIFT:
+	    case INST_RSHIFT:
+	    case INST_BITOR:
+	    case INST_BITXOR:
+	    case INST_BITAND:
+	    case INST_EXPON:
+	    case INST_ADD:
+	    case INST_SUB:
+	    case INST_DIV:
+	    case INST_MULT:
+	    case INST_LNOT:
+	    case INST_BITNOT:
+	    case INST_UMINUS:
+	    case INST_UPLUS:
+	    case INST_TRY_CVT_TO_NUMERIC:
+		blank = size;
+		break;
 	    }
 	    break;
 	}
@@ -1466,6 +1514,7 @@ TclInitCompileEnv(
     envPtr->mallocedLiteralArray = 0;
 
     envPtr->exceptArrayPtr = envPtr->staticExceptArraySpace;
+    envPtr->exnStackDepthArrayPtr = envPtr->staticExnStackDepthArraySpace;
     envPtr->exceptArrayNext = 0;
     envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
     envPtr->mallocedExceptArray = 0;
@@ -1678,6 +1727,7 @@ TclFreeCompileEnv(
     }
     if (envPtr->mallocedExceptArray) {
 	ckfree(envPtr->exceptArrayPtr);
+	ckfree(envPtr->exnStackDepthArrayPtr);
     }
     if (envPtr->mallocedCmdMap) {
 	ckfree(envPtr->cmdMapPtr);
@@ -3371,12 +3421,16 @@ TclCreateExceptRange(
 
 	size_t currBytes =
 		envPtr->exceptArrayNext * sizeof(ExceptionRange);
+	size_t currBytes2 = envPtr->exceptArrayNext * sizeof(int);
 	int newElems = 2*envPtr->exceptArrayEnd;
 	size_t newBytes = newElems * sizeof(ExceptionRange);
+	size_t newBytes2 = newElems * sizeof(int);
 
 	if (envPtr->mallocedExceptArray) {
 	    envPtr->exceptArrayPtr =
 		    ckrealloc(envPtr->exceptArrayPtr, newBytes);
+	    envPtr->exnStackDepthArrayPtr =
+		    ckrealloc(envPtr->exnStackDepthArrayPtr, newBytes2);
 	} else {
 	    /*
 	     * envPtr->exceptArrayPtr isn't a ckalloc'd pointer, so we must
@@ -3384,9 +3438,12 @@ TclCreateExceptRange(
 	     */
 
 	    ExceptionRange *newPtr = ckalloc(newBytes);
+	    int *newPtr2 = ckalloc(newBytes2);
 
 	    memcpy(newPtr, envPtr->exceptArrayPtr, currBytes);
+	    memcpy(newPtr2, envPtr->exnStackDepthArrayPtr, currBytes2);
 	    envPtr->exceptArrayPtr = newPtr;
+	    envPtr->exnStackDepthArrayPtr = newPtr2;
 	    envPtr->mallocedExceptArray = 1;
 	}
 	envPtr->exceptArrayEnd = newElems;
@@ -3401,6 +3458,7 @@ TclCreateExceptRange(
     rangePtr->breakOffset = -1;
     rangePtr->continueOffset = -1;
     rangePtr->catchOffset = -1;
+    envPtr->exnStackDepthArrayPtr[index] = envPtr->currStackDepth;
     return index;
 }
 
