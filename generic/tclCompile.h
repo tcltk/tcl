@@ -1076,7 +1076,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * void TclAdjustStackDepth(int delta, CompileEnv *envPtr);
  */
 
-#ifdef TCL_COMPILE_DEBUG
+#if defined(TCL_COMPILE_DEBUG) 
 #define VerifyStackDepth(envPtr) \
     do {							\
 	int i = (envPtr)->currStackDepth;			\
@@ -1166,6 +1166,23 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * void TclEmitInt4(int i, CompileEnv *envPtr);
  */
 
+
+#if defined(TCL_COMPILE_DEBUG) 
+#define TclEmitInt1(i, envPtr) \
+    do {								\
+	if ((envPtr)->codeNext == (envPtr)->codeEnd) {			\
+	    TclExpandCodeArray(envPtr);					\
+	}								\
+	if ((envPtr)->codeNext[-5] == INST_VERIFY) {			\
+	    memmove((envPtr)->codeNext-4, (envPtr)->codeNext-5, 5);	\
+	    (envPtr)->codeNext[-5] =					\
+		(unsigned char) ((unsigned int) (i));			\
+	    (envPtr)->codeNext++;					\
+	    break;							\
+	}								\
+	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
+    } while (0)
+#else
 #define TclEmitInt1(i, envPtr) \
     do {								\
 	if ((envPtr)->codeNext == (envPtr)->codeEnd) {			\
@@ -1173,7 +1190,37 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
     } while (0)
+#endif
 
+#if defined(TCL_COMPILE_DEBUG) 
+#define TclEmitInt4(i, envPtr) \
+    do {								\
+	if (((envPtr)->codeNext + 4) > (envPtr)->codeEnd) {		\
+	    TclExpandCodeArray(envPtr);					\
+	}								\
+	if ((envPtr)->codeNext[-5] == INST_VERIFY) {			\
+	    memmove((envPtr)->codeNext-1, (envPtr)->codeNext-5, 5);	\
+	    (envPtr)->codeNext[-5] =					\
+		(unsigned char) ((unsigned int) (i) >> 24);		\
+	    (envPtr)->codeNext[-4] =					\
+		(unsigned char) ((unsigned int) (i) >> 16);		\
+	    (envPtr)->codeNext[-3] =					\
+		(unsigned char) ((unsigned int) (i) >>  8);		\
+	    (envPtr)->codeNext[-2] =					\
+		(unsigned char) ((unsigned int) (i)      );		\
+	    (envPtr)->codeNext += 4;					\
+	    break;							\
+	}								\
+	*(envPtr)->codeNext++ =						\
+		(unsigned char) ((unsigned int) (i) >> 24);		\
+	*(envPtr)->codeNext++ =						\
+		(unsigned char) ((unsigned int) (i) >> 16);		\
+	*(envPtr)->codeNext++ =						\
+		(unsigned char) ((unsigned int) (i) >>  8);		\
+	*(envPtr)->codeNext++ =						\
+		(unsigned char) ((unsigned int) (i)      );		\
+    } while (0)
+#else
 #define TclEmitInt4(i, envPtr) \
     do {								\
 	if (((envPtr)->codeNext + 4) > (envPtr)->codeEnd) {		\
@@ -1188,6 +1235,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	*(envPtr)->codeNext++ =						\
 		(unsigned char) ((unsigned int) (i)      );		\
     } while (0)
+#endif;
 
 /*
  * Macros to emit an instruction with signed or unsigned integer operands.

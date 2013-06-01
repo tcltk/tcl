@@ -1345,7 +1345,7 @@ AssembleOneLine(
 		|| CheckStrictlyPositive(interp, opnd) != TCL_OK) {
 	    goto cleanup;
 	}
-	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd+1);
+	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd+1, opnd+1);
 	break;
 
     case ASSEM_DICT_SET:
@@ -1361,7 +1361,7 @@ AssembleOneLine(
 	if (localVar < 0) {
 	    goto cleanup;
 	}
-	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd, opnd+1);
+	BBEmitInstInt4(assemEnvPtr, tblIdx, opnd+1, opnd+1);
 	TclEmitInt4(localVar, envPtr);
 	break;
 

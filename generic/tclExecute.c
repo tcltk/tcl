@@ -67,7 +67,7 @@ static int cachedInExit = 0;
  * This variable is linked to the Tcl variable "tcl_traceExec".
  */
 
-int tclTraceExec = 3;
+int tclTraceExec = 0;
 #endif
 
 /*
@@ -2323,7 +2323,7 @@ TEBCresume(
 	goto instLoadScalar1;
     } else if (inst == INST_PUSH1) {
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
-	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), OBJ_AT_TOS);
+	TRACE_WITH_OBJ(("%u => ", TclGetUInt1AtPtr(pc+1)), OBJ_AT_TOS);
 	inst = *(pc += 2);
 	goto peepholeStart;
     } else if (inst == INST_START_CMD) {
@@ -2997,7 +2997,7 @@ TEBCresume(
 #endif
 
     case INST_INVOKE_REPLACE:
-	objc = TclGetUInt4AtPtr(pc+1);
+	objc = TclGetUInt4AtPtr(pc+1) - 1;
 	opnd = TclGetUInt1AtPtr(pc+5);
 	objPtr = POP_OBJECT();
 	objv = &OBJ_AT_DEPTH(objc-1);
@@ -4249,7 +4249,7 @@ TEBCresume(
 	    } else {
 		TRACE(("%d => %.20s false, new pc %u\n", jmpOffset[0],
 			O2S(valuePtr),
-			(unsigned)(pc + jmpOffset[1] - codePtr->codeStart)));
+			(unsigned)(pc + jmpOffset[0] - codePtr->codeStart)));
 	    }
 	}
 #endif
@@ -6172,6 +6172,11 @@ TEBCresume(
 	 */
 
 	pc += 5;
+#ifdef TCL_COMPILE_DEBUG
+	if (*pc == INST_VERIFY) {
+	    pc +=5;
+	}
+#endif
 	if (*pc == INST_JUMP_FALSE1) {
 	    NEXT_INST_F((continueLoop? 2 : TclGetInt1AtPtr(pc+1)), 0, 0);
 	} else {
@@ -6268,7 +6273,7 @@ TEBCresume(
     case INST_DICT_EXISTS: {
 	register Tcl_Interp *interp2 = interp;
 
-	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd = TclGetUInt4AtPtr(pc+1) - 1;
 	TRACE(("%u => ", opnd));
 	dictPtr = OBJ_AT_DEPTH(opnd);
 	if (*pc == INST_DICT_EXISTS) {
@@ -6324,7 +6329,7 @@ TEBCresume(
     case INST_DICT_SET:
     case INST_DICT_UNSET:
     case INST_DICT_INCR_IMM:
-	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd = TclGetUInt4AtPtr(pc+1) - (*pc == INST_DICT_SET);
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 
 	varPtr = LOCAL(opnd2);

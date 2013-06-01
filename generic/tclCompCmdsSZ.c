@@ -2309,7 +2309,12 @@ IssueTryInstructions(
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
     OP4(				REVERSE, 2);
-    OP1(				JUMP1, 4);
+    OP1(				JUMP1, 4
+#ifdef TCL_COMPILE_DEBUG
++10
+#endif
+);
+    TclAdjustStackDepth(-2, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
     OP(					PUSH_RESULT);
@@ -2346,8 +2351,7 @@ IssueTryInstructions(
 
 	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
-	    OP4(			DICT_GET, 1);
-	    TclAdjustStackDepth(-1, envPtr);
+	    OP4(			DICT_GET, 2);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
 	    p = Tcl_GetStringFromObj(matchClauses[i], &len);
 	    PushLiteral(envPtr, p, len);
@@ -2463,7 +2467,13 @@ IssueTryFinallyInstructions(
     ExceptionRangeEnds(envPtr, range);
     PUSH(				"0");
     OP4(				REVERSE, 2);
-    OP1(				JUMP1, 4);
+    OP1(				JUMP1, 4
+#ifdef TCL_COMPILE_DEBUG
++10
+#endif
+);
+//    TclAdjustStackDepth(-2, envPtr);
+    envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
     OP(					PUSH_RESULT);
@@ -2473,7 +2483,7 @@ IssueTryFinallyInstructions(
     OP(					POP);
     STORE(				resultVar);
     OP(					POP);
-    envPtr->currStackDepth = savedStackDepth + 1;
+//    envPtr->currStackDepth = savedStackDepth + 1;
 
     /*
      * Now we handle all the registered 'on' and 'trap' handlers in order.
@@ -2503,8 +2513,7 @@ IssueTryFinallyInstructions(
 
 		LOAD(			optionsVar);
 		PUSH(			"-errorcode");
-		OP4(			DICT_GET, 1);
-		TclAdjustStackDepth(-1, envPtr);
+		OP4(			DICT_GET, 2);
 		OP44(			LIST_RANGE_IMM, 0, len-1);
 		p = Tcl_GetStringFromObj(matchClauses[i], &len);
 		PushLiteral(envPtr, p, len);
@@ -2578,7 +2587,7 @@ IssueTryFinallyInstructions(
 		}
 		OP4(			BEGIN_CATCH4, range);
 	    }
-	    envPtr->currStackDepth = savedStackDepth;
+//	    envPtr->currStackDepth = savedStackDepth + 1;
 	    BODY(			handlerTokens[i], 5+i*4);
 	    ExceptionRangeEnds(envPtr, range);
 	    OP(				PUSH_RETURN_OPTIONS);
@@ -2629,6 +2638,7 @@ IssueTryFinallyInstructions(
      * Drop the result code.
      */
 
+    envPtr->currStackDepth = savedStackDepth + 1;
     OP(					POP);
 
     /*
@@ -2639,7 +2649,6 @@ IssueTryFinallyInstructions(
      * next command (or some inter-command manipulation).
      */
 
-    envPtr->currStackDepth = savedStackDepth;
     BODY(				finallyToken, 3 + 4*numHandlers);
     OP(					POP);
     LOAD(				optionsVar);

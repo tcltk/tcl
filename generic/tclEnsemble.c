@@ -3198,9 +3198,8 @@ CompileToInvokedCommand(
      * Do the replacing dispatch.
      */
 
-    TclEmitInstInt4(INST_INVOKE_REPLACE, parsePtr->numWords, envPtr);
+    TclEmitInstInt4(INST_INVOKE_REPLACE, parsePtr->numWords+1, envPtr);
     TclEmitInt1(numWords+1, envPtr);
-    TclAdjustStackDepth(-1, envPtr);	/* Correction to stack depth calcs. */
 }
 
 /*

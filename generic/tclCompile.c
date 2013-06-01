@@ -35,8 +35,8 @@ TCL_DECLARE_MUTEX(tableMutex)
  */
 
 #ifdef TCL_COMPILE_DEBUG
-int tclTraceCompile = 2;
-static int traceInitialized = 1;
+int tclTraceCompile = 0;
+static int traceInitialized = 0;
 #endif
 
 /*
