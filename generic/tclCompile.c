@@ -1523,6 +1523,7 @@ TclInitCompileEnv(
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
     envPtr->mallocedCmdMap = 0;
     envPtr->atCmdStart = 1;
+    envPtr->expandCount = 0;
 
     /*
      * TIP #280: Set up the extended command location information, based on
@@ -2060,6 +2061,7 @@ TclCompileScript(
 
 	    if (expand) {
 		TclEmitOpcode(INST_EXPAND_START, envPtr);
+		envPtr->expandCount++;
 	    }
 
 	    /*
@@ -2279,6 +2281,7 @@ TclCompileScript(
 		 */
 
 		TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
+		envPtr->expandCount--;
 		TclAdjustStackDepth(1 - wordIdx, envPtr);
 	    } else if (wordIdx > 0) {
 		/*
@@ -3460,6 +3463,45 @@ TclCreateExceptRange(
     rangePtr->catchOffset = -1;
     envPtr->exnStackDepthArrayPtr[index] = envPtr->currStackDepth;
     return index;
+}
+
+/*
+ * ---------------------------------------------------------------------
+ *
+ * TclGetInnermostExceptionRange --
+ *
+ *	Returns the innermost exception range that covers the current code
+ *	creation point, and (optionally) the stack depth that is expected at
+ *	that point. Relies on the fact that the range has a numCodeBytes = -1
+ *	when it is being populated and that inner ranges come after outer
+ *	ranges.
+ *
+ * ---------------------------------------------------------------------
+ */
+
+ExceptionRange *
+TclGetInnermostExceptionRange(
+    CompileEnv *envPtr,
+    int *stackDepthPtr)
+{
+    int exnIdx = -1, i;
+
+    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
+	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
+
+	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
+		(rangePtr->numCodeBytes == -1 || CurrentOffset(envPtr) <
+			rangePtr->codeOffset+rangePtr->numCodeBytes)) {
+	    exnIdx = i;
+	}
+    }
+    if (exnIdx == -1) {
+	return NULL;
+    }
+    if (stackDepthPtr) {
+	*stackDepthPtr = envPtr->exnStackDepthArrayPtr[exnIdx];
+    }
+    return &envPtr->exceptArrayPtr[exnIdx];
 }
 
 /*
