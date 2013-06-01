@@ -318,6 +318,10 @@ typedef struct CompileEnv {
 				 * inefficient. If set to 2, that instruction
 				 * should not be issued at all (by the generic
 				 * part of the command compiler). */
+    int expandCount;		/* Number of INST_EXPAND_START instructions
+				 * encountered that have not yet been paired
+				 * with a corresponding
+				 * INST_INVOKE_EXPANDED. */
     ContLineLoc *clLoc;		/* If not NULL, the table holding the
 				 * locations of the invisible continuation
 				 * lines in the input script, to adjust the
@@ -990,6 +994,8 @@ MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    int numBytes, const CmdFrame *invoker, int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
+MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
+			    int *depthPtr);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
