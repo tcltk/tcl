@@ -480,7 +480,7 @@ TclCompileBreakCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int i, exnIdx;
+    int depth;
     ExceptionRange *rangePtr;
 
     if (parsePtr->numWords != 1) {
@@ -488,33 +488,40 @@ TclCompileBreakCmd(
     }
 
     /*
-     * Find the innermost exception range that contains this command. Relies
-     * on the fact that the range has a numCodeBytes = -1 when it is being
-     * populated and that inner ranges come after outer ranges.
+     * Find the innermost exception range that contains this command.
      */
 
-    exnIdx = -1;
-    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
-	rangePtr = &envPtr->exceptArrayPtr[i];
-	if (envPtr->codeStart+rangePtr->codeOffset <= envPtr->codeNext
-		&& rangePtr->numCodeBytes == -1) {
-	    exnIdx = i;
+    rangePtr = TclGetInnermostExceptionRange(envPtr, &depth);
+    if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	int toPop = envPtr->currStackDepth - depth;
+
+	/*
+	 * Pop off the extra stack frames.
+	 */
+
+	while (toPop > 0) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    toPop--;
+#ifdef TCL_COMPILE_DEBUG
+	    /*
+	     * Instructions that raise exceptions don't really have to follow
+	     * the usual stack management rules.  But the checker wants them
+	     * followed, so lie about stack usage to make it happy.
+	     */
+	    TclAdjustStackDepth(1, envPtr);
+#endif
 	}
-    }
-    if (exnIdx != -1) {
-	rangePtr = &envPtr->exceptArrayPtr[exnIdx];
-	if (rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	    int toPop = envPtr->currStackDepth -
-		    envPtr->exnStackDepthArrayPtr[exnIdx];
+
+	if (envPtr->expandCount == 0 && rangePtr->breakOffset != -1) {
+	    int offset = (rangePtr->breakOffset - CurrentOffset(envPtr));
 
 	    /*
-	     * Pop off the extra stack frames.
+	     * Found the target! Also, no built-up expansion stack. No need
+	     * for a nasty INST_BREAK here.
 	     */
 
-	    while (toPop > 0) {
-		TclEmitOpcode(INST_POP, envPtr);
-		toPop--;
-	    }
+	    TclEmitInstInt4(INST_JUMP4, offset, envPtr);
+	    goto done;
 	}
     }
 
@@ -523,6 +530,8 @@ TclCompileBreakCmd(
      */
 
     TclEmitOpcode(INST_BREAK, envPtr);
+
+  done:
 #ifdef TCL_COMPILE_DEBUG
     /*
      * Instructions that raise exceptions don't really have to follow
@@ -824,7 +833,7 @@ TclCompileContinueCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int i, exnIdx;
+    int depth;
     ExceptionRange *rangePtr;
 
     /*
@@ -837,45 +846,40 @@ TclCompileContinueCmd(
 
     /*
      * See if we can find a valid continueOffset (i.e., not -1) in the
-     * innermost containing exception range. Relies on the fact that the range
-     * has a numCodeBytes = -1 when it is being populated and that inner
-     * ranges come after outer ranges.
+     * innermost containing exception range.
      */
 
-    exnIdx = -1;
-    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
-	rangePtr = &envPtr->exceptArrayPtr[i];
-	if (envPtr->codeStart+rangePtr->codeOffset <= envPtr->codeNext
-		&& rangePtr->numCodeBytes == -1) {
-	    exnIdx = i;
-	}
-    }
-    if (exnIdx >= 0) {
-	rangePtr = &envPtr->exceptArrayPtr[exnIdx];
-	if (rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	    int toPop = envPtr->currStackDepth -
-		    envPtr->exnStackDepthArrayPtr[exnIdx];
+    rangePtr = TclGetInnermostExceptionRange(envPtr, &depth);
+    if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	int toPop = envPtr->currStackDepth - depth;
 
+	/*
+	 * Pop off the extra stack frames.
+	 */
+
+	while (toPop > 0) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    toPop--;
+#ifdef TCL_COMPILE_DEBUG
 	    /*
-	     * Pop off the extra stack frames.
+	     * Instructions that raise exceptions don't really have to follow
+	     * the usual stack management rules.  But the checker wants them
+	     * followed, so lie about stack usage to make it happy.
 	     */
-
-	    while (toPop > 0) {
-		TclEmitOpcode(INST_POP, envPtr);
-		toPop--;
-	    }
+	    TclAdjustStackDepth(1, envPtr);
+#endif
 	}
-	if (rangePtr->type == LOOP_EXCEPTION_RANGE
-		&& rangePtr->continueOffset != -1) {
+
+	if (envPtr->expandCount == 0 && rangePtr->continueOffset != -1) {
 	    int offset = (rangePtr->continueOffset - CurrentOffset(envPtr));
 
 	    /*
-	     * Found the target! No need for a nasty INST_CONTINUE here.
+	     * Found the target! Also, no built-up expansion stack. No need
+	     * for a nasty INST_CONTINUE here.
 	     */
 
 	    TclEmitInstInt4(INST_JUMP4, offset, envPtr);
-	    PushStringLiteral(envPtr, "");	/* Evil hack! */
-	    return TCL_OK;
+	    goto done;
 	}
     }
 
@@ -884,7 +888,16 @@ TclCompileContinueCmd(
      */
 
     TclEmitOpcode(INST_CONTINUE, envPtr);
-    PushStringLiteral(envPtr, "");	/* Evil hack! */
+
+  done:
+#ifdef TCL_COMPILE_DEBUG
+    /*
+     * Instructions that raise exceptions don't really have to follow
+     * the usual stack management rules.  But the checker wants them
+     * followed, so lie about stack usage to make it happy.
+     */
+    TclAdjustStackDepth(1, envPtr);
+#endif
     return TCL_OK;
 }
 
