@@ -1450,14 +1450,11 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
  *
- * static int	DeclareExceptionRange(CompileEnv *envPtr, int type);
  * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
  */
 
-#define DeclareExceptionRange(envPtr, type) \
-    (TclCreateExceptRange((type), (envPtr)))
 #define ExceptionRangeStarts(envPtr, index) \
     (((envPtr)->exceptDepth++),						\
     ((envPtr)->maxExceptDepth =						\
