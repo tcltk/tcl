@@ -834,7 +834,7 @@ TclSubstCompile(
 	}
 
 	envPtr->line = bline;
-	catchRange = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+	catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	OP4(	BEGIN_CATCH4, catchRange);
 	ExceptionRangeStarts(envPtr, catchRange);
 
@@ -2302,7 +2302,7 @@ IssueTryInstructions(
      * (and it's never called when there's a finally clause).
      */
 
-    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
@@ -2455,7 +2455,7 @@ IssueTryFinallyInstructions(
      * (if any trap matches) and run a finally clause.
      */
 
-    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     envPtr->currStackDepth = savedStackDepth;
@@ -2522,7 +2522,7 @@ IssueTryFinallyInstructions(
 	     */
 
 	    if (resultVars[i] >= 0 || handlerTokens[i]) {
-		range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+		range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 		OP4(			BEGIN_CATCH4, range);
 		ExceptionRangeStarts(envPtr, range);
 	    }
@@ -2833,7 +2833,7 @@ TclCompileWhileCmd(
      * implement break and continue.
      */
 
-    range = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
 
     /*
      * Jump to the evaluation of the condition. This code uses the "loop
@@ -2917,6 +2917,7 @@ TclCompileWhileCmd(
     envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
     envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
     ExceptionRangeTarget(envPtr, range, breakOffset);
+    TclFinalizeLoopExceptionRange(envPtr, range);
 
     /*
      * The while command's result is an empty string.

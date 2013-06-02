@@ -100,6 +100,38 @@ typedef struct ExceptionRange {
 } ExceptionRange;
 
 /*
+ * Auxiliary data used when issuing (currently just loop) exception ranges,
+ * but which is not required during execution.
+ */
+
+typedef struct ExceptionAux {
+    int stackDepth;		/* The stack depth at the point where the
+				 * exception range was created. This is used
+				 * to calculate the number of POPs required to
+				 * restore the stack to its prior state. */
+    int numBreakTargets;	/* The number of [break]s that want to be
+				 * targeted to the place where this loop
+				 * exception will be bound to. */
+    int *breakTargets;		/* The offsets of the INST_JUMP4 instructions
+				 * issued by the [break]s that we must
+				 * update. Note that resizing a jump (via
+				 * TclFixupForwardJump) can cause the contents
+				 * of this array to be updated. When
+				 * numBreakTargets==0, this is NULL. */
+    int allocBreakTargets;	/* The size of the breakTargets array. */
+    int numContinueTargets;	/* The number of [continue]s that want to be
+				 * targeted to the place where this loop
+				 * exception will be bound to. */
+    int *continueTargets;	/* The offsets of the INST_JUMP4 instructions
+				 * issued by the [continue]s that we must
+				 * update. Note that resizing a jump (via
+				 * TclFixupForwardJump) can cause the contents
+				 * of this array to be updated. When
+				 * numContinueTargets==0, this is NULL. */
+    int allocContinueTargets;	/* The size of the continueTargets array. */
+} ExceptionAux;
+
+/*
  * Structure used to map between instruction pc and source locations. It
  * defines for each compiled Tcl command its code's starting offset and its
  * source's starting offset and length. Note that the code offset increases
@@ -275,9 +307,11 @@ typedef struct CompileEnv {
 				 * entry. */
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
 				 * exceptArrayPtr points in heap, else 0. */
-    int *exnStackDepthArrayPtr;	/* Array of stack depths to restore to when
-				 * processing BREAK/CONTINUE exceptions. Must
-				 * be the same size as the exceptArrayPtr. */
+    ExceptionAux *exceptAuxArrayPtr;
+				/* Array of information used to restore the
+				 * state when processing BREAK/CONTINUE
+				 * exceptions. Must be the same size as the
+				 * exceptArrayPtr. */
     CmdLocation *cmdMapPtr;	/* Points to start of CmdLocation array.
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
@@ -299,8 +333,8 @@ typedef struct CompileEnv {
 				/* Initial storage of LiteralEntry array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
-    int staticExnStackDepthArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
-				/* Initial static except stack depth array
+    ExceptionAux staticExAuxArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
+				/* Initial static except auxiliary info array
 				 * storage. */
     CmdLocation staticCmdMapSpace[COMPILEENV_INIT_CMD_MAP_SIZE];
 				/* Initial storage for cmd location map. */
@@ -995,7 +1029,13 @@ MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
-			    int *depthPtr);
+			    ExceptionAux **auxPtrPtr);
+MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
+			    ExceptionAux *auxPtr);
+MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
+			    ExceptionAux *auxPtr);
+MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
+			    int range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);

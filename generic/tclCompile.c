@@ -1514,7 +1514,7 @@ TclInitCompileEnv(
     envPtr->mallocedLiteralArray = 0;
 
     envPtr->exceptArrayPtr = envPtr->staticExceptArraySpace;
-    envPtr->exnStackDepthArrayPtr = envPtr->staticExnStackDepthArraySpace;
+    envPtr->exceptAuxArrayPtr = envPtr->staticExAuxArraySpace;
     envPtr->exceptArrayNext = 0;
     envPtr->exceptArrayEnd = COMPILEENV_INIT_EXCEPT_RANGES;
     envPtr->mallocedExceptArray = 0;
@@ -1728,7 +1728,7 @@ TclFreeCompileEnv(
     }
     if (envPtr->mallocedExceptArray) {
 	ckfree(envPtr->exceptArrayPtr);
-	ckfree(envPtr->exnStackDepthArrayPtr);
+	ckfree(envPtr->exceptAuxArrayPtr);
     }
     if (envPtr->mallocedCmdMap) {
 	ckfree(envPtr->cmdMapPtr);
@@ -3413,6 +3413,7 @@ TclCreateExceptRange(
 				 * new ExceptionRange structure. */
 {
     register ExceptionRange *rangePtr;
+    register ExceptionAux *auxPtr;
     int index = envPtr->exceptArrayNext;
 
     if (index >= envPtr->exceptArrayEnd) {
@@ -3424,16 +3425,16 @@ TclCreateExceptRange(
 
 	size_t currBytes =
 		envPtr->exceptArrayNext * sizeof(ExceptionRange);
-	size_t currBytes2 = envPtr->exceptArrayNext * sizeof(int);
+	size_t currBytes2 = envPtr->exceptArrayNext * sizeof(ExceptionAux);
 	int newElems = 2*envPtr->exceptArrayEnd;
 	size_t newBytes = newElems * sizeof(ExceptionRange);
-	size_t newBytes2 = newElems * sizeof(int);
+	size_t newBytes2 = newElems * sizeof(ExceptionAux);
 
 	if (envPtr->mallocedExceptArray) {
 	    envPtr->exceptArrayPtr =
 		    ckrealloc(envPtr->exceptArrayPtr, newBytes);
-	    envPtr->exnStackDepthArrayPtr =
-		    ckrealloc(envPtr->exnStackDepthArrayPtr, newBytes2);
+	    envPtr->exceptAuxArrayPtr =
+		    ckrealloc(envPtr->exceptAuxArrayPtr, newBytes2);
 	} else {
 	    /*
 	     * envPtr->exceptArrayPtr isn't a ckalloc'd pointer, so we must
@@ -3441,12 +3442,12 @@ TclCreateExceptRange(
 	     */
 
 	    ExceptionRange *newPtr = ckalloc(newBytes);
-	    int *newPtr2 = ckalloc(newBytes2);
+	    ExceptionAux *newPtr2 = ckalloc(newBytes2);
 
 	    memcpy(newPtr, envPtr->exceptArrayPtr, currBytes);
-	    memcpy(newPtr2, envPtr->exnStackDepthArrayPtr, currBytes2);
+	    memcpy(newPtr2, envPtr->exceptAuxArrayPtr, currBytes2);
 	    envPtr->exceptArrayPtr = newPtr;
-	    envPtr->exnStackDepthArrayPtr = newPtr2;
+	    envPtr->exceptAuxArrayPtr = newPtr2;
 	    envPtr->mallocedExceptArray = 1;
 	}
 	envPtr->exceptArrayEnd = newElems;
@@ -3461,7 +3462,14 @@ TclCreateExceptRange(
     rangePtr->breakOffset = -1;
     rangePtr->continueOffset = -1;
     rangePtr->catchOffset = -1;
-    envPtr->exnStackDepthArrayPtr[index] = envPtr->currStackDepth;
+    auxPtr = &envPtr->exceptAuxArrayPtr[index];
+    auxPtr->stackDepth = envPtr->currStackDepth;
+    auxPtr->numBreakTargets = 0;
+    auxPtr->breakTargets = NULL;
+    auxPtr->allocBreakTargets = 0;
+    auxPtr->numContinueTargets = 0;
+    auxPtr->continueTargets = NULL;
+    auxPtr->allocContinueTargets = 0;
     return index;
 }
 
@@ -3482,7 +3490,7 @@ TclCreateExceptRange(
 ExceptionRange *
 TclGetInnermostExceptionRange(
     CompileEnv *envPtr,
-    int *stackDepthPtr)
+    ExceptionAux **auxPtrPtr)
 {
     int exnIdx = -1, i;
 
@@ -3498,10 +3506,120 @@ TclGetInnermostExceptionRange(
     if (exnIdx == -1) {
 	return NULL;
     }
-    if (stackDepthPtr) {
-	*stackDepthPtr = envPtr->exnStackDepthArrayPtr[exnIdx];
+    if (auxPtrPtr) {
+	*auxPtrPtr = &envPtr->exceptAuxArrayPtr[exnIdx];
     }
     return &envPtr->exceptArrayPtr[exnIdx];
+}
+
+void
+TclAddLoopBreakFixup(
+    CompileEnv *envPtr,
+    ExceptionAux *auxPtr)
+{
+    int range = auxPtr - envPtr->exceptAuxArrayPtr;
+
+    if (envPtr->exceptArrayPtr[range].type != LOOP_EXCEPTION_RANGE) {
+	Tcl_Panic("trying to add 'break' fixup to full exception range");
+    }
+
+    if (++auxPtr->numBreakTargets > auxPtr->allocBreakTargets) {
+	auxPtr->allocBreakTargets *= 2;
+	auxPtr->allocBreakTargets += 2;
+	if (auxPtr->breakTargets) {
+	    auxPtr->breakTargets = ckrealloc(auxPtr->breakTargets,
+		    sizeof(int) * auxPtr->allocBreakTargets);
+	} else {
+	    auxPtr->breakTargets =
+		    ckalloc(sizeof(int) * auxPtr->allocBreakTargets);
+	}
+    }
+    auxPtr->breakTargets[auxPtr->numBreakTargets - 1] = CurrentOffset(envPtr);
+}
+
+void
+TclAddLoopContinueFixup(
+    CompileEnv *envPtr,
+    ExceptionAux *auxPtr)
+{
+    int range = auxPtr - envPtr->exceptAuxArrayPtr;
+
+    if (envPtr->exceptArrayPtr[range].type != LOOP_EXCEPTION_RANGE) {
+	Tcl_Panic("trying to add 'continue' fixup to full exception range");
+    }
+
+    if (++auxPtr->numContinueTargets > auxPtr->allocContinueTargets) {
+	auxPtr->allocContinueTargets *= 2;
+	auxPtr->allocContinueTargets += 2;
+	if (auxPtr->continueTargets) {
+	    auxPtr->continueTargets = ckrealloc(auxPtr->continueTargets,
+		    sizeof(int) * auxPtr->allocContinueTargets);
+	} else {
+	    auxPtr->continueTargets =
+		    ckalloc(sizeof(int) * auxPtr->allocContinueTargets);
+	}
+    }
+    auxPtr->continueTargets[auxPtr->numContinueTargets - 1] =
+	    CurrentOffset(envPtr);
+}
+
+void
+TclFinalizeLoopExceptionRange(
+    CompileEnv *envPtr,
+    int range)
+{
+    ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[range];
+    ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[range];
+    int i, offset;
+    unsigned char *site;
+
+    if (rangePtr->type != LOOP_EXCEPTION_RANGE) {
+	Tcl_Panic("trying to finalize a loop exception range");
+    }
+
+    /*
+     * Do the jump fixups. Note that these are always issued as INST_JUMP4 so
+     * there is no need to fuss around with updating code offsets.
+     */
+
+    for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
+	site = envPtr->codeStart + auxPtr->breakTargets[i];
+	offset = rangePtr->breakOffset - auxPtr->breakTargets[i];
+	TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
+    }
+    for (i=0 ; i<auxPtr->numContinueTargets ; i++) {
+	site = envPtr->codeStart + auxPtr->continueTargets[i];
+	if (rangePtr->continueOffset == -1) {
+	    int j;
+
+	    /*
+	     * WTF? Can't bind, so revert to an INST_CONTINUE.
+	     */
+
+	    *site = INST_CONTINUE;
+	    for (j=0 ; j<4 ; j++) {
+		*++site = INST_NOP;
+	    }
+	} else {
+	    offset = rangePtr->continueOffset - auxPtr->continueTargets[i];
+	    TclUpdateInstInt4AtPc(INST_JUMP4, offset, site);
+	}
+    }
+
+    /*
+     * Drop the arrays we were holding the only reference to.
+     */
+
+    if (auxPtr->breakTargets) {
+	ckfree(auxPtr->breakTargets);
+	auxPtr->breakTargets = NULL;
+	auxPtr->numBreakTargets = 0;
+    }
+    if (auxPtr->continueTargets) {
+	ckfree(auxPtr->continueTargets);
+	auxPtr->continueTargets = NULL;
+	auxPtr->numContinueTargets = 0;
+    }
 }
 
 /*
@@ -3861,6 +3979,22 @@ TclFixupForwardJump(
 	default:
 	    Tcl_Panic("TclFixupForwardJump: bad ExceptionRange type %d",
 		    rangePtr->type);
+	}
+    }
+
+    for (k = 0 ; k < envPtr->exceptArrayNext ; k++) {
+	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[k];
+	int i;
+
+	for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
+	    if (jumpFixupPtr->codeOffset < auxPtr->breakTargets[i]) {
+		auxPtr->breakTargets[i] += 3;
+	    }
+	}
+	for (i=0 ; i<auxPtr->numContinueTargets ; i++) {
+	    if (jumpFixupPtr->codeOffset < auxPtr->continueTargets[i]) {
+		auxPtr->continueTargets[i] += 3;
+	    }
 	}
     }
 
