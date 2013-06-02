@@ -1518,7 +1518,7 @@ IssueSwitchChainedTests(
 	 */
 
 	OP(	POP);
-	envPtr->currStackDepth = savedStackDepth + 1;
+	envPtr->currStackDepth = savedStackDepth;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
 	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
