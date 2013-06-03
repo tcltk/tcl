@@ -1564,14 +1564,14 @@ dnl AC_CHECK_TOOL(AR, ar)
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
-	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname \$[@]"
+	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname,\$[@]"
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
 	    LDFLAGS=""
 	    if test $doRpath = yes ; then
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 		fi
 	    if test "${TCL_THREADS}" = "1" ; then
 		# The -pthread needs to go in the LDFLAGS, not LIBS
