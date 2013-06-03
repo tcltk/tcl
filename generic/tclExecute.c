@@ -2424,11 +2424,6 @@ TclExecuteByteCode(
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
 
-#ifndef TCL_COMPILE_DEBUG
-		if (*(pc+pcAdjustment) == INST_POP) {
-		    NEXT_INST_V((pcAdjustment+1), objc, 0);
-		}
-#endif
 		/*
 		 * Push the call's object result and continue execution with
 		 * the next instruction.
@@ -2455,6 +2450,12 @@ TclExecuteByteCode(
 		TclNewObj(objPtr);
 		Tcl_IncrRefCount(objPtr);
 		iPtr->objResultPtr = objPtr;
+#ifndef TCL_COMPILE_DEBUG
+		if (*(pc+pcAdjustment) == INST_POP) {
+		    TclDecrRefCount(objResultPtr);
+		    NEXT_INST_V((pcAdjustment+1), objc, 0);
+		}
+#endif
 		NEXT_INST_V(pcAdjustment, objc, -1);
 	    } else {
 		cleanup = objc;
