@@ -105,10 +105,21 @@ typedef struct ExceptionRange {
  */
 
 typedef struct ExceptionAux {
+    int supportsContinue;	/* Whether this exception range will have a
+				 * continueOffset created for it; if it is a
+				 * loop exception range that *doesn't* have
+				 * one (see [for] next-clause) then we must
+				 * not pick up the range when scanning for a
+				 * target to continue to. */
     int stackDepth;		/* The stack depth at the point where the
 				 * exception range was created. This is used
 				 * to calculate the number of POPs required to
 				 * restore the stack to its prior state. */
+    int expandTarget;		/* The number of expansions expected on the
+				 * auxData stack at the time the loop starts;
+				 * we can't currently discard them except by
+				 * doing INST_INVOKE_EXPANDED; this is a known
+				 * problem. */
     int numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
@@ -1029,7 +1040,7 @@ MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
 MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
-			    ExceptionAux **auxPtrPtr);
+			    int returnCode, ExceptionAux **auxPtrPtr);
 MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,

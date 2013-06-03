@@ -3463,7 +3463,9 @@ TclCreateExceptRange(
     rangePtr->continueOffset = -1;
     rangePtr->catchOffset = -1;
     auxPtr = &envPtr->exceptAuxArrayPtr[index];
+    auxPtr->supportsContinue = 1;
     auxPtr->stackDepth = envPtr->currStackDepth;
+    auxPtr->expandTarget = envPtr->expandCount;
     auxPtr->numBreakTargets = 0;
     auxPtr->breakTargets = NULL;
     auxPtr->allocBreakTargets = 0;
@@ -3490,6 +3492,7 @@ TclCreateExceptRange(
 ExceptionRange *
 TclGetInnermostExceptionRange(
     CompileEnv *envPtr,
+    int returnCode,
     ExceptionAux **auxPtrPtr)
 {
     int exnIdx = -1, i;
@@ -3499,7 +3502,9 @@ TclGetInnermostExceptionRange(
 
 	if (CurrentOffset(envPtr) >= rangePtr->codeOffset &&
 		(rangePtr->numCodeBytes == -1 || CurrentOffset(envPtr) <
-			rangePtr->codeOffset+rangePtr->numCodeBytes)) {
+			rangePtr->codeOffset+rangePtr->numCodeBytes) &&
+		(returnCode != TCL_CONTINUE ||
+			envPtr->exceptAuxArrayPtr[i].supportsContinue)) {
 	    exnIdx = i;
 	}
     }
@@ -3512,6 +3517,19 @@ TclGetInnermostExceptionRange(
     return &envPtr->exceptArrayPtr[exnIdx];
 }
 
+/*
+ * ---------------------------------------------------------------------
+ *
+ * TclAddLoopBreakFixup, TclAddLoopContinueFixup --
+ *
+ *	Adds a place that wants to break/continue to the loop exception range
+ *	tracking that will be fixed up once the loop can be finalized. These
+ *	functions will generate an INST_JUMP4 that will be fixed up during the
+ *	loop finalization.
+ *
+ * ---------------------------------------------------------------------
+ */
+
 void
 TclAddLoopBreakFixup(
     CompileEnv *envPtr,
@@ -3535,6 +3553,7 @@ TclAddLoopBreakFixup(
 	}
     }
     auxPtr->breakTargets[auxPtr->numBreakTargets - 1] = CurrentOffset(envPtr);
+    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 }
 
 void
@@ -3561,7 +3580,21 @@ TclAddLoopContinueFixup(
     }
     auxPtr->continueTargets[auxPtr->numContinueTargets - 1] =
 	    CurrentOffset(envPtr);
+    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 }
+
+/*
+ * ---------------------------------------------------------------------
+ *
+ * TclFinalizeLoopExceptionRange --
+ *
+ *	Finalizes a loop exception range, binding the registered [break] and
+ *	[continue] implementations so that they jump to the correct place.
+ *	Note that this must only be called after *all* the exception range
+ *	target offsets have been set.
+ *
+ * ---------------------------------------------------------------------
+ */
 
 void
 TclFinalizeLoopExceptionRange(
