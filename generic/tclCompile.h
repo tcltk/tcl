@@ -772,8 +772,10 @@ typedef struct ByteCode {
 
 #define INST_LIST_CONCAT		164
 
+#define INST_EXPAND_DROP		165
+
 /* The last opcode */
-#define LAST_INST_OPCODE		164
+#define LAST_INST_OPCODE		165
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

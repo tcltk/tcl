@@ -854,7 +854,7 @@ test for-7.2 {Bug 3614226: ensure that continue cleans up the stack} memory {
 	expr {$end - $tmp}
     }}
 } 0
-test for-7.3 {Bug 3614226: ensure that break cleans up the expansion stack} {memory knownBug} {
+test for-7.3 {Bug 3614226: ensure that break cleans up the expansion stack} memory {
     apply {{} {
 	# Can't use [memtest]; must be careful when we change stack frames
 	set end [meminfo]
@@ -868,7 +868,7 @@ test for-7.3 {Bug 3614226: ensure that break cleans up the expansion stack} {mem
 	expr {$end - $tmp}
     }}
 } 0
-test for-7.4 {Bug 3614226: ensure that continue cleans up the expansion stack} {memory knownBug} {
+test for-7.4 {Bug 3614226: ensure that continue cleans up the expansion stack} memory {
     apply {{} {
 	# Can't use [memtest]; must be careful when we change stack frames
 	set end [meminfo]

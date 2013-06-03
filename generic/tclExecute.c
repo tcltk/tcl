@@ -2718,6 +2718,17 @@ TEBCresume(
 	PUSH_TAUX_OBJ(objPtr);
 	NEXT_INST_F(1, 0, 0);
 
+    case INST_EXPAND_DROP:
+	/*
+	 * Drops an element of the auxObjList. Does not do any clean up of the
+	 * actual stack.
+	 *
+	 * TODO: POP MAIN STACK BACK TO MARKER
+	 */
+
+	POP_TAUX_OBJ();
+	NEXT_INST_F(1, 0, 0);
+
     case INST_EXPAND_STKTOP: {
 	int i;
 	ptrdiff_t moved;
