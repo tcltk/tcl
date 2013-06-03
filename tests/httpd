@@ -39,7 +39,7 @@ proc httpdAccept {newsock ipaddr port} {
     fconfigure $newsock -blocking 0 -translation {auto crlf}
     httpd_log $newsock Connect $ipaddr $port
     set data(ipaddr) $ipaddr
-    fileevent $newsock readable [list httpdRead $newsock]
+    after 50 [list fileevent $newsock readable [list httpdRead $newsock]]
 }
 
 # read data from a client request
