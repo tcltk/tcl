@@ -2592,7 +2592,12 @@ IssueTryFinallyInstructions(
 	    ExceptionRangeEnds(envPtr, range);
 	    OP(				PUSH_RETURN_OPTIONS);
 	    OP4(			REVERSE, 2);
-	    OP1(			JUMP1, 4);
+	    OP1(			JUMP1, 4
+#ifdef TCL_COMPILE_DEBUG
++10
+#endif
+);
+	    envPtr->currStackDepth = savedStackDepth + 1;
 	    forwardsToFix[i] = -1;
 
 	    /*
