@@ -834,7 +834,7 @@ TclSubstCompile(
 	}
 
 	envPtr->line = bline;
-	catchRange = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+	catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	OP4(	BEGIN_CATCH4, catchRange);
 	ExceptionRangeStarts(envPtr, catchRange);
 
@@ -1518,7 +1518,7 @@ IssueSwitchChainedTests(
 	 */
 
 	OP(	POP);
-	envPtr->currStackDepth = savedStackDepth + 1;
+	envPtr->currStackDepth = savedStackDepth;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
 	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
@@ -2302,7 +2302,7 @@ IssueTryInstructions(
      * (and it's never called when there's a finally clause).
      */
 
-    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
@@ -2459,7 +2459,7 @@ IssueTryFinallyInstructions(
      * (if any trap matches) and run a finally clause.
      */
 
-    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
     envPtr->currStackDepth = savedStackDepth;
@@ -2531,7 +2531,7 @@ IssueTryFinallyInstructions(
 	     */
 
 	    if (resultVars[i] >= 0 || handlerTokens[i]) {
-		range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+		range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 		OP4(			BEGIN_CATCH4, range);
 		ExceptionRangeStarts(envPtr, range);
 	    }
@@ -2842,7 +2842,7 @@ TclCompileWhileCmd(
      * implement break and continue.
      */
 
-    range = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
 
     /*
      * Jump to the evaluation of the condition. This code uses the "loop
@@ -2878,6 +2878,10 @@ TclCompileWhileCmd(
 
     SetLineInformation(2);
     bodyCodeOffset = ExceptionRangeStarts(envPtr, range);
+    if (!loopMayEnd) {
+	envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
+	envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
+    }
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
     envPtr->currStackDepth = savedStackDepth + 1;
@@ -2922,6 +2926,7 @@ TclCompileWhileCmd(
     envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
     envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
     ExceptionRangeTarget(envPtr, range, breakOffset);
+    TclFinalizeLoopExceptionRange(envPtr, range);
 
     /*
      * The while command's result is an empty string.

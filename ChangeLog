@@ -1,3 +1,20 @@
+2013-06-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix for perf bug detected by Kieran
+	(https://groups.google.com/forum/?fromgroups#!topic/comp.lang.tcl/vfpI3bc-DkQ),
+	diagnosed by dgp to be a close relative of [Bug 781585], which was
+	fixed by commit	[f46fb50cb3]. This bug was introduced by myself in
+	commit [cbfe055d8c]. 
+
+2013-06-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileBreakCmd, TclCompileContinueCmd):
+	Added code to allow [break] and [continue] to be issued as a jump (in
+	the most common cases) rather than using the more expensive exception
+	processing path in the bytecode engine. [Bug 3614226]: Partial fix for
+	the issues relating to cleaning up the stack when dealing with [break]
+	and [continue].
+
 2013-05-27 Harald Oehlmann  <oehhar@users.sf.net>
 
 	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from

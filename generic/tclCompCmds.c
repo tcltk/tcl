@@ -500,8 +500,40 @@ TclCompileBreakCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    ExceptionRange *rangePtr;
+    ExceptionAux *auxPtr;
+
     if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
+    }
+
+    /*
+     * Find the innermost exception range that contains this command.
+     */
+
+    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxPtr);
+    if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	int toPop = envPtr->currStackDepth - auxPtr->stackDepth;
+
+	/*
+	 * Pop off the extra stack frames.
+	 */
+
+	while (toPop > 0) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    TclAdjustStackDepth(1, envPtr);
+	    toPop--;
+	}
+
+	if (envPtr->expandCount == auxPtr->expandTarget) {
+	    /*
+	     * Found the target! Also, no built-up expansion stack. No need
+	     * for a nasty INST_BREAK here.
+	     */
+
+	    TclAddLoopBreakFixup(envPtr, auxPtr);
+	    goto done;
+	}
     }
 
     /*
@@ -509,14 +541,14 @@ TclCompileBreakCmd(
      */
 
     TclEmitOpcode(INST_BREAK, envPtr);
-#ifdef TCL_COMPILE_DEBUG
+
+  done:
     /*
-     * Instructions that raise exceptions don't really have to follow
-     * the usual stack management rules.  But the checker wants them
-     * followed, so lie about stack usage to make it happy.
+     * Instructions that raise exceptions don't really have to follow the
+     * usual stack management rules, but the cleanup code does.
      */
+
     TclAdjustStackDepth(1, envPtr);
-#endif
     return TCL_OK;
 }
 
@@ -622,7 +654,7 @@ TclCompileCatchCmd(
      * uses.
      */
 
-    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 
     /*
      * If the body is a simple word, compile a BEGIN_CATCH instruction,
@@ -814,6 +846,9 @@ TclCompileContinueCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    ExceptionRange *rangePtr;
+    ExceptionAux *auxPtr;
+
     /*
      * There should be no argument after the "continue".
      */
@@ -823,18 +858,48 @@ TclCompileContinueCmd(
     }
 
     /*
+     * See if we can find a valid continueOffset (i.e., not -1) in the
+     * innermost containing exception range.
+     */
+
+    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE, &auxPtr);
+    if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	int toPop = envPtr->currStackDepth - auxPtr->stackDepth;
+
+	/*
+	 * Pop off the extra stack frames.
+	 */
+
+	while (toPop > 0) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    TclAdjustStackDepth(1, envPtr);
+	    toPop--;
+	}
+
+	if (envPtr->expandCount == auxPtr->expandTarget) {
+	    /*
+	     * Found the target! Also, no built-up expansion stack. No need
+	     * for a nasty INST_CONTINUE here.
+	     */
+
+	    TclAddLoopContinueFixup(envPtr, auxPtr);
+	    goto done;
+	}
+    }
+
+    /*
      * Emit a continue instruction.
      */
 
     TclEmitOpcode(INST_CONTINUE, envPtr);
-#ifdef TCL_COMPILE_DEBUG
+
+  done:
     /*
-     * Instructions that raise exceptions don't really have to follow
-     * the usual stack management rules.  But the checker wants them
-     * followed, so lie about stack usage to make it happy.
+     * Instructions that raise exceptions don't really have to follow the
+     * usual stack management rules, but the cleanup code does.
      */
+
     TclAdjustStackDepth(1, envPtr);
-#endif
     return TCL_OK;
 }
 
@@ -1283,7 +1348,7 @@ TclCompileDictMergeCmd(
      * For each of the remaining dictionaries...
      */
 
-    outLoop = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    outLoop = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(		INST_BEGIN_CATCH4, outLoop,	envPtr);
     ExceptionRangeStarts(envPtr, outLoop);
     for (i=2 ; i<parsePtr->numWords ; i++) {
@@ -1495,7 +1560,7 @@ CompileDictEachCmd(
      * started by Tcl_DictObjFirst above.
      */
 
-    catchRange = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(	INST_BEGIN_CATCH4, catchRange,		envPtr);
     ExceptionRangeStarts(envPtr, catchRange);
 
@@ -1513,7 +1578,7 @@ CompileDictEachCmd(
      * Set up the loop exception targets.
      */
 
-    loopRange = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
+    loopRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     ExceptionRangeStarts(envPtr, loopRange);
 
     /*
@@ -1560,6 +1625,7 @@ CompileDictEachCmd(
      */
 
     ExceptionRangeTarget(envPtr, loopRange, breakOffset);
+    TclFinalizeLoopExceptionRange(envPtr, loopRange);
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
     TclEmitOpcode(	INST_END_CATCH,				envPtr);
@@ -1738,7 +1804,7 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4(	INST_DICT_UPDATE_START, dictIndex,	envPtr);
     TclEmitInt4(	infoIndex,				envPtr);
 
-    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
@@ -2095,7 +2161,7 @@ TclCompileDictWithCmd(
      * Now the body of the [dict with].
      */
 
-    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
 
     ExceptionRangeStarts(envPtr, range);
@@ -2377,15 +2443,6 @@ TclCompileForCmd(
     }
 
     /*
-     * Create ExceptionRange records for the body and the "next" command. The
-     * "next" command's ExceptionRange supports break but not continue (and
-     * has a -1 continueOffset).
-     */
-
-    bodyRange = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
-    nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
-
-    /*
      * Inline compile the initial command.
      */
 
@@ -2411,6 +2468,7 @@ TclCompileForCmd(
      * Compile the loop body.
      */
 
+    bodyRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     bodyCodeOffset = ExceptionRangeStarts(envPtr, bodyRange);
     SetLineInformation(4);
     CompileBody(envPtr, bodyTokenPtr, interp);
@@ -2419,9 +2477,13 @@ TclCompileForCmd(
     TclEmitOpcode(INST_POP, envPtr);
 
     /*
-     * Compile the "next" subcommand.
+     * Compile the "next" subcommand. Note that this exception range will not
+     * have a continueOffset (other than -1) connected to it; it won't trap
+     * TCL_CONTINUE but rather just TCL_BREAK.
      */
 
+    nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+    envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
     envPtr->currStackDepth = savedStackDepth;
     nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
     SetLineInformation(3);
@@ -2469,6 +2531,8 @@ TclCompileForCmd(
 
     ExceptionRangeTarget(envPtr, bodyRange, breakOffset);
     ExceptionRangeTarget(envPtr, nextRange, breakOffset);
+    TclFinalizeLoopExceptionRange(envPtr, bodyRange);
+    TclFinalizeLoopExceptionRange(envPtr, nextRange);
 
     /*
      * The for command's result is an empty string.
@@ -2760,7 +2824,7 @@ CompileEachloopCmd(
      * Create an exception record to handle [break] and [continue].
      */
 
-    range = DeclareExceptionRange(envPtr, LOOP_EXCEPTION_RANGE);
+    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
 
     /*
      * Evaluate then store each value list in the associated temporary.
@@ -2866,6 +2930,7 @@ CompileEachloopCmd(
      */
 
     ExceptionRangeTarget(envPtr, range, breakOffset);
+    TclFinalizeLoopExceptionRange(envPtr, range);
 
     /*
      * The command's result is an empty string if not collecting, or the

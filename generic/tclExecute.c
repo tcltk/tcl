@@ -2145,11 +2145,6 @@ TEBCresume(
 
 	CACHE_STACK_INFO();
 	if (result == TCL_OK) {
-#ifndef TCL_COMPILE_DEBUG
-	    if (*pc == INST_POP) {
-		NEXT_INST_V(1, cleanup, 0);
-	    }
-#endif
 	    /*
 	     * Push the call's object result and continue execution with the
 	     * next instruction.
@@ -2157,8 +2152,6 @@ TEBCresume(
 
 	    TRACE_WITH_OBJ(("%u => ... after \"%.20s\": TCL_OK, result=",
 		    objc, cmdNameBuf), Tcl_GetObjResult(interp));
-
-	    objResultPtr = Tcl_GetObjResult(interp);
 
 	    /*
 	     * Reset the interp's result to avoid possible duplications of
@@ -2171,9 +2164,16 @@ TEBCresume(
 	     * the refCount it had in its role of iPtr->objResultPtr.
 	     */
 
+	    objResultPtr = Tcl_GetObjResult(interp);
 	    TclNewObj(objPtr);
 	    Tcl_IncrRefCount(objPtr);
 	    iPtr->objResultPtr = objPtr;
+#ifndef TCL_COMPILE_DEBUG
+	    if (*pc == INST_POP) {
+		TclDecrRefCount(objResultPtr);
+		NEXT_INST_V(1, cleanup, 0);
+	    }
+#endif
 	    NEXT_INST_V(0, cleanup, -1);
 	}
 
