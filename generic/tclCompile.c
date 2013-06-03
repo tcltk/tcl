@@ -540,6 +540,9 @@ InstructionDesc const tclInstructionTable[] = {
 	 * list and pushes that resulting list onto the stack.
 	 * Stack: ... list1 list2 => ... [lconcat list1 list2] */
 
+    {"expandDrop",       1,    0,          0,	{OPERAND_NONE}},
+	/* Drops an element from the auxiliary stack. */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
