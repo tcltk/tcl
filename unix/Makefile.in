@@ -1364,14 +1364,6 @@ dist:
 	$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/win/tcl.ds*
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
-	mkdir $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/tcl*.sea.hqx \
-		$(TOP_DIR)/mac/*.c $(TOP_DIR)/mac/*.h $(TOP_DIR)/mac/*.r \
-		$(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/porting.notes $(TOP_DIR)/mac/README $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.pch $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/mac/*.doc $(TOP_DIR)/mac/*.html $(DISTDIR)/mac
-	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/mac
 	mkdir $(DISTDIR)/macosx
 	cp -p $(MAC_OSX_DIR)/Makefile $(MAC_OSX_DIR)/README \
 		$(MAC_OSX_DIR)/*.c $(MAC_OSX_DIR)/*.in \

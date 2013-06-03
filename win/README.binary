@@ -3,7 +3,7 @@ Tcl/Tk 8.4 for Windows, Binary Distribution
 1. Introduction
 --------------- 
 
-This directory contains the binary distribution of Tcl/Tk 8.4.19 for
+This directory contains the binary distribution of Tcl/Tk 8.4.20 for
 Windows.  It was compiled with Microsoft Visual C++ 6.0 using Win32
 API, so that it will run under Windows NT, 95, 98 and 2000.
 
