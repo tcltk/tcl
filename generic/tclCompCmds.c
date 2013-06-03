@@ -491,7 +491,7 @@ TclCompileBreakCmd(
      * Find the innermost exception range that contains this command.
      */
 
-    rangePtr = TclGetInnermostExceptionRange(envPtr, &auxPtr);
+    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxPtr);
     if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
 	int toPop = envPtr->currStackDepth - auxPtr->stackDepth;
 
@@ -505,14 +505,13 @@ TclCompileBreakCmd(
 	    toPop--;
 	}
 
-	if (envPtr->expandCount == 0) {
+	if (envPtr->expandCount == auxPtr->expandTarget) {
 	    /*
 	     * Found the target! Also, no built-up expansion stack. No need
 	     * for a nasty INST_BREAK here.
 	     */
 
 	    TclAddLoopBreakFixup(envPtr, auxPtr);
-	    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 	    goto done;
 	}
     }
@@ -839,7 +838,7 @@ TclCompileContinueCmd(
      * innermost containing exception range.
      */
 
-    rangePtr = TclGetInnermostExceptionRange(envPtr, &auxPtr);
+    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE, &auxPtr);
     if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
 	int toPop = envPtr->currStackDepth - auxPtr->stackDepth;
 
@@ -853,14 +852,13 @@ TclCompileContinueCmd(
 	    toPop--;
 	}
 
-	if (envPtr->expandCount == 0) {
+	if (envPtr->expandCount == auxPtr->expandTarget) {
 	    /*
 	     * Found the target! Also, no built-up expansion stack. No need
 	     * for a nasty INST_CONTINUE here.
 	     */
 
 	    TclAddLoopContinueFixup(envPtr, auxPtr);
-	    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 	    goto done;
 	}
     }
@@ -2467,6 +2465,7 @@ TclCompileForCmd(
      */
 
     nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+    envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
     envPtr->currStackDepth = savedStackDepth;
     nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
     SetLineInformation(3);
