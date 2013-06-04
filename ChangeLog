@@ -1,3 +1,9 @@
+2013-06-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: Eliminate NO_VIZ macro as current
+	zlib uses HAVE_HIDDEN in stead. One more last-moment
+	fix for FreeBSD by Pietro Cerutti
+
 2013-06-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fix for perf bug detected by Kieran
