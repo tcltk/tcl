@@ -1411,21 +1411,49 @@ Tcl_UtfToExternal(
 /*
  *---------------------------------------------------------------------------
  *
- * Tcl_FindExecutable --
+ * Tcl_InitSubsystems/Tcl_FindExecutable --
  *
- *	This function computes the absolute path name of the current
- *	application, given its argv[0] value.
+ *	This function initializes everything needed for the Tcl library
+ *	to be able to operate.
  *
  * Results:
  *	None.
  *
  * Side effects:
  *	The absolute pathname for the application is computed and stored to be
- *	returned later be [info nameofexecutable].
+ *	returned later by [info nameofexecutable]. The system encoding is
+ *	determined and stored to be returned later by [encoding system]
  *
  *---------------------------------------------------------------------------
  */
+MODULE_SCOPE const TclStubs tclStubs;
+
+/* Dummy const structure returned by Tcl_InitSubsystems when
+ * using stubs, which looks like an Tcl_Interp, but in reality
+ * is not. It contains just enough for Tcl_InitStubs to be able
+ * to initialize the stub table. The first bytes of this structure
+ * are filled with the Tcl version string, so it can be cast to a
+ * "const char *" holding the Tcl version as well. */
+static const struct {
+    /* A real interpreter has interp->result/freeProc here: */
+    const char version[sizeof(struct {char *r; void (*f)(void);})];
+    int errorLine;
+    const struct TclStubs *stubTable;
+} dummyInterp = {
+    TCL_PATCH_LEVEL, TCL_STUB_MAGIC, &tclStubs
+};
+
 #undef Tcl_FindExecutable
+const char *
+Tcl_InitSubsystems(Tcl_PanicProc *panicProc)
+{
+    if (panicProc) {
+	Tcl_SetPanicProc(panicProc);
+    }
+    TclInitSubsystems();
+    return dummyInterp.version;
+}
+
 void
 Tcl_FindExecutable(
     const char *argv0)		/* The value of the application's argv[0]
