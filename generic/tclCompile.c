@@ -539,13 +539,13 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Concatenates the two lists at the top of the stack into a single
 	 * list and pushes that resulting list onto the stack.
 	 * Stack: ... list1 list2 => ... [lconcat list1 list2] */
-    {"verify",		 5,	 0,	  1,	{OPERAND_UINT4}},
-	/* Verify the predicted stack depth (operand) is true during
-	 * bytecode execution. */
-
     {"expandDrop",       1,    0,          0,	{OPERAND_NONE}},
 	/* Drops an element from the auxiliary stack, popping stack elements
 	 * until the matching stack depth is reached. */
+
+    {"verify",		 5,	 0,	  1,	{OPERAND_UINT4}},
+	/* Verify the predicted stack depth (operand) is true during
+	 * bytecode execution. */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
