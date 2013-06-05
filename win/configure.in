@@ -135,7 +135,6 @@ AS_IF([test "$tcl_ok" = "yes"], [
   ])
 ], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
-  AC_DEFINE_UNQUOTED(NO_VIZ, 1)
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
