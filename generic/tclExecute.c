@@ -2728,6 +2728,8 @@ TEBCresume(
 	CLANG_ASSERT(auxObjList);
 	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
 	POP_TAUX_OBJ();
+	/* Ugly abuse! */
+	starting = 1;
 	NEXT_INST_V(1, objc, 0);
 
     case INST_EXPAND_STKTOP: {
