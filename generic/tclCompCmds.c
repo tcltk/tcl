@@ -499,6 +499,13 @@ TclCompileBreakCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopBreakFixup(envPtr, auxPtr);
+
+	/*
+	 * Instructions that raise exceptions don't really have to follow the
+	 * usual stack management rules, but the cleanup code does.
+	 */
+
+	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real break.
@@ -510,12 +517,6 @@ TclCompileBreakCmd(
 	TclEmitInt4(0, envPtr);
     }
 
-    /*
-     * Instructions that raise exceptions don't really have to follow the
-     * usual stack management rules, but the cleanup code does.
-     */
-
-    TclAdjustStackDepth(1, envPtr);
     return TCL_OK;
 }
 
@@ -833,6 +834,13 @@ TclCompileContinueCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopContinueFixup(envPtr, auxPtr);
+
+	/*
+	 * Instructions that raise exceptions don't really have to follow the
+	 * usual stack management rules, but the cleanup code does.
+	 */
+
+	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real continue.
@@ -844,12 +852,6 @@ TclCompileContinueCmd(
 	TclEmitInt4(0, envPtr);
     }
 
-    /*
-     * Instructions that raise exceptions don't really have to follow the
-     * usual stack management rules, but the cleanup code does.
-     */
-
-    TclAdjustStackDepth(1, envPtr);
     return TCL_OK;
 }
 
@@ -2121,10 +2123,10 @@ TclCompileDictWithCmd(
     TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    envPtr->currStackDepth++;
+    //envPtr->currStackDepth++;
     SetLineInformation(parsePtr->numWords-1);
     CompileBody(envPtr, tokenPtr, interp);
-    envPtr->currStackDepth = savedStackDepth;
+    //envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeEnds(envPtr, range);
 
     /*
