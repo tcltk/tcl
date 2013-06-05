@@ -858,6 +858,7 @@ TclSubstCompile(
 	/* Substitution produced TCL_OK */
 	OP(	END_CATCH);
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &okFixup);
+	TclAdjustStackDepth(-1, envPtr);
 
 	/* Exceptional return codes processed here */
 	ExceptionRangeTarget(envPtr, catchRange, catchOffset);
@@ -883,6 +884,7 @@ TclSubstCompile(
 	/* OTHER */
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &otherFixup);
 
+	TclAdjustStackDepth(1, envPtr);
 	/* BREAK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &breakFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
@@ -898,6 +900,7 @@ TclSubstCompile(
 	    OP1(JUMP1, -breakJump);
 	}
 
+	TclAdjustStackDepth(2, envPtr);
 	/* CONTINUE destination */
 	if (TclFixupForwardJumpToHere(envPtr, &continueFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %d",
@@ -907,6 +910,7 @@ TclSubstCompile(
 	OP(	POP);
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
 
+	TclAdjustStackDepth(2, envPtr);
 	/* RETURN + other destination */
 	if (TclFixupForwardJumpToHere(envPtr, &returnFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %d",
@@ -923,17 +927,6 @@ TclSubstCompile(
 
 	OP4(	REVERSE, 2);
 	OP(	POP);
-
-	/*
-	 * We've emitted several POP instructions, and the automatic
-	 * computations for stack depth requirements have been decrementing
-	 * for every one.  However, we know that every branch actually taken
-	 * only encounters some of those instructions.  No branch passes
-	 * through them all.  So, we now have a stack requirements estimate
-	 * that is too low.  Here we manually fix that up.
-	 */
-
-	TclAdjustStackDepth(4, envPtr);
 
 	/* OK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {

@@ -6258,7 +6258,11 @@ TEBCresume(
 	if (code < TCL_ERROR || code > TCL_CONTINUE) {
 	    code = TCL_CONTINUE + 1;
 	}
-	NEXT_INST_F(2*code -1, 1, 0);
+	NEXT_INST_F(2*code -1
+#ifdef TCL_COMPILE_DEBUG
++ (code != TCL_ERROR)*10
+#endif
+, 1, 0);
     }
 
     /*
