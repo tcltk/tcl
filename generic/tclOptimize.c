@@ -13,18 +13,45 @@
 #include "tclCompile.h"
 #include <assert.h>
 
+/*
+ * Forward declarations.
+ */
+
+static void		LocateTargetAddresses(CompileEnv *envPtr,
+			    Tcl_HashTable *tablePtr);
+
+/*
+ * Helper macros.
+ */
+
 #define DefineTargetAddress(tablePtr, address) \
     ((void) Tcl_CreateHashEntry((tablePtr), (void *) (address), &isNew))
 #define IsTargetAddress(tablePtr, address) \
     (Tcl_FindHashEntry((tablePtr), (void *) (address)) != NULL)
+#define AddrLength(address) \
+    (tclInstructionTable[*(unsigned char *)(address)].numBytes)
+#define InstLength(instruction) \
+    (tclInstructionTable[(unsigned char)(instruction)].numBytes)
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * LocateTargetAddresses --
+ *
+ *	Populate a hash table with places that we need to be careful around
+ *	because they're the targets of various kinds of jumps and other
+ *	non-local behavior.
+ *
+ * ----------------------------------------------------------------------
+ */
+
 static void
 LocateTargetAddresses(
     CompileEnv *envPtr,
     Tcl_HashTable *tablePtr)
 {
-    unsigned char *pc, *target;
-    int size, isNew, i;
+    unsigned char *currentInstPtr, *targetInstPtr;
+    int isNew, i;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch hSearch;
 
@@ -44,36 +71,39 @@ LocateTargetAddresses(
      * because they are the targets of various types of jumps.
      */
 
-    for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
-	size = tclInstructionTable[*pc].numBytes;
-	switch (*pc) {
+    for (currentInstPtr = envPtr->codeStart ;
+	    currentInstPtr < envPtr->codeNext ;
+	    currentInstPtr += AddrLength(currentInstPtr)) {
+	switch (*currentInstPtr) {
 	case INST_JUMP1:
 	case INST_JUMP_TRUE1:
 	case INST_JUMP_FALSE1:
-	    target = pc + TclGetInt1AtPtr(pc+1);
+	    targetInstPtr = currentInstPtr+TclGetInt1AtPtr(currentInstPtr+1);
 	    goto storeTarget;
 	case INST_JUMP4:
 	case INST_JUMP_TRUE4:
 	case INST_JUMP_FALSE4:
-	    target = pc + TclGetInt4AtPtr(pc+1);
+	    targetInstPtr = currentInstPtr+TclGetInt4AtPtr(currentInstPtr+1);
 	    goto storeTarget;
 	case INST_BEGIN_CATCH4:
-	    target = envPtr->codeStart + envPtr->exceptArrayPtr[
-		    TclGetUInt4AtPtr(pc+1)].codeOffset;
+	    targetInstPtr = envPtr->codeStart + envPtr->exceptArrayPtr[
+		    TclGetUInt4AtPtr(currentInstPtr+1)].codeOffset;
 	storeTarget:
-	    DefineTargetAddress(tablePtr, target);
+	    DefineTargetAddress(tablePtr, targetInstPtr);
 	    break;
 	case INST_JUMP_TABLE:
 	    hPtr = Tcl_FirstHashEntry(
-		    &JUMPTABLEINFO(envPtr, pc+1)->hashTable, &hSearch);
+		    &JUMPTABLEINFO(envPtr, currentInstPtr+1)->hashTable,
+		    &hSearch);
 	    for (; hPtr ; hPtr = Tcl_NextHashEntry(&hSearch)) {
-		target = pc + PTR2INT(Tcl_GetHashValue(hPtr));
-		DefineTargetAddress(tablePtr, target);
+		targetInstPtr = currentInstPtr +
+			PTR2INT(Tcl_GetHashValue(hPtr));
+		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
 	    break;
 	case INST_RETURN_CODE_BRANCH:
 	    for (i=TCL_ERROR ; i<TCL_CONTINUE+1 ; i++) {
-		DefineTargetAddress(tablePtr, pc + 2*i - 1);
+		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
 	    }
 	    break;
 	case INST_START_CMD:
@@ -86,7 +116,7 @@ LocateTargetAddresses(
      * one past the end!
      */
 
-    DefineTargetAddress(tablePtr, pc);
+    DefineTargetAddress(tablePtr, currentInstPtr);
 
     /*
      * Enter in the targets of exception ranges.
@@ -96,14 +126,14 @@ LocateTargetAddresses(
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
 
 	if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
-	    target = envPtr->codeStart + rangePtr->catchOffset;
-	    DefineTargetAddress(tablePtr, target);
+	    targetInstPtr = envPtr->codeStart + rangePtr->catchOffset;
+	    DefineTargetAddress(tablePtr, targetInstPtr);
 	} else {
-	    target = envPtr->codeStart + rangePtr->breakOffset;
-	    DefineTargetAddress(tablePtr, target);
+	    targetInstPtr = envPtr->codeStart + rangePtr->breakOffset;
+	    DefineTargetAddress(tablePtr, targetInstPtr);
 	    if (rangePtr->continueOffset >= 0) {
-		target = envPtr->codeStart + rangePtr->continueOffset;
-		DefineTargetAddress(tablePtr, target);
+		targetInstPtr = envPtr->codeStart + rangePtr->continueOffset;
+		DefineTargetAddress(tablePtr, targetInstPtr);
 	    }
 	}
     }
@@ -123,7 +153,7 @@ void
 TclOptimizeBytecode(
     CompileEnv *envPtr)
 {
-    unsigned char *pc;
+    unsigned char *currentInstPtr;
     int size;
     Tcl_HashTable targets;
 
@@ -135,73 +165,74 @@ TclOptimizeBytecode(
      */
 
     LocateTargetAddresses(envPtr, &targets);
-    for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
-	int blank = 0, i, inst;
+    for (currentInstPtr = envPtr->codeStart ;
+	    currentInstPtr < envPtr->codeNext ; currentInstPtr += size) {
+	int blank = 0, i, nextInst;
 
-	size = tclInstructionTable[*pc].numBytes;
-	while (*(pc+size) == INST_NOP) {
-	    if (IsTargetAddress(&targets, pc + size)) {
+	size = AddrLength(currentInstPtr);
+	while (*(currentInstPtr+size) == INST_NOP) {
+	    if (IsTargetAddress(&targets, currentInstPtr + size)) {
 		break;
 	    }
-	    size += tclInstructionTable[INST_NOP].numBytes;
+	    size += InstLength(INST_NOP);
 	}
-	if (IsTargetAddress(&targets, pc + size)) {
+	if (IsTargetAddress(&targets, currentInstPtr + size)) {
 	    continue;
 	}
-	inst = *(pc + size);
-	switch (*pc) {
+	nextInst = *(currentInstPtr + size);
+	switch (*currentInstPtr) {
 	case INST_PUSH1:
-	    if (inst == INST_POP) {
-		blank = size + tclInstructionTable[inst].numBytes;
-	    } else if (inst == INST_CONCAT1
-		    && TclGetUInt1AtPtr(pc + size + 1) == 2) {
+	    if (nextInst == INST_POP) {
+		blank = size + InstLength(nextInst);
+	    } else if (nextInst == INST_CONCAT1
+		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
-			TclGetUInt1AtPtr(pc + 1));
+			TclGetUInt1AtPtr(currentInstPtr + 1));
 		int numBytes;
 
 		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
-		    blank = size + tclInstructionTable[inst].numBytes;
+		    blank = size + InstLength(nextInst);
 		}
 	    }
 	    break;
 	case INST_PUSH4:
-	    if (inst == INST_POP) {
+	    if (nextInst == INST_POP) {
 		blank = size + 1;
-	    } else if (inst == INST_CONCAT1
-		    && TclGetUInt1AtPtr(pc + size + 1) == 2) {
+	    } else if (nextInst == INST_CONCAT1
+		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
-			TclGetUInt4AtPtr(pc + 1));
+			TclGetUInt4AtPtr(currentInstPtr + 1));
 		int numBytes;
 
 		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
 		if (numBytes == 0) {
-		    blank = size + tclInstructionTable[inst].numBytes;
+		    blank = size + InstLength(nextInst);
 		}
 	    }
 	    break;
 	case INST_LNOT:
-	    switch (inst) {
+	    switch (nextInst) {
 	    case INST_JUMP_TRUE1:
 		blank = size;
-		*(pc + size) = INST_JUMP_FALSE1;
+		*(currentInstPtr + size) = INST_JUMP_FALSE1;
 		break;
 	    case INST_JUMP_FALSE1:
 		blank = size;
-		*(pc + size) = INST_JUMP_TRUE1;
+		*(currentInstPtr + size) = INST_JUMP_TRUE1;
 		break;
 	    case INST_JUMP_TRUE4:
 		blank = size;
-		*(pc + size) = INST_JUMP_FALSE4;
+		*(currentInstPtr + size) = INST_JUMP_FALSE4;
 		break;
 	    case INST_JUMP_FALSE4:
 		blank = size;
-		*(pc + size) = INST_JUMP_TRUE4;
+		*(currentInstPtr + size) = INST_JUMP_TRUE4;
 		break;
 	    }
 	    break;
 	case INST_TRY_CVT_TO_NUMERIC:
-	    switch (inst) {
+	    switch (nextInst) {
 	    case INST_JUMP_TRUE1:
 	    case INST_JUMP_TRUE4:
 	    case INST_JUMP_FALSE1:
@@ -242,7 +273,7 @@ TclOptimizeBytecode(
 	}
 	if (blank > 0) {
 	    for (i=0 ; i<blank ; i++) {
-		*(pc + i) = INST_NOP;
+		*(currentInstPtr + i) = INST_NOP;
 	    }
 	    size = blank;
 	}
@@ -250,26 +281,90 @@ TclOptimizeBytecode(
     Tcl_DeleteHashTable(&targets);
 
     /*
+     * Advance jumps past NOPs and chained JUMPs.
+     */
+
+    for (currentInstPtr = envPtr->codeStart ;
+	    currentInstPtr < envPtr->codeNext-1 ;
+	    currentInstPtr += AddrLength(currentInstPtr)) {
+	int offset, delta;
+
+	switch (*currentInstPtr) {
+	case INST_JUMP1:
+	case INST_JUMP_TRUE1:
+	case INST_JUMP_FALSE1:
+	    offset = TclGetInt1AtPtr(currentInstPtr + 1);
+	    delta = 0;
+	advanceNext1:
+	    if (offset + delta == 0) {
+		continue;
+	    }	    
+	    if (offset + delta < -128 || offset + delta > 127) {
+		TclStoreInt1AtPtr(offset, currentInstPtr + 1);
+		continue;
+	    }
+	    offset += delta;
+	    switch (*(currentInstPtr + offset)) {
+	    case INST_NOP:
+		delta = InstLength(INST_NOP);
+		goto advanceNext1;
+	    case INST_JUMP1:
+		delta = TclGetInt1AtPtr(currentInstPtr + offset + 1);
+		goto advanceNext1;
+	    case INST_JUMP4:
+		delta = TclGetInt4AtPtr(currentInstPtr + offset + 1);
+		goto advanceNext1;
+	    default:
+		TclStoreInt1AtPtr(offset, currentInstPtr + 1);
+		continue;
+	    }
+	case INST_JUMP4:
+	case INST_JUMP_TRUE4:
+	case INST_JUMP_FALSE4:
+	    offset = TclGetInt4AtPtr(currentInstPtr + 1);
+	advanceNext4:
+	    if (offset == 0) {
+		continue;
+	    }
+	    switch (*(currentInstPtr + offset)) {
+	    case INST_NOP:
+		offset += InstLength(INST_NOP);
+		goto advanceNext4;
+	    case INST_JUMP1:
+		offset += TclGetInt1AtPtr(currentInstPtr + offset + 1);
+		goto advanceNext4;
+	    case INST_JUMP4:
+		offset += TclGetInt4AtPtr(currentInstPtr + offset + 1);
+		goto advanceNext4;
+	    default:
+		TclStoreInt4AtPtr(offset, currentInstPtr + 1);
+		continue;
+	    }
+	}
+    }
+
+    /*
      * Trim unreachable instructions after a DONE.
      */
 
     LocateTargetAddresses(envPtr, &targets);
-    for (pc = envPtr->codeStart ; pc < envPtr->codeNext-1 ; pc += size) {
+    for (currentInstPtr = envPtr->codeStart ;
+	    currentInstPtr < envPtr->codeNext-1 ;
+	    currentInstPtr += AddrLength(currentInstPtr)) {
 	int clear = 0;
 
-	size = tclInstructionTable[*pc].numBytes;
-	if (*pc != INST_DONE) {
+	if (*currentInstPtr != INST_DONE) {
 	    continue;
 	}
-	assert (size == 1);
-	while (!IsTargetAddress(&targets, pc + 1 + clear)) {
-	    clear += tclInstructionTable[*(pc + 1 + clear)].numBytes;
+
+	while (!IsTargetAddress(&targets, currentInstPtr + 1 + clear)) {
+	    clear += AddrLength(currentInstPtr + 1 + clear);
 	}
-	if (pc + 1 + clear == envPtr->codeNext) {
+	if (currentInstPtr + 1 + clear == envPtr->codeNext) {
 	    envPtr->codeNext -= clear;
 	} else {
 	    while (clear --> 0) {
-		*(pc + 1 + clear) = INST_NOP;
+		*(currentInstPtr + 1 + clear) = INST_NOP;
 	    }
 	}
     }
