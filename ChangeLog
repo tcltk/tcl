@@ -1,10 +1,25 @@
+2013-06-05  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclExecute.c (INST_EXPAND_DROP): [Bugs 2835313, 3614226]:
+	New opcode to allow resetting the stack to get rid of an expansion,
+	restoring the stack to a known state in the process.
+	* generic/tclCompile.c, generic/tclCompCmds.c: Adjusted the compilers
+	for [break] and [continue] to get stack cleanup right in the majority
+	of cases.
+	* tests/for.test (for-7.*): Set of tests for these evil cases.
+
+2013-06-04  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4: Eliminate NO_VIZ macro as current zlib uses HAVE_HIDDEN
+	instead. One more last-moment fix for FreeBSD by Pietro Cerutti
+
 2013-06-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fix for perf bug detected by Kieran
 	(https://groups.google.com/forum/?fromgroups#!topic/comp.lang.tcl/vfpI3bc-DkQ),
 	diagnosed by dgp to be a close relative of [Bug 781585], which was
 	fixed by commit	[f46fb50cb3]. This bug was introduced by myself in
-	commit [cbfe055d8c]. 
+	commit [cbfe055d8c].
 
 2013-06-03  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -18,14 +33,14 @@
 2013-05-27 Harald Oehlmann  <oehhar@users.sf.net>
 
 	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from
-	registry key HCU\Control Panel\Desktop : PreferredUILanguages to
-	honor installed language packs on Vista+.
+	registry key HCU\Control Panel\Desktop : PreferredUILanguages to honor
+	installed language packs on Vista+.
 	Bumped msgcat version to 1.5.2
 
 2013-05-22  Andreas Kupries  <andreask@activestate.com>
 
 	* tclCompile.c: Removed duplicate const qualifier causing the HP
-	  native cc to error out.
+	native cc to error out.
 
 2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -87,10 +102,9 @@
 2013-04-30  Andreas Kupries  <andreask@activestate.com>
 
 	* library/platform/platform.tcl (::platform::LibcVersion):
-	* library/platform/pkgIndex.tcl: Followup to the 2013-01-30
-	  change. The RE become too restrictive again. SuSe added a
-	  timestamp after the version. Loosened up a bit. Bumped package
-	  to version 1.0.12.
+	* library/platform/pkgIndex.tcl: Followup to the 2013-01-30 change.
+	The RE become too restrictive again. SuSe added a timestamp after the
+	version. Loosened up a bit. Bumped package to version 1.0.12.
 
 2013-04-29  Donal K. Fellows  <dkf@users.sf.net>
 
@@ -109,8 +123,8 @@
 2013-04-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclDecls.h: Implement many Tcl_*Var* functions and
-	Tcl_GetIndexFromObj as (faster/stack-saving) macros around resp
-	their Tcl_*Var*2 equivalent and Tcl_GetIndexFromObjStruct.
+	Tcl_GetIndexFromObj as (faster/stack-saving) macros around resp their
+	Tcl_*Var*2 equivalent and Tcl_GetIndexFromObjStruct.
 
 2013-04-12  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -119,16 +133,16 @@
 
 2013-04-08  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/regc_color.c:	[Bug 3610026] Stop crash when the number of
-	* generic/regerrs.h:	"colors" in a regular expression overflows
-	* generic/regex.h:	a short int.  Thanks to Heikki Linnakangas
-	* generic/regguts.h:	for the report and the patch.
+	* generic/regc_color.c:	[Bug 3610026]: Stop crash when the number of
+	* generic/regerrs.h:	"colors" in a regular expression overflows a
+	* generic/regex.h:	short int.  Thanks to Heikki Linnakangas for
+	* generic/regguts.h:	the report and the patch.
 	* tests/regexp.test:
 
 2013-04-04  Reinhard Max  <max@suse.de>
 
-	* library/http/http.tcl (http::geturl): Allow URLs that don't have
-	a path, but a query query, e.g. http://example.com?foo=bar .
+	* library/http/http.tcl (http::geturl): Allow URLs that don't have a
+	path, but a query query, e.g. http://example.com?foo=bar
 	* Bump the http package to 2.8.7.
 
 2013-03-22  Venkat Iyer <venkat@comit.com>
@@ -160,12 +174,12 @@
 
 2013-03-21  Don Porter  <dgp@users.sourceforge.net>
 
-	* library/auto.tcl: [Bug 2102614] Add ensemble indexing support
-	* tests/autoMkindex.test: to [auto_mkindex].  Thanks Brian Griffin.
+	* library/auto.tcl: [Bug 2102614]: Add ensemble indexing support to
+	* tests/autoMkindex.test: [auto_mkindex].  Thanks Brian Griffin.
 
 2013-03-19  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclFCmd.c: [Bug 3597000] Consistent [file copy] result.
+	* generic/tclFCmd.c: [Bug 3597000]: Consistent [file copy] result.
 	* tests/fileSystem.test:
 
 2013-03-19  Jan Nijtmans  <nijtmans@users.sf.net>
@@ -185,20 +199,20 @@
 
 2013-03-11  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclCompile.c:	[Bugs 3607246,3607372] Unbalanced refcounts
+	* generic/tclCompile.c:	[Bugs 3607246,3607372]: Unbalanced refcounts
 	* generic/tclLiteral.c:	of literals in the global literal table.
 
 2013-03-06  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/regc_nfa.c:	[Bugs 3604074,3606683] Rewrite of the
-	* generic/regcomp.c:	fixempties() routine (and supporting
-	routines) to completely eliminate the infinite loop hazard.
-	Thanks to Tom Lane for the much improved solution.
+	* generic/regc_nfa.c:	[Bugs 3604074,3606683]: Rewrite of the
+	* generic/regcomp.c:	fixempties() routine (and supporting routines)
+	to completely eliminate the infinite loop hazard. Thanks to Tom Lane
+	for the much improved solution.
 
 2013-02-28  Don Porter  <dgp@users.sourceforge.net>
 
-	* generic/tclLiteral.c:	Revise TclReleaseLiteral() to tolerate a
-	NULL interp argument.
+	* generic/tclLiteral.c:	Revise TclReleaseLiteral() to tolerate a NULL
+	interp argument.
 
 	* generic/tclCompile.c:	Update callers and revise mistaken comments.
 	* generic/tclProc.c:
@@ -4893,8 +4907,7 @@
 2010-05-19  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
 	* tests/dict.test: Add missing tests for [Bug 3004007], fixed under
-	                   the radar on 2010-02-24 (dkf): EIAS violation in
-	                   list-dict conversions.
+	the radar on 2010-02-24 (dkf): EIAS violation in list-dict conversions
 
 2010-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -6748,10 +6761,9 @@
 
 2009-11-11  Alexandre Ferrieux  <ferrieux@users.sourceforge.net>
 
-	* generic/tclIO.c: Fix [Bug 2888099] (close discards ENOSPC error)
-	                   by saving the errno from the first of two
-	                   FlushChannel()s. Uneasy to test; might need
-	                   specific channel drivers. Four-hands with aku.
+	* generic/tclIO.c: Fix [Bug 2888099] (close discards ENOSPC error) by
+	saving the errno from the first of two FlushChannel()s. Uneasy to
+	test; might need specific channel drivers. Four-hands with aku.
 
 2009-11-10  Pat Thoyts  <patthoyts@users.sourceforge.net>
 

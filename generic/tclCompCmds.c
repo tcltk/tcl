@@ -513,42 +513,24 @@ TclCompileBreakCmd(
 
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxPtr);
     if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	int toPop = envPtr->currStackDepth - auxPtr->stackDepth;
-
 	/*
-	 * Pop off the extra stack frames.
+	 * Found the target! No need for a nasty INST_BREAK here.
 	 */
 
-	while (toPop > 0) {
-	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
-	    toPop--;
-	}
+	TclCleanupStackForBreakContinue(envPtr, auxPtr);
+	TclAddLoopBreakFixup(envPtr, auxPtr);
+	TclAdjustStackDepth(1, envPtr);
+    } else {
+	/*
+	 * Emit a real break.
+	 */
 
-	if (envPtr->expandCount == auxPtr->expandTarget) {
-	    /*
-	     * Found the target! Also, no built-up expansion stack. No need
-	     * for a nasty INST_BREAK here.
-	     */
-
-	    TclAddLoopBreakFixup(envPtr, auxPtr);
-	    goto done;
-	}
+	PushStringLiteral(envPtr, "");
+	TclEmitOpcode(INST_DUP, envPtr);
+	TclEmitInstInt4(INST_RETURN_IMM, TCL_BREAK, envPtr);
+	TclEmitInt4(0, envPtr);
     }
 
-    /*
-     * Emit a break instruction.
-     */
-
-    TclEmitOpcode(INST_BREAK, envPtr);
-
-  done:
-    /*
-     * Instructions that raise exceptions don't really have to follow the
-     * usual stack management rules, but the cleanup code does.
-     */
-
-    TclAdjustStackDepth(1, envPtr);
     return TCL_OK;
 }
 
@@ -864,42 +846,24 @@ TclCompileContinueCmd(
 
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE, &auxPtr);
     if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	int toPop = envPtr->currStackDepth - auxPtr->stackDepth;
-
 	/*
-	 * Pop off the extra stack frames.
+	 * Found the target! No need for a nasty INST_CONTINUE here.
 	 */
 
-	while (toPop > 0) {
-	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
-	    toPop--;
-	}
+	TclCleanupStackForBreakContinue(envPtr, auxPtr);
+	TclAddLoopContinueFixup(envPtr, auxPtr);
+	TclAdjustStackDepth(1, envPtr);
+    } else {
+	/*
+	 * Emit a real continue.
+	 */
 
-	if (envPtr->expandCount == auxPtr->expandTarget) {
-	    /*
-	     * Found the target! Also, no built-up expansion stack. No need
-	     * for a nasty INST_CONTINUE here.
-	     */
-
-	    TclAddLoopContinueFixup(envPtr, auxPtr);
-	    goto done;
-	}
+	PushStringLiteral(envPtr, "");
+	TclEmitOpcode(INST_DUP, envPtr);
+	TclEmitInstInt4(INST_RETURN_IMM, TCL_CONTINUE, envPtr);
+	TclEmitInt4(0, envPtr);
     }
 
-    /*
-     * Emit a continue instruction.
-     */
-
-    TclEmitOpcode(INST_CONTINUE, envPtr);
-
-  done:
-    /*
-     * Instructions that raise exceptions don't really have to follow the
-     * usual stack management rules, but the cleanup code does.
-     */
-
-    TclAdjustStackDepth(1, envPtr);
     return TCL_OK;
 }
 
