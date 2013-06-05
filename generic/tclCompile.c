@@ -2183,8 +2183,7 @@ TclCompileScript(
 #ifdef TCL_COMPILE_DEBUG
 			    int diff = envPtr->currStackDepth-startStackDepth;
 
-			    if (diff != 1 && (diff != 0 ||
-				   *(envPtr->codeNext-1) != INST_DONE)) {
+			    if (diff != 1) {
 				Tcl_Panic("bad stack adjustment when compiling"
 					" %.*s (was %d instead of 1)",
 					parsePtr->tokenPtr->size,
