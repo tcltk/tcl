@@ -499,12 +499,6 @@ TclCompileBreakCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopBreakFixup(envPtr, auxPtr);
-
-	/*
-	 * Instructions that raise exceptions don't really have to follow the
-	 * usual stack management rules, but the cleanup code does.
-	 */
-
 	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
@@ -834,12 +828,6 @@ TclCompileContinueCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopContinueFixup(envPtr, auxPtr);
-
-	/*
-	 * Instructions that raise exceptions don't really have to follow the
-	 * usual stack management rules, but the cleanup code does.
-	 */
-
 	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
