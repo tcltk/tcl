@@ -260,7 +260,7 @@ VarHashCreateVar(
 
 /* Verify the stack depth, only when no expansion is in progress */
 
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 #define CHECK_STACK()							\
     do {								\
 	ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,			\
@@ -2633,7 +2633,7 @@ TEBCresume(
 		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
 			INT_MAX);
 	    }
-#if !TCL_COMPILE_DEBUG
+#ifndef TCL_COMPILE_DEBUG
 	    if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
 		TclFreeIntRep(objResultPtr);
 		objResultPtr->bytes = ckrealloc(bytes, length+appendLen+1);
@@ -2669,7 +2669,7 @@ TEBCresume(
 		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
 			INT_MAX);
 	    }
-#if !TCL_COMPILE_DEBUG
+#ifndef TCL_COMPILE_DEBUG
 	    if (!Tcl_IsShared(objResultPtr)) {
 		bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,
 			length + appendLen);
@@ -2748,6 +2748,10 @@ TEBCresume(
 	CLANG_ASSERT(auxObjList);
 	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
 	POP_TAUX_OBJ();
+#ifdef TCL_COMPILE_DEBUG
+	/* Ugly abuse! */
+	starting = 1;
+#endif
 	NEXT_INST_V(1, objc, 0);
 
     case INST_EXPAND_STKTOP: {
@@ -6878,7 +6882,7 @@ TEBCresume(
 	 */
 
     processExceptionReturn:
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 	switch (*pc) {
 	case INST_INVOKE_STK1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
@@ -6935,7 +6939,7 @@ TEBCresume(
 		    rangePtr->codeOffset, rangePtr->continueOffset));
 	    NEXT_INST_F(0, 0, 0);
 	}
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
 	    objPtr = Tcl_GetObjResult(interp);
 	    if ((result != TCL_ERROR) && (result != TCL_RETURN)) {

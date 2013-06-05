@@ -519,6 +519,7 @@ TclCompileBreakCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopBreakFixup(envPtr, auxPtr);
+	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real break.
@@ -530,12 +531,6 @@ TclCompileBreakCmd(
 	TclEmitInt4(0, envPtr);
     }
 
-    /*
-     * Instructions that raise exceptions don't really have to follow the
-     * usual stack management rules, but the cleanup code does.
-     */
-
-    TclAdjustStackDepth(1, envPtr);
     return TCL_OK;
 }
 
@@ -857,6 +852,7 @@ TclCompileContinueCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopContinueFixup(envPtr, auxPtr);
+	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real continue.
@@ -868,12 +864,6 @@ TclCompileContinueCmd(
 	TclEmitInt4(0, envPtr);
     }
 
-    /*
-     * Instructions that raise exceptions don't really have to follow the
-     * usual stack management rules, but the cleanup code does.
-     */
-
-    TclAdjustStackDepth(1, envPtr);
     return TCL_OK;
 }
 
