@@ -2365,7 +2365,7 @@ TEBCresume(
 	TRACE(("%u %u => ", code, level));
 	result = TclProcessReturn(interp, code, level, OBJ_AT_TOS);
 	if (result == TCL_OK) {
-	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
+	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")\n",
 		    O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 0);
 	}
@@ -2374,6 +2374,7 @@ TEBCresume(
 	    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 	}
 	cleanup = 2;
+	TRACE_APPEND(("\n"));
 	goto processExceptionReturn;
     }
 
@@ -2384,7 +2385,7 @@ TEBCresume(
 	if (result == TCL_OK) {
 	    Tcl_DecrRefCount(OBJ_AT_TOS);
 	    OBJ_AT_TOS = objResultPtr;
-	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
+	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")\n",
 		    O2S(objResultPtr)));
 	    NEXT_INST_F(1, 0, 0);
 	} else if (result == TCL_ERROR) {
@@ -2404,6 +2405,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, objResultPtr);
 	}
 	cleanup = 1;
+	TRACE_APPEND(("\n"));
 	goto processExceptionReturn;
 
     case INST_YIELD: {
@@ -6656,7 +6658,7 @@ TEBCresume(
 	}
 #endif
 
-	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
+	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
 	objResultPtr = TCONST(done);
 	/* TODO: consider opt like INST_FOREACH_STEP4 */

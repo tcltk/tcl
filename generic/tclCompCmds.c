@@ -1324,13 +1324,21 @@ TclCompileDictMergeCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
 	TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,	envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 24,		envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 24
+#ifdef TCL_COMPILE_DEBUG
++25
+#endif
+,		envPtr);
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitInstInt4(	INST_DICT_SET, 2,		envPtr);
 	TclEmitInt4(			workerIndex,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	TclEmitInstInt4(	INST_DICT_NEXT, infoIndex,	envPtr);
-	TclEmitInstInt1(	INST_JUMP_FALSE1, -20,		envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, -20
+#ifdef TCL_COMPILE_DEBUG
+-15
+#endif
+,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	TclEmitInstInt1(	INST_UNSET_SCALAR, 0,		envPtr);
@@ -1346,13 +1354,18 @@ TclCompileDictMergeCmd(
     Emit14Inst(			INST_LOAD_SCALAR, workerIndex,	envPtr);
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			workerIndex,		envPtr);
-    TclEmitInstInt1(		INST_JUMP1, 18,			envPtr);
+    TclEmitInstInt1(		INST_JUMP1, 18
+#ifdef TCL_COMPILE_DEBUG
++5
+#endif
+,			envPtr);
 
     /*
      * If an exception happens when starting to iterate over the second (and
      * subsequent) dicts. This is strictly not necessary, but it is nice.
      */
 
+    TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, outLoop, catchOffset);
     TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
@@ -1362,7 +1375,6 @@ TclCompileDictMergeCmd(
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			infoIndex,		envPtr);
     TclEmitOpcode(		INST_RETURN_STK,		envPtr);
-    TclAdjustStackDepth(-1, envPtr);
 
     return TCL_OK;
 }
@@ -1601,7 +1613,10 @@ CompileDictEachCmd(
      * and rethrows the error.
      */
 
+    TclAdjustStackDepth(2, envPtr);
     ExceptionRangeTarget(envPtr, catchRange, catchOffset);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
     TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
     TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
