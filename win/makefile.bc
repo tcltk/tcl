@@ -239,6 +239,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclOOMethod.obj \
 	$(TMPDIR)\tclOOStubInit.obj \
 	$(TMPDIR)\tclObj.obj \
+	$(TMPDIR)\tclOptimize.obj \
 	$(TMPDIR)\tclPanic.obj \
 	$(TMPDIR)\tclParse.obj \
 	$(TMPDIR)\tclPipe.obj \
