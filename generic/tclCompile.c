@@ -431,7 +431,7 @@ InstructionDesc const tclInstructionTable[] = {
         /* Map variable contents back into a dictionary in a variable. Part of
          * [dict with].
 	 * Stack:  ... dictVarName path keyList => ... */
-    {"dictRecombineImm", 1,    -2,        1,    {OPERAND_LVT4}},
+    {"dictRecombineImm", 5,    -2,        1,    {OPERAND_LVT4}},
         /* Map variable contents back into a dictionary in the local variable
          * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
