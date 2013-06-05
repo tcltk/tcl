@@ -1406,7 +1406,12 @@ CompileSubstObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-	/* TODO: Debug printing? */
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceCompile >= 2) {
+	    TclPrintByteCodeObj(interp, objPtr);
+	    fflush(stdout);
+	}
+#endif /* TCL_COMPILE_DEBUG */
     }
     return codePtr;
 }
