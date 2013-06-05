@@ -2144,10 +2144,8 @@ TclCompileDictWithCmd(
     TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    envPtr->currStackDepth++;
     SetLineInformation(parsePtr->numWords-1);
     CompileBody(envPtr, tokenPtr, interp);
-    envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeEnds(envPtr, range);
 
     /*

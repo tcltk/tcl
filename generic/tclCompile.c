@@ -431,7 +431,7 @@ InstructionDesc const tclInstructionTable[] = {
         /* Map variable contents back into a dictionary in a variable. Part of
          * [dict with].
 	 * Stack:  ... dictVarName path keyList => ... */
-    {"dictRecombineImm", 1,    -2,        1,    {OPERAND_LVT4}},
+    {"dictRecombineImm", 5,    -2,        1,    {OPERAND_LVT4}},
         /* Map variable contents back into a dictionary in the local variable
          * indicated by the LVT index. Part of [dict with].
 	 * Stack:  ... path keyList => ... */
@@ -571,7 +571,6 @@ static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
-static void		PeepholeOptimize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
@@ -763,7 +762,7 @@ TclSetByteCodeFromAny(
      * instruction generator boundaries.
      */
 
-    PeepholeOptimize(&compEnv);
+    TclOptimizeBytecode(&compEnv);
 
     /*
      * Invoke the compilation hook procedure if one exists.
@@ -1102,177 +1101,6 @@ IsCompactibleCompileEnv(
     }
 
     return 1;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * PeepholeOptimize --
- *
- *	A very simple peephole optimizer for bytecode.
- *
- * ----------------------------------------------------------------------
- */
-
-static void
-PeepholeOptimize(
-    CompileEnv *envPtr)
-{
-    unsigned char *pc, *prev1 = NULL, *prev2 = NULL, *target;
-    int size, isNew;
-    Tcl_HashTable targets;
-    Tcl_HashEntry *hPtr;
-    Tcl_HashSearch hSearch;
-
-    /*
-     * Find places where we should be careful about replacing instructions
-     * because they are the targets of various types of jumps.
-     */
-
-    Tcl_InitHashTable(&targets, TCL_ONE_WORD_KEYS);
-    for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
-	size = tclInstructionTable[*pc].numBytes;
-	switch (*pc) {
-	case INST_JUMP1:
-	case INST_JUMP_TRUE1:
-	case INST_JUMP_FALSE1:
-	    target = pc + TclGetInt1AtPtr(pc+1);
-	    goto storeTarget;
-	case INST_JUMP4:
-	case INST_JUMP_TRUE4:
-	case INST_JUMP_FALSE4:
-	    target = pc + TclGetInt4AtPtr(pc+1);
-	    goto storeTarget;
-	case INST_BEGIN_CATCH4:
-	    target = envPtr->codeStart + envPtr->exceptArrayPtr[
-		    TclGetUInt4AtPtr(pc+1)].codeOffset;
-	storeTarget:
-	    (void) Tcl_CreateHashEntry(&targets, (void *) target, &isNew);
-	    break;
-	case INST_JUMP_TABLE:
-	    hPtr = Tcl_FirstHashEntry(
-		    &JUMPTABLEINFO(envPtr, pc+1)->hashTable, &hSearch);
-	    for (; hPtr ; hPtr = Tcl_NextHashEntry(&hSearch)) {
-		target = pc + PTR2INT(Tcl_GetHashValue(hPtr));
-		(void) Tcl_CreateHashEntry(&targets, (void *) target, &isNew);
-	    }
-	    break;
-	case INST_START_CMD:
-	    assert (envPtr->atCmdStart < 2);
-	}
-    }
-
-    /*
-     * Replace PUSH/POP sequences (when non-hazardous) with NOPs. Also replace
-     * PUSH empty/CONCAT and TRY_CVT_NUMERIC (when followed by an operation
-     * that guarantees the check for arithmeticity).
-     */
-
-    (void) Tcl_CreateHashEntry(&targets, (void *) pc, &isNew);
-    for (pc = envPtr->codeStart ; pc < envPtr->codeNext ; pc += size) {
-	int blank = 0, i, inst;
-
-	size = tclInstructionTable[*pc].numBytes;
-	prev2 = prev1;
-	prev1 = pc;
-	while (*(pc+size) == INST_NOP) {
-	    if (Tcl_FindHashEntry(&targets, (void *) (pc + size))) {
-		break;
-	    }
-	    size += tclInstructionTable[INST_NOP].numBytes;
-	}
-	if (Tcl_FindHashEntry(&targets, (void *) (pc + size))) {
-	    continue;
-	}
-	inst = *(pc + size);
-	switch (*pc) {
-	case INST_PUSH1:
-	    if (inst == INST_POP) {
-		blank = size + tclInstructionTable[inst].numBytes;
-	    } else if (inst == INST_CONCAT1
-		    && TclGetUInt1AtPtr(pc + size + 1) == 2) {
-		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
-			TclGetUInt1AtPtr(pc + 1));
-		int numBytes;
-
-		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
-		if (numBytes == 0) {
-		    blank = size + tclInstructionTable[inst].numBytes;
-		}
-	    }
-	    break;
-	case INST_PUSH4:
-	    if (inst == INST_POP) {
-		blank = size + 1;
-	    } else if (inst == INST_CONCAT1
-		    && TclGetUInt1AtPtr(pc + size + 1) == 2) {
-		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
-			TclGetUInt4AtPtr(pc + 1));
-		int numBytes;
-
-		(void) Tcl_GetStringFromObj(litPtr, &numBytes);
-		if (numBytes == 0) {
-		    blank = size + tclInstructionTable[inst].numBytes;
-		}
-	    }
-	    break;
-	case INST_TRY_CVT_TO_NUMERIC:
-	    switch (inst) {
-	    case INST_JUMP_TRUE1:
-	    case INST_JUMP_TRUE4:
-	    case INST_JUMP_FALSE1:
-	    case INST_JUMP_FALSE4:
-	    case INST_INCR_SCALAR1:
-	    case INST_INCR_ARRAY1:
-	    case INST_INCR_ARRAY_STK:
-	    case INST_INCR_SCALAR_STK:
-	    case INST_INCR_STK:
-	    case INST_LOR:
-	    case INST_LAND:
-	    case INST_EQ:
-	    case INST_NEQ:
-	    case INST_LT:
-	    case INST_LE:
-	    case INST_GT:
-	    case INST_GE:
-	    case INST_MOD:
-	    case INST_LSHIFT:
-	    case INST_RSHIFT:
-	    case INST_BITOR:
-	    case INST_BITXOR:
-	    case INST_BITAND:
-	    case INST_EXPON:
-	    case INST_ADD:
-	    case INST_SUB:
-	    case INST_DIV:
-	    case INST_MULT:
-	    case INST_LNOT:
-	    case INST_BITNOT:
-	    case INST_UMINUS:
-	    case INST_UPLUS:
-	    case INST_TRY_CVT_TO_NUMERIC:
-		blank = size;
-		break;
-	    }
-	    break;
-	}
-	if (blank > 0) {
-	    for (i=0 ; i<blank ; i++) {
-		*(pc + i) = INST_NOP;
-	    }
-	    size = blank;
-	}
-    }
-
-    /*
-     * Trim a trailing double DONE.
-     */
-
-    if (prev1 && prev2 && *prev1 == INST_DONE && *prev2 == INST_DONE
-	    && !Tcl_FindHashEntry(&targets, (void *) prev1)) {
-	envPtr->codeNext--;
-    }
-    Tcl_DeleteHashTable(&targets);
 }
 
 /*
