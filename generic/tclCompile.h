@@ -120,6 +120,11 @@ typedef struct ExceptionAux {
 				 * we can't currently discard them except by
 				 * doing INST_INVOKE_EXPANDED; this is a known
 				 * problem. */
+    int expandTargetDepth;	/* The stack depth expected at the outermost
+				 * expansion within the loop. Not meaningful
+				 * if there have are no open expansions
+				 * between the looping level and the point of
+				 * jump issue. */
     int numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
@@ -771,10 +776,13 @@ typedef struct ByteCode {
 #define INST_INVOKE_REPLACE		163
 
 #define INST_LIST_CONCAT		164
-#define INST_VERIFY			165
+
+#define INST_EXPAND_DROP		165
+
+#define INST_VERIFY			166
 
 /* The last opcode */
-#define LAST_INST_OPCODE		165
+#define LAST_INST_OPCODE		166
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -986,6 +994,8 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  */
 
 MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
+MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
+			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
@@ -1298,7 +1308,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	*(envPtr)->codeNext++ =						\
 		(unsigned char) ((unsigned int) (i)      );		\
     } while (0)
-#endif;
+#endif
 
 /*
  * Macros to emit an instruction with signed or unsigned integer operands.

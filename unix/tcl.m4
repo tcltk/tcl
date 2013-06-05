@@ -1067,6 +1067,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AC_DEFINE(MODULE_SCOPE,
 		[extern __attribute__((__visibility__("hidden")))],
 		[Compiler support for module scope symbols])
+	    AC_DEFINE(HAVE_HIDDEN, [1], [Compiler support for module scope symbols])
 	])
     ])
 
@@ -1537,20 +1538,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		CFLAGS="$CFLAGS -pthread"
 	    	LDFLAGS="$LDFLAGS -pthread"
 	    ])
-	    case $system in
-	    FreeBSD-3.*)
-	    	# FreeBSD-3 doesn't handle version numbers with dots.
-	    	UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    	SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
-	    	TCL_LIB_VERSIONS_OK=nodots
-		;;
-	    esac
 	    ;;
 	FreeBSD-*)
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
-	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname,\$[@]"
+	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname=\$[@]"
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -2048,7 +2041,6 @@ dnl # preprocessing tests use only CPPFLAGS.
     AS_IF([test "$tcl_cv_cc_visibility_hidden" != yes], [
 	AC_DEFINE(MODULE_SCOPE, [extern],
 	    [No Compiler support for module scope symbols])
-	AC_DEFINE(NO_VIZ, [], [No visibility attribute])
     ])
 
     AS_IF([test "$SHARED_LIB_SUFFIX" = ""], [
