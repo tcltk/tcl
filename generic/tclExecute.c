@@ -2720,14 +2720,15 @@ TEBCresume(
 
     case INST_EXPAND_DROP:
 	/*
-	 * Drops an element of the auxObjList. Does not do any clean up of the
-	 * actual stack.
-	 *
-	 * TODO: POP MAIN STACK BACK TO MARKER
+	 * Drops an element of the auxObjList, popping stack elements to
+	 * restore the stack to the state before the point where the aux
+	 * element was created.
 	 */
 
+	CLANG_ASSERT(auxObjList);
+	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
 	POP_TAUX_OBJ();
-	NEXT_INST_F(1, 0, 0);
+	NEXT_INST_V(1, objc, 0);
 
     case INST_EXPAND_STKTOP: {
 	int i;

@@ -493,40 +493,21 @@ TclCompileBreakCmd(
 
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxPtr);
     if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	int toPop;
-
-	/*
-	 * Ditch the extra elements from the auxiliary stack.
-	 */
-
-	toPop = envPtr->expandCount - auxPtr->expandTarget;
-	while (toPop > 0) {
-	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
-	    toPop--;
-	}
-
-	/*
-	 * Pop off the extra stack frames.
-	 */
-
-	toPop = envPtr->currStackDepth - auxPtr->stackDepth;
-	while (toPop > 0) {
-	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
-	    toPop--;
-	}
-
 	/*
 	 * Found the target! No need for a nasty INST_BREAK here.
 	 */
 
+	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopBreakFixup(envPtr, auxPtr);
     } else {
 	/*
-	 * Emit a break instruction.
+	 * Emit a real break.
 	 */
 
-	TclEmitOpcode(INST_BREAK, envPtr);
+	PushStringLiteral(envPtr, "");
+	TclEmitOpcode(INST_DUP, envPtr);
+	TclEmitInstInt4(INST_RETURN_IMM, TCL_BREAK, envPtr);
+	TclEmitInt4(0, envPtr);
     }
 
     /*
@@ -846,40 +827,21 @@ TclCompileContinueCmd(
 
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE, &auxPtr);
     if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	int toPop;
-
-	/*
-	 * Ditch the extra elements from the auxiliary stack.
-	 */
-
-	toPop = envPtr->expandCount - auxPtr->expandTarget;
-	while (toPop > 0) {
-	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
-	    toPop--;
-	}
-
-	/*
-	 * Pop off the extra stack frames.
-	 */
-
-	toPop = envPtr->currStackDepth - auxPtr->stackDepth;
-	while (toPop > 0) {
-	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
-	    toPop--;
-	}
-
 	/*
 	 * Found the target! No need for a nasty INST_CONTINUE here.
 	 */
 
+	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopContinueFixup(envPtr, auxPtr);
     } else {
 	/*
-	 * Emit a continue instruction.
+	 * Emit a real continue.
 	 */
 
-	TclEmitOpcode(INST_CONTINUE, envPtr);
+	PushStringLiteral(envPtr, "");
+	TclEmitOpcode(INST_DUP, envPtr);
+	TclEmitInstInt4(INST_RETURN_IMM, TCL_CONTINUE, envPtr);
+	TclEmitInt4(0, envPtr);
     }
 
     /*
