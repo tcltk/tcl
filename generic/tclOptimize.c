@@ -17,8 +17,11 @@
  * Forward declarations.
  */
 
+static void		AdvanceJumps(CompileEnv *envPtr);
+static void		ConvertZeroEffectToNOP(CompileEnv *envPtr);
 static void		LocateTargetAddresses(CompileEnv *envPtr,
 			    Tcl_HashTable *tablePtr);
+static void		TrimUnreachable(CompileEnv *envPtr);
 
 /*
  * Helper macros.
@@ -142,27 +145,67 @@ LocateTargetAddresses(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOptimizeBytecode --
+ * TrimUnreachable --
  *
- *	A very simple peephole optimizer for bytecode.
+ *	Converts code that provably can't be executed into NOPs and reduces
+ *	the overall reported length of the bytecode where that is possible.
  *
  * ----------------------------------------------------------------------
  */
 
-void
-TclOptimizeBytecode(
+static void
+TrimUnreachable(
+    CompileEnv *envPtr)
+{
+    unsigned char *currentInstPtr;
+    Tcl_HashTable targets;
+
+    LocateTargetAddresses(envPtr, &targets);
+
+    for (currentInstPtr = envPtr->codeStart ;
+	    currentInstPtr < envPtr->codeNext-1 ;
+	    currentInstPtr += AddrLength(currentInstPtr)) {
+	int clear = 0;
+
+	if (*currentInstPtr != INST_DONE) {
+	    continue;
+	}
+
+	while (!IsTargetAddress(&targets, currentInstPtr + 1 + clear)) {
+	    clear += AddrLength(currentInstPtr + 1 + clear);
+	}
+	if (currentInstPtr + 1 + clear == envPtr->codeNext) {
+	    envPtr->codeNext -= clear;
+	} else {
+	    while (clear --> 0) {
+		*(currentInstPtr + 1 + clear) = INST_NOP;
+	    }
+	}
+    }
+
+    Tcl_DeleteHashTable(&targets);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ConvertZeroEffectToNOP --
+ *
+ *	Replace PUSH/POP sequences (when non-hazardous) with NOPs. Also
+ *	replace PUSH empty/CONCAT and TRY_CVT_NUMERIC (when followed by an
+ *	operation that guarantees the check for arithmeticity) and eliminate
+ *	LNOT when we can invert the following JUMP condition.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+ConvertZeroEffectToNOP(
     CompileEnv *envPtr)
 {
     unsigned char *currentInstPtr;
     int size;
     Tcl_HashTable targets;
-
-    /*
-     * Replace PUSH/POP sequences (when non-hazardous) with NOPs. Also replace
-     * PUSH empty/CONCAT and TRY_CVT_NUMERIC (when followed by an operation
-     * that guarantees the check for arithmeticity) and eliminate LNOT when we
-     * can invert the following JUMP condition.
-     */
 
     LocateTargetAddresses(envPtr, &targets);
     for (currentInstPtr = envPtr->codeStart ;
@@ -211,6 +254,7 @@ TclOptimizeBytecode(
 		}
 	    }
 	    break;
+
 	case INST_LNOT:
 	    switch (nextInst) {
 	    case INST_JUMP_TRUE1:
@@ -231,6 +275,7 @@ TclOptimizeBytecode(
 		break;
 	    }
 	    break;
+
 	case INST_TRY_CVT_TO_NUMERIC:
 	    switch (nextInst) {
 	    case INST_JUMP_TRUE1:
@@ -271,6 +316,7 @@ TclOptimizeBytecode(
 	    }
 	    break;
 	}
+
 	if (blank > 0) {
 	    for (i=0 ; i<blank ; i++) {
 		*(currentInstPtr + i) = INST_NOP;
@@ -279,10 +325,25 @@ TclOptimizeBytecode(
 	}
     }
     Tcl_DeleteHashTable(&targets);
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * AdvanceJumps --
+ *
+ *	Advance jumps past NOPs and chained JUMPs. After this runs, the only
+ *	JUMPs that jump to a NOP or a JUMP will be length-1 ones that run out
+ *	of room in their opcode to be targeted to where they really belong.
+ *
+ * ----------------------------------------------------------------------
+ */
 
-    /*
-     * Advance jumps past NOPs and chained JUMPs.
-     */
+static void
+AdvanceJumps(
+    CompileEnv *envPtr)
+{
+    unsigned char *currentInstPtr;
 
     for (currentInstPtr = envPtr->codeStart ;
 	    currentInstPtr < envPtr->codeNext-1 ;
@@ -294,82 +355,67 @@ TclOptimizeBytecode(
 	case INST_JUMP_TRUE1:
 	case INST_JUMP_FALSE1:
 	    offset = TclGetInt1AtPtr(currentInstPtr + 1);
-	    delta = 0;
-	advanceNext1:
-	    if (offset + delta == 0) {
-		continue;
-	    }	    
-	    if (offset + delta < -128 || offset + delta > 127) {
-		TclStoreInt1AtPtr(offset, currentInstPtr + 1);
-		continue;
+	    for (delta=0 ; offset+delta != 0 ;) {
+		if (offset + delta < -128 || offset + delta > 127) {
+		    break;
+		}
+		offset += delta;
+		switch (*(currentInstPtr + offset)) {
+		case INST_NOP:
+		    delta = InstLength(INST_NOP);
+		    continue;
+		case INST_JUMP1:
+		    delta = TclGetInt1AtPtr(currentInstPtr + offset + 1);
+		    continue;
+		case INST_JUMP4:
+		    delta = TclGetInt4AtPtr(currentInstPtr + offset + 1);
+		    continue;
+		}
+		break;
 	    }
-	    offset += delta;
-	    switch (*(currentInstPtr + offset)) {
-	    case INST_NOP:
-		delta = InstLength(INST_NOP);
-		goto advanceNext1;
-	    case INST_JUMP1:
-		delta = TclGetInt1AtPtr(currentInstPtr + offset + 1);
-		goto advanceNext1;
-	    case INST_JUMP4:
-		delta = TclGetInt4AtPtr(currentInstPtr + offset + 1);
-		goto advanceNext1;
-	    default:
-		TclStoreInt1AtPtr(offset, currentInstPtr + 1);
-		continue;
-	    }
+	    TclStoreInt1AtPtr(offset, currentInstPtr + 1);
+	    continue;
+
 	case INST_JUMP4:
 	case INST_JUMP_TRUE4:
 	case INST_JUMP_FALSE4:
-	    offset = TclGetInt4AtPtr(currentInstPtr + 1);
-	advanceNext4:
-	    if (offset == 0) {
-		continue;
+	    for (offset = TclGetInt4AtPtr(currentInstPtr + 1); offset!=0 ;) {
+		switch (*(currentInstPtr + offset)) {
+		case INST_NOP:
+		    offset += InstLength(INST_NOP);
+		    continue;
+		case INST_JUMP1:
+		    offset += TclGetInt1AtPtr(currentInstPtr + offset + 1);
+		    continue;
+		case INST_JUMP4:
+		    offset += TclGetInt4AtPtr(currentInstPtr + offset + 1);
+		    continue;
+		}
+		break;
 	    }
-	    switch (*(currentInstPtr + offset)) {
-	    case INST_NOP:
-		offset += InstLength(INST_NOP);
-		goto advanceNext4;
-	    case INST_JUMP1:
-		offset += TclGetInt1AtPtr(currentInstPtr + offset + 1);
-		goto advanceNext4;
-	    case INST_JUMP4:
-		offset += TclGetInt4AtPtr(currentInstPtr + offset + 1);
-		goto advanceNext4;
-	    default:
-		TclStoreInt4AtPtr(offset, currentInstPtr + 1);
-		continue;
-	    }
-	}
-    }
-
-    /*
-     * Trim unreachable instructions after a DONE.
-     */
-
-    LocateTargetAddresses(envPtr, &targets);
-    for (currentInstPtr = envPtr->codeStart ;
-	    currentInstPtr < envPtr->codeNext-1 ;
-	    currentInstPtr += AddrLength(currentInstPtr)) {
-	int clear = 0;
-
-	if (*currentInstPtr != INST_DONE) {
+	    TclStoreInt4AtPtr(offset, currentInstPtr + 1);
 	    continue;
 	}
-
-	while (!IsTargetAddress(&targets, currentInstPtr + 1 + clear)) {
-	    clear += AddrLength(currentInstPtr + 1 + clear);
-	}
-	if (currentInstPtr + 1 + clear == envPtr->codeNext) {
-	    envPtr->codeNext -= clear;
-	} else {
-	    while (clear --> 0) {
-		*(currentInstPtr + 1 + clear) = INST_NOP;
-	    }
-	}
     }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOptimizeBytecode --
+ *
+ *	A very simple peephole optimizer for bytecode.
+ *
+ * ----------------------------------------------------------------------
+ */
 
-    Tcl_DeleteHashTable(&targets);
+void
+TclOptimizeBytecode(
+    CompileEnv *envPtr)
+{
+    ConvertZeroEffectToNOP(envPtr);
+    AdvanceJumps(envPtr);
+    TrimUnreachable(envPtr);
 }
 
 /*
