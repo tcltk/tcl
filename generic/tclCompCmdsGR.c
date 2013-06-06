@@ -2471,6 +2471,7 @@ TclCompileReturnCmd(
 
 	    Tcl_DecrRefCount(returnOpts);
 	    TclEmitOpcode(INST_DONE, envPtr);
+	    TclAdjustStackDepth(1, envPtr);
 	    return TCL_OK;
 	}
     }
