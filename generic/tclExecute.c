@@ -3701,7 +3701,7 @@ TEBCresume(
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
-	TRACE(("%u %ld => ", opnd, increment));
+	TRACE(("%u %s => ", opnd, Tcl_GetString(incrPtr)));
 
     doIncrVar:
 	if (TclIsVarDirectModifyable2(varPtr, arrayPtr)) {
@@ -6801,6 +6801,7 @@ TEBCresume(
 		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
 	    goto gotError;
 	}
+	TRACE(("=> "));
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 

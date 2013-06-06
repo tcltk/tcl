@@ -1614,7 +1614,7 @@ CompileDictEachCmd(
      * and rethrows the error.
      */
 
-    TclAdjustStackDepth(2, envPtr);
+    TclAdjustStackDepth(1, envPtr);
     ExceptionRangeTarget(envPtr, catchRange, catchOffset);
     TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
     TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
@@ -1786,10 +1786,10 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    envPtr->currStackDepth++;
+//    envPtr->currStackDepth++;
     SetLineInformation(parsePtr->numWords - 1);
     CompileBody(envPtr, bodyTokenPtr, interp);
-    envPtr->currStackDepth = savedStackDepth;
+ //   envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeEnds(envPtr, range);
 
     /*
@@ -1829,7 +1829,7 @@ TclCompileDictUpdateCmd(
 		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
     TclStackFree(interp, keyTokenPtrs);
-    envPtr->currStackDepth = savedStackDepth + 1;
+//    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
@@ -2079,7 +2079,7 @@ TclCompileDictWithCmd(
 		PushStringLiteral(envPtr, "");
 	    }
 	}
-	envPtr->currStackDepth = savedStackDepth + 1;
+//	envPtr->currStackDepth = savedStackDepth + 1;
 	return TCL_OK;
     }
 
@@ -2172,6 +2172,7 @@ TclCompileDictWithCmd(
      * Now fold the results back into the dictionary in the exception case.
      */
 
+    TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
@@ -2196,7 +2197,7 @@ TclCompileDictWithCmd(
      * Prepare for the start of the next command.
      */
 
-    envPtr->currStackDepth = savedStackDepth + 1;
+//    envPtr->currStackDepth = savedStackDepth + 1;
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
 		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
