@@ -1496,9 +1496,6 @@ CompileDictEachCmd(
      */
 
     CompileWord(envPtr, dictTokenPtr, interp, 3);
-    TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,		envPtr);
-    emptyTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt4(	INST_JUMP_TRUE4, 0,			envPtr);
 
     /*
      * Now we catch errors from here on so that we can finalize the search
@@ -1508,6 +1505,10 @@ CompileDictEachCmd(
     catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(	INST_BEGIN_CATCH4, catchRange,		envPtr);
     ExceptionRangeStarts(envPtr, catchRange);
+
+    TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,		envPtr);
+    emptyTargetOffset = CurrentOffset(envPtr);
+    TclEmitInstInt4(	INST_JUMP_TRUE4, 0,			envPtr);
 
     /*
      * Inside the iteration, write the loop variables.
