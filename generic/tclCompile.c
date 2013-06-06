@@ -2012,10 +2012,14 @@ TclCompileScript(
 			    int diff = envPtr->currStackDepth-startStackDepth;
 
 			    if (diff != 1) {
-				Tcl_Panic("bad stack adjustment when compiling"
+				/*Tcl_Panic(*/
+fprintf(stdout, 
+"bad stack adjustment when compiling"
 					" %.*s (was %d instead of 1)",
 					parsePtr->tokenPtr->size,
 					parsePtr->tokenPtr->start, diff);
+fprintf(stdout, "\n");
+fflush(stdout);
 			    }
 #endif
 			    if (update) {
@@ -3450,16 +3454,20 @@ TclCleanupStackForBreakContinue(
 	toPop = auxPtr->expandTargetDepth - auxPtr->stackDepth;
 	while (toPop > 0) {
 	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
+//	    TclAdjustStackDepth(1, envPtr);
 	    toPop--;
 	}
+	envPtr->currStackDepth += (auxPtr->expandTargetDepth
+		- auxPtr->stackDepth);
     } else {
+	int savedStackDepth = envPtr->currStackDepth;
 	toPop = envPtr->currStackDepth - auxPtr->stackDepth;
 	while (toPop > 0) {
 	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
+//	    TclAdjustStackDepth(1, envPtr);
 	    toPop--;
 	}
+	envPtr->currStackDepth = savedStackDepth;
     }
 }
 

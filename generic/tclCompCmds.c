@@ -1356,7 +1356,7 @@ TclCompileDictMergeCmd(
     TclEmitInt4(			workerIndex,		envPtr);
     TclEmitInstInt1(		INST_JUMP1, 18
 #ifdef TCL_COMPILE_DEBUG
-+5
++20
 #endif
 ,			envPtr);
 
@@ -1633,7 +1633,7 @@ CompileDictEachCmd(
      * easy!) Note that we skip the END_CATCH. [Bug 1382528]
      */
 
-    envPtr->currStackDepth = savedStackDepth + 2;
+    TclAdjustStackDepth(1, envPtr);
     jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
     TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
 	    envPtr->codeStart + emptyTargetOffset);
@@ -1789,7 +1789,7 @@ TclCompileDictUpdateCmd(
 //    envPtr->currStackDepth++;
     SetLineInformation(parsePtr->numWords - 1);
     CompileBody(envPtr, bodyTokenPtr, interp);
- //   envPtr->currStackDepth = savedStackDepth;
+//    envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeEnds(envPtr, range);
 
     /*
@@ -2450,7 +2450,7 @@ TclCompileForCmd(
     SetLineInformation(4);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, bodyRange);
-    envPtr->currStackDepth = savedStackDepth + 1;
+//    envPtr->currStackDepth = savedStackDepth + 1;
     TclEmitOpcode(INST_POP, envPtr);
 
     /*
@@ -2461,14 +2461,14 @@ TclCompileForCmd(
 
     nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
-    envPtr->currStackDepth = savedStackDepth;
+//    envPtr->currStackDepth = savedStackDepth;
     nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
     SetLineInformation(3);
     CompileBody(envPtr, nextTokenPtr, interp);
     ExceptionRangeEnds(envPtr, nextRange);
-    envPtr->currStackDepth = savedStackDepth + 1;
+//    envPtr->currStackDepth = savedStackDepth + 1;
     TclEmitOpcode(INST_POP, envPtr);
-    envPtr->currStackDepth = savedStackDepth;
+//    envPtr->currStackDepth = savedStackDepth;
 
     /*
      * Compile the test expression then emit the conditional jump that
@@ -2485,9 +2485,9 @@ TclCompileForCmd(
     }
 
     SetLineInformation(2);
-    envPtr->currStackDepth = savedStackDepth;
+//    envPtr->currStackDepth = savedStackDepth;
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
+//    envPtr->currStackDepth = savedStackDepth + 1;
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
     if (jumpDist > 127) {
@@ -2515,7 +2515,7 @@ TclCompileForCmd(
      * The for command's result is an empty string.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
+//    envPtr->currStackDepth = savedStackDepth;
     PushStringLiteral(envPtr, "");
 
     return TCL_OK;
@@ -2854,7 +2854,7 @@ CompileEachloopCmd(
     ExceptionRangeStarts(envPtr, range);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
-    envPtr->currStackDepth = savedStackDepth + 1;
+//    envPtr->currStackDepth = savedStackDepth + 1;
 
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(		INST_LAPPEND_SCALAR, collectVar,envPtr);
@@ -2914,7 +2914,7 @@ CompileEachloopCmd(
      * list of results from evaluating the loop body.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
+//    envPtr->currStackDepth = savedStackDepth;
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(		INST_LOAD_SCALAR, collectVar,	envPtr);
 	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
@@ -2922,7 +2922,7 @@ CompileEachloopCmd(
     } else {
 	PushStringLiteral(envPtr, "");
     }
-    envPtr->currStackDepth = savedStackDepth + 1;
+//    envPtr->currStackDepth = savedStackDepth + 1;
 
   done:
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
