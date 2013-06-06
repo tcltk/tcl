@@ -122,9 +122,9 @@ typedef struct ExceptionAux {
 				 * problem. */
     int expandTargetDepth;	/* The stack depth expected at the outermost
 				 * expansion within the loop. Not meaningful
-				 * if there have are no open expansions
-				 * between the looping level and the point of
-				 * jump issue. */
+				 * if there are no open expansions between the
+				 * looping level and the point of jump
+				 * issue. */
     int numBreakTargets;	/* The number of [break]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
