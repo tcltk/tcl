@@ -1598,7 +1598,7 @@ CompileDictEachCmd(
      * and rethrows the error.
      */
 
-    TclAdjustStackDepth(1, envPtr);
+    TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, catchRange, catchOffset);
     TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
     TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
@@ -1617,7 +1617,7 @@ CompileDictEachCmd(
      * easy!) Note that we skip the END_CATCH. [Bug 1382528]
      */
 
-    TclAdjustStackDepth(1, envPtr);
+//    TclAdjustStackDepth(1, envPtr);
     jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
     TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
 	    envPtr->codeStart + emptyTargetOffset);
