@@ -1590,24 +1590,8 @@ CompileDictEachCmd(
     TclEmitInstInt4(	INST_DICT_NEXT, infoIndex,		envPtr);
     jumpDisplacement = bodyTargetOffset - CurrentOffset(envPtr);
     TclEmitInstInt4(	INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
-    TclEmitOpcode(	INST_POP,				envPtr);
-    TclEmitOpcode(	INST_POP,				envPtr);
-
-    /*
-     * Now do the final cleanup for the no-error case (this is where we break
-     * out of the loop to) by force-terminating the iteration (if not already
-     * terminated), ditching the exception info and jumping to the last
-     * instruction for this command. In theory, this could be done using the
-     * "finally" clause (next generated) but this is faster.
-     */
-
-    ExceptionRangeTarget(envPtr, loopRange, breakOffset);
-    TclFinalizeLoopExceptionRange(envPtr, loopRange);
-    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(		infoIndex,			envPtr);
-    TclEmitOpcode(	INST_END_CATCH,				envPtr);
     endTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt4(	INST_JUMP4, 0,				envPtr);
+    TclEmitInstInt1(	INST_JUMP1, 0,				envPtr);
 
     /*
      * Error handler "finally" clause, which force-terminates the iteration
@@ -1618,9 +1602,9 @@ CompileDictEachCmd(
     ExceptionRangeTarget(envPtr, catchRange, catchOffset);
     TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
     TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
-    TclEmitOpcode(	INST_END_CATCH,				envPtr);
     if (collect == TCL_EACH_COLLECT) {
 	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
 	TclEmitInt4(		collectVar,			envPtr);
@@ -1637,10 +1621,14 @@ CompileDictEachCmd(
     jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
     TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
 	    envPtr->codeStart + emptyTargetOffset);
+    jumpDisplacement = CurrentOffset(envPtr) - endTargetOffset;
+    TclUpdateInstInt1AtPc(INST_JUMP1, jumpDisplacement,
+	    envPtr->codeStart + endTargetOffset);
     TclEmitOpcode(	INST_POP,				envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
-    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(		infoIndex,			envPtr);
+    ExceptionRangeTarget(envPtr, loopRange, breakOffset);
+    TclFinalizeLoopExceptionRange(envPtr, loopRange);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
 
     /*
      * Final stage of the command (normal case) is that we push an empty
@@ -1648,9 +1636,8 @@ CompileDictEachCmd(
      * last to promote peephole optimization when it's dropped immediately.
      */
 
-    jumpDisplacement = CurrentOffset(envPtr) - endTargetOffset;
-    TclUpdateInstInt4AtPc(INST_JUMP4, jumpDisplacement,
-	    envPtr->codeStart + endTargetOffset);
+    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(	INST_LOAD_SCALAR, collectVar,		envPtr);
 	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
