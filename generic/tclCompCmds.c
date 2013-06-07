@@ -1630,7 +1630,6 @@ TclCompileDictUpdateCmd(
     const char *name;
     int i, nameChars, dictIndex, numVars, range, infoIndex;
     Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr, *tokenPtr;
-    int savedStackDepth = envPtr->currStackDepth;
     DictUpdateInfo *duiPtr;
     JumpFixup jumpFixup;
 
@@ -1660,16 +1659,16 @@ TclCompileDictUpdateCmd(
 
     dictVarTokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (dictVarTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	goto issueFallback;
     }
     name = dictVarTokenPtr[1].start;
     nameChars = dictVarTokenPtr[1].size;
     if (!TclIsLocalScalar(name, nameChars)) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	goto issueFallback;
     }
     dictIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
     if (dictIndex < 0) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	goto issueFallback;
     }
 
     /*
@@ -1680,8 +1679,7 @@ TclCompileDictUpdateCmd(
 
     duiPtr = ckalloc(sizeof(DictUpdateInfo) + sizeof(int) * (numVars - 1));
     duiPtr->length = numVars;
-    keyTokenPtrs = TclStackAlloc(interp,
-	    sizeof(Tcl_Token *) * numVars);
+    keyTokenPtrs = TclStackAlloc(interp, sizeof(Tcl_Token *) * numVars);
     tokenPtr = TokenAfter(dictVarTokenPtr);
 
     for (i=0 ; i<numVars ; i++) {
@@ -1717,10 +1715,7 @@ TclCompileDictUpdateCmd(
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-    failedUpdateInfoAssembly:
-	ckfree(duiPtr);
-	TclStackFree(interp, keyTokenPtrs);
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	goto failedUpdateInfoAssembly;
     }
     bodyTokenPtr = tokenPtr;
 
@@ -1736,16 +1731,14 @@ TclCompileDictUpdateCmd(
     }
     TclEmitInstInt4(	INST_LIST, numVars,			envPtr);
     TclEmitInstInt4(	INST_DICT_UPDATE_START, dictIndex,	envPtr);
-    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    envPtr->currStackDepth++;
     SetLineInformation(parsePtr->numWords - 1);
     CompileBody(envPtr, bodyTokenPtr, interp);
-    envPtr->currStackDepth = savedStackDepth;
     ExceptionRangeEnds(envPtr, range);
 
     /*
@@ -1756,7 +1749,7 @@ TclCompileDictUpdateCmd(
     TclEmitOpcode(	INST_END_CATCH,				envPtr);
     TclEmitInstInt4(	INST_REVERSE, 2,			envPtr);
     TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
-    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
 
     /*
      * Jump around the exceptional termination code.
@@ -1777,7 +1770,7 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4(	INST_REVERSE, 3,			envPtr);
 
     TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
-    TclEmitInt4(	infoIndex,				envPtr);
+    TclEmitInt4(		infoIndex,			envPtr);
     TclEmitOpcode(	INST_RETURN_STK,			envPtr);
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
@@ -1785,8 +1778,17 @@ TclCompileDictUpdateCmd(
 		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
     TclStackFree(interp, keyTokenPtrs);
-    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
+
+    /*
+     * Clean up after a failure to create the DictUpdateInfo structure.
+     */
+
+  failedUpdateInfoAssembly:
+    ckfree(duiPtr);
+    TclStackFree(interp, keyTokenPtrs);
+  issueFallback:
+    return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 }
 
 int
@@ -1875,6 +1877,10 @@ TclCompileDictLappendCmd(
 	return TCL_ERROR;
     }
 
+    /*
+     * Parse the arguments.
+     */
+
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     keyTokenPtr = TokenAfter(varTokenPtr);
     valueTokenPtr = TokenAfter(keyTokenPtr);
@@ -1890,6 +1896,11 @@ TclCompileDictLappendCmd(
     if (dictVarIndex < 0) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
+
+    /*
+     * Issue the implementation.
+     */
+
     CompileWord(envPtr, keyTokenPtr, interp, 3);
     CompileWord(envPtr, valueTokenPtr, interp, 4);
     TclEmitInstInt4(	INST_DICT_LAPPEND, dictVarIndex,	envPtr);
@@ -1906,10 +1917,9 @@ TclCompileDictWithCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int i, range, varNameTmp, pathTmp, keysTmp, gotPath, dictVar = -1;
+    int i, range, varNameTmp = -1, pathTmp, keysTmp, gotPath, dictVar = -1;
     int bodyIsEmpty = 1;
     Tcl_Token *varTokenPtr, *tokenPtr;
-    int savedStackDepth = envPtr->currStackDepth;
     JumpFixup jumpFixup;
     const char *ptr, *end;
 
@@ -1988,7 +1998,6 @@ TclCompileDictWithCmd(
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
 		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
 		TclEmitInstInt4(INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
-		PushStringLiteral(envPtr, "");
 	    } else {
 		/*
 		 * Case: Direct dict in LVT with empty body.
@@ -1999,7 +2008,6 @@ TclCompileDictWithCmd(
 		PushStringLiteral(envPtr, "");
 		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
 		TclEmitInstInt4(INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
-		PushStringLiteral(envPtr, "");
 	    }
 	} else {
 	    if (gotPath) {
@@ -2018,7 +2026,6 @@ TclCompileDictWithCmd(
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
 		TclEmitOpcode(	INST_DICT_EXPAND,		envPtr);
 		TclEmitOpcode(	INST_DICT_RECOMBINE_STK,	envPtr);
-		PushStringLiteral(envPtr, "");
 	    } else {
 		/*
 		 * Case: Direct dict in non-simple var with empty body.
@@ -2032,10 +2039,9 @@ TclCompileDictWithCmd(
 		PushStringLiteral(envPtr, "");
 		TclEmitInstInt4(INST_REVERSE, 2,		envPtr);
 		TclEmitOpcode(	INST_DICT_RECOMBINE_STK,	envPtr);
-		PushStringLiteral(envPtr, "");
 	    }
 	}
-	envPtr->currStackDepth = savedStackDepth + 1;
+	PushStringLiteral(envPtr, "");
 	return TCL_OK;
     }
 
@@ -2049,8 +2055,6 @@ TclCompileDictWithCmd(
 
     if (dictVar == -1) {
 	varNameTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    } else {
-	varNameTmp = -1;
     }
     if (gotPath) {
 	pathTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
@@ -2063,7 +2067,7 @@ TclCompileDictWithCmd(
      * Issue instructions. First, the part to expand the dictionary.
      */
 
-    if (varNameTmp > -1) {
+    if (dictVar == -1) {
 	CompileWord(envPtr, varTokenPtr, interp, 0);
 	Emit14Inst(		INST_STORE_SCALAR, varNameTmp,	envPtr);
     }
@@ -2108,7 +2112,7 @@ TclCompileDictWithCmd(
      */
 
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
-    if (varNameTmp > -1) {
+    if (dictVar == -1) {
 	Emit14Inst(		INST_LOAD_SCALAR, varNameTmp,	envPtr);
     }
     if (gotPath) {
@@ -2128,11 +2132,12 @@ TclCompileDictWithCmd(
      * Now fold the results back into the dictionary in the exception case.
      */
 
+    TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
-    if (varNameTmp > -1) {
+    if (dictVar == -1) {
 	Emit14Inst(		INST_LOAD_SCALAR, varNameTmp,	envPtr);
     }
     if (parsePtr->numWords > 3) {
@@ -2152,7 +2157,6 @@ TclCompileDictWithCmd(
      * Prepare for the start of the next command.
      */
 
-    envPtr->currStackDepth = savedStackDepth + 1;
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
 		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
@@ -2252,7 +2256,6 @@ TclCompileErrorCmd(
      * However, we only deal with the case where there is just a message.
      */
     Tcl_Token *messageTokenPtr;
-    int savedStackDepth = envPtr->currStackDepth;
     DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 2) {
@@ -2263,7 +2266,6 @@ TclCompileErrorCmd(
     PushStringLiteral(envPtr, "-code error -level 0");
     CompileWord(envPtr, messageTokenPtr, interp, 1);
     TclEmitOpcode(INST_RETURN_STK, envPtr);
-    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
