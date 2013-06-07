@@ -602,7 +602,11 @@ TclCompileInfoCommandsCmd(
     TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
     TclEmitOpcode(	INST_DUP,		envPtr);
     TclEmitOpcode(	INST_STR_LEN,		envPtr);
-    TclEmitInstInt1(	INST_JUMP_FALSE1, 7,	envPtr);
+    TclEmitInstInt1(	INST_JUMP_FALSE1, 7
+#ifdef TCL_COMPILE_DEBUG
++10
+#endif
+,	envPtr);
     TclEmitInstInt4(	INST_LIST, 1,		envPtr);
     return TCL_OK;
 
