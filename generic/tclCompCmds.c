@@ -448,7 +448,11 @@ TclCompileArrayUnsetCmd(
 
     if (localIndex >= 0) {
 	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 8,			envPtr);
+	TclEmitInstInt1(INST_JUMP_FALSE1, 8
+#ifdef TCL_COMPILE_DEBUG
++5
+#endif
+,			envPtr);
 	TclEmitInstInt1(INST_UNSET_SCALAR, 1,			envPtr);
 	TclEmitInt4(		localIndex,			envPtr);
     } else {
