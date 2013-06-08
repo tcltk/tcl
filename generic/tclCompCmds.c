@@ -317,10 +317,10 @@ TclCompileArraySetCmd(
      * Prepare for the internal foreach.
      */
 
-    dataVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    iterVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    keyVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    valVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    dataVar = AnonymousLocal(envPtr);
+    iterVar = AnonymousLocal(envPtr);
+    keyVar = AnonymousLocal(envPtr);
+    valVar = AnonymousLocal(envPtr);
 
     infoPtr = ckalloc(sizeof(ForeachInfo) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
@@ -543,8 +543,7 @@ TclCompileCatchCmd(
 {
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    const char *name;
-    int resultIndex, optsIndex, nameChars, range;
+    int resultIndex, optsIndex, range;
     int initStackDepth = envPtr->currStackDepth;
     int savedStackDepth;
     DefineLineInformation;	/* TIP #280 */
@@ -577,17 +576,7 @@ TclCompileCatchCmd(
     if (parsePtr->numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
 	/* DGP */
-	if (resultNameTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TCL_ERROR;
-	}
-
-	name = resultNameTokenPtr[1].start;
-	nameChars = resultNameTokenPtr[1].size;
-	if (!TclIsLocalScalar(name, nameChars)) {
-	    return TCL_ERROR;
-	}
-	resultIndex = TclFindCompiledLocal(resultNameTokenPtr[1].start,
-		resultNameTokenPtr[1].size, /*create*/ 1, envPtr);
+	resultIndex = LocalScalarFromToken(resultNameTokenPtr, envPtr);
 	if (resultIndex < 0) {
 	    return TCL_ERROR;
 	}
@@ -595,16 +584,7 @@ TclCompileCatchCmd(
 	/* DKF */
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
-	    if (optsNameTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-		return TCL_ERROR;
-	    }
-	    name = optsNameTokenPtr[1].start;
-	    nameChars = optsNameTokenPtr[1].size;
-	    if (!TclIsLocalScalar(name, nameChars)) {
-		return TCL_ERROR;
-	    }
-	    optsIndex = TclFindCompiledLocal(optsNameTokenPtr[1].start,
-		    optsNameTokenPtr[1].size, /*create*/ 1, envPtr);
+	    optsIndex = LocalScalarFromToken(optsNameTokenPtr, envPtr);
 	    if (optsIndex < 0) {
 		return TCL_ERROR;
 	    }
@@ -871,11 +851,9 @@ TclCompileDictSetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int numWords, i;
+    int numWords, i, dictVarIndex;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
-    int dictVarIndex, nameChars;
-    const char *name;
 
     /*
      * There must be at least one argument after the command.
@@ -892,15 +870,7 @@ TclCompileDictSetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
-    }
-    name = varTokenPtr[1].start;
-    nameChars = varTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
-    }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TCL_ERROR;
     }
@@ -937,8 +907,7 @@ TclCompileDictIncrCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr;
-    int dictVarIndex, nameChars, incrAmount;
-    const char *name;
+    int dictVarIndex, incrAmount;
 
     /*
      * There must be at least two arguments after the command.
@@ -984,15 +953,7 @@ TclCompileDictIncrCmd(
      * discover what the index is.
      */
 
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-    name = varTokenPtr[1].start;
-    nameChars = varTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TclCompileBasic2Or3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
@@ -1092,8 +1053,7 @@ TclCompileDictUnsetCmd(
 {
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    int i, dictVarIndex, nameChars;
-    const char *name;
+    int i, dictVarIndex;
 
     /*
      * There must be at least one argument after the variable name for us to
@@ -1111,15 +1071,7 @@ TclCompileDictUnsetCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-    name = tokenPtr[1].start;
-    nameChars = tokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    dictVarIndex = LocalScalarFromToken(tokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
@@ -1210,7 +1162,7 @@ TclCompileDictCreateCmd(
      */
 
   nonConstant:
-    worker = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    worker = AnonymousLocal(envPtr);
     if (worker < 0) {
 	return TclCompileBasicMin0ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
@@ -1271,11 +1223,11 @@ TclCompileDictMergeCmd(
      * command when there's an LVT present.
      */
 
-    workerIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    workerIndex = AnonymousLocal(envPtr);
     if (workerIndex < 0) {
 	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
-    infoIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    infoIndex = AnonymousLocal(envPtr);
 
     /*
      * Get the first dictionary and verify that it is so.
@@ -1421,8 +1373,7 @@ CompileDictEachCmd(
      */
 
     if (collect == TCL_EACH_COLLECT) {
-	collectVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1,
-		envPtr);
+	collectVar = AnonymousLocal(envPtr);
 	if (collectVar < 0) {
 	    return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	}
@@ -1447,18 +1398,9 @@ CompileDictEachCmd(
     }
 
     nameChars = strlen(argv[0]);
-    if (!TclIsLocalScalar(argv[0], nameChars)) {
-	ckfree(argv);
-	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-    keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, envPtr);
-
+    keyVarIndex = LocalScalar(argv[0], nameChars, envPtr);
     nameChars = strlen(argv[1]);
-    if (!TclIsLocalScalar(argv[1], nameChars)) {
-	ckfree(argv);
-	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-    valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, envPtr);
+    valueVarIndex = LocalScalar(argv[1], nameChars, envPtr);
     ckfree(argv);
 
     if ((keyVarIndex < 0) || (valueVarIndex < 0)) {
@@ -1472,7 +1414,7 @@ CompileDictEachCmd(
      * (at which point it should also have been finished with).
      */
 
-    infoIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    infoIndex = AnonymousLocal(envPtr);
     if (infoIndex < 0) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
@@ -1627,8 +1569,7 @@ TclCompileDictUpdateCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    const char *name;
-    int i, nameChars, dictIndex, numVars, range, infoIndex;
+    int i, dictIndex, numVars, range, infoIndex;
     Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr, *tokenPtr;
     DictUpdateInfo *duiPtr;
     JumpFixup jumpFixup;
@@ -1658,15 +1599,7 @@ TclCompileDictUpdateCmd(
      */
 
     dictVarTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (dictVarTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	goto issueFallback;
-    }
-    name = dictVarTokenPtr[1].start;
-    nameChars = dictVarTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	goto issueFallback;
-    }
-    dictIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    dictIndex = LocalScalarFromToken(dictVarTokenPtr, envPtr);
     if (dictIndex < 0) {
 	goto issueFallback;
     }
@@ -1688,27 +1621,14 @@ TclCompileDictUpdateCmd(
 	 */
 
 	keyTokenPtrs[i] = tokenPtr;
-
-	/*
-	 * Variables first need to be checked for sanity.
-	 */
-
 	tokenPtr = TokenAfter(tokenPtr);
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    goto failedUpdateInfoAssembly;
-	}
-	name = tokenPtr[1].start;
-	nameChars = tokenPtr[1].size;
-	if (!TclIsLocalScalar(name, nameChars)) {
-	    goto failedUpdateInfoAssembly;
-	}
 
 	/*
-	 * Stash the index in the auxiliary data.
+	 * Stash the index in the auxiliary data (if it is indeed a local
+	 * scalar that is resolvable at compile-time).
 	 */
 
-	duiPtr->varIndices[i] =
-		TclFindCompiledLocal(name, nameChars, 1, envPtr);
+	duiPtr->varIndices[i] = LocalScalarFromToken(tokenPtr, envPtr);
 	if (duiPtr->varIndices[i] < 0) {
 	    goto failedUpdateInfoAssembly;
 	}
@@ -1819,19 +1739,9 @@ TclCompileDictAppendCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TclCompileBasicMin2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    } else {
-	register const char *name = tokenPtr[1].start;
-	register int nameChars = tokenPtr[1].size;
-
-	if (!TclIsLocalScalar(name, nameChars)) {
-	    return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
-	}
-	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
-	if (dictVarIndex < 0) {
-	    return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
-	}
+    dictVarIndex = LocalScalarFromToken(tokenPtr, envPtr);
+    if (dictVarIndex < 0) {
+	return TclCompileBasicMin2ArgCmd(interp, parsePtr,cmdPtr, envPtr);
     }
 
     /*
@@ -1866,8 +1776,7 @@ TclCompileDictLappendCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr, *valueTokenPtr;
-    int dictVarIndex, nameChars;
-    const char *name;
+    int dictVarIndex;
 
     /*
      * There must be three arguments after the command.
@@ -1884,15 +1793,7 @@ TclCompileDictLappendCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     keyTokenPtr = TokenAfter(varTokenPtr);
     valueTokenPtr = TokenAfter(keyTokenPtr);
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-    name = varTokenPtr[1].start;
-    nameChars = varTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
-    }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
+    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
     if (dictVarIndex < 0) {
 	return TclCompileBasic3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
     }
@@ -1917,8 +1818,8 @@ TclCompileDictWithCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int i, range, varNameTmp = -1, pathTmp, keysTmp, gotPath, dictVar = -1;
-    int bodyIsEmpty = 1;
+    int i, range, varNameTmp = -1, pathTmp = -1, keysTmp, gotPath;
+    int dictVar, bodyIsEmpty = 1;
     Tcl_Token *varTokenPtr, *tokenPtr;
     JumpFixup jumpFixup;
     const char *ptr, *end;
@@ -1967,11 +1868,7 @@ TclCompileDictWithCmd(
      */
 
     gotPath = (parsePtr->numWords > 3);
-    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD &&
-	    TclIsLocalScalar(varTokenPtr[1].start, varTokenPtr[1].size)) {
-	dictVar = TclFindCompiledLocal(varTokenPtr[1].start,
-		varTokenPtr[1].size, 1, envPtr);
-    }
+    dictVar = LocalScalarFromToken(varTokenPtr, envPtr);
 
     /*
      * Special case: an empty body means we definitely have no need to issue
@@ -2054,14 +1951,12 @@ TclCompileDictWithCmd(
      */
 
     if (dictVar == -1) {
-	varNameTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+	varNameTmp = AnonymousLocal(envPtr);
     }
     if (gotPath) {
-	pathTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    } else {
-	pathTmp = -1;
+	pathTmp = AnonymousLocal(envPtr);
     }
-    keysTmp = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    keysTmp = AnonymousLocal(envPtr);
 
     /*
      * Issue instructions. First, the part to expand the dictionary.
@@ -2696,8 +2591,7 @@ CompileEachloopCmd(
     }
 
     if (collect == TCL_EACH_COLLECT) {
-	collectVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1,
-		envPtr);
+	collectVar = AnonymousLocal(envPtr);
 	if (collectVar < 0) {
 	    return TCL_ERROR;
 	}
@@ -2716,14 +2610,12 @@ CompileEachloopCmd(
     code = TCL_OK;
     firstValueTemp = -1;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	tempVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-		/*create*/ 1, envPtr);
+	tempVar = AnonymousLocal(envPtr);
 	if (loopIndex == 0) {
 	    firstValueTemp = tempVar;
 	}
     }
-    loopCtTemp = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-	    /*create*/ 1, envPtr);
+    loopCtTemp = AnonymousLocal(envPtr);
 
     /*
      * Create and initialize the ForeachInfo and ForeachVarList data
@@ -3455,8 +3347,7 @@ TclPushVarName(
 	 */
 
 	if (!hasNsQualifiers) {
-	    localIndex = TclFindCompiledLocal(name, nameChars,
-		    1, envPtr);
+	    localIndex = TclFindCompiledLocal(name, nameChars, 1, envPtr);
 	    if ((flags & TCL_NO_LARGE_INDEX) && (localIndex > 255)) {
 		/*
 		 * We'll push the name.
