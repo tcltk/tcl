@@ -51,17 +51,20 @@ static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    Tcl_Token *valueTokenPtr, int numWords,
 			    Tcl_Token **bodyToken, int *bodyLines,
 			    int **bodyContLines);
-static int		IssueTryFinallyInstructions(Tcl_Interp *interp,
+static int		IssueTryClausesInstructions(Tcl_Interp *interp,
+			    CompileEnv *envPtr, Tcl_Token *bodyToken,
+			    int numHandlers, int *matchCodes,
+			    Tcl_Obj **matchClauses, int *resultVarIndices,
+			    int *optionVarIndices, Tcl_Token **handlerTokens);
+static int		IssueTryClausesFinallyInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
 			    Tcl_Obj **matchClauses, int *resultVarIndices,
 			    int *optionVarIndices, Tcl_Token **handlerTokens,
 			    Tcl_Token *finallyToken);
-static int		IssueTryInstructions(Tcl_Interp *interp,
+static int		IssueTryFinallyInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
-			    int numHandlers, int *matchCodes,
-			    Tcl_Obj **matchClauses, int *resultVarIndices,
-			    int *optionVarIndices, Tcl_Token **handlerTokens);
+			    Tcl_Token *finallyToken);
 
 /*
  * The structures below define the AuxData types defined in this file.
@@ -2223,14 +2226,17 @@ TclCompileTryCmd(
      * Issue the bytecode.
      */
 
-    if (finallyToken) {
+    if (!finallyToken) {
+	result = IssueTryClausesInstructions(interp, envPtr, bodyToken,
+		numHandlers, matchCodes, matchClauses, resultVarIndices,
+		optionVarIndices, handlerTokens);
+    } else if (numHandlers == 0) {
 	result = IssueTryFinallyInstructions(interp, envPtr, bodyToken,
+		finallyToken);
+    } else {
+	result = IssueTryClausesFinallyInstructions(interp, envPtr, bodyToken,
 		numHandlers, matchCodes, matchClauses, resultVarIndices,
 		optionVarIndices, handlerTokens, finallyToken);
-    } else {
-	result = IssueTryInstructions(interp, envPtr, bodyToken, numHandlers,
-		matchCodes, matchClauses, resultVarIndices, optionVarIndices,
-		handlerTokens);
     }
 
     /*
@@ -2256,12 +2262,13 @@ TclCompileTryCmd(
 /*
  *----------------------------------------------------------------------
  *
- * IssueTryInstructions, IssueTryFinallyInstructions --
+ * IssueTryClausesInstructions, IssueTryClausesFinallyInstructions,
+ * IssueTryFinallyInstructions --
  *
  *	The code generators for [try]. Split from the parsing engine for
- *	reasons of developer sanity, and also split between no-finally and
- *	with-finally cases because so many of the details of generation vary
- *	between the two.
+ *	reasons of developer sanity, and also split between no-finally,
+ *	just-finally and with-finally cases because so many of the details of
+ *	generation vary between the three.
  *
  *	The macros below make the instruction issuing easier to follow.
  *
@@ -2269,7 +2276,7 @@ TclCompileTryCmd(
  */
 
 static int
-IssueTryInstructions(
+IssueTryClausesInstructions(
     Tcl_Interp *interp,
     CompileEnv *envPtr,
     Tcl_Token *bodyToken,
@@ -2283,7 +2290,7 @@ IssueTryInstructions(
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
     int savedStackDepth = envPtr->currStackDepth;
-    int i, j, len, forwardsNeedFixing = 0;
+    int i, j, len, forwardsNeedFixing = 0, trapZero = 0, afterBody = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
 
@@ -2291,6 +2298,18 @@ IssueTryInstructions(
     optionsVar = AnonymousLocal(envPtr);
     if (resultVar < 0 || optionsVar < 0) {
 	return TCL_ERROR;
+    }
+
+    /*
+     * Check if we're supposed to trap a normal TCL_OK completion of the body.
+     * If not, we can handle that case much more efficiently.
+     */
+
+    for (i=0 ; i<numHandlers ; i++) {
+	if (matchCodes[i] == 0) {
+	    trapZero = 1;
+	    break;
+	}
     }
 
     /*
@@ -2305,9 +2324,16 @@ IssueTryInstructions(
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
-    PUSH(				"0");
-    OP4(				REVERSE, 2);
-    OP1(				JUMP1, 4);
+    if (!trapZero) {
+	OP(				END_CATCH);
+	JUMP(afterBody,			JUMP4);
+	TclAdjustStackDepth(-1, envPtr);
+    } else {
+	PUSH(				"0");
+	OP4(				REVERSE, 2);
+	OP1(				JUMP1, 4);
+	TclAdjustStackDepth(-2, envPtr);
+    }
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
     OP(					PUSH_RESULT);
@@ -2414,6 +2440,9 @@ IssueTryInstructions(
      * [try]).
      */
 
+    if (!trapZero) {
+	FIXJUMP(afterBody);
+    }
     for (i=0 ; i<numHandlers ; i++) {
 	FIXJUMP(addrsToFix[i]);
     }
@@ -2424,7 +2453,7 @@ IssueTryInstructions(
 }
 
 static int
-IssueTryFinallyInstructions(
+IssueTryClausesFinallyInstructions(
     Tcl_Interp *interp,
     CompileEnv *envPtr,
     Tcl_Token *bodyToken,
@@ -2439,6 +2468,7 @@ IssueTryFinallyInstructions(
     DefineLineInformation;	/* TIP #280 */
     int savedStackDepth = envPtr->currStackDepth;
     int range, resultVar, optionsVar, i, j, len, forwardsNeedFixing = 0;
+    int trapZero = 0, afterBody = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
 
@@ -2446,6 +2476,18 @@ IssueTryFinallyInstructions(
     optionsVar = AnonymousLocal(envPtr);
     if (resultVar < 0 || optionsVar < 0) {
 	return TCL_ERROR;
+    }
+
+    /*
+     * Check if we're supposed to trap a normal TCL_OK completion of the body.
+     * If not, we can handle that case much more efficiently.
+     */
+
+    for (i=0 ; i<numHandlers ; i++) {
+	if (matchCodes[i] == 0) {
+	    trapZero = 1;
+	    break;
+	}
     }
 
     /*
@@ -2459,9 +2501,19 @@ IssueTryFinallyInstructions(
     envPtr->currStackDepth = savedStackDepth;
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
-    PUSH(				"0");
-    OP4(				REVERSE, 2);
-    OP1(				JUMP1, 4);
+    if (!trapZero) {
+	OP(				END_CATCH);
+	STORE(				resultVar);
+	OP(				POP);
+	PUSH(				"-level 0 -code 0");
+	STORE(				optionsVar);
+	OP(				POP);
+	JUMP(afterBody,			JUMP4);
+    } else {
+	PUSH(				"0");
+	OP4(				REVERSE, 2);
+	OP1(				JUMP1, 4);
+    }
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
     OP(					PUSH_RESULT);
@@ -2637,6 +2689,9 @@ IssueTryFinallyInstructions(
      * next command (or some inter-command manipulation).
      */
 
+    if (!trapZero) {
+	FIXJUMP(afterBody);
+    }
     envPtr->currStackDepth = savedStackDepth;
     BODY(				finallyToken, 3 + 4*numHandlers);
     OP(					POP);
@@ -2645,6 +2700,51 @@ IssueTryFinallyInstructions(
     OP(					RETURN_STK);
     envPtr->currStackDepth = savedStackDepth + 1;
 
+    return TCL_OK;
+}
+
+static int
+IssueTryFinallyInstructions(
+    Tcl_Interp *interp,
+    CompileEnv *envPtr,
+    Tcl_Token *bodyToken,
+    Tcl_Token *finallyToken)
+{
+    DefineLineInformation;	/* TIP #280 */
+    int range;
+
+    /*
+     * Note that this one is simple enough that we can issue it without
+     * needing a local variable table, making it a universal compilation.
+     */
+
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+    OP4(				BEGIN_CATCH4, range);
+    ExceptionRangeStarts(envPtr, range);
+    BODY(				bodyToken, 1);
+    ExceptionRangeEnds(envPtr, range);
+    OP1(				JUMP1, 3);
+    TclAdjustStackDepth(-1, envPtr);
+    ExceptionRangeTarget(envPtr, range, catchOffset);
+    OP(					PUSH_RESULT);
+    OP(					PUSH_RETURN_OPTIONS);
+    OP(					END_CATCH);
+
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+    OP4(				BEGIN_CATCH4, range);
+    ExceptionRangeStarts(envPtr, range);
+    BODY(				finallyToken, 3);
+    OP(					END_CATCH);
+    OP(					POP);
+    OP1(				JUMP1, 3);
+    TclAdjustStackDepth(-1, envPtr);
+    OP(					PUSH_RESULT);
+    OP(					PUSH_RETURN_OPTIONS);
+    OP(					PUSH_RETURN_CODE);
+    OP(					END_CATCH);
+    OP(					POP);
+    OP4(				REVERSE, 2);
+    OP(					RETURN_STK);
     return TCL_OK;
 }
 
