@@ -2293,9 +2293,9 @@ IssueTryClausesInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
-    int savedStackDepth = envPtr->currStackDepth;
     int i, j, len, forwardsNeedFixing = 0, trapZero = 0, afterBody = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
+    int *noError;
     char buf[TCL_INTEGER_SPACE];
 
     resultVar = AnonymousLocal(envPtr);
@@ -2357,8 +2357,10 @@ IssueTryClausesInstructions(
 
     addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
     forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    noError = TclStackAlloc(interp, sizeof(int)*numHandlers);
 
     for (i=0 ; i<numHandlers ; i++) {
+	noError[i] = -1;
 	sprintf(buf, "%d", matchCodes[i]);
 	OP(				DUP);
 	PushLiteral(envPtr, buf, strlen(buf));
@@ -2406,6 +2408,8 @@ IssueTryClausesInstructions(
 	    forwardsNeedFixing = 1;
 	    JUMP4(			JUMP, forwardsToFix[i]);
 	} else {
+	    int dontChangeOptions;
+
 	    forwardsToFix[i] = -1;
 	    if (forwardsNeedFixing) {
 		forwardsNeedFixing = 0;
@@ -2417,8 +2421,33 @@ IssueTryClausesInstructions(
 		    forwardsToFix[j] = -1;
 		}
 	    }
-	    envPtr->currStackDepth = savedStackDepth;
+	    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+	    OP4(			BEGIN_CATCH4, range);
+	    ExceptionRangeStarts(envPtr, range);
 	    BODY(			handlerTokens[i], 5+i*4);
+	    ExceptionRangeEnds(envPtr, range);
+	    OP(				END_CATCH);
+	    JUMP4(			JUMP, noError[i]);
+	    ExceptionRangeTarget(envPtr, range, catchOffset);
+	    TclAdjustStackDepth(-1, envPtr);
+	    OP(				PUSH_RESULT);
+	    OP(				PUSH_RETURN_OPTIONS);
+	    OP(				PUSH_RETURN_CODE);
+	    OP(				END_CATCH);
+	    PUSH(			"1");
+	    OP(				EQ);
+	    JUMP1(			JUMP_FALSE, dontChangeOptions);
+	    LOAD(			optionsVar);
+	    OP4(			REVERSE, 2);
+	    STORE(			optionsVar);
+	    OP(				POP);
+	    PUSH(			"-during");
+	    OP4(			REVERSE, 2);
+	    OP44(			DICT_SET, 1, optionsVar);
+	    TclAdjustStackDepth(-1, envPtr);
+	    FIXJUMP1(		dontChangeOptions);
+	    OP4(			REVERSE, 2);
+	    OP(				RETURN_STK);
 	}
 
 	JUMP4(				JUMP, addrsToFix[i]);
@@ -2449,10 +2478,13 @@ IssueTryClausesInstructions(
     }
     for (i=0 ; i<numHandlers ; i++) {
 	FIXJUMP4(addrsToFix[i]);
+	if (noError[i] != -1) {
+	    FIXJUMP4(noError[i]);
+	}
     }
+    TclStackFree(interp, noError);
     TclStackFree(interp, forwardsToFix);
     TclStackFree(interp, addrsToFix);
-    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
@@ -2470,9 +2502,8 @@ IssueTryClausesFinallyInstructions(
     Tcl_Token *finallyToken)	/* Not NULL */
 {
     DefineLineInformation;	/* TIP #280 */
-    int savedStackDepth = envPtr->currStackDepth;
     int range, resultVar, optionsVar, i, j, len, forwardsNeedFixing = 0;
-    int trapZero = 0, afterBody = 0;
+    int trapZero = 0, afterBody = 0, finalOK, finalError, noFinalError;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
 
@@ -2502,7 +2533,6 @@ IssueTryClausesFinallyInstructions(
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     OP4(				BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
-    envPtr->currStackDepth = savedStackDepth;
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
     if (!trapZero) {
@@ -2517,6 +2547,7 @@ IssueTryClausesFinallyInstructions(
 	PUSH(				"0");
 	OP4(				REVERSE, 2);
 	OP1(				JUMP1, 4);
+	TclAdjustStackDepth(-2, envPtr);
     }
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
@@ -2527,163 +2558,178 @@ IssueTryClausesFinallyInstructions(
     OP(					POP);
     STORE(				resultVar);
     OP(					POP);
-    envPtr->currStackDepth = savedStackDepth + 1;
 
     /*
      * Now we handle all the registered 'on' and 'trap' handlers in order.
+     *
+     * Slight overallocation, but reduces size of this function.
      */
 
-    if (numHandlers) {
-	/*
-	 * Slight overallocation, but reduces size of this function.
-	 */
+    addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
 
-	addrsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
-	forwardsToFix = TclStackAlloc(interp, sizeof(int)*numHandlers);
+    for (i=0 ; i<numHandlers ; i++) {
+	int noTrapError, trapError;
+	const char *p;
 
-	for (i=0 ; i<numHandlers ; i++) {
-	    sprintf(buf, "%d", matchCodes[i]);
-	    OP(				DUP);
-	    PushLiteral(envPtr,	buf, strlen(buf));
-	    OP(				EQ);
-	    JUMP4(			JUMP_FALSE, notCodeJumpSource);
-	    if (matchClauses[i]) {
-		const char *p;
-		Tcl_ListObjLength(NULL, matchClauses[i], &len);
-
-		/*
-		 * Match the errorcode according to try/trap rules.
-		 */
-
-		LOAD(			optionsVar);
-		PUSH(			"-errorcode");
-		OP4(			DICT_GET, 1);
-		TclAdjustStackDepth(-1, envPtr);
-		OP44(			LIST_RANGE_IMM, 0, len-1);
-		p = Tcl_GetStringFromObj(matchClauses[i], &len);
-		PushLiteral(envPtr, p, len);
-		OP(			STR_EQ);
-		JUMP4(			JUMP_FALSE, notECJumpSource);
-	    } else {
-		notECJumpSource = -1; /* LINT */
-	    }
+	sprintf(buf, "%d", matchCodes[i]);
+	OP(				DUP);
+	PushLiteral(envPtr, buf, strlen(buf));
+	OP(				EQ);
+	JUMP4(				JUMP_FALSE, notCodeJumpSource);
+	if (matchClauses[i]) {
+	    Tcl_ListObjLength(NULL, matchClauses[i], &len);
 
 	    /*
-	     * There is a finally clause, so we need a fairly complex sequence
-	     * of instructions to deal with an on/trap handler because we must
-	     * call the finally handler *and* we need to substitute the result
-	     * from a failed trap for the result from the main script.
+	     * Match the errorcode according to try/trap rules.
 	     */
 
-	    if (resultVars[i] >= 0 || handlerTokens[i]) {
-		range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-		OP4(			BEGIN_CATCH4, range);
-		ExceptionRangeStarts(envPtr, range);
-	    }
-	    if (resultVars[i] >= 0) {
-		LOAD(			resultVar);
-		STORE(			resultVars[i]);
+	    LOAD(			optionsVar);
+	    PUSH(			"-errorcode");
+	    OP4(			DICT_GET, 1);
+	    TclAdjustStackDepth(-1, envPtr);
+	    OP44(			LIST_RANGE_IMM, 0, len-1);
+	    p = Tcl_GetStringFromObj(matchClauses[i], &len);
+	    PushLiteral(envPtr, p, len);
+	    OP(				STR_EQ);
+	    JUMP4(			JUMP_FALSE, notECJumpSource);
+	} else {
+	    notECJumpSource = -1; /* LINT */
+	}
+	OP(				POP);
+
+	/*
+	 * There is a finally clause, so we need a fairly complex sequence of
+	 * instructions to deal with an on/trap handler because we must call
+	 * the finally handler *and* we need to substitute the result from a
+	 * failed trap for the result from the main script.
+	 */
+
+	if (resultVars[i] >= 0 || handlerTokens[i]) {
+	    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+	    OP4(			BEGIN_CATCH4, range);
+	    ExceptionRangeStarts(envPtr, range);
+	}
+	if (resultVars[i] >= 0) {
+	    LOAD(			resultVar);
+	    STORE(			resultVars[i]);
+	    OP(				POP);
+	    if (optionVars[i] >= 0) {
+		LOAD(			optionsVar);
+		STORE(			optionVars[i]);
 		OP(			POP);
-		if (optionVars[i] >= 0) {
-		    LOAD(		optionsVar);
-		    STORE(		optionVars[i]);
-		    OP(			POP);
-		}
+	    }
 
-		if (!handlerTokens[i]) {
-		    /*
-		     * No handler. Will not be the last handler (that is a
-		     * condition that is checked by the caller). Chain to the
-		     * next one.
-		     */
-
-		    ExceptionRangeEnds(envPtr, range);
-		    OP(			END_CATCH);
-		    forwardsNeedFixing = 1;
-		    JUMP4(		JUMP, forwardsToFix[i]);
-		    goto finishTrapCatchHandling;
-		}
-	    } else if (!handlerTokens[i]) {
+	    if (!handlerTokens[i]) {
 		/*
-		 * No handler. Will not be the last handler (that condition is
-		 * checked by the caller). Chain to the next one.
+		 * No handler. Will not be the last handler (that is a
+		 * condition that is checked by the caller). Chain to the next
+		 * one.
 		 */
 
+		ExceptionRangeEnds(envPtr, range);
+		OP(			END_CATCH);
 		forwardsNeedFixing = 1;
 		JUMP4(			JUMP, forwardsToFix[i]);
-		goto endOfThisArm;
+		goto finishTrapCatchHandling;
 	    }
-
+	} else if (!handlerTokens[i]) {
 	    /*
-	     * Got a handler. Make sure that any pending patch-up actions from
-	     * previous unprocessed handlers are dealt with now that we know
-	     * where they are to jump to.
+	     * No handler. Will not be the last handler (that condition is
+	     * checked by the caller). Chain to the next one.
 	     */
 
-	    if (forwardsNeedFixing) {
-		forwardsNeedFixing = 0;
-		OP1(			JUMP1, 7);
-		for (j=0 ; j<i ; j++) {
-		    if (forwardsToFix[j] == -1) {
-			continue;
-		    }
-		    FIXJUMP4(forwardsToFix[j]);
-		    forwardsToFix[j] = -1;
-		}
-		OP4(			BEGIN_CATCH4, range);
-	    }
-	    envPtr->currStackDepth = savedStackDepth;
-	    BODY(			handlerTokens[i], 5+i*4);
-	    ExceptionRangeEnds(envPtr, range);
-	    OP(				PUSH_RETURN_OPTIONS);
-	    OP4(			REVERSE, 2);
-	    OP1(			JUMP1, 4);
-	    forwardsToFix[i] = -1;
-
-	    /*
-	     * Error in handler or setting of variables; replace the stored
-	     * exception with the new one. Note that we only push this if we
-	     * have either a body or some variable setting here. Otherwise
-	     * this code is unreachable.
-	     */
-
-	finishTrapCatchHandling:
-	    ExceptionRangeTarget(envPtr, range, catchOffset);
-	    OP(				PUSH_RETURN_OPTIONS);
-	    OP(				PUSH_RESULT);
-	    OP(				END_CATCH);
-	    STORE(			resultVar);
-	    OP(				POP);
-	    STORE(			optionsVar);
-	    OP(				POP);
-
-	endOfThisArm:
-	    if (i+1 < numHandlers) {
-		JUMP4(			JUMP, addrsToFix[i]);
-	    }
-	    if (matchClauses[i]) {
-		FIXJUMP4(notECJumpSource);
-	    }
-	    FIXJUMP4(notCodeJumpSource);
+	    forwardsNeedFixing = 1;
+	    JUMP4(			JUMP, forwardsToFix[i]);
+	    goto endOfThisArm;
 	}
 
 	/*
-	 * Fix all the jumps from taken clauses to here (the start of the
-	 * finally clause).
+	 * Got a handler. Make sure that any pending patch-up actions from
+	 * previous unprocessed handlers are dealt with now that we know where
+	 * they are to jump to.
 	 */
 
-	for (i=0 ; i<numHandlers-1 ; i++) {
-	    FIXJUMP4(addrsToFix[i]);
+	if (forwardsNeedFixing) {
+	    forwardsNeedFixing = 0;
+	    OP1(			JUMP1, 7);
+	    for (j=0 ; j<i ; j++) {
+		if (forwardsToFix[j] == -1) {
+		    continue;
+		}
+		FIXJUMP4(	forwardsToFix[j]);
+		forwardsToFix[j] = -1;
+	    }
+	    OP4(			BEGIN_CATCH4, range);
 	}
-	TclStackFree(interp, forwardsToFix);
-	TclStackFree(interp, addrsToFix);
+	BODY(				handlerTokens[i], 5+i*4);
+	ExceptionRangeEnds(envPtr, range);
+	PUSH(				"0");
+	OP(				PUSH_RETURN_OPTIONS);
+	OP4(				REVERSE, 3);
+	OP1(				JUMP1, 5);
+	TclAdjustStackDepth(-3, envPtr);
+	forwardsToFix[i] = -1;
+
+	/*
+	 * Error in handler or setting of variables; replace the stored
+	 * exception with the new one. Note that we only push this if we have
+	 * either a body or some variable setting here. Otherwise this code is
+	 * unreachable.
+	 */
+
+    finishTrapCatchHandling:
+	ExceptionRangeTarget(envPtr, range, catchOffset);
+	OP(				PUSH_RETURN_OPTIONS);
+	OP(				PUSH_RETURN_CODE);
+	OP(				PUSH_RESULT);
+	OP(				END_CATCH);
+	STORE(				resultVar);
+	OP(				POP);
+	PUSH(				"1");
+	OP(				EQ);
+	JUMP1(				JUMP_FALSE, noTrapError);
+	LOAD(				optionsVar);
+	PUSH(				"-during");
+	OP4(				REVERSE, 3);
+	STORE(				optionsVar);
+	OP(				POP);
+	OP44(				DICT_SET, 1, optionsVar);
+	TclAdjustStackDepth(-1, envPtr);
+	JUMP1(				JUMP, trapError);
+	FIXJUMP1(		noTrapError);
+	STORE(				optionsVar);
+	FIXJUMP1(		trapError);
+	/* Skip POP at end; can clean up with subsequent POP */
+	if (i+1 < numHandlers) {
+	    OP(				POP);
+	} else {
+	    TclAdjustStackDepth(-1, envPtr);
+	}
+
+    endOfThisArm:
+	if (i+1 < numHandlers) {
+	    JUMP4(			JUMP, addrsToFix[i]);
+	}
+	TclAdjustStackDepth(1, envPtr);
+	if (matchClauses[i]) {
+	    FIXJUMP4(		notECJumpSource);
+	}
+	FIXJUMP4(		notCodeJumpSource);
     }
 
     /*
-     * Drop the result code.
+     * Drop the result code, and fix all the jumps from taken clauses - which
+     * drop the result code as their first action - to point straight after
+     * (i.e., to the start of the finally clause).
      */
 
     OP(					POP);
+    for (i=0 ; i<numHandlers-1 ; i++) {
+	FIXJUMP4(		addrsToFix[i]);
+    }
+    TclStackFree(interp, forwardsToFix);
+    TclStackFree(interp, addrsToFix);
 
     /*
      * Process the finally clause (at last!) Note that we do not wrap this in
@@ -2694,15 +2740,44 @@ IssueTryClausesFinallyInstructions(
      */
 
     if (!trapZero) {
-	FIXJUMP4(	afterBody);
+	FIXJUMP4(		afterBody);
     }
-    envPtr->currStackDepth = savedStackDepth;
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+    OP4(				BEGIN_CATCH4, range);
+    ExceptionRangeStarts(envPtr, range);
     BODY(				finallyToken, 3 + 4*numHandlers);
+    ExceptionRangeEnds(envPtr, range);
+    OP(					END_CATCH);
     OP(					POP);
+    JUMP1(				JUMP, finalOK);
+    ExceptionRangeTarget(envPtr, range, catchOffset);
+    OP(					PUSH_RESULT);
+    OP(					PUSH_RETURN_OPTIONS);
+    OP(					PUSH_RETURN_CODE);
+    OP(					END_CATCH);
+    PUSH(				"1");
+    OP(					EQ);
+    JUMP1(				JUMP_FALSE, noFinalError);
+    LOAD(				optionsVar);
+    PUSH(				"-during");
+    OP4(				REVERSE, 3);
+    STORE(				optionsVar);
+    OP(					POP);
+    OP44(				DICT_SET, 1, optionsVar);
+    TclAdjustStackDepth(-1, envPtr);
+    OP(					POP);
+    JUMP1(				JUMP, finalError);
+    TclAdjustStackDepth(1, envPtr);
+    FIXJUMP1(			noFinalError);
+    STORE(				optionsVar);
+    OP(					POP);
+    FIXJUMP1(			finalError);
+    STORE(				resultVar);
+    OP(					POP);
+    FIXJUMP1(			finalOK);
     LOAD(				optionsVar);
     LOAD(				resultVar);
     OP(					RETURN_STK);
-    envPtr->currStackDepth = savedStackDepth + 1;
 
     return TCL_OK;
 }
