@@ -17,6 +17,9 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 }
 
 testConstraint memory [llength [info commands memory]]
+customMatch pairwise {apply {{a b} {
+    string equal [lindex $b 0] [lindex $b 1]
+}}}
 namespace eval ::tcl::test::error {
 if {[testConstraint memory]} {
     proc getbytes {} {
@@ -601,21 +604,21 @@ test error-16.7 {try with variable assignment and propagation #2} {
     }
     list $em [dict get $opts -errorcode]
 } {bar FOO}
-test error-16.8 {exception chaining (try=ok, handler=error)} {
+test error-16.8 {exception chaining (try=ok, handler=error)} -body {
     #FIXME is the intent of this test correct?
     catch {
 	try { list a b c } on ok {em opts} { throw BAR baz }
     } tryem tryopts
-    string equal $opts [dict get $tryopts -during]
-} {1}
-test error-16.9 {exception chaining (try=error, handler=error)} {
+    list $opts [dict get $tryopts -during]
+} -match pairwise -result equal
+test error-16.9 {exception chaining (try=error, handler=error)} -body {
     # The exception off the handler should chain to the exception off the
     # try-body (using the -during option)
     catch {
 	try { throw FOO bar } trap {} {em opts} { throw BAR baz }
     } tryem tryopts
-    string equal $opts [dict get $tryopts -during]
-} {1}
+    list $opts [dict get $tryopts -during]
+} -match pairwise -result equal
 test error-16.10 {no exception chaining when handler is successful} {
     catch {
 	try { throw FOO bar } trap {} {em opts} { list d e f }
@@ -628,6 +631,131 @@ test error-16.11 {no exception chaining when handler is a non-error exception} {
     } tryem tryopts
     dict exists $tryopts -during
 } {0}
+test error-16.12 {compiled try with successfully executed handler} {
+    apply {{} {
+	try { throw FOO bar } trap FOO {} { list a b c }
+    }}
+} {a b c}
+test error-16.13 {compiled try with exception (error) in handler} -body {
+    apply {{} {
+	try { throw FOO bar } trap FOO {} { throw BAR foo }
+    }}
+} -returnCodes error -result {foo}
+test error-16.14 {compiled try with exception (return) in handler} -body {
+    apply {{} {
+	list [catch {
+	    try { throw FOO bar } trap FOO {} { return BAR }
+	} msg] $msg
+    }}
+} -result {2 BAR}
+test error-16.15 {compiled try with exception (break) in handler} {
+    apply {{} {
+	for { set i 5 } { $i < 10 } { incr i } {
+	    try { throw FOO bar } trap FOO {} { break }
+	}
+	return $i
+    }}
+} {5}
+test error-16.16 {compiled try with exception (continue) in handler} {
+    apply {{} {
+	for { set i 5 } { $i < 10 } { incr i } {
+	    try { throw FOO bar } trap FOO {} { continue }
+	    incr i 20
+	}
+	return $i
+    }}
+} {10}
+test error-16.17 {compiled try with variable assignment and propagation #1} {
+    # Ensure that the handler variables preserve the exception off the
+    # try-body, and are not modified by the exception off the handler
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap FOO {em} { throw BAR baz }
+	}
+	return $em
+    }}
+} {bar}
+test error-16.18 {compiled try with variable assignment and propagation #2} {
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap FOO {em opts} { throw BAR baz }
+	}
+	list $em [dict get $opts -errorcode]
+    }}
+} {bar FOO}
+test error-16.19 {compiled try exception chaining (try=ok, handler=error)} -body {
+    #FIXME is the intent of this test correct?
+    apply {{} {
+	catch {
+	    try { list a b c } on ok {em opts} { throw BAR baz }
+	} tryem tryopts
+	list $opts [dict get $tryopts -during]
+    }}
+} -match pairwise -result equal
+test error-16.20 {compiled try exception chaining (try=error, handler=error)} -body {
+    # The exception off the handler should chain to the exception off the
+    # try-body (using the -during option)
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap {} {em opts} { throw BAR baz }
+	} tryem tryopts
+	list $opts [dict get $tryopts -during]
+    }}
+} -match pairwise -result equal
+test error-16.21 {compiled try exception chaining (try=error, finally=error)} {
+    # The exception off the handler should chain to the exception off the
+    # try-body (using the -during option)
+    apply {{} {
+	catch {
+	    try { throw FOO bar } finally { throw BAR baz }
+	} tryem tryopts
+	dict get $tryopts -during -errorcode
+    }}
+} FOO
+test error-16.22 {compiled try: no exception chaining when handler is successful} {
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap {} {em opts} { list d e f }
+	} tryem tryopts
+	dict exists $tryopts -during
+    }}
+} {0}
+test error-16.23 {compiled try: no exception chaining when handler is a non-error exception} {
+    apply {{} {
+	catch {
+	    try { throw FOO bar } trap {} {em opts} { break }
+	} tryem tryopts
+	dict exists $tryopts -during
+    }}
+} {0}
+test error-16.24 {compiled try exception chaining (try=ok, handler=error, finally=error)} -body {
+    apply {{} {
+	catch {
+	    try {
+		list a b c
+	    } on ok {em opts} {
+		throw BAR baz
+	    } finally {
+		throw DING dong
+	    }
+	} tryem tryopts
+	list $opts [dict get $tryopts -during -during]
+    }}
+} -match pairwise -result equal
+test error-16.25 {compiled try exception chaining (all errors)} -body {
+    apply {{} {
+	catch {
+	    try {
+		throw FOO bar
+	    } on error {em opts} {
+		throw BAR baz
+	    } finally {
+		throw DING dong
+	    }
+	} tryem tryopts
+	list $opts [dict get $tryopts -during -during]
+    }}
+} -match pairwise -result equal
 
 # try tests - finally
 
@@ -709,15 +837,15 @@ test error-18.5 {exception in finally doesn't affect variable assignment} {
     }
     list $em [dict get $opts -errorcode]
 } {bar FOO}
-test error-18.6 {exception chaining in finally (try=ok)} {
+test error-18.6 {exception chaining in finally (try=ok)} -body {
     catch {
 	list a b c
     } em expopts
     catch {
 	try { list a b c } finally { throw BAR foo }
     } em opts
-    string equal $expopts [dict get $opts -during]
-} {1}
+    list $expopts [dict get $opts -during]
+} -match pairwise -result equal
 test error-18.7 {exception chaining in finally (try=error)} {
     catch {
 	try { throw FOO bar } finally { throw BAR baz }
