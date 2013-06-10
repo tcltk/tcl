@@ -3217,10 +3217,15 @@ TclpFileOwnedByCurrentUser(
     Tcl_Interp *interp,
     Tcl_Obj *pathObj)
 {
+    const Tcl_Filesystem *fsPtr;
+
     if (Tcl_FSConvertToPathType(NULL, pathObj) != TCL_OK) {
 	return 0;
     }
-    return (Tcl_FSAccess(pathObj, F_OK) == 0);
+    if (Tcl_FSGetFileSystemForPath(pathPtr) != &tclNativeFilesystem) {
+	return 0;
+    }
+    return (NativeAccess(Tcl_FSGetNativePath(pathObj), F_OK) == 0);
 }
 
 /*
