@@ -383,7 +383,8 @@ InstructionDesc const tclInstructionTable[] = {
 	/* finds namespace and otherName in stack, links to local variable at
 	 * index op1. Leaves the namespace on stack. */
     {"syntax",		 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
-	/* Compiled bytecodes to signal syntax error. */
+	/* Compiled bytecodes to signal syntax error. Equivalent to returnImm
+	 * except for the ERR_ALREADY_LOGGED flag in the interpreter. */
     {"reverse",		 5,    0,         1,	{OPERAND_UINT4}},
 	/* Reverse the order of the arg elements at the top of stack */
 

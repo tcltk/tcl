@@ -24,7 +24,7 @@ namespace import tcl::unsupported::assemble
 proc fillTables {} {
     set s {}
     set sep {}
-    for {set i 0} {$i < 256} {incr i} {
+    for {set i 0} {$i < 2} {incr i} {
 	append s $sep [list set v$i literal$i]
 	set sep \n
     }
@@ -277,7 +277,11 @@ test assemble-6.3 {push} {
     }
     -result hello
 }
-test assemble-6.4 {push4} {
+test assemble-6.4 {push4} {*}{
+    -setup {
+set tcl_traceCompile 2
+set tcl_traceExec 3
+    }
     -body {
 	proc x {} "
             [fillTables]
@@ -286,6 +290,8 @@ test assemble-6.4 {push4} {
 	x
     }
     -cleanup {
+set tcl_traceCompile 0
+set tcl_traceExec 0
 	rename x {}
     }
     -result hello

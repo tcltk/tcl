@@ -1631,6 +1631,20 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     }
 
 /*
+ * How to get an anonymous local variable (used for holding temporary values
+ * off the stack) or a local simple scalar.
+ */
+
+#define AnonymousLocal(envPtr) \
+    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
+#define LocalScalar(chars,len,envPtr) \
+    (!TclIsLocalScalar((chars), (len)) ? -1 : \
+	TclFindCompiledLocal((chars), (len), /*create*/ 1, (envPtr)))
+#define LocalScalarFromToken(tokenPtr,envPtr) \
+    ((tokenPtr)->type != TCL_TOKEN_SIMPLE_WORD ? -1 : \
+	LocalScalar((tokenPtr)[1].start, (tokenPtr)[1].size, (envPtr)))
+
+/*
  * Flags bits used by TclPushVarName.
  */
 

@@ -2152,12 +2152,11 @@ TclCompileTryCmd(
 		int len;
 		const char *varname = Tcl_GetStringFromObj(objv[0], &len);
 
-		if (!TclIsLocalScalar(varname, len)) {
+		resultVarIndices[i] = LocalScalar(varname, len, envPtr);
+		if (resultVarIndices[i] < 0) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
 		}
-		resultVarIndices[i] =
-			TclFindCompiledLocal(varname, len, 1, envPtr);
 	    } else {
 		resultVarIndices[i] = -1;
 	    }
@@ -2165,12 +2164,11 @@ TclCompileTryCmd(
 		int len;
 		const char *varname = Tcl_GetStringFromObj(objv[1], &len);
 
-		if (!TclIsLocalScalar(varname, len)) {
+		optionVarIndices[i] = LocalScalar(varname, len, envPtr);
+		if (optionVarIndices[i] < 0) {
 		    TclDecrRefCount(tmpObj);
 		    goto failedToCompile;
 		}
-		optionVarIndices[i] =
-			TclFindCompiledLocal(varname, len, 1, envPtr);
 	    } else {
 		optionVarIndices[i] = -1;
 	    }
@@ -2282,8 +2280,8 @@ IssueTryInstructions(
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
 
-    resultVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    optionsVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    resultVar = AnonymousLocal(envPtr);
+    optionsVar = AnonymousLocal(envPtr);
     if (resultVar < 0 || optionsVar < 0) {
 	return TCL_ERROR;
     }
@@ -2441,8 +2439,8 @@ IssueTryFinallyInstructions(
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     char buf[TCL_INTEGER_SPACE];
 
-    resultVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
-    optionsVar = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+    resultVar = AnonymousLocal(envPtr);
+    optionsVar = AnonymousLocal(envPtr);
     if (resultVar < 0 || optionsVar < 0) {
 	return TCL_ERROR;
     }
@@ -3148,7 +3146,7 @@ CompileComparisonOpCmd(
 
 	return TCL_ERROR;
     } else {
-	int tmpIndex = TclFindCompiledLocal(NULL, 0, 1, envPtr);
+	int tmpIndex = AnonymousLocal(envPtr);
 	int words;
 
 	tokenPtr = TokenAfter(parsePtr->tokenPtr);
