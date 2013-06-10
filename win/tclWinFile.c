@@ -3195,6 +3195,33 @@ TclpUtime(
     }
     return res;
 }
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpUtime --
+ *
+ *	Check if the file named in the pathObj is owned by the current user.
+ *
+ * Results:
+ *	Boolean: true if the file exists, is accessible and is owned by the
+ *	current user. BUG 3613671: not implemented yet.
+ *
+ * Side effects:
+ *	pathObj may be converted to path type.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpFileOwnedByCurrentUser(
+    Tcl_Interp *interp,
+    Tcl_Obj *pathObj)
+{
+    if (Tcl_FSConvertToPathType(NULL, pathObj) != TCL_OK) {
+	return 0;
+    }
+    return (Tcl_FSAccess(pathObj, F_OK) == 0);
+}
 
 /*
  * Local Variables:

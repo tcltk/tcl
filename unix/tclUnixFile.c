@@ -1176,6 +1176,40 @@ TclpUtime(
     return utime(Tcl_FSGetNativePath(pathPtr), tval);
 }
 
+/*
+ *---------------------------------------------------------------------------
+ *
+ * TclpUtime --
+ *
+ *	Check if the file named in the pathObj is owned by the current
+ *	(effective) user.
+ *
+ * Results:
+ *	Boolean: true if the file exists, is accessible and is owned by the
+ *	current user.
+ *
+ * Side effects:
+ *	pathObj may be converted to path type.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+int
+TclpFileOwnedByCurrentUser(
+    Tcl_Interp *interp,
+    Tcl_Obj *pathObj)
+{
+    Tcl_StatBuf buf;
+
+    if (Tcl_FSConvertToPathType(interp, pathObj) != TCL_OK) {
+	return 0;
+    }
+    if (Tcl_FSStat(pathObj, &buf) < 0) {
+	return 0;
+    }
+    return (geteuid() == buf.st_uid);
+}
+
 #ifdef __CYGWIN__
 
 int
