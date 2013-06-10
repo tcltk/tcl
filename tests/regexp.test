@@ -865,6 +865,17 @@ test regexp-22.4 {Bug 3606139} -setup {
 } -cleanup {
     rename a {}
 } -returnCodes 1 -result {couldn't compile regular expression pattern: nfa has too many states}
+test regexp-22.5 {Bug 3610026} -setup {
+    set e {}
+    set cp 99
+    while {$cp < 32864} {
+	append e [format %c [incr cp]]
+    }
+} -body {
+    regexp -about $e
+} -cleanup {
+    unset -nocomplain e cp
+} -returnCodes error  -match glob -result {*too many colors*}
 
 test regexp-23.1 {regexp -all and -line} {
     set string ""

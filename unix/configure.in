@@ -310,11 +310,7 @@ SC_TIME_HANDLER
 #	lack blkcnt_t.
 #--------------------------------------------------------------------
 
-if test "$ac_cv_cygwin" = "yes"; then
-    if test "x${SHARED_BUILD}" = "x1"; then
-	TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
-    fi
-else
+if test "$ac_cv_cygwin" != "yes"; then
     AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
 fi
 AC_CHECK_TYPES([blkcnt_t])
