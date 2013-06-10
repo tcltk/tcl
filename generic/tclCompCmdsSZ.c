@@ -2440,7 +2440,6 @@ IssueTryClausesInstructions(
 	    PUSH(			"-during");
 	    OP4(			REVERSE, 2);
 	    OP44(			DICT_SET, 2, optionsVar);
-	    TclAdjustStackDepth(-1, envPtr);
 	    FIXJUMP1(		dontChangeOptions);
 	    OP4(			REVERSE, 2);
 	    OP(				RETURN_STK);
@@ -2544,10 +2543,10 @@ IssueTryClausesFinallyInstructions(
 	OP4(				REVERSE, 2);
 	OP1(				JUMP1, 4
 #ifdef TCL_COMPILE_DEBUG
-+10
++15
 #endif
 );
-//	TclAdjustStackDepth(-2, envPtr);
+	TclAdjustStackDepth(-2, envPtr);
     }
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RETURN_CODE);
@@ -2587,7 +2586,6 @@ IssueTryClausesFinallyInstructions(
 	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
 	    OP4(			DICT_GET, 2);
-	    TclAdjustStackDepth(-1, envPtr);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
 	    p = Tcl_GetStringFromObj(matchClauses[i], &len);
 	    PushLiteral(envPtr, p, len);
@@ -2667,7 +2665,11 @@ IssueTryClausesFinallyInstructions(
 	PUSH(				"0");
 	OP(				PUSH_RETURN_OPTIONS);
 	OP4(				REVERSE, 3);
-	OP1(				JUMP1, 5);
+	OP1(				JUMP1, 5
+#ifdef TCL_COMPILE_DEBUG
++20
+#endif
+);
 	TclAdjustStackDepth(-3, envPtr);
 	forwardsToFix[i] = -1;
 
@@ -2695,7 +2697,6 @@ IssueTryClausesFinallyInstructions(
 	STORE(				optionsVar);
 	OP(				POP);
 	OP44(				DICT_SET, 2, optionsVar);
-	TclAdjustStackDepth(-1, envPtr);
 	JUMP1(				JUMP, trapError);
 	FIXJUMP1(		noTrapError);
 	STORE(				optionsVar);
@@ -2703,15 +2704,13 @@ IssueTryClausesFinallyInstructions(
 	/* Skip POP at end; can clean up with subsequent POP */
 	if (i+1 < numHandlers) {
 	    OP(				POP);
-	} else {
-	    TclAdjustStackDepth(-1, envPtr);
 	}
 
     endOfThisArm:
 	if (i+1 < numHandlers) {
 	    JUMP4(			JUMP, addrsToFix[i]);
+	    TclAdjustStackDepth(1, envPtr);
 	}
-	TclAdjustStackDepth(1, envPtr);
 	if (matchClauses[i]) {
 	    FIXJUMP4(		notECJumpSource);
 	}
@@ -2764,7 +2763,6 @@ IssueTryClausesFinallyInstructions(
     STORE(				optionsVar);
     OP(					POP);
     OP44(				DICT_SET, 2, optionsVar);
-    TclAdjustStackDepth(-1, envPtr);
     OP(					POP);
     JUMP1(				JUMP, finalError);
     TclAdjustStackDepth(1, envPtr);
@@ -2802,7 +2800,11 @@ IssueTryFinallyInstructions(
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
-    OP1(				JUMP1, 3);
+    OP1(				JUMP1, 3
+#ifdef TCL_COMPILE_DEBUG
++10
+#endif
+);
     TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RESULT);
