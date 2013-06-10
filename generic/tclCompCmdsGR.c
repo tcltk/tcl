@@ -450,7 +450,7 @@ TclCompileIncrCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *incrTokenPtr;
-    int simpleVarName, isScalar, localIndex, haveImmValue, immValue;
+    int isScalar, localIndex, haveImmValue, immValue;
     DefineLineInformation;	/* TIP #280 */
 
     if ((parsePtr->numWords != 2) && (parsePtr->numWords != 3)) {
@@ -460,7 +460,7 @@ TclCompileIncrCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_LARGE_INDEX,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
 
     /*
      * If an increment is given, push it, but see first if it's a small
@@ -498,13 +498,7 @@ TclCompileIncrCmd(
      * Emit the instruction to increment the variable.
      */
 
-    if (!simpleVarName) {
-	if (haveImmValue) {
-	    TclEmitInstInt1(	INST_INCR_STK_IMM, immValue,	envPtr);
-	} else {
-	    TclEmitOpcode(	INST_INCR_STK,			envPtr);
-	}
-    } else if (isScalar) {	/* Simple scalar variable. */
+    if (isScalar) {	/* Simple scalar variable. */
 	if (localIndex >= 0) {
 	    if (haveImmValue) {
 		TclEmitInstInt1(INST_INCR_SCALAR1_IMM, localIndex, envPtr);
@@ -514,9 +508,9 @@ TclCompileIncrCmd(
 	    }
 	} else {
 	    if (haveImmValue) {
-		TclEmitInstInt1(INST_INCR_SCALAR_STK_IMM, immValue, envPtr);
+		TclEmitInstInt1(INST_INCR_STK_IMM, immValue, envPtr);
 	    } else {
-		TclEmitOpcode(	INST_INCR_SCALAR_STK,		envPtr);
+		TclEmitOpcode(	INST_INCR_STK,		envPtr);
 	    }
 	}
     } else {			/* Simple array variable. */
@@ -652,7 +646,7 @@ TclCompileInfoExistsCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int isScalar, simpleVarName, localIndex;
+    int isScalar, localIndex;
     DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 2) {
@@ -668,16 +662,13 @@ TclCompileInfoExistsCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, tokenPtr, envPtr, 0, &localIndex,
-	    &simpleVarName, &isScalar, 1);
+    PushVarNameWord(interp, tokenPtr, envPtr, 0, &localIndex, &isScalar, 1);
 
     /*
      * Emit instruction to check the variable for existence.
      */
 
-    if (!simpleVarName) {
-	TclEmitOpcode(		INST_EXIST_STK,			envPtr);
-    } else if (isScalar) {
+    if (isScalar) {
 	if (localIndex < 0) {
 	    TclEmitOpcode(	INST_EXIST_STK,			envPtr);
 	} else {
@@ -834,7 +825,7 @@ TclCompileLappendCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords, i, fwd, offsetFwd;
+    int isScalar, localIndex, numWords, i, fwd, offsetFwd;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -869,7 +860,7 @@ TclCompileLappendCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
 
     /*
      * If we are doing an assignment, push the new value. In the no values
@@ -891,9 +882,7 @@ TclCompileLappendCmd(
      * LOAD/STORE instructions.
      */
 
-    if (!simpleVarName) {
-	TclEmitOpcode(		INST_LAPPEND_STK,		envPtr);
-    } else if (isScalar) {
+    if (isScalar) {
 	if (localIndex < 0) {
 	    TclEmitOpcode(	INST_LAPPEND_STK,		envPtr);
 	} else {
@@ -920,7 +909,7 @@ TclCompileLappendCmd(
     }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
     if (!isScalar || localIndex < 0) {
 	return TCL_ERROR;
     }
@@ -977,7 +966,7 @@ TclCompileLassignCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords, idx;
+    int isScalar, localIndex, numWords, idx;
     DefineLineInformation;	/* TIP #280 */
 
     numWords = parsePtr->numWords;
@@ -1009,19 +998,14 @@ TclCompileLassignCmd(
 	 */
 
 	PushVarNameWord(interp, tokenPtr, envPtr, 0, &localIndex,
-		&simpleVarName, &isScalar, idx+2);
+		&isScalar, idx+2);
 
 	/*
 	 * Emit instructions to get the idx'th item out of the list value on
 	 * the stack and assign it to the variable.
 	 */
 
-	if (!simpleVarName) {
-	    TclEmitInstInt4(	INST_OVER, 1,			envPtr);
-	    TclEmitInstInt4(	INST_LIST_INDEX_IMM, idx,	envPtr);
-	    TclEmitOpcode(	INST_STORE_STK,			envPtr);
-	    TclEmitOpcode(	INST_POP,			envPtr);
-	} else if (isScalar) {
+	if (isScalar) {
 	    if (localIndex >= 0) {
 		TclEmitOpcode(	INST_DUP,			envPtr);
 		TclEmitInstInt4(INST_LIST_INDEX_IMM, idx,	envPtr);
@@ -1030,7 +1014,7 @@ TclCompileLassignCmd(
 	    } else {
 		TclEmitInstInt4(INST_OVER, 1,			envPtr);
 		TclEmitInstInt4(INST_LIST_INDEX_IMM, idx,	envPtr);
-		TclEmitOpcode(	INST_STORE_SCALAR_STK,		envPtr);
+		TclEmitOpcode(	INST_STORE_STK,			envPtr);
 		TclEmitOpcode(	INST_POP,			envPtr);
 	    }
 	} else {
@@ -1607,7 +1591,6 @@ TclCompileLsetCmd(
     Tcl_Token *varTokenPtr;	/* Pointer to the Tcl_Token representing the
 				 * parse of the variable name. */
     int localIndex;		/* Index of var in local var table. */
-    int simpleVarName;		/* Flag == 1 if var name is simple. */
     int isScalar;		/* Flag == 1 if scalar, 0 if array. */
     int i;
     DefineLineInformation;	/* TIP #280 */
@@ -1634,7 +1617,7 @@ TclCompileLsetCmd(
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-	    &localIndex, &simpleVarName, &isScalar, 1);
+	    &localIndex, &isScalar, 1);
 
     /*
      * Push the "index" args and the new element value.
@@ -1649,8 +1632,8 @@ TclCompileLsetCmd(
      * Duplicate the variable name if it's been pushed.
      */
 
-    if (!simpleVarName || localIndex < 0) {
-	if (!simpleVarName || isScalar) {
+    if (localIndex < 0) {
+	if (isScalar) {
 	    tempDepth = parsePtr->numWords - 2;
 	} else {
 	    tempDepth = parsePtr->numWords - 1;
@@ -1662,7 +1645,7 @@ TclCompileLsetCmd(
      * Duplicate an array index if one's been pushed.
      */
 
-    if (simpleVarName && !isScalar) {
+    if (!isScalar) {
 	if (localIndex < 0) {
 	    tempDepth = parsePtr->numWords - 1;
 	} else {
@@ -1675,11 +1658,9 @@ TclCompileLsetCmd(
      * Emit code to load the variable's value.
      */
 
-    if (!simpleVarName) {
-	TclEmitOpcode(		INST_LOAD_STK,			envPtr);
-    } else if (isScalar) {
+    if (isScalar) {
 	if (localIndex < 0) {
-	    TclEmitOpcode(	INST_LOAD_SCALAR_STK,		envPtr);
+	    TclEmitOpcode(	INST_LOAD_STK,			envPtr);
 	} else {
 	    Emit14Inst(		INST_LOAD_SCALAR, localIndex,	envPtr);
 	}
@@ -1705,11 +1686,9 @@ TclCompileLsetCmd(
      * Emit code to put the value back in the variable.
      */
 
-    if (!simpleVarName) {
-	TclEmitOpcode(		INST_STORE_STK,			envPtr);
-    } else if (isScalar) {
+    if (isScalar) {
 	if (localIndex < 0) {
-	    TclEmitOpcode(	INST_STORE_SCALAR_STK,		envPtr);
+	    TclEmitOpcode(	INST_STORE_STK,			envPtr);
 	} else {
 	    Emit14Inst(		INST_STORE_SCALAR, localIndex,	envPtr);
 	}
@@ -1902,7 +1881,7 @@ TclCompileNamespaceUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords, i;
+    int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
     if (envPtr->procPtr == NULL) {
@@ -1938,7 +1917,7 @@ TclCompileNamespaceUpvarCmd(
 
 	CompileWord(envPtr, otherTokenPtr, interp, 1);
 	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &simpleVarName, &isScalar, 1);
+		&localIndex, &isScalar, 1);
 
 	if ((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
@@ -2492,6 +2471,7 @@ TclCompileReturnCmd(
 
 	    Tcl_DecrRefCount(returnOpts);
 	    TclEmitOpcode(INST_DONE, envPtr);
+	    TclAdjustStackDepth(1, envPtr);
 	    return TCL_OK;
 	}
     }
@@ -2597,7 +2577,7 @@ TclCompileUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int simpleVarName, isScalar, localIndex, numWords, i;
+    int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *objPtr = Tcl_NewObj();
 
@@ -2661,7 +2641,7 @@ TclCompileUpvarCmd(
 
 	CompileWord(envPtr, otherTokenPtr, interp, 1);
 	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &simpleVarName, &isScalar, 1);
+		&localIndex, &isScalar, 1);
 
 	if ((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;

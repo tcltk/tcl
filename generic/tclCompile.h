@@ -100,6 +100,54 @@ typedef struct {
 } ExceptionRange;
 
 /*
+ * Auxiliary data used when issuing (currently just loop) exception ranges,
+ * but which is not required during execution.
+ */
+
+typedef struct ExceptionAux {
+    int supportsContinue;	/* Whether this exception range will have a
+				 * continueOffset created for it; if it is a
+				 * loop exception range that *doesn't* have
+				 * one (see [for] next-clause) then we must
+				 * not pick up the range when scanning for a
+				 * target to continue to. */
+    int stackDepth;		/* The stack depth at the point where the
+				 * exception range was created. This is used
+				 * to calculate the number of POPs required to
+				 * restore the stack to its prior state. */
+    int expandTarget;		/* The number of expansions expected on the
+				 * auxData stack at the time the loop starts;
+				 * we can't currently discard them except by
+				 * doing INST_INVOKE_EXPANDED; this is a known
+				 * problem. */
+    int expandTargetDepth;	/* The stack depth expected at the outermost
+				 * expansion within the loop. Not meaningful
+				 * if there are no open expansions between the
+				 * looping level and the point of jump
+				 * issue. */
+    int numBreakTargets;	/* The number of [break]s that want to be
+				 * targeted to the place where this loop
+				 * exception will be bound to. */
+    int *breakTargets;		/* The offsets of the INST_JUMP4 instructions
+				 * issued by the [break]s that we must
+				 * update. Note that resizing a jump (via
+				 * TclFixupForwardJump) can cause the contents
+				 * of this array to be updated. When
+				 * numBreakTargets==0, this is NULL. */
+    int allocBreakTargets;	/* The size of the breakTargets array. */
+    int numContinueTargets;	/* The number of [continue]s that want to be
+				 * targeted to the place where this loop
+				 * exception will be bound to. */
+    int *continueTargets;	/* The offsets of the INST_JUMP4 instructions
+				 * issued by the [continue]s that we must
+				 * update. Note that resizing a jump (via
+				 * TclFixupForwardJump) can cause the contents
+				 * of this array to be updated. When
+				 * numContinueTargets==0, this is NULL. */
+    int allocContinueTargets;	/* The size of the continueTargets array. */
+} ExceptionAux;
+
+/*
  * Structure used to map between instruction pc and source locations. It
  * defines for each compiled Tcl command its code's starting offset and its
  * source's starting offset and length. Note that the code offset increases
@@ -275,6 +323,11 @@ typedef struct CompileEnv {
 				 * entry. */
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
 				 * exceptArrayPtr points in heap, else 0. */
+    ExceptionAux *exceptAuxArrayPtr;
+				/* Array of information used to restore the
+				 * state when processing BREAK/CONTINUE
+				 * exceptions. Must be the same size as the
+				 * exceptArrayPtr. */
     CmdLocation *cmdMapPtr;	/* Points to start of CmdLocation array.
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
@@ -296,6 +349,9 @@ typedef struct CompileEnv {
 				/* Initial storage of LiteralEntry array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
+    ExceptionAux staticExAuxArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
+				/* Initial static except auxiliary info array
+				 * storage. */
     CmdLocation staticCmdMapSpace[COMPILEENV_INIT_CMD_MAP_SIZE];
 				/* Initial storage for cmd location map. */
     AuxData staticAuxDataArraySpace[COMPILEENV_INIT_AUX_DATA_SIZE];
@@ -312,6 +368,10 @@ typedef struct CompileEnv {
 				 * inefficient. If set to 2, that instruction
 				 * should not be issued at all (by the generic
 				 * part of the command compiler). */
+    int expandCount;		/* Number of INST_EXPAND_START instructions
+				 * encountered that have not yet been paired
+				 * with a corresponding
+				 * INST_INVOKE_EXPANDED. */
     ContLineLoc *clLoc;		/* If not NULL, the table holding the
 				 * locations of the invisible continuation
 				 * lines in the input script, to adjust the
@@ -717,8 +777,10 @@ typedef struct ByteCode {
 
 #define INST_LIST_CONCAT		164
 
+#define INST_EXPAND_DROP		165
+
 /* The last opcode */
-#define LAST_INST_OPCODE		164
+#define LAST_INST_OPCODE		165
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -930,6 +992,8 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  */
 
 MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
+MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
+			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
@@ -984,10 +1048,19 @@ MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    int numBytes, const CmdFrame *invoker, int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
+MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
+			    int returnCode, ExceptionAux **auxPtrPtr);
+MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
+			    ExceptionAux *auxPtr);
+MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
+			    ExceptionAux *auxPtr);
+MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
+			    int range);
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
+MODULE_SCOPE void	TclOptimizeBytecode(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -998,11 +1071,10 @@ MODULE_SCOPE void	TclPrintObject(FILE *outFile,
 			    Tcl_Obj *objPtr, int maxChars);
 MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 			    const char *string, int maxChars);
-MODULE_SCOPE int	TclPushVarName(Tcl_Interp *interp,
+MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
-			    int *simpleVarNamePtr, int *isScalarPtr,
-			    int line, int *clNext);
+			    int *isScalarPtr, int line, int *clNext);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -1399,14 +1471,11 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * of LOOP ranges is an interesting datum for debugging purposes, and that is
  * what we compute now.
  *
- * static int	DeclareExceptionRange(CompileEnv *envPtr, int type);
  * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
  */
 
-#define DeclareExceptionRange(envPtr, type) \
-    (TclCreateExceptRange((type), (envPtr)))
 #define ExceptionRangeStarts(envPtr, index) \
     (((envPtr)->exceptDepth++),						\
     ((envPtr)->maxExceptDepth =						\
@@ -1472,8 +1541,8 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
     envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
-#define PushVarNameWord(i,v,e,f,l,s,sc,word) \
-    TclPushVarName(i,v,e,f,l,s,sc,						\
+#define PushVarNameWord(i,v,e,f,l,sc,word) \
+    TclPushVarName(i,v,e,f,l,sc,						\
 	    mapPtr->loc[eclIndex].line[(word)],				\
 	    mapPtr->loc[eclIndex].next[(word)])
 
@@ -1488,6 +1557,20 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     } else {								\
 	TclEmitInstInt4(nm##4,idx,envPtr);				\
     }
+
+/*
+ * How to get an anonymous local variable (used for holding temporary values
+ * off the stack) or a local simple scalar.
+ */
+
+#define AnonymousLocal(envPtr) \
+    (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
+#define LocalScalar(chars,len,envPtr) \
+    (!TclIsLocalScalar((chars), (len)) ? -1 : \
+	TclFindCompiledLocal((chars), (len), /*create*/ 1, (envPtr)))
+#define LocalScalarFromToken(tokenPtr,envPtr) \
+    ((tokenPtr)->type != TCL_TOKEN_SIMPLE_WORD ? -1 : \
+	LocalScalar((tokenPtr)[1].start, (tokenPtr)[1].size, (envPtr)))
 
 /*
  * Flags bits used by TclPushVarName.
