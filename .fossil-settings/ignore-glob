@@ -1,8 +1,13 @@
 *.a
 *.dll
+*.dylib
 *.exe
+*.exp
+*.lib
 *.o
 *.obj
+*.res
+*.sl
 *.so
 */Makefile
 */config.cache
@@ -11,5 +16,9 @@
 */tclConfig.sh
 */tclsh*
 */tcltest*
+*/versions.vc
 unix/dltest.marker
+unix/tcl.pc
+unix/pkgs/*
+win/pkgs/*
 win/tcl.hpj

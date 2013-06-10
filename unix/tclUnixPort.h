@@ -99,9 +99,11 @@ typedef off_t		Tcl_SeekOffset;
 #   define USE_PUTENV 1
 #   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
+#ifndef __x86_64__
 #   define environ __cygwin_environ
-#   define timezone _timezone
     extern char **__cygwin_environ;
+#endif
+#   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
