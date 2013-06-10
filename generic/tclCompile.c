@@ -3445,6 +3445,7 @@ TclCleanupStackForBreakContinue(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
+    int savedStackDepth = envPtr->currStackDepth;
     int toPop = envPtr->expandCount - auxPtr->expandTarget;
 
     if (toPop > 0) {
@@ -3452,24 +3453,21 @@ TclCleanupStackForBreakContinue(
 	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
 	    toPop--;
 	}
+	TclAdjustStackDepth(auxPtr->expandTargetDepth - envPtr->currStackDepth,
+		envPtr);
 	toPop = auxPtr->expandTargetDepth - auxPtr->stackDepth;
 	while (toPop > 0) {
 	    TclEmitOpcode(INST_POP, envPtr);
-//	    TclAdjustStackDepth(1, envPtr);
 	    toPop--;
 	}
-	envPtr->currStackDepth += (auxPtr->expandTargetDepth
-		- auxPtr->stackDepth);
     } else {
-	int savedStackDepth = envPtr->currStackDepth;
 	toPop = envPtr->currStackDepth - auxPtr->stackDepth;
 	while (toPop > 0) {
 	    TclEmitOpcode(INST_POP, envPtr);
-//	    TclAdjustStackDepth(1, envPtr);
 	    toPop--;
 	}
-	envPtr->currStackDepth = savedStackDepth;
     }
+    envPtr->currStackDepth = savedStackDepth;
 }
 
 /*
