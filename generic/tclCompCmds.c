@@ -569,7 +569,6 @@ TclCompileCatchCmd(
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     int resultIndex, optsIndex, range;
     int initStackDepth = envPtr->currStackDepth;
-    int savedStackDepth;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -637,13 +636,11 @@ TclCompileCatchCmd(
 
     SetLineInformation(1);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	savedStackDepth = envPtr->currStackDepth;
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	CompileBody(envPtr, cmdTokenPtr, interp);
     } else {
 	CompileTokens(envPtr, cmdTokenPtr, interp);
-	savedStackDepth = envPtr->currStackDepth;
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	TclEmitOpcode(		INST_DUP,			envPtr);
@@ -666,10 +663,10 @@ TclCompileCatchCmd(
 	PushStringLiteral(envPtr, "0");
 	TclEmitInstInt1(	INST_JUMP1, 3
 #ifdef TCL_COMPILE_DEBUG
-+5
++10
 #endif
 ,			envPtr);
-	envPtr->currStackDepth = savedStackDepth;
+	TclAdjustStackDepth(-1, envPtr);
 	ExceptionRangeTarget(envPtr, range, catchOffset);
 	TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
 	ExceptionRangeEnds(envPtr, range);
@@ -698,7 +695,7 @@ TclCompileCatchCmd(
      * return code.
      */
 
-    envPtr->currStackDepth = savedStackDepth;
+    TclAdjustStackDepth(-2, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     /* Stack at this point:  ?script? */
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
@@ -1380,9 +1377,6 @@ CompileDictEachCmd(
     int numVars, endTargetOffset;
     int collectVar = -1;	/* Index of temp var holding the result
 				 * dict. */
-    int savedStackDepth = envPtr->currStackDepth;
-				/* Needed because jumps confuse the stack
-				 * space calculator. */
     const char **argv;
     Tcl_DString buffer;
 
@@ -1563,7 +1557,6 @@ CompileDictEachCmd(
      * easy!) Note that we skip the END_CATCH. [Bug 1382528]
      */
 
-//    TclAdjustStackDepth(1, envPtr);
     jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
     TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
 	    envPtr->codeStart + emptyTargetOffset);
@@ -2275,7 +2268,6 @@ TclCompileForCmd(
     JumpFixup jumpEvalCondFixup;
     int testCodeOffset, bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
-    int savedStackDepth = envPtr->currStackDepth;
     DefineLineInformation;	/* TIP #280 */
 
     if (parsePtr->numWords != 5) {
@@ -2337,7 +2329,6 @@ TclCompileForCmd(
     SetLineInformation(4);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, bodyRange);
-//    envPtr->currStackDepth = savedStackDepth + 1;
     TclEmitOpcode(INST_POP, envPtr);
 
     /*
@@ -2348,14 +2339,11 @@ TclCompileForCmd(
 
     nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
-//    envPtr->currStackDepth = savedStackDepth;
     nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
     SetLineInformation(3);
     CompileBody(envPtr, nextTokenPtr, interp);
     ExceptionRangeEnds(envPtr, nextRange);
-//    envPtr->currStackDepth = savedStackDepth + 1;
     TclEmitOpcode(INST_POP, envPtr);
-//    envPtr->currStackDepth = savedStackDepth;
 
     /*
      * Compile the test expression then emit the conditional jump that
@@ -2372,9 +2360,7 @@ TclCompileForCmd(
     }
 
     SetLineInformation(2);
-//    envPtr->currStackDepth = savedStackDepth;
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-//    envPtr->currStackDepth = savedStackDepth + 1;
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
     if (jumpDist > 127) {
@@ -2402,7 +2388,6 @@ TclCompileForCmd(
      * The for command's result is an empty string.
      */
 
-//    envPtr->currStackDepth = savedStackDepth;
     PushStringLiteral(envPtr, "");
 
     return TCL_OK;
@@ -2515,7 +2500,6 @@ CompileEachloopCmd(
     JumpFixup jumpFalseFixup;
     int jumpBackDist, jumpBackOffset, infoIndex, range, bodyIndex;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
-    int savedStackDepth = envPtr->currStackDepth;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -2738,7 +2722,6 @@ CompileEachloopCmd(
     ExceptionRangeStarts(envPtr, range);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
-//    envPtr->currStackDepth = savedStackDepth + 1;
 
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(		INST_LAPPEND_SCALAR, collectVar,envPtr);
@@ -2798,7 +2781,6 @@ CompileEachloopCmd(
      * list of results from evaluating the loop body.
      */
 
-//    envPtr->currStackDepth = savedStackDepth;
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(		INST_LOAD_SCALAR, collectVar,	envPtr);
 	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
@@ -2806,7 +2788,6 @@ CompileEachloopCmd(
     } else {
 	PushStringLiteral(envPtr, "");
     }
-//    envPtr->currStackDepth = savedStackDepth + 1;
 
   done:
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
