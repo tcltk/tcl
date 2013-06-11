@@ -51,6 +51,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  *---------------------------------------------------------------------------
  */
 
+#include <time.h>
 #include <io.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -84,8 +85,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #	include <sys/utime.h>
 #   endif /* __BORLANDC__ */
 #endif /* __MWERKS__ */
-
-#include <time.h>
 
 /*
  * Define EINPROGRESS in terms of WSAEINPROGRESS.
