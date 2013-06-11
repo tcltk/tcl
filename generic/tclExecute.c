@@ -6801,7 +6801,7 @@ TEBCresume(
 		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
 	    goto gotError;
 	}
-	TRACE(("=> "));
+	TRACE((" => "));
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 
