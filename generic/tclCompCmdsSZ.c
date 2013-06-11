@@ -1346,7 +1346,6 @@ IssueSwitchChainedTests(
     int **bodyContLines)	/* Array of continuation line info. */
 {
     enum {Switch_Exact, Switch_Glob, Switch_Regexp};
-    int savedStackDepth = envPtr->currStackDepth;
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
@@ -1381,7 +1380,6 @@ IssueSwitchChainedTests(
     foundDefault = 0;
     for (i=0 ; i<numBodyTokens ; i+=2) {
 	nextArmFixupIndex = -1;
-	envPtr->currStackDepth = savedStackDepth + 1;
 	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
 		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
 	    /*
@@ -1518,7 +1516,6 @@ IssueSwitchChainedTests(
 	 */
 
 	OP(	POP);
-	envPtr->currStackDepth = savedStackDepth;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
 	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
@@ -1576,8 +1573,6 @@ IssueSwitchChainedTests(
     }
     TclStackFree(interp, fixupTargetArray);
     TclStackFree(interp, fixupArray);
-
-    envPtr->currStackDepth = savedStackDepth + 1;
 }
 
 /*
@@ -1611,7 +1606,6 @@ IssueSwitchJumpTable(
     int **bodyContLines)	/* Array of continuation line info. */
 {
     JumptableInfo *jtPtr;
-    int savedStackDepth = envPtr->currStackDepth;
     int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
     int mustGenerate, foundDefault, jumpToDefault, i;
     Tcl_DString buffer;
@@ -1724,7 +1718,6 @@ IssueSwitchJumpTable(
 	 * Compile the body of the arm.
 	 */
 
-	envPtr->currStackDepth = savedStackDepth;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
 	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
@@ -1746,6 +1739,7 @@ IssueSwitchJumpTable(
 	     */
 
 	    OP4(	JUMP4, 0);
+	    TclAdjustStackDepth(-1, envPtr);
 	}
     }
 
@@ -1756,7 +1750,6 @@ IssueSwitchJumpTable(
      */
 
     if (!foundDefault) {
-	envPtr->currStackDepth = savedStackDepth;
 	TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
 		envPtr->codeStart+jumpToDefault+1);
 	PUSH("");
@@ -1777,7 +1770,6 @@ IssueSwitchJumpTable(
      */
 
     TclStackFree(interp, finalFixups);
-    envPtr->currStackDepth = savedStackDepth + 1;
 }
 
 /*
