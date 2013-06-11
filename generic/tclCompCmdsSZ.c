@@ -2005,6 +2005,8 @@ TclCompileThrowCmd(
 	OP1(			JUMP_FALSE1, 16);
 	OP4(			LIST, 2);
 	OP44(			RETURN_IMM, 1, 0);
+	TclAdjustStackDepth(2, envPtr);
+	OP(			POP);
 	OP(			POP);
 	OP(			POP);
     issueErrorForEmptyCode:
