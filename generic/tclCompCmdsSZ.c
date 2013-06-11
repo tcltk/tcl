@@ -1987,7 +1987,11 @@ TclCompileThrowCmd(
 	OP4(			REVERSE, 3);
 	OP(			DUP);
 	OP(			LIST_LENGTH);
-	OP1(			JUMP_FALSE1, 16);
+	OP1(			JUMP_FALSE1, 16
+#ifdef TCL_COMPILE_DEBUG
++20
+#endif
+);
 	OP4(			LIST, 2);
 	OP44(			RETURN_IMM, 1, 0);
 	TclAdjustStackDepth(2, envPtr);
@@ -2309,7 +2313,11 @@ IssueTryClausesInstructions(
     } else {
 	PUSH(				"0");
 	OP4(				REVERSE, 2);
-	OP1(				JUMP1, 4);
+	OP1(				JUMP1, 4
+#ifdef TCL_COMPILE_DEBUG
++10
+#endif
+);
 	TclAdjustStackDepth(-2, envPtr);
     }
     ExceptionRangeTarget(envPtr, range, catchOffset);
@@ -2350,8 +2358,7 @@ IssueTryClausesInstructions(
 
 	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
-	    OP4(			DICT_GET, 1);
-	    TclAdjustStackDepth(-1, envPtr);
+	    OP4(			DICT_GET, 2);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
 	    p = Tcl_GetStringFromObj(matchClauses[i], &len);
 	    PushLiteral(envPtr, p, len);
@@ -2417,8 +2424,7 @@ IssueTryClausesInstructions(
 	    OP(				POP);
 	    PUSH(			"-during");
 	    OP4(			REVERSE, 2);
-	    OP44(			DICT_SET, 1, optionsVar);
-	    TclAdjustStackDepth(-1, envPtr);
+	    OP44(			DICT_SET, 2, optionsVar);
 	    FIXJUMP1(		dontChangeOptions);
 	    OP4(			REVERSE, 2);
 	    OP(				RETURN_STK);
@@ -2520,7 +2526,11 @@ IssueTryClausesFinallyInstructions(
     } else {
 	PUSH(				"0");
 	OP4(				REVERSE, 2);
-	OP1(				JUMP1, 4);
+	OP1(				JUMP1, 4
+#ifdef TCL_COMPILE_DEBUG
++15
+#endif
+);
 	TclAdjustStackDepth(-2, envPtr);
     }
     ExceptionRangeTarget(envPtr, range, catchOffset);
@@ -2560,8 +2570,7 @@ IssueTryClausesFinallyInstructions(
 
 	    LOAD(			optionsVar);
 	    PUSH(			"-errorcode");
-	    OP4(			DICT_GET, 1);
-	    TclAdjustStackDepth(-1, envPtr);
+	    OP4(			DICT_GET, 2);
 	    OP44(			LIST_RANGE_IMM, 0, len-1);
 	    p = Tcl_GetStringFromObj(matchClauses[i], &len);
 	    PushLiteral(envPtr, p, len);
@@ -2641,7 +2650,11 @@ IssueTryClausesFinallyInstructions(
 	PUSH(				"0");
 	OP(				PUSH_RETURN_OPTIONS);
 	OP4(				REVERSE, 3);
-	OP1(				JUMP1, 5);
+	OP1(				JUMP1, 5
+#ifdef TCL_COMPILE_DEBUG
++20
+#endif
+);
 	TclAdjustStackDepth(-3, envPtr);
 	forwardsToFix[i] = -1;
 
@@ -2668,8 +2681,7 @@ IssueTryClausesFinallyInstructions(
 	OP4(				REVERSE, 3);
 	STORE(				optionsVar);
 	OP(				POP);
-	OP44(				DICT_SET, 1, optionsVar);
-	TclAdjustStackDepth(-1, envPtr);
+	OP44(				DICT_SET, 2, optionsVar);
 	JUMP1(				JUMP, trapError);
 	FIXJUMP1(		noTrapError);
 	STORE(				optionsVar);
@@ -2735,8 +2747,7 @@ IssueTryClausesFinallyInstructions(
     OP4(				REVERSE, 3);
     STORE(				optionsVar);
     OP(					POP);
-    OP44(				DICT_SET, 1, optionsVar);
-    TclAdjustStackDepth(-1, envPtr);
+    OP44(				DICT_SET, 2, optionsVar);
     OP(					POP);
     JUMP1(				JUMP, finalError);
     TclAdjustStackDepth(1, envPtr);
@@ -2774,7 +2785,11 @@ IssueTryFinallyInstructions(
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
-    OP1(				JUMP1, 3);
+    OP1(				JUMP1, 3
+#ifdef TCL_COMPILE_DEBUG
++10
+#endif
+);
     TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RESULT);

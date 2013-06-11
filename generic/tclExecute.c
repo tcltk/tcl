@@ -2724,6 +2724,22 @@ TEBCresume(
 	PUSH_TAUX_OBJ(objPtr);
 	NEXT_INST_F(1, 0, 0);
 
+    case INST_VERIFY : {
+#ifdef TCL_COMPILE_DEBUG
+	/*
+	 * This is how deep the compiler thought the stack would be,
+	 * assuming no expansion.
+	 */
+	int estimate = TclGetUInt4AtPtr(pc+1);
+
+	if (CURR_DEPTH != estimate + (auxObjList ? auxObjList->length : 0)) {
+	    Tcl_Panic("Bad stack estimate = %d; truth = %ld", estimate,
+		    CURR_DEPTH - (auxObjList ? auxObjList->length : 0));
+	}
+#endif
+	NEXT_INST_F(5, 0, 0);
+    }
+
     case INST_EXPAND_DROP:
 	/*
 	 * Drops an element of the auxObjList, popping stack elements to
@@ -2744,6 +2760,18 @@ TEBCresume(
 	int i;
 	ptrdiff_t moved;
 
+#ifdef TCL_COMPILE_DEBUG
+	/*
+	 * This is how deep the compiler thought the stack would be,
+	 * assuming no expansion.
+	 */
+	int estimate = TclGetInt4AtPtr(pc+1);
+
+	if (CURR_DEPTH != estimate + auxObjList->length) {
+	    Tcl_Panic("Bad stack estimate = %d; truth = %ld", estimate,
+		    CURR_DEPTH - auxObjList->length);
+	}
+#endif
 	/*
 	 * Make sure that the element at stackTop is a list; if not, just
 	 * leave with an error. Note that the element from the expand list
@@ -2986,7 +3014,7 @@ TEBCresume(
 #endif
 
     case INST_INVOKE_REPLACE:
-	objc = TclGetUInt4AtPtr(pc+1);
+	objc = TclGetUInt4AtPtr(pc+1) - 1;
 	opnd = TclGetUInt1AtPtr(pc+5);
 	objPtr = POP_OBJECT();
 	objv = &OBJ_AT_DEPTH(objc-1);
@@ -6161,6 +6189,11 @@ TEBCresume(
 	 */
 
 	pc += 5;
+#ifdef TCL_COMPILE_DEBUG
+	if (*pc == INST_VERIFY) {
+	    pc +=5;
+	}
+#endif
 	if (*pc == INST_JUMP_FALSE1) {
 	    NEXT_INST_F((continueLoop? 2 : TclGetInt1AtPtr(pc+1)), 0, 0);
 	} else {
@@ -6227,7 +6260,11 @@ TEBCresume(
 	if (code < TCL_ERROR || code > TCL_CONTINUE) {
 	    code = TCL_CONTINUE + 1;
 	}
-	NEXT_INST_F(2*code -1, 1, 0);
+	NEXT_INST_F(2*code -1
+#ifdef TCL_COMPILE_DEBUG
++ (code != TCL_ERROR)*10
+#endif
+, 1, 0);
     }
 
     /*
@@ -6257,7 +6294,7 @@ TEBCresume(
     case INST_DICT_EXISTS: {
 	register Tcl_Interp *interp2 = interp;
 
-	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd = TclGetUInt4AtPtr(pc+1) - 1;
 	TRACE(("%u => ", opnd));
 	dictPtr = OBJ_AT_DEPTH(opnd);
 	if (*pc == INST_DICT_EXISTS) {
@@ -6313,7 +6350,7 @@ TEBCresume(
     case INST_DICT_SET:
     case INST_DICT_UNSET:
     case INST_DICT_INCR_IMM:
-	opnd = TclGetUInt4AtPtr(pc+1);
+	opnd = TclGetUInt4AtPtr(pc+1) - (*pc == INST_DICT_SET);
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 
 	varPtr = LOCAL(opnd2);
