@@ -865,6 +865,7 @@ TclSubstCompile(
 	/* Substitution produced TCL_OK */
 	OP(	END_CATCH);
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &okFixup);
+	TclAdjustStackDepth(-1, envPtr);
 
 	/* Exceptional return codes processed here */
 	ExceptionRangeTarget(envPtr, catchRange, catchOffset);
@@ -890,6 +891,7 @@ TclSubstCompile(
 	/* OTHER */
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &otherFixup);
 
+	TclAdjustStackDepth(1, envPtr);
 	/* BREAK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &breakFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
@@ -905,6 +907,7 @@ TclSubstCompile(
 	    OP1(JUMP1, -breakJump);
 	}
 
+	TclAdjustStackDepth(2, envPtr);
 	/* CONTINUE destination */
 	if (TclFixupForwardJumpToHere(envPtr, &continueFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %d",
@@ -914,6 +917,7 @@ TclSubstCompile(
 	OP(	POP);
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
 
+	TclAdjustStackDepth(2, envPtr);
 	/* RETURN + other destination */
 	if (TclFixupForwardJumpToHere(envPtr, &returnFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %d",
@@ -930,17 +934,6 @@ TclSubstCompile(
 
 	OP4(	REVERSE, 2);
 	OP(	POP);
-
-	/*
-	 * We've emitted several POP instructions, and the automatic
-	 * computations for stack depth requirements have been decrementing
-	 * for every one.  However, we know that every branch actually taken
-	 * only encounters some of those instructions.  No branch passes
-	 * through them all.  So, we now have a stack requirements estimate
-	 * that is too low.  Here we manually fix that up.
-	 */
-
-	TclAdjustStackDepth(4, envPtr);
 
 	/* OK destination */
 	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
@@ -1353,7 +1346,6 @@ IssueSwitchChainedTests(
     int **bodyContLines)	/* Array of continuation line info. */
 {
     enum {Switch_Exact, Switch_Glob, Switch_Regexp};
-    int savedStackDepth = envPtr->currStackDepth;
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
@@ -1388,7 +1380,6 @@ IssueSwitchChainedTests(
     foundDefault = 0;
     for (i=0 ; i<numBodyTokens ; i+=2) {
 	nextArmFixupIndex = -1;
-	envPtr->currStackDepth = savedStackDepth + 1;
 	if (i!=numBodyTokens-2 || bodyToken[numBodyTokens-2]->size != 7 ||
 		memcmp(bodyToken[numBodyTokens-2]->start, "default", 7)) {
 	    /*
@@ -1525,7 +1516,6 @@ IssueSwitchChainedTests(
 	 */
 
 	OP(	POP);
-	envPtr->currStackDepth = savedStackDepth;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
 	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
@@ -1583,8 +1573,6 @@ IssueSwitchChainedTests(
     }
     TclStackFree(interp, fixupTargetArray);
     TclStackFree(interp, fixupArray);
-
-    envPtr->currStackDepth = savedStackDepth + 1;
 }
 
 /*
@@ -1618,7 +1606,6 @@ IssueSwitchJumpTable(
     int **bodyContLines)	/* Array of continuation line info. */
 {
     JumptableInfo *jtPtr;
-    int savedStackDepth = envPtr->currStackDepth;
     int infoIndex, isNew, *finalFixups, numRealBodies = 0, jumpLocation;
     int mustGenerate, foundDefault, jumpToDefault, i;
     Tcl_DString buffer;
@@ -1731,7 +1718,6 @@ IssueSwitchJumpTable(
 	 * Compile the body of the arm.
 	 */
 
-	envPtr->currStackDepth = savedStackDepth;
 	envPtr->line = bodyLines[i+1];		/* TIP #280 */
 	envPtr->clNext = bodyContLines[i+1];	/* TIP #280 */
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
@@ -1753,6 +1739,7 @@ IssueSwitchJumpTable(
 	     */
 
 	    OP4(	JUMP4, 0);
+	    TclAdjustStackDepth(-1, envPtr);
 	}
     }
 
@@ -1763,7 +1750,6 @@ IssueSwitchJumpTable(
      */
 
     if (!foundDefault) {
-	envPtr->currStackDepth = savedStackDepth;
 	TclStoreInt4AtPtr(CurrentOffset(envPtr)-jumpToDefault,
 		envPtr->codeStart+jumpToDefault+1);
 	PUSH("");
@@ -1784,7 +1770,6 @@ IssueSwitchJumpTable(
      */
 
     TclStackFree(interp, finalFixups);
-    envPtr->currStackDepth = savedStackDepth + 1;
 }
 
 /*
@@ -1942,9 +1927,9 @@ TclCompileThrowCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     int numWords = parsePtr->numWords;
-    int savedStackDepth = envPtr->currStackDepth;
     Tcl_Token *codeToken, *msgToken;
     Tcl_Obj *objPtr;
+    int codeKnown, codeIsList, codeIsValid, len;
 
     if (numWords != 3) {
 	return TCL_ERROR;
@@ -1954,77 +1939,66 @@ TclCompileThrowCmd(
 
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
-    if (TclWordKnownAtCompileTime(codeToken, objPtr)) {
+
+    codeKnown = TclWordKnownAtCompileTime(codeToken, objPtr);
+
+    /*
+     * First we must emit the code to substitute the arguments.  This
+     * must come first in case substitution raises errors.
+     */
+    if (!codeKnown) {
+	CompileWord(envPtr, codeToken, interp, 1);
+	PUSH(			"-errorcode");
+    }
+    CompileWord(envPtr, msgToken, interp, 2);
+
+    codeIsList = codeKnown && (TCL_OK == 
+	    Tcl_ListObjLength(interp, objPtr, &len));
+    codeIsValid = codeIsList && (len != 0);
+
+    if (codeIsValid) {
 	Tcl_Obj *errPtr, *dictPtr;
-	const char *string;
-	int len;
 
-	/*
-	 * The code is known at compilation time. This allows us to issue a
-	 * very efficient sequence of instructions.
-	 */
-
-	if (Tcl_ListObjLength(interp, objPtr, &len) != TCL_OK) {
-	    /*
-	     * Must still do this; might generate an error when getting this
-	     * "ignored" value prepared as an argument.
-	     */
-
-	    CompileWord(envPtr, msgToken, interp, 2);
-	    TclCompileSyntaxError(interp, envPtr);
-	    Tcl_DecrRefCount(objPtr);
-	    envPtr->currStackDepth = savedStackDepth + 1;
-	    return TCL_OK;
-	}
-	if (len == 0) {
-	    /*
-	     * Must still do this; might generate an error when getting this
-	     * "ignored" value prepared as an argument.
-	     */
-
-	    CompileWord(envPtr, msgToken, interp, 2);
-	    goto issueErrorForEmptyCode;
-	}
 	TclNewLiteralStringObj(errPtr, "-errorcode");
 	TclNewObj(dictPtr);
 	Tcl_DictObjPut(NULL, dictPtr, errPtr, objPtr);
-	Tcl_IncrRefCount(dictPtr);
-	string = Tcl_GetStringFromObj(dictPtr, &len);
-	CompileWord(envPtr, msgToken, interp, 2);
-	PushLiteral(envPtr, string, len);
-	TclDecrRefCount(dictPtr);
-	OP44(				RETURN_IMM, 1, 0);
-	envPtr->currStackDepth = savedStackDepth + 1;
-    } else {
-	/*
-	 * When the code token is not known at compilation time, we need to do
-	 * a little bit more work. The main tricky bit here is that the error
-	 * code has to be a list (a [throw] restriction) so we must emit extra
-	 * instructions to enforce that condition.
-	 */
-
-	CompileWord(envPtr, codeToken, interp, 1);
-	PUSH(				"-errorcode");
-	CompileWord(envPtr, msgToken, interp, 2);
-	OP4(				REVERSE, 3);
-	OP(				DUP);
-	OP(				LIST_LENGTH);
-	OP1(				JUMP_FALSE1, 16);
-	OP4(				LIST, 2);
-	OP44(				RETURN_IMM, 1, 0);
-
-	/*
-	 * Generate an error for being an empty list. Can't leverage anything
-	 * else to do this for us.
-	 */
-
-    issueErrorForEmptyCode:
-	PUSH(				"type must be non-empty list");
-	PUSH(				"");
-	OP44(				RETURN_IMM, 1, 0);
+	TclEmitPush(TclAddLiteralObj(envPtr, dictPtr, NULL), envPtr);
     }
-    envPtr->currStackDepth = savedStackDepth + 1;
     TclDecrRefCount(objPtr);
+
+    /*
+     * Simpler bytecodes when we detect invalid arguments at compile time.
+     */
+    if (codeKnown && !codeIsValid) {
+	OP(			POP);
+	if (codeIsList) {
+	    /* Must be an empty list */
+	    goto issueErrorForEmptyCode;
+	}
+	TclCompileSyntaxError(interp, envPtr);
+	return TCL_OK;
+    }
+
+    if (!codeKnown) {
+	/*
+	 * Argument validity checking has to be done by bytecode at
+	 * run time.
+	 */
+	OP4(			REVERSE, 3);
+	OP(			DUP);
+	OP(			LIST_LENGTH);
+	OP1(			JUMP_FALSE1, 16);
+	OP4(			LIST, 2);
+	OP44(			RETURN_IMM, 1, 0);
+	TclAdjustStackDepth(2, envPtr);
+	OP(			POP);
+	OP(			POP);
+	OP(			POP);
+    issueErrorForEmptyCode:
+	PUSH(			"type must be non-empty list");
+	PUSH(			"-errorcode {TCL OPERATION THROW BADEXCEPTION}");
+    }
+    OP44(			RETURN_IMM, 1, 0);
     return TCL_OK;
 }
 
@@ -2703,15 +2677,13 @@ IssueTryClausesFinallyInstructions(
 	/* Skip POP at end; can clean up with subsequent POP */
 	if (i+1 < numHandlers) {
 	    OP(				POP);
-	} else {
-	    TclAdjustStackDepth(-1, envPtr);
 	}
 
     endOfThisArm:
 	if (i+1 < numHandlers) {
 	    JUMP4(			JUMP, addrsToFix[i]);
+	    TclAdjustStackDepth(1, envPtr);
 	}
-	TclAdjustStackDepth(1, envPtr);
 	if (matchClauses[i]) {
 	    FIXJUMP4(		notECJumpSource);
 	}
@@ -2965,7 +2937,6 @@ TclCompileWhileCmd(
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
     int testCodeOffset, bodyCodeOffset, jumpDist, range, code, boolVal;
-    int savedStackDepth = envPtr->currStackDepth;
     int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
 				 * infinite loop. */
     Tcl_Obj *boolObj;
@@ -3065,7 +3036,6 @@ TclCompileWhileCmd(
     }
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
-    envPtr->currStackDepth = savedStackDepth + 1;
     OP(		POP);
 
     /*
@@ -3080,10 +3050,8 @@ TclCompileWhileCmd(
 	    bodyCodeOffset += 3;
 	    testCodeOffset += 3;
 	}
-	envPtr->currStackDepth = savedStackDepth;
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-	envPtr->currStackDepth = savedStackDepth + 1;
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {
@@ -3114,7 +3082,6 @@ TclCompileWhileCmd(
      */
 
   pushResult:
-    envPtr->currStackDepth = savedStackDepth;
     PUSH("");
     return TCL_OK;
 }
