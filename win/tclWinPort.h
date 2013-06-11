@@ -82,6 +82,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  *---------------------------------------------------------------------------
  */
 
+#include <time.h>
 #include <wchar.h>
 #include <io.h>
 #include <errno.h>
@@ -113,8 +114,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #	include <sys/utime.h>
 #   endif /* __BORLANDC__ */
 #endif /* __MWERKS__ */
-
-#include <time.h>
 
 /*
  * The following defines redefine the Windows Socket errors as
