@@ -2967,7 +2967,6 @@ TclCompileWhileCmd(
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
     int testCodeOffset, bodyCodeOffset, jumpDist, range, code, boolVal;
-    int savedStackDepth = envPtr->currStackDepth;
     int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
 				 * infinite loop. */
     Tcl_Obj *boolObj;
@@ -3067,7 +3066,6 @@ TclCompileWhileCmd(
     }
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
-    envPtr->currStackDepth = savedStackDepth + 1;
     OP(		POP);
 
     /*
@@ -3082,10 +3080,8 @@ TclCompileWhileCmd(
 	    bodyCodeOffset += 3;
 	    testCodeOffset += 3;
 	}
-	envPtr->currStackDepth = savedStackDepth;
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-	envPtr->currStackDepth = savedStackDepth + 1;
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {
@@ -3116,7 +3112,6 @@ TclCompileWhileCmd(
      */
 
   pushResult:
-    envPtr->currStackDepth = savedStackDepth;
     PUSH("");
     return TCL_OK;
 }

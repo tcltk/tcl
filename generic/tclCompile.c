@@ -2634,12 +2634,10 @@ TclCompileNoOp(
 {
     Tcl_Token *tokenPtr;
     int i;
-    int savedStackDepth = envPtr->currStackDepth;
 
     tokenPtr = parsePtr->tokenPtr;
     for (i = 1; i < parsePtr->numWords; i++) {
 	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
-	envPtr->currStackDepth = savedStackDepth;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
@@ -2647,7 +2645,6 @@ TclCompileNoOp(
 	    TclEmitOpcode(INST_POP, envPtr);
 	}
     }
-    envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     return TCL_OK;
 }
