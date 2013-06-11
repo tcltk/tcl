@@ -810,6 +810,229 @@ PrintSourceToObj(
 /*
  *----------------------------------------------------------------------
  *
+ * DisassembleByteCodeAsDicts --
+ *
+ *	Given an object which is of bytecode type, return a disassembled
+ *	version of the bytecode (in a new refcount 0 object) in a dictionary.
+ *	No guarantees are made about the details of the contents of the
+ *	result, but it is intended to be more readable than the old output
+ *	format.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static Tcl_Obj *
+DisassembleByteCodeAsDicts(
+    Tcl_Obj *objPtr)		/* The bytecode-holding value to take apart */
+{
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    Tcl_Obj *description, *literals, *variables, *instructions, *inst;
+    Tcl_Obj *aux, *exn;
+    unsigned char *pc, *opnd;
+    int i, val;
+
+    /*
+     * Get the literals from the bytecode.
+     */
+
+    literals = Tcl_NewObj();
+    for (i=0 ; i<codePtr->numLitObjects ; i++) {
+	Tcl_ListObjAppendElement(NULL, literals, codePtr->objArrayPtr[i]);
+    }
+
+    /*
+     * Get the variables from the bytecode.
+     */
+
+    variables = Tcl_NewObj();
+    if (codePtr->procPtr) {
+	int localCount = codePtr->procPtr->numCompiledLocals;
+	CompiledLocal *localPtr = codePtr->procPtr->firstLocalPtr;
+
+	for (i=0 ; i<localCount ; i++,localPtr=localPtr->nextPtr) {
+	    Tcl_Obj *descriptor[2];
+
+	    descriptor[0] = Tcl_NewObj();
+	    if (!(localPtr->flags & (VAR_ARRAY|VAR_LINK))) {
+		Tcl_ListObjAppendElement(NULL, descriptor[0],
+			Tcl_NewStringObj("scalar", -1));
+	    }
+	    if (localPtr->flags & VAR_ARRAY) {
+		Tcl_ListObjAppendElement(NULL, descriptor[0],
+			Tcl_NewStringObj("array", -1));
+	    }
+	    if (localPtr->flags & VAR_LINK) {
+		Tcl_ListObjAppendElement(NULL, descriptor[0],
+			Tcl_NewStringObj("link", -1));
+	    }
+	    if (localPtr->flags & VAR_ARGUMENT) {
+		Tcl_ListObjAppendElement(NULL, descriptor[0],
+			Tcl_NewStringObj("arg", -1));
+	    }
+	    if (localPtr->flags & VAR_TEMPORARY) {
+		Tcl_ListObjAppendElement(NULL, descriptor[0],
+			Tcl_NewStringObj("temp", -1));
+	    }
+	    if (localPtr->flags & VAR_RESOLVED) {
+		Tcl_ListObjAppendElement(NULL, descriptor[0],
+			Tcl_NewStringObj("resolved", -1));
+	    }
+	    if (localPtr->flags & VAR_TEMPORARY) {
+		Tcl_ListObjAppendElement(NULL, variables,
+			Tcl_NewListObj(1, descriptor));
+	    } else {
+		descriptor[1] = Tcl_NewStringObj(localPtr->name, -1);
+		Tcl_ListObjAppendElement(NULL, variables,
+			Tcl_NewListObj(2, descriptor));
+	    }
+	}
+    }
+
+    /*
+     * Get the instructions from the bytecode.
+     */
+
+    instructions = Tcl_NewObj();
+    for (pc=codePtr->codeStart; pc<codePtr->codeStart+codePtr->numCodeBytes;){
+	const InstructionDesc *instDesc = &tclInstructionTable[*pc];
+
+	inst = Tcl_NewIntObj(pc - codePtr->codeStart);
+	Tcl_ListObjAppendElement(NULL, inst,
+		Tcl_NewStringObj(instDesc->name, -1));
+	opnd = pc + 1;
+	for (i=0 ; i<instDesc->numOperands ; i++) {
+	    switch (instDesc->opTypes[i]) {
+	    case OPERAND_INT1:
+		val = TclGetInt1AtPtr(opnd);
+		opnd += 1;
+		if (*pc == INST_JUMP1 || *pc == INST_JUMP_TRUE1
+			|| *pc == INST_JUMP_FALSE1) {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			    "pc %d (%d)", pc+val-codePtr->codeStart, val));
+		} else {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		}
+		break;
+	    case OPERAND_INT4:
+		val = TclGetInt4AtPtr(opnd);
+		opnd += 4;
+		if (*pc == INST_JUMP4 || *pc == INST_JUMP_TRUE4
+			|| *pc == INST_JUMP_FALSE4 || *pc == INST_START_CMD) {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			    "pc %d (%d)", pc+val-codePtr->codeStart, val));
+		} else {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		}
+		break;
+	    case OPERAND_UINT1:
+		val = TclGetUInt1AtPtr(opnd);
+		opnd += 1;
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		break;
+	    case OPERAND_UINT4:
+		val = TclGetUInt4AtPtr(opnd);
+		opnd += 4;
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		break;
+	    case OPERAND_IDX4:
+		val = TclGetInt4AtPtr(opnd);
+		opnd += 4;
+		if (val >= -1) {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		} else if (val == -2) {
+		    Tcl_ListObjAppendElement(NULL, inst,
+			    Tcl_NewStringObj("end", -1));
+		} else {
+		    Tcl_ListObjAppendElement(NULL, inst,
+			    Tcl_ObjPrintf("end-%d", -2-val));
+		}
+		break;
+	    case OPERAND_LVT1:
+		val = TclGetUInt1AtPtr(opnd);
+		opnd += 1;
+		Tcl_ListObjAppendElement(NULL, inst,
+			Tcl_ObjPrintf("%%%d", val));
+		break;
+	    case OPERAND_LVT4:
+		val = TclGetUInt4AtPtr(opnd);
+		opnd += 4;
+		Tcl_ListObjAppendElement(NULL, inst,
+			Tcl_ObjPrintf("%%%d", val));
+		break;
+	    case OPERAND_AUX4:
+		val = TclGetInt4AtPtr(opnd);
+		opnd += 4;
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		break;
+	    case OPERAND_NONE:
+		Tcl_Panic("opcode %d with more than zero 'no' operands", *pc);
+	    }
+	}
+	Tcl_ListObjAppendElement(NULL, instructions, inst);
+	pc += instDesc->numBytes;
+    }
+
+    /*
+     * Get the auxiliary data from the bytecode.
+     */
+
+    aux = Tcl_NewObj();
+    for (i=0 ; i<codePtr->numAuxDataItems ; i++) {
+	AuxData *auxData = &codePtr->auxDataArrayPtr[i];
+	Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
+
+	if (auxData->type->printProc) {
+	    Tcl_AppendToObj(auxDesc, " ", -1);
+	    auxData->type->printProc(auxData->clientData, auxDesc, codePtr,0);
+	}
+	Tcl_ListObjAppendElement(NULL, aux, auxDesc);
+    }
+
+    /*
+     * Get the exception ranges from the bytecode.
+     */
+
+    exn = Tcl_NewObj();
+    for (i=0 ; i<codePtr->numExceptRanges ; i++) {
+	ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
+
+	switch (rangePtr->type) {
+	case LOOP_EXCEPTION_RANGE:
+	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
+		    "type %s level %d from %d to %d break %d continue %d",
+		    "loop", rangePtr->nestingLevel, rangePtr->codeOffset,
+		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
+		    rangePtr->breakOffset, rangePtr->continueOffset));
+	    break;
+	case CATCH_EXCEPTION_RANGE:
+	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
+		    "type %s level %d from %d to %d catch %d",
+		    "catch", rangePtr->nestingLevel, rangePtr->codeOffset,
+		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
+		    rangePtr->catchOffset));
+	    break;
+	}
+    }
+
+    /*
+     * Build the overall result.
+     */
+
+    description = Tcl_NewObj();
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("literals", -1),
+	    literals);
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("variables", -1),
+	    variables);
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exception", -1), exn);
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("instructions", -1),
+	    instructions);
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("auxiliary", -1), aux);
+    return description;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_DisassembleObjCmd --
  *
  *	Implementation of the "::tcl::unsupported::disassemble" command. This
@@ -822,7 +1045,7 @@ PrintSourceToObj(
 
 int
 Tcl_DisassembleObjCmd(
-    ClientData dummy,		/* Not used. */
+    ClientData clientData,	/* What type of operation. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
@@ -1031,7 +1254,11 @@ Tcl_DisassembleObjCmd(
 		"BYTECODE", NULL);
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, TclDisassembleByteCodeObj(codeObjPtr));
+    if (PTR2INT(clientData)) {
+	Tcl_SetObjResult(interp, DisassembleByteCodeAsDicts(codeObjPtr));
+    } else {
+	Tcl_SetObjResult(interp, TclDisassembleByteCodeObj(codeObjPtr));
+    }
     return TCL_OK;
 }
 
