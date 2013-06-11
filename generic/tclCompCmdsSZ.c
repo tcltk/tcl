@@ -1927,9 +1927,9 @@ TclCompileThrowCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     int numWords = parsePtr->numWords;
-    int savedStackDepth = envPtr->currStackDepth;
     Tcl_Token *codeToken, *msgToken;
     Tcl_Obj *objPtr;
+    int codeKnown, codeIsList, codeIsValid, len;
 
     if (numWords != 3) {
 	return TCL_ERROR;
@@ -1939,77 +1939,70 @@ TclCompileThrowCmd(
 
     TclNewObj(objPtr);
     Tcl_IncrRefCount(objPtr);
-    if (TclWordKnownAtCompileTime(codeToken, objPtr)) {
+
+    codeKnown = TclWordKnownAtCompileTime(codeToken, objPtr);
+
+    /*
+     * First we must emit the code to substitute the arguments.  This
+     * must come first in case substitution raises errors.
+     */
+    if (!codeKnown) {
+	CompileWord(envPtr, codeToken, interp, 1);
+	PUSH(			"-errorcode");
+    }
+    CompileWord(envPtr, msgToken, interp, 2);
+
+    codeIsList = codeKnown && (TCL_OK == 
+	    Tcl_ListObjLength(interp, objPtr, &len));
+    codeIsValid = codeIsList && (len != 0);
+
+    if (codeIsValid) {
 	Tcl_Obj *errPtr, *dictPtr;
-	const char *string;
-	int len;
 
-	/*
-	 * The code is known at compilation time. This allows us to issue a
-	 * very efficient sequence of instructions.
-	 */
-
-	if (Tcl_ListObjLength(interp, objPtr, &len) != TCL_OK) {
-	    /*
-	     * Must still do this; might generate an error when getting this
-	     * "ignored" value prepared as an argument.
-	     */
-
-	    CompileWord(envPtr, msgToken, interp, 2);
-	    TclCompileSyntaxError(interp, envPtr);
-	    Tcl_DecrRefCount(objPtr);
-	    envPtr->currStackDepth = savedStackDepth + 1;
-	    return TCL_OK;
-	}
-	if (len == 0) {
-	    /*
-	     * Must still do this; might generate an error when getting this
-	     * "ignored" value prepared as an argument.
-	     */
-
-	    CompileWord(envPtr, msgToken, interp, 2);
-	    goto issueErrorForEmptyCode;
-	}
 	TclNewLiteralStringObj(errPtr, "-errorcode");
 	TclNewObj(dictPtr);
 	Tcl_DictObjPut(NULL, dictPtr, errPtr, objPtr);
-	Tcl_IncrRefCount(dictPtr);
-	string = Tcl_GetStringFromObj(dictPtr, &len);
-	CompileWord(envPtr, msgToken, interp, 2);
-	PushLiteral(envPtr, string, len);
-	TclDecrRefCount(dictPtr);
-	OP44(				RETURN_IMM, 1, 0);
-	envPtr->currStackDepth = savedStackDepth + 1;
-    } else {
-	/*
-	 * When the code token is not known at compilation time, we need to do
-	 * a little bit more work. The main tricky bit here is that the error
-	 * code has to be a list (a [throw] restriction) so we must emit extra
-	 * instructions to enforce that condition.
-	 */
-
-	CompileWord(envPtr, codeToken, interp, 1);
-	PUSH(				"-errorcode");
-	CompileWord(envPtr, msgToken, interp, 2);
-	OP4(				REVERSE, 3);
-	OP(				DUP);
-	OP(				LIST_LENGTH);
-	OP1(				JUMP_FALSE1, 16);
-	OP4(				LIST, 2);
-	OP44(				RETURN_IMM, 1, 0);
-
-	/*
-	 * Generate an error for being an empty list. Can't leverage anything
-	 * else to do this for us.
-	 */
-
-    issueErrorForEmptyCode:
-	PUSH(				"type must be non-empty list");
-	PUSH(				"");
-	OP44(				RETURN_IMM, 1, 0);
+	TclEmitPush(TclAddLiteralObj(envPtr, dictPtr, NULL), envPtr);
     }
-    envPtr->currStackDepth = savedStackDepth + 1;
     TclDecrRefCount(objPtr);
+
+    /*
+     * Simpler bytecodes when we detect invalid arguments at compile time.
+     */
+    if (codeKnown && !codeIsValid) {
+	OP(			POP);
+	if (codeIsList) {
+	    /* Must be an empty list */
+	    goto issueErrorForEmptyCode;
+	}
+	TclCompileSyntaxError(interp, envPtr);
+	return TCL_OK;
+    }
+
+    if (!codeKnown) {
+	/*
+	 * Argument validity checking has to be done by bytecode at
+	 * run time.
+	 */
+	OP4(			REVERSE, 3);
+	OP(			DUP);
+	OP(			LIST_LENGTH);
+	OP1(			JUMP_FALSE1, 16
+#ifdef TCL_COMPILE_DEBUG
++20
+#endif
+);
+	OP4(			LIST, 2);
+	OP44(			RETURN_IMM, 1, 0);
+	TclAdjustStackDepth(2, envPtr);
+	OP(			POP);
+	OP(			POP);
+	OP(			POP);
+    issueErrorForEmptyCode:
+	PUSH(			"type must be non-empty list");
+	PUSH(			"-errorcode {TCL OPERATION THROW BADEXCEPTION}");
+    }
+    OP44(			RETURN_IMM, 1, 0);
     return TCL_OK;
 }
 

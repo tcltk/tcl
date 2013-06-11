@@ -317,6 +317,12 @@ test error-8.8 {throw syntax checks} -returnCodes error -body {
 test error-8.9 {throw syntax checks} -returnCodes error -body {
     throw {} foo
 } -result {type must be non-empty list}
+test error-8.10 {Bug 33b7abb8a2: throw stack usage} -returnCodes error -body {
+    apply {code {throw $code foo}} {}
+} -result {type must be non-empty list}
+test error-8.11 {Bug 7174354ecb: throw error message} -returnCodes error  -body {
+    throw {not {}a list} x[]y
+} -result {list element in braces followed by "a" instead of space}
 
 # simple try tests: body completes with code ok
 
