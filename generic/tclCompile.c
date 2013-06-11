@@ -2013,14 +2013,10 @@ TclCompileScript(
 			    int diff = envPtr->currStackDepth-startStackDepth;
 
 			    if (diff != 1) {
-				/*Tcl_Panic(*/
-fprintf(stdout, 
-"bad stack adjustment when compiling"
+				Tcl_Panic("bad stack adjustment when compiling"
 					" %.*s (was %d instead of 1)",
 					parsePtr->tokenPtr->size,
 					parsePtr->tokenPtr->start, diff);
-fprintf(stdout, "\n");
-fflush(stdout);
 			    }
 #endif
 			    if (update) {
