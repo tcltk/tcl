@@ -145,6 +145,9 @@ typedef struct {
 
 #define PUSH_TAUX_OBJ(objPtr) \
     do {							\
+	if (auxObjList) {					\
+	    objPtr->length += auxObjList->length;		\
+	}							\
 	objPtr->internalRep.ptrAndLongRep.ptr = auxObjList;	\
 	auxObjList = objPtr;					\
     } while (0)
@@ -2233,7 +2236,7 @@ TEBCresume(
 	goto instLoadScalar1;
     } else if (inst == INST_PUSH1) {
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
-	TRACE_WITH_OBJ(("%u => ", TclGetInt1AtPtr(pc+1)), OBJ_AT_TOS);
+	TRACE_WITH_OBJ(("%u => ", TclGetUInt1AtPtr(pc+1)), OBJ_AT_TOS);
 	inst = *(pc += 2);
 	goto peepholeStart;
     } else if (inst == INST_START_CMD) {
@@ -2275,7 +2278,7 @@ TEBCresume(
 	TRACE(("%u %u => ", code, level));
 	result = TclProcessReturn(interp, code, level, OBJ_AT_TOS);
 	if (result == TCL_OK) {
-	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
+	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")\n",
 		    O2S(objResultPtr)));
 	    NEXT_INST_F(9, 1, 0);
 	}
@@ -2284,6 +2287,7 @@ TEBCresume(
 	    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 	}
 	cleanup = 2;
+	TRACE_APPEND(("\n"));
 	goto processExceptionReturn;
     }
 
@@ -2294,7 +2298,7 @@ TEBCresume(
 	if (result == TCL_OK) {
 	    Tcl_DecrRefCount(OBJ_AT_TOS);
 	    OBJ_AT_TOS = objResultPtr;
-	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")",
+	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")\n",
 		    O2S(objResultPtr)));
 	    NEXT_INST_F(1, 0, 0);
 	} else if (result == TCL_ERROR) {
@@ -2314,6 +2318,7 @@ TEBCresume(
 	    Tcl_SetObjResult(interp, objResultPtr);
 	}
 	cleanup = 1;
+	TRACE_APPEND(("\n"));
 	goto processExceptionReturn;
 
     case INST_YIELD: {
@@ -2628,6 +2633,7 @@ TEBCresume(
 
 	TclNewObj(objPtr);
 	objPtr->internalRep.ptrAndLongRep.value = CURR_DEPTH;
+	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
 	NEXT_INST_F(1, 0, 0);
 
@@ -2672,22 +2678,27 @@ TEBCresume(
 	 * stack depth, as seen by the compiler.
 	 */
 
-	length = objc + (codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1));
-	DECACHE_STACK_INFO();
-	moved = GrowEvaluationStack(iPtr->execEnvPtr, length, 1)
-		- (Tcl_Obj **) TD;
-	if (moved) {
-	    /*
-	     * Change the global data to point to the new stack: move the
-	     * TEBCdataPtr TD, recompute the position of every other
-	     * stack-allocated parameter, update the stack pointers.
-	     */
+	auxObjList->length += objc - 1;
+	if ((objc > 1) && (auxObjList-length > 0)) {
+	    length = auxObjList->length /* Total expansion room we need */
+		    + codePtr->maxStackDepth /* Beyond the original max */
+		    - CURR_DEPTH;	/* Relative to where we are */
+	    DECACHE_STACK_INFO();
+	    moved = GrowEvaluationStack(iPtr->execEnvPtr, length, 1)
+		    - (Tcl_Obj **) TD;
+	    if (moved) {
+		/*
+		 * Change the global data to point to the new stack: move the
+		 * TEBCdataPtr TD, recompute the position of every other
+		 * stack-allocated parameter, update the stack pointers.
+		 */
 
-	    esPtr = iPtr->execEnvPtr->execStackPtr;
-	    TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
+		esPtr = iPtr->execEnvPtr->execStackPtr;
+		TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
 
-	    catchTop += moved;
-	    tosPtr += moved;
+		catchTop += moved;
+		tosPtr += moved;
+	    }
 	}
 
 	/*
@@ -3494,7 +3505,7 @@ TEBCresume(
 	arrayPtr = NULL;
 	part1Ptr = part2Ptr = NULL;
 	cleanup = 0;
-	TRACE(("%u %ld => ", opnd, increment));
+	TRACE(("%u %s => ", opnd, Tcl_GetString(incrPtr)));
 
     doIncrVar:
 	if (TclIsVarDirectModifyable2(varPtr, arrayPtr)) {
@@ -4059,7 +4070,7 @@ TEBCresume(
 	    } else {
 		TRACE(("%d => %.20s false, new pc %u\n", jmpOffset[0],
 			O2S(valuePtr),
-			(unsigned)(pc + jmpOffset[1] - codePtr->codeStart)));
+			(unsigned)(pc + jmpOffset[0] - codePtr->codeStart)));
 	    }
 	}
 #endif
@@ -6418,7 +6429,7 @@ TEBCresume(
 	}
 #endif
 
-	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d",
+	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d\n",
 		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
 	objResultPtr = TCONST(done);
 	/* TODO: consider opt like INST_FOREACH_STEP4 */
@@ -6432,7 +6443,7 @@ TEBCresume(
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
-	TRACE(("%u => ", opnd));
+	TRACE(("%u => \n", opnd));
 	if (TclIsVarDirectReadable(varPtr)) {
 	    dictPtr = varPtr->value.objPtr;
 	} else {
@@ -6561,6 +6572,7 @@ TEBCresume(
 		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
 	    goto gotError;
 	}
+	TRACE((" => "));
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
 

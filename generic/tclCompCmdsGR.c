@@ -142,10 +142,6 @@ TclCompileIfCmd(
     int jumpIndex = 0;		/* Avoid compiler warning. */
     int jumpFalseDist, numWords, wordIdx, numBytes, j, code;
     const char *word;
-    int savedStackDepth = envPtr->currStackDepth;
-				/* Saved stack depth at the start of the first
-				 * test; the envPtr current depth is restored
-				 * to this value at the start of each test. */
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
     int boolVal;		/* Value of static condition. */
@@ -203,7 +199,6 @@ TclCompileIfCmd(
 	 * the "then" part.
 	 */
 
-	envPtr->currStackDepth = savedStackDepth;
 	testTokenPtr = tokenPtr;
 
 	if (realCond) {
@@ -270,7 +265,6 @@ TclCompileIfCmd(
 
 	if (compileScripts) {
 	    SetLineInformation(wordIdx);
-	    envPtr->currStackDepth = savedStackDepth;
 	    CompileBody(envPtr, tokenPtr, interp);
 	}
 
@@ -295,6 +289,7 @@ TclCompileIfCmd(
 	     * with a 4 byte jump.
 	     */
 
+	    TclAdjustStackDepth(-1, envPtr);
 	    if (TclFixupForwardJumpToHere(envPtr,
 		    jumpFalseFixupArray.fixup+jumpIndex, 120)) {
 		/*
@@ -323,13 +318,6 @@ TclCompileIfCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	wordIdx++;
     }
-
-    /*
-     * Restore the current stack depth in the environment; the "else" clause
-     * (or its default) will add 1 to this.
-     */
-
-    envPtr->currStackDepth = savedStackDepth;
 
     /*
      * Check for the optional else clause. Do not compile anything if this was
@@ -416,7 +404,6 @@ TclCompileIfCmd(
      */
 
   done:
-    envPtr->currStackDepth = savedStackDepth + 1;
     TclFreeJumpFixupArray(&jumpFalseFixupArray);
     TclFreeJumpFixupArray(&jumpEndFixupArray);
     return code;
