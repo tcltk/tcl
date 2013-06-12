@@ -129,7 +129,11 @@ AS_IF([test "${enable_shared+set}" = "set"], [
 AS_IF([test "$tcl_ok" = "yes"], [
   AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
   AS_IF([test "$do64bit" = "yes"], [
-    AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win64/zdll.lib])
+    AS_IF([test "$GCC" == "yes"],[
+      AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win64/libz.dll.a])
+    ], [
+      AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win64/zdll.lib])
+    ])
   ], [
     AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
   ])
