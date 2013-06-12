@@ -827,8 +827,9 @@ DisassembleByteCodeAsDicts(
 {
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
-    Tcl_Obj *aux, *exn;
-    unsigned char *pc, *opnd;
+    Tcl_Obj *aux, *exn, *commands;
+    unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
+    int codeOffset, codeLength, sourceOffset, sourceLength;
     int i, val;
 
     /*
@@ -896,7 +897,7 @@ DisassembleByteCodeAsDicts(
     for (pc=codePtr->codeStart; pc<codePtr->codeStart+codePtr->numCodeBytes;){
 	const InstructionDesc *instDesc = &tclInstructionTable[*pc];
 
-	inst = Tcl_NewIntObj(pc - codePtr->codeStart);
+	inst = Tcl_NewObj();
 	Tcl_ListObjAppendElement(NULL, inst,
 		Tcl_NewStringObj(instDesc->name, -1));
 	opnd = pc + 1;
@@ -962,13 +963,15 @@ DisassembleByteCodeAsDicts(
 	    case OPERAND_AUX4:
 		val = TclGetInt4AtPtr(opnd);
 		opnd += 4;
-		Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		Tcl_ListObjAppendElement(NULL, inst,
+			Tcl_ObjPrintf("?%d", val));
 		break;
 	    case OPERAND_NONE:
 		Tcl_Panic("opcode %d with more than zero 'no' operands", *pc);
 	    }
 	}
-	Tcl_ListObjAppendElement(NULL, instructions, inst);
+	Tcl_DictObjPut(NULL, instructions,
+		Tcl_NewIntObj(pc - codePtr->codeStart), inst);
 	pc += instDesc->numBytes;
     }
 
@@ -1015,6 +1018,48 @@ DisassembleByteCodeAsDicts(
     }
 
     /*
+     * Get the command information from the bytecode.
+     */
+
+    commands = Tcl_NewObj();
+    codeOffPtr = codePtr->codeDeltaStart;
+    codeLenPtr = codePtr->codeLengthStart;
+    srcOffPtr = codePtr->srcDeltaStart;
+    srcLenPtr = codePtr->srcLengthStart;
+    codeOffset = sourceOffset = 0;
+#define Decode(ptr) \
+    ((TclGetUInt1AtPtr(ptr) == 0xFF)		\
+	? ((ptr)+=5,TclGetInt4AtPtr((ptr)-4))	\
+	: ((ptr)+=1,TclGetInt1AtPtr((ptr)-1)))
+    for (i=0 ; i<codePtr->numCommands ; i++) {
+	Tcl_Obj *cmd;
+
+	codeOffset += Decode(codeOffPtr);
+	codeLength = Decode(codeLenPtr);
+	sourceOffset += Decode(srcOffPtr);
+	sourceLength = Decode(srcLenPtr);
+	cmd = Tcl_NewObj();
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codefrom", -1),
+		Tcl_NewIntObj(codeOffset));
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codeto", -1),
+		Tcl_NewIntObj(codeOffset + codeLength - 1));
+	/*
+	 * Convert byte offsets to character offsets; important if multibyte
+	 * characters are present in the source!
+	 */
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptfrom", -1),
+		Tcl_NewIntObj(Tcl_NumUtfChars(codePtr->source,
+			sourceOffset)));
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptto", -1),
+		Tcl_NewIntObj(Tcl_NumUtfChars(codePtr->source,
+			sourceOffset + sourceLength - 1)));
+	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("script", -1),
+		Tcl_NewStringObj(codePtr->source+sourceOffset, sourceLength));
+	Tcl_ListObjAppendElement(NULL, commands, cmd);
+    }
+#undef Decode
+
+    /*
      * Build the overall result.
      */
 
@@ -1027,6 +1072,16 @@ DisassembleByteCodeAsDicts(
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("instructions", -1),
 	    instructions);
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("auxiliary", -1), aux);
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("commands", -1),
+	    commands);
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("script", -1),
+	    Tcl_NewStringObj(codePtr->source, codePtr->numSrcBytes));
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("namespace", -1),
+	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("stackdepth", -1),
+	    Tcl_NewIntObj(codePtr->maxStackDepth));
+    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exceptdepth", -1),
+	    Tcl_NewIntObj(codePtr->maxExceptDepth));
     return description;
 }
 
