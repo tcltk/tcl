@@ -252,6 +252,16 @@ typedef struct AuxDataType {
     AuxDataPrintProc *printProc;/* Callback function to invoke when printing
 				 * the aux data as part of debugging. NULL
 				 * means that the data can't be printed. */
+    AuxDataPrintProc *disassembleProc;
+				/* Callback function to invoke when doing a
+				 * disassembly of the aux data (like the
+				 * printProc, except that the output is
+				 * intended to be script-readable). The
+				 * appendObj argument should be filled in with
+				 * a descriptive dictionary; it will start out
+				 * with "name" mapped to the content of the
+				 * name field. NULL means that the printProc
+				 * should be used instead. */
 } AuxDataType;
 
 /*
