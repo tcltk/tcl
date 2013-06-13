@@ -26,10 +26,16 @@ static void		FreeDictUpdateInfo(ClientData clientData);
 static void		PrintDictUpdateInfo(ClientData clientData,
 			    Tcl_Obj *appendObj, ByteCode *codePtr,
 			    unsigned int pcOffset);
+static void		DisassembleDictUpdateInfo(ClientData clientData,
+			    Tcl_Obj *dictObj, ByteCode *codePtr,
+			    unsigned int pcOffset);
 static ClientData	DupForeachInfo(ClientData clientData);
 static void		FreeForeachInfo(ClientData clientData);
 static void		PrintForeachInfo(ClientData clientData,
 			    Tcl_Obj *appendObj, ByteCode *codePtr,
+			    unsigned int pcOffset);
+static void		DisassembleForeachInfo(ClientData clientData,
+			    Tcl_Obj *dictObj, ByteCode *codePtr,
 			    unsigned int pcOffset);
 static int		CompileEachloopCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
@@ -46,14 +52,16 @@ const AuxDataType tclForeachInfoType = {
     "ForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo,		/* freeProc */
-    PrintForeachInfo		/* printProc */
+    PrintForeachInfo,		/* printProc */
+    DisassembleForeachInfo	/* disassembleProc */
 };
 
 const AuxDataType tclDictUpdateInfoType = {
     "DictUpdateInfo",		/* name */
     DupDictUpdateInfo,		/* dupProc */
     FreeDictUpdateInfo,		/* freeProc */
-    PrintDictUpdateInfo		/* printProc */
+    PrintDictUpdateInfo,	/* printProc */
+    DisassembleDictUpdateInfo	/* disassembleProc */
 };
 
 /*
@@ -2065,11 +2073,13 @@ TclCompileDictWithCmd(
  *	DupDictUpdateInfo: a copy of the auxiliary data
  *	FreeDictUpdateInfo: none
  *	PrintDictUpdateInfo: none
+ *	DisassembleDictUpdateInfo: none
  *
  * Side effects:
  *	DupDictUpdateInfo: allocates memory
  *	FreeDictUpdateInfo: releases memory
  *	PrintDictUpdateInfo: none
+ *	DisassembleDictUpdateInfo: none
  *
  *----------------------------------------------------------------------
  */
@@ -2111,6 +2121,25 @@ PrintDictUpdateInfo(
 	}
 	Tcl_AppendPrintfToObj(appendObj, "%%v%u", duiPtr->varIndices[i]);
     }
+}
+
+static void
+DisassembleDictUpdateInfo(
+    ClientData clientData,
+    Tcl_Obj *dictObj,
+    ByteCode *codePtr,
+    unsigned int pcOffset)
+{
+    DictUpdateInfo *duiPtr = clientData;
+    int i;
+    Tcl_Obj *variables = Tcl_NewObj();
+
+    for (i=0 ; i<duiPtr->length ; i++) {
+	Tcl_ListObjAppendElement(NULL, variables,
+		Tcl_NewIntObj(duiPtr->varIndices[i]));
+    }
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("variables", -1),
+	    variables);
 }
 
 /*
@@ -2856,10 +2885,10 @@ FreeForeachInfo(
 /*
  *----------------------------------------------------------------------
  *
- * PrintForeachInfo --
+ * PrintForeachInfo, DisassembleForeachInfo --
  *
- *	Function to write a human-readable representation of a ForeachInfo
- *	structure to stdout for debugging.
+ *	Functions to write a human-readable or script-readablerepresentation
+ *	of a ForeachInfo structure to a Tcl_Obj for debugging.
  *
  * Results:
  *	None.
@@ -2908,6 +2937,53 @@ PrintForeachInfo(
 	}
 	Tcl_AppendToObj(appendObj, "]", -1);
     }
+}
+
+static void
+DisassembleForeachInfo(
+    ClientData clientData,
+    Tcl_Obj *dictObj,
+    ByteCode *codePtr,
+    unsigned int pcOffset)
+{
+    register ForeachInfo *infoPtr = clientData;
+    register ForeachVarList *varsPtr;
+    int i, j;
+    Tcl_Obj *objPtr, *innerPtr;
+
+    /*
+     * Data stores.
+     */
+
+    objPtr = Tcl_NewObj();
+    for (i=0 ; i<infoPtr->numLists ; i++) {
+	Tcl_ListObjAppendElement(NULL, objPtr,
+		Tcl_NewIntObj(infoPtr->firstValueTemp + i));
+    }
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", -1), objPtr);
+
+    /*
+     * Loop counter.
+     */
+
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", -1),
+	   Tcl_NewIntObj(infoPtr->loopCtTemp));
+
+    /*
+     * Assignment targets.
+     */
+
+    objPtr = Tcl_NewObj();
+    for (i=0 ; i<infoPtr->numLists ; i++) {
+	innerPtr = Tcl_NewObj();
+	varsPtr = infoPtr->varLists[i];
+	for (j=0 ; j<varsPtr->numVars ; j++) {
+	    Tcl_ListObjAppendElement(NULL, innerPtr,
+		    Tcl_NewIntObj(varsPtr->varIndexes[j]));
+	}
+	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
+    }
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
 }
 
 /*
