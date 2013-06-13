@@ -1,3 +1,12 @@
+2013-06-03  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmds.c (TclCompileBreakCmd, TclCompileContinueCmd):
+	Added code to allow [break] and [continue] to be issued as a jump (in
+	the most common cases) rather than using the more expensive exception
+	processing path in the bytecode engine. [Bug 3614226]: Partial fix for
+	the issues relating to cleaning up the stack when dealing with [break]
+	and [continue].
+
 2013-05-27 Harald Oehlmann  <oehhar@users.sf.net>
 
 	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from

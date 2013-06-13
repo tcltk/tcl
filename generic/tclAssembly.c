@@ -650,7 +650,7 @@ BBEmitOpcode(
     }
 
     TclEmitInt1(op, envPtr);
-    envPtr->atCmdStart = ((op) == INST_START_CMD);
+    TclUpdateAtCmdStart(op, envPtr);
     BBUpdateStackReqs(bbPtr, tblIdx, count);
 }
 
@@ -711,7 +711,7 @@ BBEmitInst1or4(
     } else {
 	TclEmitInt4(param, envPtr);
     }
-    envPtr->atCmdStart = ((op) == INST_START_CMD);
+    TclUpdateAtCmdStart(op, envPtr);
     BBUpdateStackReqs(bbPtr, tblIdx, count);
 }
 
