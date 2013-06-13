@@ -558,6 +558,10 @@ InstructionDesc const tclInstructionTable[] = {
 	 * list and pushes that resulting list onto the stack.
 	 * Stack: ... list1 list2 => ... [lconcat list1 list2] */
 
+    {"expandDrop",       1,    0,          0,	{OPERAND_NONE}},
+	/* Drops an element from the auxiliary stack, popping stack elements
+	 * until the matching stack depth is reached. */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -592,6 +596,7 @@ static void		RecordByteCodeStats(ByteCode *codePtr);
 static void		RegisterAuxDataType(const AuxDataType *typePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
+static void		StartExpanding(CompileEnv *envPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
@@ -2048,8 +2053,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	 */
 
 	if (expand) {
-	    TclEmitOpcode(INST_EXPAND_START, envPtr);
-	    envPtr->expandCount++;
+	    StartExpanding(envPtr);
 	}
 
 	/* TIP #280. Scan the words and compute the extended location
@@ -3444,6 +3448,7 @@ TclCreateExceptRange(
     auxPtr->supportsContinue = 1;
     auxPtr->stackDepth = envPtr->currStackDepth;
     auxPtr->expandTarget = envPtr->expandCount;
+    auxPtr->expandTargetDepth = -1;
     auxPtr->numBreakTargets = 0;
     auxPtr->breakTargets = NULL;
     auxPtr->allocBreakTargets = 0;
@@ -3564,6 +3569,103 @@ TclAddLoopContinueFixup(
 /*
  * ---------------------------------------------------------------------
  *
+ * TclCleanupStackForBreakContinue --
+ *
+ *	Ditch the extra elements from the auxiliary stack and the main
+ *	stack. How to do this exactly depends on whether there are any
+ *	elements on the auxiliary stack to pop.
+ *
+ * ---------------------------------------------------------------------
+ */
+
+void
+TclCleanupStackForBreakContinue(
+    CompileEnv *envPtr,
+    ExceptionAux *auxPtr)
+{
+    int toPop = envPtr->expandCount - auxPtr->expandTarget;
+
+    if (toPop > 0) {
+	while (toPop > 0) {
+	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
+	    toPop--;
+	}
+	toPop = auxPtr->expandTargetDepth - auxPtr->stackDepth;
+	while (toPop > 0) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    TclAdjustStackDepth(1, envPtr);
+	    toPop--;
+	}
+    } else {
+	toPop = envPtr->currStackDepth - auxPtr->stackDepth;
+	while (toPop > 0) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    TclAdjustStackDepth(1, envPtr);
+	    toPop--;
+	}
+    }
+}
+
+/*
+ * ---------------------------------------------------------------------
+ *
+ * StartExpanding --
+ *
+ *	Pushes an INST_EXPAND_START and does some additional housekeeping so
+ *	that the [break] and [continue] compilers can use an exception-free
+ *	issue to discard it.
+ *
+ * ---------------------------------------------------------------------
+ */
+
+static void
+StartExpanding(
+    CompileEnv *envPtr)
+{
+    int i;
+
+    TclEmitOpcode(INST_EXPAND_START, envPtr);
+
+    /*
+     * Update inner exception ranges with information about the environment
+     * where this expansion started.
+     */
+
+    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
+	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
+	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[i];
+
+	/*
+	 * Ignore loops unless they're still being built.
+	 */
+
+	if (rangePtr->codeOffset > CurrentOffset(envPtr)) {
+	    continue;
+	}
+	if (rangePtr->numCodeBytes != -1) {
+	    continue;
+	}
+
+	/*
+	 * Adequate condition: further out loops and further in exceptions
+	 * don't actually need this information.
+	 */
+
+	if (auxPtr->expandTarget == envPtr->expandCount) {
+	    auxPtr->expandTargetDepth = envPtr->currStackDepth;
+	}
+    }
+
+    /*
+     * There's now one more expansion being processed on the auxiliary stack.
+     */
+
+    envPtr->expandCount++;
+}
+
+/*
+ * ---------------------------------------------------------------------
+ *
  * TclFinalizeLoopExceptionRange --
  *
  *	Finalizes a loop exception range, binding the registered [break] and
@@ -3604,7 +3706,8 @@ TclFinalizeLoopExceptionRange(
 	    int j;
 
 	    /*
-	     * WTF? Can't bind, so revert to an INST_CONTINUE.
+	     * WTF? Can't bind, so revert to an INST_CONTINUE. Not enough
+	     * space to do anything else.
 	     */
 
 	    *site = INST_CONTINUE;

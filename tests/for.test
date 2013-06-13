@@ -854,7 +854,7 @@ test for-7.2 {Bug 3614226: ensure that continue cleans up the stack} memory {
 	expr {$end - $tmp}
     }}
 } 0
-test for-7.3 {Bug 3614226: ensure that break cleans up the expansion stack} {memory knownBug} {
+test for-7.3 {Bug 3614226: ensure that break cleans up the expansion stack} memory {
     apply {{} {
 	# Can't use [memtest]; must be careful when we change stack frames
 	set end [meminfo]
@@ -868,7 +868,7 @@ test for-7.3 {Bug 3614226: ensure that break cleans up the expansion stack} {mem
 	expr {$end - $tmp}
     }}
 } 0
-test for-7.4 {Bug 3614226: ensure that continue cleans up the expansion stack} {memory knownBug} {
+test for-7.4 {Bug 3614226: ensure that continue cleans up the expansion stack} memory {
     apply {{} {
 	# Can't use [memtest]; must be careful when we change stack frames
 	set end [meminfo]
@@ -876,6 +876,66 @@ test for-7.4 {Bug 3614226: ensure that continue cleans up the expansion stack} {
 	    for {set x 0} {[incr x]<50} {} {
 		puts {*}[puts a b c {*}[continue] d e f]
 	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.5 {Bug 3614226: ensure that break cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[break] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.6 {Bug 3614226: ensure that continue cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[continue] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.7 {Bug 3614226: ensure that break only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[break] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.8 {Bug 3614226: ensure that continue only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[continue] d e f]]
+	    }]
 	    set tmp $end
 	    set end [meminfo]
 	}

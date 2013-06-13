@@ -20,7 +20,7 @@
  *-   break and continue - if exception ranges can be sorted out.
  *-   foreach_start4, foreach_step4
  *-   returnImm, returnStk
- *-   expandStart, expandStkTop, invokeExpanded
+ *-   expandStart, expandStkTop, invokeExpanded, expandDrop
  *-   dictFirst, dictNext, dictDone
  *-   dictUpdateStart, dictUpdateEnd
  *-   jumpTable testing

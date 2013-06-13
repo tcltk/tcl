@@ -257,7 +257,7 @@ VarHashCreateVar(
 
 /* Verify the stack depth, only when no expansion is in progress */
 
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 #define CHECK_STACK()							\
     do {								\
 	ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,			\
@@ -2142,11 +2142,6 @@ TEBCresume(
 
 	CACHE_STACK_INFO();
 	if (result == TCL_OK) {
-#ifndef TCL_COMPILE_DEBUG
-	    if (*pc == INST_POP) {
-		NEXT_INST_V(1, cleanup, 0);
-	    }
-#endif
 	    /*
 	     * Push the call's object result and continue execution with the
 	     * next instruction.
@@ -2154,8 +2149,6 @@ TEBCresume(
 
 	    TRACE_WITH_OBJ(("%u => ... after \"%.20s\": TCL_OK, result=",
 		    objc, cmdNameBuf), Tcl_GetObjResult(interp));
-
-	    objResultPtr = Tcl_GetObjResult(interp);
 
 	    /*
 	     * Reset the interp's result to avoid possible duplications of
@@ -2168,9 +2161,16 @@ TEBCresume(
 	     * the refCount it had in its role of iPtr->objResultPtr.
 	     */
 
+	    objResultPtr = Tcl_GetObjResult(interp);
 	    TclNewObj(objPtr);
 	    Tcl_IncrRefCount(objPtr);
 	    iPtr->objResultPtr = objPtr;
+#ifndef TCL_COMPILE_DEBUG
+	    if (*pc == INST_POP) {
+		TclDecrRefCount(objResultPtr);
+		NEXT_INST_V(1, cleanup, 0);
+	    }
+#endif
 	    NEXT_INST_V(0, cleanup, -1);
 	}
 
@@ -2630,7 +2630,7 @@ TEBCresume(
 		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
 			INT_MAX);
 	    }
-#if !TCL_COMPILE_DEBUG
+#ifndef TCL_COMPILE_DEBUG
 	    if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
 		TclFreeIntRep(objResultPtr);
 		objResultPtr->bytes = ckrealloc(bytes, length+appendLen+1);
@@ -2666,7 +2666,7 @@ TEBCresume(
 		Tcl_Panic("max size for a Tcl value (%d bytes) exceeded",
 			INT_MAX);
 	    }
-#if !TCL_COMPILE_DEBUG
+#ifndef TCL_COMPILE_DEBUG
 	    if (!Tcl_IsShared(objResultPtr)) {
 		bytes = (char *) Tcl_SetByteArrayLength(objResultPtr,
 			length + appendLen);
@@ -2717,6 +2717,22 @@ TEBCresume(
 	objPtr->internalRep.ptrAndLongRep.value = CURR_DEPTH;
 	PUSH_TAUX_OBJ(objPtr);
 	NEXT_INST_F(1, 0, 0);
+
+    case INST_EXPAND_DROP:
+	/*
+	 * Drops an element of the auxObjList, popping stack elements to
+	 * restore the stack to the state before the point where the aux
+	 * element was created.
+	 */
+
+	CLANG_ASSERT(auxObjList);
+	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
+	POP_TAUX_OBJ();
+#ifdef TCL_COMPILE_DEBUG
+	/* Ugly abuse! */
+	starting = 1;
+#endif
+	NEXT_INST_V(1, objc, 0);
 
     case INST_EXPAND_STKTOP: {
 	int i;
@@ -6824,7 +6840,7 @@ TEBCresume(
 	 */
 
     processExceptionReturn:
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 	switch (*pc) {
 	case INST_INVOKE_STK1:
 	    opnd = TclGetUInt1AtPtr(pc+1);
@@ -6881,7 +6897,7 @@ TEBCresume(
 		    rangePtr->codeOffset, rangePtr->continueOffset));
 	    NEXT_INST_F(0, 0, 0);
 	}
-#if TCL_COMPILE_DEBUG
+#ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
 	    objPtr = Tcl_GetObjResult(interp);
 	    if ((result != TCL_ERROR) && (result != TCL_RETURN)) {
