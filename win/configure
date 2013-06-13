@@ -4362,7 +4362,17 @@ if test "$tcl_ok" = "yes"; then
 
   if test "$do64bit" = "yes"; then
 
-    ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+    if test "$GCC" == "yes"; then
+
+      ZLIB_LIBS=\${ZLIB_DIR}/win64/libz.dll.a
+
+
+else
+
+      ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+
+
+fi
 
 
 else
