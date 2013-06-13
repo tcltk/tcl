@@ -401,7 +401,8 @@ InstructionDesc const tclInstructionTable[] = {
 	/* finds namespace and otherName in stack, links to local variable at
 	 * index op1. Leaves the namespace on stack. */
     {"syntax",		 9,   -1,         2,	{OPERAND_INT4, OPERAND_UINT4}},
-	/* Compiled bytecodes to signal syntax error. */
+	/* Compiled bytecodes to signal syntax error. Equivalent to returnImm
+	 * except for the ERR_ALREADY_LOGGED flag in the interpreter. */
     {"reverse",		 5,    0,         1,	{OPERAND_UINT4}},
 	/* Reverse the order of the arg elements at the top of stack */
 
@@ -1256,7 +1257,12 @@ CompileSubstObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-	/* TODO: Debug printing? */
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceCompile >= 2) {
+	    TclPrintByteCodeObj(interp, objPtr);
+	    fflush(stdout);
+	}
+#endif /* TCL_COMPILE_DEBUG */
     }
     return codePtr;
 }
@@ -1975,8 +1981,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	    if (code == TCL_OK) {
 	        int diff = envPtr->currStackDepth-startStackDepth;
 
-	        if (diff != 1 && (diff != 0 ||
-			*(envPtr->codeNext-1) != INST_DONE)) {
+	        if (diff != 1) {
 		    Tcl_Panic("bad stack adjustment when compiling"
 			    " %.*s (was %d instead of 1)", tokenPtr->size,
 			    tokenPtr->start, diff);
@@ -2637,12 +2642,10 @@ TclCompileNoOp(
 {
     Tcl_Token *tokenPtr;
     int i;
-    int savedStackDepth = envPtr->currStackDepth;
 
     tokenPtr = parsePtr->tokenPtr;
     for (i = 1; i < parsePtr->numWords; i++) {
 	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
-	envPtr->currStackDepth = savedStackDepth;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
@@ -2650,7 +2653,6 @@ TclCompileNoOp(
 	    TclEmitOpcode(INST_POP, envPtr);
 	}
     }
-    envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     return TCL_OK;
 }
@@ -3411,6 +3413,7 @@ TclCleanupStackForBreakContinue(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
+    int savedStackDepth = envPtr->currStackDepth;
     int toPop = envPtr->expandCount - auxPtr->expandTarget;
 
     if (toPop > 0) {
@@ -3418,20 +3421,21 @@ TclCleanupStackForBreakContinue(
 	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
 	    toPop--;
 	}
+	TclAdjustStackDepth(auxPtr->expandTargetDepth - envPtr->currStackDepth,
+		envPtr);
 	toPop = auxPtr->expandTargetDepth - auxPtr->stackDepth;
 	while (toPop > 0) {
 	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
 	    toPop--;
 	}
     } else {
 	toPop = envPtr->currStackDepth - auxPtr->stackDepth;
 	while (toPop > 0) {
 	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
 	    toPop--;
 	}
     }
+    envPtr->currStackDepth = savedStackDepth;
 }
 
 /*

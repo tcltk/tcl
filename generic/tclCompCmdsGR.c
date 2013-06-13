@@ -145,10 +145,6 @@ TclCompileIfCmd(
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpFalseDist, numWords, wordIdx, numBytes, code;
     const char *word;
-    int savedStackDepth = envPtr->currStackDepth;
-				/* Saved stack depth at the start of the first
-				 * test; the envPtr current depth is restored
-				 * to this value at the start of each test. */
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
     int boolVal;		/* Value of static condition. */
@@ -206,7 +202,6 @@ TclCompileIfCmd(
 	 * the "then" part.
 	 */
 
-	envPtr->currStackDepth = savedStackDepth;
 	testTokenPtr = tokenPtr;
 
 	if (realCond) {
@@ -269,7 +264,6 @@ TclCompileIfCmd(
 
 	if (compileScripts) {
 	    SetLineInformation(wordIdx);
-	    envPtr->currStackDepth = savedStackDepth;
 	    CompileBody(envPtr, tokenPtr, interp);
 	}
 
@@ -285,6 +279,7 @@ TclCompileIfCmd(
 	     * with a 4 byte jump.
 	     */
 
+	    TclAdjustStackDepth(-1, envPtr);
 	    if (TclFixupForwardJumpToHere(envPtr, falseFixupPtr, 120)) {
 		/*
 		 * Adjust the code offset for the proceeding jump to the end
@@ -312,13 +307,6 @@ TclCompileIfCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	wordIdx++;
     }
-
-    /*
-     * Restore the current stack depth in the environment; the "else" clause
-     * (or its default) will add 1 to this.
-     */
-
-    envPtr->currStackDepth = savedStackDepth;
 
     /*
      * Check for the optional else clause. Do not compile anything if this was
@@ -409,7 +397,6 @@ TclCompileIfCmd(
      */
 
   done:
-    envPtr->currStackDepth = savedStackDepth + 1;
     BA_JumpFixup_Destroy(jumpFalseFixup);
     BA_JumpFixup_Destroy(jumpEndFixup);
     return code;
@@ -2464,6 +2451,7 @@ TclCompileReturnCmd(
 
 	    Tcl_DecrRefCount(returnOpts);
 	    TclEmitOpcode(INST_DONE, envPtr);
+	    TclAdjustStackDepth(1, envPtr);
 	    return TCL_OK;
 	}
     }

@@ -1,3 +1,12 @@
+2013-06-09  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclCompCmdsSZ.c (TclCompileTryCmd): [Bug 779d38b996]:
+	Rewrote the [try] compiler to generate better code in some cases and
+	to behave correctly in others; when an error happens during the
+	processing of an exception-trap clause or a finally clause, the
+	*original* return options are now captured in a -during option, even
+	when fully compiled.
+
 2013-06-05  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclExecute.c (INST_EXPAND_DROP): [Bugs 2835313, 3614226]:

@@ -2409,6 +2409,7 @@ CompileExprTree(
 			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&jumpPtr->next->next->jump);
+		TclAdjustStackDepth(-1, envPtr);
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->jump, 127);
 		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
 		    jumpPtr->next->next->jump.codeOffset += 3;
