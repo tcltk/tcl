@@ -957,6 +957,7 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
+MODULE_SCOPE void *	TclCmdStartAddress(CompileEnv *envPtr, int i);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
@@ -1018,6 +1019,7 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
+MODULE_SCOPE void	TclOptimizeBytecode(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);

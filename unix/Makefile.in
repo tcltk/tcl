@@ -301,7 +301,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclIORChan.o tclIORTrans.o tclIOGT.o tclIOSock.o tclIOUtil.o \
 	tclLink.o tclListObj.o \
 	tclLiteral.o tclLoad.o tclMain.o tclNamesp.o tclNotify.o \
-	tclObj.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
+	tclObj.o tclOptimize.o tclPanic.o tclParse.o tclPathObj.o tclPipe.o \
 	tclPkg.o tclPkgConfig.o tclPosixStr.o \
 	tclPreserve.o tclProc.o tclRegexp.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
@@ -430,6 +430,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclNamesp.c \
 	$(GENERIC_DIR)/tclNotify.c \
 	$(GENERIC_DIR)/tclObj.c \
+	$(GENERIC_DIR)/tclOptimize.c \
 	$(GENERIC_DIR)/tclParse.c \
 	$(GENERIC_DIR)/tclPathObj.c \
 	$(GENERIC_DIR)/tclPipe.c \
@@ -1168,6 +1169,9 @@ tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
 
 tclObj.o: $(GENERIC_DIR)/tclObj.c $(COMPILEHDR) $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
+
+tclOptimize.o: $(GENERIC_DIR)/tclOptimize.c $(COMPILEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOptimize.c
 
 tclLoad.o: $(GENERIC_DIR)/tclLoad.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLoad.c

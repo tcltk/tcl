@@ -316,6 +316,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclOOMethod.obj \
 	$(TMP_DIR)\tclOOStubInit.obj \
 	$(TMP_DIR)\tclObj.obj \
+	$(TMP_DIR)\tclOptimize.obj \
 	$(TMP_DIR)\tclPanic.obj \
 	$(TMP_DIR)\tclParse.obj \
 	$(TMP_DIR)\tclPathObj.obj \

@@ -267,6 +267,7 @@ GENERIC_OBJS = \
 	tclOOMethod.$(OBJEXT) \
 	tclOOStubInit.$(OBJEXT) \
 	tclObj.$(OBJEXT) \
+	tclOptimize.$(OBJEXT) \
 	tclPanic.$(OBJEXT) \
 	tclParse.$(OBJEXT) \
 	tclPathObj.$(OBJEXT) \
