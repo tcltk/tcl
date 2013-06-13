@@ -2158,6 +2158,12 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	}
     }
     if (tokenPtr <= lastTokenPtr) {
+	if (!isFirstCmd) {
+	    TclEmitOpcode(INST_POP, envPtr);
+	    BA_CmdLocation_At(envPtr->cmdMap,
+		    lastTopLevelCmdIndex)->numCodeBytes =
+		    (envPtr->codeNext - envPtr->codeStart) - startCodeOffset;
+	}
 	TclCompileTokens(interp, tokenPtr, lastTokenPtr-tokenPtr+1, envPtr);
     }
 
@@ -2438,7 +2444,6 @@ TclCompileTokens(
 	    Tcl_LogCommandInfo(interp, envPtr->source,
 		    tokenPtr->start, tokenPtr->size);
 	    TclCompileSyntaxError(interp, envPtr);
-	    TclAdjustStackDepth(-1, envPtr);
 	    goto done;
 
 	default:

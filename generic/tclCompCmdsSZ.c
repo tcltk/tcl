@@ -967,6 +967,14 @@ TclSubstCompile(
     }
 
     if (endTokenPtr[-1].type == TCL_TOKEN_ERROR) {
+	/*
+	 * Bytecode execution will only reach this point after a
+	 * TCL_RETURN, TCL_CONTINUE, or other exception is raised.
+	 * In those cases, we're at a +1 status in stack depth, so
+	 * we POP before continuing with instructions to raise the
+	 * syntax error message.
+	 */
+	OP(	POP);
 	TclCompileTokens(interp, endTokenPtr - 1, 1, envPtr);
     }
 
