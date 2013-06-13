@@ -928,24 +928,35 @@ DisassembleByteCodeAsDicts(
 	    case OPERAND_UINT1:
 		val = TclGetUInt1AtPtr(opnd);
 		opnd += 1;
-		Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		if (*pc == INST_PUSH1) {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			    "@%d", val));
+		} else {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		}
 		break;
 	    case OPERAND_UINT4:
 		val = TclGetUInt4AtPtr(opnd);
 		opnd += 4;
-		Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		if (*pc == INST_PUSH4) {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			    "@%d", val));
+		} else {
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		}
 		break;
 	    case OPERAND_IDX4:
 		val = TclGetInt4AtPtr(opnd);
 		opnd += 4;
 		if (val >= -1) {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			    ".%d", val));
 		} else if (val == -2) {
 		    Tcl_ListObjAppendElement(NULL, inst,
-			    Tcl_NewStringObj("end", -1));
+			    Tcl_NewStringObj(".end", -1));
 		} else {
 		    Tcl_ListObjAppendElement(NULL, inst,
-			    Tcl_ObjPrintf("end-%d", -2-val));
+			    Tcl_ObjPrintf(".end-%d", -2-val));
 		}
 		break;
 	    case OPERAND_LVT1:
@@ -984,9 +995,18 @@ DisassembleByteCodeAsDicts(
 	AuxData *auxData = &codePtr->auxDataArrayPtr[i];
 	Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
 
-	if (auxData->type->printProc) {
-	    Tcl_AppendToObj(auxDesc, " ", -1);
-	    auxData->type->printProc(auxData->clientData, auxDesc, codePtr,0);
+	if (auxData->type->disassembleProc) {
+	    Tcl_Obj *desc = Tcl_NewObj();
+
+	    Tcl_DictObjPut(NULL, desc, Tcl_NewStringObj("name", -1), auxDesc);
+	    auxDesc = desc;
+	    auxData->type->disassembleProc(auxData->clientData, auxDesc,
+		    codePtr, 0);
+	} else if (auxData->type->printProc) {
+	    Tcl_Obj *desc = Tcl_NewObj();
+
+	    auxData->type->printProc(auxData->clientData, desc, codePtr, 0);
+	    Tcl_ListObjAppendElement(NULL, auxDesc, desc);
 	}
 	Tcl_ListObjAppendElement(NULL, aux, auxDesc);
     }
