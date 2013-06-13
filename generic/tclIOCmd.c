@@ -1823,24 +1823,24 @@ TclInitChanCmd(
      * function at the moment.
      */
     static const EnsembleImplMap initMap[] = {
-	{"blocked",	Tcl_FblockedObjCmd},
-	{"close",	Tcl_CloseObjCmd},
-	{"copy",	Tcl_FcopyObjCmd},
-	{"create",	TclChanCreateObjCmd},		/* TIP #219 */
-	{"eof",		Tcl_EofObjCmd},
-	{"event",	Tcl_FileEventObjCmd},
-	{"flush",	Tcl_FlushObjCmd},
-	{"gets",	Tcl_GetsObjCmd},
-	{"pending",	ChanPendingObjCmd},		/* TIP #287 */
-	{"postevent",	TclChanPostEventObjCmd},	/* TIP #219 */
-	{"puts",	Tcl_PutsObjCmd},
-	{"read",	Tcl_ReadObjCmd},
-	{"seek",	Tcl_SeekObjCmd},
-	{"tell",	Tcl_TellObjCmd},
-	{"truncate",	ChanTruncateObjCmd},		/* TIP #208 */
-	{NULL}
+	{"blocked",	Tcl_FblockedObjCmd, NULL},
+	{"close",	Tcl_CloseObjCmd, NULL},
+	{"copy",	Tcl_FcopyObjCmd, NULL},
+	{"create",	TclChanCreateObjCmd, NULL},		/* TIP #219 */
+	{"eof",		Tcl_EofObjCmd, NULL},
+	{"event",	Tcl_FileEventObjCmd, NULL},
+	{"flush",	Tcl_FlushObjCmd, NULL},
+	{"gets",	Tcl_GetsObjCmd, NULL},
+	{"pending",	ChanPendingObjCmd, NULL},		/* TIP #287 */
+	{"postevent",	TclChanPostEventObjCmd, NULL},	/* TIP #219 */
+	{"puts",	Tcl_PutsObjCmd, NULL},
+	{"read",	Tcl_ReadObjCmd, NULL},
+	{"seek",	Tcl_SeekObjCmd, NULL},
+	{"tell",	Tcl_TellObjCmd, NULL},
+	{"truncate",	ChanTruncateObjCmd, NULL},		/* TIP #208 */
+	{NULL,NULL, NULL}
     };
-    static const char *extras[] = {
+    static const char *const extras[] = {
 	"configure",	"::fconfigure",
 	"names",	"::file channels",
 	NULL

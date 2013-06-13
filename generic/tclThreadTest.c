@@ -292,7 +292,7 @@ Tcl_ThreadObjCmd(
 	return TCL_OK;
     case THREAD_ID:
 	if (objc == 2) {
-	    Tcl_Obj *idObj = Tcl_NewLongObj((long) Tcl_GetCurrentThread());
+	    Tcl_Obj *idObj = Tcl_NewWideIntObj((Tcl_WideInt)(size_t) Tcl_GetCurrentThread());
 
 	    Tcl_SetObjResult(interp, idObj);
 	    return TCL_OK;
@@ -301,24 +301,24 @@ Tcl_ThreadObjCmd(
 	    return TCL_ERROR;
 	}
     case THREAD_JOIN: {
-	long id;
+	Tcl_WideInt id;
 	int result, status;
 
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "id");
 	    return TCL_ERROR;
 	}
-	if (Tcl_GetLongFromObj(interp, objv[2], &id) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[2], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 
-	result = Tcl_JoinThread ((Tcl_ThreadId) id, &status);
+	result = Tcl_JoinThread ((Tcl_ThreadId)(size_t)id, &status);
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj (Tcl_GetObjResult (interp), status);
 	} else {
 	    char buf [20];
 
-	    sprintf(buf, "%ld", id);
+	    sprintf(buf, "%" TCL_LL_MODIFIER "d", id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
@@ -330,7 +330,7 @@ Tcl_ThreadObjCmd(
 	}
 	return TclThreadList(interp);
     case THREAD_SEND: {
-	long id;
+	Tcl_WideInt id;
 	const char *script;
 	int wait, arg;
 
@@ -349,12 +349,12 @@ Tcl_ThreadObjCmd(
 	    wait = 1;
 	    arg = 2;
 	}
-	if (Tcl_GetLongFromObj(interp, objv[arg], &id) != TCL_OK) {
+	if (Tcl_GetWideIntFromObj(interp, objv[arg], &id) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	arg++;
 	script = Tcl_GetString(objv[arg]);
-	return TclThreadSend(interp, (Tcl_ThreadId) id, script, wait);
+	return TclThreadSend(interp, (Tcl_ThreadId)(size_t)id, script, wait);
     }
     case THREAD_ERRORPROC: {
 	/*
@@ -434,7 +434,7 @@ TclCreateThread(
     Tcl_ConditionWait(&ctrl.condWait, &threadMutex, NULL);
     Tcl_MutexUnlock(&threadMutex);
     Tcl_ConditionFinalize(&ctrl.condWait);
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)id));
+    Tcl_SetObjResult(interp, Tcl_NewWideIntObj((Tcl_WideInt)(size_t)id));
     return TCL_OK;
 }
 
@@ -560,7 +560,7 @@ ThreadErrorProc(
     const char *errorInfo, *argv[3];
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
-    sprintf(buf, "%ld", (long) Tcl_GetCurrentThread());
+    sprintf(buf, "%" TCL_LL_MODIFIER "d", (Tcl_WideInt)(size_t)Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
@@ -677,7 +677,7 @@ TclThreadList(
     Tcl_MutexLock(&threadMutex);
     for (tsdPtr = threadList ; tsdPtr ; tsdPtr = tsdPtr->nextPtr) {
 	Tcl_ListObjAppendElement(interp, listPtr,
-		Tcl_NewLongObj((long) tsdPtr->threadId));
+		Tcl_NewWideIntObj((Tcl_WideInt)(size_t)tsdPtr->threadId));
     }
     Tcl_MutexUnlock(&threadMutex);
     Tcl_SetObjResult(interp, listPtr);
