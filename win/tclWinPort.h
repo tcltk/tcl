@@ -64,11 +64,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <string.h>
 #include <limits.h>
 
-#ifndef strncasecmp
-#   define strncasecmp strnicmp
-#endif
-#ifndef strcasecmp
-#   define strcasecmp stricmp
+#ifndef __GNUC__
+#    define strncasecmp _strnicmp
+#    define strcasecmp _stricmp
 #endif
 
 /*
