@@ -13,16 +13,6 @@
 
 #include "tclInt.h"
 
-MODULE_SCOPE const TclStubs *tclStubsPtr;
-MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
-MODULE_SCOPE const TclIntStubs *tclIntStubsPtr;
-MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
-
-const TclStubs *tclStubsPtr = NULL;
-const TclPlatStubs *tclPlatStubsPtr = NULL;
-const TclIntStubs *tclIntStubsPtr = NULL;
-const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-
 /*
  * Use our own isDigit to avoid linking to libc on windows
  */
@@ -58,7 +48,7 @@ Tcl_InitStubs(
 {
     Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
-    ClientData pkgData = NULL;
+    TclStubInfoType stub;
     const TclStubs *stubsPtr = iPtr->stubTable;
 
     /*
@@ -73,7 +63,7 @@ Tcl_InitStubs(
 	return NULL;
     }
 
-    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &pkgData);
+    actualVersion = stubsPtr->tcl_PkgRequireEx(interp, "Tcl", version, 0, &stub.data);
     if (actualVersion == NULL) {
 	return NULL;
     }
@@ -103,18 +93,7 @@ Tcl_InitStubs(
 	    }
 	}
     }
-    tclStubsPtr = (TclStubs *)pkgData;
-
-    if (tclStubsPtr->hooks) {
-	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
-	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
-	tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
-    } else {
-	tclPlatStubsPtr = NULL;
-	tclIntStubsPtr = NULL;
-	tclIntPlatStubsPtr = NULL;
-    }
-
+    TclInitStubTable(stub.version);
     return actualVersion;
 }
 
