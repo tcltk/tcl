@@ -909,7 +909,7 @@ DisassembleByteCodeAsDicts(
 		if (*pc == INST_JUMP1 || *pc == INST_JUMP_TRUE1
 			|| *pc == INST_JUMP_FALSE1) {
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
-			    "pc %d (%d)", pc+val-codePtr->codeStart, val));
+			    "pc %d", pc+val-codePtr->codeStart));
 		} else {
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
 		}
@@ -920,7 +920,7 @@ DisassembleByteCodeAsDicts(
 		if (*pc == INST_JUMP4 || *pc == INST_JUMP_TRUE4
 			|| *pc == INST_JUMP_FALSE4 || *pc == INST_START_CMD) {
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
-			    "pc %d (%d)", pc+val-codePtr->codeStart, val));
+			    "pc %d", pc+val-codePtr->codeStart));
 		} else {
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
 		}
