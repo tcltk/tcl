@@ -3833,7 +3833,7 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 
 /* Used internally in stub library. */
 typedef struct {
-    char version[16];
+    char version[12];
     ClientData data;
 } TclStubInfoType;
 
