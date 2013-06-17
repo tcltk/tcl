@@ -3915,6 +3915,14 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 
+/* Used internally in stub library. */
+typedef struct {
+    char version[12];
+    ClientData data;
+} TclStubInfoType;
+
+MODULE_SCOPE const char *TclInitStubTable(const char *version);
+
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use
  * by the bytecode compiler and engine. Some of these could later be placed in
