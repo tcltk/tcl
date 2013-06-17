@@ -130,8 +130,7 @@ Tcl_CaseObjCmd(
     for (i = 0;  i < caseObjc;  i += 2) {
 	int patObjc, j;
 	const char **patObjv;
-	char *pat;
-	unsigned char *p;
+	char *pat, *p;
 
 	if (i == (caseObjc - 1)) {
 	    Tcl_ResetResult(interp);
@@ -145,8 +144,8 @@ Tcl_CaseObjCmd(
 	 */
 
 	pat = TclGetString(caseObjv[i]);
-	for (p = (unsigned char *) pat; *p != '\0'; p++) {
-	    if (isspace(*p) || (*p == '\\')) {	/* INTL: ISO space, UCHAR */
+	for (p = pat; *p != '\0'; p++) {
+	    if (TclIsSpaceProc(*p) || (*p == '\\')) {
 		break;
 	    }
 	}
