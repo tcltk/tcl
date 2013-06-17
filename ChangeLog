@@ -1,3 +1,8 @@
+2013-06-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c: Bug [a876646efe]: re_expr character class
+	[:cntrl:] should contain \u0000 - \u001f
+
 2013-06-03  Miguel Sofer  <msofer@users.sf.net>
 
 	* generic/tclExecute.c: fix for perf bug detected by Kieran
