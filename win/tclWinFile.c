@@ -18,6 +18,10 @@
 #include <shlobj.h>
 #include <lm.h>		/* For TclpGetUserHome(). */
 
+#if defined(_MSC_VER)
+#   define vsnprintf _vsnprintf
+#endif
+
 /*
  * The number of 100-ns intervals between the Windows system epoch (1601-01-01
  * on the proleptic Gregorian calendar) and the Posix epoch (1970-01-01).
