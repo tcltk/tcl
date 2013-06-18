@@ -1030,14 +1030,8 @@ TclInitSubsystems(void)
 
 	TclpInitLock();
 	if (subsystemsInitialized == 0) {
-	    /*
-	     * Have to set this bit here to avoid deadlock with the routines
-	     * below us that call into TclInitSubsystems.
-	     */
 
-	    subsystemsInitialized = 1;
-
-	    /*
+		/*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -1061,6 +1055,7 @@ TclInitSubsystems(void)
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclpSetInterfaces();
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();
     }
