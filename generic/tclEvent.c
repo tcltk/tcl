@@ -934,7 +934,7 @@ Tcl_Exit(
 
 #define INITDEBUG 1
 typedef enum {
-    DOWN, CHANGING, UP
+    DOWN, RISING, FALLING, UP
 } State;
 
 static State initState = DOWN;
@@ -959,8 +959,8 @@ TclInitSubsystems(void)
 	/* Did we win? */
 	if (initState == DOWN) {
 
-	    /* Yes! Record that we are CHANGING the state */
-	    initState = CHANGING;
+	    /* Yes! Record that we are bring the state up */
+	    initState = RISING;
 	    changer = Tcl_GetCurrentThread();
 
 	    /*
@@ -1077,7 +1077,7 @@ Tcl_Finalize(void)
 
 	TclpInitLock();
 	if (initState == UP) {
-	    initState = CHANGING;
+	    initState = FALLING;
 	    changer = Tcl_GetCurrentThread();
 
     /*
