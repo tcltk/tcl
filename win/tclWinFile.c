@@ -799,7 +799,7 @@ tclWinDebugPanic(
     WCHAR msgString[TCL_MAX_WARN_LEN];
 
     va_start(argList, format);
-    _vsnprintf(buf, sizeof(buf), format, argList);
+    vsnprintf(buf, sizeof(buf), format, argList);
 
     msgString[TCL_MAX_WARN_LEN-1] = L'\0';
     MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);

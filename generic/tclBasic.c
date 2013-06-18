@@ -489,11 +489,12 @@ Tcl_CreateInterp(void)
 #if defined(_WIN32) && !defined(_WIN64)
     if (sizeof(time_t) != 4) {
 	/*NOTREACHED*/
-	Tcl_Panic("sys/time.h is not compatible with MSVC");
+	Tcl_Panic("<time.h> is not compatible with MSVC");
     }
-    if (sizeof(Tcl_StatBuf) != 48) {
+    if ((TclOffset(Tcl_StatBuf,st_atime) != 32)
+	    || (TclOffset(Tcl_StatBuf,st_ctime) != 40)) {
 	/*NOTREACHED*/
-	Tcl_Panic("sys/stat.h is not compatible with MSVC");
+	Tcl_Panic("<sys/stat.h> is not compatible with MSVC");
     }
 #endif
 

@@ -1720,7 +1720,7 @@ Tcl_UniCharIsSpace(
      */
 
     if (ch < 0x80) {
-	return isspace(UCHAR(ch)); /* INTL: ISO space */
+	return TclIsSpaceProc(ch);
     } else if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     } else if (ch == 0x0085 || ch == 0x180e || ch == 0x200b

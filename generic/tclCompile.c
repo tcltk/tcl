@@ -1232,7 +1232,12 @@ CompileSubstObj(
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
 	}
-	/* TODO: Debug printing? */
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceCompile >= 2) {
+	    TclPrintByteCodeObj(interp, objPtr);
+	    fflush(stdout);
+	}
+#endif /* TCL_COMPILE_DEBUG */
     }
     return codePtr;
 }
@@ -2004,8 +2009,7 @@ TclCompileScript(
 #ifdef TCL_COMPILE_DEBUG
 			    int diff = envPtr->currStackDepth-startStackDepth;
 
-			    if (diff != 1 && (diff != 0 ||
-				   *(envPtr->codeNext-1) != INST_DONE)) {
+			    if (diff != 1) {
 				Tcl_Panic("bad stack adjustment when compiling"
 					" %.*s (was %d instead of 1)",
 					parsePtr->tokenPtr->size,
@@ -2623,12 +2627,10 @@ TclCompileNoOp(
 {
     Tcl_Token *tokenPtr;
     int i;
-    int savedStackDepth = envPtr->currStackDepth;
 
     tokenPtr = parsePtr->tokenPtr;
     for (i = 1; i < parsePtr->numWords; i++) {
 	tokenPtr = tokenPtr + tokenPtr->numComponents + 1;
-	envPtr->currStackDepth = savedStackDepth;
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
@@ -2636,7 +2638,6 @@ TclCompileNoOp(
 	    TclEmitOpcode(INST_POP, envPtr);
 	}
     }
-    envPtr->currStackDepth = savedStackDepth;
     TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
     return TCL_OK;
 }
@@ -3434,6 +3435,7 @@ TclCleanupStackForBreakContinue(
     CompileEnv *envPtr,
     ExceptionAux *auxPtr)
 {
+    int savedStackDepth = envPtr->currStackDepth;
     int toPop = envPtr->expandCount - auxPtr->expandTarget;
 
     if (toPop > 0) {
@@ -3441,20 +3443,21 @@ TclCleanupStackForBreakContinue(
 	    TclEmitOpcode(INST_EXPAND_DROP, envPtr);
 	    toPop--;
 	}
+	TclAdjustStackDepth(auxPtr->expandTargetDepth - envPtr->currStackDepth,
+		envPtr);
 	toPop = auxPtr->expandTargetDepth - auxPtr->stackDepth;
 	while (toPop > 0) {
 	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
 	    toPop--;
 	}
     } else {
 	toPop = envPtr->currStackDepth - auxPtr->stackDepth;
 	while (toPop > 0) {
 	    TclEmitOpcode(INST_POP, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
 	    toPop--;
 	}
     }
+    envPtr->currStackDepth = savedStackDepth;
 }
 
 /*
