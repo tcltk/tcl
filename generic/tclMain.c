@@ -313,6 +313,8 @@ Tcl_MainEx(
     Tcl_Channel chan;
     InteractiveState is;
 
+    TclpSetInitialEncodings();
+    TclpFindExecutable((void *)argv[0]);
     Tcl_InitMemory(interp);
 
     is.interp = interp;
@@ -640,7 +642,6 @@ Tcl_Main(
 				 * function to call after most initialization
 				 * but before starting to execute commands. */
 {
-    Tcl_FindExecutable(argv[0]);
     Tcl_MainEx(argc, argv, appInitProc, Tcl_CreateInterp());
 }
 #endif /* TCL_MAJOR_VERSION == 8 && !UNICODE */

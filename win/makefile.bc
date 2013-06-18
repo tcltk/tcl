@@ -281,7 +281,8 @@ TCLSTUBOBJS	= \
 	$(TMPDIR)\tclStubLib.obj \
 	$(TMPDIR)\tclStubLibTbl.obj \
 	$(TMPDIR)\tclTomMathStubLib.obj \
-	$(TMPDIR)\tclOOStubLib.obj
+	$(TMPDIR)\tclOOStubLib.obj \
+	$(TMPDIR)\tclWinPanic.obj
 
 WINDIR		= $(ROOT)\win
 GENERICDIR	= $(ROOT)\generic
@@ -536,6 +537,9 @@ $(TMPDIR)\tclTomMathStubLib.obj : $(GENERICDIR)\tclTomMathStubLib.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
 
 $(TMPDIR)\tclOOStubLib.obj : $(GENERICDIR)\tclOOStubLib.c
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
+
+$(TMPDIR)\tclWinPanic.obj : $(WINDIR)\tclWinPanic.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
 
 
