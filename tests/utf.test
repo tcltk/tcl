@@ -322,8 +322,8 @@ test utf-21.11 {TclUniCharIsControl} {
     string is control \u00ad
 } {1}
 test utf-21.12 {unicode control char in regc_locale.c} {
-    # [Bug 3464428]
-    regexp {^[[:cntrl:]]$} \u00ad
+    # [Bug 3464428], [Bug a876646efe]
+    regexp {^[[:cntrl:]]*$} \u0000\u001f\u00ad
 } {1}
 
 test utf-22.1 {TclUniCharIsWordChar} {
