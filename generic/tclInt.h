@@ -3840,8 +3840,6 @@ typedef struct {
     ClientData data;
 } TclStubInfoType;
 
-MODULE_SCOPE const char *TclInitStubTable(const char *version);
-
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use
  * by the bytecode compiler and engine. Some of these could later be placed in
