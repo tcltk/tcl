@@ -1308,6 +1308,10 @@ SOURCE=..\generic\tclOOStubLib.c
 # End Source File
 # Begin Source File
 
+SOURCE=..\generic\tclWinPanic.c
+# End Source File
+# Begin Source File
+
 SOURCE=..\generic\tclTomMathStubLib.c
 # End Source File
 # Begin Source File
