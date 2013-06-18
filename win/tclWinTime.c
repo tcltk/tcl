@@ -309,7 +309,7 @@ NativeGetTime(
     Tcl_Time *timePtr,
     ClientData clientData)
 {
-    struct timeb t;
+    struct _timeb t;
     int useFtime = 1;		/* Flag == TRUE if we need to fall back on
 				 * ftime rather than using the perf counter. */
 
@@ -475,7 +475,7 @@ NativeGetTime(
 	 * High resolution timer is not available. Just use ftime.
 	 */
 
-	ftime(&t);
+	_ftime(&t);
 	timePtr->sec = (long)t.time;
 	timePtr->usec = t.millitm * 1000;
     }

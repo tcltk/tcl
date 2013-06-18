@@ -2807,7 +2807,7 @@ Tcl_LsearchObjCmd(
 	    dataType = INTEGER;
 	    break;
 	case LSEARCH_NOCASE:		/* -nocase */
-	    strCmpFn = strcasecmp;
+	    strCmpFn = TclUtfCasecmp;
 	    noCase = 1;
 	    break;
 	case LSEARCH_NOT:		/* -not */
@@ -3209,7 +3209,7 @@ Tcl_LsearchObjCmd(
 			 */
 
 			if (noCase) {
-			    match = (strcasecmp(bytes, patternBytes) == 0);
+			    match = (TclUtfCasecmp(bytes, patternBytes) == 0);
 			} else {
 			    match = (memcmp(bytes, patternBytes,
 				    (size_t) length) == 0);
@@ -3460,7 +3460,8 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int i, j, index, indices, length, nocase = 0, sortMode, indexc;
+    int i, j, index, indices, length, nocase = 0, indexc;
+    int sortMode = SORTMODE_ASCII;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
     SortInfo sortInfo;		/* Information about this sort that needs to
@@ -3712,7 +3713,7 @@ Tcl_LsortObjCmd(
 		goto done1;
 	    }
 	    elementArray[i].index.intValue = a;
-	} else if (sortInfo.sortMode == SORTMODE_REAL) {
+	} else if (sortMode == SORTMODE_REAL) {
 	    double a;
 	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
@@ -3790,7 +3791,7 @@ Tcl_LsortObjCmd(
     ckfree((char *)elementArray);
 
   done:
-    if (sortInfo.sortMode == SORTMODE_COMMAND) {
+    if (sortMode == SORTMODE_COMMAND) {
 	TclDecrRefCount(sortInfo.compareCmdPtr);
 	TclDecrRefCount(listObj);
 	sortInfo.compareCmdPtr = NULL;
@@ -3932,7 +3933,7 @@ SortCompare(
 	order = strcmp(elemPtr1->index.strValuePtr,
 		elemPtr2->index.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_ASCII_NC) {
-	order = strcasecmp(elemPtr1->index.strValuePtr,
+	order = TclUtfCasecmp(elemPtr1->index.strValuePtr,
 		elemPtr2->index.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
 	order = DictionaryCompare(elemPtr1->index.strValuePtr,

@@ -358,12 +358,12 @@ struct subre {
 #define	CAP	010		/* capturing parens below */
 #define	BACKR	020		/* back reference below */
 #define	INUSE	0100		/* in use in final tree */
-#define	LOCAL	03		/* bits which may not propagate up */
+#define	NOPROP	03		/* bits which may not propagate up */
 #define	LMIX(f)	((f)<<2)	/* LONGER -> MIXED */
 #define	SMIX(f)	((f)<<1)	/* SHORTER -> MIXED */
-#define	UP(f)	(((f)&~LOCAL) | (LMIX(f) & SMIX(f) & MIXED))
+#define	UP(f)	(((f)&~NOPROP) | (LMIX(f) & SMIX(f) & MIXED))
 #define	MESSY(f)	((f)&(MIXED|CAP|BACKR))
-#define	PREF(f)	((f)&LOCAL)
+#define	PREF(f)	((f)&NOPROP)
 #define	PREF2(f1, f2)	((PREF(f1) != 0) ? PREF(f1) : PREF(f2))
 #define	COMBINE(f1, f2)	(UP((f1)|(f2)) | PREF2(f1, f2))
     short retry;		/* index into retry memory */

@@ -836,13 +836,13 @@ TclFinalizeExecution(void)
     (TCL_ALLOCALIGN/sizeof(Tcl_Obj *))
 
 /*
- * OFFSET computes how many words have to be skipped until the next aligned
+ * wordSkip computes how many words have to be skipped until the next aligned
  * word. Note that we are only interested in the low order bits of ptr, so
  * that any possible information loss in PTR2INT is of no consequence.
  */
 
 static inline int
-OFFSET(
+wordSkip(
     void *ptr)
 {
     int mask = TCL_ALLOCALIGN-1;
@@ -855,7 +855,7 @@ OFFSET(
  */
 
 #define MEMSTART(markerPtr)			\
-    ((markerPtr) + OFFSET(markerPtr))
+    ((markerPtr) + wordSkip(markerPtr))
 
 
 /*
@@ -900,7 +900,7 @@ GrowEvaluationStack(
 	}
     } else {
 	Tcl_Obj **tmpMarkerPtr = esPtr->tosPtr + 1;
-	int offset = OFFSET(tmpMarkerPtr);
+	int offset = wordSkip(tmpMarkerPtr);
 
 	if (needed + offset < 0) {
 	    /*
@@ -2424,11 +2424,6 @@ TclExecuteByteCode(
 	    if (result == TCL_OK) {
 		Tcl_Obj *objPtr;
 
-#ifndef TCL_COMPILE_DEBUG
-		if (*(pc+pcAdjustment) == INST_POP) {
-		    NEXT_INST_V((pcAdjustment+1), objc, 0);
-		}
-#endif
 		/*
 		 * Push the call's object result and continue execution with
 		 * the next instruction.
@@ -2455,6 +2450,12 @@ TclExecuteByteCode(
 		TclNewObj(objPtr);
 		Tcl_IncrRefCount(objPtr);
 		iPtr->objResultPtr = objPtr;
+#ifndef TCL_COMPILE_DEBUG
+		if (*(pc+pcAdjustment) == INST_POP) {
+		    TclDecrRefCount(objResultPtr);
+		    NEXT_INST_V((pcAdjustment+1), objc, 0);
+		}
+#endif
 		NEXT_INST_V(pcAdjustment, objc, -1);
 	    } else {
 		cleanup = objc;

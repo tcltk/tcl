@@ -229,6 +229,7 @@ static int		WriteChars(Channel *chanPtr, const char *src,
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
+static int WillRead(Channel *chanPtr);
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -342,6 +343,52 @@ static Tcl_ObjType tclChannelType = {
       (((st)->csPtrW) && ((fl) & TCL_WRITABLE)))
 
 #define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
+
+/*
+ * ChanRead, dropped here by a time traveler, see 8.6
+ */
+static inline int
+ChanRead(
+    Channel *chanPtr,
+    char *dst,
+    int dstSize,
+    int *errnoPtr)
+{
+    if (WillRead(chanPtr) < 0) {
+        return -1;
+    }
+
+    return chanPtr->typePtr->inputProc(chanPtr->instanceData, dst, dstSize,
+	    errnoPtr);
+}
+
+static inline Tcl_WideInt
+ChanSeek(
+    Channel *chanPtr,
+    Tcl_WideInt offset,
+    int mode,
+    int *errnoPtr)
+{
+    /*
+     * Note that we prefer the wideSeekProc if that field is available in the
+     * type and non-NULL.
+     */
+
+    if (HaveVersion(chanPtr->typePtr, TCL_CHANNEL_VERSION_3) &&
+	    chanPtr->typePtr->wideSeekProc != NULL) {
+	return chanPtr->typePtr->wideSeekProc(chanPtr->instanceData,
+		offset, mode, errnoPtr);
+    }
+
+    if (offset<Tcl_LongAsWide(LONG_MIN) || offset>Tcl_LongAsWide(LONG_MAX)) {
+	*errnoPtr = EOVERFLOW;
+	return Tcl_LongAsWide(-1);
+    }
+
+    return Tcl_LongAsWide(chanPtr->typePtr->seekProc(chanPtr->instanceData,
+	    Tcl_WideAsLong(offset), mode, errnoPtr));
+}
+
 
 /*
  *---------------------------------------------------------------------------
@@ -3548,6 +3595,33 @@ Tcl_WriteObj(
     }
 }
 
+static void WillWrite(Channel *chanPtr)
+{
+    int inputBuffered;
+
+    if ((chanPtr->typePtr->seekProc != NULL)
+        && ((inputBuffered = Tcl_InputBuffered((Tcl_Channel) chanPtr)) > 0)) {
+        int ignore;
+        DiscardInputQueued(chanPtr->state, 0);
+        ChanSeek(chanPtr, - inputBuffered, SEEK_CUR, &ignore);
+    }
+}
+
+static int WillRead(Channel *chanPtr)
+{
+    if ((chanPtr->typePtr->seekProc != NULL)
+        && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
+        if ((chanPtr->state->curOutPtr != NULL)
+            && IsBufferReady(chanPtr->state->curOutPtr)) {
+            SetFlag(chanPtr->state, BUFFER_READY);
+        }
+        if (FlushChannel(NULL, chanPtr, 0) != 0) {
+            return -1;
+        }
+    }
+    return 0;
+}
+
 /*
  *----------------------------------------------------------------------
  *
@@ -3580,6 +3654,10 @@ WriteBytes(
     ChannelBuffer *bufPtr;
     char *dst;
     int dstMax, sawLF, savedLF, total, dstLen, toWrite, translate;
+
+    if (srcLen) {
+        WillWrite(chanPtr);
+    }
 
     total = 0;
     sawLF = 0;
@@ -3681,6 +3759,10 @@ WriteChars(
     int consumedSomething, translate;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
+
+    if (srcLen) {
+        WillWrite(chanPtr);
+    }
 
     total = 0;
     sawLF = 0;
@@ -5187,8 +5269,8 @@ Tcl_ReadRaw(
 		 * The case of 'bytesToRead == 0' at this point cannot happen.
 		 */
 
-		nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
-			bufPtr + copied, bytesToRead - copied, &result);
+		nread = ChanRead(chanPtr, bufPtr + copied,
+			bytesToRead - copied, &result);
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
 	    }
@@ -6353,8 +6435,7 @@ GetInput(
     } else {
 #endif /* TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING */
 
-	nread = (chanPtr->typePtr->inputProc)(chanPtr->instanceData,
-		InsertPoint(bufPtr), toRead, &result);
+	nread = ChanRead(chanPtr, InsertPoint(bufPtr), toRead, &result);
 
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
     }
@@ -6657,8 +6738,8 @@ Tcl_Tell(
     outputBuffered = Tcl_OutputBuffered(chan);
 
     if ((inputBuffered != 0) && (outputBuffered != 0)) {
-	Tcl_SetErrno(EFAULT);
-	return Tcl_LongAsWide(-1);
+	/*Tcl_SetErrno(EFAULT);*/
+	/*return Tcl_LongAsWide(-1);*/
     }
 
     /*
@@ -6679,6 +6760,7 @@ Tcl_Tell(
 	Tcl_SetErrno(result);
 	return Tcl_LongAsWide(-1);
     }
+
     if (inputBuffered != 0) {
 	return curPos - inputBuffered;
     }
@@ -6780,8 +6862,10 @@ Tcl_TruncateChannel(
      * pre-read input data.
      */
 
-    if (Tcl_Seek(chan, (Tcl_WideInt)0, SEEK_CUR) == Tcl_LongAsWide(-1)) {
-	return TCL_ERROR;
+    WillWrite(chanPtr);
+
+    if (WillRead(chanPtr) < 0) {
+        return TCL_ERROR;
     }
 
     /*

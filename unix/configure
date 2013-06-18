@@ -7559,63 +7559,6 @@ fi
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
 	    ;;
-	NetBSD-1.*|FreeBSD-[1-2].*)
-	    SHLIB_CFLAGS="-fPIC"
-	    SHLIB_LD="ld -Bshareable -x"
-	    SHLIB_SUFFIX=".so"
-	    DL_OBJS="tclLoadDl.o"
-	    DL_LIBS=""
-	    if test $doRpath = yes; then
-
-		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
-fi
-
-	    echo "$as_me:$LINENO: checking for ELF" >&5
-echo $ECHO_N "checking for ELF... $ECHO_C" >&6
-if test "${tcl_cv_ld_elf+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-
-		cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-#ifdef __ELF__
-	yes
-#endif
-
-_ACEOF
-if (eval "$ac_cpp conftest.$ac_ext") 2>&5 |
-  $EGREP "yes" >/dev/null 2>&1; then
-  tcl_cv_ld_elf=yes
-else
-  tcl_cv_ld_elf=no
-fi
-rm -f conftest*
-
-fi
-echo "$as_me:$LINENO: result: $tcl_cv_ld_elf" >&5
-echo "${ECHO_T}$tcl_cv_ld_elf" >&6
-	    if test $tcl_cv_ld_elf = yes; then
-
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
-
-else
-
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-
-fi
-
-
-	    # Ancient FreeBSD doesn't handle version numbers with dots.
-
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    TCL_LIB_VERSIONS_OK=nodots
-	    ;;
 	OpenBSD-*)
 	    arch=`arch -s`
 	    case "$arch" in
@@ -7701,9 +7644,8 @@ fi
 	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
 	    TCL_LIB_VERSIONS_OK=nodots
 	    ;;
-	NetBSD-*|FreeBSD-[3-4].*)
-	    # FreeBSD 3.* and greater have ELF.
-	    # NetBSD 2.* has ELF and can use 'cc -shared' to build shared libs
+	NetBSD-*)
+	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
 	    SHLIB_SUFFIX=".so"
@@ -7738,7 +7680,7 @@ fi
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
-	    TCL_SHLIB_LD_EXTRAS="-soname \$@"
+	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname,\$@"
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -7746,7 +7688,7 @@ fi
 	    if test $doRpath = yes; then
 
 		CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
-		LD_SEARCH_FLAGS='-rpath ${LIB_RUNTIME_DIR}'
+		LD_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'
 fi
 
 	    if test "${TCL_THREADS}" = "1"; then

@@ -1,4 +1,57 @@
-2013-04-23  Jan Nijtmans  <nijtmans@users.sf.net>
+2013-06-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c: Bug [a876646efe]: re_expr character class
+	[:cntrl:] should contain \u0000 - \u001f
+
+2013-06-03  Miguel Sofer  <msofer@users.sf.net>
+
+	* generic/tclExecute.c: fix for perf bug detected by Kieran
+	(https://groups.google.com/forum/?fromgroups#!topic/comp.lang.tcl/vfpI3bc-DkQ),
+	diagnosed by dgp to be a close relative of [Bug 781585], which was
+	fixed by commit	[f46fb50cb3]. This bug was introduced by myself in
+	commit [cbfe055d8c]. 
+
+2013-05-28 Harald Oehlmann  <oehhar@users.sf.net>
+
+	* library/msgcat/msgcat.tcl: [Bug 3036566]: Also get locale from
+	registry key HCU\Control Panel\Desktop : PreferredUILanguages to
+	honor installed language packs on Vista+.
+	Bumped msgcat version to 1.5.2
+
+2013-05-22  Donal K. Fellows  <dkf@users.sf.net>
+
+	* generic/tclUtf.c (TclUtfCasecmp): [Bug 3613609]: Replace problematic
+	uses of strcasecmp with a proper UTF-8-aware version. Affects both
+	[lsearch -nocase] and [lsort -nocase].
+
+2013-05-19  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:     Fix for FreeBSD, and remove support for older
+	* unix/configure:  FreeBSD versions. Patch by Pietro Cerutti.
+
+2013-05-16  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclBasic.c: Add panic in order to detect
+	incompatible mingw32 sys/stat.h and sys/time.h headers,
+
+2013-05-06  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit
+	* generic/tclDecls.h: "long" type. Binary compatibility with win64
+	requires that all stub entries use 32-bit long's, therefore the
+	need for various wrapper functions/macros. For Tcl 9 a better
+	solution is needed, but that cannot be done without introducing
+	binary incompatibility.
+
+2013-04-30  Andreas Kupries  <andreask@activestate.com>
+
+	* library/platform/platform.tcl (::platform::LibcVersion):
+	* library/platform/pkgIndex.tcl: Followup to the 2013-01-30
+	  change. The RE become too restrictive again. SuSe added a
+	  timestamp after the version. Loosened up a bit. Bumped package
+	  to version 1.0.12.
+
+2013-04-25  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclDecls.h: Implement Tcl_NewBooleanObj, Tcl_DbNewBooleanObj
 	and Tcl_SetBooleanObj as macros using Tcl_NewIntObj, Tcl_DbNewLongObj
