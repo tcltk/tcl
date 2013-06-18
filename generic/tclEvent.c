@@ -949,14 +949,8 @@ TclInitSubsystems(void)
 
 	TclpInitLock();
 	if (subsystemsInitialized == 0) {
-	    /*
-	     * Have to set this bit here to avoid deadlock with the routines
-	     * below us that call into TclInitSubsystems.
-	     */
 
-	    subsystemsInitialized = 1;
-
-	    /*
+		/*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -974,12 +968,13 @@ TclInitSubsystems(void)
 	    TclpInitPlatform();		/* Creates signal handler(s) */
 	    TclInitDoubleConversion();	/* Initializes constants for
 					 * converting to/from double. */
-    	    TclInitObjSubsystem();	/* Register obj types, create
+	    TclInitObjSubsystem();	/* Register obj types, create
 					 * mutexes. */
 	    TclInitIOSubsystem();	/* Inits a tsd key (noop). */
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclpSetInterfaces();
-    	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();
     }
