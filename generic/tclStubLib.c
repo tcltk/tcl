@@ -13,16 +13,6 @@
 
 #include "tclInt.h"
 
-MODULE_SCOPE const TclStubs *tclStubsPtr;
-MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
-MODULE_SCOPE const TclIntStubs *tclIntStubsPtr;
-MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
-
-const TclStubs *tclStubsPtr = NULL;
-const TclPlatStubs *tclPlatStubsPtr = NULL;
-const TclIntStubs *tclIntStubsPtr = NULL;
-const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-
 /*
  * Use our own ISDIGIT to avoid linking to libc on windows
  */
@@ -57,8 +47,8 @@ Tcl_InitStubs(
 {
     Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
-    ClientData pkgData = NULL;
     const TclStubs *stubsPtr = iPtr->stubTable;
+    ClientData pkgData = NULL;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -104,21 +94,11 @@ Tcl_InitStubs(
     }
 
     if (stubsPtr->reserved77) {
-	/* We are running Tcl 8. Do some additional checks here. */
-	tclStubsPtr = (TclStubs *)pkgData;
+	/* We are running Tcl 8. */
+	TclInitStubTable(((char *)&pkgData)-TclOffset(TclStubInfoType, stubs));
     } else {
-	/* We are running Tcl 9. Do some additional checks here. */
-	tclStubsPtr = stubsPtr;
-    }
-
-    if (tclStubsPtr->hooks) {
-	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
-	tclIntStubsPtr = tclStubsPtr->hooks->tclIntStubs;
-	tclIntPlatStubsPtr = tclStubsPtr->hooks->tclIntPlatStubs;
-    } else {
-	tclPlatStubsPtr = NULL;
-	tclIntStubsPtr = NULL;
-	tclIntPlatStubsPtr = NULL;
+	/* We are running Tcl 9. */
+	TclInitStubTable(((char *)&stubsPtr)-TclOffset(TclStubInfoType, stubs));
     }
 
     return actualVersion;

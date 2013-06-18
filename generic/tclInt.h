@@ -30,8 +30,7 @@
  * here, so that system-dependent personalizations for the include files only
  * have to be made in once place. This results in a few extra includes, but
  * greater modularity. The order of the three groups of #includes is
- * important. For example, stdio.h is needed by tcl.h, and the _ANSI_ARGS_
- * declaration in tcl.h is needed by stdlib.h in some configurations.
+ * important. For example, stdio.h is needed by tcl.h.
  */
 
 #include "tclPort.h"
@@ -117,6 +116,10 @@ typedef int ptrdiff_t;
 #	define UINT2PTR(p) ((void *)(p))
 #	define PTR2UINT(p) ((unsigned int)(p))
 #   endif
+#endif
+
+#if defined(_WIN32) && defined(_MSC_VER)
+#   define vsnprintf _vsnprintf
 #endif
 
 /*
@@ -3783,6 +3786,14 @@ MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+
+/* Used internally in stub library. */
+typedef struct {
+    char version[12];
+    const TclStubs *stubs;
+} TclStubInfoType;
+
+MODULE_SCOPE const char *TclInitStubTable(const char *version);
 
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use

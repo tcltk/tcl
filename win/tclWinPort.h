@@ -93,11 +93,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <signal.h>
 #include <limits.h>
 
-#ifndef strncasecmp
-#   define strncasecmp strnicmp
-#endif
-#ifndef strcasecmp
-#   define strcasecmp stricmp
+#ifndef __GNUC__
+#    define strncasecmp _strnicmp
+#    define strcasecmp _stricmp
 #endif
 
 /*
@@ -468,13 +466,9 @@ typedef DWORD_PTR * PDWORD_PTR;
  * including the *printf family and others. Tell it to shut up.
  * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
  */
-#if defined(_MSC_VER)
-#   if _MSC_VER >= 1400
-#	pragma warning(disable:4996)
-#   endif
-#   define vsnprintf _vsnprintf
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#   pragma warning(disable:4996)
 #endif
-
 
 /*
  *---------------------------------------------------------------------------
