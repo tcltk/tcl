@@ -2181,7 +2181,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
      */
 
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+	PushStringLiteral(envPtr, "");
     }
 }
 
@@ -2246,7 +2246,7 @@ TclCompileVarSubst(
 	localVar = TclFindCompiledLocal(name, nameBytes, localVarName, envPtr);
     }
     if (localVar < 0) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, name, nameBytes), envPtr);
+	PushLiteral(envPtr, name, nameBytes);
     }
 
     /*
@@ -2485,7 +2485,7 @@ TclCompileTokens(
      */
 
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+	PushStringLiteral(envPtr, "");
     }
 done:
     Tcl_DStringFree(&textBuffer);
@@ -2603,7 +2603,7 @@ TclCompileExprWords(
     for (i = 0;  i < numWords;  i++) {
 	TclCompileTokens(interp, wordPtr+1, wordPtr->numComponents, envPtr);
 	if (i < (numWords - 1)) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, " ", 1), envPtr);
+	    PushStringLiteral(envPtr, " ");
 	}
 	wordPtr += wordPtr->numComponents + 1;
     }
@@ -2658,7 +2658,7 @@ TclCompileNoOp(
 	    TclEmitOpcode(INST_POP, envPtr);
 	}
     }
-    TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
