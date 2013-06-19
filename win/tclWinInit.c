@@ -486,13 +486,10 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
-void
-TclpSetInterfaces(void)
+void TclWinSetInterfaces(
+    int dummy)			/* Not used. */
 {
-    int useWide;
-
-    useWide = (TclWinGetPlatformId() != VER_PLATFORM_WIN32_WINDOWS);
-    TclWinSetInterfaces(useWide);
+    TclpSetInterfaces();
 }
 
 const char *
