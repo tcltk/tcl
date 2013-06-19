@@ -1231,7 +1231,6 @@ Tcl_Finalize(void)
     initState = DOWN;
     changer = NULL;
     }
-    TclpInitUnlock();
     } else {
 	if (changer == Tcl_GetCurrentThread()) {
 #if INITDEBUG
