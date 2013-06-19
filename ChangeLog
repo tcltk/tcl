@@ -1,3 +1,12 @@
+2013-06-18  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclEvent.c: Bug [3611974]: InitSubsystems multiple thread issue.
+
+2013-06-17  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/regc_locale.c: Bug [a876646efe]: re_expr character class
+	[:cntrl:] should contain \u0000 - \u001f
+
 2013-06-09  Donal K. Fellows  <dkf@users.sf.net>
 
 	* generic/tclCompCmdsSZ.c (TclCompileTryCmd): [Bug 779d38b996]:

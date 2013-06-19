@@ -1744,7 +1744,7 @@ TclCompileScript(
     /* TIP #280 */
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int *wlines, wlineat, cmdLine, *clNext;
-    Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
+    Tcl_Parse parse, *parsePtr = &parse;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
@@ -2172,11 +2172,10 @@ TclCompileScript(
      */
 
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+	PushStringLiteral(envPtr, "");
     }
 
     envPtr->numSrcBytes = p - script;
-    TclStackFree(interp, parsePtr);
 }
 
 /*
@@ -2240,7 +2239,7 @@ TclCompileVarSubst(
 	localVar = TclFindCompiledLocal(name, nameBytes, localVarName, envPtr);
     }
     if (localVar < 0) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, name, nameBytes), envPtr);
+	PushLiteral(envPtr, name, nameBytes);
     }
 
     /*
@@ -2448,7 +2447,7 @@ TclCompileTokens(
      */
 
     if (envPtr->codeNext == entryCodeNext) {
-	TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+	PushStringLiteral(envPtr, "");
     }
     Tcl_DStringFree(&textBuffer);
 
@@ -2565,7 +2564,7 @@ TclCompileExprWords(
     for (i = 0;  i < numWords;  i++) {
 	TclCompileTokens(interp, wordPtr+1, wordPtr->numComponents, envPtr);
 	if (i < (numWords - 1)) {
-	    TclEmitPush(TclRegisterNewLiteral(envPtr, " ", 1), envPtr);
+	    PushStringLiteral(envPtr, " ");
 	}
 	wordPtr += wordPtr->numComponents + 1;
     }
@@ -2620,7 +2619,7 @@ TclCompileNoOp(
 	    TclEmitOpcode(INST_POP, envPtr);
 	}
     }
-    TclEmitPush(TclRegisterNewLiteral(envPtr, "", 0), envPtr);
+    PushStringLiteral(envPtr, "");
     return TCL_OK;
 }
 
