@@ -482,42 +482,52 @@ FormatInstruction(
 	switch (instDesc->opTypes[i]) {
 	case OPERAND_INT1:
 	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
-	    if (opCode == INST_JUMP1 || opCode == INST_JUMP_TRUE1
-		    || opCode == INST_JUMP_FALSE1) {
-		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
-	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_INT4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
-	    if (opCode == INST_JUMP4 || opCode == INST_JUMP_TRUE4
-		    || opCode == INST_JUMP_FALSE4) {
-		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
-	    } else if (opCode == INST_START_CMD) {
-		sprintf(suffixBuffer, "next cmd at pc %u", pcOffset+opnd);
-	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_UINT1:
 	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
-	    if (opCode == INST_PUSH1) {
-		suffixObj = codePtr->objArrayPtr[opnd];
-	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
 	    break;
-	case OPERAND_AUX4:
 	case OPERAND_UINT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
-	    if (opCode == INST_PUSH4) {
-		suffixObj = codePtr->objArrayPtr[opnd];
-	    } else if (opCode == INST_START_CMD && opnd != 1) {
+	    if (opCode == INST_START_CMD) {
 		sprintf(suffixBuffer+strlen(suffixBuffer),
 			", %u cmds start here", opnd);
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
-	    if (instDesc->opTypes[i] == OPERAND_AUX4) {
-		auxPtr = &codePtr->auxDataArrayPtr[opnd];
+	    break;
+	case OPERAND_OFFSET1:
+	    opnd = TclGetInt1AtPtr(pc+numBytes); numBytes++;
+	    sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
+	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
+	    break;
+	case OPERAND_OFFSET4:
+	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
+	    if (opCode == INST_START_CMD) {
+		sprintf(suffixBuffer, "next cmd at pc %u", pcOffset+opnd);
+	    } else {
+		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
 	    }
+	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
+	    break;
+	case OPERAND_LIT1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    suffixObj = codePtr->objArrayPtr[opnd];
+	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
+	    break;
+	case OPERAND_LIT4:
+	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
+	    suffixObj = codePtr->objArrayPtr[opnd];
+	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
+	    break;
+	case OPERAND_AUX4:
+	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
+	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
+	    auxPtr = &codePtr->auxDataArrayPtr[opnd];
 	    break;
 	case OPERAND_IDX4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
@@ -896,54 +906,67 @@ DisassembleByteCodeAsDicts(
     instructions = Tcl_NewObj();
     for (pc=codePtr->codeStart; pc<codePtr->codeStart+codePtr->numCodeBytes;){
 	const InstructionDesc *instDesc = &tclInstructionTable[*pc];
+	int address = pc - codePtr->codeStart;
 
 	inst = Tcl_NewObj();
-	Tcl_ListObjAppendElement(NULL, inst,
-		Tcl_NewStringObj(instDesc->name, -1));
+	Tcl_ListObjAppendElement(NULL, inst, Tcl_NewStringObj(
+		instDesc->name, -1));
 	opnd = pc + 1;
 	for (i=0 ; i<instDesc->numOperands ; i++) {
 	    switch (instDesc->opTypes[i]) {
 	    case OPERAND_INT1:
 		val = TclGetInt1AtPtr(opnd);
 		opnd += 1;
-		if (*pc == INST_JUMP1 || *pc == INST_JUMP_TRUE1
-			|| *pc == INST_JUMP_FALSE1) {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
-			    "pc %d", pc+val-codePtr->codeStart));
-		} else {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
-		}
-		break;
-	    case OPERAND_INT4:
-		val = TclGetInt4AtPtr(opnd);
-		opnd += 4;
-		if (*pc == INST_JUMP4 || *pc == INST_JUMP_TRUE4
-			|| *pc == INST_JUMP_FALSE4 || *pc == INST_START_CMD) {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
-			    "pc %d", pc+val-codePtr->codeStart));
-		} else {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
-		}
-		break;
+		goto formatNumber;
 	    case OPERAND_UINT1:
 		val = TclGetUInt1AtPtr(opnd);
 		opnd += 1;
-		if (*pc == INST_PUSH1) {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
-			    "@%d", val));
-		} else {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
-		}
-		break;
+		goto formatNumber;
+	    case OPERAND_INT4:
+		val = TclGetInt4AtPtr(opnd);
+		opnd += 4;
+		goto formatNumber;
 	    case OPERAND_UINT4:
 		val = TclGetUInt4AtPtr(opnd);
 		opnd += 4;
-		if (*pc == INST_PUSH4) {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
-			    "@%d", val));
-		} else {
-		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
-		}
+	    formatNumber:
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_NewIntObj(val));
+		break;
+
+	    case OPERAND_OFFSET1:
+		val = TclGetInt1AtPtr(opnd);
+		opnd += 1;
+		goto formatAddress;
+	    case OPERAND_OFFSET4:
+		val = TclGetInt4AtPtr(opnd);
+		opnd += 4;
+	    formatAddress:
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			"pc %d", address + val));
+		break;
+
+	    case OPERAND_LIT1:
+		val = TclGetUInt1AtPtr(opnd);
+		opnd += 1;
+		goto formatLiteral;
+	    case OPERAND_LIT4:
+		val = TclGetUInt4AtPtr(opnd);
+		opnd += 4;
+	    formatLiteral:
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			"@%d", val));
+		break;
+
+	    case OPERAND_LVT1:
+		val = TclGetUInt1AtPtr(opnd);
+		opnd += 1;
+		goto formatVariable;
+	    case OPERAND_LVT4:
+		val = TclGetUInt4AtPtr(opnd);
+		opnd += 4;
+	    formatVariable:
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			"%%%d", val));
 		break;
 	    case OPERAND_IDX4:
 		val = TclGetInt4AtPtr(opnd);
@@ -952,37 +975,24 @@ DisassembleByteCodeAsDicts(
 		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
 			    ".%d", val));
 		} else if (val == -2) {
-		    Tcl_ListObjAppendElement(NULL, inst,
-			    Tcl_NewStringObj(".end", -1));
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_NewStringObj(
+			    ".end", -1));
 		} else {
-		    Tcl_ListObjAppendElement(NULL, inst,
-			    Tcl_ObjPrintf(".end-%d", -2-val));
+		    Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			    ".end-%d", -2-val));
 		}
-		break;
-	    case OPERAND_LVT1:
-		val = TclGetUInt1AtPtr(opnd);
-		opnd += 1;
-		Tcl_ListObjAppendElement(NULL, inst,
-			Tcl_ObjPrintf("%%%d", val));
-		break;
-	    case OPERAND_LVT4:
-		val = TclGetUInt4AtPtr(opnd);
-		opnd += 4;
-		Tcl_ListObjAppendElement(NULL, inst,
-			Tcl_ObjPrintf("%%%d", val));
 		break;
 	    case OPERAND_AUX4:
 		val = TclGetInt4AtPtr(opnd);
 		opnd += 4;
-		Tcl_ListObjAppendElement(NULL, inst,
-			Tcl_ObjPrintf("?%d", val));
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			"?%d", val));
 		break;
 	    case OPERAND_NONE:
 		Tcl_Panic("opcode %d with more than zero 'no' operands", *pc);
 	    }
 	}
-	Tcl_DictObjPut(NULL, instructions,
-		Tcl_NewIntObj(pc - codePtr->codeStart), inst);
+	Tcl_DictObjPut(NULL, instructions, Tcl_NewIntObj(address), inst);
 	pc += instDesc->numBytes;
     }
 
@@ -1039,7 +1049,16 @@ DisassembleByteCodeAsDicts(
 
     /*
      * Get the command information from the bytecode.
+     *
+     * The way these are encoded in the bytecode is non-trivial; the Decode
+     * macro (which updates its argument and returns the next decoded value)
+     * handles this so that the rest of the code does not.
      */
+
+#define Decode(ptr) \
+    ((TclGetUInt1AtPtr(ptr) == 0xFF)			\
+	? ((ptr)+=5 , TclGetInt4AtPtr((ptr)-4))		\
+	: ((ptr)+=1 , TclGetInt1AtPtr((ptr)-1)))
 
     commands = Tcl_NewObj();
     codeOffPtr = codePtr->codeDeltaStart;
@@ -1047,10 +1066,6 @@ DisassembleByteCodeAsDicts(
     srcOffPtr = codePtr->srcDeltaStart;
     srcLenPtr = codePtr->srcLengthStart;
     codeOffset = sourceOffset = 0;
-#define Decode(ptr) \
-    ((TclGetUInt1AtPtr(ptr) == 0xFF)		\
-	? ((ptr)+=5,TclGetInt4AtPtr((ptr)-4))	\
-	: ((ptr)+=1,TclGetInt1AtPtr((ptr)-1)))
     for (i=0 ; i<codePtr->numCommands ; i++) {
 	Tcl_Obj *cmd;
 
@@ -1077,6 +1092,7 @@ DisassembleByteCodeAsDicts(
 		Tcl_NewStringObj(codePtr->source+sourceOffset, sourceLength));
 	Tcl_ListObjAppendElement(NULL, commands, cmd);
     }
+
 #undef Decode
 
     /*
