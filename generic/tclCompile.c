@@ -2192,8 +2192,6 @@ TclCompileScript(
     if (envPtr->codeNext == entryCodeNext) {
 	PushStringLiteral(envPtr, "");
     }
-
-    envPtr->numSrcBytes = p - script;
 }
 
 /*
