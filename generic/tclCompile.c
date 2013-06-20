@@ -1631,7 +1631,6 @@ TclCompileScript(
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_NewObj(), NULL), envPtr);
     }
 
-    envPtr->numSrcBytes = (p - script);
     TclStackFree(interp, parsePtr);
     Tcl_DStringFree(&ds);
 }
