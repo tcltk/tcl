@@ -55,9 +55,9 @@ InstructionDesc const tclInstructionTable[] = {
     /* Name	      Bytes stackEffect #Opnds  Operand types */
     {"done",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Finish ByteCode execution and return stktop (top stack item) */
-    {"push1",		  2,   +1,         1,	{OPERAND_UINT1}},
+    {"push1",		  2,   +1,         1,	{OPERAND_LIT1}},
 	/* Push object at ByteCode objArray[op1] */
-    {"push4",		  5,   +1,         1,	{OPERAND_UINT4}},
+    {"push4",		  5,   +1,         1,	{OPERAND_LIT4}},
 	/* Push object at ByteCode objArray[op4] */
     {"pop",		  1,   -1,         0,	{OPERAND_NONE}},
 	/* Pop the topmost stack object */
@@ -125,17 +125,17 @@ InstructionDesc const tclInstructionTable[] = {
     {"incrStkImm",	  2,   0,	   1,	{OPERAND_INT1}},
 	/* Incr general variable; unparsed name is top, amount is op1 */
 
-    {"jump1",		  2,   0,          1,	{OPERAND_INT1}},
+    {"jump1",		  2,   0,          1,	{OPERAND_OFFSET1}},
 	/* Jump relative to (pc + op1) */
-    {"jump4",		  5,   0,          1,	{OPERAND_INT4}},
+    {"jump4",		  5,   0,          1,	{OPERAND_OFFSET4}},
 	/* Jump relative to (pc + op4) */
-    {"jumpTrue1",	  2,   -1,         1,	{OPERAND_INT1}},
+    {"jumpTrue1",	  2,   -1,         1,	{OPERAND_OFFSET1}},
 	/* Jump relative to (pc + op1) if stktop expr object is true */
-    {"jumpTrue4",	  5,   -1,         1,	{OPERAND_INT4}},
+    {"jumpTrue4",	  5,   -1,         1,	{OPERAND_OFFSET4}},
 	/* Jump relative to (pc + op4) if stktop expr object is true */
-    {"jumpFalse1",	  2,   -1,         1,	{OPERAND_INT1}},
+    {"jumpFalse1",	  2,   -1,         1,	{OPERAND_OFFSET1}},
 	/* Jump relative to (pc + op1) if stktop expr object is false */
-    {"jumpFalse4",	  5,   -1,         1,	{OPERAND_INT4}},
+    {"jumpFalse4",	  5,   -1,         1,	{OPERAND_OFFSET4}},
 	/* Jump relative to (pc + op4) if stktop expr object is false */
 
     {"lor",		  1,   -1,         0,	{OPERAND_NONE}},
@@ -298,7 +298,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* List Index:	push (lindex stktop op4) */
     {"listRangeImm",	  9,	0,	   2,	{OPERAND_IDX4, OPERAND_IDX4}},
 	/* List Range:	push (lrange stktop op4 op4) */
-    {"startCommand",	  9,	0,	   2,	{OPERAND_INT4,OPERAND_UINT4}},
+    {"startCommand",	  9,	0,	   2,	{OPERAND_OFFSET4, OPERAND_UINT4}},
 	/* Start of bytecoded command: op is the length of the cmd's code, op2
 	 * is number of commands here */
 
