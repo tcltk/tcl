@@ -13,17 +13,6 @@
 
 #include "tclInt.h"
 
-MODULE_SCOPE const TclStubs *tclStubsPtr;
-MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
-MODULE_SCOPE const TclIntStubs *tclIntStubsPtr;
-MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
-
-const TclStubs *tclStubsPtr = NULL;
-const TclPlatStubs *tclPlatStubsPtr = NULL;
-const TclIntStubs *tclIntStubsPtr = NULL;
-const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -45,8 +34,7 @@ TclInitStubTable(
 	const char *version) /* points to the version field of a
 	                        TclStubInfoType structure variable. */
 {
-    const TclStubInfoType *ptr = (const TclStubInfoType *) version;
-    tclStubsPtr = (const TclStubs *) ptr->data;
+    tclStubsPtr = ((const TclStubInfoType *) version)->stubs;
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;
@@ -57,6 +45,7 @@ TclInitStubTable(
 	tclIntStubsPtr = NULL;
 	tclIntPlatStubsPtr = NULL;
     }
+
     return version;
 }
 
