@@ -2735,6 +2735,7 @@ TclWinSetSockOpt(
     return setsockopt(s, level, optname, optval, optlen);
 }
 
+#undef TclpInetNtoa
 char *
 TclpInetNtoa(
     struct in_addr addr)
