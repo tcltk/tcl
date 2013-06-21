@@ -13,17 +13,6 @@
 
 #include "tclInt.h"
 
-MODULE_SCOPE const TclStubs *tclStubsPtr;
-MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
-MODULE_SCOPE const TclIntStubs *tclIntStubsPtr;
-MODULE_SCOPE const TclIntPlatStubs *tclIntPlatStubsPtr;
-
-const TclStubs *tclStubsPtr = NULL;
-const TclPlatStubs *tclPlatStubsPtr = NULL;
-const TclIntStubs *tclIntStubsPtr = NULL;
-const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
-
-
 /*
  *----------------------------------------------------------------------
  *
@@ -56,6 +45,7 @@ TclInitStubTable(
 	tclIntStubsPtr = NULL;
 	tclIntPlatStubsPtr = NULL;
     }
+
     return version;
 }
 

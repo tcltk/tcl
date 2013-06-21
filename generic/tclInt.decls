@@ -1072,10 +1072,10 @@ declare 8 win {
 declare 9 win {
     int TclWinGetPlatformId(void)
 }
-# new for 8.4.20+/8.5.12+ Cygwin only
-declare 10 win {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
-}
+# Removed in Tcl 9.0
+#declare 10 win {
+#    Tcl_DirEntry *TclpReaddir(DIR *dir)
+#}
 # Removed in 8.3.1 (for Win32s only)
 #declare 10 win {
 #    int TclWinSynchSpawn(void *args, int type, void **trans, Tcl_Pid *pidPtr)
@@ -1126,10 +1126,10 @@ declare 19 win {
 declare 20 win {
     void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
-# new for 8.4.20+/8.5.12+
-declare 21 win {
-    char *TclpInetNtoa(struct in_addr addr)
-}
+# Removed in Tcl 9.0
+#declare 21 win {
+#    char *TclpInetNtoa(struct in_addr addr)
+#}
 # removed permanently for 8.4
 #declare 21 win {
 #    void TclpAsyncMark(Tcl_AsyncHandler async)
@@ -1211,19 +1211,19 @@ declare 9 unix {
 
 # Added in 8.4:
 
-declare 10 unix {
-    Tcl_DirEntry *TclpReaddir(DIR *dir)
-}
 # Removed in Tcl 9.0
+#declare 10 unix {
+#    Tcl_DirEntry *TclpReaddir(DIR *dir)
+#}
 #declare 11 unix {
 #    struct tm *TclpLocaltime_unix(const time_t *clock)
 #}
 #declare 12 unix {
 #    struct tm *TclpGmtime_unix(const time_t *clock)
 #}
-declare 13 unix {
-    char *TclpInetNtoa(struct in_addr addr)
-}
+#declare 13 unix {
+#    char *TclpInetNtoa(struct in_addr addr)
+#}
 
 # Added in 8.5:
 

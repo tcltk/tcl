@@ -631,49 +631,6 @@ TclpFinalizeCondition(
 }
 #endif /* TCL_THREADS */
 
-/*
- *----------------------------------------------------------------------
- *
- * TclpReaddir, TclpInetNtoa --
- *
- *	These procedures replace core C versions to be used in a threaded
- *	environment.
- *
- * Results:
- *	See documentation of C functions.
- *
- * Side effects:
- *	See documentation of C functions.
- *
- * Notes:
- *	TclpReaddir is no longer used by the core (see 1095909), but it
- *	appears in the internal stubs table (see #589526).
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_DirEntry *
-TclpReaddir(
-    DIR * dir)
-{
-    return TclOSreaddir(dir);
-}
-
-char *
-TclpInetNtoa(
-    struct in_addr addr)
-{
-#ifdef TCL_THREADS
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    unsigned char *b = (unsigned char*) &addr.s_addr;
-
-    sprintf(tsdPtr->nabuf, "%u.%u.%u.%u", b[0], b[1], b[2], b[3]);
-    return tsdPtr->nabuf;
-#else
-    return inet_ntoa(addr);
-#endif
-}
-
 #ifdef TCL_THREADS
 /*
  * Additions by AOL for specialized thread memory allocator.
