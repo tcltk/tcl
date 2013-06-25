@@ -59,9 +59,6 @@ steps:
 Call \fBTcl_InitStubs\fR in the extension before calling any other
 Tcl functions.
 .IP 2) 5
-Define the \fBUSE_TCL_STUBS\fR symbol.  Typically, you would include the
-\fB\-DUSE_TCL_STUBS\fR flag when compiling the extension.
-.IP 3) 5
 Link the extension with the Tcl stubs library instead of the standard
 Tcl library.  For example, to use the Tcl 9.0 ABI on Unix platforms,
 the library name is \fIlibtclstub9.0.a\fR; on Windows platforms, the

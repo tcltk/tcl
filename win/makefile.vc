@@ -506,7 +506,7 @@ TCL_INCLUDES	= -I"$(WINDIR)" -I"$(GENERICDIR)" -I"$(TOMMATHDIR)"
 TCL_DEFINES	= -DTCL_TOMMATH -DMP_PREC=4 -Dinline=__inline -DHAVE_ZLIB=1
 BASE_CFLAGS	= $(cflags) $(cdebug) $(crt) $(TCL_INCLUDES) $(TCL_DEFINES)
 CON_CFLAGS	= $(cflags) $(cdebug) $(crt) -DCONSOLE
-TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES)
+TCL_CFLAGS	= $(BASE_CFLAGS) $(OPTDEFINES) -DBUILD_tcl -DMODULE_SCOPE=extern
 STUB_CFLAGS     = $(cflags) $(cdebug) $(OPTDEFINES)
 
 
@@ -920,7 +920,7 @@ $(TMP_DIR)\testMain.obj: $(WINDIR)\tclAppInit.c
 	    -Fo$@ $?
 
 $(TMP_DIR)\tclMain2.obj: $(GENERICDIR)\tclMain.c
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -DTCL_ASCII_MAIN \
+	$(cc32) $(TCL_CFLAGS) -DTCL_ASCII_MAIN \
 	    -Fo$@ $?
 
 $(TMP_DIR)\tclTest.obj: $(GENERICDIR)\tclTest.c
@@ -933,10 +933,10 @@ $(TMP_DIR)\tclWinTest.obj: $(WINDIR)\tclWinTest.c
 	$(cc32) $(TCL_CFLAGS) -Fo$@ $?
 
 $(TMP_DIR)\tclZlib.obj: $(GENERICDIR)\tclZlib.c
-	$(cc32) $(TCL_CFLAGS) -I$(COMPATDIR)\zlib -DBUILD_tcl -Fo$@ $?
+	$(cc32) $(TCL_CFLAGS) -I$(COMPATDIR)\zlib -Fo$@ $?
 
 $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
-	$(cc32) -DBUILD_tcl $(TCL_CFLAGS) \
+	$(cc32) $(TCL_CFLAGS) \
 	-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR:\=\\)\"" \
 	-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR:\=\\)\"" \
 	-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR:\=\\)\"" \
@@ -961,7 +961,7 @@ $(TMP_DIR)\tclWinReg.obj: $(WINDIR)\tclWinReg.c
 !if $(STATIC_BUILD)
 	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -DSTATIC_BUILD -Fo$@ $?
 !else
-	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -DUSE_TCL_STUBS -Fo$@ $?
+	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -Fo$@ $?
 !endif
 
 
@@ -969,7 +969,7 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 !if $(STATIC_BUILD)
 	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -DSTATIC_BUILD -Fo$@ $?
 !else
-	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -DUSE_TCL_STUBS -Fo$@ $?
+	$(cc32) $(TCL_CFLAGS) -DTCL_THREADS=1 -Fo$@ $?
 !endif
 
 
@@ -1030,27 +1030,27 @@ $(TCLOBJS)
 #---------------------------------------------------------------------
 
 {$(WINDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
 {$(TOMMATHDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
 {$(GENERICDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
 {$(COMPATDIR)}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 
 {$(COMPATDIR)\zlib}.c{$(TMP_DIR)}.obj::
-	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
+	$(cc32) $(TCL_CFLAGS) -Fo$(TMP_DIR)\ @<<
 $<
 <<
 

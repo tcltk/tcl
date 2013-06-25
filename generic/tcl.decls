@@ -631,11 +631,10 @@ declare 173 {
 declare 174 {
     const char *Tcl_GetStringResult(Tcl_Interp *interp)
 }
-# Removed in 9.0
-#declare 175 {
-#    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
-#	    int flags)
-#}
+declare 175 {
+    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
+	    int flags)
+}
 declare 176 {
     const char *Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
@@ -823,9 +822,10 @@ declare 228 {
 declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
-declare 230 {
-    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
-}
+# Removed (from stubtable only) in 9.0:
+#declare 230 {
+#    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
+#}
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
 }
@@ -845,11 +845,10 @@ declare 235 {
 declare 236 {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
-# Removed in 9.0:
-#declare 237 {
-#    const char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
-#	    const char *newValue, int flags)
-#}
+declare 237 {
+    const char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
+	    const char *newValue, int flags)
+}
 declare 238 {
     const char *Tcl_SetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, const char *newValue, int flags)
@@ -882,11 +881,10 @@ declare 245 {
 #declare 246 {
 #    int Tcl_TellOld(Tcl_Channel chan)
 #}
-# Removed in Tcl 9
-#declare 247 {
-#    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
-#	    Tcl_VarTraceProc *proc, ClientData clientData)
-#}
+declare 247 {
+    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
+	    Tcl_VarTraceProc *proc, ClientData clientData)
+}
 declare 248 {
     int Tcl_TraceVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
@@ -904,19 +902,17 @@ declare 251 {
 declare 252 {
     int Tcl_UnregisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
-# Removed in 9.0:
-#declare 253 {
-#    int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
-#}
+declare 253 {
+    int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
+}
 declare 254 {
     int Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags)
 }
-# Removed in 9.0:
-#declare 255 {
-#    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
-#	    Tcl_VarTraceProc *proc, ClientData clientData)
-#}
+declare 255 {
+    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
+	    Tcl_VarTraceProc *proc, ClientData clientData)
+}
 declare 256 {
     void Tcl_UntraceVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags, Tcl_VarTraceProc *proc,
@@ -2400,10 +2396,6 @@ export {
 export {
     const char *TclTomMathInitializeStubs(Tcl_Interp* interp,
 	const char* version, int epoch, int revision)
-}
-export {
-    const char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, const char *version,
-	int exact)
 }
 export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)

@@ -14,6 +14,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#define USE_TCL_STUBS
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
@@ -150,7 +151,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 
@@ -197,7 +198,7 @@ Tcl_AppInit(
      * user-specific startup file will be run under any conditions.
      */
 
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/tclshrc.tcl", -1), TCL_GLOBAL_ONLY);
     return TCL_OK;
 }
@@ -259,11 +260,7 @@ setargv(
 	}
     }
 
-    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
-    #undef Tcl_Alloc
-    #undef Tcl_DbCkalloc
-
-    argSpace = ckalloc(size * sizeof(char *)
+    argSpace = malloc(size * sizeof(char *)
 	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
     argv = (TCHAR **) argSpace;
     argSpace += size * (sizeof(char *)/sizeof(TCHAR));

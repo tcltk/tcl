@@ -1171,8 +1171,6 @@ Tcl_Finalize(void)
 
     TclFinalizeEncodingSubsystem();
 
-    Tcl_SetPanicProc(NULL);
-
     /*
      * Repeat finalization of the thread local storage once more. Although
      * this step is already done by the Tcl_FinalizeThread call above, series
@@ -1415,7 +1413,7 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
     }
-    Tcl_UntraceVar2(interp, nameString, NULL,
+    Tcl_UntraceVar(interp, nameString,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done);
 

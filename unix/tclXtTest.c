@@ -9,9 +9,7 @@
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
+#define USE_TCL_STUBS
 #include <X11/Intrinsic.h>
 #include "tcl.h"
 
@@ -48,7 +46,7 @@ int
 Tclxttest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, "8.1", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     XtToolkitInitialize();

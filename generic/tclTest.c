@@ -15,10 +15,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
+#define USE_TCL_STUBS
 #include "tclInt.h"
 #include "tclOO.h"
 #include <math.h>
@@ -510,10 +507,10 @@ Tcltest_Init(
 	"-appinitprocclosestderr", "-appinitprocsetrcfile", NULL
     };
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
-    if (Tcl_TomMath_InitStubs(interp, TCL_VERSION) == NULL) {
+    if (Tcl_TomMath_InitStubs(interp, "8.5-") == NULL) {
 	return TCL_ERROR;
     }
     if (Tcl_OOInitStubs(interp) == NULL) {
@@ -734,7 +731,7 @@ int
 Tcltest_SafeInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+    if (Tcl_InitStubs(interp, "8.5-", 0) == NULL) {
 	return TCL_ERROR;
     }
     return Procbodytest_SafeInit(interp);
@@ -4095,7 +4092,7 @@ TeststaticpkgCmd(
     if (Tcl_GetInt(interp, argv[3], &loaded) != TCL_OK) {
 	return TCL_ERROR;
     }
-    tclStubsPtr->tcl_StaticPackage((loaded) ? interp : NULL, argv[1],
+    Tcl_StaticPackage((loaded) ? interp : NULL, argv[1],
 	    StaticInitProc, (safe) ? StaticInitProc : NULL);
     return TCL_OK;
 }

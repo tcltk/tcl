@@ -10,13 +10,11 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.4-
-
 namespace eval genStubs {
     # libraryName --
     #
     #	The name of the entire library.  This value is used to compute
-    #	the USE_*_STUBS macro and the name of the init file.
+    #	the USE_*_STUBS and BUILD_* macro and the name of the init file.
 
     variable libraryName "UNKNOWN"
 
@@ -947,12 +945,13 @@ proc genStubs::emitMacros {name textVar} {
     upvar $textVar text
 
     set upName [string toupper $libraryName]
-    append text "\n#if defined(USE_${upName}_STUBS)\n"
+    set loName [string tolower $libraryName]
+    append text "\n#if !defined(BUILD_${loName}) || defined(USE_${upName}_STUBS)\n"
     append text "\n/*\n * Inline function declarations:\n */\n\n"
 
     forAllStubs $name makeMacro 0 text
 
-    append text "\n#endif /* defined(USE_${upName}_STUBS) */\n"
+    append text "\n#endif /* !BUILD_${loName} || USE_${upName}_STUBS */\n"
     return
 }
 
@@ -1135,7 +1134,6 @@ proc genStubs::init {} {
     variable outDir
     variable interfaces
 
-variable scspec
     if {[llength $argv] < 2} {
 	puts stderr "usage: $argv0 outDir declFile ?declFile...?"
 	exit 1

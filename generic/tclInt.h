@@ -3793,7 +3793,7 @@ typedef struct {
     const TclStubs *stubs;
 } TclStubInfoType;
 
-MODULE_SCOPE const char *TclInitStubTable(const char *version);
+MODULE_SCOPE const TclStubInfoType tclStubInfo;
 
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use
@@ -4708,7 +4708,7 @@ typedef struct NRE_callback {
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"
 
-#if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
+#if defined(BUILD_tcl) && !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
 #define Tcl_AttemptAlloc(size)        TclpAlloc(size)
 #define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
 #define Tcl_Free(ptr)                 TclpFree(ptr)

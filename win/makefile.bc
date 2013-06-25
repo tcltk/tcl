@@ -516,11 +516,11 @@ $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
 
 # tclWinReg: Produces errors in ANSI mode
 $(TMPDIR)\tclWinReg.obj : $(WINDIR)\tclWinReg.c
-	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -o$(TMPDIR)\$@ $?
+	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
 
 # tclWinDde: Produces errors in ANSI mode
 $(TMPDIR)\tclWinDde.obj : $(WINDIR)\tclWinDde.c
-	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -o$(TMPDIR)\$@ $?
+	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
 
 
 # The following objects are part of the stub library and should not

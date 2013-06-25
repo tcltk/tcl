@@ -11,9 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#ifndef USE_TCL_STUBS
-#   define USE_TCL_STUBS
-#endif
+#define USE_TCL_STUBS
 #include "tclInt.h"
 
 /*

@@ -848,6 +848,7 @@ tclWinDebugPanic(
  *---------------------------------------------------------------------------
  */
 
+#undef Tcl_SetPanicProc
 void
 TclpFindExecutable(
     const char *argv0)		/* If NULL, install PanicMessageBox, otherwise

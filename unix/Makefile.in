@@ -633,9 +633,9 @@ tclLibObjs:
 # This targets actually build the objects needed for the lib in the above case
 objs: ${OBJS}
 
-${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
+${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} $(TCL_STUB_LIB_FILE)
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
-		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
+		@TCL_BUILD_LIB_SPEC@ $(TCL_STUB_LIB_FILE) ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
 
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above

@@ -2801,6 +2801,38 @@ DisposeTraceResult(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_UntraceVar --
+ *
+ *	Remove a previously-created trace for a variable.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	If there exists a trace for the variable given by varName with the
+ *	given flags, proc, and clientData, then that trace is removed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_UntraceVar(
+    Tcl_Interp *interp,		/* Interpreter containing variable. */
+    const char *varName,	/* Name of variable; may end with "(index)" to
+				 * signify an array reference. */
+    int flags,			/* OR-ed collection of bits describing current
+				 * trace, including any of TCL_TRACE_READS,
+				 * TCL_TRACE_WRITES, TCL_TRACE_UNSETS,
+				 * TCL_GLOBAL_ONLY and TCL_NAMESPACE_ONLY. */
+    Tcl_VarTraceProc *proc,	/* Function assocated with trace. */
+    ClientData clientData)	/* Arbitrary argument to pass to proc. */
+{
+    Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_UntraceVar2 --
  *
  *	Remove a previously-created trace for a variable.
@@ -2996,6 +3028,44 @@ Tcl_VarTraceInfo2(
 	}
     }
     return NULL;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_TraceVar --
+ *
+ *	Arrange for reads and/or writes to a variable to cause a function to
+ *	be invoked, which can monitor the operations and/or change their
+ *	actions.
+ *
+ * Results:
+ *	A standard Tcl return value.
+ *
+ * Side effects:
+ *	A trace is set up on the variable given by varName, such that future
+ *	references to the variable will be intermediated by proc. See the
+ *	manual entry for complete details on the calling sequence for proc.
+ *     The variable's flags are updated.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_TraceVar(
+    Tcl_Interp *interp,		/* Interpreter in which variable is to be
+				 * traced. */
+    const char *varName,	/* Name of variable; may end with "(index)" to
+				 * signify an array reference. */
+    int flags,			/* OR-ed collection of bits, including any of
+				 * TCL_TRACE_READS, TCL_TRACE_WRITES,
+				 * TCL_TRACE_UNSETS, TCL_GLOBAL_ONLY, and
+				 * TCL_NAMESPACE_ONLY. */
+    Tcl_VarTraceProc *proc,	/* Function to call when specified ops are
+				 * invoked upon varName. */
+    ClientData clientData)	/* Arbitrary argument to pass to proc. */
+{
+    return Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData);
 }
 
 /*
