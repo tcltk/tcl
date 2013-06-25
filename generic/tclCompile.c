@@ -2498,6 +2498,7 @@ TclCompileScript(
 	     * Emit an invoke instruction for the command. We skip this if a
 	     * compile procedure was found for the command.
 	     */
+	    assert(wordIdx > 0);
 
 	    if (expand) {
 		/*
@@ -2519,7 +2520,7 @@ TclCompileScript(
 		TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
 		envPtr->expandCount--;
 		TclAdjustStackDepth(1 - wordIdx, envPtr);
-	    } else if (wordIdx > 0) {
+	    } else {
 		/*
 		 * Save PC -> command map for the TclArgumentBC* functions.
 		 */
