@@ -279,7 +279,6 @@ TCLOBJS	= \
 
 TCLSTUBOBJS	= \
 	$(TMPDIR)\tclStubLib.obj \
-	$(TMPDIR)\tclStubLibTbl.obj \
 	$(TMPDIR)\tclTomMathStubLib.obj \
 	$(TMPDIR)\tclOOStubLib.obj
 
@@ -527,9 +526,6 @@ $(TMPDIR)\tclWinDde.obj : $(WINDIR)\tclWinDde.c
 # be built as DLL objects but none of the symbols should be exported
 
 $(TMPDIR)\tclStubLib.obj : $(GENERICDIR)\tclStubLib.c
-	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
-
-$(TMPDIR)\tclStubLibTbl.obj : $(GENERICDIR)\tclStubLibTbl.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
 
 $(TMPDIR)\tclTomMathStubLib.obj : $(GENERICDIR)\tclTomMathStubLib.c

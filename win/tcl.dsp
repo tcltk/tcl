@@ -1300,10 +1300,6 @@ SOURCE=..\generic\tclStubLib.c
 # End Source File
 # Begin Source File
 
-SOURCE=..\generic\tclStubLibTbl.c
-# End Source File
-# Begin Source File
-
 SOURCE=..\generic\tclOOStubLib.c
 # End Source File
 # Begin Source File
