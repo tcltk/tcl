@@ -1737,6 +1737,37 @@ FindCompiledCommandFromToken(
  *----------------------------------------------------------------------
  */
 
+#if 1
+static void
+CompileCommandTokens(
+    Tcl_Interp *interp,
+    Tcl_Parse *parsePtr,
+    CompileEnv *envPtr)
+{
+    Tcl_Obj *cmdObj;
+    Tcl_Token *cmdTokenPtr = parsePtr->tokenPtr;
+	
+
+    if (parsePtr->numWords == 0) {
+	return 0;
+    }
+
+    if (!TclWordKnownAtCompileTime(cmdTokenPtr, cmdObj)) {
+	/*
+	 * Command is not known until runtime substitution is complete.
+	 * Emit instructions to perform that substitution.
+	 */
+	CompileTokens(interp, cmdTokenPtr, envPtr);
+
+    }
+
+    
+
+    TclEmitOpcode(INST_POP, envPtr);
+
+}
+#endif
+
 void
 TclCompileScript(
     Tcl_Interp *interp,		/* Used for error and status reporting. Also
@@ -1748,6 +1779,98 @@ TclCompileScript(
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+#if 1
+    unsigned char *entryCodeNext = envPtr->codeNext;
+    const char *p;
+    int cmdLine, *clNext;
+
+    if (envPtr->iPtr == NULL) {
+	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
+    }
+
+    /*
+     * Each iteration through the following loop compiles the next command
+     * from the script.
+     */
+
+    p = script;
+    cmdLine = envPtr->line;
+    clNext = envPtr->clNext;
+    while (numBytes > 0) {
+	Tcl_Parse parse;
+	const char *next;
+
+	/* TODO: can we relocate this to happen less frequently? */
+	Tcl_ResetResult(interp);
+	if (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0, &parse)) {
+	    /*
+	     * Compile bytecodes to report the parse error at runtime.
+	     */
+
+	    Tcl_LogCommandInfo(interp, script, parse.commandStart,
+		    parse.term - parse.commandStart);
+	    TclCompileSyntaxError(interp, envPtr);
+	    break;
+	}
+
+	/*
+	 * TIP #280: Count newlines before the command start.
+	 * (See test info-30.33).
+	 */
+
+	TclAdvanceLines(&cmdLine, p, parse.commandStart);
+	TclAdvanceContinuations(&cmdLine, &clNext,
+		parse.commandStart - envPtr->source);
+
+#ifdef TCL_COMPILE_DEBUG
+	/*
+	 * If tracing, print a line for each top level command compiled.
+	 */
+
+	if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
+	    fprintf(stdout, "  Compiling: ");
+	    TclPrintSource(stdout, parse.commandStart,
+		    TclMin(parse.term - parse.commandStart, 55));
+	    fprintf(stdout, "\n");
+	}
+#endif
+
+	CompileCommandTokens(interp, &parse, envPtr);
+
+	/*
+	 * Advance to the next command in the script.
+	 */
+
+	next = parse.commandStart + parse.commandSize;
+	numBytes -= next - p;
+	p = next;
+
+	/*
+	 * TIP #280: Track lines in the just compiled command.
+	 */
+
+	TclAdvanceLines(&cmdLine, parsePtr->commandStart, p);
+	TclAdvanceContinuations(&cmdLine, &clNext, p - envPtr->source);
+	Tcl_FreeParse(&parse);
+    }
+
+    /*
+     * TIP #280: Bring the line counts in the CompEnv up to date.
+     *	See tests info-30.33,34,35 .
+     */
+
+    envPtr->line = cmdLine;
+    envPtr->clNext = clNext;
+
+    /*
+     * If the source script yielded no instructions (e.g., if it was empty),
+     * push an empty string as the command's result.
+     */
+
+    if (envPtr->codeNext == entryCodeNext) {
+	PushStringLiteral(envPtr, "");
+    }
+#else
     int lastTopLevelCmdIndex = -1;
 				/* Index of most recent toplevel command in
 				 * the command location table. Initialized to
@@ -2192,6 +2315,7 @@ TclCompileScript(
     if (envPtr->codeNext == entryCodeNext) {
 	PushStringLiteral(envPtr, "");
     }
+#endif
 }
 
 /*
