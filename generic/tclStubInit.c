@@ -899,7 +899,7 @@ const TclStubs tclStubs = {
     Tcl_GetSlave, /* 172 */
     Tcl_GetStdChannel, /* 173 */
     Tcl_GetStringResult, /* 174 */
-    Tcl_GetVar, /* 175 */
+    0, /* 175 */
     Tcl_GetVar2, /* 176 */
     0, /* 177 */
     0, /* 178 */
@@ -961,7 +961,7 @@ const TclStubs tclStubs = {
     Tcl_SetObjErrorCode, /* 234 */
     Tcl_SetObjResult, /* 235 */
     Tcl_SetStdChannel, /* 236 */
-    Tcl_SetVar, /* 237 */
+    0, /* 237 */
     Tcl_SetVar2, /* 238 */
     Tcl_SignalId, /* 239 */
     Tcl_SignalMsg, /* 240 */
@@ -971,15 +971,15 @@ const TclStubs tclStubs = {
     Tcl_StaticPackage, /* 244 */
     Tcl_StringMatch, /* 245 */
     0, /* 246 */
-    Tcl_TraceVar, /* 247 */
+    0, /* 247 */
     Tcl_TraceVar2, /* 248 */
     Tcl_TranslateFileName, /* 249 */
     Tcl_Ungets, /* 250 */
     Tcl_UnlinkVar, /* 251 */
     Tcl_UnregisterChannel, /* 252 */
-    Tcl_UnsetVar, /* 253 */
+    0, /* 253 */
     Tcl_UnsetVar2, /* 254 */
-    Tcl_UntraceVar, /* 255 */
+    0, /* 255 */
     Tcl_UntraceVar2, /* 256 */
     Tcl_UpdateLinkedVar, /* 257 */
     0, /* 258 */

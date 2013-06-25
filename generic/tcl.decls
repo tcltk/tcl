@@ -631,10 +631,11 @@ declare 173 {
 declare 174 {
     const char *Tcl_GetStringResult(Tcl_Interp *interp)
 }
-declare 175 {
-    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
-	    int flags)
-}
+# Removed in 9.0
+#declare 175 {
+#    const char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
+#	    int flags)
+#}
 declare 176 {
     const char *Tcl_GetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags)
@@ -845,10 +846,11 @@ declare 235 {
 declare 236 {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
-declare 237 {
-    const char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
-	    const char *newValue, int flags)
-}
+# Removed in 9.0:
+#declare 237 {
+#    const char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
+#	    const char *newValue, int flags)
+#}
 declare 238 {
     const char *Tcl_SetVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, const char *newValue, int flags)
@@ -881,10 +883,11 @@ declare 245 {
 #declare 246 {
 #    int Tcl_TellOld(Tcl_Channel chan)
 #}
-declare 247 {
-    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
-	    Tcl_VarTraceProc *proc, ClientData clientData)
-}
+# Removed in Tcl 9
+#declare 247 {
+#    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
+#	    Tcl_VarTraceProc *proc, ClientData clientData)
+#}
 declare 248 {
     int Tcl_TraceVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags, Tcl_VarTraceProc *proc, ClientData clientData)
@@ -902,17 +905,19 @@ declare 251 {
 declare 252 {
     int Tcl_UnregisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
-declare 253 {
-    int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
-}
+# Removed in 9.0:
+#declare 253 {
+#    int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
+#}
 declare 254 {
     int Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags)
 }
-declare 255 {
-    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
-	    Tcl_VarTraceProc *proc, ClientData clientData)
-}
+# Removed in 9.0:
+#declare 255 {
+#    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
+#	    Tcl_VarTraceProc *proc, ClientData clientData)
+#}
 declare 256 {
     void Tcl_UntraceVar2(Tcl_Interp *interp, const char *part1,
 	    const char *part2, int flags, Tcl_VarTraceProc *proc,
