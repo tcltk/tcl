@@ -2486,8 +2486,7 @@ CompileExprTree(
 	    break;
 	}
 	case OT_TOKENS:
-	    TclCompileTokens(interp, tokenPtr+1, tokenPtr->numComponents,
-		    envPtr);
+	    CompileTokens(envPtr, tokenPtr, interp);
 	    tokenPtr += tokenPtr->numComponents + 1;
 	    break;
 	default:
