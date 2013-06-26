@@ -1742,7 +1742,8 @@ static void
 CompileCommandTokens(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    CompileEnv *envPtr)
+    CompileEnv *envPtr,
+    int *lastPopPtr)
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *cmdObj = Tcl_NewObj();
@@ -2017,6 +2018,8 @@ finishCommand:
     EnterCmdExtentData(envPtr, currCmdIndex,
 	    parsePtr->term - parsePtr->commandStart,
 	    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
+    *lastPopPtr = currCmdIndex;
+    
 
     if (cmdKnown) {
 	Tcl_DecrRefCount(cmdObj);
@@ -2051,6 +2054,7 @@ TclCompileScript(
     unsigned char *entryCodeNext = envPtr->codeNext;
     const char *p;
     int cmdLine, *clNext;
+    int lastPop = -1;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
@@ -2081,6 +2085,7 @@ TclCompileScript(
 		    parse.commandStart + parse.commandSize - 1)?
 		    parse.commandSize - 1 : parse.commandSize);
 	    TclCompileSyntaxError(interp, envPtr);
+	    lastPop = -1;
 	    break;
 	}
 
@@ -2109,7 +2114,7 @@ TclCompileScript(
 
     envPtr->line = cmdLine;
     envPtr->clNext = clNext;
-	CompileCommandTokens(interp, &parse, envPtr);
+	CompileCommandTokens(interp, &parse, envPtr, &lastPop);
     cmdLine = envPtr->line;
     clNext = envPtr->clNext;
 
@@ -2145,8 +2150,8 @@ TclCompileScript(
 
     if (envPtr->codeNext == entryCodeNext) {
 	PushStringLiteral(envPtr, "");
-    } else if (envPtr->codeNext[-1] == INST_POP) {
-	/* Remove the surplus INST_POP */
+    } else if (lastPop >= 0) {
+	envPtr->cmdMapPtr[lastPop].numCodeBytes--;
 	envPtr->codeNext--;
 	TclAdjustStackDepth(1, envPtr);
     }
