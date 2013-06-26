@@ -342,9 +342,10 @@ Tcl_Main(
     Tcl_Interp *interp;
     Tcl_DString appName;
 
-    Tcl_FindExecutable(argv[0]);
-
     interp = Tcl_CreateInterp();
+    TclpSetInitialEncodings();
+    TclpFindExecutable(argv[0]);
+
     Tcl_InitMemory(interp);
 
     /*
