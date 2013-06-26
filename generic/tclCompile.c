@@ -2076,7 +2076,10 @@ TclCompileScript(
 	     */
 
 	    Tcl_LogCommandInfo(interp, script, parse.commandStart,
-		    parse.term - parse.commandStart);
+		    /* Drop the command terminator (";","]") if appropriate */
+		    (parse.term ==
+		    parse.commandStart + parse.commandSize - 1)?
+		    parse.commandSize - 1 : parse.commandSize);
 	    TclCompileSyntaxError(interp, envPtr);
 	    break;
 	}
@@ -2142,7 +2145,7 @@ TclCompileScript(
 
     if (envPtr->codeNext == entryCodeNext) {
 	PushStringLiteral(envPtr, "");
-    } else {
+    } else if (envPtr->codeNext[-1] == INST_POP) {
 	/* Remove the surplus INST_POP */
 	envPtr->codeNext--;
 	TclAdjustStackDepth(1, envPtr);
