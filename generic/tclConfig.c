@@ -34,7 +34,7 @@
 typedef struct QCCD {
     Tcl_Obj *pkg;
     Tcl_Interp *interp;
-    CONST char *encoding;
+    char *encoding;
 } QCCD;
 
 /*
@@ -82,15 +82,20 @@ Tcl_RegisterConfig(
     QCCD *cdPtr = (QCCD *)ckalloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
-    cdPtr->encoding = valEncoding;
+    if (valEncoding) {
+	cdPtr->encoding = ckalloc(strlen(valEncoding)+1);
+	strcpy(cdPtr->encoding, valEncoding);
+    } else {
+	cdPtr->encoding = NULL;
+    }
     cdPtr->pkg = Tcl_NewStringObj(pkgName, -1);
 
     /*
      * Phase I: Adding the provided information to the internal database of
-     * package meta data. Only if we have an ok encoding.
+     * package meta data.
      *
      * Phase II: Create a command for querying this database, specific to the
-     * package registerting its configuration. This is the approved interface
+     * package registering its configuration. This is the approved interface
      * in TIP 59. In the future a more general interface should be done, as
      * followup to TIP 59. Simply because our database is now general across
      * packages, and not a structure tied to one package.
@@ -313,6 +318,9 @@ QueryConfigDelete(
     Tcl_Obj *pDB = GetConfigDict(cdPtr->interp);
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
+    if (cdPtr->encoding) {
+	ckfree((char *)cdPtr->encoding);
+    }
     ckfree((char *)cdPtr);
 }
 
