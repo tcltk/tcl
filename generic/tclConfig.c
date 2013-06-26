@@ -88,9 +88,9 @@ Tcl_RegisterConfig(
      * package meta data. Only if we have an ok encoding.
      *
      * Phase II: Create a command for querying this database, specific to the
-     * package registerting its configuration. This is the approved interface
+     * package registering its configuration. This is the approved interface
      * in TIP 59. In the future a more general interface should be done, as
-     * followup to TIP 59. Simply because our database is now general across
+     * follow-up to TIP 59. Simply because our database is now general across
      * packages, and not a structure tied to one package.
      *
      * Note, the created command will have a reference through its clientdata.
