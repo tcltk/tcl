@@ -75,7 +75,6 @@ Tcl_RegisterConfig(
     CONST char *valEncoding)	/* Name of the encoding used to store the
 				 * configuration values, ASCII, thus UTF-8. */
 {
-    Tcl_Obj *pDB, *pkgDict;
     Tcl_DString cmdName;
     Tcl_Config *cfg;
     Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
@@ -89,9 +88,9 @@ Tcl_RegisterConfig(
      * package meta data. Only if we have an ok encoding.
      *
      * Phase II: Create a command for querying this database, specific to the
-     * package registerting its configuration. This is the approved interface
+     * package registering its configuration. This is the approved interface
      * in TIP 59. In the future a more general interface should be done, as
-     * followup to TIP 59. Simply because our database is now general across
+     * follow-up to TIP 59. Simply because our database is now general across
      * packages, and not a structure tied to one package.
      *
      * Note, the created command will have a reference through its clientdata.
@@ -105,14 +104,14 @@ Tcl_RegisterConfig(
      */
 
     if (venc != NULL) {
+	Tcl_Obj *pkgDict, *pDB = GetConfigDict(interp);
+
 	/*
 	 * Retrieve package specific configuration...
 	 */
 
-	pDB = GetConfigDict(interp);
-
 	if (Tcl_DictObjGet(interp, pDB, cdPtr->pkg, &pkgDict) != TCL_OK
-	    || (pkgDict == NULL)) {
+		|| (pkgDict == NULL)) {
 	    pkgDict = Tcl_NewDictObj();
 	} else if (Tcl_IsShared(pkgDict)) {
 	    pkgDict = Tcl_DuplicateObj(pkgDict);
@@ -125,7 +124,7 @@ Tcl_RegisterConfig(
 	for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
 	    Tcl_DString conv;
 	    CONST char *convValue =
-		Tcl_ExternalToUtfDString(venc, cfg->value, -1, &conv);
+		    Tcl_ExternalToUtfDString(venc, cfg->value, -1, &conv);
 
 	    /*
 	     * We know that the keys are in ASCII/UTF-8, so for them is no
@@ -133,7 +132,7 @@ Tcl_RegisterConfig(
 	     */
 
 	    Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
-			   Tcl_NewStringObj(convValue, -1));
+		    Tcl_NewStringObj(convValue, -1));
 	    Tcl_DStringFree(&conv);
 	}
 
@@ -178,7 +177,7 @@ Tcl_RegisterConfig(
 
     if (Tcl_CreateObjCommand(interp, Tcl_DStringValue(&cmdName),
 	    QueryConfigObjCmd, (ClientData) cdPtr, QueryConfigDelete) == NULL) {
-        Tcl_Panic("%s: %s", "Tcl_RegisterConfig",
+	Tcl_Panic("%s: %s", "Tcl_RegisterConfig",
 		"Unable to create query command for package configuration");
     }
 
@@ -213,7 +212,7 @@ QueryConfigObjCmd(
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB, *pkgDict, *val, *listPtr;
     int n, index;
-    static const char *subcmdStrings[] = {
+    static CONST char *subcmdStrings[] = {
 	"get", "list", NULL
     };
     enum subcmds {
@@ -232,12 +231,12 @@ QueryConfigObjCmd(
     pDB = GetConfigDict(interp);
     if (Tcl_DictObjGet(interp, pDB, pkgName, &pkgDict) != TCL_OK
 	    || pkgDict == NULL) {
-        /*
+	/*
 	 * Maybe a Tcl_Panic is better, because the package data has to be
 	 * present.
 	 */
 
-        Tcl_SetResult(interp, "package not known", TCL_STATIC);
+	Tcl_SetResult(interp, "package not known", TCL_STATIC);
 	return TCL_ERROR;
     }
 
@@ -248,7 +247,7 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	if (Tcl_DictObjGet(interp, pkgDict, objv [2], &val) != TCL_OK
+	if (Tcl_DictObjGet(interp, pkgDict, objv[2], &val) != TCL_OK
 		|| val == NULL) {
 	    Tcl_SetResult(interp, "key not known", TCL_STATIC);
 	    return TCL_ERROR;
@@ -317,6 +316,7 @@ QueryConfigDelete(
     QCCD *cdPtr = (QCCD *) clientData;
     Tcl_Obj *pkgName = cdPtr->pkg;
     Tcl_Obj *pDB = GetConfigDict(cdPtr->interp);
+
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
     ckfree((char *)cdPtr);
