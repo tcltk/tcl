@@ -3861,7 +3861,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 
     # Put DST in effect in all years from 1916 to 2099.
 
-    for { set y 1916 } { $y < 2099 } { incr y } {
+    for { set y 1916 } { $y < 2100 } { incr y } {
 	set startTime [DeterminePosixDSTTime $z start $y]
 	incr startTime [expr { - wide($stdOffset) }]
 	set endTime [DeterminePosixDSTTime $z end $y]
