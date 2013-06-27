@@ -1746,7 +1746,7 @@ CompileCommandTokens(
     int *lastPopPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *cmdObj = Tcl_NewObj();
+    Tcl_Obj *cmdObj;
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
     Command *cmdPtr = NULL;
     int wordIdx, cmdKnown, expand = 0, numWords = parsePtr->numWords;
@@ -1765,6 +1765,7 @@ CompileCommandTokens(
 	}
     }
 
+    cmdObj = Tcl_NewObj();
     Tcl_IncrRefCount(cmdObj);
     tokenPtr = parsePtr->tokenPtr;
     cmdKnown = TclWordKnownAtCompileTime(tokenPtr, cmdObj);
@@ -2085,6 +2086,7 @@ TclCompileScript(
 		    parse.commandStart + parse.commandSize - 1)?
 		    parse.commandSize - 1 : parse.commandSize);
 	    TclCompileSyntaxError(interp, envPtr);
+	    Tcl_FreeParse(&parse);
 	    lastPop = -1;
 	    break;
 	}
