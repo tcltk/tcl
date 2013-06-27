@@ -1738,24 +1738,25 @@ FindCompiledCommandFromToken(
  */
 
 #if 1
-static void
+static int
 CompileCommandTokens(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
-    CompileEnv *envPtr,
-    int *lastPopPtr)
+    CompileEnv *envPtr)
 {
     Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *cmdObj;
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
+    Tcl_Obj *cmdObj = Tcl_NewObj();
     Command *cmdPtr = NULL;
     int wordIdx, cmdKnown, expand = 0, numWords = parsePtr->numWords;
-    ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int *wlines, wlineat;
+    int cmdLine = envPtr->line;
+    int *clNext = envPtr->clNext;
+    int cmdIdx = envPtr->numCommands;
+    int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
 
-    if (numWords == 0) {
-	return;
-    }
+    assert (numWords > 0);
  
     for (wordIdx = 0; wordIdx < numWords;
 	    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
@@ -1765,7 +1766,6 @@ CompileCommandTokens(
 	}
     }
 
-    cmdObj = Tcl_NewObj();
     Tcl_IncrRefCount(cmdObj);
     tokenPtr = parsePtr->tokenPtr;
     cmdKnown = TclWordKnownAtCompileTime(tokenPtr, cmdObj);
@@ -1787,15 +1787,9 @@ CompileCommandTokens(
     }
 
     /* Pre-Compile */
-int lastTopLevelCmdIndex, currCmdIndex, startCodeOffset;
 
-int    cmdLine = envPtr->line;
-int    *clNext = envPtr->clNext;
-
-    lastTopLevelCmdIndex = currCmdIndex = envPtr->numCommands;
     envPtr->numCommands++;
-    startCodeOffset = envPtr->codeNext - envPtr->codeStart;
-    EnterCmdStartData(envPtr, currCmdIndex,
+    EnterCmdStartData(envPtr, cmdIdx,
 	    parsePtr->commandStart - envPtr->source, startCodeOffset);
 
     if (expand && !cmdPtr) {
@@ -2016,11 +2010,9 @@ int    *clNext = envPtr->clNext;
 
 finishCommand:
     TclEmitOpcode(INST_POP, envPtr);
-    EnterCmdExtentData(envPtr, currCmdIndex,
+    EnterCmdExtentData(envPtr, cmdIdx,
 	    parsePtr->term - parsePtr->commandStart,
 	    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
-    *lastPopPtr = currCmdIndex;
-    
 
     if (cmdKnown) {
 	Tcl_DecrRefCount(cmdObj);
@@ -2037,6 +2029,8 @@ finishCommand:
     ckfree(eclPtr->loc[wlineat].next);
     eclPtr->loc[wlineat].line = wlines;
     eclPtr->loc[wlineat].next = NULL;
+
+    return cmdIdx;
 }
 #endif
 
@@ -2052,10 +2046,8 @@ TclCompileScript(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
 #if 1
-    unsigned char *entryCodeNext = envPtr->codeNext;
-    const char *p;
-    int cmdLine, *clNext;
-    int lastPop = -1;
+    int lastCmdIdx = -1;
+    const char *p = script;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
@@ -2066,39 +2058,33 @@ TclCompileScript(
      * from the script.
      */
 
-    p = script;
-    cmdLine = envPtr->line;
-    clNext = envPtr->clNext;
+    /* TODO: Figure out when/why we need this */
+#if 0
+if (Tcl_GetStringResult(interp)[0] != '\0') {
+    fprintf(stdout, "INIT: '%s'\n", Tcl_GetStringResult(interp));
+    fflush(stdout);
+}
+#endif
+    Tcl_ResetResult(interp);
     while (numBytes > 0) {
 	Tcl_Parse parse;
 	const char *next;
 
-	/* TODO: can we relocate this to happen less frequently? */
-	Tcl_ResetResult(interp);
 	if (TCL_OK != Tcl_ParseCommand(interp, p, numBytes, 0, &parse)) {
 	    /*
 	     * Compile bytecodes to report the parse error at runtime.
 	     */
 
 	    Tcl_LogCommandInfo(interp, script, parse.commandStart,
+/* TODO: Make this more sensible, f. ex. [eval {foo \$x(}] */
 		    /* Drop the command terminator (";","]") if appropriate */
 		    (parse.term ==
 		    parse.commandStart + parse.commandSize - 1)?
 		    parse.commandSize - 1 : parse.commandSize);
 	    TclCompileSyntaxError(interp, envPtr);
 	    Tcl_FreeParse(&parse);
-	    lastPop = -1;
-	    break;
+	    return;
 	}
-
-	/*
-	 * TIP #280: Count newlines before the command start.
-	 * (See test info-30.33).
-	 */
-
-	TclAdvanceLines(&cmdLine, p, parse.commandStart);
-	TclAdvanceContinuations(&cmdLine, &clNext,
-		parse.commandStart - envPtr->source);
 
 #ifdef TCL_COMPILE_DEBUG
 	/*
@@ -2114,48 +2100,51 @@ TclCompileScript(
 	}
 #endif
 
-    envPtr->line = cmdLine;
-    envPtr->clNext = clNext;
-	CompileCommandTokens(interp, &parse, envPtr, &lastPop);
-    cmdLine = envPtr->line;
-    clNext = envPtr->clNext;
+	/*
+	 * TIP #280: Count newlines before the command start.
+	 * (See test info-30.33).
+	 */
+
+	TclAdvanceLines(&envPtr->line, p, parse.commandStart);
+	TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
+		parse.commandStart - envPtr->source);
 
 	/*
-	 * Advance to the next command in the script.
+	 * Advance parser to the next command in the script.
 	 */
 
 	next = parse.commandStart + parse.commandSize;
 	numBytes -= next - p;
 	p = next;
 
+	if (parse.numWords == 0) {
+	    /* TODO: Document justification */
+	    continue;
+	}
+
+	lastCmdIdx = CompileCommandTokens(interp, &parse, envPtr);
+
 	/*
 	 * TIP #280: Track lines in the just compiled command.
 	 */
 
-	TclAdvanceLines(&cmdLine, parse.commandStart, p);
-	TclAdvanceContinuations(&cmdLine, &clNext, p - envPtr->source);
+	TclAdvanceLines(&envPtr->line, parse.commandStart, p);
+	TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
+		p - envPtr->source);
 	Tcl_FreeParse(&parse);
     }
-
-    /*
-     * TIP #280: Bring the line counts in the CompEnv up to date.
-     *	See tests info-30.33,34,35 .
-     */
-
-    envPtr->line = cmdLine;
-    envPtr->clNext = clNext;
 
     /*
      * If the source script yielded no instructions (e.g., if it was empty),
      * push an empty string as the command's result.
      */
 
-    if (envPtr->codeNext == entryCodeNext) {
-	PushStringLiteral(envPtr, "");
-    } else if (lastPop >= 0) {
-	envPtr->cmdMapPtr[lastPop].numCodeBytes--;
+    if (lastCmdIdx >= 0) {
+	envPtr->cmdMapPtr[lastCmdIdx].numCodeBytes--;
 	envPtr->codeNext--;
-	TclAdjustStackDepth(1, envPtr);
+	envPtr->currStackDepth++;
+    } else {
+	PushStringLiteral(envPtr, "");
     }
 #else
     int lastTopLevelCmdIndex = -1;
