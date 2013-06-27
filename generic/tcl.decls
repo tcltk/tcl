@@ -823,9 +823,10 @@ declare 228 {
 declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
-declare 230 {
-    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
-}
+# Removed (from stubtable only) in 9.0:
+#declare 230 {
+#    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
+#}
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
 }

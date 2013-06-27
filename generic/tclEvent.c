@@ -1171,8 +1171,6 @@ Tcl_Finalize(void)
 
     TclFinalizeEncodingSubsystem();
 
-    Tcl_SetPanicProc(NULL);
-
     /*
      * Repeat finalization of the thread local storage once more. Although
      * this step is already done by the Tcl_FinalizeThread call above, series

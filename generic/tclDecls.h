@@ -645,8 +645,7 @@ TCLAPI void		Tcl_SetErrno(int err);
 TCLAPI void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 /* 229 */
 TCLAPI void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
-/* 230 */
-TCLAPI void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
+/* Slot 230 is reserved */
 /* 231 */
 TCLAPI int		Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth);
 /* 232 */
@@ -1992,7 +1991,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
-    void (*tcl_SetPanicProc) (Tcl_PanicProc *panicProc); /* 230 */
+    void (*reserved230)(void);
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
     void (*tcl_SetResult) (Tcl_Interp *interp, char *result, Tcl_FreeProc *freeProc); /* 232 */
     int (*tcl_SetServiceMode) (int mode); /* 233 */
@@ -2874,8 +2873,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SetErrorCode) /* 228 */
 #define Tcl_SetMaxBlockTime \
 	(tclStubsPtr->tcl_SetMaxBlockTime) /* 229 */
-#define Tcl_SetPanicProc \
-	(tclStubsPtr->tcl_SetPanicProc) /* 230 */
+/* Slot 230 is reserved */
 #define Tcl_SetRecursionLimit \
 	(tclStubsPtr->tcl_SetRecursionLimit) /* 231 */
 #define Tcl_SetResult \
@@ -3666,14 +3664,12 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_FindExecutable
 #   undef Tcl_GetStringResult
 #   undef Tcl_Init
-#   undef Tcl_SetPanicProc
 #   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
 #   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif

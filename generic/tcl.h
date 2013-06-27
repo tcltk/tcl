@@ -2220,8 +2220,9 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+	    ((Tcl_CreateInterp)()))
 TCLAPI void		Tcl_FindExecutable(const char *argv0);
+TCLAPI void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
 TCLAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,

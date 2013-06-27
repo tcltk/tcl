@@ -954,7 +954,7 @@ const TclStubs tclStubs = {
     Tcl_SetErrno, /* 227 */
     Tcl_SetErrorCode, /* 228 */
     Tcl_SetMaxBlockTime, /* 229 */
-    Tcl_SetPanicProc, /* 230 */
+    0, /* 230 */
     Tcl_SetRecursionLimit, /* 231 */
     Tcl_SetResult, /* 232 */
     Tcl_SetServiceMode, /* 233 */
