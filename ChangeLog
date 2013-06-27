@@ -1,3 +1,8 @@
+2013-06-27  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* generic/tclConfig.c: Bug [9b2e636361]: Tcl_CreateInterp() needs initialized
+	* generic/tclMain.c:   encodings.
+
 2013-06-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* generic/tclEvent.c: Bug [3611974]: InitSubsystems multiple thread issue.
