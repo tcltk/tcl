@@ -2766,7 +2766,7 @@ TEBCresume(
 	 */
 
 	auxObjList->length += objc - 1;
-	if ((objc > 1) && (auxObjList-length > 0)) {
+	if ((objc > 1) && (auxObjList->length > 0)) {
 	    length = auxObjList->length /* Total expansion room we need */
 		    + codePtr->maxStackDepth /* Beyond the original max */
 		    - CURR_DEPTH;	/* Relative to where we are */

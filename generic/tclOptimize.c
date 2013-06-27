@@ -211,7 +211,8 @@ ConvertZeroEffectToNOP(
 	int blank = 0, i, nextInst;
 
 	size = AddrLength(currentInstPtr);
-	while (*(currentInstPtr+size) == INST_NOP) {
+	while ((currentInstPtr + size < envPtr->codeNext)
+		&& *(currentInstPtr+size) == INST_NOP) {
 	    if (IsTargetAddress(&targets, currentInstPtr + size)) {
 		break;
 	    }
