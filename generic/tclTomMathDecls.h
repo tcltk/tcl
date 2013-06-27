@@ -343,7 +343,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 }
 #endif
 
-#if defined(USE_TCL_STUBS)
+#if !defined(BUILD_tcl) || defined(USE_TCL_STUBS)
 
 /*
  * Inline function declarations:
@@ -478,7 +478,7 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 #define TclBN_mp_cnt_lsb \
 	(tclTomMathStubsPtr->tclBN_mp_cnt_lsb) /* 63 */
 
-#endif /* defined(USE_TCL_STUBS) */
+#endif /* !BUILD_tcl || USE_TCL_STUBS */
 
 /* !END!: Do not edit above this line. */
 

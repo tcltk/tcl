@@ -3787,6 +3787,14 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 
+/* Used internally in stub library. */
+typedef struct {
+    char version[12];
+    const TclStubs *stubs;
+} TclStubInfoType;
+
+MODULE_SCOPE const TclStubInfoType tclStubInfo;
+
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use
  * by the bytecode compiler and engine. Some of these could later be placed in
@@ -4700,7 +4708,7 @@ typedef struct NRE_callback {
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"
 
-#if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
+#if defined(BUILD_tcl) && !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
 #define Tcl_AttemptAlloc(size)        TclpAlloc(size)
 #define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
 #define Tcl_Free(ptr)                 TclpFree(ptr)

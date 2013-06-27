@@ -335,7 +335,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 }
 #endif
 
-#if defined(USE_TCL_STUBS)
+#if !defined(BUILD_tcl) || defined(USE_TCL_STUBS)
 
 /*
  * Inline function declarations:
@@ -495,7 +495,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
 #endif /* MACOSX */
 
-#endif /* defined(USE_TCL_STUBS) */
+#endif /* !BUILD_tcl || USE_TCL_STUBS */
 
 /* !END!: Do not edit above this line. */
 

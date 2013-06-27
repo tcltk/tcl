@@ -1363,15 +1363,22 @@ Tcl_UtfToExternal(
  *
  *---------------------------------------------------------------------------
  */
+MODULE_SCOPE const TclStubs tclStubs;
+
+const TclStubInfoType tclStubInfo = {
+    TCL_PATCH_LEVEL, &tclStubs
+};
+
 #undef Tcl_FindExecutable
-void
+const char *
 Tcl_FindExecutable(
-    const char *argv0)		/* The value of the application's argv[0]
+    const void *argv0)		/* The value of the application's argv[0]
 				 * (native). */
 {
     TclInitSubsystems();
     TclpSetInitialEncodings();
     TclpFindExecutable(argv0);
+    return tclStubInfo.version;
 }
 
 /*

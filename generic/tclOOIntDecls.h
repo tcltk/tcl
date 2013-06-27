@@ -118,7 +118,7 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 }
 #endif
 
-#if defined(USE_TCLOO_STUBS)
+#if !defined(BUILD_tcloo) || defined(USE_TCLOO_STUBS)
 
 /*
  * Inline function declarations:
@@ -157,7 +157,7 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 #define TclOOClassSetMixins \
 	(tclOOIntStubsPtr->tclOOClassSetMixins) /* 15 */
 
-#endif /* defined(USE_TCLOO_STUBS) */
+#endif /* !BUILD_tcloo || USE_TCLOO_STUBS */
 
 /* !END!: Do not edit above this line. */
 #endif /* _TCLOOINTDECLS */

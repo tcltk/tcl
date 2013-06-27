@@ -12,9 +12,11 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef BUILD_tcl
+#define USE_TCL_STUBS
 #undef STATIC_BUILD
 #include "tcl.h"
+#include "tclOO.h"
+#include "tclTomMathDecls.h"
 
 #ifdef TCL_TEST
 extern Tcl_PackageInitProc Tcltest_Init;
@@ -108,9 +110,11 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    if ((Tcl_Init)(interp) == TCL_ERROR) {
+    if (Tcl_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
+    Tcl_TomMath_InitStubs(interp, TCL_VERSION);
+    Tcl_OOInitStubs(interp);
 
 #ifdef TCL_XT_TEST
     if (Tclxttest_Init(interp) == TCL_ERROR) {
@@ -150,10 +154,10 @@ Tcl_AppInit(
      */
 
 #ifdef DJGPP
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
 #else
-    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+    Tcl_ObjSetVar2(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
 	    Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
 #endif
 

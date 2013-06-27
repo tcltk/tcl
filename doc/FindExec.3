@@ -13,14 +13,14 @@ Tcl_FindExecutable, Tcl_GetNameOfExecutable \- identify or return the name of th
 .nf
 \fB#include <tcl.h>\fR
 .sp
-void
+const char *
 \fBTcl_FindExecutable\fR(\fIargv0\fR)
 .sp
 const char *
 \fBTcl_GetNameOfExecutable\fR()
 .SH ARGUMENTS
-.AS char *argv0
-.AP char *argv0 in
+.AS void *argv0
+.AP void *argv0 in
 The first command-line argument to the program, which gives the
 application's name.
 .BE

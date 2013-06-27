@@ -2402,7 +2402,7 @@ extern const TclStubs *tclStubsPtr;
 }
 #endif
 
-#if defined(USE_TCL_STUBS)
+#if !defined(BUILD_tcl) || defined(USE_TCL_STUBS)
 
 /*
  * Inline function declarations:
@@ -3655,29 +3655,13 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 
-#endif /* defined(USE_TCL_STUBS) */
+#endif /* !BUILD_tcl || USE_TCL_STUBS */
 
 /* !END!: Do not edit above this line. */
 
-#if defined(USE_TCL_STUBS)
-#   undef Tcl_CreateInterp
-#   undef Tcl_FindExecutable
-#   undef Tcl_GetStringResult
-#   undef Tcl_Init
-#   undef Tcl_ObjSetVar2
-#   undef Tcl_StaticPackage
-#   undef TclFSGetNativePath
-#   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
-#   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
-#   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
-	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
-#endif
-
 #if defined(_WIN32) && defined(UNICODE)
-#   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #   define Tcl_MainEx Tcl_MainExW
-TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
+TCLSOAPI void Tcl_MainExW(int argc, wchar_t **argv,
 	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 

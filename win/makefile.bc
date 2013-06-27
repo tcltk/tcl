@@ -279,6 +279,7 @@ TCLOBJS	= \
 
 TCLSTUBOBJS	= \
 	$(TMPDIR)\tclStubLib.obj \
+	$(TMPDIR)\tclStubLibTbl.obj \
 	$(TMPDIR)\tclTomMathStubLib.obj \
 	$(TMPDIR)\tclOOStubLib.obj
 
@@ -515,17 +516,20 @@ $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
 
 # tclWinReg: Produces errors in ANSI mode
 $(TMPDIR)\tclWinReg.obj : $(WINDIR)\tclWinReg.c
-	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -o$(TMPDIR)\$@ $?
+	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
 
 # tclWinDde: Produces errors in ANSI mode
 $(TMPDIR)\tclWinDde.obj : $(WINDIR)\tclWinDde.c
-	$(cc32) $(TCL_CFLAGS) -DUSE_TCL_STUBS -o$(TMPDIR)\$@ $?
+	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
 
 
 # The following objects are part of the stub library and should not
 # be built as DLL objects but none of the symbols should be exported
 
 $(TMPDIR)\tclStubLib.obj : $(GENERICDIR)\tclStubLib.c
+	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
+
+$(TMPDIR)\tclStubLibTbl.obj : $(GENERICDIR)\tclStubLibTbl.c
 	$(cc32) $(TCL_CFLAGS) -DSTATIC_BUILD -o$(TMPDIR)\$@ $?
 
 $(TMPDIR)\tclTomMathStubLib.obj : $(GENERICDIR)\tclTomMathStubLib.c

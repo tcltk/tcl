@@ -45,7 +45,8 @@ static Tcl_PanicProc *panicProc = NULL;
  *----------------------------------------------------------------------
  */
 
-void
+#undef Tcl_SetPanicProc
+const char *
 Tcl_SetPanicProc(
     Tcl_PanicProc *proc)
 {
@@ -58,6 +59,7 @@ Tcl_SetPanicProc(
     else
 #endif
     panicProc = proc;
+    return tclStubInfo.version;
 }
 
 /*

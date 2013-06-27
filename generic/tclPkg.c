@@ -197,78 +197,6 @@ Tcl_PkgRequireEx(
     const char *result = NULL;
 
     /*
-     * If an attempt is being made to load this into a standalone executable
-     * on a platform where backlinking is not supported then this must be a
-     * shared version of Tcl (Otherwise the load would have failed). Detect
-     * this situation by checking that this library has been correctly
-     * initialised. If it has not been then return immediately as nothing will
-     * work.
-     */
-
-    if (tclEmptyStringRep == NULL) {
-	/*
-	 * OK, so what's going on here?
-	 *
-	 * First, what are we doing? We are performing a check on behalf of
-	 * one particular caller, Tcl_InitStubs(). When a package is stub-
-	 * enabled, it is statically linked to libtclstub.a, which contains a
-	 * copy of Tcl_InitStubs(). When a stub-enabled package is loaded, its
-	 * *_Init() function is supposed to call Tcl_InitStubs() before
-	 * calling any other functions in the Tcl library. The first Tcl
-	 * function called by Tcl_InitStubs() through the stub table is
-	 * Tcl_PkgRequireEx(), so this code right here is the first code that
-	 * is part of the original Tcl library in the executable that gets
-	 * executed on behalf of a newly loaded stub-enabled package.
-	 *
-	 * One easy error for the developer/builder of a stub-enabled package
-	 * to make is to forget to define USE_TCL_STUBS when compiling the
-	 * package. When that happens, the package will contain symbols that
-	 * are references to the Tcl library, rather than function pointers
-	 * referencing the stub table. On platforms that lack backlinking,
-	 * those unresolved references may cause the loading of the package to
-	 * also load a second copy of the Tcl library, leading to all kinds of
-	 * trouble. We would like to catch that error and report a useful
-	 * message back to the user. That's what we're doing.
-	 *
-	 * Second, how does this work? If we reach this point, then the global
-	 * variable tclEmptyStringRep has the value NULL. Compare that with
-	 * the definition of tclEmptyStringRep near the top of the file
-	 * generic/tclObj.c. It clearly should not have the value NULL; it
-	 * should point to the char tclEmptyString. If we see it having the
-	 * value NULL, then somehow we are seeing a Tcl library that isn't
-	 * completely initialized, and that's an indicator for the error
-	 * condition described above. (Further explanation is welcome.)
-	 *
-	 * Third, so what do we do about it? This situation indicates the
-	 * package we just loaded wasn't properly compiled to be stub-enabled,
-	 * yet it thinks it is stub-enabled (it called Tcl_InitStubs()). We
-	 * want to report that the package just loaded is broken, so we want
-	 * to place an error message in the interpreter result and return NULL
-	 * to indicate failure to Tcl_InitStubs() so that it will also fail.
-	 * (Further explanation why we don't want to Tcl_Panic() is welcome.
-	 * After all, two Tcl libraries can't be a good thing!)
-	 *
-	 * Trouble is that's going to be tricky. We're now using a Tcl library
-	 * that's not fully initialized. In particular, it doesn't have a
-	 * proper value for tclEmptyStringRep. The Tcl_Obj system heavily
-	 * depends on the value of tclEmptyStringRep and all of Tcl depends
-	 * (increasingly) on the Tcl_Obj system, we need to correct that flaw
-	 * before making the calls to set the interpreter result to the error
-	 * message. That's the only flaw corrected; other problems with
-	 * initialization of the Tcl library are not remedied, so be very
-	 * careful about adding any other calls here without checking how they
-	 * behave when initialization is incomplete.
-	 */
-
-	tclEmptyStringRep = &tclEmptyString;
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"Cannot load package \"%s\" in standalone executable:"
-		" This package is not compiled with stub support", name));
-	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNSTUBBED", NULL);
-	return NULL;
-    }
-
-    /*
      * Translate between old and new API, and defer to the new function.
      */
 
@@ -1825,53 +1753,6 @@ RequirementSatisfied(
     ckfree(max);
     ckfree(buf);
     return satisfied;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_PkgInitStubsCheck --
- *
- *	This is a replacement routine for Tcl_InitStubs() that is called
- *	from code where -DUSE_TCL_STUBS has not been enabled.
- *
- * Results:
- *	Returns the version of a conforming stubs table, or NULL, if
- *	the table version doesn't satisfy the requested requirements,
- *	according to historical practice.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-const char *
-Tcl_PkgInitStubsCheck(
-    Tcl_Interp *interp,
-    const char * version,
-    int exact)
-{
-    const char *actualVersion = Tcl_PkgPresentEx(interp, "Tcl", version, 0, NULL);
-
-    if (exact && actualVersion) {
-	const char *p = version;
-	int count = 0;
-
-	while (*p) {
-	    count += !isdigit(UCHAR(*p++));
-	}
-	if (count == 1) {
-	    if (0 != strncmp(version, actualVersion, strlen(version))) {
-		/* Construct error message */
-		Tcl_PkgPresentEx(interp, "Tcl", version, 1, NULL);
-		return NULL;
-	    }
-	} else {
-	    return Tcl_PkgPresentEx(interp, "Tcl", version, 1, NULL);
-	}
-    }
-    return actualVersion;
 }
 /*
  * Local Variables:

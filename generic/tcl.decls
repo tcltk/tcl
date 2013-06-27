@@ -2403,10 +2403,6 @@ export {
 	const char* version, int epoch, int revision)
 }
 export {
-    const char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, const char *version,
-	int exact)
-}
-export {
     void Tcl_GetMemoryInfo(Tcl_DString *dsPtr)
 }
 

@@ -177,7 +177,7 @@ Tcl_UnlinkVar(
     if (linkPtr == NULL) {
 	return;
     }
-    Tcl_UntraceVar2(interp, varName, NULL,
+    Tcl_UntraceVar(interp, varName,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    LinkTraceProc, linkPtr);
     Tcl_DecrRefCount(linkPtr->varName);
