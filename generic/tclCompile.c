@@ -2058,14 +2058,6 @@ TclCompileScript(
      * from the script.
      */
 
-    /* TODO: Figure out when/why we need this */
-#if 0
-if (Tcl_GetStringResult(interp)[0] != '\0') {
-    fprintf(stdout, "INIT: '%s'\n", Tcl_GetStringResult(interp));
-    fflush(stdout);
-}
-#endif
-    Tcl_ResetResult(interp);
     while (numBytes > 0) {
 	Tcl_Parse parse;
 	const char *next;
