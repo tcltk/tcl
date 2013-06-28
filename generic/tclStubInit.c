@@ -44,6 +44,7 @@
 #define TclBackgroundException Tcl_BackgroundException
 #undef Tcl_SetIntObj
 #undef TclpInetNtoa
+#define TclMacOSXNotifierAddRunLoopMode Tcl_MacOSXNotifierAddRunLoopMode
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
@@ -669,6 +670,7 @@ static const TclPlatStubs tclPlatStubs = {
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+    Tcl_MacOSXNotifierAddRunLoopMode, /* 2 */
 #endif /* MACOSX */
 };
 

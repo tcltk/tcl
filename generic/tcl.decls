@@ -2362,6 +2362,9 @@ declare 1 macosx {
 	    const char *bundleName, const char *bundleVersion,
 	    int hasResourceFile, int maxPathLen, char *libraryPath)
 }
+declare 2 macosx {
+    void Tcl_MacOSXNotifierAddRunLoopMode(const void *runLoopMode)
+}
 
 ##############################################################################
 
