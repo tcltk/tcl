@@ -1426,17 +1426,12 @@ Tcl_NRExprObj(
     Tcl_Obj *resultPtr)
 {
     ByteCode *codePtr;
+    Tcl_InterpState state = Tcl_SaveInterpState(interp, TCL_OK);
 
-    /* TODO: consider saving whole state? */
-    Tcl_Obj *saveObjPtr = Tcl_GetObjResult(interp);
-
-    Tcl_IncrRefCount(saveObjPtr);
-
+    Tcl_ResetResult(interp);
     codePtr = CompileExprObj(interp, objPtr);
 
-    /* TODO: Confirm reset not required? */
-    /*Tcl_ResetResult(interp);*/
-    Tcl_NRAddCallback(interp, ExprObjCallback, saveObjPtr, resultPtr,
+    Tcl_NRAddCallback(interp, ExprObjCallback, state, resultPtr,
 	    NULL, NULL);
     return TclNRExecuteByteCode(interp, codePtr);
 }
@@ -1447,14 +1442,15 @@ ExprObjCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *saveObjPtr = data[0];
+    Tcl_InterpState state = data[0];
     Tcl_Obj *resultPtr = data[1];
 
     if (result == TCL_OK) {
 	TclSetDuplicateObj(resultPtr, Tcl_GetObjResult(interp));
-	Tcl_SetObjResult(interp, saveObjPtr);
+	(void) Tcl_RestoreInterpState(interp, state);
+    } else {
+	Tcl_DiscardInterpState(state);
     }
-    TclDecrRefCount(saveObjPtr);
     return result;
 }
 
