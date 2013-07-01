@@ -16,6 +16,8 @@
 #include "tclCompile.h"
 #include <assert.h>
 
+#define REWRITE
+
 /*
  * Table of all AuxData types.
  */
@@ -562,8 +564,10 @@ static void		EnterCmdExtentData(CompileEnv *envPtr,
 			    int cmdNumber, int numSrcBytes, int numCodeBytes);
 static void		EnterCmdStartData(CompileEnv *envPtr,
 			    int cmdNumber, int srcOffset, int codeOffset);
+#ifndef REWRITE
 static Command *	FindCompiledCommandFromToken(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr);
+#endif
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -1671,6 +1675,7 @@ TclWordKnownAtCompileTime(
     return 1;
 }
 
+#ifndef REWRITE
 /*
  * ---------------------------------------------------------------------
  *
@@ -1718,6 +1723,7 @@ FindCompiledCommandFromToken(
     Tcl_DStringFree(&ds);
     return cmdPtr;
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -1737,7 +1743,7 @@ FindCompiledCommandFromToken(
  *----------------------------------------------------------------------
  */
 
-#if 1
+#ifdef REWRITE
 static int
 CompileCommandTokens(
     Tcl_Interp *interp,
@@ -2045,18 +2051,18 @@ TclCompileScript(
 				 * first null character. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-#if 1
-    int lastCmdIdx = -1;
-    const char *p = script;
+#ifdef REWRITE
+    int lastCmdIdx = -1;	/* Index into envPtr->cmdMapPtr of the last
+				 * command this routine compiles into bytecode.
+				 * Initial value of -1 indicates this routine
+				 * has not yet generated any bytecode. */
+    const char *p = script;	/* Where we are in our compile. */
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
     }
 
-    /*
-     * Each iteration through the following loop compiles the next command
-     * from the script.
-     */
+    /* Each iteration compiles one command from the script. */
 
     while (numBytes > 0) {
 	Tcl_Parse parse;
@@ -2068,11 +2074,7 @@ TclCompileScript(
 	     */
 
 	    Tcl_LogCommandInfo(interp, script, parse.commandStart,
-/* TODO: Make this more sensible, f. ex. [eval {foo \$x(}] */
-		    /* Drop the command terminator (";","]") if appropriate */
-		    (parse.term ==
-		    parse.commandStart + parse.commandSize - 1)?
-		    parse.commandSize - 1 : parse.commandSize);
+		    parse.term + 1 - parse.commandStart);
 	    TclCompileSyntaxError(interp, envPtr);
 	    Tcl_FreeParse(&parse);
 	    return;
@@ -2126,17 +2128,28 @@ TclCompileScript(
 	Tcl_FreeParse(&parse);
     }
 
-    /*
-     * If the source script yielded no instructions (e.g., if it was empty),
-     * push an empty string as the command's result.
-     */
-
-    if (lastCmdIdx >= 0) {
+    if (lastCmdIdx == -1) {
+	/*
+	 * Compiling the script yielded no bytecode.  The script must be
+	 * all whitespace, comments, and empty commands.  Such scripts
+	 * are defined to successfully produce the empty string result,
+	 * so we emit the simple bytecode that makes that happen.
+	 */
+	PushStringLiteral(envPtr, "");
+    } else {
+	/*
+	 * We compiled at least one command to bytecode.  The routine
+	 * CompileCommandTokens() follows the bytecode of each compiled
+	 * command with an INST_POP, so that stack balance is maintained
+	 * when several commands are in sequence.  (The result of each
+	 * command is thrown away before moving on to the next command).
+	 * For the last command compiled, we need to undo that INST_POP
+	 * so that the result of the last command becomes the result of
+	 * the script.  These code here removes that trailing INST_POP.
+	 */
 	envPtr->cmdMapPtr[lastCmdIdx].numCodeBytes--;
 	envPtr->codeNext--;
 	envPtr->currStackDepth++;
-    } else {
-	PushStringLiteral(envPtr, "");
     }
 #else
     int lastTopLevelCmdIndex = -1;
