@@ -1764,6 +1764,7 @@ CompileCommandTokens(
 
     assert (numWords > 0);
  
+    /* Determine whether any words of the command require expansion */
     for (wordIdx = 0; wordIdx < numWords;
 	    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
@@ -1772,6 +1773,7 @@ CompileCommandTokens(
 	}
     }
 
+    /* Do we know the command  word? */
     Tcl_IncrRefCount(cmdObj);
     tokenPtr = parsePtr->tokenPtr;
     cmdKnown = TclWordKnownAtCompileTime(tokenPtr, cmdObj);
@@ -1791,6 +1793,7 @@ CompileCommandTokens(
 	    }
 	}
     }
+    /* If cmdPtr != NULL, we will try to call cmdPtr->compileProc */
 
     /* Pre-Compile */
 
@@ -2112,7 +2115,22 @@ TclCompileScript(
 	p = next;
 
 	if (parse.numWords == 0) {
-	    /* TODO: Document justification */
+	    /*
+	     * The "command" parsed has no words.  In this case
+	     * we can skip the rest of the loop body.  With no words,
+	     * clearly CompileCommandTokens() has nothing to do.  Since
+	     * the parser aggressively sucks up leading comment and white
+	     * space, including newlines, parse.commandStart must be 
+	     * pointing at either the end of script, or a command-terminating
+	     * semi-colon.  In either case, the TclAdvance*() calls have
+	     * nothing to do.  Finally, when no words are parsed, no
+	     * tokens have been allocated at parse.tokenPtr so there's
+	     * also nothing for Tcl_FreeParse() to do.
+	     *
+	     * The advantage of this shortcut is that CompileCommandTokens()
+	     * can be written with an assumption that parse.numWords > 0,
+	     * with the implication the CCT() always generates bytecode.
+	     */
 	    continue;
 	}
 
@@ -2145,7 +2163,7 @@ TclCompileScript(
 	 * command is thrown away before moving on to the next command).
 	 * For the last command compiled, we need to undo that INST_POP
 	 * so that the result of the last command becomes the result of
-	 * the script.  These code here removes that trailing INST_POP.
+	 * the script.  The code here removes that trailing INST_POP.
 	 */
 	envPtr->cmdMapPtr[lastCmdIdx].numCodeBytes--;
 	envPtr->codeNext--;
