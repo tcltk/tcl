@@ -386,6 +386,7 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
 	tclStubLibTbl.$(OBJEXT) \
+	tclStubLibDl.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
 	tclOOStubLib.$(OBJEXT)
 
@@ -518,6 +519,9 @@ tclStubLib.${OBJEXT}: tclStubLib.c
 
 tclStubLibTbl.${OBJEXT}: tclStubLibTbl.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
+
+tclStubLibDl.${OBJEXT}: tclStubLibDl.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD -DTCL_LIB_FILE="\"$(TCL_LIB_FILE)\"" @DEPARG@ $(CC_OBJNAME)
 
 tclTomMathStubLib.${OBJEXT}: tclTomMathStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
