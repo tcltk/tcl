@@ -1,3 +1,8 @@
+2013-07-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclXtNotify.c: Bug [817249]: bring tclXtNotify.c up to date with
+	Tcl_SetNotifier() change.
+
 2013-07-02  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tcl.m4:  Bug [32afa6e256]: dirent64 check is incorrect in tcl.m4
