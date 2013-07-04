@@ -96,7 +96,7 @@ typedef struct ThreadSpecificData {
 	 * that an event is ready to be processed
 	 * by sending this event. */
     void *hwnd;			/* Messaging window. */
-#else
+#else /* !__CYGWIN__ */
     Tcl_Condition waitCV;	/* Any other thread alerts a notifier that an
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
@@ -184,9 +184,9 @@ static Tcl_ThreadId notifierThread;
  */
 
 #ifdef TCL_THREADS
-static void		NotifierThreadProc(ClientData clientData);
+static void	NotifierThreadProc(ClientData clientData);
 #endif
-static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 
 /*
  * Import of Windows API when building threaded with Cygwin.
