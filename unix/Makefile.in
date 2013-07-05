@@ -201,6 +201,7 @@ BUILD_DLTEST		= @BUILD_DLTEST@
 
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 #TCL_LIB_FILE		= libtcl.a
+TCL_PREV_LIB_FILE		= @TCL_PREV_LIB_FILE@
 
 # Generic lib name used in rules that apply to tcl and tk
 LIB_FILE		= ${TCL_LIB_FILE}
@@ -335,7 +336,7 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
         bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
-STUB_LIB_OBJS = tclStubLib.o tclTomMathStubLib.o tclOOStubLib.o ${COMPAT_OBJS}
+STUB_LIB_OBJS = tclStubLib.o tclStubLibDl.o tclTomMathStubLib.o tclOOStubLib.o ${COMPAT_OBJS}
 
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
@@ -470,6 +471,7 @@ OO_SRCS = \
 
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c \
+	$(GENERIC_DIR)/tclStubLibDl.c \
 	$(GENERIC_DIR)/tclTomMathStubLib.c \
 	$(GENERIC_DIR)/tclOOStubLib.c
 
@@ -1684,6 +1686,9 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubLib.c
+
+tclStubLibDl.o: $(GENERIC_DIR)/tclStubLibDl.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DTCL_DLL_FILE="\"$(TCL_LIB_FILE)\"" -DTCL_PREV_DLL_FILE="\"$(TCL_PREV_LIB_FILE)\"" $(GENERIC_DIR)/tclStubLibDl.c
 
 tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c

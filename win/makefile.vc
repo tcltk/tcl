@@ -450,6 +450,7 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
+	$(TMP_DIR)\tclStubLibDl.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
 	$(TMP_DIR)\tclOOStubLib.obj
 
@@ -978,6 +979,9 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+
+$(TMP_DIR)\tclStubLibDl.obj: $(GENERICDIR)\tclStubLibDl.c
+	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD -DTCL_DLL_FILE="\"tcl86.dll\"" -DTCL_PREV_DLL_FILE="\"tcl85.dll\"" $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
