@@ -211,7 +211,7 @@ QueryConfigObjCmd(
     };
     Tcl_DString conv;
     Tcl_Encoding venc = NULL;
-    CONST char *value;
+    const char *value;
 
     if ((objc < 2) || (objc > 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg?");
