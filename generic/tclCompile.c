@@ -1773,11 +1773,12 @@ CompileCommandTokens(
 	}
     }
 
-    /* Do we know the command  word? */
+    /* Do we know the command word? */
     Tcl_IncrRefCount(cmdObj);
     tokenPtr = parsePtr->tokenPtr;
     cmdKnown = TclWordKnownAtCompileTime(tokenPtr, cmdObj);
 
+    /* Is this a command we should (try to) compile with a compileProc ? */
     if (cmdKnown && !(iPtr->flags & DONT_COMPILE_CMDS_INLINE)) {
 	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
 	if (cmdPtr) {
