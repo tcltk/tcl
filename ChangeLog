@@ -1,3 +1,13 @@
+2013-07-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/Antarctica/Macquarie:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Hebron:
+	* library/tzdata/Asia/Jerusalem:
+	http://www.iana.org/time-zones/repository/releases/tzdata2013d.tar.gz
+
 2013-07-03  Jan Nijtmans  <nijtmans@users.sf.net>
 
 	* unix/tclXtNotify.c: Bug [817249]: bring tclXtNotify.c up to date with
