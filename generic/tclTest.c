@@ -1856,7 +1856,7 @@ TestdstringCmd(
 	if (Tcl_GetInt(interp, argv[2], &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringTrunc(&dstring, count);
+	Tcl_DStringSetLength(&dstring, count);
     } else if (strcmp(argv[1], "start") == 0) {
 	if (argc != 2) {
 	    goto wrongNumArgs;
