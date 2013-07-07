@@ -372,7 +372,7 @@ test exec-10.1 {errors in exec invocation} -constraints {exec} -body {
     exec
 } -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
 test exec-10.2 {errors in exec invocation} -constraints {exec} -body {
-    exec | cat
+    exec |& cat
 } -returnCodes error -result {illegal use of | or |& in command}
 test exec-10.3 {errors in exec invocation} -constraints {exec} -body {
     exec cat |
@@ -682,6 +682,12 @@ test exec-19.1 {exec >> uses O_APPEND} -constraints {exec unix} -setup {
 } -cleanup {
     removeFile $tmpfile
 } -result 14
+
+# New Syntax
+test exec-20.1 {New exec syntax with sublists} {exec} {
+    exec | {echo >}
+} >
+
 
 # ----------------------------------------------------------------------
 # cleanup
