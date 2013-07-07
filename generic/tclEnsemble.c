@@ -21,8 +21,6 @@ static inline Tcl_Obj *	NewNsObj(Tcl_Namespace *namespacePtr);
 static inline int	EnsembleUnknownCallback(Tcl_Interp *interp,
 			    EnsembleConfig *ensemblePtr, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **prefixObjPtr);
-static int		NsEnsembleImplementationCmd(ClientData clientData,
-			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static int		NsEnsembleImplementationCmdNR(ClientData clientData,
 			    Tcl_Interp *interp,int objc,Tcl_Obj *const objv[]);
 static void		BuildEnsembleConfig(EnsembleConfig *ensemblePtr);
@@ -687,7 +685,7 @@ Tcl_CreateEnsemble(
     ensemblePtr->parameterList = NULL;
     ensemblePtr->unknownHandler = NULL;
     ensemblePtr->token = Tcl_NRCreateCommand(interp, name,
-	    NsEnsembleImplementationCmd, NsEnsembleImplementationCmdNR,
+	    TclEnsembleImplementationCmd, NsEnsembleImplementationCmdNR,
 	    ensemblePtr, DeleteEnsembleConfig);
     ensemblePtr->next = (EnsembleConfig *) nsPtr->ensembles;
     nsPtr->ensembles = (Tcl_Ensemble *) ensemblePtr;
@@ -738,7 +736,7 @@ Tcl_SetEnsembleSubcommandList(
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldList;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -814,7 +812,7 @@ Tcl_SetEnsembleParameterList(
     Tcl_Obj *oldList;
     int length;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -890,7 +888,7 @@ Tcl_SetEnsembleMappingDict(
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldDict;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -989,7 +987,7 @@ Tcl_SetEnsembleUnknownHandler(
     EnsembleConfig *ensemblePtr;
     Tcl_Obj *oldList;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -1055,7 +1053,7 @@ Tcl_SetEnsembleFlags(
     EnsembleConfig *ensemblePtr;
     int wasCompiled;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"command is not an ensemble", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE", "NOT_ENSEMBLE", NULL);
@@ -1131,7 +1129,7 @@ Tcl_GetEnsembleSubcommandList(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1173,7 +1171,7 @@ Tcl_GetEnsembleParameterList(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1215,7 +1213,7 @@ Tcl_GetEnsembleMappingDict(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1256,7 +1254,7 @@ Tcl_GetEnsembleUnknownHandler(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1297,7 +1295,7 @@ Tcl_GetEnsembleFlags(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1338,7 +1336,7 @@ Tcl_GetEnsembleNamespace(
     Command *cmdPtr = (Command *) token;
     EnsembleConfig *ensemblePtr;
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "command is not an ensemble", -1));
@@ -1388,7 +1386,7 @@ Tcl_FindEnsemble(
 	return NULL;
     }
 
-    if (cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	/*
 	 * Reuse existing infrastructure for following import link chains
 	 * rather than duplicating it.
@@ -1396,7 +1394,8 @@ Tcl_FindEnsemble(
 
 	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
 
-	if (cmdPtr == NULL || cmdPtr->objProc != NsEnsembleImplementationCmd){
+	if (cmdPtr == NULL
+		|| cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	    if (flags & TCL_LEAVE_ERR_MSG) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"\"%s\" is not an ensemble command",
@@ -1434,11 +1433,11 @@ Tcl_IsEnsemble(
 {
     Command *cmdPtr = (Command *) token;
 
-    if (cmdPtr->objProc == NsEnsembleImplementationCmd) {
+    if (cmdPtr->objProc == TclEnsembleImplementationCmd) {
 	return 1;
     }
     cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
-    if (cmdPtr == NULL || cmdPtr->objProc != NsEnsembleImplementationCmd) {
+    if (cmdPtr == NULL || cmdPtr->objProc != TclEnsembleImplementationCmd) {
 	return 0;
     }
     return 1;
@@ -1609,7 +1608,7 @@ TclMakeEnsemble(
 /*
  *----------------------------------------------------------------------
  *
- * NsEnsembleImplementationCmd --
+ * TclEnsembleImplementationCmd --
  *
  *	Implements an ensemble of commands (being those exported by a
  *	namespace other than the global namespace) as a command with the same
@@ -1628,8 +1627,8 @@ TclMakeEnsemble(
  *----------------------------------------------------------------------
  */
 
-static int
-NsEnsembleImplementationCmd(
+int
+TclEnsembleImplementationCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,

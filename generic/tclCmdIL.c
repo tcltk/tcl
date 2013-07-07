@@ -146,6 +146,8 @@ static int		InfoScriptCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
+static int		InfoTypeCmd(ClientData dummy, Tcl_Interp *interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static SortElement *	MergeLists(SortElement *leftPtr, SortElement *rightPtr,
@@ -184,6 +186,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"type",		   InfoTypeCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
@@ -2136,6 +2139,50 @@ InfoTclVersionCmd(
 	return TCL_OK;
     }
     return TCL_ERROR;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * InfoTypeCmd --
+ *
+ *	Called to implement the "info type" command that returns the type of a
+ *	given command. Handles the following syntax:
+ *
+ *	    info type cmdName
+ *
+ * Results:
+ *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
+ *
+ * Side effects:
+ *	Returns a type name. If there is an error, the result is an error
+ *	message.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+InfoTypeCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    Tcl_Command command;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "commandName");
+	return TCL_ERROR;
+    }
+    command = Tcl_FindCommand(interp, Tcl_GetString(objv[1]), NULL,
+	    TCL_LEAVE_ERR_MSG);
+    if (command == NULL) {
+	return TCL_ERROR;
+    }
+
+    Tcl_SetObjResult(interp,
+	    Tcl_NewStringObj(TclGetCommandTypeName(command), -1));
+    return TCL_OK;
 }
 
 /*
