@@ -1131,7 +1131,7 @@ Tcl_OpenTcpClient(
 {
     TcpState *state;
     const char *errorMsg = NULL;
-    struct addrinfo *addrlist = NULL, *myaddrlist = NULL;
+    void *addrlist = NULL, *myaddrlist = NULL;
     char channelName[SOCK_CHAN_LENGTH];
 
     /*
@@ -1276,7 +1276,8 @@ Tcl_OpenTcpServer(
     ClientData acceptProcData)	/* Data for the callback. */
 {
     int status = 0, sock = -1, reuseaddr = 1, chosenport = 0;
-    struct addrinfo *addrlist = NULL, *addrPtr;	/* socket address */
+    void *addrlist = NULL;
+    struct addrinfo *addrPtr;	/* socket address */
     TcpState *statePtr = NULL;
     char channelName[SOCK_CHAN_LENGTH];
     const char *errorMsg = NULL;
