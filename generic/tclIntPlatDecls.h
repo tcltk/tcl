@@ -545,6 +545,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpGmtime_unix
 #undef TclWinConvertWSAError
 #define TclWinConvertWSAError TclWinConvertError
+#undef TclpInetNtoa
+#define TclpInetNtoa inet_ntoa
 
 #if defined(__WIN32__) || defined(__CYGWIN__)
 #   undef TclWinNToHS

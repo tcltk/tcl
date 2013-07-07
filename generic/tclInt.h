@@ -3010,9 +3010,8 @@ MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
-			    struct addrinfo **addrlist,
-			    const char *host, int port, int willBind,
-			    const char **errorMsgPtr);
+			    void **addrlist, const char *host, int port,
+			    int willBind, const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, ClientData clientData,
 			    int stackSize, int flags);
@@ -3833,14 +3832,6 @@ MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-
-/* Used internally in stub library. */
-typedef struct {
-    char version[12];
-    ClientData data;
-} TclStubInfoType;
-
-MODULE_SCOPE const char *TclInitStubTable(const char *version);
 
 /*
  * Functions defined in generic/tclVar.c and currenttly exported only for use
