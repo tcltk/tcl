@@ -1484,11 +1484,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	OpenBSD-*)
 	    arch=`arch -s`
 	    case "$arch" in
-	    m88k|vax)
+	    vax)
 		# Equivalent using configure option --disable-load
 		# Step 4 will set the necessary variables
 		DL_OBJS=""
 		SHLIB_LD_LIBS=""
+		LDFLAGS=""
 		;;
 	    *)
 		SHLIB_CFLAGS="-fPIC"
@@ -1500,10 +1501,11 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
 		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
+		LDFLAGS="-Wl,-export-dynamic"
 		;;
 	    esac
 	    case "$arch" in
-	    m88k|vax)
+	    vax)
 		CFLAGS_OPTIMIZE="-O1"
 		;;
 	    sh)
@@ -1513,15 +1515,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		CFLAGS_OPTIMIZE="-O2"
 		;;
 	    esac
-	    AC_CACHE_CHECK([for ELF], tcl_cv_ld_elf, [
-		AC_EGREP_CPP(yes, [
-#ifdef __ELF__
-	yes
-#endif
-		], tcl_cv_ld_elf=yes, tcl_cv_ld_elf=no)])
-	    AS_IF([test $tcl_cv_ld_elf = yes], [
-		LDFLAGS=-Wl,-export-dynamic
-	    ], [LDFLAGS=""])
 	    AS_IF([test "${TCL_THREADS}" = "1"], [
 		# On OpenBSD:	Compile with -pthread
 		#		Don't link with -lpthread
