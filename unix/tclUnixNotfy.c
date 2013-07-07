@@ -96,7 +96,7 @@ typedef struct ThreadSpecificData {
 	 * that an event is ready to be processed
 	 * by sending this event. */
     void *hwnd;			/* Messaging window. */
-#else
+#else /* !__CYGWIN__ */
     Tcl_Condition waitCV;	/* Any other thread alerts a notifier that an
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
@@ -184,9 +184,9 @@ static Tcl_ThreadId notifierThread;
  */
 
 #ifdef TCL_THREADS
-static void		NotifierThreadProc(ClientData clientData);
+static void	NotifierThreadProc(ClientData clientData);
 #endif
-static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 
 /*
  * Import of Windows API when building threaded with Cygwin.
@@ -213,14 +213,14 @@ typedef struct {
     void *hCursor;
     void *hbrBackground;
     void *lpszMenuName;
-    void *lpszClassName;
+    const void *lpszClassName;
 } WNDCLASS;
 
 extern void __stdcall	CloseHandle(void *);
 extern void *__stdcall	CreateEventW(void *, unsigned char, unsigned char,
 			    void *);
-extern void * __stdcall	CreateWindowExW(void *, void *, void *, DWORD, int,
-			    int, int, int, void *, void *, void *, void *);
+extern void * __stdcall	CreateWindowExW(void *, const void *, const void *,
+			    DWORD, int, int, int, int, void *, void *, void *, void *);
 extern DWORD __stdcall	DefWindowProcW(void *, int, void *, void *);
 extern unsigned char __stdcall	DestroyWindow(void *);
 extern int __stdcall	DispatchMessageW(const MSG *);
