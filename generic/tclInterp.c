@@ -222,9 +222,6 @@ static int		AliasDelete(Tcl_Interp *interp,
 static int		AliasDescribe(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, Tcl_Obj *objPtr);
 static int		AliasList(Tcl_Interp *interp, Tcl_Interp *slaveInterp);
-static int		AliasObjCmd(ClientData dummy,
-			    Tcl_Interp *currentInterp, int objc,
-			    Tcl_Obj *const objv[]);
 static int		AliasNRCmd(ClientData dummy,
 			    Tcl_Interp *currentInterp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -257,8 +254,6 @@ static int		SlaveInvokeHidden(Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		SlaveMarkTrusted(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp);
-static int		SlaveObjCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 static void		SlaveObjCmdDeleteProc(ClientData clientData);
 static int		SlaveRecursionLimit(Tcl_Interp *interp,
 			    Tcl_Interp *slaveInterp, int objc,
@@ -1390,7 +1385,7 @@ TclPreventAliasLoop(
      * create or rename the command.
      */
 
-    if (cmdPtr->objProc != AliasObjCmd) {
+    if (cmdPtr->objProc != TclAliasObjCmd) {
 	return TCL_OK;
     }
 
@@ -1445,7 +1440,7 @@ TclPreventAliasLoop(
 	 * Otherwise we do not have a loop.
 	 */
 
-	if (aliasCmdPtr->objProc != AliasObjCmd) {
+	if (aliasCmdPtr->objProc != TclAliasObjCmd) {
 	    return TCL_OK;
 	}
 	nextAliasPtr = aliasCmdPtr->objClientData;
@@ -1511,12 +1506,12 @@ AliasCreate(
 
     if (slaveInterp == masterInterp) {
 	aliasPtr->slaveCmd = Tcl_NRCreateCommand(slaveInterp,
-		TclGetString(namePtr), AliasObjCmd, AliasNRCmd, aliasPtr,
+		TclGetString(namePtr), TclAliasObjCmd, AliasNRCmd, aliasPtr,
 		AliasObjCmdDeleteProc);
     } else {
-    aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
-	    TclGetString(namePtr), AliasObjCmd, aliasPtr,
-	    AliasObjCmdDeleteProc);
+	aliasPtr->slaveCmd = Tcl_CreateObjCommand(slaveInterp,
+		TclGetString(namePtr), TclAliasObjCmd, aliasPtr,
+		AliasObjCmdDeleteProc);
     }
 
     if (TclPreventAliasLoop(interp, slaveInterp,
@@ -1752,7 +1747,7 @@ AliasList(
 /*
  *----------------------------------------------------------------------
  *
- * AliasObjCmd --
+ * TclAliasObjCmd --
  *
  *	This is the function that services invocations of aliases in a slave
  *	interpreter. One such command exists for each alias. When invoked,
@@ -1835,8 +1830,8 @@ AliasNRCmd(
     return Tcl_NREvalObj(interp, listPtr, flags);
 }
 
-static int
-AliasObjCmd(
+int
+TclAliasObjCmd(
     ClientData clientData,	/* Alias record. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2373,7 +2368,7 @@ SlaveCreate(
     slavePtr->slaveEntryPtr = hPtr;
     slavePtr->slaveInterp = slaveInterp;
     slavePtr->interpCmd = Tcl_CreateObjCommand(masterInterp, path,
-	    SlaveObjCmd, slaveInterp, SlaveObjCmdDeleteProc);
+	    TclSlaveObjCmd, slaveInterp, SlaveObjCmdDeleteProc);
     Tcl_InitHashTable(&slavePtr->aliasTable, TCL_STRING_KEYS);
     Tcl_SetHashValue(hPtr, slavePtr);
     Tcl_SetVar(slaveInterp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
@@ -2441,7 +2436,7 @@ SlaveCreate(
 /*
  *----------------------------------------------------------------------
  *
- * SlaveObjCmd --
+ * TclSlaveObjCmd --
  *
  *	Command to manipulate an interpreter, e.g. to send commands to it to
  *	be evaluated. One such command exists for each slave interpreter.
@@ -2455,8 +2450,8 @@ SlaveCreate(
  *----------------------------------------------------------------------
  */
 
-static int
-SlaveObjCmd(
+int
+TclSlaveObjCmd(
     ClientData clientData,	/* Slave interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -2478,7 +2473,7 @@ SlaveObjCmd(
     };
 
     if (slaveInterp == NULL) {
-	Tcl_Panic("SlaveObjCmd: interpreter has been deleted");
+	Tcl_Panic("TclSlaveObjCmd: interpreter has been deleted");
     }
 
     if (objc < 2) {

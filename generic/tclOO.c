@@ -84,13 +84,7 @@ static void		ReleaseClassContents(Tcl_Interp *interp,Object *oPtr);
 static inline void	SquelchCachedName(Object *oPtr);
 static void		SquelchedNsFirst(ClientData clientData);
 
-static int		PublicObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
 static int		PublicNRObjectCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const *objv);
-static int		PrivateObjectCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const *objv);
 static int		PrivateNRObjectCmd(ClientData clientData,
@@ -650,10 +644,11 @@ AllocObject(
 
     if (!nameStr) {
 	oPtr->command = Tcl_CreateObjCommand(interp,
-		oPtr->namespacePtr->fullName, PublicObjectCmd, oPtr, NULL);
+		oPtr->namespacePtr->fullName, TclOOPublicObjectCmd, oPtr,
+		NULL);
     } else if (nameStr[0] == ':' && nameStr[1] == ':') {
 	oPtr->command = Tcl_CreateObjCommand(interp, nameStr,
-		PublicObjectCmd, oPtr, NULL);
+		TclOOPublicObjectCmd, oPtr, NULL);
     } else {
 	Tcl_DString buffer;
 
@@ -663,7 +658,7 @@ AllocObject(
 	TclDStringAppendLiteral(&buffer, "::");
 	Tcl_DStringAppend(&buffer, nameStr, -1);
 	oPtr->command = Tcl_CreateObjCommand(interp,
-		Tcl_DStringValue(&buffer), PublicObjectCmd, oPtr, NULL);
+		Tcl_DStringValue(&buffer), TclOOPublicObjectCmd, oPtr, NULL);
 	Tcl_DStringFree(&buffer);
     }
 
@@ -692,7 +687,7 @@ AllocObject(
     cmdPtr->hPtr = Tcl_CreateHashEntry(&cmdPtr->nsPtr->cmdTable, "my",
 	    &ignored);
     cmdPtr->refCount = 1;
-    cmdPtr->objProc = PrivateObjectCmd;
+    cmdPtr->objProc = TclOOPrivateObjectCmd;
     cmdPtr->deleteProc = MyDeleted;
     cmdPtr->objClientData = cmdPtr->deleteData = oPtr;
     cmdPtr->proc = TclInvokeObjectCommand;
@@ -2368,7 +2363,7 @@ Tcl_ObjectSetMetadata(
 /*
  * ----------------------------------------------------------------------
  *
- * PublicObjectCmd, PrivateObjectCmd, TclOOInvokeObject --
+ * TclOOPublicObjectCmd, TclOOPrivateObjectCmd, TclOOInvokeObject --
  *
  *	Main entry point for object invokations. The Public* and Private*
  *	wrapper functions (implementations of both object instance commands
@@ -2378,8 +2373,8 @@ Tcl_ObjectSetMetadata(
  * ----------------------------------------------------------------------
  */
 
-static int
-PublicObjectCmd(
+int
+TclOOPublicObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -2399,8 +2394,8 @@ PublicNRObjectCmd(
 	    NULL);
 }
 
-static int
-PrivateObjectCmd(
+int
+TclOOPrivateObjectCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -2784,9 +2779,9 @@ Tcl_GetObjectFromObj(
     if (cmdPtr == NULL) {
 	goto notAnObject;
     }
-    if (cmdPtr->objProc != PublicObjectCmd) {
+    if (cmdPtr->objProc != TclOOPublicObjectCmd) {
 	cmdPtr = (Command *) TclGetOriginalCommand((Tcl_Command) cmdPtr);
-	if (cmdPtr == NULL || cmdPtr->objProc != PublicObjectCmd) {
+	if (cmdPtr == NULL || cmdPtr->objProc != TclOOPublicObjectCmd) {
 	    goto notAnObject;
 	}
     }
