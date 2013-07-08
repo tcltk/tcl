@@ -1687,7 +1687,7 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 #--------------------------------------------------------------------------
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
 
 tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c
