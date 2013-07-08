@@ -1802,10 +1802,6 @@ CompileCommandTokens(
     EnterCmdStartData(envPtr, cmdIdx,
 	    parsePtr->commandStart - envPtr->source, startCodeOffset);
 
-    if (expand && !cmdPtr) {
-	StartExpanding(envPtr);
-    }
-
     /*
      * TIP #280. Scan the words and compute the extended location
      * information. The map first contain full per-word line
@@ -1823,6 +1819,9 @@ CompileCommandTokens(
     envPtr->line = eclPtr->loc[wlineat].line[0];
     envPtr->clNext = eclPtr->loc[wlineat].next[0];
 
+    if (expand && !cmdPtr) {
+	StartExpanding(envPtr);
+    }
     if (cmdPtr) {
 	int savedNumCmds = envPtr->numCommands;
 	int update = 0;
