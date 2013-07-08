@@ -1819,9 +1819,6 @@ CompileCommandTokens(
     envPtr->line = eclPtr->loc[wlineat].line[0];
     envPtr->clNext = eclPtr->loc[wlineat].next[0];
 
-    if (expand && !cmdPtr) {
-	StartExpanding(envPtr);
-    }
     if (cmdPtr) {
 	int savedNumCmds = envPtr->numCommands;
 	int update = 0;
@@ -1919,11 +1916,10 @@ CompileCommandTokens(
 
 	envPtr->line = eclPtr->loc[wlineat].line[0];
 	envPtr->clNext = eclPtr->loc[wlineat].next[0];
+    }
 
-	/* TODO: Can this happen?  If so, is this right? */
-	if (expand) {
-	    StartExpanding(envPtr);
-	}
+    if (expand) {
+	StartExpanding(envPtr);
     }
 
     /*
