@@ -1761,6 +1761,23 @@ ExpandRequested(
 }
 
 static void
+CompileCmdLiteral(
+    Tcl_Interp *interp,
+    Tcl_Obj *cmdObj,
+    CompileEnv *envPtr)
+{
+    int numBytes;
+    const char *bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
+    int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
+    Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
+
+    if (cmdPtr) {
+	TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
+    }
+    TclEmitPush(cmdLitIdx, envPtr);
+}
+
+static void
 CompileInvocation(
     Tcl_Interp *interp,
     Tcl_Token *tokenPtr,
@@ -1773,17 +1790,7 @@ CompileInvocation(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
 
     if (cmdObj) {
-	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
-	int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
-	Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
-
-	if (cmdPtr) {
-	    TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLitIdx),
-		    cmdPtr);
-	}
-	TclEmitPush(cmdLitIdx, envPtr);
-
+	CompileCmdLiteral(interp, cmdObj, envPtr);
 	wordIdx = 1;
 	tokenPtr += tokenPtr->numComponents + 1;
     }
@@ -1839,17 +1846,7 @@ CompileExpanded(
 
     StartExpanding(envPtr);
     if (cmdObj) {
-	int numBytes;
-	const char *bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
-	int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
-	Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
-
-	if (cmdPtr) {
-	    TclSetCmdNameObj(interp,
-		    TclFetchLiteral(envPtr, cmdLitIdx), cmdPtr);
-	}
-	TclEmitPush(cmdLitIdx, envPtr);
-
+	CompileCmdLiteral(interp, cmdObj, envPtr);
 	wordIdx = 1;
 	tokenPtr += tokenPtr->numComponents + 1;
     }
