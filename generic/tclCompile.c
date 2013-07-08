@@ -1744,6 +1744,22 @@ FindCompiledCommandFromToken(
  */
 
 #ifdef REWRITE
+
+static int
+ExpandRequested(
+    Tcl_Token *tokenPtr,
+    int numWords)
+{
+    /* Determine whether any words of the command require expansion */
+    while (numWords--) {
+	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
+	    return 1;
+	}
+	tokenPtr += tokenPtr->numComponents + 1;
+    }
+    return 0;
+}
+
 static int
 CompileCommandTokens(
     Tcl_Interp *interp,
@@ -1755,7 +1771,7 @@ CompileCommandTokens(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     Tcl_Obj *cmdObj = Tcl_NewObj();
     Command *cmdPtr = NULL;
-    int wordIdx, cmdKnown, expand = 0, numWords = parsePtr->numWords;
+    int wordIdx, cmdKnown, expand = -1, numWords = parsePtr->numWords;
     int *wlines, wlineat;
     int cmdLine = envPtr->line;
     int *clNext = envPtr->clNext;
@@ -1763,15 +1779,6 @@ CompileCommandTokens(
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
 
     assert (numWords > 0);
- 
-    /* Determine whether any words of the command require expansion */
-    for (wordIdx = 0; wordIdx < numWords;
-	    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
-	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
-	    expand = 1;
-	    break;
-	}
-    }
 
     /* Do we know the command word? */
     Tcl_IncrRefCount(cmdObj);
@@ -1783,13 +1790,19 @@ CompileCommandTokens(
 	cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
 	if (cmdPtr) {
 	    /*
-	     * Found a command.  Test all the ways we can be told
+	     * Found a command.  Test the ways we can be told
 	     * not to attempt to compile it.
 	     */
 	    if ((cmdPtr->compileProc == NULL)
 		    || (cmdPtr->nsPtr->flags & NS_SUPPRESS_COMPILATION)
-		    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)
-		    || (expand && !(cmdPtr->flags & CMD_COMPILES_EXPANDED))) {
+		    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
+		cmdPtr = NULL;
+	    }
+	}
+	if (cmdPtr && !(cmdPtr->flags & CMD_COMPILES_EXPANDED)) {
+	    expand = ExpandRequested(parsePtr->tokenPtr, parsePtr->numWords);
+	    if (expand) {
+		/* We need to expand, but compileProc cannot. */
 		cmdPtr = NULL;
 	    }
 	}
@@ -1916,6 +1929,10 @@ CompileCommandTokens(
 
 	envPtr->line = eclPtr->loc[wlineat].line[0];
 	envPtr->clNext = eclPtr->loc[wlineat].next[0];
+    }
+
+    if (expand < 0) {
+	expand = ExpandRequested(parsePtr->tokenPtr, parsePtr->numWords);
     }
 
     if (expand) {
