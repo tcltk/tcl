@@ -1906,11 +1906,10 @@ CompileCmdCompileProc(
     int startCodeOffset,
     CompileEnv *envPtr)
 {
-    ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     int savedNumCmds = envPtr->numCommands;
     int startStackDepth = envPtr->currStackDepth;
-    int wlineat = eclPtr->nuloc - 1;
     int update = 0;
+    DefineLineInformation;
 
     /*
      * Mark the start of the command; the proper bytecode
@@ -2001,8 +2000,7 @@ CompileCmdCompileProc(
     envPtr->codeNext = envPtr->codeStart + startCodeOffset;
     envPtr->currStackDepth = startStackDepth;
 
-    envPtr->line = eclPtr->loc[wlineat].line[0];
-    envPtr->clNext = eclPtr->loc[wlineat].next[0];
+    SetLineInformation(0);
     return TCL_ERROR;
 }
 
