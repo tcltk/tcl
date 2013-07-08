@@ -1529,7 +1529,7 @@ waitpid.o: $(COMPAT_DIR)/waitpid.c
 # even though they will be placed in a static archive
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
 
 .c.o:
 	$(CC) -c $(CC_SWITCHES) $<
