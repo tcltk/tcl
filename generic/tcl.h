@@ -2397,7 +2397,7 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
-
+const char *		TclInitStubTable(const char *version);
 
 /*
  * When not using stubs, make it a macro.
@@ -2414,8 +2414,10 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 
 /* Tcl_InitSubsystems, see TIP #414 */
 
-#ifndef USE_TCL_STUBS
-    EXTERN const char *Tcl_InitSubsystems(Tcl_PanicProc *panicProc);
+EXTERN const char *Tcl_InitSubsystems(Tcl_PanicProc *panicProc);
+#ifdef USE_TCL_STUBS
+#define Tcl_InitSubsystems(panicProc) \
+    TclInitStubTable((Tcl_InitSubsystems)(panicProc))
 #endif
 
 /*
