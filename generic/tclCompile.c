@@ -1780,6 +1780,29 @@ CompileCommandTokens(
 
     assert (numWords > 0);
 
+    /* Pre-Compile */
+
+    envPtr->numCommands++;
+    EnterCmdStartData(envPtr, cmdIdx,
+	    parsePtr->commandStart - envPtr->source, startCodeOffset);
+
+    /*
+     * TIP #280. Scan the words and compute the extended location
+     * information. The map first contain full per-word line
+     * information for use by the compiler. This is later replaced by
+     * a reduced form which signals non-literal words, stored in
+     * 'wlines'.
+     */
+
+    EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
+	    parsePtr->tokenPtr, parsePtr->commandStart,
+	    parsePtr->commandSize, parsePtr->numWords, cmdLine,
+	    clNext, &wlines, envPtr);
+    wlineat = eclPtr->nuloc - 1;
+
+    envPtr->line = eclPtr->loc[wlineat].line[0];
+    envPtr->clNext = eclPtr->loc[wlineat].next[0];
+
     /* Do we know the command word? */
     Tcl_IncrRefCount(cmdObj);
     tokenPtr = parsePtr->tokenPtr;
@@ -1808,29 +1831,6 @@ CompileCommandTokens(
 	}
     }
     /* If cmdPtr != NULL, we will try to call cmdPtr->compileProc */
-
-    /* Pre-Compile */
-
-    envPtr->numCommands++;
-    EnterCmdStartData(envPtr, cmdIdx,
-	    parsePtr->commandStart - envPtr->source, startCodeOffset);
-
-    /*
-     * TIP #280. Scan the words and compute the extended location
-     * information. The map first contain full per-word line
-     * information for use by the compiler. This is later replaced by
-     * a reduced form which signals non-literal words, stored in
-     * 'wlines'.
-     */
-
-    EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
-	    parsePtr->tokenPtr, parsePtr->commandStart,
-	    parsePtr->commandSize, parsePtr->numWords, cmdLine,
-	    clNext, &wlines, envPtr);
-    wlineat = eclPtr->nuloc - 1;
-
-    envPtr->line = eclPtr->loc[wlineat].line[0];
-    envPtr->clNext = eclPtr->loc[wlineat].next[0];
 
     if (cmdPtr) {
 	int savedNumCmds = envPtr->numCommands;
@@ -2031,14 +2031,14 @@ CompileCommandTokens(
     }
 
 finishCommand:
+    if (cmdKnown) {
+	Tcl_DecrRefCount(cmdObj);
+    }
+
     TclEmitOpcode(INST_POP, envPtr);
     EnterCmdExtentData(envPtr, cmdIdx,
 	    parsePtr->term - parsePtr->commandStart,
 	    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
-
-    if (cmdKnown) {
-	Tcl_DecrRefCount(cmdObj);
-    }
 
     /*
      * TIP #280: Free full form of per-word line data and insert the
