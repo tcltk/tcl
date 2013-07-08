@@ -1755,7 +1755,7 @@ ExpandRequested(
 	if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
 	    return 1;
 	}
-	tokenPtr += tokenPtr->numComponents + 1;
+	tokenPtr = TokenAfter(tokenPtr);
     }
     return 0;
 }
@@ -1792,11 +1792,10 @@ CompileInvocation(
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
 	wordIdx = 1;
-	tokenPtr += tokenPtr->numComponents + 1;
+	tokenPtr = TokenAfter(tokenPtr);
     }
 
-    for (; wordIdx < numWords;
-	    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
+    for (; wordIdx < numWords; wordIdx++, tokenPtr = TokenAfter(tokenPtr)) {
 	int objIdx;
 
 	envPtr->line = eclPtr->loc[wlineat].line[wordIdx];
@@ -1848,11 +1847,10 @@ CompileExpanded(
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
 	wordIdx = 1;
-	tokenPtr += tokenPtr->numComponents + 1;
+	tokenPtr = TokenAfter(tokenPtr);
     }
 
-    for (; wordIdx < numWords;
-	    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
+    for (; wordIdx < numWords; wordIdx++, tokenPtr = TokenAfter(tokenPtr)) {
 	int objIdx;
 
 	envPtr->line = eclPtr->loc[wlineat].line[wordIdx];
