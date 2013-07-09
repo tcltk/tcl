@@ -669,6 +669,7 @@ static const TclPlatStubs tclPlatStubs = {
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_MacOSXOpenBundleResources, /* 0 */
     Tcl_MacOSXOpenVersionedBundleResources, /* 1 */
+    Tcl_MacOSXNotifierAddRunLoopMode, /* 2 */
 #endif /* MACOSX */
 };
 
