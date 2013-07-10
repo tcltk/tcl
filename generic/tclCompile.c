@@ -1783,7 +1783,6 @@ CompileInvocation(
     Tcl_Token *tokenPtr,
     Tcl_Obj *cmdObj,
     int numWords,
-    int wlineat,
     CompileEnv *envPtr)
 {
     int wordIdx = 0;
@@ -1834,7 +1833,6 @@ CompileExpanded(
     Tcl_Token *tokenPtr,
     Tcl_Obj *cmdObj,
     int numWords,
-    int wlineat,
     CompileEnv *envPtr)
 {
     int wordIdx = 0;
@@ -2095,12 +2093,10 @@ CompileCommandTokens(
 
 	if (expand) {
 	    CompileExpanded(interp, parsePtr->tokenPtr,
-		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, wlineat,
-		    envPtr);
+		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, envPtr);
 	} else {
 	    CompileInvocation(interp, parsePtr->tokenPtr,
-		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, wlineat,
-		    envPtr);
+		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, envPtr);
 	}
     }
 
