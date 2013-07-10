@@ -175,6 +175,7 @@ typedef struct CmdLocation {
 
 typedef struct ECL {
     int srcOffset;		/* Command location to find the entry. */
+    int invokePc;
     int nline;			/* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
