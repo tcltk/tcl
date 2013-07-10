@@ -377,6 +377,36 @@ string is returned.
 Returns the value of the global variable \fBtcl_version\fR; see
 the \fBtclvars\fR manual entry for more information.
 .TP
+\fBinfo type \fIcommandName\fR
+.VS "info type feature"
+Returns a description of the kind of command named by \fIcommandName\fR.  The
+supported types are:
+.RS
+.IP \fBalias\fR
+Indicates that \fIcommandName\fR was created by \fBinterp alias\fR.
+.IP \fBensemble\fR
+Indicates that \fIcommandName\fR was created by \fBnamespace ensemble\fR.
+.IP \fBimport\fR
+Indicates that \fIcommandName\fR was created by \fBnamespace import\fR.
+.IP \fBnative\fR
+Indicates that \fIcommandName\fR was created by the \fBTcl_CreateObjProc\fR
+interface directly without further registration of the type of command.
+.IP \fBobject\fR
+Indicates that \fIcommandName\fR is the public command that represents an
+instance of \fBoo::object\fR or one of its subclasses.
+.IP \fBprivateObject\fR
+Indicates that \fIcommandName\fR is the private command (\fBmy\fR by default)
+that represents an instance of \fBoo::object\fR or one of its subclasses.
+.IP \fBproc\fR
+Indicates that \fIcommandName\fR was created by \fBproc\fR.
+.IP \fBslave\fR
+Indicates that \fIcommandName\fR was created by \fBinterp create\fR.
+.PP
+There may be other registered types as well; this is a set that is extensible
+at the implementation level with \fBTcl_RegisterCommandTypeName\fR.
+.RE
+.VE "info type feature"
+.TP
 \fBinfo vars\fR ?\fIpattern\fR?
 .
 If \fIpattern\fR is not specified,
