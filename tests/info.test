@@ -2109,6 +2109,59 @@ test info-33.13 {{*}, literal, simple, bytecompiled} -body {
 } -result {type source line 2101 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    if {*}{
+	{[return [info frame 0]]}
+	{}
+    } 
+}
+test info-33.14 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2115 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    if 0 {*}{
+	{} else
+	{return [info frame 0]}
+    } 
+}
+test info-33.15 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2130 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    incr {*}{
+	x
+    } [return [info frame 0]]
+}
+test info-33.16 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2144 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    info level {*}{
+    } [return [info frame 0]]
+}
+test info-33.16 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2156 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
 unset -nocomplain res
 
 # cleanup
