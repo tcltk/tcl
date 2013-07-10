@@ -2155,11 +2155,195 @@ proc foo::bar {} {
     info level {*}{
     } [return [info frame 0]]
 }
-test info-33.16 {{*}, literal, simple, bytecompiled} -body {
+test info-33.17 {{*}, literal, simple, bytecompiled} -body {
     reduce [foo::bar]
 } -cleanup {
     namespace delete foo
 } -result {type source line 2156 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    string match {*}{
+    } [return [info frame 0]] {}
+}
+test info-33.18 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2168 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    string match {*}{
+	{}
+    } [return [info frame 0]]
+}
+test info-33.19 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2181 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    string length {*}{
+    } [return [info frame 0]]
+}
+test info-33.20 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2193 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    while {*}{
+	{[return [info frame 0]]}
+    } {}
+}
+test info-33.21 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2205 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    switch -- {*}{
+    } [return [info frame 0]] {*}{
+    } x y
+}
+test info-33.22 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2218 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {*}{
+	{set res [info frame 0]}
+    } 
+    return $res
+}
+test info-33.23 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2231 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {*}{
+	{set res [info frame 0]}
+    } finally {}
+    return $res
+}
+test info-33.24 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2245 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {*}{
+	{set res [info frame 0]}
+    } on ok {} {}
+    return $res
+}
+test info-33.25 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2259 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {*}{
+	{set res [info frame 0]}
+    } on ok {} {} finally {}
+    return $res
+}
+test info-33.26 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2273 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    while 1 {*}{
+	{return [info frame 0]}
+    }
+}
+test info-33.27 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2287 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {} finally {*}{
+	{return [info frame 0]}
+    }
+}
+test info-33.28 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2300 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {} on ok {} {} finally {*}{
+	{return [info frame 0]}
+    }
+}
+test info-33.29 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2313 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {} on ok {} {*}{
+	{return [info frame 0]}
+    }
+}
+test info-33.30 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2326 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    try {} on ok {} {*}{
+	{return [info frame 0]}
+    } finally {}
+}
+test info-33.31 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2339 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
 unset -nocomplain res
