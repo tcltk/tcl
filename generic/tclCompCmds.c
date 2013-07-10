@@ -1467,7 +1467,7 @@ CompileDictEachCmd(
      * Compile the loop body itself. It should be stack-neutral.
      */
 
-    SetLineInformation(3);
+    LineInformation(3);
     CompileBody(envPtr, bodyTokenPtr, interp);
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(	INST_LOAD_SCALAR, keyVarIndex,		envPtr);
