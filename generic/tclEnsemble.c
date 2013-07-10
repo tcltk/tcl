@@ -3059,6 +3059,7 @@ CompileToCompiledCommand(
     int savedNumCmds = envPtr->numCommands;
     int savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
+    DefineLineInformation;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
@@ -3107,10 +3108,25 @@ CompileToCompiledCommand(
     }
 
     /*
+     * Shift the line information arrays to account for different word
+     * index values.
+     */
+
+    mapPtr->loc[eclIndex].line += (depth - 1);
+    mapPtr->loc[eclIndex].next += (depth - 1);
+
+    /*
      * Hand off compilation to the subcommand compiler. At last!
      */
 
     result = cmdPtr->compileProc(interp, &synthetic, cmdPtr, envPtr);
+
+    /*
+     * Undo the shift. 
+     */
+
+    mapPtr->loc[eclIndex].line -= (depth - 1);
+    mapPtr->loc[eclIndex].next -= (depth - 1);
 
     /*
      * If our target fails to compile, revert the number of commands and the
