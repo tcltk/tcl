@@ -1786,8 +1786,7 @@ CompileInvocation(
     int wlineat,
     CompileEnv *envPtr)
 {
-    int isnew, wordIdx = 0;
-//    ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
+    int wordIdx = 0;
     DefineLineInformation;
 
     if (cmdObj) {
@@ -1799,8 +1798,6 @@ CompileInvocation(
     for (; wordIdx < numWords; wordIdx++, tokenPtr = TokenAfter(tokenPtr)) {
 	int objIdx;
 
-//	envPtr->line = eclPtr->loc[wlineat].line[wordIdx];
-//	envPtr->clNext = eclPtr->loc[wlineat].next[wordIdx];
 	SetLineInformation(wordIdx);
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
@@ -1813,7 +1810,6 @@ CompileInvocation(
 	if (envPtr->clNext) {
 	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
 		    tokenPtr[1].start - envPtr->source,
-//		    eclPtr->loc[wlineat].next[wordIdx]);
 		    mapPtr->loc[eclIndex].next[wordIdx]);
 	}
 	TclEmitPush(objIdx, envPtr);
@@ -1823,11 +1819,7 @@ CompileInvocation(
      * Save PC -> command map for the TclArgumentBC* functions.
      */
 
-//    Tcl_SetHashValue(Tcl_CreateHashEntry(&eclPtr->litInfo,
-    Tcl_SetHashValue(Tcl_CreateHashEntry(&mapPtr->litInfo,
-	    INT2PTR(envPtr->codeNext - envPtr->codeStart), &isnew),
-//	    INT2PTR(wlineat));
-	    INT2PTR(eclIndex));
+    mapPtr->loc[eclIndex].invokePc = envPtr->codeNext - envPtr->codeStart;
 
     if (wordIdx <= 255) {
 	TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
@@ -1847,7 +1839,6 @@ CompileExpanded(
 {
     int wordIdx = 0;
     DefineLineInformation;
-//    ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
 
 
     StartExpanding(envPtr);
@@ -1861,8 +1852,6 @@ CompileExpanded(
 	int objIdx;
 
 	SetLineInformation(wordIdx);
-//	envPtr->line = eclPtr->loc[wlineat].line[wordIdx];
-//	envPtr->clNext = eclPtr->loc[wlineat].next[wordIdx];
 
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    CompileTokens(envPtr, tokenPtr, interp);
@@ -1878,7 +1867,6 @@ CompileExpanded(
 	if (envPtr->clNext) {
 	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
 		    tokenPtr[1].start - envPtr->source,
-//		    eclPtr->loc[wlineat].next[wordIdx]);
 		    mapPtr->loc[eclIndex].next[wordIdx]);
 	}
 	TclEmitPush(objIdx, envPtr);
@@ -2015,6 +2003,7 @@ CompileCmdCompileProc(
 	mapPtr->nuloc--;
 	ckfree(mapPtr->loc[mapPtr->nuloc].line);
 	mapPtr->loc[mapPtr->nuloc].line = NULL;
+	mapPtr->loc[mapPtr->nuloc].invokePc = -1;
     }
 
     SetLineInformation(0);
@@ -3340,6 +3329,17 @@ TclInitByteCodeObj(
      * byte code object (internal rep), for use with the bc compiler.
      */
 
+    for (i = 0;  i < envPtr->extCmdMapPtr->nuloc;  i++) {
+	int isnew, pc = envPtr->extCmdMapPtr->loc[i].invokePc;
+
+	if (pc < 0) {
+	    continue;
+	}
+
+	Tcl_SetHashValue(Tcl_CreateHashEntry(&envPtr->extCmdMapPtr->litInfo,
+	    INT2PTR(pc), &isnew), INT2PTR(i));
+    }
+
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
 	    &isNew), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
@@ -3710,6 +3710,7 @@ EnterCmdWordData(
 
     ePtr = &eclPtr->loc[eclPtr->nuloc];
     ePtr->srcOffset = srcOffset;
+    ePtr->invokePc = -1;
     ePtr->line = ckalloc(numWords * sizeof(int));
     ePtr->next = ckalloc(numWords * sizeof(int *));
     ePtr->nline = numWords;
@@ -4493,54 +4494,12 @@ TclFixupForwardJump(
 
     {
 	ExtCmdLoc* eclPtr = envPtr->extCmdMapPtr;
-
-	/* A helper structure */
-
-	typedef struct {
-	    int pc;
-	    int cmd;
-	} MAP;
-
-	/*
-	 * And the helper array. At most the whole hashtable is placed into
-	 * this.
-	 */
-
-	MAP *map = (MAP*) ckalloc (sizeof(MAP) * eclPtr->litInfo.numEntries);
-
-	Tcl_HashSearch hSearch;
-	Tcl_HashEntry* hPtr;
-	int n, k, isnew;
-
-	/*
-	 * Phase I: Locate the affected entries, and save them in adjusted
-	 * form to the array. This removes them from the hash.
-	 */
-
-	for (n = 0, hPtr = Tcl_FirstHashEntry(&eclPtr->litInfo, &hSearch);
-	     hPtr != NULL;
-	     hPtr = Tcl_NextHashEntry(&hSearch)) {
-
-	    map [n].cmd = PTR2INT(Tcl_GetHashValue(hPtr));
-	    map [n].pc  = PTR2INT(Tcl_GetHashKey (&eclPtr->litInfo,hPtr));
-
-	    if (map[n].pc >= (jumpFixupPtr->codeOffset + 2)) {
-		Tcl_DeleteHashEntry(hPtr);
-		map [n].pc += 3;
-		n++;
+	for (k = eclPtr->nuloc - 1; k >= 0; k--) {
+	    if (eclPtr->loc[k].invokePc < (jumpFixupPtr->codeOffset + 2)) {
+		continue;
 	    }
+	    eclPtr->loc[k].invokePc += 3;
 	}
-
-	/*
-	 * Phase II: Re-insert the modified entries into the hash.
-	 */
-
-	for (k=0;k<n;k++) {
-	    hPtr = Tcl_CreateHashEntry(&eclPtr->litInfo, INT2PTR(map[k].pc), &isnew);
-	    Tcl_SetHashValue(hPtr, INT2PTR(map[k].cmd));
-	}
-
-	ckfree (map);
     }
 
     return 1;			/* the jump was grown */
