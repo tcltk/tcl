@@ -1962,6 +1962,21 @@ test info-9.13 {info level option, value in global context} -body {
 } -returnCodes error -result {bad level "2"}
 
 # -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    catch {*}{
+	{info frame 0}
+	res
+    }
+    return $res
+}
+test info-33.4 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 1968 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
 unset -nocomplain res
 
 # cleanup

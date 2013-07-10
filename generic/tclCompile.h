@@ -1537,9 +1537,9 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
     int eclIndex = mapPtr->nuloc - 1
 
-//#define SetLineInformation(word) \
-//    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-//    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
+#define LineInformation(word) \
+    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
+    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
 #define SetLineInformation(word)
 
