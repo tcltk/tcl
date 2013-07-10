@@ -1977,6 +1977,20 @@ test info-33.4 {{*}, literal, simple, bytecompiled} -body {
 } -result {type source line 1968 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    dict for {a b} {c d} {*}{
+	{set res [info frame 0]}
+    }
+    return $res
+}
+test info-33.5 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 1983 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
 unset -nocomplain res
 
 # cleanup
