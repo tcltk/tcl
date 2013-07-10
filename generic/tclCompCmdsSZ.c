@@ -725,9 +725,7 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    SetLineInformation(numArgs);
-envPtr->line = mapPtr->loc[eclIndex].line[numArgs];
-envPtr->clNext = mapPtr->loc[eclIndex].next[numArgs];
+    LineInformation(numArgs);
     TclSubstCompile(interp, wordTokenPtr[1].start, wordTokenPtr[1].size,
 	    flags, mapPtr->loc[eclIndex].line[numArgs], envPtr);
 
