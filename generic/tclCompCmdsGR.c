@@ -264,9 +264,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    SetLineInformation(wordIdx);
-envPtr->line = mapPtr->loc[eclIndex].line[wordIdx];
-envPtr->clNext = mapPtr->loc[eclIndex].next[wordIdx];
+	    LineInformation(wordIdx);
 	    CompileBody(envPtr, tokenPtr, interp);
 	}
 
