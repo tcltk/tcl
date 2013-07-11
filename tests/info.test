@@ -2346,6 +2346,31 @@ test info-33.31 {{*}, literal, simple, bytecompiled} -body {
 } -result {type source line 2339 file info.test cmd {info frame 0} proc ::foo::bar level 0}
 
 # -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    binary format {*}{
+    } [return [info frame 0]]
+}
+test info-33.32 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2352 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
+namespace eval foo {}
+proc foo::bar {} {
+    set format format
+    binary $format {*}{
+    } [return [info frame 0]]
+}
+test info-33.33 {{*}, literal, simple, bytecompiled} -body {
+    reduce [foo::bar]
+} -cleanup {
+    namespace delete foo
+} -result {type source line 2365 file info.test cmd {info frame 0} proc ::foo::bar level 0}
+
+# -------------------------------------------------------------------------
 unset -nocomplain res
 
 # cleanup
