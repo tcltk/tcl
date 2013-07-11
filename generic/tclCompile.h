@@ -1074,7 +1074,7 @@ MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
-			    int *isScalarPtr, int line, int *clNext);
+			    int *isScalarPtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -1515,13 +1515,10 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \
     if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
-	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
-		(tokenPtr)[1].size), (envPtr));				\
+	PushLiteral((envPtr), (tokenPtr)[1].start, (tokenPtr)[1].size);	\
     } else {								\
-	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
-	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
-	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-		(envPtr));						\
+	SetLineInformation((word));					\
+	CompileTokens((envPtr), (tokenPtr), (interp));			\
     }
 
 /*
@@ -1542,9 +1539,8 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
 #define PushVarNameWord(i,v,e,f,l,sc,word) \
-    TclPushVarName(i,v,e,f,l,sc,						\
-	    mapPtr->loc[eclIndex].line[(word)],				\
-	    mapPtr->loc[eclIndex].next[(word)])
+    SetLineInformation(word);						\
+    TclPushVarName(i,v,e,f,l,sc)					
 
 /*
  * Often want to issue one of two versions of an instruction based on whether
