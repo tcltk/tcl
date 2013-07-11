@@ -222,7 +222,7 @@ TclCompileIfCmd(
 		    compileScripts = 0;
 		}
 	    } else {
-		LineInformation(wordIdx);
+		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
@@ -264,7 +264,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    LineInformation(wordIdx);
+	    SetLineInformation(wordIdx);
 	    CompileBody(envPtr, tokenPtr, interp);
 	}
 
@@ -345,7 +345,7 @@ TclCompileIfCmd(
 	     * Compile the else command body.
 	     */
 
-	    LineInformation(wordIdx);
+	    SetLineInformation(wordIdx);
 	    CompileBody(envPtr, tokenPtr, interp);
 	}
 
@@ -474,7 +474,7 @@ TclCompileIncrCmd(
 		PushLiteral(envPtr, word, numBytes);
 	    }
 	} else {
-	    LineInformation(2);
+	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
 	}
     } else {			/* No incr amount given so use 1. */
@@ -701,7 +701,7 @@ TclCompileInfoLevelCmd(
 	 * list of arguments.
 	 */
 
-	LineInformation(1);
+	SetLineInformation(1);
 	CompileTokens(envPtr, TokenAfter(parsePtr->tokenPtr), interp);
 	TclEmitOpcode(		INST_INFO_LEVEL_ARGS,		envPtr);
     }
