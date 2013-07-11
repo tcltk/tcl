@@ -88,16 +88,6 @@ const Tcl_ObjType tclEnsembleCmdType = {
     NULL			/* setFromAnyProc */
 };
 
-/*
- * Copied from tclCompCmds.c
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
 static inline Tcl_Obj *
 NewNsObj(
@@ -3178,6 +3168,7 @@ CompileToInvokedCommand(
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
 	} else if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    /* TODO: Check about registering Cmd Literals here */
 	    int literal = TclRegisterNewLiteral(envPtr,
 		    tokPtr[1].start, tokPtr[1].size);
 
@@ -3189,9 +3180,7 @@ CompileToInvokedCommand(
 	    }
 	    TclEmitPush(literal, envPtr);
 	} else {
-	    if (envPtr->clNext) {
-		SetLineInformation(i);
-	    }
+	    SetLineInformation(i);
 	    CompileTokens(envPtr, tokPtr, interp);
 	}
 	tokPtr = TokenAfter(tokPtr);
@@ -3265,12 +3254,10 @@ CompileBasicNArgCommand(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (i=1 ; i<parsePtr->numWords ; i++) {
-	if (envPtr->clNext) {
-	    SetLineInformation(i);
-	}
 	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
 	} else {
+	    SetLineInformation(i);
 	    CompileTokens(envPtr, tokenPtr, interp);
 	}
 	tokenPtr = TokenAfter(tokenPtr);
