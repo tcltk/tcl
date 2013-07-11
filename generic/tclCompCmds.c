@@ -610,7 +610,7 @@ TclCompileCatchCmd(
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
-    LineInformation(1);
+    SetLineInformation(1);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
@@ -1467,7 +1467,7 @@ CompileDictEachCmd(
      * Compile the loop body itself. It should be stack-neutral.
      */
 
-    LineInformation(3);
+    SetLineInformation(3);
     CompileBody(envPtr, bodyTokenPtr, interp);
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(	INST_LOAD_SCALAR, keyVarIndex,		envPtr);
@@ -1651,7 +1651,7 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    LineInformation(parsePtr->numWords - 1);
+    SetLineInformation(parsePtr->numWords - 1);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
 
@@ -1992,7 +1992,7 @@ TclCompileDictWithCmd(
     TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    LineInformation(parsePtr->numWords-1);
+    SetLineInformation(parsePtr->numWords-1);
     CompileBody(envPtr, tokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
 
@@ -2268,7 +2268,7 @@ TclCompileForCmd(
      * Inline compile the initial command.
      */
 
-    LineInformation(1);
+    SetLineInformation(1);
     CompileBody(envPtr, startTokenPtr, interp);
     TclEmitOpcode(INST_POP, envPtr);
 
@@ -2292,7 +2292,7 @@ TclCompileForCmd(
 
     bodyRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     bodyCodeOffset = ExceptionRangeStarts(envPtr, bodyRange);
-    LineInformation(4);
+    SetLineInformation(4);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, bodyRange);
     TclEmitOpcode(INST_POP, envPtr);
@@ -2306,7 +2306,7 @@ TclCompileForCmd(
     nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
     nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
-    LineInformation(3);
+    SetLineInformation(3);
     CompileBody(envPtr, nextTokenPtr, interp);
     ExceptionRangeEnds(envPtr, nextRange);
     TclEmitOpcode(INST_POP, envPtr);
@@ -2325,7 +2325,7 @@ TclCompileForCmd(
 	testCodeOffset += 3;
     }
 
-    LineInformation(2);
+    SetLineInformation(2);
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
@@ -2644,7 +2644,7 @@ CompileEachloopCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	if ((i%2 == 0) && (i > 0)) {
-	    LineInformation(i);
+	    SetLineInformation(i);
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    tempVar = (firstValueTemp + loopIndex);
 	    Emit14Inst(		INST_STORE_SCALAR, tempVar,	envPtr);
@@ -2682,7 +2682,7 @@ CompileEachloopCmd(
      * Inline compile the loop body.
      */
 
-    LineInformation(numWords - 1);
+    SetLineInformation(numWords - 1);
     ExceptionRangeStarts(envPtr, range);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);

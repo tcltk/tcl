@@ -86,7 +86,7 @@ const AuxDataType tclJumptableInfoType = {
 #define OP44(name,val1,val2) \
     TclEmitInstInt4(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
 #define BODY(token,index) \
-    LineInformation((index));CompileBody(envPtr,(token),interp)
+    SetLineInformation((index));CompileBody(envPtr,(token),interp)
 #define PUSH(str) \
     PushStringLiteral(envPtr, str)
 #define JUMP4(name,var) \
@@ -433,7 +433,7 @@ TclCompileStringMatchCmd(
 	    }
 	    PushLiteral(envPtr, str, length);
 	} else {
-	    LineInformation(i+1+nocase);
+	    SetLineInformation(i+1+nocase);
 	    CompileTokens(envPtr, tokenPtr, interp);
 	}
 	tokenPtr = TokenAfter(tokenPtr);
@@ -483,7 +483,7 @@ TclCompileStringLenCmd(
 	len = sprintf(buf, "%d", len);
 	PushLiteral(envPtr, buf, len);
     } else {
-	LineInformation(1);
+	SetLineInformation(1);
 	CompileTokens(envPtr, tokenPtr, interp);
 	TclEmitOpcode(INST_STR_LEN, envPtr);
     }
@@ -722,7 +722,7 @@ TclCompileSubstCmd(
 	return TCL_ERROR;
     }
 
-    LineInformation(numArgs);
+    SetLineInformation(numArgs);
     TclSubstCompile(interp, wordTokenPtr[1].start, wordTokenPtr[1].size,
 	    flags, mapPtr->loc[eclIndex].line[numArgs], envPtr);
 
@@ -1284,7 +1284,7 @@ TclCompileSwitchCmd(
      */
 
     /* Both methods push the value to match against onto the stack. */
-    LineInformation(valueIndex);
+    SetLineInformation(valueIndex);
     CompileTokens(envPtr, valueTokenPtr, interp);
 
     if (mode == Switch_Exact) {
@@ -3026,7 +3026,7 @@ TclCompileWhileCmd(
 	    bodyCodeOffset += 3;
 	    testCodeOffset += 3;
 	}
-	LineInformation(1);
+	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
