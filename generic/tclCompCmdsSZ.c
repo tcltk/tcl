@@ -40,17 +40,14 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int instruction,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
-			    CompileEnv *envPtr, ExtCmdLoc *mapPtr,
-			    int eclIndex, int mode, int noCase,
-			    int valueIndex, Tcl_Token *valueTokenPtr,
-			    int numWords, Tcl_Token **bodyToken,
-			    int *bodyLines, int **bodyNext);
-static void		IssueSwitchJumpTable(Tcl_Interp *interp,
-			    CompileEnv *envPtr, ExtCmdLoc *mapPtr,
-			    int eclIndex, int valueIndex,
-			    Tcl_Token *valueTokenPtr, int numWords,
+			    CompileEnv *envPtr, int mode, int noCase,
+			    int valueIndex, int numWords,
 			    Tcl_Token **bodyToken, int *bodyLines,
-			    int **bodyContLines);
+			    int **bodyNext);
+static void		IssueSwitchJumpTable(Tcl_Interp *interp,
+			    CompileEnv *envPtr, int valueIndex,
+			    int numWords, Tcl_Token **bodyToken,
+			    int *bodyLines, int **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -1297,13 +1294,16 @@ TclCompileSwitchCmd(
      * but it handles the most common case well enough.
      */
 
+    /* Both methods push the value to match against onto the stack. */
+    SetLineInformation(valueIndex);
+    CompileTokens(envPtr, valueTokenPtr, interp);
+
     if (mode == Switch_Exact) {
-	IssueSwitchJumpTable(interp, envPtr, mapPtr, eclIndex, valueIndex,
-		valueTokenPtr, numWords, bodyToken, bodyLines, bodyContLines);
+	IssueSwitchJumpTable(interp, envPtr, valueIndex, numWords, bodyToken,
+		bodyLines, bodyContLines);
     } else {
-	IssueSwitchChainedTests(interp, envPtr, mapPtr, eclIndex, mode,noCase,
-		valueIndex, valueTokenPtr, numWords, bodyToken, bodyLines,
-		bodyContLines);
+	IssueSwitchChainedTests(interp, envPtr, mode, noCase, valueIndex,
+		numWords, bodyToken, bodyLines, bodyContLines);
     }
     result = TCL_OK;
 
@@ -1341,13 +1341,9 @@ static void
 IssueSwitchChainedTests(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    ExtCmdLoc *mapPtr,		/* For mapping tokens to their source code
-				 * location. */
-    int eclIndex,
     int mode,			/* Exact, Glob or Regexp */
     int noCase,			/* Case-insensitivity flag. */
     int valueIndex,		/* The value to match against. */
-    Tcl_Token *valueTokenPtr,
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
@@ -1370,13 +1366,6 @@ IssueSwitchChainedTests(
     int nextArmFixupIndex;
     int simple, exact;		/* For extracting the type of regexp. */
     int i;
-
-    /*
-     * First, we push the value we're matching against on the stack.
-     */
-
-    SetLineInformation(valueIndex);
-    CompileTokens(envPtr, valueTokenPtr, interp);
 
     /*
      * Generate a test for each arm.
@@ -1603,11 +1592,7 @@ static void
 IssueSwitchJumpTable(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    ExtCmdLoc *mapPtr,		/* For mapping tokens to their source code
-				 * location. */
-    int eclIndex,
     int valueIndex,		/* The value to match against. */
-    Tcl_Token *valueTokenPtr,
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
@@ -1621,13 +1606,6 @@ IssueSwitchJumpTable(
     int mustGenerate, foundDefault, jumpToDefault, i;
     Tcl_DString buffer;
     Tcl_HashEntry *hPtr;
-
-    /*
-     * First, we push the value we're matching against on the stack.
-     */
-
-    SetLineInformation(valueIndex);
-    CompileTokens(envPtr, valueTokenPtr, interp);
 
     /*
      * Compile the switch by using a jump table, which is basically a
@@ -2059,8 +2037,7 @@ TclCompileTryCmd(
 	 */
 
 	DefineLineInformation;	/* TIP #280 */
-	SetLineInformation(1);
-	CompileBody(envPtr, bodyToken, interp);
+	BODY(bodyToken, 1);
 	return TCL_OK;
     }
 
@@ -3039,13 +3016,12 @@ TclCompileWhileCmd(
      * Compile the loop body.
      */
 
-    SetLineInformation(2);
     bodyCodeOffset = ExceptionRangeStarts(envPtr, range);
     if (!loopMayEnd) {
 	envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
 	envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
     }
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, 2);
     ExceptionRangeEnds(envPtr, range);
     OP(		POP);
 
