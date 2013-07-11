@@ -3168,6 +3168,7 @@ CompileToInvokedCommand(
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
 	} else if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    /* TODO: Check about registering Cmd Literals here */
 	    int literal = TclRegisterNewLiteral(envPtr,
 		    tokPtr[1].start, tokPtr[1].size);
 
@@ -3179,9 +3180,7 @@ CompileToInvokedCommand(
 	    }
 	    TclEmitPush(literal, envPtr);
 	} else {
-	    if (envPtr->clNext) {
-		SetLineInformation(i);
-	    }
+	    LineInformation(i);
 	    CompileTokens(envPtr, tokPtr, interp);
 	}
 	tokPtr = TokenAfter(tokPtr);
@@ -3255,12 +3254,10 @@ CompileBasicNArgCommand(
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (i=1 ; i<parsePtr->numWords ; i++) {
-	if (envPtr->clNext) {
-	    SetLineInformation(i);
-	}
 	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
 	} else {
+	    LineInformation(i);
 	    CompileTokens(envPtr, tokenPtr, interp);
 	}
 	tokenPtr = TokenAfter(tokenPtr);
