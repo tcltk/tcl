@@ -3180,7 +3180,7 @@ CompileToInvokedCommand(
 	    }
 	    TclEmitPush(literal, envPtr);
 	} else {
-	    LineInformation(i);
+	    SetLineInformation(i);
 	    CompileTokens(envPtr, tokPtr, interp);
 	}
 	tokPtr = TokenAfter(tokPtr);
@@ -3257,7 +3257,7 @@ CompileBasicNArgCommand(
 	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
 	} else {
-	    LineInformation(i);
+	    SetLineInformation(i);
 	    CompileTokens(envPtr, tokenPtr, interp);
 	}
 	tokenPtr = TokenAfter(tokenPtr);
