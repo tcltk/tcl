@@ -264,8 +264,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    SetLineInformation(wordIdx);
-	    CompileBody(envPtr, tokenPtr, interp);
+	    BODY(tokenPtr, wordIdx);
 	}
 
 	if (realCond) {
@@ -345,8 +344,7 @@ TclCompileIfCmd(
 	     * Compile the else command body.
 	     */
 
-	    SetLineInformation(wordIdx);
-	    CompileBody(envPtr, tokenPtr, interp);
+	    BODY(tokenPtr, wordIdx);
 	}
 
 	/*
