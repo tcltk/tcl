@@ -1282,8 +1282,7 @@ TclCompileSwitchCmd(
      */
 
     /* Both methods push the value to match against onto the stack. */
-    SetLineInformation(valueIndex);
-    CompileTokens(envPtr, valueTokenPtr, interp);
+    CompileWord(envPtr, valueTokenPtr, interp, valueIndex);
 
     if (mode == Switch_Exact) {
 	IssueSwitchJumpTable(interp, envPtr, valueIndex, numWords, bodyToken,
