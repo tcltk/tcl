@@ -5633,6 +5633,24 @@ TclArgumentBCEnter(
 	CFWordBC *lastPtr = NULL;
 
 	/*
+	 * ePtr->nline is the number of words originally parsed.
+	 *
+	 * objc is the number of elements getting invoked.
+	 *
+	 * If they are not the same, we arrived here by compiling an
+	 * ensemble dispatch.  Ensemble subcommands that lead to script
+	 * evaluation are not supposed to get compiled, because a command
+	 * such as [info level] in the script can expose some of the dispatch
+	 * shenanigans.  This means that we don't have to tend to the 
+	 * housekeeping, and can escape now.
+	 */
+	
+	if (ePtr->nline != objc) {
+	    return;
+	}
+
+	/*
+	 * Having disposed of the ensemble cases, we can state...
 	 * A few truths ...
 	 * (1) ePtr->nline == objc
 	 * (2) (ePtr->line[word] < 0) => !literal, for all words
@@ -5641,10 +5659,6 @@ TclArgumentBCEnter(
 	 * Item (2) is why we can use objv to get the literals, and do not
 	 * have to save them at compile time.
 	 */
-
-        if (ePtr->nline != objc) {
-            Tcl_Panic ("TIP 280 data structure inconsistency");
-        }
 
 	for (word = 1; word < objc; word++) {
 	    if (ePtr->line[word] >= 0) {
