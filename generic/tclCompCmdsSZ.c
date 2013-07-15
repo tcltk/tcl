@@ -85,8 +85,6 @@ const AuxDataType tclJumptableInfoType = {
     TclEmitInstInt1(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
 #define OP44(name,val1,val2) \
     TclEmitInstInt4(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
-#define BODY(token,index) \
-    SetLineInformation((index));CompileBody(envPtr,(token),interp)
 #define PUSH(str) \
     PushStringLiteral(envPtr, str)
 #define JUMP4(name,var) \
@@ -1295,8 +1293,7 @@ TclCompileSwitchCmd(
      */
 
     /* Both methods push the value to match against onto the stack. */
-    SetLineInformation(valueIndex);
-    CompileTokens(envPtr, valueTokenPtr, interp);
+    CompileWord(envPtr, valueTokenPtr, interp, valueIndex);
 
     if (mode == Switch_Exact) {
 	IssueSwitchJumpTable(interp, envPtr, valueIndex, numWords, bodyToken,
@@ -1510,7 +1507,7 @@ IssueSwitchChainedTests(
 	}
 
 	/*
-	 * Now do the actual compilation. Note that we do not use CompileBody
+	 * Now do the actual compilation. Note that we do not use BODY() 
 	 * because we may have synthesized the tokens in a non-standard
 	 * pattern.
 	 */

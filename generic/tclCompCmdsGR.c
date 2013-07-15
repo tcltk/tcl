@@ -263,8 +263,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    SetLineInformation(wordIdx);
-	    CompileBody(envPtr, tokenPtr, interp);
+	    BODY(tokenPtr, wordIdx);
 	}
 
 	if (realCond) {
@@ -334,8 +333,7 @@ TclCompileIfCmd(
 	     * Compile the else command body.
 	     */
 
-	    SetLineInformation(wordIdx);
-	    CompileBody(envPtr, tokenPtr, interp);
+	    BODY(tokenPtr, wordIdx);
 	}
 
 	/*
@@ -694,8 +692,7 @@ TclCompileInfoLevelCmd(
 	 * list of arguments.
 	 */
 
-	SetLineInformation(1);
-	CompileTokens(envPtr, TokenAfter(parsePtr->tokenPtr), interp);
+	CompileWord(envPtr, TokenAfter(parsePtr->tokenPtr), interp, 1);
 	TclEmitOpcode(		INST_INFO_LEVEL_ARGS,		envPtr);
     }
     return TCL_OK;

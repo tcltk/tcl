@@ -1527,6 +1527,14 @@ TclMakeEnsemble(
 	    cmdName = nameParts[nameCount - 1];
 	}
     }
+
+    /*
+     * Switch on compilation always for core ensembles now that we can do
+     * nice bytecode things with them.  Do it now.  Waiting until later will
+     * just cause pointless epoch bumps.
+     */
+
+    ensembleFlags |= ENSEMBLE_COMPILE;
     ensemble = Tcl_CreateEnsemble(interp, cmdName, ns, ensembleFlags);
 
     /*
@@ -1578,14 +1586,6 @@ TclMakeEnsemble(
 	    }
 	}
 	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
-
-	/*
-	 * Switch on compilation always for core ensembles now that we can do
-	 * nice bytecode things with them.
-	 */
-
-	Tcl_SetEnsembleFlags(interp, ensemble,
-		ensembleFlags | ENSEMBLE_COMPILE);
     }
 
     Tcl_DStringFree(&buf);

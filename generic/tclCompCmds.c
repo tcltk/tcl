@@ -610,12 +610,12 @@ TclCompileCatchCmd(
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
-    SetLineInformation(1);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
-	CompileBody(envPtr, cmdTokenPtr, interp);
+	BODY(cmdTokenPtr, 1);
     } else {
+	SetLineInformation(1);
 	CompileTokens(envPtr, cmdTokenPtr, interp);
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
@@ -1467,8 +1467,7 @@ CompileDictEachCmd(
      * Compile the loop body itself. It should be stack-neutral.
      */
 
-    SetLineInformation(3);
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, 3);
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(	INST_LOAD_SCALAR, keyVarIndex,		envPtr);
 	TclEmitInstInt4(INST_OVER, 1,				envPtr);
@@ -1651,8 +1650,7 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    SetLineInformation(parsePtr->numWords - 1);
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, parsePtr->numWords - 1);
     ExceptionRangeEnds(envPtr, range);
 
     /*
@@ -1992,8 +1990,7 @@ TclCompileDictWithCmd(
     TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    SetLineInformation(parsePtr->numWords-1);
-    CompileBody(envPtr, tokenPtr, interp);
+    BODY(tokenPtr, parsePtr->numWords - 1);
     ExceptionRangeEnds(envPtr, range);
 
     /*
@@ -2268,8 +2265,7 @@ TclCompileForCmd(
      * Inline compile the initial command.
      */
 
-    SetLineInformation(1);
-    CompileBody(envPtr, startTokenPtr, interp);
+    BODY(startTokenPtr, 1);
     TclEmitOpcode(INST_POP, envPtr);
 
     /*
@@ -2292,8 +2288,7 @@ TclCompileForCmd(
 
     bodyRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     bodyCodeOffset = ExceptionRangeStarts(envPtr, bodyRange);
-    SetLineInformation(4);
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, 4);
     ExceptionRangeEnds(envPtr, bodyRange);
     TclEmitOpcode(INST_POP, envPtr);
 
@@ -2306,8 +2301,7 @@ TclCompileForCmd(
     nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
     nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
-    SetLineInformation(3);
-    CompileBody(envPtr, nextTokenPtr, interp);
+    BODY(nextTokenPtr, 3);
     ExceptionRangeEnds(envPtr, nextRange);
     TclEmitOpcode(INST_POP, envPtr);
 
@@ -2644,8 +2638,7 @@ CompileEachloopCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	if ((i%2 == 0) && (i > 0)) {
-	    SetLineInformation(i);
-	    CompileTokens(envPtr, tokenPtr, interp);
+	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tempVar = (firstValueTemp + loopIndex);
 	    Emit14Inst(		INST_STORE_SCALAR, tempVar,	envPtr);
 	    TclEmitOpcode(	INST_POP,			envPtr);
@@ -2682,9 +2675,8 @@ CompileEachloopCmd(
      * Inline compile the loop body.
      */
 
-    SetLineInformation(numWords - 1);
     ExceptionRangeStarts(envPtr, range);
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, numWords - 1);
     ExceptionRangeEnds(envPtr, range);
 
     if (collect == TCL_EACH_COLLECT) {
@@ -3164,10 +3156,7 @@ TclPushVarName(
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
     int *localIndexPtr,		/* Must not be NULL. */
-    int *isScalarPtr,		/* Must not be NULL. */
-    int line,			/* Line the token starts on. */
-    int *clNext)		/* Reference to offset of next hidden cont.
-				 * line. */
+    int *isScalarPtr)		/* Must not be NULL. */
 {
     register const char *p;
     const char *name, *elName;
@@ -3347,8 +3336,6 @@ TclPushVarName(
 
 	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
 	    if (elNameChars) {
-		envPtr->line = line;
-		envPtr->clNext = clNext;
 		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);
 	    } else {
@@ -3360,8 +3347,6 @@ TclPushVarName(
 	 * The var name isn't simple: compile and push it.
 	 */
 
-	envPtr->line = line;
-	envPtr->clNext = clNext;
 	CompileTokens(envPtr, varTokenPtr, interp);
     }
 
