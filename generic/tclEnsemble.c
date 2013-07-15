@@ -3229,6 +3229,15 @@ CompileBasicNArgCommand(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+#if 1
+    Tcl_Obj *objPtr = Tcl_NewObj();
+
+    Tcl_IncrRefCount(objPtr);
+    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
+    TclCompileInvocation(interp, parsePtr->tokenPtr, objPtr,
+	    parsePtr->numWords, envPtr);
+    Tcl_DecrRefCount(objPtr);
+#else
     Tcl_Token *tokenPtr;
     Tcl_Obj *objPtr;
     char *bytes;
@@ -3272,6 +3281,7 @@ CompileBasicNArgCommand(
     } else {
 	TclEmitInstInt4(INST_INVOKE_STK4, i, envPtr);
     }
+#endif
     return TCL_OK;
 }
 

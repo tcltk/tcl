@@ -1777,8 +1777,8 @@ CompileCmdLiteral(
     TclEmitPush(cmdLitIdx, envPtr);
 }
 
-static void
-CompileInvocation(
+void
+TclCompileInvocation(
     Tcl_Interp *interp,
     Tcl_Token *tokenPtr,
     Tcl_Obj *cmdObj,
@@ -2095,7 +2095,7 @@ CompileCommandTokens(
 	    CompileExpanded(interp, parsePtr->tokenPtr,
 		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, envPtr);
 	} else {
-	    CompileInvocation(interp, parsePtr->tokenPtr,
+	    TclCompileInvocation(interp, parsePtr->tokenPtr,
 		    cmdKnown ? cmdObj : NULL, parsePtr->numWords, envPtr);
 	}
     }
