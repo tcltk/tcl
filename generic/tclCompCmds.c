@@ -2638,8 +2638,7 @@ CompileEachloopCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	if ((i%2 == 0) && (i > 0)) {
-	    SetLineInformation(i);
-	    CompileTokens(envPtr, tokenPtr, interp);
+	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tempVar = (firstValueTemp + loopIndex);
 	    Emit14Inst(		INST_STORE_SCALAR, tempVar,	envPtr);
 	    TclEmitOpcode(	INST_POP,			envPtr);
