@@ -1003,6 +1003,9 @@ MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
 			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, int numWords,
+			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    const char *script, int numBytes,
 			    CompileEnv *envPtr);
