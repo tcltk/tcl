@@ -1885,47 +1885,41 @@ CompileCmdCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
     Command *cmdPtr,
-    int startCodeOffset,
     CompileEnv *envPtr)
 {
     int savedNumCmds = envPtr->numCommands;
     int startStackDepth = envPtr->currStackDepth;
-    int update = 0;
+    int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
+    int incrOffset = -1;
     DefineLineInformation;
 
     /*
-     * Mark the start of the command; the proper bytecode
-     * length will be updated later. There is no need to
-     * do this for the first bytecode in the compile env,
-     * as the check is done before calling
-     * TclNRExecuteByteCode(). Do emit an INST_START_CMD
-     * in special cases where the first bytecode is in a
-     * loop, to insure that the corresponding command is
-     * counted properly. Compilers for commands able to
-     * produce such a beast (currently 'while 1' only) set
-     * envPtr->atCmdStart to 0 in order to signal this
-     * case. [Bug 1752146]
+     * Emit of the INST_START_CMD instruction is controlled by
+     * the value of envPtr->atCmdStart:
      *
-     * Note that the environment is initialised with
-     * atCmdStart=1 to avoid emitting ISC for the first
-     * command.
+     * atCmdStart == 2	: We are not using the INST_START_CMD instruction.
+     * atCmdStart == 1	: INST_START_CMD was the last instruction emitted.
+     *			: We do not need to emit another.  Instead we
+     *			: increment the number of cmds started at it (except
+     *			: for the special case at the start of a script.)
+     * atCmdStart == 0	: The last instruction was something else.  We need
+     *			: to emit INST_START_CMD here.
      */
 
-    if (envPtr->atCmdStart == 1) {
-	if (startCodeOffset) {
-	    /*
-	     * Increase the number of commands being
-	     * started at the current point. Note that
-	     * this depends on the exact layout of the
-	     * INST_START_CMD's operands, so be careful!
-	     */
-
-	    TclIncrUInt4AtPtr(envPtr->codeNext - 4, 1)
-	}
-    } else if (envPtr->atCmdStart == 0) {
+    switch (envPtr->atCmdStart) {
+    case 0:
 	TclEmitInstInt4(INST_START_CMD, 0, envPtr);
-	TclEmitInt4(1, envPtr);
-	update = 1;
+	incrOffset = envPtr->codeNext - envPtr->codeStart;
+	TclEmitInt4(0, envPtr);
+	break;
+    case 1:
+	if (envPtr->codeNext > envPtr->codeStart) {
+	    incrOffset = envPtr->codeNext - 4 - envPtr->codeStart;
+	}
+	break;
+    case 2:
+	/* Nothing to do */
+	;
     }
 
     if (TCL_OK == cmdPtr->compileProc(interp, parsePtr, cmdPtr, envPtr)) {
@@ -1947,28 +1941,18 @@ CompileCmdCompileProc(
 		    parsePtr->tokenPtr->start, diff);
 	}
 #endif
-	if (update) {
+	if (incrOffset >= 0) {
 	    /*
-	     * Fix the bytecode length.
+	     * We successfully compiled a command.  Increment the number
+	     * of commands that start at the currently active INST_START_CMD.
 	     */
+	    unsigned char *incrPtr = envPtr->codeStart + incrOffset;
+	    unsigned char *startPtr = incrPtr - 5;
 
-	    unsigned char *fixPtr = envPtr->codeStart + startCodeOffset + 1;
-	    unsigned fixLen = envPtr->codeNext - fixPtr + 1;
-
-	    TclStoreInt4AtPtr(fixLen, fixPtr);
+	    TclIncrUInt4AtPtr(incrPtr, 1);
+	    TclStoreInt4AtPtr(envPtr->codeNext - startPtr, startPtr + 1);
 	}
 	return TCL_OK;
-    }
-
-    if (envPtr->atCmdStart == 1 && startCodeOffset != 0) {
-	/*
-	 * Decrease the number of commands being started
-	 * at the current point. Note that this depends on
-	 * the exact layout of the INST_START_CMD's
-	 * operands, so be careful!
-	 */
-
-	TclIncrUInt4AtPtr(envPtr->codeNext - 4, -1);
     }
 
     /*
@@ -2069,8 +2053,7 @@ CompileCommandTokens(
 
     /* If cmdPtr != NULL, we will try to call cmdPtr->compileProc */
     if (cmdPtr) {
-	code = CompileCmdCompileProc(interp, parsePtr, cmdPtr,
-		startCodeOffset, envPtr);
+	code = CompileCmdCompileProc(interp, parsePtr, cmdPtr, envPtr);
     }
 
     if (code == TCL_ERROR) {
