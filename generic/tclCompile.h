@@ -175,7 +175,6 @@ typedef struct CmdLocation {
 
 typedef struct ECL {
     int srcOffset;		/* Command location to find the entry. */
-    int invokePc;
     int nline;			/* Number of words in the command */
     int *line;			/* Line information for all words in the
 				 * command. */
@@ -194,13 +193,6 @@ typedef struct ExtCmdLoc {
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
-    Tcl_HashTable litInfo;	/* Indexed by bytecode 'PC', to have the
-				 * information accessible per command and
-				 * argument, not per whole bytecode. Value is
-				 * index of command in 'loc', giving us the
-				 * literals to associate with line information
-				 * as command argument, see
-				 * TclArgumentBCEnter() */
 } ExtCmdLoc;
 
 /*
