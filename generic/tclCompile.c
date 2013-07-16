@@ -1992,7 +1992,6 @@ CompileCmdCompileProc(
 	mapPtr->loc[mapPtr->nuloc].line = NULL;
     }
 
-    SetLineInformation(0);
     return TCL_ERROR;
 }
 
