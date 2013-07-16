@@ -3163,12 +3163,16 @@ CompileToInvokedCommand(
      */
 
     Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
-    for (i=0,tokPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+    for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
+	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
-	} else if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    /* TODO: Check about registering Cmd Literals here */
+	    continue;
+	}
+
+	SetLineInformation(i);
+	if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    int literal = TclRegisterNewLiteral(envPtr,
 		    tokPtr[1].start, tokPtr[1].size);
 
@@ -3176,14 +3180,12 @@ CompileToInvokedCommand(
 		TclContinuationsEnterDerived(
 			TclFetchLiteral(envPtr, literal),
 			tokPtr[1].start - envPtr->source,
-			mapPtr->loc[eclIndex].next[i]);
+			envPtr->clNext);
 	    }
 	    TclEmitPush(literal, envPtr);
 	} else {
-	    SetLineInformation(i);
 	    CompileTokens(envPtr, tokPtr, interp);
 	}
-	tokPtr = TokenAfter(tokPtr);
     }
 
     /*
