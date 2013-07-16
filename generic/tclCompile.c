@@ -1296,8 +1296,6 @@ ReleaseCmdWordData(
 	ckfree((char *) eclPtr->loc);
     }
 
-    Tcl_DeleteHashTable (&eclPtr->litInfo);
-
     ckfree((char *) eclPtr);
 }
 
@@ -1382,7 +1380,6 @@ TclInitCompileEnv(
     envPtr->extCmdMapPtr->nloc = 0;
     envPtr->extCmdMapPtr->nuloc = 0;
     envPtr->extCmdMapPtr->path = NULL;
-    Tcl_InitHashTable(&envPtr->extCmdMapPtr->litInfo, TCL_ONE_WORD_KEYS);
 
     if ((invoker == NULL) || (invoker->type == TCL_LOCATION_EVAL_LIST)) {
 	/*
@@ -1814,12 +1811,6 @@ TclCompileInvocation(
 	TclEmitPush(objIdx, envPtr);
     }
 
-    /*
-     * Save PC -> command map for the TclArgumentBC* functions.
-     */
-
-    mapPtr->loc[eclIndex].invokePc = envPtr->codeNext - envPtr->codeStart;
-
     if (wordIdx <= 255) {
 	TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
     } else {
@@ -2001,7 +1992,6 @@ CompileCmdCompileProc(
 	mapPtr->nuloc--;
 	ckfree(mapPtr->loc[mapPtr->nuloc].line);
 	mapPtr->loc[mapPtr->nuloc].line = NULL;
-	mapPtr->loc[mapPtr->nuloc].invokePc = -1;
     }
 
     SetLineInformation(0);
@@ -3325,17 +3315,6 @@ TclInitByteCodeObj(
      * byte code object (internal rep), for use with the bc compiler.
      */
 
-    for (i = 0;  i < envPtr->extCmdMapPtr->nuloc;  i++) {
-	int isnew, pc = envPtr->extCmdMapPtr->loc[i].invokePc;
-
-	if (pc < 0) {
-	    continue;
-	}
-
-	Tcl_SetHashValue(Tcl_CreateHashEntry(&envPtr->extCmdMapPtr->litInfo,
-	    INT2PTR(pc), &isnew), INT2PTR(i));
-    }
-
     Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
 	    &isNew), envPtr->extCmdMapPtr);
     envPtr->extCmdMapPtr = NULL;
@@ -3706,7 +3685,6 @@ EnterCmdWordData(
 
     ePtr = &eclPtr->loc[eclPtr->nuloc];
     ePtr->srcOffset = srcOffset;
-    ePtr->invokePc = -1;
     ePtr->line = ckalloc(numWords * sizeof(int));
     ePtr->next = ckalloc(numWords * sizeof(int *));
     ePtr->nline = numWords;
@@ -4474,27 +4452,6 @@ TclFixupForwardJump(
 	    if (jumpFixupPtr->codeOffset < auxPtr->continueTargets[i]) {
 		auxPtr->continueTargets[i] += 3;
 	    }
-	}
-    }
-
-    /*
-     * TIP #280: Adjust the mapping from PC values to the per-command
-     * information about arguments and their line numbers.
-     *
-     * Note: We cannot simply remove an out-of-date entry and then reinsert
-     * with the proper PC, because then we might overwrite another entry which
-     * was at that location. Therefore we pull (copy + delete) all effected
-     * entries (beyond the fixed PC) into an array, update them there, and at
-     * last reinsert them all.
-     */
-
-    {
-	ExtCmdLoc* eclPtr = envPtr->extCmdMapPtr;
-	for (k = eclPtr->nuloc - 1; k >= 0; k--) {
-	    if (eclPtr->loc[k].invokePc < (jumpFixupPtr->codeOffset + 2)) {
-		continue;
-	    }
-	    eclPtr->loc[k].invokePc += 3;
 	}
     }
 
