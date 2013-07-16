@@ -43,13 +43,13 @@ void
 Tcl_Command
 \fBTcl_GetCommandFromObj\fR(\fIinterp, objPtr\fR)
 .sp
-.VS "info type feature"
+.VS "info cmdtype feature"
 void
 \fBTcl_RegisterCommandTypeName\fR(\fIproc, typeName\fR)
 .sp
 const char *
 \fBTcl_GetCommandTypeName\fR(\fItoken\fR)
-.VE "info type feature"
+.VE "info cmdtype feature"
 .SH ARGUMENTS
 .AS Tcl_CmdDeleteProc *deleteProc in/out
 .AP Tcl_Interp *interp in
@@ -308,21 +308,21 @@ specified by the name in a \fBTcl_Obj\fR.
 The command name is resolved relative to the current namespace.
 Returns NULL if the command is not found.
 .PP
-.VS "info type feature"
+.VS "info cmdtype feature"
 \fBTcl_RegisterCommandTypeName\fR is used to associate a name (the
 \fItypeName\fR argument) with a particular implementation function so that it
 can then be looked up with \fBTcl_GetCommandTypeName\fR, which in turn is
 called with a command token that information is wanted for and which returns
 the name of the type that was registered for the implementation function used
 for that command. (The lookup functionality is surfaced virtually directly in Tcl via
-\fBinfo type\fR.) If there is no function registered for a particular
+\fBinfo cmdtype\fR.) If there is no function registered for a particular
 function, the result will be the string literal
 .QW \fBnative\fR .
 The registration of a name can be undone by registering a mapping to NULL
 instead. The result from \fBTcl_GetCommandTypeName\fR will be exactly that
 string which was registered, and not a copy; use of a compile-time constant
 string is \fIstrongly recommended\fR.
-.VE "info type feature"
+.VE "info cmdtype feature"
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_ResetResult(3), Tcl_SetObjResult(3)
 .SH KEYWORDS
