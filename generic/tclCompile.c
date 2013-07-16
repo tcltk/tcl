@@ -1805,8 +1805,7 @@ TclCompileInvocation(
 		tokenPtr[1].start, tokenPtr[1].size);
 	if (envPtr->clNext) {
 	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
-		    tokenPtr[1].start - envPtr->source,
-		    mapPtr->loc[eclIndex].next[wordIdx]);
+		    tokenPtr[1].start - envPtr->source, envPtr->clNext);
 	}
 	TclEmitPush(objIdx, envPtr);
     }
@@ -1855,8 +1854,7 @@ CompileExpanded(
 		tokenPtr[1].start, tokenPtr[1].size);
 	if (envPtr->clNext) {
 	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
-		    tokenPtr[1].start - envPtr->source,
-		    mapPtr->loc[eclIndex].next[wordIdx]);
+		    tokenPtr[1].start - envPtr->source, envPtr->clNext);
 	}
 	TclEmitPush(objIdx, envPtr);
     }
