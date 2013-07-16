@@ -146,7 +146,7 @@ static int		InfoScriptCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoSharedlibCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoTypeCmd(ClientData dummy, Tcl_Interp *interp,
+static int		InfoCmdTypeCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoTclVersionCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
@@ -166,6 +166,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"cmdtype",		   InfoCmdTypeCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
     {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
@@ -186,7 +187,6 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
-    {"type",		   InfoTypeCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
@@ -2144,12 +2144,12 @@ InfoTclVersionCmd(
 /*
  *----------------------------------------------------------------------
  *
- * InfoTypeCmd --
+ * InfoCmdTypeCmd --
  *
- *	Called to implement the "info type" command that returns the type of a
- *	given command. Handles the following syntax:
+ *	Called to implement the "info cmdtype" command that returns the type
+ *	of a given command. Handles the following syntax:
  *
- *	    info type cmdName
+ *	    info cmdtype cmdName
  *
  * Results:
  *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
@@ -2162,7 +2162,7 @@ InfoTclVersionCmd(
  */
 
 static int
-InfoTypeCmd(
+InfoCmdTypeCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
