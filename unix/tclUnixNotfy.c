@@ -120,6 +120,15 @@ static Tcl_ThreadDataKey dataKey;
 static int notifierCount = 0;
 
 /*
+ * The following static stores the process ID of the initialized notifier
+ * thread. If it changes, we have passed a fork and we should start a new
+ * notifier thread.
+ *
+ * You must hold the notifierMutex lock before accessing this variable.
+ */
+static pid_t processIDInitialized = 0;
+
+/*
  * The following variable points to the head of a doubly-linked list of
  * ThreadSpecificData structures for all threads that are currently waiting on
  * an event.
@@ -275,11 +284,23 @@ Tcl_InitNotifier(void)
 	 */
 
 	Tcl_MutexLock(&notifierMutex);
+	/*
+	 * Check if my process id changed, e.g. I was forked
+	 * In this case, restart the notifier thread and close the
+	 * pipe to the original notifier thread
+	 */
+	if (notifierCount > 0 && processIDInitialized != getpid()) {
+	    notifierCount = 0;
+	    processIDInitialized = 0;
+	    close(triggerPipe);
+	    triggerPipe = -1;
+	}
 	if (notifierCount == 0) {
 	    if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
 		    TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
 		Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread");
 	    }
+	    processIDInitialized = getpid();
 	}
 	notifierCount++;
 
