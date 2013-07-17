@@ -35,9 +35,6 @@ static void		MakeCachedEnsembleCommand(Tcl_Obj *objPtr,
 static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
-static int		CompileToCompiledCommand(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
-			    CompileEnv *envPtr);
 static void		CompileToInvokedCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Tcl_Obj *replacements,
 			    Command *cmdPtr, CompileEnv *envPtr);
@@ -2994,8 +2991,8 @@ TclCompileEnsemble(
      */
 
     invokeAnyway = 1;
-    if (CompileToCompiledCommand(interp, parsePtr, depth, cmdPtr,
-	    envPtr) == TCL_OK) {
+    if (TCL_OK == TclAttemptCompileProc(interp, parsePtr, depth, cmdPtr,
+	    envPtr)) {
 	ourResult = TCL_OK;
 	goto cleanup;
     }
@@ -3029,8 +3026,8 @@ TclCompileEnsemble(
     return ourResult;
 }
 
-static int
-CompileToCompiledCommand(
+int
+TclAttemptCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
     int depth,
@@ -3092,6 +3089,23 @@ CompileToCompiledCommand(
     if (result != TCL_OK) {
 	envPtr->currStackDepth = savedStackDepth;
 	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+#ifdef TCL_COMPILE_DEBUG
+    } else {
+	/*
+	 * Confirm that the command compiler generated a single value on
+	 * the stack as its result. This is only done in debugging mode,
+	 * as it *should* be correct and normal users have no reasonable
+	 * way to fix it anyway.
+	 */
+
+	int diff = envPtr->currStackDepth - savedStackDepth;
+
+	if (diff != 1) {
+	    Tcl_Panic("bad stack adjustment when compiling"
+		    " %.*s (was %d instead of 1)", parsePtr->tokenPtr->size,
+		    parsePtr->tokenPtr->start, diff);
+	}
+#endif
     }
 
     return result;
