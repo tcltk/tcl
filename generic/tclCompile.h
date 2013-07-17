@@ -984,6 +984,9 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
+			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
