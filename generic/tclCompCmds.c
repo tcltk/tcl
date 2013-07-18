@@ -2536,7 +2536,7 @@ CompileEachloopCmd(
 
 	Tcl_DStringInit(&varList);
 	TclDStringAppendToken(&varList, &tokenPtr[1]);
-	code = Tcl_SplitList(interp, Tcl_DStringValue(&varList),
+	code = Tcl_SplitList(NULL, Tcl_DStringValue(&varList),
 		&varcList[loopIndex], &varvList[loopIndex]);
 	Tcl_DStringFree(&varList);
 	if (code != TCL_OK) {
@@ -2978,7 +2978,8 @@ TclCompileFormatCmd(
     ckfree(objv);
     Tcl_DecrRefCount(formatObj);
     if (tmpObj == NULL) {
-	return TCL_ERROR;
+	TclCompileSyntaxError(interp, envPtr);
+	return TCL_OK;
     }
 
     /*

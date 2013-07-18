@@ -930,6 +930,12 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
+#if 1
+    int numCommands = envPtr->numCommands;
+    int offset = envPtr->codeNext - envPtr->codeStart;
+    int depth = envPtr->currStackDepth;
+#endif
+
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -943,10 +949,28 @@ TclCompileAssembleCmd(
     }
 
     /*
-     * Compile the code and return any error from the compilation.
+     * Compile the code and convert any error from the compilation into
+     * bytecode reporting the error;
      */
 
-    return TclAssembleCode(envPtr, tokenPtr[1].start, tokenPtr[1].size, 0);
+    if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
+	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
+
+#if 1
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%.*s\" body, line %d)",
+		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
+		Tcl_GetErrorLine(interp)));
+	envPtr->numCommands = numCommands;
+	envPtr->codeNext = envPtr->codeStart + offset;
+	envPtr->currStackDepth = depth;
+	TclCompileSyntaxError(interp, envPtr);
+#else
+	Tcl_ResetResult(interp);
+	return TCL_ERROR;
+#endif
+    }
+    return TCL_OK;
 }
 
 /*
@@ -1108,7 +1132,7 @@ NewAssemblyEnv(
 
     assemEnvPtr->envPtr = envPtr;
     assemEnvPtr->parsePtr = parsePtr;
-    assemEnvPtr->cmdLine = envPtr->line;
+    assemEnvPtr->cmdLine = 1;
     assemEnvPtr->clNext = envPtr->clNext;
 
     /*

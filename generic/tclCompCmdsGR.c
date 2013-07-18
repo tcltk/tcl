@@ -2531,6 +2531,7 @@ TclCompileSyntaxError(
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
 	    TclNoErrorStack(interp, Tcl_GetReturnOptions(interp, TCL_ERROR)));
+    Tcl_ResetResult(interp);
 }
 
 /*
