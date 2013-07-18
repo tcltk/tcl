@@ -1013,8 +1013,6 @@ TclAssembleCode(
 
     const char* instPtr = codePtr;
 				/* Where to start looking for a line of code */
-    int instLen;		/* Length in bytes of the current line of
-				 * code */
     const char* nextPtr;	/* Pointer to the end of the line of code */
     int bytesLeft = codeLen;	/* Number of bytes of source code remaining to
 				 * be parsed */
@@ -1028,10 +1026,6 @@ TclAssembleCode(
 	 */
 
 	status = Tcl_ParseCommand(interp, instPtr, bytesLeft, 0, parsePtr);
-	instLen = parsePtr->commandSize;
-	if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
-	    --instLen;
-	}
 
 	/*
 	 * Report errors in the parse.
@@ -1040,7 +1034,7 @@ TclAssembleCode(
 	if (status != TCL_OK) {
 	    if (flags & TCL_EVAL_DIRECT) {
 		Tcl_LogCommandInfo(interp, codePtr, parsePtr->commandStart,
-			instLen);
+			parsePtr->term + 1 - parsePtr->commandStart);
 	    }
 	    FreeAssemblyEnv(assemEnvPtr);
 	    return TCL_ERROR;
@@ -1060,6 +1054,13 @@ TclAssembleCode(
 	 */
 
 	if (parsePtr->numWords > 0) {
+	    int instLen = parsePtr->commandSize;
+		    /* Length in bytes of the current command */
+
+	    if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
+		--instLen;
+	    }
+
 	    /*
 	     * If tracing, show each line assembled as it happens.
 	     */
