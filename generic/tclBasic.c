@@ -5082,7 +5082,9 @@ TclEvalEx(
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
 	    code = TCL_ERROR;
-	    goto error;
+	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
+		    parsePtr->term + 1 - parsePtr->commandStart);
+	    goto posterror;
 	}
 
 	/*
@@ -5338,6 +5340,7 @@ TclEvalEx(
 	Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		commandLength);
     }
+ posterror:
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
     /*
