@@ -743,6 +743,9 @@ TclSubstCompile(
     Tcl_InterpState state = NULL;
 
     TclSubstParse(interp, bytes, numBytes, flags, &parse, &state);
+    if (state != NULL) {
+	Tcl_ResetResult(interp);
+    }
 
     /*
      * Tricky point! If the first token does not result in a *guaranteed* push
