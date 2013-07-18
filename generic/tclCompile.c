@@ -2109,7 +2109,6 @@ TclCompileScript(
 	    Tcl_LogCommandInfo(interp, script, parse.commandStart,
 		    parse.term + 1 - parse.commandStart);
 	    TclCompileSyntaxError(interp, envPtr);
-	    Tcl_FreeParse(&parse);
 	    return;
 	}
 
@@ -2242,10 +2241,7 @@ TclCompileScript(
 	     */
 
 	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
-		    /* Drop the command terminator (";","]") if appropriate */
-		    (parsePtr->term ==
-		    parsePtr->commandStart + parsePtr->commandSize - 1)?
-		    parsePtr->commandSize - 1 : parsePtr->commandSize);
+		    parsePtr->term + 1 - parsePtr->commandStart);
 	    TclCompileSyntaxError(interp, envPtr);
 	    break;
 	}
