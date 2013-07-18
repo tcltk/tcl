@@ -340,7 +340,6 @@ SetTokensFromAny (interp, objPtr)
 {
     int numBytes;
     CONST char *script = Tcl_GetStringFromObj(objPtr, &numBytes);
-    Tcl_Token *tokenPtr;
     TokenIntRep *tirPtr = ckalloc(sizeof(TokenIntRep));
 
     /*
@@ -597,7 +596,7 @@ ParseScript(script, numBytes, flags, parsePtr)
 	errorTokenPtr = &parsePtr->tokenPtr[errorToken];
 	errorTokenPtr->type = TCL_TOKEN_ERROR;
 	errorTokenPtr->start = parsePtr->commandStart;
-	errorTokenPtr->size = end - parsePtr->commandStart;
+	errorTokenPtr->size = parsePtr->term + 1 - parsePtr->commandStart;
 	errorTokenPtr->numComponents = parsePtr->errorType;
     }
 }
@@ -2019,7 +2018,7 @@ ParseVarName(
     tokenPtr = &parsePtr->tokenPtr[varIndex];
     tokenPtr->type = TCL_TOKEN_ERROR;
     tokenPtr->numComponents = parsePtr->errorType;
-    tokenPtr->size = parsePtr->end - tokenPtr->start;
+    tokenPtr->size = parsePtr->term + 1 - tokenPtr->start;
     return TCL_ERROR;
 }
 
