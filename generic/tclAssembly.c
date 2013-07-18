@@ -930,7 +930,7 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
-#if 0
+#if 1
     int numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
     int depth = envPtr->currStackDepth;
@@ -956,11 +956,7 @@ TclCompileAssembleCmd(
     if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
 	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
 
-    /*
-     * TODO: Finish working out how to capture syntax errors captured
-     * during compile and make them bytecode reporting the error.
-     */
-#if 0
+#if 1
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%.*s\" body, line %d)",
 		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
@@ -1136,7 +1132,7 @@ NewAssemblyEnv(
 
     assemEnvPtr->envPtr = envPtr;
     assemEnvPtr->parsePtr = parsePtr;
-    assemEnvPtr->cmdLine = envPtr->line;
+    assemEnvPtr->cmdLine = 1;
     assemEnvPtr->clNext = envPtr->clNext;
 
     /*
