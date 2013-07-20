@@ -741,6 +741,7 @@ TclSubstCompile(
     int breakOffset = 0, count = 0, bline = line;
     Tcl_Parse parse;
 
+    parse.commandStart = NULL;
     TclSubstParse(interp, bytes, numBytes, flags, &parse);
 
     /*
