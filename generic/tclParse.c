@@ -596,6 +596,8 @@ ParseScript(script, numBytes, flags, parsePtr)
 	errorTokenPtr = &parsePtr->tokenPtr[errorToken];
 	errorTokenPtr->type = TCL_TOKEN_ERROR;
 	errorTokenPtr->start = parsePtr->commandStart;
+//fprintf(stdout, "START: %p %p\n", parsePtr, parsePtr->commandStart);
+//fflush(stdout);
 	errorTokenPtr->size = parsePtr->term + 1 - parsePtr->commandStart;
 	errorTokenPtr->numComponents = parsePtr->errorType;
     }
@@ -1051,6 +1053,7 @@ ParseCommand(
   error:
     parsePtr->numWords = numWords;
     parsePtr->commandStart = commandStart;
+//fprintf(stdout, "Set to %p\n", commandStart); fflush(stdout);
     parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
     return TCL_ERROR;
 }
