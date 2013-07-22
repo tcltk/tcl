@@ -574,9 +574,12 @@ TestforkObjCmd(
                 "Cannot fork", NULL);
         return TCL_ERROR;
     }
+#ifndef HAVE_PTHREAD_ATFORK
+    /* Only needed when pthread_atfork is not present. */
     if (pid==0) {
 	Tcl_InitNotifier();
     }
+#endif
     Tcl_SetObjResult(interp, Tcl_NewIntObj(pid));
     return TCL_OK;
 }
