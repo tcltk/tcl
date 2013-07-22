@@ -291,8 +291,8 @@ Tcl_InitNotifier(void)
 	if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
 		TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
 	    Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread");
-	    processIDInitialized = getpid();
 	}
+    processIDInitialized = getpid();
     }
     notifierCount++;
 
