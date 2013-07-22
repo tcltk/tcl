@@ -202,7 +202,13 @@ static Tcl_ThreadId notifierThread;
 
 #ifdef TCL_THREADS
 static void	NotifierThreadProc(ClientData clientData);
-#endif
+#ifdef HAVE_PTHREAD_ATFORK
+static int	atForkInit = 0;
+static void	AtForkPrepare(void);
+static void	AtForkParent(void);
+static void	AtForkChild(void);
+#endif /* HAVE_PTHREAD_ATFORK */
+#endif /* TCL_THREADS */
 static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 
 /*
@@ -276,6 +282,21 @@ Tcl_InitNotifier(void)
      */
 
     Tcl_MutexLock(&notifierMutex);
+#ifdef HAVE_PTHREAD_ATFORK
+    /*
+     * Install pthread_atfork handlers to reinitialize the notifier in the
+     * child of a fork.
+     */
+
+    if (!atForkInit) {
+	int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
+
+	if (result) {
+	    Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed");
+	}
+	atForkInit = 1;
+    }
+#endif
     /*
      * Check if my process id changed, e.g. I was forked
      * In this case, restart the notifier thread and close the
@@ -1251,6 +1272,73 @@ NotifierThreadProc(
 
     TclpThreadExit (0);
 }
+
+#ifdef HAVE_PTHREAD_ATFORK
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkPrepare --
+ *
+ *	Lock the notifier in preparation for a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkPrepare(void)
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkParent --
+ *
+ *	Unlock the notifier in the parent after a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkParent(void)
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkChild --
+ *
+ *	Unlock and reinstall the notifier in the child after a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkChild(void)
+{
+    Tcl_InitNotifier();
+}
+#endif /* HAVE_PTHREAD_ATFORK */
+
 #endif /* TCL_THREADS */
 
 #endif /* HAVE_COREFOUNDATION */
