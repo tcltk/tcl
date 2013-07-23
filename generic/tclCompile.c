@@ -1846,7 +1846,6 @@ CompileExpanded(
 static int 
 CompileCmdCompileProc(
     Tcl_Interp *interp,
-//    Tcl_Parse *parsePtr,
     Tcl_Token *tokenPtr,
     Command *cmdPtr,
     CompileEnv *envPtr)
@@ -1932,7 +1931,6 @@ CompileCmdCompileProc(
 static Tcl_Token *
 CompileCommandTokens(
     Tcl_Interp *interp,
-//    Tcl_Parse *parsePtr,
     Tcl_Token *commandTokenPtr,
     CompileEnv *envPtr)
 {
@@ -1981,7 +1979,6 @@ CompileCommandTokens(
 
     /* Do we know the command word? */
     Tcl_IncrRefCount(cmdObj);
-//    tokenPtr = parsePtr->tokenPtr;
     cmdKnown = TclWordKnownAtCompileTime(tokenPtr, cmdObj);
 
     /* Is this a command we should (try to) compile with a compileProc ? */
@@ -2033,9 +2030,7 @@ CompileCommandTokens(
     Tcl_DecrRefCount(cmdObj);
 
     TclEmitOpcode(INST_POP, envPtr);
-    EnterCmdExtentData(envPtr, cmdIdx,
-//	    parsePtr->term - parsePtr->commandStart,
-commandSize,
+    EnterCmdExtentData(envPtr, cmdIdx, commandSize,
 	    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
 
     /*
