@@ -1580,9 +1580,12 @@ tclMacOSXFCmd.o: $(MAC_OSX_DIR)/tclMacOSXFCmd.c
 tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
 
-# The following is a CYGWIN only source:
+# The following are CYGWIN only sources:
 tclWinError.o: $(TOP_DIR)/win/tclWinError.c
 	$(CC) -c $(CC_SWITCHES) $(TOP_DIR)/win/tclWinError.c
+
+tclWinPanic.o: $(TOP_DIR)/win/tclWinPanic.c
+	$(CC) -c $(CC_SWITCHES) $(TOP_DIR)/win/tclWinPanic.c
 
 # DTrace support
 

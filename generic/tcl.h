@@ -2397,7 +2397,7 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__CYGWIN__)
 void Tcl_ConsolePanic(const char *format, ...);
 #else
 #define Tcl_ConsolePanic ((Tcl_PanicProc *)0)
