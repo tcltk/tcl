@@ -741,15 +741,8 @@ TclSubstCompile(
     int breakOffset = 0, count = 0, bline = line;
     Tcl_Parse parse;
 
-//fprintf(stdout, "TSP: %p %p\n", &parse, parse.commandStart);
-//fflush(stdout);
     parse.commandStart = NULL;
     TclSubstParse(interp, bytes, numBytes, flags, &parse);
-#if 0
-    if (state != NULL) {
-	Tcl_ResetResult(interp);
-    }
-#endif
 
     /*
      * Tricky point! If the first token does not result in a *guaranteed* push

@@ -2212,11 +2212,8 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	}
     }
     if (tokenPtr <= lastTokenPtr) {
-//fprintf(stdout, "SYNTAX\n"); fflush(stdout);
 	TclCompileTokens(interp, tokenPtr, lastTokenPtr-tokenPtr+1, envPtr);
-    }
-
-    if (lastCmdIdx == -1) {
+    } else if (lastCmdIdx == -1) {
 	/*
 	 * Compiling the script yielded no bytecode.  The script must be
 	 * all whitespace, comments, and empty commands.  Such scripts
