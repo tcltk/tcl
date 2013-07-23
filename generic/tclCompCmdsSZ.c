@@ -1000,9 +1000,6 @@ TclSubstCompile(
  *	Instructions are added to envPtr to execute the "switch" command at
  *	runtime.
  *
- * FIXME:
- *	Stack depths are probably not calculated correctly.
- *
  *----------------------------------------------------------------------
  */
 
