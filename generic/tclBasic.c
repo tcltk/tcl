@@ -1579,8 +1579,6 @@ DeleteInterpProc(
 	    ckfree(eclPtr->loc);
 	}
 
-	Tcl_DeleteHashTable(&eclPtr->litInfo);
-
 	ckfree(eclPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
@@ -4630,7 +4628,9 @@ TclEvalEx(
     do {
 	if (Tcl_ParseCommand(interp, p, bytesLeft, 0, parsePtr) != TCL_OK) {
 	    code = TCL_ERROR;
-	    goto error;
+	    Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
+		    parsePtr->term + 1 - parsePtr->commandStart);
+	    goto posterror;
 	}
 
 	/*
@@ -4886,6 +4886,7 @@ TclEvalEx(
 	Tcl_LogCommandInfo(interp, script, parsePtr->commandStart,
 		commandLength);
     }
+ posterror:
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
     /*
@@ -5160,76 +5161,88 @@ TclArgumentBCEnter(
     int objc,
     void *codePtr,
     CmdFrame *cfPtr,
+    int cmd,
     int pc)
 {
+    ExtCmdLoc *eclPtr;
+    int word;
+    ECL *ePtr;
+    CFWordBC *lastPtr = NULL;
     Interp *iPtr = (Interp *) interp;
     Tcl_HashEntry *hePtr =
 	    Tcl_FindHashEntry(iPtr->lineBCPtr, (char *) codePtr);
-    ExtCmdLoc *eclPtr;
 
     if (!hePtr) {
 	return;
     }
     eclPtr = Tcl_GetHashValue(hePtr);
-    hePtr = Tcl_FindHashEntry(&eclPtr->litInfo, INT2PTR(pc));
-    if (hePtr) {
-	int word;
-	int cmd = PTR2INT(Tcl_GetHashValue(hePtr));
-	ECL *ePtr = &eclPtr->loc[cmd];
-	CFWordBC *lastPtr = NULL;
+    ePtr = &eclPtr->loc[cmd];
 
-	/*
-	 * A few truths ...
-	 * (1) ePtr->nline == objc
-	 * (2) (ePtr->line[word] < 0) => !literal, for all words
-	 * (3) (word == 0) => !literal
-	 *
-	 * Item (2) is why we can use objv to get the literals, and do not
-	 * have to save them at compile time.
-	 */
+    /*
+     * ePtr->nline is the number of words originally parsed.
+     *
+     * objc is the number of elements getting invoked.
+     *
+     * If they are not the same, we arrived here by compiling an
+     * ensemble dispatch.  Ensemble subcommands that lead to script
+     * evaluation are not supposed to get compiled, because a command
+     * such as [info level] in the script can expose some of the dispatch
+     * shenanigans.  This means that we don't have to tend to the 
+     * housekeeping, and can escape now.
+     */
+	
+    if (ePtr->nline != objc) {
+        return;
+    }
 
-        if (ePtr->nline != objc) {
-            Tcl_Panic ("TIP 280 data structure inconsistency");
-        }
+    /*
+     * Having disposed of the ensemble cases, we can state...
+     * A few truths ...
+     * (1) ePtr->nline == objc
+     * (2) (ePtr->line[word] < 0) => !literal, for all words
+     * (3) (word == 0) => !literal
+     *
+     * Item (2) is why we can use objv to get the literals, and do not
+     * have to save them at compile time.
+     */
 
-	for (word = 1; word < objc; word++) {
-	    if (ePtr->line[word] >= 0) {
-		int isnew;
-		Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(iPtr->lineLABCPtr,
-			objv[word], &isnew);
-		CFWordBC *cfwPtr = ckalloc(sizeof(CFWordBC));
+    for (word = 1; word < objc; word++) {
+	if (ePtr->line[word] >= 0) {
+	    int isnew;
+	    Tcl_HashEntry *hPtr = Tcl_CreateHashEntry(iPtr->lineLABCPtr,
+		objv[word], &isnew);
+	    CFWordBC *cfwPtr = ckalloc(sizeof(CFWordBC));
 
-		cfwPtr->framePtr = cfPtr;
-		cfwPtr->obj = objv[word];
-		cfwPtr->pc = pc;
-		cfwPtr->word = word;
-		cfwPtr->nextPtr = lastPtr;
-		lastPtr = cfwPtr;
+	    cfwPtr->framePtr = cfPtr;
+	    cfwPtr->obj = objv[word];
+	    cfwPtr->pc = pc;
+	    cfwPtr->word = word;
+	    cfwPtr->nextPtr = lastPtr;
+	    lastPtr = cfwPtr;
 
-		if (isnew) {
-		    /*
-		     * The word is not on the stack yet, remember the current
-		     * location and initialize references.
-		     */
+	    if (isnew) {
+		/*
+		 * The word is not on the stack yet, remember the current
+		 * location and initialize references.
+		 */
 
-		    cfwPtr->prevPtr = NULL;
-		} else {
-		    /*
-		     * The object is already on the stack, however it may have
-		     * a different location now (literal sharing may map
-		     * multiple location to a single Tcl_Obj*. Save the old
-		     * information in the new structure.
-		     */
+		cfwPtr->prevPtr = NULL;
+	    } else {
+		/*
+		 * The object is already on the stack, however it may have
+		 * a different location now (literal sharing may map
+		 * multiple location to a single Tcl_Obj*. Save the old
+		 * information in the new structure.
+		 */
 
-		    cfwPtr->prevPtr = Tcl_GetHashValue(hPtr);
-		}
-
-		Tcl_SetHashValue(hPtr, cfwPtr);
+		cfwPtr->prevPtr = Tcl_GetHashValue(hPtr);
 	    }
-	} /* for */
 
-	cfPtr->litarg = lastPtr;
-    } /* if */
+	    Tcl_SetHashValue(hPtr, cfwPtr);
+	}
+    } /* for */
+
+    cfPtr->litarg = lastPtr;
 }
 
 /*
