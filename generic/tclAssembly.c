@@ -930,11 +930,9 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
-#if 1
     int numCommands = envPtr->numCommands;
     int offset = envPtr->codeNext - envPtr->codeStart;
     int depth = envPtr->currStackDepth;
-#endif
 
     /*
      * Make sure that the command has a single arg that is a simple word.
@@ -956,7 +954,6 @@ TclCompileAssembleCmd(
     if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
 	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
 
-#if 1
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%.*s\" body, line %d)",
 		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
@@ -965,10 +962,6 @@ TclCompileAssembleCmd(
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
 	TclCompileSyntaxError(interp, envPtr);
-#else
-	Tcl_ResetResult(interp);
-	return TCL_ERROR;
-#endif
     }
     return TCL_OK;
 }
