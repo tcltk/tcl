@@ -794,8 +794,7 @@ TclSubstCompile(
 		int i, foundCommand = 0;
 
 		for (i=2 ; i<=tokenPtr->numComponents ; i++) {
-		    if (tokenPtr[i].type == TCL_TOKEN_COMMAND
-			    || tokenPtr[i].type == TCL_TOKEN_SCRIPT_SUBST) {
+		    if (tokenPtr[i].type == TCL_TOKEN_SCRIPT_SUBST) {
 			foundCommand = 1;
 			break;
 		    }
@@ -844,11 +843,6 @@ TclSubstCompile(
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_SCRIPT_SUBST:
 	    TclCompileTokens(interp, tokenPtr, tokenPtr->numComponents + 1,
-		    envPtr);
-	    count++;
-	    break;
-	case TCL_TOKEN_COMMAND:
-	    TclCompileScript(interp, tokenPtr->start+1, tokenPtr->size-2,
 		    envPtr);
 	    count++;
 	    break;

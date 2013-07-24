@@ -2057,7 +2057,9 @@ Tcl_ParseVar(
     int code;
     Tcl_Parse *parsePtr = TclStackAlloc(interp, sizeof(Tcl_Parse));
 
-    if (Tcl_ParseVarName(interp, start, -1, parsePtr, 0) != TCL_OK) {
+    if (TCL_OK != ParseVarName(interp, start, -1, parsePtr,
+	    PARSE_USE_INTERNAL_TOKENS)) {
+	Tcl_FreeParse(parsePtr);
 	TclStackFree(interp, parsePtr);
 	return NULL;
     }
@@ -2076,6 +2078,7 @@ Tcl_ParseVar(
 
     code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
 	    NULL, 1, NULL, NULL, 0);
+    Tcl_FreeParse(parsePtr);
     TclStackFree(interp, parsePtr);
     if (code != TCL_OK) {
 	return NULL;
@@ -2618,6 +2621,12 @@ TclSubstTokens(
 	    break;
 
 	case TCL_TOKEN_COMMAND: {
+	    /*
+	     * This case exists only for the sake of the public routines
+	     * Tcl_EvalTokens(Standard)().  All internal parsing avoids
+	     * generation of the TCL_TOKEN_COMMAND token type.
+	     */
+	
 	    /* TIP #280: Transfer line information to nested command */
 	    iPtr->numLevels++;
 	    code = TclInterpReady(interp);
