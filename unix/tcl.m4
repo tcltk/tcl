@@ -1224,7 +1224,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
-	    DL_OBJS="tclLoadDl.o tclWinError.o tclWinPanic.o"
+	    DL_OBJS="tclLoadDl.o"
+	    PLAT_OBJS="tclWinError.o"
+	    STUB_OBJS="tclWinPanic.o"
 	    DL_LIBS="-ldl"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
@@ -2106,6 +2108,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     AC_SUBST(DL_OBJS)
     AC_SUBST(PLAT_OBJS)
     AC_SUBST(PLAT_SRCS)
+    AC_SUBST(STUB_OBJS)
     AC_SUBST(LDAIX_SRC)
     AC_SUBST(CFLAGS)
     AC_SUBST(CFLAGS_DEBUG)
