@@ -1567,6 +1567,7 @@ Tcl_ParseVar(
 
     code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
 	    NULL, 1, NULL, NULL);
+    Tcl_FreeParse(parsePtr);
     TclStackFree(interp, parsePtr);
     if (code != TCL_OK) {
 	return NULL;
