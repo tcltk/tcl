@@ -18,27 +18,27 @@ testConstraint testfork [llength [info commands testfork]]
 test unixforkevent-1.1 {fork and test writeable event} \
     -constraints testfork \
     -body {
-	set folder [makeDirectory unixtestfork]
+	set myFolder [makeDirectory unixtestfork]
 	set pid [testfork]
 	if {$pid == 0} {
 	    # we are the forked process
 	    set result initialized
-	    set h [open [file join $folder test.txt] w]
+	    set h [open [file join $myFolder test.txt] w]
 	    fileevent $h writable\
 		    "set result writable;\
 		    after cancel [after 1000 {set result timeout}]"
 	    vwait result
 	    close $h
-	    makeFile $result result.txt $folder
+	    makeFile $result result.txt $myFolder
 	    exit
 	}
 	# we are the original process
-	while {![file readable [file join $folder result.txt]]} {}
-	viewFile result.txt $folder
+	while {![file readable [file join $myFolder result.txt]]} {}
+	viewFile result.txt $myFolder
     } \
     -result {writable} \
     -cleanup { 
-	catch { removeFolder $folder }
+	catch { removeFolder $myFolder }
     }
 
 ::tcltest::cleanupTests
