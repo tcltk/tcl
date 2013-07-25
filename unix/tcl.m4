@@ -679,7 +679,7 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 
 	ac_saved_libs=$LIBS
 	LIBS="$LIBS $THREADS_LIBS"
-	AC_CHECK_FUNCS(pthread_attr_setstacksize)
+	AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
 	AC_CHECK_FUNC(pthread_attr_get_np,tcl_ok=yes,tcl_ok=no)
 	if test $tcl_ok = yes ; then
 	    AC_DEFINE(HAVE_PTHREAD_ATTR_GET_NP, 1,
