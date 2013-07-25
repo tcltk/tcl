@@ -93,7 +93,6 @@ fi
 #------------------------------------------------------------------------
 
 SC_ENABLE_THREADS
-AC_CHECK_FUNCS(pthread_atfork)
 
 #------------------------------------------------------------------------
 # Embedded configuration information, encoding to use for the values, TIP #59
