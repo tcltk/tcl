@@ -850,6 +850,9 @@ TclSubstCompile(
 	    TclCompileVarSubst(interp, tokenPtr, envPtr);
 	    count++;
 	    break;
+	case TCL_TOKEN_ERROR:
+	    TclCompileTokens(interp, tokenPtr, 1, envPtr);
+	    break;
 	default:
 	    Tcl_Panic("unexpected token type in TclCompileSubstCmd: %d",
 		    tokenPtr->type);
