@@ -1335,6 +1335,8 @@ AtForkParent(void)
 static void
 AtForkChild(void)
 {
+    notifierMutex = NULL;
+    notifierCV = NULL;
     Tcl_InitNotifier();
 }
 #endif /* HAVE_PTHREAD_ATFORK */
