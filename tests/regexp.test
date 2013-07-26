@@ -876,6 +876,10 @@ test regexp-22.5 {Bug 3610026} -setup {
 } -cleanup {
     unset -nocomplain e cp
 } -returnCodes error  -match glob -result {*too many colors*}
+test regexp-22.6 {Bug 6585b21ca8} {
+    expr {[regexp {(\w).*?\1} Programmer m] ? $m : "<NONE>"}
+} rogr
+
 
 test regexp-23.1 {regexp -all and -line} {
     set string ""

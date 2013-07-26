@@ -40,17 +40,14 @@ static int		CompileUnaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int instruction,
 			    CompileEnv *envPtr);
 static void		IssueSwitchChainedTests(Tcl_Interp *interp,
-			    CompileEnv *envPtr, ExtCmdLoc *mapPtr,
-			    int eclIndex, int mode, int noCase,
-			    int valueIndex, Tcl_Token *valueTokenPtr,
-			    int numWords, Tcl_Token **bodyToken,
-			    int *bodyLines, int **bodyNext);
-static void		IssueSwitchJumpTable(Tcl_Interp *interp,
-			    CompileEnv *envPtr, ExtCmdLoc *mapPtr,
-			    int eclIndex, int valueIndex,
-			    Tcl_Token *valueTokenPtr, int numWords,
+			    CompileEnv *envPtr, int mode, int noCase,
+			    int valueIndex, int numWords,
 			    Tcl_Token **bodyToken, int *bodyLines,
-			    int **bodyContLines);
+			    int **bodyNext);
+static void		IssueSwitchJumpTable(Tcl_Interp *interp,
+			    CompileEnv *envPtr, int valueIndex,
+			    int numWords, Tcl_Token **bodyToken,
+			    int *bodyLines, int **bodyContLines);
 static int		IssueTryClausesInstructions(Tcl_Interp *interp,
 			    CompileEnv *envPtr, Tcl_Token *bodyToken,
 			    int numHandlers, int *matchCodes,
@@ -88,8 +85,6 @@ const AuxDataType tclJumptableInfoType = {
     TclEmitInstInt1(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
 #define OP44(name,val1,val2) \
     TclEmitInstInt4(INST_##name,(val1),envPtr);TclEmitInt4((val2),envPtr)
-#define BODY(token,index) \
-    SetLineInformation((index));CompileBody(envPtr,(token),interp)
 #define PUSH(str) \
     PushStringLiteral(envPtr, str)
 #define JUMP4(name,var) \
@@ -748,6 +743,9 @@ TclSubstCompile(
     Tcl_InterpState state = NULL;
 
     TclSubstParse(interp, bytes, numBytes, flags, &parse, &state);
+    if (state != NULL) {
+	Tcl_ResetResult(interp);
+    }
 
     /*
      * Tricky point! If the first token does not result in a *guaranteed* push
@@ -992,9 +990,6 @@ TclSubstCompile(
  * Side effects:
  *	Instructions are added to envPtr to execute the "switch" command at
  *	runtime.
- *
- * FIXME:
- *	Stack depths are probably not calculated correctly.
  *
  *----------------------------------------------------------------------
  */
@@ -1286,13 +1281,15 @@ TclCompileSwitchCmd(
      * but it handles the most common case well enough.
      */
 
+    /* Both methods push the value to match against onto the stack. */
+    CompileWord(envPtr, valueTokenPtr, interp, valueIndex);
+
     if (mode == Switch_Exact) {
-	IssueSwitchJumpTable(interp, envPtr, mapPtr, eclIndex, valueIndex,
-		valueTokenPtr, numWords, bodyToken, bodyLines, bodyContLines);
+	IssueSwitchJumpTable(interp, envPtr, valueIndex, numWords, bodyToken,
+		bodyLines, bodyContLines);
     } else {
-	IssueSwitchChainedTests(interp, envPtr, mapPtr, eclIndex, mode,noCase,
-		valueIndex, valueTokenPtr, numWords, bodyToken, bodyLines,
-		bodyContLines);
+	IssueSwitchChainedTests(interp, envPtr, mode, noCase, valueIndex,
+		numWords, bodyToken, bodyLines, bodyContLines);
     }
     result = TCL_OK;
 
@@ -1330,13 +1327,9 @@ static void
 IssueSwitchChainedTests(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    ExtCmdLoc *mapPtr,		/* For mapping tokens to their source code
-				 * location. */
-    int eclIndex,
     int mode,			/* Exact, Glob or Regexp */
     int noCase,			/* Case-insensitivity flag. */
     int valueIndex,		/* The value to match against. */
-    Tcl_Token *valueTokenPtr,
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
@@ -1359,13 +1352,6 @@ IssueSwitchChainedTests(
     int nextArmFixupIndex;
     int simple, exact;		/* For extracting the type of regexp. */
     int i;
-
-    /*
-     * First, we push the value we're matching against on the stack.
-     */
-
-    SetLineInformation(valueIndex);
-    CompileTokens(envPtr, valueTokenPtr, interp);
 
     /*
      * Generate a test for each arm.
@@ -1510,7 +1496,7 @@ IssueSwitchChainedTests(
 	}
 
 	/*
-	 * Now do the actual compilation. Note that we do not use CompileBody
+	 * Now do the actual compilation. Note that we do not use BODY() 
 	 * because we may have synthesized the tokens in a non-standard
 	 * pattern.
 	 */
@@ -1592,11 +1578,7 @@ static void
 IssueSwitchJumpTable(
     Tcl_Interp *interp,		/* Context for compiling script bodies. */
     CompileEnv *envPtr,		/* Holds resulting instructions. */
-    ExtCmdLoc *mapPtr,		/* For mapping tokens to their source code
-				 * location. */
-    int eclIndex,
     int valueIndex,		/* The value to match against. */
-    Tcl_Token *valueTokenPtr,
     int numBodyTokens,		/* Number of tokens describing things the
 				 * switch can match against and bodies to
 				 * execute when the match succeeds. */
@@ -1610,13 +1592,6 @@ IssueSwitchJumpTable(
     int mustGenerate, foundDefault, jumpToDefault, i;
     Tcl_DString buffer;
     Tcl_HashEntry *hPtr;
-
-    /*
-     * First, we push the value we're matching against on the stack.
-     */
-
-    SetLineInformation(valueIndex);
-    CompileTokens(envPtr, valueTokenPtr, interp);
 
     /*
      * Compile the switch by using a jump table, which is basically a
@@ -2048,8 +2023,7 @@ TclCompileTryCmd(
 	 */
 
 	DefineLineInformation;	/* TIP #280 */
-	SetLineInformation(1);
-	CompileBody(envPtr, bodyToken, interp);
+	BODY(bodyToken, 1);
 	return TCL_OK;
     }
 
@@ -2844,6 +2818,7 @@ TclCompileUnsetCmd(
     Tcl_Obj *leadingWord;
     DefineLineInformation;	/* TIP #280 */
 
+    /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords-1;
     flags = 1;
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -3028,13 +3003,12 @@ TclCompileWhileCmd(
      * Compile the loop body.
      */
 
-    SetLineInformation(2);
     bodyCodeOffset = ExceptionRangeStarts(envPtr, range);
     if (!loopMayEnd) {
 	envPtr->exceptArrayPtr[range].continueOffset = testCodeOffset;
 	envPtr->exceptArrayPtr[range].codeOffset = bodyCodeOffset;
     }
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, 2);
     ExceptionRangeEnds(envPtr, range);
     OP(		POP);
 
@@ -3200,6 +3174,7 @@ CompileAssociativeBinaryOpCmd(
     DefineLineInformation;	/* TIP #280 */
     int words;
 
+    /* TODO: Consider support for compiling expanded args. */
     for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
@@ -3283,6 +3258,7 @@ CompileComparisonOpCmd(
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	PUSH("1");
     } else if (parsePtr->numWords == 3) {
@@ -3620,6 +3596,7 @@ TclCompileMinusOpCmd(
     DefineLineInformation;	/* TIP #280 */
     int words;
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords == 1) {
 	/*
 	 * Fallback to direct eval to report syntax error.
@@ -3665,6 +3642,7 @@ TclCompileDivOpCmd(
     DefineLineInformation;	/* TIP #280 */
     int words;
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords == 1) {
 	/*
 	 * Fallback to direct eval to report syntax error.
