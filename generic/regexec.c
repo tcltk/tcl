@@ -512,12 +512,7 @@ cfindloop(
 		    return er;
 		}
 		if ((shorter) ? end == estop : end == begin) {
-		    /*
-		     * No point in trying again.
-		     */
-
-		    *coldp = cold;
-		    return REG_NOMATCH;
+		    break;
 		}
 
 		/*
