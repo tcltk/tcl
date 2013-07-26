@@ -1051,7 +1051,6 @@ ParseCommand(
   error:
     parsePtr->numWords = numWords;
     parsePtr->commandStart = commandStart;
-//fprintf(stdout, "Set to %p\n", commandStart); fflush(stdout);
     parsePtr->commandSize = parsePtr->end - parsePtr->commandStart;
     return TCL_ERROR;
 }
