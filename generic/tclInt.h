@@ -3079,6 +3079,8 @@ MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 MODULE_SCOPE Tcl_Token *TclParseScript(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags,
 			    Tcl_Token **lastTokenPtrPtr, const char **termPtr);
+MODULE_SCOPE int	TclParseScriptSubst(const char *src, int numBytes,
+			    Tcl_Parse *parsePtr, int flags);
 MODULE_SCOPE int	TclParseAllWhiteSpace(const char *src, int numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);

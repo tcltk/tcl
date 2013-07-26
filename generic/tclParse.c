@@ -1611,22 +1611,9 @@ ParseTokens(
 	     * throw away the nested parse information.
 	     */
 
-	    src++;
-	    numBytes--;
 	    if (useInternalTokens) {
-		int scriptToken;
-		Tcl_Token *scriptTokenPtr;
-
-		TclGrowParseTokenArray(parsePtr, 1);
-		scriptToken = parsePtr->numTokens++;
-		ParseScript(src, numBytes, flags | PARSE_NESTED, parsePtr);
-		scriptTokenPtr = &parsePtr->tokenPtr[scriptToken];
-		scriptTokenPtr->type = TCL_TOKEN_SCRIPT_SUBST;
-		scriptTokenPtr->size = parsePtr->term - src + 2;
-		scriptTokenPtr->numComponents = parsePtr->numTokens 
-			- scriptToken - 1;
-		if (parsePtr->errorType != TCL_PARSE_SUCCESS) {
-		    parsePtr->incomplete = 1;
+		if (TclParseScriptSubst(src, numBytes, parsePtr, flags)
+			!= TCL_OK) {
 		    return TCL_ERROR;
 		}
 		src = parsePtr->term + 1;
@@ -1634,6 +1621,8 @@ ParseTokens(
 		continue;
 	    }
 
+	    src++;
+	    numBytes--;
 	    nestedPtr = TclStackAlloc(parsePtr->interp, sizeof(Tcl_Parse));
 	    while (1) {
 		if (TCL_OK != ParseCommand(parsePtr->interp, src, numBytes,
@@ -1783,6 +1772,46 @@ Tcl_FreeParse(
 	ckfree(parsePtr->tokenPtr);
 	parsePtr->tokenPtr = parsePtr->staticTokens;
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclParseScriptSubst --
+ *
+ *	Given a string starting with a [ sign, parse the script substitution
+ *	and return information about the parse. No more than numBytes bytes
+ *	will be scanned.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclParseScriptSubst(
+    const char *src,
+    register int numBytes,
+    Tcl_Parse *parsePtr,
+    int flags)	
+{
+    int scriptToken;
+    Tcl_Token *scriptTokenPtr;
+
+    TclGrowParseTokenArray(parsePtr, 1);
+    scriptToken = parsePtr->numTokens++;
+    ParseScript(src+1, numBytes-1, flags | PARSE_NESTED, parsePtr);
+    scriptTokenPtr = &parsePtr->tokenPtr[scriptToken];
+    scriptTokenPtr->type = TCL_TOKEN_SCRIPT_SUBST;
+    scriptTokenPtr->size = parsePtr->term - src + 1;
+    scriptTokenPtr->numComponents = parsePtr->numTokens - scriptToken - 1;
+    if (parsePtr->errorType != TCL_PARSE_SUCCESS) {
+	parsePtr->incomplete = 1;
+	return TCL_ERROR;
+    }
+    return TCL_OK;
 }
 
 /*

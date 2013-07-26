@@ -918,10 +918,8 @@ ParseExpr(
 		scanned = tokenPtr->size;
 		break;
 
-	    case SCRIPT: {
-#if 0
-		TclParseScript(interp, start, numBytes, PARSE_NESTED,
-#else
+	    case SCRIPT:
+	      if (parseOnly) {
 		Tcl_Parse *nestedPtr =
 			TclStackAlloc(interp, sizeof(Tcl_Parse));
 
@@ -964,9 +962,11 @@ ParseExpr(
 		scanned = end - start;
 		tokenPtr->size = scanned;
 		parsePtr->numTokens++;
-#endif
 		break;
-	    }			/* SCRIPT case */
+	      }
+		code = TclParseScriptSubst(start, numBytes, parsePtr, 0);
+		scanned = parsePtr->term + 1 - start;
+		break;
 	    }
 	    if (code != TCL_OK) {
 		/*
