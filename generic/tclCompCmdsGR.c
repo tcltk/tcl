@@ -60,6 +60,7 @@ TclCompileGlobalCmd(
     int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
+    /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
     if (numWords < 2) {
 	return TCL_ERROR;
@@ -264,8 +265,7 @@ TclCompileIfCmd(
 	 */
 
 	if (compileScripts) {
-	    SetLineInformation(wordIdx);
-	    CompileBody(envPtr, tokenPtr, interp);
+	    BODY(tokenPtr, wordIdx);
 	}
 
 	if (realCond) {
@@ -345,8 +345,7 @@ TclCompileIfCmd(
 	     * Compile the else command body.
 	     */
 
-	    SetLineInformation(wordIdx);
-	    CompileBody(envPtr, tokenPtr, interp);
+	    BODY(tokenPtr, wordIdx);
 	}
 
 	/*
@@ -701,8 +700,7 @@ TclCompileInfoLevelCmd(
 	 * list of arguments.
 	 */
 
-	SetLineInformation(1);
-	CompileTokens(envPtr, TokenAfter(parsePtr->tokenPtr), interp);
+	CompileWord(envPtr, TokenAfter(parsePtr->tokenPtr), interp, 1);
 	TclEmitOpcode(		INST_INFO_LEVEL_ARGS,		envPtr);
     }
     return TCL_OK;
@@ -823,6 +821,7 @@ TclCompileLappendCmd(
 	return TCL_ERROR;
     }
 
+    /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
     if (numWords == 1) {
 	return TCL_ERROR;
@@ -1064,6 +1063,7 @@ TclCompileLindexCmd(
      * Quit if too few args.
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (numWords <= 1) {
 	return TCL_ERROR;
     }
@@ -1586,6 +1586,7 @@ TclCompileLsetCmd(
      * Check argument count.
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	/*
 	 * Fail at run time, not in compilation.
@@ -2534,6 +2535,7 @@ TclCompileSyntaxError(
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
     CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
 	    TclNoErrorStack(interp, Tcl_GetReturnOptions(interp, TCL_ERROR)));
+    Tcl_ResetResult(interp);
 }
 
 /*
