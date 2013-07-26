@@ -768,7 +768,6 @@ TclSetByteCodeFromAny(
 	    Tcl_Preserve(compEnv.clLoc);
 	}
 	compEnv.atCmdStart = 2;		/* The disabling magic. */
-	Tcl_ResetResult(interp);
 	TclCompileScript(interp, stringPtr, length, &compEnv);
 	assert (compEnv.atCmdStart > 1);
 	TclEmitOpcode(INST_DONE, &compEnv);
