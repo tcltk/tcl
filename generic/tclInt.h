@@ -3069,6 +3069,8 @@ MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,
 			    int numBytes, int *readPtr, char *dst);
+MODULE_SCOPE int	TclParseCommand(Tcl_Interp *interp, const char *start,
+			    int numBytes, int flags, Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
 			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -3076,11 +3078,18 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int numBytes, const char **endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    int numBytes, Tcl_Parse *parsePtr);
+
+MODULE_SCOPE int	TclParseQuotedString(Tcl_Interp *interp,
+			    const char *start, int numBytes,
+			    Tcl_Parse *parsePtr, int flags,
+			    const char **termPtr);
 MODULE_SCOPE Tcl_Token *TclParseScript(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags,
 			    Tcl_Token **lastTokenPtrPtr, const char **termPtr);
 MODULE_SCOPE int	TclParseScriptSubst(const char *src, int numBytes,
 			    Tcl_Parse *parsePtr, int flags);
+MODULE_SCOPE int	TclParseVarName(Tcl_Interp *interp, const char *start,
+			    int numBytes, Tcl_Parse *parsePtr, int flags);
 MODULE_SCOPE int	TclParseAllWhiteSpace(const char *src, int numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);

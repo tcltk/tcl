@@ -890,8 +890,10 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case QUOTED:
-		code = Tcl_ParseQuotedString(NULL, start, numBytes,
-			parsePtr, 1, &end);
+		code = parseOnly ?  Tcl_ParseQuotedString(NULL, start,
+			numBytes, parsePtr, 1, &end)
+			: TclParseQuotedString(NULL, start, numBytes, parsePtr,
+			PARSE_APPEND | PARSE_USE_INTERNAL_TOKENS, &end);
 		scanned = end - start;
 		break;
 
@@ -902,7 +904,9 @@ ParseExpr(
 		break;
 
 	    case VARIABLE:
-		code = Tcl_ParseVarName(NULL, start, numBytes, parsePtr, 1);
+		code = parseOnly ? Tcl_ParseVarName(NULL, start, numBytes,
+			parsePtr, 1) : TclParseVarName(NULL, start, numBytes,
+			parsePtr, PARSE_APPEND | PARSE_USE_INTERNAL_TOKENS);
 
 		/*
 		 * Handle the quirk that Tcl_ParseVarName reports a successful

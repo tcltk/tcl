@@ -2358,30 +2358,6 @@ TclCompileTokens(
 	    }
 	    break;
 
-	case TCL_TOKEN_COMMAND:
-	    /*
-	     * Push any accumulated chars appearing before the command.
-	     */
-
-	    if (Tcl_DStringLength(&textBuffer) > 0) {
-		int literal = TclRegisterDStringLiteral(envPtr, &textBuffer);
-
-		TclEmitPush(literal, envPtr);
-		numObjsToConcat++;
-		Tcl_DStringFree(&textBuffer);
-
-		if (numCL) {
-		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
-			    numCL, clPosition);
-		}
-		numCL = 0;
-	    }
-
-	    TclCompileScript(interp, tokenPtr->start+1,
-		    tokenPtr->size-2, envPtr);
-	    numObjsToConcat++;
-	    break;
-
 	case TCL_TOKEN_VARIABLE:
 	    /*
 	     * Push any accumulated chars appearing before the $<var>.

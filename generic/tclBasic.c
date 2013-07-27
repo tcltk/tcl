@@ -4907,7 +4907,7 @@ TclEvalScriptTokens(
     int flags,
     int line,
     int*  clNextOuter,		/* Information about an outer context for */
-    CONST char* outerScript)	/* continuation line data. This is set only in
+    const char* outerScript)	/* continuation line data. This is set only in
 				 * TclSubstTokens(), to properly handle
 				 * [...]-nested commands. The 'outerScript'
 				 * refers to the most-outer script containing
@@ -5336,7 +5336,7 @@ TclEvalEx(
 				 * supported. */
     int line,			/* The line the script starts on. */
     int*  clNextOuter,       /* Information about an outer context for */
-    CONST char* outerScript) /* continuation line data. This is set only in
+    const char* outerScript) /* continuation line data. This is set only in
 			      * EvalTokensStandard(), to properly handle
 			      * [...]-nested commands. The 'outerScript'
 			      * refers to the most-outer script containing the
