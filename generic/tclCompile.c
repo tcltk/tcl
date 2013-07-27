@@ -2055,6 +2055,7 @@ TclCompileScript(
 #ifdef TCL_COMPILE_DEBUG
 	/*
 	 * If tracing, print a line for each top level command compiled.
+	 * TODO: Suppress when numWords == 0 ?
 	 */
 
 	if ((tclTraceCompile >= 1) && (envPtr->procPtr == NULL)) {
