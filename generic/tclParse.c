@@ -384,7 +384,7 @@ UpdateStringOfTokens(
     char *bytes;
 
     if (tirPtr->scriptObjPtr == NULL) {
-	Tcl_Panic("WTF?!");
+	Tcl_Panic("Lost scriptObjPtr in tokens value");
     }
     bytes = Tcl_GetStringFromObj(tirPtr->scriptObjPtr, &length);
     TclInitStringRep(objPtr, bytes, length);
@@ -533,8 +533,6 @@ ParseScript(script, numBytes, flags, parsePtr)
     p = script;
     end = p + numBytes;
     numValidTokens = parsePtr->numTokens;
-    parsePtr->errorType =
-	    nested ? TCL_PARSE_MISSING_BRACKET : TCL_PARSE_SUCCESS;
 
     while (p < end) {
 	int cmdToken;
@@ -544,10 +542,13 @@ ParseScript(script, numBytes, flags, parsePtr)
 	cmdToken = parsePtr->numTokens++;
 
 	parsePtr->errorType = TCL_PARSE_SUCCESS;
+	parsePtr->term = parsePtr->end;
 	if (TCL_OK != ParseCommand(parsePtr->interp, p, (int) (end - p),
 		flags | PARSE_APPEND | PARSE_USE_INTERNAL_TOKENS, parsePtr)) {
 	    break;
 	}
+
+	p = parsePtr->commandStart + parsePtr->commandSize;
 
 	/*
 	 * Check for missing close-brace for nested script substitution.
@@ -556,7 +557,6 @@ ParseScript(script, numBytes, flags, parsePtr)
 	 */
 
 	if (nested && (parsePtr->term >= end)) {
-	    parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
 	    break;
 	}
 
@@ -574,15 +574,21 @@ ParseScript(script, numBytes, flags, parsePtr)
 	scriptTokenPtr->numComponents++;	/* Another command parsed */
 	numValidTokens = parsePtr->numTokens;
 
-	p = parsePtr->commandStart + parsePtr->commandSize;
-
-	if (nested && (*parsePtr->term == ']') && (parsePtr->term < end)) {
+	if (nested && (parsePtr->term < end) && (*parsePtr->term == ']')) {
 	    scriptTokenPtr->size = parsePtr->term - scriptTokenPtr->start;
 	    break;
 	}
     }
-    if (nested && (p >= end) && (*parsePtr->term != ']')) {
+    /* Check all cases that indicate missing ] */
+    if (nested && (p >= end) && ((parsePtr->term >= parsePtr->end)
+	    || (*parsePtr->term != ']'))) {
 	parsePtr->errorType = TCL_PARSE_MISSING_BRACKET;
+	parsePtr->term = script - 1;
+	parsePtr->incomplete = 1;
+	if (parsePtr->interp != NULL) {
+	    Tcl_SetObjResult(parsePtr->interp, Tcl_NewStringObj(
+		    parseErrorMsg[parsePtr->errorType], -1));
+	}
     }
 
     parsePtr->numTokens = numValidTokens;
@@ -1805,10 +1811,10 @@ TclParseScriptSubst(
     ParseScript(src+1, numBytes-1, flags | PARSE_NESTED, parsePtr);
     scriptTokenPtr = &parsePtr->tokenPtr[scriptToken];
     scriptTokenPtr->type = TCL_TOKEN_SCRIPT_SUBST;
+    scriptTokenPtr->start = src;
     scriptTokenPtr->size = parsePtr->term - src + 1;
     scriptTokenPtr->numComponents = parsePtr->numTokens - scriptToken - 1;
     if (parsePtr->errorType != TCL_PARSE_SUCCESS) {
-	parsePtr->incomplete = 1;
 	return TCL_ERROR;
     }
     return TCL_OK;
