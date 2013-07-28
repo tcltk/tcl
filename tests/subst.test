@@ -296,6 +296,7 @@ test subst-13.1 {Bug 3081065} -setup {
 test subst-13.2 {Test for segfault} -body {
     subst {[}
 } -returnCodes error -result * -match glob
+
 
 # cleanup
 ::tcltest::cleanupTests
