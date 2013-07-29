@@ -1555,7 +1555,7 @@ Tcl_UniCharIsSpace(
 
     if (((Tcl_UniChar) ch) < ((Tcl_UniChar) 0x80)) {
 	return TclIsSpaceProc((char) ch);
-    } else if ((Tcl_UniChar) ch == 0x180e) {
+    } else if ((Tcl_UniChar) ch == 0x180e || (Tcl_UniChar) ch == 0x202f) {
 	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);
