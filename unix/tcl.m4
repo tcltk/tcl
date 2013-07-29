@@ -1121,6 +1121,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     LD_LIBRARY_PATH_VAR="LD_LIBRARY_PATH"
     PLAT_OBJS=""
     PLAT_SRCS=""
+    STUB_OBJS=""
     LDAIX_SRC=""
     AS_IF([test x"${SHLIB_VERSION}" = x], [SHLIB_VERSION="1.0"])
     case $system in
@@ -1227,6 +1228,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    DL_OBJS="tclLoadDl.o"
 	    PLAT_OBJS='${CYGWIN_OBJS}'
 	    PLAT_SRCS='${CYGWIN_SRCS}'
+	    STUB_OBJS="tclWinPanic.o"
 	    DL_LIBS="-ldl"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
@@ -2108,6 +2110,7 @@ dnl # preprocessing tests use only CPPFLAGS.
     AC_SUBST(DL_OBJS)
     AC_SUBST(PLAT_OBJS)
     AC_SUBST(PLAT_SRCS)
+    AC_SUBST(STUB_OBJS)
     AC_SUBST(LDAIX_SRC)
     AC_SUBST(CFLAGS)
     AC_SUBST(CFLAGS_DEBUG)
