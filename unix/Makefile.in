@@ -349,6 +349,8 @@ NOTIFY_OBJS = tclUnixNotfy.o
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
 
+CYGWIN_OBJS = tclWinError.o
+
 DTRACE_OBJ = tclDTrace.o
 
 ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
@@ -578,6 +580,9 @@ MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXBundle.c \
 	$(MAC_OSX_DIR)/tclMacOSXFCmd.c \
 	$(MAC_OSX_DIR)/tclMacOSXNotify.c
+
+CYGWIN_SRCS = \
+	$(TOP_DIR)/win/tclWinError.c
 
 DTRACE_HDR = tclDTrace.h
 
