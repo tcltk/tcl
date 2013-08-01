@@ -19,9 +19,9 @@ if {{::tcltest} ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
-
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
+testConstraint zlib [llength [info commands zlib]]
 
 # Set up namespaces needed to test operation of "info args", "info body",
 # "info default", and "info procs" with imported procedures.
@@ -2488,7 +2488,23 @@ test info-40.13 {info cmdtype: ensembles} -setup {
 } -cleanup {
     namespace delete ::testinfocmdtype::ensmbl
 } -result ensemble
-test info-40.14 {info cmdtype: dynamic behavior} -setup {
+test info-40.14 {info cmdtype: zlib streams} -constraints zlib -setup {
+    namespace eval ::testinfocmdtype {
+	rename [zlib stream gzip] zstream
+    }
+} -body {
+    info cmdtype ::testinfocmdtype::zstream
+} -cleanup {
+    ::testinfocmdtype::zstream close
+} -result zlibStream
+test info-40.15 {info cmdtype: coroutines} -setup {
+    coroutine ::testinfocmdtype::coro eval yield
+} -body {
+    info cmdtype ::testinfocmdtype::coro
+} -cleanup {
+    ::testinfocmdtype::coro
+} -result coroutine
+test info-40.16 {info cmdtype: dynamic behavior} -setup {
     proc ::testinfocmdtype::foo {} {}
 } -body {
     namespace eval ::testinfocmdtype {
