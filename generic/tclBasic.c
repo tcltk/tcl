@@ -533,6 +533,7 @@ Tcl_CreateInterp(void)
         TclRegisterCommandTypeName(TclInvokeImportedCmd, "import");
         TclRegisterCommandTypeName(TclOOPublicObjectCmd, "object");
         TclRegisterCommandTypeName(TclOOPrivateObjectCmd, "privateObject");
+        TclRegisterCommandTypeName(TclNRInterpCoroutine, "coroutine");
     }
 
     /*
@@ -1068,12 +1069,15 @@ TclGetCommandTypeName(
     Tcl_Command command)
 {
     Command *cmdPtr = (Command *) command;
+    void *procPtr = cmdPtr->objProc;
     const char *name = "native";
 
+    if (procPtr == NULL) {
+        procPtr = cmdPtr->nreProc;
+    }
     Tcl_MutexLock(&commandTypeLock);
     if (commandTypeInit) {
-        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&commandTypeTable,
-                (void *) cmdPtr->objProc);
+        Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&commandTypeTable, procPtr);
 
         if (hPtr && Tcl_GetHashValue(hPtr)) {
             name = (const char *) Tcl_GetHashValue(hPtr);
