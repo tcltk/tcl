@@ -2475,6 +2475,34 @@ test info-40.12 {info cmdtype: objects} -setup {
 } -cleanup {
     ::testinfocmdtype::obj destroy
 } -result privateObject
+test info-40.13 {info cmdtype: ensembles} -setup {
+    namespace eval ::testinfocmdtype {
+	namespace eval ensmbl {
+	    proc bar {} {}
+	    namespace export *
+	    namespace ensemble create
+	}
+    }
+} -body {
+    info cmdtype ::testinfocmdtype::ensmbl
+} -cleanup {
+    namespace delete ::testinfocmdtype::ensmbl
+} -result ensemble
+test info-40.14 {info cmdtype: dynamic behavior} -setup {
+    proc ::testinfocmdtype::foo {} {}
+} -body {
+    namespace eval ::testinfocmdtype {
+	list [catch {info cmdtype foo}] [catch {info cmdtype bar}] \
+	    [namespace which foo] [rename foo bar] [namespace which bar] \
+	    [catch {info cmdtype foo}] [catch {info cmdtype bar}]
+    }
+} -cleanup {
+    namespace eval ::testinfocmdtype {
+	catch {rename foo {}}
+	catch {rename bar {}}
+    }
+} -result {0 1 ::testinfocmdtype::foo {} ::testinfocmdtype::bar 1 0}
+namespace delete ::testinfocmdtype
 
 # -------------------------------------------------------------------------
 unset -nocomplain res
