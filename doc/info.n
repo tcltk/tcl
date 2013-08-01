@@ -52,6 +52,8 @@ supported types are:
 .RS
 .IP \fBalias\fR
 Indicates that \fIcommandName\fR was created by \fBinterp alias\fR.
+.IP \fBcoroutine\fR
+Indicates that \fIcommandName\fR was created by \fBcoroutine\fR.
 .IP \fBensemble\fR
 Indicates that \fIcommandName\fR was created by \fBnamespace ensemble\fR.
 .IP \fBimport\fR
@@ -69,6 +71,8 @@ that represents an instance of \fBoo::object\fR or one of its subclasses.
 Indicates that \fIcommandName\fR was created by \fBproc\fR.
 .IP \fBslave\fR
 Indicates that \fIcommandName\fR was created by \fBinterp create\fR.
+.IP \fBzlibStream\fR
+Indicates that \fIcommandName\fR was created by \fBzlib stream\fR.
 .PP
 There may be other registered types as well; this is a set that is extensible
 at the implementation level with \fBTcl_RegisterCommandTypeName\fR.
