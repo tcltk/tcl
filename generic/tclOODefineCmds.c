@@ -2206,29 +2206,39 @@ ClassSuperSet(
 
     /*
      * Parse the arguments to get the class to use as superclasses.
+     *
+     * Note that zero classes is special, as it is equivalent to just the
+     * class of objects. [Bug 9d61624b3d]
      */
 
-    for (i=0 ; i<superc ; i++) {
-	superclasses[i] = GetClassInOuterContext(interp, superv[i],
-		"only a class can be a superclass");
-	if (superclasses[i] == NULL) {
-	    goto failedAfterAlloc;
-	}
-	for (j=0 ; j<i ; j++) {
-	    if (superclasses[j] == superclasses[i]) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"class should only be a direct superclass once", -1));
-		Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS", NULL);
+    if (superc == 0) {
+	superclasses = ckrealloc(superclasses, sizeof(Class *));
+	superclasses[0] = oPtr->fPtr->objectCls;
+	superc = 1;
+    } else {
+	for (i=0 ; i<superc ; i++) {
+	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
+		    "only a class can be a superclass");
+	    if (superclasses[i] == NULL) {
 		goto failedAfterAlloc;
 	    }
-	}
-	if (TclOOIsReachable(oPtr->classPtr, superclasses[i])) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "attempt to form circular dependency graph", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
-	failedAfterAlloc:
-	    ckfree((char *) superclasses);
-	    return TCL_ERROR;
+	    for (j=0 ; j<i ; j++) {
+		if (superclasses[j] == superclasses[i]) {
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "class should only be a direct superclass once",
+			    -1));
+		    Tcl_SetErrorCode(interp, "TCL", "OO", "REPETITIOUS",NULL);
+		    goto failedAfterAlloc;
+		}
+	    }
+	    if (TclOOIsReachable(oPtr->classPtr, superclasses[i])) {
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"attempt to form circular dependency graph", -1));
+		Tcl_SetErrorCode(interp, "TCL", "OO", "CIRCULARITY", NULL);
+	    failedAfterAlloc:
+		ckfree((char *) superclasses);
+		return TCL_ERROR;
+	    }
 	}
     }
 
