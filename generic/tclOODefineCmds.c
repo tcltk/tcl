@@ -2215,6 +2215,9 @@ ClassSuperSet(
 	superclasses = ckrealloc(superclasses, sizeof(Class *));
 	superclasses[0] = oPtr->fPtr->objectCls;
 	superc = 1;
+	if (TclOOIsReachable(oPtr->fPtr->classCls, oPtr->classPtr)) {
+	    superclasses[0] = oPtr->fPtr->classCls;
+	}
     } else {
 	for (i=0 ; i<superc ; i++) {
 	    superclasses[i] = GetClassInOuterContext(interp, superv[i],
