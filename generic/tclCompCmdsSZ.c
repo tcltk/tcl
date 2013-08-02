@@ -991,9 +991,6 @@ TclSubstCompile(
  *	Instructions are added to envPtr to execute the "switch" command at
  *	runtime.
  *
- * FIXME:
- *	Stack depths are probably not calculated correctly.
- *
  *----------------------------------------------------------------------
  */
 
@@ -2821,6 +2818,7 @@ TclCompileUnsetCmd(
     Tcl_Obj *leadingWord;
     DefineLineInformation;	/* TIP #280 */
 
+    /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords-1;
     flags = 1;
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -3176,6 +3174,7 @@ CompileAssociativeBinaryOpCmd(
     DefineLineInformation;	/* TIP #280 */
     int words;
 
+    /* TODO: Consider support for compiling expanded args. */
     for (words=1 ; words<parsePtr->numWords ; words++) {
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, words);
@@ -3259,6 +3258,7 @@ CompileComparisonOpCmd(
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	PUSH("1");
     } else if (parsePtr->numWords == 3) {
@@ -3596,6 +3596,7 @@ TclCompileMinusOpCmd(
     DefineLineInformation;	/* TIP #280 */
     int words;
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords == 1) {
 	/*
 	 * Fallback to direct eval to report syntax error.
@@ -3641,6 +3642,7 @@ TclCompileDivOpCmd(
     DefineLineInformation;	/* TIP #280 */
     int words;
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords == 1) {
 	/*
 	 * Fallback to direct eval to report syntax error.

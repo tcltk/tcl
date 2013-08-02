@@ -1,3 +1,9 @@
+2013-08-01  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* tclUnixNotify.c Tcl_InitNotifier: Bug [a0bc856dcd]
+	  Start notifier thread again if we were forked, to solve Rivet bug
+	  55153.
+
 2013-07-05  Kevin B. Kenny  <kennykb@acm.org>
 
 	* library/tzdata/Africa/Casablanca:

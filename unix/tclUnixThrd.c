@@ -15,12 +15,6 @@
 
 #ifdef TCL_THREADS
 
-typedef struct {
-    char nabuf[16];
-} ThreadSpecificData;
-
-static Tcl_ThreadDataKey dataKey;
-
 /*
  * masterLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the

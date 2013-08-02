@@ -1113,6 +1113,15 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  *----------------------------------------------------------------
  */
 
+/*
+ * Simplified form to access AuxData.
+ *
+ * ClientData TclFetchAuxData(CompileEng *envPtr, int index);
+ */
+
+#define TclFetchAuxData(envPtr, index) \
+    (envPtr)->auxDataArrayPtr[(index)].clientData
+
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02
 
