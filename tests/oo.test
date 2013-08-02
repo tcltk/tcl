@@ -3391,6 +3391,25 @@ test oo-35.1 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
     unset -nocomplain result
     fruit destroy
 } -result {::apple ::oo::object ::oo::object 1 {{method destroy ::oo::object {core method: "destroy"}}} 1}
+test oo-35.2 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
+    oo::class create fruitMetaclass {
+	superclass oo::class
+	method eat {} {}
+    }
+    set result {}
+} -body {
+    lappend result [fruitMetaclass create ::appleClass] \
+	[appleClass create orange] \
+	[info class superclasses fruitMetaclass]
+    oo::define fruitMetaclass superclass
+    lappend result [info class superclasses fruitMetaclass] \
+	[info object class appleClass oo::class] \
+	[catch { orange }] [info object class orange] \
+	[appleClass create pear]
+} -cleanup {
+    unset -nocomplain result
+    fruitMetaclass destroy
+} -result {::appleClass ::orange ::oo::class ::oo::class 1 1 ::appleClass ::pear}
 
 cleanupTests
 return
