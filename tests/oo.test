@@ -3374,6 +3374,23 @@ test oo-34.8 {TIP 380: slots - presence} {
 test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
 } {{-append -clear -set} {Get Set}}
+
+test oo-35.1 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
+    oo::class create fruit {
+	method eat {} {}
+    }
+    set result {}
+} -body {
+    lappend result [fruit create ::apple] [info class superclasses fruit]
+    oo::define fruit superclass
+    lappend result [info class superclasses fruit] \
+	[info object class apple oo::object] \
+	[info class call fruit destroy] \
+	[catch { apple }]
+} -cleanup {
+    unset -nocomplain result
+    fruit destroy
+} -result {::apple ::oo::object ::oo::object 1 {{method destroy ::oo::object {core method: "destroy"}}} 1}
 
 cleanupTests
 return
