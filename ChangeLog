@@ -1,3 +1,8 @@
+2013-08-03  Donal Fellows  <dkf@users.sf.net>
+
+	* library/auto.tcl: [Patch 3611643]: Allow TclOO classes to be found
+	by the autoloading mechanism.
+
 2013-08-02  Donal Fellows  <dkf@users.sf.net>
 
 	* generic/tclOODefineCmds.c (ClassSuperSet): Bug [9d61624b3d]: Stop
