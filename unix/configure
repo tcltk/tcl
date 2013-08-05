@@ -4821,6 +4821,9 @@ echo "$as_me: WARNING: Don't know how to find pthread lib on your system - you m
 	# Does the pthread-implementation provide
 	# 'pthread_attr_setstacksize' ?
 
+	ac_saved_libs=$LIBS
+	LIBS="$LIBS $THREADS_LIBS"
+
 
 for ac_func in pthread_attr_setstacksize pthread_atfork
 do
@@ -4923,6 +4926,7 @@ _ACEOF
 fi
 done
 
+	LIBS=$ac_saved_libs
     else
 	TCL_THREADS=0
     fi
