@@ -16,7 +16,7 @@ testConstraint testfork [llength [info commands testfork]]
 # Test if the notifier thread is well initialized in a forked interpreter
 # by Tcl_InitNotifier
 test unixforkevent-1.1 {fork and test writeable event} \
-    -constraints testfork \
+    -constraints {testfork nonPortable} \
     -body {
 	set myFolder [makeDirectory unixtestfork]
 	set pid [testfork]
