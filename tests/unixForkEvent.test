@@ -13,8 +13,7 @@ namespace import -force ::tcltest::*
 
 testConstraint testfork [llength [info commands testfork]]
 
-# Test if the notifier thread is well initialized in a forked interpreter
-# by Tcl_InitNotifier
+# Test if the notifier thread is well initialized in a forked interpreter.
 test unixforkevent-1.1 {fork and test writeable event} \
     -constraints testfork \
     -body {
@@ -24,17 +23,28 @@ test unixforkevent-1.1 {fork and test writeable event} \
 	    # we are the forked process
 	    set result initialized
 	    set h [open [file join $myFolder test.txt] w]
+	    # create a file event and a timeout which fires after 1 second
+	    # if the file event did not fire
 	    fileevent $h writable\
 		    "set result writable;\
 		    after cancel [after 1000 {set result timeout}]"
 	    vwait result
 	    close $h
+	    # write result file
 	    makeFile $result result.txt $myFolder
+	    # write trigger file, that result file is fully written
+	    makeFile "" trigger.txt $myFolder
 	    exit
 	}
 	# we are the original process
-	while {![file readable [file join $myFolder result.txt]]} {}
-	viewFile result.txt $myFolder
+	# look over 1.5 seconds for the file creation by the forked process
+	for {set myTries 0} {$myTries < 15} {incr myTries} {
+	    if {[file readable [file join $myFolder trigger.txt]]} {
+		return [viewFile result.txt $myFolder]
+	    }
+	    after 100
+	}
+	return "forked process stalled"
     } \
     -result {writable} \
     -cleanup { 
