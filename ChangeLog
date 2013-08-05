@@ -1,8 +1,18 @@
+2013-08-03  Donal Fellows  <dkf@users.sf.net>
+
+	* library/auto.tcl: [Patch 3611643]: Allow TclOO classes to be found
+	by the autoloading mechanism.
+
+2013-08-02  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (ClassSuperSet): Bug [9d61624b3d]: Stop
+	crashes when emptying the superclass slot, even when doing elaborate
+	things with metaclasses.
+
 2013-08-01  Harald Oehlmann  <oehhar@users.sf.net>
 
-	* tclUnixNotify.c Tcl_InitNotifier: Bug [a0bc856dcd]
-	  Start notifier thread again if we were forked, to solve Rivet bug
-	  55153.
+	* tclUnixNotify.c (Tcl_InitNotifier): Bug [a0bc856dcd]: Start notifier
+	thread again if we were forked, to solve Rivet bug 55153.
 
 2013-07-05  Kevin B. Kenny  <kennykb@acm.org>
 
