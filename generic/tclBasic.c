@@ -128,7 +128,7 @@ static Tcl_ObjCmdProc	ExprSrandFunc;
 static Tcl_ObjCmdProc	ExprUnaryFunc;
 static Tcl_ObjCmdProc	ExprWideFunc;
 static Tcl_Obj *	GetCommandSource(Interp *iPtr, int objc,
-			    Tcl_Obj *const objv[], int lookup);
+			    Tcl_Obj *const objv[]);
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
@@ -3358,15 +3358,6 @@ CancelEvalProc(
  *	This function returns a Tcl_Obj with the full source string for the
  *	command. This insures that traces get a correct NUL-terminated command
  *	string. The Tcl_Obj has refCount==1.
- *
- *	*** MAINTAINER WARNING ***
- *	The returned Tcl_Obj is all wrong for any purpose but getting the
- *	source string for an objc/objv command line in the stringRep (no
- *	stringRep if no source is available) and the corresponding substituted
- *	version in the List intrep.
- *	This means that the intRep and stringRep DO NOT COINCIDE! Using these
- *	Tcl_Objs normally is likely to break things.
- *
  *----------------------------------------------------------------------
  */
 
@@ -3374,37 +3365,27 @@ static Tcl_Obj *
 GetCommandSource(
     Interp *iPtr,
     int objc,
-    Tcl_Obj *const objv[],
-    int lookup)
+    Tcl_Obj *const objv[])
 {
-    Tcl_Obj *objPtr, *obj2Ptr;
+    Tcl_Obj *objPtr = NULL;
     CmdFrame *cfPtr = iPtr->cmdFramePtr;
-    const char *command = NULL;
-    int numChars;
 
-    objPtr = Tcl_NewListObj(objc, objv);
-    if (lookup && cfPtr && (cfPtr->numLevels == iPtr->numLevels-1)) {
+    if (cfPtr && (cfPtr->numLevels == iPtr->numLevels-1)) {
 	switch (cfPtr->type) {
 	case TCL_LOCATION_EVAL:
 	case TCL_LOCATION_SOURCE:
-	    command = cfPtr->cmd.str.cmd;
-	    numChars = cfPtr->cmd.str.len;
+	    objPtr = Tcl_NewStringObj(cfPtr->cmd.str.cmd, cfPtr->cmd.str.len);
 	    break;
 	case TCL_LOCATION_BC:
-	case TCL_LOCATION_PREBC:
-	    command = TclGetSrcInfoForCmd(iPtr, &numChars);
-	    break;
-	case TCL_LOCATION_EVAL_LIST:
-	    /* Got it already */
+	case TCL_LOCATION_PREBC: {
+	    int numChars;
+	    objPtr = Tcl_NewStringObj(TclGetSrcInfoForCmd(iPtr, &numChars),
+		    numChars);
 	    break;
 	}
-	if (command) {
-	    obj2Ptr = Tcl_NewStringObj(command, numChars);
-	    objPtr->bytes = obj2Ptr->bytes;
-	    objPtr->length = numChars;
-	    obj2Ptr->bytes = NULL;
-	    Tcl_DecrRefCount(obj2Ptr);
 	}
+    } else {
+	objPtr = Tcl_NewListObj(objc, objv);
     }
     Tcl_IncrRefCount(objPtr);
     return objPtr;
@@ -4692,7 +4673,7 @@ TEOV_RunEnterTraces(
     int length;
     Tcl_Obj *commandPtr;
 
-    commandPtr = GetCommandSource(iPtr, objc, objv, 1);
+    commandPtr = GetCommandSource(iPtr, objc, objv);
     command = Tcl_GetStringFromObj(commandPtr, &length);
 
     /*
@@ -4731,7 +4712,7 @@ TEOV_RunEnterTraces(
 	 */
 
 	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
-		commandPtr, cmdPtr, NULL);
+		commandPtr, cmdPtr, Tcl_NewListObj(objc, objv));
 	cmdPtr->refCount++;
     } else {
 	Tcl_DecrRefCount(commandPtr);
@@ -4752,10 +4733,11 @@ TEOV_RunLeaveTraces(
     int traceCode = PTR2INT(data[0]);
     Tcl_Obj *commandPtr = data[1];
     Command *cmdPtr = data[2];
+    Tcl_Obj *wordsPtr = data[3];
 
     command = Tcl_GetStringFromObj(commandPtr, &length);
-    if (TCL_OK != Tcl_ListObjGetElements(interp, commandPtr, &objc, &objv)) {
-	Tcl_Panic("Who messed with commandPtr?");
+    if (TCL_OK != Tcl_ListObjGetElements(interp, wordsPtr, &objc, &objv)) {
+	Tcl_Panic("What happened with wordsPtr?!");
     }
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
@@ -4769,6 +4751,7 @@ TEOV_RunLeaveTraces(
 	}
     }
     Tcl_DecrRefCount(commandPtr);
+    Tcl_DecrRefCount(wordsPtr);
 
     /*
      * As cmdPtr is set, TclNRRunCallbacks is about to reduce the numlevels.
@@ -5974,13 +5957,12 @@ TclNREvalObjEx(
      */
 
     if (TclListObjIsCanonical(objPtr)) {
-	Tcl_Obj *listPtr = objPtr;
 	CmdFrame *eoFramePtr = NULL;
 	int objc;
-	Tcl_Obj **objv;
+	Tcl_Obj *listPtr, **objv;
 
 	/*
-	 * Pure List Optimization (no string representation). In this case, we
+	 * Canonical List Optimization:  In this case, we
 	 * can safely use Tcl_EvalObjv instead and get an appreciable
 	 * improvement in execution speed. This is because it allows us to
 	 * avoid a setFromAny step that would just pack everything into a
@@ -5988,11 +5970,6 @@ TclNREvalObjEx(
 	 *
 	 * This also preserves any associations between list elements and
 	 * location information for such elements.
-	 *
-	 * This restriction has been relaxed a bit by storing in lists whether
-	 * they are "canonical" or not (a canonical list being one that is
-	 * either pure or that has its string rep derived by
-	 * UpdateStringOfList from the internal rep).
 	 */
 
 	/*
@@ -6001,6 +5978,7 @@ TclNREvalObjEx(
 	 * we always make a copy. The callback takes care od the refCounts for
 	 * both listPtr and objPtr.
 	 *
+	 * TODO: Create a test to demo this need, or eliminate it.
 	 * FIXME OPT: preserve just the internal rep?
 	 */
 
@@ -6030,14 +6008,15 @@ TclNREvalObjEx(
 	    eoFramePtr->nline = 0;
 	    eoFramePtr->line = NULL;
 
-	    eoFramePtr->type = TCL_LOCATION_EVAL_LIST;
+	    eoFramePtr->type = TCL_LOCATION_EVAL;
 	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
 		    1 : iPtr->cmdFramePtr->level + 1);
 	    eoFramePtr->numLevels = iPtr->numLevels;
 	    eoFramePtr->framePtr = iPtr->framePtr;
 	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
 
-	    eoFramePtr->cmd.listPtr = listPtr;
+	    eoFramePtr->cmd.str.cmd = Tcl_GetStringFromObj(listPtr,
+		    &(eoFramePtr->cmd.str.len));
 	    eoFramePtr->data.eval.path = NULL;
 
 	    iPtr->cmdFramePtr = eoFramePtr;

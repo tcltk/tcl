@@ -1175,29 +1175,27 @@ typedef struct CmdFrame {
      *
      * EXECUTION CONTEXTS and usage of CmdFrame
      *
-     * Field	  TEBC		  EvalEx	  EvalObjEx
-     * =======	  ====		  ======	  =========
-     * level	  yes		  yes		  yes
-     * type	  BC/PREBC	  SRC/EVAL	  EVAL_LIST
-     * line0	  yes		  yes		  yes
-     * framePtr	  yes		  yes		  yes
-     * =======	  ====		  ======	  =========
+     * Field	  TEBC		  EvalEx
+     * =======	  ====		  ======
+     * level	  yes		  yes	
+     * type	  BC/PREBC	  SRC/EVAL
+     * line0	  yes		  yes	
+     * framePtr	  yes		  yes	
+     * =======	  ====		  ======
      *
-     * =======	  ====		  ======	  ========= union data
-     * line1	  -		  yes		  -
-     * line3	  -		  yes		  -
-     * path	  -		  yes		  -
-     * -------	  ----		  ------	  ---------
-     * codePtr	  yes		  -		  -
-     * pc	  yes		  -		  -
-     * =======	  ====		  ======	  =========
+     * =======	  ====		  ========= union data
+     * line1	  -		  yes	
+     * line3	  -		  yes	
+     * path	  -		  yes	
+     * -------	  ----		  ------
+     * codePtr	  yes		  -	
+     * pc	  yes		  -	
+     * =======	  ====		  ======
      *
-     * =======	  ====		  ======	  ========= | union cmd
-     * listPtr	  -		  -		  yes	    |
-     * -------	  ----		  ------	  --------- |
-     * cmd	  yes		  yes		  -	    |
-     * cmdlen	  yes		  yes		  -	    |
-     * -------	  ----		  ------	  --------- |
+     * =======	  ====		  ========= union cmd
+     * str.cmd	  yes		  yes	
+     * str.len	  yes		  yes	
+     * -------	  ----		  ------	
      */
 
     union {
@@ -1215,7 +1213,6 @@ typedef struct CmdFrame {
 	    const char *cmd;	/* The executed command, if possible... */
 	    int len;		/* ... and its length. */
 	} str;
-	Tcl_Obj *listPtr;	/* Tcl_EvalObjEx, cmd list. */
     } cmd;
     int numLevels;		/* Value of interp's numLevels when the frame
 				 * was pushed. */
