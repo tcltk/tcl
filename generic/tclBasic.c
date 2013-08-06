@@ -6109,6 +6109,8 @@ TclNREvalObjEx(
 	ContLineLoc *saveCLLocPtr = iPtr->scriptCLLocPtr;
 	ContLineLoc *clLocPtr = TclContinuationsGet(objPtr);
 
+	assert(invoker == NULL);
+
 	if (clLocPtr) {
 	    iPtr->scriptCLLocPtr = clLocPtr;
 	    Tcl_Preserve(iPtr->scriptCLLocPtr);
