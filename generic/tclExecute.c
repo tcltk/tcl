@@ -2006,8 +2006,8 @@ TclNRExecuteByteCode(
     bcFramePtr->litarg = NULL;
     bcFramePtr->data.tebc.codePtr = codePtr;
     bcFramePtr->data.tebc.pc = NULL;
-    bcFramePtr->cmd.str.cmd = NULL;
-    bcFramePtr->cmd.str.len = 0;
+    bcFramePtr->cmd = NULL;
+    bcFramePtr->len = 0;
 
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.numExecutions++;
@@ -8774,13 +8774,13 @@ TclGetSrcInfoForPc(
 {
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
-    if (cfPtr->cmd.str.cmd == NULL) {
-	cfPtr->cmd.str.cmd = GetSrcInfoForPc(
+    if (cfPtr->cmd == NULL) {
+	cfPtr->cmd = GetSrcInfoForPc(
 		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
-		&cfPtr->cmd.str.len, NULL, NULL);
+		&cfPtr->len, NULL, NULL);
     }
 
-    if (cfPtr->cmd.str.cmd != NULL) {
+    if (cfPtr->cmd != NULL) {
 	/*
 	 * We now have the command. We can get the srcOffset back and from
 	 * there find the list of word locations for this command.
@@ -8797,7 +8797,7 @@ TclGetSrcInfoForPc(
 	    return;
 	}
 
-	srcOffset = cfPtr->cmd.str.cmd - codePtr->source;
+	srcOffset = cfPtr->cmd - codePtr->source;
 	eclPtr = Tcl_GetHashValue(hePtr);
 
 	for (i=0; i < eclPtr->nuloc; i++) {

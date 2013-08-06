@@ -1397,7 +1397,7 @@ TclInitCompileEnv(
     envPtr->extCmdMapPtr->nuloc = 0;
     envPtr->extCmdMapPtr->path = NULL;
 
-    if ((invoker == NULL) || (invoker->type == TCL_LOCATION_EVAL_LIST)) {
+    if (invoker == NULL) {
 	/*
 	 * Initialize the compiler for relative counting in case of a
 	 * dynamic context.
