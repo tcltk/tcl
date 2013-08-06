@@ -1208,12 +1208,8 @@ typedef struct CmdFrame {
 	    const char *pc;	/* ... and instruction pointer. */
 	} tebc;
     } data;
-    union {
-	struct {
-	    const char *cmd;	/* The executed command, if possible... */
-	    int len;		/* ... and its length. */
-	} str;
-    } cmd;
+    const char *cmd;		/* The executed command, if possible... */
+    int len;			/* ... and its length. */
     int numLevels;		/* Value of interp's numLevels when the frame
 				 * was pushed. */
     const struct CFWordBC *litarg;
