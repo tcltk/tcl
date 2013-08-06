@@ -3386,8 +3386,8 @@ GetCommandSource(
 	switch (cfPtr->type) {
 	case TCL_LOCATION_EVAL:
 	case TCL_LOCATION_SOURCE:
-	    command = cfPtr->cmd.str.cmd;
-	    numChars = cfPtr->cmd.str.len;
+	    command = cfPtr->cmd;
+	    numChars = cfPtr->len;
 	    break;
 	case TCL_LOCATION_BC:
 	case TCL_LOCATION_PREBC:
@@ -5246,12 +5246,12 @@ TclEvalEx(
 	     * have been executed.
 	     */
 
-	    eeFramePtr->cmd.str.cmd = parsePtr->commandStart;
-	    eeFramePtr->cmd.str.len = parsePtr->commandSize;
+	    eeFramePtr->cmd = parsePtr->commandStart;
+	    eeFramePtr->len = parsePtr->commandSize;
 
 	    if (parsePtr->term ==
 		    parsePtr->commandStart + parsePtr->commandSize - 1) {
-		eeFramePtr->cmd.str.len--;
+		eeFramePtr->len--;
 	    }
 
 	    eeFramePtr->nline = objectsUsed;
@@ -6028,8 +6028,7 @@ TclNREvalObjEx(
 	    eoFramePtr->framePtr = iPtr->framePtr;
 	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
 
-	    eoFramePtr->cmd.str.cmd = Tcl_GetStringFromObj(listPtr,
-		    &(eoFramePtr->cmd.str.len));
+	    eoFramePtr->cmd = Tcl_GetStringFromObj(listPtr, &(eoFramePtr->len));
 	    eoFramePtr->data.eval.path = NULL;
 
 	    iPtr->cmdFramePtr = eoFramePtr;
