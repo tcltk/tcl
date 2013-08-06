@@ -3358,6 +3358,15 @@ CancelEvalProc(
  *	This function returns a Tcl_Obj with the full source string for the
  *	command. This insures that traces get a correct NUL-terminated command
  *	string. The Tcl_Obj has refCount==1.
+ *
+ *	*** MAINTAINER WARNING ***
+ *	The returned Tcl_Obj is all wrong for any purpose but getting the
+ *	source string for an objc/objv command line in the stringRep (no
+ *	stringRep if no source is available) and the corresponding substituted
+ *	version in the List intrep.
+ *	This means that the intRep and stringRep DO NOT COINCIDE! Using these
+ *	Tcl_Objs normally is likely to break things.
+ *
  *----------------------------------------------------------------------
  */
 
@@ -3367,25 +3376,31 @@ GetCommandSource(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *objPtr = NULL;
+    Tcl_Obj *objPtr, *obj2Ptr;
     CmdFrame *cfPtr = iPtr->cmdFramePtr;
+    const char *command = NULL;
+    int numChars;
 
+    objPtr = Tcl_NewListObj(objc, objv);
     if (cfPtr && (cfPtr->numLevels == iPtr->numLevels-1)) {
 	switch (cfPtr->type) {
 	case TCL_LOCATION_EVAL:
 	case TCL_LOCATION_SOURCE:
-	    objPtr = Tcl_NewStringObj(cfPtr->cmd.str.cmd, cfPtr->cmd.str.len);
+	    command = cfPtr->cmd.str.cmd;
+	    numChars = cfPtr->cmd.str.len;
 	    break;
 	case TCL_LOCATION_BC:
-	case TCL_LOCATION_PREBC: {
-	    int numChars;
-	    objPtr = Tcl_NewStringObj(TclGetSrcInfoForCmd(iPtr, &numChars),
-		    numChars);
+	case TCL_LOCATION_PREBC:
+	    command = TclGetSrcInfoForCmd(iPtr, &numChars);
 	    break;
 	}
+	if (command) {
+	    obj2Ptr = Tcl_NewStringObj(command, numChars);
+	    objPtr->bytes = obj2Ptr->bytes;
+	    objPtr->length = numChars;
+	    obj2Ptr->bytes = NULL;
+	    Tcl_DecrRefCount(obj2Ptr);
 	}
-    } else {
-	objPtr = Tcl_NewListObj(objc, objv);
     }
     Tcl_IncrRefCount(objPtr);
     return objPtr;
@@ -4712,7 +4727,7 @@ TEOV_RunEnterTraces(
 	 */
 
 	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
-		commandPtr, cmdPtr, Tcl_NewListObj(objc, objv));
+		commandPtr, cmdPtr, NULL);
 	cmdPtr->refCount++;
     } else {
 	Tcl_DecrRefCount(commandPtr);
@@ -4733,11 +4748,10 @@ TEOV_RunLeaveTraces(
     int traceCode = PTR2INT(data[0]);
     Tcl_Obj *commandPtr = data[1];
     Command *cmdPtr = data[2];
-    Tcl_Obj *wordsPtr = data[3];
 
     command = Tcl_GetStringFromObj(commandPtr, &length);
-    if (TCL_OK != Tcl_ListObjGetElements(interp, wordsPtr, &objc, &objv)) {
-	Tcl_Panic("What happened with wordsPtr?!");
+    if (TCL_OK != Tcl_ListObjGetElements(interp, commandPtr, &objc, &objv)) {
+	Tcl_Panic("Who messed with commandPtr?");
     }
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
@@ -4751,7 +4765,6 @@ TEOV_RunLeaveTraces(
 	}
     }
     Tcl_DecrRefCount(commandPtr);
-    Tcl_DecrRefCount(wordsPtr);
 
     /*
      * As cmdPtr is set, TclNRRunCallbacks is about to reduce the numlevels.
