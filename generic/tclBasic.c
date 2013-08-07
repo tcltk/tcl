@@ -6092,21 +6092,13 @@ TclNREvalObjEx(
 	 * Another important action is to save (and later restore) the
 	 * continuation line information of the caller, in case we are
 	 * executing nested commands in the eval/direct path.
-	 *
-	 * TODO: Get test coverage in here.
 	 */
 
 	ContLineLoc *saveCLLocPtr = iPtr->scriptCLLocPtr;
-	ContLineLoc *clLocPtr = TclContinuationsGet(objPtr);
 
 	assert(invoker == NULL);
 
-	if (clLocPtr) {
-	    iPtr->scriptCLLocPtr = clLocPtr;
-	    Tcl_Preserve(iPtr->scriptCLLocPtr);
-	} else {
-	    iPtr->scriptCLLocPtr = NULL;
-	}
+	iPtr->scriptCLLocPtr = TclContinuationsGet(objPtr);
 
 	Tcl_IncrRefCount(objPtr);
 
@@ -6115,14 +6107,6 @@ TclNREvalObjEx(
 
 	TclDecrRefCount(objPtr);
 
-	/*
-	 * Now release the lock on the continuation line information, if any,
-	 * and restore the caller's settings.
-	 */
-
-	if (iPtr->scriptCLLocPtr) {
-	    Tcl_Release(iPtr->scriptCLLocPtr);
-	}
 	iPtr->scriptCLLocPtr = saveCLLocPtr;
 	return result;
     }
