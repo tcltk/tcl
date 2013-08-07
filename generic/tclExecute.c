@@ -8774,13 +8774,15 @@ TclGetSrcInfoForPc(
 {
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
-    if (cfPtr->cmd == NULL) {
+    assert(cfPtr->type == TCL_LOCATION_BC);
+    assert(cfPtr->cmd == NULL);
+
 	cfPtr->cmd = GetSrcInfoForPc(
 		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
 		&cfPtr->len, NULL, NULL);
-    }
 
-    if (cfPtr->cmd != NULL) {
+    assert(cfPtr->cmd != NULL);
+    {
 	/*
 	 * We now have the command. We can get the srcOffset back and from
 	 * there find the list of word locations for this command.
