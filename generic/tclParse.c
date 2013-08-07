@@ -13,6 +13,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
  
+#include <assert.h>
 #include "tclInt.h"
 #include "tclParse.h"
 
@@ -2115,16 +2116,13 @@ Tcl_ParseVar(
      * At this point we should have an object containing the value of a
      * variable. Just return the string from that object.
      *
-     * This should have returned the object for the user to manage, but
-     * instead we have some weak reference to the string value in the object,
-     * which is why we make sure the object exists after resetting the result.
-     * This isn't ideal, but it's the best we can do with the current
-     * documented interface. -- hobbs
+     * Since TclSubstTokens above returned TCL_OK, we know that objPtr
+     * is shared.  It is in both the interp result and the value of the
+     * variable.  Returning the string relies on that to be true.
      */
 
-    if (!Tcl_IsShared(objPtr)) {
-	Tcl_IncrRefCount(objPtr);
-    }
+    assert( Tcl_IsShared(objPtr) );
+
     Tcl_ResetResult(interp);
     return TclGetString(objPtr);
 }

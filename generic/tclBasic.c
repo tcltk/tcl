@@ -4971,24 +4971,15 @@ TclEvalScriptTokens(
     /*
      * TIP #280 Initialize tracking. Do not push on the frame stack yet.
      *
-     * We may continue counting based on a specific context (CTX), or open a
-     * new context, either for a sourced script, or 'eval'. For sourced files
-     * we always have a path object, even if nothing was specified in the
-     * interp itself. That makes code using it simpler as NULL checks can be
-     * left out. Sourced file without path in the 'scriptFile' is possible
-     * during Tcl initialization.
+     * We open a new context, either for a sourced script, or 'eval'.
+     * For sourced files we always have a path object, even if nothing was
+     * specified in the interp itself. That makes code using it simpler as
+     * NULL checks can be left out. Sourced file without path in the
+     * 'scriptFile' is possible during Tcl initialization.
      */
 
     eeFramePtr = TclStackAlloc(interp, sizeof(CmdFrame));
-    if (iPtr->evalFlags & TCL_EVAL_CTX) {
-	/*
-	 * Path information comes out of the context.
-	 */
-
-	eeFramePtr->type = TCL_LOCATION_SOURCE;
-	eeFramePtr->data.eval.path = iPtr->invokeCmdFramePtr->data.eval.path;
-	Tcl_IncrRefCount(eeFramePtr->data.eval.path);
-    } else if (iPtr->evalFlags & TCL_EVAL_FILE) {
+    if (iPtr->evalFlags & TCL_EVAL_FILE) {
 	/*
 	 * Set up for a sourced file.
 	 */
@@ -5884,6 +5875,11 @@ Tcl_GlobalEvalObj(
  *	compiled into bytecodes if necessary, unless TCL_EVAL_DIRECT is
  *	specified.
  *
+ *	If the flag TCL_EVAL_DIRECT is passed in, the value of invoker
+ *	must be NULL.  Support for non-NULL invokers in that mode has
+ *	been removed since it was unused and untested.  Failure to 
+ *	follow this limitation will lead to an assertion panic.
+ *
  * Results:
  *	The return value is one of the return codes defined in tcl.h (such as
  *	TCL_OK), and the interpreter's result contains a value to supplement
@@ -6058,14 +6054,6 @@ TclNREvalObjEx(
 	 * We're not supposed to use the compiler or byte-code
 	 * interpreter. Let Tcl_EvalEx evaluate the command directly (and
 	 * probably more slowly).
-	 *
-	 * TIP #280. Propagate context as much as we can. Especially if the
-	 * script to evaluate is a single literal it makes sense to look if
-	 * our context is one with absolute line numbers we can then track
-	 * into the literal itself too.
-	 *
-	 * See also tclCompile.c, TclInitCompileEnv, for the equivalent code
-	 * in the bytecode compiler.
 	 */
 	Tcl_Token *lastTokenPtr, *tokensPtr;
 
@@ -6087,91 +6075,23 @@ TclNREvalObjEx(
 	 */
 
 	ContLineLoc *saveCLLocPtr = iPtr->scriptCLLocPtr;
-	ContLineLoc *clLocPtr = TclContinuationsGet(objPtr);
 	Tcl_Obj *copyPtr = TclTokensCopy(objPtr);
 
-	if (clLocPtr) {
-	    iPtr->scriptCLLocPtr = clLocPtr;
-	    Tcl_Preserve(iPtr->scriptCLLocPtr);
-	} else {
-	    iPtr->scriptCLLocPtr = NULL;
-	}
+	assert(invoker == NULL);
 
-	if ((invoker == NULL) /* No context ... */
-		|| (invoker->nline <= word) || (invoker->line[word] < 0)) {
-	    /* ... or dynamic script, or dynamic context, force our own */
+	iPtr->scriptCLLocPtr = TclContinuationsGet(objPtr);
 
-	    tokensPtr = TclGetTokensFromObj(copyPtr, &lastTokenPtr);
-	    result = TclEvalScriptTokens(interp, tokensPtr,
-		    1 + (int)(lastTokenPtr - tokensPtr), flags, 1, NULL,
-		    tokensPtr[0].start);
-	} else {
-	    /*
-	     * We have an invoker, describing the command asking for the
-	     * evaluation of a subordinate script. This script may originate
-	     * in a literal word, or from a variable, etc. Using the line
-	     * array we now check if we have good line information for the
-	     * relevant word. The type of context is relevant as well. In a
-	     * non-'source' context we don't have to try tracking lines.
-	     *
-	     * First see if the word exists and is a literal. If not we go
-	     * through the easy dynamic branch. No need to perform more
-	     * complex invokations.
-	     */
+	Tcl_IncrRefCount(objPtr);
 
-	    int pc = 0;
-	    CmdFrame *ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	tokensPtr = TclGetTokensFromObj(copyPtr, &lastTokenPtr);
+	result = TclEvalScriptTokens(interp, tokensPtr,
+		1 + (int)(lastTokenPtr - tokensPtr), flags, 1, NULL,
+		tokensPtr[0].start);
 
-	    *ctxPtr = *invoker;
-	    if (invoker->type == TCL_LOCATION_BC) {
-		/*
-		 * Note: Type BC => ctxPtr->data.eval.path is not used.
-		 * ctxPtr->data.tebc.codePtr is used instead.
-		 */
-
-		TclGetSrcInfoForPc(ctxPtr);
-		pc = 1;
-	    }
-
-	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-		/*
-		 * Absolute context to reuse.
-		 */
-
-		iPtr->invokeCmdFramePtr = ctxPtr;
-		iPtr->evalFlags |= TCL_EVAL_CTX;
-
-		tokensPtr = TclGetTokensFromObj(copyPtr, &lastTokenPtr);
-		result = TclEvalScriptTokens(interp, tokensPtr,
-			1 + (int)(lastTokenPtr - tokensPtr), flags,
-			ctxPtr->line[word], NULL, tokensPtr[0].start);
-
-		if (pc) {
-		    /*
-		     * Death of SrcInfo reference.
-		     */
-	
-		    Tcl_DecrRefCount(ctxPtr->data.eval.path);
-		}
-	    } else {
-		tokensPtr = TclGetTokensFromObj(copyPtr, &lastTokenPtr);
-		result = TclEvalScriptTokens(interp, tokensPtr,
-			1 + (int)(lastTokenPtr - tokensPtr), flags, 1,
-			NULL, tokensPtr[0].start);
-	    }
-	    TclStackFree(interp, ctxPtr);
-	}
-
-	/*
-	 * Now release the lock on the continuation line information, if any,
-	 * and restore the caller's settings.
-	 */
-
-	if (iPtr->scriptCLLocPtr) {
-	    Tcl_Release(iPtr->scriptCLLocPtr);
-	}
-	iPtr->scriptCLLocPtr = saveCLLocPtr;
+	Tcl_DecrRefCount(objPtr);
 	Tcl_DecrRefCount(copyPtr);
+
+	iPtr->scriptCLLocPtr = saveCLLocPtr;
 	return result;
     }
 }
