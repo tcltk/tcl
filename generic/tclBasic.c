@@ -4727,7 +4727,7 @@ TEOV_RunEnterTraces(
 	 */
 
 	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
-		commandPtr, cmdPtr, NULL);
+		commandPtr, cmdPtr, Tcl_NewListObj(objc, objv));
 	cmdPtr->refCount++;
     } else {
 	Tcl_DecrRefCount(commandPtr);
@@ -4748,11 +4748,10 @@ TEOV_RunLeaveTraces(
     int traceCode = PTR2INT(data[0]);
     Tcl_Obj *commandPtr = data[1];
     Command *cmdPtr = data[2];
+    Tcl_Obj *wordsPtr = data[3];
 
     command = Tcl_GetStringFromObj(commandPtr, &length);
-    if (TCL_OK != Tcl_ListObjGetElements(interp, commandPtr, &objc, &objv)) {
-	Tcl_Panic("Who messed with commandPtr?");
-    }
+    Tcl_ListObjGetElements(NULL, wordsPtr, &objc, &objv);
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
 	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && traceCode == TCL_OK){
@@ -4765,6 +4764,7 @@ TEOV_RunLeaveTraces(
 	}
     }
     Tcl_DecrRefCount(commandPtr);
+    Tcl_DecrRefCount(wordsPtr);
 
     /*
      * As cmdPtr is set, TclNRRunCallbacks is about to reduce the numlevels.
