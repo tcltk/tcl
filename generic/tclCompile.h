@@ -365,10 +365,6 @@ typedef struct CompileEnv {
 				 * encountered that have not yet been paired
 				 * with a corresponding
 				 * INST_INVOKE_EXPANDED. */
-    ContLineLoc *clLoc;		/* If not NULL, the table holding the
-				 * locations of the invisible continuation
-				 * lines in the input script, to adjust the
-				 * line counter. */
     int *clNext;		/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
