@@ -5893,6 +5893,11 @@ Tcl_GlobalEvalObj(
  *	compiled into bytecodes if necessary, unless TCL_EVAL_DIRECT is
  *	specified.
  *
+ *	If the flag TCL_EVAL_DIRECT is passed in, the value of invoker
+ *	must be NULL.  Support for non-NULL invokers in that mode has
+ *	been removed since it was unused and untested.  Failure to 
+ *	follow this limitation will lead to an assertion panic.
+ *
  * Results:
  *	The return value is one of the return codes defined in tcl.h (such as
  *	TCL_OK), and the interpreter's result contains a value to supplement
