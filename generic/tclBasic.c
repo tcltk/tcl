@@ -3358,15 +3358,6 @@ CancelEvalProc(
  *	This function returns a Tcl_Obj with the full source string for the
  *	command. This insures that traces get a correct NUL-terminated command
  *	string. The Tcl_Obj has refCount==1.
- *
- *	*** MAINTAINER WARNING ***
- *	The returned Tcl_Obj is all wrong for any purpose but getting the
- *	source string for an objc/objv command line in the stringRep (no
- *	stringRep if no source is available) and the corresponding substituted
- *	version in the List intrep.
- *	This means that the intRep and stringRep DO NOT COINCIDE! Using these
- *	Tcl_Objs normally is likely to break things.
- *
  *----------------------------------------------------------------------
  */
 
@@ -3376,13 +3367,13 @@ GetCommandSource(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *objPtr, *obj2Ptr;
+    Tcl_Obj *objPtr = NULL;
     CmdFrame *cfPtr = iPtr->cmdFramePtr;
-    const char *command = NULL;
-    int numChars;
 
-    objPtr = Tcl_NewListObj(objc, objv);
     if (cfPtr && (cfPtr->numLevels == iPtr->numLevels-1)) {
+	const char *command = NULL;
+	int numChars;
+
 	switch (cfPtr->type) {
 	case TCL_LOCATION_EVAL:
 	case TCL_LOCATION_SOURCE:
@@ -3395,12 +3386,11 @@ GetCommandSource(
 	    break;
 	}
 	if (command) {
-	    obj2Ptr = Tcl_NewStringObj(command, numChars);
-	    objPtr->bytes = obj2Ptr->bytes;
-	    objPtr->length = numChars;
-	    obj2Ptr->bytes = NULL;
-	    Tcl_DecrRefCount(obj2Ptr);
+	    objPtr = Tcl_NewStringObj(command, numChars);
 	}
+    }
+    if (objPtr == NULL) {
+	objPtr = Tcl_NewListObj(objc, objv);
     }
     Tcl_IncrRefCount(objPtr);
     return objPtr;
