@@ -1305,28 +1305,12 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len));
-	break;
-
-    case TCL_LOCATION_EVAL_LIST:
-	/*
-	 * List optimized evaluation. Type, line, cmd, the latter through
-	 * listPtr, possibly a frame.
-	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(1));
-
-	/*
-	 * We put a duplicate of the command list obj into the result to
-	 * ensure that the 'pure List'-property of the command itself is not
-	 * destroyed. Otherwise the query here would disable the list
-	 * optimization path in Tcl_EvalObjEx.
-	 */
-
-	ADD_PAIR("cmd", Tcl_DuplicateObj(framePtr->cmd.listPtr));
+	if (framePtr->line) {
+	    ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	} else {
+	    ADD_PAIR("line", Tcl_NewIntObj(1));
+	}
+	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd, framePtr->len));
 	break;
 
     case TCL_LOCATION_PREBC:
@@ -1374,8 +1358,7 @@ TclInfoFrame(
 	    Tcl_DecrRefCount(fPtr->data.eval.path);
 	}
 
-	ADD_PAIR("cmd",
-		Tcl_NewStringObj(fPtr->cmd.str.cmd, fPtr->cmd.str.len));
+	ADD_PAIR("cmd", Tcl_NewStringObj(fPtr->cmd, fPtr->len));
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1394,8 +1377,7 @@ TclInfoFrame(
 	 * the result list object.
 	 */
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len));
+	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd, framePtr->len));
 	break;
 
     case TCL_LOCATION_PROC:

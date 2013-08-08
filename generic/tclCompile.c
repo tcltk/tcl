@@ -713,9 +713,7 @@ TclSetByteCodeFromAny(
 
     clLocPtr = TclContinuationsGet(objPtr);
     if (clLocPtr) {
-	compEnv.clLoc = clLocPtr;
-	compEnv.clNext = &compEnv.clLoc->loc[0];
-	Tcl_Preserve(compEnv.clLoc);
+	compEnv.clNext = &clLocPtr->loc[0];
     }
 
     TclCompileScript(interp, stringPtr, length, &compEnv);
@@ -742,9 +740,7 @@ TclSetByteCodeFromAny(
 	TclInitCompileEnv(interp, &compEnv, stringPtr, length,
 		iPtr->invokeCmdFramePtr, iPtr->invokeWord);
 	if (clLocPtr) {
-	    compEnv.clLoc = clLocPtr;
-	    compEnv.clNext = &compEnv.clLoc->loc[0];
-	    Tcl_Preserve(compEnv.clLoc);
+	    compEnv.clNext = &clLocPtr->loc[0];
 	}
 	compEnv.atCmdStart = 2;		/* The disabling magic. */
 	TclCompileScript(interp, stringPtr, length, &compEnv);
@@ -1375,7 +1371,7 @@ TclInitCompileEnv(
     envPtr->extCmdMapPtr->nuloc = 0;
     envPtr->extCmdMapPtr->path = NULL;
 
-    if ((invoker == NULL) || (invoker->type == TCL_LOCATION_EVAL_LIST)) {
+    if (invoker == NULL) {
 	/*
 	 * Initialize the compiler for relative counting in case of a
 	 * dynamic context.
@@ -1489,7 +1485,6 @@ TclInitCompileEnv(
      * data is available.
      */
 
-    envPtr->clLoc = NULL;
     envPtr->clNext = NULL;
 
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
@@ -1573,16 +1568,6 @@ TclFreeCompileEnv(
     if (envPtr->extCmdMapPtr) {
 	ReleaseCmdWordData(envPtr->extCmdMapPtr);
 	envPtr->extCmdMapPtr = NULL;
-    }
-
-    /*
-     * If we used data about invisible continuation lines, then now is the
-     * time to release on our hold on it. The lock was set in function
-     * TclSetByteCodeFromAny(), found in this file.
-     */
-
-    if (envPtr->clLoc) {
-	Tcl_Release(envPtr->clLoc);
     }
 }
 
