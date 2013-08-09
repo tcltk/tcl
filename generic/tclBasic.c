@@ -3357,7 +3357,7 @@ CancelEvalProc(
  *
  *	This function returns a Tcl_Obj with the full source string for the
  *	command. This insures that traces get a correct NUL-terminated command
- *	string. The Tcl_Obj has refCount==1.
+ *	string.
  *----------------------------------------------------------------------
  */
 
@@ -3392,7 +3392,6 @@ GetCommandSource(
     if (objPtr == NULL) {
 	objPtr = Tcl_NewListObj(objc, objv);
     }
-    Tcl_IncrRefCount(objPtr);
     return objPtr;
 }
 
