@@ -2006,6 +2006,7 @@ TclNRExecuteByteCode(
     bcFramePtr->litarg = NULL;
     bcFramePtr->data.tebc.codePtr = codePtr;
     bcFramePtr->data.tebc.pc = NULL;
+    bcFramePtr->cmdObj = NULL;
     bcFramePtr->cmd = NULL;
     bcFramePtr->len = 0;
 
@@ -2130,6 +2131,11 @@ TEBCresume(
 	    result = TCL_ERROR;
 	}
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
+	if (bcFramePtr->cmdObj) {
+	    Tcl_DecrRefCount(bcFramePtr->cmdObj);
+	    bcFramePtr->cmdObj = NULL;
+	    bcFramePtr->cmd = NULL;
+	}
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
@@ -8761,7 +8767,14 @@ TclGetSrcInfoForCmd(
     Interp *iPtr,
     int *lenPtr)
 {
-    CmdFrame *cfPtr = iPtr->cmdFramePtr;
+    return TclGetSrcInfoForCmdFrame(iPtr->cmdFramePtr, lenPtr);
+}
+
+const char *
+TclGetSrcInfoForCmdFrame(
+    CmdFrame *cfPtr,
+    int *lenPtr)
+{
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
     return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
@@ -8775,11 +8788,13 @@ TclGetSrcInfoForPc(
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
     assert(cfPtr->type == TCL_LOCATION_BC);
-    assert(cfPtr->cmd == NULL);
+
+    if (cfPtr->cmd == NULL) {
 
 	cfPtr->cmd = GetSrcInfoForPc(
 		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
 		&cfPtr->len, NULL, NULL);
+    }
 
     assert(cfPtr->cmd != NULL);
     {
