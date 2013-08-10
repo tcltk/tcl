@@ -3367,32 +3367,12 @@ GetCommandSource(
     int objc,
     Tcl_Obj *const objv[])
 {
-    Tcl_Obj *objPtr = NULL;
     CmdFrame *cfPtr = iPtr->cmdFramePtr;
 
-    if (cfPtr && (cfPtr->numLevels == iPtr->numLevels-1)) {
-	const char *command = NULL;
-	int numChars;
-
-	switch (cfPtr->type) {
-	case TCL_LOCATION_EVAL:
-	case TCL_LOCATION_SOURCE:
-	    command = cfPtr->cmd;
-	    numChars = cfPtr->len;
-	    break;
-	case TCL_LOCATION_BC:
-	case TCL_LOCATION_PREBC:
-	    command = TclGetSrcInfoForCmd(iPtr, &numChars);
-	    break;
-	}
-	if (command) {
-	    objPtr = Tcl_NewStringObj(command, numChars);
-	}
+    if (cfPtr && (cfPtr->numLevels != iPtr->numLevels-1)) {
+	cfPtr = NULL;
     }
-    if (objPtr == NULL) {
-	objPtr = Tcl_NewListObj(objc, objv);
-    }
-    return objPtr;
+    return TclGetSourceFromFrame(cfPtr, objc, objv);
 }
 
 /*
@@ -4678,6 +4658,7 @@ TEOV_RunEnterTraces(
     Tcl_Obj *commandPtr;
 
     commandPtr = GetCommandSource(iPtr, objc, objv);
+    Tcl_IncrRefCount(commandPtr);
     command = Tcl_GetStringFromObj(commandPtr, &length);
 
     /*
@@ -5013,6 +4994,7 @@ TclEvalEx(
     eeFramePtr->nextPtr = iPtr->cmdFramePtr;
     eeFramePtr->nline = 0;
     eeFramePtr->line = NULL;
+    eeFramePtr->cmdObj = NULL;
 
     iPtr->cmdFramePtr = eeFramePtr;
     if (iPtr->evalFlags & TCL_EVAL_FILE) {
@@ -5243,6 +5225,10 @@ TclEvalEx(
 
 	    eeFramePtr->line = NULL;
 	    eeFramePtr->nline = 0;
+	    if (eeFramePtr->cmdObj) {
+		Tcl_DecrRefCount(eeFramePtr->cmdObj);
+		eeFramePtr->cmdObj = NULL;
+	    }
 
 	    if (code != TCL_OK) {
 		goto error;
@@ -5983,7 +5969,6 @@ TclNREvalObjEx(
 	Tcl_IncrRefCount(objPtr);
 	listPtr = TclListObjCopy(interp, objPtr);
 	Tcl_IncrRefCount(listPtr);
-	TclDecrRefCount(objPtr);
 
 	if (word != INT_MIN) {
 	    /*
@@ -6013,7 +5998,9 @@ TclNREvalObjEx(
 	    eoFramePtr->framePtr = iPtr->framePtr;
 	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
 
-	    eoFramePtr->cmd = Tcl_GetStringFromObj(listPtr, &(eoFramePtr->len));
+	    eoFramePtr->cmdObj = objPtr;
+	    eoFramePtr->cmd = NULL;
+	    eoFramePtr->len = 0;
 	    eoFramePtr->data.eval.path = NULL;
 
 	    iPtr->cmdFramePtr = eoFramePtr;
@@ -6021,7 +6008,7 @@ TclNREvalObjEx(
 
 	TclMarkTailcall(interp);
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
-		NULL, NULL);
+		objPtr, NULL);
 
 	ListObjGetElements(listPtr, objc, objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
@@ -6156,6 +6143,7 @@ TEOEx_ListCallback(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *listPtr = data[0];
     CmdFrame *eoFramePtr = data[1];
+    Tcl_Obj *objPtr = data[2];
 
     /*
      * Remove the cmdFrame
@@ -6165,6 +6153,7 @@ TEOEx_ListCallback(
 	iPtr->cmdFramePtr = eoFramePtr->nextPtr;
 	TclStackFree(interp, eoFramePtr);
     }
+    TclDecrRefCount(objPtr);
     TclDecrRefCount(listPtr);
 
     return result;
