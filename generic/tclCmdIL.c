@@ -1266,6 +1266,25 @@ InfoFrameCmd(
  */
 
 Tcl_Obj *
+TclGetSourceFromFrame(
+    CmdFrame *cfPtr,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    if (cfPtr == NULL) {
+	return Tcl_NewListObj(objc, objv);
+    }
+    if (cfPtr->cmdObj == NULL) {
+	if (cfPtr->cmd == NULL) {
+	    cfPtr->cmd = TclGetSrcInfoForCmdFrame(cfPtr, &cfPtr->len);
+	}
+	cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
+	Tcl_IncrRefCount(cfPtr->cmdObj);
+    }
+    return cfPtr->cmdObj;
+}
+
+Tcl_Obj *
 TclInfoFrame(
     Tcl_Interp *interp,		/* Current interpreter. */
     CmdFrame *framePtr)		/* Frame to get info for. */
@@ -1307,7 +1326,7 @@ TclInfoFrame(
 	} else {
 	    ADD_PAIR("line", Tcl_NewIntObj(1));
 	}
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd, framePtr->len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PREBC:
@@ -1355,7 +1374,7 @@ TclInfoFrame(
 	    Tcl_DecrRefCount(fPtr->data.eval.path);
 	}
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(fPtr->cmd, fPtr->len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1374,7 +1393,7 @@ TclInfoFrame(
 	 * the result list object.
 	 */
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd, framePtr->len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PROC:
