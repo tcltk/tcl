@@ -1998,7 +1998,6 @@ TclNRExecuteByteCode(
     bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
 	    ? TCL_LOCATION_PREBC : TCL_LOCATION_BC);
     bcFramePtr->level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
-    bcFramePtr->numLevels = iPtr->numLevels;
     bcFramePtr->framePtr = iPtr->framePtr;
     bcFramePtr->nextPtr = iPtr->cmdFramePtr;
     bcFramePtr->nline = 0;
@@ -2906,7 +2905,7 @@ TEBCresume(
 	pc += pcAdjustment;
 	TEBC_YIELD();
 	return TclNREvalObjv(interp, objc, objv,
-		TCL_EVAL_NOERR, NULL);
+		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
 
 #if TCL_SUPPORT_84_BYTECODE
     case INST_CALL_BUILTIN_FUNC1:
@@ -8741,7 +8740,7 @@ IllegalExprOperandType(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetSrcInfoForPc, GetSrcInfoForPc, TclGetSrcInfoForCmd --
+ * TclGetSrcInfoForPc, GetSrcInfoForPc, TclGetSrcInfoForCmdFrame --
  *
  *	Given a program counter value, finds the closest command in the
  *	bytecode code unit's CmdLocation array and returns information about
@@ -8761,14 +8760,6 @@ IllegalExprOperandType(
  *
  *----------------------------------------------------------------------
  */
-
-const char *
-TclGetSrcInfoForCmd(
-    Interp *iPtr,
-    int *lenPtr)
-{
-    return TclGetSrcInfoForCmdFrame(iPtr->cmdFramePtr, lenPtr);
-}
 
 const char *
 TclGetSrcInfoForCmdFrame(
