@@ -5547,6 +5547,11 @@ TEBCresume(
 		w1 = (Tcl_WideInt) l1;
 		w2 = (Tcl_WideInt) l2;
 		wResult = w1 - w2;
+#ifdef TCL_WIDE_INT_IS_LONG
+                if (Overflowing(w1, ~w2, wResult)) {
+                    goto overflow;
+                }
+#endif
 	    wideResultOfArithmetic:
 		TRACE(("%s %s => ", O2S(valuePtr), O2S(value2Ptr)));
 		if (Tcl_IsShared(valuePtr)) {
@@ -7910,7 +7915,9 @@ ExecuteExtendedBinaryMathOp(
 
 	    case INST_SUB:
 		wResult = w1 - w2;
+#ifndef TCL_WIDE_INT_IS_LONG
 		if ((type1 == TCL_NUMBER_WIDE) || (type2 == TCL_NUMBER_WIDE))
+#endif
 		{
 		    /*
 		     * Must check for overflow. The macro tests for overflows
