@@ -2172,12 +2172,8 @@ Tcl_CreateCommand(
  *	future calls to Tcl_GetCommandName.
  *
  * Side effects:
- *	If no command named "cmdName" already exists for interp, one is
- *	created. Otherwise, if a command does exist, then if the object-based
- *	Tcl_ObjCmdProc is TclInvokeStringCommand, we assume Tcl_CreateCommand
- *	was called previously for the same command and just set its
- *	Tcl_ObjCmdProc to the argument "proc"; otherwise, we delete the old
- *	command.
+ *	If a command named "cmdName" already exists for interp, it is
+ * 	first deleted.  Then the new command is created from the arguments.
  *
  *	In the future, during bytecode evaluation when "cmdName" is seen as
  *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
@@ -2245,21 +2241,7 @@ Tcl_CreateObjCommand(
 	cmdPtr = Tcl_GetHashValue(hPtr);
 
 	/*
-	 * Command already exists. If its object-based Tcl_ObjCmdProc is
-	 * TclInvokeStringCommand, we just set its Tcl_ObjCmdProc to the
-	 * argument "proc". Otherwise, we delete the old command.
-	 */
-
-	if (cmdPtr->objProc == TclInvokeStringCommand) {
-	    cmdPtr->objProc = proc;
-	    cmdPtr->objClientData = clientData;
-	    cmdPtr->deleteProc = deleteProc;
-	    cmdPtr->deleteData = clientData;
-	    return (Tcl_Command) cmdPtr;
-	}
-
-	/*
-	 * Otherwise, we delete the old command. Be careful to preserve any
+	 * Command already exists; delete it. Be careful to preserve any
 	 * existing import links so we can restore them down below. That way,
 	 * you can redefine a command and its import status will remain
 	 * intact.
@@ -2407,8 +2389,8 @@ TclInvokeStringCommand(
  *	A standard Tcl string result value.
  *
  * Side effects:
- *	Besides those side effects of the called Tcl_CmdProc,
- *	TclInvokeStringCommand allocates and frees storage.
+ *	Besides those side effects of the called Tcl_ObjCmdProc,
+ *	TclInvokeObjectCommand allocates and frees storage.
  *
  *----------------------------------------------------------------------
  */
