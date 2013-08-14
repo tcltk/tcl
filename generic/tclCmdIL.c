@@ -1266,25 +1266,6 @@ InfoFrameCmd(
  */
 
 Tcl_Obj *
-TclGetSourceFromFrame(
-    CmdFrame *cfPtr,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    if (cfPtr == NULL) {
-	return Tcl_NewListObj(objc, objv);
-    }
-    if (cfPtr->cmdObj == NULL) {
-	if (cfPtr->cmd == NULL) {
-	    cfPtr->cmd = TclGetSrcInfoForCmdFrame(cfPtr, &cfPtr->len);
-	}
-	cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
-	Tcl_IncrRefCount(cfPtr->cmdObj);
-    }
-    return cfPtr->cmdObj;
-}
-
-Tcl_Obj *
 TclInfoFrame(
     Tcl_Interp *interp,		/* Current interpreter. */
     CmdFrame *framePtr)		/* Frame to get info for. */
