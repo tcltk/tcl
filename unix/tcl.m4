@@ -676,7 +676,11 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 
 	# Does the pthread-implementation provide
 	# 'pthread_attr_setstacksize' ?
+
+	ac_saved_libs=$LIBS
+	LIBS="$LIBS $THREADS_LIBS"
 	AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
+	LIBS=$ac_saved_libs
     else
 	TCL_THREADS=0
     fi
