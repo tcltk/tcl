@@ -617,4 +617,18 @@ auto_mkindex_parser::command namespace {op args} {
     }
 }
 
+# AUTO MKINDEX:  oo::class create name ?definition?
+# Adds an entry to the auto index list for the given class name.
+foreach cmd {oo::class class} {
+    auto_mkindex_parser::command $cmd {ecmd name {body ""}} {
+	if {$cmd eq "create"} {
+	    variable index
+	    variable scriptFile
+	    append index [format "set %s \[list source \[%s]]\n" \
+			      [list auto_index([fullname $name])] \
+			      [list file join $dir {*}[file split $scriptFile]]]
+	}
+    }
+}
+
 return
