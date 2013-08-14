@@ -1307,7 +1307,7 @@ TclInfoFrame(
 	} else {
 	    ADD_PAIR("line", Tcl_NewIntObj(1));
 	}
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd, framePtr->len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PREBC:
@@ -1355,7 +1355,7 @@ TclInfoFrame(
 	    Tcl_DecrRefCount(fPtr->data.eval.path);
 	}
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(fPtr->cmd, fPtr->len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1374,7 +1374,7 @@ TclInfoFrame(
 	 * the result list object.
 	 */
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd, framePtr->len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PROC:
