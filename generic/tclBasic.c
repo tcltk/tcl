@@ -127,8 +127,6 @@ static Tcl_ObjCmdProc	ExprSqrtFunc;
 static Tcl_ObjCmdProc	ExprSrandFunc;
 static Tcl_ObjCmdProc	ExprUnaryFunc;
 static Tcl_ObjCmdProc	ExprWideFunc;
-static Tcl_Obj *	GetCommandSource(Interp *iPtr, int objc,
-			    Tcl_Obj *const objv[]);
 static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
@@ -149,7 +147,7 @@ static inline Command *	TEOV_LookupCmdFromObj(Tcl_Interp *interp,
 static int		TEOV_NotFound(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
 static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
-			    Command **cmdPtrPtr, int objc,
+			    Command **cmdPtrPtr, Tcl_Obj *commandPtr, int objc,
 			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
 static Tcl_NRPostProc	RewindCoroutineCallback;
 static Tcl_NRPostProc	TailcallCleanup;
@@ -3353,62 +3351,6 @@ CancelEvalProc(
 /*
  *----------------------------------------------------------------------
  *
- * GetCommandSource --
- *
- *	This function returns a Tcl_Obj with the full source string for the
- *	command. This insures that traces get a correct NUL-terminated command
- *	string. The Tcl_Obj has refCount==1.
- *
- *	*** MAINTAINER WARNING ***
- *	The returned Tcl_Obj is all wrong for any purpose but getting the
- *	source string for an objc/objv command line in the stringRep (no
- *	stringRep if no source is available) and the corresponding substituted
- *	version in the List intrep.
- *	This means that the intRep and stringRep DO NOT COINCIDE! Using these
- *	Tcl_Objs normally is likely to break things.
- *
- *----------------------------------------------------------------------
- */
-
-static Tcl_Obj *
-GetCommandSource(
-    Interp *iPtr,
-    int objc,
-    Tcl_Obj *const objv[])
-{
-    Tcl_Obj *objPtr, *obj2Ptr;
-    CmdFrame *cfPtr = iPtr->cmdFramePtr;
-    const char *command = NULL;
-    int numChars;
-
-    objPtr = Tcl_NewListObj(objc, objv);
-    if (cfPtr && (cfPtr->numLevels == iPtr->numLevels-1)) {
-	switch (cfPtr->type) {
-	case TCL_LOCATION_EVAL:
-	case TCL_LOCATION_SOURCE:
-	    command = cfPtr->cmd;
-	    numChars = cfPtr->len;
-	    break;
-	case TCL_LOCATION_BC:
-	case TCL_LOCATION_PREBC:
-	    command = TclGetSrcInfoForCmd(iPtr, &numChars);
-	    break;
-	}
-	if (command) {
-	    obj2Ptr = Tcl_NewStringObj(command, numChars);
-	    objPtr->bytes = obj2Ptr->bytes;
-	    objPtr->length = numChars;
-	    obj2Ptr->bytes = NULL;
-	    Tcl_DecrRefCount(obj2Ptr);
-	}
-    }
-    Tcl_IncrRefCount(objPtr);
-    return objPtr;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclCleanupCommand --
  *
  *	This function frees up a Command structure unless it is still
@@ -4261,7 +4203,9 @@ TclNREvalObjv(
 	 * necessary.
 	 */
 
-	result = TEOV_RunEnterTraces(interp, &cmdPtr, objc, objv, lookupNsPtr);
+	result = TEOV_RunEnterTraces(interp, &cmdPtr, TclGetSourceFromFrame(
+		flags & TCL_EVAL_SOURCE_IN_FRAME ?  iPtr->cmdFramePtr : NULL,
+		objc, objv), objc, objv, lookupNsPtr);
 	if (!cmdPtr) {
 	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
 	}
@@ -4675,6 +4619,7 @@ static int
 TEOV_RunEnterTraces(
     Tcl_Interp *interp,
     Command **cmdPtrPtr,
+    Tcl_Obj *commandPtr,
     int objc,
     Tcl_Obj *const objv[],
     Namespace *lookupNsPtr)
@@ -4686,9 +4631,8 @@ TEOV_RunEnterTraces(
     int newEpoch;
     const char *command;
     int length;
-    Tcl_Obj *commandPtr;
 
-    commandPtr = GetCommandSource(iPtr, objc, objv);
+    Tcl_IncrRefCount(commandPtr);
     command = Tcl_GetStringFromObj(commandPtr, &length);
 
     /*
@@ -4721,13 +4665,13 @@ TEOV_RunEnterTraces(
 	*cmdPtrPtr = cmdPtr;
     }
 
-    if (cmdPtr) {
+    if (cmdPtr && (traceCode == TCL_OK)) {
 	/*
 	 * Command was found: push a record to schedule the leave traces.
 	 */
 
-	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
-		commandPtr, cmdPtr, NULL);
+	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(objc),
+		commandPtr, cmdPtr, objv);
 	cmdPtr->refCount++;
     } else {
 	Tcl_DecrRefCount(commandPtr);
@@ -4742,20 +4686,18 @@ TEOV_RunLeaveTraces(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    const char *command;
-    int length, objc;
-    Tcl_Obj **objv;
-    int traceCode = PTR2INT(data[0]);
+    int traceCode = TCL_OK;
+    int objc = PTR2INT(data[0]);
     Tcl_Obj *commandPtr = data[1];
     Command *cmdPtr = data[2];
+    Tcl_Obj **objv = data[3];
 
-    command = Tcl_GetStringFromObj(commandPtr, &length);
-    if (TCL_OK != Tcl_ListObjGetElements(interp, commandPtr, &objc, &objv)) {
-	Tcl_Panic("Who messed with commandPtr?");
-    }
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && traceCode == TCL_OK){
+	int length;
+	const char *command = Tcl_GetStringFromObj(commandPtr, &length);
+
+	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES){
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
@@ -5018,11 +4960,11 @@ TclEvalScriptTokens(
     }
 
     eeFramePtr->level = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level + 1 : 1;
-    eeFramePtr->numLevels = iPtr->numLevels;
     eeFramePtr->framePtr = iPtr->framePtr;
     eeFramePtr->nextPtr = iPtr->cmdFramePtr;
     eeFramePtr->nline = 0;
     eeFramePtr->line = NULL;
+    eeFramePtr->cmdObj = NULL;
 
     iPtr->cmdFramePtr = eeFramePtr;
     iPtr->evalFlags = 0;
@@ -5207,11 +5149,16 @@ TclEvalScriptTokens(
 	eeFramePtr->line = lines;
 
 	TclArgumentEnter(interp, objv, objc, eeFramePtr);
-	code = Tcl_EvalObjv(interp, objc, objv, flags|TCL_EVAL_NOERR);
+	code = Tcl_EvalObjv(interp, objc, objv,
+		flags|TCL_EVAL_NOERR|TCL_EVAL_SOURCE_IN_FRAME);
 	TclArgumentRelease(interp, objv, objc);
 
 	eeFramePtr->line = NULL;
 	eeFramePtr->nline = 0;
+	if (eeFramePtr->cmdObj) {
+	    Tcl_DecrRefCount(eeFramePtr->cmdObj);
+	    eeFramePtr->cmdObj = NULL;
+	}
 
         error:
 	while (--objc >= 0) {
@@ -5977,7 +5924,6 @@ TclNREvalObjEx(
 	Tcl_IncrRefCount(objPtr);
 	listPtr = TclListObjCopy(interp, objPtr);
 	Tcl_IncrRefCount(listPtr);
-	TclDecrRefCount(objPtr);
 
 	if (word != INT_MIN) {
 	    /*
@@ -6003,19 +5949,22 @@ TclNREvalObjEx(
 	    eoFramePtr->type = TCL_LOCATION_EVAL;
 	    eoFramePtr->level = (iPtr->cmdFramePtr == NULL?
 		    1 : iPtr->cmdFramePtr->level + 1);
-	    eoFramePtr->numLevels = iPtr->numLevels;
 	    eoFramePtr->framePtr = iPtr->framePtr;
 	    eoFramePtr->nextPtr = iPtr->cmdFramePtr;
 
-	    eoFramePtr->cmd = Tcl_GetStringFromObj(listPtr, &(eoFramePtr->len));
+	    eoFramePtr->cmdObj = objPtr;
+	    eoFramePtr->cmd = NULL;
+	    eoFramePtr->len = 0;
 	    eoFramePtr->data.eval.path = NULL;
 
 	    iPtr->cmdFramePtr = eoFramePtr;
+
+	    flags |= TCL_EVAL_SOURCE_IN_FRAME;
 	}
 
 	TclMarkTailcall(interp);
         TclNRAddCallback(interp, TEOEx_ListCallback, listPtr, eoFramePtr,
-		NULL, NULL);
+		objPtr, NULL);
 
 	ListObjGetElements(listPtr, objc, objv);
 	return TclNREvalObjv(interp, objc, objv, flags, NULL);
@@ -6151,6 +6100,7 @@ TEOEx_ListCallback(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *listPtr = data[0];
     CmdFrame *eoFramePtr = data[1];
+    Tcl_Obj *objPtr = data[2];
 
     /*
      * Remove the cmdFrame
@@ -6160,6 +6110,7 @@ TEOEx_ListCallback(
 	iPtr->cmdFramePtr = eoFramePtr->nextPtr;
 	TclStackFree(interp, eoFramePtr);
     }
+    TclDecrRefCount(objPtr);
     TclDecrRefCount(listPtr);
 
     return result;
