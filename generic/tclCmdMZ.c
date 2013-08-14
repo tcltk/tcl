@@ -1565,7 +1565,7 @@ StringIsCmd(
 	/* TODO */
 	if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 		(objPtr->typePtr == &tclWideIntType) ||
 #endif
 		(objPtr->typePtr == &tclBignumType)) {
@@ -1602,7 +1602,7 @@ StringIsCmd(
 	goto failedIntParse;
     case STR_IS_ENTIER:
 	if ((objPtr->typePtr == &tclIntType) ||
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 		(objPtr->typePtr == &tclWideIntType) ||
 #endif
 		(objPtr->typePtr == &tclBignumType)) {
@@ -3527,7 +3527,7 @@ TclNRSwitchObjCmd(
 	    i++;
 	    goto finishedOptions;
 	case OPT_NOCASE:
-	    strCmpFn = strcasecmp;
+	    strCmpFn = TclUtfCasecmp;
 	    noCase = 1;
 	    break;
 

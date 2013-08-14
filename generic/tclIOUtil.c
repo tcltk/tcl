@@ -3225,6 +3225,9 @@ Tcl_LoadFile(
      */
 
     copyToPtr = TclpTempFileNameForLibrary(interp, pathPtr);
+    if (copyToPtr == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_IncrRefCount(copyToPtr);
 
     copyFsPtr = Tcl_FSGetFileSystemForPath(copyToPtr);

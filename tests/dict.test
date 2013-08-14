@@ -668,6 +668,24 @@ test dict-14.20 {dict for stack space compilation: bug 1903325} {
 	concat "c=$y,$args"
     }} {} 1 2 3
 } {c=1,2 3}
+test dict-14.21 {compiled dict for and break} {
+    apply {{} {
+	dict for {a b} {c d e f} {
+	    lappend result $a,$b
+	    break
+	}
+	return $result
+    }}
+} c,d
+test dict-14.22 {dict for and exception range depths: Bug 3614382} {
+    apply {{} {
+	dict for {a b} {c d} {
+	    dict for {e f} {g h} {
+		return 5
+	    }
+	}
+    }}
+} 5
 # There's probably a lot more tests to add here. Really ought to use a
 # coverage tool for this job...
 
