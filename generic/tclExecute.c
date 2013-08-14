@@ -8740,7 +8740,7 @@ IllegalExprOperandType(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetSrcInfoForPc, GetSrcInfoForPc, TclGetSrcInfoForCmdFrame --
+ * TclGetSrcInfoForPc, GetSrcInfoForPc, TclGetSourceFromFrame --
  *
  *	Given a program counter value, finds the closest command in the
  *	bytecode code unit's CmdLocation array and returns information about
@@ -8761,15 +8761,26 @@ IllegalExprOperandType(
  *----------------------------------------------------------------------
  */
 
-const char *
-TclGetSrcInfoForCmdFrame(
+Tcl_Obj *
+TclGetSourceFromFrame(
     CmdFrame *cfPtr,
-    int *lenPtr)
+    int objc,
+    Tcl_Obj *const objv[])
 {
-    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
+    if (cfPtr == NULL) {
+        return Tcl_NewListObj(objc, objv);
+    }
+    if (cfPtr->cmdObj == NULL) {
+        if (cfPtr->cmd == NULL) {
+	    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
-    return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
-	    codePtr, lenPtr, NULL, NULL);
+            cfPtr->cmd = GetSrcInfoForPc((unsigned char *)
+		    cfPtr->data.tebc.pc, codePtr, &cfPtr->len, NULL, NULL);
+        }
+        cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
+        Tcl_IncrRefCount(cfPtr->cmdObj);
+    }
+    return cfPtr->cmdObj;
 }
 
 void
