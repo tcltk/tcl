@@ -936,6 +936,69 @@ test oo-6.18 {Bug 3408830: more forwarding cases} -setup {
 } -returnCodes error -cleanup {
     fooClass destroy
 } -result {wrong # args: should be "::foo len string"}
+test oo-6.19 {Bug 3610404: forwarding resolution + traces} -setup {
+    oo::object create foo
+    unset -nocomplain ::result
+    set ::result {}
+} -body {
+    proc ::my {method} {lappend ::result global}
+    oo::objdefine foo {
+	method target {} {lappend ::result instance}
+	forward bar my target
+	method bump {} {
+	    set ns [info object namespace ::foo]
+	    rename ${ns}::my ${ns}::
+	    rename ${ns}:: ${ns}::my
+	}
+    }
+    proc harness {} {
+	foo target
+	foo bar
+	foo target
+    }
+    trace add execution harness enterstep {apply {{cmd args} {foo bump}}}
+    foo target
+    foo bar
+    foo bump
+    foo bar
+    harness
+} -cleanup {
+    catch {rename harness {}}
+    catch {rename ::my {}}
+    foo destroy
+} -result {instance instance instance instance instance instance}
+test oo-6.20 {Bug 3610404: forwarding resolution + traces} -setup {
+    oo::class create fooClass
+    fooClass create foo
+    unset -nocomplain ::result
+    set ::result {}
+} -body {
+    proc ::my {method} {lappend ::result global}
+    oo::define fooClass {
+	method target {} {lappend ::result class}
+	forward bar my target
+	method bump {} {
+	    set ns [info object namespace [self]]
+	    rename ${ns}::my ${ns}::
+	    rename ${ns}:: ${ns}::my
+	}
+    }
+    proc harness {} {
+	foo target
+	foo bar
+	foo target
+    }
+    trace add execution harness enterstep {apply {{cmd args} {foo bump}}}
+    foo target
+    foo bar
+    foo bump
+    foo bar
+    harness
+} -cleanup {
+    catch {rename harness {}}
+    catch {rename ::my {}}
+    fooClass destroy
+} -result {class class class class class class}
 
 test oo-7.1 {OO: inheritance 101} -setup {
     oo::class create superClass
