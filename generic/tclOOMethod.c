@@ -513,8 +513,8 @@ TclOOMakeProcInstanceMethod(
 		cfPtr->data.eval.path = context.data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
 
 		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
 			(char *) procPtr, &isNew);
@@ -626,8 +626,8 @@ TclOOMakeProcMethod(
 		cfPtr->data.eval.path = context.data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
 
 		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
 			(char *) procPtr, &isNew);
