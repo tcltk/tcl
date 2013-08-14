@@ -281,16 +281,9 @@ TclWinNoBackslash(
 /*
  *---------------------------------------------------------------------------
  *
- * TclWinSetInterfaces --
+ * TclpSetInterfaces --
  *
- *	A helper proc that allows the test library to change the tclWinProcs
- *	structure to dispatch to either the wide-character or multi-byte
- *	versions of the operating system calls, depending on whether Unicode
- *	is the system encoding.
- *
- *	As well as this, we can also try to load in some additional procs
- *	which may/may not be present depending on the current Windows version
- *	(e.g. Win95 will not have the procs below).
+ *	A helper proc that initializes winTCharEncoding.
  *
  * Results:
  *	None.
@@ -302,15 +295,10 @@ TclWinNoBackslash(
  */
 
 void
-TclWinSetInterfaces(
-    int wide)			/* Non-zero to use wide interfaces, 0
-				 * otherwise. */
+TclpSetInterfaces(void)
 {
-	TclWinResetInterfaces();
-
-    if (wide) {
-	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
-    }
+    TclWinResetInterfaces();
+    winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
 }
 
 /*
@@ -318,9 +306,7 @@ TclWinSetInterfaces(
  *
  * TclWinEncodingsCleanup --
  *
- *	Called during finalization to free up any encodings we use. The
- *	tclWinProcs-> look up table is still ok to use after this call,
- *	provided no encoding conversion is required.
+ *	Called during finalization to free up any encodings we use.
  *
  *	We also clean up any memory allocated in our mount point map which is
  *	used to follow certain kinds of symlinks. That code should never be
@@ -363,8 +349,6 @@ TclWinEncodingsCleanup(void)
  * TclWinResetInterfaces --
  *
  *	Called during finalization to reset us to a safe state for reuse.
- *	After this call, it is best not to use the tclWinProcs-> look up table
- *	since it is likely to be different to what is expected.
  *
  * Results:
  *	None.

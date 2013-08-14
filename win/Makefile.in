@@ -225,6 +225,7 @@ GENERIC_OBJS = \
 	tclCmdIL.$(OBJEXT) \
 	tclCmdMZ.$(OBJEXT) \
 	tclCompCmds.$(OBJEXT) \
+	tclCompCmdsGR.$(OBJEXT) \
 	tclCompCmdsSZ.$(OBJEXT) \
 	tclCompExpr.$(OBJEXT) \
 	tclCompile.$(OBJEXT) \
@@ -266,6 +267,7 @@ GENERIC_OBJS = \
 	tclOOMethod.$(OBJEXT) \
 	tclOOStubInit.$(OBJEXT) \
 	tclObj.$(OBJEXT) \
+	tclOptimize.$(OBJEXT) \
 	tclPanic.$(OBJEXT) \
 	tclParse.$(OBJEXT) \
 	tclPathObj.$(OBJEXT) \
@@ -456,7 +458,7 @@ ${TEST_DLL_FILE}: ${TCLTEST_OBJS} ${TCL_STUB_LIB_FILE}
 
 # use pre-built zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
-	@if test "@ZLIB_LIBS@set" == "${ZLIB_DIR}/win64/zdll.libset" ; then \
+	@if test "@ZLIB_LIBS@set" != "${ZLIB_DIR}/win32/zdll.libset" ; then \
 		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
 	else \
 		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
@@ -646,12 +648,12 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing package msgcat 1.5.1 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.1.tm;
+	@echo "Installing package msgcat 1.5.2 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.2.tm;
 	@echo "Installing package tcltest 2.3.5 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.5.tm;
-	@echo "Installing package platform 1.0.11 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.11.tm;
+	@echo "Installing package platform 1.0.12 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.12.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform/shell-1.1.4.tm;
 	@echo "Installing encodings";

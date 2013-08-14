@@ -1239,7 +1239,7 @@ TclParseNumber(
 	    if (!octalSignificandOverflow) {
 		if (octalSignificandWide >
 			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 		    if (octalSignificandWide <= (MOST_BITS + signum)) {
 			objPtr->typePtr = &tclWideIntType;
 			if (signum) {
@@ -1286,7 +1286,7 @@ TclParseNumber(
 	    if (!significandOverflow) {
 		if (significandWide >
 			(Tcl_WideUInt)(((~(unsigned long)0) >> 1) + signum)) {
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 		    if (significandWide <= MOST_BITS+signum) {
 			objPtr->typePtr = &tclWideIntType;
 			if (signum) {
