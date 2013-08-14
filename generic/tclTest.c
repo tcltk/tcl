@@ -1559,14 +1559,14 @@ DelCallbackProc(
  *
  * TestdelCmd --
  *
- *	This procedure implements the "testdcall" command.  It is used
- *	to test Tcl_CallWhenDeleted.
+ *	This procedure implements the "testdel" command.  It is used
+ *	to test calling of command deletion callbacks.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	Creates and deletes interpreters.
+ *	Creates a command.
  *
  *----------------------------------------------------------------------
  */
