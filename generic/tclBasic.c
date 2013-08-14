@@ -4665,13 +4665,13 @@ TEOV_RunEnterTraces(
 	*cmdPtrPtr = cmdPtr;
     }
 
-    if (cmdPtr) {
+    if (cmdPtr && (traceCode == TCL_OK)) {
 	/*
 	 * Command was found: push a record to schedule the leave traces.
 	 */
 
-	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(traceCode),
-		commandPtr, cmdPtr, Tcl_NewListObj(objc, objv));
+	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(objc),
+		commandPtr, cmdPtr, objv);
 	cmdPtr->refCount++;
     } else {
 	Tcl_DecrRefCount(commandPtr);
@@ -4686,19 +4686,18 @@ TEOV_RunLeaveTraces(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    const char *command;
-    int length, objc;
-    Tcl_Obj **objv;
-    int traceCode = PTR2INT(data[0]);
+    int traceCode = TCL_OK;
+    int objc = PTR2INT(data[0]);
     Tcl_Obj *commandPtr = data[1];
     Command *cmdPtr = data[2];
-    Tcl_Obj *wordsPtr = data[3];
+    Tcl_Obj **objv = data[3];
 
-    command = Tcl_GetStringFromObj(commandPtr, &length);
-    Tcl_ListObjGetElements(NULL, wordsPtr, &objc, &objv);
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && traceCode == TCL_OK){
+	int length;
+	const char *command = Tcl_GetStringFromObj(commandPtr, &length);
+
+	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES){
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
@@ -4708,7 +4707,6 @@ TEOV_RunLeaveTraces(
 	}
     }
     Tcl_DecrRefCount(commandPtr);
-    Tcl_DecrRefCount(wordsPtr);
 
     /*
      * As cmdPtr is set, TclNRRunCallbacks is about to reduce the numlevels.
