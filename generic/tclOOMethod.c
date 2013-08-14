@@ -1429,6 +1429,8 @@ InvokeForwardMethod(
 		contextPtr->oPtr->namespacePtr, 0 /* normal lookup */);
     }
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    ((Interp *)interp)->lookupNsPtr
+	    = (Namespace *) contextPtr->oPtr->namespacePtr;
     return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE, cmdPtr);
 }
 
