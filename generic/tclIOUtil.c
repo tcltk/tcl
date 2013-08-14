@@ -267,6 +267,7 @@ Tcl_Stat(
     ret = Tcl_FSStat(pathPtr, &buf);
     Tcl_DecrRefCount(pathPtr);
     if (ret != -1) {
+#ifndef TCL_WIDE_INT_IS_LONG
 	Tcl_WideInt tmp1, tmp2, tmp3 = 0;
 
 # define OUT_OF_RANGE(x) \
@@ -304,6 +305,7 @@ Tcl_Stat(
 
 #   undef OUT_OF_RANGE
 #   undef OUT_OF_URANGE
+#endif /* !TCL_WIDE_INT_IS_LONG */
 
 	/*
 	 * Copy across all supported fields, with possible type coercions on

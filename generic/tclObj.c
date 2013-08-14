@@ -212,8 +212,10 @@ static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
 static void		UpdateStringOfInt(Tcl_Obj *objPtr);
+#ifndef TCL_WIDE_INT_IS_LONG
 static void		UpdateStringOfWideInt(Tcl_Obj *objPtr);
 static int		SetWideIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
+#endif
 static void		FreeBignum(Tcl_Obj *objPtr);
 static void		DupBignum(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		UpdateStringOfBignum(Tcl_Obj *objPtr);
@@ -270,6 +272,7 @@ const Tcl_ObjType tclIntType = {
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny		/* setFromAnyProc */
 };
+#ifndef TCL_WIDE_INT_IS_LONG
 const Tcl_ObjType tclWideIntType = {
     "wideInt",			/* name */
     NULL,			/* freeIntRepProc */
@@ -277,6 +280,7 @@ const Tcl_ObjType tclWideIntType = {
     UpdateStringOfWideInt,	/* updateStringProc */
     SetWideIntFromAny		/* setFromAnyProc */
 };
+#endif
 const Tcl_ObjType tclBignumType = {
     "bignum",			/* name */
     FreeBignum,			/* freeIntRepProc */
@@ -406,7 +410,9 @@ TclInitObjSubsystem(void)
 
     /* For backward compatibility only ... */
     Tcl_RegisterObjType(&oldBooleanType);
+#ifndef TCL_WIDE_INT_IS_LONG
     Tcl_RegisterObjType(&tclWideIntType);
+#endif
 
 #ifdef TCL_COMPILE_STATS
     Tcl_MutexLock(&tclObjMutex);
@@ -1909,10 +1915,12 @@ Tcl_GetBooleanFromObj(
 	    *boolPtr = 1;
 	    return TCL_OK;
 	}
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *boolPtr = (objPtr->internalRep.wideValue != 0);
 	    return TCL_OK;
 	}
+#endif
     } while ((ParseBoolean(objPtr) == TCL_OK) || (TCL_OK ==
 	    TclParseNumber(interp, objPtr, "boolean value", NULL,-1,NULL,0)));
     return TCL_ERROR;
@@ -1962,9 +1970,11 @@ TclSetBooleanFromAny(
 	    goto badBoolean;
 	}
 
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    goto badBoolean;
 	}
+#endif
 
 	if (objPtr->typePtr == &tclDoubleType) {
 	    goto badBoolean;
@@ -2292,10 +2302,12 @@ Tcl_GetDoubleFromObj(
 	    *dblPtr = TclBignumToDouble(&big);
 	    return TCL_OK;
 	}
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *dblPtr = (double) objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
+#endif
     } while (SetDoubleFromAny(interp, objPtr) == TCL_OK);
     return TCL_ERROR;
 }
@@ -2749,6 +2761,7 @@ Tcl_GetLongFromObj(
 	    *longPtr = objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    /*
 	     * We return any integer in the range -ULONG_MAX to ULONG_MAX
@@ -2767,6 +2780,7 @@ Tcl_GetLongFromObj(
 	    }
 	    goto tooLarge;
 	}
+#endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -2805,7 +2819,9 @@ Tcl_GetLongFromObj(
 		    return TCL_OK;
 		}
 	    }
+#ifndef TCL_WIDE_INT_IS_LONG
 	tooLarge:
+#endif
 	    if (interp != NULL) {
 		const char *s = "integer value too large to represent";
 		Tcl_Obj *msg = Tcl_NewStringObj(s, -1);
@@ -2819,6 +2835,7 @@ Tcl_GetLongFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
+#ifndef TCL_WIDE_INT_IS_LONG
 
 /*
  *----------------------------------------------------------------------
@@ -2860,6 +2877,7 @@ UpdateStringOfWideInt(
     memcpy(objPtr->bytes, buffer, len + 1);
     objPtr->length = len;
 }
+#endif /* !TCL_WIDE_INT_IS_LONG */
 
 /*
  *----------------------------------------------------------------------
@@ -3014,7 +3032,14 @@ Tcl_SetWideIntObj(
 	    && (wideValue <= (Tcl_WideInt) LONG_MAX)) {
 	TclSetLongObj(objPtr, (long) wideValue);
     } else {
+#ifndef TCL_WIDE_INT_IS_LONG
 	TclSetWideIntObj(objPtr, wideValue);
+#else
+	mp_int big;
+
+	TclBNInitBignumFromWideInt(&big, wideValue);
+	Tcl_SetBignumObj(objPtr, &big);
+#endif
     }
 }
 
@@ -3047,10 +3072,12 @@ Tcl_GetWideIntFromObj(
 				/* Place to store resulting long. */
 {
     do {
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
+#endif
 	if (objPtr->typePtr == &tclIntType) {
 	    *wideIntPtr = (Tcl_WideInt) objPtr->internalRep.longValue;
 	    return TCL_OK;
@@ -3105,6 +3132,7 @@ Tcl_GetWideIntFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
+#ifndef TCL_WIDE_INT_IS_LONG
 
 /*
  *----------------------------------------------------------------------
@@ -3130,6 +3158,7 @@ SetWideIntFromAny(
     Tcl_WideInt w;
     return Tcl_GetWideIntFromObj(interp, objPtr, &w);
 }
+#endif /* !TCL_WIDE_INT_IS_LONG */
 
 /*
  *----------------------------------------------------------------------
@@ -3377,11 +3406,13 @@ GetBignumFromObj(
 	    TclBNInitBignumFromLong(bignumValue, objPtr->internalRep.longValue);
 	    return TCL_OK;
 	}
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    TclBNInitBignumFromWideInt(bignumValue,
 		    objPtr->internalRep.wideValue);
 	    return TCL_OK;
 	}
+#endif
 	if (objPtr->typePtr == &tclDoubleType) {
 	    if (interp != NULL) {
                 Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -3514,6 +3545,7 @@ Tcl_SetBignumObj(
 	return;
     }
   tooLargeForLong:
+#ifndef TCL_WIDE_INT_IS_LONG
     if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
@@ -3539,6 +3571,7 @@ Tcl_SetBignumObj(
 	return;
     }
   tooLargeForWide:
+#endif
     TclInvalidateStringRep(objPtr);
     TclFreeIntRep(objPtr);
     TclSetBignumIntRep(objPtr, bignumValue);
@@ -3624,11 +3657,13 @@ TclGetNumberFromObj(
 	    *clientDataPtr = &objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *typePtr = TCL_NUMBER_WIDE;
 	    *clientDataPtr = &objPtr->internalRep.wideValue;
 	    return TCL_OK;
 	}
+#endif
 	if (objPtr->typePtr == &tclBignumType) {
 	    static Tcl_ThreadDataKey bignumKey;
 	    mp_int *bigPtr = Tcl_GetThreadData(&bignumKey,

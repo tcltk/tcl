@@ -1918,8 +1918,10 @@ Tcl_AppendFormatToObj(
 		useBig = 1;
 		format += step;
 		step = Tcl_UtfToUniChar(format, &ch);
+#ifndef TCL_WIDE_INT_IS_LONG
 	    } else {
 		useWide = 1;
+#endif
 	    }
 	}
 

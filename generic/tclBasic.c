@@ -6799,6 +6799,7 @@ ExprAbsFunc(
 	return TCL_OK;
     }
 
+#ifndef TCL_WIDE_INT_IS_LONG
     if (type == TCL_NUMBER_WIDE) {
 	Tcl_WideInt w = *((const Tcl_WideInt *) ptr);
 
@@ -6812,6 +6813,7 @@ ExprAbsFunc(
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj(-w));
 	return TCL_OK;
     }
+#endif
 
     if (type == TCL_NUMBER_BIG) {
 	if (mp_cmp_d((const mp_int *) ptr, 0) == MP_LT) {
