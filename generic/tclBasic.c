@@ -3642,7 +3642,7 @@ TclEvalObjvInternal(
 	 * implementation.
 	 */
 
-	if (cmdEpoch != newEpoch) {
+	if (traceCode == TCL_OK && cmdEpoch != newEpoch) {
 	    checkTraces = 0;
 	    if (commandPtr) {
 		Tcl_DecrRefCount(commandPtr);
