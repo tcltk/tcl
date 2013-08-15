@@ -4188,11 +4188,11 @@ TclNREvalObjv(
 	result = TEOV_RunEnterTraces(interp, &cmdPtr, TclGetSourceFromFrame(
 		flags & TCL_EVAL_SOURCE_IN_FRAME ?  iPtr->cmdFramePtr : NULL,
 		objc, objv), objc, objv, lookupNsPtr);
-	if (!cmdPtr) {
-	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
-	}
 	if (result != TCL_OK) {
 	    return result;
+	}
+	if (!cmdPtr) {
+	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
 	}
     }
 
