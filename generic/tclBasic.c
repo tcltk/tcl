@@ -148,7 +148,8 @@ static int		TEOV_NotFound(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
 static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Command **cmdPtrPtr, Tcl_Obj *commandPtr, int objc,
-			    Tcl_Obj *const objv[], Namespace *lookupNsPtr);
+			    Tcl_Obj *const objv[], Namespace *lookupNsPtr,
+			    int weLookUp);
 static Tcl_NRPostProc	RewindCoroutineCallback;
 static Tcl_NRPostProc	TailcallCleanup;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
@@ -4098,6 +4099,7 @@ TclNREvalObjv(
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
     Command **cmdPtrPtr;
     NRE_callback *callbackPtr;
+    int weLookUp = (cmdPtr == NULL);
     
     iPtr->lookupNsPtr = NULL;
 
@@ -4136,7 +4138,7 @@ TclNREvalObjv(
 	TEOV_PushExceptionHandlers(interp, objc, objv, flags);
     }
 
-    if (cmdPtr) {
+    if (!weLookUp) {
 	goto commandFound;
     }
 
@@ -4188,12 +4190,16 @@ TclNREvalObjv(
 
 	result = TEOV_RunEnterTraces(interp, &cmdPtr, TclGetSourceFromFrame(
 		flags & TCL_EVAL_SOURCE_IN_FRAME ?  iPtr->cmdFramePtr : NULL,
-		objc, objv), objc, objv, lookupNsPtr);
+		objc, objv), objc, objv, lookupNsPtr, weLookUp);
 	if (result != TCL_OK) {
 	    return result;
 	}
-	if (!cmdPtr) {
-	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
+	if (cmdPtr == NULL) {
+	    if (weLookUp) {
+		return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
+	    }
+	    /* Is this right??? */
+	    return TCL_OK;
 	}
     }
 
@@ -4605,7 +4611,8 @@ TEOV_RunEnterTraces(
     Tcl_Obj *commandPtr,
     int objc,
     Tcl_Obj *const objv[],
-    Namespace *lookupNsPtr)
+    Namespace *lookupNsPtr,
+    int weLookUp)
 {
     Interp *iPtr = (Interp *) interp;
     Command *cmdPtr = *cmdPtrPtr;
@@ -4613,7 +4620,7 @@ TEOV_RunEnterTraces(
     int cmdEpoch = cmdPtr->cmdEpoch;
     int newEpoch;
     const char *command;
-    int length;
+    int length, deleted;
 
     Tcl_IncrRefCount(commandPtr);
     command = Tcl_GetStringFromObj(commandPtr, &length);
@@ -4635,16 +4642,32 @@ TEOV_RunEnterTraces(
 		cmdPtr, TCL_OK, TCL_TRACE_ENTER_EXEC, objc, objv);
     }
     newEpoch = cmdPtr->cmdEpoch;
+    deleted = cmdPtr->flags & CMD_IS_DELETED;
     TclCleanupCommandMacro(cmdPtr);
 
-    /*
-     * If the traces modified/deleted the command or any existing traces, they
-     * will update the command's epoch. We need to lookup again, but do not
-     * run enter traces on the newly found cmdPtr.
-     */
-
     if (cmdEpoch != newEpoch) {
-	cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
+
+	/*
+	 * The traces did something to the traced command.  How should
+	 * we respond?
+	 *
+	 * If we got the trace command by looking up a command name, we
+	 * should just look it up again.
+	 */
+	if (weLookUp) {
+	    cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
+	} else {
+
+	    /*
+	     * If we did not look up a command name, we got the cmdPtr
+	     * from a caller.  If that cmdPtr has been deleted, we need
+	     * to avoid a crash.  Otherwise, press on.  We don't have
+	     * any foundation to claim a better answer.
+	     */
+	    if (deleted) {
+		cmdPtr = NULL;
+	    }
+	}
 	*cmdPtrPtr = cmdPtr;
     }
 
