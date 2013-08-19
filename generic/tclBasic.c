@@ -133,7 +133,9 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
+#if 0
 static Tcl_NRPostProc	NRRunObjProc;
+#endif
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
@@ -4238,9 +4240,13 @@ TclNREvalObjv(
      */
 
     if (cmdPtr->nreProc) {
+#if 0
         TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
                 INT2PTR(objc), (ClientData) objv, NULL);
         return TCL_OK;
+#else
+	return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
+#endif
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
     }
@@ -4323,6 +4329,7 @@ NRCommand(
     return result;
 }
 
+#if 0
 static int
 NRRunObjProc(
     ClientData data[],
@@ -4337,6 +4344,7 @@ NRRunObjProc(
 
     return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
 }
+#endif
 
 
 /*
