@@ -338,6 +338,7 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 STUB_LIB_OBJS = tclStubLib.o \
 	tclTomMathStubLib.o \
 	tclOOStubLib.o \
+	@STUB_OBJS@ \
 	${COMPAT_OBJS}
 
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
@@ -1588,9 +1589,12 @@ tclMacOSXFCmd.o: $(MAC_OSX_DIR)/tclMacOSXFCmd.c
 tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
 	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
 
-# The following is a CYGWIN only source:
+# The following are CYGWIN only sources:
 tclWinError.o: $(TOP_DIR)/win/tclWinError.c
 	$(CC) -c $(CC_SWITCHES) $(TOP_DIR)/win/tclWinError.c
+
+tclWinPanic.o: $(TOP_DIR)/win/tclWinPanic.c
+	$(CC) -c $(CC_SWITCHES) -DBUILD_STATIC $(TOP_DIR)/win/tclWinPanic.c
 
 # DTrace support
 
