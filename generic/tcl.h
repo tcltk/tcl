@@ -2398,6 +2398,7 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
+
 /*
  * When not using stubs, make it a macro.
  */
@@ -2410,6 +2411,12 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 /*
  * TODO - tommath stubs export goes here!
  */
+
+/* Tcl_InitSubsystems, see TIP #414 */
+
+#ifndef USE_TCL_STUBS
+    EXTERN const char *Tcl_InitSubsystems(Tcl_PanicProc *panicProc);
+#endif
 
 /*
  * Public functions that are not accessible via the stubs table.
