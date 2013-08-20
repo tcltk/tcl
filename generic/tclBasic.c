@@ -161,6 +161,8 @@ static Tcl_NRPostProc	TEOV_NotFoundCallback;
 static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 
+static Tcl_NRPostProc	Dispatch;
+
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
 MODULE_SCOPE const TclStubs tclStubs;
@@ -4234,6 +4236,9 @@ TclNREvalObjv(
     *cmdPtrPtr = cmdPtr;
     cmdPtr->refCount++;
 
+    TclNRAddCallback(interp, Dispatch, cmdPtr, INT2PTR(objc), objv, NULL);
+    return TCL_OK;
+
     /*
      * Find the objProc to call: nreProc if available, objProc otherwise. Push
      * a callback to do the actual running.
@@ -4247,6 +4252,23 @@ TclNREvalObjv(
 #else
 	return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
 #endif
+    } else {
+	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    }
+}
+
+static int
+Dispatch(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Command *cmdPtr = data[0];
+    int objc = PTR2INT(data[1]);
+    Tcl_Obj **objv = data[2];
+
+    if (cmdPtr->nreProc) {
+	return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
     }
