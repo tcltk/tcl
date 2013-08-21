@@ -88,7 +88,7 @@ TclOO_Class_Constructor(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Obj **invoke = ckalloc(3 * sizeof(Tcl_Obj *));
+    Tcl_Obj **invoke;
 
     if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -102,6 +102,7 @@ TclOO_Class_Constructor(
      * Delegate to [oo::define] to do the work.
      */
 
+    invoke = ckalloc(3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
     invoke[2] = objv[objc-1];
