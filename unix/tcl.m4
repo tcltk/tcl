@@ -676,7 +676,11 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 
 	# Does the pthread-implementation provide
 	# 'pthread_attr_setstacksize' ?
-	AC_CHECK_FUNCS(pthread_attr_setstacksize)
+
+	ac_saved_libs=$LIBS
+	LIBS="$LIBS $THREADS_LIBS"
+	AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
+	LIBS=$ac_saved_libs
     else
 	TCL_THREADS=0
     fi
@@ -1224,7 +1228,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    SHLIB_CFLAGS=""
 	    SHLIB_LD='${CC} -shared'
 	    SHLIB_SUFFIX=".dll"
-	    DL_OBJS="tclLoadDl.o tclWinError.o"
+	    DL_OBJS="tclLoadDl.o"
+	    PLAT_OBJS='${CYGWIN_OBJS}'
+	    PLAT_SRCS='${CYGWIN_SRCS}'
 	    DL_LIBS="-ldl"
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""

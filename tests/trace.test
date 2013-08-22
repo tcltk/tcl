@@ -2661,6 +2661,13 @@ test trace-39.1 {bug #3485022: tracing Bc'ed commands} -setup {
     rename dotrace {}
     rename foo {}
 } -result {3 | 0 1 1}
+
+test trace-40.1 {execution trace errors become command errors} {
+    proc foo args {}
+    trace add execution foo enter {rename foo {}; error bar;#}
+    catch foo m
+    return -level 0 $m[unset m]
+} bar
     
 # Delete procedures when done, so we don't clash with other tests
 # (e.g. foobar will clash with 'unknown' tests).
