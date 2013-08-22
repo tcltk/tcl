@@ -4196,6 +4196,31 @@ TclNREvalObjv(
 	}
     }
 
+    /*
+     * Fix the original callback to point to the now known cmdPtr. Insure that
+     * the Command struct lives until the command returns.
+     */
+
+    *cmdPtrPtr = cmdPtr;
+    cmdPtr->refCount++;
+
+    TclNRAddCallback(interp, Dispatch,
+	    cmdPtr->nreProc ? cmdPtr->nreProc : cmdPtr->objProc,
+	    cmdPtr->objClientData, INT2PTR(objc), objv);
+    return TCL_OK;
+}
+
+static int
+Dispatch(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_ObjCmdProc *objProc = data[0];
+    ClientData clientData = data[1];
+    int objc = PTR2INT(data[2]);
+    Tcl_Obj **objv = data[3];
+    Interp *iPtr = (Interp *) interp;
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
@@ -4216,41 +4241,17 @@ TclNREvalObjv(
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
 	TclDecrRefCount(info);
     }
-    if (TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED()) {
+    if ((TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED())
+	    && objc) {
 	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
     }
-    if (TCL_DTRACE_CMD_ENTRY_ENABLED()) {
+    if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
 	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
 		(Tcl_Obj **)(objv + 1));
     }
 #endif /* USE_DTRACE */
-    /*
-     * Fix the original callback to point to the now known cmdPtr. Insure that
-     * the Command struct lives until the command returns.
-     */
 
-    *cmdPtrPtr = cmdPtr;
-    cmdPtr->refCount++;
-
-    TclNRAddCallback(interp, Dispatch, cmdPtr, INT2PTR(objc), objv, NULL);
-    return TCL_OK;
-}
-
-static int
-Dispatch(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Command *cmdPtr = data[0];
-    int objc = PTR2INT(data[1]);
-    Tcl_Obj **objv = data[2];
-
-    if (cmdPtr->nreProc) {
-	return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-    } else {
-	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-    }
+    return objProc(clientData, interp, objc, objv);
 }
 
 int
@@ -7963,39 +7964,11 @@ Tcl_NRCallObjProc(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int result = TCL_OK;
     NRE_callback *rootPtr = TOP_CB(interp);
 
-#ifdef USE_DTRACE
-    if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
-	const char *a[10];
-	int i = 0;
-
-	while (i < 10) {
-	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
-	}
-	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
-		a[8], a[9]);
-    }
-    if (TCL_DTRACE_CMD_INFO_ENABLED() && ((Interp *) interp)->cmdFramePtr) {
-	Tcl_Obj *info = TclInfoFrame(interp, ((Interp *) interp)->cmdFramePtr);
-	const char *a[6]; int i[2];
-
-	TclDTraceInfo(info, a, i);
-	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
-	TclDecrRefCount(info);
-    }
-    if ((TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED())
-	    && objc) {
-	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
-    }
-    if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
-	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
-		(Tcl_Obj **)(objv + 1));
-    }
-#endif /* USE_DTRACE */
-    result = objProc(clientData, interp, objc, objv);
-    return TclNRRunCallbacks(interp, result, rootPtr);
+    TclNRAddCallback(interp, Dispatch, objProc, clientData,
+	    INT2PTR(objc), objv);
+    return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
 
 /*
