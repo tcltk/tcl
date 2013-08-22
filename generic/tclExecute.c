@@ -721,7 +721,7 @@ static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, int *lengthPtr,
-			    const unsigned char **pcBeg);
+			    const unsigned char **pcBeg, int *cmdIdxPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
@@ -1426,17 +1426,12 @@ Tcl_NRExprObj(
     Tcl_Obj *resultPtr)
 {
     ByteCode *codePtr;
+    Tcl_InterpState state = Tcl_SaveInterpState(interp, TCL_OK);
 
-    /* TODO: consider saving whole state? */
-    Tcl_Obj *saveObjPtr = Tcl_GetObjResult(interp);
-
-    Tcl_IncrRefCount(saveObjPtr);
-
+    Tcl_ResetResult(interp);
     codePtr = CompileExprObj(interp, objPtr);
 
-    /* TODO: Confirm reset not required? */
-    /*Tcl_ResetResult(interp);*/
-    Tcl_NRAddCallback(interp, ExprObjCallback, saveObjPtr, resultPtr,
+    Tcl_NRAddCallback(interp, ExprObjCallback, state, resultPtr,
 	    NULL, NULL);
     return TclNRExecuteByteCode(interp, codePtr);
 }
@@ -1447,14 +1442,15 @@ ExprObjCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Tcl_Obj *saveObjPtr = data[0];
+    Tcl_InterpState state = data[0];
     Tcl_Obj *resultPtr = data[1];
 
     if (result == TCL_OK) {
 	TclSetDuplicateObj(resultPtr, Tcl_GetObjResult(interp));
-	Tcl_SetObjResult(interp, saveObjPtr);
+	(void) Tcl_RestoreInterpState(interp, state);
+    } else {
+	Tcl_DiscardInterpState(state);
     }
-    TclDecrRefCount(saveObjPtr);
     return result;
 }
 
@@ -2002,7 +1998,6 @@ TclNRExecuteByteCode(
     bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
 	    ? TCL_LOCATION_PREBC : TCL_LOCATION_BC);
     bcFramePtr->level = (iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level+1 : 1);
-    bcFramePtr->numLevels = iPtr->numLevels;
     bcFramePtr->framePtr = iPtr->framePtr;
     bcFramePtr->nextPtr = iPtr->cmdFramePtr;
     bcFramePtr->nline = 0;
@@ -2010,8 +2005,9 @@ TclNRExecuteByteCode(
     bcFramePtr->litarg = NULL;
     bcFramePtr->data.tebc.codePtr = codePtr;
     bcFramePtr->data.tebc.pc = NULL;
-    bcFramePtr->cmd.str.cmd = NULL;
-    bcFramePtr->cmd.str.len = 0;
+    bcFramePtr->cmdObj = NULL;
+    bcFramePtr->cmd = NULL;
+    bcFramePtr->len = 0;
 
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.numExecutions++;
@@ -2134,6 +2130,11 @@ TEBCresume(
 	    result = TCL_ERROR;
 	}
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
+	if (bcFramePtr->cmdObj) {
+	    Tcl_DecrRefCount(bcFramePtr->cmdObj);
+	    bcFramePtr->cmdObj = NULL;
+	    bcFramePtr->cmd = NULL;
+	}
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
@@ -2435,8 +2436,11 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	    int cmd;
+	    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
+		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+			codePtr, bcFramePtr, cmd, pc - codePtr->codeStart);
+	    }
 	}
 
 	pc++;
@@ -2889,8 +2893,11 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	    int cmd;
+	    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
+		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+			codePtr, bcFramePtr, cmd, pc - codePtr->codeStart);
+	    }
 	}
 
 	DECACHE_STACK_INFO();
@@ -2898,7 +2905,7 @@ TEBCresume(
 	pc += pcAdjustment;
 	TEBC_YIELD();
 	return TclNREvalObjv(interp, objc, objv,
-		TCL_EVAL_NOERR, NULL);
+		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
 
 #if TCL_SUPPORT_84_BYTECODE
     case INST_CALL_BUILTIN_FUNC1:
@@ -3035,8 +3042,11 @@ TEBCresume(
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	    int cmd;
+	    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
+		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+			codePtr, bcFramePtr, cmd, pc - codePtr->codeStart);
+	    }
 	}
 	iPtr->ensembleRewrite.sourceObjs = objv;
 	iPtr->ensembleRewrite.numRemovedObjs = opnd;
@@ -6971,7 +6981,7 @@ TEBCresume(
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
 	    const unsigned char *pcBeg;
 
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg);
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg, NULL);
 	    DECACHE_STACK_INFO();
 	    TclLogCommandInfo(interp, codePtr->source, bytes,
 		    bytes ? length : 0, pcBeg, tosPtr);
@@ -7153,7 +7163,7 @@ TEBCresume(
 	    }
 
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL);
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL, NULL);
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    pc += (opnd-1);
 	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
@@ -8646,7 +8656,7 @@ ValidatePcAndStackTop(
     if (checkStack && 
 	    ((stackTop < 0) || (stackTop > stackUpperBound))) {
 	int numChars;
-	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL);
+	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL, NULL);
 
 	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min 0, max %i)",
 		stackTop, relativePc, stackUpperBound);
@@ -8730,7 +8740,7 @@ IllegalExprOperandType(
 /*
  *----------------------------------------------------------------------
  *
- * TclGetSrcInfoForPc, GetSrcInfoForPc, TclGetSrcInfoForCmd --
+ * TclGetSrcInfoForPc, GetSrcInfoForPc, TclGetSourceFromFrame --
  *
  *	Given a program counter value, finds the closest command in the
  *	bytecode code unit's CmdLocation array and returns information about
@@ -8751,16 +8761,26 @@ IllegalExprOperandType(
  *----------------------------------------------------------------------
  */
 
-const char *
-TclGetSrcInfoForCmd(
-    Interp *iPtr,
-    int *lenPtr)
+Tcl_Obj *
+TclGetSourceFromFrame(
+    CmdFrame *cfPtr,
+    int objc,
+    Tcl_Obj *const objv[])
 {
-    CmdFrame *cfPtr = iPtr->cmdFramePtr;
-    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
+    if (cfPtr == NULL) {
+        return Tcl_NewListObj(objc, objv);
+    }
+    if (cfPtr->cmdObj == NULL) {
+        if (cfPtr->cmd == NULL) {
+	    ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
-    return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
-	    codePtr, lenPtr, NULL);
+            cfPtr->cmd = GetSrcInfoForPc((unsigned char *)
+		    cfPtr->data.tebc.pc, codePtr, &cfPtr->len, NULL, NULL);
+        }
+        cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
+        Tcl_IncrRefCount(cfPtr->cmdObj);
+    }
+    return cfPtr->cmdObj;
 }
 
 void
@@ -8769,13 +8789,17 @@ TclGetSrcInfoForPc(
 {
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
-    if (cfPtr->cmd.str.cmd == NULL) {
-	cfPtr->cmd.str.cmd = GetSrcInfoForPc(
+    assert(cfPtr->type == TCL_LOCATION_BC);
+
+    if (cfPtr->cmd == NULL) {
+
+	cfPtr->cmd = GetSrcInfoForPc(
 		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
-		&cfPtr->cmd.str.len, NULL);
+		&cfPtr->len, NULL, NULL);
     }
 
-    if (cfPtr->cmd.str.cmd != NULL) {
+    assert(cfPtr->cmd != NULL);
+    {
 	/*
 	 * We now have the command. We can get the srcOffset back and from
 	 * there find the list of word locations for this command.
@@ -8792,7 +8816,7 @@ TclGetSrcInfoForPc(
 	    return;
 	}
 
-	srcOffset = cfPtr->cmd.str.cmd - codePtr->source;
+	srcOffset = cfPtr->cmd - codePtr->source;
 	eclPtr = Tcl_GetHashValue(hePtr);
 
 	for (i=0; i < eclPtr->nuloc; i++) {
@@ -8832,9 +8856,12 @@ GetSrcInfoForPc(
     int *lengthPtr,		/* If non-NULL, the location where the length
 				 * of the command's source should be stored.
 				 * If NULL, no length is stored. */
-    const unsigned char **pcBeg)/* If non-NULL, the bytecode location
+    const unsigned char **pcBeg,/* If non-NULL, the bytecode location
 				 * where the current instruction starts.
 				 * If NULL; no pointer is stored. */
+    int *cmdIdxPtr)		/* If non-NULL, the location where the index
+				 * of the command containing the pc should 
+				 * be stored. */
 {
     register int pcOffset = (pc - codePtr->codeStart);
     int numCmds = codePtr->numCommands;
@@ -8844,6 +8871,7 @@ GetSrcInfoForPc(
     int bestDist = INT_MAX;	/* Distance of pc to best cmd's start pc. */
     int bestSrcOffset = -1;	/* Initialized to avoid compiler warning. */
     int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
+    int bestCmdIdx = -1;
 
     if ((pcOffset < 0) || (pcOffset >= codePtr->numCodeBytes)) {
 	if (pcBeg != NULL) *pcBeg = NULL;
@@ -8911,6 +8939,7 @@ GetSrcInfoForPc(
 		bestDist = dist;
 		bestSrcOffset = srcOffset;
 		bestSrcLength = srcLen;
+		bestCmdIdx = i;
 	    }
 	}
     }
@@ -8938,6 +8967,10 @@ GetSrcInfoForPc(
 
     if (lengthPtr != NULL) {
 	*lengthPtr = bestSrcLength;
+    }
+
+    if (cmdIdxPtr != NULL) {
+	*cmdIdxPtr = bestCmdIdx;
     }
 
     return (codePtr->source + bestSrcOffset);

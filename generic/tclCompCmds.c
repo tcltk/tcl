@@ -95,6 +95,7 @@ TclCompileAppendCmd(
     int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
+    /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
     if (numWords == 1) {
 	return TCL_ERROR;
@@ -552,7 +553,6 @@ TclCompileCatchCmd(
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     int resultIndex, optsIndex, range;
-    int initStackDepth = envPtr->currStackDepth;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -618,12 +618,12 @@ TclCompileCatchCmd(
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
-    SetLineInformation(1);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
-	CompileBody(envPtr, cmdTokenPtr, interp);
+	BODY(cmdTokenPtr, 1);
     } else {
+	SetLineInformation(1);
 	CompileTokens(envPtr, cmdTokenPtr, interp);
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
@@ -750,15 +750,6 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
-    /* 
-     * Result of all this, on either branch, should have been to leave one
-     * operand -- the return code -- on the stack.
-     */
-
-    if (envPtr->currStackDepth != initStackDepth + 1) {
-	Tcl_Panic("in TclCompileCatchCmd, currStackDepth = %d should be %d",
-		  envPtr->currStackDepth, initStackDepth+1);
-    }
     return TCL_OK;
 }
 
@@ -991,6 +982,7 @@ TclCompileDictGetCmd(
      * case is legal, but too special and magic for us to deal with here).
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
@@ -1028,6 +1020,7 @@ TclCompileDictExistsCmd(
      * case is legal, but too special and magic for us to deal with here).
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
@@ -1065,6 +1058,7 @@ TclCompileDictUnsetCmd(
      * compile to bytecode.
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
@@ -1210,6 +1204,7 @@ TclCompileDictMergeCmd(
      * argument, the only thing to do is to verify the dict-ness.
      */
 
+    /* TODO: Consider support for compiling expanded args. (less likely) */
     if (parsePtr->numWords < 2) {
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
@@ -1475,8 +1470,7 @@ CompileDictEachCmd(
      * Compile the loop body itself. It should be stack-neutral.
      */
 
-    SetLineInformation(3);
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, 3);
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(	INST_LOAD_SCALAR, keyVarIndex,		envPtr);
 	TclEmitInstInt4(INST_OVER, 1,				envPtr);
@@ -1659,8 +1653,7 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    SetLineInformation(parsePtr->numWords - 1);
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, parsePtr->numWords - 1);
     ExceptionRangeEnds(envPtr, range);
 
     /*
@@ -1732,6 +1725,7 @@ TclCompileDictAppendCmd(
      * speed quite so much. ;-)
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords<4 || parsePtr->numWords>100) {
 	return TCL_ERROR;
     }
@@ -1784,6 +1778,8 @@ TclCompileDictLappendCmd(
      * There must be three arguments after the command.
      */
 
+    /* TODO: Consider support for compiling expanded args. */
+    /* Probably not.  Why is INST_DICT_LAPPEND limited to one value? */
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
@@ -1830,6 +1826,7 @@ TclCompileDictWithCmd(
      * There must be at least one argument after the command.
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
@@ -2000,8 +1997,7 @@ TclCompileDictWithCmd(
     TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
 
     ExceptionRangeStarts(envPtr, range);
-    SetLineInformation(parsePtr->numWords-1);
-    CompileBody(envPtr, tokenPtr, interp);
+    BODY(tokenPtr, parsePtr->numWords - 1);
     ExceptionRangeEnds(envPtr, range);
 
     /*
@@ -2297,8 +2293,7 @@ TclCompileForCmd(
      * Inline compile the initial command.
      */
 
-    SetLineInformation(1);
-    CompileBody(envPtr, startTokenPtr, interp);
+    BODY(startTokenPtr, 1);
     TclEmitOpcode(INST_POP, envPtr);
 
     /*
@@ -2321,8 +2316,7 @@ TclCompileForCmd(
 
     bodyRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     bodyCodeOffset = ExceptionRangeStarts(envPtr, bodyRange);
-    SetLineInformation(4);
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, 4);
     ExceptionRangeEnds(envPtr, bodyRange);
     TclEmitOpcode(INST_POP, envPtr);
 
@@ -2335,8 +2329,7 @@ TclCompileForCmd(
     nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
     envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
     nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
-    SetLineInformation(3);
-    CompileBody(envPtr, nextTokenPtr, interp);
+    BODY(nextTokenPtr, 3);
     ExceptionRangeEnds(envPtr, nextRange);
     TclEmitOpcode(INST_POP, envPtr);
 
@@ -2493,7 +2486,7 @@ CompileEachloopCmd(
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
-    int jumpBackDist, jumpBackOffset, infoIndex, range, bodyIndex;
+    int jumpBackDist, jumpBackOffset, infoIndex, range;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2533,8 +2526,6 @@ CompileEachloopCmd(
 	return TCL_ERROR;
     }
 
-    bodyIndex = i-1;
-
     /*
      * Allocate storage for the varcList and varvList arrays if necessary.
      */
@@ -2573,7 +2564,7 @@ CompileEachloopCmd(
 
 	Tcl_DStringInit(&varList);
 	TclDStringAppendToken(&varList, &tokenPtr[1]);
-	code = Tcl_SplitList(interp, Tcl_DStringValue(&varList),
+	code = Tcl_SplitList(NULL, Tcl_DStringValue(&varList),
 		&varcList[loopIndex], &varvList[loopIndex]);
 	Tcl_DStringFree(&varList);
 	if (code != TCL_OK) {
@@ -2675,8 +2666,7 @@ CompileEachloopCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	if ((i%2 == 0) && (i > 0)) {
-	    SetLineInformation(i);
-	    CompileTokens(envPtr, tokenPtr, interp);
+	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tempVar = (firstValueTemp + loopIndex);
 	    Emit14Inst(		INST_STORE_SCALAR, tempVar,	envPtr);
 	    TclEmitOpcode(	INST_POP,			envPtr);
@@ -2713,9 +2703,8 @@ CompileEachloopCmd(
      * Inline compile the loop body.
      */
 
-    SetLineInformation(bodyIndex);
     ExceptionRangeStarts(envPtr, range);
-    CompileBody(envPtr, bodyTokenPtr, interp);
+    BODY(bodyTokenPtr, numWords - 1);
     ExceptionRangeEnds(envPtr, range);
 
     if (collect == TCL_EACH_COLLECT) {
@@ -3064,7 +3053,8 @@ TclCompileFormatCmd(
     ckfree(objv);
     Tcl_DecrRefCount(formatObj);
     if (tmpObj == NULL) {
-	return TCL_ERROR;
+	TclCompileSyntaxError(interp, envPtr);
+	return TCL_OK;
     }
 
     /*
@@ -3242,10 +3232,7 @@ TclPushVarName(
     CompileEnv *envPtr,		/* Holds resulting instructions. */
     int flags,			/* TCL_NO_LARGE_INDEX | TCL_NO_ELEMENT. */
     int *localIndexPtr,		/* Must not be NULL. */
-    int *isScalarPtr,		/* Must not be NULL. */
-    int line,			/* Line the token starts on. */
-    int *clNext)		/* Reference to offset of next hidden cont.
-				 * line. */
+    int *isScalarPtr)		/* Must not be NULL. */
 {
     register const char *p;
     const char *name, *elName;
@@ -3425,8 +3412,6 @@ TclPushVarName(
 
 	if (elName != NULL && !(flags & TCL_NO_ELEMENT)) {
 	    if (elNameChars) {
-		envPtr->line = line;
-		envPtr->clNext = clNext;
 		TclCompileTokens(interp, elemTokenPtr, elemTokenCount,
 			envPtr);
 	    } else {
@@ -3438,8 +3423,6 @@ TclPushVarName(
 	 * The var name isn't simple: compile and push it.
 	 */
 
-	envPtr->line = line;
-	envPtr->clNext = clNext;
 	CompileTokens(envPtr, varTokenPtr, interp);
     }
 
