@@ -97,7 +97,6 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 
-static void             ContLineLocFree(char *clientData);
 static void             TclThreadFinalizeContLines(ClientData clientData);
 static ThreadSpecificData *TclGetContLineTable(void);
 
@@ -805,43 +804,12 @@ TclThreadFinalizeContLines(
 
     for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	/*
-	 * We are not using Tcl_EventuallyFree (as in TclFreeObj()) because
-	 * here we can be sure that the compiler will not hold references to
-	 * the data in the hashtable, and using TEF might bork the
-	 * finalization sequence.
-	 */
-
-	ContLineLocFree(Tcl_GetHashValue(hPtr));
+	ckfree(Tcl_GetHashValue(hPtr));
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(tsdPtr->lineCLPtr);
     ckfree(tsdPtr->lineCLPtr);
     tsdPtr->lineCLPtr = NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ContLineLocFree --
- *
- *	The freProc for continuation line location tables.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Releases memory.
- *
- * TIP #280
- *----------------------------------------------------------------------
- */
-
-static void
-ContLineLocFree(
-    char *clientData)
-{
-    ckfree(clientData);
 }
 
 /*
@@ -1405,7 +1373,7 @@ TclFreeObj(
 	if (tsdPtr->lineCLPtr) {
             hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
-		Tcl_EventuallyFree(Tcl_GetHashValue(hPtr), ContLineLocFree);
+		ckfree(Tcl_GetHashValue(hPtr));
 		Tcl_DeleteHashEntry(hPtr);
 	    }
 	}
@@ -1496,7 +1464,7 @@ TclFreeObj(
 	if (tsdPtr->lineCLPtr) {
             hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
-		Tcl_EventuallyFree(Tcl_GetHashValue(hPtr), ContLineLocFree);
+		ckfree(Tcl_GetHashValue(hPtr));
 		Tcl_DeleteHashEntry(hPtr);
 	    }
 	}
