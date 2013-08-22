@@ -618,6 +618,21 @@ test coroutine-7.4 {Bug 8ff0cb9fe1} -setup {
     coroutine demo lsort -command foo {a b}
 } -result {b a}
 
+test coroutine-7.5 {return codes} {
+    set result {}
+    foreach code {0 1 2 3 4 5} {
+	lappend result [catch {coroutine demo return -level 0 -code $code}]
+    }
+    set result
+} {0 1 2 3 4 5}
+
+test coroutine-7.6 {Early yield crashes} {
+    proc foo args {}
+    trace add execution foo enter {catch yield}
+    coroutine demo foo
+    rename foo {}
+} {}
+
 
 # cleanup
 unset lambda
