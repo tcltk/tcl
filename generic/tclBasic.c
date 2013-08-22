@@ -4220,9 +4220,9 @@ Dispatch(
     ClientData clientData = data[1];
     int objc = PTR2INT(data[2]);
     Tcl_Obj **objv = data[3];
+#ifdef USE_DTRACE
     Interp *iPtr = (Interp *) interp;
 
-#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
 	int i = 0;
