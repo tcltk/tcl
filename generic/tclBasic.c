@@ -4282,6 +4282,7 @@ TclNRRunCallbacks(
 	(void) Tcl_GetObjResult(interp);
     }
 
+    iPtr->execEnvPtr->stackLevel++;
     while (TOP_CB(interp) != rootPtr) {
 	callbackPtr = TOP_CB(interp);
 	procPtr = callbackPtr->procPtr;
@@ -4289,6 +4290,7 @@ TclNRRunCallbacks(
 	result = procPtr(callbackPtr->data, interp, result);
 	TCLNR_FREE(interp, callbackPtr);
     }
+    iPtr->execEnvPtr->stackLevel--;
     return result;
 }
 
@@ -8510,7 +8512,7 @@ NRCoroutineExitCallback(
     TclDeleteExecEnv(corPtr->eePtr);
     corPtr->eePtr = NULL;
 
-    corPtr->stackLevel = NULL;
+    corPtr->stackLevel = -1;
 
     /*
      * #280.
@@ -8554,10 +8556,9 @@ TclNRCoroutineActivateCallback(
 {
     CoroutineData *corPtr = data[0];
     int type = PTR2INT(data[1]);
-    int numLevels, unused;
-    int *stackLevel = &unused;
+    int numLevels;
 
-    if (!corPtr->stackLevel) {
+    if (COR_IS_SUSPENDED(corPtr)) {
         /*
          * -- Coroutine is suspended --
          * Push the callback to restore the caller's context on yield or
@@ -8572,7 +8573,7 @@ TclNRCoroutineActivateCallback(
          * the interp's environment to make it suitable to run this coroutine.
          */
 
-        corPtr->stackLevel = stackLevel;
+        corPtr->stackLevel = corPtr->eePtr->stackLevel;
         numLevels = corPtr->auxNumLevels;
         corPtr->auxNumLevels = iPtr->numLevels;
 
@@ -8586,7 +8587,7 @@ TclNRCoroutineActivateCallback(
          * Coroutine is active: yield
          */
 
-        if (corPtr->stackLevel != stackLevel) {
+        if (corPtr->stackLevel != corPtr->eePtr->stackLevel) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "cannot yield: C stack busy", -1));
             Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
@@ -8602,7 +8603,7 @@ TclNRCoroutineActivateCallback(
             Tcl_Panic("Yield received an option which is not implemented");
         }
 
-        corPtr->stackLevel = NULL;
+        corPtr->stackLevel = -1;
 
         numLevels = iPtr->numLevels;
         iPtr->numLevels = corPtr->auxNumLevels;
@@ -8846,7 +8847,7 @@ TclNRCoroutineObjCmd(
     corPtr->running.varFramePtr = iPtr->rootFramePtr;
     corPtr->running.cmdFramePtr = NULL;
     corPtr->running.lineLABCPtr = corPtr->lineLABCPtr;
-    corPtr->stackLevel = NULL;
+    corPtr->stackLevel = -1;
     corPtr->auxNumLevels = 0;
 
     /*

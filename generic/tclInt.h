@@ -1438,7 +1438,7 @@ typedef struct CoroutineData {
     CorContext caller;
     CorContext running;
     Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
-    void *stackLevel;
+    int stackLevel;
     int auxNumLevels;		/* While the coroutine is running the
 				 * numLevels of the create/resume command is
 				 * stored here; for suspended coroutines it
@@ -1456,11 +1456,12 @@ typedef struct ExecEnv {
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
     struct CoroutineData *corPtr;
+    int stackLevel;
     int rewind;
 } ExecEnv;
 
 #define COR_IS_SUSPENDED(corPtr) \
-    ((corPtr)->stackLevel == NULL)
+    ((corPtr)->stackLevel == -1)
 
 /*
  * The definitions for the LiteralTable and LiteralEntry structures. Each

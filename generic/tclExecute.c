@@ -879,6 +879,7 @@ TclCreateExecEnv(
     eePtr->interp = interp;
     eePtr->callbackPtr = NULL;
     eePtr->corPtr = NULL;
+    eePtr->stackLevel = 0;
     eePtr->rewind = 0;
 
     esPtr->prevPtr = NULL;
