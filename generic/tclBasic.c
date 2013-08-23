@@ -4095,8 +4095,6 @@ TclNREvalObjv(
     Interp *iPtr = (Interp *) interp;
     int result;
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    Command **cmdPtrPtr;
-    NRE_callback *callbackPtr;
     
     iPtr->lookupNsPtr = NULL;
 
@@ -4111,13 +4109,10 @@ TclNREvalObjv(
      */
 
     if (iPtr->deferredCallbacks) {
-        callbackPtr = iPtr->deferredCallbacks;
         iPtr->deferredCallbacks = NULL;
     } else {
 	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
-        callbackPtr = TOP_CB(interp);
     }
-    cmdPtrPtr = (Command **) &(callbackPtr->data[0]);
 
     iPtr->numLevels++;
     result = TclInterpReady(interp);
@@ -4195,14 +4190,6 @@ TclNREvalObjv(
 	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
 	}
     }
-
-    /*
-     * Fix the original callback to point to the now known cmdPtr. Insure that
-     * the Command struct lives until the command returns.
-     */
-
-    *cmdPtrPtr = cmdPtr;
-    cmdPtr->refCount++;
 
     TclNRAddCallback(interp, Dispatch,
 	    cmdPtr->nreProc ? cmdPtr->nreProc : cmdPtr->objProc,
@@ -4297,13 +4284,8 @@ NRCommand(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Command *cmdPtr = data[0];
-    /* int cmdStart = PTR2INT(data[1]); NOT USED HERE */
 
-    if (cmdPtr) {
-	TclCleanupCommandMacro(cmdPtr);
-    }
-    ((Interp *)interp)->numLevels--;
+    iPtr->numLevels--;
 
      /*
       * If there is a tailcall, schedule it
