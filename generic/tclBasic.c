@@ -158,6 +158,7 @@ static Tcl_NRPostProc	TEOV_Exception;
 static Tcl_NRPostProc	TEOV_NotFoundCallback;
 static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
+static Tcl_NRPostProc	EvalObjvCore;
 static Tcl_NRPostProc	Dispatch;
 
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
@@ -4095,17 +4096,8 @@ TclNREvalObjv(
 				 * requested Command struct to be invoked. */
 {
     Interp *iPtr = (Interp *) interp;
-    int result;
-    Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    int weLookUp = (cmdPtr == NULL);
-    
-    iPtr->lookupNsPtr = NULL;
 
     /*
-     * Push a callback with cleanup tasks for commands; the cmdPtr at data[0]
-     * will be filled later when the command is found: save its address at
-     * objProcPtr.
-     *
      * data[1] stores a marker for use by tailcalls; it will be set to 1 by
      * command redirectors (imports, alias, ensembles) so that tailcalls
      * finishes the source command and not just the target.
@@ -4118,11 +4110,38 @@ TclNREvalObjv(
     }
 
     iPtr->numLevels++;
-    result = TclInterpReady(interp);
+    TclNRAddCallback(interp, EvalObjvCore, cmdPtr, INT2PTR(flags),
+	    INT2PTR(objc), objv);
+    return TCL_OK;
+}
 
-    if ((result != TCL_OK) || (objc == 0)) {
-	return result;
+static int
+EvalObjvCore(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Command *cmdPtr = data[0];
+    int flags = PTR2INT(data[1]);
+    int objc = PTR2INT(data[2]);
+    Tcl_Obj **objv = data[3];
+    Interp *iPtr = (Interp *) interp;
+    Namespace *lookupNsPtr = iPtr->lookupNsPtr;
+    int weLookUp = (cmdPtr == NULL);
+    
+    if (TCL_OK != TclInterpReady(interp)) {
+	return TCL_ERROR;
     }
+
+    if (objc == 0) {
+	return TCL_OK;
+    }
+
+    if (TclLimitExceeded(iPtr->limit)) {
+	return TCL_ERROR;
+    }
+
+    iPtr->lookupNsPtr = NULL;
 
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
@@ -4167,11 +4186,6 @@ TclNREvalObjv(
 	return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
     }
 
-    iPtr->cmdCount++;
-    if (TclLimitExceeded(iPtr->limit)) {
-	return TCL_ERROR;
-    }
-
     /*
      * Found a command! The real work begins now ...
      */
@@ -4214,9 +4228,9 @@ Dispatch(
     ClientData clientData = data[1];
     int objc = PTR2INT(data[2]);
     Tcl_Obj **objv = data[3];
-#ifdef USE_DTRACE
     Interp *iPtr = (Interp *) interp;
 
+#ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
 	int i = 0;
@@ -4245,6 +4259,7 @@ Dispatch(
     }
 #endif /* USE_DTRACE */
 
+    iPtr->cmdCount++;
     return objProc(clientData, interp, objc, objv);
 }
 
