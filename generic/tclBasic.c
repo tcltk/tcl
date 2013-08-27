@@ -4197,9 +4197,77 @@ EvalObjvCore(
 	 * necessary.
 	 */
 
-	result = TEOV_RunEnterTraces(interp, &cmdPtr, TclGetSourceFromFrame(
-		flags & TCL_EVAL_SOURCE_IN_FRAME ?  iPtr->cmdFramePtr : NULL,
-		objc, objv), objc, objv, lookupNsPtr, weLookUp);
+    int traceCode = TCL_OK;
+    int cmdEpoch = cmdPtr->cmdEpoch;
+    int newEpoch;
+    const char *command;
+    int length, deleted;
+
+    Tcl_Obj *commandPtr = TclGetSourceFromFrame(
+	    flags & TCL_EVAL_SOURCE_IN_FRAME ?  iPtr->cmdFramePtr : NULL,
+	    objc, objv);
+
+    Tcl_IncrRefCount(commandPtr);
+    command = Tcl_GetStringFromObj(commandPtr, &length);
+
+    /*
+     * Call trace functions.
+     * Execute any command or execution traces. Note that we bump up the
+     * command's reference count for the duration of the calling of the traces
+     * so that the structure doesn't go away underneath our feet.
+     */
+
+    cmdPtr->refCount++;
+    if (iPtr->tracePtr) {
+	traceCode = TclCheckInterpTraces(interp, command, length,
+		cmdPtr, TCL_OK, TCL_TRACE_ENTER_EXEC, objc, objv);
+    }
+    if ((cmdPtr->flags & CMD_HAS_EXEC_TRACES) && (traceCode == TCL_OK)) {
+	traceCode = TclCheckExecutionTraces(interp, command, length,
+		cmdPtr, TCL_OK, TCL_TRACE_ENTER_EXEC, objc, objv);
+    }
+    newEpoch = cmdPtr->cmdEpoch;
+    deleted = cmdPtr->flags & CMD_IS_DELETED;
+    TclCleanupCommandMacro(cmdPtr);
+
+    if (cmdEpoch != newEpoch) {
+
+	/*
+	 * The traces did something to the traced command.  How should
+	 * we respond?
+	 *
+	 * If we got the trace command by looking up a command name, we
+	 * should just look it up again.
+	 */
+	if (weLookUp) {
+	    cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
+	} else {
+
+	    /*
+	     * If we did not look up a command name, we got the cmdPtr
+	     * from a caller.  If that cmdPtr has been deleted, we need
+	     * to avoid a crash.  Otherwise, press on.  We don't have
+	     * any foundation to claim a better answer.
+	     */
+	    if (deleted) {
+		cmdPtr = NULL;
+	    }
+	}
+    }
+
+    if (cmdPtr && (traceCode == TCL_OK)) {
+	/*
+	 * Command was found: push a record to schedule the leave traces.
+	 */
+
+	TclNRAddCallback(interp, TEOV_RunLeaveTraces, INT2PTR(objc),
+		commandPtr, cmdPtr, objv);
+	cmdPtr->refCount++;
+    } else {
+	Tcl_DecrRefCount(commandPtr);
+    }
+    result = traceCode;
+
 	if (result != TCL_OK) {
 	    return result;
 	}
