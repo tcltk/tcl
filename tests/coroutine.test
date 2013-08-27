@@ -633,6 +633,15 @@ test coroutine-7.6 {Early yield crashes} {
     rename foo {}
 } {}
 
+test coroutine-7.7 {Bug 2486550} -setup {
+    interp hide {} yield
+} -body {
+    coroutine demo interp invokehidden {} yield ok
+} -cleanup {
+    demo
+    interp expose {} yield
+} -result ok
+
 
 # cleanup
 unset lambda
