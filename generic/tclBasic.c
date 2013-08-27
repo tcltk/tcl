@@ -4230,6 +4230,11 @@ EvalObjvCore(
     deleted = cmdPtr->flags & CMD_IS_DELETED;
     TclCleanupCommandMacro(cmdPtr);
 
+    if (traceCode != TCL_OK) {
+	Tcl_DecrRefCount(commandPtr);
+	return traceCode;
+    }
+
     if (cmdEpoch != newEpoch) {
 
 	/*
@@ -4255,7 +4260,7 @@ EvalObjvCore(
 	}
     }
 
-    if (cmdPtr && (traceCode == TCL_OK)) {
+    if (cmdPtr) {
 	/*
 	 * Command was found: push a record to schedule the leave traces.
 	 */
@@ -4266,11 +4271,6 @@ EvalObjvCore(
     } else {
 	Tcl_DecrRefCount(commandPtr);
     }
-    result = traceCode;
-
-	if (result != TCL_OK) {
-	    return result;
-	}
 	if (cmdPtr == NULL) {
 	    if (weLookUp) {
 		return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
