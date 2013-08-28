@@ -4121,13 +4121,21 @@ EvalObjvCore(
     Tcl_Interp *interp,
     int result)
 {
-    Command *cmdPtr = data[0];
+    Command *cmdPtr = NULL, *preCmdPtr = data[0];
     int flags = PTR2INT(data[1]);
     int objc = PTR2INT(data[2]);
     Tcl_Obj **objv = data[3];
     Interp *iPtr = (Interp *) interp;
+
+    /*
+     * Capture the namespace we should do command name resolution in, as
+     * instructed by our caller sneaking it in to us in a private interp
+     * field.  Clear that field right away so we cannot possibly have its
+     * use leak where it should not.  The sneaky message pass is done.
+     */
+
     Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    int weLookUp = (cmdPtr == NULL);
+    iPtr->lookupNsPtr = NULL;
     
     if (TCL_OK != TclInterpReady(interp)) {
 	return TCL_ERROR;
@@ -4141,8 +4149,6 @@ EvalObjvCore(
 	return TCL_ERROR;
     }
 
-    iPtr->lookupNsPtr = NULL;
-
     /*
      * Push records for task to be done on return, in INVERSE order. First, if
      * needed, the exception handlers (as they should happen last).
@@ -4152,45 +4158,43 @@ EvalObjvCore(
 	TEOV_PushExceptionHandlers(interp, objc, objv, flags);
     }
 
-    if (!weLookUp) {
-	goto commandFound;
-    }
-
-    /*
-     * Configure evaluation context to match the requested flags.
-     */
-
-    if ((flags & TCL_EVAL_INVOKE) || lookupNsPtr) {
-	if (!lookupNsPtr) {
-	    lookupNsPtr = iPtr->globalNsPtr;
-	}
+    if (preCmdPtr) {
+	cmdPtr = preCmdPtr;
     } else {
-	if (flags & TCL_EVAL_GLOBAL) {
-	    TEOV_SwitchVarFrame(interp);
-	    lookupNsPtr = iPtr->globalNsPtr;
-	}
 
 	/*
-	 * TCL_EVAL_INVOKE was not set: clear rewrite rules
+	 * Configure evaluation context to match the requested flags.
 	 */
 
-	iPtr->ensembleRewrite.sourceObjs = NULL;
+	if (lookupNsPtr) {
+	    /*
+	     * Do nothing.  Caller gave us the lookup namespace.  Use it.
+	     * Overrides TCL_EVAL_GLOBAL.  For both lookup and eval.
+	     */
+	} else if (flags & TCL_EVAL_INVOKE) {
+	    lookupNsPtr = iPtr->globalNsPtr;
+	} else {
+
+	    /*
+	     * TCL_EVAL_INVOKE was not set: clear rewrite rules
+	     */
+
+	    iPtr->ensembleRewrite.sourceObjs = NULL;
+
+	    if (flags & TCL_EVAL_GLOBAL) {
+		/* TODO: Check we do this whenever needed. */
+		TEOV_SwitchVarFrame(interp);
+		lookupNsPtr = iPtr->globalNsPtr;
+	    }
+	}
+
+	cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
+	if (!cmdPtr) {
+	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
+	}
+
     }
 
-    /*
-     * Lookup the command
-     */
-
-    cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
-    if (!cmdPtr) {
-	return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
-    }
-
-    /*
-     * Found a command! The real work begins now ...
-     */
-
-  commandFound:
     if (iPtr->tracePtr || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
 	/*
 	 * Call enter traces. They will schedule a call to the leave traces if
@@ -4244,7 +4248,7 @@ EvalObjvCore(
 	     * If we got the trace command by looking up a command name, we
 	     * should just look it up again.
 	     */
-	    if (weLookUp) {
+	    if (preCmdPtr == NULL) {
 		cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
 	    } else {
 
@@ -4273,7 +4277,7 @@ EvalObjvCore(
 	}
 
 	if (cmdPtr == NULL) {
-	    if (weLookUp) {
+	    if (preCmdPtr == NULL) {
 		return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
 	    }
 	    /* Is this right??? */
@@ -4798,7 +4802,6 @@ TEOV_LookupCmdFromObj(
 
     if (lookupNsPtr) {
 	iPtr->varFramePtr->nsPtr = lookupNsPtr;
-	iPtr->lookupNsPtr = NULL;
     }
     cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, namePtr);
     iPtr->varFramePtr->nsPtr = savedNsPtr;
