@@ -2201,6 +2201,7 @@ typedef struct Interp {
 #define TCL_ALLOW_EXCEPTIONS		0x04
 #define TCL_EVAL_FILE			0x02
 #define TCL_EVAL_SOURCE_IN_FRAME	0x10
+#define TCL_EVAL_NORESOLVE		0x20
 
 /*
  * Flag bits for Interp structures:
