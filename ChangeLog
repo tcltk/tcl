@@ -1,3 +1,16 @@
+2013-04-03  Don Porter  <dgp@users.sourceforge.net>
+
+	* generic/tcl.h:	Bump to 8.5.15 for release.
+	* library/init.tcl:
+	* tools/tcl.wse.in:
+	* unix/configure.in:
+	* unix/tcl.spec:
+	* win/configure.in:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2013-08-01  Harald Oehlmann  <oehhar@users.sf.net>
 
 	* tclUnixNotify.c Tcl_InitNotifier: Bug [a0bc856dcd]
