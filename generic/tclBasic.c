@@ -4125,18 +4125,18 @@ EvalObjvCore(
     int objc = PTR2INT(data[2]);
     Tcl_Obj **objv = data[3];
     Interp *iPtr = (Interp *) interp;
+    Namespace *lookupNsPtr = NULL;
     int enterTracesDone = 0;
-
+    
     /*
-     * Capture the namespace we should do command name resolution in, as
-     * instructed by our caller sneaking it in to us in a private interp
-     * field.  Clear that field right away so we cannot possibly have its
-     * use leak where it should not.  The sneaky message pass is done.
+     * Push records for task to be done on return, in INVERSE order. First, if
+     * needed, the exception handlers (as they should happen last).
      */
 
-    Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    iPtr->lookupNsPtr = NULL;
-    
+    if (!(flags & TCL_EVAL_NOERR)) {
+	TEOV_PushExceptionHandlers(interp, objc, objv, flags);
+    }
+
     if (TCL_OK != TclInterpReady(interp)) {
 	return TCL_ERROR;
     }
@@ -4150,25 +4150,23 @@ EvalObjvCore(
     }
 
     /*
-     * Push records for task to be done on return, in INVERSE order. First, if
-     * needed, the exception handlers (as they should happen last).
-     * TODO: Consider moving this up.
-     */
-
-    if (!(flags & TCL_EVAL_NOERR)) {
-	TEOV_PushExceptionHandlers(interp, objc, objv, flags);
-    }
-
-    /*
      * Configure evaluation context to match the requested flags.
      */
 
-    if (lookupNsPtr) {
+    if (iPtr->lookupNsPtr) {
+
 	/*
-	 * Do nothing.  Caller gave us the lookup namespace.  Use it.
-	 * Overrides TCL_EVAL_GLOBAL.  For both lookup and eval.
+	 * Capture the namespace we should do command name resolution in, as
+	 * instructed by our caller sneaking it in to us in a private interp
+	 * field.  Clear that field right away so we cannot possibly have its
+	 * use leak where it should not.  The sneaky message pass is done.
+	 *
+	 * Use of this mechanism overrides the TCL_EVAL_GLOBAL flag.
 	 * TODO: Is that a bug?
 	 */
+
+	lookupNsPtr = iPtr->lookupNsPtr;
+	iPtr->lookupNsPtr = NULL;
     } else if (flags & TCL_EVAL_INVOKE) {
 	lookupNsPtr = iPtr->globalNsPtr;
     } else {
@@ -4185,16 +4183,29 @@ EvalObjvCore(
 	}
     }
 
+    /*
+     * Lookup the Command to dispatch.
+     */
+
     reresolve:
+    assert(cmdPtr == NULL);
     if (preCmdPtr) {
-	if (preCmdPtr->flags & CMD_IS_DELETED) {
+	/* Caller gave it to us */
+	if (!(preCmdPtr->flags & CMD_IS_DELETED)) {
+	    /* So long as it exists, use it. */
+	    cmdPtr = preCmdPtr;
+	} else if (flags & TCL_EVAL_NORESOLVE) {
+	    /*
+	     * When it's been deleted, and we're told not to attempt
+	     * resolving it ourselves, all we can do is raise an error.
+	     */
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "attempt to invoke a deleted command"));
 	    Tcl_SetErrorCode(interp, "TCL", "EVAL", "DELETEDCOMMAND", NULL);
 	    return TCL_ERROR;
 	}
-	cmdPtr = preCmdPtr;
-    } else {
+    }
+    if (cmdPtr == NULL) {
 	cmdPtr = TEOV_LookupCmdFromObj(interp, objv[0], lookupNsPtr);
 	if (!cmdPtr) {
 	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
@@ -4217,6 +4228,11 @@ EvalObjvCore(
 	    /*
 	     * Send any exception from enter traces back as an exception
 	     * raised by the traced command.
+	     * TODO: Is this a bug?  Letting an execution trace BREAK or
+	     * CONTINUE or RETURN in the place of the traced command?
+	     * Would either converting all exceptions to TCL_ERROR, or
+	     * just swallowing them be better?  (Swallowing them has the
+	     * problem of permanently hiding program errors.)
 	     */
 
 	    if (code != TCL_OK) {
@@ -6524,9 +6540,14 @@ TclNRInvoke(
     /* Avoid the exception-handling brain damage when numLevels == 0 . */
     iPtr->numLevels++;
     Tcl_NRAddCallback(interp, NRPostInvoke, NULL, NULL, NULL, NULL);
- 
-    /* TODO: how to get re-resolution right */
-    return TclNREvalObjv(interp, objc, objv, 0, cmdPtr);
+
+    /*
+     * Normal command resolution of objv[0] isn't going to find cmdPtr.
+     * That's the whole point of **hidden** commands.  So tell the
+     * Eval core machinery not to even try (and risk finding something wrong).
+     */
+
+    return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NORESOLVE, cmdPtr);
 }
 
 static int
