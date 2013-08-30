@@ -7735,6 +7735,49 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 --- Released 8.5.14, April 3, 2013 --- See ChangeLog for details ---
 
-2013-05-08 (bug fix)[3036566] Honor language packs on Vista+ to get initial locale (oehlmann)
+2013-04-03 (bug fix)[3205320] outsmart gcc on powerpc detect stack direction
+
+2013-04-04 (bug fix) Support URLs with query but no path (max)
+=> http 2.7.12
+
+2013-04-08 (bug fix)[3610026] regexp crash on color overflow (linnakangas)
+
+2013-04-16 (bug fix)[3610404] crash in enter traces (found with TclOO) (porter)
+
+2013-04-30 (enhancement) broaden glibc version detection (kupries)
+=> platform 1.0.12
+
+2013-05-01 (bug fix)[2901998] inconsistent I/O buffering (ferrieux)
+
+2013-05-06 (platform support) Cygwin64 (nijtmans)
+
+2013-05-16 (platform support) mingw-4.0 (nijtmans)
+
+2013-05-19 (platform support) FreeBSD updates (cerutti)
+
+2013-05-22 (bug fix)[3613609] [lsort -nocase] failed on non-ASCII (fellows)
+
+2013-05-28 (bug fix)[3036566] Use language packs (Vista+) locale (oehlmann)
 => msgcat 1.5.2
 
+2013-06-03 Restored lost performance appending to long strings (elby,porter)
+
+2013-06-17 (bug fix)[a876646] [:cntrl:] includes \x00 to \x1f (nijtmans)
+
+2013-06-17 [string is space \u180e] => 1 (nijtmans)
+
+2013-06-27 (bug fix)[983509] missing encodings for config values (nijtmans)
+
+2013-06-27 (bug fix)[32afa6] corrected dirent64 check (griffin)
+
+2013-07-06 tzdata updated to Olson's tzdata2013d (kenny)
+
+2013-07-26 (bug fix)[6585b2] regexp {(\w).*?\1} abb (lane)
+
+2013-07-29 [string is space \u202f] => 1 (nijtmans)
+
+2013-08-01 [a0bc85] Limited support for fork with threads (for Rivet) (nijtmans)
+
+2013-08-15 Errors from execution traces become errors of the command (porter)
+
+--- Released 8.5.15, September 16, 2013 --- See ChangeLog for details ---
