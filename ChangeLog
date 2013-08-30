@@ -1,4 +1,4 @@
-2013-04-03  Don Porter  <dgp@users.sourceforge.net>
+2013-08-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump to 8.5.15 for release.
 	* library/init.tcl:
