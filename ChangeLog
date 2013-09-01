@@ -1,3 +1,9 @@
+2013-09-01  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (BinaryDecodeHex): [Bug b98fa55285]: Ensure that
+	whitespace at the end of a string don't cause the decoder to drop the
+	last decoded byte.
+
 2013-08-03  Donal Fellows  <dkf@users.sf.net>
 
 	* library/auto.tcl: [Patch 3611643]: Allow TclOO classes to be found
