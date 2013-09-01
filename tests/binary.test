@@ -2499,6 +2499,34 @@ test binary-71.9 {binary decode hex} -body {
 test binary-71.10 {binary decode hex} -body {
     string length [binary decode hex " "]
 } -result 0
+test binary-71.11 {binary decode hex: Bug b98fa55285} -body {
+    apply {{} {
+	set str "137b6f95e7519389e7c4b36599781e2ccf492699649249aae43fbe8c26\n"
+	set decoded [binary decode hex $str]
+	list [string length $decoded] [scan [string index $decoded end] %c]
+    }}
+} -result {29 38}
+test binary-71.12 {binary decode hex: Bug b98fa55285 cross check} -body {
+    apply {{} {
+	set str "137b6f95e7519389e7c4b36599781e2ccf492699649249aae43fbe8c2\n"
+	set decoded [binary decode hex $str]
+	list [string length $decoded] [scan [string index $decoded end] %c]
+    }}
+} -result {28 140}
+test binary-71.13 {binary decode hex: Bug b98fa55285 cross check} -body {
+    apply {{} {
+	set str "137b6f95e7519389e7c4b36599781e2ccf492699649249aae43fbe8c2\n\n"
+	set decoded [binary decode hex $str]
+	list [string length $decoded] [scan [string index $decoded end] %c]
+    }}
+} -result {28 140}
+test binary-71.14 {binary decode hex: Bug b98fa55285 cross check} -body {
+    apply {{} {
+	set str "137b6f95e7519389e7c4b36599781e2ccf492699649249aae43fbe8c2\n\n\n"
+	set decoded [binary decode hex $str]
+	list [string length $decoded] [scan [string index $decoded end] %c]
+    }}
+} -result {28 140}
 
 test binary-72.1 {binary encode base64} -body {
     binary encode base64
