@@ -4679,6 +4679,9 @@ TEOV_RunEnterTraces(
     TclCleanupCommandMacro(cmdPtr);
 
     if (traceCode != TCL_OK) {
+	if (traceCode == TCL_ERROR) {
+	    iPtr->flags |= ERR_ALREADY_LOGGED;
+	}
 	return traceCode;
     }
     if (cmdEpoch != newEpoch) {
@@ -4725,6 +4728,9 @@ TEOV_RunLeaveTraces(
     TclCleanupCommandMacro(cmdPtr);
 
     if (traceCode != TCL_OK) {
+	if (traceCode == TCL_ERROR) {
+	    iPtr->flags |= ERR_ALREADY_LOGGED;
+	}
 	return traceCode;
     }
     return result;
