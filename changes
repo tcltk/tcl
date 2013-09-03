@@ -7768,7 +7768,9 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 2013-06-27 (bug fix)[983509] missing encodings for config values (nijtmans)
 
-2013-06-27 (bug fix)[32afa6] corrected dirent64 check (griffin)
+2013-06-27 (bug fix)[34538b] apply DST in 2099 (lang)
+
+2013-07-02 (bug fix)[32afa6] corrected dirent64 check (griffin)
 
 2013-07-06 tzdata updated to Olson's tzdata2013d (kenny)
 
@@ -7777,6 +7779,8 @@ Many revisions to better support a Cygwin environment (nijtmans)
 2013-07-29 [string is space \u202f] => 1 (nijtmans)
 
 2013-08-01 [a0bc85] Limited support for fork with threads (for Rivet) (nijtmans)
+
+2013-08-14 (bug fix)[a16752] Missing command delete callbacks (porter)
 
 2013-08-15 Errors from execution traces become errors of the command (porter)
 
