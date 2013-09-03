@@ -8292,4 +8292,4 @@ reported usage of large expressions (porter)
 
 Many optmizations, improvements, and tightened stack management in bytecode.
 
---- Released 8.6.1, Septemer 18, 2013 --- See ChangeLog for details ---
+--- Released 8.6.1, Septemer 18, 2013 --- http://core.tcl.tk/tcl/ for details 
