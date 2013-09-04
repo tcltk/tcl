@@ -276,7 +276,10 @@ test zlib-8.10 {transformation and fconfigure} -setup {
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
     set compressed [read $inSide]
-    catch {zlib inflate $compressed} err opt
+    catch {
+	zlib inflate $compressed
+	throw UNREACHABLE "should be unreachable"
+    } err opt
     list [string length [zlib deflate $spdyHeaders]] \
 	[string length $compressed] \
 	$err [dict get $opt -errorcode]
