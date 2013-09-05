@@ -45,7 +45,7 @@
  * not hard to remedy if it's a problem in practice.
  */
 
-#define TclBrodnikArray(T)						\
+#define TclBrodnikArrayDeclare(T,scope)					\
 									\
 typedef struct BrodnikArray_ ## T BA_ ## T;				\
 									\
@@ -57,7 +57,24 @@ struct BrodnikArray_ ## T {						\
     T *		store[1];						\
 };									\
 									\
-static BA_ ## T *							\
+scope	BA_ ## T *	BA_ ## T ## _Create();				\
+scope	void		BA_ ## T ## _Destroy(BA_ ## T *a);		\
+scope	size_t		BA_ ## T ## _Size(BA_ ## T *a);			\
+scope	BA_ ## T *	BA_ ## T ## _Grow(BA_ ## T *a);			\
+scope	BA_ ## T *	BA_ ## T ## _Shrink(BA_ ## T *a);		\
+scope	void		BA_ ## T ## _Copy(T *p,	BA_ ## T *a);		\
+scope	BA_ ## T *	BA_ ## T ## _Append(BA_ ## T *a,T **elemPtrPtr);\
+scope	BA_ ## T *	BA_ ## T ## _Detach(BA_ ## T *a,T **elemPtrPtr);\
+scope	T *		BA_ ## T ## _At(BA_ ## T *a,size_t index)
+
+									
+#define TclBrodnikArray(T) 						\
+									\
+TclBrodnikArrayDeclare(T,static);					\
+TclBrodnikArrayDefine(T,static)
+
+#define TclBrodnikArrayDefine(T,scope)					\
+scope BA_ ## T *							\
 BA_ ## T ## _Create()							\
 {									\
     BA_ ## T *newPtr = ckalloc(sizeof(BA_ ## T));			\
@@ -70,7 +87,7 @@ BA_ ## T ## _Create()							\
     return newPtr;							\
 }									\
 									\
-static void								\
+scope void								\
 BA_ ## T ## _Destroy(							\
     BA_ ## T *a)							\
 {									\
@@ -82,14 +99,14 @@ BA_ ## T ## _Destroy(							\
     ckfree(a);								\
 }									\
 									\
-static size_t								\
+scope size_t								\
 BA_ ## T ## _Size(							\
     BA_ ## T *a)							\
 {									\
     return a->used;							\
 }									\
 									\
-static BA_ ## T *							\
+scope BA_ ## T *							\
 BA_ ## T ## _Grow(							\
     BA_ ## T *a)							\
 {									\
@@ -105,7 +122,7 @@ BA_ ## T ## _Grow(							\
     return a;								\
 }									\
 									\
-static BA_ ## T *							\
+scope BA_ ## T *							\
 BA_ ## T ## _Shrink(							\
     BA_ ## T *a)							\
 {									\
@@ -120,7 +137,7 @@ BA_ ## T ## _Shrink(							\
     return a;								\
 }									\
 									\
-static void								\
+scope void								\
 BA_ ## T ## _Copy(							\
     T *p,								\
     BA_ ## T *a)							\
@@ -141,7 +158,7 @@ BA_ ## T ## _Copy(							\
     memcpy(p, a->store[hi], (lo + 1) * sizeof(T));				\
 }									\
 									\
-static BA_ ## T *							\
+scope BA_ ## T *							\
 BA_ ## T ## _Append(							\
     BA_ ## T *a,							\
     T **elemPtrPtr)							\
@@ -157,7 +174,7 @@ BA_ ## T ## _Append(							\
     return a;								\
 }									\
 									\
-static BA_ ## T *							\
+scope BA_ ## T *							\
 BA_ ## T ## _Detach(							\
     BA_ ## T *a,							\
     T **elemPtrPtr)							\
@@ -177,7 +194,7 @@ BA_ ## T ## _Detach(							\
     return BA_ ## T ## _Shrink(a);					\
 }									\
 									\
-static T *								\
+scope T *								\
 BA_ ## T ## _At(							\
     BA_ ## T *a,							\
     size_t index)							\

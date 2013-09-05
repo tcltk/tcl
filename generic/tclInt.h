@@ -34,6 +34,7 @@
  */
 
 #include "tclPort.h"
+#include "tclBrodnik.h"
 
 #include <stdio.h>
 

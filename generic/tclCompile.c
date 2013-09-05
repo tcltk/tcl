@@ -32,7 +32,7 @@ typedef struct CmdLocation {
     int numSrcBytes;		/* Number of command source chars. */
 } CmdLocation;
 TclBrodnikArray(CmdLocation);
-TclBrodnikArray(AuxData);
+TclBrodnikArrayDefine(AuxData,MODULE_SCOPE);
 
 /*
  * Table of all AuxData types.
