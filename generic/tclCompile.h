@@ -239,7 +239,7 @@ typedef struct AuxData {
 
 /* Forward declarations for fields below */
 struct BrodnikArray_CmdLocation;
-struct BrodnikArray_AuxData;
+TclBrodnikArrayDeclare(AuxData,MODULE_SCOPE);
 
 /*
  * Structure defining the compilation environment. After compilation, fields
@@ -311,8 +311,7 @@ typedef struct CompileEnv {
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
 				 * for the last command. */
-    struct BrodnikArray_AuxData *auxData;
-				/* Points to array of AuxData */
+    BA_AuxData *auxData;	/* Points to array of AuxData */
     unsigned char staticCodeSpace[COMPILEENV_INIT_CODE_BYTES];
 				/* Initial storage for code. */
     Tcl_Obj *staticLiteralSpace[COMPILEENV_INIT_NUM_OBJECTS];
@@ -429,6 +428,7 @@ typedef struct ByteCode {
     				/* Points to the start of the ExceptionRange
 				 * array. This is just after the last object
 				 * in the object array. */
+    BA_AuxData *auxData;
     AuxData *auxDataArrayPtr;	/* Points to the start of the auxiliary data
 				 * array. This is just after the last entry in
 				 * the ExceptionRange array. */
