@@ -238,7 +238,7 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 			continue
 		    }
 
-		    if {[string length [package ifneeded $pkgname $pkgversion]]} {
+		    if {[package ifneeded $pkgname $pkgversion] ne {}} {
 			# There's already a provide script registered for
 			# this version of this package.  Since all units of
 			# code claiming to be the same version of the same
