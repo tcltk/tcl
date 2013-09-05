@@ -4265,7 +4265,7 @@ TEBCresume(
 	 */
 
 	opnd = TclGetInt4AtPtr(pc+1);
-	jtPtr = (JumptableInfo *) codePtr->auxDataArrayPtr[opnd].clientData;
+	jtPtr = BA_AuxData_At(codePtr->auxData, opnd)->clientData;
 	TRACE(("%d => %.20s ", opnd, O2S(OBJ_AT_TOS)));
 	hPtr = Tcl_FindHashEntry(&jtPtr->hashTable, TclGetString(OBJ_AT_TOS));
 	if (hPtr != NULL) {
@@ -6032,7 +6032,7 @@ TEBCresume(
 	 */
 
 	opnd = TclGetUInt4AtPtr(pc+1);
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
+	infoPtr = BA_AuxData_At(codePtr->auxData, opnd)->clientData;
 	iterTmpIndex = infoPtr->loopCtTemp;
 	iterVarPtr = LOCAL(iterTmpIndex);
 	oldValuePtr = iterVarPtr->value.objPtr;
@@ -6065,7 +6065,7 @@ TEBCresume(
 	 */
 
 	opnd = TclGetUInt4AtPtr(pc+1);
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
+	infoPtr = BA_AuxData_At(codePtr->auxData, opnd)->clientData;
 	numLists = infoPtr->numLists;
 
 	/*
@@ -6641,7 +6641,7 @@ TEBCresume(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 	varPtr = LOCAL(opnd);
-	duiPtr = codePtr->auxDataArrayPtr[opnd2].clientData;
+	duiPtr = BA_AuxData_At(codePtr->auxData, opnd2)->clientData;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -6692,7 +6692,7 @@ TEBCresume(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	opnd2 = TclGetUInt4AtPtr(pc+5);
 	varPtr = LOCAL(opnd);
-	duiPtr = codePtr->auxDataArrayPtr[opnd2].clientData;
+	duiPtr = BA_AuxData_At(codePtr->auxData, opnd2)->clientData;
 	while (TclIsVarLink(varPtr)) {
 	    varPtr = varPtr->value.linkPtr;
 	}
@@ -8566,6 +8566,7 @@ PrintByteCodeInfo(
 {
     Proc *procPtr = codePtr->procPtr;
     Interp *iPtr = (Interp *) *codePtr->interpHandle;
+    int numAuxDataItems = codePtr->auxData?BA_AuxData_Size(codePtr->auxData):0;
 
     fprintf(stdout, "\nExecuting ByteCode 0x%p, refCt %u, epoch %u, interp 0x%p (epoch %u)\n",
 	    codePtr, codePtr->refCount, codePtr->compileEpoch, iPtr,
@@ -8577,7 +8578,7 @@ PrintByteCodeInfo(
     fprintf(stdout, "\n  Cmds %d, src %d, inst %u, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
 	    codePtr->numCommands, codePtr->numSrcBytes,
 	    codePtr->numCodeBytes, codePtr->numLitObjects,
-	    codePtr->numAuxDataItems, codePtr->maxStackDepth,
+	    numAuxDataItems, codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
 	    codePtr->numSrcBytes?
 		    ((float)codePtr->structureSize)/codePtr->numSrcBytes :
@@ -8591,7 +8592,7 @@ PrintByteCodeInfo(
 	    codePtr->numCodeBytes,
 	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
 	    (unsigned long) (codePtr->numExceptRanges*sizeof(ExceptionRange)),
-	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (unsigned long) (numAuxDataItems * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
     if (procPtr != NULL) {

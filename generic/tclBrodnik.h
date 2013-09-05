@@ -103,6 +103,9 @@ scope size_t								\
 BA_ ## T ## _Size(							\
     BA_ ## T *a)							\
 {									\
+    if (a == NULL) {							\
+	return 0;							\
+    }									\
     return a->used;							\
 }									\
 									\

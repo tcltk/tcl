@@ -929,9 +929,8 @@ TclCleanupByteCode(
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
     Interp *iPtr = (Interp *) interp;
     int numLitObjects = codePtr->numLitObjects;
-    int numAuxDataItems = codePtr->numAuxDataItems;
     register Tcl_Obj **objArrayPtr, *objPtr;
-    register const AuxData *auxDataPtr;
+    AuxData *auxDataPtr;
     int i;
 #ifdef TCL_COMPILE_STATS
 
@@ -952,7 +951,7 @@ TclCleanupByteCode(
 	statsPtr->currentExceptBytes -= (double)
 		codePtr->numExceptRanges * sizeof(ExceptionRange);
 	statsPtr->currentAuxBytes -= (double)
-		codePtr->numAuxDataItems * sizeof(AuxData);
+		BA_AuxData_Size(codePtr->auxData) * sizeof(AuxData);
 	statsPtr->currentCmdMapBytes -= (double) codePtr->numCmdLocBytes;
 
 	Tcl_GetTime(&destroyTime);
@@ -1014,12 +1013,18 @@ TclCleanupByteCode(
 	ckfree(codePtr->objArrayPtr);
     }
 
-    auxDataPtr = codePtr->auxDataArrayPtr;
-    for (i = 0;  i < numAuxDataItems;  i++) {
-	if (auxDataPtr->type->freeProc != NULL) {
-	    auxDataPtr->type->freeProc(auxDataPtr->clientData);
+    if (codePtr->auxData) {
+	BA_AuxData *adArray = codePtr->auxData;
+
+	codePtr->auxData = NULL;
+	adArray = BA_AuxData_Detach(adArray, &auxDataPtr);
+	while (auxDataPtr) {
+	    if (auxDataPtr->type->freeProc != NULL) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	    adArray = BA_AuxData_Detach(adArray, &auxDataPtr);
 	}
-	auxDataPtr++;
+	BA_AuxData_Destroy(adArray);
     }
 
     /*
@@ -2644,7 +2649,7 @@ TclInitByteCodeObj(
 {
     register ByteCode *codePtr;
     size_t codeBytes, objArrayBytes, exceptArrayBytes, cmdLocBytes;
-    size_t auxDataCount, auxDataArrayBytes, structureSize;
+    size_t structureSize;
     register unsigned char *p;
 #ifdef TCL_COMPILE_DEBUG
     unsigned char *nextPtr;
@@ -2665,11 +2670,6 @@ TclInitByteCodeObj(
     objArrayBytes = envPtr->mallocedLiteralArray ? 0 :
 	    envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
-    auxDataCount = 0;
-    if (envPtr->auxData) {
-	auxDataCount = BA_AuxData_Size(envPtr->auxData);
-    }
-    auxDataArrayBytes = auxDataCount * sizeof(AuxData);
     cmdLocBytes = GetCmdLocEncodingSize(envPtr);
 
     /*
@@ -2680,7 +2680,6 @@ TclInitByteCodeObj(
     structureSize += TCL_ALIGN(codeBytes);	  /* align object array */
     structureSize += TCL_ALIGN(objArrayBytes);	  /* align exc range arr */
     structureSize += TCL_ALIGN(exceptArrayBytes); /* align AuxData array */
-    structureSize += auxDataArrayBytes;
     structureSize += cmdLocBytes;
 
     if (envPtr->iPtr->varFramePtr != NULL) {
@@ -2709,7 +2708,6 @@ TclInitByteCodeObj(
     codePtr->numCodeBytes = codeBytes;
     codePtr->numLitObjects = numLitObjects;
     codePtr->numExceptRanges = envPtr->exceptArrayNext;
-    codePtr->numAuxDataItems = auxDataCount;
     codePtr->numCmdLocBytes = cmdLocBytes;
     codePtr->maxExceptDepth = envPtr->maxExceptDepth;
     codePtr->maxStackDepth = envPtr->maxStackDepth;
@@ -2757,17 +2755,11 @@ TclInitByteCodeObj(
 	codePtr->exceptArrayPtr = NULL;
     }
 
-    p += TCL_ALIGN(exceptArrayBytes);	/* align AuxData array */
-    if (auxDataArrayBytes > 0) {
-	codePtr->auxDataArrayPtr = (AuxData *) p;
-	BA_AuxData_Copy(codePtr->auxDataArrayPtr, envPtr->auxData);
-	BA_AuxData_Destroy(envPtr->auxData);
-	envPtr->auxData = NULL;
-    } else {
-	codePtr->auxDataArrayPtr = NULL;
-    }
+    p += exceptArrayBytes;
 
-    p += auxDataArrayBytes;
+    codePtr->auxData = envPtr->auxData;
+    envPtr->auxData = NULL;
+
 #ifndef TCL_COMPILE_DEBUG
     EncodeCmdLocMap(envPtr, codePtr, (unsigned char *) p);
 #else
@@ -4380,7 +4372,7 @@ TclDisassembleByteCodeObj(
     Tcl_AppendPrintfToObj(bufferObj,
 	    "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
 	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
-	    codePtr->numLitObjects, codePtr->numAuxDataItems,
+	    codePtr->numLitObjects, (int)BA_AuxData_Size(codePtr->auxData),
 	    codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
 	    codePtr->numSrcBytes?
@@ -4396,7 +4388,7 @@ TclDisassembleByteCodeObj(
 	    codePtr->numCodeBytes,
 	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
 	    (unsigned long) (codePtr->numExceptRanges*sizeof(ExceptionRange)),
-	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (unsigned long) (BA_AuxData_Size(codePtr->auxData) * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
 
@@ -4681,7 +4673,7 @@ FormatInstruction(
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
 	    if (instDesc->opTypes[i] == OPERAND_AUX4) {
-		auxPtr = &codePtr->auxDataArrayPtr[opnd];
+		auxPtr = BA_AuxData_At(codePtr->auxData, opnd);
 	    }
 	    break;
 	case OPERAND_IDX4:
@@ -5022,7 +5014,7 @@ RecordByteCodeStats(
     statsPtr->currentExceptBytes += (double)
 	    codePtr->numExceptRanges * sizeof(ExceptionRange);
     statsPtr->currentAuxBytes += (double)
-	    codePtr->numAuxDataItems * sizeof(AuxData);
+	    BA_AuxData_Size(codePtr->auxData) * sizeof(AuxData);
     statsPtr->currentCmdMapBytes += (double) codePtr->numCmdLocBytes;
 }
 #endif /* TCL_COMPILE_STATS */

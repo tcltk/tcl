@@ -411,7 +411,6 @@ typedef struct ByteCode {
     int numCodeBytes;		/* Number of code bytes. */
     int numLitObjects;		/* Number of objects in literal array. */
     int numExceptRanges;	/* Number of ExceptionRange array elems. */
-    int numAuxDataItems;	/* Number of AuxData items. */
     int numCmdLocBytes;		/* Number of bytes needed for encoded command
 				 * location information. */
     int maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
@@ -428,10 +427,7 @@ typedef struct ByteCode {
     				/* Points to the start of the ExceptionRange
 				 * array. This is just after the last object
 				 * in the object array. */
-    BA_AuxData *auxData;
-    AuxData *auxDataArrayPtr;	/* Points to the start of the auxiliary data
-				 * array. This is just after the last entry in
-				 * the ExceptionRange array. */
+    BA_AuxData *auxData;	/* Array of auxiliary data. */
     unsigned char *codeDeltaStart;
 				/* Points to the first of a sequence of bytes
 				 * that encode the change in the starting
