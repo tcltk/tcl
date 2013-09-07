@@ -85,6 +85,9 @@ proc bgerror {message} {
 }
 .CE
 .SH "SEE ALSO"
-after(n), interp(n), tclvars(n)
+after(n), errorCode(n), errorInfo(n), interp(n)
 .SH KEYWORDS
 background error, reporting
+'\" Local Variables:
+'\" mode: nroff
+'\" End:
