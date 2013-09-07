@@ -2175,7 +2175,8 @@ Tcl_CreateCommand(
  *
  * Side effects:
  *	If a command named "cmdName" already exists for interp, it is
- * 	first deleted.  Then the new command is created from the arguments.
+ *	first deleted.  Then the new command is created from the arguments.
+ *	[***] (See below for exception).
  *
  *	In the future, during bytecode evaluation when "cmdName" is seen as
  *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
@@ -2242,8 +2243,27 @@ Tcl_CreateObjCommand(
     if (!isNew) {
 	cmdPtr = Tcl_GetHashValue(hPtr);
 
+	/* Command already exists. */
+
 	/*
-	 * Command already exists; delete it. Be careful to preserve any
+	 * [***] This is wrong.  See Tcl Bug a16752c252.  
+	 * However, this buggy behavior is kept under particular
+	 * circumstances to accommodate deployed binaries of the
+	 * "tclcompiler" program. http://sourceforge.net/projects/tclpro/
+	 * that crash if the bug is fixed.
+	 */
+
+	if (cmdPtr->objProc == TclInvokeStringCommand
+		&& cmdPtr->clientData == clientData
+		&& cmdPtr->deleteData == clientData
+		&& cmdPtr->deleteProc == deleteProc) {
+	    cmdPtr->objProc = proc;
+	    cmdPtr->objClientData = clientData;
+	    return (Tcl_Command) cmdPtr;
+	}
+
+	/*
+	 * Otherwise, we delete the old command. Be careful to preserve any
 	 * existing import links so we can restore them down below. That way,
 	 * you can redefine a command and its import status will remain
 	 * intact.
