@@ -576,7 +576,6 @@ if test "`uname -s`" = "Darwin" ; then
     if test $tcl_corefoundation = yes; then
 	AC_CHECK_HEADERS(libkern/OSAtomic.h)
 	AC_CHECK_FUNCS(OSSpinLockLock)
-	AC_CHECK_FUNCS(pthread_atfork)
     fi
     AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
     AC_DEFINE(TCL_DEFAULT_ENCODING, "utf-8",

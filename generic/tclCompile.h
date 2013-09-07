@@ -193,13 +193,6 @@ typedef struct ExtCmdLoc {
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
-    Tcl_HashTable litInfo;	/* Indexed by bytecode 'PC', to have the
-				 * information accessible per command and
-				 * argument, not per whole bytecode. Value is
-				 * index of command in 'loc', giving us the
-				 * literals to associate with line information
-				 * as command argument, see
-				 * TclArgumentBCEnter() */
 } ExtCmdLoc;
 
 /*
@@ -372,10 +365,6 @@ typedef struct CompileEnv {
 				 * encountered that have not yet been paired
 				 * with a corresponding
 				 * INST_INVOKE_EXPANDED. */
-    ContLineLoc *clLoc;		/* If not NULL, the table holding the
-				 * locations of the invisible continuation
-				 * lines in the input script, to adjust the
-				 * line counter. */
     int *clNext;		/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
@@ -991,6 +980,9 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
+			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
@@ -1001,6 +993,9 @@ MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 			    int numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    const char *script, int numBytes,
@@ -1113,6 +1108,15 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * modules inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
+
+/*
+ * Simplified form to access AuxData.
+ *
+ * ClientData TclFetchAuxData(CompileEng *envPtr, int index);
+ */
+
+#define TclFetchAuxData(envPtr, index) \
+    (envPtr)->auxDataArrayPtr[(index)].clientData
 
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02
