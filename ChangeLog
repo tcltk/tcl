@@ -1,4 +1,4 @@
-2013-09-08  Donal Fellows  <dkf@Donals-MacBook-Pro.local>
+2013-09-08  Donal Fellows  <dkf@users.sf.net>
 
 	* generic/tclCmdMZ.c (StringIsCmd): [Bug 3600057]: Filled out missing
 	parts of implementation of [string is double].
