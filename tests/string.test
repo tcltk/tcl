@@ -20,14 +20,31 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
 
-# Some tests require the testobj command
+proc testIEEE {} {
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
 
+# Some tests require the testobj command
 testConstraint testobj [expr {[info commands testobj] != {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
 
+# Some tests require full IEEE floating point value support
+testConstraint ieeeFloatingPoint [testIEEE]
+
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
 } {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
@@ -589,7 +606,6 @@ test string-6.88 {string is punct} {
 test string-6.89 {string is xdigit} {
     list [string is xdigit -fail var 0123456789\u0061bcdefABCDEFg] $var
 } {0 22}
-
 test string-6.90 {string is integer, bad integers} {
     # SF bug #634856
     set result ""
@@ -751,6 +767,43 @@ test string-6.130.1 {string is entier, false on bad octal} {
 test string-6.131 {string is entier, false on bad hex} {
     list [string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ] $var
 } {0 88}
+test string-6.132 {string is double, false on hex} {
+    string is double [format "0%c5" [scan x %c]]
+} 0
+test string-6.133 {string is double, false on hex} -setup {
+    set var unset
+} -body {
+    list [string is double -fail var [format "0%c5" [scan x %c]]] $var
+} -result {0 1}
+test string-6.134 {string is double, false on hex} {
+    # Force the presence of an integer representation
+    set val 0x5; expr {$val + 1}
+    list [string match "value is a int with a refcount*" \
+	    [::tcl::unsupported::representation $val]] [string is double $val]
+} {1 0}
+test string-6.135 {string is double, false on new octal} {
+    string is double [format "0%c5" [scan o %c]]
+} 0
+test string-6.136 {string is double, false on new octal} -setup {
+    set var unset
+} -body {
+    list [string is double -fail var [format "0%c5" [scan o %c]]] $var
+} -result {0 1}
+test string-6.137 {string is double, false on hex} {
+    # Force the presence of an integer representation
+    set val 0o5; expr {$val + 1}
+    list [string match "value is a int with a refcount*" \
+	    [::tcl::unsupported::representation $val]] [string is double $val]
+} {1 0}
+test string-6.138 {string is double, true on inf} ieeeFloatingPoint {
+    string is double Inf
+} 1
+test string-6.139 {string is double, true on -inf} ieeeFloatingPoint {
+    string is double -Inf
+} 1
+test string-6.140 {string is double, true on NaN} ieeeFloatingPoint {
+    string is double NaN
+} 1
 
 catch {rename largest_int {}}
 
@@ -1959,7 +2012,7 @@ test string-28.13 {tcl::prefix longest} {
     # Test UTF8 handling
     tcl::prefix longest {ax\x90 bep ax\x91} a
 } ax
-
+
 # cleanup
 rename MemStress {}
 catch {rename foo {}}
