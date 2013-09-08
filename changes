@@ -7784,4 +7784,8 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 2013-08-15 Errors from execution traces become errors of the command (porter)
 
+2013-09-07 (bug fix) stop crashes in tclcompiler (kupries,porter)
+
+2013-09-07 (bug fix)[86ceb4] have tm path favor first provider (neumann,porter)
+
 --- Released 8.5.15, September 16, 2013 --- http://core.tcl.tk/tcl/ for details
