@@ -17,11 +17,28 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+proc testIEEE {} {
+    binary scan [binary format dd -1.0 1.0] c* c
+    switch -exact -- $c {
+	{0 0 0 0 0 0 -16 -65 0 0 0 0 0 0 -16 63} {
+	    return 1
+	}
+	{-65 -16 0 0 0 0 0 0 63 -16 0 0 0 0 0 0} {
+	    return 1
+	}
+	default {
+	    return 0
+	}
+    }
+}
+
 # Some tests require the testobj command
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
 testConstraint testindexobj [expr {[info commands testindexobj] != {}}]
-
+# Some tests require full IEEE floating point value support
+testConstraint ieeeFloatingPoint [testIEEE]
+
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
 } {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
@@ -675,6 +692,41 @@ test string-6.108 {string is double, Bug 1382287} {
 test string-6.109 {string is double, Bug 1360532} {
     string is double 1\u00a0
 } 0
+test string-6.132 {string is double, false on hex} {
+    string is double [format "0%c5" [scan x %c]]
+} 0
+test string-6.133 {string is double, false on hex} -setup {
+    set var unset
+} -body {
+    list [string is double -fail var [format "0%c5" [scan x %c]]] $var
+} -result {0 1}
+test string-6.134 {string is double, false on hex} {
+    # Force the presence of an integer representation
+    set val 0x5; expr {$val + 1}
+    list [string is int $val] [string is double $val]
+} {1 0}
+test string-6.135 {string is double, false on new octal} {
+    string is double [format "0%c5" [scan o %c]]
+} 0
+test string-6.136 {string is double, false on new octal} -setup {
+    set var unset
+} -body {
+    list [string is double -fail var [format "0%c5" [scan o %c]]] $var
+} -result {0 1}
+test string-6.137 {string is double, false on hex} {
+    # Force the presence of an integer representation
+    set val 0o5; expr {$val + 1}
+    list [string is int $val] [string is double $val]
+} {1 0}
+test string-6.138 {string is double, true on inf} ieeeFloatingPoint {
+    string is double Inf
+} 1
+test string-6.139 {string is double, true on -inf} ieeeFloatingPoint {
+    string is double -Inf
+} 1
+test string-6.140 {string is double, true on NaN} ieeeFloatingPoint {
+    string is double NaN
+} 1
 
 catch {rename largest_int {}}
 
@@ -1664,7 +1716,7 @@ test string-25.14 {string is list} {
     set x {}
     list [string is list -failindex x "\uabcd {b c}d e"] $x
 } {0 2}
-
+
 # cleanup
 ::tcltest::cleanupTests
 return

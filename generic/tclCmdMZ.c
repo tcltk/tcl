@@ -1512,14 +1512,14 @@ StringIsCmd(
     case STR_IS_DIGIT:
 	chcomp = Tcl_UniCharIsDigit;
 	break;
-    case STR_IS_DOUBLE: {
-	/* TODO */
+    case STR_IS_DOUBLE:
 	if ((objPtr->typePtr == &tclDoubleType) ||
-		(objPtr->typePtr == &tclIntType) ||
+		(objPtr->bytes == NULL &&
+		((objPtr->typePtr == &tclIntType) ||
 #ifndef NO_WIDE_TYPE
 		(objPtr->typePtr == &tclWideIntType) ||
 #endif
-		(objPtr->typePtr == &tclBignumType)) {
+		(objPtr->typePtr == &tclBignumType)))) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1531,7 +1531,7 @@ StringIsCmd(
 	}
 	end = string1 + length1;
 	if (TclParseNumber(NULL, objPtr, NULL, NULL, -1,
-		(const char **) &stop, 0) != TCL_OK) {
+		(const char **) &stop, TCL_PARSE_DECIMAL_ONLY) != TCL_OK) {
 	    result = 0;
 	    failat = 0;
 	} else {
@@ -1543,7 +1543,6 @@ StringIsCmd(
 	    }
 	}
 	break;
-    }
     case STR_IS_GRAPH:
 	chcomp = Tcl_UniCharIsGraph;
 	break;
