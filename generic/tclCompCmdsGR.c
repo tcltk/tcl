@@ -229,8 +229,7 @@ TclCompileIfCmd(
 		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-		jumpFalseFixup = BA_JumpFixup_Append(jumpFalseFixup,
-			&falseFixupPtr);
+		BA_JumpFixup_Append(jumpFalseFixup, &falseFixupPtr);
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, falseFixupPtr);
 	    }
 	    code = TCL_OK;
@@ -268,7 +267,7 @@ TclCompileIfCmd(
 	}
 
 	if (realCond) {
-	    jumpEndFixup = BA_JumpFixup_Append(jumpEndFixup, &endFixupPtr);
+	    BA_JumpFixup_Append(jumpEndFixup, &endFixupPtr);
 	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, endFixupPtr);
 
 	    /*
@@ -360,8 +359,8 @@ TclCompileIfCmd(
      * Fix the unconditional jumps to the end of the "if" command.
      */
 
-    jumpEndFixup = BA_JumpFixup_Detach(jumpEndFixup, &endFixupPtr);
-    jumpFalseFixup = BA_JumpFixup_Detach(jumpFalseFixup, &falseFixupPtr);
+    BA_JumpFixup_Detach(jumpEndFixup, &endFixupPtr);
+    BA_JumpFixup_Detach(jumpFalseFixup, &falseFixupPtr);
 
     while (endFixupPtr) {
 	if (TclFixupForwardJumpToHere(envPtr, endFixupPtr, 127)) {
@@ -387,8 +386,8 @@ TclCompileIfCmd(
 	    }
 	}
 
-	jumpEndFixup = BA_JumpFixup_Detach(jumpEndFixup, &endFixupPtr);
-	jumpFalseFixup = BA_JumpFixup_Detach(jumpFalseFixup, &falseFixupPtr);
+	BA_JumpFixup_Detach(jumpEndFixup, &endFixupPtr);
+	BA_JumpFixup_Detach(jumpFalseFixup, &falseFixupPtr);
     }
 
     /*

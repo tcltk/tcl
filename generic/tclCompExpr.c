@@ -2279,10 +2279,10 @@ CompileExprTree(
 		if (stack == NULL) {
 		    stack = BA_JumpList_Create();
 		}
-		stack = BA_JumpList_Append(stack, &newJump);
+		BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		stack = BA_JumpList_Append(stack, &newJump);
+		BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		jumpPtr->depth = envPtr->currStackDepth;
@@ -2293,13 +2293,13 @@ CompileExprTree(
 		if (stack == NULL) {
 		    stack = BA_JumpList_Create();
 		}
-		stack = BA_JumpList_Append(stack, &newJump);
+		BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		stack = BA_JumpList_Append(stack, &newJump);
+		BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		stack = BA_JumpList_Append(stack, &newJump);
+		BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
 		jumpPtr->depth = envPtr->currStackDepth;
@@ -2403,8 +2403,8 @@ CompileExprTree(
 			jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
 		convert |= jumpPtr->convert;
 		envPtr->currStackDepth = jumpPtr->depth + 1;
-		stack = BA_JumpList_Detach(stack, &jumpPtr);
-		stack = BA_JumpList_Detach(stack, &jumpPtr);
+		BA_JumpList_Detach(stack, &jumpPtr);
+		BA_JumpList_Detach(stack, &jumpPtr);
 		jumpPtr = jumpPtr->next;
 		break;
 	    case AND:
@@ -2428,9 +2428,9 @@ CompileExprTree(
 			127);
 		convert = 0;
 		envPtr->currStackDepth = jumpPtr->depth + 1;
-		stack = BA_JumpList_Detach(stack, &jumpPtr);
-		stack = BA_JumpList_Detach(stack, &jumpPtr);
-		stack = BA_JumpList_Detach(stack, &jumpPtr);
+		BA_JumpList_Detach(stack, &jumpPtr);
+		BA_JumpList_Detach(stack, &jumpPtr);
+		BA_JumpList_Detach(stack, &jumpPtr);
 		jumpPtr = jumpPtr->next;
 		break;
 	    default:

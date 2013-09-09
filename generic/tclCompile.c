@@ -1017,12 +1017,12 @@ TclCleanupByteCode(
 	BA_AuxData *adArray = codePtr->auxData;
 
 	codePtr->auxData = NULL;
-	adArray = BA_AuxData_Detach(adArray, &auxDataPtr);
+	BA_AuxData_Detach(adArray, &auxDataPtr);
 	while (auxDataPtr) {
 	    if (auxDataPtr->type->freeProc != NULL) {
 		auxDataPtr->type->freeProc(auxDataPtr->clientData);
 	    }
-	    adArray = BA_AuxData_Detach(adArray, &auxDataPtr);
+	    BA_AuxData_Detach(adArray, &auxDataPtr);
 	}
 	BA_AuxData_Destroy(adArray);
     }
@@ -1566,12 +1566,12 @@ TclFreeCompileEnv(
 	    AuxData *auxDataPtr;
 
 	    envPtr->auxData = NULL;
-	    adArray = BA_AuxData_Detach(adArray, &auxDataPtr);
+	    BA_AuxData_Detach(adArray, &auxDataPtr);
 	    while (auxDataPtr) {
 		if (auxDataPtr->type->freeProc != NULL) {
 		    auxDataPtr->type->freeProc(auxDataPtr->clientData);
 		}
-		adArray = BA_AuxData_Detach(adArray, &auxDataPtr);
+		BA_AuxData_Detach(adArray, &auxDataPtr);
 	    }
 	    BA_AuxData_Destroy(adArray);
 	}
@@ -3017,7 +3017,7 @@ EnterCmdStartData(
 {
     CmdLocation *cmdLocPtr;
 
-    envPtr->cmdMap = BA_CmdLocation_Append(envPtr->cmdMap, &cmdLocPtr);
+    BA_CmdLocation_Append(envPtr->cmdMap, &cmdLocPtr);
     cmdLocPtr->codeOffset = codeOffset;
     cmdLocPtr->srcOffset = srcOffset;
     cmdLocPtr->numSrcBytes = -1;
@@ -3578,7 +3578,7 @@ TclCreateAuxData(
 	envPtr->auxData = BA_AuxData_Create();
     }
 
-    envPtr->auxData = BA_AuxData_Append(envPtr->auxData, &auxDataPtr);
+    BA_AuxData_Append(envPtr->auxData, &auxDataPtr);
     auxDataPtr->clientData = clientData;
     auxDataPtr->type = typePtr;
     return (int) (BA_AuxData_Size(envPtr->auxData) - 1);

@@ -135,7 +135,7 @@ Tcl_Preserve(
      * Make a new entry for the new reference.
      */
 
-    refArray = BA_Reference_Append(refArray, &refPtr);
+    BA_Reference_Append(refArray, &refPtr);
     refPtr->clientData = clientData;
     refPtr->refCount = 1;
     refPtr->freeProc = NULL;
@@ -194,7 +194,7 @@ Tcl_Release(
 	 */
 
 	freeProc = refPtr->freeProc;
-	refArray = BA_Reference_Detach(refArray, &lastRefPtr);
+	BA_Reference_Detach(refArray, &lastRefPtr);
 	if (refPtr != lastRefPtr) {
 	    *refPtr = *lastRefPtr;
 	}

@@ -60,11 +60,9 @@ struct BrodnikArray_ ## T {						\
 scope	BA_ ## T *	BA_ ## T ## _Create();				\
 scope	void		BA_ ## T ## _Destroy(BA_ ## T *a);		\
 scope	size_t		BA_ ## T ## _Size(BA_ ## T *a);			\
-scope	BA_ ## T *	BA_ ## T ## _Grow(BA_ ## T *a);			\
-scope	BA_ ## T *	BA_ ## T ## _Shrink(BA_ ## T *a);		\
 scope	void		BA_ ## T ## _Copy(T *p,	BA_ ## T *a);		\
-scope	BA_ ## T *	BA_ ## T ## _Append(BA_ ## T *a,T **elemPtrPtr);\
-scope	BA_ ## T *	BA_ ## T ## _Detach(BA_ ## T *a,T **elemPtrPtr);\
+scope	void		BA_ ## T ## _Append(BA_ ## T *a,T **elemPtrPtr);\
+scope	void		BA_ ## T ## _Detach(BA_ ## T *a,T **elemPtrPtr);\
 scope	T *		BA_ ## T ## _At(BA_ ## T *a,size_t index)
 
 									
@@ -111,7 +109,7 @@ BA_ ## T ## _Size(							\
     return a->used;							\
 }									\
 									\
-scope BA_ ## T *							\
+scope void								\
 BA_ ## T ## _Grow(							\
     BA_ ## T *a)							\
 {									\
@@ -124,10 +122,9 @@ BA_ ## T ## _Grow(							\
     a->store[a->dbused] = ckalloc(dbsize * sizeof(T));			\
     a->dbused++;							\
     a->avail += dbsize;							\
-    return a;								\
 }									\
 									\
-scope BA_ ## T *							\
+scope void							\
 BA_ ## T ## _Shrink(							\
     BA_ ## T *a)							\
 {									\
@@ -139,7 +136,6 @@ BA_ ## T ## _Shrink(							\
 	a->dbavail /= 2;						\
 	a->store = ckrealloc(a->store, a->dbavail*sizeof(T *));		\
     }									\
-    return a;								\
 }									\
 									\
 scope void								\
@@ -163,7 +159,7 @@ BA_ ## T ## _Copy(							\
     memcpy(p, a->store[hi], (lo + 1) * sizeof(T));				\
 }									\
 									\
-scope BA_ ## T *							\
+scope void								\
 BA_ ## T ## _Append(							\
     BA_ ## T *a,							\
     T **elemPtrPtr)							\
@@ -171,15 +167,14 @@ BA_ ## T ## _Append(							\
     unsigned int hi, lo;						\
 									\
     if (a->used == a->avail) {						\
-	a = BA_ ## T ## _Grow(a);					\
+	BA_ ## T ## _Grow(a);						\
     }									\
     TclBAConvertIndices(a->used, &hi, &lo);				\
     *elemPtrPtr = a->store[hi] + lo;					\
     a->used++;								\
-    return a;								\
 }									\
 									\
-scope BA_ ## T *							\
+scope void								\
 BA_ ## T ## _Detach(							\
     BA_ ## T *a,							\
     T **elemPtrPtr)							\
@@ -188,15 +183,15 @@ BA_ ## T ## _Detach(							\
 									\
     if (a->used == 0) {							\
 	*elemPtrPtr = NULL;						\
-	return a;							\
+	return;								\
     }									\
     a->used--;								\
     TclBAConvertIndices(a->used, &hi, &lo);				\
     *elemPtrPtr = a->store[hi] + lo;					\
     if (lo || (hi == a->dbused - 1)) {					\
-	return a;							\
+	return;								\
     }									\
-    return BA_ ## T ## _Shrink(a);					\
+    BA_ ## T ## _Shrink(a);						\
 }									\
 									\
 scope T *								\
