@@ -261,3 +261,33 @@ TclBAConvertIndices(
     *loPtr	= r & lobits;
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclBAInvertIndices --
+ *
+ *	Given a size_t index pair hi, lo into the store[] of a BrodnikArray,
+ *	compute and return the size_t index of the element found there.
+ *
+ * Results:
+ *	The size_t index value.
+ *
+ * Side effects:
+ *	None.
+ *----------------------------------------------------------------------
+ */
+
+size_t
+TclBAInvertIndices(
+    size_t	hi,
+    size_t	lo)
+{
+    size_t	plus2 = hi + 2;
+    int		n = TclMSB(plus2) - 1;
+    size_t	bit = (((size_t)1)<<n);
+    int		SB = 2*n + ((plus2 & bit)!=0);
+    size_t	base = (((size_t)1)<<SB) - 1;
+    size_t	increment = ((bit - 1) & plus2) << n;
+
+    return base + increment + lo;
+}
