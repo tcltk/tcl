@@ -246,15 +246,15 @@ TclMSB(
 
 void
 TclBAConvertIndices(
-    size_t	index,
-    size_t	*hiPtr,
-    size_t	*loPtr)
+    size_t		index,
+    unsigned int	*hiPtr,
+    unsigned int	*loPtr)
 {
-    size_t	r = index + 1;
-    int		k = TclMSB(r);
-    int		shift = (k + 1) >> 1;
-    size_t	lobits = (((size_t)1) << shift) - 1;
-    size_t	hibits = ((size_t)1) << (k - shift);
+    size_t		r = index + 1;
+    int			k = TclMSB(r);
+    int			shift = (k + 1) >> 1;
+    unsigned int	lobits = (1 << shift) - 1;
+    unsigned int	hibits = 1 << (k - shift);
 
     *hiPtr	= (lobits << 1) - ((k & 1) * hibits)
 			+ ((r >> shift) & (hibits - 1));
@@ -279,15 +279,15 @@ TclBAConvertIndices(
 
 size_t
 TclBAInvertIndices(
-    size_t	hi,
-    size_t	lo)
+    unsigned int	hi,
+    unsigned int	lo)
 {
-    size_t	plus2 = hi + 2;
-    int		n = TclMSB(plus2) - 1;
-    size_t	bit = (((size_t)1)<<n);
-    int		SB = 2*n + ((plus2 & bit)!=0);
-    size_t	base = (((size_t)1)<<SB) - 1;
-    size_t	increment = ((bit - 1) & plus2) << n;
+    size_t		plus2 = hi + 2;
+    int			n = TclMSB(plus2) - 1;
+    unsigned int	bit = (((size_t)1)<<n);
+    int			SB = 2*n + ((plus2 & bit)!=0);
+    size_t		base = (((size_t)1)<<SB) - 1;
+    size_t		increment = ((bit - 1) & plus2) << n;
 
     return base + increment + lo;
 }

@@ -50,10 +50,10 @@
 typedef struct BrodnikArray_ ## T BA_ ## T;				\
 									\
 struct BrodnikArray_ ## T {						\
-    size_t	used;							\
-    size_t	avail;							\
-    size_t	dbused;							\
-    size_t	dbavail;						\
+    size_t		used;						\
+    size_t		avail;						\
+    unsigned int	dbused;						\
+    unsigned int	dbavail;					\
     T *		store[1];						\
 };									\
 									\
@@ -91,7 +91,7 @@ scope void								\
 BA_ ## T ## _Destroy(							\
     BA_ ## T *a)							\
 {									\
-    size_t i = a->dbused;						\
+    unsigned int i = a->dbused;						\
 									\
     while (i--) {							\
 	ckfree(a->store[i]);						\
@@ -113,7 +113,7 @@ scope BA_ ## T *							\
 BA_ ## T ## _Grow(							\
     BA_ ## T *a)							\
 {									\
-    size_t dbsize = 1 << ((TclMSB(a->avail + 1) + 1) >> 1);		\
+    unsigned int dbsize = 1 << ((TclMSB(a->avail + 1) + 1) >> 1);	\
 									\
     if (a->dbused == a->dbavail) {					\
 	a->dbavail *= 2;						\
@@ -129,7 +129,7 @@ scope BA_ ## T *							\
 BA_ ## T ## _Shrink(							\
     BA_ ## T *a)							\
 {									\
-    size_t dbsize = 1 << ((TclMSB(a->used + 1) + 1) >> 1);		\
+    unsigned int dbsize = 1 << ((TclMSB(a->used + 1) + 1) >> 1);	\
     a->dbused--;							\
     ckfree(a->store[a->dbused]);					\
     a->avail = a->used + dbsize;					\
@@ -145,7 +145,7 @@ BA_ ## T ## _Copy(							\
     T *p,								\
     BA_ ## T *a)							\
 {									\
-    size_t i = 0, n = 1, m = 0, hi, lo;					\
+    unsigned int i = 0, n = 1, m = 0, hi, lo;				\
     if (a->used == 0) {							\
 	return;								\
     }									\
@@ -166,7 +166,7 @@ BA_ ## T ## _Append(							\
     BA_ ## T *a,							\
     T **elemPtrPtr)							\
 {									\
-    size_t hi, lo;							\
+    unsigned int hi, lo;						\
 									\
     if (a->used == a->avail) {						\
 	a = BA_ ## T ## _Grow(a);					\
@@ -182,7 +182,7 @@ BA_ ## T ## _Detach(							\
     BA_ ## T *a,							\
     T **elemPtrPtr)							\
 {									\
-    size_t hi, lo;							\
+    unsigned int hi, lo;						\
 									\
     if (a->used == 0) {							\
 	*elemPtrPtr = NULL;						\
@@ -202,7 +202,7 @@ BA_ ## T ## _At(							\
     BA_ ## T *a,							\
     size_t index)							\
 {									\
-    size_t hi, lo;							\
+    unsigned int hi, lo;						\
 									\
     if (index >= a->used) {						\
 	return NULL;							\
