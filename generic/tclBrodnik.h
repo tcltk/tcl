@@ -54,7 +54,7 @@ struct BrodnikArray_ ## T {						\
     size_t		avail;						\
     unsigned int	dbused;						\
     unsigned int	dbavail;					\
-    T *		store[1];						\
+    T **		store;						\
 };									\
 									\
 scope	BA_ ## T *	BA_ ## T ## _Create();				\
@@ -83,6 +83,7 @@ BA_ ## T ## _Create()							\
     newPtr->avail = 1;							\
     newPtr->dbused = 1;							\
     newPtr->dbavail = 1;						\
+    newPtr->store = ckalloc(sizeof(T *));				\
     newPtr->store[0] = ckalloc(sizeof(T));				\
     return newPtr;							\
 }									\
@@ -96,6 +97,7 @@ BA_ ## T ## _Destroy(							\
     while (i--) {							\
 	ckfree(a->store[i]);						\
     }									\
+    ckfree(a->store);							\
     ckfree(a);								\
 }									\
 									\
@@ -117,7 +119,7 @@ BA_ ## T ## _Grow(							\
 									\
     if (a->dbused == a->dbavail) {					\
 	a->dbavail *= 2;						\
-	a = ckrealloc(a, sizeof(BA_ ## T)+(a->dbavail-1)*sizeof(T *));	\
+	a->store = ckrealloc(a->store, a->dbavail*sizeof(T *));		\
     }									\
     a->store[a->dbused] = ckalloc(dbsize * sizeof(T));			\
     a->dbused++;							\
@@ -135,7 +137,7 @@ BA_ ## T ## _Shrink(							\
     a->avail = a->used + dbsize;					\
     if (a->dbavail / a->dbused >= 4) {					\
 	a->dbavail /= 2;						\
-	a = ckrealloc(a, sizeof(BA_ ## T)+(a->dbavail-1)*sizeof(T *));	\
+	a->store = ckrealloc(a->store, a->dbavail*sizeof(T *));		\
     }									\
     return a;								\
 }									\
