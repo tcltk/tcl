@@ -1,3 +1,9 @@
+2013-09-09  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (CloneProcedureMethod): [Bug 3609693]: Strip
+	the internal representation of method bodies during cloning in order
+	to ensure that any bound references to instance variables are removed.
+
 2013-09-01  Donal Fellows  <dkf@users.sf.net>
 
 	* generic/tclBinary.c (BinaryDecodeHex): [Bug b98fa55285]: Ensure that
