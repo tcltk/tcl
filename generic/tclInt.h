@@ -2201,6 +2201,7 @@ typedef struct Interp {
 #define TCL_ALLOW_EXCEPTIONS		0x04
 #define TCL_EVAL_FILE			0x02
 #define TCL_EVAL_SOURCE_IN_FRAME	0x10
+#define TCL_EVAL_NORESOLVE		0x20
 
 /*
  * Flag bits for Interp structures:
@@ -2725,6 +2726,7 @@ MODULE_SCOPE Tcl_ObjCmdProc TclNRCoroutineObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldmObjCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclNRYieldToObjCmd;
+MODULE_SCOPE Tcl_ObjCmdProc TclNRInvoke;
 
 MODULE_SCOPE void  TclSetTailcall(Tcl_Interp *interp, Tcl_Obj *tailcallPtr);
 MODULE_SCOPE void  TclPushTailcallPoint(Tcl_Interp *interp);

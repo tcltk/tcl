@@ -317,8 +317,8 @@ proc myReturn {args} {
 }
 .CE
 .SH "SEE ALSO"
-break(n), catch(n), continue(n), dict(n), error(n), proc(n),
-source(n), tclvars(n), throw(n), try(n)
+break(n), catch(n), continue(n), dict(n), error(n), errorCode(n),
+errorInfo(n), proc(n), source(n), throw(n), try(n)
 .SH KEYWORDS
 break, catch, continue, error, exception, procedure, result, return
 .\" Local Variables:

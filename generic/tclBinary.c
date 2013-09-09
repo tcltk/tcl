@@ -2386,29 +2386,32 @@ BinaryDecodeHex(
     while (data < dataend) {
 	value = 0;
 	for (i=0 ; i<2 ; i++) {
-	    if (data < dataend) {
-		c = *data++;
-
-		if (!isxdigit((int) c)) {
-		    if (strict || !isspace(c)) {
-			goto badChar;
-		    }
-		    i--;
-		    continue;
-		}
+	    if (data >= dataend) {
 		value <<= 4;
-		c -= '0';
-		if (c > 9) {
-		    c += ('0' - 'A') + 10;
-		}
-		if (c > 16) {
-		    c += ('A' - 'a');
-		}
-		value |= (c & 0xf);
-	    } else {
-		value <<= 4;
-		cut++;
+		break;
 	    }
+
+	    c = *data++;
+	    if (!isxdigit((int) c)) {
+		if (strict || !isspace(c)) {
+		    goto badChar;
+		}
+		i--;
+		continue;
+	    }
+
+	    value <<= 4;
+	    c -= '0';
+	    if (c > 9) {
+		c += ('0' - 'A') + 10;
+	    }
+	    if (c > 16) {
+		c += ('A' - 'a');
+	    }
+	    value |= (c & 0xf);
+	}
+	if (i < 2) {
+	    cut++;
 	}
 	*cursor++ = UCHAR(value);
 	value = 0;
