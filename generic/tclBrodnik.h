@@ -48,8 +48,18 @@
 #define TclBrodnikArrayDeclare(T,scope)					\
 									\
 typedef struct BrodnikArray_ ## T BA_ ## T;				\
+typedef struct BrodnikPointer_ ## T BP_ ## T;				\
+									\
+struct BrodnikPointer_ ## T {						\
+    T *			ptr;						\
+    BA_ ## T *		array;						\
+    unsigned int	hi;						\
+    unsigned int	lo;						\
+    unsigned int	dbsize;						\
+};									\
 									\
 struct BrodnikArray_ ## T {						\
+    BP_ ## T *		top;						\
     size_t		used;						\
     size_t		avail;						\
     unsigned int	dbused;						\
@@ -63,7 +73,9 @@ scope	size_t		BA_ ## T ## _Size(BA_ ## T *a);			\
 scope	void		BA_ ## T ## _Copy(T *p,	BA_ ## T *a);		\
 scope	void		BA_ ## T ## _Append(BA_ ## T *a,T **elemPtrPtr);\
 scope	void		BA_ ## T ## _Detach(BA_ ## T *a,T **elemPtrPtr);\
-scope	T *		BA_ ## T ## _At(BA_ ## T *a,size_t index)
+scope	T *		BA_ ## T ## _At(BA_ ## T *a,size_t index);	\
+									\
+scope	BP_ ## T *	BA_ ## T ## _Start(BA_ ## T *a)
 
 									
 #define TclBrodnikArray(T) 						\
@@ -83,6 +95,7 @@ BA_ ## T ## _Create()							\
     newPtr->dbavail = 1;						\
     newPtr->store = ckalloc(sizeof(T *));				\
     newPtr->store[0] = ckalloc(sizeof(T));				\
+    newPtr->top = BA_ ## T ## _Start(newPtr);				\
     return newPtr;							\
 }									\
 									\
@@ -124,7 +137,7 @@ BA_ ## T ## _Grow(							\
     a->avail += dbsize;							\
 }									\
 									\
-scope void							\
+scope void								\
 BA_ ## T ## _Shrink(							\
     BA_ ## T *a)							\
 {									\
@@ -156,7 +169,7 @@ BA_ ## T ## _Copy(							\
 	}								\
 	m--;								\
     }									\
-    memcpy(p, a->store[hi], (lo + 1) * sizeof(T));				\
+    memcpy(p, a->store[hi], (lo + 1) * sizeof(T));			\
 }									\
 									\
 scope void								\
@@ -206,5 +219,19 @@ BA_ ## T ## _At(							\
     }									\
     TclBAConvertIndices(index, &hi, &lo);				\
     return a->store[hi] + lo;						\
+}									\
+									\
+scope BP_ ## T *							\
+BA_ ## T ## _Start(							\
+    BA_ ## T *a)							\
+{									\
+    BP_ ## T *bPtr = ckalloc(sizeof(BP_ ## T));				\
+									\
+    bPtr->array = a;							\
+    bPtr->hi = 0;							\
+    bPtr->lo = 0;							\
+    bPtr->dbsize = 1;							\
+    bPtr->ptr = a->store[0];						\
+    return bPtr;							\
 }
 
