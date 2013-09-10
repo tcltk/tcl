@@ -53,7 +53,6 @@ typedef struct BrodnikPointer_ ## T BP_ ## T;				\
 struct BrodnikPointer_ ## T {						\
     T *			ptr;						\
     BA_ ## T *		array;						\
-    size_t		index;						\
     unsigned int	hi;						\
     unsigned int	lo;						\
     unsigned int	dbsize;						\
@@ -61,8 +60,10 @@ struct BrodnikPointer_ ## T {						\
 };									\
 									\
 struct BrodnikArray_ ## T {						\
-    size_t		used;						\
-    size_t		avail;						\
+    unsigned int	hi;						\
+    unsigned int	lo;						\
+    unsigned int	dbsize;						\
+    unsigned int	count;						\
     unsigned int	dbused;						\
     unsigned int	dbavail;					\
     T **		store;						\
@@ -91,8 +92,10 @@ BA_ ## T ## _Create()							\
 {									\
     BA_ ## T *newPtr = ckalloc(sizeof(BA_ ## T));			\
 									\
-    newPtr->used = 0;							\
-    newPtr->avail = 1;							\
+    newPtr->hi = 0;							\
+    newPtr->lo = 0;							\
+    newPtr->dbsize = 1;							\
+    newPtr->count = 0;							\
     newPtr->dbused = 1;							\
     newPtr->dbavail = 1;						\
     newPtr->store = ckalloc(sizeof(T *));				\
@@ -120,32 +123,27 @@ BA_ ## T ## _Size(							\
     if (a == NULL) {							\
 	return 0;							\
     }									\
-    return a->used;							\
+    return TclBAInvertIndices(a->hi, a->lo);				\
 }									\
 									\
 scope void								\
 BA_ ## T ## _Grow(							\
     BA_ ## T *a)							\
 {									\
-    unsigned int dbsize = 1 << ((TclMSB(a->avail + 1) + 1) >> 1);	\
-									\
     if (a->dbused == a->dbavail) {					\
 	a->dbavail *= 2;						\
 	a->store = ckrealloc(a->store, a->dbavail*sizeof(T *));		\
     }									\
-    a->store[a->dbused] = ckalloc(dbsize * sizeof(T));			\
+    a->store[a->dbused] = ckalloc(a->dbsize * sizeof(T));		\
     a->dbused++;							\
-    a->avail += dbsize;							\
 }									\
 									\
 scope void								\
 BA_ ## T ## _Shrink(							\
     BA_ ## T *a)							\
 {									\
-    unsigned int dbsize = 1 << ((TclMSB(a->used + 1) + 1) >> 1);	\
     a->dbused--;							\
     ckfree(a->store[a->dbused]);					\
-    a->avail = a->used + dbsize;					\
     if (a->dbavail / a->dbused >= 4) {					\
 	a->dbavail /= 2;						\
 	a->store = ckrealloc(a->store, a->dbavail*sizeof(T *));		\
@@ -157,12 +155,11 @@ BA_ ## T ## _Copy(							\
     T *p,								\
     BA_ ## T *a)							\
 {									\
-    unsigned int i = 0, n = 1, m = 0, hi, lo;				\
-    if (a->used == 0) {							\
+    unsigned int i = 0, n = 1, m = 0;					\
+    if (a->hi == 0) {							\
 	return;								\
     }									\
-    TclBAConvertIndices(a->used - 1, &hi, &lo);				\
-    while (i < hi) {							\
+    while (i < a->hi) {							\
 	memcpy(p, a->store[i++], n * sizeof(T));			\
 	p += n;								\
 	if (m == 0) {							\
@@ -170,7 +167,9 @@ BA_ ## T ## _Copy(							\
 	}								\
 	m--;								\
     }									\
-    memcpy(p, a->store[hi], (lo + 1) * sizeof(T));			\
+    if (a->lo) {							\
+	memcpy(p, a->store[a->hi], a->lo * sizeof(T));			\
+    }									\
 }									\
 									\
 scope void								\
@@ -178,14 +177,21 @@ BA_ ## T ## _Append(							\
     BA_ ## T *a,							\
     T **elemPtrPtr)							\
 {									\
-    unsigned int hi, lo;						\
-									\
-    if (a->used == a->avail) {						\
+    if (a->hi == a->dbused) {						\
 	BA_ ## T ## _Grow(a);						\
     }									\
-    TclBAConvertIndices(a->used, &hi, &lo);				\
-    *elemPtrPtr = a->store[hi] + lo;					\
-    a->used++;								\
+    *elemPtrPtr = a->store[a->hi] + a->lo;				\
+    a->lo++;								\
+    if (a->lo == a->dbsize) {						\
+	a->lo = 0;							\
+	a->hi++;							\
+	if (a->count == 0) {						\
+	    a->count = a->dbsize;					\
+	    a->dbsize *= 2;						\
+	    a->count += a->dbsize;					\
+	}								\
+	a->count--;							\
+    }									\
 }									\
 									\
 scope void								\
@@ -193,16 +199,23 @@ BA_ ## T ## _Detach(							\
     BA_ ## T *a,							\
     T **elemPtrPtr)							\
 {									\
-    unsigned int hi, lo;						\
-									\
-    if (a->used == 0) {							\
+    if (a->hi == 0) {							\
 	*elemPtrPtr = NULL;						\
 	return;								\
     }									\
-    a->used--;								\
-    TclBAConvertIndices(a->used, &hi, &lo);				\
-    *elemPtrPtr = a->store[hi] + lo;					\
-    if (lo || (hi == a->dbused - 1)) {					\
+    if (a->lo) {							\
+	a->lo--;							\
+    } else {								\
+	a->hi--;							\
+	a->count++;							\
+	if (a->count == 3 * (a->dbsize / 2)) {				\
+	    a->count = 0;						\
+	    a->dbsize /= 2;						\
+	}								\
+	a->lo = a->dbsize - 1;						\
+    }									\
+    *elemPtrPtr = a->store[a->hi] + a->lo;				\
+    if (a->lo || (a->hi == a->dbused - 1)) {				\
 	return;								\
     }									\
     BA_ ## T ## _Shrink(a);						\
@@ -215,10 +228,10 @@ BA_ ## T ## _At(							\
 {									\
     unsigned int hi, lo;						\
 									\
-    if (index >= a->used) {						\
+    TclBAConvertIndices(index, &hi, &lo);				\
+    if (hi > a->hi || (hi == a->hi && lo >= a->lo)) {			\
 	return NULL;							\
     }									\
-    TclBAConvertIndices(index, &hi, &lo);				\
     return a->store[hi] + lo;						\
 }									\
 									\
@@ -228,12 +241,11 @@ BA_ ## T ## _First(							\
     BP_ ## T *p)							\
 {									\
     p->array = a;							\
-    p->index = 0;							\
     p->hi = 0;								\
     p->lo = 0;								\
     p->dbsize = 1;							\
     p->count = 0;							\
-    p->ptr = (a->used) ? a->store[0] : NULL;				\
+    p->ptr = (a->hi) ? a->store[0] : NULL;				\
     return p->ptr;							\
 }									\
 									\
@@ -242,29 +254,25 @@ BP_ ## T ## _Next(							\
     BP_ ## T *p)							\
 {									\
     if (p->ptr) {							\
-	p->index++;							\
-	if (p->index >= p->array->used) {				\
-	    p->ptr = NULL;						\
+	p->lo++;							\
+	if (p->lo < p->dbsize) {					\
+	    p->ptr++;							\
 	} else {							\
-	    p->lo++;							\
-	    if (p->lo < p->dbsize) {					\
-		p->ptr++;						\
-	    } else {							\
-		p->lo = 0;						\
-		p->hi++;						\
-		p->ptr = p->array->store[p->hi];			\
-		if (p->count == 0) {					\
-		    p->count += p->dbsize;				\
-		    p->dbsize *= 2;					\
-		    p->count += p->dbsize;				\
-		}							\
-		p->count--;						\
+	    p->lo = 0;							\
+	    p->hi++;							\
+	    p->ptr = p->array->store[p->hi];				\
+	    if (p->count == 0) {					\
+		p->count = p->dbsize;					\
+		p->dbsize *= 2;						\
+		p->count += p->dbsize;					\
 	    }								\
+	    p->count--;							\
+	}								\
+	if (p->hi > p->array->hi 					\
+		|| (p->hi == p->array->hi && p->lo >= p->array->lo)) {	\
+	    p->ptr = NULL;						\
 	}								\
     }									\
     return p->ptr;							\
 }
-
-
-
 

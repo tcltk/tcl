@@ -2897,6 +2897,7 @@ MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
 MODULE_SCOPE void	TclBAConvertIndices(size_t index, unsigned int *hiPtr,
 			    unsigned int *loPtr);
+MODULE_SCOPE size_t	TclBAInvertIndices(unsigned int hi, unsigned int lo);
 MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
