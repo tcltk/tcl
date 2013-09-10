@@ -611,10 +611,10 @@ ReplaceString(
     }
 
     if (oldStr) {
-	int i = 0;
-	pchar *p;
+	BP_pchar ptr;
+	pchar *p = BA_pchar_First(env.cachePtr, &ptr);
 
-	while ((p = BA_pchar_At(env.cachePtr, i++))) {
+	while (p) {
 	    if (*p == oldStr) {
 		pchar *lastPtr;
 
@@ -631,6 +631,7 @@ ReplaceString(
 		}
 		return;
 	    }
+	    p = BP_pchar_Next(&ptr);
 	}
     }
 

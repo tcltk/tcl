@@ -169,14 +169,15 @@ Tcl_Release(
     ClientData clientData)	/* Pointer to malloc'ed block of memory. */
 {
     Reference *refPtr;
-    int i = 0;
+    BP_Reference ptr;
 
     Tcl_MutexLock(&preserveMutex);
     if (refArray == NULL) {
 	refArray = BA_Reference_Create();
     }
 
-    while ((refPtr = BA_Reference_At(refArray, i++))) {
+    for (refPtr = BA_Reference_First(refArray, &ptr); refPtr;
+	    refPtr = BP_Reference_Next(&ptr)) {
 	Tcl_FreeProc *freeProc;
 	Reference *lastRefPtr;
 
@@ -248,7 +249,7 @@ Tcl_EventuallyFree(
     Tcl_FreeProc *freeProc)	/* Function to actually do free. */
 {
     Reference *refPtr;
-    int i = 0;
+    BP_Reference ptr;
 
     if (freeProc == TCL_DYNAMIC) {
 	freeProc = Tcl_Free;
@@ -262,7 +263,8 @@ Tcl_EventuallyFree(
 	refArray = BA_Reference_Create();
     }
 
-    while ((refPtr = BA_Reference_At(refArray, i++))) {
+    for (refPtr = BA_Reference_First(refArray, &ptr); refPtr;
+	    refPtr = BP_Reference_Next(&ptr)) {
 	if (refPtr->clientData != clientData) {
 	    continue;
 	}
