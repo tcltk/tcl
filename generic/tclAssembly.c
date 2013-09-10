@@ -958,7 +958,7 @@ TclCompileAssembleCmd(
 		"\n    (\"%.*s\" body, line %d)",
 		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
 		Tcl_GetErrorLine(interp)));
-	envPtr->numCommands = numCommands;
+	TclDisposeFailedCompile(envPtr, numCommands);
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
 	TclCompileSyntaxError(interp, envPtr);

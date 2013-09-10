@@ -976,6 +976,7 @@ MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes, int length);
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
+MODULE_SCOPE void	TclDisposeFailedCompile(CompileEnv *envPtr, int num);
 MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,

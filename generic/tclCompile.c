@@ -1912,9 +1912,21 @@ CompileCmdCompileProc(
      * Reset the index of next command.
      * Toss out any from failed nested partial compiles.
      */
-    envPtr->numCommands = mapPtr->nuloc;
+    TclDisposeFailedCompile(envPtr, mapPtr->nuloc);
 
     return TCL_ERROR;
+}
+
+void
+TclDisposeFailedCompile(
+    CompileEnv *envPtr,
+    int numCommands)
+{
+    while (envPtr->numCommands > numCommands) {
+	CmdLocation *dummy;
+	BA_CmdLocation_Detach(envPtr->cmdMap, &dummy);
+	envPtr->numCommands--;
+    }
 }
 
 static Tcl_Token *
@@ -4012,20 +4024,20 @@ GetCmdLocEncodingSize(
 				 * containing the CmdLocation structure to
 				 * encode. */
 {
-    int numCmds = envPtr->numCommands;
     int codeDelta, codeLen, srcDelta, srcLen;
     int codeDeltaNext, codeLengthNext, srcDeltaNext, srcLengthNext;
 				/* The offsets in their respective byte
 				 * sequences where the next encoded offset or
 				 * length should go. */
-    int prevCodeOffset, prevSrcOffset, i;
+    int prevCodeOffset, prevSrcOffset;
     BA_CmdLocation *map = envPtr->cmdMap;
+    CmdLocation *cmdLocPtr;
+    BP_CmdLocation ptr;
 
     codeDeltaNext = codeLengthNext = srcDeltaNext = srcLengthNext = 0;
     prevCodeOffset = prevSrcOffset = 0;
-    for (i = 0;  i < numCmds;  i++) {
-	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
-
+    for (cmdLocPtr = BA_CmdLocation_First(map, &ptr); cmdLocPtr;
+	    cmdLocPtr = BP_CmdLocation_Next(&ptr)) {
 	codeDelta = cmdLocPtr->codeOffset - prevCodeOffset;
 	if (codeDelta < 0) {
 	    Tcl_Panic("GetCmdLocEncodingSize: bad code offset");

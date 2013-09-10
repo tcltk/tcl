@@ -77,7 +77,7 @@ scope	void		BA_ ## T ## _Detach(BA_ ## T *a,T **elemPtrPtr);\
 scope	T *		BA_ ## T ## _At(BA_ ## T *a,size_t index);	\
 									\
 scope	T *		BA_ ## T ## _First(BA_ ## T *a, BP_ ## T *p);	\
-scope	T *		BP_ ## T ## Next(BP_ ## T *p)
+scope	T *		BP_ ## T ## _Next(BP_ ## T *p)
 
 									
 #define TclBrodnikArray(T) 						\
