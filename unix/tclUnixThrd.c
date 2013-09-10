@@ -360,12 +360,11 @@ TclpMasterUnlock(void)
     pthread_mutex_unlock(&masterLock);
 #endif
 }
-
 
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_GetAllocMutex
+ * TclpGetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
  *	use by the memory allocator. The alloctor must use this lock, because
@@ -382,10 +381,11 @@ TclpMasterUnlock(void)
  */
 
 Tcl_Mutex *
-Tcl_GetAllocMutex(void)
+TclpGetAllocMutex(void)
 {
 #ifdef TCL_THREADS
     pthread_mutex_t **allocLockPtrPtr = &allocLockPtr;
+
     return (Tcl_Mutex *) allocLockPtrPtr;
 #else
     return NULL;

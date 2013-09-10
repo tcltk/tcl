@@ -155,7 +155,7 @@ TclInitDbCkalloc(void)
 {
     if (!ckallocInit) {
 	ckallocInit = 1;
-	ckallocMutexPtr = Tcl_GetAllocMutex();
+	ckallocMutexPtr = TclpGetAllocMutex();
 #ifndef TCL_THREADS
 	/* Silence compiler warning */
 	(void)ckallocMutexPtr;

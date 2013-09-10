@@ -1116,8 +1116,7 @@ EXTERN int		Tcl_RegExpMatchObj(Tcl_Interp *interp,
 				Tcl_Obj *textObj, Tcl_Obj *patternObj);
 /* 386 */
 EXTERN void		Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr);
-/* 387 */
-EXTERN Tcl_Mutex *	Tcl_GetAllocMutex(void);
+/* Slot 387 is reserved */
 /* 388 */
 EXTERN int		Tcl_GetChannelNames(Tcl_Interp *interp);
 /* 389 */
@@ -2233,7 +2232,7 @@ typedef struct TclStubs {
     void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
     void (*tcl_SetNotifier) (Tcl_NotifierProcs *notifierProcPtr); /* 386 */
-    Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
+    void (*reserved387)(void);
     int (*tcl_GetChannelNames) (Tcl_Interp *interp); /* 388 */
     int (*tcl_GetChannelNamesEx) (Tcl_Interp *interp, const char *pattern); /* 389 */
     int (*tcl_ProcObjCmd) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 390 */
@@ -3283,8 +3282,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_RegExpMatchObj) /* 385 */
 #define Tcl_SetNotifier \
 	(tclStubsPtr->tcl_SetNotifier) /* 386 */
-#define Tcl_GetAllocMutex \
-	(tclStubsPtr->tcl_GetAllocMutex) /* 387 */
+/* Slot 387 is reserved */
 #define Tcl_GetChannelNames \
 	(tclStubsPtr->tcl_GetChannelNames) /* 388 */
 #define Tcl_GetChannelNamesEx \

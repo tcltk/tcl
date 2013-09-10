@@ -553,6 +553,7 @@ static const TclIntStubs tclIntStubs = {
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
     TclSetSlaveCancelFlags, /* 250 */
+    TclpGetAllocMutex, /* 251 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
@@ -1161,7 +1162,7 @@ const TclStubs tclStubs = {
     Tcl_AppendUnicodeToObj, /* 384 */
     Tcl_RegExpMatchObj, /* 385 */
     Tcl_SetNotifier, /* 386 */
-    Tcl_GetAllocMutex, /* 387 */
+    0, /* 387 */
     Tcl_GetChannelNames, /* 388 */
     Tcl_GetChannelNamesEx, /* 389 */
     Tcl_ProcObjCmd, /* 390 */

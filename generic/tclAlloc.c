@@ -172,7 +172,7 @@ TclInitAlloc(void)
     if (!allocInit) {
 	allocInit = 1;
 #ifdef TCL_THREADS
-	allocMutexPtr = Tcl_GetAllocMutex();
+	allocMutexPtr = TclpGetAllocMutex();
 #endif
     }
 }

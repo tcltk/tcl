@@ -1370,9 +1370,10 @@ declare 385 {
 declare 386 {
     void Tcl_SetNotifier(Tcl_NotifierProcs *notifierProcPtr)
 }
-declare 387 {
-    Tcl_Mutex *Tcl_GetAllocMutex(void)
-}
+### Removed from stub table: see [Bug 547989]
+#declare 387 {
+#    Tcl_Mutex *Tcl_GetAllocMutex(void)
+#}
 declare 388 {
     int Tcl_GetChannelNames(Tcl_Interp *interp)
 }

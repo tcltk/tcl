@@ -195,7 +195,7 @@ GetCache(void)
 	Tcl_Mutex *initLockPtr;
 	unsigned int i;
 
-	initLockPtr = Tcl_GetAllocMutex();
+	initLockPtr = TclpGetAllocMutex();
 	Tcl_MutexLock(initLockPtr);
 	if (listLockPtr == NULL) {
 	    listLockPtr = TclpNewAllocMutex();

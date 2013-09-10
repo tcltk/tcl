@@ -1006,6 +1006,9 @@ declare 249 {
 declare 250 {
     void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
 }
+declare 251 {
+    Tcl_Mutex *TclpGetAllocMutex(void)
+}
 
 ##############################################################################
 
