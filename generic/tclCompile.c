@@ -579,10 +579,8 @@ static void		DupByteCodeInternalRep(Tcl_Obj *srcPtr,
 			    Tcl_Obj *copyPtr);
 static unsigned char *	EncodeCmdLocMap(CompileEnv *envPtr,
 			    ByteCode *codePtr, unsigned char *startPtr);
-static void		EnterCmdExtentData(CompileEnv *envPtr,
-			    int cmdNumber, int numSrcBytes, int numCodeBytes);
-static void		EnterCmdStartData(CompileEnv *envPtr,
-			    int cmdNumber, int srcOffset, int codeOffset);
+static CmdLocation *	EnterCmdStartData(CompileEnv *envPtr,
+			    int srcOffset, int codeOffset);
 static void		FreeByteCodeInternalRep(Tcl_Obj *objPtr);
 static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
@@ -1933,7 +1931,8 @@ static Tcl_Token *
 CompileCommandTokens(
     Tcl_Interp *interp,
     Tcl_Token *commandTokenPtr,
-    CompileEnv *envPtr)
+    CompileEnv *envPtr,
+    CmdLocation **cmdLocPtrPtr)
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -1945,12 +1944,12 @@ CompileCommandTokens(
     ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     Tcl_Obj *cmdObj = Tcl_NewObj();
     Command *cmdPtr = NULL;
+    CmdLocation *cmdLocPtr = NULL;
     int code = TCL_ERROR;
     int cmdKnown, expand = -1;
     int *wlines, wlineat;
     int cmdLine = envPtr->line;
     int *clNext = envPtr->clNext;
-    int cmdIdx = envPtr->numCommands;
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
 
     assert (numWords > 0);
@@ -1959,7 +1958,7 @@ CompileCommandTokens(
 
     tokenPtr++;
     envPtr->numCommands++;
-    EnterCmdStartData(envPtr, cmdIdx, commandStart - envPtr->source,
+    cmdLocPtr = EnterCmdStartData(envPtr, commandStart - envPtr->source,
 	    startCodeOffset);
 
     /*
@@ -2031,8 +2030,9 @@ CompileCommandTokens(
     Tcl_DecrRefCount(cmdObj);
 
     TclEmitOpcode(INST_POP, envPtr);
-    EnterCmdExtentData(envPtr, cmdIdx, commandSize,
-	    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
+    cmdLocPtr->numSrcBytes = commandSize;
+    cmdLocPtr->numCodeBytes = (envPtr->codeNext-envPtr->codeStart)
+	    - startCodeOffset;
 
     /*
      * TIP #280: Free full form of per-word line data and insert the
@@ -2045,6 +2045,8 @@ CompileCommandTokens(
     ckfree(eclPtr->loc[wlineat].next);
     eclPtr->loc[wlineat].line = wlines;
     eclPtr->loc[wlineat].next = NULL;
+
+    *cmdLocPtrPtr = cmdLocPtr;
 
     return tokenPtr;
 }
@@ -2083,10 +2085,11 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 {
     Tcl_Token *tokenPtr;
     int numCommands = tokens[0].numComponents;
-    int lastCmdIdx = -1;	/* Index into envPtr->cmdMapPtr of the last
-				 * command this routine compiles into bytecode.
-				 * Initial value of -1 indicates this routine
-				 * has not yet generated any bytecode. */
+    CmdLocation *cmdLocPtr = NULL;	/* Pointer into envPtr->cmdMap for
+					 * the last command this routine
+					 * compiles into bytecode;  If we
+					 * exit still value NULL, there
+					 * was no bytecode generated. */
 
     if (lastTokenPtr < tokens) {
 	Tcl_Panic("CompileScriptTokens: parse produced no tokens");
@@ -2134,8 +2137,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	}
 #endif
 
-	lastCmdIdx = envPtr->numCommands;
-	tokenPtr = CompileCommandTokens(interp, tokenPtr, envPtr);
+	tokenPtr = CompileCommandTokens(interp, tokenPtr, envPtr, &cmdLocPtr);
 
 	/*
 	 * TIP #280: Track lines in the just compiled command.
@@ -2149,7 +2151,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
     }
     if (tokenPtr <= lastTokenPtr) {
 	TclCompileTokens(interp, tokenPtr, lastTokenPtr-tokenPtr+1, envPtr);
-    } else if (lastCmdIdx == -1) {
+    } else if (cmdLocPtr == NULL) {
 	/*
 	 * Compiling the script yielded no bytecode.  The script must be
 	 * all whitespace, comments, and empty commands.  Such scripts
@@ -2168,7 +2170,7 @@ CompileScriptTokens(interp, tokens, lastTokenPtr, envPtr)
 	 * so that the result of the last command becomes the result of
 	 * the script.  The code here removes that trailing INST_POP.
 	 */
-	BA_CmdLocation_At(envPtr->cmdMap, lastCmdIdx)->numCodeBytes--;
+	cmdLocPtr->numCodeBytes--;
 	envPtr->codeNext--;
 	envPtr->currStackDepth++;
     }
@@ -3017,13 +3019,11 @@ TclExpandCodeArray(
  *----------------------------------------------------------------------
  */
 
-static void
+static CmdLocation *
 EnterCmdStartData(
     CompileEnv *envPtr,		/* Points to the compilation environment
 				 * structure in which to enter command
 				 * location information. */
-    int cmdIndex,		/* Index of the command whose start data is
-				 * being set. */
     int srcOffset,		/* Offset of first char of the command. */
     int codeOffset)		/* Offset of first byte of command code. */
 {
@@ -3034,44 +3034,7 @@ EnterCmdStartData(
     cmdLocPtr->srcOffset = srcOffset;
     cmdLocPtr->numSrcBytes = -1;
     cmdLocPtr->numCodeBytes = -1;
-
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * EnterCmdExtentData --
- *
- *	Registers the source and bytecode length for a command. This
- *	information is used at runtime to map between instruction pc and
- *	source locations.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Inserts source and code length information into the compilation
- *	environment envPtr for the command at index cmdIndex. Starting source
- *	and bytecode information for the command must already have been
- *	registered.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-EnterCmdExtentData(
-    CompileEnv *envPtr,		/* Points to the compilation environment
-				 * structure in which to enter command
-				 * location information. */
-    int cmdIndex,		/* Index of the command whose source and code
-				 * length data is being set. */
-    int numSrcBytes,		/* Number of command source chars. */
-    int numCodeBytes)		/* Offset of last byte of command code. */
-{
-    CmdLocation *cmdLocPtr = BA_CmdLocation_At(envPtr->cmdMap, cmdIndex);
-
-    cmdLocPtr->numSrcBytes = numSrcBytes;
-    cmdLocPtr->numCodeBytes = numCodeBytes;
+    return cmdLocPtr;
 }
 
 /*
@@ -4110,11 +4073,11 @@ EncodeCmdLocMap(
 				 * memory block where the location information
 				 * is to be stored. */
 {
-    int numCmds = envPtr->numCommands;
     register unsigned char *p = startPtr;
     int codeDelta, codeLen, srcDelta, srcLen, prevOffset;
-    register int i;
     BA_CmdLocation *map = envPtr->cmdMap;
+    BP_CmdLocation ptr;
+    CmdLocation *cmdLocPtr;
 
     /*
      * Encode the code offset for each command as a sequence of deltas.
@@ -4122,9 +4085,8 @@ EncodeCmdLocMap(
 
     codePtr->codeDeltaStart = p;
     prevOffset = 0;
-    for (i = 0;  i < numCmds;  i++) {
-	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
-
+    for (cmdLocPtr = BA_CmdLocation_First(map, &ptr);  cmdLocPtr;
+	    cmdLocPtr = BP_CmdLocation_Next(&ptr)) {
 	codeDelta = cmdLocPtr->codeOffset - prevOffset;
 	if (codeDelta < 0) {
 	    Tcl_Panic("EncodeCmdLocMap: bad code offset");
@@ -4145,9 +4107,8 @@ EncodeCmdLocMap(
      */
 
     codePtr->codeLengthStart = p;
-    for (i = 0;  i < numCmds;  i++) {
-	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
-
+    for (cmdLocPtr = BA_CmdLocation_First(map, &ptr);  cmdLocPtr;
+	    cmdLocPtr = BP_CmdLocation_Next(&ptr)) {
 	codeLen = cmdLocPtr->numCodeBytes;
 	if (codeLen < 0) {
 	    Tcl_Panic("EncodeCmdLocMap: bad code length");
@@ -4168,9 +4129,8 @@ EncodeCmdLocMap(
 
     codePtr->srcDeltaStart = p;
     prevOffset = 0;
-    for (i = 0;  i < numCmds;  i++) {
-	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
-
+    for (cmdLocPtr = BA_CmdLocation_First(map, &ptr);  cmdLocPtr;
+	    cmdLocPtr = BP_CmdLocation_Next(&ptr)) {
 	srcDelta = cmdLocPtr->srcOffset - prevOffset;
 	if ((-127 <= srcDelta) && (srcDelta <= 127) && (srcDelta != -1)) {
 	    TclStoreInt1AtPtr(srcDelta, p);
@@ -4189,9 +4149,8 @@ EncodeCmdLocMap(
      */
 
     codePtr->srcLengthStart = p;
-    for (i = 0;  i < numCmds;  i++) {
-	CmdLocation *cmdLocPtr = BA_CmdLocation_At(map, i);
-
+    for (cmdLocPtr = BA_CmdLocation_First(map, &ptr);  cmdLocPtr;
+	    cmdLocPtr = BP_CmdLocation_Next(&ptr)) {
 	srcLen = cmdLocPtr->numSrcBytes;
 	if (srcLen < 0) {
 	    Tcl_Panic("EncodeCmdLocMap: bad source length");
