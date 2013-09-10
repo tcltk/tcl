@@ -121,13 +121,16 @@ Tcl_Preserve(
     if (refArray == NULL) {
 	refArray = BA_Reference_Create();
     } else {
-	int i = 0;
-	while ((refPtr = BA_Reference_At(refArray, i++))) {
+	BP_Reference ptr;
+
+	refPtr = BA_Reference_First(refArray, &ptr);
+	while (refPtr) {
 	    if (refPtr->clientData == clientData) {
 		refPtr->refCount++;
 		Tcl_MutexUnlock(&preserveMutex);
 		return;
 	    }
+	    refPtr = BP_Reference_Next(&ptr);
 	}
     }
 

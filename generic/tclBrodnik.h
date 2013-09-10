@@ -53,13 +53,14 @@ typedef struct BrodnikPointer_ ## T BP_ ## T;				\
 struct BrodnikPointer_ ## T {						\
     T *			ptr;						\
     BA_ ## T *		array;						\
+    size_t		index;						\
     unsigned int	hi;						\
     unsigned int	lo;						\
     unsigned int	dbsize;						\
+    unsigned int	count;						\
 };									\
 									\
 struct BrodnikArray_ ## T {						\
-    BP_ ## T *		top;						\
     size_t		used;						\
     size_t		avail;						\
     unsigned int	dbused;						\
@@ -75,7 +76,8 @@ scope	void		BA_ ## T ## _Append(BA_ ## T *a,T **elemPtrPtr);\
 scope	void		BA_ ## T ## _Detach(BA_ ## T *a,T **elemPtrPtr);\
 scope	T *		BA_ ## T ## _At(BA_ ## T *a,size_t index);	\
 									\
-scope	BP_ ## T *	BA_ ## T ## _Start(BA_ ## T *a)
+scope	T *		BA_ ## T ## _First(BA_ ## T *a, BP_ ## T *p);	\
+scope	T *		BP_ ## T ## Next(BP_ ## T *p)
 
 									
 #define TclBrodnikArray(T) 						\
@@ -95,7 +97,6 @@ BA_ ## T ## _Create()							\
     newPtr->dbavail = 1;						\
     newPtr->store = ckalloc(sizeof(T *));				\
     newPtr->store[0] = ckalloc(sizeof(T));				\
-    newPtr->top = BA_ ## T ## _Start(newPtr);				\
     return newPtr;							\
 }									\
 									\
@@ -221,17 +222,49 @@ BA_ ## T ## _At(							\
     return a->store[hi] + lo;						\
 }									\
 									\
-scope BP_ ## T *							\
-BA_ ## T ## _Start(							\
-    BA_ ## T *a)							\
+scope T *								\
+BA_ ## T ## _First(							\
+    BA_ ## T *a,							\
+    BP_ ## T *p)							\
 {									\
-    BP_ ## T *bPtr = ckalloc(sizeof(BP_ ## T));				\
+    p->array = a;							\
+    p->index = 0;							\
+    p->hi = 0;								\
+    p->lo = 0;								\
+    p->dbsize = 1;							\
+    p->count = 0;							\
+    p->ptr = (a->used) ? a->store[0] : NULL;				\
+    return p->ptr;							\
+}									\
 									\
-    bPtr->array = a;							\
-    bPtr->hi = 0;							\
-    bPtr->lo = 0;							\
-    bPtr->dbsize = 1;							\
-    bPtr->ptr = a->store[0];						\
-    return bPtr;							\
+scope T *								\
+BP_ ## T ## _Next(							\
+    BP_ ## T *p)							\
+{									\
+    if (p->ptr) {							\
+	p->index++;							\
+	if (p->index >= p->array->used) {				\
+	    p->ptr = NULL;						\
+	} else {							\
+	    p->lo++;							\
+	    if (p->lo < p->dbsize) {					\
+		p->ptr++;						\
+	    } else {							\
+		p->lo = 0;						\
+		p->hi++;						\
+		p->ptr = p->array->store[p->hi];			\
+		if (p->count == 0) {					\
+		    p->count += p->dbsize;				\
+		    p->dbsize *= 2;					\
+		    p->count += p->dbsize;				\
+		}							\
+		p->count--;						\
+	    }								\
+	}								\
+    }									\
+    return p->ptr;							\
 }
+
+
+
 
