@@ -490,8 +490,6 @@ typedef struct JumpList {
     JumpFixup jump;		/* Pass this argument to matching calls of
 				 * TclEmitForwardJump() and 
 				 * TclFixupForwardJump(). */
-    int depth;			/* Remember the currStackDepth of the
-				 * CompileEnv here. */
     int offset;			/* Data used to compute jump lengths to pass
 				 * to TclFixupForwardJump() */
     int convert;		/* Temporary storage used to compute whether
@@ -2269,7 +2267,6 @@ CompileExprTree(
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		jumpPtr->depth = envPtr->currStackDepth;
 		convert = 1;
 		break;
 	    case AND:
@@ -2283,7 +2280,6 @@ CompileExprTree(
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		jumpPtr->depth = envPtr->currStackDepth;
 		break;
 	    }
 	} else if (nodePtr->mark == MARK_RIGHT) {
@@ -2323,7 +2319,7 @@ CompileExprTree(
 		CLANG_ASSERT(jumpPtr);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&jumpPtr->next->jump);
-		envPtr->currStackDepth = jumpPtr->depth;
+		TclAdjustStackDepth(-1, envPtr);
 		jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
 		jumpPtr->convert = convert;
 		convert = 1;
@@ -2383,7 +2379,6 @@ CompileExprTree(
 		TclFixupForwardJump(envPtr, &jumpPtr->jump,
 			jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
 		convert |= jumpPtr->convert;
-		envPtr->currStackDepth = jumpPtr->depth + 1;
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
@@ -2411,7 +2406,6 @@ CompileExprTree(
 		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->next->jump,
 			127);
 		convert = 0;
-		envPtr->currStackDepth = jumpPtr->depth + 1;
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
