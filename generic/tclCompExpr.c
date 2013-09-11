@@ -490,8 +490,6 @@ typedef struct JumpList {
     JumpFixup jump;		/* Pass this argument to matching calls of
 				 * TclEmitForwardJump() and 
 				 * TclFixupForwardJump(). */
-    int offset;			/* Data used to compute jump lengths to pass
-				 * to TclFixupForwardJump() */
     int convert;		/* Temporary storage used to compute whether
 				 * numeric conversion will be needed following
 				 * the operator we're compiling. */
@@ -2320,7 +2318,6 @@ CompileExprTree(
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&jumpPtr->next->jump);
 		TclAdjustStackDepth(-1, envPtr);
-		jumpPtr->offset = (envPtr->codeNext - envPtr->codeStart);
 		jumpPtr->convert = convert;
 		convert = 1;
 		break;
@@ -2374,10 +2371,10 @@ CompileExprTree(
 		if (TclFixupForwardJump(envPtr, &jumpPtr->next->jump,
 			(envPtr->codeNext - envPtr->codeStart)
 			- jumpPtr->next->jump.codeOffset, 127)) {
-		    jumpPtr->offset += 3;
+		    jumpPtr->next->jump.codeOffset += 3;
 		}
 		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			jumpPtr->offset - jumpPtr->jump.codeOffset, 127);
+			jumpPtr->next->jump.codeOffset + 2 -jumpPtr->jump.codeOffset, 127);
 		convert |= jumpPtr->convert;
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
