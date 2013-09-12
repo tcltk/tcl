@@ -491,7 +491,6 @@ typedef struct JumpList {
     JumpFixup jump;		/* Pass this argument to matching calls of
 				 * TclEmitForwardJump() and 
 				 * TclFixupForwardJump(). */
-    struct JumpList *next;	/* Point to next item on the stack */
 } JumpList;
 
 TclBrodnikArray(JumpList);
@@ -2269,8 +2268,6 @@ CompileExprTree(
 		convert = 1;
 	    }
 	} else if (nodePtr->mark == MARK_RIGHT) {
-	    JumpList *newJump;
-
 	    next = nodePtr->right;
 
 	    switch (nodePtr->lexeme) {
@@ -2304,15 +2301,11 @@ CompileExprTree(
 		if (stack == NULL) {
 		    stack = BA_JumpList_Create();
 		}
-		BA_JumpList_Append(stack, &newJump);
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
+		BA_JumpList_Append(stack, &jumpPtr);
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
 		break;
 	    case COLON:
-		BA_JumpList_Append(stack, &newJump);
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
+		BA_JumpList_Append(stack, &jumpPtr);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
 			&jumpPtr->jump);
 		TclAdjustStackDepth(-1, envPtr);
@@ -2326,9 +2319,7 @@ CompileExprTree(
 		if (stack == NULL) {
 		    stack = BA_JumpList_Create();
 		}
-		BA_JumpList_Append(stack, &newJump);
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
+		BA_JumpList_Append(stack, &jumpPtr);
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
 		break;
@@ -2374,6 +2365,7 @@ CompileExprTree(
 		numWords++;
 		break;
 	    case COLON:
+		BA_JumpList_Detach(stack, &jumpPtr);
 		CLANG_ASSERT(jumpPtr);
 		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
 		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
@@ -2386,14 +2378,12 @@ CompileExprTree(
 		    target += 3;
 		}
 		BA_JumpList_Detach(stack, &jumpPtr);
-		jumpPtr = jumpPtr->next;
 		TclFixupForwardJump(envPtr, &jumpPtr->jump,
 			target - jumpPtr->jump.codeOffset, 127);
-		BA_JumpList_Detach(stack, &jumpPtr);
-		jumpPtr = jumpPtr->next;
 		break;
 	    case AND:
 	    case OR:
+		BA_JumpList_Detach(stack, &jumpPtr);
 		CLANG_ASSERT(jumpPtr);
 		pc1 = CurrentOffset(envPtr);
 		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
@@ -2413,8 +2403,6 @@ CompileExprTree(
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
 			envPtr->codeStart + pc2 + 1);
 		convert = 0;
-		BA_JumpList_Detach(stack, &jumpPtr);
-		jumpPtr = jumpPtr->next;
 		break;
 	    default:
 		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
