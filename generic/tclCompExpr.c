@@ -481,21 +481,6 @@ static const unsigned char Lexeme[] = {
 };
 
 /*
- * The JumpList struct is used to create a stack of data needed for the
- * TclEmitForwardJump() and TclFixupForwardJump() calls that are performed
- * when compiling the short-circuiting operators QUESTION/COLON, AND, and OR.
- * Keeping a stack permits the CompileExprTree() routine to be non-recursive.
- */
-
-typedef struct JumpList {
-    JumpFixup jump;		/* Pass this argument to matching calls of
-				 * TclEmitForwardJump() and 
-				 * TclFixupForwardJump(). */
-} JumpList;
-
-TclBrodnikArray(JumpList);
-
-/*
  * Declarations for local functions to this file:
  */
 
@@ -2240,6 +2225,8 @@ ExecConstantExprTree(
  *----------------------------------------------------------------------
  */
 
+TclBrodnikArray(JumpFixup);
+
 static void
 CompileExprTree(
     Tcl_Interp *interp,
@@ -2254,8 +2241,8 @@ CompileExprTree(
     OpNode *nodePtr = nodes + index;
     OpNode *rootPtr = nodePtr;
     int numWords = 0;
-    JumpList *jumpPtr = NULL;
-    BA_JumpList *stack = NULL;
+    JumpFixup *jumpPtr = NULL;
+    BA_JumpFixup *stack = NULL;
     int convert = 1;
 
     while (1) {
@@ -2299,29 +2286,28 @@ CompileExprTree(
 	    }
 	    case QUESTION:
 		if (stack == NULL) {
-		    stack = BA_JumpList_Create();
+		    stack = BA_JumpFixup_Create();
 		}
-		BA_JumpList_Append(stack, &jumpPtr);
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
+		BA_JumpFixup_Append(stack, &jumpPtr);
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, jumpPtr);
 		break;
 	    case COLON:
-		BA_JumpList_Append(stack, &jumpPtr);
-		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&jumpPtr->jump);
+		BA_JumpFixup_Append(stack, &jumpPtr);
+		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, jumpPtr);
 		TclAdjustStackDepth(-1, envPtr);
 		if (convert) {
-		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
+		    jumpPtr->jumpType = TCL_TRUE_JUMP;
 		}
 		convert = 1;
 		break;
 	    case AND:
 	    case OR:
 		if (stack == NULL) {
-		    stack = BA_JumpList_Create();
+		    stack = BA_JumpFixup_Create();
 		}
-		BA_JumpList_Append(stack, &jumpPtr);
+		BA_JumpFixup_Append(stack, &jumpPtr);
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
-			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
+			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, jumpPtr);
 		break;
 	    }
 	} else {
@@ -2365,25 +2351,25 @@ CompileExprTree(
 		numWords++;
 		break;
 	    case COLON:
-		BA_JumpList_Detach(stack, &jumpPtr);
+		BA_JumpFixup_Detach(stack, &jumpPtr);
 		CLANG_ASSERT(jumpPtr);
-		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
-		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
+		if (jumpPtr->jumpType == TCL_TRUE_JUMP) {
+		    jumpPtr->jumpType = TCL_UNCONDITIONAL_JUMP;
 		    convert = 1;
 		}
-		target = jumpPtr->jump.codeOffset + 2;
-		if (TclFixupForwardJump(envPtr, &jumpPtr->jump,
+		target = jumpPtr->codeOffset + 2;
+		if (TclFixupForwardJump(envPtr, jumpPtr,
 			(envPtr->codeNext - envPtr->codeStart)
-			- jumpPtr->jump.codeOffset, 127)) {
+			- jumpPtr->codeOffset, 127)) {
 		    target += 3;
 		}
-		BA_JumpList_Detach(stack, &jumpPtr);
-		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			target - jumpPtr->jump.codeOffset, 127);
+		BA_JumpFixup_Detach(stack, &jumpPtr);
+		TclFixupForwardJump(envPtr, jumpPtr,
+			target - jumpPtr->codeOffset, 127);
 		break;
 	    case AND:
 	    case OR:
-		BA_JumpList_Detach(stack, &jumpPtr);
+		BA_JumpFixup_Detach(stack, &jumpPtr);
 		CLANG_ASSERT(jumpPtr);
 		pc1 = CurrentOffset(envPtr);
 		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
@@ -2395,7 +2381,7 @@ CompileExprTree(
 		TclAdjustStackDepth(-1, envPtr);
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc1,
 			envPtr->codeStart + pc1 + 1);
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
+		if (TclFixupForwardJumpToHere(envPtr, jumpPtr, 127)) {
 		    pc2 += 3;
 		}
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
@@ -2413,7 +2399,7 @@ CompileExprTree(
 		/* We're done */
 
 		if (stack) {
-		    BA_JumpList_Destroy(stack);
+		    BA_JumpFixup_Destroy(stack);
 		}
 		return;
 	    }
