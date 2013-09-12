@@ -13,7 +13,6 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"		/* CompileEnv */
-#include "tclBrodnik.h"
 
 /*
  * Expression parsing takes place in the routine ParseExpr(). It takes a
@@ -2225,8 +2224,6 @@ ExecConstantExprTree(
  *----------------------------------------------------------------------
  */
 
-TclBrodnikArray(JumpFixup);
-
 static void
 CompileExprTree(
     Tcl_Interp *interp,
@@ -2288,11 +2285,11 @@ CompileExprTree(
 		if (stack == NULL) {
 		    stack = BA_JumpFixup_Create();
 		}
-		BA_JumpFixup_Append(stack, &jumpPtr);
+		jumpPtr = BA_JumpFixup_Append(stack);
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, jumpPtr);
 		break;
 	    case COLON:
-		BA_JumpFixup_Append(stack, &jumpPtr);
+		jumpPtr = BA_JumpFixup_Append(stack);
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, jumpPtr);
 		TclAdjustStackDepth(-1, envPtr);
 		if (convert) {
@@ -2305,7 +2302,7 @@ CompileExprTree(
 		if (stack == NULL) {
 		    stack = BA_JumpFixup_Create();
 		}
-		BA_JumpFixup_Append(stack, &jumpPtr);
+		jumpPtr = BA_JumpFixup_Append(stack);
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
 			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, jumpPtr);
 		break;
@@ -2351,7 +2348,7 @@ CompileExprTree(
 		numWords++;
 		break;
 	    case COLON:
-		BA_JumpFixup_Detach(stack, &jumpPtr);
+		jumpPtr = BA_JumpFixup_Detach(stack);
 		CLANG_ASSERT(jumpPtr);
 		if (jumpPtr->jumpType == TCL_TRUE_JUMP) {
 		    jumpPtr->jumpType = TCL_UNCONDITIONAL_JUMP;
@@ -2363,13 +2360,13 @@ CompileExprTree(
 			- jumpPtr->codeOffset, 127)) {
 		    target += 3;
 		}
-		BA_JumpFixup_Detach(stack, &jumpPtr);
+		jumpPtr = BA_JumpFixup_Detach(stack);
 		TclFixupForwardJump(envPtr, jumpPtr,
 			target - jumpPtr->codeOffset, 127);
 		break;
 	    case AND:
 	    case OR:
-		BA_JumpFixup_Detach(stack, &jumpPtr);
+		jumpPtr = BA_JumpFixup_Detach(stack);
 		CLANG_ASSERT(jumpPtr);
 		pc1 = CurrentOffset(envPtr);
 		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1

@@ -124,7 +124,7 @@ TclCompileGlobalCmd(
  *----------------------------------------------------------------------
  */
 
-TclBrodnikArray(JumpFixup);
+TclBrodnikArrayDefine(JumpFixup,MODULE_SCOPE);
 
 int
 TclCompileIfCmd(
@@ -142,7 +142,7 @@ TclCompileIfCmd(
 				/* Used to fix the jump after each "then" body
 				 * to the end of the "if" when that PC is
 				 * determined. */
-    JumpFixup *falseFixupPtr, *endFixupPtr;
+    JumpFixup *falseFixupPtr = NULL, *endFixupPtr = NULL;
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpFalseDist, numWords, wordIdx, numBytes, code;
     const char *word;
@@ -229,7 +229,7 @@ TclCompileIfCmd(
 		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-		BA_JumpFixup_Append(jumpFalseFixup, &falseFixupPtr);
+		falseFixupPtr = BA_JumpFixup_Append(jumpFalseFixup);
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, falseFixupPtr);
 	    }
 	    code = TCL_OK;
@@ -267,7 +267,7 @@ TclCompileIfCmd(
 	}
 
 	if (realCond) {
-	    BA_JumpFixup_Append(jumpEndFixup, &endFixupPtr);
+	    endFixupPtr = BA_JumpFixup_Append(jumpEndFixup);
 	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, endFixupPtr);
 
 	    /*
@@ -359,8 +359,8 @@ TclCompileIfCmd(
      * Fix the unconditional jumps to the end of the "if" command.
      */
 
-    BA_JumpFixup_Detach(jumpEndFixup, &endFixupPtr);
-    BA_JumpFixup_Detach(jumpFalseFixup, &falseFixupPtr);
+    endFixupPtr = BA_JumpFixup_Detach(jumpEndFixup);
+    falseFixupPtr = BA_JumpFixup_Detach(jumpFalseFixup);
 
     while (endFixupPtr) {
 	if (TclFixupForwardJumpToHere(envPtr, endFixupPtr, 127)) {
@@ -386,8 +386,8 @@ TclCompileIfCmd(
 	    }
 	}
 
-	BA_JumpFixup_Detach(jumpEndFixup, &endFixupPtr);
-	BA_JumpFixup_Detach(jumpFalseFixup, &falseFixupPtr);
+	endFixupPtr = BA_JumpFixup_Detach(jumpEndFixup);
+	falseFixupPtr = BA_JumpFixup_Detach(jumpFalseFixup);
     }
 
     /*

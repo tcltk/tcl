@@ -819,6 +819,7 @@ typedef struct JumpFixup {
 				 * records when a jump is grown from 2 bytes
 				 * to 5 bytes. */
 } JumpFixup;
+TclBrodnikArrayDeclare(JumpFixup,MODULE_SCOPE);
 
 /*
  * The structure describing one variable list of a foreach command. Note that

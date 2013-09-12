@@ -625,7 +625,7 @@ ReplaceString(
 		    return;
 		}
 
-		BA_pchar_Detach(env.cachePtr, &lastPtr);
+		lastPtr = BA_pchar_Detach(env.cachePtr);
 		if (p != lastPtr) {
 		    *p = *lastPtr;
 		}
@@ -636,8 +636,7 @@ ReplaceString(
     }
 
     if (newStr) {
-	pchar *newPtr;
-	BA_pchar_Append(env.cachePtr, &newPtr);
+	pchar *newPtr = BA_pchar_Append(env.cachePtr);
 	*newPtr = newStr;
     }
 }

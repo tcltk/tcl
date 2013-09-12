@@ -73,8 +73,8 @@ scope	BA_ ## T *	BA_ ## T ## _Create();				\
 scope	void		BA_ ## T ## _Destroy(BA_ ## T *a);		\
 scope	size_t		BA_ ## T ## _Size(BA_ ## T *a);			\
 scope	void		BA_ ## T ## _Copy(T *p,	BA_ ## T *a);		\
-scope	void		BA_ ## T ## _Append(BA_ ## T *a,T **elemPtrPtr);\
-scope	void		BA_ ## T ## _Detach(BA_ ## T *a,T **elemPtrPtr);\
+scope	T *		BA_ ## T ## _Append(BA_ ## T *a);		\
+scope	T *		BA_ ## T ## _Detach(BA_ ## T *a);		\
 scope	T *		BA_ ## T ## _At(BA_ ## T *a,size_t index);	\
 									\
 scope	T *		BA_ ## T ## _First(BA_ ## T *a, BP_ ## T *p);	\
@@ -172,15 +172,15 @@ BA_ ## T ## _Copy(							\
     }									\
 }									\
 									\
-scope void								\
+scope T *								\
 BA_ ## T ## _Append(							\
-    BA_ ## T *a,							\
-    T **elemPtrPtr)							\
+    BA_ ## T *a)							\
 {									\
+    T *elemPtr;								\
     if (a->hi == a->dbused) {						\
 	BA_ ## T ## _Grow(a);						\
     }									\
-    *elemPtrPtr = a->store[a->hi] + a->lo;				\
+    elemPtr = a->store[a->hi] + a->lo;					\
     a->lo++;								\
     if (a->lo == a->dbsize) {						\
 	a->lo = 0;							\
@@ -192,16 +192,16 @@ BA_ ## T ## _Append(							\
 	}								\
 	a->count--;							\
     }									\
+    return elemPtr;							\
 }									\
 									\
-scope void								\
+scope T *								\
 BA_ ## T ## _Detach(							\
-    BA_ ## T *a,							\
-    T **elemPtrPtr)							\
+    BA_ ## T *a)							\
 {									\
+    T *elemPtr;								\
     if (a->hi == 0) {							\
-	*elemPtrPtr = NULL;						\
-	return;								\
+	return NULL;							\
     }									\
     if (a->lo) {							\
 	a->lo--;							\
@@ -214,11 +214,11 @@ BA_ ## T ## _Detach(							\
 	}								\
 	a->lo = a->dbsize - 1;						\
     }									\
-    *elemPtrPtr = a->store[a->hi] + a->lo;				\
-    if (a->lo || (a->hi == a->dbused - 1)) {				\
-	return;								\
+    elemPtr = a->store[a->hi] + a->lo;					\
+    if (a->lo == 0 && (a->hi != a->dbused - 1)) {			\
+	BA_ ## T ## _Shrink(a);						\
     }									\
-    BA_ ## T ## _Shrink(a);						\
+    return elemPtr;							\
 }									\
 									\
 scope T *								\
