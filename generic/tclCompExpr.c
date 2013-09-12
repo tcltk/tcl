@@ -2288,12 +2288,6 @@ CompileExprTree(
 		BA_JumpList_Append(stack, &newJump);
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		BA_JumpList_Append(stack, &newJump);
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
-		BA_JumpList_Append(stack, &newJump);
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
 		break;
 	    }
 	} else if (nodePtr->mark == MARK_RIGHT) {
@@ -2347,6 +2341,8 @@ CompileExprTree(
 		break;
 	    }
 	} else {
+	    int pc1, pc2;
+
 	    switch (nodePtr->lexeme) {
 	    case START:
 	    case QUESTION:
@@ -2396,7 +2392,9 @@ CompileExprTree(
 		    jumpPtr->next->jump.codeOffset += 3;
 		}
 		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			jumpPtr->next->jump.codeOffset + 2 -jumpPtr->jump.codeOffset, 127);
+			jumpPtr->next->jump.codeOffset + 2
+			- jumpPtr->jump.codeOffset, 127);
+
 		BA_JumpList_Detach(stack, &jumpPtr);
 		BA_JumpList_Detach(stack, &jumpPtr);
 		jumpPtr = jumpPtr->next;
@@ -2404,25 +2402,24 @@ CompileExprTree(
 	    case AND:
 	    case OR:
 		CLANG_ASSERT(jumpPtr);
-		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
-			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP,
-			&jumpPtr->next->jump);
+		pc1 = CurrentOffset(envPtr);
+		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
+			: INST_JUMP_TRUE1, 0, envPtr);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
-		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&jumpPtr->next->next->jump);
+		pc2 = CurrentOffset(envPtr);
+		TclEmitInstInt1(INST_JUMP1, 0, envPtr);
 		TclAdjustStackDepth(-1, envPtr);
-		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->jump, 127);
+		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc1,
+			envPtr->codeStart + pc1 + 1);
 		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
-		    jumpPtr->next->next->jump.codeOffset += 3;
+		    pc2 += 3;
 		}
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
-		TclFixupForwardJumpToHere(envPtr, &jumpPtr->next->next->jump,
-			127);
+		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
+			envPtr->codeStart + pc2 + 1);
 		convert = 0;
-		BA_JumpList_Detach(stack, &jumpPtr);
-		BA_JumpList_Detach(stack, &jumpPtr);
 		BA_JumpList_Detach(stack, &jumpPtr);
 		jumpPtr = jumpPtr->next;
 		break;
