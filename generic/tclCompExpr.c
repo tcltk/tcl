@@ -2263,34 +2263,14 @@ CompileExprTree(
 	int next;
 
 	if (nodePtr->mark == MARK_LEFT) {
-	    JumpList *newJump;
-
 	    next = nodePtr->left;
 
-	    switch (nodePtr->lexeme) {
-	    case QUESTION:
-		if (stack == NULL) {
-		    stack = BA_JumpList_Create();
-		}
-		BA_JumpList_Append(stack, &newJump);
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
-		BA_JumpList_Append(stack, &newJump);
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
+	    if (nodePtr->lexeme == QUESTION) {
 		convert = 1;
-		break;
-	    case AND:
-	    case OR:
-		if (stack == NULL) {
-		    stack = BA_JumpList_Create();
-		}
-		BA_JumpList_Append(stack, &newJump);
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
-		break;
 	    }
 	} else if (nodePtr->mark == MARK_RIGHT) {
+	    JumpList *newJump;
+
 	    next = nodePtr->right;
 
 	    switch (nodePtr->lexeme) {
@@ -2321,12 +2301,20 @@ CompileExprTree(
 		break;
 	    }
 	    case QUESTION:
+		if (stack == NULL) {
+		    stack = BA_JumpList_Create();
+		}
+		BA_JumpList_Append(stack, &newJump);
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
 		break;
 	    case COLON:
-		CLANG_ASSERT(jumpPtr);
+		BA_JumpList_Append(stack, &newJump);
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&jumpPtr->next->jump);
+			&jumpPtr->jump);
 		TclAdjustStackDepth(-1, envPtr);
 		if (convert) {
 		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
@@ -2334,14 +2322,19 @@ CompileExprTree(
 		convert = 1;
 		break;
 	    case AND:
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
-		break;
 	    case OR:
-		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP, &jumpPtr->jump);
+		if (stack == NULL) {
+		    stack = BA_JumpList_Create();
+		}
+		BA_JumpList_Append(stack, &newJump);
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
+		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
+			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
 		break;
 	    }
 	} else {
-	    int pc1, pc2;
+	    int pc1, pc2, target;
 
 	    switch (nodePtr->lexeme) {
 	    case START:
@@ -2383,19 +2376,19 @@ CompileExprTree(
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
 		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
-		    jumpPtr->jump.jumpType = TCL_FALSE_JUMP;
+		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
 		    convert = 1;
 		}
-		if (TclFixupForwardJump(envPtr, &jumpPtr->next->jump,
+		target = jumpPtr->jump.codeOffset + 2;
+		if (TclFixupForwardJump(envPtr, &jumpPtr->jump,
 			(envPtr->codeNext - envPtr->codeStart)
-			- jumpPtr->next->jump.codeOffset, 127)) {
-		    jumpPtr->next->jump.codeOffset += 3;
+			- jumpPtr->jump.codeOffset, 127)) {
+		    target += 3;
 		}
-		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			jumpPtr->next->jump.codeOffset + 2
-			- jumpPtr->jump.codeOffset, 127);
-
 		BA_JumpList_Detach(stack, &jumpPtr);
+		jumpPtr = jumpPtr->next;
+		TclFixupForwardJump(envPtr, &jumpPtr->jump,
+			target - jumpPtr->jump.codeOffset, 127);
 		BA_JumpList_Detach(stack, &jumpPtr);
 		jumpPtr = jumpPtr->next;
 		break;
