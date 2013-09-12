@@ -2256,12 +2256,6 @@ CompileExprTree(
 
 	    switch (nodePtr->lexeme) {
 	    case QUESTION:
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
 		convert = 1;
 		break;
 	    case AND:
@@ -2302,12 +2296,17 @@ CompileExprTree(
 		break;
 	    }
 	    case QUESTION:
+		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
 		break;
 	    case COLON:
-		CLANG_ASSERT(jumpPtr);
+		newJump = TclStackAlloc(interp, sizeof(JumpList));
+		newJump->next = jumpPtr;
+		jumpPtr = newJump;
 		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&jumpPtr->next->jump);
+			&jumpPtr->jump);
 		TclAdjustStackDepth(-1, envPtr);
 		if (convert) {
 		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
@@ -2322,7 +2321,7 @@ CompileExprTree(
 		break;
 	    }
 	} else {
-	    int pc1, pc2;
+	    int pc1, pc2, target;
 
 	    switch (nodePtr->lexeme) {
 	    case START:
@@ -2364,21 +2363,21 @@ CompileExprTree(
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
 		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
-		    jumpPtr->jump.jumpType = TCL_FALSE_JUMP;
+		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
 		    convert = 1;
 		}
-		if (TclFixupForwardJump(envPtr, &jumpPtr->next->jump,
+		target = jumpPtr->jump.codeOffset + 2;
+		if (TclFixupForwardJump(envPtr, &jumpPtr->jump,
 			(envPtr->codeNext - envPtr->codeStart)
-			- jumpPtr->next->jump.codeOffset, 127)) {
-		    jumpPtr->next->jump.codeOffset += 3;
+			- jumpPtr->jump.codeOffset, 127)) {
+		    target += 3;
 		}
-		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			jumpPtr->next->jump.codeOffset + 2
-			- jumpPtr->jump.codeOffset, 127);
-
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
+		TclFixupForwardJump(envPtr, &jumpPtr->jump,
+			target - jumpPtr->jump.codeOffset, 127);
+
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
