@@ -2228,7 +2228,7 @@ TclCompileForCmd(
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
-    int testCodeOffset, bodyCodeOffset, nextCodeOffset, jumpDist;
+    int bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2309,13 +2309,9 @@ TclCompileForCmd(
      * terminates the for.
      */
 
-    testCodeOffset = CurrentOffset(envPtr);
-
-    jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
+    if (TclFixupForwardJumpToHere(envPtr, &jumpEvalCondFixup, 127)) {
 	bodyCodeOffset += 3;
 	nextCodeOffset += 3;
-	testCodeOffset += 3;
     }
 
     SetLineInformation(2);

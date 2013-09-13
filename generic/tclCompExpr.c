@@ -2355,9 +2355,7 @@ CompileExprTree(
 		    convert = 1;
 		}
 		target = jumpPtr->codeOffset + 2;
-		if (TclFixupForwardJump(envPtr, jumpPtr,
-			(envPtr->codeNext - envPtr->codeStart)
-			- jumpPtr->codeOffset, 127)) {
+		if (TclFixupForwardJumpToHere(envPtr, jumpPtr, 127)) {
 		    target += 3;
 		}
 		jumpPtr = BA_JumpFixup_Detach(stack);
