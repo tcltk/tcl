@@ -1,3 +1,12 @@
+A NOTE ON THE CHANGELOG:
+Starting in early 2011, Tcl source code has been under the management of
+fossil, hosted at http://core.tcl.tk/tcl/ .  Fossil presents a "Timeline"
+view of changes made that is superior in every way to a hand edited log file.
+Because of this, many Tcl developers are now out of the habit of maintaining
+this log file.  You may still find useful things in it, but the Timeline is
+a better first place to look now.
+============================================================================
+
 2013-08-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump to 8.5.15 for release.
