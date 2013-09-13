@@ -2361,9 +2361,7 @@ CompileExprTree(
 		    convert = 1;
 		}
 		target = jumpPtr->jump.codeOffset + 2;
-		if (TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			(envPtr->codeNext - envPtr->codeStart)
-			- jumpPtr->jump.codeOffset, 127)) {
+		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
 		    target += 3;
 		}
 		freePtr = jumpPtr;
