@@ -2311,6 +2311,7 @@ TclExecuteByteCode(
 
 	    initCatchTop += moved;
 	    catchTop += moved;
+	    bcFramePtr = (CmdFrame *) (initCatchTop + codePtr->maxExceptDepth + 1);
 	    initTosPtr += moved;
 	    tosPtr += moved;
 	    esPtr = iPtr->execEnvPtr->execStackPtr;
