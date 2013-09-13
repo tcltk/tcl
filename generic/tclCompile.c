@@ -3651,8 +3651,10 @@ TclFixupForwardJump(
 				 * is grown to five bytes. */
 {
     unsigned char *jumpPc, *p;
-    int firstCmd, lastCmd, firstRange, lastRange, k;
+    int firstRange, lastRange, k;
     unsigned numBytes;
+    CmdLocation *cmdLocPtr = NULL;
+    BP_CmdLocation ptr;
 
     if (jumpDist <= distThreshold) {
 	jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
@@ -3704,12 +3706,10 @@ TclFixupForwardJump(
      * between the jump and the current code address.
      */
 
-    firstCmd = jumpFixupPtr->cmdIndex;
-    lastCmd = envPtr->numCommands - 1;
-    if (firstCmd < lastCmd) {
-	for (k = firstCmd;  k <= lastCmd;  k++) {
-	    BA_CmdLocation_At(envPtr->cmdMap, k)->codeOffset += 3;
-	}
+    for (cmdLocPtr = BA_CmdLocation_Get(envPtr->cmdMap,
+	    jumpFixupPtr->cmdIndex, &ptr); cmdLocPtr;
+	    cmdLocPtr = BP_CmdLocation_Next(&ptr)) {
+	cmdLocPtr->codeOffset += 3;
     }
 
     firstRange = jumpFixupPtr->exceptIndex;

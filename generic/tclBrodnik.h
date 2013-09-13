@@ -75,7 +75,9 @@ scope	size_t		BA_ ## T ## _Size(BA_ ## T *a);			\
 scope	void		BA_ ## T ## _Copy(T *p,	BA_ ## T *a);		\
 scope	T *		BA_ ## T ## _Append(BA_ ## T *a);		\
 scope	T *		BA_ ## T ## _Detach(BA_ ## T *a);		\
-scope	T *		BA_ ## T ## _At(BA_ ## T *a,size_t index);	\
+scope	T *		BA_ ## T ## _Get(BA_ ## T *a, size_t index,	\
+			    BP_ ## T *p);				\
+scope	T *		BA_ ## T ## _At(BA_ ## T *a, size_t index);	\
 									\
 scope	T *		BA_ ## T ## _First(BA_ ## T *a, BP_ ## T *p);	\
 scope	T *		BP_ ## T ## _Next(BP_ ## T *p)
@@ -222,17 +224,37 @@ BA_ ## T ## _Detach(							\
 }									\
 									\
 scope T *								\
-BA_ ## T ## _At(							\
+BA_ ## T ## _Get(							\
     BA_ ## T *a,							\
-    size_t index)							\
+    size_t index,							\
+    BP_ ## T *p)							\
 {									\
     unsigned int hi, lo;						\
 									\
     TclBAConvertIndices(index, &hi, &lo);				\
     if (hi > a->hi || (hi == a->hi && lo >= a->lo)) {			\
+	if (p) {p->ptr = NULL;}						\
 	return NULL;							\
     }									\
+    if (p) {								\
+	size_t plus2 = hi + 2;						\
+	int n = TclMSB(plus2) - 1;					\
+	p->array = a;							\
+	p->hi = hi;							\
+	p->lo = lo;							\
+	p->dbsize = 1 << (n + ((plus2 >> n) & 1));			\
+	p->count = 3 * p->dbsize - 3 - hi;				\
+	p->ptr = a->store[hi] + lo;					\
+    }									\
     return a->store[hi] + lo;						\
+}									\
+									\
+scope T *								\
+BA_ ## T ## _At(							\
+    BA_ ## T *a,							\
+    size_t index)							\
+{									\
+    return BA_ ## T ## _Get(a, index, NULL);				\
 }									\
 									\
 scope T *								\
