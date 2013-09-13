@@ -7788,4 +7788,6 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 2013-09-07 (bug fix)[86ceb4] have tm path favor first provider (neumann,porter)
 
+2013-09-13 (bug fix)[bdd91c] crash in exec stack mem management (azazel)
+
 --- Released 8.5.15, September 16, 2013 --- http://core.tcl.tk/tcl/ for details
