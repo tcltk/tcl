@@ -64,7 +64,7 @@ Indicates that the output should be split into lines of no more than
 .
 Indicates that, when lines are split because of the \fB\-maxlen\fR option,
 \fIcharacter\fR should be used to separate lines. By default, this is a
-newline character,
+newline character.
 .QW \en .
 .PP
 During decoding, the following options are supported:
@@ -102,6 +102,13 @@ During encoding, the following options are supported:
 Indicates that the output should be split into lines of no more than
 \fIlength\fR characters. By default, lines are split every 61 characters, and
 this must be in the range 3 to 85 due to limitations in the encoding.
+.TP
+\fB\-wrapchar \fIcharacter\fR
+.
+Indicates that, when lines are split because of the \fB\-maxlen\fR option,
+\fIcharacter\fR should be used to separate lines. By default, this is a
+newline character.
+.QW \en .
 .PP
 During decoding, the following options are supported:
 .TP
