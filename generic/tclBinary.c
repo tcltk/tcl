@@ -87,10 +87,13 @@ static int		BinaryDecodeHex(ClientData clientData,
 static int		BinaryEncode64(ClientData clientData,
 			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecodeUu(ClientData clientData,
+static int		BinaryDecode64(ClientData clientData,
 			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		BinaryDecode64(ClientData clientData,
+static int		BinaryEncodeUu(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+static int		BinaryDecodeUu(ClientData clientData,
 			    Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 
@@ -140,7 +143,7 @@ static const EnsembleImplMap binaryMap[] = {
 };
 static const EnsembleImplMap encodeMap[] = {
     { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, (ClientData)HexDigits, 0 },
-    { "uuencode", BinaryEncode64,  NULL, NULL, (ClientData)UueDigits, 0 },
+    { "uuencode", BinaryEncodeUu,  NULL, NULL, NULL, 0 },
     { "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
@@ -2439,7 +2442,7 @@ BinaryDecodeHex(
  *	This implements a generic 6 bit binary encoding. Input is broken into
  *	6 bit chunks and a lookup table passed in via clientData is used to
  *	turn these values into output characters. This is used to implement
- *	base64 and uuencode binary encodings.
+ *	base64 binary encodings.
  *
  * Results:
  *	Interp result set to an encoded byte array object
@@ -2498,6 +2501,12 @@ BinaryEncode64(
 	    if (Tcl_GetIntFromObj(interp, objv[i+1], &maxlen) != TCL_OK) {
 		return TCL_ERROR;
 	    }
+	    if (maxlen < 0) {
+		Tcl_SetResult(interp, "line length out of range", TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
+			"LINE_LENGTH", NULL);
+		return TCL_ERROR;
+	    }
 	    break;
 	case OPT_WRAPCHAR:
 	    wrapchar = Tcl_GetStringFromObj(objv[i+1], &wrapcharlen);
@@ -2546,6 +2555,114 @@ BinaryEncode64(
     return TCL_OK;
 }
 #undef OUTPUT
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * BinaryEncodeUu --
+ *
+ *	This implements the uuencode binary encoding. Input is broken into 6
+ *	bit chunks and a lookup table is used to turn these values into output
+ *	characters. This differs from the generic code above in that line
+ *	lengths are also encoded.
+ *
+ * Results:
+ *	Interp result set to an encoded byte array object
+ *
+ * Side effects:
+ *	None
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+BinaryEncodeUu(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    Tcl_Obj *resultObj;
+    unsigned char *data, *start, *cursor;
+    int offset, count, rawLength, n, i, bits, index;
+    int lineLength = 61;
+    enum {OPT_MAXLEN};
+    static const char *const optStrings[] = { "-maxlen", NULL };
+
+    if (objc < 2 || objc%2 != 0) {
+	Tcl_WrongNumArgs(interp, 1, objv, "?-maxlen len? data");
+	return TCL_ERROR;
+    }
+    for (i = 1; i < objc-1; i += 2) {
+	if (Tcl_GetIndexFromObj(interp, objv[i], optStrings, "option",
+		TCL_EXACT, &index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch (index) {
+	case OPT_MAXLEN:
+	    if (Tcl_GetIntFromObj(interp, objv[i+1], &lineLength) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if (lineLength < 3 || lineLength > 85) {
+		Tcl_SetResult(interp, "line length out of range", TCL_STATIC);
+		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
+			"LINE_LENGTH", NULL);
+		return TCL_ERROR;
+	    }
+	    break;
+	}
+    }
+
+    /*
+     * Allocate the buffer. This is a little bit too long, but is "good
+     * enough".
+     */
+
+    resultObj = Tcl_NewObj();
+    offset = 0;
+    data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
+    rawLength = (lineLength - 1) * 3 / 4;
+    start = cursor = Tcl_SetByteArrayLength(resultObj,
+	    (lineLength + 1) * ((count + (rawLength - 1)) / rawLength));
+    n = bits = 0;
+
+    /*
+     * Encode the data. Each output line first has the length of raw data
+     * encoded by the output line described in it by one encoded byte, then
+     * the encoded data follows (encoding each 6 bits as one character).
+     * Encoded lines are always terminated by a newline.
+     */
+
+    while (offset < count) {
+	int lineLen = count - offset;
+
+	if (lineLen > rawLength) {
+	    lineLen = rawLength;
+	}
+	*cursor++ = UueDigits[lineLen];
+	for (i=0 ; i<lineLen ; i++) {
+	    n <<= 8;
+	    n |= data[offset++];
+	    for (bits += 8; bits > 6 ; bits -= 6) {
+		*cursor++ = UueDigits[(n >> (bits-6)) & 0x3f];
+	    }
+	}
+	if (bits > 0) {
+	    n <<= 8;
+	    *cursor++ = UueDigits[(n >> (bits + 2)) & 0x3f];
+	    bits = 0;
+	}
+	*cursor++ = '\n';
+    }
+
+    /*
+     * Fix the length of the output bytearray.
+     */
+
+    Tcl_SetByteArrayLength(resultObj, cursor-start);
+    Tcl_SetObjResult(interp, resultObj);
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------

@@ -2705,34 +2705,51 @@ test binary-74.1 {binary encode uuencode} -body {
 } -returnCodes error -match glob -result "wrong # args: *"
 test binary-74.2 {binary encode uuencode} -body {
     binary encode uuencode abc
-} -result {86)C}
+} -result {#86)C
+}
 test binary-74.3 {binary encode uuencode} -body {
     binary encode uuencode {}
 } -result {}
 test binary-74.4 {binary encode uuencode} -body {
     binary encode uuencode [string repeat abc 20]
-} -result [string repeat 86)C 20]
+} -result "M[string repeat 86)C 15]\n/[string repeat 86)C 5]\n"
 test binary-74.5 {binary encode uuencode} -body {
     binary encode uuencode \0\1\2\3\4\0\1\2\3
-} -result "``\$\"`P0``0(#"
+} -result ")``\$\"`P0``0(#\n"
 test binary-74.6 {binary encode uuencode} -body {
     binary encode uuencode \0
-} -result {````}
+} -result {!``
+}
 test binary-74.7 {binary encode uuencode} -body {
     binary encode uuencode \0\0
-} -result {````}
+} -result "\"```
+"
 test binary-74.8 {binary encode uuencode} -body {
     binary encode uuencode \0\0\0
-} -result {````}
+} -result {#````
+}
 test binary-74.9 {binary encode uuencode} -body {
     binary encode uuencode \0\0\0\0
-} -result {````````}
-test binary-74.10 {binary encode uuencode} -body {
-    binary encode uuencode -maxlen 0 -wrapchar | abcabcabc
-} -result {86)C86)C86)C}
-test binary-74.11 {binary encode uuencode} -body {
-    binary encode uuencode -maxlen 1 -wrapchar | abcabcabc
-} -result {8|6|)|C|8|6|)|C|8|6|)|C}
+} -result {$``````
+}
+test binary-74.10 {binary encode uuencode} -returnCodes error -body {
+    binary encode uuencode -maxlen 30 -wrapchar | abcabcabc
+} -result {bad option "-wrapchar": must be -maxlen}
+test binary-74.11 {binary encode uuencode} -returnCodes error -body {
+    binary encode uuencode -maxlen 1 abcabcabc
+} -result {line length out of range}
+test binary-74.12 {binary encode uuencode} -body {
+    binary encode uuencode -maxlen 3 abcabcabc
+} -result {!80
+!8@
+!8P
+!80
+!8@
+!8P
+!80
+!8@
+!8P
+}
 
 test binary-75.1 {binary decode uuencode} -body {
     binary decode uuencode
