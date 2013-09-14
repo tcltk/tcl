@@ -2614,12 +2614,6 @@ BinaryEncodeUu(
 	    break;
 	case OPT_WRAPCHAR:
 	    wrapchar = Tcl_GetStringFromObj(objv[i+1], &wrapcharlen);
-	    if (wrapcharlen < 0 || wrapcharlen > 2) {
-		Tcl_SetResult(interp, "wrap char out of range", TCL_STATIC);
-		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
-			"WRAP_CHAR", NULL);
-		return TCL_ERROR;
-	    }
 	    break;
 	}
     }
