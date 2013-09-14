@@ -2690,8 +2690,8 @@ BinaryDecodeUu(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data, *datastart, *dataend;
     unsigned char *begin, *cursor;
-    int i, index, size, count = 0, cut = 0, strict = 0;
-    char c;
+    int i, index, size, count = 0, strict = 0, lineLen;
+    unsigned char c;
     enum {OPT_STRICT };
     static const char *const optStrings[] = { "-strict", NULL };
 
@@ -2717,44 +2717,112 @@ BinaryDecodeUu(
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
+    lineLen = -1;
+
+    /*
+     * The decoding loop. First, we get the length of line (strictly, the
+     * number of data bytes we expect to generate from the line) we're
+     * processing this time round if it is not already known (i.e., when the
+     * lineLen variable is set to the magic value, -1).
+     */
+
     while (data < dataend) {
 	char d[4] = {0, 0, 0, 0};
+
+	if (lineLen < 0) {
+	    c = *data++;
+	    if (c < 32 || c > 96) {
+		if (strict || !isspace(c)) {
+		    goto badUu;
+		}
+		i--;
+		continue;
+	    }
+	    lineLen = (c - 32) & 0x3f;
+	}
+
+	/*
+	 * Now we read a four-character grouping.
+	 */
 
 	for (i=0 ; i<4 ; i++) {
 	    if (data < dataend) {
 		d[i] = c = *data++;
-		if (c < 33 || c > 96) {
-		    if (strict || !isspace(UCHAR(c))) {
-			goto badUu;
+		if (c < 32 || c > 96) {
+		    if (strict) {
+			if (!isspace(c)) {
+			    goto badUu;
+			} else if (c == '\n') {
+			    goto shortUu;
+			}
 		    }
 		    i--;
 		    continue;
 		}
-	    } else {
-		cut++;
 	    }
 	}
-	if (cut > 3) {
-	    cut = 3;
+
+	/*
+	 * Translate that grouping into (up to) three binary bytes output.
+	 */
+
+	if (lineLen > 0) {
+	    *cursor++ = (((d[0] - 0x20) & 0x3f) << 2)
+		    | (((d[1] - 0x20) & 0x3f) >> 4);
+	    if (--lineLen > 0) {
+		*cursor++ = (((d[1] - 0x20) & 0x3f) << 4)
+			| (((d[2] - 0x20) & 0x3f) >> 2);
+		if (--lineLen > 0) {
+		    *cursor++ = (((d[2] - 0x20) & 0x3f) << 6)
+			    | (((d[3] - 0x20) & 0x3f));
+		    lineLen--;
+		}
+	    }
 	}
-	*cursor++ = (((d[0] - 0x20) & 0x3f) << 2)
-		| (((d[1] - 0x20) & 0x3f) >> 4);
-	*cursor++ = (((d[1] - 0x20) & 0x3f) << 4)
-		| (((d[2] - 0x20) & 0x3f) >> 2);
-	*cursor++ = (((d[2] - 0x20) & 0x3f) << 6)
-		| (((d[3] - 0x20) & 0x3f));
+
+	/*
+	 * If we've reached the end of the line, skip until we process a
+	 * newline.
+	 */
+
+	if (lineLen == 0 && data < dataend) {
+	    lineLen = -1;
+	    do {
+		c = *data++;
+		if (c == '\n') {
+		    break;
+		} else if (c >= 32 && c <= 96) {
+		    data--;
+		    break;
+		} else if (strict || !isspace(c)) {
+		    goto badUu;
+		}
+	    } while (data < dataend);
+	}
     }
-    if (cut > size) {
-	cut = size;
+
+    /*
+     * Sanity check, clean up and finish.
+     */
+
+    if (lineLen > 0 && strict) {
+	goto shortUu;
     }
-    Tcl_SetByteArrayLength(resultObj, cursor - begin - cut);
+    Tcl_SetByteArrayLength(resultObj, cursor - begin);
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
+
+  shortUu:
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf("short uuencode data"));
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "SHORT", NULL);
+    TclDecrRefCount(resultObj);
+    return TCL_ERROR;
 
   badUu:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 	    "invalid uuencode character \"%c\" at position %d",
 	    c, (int) (data - datastart - 1)));
+    Tcl_SetErrorCode(interp, "TCL", "BINARY", "DECODE", "INVALID", NULL);
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }
