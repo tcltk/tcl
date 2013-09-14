@@ -107,7 +107,7 @@ During decoding, the following options are supported:
 .TP
 \fB\-strict\fR
 .
-Instructs the decoder to throw an error if it encounters whitespace
+Instructs the decoder to throw an error if it encounters unexpected whitespace
 characters. Otherwise it ignores them.
 .PP
 Note that neither the encoder nor the decoder handle the header and footer of
