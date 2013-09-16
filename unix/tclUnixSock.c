@@ -1358,6 +1358,7 @@ Tcl_OpenTcpServer(
 		my_errno = errno;
 	    }       
             close(sock);
+            sock = -1;
             continue;
         }
         if (port == 0 && chosenport == 0) {
@@ -1380,6 +1381,7 @@ Tcl_OpenTcpServer(
 		my_errno = errno;
 	    }
             close(sock);
+            sock = -1;
             continue;
         }
         if (statePtr == NULL) {

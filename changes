@@ -8290,6 +8290,10 @@ reported usage of large expressions (porter)
 
 2013-09-01 (bug fix)[b98fa55] [binary decode] fail on whitespace (reche,fellows)
 
+2013-09-07 (bug fix)[86ceb4] have tm path favor first provider (neumann,porter)
+
+2013-09-09 (bug fix)[3609693] copied object member variable confusion (fellows)
+
 Many optmizations, improvements, and tightened stack management in bytecode.
 
---- Released 8.6.1, Septemer 18, 2013 --- http://core.tcl.tk/tcl/ for details 
+--- Released 8.6.1, Septemer 19, 2013 --- http://core.tcl.tk/tcl/ for details 
