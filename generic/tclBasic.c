@@ -2175,7 +2175,8 @@ Tcl_CreateCommand(
  *
  * Side effects:
  *	If a command named "cmdName" already exists for interp, it is
- * 	first deleted.  Then the new command is created from the arguments.
+ *	first deleted.  Then the new command is created from the arguments.
+ *	[***] (See below for exception).
  *
  *	In the future, during bytecode evaluation when "cmdName" is seen as
  *	the name of a command by Tcl_EvalObj or Tcl_Eval, the object-based
@@ -2242,8 +2243,27 @@ Tcl_CreateObjCommand(
     if (!isNew) {
 	cmdPtr = Tcl_GetHashValue(hPtr);
 
+	/* Command already exists. */
+
 	/*
-	 * Command already exists; delete it. Be careful to preserve any
+	 * [***] This is wrong.  See Tcl Bug a16752c252.  
+	 * However, this buggy behavior is kept under particular
+	 * circumstances to accommodate deployed binaries of the
+	 * "tclcompiler" program. http://sourceforge.net/projects/tclpro/
+	 * that crash if the bug is fixed.
+	 */
+
+	if (cmdPtr->objProc == TclInvokeStringCommand
+		&& cmdPtr->clientData == clientData
+		&& cmdPtr->deleteData == clientData
+		&& cmdPtr->deleteProc == deleteProc) {
+	    cmdPtr->objProc = proc;
+	    cmdPtr->objClientData = clientData;
+	    return (Tcl_Command) cmdPtr;
+	}
+
+	/*
+	 * Otherwise, we delete the old command. Be careful to preserve any
 	 * existing import links so we can restore them down below. That way,
 	 * you can redefine a command and its import status will remain
 	 * intact.
@@ -4679,6 +4699,15 @@ TEOV_RunEnterTraces(
     TclCleanupCommandMacro(cmdPtr);
 
     if (traceCode != TCL_OK) {
+	if (traceCode == TCL_ERROR) {
+	    Tcl_Obj *info;
+
+	    TclNewLiteralStringObj(info, "\n    (enter trace on \"");
+	    Tcl_AppendLimitedToObj(info, command, length, 55, "...");
+	    Tcl_AppendToObj(info, "\")", 2);
+	    Tcl_AppendObjToErrorInfo(interp, info);
+	    iPtr->flags |= ERR_ALREADY_LOGGED;
+	}
 	return traceCode;
     }
     if (cmdEpoch != newEpoch) {
@@ -4699,12 +4728,10 @@ TEOV_RunLeaveTraces(
     Tcl_Obj *commandPtr = data[1];
     Command *cmdPtr = data[2];
     Tcl_Obj **objv = data[3];
-
+    int length;
+    const char *command = Tcl_GetStringFromObj(commandPtr, &length);
 
     if (!(cmdPtr->flags & CMD_IS_DELETED)) {
-	int length;
-	const char *command = Tcl_GetStringFromObj(commandPtr, &length);
-
 	if (cmdPtr->flags & CMD_HAS_EXEC_TRACES){
 	    traceCode = TclCheckExecutionTraces(interp, command, length,
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
@@ -4714,7 +4741,6 @@ TEOV_RunLeaveTraces(
 		    cmdPtr, result, TCL_TRACE_LEAVE_EXEC, objc, objv);
 	}
     }
-    Tcl_DecrRefCount(commandPtr);
 
     /*
      * As cmdPtr is set, TclNRRunCallbacks is about to reduce the numlevels.
@@ -4725,8 +4751,18 @@ TEOV_RunLeaveTraces(
     TclCleanupCommandMacro(cmdPtr);
 
     if (traceCode != TCL_OK) {
-	return traceCode;
+	if (traceCode == TCL_ERROR) {
+	    Tcl_Obj *info;
+
+	    TclNewLiteralStringObj(info, "\n    (leave trace on \"");
+	    Tcl_AppendLimitedToObj(info, command, length, 55, "...");
+	    Tcl_AppendToObj(info, "\")", 2);
+	    Tcl_AppendObjToErrorInfo(interp, info);
+	    iPtr->flags |= ERR_ALREADY_LOGGED;
+	}
+	result = traceCode;
     }
+    Tcl_DecrRefCount(commandPtr);
     return result;
 }
 
