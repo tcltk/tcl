@@ -142,9 +142,9 @@ static const EnsembleImplMap binaryMap[] = {
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
 static const EnsembleImplMap encodeMap[] = {
-    { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, (ClientData)HexDigits, 0 },
+    { "hex",      BinaryEncodeHex, TclCompileBasic1ArgCmd, NULL, NULL, 0 },
     { "uuencode", BinaryEncodeUu,  NULL, NULL, NULL, 0 },
-    { "base64",   BinaryEncode64,  NULL, NULL, (ClientData)B64Digits, 0 },
+    { "base64",   BinaryEncode64,  NULL, NULL, NULL, 0 },
     { NULL, NULL, NULL, NULL, NULL, 0 }
 };
 static const EnsembleImplMap decodeMap[] = {
@@ -2315,7 +2315,6 @@ BinaryEncodeHex(
     Tcl_Obj *resultObj = NULL;
     unsigned char *data = NULL;
     unsigned char *cursor = NULL;
-    const char *digits = clientData;
     int offset = 0, count = 0;
 
     if (objc != 2) {
@@ -2327,8 +2326,8 @@ BinaryEncodeHex(
     data = Tcl_GetByteArrayFromObj(objv[1], &count);
     cursor = Tcl_SetByteArrayLength(resultObj, count * 2);
     for (offset = 0; offset < count; ++offset) {
-	*cursor++ = digits[((data[offset] >> 4) & 0x0f)];
-	*cursor++ = digits[(data[offset] & 0x0f)];
+	*cursor++ = HexDigits[((data[offset] >> 4) & 0x0f)];
+	*cursor++ = HexDigits[(data[offset] & 0x0f)];
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
@@ -2478,7 +2477,6 @@ BinaryEncode64(
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *cursor, *limit;
-    const char *digits = clientData;
     int maxlen = 0;
     const char *wrapchar = "\n";
     int wrapcharlen = 1;
@@ -2537,17 +2535,17 @@ BinaryEncode64(
 	    for (i = 0; i < 3 && offset+i < count; ++i) {
 		d[i] = data[offset + i];
 	    }
-	    OUTPUT(digits[d[0] >> 2]);
-	    OUTPUT(digits[((d[0] & 0x03) << 4) | (d[1] >> 4)]);
+	    OUTPUT(B64Digits[d[0] >> 2]);
+	    OUTPUT(B64Digits[((d[0] & 0x03) << 4) | (d[1] >> 4)]);
 	    if (offset+1 < count) {
-		OUTPUT(digits[((d[1] & 0x0f) << 2) | (d[2] >> 6)]);
+		OUTPUT(B64Digits[((d[1] & 0x0f) << 2) | (d[2] >> 6)]);
 	    } else {
-		OUTPUT(digits[64]);
+		OUTPUT(B64Digits[64]);
 	    }
 	    if (offset+2 < count) {
-		OUTPUT(digits[d[2] & 0x3f]);
+		OUTPUT(B64Digits[d[2] & 0x3f]);
 	    } else {
-		OUTPUT(digits[64]);
+		OUTPUT(B64Digits[64]);
 	    }
 	}
     }
