@@ -2586,13 +2586,15 @@ BinaryEncodeUu(
     unsigned char *data, *start, *cursor;
     int offset, count, rawLength, n, i, j, bits, index;
     int lineLength = 61;
-    const char *wrapchar = "\n";
-    int wrapcharlen = 1;
-    enum {OPT_MAXLEN, OPT_WRAPCHAR };
+    const unsigned char SingleNewline[] = { (unsigned char) '\n' };
+    const unsigned char *wrapchar = SingleNewline;
+    int wrapcharlen = sizeof(SingleNewline);
+    enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
     if (objc < 2 || objc%2 != 0) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-maxlen len? ?-wrapchar char? data");
+	Tcl_WrongNumArgs(interp, 1, objv,
+		"?-maxlen len? ?-wrapchar char? data");
 	return TCL_ERROR;
     }
     for (i = 1; i < objc-1; i += 2) {
@@ -2613,7 +2615,7 @@ BinaryEncodeUu(
 	    }
 	    break;
 	case OPT_WRAPCHAR:
-	    wrapchar = Tcl_GetStringFromObj(objv[i+1], &wrapcharlen);
+	    wrapchar = Tcl_GetByteArrayFromObj(objv[i+1], &wrapcharlen);
 	    break;
 	}
     }
@@ -2628,7 +2630,8 @@ BinaryEncodeUu(
     data = Tcl_GetByteArrayFromObj(objv[objc-1], &count);
     rawLength = (lineLength - 1) * 3 / 4;
     start = cursor = Tcl_SetByteArrayLength(resultObj,
-	    (lineLength + wrapcharlen) * ((count + (rawLength - 1)) / rawLength));
+	    (lineLength + wrapcharlen) *
+	    ((count + (rawLength - 1)) / rawLength));
     n = bits = 0;
 
     /*
@@ -2657,7 +2660,7 @@ BinaryEncodeUu(
 	    *cursor++ = UueDigits[(n >> (bits + 2)) & 0x3f];
 	    bits = 0;
 	}
-	for (j=0; j<wrapcharlen; ++j) {
+	for (j=0 ; j<wrapcharlen ; ++j) {
 	    *cursor++ = wrapchar[j];
 	}
     }
