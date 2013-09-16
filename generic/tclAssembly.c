@@ -2618,6 +2618,7 @@ AllocBB(
     bb->minStackDepth = 0;
     bb->maxStackDepth = 0;
     bb->finalStackDepth = 0;
+    bb->catchDepth = 0;
     bb->enclosingCatch = NULL;
     bb->foreignExceptionBase = -1;
     bb->foreignExceptionCount = 0;
