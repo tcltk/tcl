@@ -1,3 +1,14 @@
+2013-09-17  Donal Fellows  <dkf@Donals-MacBook-Pro.local>
+
+	* generic/tclBinary.c (BinaryEncodeUu, BinaryDecodeUu): [Bug 2152292]:
+	Corrected implementation of the core of uuencode handling so that the
+	line length processing is correctly applied.
+	***POTENTIAL INCOMPATIBILITY***
+	Existing code that was using the old versions and working around the
+	limitations will now need to do far less. The -maxlen option now has
+	strict limits on the range of supported lengths; this is a limitation
+	of the format itself.
+
 2013-09-09  Donal Fellows  <dkf@users.sf.net>
 
 	* generic/tclOOMethod.c (CloneProcedureMethod): [Bug 3609693]: Strip
