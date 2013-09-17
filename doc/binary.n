@@ -36,6 +36,13 @@ The \fBbinary encode\fR and \fBbinary decode\fR subcommands convert
 binary data to or from string encodings such as base64 (used in MIME
 messages for example).
 .VE 8.6
+.PP
+Note that other operations on binary data, such as taking a subsequence of it,
+getting its length, or reinterpreting it as a string in some encoding, are
+done by other Tcl commands (respectively \fBstring range\fR,
+\fBstring length\fR and \fBencoding convertfrom\fR in the example cases).  A
+binary string in Tcl is merely one where all the characters it contains are in
+the range \eu0000\-\eu00FF.
 .SH "BINARY ENCODE AND DECODE"
 .VS 8.6
 .PP
@@ -64,7 +71,7 @@ Indicates that the output should be split into lines of no more than
 .
 Indicates that, when lines are split because of the \fB\-maxlen\fR option,
 \fIcharacter\fR should be used to separate lines. By default, this is a
-newline character.
+newline character,
 .QW \en .
 .PP
 During decoding, the following options are supported:
@@ -95,7 +102,8 @@ between Unix systems and on USENET, but is less common these days, having been
 largely superseded by the \fBbase64\fR binary encoding.
 .RS
 .PP
-During encoding, the following options are supported:
+During encoding, the following options are supported (though changing them may
+produce files that other implementations of decoders cannot process):
 .TP
 \fB\-maxlen \fIlength\fR
 .
@@ -107,7 +115,7 @@ this must be in the range 3 to 85 due to limitations in the encoding.
 .
 Indicates that, when lines are split because of the \fB\-maxlen\fR option,
 \fIcharacter\fR should be used to separate lines. By default, this is a
-newline character.
+newline character,
 .QW \en .
 .PP
 During decoding, the following options are supported:
@@ -859,6 +867,7 @@ architectures, use their textual representation (as produced by
 .PP
 This is a procedure to write a Tcl string to a binary-encoded channel as
 UTF-8 data preceded by a length word:
+.PP
 .CS
 proc \fIwriteString\fR {channel string} {
     set data [encoding convertto utf-8 $string]
@@ -869,6 +878,7 @@ proc \fIwriteString\fR {channel string} {
 .PP
 This procedure reads a string from a channel that was written by the
 previously presented \fIwriteString\fR procedure:
+.PP
 .CS
 proc \fIreadString\fR {channel} {
     if {![\fBbinary scan\fR [read $channel 4] I length]} {
@@ -881,6 +891,7 @@ proc \fIreadString\fR {channel} {
 .PP
 This converts the contents of a file (named in the variable \fIfilename\fR) to
 base64 and prints them:
+.PP
 .CS
 set f [open $filename rb]
 set data [read $f]
@@ -888,9 +899,10 @@ close $f
 puts [\fBbinary encode\fR base64 \-maxlen 64 $data]
 .CE
 .SH "SEE ALSO"
-format(n), scan(n), tcl_platform(n)
+encoding(n), format(n), scan(n), string(n), tcl_platform(n)
 .SH KEYWORDS
 binary, format, scan
 '\" Local Variables:
 '\" mode: nroff
+'\" fill-column: 78
 '\" End:
