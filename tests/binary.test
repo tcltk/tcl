@@ -2705,105 +2705,116 @@ test binary-74.1 {binary encode uuencode} -body {
 } -returnCodes error -match glob -result "wrong # args: *"
 test binary-74.2 {binary encode uuencode} -body {
     binary encode uuencode abc
-} -result {86)C}
+} -result {#86)C
+}
 test binary-74.3 {binary encode uuencode} -body {
     binary encode uuencode {}
 } -result {}
 test binary-74.4 {binary encode uuencode} -body {
     binary encode uuencode [string repeat abc 20]
-} -result [string repeat 86)C 20]
+} -result "M[string repeat 86)C 15]\n/[string repeat 86)C 5]\n"
 test binary-74.5 {binary encode uuencode} -body {
     binary encode uuencode \0\1\2\3\4\0\1\2\3
-} -result "``\$\"`P0``0(#"
+} -result ")``\$\"`P0``0(#\n"
 test binary-74.6 {binary encode uuencode} -body {
     binary encode uuencode \0
-} -result {````}
+} -result {!``
+}
 test binary-74.7 {binary encode uuencode} -body {
     binary encode uuencode \0\0
-} -result {````}
+} -result "\"```
+"
 test binary-74.8 {binary encode uuencode} -body {
     binary encode uuencode \0\0\0
-} -result {````}
+} -result {#````
+}
 test binary-74.9 {binary encode uuencode} -body {
     binary encode uuencode \0\0\0\0
-} -result {````````}
-test binary-74.10 {binary encode uuencode} -body {
-    binary encode uuencode -maxlen 0 -wrapchar | abcabcabc
-} -result {86)C86)C86)C}
-test binary-74.11 {binary encode uuencode} -body {
-    binary encode uuencode -maxlen 1 -wrapchar | abcabcabc
-} -result {8|6|)|C|8|6|)|C|8|6|)|C}
+} -result {$``````
+}
+test binary-74.10 {binary encode uuencode} -returnCodes error -body {
+    binary encode uuencode -foo 30 abcabcabc
+} -result {bad option "-foo": must be -maxlen or -wrapchar}
+test binary-74.11 {binary encode uuencode} -returnCodes error -body {
+    binary encode uuencode -maxlen 1 abcabcabc
+} -result {line length out of range}
+test binary-74.12 {binary encode uuencode} -body {
+    binary encode uuencode -maxlen 3 -wrapchar | abcabcabc
+} -result {!80|!8@|!8P|!80|!8@|!8P|!80|!8@|!8P|}
 
 test binary-75.1 {binary decode uuencode} -body {
     binary decode uuencode
 } -returnCodes error -match glob -result "wrong # args: *"
 test binary-75.2 {binary decode uuencode} -body {
-    binary decode uuencode 86)C
+    binary decode uuencode "#86)C\n"
 } -result {abc}
 test binary-75.3 {binary decode uuencode} -body {
     binary decode uuencode {}
 } -result {}
+test binary-75.3.1 {binary decode uuencode} -body {
+    binary decode uuencode `\n
+} -result {}
 test binary-75.4 {binary decode uuencode} -body {
-    binary decode uuencode [string repeat "86)C" 20]
+    binary decode uuencode "M[string repeat 86)C 15]\n/[string repeat 86)C 5]\n"
 } -result [string repeat abc 20]
 test binary-75.5 {binary decode uuencode} -body {
-    binary decode uuencode "``\$\"`P0``0(#"
+    binary decode uuencode ")``\$\"`P0``0(#"
 } -result "\0\1\2\3\4\0\1\2\3"
 test binary-75.6 {binary decode uuencode} -body {
-    string length [binary decode uuencode {`}]
+    string length [binary decode uuencode "`\n"]
 } -result 0
 test binary-75.7 {binary decode uuencode} -body {
-    string length [binary decode uuencode {``}]
+    string length [binary decode uuencode "!`\n"]
 } -result 1
 test binary-75.8 {binary decode uuencode} -body {
-    string length [binary decode uuencode {```}]
+    string length [binary decode uuencode "\"``\n"]
 } -result 2
 test binary-75.9 {binary decode uuencode} -body {
-    string length [binary decode uuencode {````}]
+    string length [binary decode uuencode "#```\n"]
 } -result 3
 test binary-75.10 {binary decode uuencode} -body {
-    set s "[string repeat 86)C 10]\n[string repeat 86)C 10]"
+    set s ">[string repeat 86)C 10]\n>[string repeat 86)C 10]"
     binary decode uuencode $s
 } -result [string repeat abc 20]
 test binary-75.11 {binary decode uuencode} -body {
-    set s "[string repeat 86)C 10]\n    [string repeat 86)C 10]"
+    set s ">[string repeat 86)C 10]\n\t>\t[string repeat 86)C 10]\r"
     binary decode uuencode $s
 } -result [string repeat abc 20]
 test binary-75.12 {binary decode uuencode} -body {
     binary decode uuencode -strict "|86)C"
 } -returnCodes error -match glob -result {invalid uuencode character "|" at position 0}
 test binary-75.13 {binary decode uuencode} -body {
-    set s "[string repeat 86)C 10]|[string repeat 86)C 10]"
+    set s ">[string repeat 86)C 10]|[string repeat 86)C 10]"
     binary decode uuencode -strict $s
-} -returnCodes error -match glob -result {invalid uuencode character "|" at position 40}
+} -returnCodes error -match glob -result {invalid uuencode character "|" at position 41}
 test binary-75.14 {binary decode uuencode} -body {
-    set s "[string repeat 86)C 10]\n    [string repeat 86)C 10]"
+    set s ">[string repeat 86)C 10]\na[string repeat 86)C 10]"
     binary decode uuencode -strict $s
 } -returnCodes error -match glob -result {invalid uuencode character *}
 test binary-75.20 {binary decode uuencode} -body {
-    set r [binary decode uuencode 8]
+    set r [binary decode uuencode " 8"]
     list [string length $r] $r
 } -result {0 {}}
 test binary-75.21 {binary decode uuencode} -body {
-    set r [binary decode uuencode 86]
+    set r [binary decode uuencode "!86"]
     list [string length $r] $r
 } -result {1 a}
 test binary-75.22 {binary decode uuencode} -body {
-    set r [binary decode uuencode 86)]
+    set r [binary decode uuencode "\"86)"]
     list [string length $r] $r
 } -result {2 ab}
 test binary-75.23 {binary decode uuencode} -body {
-    set r [binary decode uuencode 86)C]
+    set r [binary decode uuencode "#86)C"]
     list [string length $r] $r
 } -result {3 abc}
 test binary-75.24 {binary decode uuencode} -body {
-    set s "04)\# "
+    set s "#04)\# "
     binary decode uuencode $s
 } -result ABC
 test binary-75.25 {binary decode uuencode} -body {
-    set s "04)\#z"
+    set s "#04)\#z"
     binary decode uuencode $s
-} -returnCodes error -match glob -result {invalid uuencode character "z" at position 4}
+} -returnCodes error -match glob -result {invalid uuencode character "z" at position 5}
 test binary-75.26 {binary decode uuencode} -body {
     string length [binary decode uuencode " "]
 } -result 0
