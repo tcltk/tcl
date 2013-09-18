@@ -4,7 +4,7 @@
  *	This file contains implementations of the "simple" commands and
  *	methods from the object-system core.
  *
- * Copyright (c) 2005-2012 by Donal K. Fellows
+ * Copyright (c) 2005-2013 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
