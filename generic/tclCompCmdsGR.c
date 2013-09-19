@@ -1899,13 +1899,13 @@ TclCompileNamespaceUpvarCmd(
      */
 
     localTokenPtr = tokenPtr;
-    for (i=3; i<=numWords; i+=2) {
+    for (i=2; i<numWords; i+=2) {
 	otherTokenPtr = TokenAfter(localTokenPtr);
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
-	CompileWord(envPtr, otherTokenPtr, interp, 1);
+	CompileWord(envPtr, otherTokenPtr, interp, i);
 	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, 1);
+		&localIndex, &isScalar, i+1);
 
 	if ((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
