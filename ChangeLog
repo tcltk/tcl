@@ -1,4 +1,13 @@
-2013-09-17  Donal Fellows  <dkf@Donals-MacBook-Pro.local>
+2013-09-19  Donal Fellows  <dkf@users.sf.net>
+
+	* doc/next.n (METHOD SEARCH ORDER): Bug [3606943]: Corrected
+	description of method search order.
+
+2013-09-18  Donal Fellows  <dkf@users.sf.net>
+
+	Bump TclOO version to 1.0.1 for release.
+
+2013-09-17  Donal Fellows  <dkf@users.sf.net>
 
 	* generic/tclBinary.c (BinaryEncodeUu, BinaryDecodeUu): [Bug 2152292]:
 	Corrected implementation of the core of uuencode handling so that the
@@ -59,12 +68,13 @@
 
 2013-06-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclConfig.c: Bug [9b2e636361]: Tcl_CreateInterp() needs initialized
-	* generic/tclMain.c:   encodings.
+	* generic/tclConfig.c: Bug [9b2e636361]: Tcl_CreateInterp() needs
+	* generic/tclMain.c:   initialized encodings.
 
 2013-06-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclEvent.c: Bug [3611974]: InitSubsystems multiple thread issue.
+	* generic/tclEvent.c: Bug [3611974]: InitSubsystems multiple thread
+	issue.
 
 2013-06-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -176,10 +186,10 @@
 
 	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit
 	* generic/tclDecls.h: "long" type. Binary compatibility with win64
-	requires that all stub entries use 32-bit long's, therefore the
-	need for various wrapper functions/macros. For Tcl 9 a better
-	solution is needed, but that cannot be done without introducing
-	binary incompatibility.
+	requires that all stub entries use 32-bit long's, therefore the need
+	for various wrapper functions/macros. For Tcl 9 a better solution is
+	needed, but that cannot be done without introducing binary
+	incompatibility.
 
 2013-04-30  Andreas Kupries  <andreask@activestate.com>
 
@@ -197,8 +207,8 @@
 
 	* generic/tclDecls.h: Implement Tcl_NewBooleanObj, Tcl_DbNewBooleanObj
 	and Tcl_SetBooleanObj as macros using Tcl_NewIntObj, Tcl_DbNewLongObj
-	and Tcl_SetIntObj. Starting with Tcl 8.5, this is exactly the same,
-	it only eliminates code duplication.
+	and Tcl_SetIntObj. Starting with Tcl 8.5, this is exactly the same, it
+	only eliminates code duplication.
 	* generic/tclInt.h: Eliminate use of NO_WIDE_TYPE everywhere: It's
 	exactly the same as TCL_WIDE_INT_IS_LONG
 

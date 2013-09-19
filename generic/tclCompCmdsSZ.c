@@ -1870,6 +1870,7 @@ TclCompileTailcallCmd(
     }
 
     /* make room for the nsObjPtr */
+    /* TODO: Doesn't this have to be a known value? */
     CompileWord(envPtr, tokenPtr, interp, 0);
     for (i=1 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
@@ -2820,26 +2821,26 @@ TclCompileUnsetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
-    int isScalar, localIndex, numWords, flags, i;
+    int isScalar, localIndex, flags, i;
     Tcl_Obj *leadingWord;
     DefineLineInformation;	/* TIP #280 */
 
     /* TODO: Consider support for compiling expanded args. */
-    numWords = parsePtr->numWords-1;
     flags = 1;
+    i = 1;
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     leadingWord = Tcl_NewObj();
-    if (numWords > 0 && TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
+    if (parsePtr->numWords > 1 && TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
 	int len;
 	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
 
 	if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {
 	    flags = 0;
 	    varTokenPtr = TokenAfter(varTokenPtr);
-	    numWords--;
+	    i++;
 	} else if (len == 2 && !strncmp("--", bytes, 2)) {
 	    varTokenPtr = TokenAfter(varTokenPtr);
-	    numWords--;
+	    i++;
 	}
     } else {
 	/*
@@ -2852,7 +2853,7 @@ TclCompileUnsetCmd(
     }
     TclDecrRefCount(leadingWord);
 
-    for (i=0 ; i<numWords ; i++) {
+    for ( ; i<parsePtr->numWords ; i++) {
 	/*
 	 * Decide if we can use a frame slot for the var/array name or if we
 	 * need to emit code to compute and push the name at runtime. We use a
@@ -2862,7 +2863,7 @@ TclCompileUnsetCmd(
 	 */
 
 	PushVarNameWord(interp, varTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, 1);
+		&localIndex, &isScalar, i);
 
 	/*
 	 * Emit instructions to unset the variable.
