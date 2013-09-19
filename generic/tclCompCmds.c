@@ -934,7 +934,7 @@ TclCompileDictForCmd(
      * errors at this point.
      */
 
-    CompileWord(envPtr, dictTokenPtr, interp, 3);
+    CompileWord(envPtr, dictTokenPtr, interp, 2);
     TclEmitInstInt4( INST_DICT_FIRST, infoIndex,		envPtr);
     emptyTargetOffset = CurrentOffset(envPtr);
     TclEmitInstInt4( INST_JUMP_TRUE4, 0,			envPtr);
