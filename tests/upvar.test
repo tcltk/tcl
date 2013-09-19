@@ -553,6 +553,27 @@ test upvar-NS-1.9 {nsupvar links to correct variable} \
     -returnCodes error \
     -cleanup {namespace delete test_ns_1}
 
+test upvar-NS-2.1 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        namespace upvar {*}{
+        } [return [incr n -[linenumber]]] x y
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+test upvar-NS-2.2 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        namespace upvar :: {*}{
+        } [return [incr n -[linenumber]]] x
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+
 
 # cleanup
 ::tcltest::cleanupTests
