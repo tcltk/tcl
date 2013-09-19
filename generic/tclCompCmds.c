@@ -806,7 +806,7 @@ TclCompileDictIncrCmd(
      * Emit the key and the code to actually do the increment.
      */
 
-    CompileWord(envPtr, keyTokenPtr, interp, 3);
+    CompileWord(envPtr, keyTokenPtr, interp, 2);
     TclEmitInstInt4( INST_DICT_INCR_IMM, incrAmount,	envPtr);
     TclEmitInt4(     dictVarIndex,			envPtr);
     return TCL_OK;
