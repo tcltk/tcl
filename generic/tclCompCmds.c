@@ -5781,16 +5781,14 @@ TclCompileUpvarCmd(
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
     int simpleVarName, isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *objPtr = Tcl_NewObj();
+    Tcl_Obj *objPtr;
 
     if (envPtr->procPtr == NULL) {
-	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
 
     numWords = parsePtr->numWords;
     if (numWords < 3) {
-	Tcl_DecrRefCount(objPtr);
 	return TCL_ERROR;
     }
 
@@ -5798,6 +5796,7 @@ TclCompileUpvarCmd(
      * Push the frame index if it is known at compile time
      */
 
+    objPtr = Tcl_NewObj();
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
     if(TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
 	CallFrame *framePtr;
@@ -5816,16 +5815,17 @@ TclCompileUpvarCmd(
 	    if(numWords%2) {
 		return TCL_ERROR;
 	    }
+	    /* TODO: Push the known value instead? */
 	    CompileWord(envPtr, tokenPtr, interp, 1);
 	    otherTokenPtr = TokenAfter(tokenPtr);
-	    i = 4;
+	    i = 2;
 	} else {
 	    if(!(numWords%2)) {
 		return TCL_ERROR;
 	    }
 	    PushLiteral(envPtr, "1", 1);
 	    otherTokenPtr = tokenPtr;
-	    i = 3;
+	    i = 1;
 	}
     } else {
 	Tcl_DecrRefCount(objPtr);
@@ -5838,12 +5838,12 @@ TclCompileUpvarCmd(
      * be called at runtime.
      */
 
-    for(; i<=numWords; i+=2, otherTokenPtr = TokenAfter(localTokenPtr)) {
+    for(; i<numWords; i+=2, otherTokenPtr = TokenAfter(localTokenPtr)) {
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
-	CompileWord(envPtr, otherTokenPtr, interp, 1);
+	CompileWord(envPtr, otherTokenPtr, interp, i);
 	PushVarNameWord(interp, localTokenPtr, envPtr, TCL_CREATE_VAR,
-			&localIndex, &simpleVarName, &isScalar, 1);
+			&localIndex, &simpleVarName, &isScalar, i+1);
 
 	if((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
