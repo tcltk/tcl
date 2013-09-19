@@ -1864,6 +1864,7 @@ TclCompileTailcallCmd(
     }
 
     /* make room for the nsObjPtr */
+    /* TODO: Doesn't this have to be a known value? */
     CompileWord(envPtr, tokenPtr, interp, 0);
     for (i=1 ; i<parsePtr->numWords ; i++) {
 	tokenPtr = TokenAfter(tokenPtr);
