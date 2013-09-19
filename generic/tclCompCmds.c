@@ -683,11 +683,10 @@ TclCompileDictSetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int numWords, i;
     Proc *procPtr = envPtr->procPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
-    int dictVarIndex, nameChars;
+    int i, dictVarIndex, nameChars;
     const char *name;
 
     /*
@@ -720,8 +719,7 @@ TclCompileDictSetCmd(
      */
 
     tokenPtr = TokenAfter(varTokenPtr);
-    numWords = parsePtr->numWords-1;
-    for (i=1 ; i<numWords ; i++) {
+    for (i=2 ; i< parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -730,7 +728,7 @@ TclCompileDictSetCmd(
      * Now emit the instruction to do the dict manipulation.
      */
 
-    TclEmitInstInt4( INST_DICT_SET, numWords-2,		envPtr);
+    TclEmitInstInt4( INST_DICT_SET, parsePtr->numWords-3,	envPtr);
     TclEmitInt4(     dictVarIndex,			envPtr);
     return TCL_OK;
 }
