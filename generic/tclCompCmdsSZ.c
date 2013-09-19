@@ -2815,19 +2815,37 @@ TclCompileUnsetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
-    int isScalar, localIndex, flags, i;
-    Tcl_Obj *leadingWord;
+    int isScalar, localIndex, flags = 1, i;
     DefineLineInformation;	/* TIP #280 */
 
     /* TODO: Consider support for compiling expanded args. */
-    flags = 1;
-    i = 1;
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    leadingWord = Tcl_NewObj();
-    if (parsePtr->numWords > 1 && TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
-	int len;
-	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
 
+    /*
+     * Verify that all words are known at compile time so that we can handle
+     * them without needing to do a nasty push/rotate. [Bug 3970f54c4e]
+     */
+
+    for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+	varTokenPtr = TokenAfter(varTokenPtr);
+	if (!TclWordKnownAtCompileTime(varTokenPtr, NULL)) {
+	    return TCL_ERROR;
+	}
+    }
+
+    /*
+     * Check for options; if they're present we'll know for sure because we
+     * know we're all constant arguments.
+     */
+
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    i = 1;
+    if (parsePtr->numWords > 1) {
+	Tcl_Obj *leadingWord = Tcl_NewObj();
+	const char *bytes;
+	int len;
+
+	(void) TclWordKnownAtCompileTime(varTokenPtr, leadingWord);
+	bytes = Tcl_GetStringFromObj(leadingWord, &len);
 	if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {
 	    flags = 0;
 	    varTokenPtr = TokenAfter(varTokenPtr);
@@ -2836,16 +2854,8 @@ TclCompileUnsetCmd(
 	    varTokenPtr = TokenAfter(varTokenPtr);
 	    i++;
 	}
-    } else {
-	/*
-	 * Cannot guarantee that the first word is not '-nocomplain' at
-	 * evaluation with reasonable effort, so spill to interpreted version.
-	 */
-
 	TclDecrRefCount(leadingWord);
-	return TCL_ERROR;
     }
-    TclDecrRefCount(leadingWord);
 
     for ( ; i<parsePtr->numWords ; i++) {
 	/*
