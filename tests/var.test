@@ -748,6 +748,9 @@ test var-15.1 {segfault in [unset], [Bug 735335]} {
     namespace eval test A useSomeUnlikelyNameHere
     namespace eval test unset useSomeUnlikelyNameHere
 } {}
+test var-15.2 {compiled unset evaluation order, Bug 3970f54c4e} {
+    apply {{} {unset foo [return ok]}}
+} ok
 
 test var-16.1 {CallVarTraces: save/restore interp error state} {
     trace add variable ::errorCode write " ;#"
