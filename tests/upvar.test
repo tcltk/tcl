@@ -568,6 +568,16 @@ test upvar-NS-3.2 {CompileWord OBOE} -setup {
 } -cleanup {
     rename linenumber {}
 } -result 1
+test upvar-NS-3.3 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        variable x {*}{
+        } [return [incr n -[linenumber]]]
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
 
 
 # cleanup
