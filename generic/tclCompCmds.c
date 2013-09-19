@@ -1002,7 +1002,7 @@ TclCompileDictExistsCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int numWords, i;
+    int i;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -1015,17 +1015,16 @@ TclCompileDictExistsCmd(
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    numWords = parsePtr->numWords-1;
 
     /*
      * Now we do the code generation.
      */
 
-    for (i=0 ; i<numWords ; i++) {
+    for (i=1 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    TclEmitInstInt4(INST_DICT_EXISTS, numWords-1, envPtr);
+    TclEmitInstInt4(INST_DICT_EXISTS, parsePtr->numWords-2, envPtr);
     TclAdjustStackDepth(-1, envPtr);
     return TCL_OK;
 }
