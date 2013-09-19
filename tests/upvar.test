@@ -414,6 +414,17 @@ test upvar-9.7 {Tcl_UpVar procedure} testupvar {
 } {1234}
 catch {unset a}
 
+test upvar-10.1 {CompileWord OBOE} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        upvar 1 {*}{
+        } [return [incr n -[linenumber]]] x
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+
 #
 # Tests for 'namespace upvar'. As the implementation is essentially the same as
 # for 'upvar', we only test that the variables are linked correctly, i.e., we
