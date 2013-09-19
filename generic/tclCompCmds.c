@@ -6007,14 +6007,17 @@ TclCompileGlobalCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for(i=2; i<=numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
+    for(i=1; i<numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
 	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
 
 	if(localIndex < 0) {
 	    return TCL_ERROR;
 	}
 
-	CompileWord(envPtr, varTokenPtr, interp, 1);
+	/* TODO: Consider what values can pass through the 
+	 * IndexTailVarIfKnown() screen.  Full CompileWord()
+	 * likely does not apply here.  Push known value instead. */
+	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(INST_NSUPVAR, localIndex, envPtr);
     }
 
@@ -6076,7 +6079,7 @@ TclCompileVariableCmd(
      */
 
     valueTokenPtr = parsePtr->tokenPtr;
-    for(i=2; i<=numWords; i+=2) {
+    for(i=1; i<numWords; i+=2) {
 	varTokenPtr = TokenAfter(valueTokenPtr);
 	valueTokenPtr = TokenAfter(varTokenPtr);
 
@@ -6086,15 +6089,18 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
-	CompileWord(envPtr, varTokenPtr, interp, 1);
+	/* TODO: Consider what values can pass through the 
+	 * IndexTailVarIfKnown() screen.  Full CompileWord()
+	 * likely does not apply here.  Push known value instead. */
+	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(INST_VARIABLE, localIndex, envPtr);
 
-	if (i != numWords) {
+	if (i != numWords-1) {
 	    /*
 	     * A value has been given: set the variable, pop the value
 	     */
 
-	    CompileWord(envPtr, valueTokenPtr, interp, 1);
+	    CompileWord(envPtr, valueTokenPtr, interp, i+1);
 	    TclEmitInstInt4(INST_STORE_SCALAR4, localIndex, envPtr);
 	    TclEmitOpcode(INST_POP, envPtr);
 	}
