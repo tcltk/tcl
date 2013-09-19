@@ -1899,6 +1899,12 @@ test dict-23.8 {CompileWord OBOE} {
 	} [return [incr n -[linenumber]]] x {}
     }} [linenumber]
 } 1
+test dict-23.9 {CompileWord OBOE} {
+    apply {n {
+	dict exists {} {*}{
+	} [return [incr n -[linenumber]]]
+    }} [linenumber]
+} 1
 
 rename linenumber {}
 test dict-24.22 {dict map results (non-compiled)} {
