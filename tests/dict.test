@@ -1248,6 +1248,12 @@ test dict-23.3 {CompileWord OBOE} {
     apply {{} {tcl::dict::lappend foo bar \
 	[format baz]}}
 } {bar baz}
+test dict-23.4 {CompileWord OBOE} {
+    apply {n {
+	dict set foo {*}{
+	} [return [incr n -[linenumber]]] val
+    }} [linenumber]
+} 1
 
 rename linenumber {}
 
