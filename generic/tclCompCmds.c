@@ -1313,8 +1313,8 @@ TclCompileDictLappendCmd(
 	return TCL_ERROR;
     }
     dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
-    CompileWord(envPtr, keyTokenPtr, interp, 3);
-    CompileWord(envPtr, valueTokenPtr, interp, 4);
+    CompileWord(envPtr, keyTokenPtr, interp, 2);
+    CompileWord(envPtr, valueTokenPtr, interp, 3);
     TclEmitInstInt4( INST_DICT_LAPPEND, dictVarIndex, envPtr);
     return TCL_OK;
 }
