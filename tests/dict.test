@@ -1243,6 +1243,12 @@ j
 	}
     }} [linenumber]
 } 5
+test dict-23.3 {CompileWord OBOE} {
+    # segfault when buggy
+    apply {{} {tcl::dict::lappend foo bar \
+	[format baz]}}
+} {bar baz}
+
 rename linenumber {}
 
 # cleanup
