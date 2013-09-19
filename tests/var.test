@@ -862,6 +862,19 @@ test var-20.8 {array set compilation correctness: Bug 3603163} -setup {
     }}
     array size x
 } -result 0
+
+test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+	set foo bar
+        unset foo {*}{
+        } [return [incr n -[linenumber]]]
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+
 
 catch {namespace delete ns}
 catch {unset arr}

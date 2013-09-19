@@ -587,6 +587,7 @@ TclCompileInfoCommandsCmd(
      * that the result needs to be list-ified.
      */
 
+    /* TODO: Just push the known value */
     CompileWord(envPtr, tokenPtr,		interp, 1);
     TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
     TclEmitOpcode(	INST_DUP,		envPtr);
