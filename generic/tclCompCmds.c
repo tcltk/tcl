@@ -6149,6 +6149,7 @@ TclCompileEnsemble(
     Tcl_Parse synthetic;
     int len, numBytes, result, flags = 0, i;
     const char *word;
+    DefineLineInformation;
 
     if (parsePtr->numWords < 2) {
 	return TCL_ERROR;
@@ -6388,7 +6389,13 @@ TclCompileEnsemble(
      * Hand off compilation to the subcommand compiler. At last!
      */
 
+    mapPtr->loc[eclIndex].line++;
+    mapPtr->loc[eclIndex].next++;
+
     result = cmdPtr->compileProc(interp, &synthetic, cmdPtr, envPtr);
+
+    mapPtr->loc[eclIndex].line--;
+    mapPtr->loc[eclIndex].next--;
 
     /*
      * Clean up if necessary.
