@@ -1881,6 +1881,12 @@ test dict-23.5 {CompileWord OBOE} {
     apply {{} {tcl::dict::incr foo \
 	[format bar]}}
 } {bar 1}
+test dict-23.6 {CompileWord OBOE} {
+    apply {n {
+	dict get {a b} {*}{
+	} [return [incr n -[linenumber]]]
+    }} [linenumber]
+} 1
 
 rename linenumber {}
 test dict-24.22 {dict map results (non-compiled)} {
