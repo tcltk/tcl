@@ -5920,7 +5920,7 @@ TclCompileNamespaceCmd(
      */
 
     tokenPtr = TokenAfter(tokenPtr);
-    CompileWord(envPtr, tokenPtr, interp, 1);
+    CompileWord(envPtr, tokenPtr, interp, 2);
 
     /*
      * Loop over the (otherVar, thisVar) pairs. If any of the thisVar is not a
@@ -5929,13 +5929,13 @@ TclCompileNamespaceCmd(
      */
 
     localTokenPtr = tokenPtr;
-    for(i=4; i<=numWords; i+=2) {
+    for(i=3; i<numWords; i+=2) {
 	otherTokenPtr = TokenAfter(localTokenPtr);
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
-	CompileWord(envPtr, otherTokenPtr, interp, 1);
+	CompileWord(envPtr, otherTokenPtr, interp, i);
 	PushVarNameWord(interp, localTokenPtr, envPtr, TCL_CREATE_VAR,
-			&localIndex, &simpleVarName, &isScalar, 1);
+			&localIndex, &simpleVarName, &isScalar, i+1);
 
 	if((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
