@@ -1271,6 +1271,12 @@ test dict-23.7 {CompileWord OBOE} {
 	} {}
     }} [linenumber]
 } 2
+test dict-23.8 {CompileWord OBOE} {
+    apply {n {
+	dict update foo {*}{
+	} [return [incr n -[linenumber]]] x {}
+    }} [linenumber]
+} 1
 
 rename linenumber {}
 
