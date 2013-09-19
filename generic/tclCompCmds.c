@@ -1628,7 +1628,7 @@ TclCompileForeachCmd(
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
-    int jumpBackDist, jumpBackOffset, infoIndex, range, bodyIndex;
+    int jumpBackDist, jumpBackOffset, infoIndex, range;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     int savedStackDepth = envPtr->currStackDepth;
     DefineLineInformation;	/* TIP #280 */
@@ -1668,8 +1668,6 @@ TclCompileForeachCmd(
     if (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	return TCL_ERROR;
     }
-
-    bodyIndex = i-1;
 
     /*
      * Allocate storage for the varcList and varvList arrays if necessary.
@@ -1837,7 +1835,7 @@ TclCompileForeachCmd(
      * Inline compile the loop body.
      */
 
-    SetLineInformation (bodyIndex);
+    SetLineInformation (numWords - 1);
     ExceptionRangeStarts(envPtr, range);
     CompileBody(envPtr, bodyTokenPtr, interp);
     ExceptionRangeEnds(envPtr, range);
