@@ -8293,9 +8293,14 @@ reported usage of large expressions (porter)
 2013-09-07 (bug fix)[86ceb4] have tm path favor first provider (neumann,porter)
 
 2013-09-09 (bug fix)[3609693] copied object member variable confusion (fellows)
+=> TclOO 1.0.1
 
 2013-09-17 (bug fix)[2152292] [binary encode uuencode] corrected (fellows)
 
+2013-09-19 (bug fix)[3487626] segfaults in [dict] compilers (porter)
+
+2013-09-19 (bug fix)[31661d2] mem leak in [lreplace] (ade,porter)
+
 Many optmizations, improvements, and tightened stack management in bytecode.
 
---- Released 8.6.1, Septemer 19, 2013 --- http://core.tcl.tk/tcl/ for details 
+--- Released 8.6.1, Septemer 20, 2013 --- http://core.tcl.tk/tcl/ for details 

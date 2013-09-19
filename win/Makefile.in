@@ -584,23 +584,23 @@ install-binaries: binaries
 	    fi; \
 	    done
 	@if [ -f $(DDE_DLL_FILE) ]; then \
-	    echo installing $(DDE_DLL_FILE); \
+	    echo Installing $(DDE_DLL_FILE); \
 	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
 		$(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
-	    echo installing $(DDE_LIB_FILE); \
+	    echo Installing $(DDE_LIB_FILE); \
 	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
-	    echo installing $(REG_DLL_FILE); \
+	    echo Installing $(REG_DLL_FILE); \
 	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
 	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
 		$(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
-	    echo installing $(REG_LIB_FILE); \
+	    echo Installing $(REG_LIB_FILE); \
 	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
 	    fi
 
