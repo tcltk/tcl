@@ -80,7 +80,9 @@ scope	T *		BA_ ## T ## _Get(BA_ ## T *a, size_t index,	\
 scope	T *		BA_ ## T ## _At(BA_ ## T *a, size_t index);	\
 									\
 scope	T *		BA_ ## T ## _First(BA_ ## T *a, BP_ ## T *p);	\
-scope	T *		BP_ ## T ## _Next(BP_ ## T *p)
+scope	T *		BP_ ## T ## _Next(BP_ ## T *p);			\
+scope	T *		BP_ ## T ## _Plus(BP_ ## T *p, size_t incr);	\
+scope	T *		BP_ ## T ## _Minus(BP_ ## T *p, size_t incr)
 
 									
 #define TclBrodnikArray(T) 						\
@@ -294,6 +296,35 @@ BP_ ## T ## _Next(							\
 		|| (p->hi == p->array->hi && p->lo >= p->array->lo)) {	\
 	    p->ptr = NULL;						\
 	}								\
+    }									\
+    return p->ptr;							\
+}									\
+									\
+scope T *								\
+BP_ ## T ## _Plus(							\
+    BP_ ## T *p,							\
+    size_t incr)							\
+{									\
+    if (p->ptr) {							\
+	size_t index = TclBAInvertIndices(p->hi, p->lo);		\
+	index += incr;							\
+	return BA_ ## T ## _Get(p->array, index, p);			\
+    }									\
+    return p->ptr;							\
+}									\
+									\
+scope T *								\
+BP_ ## T ## _Minus(							\
+    BP_ ## T *p,							\
+    size_t incr)							\
+{									\
+    if (p->ptr) {							\
+	size_t index = TclBAInvertIndices(p->hi, p->lo);		\
+	if (index < incr) {						\
+	    return p->ptr = NULL;					\
+	}								\
+	index -= incr;							\
+	return BA_ ## T ## _Get(p->array, index, p);			\
     }									\
     return p->ptr;							\
 }
