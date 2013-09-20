@@ -2821,39 +2821,81 @@ TclCompileUnsetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr;
-    int isScalar, localIndex, flags, i;
-    Tcl_Obj *leadingWord;
+    int isScalar, localIndex, flags = 1, i, varCount = 0, haveFlags = 0;
     DefineLineInformation;	/* TIP #280 */
 
     /* TODO: Consider support for compiling expanded args. */
-    flags = 1;
-    i = 1;
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    leadingWord = Tcl_NewObj();
-    if (parsePtr->numWords > 1 && TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
-	int len;
-	const char *bytes = Tcl_GetStringFromObj(leadingWord, &len);
 
-	if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {
-	    flags = 0;
-	    varTokenPtr = TokenAfter(varTokenPtr);
-	    i++;
-	} else if (len == 2 && !strncmp("--", bytes, 2)) {
-	    varTokenPtr = TokenAfter(varTokenPtr);
-	    i++;
+    /*
+     * Verify that all words - except the first non-option one - are known at
+     * compile time so that we can handle them without needing to do a nasty
+     * push/rotate. [Bug 3970f54c4e]
+     */
+
+    for (i=1,varTokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+	Tcl_Obj *leadingWord = Tcl_NewObj();
+
+	varTokenPtr = TokenAfter(varTokenPtr);
+	if (!TclWordKnownAtCompileTime(varTokenPtr, leadingWord)) {
+	    TclDecrRefCount(leadingWord);
+
+	    /*
+	     * We can tolerate non-trivial substitutions in the first variable
+	     * to be unset. If a '--' or '-nocomplain' was present, anything
+	     * goes in that one place! (All subsequent variable names must be
+	     * constants since we don't want to have to push them all first.)
+	     */
+
+	    if (varCount == 0) {
+		if (haveFlags) {
+		    continue;
+		}
+
+		/*
+		 * In fact, we're OK as long as we're the first argument *and*
+		 * we provably don't start with a '-'. If that is true, then
+		 * even if everything else is varying, we still can't be a
+		 * flag. Otherwise we'll spill to runtime to place a limit on
+		 * the trickiness.
+		 */
+
+		if (varTokenPtr->type == TCL_TOKEN_WORD
+			&& varTokenPtr[1].type == TCL_TOKEN_TEXT
+			&& varTokenPtr[1].size > 0
+			&& varTokenPtr[1].start[0] != '-') {
+		    continue;
+		}
+	    }
+	    return TCL_ERROR;
 	}
-    } else {
-	/*
-	 * Cannot guarantee that the first word is not '-nocomplain' at
-	 * evaluation with reasonable effort, so spill to interpreted version.
-	 */
+	if (i == 1) {
+	    const char *bytes;
+	    int len;
 
+	    bytes = Tcl_GetStringFromObj(leadingWord, &len);
+	    if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {
+		flags = 0;
+		haveFlags = 1;
+	    } else if (len == 2 && !strncmp("--", bytes, 2)) {
+		haveFlags = 1;
+	    } else {
+		varCount++;
+	    }
+	} else {
+	    varCount++;
+	}
 	TclDecrRefCount(leadingWord);
-	return TCL_ERROR;
     }
-    TclDecrRefCount(leadingWord);
 
-    for ( ; i<parsePtr->numWords ; i++) {
+    /*
+     * Issue instructions to unset each of the named variables.
+     */
+
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (haveFlags) {
+	varTokenPtr = TokenAfter(varTokenPtr);
+    }
+    for (i=1+haveFlags ; i<parsePtr->numWords ; i++) {
 	/*
 	 * Decide if we can use a frame slot for the var/array name or if we
 	 * need to emit code to compute and push the name at runtime. We use a

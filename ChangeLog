@@ -1,3 +1,26 @@
+A NOTE ON THE CHANGELOG:
+Starting in early 2011, Tcl source code has been under the management of
+fossil, hosted at http://core.tcl.tk/tcl/ .  Fossil presents a "Timeline"
+view of changes made that is superior in every way to a hand edited log file.
+Because of this, many Tcl developers are now out of the habit of maintaining
+this log file.  You may still find useful things in it, but the Timeline is
+a better first place to look now.
+============================================================================
+
+2013-09-19  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6.1 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump version number to 8.6.1.
+	* library/init.tcl:
+	* unix/configure.in:
+	* win/configure.in:
+	* unix/tcl.spec:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
 2013-09-19  Donal Fellows  <dkf@users.sf.net>
 
 	* doc/next.n (METHOD SEARCH ORDER): Bug [3606943]: Corrected
