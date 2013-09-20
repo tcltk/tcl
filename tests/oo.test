@@ -2,12 +2,12 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 2006-2012 Donal K. Fellows
+# Copyright (c) 2006-2013 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require TclOO 1.0
+package require TclOO 1.0.1
 package require tcltest 2
 if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
@@ -1839,6 +1839,36 @@ test oo-15.9 {ensemble rewriting must not bleed through oo::copy} -setup {
 } -returnCodes error -cleanup {
     Foo destroy
 } -result {wrong # args: should be "::bar <cloned> a b"}
+test oo-15.10 {variable binding must not bleed through oo::copy} -setup {
+    oo::class create FooClass
+    set result {}
+} -body {
+    set obj1 [FooClass new]
+    oo::objdefine $obj1 {
+	variable var 
+	method m {} {
+	    set var foo
+	}
+	method get {} {
+	    return $var
+	}
+	export eval
+    }
+
+    $obj1 m
+    lappend result [$obj1 get]
+    set obj2 [oo::copy $obj1]
+    $obj2 eval {
+	set var bar
+    }
+    lappend result [$obj2 get]
+    $obj1 eval {
+	set var grill
+    }
+    lappend result [$obj1 get] [$obj2 get]
+} -cleanup {
+    FooClass destroy
+} -result {foo bar grill bar}
 
 test oo-16.1 {OO: object introspection} -body {
     info object

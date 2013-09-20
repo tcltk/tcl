@@ -8164,6 +8164,143 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 
 --- Released 8.6.0, December 20, 2012 --- See ChangeLog for details ---
 
-2013-05-08 (bug fix)[3036566] Honor language packs on Vista+ to get initial locale (oehlmann)
+2012-12-22 (bug fix)[3598150] DString to Tcl_Obj memleak (afredd)
+
+2012-12-27 (bug fix)[3598580] Tcl_ListObjReplace() refcount fix (nijtmans)
+
+2013-01-04 (bug fix) memleak in [format] compiler (fellows)
+
+2013-01-08 (bug fix)[3092089,3587096] [file normalize] on junction points
+
+2013-01-09 (bug fix)[3599395] status line processing (nijtmans)
+2013-01-23 (bug fix)[2911139] repair async connection management (fellows)
+=> http 2.8.6
+
+2013-01-26 (bug fix)[3601804] Darwin segfault platformCPUID (nijtmans)
+
+2013-01-28 (enhancement) improve ensemble bytecode (fellows)
+
+2013-01-30 (enhancement) selected script code improvements (fradin)
+=> tcltest 2.3.6
+
+2013-01-30 (bug fix)[3599098] update to handle glibc banner changes (kupries)
+=> platform 1.0.11
+
+2013-01-31 (bug fix)[3598282] make install DESTDIR support (cassoff)
+
+2013-02-05 (bug fix)[3603434] [file normalize a:/] flaw in VFS (porter,griffin)
+
+2013-02-09 (bug fix)[3603695] $obj varname resolution rules (venable,fellows)
+
+2013-02-11 (bug fix)[3603553] zlib flushing errors (vampiera,fellows)
+
+2013-02-14 (bug fix)[3604576] msgcat use of Windows registry (oehlmann,nijtmans)
+=> msgcat 1.5.1
+
+2013-02-19 (bug fix)[2438181] report errors in trace handlers (yorick)
+
+2013-02-21 (bug fix)[3605447] unbreak [namespace export -clear] (porter)
+
+2013-02-23 (bug fix)[3599194] fallback IPv6 routines (afredd,max)
+
+2013-02-27 (bug fix)[3606139] stop crash in [regexp] (lane)
+
+2013-03-03 (bug fix)[3606258] major serial port update (english)
+
+2013-03-06 (bug fix)[3606683] [regexp (((((a)*)*)*)*)* {}] hangs
+(grathwohl,lane,porter)
+
+2013-03-12 (enhancement) better build support for Debian arch (shadura)
+
+2013-03-19 (bug fix)[2893771] [file stat] on locked files (thoyts,nijtmans)
+
+2013-03-21 (bug fix)[2102614] [auto_mkindex] ensemble support (griffin)
+
+2013-03-27 Tcl_Zlib*() routines tolerate NULL interps (porter
+
+2013-04-04 (bug fix) Support URLs with query but no path (max)
+=> http 2.8.7
+
+2013-04-08 (bug fix)[3610026] regexp crash on color overflow (linnakangas)
+
+2013-04-29 (enhancement) [array set] compile improvement (fellows)
+
+2013-04-30 (enhancement) broaden glibc version detection (kupries)
+=> platform 1.0.12
+
+2013-05-06 (platform support) Cygwin64 (nijtmans)
+
+2013-05-15 (enhancement) Improved [list {*}...] compile (fellows)
+
+2013-05-16 (platform support) mingw-4.0 (nijtmans)
+
+2013-05-19 (platform support) FreeBSD updates (cerutti)
+
+2013-05-20 (bug fix)[3613567] access error temp file creation (keene)
+
+2013-05-20 (bug fix)[3613569] temp file open fail can crash [load] (keene)
+
+2013-05-22 (bug fix)[3613609] [lsort -nocase] failed on non-ASCII (fellows)
+
+2013-05-28 (bug fix)[3036566] Use language packs (Vista+) locale (oehlmann)
 => msgcat 1.5.2
 
+2013-05-29 (bug fix)[3614102] [apply {{} {list [if 1]}}] stack woes (porter)
+
+2013-06-03 Restored lost performance appending to long strings (elby,porter)
+
+2013-06-05 (bug fix)[2835313] [while 1 {foo [continue]}] crash (fellows)
+
+2013-06-17 (bug fix)[a876646] [:cntrl:] includes \x00 to \x1f (nijtmans)
+
+2013-06-27 (bug fix)[983509] missing encodings for config values (nijtmans)
+
+2013-06-27 (bug fix)[34538b] apply DST in 2099 (lang)
+
+2013-07-02 (bug fix)[32afa6] corrected dirent64 check (griffin)
+
+2013-07-06 tzdata updated to Olson's tzdata2013d (kenny)
+
+2013-07-10 (bug fix)[86fb5e] [info frame] in compiled ensembles (porter)
+
+2013-07-18 (bug fix)[1c17fb] revisd syntax errorinfo that shows error (porter)
+
+2013-07-26 (bug fix)[6585b2] regexp {(\w).*?\1} abb (lane)
+
+2013-07-29 [string is space \u202f] => 1 (nijtmans)
+
+2013-08-01 [a0bc85] Limited support for fork with threads (for Rivet) (nijtmans)
+
+2013-08-01 (bug fix)[1905562] RE recursion limit increased to support
+reported usage of large expressions (porter)
+
+2013-08-02 (bug fix)[9d6162] superclass slot empty crash (vdgoot,fellows)2013-08-02 (bug fix)[9d6162] superclass slot empty crash (vdgoot,fellows)
+
+2013-08-03 (enhancement)[3611643] [auto_mkindex] support TclOO (fellows)
+
+2013-08-14 (bug fix)[a16752] Missing command delete callbacks (porter)
+
+2013-08-15 (bug fix)[3610404] reresolve traced forwards (porter)
+
+2013-08-15 Errors from execution traces become errors of the command (porter)
+
+2013-08-23 (bug fix)[8ff0cb9] Tcl_NR*Eval*() schedule only, as doc'd (porter)
+
+2013-08-29 (bug fix)[2486550] enable [interp invokehidden {} yield] (porter)
+
+2013-09-01 (bug fix)[b98fa55] [binary decode] fail on whitespace (reche,fellows)
+
+2013-09-07 (bug fix)[86ceb4] have tm path favor first provider (neumann,porter)
+
+2013-09-09 (bug fix)[3609693] copied object member variable confusion (fellows)
+=> TclOO 1.0.1
+
+2013-09-17 (bug fix)[2152292] [binary encode uuencode] corrected (fellows)
+
+2013-09-19 (bug fix)[3487626] segfaults in [dict] compilers (porter)
+
+2013-09-19 (bug fix)[31661d2] mem leak in [lreplace] (ade,porter)
+
+Many optmizations, improvements, and tightened stack management in bytecode.
+
+--- Released 8.6.1, Septemer 20, 2013 --- http://core.tcl.tk/tcl/ for details 

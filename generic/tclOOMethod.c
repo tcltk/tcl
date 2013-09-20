@@ -1290,11 +1290,57 @@ CloneProcedureMethod(
     ClientData *newClientData)
 {
     ProcedureMethod *pmPtr = clientData;
-    ProcedureMethod *pm2Ptr = ckalloc(sizeof(ProcedureMethod));
+    ProcedureMethod *pm2Ptr;
+    Tcl_Obj *bodyObj, *argsObj;
+    CompiledLocal *localPtr;
 
+    /*
+     * Copy the argument list.
+     */
+
+    argsObj = Tcl_NewObj();
+    for (localPtr=pmPtr->procPtr->firstLocalPtr; localPtr!=NULL;
+	    localPtr=localPtr->nextPtr) {
+	if (TclIsVarArgument(localPtr)) {
+	    Tcl_Obj *argObj = Tcl_NewObj();
+
+	    Tcl_ListObjAppendElement(NULL, argObj,
+		    Tcl_NewStringObj(localPtr->name, -1));
+	    if (localPtr->defValuePtr != NULL) {
+		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
+	    }
+	    Tcl_ListObjAppendElement(NULL, argsObj, argObj);
+	}
+    }
+
+    /*
+     * Must strip the internal representation in order to ensure that any
+     * bound references to instance variables are removed. [Bug 3609693]
+     */
+
+    bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
+    TclFreeIntRep(bodyObj);
+
+    /*
+     * Create the actual copy of the method record, manufacturing a new proc
+     * record.
+     */
+
+    pm2Ptr = ckalloc(sizeof(ProcedureMethod));
     memcpy(pm2Ptr, pmPtr, sizeof(ProcedureMethod));
     pm2Ptr->refCount = 1;
-    pm2Ptr->procPtr->refCount++;
+    Tcl_IncrRefCount(argsObj);
+    Tcl_IncrRefCount(bodyObj);
+    if (TclCreateProc(interp, NULL, "", argsObj, bodyObj,
+	    &pm2Ptr->procPtr) != TCL_OK) {
+	Tcl_DecrRefCount(argsObj);
+	Tcl_DecrRefCount(bodyObj);
+	ckfree(pm2Ptr);
+	return TCL_ERROR;
+    }
+    Tcl_DecrRefCount(argsObj);
+    Tcl_DecrRefCount(bodyObj);
+
     if (pmPtr->cloneClientdataProc) {
 	pm2Ptr->clientData = pmPtr->cloneClientdataProc(pmPtr->clientData);
     }
@@ -1421,7 +1467,7 @@ InvokeForwardMethod(
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
     ((Interp *)interp)->lookupNsPtr
 	    = (Namespace *) contextPtr->oPtr->namespacePtr;
-    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE, NULL);
+    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);
 }
 
 static int
