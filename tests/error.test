@@ -182,6 +182,16 @@ test error-4.7 {errorstack via options dict } -body {
     catch {f 12} m d
     dict get $d -errorstack
 } -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
+test error-4.8 {errorstack from exec traces} -body {
+    proc foo args {}
+    proc goo {} foo
+    trace add execution foo enter {error bar;#}
+    catch goo m d
+    dict get $d -errorstack
+} -cleanup {
+    rename goo {}; rename foo {}
+    unset -nocomplain m d
+} -result {INNER {error bar} CALL goo UP 1}
 
 # Errors in error command itself
 
