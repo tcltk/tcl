@@ -250,7 +250,8 @@ proc unknown args {
 	# Make sure we're not trying to load the same proc twice.
 	#
 	if {[info exists UnknownPending($name)]} {
-	    return -code error "self-referential recursion\
+	    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+		    "self-referential recursion\
 		    in \"unknown\" for command \"$name\""
 	}
 	set UnknownPending($name) pending
@@ -399,10 +400,12 @@ proc unknown args {
 	    return -options $::tcl::UnknownOptions $::tcl::UnknownResult
 	}
 	if {[llength $cmds]} {
-	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
+	    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+		    "ambiguous command name \"$name\": [lsort $cmds]"
 	}
     }
-    return -code error "invalid command name \"$name\""
+    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+	    "invalid command name \"$name\""
 }
 
 # auto_load --
