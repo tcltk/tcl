@@ -1290,11 +1290,57 @@ CloneProcedureMethod(
     ClientData *newClientData)
 {
     ProcedureMethod *pmPtr = clientData;
-    ProcedureMethod *pm2Ptr = ckalloc(sizeof(ProcedureMethod));
+    ProcedureMethod *pm2Ptr;
+    Tcl_Obj *bodyObj, *argsObj;
+    CompiledLocal *localPtr;
 
+    /*
+     * Copy the argument list.
+     */
+
+    argsObj = Tcl_NewObj();
+    for (localPtr=pmPtr->procPtr->firstLocalPtr; localPtr!=NULL;
+	    localPtr=localPtr->nextPtr) {
+	if (TclIsVarArgument(localPtr)) {
+	    Tcl_Obj *argObj = Tcl_NewObj();
+
+	    Tcl_ListObjAppendElement(NULL, argObj,
+		    Tcl_NewStringObj(localPtr->name, -1));
+	    if (localPtr->defValuePtr != NULL) {
+		Tcl_ListObjAppendElement(NULL, argObj, localPtr->defValuePtr);
+	    }
+	    Tcl_ListObjAppendElement(NULL, argsObj, argObj);
+	}
+    }
+
+    /*
+     * Must strip the internal representation in order to ensure that any
+     * bound references to instance variables are removed. [Bug 3609693]
+     */
+
+    bodyObj = Tcl_DuplicateObj(pmPtr->procPtr->bodyPtr);
+    TclFreeIntRep(bodyObj);
+
+    /*
+     * Create the actual copy of the method record, manufacturing a new proc
+     * record.
+     */
+
+    pm2Ptr = ckalloc(sizeof(ProcedureMethod));
     memcpy(pm2Ptr, pmPtr, sizeof(ProcedureMethod));
     pm2Ptr->refCount = 1;
-    pm2Ptr->procPtr->refCount++;
+    Tcl_IncrRefCount(argsObj);
+    Tcl_IncrRefCount(bodyObj);
+    if (TclCreateProc(interp, NULL, "", argsObj, bodyObj,
+	    &pm2Ptr->procPtr) != TCL_OK) {
+	Tcl_DecrRefCount(argsObj);
+	Tcl_DecrRefCount(bodyObj);
+	ckfree(pm2Ptr);
+	return TCL_ERROR;
+    }
+    Tcl_DecrRefCount(argsObj);
+    Tcl_DecrRefCount(bodyObj);
+
     if (pmPtr->cloneClientdataProc) {
 	pm2Ptr->clientData = pmPtr->cloneClientdataProc(pmPtr->clientData);
     }
@@ -1338,7 +1384,6 @@ TclOONewForwardInstanceMethod(
     fmPtr = ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
-    fmPtr->fullyQualified = (strncmp(TclGetString(cmdObj), "::", 2) == 0);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr,
 	    nameObj, flags, &fwdMethodType, fmPtr);
@@ -1380,7 +1425,6 @@ TclOONewForwardMethod(
     fmPtr = ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
-    fmPtr->fullyQualified = (strncmp(TclGetString(cmdObj), "::", 2) == 0);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr, nameObj,
 	    flags, &fwdMethodType, fmPtr);
@@ -1409,7 +1453,6 @@ InvokeForwardMethod(
     ForwardMethod *fmPtr = clientData;
     Tcl_Obj **argObjs, **prefixObjs;
     int numPrefixes, len, skip = contextPtr->skip;
-    Command *cmdPtr;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1421,15 +1464,10 @@ InvokeForwardMethod(
     Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
-
-    if (fmPtr->fullyQualified) {
-	cmdPtr = NULL;
-    } else {
-	cmdPtr = (Command *) Tcl_FindCommand(interp, TclGetString(argObjs[0]),
-		contextPtr->oPtr->namespacePtr, 0 /* normal lookup */);
-    }
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
-    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE, cmdPtr);
+    ((Interp *)interp)->lookupNsPtr
+	    = (Namespace *) contextPtr->oPtr->namespacePtr;
+    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);
 }
 
 static int
@@ -1474,7 +1512,6 @@ CloneForwardMethod(
     ForwardMethod *fm2Ptr = ckalloc(sizeof(ForwardMethod));
 
     fm2Ptr->prefixObj = fmPtr->prefixObj;
-    fm2Ptr->fullyQualified = fmPtr->fullyQualified;
     Tcl_IncrRefCount(fm2Ptr->prefixObj);
     *newClientData = fm2Ptr;
     return TCL_OK;

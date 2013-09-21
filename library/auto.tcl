@@ -513,6 +513,32 @@ proc auto_mkindex_parser::fullname {name} {
     return [string map [list \0 \$] $name]
 }
 
+# auto_mkindex_parser::indexEntry --
+#
+# Used by commands like "proc" within the auto_mkindex parser to add a
+# correctly-quoted entry to the index. This is shared code so it is done
+# *right*, in one place.
+#
+# Arguments:
+# name -		Name that is being added to index.
+
+proc auto_mkindex_parser::indexEntry {name} {
+    variable index
+    variable scriptFile
+
+    # We convert all metacharacters to their backslashed form, and pre-split
+    # the file name that we know about (which will be a proper list, and so
+    # correctly quoted).
+
+    set name [string range [list \}[fullname $name]] 2 end]
+    set filenameParts [file split $scriptFile]
+
+    append index [format \
+	    {set auto_index(%s) [list source [file join $dir %s]]%s} \
+	    $name $filenameParts \n]
+    return
+}
+
 if {[llength $::auto_mkindex_parser::initCommands]} {
     return
 }
@@ -524,15 +550,7 @@ if {[llength $::auto_mkindex_parser::initCommands]} {
 # Adds an entry to the auto index list for the given procedure name.
 
 auto_mkindex_parser::command proc {name args} {
-    variable index
-    variable scriptFile
-    # Do some fancy reformatting on the "source" call to handle platform
-    # differences with respect to pathnames.  Use format just so that the
-    # command is a little easier to read (otherwise it'd be full of
-    # backslashed dollar signs, etc.
-    append index [list set auto_index([fullname $name])] \
-	    [format { [list source [file join $dir %s]]} \
-	    [file split $scriptFile]] "\n"
+    indexEntry $name
 }
 
 # Conditionally add support for Tcl byte code files.  There are some tricky
@@ -559,14 +577,7 @@ auto_mkindex_parser::hook {
 	# procedure name.
 
 	auto_mkindex_parser::commandInit tbcload::bcproc {name args} {
-	    variable index
-	    variable scriptFile
-	    # Do some nice reformatting of the "source" call, to get around
-	    # path differences on different platforms.  We use the format
-	    # command just so that the code is a little easier to read.
-	    append index [list set auto_index([fullname $name])] \
-		    [format { [list source [file join $dir %s]]} \
-		    [file split $scriptFile]] "\n"
+	    indexEntry $name
 	}
     }
 }
@@ -610,6 +621,13 @@ auto_mkindex_parser::command namespace {op args} {
 	    variable contextStack
 	    if {[lindex $args 0] eq "create"} {
 		set name ::[join [lreverse $contextStack] ::]
+		catch {
+		    set name [dict get [lrange $args 1 end] -command]
+		    if {![string match ::* $name]} {
+			set name ::[join [lreverse $contextStack] ::]$name
+		    }
+		    regsub -all ::+ $name :: name
+		}
 		# create artifical proc to force an entry in the tclIndex
 		$parser eval [list ::proc $name {} {}]
 	    }
@@ -619,15 +637,14 @@ auto_mkindex_parser::command namespace {op args} {
 
 # AUTO MKINDEX:  oo::class create name ?definition?
 # Adds an entry to the auto index list for the given class name.
-foreach cmd {oo::class class} {
-    auto_mkindex_parser::command $cmd {ecmd name {body ""}} {
-	if {$cmd eq "create"} {
-	    variable index
-	    variable scriptFile
-	    append index [format "set %s \[list source \[%s]]\n" \
-			      [list auto_index([fullname $name])] \
-			      [list file join $dir {*}[file split $scriptFile]]]
-	}
+auto_mkindex_parser::command oo::class {op name {body ""}} {
+    if {$op eq "create"} {
+	indexEntry $name
+    }
+}
+auto_mkindex_parser::command class {op name {body ""}} {
+    if {$op eq "create"} {
+	indexEntry $name
     }
 }
 

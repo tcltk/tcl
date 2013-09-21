@@ -3464,10 +3464,9 @@ UpdateStringOfEndOffset(
     register Tcl_Obj *objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + 5];
-    register int len;
+    register int len = 3;
 
     memcpy(buffer, "end", 4);
-    len = sizeof("end") - 1;
     if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
 	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));

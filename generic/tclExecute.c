@@ -4606,7 +4606,7 @@ TEBCresume(
 		if (listPtr->refCount == 1) {
 		    TRACE(("\"%.30s\" %d %d => ", O2S(valuePtr),
 			    TclGetInt4AtPtr(pc+1), TclGetInt4AtPtr(pc+5)));
-		    for (index=toIdx+1 ; index<objc-1 ; index++) {
+		    for (index=toIdx+1; index<objc ; index++) {
 			TclDecrRefCount(objv[index]);
 		    }
 		    listPtr->elemCount = toIdx+1;
@@ -8648,8 +8648,7 @@ TclGetSrcInfoForPc(
 		&cfPtr->len, NULL, NULL);
     }
 
-    assert(cfPtr->cmd != NULL);
-    {
+    if (cfPtr->cmd != NULL) {
 	/*
 	 * We now have the command. We can get the srcOffset back and from
 	 * there find the list of word locations for this command.

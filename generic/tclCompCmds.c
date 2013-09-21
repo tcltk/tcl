@@ -839,7 +839,7 @@ TclCompileDictSetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int numWords, i, dictVarIndex;
+    int i, dictVarIndex;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
 
@@ -868,8 +868,7 @@ TclCompileDictSetCmd(
      */
 
     tokenPtr = TokenAfter(varTokenPtr);
-    numWords = parsePtr->numWords-1;
-    for (i=1 ; i<numWords ; i++) {
+    for (i=2 ; i< parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -878,7 +877,7 @@ TclCompileDictSetCmd(
      * Now emit the instruction to do the dict manipulation.
      */
 
-    TclEmitInstInt4( INST_DICT_SET, numWords-2,		envPtr);
+    TclEmitInstInt4( INST_DICT_SET, parsePtr->numWords-3,	envPtr);
     TclEmitInt4(     dictVarIndex,			envPtr);
     TclAdjustStackDepth(-1, envPtr);
     return TCL_OK;
@@ -950,7 +949,7 @@ TclCompileDictIncrCmd(
      * Emit the key and the code to actually do the increment.
      */
 
-    CompileWord(envPtr, keyTokenPtr, interp, 3);
+    CompileWord(envPtr, keyTokenPtr, interp, 2);
     TclEmitInstInt4( INST_DICT_INCR_IMM, incrAmount,	envPtr);
     TclEmitInt4(     dictVarIndex,			envPtr);
     return TCL_OK;
@@ -966,7 +965,7 @@ TclCompileDictGetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int numWords, i;
+    int i;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -979,17 +978,16 @@ TclCompileDictGetCmd(
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    numWords = parsePtr->numWords-1;
 
     /*
      * Only compile this because we need INST_DICT_GET anyway.
      */
 
-    for (i=0 ; i<numWords ; i++) {
+    for (i=1 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    TclEmitInstInt4(INST_DICT_GET, numWords-1, envPtr);
+    TclEmitInstInt4(INST_DICT_GET, parsePtr->numWords-2, envPtr);
     TclAdjustStackDepth(-1, envPtr);
     return TCL_OK;
 }
@@ -1004,7 +1002,7 @@ TclCompileDictExistsCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int numWords, i;
+    int i;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -1017,17 +1015,16 @@ TclCompileDictExistsCmd(
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    numWords = parsePtr->numWords-1;
 
     /*
      * Now we do the code generation.
      */
 
-    for (i=0 ; i<numWords ; i++) {
+    for (i=1 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    TclEmitInstInt4(INST_DICT_EXISTS, numWords-1, envPtr);
+    TclEmitInstInt4(INST_DICT_EXISTS, parsePtr->numWords-2, envPtr);
     TclAdjustStackDepth(-1, envPtr);
     return TCL_OK;
 }
@@ -1426,7 +1423,7 @@ CompileDictEachCmd(
      * this point.
      */
 
-    CompileWord(envPtr, dictTokenPtr, interp, 3);
+    CompileWord(envPtr, dictTokenPtr, interp, 2);
 
     /*
      * Now we catch errors from here on so that we can finalize the search
@@ -1635,7 +1632,7 @@ TclCompileDictUpdateCmd(
     infoIndex = TclCreateAuxData(duiPtr, &tclDictUpdateInfoType, envPtr);
 
     for (i=0 ; i<numVars ; i++) {
-	CompileWord(envPtr, keyTokenPtrs[i], interp, i);
+	CompileWord(envPtr, keyTokenPtrs[i], interp, 2*i+2);
     }
     TclEmitInstInt4(	INST_LIST, numVars,			envPtr);
     TclEmitInstInt4(	INST_DICT_UPDATE_START, dictIndex,	envPtr);
@@ -1792,8 +1789,8 @@ TclCompileDictLappendCmd(
      * Issue the implementation.
      */
 
-    CompileWord(envPtr, keyTokenPtr, interp, 3);
-    CompileWord(envPtr, valueTokenPtr, interp, 4);
+    CompileWord(envPtr, keyTokenPtr, interp, 2);
+    CompileWord(envPtr, valueTokenPtr, interp, 3);
     TclEmitInstInt4(	INST_DICT_LAPPEND, dictVarIndex,	envPtr);
     return TCL_OK;
 }
@@ -1878,7 +1875,7 @@ TclCompileDictWithCmd(
 
 		tokenPtr = TokenAfter(varTokenPtr);
 		for (i=2 ; i<parsePtr->numWords-1 ; i++) {
-		    CompileWord(envPtr, tokenPtr, interp, i-1);
+		    CompileWord(envPtr, tokenPtr, interp, i);
 		    tokenPtr = TokenAfter(tokenPtr);
 		}
 		TclEmitInstInt4(INST_LIST, parsePtr->numWords-3,envPtr);
@@ -1905,7 +1902,7 @@ TclCompileDictWithCmd(
 
 		tokenPtr = varTokenPtr;
 		for (i=1 ; i<parsePtr->numWords-1 ; i++) {
-		    CompileWord(envPtr, tokenPtr, interp, i-1);
+		    CompileWord(envPtr, tokenPtr, interp, i);
 		    tokenPtr = TokenAfter(tokenPtr);
 		}
 		TclEmitInstInt4(INST_LIST, parsePtr->numWords-3,envPtr);
@@ -1919,7 +1916,7 @@ TclCompileDictWithCmd(
 		 * Case: Direct dict in non-simple var with empty body.
 		 */
 
-		CompileWord(envPtr, varTokenPtr, interp, 0);
+		CompileWord(envPtr, varTokenPtr, interp, 1);
 		TclEmitOpcode(	INST_DUP,			envPtr);
 		TclEmitOpcode(	INST_LOAD_STK,			envPtr);
 		PushStringLiteral(envPtr, "");
@@ -1954,13 +1951,13 @@ TclCompileDictWithCmd(
      */
 
     if (dictVar == -1) {
-	CompileWord(envPtr, varTokenPtr, interp, 0);
+	CompileWord(envPtr, varTokenPtr, interp, 1);
 	Emit14Inst(		INST_STORE_SCALAR, varNameTmp,	envPtr);
     }
     tokenPtr = TokenAfter(varTokenPtr);
     if (gotPath) {
 	for (i=2 ; i<parsePtr->numWords-1 ; i++) {
-	    CompileWord(envPtr, tokenPtr, interp, i-1);
+	    CompileWord(envPtr, tokenPtr, interp, i);
 	    tokenPtr = TokenAfter(tokenPtr);
 	}
 	TclEmitInstInt4(	INST_LIST, parsePtr->numWords-3,envPtr);
@@ -2228,7 +2225,7 @@ TclCompileForCmd(
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
     JumpFixup jumpEvalCondFixup;
-    int testCodeOffset, bodyCodeOffset, nextCodeOffset, jumpDist;
+    int bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2309,13 +2306,9 @@ TclCompileForCmd(
      * terminates the for.
      */
 
-    testCodeOffset = CurrentOffset(envPtr);
-
-    jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
-    if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
+    if (TclFixupForwardJumpToHere(envPtr, &jumpEvalCondFixup, 127)) {
 	bodyCodeOffset += 3;
 	nextCodeOffset += 3;
-	testCodeOffset += 3;
     }
 
     SetLineInformation(2);
