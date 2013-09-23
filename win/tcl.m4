@@ -633,6 +633,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # set various compiler flags depending on whether we are using gcc or cl
 
     if test "${GCC}" = "yes" ; then
+	extra_cflags="-pipe"
+	extra_ldflags="-pipe"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_TRY_COMPILE([
@@ -663,6 +665,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    extra_ldflags="$extra_ldflags -municode"
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
+	    extra_ldflags="$extra_ldflags -static-libgcc"
 	fi
     fi
 
@@ -683,9 +686,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	POST_MAKE_LIB="\${RANLIB} \[$]@"
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
-
-	extra_cflags="$extra_cflags -pipe"
-	extra_ldflags="$extra_ldflags -pipe"
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
