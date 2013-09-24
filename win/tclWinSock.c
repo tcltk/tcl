@@ -2205,8 +2205,7 @@ TcpGetOptionProc(
 			flags |= NI_NUMERICHOST;
 		    }
 		} else if (sockname.sa.sa_family == AF_INET6) {
-		    if ((IN6_ARE_ADDR_EQUAL(&sockname.sa6.sin6_addr,
-				&in6addr_any)) ||
+		    if (IN6_IS_ADDR_UNSPECIFIED(&sockname.sa6.sin6_addr) ||
 			    (IN6_IS_ADDR_V4MAPPED(&sockname.sa6.sin6_addr)
 			    && sockname.sa6.sin6_addr.s6_addr[12] == 0
 			    && sockname.sa6.sin6_addr.s6_addr[13] == 0

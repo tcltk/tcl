@@ -46,7 +46,7 @@ typedef struct EXCEPTION_REGISTRATION {
  * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
  */
 
-#if defined(_MSC_VER) && (_MSC_VER <= 1100)
+#if defined(_MSC_VER) && (_MSC_VER <= 1100) && defined (_M_IX86)
 #define cpuid	__asm __emit 0fh __asm __emit 0a2h
 #endif
 
@@ -752,7 +752,7 @@ TclWinCPUID(
     __cpuid(regsPtr, index);
     status = TCL_OK;
 
-#   else
+#   elif defined (_M_IX86)
     /*
      * Define a structure in the stack frame to hold the registers.
      */

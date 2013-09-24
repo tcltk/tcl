@@ -823,7 +823,7 @@ tclWinDebugPanic(
     __builtin_trap();
 #elif defined(_WIN64)
     __debugbreak();
-#elif defined(_MSC_VER)
+#elif defined(_MSC_VER) && defined (_M_IX86)
     _asm {int 3}
 #else
     DebugBreak();
