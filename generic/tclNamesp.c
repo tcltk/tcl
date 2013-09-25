@@ -737,6 +737,10 @@ Tcl_CreateNamespace(
     Tcl_DString *namePtr, *buffPtr;
     int newEntry, nameLen;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    const char *nameStr;
+    Tcl_DString tmpBuffer;
+
+    Tcl_DStringInit(&tmpBuffer);
 
     /*
      * If there is no active namespace, the interpreter is being initialized.
@@ -750,39 +754,68 @@ Tcl_CreateNamespace(
 
 	parentPtr = NULL;
 	simpleName = "";
-    } else if (*name == '\0') {
+	goto doCreate;
+    }
+
+    /*
+     * Ensure that there are no trailing colons as that causes chaos when a
+     * deleteProc is specified. [Bug d614d63989]
+     */
+
+    if (deleteProc != NULL) {
+	nameStr = name + strlen(name) - 2;
+	if (nameStr >= name && nameStr[1] == ':' && nameStr[0] == ':') {
+	    Tcl_DStringAppend(&tmpBuffer, name, -1);
+	    while ((nameLen = Tcl_DStringLength(&tmpBuffer)) > 0
+		    && Tcl_DStringValue(&tmpBuffer)[nameLen-1] == ':') {
+		Tcl_DStringSetLength(&tmpBuffer, nameLen-1);
+	    }
+	    name = Tcl_DStringValue(&tmpBuffer);
+	}
+    }
+
+    /*
+     * If we've ended up with an empty string now, we're attempting to create
+     * the global namespace despite the global namespace existing. That's
+     * naughty!
+     */
+
+    if (*name == '\0') {
 	Tcl_ResetResult(interp);
 	Tcl_AppendResult(interp, "can't create namespace \"\": "
 		"only global namespace can have empty name", NULL);
+	Tcl_DStringFree(&tmpBuffer);
 	return NULL;
-    } else {
-	/*
-	 * Find the parent for the new namespace.
-	 */
+    }
 
-	TclGetNamespaceForQualName(interp, name, NULL, TCL_CREATE_NS_IF_UNKNOWN,
-		&parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
+    /*
+     * Find the parent for the new namespace.
+     */
 
-	/*
-	 * If the unqualified name at the end is empty, there were trailing
-	 * "::"s after the namespace's name which we ignore. The new namespace
-	 * was already (recursively) created and is pointed to by parentPtr.
-	 */
+    TclGetNamespaceForQualName(interp, name, NULL, TCL_CREATE_NS_IF_UNKNOWN,
+	    &parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
 
-	if (*simpleName == '\0') {
-	    return (Tcl_Namespace *) parentPtr;
-	}
+    /*
+     * If the unqualified name at the end is empty, there were trailing "::"s
+     * after the namespace's name which we ignore. The new namespace was
+     * already (recursively) created and is pointed to by parentPtr.
+     */
 
-	/*
-	 * Check for a bad namespace name and make sure that the name does not
-	 * already exist in the parent namespace.
-	 */
+    if (*simpleName == '\0') {
+	Tcl_DStringFree(&tmpBuffer);
+	return (Tcl_Namespace *) parentPtr;
+    }
 
-	if (Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL) {
-	    Tcl_AppendResult(interp, "can't create namespace \"", name,
-		    "\": already exists", NULL);
-	    return NULL;
-	}
+    /*
+     * Check for a bad namespace name and make sure that the name does not
+     * already exist in the parent namespace.
+     */
+
+    if (Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL) {
+	Tcl_AppendResult(interp, "can't create namespace \"", name,
+		"\": already exists", NULL);
+	Tcl_DStringFree(&tmpBuffer);
+	return NULL;
     }
 
     /*
@@ -790,6 +823,7 @@ Tcl_CreateNamespace(
      * of namespaces created.
      */
 
+  doCreate:
     nsPtr = (Namespace *) ckalloc(sizeof(Namespace));
     nsPtr->name = ckalloc((unsigned) (strlen(simpleName)+1));
     strcpy(nsPtr->name, simpleName);
@@ -879,6 +913,7 @@ Tcl_CreateNamespace(
 
     Tcl_DStringFree(&buffer1);
     Tcl_DStringFree(&buffer2);
+    Tcl_DStringFree(&tmpBuffer);
 
     /*
      * Return a pointer to the new namespace.
