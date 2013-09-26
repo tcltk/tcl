@@ -2500,7 +2500,8 @@ BinaryEncode64(
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {
-		Tcl_SetResult(interp, "line length out of range", TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;
@@ -2606,7 +2607,8 @@ BinaryEncodeUu(
 		return TCL_ERROR;
 	    }
 	    if (lineLength < 3 || lineLength > 85) {
-		Tcl_SetResult(interp, "line length out of range", TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;
