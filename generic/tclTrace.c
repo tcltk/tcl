@@ -144,7 +144,7 @@ static int		TraceVarEx(Tcl_Interp *interp, const char *part1,
  * trace procs
  */
 
-typedef struct StringTraceData {
+typedef struct {
     ClientData clientData;	/* Client data from Tcl_CreateTrace */
     Tcl_CmdTraceProc *proc;	/* Trace function from Tcl_CreateTrace */
 } StringTraceData;
@@ -156,8 +156,8 @@ typedef struct StringTraceData {
 
 #define FOREACH_VAR_TRACE(interp, name, clientData) \
     (clientData) = NULL; \
-    while (((clientData) = Tcl_VarTraceInfo((interp), (name), 0, \
-	    TraceVarProc, (clientData))) != NULL)
+    while (((clientData) = Tcl_VarTraceInfo2((interp), (name), NULL, \
+	    0, TraceVarProc, (clientData))) != NULL)
 
 #define FOREACH_COMMAND_TRACE(interp, name, clientData) \
     (clientData) = NULL; \
@@ -1324,7 +1324,7 @@ TraceCommandProc(
 		Tcl_DStringLength(&cmd), 0);
 	if (code != TCL_OK) {
 	    /* We ignore errors in these traced commands */
-	    /*** QUESTION: Use Tcl_BackgroundError(interp); instead? ***/
+	    /*** QUESTION: Use Tcl_BackgroundException(interp, code); instead? ***/
 	}
 	Tcl_DStringFree(&cmd);
     }
@@ -1487,7 +1487,11 @@ TclCheckExecutionTraces(
     }
     iPtr->activeCmdTracePtr = active.nextPtr;
     if (state) {
-	Tcl_RestoreInterpState(interp, state);
+	if (traceCode == TCL_OK) {
+	    (void) Tcl_RestoreInterpState(interp, state);
+	} else {
+	    Tcl_DiscardInterpState(state);
+	}
     }
 
     return traceCode;
@@ -1847,7 +1851,7 @@ TraceExecutionProc(
 		 * Append result code.
 		 */
 
-		resultCode = Tcl_NewIntObj(code);
+		resultCode = Tcl_NewLongObj(code);
 		resultCodeStr = Tcl_GetString(resultCode);
 		Tcl_DStringAppendElement(&cmd, resultCodeStr);
 		Tcl_DecrRefCount(resultCode);
@@ -1887,7 +1891,7 @@ TraceExecutionProc(
 	     * interpreter.
 	     */
 
-	    traceCode = Tcl_Eval(interp, Tcl_DStringValue(&cmd));
+	    traceCode = Tcl_EvalEx(interp, Tcl_DStringValue(&cmd), -1, 0);
 	    tcmdPtr->flags &= ~TCL_TRACE_EXEC_IN_PROGRESS;
 
 	    /*
@@ -1977,7 +1981,7 @@ TraceVarProc(
     int rewind = ((Interp *)interp)->execEnvPtr->rewind;
 
     /*
-     * We might call Tcl_Eval() below, and that might evaluate [trace vdelete]
+     * We might call Tcl_EvalEx() below, and that might evaluate [trace vdelete]
      * which might try to free tvarPtr. We want to use tvarPtr until the end
      * of this function, so we use Tcl_Preserve() and Tcl_Release() to be sure
      * it is not freed while we still need it.
@@ -2799,38 +2803,6 @@ DisposeTraceResult(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_UntraceVar --
- *
- *	Remove a previously-created trace for a variable.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	If there exists a trace for the variable given by varName with the
- *	given flags, proc, and clientData, then that trace is removed.
- *
- *----------------------------------------------------------------------
- */
-
-void
-Tcl_UntraceVar(
-    Tcl_Interp *interp,		/* Interpreter containing variable. */
-    const char *varName,	/* Name of variable; may end with "(index)" to
-				 * signify an array reference. */
-    int flags,			/* OR-ed collection of bits describing current
-				 * trace, including any of TCL_TRACE_READS,
-				 * TCL_TRACE_WRITES, TCL_TRACE_UNSETS,
-				 * TCL_GLOBAL_ONLY and TCL_NAMESPACE_ONLY. */
-    Tcl_VarTraceProc *proc,	/* Function assocated with trace. */
-    ClientData clientData)	/* Arbitrary argument to pass to proc. */
-{
-    Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_UntraceVar2 --
  *
  *	Remove a previously-created trace for a variable.
@@ -2961,46 +2933,6 @@ Tcl_UntraceVar2(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_VarTraceInfo --
- *
- *	Return the clientData value associated with a trace on a variable.
- *	This function can also be used to step through all of the traces on a
- *	particular variable that have the same trace function.
- *
- * Results:
- *	The return value is the clientData value associated with a trace on
- *	the given variable. Information will only be returned for a trace with
- *	proc as trace function. If the clientData argument is NULL then the
- *	first such trace is returned; otherwise, the next relevant one after
- *	the one given by clientData will be returned. If the variable doesn't
- *	exist, or if there are no (more) traces for it, then NULL is returned.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-ClientData
-Tcl_VarTraceInfo(
-    Tcl_Interp *interp,		/* Interpreter containing variable. */
-    const char *varName,	/* Name of variable; may end with "(index)" to
-				 * signify an array reference. */
-    int flags,			/* OR-ed combo or TCL_GLOBAL_ONLY,
-				 * TCL_NAMESPACE_ONLY (can be 0). */
-    Tcl_VarTraceProc *proc,	/* Function assocated with trace. */
-    ClientData prevClientData)	/* If non-NULL, gives last value returned by
-				 * this function, so this call will return the
-				 * next trace after that one. If NULL, this
-				 * call will return the first trace. */
-{
-    return Tcl_VarTraceInfo2(interp, varName, NULL, flags, proc,
-	    prevClientData);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_VarTraceInfo2 --
  *
  *	Same as Tcl_VarTraceInfo, except takes name in two pieces instead of
@@ -3066,44 +2998,6 @@ Tcl_VarTraceInfo2(
 	}
     }
     return NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * Tcl_TraceVar --
- *
- *	Arrange for reads and/or writes to a variable to cause a function to
- *	be invoked, which can monitor the operations and/or change their
- *	actions.
- *
- * Results:
- *	A standard Tcl return value.
- *
- * Side effects:
- *	A trace is set up on the variable given by varName, such that future
- *	references to the variable will be intermediated by proc. See the
- *	manual entry for complete details on the calling sequence for proc.
- *     The variable's flags are updated.
- *
- *----------------------------------------------------------------------
- */
-
-int
-Tcl_TraceVar(
-    Tcl_Interp *interp,		/* Interpreter in which variable is to be
-				 * traced. */
-    const char *varName,	/* Name of variable; may end with "(index)" to
-				 * signify an array reference. */
-    int flags,			/* OR-ed collection of bits, including any of
-				 * TCL_TRACE_READS, TCL_TRACE_WRITES,
-				 * TCL_TRACE_UNSETS, TCL_GLOBAL_ONLY, and
-				 * TCL_NAMESPACE_ONLY. */
-    Tcl_VarTraceProc *proc,	/* Function to call when specified ops are
-				 * invoked upon varName. */
-    ClientData clientData)	/* Arbitrary argument to pass to proc. */
-{
-    return Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData);
 }
 
 /*

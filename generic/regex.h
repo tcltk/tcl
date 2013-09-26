@@ -92,9 +92,6 @@ extern "C" {
 #ifdef __REG_REGOFF_T
 #undef __REG_REGOFF_T
 #endif
-#ifdef __REG_VOID_T
-#undef __REG_VOID_T
-#endif
 #ifdef __REG_NOFRONT
 #undef __REG_NOFRONT
 #endif
@@ -104,7 +101,6 @@ extern "C" {
 /* interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
 #define	__REG_REGOFF_T	long	/* not really right, but good enough... */
-#define	__REG_VOID_T	void
 /* names and declarations */
 #define	__REG_WIDE_COMPILE	TclReComp
 #define	__REG_WIDE_EXEC		TclReExec
@@ -127,16 +123,6 @@ extern "C" {
 typedef __REG_REGOFF_T regoff_t;
 #else
 typedef long regoff_t;
-#endif
-
-/*
- * For benefit of old compilers, we offer <sys/types.h> the option of
- * overriding the `void' type used to declare nonexistent return types.
- */
-#ifdef __REG_VOID_T
-typedef __REG_VOID_T re_void;
-#else
-typedef void re_void;
 #endif
 
 /*
@@ -234,7 +220,7 @@ typedef struct {
 
 /*
  * misc generics (may be more functions here eventually)
- ^ re_void regfree(regex_t *);
+ ^ void regfree(regex_t *);
  */
 
 /*
@@ -267,6 +253,7 @@ typedef struct {
 #define	REG_MIXED	17	/* character widths of regex and string differ */
 #define	REG_BADOPT	18	/* invalid embedded option */
 #define	REG_ETOOBIG	19	/* nfa has too many states */
+#define	REG_ECOLORS	20	/* too many colors */
 /* two specials for debugging and testing */
 #define	REG_ATOI	101	/* convert error-code name to number */
 #define	REG_ITOA	102	/* convert error-code number to name */
@@ -295,7 +282,7 @@ int regexec(regex_t *, const char *, size_t, regmatch_t [], int);
 #ifdef __REG_WIDE_T
 MODULE_SCOPE int __REG_WIDE_EXEC(regex_t *, const __REG_WIDE_T *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
 #endif
-MODULE_SCOPE re_void regfree(regex_t *);
+MODULE_SCOPE void regfree(regex_t *);
 MODULE_SCOPE size_t regerror(int, const regex_t *, char *, size_t);
 /* automatically gathered by fwd; do not hand-edit */
 /* =====^!^===== end forwards =====^!^===== */

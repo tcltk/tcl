@@ -13,8 +13,6 @@
 #ifndef _STRING
 #define _STRING
 
-#include "tcl.h"
-
 /*
  * The following #include is needed to define size_t. (This used to include
  * sys/stdtypes.h but that doesn't exist on older versions of SunOS, e.g.

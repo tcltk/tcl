@@ -12,15 +12,6 @@
  */
 
 #include <dl.h>
-
-/*
- * On some HP machines, dl.h defines EXTERN; remove that definition.
- */
-
-#ifdef EXTERN
-#   undef EXTERN
-#endif
-
 #include "tclInt.h"
 
 /*

@@ -77,7 +77,7 @@ static const Tcl_ChannelType tclRTransformType = {
  * layers upon reading from the channel, plus the functions to manage such.
  */
 
-typedef struct _ResultBuffer_ {
+typedef struct {
     unsigned char *buf;		/* Reference to the buffer area. */
     int allocated;		/* Allocated size of the buffer area. */
     int used;			/* Number of bytes in the buffer,
@@ -242,7 +242,7 @@ typedef enum {
  * sharing problems.
  */
 
-typedef struct ForwardParamBase {
+typedef struct {
     int code;			/* O: Ok/Fail of the cmd handler */
     char *msgStr;		/* O: Error message for handler failure */
     int mustFree;		/* O: True if msgStr is allocated, false if
@@ -287,7 +287,7 @@ typedef struct ForwardingResult ForwardingResult;
  * General event structure, with reference to operation specific data.
  */
 
-typedef struct ForwardingEvent {
+typedef struct {
     Tcl_Event event;		/* Basic event data, has to be first item */
     ForwardingResult *resultPtr;
     ForwardedOperation op;	/* Forwarded driver operation */
@@ -318,7 +318,7 @@ struct ForwardingResult {
 				 * results. */
 };
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * Table of all reflected transformations owned by this thread.
      */
@@ -604,8 +604,8 @@ TclChanPushObjCmd(
 
     methods = 0;
     while (listc > 0) {
-	if (Tcl_GetIndexFromObj(interp, listv[listc-1], methodNames,
-		"method", TCL_EXACT, &methIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, listv[listc-1], methodNames,
+		sizeof(char *), "method", TCL_EXACT, &methIndex) != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "chan handler \"%s initialize\" returned %s",
 		    Tcl_GetString(cmdObj),
@@ -932,7 +932,7 @@ ReflectClose(
 		Tcl_EventuallyFree(rtPtr,
 			(Tcl_FreeProc *) FreeReflectedTransform);
 		return errorCode;
-	    } 
+	    }
 #endif /* TCL_THREADS */
 	    errorCodeSet = 1;
 	    goto cleanup;
@@ -946,7 +946,7 @@ ReflectClose(
 		Tcl_EventuallyFree(rtPtr,
 			(Tcl_FreeProc *) FreeReflectedTransform);
 		return errorCode;
-	    } 
+	    }
 #endif /* TCL_THREADS */
 	    errorCodeSet = 1;
 	    goto cleanup;
@@ -2920,7 +2920,7 @@ ResultClear(
 	return;
     }
 
-    Tcl_Free((char *) rPtr->buf);
+    ckfree((char *) rPtr->buf);
     rPtr->buf = NULL;
     rPtr->allocated = 0;
 }
@@ -2955,10 +2955,10 @@ ResultAdd(
 
 	if (rPtr->allocated == 0) {
 	    rPtr->allocated = toWrite + RB_INCREMENT;
-	    rPtr->buf = UCHARP(Tcl_Alloc(rPtr->allocated));
+	    rPtr->buf = UCHARP(ckalloc(rPtr->allocated));
 	} else {
 	    rPtr->allocated += toWrite + RB_INCREMENT;
-	    rPtr->buf = UCHARP(Tcl_Realloc((char *) rPtr->buf,
+	    rPtr->buf = UCHARP(ckrealloc((char *) rPtr->buf,
 		    rPtr->allocated));
 	}
     }

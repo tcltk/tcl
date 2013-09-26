@@ -188,7 +188,7 @@ test load-8.3 {TclGetLoadedPackages procedure} [list teststaticpkg $dll $loaded]
 test load-8.4 {TclGetLoadedPackages procedure} [list $dll $loaded teststaticpkg] {
     load [file join $testDir pkgb$ext] pkgb
     list [info loaded {}] [lsort [info commands pkgb_*]]
-} [list [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded] {pkgb_sub pkgb_unsafe}]
+} [list [concat [list [list [file join $testDir pkgb$ext] Pkgb] {{} Double} {{} More} {{} Another} {{} Test} [list [file join $testDir pkga$ext] Pkga]] $alreadyLoaded] {pkgb_demo pkgb_sub pkgb_unsafe}]
 interp delete child
 
 test load-9.1 {Tcl_StaticPackage, load already-loaded package into another interp} \

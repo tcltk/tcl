@@ -68,6 +68,12 @@ test cmdAH-1.2 {Tcl_CatchObjCmd, errors} {
 test cmdAH-1.3 {Tcl_CatchObjCmd, errors} -returnCodes error -body {
     catch foo bar baz spaz
 } -result {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}
+test cmdAH-1.4 {Bug 3595576} {
+    catch {catch {} -> noSuchNs::var}
+} 1
+test cmdAH-1.5 {Bug 3595576} {
+    catch {catch error -> noSuchNs::var}
+} 1
 
 test cmdAH-2.1 {Tcl_CdObjCmd} -returnCodes error -body {
     cd foo bar
@@ -946,6 +952,19 @@ test cmdAH-19.11 {Tcl_FileObjCmd: exists} -constraints {unix notRoot} -setup {
     removeFile /tmp/tcl.foo.dir/file
     removeDirectory /tmp/tcl.foo.dir
 } -result 0
+test cmdAH-19.12 {Bug 3608360: [file exists] mustn't do globbing} -setup {
+    set newdirfile [makeDirectory newdir.file]
+    set cwd [pwd]
+    cd $newdirfile
+    # Content of file is totally unimportant; name is *not*
+    set innocentBystander [makeFile "abc" [file join $newdirfile foo.bar]]
+} -body {
+    list [file exists foo.bar] [file exists *.bar]
+} -cleanup {
+    cd $cwd
+    removeFile $innocentBystander
+    removeDirectory $newdirfile
+} -result {1 0}
 
 # Stat related commands
 

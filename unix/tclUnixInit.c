@@ -42,12 +42,12 @@ static const char *const platforms[NUMPLATFORMS] = {
 };
 
 #define NUMPROCESSORS 11
-static const char *const  processors[NUMPROCESSORS] = {
+static const char *const processors[NUMPROCESSORS] = {
     "intel", "mips", "alpha", "ppc", "shx", "arm", "ia64", "alpha64", "msil",
     "amd64", "ia32_on_win64"
 };
 
-typedef struct _SYSTEM_INFO {
+typedef struct {
   union {
     DWORD  dwOemId;
     struct {
@@ -66,7 +66,7 @@ typedef struct _SYSTEM_INFO {
   int      wProcessorRevision;
 } SYSTEM_INFO;
 
-typedef struct _OSVERSIONINFOA {
+typedef struct {
   DWORD dwOSVersionInfoSize;
   DWORD dwMajorVersion;
   DWORD dwMinorVersion;
@@ -112,7 +112,7 @@ static char pkgPath[sizeof(TCL_PACKAGE_PATH)+200] = TCL_PACKAGE_PATH;
  * first list checked for a mapping from env encoding to Tcl encoding name.
  */
 
-typedef struct LocaleTable {
+typedef struct {
     const char *lang;
     const char *encoding;
 } LocaleTable;

@@ -137,6 +137,9 @@ proc pkg_mkIndex {args} {
     } on error {msg opt} {
 	return -options $opt $msg
     }
+    if {[llength $fileList] == 0} {
+	return -code error "no files matched glob pattern \"$patternList\""
+    }
     foreach file $fileList {
 	# For each file, figure out what commands and packages it provides.
 	# To do this, create a child interpreter, load the file into the
@@ -395,9 +398,7 @@ proc pkg_mkIndex {args} {
 
     foreach pkg [lsort [array names files]] {
 	set cmd {}
-	foreach {name version} $pkg {
-	    break
-	}
+	lassign $pkg name version
 	lappend cmd ::tcl::Pkg::Create -name $name -version $version
 	foreach spec [lsort -index 0 $files($pkg)] {
 	    foreach {file type procs} $spec {
@@ -544,8 +545,7 @@ proc tclPkgUnknown {name args} {
 	# Don't add directories we've already seen, or ones already on the
 	# $use_path.
 	foreach dir [lrange $auto_path $index end] {
-	    if {![info exists tclSeenPath($dir)]
-		    && ([lsearch -exact $use_path $dir] == -1) } {
+	    if {![info exists tclSeenPath($dir)] && ($dir ni $use_path)} {
 		lappend use_path $dir
 	    }
 	}
@@ -628,8 +628,7 @@ proc tcl::MacOSXPkgUnknown {original name args} {
 	# Don't add directories we've already seen, or ones already on the
 	# $use_path.
 	foreach dir [lrange $auto_path $index end] {
-	    if {![info exists tclSeenPath($dir)]
-		    && ([lsearch -exact $use_path $dir] == -1) } {
+	    if {![info exists tclSeenPath($dir)] && ($dir ni $use_path)} {
 		lappend use_path $dir
 	    }
 	}
@@ -681,10 +680,7 @@ proc ::tcl::Pkg::Create {args} {
     }
 
     # Initialize parameters
-    set opts(-name)		{}
-    set opts(-version)		{}
-    set opts(-source)		{}
-    set opts(-load)		{}
+    array set opts {-name {} -version {} -source {} -load {}}
 
     # process parameters
     for {set i 0} {$i < $len} {incr i} {
@@ -732,14 +728,9 @@ proc ::tcl::Pkg::Create {args} {
     # Handle -load and -source specs
     foreach key {load source} {
 	foreach filespec $opts(-$key) {
-	    foreach {filename proclist} {{} {}} {
-		break
-	    }
-	    foreach {filename proclist} $filespec {
-		break
-	    }
-
-	    if {![llength $proclist]} {
+	    lassign $filespec filename proclist
+	    
+	    if { [llength $proclist] == 0 } {
 		set cmd "\[list $key \[file join \$dir [list $filename]\]\]"
 		lappend cmdList $cmd
 	    } else {

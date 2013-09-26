@@ -40,13 +40,16 @@ static void setargv(int *argcPtr, TCHAR ***argvPtr);
 /*
  * The following #if block allows you to change the AppInit function by using
  * a #define of TCL_LOCAL_APPINIT instead of rewriting this entire file. The
- * #if checks for that #define and uses Tcl_AppInit if it doesn't exist.
+ * #if checks for that #define and uses Tcl_AppInit if it does not exist.
  */
 
 #ifndef TCL_LOCAL_APPINIT
 #define TCL_LOCAL_APPINIT Tcl_AppInit
 #endif
-extern int TCL_LOCAL_APPINIT(Tcl_Interp *interp);
+#ifndef MODULE_SCOPE
+#   define MODULE_SCOPE extern
+#endif
+MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 
 /*
  * The following #if block allows you to change how Tcl finds the startup
@@ -55,7 +58,7 @@ extern int TCL_LOCAL_APPINIT(Tcl_Interp *interp);
  */
 
 #ifdef TCL_LOCAL_MAIN_HOOK
-extern int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
+MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 #endif
 
 /*
@@ -78,12 +81,12 @@ extern int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 int
 #ifdef TCL_BROKEN_MAINARGS
 main(
-    int argc,
-    char *dummy[])
+    int argc,			/* Number of command-line arguments. */
+    char *dummy[])		/* Not used. */
 #else
 _tmain(
-    int argc,
-    TCHAR *argv[])
+    int argc,			/* Number of command-line arguments. */
+    TCHAR *argv[])		/* Values of command-line arguments. */
 #endif /* TCL_BROKEN_MAINARGS */
 {
 #ifdef TCL_BROKEN_MAINARGS
@@ -100,7 +103,7 @@ _tmain(
     setlocale(LC_ALL, "C");
 
     /*
-     * Get our args from the c-runtime. Ignore lpszCmdLine.
+     * Get our args from the c-runtime. Ignore command line.
      */
 
 #ifdef TCL_BROKEN_MAINARGS
@@ -191,11 +194,12 @@ Tcl_AppInit(
     /*
      * Specify a user-specific startup file to invoke if the application is
      * run interactively. Typically the startup file is "~/.apprc" where "app"
-     * is the name of the application. If this line is deleted then no user-
-     * specific startup file will be run under any conditions.
+     * is the name of the application. If this line is deleted then no
+     * user-specific startup file will be run under any conditions.
      */
 
-    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/tclshrc.tcl",
+    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", TCL_STRLEN),
+	    NULL, Tcl_NewStringObj("~/tclshrc.tcl", TCL_STRLEN),
 	    TCL_GLOBAL_ONLY);
     return TCL_OK;
 }

@@ -27,7 +27,7 @@
  * created for each thread that is using the notifier.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     CRITICAL_SECTION crit;	/* Monitor for this notifier. */
     DWORD thread;		/* Identifier for thread associated with this
 				 * notifier. */

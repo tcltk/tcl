@@ -1140,9 +1140,10 @@ CreateSocket(
     int asyncConnect = 0;	/* Will be 1 if async connect is in
 				 * progress. */
     unsigned short chosenport = 0;
-    struct addrinfo *addrlist = NULL, *addrPtr;
+    void *addrlist = NULL, *myaddrlist = NULL;
+    struct addrinfo *addrPtr;
 				/* Socket address to connect to. */
-    struct addrinfo *myaddrlist = NULL, *myaddrPtr;
+    struct addrinfo *myaddrPtr;
 				/* Socket address for our side. */
     const char *errorMsg = NULL;
     SOCKET sock = INVALID_SOCKET;
@@ -2752,23 +2753,6 @@ TclWinSetSockOpt(
     }
 
     return setsockopt(s, level, optname, optval, optlen);
-}
-
-char *
-TclpInetNtoa(
-    struct in_addr addr)
-{
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-        return NULL;
-    }
-
-    return inet_ntoa(addr);
 }
 
 struct servent *

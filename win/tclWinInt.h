@@ -15,6 +15,20 @@
 #include "tclInt.h"
 
 /*
+ * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
+ * quotation marks), JOIN joins two arguments.
+ */
+
+#ifndef STRINGIFY
+#  define STRINGIFY(x) STRINGIFY1(x)
+#  define STRINGIFY1(x) #x
+#endif
+#ifndef JOIN
+#  define JOIN(a,b) JOIN1(a,b)
+#  define JOIN1(a,b) a##b
+#endif
+
+/*
  * Some versions of Borland C have a define for the OSVERSIONINFO for
  * Win32s and for NT, but not for Windows 95.
  * Define VER_PLATFORM_WIN32_CE for those without newer headers.
@@ -25,12 +39,6 @@
 #endif
 #ifndef VER_PLATFORM_WIN32_CE
 #define VER_PLATFORM_WIN32_CE 3
-#endif
-
-#ifdef _WIN64
-#         define TCL_I_MODIFIER        "I"
-#else
-#         define TCL_I_MODIFIER        ""
 #endif
 
 #ifdef _WIN64

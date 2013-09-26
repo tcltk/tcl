@@ -39,7 +39,7 @@ typedef struct PkgAvail {
  * "Tk" (no version number).
  */
 
-typedef struct Package {
+typedef struct {
     char *version;		/* Version that has been supplied in this
 				 * interpreter via "package provide"
 				 * (malloc'ed). NULL means the package doesn't
@@ -88,7 +88,7 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_PkgProvide / Tcl_PkgProvideEx --
+ * Tcl_PkgProvideEx --
  *
  *	This function is invoked to declare that a particular version of a
  *	particular package is now present in an interpreter. There must not be
@@ -105,16 +105,6 @@ static const char *	PkgRequireCore(Tcl_Interp *interp, const char *name,
  *
  *----------------------------------------------------------------------
  */
-
-int
-Tcl_PkgProvide(
-    Tcl_Interp *interp,		/* Interpreter in which package is now
-				 * available. */
-    const char *name,		/* Name of package. */
-    const char *version)	/* Version string for package. */
-{
-    return Tcl_PkgProvideEx(interp, name, version, NULL);
-}
 
 int
 Tcl_PkgProvideEx(
@@ -164,7 +154,7 @@ Tcl_PkgProvideEx(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_PkgRequire / Tcl_PkgRequireEx / Tcl_PkgRequireProc --
+ * Tcl_PkgRequireEx / Tcl_PkgRequireProc --
  *
  *	This function is called by code that depends on a particular version
  *	of a particular package. If the package is not already provided in the
@@ -187,20 +177,6 @@ Tcl_PkgProvideEx(
  *
  *----------------------------------------------------------------------
  */
-
-const char *
-Tcl_PkgRequire(
-    Tcl_Interp *interp,		/* Interpreter in which package is now
-				 * available. */
-    const char *name,		/* Name of desired package. */
-    const char *version,	/* Version string for desired version; NULL
-				 * means use the latest version available. */
-    int exact)			/* Non-zero means that only the particular
-				 * version given is acceptable. Zero means use
-				 * the latest compatible version. */
-{
-    return Tcl_PkgRequireEx(interp, name, version, exact, NULL);
-}
 
 const char *
 Tcl_PkgRequireEx(
@@ -355,6 +331,10 @@ PkgRequireCore(
     int availStable, code, satisfies, pass;
     char *script, *pkgVersionI;
     Tcl_DString command;
+
+    if (TCL_OK != CheckAllRequirements(interp, reqc, reqv)) {
+	return NULL;
+    }
 
     /*
      * It can take up to three passes to find the package: one pass to run the
@@ -648,7 +628,7 @@ PkgRequireCore(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_PkgPresent / Tcl_PkgPresentEx --
+ * Tcl_PkgPresentEx --
  *
  *	Checks to see whether the specified package is present. If it is not
  *	then no additional action is taken.
@@ -665,20 +645,6 @@ PkgRequireCore(
  *
  *----------------------------------------------------------------------
  */
-
-const char *
-Tcl_PkgPresent(
-    Tcl_Interp *interp,		/* Interpreter in which package is now
-				 * available. */
-    const char *name,		/* Name of desired package. */
-    const char *version,	/* Version string for desired version; NULL
-				 * means use the latest version available. */
-    int exact)			/* Non-zero means that only the particular
-				 * version given is acceptable. Zero means use
-				 * the latest compatible version. */
-{
-    return Tcl_PkgPresentEx(interp, name, version, exact, NULL);
-}
 
 const char *
 Tcl_PkgPresentEx(
@@ -946,7 +912,7 @@ Tcl_PackageObjCmd(
 		version = TclGetString(objv[3]);
 	    }
 	}
-	Tcl_PkgPresent(interp, name, version, exact);
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL);
 	return TCL_ERROR;
 	break;
     }
@@ -971,7 +937,7 @@ Tcl_PackageObjCmd(
 	if (CheckVersionAndConvert(interp, argv3, NULL, NULL) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	return Tcl_PkgProvide(interp, argv2, argv3);
+	return Tcl_PkgProvideEx(interp, argv2, argv3, NULL);
     case PKG_REQUIRE:
     require:
 	if (objc < 3) {
@@ -1890,7 +1856,7 @@ Tcl_PkgInitStubsCheck(
     const char *version,
     int exact)
 {
-    const char *actualVersion = Tcl_PkgPresent(interp, "Tcl", version, 0);
+    const char *actualVersion = Tcl_PkgPresentEx(interp, "Tcl", version, 0, NULL);
 
     if (exact && actualVersion) {
 	const char *p = version;
@@ -1902,11 +1868,11 @@ Tcl_PkgInitStubsCheck(
 	if (count == 1) {
 	    if (0 != strncmp(version, actualVersion, strlen(version))) {
 		/* Construct error message */
-		Tcl_PkgPresent(interp, "Tcl", version, 1);
+		Tcl_PkgPresentEx(interp, "Tcl", version, 1, NULL);
 		return NULL;
 	    }
 	} else {
-	    return Tcl_PkgPresent(interp, "Tcl", version, 1);
+	    return Tcl_PkgPresentEx(interp, "Tcl", version, 1, NULL);
 	}
     }
     return actualVersion;

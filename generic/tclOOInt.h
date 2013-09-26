@@ -122,12 +122,6 @@ typedef struct ForwardMethod {
     Tcl_Obj *prefixObj;		/* The list of values to use to replace the
 				 * object and method name with. Will be a
 				 * non-empty list. */
-    int fullyQualified;		/* If 1, the command name is fully qualified
-				 * and we should let the default Tcl mechanism
-				 * handle the command lookup because it is
-				 * more efficient. If 0, we need to do a
-				 * specialized lookup based on the current
-				 * object's namespace. */
 } ForwardMethod;
 
 /*

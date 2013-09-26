@@ -44,7 +44,7 @@ struct sset {			/* state set */
     unsigned hash;		/* hash of bitvector */
 #define	HASH(bv, nw)	(((nw) == 1) ? *(bv) : hash(bv, nw))
 #define	HIT(h,bv,ss,nw)	((ss)->hash == (h) && ((nw) == 1 || \
-	memcmp(VS(bv), VS((ss)->states), (nw)*sizeof(unsigned)) == 0))
+	memcmp((void*)(bv), (void*)((ss)->states), (nw)*sizeof(unsigned)) == 0))
     int flags;
 #define	STARTER		01	/* the initial state set */
 #define	POSTSTATE	02	/* includes the goal state */
@@ -276,7 +276,7 @@ exec(
     if (st == REG_OKAY && v->pmatch != pmatch && nmatch > 0) {
 	zapSubexpressions(pmatch, nmatch);
 	n = (nmatch < v->nmatch) ? nmatch : v->nmatch;
-	memcpy(VS(pmatch), VS(v->pmatch), n*sizeof(regmatch_t));
+	memcpy((void*)(pmatch), (void*)(v->pmatch), n*sizeof(regmatch_t));
     }
 
     /*
@@ -504,12 +504,7 @@ complicatedFindLoop(
 		    return er;
 		}
 		if ((shorter) ? end == estop : end == begin) {
-		    /*
-		     * No point in trying again.
-		     */
-
-		    *coldp = cold;
-		    return REG_NOMATCH;
+		    break;
 		}
 
 		/*

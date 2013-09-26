@@ -91,7 +91,7 @@ static const char *const literals[] = {
  * Structure containing the client data for [clock]
  */
 
-typedef struct ClockClientData {
+typedef struct {
     int refCount;		/* Number of live references. */
     Tcl_Obj **literals;		/* Pool of object literals. */
 } ClockClientData;
@@ -100,7 +100,7 @@ typedef struct ClockClientData {
  * Structure containing the fields used in [clock format] and [clock scan]
  */
 
-typedef struct TclDateFields {
+typedef struct {
     Tcl_WideInt seconds;	/* Time expressed in seconds from the Posix
 				 * epoch */
     Tcl_WideInt localSeconds;	/* Local time expressed in nominal seconds
@@ -528,8 +528,8 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     }
     dict = objv[1];
     if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
-	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
-		&era) != TCL_OK
+	    || Tcl_GetIndexFromObjStruct(interp, fieldPtr, eras,
+		sizeof(char *), "era", TCL_EXACT, &era) != TCL_OK
 	    || Tcl_DictObjGet(interp, dict, literals[LIT_YEAR],
 		&fieldPtr) != TCL_OK
 	    || TclGetIntFromObj(interp, fieldPtr, &fields.year) != TCL_OK
@@ -618,8 +618,8 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     }
     dict = objv[1];
     if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
-	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
-		&era) != TCL_OK
+	    || Tcl_GetIndexFromObjStruct(interp, fieldPtr, eras,
+		sizeof(char *), "era", TCL_EXACT, &era) != TCL_OK
 	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601YEAR],
 		&fieldPtr) != TCL_OK
 	    || TclGetIntFromObj(interp, fieldPtr, &fields.iso8601Year)!=TCL_OK
@@ -1678,8 +1678,8 @@ ClockClicksObjCmd(
     case 1:
 	break;
     case 2:
-	if (Tcl_GetIndexFromObj(interp, objv[1], clicksSwitches, "switch", 0,
-		&index) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[1], clicksSwitches,
+		sizeof(char *), "switch", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	break;
@@ -1848,8 +1848,8 @@ ClockParseformatargsObjCmd(
     localeObj = litPtr[LIT_C];
     timezoneObj = litPtr[LIT__NIL];
     for (i = 2; i < objc; i+=2) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", 0,
-		&optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
+		sizeof(char *), "switch", 0, &optionIndex) != TCL_OK) {
 	    Tcl_SetErrorCode(interp, "CLOCK", "badSwitch",
 		    Tcl_GetString(objv[i]), NULL);
 	    return TCL_ERROR;

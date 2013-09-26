@@ -41,8 +41,9 @@ may only be passed to Tcl routines called from the same thread as
 the original \fBTcl_CreateInterp\fR call.  It is not safe for multiple
 threads to pass the same token to Tcl's routines.
 The new interpreter is initialized with the built-in Tcl commands
-and with the variables documented in the \fBtclvars\fR manual page. To bind in
-additional commands, call \fBTcl_CreateCommand\fR.
+and with standard variables like \fBtcl_platform\fR and \fBenv\fR. To
+bind in additional commands, call \fBTcl_CreateCommand\fR, and to
+create additional variables, call \fBTcl_SetVar\fR.
 .PP
 \fBTcl_DeleteInterp\fR marks an interpreter as deleted; the interpreter
 will eventually be deleted when all calls to \fBTcl_Preserve\fR for it have
@@ -107,7 +108,7 @@ uses.
 \fBInterpreter Creation And Deletion\fR
 .
 When a new interpreter is created and used in a call to \fBTcl_Eval\fR,
-\fBTcl_VarEval\fR, \fBTcl_SetVar\fR, or \fBTcl_GetVar\fR, a pair of calls
+\fBTcl_SetVar\fR, or \fBTcl_GetVar\fR, a pair of calls
 to \fBTcl_Preserve\fR and \fBTcl_Release\fR should be wrapped around all
 uses of the interpreter. Remember that it is unsafe to use the interpreter
 once \fBTcl_Release\fR has been called. To ensure that the interpreter is
@@ -120,7 +121,7 @@ code.
 .
 When an interpreter is retrieved from a data structure (e.g. the client
 data of a callback) for use in one of the evaluation functions
-(\fBTcl_Eval\fR, \fBTcl_VarEval\fR, \fBTcl_EvalObjv\fR etc.) or variable
+(\fBTcl_Eval\fR, \fBTcl_EvalObjv\fR etc.) or variable
 access functions (\fBTcl_SetVar\fR, \fBTcl_GetVar\fR, \fBTcl_SetVar2Ex\fR,
 etc.), a pair of calls to \fBTcl_Preserve\fR and \fBTcl_Release\fR should
 be wrapped around all uses of the interpreter; it is unsafe to reuse the
@@ -143,6 +144,6 @@ should be used to determine when an interpreter is a candidate for deletion
 due to inactivity.
 .VE 8.6
 .SH "SEE ALSO"
-Tcl_Preserve(3), Tcl_Release(3), tclvars(n)
+Tcl_Preserve(3), Tcl_Release(3)
 .SH KEYWORDS
 command, create, delete, interpreter

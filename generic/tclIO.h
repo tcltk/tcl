@@ -30,26 +30,6 @@
 #endif
 
 /*
- * The following structure encapsulates the state for a background channel
- * copy. Note that the data buffer for the copy will be appended to this
- * structure.
- */
-
-typedef struct CopyState {
-    struct Channel *readPtr;	/* Pointer to input channel. */
-    struct Channel *writePtr;	/* Pointer to output channel. */
-    int readFlags;		/* Original read channel flags. */
-    int writeFlags;		/* Original write channel flags. */
-    Tcl_WideInt toRead;		/* Number of bytes to copy, or -1. */
-    Tcl_WideInt total;		/* Total bytes transferred (written). */
-    Tcl_Interp *interp;		/* Interp that started the copy. */
-    Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
-    int bufSize;		/* Size of appended buffer. */
-    char buffer[1];		/* Copy buffer, this must be the last
-				 * field. */
-} CopyState;
-
-/*
  * struct ChannelBuffer:
  *
  * Buffers data being sent to or from a channel.
@@ -84,19 +64,6 @@ typedef struct ChannelBuffer {
  */
 
 #define CHANNELBUFFER_DEFAULT_SIZE	(1024 * 4)
-
-/*
- * Structure to record a close callback. One such record exists for each close
- * callback registered for a channel.
- */
-
-typedef struct CloseCallback {
-    Tcl_CloseProc *proc;	/* The procedure to call. */
-    ClientData clientData;	/* Arbitrary one-word data to pass to the
-				 * callback. */
-    struct CloseCallback *nextPtr;
-				/* For chaining close callbacks. */
-} CloseCallback;
 
 /*
  * The following structure describes the information saved from a call to
@@ -195,7 +162,8 @@ typedef struct ChannelState {
 				 * value is the POSIX error code. */
     int refCount;		/* How many interpreters hold references to
 				 * this IO channel? */
-    CloseCallback *closeCbPtr;	/* Callbacks registered to be called when the
+    struct CloseCallback *closeCbPtr;
+				/* Callbacks registered to be called when the
 				 * channel is closed. */
     char *outputStage;		/* Temporary staging buffer used when
 				 * translating EOL before converting from
@@ -217,9 +185,9 @@ typedef struct ChannelState {
 				 * handlers ("fileevent") on this channel. */
     int bufSize;		/* What size buffers to allocate? */
     Tcl_TimerToken timer;	/* Handle to wakeup timer for this channel. */
-    CopyState *csPtrR;		/* State of background copy for which channel
+    struct CopyState *csPtrR;	/* State of background copy for which channel
 				 * is input, or NULL. */
-    CopyState *csPtrW;		/* State of background copy for which channel
+    struct CopyState *csPtrW;	/* State of background copy for which channel
 				 * is output, or NULL. */
     Channel *topChanPtr;	/* Refers to topmost channel in a stack. Never
 				 * NULL. */
@@ -342,89 +310,6 @@ typedef struct ChannelState {
 #define CHANNEL_CLOSEDWRITE	(1<<21)	/* Channel write side has been closed.
 					 * No further Tcl-level write IO on
 					 * the channel is allowed. */
-
-/*
- * For each channel handler registered in a call to Tcl_CreateChannelHandler,
- * there is one record of the following type. All of records for a specific
- * channel are chained together in a singly linked list which is stored in the
- * channel structure.
- */
-
-typedef struct ChannelHandler {
-    Channel *chanPtr;		/* The channel structure for this channel. */
-    int mask;			/* Mask of desired events. */
-    Tcl_ChannelProc *proc;	/* Procedure to call in the type of
-				 * Tcl_CreateChannelHandler. */
-    ClientData clientData;	/* Argument to pass to procedure. */
-    struct ChannelHandler *nextPtr;
-    				/* Next one in list of registered handlers. */
-} ChannelHandler;
-
-/*
- * This structure keeps track of the current ChannelHandler being invoked in
- * the current invocation of ChannelHandlerEventProc. There is a potential
- * problem if a ChannelHandler is deleted while it is the current one, since
- * ChannelHandlerEventProc needs to look at the nextPtr field. To handle this
- * problem, structures of the type below indicate the next handler to be
- * processed for any (recursively nested) dispatches in progress. The
- * nextHandlerPtr field is updated if the handler being pointed to is deleted.
- * The nextPtr field is used to chain together all recursive invocations, so
- * that Tcl_DeleteChannelHandler can find all the recursively nested
- * invocations of ChannelHandlerEventProc and compare the handler being
- * deleted against the NEXT handler to be invoked in that invocation; when it
- * finds such a situation, Tcl_DeleteChannelHandler updates the nextHandlerPtr
- * field of the structure to the next handler.
- */
-
-typedef struct NextChannelHandler {
-    ChannelHandler *nextHandlerPtr;
-				/* The next handler to be invoked in this
-				 * invocation. */
-    struct NextChannelHandler *nestedHandlerPtr;
-				/* Next nested invocation of
-				 * ChannelHandlerEventProc. */
-} NextChannelHandler;
-
-/*
- * The following structure describes the event that is added to the Tcl event
- * queue by the channel handler check procedure.
- */
-
-typedef struct ChannelHandlerEvent {
-    Tcl_Event header;		/* Standard header for all events. */
-    Channel *chanPtr;		/* The channel that is ready. */
-    int readyMask;		/* Events that have occurred. */
-} ChannelHandlerEvent;
-
-/*
- * The following structure is used by Tcl_GetsObj() to encapsulates the state
- * for a "gets" operation.
- */
-
-typedef struct GetsState {
-    Tcl_Obj *objPtr;		/* The object to which UTF-8 characters will
-				 * be appended. */
-    char **dstPtr;		/* Pointer into objPtr's string rep where next
-				 * character should be stored. */
-    Tcl_Encoding encoding;	/* The encoding to use to convert raw bytes to
-				 * UTF-8. */
-    ChannelBuffer *bufPtr;	/* The current buffer of raw bytes being
-				 * emptied. */
-    Tcl_EncodingState state;	/* The encoding state just before the last
-				 * external to UTF-8 conversion in
-				 * FilterInputBytes(). */
-    size_t rawRead;		/* The number of bytes removed from bufPtr in
-				 * the last call to FilterInputBytes(). */
-    size_t bytesWrote;		/* The number of bytes of UTF-8 data appended
-				 * to objPtr during the last call to
-				 * FilterInputBytes(). */
-    size_t charsWrote;		/* The corresponding number of UTF-8
-				 * characters appended to objPtr during the
-				 * last call to FilterInputBytes(). */
-    size_t totalChars;		/* The total number of UTF-8 characters
-				 * appended to objPtr so far, just before the
-				 * last call to FilterInputBytes(). */
-} GetsState;
 
 /*
  * The length of time to wait between synthetic timer events. Must be zero or

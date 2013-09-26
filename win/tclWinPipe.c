@@ -12,8 +12,6 @@
 
 #include "tclWinInt.h"
 
-#include <sys/stat.h>
-
 /*
  * The following variable is used to tell whether this module has been
  * initialized.
@@ -52,7 +50,7 @@ TCL_DECLARE_MUTEX(pipeMutex)
  * used in a pipeline.
  */
 
-typedef struct WinFile {
+typedef struct {
     int type;			/* One of the file types defined above. */
     HANDLE handle;		/* Open file handle. */
 } WinFile;
@@ -144,7 +142,7 @@ typedef struct PipeInfo {
 				 * synchronized with the readable object. */
 } PipeInfo;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * The following pointer refers to the head of the list of pipes that are
      * being watched for file events.
@@ -160,7 +158,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct PipeEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     PipeInfo *infoPtr;		/* Pointer to pipe info structure. Note that
@@ -1048,15 +1046,8 @@ TclpCreateProcess(
 	 * sink.
 	 */
 
-	if ((TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS)
-		&& (applType == APPL_DOS)) {
-	    if (CreatePipe(&h, &startInfo.hStdOutput, &secAtts, 0) != FALSE) {
-		CloseHandle(h);
-	    }
-	} else {
-	    startInfo.hStdOutput = CreateFileA("NUL:", GENERIC_WRITE, 0,
-		    &secAtts, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	}
+	startInfo.hStdOutput = CreateFile(TEXT("NUL:"), GENERIC_WRITE, 0,
+		&secAtts, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
 	DuplicateHandle(hProcess, outputHandle, hProcess,
 		&startInfo.hStdOutput, 0, TRUE, DUPLICATE_SAME_ACCESS);
@@ -1075,7 +1066,7 @@ TclpCreateProcess(
 	 * sink.
 	 */
 
-	startInfo.hStdError = CreateFileA("NUL:", GENERIC_WRITE, 0,
+	startInfo.hStdError = CreateFile(TEXT("NUL:"), GENERIC_WRITE, 0,
 		&secAtts, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
 	DuplicateHandle(hProcess, errorHandle, hProcess, &startInfo.hStdError,

@@ -44,11 +44,6 @@ The remaining pattern arguments, after option processing, are treated
 as a single pattern obtained by joining the arguments with directory
 separators.
 .TP
-\fB\-nocomplain\fR
-.
-Allows an empty list to be returned without error; without this
-switch an error is returned if the result list would be empty.
-.TP
 \fB\-path\fR \fIpathPrefix\fR
 .
 Search for files with the given \fIpathPrefix\fR where the rest of the name

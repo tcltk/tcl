@@ -20,7 +20,7 @@
  *-   break and continue - if exception ranges can be sorted out.
  *-   foreach_start4, foreach_step4
  *-   returnImm, returnStk
- *-   expandStart, expandStkTop, invokeExpanded
+ *-   expandStart, expandStkTop, invokeExpanded, expandDrop
  *-   dictFirst, dictNext, dictDone
  *-   dictUpdateStart, dictUpdateEnd
  *-   jumpTable testing
@@ -325,29 +325,6 @@ static const Tcl_ObjType assembleCodeType = {
 };
 
 /*
- * TIP #280: Remember the per-word line information of the current command. An
- * index is used instead of a pointer as recursive compilation may reallocate,
- * i.e. move, the array. This is also the reason to save the nuloc now, it may
- * change during the course of the function.
- *
- * Macro to encapsulate the variable definition and setup.
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
-
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
-
-/*
- * Flags bits used by PushVarName.
- */
-
-#define TCL_NO_LARGE_INDEX 1	/* Do not return localIndex value > 255 */
-
-/*
  * Source instructions recognized in the Tcl Assembly Language (TAL)
  */
 
@@ -411,9 +388,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"incrArrayStkImm", ASSEM_SINT1,	INST_INCR_ARRAY_STK_IMM,2,	1},
     {"incrImm",		ASSEM_LVT1_SINT1,
 					INST_INCR_SCALAR1_IMM,	0,	1},
-    {"incrStk",		ASSEM_1BYTE,	INST_INCR_SCALAR_STK,	2,	1},
-    {"incrStkImm",	ASSEM_SINT1,	INST_INCR_SCALAR_STK_IMM,
-								1,	1},
+    {"incrStk",		ASSEM_1BYTE,	INST_INCR_STK,		2,	1},
+    {"incrStkImm",	ASSEM_SINT1,	INST_INCR_STK_IMM,	1,	1},
     {"infoLevelArgs",	ASSEM_1BYTE,	INST_INFO_LEVEL_ARGS,	1,	1},
     {"infoLevelNumber",	ASSEM_1BYTE,	INST_INFO_LEVEL_NUM,	0,	1},
     {"invokeStk",	ASSEM_INVOKE,	(INST_INVOKE_STK1 << 8
@@ -438,6 +414,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"lindexMulti",	ASSEM_LINDEX_MULTI,
 					INST_LIST_INDEX_MULTI,	INT_MIN,1},
     {"list",		ASSEM_LIST,	INST_LIST,		INT_MIN,1},
+    {"listConcat",	ASSEM_1BYTE,	INST_LIST_CONCAT,	2,	1},
     {"listIn",		ASSEM_1BYTE,	INST_LIST_IN,		2,	1},
     {"listIndex",	ASSEM_1BYTE,	INST_LIST_INDEX,	2,	1},
     {"listIndexImm",	ASSEM_INDEX,	INST_LIST_INDEX_IMM,	1,	1},
@@ -448,7 +425,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"loadArray",	ASSEM_LVT,	(INST_LOAD_ARRAY1<<8
 					 | INST_LOAD_ARRAY4),	1,	1},
     {"loadArrayStk",	ASSEM_1BYTE,	INST_LOAD_ARRAY_STK,	2,	1},
-    {"loadStk",		ASSEM_1BYTE,	INST_LOAD_SCALAR_STK,	1,	1},
+    {"loadStk",		ASSEM_1BYTE,	INST_LOAD_STK,		1,	1},
     {"lor",		ASSEM_1BYTE,	INST_LOR,		2,	1},
     {"lsetFlat",	ASSEM_LSET_FLAT,INST_LSET_FLAT,		INT_MIN,1},
     {"lsetList",	ASSEM_1BYTE,	INST_LSET_LIST,		3,	1},
@@ -475,7 +452,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"storeArray",	ASSEM_LVT,	(INST_STORE_ARRAY1<<8
 					 | INST_STORE_ARRAY4),	2,	1},
     {"storeArrayStk",	ASSEM_1BYTE,	INST_STORE_ARRAY_STK,	3,	1},
-    {"storeStk",	ASSEM_1BYTE,	INST_STORE_SCALAR_STK,	2,	1},
+    {"storeStk",	ASSEM_1BYTE,	INST_STORE_STK,		2,	1},
     {"strcmp",		ASSEM_1BYTE,	INST_STR_CMP,		2,	1},
     {"streq",		ASSEM_1BYTE,	INST_STR_EQ,		2,	1},
     {"strfind",		ASSEM_1BYTE,	INST_STR_FIND,		2,	1},
@@ -674,7 +651,7 @@ BBEmitOpcode(
     }
 
     TclEmitInt1(op, envPtr);
-    envPtr->atCmdStart = ((op) == INST_START_CMD);
+    TclUpdateAtCmdStart(op, envPtr);
     BBUpdateStackReqs(bbPtr, tblIdx, count);
 }
 
@@ -735,7 +712,7 @@ BBEmitInst1or4(
     } else {
 	TclEmitInt4(param, envPtr);
     }
-    envPtr->atCmdStart = ((op) == INST_START_CMD);
+    TclUpdateAtCmdStart(op, envPtr);
     BBUpdateStackReqs(bbPtr, tblIdx, count);
 }
 
@@ -799,12 +776,10 @@ TclNRAssembleObjCmd(
 
     if (codePtr == NULL) {
 	Tcl_AddErrorInfo(interp, "\n    (\"");
-	Tcl_AddErrorInfo(interp, Tcl_GetString(objv[0]));
+	Tcl_AppendObjToErrorInfo(interp, objv[0]);
 	Tcl_AddErrorInfo(interp, "\" body, line ");
 	backtrace = Tcl_NewIntObj(Tcl_GetErrorLine(interp));
-	Tcl_IncrRefCount(backtrace);
-	Tcl_AddErrorInfo(interp, Tcl_GetString(backtrace));
-	Tcl_DecrRefCount(backtrace);
+	Tcl_AppendObjToErrorInfo(interp, backtrace);
 	Tcl_AddErrorInfo(interp, ")");
 	return TCL_ERROR;
     }
@@ -842,16 +817,11 @@ CompileAssembleObj(
     CompileEnv compEnv;		/* Compilation environment structure */
     register ByteCode *codePtr = NULL;
 				/* Bytecode resulting from the assembly */
-    register const AuxData * auxDataPtr;
-				/* Pointer to an auxiliary data element
-				 * in a compilation environment being
-				 * destroyed. */
     Namespace* namespacePtr;	/* Namespace in which variable and command
 				 * names in the bytecode resolve */
     int status;			/* Status return from Tcl_AssembleCode */
     const char* source;		/* String representation of the source code */
     size_t sourceLen;		/* Length of the source code in bytes */
-    int i;
 
 
     /*
@@ -861,7 +831,7 @@ CompileAssembleObj(
 
     if (objPtr->typePtr == &assembleCodeType) {
 	namespacePtr = iPtr->varFramePtr->nsPtr;
-	codePtr = objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == namespacePtr)
@@ -889,44 +859,6 @@ CompileAssembleObj(
 	/*
 	 * Assembly failed. Clean up and report the error.
 	 */
-
-	/*
-	 * Free any literals that were constructed for the assembly.
-	 */
-	for (i = 0; i < compEnv.literalArrayNext; i++) {
-	    TclReleaseLiteral(interp, compEnv.literalArrayPtr[i].objPtr);
-	}
-
-	/*
-	 * Free any auxiliary data that was attached to the bytecode
-	 * under construction.
-	 */
-
-	for (i = 0; i < compEnv.auxDataArrayNext; i++) {
-	    auxDataPtr = compEnv.auxDataArrayPtr + i;
-	    if (auxDataPtr->type->freeProc != NULL) {
-		(auxDataPtr->type->freeProc)(auxDataPtr->clientData);
-	    }
-	}
-
-	/*
-	 * TIP 280. If there is extended command line information,
-	 * we need to clean it up.
-	 */
-
-	if (compEnv.extCmdMapPtr != NULL) {
-	    if (compEnv.extCmdMapPtr->type == TCL_LOCATION_SOURCE) {
-		Tcl_DecrRefCount(compEnv.extCmdMapPtr->path);
-	    }
-	    for (i = 0; i < compEnv.extCmdMapPtr->nuloc; ++i) {
-		ckfree(compEnv.extCmdMapPtr->loc[i].line);
-	    }
-	    if (compEnv.extCmdMapPtr->loc != NULL) {
-		ckfree(compEnv.extCmdMapPtr->loc);
-	    }
-	    Tcl_DeleteHashTable(&(compEnv.extCmdMapPtr->litInfo));
-	}
-
 	TclFreeCompileEnv(&compEnv);
 	return NULL;
     }
@@ -946,7 +878,7 @@ CompileAssembleObj(
      * Record the local variable context to which the bytecode pertains
      */
 
-    codePtr = objPtr->internalRep.otherValuePtr;
+    codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -999,6 +931,10 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
+    int numCommands = envPtr->numCommands;
+    int offset = envPtr->codeNext - envPtr->codeStart;
+    int depth = envPtr->currStackDepth;
+
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -1012,10 +948,23 @@ TclCompileAssembleCmd(
     }
 
     /*
-     * Compile the code and return any error from the compilation.
+     * Compile the code and convert any error from the compilation into
+     * bytecode reporting the error;
      */
 
-    return TclAssembleCode(envPtr, tokenPtr[1].start, tokenPtr[1].size, 0);
+    if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
+	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
+
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%.*s\" body, line %d)",
+		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
+		Tcl_GetErrorLine(interp)));
+	envPtr->numCommands = numCommands;
+	envPtr->codeNext = envPtr->codeStart + offset;
+	envPtr->currStackDepth = depth;
+	TclCompileSyntaxError(interp, envPtr);
+    }
+    return TCL_OK;
 }
 
 /*
@@ -1054,8 +1003,6 @@ TclAssembleCode(
 
     const char* instPtr = codePtr;
 				/* Where to start looking for a line of code */
-    int instLen;		/* Length in bytes of the current line of
-				 * code */
     const char* nextPtr;	/* Pointer to the end of the line of code */
     int bytesLeft = codeLen;	/* Number of bytes of source code remaining to
 				 * be parsed */
@@ -1069,10 +1016,6 @@ TclAssembleCode(
 	 */
 
 	status = Tcl_ParseCommand(interp, instPtr, bytesLeft, 0, parsePtr);
-	instLen = parsePtr->commandSize;
-	if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
-	    --instLen;
-	}
 
 	/*
 	 * Report errors in the parse.
@@ -1081,7 +1024,7 @@ TclAssembleCode(
 	if (status != TCL_OK) {
 	    if (flags & TCL_EVAL_DIRECT) {
 		Tcl_LogCommandInfo(interp, codePtr, parsePtr->commandStart,
-			instLen);
+			parsePtr->term + 1 - parsePtr->commandStart);
 	    }
 	    FreeAssemblyEnv(assemEnvPtr);
 	    return TCL_ERROR;
@@ -1101,6 +1044,13 @@ TclAssembleCode(
 	 */
 
 	if (parsePtr->numWords > 0) {
+	    int instLen = parsePtr->commandSize;
+		    /* Length in bytes of the current command */
+
+	    if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
+		--instLen;
+	    }
+
 	    /*
 	     * If tracing, show each line assembled as it happens.
 	     */
@@ -1176,7 +1126,7 @@ NewAssemblyEnv(
 
     assemEnvPtr->envPtr = envPtr;
     assemEnvPtr->parsePtr = parsePtr;
-    assemEnvPtr->cmdLine = envPtr->line;
+    assemEnvPtr->cmdLine = 1;
     assemEnvPtr->clNext = envPtr->clNext;
 
     /*
@@ -2677,6 +2627,7 @@ AllocBB(
     bb->minStackDepth = 0;
     bb->maxStackDepth = 0;
     bb->finalStackDepth = 0;
+    bb->catchDepth = 0;
     bb->enclosingCatch = NULL;
     bb->foreignExceptionBase = -1;
     bb->foreignExceptionCount = 0;
@@ -3107,7 +3058,7 @@ ResolveJumpTableTargets(
     auxDataIndex = TclGetInt4AtPtr(envPtr->codeStart + bbPtr->jumpOffset + 1);
     DEBUG_PRINT("bbPtr = %p jumpOffset = %d auxDataIndex = %d\n",
 	    bbPtr, bbPtr->jumpOffset, auxDataIndex);
-    realJumpTablePtr = envPtr->auxDataArrayPtr[auxDataIndex].clientData;
+    realJumpTablePtr = TclFetchAuxData(envPtr, auxDataIndex);
     realJumpHashPtr = &realJumpTablePtr->hashTable;
 
     /*
@@ -4286,11 +4237,11 @@ AddBasicBlockRangeToErrorInfo(
     Tcl_AddErrorInfo(interp, "\n    in assembly code between lines ");
     lineNo = Tcl_NewIntObj(bbPtr->startLine);
     Tcl_IncrRefCount(lineNo);
-    Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+    Tcl_AppendObjToErrorInfo(interp, lineNo);
     Tcl_AddErrorInfo(interp, " and ");
     if (bbPtr->successor1 != NULL) {
 	Tcl_SetIntObj(lineNo, bbPtr->successor1->startLine);
-	Tcl_AddErrorInfo(interp, Tcl_GetString(lineNo));
+	Tcl_AppendObjToErrorInfo(interp, lineNo);
     } else {
 	Tcl_AddErrorInfo(interp, "end of assembly code");
     }
@@ -4354,14 +4305,13 @@ static void
 FreeAssembleCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
     objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*

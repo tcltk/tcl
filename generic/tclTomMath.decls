@@ -19,7 +19,7 @@ library tcl
 
 interface tclTomMath
 # hooks {tclTomMathInt}
-scspec EXTERN
+scspec TCLAPI
 
 # Declare each of the functions in the Tcl tommath interface
 

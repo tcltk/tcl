@@ -3146,7 +3146,8 @@ echo "${ECHO_T}shared" >&6
 	echo "$as_me:$LINENO: result: static" >&5
 echo "${ECHO_T}static" >&6
 	SHARED_BUILD=0
-	cat >>confdefs.h <<\_ACEOF
+
+cat >>confdefs.h <<\_ACEOF
 #define STATIC_BUILD 1
 _ACEOF
 
@@ -3448,6 +3449,8 @@ echo "${ECHO_T}yes" >&6
     # set various compiler flags depending on whether we are using gcc or cl
 
     if test "${GCC}" = "yes" ; then
+	extra_cflags="-pipe"
+	extra_ldflags="-pipe"
 	echo "$as_me:$LINENO: checking for mingw32 version of gcc" >&5
 echo $ECHO_N "checking for mingw32 version of gcc... $ECHO_C" >&6
 if test "${ac_cv_win32+set}" = set; then
@@ -3576,6 +3579,7 @@ echo "${ECHO_T}$ac_cv_municode" >&6
 	    extra_ldflags="$extra_ldflags -municode"
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
+	    extra_ldflags="$extra_ldflags -static-libgcc"
 	fi
     fi
 
@@ -3597,9 +3601,6 @@ echo $ECHO_N "checking compiler flags... $ECHO_C" >&6
 	POST_MAKE_LIB="\${RANLIB} \$@"
 	MAKE_EXE="\${CC} -o \$@"
 	LIBPREFIX="lib"
-
-	extra_cflags="$extra_cflags -pipe"
-	extra_ldflags="$extra_ldflags -pipe"
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -3646,7 +3647,7 @@ echo "$as_me: error: ${CC} does not support the -shared option.
 
 	CFLAGS_DEBUG=-g
 	CFLAGS_OPTIMIZE="-O2 -fomit-frame-pointer"
-	CFLAGS_WARNING="-Wall -Wdeclaration-after-statement"
+	CFLAGS_WARNING="-Wall -Wwrite-strings -Wdeclaration-after-statement"
 	LDFLAGS_DEBUG=
 	LDFLAGS_OPTIMIZE=
 
@@ -4361,7 +4362,17 @@ if test "$tcl_ok" = "yes"; then
 
   if test "$do64bit" = "yes"; then
 
-    ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+    if test "$GCC" == "yes"; then
+
+      ZLIB_LIBS=\${ZLIB_DIR}/win64/libz.dll.a
+
+
+else
+
+      ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+
+
+fi
 
 
 else
@@ -4375,10 +4386,6 @@ fi
 else
 
   ZLIB_OBJS=\${ZLIB_OBJS}
-
-  cat >>confdefs.h <<_ACEOF
-#define NO_VIZ 1
-_ACEOF
 
 
 fi

@@ -37,7 +37,7 @@ typedef struct BgError {
  * pending background errors for the interpreter.
  */
 
-typedef struct ErrAssocData {
+typedef struct {
     Tcl_Interp *interp;		/* Interpreter in which error occurred. */
     Tcl_Obj *cmdPrefix;		/* First word(s) of the handler command */
     BgError *firstBgPtr;	/* First in list of all background errors
@@ -895,7 +895,7 @@ Tcl_SetExitProc(
  *----------------------------------------------------------------------
  */
 static void
-InvokeExitHandlers(void) 
+InvokeExitHandlers(void)
 {
     ExitHandler *exitPtr;
 
@@ -971,22 +971,22 @@ Tcl_Exit(
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
-	    
+
 	    InvokeExitHandlers();
-	    
+
 	    /*
 	     * Ensure the thread-specific data is initialised as it is used in
 	     * Tcl_FinalizeThread()
 	     */
-	    
+
 	    (void) TCL_TSD_INIT(&dataKey);
-	    
+
 	    /*
 	     * Now finalize the calling thread only (others are not safely
 	     * reachable).  Among other things, this triggers a flush of the
 	     * Tcl_Channels that may have data enqueued.
 	     */
-	    
+
 	    Tcl_FinalizeThread();
 	}
 	TclpExit(status);
@@ -1034,14 +1034,8 @@ TclInitSubsystems(void)
 
 	TclpInitLock();
 	if (subsystemsInitialized == 0) {
-	    /*
-	     * Have to set this bit here to avoid deadlock with the routines
-	     * below us that call into TclInitSubsystems.
-	     */
 
-	    subsystemsInitialized = 1;
-
-	    /*
+		/*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -1065,6 +1059,7 @@ TclInitSubsystems(void)
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclpSetInterfaces();
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();
     }
@@ -1098,7 +1093,7 @@ Tcl_Finalize(void)
      * Invoke exit handlers first.
      */
 
-    InvokeExitHandlers();   
+    InvokeExitHandlers();
 
     TclpInitLock();
     if (subsystemsInitialized == 0) {
@@ -1179,8 +1174,6 @@ Tcl_Finalize(void)
      */
 
     TclFinalizeEncodingSubsystem();
-
-    Tcl_SetPanicProc(NULL);
 
     /*
      * Repeat finalization of the thread local storage once more. Although
@@ -1406,7 +1399,7 @@ Tcl_VwaitObjCmd(
 	return TCL_ERROR;
     }
     nameString = Tcl_GetString(objv[1]);
-    if (Tcl_TraceVar(interp, nameString,
+    if (Tcl_TraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done) != TCL_OK) {
 	return TCL_ERROR;
@@ -1425,7 +1418,7 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
     }
-    Tcl_UntraceVar(interp, nameString,
+    Tcl_UntraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done);
 
@@ -1503,8 +1496,8 @@ Tcl_UpdateObjCmd(
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
     } else if (objc == 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[1], updateOptions,
-		"option", 0, &optionIndex) != TCL_OK) {
+	if (Tcl_GetIndexFromObjStruct(interp, objv[1], updateOptions,
+		sizeof(char *), "option", 0, &optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	switch ((enum updateOptions) optionIndex) {

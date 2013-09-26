@@ -745,12 +745,12 @@ test fCmd-7.4 {FileForceOption: bad option} -constraints {notRoot} -setup {
 } -result {bad option "-tf1": must be -force or --}
 test fCmd-7.5 {FileForceOption: multiple times through loop} -setup {
     cleanup
-} -constraints {notRoot} -returnCodes error -body {
+} -constraints {notRoot} -body {
     createfile --
     createfile -force
     file delete -force -force -- -- -force
     glob -- -- -force
-} -result {no files matched glob patterns "-- -force"}
+} -result {}
 
 test fCmd-8.1 {FileBasename: basename of ~user: argc == 1 && *path == ~} \
     -constraints {unix notRoot knownBug} -body {
@@ -938,9 +938,9 @@ test fCmd-9.10 {file rename: comprehensive: file to new name and dir} -setup {
     testchmod 444 tf2
     file rename tf1 [file join td1 tf3]
     file rename tf2 [file join td1 tf4]
-    list [catch {glob tf*}] [lsort [glob -directory td1 t*]] \
+    list [glob tf*] [lsort [glob -directory td1 t*]] \
     [file writable [file join td1 tf3]] [file writable [file join td1 tf4]]
-} -result [subst {1 {[file join td1 tf3] [file join td1 tf4]} 1 0}]
+} -result [subst {{} {[file join td1 tf3] [file join td1 tf4]} 1 0}]
 test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} -setup {
     cleanup
 } -constraints {notRoot testchmod} -body {
@@ -2441,14 +2441,17 @@ test fCmd-28.12 {file link: cd into a link} -setup {
 	return "ok"
     }
 } -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
 } -result ok
 test fCmd-28.13 {file link} -constraints {linkDirectory} -setup {
     cd [temporaryDirectory]
+    file link abc.link abc.dir
 } -body {
     # duplicate link throws error
     file link abc.link abc.dir
 } -returnCodes error -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
 } -result {could not create new link "abc.link": that path already exists}
 test fCmd-28.14 {file link: deletes link not dir} -setup {
@@ -2469,6 +2472,7 @@ test fCmd-28.15.1 {file link: copies link not dir} -setup {
     # directory, not a link (links trace to endpoint).
     list [file type abc2.link] [file tail [file link abc.link]]
 } -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
 } -result {directory abc.dir}
 test fCmd-28.15.2 {file link: copies link not dir} -setup {
@@ -2479,6 +2483,7 @@ test fCmd-28.15.2 {file link: copies link not dir} -setup {
     file copy abc.link abc2.link
     list [file type abc2.link] [file tail [file link abc2.link]]
 } -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
 } -result {link abc.dir}
 cd [temporaryDirectory]
@@ -2498,20 +2503,25 @@ test fCmd-28.16 {file link: glob inside link} -setup {
     file link abc.link abc.dir
     lsort [glob -dir abc.link -tails *]
 } -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
 } -result {abc.file abc2.file}
 test fCmd-28.17 {file link: glob -type l} -setup {
     cd [temporaryDirectory]
+    file link abc.link abc.dir
 } -constraints {linkDirectory} -body {
     glob -dir [pwd] -type l -tails abc*
 } -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
 } -result {abc.link}
 test fCmd-28.18 {file link: glob -type d} -constraints linkDirectory -setup {
     cd [temporaryDirectory]
+    file link abc.link abc.dir
 } -body {
     lsort [glob -dir [pwd] -type d -tails abc*]
 } -cleanup {
+    file delete -force abc.link
     cd [workingDirectory]
 } -result [lsort [list abc.link abc.dir abc2.dir]]
 test fCmd-28.19 {file link: relative paths} -setup {

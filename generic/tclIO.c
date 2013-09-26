@@ -16,6 +16,108 @@
 #include <assert.h>
 
 /*
+ * For each channel handler registered in a call to Tcl_CreateChannelHandler,
+ * there is one record of the following type. All of records for a specific
+ * channel are chained together in a singly linked list which is stored in
+ * the channel structure.
+ */
+
+typedef struct ChannelHandler {
+    Channel *chanPtr;		/* The channel structure for this channel. */
+    int mask;			/* Mask of desired events. */
+    Tcl_ChannelProc *proc;	/* Procedure to call in the type of
+				 * Tcl_CreateChannelHandler. */
+    ClientData clientData;	/* Argument to pass to procedure. */
+    struct ChannelHandler *nextPtr;
+				/* Next one in list of registered handlers. */
+} ChannelHandler;
+
+/*
+ * This structure keeps track of the current ChannelHandler being invoked in
+ * the current invocation of ChannelHandlerEventProc. There is a potential
+ * problem if a ChannelHandler is deleted while it is the current one, since
+ * ChannelHandlerEventProc needs to look at the nextPtr field. To handle this
+ * problem, structures of the type below indicate the next handler to be
+ * processed for any (recursively nested) dispatches in progress. The
+ * nextHandlerPtr field is updated if the handler being pointed to is deleted.
+ * The nextPtr field is used to chain together all recursive invocations, so
+ * that Tcl_DeleteChannelHandler can find all the recursively nested
+ * invocations of ChannelHandlerEventProc and compare the handler being
+ * deleted against the NEXT handler to be invoked in that invocation; when it
+ * finds such a situation, Tcl_DeleteChannelHandler updates the nextHandlerPtr
+ * field of the structure to the next handler.
+ */
+
+typedef struct NextChannelHandler {
+    ChannelHandler *nextHandlerPtr;	/* The next handler to be invoked in
+					 * this invocation. */
+    struct NextChannelHandler *nestedHandlerPtr;
+					/* Next nested invocation of
+					 * ChannelHandlerEventProc. */
+} NextChannelHandler;
+
+/*
+ * The following structure describes the event that is added to the Tcl
+ * event queue by the channel handler check procedure.
+ */
+
+typedef struct ChannelHandlerEvent {
+    Tcl_Event header;		/* Standard header for all events. */
+    Channel *chanPtr;		/* The channel that is ready. */
+    int readyMask;		/* Events that have occurred. */
+} ChannelHandlerEvent;
+
+/*
+ * The following structure is used by Tcl_GetsObj() to encapsulates the
+ * state for a "gets" operation.
+ */
+
+typedef struct GetsState {
+    Tcl_Obj *objPtr;		/* The object to which UTF-8 characters
+				 * will be appended. */
+    char **dstPtr;		/* Pointer into objPtr's string rep where
+				 * next character should be stored. */
+    Tcl_Encoding encoding;	/* The encoding to use to convert raw bytes
+				 * to UTF-8.  */
+    ChannelBuffer *bufPtr;	/* The current buffer of raw bytes being
+				 * emptied. */
+    Tcl_EncodingState state;	/* The encoding state just before the last
+				 * external to UTF-8 conversion in
+				 * FilterInputBytes(). */
+    int rawRead;		/* The number of bytes removed from bufPtr
+				 * in the last call to FilterInputBytes(). */
+    int bytesWrote;		/* The number of bytes of UTF-8 data
+				 * appended to objPtr during the last call to
+				 * FilterInputBytes(). */
+    int charsWrote;		/* The corresponding number of UTF-8
+				 * characters appended to objPtr during the
+				 * last call to FilterInputBytes(). */
+    int totalChars;		/* The total number of UTF-8 characters
+				 * appended to objPtr so far, just before the
+				 * last call to FilterInputBytes(). */
+} GetsState;
+
+/*
+ * The following structure encapsulates the state for a background channel
+ * copy.  Note that the data buffer for the copy will be appended to this
+ * structure.
+ */
+
+typedef struct CopyState {
+    struct Channel *readPtr;	/* Pointer to input channel. */
+    struct Channel *writePtr;	/* Pointer to output channel. */
+    int readFlags;		/* Original read channel flags. */
+    int writeFlags;		/* Original write channel flags. */
+    Tcl_WideInt toRead;		/* Number of bytes to copy, or -1. */
+    Tcl_WideInt total;		/* Total bytes transferred (written). */
+    Tcl_Interp *interp;		/* Interp that started the copy. */
+    Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
+    int bufSize;		/* Size of appended buffer. */
+    char buffer[1];		/* Copy buffer, this must be the last
+                                 * field. */
+} CopyState;
+
+/*
  * All static variables used in this file are collected into a single instance
  * of the following structure. For multi-threaded implementations, there is
  * one instance of this structure for each thread.
@@ -24,7 +126,7 @@
  * The structure defined below is used in this file only.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     NextChannelHandler *nestedHandlerPtr;
 				/* This variable holds the list of nested
 				 * ChannelHandlerEventProc invocations. */
@@ -42,6 +144,18 @@ typedef struct ThreadSpecificData {
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
+
+/*
+ * Structure to record a close callback. One such record exists for
+ * each close callback registered for a channel.
+ */
+
+typedef struct CloseCallback {
+    Tcl_CloseProc *proc;		/* The procedure to call. */
+    ClientData clientData;		/* Arbitrary one-word data to pass
+					 * to the callback. */
+    struct CloseCallback *nextPtr;	/* For chaining close callbacks. */
+} CloseCallback;
 
 /*
  * Static functions in this file:
@@ -228,9 +342,9 @@ static const Tcl_ObjType tclChannelType = {
 };
 
 #define GET_CHANNELSTATE(objPtr) \
-    ((ChannelState *) (objPtr)->internalRep.otherValuePtr)
+    ((ChannelState *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_CHANNELSTATE(objPtr, storePtr) \
-    ((objPtr)->internalRep.otherValuePtr = (void *) (storePtr))
+    ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (storePtr))
 #define GET_CHANNELINTERP(objPtr) \
     ((Interp *) (objPtr)->internalRep.twoPtrValue.ptr2)
 #define SET_CHANNELINTERP(objPtr, storePtr) \
@@ -437,7 +551,7 @@ TclFinalizeIOSubsystem(void)
             if (GotFlag(statePtr, CHANNEL_DEAD)) {
                 continue;
             }
-	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED )
+	    if (!GotFlag(statePtr, CHANNEL_INCLOSE | CHANNEL_CLOSED)
                     || GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
                 ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		active = 1;
@@ -703,6 +817,8 @@ Tcl_DeleteCloseHandler(
 	if ((cbPtr->proc == proc) && (cbPtr->clientData == clientData)) {
 	    if (cbPrevPtr == NULL) {
 		statePtr->closeCbPtr = cbPtr->nextPtr;
+	    } else {
+		cbPrevPtr->nextPtr = cbPtr->nextPtr;
 	    }
 	    ckfree(cbPtr);
 	    break;
@@ -2480,7 +2596,7 @@ FlushChannel(
 		 * it's a tty channel (dup'ed underneath)
 		 */
 
-		if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+		if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED) && !TclInExit()) {
 		    SetFlag(statePtr, BG_FLUSH_SCHEDULED);
 		    UpdateInterest(chanPtr);
 		}
@@ -8882,8 +8998,8 @@ Tcl_FileEventObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId event ?script?");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[2], modeOptions, "event name", 0,
-	    &modeIndex) != TCL_OK) {
+    if (Tcl_GetIndexFromObjStruct(interp, objv[2], modeOptions,
+	    sizeof(char *), "event name", 0, &modeIndex) != TCL_OK) {
 	return TCL_ERROR;
     }
     mask = maskArray[modeIndex];

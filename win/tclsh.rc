@@ -2,7 +2,7 @@
 //
 
 #include <winver.h>
-#include <tcl.h>
+#include "tclWinInt.h"
 
 //
 // build-up the name suffix that defines the type of build this is.

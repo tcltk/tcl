@@ -18,9 +18,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if defined(HAVE_SYS_STAT_H) && !defined _WIN32
-#   include <sys/stat.h>
-#endif
 #include "tclInt.h"
 #ifdef __WIN32__
 #   include "tclWinInt.h"
@@ -54,7 +51,7 @@ typedef struct FilesystemRecord {
  * this information each time the corresponding epoch counter changes.
  */
 
-typedef struct ThreadSpecificData {
+typedef struct {
     int initialized;
     int cwdPathEpoch;
     int filesystemEpoch;
@@ -243,7 +240,7 @@ static Tcl_ThreadDataKey fsDataKey;
  * code.
  */
 
-typedef struct FsDivertLoad {
+typedef struct {
     Tcl_LoadHandle loadHandle;
     Tcl_FSUnloadFileProc *unloadProcPtr;
     Tcl_Obj *divertedFile;
@@ -2480,8 +2477,8 @@ TclFSFileAttrIndex(
 	Tcl_Obj *tmpObj = Tcl_NewStringObj(attributeName, TCL_STRLEN);
 	int result;
 
-	result = Tcl_GetIndexFromObj(NULL, tmpObj, attrTable, NULL, TCL_EXACT,
-		indexPtr);
+	result = Tcl_GetIndexFromObjStruct(NULL, tmpObj, attrTable,
+		sizeof(char *), NULL, TCL_EXACT, indexPtr);
 	TclDecrRefCount(tmpObj);
 	if (listObj != NULL) {
 	    TclDecrRefCount(listObj);
@@ -3217,6 +3214,9 @@ Tcl_LoadFile(
      */
 
     copyToPtr = TclpTempFileNameForLibrary(interp, pathPtr);
+    if (copyToPtr == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_IncrRefCount(copyToPtr);
 
     copyFsPtr = Tcl_FSGetFileSystemForPath(copyToPtr);
@@ -3365,7 +3365,7 @@ Tcl_LoadFile(
     return retVal;
 
   resolveSymbols:
-    /* 
+    /*
      * At this point, *handlePtr is already set up to the handle for the
      * loaded library. We now try to resolve the symbols.
      */
@@ -3374,7 +3374,7 @@ Tcl_LoadFile(
 	for (i=0 ; symbols[i] != NULL; i++) {
 	    procPtrs[i] = Tcl_FindSymbol(interp, *handlePtr, symbols[i]);
 	    if (procPtrs[i] == NULL) {
-		/* 
+		/*
 		 * At least one symbol in the list was not found.  Unload the
 		 * file, and report the problem back to the caller.
 		 * (Tcl_FindSymbol should already have left an appropriate
@@ -3394,7 +3394,7 @@ Tcl_LoadFile(
  *----------------------------------------------------------------------
  *
  * DivertFindSymbol --
- *	
+ *
  *	Find a symbol in a shared library loaded by copy-from-VFS.
  *
  *----------------------------------------------------------------------

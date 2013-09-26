@@ -19,3 +19,8 @@ thread Thread
 tdbc TDBC
 Tdbc TDBC
 TDBC TDBC
+# Drivers for TDBC
+tdbcmysql	tdbc::mysql
+tdbcodbc	tdbc::odbc
+tdbcpostgres	tdbc::postgres
+tdbcsqlite3	tdbc::sqlite3

@@ -14,7 +14,6 @@
 #ifndef _UNISTD
 #define _UNISTD
 
-#include "tcl.h"
 #include <sys/types.h>
 
 #ifndef NULL

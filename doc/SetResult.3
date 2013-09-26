@@ -199,17 +199,11 @@ change \fIinterp->result\fR or clear error state.
 is about to replace one result value with another.
 .SS "DIRECT ACCESS TO INTERP->RESULT"
 .PP
-It used to be legal for programs to
-directly read and write \fIinterp->result\fR
-to manipulate the interpreter result.  The Tcl headers no longer
-permit this access by default, and C code still doing this must
-be updated to use supported routines \fBTcl_GetObjResult\fR,
+It used to be legal for programs to directly read and write
+\fIinterp->result\fR to manipulate the interpreter result.
+The Tcl headers no longer permit this access, and C code still
+doing this must be updated to use supported routines \fBTcl_GetObjResult\fR,
 \fBTcl_GetStringResult\fR, \fBTcl_SetObjResult\fR, and \fBTcl_SetResult\fR.
-As a migration aid, access can be restored with the compiler directive
-.CS
-#define USE_INTERP_RESULT
-.CE
-but this is meant only to offer life support to otherwise dead code.
 .SH "THE TCL_FREEPROC ARGUMENT TO TCL_SETRESULT"
 .PP
 \fBTcl_SetResult\fR's \fIfreeProc\fR argument specifies how 

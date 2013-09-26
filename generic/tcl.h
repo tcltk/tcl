@@ -90,20 +90,6 @@ extern "C" {
 #endif /* __WIN32__ */
 
 /*
- * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
- * quotation marks), JOIN joins two arguments.
- */
-
-#ifndef STRINGIFY
-#  define STRINGIFY(x) STRINGIFY1(x)
-#  define STRINGIFY1(x) #x
-#endif
-#ifndef JOIN
-#  define JOIN(a,b) JOIN1(a,b)
-#  define JOIN1(a,b) a##b
-#endif
-
-/*
  * A special definition used to allow this header file to be included from
  * windows resource files so that they can obtain version information.
  * RC_INVOKED is defined by default by the windows RC tool.
@@ -138,7 +124,7 @@ extern "C" {
 #include <stdio.h>
 // TODO: AUTOCONFERY
 #include <sys/types.h>
-#include <stddef.h>
+//#include <stddef.h>
 
 /*
  *----------------------------------------------------------------------------
@@ -230,79 +216,17 @@ extern "C" {
  * be reset to DLLIMPORT.
  */
 
-#undef TCL_STORAGE_CLASS
 #ifdef BUILD_tcl
-#   define TCL_STORAGE_CLASS DLLEXPORT
+#   define TCLAPI DLLEXPORT
 #else
-#   ifdef USE_TCL_STUBS
-#      define TCL_STORAGE_CLASS
-#   else
-#      define TCL_STORAGE_CLASS DLLIMPORT
-#   endif
-#endif
-
-/*
- * Definitions that allow this header file to be used either with or without
- * ANSI C features.
- */
-
-#ifndef INLINE
-#   define INLINE
-#endif
-
-/*
- * Make sure EXTERN isn't defined elsewhere.
- */
-
-#ifdef EXTERN
-#   undef EXTERN
-#endif /* EXTERN */
-
-#ifdef __cplusplus
-#   define EXTERN extern "C" TCL_STORAGE_CLASS
-#else
-#   define EXTERN extern TCL_STORAGE_CLASS
-#endif
-
-/*
- *----------------------------------------------------------------------------
- * The following code is copied from winnt.h. If we don't replicate it here,
- * then <windows.h> can't be included after tcl.h, since tcl.h also defines
- * VOID. This block is skipped under Cygwin and Mingw.
- */
-
-#if defined(__WIN32__) && !defined(HAVE_WINNT_IGNORE_VOID)
-#ifndef VOID
-#define VOID void
-typedef char CHAR;
-typedef short SHORT;
-typedef long LONG;
-#endif
-#endif /* __WIN32__ && !HAVE_WINNT_IGNORE_VOID */
-
-/*
- * Macro to use instead of "void" for arguments that must have type "void *"
- * in ANSI C; maps them to type "char *" in non-ANSI systems.
- */
-
-#ifndef NO_VOID
-#   define VOID void
-#else
-#   define VOID char
+#   define TCLAPI DLLIMPORT
 #endif
 
 /*
  * Miscellaneous declarations.
  */
 
-#ifndef _CLIENTDATA
-#   ifndef NO_VOID
-	typedef void *ClientData;
-#   else
-	typedef int *ClientData;
-#   endif
-#   define _CLIENTDATA
-#endif
+typedef void *ClientData;
 
 /*
  * Darwin specific configure overrides (to support fat compiles, where
@@ -412,7 +336,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct _stat32i64 Tcl_StatBuf;
 #   endif /* _MSC_VER < 1400 */
 #elif defined(__CYGWIN__)
-    typedef struct _stat32i64 {
+    typedef struct {
 	dev_t st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
@@ -428,7 +352,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	struct {long tv_sec;} st_ctim;
 	/* Here is a 4-byte gap */
     } Tcl_StatBuf;
-#elif defined(HAVE_STRUCT_STAT64)
+#elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
     typedef struct stat64 Tcl_StatBuf;
 #else
     typedef struct stat Tcl_StatBuf;
@@ -603,8 +527,6 @@ typedef struct stat *Tcl_OldStat_;
 #define TCL_BREAK		3
 #define TCL_CONTINUE		4
 
-#define TCL_RESULT_SIZE		200
-
 /*
  *----------------------------------------------------------------------------
  * Flags to control what substitutions are performed by Tcl_SubstObj():
@@ -771,10 +693,7 @@ typedef struct Tcl_Obj {
  * whether an object is shared (i.e. has reference count > 1). Note: clients
  * should use Tcl_DecrRefCount() when they are finished using an object, and
  * should never call TclFreeObj() directly. TclFreeObj() is only defined and
- * made public in tcl.h to support Tcl_DecrRefCount's macro definition. Note
- * also that Tcl_DecrRefCount() refers to the parameter "obj" twice. This
- * means that you should avoid calling it with an expression that is expensive
- * to compute or has side effects.
+ * made public in tcl.h to support Tcl_DecrRefCount's macro definition.
  */
 
 void		Tcl_IncrRefCount(Tcl_Obj *objPtr);
@@ -783,20 +702,11 @@ int		Tcl_IsShared(Tcl_Obj *objPtr);
 
 /*
  *----------------------------------------------------------------------------
- * The following structure contains the state needed by Tcl_SaveResult. No-one
- * outside of Tcl should access any of these fields. This structure is
- * typically allocated on the stack.
+ * The following type contains the state needed by Tcl_SaveResult. This
+ * structure is typically allocated on the stack.
  */
 
-typedef struct Tcl_SavedResult {
-    char *result;
-    Tcl_FreeProc *freeProc;
-    Tcl_Obj *objResultPtr;
-    char *appendResult;
-    int appendAvl;
-    int appendUsed;
-    char resultSpace[TCL_RESULT_SIZE+1];
-} Tcl_SavedResult;
+typedef Tcl_Obj *Tcl_SavedResult;
 
 /*
  *----------------------------------------------------------------------------
@@ -2287,7 +2197,7 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * stubs tables.
  */
 
-#define TCL_STUB_MAGIC		((int) (0xFCA3BACB + sizeof(size_t)))
+#define TCL_STUB_MAGIC		((int) 0xFCA3BACF)
 
 /*
  * The following function is required to be defined in all stubs aware
@@ -2296,18 +2206,21 @@ typedef int (Tcl_NRPostProc) (ClientData data[], Tcl_Interp *interp,
  * main library in case an extension is statically linked into an application.
  */
 
-const char *		TclInitStubs(Tcl_Interp *interp, const char *version,
-			    int exact, int magic);
+const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
+			    int exact, const char *tclversion, int magic);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
-/*
- * When not using stubs, make it a macro.
- */
-
 #ifdef USE_TCL_STUBS
-#define Tcl_InitStubs(interp, version, exact) \
-    TclInitStubs(interp, version, exact, TCL_STUB_MAGIC)
+#if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)((interp), (version), (exact)|(int)sizeof(size_t), \
+	TCL_VERSION, TCL_STUB_MAGIC)
+#else
+#   define Tcl_InitStubs(interp, version, exact) \
+	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, 1|(int)sizeof(size_t), \
+	TCL_VERSION, TCL_STUB_MAGIC)
+#endif
 #else
 #define Tcl_InitStubs(interp, version, exact) \
     Tcl_PkgInitStubsCheck(interp, version, exact)
@@ -2319,14 +2232,15 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
-EXTERN void		Tcl_FindExecutable(const char *argv0);
-EXTERN void		Tcl_MainEx(int argc, char **argv,
+	    ((Tcl_CreateInterp)()))
+TCLAPI void		Tcl_FindExecutable(const char *argv0);
+TCLAPI void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
+TCLAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
-EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
+TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
+TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #endif
 
 /*
@@ -2354,15 +2268,15 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #ifdef TCL_MEM_DEBUG
 
 #   define ckalloc(x) \
-    ((VOID *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    ((void *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define ckfree(x) \
     Tcl_DbCkfree((char *)(x), __FILE__, __LINE__)
 #   define ckrealloc(x,y) \
-    ((VOID *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((void *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 #   define attemptckalloc(x) \
-    ((VOID *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    ((void *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
 #   define attemptckrealloc(x,y) \
-    ((VOID *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    ((void *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
 
@@ -2373,15 +2287,15 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  */
 
 #   define ckalloc(x) \
-    ((VOID *) Tcl_Alloc((unsigned)(x)))
+    ((void *) Tcl_Alloc((unsigned)(x)))
 #   define ckfree(x) \
     Tcl_Free((char *)(x))
 #   define ckrealloc(x,y) \
-    ((VOID *) Tcl_Realloc((char *)(x), (unsigned)(y)))
+    ((void *) Tcl_Realloc((char *)(x), (unsigned)(y)))
 #   define attemptckalloc(x) \
-    ((VOID *) Tcl_AttemptAlloc((unsigned)(x)))
+    ((void *) Tcl_AttemptAlloc((unsigned)(x)))
 #   define attemptckrealloc(x,y) \
-    ((VOID *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
+    ((void *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory
@@ -2404,9 +2318,18 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
     /*
      * Use do/while0 idiom for optimum correctness without compiler warnings.
      * http://c2.com/cgi/wiki?TrivialDoWhileLoop
+     *
+     * Decrement refCount AFTER checking it for 0 or 1 (<2), because
+     * we cannot assume anymore that refCount is a signed type; In
+     * Tcl8 it was but in Tcl9 it is subject to change.
      */
 #   define Tcl_DecrRefCount(objPtr) \
-	do { if (--(objPtr)->refCount <= 0) TclFreeObj(objPtr); } while(0)
+	do { \
+	    Tcl_Obj *_objPtr = (objPtr); \
+	    if (_objPtr->refCount-- < 2) { \
+		TclFreeObj(_objPtr); \
+	    } \
+	} while(0)
 #   define Tcl_IsShared(objPtr) \
 	((objPtr)->refCount > 1)
 #endif
@@ -2430,9 +2353,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #  undef  Tcl_NewDoubleObj
 #  define Tcl_NewDoubleObj(val) \
      Tcl_DbNewDoubleObj(val, __FILE__, __LINE__)
-#  undef  Tcl_NewIntObj
-#  define Tcl_NewIntObj(val) \
-     Tcl_DbNewLongObj(val, __FILE__, __LINE__)
 #  undef  Tcl_NewListObj
 #  define Tcl_NewListObj(objc, objv) \
      Tcl_DbNewListObj(objc, objv, __FILE__, __LINE__)
@@ -2495,18 +2415,6 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #undef  Tcl_ConditionFinalize
 #define Tcl_ConditionFinalize(condPtr)
 #endif /* TCL_THREADS */
-
-/*
- *----------------------------------------------------------------------------
- * Deprecated Tcl functions:
- */
-
-#ifndef TCL_NO_DEPRECATED
-#   undef  Tcl_EvalObj
-#   define Tcl_EvalObj(interp,objPtr) \
-	Tcl_EvalObjEx((interp),(objPtr),0)
-
-#endif /* !TCL_NO_DEPRECATED */
 
 #endif /* RC_INVOKED */
 

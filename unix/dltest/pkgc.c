@@ -11,16 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef STATIC_BUILD
 #include "tcl.h"
-
-/*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Pkgc_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -65,7 +56,7 @@ Pkgc_SubObjCmd(
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(first - second));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(first - second));
     return TCL_OK;
 }
 
@@ -115,17 +106,17 @@ Pkgc_UnsafeObjCmd(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgc_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
+    code = Tcl_PkgProvideEx(interp, "Pkgc", "1.7.2", NULL);
     if (code != TCL_OK) {
 	return code;
     }
@@ -152,17 +143,17 @@ Pkgc_Init(
  *----------------------------------------------------------------------
  */
 
-EXTERN int
+DLLEXPORT int
 Pkgc_SafeInit(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
 	return TCL_ERROR;
     }
-    code = Tcl_PkgProvide(interp, "Pkgc", "1.7.2");
+    code = Tcl_PkgProvideEx(interp, "Pkgc", "1.7.2", NULL);
     if (code != TCL_OK) {
 	return code;
     }

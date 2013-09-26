@@ -4,7 +4,7 @@
  *	This file contains implementations of the "simple" commands and
  *	methods from the object-system core.
  *
- * Copyright (c) 2005-2012 by Donal K. Fellows
+ * Copyright (c) 2005-2013 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -88,7 +88,7 @@ TclOO_Class_Constructor(
     Tcl_Obj *const *objv)
 {
     Object *oPtr = (Object *) Tcl_ObjectContextObject(context);
-    Tcl_Obj *invoke[3];
+    Tcl_Obj **invoke;
 
     if (objc-1 > Tcl_ObjectContextSkippedArgs(context)) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
@@ -102,6 +102,7 @@ TclOO_Class_Constructor(
      * Delegate to [oo::define] to do the work.
      */
 
+    invoke = ckalloc(3 * sizeof(Tcl_Obj *));
     invoke[0] = oPtr->fPtr->defineName;
     invoke[1] = TclOOObjectName(interp, oPtr);
     invoke[2] = objv[objc-1];
@@ -115,7 +116,7 @@ TclOO_Class_Constructor(
     Tcl_IncrRefCount(invoke[1]);
     Tcl_IncrRefCount(invoke[2]);
     TclNRAddCallback(interp, DecrRefsPostClassConstructor,
-	    invoke[0], invoke[1], invoke[2], NULL);
+	    invoke, NULL, NULL, NULL);
 
     /*
      * Tricky point: do not want the extra reported level in the Tcl stack
@@ -131,9 +132,12 @@ DecrRefsPostClassConstructor(
     Tcl_Interp *interp,
     int result)
 {
-    TclDecrRefCount((Tcl_Obj *) data[0]);
-    TclDecrRefCount((Tcl_Obj *) data[1]);
-    TclDecrRefCount((Tcl_Obj *) data[2]);
+    Tcl_Obj **invoke = data[0];
+
+    TclDecrRefCount(invoke[0]);
+    TclDecrRefCount(invoke[1]);
+    TclDecrRefCount(invoke[2]);
+    ckfree(invoke);
     return result;
 }
 
@@ -687,51 +691,50 @@ TclOO_Object_VarName(
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* The actual arguments. */
 {
-    Interp *iPtr = (Interp *) interp;
     Var *varPtr, *aryVar;
-    Tcl_Obj *varNamePtr;
+    Tcl_Obj *varNamePtr, *argPtr;
+    const char *arg;
 
     if (Tcl_ObjectContextSkippedArgs(context)+1 != objc) {
 	Tcl_WrongNumArgs(interp, Tcl_ObjectContextSkippedArgs(context), objv,
 		"varName");
 	return TCL_ERROR;
     }
+    argPtr = objv[objc-1];
+    arg = Tcl_GetString(argPtr);
 
     /*
-     * Switch to the object's namespace for the duration of this call. Like
-     * this, the variable is looked up in the namespace of the object, and not
-     * in the namespace of the caller. Otherwise this would only work if the
-     * caller was a method of the object itself, which might not be true if
-     * the method was exported. This is a bit of a hack, but the simplest way
-     * to do this (pushing a stack frame would be horribly expensive by
-     * comparison, and is only done when we'd otherwise interfere with the
-     * global namespace).
+     * Convert the variable name to fully-qualified form if it wasn't already.
+     * This has to be done prior to lookup because we can run into problems
+     * with resolvers otherwise. [Bug 3603695]
+     *
+     * We still need to do the lookup; the variable could be linked to another
+     * variable and we want the target's name.
      */
 
-    if (iPtr->varFramePtr == NULL) {
-	Tcl_CallFrame *dummyFrame;
-
-	TclPushStackFrame(interp, &dummyFrame,
-		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context)),0);
-	varPtr = TclObjLookupVar(interp, objv[objc-1], NULL,
-		TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to",1,1,&aryVar);
-	TclPopStackFrame(interp);
+    if (arg[0] == ':' && arg[1] == ':') {
+	varNamePtr = argPtr;
     } else {
-	Namespace *savedNsPtr;
-
-	savedNsPtr = iPtr->varFramePtr->nsPtr;
-	iPtr->varFramePtr->nsPtr = (Namespace *)
+	Tcl_Namespace *namespacePtr =
 		Tcl_GetObjectNamespace(Tcl_ObjectContextObject(context));
-	varPtr = TclObjLookupVar(interp, objv[objc-1], NULL,
-		TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to",1,1,&aryVar);
-	iPtr->varFramePtr->nsPtr = savedNsPtr;
-    }
 
+	varNamePtr = Tcl_NewStringObj(namespacePtr->fullName, -1);
+	Tcl_AppendToObj(varNamePtr, "::", 2);
+	Tcl_AppendObjToObj(varNamePtr, argPtr);
+    }
+    Tcl_IncrRefCount(varNamePtr);
+    varPtr = TclObjLookupVar(interp, varNamePtr, NULL,
+	    TCL_NAMESPACE_ONLY|TCL_LEAVE_ERR_MSG, "refer to", 1, 1, &aryVar);
+    Tcl_DecrRefCount(varNamePtr);
     if (varPtr == NULL) {
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE",
-		TclGetString(objv[objc-1]), NULL);
+	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARIABLE", arg, NULL);
 	return TCL_ERROR;
     }
+
+    /*
+     * Now that we've pinned down what variable we're really talking about
+     * (including traversing variable links), convert back to a name.
+     */
 
     varNamePtr = Tcl_NewObj();
     if (aryVar != NULL) {
@@ -979,8 +982,8 @@ TclOOSelfObjCmd(
 	return TCL_ERROR;
     } else if (objc == 1) {
 	index = SELF_OBJECT;
-    } else if (Tcl_GetIndexFromObj(interp, objv[1], subcmds, "subcommand", 0,
-	    &index) != TCL_OK) {
+    } else if (Tcl_GetIndexFromObjStruct(interp, objv[1], subcmds,
+	    sizeof(char *), "subcommand", 0, &index) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1149,7 +1152,7 @@ TclOOSelfObjCmd(
 	}
     case SELF_CALL:
 	result[0] = TclOORenderCallChain(interp, contextPtr->callPtr);
-	result[1] = Tcl_NewIntObj(contextPtr->index);
+	result[1] = Tcl_NewLongObj(contextPtr->index);
 	Tcl_SetObjResult(interp, Tcl_NewListObj(2, result));
 	return TCL_OK;
     }

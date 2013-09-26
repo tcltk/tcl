@@ -444,7 +444,7 @@ next(
 	    if (ATEOS()) {
 		FAILW(REG_EESCAPE);
 	    }
-	    (DISCARD)lexescape(v);
+	    (void)lexescape(v);
 	    switch (v->nexttype) {	/* not all escapes okay here */
 	    case PLAIN:
 		return 1;
@@ -703,7 +703,7 @@ next(
 	}
 	RETV(PLAIN, *v->now++);
     }
-    (DISCARD)lexescape(v);
+    (void)lexescape(v);
     if (ISERR()) {
 	FAILW(REG_EESCAPE);
     }
@@ -1130,7 +1130,7 @@ skip(
 /*
  - newline - return the chr for a newline
  * This helps confine use of CHR to this source file.
- ^ static chr newline(NOPARMS);
+ ^ static chr newline(void);
  */
 static chr
 newline(void)
@@ -1143,7 +1143,7 @@ newline(void)
  * This helps confine use of CHR to this source file.  Beware that the caller
  * knows how long the sequence is.
  ^ #ifdef REG_DEBUG
- ^ static const chr *ch(NOPARMS);
+ ^ static const chr *ch(void);
  ^ #endif
  */
 #ifdef REG_DEBUG

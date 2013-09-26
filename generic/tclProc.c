@@ -271,8 +271,8 @@ Tcl_ProcObjCmd(
 		cfPtr->data.eval.path = contextPtr->data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
 
 		hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
 			procPtr, &isNew);
@@ -420,7 +420,7 @@ TclCreateProc(
 	 * will be holding a reference to it.
 	 */
 
-	procPtr = bodyPtr->internalRep.otherValuePtr;
+	procPtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 	procPtr->iPtr = iPtr;
 	procPtr->refCount++;
 	precompiled = 1;
@@ -836,7 +836,7 @@ TclObjGetFrame(
 	}
 	/* TODO: Consider skipping the typePtr checks */
     } else if (objPtr->typePtr == &tclIntType
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	    || objPtr->typePtr == &tclWideIntType
 #endif
 	    ) {
@@ -1197,7 +1197,7 @@ TclInitCompiledLocals(
     if (bodyPtr->typePtr != &tclByteCodeType) {
 	Tcl_Panic("body object for proc attached to frame is not a byte code type");
     }
-    codePtr = bodyPtr->internalRep.otherValuePtr;
+    codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 
     if (framePtr->numCompiledLocals) {
 	if (!codePtr->localCachePtr) {
@@ -1347,17 +1347,9 @@ TclFreeLocalCache(
     for (i = 0; i < localCachePtr->numVars; i++, namePtrPtr++) {
 	register Tcl_Obj *objPtr = *namePtrPtr;
 
-	/*
-	 * Note that this can be called with interp==NULL, on interp deletion.
-	 * In that case, the literal table and objects go away on their own.
-	 */
-
 	if (objPtr) {
-	    if (interp) {
-		TclReleaseLiteral(interp, objPtr);
-	    } else {
-		Tcl_DecrRefCount(objPtr);
-	    }
+	    /* TclReleaseLiteral calls Tcl_DecrRefCount for us */
+	    TclReleaseLiteral(interp, objPtr);
 	}
     }
     ckfree(localCachePtr);
@@ -1368,7 +1360,7 @@ InitLocalCache(
     Proc *procPtr)
 {
     Interp *iPtr = procPtr->iPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
     int localCt = procPtr->numCompiledLocals;
     int numArgs = procPtr->numArgs, i = 0;
 
@@ -1445,7 +1437,7 @@ InitArgsAndLocals(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
     register Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
@@ -1643,7 +1635,7 @@ PushProcCallFrame(
 	 * commands and/or resolver changes are considered).
 	 */
 
-	codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+	codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1844,7 +1836,7 @@ TclNRInterpProcCore(
      */
 
     procPtr->refCount++;
-    codePtr = procPtr->bodyPtr->internalRep.otherValuePtr;
+    codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
 	    NULL, NULL);
@@ -1986,7 +1978,7 @@ TclProcCompileProc(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_CallFrame *framePtr;
-    ByteCode *codePtr = bodyPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
@@ -2106,7 +2098,7 @@ TclProcCompileProc(
 
 	iPtr->invokeWord = 0;
 	iPtr->invokeCmdFramePtr = (hePtr ? Tcl_GetHashValue(hePtr) : NULL);
-	tclByteCodeType.setFromAnyProc(interp, bodyPtr);
+	TclSetByteCodeFromAny(interp, bodyPtr, NULL, NULL);
 	iPtr->invokeCmdFramePtr = NULL;
 	TclPopStackFrame(interp);
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
@@ -2377,7 +2369,7 @@ TclNewProcBodyObj(
     TclNewObj(objPtr);
     if (objPtr) {
 	objPtr->typePtr = &tclProcBodyType;
-	objPtr->internalRep.otherValuePtr = procPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
 
 	procPtr->refCount++;
     }
@@ -2407,10 +2399,10 @@ ProcBodyDup(
     Tcl_Obj *srcPtr,		/* Object to copy. */
     Tcl_Obj *dupPtr)		/* Target object for the duplication. */
 {
-    Proc *procPtr = srcPtr->internalRep.otherValuePtr;
+    Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
 
     dupPtr->typePtr = &tclProcBodyType;
-    dupPtr->internalRep.otherValuePtr = procPtr;
+    dupPtr->internalRep.twoPtrValue.ptr1 = procPtr;
     procPtr->refCount++;
 }
 
@@ -2437,10 +2429,9 @@ static void
 ProcBodyFree(
     Tcl_Obj *objPtr)		/* The object to clean up. */
 {
-    Proc *procPtr = objPtr->internalRep.otherValuePtr;
+    Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    procPtr->refCount--;
-    if (procPtr->refCount <= 0) {
+    if (procPtr->refCount-- < 2) {
 	TclProcCleanupProc(procPtr);
     }
 }
@@ -2617,8 +2608,8 @@ SetLambdaFromAny(
 		cfPtr->data.eval.path = contextPtr->data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
 	    }
 
 	    /*
@@ -2734,7 +2725,6 @@ TclNRApplyObjCmd(
     else {
 	/*
 	 * Joe English's suggestion to allow cmdNames to function as lambdas.
-	 * Also requires making tclCmdNameType non-static in tclObj.c
 	 */
 
 	Tcl_Obj *elemPtr;
@@ -2895,7 +2885,8 @@ Tcl_DisassembleObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
 	return TCL_ERROR;
     }
-    if (Tcl_GetIndexFromObj(interp, objv[1], types, "type", 0, &idx)!=TCL_OK){
+    if (Tcl_GetIndexFromObjStruct(interp, objv[1], types,
+	    sizeof(char *), "type", 0, &idx) != TCL_OK){
 	return TCL_ERROR;
     }
 
@@ -2975,10 +2966,9 @@ Tcl_DisassembleObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "script");
 	    return TCL_ERROR;
 	}
-	if (objv[2]->typePtr != &tclByteCodeType) {
-	    if (TclSetByteCodeFromAny(interp, objv[2], NULL, NULL) != TCL_OK){
-		return TCL_ERROR;
-	    }
+	if ((objv[2]->typePtr != &tclByteCodeType)
+		&& (TclSetByteCodeFromAny(interp, objv[2], NULL, NULL) != TCL_OK)) {
+	    return TCL_ERROR;
 	}
 	codeObjPtr = objv[2];
 	break;
@@ -3076,7 +3066,7 @@ Tcl_DisassembleObjCmd(
      * Do the actual disassembly.
      */
 
-    if (((ByteCode *) codeObjPtr->internalRep.otherValuePtr)->flags
+    if (((ByteCode *) codeObjPtr->internalRep.twoPtrValue.ptr1)->flags
 	    & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not disassemble prebuilt bytecode", TCL_STRLEN));

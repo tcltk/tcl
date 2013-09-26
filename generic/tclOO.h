@@ -39,7 +39,7 @@ extern const char *TclOOInitializeStubs(
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "0.7"
+#define TCLOO_VERSION "1.0.1"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
 
 /*

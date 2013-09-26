@@ -267,7 +267,7 @@ TclOOInit(
      * to be fully provided.
      */
 
-    if (Tcl_Eval(interp, initScript) != TCL_OK) {
+    if (Tcl_EvalEx(interp, initScript, -1, 0) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -458,7 +458,7 @@ InitFoundation(
     if (TclOODefineSlots(fPtr) != TCL_OK) {
 	return TCL_ERROR;
     }
-    return Tcl_Eval(interp, slotScript);
+    return Tcl_EvalEx(interp, slotScript, -1, 0);
 }
 
 /*
@@ -843,7 +843,7 @@ ObjectRenamedTrace(
 	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
 		    contextPtr, 0, NULL);
 	    if (result != TCL_OK) {
-		Tcl_BackgroundError(interp);
+		Tcl_BackgroundException(interp, result);
 	    }
 	    Tcl_RestoreInterpState(interp, state);
 	    TclOODeleteContext(contextPtr);

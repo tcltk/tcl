@@ -471,17 +471,19 @@ Tcl_LoadObjCmd(
     if (code != TCL_OK) {
 	Interp *iPtr = (Interp *) target;
 
-	if (iPtr->result != NULL && iPtr->result[0] != '\0') {
+	if (iPtr->legacyResult && !iPtr->legacyFreeProc) {
 	    /*
-	     * We have an Tcl 8.x extension with incompatible stub table.
+	     * A call to Tcl_InitStubs() determined the caller extension and
+	     * this interp are incompatible in their stubs mechanisms, and
+	     * recorded the error in the oldest legacy place we have to do so.
 	     */
 
-	    Tcl_Obj *obj = Tcl_NewStringObj(iPtr->result, TCL_STRLEN);
-
-	    Tcl_SetObjResult(interp, obj);
-	} else {
-	    Tcl_TransferResult(target, code, interp);
+	    Tcl_SetObjResult(target,
+		    Tcl_NewStringObj(iPtr->legacyResult, TCL_STRLEN));
+	    iPtr->legacyResult = NULL;
+	    iPtr->legacyFreeProc = (void (*) (void))-1;
 	}
+	Tcl_TransferResult(target, code, interp);
 	goto done;
     }
 

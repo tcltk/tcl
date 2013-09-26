@@ -10,7 +10,7 @@
 .TH Tcl_Eval 3 8.1 Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_EvalObjEx, Tcl_EvalObjv, Tcl_Eval, Tcl_EvalEx, Tcl_VarEval, Tcl_VarEvalVA \- execute Tcl scripts
+Tcl_EvalObjEx, Tcl_EvalObjv, Tcl_Eval, Tcl_EvalEx \- execute Tcl scripts
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -26,12 +26,6 @@ int
 .sp
 int
 \fBTcl_EvalEx\fR(\fIinterp, script, numBytes, flags\fR)
-.sp
-int
-\fBTcl_VarEval\fR(\fIinterp, part, part, ... \fB(char *) NULL\fR)
-.sp
-int
-\fBTcl_VarEvalVA\fR(\fIinterp, argList\fR)
 .SH ARGUMENTS
 .AS Tcl_Interp **termPtr
 .AP Tcl_Interp *interp in
@@ -108,18 +102,6 @@ executed again, \fBTcl_Eval\fR may be faster than \fBTcl_EvalObjEx\fR.
 \fBTcl_EvalEx\fR is an extended version of \fBTcl_Eval\fR that takes
 additional arguments \fInumBytes\fR and \fIflags\fR.  \fBTcl_EvalEx\fR
 is generally preferred over \fBTcl_Eval\fR.
-.PP
-\fBTcl_VarEval\fR takes any number of string arguments
-of any length, concatenates them into a single string,
-then calls \fBTcl_Eval\fR to execute that string as a Tcl command.
-It returns the result of the command and also modifies
-\fIinterp->result\fR in the same way as \fBTcl_Eval\fR.
-The last argument to \fBTcl_VarEval\fR must be NULL to indicate the end
-of arguments.  \fBTcl_VarEval\fR is now deprecated.
-.PP
-\fBTcl_VarEvalVA\fR is the same as \fBTcl_VarEval\fR except that
-instead of taking a variable number of arguments it takes an argument
-list. Like \fBTcl_VarEval\fR, \fBTcl_VarEvalVA\fR is deprecated.
 
 .SH "FLAG BITS"
 .PP

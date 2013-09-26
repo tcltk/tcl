@@ -82,9 +82,9 @@ static int lexescape(struct vars *);
 static int lexdigits(struct vars *, int, int, int);
 static int brenext(struct vars *, pchr);
 static void skip(struct vars *);
-static chr newline(NOPARMS);
+static chr newline(void);
 #ifdef REG_DEBUG
-static const chr *ch(NOPARMS);
+static const chr *ch(void);
 #endif
 static chr chrnamed(struct vars *, const chr *, const chr *, pchr);
 /* === regc_color.c === */
@@ -121,12 +121,15 @@ static void destroystate(struct nfa *, struct state *);
 static void newarc(struct nfa *, int, pcolor, struct state *, struct state *);
 static struct arc *allocarc(struct nfa *, struct state *);
 static void freearc(struct nfa *, struct arc *);
+static int hasnonemptyout(struct state *);
+static int nonemptyouts(struct state *);
+static int nonemptyins(struct state *);
 static struct arc *findarc(struct state *, int, pcolor);
 static void cparc(struct nfa *, struct arc *, struct state *, struct state *);
 static void moveins(struct nfa *, struct state *, struct state *);
-static void copyins(struct nfa *, struct state *, struct state *);
+static void copyins(struct nfa *, struct state *, struct state *, int);
 static void moveouts(struct nfa *, struct state *, struct state *);
-static void copyouts(struct nfa *, struct state *, struct state *);
+static void copyouts(struct nfa *, struct state *, struct state *, int);
 static void cloneouts(struct nfa *, struct state *, struct state *, struct state *, int);
 static void delsub(struct nfa *, struct state *, struct state *);
 static void deltraverse(struct nfa *, struct state *, struct state *);
@@ -144,7 +147,8 @@ static int push(struct nfa *, struct arc *);
 #define	COMPATIBLE	3	/* compatible but not satisfied yet */
 static int combine(struct arc *, struct arc *);
 static void fixempties(struct nfa *, FILE *);
-static int unempty(struct nfa *, struct arc *);
+static struct state *emptyreachable(struct state *, struct state *);
+static void replaceempty(struct nfa *, struct state *, struct state *);
 static void cleanup(struct nfa *);
 static void markreachable(struct nfa *, struct state *, struct state *, struct state *);
 static void markcanreach(struct nfa *, struct state *, struct state *, struct state *);
@@ -324,13 +328,13 @@ compile(
     re->re_info = 0;		/* bits get set during parse */
     re->re_csize = sizeof(chr);
     re->re_guts = NULL;
-    re->re_fns = VS(&functions);
+    re->re_fns = (void*)(&functions);
 
     /*
      * More complex setup, malloced things.
      */
 
-    re->re_guts = VS(MALLOC(sizeof(struct guts)));
+    re->re_guts = (void*)(MALLOC(sizeof(struct guts)));
     if (re->re_guts == NULL) {
 	return freev(v, REG_ESPACE);
     }
@@ -417,7 +421,7 @@ compile(
      * Can sacrifice main NFA now, so use it as work area.
      */
 
-    (DISCARD) optimize(v->nfa, debug);
+    (void) optimize(v->nfa, debug);
     CNOERR();
     makesearch(v, v->nfa);
     CNOERR();
@@ -607,7 +611,7 @@ makesearch(
     for (s=slist ; s!=NULL ; s=s2) {
 	s2 = newstate(nfa);
 
-	copyouts(nfa, s, s2);
+	copyouts(nfa, s, s2, 1);
 	for (a=s->ins ; a!=NULL ; a=b) {
 	    b = a->inchain;
 
@@ -738,6 +742,7 @@ parsebranch(
 
 	/* NB, recursion in parseqatom() may swallow rest of branch */
 	parseqatom(v, stopper, type, lp, right, t);
+	NOERRN();
     }
 
     if (!seencontent) {		/* empty branch */
@@ -1234,6 +1239,7 @@ parseqatom(
 	EMPTYARC(atom->end, rp);
 	t->right = subre(v, '=', 0, atom->end, rp);
     }
+    NOERR();
     assert(SEE('|') || SEE(stopper) || SEE(EOS));
     t->flags |= COMBINE(t->flags, t->right->flags);
     top->flags |= COMBINE(top->flags, t->flags);
@@ -1868,10 +1874,10 @@ nfatree(
     assert(t != NULL && t->begin != NULL);
 
     if (t->left != NULL) {
-	(DISCARD) nfatree(v, t->left, f);
+	(void) nfatree(v, t->left, f);
     }
     if (t->right != NULL) {
-	(DISCARD) nfatree(v, t->right, f);
+	(void) nfatree(v, t->right, f);
     }
 
     return nfanode(v, t, f);

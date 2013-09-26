@@ -18,7 +18,7 @@ typedef size_t (LengthProc)(const char *src);
  * convert between various character sets and UTF-8.
  */
 
-typedef struct Encoding {
+typedef struct {
     char *name;			/* Name of encoding. Malloced because (1) hash
 				 * table entry that owns this encoding may be
 				 * freed prior to this encoding being freed,
@@ -57,7 +57,7 @@ typedef struct Encoding {
  * encoding.
  */
 
-typedef struct TableEncodingData {
+typedef struct {
     int fallback;		/* Character (in this encoding) to substitute
 				 * when this encoding cannot represent a UTF-8
 				 * character. */
@@ -91,7 +91,7 @@ typedef struct TableEncodingData {
  * for switching character sets.
  */
 
-typedef struct EscapeSubTable {
+typedef struct {
     unsigned sequenceLen;	/* Length of following string. */
     char sequence[16];		/* Escape code that marks this encoding. */
     char name[32];		/* Name for encoding. */
@@ -100,7 +100,7 @@ typedef struct EscapeSubTable {
 				 * yet. */
 } EscapeSubTable;
 
-typedef struct EscapeEncodingData {
+typedef struct {
     int fallback;		/* Character (in this encoding) to substitute
 				 * when this encoding cannot represent a UTF-8
 				 * character. */
@@ -228,7 +228,7 @@ static Tcl_EncodingConvertProc Iso88591FromUtfProc;
 static Tcl_EncodingConvertProc Iso88591ToUtfProc;
 
 /*
- * A Tcl_ObjType for holding a cached Tcl_Encoding in the otherValuePtr field
+ * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
  * of the intrep. This should help the lifetime of encodings be more useful.
  * See concerns raised in [Bug 1077262].
  */
@@ -271,7 +271,7 @@ Tcl_GetEncodingFromObj(
 	    return TCL_ERROR;
 	}
 	TclFreeIntRep(objPtr);
-	objPtr->internalRep.otherValuePtr = encoding;
+	objPtr->internalRep.twoPtrValue.ptr1 = encoding;
 	objPtr->typePtr = &encodingType;
     }
     *encodingPtr = Tcl_GetEncoding(NULL, name);
@@ -292,7 +292,7 @@ static void
 FreeEncodingIntRep(
     Tcl_Obj *objPtr)
 {
-    Tcl_FreeEncoding(objPtr->internalRep.otherValuePtr);
+    Tcl_FreeEncoding(objPtr->internalRep.twoPtrValue.ptr1);
     objPtr->typePtr = NULL;
 }
 
@@ -311,7 +311,7 @@ DupEncodingIntRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    dupPtr->internalRep.otherValuePtr = Tcl_GetEncoding(NULL, srcPtr->bytes);
+    dupPtr->internalRep.twoPtrValue.ptr1 = Tcl_GetEncoding(NULL, srcPtr->bytes);
 }
 
 /*
@@ -625,68 +625,6 @@ TclFinalizeEncodingSubsystem(void)
 
     Tcl_DeleteHashTable(&encodingTable);
     Tcl_MutexUnlock(&encodingMutex);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * Tcl_GetDefaultEncodingDir --
- *
- *	Legacy public interface to retrieve first directory in the encoding
- *	searchPath.
- *
- * Results:
- *	The directory pathname, as a string, or NULL for an empty encoding
- *	search path.
- *
- * Side effects:
- *	None.
- *
- *-------------------------------------------------------------------------
- */
-
-const char *
-Tcl_GetDefaultEncodingDir(void)
-{
-    size_t numDirs;
-    Tcl_Obj *first, *searchPath = Tcl_GetEncodingSearchPath();
-
-    Tcl_ListObjLength(NULL, searchPath, &numDirs);
-    if (numDirs == 0) {
-	return NULL;
-    }
-    Tcl_ListObjIndex(NULL, searchPath, 0, &first);
-
-    return Tcl_GetString(first);
-}
-
-/*
- *-------------------------------------------------------------------------
- *
- * Tcl_SetDefaultEncodingDir --
- *
- *	Legacy public interface to set the first directory in the encoding
- *	search path.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Modifies the encoding search path.
- *
- *-------------------------------------------------------------------------
- */
-
-void
-Tcl_SetDefaultEncodingDir(
-    const char *path)
-{
-    Tcl_Obj *searchPath = Tcl_GetEncodingSearchPath();
-    Tcl_Obj *directory = Tcl_NewStringObj(path, TCL_STRLEN);
-
-    searchPath = Tcl_DuplicateObj(searchPath);
-    Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &directory);
-    Tcl_SetEncodingSearchPath(searchPath);
 }
 
 /*

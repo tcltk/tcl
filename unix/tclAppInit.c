@@ -22,14 +22,14 @@ extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
 #ifdef TCL_XT_TEST
-extern void		XtToolkitInitialize(void);
-extern int		Tclxttest_Init(Tcl_Interp *interp);
-#endif
+extern void                XtToolkitInitialize(void);
+extern Tcl_PackageInitProc Tclxttest_Init;
+#endif /* TCL_XT_TEST */
 
 /*
  * The following #if block allows you to change the AppInit function by using
  * a #define of TCL_LOCAL_APPINIT instead of rewriting this entire file. The
- * #if checks for that #define and uses Tcl_AppInit if it doesn't exist.
+ * #if checks for that #define and uses Tcl_AppInit if it does not exist.
  */
 
 #ifndef TCL_LOCAL_APPINIT
@@ -48,7 +48,7 @@ MODULE_SCOPE int main(int, char **);
  */
 
 #ifdef TCL_LOCAL_MAIN_HOOK
-extern int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
+MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
 #endif
 
 /*
@@ -71,7 +71,7 @@ extern int TCL_LOCAL_MAIN_HOOK(int *argc, char ***argv);
 int
 main(
     int argc,			/* Number of command-line arguments. */
-    char **argv)		/* Values of command-line arguments. */
+    char *argv[])		/* Values of command-line arguments. */
 {
 #ifdef TCL_XT_TEST
     XtToolkitInitialize();
@@ -145,14 +145,16 @@ Tcl_AppInit(
     /*
      * Specify a user-specific startup file to invoke if the application is
      * run interactively. Typically the startup file is "~/.apprc" where "app"
-     * is the name of the application. If this line is deleted then no user-
-     * specific startup file will be run under any conditions.
+     * is the name of the application. If this line is deleted then no
+     * user-specific startup file will be run under any conditions.
      */
 
 #ifdef DJGPP
-    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/tclsh.rc", TCL_GLOBAL_ONLY);
+    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+	    Tcl_NewStringObj("~/tclsh.rc", -1), TCL_GLOBAL_ONLY);
 #else
-    (Tcl_SetVar2)(interp, "tcl_rcFileName", NULL, "~/.tclshrc", TCL_GLOBAL_ONLY);
+    (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,
+	    Tcl_NewStringObj("~/.tclshrc", -1), TCL_GLOBAL_ONLY);
 #endif
 
     return TCL_OK;

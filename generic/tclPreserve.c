@@ -53,7 +53,7 @@ TCL_DECLARE_MUTEX(preserveMutex)/* To protect the above statics */
  * objects that we don't want to live any longer than necessary.
  */
 
-typedef struct HandleStruct {
+typedef struct {
     void *ptr;			/* Pointer to the memory block being tracked.
 				 * This field will become NULL when the memory
 				 * block is deleted. This field must be the

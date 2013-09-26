@@ -167,7 +167,7 @@ const Tcl_ObjType tclEndOffsetType = {
  *	  separating whitespace, or a string terminator. It is just another
  *	  character in a list element.
  *
- * The interpretaton of a formatted substring as a list element follows rules
+ * The interpretation of a formatted substring as a list element follows rules
  * similar to the parsing of the words of a command in a Tcl script. Backslash
  * substitution plays a key role, and is defined exactly as it is in command
  * parsing. The same routine, TclParseBackslash() is used in both command
@@ -179,7 +179,7 @@ const Tcl_ObjType tclEndOffsetType = {
  * Backslash substitution replaces an "escape sequence" of one or more
  * characters starting with
  *		\u005c	\	BACKSLASH
- * with a single character. The one character escape sequent case happens only
+ * with a single character. The one character escape sequence case happens only
  * when BACKSLASH is the last character in the string. In all other cases, the
  * escape sequence is at least two characters long.
  *
@@ -874,9 +874,9 @@ Tcl_SplitList(
 
 size_t
 Tcl_ScanElement(
-    register const char *src,	/* String to convert to list element. */
-    register int *flagPtr)	/* Where to store information to guide
-				 * Tcl_ConvertCountedElement. */
+    const char *src,	/* String to convert to list element. */
+    int *flagPtr)	/* Where to store information to guide
+			 * Tcl_ConvertCountedElement. */
 {
     return Tcl_ScanCountedElement(src, TCL_STRLEN, flagPtr);
 }
@@ -911,7 +911,7 @@ Tcl_ScanCountedElement(
     int *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
-    int flags = CONVERT_ANY;
+    char flags = CONVERT_ANY;
     size_t numBytes = TclScanElement(src, length, &flags);
 
     *flagPtr = flags;
@@ -952,7 +952,7 @@ size_t
 TclScanElement(
     const char *src,		/* String to convert to Tcl list element. */
     size_t length,		/* Number of bytes in src, or TCL_STRLEN. */
-    int *flagPtr)		/* Where to store information to guide
+    char *flagPtr)		/* Where to store information to guide
 				 * Tcl_ConvertElement. */
 {
     const char *p = src;
@@ -1234,9 +1234,9 @@ TclScanElement(
 
 size_t
 Tcl_ConvertElement(
-    register const char *src,	/* Source information for list element. */
-    register char *dst,		/* Place to put list-ified element. */
-    register int flags)		/* Flags produced by Tcl_ScanElement. */
+    const char *src,	/* Source information for list element. */
+    char *dst,		/* Place to put list-ified element. */
+    int flags)		/* Flags produced by Tcl_ScanElement. */
 {
     return Tcl_ConvertCountedElement(src, TCL_STRLEN, dst, flags);
 }
@@ -1301,9 +1301,9 @@ TclConvertElement(
     register const char *src,	/* Source information for list element. */
     size_t length,		/* Number of bytes in src, or TCL_STRLEN. */
     char *dst,			/* Place to put list-ified element. */
-    int flags)			/* Flags produced by Tcl_ScanElement. */
+    char flags)			/* Flags produced by Tcl_ScanElement. */
 {
-    int conversion = flags & CONVERT_MASK;
+    char conversion = flags & CONVERT_MASK;
     char *p = dst;
 
     /*
@@ -1483,11 +1483,10 @@ Tcl_Merge(
     size_t argc,		/* How many strings to merge. */
     const char *const *argv)	/* Array of string values. */
 {
-#define LOCAL_SIZE 20
-    int localFlags[LOCAL_SIZE], *flagPtr = NULL;
+#define LOCAL_SIZE 64
+    char localFlags[LOCAL_SIZE];
     size_t i, bytesNeeded = 0;
-    char *result, *dst;
-    const int maxFlags = UINT_MAX / sizeof(int);
+    char *result, *dst, *flagPtr = NULL;
 
     /*
      * Handle empty list case first, so logic of the general case can be
@@ -1506,22 +1505,8 @@ Tcl_Merge(
 
     if (argc <= LOCAL_SIZE) {
 	flagPtr = localFlags;
-    } else if (argc > maxFlags) {
-	/*
-	 * We cannot allocate a large enough flag array to format this list in
-	 * one pass.  We could imagine converting this routine to a multi-pass
-	 * implementation, but for sizeof(int) == 4, the limit is a max of
-	 * 2^30 list elements and since each element is at least one byte
-	 * formatted, and requires one byte space between it and the next one,
-	 * that a minimum space requirement of 2^31 bytes, which is already
-	 * INT_MAX. If we tried to format a list of > maxFlags elements, we're
-	 * just going to overflow the size limits on the formatted string
-	 * anyway, so just issue that same panic early.
-	 */
-
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     } else {
-	flagPtr = ckalloc(argc * sizeof(int));
+	flagPtr = ckalloc(argc);
     }
     for (i = 0; i < argc; i++) {
 	flagPtr[i] = ( i ? TCL_DONT_QUOTE_HASH : 0 );
@@ -2594,7 +2579,7 @@ Tcl_DStringAppendElement(
 {
     char *dst = dsPtr->string + dsPtr->length;
     size_t needSpace = TclNeedSpace(dsPtr->string, dst);
-    int flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
+    char flags = needSpace ? TCL_DONT_QUOTE_HASH : 0;
     size_t newSize = dsPtr->length + needSpace
 	    + TclScanElement(element, TCL_STRLEN, &flags);
 
@@ -2759,7 +2744,6 @@ Tcl_DStringResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the
 				 * result of interp. */
 {
-    Tcl_ResetResult(interp);
     Tcl_SetObjResult(interp, TclDStringToObj(dsPtr));
 }
 
@@ -2789,77 +2773,12 @@ Tcl_DStringGetResult(
     Tcl_DString *dsPtr)		/* Dynamic string that is to become the result
 				 * of interp. */
 {
-    Interp *iPtr = (Interp *) interp;
+    size_t length;
+    char *bytes = Tcl_GetStringFromObj(Tcl_GetObjResult(interp), &length);
 
-    if (dsPtr->string != dsPtr->staticSpace) {
-	ckfree(dsPtr->string);
-    }
-
-    /*
-     * Do more efficient transfer when we know the result is a Tcl_Obj. When
-     * there's no st`ring result, we only have to deal with two cases:
-     *
-     *  1. When the string rep is the empty string, when we don't copy but
-     *     instead use the staticSpace in the DString to hold an empty string.
-
-     *  2. When the string rep is not there or there's a real string rep, when
-     *     we use Tcl_GetString to fetch (or generate) the string rep - which
-     *     we know to have been allocated with ckalloc() - and use it to
-     *     populate the DString space. Then, we free the internal rep. and set
-     *     the object's string representation back to the canonical empty
-     *     string.
-     */
-
-    if (!iPtr->result[0] && iPtr->objResultPtr
-	    && !Tcl_IsShared(iPtr->objResultPtr)) {
-	if (iPtr->objResultPtr->bytes == tclEmptyStringRep) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->string[0] = 0;
-	    dsPtr->length = 0;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = Tcl_GetString(iPtr->objResultPtr);
-	    dsPtr->length = iPtr->objResultPtr->length;
-	    dsPtr->spaceAvl = dsPtr->length + 1;
-	    TclFreeIntRep(iPtr->objResultPtr);
-	    iPtr->objResultPtr->bytes = tclEmptyStringRep;
-	    iPtr->objResultPtr->length = 0;
-	}
-	return;
-    }
-
-    /*
-     * If the string result is empty, move the object result to the string
-     * result, then reset the object result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
-
-    dsPtr->length = strlen(iPtr->result);
-    if (iPtr->freeProc != NULL) {
-	if (iPtr->freeProc == TCL_DYNAMIC) {
-	    dsPtr->string = iPtr->result;
-	    dsPtr->spaceAvl = dsPtr->length+1;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-	    iPtr->freeProc(iPtr->result);
-	}
-	dsPtr->spaceAvl = dsPtr->length+1;
-	iPtr->freeProc = NULL;
-    } else {
-	if (dsPtr->length < TCL_DSTRING_STATIC_SIZE) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    dsPtr->spaceAvl = dsPtr->length + 1;
-	}
-	memcpy(dsPtr->string, iPtr->result, dsPtr->length+1);
-    }
-
-    iPtr->result = iPtr->resultSpace;
-    iPtr->resultSpace[0] = 0;
+    Tcl_DStringFree(dsPtr);
+    Tcl_DStringAppend(dsPtr, bytes, length);
+    Tcl_ResetResult(interp);
 }
 
 /*
@@ -2890,14 +2809,16 @@ TclDStringToObj(
 {
     Tcl_Obj *result;
 
-    if (dsPtr->length == 0) {
-	TclNewObj(result);
-    } else if (dsPtr->string == dsPtr->staticSpace) {
-	/*
-	 * Static buffer, so must copy.
-	 */
-
-	TclNewStringObj(result, dsPtr->string, dsPtr->length);
+    if (dsPtr->string == dsPtr->staticSpace) {
+	if (dsPtr->length == 0) {
+	    TclNewObj(result);
+	} else {
+	    /*
+	     * Static buffer, so must copy.
+	     */
+	    
+	    TclNewStringObj(result, dsPtr->string, dsPtr->length);
+	}
     } else {
 	/*
 	 * Dynamic buffer, so transfer ownership and reset.
@@ -3204,7 +3125,7 @@ TclPrecTraceProc(
 
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(*precisionPtr),
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewLongObj(*precisionPtr),
 		flags & TCL_GLOBAL_ONLY);
 	return NULL;
     }
@@ -3542,10 +3463,9 @@ UpdateStringOfEndOffset(
     register Tcl_Obj *objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + 5];
-    register int len;
+    register int len = 3;
 
     memcpy(buffer, "end", 4);
-    len = sizeof("end") - 1;
     if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
 	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
