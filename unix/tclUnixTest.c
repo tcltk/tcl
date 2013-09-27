@@ -606,7 +606,7 @@ TestgetdefencdirCmd(
     size_t objc,		/* Number of arguments. */
     Tcl_Obj *const *objv)	/* Argument strings. */
 {
-    int numDirs;
+    size_t numDirs;
     Tcl_Obj *first, *searchPath;
 
     if (objc != 1) {
