@@ -673,6 +673,10 @@ Tcl_CreateNamespace(
     Tcl_DString *namePtr, *buffPtr;
     int newEntry, nameLen;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    const char *nameStr;
+    Tcl_DString tmpBuffer;
+
+    Tcl_DStringInit(&tmpBuffer);
 
     /*
      * If there is no active namespace, the interpreter is being initialized.
@@ -686,49 +690,78 @@ Tcl_CreateNamespace(
 
 	parentPtr = NULL;
 	simpleName = "";
-    } else if (*name == '\0') {
+	goto doCreate;
+    }
+
+    /*
+     * Ensure that there are no trailing colons as that causes chaos when a
+     * deleteProc is specified. [Bug d614d63989]
+     */
+
+    if (deleteProc != NULL) {
+	nameStr = name + strlen(name) - 2;
+	if (nameStr >= name && nameStr[1] == ':' && nameStr[0] == ':') {
+	    Tcl_DStringAppend(&tmpBuffer, name, -1);
+	    while ((nameLen = Tcl_DStringLength(&tmpBuffer)) > 0
+		    && Tcl_DStringValue(&tmpBuffer)[nameLen-1] == ':') {
+		Tcl_DStringSetLength(&tmpBuffer, nameLen-1);
+	    }
+	    name = Tcl_DStringValue(&tmpBuffer);
+	}
+    }
+
+    /*
+     * If we've ended up with an empty string now, we're attempting to create
+     * the global namespace despite the global namespace existing. That's
+     * naughty!
+     */
+
+    if (*name == '\0') {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("can't create namespace"
                 " \"\": only global namespace can have empty name", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
 		"CREATEGLOBAL", NULL);
+	Tcl_DStringFree(&tmpBuffer);
 	return NULL;
-    } else {
-	/*
-	 * Find the parent for the new namespace.
-	 */
+    }
 
-	TclGetNamespaceForQualName(interp, name, NULL, TCL_CREATE_NS_IF_UNKNOWN,
-		&parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
+    /*
+     * Find the parent for the new namespace.
+     */
 
-	/*
-	 * If the unqualified name at the end is empty, there were trailing
-	 * "::"s after the namespace's name which we ignore. The new namespace
-	 * was already (recursively) created and is pointed to by parentPtr.
-	 */
+    TclGetNamespaceForQualName(interp, name, NULL, TCL_CREATE_NS_IF_UNKNOWN,
+	    &parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
 
-	if (*simpleName == '\0') {
-	    return (Tcl_Namespace *) parentPtr;
-	}
+    /*
+     * If the unqualified name at the end is empty, there were trailing "::"s
+     * after the namespace's name which we ignore. The new namespace was
+     * already (recursively) created and is pointed to by parentPtr.
+     */
 
-	/*
-	 * Check for a bad namespace name and make sure that the name does not
-	 * already exist in the parent namespace.
-	 */
+    if (*simpleName == '\0') {
+	Tcl_DStringFree(&tmpBuffer);
+	return (Tcl_Namespace *) parentPtr;
+    }
 
-	if (
+    /*
+     * Check for a bad namespace name and make sure that the name does not
+     * already exist in the parent namespace.
+     */
+
+    if (
 #ifndef BREAK_NAMESPACE_COMPAT
-	    Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL
+	Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL
 #else
-	    parentPtr->childTablePtr != NULL &&
-	    Tcl_FindHashEntry(parentPtr->childTablePtr, simpleName) != NULL
+	parentPtr->childTablePtr != NULL &&
+	Tcl_FindHashEntry(parentPtr->childTablePtr, simpleName) != NULL
 #endif
-	) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "can't create namespace \"%s\": already exists", name));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
-		    "CREATEEXISTING", NULL);
-	    return NULL;
-	}
+    ) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create namespace \"%s\": already exists", name));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
+		"CREATEEXISTING", NULL);
+	Tcl_DStringFree(&tmpBuffer);
+	return NULL;
     }
 
     /*
@@ -736,6 +769,7 @@ Tcl_CreateNamespace(
      * of namespaces created.
      */
 
+  doCreate:
     nsPtr = ckalloc(sizeof(Namespace));
     nameLen = strlen(simpleName) + 1;
     nsPtr->name = ckalloc(nameLen);
@@ -829,6 +863,7 @@ Tcl_CreateNamespace(
 
     Tcl_DStringFree(&buffer1);
     Tcl_DStringFree(&buffer2);
+    Tcl_DStringFree(&tmpBuffer);
 
     /*
      * If compilation of commands originating from the parent NS is
