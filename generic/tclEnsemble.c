@@ -2755,8 +2755,8 @@ TclCompileEnsemble(
     Tcl_Obj *replaced = Tcl_NewObj(), *replacement;
     Tcl_Command ensemble = (Tcl_Command) cmdPtr;
     Command *oldCmdPtr = cmdPtr, *newCmdPtr;
-    size_T len, result, flags = 0, i, numBytes;
-    int depth = 1, invokeAnyway = 0, ourResult = TCL_ERROR;
+    size_t len, result, i, numBytes;
+    int flags = 0, depth = 1, invokeAnyway = 0, ourResult = TCL_ERROR;
     const char *word;
 
     Tcl_IncrRefCount(replaced);
@@ -3136,7 +3136,7 @@ CompileToInvokedCommand(
     Tcl_Token *tokPtr;
     Tcl_Obj *objPtr, **words;
     char *bytes;
-    int length, i, numWords, cmdLit;
+    size_t length, i, numWords, cmdLit;
     DefineLineInformation;
 
     /*

@@ -4264,6 +4264,7 @@ TEOV_RunEnterTraces(
     Tcl_Interp *interp,
     Command **cmdPtrPtr,
     Tcl_Obj *commandPtr,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Interp *iPtr = (Interp *) interp;
@@ -6009,7 +6010,7 @@ int
 TclNRInvoke(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     register Interp *iPtr = (Interp *) interp;

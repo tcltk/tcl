@@ -244,9 +244,10 @@ TclCompileArraySetCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *dataTokenPtr;
     int isScalar, localIndex, code = TCL_OK;
-    int isDataLiteral, isDataValid, isDataEven, len;
+    int isDataLiteral, isDataValid, isDataEven;
     int dataVar, iterVar, keyVar, valVar, infoIndex;
     int back, fwd, offsetBack, offsetFwd;
+    size_t len;
     Tcl_Obj *literalObj;
     ForeachInfo *infoPtr;
 

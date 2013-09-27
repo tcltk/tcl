@@ -2568,16 +2568,16 @@ static int
 BinaryEncodeUu(
     ClientData clientData,
     Tcl_Interp *interp,
-    int objc,
+    size_t objc,
     Tcl_Obj *const objv[])
 {
     Tcl_Obj *resultObj;
     unsigned char *data, *start, *cursor;
-    int offset, count, rawLength, n, i, j, bits, index;
-    int lineLength = 61;
+    int offset, n, i, j, bits, index, lineLength = 61;
+    size_t count, rawLength;
     const unsigned char SingleNewline[] = { (unsigned char) '\n' };
     const unsigned char *wrapchar = SingleNewline;
-    int wrapcharlen = sizeof(SingleNewline);
+    size_t wrapcharlen = sizeof(SingleNewline);
     enum { OPT_MAXLEN, OPT_WRAPCHAR };
     static const char *const optStrings[] = { "-maxlen", "-wrapchar", NULL };
 
@@ -2970,8 +2970,8 @@ BinaryDecode64(
 
   bad64:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "invalid base64 character \"%c\" at position %d",
-	    (char) c, data - datastart - 1));
+	    "invalid base64 character \"%c\" at position %lu",
+	    (char) c, (unsigned long) (data - datastart - 1)));
     TclDecrRefCount(resultObj);
     return TCL_ERROR;
 }

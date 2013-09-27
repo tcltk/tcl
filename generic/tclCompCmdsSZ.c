@@ -43,7 +43,7 @@ static void		IssueSwitchChainedTests(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int mode, int noCase,
 			    int valueIndex, int numWords,
 			    Tcl_Token **bodyToken, int *bodyLines,
-			    int **bodyNext);
+			    ssize_t **bodyContLines);
 static void		IssueSwitchJumpTable(Tcl_Interp *interp,
 			    CompileEnv *envPtr, int valueIndex,
 			    int numWords, Tcl_Token **bodyToken,
@@ -1906,10 +1906,10 @@ TclCompileThrowCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     DefineLineInformation;	/* TIP #280 */
-    int numWords = parsePtr->numWords;
+    int codeKnown, codeIsList, codeIsValid, numWords = parsePtr->numWords;
     Tcl_Token *codeToken, *msgToken;
     Tcl_Obj *objPtr;
-    int codeKnown, codeIsList, codeIsValid, len;
+    size_t len;
 
     if (numWords != 3) {
 	return TCL_ERROR;
@@ -2246,7 +2246,7 @@ IssueTryClausesInstructions(
 {
     DefineLineInformation;	/* TIP #280 */
     int range, resultVar, optionsVar;
-    int i, j, len, forwardsNeedFixing = 0, trapZero = 0, afterBody = 0;
+    int i, j, forwardsNeedFixing = 0, trapZero = 0, afterBody = 0;
     int *addrsToFix, *forwardsToFix, notCodeJumpSource, notECJumpSource;
     int *noError;
     char buf[TCL_INTEGER_SPACE];

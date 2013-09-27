@@ -441,7 +441,7 @@ Tcl_AppendElement(
     Interp *iPtr = (Interp *) interp;
     Tcl_Obj *elementPtr = Tcl_NewStringObj(element, -1);
     Tcl_Obj *listPtr = Tcl_NewListObj(1, &elementPtr);
-    int length;
+    size_t length;
     const char *bytes;
 
     if (Tcl_IsShared(iPtr->objResultPtr)) {

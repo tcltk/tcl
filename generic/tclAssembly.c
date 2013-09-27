@@ -957,7 +957,7 @@ TclCompileAssembleCmd(
 
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"%.*s\" body, line %d)",
-		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
+		(int) parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
 		Tcl_GetErrorLine(interp)));
 	envPtr->numCommands = numCommands;
 	envPtr->codeNext = envPtr->codeStart + offset;

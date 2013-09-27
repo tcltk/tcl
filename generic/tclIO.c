@@ -84,15 +84,15 @@ typedef struct GetsState {
     Tcl_EncodingState state;	/* The encoding state just before the last
 				 * external to UTF-8 conversion in
 				 * FilterInputBytes(). */
-    int rawRead;		/* The number of bytes removed from bufPtr
+    size_t rawRead;		/* The number of bytes removed from bufPtr
 				 * in the last call to FilterInputBytes(). */
-    int bytesWrote;		/* The number of bytes of UTF-8 data
+    size_t bytesWrote;		/* The number of bytes of UTF-8 data
 				 * appended to objPtr during the last call to
 				 * FilterInputBytes(). */
-    int charsWrote;		/* The corresponding number of UTF-8
+    size_t charsWrote;		/* The corresponding number of UTF-8
 				 * characters appended to objPtr during the
 				 * last call to FilterInputBytes(). */
-    int totalChars;		/* The total number of UTF-8 characters
+    size_t totalChars;		/* The total number of UTF-8 characters
 				 * appended to objPtr so far, just before the
 				 * last call to FilterInputBytes(). */
 } GetsState;

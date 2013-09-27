@@ -1691,7 +1691,7 @@ CompileCmdLiteral(
     Tcl_Obj *cmdObj,
     CompileEnv *envPtr)
 {
-    int numBytes;
+    size_t numBytes;
     const char *bytes = Tcl_GetStringFromObj(cmdObj, &numBytes);
     int cmdLitIdx = TclRegisterNewCmdLiteral(envPtr, bytes, numBytes);
     Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, cmdObj);
@@ -1902,7 +1902,7 @@ CompileCommandTokens(
     int cmdKnown, expand = -1;
     int *wlines, wlineat;
     int cmdLine = envPtr->line;
-    int *clNext = envPtr->clNext;
+    ssize_t *clNext = envPtr->clNext;
     int cmdIdx = envPtr->numCommands;
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
 

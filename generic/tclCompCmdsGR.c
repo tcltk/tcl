@@ -27,7 +27,42 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
+
+/*
+ * Simple parser for list indices.
+ */
 
+static inline int
+ParseIndex(
+    Tcl_Token *tokenPtr,
+    int *indexPtr)
+{
+    Tcl_Obj *tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
+    int result, idx;
+    ssize_t bigidx;
+
+    result = TclGetIntFromObj(NULL, tmpObj, &idx);
+
+    if (result == TCL_OK) {
+	if (idx < 0) {
+	    result = TCL_ERROR;
+	} else {
+	    *indexPtr = idx;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, -2, &bigidx);
+	if (result == TCL_OK) {
+	    if (bigidx > -2 || bigidx < INT_MIN) {
+		result = TCL_ERROR;
+	    } else {
+		*indexPtr = (int) bigidx;
+	    }
+	}
+    }
+
+    TclDecrRefCount(tmpObj);
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1079,24 +1114,9 @@ TclCompileLindexCmd(
 
     idxTokenPtr = TokenAfter(valTokenPtr);
     if (idxTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	Tcl_Obj *tmpObj;
-	int idx, result;
+	int idx;
 
-	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
-	result = TclGetIntFromObj(NULL, tmpObj, &idx);
-	if (result == TCL_OK) {
-	    if (idx < 0) {
-		result = TCL_ERROR;
-	    }
-	} else {
-	    result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
-	    if (result == TCL_OK && idx > -2) {
-		result = TCL_ERROR;
-	    }
-	}
-	TclDecrRefCount(tmpObj);
-
-	if (result == TCL_OK) {
+	if (ParseIndex(idxTokenPtr, &idx) == TCL_OK) {
 	    /*
 	     * All checks have been completed, and we have exactly one of
 	     * these constructs:
@@ -1202,7 +1222,7 @@ TclCompileListCmd(
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
     if (listObj != NULL) {
-	int len;
+	size_t len;
 	const char *bytes = Tcl_GetStringFromObj(listObj, &len);
 
 	PushLiteral(envPtr, bytes, len);
@@ -1330,8 +1350,7 @@ TclCompileLrangeCmd(
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *tmpObj;
-    int idx1, idx2, result;
+    int idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -1348,20 +1367,7 @@ TclCompileLrangeCmd(
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
-    if (result == TCL_OK) {
-	if (idx1 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
-	if (result == TCL_OK && idx1 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (ParseIndex(tokenPtr, &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1375,20 +1381,7 @@ TclCompileLrangeCmd(
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
-    if (result == TCL_OK) {
-	if (idx2 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
-	if (result == TCL_OK && idx2 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (ParseIndex(tokenPtr, &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1429,8 +1422,7 @@ TclCompileLreplaceCmd(
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *tmpObj;
-    int idx1, idx2, result, guaranteedDropAll = 0;
+    int idx1, idx2, guaranteedDropAll = 0;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -1447,20 +1439,7 @@ TclCompileLreplaceCmd(
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
-    if (result == TCL_OK) {
-	if (idx1 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
-	if (result == TCL_OK && idx1 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (ParseIndex(tokenPtr, &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1474,20 +1453,7 @@ TclCompileLreplaceCmd(
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
-    if (result == TCL_OK) {
-	if (idx2 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
-	if (result == TCL_OK && idx2 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (ParseIndex(tokenPtr, &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -2189,7 +2155,8 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, result = TCL_ERROR;
+    size_t len;
+    int exact, result = TCL_ERROR;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2342,8 +2309,8 @@ TclCompileReturnCmd(
      * General syntax: [return ?-option value ...? ?result?]
      * An even number of words means an explicit result argument is present.
      */
-    int level, code, objc, size, status = TCL_OK;
-    int numWords = parsePtr->numWords;
+    int level, code, objc, status = TCL_OK, numWords = parsePtr->numWords;
+    size_t size;
     int explicitResult = (0 == (numWords % 2));
     int numOptionWords = numWords - 1 - explicitResult;
     Tcl_Obj *returnOpts, **objv;
@@ -2532,7 +2499,7 @@ TclCompileSyntaxError(
     CompileEnv *envPtr)
 {
     Tcl_Obj *msg = Tcl_GetObjResult(interp);
-    int numBytes;
+    size_t numBytes;
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclErrorStackResetIf(interp, bytes, numBytes);
@@ -2762,9 +2729,9 @@ IndexTailVarIfKnown(
 {
     Tcl_Obj *tailPtr;
     const char *tailName, *p;
-    int len, n = varTokenPtr->numComponents;
+    size_t len;
     Tcl_Token *lastTokenPtr;
-    int full, localIndex;
+    int full, localIndex, n = varTokenPtr->numComponents;
 
     /*
      * Determine if the tail is (a) known at compile time, and (b) not an

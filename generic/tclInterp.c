@@ -2472,7 +2472,7 @@ static int
 SlaveObjCmd(
     ClientData clientData,	/* Slave interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
+    size_t objc,		/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     return Tcl_NRCallObjProc(interp, NRSlaveCmd, clientData, objc, objv);
