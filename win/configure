@@ -3438,7 +3438,7 @@ echo "${ECHO_T}yes" >&6
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe"
+	extra_ldflags="-pipe -static-libgcc"
 	echo "$as_me:$LINENO: checking for mingw32 version of gcc" >&5
 echo $ECHO_N "checking for mingw32 version of gcc... $ECHO_C" >&6
 if test "${ac_cv_win32+set}" = set; then
@@ -3501,70 +3501,6 @@ echo "${ECHO_T}$ac_cv_win32" >&6
 	    { { echo "$as_me:$LINENO: error: ${CC} cannot produce win32 executables." >&5
 echo "$as_me: error: ${CC} cannot produce win32 executables." >&2;}
    { (exit 1); exit 1; }; }
-	fi
-
-	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -mwindows -municode -Dmain=xxmain"
-	echo "$as_me:$LINENO: checking for working -municode linker flag" >&5
-echo $ECHO_N "checking for working -municode linker flag... $ECHO_C" >&6
-if test "${ac_cv_municode+set}" = set; then
-  echo $ECHO_N "(cached) $ECHO_C" >&6
-else
-  cat >conftest.$ac_ext <<_ACEOF
-/* confdefs.h.  */
-_ACEOF
-cat confdefs.h >>conftest.$ac_ext
-cat >>conftest.$ac_ext <<_ACEOF
-/* end confdefs.h.  */
-
-	#include <windows.h>
-	int APIENTRY wWinMain(HINSTANCE a, HINSTANCE b, LPWSTR c, int d) {return 0;}
-
-int
-main ()
-{
-
-  ;
-  return 0;
-}
-_ACEOF
-rm -f conftest.$ac_objext conftest$ac_exeext
-if { (eval echo "$as_me:$LINENO: \"$ac_link\"") >&5
-  (eval $ac_link) 2>conftest.er1
-  ac_status=$?
-  grep -v '^ *+' conftest.er1 >conftest.err
-  rm -f conftest.er1
-  cat conftest.err >&5
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); } &&
-	 { ac_try='test -z "$ac_c_werror_flag"
-			 || test ! -s conftest.err'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; } &&
-	 { ac_try='test -s conftest$ac_exeext'
-  { (eval echo "$as_me:$LINENO: \"$ac_try\"") >&5
-  (eval $ac_try) 2>&5
-  ac_status=$?
-  echo "$as_me:$LINENO: \$? = $ac_status" >&5
-  (exit $ac_status); }; }; then
-  ac_cv_municode=yes
-else
-  echo "$as_me: failed program was:" >&5
-sed 's/^/| /' conftest.$ac_ext >&5
-
-ac_cv_municode=no
-fi
-rm -f conftest.err conftest.$ac_objext \
-      conftest$ac_exeext conftest.$ac_ext
-
-fi
-echo "$as_me:$LINENO: result: $ac_cv_municode" >&5
-echo "${ECHO_T}$ac_cv_municode" >&6
-	CFLAGS=$hold_cflags
-	if test "$ac_cv_municode" = "no" ; then
-	    extra_ldflags="$extra_ldflags -static-libgcc"
 	fi
     fi
 
