@@ -1687,7 +1687,7 @@ TclCompileTokens(
     char buffer[TCL_UTF_MAX];
     const char *name, *p;
     int numObjsToConcat, nameBytes, localVarName, localVar;
-    int length, i;
+    int length, i, adjust;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL;
@@ -1725,6 +1725,7 @@ TclCompileTokens(
 	clPosition = (int*) ckalloc (maxNumCL*sizeof(int));
     }
 
+    adjust = 0;
     Tcl_DStringInit(&textBuffer);
     numObjsToConcat = 0;
     for ( ;  count > 0;  count--, tokenPtr++) {
@@ -1765,6 +1766,7 @@ TclCompileTokens(
 		    clPosition[numCL] = clPos;
 		    numCL ++;
 		}
+		adjust++;
 	    }
 	    break;
 
@@ -1789,8 +1791,10 @@ TclCompileTokens(
 		numCL = 0;
 	    }
 
+	    envPtr->line += adjust;
 	    TclCompileScript(interp, tokenPtr->start+1,
 		    tokenPtr->size-2, envPtr);
+	    envPtr->line -= adjust;
 	    numObjsToConcat++;
 	    break;
 

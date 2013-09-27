@@ -176,6 +176,16 @@ test source-3.5 {return with special code etc.} -setup {
     invoked from within
 "source $sourcefile"} {a b c}}
 
+test source-4.1 {continuation line parsing} -setup {
+    set sourcefile [makeFile [string map {CL \\\n} {
+	format %s "[dict get [info frame 0] type]:CL[dict get [info frame 0] line]CL[dict get [info frame 0] line]CL[dict get [info frame 0] line]"
+    }] source.file]
+} -body {
+    source $sourcefile
+} -cleanup {
+    removeFile source.file
+} -result {source: 3 4 5}
+
 test source-6.1 {source is binary ok} -setup {
     # Note [makeFile] writes in the system encoding.
     # [source] defaults to reading in the system encoding.
