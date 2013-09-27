@@ -634,7 +634,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe"
+	extra_ldflags="-pipe -static-libgcc"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_TRY_COMPILE([
@@ -665,7 +665,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    extra_ldflags="$extra_ldflags -municode"
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
-	    extra_ldflags="$extra_ldflags -static-libgcc"
 	fi
     fi
 
