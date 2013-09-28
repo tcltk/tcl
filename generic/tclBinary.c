@@ -2718,7 +2718,7 @@ BinaryDecodeUu(
     dataend = data + count;
     size = ((count + 3) & ~3) * 3 / 4;
     begin = cursor = Tcl_SetByteArrayLength(resultObj, size);
-    lineLen = -1;
+    lineLen = TCL_STRLEN;
 
     /*
      * The decoding loop. First, we get the length of line (strictly, the
@@ -2730,7 +2730,7 @@ BinaryDecodeUu(
     while (data < dataend) {
 	char d[4] = {0, 0, 0, 0};
 
-	if (lineLen < 0) {
+	if (lineLen == TCL_STRLEN) {
 	    c = *data++;
 	    if (c < 32 || c > 96) {
 		if (strict || !isspace(c)) {
@@ -2787,7 +2787,7 @@ BinaryDecodeUu(
 	 */
 
 	if (lineLen == 0 && data < dataend) {
-	    lineLen = -1;
+	    lineLen = TCL_STRLEN;
 	    do {
 		c = *data++;
 		if (c == '\n') {
