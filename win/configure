@@ -3450,7 +3450,7 @@ echo "${ECHO_T}yes" >&6
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe"
+	extra_ldflags="-pipe -static-libgcc"
 	echo "$as_me:$LINENO: checking for mingw32 version of gcc" >&5
 echo $ECHO_N "checking for mingw32 version of gcc... $ECHO_C" >&6
 if test "${ac_cv_win32+set}" = set; then
@@ -3579,7 +3579,6 @@ echo "${ECHO_T}$ac_cv_municode" >&6
 	    extra_ldflags="$extra_ldflags -municode"
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
-	    extra_ldflags="$extra_ldflags -static-libgcc"
 	fi
     fi
 

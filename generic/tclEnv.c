@@ -76,36 +76,60 @@ TclSetupEnv(
     Tcl_Interp *interp)		/* Interpreter whose "env" array is to be
 				 * managed. */
 {
+    Var *varPtr, *arrayPtr;
+    Tcl_Obj *varNamePtr;
     Tcl_DString envString;
-    char *p1, *p2;
-    int i;
+    Tcl_HashTable namesHash;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
 
     /*
      * Synchronize the values in the environ array with the contents of the
      * Tcl "env" variable. To do this:
-     *    1) Remove the trace that fires when the "env" var is unset.
-     *    2) Unset the "env" variable.
-     *    3) If there are no environ variables, create an empty "env" array.
-     *	     Otherwise populate the array with current values.
-     *    4) Add a trace that synchronizes the "env" array.
+     *    1) Remove the trace that fires when the "env" var is updated.
+     *    2) Find the existing contents of the "env", storing in a hash table.
+     *    3) Create/update elements for each environ variable, removing
+     *	     elements from the hash table as we go.
+     *    4) Remove the elements for each remaining entry in the hash table,
+     *	     which must have existed before yet have no analog in the environ
+     *	     variable.
+     *    5) Add a trace that synchronizes the "env" array.
      */
 
     Tcl_UntraceVar2(interp, "env", NULL,
 	    TCL_GLOBAL_ONLY | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
 	    TCL_TRACE_READS | TCL_TRACE_ARRAY, EnvTraceProc, NULL);
 
-    Tcl_UnsetVar2(interp, "env", NULL, TCL_GLOBAL_ONLY);
+    /*
+     * Find out what elements are currently in the global env array.
+     */
 
-    if (environ[0] == NULL) {
-	Tcl_Obj *varNamePtr;
-
-	TclNewLiteralStringObj(varNamePtr, "env");
-	Tcl_IncrRefCount(varNamePtr);
-	TclArraySet(interp, varNamePtr, NULL);
-	Tcl_DecrRefCount(varNamePtr);
+    TclNewLiteralStringObj(varNamePtr, "env");
+    Tcl_IncrRefCount(varNamePtr);
+    Tcl_InitObjHashTable(&namesHash);
+    varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL, TCL_GLOBAL_ONLY,
+	    /*msg*/ 0, /*createPart1*/ 0, /*createPart2*/ 0, &arrayPtr);
+    if (varPtr != NULL) {
+	TclFindArrayPtrElements(varPtr, &namesHash);
     } else {
+	TclArraySet(interp, varNamePtr, NULL);
+    }
+
+    /*
+     * Go through the environment array and transfer its values into Tcl. At
+     * the same time, remove those elements we add/update from the hash table
+     * of existing elements, so that after this part processes, that table
+     * will hold just the parts to remove.
+     */
+
+    if (environ[0] != NULL) {
+	int i;
+
 	Tcl_MutexLock(&envMutex);
 	for (i = 0; environ[i] != NULL; i++) {
+	    Tcl_Obj *obj1, *obj2;
+	    char *p1, *p2;
+
 	    p1 = Tcl_ExternalToUtfDString(NULL, environ[i], TCL_STRLEN,
 		    &envString);
 	    p2 = strchr(p1, '=');
@@ -118,13 +142,41 @@ TclSetupEnv(
 
 		continue;
 	    }
-	    p2++;
-	    p2[-1] = '\0';
-	    Tcl_SetVar2(interp, "env", p1, p2, TCL_GLOBAL_ONLY);
+	    *(p2++) = '\0';
+	    obj1 = Tcl_NewStringObj(p1, TCL_STRLEN);
+	    obj2 = Tcl_NewStringObj(p2, TCL_STRLEN);
 	    Tcl_DStringFree(&envString);
+
+	    Tcl_IncrRefCount(obj1);
+	    Tcl_IncrRefCount(obj2);
+	    Tcl_ObjSetVar2(interp, varNamePtr, obj1, obj2, TCL_GLOBAL_ONLY);
+	    hPtr = Tcl_FindHashEntry(&namesHash, obj1);
+	    if (hPtr != NULL) {
+		Tcl_DeleteHashEntry(hPtr);
+	    }
+	    Tcl_DecrRefCount(obj1);
+	    Tcl_DecrRefCount(obj2);
 	}
 	Tcl_MutexUnlock(&envMutex);
     }
+
+    /*
+     * Delete those elements that existed in the array but which had no
+     * counterparts in the environment array.
+     */
+
+    for (hPtr=Tcl_FirstHashEntry(&namesHash, &search); hPtr!=NULL;
+	    hPtr=Tcl_NextHashEntry(&search)) {
+	Tcl_Obj *elemName = Tcl_GetHashValue(hPtr);
+
+	TclObjUnsetVar2(interp, varNamePtr, elemName, TCL_GLOBAL_ONLY);
+    }
+    Tcl_DeleteHashTable(&namesHash);
+    Tcl_DecrRefCount(varNamePtr);
+
+    /*
+     * Re-establish the trace.
+     */
 
     Tcl_TraceVar2(interp, "env", NULL,
 	    TCL_GLOBAL_ONLY | TCL_TRACE_WRITES | TCL_TRACE_UNSETS |
