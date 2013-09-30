@@ -545,6 +545,17 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Drops an element from the auxiliary stack, popping stack elements
 	 * until the matching stack depth is reached. */
 
+    {"strtrimLeft",	 1,	-1,	  0,	{OPERAND_NONE}},
+	/* [string trimleft] core: removes the characters (designated by the
+	 * value at the top of the stack) from the left of the string and
+	 * pushes the resulting string.
+	 * Stack: ... string charset => ... trimmedString */
+    {"strtrimRight",	 1,	-1,	  0,	{OPERAND_NONE}},
+	/* [string trimright] core: removes the characters (designated by the
+	 * value at the top of the stack) from the right of the string and
+	 * pushes the resulting string.
+	 * Stack: ... string charset => ... trimmedString */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 

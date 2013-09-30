@@ -462,6 +462,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"strneq",		ASSEM_1BYTE,	INST_STR_NEQ,		2,	1},
     {"strrange",	ASSEM_1BYTE,	INST_STR_RANGE,		3,	1},
     {"strrfind",	ASSEM_1BYTE,	INST_STR_FIND_LAST,	2,	1},
+    {"strtrimLeft",	ASSEM_1BYTE,	INST_STRTRIM_LEFT,	2,	1},
+    {"strtrimRight",	ASSEM_1BYTE,	INST_STRTRIM_RIGHT,	2,	1},
     {"sub",		ASSEM_1BYTE,	INST_SUB,		2,	1},
     {"tclooClass",	ASSEM_1BYTE,	INST_TCLOO_CLASS,	1,	1},
     {"tclooIsObject",	ASSEM_1BYTE,	INST_TCLOO_IS_OBJECT,	1,	1},
@@ -502,7 +504,8 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_COROUTINE_NAME,					/* 149 */
     INST_NS_CURRENT,						/* 151 */
     INST_INFO_LEVEL_NUM,					/* 152 */
-    INST_RESOLVE_COMMAND					/* 154 */
+    INST_RESOLVE_COMMAND,					/* 154 */
+    INST_STRTRIM_LEFT, INST_STRTRIM_RIGHT			/* 166,167 */
 };
 
 /*
