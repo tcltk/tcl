@@ -768,8 +768,12 @@ typedef struct ByteCode {
 
 #define INST_EXPAND_DROP		165
 
+/* For compilation of [string trim] and related */
+#define INST_STRTRIM_LEFT		166
+#define INST_STRTRIM_RIGHT		167
+
 /* The last opcode */
-#define LAST_INST_OPCODE		165
+#define LAST_INST_OPCODE		167
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
