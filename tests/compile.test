@@ -707,6 +707,12 @@ test compile-18.19 {disassembler - basics} -setup {
 } -cleanup {
     foo destroy
 } -match glob -result *
+
+test compile-19.0 {Bug 3614102: reset stack housekeeping} -body {
+    # This will panic in a --enable-symbols=compile build, unless bug is fixed.
+    apply {{} {list [if 1]}}
+} -returnCodes error -match glob -result *
+
 # TODO sometime - check that bytecode from tbcload is *not* disassembled.
 
 # cleanup

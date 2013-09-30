@@ -115,7 +115,8 @@ if { [\fBcatch\fR {open $someFile w} fid] } {
 There are more complex examples of \fBcatch\fR usage in the
 documentation for the \fBreturn\fR command.
 .SH "SEE ALSO" 
-break(n), continue(n), dict(n), error(n), info(n), return(n), tclvars(n)
+break(n), continue(n), dict(n), error(n), errorCode(n), errorInfo(n), info(n),
+return(n)
 .SH KEYWORDS
 catch, error, exception
 '\" Local Variables:
