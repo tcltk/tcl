@@ -2278,7 +2278,7 @@ TclCompileTokens(
     Tcl_DString textBuffer;	/* Holds concatenated chars from adjacent
 				 * TCL_TOKEN_TEXT, TCL_TOKEN_BS tokens. */
     char buffer[TCL_UTF_MAX];
-    int i, numObjsToConcat, length;
+    int i, numObjsToConcat, length, adjust;
     unsigned char *entryCodeNext = envPtr->codeNext;
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL;
@@ -2315,6 +2315,7 @@ TclCompileTokens(
 	clPosition = ckalloc(maxNumCL * sizeof(int));
     }
 
+    adjust = 0;
     Tcl_DStringInit(&textBuffer);
     numObjsToConcat = 0;
     for ( ;  count > 0;  count--, tokenPtr++) {
@@ -2358,6 +2359,7 @@ TclCompileTokens(
 		    clPosition[numCL] = clPos;
 		    numCL ++;
 		}
+		adjust++;
 	    }
 	    break;
 
@@ -2397,8 +2399,10 @@ TclCompileTokens(
 		Tcl_Panic("token components overflow token array");
 	    }
 		
+	    envPtr->line += adjust;
 	    CompileScriptTokens(interp, tokenPtr+1,
 		    tokenPtr + (tokenPtr->numComponents), envPtr);
+	    envPtr->line -= adjust;
 	    numObjsToConcat++;
 	    count -= tokenPtr->numComponents;
 	    tokenPtr += tokenPtr->numComponents;
