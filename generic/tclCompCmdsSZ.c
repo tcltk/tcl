@@ -640,6 +640,141 @@ TclCompileStringRangeCmd(
     OP(			STR_RANGE);
     return TCL_OK;
 }
+
+/*
+ * Synch with tclCmdMZ.c
+ */
+
+#define DEFAULT_TRIM_SET \
+	"\x09\x0a\x0b\x0c\x0d " /* ASCII */\
+	"\xc0\x80" /*     nul (U+0000) */\
+	"\xc2\x85" /*     next line (U+0085) */\
+	"\xc2\xa0" /*     non-breaking space (U+00a0) */\
+	"\xe1\x9a\x80" /* ogham space mark (U+1680) */ \
+	"\xe1\xa0\x8e" /* mongolian vowel separator (U+180e) */\
+	"\xe2\x80\x80" /* en quad (U+2000) */\
+	"\xe2\x80\x81" /* em quad (U+2001) */\
+	"\xe2\x80\x82" /* en space (U+2002) */\
+	"\xe2\x80\x83" /* em space (U+2003) */\
+	"\xe2\x80\x84" /* three-per-em space (U+2004) */\
+	"\xe2\x80\x85" /* four-per-em space (U+2005) */\
+	"\xe2\x80\x86" /* six-per-em space (U+2006) */\
+	"\xe2\x80\x87" /* figure space (U+2007) */\
+	"\xe2\x80\x88" /* punctuation space (U+2008) */\
+	"\xe2\x80\x89" /* thin space (U+2009) */\
+	"\xe2\x80\x8a" /* hair space (U+200a) */\
+	"\xe2\x80\x8b" /* zero width space (U+200b) */\
+	"\xe2\x80\xa8" /* line separator (U+2028) */\
+	"\xe2\x80\xa9" /* paragraph separator (U+2029) */\
+	"\xe2\x80\xaf" /* narrow no-break space (U+202f) */\
+	"\xe2\x81\x9f" /* medium mathematical space (U+205f) */\
+	"\xe2\x81\xa0" /* word joiner (U+2060) */\
+	"\xe3\x80\x80" /* ideographic space (U+3000) */\
+	"\xef\xbb\xbf" /* zero width no-break space (U+feff) */
+
+int
+TclCompileStringTrimLCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr,			interp, 2);
+    } else {
+	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+    }
+    OP(			STRTRIM_LEFT);
+    return TCL_OK;
+}
+
+int
+TclCompileStringTrimRCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr,			interp, 2);
+    } else {
+	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+    }
+    OP(			STRTRIM_RIGHT);
+    return TCL_OK;
+}
+
+int
+TclCompileStringTrimCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+    Tcl_Obj *objPtr;
+
+    if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(tokenPtr);
+	TclNewObj(objPtr);
+	if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
+	    int len;
+	    const char *p = Tcl_GetStringFromObj(objPtr, &len);
+
+	    PushLiteral(envPtr, p, len);
+	    OP(			STRTRIM_LEFT);
+	    PushLiteral(envPtr, p, len);
+	    OP(			STRTRIM_RIGHT);
+	} else {
+	    CompileWord(envPtr, tokenPtr,		interp, 2);
+	    OP4(		REVERSE, 2);
+	    OP4(		OVER, 1);
+	    OP(			STRTRIM_LEFT);
+	    OP4(		REVERSE, 2);
+	    OP(			STRTRIM_RIGHT);
+	}
+	TclDecrRefCount(objPtr);
+    } else {
+	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+	OP(			STRTRIM_LEFT);
+	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+	OP(			STRTRIM_RIGHT);
+    }
+    return TCL_OK;
+}
 
 /*
  *----------------------------------------------------------------------

@@ -35,6 +35,8 @@ static int		UniCharIsHexDigit(int character);
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
  * UTF-8 literal string containing all Unicode space characters [TIP #413]
+ *
+ * Synch with tclCompCmdsSZ.c
  */
 
 #define DEFAULT_TRIM_SET \
@@ -3342,9 +3344,9 @@ TclInitStringCmd(
 	{"tolower",	StringLowerCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
 	{"toupper",	StringUpperCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
 	{"totitle",	StringTitleCmd,	TclCompileBasic1To3ArgCmd, NULL, NULL, 0},
-	{"trim",	StringTrimCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"trimleft",	StringTrimLCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
-	{"trimright",	StringTrimRCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
+	{"trim",	StringTrimCmd,	TclCompileStringTrimCmd, NULL, NULL, 0},
+	{"trimleft",	StringTrimLCmd,	TclCompileStringTrimLCmd, NULL, NULL, 0},
+	{"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd, NULL, NULL, 0},
 	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}

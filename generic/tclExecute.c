@@ -5252,6 +5252,39 @@ TEBCresume(
 	objResultPtr = TCONST(match);
 	NEXT_INST_F(0, 2, 1);
 
+    {
+	const char *string1, *string2;
+
+    case INST_STRTRIM_LEFT:
+	valuePtr = OBJ_UNDER_TOS;	/* String */
+	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
+	string2 = TclGetStringFromObj(value2Ptr, &length2);
+	string1 = TclGetStringFromObj(valuePtr, &length);
+	match = TclTrimLeft(string1, length, string2, length2);
+	if (match == 0) {
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
+		    valuePtr);
+	    NEXT_INST_F(1, 1, 0);
+	} else {
+	    objResultPtr = Tcl_NewStringObj(string1+match, length-match);
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
+		    objResultPtr);
+	    NEXT_INST_F(1, 2, 1);
+	}
+    case INST_STRTRIM_RIGHT:
+	valuePtr = OBJ_UNDER_TOS;	/* String */
+	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
+	string2 = TclGetStringFromObj(value2Ptr, &length2);
+	string1 = TclGetStringFromObj(valuePtr, &length);
+	match = TclTrimRight(string1, length, string2, length2);
+	if (match == 0) {
+	    NEXT_INST_F(1, 1, 0);
+	} else {
+	    objResultPtr = Tcl_NewStringObj(string1, length-match);
+	    NEXT_INST_F(1, 2, 1);
+	}
+    }
+
     case INST_REGEXP:
 	cflags = TclGetInt1AtPtr(pc+1); /* RE compile flages like NOCASE */
 	valuePtr = OBJ_AT_TOS;		/* String */
