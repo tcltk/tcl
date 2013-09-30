@@ -24,6 +24,7 @@ extern Tcl_PackageInitProc	TclObjTest_Init;
 #endif /* TCL_TEST */
 
 #if defined(__GNUC__)
+int _CRT_glob = 0;
 static void		setargv(int *argcPtr, char ***argvPtr);
 #endif /* __GNUC__ */
 
