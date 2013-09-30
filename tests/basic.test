@@ -267,14 +267,24 @@ test basic-18.4 {TclRenameCommand, bad new name} {
     }
     rename test_ns_basic::p :::george::martha
 } {}
-test basic-18.5 {TclRenameCommand, new name must not already exist} {
+test basic-18.5 {TclRenameCommand, new name must not already exist} -setup {
+    if {![llength [info commands :::george::martha]]} {
+        catch {namespace delete {*}[namespace children :: test_ns_*]}
+        namespace eval test_ns_basic {
+            proc p {} {
+                return "p in [namespace current]"
+            }
+        }
+        rename test_ns_basic::p :::george::martha
+    }
+} -body {
     namespace eval test_ns_basic {
         proc q {} {
             return 42
         }
     }
     list [catch {rename test_ns_basic::q :::george::martha} msg] $msg
-} {1 {can't rename to ":::george::martha": command already exists}}
+} -result {1 {can't rename to ":::george::martha": command already exists}}
 test basic-18.6 {TclRenameCommand, check for command shadowing by newly renamed cmd} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
     catch {rename p ""}

@@ -271,8 +271,8 @@ Tcl_ProcObjCmd(
 		cfPtr->data.eval.path = contextPtr->data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
 
 		hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
 			procPtr, &isNew);
@@ -837,7 +837,7 @@ TclObjGetFrame(
 	}
 	/* TODO: Consider skipping the typePtr checks */
     } else if (objPtr->typePtr == &tclIntType
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	    || objPtr->typePtr == &tclWideIntType
 #endif
 	    ) {
@@ -1347,17 +1347,9 @@ TclFreeLocalCache(
     for (i = 0; i < localCachePtr->numVars; i++, namePtrPtr++) {
 	register Tcl_Obj *objPtr = *namePtrPtr;
 
-	/*
-	 * Note that this can be called with interp==NULL, on interp deletion.
-	 * In that case, the literal table and objects go away on their own.
-	 */
-
 	if (objPtr) {
-	    if (interp) {
-		TclReleaseLiteral(interp, objPtr);
-	    } else {
-		Tcl_DecrRefCount(objPtr);
-	    }
+	    /* TclReleaseLiteral calls Tcl_DecrRefCount for us */
+	    TclReleaseLiteral(interp, objPtr);
 	}
     }
     ckfree(localCachePtr);
@@ -2603,8 +2595,8 @@ SetLambdaFromAny(
 		cfPtr->data.eval.path = contextPtr->data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
 	    }
 
 	    /*

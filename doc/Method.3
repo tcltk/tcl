@@ -172,8 +172,9 @@ typedef struct {
 .PP
 The \fIversion\fR field allows for future expansion of the structure, and
 should always be declared equal to TCL_OO_METHOD_VERSION_CURRENT. The
-\fIname\fR field provides a human-readable name for the type, and is reserved
-for debugging.
+\fIname\fR field provides a human-readable name for the type, and is the value
+that is exposed via the \fBinfo class methodtype\fR and
+\fBinfo object methodtype\fR Tcl commands.
 .PP
 The \fIcallProc\fR field gives a function that is called when the method is
 invoked; it must never be NULL.

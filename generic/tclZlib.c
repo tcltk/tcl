@@ -3111,7 +3111,7 @@ ZlibTransformOutput(
 	e = deflate(&cd->outStream, Z_NO_FLUSH);
 	produced = cd->outAllocated - cd->outStream.avail_out;
 
-	if (e == Z_OK && cd->outStream.avail_out > 0) {
+	if (e == Z_OK && produced > 0) {
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
 		*errorCodePtr = Tcl_GetErrno();
 		return -1;
@@ -3891,8 +3891,10 @@ Tcl_ZlibStreamInit(
     Tcl_Obj *dictObj,
     Tcl_ZlibStream *zshandle)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 
@@ -3957,8 +3959,10 @@ Tcl_ZlibDeflate(
     int level,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 
@@ -3970,8 +3974,10 @@ Tcl_ZlibInflate(
     int bufferSize,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 
