@@ -179,6 +179,37 @@ typedef struct ScriptLimitCallbackKey {
 } ScriptLimitCallbackKey;
 
 /*
+ * TIP#143 limit handler internal representation.
+ */
+
+struct LimitHandler {
+    int flags;			/* The state of this particular handler. */
+    Tcl_LimitHandlerProc *handlerProc;
+				/* The handler callback. */
+    ClientData clientData;	/* Opaque argument to the handler callback. */
+    Tcl_LimitHandlerDeleteProc *deleteProc;
+				/* How to delete the clientData. */
+    LimitHandler *prevPtr;	/* Previous item in linked list of
+				 * handlers. */
+    LimitHandler *nextPtr;	/* Next item in linked list of handlers. */
+};
+
+/*
+ * Values for the LimitHandler flags field.
+ *      LIMIT_HANDLER_ACTIVE - Whether the handler is currently being
+ *              processed; handlers are never to be entered reentrantly.
+ *      LIMIT_HANDLER_DELETED - Whether the handler has been deleted. This
+ *              should not normally be observed because when a handler is
+ *              deleted it is also spliced out of the list of handlers, but
+ *              even so we will be careful.
+ */
+
+#define LIMIT_HANDLER_ACTIVE    0x01
+#define LIMIT_HANDLER_DELETED   0x02
+
+
+
+/*
  * Prototypes for local static functions:
  */
 
@@ -248,6 +279,12 @@ static void		DeleteScriptLimitCallback(ClientData clientData);
 static void		RunLimitHandlers(LimitHandler *handlerPtr,
 			    Tcl_Interp *interp);
 static void		TimeLimitCallback(ClientData clientData);
+
+/* NRE enabling */
+static Tcl_NRPostProc	NRPostInvokeHidden;
+static Tcl_ObjCmdProc	NRInterpCmd;
+static Tcl_ObjCmdProc	NRSlaveCmd;
+
 
 /*
  *----------------------------------------------------------------------
@@ -450,7 +487,8 @@ TclInterpInit(
     slavePtr->interpCmd		= NULL;
     Tcl_InitHashTable(&slavePtr->aliasTable, TCL_STRING_KEYS);
 
-    Tcl_CreateObjCommand(interp, "interp", Tcl_InterpObjCmd, NULL, NULL);
+    Tcl_NRCreateCommand(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
+	    NULL, NULL);
 
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
@@ -554,6 +592,16 @@ InterpInfoDeleteProc(
 	/* ARGSUSED */
 int
 Tcl_InterpObjCmd(
+    ClientData clientData,		/* Unused. */
+    Tcl_Interp *interp,			/* Current interpreter. */
+    int objc,				/* Number of arguments. */
+    Tcl_Obj *const objv[])		/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, NRInterpCmd, clientData, objc, objv);
+}
+
+static int
+NRInterpCmd(
     ClientData clientData,		/* Unused. */
     Tcl_Interp *interp,			/* Current interpreter. */
     int objc,				/* Number of arguments. */
@@ -2341,8 +2389,8 @@ SlaveCreate(
     slavePtr->masterInterp = masterInterp;
     slavePtr->slaveEntryPtr = hPtr;
     slavePtr->slaveInterp = slaveInterp;
-    slavePtr->interpCmd = Tcl_CreateObjCommand(masterInterp, path,
-	    SlaveObjCmd, slaveInterp, SlaveObjCmdDeleteProc);
+    slavePtr->interpCmd = Tcl_NRCreateCommand(masterInterp, path,
+	    SlaveObjCmd, NRSlaveCmd, slaveInterp, SlaveObjCmdDeleteProc);
     Tcl_InitHashTable(&slavePtr->aliasTable, TCL_STRING_KEYS);
     Tcl_SetHashValue(hPtr, slavePtr);
     Tcl_SetVar(slaveInterp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
@@ -2426,6 +2474,16 @@ SlaveCreate(
 
 static int
 SlaveObjCmd(
+    ClientData clientData,	/* Slave interpreter. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    return Tcl_NRCallObjProc(interp, NRSlaveCmd, clientData, objc, objv);
+}
+
+static int
+NRSlaveCmd(
     ClientData clientData,	/* Slave interpreter. */
     Tcl_Interp *interp,		/* Current interpreter. */
     int objc,			/* Number of arguments. */
@@ -3021,7 +3079,11 @@ SlaveInvokeHidden(
     Tcl_AllowExceptions(slaveInterp);
 
     if (namespaceName == NULL) {
-	result = TclObjInvoke(slaveInterp, objc, objv, TCL_INVOKE_HIDDEN);
+	NRE_callback *rootPtr = TOP_CB(slaveInterp);
+
+	Tcl_NRAddCallback(interp, NRPostInvokeHidden, slaveInterp,
+		rootPtr, NULL, NULL);
+	return TclNRInvoke(NULL, slaveInterp, objc, objv);
     } else {
 	Namespace *nsPtr, *dummy1, *dummy2;
 	const char *tail;
@@ -3037,6 +3099,23 @@ SlaveInvokeHidden(
 
     Tcl_TransferResult(slaveInterp, result, interp);
 
+    Tcl_Release(slaveInterp);
+    return result;
+}
+
+static int
+NRPostInvokeHidden(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_Interp *slaveInterp = (Tcl_Interp *)data[0];
+    NRE_callback *rootPtr = (NRE_callback *)data[1];
+
+    if (interp != slaveInterp) {
+	result = TclNRRunCallbacks(slaveInterp, result, rootPtr);
+	Tcl_TransferResult(slaveInterp, result, interp);
+    }
     Tcl_Release(slaveInterp);
     return result;
 }
