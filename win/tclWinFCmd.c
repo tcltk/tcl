@@ -67,25 +67,6 @@ CONST TclFileAttrProcs tclpFileAttrProcs[] = {
 	{GetWinFileShortName, CannotSetAttribute},
 	{GetWinFileAttributes, SetWinFileAttributes}};
 
-#ifdef HAVE_NO_SEH
-
-/*
- * Unlike Borland and Microsoft, we don't register exception handlers by
- * pushing registration records onto the runtime stack. Instead, we register
- * them by creating an EXCEPTION_REGISTRATION within the activation record.
- */
-
-typedef struct EXCEPTION_REGISTRATION {
-    struct EXCEPTION_REGISTRATION *link;
-    EXCEPTION_DISPOSITION (*handler)(
-	    struct _EXCEPTION_RECORD *, void *, struct _CONTEXT *, void *);
-    void *ebp;
-    void *esp;
-    int status;
-} EXCEPTION_REGISTRATION;
-
-#endif
-
 /*
  * Prototype for the TraverseWinTree callback function.
  */
@@ -176,7 +157,7 @@ DoRenameFile(
 				 * (native). */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    EXCEPTION_REGISTRATION registration;
+    TCLEXCEPTION_REGISTRATION registration;
 #endif
     DWORD srcAttr, dstAttr;
     int retval = -1;
@@ -213,7 +194,7 @@ DoRenameFile(
 	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
 
 	/*
-	 * Construct an EXCEPTION_REGISTRATION to protect the call to
+	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
 	 * MoveFile.
 	 */
 
@@ -227,7 +208,7 @@ DoRenameFile(
 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
 
 	/*
-	 * Link the EXCEPTION_REGISTRATION on the chain.
+	 * Link the TCLEXCEPTION_REGISTRATION on the chain.
 	 */
 
 	"movl	    %%edx,	    %%fs:0"	    "\n\t"
@@ -242,7 +223,7 @@ DoRenameFile(
 	"call	    *%%eax"			    "\n\t"
 
 	/*
-	 * Come here on normal exit. Recover the EXCEPTION_REGISTRATION and
+	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
 	 * put the status return from MoveFile into it.
 	 */
 
@@ -251,7 +232,7 @@ DoRenameFile(
 	"jmp	    2f"				    "\n"
 
 	/*
-	 * Come here on an exception. Recover the EXCEPTION_REGISTRATION
+	 * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
 	 */
 
 	"1:"					    "\t"
@@ -260,7 +241,7 @@ DoRenameFile(
 
 	/*
 	 * Come here however we exited. Restore context from the
-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
 	 */
 
 	"2:"					    "\t"
@@ -568,7 +549,7 @@ DoCopyFile(
     CONST TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    EXCEPTION_REGISTRATION registration;
+    TCLEXCEPTION_REGISTRATION registration;
 #endif
     int retval = -1;
 
@@ -605,7 +586,7 @@ DoCopyFile(
 	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
 
 	/*
-	 * Construct an EXCEPTION_REGISTRATION to protect the call to
+	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
 	 * CopyFile.
 	 */
 
@@ -619,7 +600,7 @@ DoCopyFile(
 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
 
 	/*
-	 * Link the EXCEPTION_REGISTRATION on the chain.
+	 * Link the TCLEXCEPTION_REGISTRATION on the chain.
 	 */
 
 	"movl	    %%edx,	    %%fs:0"	    "\n\t"
@@ -635,7 +616,7 @@ DoCopyFile(
 	"call	    *%%eax"			    "\n\t"
 
 	/*
-	 * Come here on normal exit. Recover the EXCEPTION_REGISTRATION and
+	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
 	 * put the status return from CopyFile into it.
 	 */
 
@@ -644,7 +625,7 @@ DoCopyFile(
 	"jmp	    2f"				    "\n"
 
 	/*
-	 * Come here on an exception. Recover the EXCEPTION_REGISTRATION
+	 * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
 	 */
 
 	"1:"					    "\t"
@@ -653,7 +634,7 @@ DoCopyFile(
 
 	/*
 	 * Come here however we exited. Restore context from the
-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
 	 */
 
 	"2:"					    "\t"
