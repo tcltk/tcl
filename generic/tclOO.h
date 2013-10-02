@@ -37,11 +37,7 @@
 extern "C" {
 #endif
 
-#ifdef USE_TCL_STUBS
-#   define USE_TCLOO_STUBS
-#endif
-
-#ifdef USE_TCLOO_STUBS
+#if (defined(USE_TCLOO_STUBS) || defined(USE_TCL_STUBS))
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version);
 #define Tcl_OOInitStubs(interp) \
