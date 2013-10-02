@@ -11,7 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tclInt.h"
+#include "tclOOInt.h"
 
 MODULE_SCOPE const TclStubs *tclStubsPtr;
 MODULE_SCOPE const TclPlatStubs *tclPlatStubsPtr;
@@ -113,6 +113,17 @@ Tcl_InitStubs(
 	tclPlatStubsPtr = NULL;
 	tclIntStubsPtr = NULL;
 	tclIntPlatStubsPtr = NULL;
+    }
+
+    if ((actualVersion[0] > '8')
+	    || ((actualVersion[1] == '.') && (actualVersion[2] > '5'))) {
+	stubsPtr->tcl_PkgRequireEx(interp,
+		"TclOO", "1.0", 0, (void *)&tclOOStubsPtr);
+	if (tclOOStubsPtr->hooks) {
+	    tclOOIntStubsPtr = tclOOStubsPtr->hooks->tclOOIntStubs;
+	} else {
+	    tclOOIntStubsPtr = NULL;
+	}
     }
 
     return actualVersion;

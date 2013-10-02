@@ -15,18 +15,23 @@
 #include "tcl.h"
 
 #ifndef TCLOOAPI
-#   if defined(BUILD_tcl) || defined(BUILD_TclOO)
+#   if (defined(BUILD_tcl) || defined(BUILD_TclOO)) && !defined(BUILD_STATIC)
 #	define TCLOOAPI MODULE_SCOPE
 #   else
 #	define TCLOOAPI extern
-#	undef USE_TCLOO_STUBS
-#	define USE_TCLOO_STUBS 1
+#	ifdef USE_TCL_STUBS
+#	    undef USE_TCLOO_STUBS
+#	    define USE_TCLOO_STUBS 1
+#	endif
 #   endif
 #endif
 
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version);
 #define Tcl_OOInitStubs(interp) TclOOInitializeStubs((interp), TCLOO_VERSION)
+#ifndef USE_TCL_STUBS
+#   define TclOOInitializeStubs(interp, version) (TCLOO_PATCHLEVEL)
+#endif
 
 /*
  * Be careful when it comes to versioning; need to make sure that the
@@ -39,8 +44,8 @@ extern const char *TclOOInitializeStubs(
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "1.0.1"
-#define TCLOO_PATCHLEVEL TCLOO_VERSION
+#define TCLOO_VERSION "1.0"
+#define TCLOO_PATCHLEVEL "1.0.1"
 
 /*
  * These are opaque types.
