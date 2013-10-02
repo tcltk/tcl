@@ -1430,9 +1430,9 @@ TclCompileLreplaceCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
-    int idx1, idx2, result, guaranteedDropAll = 0;
+    int idx1, idx2, result, i, offset;
 
-    if (parsePtr->numWords != 4) {
+    if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
     }
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
@@ -1492,38 +1492,163 @@ TclCompileLreplaceCmd(
     }
 
     /*
-     * Sanity check: can only issue when we're removing a range at one or
-     * other end of the list. If we're at one end or the other, convert the
-     * indices into the equivalent for an [lrange].
+     * Work out what this [lreplace] is actually doing.
      */
 
+    tmpObj = NULL;
+    CompileWord(envPtr, listTokenPtr, interp, 1);
+    if (parsePtr->numWords == 4) {
+	if (idx1 == 0) {
+	    if (idx2 == -2) {
+		goto dropAll;
+	    }
+	    idx1 = idx2 + 1;
+	    idx2 = -2;
+	    goto dropEnd;
+	} else if (idx2 == -2) {
+	    idx2 = idx1 - 1;
+	    idx1 = 0;
+	    goto dropEnd;
+	} else {
+	    if (idx1 > 0) {
+		tmpObj = Tcl_NewIntObj(idx1);
+		Tcl_IncrRefCount(tmpObj);
+	    }
+	    goto dropRange;
+	}
+    }
+
+    tokenPtr = TokenAfter(tokenPtr);
+    for (i=4 ; i<parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    TclEmitInstInt4(		INST_LIST, i - 4,		envPtr);
+    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
     if (idx1 == 0) {
 	if (idx2 == -2) {
-	    guaranteedDropAll = 1;
+	    goto replaceAll;
 	}
 	idx1 = idx2 + 1;
 	idx2 = -2;
+	goto replaceHead;
     } else if (idx2 == -2) {
 	idx2 = idx1 - 1;
 	idx1 = 0;
+	goto replaceTail;
     } else {
-	return TCL_ERROR;
+	if (idx1 > 0 && idx2 > 0 && idx2 < idx1) {
+	    idx2 = idx1 - 1;
+	} else if (idx1 < 0 && idx2 < 0 && idx2 < idx1) {
+	    idx2 = idx1 - 1;
+	}
+	if (idx1 > 0) {
+	    tmpObj = Tcl_NewIntObj(idx1);
+	    Tcl_IncrRefCount(tmpObj);
+	}
+	goto replaceRange;
     }
 
     /*
-     * Issue instructions. It's not safe to skip doing the LIST_RANGE, as
-     * we've not proved that the 'list' argument is really a list. Not that it
-     * is worth trying to do that given current knowledge.
+     * Issue instructions to perform the operations relating to configurations
+     * that just drop. The only argument pushed on the stack is the list to
+     * operate on.
      */
 
-    CompileWord(envPtr, listTokenPtr, interp, 1);
-    if (guaranteedDropAll) {
+  dropAll:
+    TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
+    PushStringLiteral(envPtr,	"");
+    goto done;
+
+  dropEnd:
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
+    TclEmitInt4(			idx2,			envPtr);
+    goto done;
+
+  dropRange:
+    if (tmpObj != NULL) {
+	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
-	PushStringLiteral(envPtr, "");
-    } else {
-	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx1,	envPtr);
-	TclEmitInt4(		idx2,				envPtr);
+	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
+	TclEmitOpcode(		INST_GT,			envPtr);
+	offset = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
+		"list doesn't contain element %d", idx1), NULL), envPtr);
+	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
+		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
+		envPtr->codeStart + offset + 1);
+    }
+    TclEmitOpcode(		INST_DUP,			envPtr);
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, 0,		envPtr);
+    TclEmitInt4(			idx1 - 1,		envPtr);
+    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx2 + 1,	envPtr);
+    TclEmitInt4(			-2,			envPtr);
+    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    goto done;
+
+    /*
+     * Issue instructions to perform the operations relating to configurations
+     * that do real replacement. All arguments are pushed and assembled into a
+     * pair: the list of values to replace with, and the list to do the
+     * surgery on.
+     */
+
+  replaceAll:
+    TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
+    goto done;
+
+  replaceHead:
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
+    TclEmitInt4(			idx2,			envPtr);
+    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    goto done;
+
+  replaceTail:
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx1,	envPtr);
+    TclEmitInt4(			idx2,			envPtr);
+    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
+    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    goto done;
+
+  replaceRange:
+    if (tmpObj != NULL) {
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
+	TclEmitOpcode(		INST_GT,			envPtr);
+	offset = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
+		"list doesn't contain element %d", idx1), NULL), envPtr);
+	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
+		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
+		envPtr->codeStart + offset + 1);
+    }
+    TclEmitOpcode(		INST_DUP,			envPtr);
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, 0,		envPtr);
+    TclEmitInt4(			idx1 - 1,		envPtr);
+    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
+    TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx2 + 1,	envPtr);
+    TclEmitInt4(			-2,			envPtr);
+    TclEmitInstInt4(		INST_REVERSE, 3,		envPtr);
+    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
+    TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    goto done;
+
+    /*
+     * Clean up the allocated memory.
+     */
+
+  done:
+    if (tmpObj != NULL) {
+	Tcl_DecrRefCount(tmpObj);
     }
     return TCL_OK;
 }
