@@ -37,10 +37,14 @@
 extern "C" {
 #endif
 
+#ifdef USE_TCLOO_STUBS
 extern const char *TclOOInitializeStubs(
 	Tcl_Interp *, const char *version);
 #define Tcl_OOInitStubs(interp) \
     TclOOInitializeStubs((interp), TCLOO_VERSION)
+#else
+#define Tcl_OOInitStubs(interp) (TCL_OK)
+#endif
 
 /*
  * These are opaque types.
