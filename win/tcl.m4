@@ -523,6 +523,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #		RES
 #
 #		MAKE_LIB
+#		MAKE_STUB_LIB
 #		MAKE_EXE
 #		MAKE_DLL
 #
@@ -663,6 +664,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	RC_DEFINE=--define
 	RES=res.o
 	MAKE_LIB="\${STLIB_LD} \[$]@"
+	MAKE_STUB_LIB="\${STLIB_LD} \[$]@"
 	POST_MAKE_LIB="\${RANLIB} \[$]@"
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
@@ -688,9 +690,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
 	    runtime=
 	    # Link with gcc since ld does not link to default libs like
-	    # -luser32 and -lmsvcrt by default. Make sure CFLAGS is
-	    # included so -mno-cygwin passed the correct libs to the linker.
-	    SHLIB_LD='${CC} -shared ${CFLAGS}'
+	    # -luser32 and -lmsvcrt by default.
+	    SHLIB_LD='${CC} -shared'
 	    SHLIB_LD_LIBS='${LIBS}'
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
@@ -948,6 +949,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	RC_DEFINE=-d
 	RES=res
 	MAKE_LIB="\${STLIB_LD} -out:\[$]@"
+	MAKE_STUB_LIB="\${STLIB_LD} -nodefaultlib -out:\[$]@"
 	POST_MAKE_LIB=
 	MAKE_EXE="\${CC} -Fe\[$]@"
 	LIBPREFIX=""
