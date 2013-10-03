@@ -5258,19 +5258,41 @@ TEBCresume(
 
     {
 	const char *string1, *string2;
+	int trim1, trim2;
 
+    case INST_STRTRIM:
+	valuePtr = OBJ_UNDER_TOS;	/* String */
+	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
+	string2 = TclGetStringFromObj(value2Ptr, &length2);
+	string1 = TclGetStringFromObj(valuePtr, &length);
+	trim1 = TclTrimLeft(string1, length, string2, length2);
+	if (trim1 < length) {
+	    trim2 = TclTrimRight(string1, length, string2, length2);
+	} else {
+	    trim2 = 0;
+	}
+	if (trim1 == 0 && trim2 == 0) {
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
+		    valuePtr);
+	    NEXT_INST_F(1, 1, 0);
+	} else {
+	    objResultPtr = Tcl_NewStringObj(string1+trim1, length-trim1-trim2);
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
+		    objResultPtr);
+	    NEXT_INST_F(1, 2, 1);
+	}
     case INST_STRTRIM_LEFT:
 	valuePtr = OBJ_UNDER_TOS;	/* String */
 	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
 	string2 = TclGetStringFromObj(value2Ptr, &length2);
 	string1 = TclGetStringFromObj(valuePtr, &length);
-	match = TclTrimLeft(string1, length, string2, length2);
-	if (match == 0) {
+	trim1 = TclTrimLeft(string1, length, string2, length2);
+	if (trim1 == 0) {
 	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
 		    valuePtr);
 	    NEXT_INST_F(1, 1, 0);
 	} else {
-	    objResultPtr = Tcl_NewStringObj(string1+match, length-match);
+	    objResultPtr = Tcl_NewStringObj(string1+trim1, length-trim1);
 	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
 		    objResultPtr);
 	    NEXT_INST_F(1, 2, 1);
@@ -5280,11 +5302,11 @@ TEBCresume(
 	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
 	string2 = TclGetStringFromObj(value2Ptr, &length2);
 	string1 = TclGetStringFromObj(valuePtr, &length);
-	match = TclTrimRight(string1, length, string2, length2);
-	if (match == 0) {
+	trim2 = TclTrimRight(string1, length, string2, length2);
+	if (trim2 == 0) {
 	    NEXT_INST_F(1, 1, 0);
 	} else {
-	    objResultPtr = Tcl_NewStringObj(string1, length-match);
+	    objResultPtr = Tcl_NewStringObj(string1, length-trim2);
 	    NEXT_INST_F(1, 2, 1);
 	}
     }
