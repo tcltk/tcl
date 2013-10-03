@@ -739,7 +739,6 @@ TclCompileStringTrimCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    Tcl_Obj *objPtr;
 
     if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
 	return TCL_ERROR;
@@ -749,30 +748,11 @@ TclCompileStringTrimCmd(
     CompileWord(envPtr, tokenPtr,			interp, 1);
     if (parsePtr->numWords == 3) {
 	tokenPtr = TokenAfter(tokenPtr);
-	TclNewObj(objPtr);
-	if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
-	    int len;
-	    const char *p = Tcl_GetStringFromObj(objPtr, &len);
-
-	    PushLiteral(envPtr, p, len);
-	    OP(			STRTRIM_LEFT);
-	    PushLiteral(envPtr, p, len);
-	    OP(			STRTRIM_RIGHT);
-	} else {
-	    CompileWord(envPtr, tokenPtr,		interp, 2);
-	    OP4(		REVERSE, 2);
-	    OP4(		OVER, 1);
-	    OP(			STRTRIM_LEFT);
-	    OP4(		REVERSE, 2);
-	    OP(			STRTRIM_RIGHT);
-	}
-	TclDecrRefCount(objPtr);
+	CompileWord(envPtr, tokenPtr,			interp, 2);
     } else {
 	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
-	OP(			STRTRIM_LEFT);
-	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
-	OP(			STRTRIM_RIGHT);
     }
+    OP(			STRTRIM);
     return TCL_OK;
 }
 
