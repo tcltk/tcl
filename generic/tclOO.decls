@@ -12,7 +12,6 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 library tclOO
-scspec EXTERN
 
 ######################################################################
 # Public API, exposed for general users of TclOO.
