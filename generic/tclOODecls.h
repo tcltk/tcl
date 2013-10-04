@@ -5,6 +5,18 @@
 #ifndef _TCLOODECLS
 #define _TCLOODECLS
 
+#ifndef TCLOOAPI
+#   if (defined(BUILD_tcl) || defined(BUILD_TclOO)) && !defined(BUILD_STATIC)
+#	define TCLOOAPI MODULE_SCOPE
+#   else
+#	define TCLOOAPI extern
+#	ifdef USE_TCL_STUBS
+#	    undef USE_TCLOO_STUBS
+#	    define USE_TCLOO_STUBS 1
+#	endif
+#   endif
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 /*
