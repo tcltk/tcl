@@ -622,7 +622,7 @@ $**
 !endif
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
-	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $(TCLSTUBOBJS)
+	$(lib32) -nologo $(LINKERFLAGS) -nodefaultlib -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
