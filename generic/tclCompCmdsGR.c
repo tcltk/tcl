@@ -27,7 +27,57 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileLinsertCmd --
+ *
+ *	Parse a token and get the encoded version of the index (as understood
+ *	by TEBC), assuming it is at all knowable at compile time. Only handles
+ *	indices that are integers or 'end' or 'end-integer'.
+ *
+ * Returns:
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
+ *
+ * Side effects:
+ *	Sets *index to the index value if successful.
+ *
+ *----------------------------------------------------------------------
+ */
 
+static inline int
+GetIndexFromToken(
+    Tcl_Token *tokenPtr,
+    int *index)
+{
+    Tcl_Obj *tmpObj = Tcl_NewObj();
+    int result, idx;
+
+    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
+	Tcl_DecrRefCount(tmpObj);
+	return TCL_ERROR;
+    }
+
+    result = TclGetIntFromObj(NULL, tmpObj, &idx);
+    if (result == TCL_OK) {
+	if (idx < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
+	if (result == TCL_OK && idx > -2) {
+	    result = TCL_ERROR;
+	}
+    }
+    Tcl_DecrRefCount(tmpObj);
+
+    if (result == TCL_OK) {
+	*index = idx;
+    }
+
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -1060,7 +1110,7 @@ TclCompileLindexCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *idxTokenPtr, *valTokenPtr;
-    int i, numWords = parsePtr->numWords;
+    int i, idx, numWords = parsePtr->numWords;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -1078,44 +1128,26 @@ TclCompileLindexCmd(
     }
 
     idxTokenPtr = TokenAfter(valTokenPtr);
-    if (idxTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	Tcl_Obj *tmpObj;
-	int idx, result;
-
-	tmpObj = Tcl_NewStringObj(idxTokenPtr[1].start, idxTokenPtr[1].size);
-	result = TclGetIntFromObj(NULL, tmpObj, &idx);
-	if (result == TCL_OK) {
-	    if (idx < 0) {
-		result = TCL_ERROR;
-	    }
-	} else {
-	    result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
-	    if (result == TCL_OK && idx > -2) {
-		result = TCL_ERROR;
-	    }
-	}
-	TclDecrRefCount(tmpObj);
-
-	if (result == TCL_OK) {
-	    /*
-	     * All checks have been completed, and we have exactly one of
-	     * these constructs:
-	     *	 lindex <arbitraryValue> <posInt>
-	     *	 lindex <arbitraryValue> end-<posInt>
-	     * This is best compiled as a push of the arbitrary value followed
-	     * by an "immediate lindex" which is the most efficient variety.
-	     */
-
-	    CompileWord(envPtr, valTokenPtr, interp, 1);
-	    TclEmitInstInt4(	INST_LIST_INDEX_IMM, idx,	envPtr);
-	    return TCL_OK;
-	}
-
+    if (GetIndexFromToken(idxTokenPtr, &idx) == TCL_OK) {
 	/*
-	 * If the conversion failed or the value was negative, we just keep on
-	 * going with the more complex compilation.
+	 * All checks have been completed, and we have exactly one of these
+	 * constructs:
+	 *	 lindex <arbitraryValue> <posInt>
+	 *	 lindex <arbitraryValue> end-<posInt>
+	 * This is best compiled as a push of the arbitrary value followed by
+	 * an "immediate lindex" which is the most efficient variety.
 	 */
+
+	CompileWord(envPtr, valTokenPtr, interp, 1);
+	TclEmitInstInt4(	INST_LIST_INDEX_IMM, idx,	envPtr);
+	return TCL_OK;
     }
+
+    /*
+     * If the value was not known at compile time, the conversion failed or
+     * the value was negative, we just keep on going with the more complex
+     * compilation.
+     */
 
     /*
      * Push the operands onto the stack.
@@ -1330,8 +1362,7 @@ TclCompileLrangeCmd(
 {
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    Tcl_Obj *tmpObj;
-    int idx1, idx2, result;
+    int idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -1339,56 +1370,18 @@ TclCompileLrangeCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     /*
-     * Parse the first index. Will only compile if it is constant and not an
+     * Parse the indices. Will only compile if both are constants and not an
      * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
+     * end-relative indexing) or an end-based index greater than 'end' itself.
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    if (GetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
-    if (result == TCL_OK) {
-	if (idx1 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
-	if (result == TCL_OK && idx1 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Parse the second index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
-     */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
-    }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
-    if (result == TCL_OK) {
-	if (idx2 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
-	if (result == TCL_OK && idx2 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (GetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
@@ -1407,13 +1400,92 @@ TclCompileLrangeCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileLinsertCmd --
+ *
+ *	How to compile the "linsert" command. We only bother with the case
+ *	where the index is constant.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileLinsertCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *listTokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int idx, i;
+
+    if (parsePtr->numWords < 3) {
+	return TCL_ERROR;
+    }
+    listTokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    /*
+     * Parse the index. Will only compile if it is constant and not an
+     * _integer_ less than zero (since we reserve negative indices here for
+     * end-relative indexing) or an end-based index greater than 'end' itself.
+     */
+
+    tokenPtr = TokenAfter(listTokenPtr);
+    if (GetIndexFromToken(tokenPtr, &idx) != TCL_OK) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * There are four main cases. If there are no values to insert, this is
+     * just a confirm-listiness check. If the index is '0', this is a prepend.
+     * If the index is 'end' (== -2), this is an append. Otherwise, this is a
+     * splice (== split, insert values as list, concat-3).
+     */
+
+    CompileWord(envPtr, listTokenPtr, interp, 1);
+    if (parsePtr->numWords == 3) {
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
+	TclEmitInt4(			-2,			envPtr);
+	return TCL_OK;
+    }
+
+    for (i=3 ; i<parsePtr->numWords ; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i);
+    }
+    TclEmitInstInt4(		INST_LIST, i-3,			envPtr);
+
+    if (idx == 0 /*start*/) {
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    } else if (idx == -2 /*end*/) {
+	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    } else {
+	if (idx < 0) {
+	    idx++;
+	}
+	TclEmitInstInt4(	INST_OVER, 1,			envPtr);
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
+	TclEmitInt4(			idx-1,			envPtr);
+	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
+	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
+	TclEmitInt4(			-2,			envPtr);
+	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
+    }
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileLreplaceCmd --
  *
  *	How to compile the "lreplace" command. We only bother with the case
- *	where there are no elements to insert and where both the 'first' and
- *	'last' arguments are constant and one can be deterined to be at the
- *	end of the list. (This is the case that could also be written with
- *	"lrange".)
+ *	where the indices are constant.
  *
  *----------------------------------------------------------------------
  */
@@ -1430,7 +1502,7 @@ TclCompileLreplaceCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
-    int idx1, idx2, result, i, offset;
+    int idx1, idx2, i, offset;
 
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
@@ -1438,56 +1510,18 @@ TclCompileLreplaceCmd(
     listTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     /*
-     * Parse the first index. Will only compile if it is constant and not an
+     * Parse the indices. Will only compile if both are constants and not an
      * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
+     * end-relative indexing) or an end-based index greater than 'end' itself.
      */
 
     tokenPtr = TokenAfter(listTokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    if (GetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
 	return TCL_ERROR;
     }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx1);
-    if (result == TCL_OK) {
-	if (idx1 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx1);
-	if (result == TCL_OK && idx1 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Parse the second index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
-     */
 
     tokenPtr = TokenAfter(tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	return TCL_ERROR;
-    }
-    tmpObj = Tcl_NewStringObj(tokenPtr[1].start, tokenPtr[1].size);
-    result = TclGetIntFromObj(NULL, tmpObj, &idx2);
-    if (result == TCL_OK) {
-	if (idx2 < 0) {
-	    result = TCL_ERROR;
-	}
-    } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx2);
-	if (result == TCL_OK && idx2 > -2) {
-	    result = TCL_ERROR;
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (GetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
 	return TCL_ERROR;
     }
 
