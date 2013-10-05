@@ -43,7 +43,7 @@ extern const char *TclOOInitializeStubs(
 #define Tcl_OOInitStubs(interp) \
     TclOOInitializeStubs((interp), TCLOO_VERSION)
 #else
-#define Tcl_OOInitStubs(interp) (TCL_OK)
+#define Tcl_OOInitStubs(interp) (TCLOO_PATCHLEVEL)
 #endif
 
 /*
