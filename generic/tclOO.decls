@@ -12,7 +12,6 @@
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
 library tclOO
-scspec TCLOOAPI
 
 ######################################################################
 # Public API, exposed for general users of TclOO.
@@ -20,6 +19,7 @@ scspec TCLOOAPI
 
 interface tclOO
 hooks tclOOInt
+scspec TCLAPI
 
 declare 0 {
     Tcl_Object Tcl_CopyObjectInstance(Tcl_Interp *interp,

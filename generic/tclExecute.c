@@ -236,12 +236,14 @@ VarHashCreateVar(
 	    switch (nCleanup) {					\
 	    case 1: goto cleanup1_pushObjResultPtr;		\
 	    case 2: goto cleanup2_pushObjResultPtr;		\
+	    case 0: break;					\
 	    }							\
 	} else {						\
 	    pc += (pcAdjustment);				\
 	    switch (nCleanup) {					\
 	    case 1: goto cleanup1;				\
 	    case 2: goto cleanup2;				\
+	    case 0: break;					\
 	    }							\
 	}							\
     } while (0)
@@ -302,6 +304,8 @@ VarHashCreateVar(
 #define OBJ_AT_DEPTH(n)	*(tosPtr-(n))
 
 #define CURR_DEPTH	((ptrdiff_t) (tosPtr - initTosPtr))
+
+#define STACK_BASE(esPtr) ((esPtr)->stackWords - 1)
 
 /*
  * Macros used to trace instruction execution. The macros TRACE,
@@ -394,7 +398,7 @@ VarHashCreateVar(
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
     ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
-	? TCL_ERROR :							\
+	? (*(tPtr) = TCL_NUMBER_LONG),TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #else /* !TCL_WIDE_INT_IS_LONG */
 #define GetNumberFromObj(interp, objPtr, ptrPtr, tPtr) \
@@ -414,7 +418,7 @@ VarHashCreateVar(
 		    (&((objPtr)->internalRep.doubleValue)), TCL_OK) :	\
     ((((objPtr)->typePtr == NULL) && ((objPtr)->bytes == NULL)) ||	\
     (((objPtr)->bytes != NULL) && ((objPtr)->length == 0)))		\
-	? TCL_ERROR :							\
+	? (*(tPtr) = TCL_NUMBER_LONG),TCL_ERROR :			\
     TclGetNumberFromObj((interp), (objPtr), (ptrPtr), (tPtr)))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
@@ -828,7 +832,7 @@ TclCreateExecEnv(
     esPtr->nextPtr = NULL;
     esPtr->markerPtr = NULL;
     esPtr->endPtr = &esPtr->stackWords[size-1];
-    esPtr->tosPtr = &esPtr->stackWords[-1];
+    esPtr->tosPtr = STACK_BASE(esPtr);
 
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
@@ -1049,8 +1053,8 @@ GrowEvaluationStack(
     if (esPtr->nextPtr) {
 	oldPtr = esPtr;
 	esPtr = oldPtr->nextPtr;
-	currElems = esPtr->endPtr - &esPtr->stackWords[-1];
-	if (esPtr->markerPtr || (esPtr->tosPtr != &esPtr->stackWords[-1])) {
+	currElems = esPtr->endPtr - STACK_BASE(esPtr);
+	if (esPtr->markerPtr || (esPtr->tosPtr != STACK_BASE(esPtr))) {
 	    Tcl_Panic("STACK: Stack after current is in use");
 	}
 	if (esPtr->nextPtr) {
@@ -1062,7 +1066,7 @@ GrowEvaluationStack(
 	DeleteExecStack(esPtr);
 	esPtr = oldPtr;
     } else {
-	currElems = esPtr->endPtr - &esPtr->stackWords[-1];
+	currElems = esPtr->endPtr - STACK_BASE(esPtr);
     }
 
     /*
@@ -1216,10 +1220,10 @@ TclStackFree(
     while (esPtr->nextPtr) {
 	esPtr = esPtr->nextPtr;
     }
-    esPtr->tosPtr = &esPtr->stackWords[-1];
+    esPtr->tosPtr = STACK_BASE(esPtr);
     while (esPtr->prevPtr) {
 	ExecStack *tmpPtr = esPtr->prevPtr;
-	if (tmpPtr->tosPtr == &tmpPtr->stackWords[-1]) {
+	if (tmpPtr->tosPtr == STACK_BASE(tmpPtr)) {
 	    DeleteExecStack(tmpPtr);
 	} else {
 	    break;
