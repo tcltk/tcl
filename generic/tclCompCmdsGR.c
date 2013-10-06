@@ -27,6 +27,8 @@ static void		CompileReturnInternal(CompileEnv *envPtr,
 			    Tcl_Obj *returnOpts);
 static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr);
+
+#define INDEX_END	(-2)
 
 /*
  *----------------------------------------------------------------------
@@ -65,8 +67,8 @@ GetIndexFromToken(
 	    result = TCL_ERROR;
 	}
     } else {
-	result = TclGetIntForIndexM(NULL, tmpObj, -2, &idx);
-	if (result == TCL_OK && idx > -2) {
+	result = TclGetIntForIndexM(NULL, tmpObj, INDEX_END, &idx);
+	if (result == TCL_OK && idx > INDEX_END) {
 	    result = TCL_ERROR;
 	}
     }
@@ -1077,7 +1079,7 @@ TclCompileLassignCmd(
      */
 
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx,	envPtr);
-    TclEmitInt4(		-2 /* == "end" */,		envPtr);
+    TclEmitInt4(			INDEX_END,		envPtr);
 
     return TCL_OK;
 }
@@ -1295,7 +1297,7 @@ TclCompileListCmd(
 
     if (concat && numWords == 2) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,	envPtr);
-	TclEmitInt4(			-2,		envPtr);
+	TclEmitInt4(			INDEX_END,	envPtr);
     }
     return TCL_OK;
 }
@@ -1440,14 +1442,14 @@ TclCompileLinsertCmd(
     /*
      * There are four main cases. If there are no values to insert, this is
      * just a confirm-listiness check. If the index is '0', this is a prepend.
-     * If the index is 'end' (== -2), this is an append. Otherwise, this is a
-     * splice (== split, insert values as list, concat-3).
+     * If the index is 'end' (== INDEX_END), this is an append. Otherwise,
+     * this is a splice (== split, insert values as list, concat-3).
      */
 
     CompileWord(envPtr, listTokenPtr, interp, 1);
     if (parsePtr->numWords == 3) {
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, 0,		envPtr);
-	TclEmitInt4(			-2,			envPtr);
+	TclEmitInt4(			INDEX_END,		envPtr);
 	return TCL_OK;
     }
 
@@ -1460,7 +1462,7 @@ TclCompileLinsertCmd(
     if (idx == 0 /*start*/) {
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
-    } else if (idx == -2 /*end*/) {
+    } else if (idx == INDEX_END /*end*/) {
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     } else {
 	if (idx < 0) {
@@ -1471,7 +1473,7 @@ TclCompileLinsertCmd(
 	TclEmitInt4(			idx-1,			envPtr);
 	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
 	TclEmitInstInt4(	INST_LIST_RANGE_IMM, idx,	envPtr);
-	TclEmitInt4(			-2,			envPtr);
+	TclEmitInt4(			INDEX_END,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
 	TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     }
@@ -1533,13 +1535,13 @@ TclCompileLreplaceCmd(
     CompileWord(envPtr, listTokenPtr, interp, 1);
     if (parsePtr->numWords == 4) {
 	if (idx1 == 0) {
-	    if (idx2 == -2) {
+	    if (idx2 == INDEX_END) {
 		goto dropAll;
 	    }
 	    idx1 = idx2 + 1;
-	    idx2 = -2;
+	    idx2 = INDEX_END;
 	    goto dropEnd;
-	} else if (idx2 == -2) {
+	} else if (idx2 == INDEX_END) {
 	    idx2 = idx1 - 1;
 	    idx1 = 0;
 	    goto dropEnd;
@@ -1560,13 +1562,13 @@ TclCompileLreplaceCmd(
     TclEmitInstInt4(		INST_LIST, i - 4,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
     if (idx1 == 0) {
-	if (idx2 == -2) {
+	if (idx2 == INDEX_END) {
 	    goto replaceAll;
 	}
 	idx1 = idx2 + 1;
-	idx2 = -2;
+	idx2 = INDEX_END;
 	goto replaceHead;
-    } else if (idx2 == -2) {
+    } else if (idx2 == INDEX_END) {
 	idx2 = idx1 - 1;
 	idx1 = 0;
 	goto replaceTail;
@@ -1620,7 +1622,7 @@ TclCompileLreplaceCmd(
     TclEmitInt4(			idx1 - 1,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx2 + 1,	envPtr);
-    TclEmitInt4(			-2,			envPtr);
+    TclEmitInt4(			INDEX_END,		envPtr);
     TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     goto done;
 
@@ -1669,7 +1671,7 @@ TclCompileLreplaceCmd(
     TclEmitInt4(			idx1 - 1,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, idx2 + 1,	envPtr);
-    TclEmitInt4(			-2,			envPtr);
+    TclEmitInt4(			INDEX_END,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 3,		envPtr);
     TclEmitOpcode(		INST_LIST_CONCAT,		envPtr);
     TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
