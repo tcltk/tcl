@@ -1965,7 +1965,7 @@ TclCompileThrowCmd(
 	OP(			LIST_LENGTH);
 	OP1(			JUMP_FALSE1, 16);
 	OP4(			LIST, 2);
-	OP44(			RETURN_IMM, 1, 0);
+	OP44(			RETURN_IMM, TCL_ERROR, 0);
 	TclAdjustStackDepth(2, envPtr);
 	OP(			POP);
 	OP(			POP);
@@ -1974,7 +1974,7 @@ TclCompileThrowCmd(
 	PUSH(			"type must be non-empty list");
 	PUSH(			"-errorcode {TCL OPERATION THROW BADEXCEPTION}");
     }
-    OP44(			RETURN_IMM, 1, 0);
+    OP44(			RETURN_IMM, TCL_ERROR, 0);
     return TCL_OK;
 }
 
