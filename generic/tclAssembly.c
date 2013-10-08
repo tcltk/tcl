@@ -1450,6 +1450,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 
+	// FIXME - use TclEmitInvoke
 	BBEmitInst1or4(assemEnvPtr, tblIdx, opnd, opnd);
 	break;
 
