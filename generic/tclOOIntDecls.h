@@ -5,17 +5,6 @@
 #ifndef _TCLOOINTDECLS
 #define _TCLOOINTDECLS
 
-#undef TCL_STORAGE_CLASS
-#ifdef BUILD_tcl
-#   define TCL_STORAGE_CLASS DLLEXPORT
-#else
-#   ifdef USE_TCL_STUBS
-#      define TCL_STORAGE_CLASS
-#   else
-#      define TCL_STORAGE_CLASS DLLIMPORT
-#   endif
-#endif
-
 /* !BEGIN!: Do not edit below this line. */
 
 /*
@@ -172,6 +161,4 @@ extern const TclOOIntStubs *tclOOIntStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
 #endif /* _TCLOOINTDECLS */

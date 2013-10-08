@@ -572,8 +572,8 @@ TestforkObjCmd(
                 "Cannot fork", NULL);
         return TCL_ERROR;
     }
-#if !defined(HAVE_PTHREAD_ATFORK) || defined(MAC_OSX_TCL)
-    /* Only needed when pthread_atfork is not present or on OSX. */
+#if !defined(HAVE_PTHREAD_ATFORK)
+    /* Only needed when pthread_atfork is not present. */
     if (pid==0) {
 	Tcl_InitNotifier();
     }
