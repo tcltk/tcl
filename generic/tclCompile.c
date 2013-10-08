@@ -1738,9 +1738,9 @@ TclCompileInvocation(
     }
 
     if (wordIdx <= 255) {
-	TclEmitInstInt1(INST_INVOKE_STK1, wordIdx, envPtr);
+	TclEmitInvoke(envPtr, INST_INVOKE_STK1, wordIdx);
     } else {
-	TclEmitInstInt4(INST_INVOKE_STK4, wordIdx, envPtr);
+	TclEmitInvoke(envPtr, INST_INVOKE_STK4, wordIdx);
     }
 }
 
@@ -1802,7 +1802,7 @@ CompileExpanded(
      * stack-neutral in general.
      */
 
-    TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
+    TclEmitInvoke(envPtr, INST_INVOKE_EXPANDED);
     envPtr->expandCount--;
     TclAdjustStackDepth(1 - wordIdx, envPtr);
 }
@@ -3899,6 +3899,150 @@ TclFixupForwardJump(
     }
 
     return 1;			/* the jump was grown */
+}
+
+void
+TclEmitInvoke(
+    CompileEnv *envPtr,
+    int opcode,
+    ...)
+{
+    va_list argList;
+    ExceptionRange *rangePtr;
+    ExceptionAux *auxBreakPtr, *auxContinuePtr;
+    int arg1, arg2, wordCount = 0, loopRange, predictedDepth;
+
+    /*
+     * Parse the arguments.
+     */
+
+    va_start(argList, opcode);
+    switch (opcode) {
+    case INST_INVOKE_STK1:
+	wordCount = arg1 = va_arg(argList, int);
+	arg2 = 0;
+	break;
+    case INST_INVOKE_STK4:
+	wordCount = arg1 = va_arg(argList, int);
+	arg2 = 0;
+	break;
+    case INST_INVOKE_REPLACE:
+	arg1 = va_arg(argList, int);
+	arg2 = va_arg(argList, int);
+	wordCount = arg1 + arg2 - 1;
+	break;
+    default:
+	Tcl_Panic("unexpected opcode");
+    case INST_INVOKE_EXPANDED:
+	wordCount = arg1 = arg2 = 0;
+	break;
+    }
+    va_end(argList);
+
+    /*
+     * Determine if we need to handle break and continue exceptions with a
+     * special handling exception range (so that we can correctly unwind the
+     * stack).
+     */
+
+    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxBreakPtr);
+    if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
+	auxBreakPtr = NULL;
+    } else if (auxBreakPtr->stackDepth == envPtr->currStackDepth-wordCount
+	    && auxBreakPtr->expandTarget == envPtr->expandCount) {
+	auxBreakPtr = NULL;
+    }
+    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE,
+	    &auxContinuePtr);
+    if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
+	auxContinuePtr = NULL;
+    } else if (auxContinuePtr->stackDepth == envPtr->currStackDepth-wordCount
+	    && auxContinuePtr->expandTarget == envPtr->expandCount) {
+	auxContinuePtr = NULL;
+    }
+    if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
+	fprintf(stderr,"loop call(%s,d=%d/%d(%d/%d),t=%d/%d(%d))\n",
+		tclInstructionTable[opcode].name,
+		(auxBreakPtr?auxBreakPtr->stackDepth:-1),
+		(auxContinuePtr?auxContinuePtr->stackDepth:-1),
+		envPtr->currStackDepth,
+		wordCount,
+		(auxBreakPtr?auxBreakPtr->expandTarget:-1),
+		(auxContinuePtr?auxContinuePtr->expandTarget:-1),
+		envPtr->expandCount);
+	loopRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+	ExceptionRangeStarts(envPtr, loopRange);
+    }
+    predictedDepth = envPtr->currStackDepth - wordCount;
+
+    /*
+     * Issue the invoke itself.
+     */
+
+    switch (opcode) {
+    case INST_INVOKE_STK1:
+	TclEmitInstInt1(INST_INVOKE_STK1, arg1, envPtr);
+	break;
+    case INST_INVOKE_STK4:
+	TclEmitInstInt4(INST_INVOKE_STK4, arg1, envPtr);
+	break;
+    case INST_INVOKE_EXPANDED:
+	TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
+	break;
+    case INST_INVOKE_REPLACE:
+	TclEmitInstInt4(INST_INVOKE_REPLACE, arg1, envPtr);
+	TclEmitInt1(arg2, envPtr);
+	TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
+	break;
+    }
+
+    /*
+     * If we're generating a special wrapper exception range, we need to
+     * finish that up now.
+     */
+
+    if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
+	int savedStackDepth = envPtr->currStackDepth;
+	int savedExpandCount = envPtr->expandCount;
+	JumpFixup nonTrapFixup;
+	int off;
+
+	ExceptionRangeEnds(envPtr, loopRange);
+	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &nonTrapFixup);
+	fprintf(stderr,"loop call(d=%d,t=%d|%p,%p)\n",savedStackDepth-1,savedExpandCount,auxBreakPtr,auxContinuePtr);
+
+	/*
+	 * Careful! When generating these stack unwinding sequences, the depth
+	 * of stack in the cases where they are taken is not the same as if
+	 * the exception is not taken.
+	 */
+
+	if (auxBreakPtr != NULL) {
+	    TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
+	    assert(envPtr->currStackDepth == predictedDepth);
+	    ExceptionRangeTarget(envPtr, loopRange, breakOffset);
+	    off = CurrentOffset(envPtr);
+	    TclCleanupStackForBreakContinue(envPtr, auxBreakPtr);
+	    fprintf(stderr,"popped(break):%ld\n",CurrentOffset(envPtr) - off);
+	    TclAddLoopBreakFixup(envPtr, auxBreakPtr);
+	    envPtr->currStackDepth = savedStackDepth;
+	    envPtr->expandCount = savedExpandCount;
+	}
+
+	if (auxContinuePtr != NULL) {
+	    TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
+	    assert(envPtr->currStackDepth == predictedDepth);
+	    ExceptionRangeTarget(envPtr, loopRange, continueOffset);
+	    off = CurrentOffset(envPtr);
+	    TclCleanupStackForBreakContinue(envPtr, auxContinuePtr);
+	    fprintf(stderr,"popped(continue):%ld\n",CurrentOffset(envPtr) - off);
+	    TclAddLoopContinueFixup(envPtr, auxContinuePtr);
+	    envPtr->currStackDepth = savedStackDepth;
+	    envPtr->expandCount = savedExpandCount;
+	}
+
+	TclFixupForwardJumpToHere(envPtr, &nonTrapFixup, 127);
+    }
 }
 
 /*
