@@ -5,6 +5,11 @@
 #ifndef _TCLOODECLS
 #define _TCLOODECLS
 
+#ifdef USE_TCL_STUBS
+#   undef USE_TCLOO_STUBS
+#   define USE_TCLOO_STUBS
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
 
 /*
