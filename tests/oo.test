@@ -101,7 +101,7 @@ test oo-0.8 {leak in variable management} -setup {
 test oo-0.9 {various types of presence of the TclOO package} {
     list [lsearch -nocase -all -inline [package names] tcloo] \
 	[package present TclOO] [package versions TclOO]
-} [list TclOO $::oo::version $::oo::version]
+} [list TclOO $::oo::patchlevel $::oo::patchlevel]
 
 test oo-1.1 {basic test of OO functionality: no classes} {
     set result {}
