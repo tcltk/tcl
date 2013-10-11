@@ -271,7 +271,7 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
 	    (ClientData) &tclOOStubs);
 }
 
