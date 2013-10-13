@@ -15,14 +15,6 @@
 #include <string.h>
 
 /*
- * TCL_STORAGE_CLASS is set unconditionally to DLLEXPORT because the
- * Pkgooa_Init declaration is in the source file itself, which is only
- * accessed when we are building a library.
- */
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLEXPORT
-
-/*
  * Prototypes for procedures defined later in this file:
  */
 
@@ -99,17 +91,26 @@ static TclOOStubs stubsCopy = {
      * needed for this test-case. */
 };
 
-EXTERN int
+DLLEXPORT int
 Pkgooa_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    if (Tcl_InitStubs(interp, "9.0", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    if (tclStubsPtr == NULL) {
+	Tcl_AppendResult(interp, "Tcl stubs are not inialized, "
+		"did you compile using -DUSE_TCL_STUBS? ");
 	return TCL_ERROR;
     }
     if (Tcl_OOInitStubs(interp) == NULL) {
+	return TCL_ERROR;
+    }
+    if (tclOOStubsPtr == NULL) {
+	Tcl_AppendResult(interp, "TclOO stubs are not inialized");
 	return TCL_ERROR;
     }
 
