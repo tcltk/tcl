@@ -15,7 +15,6 @@
 		F93599BE0DF1F77400E04F67 /* tclOOInfo.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599BD0DF1F77400E04F67 /* tclOOInfo.c */; };
 		F93599C20DF1F78300E04F67 /* tclOOMethod.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C10DF1F78300E04F67 /* tclOOMethod.c */; };
 		F93599C40DF1F78800E04F67 /* tclOOStubInit.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C30DF1F78800E04F67 /* tclOOStubInit.c */; };
-		F93599C60DF1F78D00E04F67 /* tclOOStubLib.c in Sources */ = {isa = PBXBuildFile; fileRef = F93599C50DF1F78D00E04F67 /* tclOOStubLib.c */; };
 		F95D77EA0DFD820D00A8BF6F /* tclIORTrans.c in Sources */ = {isa = PBXBuildFile; fileRef = F95D77E90DFD820D00A8BF6F /* tclIORTrans.c */; };
 		F96437CA0EF0D4B2003F468E /* tclZlib.c in Sources */ = {isa = PBXBuildFile; fileRef = F96437C90EF0D4B2003F468E /* tclZlib.c */; };
 		F96437E70EF0D652003F468E /* libz.dylib in Frameworks */ = {isa = PBXBuildFile; fileRef = F96437E60EF0D652003F468E /* libz.dylib */; };
@@ -209,7 +208,6 @@
 		F93599C00DF1F77D00E04F67 /* tclOOIntDecls.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclOOIntDecls.h; sourceTree = "<group>"; };
 		F93599C10DF1F78300E04F67 /* tclOOMethod.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOMethod.c; sourceTree = "<group>"; };
 		F93599C30DF1F78800E04F67 /* tclOOStubInit.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOStubInit.c; sourceTree = "<group>"; };
-		F93599C50DF1F78D00E04F67 /* tclOOStubLib.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclOOStubLib.c; sourceTree = "<group>"; };
 		F93599C80DF1F81900E04F67 /* oo.test */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = oo.test; sourceTree = "<group>"; };
 		F93599CF0DF1F87F00E04F67 /* Class.3 */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = Class.3; sourceTree = "<group>"; };
 		F93599D00DF1F89E00E04F67 /* class.n */ = {isa = PBXFileReference; explicitFileType = text.man; fileEncoding = 4; path = class.n; sourceTree = "<group>"; };
@@ -1289,7 +1287,6 @@
 				F93599C00DF1F77D00E04F67 /* tclOOIntDecls.h */,
 				F93599C10DF1F78300E04F67 /* tclOOMethod.c */,
 				F93599C30DF1F78800E04F67 /* tclOOStubInit.c */,
-				F93599C50DF1F78D00E04F67 /* tclOOStubLib.c */,
 				F96D3F0E08F272A7004A47F5 /* tclPanic.c */,
 				F96D3F0F08F272A7004A47F5 /* tclParse.c */,
 				F96D3F1108F272A7004A47F5 /* tclPathObj.c */,
@@ -2023,7 +2020,6 @@
 				F93599BE0DF1F77400E04F67 /* tclOOInfo.c in Sources */,
 				F93599C20DF1F78300E04F67 /* tclOOMethod.c in Sources */,
 				F93599C40DF1F78800E04F67 /* tclOOStubInit.c in Sources */,
-				F93599C60DF1F78D00E04F67 /* tclOOStubLib.c in Sources */,
 				F96D45AD08F272BC004A47F5 /* tclPanic.c in Sources */,
 				F96D45AE08F272BC004A47F5 /* tclParse.c in Sources */,
 				F96D45B008F272BC004A47F5 /* tclPathObj.c in Sources */,

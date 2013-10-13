@@ -10,7 +10,14 @@
  */
 
 #include "tclInt.h"
+#include "tclOOInt.h"
 #include "tommath.h"
+
+/*
+ * The actual definition of the variable holding the TclOO stub table.
+ */
+
+MODULE_SCOPE const TclOOStubs tclOOStubs;
 
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
@@ -694,7 +701,8 @@ const TclTomMathStubs tclTomMathStubs = {
 static const TclStubHooks tclStubHooks = {
     &tclPlatStubs,
     &tclIntStubs,
-    &tclIntPlatStubs
+    &tclIntPlatStubs,
+    &tclOOStubs
 };
 
 const TclStubs tclStubs = {

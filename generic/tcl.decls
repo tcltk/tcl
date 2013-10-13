@@ -18,9 +18,10 @@ library tcl
 #     tclPlat	 - platform specific public
 #     tclInt	 - generic private
 #     tclPlatInt - platform specific private
+#     tclOO	     - tclOO public
 
 interface tcl
-hooks {tclPlat tclInt tclIntPlat}
+hooks {tclPlat tclInt tclIntPlat tclOO}
 scspec TCLAPI
 
 # Declare each of the functions in the public Tcl interface.  Note that

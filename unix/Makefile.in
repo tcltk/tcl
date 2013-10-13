@@ -337,7 +337,6 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 
 STUB_LIB_OBJS = tclStubLib.o \
 	tclTomMathStubLib.o \
-	tclOOStubLib.o \
 	${COMPAT_OBJS}
 
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
@@ -475,8 +474,7 @@ OO_SRCS = \
 
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c \
-	$(GENERIC_DIR)/tclTomMathStubLib.c \
-	$(GENERIC_DIR)/tclOOStubLib.c
+	$(GENERIC_DIR)/tclTomMathStubLib.c
 
 TOMMATH_SRCS = \
 	$(TOMMATH_DIR)/bncore.c \
@@ -1695,9 +1693,6 @@ tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
 
 tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c
-
-tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclOOStubLib.c
 
 .c.o:
 	$(CC) -c $(CC_SWITCHES) $<
