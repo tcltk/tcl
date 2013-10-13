@@ -214,9 +214,11 @@ extern "C" {
  */
 
 #ifdef BUILD_tcl
-#   define TCLAPI DLLEXPORT
+#   define TCLAPI extern DLLEXPORT
+#elif defined(__cplusplus)
+#   define TCLAPI extern "C" DLLIMPORT
 #else
-#   define TCLAPI DLLIMPORT
+#   define TCLAPI extern DLLIMPORT
 #endif
 
 /*
