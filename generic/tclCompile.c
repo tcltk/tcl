@@ -3901,6 +3901,27 @@ TclFixupForwardJump(
     return 1;			/* the jump was grown */
 }
 
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclEmitInvoke --
+ *
+ *	Emit one of the invoke-related instructions, wrapping it if necessary
+ *	in code that ensures that any break or continue operation passing
+ *	through it gets the stack unwinding correct, converting it into an
+ *	internal jump if in an appropriate context.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	Issues the jump with all correct stack management. May create another
+ *	loop exception range; pointers to ExceptionRange and ExceptionAux
+ *	structures should not be held across this call.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TclEmitInvoke(
     CompileEnv *envPtr,
