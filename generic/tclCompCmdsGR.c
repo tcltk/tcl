@@ -2480,6 +2480,7 @@ TclCompileReturnCmd(
      * emit the INST_RETURN_IMM instruction with code and level as operands.
      */
 
+    // TODO: when (code==TCL_BREAK || code==TCL_CONTINUE)&&(level==0&&size==0), check for stack balance and jump opportunities
     CompileReturnInternal(envPtr, INST_RETURN_IMM, code, level, returnOpts);
     return TCL_OK;
 
