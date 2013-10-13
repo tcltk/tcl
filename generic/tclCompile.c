@@ -3911,6 +3911,7 @@ TclEmitInvoke(
     ExceptionRange *rangePtr;
     ExceptionAux *auxBreakPtr, *auxContinuePtr;
     int arg1, arg2, wordCount = 0, loopRange, predictedDepth;
+    int breakRange = -1, continueRange = -1;
 
     /*
      * Parse the arguments.
@@ -3943,6 +3944,9 @@ TclEmitInvoke(
      * Determine if we need to handle break and continue exceptions with a
      * special handling exception range (so that we can correctly unwind the
      * stack).
+     *
+     * These must be done separately; they can be different (especially for
+     * calls from inside a [for] increment clause).
      */
 
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxBreakPtr);
@@ -3951,7 +3955,10 @@ TclEmitInvoke(
     } else if (auxBreakPtr->stackDepth == envPtr->currStackDepth-wordCount
 	    && auxBreakPtr->expandTarget == envPtr->expandCount) {
 	auxBreakPtr = NULL;
+    } else {
+	breakRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
     }
+
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE,
 	    &auxContinuePtr);
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
@@ -3959,17 +3966,11 @@ TclEmitInvoke(
     } else if (auxContinuePtr->stackDepth == envPtr->currStackDepth-wordCount
 	    && auxContinuePtr->expandTarget == envPtr->expandCount) {
 	auxContinuePtr = NULL;
+    } else {
+	continueRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
     }
+
     if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
-	fprintf(stderr,"loop call(%s,d=%d/%d(%d/%d),t=%d/%d(%d))\n",
-		tclInstructionTable[opcode].name,
-		(auxBreakPtr?auxBreakPtr->stackDepth:-1),
-		(auxContinuePtr?auxContinuePtr->stackDepth:-1),
-		envPtr->currStackDepth,
-		wordCount,
-		(auxBreakPtr?auxBreakPtr->expandTarget:-1),
-		(auxContinuePtr?auxContinuePtr->expandTarget:-1),
-		envPtr->expandCount);
 	loopRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
 	ExceptionRangeStarts(envPtr, loopRange);
     }
@@ -4005,11 +4006,17 @@ TclEmitInvoke(
 	int savedStackDepth = envPtr->currStackDepth;
 	int savedExpandCount = envPtr->expandCount;
 	JumpFixup nonTrapFixup;
-	int off;
+	ExceptionAux *exceptAux = envPtr->exceptAuxArrayPtr + loopRange;
+
+	if (auxBreakPtr != NULL) {
+	    auxBreakPtr = envPtr->exceptAuxArrayPtr + breakRange;
+	}
+	if (auxContinuePtr != NULL) {
+	    auxContinuePtr = envPtr->exceptAuxArrayPtr + continueRange;
+	}
 
 	ExceptionRangeEnds(envPtr, loopRange);
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &nonTrapFixup);
-	fprintf(stderr,"loop call(d=%d,t=%d|%p,%p)\n",savedStackDepth-1,savedExpandCount,auxBreakPtr,auxContinuePtr);
 
 	/*
 	 * Careful! When generating these stack unwinding sequences, the depth
@@ -4018,25 +4025,29 @@ TclEmitInvoke(
 	 */
 
 	if (auxBreakPtr != NULL) {
-	    TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
+	    TclAdjustStackDepth(-1, envPtr);
 	    assert(envPtr->currStackDepth == predictedDepth);
+	    exceptAux->stackDepth = auxBreakPtr->stackDepth;
+	    exceptAux->expandTarget = auxBreakPtr->expandTarget;
+
 	    ExceptionRangeTarget(envPtr, loopRange, breakOffset);
-	    off = CurrentOffset(envPtr);
-	    TclCleanupStackForBreakContinue(envPtr, auxBreakPtr);
-	    fprintf(stderr,"popped(break):%ld\n",CurrentOffset(envPtr) - off);
+	    TclCleanupStackForBreakContinue(envPtr, exceptAux);
 	    TclAddLoopBreakFixup(envPtr, auxBreakPtr);
+
 	    envPtr->currStackDepth = savedStackDepth;
 	    envPtr->expandCount = savedExpandCount;
 	}
 
 	if (auxContinuePtr != NULL) {
-	    TclAdjustStackDepth(-1, envPtr); /* Correction to stack depth calcs */
+	    TclAdjustStackDepth(-1, envPtr);
 	    assert(envPtr->currStackDepth == predictedDepth);
+	    exceptAux->stackDepth = auxContinuePtr->stackDepth;
+	    exceptAux->expandTarget = auxContinuePtr->expandTarget;
+
 	    ExceptionRangeTarget(envPtr, loopRange, continueOffset);
-	    off = CurrentOffset(envPtr);
-	    TclCleanupStackForBreakContinue(envPtr, auxContinuePtr);
-	    fprintf(stderr,"popped(continue):%ld\n",CurrentOffset(envPtr) - off);
+	    TclCleanupStackForBreakContinue(envPtr, exceptAux);
 	    TclAddLoopContinueFixup(envPtr, auxContinuePtr);
+
 	    envPtr->currStackDepth = savedStackDepth;
 	    envPtr->expandCount = savedExpandCount;
 	}
