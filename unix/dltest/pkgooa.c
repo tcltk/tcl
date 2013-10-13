@@ -106,10 +106,27 @@ Pkgooa_Init(
 {
     int code;
 
-    if (Tcl_InitStubs(interp, TCL_VERSION, 0) == NULL) {
+    /* Any TclOO extension which uses stubs, calls
+     * both Tcl_InitStubs and Tcl_OOInitStubs() and
+     * does not use any Tcl 8.6 features should be
+     * loadable in Tcl 8.5 as well, provided the
+     * TclOO extension (for Tcl 8.5) is installed.
+     * This worked in Tcl 8.6.0, and is expected
+     * to keep working in all future Tcl 8.x releases.
+     */
+    if (Tcl_InitStubs(interp, "8.5", 0) == NULL) {
+	return TCL_ERROR;
+    }
+    if (tclStubsPtr == NULL) {
+	Tcl_AppendResult(interp, "Tcl stubs are not inialized, "
+		"did you compile using -DUSE_TCL_STUBS? ");
 	return TCL_ERROR;
     }
     if (Tcl_OOInitStubs(interp) == NULL) {
+	return TCL_ERROR;
+    }
+    if (tclOOStubsPtr == NULL) {
+	Tcl_AppendResult(interp, "TclOO stubs are not inialized");
 	return TCL_ERROR;
     }
 
