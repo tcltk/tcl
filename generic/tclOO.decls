@@ -3,8 +3,7 @@
 #	This file contains the declarations for all supported public functions
 #	that are exported by the TclOO package that is embedded within the Tcl
 #	library via the stubs table.  This file is used to generate the
-#	tclOODecls.h, tclOOIntDecls.h, tclOOStubInit.c, and tclOOStubLib.c
-#	files.
+#	tclOODecls.h, tclOOIntDecls.h and tclOOStubInit.c files.
 #
 # Copyright (c) 2008-2013 by Donal K. Fellows.
 #
