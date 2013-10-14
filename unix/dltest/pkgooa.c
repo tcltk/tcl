@@ -11,16 +11,8 @@
  */
 
 #undef STATIC_BUILD
-#include "tclOO.h"
+#include "tclOOInt.h"
 #include <string.h>
-
-/*
- * Prototypes for procedures defined later in this file:
- */
-
-static int    Pkgooa_StubsOKObjCmd(ClientData clientData,
-		Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]);
-
 
 /*
  *----------------------------------------------------------------------
@@ -72,26 +64,22 @@ Pkgooa_StubsOKObjCmd(
  *----------------------------------------------------------------------
  */
 
-static Tcl_Object copyObjectInstance(Tcl_Interp *interp,
-		Tcl_Object source, const char *name, const char *nameSpace)
-{
-	Tcl_Object result;
-	result = Tcl_CopyObjectInstance(interp, source, name, nameSpace);
-	if (result == NULL) {
-        Tcl_AppendResult(interp, "ERROR: copy failed.");
-	}
-	return result;
-}
-
 static TclOOStubs stubsCopy = {
     TCL_STUB_MAGIC,
     NULL,
-    copyObjectInstance
-    /* more entries here, but those are not
-     * needed for this test-case. */
+    /* It doesn't really matter what implementation of
+     * Tcl_CopyObjectInstance is put in the "pseudo"
+     * stub table, since the test-case never actually
+     * calls this function. All that matters is that it's
+     * a function with a different memory address than
+     * the real Tcl_CopyObjectInstance function in Tcl. */
+    (Tcl_Object (*) (Tcl_Interp *, Tcl_Object, const char *,
+	    const char *t)) Pkgooa_StubsOKObjCmd
+    /* More entries could be here, but those are not used
+     * needed for this test-case. So, being NULL is OK. */
 };
 
-DLLEXPORT int
+extern DLLEXPORT int
 Pkgooa_Init(
     Tcl_Interp *interp)		/* Interpreter in which the package is to be
 				 * made available. */
@@ -111,6 +99,10 @@ Pkgooa_Init(
     }
     if (tclOOStubsPtr == NULL) {
 	Tcl_AppendResult(interp, "TclOO stubs are not inialized");
+	return TCL_ERROR;
+    }
+    if (tclOOIntStubsPtr == NULL) {
+	Tcl_AppendResult(interp, "TclOO internal stubs are not inialized");
 	return TCL_ERROR;
     }
 
