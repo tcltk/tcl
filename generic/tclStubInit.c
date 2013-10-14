@@ -234,9 +234,8 @@ static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
-	    Tcl_SetResult(interp,
-		    "integer value too large to represent as non-long integer",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "integer value too large to represent as non-long integer", -1));
 	    result = TCL_ERROR;
 	}
     }
@@ -251,9 +250,8 @@ static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
 		    && (longValue <= (long)(UINT_MAX))) {
 	    *ptr = (int)longValue;
 	} else {
-	    Tcl_SetResult(interp,
-		    "integer value too large to represent as non-long integer",
-		    TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "integer value too large to represent as non-long integer", -1));
 	    result = TCL_ERROR;
 	}
     }
