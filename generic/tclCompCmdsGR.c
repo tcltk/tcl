@@ -2480,7 +2480,6 @@ TclCompileReturnCmd(
      * emit the INST_RETURN_IMM instruction with code and level as operands.
      */
 
-    // TODO: when (code==TCL_BREAK || code==TCL_CONTINUE)&&(level==0&&size==0), check for stack balance and jump opportunities
     CompileReturnInternal(envPtr, INST_RETURN_IMM, code, level, returnOpts);
     return TCL_OK;
 
@@ -2522,6 +2521,23 @@ CompileReturnInternal(
     int level,
     Tcl_Obj *returnOpts)
 {
+    if (level == 0 && (code == TCL_BREAK || code == TCL_CONTINUE)) {
+	ExceptionRange *rangePtr;
+	ExceptionAux *exceptAux;
+
+	rangePtr = TclGetInnermostExceptionRange(envPtr, code, &exceptAux);
+	if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	    TclCleanupStackForBreakContinue(envPtr, exceptAux);
+	    if (code == TCL_BREAK) {
+		TclAddLoopBreakFixup(envPtr, exceptAux);
+	    } else {
+		TclAddLoopContinueFixup(envPtr, exceptAux);
+	    }
+	    Tcl_DecrRefCount(returnOpts);
+	    return;
+	}
+    }
+
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
     TclEmitInstInt4(op, code, envPtr);
     TclEmitInt4(level, envPtr);

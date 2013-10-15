@@ -3931,8 +3931,7 @@ TclEmitInvoke(
     va_list argList;
     ExceptionRange *rangePtr;
     ExceptionAux *auxBreakPtr, *auxContinuePtr;
-    int arg1, arg2, wordCount = 0, loopRange, predictedDepth;
-    int breakRange = -1, continueRange = -1;
+    int arg1, arg2, wordCount = 0, loopRange, breakRange, continueRange;
 
     /*
      * Parse the arguments.
@@ -3995,7 +3994,6 @@ TclEmitInvoke(
 	loopRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
 	ExceptionRangeStarts(envPtr, loopRange);
     }
-    predictedDepth = envPtr->currStackDepth - wordCount;
 
     /*
      * Issue the invoke itself.
@@ -4047,7 +4045,6 @@ TclEmitInvoke(
 
 	if (auxBreakPtr != NULL) {
 	    TclAdjustStackDepth(-1, envPtr);
-	    assert(envPtr->currStackDepth == predictedDepth);
 	    exceptAux->stackDepth = auxBreakPtr->stackDepth;
 	    exceptAux->expandTarget = auxBreakPtr->expandTarget;
 
@@ -4061,7 +4058,6 @@ TclEmitInvoke(
 
 	if (auxContinuePtr != NULL) {
 	    TclAdjustStackDepth(-1, envPtr);
-	    assert(envPtr->currStackDepth == predictedDepth);
 	    exceptAux->stackDepth = auxContinuePtr->stackDepth;
 	    exceptAux->expandTarget = auxContinuePtr->expandTarget;
 
