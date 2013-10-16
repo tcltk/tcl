@@ -1555,10 +1555,10 @@ Tcl_UniCharIsSpace(
      */
 
     if (((Tcl_UniChar) ch) < ((Tcl_UniChar) 0x80)) {
-	return TclIsSpaceProc(ch);
+	return TclIsSpaceProc((char) ch);
     } else if ((Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x180e
 	    || (Tcl_UniChar) ch == 0x200b || (Tcl_UniChar) ch == 0x2060
-	    || (Tcl_UniChar) ch == 0xfeff) {
+	    || (Tcl_UniChar) ch == 0x202f || (Tcl_UniChar) ch == 0xfeff) {
 	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);

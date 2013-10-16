@@ -14,6 +14,23 @@
 
 #include "tclInt.h"
 
+#ifdef HAVE_NO_SEH
+/*
+ * Unlike Borland and Microsoft, we don't register exception handlers by
+ * pushing registration records onto the runtime stack. Instead, we register
+ * them by creating an TCLEXCEPTION_REGISTRATION within the activation record.
+ */
+
+typedef struct TCLEXCEPTION_REGISTRATION {
+    struct TCLEXCEPTION_REGISTRATION *link;
+    EXCEPTION_DISPOSITION (*handler)(
+	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
+    void *ebp;
+    void *esp;
+    int status;
+} TCLEXCEPTION_REGISTRATION;
+#endif
+
 /*
  * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
  * quotation marks), JOIN joins two arguments.

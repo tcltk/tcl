@@ -193,13 +193,6 @@ typedef struct {
     ECL *loc;			/* Command word locations (lines). */
     int nloc;			/* Number of allocated entries in 'loc'. */
     int nuloc;			/* Number of used entries in 'loc'. */
-    Tcl_HashTable litInfo;	/* Indexed by bytecode 'PC', to have the
-				 * information accessible per command and
-				 * argument, not per whole bytecode. Value is
-				 * index of command in 'loc', giving us the
-				 * literals to associate with line information
-				 * as command argument, see
-				 * TclArgumentBCEnter() */
 } ExtCmdLoc;
 
 /*
@@ -372,10 +365,6 @@ typedef struct CompileEnv {
 				 * encountered that have not yet been paired
 				 * with a corresponding
 				 * INST_INVOKE_EXPANDED. */
-    ContLineLoc *clLoc;		/* If not NULL, the table holding the
-				 * locations of the invisible continuation
-				 * lines in the input script, to adjust the
-				 * line counter. */
     int *clNext;		/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
@@ -991,6 +980,9 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
+			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
@@ -1001,6 +993,9 @@ MODULE_SCOPE void	TclCompileExpr(Tcl_Interp *interp, const char *script,
 			    int numBytes, CompileEnv *envPtr, int optimize);
 MODULE_SCOPE void	TclCompileExprWords(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int numWords,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclCompileInvocation(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, Tcl_Obj *cmdObj, int numWords,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCompileScript(Tcl_Interp *interp,
 			    const char *script, int numBytes,
@@ -1074,7 +1069,7 @@ MODULE_SCOPE void	TclPrintSource(FILE *outFile,
 MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
-			    int *isScalarPtr, int line, int *clNext);
+			    int *isScalarPtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
@@ -1113,6 +1108,15 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  * modules inside the Tcl core but not used outside.
  *----------------------------------------------------------------
  */
+
+/*
+ * Simplified form to access AuxData.
+ *
+ * ClientData TclFetchAuxData(CompileEng *envPtr, int index);
+ */
+
+#define TclFetchAuxData(envPtr, index) \
+    (envPtr)->auxDataArrayPtr[(index)].clientData
 
 #define LITERAL_ON_HEAP		0x01
 #define LITERAL_CMD_NAME	0x02
@@ -1407,16 +1411,16 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 #define TclMax(i, j)	((((int) i) > ((int) j))? (i) : (j))
 
 /*
- * Convenience macro for use when compiling bodies of commands. The ANSI C
- * "prototype" for this macro is:
+ * Convenience macros for use when compiling bodies of commands. The ANSI C
+ * "prototype" for these macros are:
  *
- * static void		CompileBody(CompileEnv *envPtr, Tcl_Token *tokenPtr,
- *			    Tcl_Interp *interp);
+ * static void		BODY(Tcl_Token *tokenPtr, int word);
  */
 
-#define CompileBody(envPtr, tokenPtr, interp) \
-    TclCompileCmdWord((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-	    (envPtr))
+#define BODY(tokenPtr, word)						\
+    SetLineInformation((word));						\
+    TclCompileCmdWord(interp, (tokenPtr)+1, (tokenPtr)->numComponents,	\
+	    envPtr)
 
 /*
  * Convenience macro for use when compiling tokens to be pushed. The ANSI C
@@ -1515,13 +1519,10 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define CompileWord(envPtr, tokenPtr, interp, word) \
     if ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD) {			\
-	TclEmitPush(TclRegisterNewLiteral((envPtr), (tokenPtr)[1].start, \
-		(tokenPtr)[1].size), (envPtr));				\
+	PushLiteral((envPtr), (tokenPtr)[1].start, (tokenPtr)[1].size);	\
     } else {								\
-	envPtr->line = mapPtr->loc[eclIndex].line[word];		\
-	envPtr->clNext = mapPtr->loc[eclIndex].next[word];		\
-	TclCompileTokens((interp), (tokenPtr)+1, (tokenPtr)->numComponents, \
-		(envPtr));						\
+	SetLineInformation((word));					\
+	CompileTokens((envPtr), (tokenPtr), (interp));			\
     }
 
 /*
@@ -1542,9 +1543,8 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
 #define PushVarNameWord(i,v,e,f,l,sc,word) \
-    TclPushVarName(i,v,e,f,l,sc,						\
-	    mapPtr->loc[eclIndex].line[(word)],				\
-	    mapPtr->loc[eclIndex].next[(word)])
+    SetLineInformation(word);						\
+    TclPushVarName(i,v,e,f,l,sc)					
 
 /*
  * Often want to issue one of two versions of an instruction based on whether

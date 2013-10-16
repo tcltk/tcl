@@ -65,6 +65,7 @@ static Tcl_CmdProc TestchmodCmd;
 static Tcl_CmdProc TestfilehandlerCmd;
 static Tcl_CmdProc TestfilewaitCmd;
 static Tcl_CmdProc TestfindexecutableCmd;
+static Tcl_ObjCmdProc TestforkObjCmd;
 static Tcl_ObjCmdProc TestgetdefencdirCmd;
 static Tcl_CmdProc TestgetopenfileCmd;
 static Tcl_CmdProc TestgotsigCmd;
@@ -101,6 +102,8 @@ TclplatformtestInit(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfork", TestforkObjCmd,
+        NULL, NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
@@ -528,6 +531,52 @@ TestsetdefencdirCmd(
     Tcl_ListObjReplace(NULL, searchPath, 0, 0, 1, &objv[1]);
     Tcl_SetEncodingSearchPath(searchPath);
 
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestforkObjCmd --
+ *
+ *	This function implements the "testfork" command. It is used to
+ *	fork the Tcl process for specific test cases.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestforkObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)		/* Argument strings. */
+{
+    pid_t pid;
+
+    if (objc != 1) {
+        Tcl_WrongNumArgs(interp, 1, objv, "");
+        return TCL_ERROR;
+    }
+    pid = fork();
+    if (pid == -1) {
+        Tcl_AppendResult(interp,
+                "Cannot fork", NULL);
+        return TCL_ERROR;
+    }
+#if !defined(HAVE_PTHREAD_ATFORK)
+    /* Only needed when pthread_atfork is not present. */
+    if (pid==0) {
+	Tcl_InitNotifier();
+    }
+#endif
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(pid));
     return TCL_OK;
 }
 

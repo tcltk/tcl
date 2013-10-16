@@ -75,10 +75,10 @@ static int initialized = 0;
  */
 
 static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
-static void		FileProc(ClientData clientData, int *source,
+static void		FileProc(XtPointer clientData, int *source,
 			    XtInputId *id);
 static void		NotifierExitHandler(ClientData clientData);
-static void		TimerProc(ClientData clientData, XtIntervalId *id);
+static void		TimerProc(XtPointer clientData, XtIntervalId *id);
 static void		CreateFileHandler(int fd, int mask,
 			    Tcl_FileProc *proc, ClientData clientData);
 static void		DeleteFileHandler(int fd);
@@ -179,7 +179,7 @@ TclSetAppContext(
 void
 InitNotifier(void)
 {
-    Tcl_NotifierProcs notifier;
+    Tcl_NotifierProcs np;
 
     /*
      * Only reinitialize if we are not in exit handling. The notifier can get
@@ -191,11 +191,15 @@ InitNotifier(void)
 	return;
     }
 
-    notifier.createFileHandlerProc = CreateFileHandler;
-    notifier.deleteFileHandlerProc = DeleteFileHandler;
-    notifier.setTimerProc = SetTimer;
-    notifier.waitForEventProc = WaitForEvent;
-    Tcl_SetNotifier(&notifier);
+    np.createFileHandlerProc = CreateFileHandler;
+    np.deleteFileHandlerProc = DeleteFileHandler;
+    np.setTimerProc = SetTimer;
+    np.waitForEventProc = WaitForEvent;
+    np.initNotifierProc = Tcl_InitNotifier;
+    np.finalizeNotifierProc = Tcl_FinalizeNotifier;
+    np.alertNotifierProc = Tcl_AlertNotifier;
+    np.serviceModeHookProc = Tcl_ServiceModeHook;
+    Tcl_SetNotifier(&np);
 
     /*
      * DO NOT create the application context yet; doing so would prevent
@@ -203,7 +207,7 @@ InitNotifier(void)
      */
 
     initialized = 1;
-    memset(&notifier, 0, sizeof(notifier));
+    memset(&np, 0, sizeof(np));
     Tcl_CreateExitHandler(NotifierExitHandler, NULL);
 }
 
@@ -299,7 +303,7 @@ SetTimer(
 
 static void
 TimerProc(
-    ClientData clientData, /* Not used. */
+    XtPointer clientData, /* Not used. */
     XtIntervalId *id)
 {
     if (*id != notifier.currentTimeout) {
@@ -486,7 +490,7 @@ DeleteFileHandler(
 
 static void
 FileProc(
-    ClientData clientData,
+    XtPointer clientData,
     int *fd,
     XtInputId *id)
 {

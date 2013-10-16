@@ -808,7 +808,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 }
 #endif
 
-#if !defined(BUILD_tcl) || defined(USE_TCL_STUBS)
+#if !defined(BUILD_tcl) && !defined(STATIC_BUILD) || defined(USE_TCL_STUBS)
 
 /*
  * Inline function declarations:

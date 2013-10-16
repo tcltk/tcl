@@ -214,19 +214,15 @@ extern "C" {
  */
 
 #ifdef BUILD_tcl
-#   define TCLSOAPI DLLEXPORT
+#   define TCLSOAPI extern DLLEXPORT
+#   define TCLAPI MODULE_SCOPE
+#elif defined(__cplusplus)
+#   define TCLSOAPI extern "C" DLLIMPORT
+#   define TCLAPI extern "C" DLLIMPORT
 #else
-#   define TCLSOAPI DLLIMPORT
+#   define TCLSOAPI extern DLLIMPORT
+#   define TCLAPI extern DLLIMPORT
 #endif
-#ifndef TCLAPI
-#   if defined(BUILD_tcl)
-#	define TCLAPI MODULE_SCOPE
-#   else
-#	define TCLAPI extern
-#   endif
-#endif
-#define TCLOOAPI TCLAPI
-
 
 /*
  * Miscellaneous declarations.
@@ -2208,6 +2204,7 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
 
+#if !defined(STATIC_BUILD) || defined(USE_TCL_STUBS)
 #if TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)((interp), (version), (exact)|(int)sizeof(size_t), \
@@ -2216,6 +2213,10 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 #   define Tcl_InitStubs(interp, version, exact) \
 	(Tcl_InitStubs)(interp, TCL_PATCH_LEVEL, 1|(int)sizeof(size_t), \
 	TCL_VERSION, TCL_STUB_MAGIC)
+#endif
+#else
+#define Tcl_InitStubs(interp, version, exact) \
+    Tcl_PkgInitStubsCheck(interp, version, exact)
 #endif
 
 /*

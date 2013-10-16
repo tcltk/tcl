@@ -238,6 +238,15 @@ proc ::tcl::tm::UnknownHandler {original name args} {
 			continue
 		    }
 
+		    if {[package ifneeded $pkgname $pkgversion] ne {}} {
+			# There's already a provide script registered for
+			# this version of this package.  Since all units of
+			# code claiming to be the same version of the same
+			# package ought to be identical, just stick with
+			# the one we already have.
+			continue
+		    }
+
 		    # We have found a candidate, generate a "provide script"
 		    # for it, and remember it.  Note that we are using ::list
 		    # to do this; locally [list] means something else without

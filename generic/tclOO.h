@@ -12,11 +12,6 @@
 
 #ifndef TCLOO_H_INCLUDED
 #define TCLOO_H_INCLUDED
-#include "tcl.h"
-
-extern const char *TclOOInitializeStubs(
-	Tcl_Interp *, const char *version);
-#define Tcl_OOInitStubs(interp) TclOOInitializeStubs((interp), TCLOO_VERSION)
 
 /*
  * Be careful when it comes to versioning; need to make sure that the
@@ -29,8 +24,26 @@ extern const char *TclOOInitializeStubs(
  * win/tclooConfig.sh
  */
 
-#define TCLOO_VERSION "1.0"
+#define TCLOO_VERSION "1.0.1"
 #define TCLOO_PATCHLEVEL TCLOO_VERSION
+
+#include "tcl.h"
+
+/*
+ * For C++ compilers, use extern "C"
+ */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+extern const char *TclOOInitializeStubs(
+	Tcl_Interp *, const char *version);
+#define Tcl_OOInitStubs(interp) \
+    TclOOInitializeStubs((interp), TCLOO_VERSION)
+#ifndef USE_TCL_STUBS
+#   define TclOOInitializeStubs(interp, version) (TCLOO_PATCHLEVEL)
+#endif
 
 /*
  * These are opaque types.
@@ -120,6 +133,9 @@ typedef struct {
 
 #include "tclOODecls.h"
 
+#ifdef __cplusplus
+}
+#endif
 #endif
 
 /*

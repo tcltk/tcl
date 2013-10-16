@@ -930,6 +930,10 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
+    int numCommands = envPtr->numCommands;
+    int offset = envPtr->codeNext - envPtr->codeStart;
+    int depth = envPtr->currStackDepth;
+
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -943,10 +947,23 @@ TclCompileAssembleCmd(
     }
 
     /*
-     * Compile the code and return any error from the compilation.
+     * Compile the code and convert any error from the compilation into
+     * bytecode reporting the error;
      */
 
-    return TclAssembleCode(envPtr, tokenPtr[1].start, tokenPtr[1].size, 0);
+    if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
+	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
+
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%.*s\" body, line %d)",
+		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
+		Tcl_GetErrorLine(interp)));
+	envPtr->numCommands = numCommands;
+	envPtr->codeNext = envPtr->codeStart + offset;
+	envPtr->currStackDepth = depth;
+	TclCompileSyntaxError(interp, envPtr);
+    }
+    return TCL_OK;
 }
 
 /*
@@ -985,8 +1002,6 @@ TclAssembleCode(
 
     const char* instPtr = codePtr;
 				/* Where to start looking for a line of code */
-    int instLen;		/* Length in bytes of the current line of
-				 * code */
     const char* nextPtr;	/* Pointer to the end of the line of code */
     int bytesLeft = codeLen;	/* Number of bytes of source code remaining to
 				 * be parsed */
@@ -1000,10 +1015,6 @@ TclAssembleCode(
 	 */
 
 	status = Tcl_ParseCommand(interp, instPtr, bytesLeft, 0, parsePtr);
-	instLen = parsePtr->commandSize;
-	if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
-	    --instLen;
-	}
 
 	/*
 	 * Report errors in the parse.
@@ -1012,7 +1023,7 @@ TclAssembleCode(
 	if (status != TCL_OK) {
 	    if (flags & TCL_EVAL_DIRECT) {
 		Tcl_LogCommandInfo(interp, codePtr, parsePtr->commandStart,
-			instLen);
+			parsePtr->term + 1 - parsePtr->commandStart);
 	    }
 	    FreeAssemblyEnv(assemEnvPtr);
 	    return TCL_ERROR;
@@ -1032,6 +1043,13 @@ TclAssembleCode(
 	 */
 
 	if (parsePtr->numWords > 0) {
+	    int instLen = parsePtr->commandSize;
+		    /* Length in bytes of the current command */
+
+	    if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
+		--instLen;
+	    }
+
 	    /*
 	     * If tracing, show each line assembled as it happens.
 	     */
@@ -1107,7 +1125,7 @@ NewAssemblyEnv(
 
     assemEnvPtr->envPtr = envPtr;
     assemEnvPtr->parsePtr = parsePtr;
-    assemEnvPtr->cmdLine = envPtr->line;
+    assemEnvPtr->cmdLine = 1;
     assemEnvPtr->clNext = envPtr->clNext;
 
     /*
@@ -2599,6 +2617,7 @@ AllocBB(
     bb->minStackDepth = 0;
     bb->maxStackDepth = 0;
     bb->finalStackDepth = 0;
+    bb->catchDepth = 0;
     bb->enclosingCatch = NULL;
     bb->foreignExceptionBase = -1;
     bb->foreignExceptionCount = 0;
@@ -3029,7 +3048,7 @@ ResolveJumpTableTargets(
     auxDataIndex = TclGetInt4AtPtr(envPtr->codeStart + bbPtr->jumpOffset + 1);
     DEBUG_PRINT("bbPtr = %p jumpOffset = %d auxDataIndex = %d\n",
 	    bbPtr, bbPtr->jumpOffset, auxDataIndex);
-    realJumpTablePtr = envPtr->auxDataArrayPtr[auxDataIndex].clientData;
+    realJumpTablePtr = TclFetchAuxData(envPtr, auxDataIndex);
     realJumpHashPtr = &realJumpTablePtr->hashTable;
 
     /*

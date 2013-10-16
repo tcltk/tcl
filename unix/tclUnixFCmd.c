@@ -460,10 +460,10 @@ DoCopyFile(
     switch ((int) (statBufPtr->st_mode & S_IFMT)) {
 #ifndef DJGPP
     case S_IFLNK: {
-	char linkBuf[MAXPATHLEN];
+	char linkBuf[MAXPATHLEN+1];
 	int length;
 
-	length = readlink(src, linkBuf, sizeof(linkBuf));
+	length = readlink(src, linkBuf, MAXPATHLEN);
 							/* INTL: Native. */
 	if (length == -1) {
 	    return TCL_ERROR;

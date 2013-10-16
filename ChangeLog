@@ -1,11 +1,103 @@
+A NOTE ON THE CHANGELOG:
+Starting in early 2011, Tcl source code has been under the management of
+fossil, hosted at http://core.tcl.tk/tcl/ .  Fossil presents a "Timeline"
+view of changes made that is superior in every way to a hand edited log file.
+Because of this, many Tcl developers are now out of the habit of maintaining
+this log file.  You may still find useful things in it, but the Timeline is
+a better first place to look now.
+============================================================================
+
+2013-09-19  Don Porter  <dgp@users.sourceforge.net>
+
+	*** 8.6.1 TAGGED FOR RELEASE ***
+
+	* generic/tcl.h:	Bump version number to 8.6.1.
+	* library/init.tcl:
+	* unix/configure.in:
+	* win/configure.in:
+	* unix/tcl.spec:
+	* README:
+
+	* unix/configure:	autoconf-2.59
+	* win/configure:
+
+2013-09-19  Donal Fellows  <dkf@users.sf.net>
+
+	* doc/next.n (METHOD SEARCH ORDER): Bug [3606943]: Corrected
+	description of method search order.
+
+2013-09-18  Donal Fellows  <dkf@users.sf.net>
+
+	Bump TclOO version to 1.0.1 for release.
+
+2013-09-17  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (BinaryEncodeUu, BinaryDecodeUu): [Bug 2152292]:
+	Corrected implementation of the core of uuencode handling so that the
+	line length processing is correctly applied.
+	***POTENTIAL INCOMPATIBILITY***
+	Existing code that was using the old versions and working around the
+	limitations will now need to do far less. The -maxlen option now has
+	strict limits on the range of supported lengths; this is a limitation
+	of the format itself.
+
+2013-09-09  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclOOMethod.c (CloneProcedureMethod): [Bug 3609693]: Strip
+	the internal representation of method bodies during cloning in order
+	to ensure that any bound references to instance variables are removed.
+
+2013-09-01  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclBinary.c (BinaryDecodeHex): [Bug b98fa55285]: Ensure that
+	whitespace at the end of a string don't cause the decoder to drop the
+	last decoded byte.
+
+2013-08-03  Donal Fellows  <dkf@users.sf.net>
+
+	* library/auto.tcl: [Patch 3611643]: Allow TclOO classes to be found
+	by the autoloading mechanism.
+
+2013-08-02  Donal Fellows  <dkf@users.sf.net>
+
+	* generic/tclOODefineCmds.c (ClassSuperSet): Bug [9d61624b3d]: Stop
+	crashes when emptying the superclass slot, even when doing elaborate
+	things with metaclasses.
+
+2013-08-01  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* tclUnixNotify.c (Tcl_InitNotifier): Bug [a0bc856dcd]: Start notifier
+	thread again if we were forked, to solve Rivet bug 55153.
+
+2013-07-05  Kevin B. Kenny  <kennykb@acm.org>
+
+	* library/tzdata/Africa/Casablanca:
+	* library/tzdata/America/Asuncion:
+	* library/tzdata/Antarctica/Macquarie:
+	* library/tzdata/Asia/Gaza:
+	* library/tzdata/Asia/Hebron:
+	* library/tzdata/Asia/Jerusalem:
+	http://www.iana.org/time-zones/repository/releases/tzdata2013d.tar.gz
+
+2013-07-03  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tclXtNotify.c: Bug [817249]: bring tclXtNotify.c up to date with
+	Tcl_SetNotifier() change.
+
+2013-07-02  Jan Nijtmans  <nijtmans@users.sf.net>
+
+	* unix/tcl.m4:  Bug [32afa6e256]: dirent64 check is incorrect in tcl.m4
+	* unix/configure: (thanks to Brian Griffin)
+
 2013-06-27  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclConfig.c: Bug [9b2e636361]: Tcl_CreateInterp() needs initialized
-	* generic/tclMain.c:   encodings.
+	* generic/tclConfig.c: Bug [9b2e636361]: Tcl_CreateInterp() needs
+	* generic/tclMain.c:   initialized encodings.
 
 2013-06-18  Jan Nijtmans  <nijtmans@users.sf.net>
 
-	* generic/tclEvent.c: Bug [3611974]: InitSubsystems multiple thread issue.
+	* generic/tclEvent.c: Bug [3611974]: InitSubsystems multiple thread
+	issue.
 
 2013-06-17  Jan Nijtmans  <nijtmans@users.sf.net>
 
@@ -117,10 +209,10 @@
 
 	* generic/tclStubInit.c: Add support for Cygwin64, which has a 64-bit
 	* generic/tclDecls.h: "long" type. Binary compatibility with win64
-	requires that all stub entries use 32-bit long's, therefore the
-	need for various wrapper functions/macros. For Tcl 9 a better
-	solution is needed, but that cannot be done without introducing
-	binary incompatibility.
+	requires that all stub entries use 32-bit long's, therefore the need
+	for various wrapper functions/macros. For Tcl 9 a better solution is
+	needed, but that cannot be done without introducing binary
+	incompatibility.
 
 2013-04-30  Andreas Kupries  <andreask@activestate.com>
 
@@ -138,8 +230,8 @@
 
 	* generic/tclDecls.h: Implement Tcl_NewBooleanObj, Tcl_DbNewBooleanObj
 	and Tcl_SetBooleanObj as macros using Tcl_NewIntObj, Tcl_DbNewLongObj
-	and Tcl_SetIntObj. Starting with Tcl 8.5, this is exactly the same,
-	it only eliminates code duplication.
+	and Tcl_SetIntObj. Starting with Tcl 8.5, this is exactly the same, it
+	only eliminates code duplication.
 	* generic/tclInt.h: Eliminate use of NO_WIDE_TYPE everywhere: It's
 	exactly the same as TCL_WIDE_INT_IS_LONG
 

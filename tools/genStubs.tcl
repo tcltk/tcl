@@ -946,7 +946,7 @@ proc genStubs::emitMacros {name textVar} {
 
     set upName [string toupper $libraryName]
     set loName [string tolower $libraryName]
-    append text "\n#if !defined(BUILD_${loName}) || defined(USE_${upName}_STUBS)\n"
+    append text "\n#if !defined(BUILD_${loName}) && !defined(STATIC_BUILD) || defined(USE_${upName}_STUBS)\n"
     append text "\n/*\n * Inline function declarations:\n */\n\n"
 
     forAllStubs $name makeMacro 0 text

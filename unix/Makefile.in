@@ -335,7 +335,11 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
         bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
-STUB_LIB_OBJS = tclStubLib.o tclStubLibTbl.o tclTomMathStubLib.o tclOOStubLib.o ${COMPAT_OBJS}
+STUB_LIB_OBJS = tclStubLib.o \
+	tclStubLibTbl.o \
+	tclTomMathStubLib.o \
+	tclOOStubLib.o \
+	${COMPAT_OBJS}
 
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
@@ -345,6 +349,8 @@ UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 NOTIFY_OBJS = tclUnixNotfy.o
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
+
+CYGWIN_OBJS = tclWinError.o
 
 DTRACE_OBJ = tclDTrace.o
 
@@ -575,6 +581,9 @@ MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXBundle.c \
 	$(MAC_OSX_DIR)/tclMacOSXFCmd.c \
 	$(MAC_OSX_DIR)/tclMacOSXNotify.c
+
+CYGWIN_SRCS = \
+	$(TOP_DIR)/win/tclWinError.c
 
 DTRACE_HDR = tclDTrace.h
 
@@ -843,8 +852,8 @@ install-libraries: libraries
 	    done;
 	@echo "Installing package msgcat 1.5.2 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.5.2.tm;
-	@echo "Installing package tcltest 2.3.5 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.5.tm;
+	@echo "Installing package tcltest 2.3.6 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.6.tm;
 
 	@echo "Installing package platform 1.0.12 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.12.tm;
@@ -1684,7 +1693,7 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 #--------------------------------------------------------------------------
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubLib.c
+	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
 
 tclStubLibTbl.o: $(GENERIC_DIR)/tclStubLibTbl.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclStubLibTbl.c
@@ -2072,6 +2081,9 @@ alldist: dist
 # build of this HTML documentation that has already been placed online. As
 # such, this rule is not guaranteed to work well on all systems; it only needs
 # to function on those of the Tcl/Tk maintainers.
+#
+# Also note that the 8.6 tool build requires an installed 8.6 native Tcl
+# interpreter in order to be able to run.
 #--------------------------------------------------------------------------
 
 html: ${NATIVE_TCLSH}
@@ -2084,9 +2096,12 @@ html-tk: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@
 
+# You'd better have these programs or you will have problems creating Makefile
+# from Makefile.in in the first place...
+HTML_VERSION = `basename $(TOP_DIR) | sed s/tcl//`
 BUILD_HTML = \
 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
-		--htmldir="$(HTML_INSTALL_DIR)" \
+		--useversion=$(HTML_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
 		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------

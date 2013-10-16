@@ -96,7 +96,7 @@ typedef struct ThreadSpecificData {
 	 * that an event is ready to be processed
 	 * by sending this event. */
     void *hwnd;			/* Messaging window. */
-#else
+#else /* !__CYGWIN__ */
     Tcl_Condition waitCV;	/* Any other thread alerts a notifier that an
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
@@ -118,6 +118,15 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static int notifierCount = 0;
+
+/*
+ * The following static stores the process ID of the initialized notifier
+ * thread. If it changes, we have passed a fork and we should start a new
+ * notifier thread.
+ *
+ * You must hold the notifierMutex lock before accessing this variable.
+ */
+static pid_t processIDInitialized = 0;
 
 /*
  * The following variable points to the head of a doubly-linked list of
@@ -184,9 +193,15 @@ static Tcl_ThreadId notifierThread;
  */
 
 #ifdef TCL_THREADS
-static void		NotifierThreadProc(ClientData clientData);
-#endif
-static int		FileHandlerEventProc(Tcl_Event *evPtr, int flags);
+static void	NotifierThreadProc(ClientData clientData);
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__)
+static int	atForkInit = 0;
+static void	AtForkPrepare(void);
+static void	AtForkParent(void);
+static void	AtForkChild(void);
+#endif /* HAVE_PTHREAD_ATFORK */
+#endif /* TCL_THREADS */
+static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
 
 /*
  * Import of Windows API when building threaded with Cygwin.
@@ -275,11 +290,38 @@ Tcl_InitNotifier(void)
 	 */
 
 	Tcl_MutexLock(&notifierMutex);
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__)
+	/*
+	 * Install pthread_atfork handlers to reinitialize the notifier in the
+	 * child of a fork.
+	 */
+
+	if (!atForkInit) {
+	    int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
+
+	    if (result) {
+		Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed");
+	    }
+	    atForkInit = 1;
+	}
+#endif /* HAVE_PTHREAD_ATFORK */
+	/*
+	 * Check if my process id changed, e.g. I was forked
+	 * In this case, restart the notifier thread and close the
+	 * pipe to the original notifier thread
+	 */
+	if (notifierCount > 0 && processIDInitialized != getpid()) {
+	    notifierCount = 0;
+	    processIDInitialized = 0;
+	    close(triggerPipe);
+	    triggerPipe = -1;
+	}
 	if (notifierCount == 0) {
 	    if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
 		    TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
 		Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread");
 	    }
+	    processIDInitialized = getpid();
 	}
 	notifierCount++;
 
@@ -1270,6 +1312,75 @@ NotifierThreadProc(
 
     TclpThreadExit(0);
 }
+
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__)
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkPrepare --
+ *
+ *	Lock the notifier in preparation for a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkPrepare(void)
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkParent --
+ *
+ *	Unlock the notifier in the parent after a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkParent(void)
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * AtForkChild --
+ *
+ *	Unlock and reinstall the notifier in the child after a fork.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+AtForkChild(void)
+{
+    notifierMutex = NULL;
+    notifierCV = NULL;
+    Tcl_InitNotifier();
+}
+#endif /* HAVE_PTHREAD_ATFORK */
+
 #endif /* TCL_THREADS */
 
 #endif /* !HAVE_COREFOUNDATION */
