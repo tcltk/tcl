@@ -11,7 +11,7 @@
  */
 
 #undef STATIC_BUILD
-#include "tclOOInt.h"
+#include "tclOO.h"
 #include <string.h>
 
 /*
@@ -63,6 +63,8 @@ Pkgooa_StubsOKObjCmd(
  *
  *----------------------------------------------------------------------
  */
+
+extern void *tclOOIntStubsPtr;
 
 static TclOOStubs stubsCopy = {
     TCL_STUB_MAGIC,
