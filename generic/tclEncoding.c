@@ -1366,7 +1366,7 @@ Tcl_UtfToExternal(
 MODULE_SCOPE const TclStubs tclStubs;
 
 const TclStubInfoType tclStubInfo = {
-    TCL_PATCH_LEVEL, &tclStubs
+    &tclStubs, TCL_PATCH_LEVEL
 };
 
 #undef Tcl_FindExecutable

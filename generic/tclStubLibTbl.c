@@ -32,9 +32,9 @@
 MODULE_SCOPE const char *
 TclInitStubTable(
 	const char *version) /* points to the version field of a
-	                        TclStubInfoType structure variable. */
+	                        structure variable. */
 {
-    tclStubsPtr = ((const TclStubInfoType *) version)->stubs;
+    tclStubsPtr = ((const TclStubs **) version)[-1];
 
     if (tclStubsPtr->hooks) {
 	tclPlatStubsPtr = tclStubsPtr->hooks->tclPlatStubs;

@@ -3781,8 +3781,8 @@ MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 
 /* Used internally in stub library. */
 typedef struct {
-    char version[12];
     const TclStubs *stubs;
+    char version[];
 } TclStubInfoType;
 
 MODULE_SCOPE const TclStubInfoType tclStubInfo;
