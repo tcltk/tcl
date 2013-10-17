@@ -77,6 +77,7 @@ static Tcl_ObjCmdProc FileAttrIsReadableCmd;
 static Tcl_ObjCmdProc FileAttrIsWritableCmd;
 static Tcl_ObjCmdProc FileAttrLinkStatCmd;
 static Tcl_ObjCmdProc FileAttrModifyTimeCmd;
+static Tcl_ObjCmdProc FileAttrUTimeCmd;
 static Tcl_ObjCmdProc FileAttrSizeCmd;
 static Tcl_ObjCmdProc FileAttrStatCmd;
 static Tcl_ObjCmdProc FileAttrTypeCmd;
@@ -981,6 +982,7 @@ TclInitFileCmd(
 	{"tail",	PathTailCmd,		TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"tempfile",	TclFileTemporaryCmd,	TclCompileBasic0To2ArgCmd, NULL, NULL, 0},
 	{"type",	FileAttrTypeCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"utime",	FileAttrUTimeCmd,	TclCompileBasic1Or2ArgCmd, NULL, NULL, 0},
 	{"volumes",	FilesystemVolumesCmd,	TclCompileBasic0ArgCmd, NULL, NULL, 0},
 	{"writable",	FileAttrIsWritableCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
@@ -1262,6 +1264,64 @@ FileAttrModifyTimeCmd(
     }
 
     Tcl_SetObjResult(interp, Tcl_NewLongObj((long) buf.st_mtime));
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FileAttrUTimeCmd --
+ *
+ *	This function is invoked to process the "file utime" Tcl command. See
+ *	the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	Update the access time and modification time on the file.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FileAttrUTimeCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    struct utimbuf tval;
+    long time;
+	/*
+	 * Need separate variable for reading longs from an object on 64-bit
+	 * platforms. [Bug 698146]
+	 */
+
+    if (objc < 3 || objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv, "name ?atime? mtime");
+	return TCL_ERROR;
+    }
+    if (TclGetLongFromObj(interp, objv[2], &time) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    tval.actime = time;
+    if (objc == 3) {
+	tval.modtime = time;
+    } else {
+	if (TclGetLongFromObj(interp, objv[3], &time) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	tval.modtime = time;
+    }
+
+    if (Tcl_FSUtime(objv[1], &tval) != 0) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"could not set time for file \"%s\": %s",
+		TclGetString(objv[1]), Tcl_PosixError(interp)));
+	return TCL_ERROR;
+    }
+
     return TCL_OK;
 }
 
