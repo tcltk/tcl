@@ -2080,6 +2080,9 @@ alldist: dist
 # build of this HTML documentation that has already been placed online. As
 # such, this rule is not guaranteed to work well on all systems; it only needs
 # to function on those of the Tcl/Tk maintainers.
+#
+# Also note that the 8.6 tool build requires an installed 8.6 native Tcl
+# interpreter in order to be able to run.
 #--------------------------------------------------------------------------
 
 html: ${NATIVE_TCLSH}
@@ -2092,9 +2095,12 @@ html-tk: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@
 
+# You'd better have these programs or you will have problems creating Makefile
+# from Makefile.in in the first place...
+HTML_VERSION = `basename $(TOP_DIR) | sed s/tcl//`
 BUILD_HTML = \
 	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
-		--htmldir="$(HTML_INSTALL_DIR)" \
+		--useversion=$(HTML_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
 		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 
 #--------------------------------------------------------------------------
