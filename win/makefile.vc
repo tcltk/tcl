@@ -450,8 +450,7 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
-	$(TMP_DIR)\tclTomMathStubLib.obj \
-	$(TMP_DIR)\tclOOStubLib.obj
+	$(TMP_DIR)\tclTomMathStubLib.obj
 
 ### The following paths CANNOT have spaces in them.
 COMPATDIR	= $(ROOT)\compat
@@ -980,9 +979,6 @@ $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
-
-$(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
 #---------------------------------------------------------------------

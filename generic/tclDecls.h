@@ -1731,6 +1731,8 @@ typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
     const struct TclIntStubs *tclIntStubs;
     const struct TclIntPlatStubs *tclIntPlatStubs;
+    const struct TclOOStubs *tclOOStubs;
+    const struct TclOOIntStubs *tclOOIntStubs;
 } TclStubHooks;
 
 typedef struct TclStubs {

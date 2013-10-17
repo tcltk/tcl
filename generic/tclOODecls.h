@@ -10,6 +10,8 @@
 #   define USE_TCLOO_STUBS
 #endif
 
+#define tclOOPrivateStubs tclOOIntStubs
+
 /* !BEGIN!: Do not edit below this line. */
 
 /*
@@ -106,7 +108,7 @@ TCLAPI Tcl_Obj *	Tcl_GetObjectName(Tcl_Interp *interp,
 				Tcl_Object object);
 
 typedef struct {
-    const struct TclOOIntStubs *tclOOIntStubs;
+    const struct TclOOPrivateStubs *tclOOPrivateStubs;
 } TclOOStubHooks;
 
 typedef struct TclOOStubs {

@@ -17,7 +17,7 @@ library tclOO
 #
 
 interface tclOO
-hooks tclOOInt
+hooks tclOOPrivate
 scspec TCLAPI
 
 declare 0 {
