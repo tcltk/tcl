@@ -11,6 +11,7 @@
 #endif
 
 #define tclOOPrivateStubs tclOOIntStubs
+#define TclOOPrivateStubs TclOOIntStubs
 
 /* !BEGIN!: Do not edit below this line. */
 
