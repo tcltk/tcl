@@ -620,7 +620,7 @@ TclCompileCatchCmd(
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_EVAL_STK,			envPtr);
+	TclEmitInvoke(envPtr,	INST_EVAL_STK);
     }
     /* Stack at this point:
      *    nonsimple:  script <mark> result
