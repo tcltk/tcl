@@ -132,6 +132,7 @@ REGDOTVER		= @TCL_REG_MAJOR_VERSION@.@TCL_REG_MINOR_VERSION@
 
 TCL_STUB_LIB_FILE	= @TCL_STUB_LIB_FILE@
 TCL_DLL_FILE		= @TCL_DLL_FILE@
+TCL_PREV_DLL_FILE	= @TCL_PREV_DLL_FILE@
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 DDE_DLL_FILE		= tcldde$(DDEVER)${DLLSUFFIX}
 DDE_LIB_FILE		= @LIBPREFIX@tcldde$(DDEVER)${LIBSUFFIX}
@@ -385,6 +386,8 @@ REG_OBJS = tclWinReg.$(OBJEXT)
 
 STUB_OBJS = \
 	tclStubLib.$(OBJEXT) \
+	tclStubLibDl.$(OBJEXT) \
+	tclStubLibTbl.$(OBJEXT) \
 	tclTomMathStubLib.$(OBJEXT) \
 	tclOOStubLib.$(OBJEXT)
 
@@ -513,6 +516,12 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 # as DLL objects but none of the symbols should be exported
 
 tclStubLib.${OBJEXT}: tclStubLib.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
+
+tclStubLibDl.${OBJEXT}: tclStubLibDl.c
+	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD -DTCL_DLL_FILE="\"$(TCL_DLL_FILE)\"" -DTCL_PREV_DLL_FILE="\"$(TCL_PREV_DLL_FILE)\"" @DEPARG@ $(CC_OBJNAME)
+
+tclStubLibTbl.${OBJEXT}: tclStubLibTbl.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
 tclTomMathStubLib.${OBJEXT}: tclTomMathStubLib.c
