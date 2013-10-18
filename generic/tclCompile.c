@@ -2458,7 +2458,7 @@ TclCompileCmdWord(
 	 */
 
 	TclCompileTokens(interp, tokenPtr, count, envPtr);
-	TclEmitOpcode(INST_EVAL_STK, envPtr);
+	TclEmitInvoke(envPtr, INST_EVAL_STK);
     }
 }
 
@@ -3954,6 +3954,7 @@ TclEmitInvoke(
 	break;
     default:
 	Tcl_Panic("unexpected opcode");
+    case INST_EVAL_STK:
     case INST_INVOKE_EXPANDED:
 	wordCount = arg1 = arg2 = 0;
 	break;
@@ -4008,6 +4009,9 @@ TclEmitInvoke(
 	break;
     case INST_INVOKE_EXPANDED:
 	TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
+	break;
+    case INST_EVAL_STK:
+	TclEmitOpcode(INST_EVAL_STK, envPtr);
 	break;
     case INST_INVOKE_REPLACE:
 	TclEmitInstInt4(INST_INVOKE_REPLACE, arg1, envPtr);
