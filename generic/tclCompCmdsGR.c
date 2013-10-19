@@ -2367,7 +2367,7 @@ TclCompileReturnCmd(
 
 	CompileWord(envPtr, optsTokenPtr, interp, 2);
 	CompileWord(envPtr, msgTokenPtr,  interp, 3);
-	TclEmitOpcode(INST_RETURN_STK, envPtr);
+	TclEmitInvoke(envPtr, INST_RETURN_STK);
 	return TCL_OK;
     }
 
@@ -2509,7 +2509,7 @@ TclCompileReturnCmd(
      * Issue the RETURN itself.
      */
 
-    TclEmitOpcode(INST_RETURN_STK, envPtr);
+    TclEmitInvoke(envPtr, INST_RETURN_STK);
     return TCL_OK;
 }
 
