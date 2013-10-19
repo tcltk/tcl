@@ -1802,9 +1802,7 @@ CompileExpanded(
      * stack-neutral in general.
      */
 
-    TclEmitInvoke(envPtr, INST_INVOKE_EXPANDED);
-    envPtr->expandCount--;
-    TclAdjustStackDepth(1 - wordIdx, envPtr);
+    TclEmitInvoke(envPtr, INST_INVOKE_EXPANDED, wordIdx);
 }
 
 static int 
@@ -3931,7 +3929,8 @@ TclEmitInvoke(
     va_list argList;
     ExceptionRange *rangePtr;
     ExceptionAux *auxBreakPtr, *auxContinuePtr;
-    int arg1, arg2, wordCount = 0, loopRange, breakRange, continueRange;
+    int arg1, arg2, wordCount = 0, expandCount = 0;
+    int loopRange, breakRange, continueRange;
 
     /*
      * Parse the arguments.
@@ -3955,8 +3954,17 @@ TclEmitInvoke(
     default:
 	Tcl_Panic("unexpected opcode");
     case INST_EVAL_STK:
+	wordCount = 1;
+	arg1 = arg2 = 0;
+	break;
+    case INST_RETURN_STK:
+	wordCount = 2;
+	arg1 = arg2 = 0;
+	break;
     case INST_INVOKE_EXPANDED:
-	wordCount = arg1 = arg2 = 0;
+	wordCount = arg1 = va_arg(argList, int);
+	arg2 = 0;
+	expandCount = 1;
 	break;
     }
     va_end(argList);
@@ -3974,7 +3982,7 @@ TclEmitInvoke(
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
 	auxBreakPtr = NULL;
     } else if (auxBreakPtr->stackDepth == envPtr->currStackDepth-wordCount
-	    && auxBreakPtr->expandTarget == envPtr->expandCount) {
+	    && auxBreakPtr->expandTarget == envPtr->expandCount-expandCount) {
 	auxBreakPtr = NULL;
     } else {
 	breakRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
@@ -3985,7 +3993,7 @@ TclEmitInvoke(
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
 	auxContinuePtr = NULL;
     } else if (auxContinuePtr->stackDepth == envPtr->currStackDepth-wordCount
-	    && auxContinuePtr->expandTarget == envPtr->expandCount) {
+	    && auxContinuePtr->expandTarget == envPtr->expandCount-expandCount) {
 	auxContinuePtr = NULL;
     } else {
 	continueRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
@@ -4009,9 +4017,14 @@ TclEmitInvoke(
 	break;
     case INST_INVOKE_EXPANDED:
 	TclEmitOpcode(INST_INVOKE_EXPANDED, envPtr);
+	envPtr->expandCount--;
+	TclAdjustStackDepth(1 - arg1, envPtr);
 	break;
     case INST_EVAL_STK:
 	TclEmitOpcode(INST_EVAL_STK, envPtr);
+	break;
+    case INST_RETURN_STK:
+	TclEmitOpcode(INST_RETURN_STK, envPtr);
 	break;
     case INST_INVOKE_REPLACE:
 	TclEmitInstInt4(INST_INVOKE_REPLACE, arg1, envPtr);
