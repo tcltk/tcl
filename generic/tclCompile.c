@@ -4073,6 +4073,7 @@ TclEmitInvoke(
 	    envPtr->expandCount = savedExpandCount;
 	}
 
+	TclFinalizeLoopExceptionRange(envPtr, loopRange);
 	TclFixupForwardJumpToHere(envPtr, &nonTrapFixup, 127);
     }
 }
