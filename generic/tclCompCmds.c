@@ -2135,19 +2135,48 @@ TclCompileErrorCmd(
 {
     /*
      * General syntax: [error message ?errorInfo? ?errorCode?]
-     * However, we only deal with the case where there is just a message.
      */
-    Tcl_Token *messageTokenPtr;
+
+    Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
 
-    if (parsePtr->numWords != 2) {
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
-    messageTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushStringLiteral(envPtr, "-code error -level 0");
-    CompileWord(envPtr, messageTokenPtr, interp, 1);
-    TclEmitOpcode(INST_RETURN_STK, envPtr);
+    /*
+     * Handle the message.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+
+    /*
+     * Construct the options. Note that -code and -level are not here.
+     */
+
+    if (parsePtr->numWords == 2) {
+	PushStringLiteral(envPtr, "");
+    } else {
+	PushStringLiteral(envPtr, "-errorinfo");
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 2);
+	if (parsePtr->numWords == 3) {
+	    TclEmitInstInt4(	INST_LIST, 2,			envPtr);
+	} else {
+	    PushStringLiteral(envPtr, "-errorcode");
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp, 3);
+	    TclEmitInstInt4(	INST_LIST, 4,			envPtr);
+	}
+    }
+
+    /*
+     * Issue the error via 'returnImm error 0'.
+     */
+
+    TclEmitInstInt4(		INST_RETURN_IMM, TCL_ERROR,	envPtr);
+    TclEmitInt4(			0,			envPtr);
     return TCL_OK;
 }
 
