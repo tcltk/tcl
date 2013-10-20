@@ -10,6 +10,8 @@
 #   define TCL_STORAGE_CLASS DLLEXPORT
 #else
 #   ifdef USE_TCL_STUBS
+#      undef USE_TCLOO_STUBS
+#      define USE_TCLOO_STUBS
 #      define TCL_STORAGE_CLASS
 #   else
 #      define TCL_STORAGE_CLASS DLLIMPORT
