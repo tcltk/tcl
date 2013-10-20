@@ -2381,6 +2381,10 @@ TclCompileReturnCmd(
      * Scan through the return options. If any are unknown at compile time,
      * there is no value in bytecompiling. Save the option values known in an
      * objv array for merging into a return options dictionary.
+     *
+     * TODO: There is potential for improvement if all option keys are known
+     * at compile time and all option values relating to '-code' and '-level'
+     * are known at compile time.
      */
 
     for (objc = 0; objc < numOptionWords; objc++) {
@@ -2388,7 +2392,7 @@ TclCompileReturnCmd(
 	Tcl_IncrRefCount(objv[objc]);
 	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
 	    /*
-	     * Non-literal, so punt to run-time.
+	     * Non-literal, so punt to run-time assembly of the dictionary.
 	     */
 
 	    for (; objc>=0 ; objc--) {
