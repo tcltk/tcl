@@ -1675,7 +1675,7 @@ TclCompileDictUpdateCmd(
 
     TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
-    TclEmitOpcode(	INST_RETURN_STK,			envPtr);
+    TclEmitInvoke(envPtr,INST_RETURN_STK);
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
@@ -2033,7 +2033,7 @@ TclCompileDictWithCmd(
     } else {
 	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
     }
-    TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+    TclEmitInvoke(envPtr,	INST_RETURN_STK);
 
     /*
      * Prepare for the start of the next command.
