@@ -99,6 +99,8 @@ const AuxDataType tclJumptableInfoType = {
     if ((idx)<256) {OP1(LOAD_SCALAR1,(idx));} else {OP4(LOAD_SCALAR4,(idx));}
 #define STORE(idx) \
     if ((idx)<256) {OP1(STORE_SCALAR1,(idx));} else {OP4(STORE_SCALAR4,(idx));}
+#define INVOKE(name) \
+    TclEmitInvoke(envPtr,INST_##name)
 
 /*
  *----------------------------------------------------------------------
@@ -988,7 +990,7 @@ TclSubstCompile(
 	OP(	END_CATCH);
 	OP(	RETURN_CODE_BRANCH);
 
-	/* ERROR -> reraise it */
+	/* ERROR -> reraise it; NB: can't require BREAK/CONTINUE handling */
 	OP(	RETURN_STK);
 	OP(	NOP);
 
@@ -2080,7 +2082,7 @@ TclCompileThrowCmd(
 	OP(			LIST_LENGTH);
 	OP1(			JUMP_FALSE1, 16);
 	OP4(			LIST, 2);
-	OP44(			RETURN_IMM, 1, 0);
+	OP44(			RETURN_IMM, TCL_ERROR, 0);
 	TclAdjustStackDepth(2, envPtr);
 	OP(			POP);
 	OP(			POP);
@@ -2089,7 +2091,7 @@ TclCompileThrowCmd(
 	PUSH(			"type must be non-empty list");
 	PUSH(			"-errorcode {TCL OPERATION THROW BADEXCEPTION}");
     }
-    OP44(			RETURN_IMM, 1, 0);
+    OP44(			RETURN_IMM, TCL_ERROR, 0);
     return TCL_OK;
 }
 
@@ -2511,7 +2513,7 @@ IssueTryClausesInstructions(
 	    TclAdjustStackDepth(-1, envPtr);
 	    FIXJUMP1(		dontChangeOptions);
 	    OP4(			REVERSE, 2);
-	    OP(				RETURN_STK);
+	    INVOKE(			RETURN_STK);
 	}
 
 	JUMP4(				JUMP, addrsToFix[i]);
@@ -2530,7 +2532,7 @@ IssueTryClausesInstructions(
     OP(					POP);
     LOAD(				optionsVar);
     LOAD(				resultVar);
-    OP(					RETURN_STK);
+    INVOKE(				RETURN_STK);
 
     /*
      * Fix all the jumps from taken clauses to here (which is the end of the
@@ -2839,7 +2841,7 @@ IssueTryClausesFinallyInstructions(
     FIXJUMP1(			finalOK);
     LOAD(				optionsVar);
     LOAD(				resultVar);
-    OP(					RETURN_STK);
+    INVOKE(				RETURN_STK);
 
     return TCL_OK;
 }
@@ -2898,7 +2900,7 @@ IssueTryFinallyInstructions(
     OP1(				JUMP1, 7);
     FIXJUMP1(		jumpOK);
     OP4(				REVERSE, 2);
-    OP(					RETURN_STK);
+    INVOKE(				RETURN_STK);
     return TCL_OK;
 }
 
