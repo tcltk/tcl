@@ -86,6 +86,7 @@ LocateTargetAddresses(
 	case INST_JUMP4:
 	case INST_JUMP_TRUE4:
 	case INST_JUMP_FALSE4:
+	case INST_START_CMD:
 	    targetInstPtr = currentInstPtr+TclGetInt4AtPtr(currentInstPtr+1);
 	    goto storeTarget;
 	case INST_BEGIN_CATCH4:
@@ -109,8 +110,6 @@ LocateTargetAddresses(
 		DefineTargetAddress(tablePtr, currentInstPtr + 2*i - 1);
 	    }
 	    break;
-	case INST_START_CMD:
-	    assert (envPtr->atCmdStart < 2);
 	}
     }
 
