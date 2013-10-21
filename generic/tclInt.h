@@ -2828,7 +2828,7 @@ MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc);
 MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
 			    Tcl_Obj *objv[], int objc,
-			    void *codePtr, CmdFrame *cfPtr, int pc);
+			    void *codePtr, CmdFrame *cfPtr, int cmd, int pc);
 MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
 			    CmdFrame *cfPtr);
 MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
@@ -3010,9 +3010,8 @@ MODULE_SCOPE void	TclpFinalizeMutex(Tcl_Mutex *mutexPtr);
 MODULE_SCOPE void	TclpFinalizePipes(void);
 MODULE_SCOPE void	TclpFinalizeSockets(void);
 MODULE_SCOPE int	TclCreateSocketAddress(Tcl_Interp *interp,
-			    struct addrinfo **addrlist,
-			    const char *host, int port, int willBind,
-			    const char **errorMsgPtr);
+			    void **addrlist, const char *host, int port,
+			    int willBind, const char **errorMsgPtr);
 MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 			    Tcl_ThreadCreateProc *proc, ClientData clientData,
 			    int stackSize, int flags);

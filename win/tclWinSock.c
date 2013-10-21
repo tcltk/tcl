@@ -1131,9 +1131,10 @@ CreateSocket(
     int asyncConnect = 0;	/* Will be 1 if async connect is in
 				 * progress. */
     unsigned short chosenport = 0;
-    struct addrinfo *addrlist = NULL, *addrPtr;
+    void *addrlist = NULL, *myaddrlist = NULL;
+    struct addrinfo *addrPtr;
 				/* Socket address to connect to. */
-    struct addrinfo *myaddrlist = NULL, *myaddrPtr;
+    struct addrinfo *myaddrPtr;
 				/* Socket address for our side. */
     const char *errorMsg = NULL;
     SOCKET sock = INVALID_SOCKET;
