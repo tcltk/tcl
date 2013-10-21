@@ -3930,7 +3930,7 @@ TclEmitInvoke(
     ExceptionRange *rangePtr;
     ExceptionAux *auxBreakPtr, *auxContinuePtr;
     int arg1, arg2, wordCount = 0, expandCount = 0;
-    int loopRange, breakRange, continueRange;
+    int loopRange = 0, breakRange = 0, continueRange = 0;
 
     /*
      * Parse the arguments.
