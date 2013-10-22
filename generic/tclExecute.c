@@ -8835,8 +8835,7 @@ TclGetSrcInfoForPc(
 		&cfPtr->len, NULL, NULL);
     }
 
-    assert(cfPtr->cmd != NULL);
-    {
+    if (cfPtr->cmd != NULL) {
 	/*
 	 * We now have the command. We can get the srcOffset back and from
 	 * there find the list of word locations for this command.

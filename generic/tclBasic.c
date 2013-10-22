@@ -133,7 +133,6 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
-static Tcl_NRPostProc	NRRunObjProc;
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
@@ -158,6 +157,8 @@ static Tcl_NRPostProc	TEOV_Exception;
 static Tcl_NRPostProc	TEOV_NotFoundCallback;
 static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
+static Tcl_NRPostProc	EvalObjvCore;
+static Tcl_NRPostProc	Dispatch;
 
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
@@ -4093,38 +4094,51 @@ TclNREvalObjv(
 				 * requested Command struct to be invoked. */
 {
     Interp *iPtr = (Interp *) interp;
-    int result;
-    Namespace *lookupNsPtr = iPtr->lookupNsPtr;
-    Command **cmdPtrPtr;
-    NRE_callback *callbackPtr;
-    
-    iPtr->lookupNsPtr = NULL;
 
     /*
-     * Push a callback with cleanup tasks for commands; the cmdPtr at data[0]
-     * will be filled later when the command is found: save its address at
-     * objProcPtr.
-     *
      * data[1] stores a marker for use by tailcalls; it will be set to 1 by
      * command redirectors (imports, alias, ensembles) so that tailcalls
      * finishes the source command and not just the target.
      */
 
     if (iPtr->deferredCallbacks) {
-        callbackPtr = iPtr->deferredCallbacks;
         iPtr->deferredCallbacks = NULL;
     } else {
 	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
-        callbackPtr = TOP_CB(interp);
     }
-    cmdPtrPtr = (Command **) &(callbackPtr->data[0]);
 
     iPtr->numLevels++;
-    result = TclInterpReady(interp);
+    TclNRAddCallback(interp, EvalObjvCore, cmdPtr, INT2PTR(flags),
+	    INT2PTR(objc), objv);
+    return TCL_OK;
+}
 
-    if ((result != TCL_OK) || (objc == 0)) {
-	return result;
+static int
+EvalObjvCore(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Command *cmdPtr = data[0];
+    int flags = PTR2INT(data[1]);
+    int objc = PTR2INT(data[2]);
+    Tcl_Obj **objv = data[3];
+    Interp *iPtr = (Interp *) interp;
+    Namespace *lookupNsPtr = iPtr->lookupNsPtr;
+    
+    if (TCL_OK != TclInterpReady(interp)) {
+	return TCL_ERROR;
     }
+
+    if (objc == 0) {
+	return TCL_OK;
+    }
+
+    if (TclLimitExceeded(iPtr->limit)) {
+	return TCL_ERROR;
+    }
+
+    iPtr->lookupNsPtr = NULL;
 
     if (cmdPtr) {
 	goto commandFound;
@@ -4169,11 +4183,6 @@ TclNREvalObjv(
 	return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
     }
 
-    iPtr->cmdCount++;
-    if (TclLimitExceeded(iPtr->limit)) {
-	return TCL_ERROR;
-    }
-
     /*
      * Found a command! The real work begins now ...
      */
@@ -4188,14 +4197,31 @@ TclNREvalObjv(
 	result = TEOV_RunEnterTraces(interp, &cmdPtr, TclGetSourceFromFrame(
 		flags & TCL_EVAL_SOURCE_IN_FRAME ?  iPtr->cmdFramePtr : NULL,
 		objc, objv), objc, objv, lookupNsPtr);
-	if (!cmdPtr) {
-	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
-	}
 	if (result != TCL_OK) {
 	    return result;
 	}
+	if (!cmdPtr) {
+	    return TEOV_NotFound(interp, objc, objv, lookupNsPtr);
+	}
     }
 
+    TclNRAddCallback(interp, Dispatch,
+	    cmdPtr->nreProc ? cmdPtr->nreProc : cmdPtr->objProc,
+	    cmdPtr->objClientData, INT2PTR(objc), objv);
+    return TCL_OK;
+}
+
+static int
+Dispatch(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Tcl_ObjCmdProc *objProc = data[0];
+    ClientData clientData = data[1];
+    int objc = PTR2INT(data[2]);
+    Tcl_Obj **objv = data[3];
+    Interp *iPtr = (Interp *) interp;
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
@@ -4216,34 +4242,18 @@ TclNREvalObjv(
 	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
 	TclDecrRefCount(info);
     }
-    if (TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED()) {
+    if ((TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED())
+	    && objc) {
 	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
     }
-    if (TCL_DTRACE_CMD_ENTRY_ENABLED()) {
+    if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
 	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
 		(Tcl_Obj **)(objv + 1));
     }
 #endif /* USE_DTRACE */
-    /*
-     * Fix the original callback to point to the now known cmdPtr. Insure that
-     * the Command struct lives until the command returns.
-     */
 
-    *cmdPtrPtr = cmdPtr;
-    cmdPtr->refCount++;
-
-    /*
-     * Find the objProc to call: nreProc if available, objProc otherwise. Push
-     * a callback to do the actual running.
-     */
-
-    if (cmdPtr->nreProc) {
-        TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
-                INT2PTR(objc), (ClientData) objv, NULL);
-        return TCL_OK;
-    } else {
-	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-    }
+    iPtr->cmdCount++;
+    return objProc(clientData, interp, objc, objv);
 }
 
 int
@@ -4289,13 +4299,8 @@ NRCommand(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-    Command *cmdPtr = data[0];
-    /* int cmdStart = PTR2INT(data[1]); NOT USED HERE */
 
-    if (cmdPtr) {
-	TclCleanupCommandMacro(cmdPtr);
-    }
-    ((Interp *)interp)->numLevels--;
+    iPtr->numLevels--;
 
      /*
       * If there is a tailcall, schedule it
@@ -4322,22 +4327,6 @@ NRCommand(
 
     return result;
 }
-
-static int
-NRRunObjProc(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    /* OPT: do not call? */
-
-    Command* cmdPtr = data[0];
-    int objc = PTR2INT(data[1]);
-    Tcl_Obj **objv = data[2];
-
-    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-}
-
 
 /*
  *----------------------------------------------------------------------
@@ -7990,39 +7979,11 @@ Tcl_NRCallObjProc(
     int objc,
     Tcl_Obj *const objv[])
 {
-    int result = TCL_OK;
     NRE_callback *rootPtr = TOP_CB(interp);
 
-#ifdef USE_DTRACE
-    if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
-	const char *a[10];
-	int i = 0;
-
-	while (i < 10) {
-	    a[i] = i < objc ? TclGetString(objv[i]) : NULL; i++;
-	}
-	TCL_DTRACE_CMD_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
-		a[8], a[9]);
-    }
-    if (TCL_DTRACE_CMD_INFO_ENABLED() && ((Interp *) interp)->cmdFramePtr) {
-	Tcl_Obj *info = TclInfoFrame(interp, ((Interp *) interp)->cmdFramePtr);
-	const char *a[6]; int i[2];
-
-	TclDTraceInfo(info, a, i);
-	TCL_DTRACE_CMD_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
-	TclDecrRefCount(info);
-    }
-    if ((TCL_DTRACE_CMD_RETURN_ENABLED() || TCL_DTRACE_CMD_RESULT_ENABLED())
-	    && objc) {
-	TclNRAddCallback(interp, DTraceCmdReturn, objv[0], NULL, NULL, NULL);
-    }
-    if (TCL_DTRACE_CMD_ENTRY_ENABLED() && objc) {
-	TCL_DTRACE_CMD_ENTRY(TclGetString(objv[0]), objc - 1,
-		(Tcl_Obj **)(objv + 1));
-    }
-#endif /* USE_DTRACE */
-    result = objProc(clientData, interp, objc, objv);
-    return TclNRRunCallbacks(interp, result, rootPtr);
+    TclNRAddCallback(interp, Dispatch, objProc, clientData,
+	    INT2PTR(objc), objv);
+    return TclNRRunCallbacks(interp, TCL_OK, rootPtr);
 }
 
 /*

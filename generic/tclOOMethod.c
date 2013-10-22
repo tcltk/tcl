@@ -1338,7 +1338,6 @@ TclOONewForwardInstanceMethod(
     fmPtr = ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
-    fmPtr->fullyQualified = (strncmp(TclGetString(cmdObj), "::", 2) == 0);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr,
 	    nameObj, flags, &fwdMethodType, fmPtr);
@@ -1380,7 +1379,6 @@ TclOONewForwardMethod(
     fmPtr = ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
     Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
-    fmPtr->fullyQualified = (strncmp(TclGetString(cmdObj), "::", 2) == 0);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr, nameObj,
 	    flags, &fwdMethodType, fmPtr);
@@ -1409,7 +1407,6 @@ InvokeForwardMethod(
     ForwardMethod *fmPtr = clientData;
     Tcl_Obj **argObjs, **prefixObjs;
     int numPrefixes, len, skip = contextPtr->skip;
-    Command *cmdPtr;
 
     /*
      * Build the real list of arguments to use. Note that we know that the
@@ -1421,15 +1418,10 @@ InvokeForwardMethod(
     Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
-
-    if (fmPtr->fullyQualified) {
-	cmdPtr = NULL;
-    } else {
-	cmdPtr = (Command *) Tcl_FindCommand(interp, TclGetString(argObjs[0]),
-		contextPtr->oPtr->namespacePtr, 0 /* normal lookup */);
-    }
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
-    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE, cmdPtr);
+    ((Interp *)interp)->lookupNsPtr
+	    = (Namespace *) contextPtr->oPtr->namespacePtr;
+    return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_INVOKE, NULL);
 }
 
 static int
@@ -1474,7 +1466,6 @@ CloneForwardMethod(
     ForwardMethod *fm2Ptr = ckalloc(sizeof(ForwardMethod));
 
     fm2Ptr->prefixObj = fmPtr->prefixObj;
-    fm2Ptr->fullyQualified = fmPtr->fullyQualified;
     Tcl_IncrRefCount(fm2Ptr->prefixObj);
     *newClientData = fm2Ptr;
     return TCL_OK;

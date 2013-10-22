@@ -609,6 +609,30 @@ test coroutine-7.3 {yielding between coroutines} -body {
 } -cleanup {
     catch {rename juggler ""}
 } -result {{{a b c d e} ::j1 {a b c d} ::j2 {a b c} ::j3 {a b} ::j1 a ::j2} {} {} {}}
+
+test coroutine-7.4 {Bug 8ff0cb9fe1} -setup {
+    proc foo {a b} {catch yield; return 1}
+} -cleanup {
+    rename foo {}
+} -body {
+    coroutine demo lsort -command foo {a b}
+} -result {b a}
+
+test coroutine-7.5 {return codes} {
+    set result {}
+    foreach code {0 1 2 3 4 5} {
+	lappend result [catch {coroutine demo return -level 0 -code $code}]
+    }
+    set result
+} {0 1 2 3 4 5}
+
+test coroutine-7.6 {Early yield crashes} {
+    proc foo args {}
+    trace add execution foo enter {catch yield}
+    coroutine demo foo
+    rename foo {}
+} {}
+
 
 # cleanup
 unset lambda
