@@ -1876,6 +1876,29 @@ test dict-23.4 {CompileWord OBOE} {
 	} [return [incr n -[linenumber]]] val
     }} [linenumber]
 } 1
+test dict-23.5 {CompileWord OBOE} {
+    # segfault when buggy
+    apply {{} {tcl::dict::incr foo \
+	[format bar]}}
+} {bar 1}
+test dict-23.6 {CompileWord OBOE} {
+    apply {n {
+	dict get {a b} {*}{
+	} [return [incr n -[linenumber]]]
+    }} [linenumber]
+} 1
+test dict-23.7 {CompileWord OBOE} {
+    apply {n {
+	dict for {a b} [return [incr n -[linenumber]]] {*}{
+	} {}
+    }} [linenumber]
+} 2
+test dict-23.8 {CompileWord OBOE} {
+    apply {n {
+	dict update foo {*}{
+	} [return [incr n -[linenumber]]] x {}
+    }} [linenumber]
+} 1
 
 rename linenumber {}
 test dict-24.22 {dict map results (non-compiled)} {

@@ -976,7 +976,7 @@ TclCompileDictIncrCmd(
      * Emit the key and the code to actually do the increment.
      */
 
-    CompileWord(envPtr, keyTokenPtr, interp, 3);
+    CompileWord(envPtr, keyTokenPtr, interp, 2);
     TclEmitInstInt4( INST_DICT_INCR_IMM, incrAmount,	envPtr);
     TclEmitInt4(     dictVarIndex,			envPtr);
     return TCL_OK;
@@ -992,7 +992,7 @@ TclCompileDictGetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int numWords, i;
+    int i;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -1005,17 +1005,16 @@ TclCompileDictGetCmd(
 	return TCL_ERROR;
     }
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    numWords = parsePtr->numWords-1;
 
     /*
      * Only compile this because we need INST_DICT_GET anyway.
      */
 
-    for (i=0 ; i<numWords ; i++) {
+    for (i=1 ; i<parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
-    TclEmitInstInt4(INST_DICT_GET, numWords, envPtr);
+    TclEmitInstInt4(INST_DICT_GET, parsePtr->numWords-1, envPtr);
     return TCL_OK;
 }
 
@@ -1460,7 +1459,7 @@ CompileDictEachCmd(
      * this point.
      */
 
-    CompileWord(envPtr, dictTokenPtr, interp, 3);
+    CompileWord(envPtr, dictTokenPtr, interp, 2);
 
     /*
      * Now we catch errors from here on so that we can finalize the search
@@ -1668,7 +1667,7 @@ TclCompileDictUpdateCmd(
     infoIndex = TclCreateAuxData(duiPtr, &tclDictUpdateInfoType, envPtr);
 
     for (i=0 ; i<numVars ; i++) {
-	CompileWord(envPtr, keyTokenPtrs[i], interp, i);
+	CompileWord(envPtr, keyTokenPtrs[i], interp, 2*i+2);
     }
     TclEmitInstInt4(	INST_LIST, numVars,			envPtr);
     TclEmitInstInt4(	INST_DICT_UPDATE_START, dictIndex,	envPtr);
