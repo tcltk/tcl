@@ -269,7 +269,7 @@ TclCompileArraySetCmd(
     if (isDataValid && !isDataEven) {
 	PushStringLiteral(envPtr, "list must have an even number of elements");
 	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
-	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
+	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	goto done;
     }
@@ -362,7 +362,7 @@ TclCompileArraySetCmd(
 	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
 	PushStringLiteral(envPtr, "list must have an even number of elements");
 	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
-	TclEmitInstInt4(INST_RETURN_IMM, 1,			envPtr);
+	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	TclAdjustStackDepth(-1, envPtr);
 	fwd = CurrentOffset(envPtr) - offsetFwd;
@@ -644,7 +644,7 @@ TclCompileCatchCmd(
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_EVAL_STK,			envPtr);
+	TclEmitInvoke(envPtr,	INST_EVAL_STK);
     }
     /* Stack at this point:
      *    nonsimple:  script <mark> result
@@ -1709,7 +1709,7 @@ TclCompileDictUpdateCmd(
 
     TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
-    TclEmitOpcode(	INST_RETURN_STK,			envPtr);
+    TclEmitInvoke(envPtr,INST_RETURN_STK);
 
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
@@ -2067,7 +2067,7 @@ TclCompileDictWithCmd(
     } else {
 	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
     }
-    TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+    TclEmitInvoke(envPtr,	INST_RETURN_STK);
 
     /*
      * Prepare for the start of the next command.
@@ -2169,19 +2169,48 @@ TclCompileErrorCmd(
 {
     /*
      * General syntax: [error message ?errorInfo? ?errorCode?]
-     * However, we only deal with the case where there is just a message.
      */
-    Tcl_Token *messageTokenPtr;
+
+    Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
 
-    if (parsePtr->numWords != 2) {
+    if (parsePtr->numWords < 2 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
     }
-    messageTokenPtr = TokenAfter(parsePtr->tokenPtr);
 
-    PushStringLiteral(envPtr, "-code error -level 0");
-    CompileWord(envPtr, messageTokenPtr, interp, 1);
-    TclEmitOpcode(INST_RETURN_STK, envPtr);
+    /*
+     * Handle the message.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr, interp, 1);
+
+    /*
+     * Construct the options. Note that -code and -level are not here.
+     */
+
+    if (parsePtr->numWords == 2) {
+	PushStringLiteral(envPtr, "");
+    } else {
+	PushStringLiteral(envPtr, "-errorinfo");
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 2);
+	if (parsePtr->numWords == 3) {
+	    TclEmitInstInt4(	INST_LIST, 2,			envPtr);
+	} else {
+	    PushStringLiteral(envPtr, "-errorcode");
+	    tokenPtr = TokenAfter(tokenPtr);
+	    CompileWord(envPtr, tokenPtr, interp, 3);
+	    TclEmitInstInt4(	INST_LIST, 4,			envPtr);
+	}
+    }
+
+    /*
+     * Issue the error via 'returnImm error 0'.
+     */
+
+    TclEmitInstInt4(		INST_RETURN_IMM, TCL_ERROR,	envPtr);
+    TclEmitInt4(			0,			envPtr);
     return TCL_OK;
 }
 

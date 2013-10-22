@@ -1023,6 +1023,7 @@ MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
 MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
+MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
