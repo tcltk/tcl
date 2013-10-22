@@ -1899,6 +1899,42 @@ test dict-23.8 {CompileWord OBOE} {
 	} [return [incr n -[linenumber]]] x {}
     }} [linenumber]
 } 1
+test dict-23.9 {CompileWord OBOE} {
+    apply {n {
+	dict exists {} {*}{
+	} [return [incr n -[linenumber]]]
+    }} [linenumber]
+} 1
+test dict-23.10 {CompileWord OBOE} {
+    apply {n {
+	dict with foo {*}{
+	} [return [incr n -[linenumber]]] {}
+    }} [linenumber]
+} 1
+test dict-23.11 {CompileWord OBOE} {
+    apply {n {
+	dict with ::foo {*}{
+	} [return [incr n -[linenumber]]] {}
+    }} [linenumber]
+} 1
+test dict-23.12 {CompileWord OBOE} {
+    apply {n {
+	dict with {*}{
+	} [return [incr n -[linenumber]]] {}
+    }} [linenumber]
+} 1
+test dict-23.13 {CompileWord OBOE} {
+    apply {n {
+	dict with {*}{
+	} [return [incr n -[linenumber]]] {bar}
+    }} [linenumber]
+} 1
+test dict-23.14 {CompileWord OBOE} {
+    apply {n {
+	dict with foo {*}{
+	} [return [incr n -[linenumber]]] {bar}
+    }} [linenumber]
+} 1
 
 rename linenumber {}
 test dict-24.22 {dict map results (non-compiled)} {

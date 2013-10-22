@@ -85,14 +85,17 @@ TclCompileGlobalCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i=2; i<=numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
+    for (i=1; i<numWords; varTokenPtr = TokenAfter(varTokenPtr),i++) {
 	localIndex = IndexTailVarIfKnown(interp, varTokenPtr, envPtr);
 
 	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 
-	CompileWord(envPtr, varTokenPtr, interp, 1);
+	/* TODO: Consider what value can pass throug the 
+	 * IndexTailVarIfKnown() screen.  Full CompileWord()
+	 * likely does not apply here.  Push known value instead. */
+	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
     }
 
@@ -584,6 +587,7 @@ TclCompileInfoCommandsCmd(
      * that the result needs to be list-ified.
      */
 
+    /* TODO: Just push the known value */
     CompileWord(envPtr, tokenPtr,		interp, 1);
     TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
     TclEmitOpcode(	INST_DUP,		envPtr);
@@ -1903,13 +1907,13 @@ TclCompileNamespaceUpvarCmd(
      */
 
     localTokenPtr = tokenPtr;
-    for (i=3; i<=numWords; i+=2) {
+    for (i=2; i<numWords; i+=2) {
 	otherTokenPtr = TokenAfter(localTokenPtr);
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
-	CompileWord(envPtr, otherTokenPtr, interp, 1);
+	CompileWord(envPtr, otherTokenPtr, interp, i);
 	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, 1);
+		&localIndex, &isScalar, i+1);
 
 	if ((localIndex < 0) || !isScalar) {
 	    return TCL_ERROR;
@@ -2710,6 +2714,9 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
+	/* TODO: Consider what value can pass throug the 
+	 * IndexTailVarIfKnown() screen.  Full CompileWord()
+	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);
 	TclEmitInstInt4(	INST_VARIABLE, localIndex,	envPtr);
 
