@@ -5272,13 +5272,13 @@ TEBCresume(
 	    trim2 = 0;
 	}
 	if (trim1 == 0 && trim2 == 0) {
-	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
-		    valuePtr);
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
+		    O2S(valuePtr), O2S(value2Ptr)), valuePtr);
 	    NEXT_INST_F(1, 1, 0);
 	} else {
 	    objResultPtr = Tcl_NewStringObj(string1+trim1, length-trim1-trim2);
-	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
-		    objResultPtr);
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
+		    O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
 	    NEXT_INST_F(1, 2, 1);
 	}
     case INST_STRTRIM_LEFT:
@@ -5288,13 +5288,13 @@ TEBCresume(
 	string1 = TclGetStringFromObj(valuePtr, &length);
 	trim1 = TclTrimLeft(string1, length, string2, length2);
 	if (trim1 == 0) {
-	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
-		    valuePtr);
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
+		    O2S(valuePtr), O2S(value2Ptr)), valuePtr);
 	    NEXT_INST_F(1, 1, 0);
 	} else {
 	    objResultPtr = Tcl_NewStringObj(string1+trim1, length-trim1);
-	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ", valuePtr, value2Ptr),
-		    objResultPtr);
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
+		    O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
 	    NEXT_INST_F(1, 2, 1);
 	}
     case INST_STRTRIM_RIGHT:
@@ -5304,9 +5304,13 @@ TEBCresume(
 	string1 = TclGetStringFromObj(valuePtr, &length);
 	trim2 = TclTrimRight(string1, length, string2, length2);
 	if (trim2 == 0) {
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
+		    O2S(valuePtr), O2S(value2Ptr)), valuePtr);
 	    NEXT_INST_F(1, 1, 0);
 	} else {
 	    objResultPtr = Tcl_NewStringObj(string1, length-trim2);
+	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
+		    O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
 	    NEXT_INST_F(1, 2, 1);
 	}
     }
