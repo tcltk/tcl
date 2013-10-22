@@ -2126,6 +2126,7 @@ TclCompileScript(
 	envPtr->cmdMapPtr[lastCmdIdx].numCodeBytes--;
 	envPtr->codeNext--;
 #ifdef TCL_COMPILE_DEBUG
+	envPtr->cmdMapPtr[lastCmdIdx].numCodeBytes -= 5;
 	envPtr->codeNext -= 5;
 #endif
 	envPtr->currStackDepth++;
