@@ -4408,8 +4408,26 @@ TestseterrorcodeCmd(
 	Tcl_SetResult(interp, "too many args", TCL_STATIC);
 	return TCL_ERROR;
     }
-    Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4],
-	    argv[5], NULL);
+    switch (argc) {
+    case 1:
+	Tcl_SetErrorCode(interp, "NONE", NULL);
+	break;
+    case 2:
+	Tcl_SetErrorCode(interp, argv[1], NULL);
+	break;
+    case 3:
+	Tcl_SetErrorCode(interp, argv[1], argv[2], NULL);
+	break;
+    case 4:
+	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], NULL);
+	break;
+    case 5:
+	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4], NULL);
+	break;
+    case 6:
+	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4],
+		argv[5], NULL);
+    }
     return TCL_ERROR;
 }
 

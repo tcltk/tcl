@@ -1604,7 +1604,7 @@ test dict-23.1 {dict compilation crash: Bug 3487626} {
 	}
     }} [linenumber]}}
 } 5
-test dict-23.2 {dict compilation crash: Bug 3487626} knownBug {
+test dict-23.2 {dict compilation crash: Bug 3487626} {
     # Something isn't quite right in line number and continuation line
     # tracking; at time of writing, this test produces 7, not 5, which
     # indicates that the extra newlines in the non-script argument are
@@ -1838,7 +1838,7 @@ test dict-24.20.1 {dict compilation crash: 'dict for' bug 3487626} {
 	}
     }} [linenumber]}}
 } 5
-test dict-24.21 {dict compilation crash: 'dict for' bug 3487626} knownBug {
+test dict-24.21 {dict compilation crash: 'dict for' bug 3487626} {
     apply {{} {apply {n {
 	set e {}
 	set k {}
