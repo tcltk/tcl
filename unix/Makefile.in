@@ -335,7 +335,10 @@ TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_mp_unsigned_bin_size.o bn_mp_xor.o bn_mp_zero.o bn_s_mp_add.o \
         bn_s_mp_mul_digs.o bn_s_mp_sqr.o bn_s_mp_sub.o
 
-STUB_LIB_OBJS = tclStubLib.o tclTomMathStubLib.o tclOOStubLib.o ${COMPAT_OBJS}
+STUB_LIB_OBJS = tclStubLib.o \
+	tclTomMathStubLib.o \
+	tclOOStubLib.o \
+	${COMPAT_OBJS}
 
 UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 	tclUnixFile.o tclUnixPipe.o tclUnixSock.o \
@@ -345,6 +348,8 @@ UNIX_OBJS = tclUnixChan.o tclUnixEvent.o tclUnixFCmd.o \
 NOTIFY_OBJS = tclUnixNotfy.o
 
 MAC_OSX_OBJS = tclMacOSXBundle.o tclMacOSXFCmd.o tclMacOSXNotify.o
+
+CYGWIN_OBJS = tclWinError.o
 
 DTRACE_OBJ = tclDTrace.o
 
@@ -574,6 +579,9 @@ MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXBundle.c \
 	$(MAC_OSX_DIR)/tclMacOSXFCmd.c \
 	$(MAC_OSX_DIR)/tclMacOSXNotify.c
+
+CYGWIN_SRCS = \
+	$(TOP_DIR)/win/tclWinError.c
 
 DTRACE_HDR = tclDTrace.h
 

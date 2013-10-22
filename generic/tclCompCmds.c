@@ -87,6 +87,7 @@ TclCompileAppendCmd(
     int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
+    /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
     if (numWords == 1) {
 	return TCL_ERROR;
@@ -568,7 +569,6 @@ TclCompileCatchCmd(
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     int resultIndex, optsIndex, range;
-    int initStackDepth = envPtr->currStackDepth;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -770,15 +770,6 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
-    /* 
-     * Result of all this, on either branch, should have been to leave one
-     * operand -- the return code -- on the stack.
-     */
-
-    if (envPtr->currStackDepth != initStackDepth + 1) {
-	Tcl_Panic("in TclCompileCatchCmd, currStackDepth = %d should be %d",
-		  envPtr->currStackDepth, initStackDepth+1);
-    }
     return TCL_OK;
 }
 
@@ -1010,6 +1001,7 @@ TclCompileDictGetCmd(
      * case is legal, but too special and magic for us to deal with here).
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
@@ -1046,6 +1038,7 @@ TclCompileDictExistsCmd(
      * case is legal, but too special and magic for us to deal with here).
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
@@ -1082,6 +1075,7 @@ TclCompileDictUnsetCmd(
      * compile to bytecode.
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }
@@ -1226,6 +1220,7 @@ TclCompileDictMergeCmd(
      * argument, the only thing to do is to verify the dict-ness.
      */
 
+    /* TODO: Consider support for compiling expanded args. (less likely) */
     if (parsePtr->numWords < 2) {
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
@@ -1756,6 +1751,7 @@ TclCompileDictAppendCmd(
      * speed quite so much. ;-)
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords<4 || parsePtr->numWords>100) {
 	return TCL_ERROR;
     }
@@ -1808,6 +1804,8 @@ TclCompileDictLappendCmd(
      * There must be three arguments after the command.
      */
 
+    /* TODO: Consider support for compiling expanded args. */
+    /* Probably not.  Why is INST_DICT_LAPPEND limited to one value? */
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
@@ -1854,6 +1852,7 @@ TclCompileDictWithCmd(
      * There must be at least one argument after the command.
      */
 
+    /* TODO: Consider support for compiling expanded args. */
     if (parsePtr->numWords < 3) {
 	return TCL_ERROR;
     }

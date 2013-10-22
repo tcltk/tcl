@@ -3204,7 +3204,6 @@ CompileBasicNArgCommand(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-#if 1
     Tcl_Obj *objPtr = Tcl_NewObj();
 
     Tcl_IncrRefCount(objPtr);
@@ -3212,51 +3211,6 @@ CompileBasicNArgCommand(
     TclCompileInvocation(interp, parsePtr->tokenPtr, objPtr,
 	    parsePtr->numWords, envPtr);
     Tcl_DecrRefCount(objPtr);
-#else
-    Tcl_Token *tokenPtr;
-    Tcl_Obj *objPtr;
-    char *bytes;
-    int length, i, literal;
-    DefineLineInformation;
-
-    /*
-     * Push the name of the command we're actually dispatching to as part of
-     * the implementation.
-     */
-
-    objPtr = Tcl_NewObj();
-    Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
-    literal = TclRegisterNewCmdLiteral(envPtr, bytes, length);
-    TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, literal), cmdPtr);
-    TclEmitPush(literal, envPtr);
-    TclDecrRefCount(objPtr);
-
-    /*
-     * Push the words of the command.
-     */
-
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i=1 ; i<parsePtr->numWords ; i++) {
-	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
-	} else {
-	    SetLineInformation(i);
-	    CompileTokens(envPtr, tokenPtr, interp);
-	}
-	tokenPtr = TokenAfter(tokenPtr);
-    }
-
-    /*
-     * Do the standard dispatch.
-     */
-
-    if (i <= 255) {
-	TclEmitInstInt1(INST_INVOKE_STK1, i, envPtr);
-    } else {
-	TclEmitInstInt4(INST_INVOKE_STK4, i, envPtr);
-    }
-#endif
     return TCL_OK;
 }
 
