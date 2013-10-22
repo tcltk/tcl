@@ -1865,6 +1865,18 @@ j
 	}
     }} [linenumber]}}
 } 5
+test dict-23.3 {CompileWord OBOE} {
+    # segfault when buggy
+    apply {{} {tcl::dict::lappend foo bar \
+	[format baz]}}
+} {bar baz}
+test dict-23.4 {CompileWord OBOE} {
+    apply {n {
+	dict set foo {*}{
+	} [return [incr n -[linenumber]]] val
+    }} [linenumber]
+} 1
+
 rename linenumber {}
 test dict-24.22 {dict map results (non-compiled)} {
     dict map {k v} [dict map {k v} {a 1 b 2 c 3 d 4} { list $v $k }] {

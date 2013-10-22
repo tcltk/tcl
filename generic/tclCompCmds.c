@@ -867,7 +867,7 @@ TclCompileDictSetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    int numWords, i, dictVarIndex;
+    int i, dictVarIndex;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
 
@@ -896,8 +896,7 @@ TclCompileDictSetCmd(
      */
 
     tokenPtr = TokenAfter(varTokenPtr);
-    numWords = parsePtr->numWords-1;
-    for (i=1 ; i<numWords ; i++) {
+    for (i=2 ; i< parsePtr->numWords ; i++) {
 	CompileWord(envPtr, tokenPtr, interp, i);
 	tokenPtr = TokenAfter(tokenPtr);
     }
@@ -906,7 +905,7 @@ TclCompileDictSetCmd(
      * Now emit the instruction to do the dict manipulation.
      */
 
-    TclEmitInstInt4( INST_DICT_SET, numWords-1,		envPtr);
+    TclEmitInstInt4( INST_DICT_SET, parsePtr->numWords-2,	envPtr);
     TclEmitInt4(     dictVarIndex,			envPtr);
     return TCL_OK;
 }
@@ -1826,8 +1825,8 @@ TclCompileDictLappendCmd(
      * Issue the implementation.
      */
 
-    CompileWord(envPtr, keyTokenPtr, interp, 3);
-    CompileWord(envPtr, valueTokenPtr, interp, 4);
+    CompileWord(envPtr, keyTokenPtr, interp, 2);
+    CompileWord(envPtr, valueTokenPtr, interp, 3);
     TclEmitInstInt4(	INST_DICT_LAPPEND, dictVarIndex,	envPtr);
     return TCL_OK;
 }
