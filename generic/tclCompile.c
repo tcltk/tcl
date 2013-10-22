@@ -2124,8 +2124,10 @@ TclCompileScript(
 	 * the script.  The code here removes that trailing INST_POP.
 	 */
 	envPtr->cmdMapPtr[lastCmdIdx].numCodeBytes--;
-//	envPtr->codeNext--;
-	envPtr->codeNext -= 6;
+	envPtr->codeNext--;
+#ifdef TCL_COMPILE_DEBUG
+	envPtr->codeNext -= 5;
+#endif
 	envPtr->currStackDepth++;
     }
 }
