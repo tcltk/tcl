@@ -398,11 +398,14 @@ ValidateFormat(
 	     */
 	case 'd':
 	case 'e':
+	case 'E':
 	case 'f':
 	case 'g':
+	case 'G':
 	case 'i':
 	case 'o':
 	case 'x':
+	case 'X':
 	    break;
 	case 'u':
 	    if (flags & SCAN_BIG) {
@@ -727,6 +730,7 @@ Tcl_ScanObjCmd(
 	    parseFlag |= TCL_PARSE_OCTAL_ONLY | TCL_PARSE_SCAN_PREFIXES;
 	    break;
 	case 'x':
+	case 'X':
 	    op = 'i';
 	    parseFlag |= TCL_PARSE_HEXADECIMAL_ONLY;
 	    break;
@@ -738,7 +742,9 @@ Tcl_ScanObjCmd(
 
 	case 'f':
 	case 'e':
+	case 'E':
 	case 'g':
+	case 'G':
 	    op = 'f';
 	    break;
 
