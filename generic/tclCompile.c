@@ -4034,7 +4034,6 @@ TclEmitInvoke(
 	int savedStackDepth = envPtr->currStackDepth;
 	int savedExpandCount = envPtr->expandCount;
 	JumpFixup nonTrapFixup;
-	ExceptionAux *exceptAux = envPtr->exceptAuxArrayPtr + loopRange;
 
 	if (auxBreakPtr != NULL) {
 	    auxBreakPtr = envPtr->exceptAuxArrayPtr + breakRange;
