@@ -1246,7 +1246,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  */
 
 
-#if defined(TCL_COMPILE_DEBUG) 
+#if defined(TCL_COMPILE_DEBUG) && !defined(TCL_ASSEMBLE)
 #define TclEmitInt1(i, envPtr) \
     do {								\
 	if ((envPtr)->codeNext == (envPtr)->codeEnd) {			\
@@ -1271,7 +1271,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
     } while (0)
 #endif
 
-#if defined(TCL_COMPILE_DEBUG) 
+#if defined(TCL_COMPILE_DEBUG) && !defined(TCL_ASSEMBLE)
 #define TclEmitInt4(i, envPtr) \
     do {								\
 	if (((envPtr)->codeNext + 4) > (envPtr)->codeEnd) {		\

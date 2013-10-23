@@ -28,6 +28,8 @@
  *-   returnCodeBranch
  */
 
+#define TCL_ASSEMBLE
+
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
