@@ -1616,6 +1616,7 @@ TclCompileLreplaceCmd(
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
 	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
+	TclAdjustStackDepth(-1, envPtr);
     }
     TclEmitOpcode(		INST_DUP,			envPtr);
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, 0,		envPtr);
@@ -1665,6 +1666,7 @@ TclCompileLreplaceCmd(
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
 	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
+	TclAdjustStackDepth(-1, envPtr);
     }
     TclEmitOpcode(		INST_DUP,			envPtr);
     TclEmitInstInt4(		INST_LIST_RANGE_IMM, 0,		envPtr);
