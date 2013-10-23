@@ -2741,7 +2741,8 @@ TEBCresume(
 	int estimate = TclGetUInt4AtPtr(pc+1);
 
 	if (CURR_DEPTH != estimate + (auxObjList ? auxObjList->length : 0)) {
-	    Tcl_Panic("Bad stack estimate = %d; truth = %ld", estimate,
+	    Tcl_Panic("(%d) Bad stack estimate = %d; truth = %ld", 
+		    (int)(pc - TD->pc), estimate,
 		    CURR_DEPTH - (auxObjList ? auxObjList->length : 0));
 	}
 #endif
