@@ -2183,6 +2183,140 @@ TclCompileErrorCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileEvalCmd --
+ *
+ *	Procedure called to compile the "eval" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "eval" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define CONCAT_WS " \f\v\r\t\n" /* Synch with tclUtil.c */
+
+int
+TclCompileEvalCmd(
+    Tcl_Interp *interp,		/* Used for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+    int i, toConcat = 0;
+
+    /*
+     * Error case: no arguments at all.
+     */
+
+    if (parsePtr->numWords < 2) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Special case: one word.
+     */
+
+    if (parsePtr->numWords == 2) {
+	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+	/*
+	 * Full compile-time constant.
+	 */
+
+	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    BODY(tokenPtr, 1);
+	    return TCL_OK;
+	}
+
+	/*
+	 * Must push and eval. The eval-issue is shared between this code path
+	 * and the concatenating one.
+	 */
+
+	CompileWord(envPtr, tokenPtr, interp, 1);
+    } else {
+	/*
+	 * General case: concatenate arguments before evaluating. Note that we
+	 * must trim the strings before concatenating.
+	 */
+
+	for (i=1,tokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+	    int doTrim = 1;
+	    Tcl_Obj *objPtr;
+
+	    tokenPtr = TokenAfter(tokenPtr);
+	    objPtr = Tcl_NewObj();
+	    if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
+		int len, trim;
+		char *str = Tcl_GetStringFromObj(objPtr, &len);
+
+		trim = TclTrimLeft(str, len, CONCAT_WS, strlen(CONCAT_WS));
+		str += trim;
+		len -= trim;
+		trim = TclTrimRight(str, len, CONCAT_WS, strlen(CONCAT_WS));
+		trim -= trim && (str[len - trim - 1] == '\\');
+		len -= trim;
+
+		PushLiteral(envPtr, str, len);
+		doTrim = 0;
+	    } else {
+		CompileWord(envPtr, tokenPtr, interp, i);
+	    }
+	    Tcl_DecrRefCount(objPtr);
+
+	    if (i == 1) {
+		if (doTrim) {
+		    PushStringLiteral(envPtr, CONCAT_WS);
+		    TclEmitOpcode(INST_STRTRIM_RIGHT,		envPtr);
+		}
+		PushStringLiteral(envPtr, " ");
+		toConcat = 2;
+	    } else if (i == parsePtr->numWords-1) {
+		if (doTrim) {
+		    PushStringLiteral(envPtr, CONCAT_WS);
+		    TclEmitOpcode(INST_STRTRIM_LEFT,		envPtr);
+		}
+		toConcat++;
+	    } else {
+		if (doTrim) {
+		    PushStringLiteral(envPtr, CONCAT_WS);
+		    TclEmitOpcode(INST_STRTRIM,			envPtr);
+		}
+		PushStringLiteral(envPtr, " ");
+		toConcat += 2;
+	    }
+	    if (toConcat >= 255) {
+		TclEmitInstInt1(INST_CONCAT1, 255,		envPtr);
+		toConcat -= 254;
+	    }
+	}
+	if (toConcat > 1) {
+	    TclEmitInstInt1(	INST_CONCAT1, toConcat,		envPtr);
+	}
+
+	return TCL_ERROR;
+    }
+
+    TclEmitOpcode(		INST_DUP,			envPtr);
+    TclEmitOpcode(		INST_EVAL_STK,			envPtr);
+    TclEmitInstInt4(		INST_REVERSE, 2,		envPtr);
+    TclEmitOpcode(		INST_POP,			envPtr);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileExprCmd --
  *
  *	Procedure called to compile the "expr" command.
