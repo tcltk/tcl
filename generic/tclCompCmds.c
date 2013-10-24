@@ -55,6 +55,13 @@ const AuxDataType tclDictUpdateInfoType = {
     FreeDictUpdateInfo,		/* freeProc */
     PrintDictUpdateInfo		/* printProc */
 };
+
+/*
+ * The definition of what whitespace is stripped when [concat]enating. Must be
+ * kept in synch with tclUtil.c
+ */
+
+#define CONCAT_WS	" \f\v\r\t\n"
 
 /*
  *----------------------------------------------------------------------
@@ -743,6 +750,85 @@ TclCompileCatchCmd(
     }
 
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclCompileConcatCmd --
+ *
+ *	Procedure called to compile the "concat" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "concat" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileConcatCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Obj *objPtr, *listObj;
+    Tcl_Token *tokenPtr;
+    int i;
+
+    if (parsePtr->numWords == 1) {
+	/*
+	 * [concat] without arguments just pushes an empty object.
+	 */
+
+	PushStringLiteral(envPtr, "");
+	return TCL_OK;
+    }
+
+    /*
+     * Test if all arguments are compile-time known. If they are, we can
+     * implement with a simple push.
+     */
+
+    listObj = Tcl_NewObj();
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	objPtr = Tcl_NewObj();
+	if (!TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
+	    Tcl_DecrRefCount(objPtr);
+	    Tcl_DecrRefCount(listObj);
+	    listObj = NULL;
+	    break;
+	}
+	(void) Tcl_ListObjAppendElement(NULL, listObj, objPtr);
+    }
+    if (listObj != NULL) {
+	Tcl_Obj **objs;
+	const char *bytes;
+	int len;
+
+	Tcl_ListObjGetElements(NULL, listObj, &len, &objs);
+	objPtr = Tcl_ConcatObj(len, objs);
+	Tcl_DecrRefCount(listObj);
+	bytes = Tcl_GetStringFromObj(objPtr, &len);
+	PushLiteral(envPtr, bytes, len);
+	Tcl_DecrRefCount(objPtr);
+	return TCL_OK;
+    }
+
+    /*
+     * General case: runtime concat.
+     */
+
+    // TODO
+    return TCL_ERROR;
 }
 
 /*
