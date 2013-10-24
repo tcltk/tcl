@@ -211,7 +211,7 @@ static const CmdInfo builtInCmds[] = {
     {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
 #endif
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
-    {"concat",		Tcl_ConcatObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"concat",		Tcl_ConcatObjCmd,	TclCompileConcatCmd,	NULL,	CMD_IS_SAFE},
     {"continue",	Tcl_ContinueObjCmd,	TclCompileContinueCmd,	NULL,	CMD_IS_SAFE},
     {"coroutine",	NULL,			NULL,			TclNRCoroutineObjCmd,	CMD_IS_SAFE},
     {"error",		Tcl_ErrorObjCmd,	TclCompileErrorCmd,	NULL,	CMD_IS_SAFE},
