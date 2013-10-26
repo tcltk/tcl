@@ -350,6 +350,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"bitor",		ASSEM_1BYTE,	INST_BITOR,		2,	1},
     {"bitxor",		ASSEM_1BYTE,	INST_BITXOR,		2,	1},
     {"concat",		ASSEM_CONCAT1,	INST_STR_CONCAT1,	INT_MIN,1},
+    {"concatStk",	ASSEM_LIST,	INST_CONCAT_STK,	INT_MIN,1},
     {"coroName",	ASSEM_1BYTE,	INST_COROUTINE_NAME,	0,	1},
     {"currentNamespace",ASSEM_1BYTE,	INST_NS_CURRENT,	0,	1},
     {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,	1},
@@ -497,6 +498,7 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_PUSH1, INST_PUSH4, INST_POP, INST_DUP,			/* 1-4 */
     INST_JUMP1, INST_JUMP4,					/* 34-35 */
     INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 70-72 */
+    INST_LIST,							/* 79 */
     INST_OVER,							/* 95 */
     INST_PUSH_RETURN_OPTIONS,					/* 108 */
     INST_REVERSE,						/* 126 */
@@ -507,7 +509,8 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_NS_CURRENT,						/* 151 */
     INST_INFO_LEVEL_NUM,					/* 152 */
     INST_RESOLVE_COMMAND,					/* 154 */
-    INST_STRTRIM, INST_STRTRIM_LEFT, INST_STRTRIM_RIGHT		/* 166-168 */
+    INST_STRTRIM, INST_STRTRIM_LEFT, INST_STRTRIM_RIGHT,	/* 166-168 */
+    INST_CONCAT_STK						/* 169 */
 };
 
 /*

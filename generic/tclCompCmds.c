@@ -779,10 +779,12 @@ TclCompileConcatCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *objPtr, *listObj;
     Tcl_Token *tokenPtr;
     int i;
 
+    /* TODO: Consider compiling expansion case. */
     if (parsePtr->numWords == 1) {
 	/*
 	 * [concat] without arguments just pushes an empty object.
@@ -827,8 +829,14 @@ TclCompileConcatCmd(
      * General case: runtime concat.
      */
 
-    // TODO
-    return TCL_ERROR;
+    for (i = 1, tokenPtr = parsePtr->tokenPtr; i < parsePtr->numWords; i++) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, i);
+    }
+
+    TclEmitInstInt4(	INST_CONCAT_STK, i-1,		envPtr);
+
+    return TCL_OK;
 }
 
 /*
