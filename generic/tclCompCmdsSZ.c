@@ -836,7 +836,7 @@ TclSubstCompile(
     /*
      * Tricky point! If the first token does not result in a *guaranteed* push
      * of a Tcl_Obj on the stack, we must push an empty object. Otherwise it
-     * is possible to get to an INST_CONCAT1 or INST_DONE without enough
+     * is possible to get to an INST_STR_CONCAT1 or INST_DONE without enough
      * values on the stack, resulting in a crash. Thanks to Joe Mistachkin for
      * identifying a script that could trigger this case.
      */
@@ -901,11 +901,11 @@ TclSubstCompile(
 	}
 
 	while (count > 255) {
-	    OP1(		CONCAT1, 255);
+	    OP1(		STR_CONCAT1, 255);
 	    count -= 254;
 	}
 	if (count > 1) {
-	    OP1(		CONCAT1, count);
+	    OP1(		STR_CONCAT1, count);
 	    count = 1;
 	}
 
@@ -1025,7 +1025,7 @@ TclSubstCompile(
 		    (int) (CurrentOffset(envPtr) - okFixup.codeOffset));
 	}
 	if (count > 1) {
-	    OP1(CONCAT1, count);
+	    OP1(STR_CONCAT1, count);
 	    count = 1;
 	}
 
@@ -1038,11 +1038,11 @@ TclSubstCompile(
     }
 
     while (count > 255) {
-	OP1(	CONCAT1, 255);
+	OP1(	STR_CONCAT1, 255);
 	count -= 254;
     }
     if (count > 1) {
-	OP1(	CONCAT1, count);
+	OP1(	STR_CONCAT1, count);
     }
 
     Tcl_FreeParse(&parse);

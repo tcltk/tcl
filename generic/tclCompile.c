@@ -63,7 +63,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Pop the topmost stack object */
     {"dup",		  1,   +1,         0,	{OPERAND_NONE}},
 	/* Duplicate the topmost stack object and push the result */
-    {"concat1",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},
+    {"strcat",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},
 	/* Concatenate the top op1 items and push result */
     {"invokeStk1",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
 	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
@@ -560,6 +560,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * value at the top of the stack) from the right of the string and
 	 * pushes the resulting string.
 	 * Stack: ... string charset => ... trimmedString */
+
+    {"concatStk",	 5,	INT_MIN,  1,	{OPERAND_UINT4}},
+	/* Wrapper round Tcl_ConcatObj(), used for [concat] and [eval]. opnd
+	 * is number of values to concatenate.
+	 * Operation:	push concat(stk1 stk2 ... stktop) */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -2400,11 +2405,11 @@ TclCompileTokens(
      */
 
     while (numObjsToConcat > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
 	numObjsToConcat -= 254;	/* concat pushes 1 obj, the result */
     }
     if (numObjsToConcat > 1) {
-	TclEmitInstInt1(INST_CONCAT1, numObjsToConcat, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, numObjsToConcat, envPtr);
     }
 
     /*
@@ -2535,11 +2540,11 @@ TclCompileExprWords(
     }
     concatItems = 2*numWords - 1;
     while (concatItems > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
 	concatItems -= 254;
     }
     if (concatItems > 1) {
-	TclEmitInstInt1(INST_CONCAT1, concatItems, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, concatItems, envPtr);
     }
     TclEmitOpcode(INST_EXPR_STK, envPtr);
 }
@@ -4050,7 +4055,6 @@ TclEmitInvoke(
 	int savedStackDepth = envPtr->currStackDepth;
 	int savedExpandCount = envPtr->expandCount;
 	JumpFixup nonTrapFixup;
-	ExceptionAux *exceptAux = envPtr->exceptAuxArrayPtr + loopRange;
 
 	if (auxBreakPtr != NULL) {
 	    auxBreakPtr = envPtr->exceptAuxArrayPtr + breakRange;

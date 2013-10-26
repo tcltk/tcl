@@ -512,7 +512,7 @@ typedef struct ByteCode {
 #define INST_PUSH4			2
 #define INST_POP			3
 #define INST_DUP			4
-#define INST_CONCAT1			5
+#define INST_STR_CONCAT1		5
 #define INST_INVOKE_STK1		6
 #define INST_INVOKE_STK4		7
 #define INST_EVAL_STK			8
@@ -773,8 +773,10 @@ typedef struct ByteCode {
 #define INST_STRTRIM_LEFT		167
 #define INST_STRTRIM_RIGHT		168
 
+#define INST_CONCAT_STK			169
+
 /* The last opcode */
-#define LAST_INST_OPCODE		168
+#define LAST_INST_OPCODE		169
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
