@@ -63,7 +63,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Pop the topmost stack object */
     {"dup",		  1,   +1,         0,	{OPERAND_NONE}},
 	/* Duplicate the topmost stack object and push the result */
-    {"concat1",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},
+    {"strcat",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},
 	/* Concatenate the top op1 items and push result */
     {"invokeStk1",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
 	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
@@ -2400,11 +2400,11 @@ TclCompileTokens(
      */
 
     while (numObjsToConcat > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
 	numObjsToConcat -= 254;	/* concat pushes 1 obj, the result */
     }
     if (numObjsToConcat > 1) {
-	TclEmitInstInt1(INST_CONCAT1, numObjsToConcat, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, numObjsToConcat, envPtr);
     }
 
     /*
@@ -2535,11 +2535,11 @@ TclCompileExprWords(
     }
     concatItems = 2*numWords - 1;
     while (concatItems > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
 	concatItems -= 254;
     }
     if (concatItems > 1) {
-	TclEmitInstInt1(INST_CONCAT1, concatItems, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, concatItems, envPtr);
     }
     TclEmitOpcode(INST_EXPR_STK, envPtr);
 }
