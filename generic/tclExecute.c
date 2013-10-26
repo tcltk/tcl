@@ -2712,6 +2712,17 @@ TEBCresume(
 	NEXT_INST_V(2, opnd, 1);
     }
 
+    case INST_CONCAT_STK:
+	/*
+	 * Pop the opnd (objc) top stack elements, run through Tcl_ConcatObj,
+	 * and then decrement their ref counts.
+	 */
+
+	opnd = TclGetUInt4AtPtr(pc+1);
+	objResultPtr = Tcl_ConcatObj(opnd, &OBJ_AT_DEPTH(opnd-1));
+	TRACE_WITH_OBJ(("%u => ", opnd), objResultPtr);
+	NEXT_INST_V(5, opnd, 1);
+
     case INST_EXPAND_START:
 	/*
 	 * Push an element to the auxObjList. This records the current
