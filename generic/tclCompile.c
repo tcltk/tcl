@@ -561,6 +561,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * pushes the resulting string.
 	 * Stack: ... string charset => ... trimmedString */
 
+    {"concatStk",	 5,	INT_MIN,  1,	{OPERAND_UINT4}},
+	/* Wrapper round Tcl_ConcatObj(), used for [concat] and [eval]. opnd
+	 * is number of values to concatenate.
+	 * Operation:	push concat(stk1 stk2 ... stktop) */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -4050,7 +4055,6 @@ TclEmitInvoke(
 	int savedStackDepth = envPtr->currStackDepth;
 	int savedExpandCount = envPtr->expandCount;
 	JumpFixup nonTrapFixup;
-	ExceptionAux *exceptAux = envPtr->exceptAuxArrayPtr + loopRange;
 
 	if (auxBreakPtr != NULL) {
 	    auxBreakPtr = envPtr->exceptAuxArrayPtr + breakRange;
