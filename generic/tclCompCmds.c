@@ -2305,7 +2305,7 @@ TclCompileEvalCmd(
 {
     Tcl_Token *tokenPtr;
     DefineLineInformation;	/* TIP #280 */
-    int i, toConcat = 0;
+    int i;
 
     /*
      * Error case: no arguments at all.
@@ -2315,89 +2315,30 @@ TclCompileEvalCmd(
 	return TCL_ERROR;
     }
 
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
     /*
-     * Special case: one word.
+     * Special case: one constant word.
      */
 
-    if (parsePtr->numWords == 2) {
-	tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (parsePtr->numWords == 2 && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	BODY(tokenPtr, 1);
+	return TCL_OK;
+    }
 
-	/*
-	 * Full compile-time constant.
-	 */
+    /*
+     * Must push, concatenate (when more than one word) and eval. Note that
+     * when we evaluate, we must first duplicate to ensure that a reference to
+     * the script is kept for the duration of the evaluation.
+     */
 
-	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    BODY(tokenPtr, 1);
-	    return TCL_OK;
-	}
+    for (i=1 ; i<parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
 
-	/*
-	 * Must push and eval. The eval-issue is shared between this code path
-	 * and the concatenating one.
-	 */
-
-	CompileWord(envPtr, tokenPtr, interp, 1);
-    } else {
-	/*
-	 * General case: concatenate arguments before evaluating. Note that we
-	 * must trim the strings before concatenating.
-	 */
-
-	for (i=1,tokenPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
-	    int doTrim = 1;
-	    Tcl_Obj *objPtr;
-
-	    tokenPtr = TokenAfter(tokenPtr);
-	    objPtr = Tcl_NewObj();
-	    if (TclWordKnownAtCompileTime(tokenPtr, objPtr)) {
-		int len, trim;
-		char *str = Tcl_GetStringFromObj(objPtr, &len);
-
-		trim = TclTrimLeft(str, len, CONCAT_WS, strlen(CONCAT_WS));
-		str += trim;
-		len -= trim;
-		trim = TclTrimRight(str, len, CONCAT_WS, strlen(CONCAT_WS));
-		trim -= trim && (str[len - trim - 1] == '\\');
-		len -= trim;
-
-		PushLiteral(envPtr, str, len);
-		doTrim = 0;
-	    } else {
-		CompileWord(envPtr, tokenPtr, interp, i);
-	    }
-	    Tcl_DecrRefCount(objPtr);
-
-	    if (i == 1) {
-		if (doTrim) {
-		    PushStringLiteral(envPtr, CONCAT_WS);
-		    TclEmitOpcode(INST_STRTRIM_RIGHT,		envPtr);
-		}
-		PushStringLiteral(envPtr, " ");
-		toConcat = 2;
-	    } else if (i == parsePtr->numWords-1) {
-		if (doTrim) {
-		    PushStringLiteral(envPtr, CONCAT_WS);
-		    TclEmitOpcode(INST_STRTRIM_LEFT,		envPtr);
-		}
-		toConcat++;
-	    } else {
-		if (doTrim) {
-		    PushStringLiteral(envPtr, CONCAT_WS);
-		    TclEmitOpcode(INST_STRTRIM,			envPtr);
-		}
-		PushStringLiteral(envPtr, " ");
-		toConcat += 2;
-	    }
-	    if (toConcat >= 255) {
-		TclEmitInstInt1(INST_CONCAT1, 255,		envPtr);
-		toConcat -= 254;
-	    }
-	}
-	if (toConcat > 1) {
-	    TclEmitInstInt1(	INST_CONCAT1, toConcat,		envPtr);
-	}
-
-	return TCL_ERROR;
+    if (i > 2) {
+	TclEmitInstInt4(	INST_CONCAT_STK, i-1,		envPtr);
     }
 
     TclEmitOpcode(		INST_DUP,			envPtr);
