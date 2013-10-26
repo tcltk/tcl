@@ -2563,7 +2563,7 @@ TEBCresume(
 	NEXT_INST_F(5, 0, 0);
     }
 
-    case INST_CONCAT1: {
+    case INST_STR_CONCAT1: {
 	int appendLen = 0;
 	char *bytes, *p;
 	Tcl_Obj **currPtr;
