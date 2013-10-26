@@ -1825,7 +1825,7 @@ TclCompileDictAppendCmd(
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (parsePtr->numWords > 4) {
-	TclEmitInstInt1(INST_CONCAT1, parsePtr->numWords-3, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, parsePtr->numWords-3, envPtr);
     }
 
     /*
@@ -3212,7 +3212,7 @@ TclCompileFormatCmd(
 	 * Do the concatenation, which produces the result.
 	 */
 
-	TclEmitInstInt1(INST_CONCAT1, i, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, i, envPtr);
     } else {
 	/*
 	 * EVIL HACK! Force there to be a string representation in the case
