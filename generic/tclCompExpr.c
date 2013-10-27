@@ -2335,9 +2335,9 @@ CompileExprTree(
 		 */
 		
 		if (numWords < 255) {
-		    TclEmitInstInt1(INST_INVOKE_STK1, numWords, envPtr);
+		    TclEmitInvoke(envPtr, INST_INVOKE_STK1, numWords);
 		} else {
-		    TclEmitInstInt4(INST_INVOKE_STK4, numWords, envPtr);
+		    TclEmitInvoke(envPtr, INST_INVOKE_STK4, numWords);
 		}
 
 		/*

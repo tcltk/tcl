@@ -99,7 +99,7 @@ The input substring must be an octal integer. It is read in and the
 integer value is stored in the variable,
 truncated as required by the size modifier value.
 .TP
-\fBx\fR
+\fBx\fR or \fBX\fR
 .
 The input substring must be a hexadecimal integer.
 It is read in and the integer value is stored in the variable,
@@ -140,7 +140,7 @@ substring may be a white-space character.
 The input substring consists of all the characters up to the next 
 white-space character; the characters are copied to the variable.
 .TP
-\fBe\fR or \fBf\fR or \fBg\fR
+\fBe\fR or \fBf\fR or \fBg\fR or \fBE\fR or \fBG\fR
 .
 The input substring must be a floating-point number consisting 
 of an optional sign, a string of decimal digits possibly

@@ -713,6 +713,70 @@ test compile-19.0 {Bug 3614102: reset stack housekeeping} -body {
     apply {{} {list [if 1]}}
 } -returnCodes error -match glob -result *
 
+test compile-20.1 {ensure there are no infinite loops in optimizing} {
+    tcl::unsupported::disassemble script {
+	while 1 {
+	    return -code continue -level 0
+	}
+    }
+    return
+} {}
+test compile-20.2 {ensure there are no infinite loops in optimizing} {
+    tcl::unsupported::disassemble script {
+	while 1 {
+	    while 1 {
+		return -code break -level 0
+	    }
+	}
+    }
+    return
+} {}
+
+test compile-21.1 {stack balance management} {
+    apply {{} {
+	set result {}
+	while 1 {
+	    lappend result a
+	    lappend result [list b [break]]
+	    lappend result c
+	}
+	return $result
+    }}
+} a
+test compile-21.2 {stack balance management} {
+    apply {{} {
+	set result {}
+	while {[incr i] <= 10} {
+	    lappend result $i
+	    lappend result [list b [continue] c]
+	    lappend result c
+	}
+	return $result
+    }}
+} {1 2 3 4 5 6 7 8 9 10}
+test compile-21.3 {stack balance management} {
+    apply {args {
+	set result {}
+	while 1 {
+	    lappend result a
+	    lappend result [concat {*}$args [break]]
+	    lappend result c
+	}
+	return $result
+    }} P Q R S T
+} a
+test compile-21.4 {stack balance management} {
+    apply {args {
+	set result {}
+	while {[incr i] <= 10} {
+	    lappend result $i
+	    lappend result [concat {*}$args [continue] c]
+	    lappend result c
+	}
+	return $result
+    }} P Q R S T
+} {1 2 3 4 5 6 7 8 9 10}
+
 # TODO sometime - check that bytecode from tbcload is *not* disassembled.
 
 # cleanup
