@@ -841,6 +841,131 @@ TclCompileInfoObjectNamespaceCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileJoinCmd --
+ *
+ *	Procedure called to compile the "join" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "join" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileJoinCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+    int separator, foreach, loopOffset;
+    int valueVar, loopCounter, memberVar, accumulator;
+    ForeachInfo *infoPtr;
+    JumpFixup jumpFalseFixup, separatorFixup;
+
+    /*
+     * Requires a local variable table; we're using foreach instructions
+     * internally.
+     */
+
+    if (envPtr->procPtr == NULL) {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Handles: join someList ?separator?
+     *
+     * The separator, if supplied, must be a compile-time known string.
+     */
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (parsePtr->numWords == 3) {
+	Tcl_Obj *separatorObj = Tcl_NewObj();
+	char *bytes;
+	int length;
+
+	if (!TclWordKnownAtCompileTime(TokenAfter(tokenPtr), separatorObj)) {
+	    Tcl_DecrRefCount(separatorObj);
+	    return TCL_ERROR;
+	}
+	bytes = Tcl_GetStringFromObj(separatorObj, &length);
+	if (length > 0) {
+	    separator = TclRegisterNewLiteral(envPtr, bytes, length);
+	} else {
+	    separator = -1;
+	}
+	Tcl_DecrRefCount(separatorObj);
+    } else if (parsePtr->numWords == 2) {
+	separator = TclRegisterNewLiteral(envPtr, " ", 1);
+    } else {
+	return TCL_ERROR;
+    }
+
+    /*
+     * Create the various variables and the auxiliary data.
+     */
+
+    valueVar = AnonymousLocal(envPtr);
+    loopCounter = AnonymousLocal(envPtr);
+    memberVar = AnonymousLocal(envPtr);
+    accumulator = AnonymousLocal(envPtr);
+
+    infoPtr = ckalloc(sizeof(ForeachInfo) + sizeof(ForeachVarList *));
+    infoPtr->numLists = 1;
+    infoPtr->firstValueTemp = valueVar;
+    infoPtr->loopCtTemp = loopCounter;
+    infoPtr->varLists[0] = ckalloc(sizeof(ForeachVarList) + sizeof(int));
+    infoPtr->varLists[0]->numVars = 1;
+    infoPtr->varLists[0]->varIndexes[0] = memberVar;
+    foreach = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
+
+    /*
+     * Issue instructions!
+     */
+
+    CompileWord(envPtr, tokenPtr, interp, 1);
+    Emit14Inst(		INST_STORE_SCALAR, valueVar,		envPtr);
+    TclEmitOpcode(	INST_POP,				envPtr);
+    PushStringLiteral(envPtr, "");
+    Emit14Inst(		INST_STORE_SCALAR, accumulator,		envPtr);
+    TclEmitInstInt4(	INST_FOREACH_START4, foreach,		envPtr);
+    loopOffset = CurrentOffset(envPtr);
+    TclEmitInstInt4(	INST_FOREACH_STEP4, foreach,	envPtr);
+    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
+    if (separator >= 0) {
+	Emit14Inst(	INST_LOAD_SCALAR, loopCounter,		envPtr);
+	TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &separatorFixup);
+	Emit14Inst(	INST_PUSH, separator,			envPtr);
+	Emit14Inst(	INST_APPEND_SCALAR, accumulator,	envPtr);
+	TclEmitOpcode(	INST_POP,				envPtr);
+	(void) TclFixupForwardJumpToHere(envPtr, &separatorFixup, 127);
+    }
+    TclEmitOpcode(	INST_POP,				envPtr);
+    Emit14Inst(		INST_LOAD_SCALAR, memberVar,		envPtr);
+    Emit14Inst(		INST_APPEND_SCALAR, accumulator,	envPtr);
+    loopOffset -= CurrentOffset(envPtr);
+    TclEmitInstInt1(	INST_JUMP1, loopOffset,			envPtr);
+    (void) TclFixupForwardJumpToHere(envPtr, &jumpFalseFixup, 127);
+    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(		valueVar,			envPtr);
+    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
+    TclEmitInt4(		accumulator,			envPtr);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileLappendCmd --
  *
  *	Procedure called to compile the "lappend" command.

@@ -28,6 +28,18 @@ test join-1.3 {basic join commands} {
 test join-1.4 {basic join commands} {
     join {12 34 56}
 } {12 34 56}
+test join-1.5 {basic join commands: compiled} {
+    apply {{} {join {a b c} xyz}}
+} axyzbxyzc
+test join-1.6 {basic join commands: compiled} {
+    apply {{} {join {a b c} {}}}
+} abc
+test join-1.7 {basic join commands: compiled} {
+    apply {{} {join {} xyz}}
+} {}
+test join-1.8 {basic join commands: compiled} {
+    apply {{} {join {12 34 56}}}
+} {12 34 56}
 
 test join-2.1 {join errors} {
     list [catch join msg] $msg $errorCode
@@ -38,12 +50,21 @@ test join-2.2 {join errors} {
 test join-2.3 {join errors} {
     list [catch {join "a \{ c" 111} msg] $msg $errorCode
 } {1 {unmatched open brace in list} {TCL VALUE LIST BRACE}}
+test join-2.4 {join errors} {
+    list [catch {apply {{} {join "a \{ c" 111}}} msg] $msg $errorCode
+} {1 {unmatched open brace in list} {TCL VALUE LIST BRACE}}
 
 test join-3.1 {joinString is binary ok} {
-  string length [join {a b c} a\0b]
+    string length [join {a b c} a\0b]
 } 9
 test join-3.2 {join is binary ok} {
-  string length [join "a\0b a\0b a\0b"]
+    string length [join "a\0b a\0b a\0b"]
+} 11
+test join-3.3 {joinString is binary ok} {
+    string length [apply {{} {join {a b c} a\0b}}]
+} 9
+test join-3.4 {join is binary ok} {
+    string length [apply {{} {join "a\0b a\0b a\0b"}}]
 } 11
 
 # cleanup
