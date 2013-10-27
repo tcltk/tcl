@@ -867,8 +867,8 @@ TclCompileJoinCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int separator, foreach, loopOffset;
-    int valueVar, loopCounter, memberVar, accumulator;
+    int separator, foreach, valueVar, loopCounter, memberVar;
+    int loopOffset, loopOffset2;
     ForeachInfo *infoPtr;
     JumpFixup jumpFalseFixup, separatorFixup;
 
@@ -917,7 +917,6 @@ TclCompileJoinCmd(
     valueVar = AnonymousLocal(envPtr);
     loopCounter = AnonymousLocal(envPtr);
     memberVar = AnonymousLocal(envPtr);
-    accumulator = AnonymousLocal(envPtr);
 
     infoPtr = ckalloc(sizeof(ForeachInfo) + sizeof(ForeachVarList *));
     infoPtr->numLists = 1;
@@ -936,29 +935,27 @@ TclCompileJoinCmd(
     Emit14Inst(		INST_STORE_SCALAR, valueVar,		envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
     PushStringLiteral(envPtr, "");
-    Emit14Inst(		INST_STORE_SCALAR, accumulator,		envPtr);
     TclEmitInstInt4(	INST_FOREACH_START4, foreach,		envPtr);
-    loopOffset = CurrentOffset(envPtr);
+    loopOffset = loopOffset2 = CurrentOffset(envPtr);
     TclEmitInstInt4(	INST_FOREACH_STEP4, foreach,	envPtr);
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
     if (separator >= 0) {
 	Emit14Inst(	INST_LOAD_SCALAR, loopCounter,		envPtr);
 	TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &separatorFixup);
 	Emit14Inst(	INST_PUSH, separator,			envPtr);
-	Emit14Inst(	INST_APPEND_SCALAR, accumulator,	envPtr);
-	TclEmitOpcode(	INST_POP,				envPtr);
+	Emit14Inst(	INST_LOAD_SCALAR, memberVar,		envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, 3,			envPtr);
+	loopOffset2 -= CurrentOffset(envPtr);
+	TclEmitInstInt1(INST_JUMP1, loopOffset2,		envPtr);
 	(void) TclFixupForwardJumpToHere(envPtr, &separatorFixup, 127);
     }
-    TclEmitOpcode(	INST_POP,				envPtr);
     Emit14Inst(		INST_LOAD_SCALAR, memberVar,		envPtr);
-    Emit14Inst(		INST_APPEND_SCALAR, accumulator,	envPtr);
+    TclEmitInstInt1(	INST_STR_CONCAT1, 2,			envPtr);
     loopOffset -= CurrentOffset(envPtr);
     TclEmitInstInt1(	INST_JUMP1, loopOffset,			envPtr);
     (void) TclFixupForwardJumpToHere(envPtr, &jumpFalseFixup, 127);
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
     TclEmitInt4(		valueVar,			envPtr);
-    TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
-    TclEmitInt4(		accumulator,			envPtr);
 
     return TCL_OK;
 }
