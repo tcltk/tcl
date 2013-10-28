@@ -340,6 +340,29 @@ Tcl_GetCurrentThread(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpResetLocks
+ *
+ *	This procedure is used to forcibly reset all the "one time" locks
+ *	used by the other platform-specific locking procedures.  Currently,
+ *	this procedure does nothing and should not be called.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpResetLocks(void)
+{
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclpInitLock
  *
  *	This procedure is used to grab a lock that serializes initialization

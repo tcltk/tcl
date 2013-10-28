@@ -317,6 +317,36 @@ Tcl_GetCurrentThread(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpResetLocks
+ *
+ *	This procedure is used to forcibly reset all the "one time" locks
+ *	used by the other platform-specific locking procedures. Currently,
+ *	this procedure is only called from the notifier to handle fork()
+ *	and must not be called from anywhere else.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpResetLocks(void)
+{
+#ifdef TCL_THREADS
+  pthread_mutex_t dummyLock = PTHREAD_MUTEX_INITIALIZER;
+  memcpy((void *)&masterLock, (void *)&dummyLock, sizeof(pthread_mutex_t));
+  memcpy((void *)&initLock, (void *)&dummyLock, sizeof(pthread_mutex_t));
+  memcpy((void *)&allocLock, (void *)&dummyLock, sizeof(pthread_mutex_t));
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclpInitLock
  *
  *	This procedure is used to grab a lock that serializes initialization

@@ -2665,6 +2665,7 @@ MODULE_SCOPE int	TclpThreadCreate(Tcl_ThreadId *idPtr,
 MODULE_SCOPE int	TclpFindVariable(const char *name, int *lengthPtr);
 MODULE_SCOPE void	TclpInitLibraryPath(char **valuePtr,
 			    int *lengthPtr, Tcl_Encoding *encodingPtr);
+MODULE_SCOPE void	TclpResetLocks(void);
 MODULE_SCOPE void	TclpInitLock(void);
 MODULE_SCOPE void	TclpInitPlatform(void);
 MODULE_SCOPE void	TclpInitUnlock(void);

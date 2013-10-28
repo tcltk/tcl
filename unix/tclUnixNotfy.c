@@ -1370,6 +1370,14 @@ AtForkChildProc(void)
     notifierMutex = NULL;
 
     /*
+     * Next, forcibly reset all the "one time" locks used by the threading
+     * subsystem.  This is necessary on some (all?) variants of Unix where
+     * the pthread internal state does not survive a call to fork().
+     */
+
+    TclpResetLocks();
+
+    /*
      * Force the notifier subsystem to be initialized now.  This should
      * create the notifier thread in this process.  Subsequently, that new
      * thread will re-open the trigger pipe.
