@@ -1320,6 +1320,8 @@ AtForkParentProc(void)
 static void
 AtForkChildProc(void)
 {
+    struct ThreadSpecificData *tsdPtr;
+
     /*
      * Close the trigger pipe and reset it to the default value.  This
      * should cause it to be re-opened when the notifier is subsequently
@@ -1359,6 +1361,24 @@ AtForkChildProc(void)
     notifierCV = NULL;
 
     /*
+     * Free all the thread specific data for the notifier now.  Since the
+     * child has no other threads, this data should be completely useless
+     * at this point.  Unfortunately, there is currently no clean way to
+     * free the thread specific data structures themselves.
+     */
+
+    for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
+	FileHandler *filePtr;
+	for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
+		/* NO LOOP UPDATE */) {
+	    FileHandler *nextFilePtr = filePtr->nextPtr;
+	    ckfree((char *) filePtr);
+	    filePtr = nextFilePtr;
+	}
+    }
+    waitingListPtr = NULL;
+
+    /*
      * Release, finalize, and reset the notifier mutex (which has been
      * held since the AtForkPrepareProc() was called via pthread_atfork()).
      * This should force it to be re-created during the next call to
@@ -1376,6 +1396,13 @@ AtForkChildProc(void)
      */
 
     TclpResetLocks();
+
+    /*
+     * Next, abandon the thread specific data for this file.  There is no
+     * clean way to free it; however, it can no longer be used.
+     */
+
+    dataKey = (Tcl_ThreadDataKey) 0;
 
     /*
      * Force the notifier subsystem to be initialized now.  This should
