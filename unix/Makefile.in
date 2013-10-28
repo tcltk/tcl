@@ -625,7 +625,6 @@ ${LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
 	rm -f $@
 	@MAKE_LIB@
 
-
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	rm -f $@
 	@MAKE_STUB_LIB@
@@ -1608,7 +1607,7 @@ $(DTRACE_OBJ): $(DTRACE_SRC) $(TCL_OBJS)
 # notifier can modify them to suit their own installation.
 #--------------------------------------------------------------------------
 
-xttest: ${XTTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST}
+xttest:	${XTTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST}
 	${CC} ${CFLAGS} ${LDFLAGS} ${XTTEST_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -L/usr/openwin/lib -lXt -o xttest
@@ -2018,7 +2017,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
 	@$(EOLFIX) -crlf $(DISTDIR)/win/*.bat
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
-	@$(EOLFIX) -crlf $(DISTDIR)/win/makefile.*
+	@$(EOLFIX) -crlf $(DISTDIR)/win/makefile.bc $(DISTDIR)/win/makefile.vc
 	cp -p $(TOP_DIR)/win/rules.vc $(DISTDIR)/win
 	@$(EOLFIX) -crlf $(DISTDIR)/win/rules.vc
 	cp -p $(TOP_DIR)/win/coffbase.txt $(DISTDIR)/win
