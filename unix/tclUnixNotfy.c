@@ -1363,8 +1363,7 @@ AtForkChildProc(void)
     /*
      * Free all the thread specific data for the notifier now.  Since the
      * child has no other threads, this data should be completely useless
-     * at this point.  Unfortunately, there is currently no clean way to
-     * free the thread specific data structures themselves.
+     * at this point.
      */
 
     for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
@@ -1402,6 +1401,7 @@ AtForkChildProc(void)
      * clean way to free it; however, it can no longer be used.
      */
 
+    Tcl_UnsetThreadData(&dataKey, sizeof(ThreadSpecificData), 1 /*all */);
     dataKey = (Tcl_ThreadDataKey) 0;
 
     /*

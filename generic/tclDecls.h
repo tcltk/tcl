@@ -3408,7 +3408,12 @@ EXTERN Tcl_Obj *	Tcl_ObjPrintf(CONST char *format, ...);
 EXTERN void		Tcl_AppendPrintfToObj(Tcl_Obj *objPtr,
 				CONST char *format, ...);
 #endif
-/* Slot 580 is reserved */
+#ifndef Tcl_UnsetThreadData_TCL_DECLARED
+#define Tcl_UnsetThreadData_TCL_DECLARED
+/* 580 */
+EXTERN void		Tcl_UnsetThreadData(Tcl_ThreadDataKey *keyPtr,
+				int size, int all);
+#endif
 /* Slot 581 is reserved */
 /* Slot 582 is reserved */
 /* Slot 583 is reserved */
@@ -4078,7 +4083,7 @@ typedef struct TclStubs {
     int (*tcl_AppendFormatToObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, CONST char *format, int objc, Tcl_Obj *CONST objv[]); /* 577 */
     Tcl_Obj * (*tcl_ObjPrintf) (CONST char *format, ...); /* 578 */
     void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, CONST char *format, ...); /* 579 */
-    VOID *reserved580;
+    void (*tcl_UnsetThreadData) (Tcl_ThreadDataKey *keyPtr, int size, int all); /* 580 */
     VOID *reserved581;
     VOID *reserved582;
     VOID *reserved583;
@@ -6483,7 +6488,10 @@ extern TclStubs *tclStubsPtr;
 #define Tcl_AppendPrintfToObj \
 	(tclStubsPtr->tcl_AppendPrintfToObj) /* 579 */
 #endif
-/* Slot 580 is reserved */
+#ifndef Tcl_UnsetThreadData
+#define Tcl_UnsetThreadData \
+	(tclStubsPtr->tcl_UnsetThreadData) /* 580 */
+#endif
 /* Slot 581 is reserved */
 /* Slot 582 is reserved */
 /* Slot 583 is reserved */

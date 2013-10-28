@@ -2108,6 +2108,9 @@ declare 578 {
 declare 579 {
     void Tcl_AppendPrintfToObj(Tcl_Obj *objPtr, const char *format, ...)
 }
+declare 580 {
+    void Tcl_UnsetThreadData(Tcl_ThreadDataKey *keyPtr, int size, int all)
+}
 declare 630 {
     void TclUnusedStubEntry(void)
 }

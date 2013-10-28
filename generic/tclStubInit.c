@@ -1340,7 +1340,7 @@ TclStubs tclStubs = {
     Tcl_AppendFormatToObj, /* 577 */
     Tcl_ObjPrintf, /* 578 */
     Tcl_AppendPrintfToObj, /* 579 */
-    NULL, /* 580 */
+    Tcl_UnsetThreadData, /* 580 */
     NULL, /* 581 */
     NULL, /* 582 */
     NULL, /* 583 */

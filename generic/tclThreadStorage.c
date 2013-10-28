@@ -400,6 +400,96 @@ TclpThreadDataKeySet(
 /*
  *----------------------------------------------------------------------
  *
+ * TclpThreadDataKeyUnset --
+ *
+ *	This procedure removes the pointer to a block of thread local
+ *	storage.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpThreadDataKeyUnset(
+    Tcl_ThreadDataKey *keyPtr,	/* Identifier for the data chunk, really
+				 * (pthread_key_t **) */
+    int freeValue)		/* Also free the value? */
+{
+    Tcl_HashTable *hashTablePtr;
+    Tcl_HashEntry *hPtr;
+
+    hashTablePtr = ThreadStorageGetHashTable(Tcl_GetCurrentThread());
+    hPtr = Tcl_FindHashEntry(hashTablePtr, (char *) keyPtr);
+
+    if (hPtr != NULL) {
+	if (freeValue) {
+	    void *blockPtr = Tcl_GetHashValue(hPtr);
+
+	    if (blockPtr != NULL) {
+		ckfree(blockPtr);
+	    }
+	}
+	Tcl_DeleteHashEntry(hPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpThreadDataKeyUnsetAll --
+ *
+ *	This procedure removes the pointer to a block of thread local
+ *	storage from all threads.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpThreadDataKeyUnsetAll(
+    Tcl_ThreadDataKey *keyPtr,	/* Identifier for the data chunk, really
+				 * (pthread_key_t **) */
+    int freeValue)		/* Also free the value? */
+{
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    Tcl_MutexLock(&threadStorageLock);
+    for (hPtr = Tcl_FirstHashEntry(&threadStorageHashTable, &search);
+	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+	Tcl_HashTable *hashTablePtr = Tcl_GetHashValue(hPtr);
+
+	if (hashTablePtr != NULL) {
+	    Tcl_HashEntry *hPtr2 = Tcl_FindHashEntry(hashTablePtr,
+		(char *) keyPtr);
+
+	    if (hPtr2 != NULL) {
+		if (freeValue) {
+		    void *blockPtr = Tcl_GetHashValue(hPtr2);
+
+		    if (blockPtr != NULL) {
+			ckfree(blockPtr);
+		    }
+		}
+		Tcl_DeleteHashEntry(hPtr2);
+	    }
+	}
+    }
+    Tcl_MutexUnlock(&threadStorageLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclpFinalizeThreadDataThread --
  *
  *	This procedure cleans up the thread storage hash table for the

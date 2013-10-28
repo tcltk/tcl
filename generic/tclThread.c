@@ -104,6 +104,70 @@ Tcl_GetThreadData(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_UnsetThreadData --
+ *
+ *	This function finalizes and deallocates a chunk of thread local
+ *	storage.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_UnsetThreadData(
+    Tcl_ThreadDataKey *keyPtr,	/* Identifier for the data chunk */
+    int size,			/* Size of storage block */
+    int all)			/* Unset for all threads? */
+{
+#ifdef TCL_THREADS
+    void *result = TclpThreadDataKeyGet(keyPtr);
+    if (all) {
+      TclpThreadDataKeyUnsetAll(keyPtr, 1 /* free */);
+    } else {
+      TclpThreadDataKeyUnset(keyPtr, 1 /* free */);
+    }
+#else
+    void *result = *keyPtr;
+    TclThreadFreeData(result, size);
+    ForgetSyncObject((char *) keyPtr, &keyRecord);
+#endif /* TCL_THREADS */
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclThreadFreeData --
+ *
+ *	This function deallocates a chunk of thread local storage.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclThreadFreeData(
+    void *blockPtr,		/* Pointer to thread local data chunk */
+    int size)			/* Size of storage block */
+{
+    if (blockPtr != NULL) {
+	memset(blockPtr, 0, (size_t) size);
+	ckfree((char *) blockPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclThreadDataKeyGet --
  *
  *	This function returns a pointer to a block of thread local storage.

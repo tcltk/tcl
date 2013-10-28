@@ -9,7 +9,7 @@
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
 .BS
 .SH NAME
-Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData, Tcl_MutexLock, Tcl_MutexUnlock, Tcl_MutexFinalize, Tcl_CreateThread, Tcl_JoinThread \- Tcl thread support
+Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData, Tcl_UnsetThreadData, Tcl_MutexLock, Tcl_MutexUnlock, Tcl_MutexFinalize, Tcl_CreateThread, Tcl_JoinThread \- Tcl thread support
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -25,6 +25,9 @@ void
 .sp
 Void *
 \fBTcl_GetThreadData\fR(\fIkeyPtr, size\fR)
+.sp
+void
+\fBTcl_UnsetThreadData\fR(\fIkeyPtr, size, all\fR)
 .sp
 void
 \fBTcl_MutexLock\fR(\fImutexPtr\fR)
@@ -53,10 +56,13 @@ Note that a polling value of 0 seconds does not make much sense.
 This identifies a block of thread local storage.  The key should be
 static and process-wide, yet each thread will end up associating
 a different block of storage with this key.
-.AP int *size in
+.AP int size in
 The size of the thread local storage block.  This amount of data
 is allocated and initialized to zero the first time each thread
 calls \fBTcl_GetThreadData\fR.
+.AP int all in
+Non-zero if the thread local storage block is to be unset for all
+threads.
 .AP Tcl_ThreadId *idPtr out
 The referred storage will contain the id of the newly created thread as
 returned by the operating system.
@@ -129,6 +135,12 @@ thread-private data.  Its argument is a key that is shared by all threads
 and a size for the block of storage.  The storage is automatically 
 allocated and initialized to all zeros the first time each thread asks for it.
 The storage is automatically deallocated by \fBTcl_FinalizeThread\fR.
+.PP
+The \fBTcl_UnsetThreadData\fR function is used to manually destroy
+and remove the block of thread local storage.  Normally, calling this
+function is not necessary.  However, if an individual thread local
+storage block needs to be manually removed, this function provides a
+means to do it.
 .SS "SYNCHRONIZATION AND COMMUNICATION"
 Tcl provides \fBTcl_ThreadQueueEvent\fR and \fBTcl_ThreadAlert\fR
 for handling event queuing in multithreaded applications.  See

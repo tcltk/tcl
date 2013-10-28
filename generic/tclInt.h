@@ -1230,13 +1230,17 @@ typedef void **TclHandle;
 MODULE_SCOPE void *	TclThreadDataKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
 			    void *data);
+MODULE_SCOPE void	TclThreadFreeData(void *blockPtr, int size);
 
 /*
  * This is a convenience macro used to initialize a thread local storage ptr.
  */
 
-#define TCL_TSD_INIT(keyPtr) \
-  (ThreadSpecificData *)Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
+#define TCL_TSD_INIT(keyPtr) (ThreadSpecificData *) \
+  Tcl_GetThreadData((keyPtr), sizeof(ThreadSpecificData))
+
+#define TCL_TSD_TERM(keyPtr) (ThreadSpecificData *) \
+  Tcl_UnsetThreadData((keyPtr), sizeof(ThreadSpecificData), 0)
 
 /*
  *----------------------------------------------------------------
@@ -2706,6 +2710,10 @@ MODULE_SCOPE void	TclpUnloadFile(Tcl_LoadHandle loadHandle);
 MODULE_SCOPE void *	TclpThreadDataKeyGet(Tcl_ThreadDataKey *keyPtr);
 MODULE_SCOPE void	TclpThreadDataKeySet(Tcl_ThreadDataKey *keyPtr,
 			    void *data);
+MODULE_SCOPE void	TclpThreadDataKeyUnset(Tcl_ThreadDataKey *keyPtr,
+			    int freeValue);
+MODULE_SCOPE void	TclpThreadDataKeyUnsetAll(Tcl_ThreadDataKey *keyPtr,
+			    int freeValue);
 MODULE_SCOPE void	TclpThreadExit(int status);
 MODULE_SCOPE size_t	TclpThreadGetStackSize(void);
 MODULE_SCOPE void	TclRememberCondition(Tcl_Condition *mutex);
