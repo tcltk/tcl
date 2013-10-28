@@ -1344,19 +1344,14 @@ AtForkChildProc(void)
     /*
      * Reset the notifier reference count to zero (i.e. not initialized).
      * This should force the notifier initialization code to be re-run the
-     * very next time Tcl_InitNotifier is called, which will be just below
-     * this statement.
+     * very next time Tcl_InitNotifier is called.
+     *
+     * For a plain [exec ...] this will not happen, and everything is fine.
+     * For a full fork of the interpreter (like apache Rivet) it is not clear
+     * to me (AK) where TIN would be called.
      */
 
     notifierCount = 0;
-
-    /*
-     * Force the notifier subsystem to be initialized now.  This should
-     * create the notifier thread in this process.  Subsequently, that new
-     * thread will re-open the trigger pipe.
-     */
-
-    Tcl_InitNotifier();
 
     /*
      * Finally, release the notifier mutex (which has been held since the
