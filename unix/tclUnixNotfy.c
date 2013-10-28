@@ -128,15 +128,6 @@ static Tcl_ThreadDataKey dataKey;
 static int notifierCount = 0;
 
 /*
- * The following static stores the process ID of the initialized notifier
- * thread. If it changes, we have passed a fork and we should start a new
- * notifier thread.
- *
- * You must hold the notifierMutex lock before accessing this variable.
- */
-static pid_t processIDInitialized = 0;
-
-/*
  * The following variable points to the head of a doubly-linked list of
  * ThreadSpecificData structures for all threads that are currently waiting on
  * an event.
@@ -204,9 +195,9 @@ static Tcl_ThreadId notifierThread;
 static void	NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__)
 static int	atForkInit = 0;
-static void	AtForkPrepare(void);
-static void	AtForkParent(void);
-static void	AtForkChild(void);
+static void	AtForkPrepareProc(void);
+static void	AtForkParentProc(void);
+static void	AtForkChildProc(void);
 #endif /* HAVE_PTHREAD_ATFORK */
 #endif /* TCL_THREADS */
 static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
@@ -282,14 +273,16 @@ Tcl_InitNotifier(void)
      */
 
     Tcl_MutexLock(&notifierMutex);
+
 #if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__)
     /*
-     * Install pthread_atfork handlers to reinitialize the notifier in the
-     * child of a fork.
+     * Install pthread_atfork() handlers to deal with the notifier in the
+     * forked child.
      */
 
     if (!atForkInit) {
-	int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
+	int result = pthread_atfork(AtForkPrepareProc, AtForkParentProc,
+		AtForkChildProc);
 
 	if (result) {
 	    Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed");
@@ -297,23 +290,12 @@ Tcl_InitNotifier(void)
 	atForkInit = 1;
     }
 #endif /* HAVE_PTHREAD_ATFORK */
-    /*
-     * Check if my process id changed, e.g. I was forked
-     * In this case, restart the notifier thread and close the
-     * pipe to the original notifier thread
-     */
-    if (notifierCount > 0 && processIDInitialized != getpid()) {
-	notifierCount = 0;
-	processIDInitialized = 0;
-	close(triggerPipe);
-	triggerPipe = -1;
-    }
+
     if (notifierCount == 0) {
 	if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
 		TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
 	    Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread");
 	}
-    processIDInitialized = getpid();
     }
     notifierCount++;
 
@@ -1277,7 +1259,7 @@ NotifierThreadProc(
 /*
  *----------------------------------------------------------------------
  *
- * AtForkPrepare --
+ * AtForkPrepareProc --
  *
  *	Lock the notifier in preparation for a fork.
  *
@@ -1291,14 +1273,15 @@ NotifierThreadProc(
  */
 
 static void
-AtForkPrepare(void)
+AtForkPrepareProc(void)
 {
+    Tcl_MutexLock(&notifierMutex);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * AtForkParent --
+ * AtForkParentProc --
  *
  *	Unlock the notifier in the parent after a fork.
  *
@@ -1312,16 +1295,18 @@ AtForkPrepare(void)
  */
 
 static void
-AtForkParent(void)
+AtForkParentProc(void)
 {
+    Tcl_MutexUnlock(&notifierMutex);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * AtForkChild --
+ * AtForkChildProc --
  *
- *	Unlock and reinstall the notifier in the child after a fork.
+ *	Assumes the notifier mutex is already held.  Reset the notifier
+ *	state and then re-initializes it for the child process.
  *
  * Results:
  *	None.
@@ -1333,11 +1318,52 @@ AtForkParent(void)
  */
 
 static void
-AtForkChild(void)
+AtForkChildProc(void)
 {
-    notifierMutex = NULL;
-    notifierCV = NULL;
+    /*
+     * Close the trigger pipe and reset it to the default value.  This
+     * should cause it to be re-opened when the notifier is subsequently
+     * initialized.  Since the trigger pipe is opened via the notifier
+     * thread (which may never have started?), check it before attempting
+     * to close it.
+     */
+
+    if (triggerPipe >= 0) {
+	close(triggerPipe);
+	triggerPipe = -1;
+    }
+
+    /*
+     * Since the notifier thread is not really running, zero out its ID.
+     * This step is not strictly necessary since its value will not be
+     * checked before it is re-created.
+     */
+
+    notifierThread = (Tcl_ThreadId) 0;
+
+    /*
+     * Reset the notifier reference count to zero (i.e. not initialized).
+     * This should force the notifier initialization code to be re-run the
+     * very next time Tcl_InitNotifier is called, which will be just below
+     * this statement.
+     */
+
+    notifierCount = 0;
+
+    /*
+     * Force the notifier subsystem to be initialized now.  This should
+     * create the notifier thread in this process.  Subsequently, that new
+     * thread will re-open the trigger pipe.
+     */
+
     Tcl_InitNotifier();
+
+    /*
+     * Finally, release the notifier mutex (which has been held since the
+     * AtForkPrepareProc() was called via pthread_atfork()).
+     */
+
+    Tcl_MutexUnlock(&notifierMutex);
 }
 #endif /* HAVE_PTHREAD_ATFORK */
 
