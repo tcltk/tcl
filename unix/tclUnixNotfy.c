@@ -1375,6 +1375,7 @@ AtForkChildProc(void)
 	    ckfree((char *) filePtr);
 	    filePtr = nextFilePtr;
 	}
+	Tcl_ConditionFinalize(&(tsdPtr->waitCV));
     }
     waitingListPtr = NULL;
 
