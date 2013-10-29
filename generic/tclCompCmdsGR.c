@@ -33,7 +33,7 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileLinsertCmd --
+ * GetIndexFromToken --
  *
  *	Parse a token and get the encoded version of the index (as understood
  *	by TEBC), assuming it is at all knowable at compile time. Only handles
