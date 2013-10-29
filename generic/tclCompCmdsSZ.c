@@ -101,6 +101,59 @@ const AuxDataType tclJumptableInfoType = {
     if ((idx)<256) {OP1(STORE_SCALAR1,(idx));} else {OP4(STORE_SCALAR4,(idx));}
 #define INVOKE(name) \
     TclEmitInvoke(envPtr,INST_##name)
+
+#define INDEX_END	(-2)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetIndexFromToken --
+ *
+ *	Parse a token and get the encoded version of the index (as understood
+ *	by TEBC), assuming it is at all knowable at compile time. Only handles
+ *	indices that are integers or 'end' or 'end-integer'.
+ *
+ * Returns:
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
+ *
+ * Side effects:
+ *	Sets *index to the index value if successful.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+GetIndexFromToken(
+    Tcl_Token *tokenPtr,
+    int *index)
+{
+    Tcl_Obj *tmpObj = Tcl_NewObj();
+    int result, idx;
+
+    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
+	Tcl_DecrRefCount(tmpObj);
+	return TCL_ERROR;
+    }
+
+    result = TclGetIntFromObj(NULL, tmpObj, &idx);
+    if (result == TCL_OK) {
+	if (idx < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, INDEX_END, &idx);
+	if (result == TCL_OK && idx > INDEX_END) {
+	    result = TCL_ERROR;
+	}
+    }
+    Tcl_DecrRefCount(tmpObj);
+
+    if (result == TCL_OK) {
+	*index = idx;
+    }
+
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -565,8 +618,7 @@ TclCompileStringRangeCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *stringTokenPtr, *fromTokenPtr, *toTokenPtr;
-    Tcl_Obj *tmpObj;
-    int idx1, idx2, result;
+    int idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -576,50 +628,13 @@ TclCompileStringRangeCmd(
     toTokenPtr = TokenAfter(fromTokenPtr);
 
     /*
-     * Parse the first index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
+     * Parse the two indices.
      */
 
-    tmpObj = Tcl_NewObj();
-    result = TCL_ERROR;
-    if (TclWordKnownAtCompileTime(fromTokenPtr, tmpObj)) {
-	if (TclGetIntFromObj(NULL, tmpObj, &idx1) == TCL_OK) {
-	    if (idx1 >= 0) {
-		result = TCL_OK;
-	    }
-	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx1) == TCL_OK) {
-	    if (idx1 <= -2) {
-		result = TCL_OK;
-	    }
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (GetIndexFromToken(fromTokenPtr, &idx1) != TCL_OK) {
 	goto nonConstantIndices;
     }
-
-    /*
-     * Parse the second index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
-     */
-
-    tmpObj = Tcl_NewObj();
-    result = TCL_ERROR;
-    if (TclWordKnownAtCompileTime(toTokenPtr, tmpObj)) {
-	if (TclGetIntFromObj(NULL, tmpObj, &idx2) == TCL_OK) {
-	    if (idx2 >= 0) {
-		result = TCL_OK;
-	    }
-	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx2) == TCL_OK) {
-	    if (idx2 <= -2) {
-		result = TCL_OK;
-	    }
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (GetIndexFromToken(toTokenPtr, &idx2) != TCL_OK) {
 	goto nonConstantIndices;
     }
 
@@ -698,7 +713,7 @@ TclCompileStringTrimLCmd(
     } else {
 	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
     }
-    OP(			STRTRIM_LEFT);
+    OP(			STR_TRIM_LEFT);
     return TCL_OK;
 }
 
@@ -726,7 +741,7 @@ TclCompileStringTrimRCmd(
     } else {
 	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
     }
-    OP(			STRTRIM_RIGHT);
+    OP(			STR_TRIM_RIGHT);
     return TCL_OK;
 }
 
@@ -754,7 +769,73 @@ TclCompileStringTrimCmd(
     } else {
 	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
     }
-    OP(			STRTRIM);
+    OP(			STR_TRIM);
+    return TCL_OK;
+}
+
+int
+TclCompileStringToUpperCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2) {
+	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    OP(			STR_UPPER);
+    return TCL_OK;
+}
+
+int
+TclCompileStringToLowerCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2) {
+	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    OP(			STR_LOWER);
+    return TCL_OK;
+}
+
+int
+TclCompileStringToTitleCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2) {
+	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    OP(			STR_TITLE);
     return TCL_OK;
 }
 
