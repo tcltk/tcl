@@ -900,7 +900,7 @@ proc insert-cross-references {text} {
 		append result [string range $text 0 [expr {$off-1}]]
 		regexp -indices -start $off {http://[\w/.]+} $text range
 		set url [string range $text {*}$range]
-		append result "<A HREF=\"$url\">" $url "</A>"
+		append result "<A HREF=\"[string trimright $url .]\">$url</A>"
 		set text [string range $text[set text ""] \
 			      [expr {[lindex $range 1]+1}] end]
 		continue
