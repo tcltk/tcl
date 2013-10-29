@@ -1320,6 +1320,7 @@ AtForkParentProc(void)
 static void
 AtForkChildProc(void)
 {
+    int shouldInitNotifier = (notifierCount > 0); /* Only when in use? */
     struct ThreadSpecificData *tsdPtr;
 
     /*
@@ -1341,7 +1342,7 @@ AtForkChildProc(void)
      * checked before it is re-created.
      */
 
-    notifierThread = (Tcl_ThreadId) 0;
+    notifierThread = (Tcl_ThreadId)0;
 
     /*
      * Reset the notifier reference count to zero (i.e. not initialized).
@@ -1390,19 +1391,21 @@ AtForkChildProc(void)
 
     /*
      * Next, forcibly reset all the "one time" locks used by the threading
-     * subsystem.  This is necessary on some (all?) variants of Unix where
-     * the pthread internal state does not survive a call to fork().
+     * subsystem.  This may be necessary on some (all?) variants of Unix
+     * where the pthread internal state does not survive a call to fork().
      */
 
     TclpResetLocks();
 
     /*
-     * Next, abandon the thread specific data for this file.  There is no
-     * clean way to free it; however, it can no longer be used.
+     * Next, attempt to free thread specific data for this module, if that
+     * is necessary.
      */
 
-    Tcl_UnsetThreadData(&dataKey, sizeof(ThreadSpecificData), 1 /*all */);
-    dataKey = (Tcl_ThreadDataKey) 0;
+    if (dataKey != (Tcl_ThreadDataKey)0) {
+      Tcl_UnsetThreadData(&dataKey, sizeof(ThreadSpecificData), 1 /*all */);
+      dataKey = (Tcl_ThreadDataKey)0;
+    }
 
     /*
      * Force the notifier subsystem to be initialized now.  This should
@@ -1410,7 +1413,9 @@ AtForkChildProc(void)
      * thread will re-open the trigger pipe.
      */
 
-    Tcl_InitNotifier();
+    if (shouldInitNotifier) {
+      Tcl_InitNotifier();
+    }
 }
 #endif /* HAVE_PTHREAD_ATFORK */
 
