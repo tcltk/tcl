@@ -50,6 +50,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -1309,10 +1313,8 @@ typedef struct TclIntStubs {
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
 } TclIntStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern TclIntStubs *tclIntStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
