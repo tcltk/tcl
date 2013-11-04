@@ -31,6 +31,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -2479,10 +2483,8 @@ typedef struct TclStubs {
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
 } TclStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclStubs *tclStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
