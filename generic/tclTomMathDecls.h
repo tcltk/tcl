@@ -134,6 +134,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -538,10 +542,8 @@ typedef struct TclTomMathStubs {
     int (*tclBN_mp_cnt_lsb) (mp_int *a); /* 63 */
 } TclTomMathStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern TclTomMathStubs *tclTomMathStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
