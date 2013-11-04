@@ -7,6 +7,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -110,10 +114,8 @@ typedef struct TclOOIntStubs {
     void (*tclOOClassSetMixins) (Tcl_Interp *interp, Class *classPtr, int numMixins, Class *const *mixins); /* 15 */
 } TclOOIntStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclOOIntStubs *tclOOIntStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif

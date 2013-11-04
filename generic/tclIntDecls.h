@@ -25,6 +25,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -800,10 +804,8 @@ typedef struct TclIntStubs {
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
 } TclIntStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclIntStubs *tclIntStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
