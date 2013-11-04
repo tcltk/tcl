@@ -20,6 +20,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -152,10 +156,8 @@ typedef struct TclOOStubs {
     Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp *interp, Tcl_Object object); /* 28 */
 } TclOOStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclOOStubs *tclOOStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
