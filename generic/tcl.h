@@ -2397,6 +2397,11 @@ const char *		Tcl_InitStubs(Tcl_Interp *interp, const char *version,
 			    int exact);
 const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 			    const char *version, int epoch, int revision);
+#if defined(_WIN32) || defined(__CYGWIN__)
+    void Tcl_ConsolePanic(const char *format, ...);
+#else
+#   define Tcl_ConsolePanic ((Tcl_PanicProc *)0)
+#endif
 
 /*
  * When not using stubs, make it a macro.
@@ -2417,7 +2422,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    ((Tcl_CreateInterp)()))
+	    ((Tcl_SetPanicProc(Tcl_ConsolePanic), Tcl_CreateInterp)()))
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
