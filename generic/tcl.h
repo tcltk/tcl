@@ -215,8 +215,6 @@ extern "C" {
 
 #ifdef BUILD_tcl
 #   define TCLAPI extern DLLEXPORT
-#elif defined(__cplusplus)
-#   define TCLAPI extern "C" DLLIMPORT
 #else
 #   define TCLAPI extern DLLIMPORT
 #endif
@@ -2227,6 +2225,10 @@ TCLAPI void		Tcl_FindExecutable(const char *argv0);
 TCLAPI void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
 TCLAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+#if defined(_WIN32) && defined(UNICODE)
+TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
+	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+#endif
 TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
