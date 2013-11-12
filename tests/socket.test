@@ -1852,7 +1852,7 @@ test socket-14.5 {[socket -async] which fails before any connect() can be made} 
     -returnCodes 1 \
     -result {couldn't open socket: cannot assign requested address}
 test socket-14.6 {[socket -async] with no event loop and [fconfigure -error] before the socket is connected} \
-    -constraints [list socket supported_any] \
+    -constraints [list socket supported_inet supported_inet6] \
     -setup {
         proc accept {s a p} {
             puts $s bye
