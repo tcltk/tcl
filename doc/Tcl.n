@@ -28,7 +28,7 @@ First, the Tcl interpreter breaks the command into \fIwords\fR
 and performs substitutions as described below.
 These substitutions are performed in the same way for all
 commands.
-The first word is used to locate a command procedure to
+Secondly, the first word is used to locate a command procedure to
 carry out the command, then all of the words of the command are
 passed to the command procedure.
 The command procedure is free to interpret each of its words
