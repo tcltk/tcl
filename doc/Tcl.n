@@ -5,8 +5,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH Tcl n "8.6" Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 .SH NAME
 Tcl \- Tool Command Language
@@ -28,7 +28,7 @@ First, the Tcl interpreter breaks the command into \fIwords\fR
 and performs substitutions as described below.
 These substitutions are performed in the same way for all
 commands.
-The first word is used to locate a command procedure to
+Secondly, the first word is used to locate a command procedure to
 carry out the command, then all of the words of the command are
 passed to the command procedure.
 The command procedure is free to interpret each of its words
