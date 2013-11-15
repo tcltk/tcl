@@ -1359,10 +1359,10 @@ CreateSocket(
     }
 
   error:
-    if (addrlist == NULL) {
+    if (addrlist != NULL) {
 	freeaddrinfo(addrlist);
     }
-    if (myaddrlist == NULL) {
+    if (myaddrlist != NULL) {
 	freeaddrinfo(myaddrlist);
     }
 
