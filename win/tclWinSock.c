@@ -1318,7 +1318,7 @@ CreateSocket(
 		if (connect(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
 			== SOCKET_ERROR) {
 		    TclWinConvertError((DWORD) WSAGetLastError());
-		    if (Tcl_GetErrno() != EAGAIN) {
+		    if (Tcl_GetErrno() != EWOULDBLOCK) {
 			goto looperror;
 		    }
 
@@ -1441,7 +1441,7 @@ WaitForSocketEvent(
 	} else if (infoPtr->readyEvents & events) {
 	    break;
 	} else if (infoPtr->flags & SOCKET_ASYNC) {
-	    *errorCodePtr = EAGAIN;
+	    *errorCodePtr = EWOULDBLOCK;
 	    result = 0;
 	    break;
 	}
@@ -1926,7 +1926,7 @@ TcpOutputProc(
 	if (error == WSAEWOULDBLOCK) {
 	    infoPtr->readyEvents &= ~(FD_WRITE);
 	    if (infoPtr->flags & SOCKET_ASYNC) {
-		*errorCodePtr = EAGAIN;
+		*errorCodePtr = EWOULDBLOCK;
 		bytesWritten = -1;
 		break;
 	    }
