@@ -1133,10 +1133,9 @@ CreateClientSocket(
     int asyncConnect = 0;	/* Will be 1 if async connect is in
 				 * progress. */
     unsigned short chosenport = 0;
-    void *addrlist = NULL, *myaddrlist = NULL;
-    struct addrinfo *addrPtr;
+    struct addrinfo *addrlist = NULL, *addrPtr;
 				/* Socket address to connect to. */
-    struct addrinfo *myaddrPtr;
+    struct addrinfo *myaddrlist = NULL, *myaddrPtr;
 				/* Socket address for our side. */
     const char *errorMsg = NULL;
     SOCKET sock = INVALID_SOCKET;
