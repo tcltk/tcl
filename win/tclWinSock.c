@@ -1317,8 +1317,9 @@ CreateSocket(
 
 		if (connect(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
 			== SOCKET_ERROR) {
-		    TclWinConvertError((DWORD) WSAGetLastError());
-		    if (Tcl_GetErrno() != EWOULDBLOCK) {
+		    DWORD error = (DWORD) WSAGetLastError();
+		    if (error != WSAEWOULDBLOCK) {
+			TclWinConvertError(error);
 			goto looperror;
 		    }
 
