@@ -74,6 +74,10 @@
 #undef getsockopt
 #undef setsockopt
 
+/* "sock" + a pointer in hex + \0 */
+#define SOCK_CHAN_LENGTH        (4 + sizeof(void *) * 2 + 1)
+#define SOCK_TEMPLATE           "sock%lx"
+
 /*
  * The following variable is used to tell whether this module has been
  * initialized.  If 1, initialization of sockets was successful, if -1 then
@@ -210,8 +214,8 @@ static WNDCLASS windowClass;
  * Static functions defined in this file.
  */
 
-static SocketInfo *	CreateSocket(Tcl_Interp *interp, int port,
-			    const char *host, int server, const char *myaddr,
+static SocketInfo *	CreateClientSocket(Tcl_Interp *interp, int port,
+			    const char *host, const char *myaddr,
 			    int myport, int async);
 static void		InitSockets(void);
 static SocketInfo *	NewSocketInfo(SOCKET socket);
@@ -1101,10 +1105,10 @@ NewSocketInfo(
 /*
  *----------------------------------------------------------------------
  *
- * CreateSocket --
+ * CreateClientSocket --
  *
- *	This function opens a new socket and initializes the SocketInfo
- *	structure.
+ *	This function opens a new client socket and initializes the
+ *	SocketInfo structure.
  *
  * Results:
  *	Returns a new SocketInfo, or NULL with an error in interp.
@@ -1116,12 +1120,10 @@ NewSocketInfo(
  */
 
 static SocketInfo *
-CreateSocket(
+CreateClientSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     int port,			/* Port number to open. */
     const char *host,		/* Name of host on which to open port. */
-    int server,			/* 1 if socket should be a server socket, else
-				 * 0 for a client socket. */
     const char *myaddr,		/* Optional client-side address */
     int myport,			/* Optional client-side port */
     int async)			/* If nonzero, connect client socket
@@ -1155,7 +1157,7 @@ CreateSocket(
      * Construct the addresses for each end of the socket.
      */
 
-    if (!TclCreateSocketAddress(interp, &addrlist, host, port, server,
+    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 0,
 	    &errorMsg)) {
 	goto error;
     }
@@ -1164,10 +1166,20 @@ CreateSocket(
 	goto error;
     }
 
-    if (server) {
+    for (addrPtr = addrlist; addrPtr != NULL;
+	 addrPtr = addrPtr->ai_next) {
+	for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
+	     myaddrPtr = myaddrPtr->ai_next) {
+	    /*
+	     * No need to try combinations of local and remote addresses
+	     * of different families.
+	     */
 
-	for (addrPtr = addrlist; addrPtr != NULL; addrPtr = addrPtr->ai_next) {
-	    sock = socket(addrPtr->ai_family, SOCK_STREAM, 0);
+	    if (myaddrPtr->ai_family != addrPtr->ai_family) {
+		continue;
+	    }
+
+	    sock = socket(myaddrPtr->ai_family, SOCK_STREAM, 0);
 	    if (sock == INVALID_SOCKET) {
 		TclWinConvertError((DWORD) WSAGetLastError());
 		continue;
@@ -1187,158 +1199,52 @@ CreateSocket(
 	    TclSockMinimumBuffers((void *)sock, TCP_BUFFER_SIZE);
 
 	    /*
-	     * Make sure we use the same port when opening two server sockets
-	     * for IPv4 and IPv6.
-	     *
-	     * As sockaddr_in6 uses the same offset and size for the port
-	     * member as sockaddr_in, we can handle both through the IPv4 API.
+	     * Try to bind to a local port.
 	     */
 
-	    if (port == 0 && chosenport != 0) {
-		((struct sockaddr_in *) addrPtr->ai_addr)->sin_port =
-			htons(chosenport);
+	    if (bind(sock, myaddrPtr->ai_addr, myaddrPtr->ai_addrlen)
+		== SOCKET_ERROR) {
+		TclWinConvertError((DWORD) WSAGetLastError());
+		goto looperror;
+	    }
+	    /*
+	     * Set the socket into nonblocking mode if the connect should
+	     * be done in the background.
+	     */
+	    if (async && ioctlsocket(sock, (long) FIONBIO, &flag)
+		== SOCKET_ERROR) {
+		TclWinConvertError((DWORD) WSAGetLastError());
+		goto looperror;
 	    }
 
 	    /*
-	     * Bind to the specified port. Note that we must not call
-	     * setsockopt with SO_REUSEADDR because Microsoft allows addresses
-	     * to be reused even if they are still in use.
-	     *
-	     * Bind should not be affected by the socket having already been
-	     * set into nonblocking mode. If there is trouble, this is one
-	     * place to look for bugs.
+	     * Attempt to connect to the remote socket.
 	     */
 
-	    if (bind(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
-		    == SOCKET_ERROR) {
-		TclWinConvertError((DWORD) WSAGetLastError());
-		closesocket(sock);
-		continue;
-	    }
-	    if (port == 0 && chosenport == 0) {
-		address sockname;
-		socklen_t namelen = sizeof(sockname);
-
-		/*
-		 * Synchronize port numbers when binding to port 0 of multiple
-		 * addresses.
-		 */
-
-		if (getsockname(sock, &sockname.sa, &namelen) >= 0) {
-		    chosenport = ntohs(sockname.sa4.sin_port);
-		}
-	    }
-
-	    /*
-	     * Set the maximum number of pending connect requests to the max
-	     * value allowed on each platform (Win32 and Win32s may be
-	     * different, and there may be differences between TCP/IP stacks).
-	     */
-
-	    if (listen(sock, SOMAXCONN) == SOCKET_ERROR) {
-		TclWinConvertError((DWORD) WSAGetLastError());
-		closesocket(sock);
-		continue;
-	    }
-
-	    if (infoPtr == NULL) {
-		/*
-		 * Add this socket to the global list of sockets.
-		 */
-
-		infoPtr = NewSocketInfo(sock);
-
-		/*
-		 * Set up the select mask for connection request events.
-		 */
-
-		infoPtr->selectEvents = FD_ACCEPT;
-		infoPtr->watchEvents |= FD_ACCEPT;
-
-	    } else {
-		AddSocketInfoFd( infoPtr, sock );
-	    }
-	}
-    } else {
-	for (addrPtr = addrlist; addrPtr != NULL;
-		addrPtr = addrPtr->ai_next) {
-	    for (myaddrPtr = myaddrlist; myaddrPtr != NULL;
-		    myaddrPtr = myaddrPtr->ai_next) {
-		/*
-		 * No need to try combinations of local and remote addresses
-		 * of different families.
-		 */
-
-		if (myaddrPtr->ai_family != addrPtr->ai_family) {
-		    continue;
-		}
-
-		sock = socket(myaddrPtr->ai_family, SOCK_STREAM, 0);
-		if (sock == INVALID_SOCKET) {
-		    TclWinConvertError((DWORD) WSAGetLastError());
-		    continue;
-		}
-
-		/*
-		 * Win-NT has a misfeature that sockets are inherited in child
-		 * processes by default. Turn off the inherit bit.
-		 */
-
-		SetHandleInformation((HANDLE) sock, HANDLE_FLAG_INHERIT, 0);
-
-		/*
-		 * Set kernel space buffering
-		 */
-
-		TclSockMinimumBuffers((void *) sock, TCP_BUFFER_SIZE);
-
-		/*
-		 * Try to bind to a local port.
-		 */
-
-		if (bind(sock, myaddrPtr->ai_addr, myaddrPtr->ai_addrlen)
-			== SOCKET_ERROR) {
-		    TclWinConvertError((DWORD) WSAGetLastError());
+	    if (connect(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
+		== SOCKET_ERROR) {
+		DWORD error = (DWORD) WSAGetLastError();
+		if (error != WSAEWOULDBLOCK) {
+		    TclWinConvertError(error);
 		    goto looperror;
 		}
+		
 		/*
-		 * Set the socket into nonblocking mode if the connect should
-		 * be done in the background.
-		 */
-		if (async && ioctlsocket(sock, (long) FIONBIO, &flag)
-			== SOCKET_ERROR) {
-		    TclWinConvertError((DWORD) WSAGetLastError());
-		    goto looperror;
-		}
-
-		/*
-		 * Attempt to connect to the remote socket.
+		 * The connection is progressing in the background.
 		 */
 
-		if (connect(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
-			== SOCKET_ERROR) {
-		    DWORD error = (DWORD) WSAGetLastError();
-		    if (error != WSAEWOULDBLOCK) {
-			TclWinConvertError(error);
-			goto looperror;
-		    }
-
-		    /*
-		     * The connection is progressing in the background.
-		     */
-
-		    asyncConnect = 1;
-		}
-		goto connected;
-
-	    looperror:
-		if (sock != INVALID_SOCKET) {
-		    closesocket(sock);
-		    sock = INVALID_SOCKET;
-		}
+		asyncConnect = 1;
+	    }
+	    goto connected;
+	    
+	looperror:
+	    if (sock != INVALID_SOCKET) {
+		closesocket(sock);
+		sock = INVALID_SOCKET;
 	    }
 	}
-	goto error;
+    }
+    goto error;
 
     connected:
 	/*
@@ -1357,7 +1263,6 @@ CreateSocket(
 	    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
 	    infoPtr->selectEvents |= FD_CONNECT;
 	}
-    }
 
   error:
     if (addrlist != NULL) {
@@ -1496,12 +1401,12 @@ Tcl_OpenTcpClient(
      * Create a new client socket and wrap it in a channel.
      */
 
-    infoPtr = CreateSocket(interp, port, host, 0, myaddr, myport, async);
+    infoPtr = CreateClientSocket(interp, port, host, myaddr, myport, async);
     if (infoPtr == NULL) {
 	return NULL;
     }
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, SOCK_TEMPLATE, infoPtr);
 
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
@@ -1564,7 +1469,7 @@ Tcl_MakeTcpClientChannel(
     infoPtr->selectEvents = FD_READ | FD_CLOSE | FD_WRITE;
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM)SELECT, (LPARAM)infoPtr);
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
+    sprintf(channelName, SOCK_TEMPLATE, infoPtr);
     infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    infoPtr, (TCL_READABLE | TCL_WRITABLE));
     Tcl_SetChannelOption(NULL, infoPtr->channel, "-translation", "auto crlf");
@@ -1598,36 +1503,169 @@ Tcl_OpenTcpServer(
 				 * clients. */
     ClientData acceptProcData)	/* Data for the callback. */
 {
-    SocketInfo *infoPtr;
-    char channelName[16 + TCL_INTEGER_SPACE];
+    SOCKET sock = INVALID_SOCKET;
+    unsigned short chosenport = 0;
+    struct addrinfo *addrPtr;	/* Socket address to listen on. */
+    SocketInfo *infoPtr = NULL;	/* The returned value. */
+    void *addrlist = NULL;
+    char channelName[SOCK_CHAN_LENGTH];
+    u_long flag = 1;		/* Indicates nonblocking mode. */
+    const char *errorMsg = NULL;
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     if (TclpHasSockets(interp) != TCL_OK) {
 	return NULL;
     }
 
     /*
-     * Create a new client socket and wrap it in a channel.
+     * Check that WinSock is initialized; do not call it if not, to prevent
+     * system crashes. This can happen at exit time if the exit handler for
+     * WinSock ran before other exit handlers that want to use sockets.
      */
 
-    infoPtr = CreateSocket(interp, port, host, 1, NULL, 0, 0);
-    if (infoPtr == NULL) {
+    if (!SocketsEnabled()) {
 	return NULL;
     }
 
-    infoPtr->acceptProc = acceptProc;
-    infoPtr->acceptProcData = acceptProcData;
+    /*
+     * Construct the addresses for each end of the socket.
+     */
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) infoPtr->sockets->fd);
+    if (!TclCreateSocketAddress(interp, &addrlist, host, port, 1, &errorMsg)) {
+	goto error;
+    }
 
-    infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
-	    infoPtr, 0);
-    if (Tcl_SetChannelOption(interp, infoPtr->channel, "-eofchar", "")
+    for (addrPtr = addrlist; addrPtr != NULL; addrPtr = addrPtr->ai_next) {
+	sock = socket(addrPtr->ai_family, addrPtr->ai_socktype,
+                addrPtr->ai_protocol);
+	if (sock == INVALID_SOCKET) {
+	    TclWinConvertError((DWORD) WSAGetLastError());
+	    continue;
+	}
+	
+	/*
+	 * Win-NT has a misfeature that sockets are inherited in child
+	 * processes by default. Turn off the inherit bit.
+	 */
+	
+	SetHandleInformation((HANDLE) sock, HANDLE_FLAG_INHERIT, 0);
+	
+	/*
+	 * Set kernel space buffering
+	 */
+	
+	TclSockMinimumBuffers((void *)sock, TCP_BUFFER_SIZE);
+	
+	/*
+	 * Make sure we use the same port when opening two server sockets
+	 * for IPv4 and IPv6.
+	 *
+	 * As sockaddr_in6 uses the same offset and size for the port
+	 * member as sockaddr_in, we can handle both through the IPv4 API.
+	 */
+	
+	if (port == 0 && chosenport != 0) {
+	    ((struct sockaddr_in *) addrPtr->ai_addr)->sin_port =
+		htons(chosenport);
+	}
+	
+	/*
+	 * Bind to the specified port. Note that we must not call
+	 * setsockopt with SO_REUSEADDR because Microsoft allows addresses
+	 * to be reused even if they are still in use.
+	 *
+	 * Bind should not be affected by the socket having already been
+	 * set into nonblocking mode. If there is trouble, this is one
+	 * place to look for bugs.
+	 */
+	
+	if (bind(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
+	    == SOCKET_ERROR) {
+	    TclWinConvertError((DWORD) WSAGetLastError());
+	    closesocket(sock);
+	    continue;
+	}
+	if (port == 0 && chosenport == 0) {
+	    address sockname;
+	    socklen_t namelen = sizeof(sockname);
+	    
+	    /*
+	     * Synchronize port numbers when binding to port 0 of multiple
+	     * addresses.
+	     */
+	    
+	    if (getsockname(sock, &sockname.sa, &namelen) >= 0) {
+		chosenport = ntohs(sockname.sa4.sin_port);
+	    }
+	}
+	
+	/*
+	 * Set the maximum number of pending connect requests to the max
+	 * value allowed on each platform (Win32 and Win32s may be
+	 * different, and there may be differences between TCP/IP stacks).
+	 */
+	
+	if (listen(sock, SOMAXCONN) == SOCKET_ERROR) {
+	    TclWinConvertError((DWORD) WSAGetLastError());
+	    closesocket(sock);
+	    continue;
+	}
+	
+	if (infoPtr == NULL) {
+	    /*
+	     * Add this socket to the global list of sockets.
+	     */
+	    infoPtr = NewSocketInfo(sock);
+	} else {
+	    AddSocketInfoFd( infoPtr, sock );
+	}
+    }
+
+error:
+     if (addrlist != NULL) {
+	freeaddrinfo(addrlist);
+    }
+
+    if (infoPtr != NULL) {
+
+	infoPtr->acceptProc = acceptProc;
+	infoPtr->acceptProcData = acceptProcData;
+	sprintf(channelName, SOCK_TEMPLATE, infoPtr);
+	infoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
+					    infoPtr, 0);	
+	/*
+	 * Set up the select mask for connection request events.
+	 */
+	
+	infoPtr->selectEvents = FD_ACCEPT;
+	infoPtr->watchEvents |= FD_ACCEPT;
+	
+	/*
+	 * Register for interest in events in the select mask. Note that this
+	 * automatically places the socket into non-blocking mode.
+	 */
+
+	ioctlsocket(sock, (long) FIONBIO, &flag);
+	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+		    (LPARAM) infoPtr);
+	if (Tcl_SetChannelOption(interp, infoPtr->channel, "-eofchar", "")
 	    == TCL_ERROR) {
-	Tcl_Close(NULL, infoPtr->channel);
-	return NULL;
+	    Tcl_Close(NULL, infoPtr->channel);
+	    return NULL;
+	}
+	return infoPtr->channel;
     }
 
-    return infoPtr->channel;
+    if (interp != NULL) {
+        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"couldn't open socket: %s",
+		(errorMsg ? errorMsg : Tcl_PosixError(interp))));
+    }
+
+    if (sock != INVALID_SOCKET) {
+	closesocket(sock);
+    }
+    return NULL;
 }
 
 /*
@@ -1682,7 +1720,7 @@ TcpAccept(
     SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 	    (LPARAM) newInfoPtr);
 
-    sprintf(channelName, "sock%" TCL_I_MODIFIER "u", (size_t) newInfoPtr->sockets->fd);
+    sprintf(channelName, SOCK_TEMPLATE, newInfoPtr);
     newInfoPtr->channel = Tcl_CreateChannel(&tcpChannelType, channelName,
 	    newInfoPtr, (TCL_READABLE | TCL_WRITABLE));
     if (Tcl_SetChannelOption(NULL, newInfoPtr->channel, "-translation",
