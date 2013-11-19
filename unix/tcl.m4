@@ -1263,8 +1263,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    if test "x${TCL_THREADS}" = "x0"; then
 		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
 	    fi
-	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde13.dll" -a ! -f "../win/tk85.dll"; then
-		AC_MSG_ERROR([Please configure and make the ../win directory first.])
+	    do64bit_ok=yes
+	    if test "x${SHARED_BUILD}" = "x1"; then
+		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		# The eval makes quoting arguments work.
+		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		then :
+		else
+		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
+		fi
 	    fi
 	    ;;
 	dgux*)
