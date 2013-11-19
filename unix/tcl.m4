@@ -1045,34 +1045,17 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     AC_CACHE_CHECK([if compiler supports visibility "hidden"],
 	tcl_cv_cc_visibility_hidden, [
-	    AS_IF([test "$SHARED_BUILD" = 1], [
-		hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
-		AC_TRY_COMPILE(,[#if !defined(__GNUC__) || __GNUC__ < 4
-#error visibility hidden is not supported for this compiler
-#endif
-		], tcl_cv_cc_visibility_hidden=yes,
-		    tcl_cv_cc_visibility_hidden=no)
-		CFLAGS=$hold_cflags
-	    ], [
-		tcl_cv_cc_visibility_hidden=no
-	    ])
-    ])
-    AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
-	CFLAGS="$CFLAGS -fvisibility=hidden"
-	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
-    ], [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	AC_TRY_LINK([
 	    extern __attribute__((__visibility__("hidden"))) void f(void);
 	    void f(void) {}], [f();], tcl_cv_cc_visibility_hidden=yes,
 	    tcl_cv_cc_visibility_hidden=no)
-	CFLAGS=$hold_cflags
-	AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
-	    AC_DEFINE(MODULE_SCOPE,
-		[extern __attribute__((__visibility__("hidden")))],
-		[Compiler support for module scope symbols])
-	    AC_DEFINE(HAVE_HIDDEN, [1], [Compiler support for module scope symbols])
-	])
+	CFLAGS=$hold_cflags])
+    AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
+	AC_DEFINE(MODULE_SCOPE,
+	    [extern __attribute__((__visibility__("hidden")))],
+	    [Compiler support for module scope symbols])
+	AC_DEFINE(HAVE_HIDDEN, [1], [Compiler support for module scope symbols])
     ])
 
     # Step 0.d: Disable -rpath support?
@@ -1638,7 +1621,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$tcl_cv_cc_visibility_hidden" != yes], [
 		AC_DEFINE(MODULE_SCOPE, [__private_extern__],
 		    [Compiler support for module scope symbols])
-		tcl_cv_cc_visibility_hidden=yes
 	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
