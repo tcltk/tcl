@@ -111,9 +111,9 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
 		    if test -f "$i/unix/tclConfig.sh" ; then
-		    ac_cv_c_tclconfig="`(cd $i/unix; pwd)`"
-		    break
-		fi
+			ac_cv_c_tclconfig="`(cd $i/unix; pwd)`"
+			break
+		    fi
 		done
 	    fi
 	])
@@ -271,11 +271,10 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #
 # Results:
 #
-#	Subst the following vars:
+#	Substitutes the following vars:
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_LOAD_TCLCONFIG], [
@@ -439,11 +438,11 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 #	extension can't assume that an executable Tcl shell exists at
 #	build time.
 #
-# Arguments
+# Arguments:
 #	none
 #
-# Results
-#	Subst's the following values:
+# Results:
+#	Substitutes the following vars:
 #		TCLSH_PROG
 #------------------------------------------------------------------------
 
@@ -484,11 +483,11 @@ AC_DEFUN([SC_PROG_TCLSH], [
 #	when running tests from an extension build directory. It is not
 #	correct to use the TCLSH_PROG in cases like this.
 #
-# Arguments
+# Arguments:
 #	none
 #
-# Results
-#	Subst's the following values:
+# Results:
+#	Substitutes the following values:
 #		BUILD_TCLSH
 #------------------------------------------------------------------------
 
@@ -790,7 +789,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #
 #	Defines the following vars:
 #		HAVE_LANGINFO	Triggers use of nl_langinfo if defined.
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_LANGINFO], [
