@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.3.6
+    variable Version 2.3.7
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -2495,14 +2495,17 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	set changedEnv {}
 	set removedEnv {}
 	foreach index [array names ::env] {
-	    if {![info exists originalEnv($index)]} {
-		lappend newEnv $index
-		unset ::env($index)
-	    } else {
+	    if {[info exists originalEnv($index)]} {
 		if {$::env($index) != $originalEnv($index)} {
 		    lappend changedEnv $index
 		    set ::env($index) $originalEnv($index)
 		}
+	    }
+	}
+	foreach index [array names ::env] {
+	    if {![info exists originalEnv($index)]} {
+		lappend newEnv $index
+		unset ::env($index)
 	    }
 	}
 	foreach index [array names originalEnv] {
