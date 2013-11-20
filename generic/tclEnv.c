@@ -614,6 +614,7 @@ EnvTraceProc(
 	const char *value = TclGetEnv(name2, &valueString);
 
 	if (value == NULL) {
+	    Tcl_UnsetVar2(interp, name1, name2, 0);
 	    return NULL;
 	}
 	Tcl_SetVar2(interp, name1, name2, value, 0);
