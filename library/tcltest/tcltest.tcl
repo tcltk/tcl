@@ -2495,14 +2495,6 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	set changedEnv {}
 	set removedEnv {}
 	foreach index [array names ::env] {
-	    if {[info exists originalEnv($index)]} {
-		if {$::env($index) != $originalEnv($index)} {
-		    lappend changedEnv $index
-		    set ::env($index) $originalEnv($index)
-		}
-	    }
-	}
-	foreach index [array names ::env] {
 	    if {![info exists originalEnv($index)]} {
 		lappend newEnv $index
 		unset ::env($index)
@@ -2511,6 +2503,9 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	foreach index [array names originalEnv] {
 	    if {![info exists ::env($index)]} {
 		lappend removedEnv $index
+		set ::env($index) $originalEnv($index)
+	    } elseif {$::env($index) ne $originalEnv($index)} {
+		lappend changedEnv $index
 		set ::env($index) $originalEnv($index)
 	    }
 	}
