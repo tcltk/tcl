@@ -106,7 +106,11 @@ extern "C" {
 #endif
 /* interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
+#ifdef __CYGWIN__
+#define	__REG_REGOFF_T	int 	/* not really right, but good enough... */
+#else
 #define	__REG_REGOFF_T	long	/* not really right, but good enough... */
+#endif
 #define	__REG_VOID_T	void
 #define	__REG_CONST	const
 /* names and declarations */

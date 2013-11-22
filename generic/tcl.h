@@ -458,7 +458,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct _stat32i64 Tcl_StatBuf;
 #   endif /* _MSC_VER < 1400 */
 #elif defined(__CYGWIN__)
-    typedef struct _stat32i64 {
+    typedef struct {
 	dev_t st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
