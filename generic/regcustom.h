@@ -74,7 +74,11 @@
 #endif
 /* Interface types */
 #define	__REG_WIDE_T	Tcl_UniChar
+#ifdef __CYGWIN__
+#define	__REG_REGOFF_T	int 	/* Not really right, but good enough... */
+#else
 #define	__REG_REGOFF_T	long	/* Not really right, but good enough... */
+#endif
 #define	__REG_VOID_T	void
 #define	__REG_CONST	const
 /* Names and declarations */
