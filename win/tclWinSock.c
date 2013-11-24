@@ -1131,10 +1131,9 @@ CreateSocket(
     int asyncConnect = 0;	/* Will be 1 if async connect is in
 				 * progress. */
     unsigned short chosenport = 0;
-    void *addrlist = NULL, *myaddrlist = NULL;
-    struct addrinfo *addrPtr;
+    struct addrinfo *addrlist = NULL, *addrPtr;
 				/* Socket address to connect to. */
-    struct addrinfo *myaddrPtr;
+    struct addrinfo *myaddrlist = NULL, *myaddrPtr;
 				/* Socket address for our side. */
     const char *errorMsg = NULL;
     SOCKET sock = INVALID_SOCKET;
@@ -1317,8 +1316,9 @@ CreateSocket(
 
 		if (connect(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
 			== SOCKET_ERROR) {
-		    TclWinConvertError((DWORD) WSAGetLastError());
-		    if (Tcl_GetErrno() != EAGAIN) {
+		    DWORD error = (DWORD) WSAGetLastError();
+		    if (error != WSAEWOULDBLOCK) {
+			TclWinConvertError(error);
 			goto looperror;
 		    }
 
@@ -1359,10 +1359,10 @@ CreateSocket(
     }
 
   error:
-    if (addrlist == NULL) {
+    if (addrlist != NULL) {
 	freeaddrinfo(addrlist);
     }
-    if (myaddrlist == NULL) {
+    if (myaddrlist != NULL) {
 	freeaddrinfo(myaddrlist);
     }
 
@@ -1441,7 +1441,7 @@ WaitForSocketEvent(
 	} else if (infoPtr->readyEvents & events) {
 	    break;
 	} else if (infoPtr->flags & SOCKET_ASYNC) {
-	    *errorCodePtr = EAGAIN;
+	    *errorCodePtr = EWOULDBLOCK;
 	    result = 0;
 	    break;
 	}
@@ -1926,7 +1926,7 @@ TcpOutputProc(
 	if (error == WSAEWOULDBLOCK) {
 	    infoPtr->readyEvents &= ~(FD_WRITE);
 	    if (infoPtr->flags & SOCKET_ASYNC) {
-		*errorCodePtr = EAGAIN;
+		*errorCodePtr = EWOULDBLOCK;
 		bytesWritten = -1;
 		break;
 	    }

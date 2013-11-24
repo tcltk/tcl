@@ -1884,7 +1884,7 @@ PipeClose2Proc(
 		SetEvent(pipePtr->stopWriter);
 
 		if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
-		    return EAGAIN;
+		    return EWOULDBLOCK;
 		}
 
 	    } else {
@@ -2161,7 +2161,7 @@ PipeOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error;
     }
 
@@ -2712,7 +2712,7 @@ WaitForRead(
 	     * is in non-blocking mode.
 	     */
 
-	    errno = EAGAIN;
+	    errno = EWOULDBLOCK;
 	    return -1;
 	}
 

@@ -611,7 +611,7 @@ SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 
 all: binaries libraries doc packages
 
-binaries: ${LIB_FILE} $(STUB_LIB_FILE) ${TCL_EXE}
+binaries: ${LIB_FILE} ${TCL_EXE}
 
 libraries:
 
@@ -619,11 +619,14 @@ doc:
 
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
-${LIB_FILE}: ${OBJS} ${STUB_LIB_FILE}
+${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
 	rm -f $@
 	@MAKE_LIB@
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
+	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
+	    (cd ${TOP_DIR}/win; ${MAKE} tcldde14.dll tclreg13.dll); \
+	fi
 	rm -f $@
 	@MAKE_STUB_LIB@
 
@@ -847,8 +850,8 @@ install-libraries: libraries
 	    done;
 	@echo "Installing package msgcat 1.5.2 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.5.2.tm;
-	@echo "Installing package tcltest 2.3.6 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.6.tm;
+	@echo "Installing package tcltest 2.3.7 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.7.tm;
 
 	@echo "Installing package platform 1.0.12 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.12.tm;

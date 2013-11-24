@@ -350,6 +350,19 @@ else
     TCL_PACKAGE_PATH="${prefix}/lib"
 fi
 
+# The tclsh.exe.manifest requires these
+# TCL_WIN_VERSION is the 4 dotted pair Windows version format which needs
+# the release level, and must account for interim release versioning
+case "$TCL_PATCH_LEVEL" in
+     *a*) TCL_RELEASE_LEVEL=0 ;;
+     *b*) TCL_RELEASE_LEVEL=1 ;;
+     *)   TCL_RELEASE_LEVEL=2 ;;
+esac
+TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
+AC_SUBST(TCL_WIN_VERSION)
+# X86|AMD64|IA64 for manifest
+AC_SUBST(MACHINE)
+
 AC_SUBST(TCL_VERSION)
 AC_SUBST(TCL_MAJOR_VERSION)
 AC_SUBST(TCL_MINOR_VERSION)
@@ -444,7 +457,7 @@ AC_SUBST(RC_DEFINE)
 AC_SUBST(RC_DEFINES)
 AC_SUBST(RES)
 
-AC_OUTPUT(Makefile tclConfig.sh tcl.hpj)
+AC_OUTPUT(Makefile tclConfig.sh tcl.hpj tclsh.exe.manifest)
 
 dnl Local Variables:
 dnl mode: autoconf;
