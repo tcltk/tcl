@@ -5,6 +5,14 @@
 #ifndef _TCLOODECLS
 #define _TCLOODECLS
 
+#ifndef TCLAPI
+#   ifdef BUILD_tcl
+#	define TCLAPI extern DLLEXPORT
+#   else
+#	define TCLAPI extern DLLIMPORT
+#   endif
+#endif
+
 #ifdef USE_TCL_STUBS
 #   undef USE_TCLOO_STUBS
 #   define USE_TCLOO_STUBS
