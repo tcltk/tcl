@@ -1147,7 +1147,7 @@ InfoFrameCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    int level, topLevel, code = TCL_OK;
+    int corOffset, level, topLevel, code = TCL_OK;
     CmdFrame *runPtr, *framePtr;
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
@@ -1170,16 +1170,21 @@ InfoFrameCmd(
 
 	runPtr = iPtr->cmdFramePtr;
 
+	corOffset = (corPtr->caller.cmdFramePtr
+		  ? corPtr->caller.cmdFramePtr->level
+		  : 0);
+
 	/* TODO - deal with overflow */
-	topLevel += corPtr->caller.cmdFramePtr->level;
+	topLevel += corOffset;
 	while (runPtr) {
-	    runPtr->level += corPtr->caller.cmdFramePtr->level;
+	    runPtr->level += corOffset;
 	    lastPtr = runPtr;
 	    runPtr = runPtr->nextPtr;
 	}
 	if (lastPtr) {
 	    lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
 	} else {
+	    /* (**) !lastPtr => 'iPtr->cmdFramePtr == NULL' */
 	    iPtr->cmdFramePtr = corPtr->caller.cmdFramePtr;
 	}
     }
@@ -1232,13 +1237,13 @@ InfoFrameCmd(
 
   done:
     if (corPtr) {
-
 	if (iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr) {
+	    /* This is right, see (**) at the beginning of the function */
 	    iPtr->cmdFramePtr = NULL;
 	} else {
 	    runPtr = iPtr->cmdFramePtr;
 	    while (runPtr->nextPtr != corPtr->caller.cmdFramePtr) {
-	    	runPtr->level -= corPtr->caller.cmdFramePtr->level;
+	    	runPtr->level -= corOffset;
 		runPtr = runPtr->nextPtr;
 	    }
 	    runPtr->level = 1;
