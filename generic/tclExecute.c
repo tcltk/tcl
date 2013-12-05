@@ -6259,6 +6259,7 @@ TEBCresume(
 	pc += 5 - infoPtr->loopCtTemp;
 	
     case INST_FOREACH_STEP:
+	/* THIS INSTRUCTION IS ONLY CALLED AS A CONTINUE TARGET */
 	/*
 	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
 	 * the next value list element to each loop var.
@@ -6341,6 +6342,7 @@ TEBCresume(
 	pc++;
 
     case INST_FOREACH_END:
+	/* THIS INSTRUCTION IS ONLY CALLED AS A BREAK TARGET */
 	tmpPtr = OBJ_AT_TOS;
 	infoPtr = tmpPtr->internalRep.otherValuePtr;
 	numLists = infoPtr->numLists;
