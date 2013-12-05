@@ -2677,7 +2677,7 @@ CompileEachloopCmd(
 
     /*
      * Set the jumpback distance from INST_FOREACH_STEP to the start of the
-     * body's code
+     * body's code. Misuse loopCtTemp for storing the jump size.
      */
     
     jumpBackOffset = envPtr->exceptArrayPtr[range].continueOffset -
