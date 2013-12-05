@@ -848,6 +848,10 @@ typedef struct Tcl_Obj {
 	    void *ptr;
 	    unsigned long value;
 	} ptrAndLongRep;
+	struct {
+	    long int1;
+	    long int2;
+	} twoIntValue;
     } internalRep;
 } Tcl_Obj;
 
