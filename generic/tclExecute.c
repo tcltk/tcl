@@ -6331,6 +6331,7 @@ TEBCresume(
 		}
 		listTmpDepth--;
 	    }
+	    /* loopCtTemp being 'misused' for storing the jump size */
 	    NEXT_INST_F(infoPtr->loopCtTemp, 0, 0);
 	}
 
