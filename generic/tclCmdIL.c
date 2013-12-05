@@ -104,6 +104,8 @@ typedef struct SortInfo {
  * Forward declarations for procedures defined in this file:
  */
 
+static CmdFrame *	CmdFrameChain(CoroutineData *corPtr);
+static void		CmdFrameUnchain(CoroutineData *corPtr);
 static int		DictionaryCompare(const char *left, const char *right);
 static int		IfConditionCallback(ClientData data[],
 			    Tcl_Interp *interp, int result);
@@ -1167,20 +1169,22 @@ InfoFrameCmd(
 	 */
 
 	CmdFrame *lastPtr = NULL;
+	CmdFrame *tailPtr = CmdFrameChain(corPtr);
+	int offset = tailPtr ? tailPtr->level : 0;
 
 	runPtr = iPtr->cmdFramePtr;
 
 	/* TODO - deal with overflow */
-	topLevel += corPtr->caller.cmdFramePtr->level;
+	topLevel += offset;
 	while (runPtr) {
-	    runPtr->level += corPtr->caller.cmdFramePtr->level;
+	    runPtr->level += offset;
 	    lastPtr = runPtr;
 	    runPtr = runPtr->nextPtr;
 	}
 	if (lastPtr) {
-	    lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
+	    lastPtr->nextPtr = tailPtr;
 	} else {
-	    iPtr->cmdFramePtr = corPtr->caller.cmdFramePtr;
+	    iPtr->cmdFramePtr = tailPtr;
 	}
     }
 
@@ -1244,9 +1248,57 @@ InfoFrameCmd(
 	    runPtr->level = 1;
 	    runPtr->nextPtr = NULL;
 	}
+	CmdFrameUnchain(corPtr);
 
     }
     return code;
+}
+
+static void
+CmdFrameUnchain(
+    CoroutineData *corPtr)
+{
+    if (corPtr->callerEEPtr->corPtr) {
+	CmdFrame *endPtr = corPtr->callerEEPtr->corPtr->caller.cmdFramePtr;
+
+	if (corPtr->caller.cmdFramePtr == endPtr) {
+	    corPtr->caller.cmdFramePtr = NULL;
+	} else {
+	    CmdFrame *runPtr = corPtr->caller.cmdFramePtr;
+
+	    while (runPtr->nextPtr != endPtr) {
+	    	runPtr->level -= endPtr->level;
+		runPtr = runPtr->nextPtr;
+	    }
+	    runPtr->level = 1;
+	    runPtr->nextPtr = NULL;
+	}
+	CmdFrameUnchain(corPtr->callerEEPtr->corPtr);
+    }
+}
+
+static CmdFrame *
+CmdFrameChain(
+    CoroutineData *corPtr)
+{
+    if (corPtr->callerEEPtr->corPtr) {
+	CmdFrame *tailPtr = CmdFrameChain(corPtr->callerEEPtr->corPtr);
+	CmdFrame *lastPtr = NULL;
+	CmdFrame *runPtr = corPtr->caller.cmdFramePtr;
+	int offset = tailPtr ? tailPtr->level : 0;
+
+	while (runPtr) {
+	    runPtr->level += offset;
+	    lastPtr = runPtr;
+	    runPtr = runPtr->nextPtr;
+	}
+	if (lastPtr) {
+	    lastPtr->nextPtr = tailPtr;
+	} else {
+	    corPtr->caller.cmdFramePtr = tailPtr;
+	}
+    }
+    return corPtr->caller.cmdFramePtr;
 }
 
 /*
