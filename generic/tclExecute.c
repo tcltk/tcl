@@ -6268,8 +6268,8 @@ TEBCresume(
 	numLists = infoPtr->numLists;
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	iterNum = INT2PTR(tmpPtr->internalRep.twoPtrValue.ptr1);
-	iterMax = INT2PTR(tmpPtr->internalRep.twoPtrValue.ptr2);
+	iterNum = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr1);
+	iterMax = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr2);
 
 	/*
 	 * If some list still has a remaining list element iterate one more
