@@ -2602,16 +2602,14 @@ CompileEachloopCmd(
      */
 
     infoPtr = ckalloc(sizeof(ForeachInfo)
-	    + numLists * sizeof(ForeachVarList *));
+	    + (numLists - 1) * sizeof(ForeachVarList *));
     infoPtr->numLists = numLists;
-    infoPtr->firstValueTemp = collect;
-    infoPtr->loopCtTemp = 0;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	ForeachVarList *varListPtr;
 
 	numVars = varcList[loopIndex];
 	varListPtr = ckalloc(sizeof(ForeachVarList)
-		+ numVars * sizeof(int));
+		+ (numVars - 1) * sizeof(int));
 	varListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
 	    const char *varName = varvList[loopIndex][j];
