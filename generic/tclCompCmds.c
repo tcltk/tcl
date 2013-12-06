@@ -31,6 +31,9 @@ static void		FreeForeachInfo(ClientData clientData);
 static void		PrintForeachInfo(ClientData clientData,
 			    Tcl_Obj *appendObj, ByteCode *codePtr,
 			    unsigned int pcOffset);
+static void		PrintNewForeachInfo(ClientData clientData,
+			    Tcl_Obj *appendObj, ByteCode *codePtr,
+			    unsigned int pcOffset);
 static int		CompileEachloopCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    CompileEnv *envPtr, int collect);
@@ -47,6 +50,13 @@ const AuxDataType tclForeachInfoType = {
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo,		/* freeProc */
     PrintForeachInfo		/* printProc */
+};
+
+const AuxDataType tclNewForeachInfoType = {
+    "NewForeachInfo",		/* name */
+    DupForeachInfo,		/* dupProc */
+    FreeForeachInfo,		/* freeProc */
+    PrintNewForeachInfo		/* printProc */
 };
 
 const AuxDataType tclDictUpdateInfoType = {
@@ -2599,7 +2609,7 @@ CompileEachloopCmd(
 	}
 	infoPtr->varLists[loopIndex] = varListPtr;
     }
-    infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
+    infoIndex = TclCreateAuxData(infoPtr, &tclNewForeachInfoType, envPtr);
 
     /*
      * Evaluate each value list and leave it on stack.
@@ -2821,6 +2831,36 @@ PrintForeachInfo(
 	for (j=0 ; j<varsPtr->numVars ; j++) {
 	    if (j) {
 		Tcl_AppendToObj(appendObj, ", ", -1);
+	    }
+	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
+		    (unsigned) varsPtr->varIndexes[j]);
+	}
+	Tcl_AppendToObj(appendObj, "]", -1);
+    }
+}
+
+static void
+PrintNewForeachInfo(
+    ClientData clientData,
+    Tcl_Obj *appendObj,
+    ByteCode *codePtr,
+    unsigned int pcOffset)
+{
+    register ForeachInfo *infoPtr = clientData;
+    register ForeachVarList *varsPtr;
+    int i, j;
+
+    Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+d, vars=",
+	    infoPtr->loopCtTemp);
+    for (i=0 ; i<infoPtr->numLists ; i++) {
+	if (i) {
+	    Tcl_AppendToObj(appendObj, ",", -1);
+	}
+	Tcl_AppendToObj(appendObj, "[", -1);
+	varsPtr = infoPtr->varLists[i];
+	for (j=0 ; j<varsPtr->numVars ; j++) {
+	    if (j) {
+		Tcl_AppendToObj(appendObj, ",", -1);
 	    }
 	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
 		    (unsigned) varsPtr->varIndexes[j]);
