@@ -6237,8 +6237,8 @@ TEBCresume(
 	 */
 
 	TclNewObj(tmpPtr);
-	tmpPtr->internalRep.twoIntValue.int1 = 0;
-	tmpPtr->internalRep.twoIntValue.int2 = iterMax;
+	tmpPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	tmpPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(iterMax);
 	PUSH_OBJECT(tmpPtr); /* iterCounts object */
 
 	/*
@@ -6268,8 +6268,8 @@ TEBCresume(
 	numLists = infoPtr->numLists;
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	iterNum = tmpPtr->internalRep.twoIntValue.int1;
-	iterMax = tmpPtr->internalRep.twoIntValue.int2;
+	iterNum = INT2PTR(tmpPtr->internalRep.twoPtrValue.ptr1);
+	iterMax = INT2PTR(tmpPtr->internalRep.twoPtrValue.ptr2);
 
 	/*
 	 * If some list still has a remaining list element iterate one more
@@ -6281,7 +6281,7 @@ TEBCresume(
 	     * Set the variables and jump back to run the body
 	     */
 
-	    tmpPtr->internalRep.twoIntValue.int1 = iterNum + 1;
+	    tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(iterNum + 1);
 
 	    listTmpDepth = numLists + 1;
 
