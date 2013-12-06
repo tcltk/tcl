@@ -245,8 +245,8 @@ TclCompileArraySetCmd(
     Tcl_Token *varTokenPtr, *dataTokenPtr;
     int isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven, len;
-    int dataVar, iterVar, keyVar, valVar, infoIndex;
-    int back, fwd, offsetBack, offsetFwd;
+    int keyVar, valVar, infoIndex;
+    int fwd, offsetBack, offsetFwd;
     Tcl_Obj *literalObj;
     ForeachInfo *infoPtr;
 
@@ -290,6 +290,7 @@ TclCompileArraySetCmd(
 	code = TCL_ERROR;
 	goto done;
     }
+
     /*
      * Special case: literal empty value argument is just an "ensure array"
      * operation.
@@ -314,19 +315,28 @@ TclCompileArraySetCmd(
 	goto done;
     }
 
+    if (localIndex < 0) {
+	/*
+	 * a non-local variable: upvar from a local one! This consumes the
+	 * variable name that was left at stacktop.
+	 */
+	
+	localIndex = AnonymousLocal(envPtr);
+	PushStringLiteral(envPtr, "0");
+	TclEmitInstInt4(INST_REVERSE, 2,        		envPtr);
+	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
+	TclEmitOpcode(INST_POP,          			envPtr);
+    }
+    
     /*
      * Prepare for the internal foreach.
      */
 
-    dataVar = AnonymousLocal(envPtr);
-    iterVar = AnonymousLocal(envPtr);
     keyVar = AnonymousLocal(envPtr);
     valVar = AnonymousLocal(envPtr);
 
     infoPtr = ckalloc(sizeof(ForeachInfo));
     infoPtr->numLists = 1;
-    infoPtr->firstValueTemp = dataVar;
-    infoPtr->loopCtTemp = iterVar;
     infoPtr->varLists[0] = ckalloc(sizeof(ForeachVarList) + sizeof(int));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
@@ -360,54 +370,23 @@ TclCompileArraySetCmd(
 	fwd = CurrentOffset(envPtr) - offsetFwd;
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
     }
-    Emit14Inst(		INST_STORE_SCALAR, dataVar,		envPtr);
-    TclEmitOpcode(	INST_POP,				envPtr);
 
-    if (localIndex >= 0) {
-	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-	TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
-	TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
-	TclEmitInstInt4(INST_FOREACH_START4, infoIndex,		envPtr);
-	offsetBack = CurrentOffset(envPtr);
-	TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex,		envPtr);
-	offsetFwd = CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
-	Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
-	Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
-	Emit14Inst(	INST_STORE_ARRAY, localIndex,		envPtr);
-	TclEmitOpcode(	INST_POP,				envPtr);
-	back = offsetBack - CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP1, back,			envPtr);
-	fwd = CurrentOffset(envPtr) - offsetFwd;
-	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-    } else {
-	TclEmitOpcode(	INST_DUP,				envPtr);
-	TclEmitOpcode(	INST_ARRAY_EXISTS_STK,			envPtr);
-	TclEmitInstInt1(INST_JUMP_TRUE1, 4,			envPtr);
-	TclEmitOpcode(	INST_DUP,				envPtr);
-	TclEmitOpcode(	INST_ARRAY_MAKE_STK,			envPtr);
-	TclEmitInstInt4(INST_FOREACH_START4, infoIndex,		envPtr);
-	offsetBack = CurrentOffset(envPtr);
-	TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex,		envPtr);
-	offsetFwd = CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
-	TclEmitOpcode(	INST_DUP,				envPtr);
-	Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
-	Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
-	TclEmitOpcode(	INST_STORE_ARRAY_STK,			envPtr);
-	TclEmitOpcode(	INST_POP,				envPtr);
-	back = offsetBack - CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP1, back,			envPtr);
-	fwd = CurrentOffset(envPtr) - offsetFwd;
-	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-	TclEmitOpcode(	INST_POP,				envPtr);
-    }
-    if (!isDataLiteral) {
-	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
-	TclEmitInt4(		dataVar,			envPtr);
-    }
+    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
+    TclEmitInstInt4(INST_FOREACH_START, infoIndex,	envPtr);
+    offsetBack = CurrentOffset(envPtr);
+    Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
+    Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
+    Emit14Inst(	INST_STORE_ARRAY, localIndex,		envPtr);
+    TclEmitOpcode(	INST_POP,			envPtr);
+    infoPtr->loopCtTemp = offsetBack - CurrentOffset(envPtr); /*misuse */
+    TclEmitOpcode( INST_FOREACH_STEP,			envPtr);
+    TclEmitOpcode( INST_FOREACH_END,			envPtr);
+    TclAdjustStackDepth(-3, envPtr);
     PushStringLiteral(envPtr,	"");
-  done:
+
+    done:
     Tcl_DecrRefCount(literalObj);
     return code;
 }
