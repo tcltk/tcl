@@ -6237,7 +6237,7 @@ TEBCresume(
 	 */
 
 	TclNewObj(tmpPtr);
-	tmpPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(0);
 	tmpPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(iterMax);
 	PUSH_OBJECT(tmpPtr); /* iterCounts object */
 
