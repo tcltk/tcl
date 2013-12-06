@@ -2359,7 +2359,7 @@ TclCompileReturnCmd(
 
 	CompileWord(envPtr, optsTokenPtr, interp, 2);
 	CompileWord(envPtr, msgTokenPtr,  interp, 3);
-	TclEmitOpcode(INST_RETURN_STK, envPtr);
+	TclEmitInvoke(envPtr, INST_RETURN_STK);
 	return TCL_OK;
     }
 
@@ -2373,6 +2373,10 @@ TclCompileReturnCmd(
      * Scan through the return options. If any are unknown at compile time,
      * there is no value in bytecompiling. Save the option values known in an
      * objv array for merging into a return options dictionary.
+     *
+     * TODO: There is potential for improvement if all option keys are known
+     * at compile time and all option values relating to '-code' and '-level'
+     * are known at compile time.
      */
 
     for (objc = 0; objc < numOptionWords; objc++) {
@@ -2380,7 +2384,7 @@ TclCompileReturnCmd(
 	Tcl_IncrRefCount(objv[objc]);
 	if (!TclWordKnownAtCompileTime(wordTokenPtr, objv[objc])) {
 	    /*
-	     * Non-literal, so punt to run-time.
+	     * Non-literal, so punt to run-time assembly of the dictionary.
 	     */
 
 	    for (; objc>=0 ; objc--) {
@@ -2501,7 +2505,7 @@ TclCompileReturnCmd(
      * Issue the RETURN itself.
      */
 
-    TclEmitOpcode(INST_RETURN_STK, envPtr);
+    TclEmitInvoke(envPtr, INST_RETURN_STK);
     return TCL_OK;
 }
 
@@ -2513,6 +2517,23 @@ CompileReturnInternal(
     int level,
     Tcl_Obj *returnOpts)
 {
+    if (level == 0 && (code == TCL_BREAK || code == TCL_CONTINUE)) {
+	ExceptionRange *rangePtr;
+	ExceptionAux *exceptAux;
+
+	rangePtr = TclGetInnermostExceptionRange(envPtr, code, &exceptAux);
+	if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
+	    TclCleanupStackForBreakContinue(envPtr, exceptAux);
+	    if (code == TCL_BREAK) {
+		TclAddLoopBreakFixup(envPtr, exceptAux);
+	    } else {
+		TclAddLoopContinueFixup(envPtr, exceptAux);
+	    }
+	    Tcl_DecrRefCount(returnOpts);
+	    return;
+	}
+    }
+
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
     TclEmitInstInt4(op, code, envPtr);
     TclEmitInt4(level, envPtr);

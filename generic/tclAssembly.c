@@ -246,6 +246,8 @@ static void		BBEmitInstInt4(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int opnd, int count);
 static void		BBEmitInst1or4(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int param, int count);
+static void		BBEmitInvoke1or4(AssemblyEnv* assemEnvPtr, int tblIdx,
+			    int param, int count);
 static void		BBEmitOpcode(AssemblyEnv* assemEnvPtr, int tblIdx,
 			    int count);
 static int		BuildExceptionRanges(AssemblyEnv* assemEnvPtr);
@@ -679,10 +681,13 @@ BBEmitInstInt4(
 /*
  *-----------------------------------------------------------------------------
  *
- * BBEmitInst1or4 --
+ * BBEmitInst1or4, BBEmitInvoke1or4 --
  *
  *	Emits a 1- or 4-byte operation according to the magnitude of the
- *	operand
+ *	operand. The Invoke variant generates wrapping stack-balance
+ *	management if necessary (which is not normally required in assembled
+ *	code, as loop exception ranges, expansions, breaks and continues can't
+ *	be issued currently).
  *
  *-----------------------------------------------------------------------------
  */
@@ -711,6 +716,29 @@ BBEmitInst1or4(
     } else {
 	TclEmitInt4(param, envPtr);
     }
+    TclUpdateAtCmdStart(op, envPtr);
+    BBUpdateStackReqs(bbPtr, tblIdx, count);
+}
+
+static void
+BBEmitInvoke1or4(
+    AssemblyEnv* assemEnvPtr,	/* Assembly environment */
+    int tblIdx,			/* Index in TalInstructionTable of op */
+    int param,			/* Variable-length parameter */
+    int count)			/* Arity if variadic */
+{
+    CompileEnv* envPtr = assemEnvPtr->envPtr;
+				/* Compilation environment */
+    BasicBlock* bbPtr = assemEnvPtr->curr_bb;
+				/* Current basic block */
+    int op = TalInstructionTable[tblIdx].tclInstCode;
+
+    if (param <= 0xff) {
+	op >>= 8;
+    } else {
+	op &= 0xff;
+    }
+    TclEmitInvoke(envPtr, op, param);
     TclUpdateAtCmdStart(op, envPtr);
     BBUpdateStackReqs(bbPtr, tblIdx, count);
 }
@@ -1451,7 +1479,7 @@ AssembleOneLine(
 	    goto cleanup;
 	}
 
-	BBEmitInst1or4(assemEnvPtr, tblIdx, opnd, opnd);
+	BBEmitInvoke1or4(assemEnvPtr, tblIdx, opnd, opnd);
 	break;
 
     case ASSEM_JUMP:
