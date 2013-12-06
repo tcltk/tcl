@@ -245,8 +245,8 @@ TclCompileArraySetCmd(
     Tcl_Token *varTokenPtr, *dataTokenPtr;
     int isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven, len;
-    int dataVar, iterVar, keyVar, valVar, infoIndex;
-    int back, fwd, offsetBack, offsetFwd;
+    int keyVar, valVar, infoIndex;
+    int fwd, offsetBack, offsetFwd;
     Tcl_Obj *literalObj;
     ForeachInfo *infoPtr;
 
@@ -290,6 +290,7 @@ TclCompileArraySetCmd(
 	code = TCL_ERROR;
 	goto done;
     }
+
     /*
      * Special case: literal empty value argument is just an "ensure array"
      * operation.
@@ -314,20 +315,29 @@ TclCompileArraySetCmd(
 	goto done;
     }
 
+    if (localIndex < 0) {
+	/*
+	 * a non-local variable: upvar from a local one! This consumes the
+	 * variable name that was left at stacktop.
+	 */
+	
+	localIndex = AnonymousLocal(envPtr);
+	PushStringLiteral(envPtr, "0");
+	TclEmitInstInt4(INST_REVERSE, 2,        		envPtr);
+	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
+	TclEmitOpcode(INST_POP,          			envPtr);
+    }
+    
     /*
      * Prepare for the internal foreach.
      */
 
-    dataVar = AnonymousLocal(envPtr);
-    iterVar = AnonymousLocal(envPtr);
     keyVar = AnonymousLocal(envPtr);
     valVar = AnonymousLocal(envPtr);
 
-    infoPtr = ckalloc(sizeof(ForeachInfo) + sizeof(ForeachVarList *));
+    infoPtr = ckalloc(sizeof(ForeachInfo));
     infoPtr->numLists = 1;
-    infoPtr->firstValueTemp = dataVar;
-    infoPtr->loopCtTemp = iterVar;
-    infoPtr->varLists[0] = ckalloc(sizeof(ForeachVarList) * 2*sizeof(int));
+    infoPtr->varLists[0] = ckalloc(sizeof(ForeachVarList) + sizeof(int));
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
@@ -360,54 +370,23 @@ TclCompileArraySetCmd(
 	fwd = CurrentOffset(envPtr) - offsetFwd;
 	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
     }
-    Emit14Inst(		INST_STORE_SCALAR, dataVar,		envPtr);
-    TclEmitOpcode(	INST_POP,				envPtr);
 
-    if (localIndex >= 0) {
-	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-	TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
-	TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
-	TclEmitInstInt4(INST_FOREACH_START4, infoIndex,		envPtr);
-	offsetBack = CurrentOffset(envPtr);
-	TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex,		envPtr);
-	offsetFwd = CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
-	Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
-	Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
-	Emit14Inst(	INST_STORE_ARRAY, localIndex,		envPtr);
-	TclEmitOpcode(	INST_POP,				envPtr);
-	back = offsetBack - CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP1, back,			envPtr);
-	fwd = CurrentOffset(envPtr) - offsetFwd;
-	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-    } else {
-	TclEmitOpcode(	INST_DUP,				envPtr);
-	TclEmitOpcode(	INST_ARRAY_EXISTS_STK,			envPtr);
-	TclEmitInstInt1(INST_JUMP_TRUE1, 4,			envPtr);
-	TclEmitOpcode(	INST_DUP,				envPtr);
-	TclEmitOpcode(	INST_ARRAY_MAKE_STK,			envPtr);
-	TclEmitInstInt4(INST_FOREACH_START4, infoIndex,		envPtr);
-	offsetBack = CurrentOffset(envPtr);
-	TclEmitInstInt4(INST_FOREACH_STEP4, infoIndex,		envPtr);
-	offsetFwd = CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
-	TclEmitOpcode(	INST_DUP,				envPtr);
-	Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
-	Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
-	TclEmitOpcode(	INST_STORE_ARRAY_STK,			envPtr);
-	TclEmitOpcode(	INST_POP,				envPtr);
-	back = offsetBack - CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP1, back,			envPtr);
-	fwd = CurrentOffset(envPtr) - offsetFwd;
-	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-	TclEmitOpcode(	INST_POP,				envPtr);
-    }
-    if (!isDataLiteral) {
-	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
-	TclEmitInt4(		dataVar,			envPtr);
-    }
+    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
+    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
+    TclEmitInstInt4(INST_FOREACH_START, infoIndex,	envPtr);
+    offsetBack = CurrentOffset(envPtr);
+    Emit14Inst(	INST_LOAD_SCALAR, keyVar,		envPtr);
+    Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
+    Emit14Inst(	INST_STORE_ARRAY, localIndex,		envPtr);
+    TclEmitOpcode(	INST_POP,			envPtr);
+    infoPtr->loopCtTemp = offsetBack - CurrentOffset(envPtr); /*misuse */
+    TclEmitOpcode( INST_FOREACH_STEP,			envPtr);
+    TclEmitOpcode( INST_FOREACH_END,			envPtr);
+    TclAdjustStackDepth(-3, envPtr);
     PushStringLiteral(envPtr,	"");
-  done:
+
+    done:
     Tcl_DecrRefCount(literalObj);
     return code;
 }
@@ -2469,18 +2448,12 @@ CompileEachloopCmd(
     ForeachInfo *infoPtr;	/* Points to the structure describing this
 				 * foreach command. Stored in a AuxData
 				 * record in the ByteCode. */
-    int firstValueTemp;		/* Index of the first temp var in the frame
-				 * used to point to a value list. */
-    int loopCtTemp;		/* Index of temp var holding the loop's
-				 * iteration count. */
     int collectVar = -1;	/* Index of temp var holding the result var
 				 * index. */
-
+    
     Tcl_Token *tokenPtr, *bodyTokenPtr;
-    unsigned char *jumpPc;
-    JumpFixup jumpFalseFixup;
-    int jumpBackDist, jumpBackOffset, infoIndex, range;
-    int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
+    int jumpBackOffset, infoIndex, range;
+    int numWords, numLists, numVars, loopIndex, i, j, code;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -2588,6 +2561,10 @@ CompileEachloopCmd(
 	loopIndex++;
     }
 
+    /*
+     * We will compile the foreach command.
+     */
+
     if (collect == TCL_EACH_COLLECT) {
 	collectVar = AnonymousLocal(envPtr);
 	if (collectVar < 0) {
@@ -2595,25 +2572,7 @@ CompileEachloopCmd(
 	}
     }
 	    
-    /*
-     * We will compile the foreach command. Reserve (numLists + 1) temporary
-     * variables:
-     *    - numLists temps to hold each value list
-     *    - 1 temp for the loop counter (index of next element in each list)
-     *
-     * At this time we don't try to reuse temporaries; if there are two
-     * nonoverlapping foreach loops, they don't share any temps.
-     */
-
     code = TCL_OK;
-    firstValueTemp = -1;
-    for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	tempVar = AnonymousLocal(envPtr);
-	if (loopIndex == 0) {
-	    firstValueTemp = tempVar;
-	}
-    }
-    loopCtTemp = AnonymousLocal(envPtr);
 
     /*
      * Create and initialize the ForeachInfo and ForeachVarList data
@@ -2622,16 +2581,14 @@ CompileEachloopCmd(
      */
 
     infoPtr = ckalloc(sizeof(ForeachInfo)
-	    + numLists * sizeof(ForeachVarList *));
+	    + (numLists - 1) * sizeof(ForeachVarList *));
     infoPtr->numLists = numLists;
-    infoPtr->firstValueTemp = firstValueTemp;
-    infoPtr->loopCtTemp = loopCtTemp;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	ForeachVarList *varListPtr;
 
 	numVars = varcList[loopIndex];
 	varListPtr = ckalloc(sizeof(ForeachVarList)
-		+ numVars * sizeof(int));
+		+ (numVars - 1) * sizeof(int));
 	varListPtr->numVars = numVars;
 	for (j = 0;  j < numVars;  j++) {
 	    const char *varName = varvList[loopIndex][j];
@@ -2645,25 +2602,14 @@ CompileEachloopCmd(
     infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
 
     /*
-     * Create an exception record to handle [break] and [continue].
+     * Evaluate each value list and leave it on stack.
      */
 
-    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
-
-    /*
-     * Evaluate then store each value list in the associated temporary.
-     */
-
-    loopIndex = 0;
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	if ((i%2 == 0) && (i > 0)) {
 	    CompileWord(envPtr, tokenPtr, interp, i);
-	    tempVar = (firstValueTemp + loopIndex);
-	    Emit14Inst(		INST_STORE_SCALAR, tempVar,	envPtr);
-	    TclEmitOpcode(	INST_POP,			envPtr);
-	    loopIndex++;
 	}
     }
 
@@ -2677,81 +2623,43 @@ CompileEachloopCmd(
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
-    /*
-     * Initialize the temporary var that holds the count of loop iterations.
-     */
-
-    TclEmitInstInt4(		INST_FOREACH_START4, infoIndex,	envPtr);
-
-    /*
-     * Top of loop code: assign each loop variable and check whether
-     * to terminate the loop.
-     */
-
-    ExceptionRangeTarget(envPtr, range, continueOffset);
-    TclEmitInstInt4(		INST_FOREACH_STEP4, infoIndex,	envPtr);
-    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFalseFixup);
-
+    TclEmitInstInt4(INST_FOREACH_START, infoIndex, envPtr);
+    
     /*
      * Inline compile the loop body.
      */
 
+    range = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
+
     ExceptionRangeStarts(envPtr, range);
     BODY(bodyTokenPtr, numWords - 1);
     ExceptionRangeEnds(envPtr, range);
-
+    
     if (collect == TCL_EACH_COLLECT) {
 	Emit14Inst(		INST_LAPPEND_SCALAR, collectVar,envPtr);
     }
     TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
-     * Jump back to the test at the top of the loop. Generate a 4 byte jump if
-     * the distance to the test is > 120 bytes. This is conservative and
-     * ensures that we won't have to replace this jump if we later need to
-     * replace the ifFalse jump with a 4 byte jump.
+     * Bottom of loop code: assign each loop variable and check whether
+     * to terminate the loop. Set the loop's break target. 
      */
 
-    jumpBackOffset = CurrentOffset(envPtr);
-    jumpBackDist = jumpBackOffset-envPtr->exceptArrayPtr[range].continueOffset;
-    if (jumpBackDist > 120) {
-	TclEmitInstInt4(INST_JUMP4, -jumpBackDist, envPtr);
-    } else {
-	TclEmitInstInt1(INST_JUMP1, -jumpBackDist, envPtr);
-    }
-
-    /*
-     * Fix the target of the jump after the foreach_step test.
-     */
-
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFalseFixup, 127)) {
-	/*
-	 * Update the loop body's starting PC offset since it moved down.
-	 */
-
-	envPtr->exceptArrayPtr[range].codeOffset += 3;
-
-	/*
-	 * Update the jump back to the test at the top of the loop since it
-	 * also moved down 3 bytes.
-	 */
-
-	jumpBackOffset += 3;
-	jumpPc = (envPtr->codeStart + jumpBackOffset);
-	jumpBackDist += 3;
-	if (jumpBackDist > 120) {
-	    TclUpdateInstInt4AtPc(INST_JUMP4, -jumpBackDist, jumpPc);
-	} else {
-	    TclUpdateInstInt1AtPc(INST_JUMP1, -jumpBackDist, jumpPc);
-	}
-    }
-
-    /*
-     * Set the loop's break target.
-     */
-
+    ExceptionRangeTarget(envPtr, range, continueOffset);
+    TclEmitOpcode(INST_FOREACH_STEP, envPtr);
     ExceptionRangeTarget(envPtr, range, breakOffset);
     TclFinalizeLoopExceptionRange(envPtr, range);
+    TclEmitOpcode(INST_FOREACH_END, envPtr);
+    TclAdjustStackDepth(-(numLists+2), envPtr);
+
+    /*
+     * Set the jumpback distance from INST_FOREACH_STEP to the start of the
+     * body's code. Misuse loopCtTemp for storing the jump size.
+     */
+    
+    jumpBackOffset = envPtr->exceptArrayPtr[range].continueOffset -
+	    envPtr->exceptArrayPtr[range].codeOffset;
+    infoPtr->loopCtTemp = -jumpBackOffset;
 
     /*
      * The command's result is an empty string if not collecting, or the
@@ -2765,8 +2673,8 @@ CompileEachloopCmd(
     } else {
 	PushStringLiteral(envPtr, "");
     }
-
-  done:
+    
+    done:
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	if (varvList[loopIndex] != NULL) {
 	    ckfree(varvList[loopIndex]);
