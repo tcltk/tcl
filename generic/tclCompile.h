@@ -868,6 +868,7 @@ typedef struct ForeachInfo {
 } ForeachInfo;
 
 MODULE_SCOPE const AuxDataType tclForeachInfoType;
+MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
 
 #define FOREACHINFO(envPtr, index) \
     ((ForeachInfo*)(TclFetchAuxData(envPtr, TclGetUInt4AtPtr(index))))

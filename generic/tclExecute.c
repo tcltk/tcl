@@ -6197,7 +6197,6 @@ TEBCresume(
 	 * corresponding Tcl_Objs to the stack.
 	 */
 
-	
 	opnd = TclGetUInt4AtPtr(pc+1);
 	infoPtr = BA_AuxData_At(codePtr->auxData, opnd)->clientData;
 	numLists = infoPtr->numLists;
@@ -6229,7 +6228,7 @@ TEBCresume(
 	    }
 	    listTmpDepth--;
 	}
-	
+
 	/*
 	 * Store the iterNum and iterMax in a single Tcl_Obj; we keep a
 	 * nul-string obj with the pointer stored in the ptrValue so that the
@@ -6238,15 +6237,15 @@ TEBCresume(
 	 */
 
 	TclNewObj(tmpPtr);
-	tmpPtr->internalRep.twoIntValue.int1 = 0;
-	tmpPtr->internalRep.twoIntValue.int2 = iterMax;
+	tmpPtr->internalRep.twoPtrValue.ptr1 = NULL;
+	tmpPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(iterMax);
 	PUSH_OBJECT(tmpPtr); /* iterCounts object */
-		
+
 	/*
 	 * Store a pointer to the ForeachInfo struct; same dirty trick
-	 * as above 
+	 * as above
 	 */
-	
+
 	TclNewObj(tmpPtr);
 	tmpPtr->internalRep.otherValuePtr = infoPtr;
 	PUSH_OBJECT(tmpPtr); /* infoPtr object */
@@ -6254,10 +6253,10 @@ TEBCresume(
 	/*
 	 * Jump directly to the INST_FOREACH_STEP instruction; the C code just
 	 * falls through.
-	 */ 
+	 */
 
 	pc += 5 - infoPtr->loopCtTemp;
-	
+
     case INST_FOREACH_STEP:
 	/*
 	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
@@ -6269,21 +6268,21 @@ TEBCresume(
 	numLists = infoPtr->numLists;
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	iterNum = tmpPtr->internalRep.twoIntValue.int1;
-	iterMax = tmpPtr->internalRep.twoIntValue.int2;
+	iterNum = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr1);
+	iterMax = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr2);
 
 	/*
 	 * If some list still has a remaining list element iterate one more
 	 * time. Assign to var the next element from its value list.
 	 */
-	    
+
 	if (iterNum < iterMax) {
 	    /*
 	     * Set the variables and jump back to run the body
 	     */
 
-	    tmpPtr->internalRep.twoIntValue.int1 = iterNum + 1;
-	    
+	    tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(iterNum + 1);
+
 	    listTmpDepth = numLists + 1;
 
 	    for (i = 0;  i < numLists;  i++) {
