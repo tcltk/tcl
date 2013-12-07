@@ -130,20 +130,14 @@ typedef struct ExceptionAux {
 				 * exception will be bound to. */
     int *breakTargets;		/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [break]s that we must
-				 * update. Note that resizing a jump (via
-				 * TclFixupForwardJump) can cause the contents
-				 * of this array to be updated. When
-				 * numBreakTargets==0, this is NULL. */
+				 * update. NULL when numBreakTargets==0 */ 
     int allocBreakTargets;	/* The size of the breakTargets array. */
     int numContinueTargets;	/* The number of [continue]s that want to be
 				 * targeted to the place where this loop
 				 * exception will be bound to. */
     int *continueTargets;	/* The offsets of the INST_JUMP4 instructions
 				 * issued by the [continue]s that we must
-				 * update. Note that resizing a jump (via
-				 * TclFixupForwardJump) can cause the contents
-				 * of this array to be updated. When
-				 * numContinueTargets==0, this is NULL. */
+				 * update. NULL when numContinueTargets==0 */
     int allocContinueTargets;	/* The size of the continueTargets array. */
 } ExceptionAux;
 
@@ -839,20 +833,8 @@ typedef enum {
 } TclJumpType;
 
 typedef struct JumpFixup {
-    TclJumpType jumpType;	/* Indicates the kind of jump. */
     int codeOffset;		/* Offset of the first byte of the one-byte
 				 * forward jump's code. */
-    int cmdIndex;		/* Index of the first command after the one
-				 * for which the jump was emitted. Used to
-				 * update the code offsets for subsequent
-				 * commands if the two-byte jump at jumpPc
-				 * must be replaced with a five-byte one. */
-    int exceptIndex;		/* Index of the first range entry in the
-				 * ExceptionRange array after the current one.
-				 * This field is used to adjust the code
-				 * offsets in subsequent ExceptionRange
-				 * records when a jump is grown from 2 bytes
-				 * to 5 bytes. */
 } JumpFixup;
 
 #define JUMPFIXUP_INIT_ENTRIES	10
@@ -1041,11 +1023,9 @@ MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist,
-			    int distThreshold);
+			    JumpFixup *jumpFixupPtr, int jumpDist);
 MODULE_SCOPE int	TclFixupForwardJump1(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist,
-			    int distThreshold);
+			    JumpFixup *jumpFixupPtr, int jumpDist);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
@@ -1364,15 +1344,13 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  *				 int threshold);
  */
 
-#define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
+#define TclFixupForwardJumpToHere(envPtr, fixupPtr) \
     TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
-	    (threshold))
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset)
 
-#define TclFixupForwardJumpToHere1(envPtr, fixupPtr, threshold)		\
+#define TclFixupForwardJumpToHere1(envPtr, fixupPtr)		\
     TclFixupForwardJump1((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
-	    (threshold))
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset)
 
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int

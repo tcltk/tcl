@@ -834,10 +834,7 @@ TclSubstCompile(
 	    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 
 	    /* Start */
-	    if (TclFixupForwardJumpToHere(envPtr, &startFixup, 127)) {
-		Tcl_Panic("TclCompileSubstCmd: bad start jump distance %d",
-			(int) (CurrentOffset(envPtr) - startFixup.codeOffset));
-	    }
+	    TclFixupForwardJumpToHere(envPtr, &startFixup);
 	}
 
 	envPtr->line = bline;
@@ -893,10 +890,7 @@ TclSubstCompile(
 
 	TclAdjustStackDepth(1, envPtr);
 	/* BREAK destination */
-	if (TclFixupForwardJumpToHere1(envPtr, &breakFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
-		    (int) (CurrentOffset(envPtr) - breakFixup.codeOffset));
-	}
+	TclFixupForwardJumpToHere1(envPtr, &breakFixup);
 	OP(	POP);
 	OP(	POP);
 
@@ -909,25 +903,15 @@ TclSubstCompile(
 
 	TclAdjustStackDepth(2, envPtr);
 	/* CONTINUE destination */
-	if (TclFixupForwardJumpToHere1(envPtr, &continueFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %d",
-		    (int) (CurrentOffset(envPtr) - continueFixup.codeOffset));
-	}
+	TclFixupForwardJumpToHere1(envPtr, &continueFixup);
 	OP(	POP);
 	OP(	POP);
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
 
 	TclAdjustStackDepth(2, envPtr);
 	/* RETURN + other destination */
-	if (TclFixupForwardJumpToHere1(envPtr, &returnFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %d",
-		    (int) (CurrentOffset(envPtr) - returnFixup.codeOffset));
-	}
-	if (TclFixupForwardJumpToHere1(envPtr, &otherFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %d",
-		    (int) (CurrentOffset(envPtr) - otherFixup.codeOffset));
-	}
-
+	TclFixupForwardJumpToHere1(envPtr, &returnFixup);
+	TclFixupForwardJumpToHere1(envPtr, &otherFixup);
 	/*
 	 * Pull the result to top of stack, discard options dict.
 	 */
@@ -936,20 +920,14 @@ TclSubstCompile(
 	OP(	POP);
 
 	/* OK destination */
-	if (TclFixupForwardJumpToHere(envPtr, &okFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad ok jump distance %d",
-		    (int) (CurrentOffset(envPtr) - okFixup.codeOffset));
-	}
+	TclFixupForwardJumpToHere(envPtr, &okFixup);
 	if (count > 1) {
 	    OP1(CONCAT1, count);
 	    count = 1;
 	}
 
 	/* CONTINUE jump to here */
-	if (TclFixupForwardJumpToHere(envPtr, &endFixup, 127)) {
-	    Tcl_Panic("TclCompileSubstCmd: bad end jump distance %d",
-		    (int) (CurrentOffset(envPtr) - endFixup.codeOffset));
-	}
+	TclFixupForwardJumpToHere(envPtr, &endFixup);
 	bline = envPtr->line;
     }
 
@@ -1536,6 +1514,8 @@ IssueSwitchChainedTests(
     for (i=0 ; i<fixupCount ; i++) {
 	if (fixupTargetArray[i] == 0) {
 	    fixupTargetArray[i] = envPtr->codeNext-envPtr->codeStart;
+	    TclFixupForwardJump(envPtr, &fixupArray[i],
+		    fixupTargetArray[i] - fixupArray[i].codeOffset);	    
 	}
     }
 
@@ -1548,17 +1528,10 @@ IssueSwitchChainedTests(
      */
 
     for (i=fixupCount-1 ; i>=0 ; i--) {
-	if (TclFixupForwardJump(envPtr, &fixupArray[i],
-		fixupTargetArray[i] - fixupArray[i].codeOffset, 127)) {
-	    int j;
-
-	    for (j=i-1 ; j>=0 ; j--) {
-		if (fixupTargetArray[j] > fixupArray[i].codeOffset) {
-		    fixupTargetArray[j] += 3;
-		}
-	    }
-	}
+       TclFixupForwardJump(envPtr, &fixupArray[i],
+               fixupTargetArray[i] - fixupArray[i].codeOffset);
     }
+    
     TclStackFree(interp, fixupTargetArray);
     TclStackFree(interp, fixupArray);
 }
@@ -3065,10 +3038,7 @@ TclCompileWhileCmd(
     if (loopMayEnd) {
 	testCodeOffset = CurrentOffset(envPtr);
 	jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
-	if (TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist, 127)) {
-	    bodyCodeOffset += 3;
-	    testCodeOffset += 3;
-	}
+	TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist);
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 

@@ -3736,18 +3736,7 @@ TclEmitForwardJump(
 				 * initialize with information about this
 				 * forward jump. */
 {
-    /*
-     * Initialize the JumpFixup structure:
-     *    - codeOffset is offset of first byte of jump below
-     *    - cmdIndex is index of the command after the current one
-     *    - exceptIndex is the index of the first ExceptionRange after the
-     *	    current one.
-     */
-
-    jumpFixupPtr->jumpType = jumpType;
     jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
-    jumpFixupPtr->cmdIndex = envPtr->numCommands;
-    jumpFixupPtr->exceptIndex = envPtr->exceptArrayNext;
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
@@ -3772,18 +3761,7 @@ TclEmitForwardJump1(
 				 * initialize with information about this
 				 * forward jump. */
 {
-    /*
-     * Initialize the JumpFixup structure:
-     *    - codeOffset is offset of first byte of jump below
-     *    - cmdIndex is index of the command after the current one
-     *    - exceptIndex is the index of the first ExceptionRange after the
-     *	    current one.
-     */
-
-    jumpFixupPtr->jumpType = jumpType;
     jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
-    jumpFixupPtr->cmdIndex = envPtr->numCommands;
-    jumpFixupPtr->exceptIndex = envPtr->exceptArrayNext;
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
@@ -3830,9 +3808,7 @@ TclFixupForwardJump(
 				 * holds the resulting instruction. */
     JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
 				 * describes the forward jump. */
-    int jumpDist,		/* Jump distance to set in jump instr. */
-    int distThreshold)		/* Maximum distance before the two byte jump
-				 * is grown to five bytes. */
+    int jumpDist)		/* Jump distance to set in jump instr. */
 {
     unsigned char *jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
     
@@ -3845,9 +3821,7 @@ TclFixupForwardJump1(
 				 * holds the resulting instruction. */
     JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
 				 * describes the forward jump. */
-    int jumpDist,		/* Jump distance to set in jump instr. */
-    int distThreshold)		/* Maximum distance before the two byte jump
-				 * is grown to five bytes. */
+    int jumpDist)		/* Jump distance to set in jump instr. */
 {
     unsigned char *jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
 
@@ -4042,7 +4016,7 @@ TclEmitInvoke(
 	}
 
 	TclFinalizeLoopExceptionRange(envPtr, loopRange);
-	TclFixupForwardJumpToHere(envPtr, &nonTrapFixup, 127);
+	TclFixupForwardJumpToHere(envPtr, &nonTrapFixup);
     }
 }
 

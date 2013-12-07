@@ -494,6 +494,15 @@ typedef struct JumpList {
 } JumpList;
 
 /*
+ * Macro to convert a jump to a different type
+ */
+
+#define CONVERT_JUMP(which, type)			\
+    TclUpdateInstInt4AtPc(INST_##type##4, 0,		\
+	    envPtr->codeStart + (which).codeOffset)
+ 
+
+/*
  * Declarations for local functions to this file:
  */
 
@@ -2301,7 +2310,7 @@ CompileExprTree(
 			&jumpPtr->jump);
 		TclAdjustStackDepth(-1, envPtr);
 		if (convert) {
-		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
+		    CONVERT_JUMP(jumpPtr->jump, JUMP_TRUE);
 		}
 		convert = 1;
 		break;
@@ -2356,19 +2365,19 @@ CompileExprTree(
 		break;
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
-		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
-		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
+		if (*(envPtr->codeStart + jumpPtr->jump.codeOffset) ==
+			INST_JUMP_TRUE4) {
+		    CONVERT_JUMP(jumpPtr->jump, JUMP);
 		    convert = 1;
 		}
 		target = jumpPtr->jump.codeOffset + 5;
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
-		    target += 3;
-		}
+		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
+		
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
 		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			target - jumpPtr->jump.codeOffset, 127);
+			target - jumpPtr->jump.codeOffset);
 
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
@@ -2387,9 +2396,7 @@ CompileExprTree(
 		TclAdjustStackDepth(-1, envPtr);
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc1,
 			envPtr->codeStart + pc1 + 1);
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
-		    pc2 += 3;
-		}
+		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
