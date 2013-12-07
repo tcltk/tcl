@@ -767,8 +767,8 @@ TclSubstCompile(
 	    tokenPtr < endTokenPtr; tokenPtr = TokenAfter(tokenPtr)) {
 	int length, literal, catchRange, breakJump;
 	char buf[TCL_UTF_MAX];
-	JumpFixup startFixup, okFixup, returnFixup, breakFixup;
-	JumpFixup continueFixup, otherFixup, endFixup;
+	int startFixup, okFixup, returnFixup, breakFixup;
+	int continueFixup, otherFixup, endFixup;
 
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
@@ -834,7 +834,7 @@ TclSubstCompile(
 	    TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 
 	    /* Start */
-	    TclFixupForwardJumpToHere(envPtr, &startFixup);
+	    TclFixupForwardJumpToHere(envPtr, startFixup);
 	}
 
 	envPtr->line = bline;
@@ -890,28 +890,24 @@ TclSubstCompile(
 
 	TclAdjustStackDepth(1, envPtr);
 	/* BREAK destination */
-	TclFixupForwardJumpToHere1(envPtr, &breakFixup);
+	TclFixupForwardJumpToHere1(envPtr, breakFixup);
 	OP(	POP);
 	OP(	POP);
 
 	breakJump = CurrentOffset(envPtr) - breakOffset;
-	if (breakJump > 127) {
-	    OP4(JUMP4, -breakJump);
-	} else {
-	    OP1(JUMP1, -breakJump);
-	}
+	OP4(JUMP4, -breakJump);
 
 	TclAdjustStackDepth(2, envPtr);
 	/* CONTINUE destination */
-	TclFixupForwardJumpToHere1(envPtr, &continueFixup);
+	TclFixupForwardJumpToHere1(envPtr, continueFixup);
 	OP(	POP);
 	OP(	POP);
 	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
 
 	TclAdjustStackDepth(2, envPtr);
 	/* RETURN + other destination */
-	TclFixupForwardJumpToHere1(envPtr, &returnFixup);
-	TclFixupForwardJumpToHere1(envPtr, &otherFixup);
+	TclFixupForwardJumpToHere1(envPtr, returnFixup);
+	TclFixupForwardJumpToHere1(envPtr, otherFixup);
 	/*
 	 * Pull the result to top of stack, discard options dict.
 	 */
@@ -920,14 +916,14 @@ TclSubstCompile(
 	OP(	POP);
 
 	/* OK destination */
-	TclFixupForwardJumpToHere(envPtr, &okFixup);
+	TclFixupForwardJumpToHere(envPtr, okFixup);
 	if (count > 1) {
 	    OP1(CONCAT1, count);
 	    count = 1;
 	}
 
 	/* CONTINUE jump to here */
-	TclFixupForwardJumpToHere(envPtr, &endFixup);
+	TclFixupForwardJumpToHere(envPtr, endFixup);
 	bline = envPtr->line;
     }
 
@@ -1321,7 +1317,7 @@ IssueSwitchChainedTests(
     enum {Switch_Exact, Switch_Glob, Switch_Regexp};
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
-    JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
+    int *fixupArray;	        /* Array of forward-jump fixup records. */
     int *fixupTargetArray;	/* Array of places for fixups to point at. */
     int fixupCount;		/* Number of places to fix up. */
     int contFixIndex;		/* Where the first of the jumps due to a group
@@ -1339,7 +1335,7 @@ IssueSwitchChainedTests(
 
     contFixIndex = -1;
     contFixCount = 0;
-    fixupArray = TclStackAlloc(interp, sizeof(JumpFixup) * numBodyTokens);
+    fixupArray = TclStackAlloc(interp, sizeof(int) * numBodyTokens);
     fixupTargetArray = TclStackAlloc(interp, sizeof(int) * numBodyTokens);
     memset(fixupTargetArray, 0, numBodyTokens * sizeof(int));
     fixupCount = 0;
@@ -1514,8 +1510,8 @@ IssueSwitchChainedTests(
     for (i=0 ; i<fixupCount ; i++) {
 	if (fixupTargetArray[i] == 0) {
 	    fixupTargetArray[i] = envPtr->codeNext-envPtr->codeStart;
-	    TclFixupForwardJump(envPtr, &fixupArray[i],
-		    fixupTargetArray[i] - fixupArray[i].codeOffset);	    
+	    TclFixupForwardJump(envPtr, fixupArray[i],
+		    fixupTargetArray[i] - fixupArray[i]);	    
 	}
     }
 
@@ -1528,8 +1524,8 @@ IssueSwitchChainedTests(
      */
 
     for (i=fixupCount-1 ; i>=0 ; i--) {
-       TclFixupForwardJump(envPtr, &fixupArray[i],
-               fixupTargetArray[i] - fixupArray[i].codeOffset);
+       TclFixupForwardJump(envPtr, fixupArray[i],
+               fixupTargetArray[i] - fixupArray[i]);
     }
     
     TclStackFree(interp, fixupTargetArray);
@@ -2928,7 +2924,7 @@ TclCompileWhileCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *testTokenPtr, *bodyTokenPtr;
-    JumpFixup jumpEvalCondFixup;
+    int jumpEvalCondFixup;
     int testCodeOffset, bodyCodeOffset, jumpDist, range, code, boolVal;
     int loopMayEnd = 1;		/* This is set to 0 if it is recognized as an
 				 * infinite loop. */
@@ -3037,8 +3033,8 @@ TclCompileWhileCmd(
 
     if (loopMayEnd) {
 	testCodeOffset = CurrentOffset(envPtr);
-	jumpDist = testCodeOffset - jumpEvalCondFixup.codeOffset;
-	TclFixupForwardJump(envPtr, &jumpEvalCondFixup, jumpDist);
+	jumpDist = testCodeOffset - jumpEvalCondFixup;
+	TclFixupForwardJump(envPtr, jumpEvalCondFixup, jumpDist);
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 

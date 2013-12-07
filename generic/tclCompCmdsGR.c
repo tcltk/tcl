@@ -293,7 +293,7 @@ TclCompileIfCmd(
 	     */
 
 	    TclAdjustStackDepth(-1, envPtr);
-	    TclFixupForwardJumpToHere(envPtr, jumpFalseFixupArray.fixup+jumpIndex);
+	    TclFixupForwardJumpToHere(envPtr, jumpFalseFixupArray.fixup[jumpIndex]);
 	} else if (boolVal) {
 	    /*
 	     * We were processing an "if 1 {...}"; stop compiling scripts.
@@ -368,7 +368,7 @@ TclCompileIfCmd(
 
     for (j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first. */
-	TclFixupForwardJumpToHere(envPtr, jumpEndFixupArray.fixup+jumpIndex);
+	TclFixupForwardJumpToHere(envPtr, jumpEndFixupArray.fixup[jumpIndex]);
     }
 
     /*
@@ -1807,7 +1807,7 @@ TclCompileNamespaceTailCmd(
 {
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     DefineLineInformation;	/* TIP #280 */
-    JumpFixup jumpFixup;
+    int jumpFixup;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
@@ -1827,7 +1827,7 @@ TclCompileNamespaceTailCmd(
     TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFixup);
     PushStringLiteral(envPtr, "2");
     TclEmitOpcode(	INST_ADD,			envPtr);
-    TclFixupForwardJumpToHere(envPtr, &jumpFixup);
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
     PushStringLiteral(envPtr, "end");
     TclEmitOpcode(	INST_STR_RANGE,			envPtr);
     return TCL_OK;

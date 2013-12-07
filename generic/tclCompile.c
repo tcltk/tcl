@@ -3618,7 +3618,7 @@ TclInitJumpFixupArray(
 				/* Points to the JumpFixupArray structure to
 				 * initialize. */
 {
-    fixupArrayPtr->fixup = fixupArrayPtr->staticFixupSpace;
+    fixupArrayPtr->fixup = fixupArrayPtr->staticCodeOffsets;
     fixupArrayPtr->next = 0;
     fixupArrayPtr->end = JUMPFIXUP_INIT_ENTRIES - 1;
     fixupArrayPtr->mallocedArray = 0;
@@ -3656,9 +3656,9 @@ TclExpandJumpFixupArray(
      * fixupArrayPtr->fixupNext is equal to fixupArrayPtr->fixupEnd.
      */
 
-    size_t currBytes = fixupArrayPtr->next * sizeof(JumpFixup);
+    size_t currBytes = fixupArrayPtr->next * sizeof(int);
     int newElems = 2*(fixupArrayPtr->end + 1);
-    size_t newBytes = newElems * sizeof(JumpFixup);
+    size_t newBytes = newElems * sizeof(int);
 
     if (fixupArrayPtr->mallocedArray) {
 	fixupArrayPtr->fixup = ckrealloc(fixupArrayPtr->fixup, newBytes);
@@ -3668,7 +3668,7 @@ TclExpandJumpFixupArray(
 	 * ckrealloc equivalent for ourselves.
 	 */
 
-	JumpFixup *newPtr = ckalloc(newBytes);
+	int *newPtr = ckalloc(newBytes);
 
 	memcpy(newPtr, fixupArrayPtr->fixup, currBytes);
 	fixupArrayPtr->fixup = newPtr;
@@ -3732,11 +3732,11 @@ TclEmitForwardJump(
 				 * holds the resulting instruction. */
     TclJumpType jumpType,	/* Indicates the kind of jump: if true or
 				 * false or unconditional. */
-    JumpFixup *jumpFixupPtr)	/* Points to the JumpFixup structure to
+    int *jumpFixupPtr)	        /* Points to the JumpFixup structure to
 				 * initialize with information about this
 				 * forward jump. */
 {
-    jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
+    *jumpFixupPtr = envPtr->codeNext - envPtr->codeStart;
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
@@ -3757,11 +3757,11 @@ TclEmitForwardJump1(
 				 * holds the resulting instruction. */
     TclJumpType jumpType,	/* Indicates the kind of jump: if true or
 				 * false or unconditional. */
-    JumpFixup *jumpFixupPtr)	/* Points to the JumpFixup structure to
+    int *jumpFixupPtr)	        /* Points to the JumpFixup structure to
 				 * initialize with information about this
 				 * forward jump. */
 {
-    jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
+    *jumpFixupPtr = envPtr->codeNext - envPtr->codeStart;
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
@@ -3806,11 +3806,10 @@ int
 TclFixupForwardJump(
     CompileEnv *envPtr,		/* Points to the CompileEnv structure that
 				 * holds the resulting instruction. */
-    JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
-				 * describes the forward jump. */
+    int jumpFixup,	        /* The offset of the forward jump to be fixed. */
     int jumpDist)		/* Jump distance to set in jump instr. */
 {
-    unsigned char *jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
+    unsigned char *jumpPc = envPtr->codeStart + jumpFixup;
     
     TclStoreInt4AtPtr(jumpDist, jumpPc + 1);
     return 0;
@@ -3819,18 +3818,16 @@ int
 TclFixupForwardJump1(
     CompileEnv *envPtr,		/* Points to the CompileEnv structure that
 				 * holds the resulting instruction. */
-    JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
-				 * describes the forward jump. */
+    int jumpFixup,	        /* The offset of the forward jump to be fixed. */
     int jumpDist)		/* Jump distance to set in jump instr. */
 {
-    unsigned char *jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
+    unsigned char *jumpPc = envPtr->codeStart + jumpFixup;
 
-    if ((jumpDist < 128) && (jumpDist > -128)) {
-	TclStoreInt1AtPtr(jumpDist, jumpPc + 1);
-	return 0;
+    if ((jumpDist > 127) && (jumpDist < -127)) {
+	Tcl_Panic("TclFixupForwardJump1: bad jump distance %d", jumpDist);    
     }
-    Tcl_Panic("TclFixupForwardJump1: bad jump distance %d", jumpDist);    
-    return 1;
+    TclStoreInt1AtPtr(jumpDist, jumpPc + 1);
+    return 0;
 }
 
 /*
@@ -3975,7 +3972,7 @@ TclEmitInvoke(
     if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
 	int savedStackDepth = envPtr->currStackDepth;
 	int savedExpandCount = envPtr->expandCount;
-	JumpFixup nonTrapFixup;
+	int nonTrapFixup;
 
 	if (auxBreakPtr != NULL) {
 	    auxBreakPtr = envPtr->exceptAuxArrayPtr + breakRange;
@@ -4016,7 +4013,7 @@ TclEmitInvoke(
 	}
 
 	TclFinalizeLoopExceptionRange(envPtr, loopRange);
-	TclFixupForwardJumpToHere(envPtr, &nonTrapFixup);
+	TclFixupForwardJumpToHere(envPtr, nonTrapFixup);
     }
 }
 

@@ -487,7 +487,7 @@ static const unsigned char Lexeme[] = {
  */
 
 typedef struct JumpList {
-    JumpFixup jump;		/* Pass this argument to matching calls of
+    int jump;		        /* Pass this argument to matching calls of
 				 * TclEmitForwardJump() and 
 				 * TclFixupForwardJump(). */
     struct JumpList *next;	/* Point to next item on the stack */
@@ -499,7 +499,7 @@ typedef struct JumpList {
 
 #define CONVERT_JUMP(which, type)			\
     TclUpdateInstInt4AtPc(INST_##type##4, 0,		\
-	    envPtr->codeStart + (which).codeOffset)
+	    envPtr->codeStart + (which))
  
 
 /*
@@ -2365,19 +2365,19 @@ CompileExprTree(
 		break;
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
-		if (*(envPtr->codeStart + jumpPtr->jump.codeOffset) ==
+		if (*(envPtr->codeStart + jumpPtr->jump) ==
 			INST_JUMP_TRUE4) {
 		    CONVERT_JUMP(jumpPtr->jump, JUMP);
 		    convert = 1;
 		}
-		target = jumpPtr->jump.codeOffset + 5;
-		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
+		target = jumpPtr->jump + 5;
+		TclFixupForwardJumpToHere(envPtr, jumpPtr->jump);
 		
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
-		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			target - jumpPtr->jump.codeOffset);
+		TclFixupForwardJump(envPtr, jumpPtr->jump,
+			target - jumpPtr->jump);
 
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
@@ -2396,7 +2396,7 @@ CompileExprTree(
 		TclAdjustStackDepth(-1, envPtr);
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc1,
 			envPtr->codeStart + pc1 + 1);
-		TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump);
+		TclFixupForwardJumpToHere(envPtr, jumpPtr->jump);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,

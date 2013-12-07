@@ -531,7 +531,7 @@ TclCompileCatchCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    JumpFixup jumpFixup;
+    int jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     int resultIndex, optsIndex, range;
     DefineLineInformation;	/* TIP #280 */
@@ -667,7 +667,7 @@ TclCompileCatchCmd(
      */
 
     /* Stack at this point: ?script? result returnCode */
-    TclFixupForwardJumpToHere(envPtr, &jumpFixup);
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
 
     /*
      * Push the return options if the caller wants them.
@@ -1543,7 +1543,7 @@ TclCompileDictUpdateCmd(
     int i, dictIndex, numVars, range, infoIndex;
     Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr, *tokenPtr;
     DictUpdateInfo *duiPtr;
-    JumpFixup jumpFixup;
+    int jumpFixup;
 
     /*
      * There must be at least one argument after the command.
@@ -1663,7 +1663,7 @@ TclCompileDictUpdateCmd(
     TclEmitInt4(		infoIndex,			envPtr);
     TclEmitInvoke(envPtr,INST_RETURN_STK);
 
-    TclFixupForwardJumpToHere(envPtr, &jumpFixup);
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
     TclStackFree(interp, keyTokenPtrs);
     return TCL_OK;
 
@@ -1791,7 +1791,7 @@ TclCompileDictWithCmd(
     int i, range, varNameTmp = -1, pathTmp = -1, keysTmp, gotPath;
     int dictVar, bodyIsEmpty = 1;
     Tcl_Token *varTokenPtr, *tokenPtr;
-    JumpFixup jumpFixup;
+    int jumpFixup;
     const char *ptr, *end;
 
     /*
@@ -2022,7 +2022,7 @@ TclCompileDictWithCmd(
      * Prepare for the start of the next command.
      */
 
-    TclFixupForwardJumpToHere(envPtr, &jumpFixup);
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
     return TCL_OK;
 }
 
@@ -2233,7 +2233,7 @@ TclCompileForCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
-    JumpFixup jumpEvalCondFixup;
+    int jumpEvalCondFixup;
     int bodyCodeOffset, nextCodeOffset, jumpDist;
     int bodyRange, nextRange;
     DefineLineInformation;	/* TIP #280 */
@@ -2315,7 +2315,7 @@ TclCompileForCmd(
      * terminates the for.
      */
 
-    TclFixupForwardJumpToHere(envPtr, &jumpEvalCondFixup);
+    TclFixupForwardJumpToHere(envPtr, jumpEvalCondFixup);
 
     SetLineInformation(2);
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);

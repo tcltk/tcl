@@ -832,20 +832,15 @@ typedef enum {
     TCL_FALSE_JUMP
 } TclJumpType;
 
-typedef struct JumpFixup {
-    int codeOffset;		/* Offset of the first byte of the one-byte
-				 * forward jump's code. */
-} JumpFixup;
-
 #define JUMPFIXUP_INIT_ENTRIES	10
 
 typedef struct JumpFixupArray {
-    JumpFixup *fixup;		/* Points to start of jump fixup array. */
+    int *fixup;		        /* Points to start of codeOffset array. */
     int next;			/* Index of next free array entry. */
     int end;			/* Index of last usable entry in array. */
     int mallocedArray;		/* 1 if array was expanded and fixups points
 				 * into the heap, else 0. */
-    JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
+    int staticCodeOffsets[JUMPFIXUP_INIT_ENTRIES];
 				/* Initial storage for jump fixup array. */
 } JumpFixupArray;
 
@@ -1009,9 +1004,9 @@ MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
 MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
-			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
+			    TclJumpType jumpType, int *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitForwardJump1(CompileEnv *envPtr,
-			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
+			    TclJumpType jumpType, int *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
@@ -1023,9 +1018,9 @@ MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist);
+			    int jumpFixup, int jumpDist);
 MODULE_SCOPE int	TclFixupForwardJump1(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist);
+			    int jumpFixup, int jumpDist);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
@@ -1344,13 +1339,13 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  *				 int threshold);
  */
 
-#define TclFixupForwardJumpToHere(envPtr, fixupPtr) \
-    TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset)
+#define TclFixupForwardJumpToHere(envPtr, fixup) \
+    TclFixupForwardJump((envPtr), (fixup),				\
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixup))
 
-#define TclFixupForwardJumpToHere1(envPtr, fixupPtr)		\
-    TclFixupForwardJump1((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset)
+#define TclFixupForwardJumpToHere1(envPtr, fixup)		\
+    TclFixupForwardJump1((envPtr), (fixup),				\
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixup))
 
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
