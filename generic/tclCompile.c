@@ -760,13 +760,6 @@ TclSetByteCodeFromAny(
     }
 
     /*
-     * Apply some peephole optimizations that can cross specific/generic
-     * instruction generator boundaries.
-     */
-
-    TclOptimizeBytecode(&compEnv);
-
-    /*
      * Invoke the compilation hook procedure if one exists.
      */
 
@@ -2632,6 +2625,13 @@ TclInitByteCodeObj(
 
     iPtr = envPtr->iPtr;
 
+    /*
+     * Apply some peephole optimizations that can cross specific/generic
+     * instruction generator boundaries.
+     */
+
+    TclOptimizeBytecode(envPtr);
+
     codeBytes = envPtr->codeNext - envPtr->codeStart;
     objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
@@ -3751,6 +3751,42 @@ TclEmitForwardJump(
 
     switch (jumpType) {
     case TCL_UNCONDITIONAL_JUMP:
+	TclEmitInstInt4(INST_JUMP4, 0, envPtr);
+	break;
+    case TCL_TRUE_JUMP:
+	TclEmitInstInt4(INST_JUMP_TRUE4, 0, envPtr);
+	break;
+    default:
+	TclEmitInstInt4(INST_JUMP_FALSE4, 0, envPtr);
+	break;
+    }
+}
+
+void
+TclEmitForwardJump1(
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
+				 * holds the resulting instruction. */
+    TclJumpType jumpType,	/* Indicates the kind of jump: if true or
+				 * false or unconditional. */
+    JumpFixup *jumpFixupPtr)	/* Points to the JumpFixup structure to
+				 * initialize with information about this
+				 * forward jump. */
+{
+    /*
+     * Initialize the JumpFixup structure:
+     *    - codeOffset is offset of first byte of jump below
+     *    - cmdIndex is index of the command after the current one
+     *    - exceptIndex is the index of the first ExceptionRange after the
+     *	    current one.
+     */
+
+    jumpFixupPtr->jumpType = jumpType;
+    jumpFixupPtr->codeOffset = envPtr->codeNext - envPtr->codeStart;
+    jumpFixupPtr->cmdIndex = envPtr->numCommands;
+    jumpFixupPtr->exceptIndex = envPtr->exceptArrayNext;
+
+    switch (jumpType) {
+    case TCL_UNCONDITIONAL_JUMP:
 	TclEmitInstInt1(INST_JUMP1, 0, envPtr);
 	break;
     case TCL_TRUE_JUMP:
@@ -3798,107 +3834,29 @@ TclFixupForwardJump(
     int distThreshold)		/* Maximum distance before the two byte jump
 				 * is grown to five bytes. */
 {
-    unsigned char *jumpPc, *p;
-    int firstCmd, lastCmd, firstRange, lastRange, k;
-    unsigned numBytes;
+    unsigned char *jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
+    
+    TclStoreInt4AtPtr(jumpDist, jumpPc + 1);
+    return 0;
+}
+int
+TclFixupForwardJump1(
+    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
+				 * holds the resulting instruction. */
+    JumpFixup *jumpFixupPtr,	/* Points to the JumpFixup structure that
+				 * describes the forward jump. */
+    int jumpDist,		/* Jump distance to set in jump instr. */
+    int distThreshold)		/* Maximum distance before the two byte jump
+				 * is grown to five bytes. */
+{
+    unsigned char *jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
 
-    if (jumpDist <= distThreshold) {
-	jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
-	switch (jumpFixupPtr->jumpType) {
-	case TCL_UNCONDITIONAL_JUMP:
-	    TclUpdateInstInt1AtPc(INST_JUMP1, jumpDist, jumpPc);
-	    break;
-	case TCL_TRUE_JUMP:
-	    TclUpdateInstInt1AtPc(INST_JUMP_TRUE1, jumpDist, jumpPc);
-	    break;
-	default:
-	    TclUpdateInstInt1AtPc(INST_JUMP_FALSE1, jumpDist, jumpPc);
-	    break;
-	}
+    if ((jumpDist < 128) && (jumpDist > -128)) {
+	TclStoreInt1AtPtr(jumpDist, jumpPc + 1);
 	return 0;
     }
-
-    /*
-     * We must grow the jump then move subsequent instructions down. Note that
-     * if we expand the space for generated instructions, code addresses might
-     * change; be careful about updating any of these addresses held in
-     * variables.
-     */
-
-    if ((envPtr->codeNext + 3) > envPtr->codeEnd) {
-	TclExpandCodeArray(envPtr);
-    }
-    jumpPc = envPtr->codeStart + jumpFixupPtr->codeOffset;
-    numBytes = envPtr->codeNext-jumpPc-2;
-    p = jumpPc+2;
-    memmove(p+3, p, numBytes);
-
-    envPtr->codeNext += 3;
-    jumpDist += 3;
-    switch (jumpFixupPtr->jumpType) {
-    case TCL_UNCONDITIONAL_JUMP:
-	TclUpdateInstInt4AtPc(INST_JUMP4, jumpDist, jumpPc);
-	break;
-    case TCL_TRUE_JUMP:
-	TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDist, jumpPc);
-	break;
-    default:
-	TclUpdateInstInt4AtPc(INST_JUMP_FALSE4, jumpDist, jumpPc);
-	break;
-    }
-
-    /*
-     * Adjust the code offsets for any commands and any ExceptionRange records
-     * between the jump and the current code address.
-     */
-
-    firstCmd = jumpFixupPtr->cmdIndex;
-    lastCmd = envPtr->numCommands - 1;
-    if (firstCmd < lastCmd) {
-	for (k = firstCmd;  k <= lastCmd;  k++) {
-	    envPtr->cmdMapPtr[k].codeOffset += 3;
-	}
-    }
-
-    firstRange = jumpFixupPtr->exceptIndex;
-    lastRange = envPtr->exceptArrayNext - 1;
-    for (k = firstRange;  k <= lastRange;  k++) {
-	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[k];
-
-	rangePtr->codeOffset += 3;
-	switch (rangePtr->type) {
-	case LOOP_EXCEPTION_RANGE:
-	    rangePtr->breakOffset += 3;
-	    if (rangePtr->continueOffset != -1) {
-		rangePtr->continueOffset += 3;
-	    }
-	    break;
-	case CATCH_EXCEPTION_RANGE:
-	    rangePtr->catchOffset += 3;
-	    break;
-	default:
-	    Tcl_Panic("TclFixupForwardJump: bad ExceptionRange type %d",
-		    rangePtr->type);
-	}
-    }
-
-    for (k = 0 ; k < envPtr->exceptArrayNext ; k++) {
-	ExceptionAux *auxPtr = &envPtr->exceptAuxArrayPtr[k];
-	int i;
-
-	for (i=0 ; i<auxPtr->numBreakTargets ; i++) {
-	    if (jumpFixupPtr->codeOffset < auxPtr->breakTargets[i]) {
-		auxPtr->breakTargets[i] += 3;
-	    }
-	}
-	for (i=0 ; i<auxPtr->numContinueTargets ; i++) {
-	    if (jumpFixupPtr->codeOffset < auxPtr->continueTargets[i]) {
-		auxPtr->continueTargets[i] += 3;
-	    }
-	}
-    }
-
-    return 1;			/* the jump was grown */
+    Tcl_Panic("TclFixupForwardJump1: bad jump distance %d", jumpDist);    
+    return 1;
 }
 
 /*

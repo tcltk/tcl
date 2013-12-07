@@ -880,20 +880,20 @@ TclSubstCompile(
 	OP(	NOP);
 
 	/* RETURN */
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &returnFixup);
+	TclEmitForwardJump1(envPtr, TCL_UNCONDITIONAL_JUMP, &returnFixup);
 
 	/* BREAK */
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &breakFixup);
+	TclEmitForwardJump1(envPtr, TCL_UNCONDITIONAL_JUMP, &breakFixup);
 
 	/* CONTINUE */
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &continueFixup);
+	TclEmitForwardJump1(envPtr, TCL_UNCONDITIONAL_JUMP, &continueFixup);
 
 	/* OTHER */
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &otherFixup);
+	TclEmitForwardJump1(envPtr, TCL_UNCONDITIONAL_JUMP, &otherFixup);
 
 	TclAdjustStackDepth(1, envPtr);
 	/* BREAK destination */
-	if (TclFixupForwardJumpToHere(envPtr, &breakFixup, 127)) {
+	if (TclFixupForwardJumpToHere1(envPtr, &breakFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad break jump distance %d",
 		    (int) (CurrentOffset(envPtr) - breakFixup.codeOffset));
 	}
@@ -909,7 +909,7 @@ TclSubstCompile(
 
 	TclAdjustStackDepth(2, envPtr);
 	/* CONTINUE destination */
-	if (TclFixupForwardJumpToHere(envPtr, &continueFixup, 127)) {
+	if (TclFixupForwardJumpToHere1(envPtr, &continueFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad continue jump distance %d",
 		    (int) (CurrentOffset(envPtr) - continueFixup.codeOffset));
 	}
@@ -919,11 +919,11 @@ TclSubstCompile(
 
 	TclAdjustStackDepth(2, envPtr);
 	/* RETURN + other destination */
-	if (TclFixupForwardJumpToHere(envPtr, &returnFixup, 127)) {
+	if (TclFixupForwardJumpToHere1(envPtr, &returnFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad return jump distance %d",
 		    (int) (CurrentOffset(envPtr) - returnFixup.codeOffset));
 	}
-	if (TclFixupForwardJumpToHere(envPtr, &otherFixup, 127)) {
+	if (TclFixupForwardJumpToHere1(envPtr, &otherFixup, 127)) {
 	    Tcl_Panic("TclCompileSubstCmd: bad other jump distance %d",
 		    (int) (CurrentOffset(envPtr) - otherFixup.codeOffset));
 	}

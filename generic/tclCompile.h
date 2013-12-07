@@ -1028,6 +1028,8 @@ MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
 MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
+MODULE_SCOPE void	TclEmitForwardJump1(CompileEnv *envPtr,
+			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
@@ -1039,6 +1041,9 @@ MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
+			    JumpFixup *jumpFixupPtr, int jumpDist,
+			    int distThreshold);
+MODULE_SCOPE int	TclFixupForwardJump1(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
@@ -1361,6 +1366,11 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
     TclFixupForwardJump((envPtr), (fixupPtr),				\
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
+	    (threshold))
+
+#define TclFixupForwardJumpToHere1(envPtr, fixupPtr, threshold)		\
+    TclFixupForwardJump1((envPtr), (fixupPtr),				\
 	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
 	    (threshold))
 

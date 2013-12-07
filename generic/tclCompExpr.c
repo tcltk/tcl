@@ -2360,7 +2360,7 @@ CompileExprTree(
 		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
 		    convert = 1;
 		}
-		target = jumpPtr->jump.codeOffset + 2;
+		target = jumpPtr->jump.codeOffset + 5;
 		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
 		    target += 3;
 		}
