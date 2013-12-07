@@ -826,12 +826,6 @@ MODULE_SCOPE InstructionDesc const tclInstructionTable[];
  * commands between the jump and the target.
  */
 
-typedef enum {
-    TCL_UNCONDITIONAL_JUMP,
-    TCL_TRUE_JUMP,
-    TCL_FALSE_JUMP
-} TclJumpType;
-
 #define JUMPFIXUP_INIT_ENTRIES	10
 
 typedef struct JumpFixupArray {
@@ -1003,10 +997,6 @@ MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
-MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
-			    TclJumpType jumpType, int *jumpFixupPtr);
-MODULE_SCOPE void	TclEmitForwardJump1(CompileEnv *envPtr,
-			    TclJumpType jumpType, int *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
@@ -1017,10 +1007,6 @@ MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
-MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
-			    int jumpFixup, int jumpDist);
-MODULE_SCOPE int	TclFixupForwardJump1(CompileEnv *envPtr,
-			    int jumpFixup, int jumpDist);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
@@ -1339,11 +1325,28 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  *				 int threshold);
  */
 
-#define TclFixupForwardJumpToHere(envPtr, fixup) \
-    TclFixupForwardJump((envPtr), (fixup),				\
+#define TclEmitForwardJump(envPtr, type, pcPtr)			\
+    *(pcPtr) = (envPtr)->codeNext - (envPtr)->codeStart;	\
+    TclEmitInstInt4(INST_##type##4, 0, (envPtr))
+
+#define TclEmitForwardJump1(envPtr, type, pcPtr)		\
+    *(pcPtr) = (envPtr)->codeNext - (envPtr)->codeStart;	\
+    TclEmitInstInt1(INST_##type##1, 0, (envPtr))
+
+#define TclFixupForwardJump(envPtr, pc, jumpDist)	\
+    TclStoreInt4AtPtr((jumpDist), (envPtr)->codeStart + (pc) + 1)
+
+#define TclFixupForwardJump1(envPtr, pc, jumpDist)			\
+    if (((jumpDist) > 127) && ((jumpDist) < -127)) {			\
+        Tcl_Panic("TclFixupForwardJump1: bad jump distance %d", jumpDist); \
+    }									\
+    TclStoreInt1AtPtr((jumpDist), (envPtr)->codeStart + (pc) + 1)
+
+#define TclFixupForwardJumpToHere(envPtr, fixup)		\
+    TclFixupForwardJump((envPtr), (fixup),			\
 	    (envPtr)->codeNext-(envPtr)->codeStart-(fixup))
 
-#define TclFixupForwardJumpToHere1(envPtr, fixup)		\
+#define TclFixupForwardJumpToHere1(envPtr, fixup)			\
     TclFixupForwardJump1((envPtr), (fixup),				\
 	    (envPtr)->codeNext-(envPtr)->codeStart-(fixup))
 

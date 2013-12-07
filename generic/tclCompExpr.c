@@ -2300,14 +2300,13 @@ CompileExprTree(
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
+		TclEmitForwardJump(envPtr, JUMP_FALSE, &jumpPtr->jump);
 		break;
 	    case COLON:
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&jumpPtr->jump);
+		TclEmitForwardJump(envPtr, JUMP, &jumpPtr->jump);
 		TclAdjustStackDepth(-1, envPtr);
 		if (convert) {
 		    CONVERT_JUMP(jumpPtr->jump, JUMP_TRUE);
@@ -2319,8 +2318,11 @@ CompileExprTree(
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
-			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
+		if (nodePtr->lexeme == AND) {
+		    TclEmitForwardJump(envPtr, JUMP_FALSE, &jumpPtr->jump);
+		} else {
+		    TclEmitForwardJump(envPtr, JUMP_TRUE, &jumpPtr->jump);
+		}
 		break;
 	    }
 	} else {

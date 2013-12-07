@@ -234,7 +234,7 @@ TclCompileIfCmd(
 		}
 		jumpIndex = jumpFalseFixupArray.next;
 		jumpFalseFixupArray.next++;
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+		TclEmitForwardJump(envPtr, JUMP_FALSE,
 			jumpFalseFixupArray.fixup+jumpIndex);
 	    }
 	    code = TCL_OK;
@@ -281,7 +281,7 @@ TclCompileIfCmd(
 		TclExpandJumpFixupArray(&jumpEndFixupArray);
 	    }
 	    jumpEndFixupArray.next++;
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+	    TclEmitForwardJump(envPtr, JUMP,
 		    jumpEndFixupArray.fixup+jumpIndex);
 
 	    /*
@@ -562,7 +562,7 @@ TclCompileInfoCommandsCmd(
     TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
     TclEmitOpcode(	INST_DUP,		envPtr);
     TclEmitOpcode(	INST_STR_LEN,		envPtr);
-    TclEmitInstInt1(	INST_JUMP_FALSE1, 7,	envPtr);
+    TclEmitInstInt4(	INST_JUMP_FALSE4, 10,	envPtr);
     TclEmitInstInt4(	INST_LIST, 1,		envPtr);
     return TCL_OK;
 
@@ -784,7 +784,7 @@ TclCompileLappendCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar, localIndex, numWords, i, fwd, offsetFwd;
+    int isScalar, localIndex, numWords, i, offsetFwd;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -886,13 +886,12 @@ TclCompileLappendCmd(
     }
     TclEmitInstInt4(	  INST_LIST, numWords-2,		envPtr);
     TclEmitInstInt4(	  INST_EXIST_SCALAR, localIndex,	envPtr);
-    offsetFwd = CurrentOffset(envPtr);
-    TclEmitInstInt1(	  INST_JUMP_FALSE1, 0,			envPtr);
+    TclEmitForwardJump(envPtr, JUMP_FALSE, &offsetFwd);
     Emit14Inst(		  INST_LOAD_SCALAR, localIndex,		envPtr);
     TclEmitInstInt4(	  INST_REVERSE, 2,			envPtr);
     TclEmitOpcode(	  INST_LIST_CONCAT,			envPtr);
-    fwd = CurrentOffset(envPtr) - offsetFwd;
-    TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
+
+    TclFixupForwardJumpToHere(envPtr, offsetFwd);
     Emit14Inst(		  INST_STORE_SCALAR, localIndex,	envPtr);
 
     return TCL_OK;
@@ -1824,7 +1823,7 @@ TclCompileNamespaceTailCmd(
     TclEmitOpcode(	INST_DUP,			envPtr);
     PushStringLiteral(envPtr, "0");
     TclEmitOpcode(	INST_GE,			envPtr);
-    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFixup);
+    TclEmitForwardJump(envPtr, JUMP_FALSE, &jumpFixup);
     PushStringLiteral(envPtr, "2");
     TclEmitOpcode(	INST_ADD,			envPtr);
     TclFixupForwardJumpToHere(envPtr, jumpFixup);

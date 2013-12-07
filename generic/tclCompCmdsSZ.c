@@ -827,7 +827,7 @@ TclSubstCompile(
 
 	if (breakOffset == 0) {
 	    /* Jump to the start (jump over the jump to end) */
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &startFixup);
+	    TclEmitForwardJump(envPtr, JUMP, &startFixup);
 
 	    /* Jump to the end (all BREAKs land here) */
 	    breakOffset = CurrentOffset(envPtr);
@@ -861,7 +861,7 @@ TclSubstCompile(
 
 	/* Substitution produced TCL_OK */
 	OP(	END_CATCH);
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &okFixup);
+	TclEmitForwardJump(envPtr, JUMP, &okFixup);
 	TclAdjustStackDepth(-1, envPtr);
 
 	/* Exceptional return codes processed here */
@@ -877,16 +877,16 @@ TclSubstCompile(
 	OP(	NOP);
 
 	/* RETURN */
-	TclEmitForwardJump1(envPtr, TCL_UNCONDITIONAL_JUMP, &returnFixup);
+	TclEmitForwardJump1(envPtr, JUMP, &returnFixup);
 
 	/* BREAK */
-	TclEmitForwardJump1(envPtr, TCL_UNCONDITIONAL_JUMP, &breakFixup);
+	TclEmitForwardJump1(envPtr, JUMP, &breakFixup);
 
 	/* CONTINUE */
-	TclEmitForwardJump1(envPtr, TCL_UNCONDITIONAL_JUMP, &continueFixup);
+	TclEmitForwardJump1(envPtr, JUMP, &continueFixup);
 
 	/* OTHER */
-	TclEmitForwardJump1(envPtr, TCL_UNCONDITIONAL_JUMP, &otherFixup);
+	TclEmitForwardJump1(envPtr, JUMP, &otherFixup);
 
 	TclAdjustStackDepth(1, envPtr);
 	/* BREAK destination */
@@ -902,7 +902,7 @@ TclSubstCompile(
 	TclFixupForwardJumpToHere1(envPtr, continueFixup);
 	OP(	POP);
 	OP(	POP);
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &endFixup);
+	TclEmitForwardJump(envPtr, JUMP, &endFixup);
 
 	TclAdjustStackDepth(2, envPtr);
 	/* RETURN + other destination */
@@ -1430,14 +1430,14 @@ IssueSwitchChainedTests(
 		    contFixIndex = fixupCount;
 		    contFixCount = 0;
 		}
-		TclEmitForwardJump(envPtr, TCL_TRUE_JUMP,
+		TclEmitForwardJump(envPtr, JUMP_TRUE,
 			&fixupArray[contFixIndex+contFixCount]);
 		fixupCount++;
 		contFixCount++;
 		continue;
 	    }
 
-	    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+	    TclEmitForwardJump(envPtr, JUMP_FALSE,
 		    &fixupArray[fixupCount]);
 	    nextArmFixupIndex = fixupCount;
 	    fixupCount++;
@@ -1483,7 +1483,7 @@ IssueSwitchChainedTests(
 	TclCompileCmdWord(interp, bodyToken[i+1], 1, envPtr);
 
 	if (!foundDefault) {
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+	    TclEmitForwardJump(envPtr, JUMP,
 		    &fixupArray[fixupCount]);
 	    fixupCount++;
 	    fixupTargetArray[nextArmFixupIndex] = CurrentOffset(envPtr);
@@ -1509,25 +1509,13 @@ IssueSwitchChainedTests(
 
     for (i=0 ; i<fixupCount ; i++) {
 	if (fixupTargetArray[i] == 0) {
-	    fixupTargetArray[i] = envPtr->codeNext-envPtr->codeStart;
+	    TclFixupForwardJumpToHere(envPtr, fixupArray[i]);
+	} else {
 	    TclFixupForwardJump(envPtr, fixupArray[i],
-		    fixupTargetArray[i] - fixupArray[i]);	    
+		    fixupTargetArray[i] - fixupArray[i]);
 	}
     }
 
-    /*
-     * Now scan backwards over all the jumps (all of which are forward jumps)
-     * doing each one. When we do one and there is a size changes, we must
-     * scan back over all the previous ones and see if they need adjusting
-     * before proceeding with further jump fixups (the interleaved nature of
-     * all the jumps makes this impossible to do without nested loops).
-     */
-
-    for (i=fixupCount-1 ; i>=0 ; i--) {
-       TclFixupForwardJump(envPtr, fixupArray[i],
-               fixupTargetArray[i] - fixupArray[i]);
-    }
-    
     TclStackFree(interp, fixupTargetArray);
     TclStackFree(interp, fixupArray);
 }
@@ -3000,8 +2988,7 @@ TclCompileWhileCmd(
      */
 
     if (loopMayEnd) {
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-		&jumpEvalCondFixup);
+	TclEmitForwardJump(envPtr, JUMP, &jumpEvalCondFixup);
 	testCodeOffset = 0;	/* Avoid compiler warning. */
     } else {
 	/*
@@ -3039,18 +3026,10 @@ TclCompileWhileCmd(
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
-	if (jumpDist > 127) {
-	    TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
-	} else {
-	    TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
-	}
+	TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
     } else {
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
-	if (jumpDist > 127) {
-	    TclEmitInstInt4(INST_JUMP4, -jumpDist, envPtr);
-	} else {
-	    TclEmitInstInt1(INST_JUMP1, -jumpDist, envPtr);
-	}
+	TclEmitInstInt4(INST_JUMP4, -jumpDist, envPtr);
     }
 
     /*

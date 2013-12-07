@@ -3707,132 +3707,6 @@ TclFreeJumpFixupArray(
 /*
  *----------------------------------------------------------------------
  *
- * TclEmitForwardJump --
- *
- *	Procedure to emit a two-byte forward jump of kind "jumpType". Since
- *	the jump may later have to be grown to five bytes if the jump target
- *	is more than, say, 127 bytes away, this procedure also initializes a
- *	JumpFixup record with information about the jump.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The JumpFixup record pointed to by "jumpFixupPtr" is initialized with
- *	information needed later if the jump is to be grown. Also, a two byte
- *	jump of the designated type is emitted at the current point in the
- *	bytecode stream.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclEmitForwardJump(
-    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
-				 * holds the resulting instruction. */
-    TclJumpType jumpType,	/* Indicates the kind of jump: if true or
-				 * false or unconditional. */
-    int *jumpFixupPtr)	        /* Points to the JumpFixup structure to
-				 * initialize with information about this
-				 * forward jump. */
-{
-    *jumpFixupPtr = envPtr->codeNext - envPtr->codeStart;
-
-    switch (jumpType) {
-    case TCL_UNCONDITIONAL_JUMP:
-	TclEmitInstInt4(INST_JUMP4, 0, envPtr);
-	break;
-    case TCL_TRUE_JUMP:
-	TclEmitInstInt4(INST_JUMP_TRUE4, 0, envPtr);
-	break;
-    default:
-	TclEmitInstInt4(INST_JUMP_FALSE4, 0, envPtr);
-	break;
-    }
-}
-
-void
-TclEmitForwardJump1(
-    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
-				 * holds the resulting instruction. */
-    TclJumpType jumpType,	/* Indicates the kind of jump: if true or
-				 * false or unconditional. */
-    int *jumpFixupPtr)	        /* Points to the JumpFixup structure to
-				 * initialize with information about this
-				 * forward jump. */
-{
-    *jumpFixupPtr = envPtr->codeNext - envPtr->codeStart;
-
-    switch (jumpType) {
-    case TCL_UNCONDITIONAL_JUMP:
-	TclEmitInstInt1(INST_JUMP1, 0, envPtr);
-	break;
-    case TCL_TRUE_JUMP:
-	TclEmitInstInt1(INST_JUMP_TRUE1, 0, envPtr);
-	break;
-    default:
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0, envPtr);
-	break;
-    }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclFixupForwardJump --
- *
- *	Procedure that updates a previously-emitted forward jump to jump a
- *	specified number of bytes, "jumpDist". If necessary, the jump is grown
- *	from two to five bytes; this is done if the jump distance is greater
- *	than "distThreshold" (normally 127 bytes). The jump is described by a
- *	JumpFixup record previously initialized by TclEmitForwardJump.
- *
- * Results:
- *	1 if the jump was grown and subsequent instructions had to be moved;
- *	otherwise 0. This result is returned to allow callers to update any
- *	additional code offsets they may hold.
- *
- * Side effects:
- *	The jump may be grown and subsequent instructions moved. If this
- *	happens, the code offsets for any commands and any ExceptionRange
- *	records between the jump and the current code address will be updated
- *	to reflect the moved code. Also, the bytecode instruction array in the
- *	CompileEnv structure may be grown and reallocated.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclFixupForwardJump(
-    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
-				 * holds the resulting instruction. */
-    int jumpFixup,	        /* The offset of the forward jump to be fixed. */
-    int jumpDist)		/* Jump distance to set in jump instr. */
-{
-    unsigned char *jumpPc = envPtr->codeStart + jumpFixup;
-    
-    TclStoreInt4AtPtr(jumpDist, jumpPc + 1);
-    return 0;
-}
-int
-TclFixupForwardJump1(
-    CompileEnv *envPtr,		/* Points to the CompileEnv structure that
-				 * holds the resulting instruction. */
-    int jumpFixup,	        /* The offset of the forward jump to be fixed. */
-    int jumpDist)		/* Jump distance to set in jump instr. */
-{
-    unsigned char *jumpPc = envPtr->codeStart + jumpFixup;
-
-    if ((jumpDist > 127) && (jumpDist < -127)) {
-	Tcl_Panic("TclFixupForwardJump1: bad jump distance %d", jumpDist);    
-    }
-    TclStoreInt1AtPtr(jumpDist, jumpPc + 1);
-    return 0;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclEmitInvoke --
  *
  *	Emit one of the invoke-related instructions, wrapping it if necessary
@@ -3982,7 +3856,7 @@ TclEmitInvoke(
 	}
 
 	ExceptionRangeEnds(envPtr, loopRange);
-	TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &nonTrapFixup);
+	TclEmitForwardJump(envPtr, JUMP, &nonTrapFixup);
 
 	/*
 	 * Careful! When generating these stack unwinding sequences, the depth
