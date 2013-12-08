@@ -874,7 +874,7 @@ TclSubstCompile(
 
 	/* ERROR -> reraise it; NB: can't require BREAK/CONTINUE handling */
 	OP(	RETURN_STK);
-	OP(	NOP);
+	OP(	DONE); /* unreachable; a NOP that cannot be removed! */
 
 	/* RETURN */
 	TclEmitForwardJump1(envPtr, JUMP, &returnFixup);
