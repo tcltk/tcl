@@ -2389,19 +2389,19 @@ CompileExprTree(
 	    case OR:
 		CLANG_ASSERT(jumpPtr);
 		pc1 = CurrentOffset(envPtr);
-		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
-			: INST_JUMP_TRUE1, 0, envPtr);
+		TclEmitInstInt4((nodePtr->lexeme == AND) ? INST_JUMP_FALSE4
+			: INST_JUMP_TRUE4, 0, envPtr);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
 		pc2 = CurrentOffset(envPtr);
-		TclEmitInstInt1(INST_JUMP1, 0, envPtr);
+		TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 		TclAdjustStackDepth(-1, envPtr);
-		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc1,
+		TclStoreInt4AtPtr(CurrentOffset(envPtr) - pc1,
 			envPtr->codeStart + pc1 + 1);
 		TclFixupForwardJumpToHere(envPtr, jumpPtr->jump);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
-		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
+		TclStoreInt4AtPtr(CurrentOffset(envPtr) - pc2,
 			envPtr->codeStart + pc2 + 1);
 		convert = 0;
 		freePtr = jumpPtr;
