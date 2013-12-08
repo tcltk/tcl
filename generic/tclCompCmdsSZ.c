@@ -2560,7 +2560,7 @@ IssueTryClausesFinallyInstructions(
 
 	if (forwardsNeedFixing) {
 	    forwardsNeedFixing = 0;
-	    OP1(			JUMP1, 7);
+	    OP4(			JUMP4, 10);
 	    for (j=0 ; j<i ; j++) {
 		if (forwardsToFix[j] == -1) {
 		    continue;
