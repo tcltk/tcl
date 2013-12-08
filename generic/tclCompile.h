@@ -1266,14 +1266,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
  */
 
 #define TclEmitPush(objIndex, envPtr) \
-    do {							 \
-	register int objIndexCopy = (objIndex);			 \
-	if (objIndexCopy <= 255) {				 \
-	    TclEmitInstInt1(INST_PUSH1, objIndexCopy, (envPtr)); \
-	} else {						 \
-	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
-	}							 \
-    } while (0)
+    TclEmitInstInt4(INST_PUSH4, objIndex, (envPtr))
 
 /*
  * Macros to update a (signed or unsigned) integer starting at a pointer. The
