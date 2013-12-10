@@ -477,6 +477,10 @@ CompactCode(
 	    case INST_JUMP4:
 	    case INST_JUMP_TRUE4:
 	    case INST_JUMP_FALSE4:
+	    case INST_LOAD_SCALAR4:
+	    case INST_LOAD_ARRAY4:
+	    case INST_STORE_SCALAR4:
+	    case INST_STORE_ARRAY4:
 		arg = GET_INT4_AT_PC(pc+1);
 		resize = ((arg < 127) && (arg > -128));
 		break;
