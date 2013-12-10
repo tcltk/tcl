@@ -168,10 +168,6 @@ TclCompileSetCmd(
 	    if (localIndex < 0) {
 		TclEmitOpcode((isAssignment?
 			INST_STORE_STK : INST_LOAD_STK), envPtr);
-	    } else if (localIndex <= 255) {
-		TclEmitInstInt1((isAssignment?
-			INST_STORE_SCALAR1 : INST_LOAD_SCALAR1),
-			localIndex, envPtr);
 	    } else {
 		TclEmitInstInt4((isAssignment?
 			INST_STORE_SCALAR4 : INST_LOAD_SCALAR4),
@@ -181,10 +177,6 @@ TclCompileSetCmd(
 	    if (localIndex < 0) {
 		TclEmitOpcode((isAssignment?
 			INST_STORE_ARRAY_STK : INST_LOAD_ARRAY_STK), envPtr);
-	    } else if (localIndex <= 255) {
-		TclEmitInstInt1((isAssignment?
-			INST_STORE_ARRAY1 : INST_LOAD_ARRAY1),
-			localIndex, envPtr);
 	    } else {
 		TclEmitInstInt4((isAssignment?
 			INST_STORE_ARRAY4 : INST_LOAD_ARRAY4),
