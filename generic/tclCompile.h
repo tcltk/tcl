@@ -767,9 +767,10 @@ typedef struct ByteCode {
 #define INST_FOREACH_START              166
 #define INST_FOREACH_STEP               167
 #define INST_FOREACH_END                168
+#define INST_LMAP_COLLECT               169
 
 /* The last opcode */
-#define LAST_INST_OPCODE		168
+#define LAST_INST_OPCODE		169
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

@@ -554,6 +554,7 @@ InstructionDesc const tclInstructionTable[] = {
     {"foreach_step",	  1,    0,         0,	{OPERAND_NONE}},
 	/* "Step" or begin next iteration of foreach loop. */
     {"foreach_end",	  1,    0,         0,	{OPERAND_NONE}},
+    {"lmap_collect",	  1,    0,         0,	{OPERAND_NONE}},
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
