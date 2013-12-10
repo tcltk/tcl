@@ -487,6 +487,10 @@ CompactCode(
 	}
 
 	if (resize) {
+	    /*
+	     * INST_XXX1 is always one less than INST_XXX4 
+	     */
+	    
 	    INST_AT_PC(pc) -= 1;
 	    SET_INT1_AT_PC(arg, pc+1);
 	    INST_AT_PC(pc+2) = INST_NOP;
@@ -495,6 +499,9 @@ CompactCode(
 	    nextpc = pc+2; /* get them counted */
 	}
 	pc = nextpc;
+    }
+    if (nops == 0) {
+	return;
     }
     NEW[codeSize] = codeSize - nops;
     
