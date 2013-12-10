@@ -453,10 +453,11 @@ CompactCode(
     /*
      * First pass: shrink jumps and push, compute new positions.
      */
-    
+
+    restart:
     pc = 0;
     nops = 0;
-    while (pc < codeSize) {
+    for (pc = 0; pc < codeSize; pc = nextpc) {
 	int arg, resize;
 
 	nextpc = NEXT_PC(pc);
@@ -498,8 +499,8 @@ CompactCode(
 	    INST_AT_PC(pc+4) = INST_NOP;
 	    nextpc = pc+2; /* get them counted */
 	}
-	pc = nextpc;
     }
+
     if (nops == 0) {
 	return;
     }
@@ -509,6 +510,7 @@ CompactCode(
      * Second pass: move code, update jump offsets, resize the code.
      */
     
+    nops = 0;
     for (pc = 0; pc < codeSize; pc = nextpc) {
 	int target, i;
 
@@ -521,6 +523,7 @@ CompactCode(
 	/* update jump offsets */
 
 	switch (inst) {
+	    int offset;
 	    ForeachInfo *infoPtr;
 	    JumptableInfo *info2Ptr;
 	    Tcl_HashEntry *hPtr;
@@ -538,7 +541,12 @@ CompactCode(
 	    case INST_JUMP_FALSE4:
 	    case INST_START_CMD:
 		target = pc + GET_INT4_AT_PC(pc+1);
-		SET_INT4_AT_PC(NEW[target]-NEW[pc], pc+1);
+		offset = NEW[target]-NEW[pc];
+		SET_INT4_AT_PC(offset, pc+1);
+		if ((inst != INST_START_CMD) &&
+			(offset < 127) && (offset > -128)) {
+		    nops += 3;
+		}
 		break;
 
 	    case INST_FOREACH_START:
@@ -614,6 +622,15 @@ CompactCode(
 	    mapPtr[i].codeOffset = NEW[start];
 	    mapPtr[i].numCodeBytes = NEW[next] - NEW[start];
 	}
+    }
+
+    /*
+     * Restart?! Only if 10% code reduction.
+     */
+
+    if ((10*nops)/NEW[codeSize]) {
+	codeSize = NEW[codeSize];
+	goto restart;
     }
 }
 
