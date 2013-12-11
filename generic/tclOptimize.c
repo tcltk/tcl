@@ -625,10 +625,14 @@ CompactCode(
     }
 
     /*
-     * Restart?! Only if 10% code reduction.
+     * Restart until all done; should be rare. Other possible criteria:
+     *  - restart if nops > x*codeSize
+     *  - use back jumps as loop indicators, restart only if some backjmp is
+     *    reduced in size
+     *  - don't restart, bet that there's not much more to be done
      */
 
-    if ((10*nops)/NEW[codeSize]) {
+    if (nops) {
 	codeSize = NEW[codeSize];
 	goto restart;
     }
