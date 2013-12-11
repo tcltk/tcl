@@ -549,7 +549,7 @@ CompactCode(
 	    case INST_JUMP_TRUE1:
 	    case INST_JUMP_FALSE1:
 		target = pc + GET_INT1_AT_PC(pc+1);
-		if (offset == 1) {
+		if (offset == 2) {
 		    if (inst == INST_JUMP1) {
 			INST_AT_PC(pc) = INST_NOP;
 			nops++;
@@ -572,7 +572,7 @@ CompactCode(
 		offset = NEW[target]-NEW[pc];
 		SET_INT4_AT_PC(offset, pc+1);
 		if (inst != INST_START_CMD) {
-		    if (offset == 1) {
+		    if (offset == 5) {
 			if (inst == INST_JUMP4) {
 			    INST_AT_PC(pc) = INST_NOP;
 			    nops++;
