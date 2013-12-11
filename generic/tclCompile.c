@@ -761,6 +761,18 @@ TclSetByteCodeFromAny(
     }
 
     /*
+     * Apply some peephole optimizations that can cross specific/generic
+     * instruction generator boundaries.
+     *
+     * TODO: should this go to InitByteCode instead? Compilations from
+     * CompileExprObj, ExecConstantExprTree, CompileAssembleObj currently skip
+     * the optimization ... certainly OK for the last two, iffy for the
+     * first? 
+     */
+
+    TclOptimizeBytecode(&compEnv);
+
+    /*
      * Invoke the compilation hook procedure if one exists.
      */
 
@@ -2625,13 +2637,6 @@ TclInitByteCodeObj(
     }
 
     iPtr = envPtr->iPtr;
-
-    /*
-     * Apply some peephole optimizations that can cross specific/generic
-     * instruction generator boundaries.
-     */
-
-    TclOptimizeBytecode(envPtr);
 
     codeBytes = envPtr->codeNext - envPtr->codeStart;
     objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
