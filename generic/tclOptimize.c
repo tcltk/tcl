@@ -486,6 +486,16 @@ CompactCode(
 		nops++;
 		break;
 
+	    case INST_RETURN_CODE_BRANCH:
+		/* do not count NOPS in the special jump targets: skip them
+		 * altogether */
+
+		for (i = 1; i < 11; i++) {
+		    NEW[pc+i] = pc + i - nops;
+		}		
+		nextpc += 10;
+		break;
+
 	    case INST_PUSH4:
 	    case INST_LOAD_SCALAR4:
 	    case INST_LOAD_ARRAY4:
@@ -545,22 +555,27 @@ CompactCode(
 	    Tcl_HashEntry *hPtr;
 	    Tcl_HashSearch hSearch;
 
+	    case INST_RETURN_CODE_BRANCH:
+		/*
+		 * Careful with NOPs in the next 10 bytes: they NEED to stay,
+		 * and their jumps NEED to be updated. Currently only JUMP1
+		 * or RETURN_STK/DONE are compiled for those destinations so
+		 * it is not a problem.
+		 * 
+		 */
+		break;
+
 	    case INST_JUMP1:
 	    case INST_JUMP_TRUE1:
 	    case INST_JUMP_FALSE1:
 		target = pc + GET_INT1_AT_PC(pc+1);
-		if (offset == 2) {
-		    if (inst == INST_JUMP1) {
-			INST_AT_PC(pc) = INST_NOP;
-			nops++;
-		    } else {
-			/* warrants a complete optimization restart? */
-			INST_AT_PC(pc) = INST_POP;
-		    }
+		offset = NEW[target]-NEW[pc];
+		if ((offset == 2) && (inst == INST_JUMP1)) {
+		    INST_AT_PC(pc) = INST_NOP;
 		    INST_AT_PC(pc+1) = INST_NOP;
-		    nops++;
+		    nops += 2;
 		} else {
-		    SET_INT1_AT_PC(NEW[target]-NEW[pc], pc+1);
+		    SET_INT1_AT_PC(offset, pc+1);
 		}
 		break;
 
@@ -574,24 +589,21 @@ CompactCode(
 		if (inst != INST_START_CMD) {
 		    if (offset == 5) {
 			if (inst == INST_JUMP4) {
-			    INST_AT_PC(pc) = INST_NOP;
-			    nops++;
+			    INST_AT_PC(pc)   = INST_NOP;
+			    INST_AT_PC(pc+1) = INST_NOP;
 			} else {
-			    /* warrants a complete optimization restart? */
-			    INST_AT_PC(pc) = INST_POP;
+			    INST_AT_PC(pc) -= 1;
+			    SET_INT1_AT_PC(2, pc+1);
 			}
-			INST_AT_PC(pc+1) = INST_NOP;
-			INST_AT_PC(pc+2) = INST_NOP;
-			INST_AT_PC(pc+3) = INST_NOP;
-			INST_AT_PC(pc+4) = INST_NOP;
-			nops += 4;
+			goto push3nops;
 		    } else if ((offset < 127) && (offset > -128)) {
 			INST_AT_PC(pc) -= 1;
 			SET_INT1_AT_PC(offset, pc+1);
+			push3nops:
 			INST_AT_PC(pc+2) = INST_NOP;
 			INST_AT_PC(pc+3) = INST_NOP;
 			INST_AT_PC(pc+4) = INST_NOP;
-			nops += 3;
+			nops += 5;
 		    }
 		}
 		break;
