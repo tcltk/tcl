@@ -37,6 +37,34 @@ static void             CompactCode(CompileEnv *envPtr);
     (tclInstructionTable[*(unsigned char *)(address)].numBytes)
 #define InstLength(instruction) \
     (tclInstructionTable[(unsigned char)(instruction)].numBytes)
+
+/*
+ * Macros used in the code compactor.
+ */
+
+#define GET_INT1_AT_PC(pc)			\
+    TclGetInt1AtPtr(envPtr->codeStart + (pc))
+
+#define GET_INT4_AT_PC(pc)				\
+    TclGetInt4AtPtr(envPtr->codeStart + (pc))
+
+#define GET_UINT1_AT_PC(pc)				\
+    TclGetUInt1AtPtr(envPtr->codeStart + (pc))
+
+#define GET_UINT4_AT_PC(pc)			\
+    TclGetUInt4AtPtr(envPtr->codeStart + (pc))
+
+#define SET_INT1_AT_PC(i, pc)			\
+    TclStoreInt1AtPtr((i), envPtr->codeStart + (pc))
+
+#define SET_INT4_AT_PC(i, pc)				\
+    TclStoreInt4AtPtr((i), envPtr->codeStart + (pc))
+
+#define INST_AT_PC(pc)				\
+    (*(envPtr->codeStart + (pc)))
+
+#define NEXT_PC(pc)				\
+    pc + InstLength(INST_AT_PC(pc))
 
 /*
  * ----------------------------------------------------------------------
@@ -417,30 +445,17 @@ AdvanceJumps(
     }
 }
 
-
-#define GET_INT1_AT_PC(pc)				\
-    TclGetInt1AtPtr(envPtr->codeStart + (pc))
-
-#define GET_INT4_AT_PC(pc)				\
-    TclGetInt4AtPtr(envPtr->codeStart + (pc))
-
-#define GET_UINT1_AT_PC(pc)				\
-    TclGetUInt1AtPtr(envPtr->codeStart + (pc))
-
-#define GET_UINT4_AT_PC(pc)			\
-    TclGetUInt4AtPtr(envPtr->codeStart + (pc))
-
-#define SET_INT1_AT_PC(i, pc)			\
-    TclStoreInt1AtPtr((i), envPtr->codeStart + (pc))
-
-#define SET_INT4_AT_PC(i, pc)				\
-    TclStoreInt4AtPtr((i), envPtr->codeStart + (pc))
-
-#define INST_AT_PC(pc)				\
-    (*(envPtr->codeStart + (pc)))
-
-#define NEXT_PC(pc)				\
-    pc + InstLength(INST_AT_PC(pc))
+/*
+ * ----------------------------------------------------------------------
+ *
+ * CompactCode --
+ *
+ *	Remove all INST_NOPS and unreachable code. This also shrinks 4-insts
+ *	to 1-insts where possible, reduces the code size, and updates all
+ *	structs so that the CompileEnv remains consistent.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 CompactCode(
