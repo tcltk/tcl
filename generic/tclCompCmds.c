@@ -614,6 +614,7 @@ TclCompileCatchCmd(
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
+    ExceptionRangeEnds(envPtr, range);
 
     if (resultIndex == -1) {
 	/*
@@ -669,46 +670,25 @@ TclCompileCatchCmd(
 
     if (optsIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
+	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
     /*
      * End the catch
      */
 
-    ExceptionRangeEnds(envPtr, range);
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
 
     /*
      * At this point, the top of the stack is inconveniently ordered:
-     *		result returnCode ?returnOptions?
-     * Reverse the stack to bring the result to the top.
+     *		result returnCode
+     * Reverse the stack to store the result.
      */
 
-    if (optsIndex != -1) {
-	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
-    } else {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-    }
-
-    /*
-     * Store the result and remove it from the stack.
-     */
-
+    TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     Emit14Inst(			INST_STORE_SCALAR, resultIndex,	envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
-
-    /*
-     * Stack is now ?returnOptions? returnCode.
-     * If the options dict has been requested, it is buried on the stack under
-     * the return code. Reverse the stack to bring it to the top, store it and
-     * remove it from the stack.
-     */
-
-    if (optsIndex != -1) {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
-    }
 
     return TCL_OK;
 }
