@@ -586,11 +586,7 @@ TclCompileCatchCmd(
     /*
      * We will compile the catch command. Declare the exception range that it
      * uses.
-     */
-
-    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-
-    /*
+     *
      * If the body is a simple word, compile a BEGIN_CATCH instruction,
      * followed by the instructions to eval the body.
      * Otherwise, compile instructions to substitute the body text before
@@ -603,6 +599,7 @@ TclCompileCatchCmd(
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
@@ -614,124 +611,73 @@ TclCompileCatchCmd(
 	ExceptionRangeStarts(envPtr, range);
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitInvoke(envPtr,	INST_EVAL_STK);
-    }
-    /* Stack at this point:
-     *    nonsimple:  script <mark> result
-     *    simple:            <mark> result
-     */
-
-    if (resultIndex == -1) {
-	/*
-	 * Special case when neither result nor options are being saved. In
-	 * that case, we can skip quite a bit of the command epilogue; all we
-	 * have to do is drop the result and push the return code (and, of
-	 * course, finish the catch context).
-	 */
-
+	/* drop the script */
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
-	PushStringLiteral(envPtr, "0");
-	TclEmitInstInt1(	INST_JUMP1, 3,			envPtr);
-	TclAdjustStackDepth(-1, envPtr);
-	ExceptionRangeTarget(envPtr, range, catchOffset);
-	TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
-	ExceptionRangeEnds(envPtr, range);
-	TclEmitOpcode(		INST_END_CATCH,			envPtr);
-
-	/*
-	 * Stack at this point:
-	 *    nonsimple:  script <mark> returnCode
-	 *    simple:            <mark> returnCode
-	 */
-
-	goto dropScriptAtEnd;
     }
+    ExceptionRangeEnds(envPtr, range);
 
     /*
-     * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
-     * and jump around the "error case" code.
+     * Emit the "no errors" epilogue: last instruction is push "0" (TCL_OK)
+     * as the catch result, and jump to the end. There is some code
+     * duplication in order to allow the optimization of the OK case.
+     *
+     * NOTE: see comments on instruction ordering below!
      */
 
+    if (optsIndex != -1) {
+	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
+    }
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    if (optsIndex != -1) {
+	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+    if (resultIndex != -1) {
+	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
+    }
+    TclEmitOpcode(	INST_POP,			envPtr);
+    
     PushStringLiteral(envPtr, "0");
     TclEmitForwardJump(envPtr, JUMP, &jumpFixup);
-    /* Stack at this point: ?script? <mark> result TCL_OK */
 
     /* 
      * Emit the "error case" epilogue. Push the interpreter result and the
      * return code.
      */
 
-    TclAdjustStackDepth(-2, envPtr);
+    TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
-    /* Stack at this point:  ?script? */
-    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
+
+    /* Stack at this point is empty. Push the return code, then push the
+     * result and return options if the caller wants them. This needs to
+     * happen before INST_END_CATCH.
+     */
+
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
-
-    /*
-     * Update the target of the jump after the "no errors" code. 
-     */
-
-    /* Stack at this point: ?script? result returnCode */
-    TclFixupForwardJumpToHere(envPtr, jumpFixup);
-
-    /*
-     * Push the return options if the caller wants them.
-     */
-
+    if (resultIndex != -1) {
+	TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
+    }
     if (optsIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
     }
-
-    /*
-     * End the catch
-     */
-
-    ExceptionRangeEnds(envPtr, range);
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
 
     /*
-     * At this point, the top of the stack is inconveniently ordered:
-     *		?script? result returnCode ?returnOptions?
-     * Reverse the stack to bring the result to the top.
+     * Save the result and return options if the caller wants them. This needs
+     * to happen after INST_END_CATCH (compile-3.6/7).
      */
 
     if (optsIndex != -1) {
-	TclEmitInstInt4(	INST_REVERSE, 3,		envPtr);
-    } else {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-    }
-
-    /*
-     * Store the result and remove it from the stack.
-     */
-
-    Emit14Inst(			INST_STORE_SCALAR, resultIndex,	envPtr);
-    TclEmitOpcode(		INST_POP,			envPtr);
-
-    /*
-     * Stack is now ?script? ?returnOptions? returnCode.
-     * If the options dict has been requested, it is buried on the stack under
-     * the return code. Reverse the stack to bring it to the top, store it and
-     * remove it from the stack.
-     */
-
-    if (optsIndex != -1) {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
-
-  dropScriptAtEnd:
-
-    /*
-     * Stack is now ?script? result. Get rid of the subst'ed script if it's
-     * hanging arond.
-     */
-
-    if (cmdTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
+    if (resultIndex != -1) {
+	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
+	TclEmitOpcode(	INST_POP,			envPtr);
     }
 
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
     return TCL_OK;
 }
 
