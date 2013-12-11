@@ -614,10 +614,26 @@ TclCompileCatchCmd(
     ExceptionRangeEnds(envPtr, range);
 
     /*
-     * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
-     * and jump around the "error case" code.
+     * Emit the "no errors" epilogue: last instruction is push "0" (TCL_OK)
+     * as the catch result, and jump to the end. There is some code
+     * duplication in order to allow the optimization of the OK case.
+     *
+     * NOTE: see comments on instruction ordering below!
      */
 
+    if (optsIndex != -1) {
+	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
+    }
+    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    if (optsIndex != -1) {
+	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+    if (resultIndex != -1) {
+	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
+    }
+    TclEmitOpcode(	INST_POP,			envPtr);
+    
     PushStringLiteral(envPtr, "0");
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 
@@ -626,32 +642,21 @@ TclCompileCatchCmd(
      * return code.
      */
 
-    TclAdjustStackDepth(-2, envPtr);
+    TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
-    /* Stack at this point is empty */
-    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
-    TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
 
-    /* Stack at this point on both branches: result returnCode */
-
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
-		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
-    }
-
-    /*
-     * Push the return options if the caller wants them. This needs to happen
-     * before INST_END_CATCH
+    /* Stack at this point is empty. Push the return code, then push the
+     * result and return options if the caller wants them. This needs to
+     * happen before INST_END_CATCH.
      */
 
+    TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
+    if (resultIndex != -1) {
+	TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
+    }
     if (optsIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
     }
-
-    /*
-     * End the catch
-     */
-
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
 
     /*
@@ -663,19 +668,12 @@ TclCompileCatchCmd(
 	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
-
-    /*
-     * At this point, the top of the stack is inconveniently ordered:
-     *		result returnCode
-     * Reverse the stack to store the result.
-     */
-
-    TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     if (resultIndex != -1) {
 	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
+	TclEmitOpcode(	INST_POP,			envPtr);
     }
-    TclEmitOpcode(	INST_POP,			envPtr);
 
+    TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
     return TCL_OK;
 }
 
