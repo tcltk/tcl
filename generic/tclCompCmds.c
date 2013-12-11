@@ -645,14 +645,8 @@ TclCompileCatchCmd(
 		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
-    /*
-     * Push the return options if the caller wants them.
-     */
-
     if (optsIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
-	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
     /*
@@ -660,6 +654,15 @@ TclCompileCatchCmd(
      */
 
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
+
+    /*
+     * Push the return options if the caller wants them.
+     */
+
+    if (optsIndex != -1) {
+	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
 
     /*
      * At this point, the top of the stack is inconveniently ordered:
