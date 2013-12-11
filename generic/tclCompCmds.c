@@ -616,25 +616,6 @@ TclCompileCatchCmd(
     }
     ExceptionRangeEnds(envPtr, range);
 
-    if (resultIndex == -1) {
-	/*
-	 * Special case when neither result nor options are being saved. In
-	 * that case, we can skip quite a bit of the command epilogue; all we
-	 * have to do is drop the result and push the return code (and, of
-	 * course, finish the catch context).
-	 */
-
-	TclEmitOpcode(		INST_POP,			envPtr);
-	PushStringLiteral(envPtr, "0");
-	TclEmitInstInt1(	INST_JUMP1, 3,			envPtr);
-	TclAdjustStackDepth(-1, envPtr);
-	ExceptionRangeTarget(envPtr, range, catchOffset);
-	TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
-	ExceptionRangeEnds(envPtr, range);
-	TclEmitOpcode(		INST_END_CATCH,			envPtr);
-	return TCL_OK;
-    }
-
     /*
      * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
      * and jump around the "error case" code.
@@ -687,8 +668,10 @@ TclCompileCatchCmd(
      */
 
     TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-    Emit14Inst(			INST_STORE_SCALAR, resultIndex,	envPtr);
-    TclEmitOpcode(		INST_POP,			envPtr);
+    if (resultIndex != -1) {
+	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
+    }
+    TclEmitOpcode(	INST_POP,			envPtr);
 
     return TCL_OK;
 }
