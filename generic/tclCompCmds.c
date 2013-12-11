@@ -635,15 +635,12 @@ TclCompileCatchCmd(
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
 
-    /*
-     * Update the target of the jump after the "no errors" code. 
-     */
-
-    /* Stack at this point: result returnCode */
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
 		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
+
+    /* Stack at this point: result returnCode */
 
     /*
      * Push the return options if the caller wants them. This needs to happen
