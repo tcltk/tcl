@@ -582,11 +582,7 @@ TclCompileCatchCmd(
     /*
      * We will compile the catch command. Declare the exception range that it
      * uses.
-     */
-
-    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-
-    /*
+     *
      * If the body is a simple word, compile a BEGIN_CATCH instruction,
      * followed by the instructions to eval the body.
      * Otherwise, compile instructions to substitute the body text before
@@ -599,6 +595,7 @@ TclCompileCatchCmd(
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
@@ -635,12 +632,12 @@ TclCompileCatchCmd(
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
 
+    /* Stack at this point on both branches: result returnCode */
+
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
 		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
-
-    /* Stack at this point: result returnCode */
 
     /*
      * Push the return options if the caller wants them. This needs to happen
