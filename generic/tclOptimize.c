@@ -549,7 +549,19 @@ CompactCode(
 	    case INST_JUMP_TRUE1:
 	    case INST_JUMP_FALSE1:
 		target = pc + GET_INT1_AT_PC(pc+1);
-		SET_INT1_AT_PC(NEW[target]-NEW[pc], pc+1);
+		if (offset == 1) {
+		    if (inst == INST_JUMP1) {
+			INST_AT_PC(pc) = INST_NOP;
+			nops++;
+		    } else {
+			/* warrants a complete optimization restart? */
+			INST_AT_PC(pc) = INST_POP;
+		    }
+		    INST_AT_PC(pc+1) = INST_NOP;
+		    nops++;
+		} else {
+		    SET_INT1_AT_PC(NEW[target]-NEW[pc], pc+1);
+		}
 		break;
 
 	    case INST_JUMP4:
@@ -559,9 +571,28 @@ CompactCode(
 		target = pc + GET_INT4_AT_PC(pc+1);
 		offset = NEW[target]-NEW[pc];
 		SET_INT4_AT_PC(offset, pc+1);
-		if ((inst != INST_START_CMD) &&
-			(offset < 127) && (offset > -128)) {
-		    nops += 3;
+		if (inst != INST_START_CMD) {
+		    if (offset == 1) {
+			if (inst == INST_JUMP4) {
+			    INST_AT_PC(pc) = INST_NOP;
+			    nops++;
+			} else {
+			    /* warrants a complete optimization restart? */
+			    INST_AT_PC(pc) = INST_POP;
+			}
+			INST_AT_PC(pc+1) = INST_NOP;
+			INST_AT_PC(pc+2) = INST_NOP;
+			INST_AT_PC(pc+3) = INST_NOP;
+			INST_AT_PC(pc+4) = INST_NOP;
+			nops += 4;
+		    } else if ((offset < 127) && (offset > -128)) {
+			INST_AT_PC(pc) -= 1;
+			SET_INT1_AT_PC(offset, pc+1);
+			INST_AT_PC(pc+2) = INST_NOP;
+			INST_AT_PC(pc+3) = INST_NOP;
+			INST_AT_PC(pc+4) = INST_NOP;
+			nops += 3;
+		    }
 		}
 		break;
 
@@ -583,7 +614,7 @@ CompactCode(
 		break;
 	}
 
-	/* move up opcode and operands */
+	/* move up opcode and operands, eliminate  */
 	for (i=0; pc+i < nextpc; i++) {
 	    INST_AT_PC(NEW[pc]+i) = INST_AT_PC(pc+i);
 	}
