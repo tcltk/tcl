@@ -610,11 +610,10 @@ TclCompileCatchCmd(
 	ExceptionRangeStarts(envPtr, range);
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitInvoke(envPtr,	INST_EVAL_STK);
+	/* drop the script */
+	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
     }
-    /* Stack at this point:
-     *    nonsimple:  script <mark> result
-     *    simple:            <mark> result
-     */
 
     if (resultIndex == -1) {
 	/*
@@ -632,14 +631,7 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
 	ExceptionRangeEnds(envPtr, range);
 	TclEmitOpcode(		INST_END_CATCH,			envPtr);
-
-	/*
-	 * Stack at this point:
-	 *    nonsimple:  script <mark> returnCode
-	 *    simple:            <mark> returnCode
-	 */
-
-	goto dropScriptAtEnd;
+	return TCL_OK;
     }
 
     /*
@@ -649,7 +641,6 @@ TclCompileCatchCmd(
 
     PushStringLiteral(envPtr, "0");
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
-    /* Stack at this point: ?script? <mark> result TCL_OK */
 
     /* 
      * Emit the "error case" epilogue. Push the interpreter result and the
@@ -658,7 +649,7 @@ TclCompileCatchCmd(
 
     TclAdjustStackDepth(-2, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
-    /* Stack at this point:  ?script? */
+    /* Stack at this point is empty */
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
 
@@ -666,7 +657,7 @@ TclCompileCatchCmd(
      * Update the target of the jump after the "no errors" code. 
      */
 
-    /* Stack at this point: ?script? result returnCode */
+    /* Stack at this point: result returnCode */
     if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
 	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
 		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
@@ -689,7 +680,7 @@ TclCompileCatchCmd(
 
     /*
      * At this point, the top of the stack is inconveniently ordered:
-     *		?script? result returnCode ?returnOptions?
+     *		result returnCode ?returnOptions?
      * Reverse the stack to bring the result to the top.
      */
 
@@ -707,7 +698,7 @@ TclCompileCatchCmd(
     TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
-     * Stack is now ?script? ?returnOptions? returnCode.
+     * Stack is now ?returnOptions? returnCode.
      * If the options dict has been requested, it is buried on the stack under
      * the return code. Reverse the stack to bring it to the top, store it and
      * remove it from the stack.
@@ -716,18 +707,6 @@ TclCompileCatchCmd(
     if (optsIndex != -1) {
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
-    }
-
-  dropScriptAtEnd:
-
-    /*
-     * Stack is now ?script? result. Get rid of the subst'ed script if it's
-     * hanging arond.
-     */
-
-    if (cmdTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
