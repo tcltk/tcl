@@ -645,6 +645,11 @@ TclCompileCatchCmd(
 		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
     }
 
+    /*
+     * Push the return options if the caller wants them. This needs to happen
+     * before INST_END_CATCH
+     */
+
     if (optsIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
     }
@@ -656,7 +661,8 @@ TclCompileCatchCmd(
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
 
     /*
-     * Push the return options if the caller wants them.
+     * Save the result and return options if the caller wants them. This needs
+     * to happen after INST_END_CATCH (compile-3.6/7).
      */
 
     if (optsIndex != -1) {
