@@ -772,20 +772,21 @@ typedef struct ByteCode {
 #define INST_FOREACH_START              166
 #define INST_FOREACH_STEP               167
 #define INST_FOREACH_END                168
+#define INST_LMAP_COLLECT               169
 
 /* For compilation of [string trim] and related */
-#define INST_STR_TRIM			169
-#define INST_STR_TRIM_LEFT		170
-#define INST_STR_TRIM_RIGHT		171
+#define INST_STR_TRIM			170
+#define INST_STR_TRIM_LEFT		171
+#define INST_STR_TRIM_RIGHT		172
 
-#define INST_CONCAT_STK			172
+#define INST_CONCAT_STK			173
 
-#define INST_STR_UPPER			173
-#define INST_STR_LOWER			174
-#define INST_STR_TITLE			175
+#define INST_STR_UPPER			174
+#define INST_STR_LOWER			175
+#define INST_STR_TITLE			176
 
 /* The last opcode */
-#define LAST_INST_OPCODE		175
+#define LAST_INST_OPCODE		176
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
