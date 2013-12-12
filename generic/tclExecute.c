@@ -6356,8 +6356,8 @@ TEBCresume(
 	 */
 
 	TclNewObj(tmpPtr);
-	tmpPtr->internalRep.twoIntValue.int1 = 0;
-	tmpPtr->internalRep.twoIntValue.int2 = iterMax;
+	tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(0);
+	tmpPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(iterMax);
 	PUSH_OBJECT(tmpPtr); /* iterCounts object */
 
 	/*
@@ -6387,8 +6387,8 @@ TEBCresume(
 	numLists = infoPtr->numLists;
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	iterNum = tmpPtr->internalRep.twoIntValue.int1;
-	iterMax = tmpPtr->internalRep.twoIntValue.int2;
+	iterNum = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr1);
+	iterMax = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr2);
 
 	/*
 	 * If some list still has a remaining list element iterate one more
@@ -6400,7 +6400,7 @@ TEBCresume(
 	     * Set the variables and jump back to run the body
 	     */
 
-	    tmpPtr->internalRep.twoIntValue.int1 = iterNum + 1;
+	    tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(iterNum + 1);
 
 	    listTmpDepth = numLists + 1;
 
@@ -6464,6 +6464,25 @@ TEBCresume(
 	infoPtr = tmpPtr->internalRep.otherValuePtr;
 	numLists = infoPtr->numLists;
 	NEXT_INST_V(1, numLists+2, 0);
+
+    case INST_LMAP_COLLECT:
+	/*
+	 * This instruction is only issued by lmap. The stack is:
+	 *   - result
+	 *   - infoPtr
+	 *   - loop counters
+	 *   - valLists
+	 *   - collecting obj (unshared)
+	 * The instruction lappends the result to the collecting obj.
+	 */
+
+	tmpPtr = OBJ_AT_DEPTH(1);
+	infoPtr = tmpPtr->internalRep.otherValuePtr;
+	numLists = infoPtr->numLists;
+	
+	objPtr = OBJ_AT_DEPTH(3 + numLists);
+	Tcl_ListObjAppendElement(NULL, objPtr, OBJ_AT_TOS);
+	NEXT_INST_F(1, 1, 0);
     }
 
     case INST_BEGIN_CATCH4:
