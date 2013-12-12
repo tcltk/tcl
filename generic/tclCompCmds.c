@@ -2552,8 +2552,6 @@ CompileEachloopCmd(
     ForeachInfo *infoPtr;	/* Points to the structure describing this
 				 * foreach command. Stored in a AuxData
 				 * record in the ByteCode. */
-    int collectVar = -1;	/* Index of temp var holding the result var
-				 * index. */
     
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     int jumpBackOffset, infoIndex, range;
@@ -2669,13 +2667,6 @@ CompileEachloopCmd(
      * We will compile the foreach command.
      */
 
-    if (collect == TCL_EACH_COLLECT) {
-	collectVar = AnonymousLocal(envPtr);
-	if (collectVar < 0) {
-	    return TCL_ERROR;
-	}
-    }
-	    
     code = TCL_OK;
 
     /*
@@ -2706,6 +2697,14 @@ CompileEachloopCmd(
     infoIndex = TclCreateAuxData(infoPtr, &tclNewForeachInfoType, envPtr);
 
     /*
+     * Create the collecting object, unshared.
+     */
+    
+    if (collect == TCL_EACH_COLLECT) {
+	TclEmitInstInt4(INST_LIST, 0, envPtr);
+    }
+	    
+    /*
      * Evaluate each value list and leave it on stack.
      */
 
@@ -2715,16 +2714,6 @@ CompileEachloopCmd(
 	if ((i%2 == 0) && (i > 0)) {
 	    CompileWord(envPtr, tokenPtr, interp, i);
 	}
-    }
-
-    /*
-     * Create temporary variable to capture return values from loop body.
-     */
-     
-    if (collect == TCL_EACH_COLLECT) {
-	PushStringLiteral(envPtr, "");
-	Emit14Inst(		INST_STORE_SCALAR, collectVar,	envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
     }
 
     TclEmitInstInt4(INST_FOREACH_START, infoIndex, envPtr);
@@ -2740,9 +2729,10 @@ CompileEachloopCmd(
     ExceptionRangeEnds(envPtr, range);
     
     if (collect == TCL_EACH_COLLECT) {
-	Emit14Inst(		INST_LAPPEND_SCALAR, collectVar,envPtr);
+	TclEmitOpcode(INST_LMAP_COLLECT, envPtr);
+    } else {
+	TclEmitOpcode(		INST_POP,			envPtr);
     }
-    TclEmitOpcode(		INST_POP,			envPtr);
 
     /*
      * Bottom of loop code: assign each loop variable and check whether
@@ -2766,15 +2756,11 @@ CompileEachloopCmd(
     infoPtr->loopCtTemp = -jumpBackOffset;
 
     /*
-     * The command's result is an empty string if not collecting, or the
-     * list of results from evaluating the loop body.
+     * The command's result is an empty string if not collecting. If
+     * collecting, it is automatically left on stack after FOREACH_END.
      */
 
-    if (collect == TCL_EACH_COLLECT) {
-	Emit14Inst(		INST_LOAD_SCALAR, collectVar,	envPtr);
-	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
-	TclEmitInt4(		collectVar,			envPtr);
-    } else {
+    if (collect != TCL_EACH_COLLECT) {
 	PushStringLiteral(envPtr, "");
     }
     
