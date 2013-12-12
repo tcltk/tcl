@@ -658,6 +658,122 @@ TclCompileStringRangeCmd(
     return TCL_OK;
 }
 
+int
+TclCompileStringReplaceCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *valueTokenPtr, *replacementTokenPtr = NULL;
+    DefineLineInformation;	/* TIP #280 */
+    int idx1, idx2;
+
+    if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
+	return TCL_ERROR;
+    }
+    valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (parsePtr->numWords == 5) {
+	tokenPtr = TokenAfter(valueTokenPtr);
+	tokenPtr = TokenAfter(tokenPtr);
+	replacementTokenPtr = TokenAfter(tokenPtr);
+    }
+
+    /*
+     * Parse the indices. Will only compile special cases if both are
+     * constants and not an _integer_ less than zero (since we reserve
+     * negative indices here for end-relative indexing) or an end-based index
+     * greater than 'end' itself.
+     */
+
+    tokenPtr = TokenAfter(valueTokenPtr);
+    if (GetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
+	goto genericReplace;
+    }
+
+    tokenPtr = TokenAfter(tokenPtr);
+    if (GetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
+	goto genericReplace;
+    }
+
+    /*
+     * We handle these replacements specially: first character (where
+     * idx1=idx2=0) and suffixes (where idx1=idx2=INDEX_END). Anything else
+     * and the semantics get rather screwy.
+     */
+
+    if (idx1 == 0 && idx2 == 0) {
+	int notEq, end;
+
+	/*
+	 * Just working with the first character.
+	 */
+
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	if (replacementTokenPtr == NULL) {
+	    /* Drop first */
+	    OP44(	STR_RANGE_IMM, 1, INDEX_END);
+	    return TCL_OK;
+	}
+	/* Replace first */
+	CompileWord(envPtr, replacementTokenPtr, interp, 4);
+	OP4(		OVER, 1);
+	PUSH(		"");
+	OP(		STR_EQ);
+	JUMP1(		JUMP_FALSE, notEq);
+	OP(		POP);
+	JUMP1(		JUMP, end);
+	FIXJUMP1(notEq);
+	TclAdjustStackDepth(1, envPtr);
+	OP4(		REVERSE, 2);
+	OP44(		STR_RANGE_IMM, 1, INDEX_END);
+	OP1(		STR_CONCAT1, 2);
+	FIXJUMP1(end);
+	return TCL_OK;
+
+    } else if (idx1 == INDEX_END && idx2 == INDEX_END) {
+	int notEq, end;
+
+	/*
+	 * Just working with the last character.
+	 */
+
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	if (replacementTokenPtr == NULL) {
+	    /* Drop last */
+	    OP44(	STR_RANGE_IMM, 0, INDEX_END-1);
+	    return TCL_OK;
+	}
+	/* Replace last */
+	CompileWord(envPtr, replacementTokenPtr, interp, 4);
+	OP4(		OVER, 1);
+	PUSH(		"");
+	OP(		STR_EQ);
+	JUMP1(		JUMP_FALSE, notEq);
+	OP(		POP);
+	JUMP1(		JUMP, end);
+	FIXJUMP1(notEq);
+	TclAdjustStackDepth(1, envPtr);
+	OP4(		REVERSE, 2);
+	OP44(		STR_RANGE_IMM, 0, INDEX_END-1);
+	OP4(		REVERSE, 2);
+	OP1(		STR_CONCAT1, 2);
+	FIXJUMP1(end);
+	return TCL_OK;
+
+    } else {
+	/*
+	 * Too complicated to optimize, but we know the number of arguments is
+	 * correct so we can issue a call of the "standard" implementation.
+	 */
+
+    genericReplace:
+	return TclCompileBasicMin0ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+}
+
 /*
  * Synch with tclCmdMZ.c
  */
