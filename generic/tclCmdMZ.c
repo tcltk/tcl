@@ -3339,7 +3339,7 @@ TclInitStringCmd(
 	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
 	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
 	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
-	{"replace",	StringRplcCmd,	NULL, NULL, NULL, 0},
+	{"replace",	StringRplcCmd,	TclCompileStringReplaceCmd, NULL, NULL, 0},
 	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"tolower",	StringLowerCmd,	TclCompileStringToLowerCmd, NULL, NULL, 0},
 	{"toupper",	StringUpperCmd,	TclCompileStringToUpperCmd, NULL, NULL, 0},
