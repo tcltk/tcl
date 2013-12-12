@@ -545,6 +545,34 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Drops an element from the auxiliary stack, popping stack elements
 	 * until the matching stack depth is reached. */
 
+    /* New foreach implementation */
+    {"foreach_start",	 5,	+2,	  1,	{OPERAND_AUX4}},
+	/* Initialize execution of a foreach loop. Operand is aux data index
+	 * of the ForeachInfo structure for the foreach command. It pushes 2
+	 * elements which hold runtime params for foreach_step, they are later
+	 * dropped by foreach_end together with the value lists. NOTE that the
+	 * iterator-tracker and info reference must not be passed to bytecodes
+	 * that handle normal Tcl values. NOTE that this instruction jumps to
+	 * the foreach_step instruction paired with it; the stack info below
+	 * is only nominal.
+	 * Stack: ... listObjs... => ... listObjs... iterTracker info */
+    {"foreach_step",	 1,	 0,	  0,	{OPERAND_NONE}},
+	/* "Step" or begin next iteration of foreach loop. Assigns to foreach
+	 * iteration variables. May jump to straight after the foreach_start
+	 * that pushed the iterTracker and info values. MUST be followed
+	 * immediately by a foreach_end.
+	 * Stack: ... listObjs... iterTracker info =>
+	 *				... listObjs... iterTracker info */
+    {"foreach_end",	 1,	 0,	  0,	{OPERAND_NONE}},
+	/* Clean up a foreach loop by dropping the info value, the tracker
+	 * value and the lists that were being iterated over.
+	 * Stack: ... listObjs... iterTracker info => ... */
+    {"lmap_collect",	 1,	-1,	  0,	{OPERAND_NONE}},
+	/* Appends the value at the top of the stack to the list located on
+	 * the stack the "other side" of the foreach-related values.
+	 * Stack: ... collector listObjs... iterTracker info value =>
+	 *			... collector listObjs... iterTracker info */
+
     {"strtrim",		 1,	-1,	  0,	{OPERAND_NONE}},
 	/* [string trim] core: removes the characters (designated by the value
 	 * at the top of the stack) from both ends of the string and pushes
@@ -578,17 +606,6 @@ InstructionDesc const tclInstructionTable[] = {
 	/* [string totitle] core: converts whole string to upper case using
 	 * the default (extended "C" locale) rules.
 	 * Stack: ... string => ... newString */
-
-    /* New foreach implementation */
-    {"foreach_start",	  5,   +2,          1,	{OPERAND_AUX4}},
-	/* Initialize execution of a foreach loop. Operand is aux data index
-	 * of the ForeachInfo structure for the foreach command. It pushes 2
-	 * elements which hold runtime params for foreach_step, they are later
-	 * dropped by foreach_end together with the value lists. */ 
-    {"foreach_step",	  1,    0,         0,	{OPERAND_NONE}},
-	/* "Step" or begin next iteration of foreach loop. */
-    {"foreach_end",	  1,    0,         0,	{OPERAND_NONE}},
-    {"lmap_collect",	  1,   -1,         0,	{OPERAND_NONE}},
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
