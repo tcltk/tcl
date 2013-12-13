@@ -105,7 +105,6 @@ typedef struct SortInfo {
  */
 
 static CmdFrame *	CmdFrameChain(CoroutineData *corPtr);
-static void		CmdFrameUnchain(CoroutineData *corPtr);
 static int		DictionaryCompare(const char *left, const char *right);
 static int		IfConditionCallback(ClientData data[],
 			    Tcl_Interp *interp, int result);
@@ -1150,7 +1149,7 @@ InfoFrameCmd(
 {
     Interp *iPtr = (Interp *) interp;
     int level, topLevel, code = TCL_OK;
-    CmdFrame *runPtr, *framePtr;
+    CmdFrame *runPtr, *framePtr, **cmdFramePtrPtr = &iPtr->cmdFramePtr;
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
     if (objc > 2) {
@@ -1235,36 +1234,13 @@ InfoFrameCmd(
     Tcl_SetObjResult(interp, TclInfoFrame(interp, framePtr));
 
   done:
-    if (corPtr) {
+    while (corPtr) {
+	CmdFrame *endPtr = corPtr->caller.cmdFramePtr;
 
-	if (iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr) {
-	    iPtr->cmdFramePtr = NULL;
+	if (*cmdFramePtrPtr == endPtr) {
+	    *cmdFramePtrPtr = NULL;
 	} else {
-	    runPtr = iPtr->cmdFramePtr;
-	    while (runPtr->nextPtr != corPtr->caller.cmdFramePtr) {
-	    	runPtr->level -= corPtr->caller.cmdFramePtr->level;
-		runPtr = runPtr->nextPtr;
-	    }
-	    runPtr->level = 1;
-	    runPtr->nextPtr = NULL;
-	}
-	CmdFrameUnchain(corPtr);
-
-    }
-    return code;
-}
-
-static void
-CmdFrameUnchain(
-    CoroutineData *corPtr)
-{
-    if (corPtr->callerEEPtr->corPtr) {
-	CmdFrame *endPtr = corPtr->callerEEPtr->corPtr->caller.cmdFramePtr;
-
-	if (corPtr->caller.cmdFramePtr == endPtr) {
-	    corPtr->caller.cmdFramePtr = NULL;
-	} else {
-	    CmdFrame *runPtr = corPtr->caller.cmdFramePtr;
+	    CmdFrame *runPtr = *cmdFramePtrPtr;
 
 	    while (runPtr->nextPtr != endPtr) {
 	    	runPtr->level -= endPtr->level;
@@ -1273,8 +1249,10 @@ CmdFrameUnchain(
 	    runPtr->level = 1;
 	    runPtr->nextPtr = NULL;
 	}
-	CmdFrameUnchain(corPtr->callerEEPtr->corPtr);
+	cmdFramePtrPtr = &corPtr->caller.cmdFramePtr;
+	corPtr = corPtr->callerEEPtr->corPtr;
     }
+    return code;
 }
 
 static CmdFrame *
