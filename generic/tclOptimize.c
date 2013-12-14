@@ -381,7 +381,17 @@ AdvanceJumps(
 	    currentInstPtr += AddrLength(currentInstPtr)) {
 	int offset, delta, isNew;
 
+	redo:
 	switch (*currentInstPtr) {
+	case INST_PUSH4: {
+	    if (*(currentInstPtr + AddrLength(currentInstPtr)) == INST_POP) {
+		*currentInstPtr = INST_JUMP4;
+		TclStoreInt4AtPtr(6, currentInstPtr + 1);
+		goto redo;
+	    }
+	    continue;
+	}
+
 	case INST_JUMP1:
 	case INST_JUMP_TRUE1:
 	case INST_JUMP_FALSE1:
@@ -711,10 +721,14 @@ void
 TclOptimizeBytecode(
     CompileEnv *envPtr)
 {
-    ConvertZeroEffectToNOP(envPtr);
-    AdvanceJumps(envPtr);
-    TrimUnreachable(envPtr);
-    CompactCode(envPtr);
+    int i = 2;
+
+    while (i--) {
+	ConvertZeroEffectToNOP(envPtr);
+	AdvanceJumps(envPtr);
+	TrimUnreachable(envPtr);
+	CompactCode(envPtr);
+    }
 }
 
 /*
