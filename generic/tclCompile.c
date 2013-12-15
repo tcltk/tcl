@@ -545,6 +545,17 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Drops an element from the auxiliary stack, popping stack elements
 	 * until the matching stack depth is reached. */
 
+    /* New foreach implementation */
+    {"foreach_start",	  5,   +2,          1,	{OPERAND_AUX4}},
+	/* Initialize execution of a foreach loop. Operand is aux data index
+	 * of the ForeachInfo structure for the foreach command. It pushes 2
+	 * elements which hold runtime params for foreach_step, they are later
+	 * dropped by foreach_end together with the value lists. */ 
+    {"foreach_step",	  1,    0,         0,	{OPERAND_NONE}},
+	/* "Step" or begin next iteration of foreach loop. */
+    {"foreach_end",	  1,    0,         0,	{OPERAND_NONE}},
+    {"lmap_collect",	  1,   -1,         0,	{OPERAND_NONE}},
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 

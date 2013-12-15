@@ -586,8 +586,8 @@ typedef struct ByteCode {
 #define INST_CONTINUE			66
 
 /* Opcodes 67 to 68 */
-#define INST_FOREACH_START4		67
-#define INST_FOREACH_STEP4		68
+#define INST_FOREACH_START4		67 /* DEPRECATED */
+#define INST_FOREACH_STEP4		68 /* DEPRECATED */
 
 /* Opcodes 69 to 72 */
 #define INST_BEGIN_CATCH4		69
@@ -768,8 +768,15 @@ typedef struct ByteCode {
 
 #define INST_EXPAND_DROP		165
 
+/* New foreach implementation */
+
+#define INST_FOREACH_START              166
+#define INST_FOREACH_STEP               167
+#define INST_FOREACH_END                168
+#define INST_LMAP_COLLECT               169
+
 /* The last opcode */
-#define LAST_INST_OPCODE		165
+#define LAST_INST_OPCODE		169
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -902,6 +909,7 @@ typedef struct ForeachInfo {
 } ForeachInfo;
 
 MODULE_SCOPE const AuxDataType tclForeachInfoType;
+MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
 
 #define FOREACHINFO(envPtr, index) \
     ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))

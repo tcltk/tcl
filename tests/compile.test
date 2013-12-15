@@ -167,6 +167,36 @@ test compile-3.6 {TclCompileCatchCmd: error in storing result [Bug 3098302]} {*}
     -cleanup {namespace delete catchtest}
 }
 
+test compile-3.7 {TclCompileCatchCmd: error in storing options [Bug 3098302]} {*}{
+     -setup {
+	 namespace eval catchtest {
+	     variable options1 {}
+	 }
+	 trace add variable catchtest::options1 write catchtest::failtrace
+	 proc catchtest::failtrace {n1 n2 op} {
+	     return -code error "trace on $n1 fails by request"
+	 }
+     }
+    -body {
+	proc catchtest::x {} {
+	    variable options1
+	    set count 0
+	    for {set i 0} {$i < 10} {incr i} {
+		set status2 [catch {
+		    set status1 [catch {
+			return -code error -level 0 "original failure"
+		    } result1 options1]
+		} result2 options2]
+		incr count
+	    }
+	    list $count $result2
+	}
+	catchtest::x
+    }
+    -result {10 {can't set "options1": trace on options1 fails by request}}
+    -cleanup {namespace delete catchtest}
+}
+
 test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
     set j 0
