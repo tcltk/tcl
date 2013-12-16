@@ -104,7 +104,7 @@ typedef struct SortInfo {
  * Forward declarations for procedures defined in this file:
  */
 
-static CmdFrame *	CmdFrameChain(CoroutineData *corPtr);
+static void		CmdFrameChain(CoroutineData *corPtr);
 static int		DictionaryCompare(const char *left, const char *right);
 static int		IfConditionCallback(ClientData data[],
 			    Tcl_Interp *interp, int result);
@@ -1140,6 +1140,47 @@ TclInfoExistsCmd(
  *----------------------------------------------------------------------
  */
 
+static void
+Chain(
+    CmdFrame **cmdFramePtrPtr,
+    CoroutineData *corPtr)
+{
+    CmdFrame *tailPtr = corPtr->caller.cmdFramePtr;
+    CmdFrame *runPtr = *cmdFramePtrPtr;
+    int offset;
+
+    if (tailPtr == NULL) {
+	return;
+    }
+
+    if (runPtr == NULL) {
+	*cmdFramePtrPtr = tailPtr;
+	return;
+    }
+
+    offset = tailPtr->level;
+
+    while (runPtr->nextPtr) {
+	runPtr->level += offset;
+	runPtr = runPtr->nextPtr;
+    }
+    runPtr->level += offset;
+    runPtr->nextPtr = tailPtr;
+}
+
+static void
+CmdFrameChain(
+    CoroutineData *corPtr)
+{
+    CmdFrame **cmdFramePtrPtr = &corPtr->caller.cmdFramePtr;
+
+    corPtr = corPtr->callerEEPtr->corPtr;
+    if (corPtr) {
+	CmdFrameChain(corPtr);
+	Chain(cmdFramePtrPtr, corPtr);
+    }
+}
+
 static int
 InfoFrameCmd(
     ClientData dummy,		/* Not used. */
@@ -1149,7 +1190,7 @@ InfoFrameCmd(
 {
     Interp *iPtr = (Interp *) interp;
     int level, topLevel, code = TCL_OK;
-    CmdFrame *runPtr, *framePtr, **cmdFramePtrPtr = &iPtr->cmdFramePtr;
+    CmdFrame *framePtr, **cmdFramePtrPtr = &iPtr->cmdFramePtr;
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
 
     if (objc > 2) {
@@ -1157,35 +1198,12 @@ InfoFrameCmd(
 	return TCL_ERROR;
     }
 
-    topLevel = ((iPtr->cmdFramePtr == NULL)
-	    ? 0
-	    : iPtr->cmdFramePtr->level);
-
     if (corPtr) {
-	/*
-	 * A coroutine: must fix the level computations AND the cmdFrame chain,
-	 * which is interrupted at the base.
-	 */
-
-	CmdFrame *lastPtr = NULL;
-	CmdFrame *tailPtr = CmdFrameChain(corPtr);
-	int offset = tailPtr ? tailPtr->level : 0;
-
-	runPtr = iPtr->cmdFramePtr;
-
-	/* TODO - deal with overflow */
-	topLevel += offset;
-	while (runPtr) {
-	    runPtr->level += offset;
-	    lastPtr = runPtr;
-	    runPtr = runPtr->nextPtr;
-	}
-	if (lastPtr) {
-	    lastPtr->nextPtr = tailPtr;
-	} else {
-	    iPtr->cmdFramePtr = tailPtr;
-	}
+	CmdFrameChain(corPtr);
+	Chain(cmdFramePtrPtr, corPtr);
     }
+
+    topLevel = iPtr->cmdFramePtr ? iPtr->cmdFramePtr->level : 0;
 
     if (objc == 1) {
 	/*
@@ -1234,6 +1252,7 @@ InfoFrameCmd(
     Tcl_SetObjResult(interp, TclInfoFrame(interp, framePtr));
 
   done:
+    cmdFramePtrPtr = &iPtr->cmdFramePtr;
     while (corPtr) {
 	CmdFrame *endPtr = corPtr->caller.cmdFramePtr;
 
@@ -1253,30 +1272,6 @@ InfoFrameCmd(
 	corPtr = corPtr->callerEEPtr->corPtr;
     }
     return code;
-}
-
-static CmdFrame *
-CmdFrameChain(
-    CoroutineData *corPtr)
-{
-    if (corPtr->callerEEPtr->corPtr) {
-	CmdFrame *tailPtr = CmdFrameChain(corPtr->callerEEPtr->corPtr);
-	CmdFrame *lastPtr = NULL;
-	CmdFrame *runPtr = corPtr->caller.cmdFramePtr;
-	int offset = tailPtr ? tailPtr->level : 0;
-
-	while (runPtr) {
-	    runPtr->level += offset;
-	    lastPtr = runPtr;
-	    runPtr = runPtr->nextPtr;
-	}
-	if (lastPtr) {
-	    lastPtr->nextPtr = tailPtr;
-	} else {
-	    corPtr->caller.cmdFramePtr = tailPtr;
-	}
-    }
-    return corPtr->caller.cmdFramePtr;
 }
 
 /*
