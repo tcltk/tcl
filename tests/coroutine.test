@@ -342,6 +342,9 @@ test coroutine-3.6 {info frame, bug #2910094} -setup {
     rename stack {}
     rename a {}
 } -result {}
+test coroutine-3.7 {bug 0b874c344d} {
+    dict get [coroutine X coroutine Y info frame 0] cmd
+} {coroutine X coroutine Y info frame 0}
 
 test coroutine-4.1 {bug #2093188} -setup {
     proc foo {} {
