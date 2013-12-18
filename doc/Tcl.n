@@ -108,8 +108,8 @@ Variable substitution may take any of the following forms:
 \fIName\fR is the name of a scalar variable;  the name is a sequence
 of one or more characters that are a letter, digit, underscore,
 or namespace separators (two or more colons).
-Letters and digits are \fIonly\fR the standard ASCII ones (\fB0\fR\-\fB9\fR,
-\fBA\fR\-\fBZ\fR and \fBa\fR\-\fBz\fR).
+Letters and digits are \fIonly\fR the standard ASCII ones (\fB0\fR\(en\fB9\fR,
+\fBA\fR\(en\fBZ\fR and \fBa\fR\(en\fBz\fR).
 .TP 15
 \fB$\fIname\fB(\fIindex\fB)\fR
 .
@@ -117,8 +117,8 @@ Letters and digits are \fIonly\fR the standard ASCII ones (\fB0\fR\-\fB9\fR,
 the name of an element within that array.
 \fIName\fR must contain only letters, digits, underscores, and
 namespace separators, and may be an empty string.
-Letters and digits are \fIonly\fR the standard ASCII ones (\fB0\fR\-\fB9\fR,
-\fBA\fR\-\fBZ\fR and \fBa\fR\-\fBz\fR).
+Letters and digits are \fIonly\fR the standard ASCII ones (\fB0\fR\(en\fB9\fR,
+\fBA\fR\(en\fBZ\fR and \fBa\fR\(en\fBz\fR).
 Command substitutions, variable substitutions, and backslash
 substitutions are performed on the characters of \fIindex\fR.
 .TP 15
@@ -158,25 +158,25 @@ handled specially, along with the value that replaces each sequence.
 .RS
 .TP 7
 \e\fBa\fR
-Audible alert (bell) (0x7).
+Audible alert (bell) (Unicode U+000007).
 .TP 7
 \e\fBb\fR
-Backspace (0x8).
+Backspace (Unicode U+000008).
 .TP 7
 \e\fBf\fR
-Form feed (0xc).
+Form feed (Unicode U+00000C).
 .TP 7
 \e\fBn\fR
-Newline (0xa).
+Newline (Unicode U+00000A).
 .TP 7
 \e\fBr\fR
-Carriage-return (0xd).
+Carriage-return (Unicode U+00000D).
 .TP 7
 \e\fBt\fR
-Tab (0x9).
+Tab (Unicode U+000009).
 .TP 7
 \e\fBv\fR
-Vertical tab (0xb).
+Vertical tab (Unicode U+00000B).
 .TP 7
 \e\fB<newline>\fIwhiteSpace\fR
 .
@@ -194,8 +194,9 @@ Backslash
 \e\fIooo\fR 
 .
 The digits \fIooo\fR (one, two, or three of them) give a eight-bit octal 
-value for the Unicode character that will be inserted, in the range \fI000\fR
-- \fI377\fR.  The parser will stop just before this range overflows, or when
+value for the Unicode character that will be inserted, in the range
+\fI000\fR\(en\fI377\fR (i.e., the range U+000000\(enU+0000FF).
+The parser will stop just before this range overflows, or when
 the maximum of three digits is reached.  The upper bits of the Unicode
 character will be 0.
 .TP 7
@@ -203,23 +204,27 @@ character will be 0.
 .
 The hexadecimal digits \fIhh\fR (one or two of them) give an eight-bit
 hexadecimal value for the Unicode character that will be inserted.  The upper
-bits of the Unicode character will be 0.
+bits of the Unicode character will be 0 (i.e., the character will be in the
+range U+000000\(enU+0000FF).
 .TP 7
 \e\fBu\fIhhhh\fR 
 .
 The hexadecimal digits \fIhhhh\fR (one, two, three, or four of them) give a
 sixteen-bit hexadecimal value for the Unicode character that will be
-inserted.  The upper bits of the Unicode character will be 0.
+inserted.  The upper bits of the Unicode character will be 0 (i.e., the
+character will be in the range U+000000\(enU+00FFFF).
 .TP 7
 \e\fBU\fIhhhhhhhh\fR 
 .
 The hexadecimal digits \fIhhhhhhhh\fR (one up to eight of them) give a
 twenty-one-bit hexadecimal value for the Unicode character that will be
-inserted, in the range U+0000..U+10FFFF.  The parser will stop just
+inserted, in the range U+000000\(enU+10FFFF.  The parser will stop just
 before this range overflows, or when the maximum of eight digits
 is reached.  The upper bits of the Unicode character will be 0.
+.RS
 .PP
-The range U+010000..U+10FFFD is reserved for the future.
+The range U+010000\(enU+10FFFD is reserved for the future.
+.RE
 .PP
 Backslash substitution is not performed on words enclosed in braces,
 except for backslash-newline as described above.
