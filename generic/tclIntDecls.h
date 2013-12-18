@@ -614,6 +614,9 @@ EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
 /* 250 */
 EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
+/* 251 */
+EXTERN int		TclRegisterLiteral(CompileEnv *envPtr, char *bytes,
+				int length, int flags);
 
 typedef struct TclIntStubs {
     int magic;
@@ -870,6 +873,7 @@ typedef struct TclIntStubs {
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
+    int (*tclRegisterLiteral) (CompileEnv *envPtr, char *bytes, int length, int flags); /* 251 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1299,6 +1303,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
 #define TclSetSlaveCancelFlags \
 	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
+#define TclRegisterLiteral \
+	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

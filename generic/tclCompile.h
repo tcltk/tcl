@@ -812,7 +812,7 @@ typedef struct InstructionDesc {
 				/* The type of each operand. */
 } InstructionDesc;
 
-MODULE_SCOPE InstructionDesc const tclInstructionTable[];
+EXTERN InstructionDesc const tclInstructionTable[];
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or
@@ -1045,8 +1045,8 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
-MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
-			    char *bytes, int length, int flags);
+/*MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
+  char *bytes, int length, int flags);*/
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
 			    const char *name, Namespace *nsPtr);

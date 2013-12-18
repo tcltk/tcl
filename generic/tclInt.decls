@@ -1006,6 +1006,12 @@ declare 249 {
 declare 250 {
     void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
 }
+
+# Allow extensions for optimization
+declare 251 {
+    int	TclRegisterLiteral(CompileEnv *envPtr,
+			   char *bytes, int length, int flags)
+}
 
 ##############################################################################
 

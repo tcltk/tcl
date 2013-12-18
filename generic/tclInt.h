@@ -4762,6 +4762,7 @@ typedef struct NRE_callback {
 #define NRE_ASSERT(expr)
 #endif
 
+#include "tclCompile.h"
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
 #include "tclTomMathDecls.h"
