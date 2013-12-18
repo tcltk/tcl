@@ -770,7 +770,9 @@ TclSetByteCodeFromAny(
      * first? 
      */
 
-    TclOptimizeBytecode(&compEnv);
+    if (iPtr->extra.optimizer) {
+	(iPtr->extra.optimizer)(&compEnv);
+    }
 
     /*
      * Invoke the compilation hook procedure if one exists.

@@ -719,7 +719,7 @@ CompactCode(
 
 void
 TclOptimizeBytecode(
-    CompileEnv *envPtr)
+    void *envPtr)
 {
     int i = 2;
 
