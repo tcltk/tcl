@@ -1800,6 +1800,7 @@ typedef struct Interp {
     ClientData interpInfo;	/* Information used by tclInterp.c to keep
 				 * track of master/slave interps on a
 				 * per-interp basis. */
+    void (*optimizer)(void *envPtr);
     /*
      * Information related to procedures and variables. See tclProc.c and
      * tclVar.c for usage.

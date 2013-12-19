@@ -765,7 +765,9 @@ TclSetByteCodeFromAny(
      * instruction generator boundaries.
      */
 
-    TclOptimizeBytecode(&compEnv);
+    if (iPtr->optimizer) {
+	(iPtr->optimizer)(&compEnv);
+    }
 
     /*
      * Invoke the compilation hook procedure if one exists.
