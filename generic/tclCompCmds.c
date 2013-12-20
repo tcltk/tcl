@@ -499,10 +499,7 @@ TclCompileBreakCmd(
 	 * Emit a real break.
 	 */
 
-	PushStringLiteral(envPtr, "");
-	TclEmitOpcode(INST_DUP, envPtr);
-	TclEmitInstInt4(INST_RETURN_IMM, TCL_BREAK, envPtr);
-	TclEmitInt4(0, envPtr);
+	TclEmitOpcode(INST_BREAK, envPtr);
     }
 
     return TCL_OK;
@@ -738,10 +735,7 @@ TclCompileContinueCmd(
 	 * Emit a real continue.
 	 */
 
-	PushStringLiteral(envPtr, "");
-	TclEmitOpcode(INST_DUP, envPtr);
-	TclEmitInstInt4(INST_RETURN_IMM, TCL_CONTINUE, envPtr);
-	TclEmitInt4(0, envPtr);
+	TclEmitOpcode(INST_CONTINUE, envPtr);
     }
 
     return TCL_OK;
