@@ -3016,6 +3016,7 @@ TclCompileWhileCmd(
 	TclFixupForwardJump(envPtr, jumpEvalCondFixup, jumpDist);
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
+	TclClearNumConversion(envPtr);
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);

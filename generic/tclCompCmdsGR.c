@@ -229,6 +229,7 @@ TclCompileIfCmd(
 		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
+		TclClearNumConversion(envPtr);
 		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
 		    TclExpandJumpFixupArray(&jumpFalseFixupArray);
 		}
@@ -448,6 +449,7 @@ TclCompileIncrCmd(
 	} else {
 	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
+	    TclClearNumConversion(envPtr);
 	}
     } else {			/* No incr amount given so use 1. */
 	haveImmValue = 1;
