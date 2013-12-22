@@ -601,7 +601,6 @@ TclCompileCatchCmd(
 	ExceptionRangeStarts(envPtr, range);
 	BODY(cmdTokenPtr, 1);
     } else {
-	dropScript = 1;
 	SetLineInformation(1);
 	CompileTokens(envPtr, cmdTokenPtr, interp);
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
