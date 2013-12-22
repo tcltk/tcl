@@ -493,7 +493,6 @@ TclCompileBreakCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopBreakFixup(envPtr, auxPtr);
-	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real break.
@@ -501,6 +500,7 @@ TclCompileBreakCmd(
 
 	TclEmitOpcode(INST_BREAK, envPtr);
     }
+    TclAdjustStackDepth(1, envPtr);
 
     return TCL_OK;
 }
@@ -736,7 +736,6 @@ TclCompileContinueCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopContinueFixup(envPtr, auxPtr);
-	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real continue.
@@ -744,6 +743,7 @@ TclCompileContinueCmd(
 
 	TclEmitOpcode(INST_CONTINUE, envPtr);
     }
+    TclAdjustStackDepth(1, envPtr);
 
     return TCL_OK;
 }
