@@ -534,7 +534,7 @@ TclCompileCatchCmd(
 {
     int jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int resultIndex, optsIndex, range, dropScript = 0;
+    int resultIndex, optsIndex, range, depth, dropScript = 0;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -596,6 +596,7 @@ TclCompileCatchCmd(
      * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
      */
 
+    depth = envPtr->currStackDepth;
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
@@ -614,7 +615,10 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
     ExceptionRangeEnds(envPtr, range);
-
+    if (depth + 1 != envPtr->currStackDepth) {
+	Tcl_Panic("catch compiler: bad stack computation on OK branch, 1");
+    }
+        
     /*
      * Emit the "no errors" epilogue: last instruction is push "0" (TCL_OK)
      * as the catch result, and jump to the end. There is some code
@@ -637,6 +641,9 @@ TclCompileCatchCmd(
     TclEmitOpcode(	INST_POP,			envPtr);
     
     PushStringLiteral(envPtr, "0");
+    if (depth + 1 != envPtr->currStackDepth) {
+	Tcl_Panic("catch compiler: bad stack computation on OK branch, 2");
+    }
     TclEmitForwardJump(envPtr, JUMP, &jumpFixup);
 
     /* 
@@ -644,7 +651,6 @@ TclCompileCatchCmd(
      * return code.
      */
 
-    TclAdjustStackDepth(-2 + dropScript, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
 
     /* Stack at this point is empty. Push the return code, then push the
@@ -657,7 +663,7 @@ TclCompileCatchCmd(
     }
 
     /* Stack at this point is empty */
-    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
+    envPtr->currStackDepth = depth;
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
     if (resultIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
@@ -679,6 +685,10 @@ TclCompileCatchCmd(
     if (resultIndex != -1) {
 	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
 	TclEmitOpcode(	INST_POP,			envPtr);
+    }
+
+    if (depth + 1 != envPtr->currStackDepth) {
+	Tcl_Panic("catch compiler: bad stack computation on not-OK branch");
     }
 
     TclFixupForwardJumpToHere(envPtr, jumpFixup);
