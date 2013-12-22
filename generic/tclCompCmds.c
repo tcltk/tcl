@@ -534,7 +534,7 @@ TclCompileCatchCmd(
 {
     int jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int resultIndex, optsIndex, range;
+    int resultIndex, optsIndex, range, dropScript = 0;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -609,6 +609,7 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitInvoke(envPtr,	INST_EVAL_STK);
 	/* drop the script */
+	dropScript = 1;
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
@@ -643,7 +644,7 @@ TclCompileCatchCmd(
      * return code.
      */
 
-    TclAdjustStackDepth(-1, envPtr);
+    TclAdjustStackDepth(-2 + dropScript, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
 
     /* Stack at this point is empty. Push the return code, then push the
@@ -651,6 +652,12 @@ TclCompileCatchCmd(
      * happen before INST_END_CATCH.
      */
 
+    if (dropScript) {
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+
+    /* Stack at this point is empty */
+    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
     if (resultIndex != -1) {
 	TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
