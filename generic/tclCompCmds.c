@@ -533,7 +533,7 @@ TclCompileCatchCmd(
 {
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int resultIndex, optsIndex, range;
+    int resultIndex, optsIndex, range, dropScript = 0;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -601,6 +601,7 @@ TclCompileCatchCmd(
 	ExceptionRangeStarts(envPtr, range);
 	BODY(cmdTokenPtr, 1);
     } else {
+	dropScript = 1;
 	SetLineInformation(1);
 	CompileTokens(envPtr, cmdTokenPtr, interp);
 	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
@@ -608,6 +609,7 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitInvoke(envPtr,	INST_EVAL_STK);
 	/* drop the script */
+	dropScript = 1;
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
@@ -626,8 +628,12 @@ TclCompileCatchCmd(
      * return code.
      */
 
-    TclAdjustStackDepth(-2, envPtr);
+    TclAdjustStackDepth(-2 + dropScript, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
+    if (dropScript) {
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+
     /* Stack at this point is empty */
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
