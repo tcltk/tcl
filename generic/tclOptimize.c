@@ -427,7 +427,7 @@ AdvanceJumps(
 
 void
 TclOptimizeBytecode(
-    CompileEnv *envPtr)
+    void *envPtr)
 {
     ConvertZeroEffectToNOP(envPtr);
     AdvanceJumps(envPtr);
