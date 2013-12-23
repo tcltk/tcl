@@ -1727,7 +1727,7 @@ TclCompileInvocation(
     int numWords,
     CompileEnv *envPtr)
 {
-    int wordIdx = 0;
+    int wordIdx = 0, depth = TclGetStackDepth(envPtr);
     DefineLineInformation;
 
     if (cmdObj) {
@@ -1760,6 +1760,7 @@ TclCompileInvocation(
     } else {
 	TclEmitInvoke(envPtr, INST_INVOKE_STK4, wordIdx);
     }
+    TclCheckStackDepth(depth+1, envPtr);
 }
 
 static void
@@ -1772,7 +1773,8 @@ CompileExpanded(
 {
     int wordIdx = 0;
     DefineLineInformation;
-
+    int depth = TclGetStackDepth(envPtr);
+    
     StartExpanding(envPtr);
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1818,6 +1820,7 @@ CompileExpanded(
      */
 
     TclEmitInvoke(envPtr, INST_INVOKE_EXPANDED, wordIdx);
+    TclCheckStackDepth(depth+1, envPtr);
 }
 
 static int 
@@ -1829,6 +1832,7 @@ CompileCmdCompileProc(
 {
     int unwind = 0, incrOffset = -1;
     DefineLineInformation;
+    int depth = TclGetStackDepth(envPtr);
 
     /*
      * Emit of the INST_START_CMD instruction is controlled by the value of
@@ -1876,6 +1880,7 @@ CompileCmdCompileProc(
 		TclStoreInt4AtPtr(envPtr->codeNext - startPtr, startPtr + 1);
 	    }
 	}
+	TclCheckStackDepth(depth+1, envPtr);
 	return TCL_OK;
     }
 
@@ -1918,7 +1923,8 @@ CompileCommandTokens(
     int *clNext = envPtr->clNext;
     int cmdIdx = envPtr->numCommands;
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
-
+    int depth = TclGetStackDepth(envPtr);
+    
     assert (parsePtr->numWords > 0);
 
     /* Pre-Compile */
@@ -2009,6 +2015,7 @@ CompileCommandTokens(
     eclPtr->loc[wlineat].line = wlines;
     eclPtr->loc[wlineat].next = NULL;
 
+    TclCheckStackDepth(depth, envPtr);
     return cmdIdx;
 }
 
@@ -2028,6 +2035,7 @@ TclCompileScript(
 				 * Initial value of -1 indicates this routine
 				 * has not yet generated any bytecode. */
     const char *p = script;	/* Where we are in our compile. */
+    int depth = TclGetStackDepth(envPtr);
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclCompileScript() called on uninitialized CompileEnv");
@@ -2139,6 +2147,7 @@ TclCompileScript(
 	envPtr->codeNext--;
 	envPtr->currStackDepth++;
     }
+    TclCheckStackDepth(depth+1, envPtr);
 }
 
 /*
@@ -2249,6 +2258,7 @@ TclCompileTokens(
 #define NUM_STATIC_POS 20
     int isLiteral, maxNumCL, numCL;
     int *clPosition = NULL;
+    int depth = TclGetStackDepth(envPtr);
 
     /*
      * For the handling of continuation lines in literals we first check if
@@ -2426,6 +2436,7 @@ TclCompileTokens(
     if (maxNumCL) {
 	ckfree(clPosition);
     }
+    TclCheckStackDepth(depth+1, envPtr);
 }
 
 /*
@@ -3744,7 +3755,8 @@ TclEmitInvoke(
     ExceptionAux *auxBreakPtr, *auxContinuePtr;
     int arg1, arg2, wordCount = 0, expandCount = 0;
     int loopRange = 0, breakRange = 0, continueRange = 0;
-
+    int cleanup, depth = TclGetStackDepth(envPtr);
+    
     /*
      * Parse the arguments.
      */
@@ -3752,30 +3764,31 @@ TclEmitInvoke(
     va_start(argList, opcode);
     switch (opcode) {
     case INST_INVOKE_STK1:
-	wordCount = arg1 = va_arg(argList, int);
+	wordCount = arg1 = cleanup = va_arg(argList, int);
 	arg2 = 0;
 	break;
     case INST_INVOKE_STK4:
-	wordCount = arg1 = va_arg(argList, int);
+	wordCount = arg1 = cleanup = va_arg(argList, int);
 	arg2 = 0;
 	break;
     case INST_INVOKE_REPLACE:
 	arg1 = va_arg(argList, int);
 	arg2 = va_arg(argList, int);
 	wordCount = arg1 + arg2 - 1;
+	cleanup = arg1 + 1;
 	break;
     default:
 	Tcl_Panic("unexpected opcode");
     case INST_EVAL_STK:
-	wordCount = 1;
+	wordCount = cleanup = 1;
 	arg1 = arg2 = 0;
 	break;
     case INST_RETURN_STK:
-	wordCount = 2;
+	wordCount = cleanup = 2;
 	arg1 = arg2 = 0;
 	break;
     case INST_INVOKE_EXPANDED:
-	wordCount = arg1 = va_arg(argList, int);
+	wordCount = arg1 = cleanup = va_arg(argList, int);
 	arg2 = 0;
 	expandCount = 1;
 	break;
@@ -3878,6 +3891,7 @@ TclEmitInvoke(
 	    ExceptionRangeTarget(envPtr, loopRange, breakOffset);
 	    TclCleanupStackForBreakContinue(envPtr, auxBreakPtr);
 	    TclAddLoopBreakFixup(envPtr, auxBreakPtr);
+	    TclAdjustStackDepth(1, envPtr);
 
 	    envPtr->currStackDepth = savedStackDepth;
 	    envPtr->expandCount = savedExpandCount;
@@ -3889,6 +3903,7 @@ TclEmitInvoke(
 	    ExceptionRangeTarget(envPtr, loopRange, continueOffset);
 	    TclCleanupStackForBreakContinue(envPtr, auxContinuePtr);
 	    TclAddLoopContinueFixup(envPtr, auxContinuePtr);
+	    TclAdjustStackDepth(1, envPtr);
 
 	    envPtr->currStackDepth = savedStackDepth;
 	    envPtr->expandCount = savedExpandCount;
@@ -3897,6 +3912,7 @@ TclEmitInvoke(
 	TclFinalizeLoopExceptionRange(envPtr, loopRange);
 	TclFixupForwardJumpToHere(envPtr, nonTrapFixup);
     }
+    TclCheckStackDepth(depth+1-cleanup, envPtr);
 }
 
 /*
