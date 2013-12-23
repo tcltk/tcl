@@ -496,17 +496,14 @@ TclCompileBreakCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopBreakFixup(envPtr, auxPtr);
-	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real break.
 	 */
 
-	PushStringLiteral(envPtr, "");
-	TclEmitOpcode(INST_DUP, envPtr);
-	TclEmitInstInt4(INST_RETURN_IMM, TCL_BREAK, envPtr);
-	TclEmitInt4(0, envPtr);
+	TclEmitOpcode(INST_BREAK, envPtr);
     }
+    TclAdjustStackDepth(1, envPtr);
 
     return TCL_OK;
 }
@@ -540,9 +537,10 @@ TclCompileCatchCmd(
 {
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int resultIndex, optsIndex, range;
+    int resultIndex, optsIndex, range, dropScript = 0;
     DefineLineInformation;	/* TIP #280 */
-
+    int depth = TclGetStackDepth(envPtr);
+    
     /*
      * If syntax does not match what we expect for [catch], do not compile.
      * Let runtime checks determine if syntax has changed.
@@ -615,16 +613,19 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitInvoke(envPtr,	INST_EVAL_STK);
 	/* drop the script */
+	dropScript = 1;
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
     ExceptionRangeEnds(envPtr, range);
 
+    
     /*
      * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
      * and jump around the "error case" code.
      */
 
+    TclCheckStackDepth(depth+1, envPtr);
     PushStringLiteral(envPtr, "0");
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 
@@ -633,8 +634,14 @@ TclCompileCatchCmd(
      * return code.
      */
 
-    TclAdjustStackDepth(-2, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
+    TclSetStackDepth(depth + dropScript, envPtr);
+    
+    if (dropScript) {
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+
+
     /* Stack at this point is empty */
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
@@ -683,6 +690,7 @@ TclCompileCatchCmd(
     }
     TclEmitOpcode(	INST_POP,			envPtr);
 
+    TclCheckStackDepth(depth+1, envPtr);
     return TCL_OK;
 }
 
@@ -824,17 +832,14 @@ TclCompileContinueCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopContinueFixup(envPtr, auxPtr);
-	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real continue.
 	 */
 
-	PushStringLiteral(envPtr, "");
-	TclEmitOpcode(INST_DUP, envPtr);
-	TclEmitInstInt4(INST_RETURN_IMM, TCL_CONTINUE, envPtr);
-	TclEmitInt4(0, envPtr);
+	TclEmitOpcode(INST_CONTINUE, envPtr);
     }
+    TclAdjustStackDepth(1, envPtr);
 
     return TCL_OK;
 }
@@ -2370,6 +2375,7 @@ TclCompileForCmd(
 
     SetLineInformation(2);
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
+    TclClearNumConversion(envPtr);
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
     if (jumpDist > 127) {
