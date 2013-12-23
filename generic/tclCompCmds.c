@@ -532,7 +532,8 @@ TclCompileCatchCmd(
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
     int resultIndex, optsIndex, range, dropScript = 0;
     DefineLineInformation;	/* TIP #280 */
-
+    int depth = TclGetStackDepth(envPtr);
+    
     /*
      * If syntax does not match what we expect for [catch], do not compile.
      * Let runtime checks determine if syntax has changed.
@@ -611,11 +612,13 @@ TclCompileCatchCmd(
     }
     ExceptionRangeEnds(envPtr, range);
 
+    
     /*
      * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
      * and jump around the "error case" code.
      */
 
+    TclCheckStackDepth(depth+1, envPtr);
     PushStringLiteral(envPtr, "0");
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 
@@ -624,11 +627,13 @@ TclCompileCatchCmd(
      * return code.
      */
 
-    TclAdjustStackDepth(-2 + dropScript, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
+    TclSetStackDepth(depth + dropScript, envPtr);
+    
     if (dropScript) {
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
+
 
     /* Stack at this point is empty */
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
@@ -678,6 +683,7 @@ TclCompileCatchCmd(
     }
     TclEmitOpcode(	INST_POP,			envPtr);
 
+    TclCheckStackDepth(depth+1, envPtr);
     return TCL_OK;
 }
 
