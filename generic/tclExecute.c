@@ -5157,6 +5157,126 @@ TEBCresume(
 	int length3;
 	Tcl_Obj *value3Ptr;
 
+    case INST_STR_REPLACE:
+	valuePtr = OBJ_AT_DEPTH(3);
+	length = Tcl_GetCharLength(valuePtr) - 1;
+	value3Ptr = OBJ_AT_TOS;
+	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
+		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(value3Ptr)));
+	if (TclGetIntForIndexM(interp, OBJ_AT_DEPTH(2), length,
+		    &fromIdx) != TCL_OK
+	    || TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+		    &toIdx) != TCL_OK) {
+	    goto gotError;
+	}
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
+
+	if (fromIdx > toIdx || fromIdx > length) {
+	    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 3, 0);
+	}
+
+	if (fromIdx == 0 && toIdx == length) {
+	    objResultPtr = value3Ptr;
+	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 4, 1);
+	}
+
+	length3 = Tcl_GetCharLength(value3Ptr);
+
+	/*
+	 * Remove substring. In-place.
+	 */
+
+	if (length3 == 0 && !Tcl_IsShared(valuePtr) && toIdx == length) {
+	    Tcl_SetObjLength(valuePtr, fromIdx);
+	    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 3, 0);
+	}
+
+	// Splice in place.
+
+	if (length3 == toIdx - fromIdx) {
+	    unsigned char *bytes1, *bytes2;
+
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_DuplicateObj(valuePtr);
+		// splice "in place"
+		if (TclIsPureByteArray(objResultPtr)
+			&& TclIsPureByteArray(value3Ptr)) {
+		    bytes1 = Tcl_GetByteArrayFromObj(objResultPtr);
+		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr);
+		} else {
+		}
+		NEXT_INST_F(1, 4, 1);
+	    } else {
+		// splice "in place"
+		if (TclIsPureByteArray(valuePtr)
+			&& TclIsPureByteArray(value3Ptr)) {
+		    bytes1 = Tcl_GetByteArrayFromObj(valuePtr);
+		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr);
+		} else {
+		}
+		NEXT_INST_F(1, 3, 0);
+	    }
+	}
+
+	/*
+	 * Get the unicode representation; this is where we guarantee to lose
+	 * bytearrays.
+	 */
+
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	length--;
+
+	/*
+	 * Remove substring using copying.
+	 */
+
+	if (length3 == 0) {
+	    if (fromIdx > 0) {
+		objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
+		if (toIdx < length) {
+		    Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			    length - toIdx);
+		}
+	    } else {
+		objResultPtr = Tcl_NewUnicodeObj(ustring1 + toIdx + 1,
+			length - toIdx);
+	    }
+	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 4, 1);
+	}
+
+	/*
+	 * Splice string pieces by full copying.
+	 */
+
+	if (fromIdx > 0) {
+	    objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
+	    Tcl_AppendObjToObj(objResultPtr, value3Ptr);
+	    if (toIdx < length) {
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			length - toIdx);
+	    }
+	} else if (Tcl_IsShared(value3Ptr)) {
+	    objResultPtr = Tcl_DuplicateObj(value3Ptr);
+	    if (toIdx < length) {
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			length - toIdx);
+	    }
+	} else {
+	    objResultPtr = value3Ptr;
+	    if (toIdx < length) {
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			length - toIdx);
+	    }
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(1, 4, 1);
+
     case INST_STR_MAP:
 	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
 	value3Ptr = OBJ_UNDER_TOS;	/* "Target" string. */
