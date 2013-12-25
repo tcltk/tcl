@@ -2021,6 +2021,14 @@ TclNRExecuteByteCode(
      * Push the callback for bytecode execution
      */
 
+#ifdef TCL_COMPILE_DEBUG
+    if (tclTraceExec >= 2) {
+	PrintByteCodeInfo(codePtr);
+	fprintf(stdout, "  Starting stack top=0\n");
+	fflush(stdout);
+    }
+#endif
+
     TclNRAddCallback(interp, TEBCresume, TD, /*resume*/ INT2PTR(0),
 	    NULL, NULL);
     return TCL_OK;
@@ -2120,14 +2128,6 @@ TEBCresume(
 #endif
 
     TEBC_DATA_DIG();
-
-#ifdef TCL_COMPILE_DEBUG
-    if (!data[1] && (tclTraceExec >= 2)) {
-	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%d\n", (int) CURR_DEPTH);
-	fflush(stdout);
-    }
-#endif
 
     if (data[1] /* resume from invocation */) {
 	if (iPtr->execEnvPtr->rewind) {
