@@ -2505,25 +2505,21 @@ TEBCresume(
     }
 
     case INST_DONE:
-	if (tosPtr > initTosPtr) {
-	    /*
-	     * Set the interpreter's object result to point to the topmost
-	     * object from the stack, and check for a possible [catch]. The
-	     * stackTop's level and refCount will be handled by "processCatch"
-	     * or "abnormalReturn".
-	     */
+	/*
+	 * Set the interpreter's object result to point to the topmost
+	 * object from the stack. The stackTop's level and refCount will be
+	 * handled by "abnormalReturn".
+	 */
 
-	    Tcl_SetObjResult(interp, OBJ_AT_TOS);
 #ifdef TCL_COMPILE_DEBUG
-	    TRACE_WITH_OBJ(("=> return code=%d, result=", result),
-		    iPtr->objResultPtr);
-	    if (traceInstructions) {
-		fprintf(stdout, "\n");
-	    }
-#endif
-	    goto checkForCatch;
+	TRACE_WITH_OBJ(("=> return code=%d, result=", result),
+		OBJ_AT_TOS);
+	if (traceInstructions) {
+	    fprintf(stdout, "\n");
 	}
-	(void) POP_OBJECT();
+#endif
+	assert (catchTop == initCatchTop); /* no catch */
+	Tcl_SetObjResult(interp, OBJ_AT_TOS);
 	goto abnormalReturn;
 
     case INST_PUSH4:
