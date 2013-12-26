@@ -2359,8 +2359,6 @@ IssueTryClausesInstructions(
 	    forwardsNeedFixing = 1;
 	    JUMP4(			JUMP, forwardsToFix[i]);
 	} else {
-	    int dontChangeOptions;
-
 	    forwardsToFix[i] = -1;
 	    if (forwardsNeedFixing) {
 		forwardsNeedFixing = 0;
@@ -2383,11 +2381,7 @@ IssueTryClausesInstructions(
 	    TclAdjustStackDepth(-1, envPtr);
 	    OP(				PUSH_RESULT);
 	    OP(				PUSH_RETURN_OPTIONS);
-	    OP(				PUSH_RETURN_CODE);
 	    OP(				END_CATCH);
-	    PUSH(			"1");
-	    OP(				EQ);
-	    JUMP1(			JUMP_FALSE, dontChangeOptions);
 	    LOAD(			optionsVar);
 	    OP4(			REVERSE, 2);
 	    STORE(			optionsVar);
@@ -2396,7 +2390,6 @@ IssueTryClausesInstructions(
 	    OP4(			REVERSE, 2);
 	    OP44(			DICT_SET, 1, optionsVar);
 	    TclAdjustStackDepth(-1, envPtr);
-	    FIXJUMP1(		dontChangeOptions);
 	    OP4(			REVERSE, 2);
 	    INVOKE(			RETURN_STK);
 	}
