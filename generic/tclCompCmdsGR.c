@@ -1792,7 +1792,7 @@ TclCompileNamespaceQualifiersCmd(
     PushStringLiteral(envPtr, ":");
     TclEmitOpcode(	INST_STR_EQ,			envPtr);
     off = off - CurrentOffset(envPtr);
-    TclEmitInstInt1(	INST_JUMP_TRUE1, off,		envPtr);
+    TclEmitInstInt4(	INST_JUMP_TRUE4, off,		envPtr);
     TclEmitOpcode(	INST_STR_RANGE,			envPtr);
     return TCL_OK;
 }
