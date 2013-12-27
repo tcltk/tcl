@@ -1117,6 +1117,21 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	(envPtr)->currStackDepth += (delta);				\
     } while (0)
 
+#define TclGetStackDepth(envPtr)		\
+    ((envPtr)->currStackDepth)
+
+#define TclSetStackDepth(depth, envPtr)		\
+    (envPtr)->currStackDepth = (depth)
+
+#define TclCheckStackDepth(depth, envPtr)				\
+    do {								\
+	int dd = (depth);						\
+	if (dd != (envPtr)->currStackDepth) {				\
+	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
+		    (envPtr)->currStackDepth, dd);		\
+	}								\
+    } while (0)
+
 /*
  * Macro used to update the stack requirements. It is called by the macros
  * TclEmitOpCode, TclEmitInst1 and TclEmitInst4.
