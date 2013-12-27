@@ -1915,7 +1915,7 @@ TclCompileThrowCmd(
 	OP4(			REVERSE, 3);
 	OP(			DUP);
 	OP(			LIST_LENGTH);
-	OP1(			JUMP_FALSE1, 16);
+	OP4(			JUMP_FALSE4, 19);
 	OP4(			LIST, 2);
 	OP44(			RETURN_IMM, TCL_ERROR, 0);
 	TclAdjustStackDepth(2, envPtr);
@@ -2236,7 +2236,7 @@ IssueTryClausesInstructions(
     } else {
 	PUSH(				"0");
 	OP4(				REVERSE, 2);
-	OP1(				JUMP1, 4);
+	OP4(				JUMP4, 7);
 	TclAdjustStackDepth(-2, envPtr);
     }
     ExceptionRangeTarget(envPtr, range, catchOffset);
@@ -2337,7 +2337,7 @@ IssueTryClausesInstructions(
 	    OP(				END_CATCH);
 	    PUSH(			"1");
 	    OP(				EQ);
-	    JUMP1(			JUMP_FALSE, dontChangeOptions);
+	    JUMP4(			JUMP_FALSE, dontChangeOptions);
 	    LOAD(			optionsVar);
 	    OP4(			REVERSE, 2);
 	    STORE(			optionsVar);
@@ -2346,7 +2346,7 @@ IssueTryClausesInstructions(
 	    OP4(			REVERSE, 2);
 	    OP44(			DICT_SET, 1, optionsVar);
 	    TclAdjustStackDepth(-1, envPtr);
-	    FIXJUMP1(		dontChangeOptions);
+	    FIXJUMP4(		dontChangeOptions);
 	    OP4(			REVERSE, 2);
 	    INVOKE(			RETURN_STK);
 	}
@@ -2447,7 +2447,7 @@ IssueTryClausesFinallyInstructions(
     } else {
 	PUSH(				"0");
 	OP4(				REVERSE, 2);
-	OP1(				JUMP1, 4);
+	OP4(				JUMP4, 7);
 	TclAdjustStackDepth(-2, envPtr);
     }
     ExceptionRangeTarget(envPtr, range, catchOffset);
@@ -2568,7 +2568,7 @@ IssueTryClausesFinallyInstructions(
 	PUSH(				"0");
 	OP(				PUSH_RETURN_OPTIONS);
 	OP4(				REVERSE, 3);
-	OP1(				JUMP1, 5);
+	OP4(				JUMP4, 8);
 	TclAdjustStackDepth(-3, envPtr);
 	forwardsToFix[i] = -1;
 
@@ -2589,7 +2589,7 @@ IssueTryClausesFinallyInstructions(
 	OP(				POP);
 	PUSH(				"1");
 	OP(				EQ);
-	JUMP1(				JUMP_FALSE, noTrapError);
+	JUMP4(				JUMP_FALSE, noTrapError);
 	LOAD(				optionsVar);
 	PUSH(				"-during");
 	OP4(				REVERSE, 3);
@@ -2597,10 +2597,10 @@ IssueTryClausesFinallyInstructions(
 	OP(				POP);
 	OP44(				DICT_SET, 1, optionsVar);
 	TclAdjustStackDepth(-1, envPtr);
-	JUMP1(				JUMP, trapError);
-	FIXJUMP1(		noTrapError);
+	JUMP4(				JUMP, trapError);
+	FIXJUMP4(		noTrapError);
 	STORE(				optionsVar);
-	FIXJUMP1(		trapError);
+	FIXJUMP4(		trapError);
 	/* Skip POP at end; can clean up with subsequent POP */
 	if (i+1 < numHandlers) {
 	    OP(				POP);
@@ -2648,7 +2648,7 @@ IssueTryClausesFinallyInstructions(
     ExceptionRangeEnds(envPtr, range);
     OP(					END_CATCH);
     OP(					POP);
-    JUMP1(				JUMP, finalOK);
+    JUMP4(				JUMP, finalOK);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RESULT);
     OP(					PUSH_RETURN_OPTIONS);
@@ -2656,7 +2656,7 @@ IssueTryClausesFinallyInstructions(
     OP(					END_CATCH);
     PUSH(				"1");
     OP(					EQ);
-    JUMP1(				JUMP_FALSE, noFinalError);
+    JUMP4(				JUMP_FALSE, noFinalError);
     LOAD(				optionsVar);
     PUSH(				"-during");
     OP4(				REVERSE, 3);
@@ -2665,15 +2665,15 @@ IssueTryClausesFinallyInstructions(
     OP44(				DICT_SET, 1, optionsVar);
     TclAdjustStackDepth(-1, envPtr);
     OP(					POP);
-    JUMP1(				JUMP, finalError);
+    JUMP4(				JUMP, finalError);
     TclAdjustStackDepth(1, envPtr);
-    FIXJUMP1(			noFinalError);
+    FIXJUMP4(			noFinalError);
     STORE(				optionsVar);
     OP(					POP);
-    FIXJUMP1(			finalError);
+    FIXJUMP4(			finalError);
     STORE(				resultVar);
     OP(					POP);
-    FIXJUMP1(			finalOK);
+    FIXJUMP4(			finalOK);
     LOAD(				optionsVar);
     LOAD(				resultVar);
     INVOKE(				RETURN_STK);
@@ -2701,7 +2701,7 @@ IssueTryFinallyInstructions(
     ExceptionRangeStarts(envPtr, range);
     BODY(				bodyToken, 1);
     ExceptionRangeEnds(envPtr, range);
-    OP1(				JUMP1, 3);
+    OP4(				JUMP4, 6);
     TclAdjustStackDepth(-1, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RESULT);
@@ -2715,7 +2715,7 @@ IssueTryFinallyInstructions(
     ExceptionRangeEnds(envPtr, range);
     OP(					END_CATCH);
     OP(					POP);
-    JUMP1(				JUMP, jumpOK);
+    JUMP4(				JUMP, jumpOK);
     ExceptionRangeTarget(envPtr, range, catchOffset);
     OP(					PUSH_RESULT);
     OP(					PUSH_RETURN_OPTIONS);
@@ -2723,17 +2723,17 @@ IssueTryFinallyInstructions(
     OP(					END_CATCH);
     PUSH(				"1");
     OP(					EQ);
-    JUMP1(				JUMP_FALSE, jumpSplice);
+    JUMP4(				JUMP_FALSE, jumpSplice);
     PUSH(				"-during");
     OP4(				OVER, 3);
     OP4(				LIST, 2);
     OP(					LIST_CONCAT);
-    FIXJUMP1(		jumpSplice);
+    FIXJUMP4(		jumpSplice);
     OP4(				REVERSE, 4);
     OP(					POP);
     OP(					POP);
-    OP1(				JUMP1, 7);
-    FIXJUMP1(		jumpOK);
+    OP4(				JUMP4, 10);
+    FIXJUMP4(		jumpOK);
     OP4(				REVERSE, 2);
     INVOKE(				RETURN_STK);
     return TCL_OK;
