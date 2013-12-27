@@ -234,6 +234,7 @@ TclCompileIfCmd(
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 		falseFixupPtr = BA_JumpFixup_Append(jumpFalseFixup);
 		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, falseFixupPtr);
+		TclClearNumConversion(envPtr);
 	    }
 	    code = TCL_OK;
 	}
@@ -470,6 +471,7 @@ TclCompileIncrCmd(
 	} else {
 	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
+	    TclClearNumConversion(envPtr);
 	}
     } else {			/* No incr amount given so use 1. */
 	haveImmValue = 1;
