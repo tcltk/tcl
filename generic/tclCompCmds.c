@@ -489,17 +489,14 @@ TclCompileBreakCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopBreakFixup(envPtr, auxPtr);
-	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real break.
 	 */
 
-	PushStringLiteral(envPtr, "");
-	TclEmitOpcode(INST_DUP, envPtr);
-	TclEmitInstInt4(INST_RETURN_IMM, TCL_BREAK, envPtr);
-	TclEmitInt4(0, envPtr);
+	TclEmitOpcode(INST_BREAK, envPtr);
     }
+    TclAdjustStackDepth(1, envPtr);
 
     return TCL_OK;
 }
@@ -533,7 +530,7 @@ TclCompileCatchCmd(
 {
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int resultIndex, optsIndex, range;
+    int resultIndex, optsIndex, range, dropScript = 0;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -608,6 +605,7 @@ TclCompileCatchCmd(
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitInvoke(envPtr,	INST_EVAL_STK);
 	/* drop the script */
+	dropScript = 1;
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
@@ -626,8 +624,12 @@ TclCompileCatchCmd(
      * return code.
      */
 
-    TclAdjustStackDepth(-2, envPtr);
+    TclAdjustStackDepth(-2 + dropScript, envPtr);
     ExceptionRangeTarget(envPtr, range, catchOffset);
+    if (dropScript) {
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+
     /* Stack at this point is empty */
     TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
     TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
@@ -730,17 +732,14 @@ TclCompileContinueCmd(
 
 	TclCleanupStackForBreakContinue(envPtr, auxPtr);
 	TclAddLoopContinueFixup(envPtr, auxPtr);
-	TclAdjustStackDepth(1, envPtr);
     } else {
 	/*
 	 * Emit a real continue.
 	 */
 
-	PushStringLiteral(envPtr, "");
-	TclEmitOpcode(INST_DUP, envPtr);
-	TclEmitInstInt4(INST_RETURN_IMM, TCL_CONTINUE, envPtr);
-	TclEmitInt4(0, envPtr);
+	TclEmitOpcode(INST_CONTINUE, envPtr);
     }
+    TclAdjustStackDepth(1, envPtr);
 
     return TCL_OK;
 }
