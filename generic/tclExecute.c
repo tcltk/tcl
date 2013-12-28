@@ -5158,30 +5158,41 @@ TEBCresume(
 	Tcl_Obj *value3Ptr;
 
     case INST_STR_REPLACE:
-	valuePtr = OBJ_AT_DEPTH(3);
+	value3Ptr = POP_OBJECT();
+	valuePtr = OBJ_AT_DEPTH(2);
 	length = Tcl_GetCharLength(valuePtr) - 1;
-	value3Ptr = OBJ_AT_TOS;
 	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
-		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(value3Ptr)));
-	if (TclGetIntForIndexM(interp, OBJ_AT_DEPTH(2), length,
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
 		    &fromIdx) != TCL_OK
-	    || TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
 		    &toIdx) != TCL_OK) {
+	    TclDecrRefCount(value3Ptr);
 	    goto gotError;
 	}
+	TclDecrRefCount(OBJ_AT_TOS);
+	(void) POP_OBJECT();
+	TclDecrRefCount(OBJ_AT_TOS);
+	(void) POP_OBJECT();
 	if (fromIdx < 0) {
 	    fromIdx = 0;
 	}
 
 	if (fromIdx > toIdx || fromIdx > length) {
 	    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
-	    NEXT_INST_F(1, 3, 0);
+	    TclDecrRefCount(value3Ptr);
+	    NEXT_INST_F(1, 0, 0);
+	}
+
+	if (toIdx > length) {
+	    toIdx = length;
 	}
 
 	if (fromIdx == 0 && toIdx == length) {
-	    objResultPtr = value3Ptr;
-	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-	    NEXT_INST_F(1, 4, 1);
+	    TclDecrRefCount(OBJ_AT_TOS);
+	    OBJ_AT_TOS = value3Ptr;
+	    TRACE_APPEND(("%.30s\n", O2S(value3Ptr)));
+	    NEXT_INST_F(1, 0, 0);
 	}
 
 	length3 = Tcl_GetCharLength(value3Ptr);
@@ -5191,35 +5202,52 @@ TEBCresume(
 	 */
 
 	if (length3 == 0 && !Tcl_IsShared(valuePtr) && toIdx == length) {
+	    TclDecrRefCount(value3Ptr);
 	    Tcl_SetObjLength(valuePtr, fromIdx);
 	    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
-	    NEXT_INST_F(1, 3, 0);
+	    NEXT_INST_F(1, 0, 0);
 	}
 
-	// Splice in place.
+	/*
+	 * See if we can splice in place. This happens when the number of
+	 * characters being replaced is the same as the number of characters
+	 * in the string to be inserted.
+	 */
 
 	if (length3 == toIdx - fromIdx) {
 	    unsigned char *bytes1, *bytes2;
 
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_DuplicateObj(valuePtr);
-		// splice "in place"
 		if (TclIsPureByteArray(objResultPtr)
 			&& TclIsPureByteArray(value3Ptr)) {
-		    bytes1 = Tcl_GetByteArrayFromObj(objResultPtr);
-		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr);
+		    bytes1 = Tcl_GetByteArrayFromObj(objResultPtr, NULL);
+		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
+		    memcpy(bytes1 + fromIdx, bytes2, length3);
 		} else {
+		    ustring1 = Tcl_GetUnicode(objResultPtr);
+		    ustring2 = Tcl_GetUnicode(value3Ptr);
+		    memcpy(ustring1 + fromIdx, ustring2,
+			    length3 * sizeof(Tcl_UniChar));
 		}
-		NEXT_INST_F(1, 4, 1);
+		Tcl_InvalidateStringRep(objResultPtr);
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 1, 1);
 	    } else {
-		// splice "in place"
 		if (TclIsPureByteArray(valuePtr)
 			&& TclIsPureByteArray(value3Ptr)) {
-		    bytes1 = Tcl_GetByteArrayFromObj(valuePtr);
-		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr);
+		    bytes1 = Tcl_GetByteArrayFromObj(valuePtr, NULL);
+		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
+		    memcpy(bytes1 + fromIdx, bytes2, length3);
 		} else {
+		    ustring1 = Tcl_GetUnicode(valuePtr);
+		    ustring2 = Tcl_GetUnicode(value3Ptr);
+		    memcpy(ustring1 + fromIdx, ustring2,
+			    length3 * sizeof(Tcl_UniChar));
 		}
-		NEXT_INST_F(1, 3, 0);
+		Tcl_InvalidateStringRep(valuePtr);
+		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 0, 0);
 	    }
 	}
 
@@ -5246,8 +5274,9 @@ TEBCresume(
 		objResultPtr = Tcl_NewUnicodeObj(ustring1 + toIdx + 1,
 			length - toIdx);
 	    }
+	    TclDecrRefCount(value3Ptr);
 	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-	    NEXT_INST_F(1, 4, 1);
+	    NEXT_INST_F(1, 1, 1);
 	}
 
 	/*
@@ -5274,8 +5303,9 @@ TEBCresume(
 			length - toIdx);
 	    }
 	}
+	TclDecrRefCount(value3Ptr);
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-	NEXT_INST_F(1, 4, 1);
+	NEXT_INST_F(1, 1, 1);
 
     case INST_STR_MAP:
 	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
