@@ -784,9 +784,10 @@ typedef struct ByteCode {
 #define INST_STR_UPPER			174
 #define INST_STR_LOWER			175
 #define INST_STR_TITLE			176
+#define INST_STR_REPLACE		177
 
 /* The last opcode */
-#define LAST_INST_OPCODE		176
+#define LAST_INST_OPCODE		177
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
