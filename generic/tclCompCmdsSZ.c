@@ -765,12 +765,25 @@ TclCompileStringReplaceCmd(
 
     } else {
 	/*
-	 * Too complicated to optimize, but we know the number of arguments is
-	 * correct so we can issue a call of the "standard" implementation.
+	 * Need to process indices at runtime. This could be because the
+	 * indices are not constants, or because we need to resolve them to
+	 * absolute indices to work out if a replacement is going to happen.
+	 * In any case, to runtime it is.
 	 */
 
     genericReplace:
-	return TclCompileBasicMin0ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	tokenPtr = TokenAfter(valueTokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 2);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 3);
+	if (replacementTokenPtr != NULL) {
+	    CompileWord(envPtr, replacementTokenPtr, interp, 4);
+	} else {
+	    PUSH(	"");
+	}
+	OP(		STR_REPLACE);
+	return TCL_OK;
     }
 }
 
