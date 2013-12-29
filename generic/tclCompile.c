@@ -606,6 +606,10 @@ InstructionDesc const tclInstructionTable[] = {
 	/* [string totitle] core: converts whole string to upper case using
 	 * the default (extended "C" locale) rules.
 	 * Stack: ... string => ... newString */
+    {"strReplace",	 1,	-3,	  0,	{OPERAND_NONE}},
+	/* [string replace] core: replaces a non-empty range of one string
+	 * with the contents of another.
+	 * Stack: ... string fromIdx toIdx replacement => ... newString */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
