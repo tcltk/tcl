@@ -5214,7 +5214,7 @@ TEBCresume(
 	 * in the string to be inserted.
 	 */
 
-	if (length3 == toIdx - fromIdx) {
+	if (length3 - 1 == toIdx - fromIdx) {
 	    unsigned char *bytes1, *bytes2;
 
 	    if (Tcl_IsShared(valuePtr)) {
@@ -5225,10 +5225,21 @@ TEBCresume(
 		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
 		    memcpy(bytes1 + fromIdx, bytes2, length3);
 		} else {
-		    ustring1 = Tcl_GetUnicode(objResultPtr);
-		    ustring2 = Tcl_GetUnicode(value3Ptr);
+		    ustring1 = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
+		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
 		    memcpy(ustring1 + fromIdx, ustring2,
 			    length3 * sizeof(Tcl_UniChar));
+
+		    /*
+		     * Magic! Flush the info in the string internal rep that
+		     * refers to the about-to-be-invalidated UTF-8 rep. This
+		     * sets the 'allocated' field of the String structure to 0
+		     * to indicate that a new buffer needs to be allocated.
+		     * This is safe; we know we've got a tclStringTypePtr set
+		     * at this point (post Tcl_GetUnicodeFromObj).
+		     */
+
+		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
 		}
 		Tcl_InvalidateStringRep(objResultPtr);
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
@@ -5240,10 +5251,21 @@ TEBCresume(
 		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
 		    memcpy(bytes1 + fromIdx, bytes2, length3);
 		} else {
-		    ustring1 = Tcl_GetUnicode(valuePtr);
-		    ustring2 = Tcl_GetUnicode(value3Ptr);
+		    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, NULL);
+		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
 		    memcpy(ustring1 + fromIdx, ustring2,
 			    length3 * sizeof(Tcl_UniChar));
+
+		    /*
+		     * Magic! Flush the info in the string internal rep that
+		     * refers to the about-to-be-invalidated UTF-8 rep. This
+		     * sets the 'allocated' field of the String structure to 0
+		     * to indicate that a new buffer needs to be allocated.
+		     * This is safe; we know we've got a tclStringTypePtr set
+		     * at this point (post Tcl_GetUnicodeFromObj).
+		     */
+
+		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
 		}
 		Tcl_InvalidateStringRep(valuePtr);
 		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
