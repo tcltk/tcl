@@ -42,6 +42,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -81,10 +85,8 @@ typedef struct TclPlatStubs {
 #endif /* MACOSX */
 } TclPlatStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclPlatStubs *tclPlatStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
