@@ -555,7 +555,7 @@ TestindexobjCmd(
 	}
 
 	Tcl_GetIndexFromObj(NULL, objv[1], tablePtr, "token", 0, &index);
-	indexRep = objv[1]->internalRep.otherValuePtr;
+	indexRep = objv[1]->internalRep.twoPtrValue.ptr1;
 	indexRep->index = index2;
 	result = Tcl_GetIndexFromObj(NULL, objv[1],
 		tablePtr, "token", 0, &index);
@@ -592,7 +592,7 @@ TestindexobjCmd(
 
     if (objv[3]->typePtr != NULL
 	    && !strcmp("index", objv[3]->typePtr->name)) {
-	indexRep = objv[3]->internalRep.otherValuePtr;
+	indexRep = objv[3]->internalRep.twoPtrValue.ptr1;
 	if (indexRep->tablePtr == (void *) argv) {
 	    TclFreeIntRep(objv[3]);
 	}
@@ -1250,7 +1250,7 @@ TeststringobjCmd(
 	    if (varPtr[varIndex] != NULL) {
 		Tcl_ConvertToType(NULL, varPtr[varIndex],
 			Tcl_GetObjType("string"));
-		strPtr = varPtr[varIndex]->internalRep.otherValuePtr;
+		strPtr = varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
 		length = (int) strPtr->allocated;
 	    } else {
 		length = -1;
@@ -1304,7 +1304,7 @@ TeststringobjCmd(
 	    if (varPtr[varIndex] != NULL) {
 		Tcl_ConvertToType(NULL, varPtr[varIndex],
 			Tcl_GetObjType("string"));
-		strPtr = varPtr[varIndex]->internalRep.otherValuePtr;
+		strPtr = varPtr[varIndex]->internalRep.twoPtrValue.ptr1;
 		length = strPtr->maxChars;
 	    } else {
 		length = -1;

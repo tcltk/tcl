@@ -37,6 +37,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -355,10 +359,8 @@ typedef struct TclIntPlatStubs {
 #endif /* MACOSX */
 } TclIntPlatStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclIntPlatStubs *tclIntPlatStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -545,6 +547,8 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpGmtime_unix
 #undef TclWinConvertWSAError
 #define TclWinConvertWSAError TclWinConvertError
+#undef TclpInetNtoa
+#define TclpInetNtoa inet_ntoa
 
 #if defined(__WIN32__) || defined(__CYGWIN__)
 #   undef TclWinNToHS

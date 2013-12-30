@@ -11,8 +11,9 @@
  */
 
 #undef STATIC_BUILD
-#undef USE_TCL_STUBS
-#define USE_TCL_STUBS
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
@@ -385,7 +386,8 @@ DdeSetServerName(
 		    Tcl_DStringSetLength(&dString, offset + sizeof(TCHAR) * TCL_INTEGER_SPACE);
 		    actualName = (TCHAR *) Tcl_DStringValue(&dString);
 		}
-		_stprintf((TCHAR *) (Tcl_DStringValue(&dString) + offset), TEXT("%d"), suffix);
+		_sntprintf((TCHAR *) (Tcl_DStringValue(&dString) + offset),
+			TCL_INTEGER_SPACE, TEXT("%d"), suffix);
 	    }
 
 	    /*
