@@ -734,17 +734,14 @@ CopyRenameOneFile(
 	     */
 
 	    errfile = target;
-
-	    /*
-	     * We now need to reset the result, because the above call, if it
-	     * failed, may have put an error message in place. (Ideally we
-	     * would prefer not to pass an interpreter in above, but the
-	     * channel IO code used by TclCrossFilesystemCopy currently
-	     * requires one).
-	     */
-
-	    Tcl_ResetResult(interp);
 	}
+	/* 
+	 * We now need to reset the result, because the above call,
+	 * may have left set it.  (Ideally we would prefer not to pass
+	 * an interpreter in above, but the channel IO code used by
+	 * TclCrossFilesystemCopy currently requires one)
+	 */
+	Tcl_ResetResult(interp);
     }
     if ((copyFlag == 0) && (result == TCL_OK)) {
 	if (S_ISDIR(sourceStatBuf.st_mode)) {
