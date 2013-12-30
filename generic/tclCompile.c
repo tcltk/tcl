@@ -594,19 +594,19 @@ InstructionDesc const tclInstructionTable[] = {
 	 * is number of values to concatenate.
 	 * Operation:	push concat(stk1 stk2 ... stktop) */
 
-    {"strUpper",	 1,	0,	  0,	{OPERAND_NONE}},
+    {"strcaseUpper",	 1,	0,	  0,	{OPERAND_NONE}},
 	/* [string toupper] core: converts whole string to upper case using
 	 * the default (extended "C" locale) rules.
 	 * Stack: ... string => ... newString */
-    {"strLower",	 1,	0,	  0,	{OPERAND_NONE}},
+    {"strcaseLower",	 1,	0,	  0,	{OPERAND_NONE}},
 	/* [string tolower] core: converts whole string to upper case using
 	 * the default (extended "C" locale) rules.
 	 * Stack: ... string => ... newString */
-    {"strTitle",	 1,	0,	  0,	{OPERAND_NONE}},
+    {"strcaseTitle",	 1,	0,	  0,	{OPERAND_NONE}},
 	/* [string totitle] core: converts whole string to upper case using
 	 * the default (extended "C" locale) rules.
 	 * Stack: ... string => ... newString */
-    {"strReplace",	 1,	-3,	  0,	{OPERAND_NONE}},
+    {"strreplace",	 1,	-3,	  0,	{OPERAND_NONE}},
 	/* [string replace] core: replaces a non-empty range of one string
 	 * with the contents of another.
 	 * Stack: ... string fromIdx toIdx replacement => ... newString */
