@@ -26,14 +26,15 @@
 #define ASSOC_KEY	"tclPackageAboutDict"
 
 /*
- * A ClientData struct for the QueryConfig command.  Store the two bits
+ * A ClientData struct for the QueryConfig command.  Store the three bits
  * of data we need; the package name for which we store a config dict,
- * and the (Tcl_Interp *) in which it is stored.
+ * the (Tcl_Interp *) in which it is stored, and the encoding.
  */
 
 typedef struct QCCD {
     Tcl_Obj *pkg;
     Tcl_Interp *interp;
+    char *encoding;
 } QCCD;
 
 /*
@@ -75,22 +76,28 @@ Tcl_RegisterConfig(
     const char *valEncoding)	/* Name of the encoding used to store the
 				 * configuration values, ASCII, thus UTF-8. */
 {
+    Tcl_Obj *pDB, *pkgDict;
     Tcl_DString cmdName;
     const Tcl_Config *cfg;
-    Tcl_Encoding venc = Tcl_GetEncoding(NULL, valEncoding);
     QCCD *cdPtr = ckalloc(sizeof(QCCD));
 
     cdPtr->interp = interp;
+    if (valEncoding) {
+	cdPtr->encoding = ckalloc(strlen(valEncoding)+1);
+	strcpy(cdPtr->encoding, valEncoding);
+    } else {
+	cdPtr->encoding = NULL;
+    }
     cdPtr->pkg = Tcl_NewStringObj(pkgName, -1);
 
     /*
      * Phase I: Adding the provided information to the internal database of
-     * package meta data. Only if we have an ok encoding.
+     * package meta data.
      *
      * Phase II: Create a command for querying this database, specific to the
-     * package registerting its configuration. This is the approved interface
+     * package registering its configuration. This is the approved interface
      * in TIP 59. In the future a more general interface should be done, as
-     * followup to TIP 59. Simply because our database is now general across
+     * follow-up to TIP 59. Simply because our database is now general across
      * packages, and not a structure tied to one package.
      *
      * Note, the created command will have a reference through its clientdata.
@@ -103,51 +110,35 @@ Tcl_RegisterConfig(
      * dictionaries visible at Tcl level. I.e. they are not filled
      */
 
-    if (venc != NULL) {
-	Tcl_Obj *pkgDict, *pDB = GetConfigDict(interp);
+    pDB = GetConfigDict(interp);
 
-	/*
-	 * Retrieve package specific configuration...
-	 */
+    /*
+     * Retrieve package specific configuration...
+     */
 
-	if (Tcl_DictObjGet(interp, pDB, cdPtr->pkg, &pkgDict) != TCL_OK
-		|| (pkgDict == NULL)) {
-	    pkgDict = Tcl_NewDictObj();
-	} else if (Tcl_IsShared(pkgDict)) {
-	    pkgDict = Tcl_DuplicateObj(pkgDict);
-	}
-
-	/*
-	 * Extend the package configuration...
-	 */
-
-	for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
-	    Tcl_DString conv;
-	    const char *convValue =
-		    Tcl_ExternalToUtfDString(venc, cfg->value, -1, &conv);
-
-	    /*
-	     * We know that the keys are in ASCII/UTF-8, so for them is no
-	     * conversion required.
-	     */
-
-	    Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
-		    Tcl_NewStringObj(convValue, -1));
-	    Tcl_DStringFree(&conv);
-	}
-
-	/*
-	 * We're now done with the encoding, so drop it.
-	 */
-
-	Tcl_FreeEncoding(venc);
-
-	/*
-	 * Write the changes back into the overall database.
-	 */
-
-	Tcl_DictObjPut(interp, pDB, cdPtr->pkg, pkgDict);
+    if (Tcl_DictObjGet(interp, pDB, cdPtr->pkg, &pkgDict) != TCL_OK
+	    || (pkgDict == NULL)) {
+	pkgDict = Tcl_NewDictObj();
+    } else if (Tcl_IsShared(pkgDict)) {
+	pkgDict = Tcl_DuplicateObj(pkgDict);
     }
+
+    /*
+     * Extend the package configuration...
+     * We cannot assume that the encodings are initialized, therefore
+     * store the value as-is in a byte array. See Bug [9b2e636361].
+     */
+
+    for (cfg=configuration ; cfg->key!=NULL && cfg->key[0]!='\0' ; cfg++) {
+	Tcl_DictObjPut(interp, pkgDict, Tcl_NewStringObj(cfg->key, -1),
+		Tcl_NewByteArrayObj((unsigned char *)cfg->value, strlen(cfg->value)));
+    }
+
+    /*
+     * Write the changes back into the overall database.
+     */
+
+    Tcl_DictObjPut(interp, pDB, cdPtr->pkg, pkgDict);
 
     /*
      * Now create the interface command for retrieval of the package
@@ -218,6 +209,9 @@ QueryConfigObjCmd(
     enum subcmds {
 	CFG_GET, CFG_LIST
     };
+    Tcl_DString conv;
+    Tcl_Encoding venc = NULL;
+    const char *value;
 
     if ((objc < 2) || (objc > 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "subcommand ?arg?");
@@ -257,7 +251,21 @@ QueryConfigObjCmd(
 	    return TCL_ERROR;
 	}
 
-	Tcl_SetObjResult(interp, val);
+	if (cdPtr->encoding) {
+	    venc = Tcl_GetEncoding(interp, cdPtr->encoding);
+	    if (!venc) {
+		return TCL_ERROR;
+	    }
+	}
+	/*
+	 * Value is stored as-is in a byte array, see Bug [9b2e636361],
+	 * so we have to decode it first.
+	 */
+	value = (const char *) Tcl_GetByteArrayFromObj(val, &n);
+	value = Tcl_ExternalToUtfDString(venc, value, n, &conv);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(value,
+		Tcl_DStringLength(&conv)));
+	Tcl_DStringFree(&conv);
 	return TCL_OK;
 
     case CFG_LIST:
@@ -324,7 +332,10 @@ QueryConfigDelete(
 
     Tcl_DictObjRemove(NULL, pDB, pkgName);
     Tcl_DecrRefCount(pkgName);
-    ckfree(cdPtr);
+    if (cdPtr->encoding) {
+	ckfree((char *)cdPtr->encoding);
+    }
+    ckfree((char *)cdPtr);
 }
 
 /*
@@ -366,7 +377,7 @@ GetConfigDict(
  *
  *	This function is associated with the "Package About dict" assoc data
  *	for an interpreter; it is invoked when the interpreter is deleted in
- *	order to free the information assoicated with any pending error
+ *	order to free the information associated with any pending error
  *	reports.
  *
  * Results:
