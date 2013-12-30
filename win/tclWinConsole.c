@@ -11,7 +11,6 @@
  */
 
 #include "tclWinInt.h"
-#include <sys/stat.h>
 
 /*
  * The following variable is used to tell whether this module has been
@@ -801,7 +800,7 @@ ConsoleOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error;
     }
 
@@ -1080,7 +1079,7 @@ WaitForRead(
 	     * is in non-blocking mode.
 	     */
 
-	    errno = EAGAIN;
+	    errno = EWOULDBLOCK;
 	    return -1;
 	}
 

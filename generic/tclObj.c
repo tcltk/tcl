@@ -97,7 +97,6 @@ typedef struct ThreadSpecificData {
 
 static Tcl_ThreadDataKey dataKey;
 
-static void             ContLineLocFree(char *clientData);
 static void             TclThreadFinalizeContLines(ClientData clientData);
 static ThreadSpecificData *TclGetContLineTable(void);
 
@@ -208,12 +207,11 @@ static Tcl_ThreadDataKey pendingObjDataKey;
  */
 
 static int		ParseBoolean(Tcl_Obj *objPtr);
-static int		SetBooleanFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetDoubleFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static int		SetIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		UpdateStringOfDouble(Tcl_Obj *objPtr);
 static void		UpdateStringOfInt(Tcl_Obj *objPtr);
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 static void		UpdateStringOfWideInt(Tcl_Obj *objPtr);
 static int		SetWideIntFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
 #endif
@@ -250,14 +248,14 @@ static const Tcl_ObjType oldBooleanType = {
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclBooleanType = {
     "booleanString",		/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     NULL,			/* updateStringProc */
-    SetBooleanFromAny		/* setFromAnyProc */
+    TclSetBooleanFromAny		/* setFromAnyProc */
 };
 const Tcl_ObjType tclDoubleType = {
     "double",			/* name */
@@ -273,7 +271,7 @@ const Tcl_ObjType tclIntType = {
     UpdateStringOfInt,		/* updateStringProc */
     SetIntFromAny		/* setFromAnyProc */
 };
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 const Tcl_ObjType tclWideIntType = {
     "wideInt",			/* name */
     NULL,			/* freeIntRepProc */
@@ -411,7 +409,7 @@ TclInitObjSubsystem(void)
 
     /* For backward compatibility only ... */
     Tcl_RegisterObjType(&oldBooleanType);
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
     Tcl_RegisterObjType(&tclWideIntType);
 #endif
 
@@ -806,43 +804,12 @@ TclThreadFinalizeContLines(
 
     for (hPtr = Tcl_FirstHashEntry(tsdPtr->lineCLPtr, &hSearch);
 	    hPtr != NULL; hPtr = Tcl_NextHashEntry(&hSearch)) {
-	/*
-	 * We are not using Tcl_EventuallyFree (as in TclFreeObj()) because
-	 * here we can be sure that the compiler will not hold references to
-	 * the data in the hashtable, and using TEF might bork the
-	 * finalization sequence.
-	 */
-
-	ContLineLocFree(Tcl_GetHashValue(hPtr));
+	ckfree(Tcl_GetHashValue(hPtr));
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(tsdPtr->lineCLPtr);
     ckfree(tsdPtr->lineCLPtr);
     tsdPtr->lineCLPtr = NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ContLineLocFree --
- *
- *	The freProc for continuation line location tables.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Releases memory.
- *
- * TIP #280
- *----------------------------------------------------------------------
- */
-
-static void
-ContLineLocFree(
-    char *clientData)
-{
-    ckfree(clientData);
 }
 
 /*
@@ -1006,7 +973,12 @@ Tcl_ConvertToType(
      */
 
     if (typePtr->setFromAnyProc == NULL) {
-	Tcl_Panic("may not convert object to type %s", typePtr->name);
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't convert value to type %s", typePtr->name));
+	    Tcl_SetErrorCode(interp, "TCL", "API_ABUSE", NULL);
+	}
+	return TCL_ERROR;
     }
 
     return typePtr->setFromAnyProc(interp, objPtr);
@@ -1255,7 +1227,7 @@ Tcl_DbNewObj(
  * Side effects:
  *	tclFreeObjList, the head of the list of free Tcl_Objs, is set to the
  *	first of a number of free Tcl_Obj's linked together by their
- *	internalRep.otherValuePtrs.
+ *	internalRep.twoPtrValue.ptr1's.
  *
  *----------------------------------------------------------------------
  */
@@ -1284,7 +1256,7 @@ TclAllocateFreeObjects(void)
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
     for (i = 0; i < OBJS_TO_ALLOC_EACH_TIME; i++) {
-	objPtr->internalRep.otherValuePtr = prevPtr;
+	objPtr->internalRep.twoPtrValue.ptr1 = prevPtr;
 	prevPtr = objPtr;
 	objPtr++;
     }
@@ -1329,9 +1301,21 @@ TclFreeObj(
 
     ObjInitDeletionContext(context);
 
+    /*
+     * Check for a double free of the same value.  This is slightly tricky
+     * because it is customary to free a Tcl_Obj when its refcount falls
+     * either from 1 to 0, or from 0 to -1.  Falling from -1 to -2, though,
+     * and so on, is always a sign of a botch in the caller.
+     */
     if (objPtr->refCount < -1) {
 	Tcl_Panic("Reference count for %p was negative", objPtr);
     }
+    /*
+     * Now, in case we just approved drop from 1 to 0 as acceptable, make
+     * sure we do not accept a second free when falling from 0 to -1.
+     * Skip that possibility so any double free will trigger the panic.
+     */
+    objPtr->refCount = -1;
 
     /*
      * Invalidate the string rep first so we can use the bytes value for our
@@ -1389,7 +1373,7 @@ TclFreeObj(
 	if (tsdPtr->lineCLPtr) {
             hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
-		Tcl_EventuallyFree(Tcl_GetHashValue(hPtr), ContLineLocFree);
+		ckfree(Tcl_GetHashValue(hPtr));
 		Tcl_DeleteHashEntry(hPtr);
 	    }
 	}
@@ -1480,7 +1464,7 @@ TclFreeObj(
 	if (tsdPtr->lineCLPtr) {
             hPtr = Tcl_FindHashEntry(tsdPtr->lineCLPtr, objPtr);
 	    if (hPtr) {
-		Tcl_EventuallyFree(Tcl_GetHashValue(hPtr), ContLineLocFree);
+		ckfree(Tcl_GetHashValue(hPtr));
 		Tcl_DeleteHashEntry(hPtr);
 	    }
 	}
@@ -1729,8 +1713,8 @@ Tcl_InvalidateStringRep(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewBooleanObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewBooleanObj(
@@ -1778,6 +1762,7 @@ Tcl_NewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DbNewBooleanObj
 #ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
@@ -1830,6 +1815,7 @@ Tcl_DbNewBooleanObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetBooleanObj
 void
 Tcl_SetBooleanObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
@@ -1897,7 +1883,7 @@ Tcl_GetBooleanFromObj(
 	    *boolPtr = 1;
 	    return TCL_OK;
 	}
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *boolPtr = (objPtr->internalRep.wideValue != 0);
 	    return TCL_OK;
@@ -1911,7 +1897,7 @@ Tcl_GetBooleanFromObj(
 /*
  *----------------------------------------------------------------------
  *
- * SetBooleanFromAny --
+ * TclSetBooleanFromAny --
  *
  *	Attempt to generate a boolean internal form for the Tcl object
  *	"objPtr".
@@ -1928,8 +1914,8 @@ Tcl_GetBooleanFromObj(
  *----------------------------------------------------------------------
  */
 
-static int
-SetBooleanFromAny(
+int
+TclSetBooleanFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
@@ -1952,7 +1938,7 @@ SetBooleanFromAny(
 	    goto badBoolean;
 	}
 
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    goto badBoolean;
 	}
@@ -2284,7 +2270,7 @@ Tcl_GetDoubleFromObj(
 	    *dblPtr = TclBignumToDouble(&big);
 	    return TCL_OK;
 	}
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *dblPtr = (double) objPtr->internalRep.wideValue;
 	    return TCL_OK;
@@ -2389,8 +2375,8 @@ UpdateStringOfDouble(
  *----------------------------------------------------------------------
  */
 
-#ifdef TCL_MEM_DEBUG
 #undef Tcl_NewIntObj
+#ifdef TCL_MEM_DEBUG
 
 Tcl_Obj *
 Tcl_NewIntObj(
@@ -2430,6 +2416,7 @@ Tcl_NewIntObj(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetIntObj
 void
 Tcl_SetIntObj(
     register Tcl_Obj *objPtr,	/* Object whose internal rep to init. */
@@ -2741,7 +2728,7 @@ Tcl_GetLongFromObj(
 	    *longPtr = objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    /*
 	     * We return any integer in the range -ULONG_MAX to ULONG_MAX
@@ -2799,7 +2786,7 @@ Tcl_GetLongFromObj(
 		    return TCL_OK;
 		}
 	    }
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	tooLarge:
 #endif
 	    if (interp != NULL) {
@@ -2815,7 +2802,7 @@ Tcl_GetLongFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 
 /*
  *----------------------------------------------------------------------
@@ -2857,7 +2844,7 @@ UpdateStringOfWideInt(
     memcpy(objPtr->bytes, buffer, len + 1);
     objPtr->length = len;
 }
-#endif /* !NO_WIDE_TYPE */
+#endif /* !TCL_WIDE_INT_IS_LONG */
 
 /*
  *----------------------------------------------------------------------
@@ -3012,7 +2999,7 @@ Tcl_SetWideIntObj(
 	    && (wideValue <= (Tcl_WideInt) LONG_MAX)) {
 	TclSetLongObj(objPtr, (long) wideValue);
     } else {
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	TclSetWideIntObj(objPtr, wideValue);
 #else
 	mp_int big;
@@ -3052,7 +3039,7 @@ Tcl_GetWideIntFromObj(
 				/* Place to store resulting long. */
 {
     do {
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *wideIntPtr = objPtr->internalRep.wideValue;
 	    return TCL_OK;
@@ -3112,7 +3099,7 @@ Tcl_GetWideIntFromObj(
 	    TCL_PARSE_INTEGER_ONLY)==TCL_OK);
     return TCL_ERROR;
 }
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 
 /*
  *----------------------------------------------------------------------
@@ -3138,7 +3125,7 @@ SetWideIntFromAny(
     Tcl_WideInt w;
     return Tcl_GetWideIntFromObj(interp, objPtr, &w);
 }
-#endif /* !NO_WIDE_TYPE */
+#endif /* !TCL_WIDE_INT_IS_LONG */
 
 /*
  *----------------------------------------------------------------------
@@ -3386,7 +3373,7 @@ GetBignumFromObj(
 	    TclBNInitBignumFromLong(bignumValue, objPtr->internalRep.longValue);
 	    return TCL_OK;
 	}
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    TclBNInitBignumFromWideInt(bignumValue,
 		    objPtr->internalRep.wideValue);
@@ -3525,7 +3512,7 @@ Tcl_SetBignumObj(
 	return;
     }
   tooLargeForLong:
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
     if ((size_t) bignumValue->used
 	    <= (CHAR_BIT * sizeof(Tcl_WideInt) + DIGIT_BIT - 1) / DIGIT_BIT) {
 	Tcl_WideUInt value = 0;
@@ -3637,7 +3624,7 @@ TclGetNumberFromObj(
 	    *clientDataPtr = &objPtr->internalRep.longValue;
 	    return TCL_OK;
 	}
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	if (objPtr->typePtr == &tclWideIntType) {
 	    *typePtr = TCL_NUMBER_WIDE;
 	    *clientDataPtr = &objPtr->internalRep.wideValue;
@@ -4171,7 +4158,7 @@ Tcl_GetCommandFromObj(
      * had is invalid one way or another.
      */
 
-    if (tclCmdNameType.setFromAnyProc(interp, objPtr) != TCL_OK) {
+    if (SetCmdNameFromAny(interp, objPtr) != TCL_OK) {
         return NULL;
     }
     resPtr = objPtr->internalRep.twoPtrValue.ptr1;
@@ -4390,7 +4377,7 @@ SetCmdNameFromAny(
 
     if (cmdPtr) {
 	cmdPtr->refCount++;
-	resPtr = objPtr->internalRep.otherValuePtr;
+	resPtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if ((objPtr->typePtr == &tclCmdNameType)
 		&& resPtr && (resPtr->refCount == 1)) {
 	    /*
