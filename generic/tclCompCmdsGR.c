@@ -33,7 +33,7 @@ static int		IndexTailVarIfKnown(Tcl_Interp *interp,
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileLinsertCmd --
+ * GetIndexFromToken --
  *
  *	Parse a token and get the encoded version of the index (as understood
  *	by TEBC), assuming it is at all knowable at compile time. Only handles
@@ -281,6 +281,7 @@ TclCompileIfCmd(
 		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
+		TclClearNumConversion(envPtr);
 		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
 		    TclExpandJumpFixupArray(&jumpFalseFixupArray);
 		}
@@ -530,6 +531,7 @@ TclCompileIncrCmd(
 	} else {
 	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
+	    TclClearNumConversion(envPtr);
 	}
     } else {			/* No incr amount given so use 1. */
 	haveImmValue = 1;
@@ -2072,6 +2074,28 @@ TclCompileNamespaceCodeCmd(
     TclEmitOpcode(		INST_NS_CURRENT,	envPtr);
     CompileWord(envPtr,		tokenPtr,		interp, 1);
     TclEmitInstInt4(		INST_LIST, 4,		envPtr);
+    return TCL_OK;
+}
+
+int
+TclCompileNamespaceOriginCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    CompileWord(envPtr,	tokenPtr,			interp, 1);
+    TclEmitOpcode(	INST_ORIGIN_COMMAND,		envPtr);
     return TCL_OK;
 }
 

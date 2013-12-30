@@ -586,8 +586,8 @@ typedef struct ByteCode {
 #define INST_CONTINUE			66
 
 /* Opcodes 67 to 68 */
-#define INST_FOREACH_START4		67
-#define INST_FOREACH_STEP4		68
+#define INST_FOREACH_START4		67 /* DEPRECATED */
+#define INST_FOREACH_STEP4		68 /* DEPRECATED */
 
 /* Opcodes 69 to 72 */
 #define INST_BEGIN_CATCH4		69
@@ -768,15 +768,28 @@ typedef struct ByteCode {
 
 #define INST_EXPAND_DROP		165
 
-/* For compilation of [string trim] and related */
-#define INST_STRTRIM			166
-#define INST_STRTRIM_LEFT		167
-#define INST_STRTRIM_RIGHT		168
+/* New foreach implementation */
+#define INST_FOREACH_START              166
+#define INST_FOREACH_STEP               167
+#define INST_FOREACH_END                168
+#define INST_LMAP_COLLECT               169
 
-#define INST_CONCAT_STK			169
+/* For compilation of [string trim] and related */
+#define INST_STR_TRIM			170
+#define INST_STR_TRIM_LEFT		171
+#define INST_STR_TRIM_RIGHT		172
+
+#define INST_CONCAT_STK			173
+
+#define INST_STR_UPPER			174
+#define INST_STR_LOWER			175
+#define INST_STR_TITLE			176
+#define INST_STR_REPLACE		177
+
+#define INST_ORIGIN_COMMAND		178
 
 /* The last opcode */
-#define LAST_INST_OPCODE		169
+#define LAST_INST_OPCODE		178
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -909,6 +922,7 @@ typedef struct ForeachInfo {
 } ForeachInfo;
 
 MODULE_SCOPE const AuxDataType tclForeachInfoType;
+MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
 
 #define FOREACHINFO(envPtr, index) \
     ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
@@ -1063,7 +1077,7 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
-MODULE_SCOPE void	TclOptimizeBytecode(CompileEnv *envPtr);
+MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -1078,8 +1092,6 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
-MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
-			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
 			    const char *name, Namespace *nsPtr);
@@ -1168,6 +1180,21 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	    }								\
 	}								\
 	(envPtr)->currStackDepth += (delta);				\
+    } while (0)
+
+#define TclGetStackDepth(envPtr)		\
+    ((envPtr)->currStackDepth)
+
+#define TclSetStackDepth(depth, envPtr)		\
+    (envPtr)->currStackDepth = (depth)
+
+#define TclCheckStackDepth(depth, envPtr)				\
+    do {								\
+	int dd = (depth);						\
+	if (dd != (envPtr)->currStackDepth) {				\
+	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
+		    (envPtr)->currStackDepth, dd);		\
+	}								\
     } while (0)
 
 /*
@@ -1307,6 +1334,18 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	} else {						 \
 	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
 	}							 \
+    } while (0)
+
+/*
+ * If the expr compiler finished with TRY_CONVERT, macro to remove it when the
+ * job is done by the following instruction.
+ */
+
+#define TclClearNumConversion(envPtr) \
+    do {								\
+	if (*(envPtr->codeNext - 1) == INST_TRY_CVT_TO_NUMERIC) {	\
+	    envPtr->codeNext--;						\
+	}								\
     } while (0)
 
 /*

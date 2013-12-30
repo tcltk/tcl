@@ -4402,14 +4402,36 @@ TEBCresume(
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_F(1, 1, 1);
     }
-    case INST_RESOLVE_COMMAND: {
-	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, OBJ_AT_TOS);
+    {
+	Tcl_Command cmd, origCmd;
 
+    case INST_RESOLVE_COMMAND:
+	cmd = Tcl_GetCommandFromObj(interp, OBJ_AT_TOS);
 	TclNewObj(objResultPtr);
 	if (cmd != NULL) {
 	    Tcl_GetCommandFullName(interp, cmd, objResultPtr);
 	}
 	TRACE_WITH_OBJ(("\"%.20s\" => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+
+    case INST_ORIGIN_COMMAND:
+	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
+	cmd = Tcl_GetCommandFromObj(interp, OBJ_AT_TOS);
+	if (cmd == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "invalid command name \"%s\"", TclGetString(OBJ_AT_TOS)));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "COMMAND",
+		    TclGetString(OBJ_AT_TOS), NULL);
+	    TRACE_APPEND(("ERROR: not command\n"));
+	    goto gotError;
+	}
+	origCmd = TclGetOriginalCommand(cmd);
+	if (origCmd == NULL) {
+	    origCmd = cmd;
+	}
+	TclNewObj(objResultPtr);
+	Tcl_GetCommandFullName(interp, origCmd, objResultPtr);
+	TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_TOS)));
 	NEXT_INST_F(1, 1, 1);
     }
     case INST_TCLOO_SELF: {
@@ -5002,6 +5024,55 @@ TEBCresume(
 	TRACE(("%.20s => %d\n", O2S(valuePtr), length));
 	NEXT_INST_F(1, 1, 1);
 
+    case INST_STR_UPPER:
+	valuePtr = OBJ_AT_TOS;
+	TRACE(("\"%.25s\" => ", O2S(valuePtr)));
+	if (Tcl_IsShared(valuePtr)) {
+	    s1 = TclGetStringFromObj(valuePtr, &length);
+	    TclNewStringObj(objResultPtr, s1, length);
+	    length = Tcl_UtfToUpper(TclGetString(objResultPtr));
+	    Tcl_SetObjLength(objResultPtr, length);
+	    TRACE_APPEND(("\"%.25s\"\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 1, 1);
+	} else {
+	    length = Tcl_UtfToUpper(TclGetString(valuePtr));
+	    Tcl_SetObjLength(valuePtr, length);
+	    TRACE_APPEND(("\"%.25s\"\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 0, 0);
+	}
+    case INST_STR_LOWER:
+	valuePtr = OBJ_AT_TOS;
+	TRACE(("\"%.25s\" => ", O2S(valuePtr)));
+	if (Tcl_IsShared(valuePtr)) {
+	    s1 = TclGetStringFromObj(valuePtr, &length);
+	    TclNewStringObj(objResultPtr, s1, length);
+	    length = Tcl_UtfToLower(TclGetString(objResultPtr));
+	    Tcl_SetObjLength(objResultPtr, length);
+	    TRACE_APPEND(("\"%.25s\"\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 1, 1);
+	} else {
+	    length = Tcl_UtfToLower(TclGetString(valuePtr));
+	    Tcl_SetObjLength(valuePtr, length);
+	    TRACE_APPEND(("\"%.25s\"\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 0, 0);
+	}
+    case INST_STR_TITLE:
+	valuePtr = OBJ_AT_TOS;
+	TRACE(("\"%.25s\" => ", O2S(valuePtr)));
+	if (Tcl_IsShared(valuePtr)) {
+	    s1 = TclGetStringFromObj(valuePtr, &length);
+	    TclNewStringObj(objResultPtr, s1, length);
+	    length = Tcl_UtfToTitle(TclGetString(objResultPtr));
+	    Tcl_SetObjLength(objResultPtr, length);
+	    TRACE_APPEND(("\"%.25s\"\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 1, 1);
+	} else {
+	    length = Tcl_UtfToTitle(TclGetString(valuePtr));
+	    Tcl_SetObjLength(valuePtr, length);
+	    TRACE_APPEND(("\"%.25s\"\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 0, 0);
+	}
+
     case INST_STR_INDEX:
 	value2Ptr = OBJ_AT_TOS;
 	valuePtr = OBJ_UNDER_TOS;
@@ -5107,6 +5178,178 @@ TEBCresume(
 	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
 	int length3;
 	Tcl_Obj *value3Ptr;
+
+    case INST_STR_REPLACE:
+	value3Ptr = POP_OBJECT();
+	valuePtr = OBJ_AT_DEPTH(2);
+	length = Tcl_GetCharLength(valuePtr) - 1;
+	TRACE(("\"%.20s\" %s %s \"%.20s\" => ", O2S(valuePtr),
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), O2S(value3Ptr)));
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+		    &fromIdx) != TCL_OK
+	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
+		    &toIdx) != TCL_OK) {
+	    TclDecrRefCount(value3Ptr);
+	    goto gotError;
+	}
+	TclDecrRefCount(OBJ_AT_TOS);
+	(void) POP_OBJECT();
+	TclDecrRefCount(OBJ_AT_TOS);
+	(void) POP_OBJECT();
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
+
+	if (fromIdx > toIdx || fromIdx > length) {
+	    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+	    TclDecrRefCount(value3Ptr);
+	    NEXT_INST_F(1, 0, 0);
+	}
+
+	if (toIdx > length) {
+	    toIdx = length;
+	}
+
+	if (fromIdx == 0 && toIdx == length) {
+	    TclDecrRefCount(OBJ_AT_TOS);
+	    OBJ_AT_TOS = value3Ptr;
+	    TRACE_APPEND(("%.30s\n", O2S(value3Ptr)));
+	    NEXT_INST_F(1, 0, 0);
+	}
+
+	length3 = Tcl_GetCharLength(value3Ptr);
+
+	/*
+	 * Remove substring. In-place.
+	 */
+
+	if (length3 == 0 && !Tcl_IsShared(valuePtr) && toIdx == length) {
+	    TclDecrRefCount(value3Ptr);
+	    Tcl_SetObjLength(valuePtr, fromIdx);
+	    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+	    NEXT_INST_F(1, 0, 0);
+	}
+
+	/*
+	 * See if we can splice in place. This happens when the number of
+	 * characters being replaced is the same as the number of characters
+	 * in the string to be inserted.
+	 */
+
+	if (length3 - 1 == toIdx - fromIdx) {
+	    unsigned char *bytes1, *bytes2;
+
+	    if (Tcl_IsShared(valuePtr)) {
+		objResultPtr = Tcl_DuplicateObj(valuePtr);
+		if (TclIsPureByteArray(objResultPtr)
+			&& TclIsPureByteArray(value3Ptr)) {
+		    bytes1 = Tcl_GetByteArrayFromObj(objResultPtr, NULL);
+		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
+		    memcpy(bytes1 + fromIdx, bytes2, length3);
+		} else {
+		    ustring1 = Tcl_GetUnicodeFromObj(objResultPtr, NULL);
+		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
+		    memcpy(ustring1 + fromIdx, ustring2,
+			    length3 * sizeof(Tcl_UniChar));
+
+		    /*
+		     * Magic! Flush the info in the string internal rep that
+		     * refers to the about-to-be-invalidated UTF-8 rep. This
+		     * sets the 'allocated' field of the String structure to 0
+		     * to indicate that a new buffer needs to be allocated.
+		     * This is safe; we know we've got a tclStringTypePtr set
+		     * at this point (post Tcl_GetUnicodeFromObj).
+		     */
+
+		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
+		}
+		Tcl_InvalidateStringRep(objResultPtr);
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_F(1, 1, 1);
+	    } else {
+		if (TclIsPureByteArray(valuePtr)
+			&& TclIsPureByteArray(value3Ptr)) {
+		    bytes1 = Tcl_GetByteArrayFromObj(valuePtr, NULL);
+		    bytes2 = Tcl_GetByteArrayFromObj(value3Ptr, NULL);
+		    memcpy(bytes1 + fromIdx, bytes2, length3);
+		} else {
+		    ustring1 = Tcl_GetUnicodeFromObj(valuePtr, NULL);
+		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
+		    memcpy(ustring1 + fromIdx, ustring2,
+			    length3 * sizeof(Tcl_UniChar));
+
+		    /*
+		     * Magic! Flush the info in the string internal rep that
+		     * refers to the about-to-be-invalidated UTF-8 rep. This
+		     * sets the 'allocated' field of the String structure to 0
+		     * to indicate that a new buffer needs to be allocated.
+		     * This is safe; we know we've got a tclStringTypePtr set
+		     * at this point (post Tcl_GetUnicodeFromObj).
+		     */
+
+		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
+		}
+		Tcl_InvalidateStringRep(valuePtr);
+		TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+		NEXT_INST_F(1, 0, 0);
+	    }
+	}
+
+	/*
+	 * Get the unicode representation; this is where we guarantee to lose
+	 * bytearrays.
+	 */
+
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	length--;
+
+	/*
+	 * Remove substring using copying.
+	 */
+
+	if (length3 == 0) {
+	    if (fromIdx > 0) {
+		objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
+		if (toIdx < length) {
+		    Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			    length - toIdx);
+		}
+	    } else {
+		objResultPtr = Tcl_NewUnicodeObj(ustring1 + toIdx + 1,
+			length - toIdx);
+	    }
+	    TclDecrRefCount(value3Ptr);
+	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	    NEXT_INST_F(1, 1, 1);
+	}
+
+	/*
+	 * Splice string pieces by full copying.
+	 */
+
+	if (fromIdx > 0) {
+	    objResultPtr = Tcl_NewUnicodeObj(ustring1, fromIdx);
+	    Tcl_AppendObjToObj(objResultPtr, value3Ptr);
+	    if (toIdx < length) {
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			length - toIdx);
+	    }
+	} else if (Tcl_IsShared(value3Ptr)) {
+	    objResultPtr = Tcl_DuplicateObj(value3Ptr);
+	    if (toIdx < length) {
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			length - toIdx);
+	    }
+	} else {
+	    objResultPtr = value3Ptr;
+	    if (toIdx < length) {
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+			length - toIdx);
+	    }
+	}
+	TclDecrRefCount(value3Ptr);
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(1, 1, 1);
 
     case INST_STR_MAP:
 	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
@@ -5271,7 +5514,7 @@ TEBCresume(
 	const char *string1, *string2;
 	int trim1, trim2;
 
-    case INST_STRTRIM:
+    case INST_STR_TRIM:
 	valuePtr = OBJ_UNDER_TOS;	/* String */
 	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
 	string2 = TclGetStringFromObj(value2Ptr, &length2);
@@ -5292,7 +5535,7 @@ TEBCresume(
 		    O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
 	    NEXT_INST_F(1, 2, 1);
 	}
-    case INST_STRTRIM_LEFT:
+    case INST_STR_TRIM_LEFT:
 	valuePtr = OBJ_UNDER_TOS;	/* String */
 	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
 	string2 = TclGetStringFromObj(value2Ptr, &length2);
@@ -5308,7 +5551,7 @@ TEBCresume(
 		    O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
 	    NEXT_INST_F(1, 2, 1);
 	}
-    case INST_STRTRIM_RIGHT:
+    case INST_STR_TRIM_RIGHT:
 	valuePtr = OBJ_UNDER_TOS;	/* String */
 	value2Ptr = OBJ_AT_TOS;		/* TrimSet */
 	string2 = TclGetStringFromObj(value2Ptr, &length2);
@@ -6099,7 +6342,7 @@ TEBCresume(
 	int varIndex, valIndex, continueLoop, j, iterTmpIndex;
 	long i;
 
-    case INST_FOREACH_START4:
+    case INST_FOREACH_START4: /* DEPRECATED */
 	/*
 	 * Initialize the temporary local var that holds the count of the
 	 * number of iterations of the loop body to -1.
@@ -6132,7 +6375,7 @@ TEBCresume(
 	NEXT_INST_F(5, 0, 0);
 #endif
 
-    case INST_FOREACH_STEP4:
+    case INST_FOREACH_STEP4: /* DEPRECATED */
 	/*
 	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
 	 * the next value list element to each loop var.
@@ -6250,6 +6493,190 @@ TEBCresume(
 	} else {
 	    NEXT_INST_F((continueLoop? 5 : TclGetInt4AtPtr(pc+1)), 0, 0);
 	}
+
+    }
+    {
+	ForeachInfo *infoPtr;
+	Tcl_Obj *listPtr, **elements, *tmpPtr;
+	ForeachVarList *varListPtr;
+	int numLists, iterMax, listLen, numVars;
+	int iterTmp, iterNum, listTmpDepth;
+	int varIndex, valIndex, j;
+	long i;
+
+    case INST_FOREACH_START:
+	/*
+	 * Initialize the data for the looping construct, pushing the
+	 * corresponding Tcl_Objs to the stack.
+	 */
+
+	opnd = TclGetUInt4AtPtr(pc+1);
+	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
+	numLists = infoPtr->numLists;
+
+	/*
+	 * Compute the number of iterations that will be run: iterMax
+	 */
+
+	iterMax = 0;
+	listTmpDepth = numLists-1;
+	for (i = 0;  i < numLists;  i++) {
+	    varListPtr = infoPtr->varLists[i];
+	    numVars = varListPtr->numVars;
+	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
+	    if (TclListObjLength(interp, listPtr, &listLen) != TCL_OK) {
+		TRACE_WITH_OBJ(("%u => ERROR converting list %ld, \"%s\": ",
+			opnd, i, O2S(listPtr)), Tcl_GetObjResult(interp));
+		goto gotError;
+	    }
+	    if (Tcl_IsShared(listPtr)) {
+		objPtr = TclListObjCopy(NULL, listPtr);
+		Tcl_IncrRefCount(objPtr);
+		Tcl_DecrRefCount(listPtr);
+		OBJ_AT_DEPTH(listTmpDepth) = objPtr;
+	    }
+	    iterTmp = (listLen + (numVars - 1))/numVars;
+	    if (iterTmp > iterMax) {
+		iterMax = iterTmp;
+	    }
+	    listTmpDepth--;
+	}
+
+	/*
+	 * Store the iterNum and iterMax in a single Tcl_Obj; we keep a
+	 * nul-string obj with the pointer stored in the ptrValue so that the
+	 * thing is properly garbage collected. THIS OBJ MAKES NO SENSE, but
+	 * it will never leave this scope and is read-only.
+	 */
+
+	TclNewObj(tmpPtr);
+	tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(0);
+	tmpPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(iterMax);
+	PUSH_OBJECT(tmpPtr); /* iterCounts object */
+
+	/*
+	 * Store a pointer to the ForeachInfo struct; same dirty trick
+	 * as above
+	 */
+
+	TclNewObj(tmpPtr);
+	tmpPtr->internalRep.otherValuePtr = infoPtr;
+	PUSH_OBJECT(tmpPtr); /* infoPtr object */
+
+	/*
+	 * Jump directly to the INST_FOREACH_STEP instruction; the C code just
+	 * falls through.
+	 */
+
+	pc += 5 - infoPtr->loopCtTemp;
+
+    case INST_FOREACH_STEP:
+	/*
+	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
+	 * the next value list element to each loop var.
+	 */
+
+	tmpPtr = OBJ_AT_TOS;
+	infoPtr = tmpPtr->internalRep.otherValuePtr;
+	numLists = infoPtr->numLists;
+
+	tmpPtr = OBJ_AT_DEPTH(1);
+	iterNum = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr1);
+	iterMax = PTR2INT(tmpPtr->internalRep.twoPtrValue.ptr2);
+
+	/*
+	 * If some list still has a remaining list element iterate one more
+	 * time. Assign to var the next element from its value list.
+	 */
+
+	if (iterNum < iterMax) {
+	    /*
+	     * Set the variables and jump back to run the body
+	     */
+
+	    tmpPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(iterNum + 1);
+
+	    listTmpDepth = numLists + 1;
+
+	    for (i = 0;  i < numLists;  i++) {
+		varListPtr = infoPtr->varLists[i];
+		numVars = varListPtr->numVars;
+
+		listPtr = OBJ_AT_DEPTH(listTmpDepth);
+		TclListObjGetElements(interp, listPtr, &listLen, &elements);
+
+		valIndex = (iterNum * numVars);
+		for (j = 0;  j < numVars;  j++) {
+		    if (valIndex >= listLen) {
+			TclNewObj(valuePtr);
+		    } else {
+			valuePtr = elements[valIndex];
+		    }
+
+		    varIndex = varListPtr->varIndexes[j];
+		    varPtr = LOCAL(varIndex);
+		    while (TclIsVarLink(varPtr)) {
+			varPtr = varPtr->value.linkPtr;
+		    }
+		    if (TclIsVarDirectWritable(varPtr)) {
+			value2Ptr = varPtr->value.objPtr;
+			if (valuePtr != value2Ptr) {
+			    if (value2Ptr != NULL) {
+				TclDecrRefCount(value2Ptr);
+			    }
+			    varPtr->value.objPtr = valuePtr;
+			    Tcl_IncrRefCount(valuePtr);
+			}
+		    } else {
+			DECACHE_STACK_INFO();
+			if (TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
+				valuePtr, TCL_LEAVE_ERR_MSG, varIndex)==NULL){
+			    CACHE_STACK_INFO();
+			    TRACE_WITH_OBJ((
+				    "%u => ERROR init. index temp %d: ",
+				    opnd,varIndex), Tcl_GetObjResult(interp));
+			    goto gotError;
+			}
+			CACHE_STACK_INFO();
+		    }
+		    valIndex++;
+		}
+		listTmpDepth--;
+	    }
+	    /* loopCtTemp being 'misused' for storing the jump size */
+	    NEXT_INST_F(infoPtr->loopCtTemp, 0, 0);
+	}
+
+	/*
+	 * FALL THROUGH
+	 */
+	pc++;
+
+    case INST_FOREACH_END:
+	/* THIS INSTRUCTION IS ONLY CALLED AS A BREAK TARGET */
+	tmpPtr = OBJ_AT_TOS;
+	infoPtr = tmpPtr->internalRep.otherValuePtr;
+	numLists = infoPtr->numLists;
+	NEXT_INST_V(1, numLists+2, 0);
+
+    case INST_LMAP_COLLECT:
+	/*
+	 * This instruction is only issued by lmap. The stack is:
+	 *   - result
+	 *   - infoPtr
+	 *   - loop counters
+	 *   - valLists
+	 *   - collecting obj (unshared)
+	 * The instruction lappends the result to the collecting obj.
+	 */
+
+	tmpPtr = OBJ_AT_DEPTH(1);
+	infoPtr = tmpPtr->internalRep.otherValuePtr;
+	numLists = infoPtr->numLists;
+	
+	objPtr = OBJ_AT_DEPTH(3 + numLists);
+	Tcl_ListObjAppendElement(NULL, objPtr, OBJ_AT_TOS);
+	NEXT_INST_F(1, 1, 0);
     }
 
     case INST_BEGIN_CATCH4:

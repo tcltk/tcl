@@ -526,6 +526,9 @@ Tcl_CreateInterp(void)
     iPtr->hiddenCmdTablePtr = NULL;
     iPtr->interpInfo = NULL;
 
+    TCL_CT_ASSERT(sizeof(iPtr->extra) <= sizeof(Tcl_HashTable));
+    iPtr->extra.optimizer = TclOptimizeBytecode;
+
     iPtr->numLevels = 0;
     iPtr->maxNestingDepth = MAX_NESTING_DEPTH;
     iPtr->framePtr = NULL;	/* Initialise as soon as :: is available */
