@@ -65,13 +65,6 @@ const AuxDataType tclDictUpdateInfoType = {
     FreeDictUpdateInfo,		/* freeProc */
     PrintDictUpdateInfo		/* printProc */
 };
-
-/*
- * The definition of what whitespace is stripped when [concat]enating. Must be
- * kept in synch with tclUtil.c
- */
-
-#define CONCAT_WS	" \f\v\r\t\n"
 
 /*
  *----------------------------------------------------------------------
@@ -2230,8 +2223,6 @@ TclCompileErrorCmd(
  *
  *----------------------------------------------------------------------
  */
-
-#define CONCAT_WS " \f\v\r\t\n" /* Synch with tclUtil.c */
 
 int
 TclCompileEvalCmd(

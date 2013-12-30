@@ -50,6 +50,13 @@
 	"\xe3\x80\x80" /* ideographic space (U+3000) */\
 	"\xef\xbb\xbf" /* zero width no-break space (U+feff) */
 
+/*
+ * The whitespace trimming set used when [concat]enating. This is a subset of
+ * the above, and deliberately so.
+ */
+
+#define CONCAT_TRIM_SET " \f\v\r\t\n"
+
 #endif /* TCL_STRING_TRIM_H */
 
 /*
