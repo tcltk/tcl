@@ -67,6 +67,7 @@ static Tcl_CmdProc TestchmodCmd;
 static Tcl_CmdProc TestfilehandlerCmd;
 static Tcl_CmdProc TestfilewaitCmd;
 static Tcl_CmdProc TestfindexecutableCmd;
+static Tcl_ObjCmdProc TestforkObjCmd;
 static Tcl_CmdProc TestgetdefencdirCmd;
 static Tcl_CmdProc TestgetopenfileCmd;
 static Tcl_CmdProc TestgotsigCmd;
@@ -103,6 +104,8 @@ TclplatformtestInit(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testfindexecutable", TestfindexecutableCmd,
 	    NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testfork", TestforkObjCmd,
+        NULL, NULL);
     Tcl_CreateCommand(interp, "testgetopenfile", TestgetopenfileCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testgetdefenc", TestgetdefencdirCmd,
@@ -200,7 +203,7 @@ TestfilehandlerCmd(
 	    return TCL_ERROR;
 	}
 	sprintf(buf, "%d %d", pipePtr->readCount, pipePtr->writeCount);
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "create") == 0) {
 	if (argc != 5) {
 	    Tcl_AppendResult(interp, "wrong # arguments: should be \"",
@@ -217,8 +220,8 @@ TestfilehandlerCmd(
 	    fcntl(GetFd(pipePtr->readFile), F_SETFL, O_NONBLOCK);
 	    fcntl(GetFd(pipePtr->writeFile), F_SETFL, O_NONBLOCK);
 #else
-	    Tcl_SetResult(interp, "can't make pipes non-blocking",
-		    TCL_STATIC);
+	    Tcl_AppendResult(interp, "can't make pipes non-blocking",
+		    NULL);
 	    return TCL_ERROR;
 #endif
 	}
@@ -281,7 +284,7 @@ TestfilehandlerCmd(
 
 	memset(buffer, 'b', 10);
 	TclFormatInt(buf, write(GetFd(pipePtr->writeFile), buffer, 10));
-	Tcl_SetResult(interp, buf, TCL_VOLATILE);
+	Tcl_AppendResult(interp, buf, NULL);
     } else if (strcmp(argv[1], "oneevent") == 0) {
 	Tcl_DoOneEvent(TCL_FILE_EVENTS|TCL_DONT_WAIT);
     } else if (strcmp(argv[1], "wait") == 0) {
@@ -390,7 +393,7 @@ TestfilewaitCmd(
     if (Tcl_GetChannelHandle(channel,
 	    (mask & TCL_READABLE) ? TCL_READABLE : TCL_WRITABLE,
 	    (ClientData*) &data) != TCL_OK) {
-	Tcl_SetResult(interp, "couldn't get channel file", TCL_STATIC);
+	Tcl_AppendResult(interp, "couldn't get channel file", NULL);
 	return TCL_ERROR;
     }
     fd = PTR2INT(data);
@@ -524,6 +527,51 @@ TestsetdefencdirCmd(
     }
 
     Tcl_SetDefaultEncodingDir(argv[1]);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestforkObjCmd --
+ *
+ *	This function implements the "testfork" command. It is used to
+ *	fork the Tcl process for specific test cases.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestforkObjCmd(
+    ClientData clientData,	/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)		/* Argument strings. */
+{
+    pid_t pid;
+
+    if (objc != 1) {
+        Tcl_WrongNumArgs(interp, 1, objv, "");
+        return TCL_ERROR;
+    }
+    pid = fork();
+    if (pid == -1) {
+        Tcl_AppendResult(interp,
+                "Cannot fork", NULL);
+        return TCL_ERROR;
+    }
+    /* Only needed when pthread_atfork is not present,
+     * should not hurt otherwise. */
+    if (pid==0) {
+	Tcl_InitNotifier();
+    }
+    Tcl_SetObjResult(interp, Tcl_NewIntObj(pid));
     return TCL_OK;
 }
 

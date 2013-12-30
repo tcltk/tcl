@@ -271,7 +271,7 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
 	    (ClientData) &tclOOStubs);
 }
 
@@ -843,7 +843,7 @@ ObjectRenamedTrace(
 	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
 		    contextPtr, 0, NULL);
 	    if (result != TCL_OK) {
-		Tcl_BackgroundError(interp);
+		Tcl_BackgroundException(interp, result);
 	    }
 	    Tcl_RestoreInterpState(interp, state);
 	    TclOODeleteContext(contextPtr);
