@@ -194,7 +194,7 @@ static Tcl_ThreadId notifierThread;
 
 #ifdef TCL_THREADS
 static void	NotifierThreadProc(ClientData clientData);
-#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__)
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
 static int	atForkInit = 0;
 static void	AtForkPrepare(void);
 static void	AtForkParent(void);
@@ -290,7 +290,7 @@ Tcl_InitNotifier(void)
 	 */
 
 	Tcl_MutexLock(&notifierMutex);
-#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__)
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
 	/*
 	 * Install pthread_atfork handlers to reinitialize the notifier in the
 	 * child of a fork.
@@ -1313,7 +1313,7 @@ NotifierThreadProc(
     TclpThreadExit(0);
 }
 
-#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__)
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
 /*
  *----------------------------------------------------------------------
  *
