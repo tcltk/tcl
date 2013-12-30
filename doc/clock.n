@@ -2,8 +2,8 @@
 '\" Generated from file './doc/clock.dt' by tcllib/doctools with format 'nroff'
 '\" Copyright (c) 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 '\"
-.so man.macros
 .TH "clock" n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 .SH NAME
 clock \- Obtain and manipulate dates and times

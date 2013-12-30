@@ -737,7 +737,10 @@ TcpGetOptionProc(
 
         if (statePtr->status == 0) {
             ret = getsockopt(statePtr->fds.fd, SOL_SOCKET, SO_ERROR,
-                    (char *) &err, &optlen);
+                            (char *) &err, &optlen);
+            if (statePtr->flags & TCP_ASYNC_CONNECT) {
+                statePtr->status = err;
+            }
             if (ret < 0) {
                 err = errno;
             }
@@ -1054,12 +1057,17 @@ CreateClientSocket(
                  */
 
                 optlen = sizeof(int);
-                getsockopt(state->fds.fd, SOL_SOCKET, SO_ERROR,
-                        (char *) &status, &optlen);
-                state->status = status;
+
+                if (state->status == 0) {
+                    getsockopt(state->fds.fd, SOL_SOCKET, SO_ERROR,
+                            (char *) &status, &optlen);
+                    state->status = status;
+                } else {
+                    status = state->status;
+                    state->status = 0;
+                }
             }
 	    if (status == 0) {
-		CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
 		goto out;
 	    }
 	}
@@ -1067,6 +1075,7 @@ CreateClientSocket(
 
 out:
 
+    CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
     if (async_callback) {
         /*
          * An asynchonous connection has finally succeeded or failed.
@@ -1131,7 +1140,7 @@ Tcl_OpenTcpClient(
 {
     TcpState *state;
     const char *errorMsg = NULL;
-    void *addrlist = NULL, *myaddrlist = NULL;
+    struct addrinfo *addrlist = NULL, *myaddrlist = NULL;
     char channelName[SOCK_CHAN_LENGTH];
 
     /*
@@ -1276,8 +1285,7 @@ Tcl_OpenTcpServer(
     ClientData acceptProcData)	/* Data for the callback. */
 {
     int status = 0, sock = -1, reuseaddr = 1, chosenport = 0;
-    void *addrlist = NULL;
-    struct addrinfo *addrPtr;	/* socket address */
+    struct addrinfo *addrlist = NULL, *addrPtr;	/* socket address */
     TcpState *statePtr = NULL;
     char channelName[SOCK_CHAN_LENGTH];
     const char *errorMsg = NULL;

@@ -168,7 +168,7 @@ extern "C" {
  */
 
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC__MINOR__ >= 5))
+#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__ (msg)))
 #   else
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__))
@@ -458,7 +458,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct _stat32i64 Tcl_StatBuf;
 #   endif /* _MSC_VER < 1400 */
 #elif defined(__CYGWIN__)
-    typedef struct _stat32i64 {
+    typedef struct {
 	dev_t st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
