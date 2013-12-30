@@ -800,7 +800,7 @@ ConsoleOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error;
     }
 
@@ -1079,7 +1079,7 @@ WaitForRead(
 	     * is in non-blocking mode.
 	     */
 
-	    errno = EAGAIN;
+	    errno = EWOULDBLOCK;
 	    return -1;
 	}
 
