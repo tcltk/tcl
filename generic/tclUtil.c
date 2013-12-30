@@ -14,6 +14,7 @@
 
 #include "tclInt.h"
 #include "tclParse.h"
+#include "tclStringTrim.h"
 #include <math.h>
 
 /*
@@ -1768,8 +1769,7 @@ TclTrimLeft(
  */
 
 /* The whitespace characters trimmed during [concat] operations */
-#define CONCAT_WS " \f\v\r\t\n"
-#define CONCAT_WS_SIZE (int) (sizeof(CONCAT_WS "") - 1)
+#define CONCAT_WS_SIZE (int) (sizeof(CONCAT_TRIM_SET "") - 1)
 
 char *
 Tcl_Concat(
@@ -1825,7 +1825,8 @@ Tcl_Concat(
 	 * Trim away the leading whitespace.
 	 */
 
-	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimLeft(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	element += trim;
 	elemLength -= trim;
 
@@ -1834,7 +1835,8 @@ Tcl_Concat(
 	 * a final backslash character.
 	 */
 
-	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimRight(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	trim -= trim && (element[elemLength - trim - 1] == '\\');
 	elemLength -= trim;
 
@@ -1959,7 +1961,8 @@ Tcl_ConcatObj(
 	 * Trim away the leading whitespace.
 	 */
 
-	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimLeft(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	element += trim;
 	elemLength -= trim;
 
@@ -1968,7 +1971,8 @@ Tcl_ConcatObj(
 	 * a final backslash character.
 	 */
 
-	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimRight(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	trim -= trim && (element[elemLength - trim - 1] == '\\');
 	elemLength -= trim;
 

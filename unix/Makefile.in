@@ -1309,7 +1309,7 @@ tclStubInit.o: $(GENERIC_DIR)/tclStubInit.c
 tclTrace.o: $(GENERIC_DIR)/tclTrace.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTrace.c
 
-tclUtil.o: $(GENERIC_DIR)/tclUtil.c $(PARSEHDR)
+tclUtil.o: $(GENERIC_DIR)/tclUtil.c $(PARSEHDR) $(TRIMHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
 
 tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
