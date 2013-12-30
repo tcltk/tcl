@@ -41,6 +41,9 @@
 #undef Tcl_FindExecutable
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#define TclBackgroundException Tcl_BackgroundException
+#undef Tcl_SetIntObj
+#undef TclpInetNtoa
 
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
@@ -53,6 +56,31 @@ static int TclSockMinimumBuffersOld(int sock, int size)
 }
 #endif
 
+#define TclSetStartupScriptPath setStartupScriptPath
+static void TclSetStartupScriptPath(Tcl_Obj *path)
+{
+    Tcl_SetStartupScript(path, NULL);
+}
+#define TclGetStartupScriptPath getStartupScriptPath
+static Tcl_Obj *TclGetStartupScriptPath(void)
+{
+    return Tcl_GetStartupScript(NULL);
+}
+#define TclSetStartupScriptFileName setStartupScriptFileName
+static void TclSetStartupScriptFileName(
+    const char *fileName)
+{
+    Tcl_SetStartupScript(Tcl_NewStringObj(fileName,-1), NULL);
+}
+#define TclGetStartupScriptFileName getStartupScriptFileName
+static const char *TclGetStartupScriptFileName(void)
+{
+    Tcl_Obj *path = Tcl_GetStartupScript(NULL);
+    if (path == NULL) {
+	return NULL;
+    }
+    return Tcl_GetStringFromObj(path, NULL);
+}
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #undef TclWinNToHS
@@ -169,6 +197,89 @@ Tcl_WinTCharToUtf(
     return Tcl_ExternalToUtfDString(winTCharEncoding,
 	    string, len, dsPtr);
 }
+
+#if defined(TCL_WIDE_INT_IS_LONG)
+/* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
+ * we have to make sure that all stub entries on Cygwin64 follow the Win64
+ * signature. Tcl 9 must find a better solution, but that cannot be done
+ * without introducing a binary incompatibility.
+ */
+#define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))dbNewLongObj)
+static Tcl_Obj *dbNewLongObj(
+    int intValue,
+    const char *file,
+    int line
+) {
+#ifdef TCL_MEM_DEBUG
+    register Tcl_Obj *objPtr;
+
+    TclDbNewObj(objPtr, file, line);
+    objPtr->bytes = NULL;
+
+    objPtr->internalRep.longValue = (long) intValue;
+    objPtr->typePtr = &tclIntType;
+    return objPtr;
+#else
+    return Tcl_NewIntObj(intValue);
+#endif
+}
+#define Tcl_GetLongFromObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetIntFromObj
+#define Tcl_NewLongObj (Tcl_Obj*(*)(long))Tcl_NewIntObj
+#define Tcl_SetLongObj (void(*)(Tcl_Obj*,long))Tcl_SetIntObj
+static int exprInt(Tcl_Interp *interp, const char *expr, int *ptr){
+    long longValue;
+    int result = Tcl_ExprLong(interp, expr, &longValue);
+    if (result == TCL_OK) {
+	    if ((longValue >= -(long)(UINT_MAX))
+		    && (longValue <= (long)(UINT_MAX))) {
+	    *ptr = (int)longValue;
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "integer value too large to represent as non-long integer", -1));
+	    result = TCL_ERROR;
+	}
+    }
+    return result;
+}
+#define Tcl_ExprLong (int(*)(Tcl_Interp*,const char*,long*))exprInt
+static int exprIntObj(Tcl_Interp *interp, Tcl_Obj*expr, int *ptr){
+    long longValue;
+    int result = Tcl_ExprLongObj(interp, expr, &longValue);
+    if (result == TCL_OK) {
+	    if ((longValue >= -(long)(UINT_MAX))
+		    && (longValue <= (long)(UINT_MAX))) {
+	    *ptr = (int)longValue;
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "integer value too large to represent as non-long integer", -1));
+	    result = TCL_ERROR;
+	}
+    }
+    return result;
+}
+#define Tcl_ExprLongObj (int(*)(Tcl_Interp*,Tcl_Obj*,long*))exprIntObj
+static int uniCharNcmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
+   return Tcl_UniCharNcmp(ucs, uct, (unsigned long)n);
+}
+#define Tcl_UniCharNcmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcmp
+static int utfNcmp(const char *s1, const char *s2, unsigned int n){
+   return Tcl_UtfNcmp(s1, s2, (unsigned long)n);
+}
+#define Tcl_UtfNcmp (int(*)(const char*,const char*,unsigned long))utfNcmp
+static int utfNcasecmp(const char *s1, const char *s2, unsigned int n){
+   return Tcl_UtfNcasecmp(s1, s2, (unsigned long)n);
+}
+#define Tcl_UtfNcasecmp (int(*)(const char*,const char*,unsigned long))utfNcasecmp
+static int uniCharNcasecmp(const Tcl_UniChar *ucs, const Tcl_UniChar *uct, unsigned int n){
+   return Tcl_UniCharNcasecmp(ucs, uct, (unsigned long)n);
+}
+#define Tcl_UniCharNcasecmp (int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned long))uniCharNcasecmp
+static int formatInt(char *buffer, int n){
+   return TclFormatInt(buffer, (long)n);
+}
+#define TclFormatInt (int(*)(char *, long))formatInt
+
+#endif
 
 #else /* UNIX and MAC */
 #   define TclpLocaltime_unix TclpLocaltime
@@ -347,8 +458,8 @@ static const TclIntStubs tclIntStubs = {
     0, /* 155 */
     TclRegError, /* 156 */
     TclVarTraceExists, /* 157 */
-    0, /* 158 */
-    0, /* 159 */
+    TclSetStartupScriptFileName, /* 158 */
+    TclGetStartupScriptFileName, /* 159 */
     0, /* 160 */
     TclChannelTransform, /* 161 */
     TclChannelEventScriptInvoker, /* 162 */
@@ -356,8 +467,8 @@ static const TclIntStubs tclIntStubs = {
     TclExpandCodeArray, /* 164 */
     TclpSetInitialEncodings, /* 165 */
     TclListObjSetElement, /* 166 */
-    0, /* 167 */
-    0, /* 168 */
+    TclSetStartupScriptPath, /* 167 */
+    TclGetStartupScriptPath, /* 168 */
     TclpUtfNcmp2, /* 169 */
     TclCheckInterpTraces, /* 170 */
     TclCheckExecutionTraces, /* 171 */
@@ -367,8 +478,8 @@ static const TclIntStubs tclIntStubs = {
     TclCallVarTraces, /* 175 */
     TclCleanupVar, /* 176 */
     TclVarErrMsg, /* 177 */
-    0, /* 178 */
-    0, /* 179 */
+    Tcl_SetStartupScript, /* 178 */
+    Tcl_GetStartupScript, /* 179 */
     0, /* 180 */
     0, /* 181 */
     TclpLocaltime, /* 182 */
@@ -425,7 +536,7 @@ static const TclIntStubs tclIntStubs = {
     TclGetSrcInfoForPc, /* 233 */
     TclVarHashCreateVar, /* 234 */
     TclInitVarHashTable, /* 235 */
-    0, /* 236 */
+    TclBackgroundException, /* 236 */
     TclResetCancellation, /* 237 */
     TclNRInterpProc, /* 238 */
     TclNRInterpProcCore, /* 239 */
@@ -440,6 +551,7 @@ static const TclIntStubs tclIntStubs = {
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
     TclSetSlaveCancelFlags, /* 250 */
+    TclRegisterLiteral, /* 251 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

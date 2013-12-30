@@ -237,7 +237,7 @@ Tcl_NewListObj(
      * Now create the object.
      */
 
-    Tcl_InvalidateStringRep(listPtr);
+    TclInvalidateStringRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
     return listPtr;
 }
@@ -302,7 +302,7 @@ Tcl_DbNewListObj(
      * Now create the object.
      */
 
-    Tcl_InvalidateStringRep(listPtr);
+    TclInvalidateStringRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
 
     return listPtr;
@@ -362,7 +362,7 @@ Tcl_SetListObj(
      */
 
     TclFreeIntRep(objPtr);
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
 
     /*
      * Set the object's type to "list" and initialize the internal rep.
@@ -697,7 +697,7 @@ Tcl_ListObjAppendElement(
      * representation has changed.
      */
 
-    Tcl_InvalidateStringRep(listPtr);
+    TclInvalidateStringRep(listPtr);
     return TCL_OK;
 }
 
@@ -1057,7 +1057,7 @@ Tcl_ListObjReplace(
      * reflects the list's internal representation.
      */
 
-    Tcl_InvalidateStringRep(listPtr);
+    TclInvalidateStringRep(listPtr);
     return TCL_OK;
 }
 
@@ -1523,7 +1523,7 @@ TclLsetFlat(
 	     * containing lists.
 	     */
 
-	    Tcl_InvalidateStringRep(objPtr);
+	    TclInvalidateStringRep(objPtr);
 	}
 
 	/*
@@ -1559,7 +1559,7 @@ TclLsetFlat(
     } else {
 	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
     }
-    Tcl_InvalidateStringRep(subListPtr);
+    TclInvalidateStringRep(subListPtr);
     Tcl_IncrRefCount(retValuePtr);
     return retValuePtr;
 }
@@ -1736,8 +1736,6 @@ FreeListInternalRep(
 	ckfree(listRepPtr);
     }
 
-    listPtr->internalRep.twoPtrValue.ptr1 = NULL;
-    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
     listPtr->typePtr = NULL;
 }
 
