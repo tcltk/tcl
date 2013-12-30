@@ -700,8 +700,8 @@ TclCompileStringReplaceCmd(
 
     /*
      * We handle these replacements specially: first character (where
-     * idx1=idx2=0) and suffixes (where idx1=idx2=INDEX_END). Anything else
-     * and the semantics get rather screwy.
+     * idx1=idx2=0) and last character (where idx1=idx2=INDEX_END). Anything
+     * else and the semantics get rather screwy.
      */
 
     if (idx1 == 0 && idx2 == 0) {
