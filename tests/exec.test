@@ -157,7 +157,7 @@ test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
     encoding system iso8859-1
     proc quotenonascii s {
 	regsub -all {\[|\\|\]} $s {\\&} s
-	regsub -all {[\u007f-\uffff]} $s \
+	regsub -all "\[\u007f-\uffff\]" $s \
 	    {[apply {c {format {\u%04x} [scan $c %c]}} &]} s
 	return [subst -novariables $s]
     }

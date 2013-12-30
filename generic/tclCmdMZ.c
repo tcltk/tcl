@@ -35,6 +35,8 @@ static int		UniCharIsHexDigit(int character);
 /*
  * Default set of characters to trim in [string trim] and friends. This is a
  * UTF-8 literal string containing all Unicode space characters [TIP #413]
+ *
+ * Synch with tclCompCmdsSZ.c
  */
 
 #define DEFAULT_TRIM_SET \
@@ -1540,7 +1542,8 @@ StringIsCmd(
     case STR_IS_BOOL:
     case STR_IS_TRUE:
     case STR_IS_FALSE:
-	if (TCL_OK != Tcl_ConvertToType(NULL, objPtr, &tclBooleanType)) {
+	if ((objPtr->typePtr != &tclBooleanType)
+		&& (TCL_OK != TclSetBooleanFromAny(NULL, objPtr))) {
 	    if (strict) {
 		result = 0;
 	    } else {
@@ -1564,7 +1567,7 @@ StringIsCmd(
 	/* TODO */
 	if ((objPtr->typePtr == &tclDoubleType) ||
 		(objPtr->typePtr == &tclIntType) ||
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 		(objPtr->typePtr == &tclWideIntType) ||
 #endif
 		(objPtr->typePtr == &tclBignumType)) {
@@ -1601,7 +1604,7 @@ StringIsCmd(
 	goto failedIntParse;
     case STR_IS_ENTIER:
 	if ((objPtr->typePtr == &tclIntType) ||
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 		(objPtr->typePtr == &tclWideIntType) ||
 #endif
 		(objPtr->typePtr == &tclBignumType)) {
@@ -3324,7 +3327,7 @@ TclInitStringCmd(
     Tcl_Interp *interp)		/* Current interpreter. */
 {
     static const EnsembleImplMap stringImplMap[] = {
-	{"bytelength",	StringBytesCmd,	NULL, NULL, NULL, 0},
+	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
 	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
@@ -3335,17 +3338,17 @@ TclInitStringCmd(
 	{"map",		StringMapCmd,	TclCompileStringMapCmd, NULL, NULL, 0},
 	{"match",	StringMatchCmd,	TclCompileStringMatchCmd, NULL, NULL, 0},
 	{"range",	StringRangeCmd,	TclCompileStringRangeCmd, NULL, NULL, 0},
-	{"repeat",	StringReptCmd,	NULL, NULL, NULL, 0},
-	{"replace",	StringRplcCmd,	NULL, NULL, NULL, 0},
-	{"reverse",	StringRevCmd,	NULL, NULL, NULL, 0},
-	{"tolower",	StringLowerCmd,	NULL, NULL, NULL, 0},
-	{"toupper",	StringUpperCmd,	NULL, NULL, NULL, 0},
-	{"totitle",	StringTitleCmd,	NULL, NULL, NULL, 0},
-	{"trim",	StringTrimCmd,	NULL, NULL, NULL, 0},
-	{"trimleft",	StringTrimLCmd,	NULL, NULL, NULL, 0},
-	{"trimright",	StringTrimRCmd,	NULL, NULL, NULL, 0},
-	{"wordend",	StringEndCmd,	NULL, NULL, NULL, 0},
-	{"wordstart",	StringStartCmd,	NULL, NULL, NULL, 0},
+	{"repeat",	StringReptCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"replace",	StringRplcCmd,	TclCompileStringReplaceCmd, NULL, NULL, 0},
+	{"reverse",	StringRevCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"tolower",	StringLowerCmd,	TclCompileStringToLowerCmd, NULL, NULL, 0},
+	{"toupper",	StringUpperCmd,	TclCompileStringToUpperCmd, NULL, NULL, 0},
+	{"totitle",	StringTitleCmd,	TclCompileStringToTitleCmd, NULL, NULL, 0},
+	{"trim",	StringTrimCmd,	TclCompileStringTrimCmd, NULL, NULL, 0},
+	{"trimleft",	StringTrimLCmd,	TclCompileStringTrimLCmd, NULL, NULL, 0},
+	{"trimright",	StringTrimRCmd,	TclCompileStringTrimRCmd, NULL, NULL, 0},
+	{"wordend",	StringEndCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
+	{"wordstart",	StringStartCmd,	TclCompileBasic2ArgCmd, NULL, NULL, 0},
 	{NULL, NULL, NULL, NULL, NULL, 0}
     };
 
@@ -3526,7 +3529,7 @@ TclNRSwitchObjCmd(
 	    i++;
 	    goto finishedOptions;
 	case OPT_NOCASE:
-	    strCmpFn = strcasecmp;
+	    strCmpFn = TclUtfCasecmp;
 	    noCase = 1;
 	    break;
 

@@ -18,9 +18,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if defined(HAVE_SYS_STAT_H) && !defined _WIN32
-#   include <sys/stat.h>
-#endif
 #include "tclInt.h"
 #ifdef __WIN32__
 #   include "tclWinInt.h"
@@ -3228,6 +3225,9 @@ Tcl_LoadFile(
      */
 
     copyToPtr = TclpTempFileNameForLibrary(interp, pathPtr);
+    if (copyToPtr == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_IncrRefCount(copyToPtr);
 
     copyFsPtr = Tcl_FSGetFileSystemForPath(copyToPtr);
