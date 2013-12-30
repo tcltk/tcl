@@ -18,6 +18,7 @@
 
 #include "tclInt.h"
 #include "tclRegexp.h"
+#include "tclStringTrim.h"
 
 static inline Tcl_Obj *	During(Tcl_Interp *interp, int resultCode,
 			    Tcl_Obj *oldOptions, Tcl_Obj *errorInfo);
@@ -3157,8 +3158,8 @@ StringTrimCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = TCL_DEFAULT_TRIM_SET;
-	length2 = strlen(TCL_DEFAULT_TRIM_SET);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
@@ -3205,8 +3206,8 @@ StringTrimLCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = TCL_DEFAULT_TRIM_SET;
-	length2 = strlen(TCL_DEFAULT_TRIM_SET);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;
@@ -3251,8 +3252,8 @@ StringTrimRCmd(
     if (objc == 3) {
 	string2 = TclGetStringFromObj(objv[2], &length2);
     } else if (objc == 2) {
-	string2 = TCL_DEFAULT_TRIM_SET;
-	length2 = strlen(TCL_DEFAULT_TRIM_SET);
+	string2 = DEFAULT_TRIM_SET;
+	length2 = strlen(DEFAULT_TRIM_SET);
     } else {
 	Tcl_WrongNumArgs(interp, 1, objv, "string ?chars?");
 	return TCL_ERROR;

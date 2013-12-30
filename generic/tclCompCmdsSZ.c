@@ -17,6 +17,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclStringTrim.h"
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -809,7 +810,7 @@ TclCompileStringTrimLCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr,			interp, 2);
     } else {
-	PushStringLiteral(envPtr, TCL_DEFAULT_TRIM_SET);
+	PushStringLiteral(envPtr, DEFAULT_TRIM_SET);
     }
     OP(			STR_TRIM_LEFT);
     return TCL_OK;
@@ -837,7 +838,7 @@ TclCompileStringTrimRCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr,			interp, 2);
     } else {
-	PushStringLiteral(envPtr, TCL_DEFAULT_TRIM_SET);
+	PushStringLiteral(envPtr, DEFAULT_TRIM_SET);
     }
     OP(			STR_TRIM_RIGHT);
     return TCL_OK;
@@ -865,7 +866,7 @@ TclCompileStringTrimCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr,			interp, 2);
     } else {
-	PushStringLiteral(envPtr, TCL_DEFAULT_TRIM_SET);
+	PushStringLiteral(envPtr, DEFAULT_TRIM_SET);
     }
     OP(			STR_TRIM);
     return TCL_OK;
