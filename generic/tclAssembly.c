@@ -437,6 +437,7 @@ static const TalInstDesc TalInstructionTable[] = {
     {"nop",		ASSEM_1BYTE,	INST_NOP,		0,	0},
     {"not",		ASSEM_1BYTE,	INST_LNOT,		1,	1},
     {"nsupvar",		ASSEM_LVT4,	INST_NSUPVAR,		2,	1},
+    {"originCmd",	ASSEM_1BYTE,	INST_ORIGIN_COMMAND,	1,	1},
     {"over",		ASSEM_OVER,	INST_OVER,		INT_MIN,-1-1},
     {"pop",		ASSEM_1BYTE,	INST_POP,		1,	0},
     {"pushReturnCode",	ASSEM_1BYTE,	INST_PUSH_RETURN_CODE,	0,	1},
