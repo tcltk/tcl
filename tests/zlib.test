@@ -16,6 +16,13 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 testConstraint zlib [llength [info commands zlib]]
+testConstraint recentZlib 0
+catch {
+    # Work around a bug in some versions of zlib; known to manifest on at
+    # least Mac OS X Mountain Lion...
+    testConstraint recentZlib \
+	    [package vsatisfies [zlib::pkgconfig get zlibVersion] 1.2.6]
+}
 
 test zlib-1.1 {zlib basics} -constraints zlib -returnCodes error -body {
     zlib
@@ -233,7 +240,7 @@ test zlib-8.7 {transformation and fconfigure} -setup {
 # Dictionary is that which is proposed _in_ SPDY draft
 set spdyHeaders "HTTP/1.0 200 OK\r\nContent-Type: text/html; charset=utf-8\r\nX-Robots-Tag: noarchive\r\nLast-Modified: Tue, 05 Jun 2012 02:43:25 GMT\r\nETag: \"1338864205129|#public|0|en|||0\"\r\nExpires: Tue, 05 Jun 2012 16:17:11 GMT\r\nDate: Tue, 05 Jun 2012 16:17:06 GMT\r\nCache-Control: public, max-age=5\r\nX-Content-Type-Options: nosniff\r\nX-XSS-Protection: 1; mode=block\r\nServer: GSE\r\n"
 set spdyDict "optionsgetheadpostputdeletetraceacceptaccept-charsetaccept-encodingaccept-languageauthorizationexpectfromhostif-modified-sinceif-matchif-none-matchif-rangeif-unmodifiedsincemax-forwardsproxy-authorizationrangerefererteuser-agent100101200201202203204205206300301302303304305306307400401402403404405406407408409410411412413414415416417500501502503504505accept-rangesageetaglocationproxy-authenticatepublicretry-afterservervarywarningwww-authenticateallowcontent-basecontent-encodingcache-controlconnectiondatetrailertransfer-encodingupgradeviawarningcontent-languagecontent-lengthcontent-locationcontent-md5content-rangecontent-typeetagexpireslast-modifiedset-cookieMondayTuesdayWednesdayThursdayFridaySaturdaySundayJanFebMarAprMayJunJulAugSepOctNovDecchunkedtext/htmlimage/pngimage/jpgimage/gifapplication/xmlapplication/xhtmltext/plainpublicmax-agecharset=iso-8859-1utf-8gzipdeflateHTTP/1.1statusversionurl"
-test zlib-8.8 {transformtion and fconfigure} -setup {
+test zlib-8.8 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
 } -constraints zlib -body {
     zlib push compress $outSide -dictionary $spdyDict
@@ -250,7 +257,7 @@ test zlib-8.8 {transformtion and fconfigure} -setup {
     catch {close $outSide}
     catch {close $inSide}
 } -result {260 222 {need dictionary} {TCL ZLIB NEED_DICT 2381337010} 2381337010}
-test zlib-8.9 {transformtion and fconfigure} -setup {
+test zlib-8.9 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream decompress]
 } -constraints zlib -body {
@@ -267,16 +274,19 @@ test zlib-8.9 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {3064818174 358 358}
-test zlib-8.10 {transformtion and fconfigure} -setup {
+test zlib-8.10 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
-} -constraints zlib -body {
+} -constraints {zlib recentZlib} -body {
     zlib push deflate $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
     fconfigure $inSide -blocking 0 -translation binary
     puts -nonewline $outSide $spdyHeaders
     chan pop $outSide
     set compressed [read $inSide]
-    catch {zlib inflate $compressed} err opt
+    catch {
+	zlib inflate $compressed
+	throw UNREACHABLE "should be unreachable"
+    } err opt
     list [string length [zlib deflate $spdyHeaders]] \
 	[string length $compressed] \
 	$err [dict get $opt -errorcode]
@@ -284,7 +294,7 @@ test zlib-8.10 {transformtion and fconfigure} -setup {
     catch {close $outSide}
     catch {close $inSide}
 } -result {254 212 {data error} {TCL ZLIB DATA}}
-test zlib-8.11 {transformtion and fconfigure} -setup {
+test zlib-8.11 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream inflate]
 } -constraints zlib -body {
@@ -300,7 +310,7 @@ test zlib-8.11 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358}
-test zlib-8.12 {transformtion and fconfigure} -setup {
+test zlib-8.12 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream compress]
 } -constraints zlib -body {
@@ -317,7 +327,7 @@ test zlib-8.12 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358 3064818174}
-test zlib-8.13 {transformtion and fconfigure} -setup {
+test zlib-8.13 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream compress]
 } -constraints zlib -body {
@@ -334,7 +344,7 @@ test zlib-8.13 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358 3064818174}
-test zlib-8.14 {transformtion and fconfigure} -setup {
+test zlib-8.14 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream deflate]
 } -constraints zlib -body {
@@ -350,7 +360,7 @@ test zlib-8.14 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358}
-test zlib-8.15 {transformtion and fconfigure} -setup {
+test zlib-8.15 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
     set strm [zlib stream deflate]
 } -constraints zlib -body {
@@ -366,6 +376,25 @@ test zlib-8.15 {transformtion and fconfigure} -setup {
     catch {close $inSide}
     catch {$strm close}
 } -result {358 358}
+test zlib-8.16 {Bug 3603553: buffer transfer with large writes} -setup {
+    # Actual data isn't very important; needs to be substantially larger than
+    # the internal buffer (32kB) and incompressible.
+    set largeData {}
+    for {set i 0;expr srand(1)} {$i < 100000} {incr i} {
+	append largeData [lindex "a b c d e f g h i j k l m n o p" \
+		[expr {int(16*rand())}]]
+    }
+    set file [makeFile {} test.gz]
+} -constraints zlib -body {
+    set f [open $file wb]
+    fconfigure $f -buffering none
+    zlib push gzip $f
+    puts -nonewline $f $largeData
+    close $f
+    file size $file
+} -cleanup {
+    removeFile $file
+} -result 57647
 
 test zlib-9.1 "check fcopy with push" -constraints zlib -setup {
     set sfile [makeFile {} testsrc.gz]
