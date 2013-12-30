@@ -1956,6 +1956,28 @@ TclCompileNamespaceCodeCmd(
 }
 
 int
+TclCompileNamespaceOriginCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    Tcl_Token *tokenPtr;
+    DefineLineInformation;	/* TIP #280 */
+
+    if (parsePtr->numWords != 2) {
+	return TCL_ERROR;
+    }
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+
+    CompileWord(envPtr,	tokenPtr,			interp, 1);
+    TclEmitOpcode(	INST_ORIGIN_COMMAND,		envPtr);
+    return TCL_OK;
+}
+
+int
 TclCompileNamespaceQualifiersCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command

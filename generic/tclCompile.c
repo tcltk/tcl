@@ -611,6 +611,11 @@ InstructionDesc const tclInstructionTable[] = {
 	 * with the contents of another.
 	 * Stack: ... string fromIdx toIdx replacement => ... newString */
 
+    {"originCmd",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Reports which command was the origin (via namespace import chain)
+	 * of the command named on the top of the stack.
+	 * Stack:  ... cmdName => ... fullOriginalCmdName */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 

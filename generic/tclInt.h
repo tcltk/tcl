@@ -3571,6 +3571,9 @@ MODULE_SCOPE int	TclCompileNamespaceCodeCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileNamespaceCurrentCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNamespaceOriginCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileNamespaceQualifiersCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
