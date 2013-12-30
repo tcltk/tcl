@@ -181,11 +181,11 @@ void
 TclWinInit(
     HINSTANCE hInst)		/* Library instance handle. */
 {
-    OSVERSIONINFO os;
+    OSVERSIONINFOW os;
 
     hInstance = hInst;
-    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&os);
+    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+    GetVersionExW(&os);
     platformId = os.dwPlatformId;
 
     /*

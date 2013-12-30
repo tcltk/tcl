@@ -932,7 +932,7 @@ SerialInputProc(
 		    bufSize = cStat.cbInQue;
 		}
 	    } else {
-		errno = *errorCode = EAGAIN;
+		errno = *errorCode = EWOULDBLOCK;
 		return -1;
 	    }
 	} else {
@@ -1034,7 +1034,7 @@ SerialOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error1;
     }
 
