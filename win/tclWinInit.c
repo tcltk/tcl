@@ -530,7 +530,7 @@ TclpSetVariables(
 	SYSTEM_INFO info;
 	OemId oemId;
     } sys;
-    OSVERSIONINFOA osInfo;
+    OSVERSIONINFOW osInfo;
     Tcl_DString ds;
     TCHAR szUserName[UNLEN+1];
     DWORD cchUserNameLen = UNLEN;
@@ -538,8 +538,8 @@ TclpSetVariables(
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    GetVersionExA(&osInfo);
+    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+    GetVersionExW(&osInfo);
 
     GetSystemInfo(&sys.info);
 
