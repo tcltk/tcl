@@ -178,7 +178,6 @@ typedef struct TEBCdata {
     ptrdiff_t *catchTop;	/* this level: they record the state when a */
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
-    int checkInterp;
     CmdFrame cmdFrame;
     void *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
@@ -1992,7 +1991,6 @@ TclNRExecuteByteCode(
     TD->catchTop    = initCatchTop;
     TD->cleanup     = 0;
     TD->auxObjList  = NULL;
-    TD->checkInterp = 0;
 
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
@@ -2086,9 +2084,6 @@ TEBCresume(
 #define auxObjList	(TD->auxObjList)
 #define catchTop	(TD->catchTop)
 #define codePtr		(TD->codePtr)
-#define checkInterp	(TD->checkInterp)
-			/* Indicates when a check of interp readyness is
-			 * necessary. Set by CACHE_STACK_INFO() */
 
     /*
      * Globals: variables that store state, must remain valid at all times.
@@ -2106,6 +2101,8 @@ TEBCresume(
 
     int cleanup = 0;
     Tcl_Obj *objResultPtr;
+    int checkInterp;            /* Indicates when a check of interp readyness
+				 * is necessary. Set by CACHE_STACK_INFO() */
 
     /*
      * Locals - variables that are used within opcodes or bounded sections of
@@ -2129,10 +2126,18 @@ TEBCresume(
 
     TEBC_DATA_DIG();
 
-    if (data[1] /* resume from invocation */) {
+    if (!data[1]) {
+	/* bytecode is starting from scratch */
+	checkInterp = 0;
+	goto cleanup0;
+    } else {
+        /* resume from invocation */
+	CACHE_STACK_INFO();
 	if (iPtr->execEnvPtr->rewind) {
 	    result = TCL_ERROR;
+	    goto abnormalReturn;
 	}
+
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	if (bcFramePtr->cmdObj) {
 	    Tcl_DecrRefCount(bcFramePtr->cmdObj);
@@ -2148,7 +2153,6 @@ TEBCresume(
 	    codePtr->flags &= ~TCL_BYTECODE_RECOMPILE;
 	}
 
-	CACHE_STACK_INFO();
 	if (result == TCL_OK) {
 	    /*
 	     * Push the call's object result and continue execution with the
@@ -2180,29 +2184,11 @@ TEBCresume(
 	    }
 #endif
 	    NEXT_INST_V(0, cleanup, -1);
+	} else {
+	    pc--;
+	    goto processExceptionReturn;
 	}
-
-	/*
-	 * Result not TCL_OK: fall through
-	 */
     }
-
-    if (iPtr->execEnvPtr->rewind) {
-	result = TCL_ERROR;
-	goto abnormalReturn;
-    }
-
-    if (result != TCL_OK) {
-	pc--;
-	goto processExceptionReturn;
-    }
-
-    /*
-     * Loop executing instructions until a "done" instruction, a TCL_RETURN,
-     * or some error.
-     */
-
-    goto cleanup0;
 
     /*
      * Targets for standard instruction endings; unrolled for speed in the
