@@ -4391,12 +4391,11 @@ TEBCresume(
 	register CallFrame *framePtr = iPtr->varFramePtr;
 	register CallFrame *rootFramePtr = iPtr->rootFramePtr;
 
+	TRACE(("\"%.30s\" => ", O2S(OBJ_AT_TOS)));
 	if (TclGetIntFromObj(interp, OBJ_AT_TOS, &level) != TCL_OK) {
-	    TRACE_WITH_OBJ(("\"%.30s\" => ERROR: ", O2S(OBJ_AT_TOS)),
-		    Tcl_GetObjResult(interp));
+	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
-	TRACE(("%d => ", level));
 	if (level <= 0) {
 	    level += framePtr->level;
 	}
@@ -5204,6 +5203,7 @@ TEBCresume(
 	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
 		    &toIdx) != TCL_OK) {
 	    TclDecrRefCount(value3Ptr);
+	    TRACE_ERROR(interp);
 	    goto gotError;
 	}
 	TclDecrRefCount(OBJ_AT_TOS);
@@ -5587,6 +5587,7 @@ TEBCresume(
 	cflags = TclGetInt1AtPtr(pc+1); /* RE compile flages like NOCASE */
 	valuePtr = OBJ_AT_TOS;		/* String */
 	value2Ptr = OBJ_UNDER_TOS;	/* Pattern */
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(valuePtr), O2S(value2Ptr)));
 
 	/*
 	 * Compile and match the regular expression.
@@ -5597,23 +5598,17 @@ TEBCresume(
 		    Tcl_GetRegExpFromObj(interp, value2Ptr, cflags);
 
 	    if (regExpr == NULL) {
-		goto regexpFailure;
+		TRACE_ERROR(interp);
+		goto gotError;
 	    }
-
 	    match = Tcl_RegExpExecObj(interp, regExpr, valuePtr, 0, 0, 0);
-
 	    if (match < 0) {
-	    regexpFailure:
-#ifdef TCL_COMPILE_DEBUG
-		objResultPtr = Tcl_GetObjResult(interp);
-		TRACE_WITH_OBJ(("%.20s %.20s => ERROR: ",
-			O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
-#endif
+		TRACE_ERROR(interp);
 		goto gotError;
 	    }
 	}
 
-	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr), match));
+	TRACE_APPEND(("%d\n", match));
 
 	/*
 	 * Peep-hole optimisation: if you're about to jump, do jump from here.
