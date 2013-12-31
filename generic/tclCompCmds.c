@@ -2248,15 +2248,6 @@ TclCompileEvalCmd(
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
 
     /*
-     * Special case: one constant word.
-     */
-
-    if (parsePtr->numWords == 2 && tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	BODY(tokenPtr, 1);
-	return TCL_OK;
-    }
-
-    /*
      * Must push, concatenate (when more than one word) and eval. Note that
      * when we evaluate, we must first duplicate to ensure that a reference to
      * the script is kept for the duration of the evaluation.

@@ -179,6 +179,7 @@ typedef struct TEBCdata {
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
+    int numLevels;
     CmdFrame cmdFrame;
     void *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
@@ -190,14 +191,16 @@ typedef struct TEBCdata {
 	esPtr->tosPtr = tosPtr;						\
 	TD->pc = pc;							\
 	TD->cleanup = cleanup;						\
+	TD->numLevels = ((Interp *) interp)->numLevels;			\
 	TclNRAddCallback(interp, TEBCresume, TD, INT2PTR(1), NULL, NULL); \
     } while (0)
 
 #define TEBC_DATA_DIG() \
-    do {					\
-	pc = TD->pc;				\
-	cleanup = TD->cleanup;			\
-	tosPtr = esPtr->tosPtr;			\
+    do {							\
+	pc = TD->pc;						\
+	cleanup = TD->cleanup;					\
+	tosPtr = esPtr->tosPtr;					\
+	((Interp *) interp)->numLevels = TD->numLevels;		\
     } while (0)
 
 #define PUSH_TAUX_OBJ(objPtr) \
@@ -1993,6 +1996,7 @@ TclNRExecuteByteCode(
     TD->cleanup     = 0;
     TD->auxObjList  = NULL;
     TD->checkInterp = 0;
+    TD->numLevels   = ((Interp *) interp)->numLevels;
 
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
@@ -2831,6 +2835,7 @@ TEBCresume(
 	cleanup = 1;
 	pc++;
 	TEBC_YIELD();
+	((Interp *) interp)->numLevels++;
 	return TclNRExecuteByteCode(interp, newCodePtr);
     }
 
@@ -2846,6 +2851,7 @@ TEBCresume(
 	cleanup = 1;
 	pc += 1;
 	TEBC_YIELD();
+	((Interp *) interp)->numLevels++;
 	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0, NULL, 0);
 
     case INST_INVOKE_EXPANDED:
