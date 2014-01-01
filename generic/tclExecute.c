@@ -319,6 +319,70 @@ VarHashCreateVar(
 	}							\
     } while (0)
 
+#ifndef TCL_COMPILE_DEBUG
+#define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
+    do {								\
+	pc += (pcAdjustment);						\
+	switch (*pc) {							\
+	case INST_JUMP_FALSE1:						\
+	    NEXT_INST_F(((condition)? 2 : TclGetInt1AtPtr(pc+1)), (cleanup), 0); \
+	case INST_JUMP_TRUE1:						\
+	    NEXT_INST_F(((condition)? TclGetInt1AtPtr(pc+1) : 2), (cleanup), 0); \
+	case INST_JUMP_FALSE4:						\
+	    NEXT_INST_F(((condition)? 5 : TclGetInt4AtPtr(pc+1)), (cleanup), 0); \
+	case INST_JUMP_TRUE4:						\
+	    NEXT_INST_F(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
+	default:							\
+	    if ((condition) < 0) {					\
+		TclNewIntObj(objResultPtr, -1);				\
+	    } else {							\
+		objResultPtr = TCONST((condition) > 0);			\
+	    }								\
+	    NEXT_INST_F(0, (cleanup), 1);				\
+	}								\
+    } while (0)
+#define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
+    do {								\
+	pc += (pcAdjustment);						\
+	switch (*pc) {							\
+	case INST_JUMP_FALSE1:						\
+	    NEXT_INST_V(((condition)? 2 : TclGetInt1AtPtr(pc+1)), (cleanup), 0); \
+	case INST_JUMP_TRUE1:						\
+	    NEXT_INST_V(((condition)? TclGetInt1AtPtr(pc+1) : 2), (cleanup), 0); \
+	case INST_JUMP_FALSE4:						\
+	    NEXT_INST_V(((condition)? 5 : TclGetInt4AtPtr(pc+1)), (cleanup), 0); \
+	case INST_JUMP_TRUE4:						\
+	    NEXT_INST_V(((condition)? TclGetInt4AtPtr(pc+1) : 5), (cleanup), 0); \
+	default:							\
+	    if ((condition) < 0) {					\
+		TclNewIntObj(objResultPtr, -1);				\
+	    } else {							\
+		objResultPtr = TCONST((condition) > 0);			\
+	    }								\
+	    NEXT_INST_V(0, (cleanup), 1);				\
+	}								\
+    } while (0)
+#else /* TCL_COMPILE_DEBUG */
+#define JUMP_PEEPHOLE_F(condition, pcAdjustment, cleanup) \
+    do{									\
+	if ((condition) < 0) {						\
+	    TclNewIntObj(objResultPtr, -1);				\
+	} else {							\
+	    objResultPtr = TCONST((condition) > 0);			\
+	}								\
+	NEXT_INST_F((pcAdjustment), (cleanup), 1);			\
+    } while (0)
+#define JUMP_PEEPHOLE_V(condition, pcAdjustment, cleanup) \
+    do{									\
+	if ((condition) < 0) {						\
+	    TclNewIntObj(objResultPtr, -1);				\
+	} else {							\
+	    objResultPtr = TCONST((condition) > 0);			\
+	}								\
+	NEXT_INST_V((pcAdjustment), (cleanup), 1);			\
+    } while (0)
+#endif
+
 /*
  * Macros used to cache often-referenced Tcl evaluation stack information
  * in local variables. Note that a DECACHE_STACK_INFO()-CACHE_STACK_INFO()
@@ -3813,22 +3877,8 @@ TEBCresume(
     afterExistsPeephole: {
 	int found = (varPtr && !TclIsVarUndefined(varPtr));
 
-	pc += pcAdjustment;
-#ifndef TCL_COMPILE_DEBUG
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_V((found? 2 : TclGetInt1AtPtr(pc+1)), cleanup, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_V((found? TclGetInt1AtPtr(pc+1) : 2), cleanup, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_V((found? 5 : TclGetInt4AtPtr(pc+1)), cleanup, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_V((found? TclGetInt4AtPtr(pc+1) : 5), cleanup, 0);
-	}
-#endif
-	objResultPtr = TCONST(found ? 1 : 0);
-	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-	NEXT_INST_V(0, cleanup, 1);
+	TRACE_APPEND(("%d\n", found ? 1 : 0));
+	JUMP_PEEPHOLE_V(found, pcAdjustment, cleanup);
     }
 
     /*
@@ -4820,21 +4870,7 @@ TEBCresume(
 	 * for branching.
 	 */
 
-	pc++;
-#ifndef TCL_COMPILE_DEBUG
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((match ? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((match ? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((match ? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((match ? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
-	}
-#endif
-	objResultPtr = TCONST(match);
-	NEXT_INST_F(0, 2, 1);
+	JUMP_PEEPHOLE_F(match, 1, 2);
 
     case INST_LIST_CONCAT:
 	value2Ptr = OBJ_AT_TOS;
@@ -4988,27 +5024,10 @@ TEBCresume(
 	    }
 	}
 
-#ifndef TCL_COMPILE_DEBUG
-	switch (*(pc+1)) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((match? 3 : TclGetInt1AtPtr(pc+2)+1), 2, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((match? TclGetInt1AtPtr(pc+2)+1 : 3), 2, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((match? 6 : TclGetInt4AtPtr(pc+2)+1), 2, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((match? TclGetInt4AtPtr(pc+2)+1 : 6), 2, 0);
-	}
-#endif
+	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr), O2S(value2Ptr),
+		(match < 0 ? -1 : match > 0 : 1 : 0)));
 
-	if (match < 0) {
-	    TclNewIntObj(objResultPtr, -1);
-	} else {
-	    objResultPtr = TCONST(match > 0);
-	}
-	TRACE(("%.20s %.20s => %s\n", O2S(valuePtr), O2S(value2Ptr),
-		O2S(objResultPtr)));
-	NEXT_INST_F(1, 2, 1);
+	JUMP_PEEPHOLE_F(match, 1, 2);
 
     case INST_STR_LEN:
 	valuePtr = OBJ_AT_TOS;
@@ -5268,21 +5287,7 @@ TEBCresume(
 	 * Peep-hole optimisation: if you're about to jump, do jump from here.
 	 */
 
-	pc += 2;
-#ifndef TCL_COMPILE_DEBUG
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((match? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((match? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((match? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((match? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
-	}
-#endif
-	objResultPtr = TCONST(match);
-	NEXT_INST_F(0, 2, 1);
+	JUMP_PEEPHOLE_F(match, 2, 2);
 
     case INST_REGEXP:
 	cflags = TclGetInt1AtPtr(pc+1); /* RE compile flages like NOCASE */
@@ -5321,21 +5326,7 @@ TEBCresume(
 	 * Adjustment is 2 due to the nocase byte.
 	 */
 
-	pc += 2;
-#ifndef TCL_COMPILE_DEBUG
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((match? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((match? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((match? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((match? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
-	}
-#endif
-	objResultPtr = TCONST(match);
-	NEXT_INST_F(0, 2, 1);
+	JUMP_PEEPHOLE_F(match, 2, 2);
     }
 
     /*
@@ -5433,21 +5424,7 @@ TEBCresume(
 	 */
 
     foundResult:
-	pc++;
-#ifndef TCL_COMPILE_DEBUG
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((iResult? 2 : TclGetInt1AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((iResult? TclGetInt1AtPtr(pc+1) : 2), 2, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((iResult? 5 : TclGetInt4AtPtr(pc+1)), 2, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((iResult? TclGetInt4AtPtr(pc+1) : 5), 2, 0);
-	}
-#endif
-	objResultPtr = TCONST(iResult);
-	NEXT_INST_F(0, 2, 1);
+	JUMP_PEEPHOLE_F(iResult, 1, 2);
     }
 
     case INST_MOD:
@@ -6535,7 +6512,8 @@ TEBCresume(
 	    found = 0;
 	}
     afterDictExists:
-#ifndef TCL_COMPILE_DEBUG
+	TRACE_APPEND(("%d\n", found));
+
 	/*
 	 * The INST_DICT_EXISTS instruction is usually followed by a
 	 * conditional jump, so we can take advantage of this to do some
@@ -6543,24 +6521,7 @@ TEBCresume(
 	 * someone doing something else).
 	 */
 
-	pc += 5;
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_V((found ? 2 : TclGetInt1AtPtr(pc+1)), opnd+1, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_V((found ? 5 : TclGetInt4AtPtr(pc+1)), opnd+1, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_V((found ? TclGetInt1AtPtr(pc+1) : 2), opnd+1, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_V((found ? TclGetInt4AtPtr(pc+1) : 5), opnd+1, 0);
-	default:
-	    pc -= 5;
-	    /* fall through to non-debug handling */
-	}
-#endif
-	TRACE_APPEND(("%d\n", found));
-	objResultPtr = TCONST(found);
-	NEXT_INST_V(5, opnd+1, 1);
+	JUMP_PEEPHOLE_V(found, 5, opnd+1);
     }
 
     case INST_DICT_SET:
@@ -6851,8 +6812,9 @@ TEBCresume(
 	    PUSH_OBJECT(valuePtr);
 	    PUSH_OBJECT(keyPtr);
 	}
+	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
 
-#ifndef TCL_COMPILE_DEBUG
 	/*
 	 * The INST_DICT_FIRST and INST_DICT_NEXT instructsions are always
 	 * followed by a conditional jump, so we can take advantage of this to
@@ -6860,27 +6822,7 @@ TEBCresume(
 	 * out someone doing something else).
 	 */
 
-	pc += 5;
-	switch (*pc) {
-	case INST_JUMP_FALSE1:
-	    NEXT_INST_F((done ? 2 : TclGetInt1AtPtr(pc+1)), 0, 0);
-	case INST_JUMP_FALSE4:
-	    NEXT_INST_F((done ? 5 : TclGetInt4AtPtr(pc+1)), 0, 0);
-	case INST_JUMP_TRUE1:
-	    NEXT_INST_F((done ? TclGetInt1AtPtr(pc+1) : 2), 0, 0);
-	case INST_JUMP_TRUE4:
-	    NEXT_INST_F((done ? TclGetInt4AtPtr(pc+1) : 5), 0, 0);
-	default:
-	    pc -= 5;
-	    /* fall through to non-debug handling */
-	}
-#endif
-
-	TRACE_APPEND(("\"%.30s\" \"%.30s\" %d\n",
-		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), done));
-	objResultPtr = TCONST(done);
-	/* TODO: consider opt like INST_FOREACH_STEP4 */
-	NEXT_INST_F(5, 0, 1);
+	JUMP_PEEPHOLE_F(done, 5, 0);
 
     case INST_DICT_UPDATE_START:
 	opnd = TclGetUInt4AtPtr(pc+1);
