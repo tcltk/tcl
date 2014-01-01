@@ -4983,6 +4983,20 @@ TEBCresume(
 		break;
 	    }
 	}
+
+#ifndef TCL_COMPILE_DEBUG
+	switch (*(pc+1)) {
+	case INST_JUMP_FALSE1:
+	    NEXT_INST_F((match? 3 : TclGetInt1AtPtr(pc+2)+1), 2, 0);
+	case INST_JUMP_TRUE1:
+	    NEXT_INST_F((match? TclGetInt1AtPtr(pc+2)+1 : 3), 2, 0);
+	case INST_JUMP_FALSE4:
+	    NEXT_INST_F((match? 6 : TclGetInt4AtPtr(pc+2)+1), 2, 0);
+	case INST_JUMP_TRUE4:
+	    NEXT_INST_F((match? TclGetInt4AtPtr(pc+2)+1 : 6), 2, 0);
+	}
+#endif
+
 	if (match < 0) {
 	    TclNewIntObj(objResultPtr, -1);
 	} else {
