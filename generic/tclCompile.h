@@ -1169,6 +1169,21 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	(envPtr)->currStackDepth += (delta);				\
     } while (0)
 
+#define TclGetStackDepth(envPtr)		\
+    ((envPtr)->currStackDepth)
+
+#define TclSetStackDepth(depth, envPtr)		\
+    (envPtr)->currStackDepth = (depth)
+
+#define TclCheckStackDepth(depth, envPtr)				\
+    do {								\
+	int dd = (depth);						\
+	if (dd != (envPtr)->currStackDepth) {				\
+	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
+		    (envPtr)->currStackDepth, dd);		\
+	}								\
+    } while (0)
+
 /*
  * Macro used to update the stack requirements. It is called by the macros
  * TclEmitOpCode, TclEmitInst1 and TclEmitInst4.
@@ -1306,6 +1321,18 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	} else {						 \
 	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
 	}							 \
+    } while (0)
+
+/*
+ * If the expr compiler finished with TRY_CONVERT, macro to remove it when the
+ * job is done by the following instruction.
+ */
+
+#define TclClearNumConversion(envPtr) \
+    do {								\
+	if (*(envPtr->codeNext - 1) == INST_TRY_CVT_TO_NUMERIC) {	\
+	    envPtr->codeNext--;						\
+	}								\
     } while (0)
 
 /*
