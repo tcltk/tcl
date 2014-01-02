@@ -751,6 +751,8 @@ typedef struct ByteCode {
 #define INST_INFO_LEVEL_NUM		152
 #define INST_INFO_LEVEL_ARGS		153
 #define INST_RESOLVE_COMMAND		154
+
+/* For compilation relating to TclOO */
 #define INST_TCLOO_SELF			155
 #define INST_TCLOO_CLASS		156
 #define INST_TCLOO_NS			157
@@ -788,8 +790,10 @@ typedef struct ByteCode {
 
 #define INST_ORIGIN_COMMAND		178
 
+#define INST_TCLOO_NEXT			179
+
 /* The last opcode */
-#define LAST_INST_OPCODE		178
+#define LAST_INST_OPCODE		179
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
