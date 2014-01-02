@@ -435,56 +435,59 @@ TclCompileStringIsCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    int numWords = parsePtr->numWords;
-    enum IsType {
-	TypeBool, TypeBoolFalse, TypeBoolTrue,
-	TypeFloat,
-	TypeInteger, TypeNarrowInt, TypeWideInt,
-	TypeList /*, TypeDict */
+    static const char *const isClasses[] = {
+	"alnum",	"alpha",	"ascii",	"control",
+	"boolean",	"digit",	"double",	"entier",
+	"false",	"graph",	"integer",	"list",
+	"lower",	"print",	"punct",	"space",
+	"true",		"upper",	"wideinteger",	"wordchar",
+	"xdigit",	NULL
     };
-    enum IsType t;
+    enum isClasses {
+	STR_IS_ALNUM,	STR_IS_ALPHA,	STR_IS_ASCII,	STR_IS_CONTROL,
+	STR_IS_BOOL,	STR_IS_DIGIT,	STR_IS_DOUBLE,	STR_IS_ENTIER,
+	STR_IS_FALSE,	STR_IS_GRAPH,	STR_IS_INT,	STR_IS_LIST,
+	STR_IS_LOWER,	STR_IS_PRINT,	STR_IS_PUNCT,	STR_IS_SPACE,
+	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,	STR_IS_WORD,
+	STR_IS_XDIGIT
+    };
     JumpFixup jumpFixup;
-    int start, range;
-    int allowEmpty = 0;
+    int t, range, allowEmpty = 0;
+    Tcl_Obj *isClass;
 
-    if (numWords < 2 || tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
     }
-#define GotLiteral(tokenPtr,word) \
-    ((tokenPtr)[1].size > 1 && (tokenPtr)[1].start[0] == word[0] &&	\
-	    strncmp((tokenPtr)[1].start, (word), (tokenPtr)[1].size) == 0)
+    isClass = Tcl_NewObj();
+    if (!TclWordKnownAtCompileTime(tokenPtr, isClass)) {
+	Tcl_DecrRefCount(isClass);
+	return TCL_ERROR;
+    } else if (Tcl_GetIndexFromObj(interp, isClass, isClasses, "class", 0,
+	    &t) != TCL_OK) {
+	Tcl_DecrRefCount(isClass);
+	TclCompileSyntaxError(interp, envPtr);
+	return TCL_OK;
+    }
+    Tcl_DecrRefCount(isClass);
 
-    if (GotLiteral(tokenPtr, "boolean")) {
-	t = TypeBool;
-    } else if (GotLiteral(tokenPtr, "double")) {
-	t = TypeFloat;
-    } else if (GotLiteral(tokenPtr, "entier")) {
-	t = TypeInteger;
-    } else if (GotLiteral(tokenPtr, "false")) {
-	t = TypeBoolFalse;
-    } else if (GotLiteral(tokenPtr, "integer")) {
-	t = TypeNarrowInt;
-	return TCL_ERROR; // Not yet implemented
-    } else if (GotLiteral(tokenPtr, "list")) {
-	t = TypeList;
-    } else if (GotLiteral(tokenPtr, "true")) {
-	t = TypeBoolTrue;
-    } else if (GotLiteral(tokenPtr, "wideinteger")) {
-	t = TypeWideInt;
-	return TCL_ERROR; // Not yet implemented
-    } else {
-	/*
-	 * We don't handle character class checks in bytecode currently.
-	 */
+#define GotLiteral(tokenPtr, word) \
+    ((tokenPtr)->type == TCL_TOKEN_SIMPLE_WORD &&			\
+     (tokenPtr)[1].size > 1 &&						\
+     (tokenPtr)[1].start[0] == word[0] &&				\
+     strncmp((tokenPtr)[1].start, (word), (tokenPtr)[1].size) == 0)
 
+    /*
+     * Cannot handle the -failindex option at all, and that's the only legal
+     * way to have more than 4 arguments.
+     */
+
+    if (parsePtr->numWords != 3 && parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
-    if (numWords != 3 && numWords != 4) {
-	return TCL_ERROR;
-    }
+
     tokenPtr = TokenAfter(tokenPtr);
-    if (numWords == 3) {
-	allowEmpty = (t != TypeList);
+    if (parsePtr->numWords == 3) {
+	allowEmpty = (t != STR_IS_LIST);
     } else {
 	if (!GotLiteral(tokenPtr, "-strict")) {
 	    return TCL_ERROR;
@@ -494,18 +497,47 @@ TclCompileStringIsCmd(
 #undef GotLiteral
 
     /*
+     * Some types are not currently handled. Character classes are a prime
+     * example of this.
+     */
+
+    switch (t) {
+    case STR_IS_ALNUM:
+    case STR_IS_ALPHA:
+    case STR_IS_ASCII:
+    case STR_IS_CONTROL:
+    case STR_IS_DIGIT:
+    case STR_IS_GRAPH:
+    case STR_IS_LOWER:
+    case STR_IS_PRINT:
+    case STR_IS_PUNCT:
+    case STR_IS_SPACE:
+    case STR_IS_UPPER:
+    case STR_IS_WORD:
+    case STR_IS_XDIGIT:
+	return TCL_ERROR;
+
+    case STR_IS_BOOL:
+    case STR_IS_FALSE:
+    case STR_IS_INT:
+    case STR_IS_TRUE:
+    case STR_IS_WIDE:
+	/* Not yet implemented */
+	return TCL_ERROR;
+    }
+
+    /*
      * Push the word to check.
      */
 
-    CompileWord(envPtr, tokenPtr, interp, numWords-1);
+    CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
 
     /*
      * Next, do the type check. First, we push a catch range; most of the
      * type-check operations throw an exception on failure.
      */
 
-    range = DeclareExceptionRange(envPtr, CATCH_EXCEPTION_RANGE);
-    start = 0;
+    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
     TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
     ExceptionRangeStarts(envPtr, range);
 
@@ -514,22 +546,7 @@ TclCompileStringIsCmd(
      */
 
     switch (t) {
-    case TypeBool:
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_LNOT,			envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
-	break;
-    case TypeBoolFalse:
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	start = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
-	break;
-    case TypeBoolTrue:
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	start = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
-	break;
-    case TypeFloat:
+    case STR_IS_DOUBLE:
 	/*
 	 * Careful! Preserve behavior of NaN which is a double (that is, true
 	 * for the purposes of a type check) but most math ops fail on it. The
@@ -550,16 +567,12 @@ TclCompileStringIsCmd(
 	TclEmitOpcode(		INST_UMINUS,			envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	break;
-    case TypeInteger:
+    case STR_IS_ENTIER:
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_BITNOT,			envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	break;
-    case TypeNarrowInt:
-	Tcl_Panic("not yet implemented");
-    case TypeWideInt:
-	Tcl_Panic("not yet implemented");
-    case TypeList:
+    case STR_IS_LIST:
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
@@ -579,10 +592,6 @@ TclCompileStringIsCmd(
     PushLiteral(envPtr, "1", 1);
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
     ExceptionRangeTarget(envPtr, range, catchOffset);
-    if (start != 0) {
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - start,
-		envPtr->codeStart + start + 1);
-    }
     TclEmitOpcode(		INST_END_CATCH,			envPtr);
     if (allowEmpty) {
 	PushLiteral(envPtr, "", 0);
