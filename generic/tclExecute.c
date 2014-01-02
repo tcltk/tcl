@@ -2799,7 +2799,7 @@ TEBCresume(
 	objPtr->internalRep.ptrAndLongRep.value = CURR_DEPTH;
 	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
-	TRACE(("=> mark depth as %d\n", CURR_DEPTH));
+	TRACE(("=> mark depth as %d\n", (int) CURR_DEPTH));
 	NEXT_INST_F(1, 0, 0);
 
     case INST_EXPAND_DROP:
@@ -5075,7 +5075,7 @@ TEBCresume(
 	}
 
 	TRACE(("\"%.20s\" \"%.20s\" => %d\n", O2S(valuePtr), O2S(value2Ptr),
-		(match < 0 ? -1 : match > 0 : 1 : 0)));
+		(match < 0 ? -1 : match > 0 ? 1 : 0)));
 	JUMP_PEEPHOLE_F(match, 1, 2);
 
     case INST_STR_LEN:
@@ -6495,8 +6495,8 @@ TEBCresume(
 		listTmpIndex++;
 	    }
 	}
-	TRACE_APPEND(("%d lists, iter %d, %s loop\n", opnd, numLists,
-		iterNum, (continueLoop? "continue" : "exit")));
+	TRACE_APPEND(("%d lists, iter %d, %s loop\n",
+		numLists, iterNum, (continueLoop? "continue" : "exit")));
 
 	/*
 	 * Run-time peep-hole optimisation: the compiler ALWAYS follows
