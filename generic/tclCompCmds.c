@@ -1465,7 +1465,7 @@ CompileDictEachCmd(
     TclEmitOpcode(	INST_POP,				envPtr);
     ExceptionRangeTarget(envPtr, loopRange, breakOffset);
     TclFinalizeLoopExceptionRange(envPtr, loopRange);
-    //TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    TclEmitOpcode(	INST_END_CATCH,				envPtr);
 
     /*
      * Final stage of the command (normal case) is that we push an empty
