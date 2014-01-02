@@ -6244,7 +6244,7 @@ TEBCresume(
 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
 	    if (TclListObjLength(interp, listPtr, &listLen) != TCL_OK) {
 		TRACE_APPEND(("ERROR converting list %ld, \"%s\": %s",
-			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp)));
+			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
