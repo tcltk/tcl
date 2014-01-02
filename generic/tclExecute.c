@@ -2799,7 +2799,7 @@ TEBCresume(
 	objPtr->internalRep.ptrAndLongRep.value = CURR_DEPTH;
 	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
-	TRACE(("=> mark depth as %d\n", CURR_DEPTH));
+	TRACE(("=> mark depth as %d\n", (int) CURR_DEPTH));
 	NEXT_INST_F(1, 0, 0);
 
     case INST_EXPAND_DROP:
@@ -4549,13 +4549,16 @@ TEBCresume(
     case INST_TCLOO_NEXT:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	framePtr = iPtr->varFramePtr;
+	TRACE(("%d => ", opnd));
 	if (framePtr == NULL ||
 		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
-	    TRACE(("%d => ERROR: no TclOO call context\n", opnd));
+	    TRACE_APPEND(("ERROR: no TclOO call context\n"));
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "next may only be called from inside a method",
 		    -1));
+	    DECACHE_STACK_INFO();
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 	contextPtr = framePtr->clientData;
@@ -4564,31 +4567,22 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	    int cmd;
+	    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
+		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+			codePtr, bcFramePtr, cmd, pc - codePtr->codeStart);
+	    }
 	}
 
 	pcAdjustment = 2;
 	cleanup = opnd;
 	DECACHE_STACK_INFO();
-
-	/*
-	 * BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG BUG
-	 *
-	 * Bug somewhere near here. The iPtr->varFramePtr must be updated as
-	 * below, but TclOONextRestoreFrame (in tclOOBasic.c) seems to be
-	 * unable to restore the frame upon return...
-	 *
-	 * If TclOONextRestoreFrame is wrong for use here (and it might be!)
-	 * it should be copied to this file and adjusted afterwards. It is
-	 * *correct* for its other uses.
-	 */
-
 	iPtr->varFramePtr = framePtr->callerVarPtr;
-	TclNRAddCallback(interp, TclOONextRestoreFrame, framePtr,
-		NULL, NULL, NULL);
 	pc += pcAdjustment;
 	TEBC_YIELD();
+	TclNRAddCallback(interp, TclOONextRestoreFrame, framePtr,
+		NULL, NULL, NULL);
+	/* TODO: consider merging another layer of processing */
 	return TclNRObjectContextInvokeNext(interp,
 		(Tcl_ObjectContext) contextPtr, opnd, &OBJ_AT_DEPTH(opnd-1), 1);
     }
@@ -5130,7 +5124,7 @@ TEBCresume(
 	}
 
 	TRACE(("\"%.20s\" \"%.20s\" => %d\n", O2S(valuePtr), O2S(value2Ptr),
-		(match < 0 ? -1 : match > 0 : 1 : 0)));
+		(match < 0 ? -1 : match > 0 ? 1 : 0)));
 	JUMP_PEEPHOLE_F(match, 1, 2);
 
     case INST_STR_LEN:
@@ -6550,8 +6544,8 @@ TEBCresume(
 		listTmpIndex++;
 	    }
 	}
-	TRACE_APPEND(("%d lists, iter %d, %s loop\n", opnd, numLists,
-		iterNum, (continueLoop? "continue" : "exit")));
+	TRACE_APPEND(("%d lists, iter %d, %s loop\n",
+		numLists, iterNum, (continueLoop? "continue" : "exit")));
 
 	/*
 	 * Run-time peep-hole optimisation: the compiler ALWAYS follows
@@ -6599,7 +6593,7 @@ TEBCresume(
 	    listPtr = OBJ_AT_DEPTH(listTmpDepth);
 	    if (TclListObjLength(interp, listPtr, &listLen) != TCL_OK) {
 		TRACE_APPEND(("ERROR converting list %ld, \"%s\": %s",
-			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp)));
+			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
 		goto gotError;
 	    }
 	    if (Tcl_IsShared(listPtr)) {
