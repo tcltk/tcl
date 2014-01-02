@@ -3161,6 +3161,41 @@ IndexTailVarIfKnown(
     return localIndex;
 }
 
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclCompileObjectNextCmd, TclCompileObjectSelfCmd --
+ *
+ *	Compilations of the TclOO utility commands [next] and [self].
+ *
+ * ----------------------------------------------------------------------
+ */
+
+int
+TclCompileObjectNextCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = parsePtr->tokenPtr;
+    int i;
+
+    if (parsePtr->numWords > 255) {
+	return TCL_ERROR;
+    }
+
+    for (i=0 ; i<parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    TclEmitInstInt1(	INST_TCLOO_NEXT, i,		envPtr);
+    return TCL_OK;
+}
+
 int
 TclCompileObjectSelfCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
