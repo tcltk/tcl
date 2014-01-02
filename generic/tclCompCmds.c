@@ -1465,7 +1465,7 @@ CompileDictEachCmd(
     TclEmitOpcode(	INST_POP,				envPtr);
     ExceptionRangeTarget(envPtr, loopRange, breakOffset);
     TclFinalizeLoopExceptionRange(envPtr, loopRange);
-    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    //TclEmitOpcode(	INST_END_CATCH,				envPtr);
 
     /*
      * Final stage of the command (normal case) is that we push an empty
@@ -2284,10 +2284,7 @@ TclCompileForCmd(
      * jump type modification) and set where the exceptions target.
      */
 
-    envPtr->exceptArrayPtr[bodyRange].codeOffset = bodyCodeOffset;
     envPtr->exceptArrayPtr[bodyRange].continueOffset = nextCodeOffset;
-
-    envPtr->exceptArrayPtr[nextRange].codeOffset = nextCodeOffset;
 
     ExceptionRangeTarget(envPtr, bodyRange, breakOffset);
     ExceptionRangeTarget(envPtr, nextRange, breakOffset);
