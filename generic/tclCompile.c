@@ -493,6 +493,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * qualified version, or produces the empty string if no such command
 	 * exists. Never generates errors.
 	 * Stack:  ... cmdName => ... fullCmdName */
+
     {"tclooSelf",	 1,	+1,	  0,	{OPERAND_NONE}},
 	/* Push the identity of the current TclOO object (i.e., the name of
 	 * its current public access command) on the stack. */
@@ -615,6 +616,10 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Reports which command was the origin (via namespace import chain)
 	 * of the command named on the top of the stack.
 	 * Stack:  ... cmdName => ... fullOriginalCmdName */
+
+    {"tclooNext",	 2,	INT_MIN,  1,	{OPERAND_UINT1}},
+	/* Push the identity of the current TclOO object (i.e., the name of
+	 * its current public access command) on the stack. */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
