@@ -1195,6 +1195,7 @@ tclLoadDld.o: $(UNIX_DIR)/tclLoadDld.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDld.c
 
 tclLoadDyld.o: $(UNIX_DIR)/tclLoadDyld.c
+	@echo Warnings are expected from compiling tclLoadDyld.c: deprecated API use
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDyld.c
 
 tclLoadNone.o: $(GENERIC_DIR)/tclLoadNone.c
