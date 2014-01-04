@@ -2330,7 +2330,7 @@ TEBCresume(
 	    }
 	}
 
-	if (TclCanceled(iPtr)) {
+	if (0 && TclCanceled(iPtr)) {
 	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 		CACHE_STACK_INFO();
 		goto gotError;
@@ -7239,7 +7239,7 @@ TEBCresume(
 	 * already be set prior to vectoring down to this point in the code.
 	 */
 
-	if (TclCanceled(iPtr) && (Tcl_Canceled(interp, 0) == TCL_ERROR)) {
+	if (0 && TclCanceled(iPtr) && (Tcl_Canceled(interp, 0) == TCL_ERROR)) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... cancel with unwind, returning %s\n",
