@@ -278,7 +278,7 @@ TclCompileArraySetCmd(
 
     if (isDataValid && !isDataEven) {
 	PushStringLiteral(envPtr, "list must have an even number of elements");
-	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
+	PushStringLiteral(envPtr, "-errorcode {TCL ARGUMENT FORMAT}");
 	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	goto done;
@@ -375,7 +375,7 @@ TclCompileArraySetCmd(
 	TclEmitOpcode(	INST_BITAND,				envPtr);
 	TclEmitForwardJump(envPtr, JUMP_FALSE, &offsetFwd);
 	PushStringLiteral(envPtr, "list must have an even number of elements");
-	PushStringLiteral(envPtr, "-errorCode {TCL ARGUMENT FORMAT}");
+	PushStringLiteral(envPtr, "-errorcode {TCL ARGUMENT FORMAT}");
 	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	TclAdjustStackDepth(-1, envPtr);
