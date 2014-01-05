@@ -1996,6 +1996,41 @@ TclIncrObj(
 /*
  *----------------------------------------------------------------------
  *
+ * ArgumentBCEnter --
+ *
+ *	This is a helper for TclNRExecuteByteCode/TEBCresume that encapsulates
+ *	a code sequence that is fairly common in the code but *not* commonly
+ *	called.
+ *
+ * Results:
+ *	None
+ *
+ * Side effects:
+ *	May register information about the bytecode in the command frame.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ArgumentBCEnter(
+    Tcl_Interp *interp,
+    ByteCode *codePtr,
+    TEBCdata *tdPtr,
+    const unsigned char *pc,
+    int objc,
+    Tcl_Obj **objv)
+{
+    int cmd;
+
+    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
+	TclArgumentBCEnter(interp, objv, objc, codePtr, &tdPtr->cmdFrame, cmd,
+		pc - codePtr->codeStart);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclNRExecuteByteCode --
  *
  *	This procedure executes the instructions of a ByteCode structure. It
@@ -2205,7 +2240,7 @@ TEBCresume(
 	}
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
+	    TclArgumentBCRelease(interp, bcFramePtr);
 	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
@@ -2487,11 +2522,7 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    int cmd;
-	    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
-		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-			codePtr, bcFramePtr, cmd, pc - codePtr->codeStart);
-	    }
+	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
 
 	pc++;
@@ -2961,11 +2992,7 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    int cmd;
-	    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
-		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-			codePtr, bcFramePtr, cmd, pc - codePtr->codeStart);
-	    }
+	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
 
 	DECACHE_STACK_INFO();
@@ -3110,11 +3137,7 @@ TEBCresume(
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    int cmd;
-	    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
-		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-			codePtr, bcFramePtr, cmd, pc - codePtr->codeStart);
-	    }
+	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
 	iPtr->ensembleRewrite.sourceObjs = objv;
 	iPtr->ensembleRewrite.numRemovedObjs = opnd;
@@ -4559,11 +4582,7 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    int cmd;
-	    if (GetSrcInfoForPc(pc, codePtr, NULL, NULL, &cmd)) {
-		TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-			codePtr, bcFramePtr, cmd, pc - codePtr->codeStart);
-	    }
+	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
 
 	pcAdjustment = 2;
