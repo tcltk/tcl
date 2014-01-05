@@ -174,28 +174,24 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
 typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
-    const unsigned char *pc;	/* These fields are used on return TO this */
-    ptrdiff_t *catchTop;	/* this level: they record the state when a */
-    int cleanup;		/* new codePtr was received for NR */
-    Tcl_Obj *auxObjList;	/* execution. */
-    CmdFrame cmdFrame;
+    ptrdiff_t *catchTop;	/* These fields are used on return TO this */
+    Tcl_Obj *auxObjList;	/* this level: they record the state when a */
+    CmdFrame cmdFrame;		/* new codePtr was received for NR */
+                                /* execution. */
     void *stack[1];		/* Start of the actual combined catch and obj
 				 * stacks; the struct will be expanded as
 				 * necessary */
 } TEBCdata;
 
 #define TEBC_YIELD() \
-    do {								\
-	esPtr->tosPtr = tosPtr;						\
-	TD->pc = pc;							\
-	TD->cleanup = cleanup;						\
-	TclNRAddCallback(interp, TEBCresume, TD, INT2PTR(1), NULL, NULL); \
+    do {						\
+	esPtr->tosPtr = tosPtr;				\
+	TclNRAddCallback(interp, TEBCresume,		\
+		TD, pc, INT2PTR(cleanup), NULL);	\
     } while (0)
 
 #define TEBC_DATA_DIG() \
     do {					\
-	pc = TD->pc;				\
-	cleanup = TD->cleanup;			\
 	tosPtr = esPtr->tosPtr;			\
     } while (0)
 
@@ -2032,10 +2028,6 @@ TclNRExecuteByteCode(
 		* sizeof(void *);
     int numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
 
-    if (iPtr->execEnvPtr->rewind) {
-	return TCL_ERROR;
-    }
-
     codePtr->refCount++;
 
     /*
@@ -2054,9 +2046,7 @@ TclNRExecuteByteCode(
     esPtr->tosPtr = initTosPtr;
 
     TD->codePtr     = codePtr;
-    TD->pc	    = codePtr->codeStart;
     TD->catchTop    = initCatchTop;
-    TD->cleanup     = 0;
     TD->auxObjList  = NULL;
 
     /*
@@ -2094,8 +2084,8 @@ TclNRExecuteByteCode(
     }
 #endif
 
-    TclNRAddCallback(interp, TEBCresume, TD, /*resume*/ INT2PTR(0),
-	    NULL, NULL);
+    TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
+	    /* cleanup */ INT2PTR(0), NULL);
     return TCL_OK;
 }
 
@@ -2158,7 +2148,8 @@ TEBCresume(
 
     Tcl_Obj **tosPtr;		/* Cached pointer to top of evaluation
 				 * stack. */
-    const unsigned char *pc;	/* The current program counter. */
+    const unsigned char *pc = data[1];
+                                /* The current program counter. */
     unsigned char inst;         /* The currently running instruction */
     
     /*
@@ -2166,7 +2157,7 @@ TEBCresume(
      * executing an instruction.
      */
 
-    int cleanup = 0;
+    int cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
     int checkInterp;            /* Indicates when a check of interp readyness
 				 * is necessary. Set by CACHE_STACK_INFO() */
@@ -2193,9 +2184,10 @@ TEBCresume(
 
     TEBC_DATA_DIG();
 
-    if (!data[1]) {
+    if (!pc) {
 	/* bytecode is starting from scratch */
 	checkInterp = 0;
+	pc = codePtr->codeStart;
 	goto cleanup0;
     } else {
         /* resume from invocation */
