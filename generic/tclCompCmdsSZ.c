@@ -17,6 +17,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclStringTrim.h"
 
 /*
  * Prototypes for procedures defined later in this file:
@@ -101,6 +102,59 @@ const AuxDataType tclJumptableInfoType = {
     if ((idx)<256) {OP1(STORE_SCALAR1,(idx));} else {OP4(STORE_SCALAR4,(idx));}
 #define INVOKE(name) \
     TclEmitInvoke(envPtr,INST_##name)
+
+#define INDEX_END	(-2)
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetIndexFromToken --
+ *
+ *	Parse a token and get the encoded version of the index (as understood
+ *	by TEBC), assuming it is at all knowable at compile time. Only handles
+ *	indices that are integers or 'end' or 'end-integer'.
+ *
+ * Returns:
+ *	TCL_OK if parsing succeeded, and TCL_ERROR if it failed.
+ *
+ * Side effects:
+ *	Sets *index to the index value if successful.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static inline int
+GetIndexFromToken(
+    Tcl_Token *tokenPtr,
+    int *index)
+{
+    Tcl_Obj *tmpObj = Tcl_NewObj();
+    int result, idx;
+
+    if (!TclWordKnownAtCompileTime(tokenPtr, tmpObj)) {
+	Tcl_DecrRefCount(tmpObj);
+	return TCL_ERROR;
+    }
+
+    result = TclGetIntFromObj(NULL, tmpObj, &idx);
+    if (result == TCL_OK) {
+	if (idx < 0) {
+	    result = TCL_ERROR;
+	}
+    } else {
+	result = TclGetIntForIndexM(NULL, tmpObj, INDEX_END, &idx);
+	if (result == TCL_OK && idx > INDEX_END) {
+	    result = TCL_ERROR;
+	}
+    }
+    Tcl_DecrRefCount(tmpObj);
+
+    if (result == TCL_OK) {
+	*index = idx;
+    }
+
+    return result;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -565,8 +619,7 @@ TclCompileStringRangeCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *stringTokenPtr, *fromTokenPtr, *toTokenPtr;
-    Tcl_Obj *tmpObj;
-    int idx1, idx2, result;
+    int idx1, idx2;
 
     if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
@@ -576,50 +629,13 @@ TclCompileStringRangeCmd(
     toTokenPtr = TokenAfter(fromTokenPtr);
 
     /*
-     * Parse the first index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
+     * Parse the two indices.
      */
 
-    tmpObj = Tcl_NewObj();
-    result = TCL_ERROR;
-    if (TclWordKnownAtCompileTime(fromTokenPtr, tmpObj)) {
-	if (TclGetIntFromObj(NULL, tmpObj, &idx1) == TCL_OK) {
-	    if (idx1 >= 0) {
-		result = TCL_OK;
-	    }
-	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx1) == TCL_OK) {
-	    if (idx1 <= -2) {
-		result = TCL_OK;
-	    }
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (GetIndexFromToken(fromTokenPtr, &idx1) != TCL_OK) {
 	goto nonConstantIndices;
     }
-
-    /*
-     * Parse the second index. Will only compile if it is constant and not an
-     * _integer_ less than zero (since we reserve negative indices here for
-     * end-relative indexing).
-     */
-
-    tmpObj = Tcl_NewObj();
-    result = TCL_ERROR;
-    if (TclWordKnownAtCompileTime(toTokenPtr, tmpObj)) {
-	if (TclGetIntFromObj(NULL, tmpObj, &idx2) == TCL_OK) {
-	    if (idx2 >= 0) {
-		result = TCL_OK;
-	    }
-	} else if (TclGetIntForIndexM(NULL, tmpObj, -2, &idx2) == TCL_OK) {
-	    if (idx2 <= -2) {
-		result = TCL_OK;
-	    }
-	}
-    }
-    TclDecrRefCount(tmpObj);
-    if (result != TCL_OK) {
+    if (GetIndexFromToken(toTokenPtr, &idx2) != TCL_OK) {
 	goto nonConstantIndices;
     }
 
@@ -640,6 +656,285 @@ TclCompileStringRangeCmd(
     CompileWord(envPtr, fromTokenPtr,			interp, 2);
     CompileWord(envPtr, toTokenPtr,			interp, 3);
     OP(			STR_RANGE);
+    return TCL_OK;
+}
+
+int
+TclCompileStringReplaceCmd(
+    Tcl_Interp *interp,		/* Tcl interpreter for context. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the
+				 * command. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds the resulting instructions. */
+{
+    Tcl_Token *tokenPtr, *valueTokenPtr, *replacementTokenPtr = NULL;
+    DefineLineInformation;	/* TIP #280 */
+    int idx1, idx2;
+
+    if (parsePtr->numWords < 4 || parsePtr->numWords > 5) {
+	return TCL_ERROR;
+    }
+    valueTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    if (parsePtr->numWords == 5) {
+	tokenPtr = TokenAfter(valueTokenPtr);
+	tokenPtr = TokenAfter(tokenPtr);
+	replacementTokenPtr = TokenAfter(tokenPtr);
+    }
+
+    /*
+     * Parse the indices. Will only compile special cases if both are
+     * constants and not an _integer_ less than zero (since we reserve
+     * negative indices here for end-relative indexing) or an end-based index
+     * greater than 'end' itself.
+     */
+
+    tokenPtr = TokenAfter(valueTokenPtr);
+    if (GetIndexFromToken(tokenPtr, &idx1) != TCL_OK) {
+	goto genericReplace;
+    }
+
+    tokenPtr = TokenAfter(tokenPtr);
+    if (GetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
+	goto genericReplace;
+    }
+
+    /*
+     * We handle these replacements specially: first character (where
+     * idx1=idx2=0) and last character (where idx1=idx2=INDEX_END). Anything
+     * else and the semantics get rather screwy.
+     */
+
+    if (idx1 == 0 && idx2 == 0) {
+	int notEq, end;
+
+	/*
+	 * Just working with the first character.
+	 */
+
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	if (replacementTokenPtr == NULL) {
+	    /* Drop first */
+	    OP44(	STR_RANGE_IMM, 1, INDEX_END);
+	    return TCL_OK;
+	}
+	/* Replace first */
+	CompileWord(envPtr, replacementTokenPtr, interp, 4);
+	OP4(		OVER, 1);
+	PUSH(		"");
+	OP(		STR_EQ);
+	JUMP1(		JUMP_FALSE, notEq);
+	OP(		POP);
+	JUMP1(		JUMP, end);
+	FIXJUMP1(notEq);
+	TclAdjustStackDepth(1, envPtr);
+	OP4(		REVERSE, 2);
+	OP44(		STR_RANGE_IMM, 1, INDEX_END);
+	OP1(		STR_CONCAT1, 2);
+	FIXJUMP1(end);
+	return TCL_OK;
+
+    } else if (idx1 == INDEX_END && idx2 == INDEX_END) {
+	int notEq, end;
+
+	/*
+	 * Just working with the last character.
+	 */
+
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	if (replacementTokenPtr == NULL) {
+	    /* Drop last */
+	    OP44(	STR_RANGE_IMM, 0, INDEX_END-1);
+	    return TCL_OK;
+	}
+	/* Replace last */
+	CompileWord(envPtr, replacementTokenPtr, interp, 4);
+	OP4(		OVER, 1);
+	PUSH(		"");
+	OP(		STR_EQ);
+	JUMP1(		JUMP_FALSE, notEq);
+	OP(		POP);
+	JUMP1(		JUMP, end);
+	FIXJUMP1(notEq);
+	TclAdjustStackDepth(1, envPtr);
+	OP4(		REVERSE, 2);
+	OP44(		STR_RANGE_IMM, 0, INDEX_END-1);
+	OP4(		REVERSE, 2);
+	OP1(		STR_CONCAT1, 2);
+	FIXJUMP1(end);
+	return TCL_OK;
+
+    } else {
+	/*
+	 * Need to process indices at runtime. This could be because the
+	 * indices are not constants, or because we need to resolve them to
+	 * absolute indices to work out if a replacement is going to happen.
+	 * In any case, to runtime it is.
+	 */
+
+    genericReplace:
+	CompileWord(envPtr, valueTokenPtr, interp, 1);
+	tokenPtr = TokenAfter(valueTokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 2);
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr, interp, 3);
+	if (replacementTokenPtr != NULL) {
+	    CompileWord(envPtr, replacementTokenPtr, interp, 4);
+	} else {
+	    PUSH(	"");
+	}
+	OP(		STR_REPLACE);
+	return TCL_OK;
+    }
+}
+
+int
+TclCompileStringTrimLCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr,			interp, 2);
+    } else {
+	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+    }
+    OP(			STR_TRIM_LEFT);
+    return TCL_OK;
+}
+
+int
+TclCompileStringTrimRCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr,			interp, 2);
+    } else {
+	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+    }
+    OP(			STR_TRIM_RIGHT);
+    return TCL_OK;
+}
+
+int
+TclCompileStringTrimCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2 && parsePtr->numWords != 3) {
+	return TCL_ERROR;
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    if (parsePtr->numWords == 3) {
+	tokenPtr = TokenAfter(tokenPtr);
+	CompileWord(envPtr, tokenPtr,			interp, 2);
+    } else {
+	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+    }
+    OP(			STR_TRIM);
+    return TCL_OK;
+}
+
+int
+TclCompileStringToUpperCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2) {
+	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    OP(			STR_UPPER);
+    return TCL_OK;
+}
+
+int
+TclCompileStringToLowerCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2) {
+	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    OP(			STR_LOWER);
+    return TCL_OK;
+}
+
+int
+TclCompileStringToTitleCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr;
+
+    if (parsePtr->numWords != 2) {
+	return TclCompileBasic1To3ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+    }
+
+    tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    CompileWord(envPtr, tokenPtr,			interp, 1);
+    OP(			STR_TITLE);
     return TCL_OK;
 }
 
@@ -749,7 +1044,7 @@ TclSubstCompile(
     /*
      * Tricky point! If the first token does not result in a *guaranteed* push
      * of a Tcl_Obj on the stack, we must push an empty object. Otherwise it
-     * is possible to get to an INST_CONCAT1 or INST_DONE without enough
+     * is possible to get to an INST_STR_CONCAT1 or INST_DONE without enough
      * values on the stack, resulting in a crash. Thanks to Joe Mistachkin for
      * identifying a script that could trigger this case.
      */
@@ -814,11 +1109,11 @@ TclSubstCompile(
 	}
 
 	while (count > 255) {
-	    OP1(		CONCAT1, 255);
+	    OP1(		STR_CONCAT1, 255);
 	    count -= 254;
 	}
 	if (count > 1) {
-	    OP1(		CONCAT1, count);
+	    OP1(		STR_CONCAT1, count);
 	    count = 1;
 	}
 
@@ -941,7 +1236,7 @@ TclSubstCompile(
 		    (int) (CurrentOffset(envPtr) - okFixup.codeOffset));
 	}
 	if (count > 1) {
-	    OP1(CONCAT1, count);
+	    OP1(STR_CONCAT1, count);
 	    count = 1;
 	}
 
@@ -954,11 +1249,11 @@ TclSubstCompile(
     }
 
     while (count > 255) {
-	OP1(	CONCAT1, 255);
+	OP1(	STR_CONCAT1, 255);
 	count -= 254;
     }
     if (count > 1) {
-	OP1(	CONCAT1, count);
+	OP1(	STR_CONCAT1, count);
     }
 
     if (endTokenPtr[-1].type == TCL_TOKEN_ERROR) {
