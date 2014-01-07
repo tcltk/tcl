@@ -14,7 +14,6 @@
 
 #include "tclInt.h"
 #include "tclParse.h"
-#include "tclStringTrim.h"
 #include <math.h>
 
 /*
@@ -1767,6 +1766,13 @@ TclTrimLeft(
  *
  *----------------------------------------------------------------------
  */
+
+/*
+ * The whitespace trimming set used when [concat]enating. This is a subset of
+ * tclDefaultTrimSet, and deliberately so.
+ */
+
+#define CONCAT_TRIM_SET " \f\v\r\t\n"
 
 /* The whitespace characters trimmed during [concat] operations */
 #define CONCAT_WS_SIZE (int) (sizeof(CONCAT_TRIM_SET "") - 1)

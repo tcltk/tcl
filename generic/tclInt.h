@@ -2649,6 +2649,14 @@ MODULE_SCOPE Tcl_ScaleTimeProc *tclScaleTimeProcPtr;
 MODULE_SCOPE ClientData tclTimeClientData;
 
 /*
+ * Default set of characters to trim in [string trim] and friends. This is a
+ * UTF-8 literal string containing all Unicode space characters [TIP #413]
+ */
+
+MODULE_SCOPE const char tclDefaultTrimSet[];
+
+
+/*
  * Variables denoting the Tcl object types defined in the core.
  */
 
