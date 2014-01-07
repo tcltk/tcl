@@ -17,14 +17,11 @@
 #include "tclOOInt.h"
 
 static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
-static int		AfterNRDestructor(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		DecrRefsPostClassConstructor(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeConstruction(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeEval(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	AfterNRDestructor;
+static Tcl_NRPostProc	DecrRefsPostClassConstructor;
+static Tcl_NRPostProc	FinalizeConstruction;
+static Tcl_NRPostProc	FinalizeEval;
+static Tcl_NRPostProc	NextRestoreFrame;
 
 /*
  * ----------------------------------------------------------------------
@@ -806,7 +803,7 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
-    TclNRAddCallback(interp, TclOONextRestoreFrame, framePtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, NextRestoreFrame, framePtr, NULL,NULL,NULL);
     iPtr->varFramePtr = framePtr->callerVarPtr;
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
 }
@@ -875,7 +872,7 @@ TclOONextToObjCmd(
 	     * context. Note that this is like [uplevel 1] and not [eval].
 	     */
 
-	    TclNRAddCallback(interp, TclOONextRestoreFrame, framePtr,
+	    TclNRAddCallback(interp, NextRestoreFrame, framePtr,
 		    contextPtr, INT2PTR(contextPtr->index), NULL);
 	    contextPtr->index = i-1;
 	    iPtr->varFramePtr = framePtr->callerVarPtr;
@@ -905,8 +902,8 @@ TclOONextToObjCmd(
     return TCL_ERROR;
 }
 
-int
-TclOONextRestoreFrame(
+static int
+NextRestoreFrame(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
