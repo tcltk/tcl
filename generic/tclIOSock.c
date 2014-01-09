@@ -139,7 +139,7 @@ int
 TclCreateSocketAddress(
     Tcl_Interp *interp,                 /* Interpreter for querying
 					 * the desired socket family */
-    void **addrlist,		/* Socket address list */
+    struct addrinfo **addrlist,		/* Socket address list */
     const char *host,			/* Host. NULL implies INADDR_ANY */
     int port,				/* Port number */
     int willBind,			/* Is this an address to bind() to or
@@ -213,7 +213,7 @@ TclCreateSocketAddress(
 	hints.ai_flags |= AI_PASSIVE;
     } 
 
-    result = getaddrinfo(native, portstring, &hints, (struct addrinfo **) addrlist);
+    result = getaddrinfo(native, portstring, &hints, addrlist);
 
     if (host != NULL) {
 	Tcl_DStringFree(&ds);
