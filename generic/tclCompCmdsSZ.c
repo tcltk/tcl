@@ -810,7 +810,7 @@ TclCompileStringTrimLCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr,			interp, 2);
     } else {
-	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+	PushLiteral(envPtr, tclDefaultTrimSet, strlen(tclDefaultTrimSet));
     }
     OP(			STR_TRIM_LEFT);
     return TCL_OK;
@@ -838,7 +838,7 @@ TclCompileStringTrimRCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr,			interp, 2);
     } else {
-	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+	PushLiteral(envPtr, tclDefaultTrimSet, strlen(tclDefaultTrimSet));
     }
     OP(			STR_TRIM_RIGHT);
     return TCL_OK;
@@ -866,7 +866,7 @@ TclCompileStringTrimCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr,			interp, 2);
     } else {
-	PushLiteral(envPtr, DEFAULT_TRIM_SET, strlen(DEFAULT_TRIM_SET));
+	PushLiteral(envPtr, tclDefaultTrimSet, strlen(tclDefaultTrimSet));
     }
     OP(			STR_TRIM);
     return TCL_OK;
