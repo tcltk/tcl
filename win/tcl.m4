@@ -247,7 +247,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #
 # Results:
 #
-#	Subst the following vars:
+#	Substitutes the following vars:
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
@@ -523,6 +523,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #		RES
 #
 #		MAKE_LIB
+#		MAKE_STUB_LIB
 #		MAKE_EXE
 #		MAKE_DLL
 #
@@ -634,7 +635,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     if test "${GCC}" = "yes" ; then
 	extra_cflags="-pipe"
-	extra_ldflags="-pipe"
+	extra_ldflags="-pipe -static-libgcc"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_TRY_COMPILE([
@@ -665,7 +666,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    extra_ldflags="$extra_ldflags -municode"
 	else
 	    extra_cflags="$extra_cflags -DTCL_BROKEN_MAINARGS"
-	    extra_ldflags="$extra_ldflags -static-libgcc"
 	fi
     fi
 
@@ -683,6 +683,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	RC_DEFINE=--define
 	RES=res.o
 	MAKE_LIB="\${STLIB_LD} \[$]@"
+	MAKE_STUB_LIB="\${STLIB_LD} \[$]@"
 	POST_MAKE_LIB="\${RANLIB} \[$]@"
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
@@ -710,9 +711,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
-	# -luser32 and -lmsvcrt by default. Make sure CFLAGS is
-	# included so -mno-cygwin passed the correct libs to the linker.
-	SHLIB_LD='${CC} -shared ${CFLAGS}'
+	# -luser32 and -lmsvcrt by default.
+	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
 	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
@@ -961,6 +961,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	RC_DEFINE=-d
 	RES=res
 	MAKE_LIB="\${STLIB_LD} -out:\[$]@"
+	MAKE_STUB_LIB="\${STLIB_LD} -nodefaultlib -out:\[$]@"
 	POST_MAKE_LIB=
 	MAKE_EXE="\${CC} -Fe\[$]@"
 	LIBPREFIX=""
