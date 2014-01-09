@@ -451,8 +451,7 @@ TclCompileStringIsCmd(
 	STR_IS_TRUE,	STR_IS_UPPER,	STR_IS_WIDE,	STR_IS_WORD,
 	STR_IS_XDIGIT
     };
-    JumpFixup jumpFixup;
-    int t, range, allowEmpty = 0;
+    int t, range, allowEmpty = 0, end;
     Tcl_Obj *isClass;
 
     if (parsePtr->numWords < 3 || parsePtr->numWords > 6) {
@@ -538,7 +537,7 @@ TclCompileStringIsCmd(
      */
 
     range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
+    OP4(		BEGIN_CATCH4, range);
     ExceptionRangeStarts(envPtr, range);
 
     /*
@@ -554,28 +553,28 @@ TclCompileStringIsCmd(
 	 * this is true for).
 	 */
 
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_NEQ,			envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 5,		envPtr);
+	OP(		DUP);
+	OP(		DUP);
+	OP(		NEQ);
+	OP1(		JUMP_TRUE1, 5);
 
 	/*
 	 * Type check for all other double values.
 	 */
 
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_UMINUS,			envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
+	OP(		DUP);
+	OP(		UMINUS);
+	OP(		POP);
 	break;
     case STR_IS_ENTIER:
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_BITNOT,			envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
+	OP(		DUP);
+	OP(		BITNOT);
+	OP(		POP);
 	break;
     case STR_IS_LIST:
-	TclEmitOpcode(		INST_DUP,			envPtr);
-	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
+	OP(		DUP);
+	OP(		LIST_LENGTH);
+	OP(		POP);
 	break;
     }
 
@@ -587,20 +586,20 @@ TclCompileStringIsCmd(
      */
 
     ExceptionRangeEnds(envPtr, range);
-    TclEmitOpcode(		INST_END_CATCH,			envPtr);
-    TclEmitOpcode(		INST_POP,			envPtr);
-    PushLiteral(envPtr, "1", 1);
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+    OP(			END_CATCH);
+    OP(			POP);
+    PUSH(		"1");
+    JUMP1(		JUMP, end);
     ExceptionRangeTarget(envPtr, range, catchOffset);
-    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    OP(			END_CATCH);
     if (allowEmpty) {
-	PushLiteral(envPtr, "", 0);
-	TclEmitOpcode(		INST_STR_EQ,			envPtr);
+	PUSH(		"");
+	OP(		STR_EQ);
     } else {
-	TclEmitOpcode(		INST_POP,			envPtr);
-	PushLiteral(envPtr, "0", 1);
+	OP(		POP);
+	PUSH(		"0");
     }
-    TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
+    FIXJUMP1(	end);
     return TCL_OK;
 }
 
