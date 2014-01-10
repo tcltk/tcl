@@ -621,6 +621,10 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Push the identity of the current TclOO object (i.e., the name of
 	 * its current public access command) on the stack. */
 
+    {"numericType",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Pushes the numeric type code of the word at the top of the stack.
+	 * Stack:  ... value => ... typeCode */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
