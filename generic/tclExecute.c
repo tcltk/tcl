@@ -5776,6 +5776,14 @@ TEBCresume(
 	int type1, type2;
 	long l1, l2, lResult;
 
+    case INST_NUM_TYPE:
+	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
+	    type1 = 0;
+	}
+	TclNewIntObj(objResultPtr, type1);
+	TRACE(("\"%.20s\" => %d\n", O2S(OBJ_AT_TOS), type1));
+	NEXT_INST_F(1, 1, 1);
+
     case INST_EQ:
     case INST_NEQ:
     case INST_LT:

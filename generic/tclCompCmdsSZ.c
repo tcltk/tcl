@@ -500,7 +500,7 @@ TclCompileStringIsCmd(
      * example of this.
      */
 
-    switch (t) {
+    switch ((enum isClasses) t) {
     case STR_IS_ALNUM:
     case STR_IS_ALPHA:
     case STR_IS_ASCII:
@@ -514,93 +514,103 @@ TclCompileStringIsCmd(
     case STR_IS_UPPER:
     case STR_IS_WORD:
     case STR_IS_XDIGIT:
+	/* Not yet implemented */
 	return TCL_ERROR;
 
     case STR_IS_BOOL:
     case STR_IS_FALSE:
-    case STR_IS_INT:
     case STR_IS_TRUE:
-    case STR_IS_WIDE:
 	/* Not yet implemented */
 	return TCL_ERROR;
+
+    case STR_IS_DOUBLE: {
+	int satisfied, isEmpty;
+
+	CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
+	if (allowEmpty) {
+	    OP(		DUP);
+	    PUSH(	"");
+	    OP(		STR_EQ);
+	    JUMP1(	JUMP_TRUE, isEmpty);
+	    OP(		NUM_TYPE);
+	    JUMP1(	JUMP_TRUE, satisfied);
+	    PUSH(	"0");
+	    JUMP1(	JUMP, end);
+	    FIXJUMP1(	isEmpty);
+	    OP(		POP);
+	    FIXJUMP1(	satisfied);
+	} else {
+	    OP(		NUM_TYPE);
+	    JUMP1(	JUMP_TRUE, satisfied);
+	    PUSH(	"0");
+	    JUMP1(	JUMP, end);
+	    TclAdjustStackDepth(-1, envPtr);
+	    FIXJUMP1(	satisfied);
+	}
+	PUSH(		"1");
+	FIXJUMP1(	end);
+	return TCL_OK;
     }
 
-    /*
-     * Push the word to check.
-     */
-
-    CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
-
-    /*
-     * Next, do the type check. First, we push a catch range; most of the
-     * type-check operations throw an exception on failure.
-     */
-
-    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    OP4(		BEGIN_CATCH4, range);
-    ExceptionRangeStarts(envPtr, range);
-
-    /*
-     * Issue the type-check itself for the specific type.
-     */
-
-    switch (t) {
-    case STR_IS_DOUBLE:
-	/*
-	 * Careful! Preserve behavior of NaN which is a double (that is, true
-	 * for the purposes of a type check) but most math ops fail on it. The
-	 * key is that it is not == to itself (and is the only value which
-	 * this is true for).
-	 */
-
-	OP(		DUP);
-	OP(		DUP);
-	OP(		NEQ);
-	OP1(		JUMP_TRUE1, 5);
-
-	/*
-	 * Type check for all other double values.
-	 */
-
-	OP(		DUP);
-	OP(		UMINUS);
-	OP(		POP);
-	break;
+    case STR_IS_INT:
+    case STR_IS_WIDE:
     case STR_IS_ENTIER:
-	OP(		DUP);
-	OP(		BITNOT);
-	OP(		POP);
-	break;
+	CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
+	if (allowEmpty) {
+	    int testNumType;
+
+	    OP(		DUP);
+	    OP(		NUM_TYPE);
+	    OP(		DUP);
+	    JUMP1(	JUMP_TRUE, testNumType);
+	    OP(		POP);
+	    PUSH(	"");
+	    OP(		STR_EQ);
+	    JUMP1(	JUMP, end);
+	    TclAdjustStackDepth(1, envPtr);
+	    FIXJUMP1(	testNumType);
+	    OP4(	REVERSE, 2);
+	    OP(		POP);
+	} else {
+	    OP(		NUM_TYPE);
+	    OP(		DUP);
+	    JUMP1(	JUMP_FALSE, end);
+	}
+
+	switch (t) {
+	case STR_IS_INT:
+	    PUSH(	"1");
+	    OP(		EQ);
+	    break;
+	case STR_IS_WIDE:
+	    PUSH(	"2");
+	    OP(		LE);
+	    break;
+	case STR_IS_ENTIER:
+	    PUSH(	"3");
+	    OP(		LE);
+	    break;
+	}
+	FIXJUMP1(	end);
+	return TCL_OK;
+
     case STR_IS_LIST:
+	CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
+	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+	OP4(		BEGIN_CATCH4, range);
+	ExceptionRangeStarts(envPtr, range);
 	OP(		DUP);
 	OP(		LIST_LENGTH);
 	OP(		POP);
-	break;
-    }
-
-    /*
-     * Based on whether the exception was thrown (or conditional branch taken,
-     * in the case of true/false checks), push the correct boolean value. This
-     * is also where we deal with what happens with empty values in non-strict
-     * mode.
-     */
-
-    ExceptionRangeEnds(envPtr, range);
-    OP(			END_CATCH);
-    OP(			POP);
-    PUSH(		"1");
-    JUMP1(		JUMP, end);
-    ExceptionRangeTarget(envPtr, range, catchOffset);
-    OP(			END_CATCH);
-    if (allowEmpty) {
-	PUSH(		"");
-	OP(		STR_EQ);
-    } else {
+	ExceptionRangeEnds(envPtr, range);
+	ExceptionRangeTarget(envPtr, range, catchOffset);
 	OP(		POP);
-	PUSH(		"0");
+	OP(		PUSH_RETURN_CODE);
+	OP(		END_CATCH);
+	OP(		LNOT);
+	return TCL_OK;
     }
-    FIXJUMP1(	end);
-    return TCL_OK;
+    return TCL_ERROR;
 }
 
 int
