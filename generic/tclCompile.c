@@ -624,6 +624,9 @@ InstructionDesc const tclInstructionTable[] = {
     {"numericType",	 1,	0,	  0,	{OPERAND_NONE}},
 	/* Pushes the numeric type code of the word at the top of the stack.
 	 * Stack:  ... value => ... typeCode */
+    {"tryCvtToBoolean",	 1,	+1,	  0,	{OPERAND_NONE}},
+	/* Try converting stktop to boolean if possible. No errors.
+	 * Stack:  ... value => ... value isStrictBool */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
