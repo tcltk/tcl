@@ -514,14 +514,57 @@ TclCompileStringIsCmd(
     case STR_IS_UPPER:
     case STR_IS_WORD:
     case STR_IS_XDIGIT:
-	/* Not yet implemented */
-	return TCL_ERROR;
+	return TclCompileBasicMin0ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 
     case STR_IS_BOOL:
     case STR_IS_FALSE:
     case STR_IS_TRUE:
-	/* Not yet implemented */
-	return TCL_ERROR;
+	CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
+	OP(		TRY_CVT_TO_BOOLEAN);
+	switch (t) {
+	    int over, over2;
+
+	case STR_IS_BOOL:
+	    if (allowEmpty) {
+		JUMP1(	JUMP_TRUE, over);
+		PUSH(	"");
+		OP(	STR_EQ);
+		JUMP1(	JUMP, over2);
+		FIXJUMP1(over);
+		OP(	POP);
+		PUSH(	"1");
+		FIXJUMP1(over2);
+	    } else {
+		OP4(	REVERSE, 2);
+		OP(	POP);
+	    }
+	    return TCL_OK;
+	case STR_IS_TRUE:
+	    JUMP1(	JUMP_TRUE, over);
+	    if (allowEmpty) {
+		PUSH(	"");
+		OP(	STR_EQ);
+	    } else {
+		OP(	POP);
+		PUSH(	"0");
+	    }
+	    FIXJUMP1(	over);
+	    OP(		LNOT);
+	    OP(		LNOT);
+	    return TCL_OK;
+	case STR_IS_FALSE:
+	    JUMP1(	JUMP_TRUE, over);
+	    if (allowEmpty) {
+		PUSH(	"");
+		OP(	STR_NEQ);
+	    } else {
+		OP(	POP);
+		PUSH(	"1");
+	    }
+	    FIXJUMP1(	over);
+	    OP(		LNOT);
+	    return TCL_OK;
+	}
 
     case STR_IS_DOUBLE: {
 	int satisfied, isEmpty;
