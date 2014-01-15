@@ -6023,6 +6023,7 @@ ReadBytes(
 	toRead = srcLen;
     }
 
+#if 0
     dst = (char *) Tcl_GetByteArrayFromObj(objPtr, &length);
     if (toRead > length - offset - 1) {
 	/*
@@ -6037,6 +6038,10 @@ ReadBytes(
 	}
 	dst = (char *) Tcl_SetByteArrayLength(objPtr, length);
     }
+#else
+    TclAppendBytesToByteArray(objPtr, NULL, toRead);
+    dst = (char *) Tcl_GetByteArrayFromObj(objPtr, &length);
+#endif
     dst += offset;
 
     if (GotFlag(statePtr, INPUT_NEED_NL)) {
@@ -6044,6 +6049,7 @@ ReadBytes(
 	if ((srcLen == 0) || (*src != '\n')) {
 	    *dst = '\r';
 	    *offsetPtr += 1;
+	    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
 	    return 1;
 	}
 	*dst++ = '\n';
@@ -6056,11 +6062,13 @@ ReadBytes(
     dstWrote = toRead;
     if (TranslateInputEOL(statePtr, dst, src, &dstWrote, &srcRead) != 0) {
 	if (dstWrote == 0) {
+	    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
 	    return -1;
 	}
     }
     bufPtr->nextRemoved += srcRead;
     *offsetPtr += dstWrote;
+    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
     return dstWrote;
 }
 
