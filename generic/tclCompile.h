@@ -791,9 +791,10 @@ typedef struct ByteCode {
 #define INST_ORIGIN_COMMAND		178
 
 #define INST_TCLOO_NEXT			179
+#define INST_TCLOO_NEXT_CLASS		180
 
 /* The last opcode */
-#define LAST_INST_OPCODE		179
+#define LAST_INST_OPCODE		180
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
