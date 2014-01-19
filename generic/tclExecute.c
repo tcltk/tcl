@@ -4539,6 +4539,7 @@ TEBCresume(
 	Object *oPtr;
 	CallFrame *framePtr;
 	CallContext *contextPtr;
+	int skip, newDepth;
 
     case INST_TCLOO_SELF:
 	framePtr = iPtr->varFramePtr;
@@ -4563,9 +4564,111 @@ TEBCresume(
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
 
-    case INST_TCLOO_NEXT:
+    case INST_TCLOO_NEXT_CLASS:
 	opnd = TclGetUInt1AtPtr(pc+1);
 	framePtr = iPtr->varFramePtr;
+	valuePtr = OBJ_AT_DEPTH(opnd - 2);
+	objv = &OBJ_AT_DEPTH(opnd - 1);
+	skip = 2;
+	TRACE(("%d => ", opnd));
+	if (framePtr == NULL ||
+		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	    TRACE_APPEND(("ERROR: no TclOO call context\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "nextto may only be called from inside a method",
+		    -1));
+	    DECACHE_STACK_INFO();
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    CACHE_STACK_INFO();
+	    goto gotError;
+	}
+	contextPtr = framePtr->clientData;
+
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, valuePtr);
+	if (oPtr == NULL) {
+	    TRACE_APPEND(("ERROR: \"%.30s\" not object\n", O2S(valuePtr)));
+	    goto gotError;
+	} else {
+	    Class *classPtr = oPtr->classPtr;
+	    struct MInvoke *miPtr;
+	    int i;
+	    const char *methodType;
+
+	    if (classPtr == NULL) {
+		TRACE_APPEND(("ERROR: \"%.30s\" not class\n", O2S(valuePtr)));
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"\"%s\" is not a class", TclGetString(valuePtr)));
+		DECACHE_STACK_INFO();
+		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_REQUIRED", NULL);
+		CACHE_STACK_INFO();
+		goto gotError;
+	    }
+
+	    for (i=contextPtr->index+1 ; i<contextPtr->callPtr->numChain ; i++) {
+		miPtr = contextPtr->callPtr->chain + i;
+		if (!miPtr->isFilter &&
+			miPtr->mPtr->declaringClassPtr == classPtr) {
+		    newDepth = i;
+#ifdef TCL_COMPILE_DEBUG
+		    if (tclTraceExec >= 2) {
+			if (traceInstructions) {
+			    strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
+			} else {
+			    fprintf(stdout, "%d: (%u) invoking ",
+				    iPtr->numLevels,
+				    (unsigned)(pc - codePtr->codeStart));
+			}
+			for (i = 0;  i < opnd;  i++) {
+			    TclPrintObject(stdout, objv[i], 15);
+			    fprintf(stdout, " ");
+			}
+			fprintf(stdout, "\n");
+			fflush(stdout);
+		    }
+#endif /*TCL_COMPILE_DEBUG*/
+		    goto doInvokeNext;
+		}
+	    }
+
+	    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+		methodType = "constructor";
+	    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+		methodType = "destructor";
+	    } else {
+		methodType = "method";
+	    }
+
+	    TRACE_APPEND(("ERROR: \"%.30s\" not on reachable chain\n",
+		    O2S(valuePtr)));
+	    for (i=contextPtr->index ; i>=0 ; i--) {
+		miPtr = contextPtr->callPtr->chain + i;
+		if (miPtr->isFilter
+			|| miPtr->mPtr->declaringClassPtr != classPtr) {
+		    continue;
+		}
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"%s implementation by \"%s\" not reachable from here",
+			methodType, TclGetString(valuePtr)));
+		DECACHE_STACK_INFO();
+		Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
+			NULL);
+		CACHE_STACK_INFO();
+		goto gotError;
+	    }
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "%s has no non-filter implementation by \"%s\"",
+		    methodType, TclGetString(valuePtr)));
+	    DECACHE_STACK_INFO();
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", NULL);
+	    CACHE_STACK_INFO();
+	    goto gotError;
+	}
+
+    case INST_TCLOO_NEXT:
+	opnd = TclGetUInt1AtPtr(pc+1);
+	objv = &OBJ_AT_DEPTH(opnd - 1);
+	framePtr = iPtr->varFramePtr;
+	skip = 1;
 	TRACE(("%d => ", opnd));
 	if (framePtr == NULL ||
 		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
@@ -4580,7 +4683,8 @@ TEBCresume(
 	}
 	contextPtr = framePtr->clientData;
 
-	if (contextPtr->index+1 >= contextPtr->callPtr->numChain) {
+	newDepth = contextPtr->index + 1;
+	if (newDepth >= contextPtr->callPtr->numChain) {
 	    /*
 	     * We're at the end of the chain; generate an error message unless
 	     * the interpreter is being torn down, in which case we might be
@@ -4605,33 +4709,31 @@ TEBCresume(
 	    Tcl_SetErrorCode(interp, "TCL", "OO", "NOTHING_NEXT", NULL);
 	    CACHE_STACK_INFO();
 	    goto gotError;
-	}
-
 #ifdef TCL_COMPILE_DEBUG
-	if (tclTraceExec >= 2) {
+	} else if (tclTraceExec >= 2) {
 	    int i;
 
 	    if (traceInstructions) {
 		strncpy(cmdNameBuf, TclGetString(objv[0]), 20);
-		TRACE(("next_in_chain "));
 	    } else {
-		fprintf(stdout, "%d: (%u) invoking next_in_chain ",
+		fprintf(stdout, "%d: (%u) invoking ",
 			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart));
 	    }
-	    for (i = 0;  i < objc;  i++) {
+	    for (i = 0;  i < opnd;  i++) {
 		TclPrintObject(stdout, objv[i], 15);
 		fprintf(stdout, " ");
 	    }
 	    fprintf(stdout, "\n");
 	    fflush(stdout);
-	}
 #endif /*TCL_COMPILE_DEBUG*/
+	}
 
+    doInvokeNext:
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
-	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
+	    ArgumentBCEnter(interp, codePtr, TD, pc, opnd, objv);
 	}
 
 	pcAdjustment = 2;
@@ -4640,6 +4742,7 @@ TEBCresume(
 	iPtr->varFramePtr = framePtr->callerVarPtr;
 	pc += pcAdjustment;
 	TEBC_YIELD();
+
 	oPtr = contextPtr->oPtr;
 	if (oPtr->flags & FILTER_HANDLING) {
 	    TclNRAddCallback(interp, FinalizeOONextFilter,
@@ -4650,20 +4753,21 @@ TEBCresume(
 		    framePtr, contextPtr, INT2PTR(contextPtr->index),
 		    INT2PTR(contextPtr->skip));
 	}
-	if (contextPtr->callPtr->chain[++contextPtr->index].isFilter
+	contextPtr->skip = skip;
+	contextPtr->index = newDepth;
+	if (contextPtr->callPtr->chain[newDepth].isFilter
 		|| contextPtr->callPtr->flags & FILTER_HANDLING) {
 	    oPtr->flags |= FILTER_HANDLING;
 	} else {
 	    oPtr->flags &= ~FILTER_HANDLING;
 	}
-	contextPtr->skip = 1;
+
 	{
 	    register Method *const mPtr =
-		    contextPtr->callPtr->chain[contextPtr->index].mPtr;
+		    contextPtr->callPtr->chain[newDepth].mPtr;
 
 	    return mPtr->typePtr->callProc(mPtr->clientData, interp,
-		    (Tcl_ObjectContext) contextPtr, opnd,
-		    &OBJ_AT_DEPTH(opnd-1));
+		    (Tcl_ObjectContext) contextPtr, opnd, objv);
 	}
 
     case INST_TCLOO_IS_OBJECT:
