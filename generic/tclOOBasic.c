@@ -821,6 +821,7 @@ TclOONextToObjCmd(
     CallContext *contextPtr;
     int i;
     Tcl_Object object;
+    const char *methodType;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -886,19 +887,30 @@ TclOONextToObjCmd(
      * is on the chain but unreachable, or not on the chain at all.
      */
 
+    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	methodType = "constructor";
+    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	methodType = "destructor";
+    } else {
+	methodType = "method";
+    }
+
     for (i=contextPtr->index ; i>=0 ; i--) {
 	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "method implementation by \"%s\" not reachable from here",
-		    TclGetString(objv[1])));
+		    "%s implementation by \"%s\" not reachable from here",
+		    methodType, TclGetString(objv[1])));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
+		    NULL);
 	    return TCL_ERROR;
 	}
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "method has no non-filter implementation by \"%s\"",
-	    TclGetString(objv[1])));
+	    "%s has no non-filter implementation by \"%s\"",
+	    methodType, TclGetString(objv[1])));
+    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", NULL);
     return TCL_ERROR;
 }
 
