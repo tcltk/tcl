@@ -618,8 +618,18 @@ InstructionDesc const tclInstructionTable[] = {
 	 * Stack:  ... cmdName => ... fullOriginalCmdName */
 
     {"tclooNext",	 2,	INT_MIN,  1,	{OPERAND_UINT1}},
-	/* Push the identity of the current TclOO object (i.e., the name of
-	 * its current public access command) on the stack. */
+	/* Call the next item on the TclOO call chain, passing opnd arguments
+	 * (min 1, max 255, *includes* "next").  The result of the invoked
+	 * method implementation will be pushed on the stack in place of the
+	 * arguments (similar to invokeStk).
+	 * Stack:  ... "next" arg2 arg3 -- argN => ... result */
+    {"tclooNextClass",	 2,	INT_MIN,  1,	{OPERAND_UINT1}},
+	/* Call the following item on the TclOO call chain defined by class
+	 * className, passing opnd arguments (min 2, max 255, *includes*
+	 * "nextto" and the class name). The result of the invoked method
+	 * implementation will be pushed on the stack in place of the
+	 * arguments (similar to invokeStk).
+	 * Stack:  ... "nextto" className arg3 arg4 -- argN => ... result */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
