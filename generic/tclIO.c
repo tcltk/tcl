@@ -208,7 +208,7 @@ static int		HaveVersion(const Tcl_ChannelType *typePtr,
 static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
 			    GetsState *gsPtr);
 static int		ReadBytes(ChannelState *statePtr, Tcl_Obj *objPtr,
-			    int charsLeft, int *offsetPtr);
+			    int charsLeft);
 static int		ReadChars(ChannelState *statePtr, Tcl_Obj *objPtr,
 			    int charsLeft, int *offsetPtr, int *factorPtr);
 static void		RecycleBuffer(ChannelState *statePtr,
@@ -5448,12 +5448,10 @@ DoReadChars(
 	     */
 
 	    TclGetString(objPtr);
+	    offset = 0;
 	}
-	offset = 0;
     } else {
-	if (encoding == NULL) {
-	    Tcl_GetByteArrayFromObj(objPtr, &offset);
-	} else {
+	if (encoding) {
 	    TclGetStringFromObj(objPtr, &offset);
 	}
     }
@@ -5462,7 +5460,7 @@ DoReadChars(
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
 	    if (encoding == NULL) {
-		copiedNow = ReadBytes(statePtr, objPtr, toRead, &offset);
+		copiedNow = ReadBytes(statePtr, objPtr, toRead);
 	    } else {
 		copiedNow = ReadChars(statePtr, objPtr, toRead, &offset,
 			&factor);
@@ -5510,9 +5508,7 @@ DoReadChars(
     }
 
     ResetFlag(statePtr, CHANNEL_BLOCKED);
-    if (encoding == NULL) {
-	Tcl_SetByteArrayLength(objPtr, offset);
-    } else {
+    if (encoding) {
 	Tcl_SetObjLength(objPtr, offset);
     }
 
@@ -5540,13 +5536,11 @@ DoReadChars(
  *	allocated to hold data read from the channel as needed.
  *
  * Results:
- *	The return value is the number of bytes appended to the object and
- *	*offsetPtr is filled with the total number of bytes in the object
- *	(greater than the return value if there were already bytes in the
- *	object).
+ *	The return value is the number of bytes appended to the object, or
+ *	-1 to indicate that zero bytes were read due to an EOF.
  *
  * Side effects:
- *	None.
+ *	The storage of bytes in objPtr can cause (re-)allocation of memory.
  *
  *---------------------------------------------------------------------------
  */
@@ -5559,23 +5553,17 @@ ReadBytes(
 				 * been allocated to hold data, not how many
 				 * bytes of data have been stored in the
 				 * object. */
-    int bytesToRead,		/* Maximum number of bytes to store, or < 0 to
+    int bytesToRead)		/* Maximum number of bytes to store, or < 0 to
 				 * get all available bytes. Bytes are obtained
 				 * from the first buffer in the queue - even
 				 * if this number is larger than the number of
 				 * bytes available in the first buffer, only
 				 * the bytes from the first buffer are
 				 * returned. */
-    int *offsetPtr)		/* On input, contains how many bytes of objPtr
-				 * have been used to hold data. On output,
-				 * filled with how many bytes are now being
-				 * used. */
 {
-    int toRead, srcLen, offset, length, srcRead, dstWrote;
+    int toRead, srcLen, length, srcRead, dstWrote;
     ChannelBuffer *bufPtr;
     char *src, *dst;
-
-    offset = *offsetPtr;
 
     bufPtr = statePtr->inQueueHead;
     src = RemovePoint(bufPtr);
@@ -5586,16 +5574,17 @@ ReadBytes(
 	toRead = srcLen;
     }
 
+    (void) Tcl_GetByteArrayFromObj(objPtr, &length);
     TclAppendBytesToByteArray(objPtr, NULL, toRead);
-    dst = (char *) Tcl_GetByteArrayFromObj(objPtr, &length);
-    dst += offset;
+    dst = (char *) Tcl_GetByteArrayFromObj(objPtr, NULL);
+    dst += length;
 
     if (statePtr->flags & INPUT_NEED_NL) {
 	ResetFlag(statePtr, INPUT_NEED_NL);
 	if ((srcLen == 0) || (*src != '\n')) {
 	    *dst = '\r';
-	    *offsetPtr += 1;
-	    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
+	    length += 1;
+	    Tcl_SetByteArrayLength(objPtr, length);
 	    return 1;
 	}
 	*dst++ = '\n';
@@ -5608,13 +5597,13 @@ ReadBytes(
     dstWrote = toRead;
     if (TranslateInputEOL(statePtr, dst, src, &dstWrote, &srcRead) != 0) {
 	if (dstWrote == 0) {
-	    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
+	    Tcl_SetByteArrayLength(objPtr, length);
 	    return -1;
 	}
     }
     bufPtr->nextRemoved += srcRead;
-    *offsetPtr += dstWrote;
-    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
+    length += dstWrote;
+    Tcl_SetByteArrayLength(objPtr, length);
     return dstWrote;
 }
 
