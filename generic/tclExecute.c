@@ -2494,9 +2494,12 @@ TEBCresume(
 	TRACE_APPEND(("\n"));
 	goto processExceptionReturn;
 
-    case INST_YIELD: {
-	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+    {
+	CoroutineData *corPtr;
+	int yieldParameter;
 
+    case INST_YIELD:
+	corPtr = iPtr->execEnvPtr->corPtr;
 	TRACE(("%.30s => ", O2S(OBJ_AT_TOS)));
 	if (!corPtr) {
 	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
@@ -2510,11 +2513,63 @@ TEBCresume(
 	}
 
 #ifdef TCL_COMPILE_DEBUG
-	TRACE_WITH_OBJ(("yield, result="), iPtr->objResultPtr);
-	if (traceInstructions) {
-	    fprintf(stdout, "\n");
+	if (tclTraceExec >= 2) {
+	    if (traceInstructions) {
+		TRACE_APPEND(("YIELD...\n"));
+	    } else {
+		fprintf(stdout, "%d: (%u) yielding value \"%.30s\"\n",
+			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart),
+			Tcl_GetString(OBJ_AT_TOS));
+	    }
+	    fflush(stdout);
 	}
 #endif
+	yieldParameter = 0;
+	Tcl_SetObjResult(interp, OBJ_AT_TOS);
+	goto doYield;
+
+    case INST_YIELD_TO_INVOKE:
+	corPtr = iPtr->execEnvPtr->corPtr;
+	valuePtr = OBJ_AT_TOS;
+	if (!corPtr) {
+	    TRACE(("[%.30s] => ERROR: yield outside coroutine\n",
+		    O2S(valuePtr)));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "yieldto can only be called in a coroutine", -1));
+	    DECACHE_STACK_INFO();
+	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
+		    NULL);
+	    CACHE_STACK_INFO();
+	    goto gotError;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	if (tclTraceExec >= 2) {
+	    if (traceInstructions) {
+		TRACE(("[%.30s] => YIELD...\n", O2S(valuePtr)));
+	    } else {
+		/* FIXME: What is the right thing to trace? */
+		fprintf(stdout, "%d: (%u) yielding to [%.30s]\n",
+			iPtr->numLevels, (unsigned)(pc - codePtr->codeStart),
+			Tcl_GetString(valuePtr));
+	    }
+	    fflush(stdout);
+	}
+#endif
+
+	/*
+	 * Install a tailcall record in the caller and continue with the
+	 * yield. The yield is switched into multi-return mode (via the
+	 * 'yieldParameter').
+	 */
+
+	Tcl_IncrRefCount(valuePtr);
+	iPtr->execEnvPtr = corPtr->callerEEPtr;
+	TclSetTailcall(interp, valuePtr);
+	iPtr->execEnvPtr = corPtr->eePtr;
+	yieldParameter = (PTR2INT(NULL)+1);	/*==CORO_ACTIVATE_YIELDM*/
+
+    doYield:
 	/* TIP #280: Record the last piece of info needed by
 	 * 'TclGetSrcInfoForPc', and push the frame.
 	 */
@@ -2529,11 +2584,8 @@ TEBCresume(
 	pc++;
 	cleanup = 1;
 	TEBC_YIELD();
-	
-	Tcl_SetObjResult(interp, OBJ_AT_TOS);
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-		INT2PTR(0), NULL, NULL);
-
+		INT2PTR(yieldParameter), NULL, NULL);
 	return TCL_OK;
     }
 
@@ -2553,6 +2605,7 @@ TEBCresume(
 	}
 
 #ifdef TCL_COMPILE_DEBUG
+	/* FIXME: What is the right thing to trace? */
 	{
 	    register int i;
 

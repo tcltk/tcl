@@ -631,6 +631,13 @@ InstructionDesc const tclInstructionTable[] = {
 	 * arguments (similar to invokeStk).
 	 * Stack:  ... "nextto" className arg3 arg4 -- argN => ... result */
 
+    {"yieldToInvoke",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Makes the current coroutine yield the value at the top of the
+	 * stack, invoking the given command/args with resolution in the given
+	 * namespace (all packed into a list), and places the list of values
+	 * that are the response back on top of the stack when it resumes.
+	 * Stack:  ... [list ns cmd arg1 ... argN] => ... resumeList */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
