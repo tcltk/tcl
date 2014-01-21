@@ -549,6 +549,98 @@ UpdateStringOfByteArray(
 /*
  *----------------------------------------------------------------------
  *
+ * TclAppendBytesToByteArray --
+ *
+ *	This function appends an array of bytes to a byte array object. Note
+ *	that the object *must* be unshared, and the array of bytes *must not*
+ *	refer to the object being appended to.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Allocates enough memory for an array of bytes of the requested total
+ *	size, or possibly larger. [Bug 2992970]
+ *
+ *----------------------------------------------------------------------
+ */
+
+#define TCL_MIN_GROWTH 1024
+void
+TclAppendBytesToByteArray(
+    Tcl_Obj *objPtr,
+    const unsigned char *bytes,
+    int len)
+{
+    ByteArray *byteArrayPtr;
+    int needed;
+
+    if (Tcl_IsShared(objPtr)) {
+	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
+    }
+    if (len < 0) {
+	Tcl_Panic("%s must be called with definite number of bytes to append",
+		"TclAppendBytesToByteArray");
+    }
+    if (len == 0) {
+	/* Append zero bytes is a no-op. */
+	return;
+    }
+    if (objPtr->typePtr != &tclByteArrayType) {
+	SetByteArrayFromAny(NULL, objPtr);
+    }
+    byteArrayPtr = GET_BYTEARRAY(objPtr);
+
+    if (len > INT_MAX - byteArrayPtr->used) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
+
+    needed = byteArrayPtr->used + len;
+    /*
+     * If we need to, resize the allocated space in the byte array.
+     */
+
+    if (needed > byteArrayPtr->allocated) {
+	ByteArray *ptr = NULL;
+	int attempt;
+
+	if (needed <= INT_MAX/2) {
+	    /* Try to allocate double the total space that is needed. */
+	    attempt = 2 * needed;
+	    ptr = (ByteArray *) attemptckrealloc((void *) byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
+	}
+	if (ptr == NULL) {
+	    /* Try to allocate double the increment that is needed (plus). */
+	    unsigned int limit = INT_MAX - needed;
+	    unsigned int extra = len + TCL_MIN_GROWTH;
+	    int growth = (int) ((extra > limit) ? limit : extra);
+
+	    attempt = needed + growth;
+	    ptr = (ByteArray *) attemptckrealloc((void *) byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
+	}
+	if (ptr == NULL) {
+	    /* Last chance: Try to allocate exactly what is needed. */
+	    attempt = needed;
+	    ptr = (ByteArray *) ckrealloc((void *)byteArrayPtr,
+		    BYTEARRAY_SIZE(attempt));
+	}
+	byteArrayPtr = ptr;
+	byteArrayPtr->allocated = attempt;
+	SET_BYTEARRAY(objPtr, byteArrayPtr);
+    }
+
+    if (bytes) {
+	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
+    }
+    byteArrayPtr->used += len;
+    TclInvalidateStringRep(objPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_BinaryObjCmd --
  *
  *	This procedure implements the "binary" Tcl command.
