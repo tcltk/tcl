@@ -5586,20 +5586,8 @@ ReadBytes(
 	toRead = srcLen;
     }
 
+    TclAppendBytesToByteArray(objPtr, NULL, toRead);
     dst = (char *) Tcl_GetByteArrayFromObj(objPtr, &length);
-    if (toRead > length - offset - 1) {
-	/*
-	 * Double the existing size of the object or make enough room to hold
-	 * all the characters we may get from the source buffer, whichever is
-	 * larger.
-	 */
-
-	length = offset * 2;
-	if (offset < toRead) {
-	    length = offset + toRead + 1;
-	}
-	dst = (char *) Tcl_SetByteArrayLength(objPtr, length);
-    }
     dst += offset;
 
     if (statePtr->flags & INPUT_NEED_NL) {
@@ -5607,6 +5595,7 @@ ReadBytes(
 	if ((srcLen == 0) || (*src != '\n')) {
 	    *dst = '\r';
 	    *offsetPtr += 1;
+	    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
 	    return 1;
 	}
 	*dst++ = '\n';
@@ -5619,11 +5608,13 @@ ReadBytes(
     dstWrote = toRead;
     if (TranslateInputEOL(statePtr, dst, src, &dstWrote, &srcRead) != 0) {
 	if (dstWrote == 0) {
+	    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
 	    return -1;
 	}
     }
     bufPtr->nextRemoved += srcRead;
     *offsetPtr += dstWrote;
+    Tcl_SetByteArrayLength(objPtr, *offsetPtr);
     return dstWrote;
 }
 
