@@ -1040,218 +1040,289 @@ TRIMHDR=$(GENERIC_DIR)/tclStringTrim.h
 regcomp.o: $(REGHDRS) $(GENERIC_DIR)/regcomp.c $(GENERIC_DIR)/regc_lex.c \
 		$(GENERIC_DIR)/regc_color.c $(GENERIC_DIR)/regc_locale.c \
 		$(GENERIC_DIR)/regc_nfa.c $(GENERIC_DIR)/regc_cvec.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regcomp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regcomp.c
 
 regexec.o: $(REGHDRS) $(GENERIC_DIR)/regexec.c $(GENERIC_DIR)/rege_dfa.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regexec.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regexec.c
 
 regfree.o: $(REGHDRS) $(GENERIC_DIR)/regfree.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regfree.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regfree.c
 
 regerror.o: $(REGHDRS) $(GENERIC_DIR)/regerrs.h $(GENERIC_DIR)/regerror.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regerror.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/regerror.c
 
 tclAppInit.o: $(UNIX_DIR)/tclAppInit.c
-	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclAppInit.c
 
 tclAlloc.o: $(GENERIC_DIR)/tclAlloc.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAlloc.c
 
 tclAssembly.o: $(GENERIC_DIR)/tclAssembly.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAssembly.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAssembly.c
 
 tclAsync.o: $(GENERIC_DIR)/tclAsync.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
 
 tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBasic.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBasic.c
 
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c
 
 tclCkalloc.o: $(GENERIC_DIR)/tclCkalloc.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCkalloc.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCkalloc.c
 
 tclClock.o: $(GENERIC_DIR)/tclClock.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClock.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclClock.c
 
 tclCmdAH.o: $(GENERIC_DIR)/tclCmdAH.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdAH.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdAH.c
 
 tclCmdIL.o: $(GENERIC_DIR)/tclCmdIL.c $(TCLREHDRS)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdIL.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdIL.c
 
 tclCmdMZ.o: $(GENERIC_DIR)/tclCmdMZ.c $(TCLREHDRS) $(TRIMHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdMZ.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCmdMZ.c
 
 tclDate.o: $(GENERIC_DIR)/tclDate.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDate.c
 
 tclCompCmds.o: $(GENERIC_DIR)/tclCompCmds.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmds.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmds.c
 
 tclCompCmdsGR.o: $(GENERIC_DIR)/tclCompCmdsGR.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsGR.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsGR.c
 
 tclCompCmdsSZ.o: $(GENERIC_DIR)/tclCompCmdsSZ.c $(COMPILEHDR) $(TRIMHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsSZ.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompCmdsSZ.c
 
 tclCompExpr.o: $(GENERIC_DIR)/tclCompExpr.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompExpr.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompExpr.c
 
 tclCompile.o: $(GENERIC_DIR)/tclCompile.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompile.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCompile.c
 
 tclConfig.o: $(GENERIC_DIR)/tclConfig.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclConfig.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclConfig.c
 
 tclDictObj.o: $(GENERIC_DIR)/tclDictObj.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDictObj.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDictObj.c
 
 tclEncoding.o: $(GENERIC_DIR)/tclEncoding.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEncoding.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEncoding.c
 
 tclEnsemble.o: $(GENERIC_DIR)/tclEnsemble.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnsemble.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnsemble.c
 
 tclEnv.o: $(GENERIC_DIR)/tclEnv.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnv.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEnv.c
 
 tclEvent.o: $(GENERIC_DIR)/tclEvent.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
 
 tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclExecute.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclExecute.c
 
 tclFCmd.o: $(GENERIC_DIR)/tclFCmd.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclFCmd.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclFCmd.c
 
 tclFileName.o: $(GENERIC_DIR)/tclFileName.c $(FSHDR) $(TCLREHDRS)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclFileName.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclFileName.c
 
 tclGet.o: $(GENERIC_DIR)/tclGet.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclGet.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclGet.c
 
 tclHash.o: $(GENERIC_DIR)/tclHash.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHash.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHash.c
 
 tclHistory.o: $(GENERIC_DIR)/tclHistory.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHistory.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclHistory.c
 
 tclIndexObj.o: $(GENERIC_DIR)/tclIndexObj.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIndexObj.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIndexObj.c
 
 tclInterp.o: $(GENERIC_DIR)/tclInterp.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclInterp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclInterp.c
 
 tclIO.o: $(GENERIC_DIR)/tclIO.c $(IOHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIO.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIO.c
 
 tclIOCmd.o: $(GENERIC_DIR)/tclIOCmd.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOCmd.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOCmd.c
 
 tclIOGT.o: $(GENERIC_DIR)/tclIOGT.c $(IOHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOGT.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOGT.c
 
 tclIOSock.o: $(GENERIC_DIR)/tclIOSock.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOSock.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOSock.c
 
 tclIOUtil.o: $(GENERIC_DIR)/tclIOUtil.c $(FSHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOUtil.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIOUtil.c
 
 tclIORChan.o: $(GENERIC_DIR)/tclIORChan.c $(IOHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIORChan.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIORChan.c
 
 tclIORTrans.o: $(GENERIC_DIR)/tclIORTrans.c $(IOHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIORTrans.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIORTrans.c
 
 tclLink.o: $(GENERIC_DIR)/tclLink.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLink.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLink.c
 
 tclListObj.o: $(GENERIC_DIR)/tclListObj.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclListObj.c
 
 tclLiteral.o: $(GENERIC_DIR)/tclLiteral.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLiteral.c
 
 tclObj.o: $(GENERIC_DIR)/tclObj.c $(COMPILEHDR) $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclObj.c
 
 tclOptimize.o: $(GENERIC_DIR)/tclOptimize.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOptimize.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOptimize.c
 
 tclLoad.o: $(GENERIC_DIR)/tclLoad.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLoad.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLoad.c
 
 tclLoadAix.o: $(UNIX_DIR)/tclLoadAix.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadAix.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadAix.c
 
 tclLoadDl.o: $(UNIX_DIR)/tclLoadDl.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDl.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDl.c
 
 tclLoadDl2.o: $(UNIX_DIR)/tclLoadDl2.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDl2.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDl2.c
 
 tclLoadDld.o: $(UNIX_DIR)/tclLoadDld.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDld.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDld.c
 
 tclLoadDyld.o: $(UNIX_DIR)/tclLoadDyld.c
 	@echo Warnings are expected from compiling tclLoadDyld.c: deprecated API use
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDyld.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDyld.c
 
 tclLoadNone.o: $(GENERIC_DIR)/tclLoadNone.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLoadNone.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLoadNone.c
 
 tclLoadOSF.o: $(UNIX_DIR)/tclLoadOSF.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadOSF.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadOSF.c
 
 tclLoadShl.o: $(UNIX_DIR)/tclLoadShl.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadShl.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadShl.c
 
 tclMain.o: $(GENERIC_DIR)/tclMain.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclMain.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclMain.c
 
 tclNamesp.o: $(GENERIC_DIR)/tclNamesp.c $(COMPILEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNamesp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNamesp.c
 
 tclNotify.o: $(GENERIC_DIR)/tclNotify.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNotify.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclNotify.c
 
 tclOO.o: $(GENERIC_DIR)/tclOO.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOO.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOO.c
 
 tclOOBasic.o: $(GENERIC_DIR)/tclOOBasic.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOBasic.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOBasic.c
 
 tclOOCall.o: $(GENERIC_DIR)/tclOOCall.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOCall.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOCall.c
 
 tclOODefineCmds.o: $(GENERIC_DIR)/tclOODefineCmds.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOODefineCmds.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOODefineCmds.c
 
 tclOOInfo.o: $(GENERIC_DIR)/tclOOInfo.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOInfo.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOInfo.c
 
 tclOOMethod.o: $(GENERIC_DIR)/tclOOMethod.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOMethod.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOMethod.c
 
 tclOOStubInit.o: $(GENERIC_DIR)/tclOOStubInit.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOStubInit.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclOOStubInit.c
 
 tclParse.o: $(GENERIC_DIR)/tclParse.c $(PARSEHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclParse.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclParse.c
 
 tclPanic.o: $(GENERIC_DIR)/tclPanic.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPanic.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPanic.c
 
 tclPathObj.o: $(GENERIC_DIR)/tclPathObj.c $(FSHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPathObj.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPathObj.c
 
 tclPipe.o: $(GENERIC_DIR)/tclPipe.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPipe.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPipe.c
 
 tclPkg.o: $(GENERIC_DIR)/tclPkg.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPkg.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPkg.c
 
 # TIP #59, embedding of configuration information into the binary library.
 #
@@ -1262,7 +1333,8 @@ tclPkg.o: $(GENERIC_DIR)/tclPkg.c
 # prefix/exec_prefix but all the different paths individually.
 
 tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
-	$(CC) -c $(CC_SWITCHES)					\
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES)					\
 		-DCFG_INSTALL_LIBDIR="\"$(LIB_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_BINDIR="\"$(BIN_INSTALL_DIR)\"" \
 		-DCFG_INSTALL_SCRDIR="\"$(SCRIPT_INSTALL_DIR)\"" \
@@ -1278,323 +1350,428 @@ tclPkgConfig.o: $(GENERIC_DIR)/tclPkgConfig.c
 		$(GENERIC_DIR)/tclPkgConfig.c
 
 tclPosixStr.o: $(GENERIC_DIR)/tclPosixStr.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPosixStr.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPosixStr.c
 
 tclPreserve.o: $(GENERIC_DIR)/tclPreserve.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPreserve.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclPreserve.c
 
 tclProc.o: $(GENERIC_DIR)/tclProc.c $(COMPILEHDR) $(NREHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProc.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclProc.c
 
 tclRegexp.o: $(GENERIC_DIR)/tclRegexp.c $(TCLREHDRS)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclRegexp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclRegexp.c
 
 tclResolve.o: $(GENERIC_DIR)/tclResolve.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclResolve.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclResolve.c
 
 tclResult.o: $(GENERIC_DIR)/tclResult.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclResult.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclResult.c
 
 tclScan.o: $(GENERIC_DIR)/tclScan.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclScan.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclScan.c
 
 tclStringObj.o: $(GENERIC_DIR)/tclStringObj.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStringObj.c
 
 tclStrToD.o: $(GENERIC_DIR)/tclStrToD.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrToD.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStrToD.c
 
 tclStubInit.o: $(GENERIC_DIR)/tclStubInit.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStubInit.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclStubInit.c
 
 tclTrace.o: $(GENERIC_DIR)/tclTrace.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTrace.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTrace.c
 
 tclUtil.o: $(GENERIC_DIR)/tclUtil.c $(PARSEHDR) $(TRIMHDR)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtil.c
 
 tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtf.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclUtf.c
 
 tclVar.o: $(GENERIC_DIR)/tclVar.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
-	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
-	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
 
 tclTestObj.o: $(GENERIC_DIR)/tclTestObj.c $(MATHHDRS)
-	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestObj.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestObj.c
 
 tclTestProcBodyObj.o: $(GENERIC_DIR)/tclTestProcBodyObj.c
-	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestProcBodyObj.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTestProcBodyObj.c
 
 tclTimer.o: $(GENERIC_DIR)/tclTimer.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTimer.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTimer.c
 
 tclThread.o: $(GENERIC_DIR)/tclThread.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThread.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThread.c
 
 tclThreadAlloc.o: $(GENERIC_DIR)/tclThreadAlloc.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadAlloc.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadAlloc.c
 
 tclThreadJoin.o: $(GENERIC_DIR)/tclThreadJoin.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadJoin.c
 
 tclThreadStorage.o: $(GENERIC_DIR)/tclThreadStorage.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadStorage.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclThreadStorage.c
 
 tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
-	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclThreadTest.c
 
 tclTomMathInterface.o: $(GENERIC_DIR)/tclTomMathInterface.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTomMathInterface.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTomMathInterface.c
 
 bncore.o: $(TOMMATH_DIR)/bncore.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bncore.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bncore.c
 
 bn_reverse.o: $(TOMMATH_DIR)/bn_reverse.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_reverse.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_reverse.c
 
 bn_fast_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_mul_digs.c
 
 bn_fast_s_mp_sqr.o: $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_fast_s_mp_sqr.c
 
 bn_mp_add.o: $(TOMMATH_DIR)/bn_mp_add.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add.c
 
 bn_mp_add_d.o: $(TOMMATH_DIR)/bn_mp_add_d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add_d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_add_d.c
 
 bn_mp_and.o: $(TOMMATH_DIR)/bn_mp_and.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_and.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_and.c
 
 bn_mp_clamp.o: $(TOMMATH_DIR)/bn_mp_clamp.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clamp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clamp.c
 
 bn_mp_clear.o: $(TOMMATH_DIR)/bn_mp_clear.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clear.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clear.c
 
 bn_mp_clear_multi.o: $(TOMMATH_DIR)/bn_mp_clear_multi.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clear_multi.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_clear_multi.c
 
 bn_mp_cmp.o: $(TOMMATH_DIR)/bn_mp_cmp.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp.c
 
 bn_mp_cmp_d.o: $(TOMMATH_DIR)/bn_mp_cmp_d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_d.c
 
 bn_mp_cmp_mag.o: $(TOMMATH_DIR)/bn_mp_cmp_mag.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_mag.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cmp_mag.c
 
 bn_mp_cnt_lsb.o: $(TOMMATH_DIR)/bn_mp_cnt_lsb.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cnt_lsb.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_cnt_lsb.c
 
 bn_mp_copy.o: $(TOMMATH_DIR)/bn_mp_copy.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_copy.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_copy.c
 
 bn_mp_count_bits.o: $(TOMMATH_DIR)/bn_mp_count_bits.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_count_bits.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_count_bits.c
 
 bn_mp_div.o: $(TOMMATH_DIR)/bn_mp_div.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div.c
 
 bn_mp_div_d.o: $(TOMMATH_DIR)/bn_mp_div_d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_d.c
 
 bn_mp_div_2.o: $(TOMMATH_DIR)/bn_mp_div_2.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2.c
 
 bn_mp_div_2d.o: $(TOMMATH_DIR)/bn_mp_div_2d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_2d.c
 
 bn_mp_div_3.o: $(TOMMATH_DIR)/bn_mp_div_3.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_3.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_div_3.c
 
 bn_mp_exch.o: $(TOMMATH_DIR)/bn_mp_exch.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_exch.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_exch.c
 
 bn_mp_expt_d.o: $(TOMMATH_DIR)/bn_mp_expt_d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_expt_d.c
 
 bn_mp_grow.o: $(TOMMATH_DIR)/bn_mp_grow.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_grow.c
 
 bn_mp_init.o: $(TOMMATH_DIR)/bn_mp_init.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init.c
 
 bn_mp_init_copy.o: $(TOMMATH_DIR)/bn_mp_init_copy.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_copy.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_copy.c
 
 bn_mp_init_multi.o: $(TOMMATH_DIR)/bn_mp_init_multi.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_multi.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_multi.c
 
 bn_mp_init_set.o: $(TOMMATH_DIR)/bn_mp_init_set.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_set.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_set.c
 
 bn_mp_init_set_int.o: $(TOMMATH_DIR)/bn_mp_init_set_int.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_set_int.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_set_int.c
 
 bn_mp_init_size.o:$(TOMMATH_DIR)/bn_mp_init_size.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_size.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_init_size.c
 
 bn_mp_karatsuba_mul.o: $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_mul.c
 
 bn_mp_karatsuba_sqr.o: $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_karatsuba_sqr.c
 
 bn_mp_lshd.o: $(TOMMATH_DIR)/bn_mp_lshd.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_lshd.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_lshd.c
 
 bn_mp_mod.o: $(TOMMATH_DIR)/bn_mp_mod.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mod.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mod.c
 
 bn_mp_mod_2d.o: $(TOMMATH_DIR)/bn_mp_mod_2d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mod_2d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mod_2d.c
 
 bn_mp_mul.o: $(TOMMATH_DIR)/bn_mp_mul.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul.c
 
 bn_mp_mul_2.o: $(TOMMATH_DIR)/bn_mp_mul_2.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_2.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_2.c
 
 bn_mp_mul_2d.o: $(TOMMATH_DIR)/bn_mp_mul_2d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_2d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_2d.c
 
 bn_mp_mul_d.o: $(TOMMATH_DIR)/bn_mp_mul_d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_mul_d.c
 
 bn_mp_neg.o: $(TOMMATH_DIR)/bn_mp_neg.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_neg.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_neg.c
 
 bn_mp_or.o: $(TOMMATH_DIR)/bn_mp_or.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_or.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_or.c
 
 bn_mp_radix_size.o: $(TOMMATH_DIR)/bn_mp_radix_size.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_size.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_size.c
 
 bn_mp_radix_smap.o: $(TOMMATH_DIR)/bn_mp_radix_smap.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_smap.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_radix_smap.c
 
 bn_mp_read_radix.o: $(TOMMATH_DIR)/bn_mp_read_radix.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_read_radix.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_read_radix.c
 
 bn_mp_rshd.o: $(TOMMATH_DIR)/bn_mp_rshd.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_rshd.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_rshd.c
 
 bn_mp_set.o: $(TOMMATH_DIR)/bn_mp_set.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set.c
 
 bn_mp_set_int.o: $(TOMMATH_DIR)/bn_mp_set_int.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_int.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_set_int.c
 
 bn_mp_shrink.o: $(TOMMATH_DIR)/bn_mp_shrink.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_shrink.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_shrink.c
 
 bn_mp_sqr.o: $(TOMMATH_DIR)/bn_mp_sqr.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sqr.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sqr.c
 
 bn_mp_sqrt.o: $(TOMMATH_DIR)/bn_mp_sqrt.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sqrt.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sqrt.c
 
 bn_mp_sub.o: $(TOMMATH_DIR)/bn_mp_sub.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub.c
 
 bn_mp_sub_d.o: $(TOMMATH_DIR)/bn_mp_sub_d.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub_d.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_sub_d.c
 
 bn_mp_to_unsigned_bin.o: $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin.c
 
 bn_mp_to_unsigned_bin_n.o: $(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_to_unsigned_bin_n.c
 
 bn_mp_toom_mul.o: $(TOMMATH_DIR)/bn_mp_toom_mul.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_mul.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_mul.c
 
 bn_mp_toom_sqr.o: $(TOMMATH_DIR)/bn_mp_toom_sqr.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_sqr.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toom_sqr.c
 
 bn_mp_toradix_n.o: $(TOMMATH_DIR)/bn_mp_toradix_n.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toradix_n.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_toradix_n.c
 
 bn_mp_unsigned_bin_size.o: $(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_unsigned_bin_size.c
 
 bn_mp_xor.o: $(TOMMATH_DIR)/bn_mp_xor.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_xor.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_xor.c
 
 bn_mp_zero.o: $(TOMMATH_DIR)/bn_mp_zero.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_zero.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_mp_zero.c
 
 bn_s_mp_add.o: $(TOMMATH_DIR)/bn_s_mp_add.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_add.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_add.c
 
 bn_s_mp_mul_digs.o: $(TOMMATH_DIR)/bn_s_mp_mul_digs.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_mul_digs.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_mul_digs.c
 
 bn_s_mp_sqr.o: $(TOMMATH_DIR)/bn_s_mp_sqr.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sqr.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sqr.c
 
 bn_s_mp_sub.o: $(TOMMATH_DIR)/bn_s_mp_sub.c $(MATHHDRS)
-	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sub.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bn_s_mp_sub.c
 
 tclUnixChan.o: $(UNIX_DIR)/tclUnixChan.c $(IOHDR)
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixChan.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixChan.c
 
 tclUnixEvent.o: $(UNIX_DIR)/tclUnixEvent.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixEvent.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixEvent.c
 
 tclUnixFCmd.o: $(UNIX_DIR)/tclUnixFCmd.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFCmd.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFCmd.c
 
 tclUnixFile.o: $(UNIX_DIR)/tclUnixFile.c $(FSHDR)
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFile.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixFile.c
 
 tclUnixNotfy.o: $(UNIX_DIR)/tclUnixNotfy.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixNotfy.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixNotfy.c
 
 tclUnixPipe.o: $(UNIX_DIR)/tclUnixPipe.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixPipe.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixPipe.c
 
 tclUnixSock.o: $(UNIX_DIR)/tclUnixSock.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixSock.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixSock.c
 
 tclUnixTest.o: $(UNIX_DIR)/tclUnixTest.c
-	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclUnixTest.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclUnixTest.c
 
 tclUnixThrd.o: $(UNIX_DIR)/tclUnixThrd.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixThrd.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixThrd.c
 
 tclUnixTime.o: $(UNIX_DIR)/tclUnixTime.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTime.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTime.c
 
 tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
-	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
 		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
 		$(UNIX_DIR)/tclUnixInit.c
 
 tclUnixCompat.o: $(UNIX_DIR)/tclUnixCompat.c
-	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixCompat.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixCompat.c
 
 # The following are Mac OS X only sources:
 tclMacOSXBundle.o: $(MAC_OSX_DIR)/tclMacOSXBundle.c
-	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXBundle.c
 
 tclMacOSXFCmd.o: $(MAC_OSX_DIR)/tclMacOSXFCmd.c
-	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXFCmd.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXFCmd.c
 
 tclMacOSXNotify.o: $(MAC_OSX_DIR)/tclMacOSXNotify.c
-	$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(MAC_OSX_DIR)/tclMacOSXNotify.c
 
 # The following is a CYGWIN only source:
 tclWinError.o: $(TOP_DIR)/win/tclWinError.c
-	$(CC) -c $(CC_SWITCHES) $(TOP_DIR)/win/tclWinError.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(TOP_DIR)/win/tclWinError.c
 
 # DTrace support
 
@@ -1618,11 +1795,13 @@ xttest:	${XTTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST}
 		${CC_SEARCH_FLAGS} -L/usr/openwin/lib -lXt -o xttest
 
 tclXtNotify.o: $(UNIX_DIR)/tclXtNotify.c
-	$(CC) -c $(APP_CC_SWITCHES) -I/usr/openwin/include \
+	@echo $(CC) -c $<
+	@$(CC) -c $(APP_CC_SWITCHES) -I/usr/openwin/include \
 		$(UNIX_DIR)/tclXtNotify.c
 
 tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
-	$(CC) -c $(APP_CC_SWITCHES) -I/usr/openwin/include \
+	@echo $(CC) -c $<
+	@$(CC) -c $(APP_CC_SWITCHES) -I/usr/openwin/include \
 		$(UNIX_DIR)/tclXtTest.c
 
 #--------------------------------------------------------------------------
@@ -1633,61 +1812,83 @@ tclXtTest.o: $(UNIX_DIR)/tclXtTest.c
 #--------------------------------------------------------------------------
 
 fixstrtod.o: $(COMPAT_DIR)/fixstrtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fixstrtod.c
 
 opendir.o: $(COMPAT_DIR)/opendir.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/opendir.c
 
 mkstemp.o: $(COMPAT_DIR)/mkstemp.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/mkstemp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/mkstemp.c
 
 memcmp.o: $(COMPAT_DIR)/memcmp.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/memcmp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/memcmp.c
 
 strncasecmp.o: $(COMPAT_DIR)/strncasecmp.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strncasecmp.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strncasecmp.c
 
 strstr.o: $(COMPAT_DIR)/strstr.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strstr.c
 
 strtod.o: $(COMPAT_DIR)/strtod.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtod.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtod.c
 
 strtol.o: $(COMPAT_DIR)/strtol.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtol.c
 
 strtoul.o: $(COMPAT_DIR)/strtoul.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtoul.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/strtoul.c
 
 waitpid.o: $(COMPAT_DIR)/waitpid.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/waitpid.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/waitpid.c
 
 fake-rfc2553.o: $(COMPAT_DIR)/fake-rfc2553.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fake-rfc2553.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fake-rfc2553.c
 
 # For building zlib, only used in some build configurations
 Zadler32.o: $(ZLIB_DIR)/adler32.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/adler32.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/adler32.c
 Zcompress.o: $(ZLIB_DIR)/compress.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/compress.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/compress.c
 Zcrc32.o:    $(ZLIB_DIR)/crc32.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/crc32.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/crc32.c
 Zdeflate.o:  $(ZLIB_DIR)/deflate.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/deflate.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/deflate.c
 Zinfback.o:  $(ZLIB_DIR)/infback.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/infback.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/infback.c
 Zinffast.o:  $(ZLIB_DIR)/inffast.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inffast.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inffast.c
 Zinflate.o:  $(ZLIB_DIR)/inflate.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inflate.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inflate.c
 Zinftrees.o: $(ZLIB_DIR)/inftrees.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inftrees.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inftrees.c
 Ztrees.o:    $(ZLIB_DIR)/trees.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/trees.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/trees.c
 Zuncompr.o:  $(ZLIB_DIR)/uncompr.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/uncompr.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/uncompr.c
 Zzutil.o:    $(ZLIB_DIR)/zutil.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/zutil.c
+	@echo $(CC) -c $<
+	@$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/zutil.c
 
 #--------------------------------------------------------------------------
 # Stub library binaries, these must be compiled for use in a shared library
@@ -1695,16 +1896,20 @@ Zzutil.o:    $(ZLIB_DIR)/zutil.c
 #--------------------------------------------------------------------------
 
 tclStubLib.o: $(GENERIC_DIR)/tclStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) -DSTATIC_BUILD $(GENERIC_DIR)/tclStubLib.c
 
 tclTomMathStubLib.o: $(GENERIC_DIR)/tclTomMathStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclTomMathStubLib.c
 
 tclOOStubLib.o: $(GENERIC_DIR)/tclOOStubLib.c
-	$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclOOStubLib.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(STUB_CC_SWITCHES) $(GENERIC_DIR)/tclOOStubLib.c
 
 .c.o:
-	$(CC) -c $(CC_SWITCHES) $<
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $<
 
 #--------------------------------------------------------------------------
 # Bundled Package targets
