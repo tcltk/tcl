@@ -8416,8 +8416,7 @@ TclNRYieldToObjCmd(
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
     Tcl_Obj *listPtr, *nsObjPtr;
-    Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-    Tcl_Namespace *ns1Ptr;
+    Tcl_Namespace *nsPtr = TclGetCurrentNamespace(interp);
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -8431,7 +8430,7 @@ TclNRYieldToObjCmd(
 	return TCL_ERROR;
     }
 
-    if (((Namespace *) TclGetCurrentNamespace(interp))->flags & NS_DYING) {
+    if (((Namespace *) nsPtr)->flags & NS_DYING) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"yieldto called in deleted namespace", -1));
         Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
