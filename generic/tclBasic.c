@@ -8417,7 +8417,6 @@ TclNRYieldToObjCmd(
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
     Tcl_Obj *listPtr, *nsObjPtr;
     Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-    Tcl_Namespace *ns1Ptr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
