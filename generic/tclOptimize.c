@@ -191,7 +191,7 @@ TrimUnreachable(
  * ConvertZeroEffectToNOP --
  *
  *	Replace PUSH/POP sequences (when non-hazardous) with NOPs. Also
- *	replace PUSH empty/CONCAT and TRY_CVT_NUMERIC (when followed by an
+ *	replace PUSH empty/STR_CONCAT and TRY_CVT_NUMERIC (when followed by an
  *	operation that guarantees the check for arithmeticity) and eliminate
  *	LNOT when we can invert the following JUMP condition.
  *
@@ -227,7 +227,7 @@ ConvertZeroEffectToNOP(
 	case INST_PUSH1:
 	    if (nextInst == INST_POP) {
 		blank = size + InstLength(nextInst);
-	    } else if (nextInst == INST_CONCAT1
+	    } else if (nextInst == INST_STR_CONCAT1
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt1AtPtr(currentInstPtr + 1));
@@ -242,7 +242,7 @@ ConvertZeroEffectToNOP(
 	case INST_PUSH4:
 	    if (nextInst == INST_POP) {
 		blank = size + 1;
-	    } else if (nextInst == INST_CONCAT1
+	    } else if (nextInst == INST_STR_CONCAT1
 		    && TclGetUInt1AtPtr(currentInstPtr + size + 1) == 2) {
 		Tcl_Obj *litPtr = TclFetchLiteral(envPtr,
 			TclGetUInt4AtPtr(currentInstPtr + 1));

@@ -512,7 +512,7 @@ typedef struct ByteCode {
 #define INST_PUSH4			2
 #define INST_POP			3
 #define INST_DUP			4
-#define INST_CONCAT1			5
+#define INST_STR_CONCAT1		5
 #define INST_INVOKE_STK1		6
 #define INST_INVOKE_STK4		7
 #define INST_EVAL_STK			8
@@ -751,6 +751,8 @@ typedef struct ByteCode {
 #define INST_INFO_LEVEL_NUM		152
 #define INST_INFO_LEVEL_ARGS		153
 #define INST_RESOLVE_COMMAND		154
+
+/* For compilation relating to TclOO */
 #define INST_TCLOO_SELF			155
 #define INST_TCLOO_CLASS		156
 #define INST_TCLOO_NS			157
@@ -769,14 +771,32 @@ typedef struct ByteCode {
 #define INST_EXPAND_DROP		165
 
 /* New foreach implementation */
-
 #define INST_FOREACH_START              166
 #define INST_FOREACH_STEP               167
 #define INST_FOREACH_END                168
 #define INST_LMAP_COLLECT               169
 
+/* For compilation of [string trim] and related */
+#define INST_STR_TRIM			170
+#define INST_STR_TRIM_LEFT		171
+#define INST_STR_TRIM_RIGHT		172
+
+#define INST_CONCAT_STK			173
+
+#define INST_STR_UPPER			174
+#define INST_STR_LOWER			175
+#define INST_STR_TITLE			176
+#define INST_STR_REPLACE		177
+
+#define INST_ORIGIN_COMMAND		178
+
+#define INST_TCLOO_NEXT			179
+#define INST_TCLOO_NEXT_CLASS		180
+
+#define INST_YIELD_TO_INVOKE		181
+
 /* The last opcode */
-#define LAST_INST_OPCODE		169
+#define LAST_INST_OPCODE		181
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
