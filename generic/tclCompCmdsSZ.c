@@ -3453,6 +3453,51 @@ TclCompileYieldCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileYieldToCmd --
+ *
+ *	Procedure called to compile the "yieldto" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "yieldto" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileYieldToCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    DefineLineInformation;	/* TIP #280 */
+    Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
+    int i;
+
+    if (parsePtr->numWords < 2) {
+	return TCL_ERROR;
+    }
+
+    OP(		NS_CURRENT);
+    for (i = 1 ; i < parsePtr->numWords ; i++) {
+	CompileWord(envPtr, tokenPtr, interp, i);
+	tokenPtr = TokenAfter(tokenPtr);
+    }
+    OP4(	LIST, i);
+    OP(		YIELD_TO_INVOKE);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * CompileUnaryOpCmd --
  *
  *	Utility routine to compile the unary operator commands.
