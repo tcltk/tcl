@@ -259,7 +259,7 @@ static const CmdInfo builtInCmds[] = {
     {"variable",	Tcl_VariableObjCmd,	TclCompileVariableCmd,	NULL,	CMD_IS_SAFE},
     {"while",		Tcl_WhileObjCmd,	TclCompileWhileCmd,	TclNRWhileObjCmd,	CMD_IS_SAFE},
     {"yield",		NULL,			TclCompileYieldCmd,	TclNRYieldObjCmd,	CMD_IS_SAFE},
-    {"yieldto",		NULL,			NULL,			TclNRYieldToObjCmd,	CMD_IS_SAFE},
+    {"yieldto",		NULL,			TclCompileYieldToCmd,	TclNRYieldToObjCmd,	CMD_IS_SAFE},
 
     /*
      * Commands in the OS-interface. Note that many of these are unsafe.
@@ -8416,8 +8416,7 @@ TclNRYieldToObjCmd(
 {
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
     Tcl_Obj *listPtr, *nsObjPtr;
-    Tcl_Namespace *nsPtr = (Tcl_Namespace *) iPtr->varFramePtr->nsPtr;
-    Tcl_Namespace *ns1Ptr;
+    Tcl_Namespace *nsPtr = TclGetCurrentNamespace(interp);
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "command ?arg ...?");
@@ -8431,11 +8430,13 @@ TclNRYieldToObjCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * Add the tailcall in the caller env, then just yield.
-     *
-     * This is essentially code from TclNRTailcallObjCmd
-     */
+    if (((Namespace *) nsPtr)->flags & NS_DYING) {
+        Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"yieldto called in deleted namespace", -1));
+        Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "YIELDTO_IN_DELETED",
+		NULL);
+        return TCL_ERROR;
+    }
 
     /*
      * Add the tailcall in the caller env, then just yield.
@@ -8444,14 +8445,8 @@ TclNRYieldToObjCmd(
      */
 
     listPtr = Tcl_NewListObj(objc, objv);
-
     nsObjPtr = Tcl_NewStringObj(nsPtr->fullName, -1);
-    if ((TCL_OK != TclGetNamespaceFromObj(interp, nsObjPtr, &ns1Ptr))
-	    || (nsPtr != ns1Ptr)) {
-	Tcl_Panic("yieldto failed to find the proper namespace");
-    }
     TclListObjSetElement(interp, listPtr, 0, nsObjPtr);
-
 
     /*
      * Add the callback in the caller's env, then instruct TEBC to yield.

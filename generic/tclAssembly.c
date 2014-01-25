@@ -26,6 +26,7 @@
  *-   jumpTable testing
  *-   syntax (?)
  *-   returnCodeBranch
+ *-   tclooNext, tclooNextClass
  */
 
 #include "tclInt.h"
