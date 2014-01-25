@@ -4198,16 +4198,17 @@ WriteChars(
     consumedSomething = 1;
     while (consumedSomething && (srcLen + savedLF + endEncoding > 0)) {
 	consumedSomething = 0;
-	stage = statePtr->outputStage;
-	stageMax = statePtr->bufSize;
-	stageLen = stageMax;
-
-	toWrite = stageLen;
-	if (toWrite > srcLen) {
-	    toWrite = srcLen;
-	}
 
 	if (translate) {
+	    stage = statePtr->outputStage;
+	    stageMax = statePtr->bufSize;
+	    stageLen = stageMax;
+
+	    toWrite = stageLen;
+	    if (toWrite > srcLen) {
+		toWrite = srcLen;
+	    }
+
 	    if (savedLF) {
 		/*
 		 * A '\n' was left over from last call to TranslateOutputEOL()
@@ -4234,8 +4235,9 @@ WriteChars(
 		stageLen = stageMax;
 	    }
 	} else {
-	    memcpy(stage, src, toWrite);
-	    stageLen = toWrite;
+	    stage = (char *) src;
+	    stageLen = srcLen;
+	    toWrite = stageLen;
 	}
 	src += toWrite;
 	srcLen -= toWrite;
