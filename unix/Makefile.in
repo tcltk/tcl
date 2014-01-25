@@ -622,14 +622,14 @@ doc:
 # The following target is configured by autoconf to generate either a shared
 # library or non-shared library for Tcl.
 ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
-	rm -f $@
+	-@rm -f $@
 	@MAKE_LIB@
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
 	    (cd ${TOP_DIR}/win; ${MAKE} tcldde14.dll tclreg13.dll); \
 	fi
-	rm -f $@
+	-@rm -f $@
 	@MAKE_STUB_LIB@
 
 # Make target which outputs the list of the .o contained in the Tcl lib useful
@@ -643,7 +643,8 @@ tclLibObjs:
 objs: ${OBJS}
 
 ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
-	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
+	@echo ${CC} ${TCLSH_OBJS} ${TCL_STUB_LIB_FILE} ${LIBS} -o ${TCL_EXE}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
 
@@ -658,12 +659,12 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 clean: clean-packages
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@
-	cd dltest ; $(MAKE) clean
+	@cd dltest ; $(MAKE) clean
 
 distclean: distclean-packages clean
 	rm -rf Makefile config.status config.cache config.log tclConfig.sh \
 		tclConfig.h *.plist Tcl.framework tcl.pc
-	cd dltest ; $(MAKE) distclean
+	@cd dltest ; $(MAKE) distclean
 
 depend:
 	makedepend -- $(DEPEND_SWITCHES) -- $(SRCS)
@@ -693,10 +694,11 @@ SHELL_ENV =	@LD_LIBRARY_PATH_VAR@=`pwd`:${@LD_LIBRARY_PATH_VAR@} \
 		TCL_LIBRARY="${TCL_BUILDTIME_LIBRARY}"
 
 ${TCLTEST_EXE}: ${TCLTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST}
-	$(MAKE) tcltest-real LIB_RUNTIME_DIR="`pwd`"
+	@$(MAKE) tcltest-real LIB_RUNTIME_DIR="`pwd`"
 
 tcltest-real:
-	${CC} ${CFLAGS} ${LDFLAGS} ${TCLTEST_OBJS} \
+	@echo ${CC} ${TCLTEST_OBJS} ${TCL_STUB_LIB_FILE} ${LIBS} -o ${TCLTEST_EXE}
+	@${CC} ${CFLAGS} ${LDFLAGS} ${TCLTEST_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLTEST_EXE}
 
@@ -711,18 +713,20 @@ tcltest-real:
 test: test-tcl test-packages
 
 test-tcl: ${TCLTEST_EXE}
-	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
+	@echo ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
+	@$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
 gdb-test: ${TCLTEST_EXE}
 	@echo "set env @LD_LIBRARY_PATH_VAR@=`pwd`:$${@LD_LIBRARY_PATH_VAR@}" > gdb.run
 	@echo "set env TCL_LIBRARY=${TCL_BUILDTIME_LIBRARY}" >> gdb.run
 	@echo "set args $(TOP_DIR)/tests/all.tcl $(TESTFLAGS) -singleproc 1" >> gdb.run
 	$(GDB) ./${TCLTEST_EXE} --command=gdb.run
-	rm gdb.run
+	@rm gdb.run
 
 # Useful target to launch a built tcltest with the proper path,...
 runtest: ${TCLTEST_EXE}
-	$(SHELL_ENV) ./${TCLTEST_EXE}
+	@echo ./${TCLTEST_EXE}
+	@$(SHELL_ENV) ./${TCLTEST_EXE}
 
 # Useful target for running the test suite with an unwritable current
 # directory...
@@ -736,7 +740,7 @@ ro-test: ${TCLTEST_EXE}
 # directory after a successful build.
 
 dltest.marker: ${STUB_LIB_FILE}
-	cd dltest ; $(MAKE)
+	@cd dltest ; $(MAKE)
 
 #--------------------------------------------------------------------------
 # Rules for running a shell before installation
@@ -745,23 +749,29 @@ dltest.marker: ${STUB_LIB_FILE}
 # This target can be used to run tclsh from the build directory
 # via `make shell SCRIPT=/tmp/foo.tcl`
 shell: ${TCL_EXE}
-	$(SHELL_ENV) ./${TCL_EXE} $(SCRIPT)
+	@echo ./${TCL_EXE} $(SCRIPT)
+	@$(SHELL_ENV) ./${TCL_EXE} $(SCRIPT)
 
 # This target can be used to run tclsh inside either gdb or insight
 gdb: ${TCL_EXE}
-	$(SHELL_ENV) $(GDB) ./${TCL_EXE}
+	@echo $(GDB) ./${TCL_EXE} ${COREDUMP}
+	@$(SHELL_ENV) $(GDB) ./${TCL_EXE} ${COREDUMP}
 
 valgrind: ${TCL_EXE} ${TCLTEST_EXE}
-	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind $(TESTFLAGS)
+	@echo $(VALGRIND) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind $(TESTFLAGS)
+	@$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 -constraints valgrind $(TESTFLAGS)
 
 valgrindshell: ${TCL_EXE}
-	$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCL_EXE} $(SCRIPT)
+	@echo $(VALGRIND) ./${TCL_EXE} $(SCRIPT)
+	@$(SHELL_ENV) $(VALGRIND) $(VALGRINDARGS) ./${TCL_EXE} $(SCRIPT)
 
 trace-shell: ${TCL_EXE}
-	$(SHELL_ENV) ${TRACE} $(TRACE_OPTS) ./${TCL_EXE} $(SCRIPT)
+	@echo ${TRACE} ./${TCL_EXE} $(SCRIPT)
+	@$(SHELL_ENV) ${TRACE} $(TRACE_OPTS) ./${TCL_EXE} $(SCRIPT)
 
 trace-test: ${TCLTEST_EXE}
-	$(SHELL_ENV) ${TRACE} $(TRACE_OPTS) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS)
+	@echo ${TRACE} ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS)
+	@$(SHELL_ENV) ${TRACE} $(TRACE_OPTS) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl -singleproc 1 $(TESTFLAGS)
 
 #--------------------------------------------------------------------------
 # Installation rules
@@ -778,7 +788,7 @@ INSTALL_TARGETS = $(INSTALL_BASE_TARGETS) $(INSTALL_DOC_TARGETS) $(INSTALL_DEV_T
 install: $(INSTALL_TARGETS)
 
 install-strip:
-	$(MAKE) $(INSTALL_TARGETS) \
+	@$(MAKE) $(INSTALL_TARGETS) \
 		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
 		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
 
@@ -1001,11 +1011,12 @@ tclTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
 	fi;
-	$(CC) -c $(APP_CC_SWITCHES) \
+	@echo ${CC} -c -DTCL_TEST $< -o tclTestInit.o
+	@$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
 		-DTCL_TEST $(UNIX_DIR)/tclAppInit.c
-	rm -f tclTestInit.o
-	mv tclAppInit.o tclTestInit.o
+	@rm -f tclTestInit.o
+	@mv tclAppInit.o tclTestInit.o
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
 	fi;
@@ -1015,11 +1026,12 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	    rm -f tclAppInit.sav; \
 	    mv tclAppInit.o tclAppInit.sav; \
 	fi;
-	$(CC) -c $(APP_CC_SWITCHES) \
+	@echo ${CC} -c -DTCL_TEST -DTCL_XT_TEST $< -o xtTestInit.o
+	@$(CC) -c $(APP_CC_SWITCHES) \
 		-DTCL_BUILDTIME_LIBRARY="\"${TCL_BUILDTIME_LIBRARY}\"" \
 		-DTCL_TEST -DTCL_XT_TEST $(UNIX_DIR)/tclAppInit.c
-	rm -f xtTestInit.o
-	mv tclAppInit.o xtTestInit.o
+	@rm -f xtTestInit.o
+	@mv tclAppInit.o xtTestInit.o
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
 	fi;
@@ -1790,7 +1802,8 @@ $(DTRACE_OBJ): $(DTRACE_SRC) $(TCL_OBJS)
 #--------------------------------------------------------------------------
 
 xttest:	${XTTEST_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${BUILD_DLTEST}
-	${CC} ${CFLAGS} ${LDFLAGS} ${XTTEST_OBJS} \
+	@echo ${CC} ${XTTEST_OBJS} ${TCL_STUB_LIB_FILE} ${LIBS} -lXt -o xttest
+	@${CC} ${CFLAGS} ${LDFLAGS} ${XTTEST_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -L/usr/openwin/lib -lXt -o xttest
 
@@ -2045,7 +2058,8 @@ gendate:
 # run (and the results checked) after updating to a new release of libtommath.
 
 gentommath_h:
-	$(NATIVE_TCLSH) "$(TOOL_DIR)/fix_tommath_h.tcl" \
+	@echo tclsh $(TOOL_DIR)/fix_tommath_h.tcl $(TOMMATH_DIR)/tommath.h
+	@$(NATIVE_TCLSH) "$(TOOL_DIR)/fix_tommath_h.tcl" \
 		"$(TOMMATH_DIR)/tommath.h" \
 		> "$(GENERIC_DIR)/tclTomMath.h"
 
@@ -2065,10 +2079,11 @@ $(GENERIC_DIR)/tclOOStubInit.c: $(GENERIC_DIR)/tclOO.decls
 	@echo "This warning can be safely ignored, do not report as a bug!"
 
 genstubs:
-	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	@echo tclsh $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) '*.decls'
+	@$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tcl.decls $(GENERIC_DIR)/tclInt.decls \
 		$(GENERIC_DIR)/tclTomMath.decls
-	$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
+	@$(NATIVE_TCLSH) $(TOOL_DIR)/genStubs.tcl $(GENERIC_DIR) \
 		$(GENERIC_DIR)/tclOO.decls
 
 #
@@ -2132,14 +2147,15 @@ checkexports: $(TCL_LIB_FILE)
 #
 
 rpm: all
-	rm -f THIS.TCL.SPEC
-	echo "%define _builddir `pwd`" > THIS.TCL.SPEC
-	echo "%define _rpmdir `pwd`/RPMS" >> THIS.TCL.SPEC
-	cat tcl.spec >> THIS.TCL.SPEC
-	mkdir -p RPMS/i386
-	rpmbuild -bb THIS.TCL.SPEC
+	-@rm -f THIS.TCL.SPEC
+	@echo "%define _builddir `pwd`" > THIS.TCL.SPEC
+	@echo "%define _rpmdir `pwd`/RPMS" >> THIS.TCL.SPEC
+	@cat tcl.spec >> THIS.TCL.SPEC
+	@mkdir -p RPMS/i386
+	@echo rpmbuild -bb tcl.spec
+	@rpmbuild -bb THIS.TCL.SPEC
 	mv RPMS/i386/*.rpm .
-	rm -rf RPMS THIS.TCL.SPEC
+	-@rm -rf RPMS THIS.TCL.SPEC
 
 #
 # Target to create a proper Tcl distribution from information in the master
@@ -2153,16 +2169,19 @@ ZIPNAME	 = tcl${MAJOR_VERSION}${MINOR_VERSION}${PATCH_LEVEL}-src.zip
 DISTDIR	 = $(DISTROOT)/$(DISTNAME)
 $(UNIX_DIR)/configure: $(UNIX_DIR)/configure.in $(UNIX_DIR)/tcl.m4 \
 		$(UNIX_DIR)/aclocal.m4
-	cd $(UNIX_DIR); autoconf
+	@echo autoconf
+	@cd $(UNIX_DIR); autoconf
 $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
-	cd $(MAC_OSX_DIR); autoconf
+	@echo autoconf
+	@cd $(MAC_OSX_DIR); autoconf
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
-	cd $(MAC_OSX_DIR); autoheader; touch $@
+	@echo autoheader
+	@cd $(MAC_OSX_DIR); autoheader; touch $@
 
 EOLFIX=$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure genstubs dist-packages ${NATIVE_TCLSH}
-	rm -rf $(DISTDIR)
-	mkdir -p $(DISTDIR)/unix
+	@rm -rf $(DISTDIR)
+	@mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
 	cp $(UNIX_DIR)/Makefile.in $(DISTDIR)/unix
 	chmod 664 $(DISTDIR)/unix/Makefile.in
@@ -2186,9 +2205,10 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	@mkdir $(DISTDIR)/library
 	cp -p $(TOP_DIR)/license.terms $(TOP_DIR)/library/*.tcl \
 		$(TOP_DIR)/library/tclIndex $(DISTDIR)/library
-	for i in http1.0 http opt msgcat reg dde tcltest platform; \
+	@for i in http1.0 http opt msgcat reg dde tcltest platform; \
 	    do \
 		mkdir $(DISTDIR)/library/$$i ;\
+		echo cp -p $(TOP_DIR)/library/$$i $(DISTDIR)/library;\
 		cp -p $(TOP_DIR)/library/$$i/*.tcl $(DISTDIR)/library/$$i; \
 	    done;
 	@mkdir $(DISTDIR)/library/encoding
@@ -2207,7 +2227,8 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(TOP_DIR)/license.terms $(COMPAT_DIR)/*.[ch] \
 		$(COMPAT_DIR)/README $(DISTDIR)/compat
 	@mkdir $(DISTDIR)/compat/zlib
-	( cd $(COMPAT_DIR)/zlib; \
+	@echo cp -r $(COMPAT_DIR)/zlib $(DISTDIR)/compat/zlib
+	@( cd $(COMPAT_DIR)/zlib; \
 	  find . -name CVS -prune -o -type f -print ) \
 	    | ( cd $(COMPAT_DIR)/zlib ; xargs tar cf - ) \
 	    | ( cd $(DISTDIR)/compat/zlib ; tar xfp - )
@@ -2272,8 +2293,9 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	done
 
 alldist: dist
-	rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
-	cd $(DISTROOT); tar cf $(DISTNAME)-src.tar $(DISTNAME); \
+	@rm -f $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(ZIPNAME)
+	@echo tar -zcf $(DISTROOT)/$(DISTNAME)-src.tar.gz $(DISTROOT)/$(DISTNAME)\; zip -qr8 $(DISTROOT)/$(ZIPNAME) $(DISTROOT)/$(DISTNAME)
+	@cd $(DISTROOT); tar cf $(DISTNAME)-src.tar $(DISTNAME); \
 		gzip -9 $(DISTNAME)-src.tar; zip -qr8 $(ZIPNAME) $(DISTNAME)
 
 #--------------------------------------------------------------------------
@@ -2292,20 +2314,23 @@ alldist: dist
 #--------------------------------------------------------------------------
 
 html: ${NATIVE_TCLSH}
-	$(BUILD_HTML)
+	@echo tclsh $(TOOL_DIR)/tcltk-man2html.tcl $(BUILD_HTML_FLAGS)
+	@$(BUILD_HTML)
 	@EXTRA_BUILD_HTML@
 html-tcl: ${NATIVE_TCLSH}
-	$(BUILD_HTML) --tcl
+	@echo tclsh $(TOOL_DIR)/tcltk-man2html.tcl --tcl $(BUILD_HTML_FLAGS)
+	@$(BUILD_HTML) --tcl
 	@EXTRA_BUILD_HTML@
 html-tk: ${NATIVE_TCLSH}
-	$(BUILD_HTML) --tk
+	@echo tclsh $(TOOL_DIR)/tcltk-man2html.tcl --tk $(BUILD_HTML_FLAGS)
+	@$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@
 
 # You'd better have these programs or you will have problems creating Makefile
 # from Makefile.in in the first place...
 HTML_VERSION = `basename $(TOP_DIR) | sed s/tcl//`
 BUILD_HTML = \
-	@${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
+	${NATIVE_TCLSH} $(TOOL_DIR)/tcltk-man2html.tcl \
 		--useversion=$(HTML_VERSION) --htmldir="$(HTML_INSTALL_DIR)" \
 		--srcdir=$(TOP_DIR)/.. $(BUILD_HTML_FLAGS)
 

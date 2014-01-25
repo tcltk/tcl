@@ -33,25 +33,32 @@ dltest_suffix: pkga${DLTEST_SUFFIX} pkgb${DLTEST_SUFFIX} pkgc${DLTEST_SUFFIX} pk
 	@touch ../dltest.marker
 
 pkga.o: $(SRC_DIR)/pkga.c
-	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkga.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkga.c
 
 pkgb.o: $(SRC_DIR)/pkgb.c
-	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgb.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgb.c
 
 pkgc.o: $(SRC_DIR)/pkgc.c
-	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgc.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgc.c
 
 pkgd.o: $(SRC_DIR)/pkgd.c
-	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgd.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgd.c
 
 pkge.o: $(SRC_DIR)/pkge.c
-	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkge.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkge.c
 
 pkgua.o: $(SRC_DIR)/pkgua.c
-	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgua.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgua.c
 
 pkgooa.o: $(SRC_DIR)/pkgooa.c
-	$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgooa.c
+	@echo $(CC) -c $<
+	@$(CC) -c $(CC_SWITCHES) $(SRC_DIR)/pkgooa.c
 
 pkga${SHLIB_SUFFIX}: pkga.o
 	${SHLIB_LD} -o pkga${SHLIB_SUFFIX} pkga.o ${SHLIB_LD_LIBS}
