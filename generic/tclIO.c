@@ -210,7 +210,7 @@ static void		PeekAhead(Channel *chanPtr, char **dstEndPtr,
 static int		ReadBytes(ChannelState *statePtr, Tcl_Obj *objPtr,
 			    int charsLeft);
 static int		ReadChars(ChannelState *statePtr, Tcl_Obj *objPtr,
-			    int charsLeft, int *offsetPtr, int *factorPtr);
+			    int charsLeft, int *factorPtr);
 static void		RecycleBuffer(ChannelState *statePtr,
 			    ChannelBuffer *bufPtr, int mustDiscard);
 static int		StackSetBlockMode(Channel *chanPtr, int mode);
@@ -5425,7 +5425,7 @@ DoReadChars(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int offset, factor, copied, copiedNow, result;
+    int factor, copied, copiedNow, result;
     Tcl_Encoding encoding;
 #define UTF_EXPANSION_FACTOR	1024
 
@@ -5447,14 +5447,11 @@ DoReadChars(
 	     * We're going to access objPtr->bytes directly, so we must ensure
 	     * that this is actually a string object (otherwise it might have
 	     * been pure Unicode).
+	     *
+	     * Probably not needed anymore.
 	     */
 
 	    TclGetString(objPtr);
-	    offset = 0;
-	}
-    } else {
-	if (encoding) {
-	    TclGetStringFromObj(objPtr, &offset);
 	}
     }
 
@@ -5464,8 +5461,7 @@ DoReadChars(
 	    if (encoding == NULL) {
 		copiedNow = ReadBytes(statePtr, objPtr, toRead);
 	    } else {
-		copiedNow = ReadChars(statePtr, objPtr, toRead, &offset,
-			&factor);
+		copiedNow = ReadChars(statePtr, objPtr, toRead, &factor);
 	    }
 
 	    /*
@@ -5510,9 +5506,6 @@ DoReadChars(
     }
 
     ResetFlag(statePtr, CHANNEL_BLOCKED);
-    if (encoding) {
-	Tcl_SetObjLength(objPtr, offset);
-    }
 
     /*
      * Update the notifier state so we don't block while there is still data
@@ -5651,17 +5644,13 @@ ReadChars(
 				 * available in the first buffer, only the
 				 * characters from the first buffer are
 				 * returned. */
-    int *offsetPtr,		/* On input, contains how many bytes of objPtr
-				 * have been used to hold data. On output,
-				 * filled with how many bytes are now being
-				 * used. */
     int *factorPtr)		/* On input, contains a guess of how many
 				 * bytes need to be allocated to hold the
 				 * result of converting N source bytes to
 				 * UTF-8. On output, contains another guess
 				 * based on the data seen so far. */
 {
-    int toRead, factor, offset, spaceLeft, srcLen, dstNeeded;
+    int toRead, factor, srcLen, dstNeeded, numBytes;
     int srcRead, dstWrote, numChars, dstRead;
     ChannelBuffer *bufPtr;
     char *src, *dst;
@@ -5669,7 +5658,6 @@ ReadChars(
     int encEndFlagSuppressed = 0;
 
     factor = *factorPtr;
-    offset = *offsetPtr;
 
     bufPtr = statePtr->inQueueHead;
     src = RemovePoint(bufPtr);
@@ -5687,37 +5675,9 @@ ReadChars(
      */
 
     dstNeeded = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
-    spaceLeft = objPtr->length - offset;
-
-    if (dstNeeded > spaceLeft) {
-	/*
-	 * Double the existing size of the object or make enough room to hold
-	 * all the characters we want from the source buffer, whichever is
-	 * larger.
-	 */
-
-	int length = offset + ((offset < dstNeeded) ? dstNeeded : offset);
-
-	if (Tcl_AttemptSetObjLength(objPtr, length) == 0) {
-	    length = offset + dstNeeded;
-	    if (Tcl_AttemptSetObjLength(objPtr, length) == 0) {
-		dstNeeded = TCL_UTF_MAX - 1 + toRead;
-		length = offset + dstNeeded;
-		Tcl_SetObjLength(objPtr, length);
-	    }
-	}
-	spaceLeft = length - offset;
-    }
-    if (toRead == srcLen) {
-	/*
-	 * Want to convert the whole buffer in one pass. If we have enough
-	 * space, convert it using all available space in object rather than
-	 * using the factor.
-	 */
-
-	dstNeeded = spaceLeft;
-    }
-    dst = objPtr->bytes + offset;
+    (void) TclGetStringFromObj(objPtr, &numBytes);
+    Tcl_AppendToObj(objPtr, NULL, dstNeeded);
+    dst = TclGetString(objPtr) + numBytes;
 
     /*
      * [Bug 1462248]: The cause of the crash reported in this bug is this:
@@ -5788,7 +5748,7 @@ ReadChars(
 	    *dst = '\r';
 	}
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
-	*offsetPtr += 1;
+	Tcl_SetObjLength(objPtr, numBytes + 1);
 
 	if (encEndFlagSuppressed) {
 	    statePtr->inputEncodingFlags |= TCL_ENCODING_END;
@@ -5829,6 +5789,7 @@ ReadChars(
 
 		SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
 	    }
+	    Tcl_SetObjLength(objPtr, numBytes);
 	    return -1;
 	}
 
@@ -5853,7 +5814,8 @@ ReadChars(
 	memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
 	RecycleBuffer(statePtr, bufPtr, 0);
 	statePtr->inQueueHead = nextPtr;
-	return ReadChars(statePtr, objPtr, charsToRead, offsetPtr, factorPtr);
+	Tcl_SetObjLength(objPtr, numBytes);
+	return ReadChars(statePtr, objPtr, charsToRead, factorPtr);
     }
 
     dstRead = dstWrote;
@@ -5866,6 +5828,7 @@ ReadChars(
 	 */
 
 	if (dstWrote == 0) {
+	    Tcl_SetObjLength(objPtr, numBytes);
 	    return -1;
 	}
 	statePtr->inputEncodingState = oldState;
@@ -5905,7 +5868,7 @@ ReadChars(
     if (dstWrote > srcRead + 1) {
 	*factorPtr = dstWrote * UTF_EXPANSION_FACTOR / srcRead;
     }
-    *offsetPtr += dstWrote;
+    Tcl_SetObjLength(objPtr, numBytes + dstWrote);
     return numChars;
 }
 
