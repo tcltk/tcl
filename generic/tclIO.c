@@ -3779,6 +3779,74 @@ WriteChars(
     translate = (statePtr->flags & CHANNEL_LINEBUFFERED)
 	|| (statePtr->outputTranslation != TCL_TRANSLATE_LF);
 
+#if 0
+    consumedSomething = 1;
+    while (consumedSomething && (srcLen + saved + endEncoding > 0)) {
+	void *lastNewLine;
+	int srcLimit;
+	
+	/* Get space to write into */
+	bufPtr = statePtr->curOutPtr;
+	if (bufPtr == NULL) {
+	    bufPtr = AllocChannelBuffer(statePtr->bufSize);
+	    statePtr->curOutPtr = bufPtr;
+	    if (saved) {
+		/*
+		 * Here's some translated bytes left over from the last buffer
+		 * that we need to stick at the beginning of this buffer.
+		 */
+
+		memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+		bufPtr->nextAdded += saved;
+		saved = 0;
+	    }
+	}
+	dst = InsertPoint(bufPtr);
+	dstLen = SpaceLeft(bufPtr);
+
+	/*
+	 * We have dstLen bytes to write to.  The most source bytes
+	 * that could possibly fill that is TCL_UTF_MAX * dstLen.
+	 */
+
+	srcLimit = TCL_UTF_MAX * dstLen;
+	if (srcLen < srcLimit) {
+	    srcLimit = srcLen;
+	}
+	lastNewLine = memchr(src, '\n', srcLimit);
+
+	if (lastNewLine) {
+	    srcLimit = lastNewLine - src;
+	}
+	
+	result = Tcl_UtfToExternal(NULL, encoding, src, srcLimit,
+		statePtr->outputEncodingFlags,
+		&statePtr->outputEncodingState, dst,
+		dstLen + BUFFER_PADDING, &srcRead, &dstWrote, NULL);
+
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
+	
+	if ((result != 0) && (srcRead + dstWrote == 0)) {
+	    fprintf(stdout, "WDTH?\n"); fflush(stdout);
+	}
+	bufPtr->nextAdded += dstWrote;
+	if (IsBufferOverflowing(bufPtr)) {
+	    /*
+	     * When translating from UTF-8 to external encoding, we
+	     * allowed the translation to produce a character that crossed
+	     * the end of the output buffer, so that we would get a
+	     * completely full buffer before flushing it. The extra bytes
+	     * will be moved to the beginning of the next buffer.
+	     */
+
+	    saved = -SpaceLeft(bufPtr);
+	    memcpy(safe, dst + dstLen, (size_t) saved);
+	    bufPtr->nextAdded = bufPtr->bufLength;
+	}
+	
+    
+    }
+#else
     /*
      * Loop over all UTF-8 characters in src, storing them in staging buffer
      * with proper EOL translation.
@@ -3933,6 +4001,7 @@ WriteChars(
 	    }
 	}
     }
+#endif
 
     /*
      * If nothing was written and it happened because there was no progress in
