@@ -3756,18 +3756,21 @@ WriteChars(
     char *dst, *stage;
     int saved, savedLF, sawLF, total, dstLen, stageMax, dstWrote;
     int stageLen, toWrite, stageRead, endEncoding, result;
-    int consumedSomething, translate;
+    int consumedSomething, translate, flushed, needNlFlush;
     Tcl_Encoding encoding;
     char safe[BUFFER_PADDING];
+    char *nextNewLine = NULL;
 
     if (srcLen) {
         WillWrite(chanPtr);
     }
 
+    flushed = 0;
     total = 0;
     sawLF = 0;
     savedLF = 0;
     saved = 0;
+    needNlFlush = 0;
     encoding = statePtr->encoding;
 
     /*
@@ -3779,46 +3782,39 @@ WriteChars(
     translate = (statePtr->flags & CHANNEL_LINEBUFFERED)
 	|| (statePtr->outputTranslation != TCL_TRANSLATE_LF);
 
-#if 0
+#if 1
+    if (translate) {
+	nextNewLine = memchr(src, '\n', srcLen);
+    }
     consumedSomething = 1;
     while (consumedSomething && (srcLen + saved + endEncoding > 0)) {
-	void *lastNewLine;
-	int srcLimit;
+	int srcRead;
+	int srcLimit = srcLen;
+
+	consumedSomething = 0;
+	if (nextNewLine) {
+	    srcLimit = nextNewLine - src;
+	}
 	
 	/* Get space to write into */
 	bufPtr = statePtr->curOutPtr;
 	if (bufPtr == NULL) {
 	    bufPtr = AllocChannelBuffer(statePtr->bufSize);
 	    statePtr->curOutPtr = bufPtr;
-	    if (saved) {
-		/*
-		 * Here's some translated bytes left over from the last buffer
-		 * that we need to stick at the beginning of this buffer.
-		 */
+	}
+	if (saved) {
+	    /*
+	     * Here's some translated bytes left over from the last buffer
+	     * that we need to stick at the beginning of this buffer.
+	     */
 
-		memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
-		bufPtr->nextAdded += saved;
-		saved = 0;
-	    }
+	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    bufPtr->nextAdded += saved;
+	    saved = 0;
 	}
 	dst = InsertPoint(bufPtr);
 	dstLen = SpaceLeft(bufPtr);
 
-	/*
-	 * We have dstLen bytes to write to.  The most source bytes
-	 * that could possibly fill that is TCL_UTF_MAX * dstLen.
-	 */
-
-	srcLimit = TCL_UTF_MAX * dstLen;
-	if (srcLen < srcLimit) {
-	    srcLimit = srcLen;
-	}
-	lastNewLine = memchr(src, '\n', srcLimit);
-
-	if (lastNewLine) {
-	    srcLimit = lastNewLine - src;
-	}
-	
 	result = Tcl_UtfToExternal(NULL, encoding, src, srcLimit,
 		statePtr->outputEncodingFlags,
 		&statePtr->outputEncodingState, dst,
@@ -3827,9 +3823,59 @@ WriteChars(
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
 	
 	if ((result != 0) && (srcRead + dstWrote == 0)) {
-	    fprintf(stdout, "WDTH?\n"); fflush(stdout);
+	    /* We're reading from invalid/incomplete UTF-8 */
+	    break;
 	}
+
+	consumedSomething = 1;
 	bufPtr->nextAdded += dstWrote;
+	src += srcRead;
+	srcLen -= srcRead;
+	total += dstWrote;
+	dst += dstWrote;
+	dstLen -= dstWrote;
+
+	if (src == nextNewLine && dstLen > 0) {
+	    static char crln[3] = "\r\n";
+	    char *nl = NULL;
+	    int nlLen = 0;
+
+	    switch (statePtr->outputTranslation) {
+	    case TCL_TRANSLATE_LF:
+		nl = crln + 1;
+		nlLen = 1;
+		break;
+	    case TCL_TRANSLATE_CR:
+		nl = crln;
+		nlLen = 1;
+		break;
+	    case TCL_TRANSLATE_CRLF:
+		nl = crln;
+		nlLen = 2;
+		break;
+	    default:
+		Tcl_Panic("unknown output translation requested");
+		break;
+	    }
+	
+	    result |= Tcl_UtfToExternal(NULL, encoding, nl, nlLen,
+		statePtr->outputEncodingFlags,
+		&statePtr->outputEncodingState, dst,
+		dstLen + BUFFER_PADDING, &srcRead, &dstWrote, NULL);
+
+	    if (srcRead != nlLen) {
+		Tcl_Panic("Can This Happen?");
+	    }
+
+	    bufPtr->nextAdded += dstWrote;
+	    src++;
+	    srcLen--;
+	    total += dstWrote;
+	    dst += dstWrote;
+	    dstLen -= dstWrote;
+	    nextNewLine = memchr(src, '\n', srcLen);
+	    needNlFlush = 1;
+	}
 	if (IsBufferOverflowing(bufPtr)) {
 	    /*
 	     * When translating from UTF-8 to external encoding, we
@@ -3843,8 +3889,28 @@ WriteChars(
 	    memcpy(safe, dst + dstLen, (size_t) saved);
 	    bufPtr->nextAdded = bufPtr->bufLength;
 	}
-	
-    
+
+	if ((srcLen + saved == 0) && (result == 0)) {
+	    endEncoding = 0;
+	}
+
+	/* FLUSH ! */
+	if (IsBufferFull(bufPtr)) {
+	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
+		return -1;
+	    }
+	    flushed += statePtr->bufSize;
+	    if (saved == 0 || src[-1] != '\n') {
+		needNlFlush = 0;
+	    }
+	}
+    }
+    if ((flushed < total) && (statePtr->flags & CHANNEL_UNBUFFERED ||
+	    (needNlFlush && statePtr->flags & CHANNEL_LINEBUFFERED))) {
+	SetFlag(statePtr, BUFFER_READY);
+	if (FlushChannel(NULL, chanPtr, 0) != 0) {
+	    return -1;
+	}
     }
 #else
     /*
