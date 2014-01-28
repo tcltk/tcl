@@ -1489,12 +1489,7 @@ Tcl_CreateChannel(
     statePtr->timer		= NULL;
     statePtr->csPtrR		= NULL;
     statePtr->csPtrW		= NULL;
-
     statePtr->outputStage	= NULL;
-    if ((statePtr->encoding != NULL) && (statePtr->flags & TCL_WRITABLE)) {
-	statePtr->outputStage = (char *)
-		ckalloc((unsigned) (statePtr->bufSize + 2));
-    }
 
     /*
      * As we are creating the channel, it is obviously the top for now.
@@ -2757,10 +2752,6 @@ CloseChannel(
 	}
 
 	Tcl_FreeEncoding(statePtr->encoding);
-	if (statePtr->outputStage != NULL) {
-	    ckfree((char *) statePtr->outputStage);
-	    statePtr->outputStage = NULL;
-	}
     }
 
     /*
@@ -7151,15 +7142,6 @@ Tcl_SetChannelBufferSize(
 
     statePtr = ((Channel *) chan)->state;
     statePtr->bufSize = sz;
-
-    if (statePtr->outputStage != NULL) {
-	ckfree((char *) statePtr->outputStage);
-	statePtr->outputStage = NULL;
-    }
-    if ((statePtr->encoding != NULL) && (statePtr->flags & TCL_WRITABLE)) {
-	statePtr->outputStage = (char *)
-		ckalloc((unsigned) (statePtr->bufSize + 2));
-    }
 }
 
 /*
@@ -7800,17 +7782,6 @@ Tcl_SetChannelOption(
 	statePtr->inQueueTail = NULL;
     }
 
-    /*
-     * If encoding or bufsize changes, need to update output staging buffer.
-     */
-
-    if (statePtr->outputStage != NULL) {
-	ckfree(statePtr->outputStage);
-	statePtr->outputStage = NULL;
-    }
-    if ((statePtr->encoding != NULL) && (statePtr->flags & TCL_WRITABLE)) {
-	statePtr->outputStage = ckalloc((unsigned) (statePtr->bufSize + 2));
-    }
     return TCL_OK;
 }
 
