@@ -452,6 +452,7 @@ TclCompileStringIsCmd(
 	STR_IS_XDIGIT
     };
     int t, range, allowEmpty = 0, end;
+    InstStringClassType strClassType;
     Tcl_Obj *isClass;
 
     if (parsePtr->numWords < 3 || parsePtr->numWords > 6) {
@@ -486,7 +487,7 @@ TclCompileStringIsCmd(
 
     tokenPtr = TokenAfter(tokenPtr);
     if (parsePtr->numWords == 3) {
-	allowEmpty = (t != STR_IS_LIST);
+	allowEmpty = 1;
     } else {
 	if (!GotLiteral(tokenPtr, "-strict")) {
 	    return TCL_ERROR;
@@ -496,30 +497,77 @@ TclCompileStringIsCmd(
 #undef GotLiteral
 
     /*
-     * Some types are not currently handled. Character classes are a prime
-     * example of this.
+     * Compile the code. There are several main classes of check here.
+     *	1. Character classes
+     *	2. Booleans
+     *	3. Integers
+     *	4. Floats
+     *	5. Lists
      */
+
+    CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
 
     switch ((enum isClasses) t) {
     case STR_IS_ALNUM:
+	strClassType = STR_CLASS_ALNUM;
+	goto compileStrClass;
     case STR_IS_ALPHA:
+	strClassType = STR_CLASS_ALPHA;
+	goto compileStrClass;
     case STR_IS_ASCII:
+	strClassType = STR_CLASS_ASCII;
+	goto compileStrClass;
     case STR_IS_CONTROL:
+	strClassType = STR_CLASS_CONTROL;
+	goto compileStrClass;
     case STR_IS_DIGIT:
+	strClassType = STR_CLASS_DIGIT;
+	goto compileStrClass;
     case STR_IS_GRAPH:
+	strClassType = STR_CLASS_GRAPH;
+	goto compileStrClass;
     case STR_IS_LOWER:
+	strClassType = STR_CLASS_LOWER;
+	goto compileStrClass;
     case STR_IS_PRINT:
+	strClassType = STR_CLASS_PRINT;
+	goto compileStrClass;
     case STR_IS_PUNCT:
+	strClassType = STR_CLASS_PUNCT;
+	goto compileStrClass;
     case STR_IS_SPACE:
+	strClassType = STR_CLASS_SPACE;
+	goto compileStrClass;
     case STR_IS_UPPER:
+	strClassType = STR_CLASS_UPPER;
+	goto compileStrClass;
     case STR_IS_WORD:
+	strClassType = STR_CLASS_WORD;
+	goto compileStrClass;
     case STR_IS_XDIGIT:
-	return TclCompileBasicMin0ArgCmd(interp, parsePtr, cmdPtr, envPtr);
+	strClassType = STR_CLASS_XDIGIT;
+    compileStrClass:
+	if (allowEmpty) {
+	    OP1(	STR_CLASS, strClassType);
+	} else {
+	    int over, over2;
+
+	    OP(		DUP);
+	    OP1(	STR_CLASS, strClassType);
+	    JUMP1(	JUMP_TRUE, over);
+	    OP(		POP);
+	    PUSH(	"0");
+	    JUMP1(	JUMP, over2);
+	    FIXJUMP1(over);
+	    PUSH(	"");
+	    OP(		STR_NEQ);
+	    FIXJUMP1(over2);
+	}
+	return TCL_OK;
 
     case STR_IS_BOOL:
     case STR_IS_FALSE:
     case STR_IS_TRUE:
-	CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
 	OP(		TRY_CVT_TO_BOOLEAN);
 	switch (t) {
 	    int over, over2;
@@ -569,7 +617,6 @@ TclCompileStringIsCmd(
     case STR_IS_DOUBLE: {
 	int satisfied, isEmpty;
 
-	CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
 	if (allowEmpty) {
 	    OP(		DUP);
 	    PUSH(	"");
@@ -598,7 +645,6 @@ TclCompileStringIsCmd(
     case STR_IS_INT:
     case STR_IS_WIDE:
     case STR_IS_ENTIER:
-	CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
 	if (allowEmpty) {
 	    int testNumType;
 
@@ -638,7 +684,6 @@ TclCompileStringIsCmd(
 	return TCL_OK;
 
     case STR_IS_LIST:
-	CompileWord(envPtr, tokenPtr, interp, parsePtr->numWords-1);
 	range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
 	OP4(		BEGIN_CATCH4, range);
 	ExceptionRangeStarts(envPtr, range);
@@ -653,7 +698,8 @@ TclCompileStringIsCmd(
 	OP(		LNOT);
 	return TCL_OK;
     }
-    return TCL_ERROR;
+
+    return TclCompileBasicMin0ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 }
 
 int
@@ -1169,6 +1215,41 @@ TclCompileStringToTitleCmd(
     OP(			STR_TITLE);
     return TCL_OK;
 }
+
+/*
+ * Support definitions for the [string is] compilation.
+ */
+
+static int
+UniCharIsAscii(
+    int character)
+{
+    return (character >= 0) && (character < 0x80);
+}
+
+static int
+UniCharIsHexDigit(
+    int character)
+{
+    return (character >= 0) && (character < 0x80) && isxdigit(character);
+}
+
+StringClassDesc const tclStringClassTable[] = {
+    {"alnum",	Tcl_UniCharIsAlnum},
+    {"alpha",	Tcl_UniCharIsAlpha},
+    {"ascii",	UniCharIsAscii},
+    {"control", Tcl_UniCharIsControl},
+    {"digit",	Tcl_UniCharIsDigit},
+    {"graph",	Tcl_UniCharIsGraph},
+    {"lower",	Tcl_UniCharIsLower},
+    {"print",	Tcl_UniCharIsPrint},
+    {"punct",	Tcl_UniCharIsPunct},
+    {"space",	Tcl_UniCharIsSpace},
+    {"upper",	Tcl_UniCharIsUpper},
+    {"word",	Tcl_UniCharIsWordChar},
+    {"xdigit",	UniCharIsHexDigit},
+    {NULL,	NULL}
+};
 
 /*
  *----------------------------------------------------------------------
