@@ -5810,6 +5810,25 @@ TEBCresume(
 
 	TclNewIntObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
+
+    case INST_STR_CLASS:
+	opnd = TclGetInt1AtPtr(pc+1);
+	valuePtr = OBJ_AT_TOS;
+	TRACE(("%s \"%.30s\" => ", tclStringClassTable[opnd].name,
+		O2S(valuePtr)));
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	match = 1;
+	if (length > 0) {
+	    end = ustring1 + length;
+	    for (p=ustring1 ; p<end ; p++) {
+		if (!tclStringClassTable[opnd].comparator(*p)) {
+		    match = 0;
+		    break;
+		}
+	    }
+	}
+	TRACE_APPEND(("%d\n", match));
+	JUMP_PEEPHOLE_F(match, 2, 1);
     }
 
     case INST_STR_MATCH:
