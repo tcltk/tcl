@@ -9213,6 +9213,9 @@ DoWrite(
     const char *src,		/* Data to write. */
     int srcLen)			/* Number of bytes to write. */
 {
+#if 1
+    return WriteBytes(chanPtr, src, srcLen);
+#else
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *outBufPtr;	/* Current output buffer. */
@@ -9340,6 +9343,7 @@ DoWrite(
     } /* Closes "while" */
 
     return totalDestCopied;
+#endif
 }
 
 /*
