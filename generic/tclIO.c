@@ -200,6 +200,7 @@ static int		FilterInputBytes(Channel *chanPtr,
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int calledFromAsyncFlush);
 static int		TclGetsObjBinary(Tcl_Channel chan, Tcl_Obj *objPtr);
+static Tcl_Encoding	GetBinaryEncoding();
 static void		FreeBinaryEncoding(ClientData clientData);
 static Tcl_HashTable *	GetChannelTable(Tcl_Interp *interp);
 static int		GetInput(Channel *chanPtr);
@@ -222,6 +223,8 @@ static int		TranslateInputEOL(ChannelState *statePtr, char *dst,
 static int		TranslateOutputEOL(ChannelState *statePtr, char *dst,
 			    const char *src, int *dstLenPtr, int *srcLenPtr);
 static void		UpdateInterest(Channel *chanPtr);
+static int		Write(Channel *chanPtr, const char *src,
+			    int srcLen, Tcl_Encoding encoding);
 static int		WriteBytes(Channel *chanPtr, const char *src,
 			    int srcLen);
 static int		WriteChars(Channel *chanPtr, const char *src,
@@ -3640,6 +3643,9 @@ WriteBytes(
     const char *src,		/* Bytes to write. */
     int srcLen)			/* Number of bytes to write. */
 {
+#if 1
+    return Write(chanPtr, src, srcLen, tclIdentityEncoding);
+#else
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
@@ -3712,6 +3718,7 @@ WriteBytes(
 	sawLF = 0;
     }
     return total;
+#endif
 }
 
 /*
@@ -3736,16 +3743,16 @@ WriteBytes(
  */
 
 static int
-WriteChars(
+Write(
     Channel *chanPtr,		/* The channel to buffer output for. */
     const char *src,		/* UTF-8 string to write. */
-    int srcLen)			/* Length of UTF-8 string in bytes. */
+    int srcLen,			/* Length of UTF-8 string in bytes. */
+    Tcl_Encoding encoding)
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     char *nextNewLine = NULL;
     int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
-    Tcl_Encoding encoding = statePtr->encoding;
 
     if (srcLen) {
         WillWrite(chanPtr);
@@ -3893,6 +3900,15 @@ WriteChars(
     }
 
     return total;
+}
+
+static int
+WriteChars(
+    Channel *chanPtr,		/* The channel to buffer output for. */
+    const char *src,		/* UTF-8 string to write. */
+    int srcLen)			/* Length of UTF-8 string in bytes. */
+{
+    return Write(chanPtr, src, srcLen, chanPtr->state->encoding);
 }
 
 /*
@@ -4197,16 +4213,7 @@ Tcl_GetsObj(
      */
 
     if (encoding == NULL) {
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-	if (tsdPtr->binaryEncoding == NULL) {
-	    tsdPtr->binaryEncoding = Tcl_GetEncoding(NULL, "iso8859-1");
-	    Tcl_CreateThreadExitHandler(FreeBinaryEncoding, NULL);
-	}
-	encoding = tsdPtr->binaryEncoding;
-	if (encoding == NULL) {
-	    Tcl_Panic("attempted gets on binary channel where no iso8859-1 encoding available");
-	}
+	encoding = GetBinaryEncoding();
     }
 
     /*
@@ -4746,6 +4753,21 @@ FreeBinaryEncoding(
 	Tcl_FreeEncoding(tsdPtr->binaryEncoding);
 	tsdPtr->binaryEncoding = NULL;
     }
+}
+
+static Tcl_Encoding
+GetBinaryEncoding()
+{
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->binaryEncoding == NULL) {
+	tsdPtr->binaryEncoding = Tcl_GetEncoding(NULL, "iso8859-1");
+	Tcl_CreateThreadExitHandler(FreeBinaryEncoding, NULL);
+    }
+    if (tsdPtr->binaryEncoding == NULL) {
+	Tcl_Panic("binary encoding is not available");
+    }
+    return tsdPtr->binaryEncoding;
 }
 
 /*
