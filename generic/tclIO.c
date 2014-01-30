@@ -189,7 +189,6 @@ static void		DiscardInputQueued(ChannelState *statePtr,
 			    int discardSavedBuffers);
 static void		DiscardOutputQueued(ChannelState *chanPtr);
 static int		DoRead(Channel *chanPtr, char *srcPtr, int slen);
-static int		DoWrite(Channel *chanPtr, const char *src, int srcLen);
 static int		DoReadChars(Channel *chan, Tcl_Obj *objPtr, int toRead,
 			    int appendFlag);
 static int		DoWriteChars(Channel *chan, const char *src, int len);
@@ -3362,7 +3361,7 @@ Tcl_Write(
     if (srcLen < 0) {
 	srcLen = strlen(src);
     }
-    return DoWrite(chanPtr, src, srcLen);
+    return WriteBytes(chanPtr, src, srcLen);
 }
 
 /*
@@ -8639,7 +8638,7 @@ CopyData(
 	}
 
 	if (outBinary || sameEncoding) {
-	    sizeb = DoWrite(outStatePtr->topChanPtr, buffer, sizeb);
+	    sizeb = WriteBytes(outStatePtr->topChanPtr, buffer, sizeb);
 	} else {
 	    sizeb = DoWriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
@@ -9184,166 +9183,6 @@ CopyBuffer(
      */
 
     return copied;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * DoWrite --
- *
- *	Puts a sequence of characters into an output buffer, may queue the
- *	buffer for output if it gets full, and also remembers whether the
- *	current buffer is ready e.g. if it contains a newline and we are in
- *	line buffering mode.
- *
- * Results:
- *	The number of bytes written or -1 in case of error. If -1,
- *	Tcl_GetErrno will return the error code.
- *
- * Side effects:
- *	May buffer up output and may cause output to be produced on the
- *	channel.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DoWrite(
-    Channel *chanPtr,		/* The channel to buffer output for. */
-    const char *src,		/* Data to write. */
-    int srcLen)			/* Number of bytes to write. */
-{
-#if 1
-    return WriteBytes(chanPtr, src, srcLen);
-#else
-    ChannelState *statePtr = chanPtr->state;
-				/* State info for channel */
-    ChannelBuffer *outBufPtr;	/* Current output buffer. */
-    int foundNewline;		/* Did we find a newline in output? */
-    char *dPtr;
-    const char *sPtr;		/* Search variables for newline. */
-    int crsent;			/* In CRLF eol translation mode, remember the
-				 * fact that a CR was output to the channel
-				 * without its following NL. */
-    int i;			/* Loop index for newline search. */
-    int destCopied;		/* How many bytes were used in this
-				 * destination buffer to hold the output? */
-    int totalDestCopied;	/* How many bytes total were copied to the
-				 * channel buffer? */
-    int srcCopied;		/* How many bytes were copied from the source
-				 * string? */
-    char *destPtr;		/* Where in line to copy to? */
-
-    /*
-     * If we are in network (or windows) translation mode, record the fact
-     * that we have not yet sent a CR to the channel.
-     */
-
-    crsent = 0;
-
-    /*
-     * Loop filling buffers and flushing them until all output has been
-     * consumed.
-     */
-
-    srcCopied = 0;
-    totalDestCopied = 0;
-
-    while (srcLen > 0) {
-	/*
-	 * Make sure there is a current output buffer to accept output.
-	 */
-
-	if (statePtr->curOutPtr == NULL) {
-	    statePtr->curOutPtr = AllocChannelBuffer(statePtr->bufSize);
-	}
-
-	outBufPtr = statePtr->curOutPtr;
-
-	destCopied = SpaceLeft(outBufPtr);
-	if (destCopied > srcLen) {
-	    destCopied = srcLen;
-	}
-
-	destPtr = InsertPoint(outBufPtr);
-	switch (statePtr->outputTranslation) {
-	case TCL_TRANSLATE_LF:
-	    srcCopied = destCopied;
-	    memcpy(destPtr, src, (size_t) destCopied);
-	    break;
-	case TCL_TRANSLATE_CR:
-	    srcCopied = destCopied;
-	    memcpy(destPtr, src, (size_t) destCopied);
-	    for (dPtr = destPtr; dPtr < destPtr + destCopied; dPtr++) {
-		if (*dPtr == '\n') {
-		    *dPtr = '\r';
-		}
-	    }
-	    break;
-	case TCL_TRANSLATE_CRLF:
-	    for (srcCopied = 0, dPtr = destPtr, sPtr = src;
-		    dPtr < destPtr + destCopied;
-		    dPtr++, sPtr++, srcCopied++) {
-		if (*sPtr == '\n') {
-		    if (crsent) {
-			*dPtr = '\n';
-			crsent = 0;
-		    } else {
-			*dPtr = '\r';
-			crsent = 1;
-			sPtr--, srcCopied--;
-		    }
-		} else {
-		    *dPtr = *sPtr;
-		}
-	    }
-	    break;
-	case TCL_TRANSLATE_AUTO:
-	    Tcl_Panic("Tcl_Write: AUTO output translation mode not supported");
-	default:
-	    Tcl_Panic("Tcl_Write: unknown output translation mode");
-	}
-
-	/*
-	 * The current buffer is ready for output if it is full, or if it
-	 * contains a newline and this channel is line-buffered, or if it
-	 * contains any output and this channel is unbuffered.
-	 */
-
-	outBufPtr->nextAdded += destCopied;
-	if (!(statePtr->flags & BUFFER_READY)) {
-	    if (IsBufferFull(outBufPtr)) {
-		SetFlag(statePtr, BUFFER_READY);
-	    } else if (statePtr->flags & CHANNEL_LINEBUFFERED) {
-		for (sPtr = src, i = 0, foundNewline = 0;
-			(i < srcCopied) && (!foundNewline);
-			i++, sPtr++) {
-		    if (*sPtr == '\n') {
-			foundNewline = 1;
-			break;
-		    }
-		}
-		if (foundNewline) {
-		    SetFlag(statePtr, BUFFER_READY);
-		}
-	    } else if (statePtr->flags & CHANNEL_UNBUFFERED) {
-		SetFlag(statePtr, BUFFER_READY);
-	    }
-	}
-
-	totalDestCopied += srcCopied;
-	src += srcCopied;
-	srcLen -= srcCopied;
-
-	if (statePtr->flags & BUFFER_READY) {
-	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
-		return -1;
-	    }
-	}
-    } /* Closes "while" */
-
-    return totalDestCopied;
-#endif
 }
 
 /*
