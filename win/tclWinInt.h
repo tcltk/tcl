@@ -187,7 +187,7 @@ MODULE_SCOPE Tcl_Channel TclWinOpenFileChannel(HANDLE handle, char *channelName,
 MODULE_SCOPE Tcl_Channel TclWinOpenSerialChannel(HANDLE handle,
 			    char *channelName, int permissions);
 MODULE_SCOPE void	TclWinResetInterfaceEncodings();
-MODULE_SCOPE HANDLE	TclWinSerialReopen(HANDLE handle, CONST TCHAR *name,
+MODULE_SCOPE HANDLE	TclWinSerialOpen(HANDLE handle, CONST TCHAR *name,
 			    DWORD access);
 MODULE_SCOPE int	TclWinSymLinkCopyDirectory(CONST TCHAR* LinkOriginal,
 			    CONST TCHAR* LinkCopy);
