@@ -191,7 +191,6 @@ static void		DiscardOutputQueued(ChannelState *chanPtr);
 static int		DoRead(Channel *chanPtr, char *srcPtr, int slen);
 static int		DoReadChars(Channel *chan, Tcl_Obj *objPtr, int toRead,
 			    int appendFlag);
-static int		DoWriteChars(Channel *chan, const char *src, int len);
 static int		FilterInputBytes(Channel *chanPtr,
 			    GetsState *statePtr);
 static int		FlushChannel(Tcl_Interp *interp, Channel *chanPtr,
@@ -3454,81 +3453,40 @@ Tcl_WriteChars(
     int len)			/* Length of string in bytes, or < 0 for
 				 * strlen(). */
 {
-    ChannelState *statePtr;	/* State info for channel */
-
-    statePtr = ((Channel *) chan)->state;
+    Channel *chanPtr = (Channel *) chan;
+    ChannelState *statePtr = chanPtr->state;	/* State info for channel */
+    int result;
+    Tcl_Obj *objPtr;
 
     if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
 	return -1;
     }
 
-    return DoWriteChars((Channel *) chan, src, len);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * DoWriteChars --
- *
- *	Takes a sequence of UTF-8 characters and converts them for output
- *	using the channel's current encoding, may queue the buffer for output
- *	if it gets full, and also remembers whether the current buffer is
- *	ready e.g. if it contains a newline and we are in line buffering mode.
- *	Compensates stacking, i.e. will redirect the data from the specified
- *	channel to the topmost channel in a stack.
- *
- * Results:
- *	The number of bytes written or -1 in case of error. If -1,
- *	Tcl_GetErrno will return the error code.
- *
- * Side effects:
- *	May buffer up output and may cause output to be produced on the
- *	channel.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-DoWriteChars(
-    Channel *chanPtr,		/* The channel to buffer output for. */
-    const char *src,		/* UTF-8 characters to queue in output
-				 * buffer. */
-    int len)			/* Length of string in bytes, or < 0 for
-				 * strlen(). */
-{
-    /*
-     * Always use the topmost channel of the stack
-     */
-
-    ChannelState *statePtr;	/* State info for channel */
-
-    statePtr = chanPtr->state;
     chanPtr = statePtr->topChanPtr;
 
     if (len < 0) {
 	len = strlen(src);
     }
-    if (statePtr->encoding == NULL) {
-	/*
-	 * Inefficient way to convert UTF-8 to byte-array, but the code
-	 * parallels the way it is done for objects.
-	 * Special case for 1-byte (used by eg [puts] for the \n) could
-	 * be extended to more efficient translation of the src string.
-	 */
-
- 	int result;
-
-	if ((len == 1) && (UCHAR(*src) < 0xC0)) {
-	    result = WriteBytes(chanPtr, src, len);
-	} else {
-	    Tcl_Obj *objPtr = Tcl_NewStringObj(src, len);
-	    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
-	    result = WriteBytes(chanPtr, src, len);
-	    TclDecrRefCount(objPtr);
-	}
-	return result;
+    if (statePtr->encoding) {
+	return WriteChars(chanPtr, src, len);
     }
-    return WriteChars(chanPtr, src, len);
+
+    /*
+     * Inefficient way to convert UTF-8 to byte-array, but the code
+     * parallels the way it is done for objects.  Special case for 1-byte
+     * (used by eg [puts] for the \n) could be extended to more efficient
+     * translation of the src string.
+     */
+
+    if ((len == 1) && (UCHAR(*src) < 0xC0)) {
+	return WriteBytes(chanPtr, src, len);
+    }
+
+    objPtr = Tcl_NewStringObj(src, len);
+    src = (char *) Tcl_GetByteArrayFromObj(objPtr, &len);
+    result = WriteBytes(chanPtr, src, len);
+    TclDecrRefCount(objPtr);
+    return result;
 }
 
 /*
@@ -8640,7 +8598,7 @@ CopyData(
 	if (outBinary || sameEncoding) {
 	    sizeb = WriteBytes(outStatePtr->topChanPtr, buffer, sizeb);
 	} else {
-	    sizeb = DoWriteChars(outStatePtr->topChanPtr, buffer, sizeb);
+	    sizeb = WriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
 
 	/*
