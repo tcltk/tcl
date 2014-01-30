@@ -165,8 +165,6 @@ static ChannelBuffer *	AllocChannelBuffer(int length);
 static void		ChannelTimerProc(ClientData clientData);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
-static int		CheckFlush(Channel *chanPtr, ChannelBuffer *bufPtr,
-			    int newlineFlag);
 static int		CheckForDeadChannel(Tcl_Interp *interp,
 			    ChannelState *statePtr);
 static void		CheckForStdChannelsBeingClosed(Tcl_Channel chan);
@@ -220,19 +218,18 @@ static int		SetBlockMode(Tcl_Interp *interp, Channel *chanPtr,
 static void		StopCopy(CopyState *csPtr);
 static int		TranslateInputEOL(ChannelState *statePtr, char *dst,
 			    const char *src, int *dstLenPtr, int *srcLenPtr);
-static int		TranslateOutputEOL(ChannelState *statePtr, char *dst,
-			    const char *src, int *dstLenPtr, int *srcLenPtr);
 static void		UpdateInterest(Channel *chanPtr);
 static int		Write(Channel *chanPtr, const char *src,
 			    int srcLen, Tcl_Encoding encoding);
-static int		WriteBytes(Channel *chanPtr, const char *src,
-			    int srcLen);
-static int		WriteChars(Channel *chanPtr, const char *src,
-			    int srcLen);
 static Tcl_Obj *	FixLevelCode(Tcl_Obj *msg);
 static void		SpliceChannel(Tcl_Channel chan);
 static void		CutChannel(Tcl_Channel chan);
 static int WillRead(Channel *chanPtr);
+
+#define WriteChars(chanPtr, src, srcLen) \
+			Write(chanPtr, src, srcLen, chanPtr->state->encoding)
+#define WriteBytes(chanPtr, src, srcLen) \
+			Write(chanPtr, src, srcLen, tclIdentityEncoding)
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -3619,114 +3616,9 @@ static int WillRead(Channel *chanPtr)
 /*
  *----------------------------------------------------------------------
  *
- * WriteBytes --
+ * Write --
  *
- *	Write a sequence of bytes into an output buffer, may queue the buffer
- *	for output if it gets full, and also remembers whether the current
- *	buffer is ready e.g. if it contains a newline and we are in line
- *	buffering mode.
- *
- * Results:
- *	The number of bytes written or -1 in case of error. If -1,
- *	Tcl_GetErrno will return the error code.
- *
- * Side effects:
- *	May buffer up output and may cause output to be produced on the
- *	channel.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-WriteBytes(
-    Channel *chanPtr,		/* The channel to buffer output for. */
-    const char *src,		/* Bytes to write. */
-    int srcLen)			/* Number of bytes to write. */
-{
-#if 1
-    return Write(chanPtr, src, srcLen, tclIdentityEncoding);
-#else
-    ChannelState *statePtr = chanPtr->state;
-				/* State info for channel */
-    ChannelBuffer *bufPtr;
-    char *dst;
-    int dstMax, sawLF, savedLF, total, dstLen, toWrite, translate;
-
-    if (srcLen) {
-        WillWrite(chanPtr);
-    }
-
-    total = 0;
-    sawLF = 0;
-    savedLF = 0;
-    translate = (statePtr->flags & CHANNEL_LINEBUFFERED)
-	|| (statePtr->outputTranslation != TCL_TRANSLATE_LF);
-
-    /*
-     * Loop over all bytes in src, storing them in output buffer with proper
-     * EOL translation.
-     */
-
-    while (srcLen + savedLF > 0) {
-	bufPtr = statePtr->curOutPtr;
-	if (bufPtr == NULL) {
-	    bufPtr = AllocChannelBuffer(statePtr->bufSize);
-	    statePtr->curOutPtr = bufPtr;
-	}
-	dst = InsertPoint(bufPtr);
-	dstMax = SpaceLeft(bufPtr);
-	dstLen = dstMax;
-
-	toWrite = dstLen;
-	if (toWrite > srcLen) {
-	    toWrite = srcLen;
-	}
-
-	if (translate) {
-	    if (savedLF) {
-		/*
-		 * A '\n' was left over from last call to TranslateOutputEOL()
-		 * and we need to store it in this buffer. If the channel is
-		 * line-based, we will need to flush it.
-		 */
-
-		*dst++ = '\n';
-		dstLen--;
-		sawLF++;
-	    }
-	    if (TranslateOutputEOL(statePtr, dst, src, &dstLen, &toWrite)) {
-		sawLF++;
-	    }
-	    dstLen += savedLF;
-	    savedLF = 0;
-	    if (dstLen > dstMax) {
-		savedLF = 1;
-		dstLen = dstMax;
-	    }
-	} else {
-	    memcpy(dst, src, toWrite);
-	    dstLen = toWrite;
-	}
-
-	bufPtr->nextAdded += dstLen;
-	if (CheckFlush(chanPtr, bufPtr, sawLF) != 0) {
-	    return -1;
-	}
-	total += dstLen;
-	src += toWrite;
-	srcLen -= toWrite;
-	sawLF = 0;
-    }
-    return total;
-#endif
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * WriteChars --
- *
- *	Convert UTF-8 bytes to the channel's external encoding and write the
+ *	Convert srcLen bytes starting at src according to encoding and write
  *	produced bytes into an output buffer, may queue the buffer for output
  *	if it gets full, and also remembers whether the current buffer is
  *	ready e.g. if it contains a newline and we are in line buffering mode.
@@ -3900,192 +3792,6 @@ Write(
     }
 
     return total;
-}
-
-static int
-WriteChars(
-    Channel *chanPtr,		/* The channel to buffer output for. */
-    const char *src,		/* UTF-8 string to write. */
-    int srcLen)			/* Length of UTF-8 string in bytes. */
-{
-    return Write(chanPtr, src, srcLen, chanPtr->state->encoding);
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * TranslateOutputEOL --
- *
- *	Helper function for WriteBytes() and WriteChars(). Converts the '\n'
- *	characters in the source buffer into the appropriate EOL form
- *	specified by the output translation mode.
- *
- *	EOL translation stops either when the source buffer is empty or the
- *	output buffer is full.
- *
- *	When converting to CRLF mode and there is only 1 byte left in the
- *	output buffer, this routine stores the '\r' in the last byte and then
- *	stores the '\n' in the byte just past the end of the buffer. The
- *	caller is responsible for passing in a buffer that is large enough to
- *	hold the extra byte.
- *
- * Results:
- *	The return value is 1 if a '\n' was translated from the source buffer,
- *	or 0 otherwise -- this can be used by the caller to decide to flush a
- *	line-based channel even though the channel buffer is not full.
- *
- *	*dstLenPtr is filled with how many bytes of the output buffer were
- *	used. As mentioned above, this can be one more that the output
- *	buffer's specified length if a CRLF was stored.
- *
- *	*srcLenPtr is filled with how many bytes of the source buffer were
- *	consumed.
- *
- * Side effects:
- *	It may be obvious, but bears mentioning that when converting in CRLF
- *	mode (which requires two bytes of storage in the output buffer), the
- *	number of bytes consumed from the source buffer will be less than the
- *	number of bytes stored in the output buffer.
- *
- *---------------------------------------------------------------------------
- */
-
-static int
-TranslateOutputEOL(
-    ChannelState *statePtr,	/* Channel being read, for translation and
-				 * buffering modes. */
-    char *dst,			/* Output buffer filled with UTF-8 chars by
-				 * applying appropriate EOL translation to
-				 * source characters. */
-    const char *src,		/* Source UTF-8 characters. */
-    int *dstLenPtr,		/* On entry, the maximum length of output
-				 * buffer in bytes. On exit, the number of
-				 * bytes actually used in output buffer. */
-    int *srcLenPtr)		/* On entry, the length of source buffer. On
-				 * exit, the number of bytes read from the
-				 * source buffer. */
-{
-    char *dstEnd;
-    int srcLen, newlineFound;
-
-    newlineFound = 0;
-    srcLen = *srcLenPtr;
-
-    switch (statePtr->outputTranslation) {
-    case TCL_TRANSLATE_LF:
-	for (dstEnd = dst + srcLen; dst < dstEnd; ) {
-	    if (*src == '\n') {
-		newlineFound = 1;
-	    }
-	    *dst++ = *src++;
-	}
-	*dstLenPtr = srcLen;
-	break;
-    case TCL_TRANSLATE_CR:
-	for (dstEnd = dst + srcLen; dst < dstEnd;) {
-	    if (*src == '\n') {
-		*dst++ = '\r';
-		newlineFound = 1;
-		src++;
-	    } else {
-		*dst++ = *src++;
-	    }
-	}
-	*dstLenPtr = srcLen;
-	break;
-    case TCL_TRANSLATE_CRLF: {
-	/*
-	 * Since this causes the number of bytes to grow, we start off trying
-	 * to put 'srcLen' bytes into the output buffer, but allow it to store
-	 * more bytes, as long as there's still source bytes and room in the
-	 * output buffer.
-	 */
-
-	char *dstStart, *dstMax;
-	const char *srcStart;
-
-	dstStart = dst;
-	dstMax = dst + *dstLenPtr;
-
-	srcStart = src;
-
-	if (srcLen < *dstLenPtr) {
-	    dstEnd = dst + srcLen;
-	} else {
-	    dstEnd = dst + *dstLenPtr;
-	}
-	while (dst < dstEnd) {
-	    if (*src == '\n') {
-		if (dstEnd < dstMax) {
-		    dstEnd++;
-		}
-		*dst++ = '\r';
-		newlineFound = 1;
-	    }
-	    *dst++ = *src++;
-	}
-	*srcLenPtr = src - srcStart;
-	*dstLenPtr = dst - dstStart;
-	break;
-    }
-    default:
-	break;
-    }
-    return newlineFound;
-}
-
-/*
- *---------------------------------------------------------------------------
- *
- * CheckFlush --
- *
- *	Helper function for WriteBytes() and WriteChars(). If the channel
- *	buffer is ready to be flushed, flush it.
- *
- * Results:
- *	The return value is -1 if there was a problem flushing the channel
- *	buffer, or 0 otherwise.
- *
- * Side effects:
- *	The buffer will be recycled if it is flushed.
- *
- *---------------------------------------------------------------------------
- */
-
-static int
-CheckFlush(
-    Channel *chanPtr,		/* Channel being read, for buffering mode. */
-    ChannelBuffer *bufPtr,	/* Channel buffer to possibly flush. */
-    int newlineFlag)		/* Non-zero if a the channel buffer contains a
-				 * newline. */
-{
-    ChannelState *statePtr = chanPtr->state;
-				/* State info for channel */
-
-    /*
-     * The current buffer is ready for output:
-     * 1. if it is full.
-     * 2. if it contains a newline and this channel is line-buffered.
-     * 3. if it contains any output and this channel is unbuffered.
-     */
-
-    if ((statePtr->flags & BUFFER_READY) == 0) {
-	if (IsBufferFull(bufPtr)) {
-	    SetFlag(statePtr, BUFFER_READY);
-	} else if (statePtr->flags & CHANNEL_LINEBUFFERED) {
-	    if (newlineFlag != 0) {
-		SetFlag(statePtr, BUFFER_READY);
-	    }
-	} else if (statePtr->flags & CHANNEL_UNBUFFERED) {
-	    SetFlag(statePtr, BUFFER_READY);
-	}
-    }
-    if (statePtr->flags & BUFFER_READY) {
-	if (FlushChannel(NULL, chanPtr, 0) != 0) {
-	    return -1;
-	}
-    }
-    return 0;
 }
 
 /*
