@@ -7,6 +7,12 @@ this log file.  You may still find useful things in it, but the Timeline is
 a better first place to look now.
 ============================================================================
 
+2014-01-30  Harald Oehlmann  <oehhar@users.sf.net>
+
+	* win/tclWinChan.c Tcl_InitNotifier: Bug [2413550]
+	  Avoid reopening of serial channels which causes issues with
+          Bluetooth virtual com. Patch by Rolf Schroedter.
+
 2013-08-30  Don Porter  <dgp@users.sourceforge.net>
 
 	* generic/tcl.h:	Bump to 8.5.15 for release.
