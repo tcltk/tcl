@@ -331,7 +331,7 @@ static Tcl_ObjType chanObjType = {
 #define SET_CHANNELSTATE(objPtr, storePtr) \
     ((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (storePtr))
 #define GET_CHANNELINTERP(objPtr) \
-    ((Interp *) (objPtr)->internalRep.twoPtrValue.ptr2)
+    ((Tcl_Interp *) (objPtr)->internalRep.twoPtrValue.ptr2)
 #define SET_CHANNELINTERP(objPtr, storePtr) \
     ((objPtr)->internalRep.twoPtrValue.ptr2 = (void *) (storePtr))
 
@@ -10373,10 +10373,9 @@ DupChannelIntRep(
 				 * currently have an internal rep.*/
 {
     ChannelState *statePtr  = GET_CHANNELSTATE(srcPtr);
-    Interp       *interpPtr = GET_CHANNELINTERP(srcPtr);
 
     SET_CHANNELSTATE(copyPtr, statePtr);
-    SET_CHANNELINTERP(copyPtr, interpPtr);
+    SET_CHANNELINTERP(copyPtr, GET_CHANNELINTERP(srcPtr));
     Tcl_Preserve((ClientData) statePtr);
     copyPtr->typePtr = srcPtr->typePtr;
 }
@@ -10404,7 +10403,6 @@ SetChannelFromAny(
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
     ChannelState *statePtr;
-    Interp       *interpPtr;
 
     if (interp == NULL) {
 	return TCL_ERROR;
@@ -10415,12 +10413,11 @@ SetChannelFromAny(
 	 * Ensure consistency checks are done.
 	 */
 	statePtr  = GET_CHANNELSTATE(objPtr);
-	interpPtr = GET_CHANNELINTERP(objPtr);
 	if (statePtr->flags & (CHANNEL_TAINTED|CHANNEL_CLOSED)) {
 	    ResetFlag(statePtr, CHANNEL_TAINTED);
 	    Tcl_Release((ClientData) statePtr);
 	    objPtr->typePtr = NULL;
-	} else if (interpPtr != (Interp*) interp) {
+	} else if (interp != GET_CHANNELINTERP(objPtr)) {
 	    Tcl_Release((ClientData) statePtr);
 	    objPtr->typePtr = NULL;
 	}
