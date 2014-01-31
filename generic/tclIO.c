@@ -10429,17 +10429,8 @@ SetChannelFromAny(
 	}
     }
     if (objPtr->typePtr != &tclChannelType) {
-	Tcl_Channel chan;
+	Tcl_Channel chan = Tcl_GetChannel(interp, TclGetString(objPtr), NULL);
 
-	/*
-	 * We need a valid string with which to check for a valid channel, but
-	 * make sure not to free internal rep until validated. [Bug 1847044]
-	 */
-	if ((objPtr->typePtr != NULL) && (objPtr->bytes == NULL)) {
-	    objPtr->typePtr->updateStringProc(objPtr);
-	}
-
-	chan = Tcl_GetChannel(interp, objPtr->bytes, NULL);
 	if (chan == NULL) {
 	    return TCL_ERROR;
 	}
