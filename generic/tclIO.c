@@ -1581,11 +1581,7 @@ Tcl_CreateChannel(
     statePtr->timer		= NULL;
     statePtr->csPtrR		= NULL;
     statePtr->csPtrW		= NULL;
-
     statePtr->outputStage	= NULL;
-    if ((statePtr->encoding != NULL) && GotFlag(statePtr, TCL_WRITABLE)) {
-	statePtr->outputStage = ckalloc(statePtr->bufSize + 2);
-    }
 
     /*
      * As we are creating the channel, it is obviously the top for now.
@@ -2838,10 +2834,6 @@ CloseChannel(
 	}
 
 	Tcl_FreeEncoding(statePtr->encoding);
-	if (statePtr->outputStage != NULL) {
-	    ckfree(statePtr->outputStage);
-	    statePtr->outputStage = NULL;
-	}
     }
 
     /*
@@ -4163,23 +4155,13 @@ WriteChars(
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    ChannelBuffer *bufPtr;
-    char *dst, *stage;
-    int saved, savedLF, sawLF, total, dstLen, stageMax, dstWrote;
-    int stageLen, toWrite, stageRead, endEncoding, result;
-    int consumedSomething, translate;
-    Tcl_Encoding encoding;
-    char safe[BUFFER_PADDING];
+    char *nextNewLine = NULL;
+    int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
+    Tcl_Encoding encoding = statePtr->encoding;
 
     if (srcLen) {
         WillWrite(chanPtr);
     }
-
-    total = 0;
-    sawLF = 0;
-    savedLF = 0;
-    saved = 0;
-    encoding = statePtr->encoding;
 
     /*
      * Write the terminated escape sequence even if srcLen is 0.
@@ -4187,174 +4169,141 @@ WriteChars(
 
     endEncoding = ((statePtr->outputEncodingFlags & TCL_ENCODING_END) != 0);
 
-    translate = GotFlag(statePtr, CHANNEL_LINEBUFFERED)
-	    || (statePtr->outputTranslation != TCL_TRANSLATE_LF);
+    if (GotFlag(statePtr, CHANNEL_LINEBUFFERED)
+	    || (statePtr->outputTranslation != TCL_TRANSLATE_LF)) {
+	nextNewLine = memchr(src, '\n', srcLen);
+    }
 
-    /*
-     * Loop over all UTF-8 characters in src, storing them in staging buffer
-     * with proper EOL translation.
-     */
+    while (srcLen + saved + endEncoding > 0) {
+	ChannelBuffer *bufPtr;
+	char *dst, safe[BUFFER_PADDING];
+	int result, srcRead, dstLen, dstWrote, srcLimit = srcLen;
 
-    consumedSomething = 1;
-    while (consumedSomething && (srcLen + savedLF + endEncoding > 0)) {
-	consumedSomething = 0;
-
-	if (translate) {
-	    stage = statePtr->outputStage;
-	    stageMax = statePtr->bufSize;
-	    stageLen = stageMax;
-
-	    toWrite = stageLen;
-	    if (toWrite > srcLen) {
-		toWrite = srcLen;
-	    }
-
-	    if (savedLF) {
-		/*
-		 * A '\n' was left over from last call to TranslateOutputEOL()
-		 * and we need to store it in the staging buffer. If the
-		 * channel is line-based, we will need to flush the output
-		 * buffer (after translating the staging buffer).
-		 */
-
-		*stage++ = '\n';
-		stageLen--;
-		sawLF++;
-	    }
-	    if (TranslateOutputEOL(statePtr, stage, src, &stageLen,
-		    &toWrite)) {
-		sawLF++;
-	    }
-
-	    stage -= savedLF;
-	    stageLen += savedLF;
-	    savedLF = 0;
-
-	    if (stageLen > stageMax) {
-		savedLF = 1;
-		stageLen = stageMax;
-	    }
-	} else {
-	    stage = (char *) src;
-	    stageLen = srcLen;
-	    toWrite = stageLen;
+	if (nextNewLine) {
+	    srcLimit = nextNewLine - src;
 	}
-	src += toWrite;
-	srcLen -= toWrite;
-
-	/*
-	 * Loop over all UTF-8 characters in staging buffer, converting them
-	 * to external encoding, storing them in output buffer.
-	 */
-
-	while (stageLen + saved + endEncoding > 0) {
-	    bufPtr = statePtr->curOutPtr;
-	    if (bufPtr == NULL) {
-		bufPtr = AllocChannelBuffer(statePtr->bufSize);
-		statePtr->curOutPtr = bufPtr;
-	    }
-	    dst = InsertPoint(bufPtr);
-	    dstLen = SpaceLeft(bufPtr);
-
-	    if (saved != 0) {
-		/*
-		 * Here's some translated bytes left over from the last buffer
-		 * that we need to stick at the beginning of this buffer.
-		 */
-
-		memcpy(dst, safe, (size_t) saved);
-		bufPtr->nextAdded += saved;
-		dst += saved;
-		dstLen -= saved;
-		saved = 0;
-	    }
-
-	    result = Tcl_UtfToExternal(NULL, encoding, stage, stageLen,
-		    statePtr->outputEncodingFlags,
-		    &statePtr->outputEncodingState, dst,
-		    dstLen + BUFFER_PADDING, &stageRead, &dstWrote, NULL);
-
+	
+	/* Get space to write into */
+	bufPtr = statePtr->curOutPtr;
+	if (bufPtr == NULL) {
+	    bufPtr = AllocChannelBuffer(statePtr->bufSize);
+	    statePtr->curOutPtr = bufPtr;
+	}
+	if (saved) {
 	    /*
-	     * Fix for SF #506297, reported by Martin Forssen
-	     * <ruric@users.sourceforge.net>.
-	     *
-	     * The encoding chosen in the script exposing the bug writes out
-	     * three intro characters when TCL_ENCODING_START is set, but does
-	     * not consume any input as TCL_ENCODING_END is cleared. As some
-	     * output was generated the enclosing loop calls UtfToExternal
-	     * again, again with START set. Three more characters in the out
-	     * and still no use of input ... To break this infinite loop we
-	     * remove TCL_ENCODING_START from the set of flags after the first
-	     * call (no condition is required, the later calls remove an unset
-	     * flag, which is a no-op). This causes the subsequent calls to
-	     * UtfToExternal to consume and convert the actual input.
+	     * Here's some translated bytes left over from the last buffer
+	     * that we need to stick at the beginning of this buffer.
 	     */
 
-	    statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
+	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    bufPtr->nextAdded += saved;
+	    saved = 0;
+	}
+	dst = InsertPoint(bufPtr);
+	dstLen = SpaceLeft(bufPtr);
 
-	    /*
-	     * The following code must be executed only when result is not 0.
-	     */
+	result = Tcl_UtfToExternal(NULL, encoding, src, srcLimit,
+		statePtr->outputEncodingFlags,
+		&statePtr->outputEncodingState, dst,
+		dstLen + BUFFER_PADDING, &srcRead, &dstWrote, NULL);
 
-	    if ((result != 0) && (stageRead + dstWrote == 0)) {
-		/*
-		 * We have an incomplete UTF-8 character at the end of the
-		 * staging buffer. It will get moved to the beginning of the
-		 * staging buffer followed by more bytes from src.
-		 */
-
-		src -= stageLen;
-		srcLen += stageLen;
-		stageLen = 0;
-		savedLF = 0;
-		break;
-	    }
-	    bufPtr->nextAdded += dstWrote;
-	    if (IsBufferOverflowing(bufPtr)) {
-		/*
-		 * When translating from UTF-8 to external encoding, we
-		 * allowed the translation to produce a character that crossed
-		 * the end of the output buffer, so that we would get a
-		 * completely full buffer before flushing it. The extra bytes
-		 * will be moved to the beginning of the next buffer.
-		 */
-
-		saved = -SpaceLeft(bufPtr);
-		memcpy(safe, dst + dstLen, (size_t) saved);
-		bufPtr->nextAdded = bufPtr->bufLength;
-	    }
-	    if (CheckFlush(chanPtr, bufPtr, sawLF) != 0) {
+	/* See chan-io-1.[89]. Tcl Bug 506297. */
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
+	
+	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
+	    /* We're reading from invalid/incomplete UTF-8 */
+	    if (total == 0) {
+		Tcl_SetErrno(EINVAL);
 		return -1;
 	    }
+	    break;
+	}
 
+	bufPtr->nextAdded += dstWrote;
+	src += srcRead;
+	srcLen -= srcRead;
+	total += dstWrote;
+	dst += dstWrote;
+	dstLen -= dstWrote;
+
+	if (src == nextNewLine && dstLen > 0) {
+	    static char crln[3] = "\r\n";
+	    char *nl = NULL;
+	    int nlLen = 0;
+
+	    switch (statePtr->outputTranslation) {
+	    case TCL_TRANSLATE_LF:
+		nl = crln + 1;
+		nlLen = 1;
+		break;
+	    case TCL_TRANSLATE_CR:
+		nl = crln;
+		nlLen = 1;
+		break;
+	    case TCL_TRANSLATE_CRLF:
+		nl = crln;
+		nlLen = 2;
+		break;
+	    default:
+		Tcl_Panic("unknown output translation requested");
+		break;
+	    }
+	
+	    result |= Tcl_UtfToExternal(NULL, encoding, nl, nlLen,
+		statePtr->outputEncodingFlags,
+		&statePtr->outputEncodingState, dst,
+		dstLen + BUFFER_PADDING, &srcRead, &dstWrote, NULL);
+
+	    if (srcRead != nlLen) {
+		Tcl_Panic("Can This Happen?");
+	    }
+
+	    bufPtr->nextAdded += dstWrote;
+	    src++;
+	    srcLen--;
 	    total += dstWrote;
-	    stage += stageRead;
-	    stageLen -= stageRead;
-	    sawLF = 0;
+	    dst += dstWrote;
+	    dstLen -= dstWrote;
+	    nextNewLine = memchr(src, '\n', srcLen);
+	    needNlFlush = 1;
+	}
 
-	    consumedSomething = 1;
-
+	if (IsBufferOverflowing(bufPtr)) {
 	    /*
-	     * If all translated characters are written to the buffer,
-	     * endEncoding is set to 0 because the escape sequence may be
-	     * output.
+	     * When translating from UTF-8 to external encoding, we
+	     * allowed the translation to produce a character that crossed
+	     * the end of the output buffer, so that we would get a
+	     * completely full buffer before flushing it. The extra bytes
+	     * will be moved to the beginning of the next buffer.
 	     */
 
-	    if ((stageLen + saved == 0) && (result == 0)) {
-		endEncoding = 0;
+	    saved = -SpaceLeft(bufPtr);
+	    memcpy(safe, dst + dstLen, (size_t) saved);
+	    bufPtr->nextAdded = bufPtr->bufLength;
+	}
+
+	if ((srcLen + saved == 0) && (result == TCL_OK)) {
+	    endEncoding = 0;
+	}
+
+	if (IsBufferFull(bufPtr)) {
+	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
+		return -1;
+	    }
+	    flushed += statePtr->bufSize;
+	    if (saved == 0 || src[-1] != '\n') {
+		needNlFlush = 0;
 	    }
 	}
     }
-
-    /*
-     * If nothing was written and it happened because there was no progress in
-     * the UTF conversion, we throw an error.
-     */
-
-    if (!consumedSomething && (total == 0)) {
-	Tcl_SetErrno(EINVAL);
-	return -1;
+    if ((flushed < total) && (GotFlag(statePtr, CHANNEL_UNBUFFERED) ||
+	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED)))) {
+	SetFlag(statePtr, BUFFER_READY);
+	if (FlushChannel(NULL, chanPtr, 0) != 0) {
+	    return -1;
+	}
     }
+
     return total;
 }
 
@@ -7555,14 +7504,6 @@ Tcl_SetChannelBufferSize(
 
     statePtr = ((Channel *) chan)->state;
     statePtr->bufSize = sz;
-
-    if (statePtr->outputStage != NULL) {
-	ckfree(statePtr->outputStage);
-	statePtr->outputStage = NULL;
-    }
-    if ((statePtr->encoding != NULL) && GotFlag(statePtr, TCL_WRITABLE)) {
-	statePtr->outputStage = ckalloc(statePtr->bufSize + 2);
-    }
 }
 
 /*
@@ -8203,17 +8144,6 @@ Tcl_SetChannelOption(
 	statePtr->inQueueTail = NULL;
     }
 
-    /*
-     * If encoding or bufsize changes, need to update output staging buffer.
-     */
-
-    if (statePtr->outputStage != NULL) {
-	ckfree(statePtr->outputStage);
-	statePtr->outputStage = NULL;
-    }
-    if ((statePtr->encoding != NULL) && GotFlag(statePtr, TCL_WRITABLE)) {
-	statePtr->outputStage = ckalloc(statePtr->bufSize + 2);
-    }
     return TCL_OK;
 }
 
