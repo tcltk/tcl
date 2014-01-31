@@ -316,14 +316,13 @@ static int WillRead(Channel *chanPtr);
 
 static void		DupChannelIntRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static int		SetChannelFromAny(Tcl_Interp *interp, Tcl_Obj *objPtr);
-static void		UpdateStringOfChannel(Tcl_Obj *objPtr);
 static void		FreeChannelIntRep(Tcl_Obj *objPtr);
 
-static Tcl_ObjType tclChannelType = {
+static Tcl_ObjType chanObjType = {
     "channel",			/* name for this type */
     FreeChannelIntRep,		/* freeIntRepProc */
     DupChannelIntRep,		/* dupIntRepProc */
-    NULL,			/* updateStringProc UpdateStringOfChannel */
+    NULL,			/* updateStringProc */
     NULL			/* setFromAnyProc SetChannelFromAny */
 };
 
@@ -10379,7 +10378,7 @@ DupChannelIntRep(
     SET_CHANNELSTATE(copyPtr, statePtr);
     SET_CHANNELINTERP(copyPtr, interpPtr);
     Tcl_Preserve((ClientData) statePtr);
-    copyPtr->typePtr = &tclChannelType;
+    copyPtr->typePtr = srcPtr->typePtr;
 }
 
 /*
@@ -10410,7 +10409,7 @@ SetChannelFromAny(
     if (interp == NULL) {
 	return TCL_ERROR;
     }
-    if (objPtr->typePtr == &tclChannelType) {
+    if (objPtr->typePtr == &chanObjType) {
 	/*
 	 * The channel is valid until any call to DetachChannel occurs.
 	 * Ensure consistency checks are done.
@@ -10420,15 +10419,13 @@ SetChannelFromAny(
 	if (statePtr->flags & (CHANNEL_TAINTED|CHANNEL_CLOSED)) {
 	    ResetFlag(statePtr, CHANNEL_TAINTED);
 	    Tcl_Release((ClientData) statePtr);
-	    UpdateStringOfChannel(objPtr);
 	    objPtr->typePtr = NULL;
 	} else if (interpPtr != (Interp*) interp) {
 	    Tcl_Release((ClientData) statePtr);
-	    UpdateStringOfChannel(objPtr);
 	    objPtr->typePtr = NULL;
 	}
     }
-    if (objPtr->typePtr != &tclChannelType) {
+    if (objPtr->typePtr != &chanObjType) {
 	Tcl_Channel chan = Tcl_GetChannel(interp, TclGetString(objPtr), NULL);
 
 	if (chan == NULL) {
@@ -10440,46 +10437,9 @@ SetChannelFromAny(
 	Tcl_Preserve((ClientData) statePtr);
 	SET_CHANNELSTATE(objPtr, statePtr);
 	SET_CHANNELINTERP(objPtr, interp);
-	objPtr->typePtr = &tclChannelType;
+	objPtr->typePtr = &chanObjType;
     }
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * UpdateStringOfChannel --
- *
- *	Update the string representation for an object whose internal
- *	representation is "Channel".
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The object's string may be set by converting its Unicode represention
- *	to UTF format.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateStringOfChannel(
-    Tcl_Obj *objPtr)		/* Object with string rep to update. */
-{
-    if (objPtr->bytes == NULL) {
-	ChannelState *statePtr = GET_CHANNELSTATE(objPtr);
-	const char *name = statePtr->channelName;
-	if (name) {
-	    size_t len = strlen(name);
-	    objPtr->bytes = (char *) ckalloc(len + 1);
-	    objPtr->length = len;
-	    memcpy(objPtr->bytes, name, len);
-	} else {
-	    objPtr->bytes = tclEmptyStringRep;
-	    objPtr->length = 0;
-	}
-    }
 }
 
 /*
