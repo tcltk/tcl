@@ -644,7 +644,7 @@ InstructionDesc const tclInstructionTable[] = {
     {"tryCvtToBoolean",	 1,	+1,	  0,	{OPERAND_NONE}},
 	/* Try converting stktop to boolean if possible. No errors.
 	 * Stack:  ... value => ... value isStrictBool */
-    {"strclass",	 2,	0,	  1,	{OPERAND_UINT1}},
+    {"strclass",	 2,	0,	  1,	{OPERAND_SCLS1}},
 	/* See if all the characters of the given string are a member of the
 	 * specified (by opnd) character class. Note that an empty string will
 	 * satisfy the class check (standard definition of "all").
@@ -5096,6 +5096,11 @@ FormatInstruction(
 		}
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", (unsigned) opnd);
+	    break;
+	case OPERAND_SCLS1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    Tcl_AppendPrintfToObj(bufferObj, "%s ",
+		    tclStringClassTable[opnd].name);
 	    break;
 	case OPERAND_NONE:
 	default:
