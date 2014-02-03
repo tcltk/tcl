@@ -564,6 +564,11 @@ FormatInstruction(
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", (unsigned) opnd);
 	    break;
+	case OPERAND_SCLS1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    Tcl_AppendPrintfToObj(bufferObj, "%s ",
+		    tclStringClassTable[opnd].name);
+	    break;
 	case OPERAND_NONE:
 	default:
 	    break;
@@ -987,6 +992,12 @@ DisassembleByteCodeAsDicts(
 		opnd += 4;
 		Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
 			"?%d", val));
+		break;
+	    case OPERAND_SCLS1:
+		val = TclGetUInt1AtPtr(opnd);
+		opnd++;
+		Tcl_ListObjAppendElement(NULL, inst, Tcl_ObjPrintf(
+			"=%s", tclStringClassTable[val].name));
 		break;
 	    case OPERAND_NONE:
 		Tcl_Panic("opcode %d with more than zero 'no' operands", *pc);
