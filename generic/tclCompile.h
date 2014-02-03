@@ -506,7 +506,7 @@ typedef struct ByteCode {
 #define INST_PUSH4			2
 #define INST_POP			3
 #define INST_DUP			4
-#define INST_CONCAT1			5
+#define INST_STR_CONCAT1		5
 #define INST_INVOKE_STK1		6
 #define INST_INVOKE_STK4		7
 #define INST_EVAL_STK			8
@@ -745,6 +745,8 @@ typedef struct ByteCode {
 #define INST_INFO_LEVEL_NUM		152
 #define INST_INFO_LEVEL_ARGS		153
 #define INST_RESOLVE_COMMAND		154
+
+/* For compilation relating to TclOO */
 #define INST_TCLOO_SELF			155
 #define INST_TCLOO_CLASS		156
 #define INST_TCLOO_NS			157
@@ -763,14 +765,36 @@ typedef struct ByteCode {
 #define INST_EXPAND_DROP		165
 
 /* New foreach implementation */
-
 #define INST_FOREACH_START              166
 #define INST_FOREACH_STEP               167
 #define INST_FOREACH_END                168
 #define INST_LMAP_COLLECT               169
 
+/* For compilation of [string trim] and related */
+#define INST_STR_TRIM			170
+#define INST_STR_TRIM_LEFT		171
+#define INST_STR_TRIM_RIGHT		172
+
+#define INST_CONCAT_STK			173
+
+#define INST_STR_UPPER			174
+#define INST_STR_LOWER			175
+#define INST_STR_TITLE			176
+#define INST_STR_REPLACE		177
+
+#define INST_ORIGIN_COMMAND		178
+
+#define INST_TCLOO_NEXT			179
+#define INST_TCLOO_NEXT_CLASS		180
+
+#define INST_YIELD_TO_INVOKE		181
+
+#define INST_NUM_TYPE			182
+#define INST_TRY_CVT_TO_BOOLEAN		183
+#define INST_STR_CLASS			184
+
 /* The last opcode */
-#define LAST_INST_OPCODE		169
+#define LAST_INST_OPCODE		184
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -795,8 +819,9 @@ typedef enum InstOperandType {
 				 * variable table. */
     OPERAND_LVT4,		/* Four byte unsigned index into the local
 				 * variable table. */
-    OPERAND_AUX4		/* Four byte unsigned index into the aux data
+    OPERAND_AUX4,		/* Four byte unsigned index into the aux data
 				 * table. */
+    OPERAND_SCLS1		/* Index into tclStringClassTable. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -813,6 +838,40 @@ typedef struct InstructionDesc {
 } InstructionDesc;
 
 MODULE_SCOPE InstructionDesc const tclInstructionTable[];
+
+/*
+ * Constants used by INST_STRING_CLASS to indicate character classes. These
+ * correspond closely by name with what [string is] can support, but there is
+ * no requirement to keep the values the same.
+ */
+
+typedef enum InstStringClassType {
+    STR_CLASS_ALNUM,		/* Unicode alphabet or digit characters. */
+    STR_CLASS_ALPHA,		/* Unicode alphabet characters. */
+    STR_CLASS_ASCII,		/* Characters in range U+000000..U+00007F. */
+    STR_CLASS_CONTROL,		/* Unicode control characters. */
+    STR_CLASS_DIGIT,		/* Unicode digit characters. */
+    STR_CLASS_GRAPH,		/* Unicode printing characters, excluding
+				 * space. */
+    STR_CLASS_LOWER,		/* Unicode lower-case alphabet characters. */
+    STR_CLASS_PRINT,		/* Unicode printing characters, including
+				 * spaces. */
+    STR_CLASS_PUNCT,		/* Unicode punctuation characters. */
+    STR_CLASS_SPACE,		/* Unicode space characters. */
+    STR_CLASS_UPPER,		/* Unicode upper-case alphabet characters. */
+    STR_CLASS_WORD,		/* Unicode word (alphabetic, digit, connector
+				 * punctuation) characters. */
+    STR_CLASS_XDIGIT		/* Characters that can be used as digits in
+				 * hexadecimal numbers ([0-9A-Fa-f]). */
+} InstStringClassType;
+
+typedef struct StringClassDesc {
+    const char *name;		/* Name of the class. */
+    int (*comparator)(int);	/* Function to test if a single unicode
+				 * character is a member of the class. */
+} StringClassDesc;
+
+MODULE_SCOPE StringClassDesc const tclStringClassTable[];
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or

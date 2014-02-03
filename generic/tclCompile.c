@@ -63,7 +63,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Pop the topmost stack object */
     {"dup",		  1,   +1,         0,	{OPERAND_NONE}},
 	/* Duplicate the topmost stack object and push the result */
-    {"concat1",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},
+    {"strcat",		  2,   INT_MIN,    1,	{OPERAND_UINT1}},
 	/* Concatenate the top op1 items and push result */
     {"invokeStk1",	  2,   INT_MIN,    1,	{OPERAND_UINT1}},
 	/* Invoke command named objv[0]; <objc,objv> = <op1,top op1> */
@@ -493,6 +493,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * qualified version, or produces the empty string if no such command
 	 * exists. Never generates errors.
 	 * Stack:  ... cmdName => ... fullCmdName */
+
     {"tclooSelf",	 1,	+1,	  0,	{OPERAND_NONE}},
 	/* Push the identity of the current TclOO object (i.e., the name of
 	 * its current public access command) on the stack. */
@@ -546,15 +547,108 @@ InstructionDesc const tclInstructionTable[] = {
 	 * until the matching stack depth is reached. */
 
     /* New foreach implementation */
-    {"foreach_start",	  5,   +2,          1,	{OPERAND_AUX4}},
+    {"foreach_start",	 5,	+2,	  1,	{OPERAND_AUX4}},
 	/* Initialize execution of a foreach loop. Operand is aux data index
 	 * of the ForeachInfo structure for the foreach command. It pushes 2
 	 * elements which hold runtime params for foreach_step, they are later
-	 * dropped by foreach_end together with the value lists. */ 
-    {"foreach_step",	  1,    0,         0,	{OPERAND_NONE}},
-	/* "Step" or begin next iteration of foreach loop. */
-    {"foreach_end",	  1,    0,         0,	{OPERAND_NONE}},
-    {"lmap_collect",	  1,   -1,         0,	{OPERAND_NONE}},
+	 * dropped by foreach_end together with the value lists. NOTE that the
+	 * iterator-tracker and info reference must not be passed to bytecodes
+	 * that handle normal Tcl values. NOTE that this instruction jumps to
+	 * the foreach_step instruction paired with it; the stack info below
+	 * is only nominal.
+	 * Stack: ... listObjs... => ... listObjs... iterTracker info */
+    {"foreach_step",	 1,	 0,	  0,	{OPERAND_NONE}},
+	/* "Step" or begin next iteration of foreach loop. Assigns to foreach
+	 * iteration variables. May jump to straight after the foreach_start
+	 * that pushed the iterTracker and info values. MUST be followed
+	 * immediately by a foreach_end.
+	 * Stack: ... listObjs... iterTracker info =>
+	 *				... listObjs... iterTracker info */
+    {"foreach_end",	 1,	 0,	  0,	{OPERAND_NONE}},
+	/* Clean up a foreach loop by dropping the info value, the tracker
+	 * value and the lists that were being iterated over.
+	 * Stack: ... listObjs... iterTracker info => ... */
+    {"lmap_collect",	 1,	-1,	  0,	{OPERAND_NONE}},
+	/* Appends the value at the top of the stack to the list located on
+	 * the stack the "other side" of the foreach-related values.
+	 * Stack: ... collector listObjs... iterTracker info value =>
+	 *			... collector listObjs... iterTracker info */
+
+    {"strtrim",		 1,	-1,	  0,	{OPERAND_NONE}},
+	/* [string trim] core: removes the characters (designated by the value
+	 * at the top of the stack) from both ends of the string and pushes
+	 * the resulting string.
+	 * Stack: ... string charset => ... trimmedString */
+    {"strtrimLeft",	 1,	-1,	  0,	{OPERAND_NONE}},
+	/* [string trimleft] core: removes the characters (designated by the
+	 * value at the top of the stack) from the left of the string and
+	 * pushes the resulting string.
+	 * Stack: ... string charset => ... trimmedString */
+    {"strtrimRight",	 1,	-1,	  0,	{OPERAND_NONE}},
+	/* [string trimright] core: removes the characters (designated by the
+	 * value at the top of the stack) from the right of the string and
+	 * pushes the resulting string.
+	 * Stack: ... string charset => ... trimmedString */
+
+    {"concatStk",	 5,	INT_MIN,  1,	{OPERAND_UINT4}},
+	/* Wrapper round Tcl_ConcatObj(), used for [concat] and [eval]. opnd
+	 * is number of values to concatenate.
+	 * Operation:	push concat(stk1 stk2 ... stktop) */
+
+    {"strcaseUpper",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* [string toupper] core: converts whole string to upper case using
+	 * the default (extended "C" locale) rules.
+	 * Stack: ... string => ... newString */
+    {"strcaseLower",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* [string tolower] core: converts whole string to upper case using
+	 * the default (extended "C" locale) rules.
+	 * Stack: ... string => ... newString */
+    {"strcaseTitle",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* [string totitle] core: converts whole string to upper case using
+	 * the default (extended "C" locale) rules.
+	 * Stack: ... string => ... newString */
+    {"strreplace",	 1,	-3,	  0,	{OPERAND_NONE}},
+	/* [string replace] core: replaces a non-empty range of one string
+	 * with the contents of another.
+	 * Stack: ... string fromIdx toIdx replacement => ... newString */
+
+    {"originCmd",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Reports which command was the origin (via namespace import chain)
+	 * of the command named on the top of the stack.
+	 * Stack:  ... cmdName => ... fullOriginalCmdName */
+
+    {"tclooNext",	 2,	INT_MIN,  1,	{OPERAND_UINT1}},
+	/* Call the next item on the TclOO call chain, passing opnd arguments
+	 * (min 1, max 255, *includes* "next").  The result of the invoked
+	 * method implementation will be pushed on the stack in place of the
+	 * arguments (similar to invokeStk).
+	 * Stack:  ... "next" arg2 arg3 -- argN => ... result */
+    {"tclooNextClass",	 2,	INT_MIN,  1,	{OPERAND_UINT1}},
+	/* Call the following item on the TclOO call chain defined by class
+	 * className, passing opnd arguments (min 2, max 255, *includes*
+	 * "nextto" and the class name). The result of the invoked method
+	 * implementation will be pushed on the stack in place of the
+	 * arguments (similar to invokeStk).
+	 * Stack:  ... "nextto" className arg3 arg4 -- argN => ... result */
+
+    {"yieldToInvoke",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Makes the current coroutine yield the value at the top of the
+	 * stack, invoking the given command/args with resolution in the given
+	 * namespace (all packed into a list), and places the list of values
+	 * that are the response back on top of the stack when it resumes.
+	 * Stack:  ... [list ns cmd arg1 ... argN] => ... resumeList */
+
+    {"numericType",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Pushes the numeric type code of the word at the top of the stack.
+	 * Stack:  ... value => ... typeCode */
+    {"tryCvtToBoolean",	 1,	+1,	  0,	{OPERAND_NONE}},
+	/* Try converting stktop to boolean if possible. No errors.
+	 * Stack:  ... value => ... value isStrictBool */
+    {"strclass",	 2,	0,	  1,	{OPERAND_SCLS1}},
+	/* See if all the characters of the given string are a member of the
+	 * specified (by opnd) character class. Note that an empty string will
+	 * satisfy the class check (standard definition of "all").
+	 * Stack:  ... stringValue => ... boolean */
 
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
@@ -2412,11 +2506,11 @@ TclCompileTokens(
      */
 
     while (numObjsToConcat > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
 	numObjsToConcat -= 254;	/* concat pushes 1 obj, the result */
     }
     if (numObjsToConcat > 1) {
-	TclEmitInstInt1(INST_CONCAT1, numObjsToConcat, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, numObjsToConcat, envPtr);
     }
 
     /*
@@ -2548,11 +2642,11 @@ TclCompileExprWords(
     }
     concatItems = 2*numWords - 1;
     while (concatItems > 255) {
-	TclEmitInstInt1(INST_CONCAT1, 255, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
 	concatItems -= 254;
     }
     if (concatItems > 1) {
-	TclEmitInstInt1(INST_CONCAT1, concatItems, envPtr);
+	TclEmitInstInt1(INST_STR_CONCAT1, concatItems, envPtr);
     }
     TclEmitOpcode(INST_EXPR_STK, envPtr);
 }
@@ -4810,6 +4904,11 @@ FormatInstruction(
 		}
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", (unsigned) opnd);
+	    break;
+	case OPERAND_SCLS1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    Tcl_AppendPrintfToObj(bufferObj, "%s ",
+		    tclStringClassTable[opnd].name);
 	    break;
 	case OPERAND_NONE:
 	default:
