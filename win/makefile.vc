@@ -902,7 +902,7 @@ $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 $(TMP_DIR)\tclsh.exe.manifest: $(WINDIR)\tclsh.exe.manifest.in
 	@nmakehlp -s << $** >$@
 @MACHINE@	  $(MACHINE:IX86=X86)
-@TCL_WIN_VERSION@  $(TCL_DOTVERSION).0.0
+@TCL_WIN_VERSION@  $(DOTVERSION).0.0
 <<
 
 #---------------------------------------------------------------------
