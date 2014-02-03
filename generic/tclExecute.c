@@ -5678,6 +5678,25 @@ TEBCresume(
 
 	TclNewLongObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
+
+    case INST_STR_CLASS:
+	opnd = TclGetInt1AtPtr(pc+1);
+	valuePtr = OBJ_AT_TOS;
+	TRACE(("%s \"%.30s\" => ", tclStringClassTable[opnd].name,
+		O2S(valuePtr)));
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	match = 1;
+	if (length > 0) {
+	    end = ustring1 + length;
+	    for (p=ustring1 ; p<end ; p++) {
+		if (!tclStringClassTable[opnd].comparator(*p)) {
+		    match = 0;
+		    break;
+		}
+	    }
+	}
+	TRACE_APPEND(("%d\n", match));
+	JUMP_PEEPHOLE_F(match, 2, 1);
     }
 
     case INST_STR_MATCH:
@@ -5811,6 +5830,14 @@ TEBCresume(
 	ClientData ptr1, ptr2;
 	int type1, type2;
 	long l1, l2, lResult;
+
+    case INST_NUM_TYPE:
+	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
+	    type1 = 0;
+	}
+	TclNewIntObj(objResultPtr, type1);
+	TRACE(("\"%.20s\" => %d\n", O2S(OBJ_AT_TOS), type1));
+	NEXT_INST_F(1, 1, 1);
 
     case INST_EQ:
     case INST_NEQ:
@@ -6478,6 +6505,17 @@ TEBCresume(
      *	   End of numeric operator instructions.
      * -----------------------------------------------------------------
      */
+
+    case INST_TRY_CVT_TO_BOOLEAN:
+	valuePtr = OBJ_AT_TOS;
+	if (valuePtr->typePtr == &tclBooleanType) {
+	    objResultPtr = TCONST(1);
+	} else {
+	    int result = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
+	    objResultPtr = TCONST(result);
+	}
+	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(valuePtr)), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
 
     case INST_BREAK:
 	/*

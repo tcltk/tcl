@@ -638,6 +638,18 @@ InstructionDesc const tclInstructionTable[] = {
 	 * that are the response back on top of the stack when it resumes.
 	 * Stack:  ... [list ns cmd arg1 ... argN] => ... resumeList */
 
+    {"numericType",	 1,	0,	  0,	{OPERAND_NONE}},
+	/* Pushes the numeric type code of the word at the top of the stack.
+	 * Stack:  ... value => ... typeCode */
+    {"tryCvtToBoolean",	 1,	+1,	  0,	{OPERAND_NONE}},
+	/* Try converting stktop to boolean if possible. No errors.
+	 * Stack:  ... value => ... value isStrictBool */
+    {"strclass",	 2,	0,	  1,	{OPERAND_SCLS1}},
+	/* See if all the characters of the given string are a member of the
+	 * specified (by opnd) character class. Note that an empty string will
+	 * satisfy the class check (standard definition of "all").
+	 * Stack:  ... stringValue => ... boolean */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 
@@ -5084,6 +5096,11 @@ FormatInstruction(
 		}
 	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%%v%u ", (unsigned) opnd);
+	    break;
+	case OPERAND_SCLS1:
+	    opnd = TclGetUInt1AtPtr(pc+numBytes); numBytes++;
+	    Tcl_AppendPrintfToObj(bufferObj, "%s ",
+		    tclStringClassTable[opnd].name);
 	    break;
 	case OPERAND_NONE:
 	default:
