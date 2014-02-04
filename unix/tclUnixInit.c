@@ -38,6 +38,7 @@ DLLIMPORT extern __stdcall void *LoadLibraryW(const void *);
 DLLIMPORT extern __stdcall void FreeLibrary(void *);
 DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
 DLLIMPORT extern __stdcall void GetSystemInfo(void *);
+DLLIMPORT extern __stdcall void GetSystemInfo(void *);
 
 #define NUMPLATFORMS 4
 static const char *const platforms[NUMPLATFORMS] = {
@@ -929,16 +930,17 @@ TclpSetVariables(
 #ifdef __CYGWIN__
 	unameOK = 1;
     if (!osInfoInitialized) {
-      HANDLE handle = LoadLibraryW(L"NTDLL");
-      int(*getversion)(void *) = (int(*)(void *))GetProcAddress(handle, "RtlGetVersion");
-      osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-      if (!getversion || getversion(&osInfo)) {
-        GetVersionExW(&osInfo);
-      }
-      if (handle) {
-        FreeLibrary(handle);
-      }
-      osInfoInitialized = 1;
+	HANDLE handle = LoadLibraryW(L"NTDLL");
+	__stdcall int(*getversion)(void *) =
+		(__stdcall int(*)(void *))GetProcAddress(handle, "RtlGetVersion");
+	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	if (!getversion || getversion(&osInfo)) {
+	    GetVersionExW(&osInfo);
+	}
+	if (handle) {
+	    FreeLibrary(handle);
+	}
+	osInfoInitialized = 1;
     }
 
     GetSystemInfo(&sysInfo);
