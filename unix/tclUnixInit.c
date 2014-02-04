@@ -38,7 +38,6 @@ DLLIMPORT extern __stdcall void *LoadLibraryW(const void *);
 DLLIMPORT extern __stdcall void FreeLibrary(void *);
 DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
 DLLIMPORT extern __stdcall void GetSystemInfo(void *);
-DLLIMPORT extern __stdcall void GetSystemInfo(void *);
 
 #define NUMPLATFORMS 4
 static const char *const platforms[NUMPLATFORMS] = {
