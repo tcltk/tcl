@@ -541,8 +541,8 @@ TclpSetVariables(
 
     if (!osInfoInitialized) {
 	HANDLE handle = LoadLibraryW(L"NTDLL");
-	__stdcall int(*getversion)(void *) =
-		(__stdcall int(*)(void *)) GetProcAddress(handle, "RtlGetVersion");
+	int(__stdcall *getversion)(void *) =
+		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
 	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
 	if (!getversion || getversion(&osInfo)) {
 	    GetVersionExW(&osInfo);
