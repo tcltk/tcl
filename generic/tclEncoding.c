@@ -658,6 +658,7 @@ TclFinalizeEncodingSubsystem(void)
     Tcl_MutexLock(&encodingMutex);
     encodingsInitialized = 0;
     FreeEncoding(systemEncoding);
+    FreeEncoding(tclIdentityEncoding);
 
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {
