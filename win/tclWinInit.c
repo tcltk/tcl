@@ -530,7 +530,8 @@ TclpSetVariables(
 	SYSTEM_INFO info;
 	OemId oemId;
     } sys;
-    OSVERSIONINFOW osInfo;
+    static OSVERSIONINFOW osInfo;
+    static int osInfoInitialized = 0;
     Tcl_DString ds;
     TCHAR szUserName[UNLEN+1];
     DWORD cchUserNameLen = UNLEN;
@@ -538,9 +539,18 @@ TclpSetVariables(
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-    GetVersionExW(&osInfo);
-
+    if (!osInfoInitialized) {
+      HANDLE handle = LoadLibraryW(L"NTDLL");
+      int(*getversion)(void *) = (int(*)(void *))GetProcAddress(handle, "RtlGetVersion");
+      osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+      if (!getversion || getversion(&osInfo)) {
+        GetVersionExW(&osInfo);
+      }
+      if (handle) {
+        FreeLibrary(handle);
+      }
+      osInfoInitialized = 1;
+    }
     GetSystemInfo(&sys.info);
 
     /*

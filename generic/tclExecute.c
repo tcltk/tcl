@@ -5810,6 +5810,25 @@ TEBCresume(
 
 	TclNewIntObj(objResultPtr, match);
 	NEXT_INST_F(1, 2, 1);
+
+    case INST_STR_CLASS:
+	opnd = TclGetInt1AtPtr(pc+1);
+	valuePtr = OBJ_AT_TOS;
+	TRACE(("%s \"%.30s\" => ", tclStringClassTable[opnd].name,
+		O2S(valuePtr)));
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	match = 1;
+	if (length > 0) {
+	    end = ustring1 + length;
+	    for (p=ustring1 ; p<end ; p++) {
+		if (!tclStringClassTable[opnd].comparator(*p)) {
+		    match = 0;
+		    break;
+		}
+	    }
+	}
+	TRACE_APPEND(("%d\n", match));
+	JUMP_PEEPHOLE_F(match, 2, 1);
     }
 
     case INST_STR_MATCH:
@@ -5886,14 +5905,34 @@ TEBCresume(
 	    trim2 = 0;
 	}
     createTrimmedString:
+	/*
+	 * Careful here; trim set often contains non-ASCII characters so we
+	 * take care when printing. [Bug 971cb4f1db]
+	 */
+
+#ifdef TCL_COMPILE_DEBUG
+	if (traceInstructions) {
+	    TRACE(("\"%.30s\" ", O2S(valuePtr)));
+	    TclPrintObject(stdout, value2Ptr, 30);
+	    printf(" => ");
+	}
+#endif
 	if (trim1 == 0 && trim2 == 0) {
-	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
-		    O2S(valuePtr), O2S(value2Ptr)), valuePtr);
+#ifdef TCL_COMPILE_DEBUG
+	    if (traceInstructions) {
+		TclPrintObject(stdout, valuePtr, 30);
+		printf("\n");
+	    }
+#endif
 	    NEXT_INST_F(1, 1, 0);
 	} else {
 	    objResultPtr = Tcl_NewStringObj(string1+trim1, length-trim1-trim2);
-	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
-		    O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
+#ifdef TCL_COMPILE_DEBUG
+	    if (traceInstructions) {
+		TclPrintObject(stdout, objResultPtr, 30);
+		printf("\n");
+	    }
+#endif
 	    NEXT_INST_F(1, 2, 1);
 	}
     }
@@ -5943,6 +5982,14 @@ TEBCresume(
 	ClientData ptr1, ptr2;
 	int type1, type2;
 	long l1, l2, lResult;
+
+    case INST_NUM_TYPE:
+	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
+	    type1 = 0;
+	}
+	TclNewIntObj(objResultPtr, type1);
+	TRACE(("\"%.20s\" => %d\n", O2S(OBJ_AT_TOS), type1));
+	NEXT_INST_F(1, 1, 1);
 
     case INST_EQ:
     case INST_NEQ:
@@ -6620,6 +6667,17 @@ TEBCresume(
      *	   End of numeric operator instructions.
      * -----------------------------------------------------------------
      */
+
+    case INST_TRY_CVT_TO_BOOLEAN:
+	valuePtr = OBJ_AT_TOS;
+	if (valuePtr->typePtr == &tclBooleanType) {
+	    objResultPtr = TCONST(1);
+	} else {
+	    int result = (TclSetBooleanFromAny(NULL, valuePtr) == TCL_OK);
+	    objResultPtr = TCONST(result);
+	}
+	TRACE_WITH_OBJ(("\"%.30s\" => ", O2S(valuePtr)), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
 
     case INST_BREAK:
 	/*
@@ -9580,10 +9638,12 @@ IllegalExprOperandType(
     ClientData ptr;
     int type;
     const unsigned char opcode = *pc;
-    const char *description, *operator = operatorStrings[opcode - INST_LOR];
+    const char *description, *operator = "unknown";
 
     if (opcode == INST_EXPON) {
 	operator = "**";
+    } else if (opcode <= INST_STR_NEQ) {
+	operator = operatorStrings[opcode - INST_LOR];
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
