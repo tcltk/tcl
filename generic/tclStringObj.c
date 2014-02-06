@@ -2711,6 +2711,38 @@ Tcl_ObjPrintf(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclGetStringStorage --
+ *
+ *	Returns the string storage space of a Tcl_Obj.
+ *
+ * Results:
+ *	The pointer value objPtr->bytes is returned and the number of bytes
+ *	allocated there is written to *sizePtr (if known).
+ *
+ * Side effects:
+ *	May set objPtr->bytes.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+char *
+TclGetStringStorage(
+    Tcl_Obj *objPtr,
+    unsigned int *sizePtr)
+{
+    String *stringPtr;
+
+    if (objPtr->typePtr != &tclStringType || objPtr->bytes == NULL) {
+	return TclGetStringFromObj(objPtr, (int *)sizePtr);
+    }
+
+    stringPtr = GET_STRING(objPtr);
+    *sizePtr = stringPtr->allocated;
+    return objPtr->bytes;
+}
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringObjReverse --
  *
  *	Implements the [string reverse] operation.
