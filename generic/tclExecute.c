@@ -73,7 +73,7 @@ int tclTraceExec = 0;
  * disjoint for backward-compatability reasons.
  */
 
-static const char *operatorStrings[] = {
+static const char *const operatorStrings[] = {
     "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
     "+", "-", "*", "/", "%", "+", "-", "~", "!",
     "BUILTIN FUNCTION", "FUNCTION",
@@ -86,7 +86,7 @@ static const char *operatorStrings[] = {
  */
 
 #ifdef TCL_COMPILE_DEBUG
-static const char *resultStrings[] = {
+static const char *const resultStrings[] = {
     "TCL_OK", "TCL_ERROR", "TCL_RETURN", "TCL_BREAK", "TCL_CONTINUE"
 };
 #endif
@@ -7710,10 +7710,12 @@ IllegalExprOperandType(
     ClientData ptr;
     int type;
     unsigned char opcode = *pc;
-    const char *description, *operator = operatorStrings[opcode - INST_LOR];
+    const char *description, *operator = "unknown";
 
     if (opcode == INST_EXPON) {
 	operator = "**";
+    } else if (opcode <= INST_STR_NEQ) {
+	operator = operatorStrings[opcode - INST_LOR];
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
