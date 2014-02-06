@@ -5901,14 +5901,34 @@ TEBCresume(
 	    trim2 = 0;
 	}
     createTrimmedString:
+	/*
+	 * Careful here; trim set often contains non-ASCII characters so we
+	 * take care when printing. [Bug 971cb4f1db]
+	 */
+
+#ifdef TCL_COMPILE_DEBUG
+	if (traceInstructions) {
+	    TRACE(("\"%.30s\" ", O2S(valuePtr)));
+	    TclPrintObject(stdout, value2Ptr, 30);
+	    printf(" => ");
+	}
+#endif
 	if (trim1 == 0 && trim2 == 0) {
-	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
-		    O2S(valuePtr), O2S(value2Ptr)), valuePtr);
+#ifdef TCL_COMPILE_DEBUG
+	    if (traceInstructions) {
+		TclPrintObject(stdout, valuePtr, 30);
+		printf("\n");
+	    }
+#endif
 	    NEXT_INST_F(1, 1, 0);
 	} else {
 	    objResultPtr = Tcl_NewStringObj(string1+trim1, length-trim1-trim2);
-	    TRACE_WITH_OBJ(("\"%.30s\" \"%.30s\" => ",
-		    O2S(valuePtr), O2S(value2Ptr)), objResultPtr);
+#ifdef TCL_COMPILE_DEBUG
+	    if (traceInstructions) {
+		TclPrintObject(stdout, objResultPtr, 30);
+		printf("\n");
+	    }
+#endif
 	    NEXT_INST_F(1, 2, 1);
 	}
     }
