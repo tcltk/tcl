@@ -5310,7 +5310,13 @@ ReadChars(
     dstNeeded = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
     (void) TclGetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstNeeded);
-    dst = TclGetString(objPtr) + numBytes;
+    if (toRead == srcLen) {
+	unsigned int size;
+	dst = TclGetStringStorage(objPtr, &size) + numBytes;
+	dstNeeded = size - numBytes;
+    } else {
+	dst = TclGetString(objPtr) + numBytes;
+    }
 
     /*
      * [Bug 1462248]: The cause of the crash reported in this bug is this:
