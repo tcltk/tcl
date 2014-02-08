@@ -558,6 +558,15 @@ test namespace-13.1 {DeleteImportedCmd, deletes imported cmds} {
         lappend l [info commands ::test_ns_import::*]
     }
 } {::test_ns_import::cmd1 {}}
+test namespace-13.2 {DeleteImportedCmd, Bug a4494e28ed} {
+    # Will panic if still buggy
+    namespace eval src {namespace export foo; proc foo {} {}}
+    namespace eval dst {namespace import [namespace parent]::src::foo}
+    trace add command src::foo delete \
+        "[list namespace delete [namespace current]::dst] ;#"
+    proc src::foo {} {}
+    namespace delete src
+} {}
 
 test namespace-14.1 {TclGetNamespaceForQualName, absolute names} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
