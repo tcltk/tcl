@@ -661,12 +661,13 @@ TransformInputProc(
 	     * had some data before we report that instead of the request to
 	     * re-try.
 	     */
+		int error = Tcl_GetErrno();
 
-	    if ((Tcl_GetErrno() == EAGAIN) && (gotBytes > 0)) {
+	    if ((error == EAGAIN) && (gotBytes > 0)) {
 		return gotBytes;
 	    }
 
-	    *errorCodePtr = Tcl_GetErrno();
+	    *errorCodePtr = error;
 	    return -1;
 	} else if (read == 0) {
 	    /*

@@ -486,13 +486,10 @@ TclpSetInitialEncodings(void)
     Tcl_DStringFree(&encodingName);
 }
 
-void
-TclpSetInterfaces(void)
+void TclWinSetInterfaces(
+    int dummy)			/* Not used. */
 {
-    int useWide;
-
-    useWide = (TclWinGetPlatformId() != VER_PLATFORM_WIN32_WINDOWS);
-    TclWinSetInterfaces(useWide);
+    TclpSetInterfaces();
 }
 
 const char *
@@ -533,7 +530,8 @@ TclpSetVariables(
 	SYSTEM_INFO info;
 	OemId oemId;
     } sys;
-    OSVERSIONINFOA osInfo;
+    static OSVERSIONINFOW osInfo;
+    static int osInfoInitialized = 0;
     Tcl_DString ds;
     TCHAR szUserName[UNLEN+1];
     DWORD cchUserNameLen = UNLEN;
@@ -541,9 +539,19 @@ TclpSetVariables(
     Tcl_SetVar2Ex(interp, "tclDefaultLibrary", NULL,
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    GetVersionExA(&osInfo);
-
+    if (!osInfoInitialized) {
+	HANDLE handle = LoadLibraryW(L"NTDLL");
+	int(__stdcall *getversion)(void *) =
+		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
+	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	if (!getversion || getversion(&osInfo)) {
+	    GetVersionExW(&osInfo);
+	}
+	if (handle) {
+		FreeLibrary(handle);
+	}
+	osInfoInitialized = 1;
+    }
     GetSystemInfo(&sys.info);
 
     /*

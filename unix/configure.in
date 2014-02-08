@@ -25,7 +25,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".0"
+TCL_PATCH_LEVEL=".1"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -310,11 +310,7 @@ SC_TIME_HANDLER
 #	lack blkcnt_t.
 #--------------------------------------------------------------------
 
-if test "$ac_cv_cygwin" = "yes"; then
-    if test "x${SHARED_BUILD}" = "x1"; then
-	TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
-    fi
-else
+if test "$ac_cv_cygwin" != "yes"; then
     AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
 fi
 AC_CHECK_TYPES([blkcnt_t])
@@ -580,7 +576,6 @@ if test "`uname -s`" = "Darwin" ; then
     if test $tcl_corefoundation = yes; then
 	AC_CHECK_HEADERS(libkern/OSAtomic.h)
 	AC_CHECK_FUNCS(OSSpinLockLock)
-	AC_CHECK_FUNCS(pthread_atfork)
     fi
     AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
     AC_DEFINE(TCL_DEFAULT_ENCODING, "utf-8",

@@ -56,10 +56,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   6
 #define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  0
+#define TCL_RELEASE_SERIAL  1
 
 #define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6.0"
+#define TCL_PATCH_LEVEL	    "8.6.1"
 
 /*
  *----------------------------------------------------------------------------
@@ -168,7 +168,7 @@ extern "C" {
  */
 
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC__MINOR__ >= 5))
+#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__ (msg)))
 #   else
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__))
@@ -191,7 +191,7 @@ extern "C" {
  *       MSVCRT.
  */
 
-#if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
+#if (defined(__WIN32__) && (defined(_MSC_VER) || (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0550)) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
 #   define HAVE_DECLSPEC 1
 #   ifdef STATIC_BUILD
 #       define DLLIMPORT
@@ -329,10 +329,12 @@ typedef long LONG;
  * in ANSI C; maps them to type "char *" in non-ANSI systems.
  */
 
-#ifndef NO_VOID
-#   define VOID void
-#else
-#   define VOID char
+#ifndef __VXWORKS__
+#   ifndef NO_VOID
+#	define VOID void
+#   else
+#	define VOID char
+#   endif
 #endif
 
 /*
@@ -456,7 +458,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 	typedef struct _stat32i64 Tcl_StatBuf;
 #   endif /* _MSC_VER < 1400 */
 #elif defined(__CYGWIN__)
-    typedef struct _stat32i64 {
+    typedef struct {
 	dev_t st_dev;
 	unsigned short st_ino;
 	unsigned short st_mode;
@@ -2415,7 +2417,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+	    ((Tcl_CreateInterp)()))
 EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
