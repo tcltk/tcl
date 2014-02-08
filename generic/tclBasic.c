@@ -2087,10 +2087,19 @@ Tcl_CreateCommand(
 	 */
 
 	cmdPtr = Tcl_GetHashValue(hPtr);
-	oldRefPtr = cmdPtr->importRefPtr;
-	cmdPtr->importRefPtr = NULL;
+	cmdPtr->refCount++;
+	if (cmdPtr->importRefPtr) {
+	    cmdPtr->flags |= CMD_REDEF_IN_PROGRESS;
+	}
 
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+
+	if (cmdPtr->flags & CMD_REDEF_IN_PROGRESS) {
+	    oldRefPtr = cmdPtr->importRefPtr;
+	    cmdPtr->importRefPtr = NULL;
+	}
+	TclCleanupCommandMacro(cmdPtr);
+
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
 	if (!isNew) {
 	    /*
@@ -2274,10 +2283,19 @@ Tcl_CreateObjCommand(
 	 * intact.
 	 */
 
-	oldRefPtr = cmdPtr->importRefPtr;
-	cmdPtr->importRefPtr = NULL;
+	cmdPtr->refCount++;
+	if (cmdPtr->importRefPtr) {
+	    cmdPtr->flags |= CMD_REDEF_IN_PROGRESS;
+	}
 
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+
+	if (cmdPtr->flags & CMD_REDEF_IN_PROGRESS) {
+	    oldRefPtr = cmdPtr->importRefPtr;
+	    cmdPtr->importRefPtr = NULL;
+	}
+	TclCleanupCommandMacro(cmdPtr);
+
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
 	if (!isNew) {
 	    /*
@@ -3119,12 +3137,13 @@ Tcl_DeleteCommandFromToken(
      * commands were created that refer back to this command. Delete these
      * imported commands now.
      */
-
-    for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
-	    refPtr = nextRefPtr) {
-	nextRefPtr = refPtr->nextPtr;
-	importCmd = (Tcl_Command) refPtr->importedCmdPtr;
-	Tcl_DeleteCommandFromToken(interp, importCmd);
+    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
+	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
+		refPtr = nextRefPtr) {
+	    nextRefPtr = refPtr->nextPtr;
+	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
+	    Tcl_DeleteCommandFromToken(interp, importCmd);
+	}
     }
 
     /*
