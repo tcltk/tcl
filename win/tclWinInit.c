@@ -540,16 +540,17 @@ TclpSetVariables(
 	    TclGetProcessGlobalValue(&defaultLibraryDir), TCL_GLOBAL_ONLY);
 
     if (!osInfoInitialized) {
-      HANDLE handle = LoadLibraryW(L"NTDLL");
-      int(*getversion)(void *) = (int(*)(void *))GetProcAddress(handle, "RtlGetVersion");
-      osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
-      if (!getversion || getversion(&osInfo)) {
-        GetVersionExW(&osInfo);
-      }
-      if (handle) {
-        FreeLibrary(handle);
-      }
-      osInfoInitialized = 1;
+	HANDLE handle = LoadLibraryW(L"NTDLL");
+	int(__stdcall *getversion)(void *) =
+		(int(__stdcall *)(void *)) GetProcAddress(handle, "RtlGetVersion");
+	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	if (!getversion || getversion(&osInfo)) {
+	    GetVersionExW(&osInfo);
+	}
+	if (handle) {
+		FreeLibrary(handle);
+	}
+	osInfoInitialized = 1;
     }
     GetSystemInfo(&sys.info);
 
