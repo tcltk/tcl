@@ -17,7 +17,7 @@ namespace eval ::tcl::idna {
 	encode IDNAencode
 	decode IDNAdecode
 	puny puny
-	version {::package present idna}
+	version {::apply {{} {package present tcl::idna} ::}}
     }
 
     proc IDNAencode hostname {

@@ -635,6 +635,32 @@ test http-7.4 {http::formatQuery} -setup {
     http::config -urlencoding $enc
 } -result {%3F}
 
+package require -exact tcl::idna 1.0
+test http-idna-1.1 {} -returnCodes error -body {
+    ::tcl::idna
+} -result {wrong # args: should be "::tcl::idna subcommand ?arg ...?"}
+test http-idna-1.2 {} -returnCodes error -body {
+    ::tcl::idna ?
+} -result {unknown or ambiguous subcommand "?": must be decode, encode, puny, or version}
+test http-idna-1.3 {} -body {
+    ::tcl::idna version
+} -result 1.0
+test http-idna-1.4 {} -returnCodes error -body {
+    ::tcl::idna version what
+} -result {wrong # args: should be "::tcl::idna version"}
+test http-idna-1.5 {} -returnCodes error -body {
+    ::tcl::idna puny
+} -result {wrong # args: should be "::tcl::idna puny subcommand ?arg ...?"}
+test http-idna-1.6 {} -returnCodes error -body {
+    ::tcl::idna puny ?
+} -result {unknown or ambiguous subcommand "?": must be decode, or encode}
+test http-idna-1.7 {} -returnCodes error -body {
+    ::tcl::idna puny encode
+} -result {wrong # args: should be "::tcl::idna puny encode string ?case?"}
+test http-idna-1.8 {} -returnCodes error -body {
+    ::tcl::idna puny decode
+} -result {wrong # args: should be "::tcl::idna puny decode string ?case?"}
+
 # cleanup
 catch {unset url}
 catch {unset badurl}
