@@ -67,15 +67,12 @@ extern "C" {
  * We use this method because there is no autoconf equivalent.
  */
 
-#ifndef __WIN32__
-#   if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__) || (defined(__WATCOMC__) && defined(__WINDOWS_386__))
+#ifdef _WIN32
+#   ifndef __WIN32__
 #	define __WIN32__
-#	ifndef WIN32
-#	    define WIN32
-#	endif
-#	ifndef _WIN32
-#	    define _WIN32
-#	endif
+#   endif
+#   ifndef WIN32
+#	define WIN32
 #   endif
 #endif
 
@@ -83,11 +80,11 @@ extern "C" {
  * STRICT: See MSDN Article Q83456
  */
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #   ifndef STRICT
 #	define STRICT
 #   endif
-#endif /* __WIN32__ */
+#endif /* _WIN32 */
 
 /*
  * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
@@ -191,7 +188,7 @@ extern "C" {
  *       MSVCRT.
  */
 
-#if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
+#if (defined(_WIN32) && (defined(_MSC_VER) || (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0550)) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
 #   define HAVE_DECLSPEC 1
 #   ifdef STATIC_BUILD
 #       define DLLIMPORT
@@ -315,14 +312,14 @@ extern "C" {
  * VOID. This block is skipped under Cygwin and Mingw.
  */
 
-#if defined(__WIN32__) && !defined(HAVE_WINNT_IGNORE_VOID)
+#if defined(_WIN32) && !defined(HAVE_WINNT_IGNORE_VOID)
 #ifndef VOID
 #define VOID void
 typedef char CHAR;
 typedef short SHORT;
 typedef long LONG;
 #endif
-#endif /* __WIN32__ && !HAVE_WINNT_IGNORE_VOID */
+#endif /* _WIN32 && !HAVE_WINNT_IGNORE_VOID */
 
 /*
  * Macro to use instead of "void" for arguments that must have type "void *"
@@ -390,7 +387,7 @@ typedef long LONG;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__WIN32__)
+#   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
 #         define TCL_LL_MODIFIER	"L"
@@ -400,7 +397,7 @@ typedef long LONG;
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
-#   else /* ! __WIN32__ && ! __GNUC__ */
+#   else /* ! _WIN32 && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
@@ -415,7 +412,7 @@ typedef long LONG;
 #	     define TCL_WIDE_INT_TYPE long long
 #         endif
 #      endif /* NO_LIMITS_H */
-#   endif /* __WIN32__ */
+#   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
 #   undef TCL_WIDE_INT_TYPE
@@ -447,7 +444,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
-#if defined(__WIN32__)
+#if defined(_WIN32)
 #   ifdef __BORLANDC__
 	typedef struct stati64 Tcl_StatBuf;
 #   elif defined(_WIN64)
@@ -562,7 +559,7 @@ typedef struct Tcl_ZLibStream_ *Tcl_ZlibStream;
  * will be called as the main fuction of the new thread created by that call.
  */
 
-#if defined __WIN32__
+#if defined _WIN32
 typedef unsigned (__stdcall Tcl_ThreadCreateProc) (ClientData clientData);
 #else
 typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
@@ -574,7 +571,7 @@ typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
  * in generic/tclThreadTest.c for it's usage.
  */
 
-#if defined __WIN32__
+#if defined _WIN32
 #   define Tcl_ThreadCreateType		unsigned __stdcall
 #   define TCL_THREAD_CREATE_RETURN	return 0
 #else
