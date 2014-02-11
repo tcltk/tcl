@@ -8805,8 +8805,6 @@ CopyAndTranslateBuffer(
 				 * in the current input buffer? */
     int copied;			/* How many characters were already copied
 				 * into the destination space? */
-    int i;			/* Iterates over the copied input looking for
-				 * the input eofChar. */
 
     /*
      * If there is no input at all, return zero. The invariant is that either
@@ -8821,6 +8819,15 @@ CopyAndTranslateBuffer(
     bufPtr = statePtr->inQueueHead;
     bytesInBuffer = BytesLeft(bufPtr);
 
+#if 1
+    copied = space;
+    if (bytesInBuffer <= copied) {
+	copied = bytesInBuffer;
+    }
+    TranslateInputEOL(statePtr, result, RemovePoint(bufPtr),
+	    &copied, &bytesInBuffer);
+    bufPtr->nextRemoved += copied;
+#else
     copied = 0;
     switch (statePtr->inputTranslation) {
     case TCL_TRANSLATE_LF:
@@ -8842,6 +8849,7 @@ CopyAndTranslateBuffer(
     case TCL_TRANSLATE_CR: {
 	char *end;
 
+	Tcl_Panic("Untested");
 	if (bytesInBuffer == 0) {
 	    return 0;
 	}
@@ -8873,6 +8881,7 @@ CopyAndTranslateBuffer(
 	 * If there is a held-back "\r" at EOF, produce it now.
 	 */
 
+	Tcl_Panic("Untested");
 	if (bytesInBuffer == 0) {
 	    if ((statePtr->flags & (INPUT_SAW_CR | CHANNEL_EOF)) ==
 		    (INPUT_SAW_CR | CHANNEL_EOF)) {
@@ -8940,6 +8949,7 @@ CopyAndTranslateBuffer(
 	for (src = result; src < end; src++) {
 	    curByte = *src;
 	    if (curByte == '\r') {
+		Tcl_Panic("Untested");
 		SetFlag(statePtr, INPUT_SAW_CR);
 		*dst = '\n';
 		dst++;
@@ -8965,6 +8975,9 @@ CopyAndTranslateBuffer(
      */
 
     if (statePtr->inEofChar != 0) {
+	int i;
+
+	Tcl_Panic("Untested");
 	for (i = 0; i < copied; i++) {
 	    if (result[i] == (char) statePtr->inEofChar) {
 		/*
@@ -8979,6 +8992,7 @@ CopyAndTranslateBuffer(
 	    }
 	}
     }
+#endif
 
     /*
      * If the current buffer is empty recycle it.
