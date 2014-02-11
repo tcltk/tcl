@@ -70,7 +70,7 @@ static int TclPkgProvide(
 	return TCL_ERROR;
 }
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
 #   define TclUnixOpenTemporaryFile 0
@@ -517,7 +517,7 @@ static const TclIntStubs tclIntStubs = {
 static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
     TclGetAndDetachPids, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
@@ -550,7 +550,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
     0, /* 1 */
     TclWinGetServByName, /* 2 */
@@ -621,7 +621,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
 #endif /* WIN */
@@ -720,19 +720,19 @@ const TclStubs tclStubs = {
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     0, /* 9 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     0, /* 10 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -894,10 +894,10 @@ const TclStubs tclStubs = {
     Tcl_GetMaster, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_GetOpenFile, /* 167 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     0, /* 167 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */

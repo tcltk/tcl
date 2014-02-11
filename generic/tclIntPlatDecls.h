@@ -29,7 +29,7 @@ extern "C" {
  * Exported function declarations:
  */
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 0 */
 TCLAPI void		TclGetAndDetachPids(Tcl_Interp *interp,
 				Tcl_Channel chan);
@@ -84,7 +84,7 @@ TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 				Tcl_Obj *resultingNameObj);
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 /* 0 */
 TCLAPI void		TclWinConvertError(DWORD errCode);
 /* Slot 1 is reserved */
@@ -230,7 +230,7 @@ typedef struct TclIntPlatStubs {
     int magic;
     void *hooks;
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 0 */
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
@@ -263,7 +263,7 @@ typedef struct TclIntPlatStubs {
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     void (*tclWinConvertError) (DWORD errCode); /* 0 */
     void (*reserved1)(void);
     struct servent * (*tclWinGetServByName) (const char *nm, const char *proto); /* 2 */
@@ -343,7 +343,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
  * Inline function declarations:
  */
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
 #define TclGetAndDetachPids \
 	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 0 */
 #define TclpCloseFile \
@@ -388,7 +388,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclUnixOpenTemporaryFile \
 	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 #define TclWinConvertError \
 	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
 /* Slot 1 is reserved */
@@ -501,7 +501,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__)
+#if !defined(_WIN32) && !defined(__CYGWIN__)
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
 #endif

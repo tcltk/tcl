@@ -391,7 +391,7 @@ static int		TestNRELevels(ClientData clientData,
 static int		TestInterpResolverCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-#if defined(HAVE_CPUID) || defined(__WIN32__)
+#if defined(HAVE_CPUID) || defined(_WIN32)
 static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Interp* interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -649,7 +649,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
 	    NULL, NULL);
-#if defined(HAVE_CPUID) || defined(__WIN32__)
+#if defined(HAVE_CPUID) || defined(_WIN32)
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    (ClientData) 0, NULL);
 #endif
@@ -6464,7 +6464,7 @@ TestNumUtfCharsCmd(
     return TCL_OK;
 }
 
-#if defined(HAVE_CPUID) || defined(__WIN32__)
+#if defined(HAVE_CPUID) || defined(_WIN32)
 /*
  *----------------------------------------------------------------------
  *
