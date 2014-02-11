@@ -886,24 +886,6 @@ TclpOpenFileChannel(
     }
 
     /*
-     * If the file is being created, get the file attributes from the
-     * permissions argument, else use the existing file attributes.
-     */
-
-    if (mode & O_CREAT) {
-	if (permissions & S_IWRITE) {
-	    flags = FILE_ATTRIBUTE_NORMAL;
-	} else {
-	    flags = FILE_ATTRIBUTE_READONLY;
-	}
-    } else {
-	flags = (*tclWinProcs->getFileAttributesProc)(nativeName);
-	if (flags == 0xFFFFFFFF) {
-	    flags = 0;
-	}
-    }
-
-    /*
      * [2413550] Avoid double-open of serial ports on Windows
      * Special handling for Windows serial ports by a "name-hint"
      * to directly open it with the OVERLAPPED flag set.
@@ -930,6 +912,24 @@ TclpOpenFileChannel(
 
 	return channel;
     }
+    /*
+     * If the file is being created, get the file attributes from the
+     * permissions argument, else use the existing file attributes.
+     */
+
+    if (mode & O_CREAT) {
+	if (permissions & S_IWRITE) {
+	    flags = FILE_ATTRIBUTE_NORMAL;
+	} else {
+	    flags = FILE_ATTRIBUTE_READONLY;
+	}
+    } else {
+	flags = (*tclWinProcs->getFileAttributesProc)(nativeName);
+	if (flags == 0xFFFFFFFF) {
+	    flags = 0;
+	}
+    }
+
     /*
      * Set up the file sharing mode.  We want to allow simultaneous access.
      */
