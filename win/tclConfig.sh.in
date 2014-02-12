@@ -175,6 +175,6 @@ TCL_BUILD_STUB_LIB_PATH='@TCL_BUILD_STUB_LIB_PATH@'
 # Path to the Tcl stub library in the install directory.
 TCL_STUB_LIB_PATH='@TCL_STUB_LIB_PATH@'
 
-# Flag, 1: we built Tcl with threads enables, 0 we didn't
+# Flag, 1: we built Tcl with threads enabled, 0 we didn't
 TCL_THREADS=@TCL_THREADS@
 
