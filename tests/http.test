@@ -636,30 +636,140 @@ test http-7.4 {http::formatQuery} -setup {
 } -result {%3F}
 
 package require -exact tcl::idna 1.0
-test http-idna-1.1 {} -returnCodes error -body {
+
+test http-idna-1.1 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna
 } -result {wrong # args: should be "::tcl::idna subcommand ?arg ...?"}
-test http-idna-1.2 {} -returnCodes error -body {
+test http-idna-1.2 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna ?
 } -result {unknown or ambiguous subcommand "?": must be decode, encode, puny, or version}
-test http-idna-1.3 {} -body {
+test http-idna-1.3 {IDNA package: basics} -body {
     ::tcl::idna version
 } -result 1.0
-test http-idna-1.4 {} -returnCodes error -body {
+test http-idna-1.4 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna version what
 } -result {wrong # args: should be "::tcl::idna version"}
-test http-idna-1.5 {} -returnCodes error -body {
+test http-idna-1.5 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna puny
 } -result {wrong # args: should be "::tcl::idna puny subcommand ?arg ...?"}
-test http-idna-1.6 {} -returnCodes error -body {
+test http-idna-1.6 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna puny ?
 } -result {unknown or ambiguous subcommand "?": must be decode, or encode}
-test http-idna-1.7 {} -returnCodes error -body {
+test http-idna-1.7 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna puny encode
 } -result {wrong # args: should be "::tcl::idna puny encode string ?case?"}
-test http-idna-1.8 {} -returnCodes error -body {
+test http-idna-1.8 {IDNA package: basics} -returnCodes error -body {
+    ::tcl::idna puny encode a b c
+} -result {wrong # args: should be "::tcl::idna puny encode string ?case?"}
+test http-idna-1.9 {IDNA package: basics} -returnCodes error -body {
     ::tcl::idna puny decode
 } -result {wrong # args: should be "::tcl::idna puny decode string ?case?"}
+test http-idna-1.10 {IDNA package: basics} -returnCodes error -body {
+    ::tcl::idna puny decode a b c
+} -result {wrong # args: should be "::tcl::idna puny decode string ?case?"}
+test http-idna-1.11 {IDNA package: basics} -returnCodes error -body {
+    ::tcl::idna decode
+} -result {wrong # args: should be "::tcl::idna decode hostname"}
+test http-idna-1.12 {IDNA package: basics} -returnCodes error -body {
+    ::tcl::idna encode
+} -result {wrong # args: should be "::tcl::idna encode hostname"}
+
+test http-idna-2.1 {puny encode: functional test} {
+    ::tcl::idna puny encode abc
+} abc-
+test http-idna-2.2 {puny encode: functional test} {
+    ::tcl::idna puny encode a\u20acb\u20acc
+} abc-k50ab
+test http-idna-2.3 {puny encode: functional test} {
+    ::tcl::idna puny encode ABC
+} ABC-
+test http-idna-2.4 {puny encode: functional test} {
+    ::tcl::idna puny encode A\u20ACB\u20ACC
+} ABC-k50ab
+test http-idna-2.5 {puny encode: functional test} {
+    ::tcl::idna puny encode ABC 0
+} abc-
+test http-idna-2.6 {puny encode: functional test} {
+    ::tcl::idna puny encode A\u20ACB\u20ACC 0
+} abc-k50ab
+test http-idna-2.7 {puny encode: functional test} {
+    ::tcl::idna puny encode ABC 1
+} ABC-
+test http-idna-2.8 {puny encode: functional test} {
+    ::tcl::idna puny encode A\u20ACB\u20ACC 1
+} ABC-k50ab
+test http-idna-2.9 {puny encode: functional test} {
+    ::tcl::idna puny encode abc 0
+} abc-
+test http-idna-2.10 {puny encode: functional test} {
+    ::tcl::idna puny encode a\u20ACb\u20ACc 0
+} abc-k50ab
+test http-idna-2.11 {puny encode: functional test} {
+    ::tcl::idna puny encode abc 1
+} ABC-
+test http-idna-2.12 {puny encode: functional test} {
+    ::tcl::idna puny encode a\u20ACb\u20ACc 1
+} ABC-k50ab
+test http-idna-2.13 {puny encode: edge cases} {
+    ::tcl::idna puny encode ""
+} ""
+
+test http-idna-3.1 {puny decode: functional test} {
+    ::tcl::idna puny decode abc-
+} abc
+test http-idna-3.2 {puny decode: functional test} {
+    ::tcl::idna puny decode abc-k50ab
+} a\u20acb\u20acc
+test http-idna-3.3 {puny decode: functional test} {
+    ::tcl::idna puny decode ABC-
+} ABC
+test http-idna-3.4 {puny decode: functional test} {
+    ::tcl::idna puny decode ABC-k50ab
+} A\u20ACB\u20ACC
+test http-idna-3.5 {puny decode: functional test} {
+    ::tcl::idna puny decode ABC-K50AB
+} A\u20ACB\u20ACC
+test http-idna-3.6 {puny decode: functional test} {
+    ::tcl::idna puny decode abc-K50AB
+} a\u20ACb\u20ACc
+test http-idna-3.7 {puny decode: functional test} {
+    ::tcl::idna puny decode ABC- 0
+} abc
+test http-idna-3.8 {puny decode: functional test} {
+    ::tcl::idna puny decode ABC-K50AB 0
+} a\u20ACb\u20ACc
+test http-idna-3.9 {puny decode: functional test} {
+    ::tcl::idna puny decode ABC- 1
+} ABC
+test http-idna-3.10 {puny decode: functional test} {
+    ::tcl::idna puny decode ABC-K50AB 1
+} A\u20ACB\u20ACC
+test http-idna-3.11 {puny decode: functional test} {
+    ::tcl::idna puny decode abc- 0
+} abc
+test http-idna-3.12 {puny decode: functional test} {
+    ::tcl::idna puny decode abc-k50ab 0
+} a\u20ACb\u20ACc
+test http-idna-3.13 {puny decode: functional test} {
+    ::tcl::idna puny decode abc- 1
+} ABC
+test http-idna-3.14 {puny decode: functional test} {
+    ::tcl::idna puny decode abc-k50ab 1
+} A\u20ACB\u20ACC
+test http-idna-3.15 {puny decode: edge cases and errors} {
+    # Is this case actually correct?
+    binary encode hex [encoding convertto utf-8 [::tcl::idna puny decode abc]]
+} c282c281c280
+test http-idna-3.16 {puny decode: edge cases and errors} -returnCodes error -body {
+    ::tcl::idna puny decode abc!
+} -result {bad decode character "!"}
+test http-idna-3.17 {puny decode: edge cases and errors} {
+    catch {::tcl::idna puny decode abc!} -> opt
+    dict get $opt -errorcode
+} {PUNYCODE BAD_INPUT}
+test http-idna-3.18 {puny decode: edge cases and errors} {
+    ::tcl::idna puny decode ""
+} {}
 
 # cleanup
 catch {unset url}
