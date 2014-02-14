@@ -43,7 +43,7 @@ namespace eval ::tcl::idna {
 	set parts {}
 	# Split term from RFC 3490, Sec 3.1
 	foreach part [split $hostname "\u002E\u3002\uFF0E\uFF61"] {
-	    if {[string match "xn--*" $part]} {
+	    if {[string match -nocase "xn--*" $part]} {
 		set part [punydecode [string range $part 4 end]]
 	    }
 	    lappend parts $part
