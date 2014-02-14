@@ -770,6 +770,52 @@ test http-idna-3.17 {puny decode: edge cases and errors} {
 test http-idna-3.18 {puny decode: edge cases and errors} {
     ::tcl::idna puny decode ""
 } {}
+
+test http-idna-4.1 {IDNA encoding} {
+    ::tcl::idna encode abc.def
+} abc.def
+test http-idna-4.2 {IDNA encoding} {
+    ::tcl::idna encode a\u20acb\u20acc.def
+} xn--abc-k50ab.def
+test http-idna-4.3 {IDNA encoding} {
+    ::tcl::idna encode def.a\u20acb\u20acc
+} def.xn--abc-k50ab
+test http-idna-4.4 {IDNA encoding} {
+    ::tcl::idna encode ABC.DEF
+} ABC.DEF
+test http-idna-4.5 {IDNA encoding} {
+    ::tcl::idna encode A\u20acB\u20acC.def
+} xn--ABC-k50ab.def
+test http-idna-4.6 {IDNA encoding: invalid edge case} {
+    # Should this be an error?
+    ::tcl::idna encode abc..def
+} abc..def
+test http-idna-4.7 {IDNA encoding: invalid char} -returnCodes error -body {
+    ::tcl::idna encode abc.$.def
+} -result {bad character "$" in DNS name}
+test http-idna-4.7.1 {IDNA encoding: invalid char} {
+    catch {::tcl::idna encode abc.$.def} -> opt
+    dict get $opt -errorcode
+} {IDNA INVALID_NAME_CHARACTER 36}
+test http-idna-4.8 {IDNA encoding: empty} {
+    ::tcl::idna encode ""
+} {}
+
+test http-idna-5.1 {IDNA decoding} {
+    ::tcl::idna decode abc.def
+} abc.def
+test http-idna-5.2 {IDNA decoding} {
+    # Invalid entry that's just a wrapper
+    ::tcl::idna decode xn--abc-.def
+} abc.def
+test http-idna-5.3 {IDNA decoding} {
+    # Invalid entry that's just a wrapper
+    ::tcl::idna decode xn--abc-.xn--def-
+} abc.def
+test http-idna-5.4 {IDNA decoding} {
+    # Invalid entry that's just a wrapper
+    ::tcl::idna decode XN--abc-.XN--def-
+} abc.def
 
 # cleanup
 catch {unset url}
