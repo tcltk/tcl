@@ -30,10 +30,15 @@ namespace eval ::tcl::idna {
 		    if {$ch < "!" || $ch > "~"} {
 			set ch [format "\\u%04x" $c]
 		    }
-		    throw [list IDNA INVALID_NAME_CHARACTER $c] \
+		    throw [list IDNA INVALID_NAME_CHARACTER $ch] \
 			"bad character \"$ch\" in DNS name"
 		}
 		set part xn--[punyencode $part]
+		# Length restriction from RFC 5890, Sec 2.3.1
+		if {[string length $part] > 63} {
+		    throw [list IDNA OVERLONG_PART $part] \
+			"hostname part too long"
+		}
 	    }
 	    lappend parts $part
 	}
@@ -226,7 +231,7 @@ namespace eval ::tcl::idna {
 
 	    for {set oldi $i; set w 1; set k $base} 1 {incr in} {
 		if {[set ch [string index $post $in]] eq ""} {
-		    throw {PUNYCODE BAD_INPUT} "exceeded input data"
+		    throw {PUNYCODE BAD_INPUT LENGTH} "exceeded input data"
 		}
 		if {[string match -nocase {[a-z]} $ch]} {
 		    scan [string toupper $ch] %c digit
@@ -234,7 +239,8 @@ namespace eval ::tcl::idna {
 		} elseif {[string match {[0-9]} $ch]} {
 		    set digit [expr {$ch + 26}]
 		} else {
-		    throw {PUNYCODE BAD_INPUT} "bad decode character \"$ch\""
+		    throw {PUNYCODE BAD_INPUT CHAR} \
+			    "bad decode character \"$ch\""
 		}
 		incr i [expr {$digit * $w}]
 		set t [expr {min(max($tmin, $k-$bias), $tmax)}]
