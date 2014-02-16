@@ -885,7 +885,7 @@ test http-idna-3.16 {puny decode: edge cases and errors} -returnCodes error -bod
 test http-idna-3.17 {puny decode: edge cases and errors} {
     catch {::tcl::idna puny decode abc!} -> opt
     dict get $opt -errorcode
-} {PUNYCODE BAD_INPUT}
+} {PUNYCODE BAD_INPUT CHAR}
 test http-idna-3.18 {puny decode: edge cases and errors} {
     ::tcl::idna puny decode ""
 } {}
@@ -1029,10 +1029,23 @@ test http-idna-4.7 {IDNA encoding: invalid char} -returnCodes error -body {
 test http-idna-4.7.1 {IDNA encoding: invalid char} {
     catch {::tcl::idna encode abc.$.def} -> opt
     dict get $opt -errorcode
-} {IDNA INVALID_NAME_CHARACTER 36}
+} {IDNA INVALID_NAME_CHARACTER {$}}
 test http-idna-4.8 {IDNA encoding: empty} {
     ::tcl::idna encode ""
 } {}
+set overlong www.[join [subst [string map {u+ \\u} {
+    u+C138 u+ACC4 u+C758 u+BAA8 u+B4E0 u+C0AC u+B78C u+B4E4 u+C774
+    u+D55C u+AD6D u+C5B4 u+B97C u+C774 u+D574 u+D55C u+B2E4 u+BA74
+    u+C5BC u+B9C8 u+B098 u+C88B u+C744 u+AE4C
+}]] ""].com
+test http-idna-4.9 {IDNA encoding: max lengths from RFC 5890} -body {
+    ::tcl::idna encode $overlong
+} -returnCodes error -result "hostname part too long"
+test http-idna-4.9.1 {IDNA encoding: max lengths from RFC 5890} {
+    catch {::tcl::idna encode $overlong} -> opt
+    dict get $opt -errorcode
+} {IDNA OVERLONG_PART xn--989aomsvi5e83db1d2a355cv1e0vak1dwrv93d5xbh15a0dt30a5jpsd879ccm6fea98c}
+unset overlong
 
 test http-idna-5.1 {IDNA decoding} {
     ::tcl::idna decode abc.def
@@ -1049,6 +1062,20 @@ test http-idna-5.4 {IDNA decoding} {
     # Invalid entry that's just a wrapper
     ::tcl::idna decode XN--abc-.XN--def-
 } abc.def
+test http-idna-5.5 {IDNA decoding: error cases} -returnCodes error -body {
+    ::tcl::idna decode xn--$$$.example.com
+} -result {bad decode character "$"}
+test http-idna-5.5.1 {IDNA decoding: error cases} {
+    catch {::tcl::idna decode xn--$$$.example.com} -> opt
+    dict get $opt -errorcode
+} {PUNYCODE BAD_INPUT CHAR}
+test http-idna-5.6 {IDNA decoding: error cases} -returnCodes error -body {
+    ::tcl::idna decode xn--a-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.def
+} -result {exceeded input data}
+test http-idna-5.6.1 {IDNA decoding: error cases} {
+    catch {::tcl::idna decode xn--a-zzzzzzzzzzzzzzzzzzzzzzzzzzzzzz.def} -> opt
+    dict get $opt -errorcode
+} {PUNYCODE BAD_INPUT LENGTH}
 
 # cleanup
 catch {unset url}
