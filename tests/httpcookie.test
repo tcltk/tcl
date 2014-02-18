@@ -1,0 +1,157 @@
+# Commands covered:  http::cookiejar
+#
+# This file contains a collection of tests for the cookiejar package.
+# Sourcing this file into Tcl runs the tests and generates output for errors.
+# No output means no errors were found.
+#
+# Copyright (c) 2014 Donal K. Fellows.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
+package require tcltest 2
+namespace import -force ::tcltest::*
+
+testConstraint cookiejar [expr {![catch {
+    package require cookiejar
+}]}]
+
+test http-cookiejar-1.1 {cookie storage: packaging} cookiejar {
+    package require cookiejar
+} 0.1
+test http-cookiejar-1.2 {cookie storage: packaging} cookiejar {
+    package require cookiejar
+    package require cookiejar
+} 0.1
+
+test http-cookiejar-2.1 {cookie storage: basics} -constraints cookiejar -body {
+    http::cookiejar
+} -returnCodes error -result {wrong # args: should be "http::cookiejar method ?arg ...?"}
+test http-cookiejar-2.2 {cookie storage: basics} -constraints cookiejar -body {
+    http::cookiejar ?
+} -returnCodes error -result {unknown method "?": must be create, destroy, loglevel or new}
+test http-cookiejar-2.3 {cookie storage: basics} -constraints cookiejar -body {
+    http::cookiejar loglevel
+} -result info
+test http-cookiejar-2.4 {cookie storage: basics} -constraints cookiejar -body {
+    http::cookiejar loglevel ?
+} -returnCodes error -result {bad log level "?": must be debug, info, warn, or error}
+test http-cookiejar-2.5 {cookie storage: basics} -constraints cookiejar -body {
+    http::cookiejar loglevel ? ?
+} -returnCodes error -result {wrong # args: should be "http::cookiejar loglevel ?level?"}
+test http-cookiejar-2.6 {cookie storage: basics} -setup {
+    set old [http::cookiejar loglevel]
+} -constraints cookiejar -body {
+    list    [http::cookiejar loglevel] [http::cookiejar loglevel debug] \
+	    [http::cookiejar loglevel] [http::cookiejar loglevel error] \
+	    [http::cookiejar loglevel]
+} -cleanup {
+    http::cookiejar loglevel $old
+} -result {info debug debug error error}
+test http-cookiejar-2.7 {cookie storage: basics} -setup {
+    set old [http::cookiejar loglevel]
+} -constraints cookiejar -body {
+    list    [http::cookiejar loglevel] [http::cookiejar loglevel d] \
+	    [http::cookiejar loglevel i] [http::cookiejar loglevel w] \
+	    [http::cookiejar loglevel e]
+} -cleanup {
+    http::cookiejar loglevel $old
+} -result {info debug info warn error}
+
+test http-cookiejar-3.1 {cookie storage: class} cookiejar {
+    info object isa object http::cookiejar
+} 1
+test http-cookiejar-3.2 {cookie storage: class} cookiejar {
+    info object isa class http::cookiejar
+} 1
+test http-cookiejar-3.3 {cookie storage: class} cookiejar {
+    lsort [info object methods http::cookiejar]
+} loglevel
+test http-cookiejar-3.4 {cookie storage: class} cookiejar {
+    lsort [info object methods http::cookiejar -all]
+} {create destroy loglevel new}
+test http-cookiejar-3.5 {cookie storage: class} -setup {
+    catch {rename ::cookiejar ""}
+} -constraints cookiejar -body {
+    namespace eval :: {http::cookiejar create cookiejar}
+} -cleanup {
+    catch {rename ::cookiejar ""}
+} -result ::cookiejar
+test http-cookiejar-3.6 {cookie storage: class} -setup {
+    catch {rename ::cookiejar ""}
+} -constraints cookiejar -body {
+    list [http::cookiejar create ::cookiejar] [info commands ::cookiejar] \
+	    [::cookiejar destroy] [info commands ::cookiejar]
+} -cleanup {
+    catch {rename ::cookiejar ""}
+} -result {::cookiejar ::cookiejar {} {}}
+test http-cookiejar-3.7 {cookie storage: class} -setup {
+    catch {rename ::cookiejar ""}
+} -constraints cookiejar -body {
+    http::cookiejar create ::cookiejar foo bar
+} -returnCodes error -cleanup {
+    catch {rename ::cookiejar ""}
+} -result {wrong # args: should be "http::cookiejar create ::cookiejar ?path?"}
+
+test http-cookiejar-4.1 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar
+} -returnCodes error -cleanup {
+    ::cookiejar destroy
+} -result {wrong # args: should be "cookiejar method ?arg ...?"}
+test http-cookiejar-4.2 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar ?
+} -returnCodes error -cleanup {
+    ::cookiejar destroy
+} -result {unknown method "?": must be destroy, forceLoadDomainData, getCookies, lookup or storeCookie}
+test http-cookiejar-4.3 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    lsort [info object methods cookiejar -all]
+} -cleanup {
+    ::cookiejar destroy
+} -result {destroy forceLoadDomainData getCookies lookup storeCookie}
+test http-cookiejar-4.4 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar getCookies
+} -returnCodes error -cleanup {
+    ::cookiejar destroy
+} -result {wrong # args: should be "cookiejar getCookies proto host path"}
+test http-cookiejar-4.5 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar getCookies http www.example.com /
+} -cleanup {
+    ::cookiejar destroy
+} -result {}
+test http-cookiejar-4.6 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar storeCookie
+} -returnCodes error -cleanup {
+    ::cookiejar destroy
+} -result {wrong # args: should be "cookiejar storeCookie name value options"}
+test http-cookiejar-4.7 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+} -cleanup {
+    ::cookiejar destroy
+} -result {}
+
+::tcltest::cleanupTests
+
+# Local variables:
+# mode: tcl
+# End:
