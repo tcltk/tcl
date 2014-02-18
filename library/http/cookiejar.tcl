@@ -35,7 +35,9 @@ namespace eval ::http {
     variable cookiejar_purgeinterval 60000
 
     # This is the class that we are creating
-    ::oo::class create cookiejar
+    if {![llength [info commands cookiejar]]} {
+	::oo::class create cookiejar
+    }
 
     # Some support procedures, none particularly useful in general
     namespace eval cookiejar_support {
@@ -50,10 +52,10 @@ namespace eval ::http {
 	proc locn {secure domain path {key ""}} {
 	    if {$key eq ""} {
 		format "%s://%s%s" [expr {$secure?"https":"http"}] \
-		    [tcl::idna encode $domain] $path
+		    [::tcl::idna encode $domain] $path
 	    } else {
 		format "%s://%s%s?%s" \
-		    [expr {$secure?"https":"http"}] [tcl::idna encode $domain] \
+		    [expr {$secure?"https":"http"}] [::tcl::idna encode $domain] \
 		    $path $key
 	    }
 	}
@@ -85,7 +87,6 @@ namespace eval ::http {
 		::http::Log "[isoNow] [string toupper $level] cookiejar($who) - ${msg}"
 	    }
 	}
-	namespace import ::http::cookiejar_support::puny::IDNA*
     }
 }
 
@@ -96,10 +97,9 @@ package provide cookiejar $::http::cookiejar_version
 ::oo::define ::http::cookiejar {
     self method loglevel {{level "\u0000\u0000"}} {
 	namespace upvar ::http cookiejar_loglevel loglevel
-	if {$level in {debug info warn error}} {
-	    set loglevel $level
-	} elseif {$level ne "\u0000\u0000"} {
-	    return -code error "unknown log level \"$level\": must be debug, info, warn, or error"
+	if {$level ne "\u0000\u0000"} {
+	    set loglevel [::tcl::prefix match -message "log level" \
+				  {debug info warn error} $level]
 	}
 	return $loglevel
     }
@@ -254,8 +254,8 @@ package provide cookiejar $::http::cookiejar_version
 		    continue
 		} elseif {[string match !* $line]} {
 		    set line [string range $line 1 end]
-		    set idna [string tolower [tcl::idna encode $line]]
-		    set utf [tcl::idna decode [string tolower $line]]
+		    set idna [string tolower [::tcl::idna encode $line]]
+		    set utf [::tcl::idna decode [string tolower $line]]
 		    db eval {
 			INSERT OR REPLACE INTO domains (domain, forbidden)
 			VALUES ($utf, 0);
@@ -269,8 +269,8 @@ package provide cookiejar $::http::cookiejar_version
 		} else {
 		    if {[string match {\*.*} $line]} {
 			set line [string range $line 2 end]
-			set idna [string tolower [tcl::idna encode $line]]
-			set utf [tcl::idna decode [string tolower $line]]
+			set idna [string tolower [::tcl::idna encode $line]]
+			set utf [::tcl::idna decode [string tolower $line]]
 			db eval {
 			    INSERT OR REPLACE INTO forbiddenSuper (domain)
 			    VALUES ($utf);
@@ -282,8 +282,8 @@ package provide cookiejar $::http::cookiejar_version
 			    }
 			}
 		    } else {
-			set idna [string tolower [tcl::idna encode $line]]
-			set utf [tcl::idna decode [string tolower $line]]
+			set idna [string tolower [::tcl::idna encode $line]]
+			set utf [::tcl::idna decode [string tolower $line]]
 		    }
 		    db eval {
 			INSERT OR REPLACE INTO domains (domain, forbidden)
@@ -296,8 +296,8 @@ package provide cookiejar $::http::cookiejar_version
 			}
 		    }
 		}
-		if {$utf ne [tcl::idna decode [string tolower $idna]]} {
-		    log warn "mismatch in IDNA handling for $idna ($line, $utf, [tcl::idna decode $idna])"
+		if {$utf ne [::tcl::idna decode [string tolower $idna]]} {
+		    log warn "mismatch in IDNA handling for $idna ($line, $utf, [::tcl::idna decode $idna])"
 		}
 	    }
 	}
@@ -347,7 +347,7 @@ package provide cookiejar $::http::cookiejar_version
     method getCookies {proto host path} {
 	set result {}
 	set paths [splitPath $path]
-	set domains [splitDomain [string tolower [tcl::idna encode $host]]]
+	set domains [splitDomain [string tolower [::tcl::idna encode $host]]]
 	set secure [string equal -nocase $proto "https"]
 	# Open question: how to move these manipulations into the database
 	# engine (if that's where they *should* be).
@@ -409,7 +409,7 @@ package provide cookiejar $::http::cookiejar_version
 	return 0
     }
 
-    method storeCookie {name val options} {
+    method storeCookie {name value options} {
 	set now [clock seconds]
 	db transaction {
 	    if {[my BadDomain $options]} {
@@ -421,36 +421,36 @@ package provide cookiejar $::http::cookiejar_version
 		db eval {
 		    INSERT OR REPLACE INTO sessionCookies (
 			secure, domain, path, key, value, originonly, creation, lastuse)
-		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $now, $now);
+		    VALUES ($secure, $domain, $path, $name, $value, $hostonly, $now, $now);
 		    DELETE FROM persistentCookies
-		    WHERE domain = $domain AND path = $path AND key = $key AND secure <= $secure
+		    WHERE domain = $domain AND path = $path AND key = $name AND secure <= $secure
 		}
 		incr deletions [db changes]
-		log debug "defined session cookie for [locn $secure $domain $path $key]"
+		log debug "defined session cookie for [locn $secure $domain $path $name]"
 	    } elseif {$expires < $now} {
 		db eval {
 		    DELETE FROM persistentCookies
-		    WHERE domain = $domain AND path = $path AND key = $key
+		    WHERE domain = $domain AND path = $path AND key = $name
 			AND secure <= $secure;
 		}
 		set del [db changes]
 		db eval {
 		    DELETE FROM sessionCookies
-		    WHERE domain = $domain AND path = $path AND key = $key
+		    WHERE domain = $domain AND path = $path AND key = $name
 			AND secure <= $secure;
 		}
 		incr deletions [incr del [db changes]]
-		log debug "deleted $del cookies for [locn $secure $domain $path $key]"
+		log debug "deleted $del cookies for [locn $secure $domain $path $name]"
 	    } else {
 		db eval {
 		    INSERT OR REPLACE INTO persistentCookies (
 			secure, domain, path, key, value, originonly, expiry, creation)
-		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $expires, $now);
+		    VALUES ($secure, $domain, $path, $name, $value, $hostonly, $expires, $now);
 		    DELETE FROM sessionCookies
-		    WHERE domain = $domain AND path = $path AND key = $key AND secure <= $secure
+		    WHERE domain = $domain AND path = $path AND key = $name AND secure <= $secure
 		}
 		incr deletions [db changes]
-		log debug "defined persistent cookie for [locn $secure $domain $path $key], expires at [clock format $expires]"
+		log debug "defined persistent cookie for [locn $secure $domain $path $name], expires at [clock format $expires]"
 	    }
 	}
     }
@@ -487,7 +487,7 @@ package provide cookiejar $::http::cookiejar_version
     forward Database db
 
     method lookup {{host ""} {key ""}} {
-	set host [string tolower [tcl::idna encode $host]]
+	set host [string tolower [::tcl::idna encode $host]]
 	db transaction {
 	    if {$host eq ""} {
 		set result {}
@@ -495,7 +495,7 @@ package provide cookiejar $::http::cookiejar_version
 		    SELECT DISTINCT domain FROM cookies
 		    ORDER BY domain
 		} {
-		    lappend result [tcl::idna decode [string tolower $domain]]
+		    lappend result [::tcl::idna decode [string tolower $domain]]
 		}
 		return $result
 	    } elseif {$key eq ""} {
