@@ -8949,7 +8949,6 @@ CopyAndTranslateBuffer(
 	for (src = result; src < end; src++) {
 	    curByte = *src;
 	    if (curByte == '\r') {
-		Tcl_Panic("Untested");
 		SetFlag(statePtr, INPUT_SAW_CR);
 		*dst = '\n';
 		dst++;
