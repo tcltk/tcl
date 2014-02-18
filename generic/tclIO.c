@@ -8824,6 +8824,20 @@ CopyAndTranslateBuffer(
     if (bytesInBuffer <= copied) {
 	copied = bytesInBuffer;
     }
+    if (copied == 0) {
+	return 0;
+    }
+    if (statePtr->flags & INPUT_NEED_NL) {
+	ResetFlag(statePtr, INPUT_NEED_NL);
+
+	if (RemovePoint(bufPtr)[0] == '\n') {
+	    bufPtr->nextRemoved++;
+	    *result = '\n';
+	} else {
+	    *result = '\r';
+	}
+	return 1;
+    }
     TranslateInputEOL(statePtr, result, RemovePoint(bufPtr),
 	    &copied, &bytesInBuffer);
     bufPtr->nextRemoved += bytesInBuffer;
