@@ -8849,7 +8849,6 @@ CopyAndTranslateBuffer(
     case TCL_TRANSLATE_CR: {
 	char *end;
 
-	Tcl_Panic("Untested");
 	if (bytesInBuffer == 0) {
 	    return 0;
 	}
