@@ -8826,7 +8826,7 @@ CopyAndTranslateBuffer(
     }
     TranslateInputEOL(statePtr, result, RemovePoint(bufPtr),
 	    &copied, &bytesInBuffer);
-    bufPtr->nextRemoved += copied;
+    bufPtr->nextRemoved += bytesInBuffer;
 #else
     copied = 0;
     switch (statePtr->inputTranslation) {
