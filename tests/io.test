@@ -6730,6 +6730,21 @@ test io-52.11 {TclCopyChannel & encodings} {fcopy} {
     file size $path(kyrillic.txt)
 } 3
 
+test io-52.12 {coverage of -translation auto} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 29
+
 test io-53.1 {CopyData} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
