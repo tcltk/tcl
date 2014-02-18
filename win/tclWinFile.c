@@ -799,7 +799,7 @@ tclWinDebugPanic(
     WCHAR msgString[TCL_MAX_WARN_LEN];
 
     va_start(argList, format);
-    _vsnprintf(buf, sizeof(buf), format, argList);
+    vsnprintf(buf, sizeof(buf), format, argList);
 
     msgString[TCL_MAX_WARN_LEN-1] = L'\0';
     MultiByteToWideChar(CP_UTF8, 0, buf, -1, msgString, TCL_MAX_WARN_LEN);
@@ -2415,373 +2415,213 @@ TclpObjNormalizePath(
     Tcl_DStringInit(&dsNorm);
     path = Tcl_GetString(pathPtr);
 
-    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS) {
-	/*
-	 * We're on Win95, 98 or ME. There are two assumptions in this block
-	 * of code. First that the native (NULL) encoding is basically ascii,
-	 * and second that symbolic links are not possible. Both of these
-	 * assumptions appear to be true of these operating systems.
-	 *
-	 * FIXME: This code branch may be derelict as those are not supported
-	 * platforms any more.
-	 */
+    currentPathEndPosition = path + nextCheckpoint;
+    if (*currentPathEndPosition == '/') {
+	currentPathEndPosition++;
+    }
+    while (1) {
+	char cur = *currentPathEndPosition;
 
-	currentPathEndPosition = path + nextCheckpoint;
-	if (*currentPathEndPosition == '/') {
-	    currentPathEndPosition++;
-	}
+	if ((cur=='/' || cur==0) && (path != currentPathEndPosition)) {
+	    /*
+	     * Reached directory separator, or end of string.
+	     */
 
-	while (1) {
-	    char cur = *currentPathEndPosition;
+	    WIN32_FILE_ATTRIBUTE_DATA data;
+	    const TCHAR *nativePath = Tcl_WinUtfToTChar(path,
+		    currentPathEndPosition - path, &ds);
 
-	    if ((cur=='/' || cur==0) && (path != currentPathEndPosition)) {
+	    if (GetFileAttributesEx(nativePath,
+		    GetFileExInfoStandard, &data) != TRUE) {
 		/*
-		 * Reached directory separator, or end of string.
-		 */
-
-		const char *nativePath = Tcl_UtfToExternalDString(NULL, path,
-			currentPathEndPosition - path, &ds);
-
-		/*
-		 * Now we convert the tail of the current path to its 'long
-		 * form', and append it to 'dsNorm' which holds the current
-		 * normalized path, if the file exists.
+		 * File doesn't exist.
 		 */
 
 		if (isDrive) {
-		    if (GetFileAttributesA(nativePath)
-			    == INVALID_FILE_ATTRIBUTES) {
+		    int len = WinIsReserved(path);
+
+		    if (len > 0) {
 			/*
-			 * File doesn't exist.
+			 * Actually it does exist - COM1, etc.
 			 */
 
-			if (isDrive) {
-			    int len = WinIsReserved(path);
+			int i;
 
-			    if (len > 0) {
-				/*
-				 * Actually it does exist - COM1, etc.
-				 */
+			for (i=0 ; i<len ; i++) {
+			    WCHAR wc = ((WCHAR *) nativePath)[i];
 
-				int i;
-
-				for (i=0 ; i<len ; i++) {
-				    if (nativePath[i] >= 'a') {
-					((char *) nativePath)[i] -= ('a'-'A');
-				    }
-				}
-				Tcl_DStringAppend(&dsNorm, nativePath, len);
-				lastValidPathEnd = currentPathEndPosition;
-			    } else if (nextCheckpoint == 0) {
-				/* Path starts with a drive designation
-				 * that's not actually on the system.
-				 * We still must normalize up past the
-				 * first separator.  [Bug 3603434] */
-				currentPathEndPosition++;
+			    if (wc >= L'a') {
+				wc -= (L'a' - L'A');
+				((WCHAR *) nativePath)[i] = wc;
 			    }
 			}
-			Tcl_DStringFree(&ds);
-			break;
-		    }
-		    if (nativePath[0] >= 'a') {
-			((char *) nativePath)[0] -= ('a' - 'A');
-		    }
-		    Tcl_DStringAppend(&dsNorm, nativePath,
-			    Tcl_DStringLength(&ds));
-		} else {
-		    char *checkDots = NULL;
-
-		    if (lastValidPathEnd[1] == '.') {
-			checkDots = lastValidPathEnd + 1;
-			while (checkDots < currentPathEndPosition) {
-			    if (*checkDots != '.') {
-				checkDots = NULL;
-				break;
-			    }
-			    checkDots++;
-			}
-		    }
-		    if (checkDots != NULL) {
-			int dotLen = currentPathEndPosition-lastValidPathEnd;
-
-			/*
-			 * Path is just dots. We shouldn't really ever see a
-			 * path like that. However, to be nice we at least
-			 * don't mangle the path - we just add the dots as a
-			 * path segment and continue
-			 */
-
-			Tcl_DStringAppend(&dsNorm, (const char *)
-				(nativePath + Tcl_DStringLength(&ds)-dotLen),
-				dotLen);
-		    } else {
-			/*
-			 * Normal path.
-			 */
-
-			WIN32_FIND_DATAA fData;
-			HANDLE handle;
-
-			handle = FindFirstFileA(nativePath, &fData);
-			if (handle == INVALID_HANDLE_VALUE) {
-			    if (GetFileAttributesA(nativePath)
-				    == INVALID_FILE_ATTRIBUTES) {
-				/*
-				 * File doesn't exist.
-				 */
-
-				Tcl_DStringFree(&ds);
-				break;
-			    }
-
-			    /*
-			     * This is usually the '/' in 'c:/' at end of
-			     * string.
-			     */
-
-			    TclDStringAppendLiteral(&dsNorm, "/");
-			} else {
-			    char *nativeName;
-
-			    if (fData.cFileName[0] != '\0') {
-				nativeName = fData.cFileName;
-			    } else {
-				nativeName = fData.cAlternateFileName;
-			    }
-			    FindClose(handle);
-			    TclDStringAppendLiteral(&dsNorm, "/");
-			    Tcl_DStringAppend(&dsNorm, nativeName, -1);
-			}
+			Tcl_DStringAppend(&dsNorm,
+				(const char *)nativePath,
+				(int)(sizeof(WCHAR) * len));
+			lastValidPathEnd = currentPathEndPosition;
+		    } else if (nextCheckpoint == 0) {
+			/* Path starts with a drive designation
+			 * that's not actually on the system.
+			 * We still must normalize up past the
+			 * first separator.  [Bug 3603434] */
+			currentPathEndPosition++;
 		    }
 		}
 		Tcl_DStringFree(&ds);
-		lastValidPathEnd = currentPathEndPosition;
-		if (cur == 0) {
-		    break;
-		}
-
-		/*
-		 * If we get here, we've got past one directory delimiter, so
-		 * we know it is no longer a drive.
-		 */
-
-		isDrive = 0;
+		break;
 	    }
-	    currentPathEndPosition++;
-	}
-    } else {
-	/*
-	 * We're on WinNT (or 2000 or XP; something with an NT core).
-	 */
 
-	currentPathEndPosition = path + nextCheckpoint;
-	if (*currentPathEndPosition == '/') {
-	    currentPathEndPosition++;
-	}
-	while (1) {
-	    char cur = *currentPathEndPosition;
+	    /*
+	     * File 'nativePath' does exist if we get here. We now want to
+	     * check if it is a symlink and otherwise continue with the
+	     * rest of the path.
+	     */
 
-	    if ((cur=='/' || cur==0) && (path != currentPathEndPosition)) {
-		/*
-		 * Reached directory separator, or end of string.
-		 */
+	    /*
+	     * Check for symlinks, except at last component of path (we
+	     * don't follow final symlinks). Also a drive (C:/) for
+	     * example, may sometimes have the reparse flag set for some
+	     * reason I don't understand. We therefore don't perform this
+	     * check for drives.
+	     */
 
-		WIN32_FILE_ATTRIBUTE_DATA data;
-		const TCHAR *nativePath = Tcl_WinUtfToTChar(path,
-			currentPathEndPosition - path, &ds);
+	    if (cur != 0 && !isDrive &&
+		    data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT){
+		Tcl_Obj *to = WinReadLinkDirectory(nativePath);
 
-		if (GetFileAttributesEx(nativePath,
-			GetFileExInfoStandard, &data) != TRUE) {
+		if (to != NULL) {
 		    /*
-		     * File doesn't exist.
+		     * Read the reparse point ok. Now, reparse points need
+		     * not be normalized, otherwise we could use:
+		     *
+		     * Tcl_GetStringFromObj(to, &pathLen);
+		     * nextCheckpoint = pathLen;
+		     *
+		     * So, instead we have to start from the beginning.
 		     */
 
-		    if (isDrive) {
-			int len = WinIsReserved(path);
+		    nextCheckpoint = 0;
+		    Tcl_AppendToObj(to, currentPathEndPosition, -1);
 
-			if (len > 0) {
-			    /*
-			     * Actually it does exist - COM1, etc.
-			     */
+		    /*
+		     * Convert link to forward slashes.
+		     */
 
-			    int i;
-
-			    for (i=0 ; i<len ; i++) {
-				WCHAR wc = ((WCHAR *) nativePath)[i];
-
-				if (wc >= L'a') {
-				    wc -= (L'a' - L'A');
-				    ((WCHAR *) nativePath)[i] = wc;
-				}
-			    }
-			    Tcl_DStringAppend(&dsNorm,
-				    (const char *)nativePath,
-				    (int)(sizeof(WCHAR) * len));
-			    lastValidPathEnd = currentPathEndPosition;
-			} else if (nextCheckpoint == 0) {
-			    /* Path starts with a drive designation
-			     * that's not actually on the system.
-			     * We still must normalize up past the
-			     * first separator.  [Bug 3603434] */
-			    currentPathEndPosition++;
+		    for (path = Tcl_GetString(to); *path != 0; path++) {
+			if (*path == '\\') {
+			    *path = '/';
 			}
 		    }
+		    path = Tcl_GetString(to);
+		    currentPathEndPosition = path + nextCheckpoint;
+		    if (temp != NULL) {
+			Tcl_DecrRefCount(temp);
+		    }
+		    temp = to;
+
+		    /*
+		     * Reset variables so we can restart normalization.
+		     */
+
+		    isDrive = 1;
+		    Tcl_DStringFree(&dsNorm);
 		    Tcl_DStringFree(&ds);
-		    break;
+		    continue;
 		}
-
-		/*
-		 * File 'nativePath' does exist if we get here. We now want to
-		 * check if it is a symlink and otherwise continue with the
-		 * rest of the path.
-		 */
-
-		/*
-		 * Check for symlinks, except at last component of path (we
-		 * don't follow final symlinks). Also a drive (C:/) for
-		 * example, may sometimes have the reparse flag set for some
-		 * reason I don't understand. We therefore don't perform this
-		 * check for drives.
-		 */
-
-		if (cur != 0 && !isDrive &&
-			data.dwFileAttributes & FILE_ATTRIBUTE_REPARSE_POINT){
-		    Tcl_Obj *to = WinReadLinkDirectory(nativePath);
-
-		    if (to != NULL) {
-			/*
-			 * Read the reparse point ok. Now, reparse points need
-			 * not be normalized, otherwise we could use:
-			 *
-			 * Tcl_GetStringFromObj(to, &pathLen);
-			 * nextCheckpoint = pathLen;
-			 *
-			 * So, instead we have to start from the beginning.
-			 */
-
-			nextCheckpoint = 0;
-			Tcl_AppendToObj(to, currentPathEndPosition, -1);
-
-			/*
-			 * Convert link to forward slashes.
-			 */
-
-			for (path = Tcl_GetString(to); *path != 0; path++) {
-			    if (*path == '\\') {
-				*path = '/';
-			    }
-			}
-			path = Tcl_GetString(to);
-			currentPathEndPosition = path + nextCheckpoint;
-			if (temp != NULL) {
-			    Tcl_DecrRefCount(temp);
-			}
-			temp = to;
-
-			/*
-			 * Reset variables so we can restart normalization.
-			 */
-
-			isDrive = 1;
-			Tcl_DStringFree(&dsNorm);
-			Tcl_DStringFree(&ds);
-			continue;
-		    }
-		}
+	    }
 
 #ifndef TclNORM_LONG_PATH
-		/*
-		 * Now we convert the tail of the current path to its 'long
-		 * form', and append it to 'dsNorm' which holds the current
-		 * normalized path
-		 */
+	    /*
+	     * Now we convert the tail of the current path to its 'long
+	     * form', and append it to 'dsNorm' which holds the current
+	     * normalized path
+	     */
 
-		if (isDrive) {
-		    WCHAR drive = ((WCHAR *) nativePath)[0];
+	    if (isDrive) {
+		WCHAR drive = ((WCHAR *) nativePath)[0];
 
-		    if (drive >= L'a') {
-			drive -= (L'a' - L'A');
-			((WCHAR *) nativePath)[0] = drive;
+		if (drive >= L'a') {
+		    drive -= (L'a' - L'A');
+		    ((WCHAR *) nativePath)[0] = drive;
+		}
+		Tcl_DStringAppend(&dsNorm, (const char *)nativePath,
+			Tcl_DStringLength(&ds));
+	    } else {
+		char *checkDots = NULL;
+
+		if (lastValidPathEnd[1] == '.') {
+		    checkDots = lastValidPathEnd + 1;
+		    while (checkDots < currentPathEndPosition) {
+			if (*checkDots != '.') {
+			    checkDots = NULL;
+			    break;
+			}
+			checkDots++;
 		    }
-		    Tcl_DStringAppend(&dsNorm, (const char *)nativePath,
-			    Tcl_DStringLength(&ds));
+		}
+		if (checkDots != NULL) {
+		    int dotLen = currentPathEndPosition-lastValidPathEnd;
+
+		    /*
+		     * Path is just dots. We shouldn't really ever see a
+		     * path like that. However, to be nice we at least
+		     * don't mangle the path - we just add the dots as a
+		     * path segment and continue.
+		     */
+
+		    Tcl_DStringAppend(&dsNorm, ((const char *)nativePath)
+			    + Tcl_DStringLength(&ds)
+			    - (dotLen * sizeof(TCHAR)),
+			    (int)(dotLen * sizeof(TCHAR)));
 		} else {
-		    char *checkDots = NULL;
+		    /*
+		     * Normal path.
+		     */
 
-		    if (lastValidPathEnd[1] == '.') {
-			checkDots = lastValidPathEnd + 1;
-			while (checkDots < currentPathEndPosition) {
-			    if (*checkDots != '.') {
-				checkDots = NULL;
-				break;
-			    }
-			    checkDots++;
-			}
-		    }
-		    if (checkDots != NULL) {
-			int dotLen = currentPathEndPosition-lastValidPathEnd;
+		    WIN32_FIND_DATAW fData;
+		    HANDLE handle;
 
+		    handle = FindFirstFileW((WCHAR *) nativePath, &fData);
+		    if (handle == INVALID_HANDLE_VALUE) {
 			/*
-			 * Path is just dots. We shouldn't really ever see a
-			 * path like that. However, to be nice we at least
-			 * don't mangle the path - we just add the dots as a
-			 * path segment and continue.
+			 * This is usually the '/' in 'c:/' at end of
+			 * string.
 			 */
 
-			Tcl_DStringAppend(&dsNorm, ((const char *)nativePath)
-				+ Tcl_DStringLength(&ds)
-				- (dotLen * sizeof(TCHAR)),
-				(int)(dotLen * sizeof(TCHAR)));
+			Tcl_DStringAppend(&dsNorm, (const char *) L"/",
+				sizeof(WCHAR));
 		    } else {
-			/*
-			 * Normal path.
-			 */
+			WCHAR *nativeName;
 
-			WIN32_FIND_DATAW fData;
-			HANDLE handle;
-
-			handle = FindFirstFileW((WCHAR *) nativePath, &fData);
-			if (handle == INVALID_HANDLE_VALUE) {
-			    /*
-			     * This is usually the '/' in 'c:/' at end of
-			     * string.
-			     */
-
-			    Tcl_DStringAppend(&dsNorm, (const char *) L"/",
-				    sizeof(WCHAR));
+			if (fData.cFileName[0] != '\0') {
+			    nativeName = fData.cFileName;
 			} else {
-			    WCHAR *nativeName;
-
-			    if (fData.cFileName[0] != '\0') {
-				nativeName = fData.cFileName;
-			    } else {
-				nativeName = fData.cAlternateFileName;
-			    }
-			    FindClose(handle);
-			    Tcl_DStringAppend(&dsNorm, (const char *) L"/",
-				    sizeof(WCHAR));
-			    Tcl_DStringAppend(&dsNorm,
-				    (const char *) nativeName,
-				    (int) (wcslen(nativeName)*sizeof(WCHAR)));
+			    nativeName = fData.cAlternateFileName;
 			}
+			FindClose(handle);
+			Tcl_DStringAppend(&dsNorm, (const char *) L"/",
+				sizeof(WCHAR));
+			Tcl_DStringAppend(&dsNorm,
+				(const char *) nativeName,
+				(int) (wcslen(nativeName)*sizeof(WCHAR)));
 		    }
 		}
-#endif /* !TclNORM_LONG_PATH */
-		Tcl_DStringFree(&ds);
-		lastValidPathEnd = currentPathEndPosition;
-		if (cur == 0) {
-		    break;
-		}
-
-		/*
-		 * If we get here, we've got past one directory delimiter, so
-		 * we know it is no longer a drive.
-		 */
-
-		isDrive = 0;
 	    }
-	    currentPathEndPosition++;
+#endif /* !TclNORM_LONG_PATH */
+	    Tcl_DStringFree(&ds);
+	    lastValidPathEnd = currentPathEndPosition;
+	    if (cur == 0) {
+		break;
+	    }
+
+	    /*
+	     * If we get here, we've got past one directory delimiter, so
+	     * we know it is no longer a drive.
+	     */
+
+	    isDrive = 0;
 	}
+	currentPathEndPosition++;
 
 #ifdef TclNORM_LONG_PATH
 	/*

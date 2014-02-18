@@ -343,8 +343,8 @@
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
 
-/* No visibility attribute */
-#undef NO_VIZ
+/* Compiler support for module scope symbols */
+#undef HAVE_HIDDEN
 
 /* Do we have wait3() */
 #undef NO_WAIT3

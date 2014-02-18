@@ -20,6 +20,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -48,7 +52,7 @@ TCLAPI void		Tcl_DbCkfree(char *ptr, const char *file, int line);
 /* 8 */
 TCLAPI char *		Tcl_DbCkrealloc(char *ptr, unsigned int size,
 				const char *file, int line);
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 9 */
 TCLAPI void		Tcl_CreateFileHandler(int fd, int mask,
 				Tcl_FileProc *proc, ClientData clientData);
@@ -58,7 +62,7 @@ TCLAPI void		Tcl_CreateFileHandler(int fd, int mask,
 TCLAPI void		Tcl_CreateFileHandler(int fd, int mask,
 				Tcl_FileProc *proc, ClientData clientData);
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 10 */
 TCLAPI void		Tcl_DeleteFileHandler(int fd);
 #endif /* UNIX */
@@ -480,7 +484,7 @@ TCLAPI Tcl_Interp *	Tcl_GetMaster(Tcl_Interp *interp);
 TCLAPI const char *	Tcl_GetNameOfExecutable(void);
 /* 166 */
 TCLAPI Tcl_Obj *	Tcl_GetObjResult(Tcl_Interp *interp);
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 167 */
 TCLAPI int		Tcl_GetOpenFile(Tcl_Interp *interp,
 				const char *chanID, int forWriting,
@@ -645,8 +649,7 @@ TCLAPI void		Tcl_SetErrno(int err);
 TCLAPI void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 /* 229 */
 TCLAPI void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
-/* 230 */
-TCLAPI void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
+/* Slot 230 is reserved */
 /* 231 */
 TCLAPI int		Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth);
 /* 232 */
@@ -1732,6 +1735,8 @@ typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
     const struct TclIntStubs *tclIntStubs;
     const struct TclIntPlatStubs *tclIntPlatStubs;
+    const struct TclOOStubs *tclOOStubs;
+    const struct TclOOIntStubs *tclOOIntStubs;
 } TclStubHooks;
 
 typedef struct TclStubs {
@@ -1747,19 +1752,19 @@ typedef struct TclStubs {
     char * (*tcl_DbCkalloc) (unsigned int size, const char *file, int line); /* 6 */
     void (*tcl_DbCkfree) (char *ptr, const char *file, int line); /* 7 */
     char * (*tcl_DbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     void (*reserved9)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_DeleteFileHandler) (int fd); /* 10 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     void (*reserved10)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -1921,10 +1926,10 @@ typedef struct TclStubs {
     Tcl_Interp * (*tcl_GetMaster) (Tcl_Interp *interp); /* 164 */
     const char * (*tcl_GetNameOfExecutable) (void); /* 165 */
     Tcl_Obj * (*tcl_GetObjResult) (Tcl_Interp *interp); /* 166 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tcl_GetOpenFile) (Tcl_Interp *interp, const char *chanID, int forWriting, int checkUsage, ClientData *filePtr); /* 167 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     void (*reserved167)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -1992,7 +1997,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
-    void (*tcl_SetPanicProc) (Tcl_PanicProc *panicProc); /* 230 */
+    void (*reserved230)(void);
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
     void (*tcl_SetResult) (Tcl_Interp *interp, char *result, Tcl_FreeProc *freeProc); /* 232 */
     int (*tcl_SetServiceMode) (int mode); /* 233 */
@@ -2395,10 +2400,8 @@ typedef struct TclStubs {
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
 } TclStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclStubs *tclStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -2427,7 +2430,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DbCkfree) /* 7 */
 #define Tcl_DbCkrealloc \
 	(tclStubsPtr->tcl_DbCkrealloc) /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_CreateFileHandler \
 	(tclStubsPtr->tcl_CreateFileHandler) /* 9 */
 #endif /* UNIX */
@@ -2435,7 +2438,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_CreateFileHandler \
 	(tclStubsPtr->tcl_CreateFileHandler) /* 9 */
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_DeleteFileHandler \
 	(tclStubsPtr->tcl_DeleteFileHandler) /* 10 */
 #endif /* UNIX */
@@ -2747,7 +2750,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetNameOfExecutable) /* 165 */
 #define Tcl_GetObjResult \
 	(tclStubsPtr->tcl_GetObjResult) /* 166 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_GetOpenFile \
 	(tclStubsPtr->tcl_GetOpenFile) /* 167 */
 #endif /* UNIX */
@@ -2874,8 +2877,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_SetErrorCode) /* 228 */
 #define Tcl_SetMaxBlockTime \
 	(tclStubsPtr->tcl_SetMaxBlockTime) /* 229 */
-#define Tcl_SetPanicProc \
-	(tclStubsPtr->tcl_SetPanicProc) /* 230 */
+/* Slot 230 is reserved */
 #define Tcl_SetRecursionLimit \
 	(tclStubsPtr->tcl_SetRecursionLimit) /* 231 */
 #define Tcl_SetResult \
@@ -3666,14 +3668,12 @@ extern const TclStubs *tclStubsPtr;
 #   undef Tcl_FindExecutable
 #   undef Tcl_GetStringResult
 #   undef Tcl_Init
-#   undef Tcl_SetPanicProc
 #   undef Tcl_ObjSetVar2
 #   undef Tcl_StaticPackage
 #   undef TclFSGetNativePath
 #   define Tcl_CreateInterp() (tclStubsPtr->tcl_CreateInterp())
 #   define Tcl_GetStringResult(interp) (tclStubsPtr->tcl_GetStringResult(interp))
 #   define Tcl_Init(interp) (tclStubsPtr->tcl_Init(interp))
-#   define Tcl_SetPanicProc(proc) (tclStubsPtr->tcl_SetPanicProc(proc))
 #   define Tcl_ObjSetVar2(interp, part1, part2, newValue, flags) \
 	    (tclStubsPtr->tcl_ObjSetVar2(interp, part1, part2, newValue, flags))
 #endif
@@ -3681,8 +3681,6 @@ extern const TclStubs *tclStubsPtr;
 #if defined(_WIN32) && defined(UNICODE)
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
 #   define Tcl_MainEx Tcl_MainExW
-TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
-	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 
 #define Tcl_PkgPresent(interp, name, version, exact) \

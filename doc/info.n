@@ -8,8 +8,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH info n 8.4 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -296,7 +296,6 @@ Returns the name of the library directory in which standard Tcl
 scripts are stored.
 This is actually the value of the \fBtcl_library\fR
 variable and may be changed by setting \fBtcl_library\fR.
-See the \fBtclvars\fR manual entry for more information.
 .TP
 \fBinfo loaded \fR?\fIinterp\fR?
 .
@@ -336,8 +335,8 @@ described in \fBOBJECT INTROSPECTION\fR below.
 .TP
 \fBinfo patchlevel\fR
 .
-Returns the value of the global variable \fBtcl_patchLevel\fR; see
-the \fBtclvars\fR manual entry for more information.
+Returns the value of the global variable \fBtcl_patchLevel\fR, which holds
+the exact version of the Tcl library by default.
 .TP
 \fBinfo procs \fR?\fIpattern\fR?
 .
@@ -374,8 +373,8 @@ string is returned.
 .TP
 \fBinfo tclversion\fR
 .
-Returns the value of the global variable \fBtcl_version\fR; see
-the \fBtclvars\fR manual entry for more information.
+Returns the value of the global variable \fBtcl_version\fR, which holds the
+major and minor version of the Tcl library by default.
 .TP
 \fBinfo vars\fR ?\fIpattern\fR?
 .
@@ -763,8 +762,9 @@ proc getDef {obj method} {
 .VE 8.6
 .SH "SEE ALSO"
 .VS 8.6
-global(n), oo::class(n), oo::define(n), oo::object(n), proc(n), self(n)
+global(n), oo::class(n), oo::define(n), oo::object(n), proc(n), self(n),
 .VE 8.6
+tcl_library(n), tcl_patchLevel(n), tcl_version(n)
 .SH KEYWORDS
 command, information, interpreter, introspection, level, namespace,
 .VS 8.6

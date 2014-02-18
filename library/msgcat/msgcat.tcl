@@ -13,7 +13,7 @@
 package require Tcl 8.5-
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.5.1
+package provide msgcat 1.5.2
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
@@ -541,8 +541,11 @@ proc msgcat::Init {} {
     # settings, or fall back on locale of "C".
     #
 
-    # First check registry value LocalName present from Windows Vista
-    # which contains the local string as RFC5646, composed of:
+    # On Vista and later:
+    # HCU/Control Panel/Desktop : PreferredUILanguages is for language packs,
+    # HCU/Control Pannel/International : localName is the default locale.
+    #
+    # They contain the local string as RFC5646, composed of:
     # [a-z]{2,3} : language
     # -[a-z]{4}  : script (optional, translated by table Latn->latin)
     # -[a-z]{2}|[0-9]{3} : territory (optional, numerical region codes not used)
@@ -550,23 +553,25 @@ proc msgcat::Init {} {
     # Those are translated to local strings.
     # Examples: de-CH -> de_ch, sr-Latn-CS -> sr_cs@latin, es-419 -> es
     #
-    set key {HKEY_CURRENT_USER\Control Panel\International}
-    if {![catch {registry get $key LocaleName} localeName]
-	    && [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
-	    [string tolower $localeName] match locale script territory]} {
-	if {"" ne $territory} {
-	    append locale _ $territory
-	}
-	set modifierDict [dict create latn latin cyrl cyrillic]
-	if {[dict exists $modifierDict $script]} {
-	    append locale @ [dict get $modifierDict $script]
-	}
-	if {![catch {mclocale [ConvertLocale $locale]}]} {
-	    return
+    foreach key {{HKEY_CURRENT_USER\Control Panel\Desktop} {HKEY_CURRENT_USER\Control Panel\International}}\
+	    value {PreferredUILanguages localeName} {
+	if {![catch {registry get $key $value} localeName]
+		&& [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
+		    [string tolower $localeName] match locale script territory]} {
+	    if {"" ne $territory} {
+		append locale _ $territory
+	    }
+	    set modifierDict [dict create latn latin cyrl cyrillic]
+	    if {[dict exists $modifierDict $script]} {
+		append locale @ [dict get $modifierDict $script]
+	    }
+	    if {![catch {mclocale [ConvertLocale $locale]}]} {
+		return
+	    }
 	}
     }
 
-    # then check key locale which contains a numerical language ID
+    # then check value locale which contains a numerical language ID
     if {[catch {
 	set locale [registry get $key "locale"]
     }]} {

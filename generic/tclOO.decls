@@ -1,12 +1,24 @@
+# tclOO.decls --
+#
+#	This file contains the declarations for all supported public functions
+#	that are exported by the TclOO package that is embedded within the Tcl
+#	library via the stubs table.  This file is used to generate the
+#	tclOODecls.h, tclOOIntDecls.h and tclOOStubInit.c files.
+#
+# Copyright (c) 2008-2013 by Donal K. Fellows.
+#
+# See the file "license.terms" for information on usage and redistribution of
+# this file, and for a DISCLAIMER OF ALL WARRANTIES.
+
 library tclOO
 
 ######################################################################
-# public API
+# Public API, exposed for general users of TclOO.
 #
 
 interface tclOO
-hooks tclOOInt
-scspec TCLOOAPI
+hooks tclOOPrivate
+scspec TCLAPI
 
 declare 0 {
     Tcl_Object Tcl_CopyObjectInstance(Tcl_Interp *interp,
@@ -116,7 +128,9 @@ declare 28 {
 }
 
 ######################################################################
-# private API, exposed to support advanced OO systems that plug in on top
+# Private API, exposed to support advanced OO systems that plug in on top of
+# TclOO; not intended for general use and does not have any commitment to
+# long-term support.
 #
 
 interface tclOOInt

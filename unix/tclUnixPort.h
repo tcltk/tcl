@@ -700,8 +700,6 @@ typedef int socklen_t;
 
 #ifdef TCL_THREADS
 #   include <pthread.h>
-#   undef inet_ntoa
-#   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
 
 /* FIXME - Hyper-enormous platform assumption! */

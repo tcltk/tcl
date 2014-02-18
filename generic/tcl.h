@@ -62,32 +62,14 @@ extern "C" {
 #define TCL_PATCH_LEVEL	    "9.0a0"
 
 /*
- *----------------------------------------------------------------------------
- * The following definitions set up the proper options for Windows compilers.
- * We use this method because there is no autoconf equivalent.
- */
-
-#ifndef __WIN32__
-#   if defined(_WIN32) || defined(WIN32) || defined(__MINGW32__) || defined(__BORLANDC__) || (defined(__WATCOMC__) && defined(__WINDOWS_386__))
-#	define __WIN32__
-#	ifndef WIN32
-#	    define WIN32
-#	endif
-#	ifndef _WIN32
-#	    define _WIN32
-#	endif
-#   endif
-#endif
-
-/*
  * STRICT: See MSDN Article Q83456
  */
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #   ifndef STRICT
 #	define STRICT
 #   endif
-#endif /* __WIN32__ */
+#endif /* _WIN32 */
 
 /*
  * A special definition used to allow this header file to be included from
@@ -149,7 +131,7 @@ extern "C" {
  */
 
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 1)))
-#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC__MINOR__ >= 5))
+#   if (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 5))
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__ (msg)))
 #   else
 #	define TCL_DEPRECATED_API(msg)	__attribute__ ((__deprecated__))
@@ -172,7 +154,7 @@ extern "C" {
  *       MSVCRT.
  */
 
-#if (defined(__WIN32__) && (defined(_MSC_VER) || (__BORLANDC__ >= 0x0550) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
+#if (defined(_WIN32) && (defined(_MSC_VER) || (defined(__BORLANDC__) && (__BORLANDC__ >= 0x0550)) || defined(__LCC__) || defined(__WATCOMC__) || (defined(__GNUC__) && defined(__declspec))))
 #   define HAVE_DECLSPEC 1
 #   ifdef STATIC_BUILD
 #       define DLLIMPORT
@@ -214,9 +196,9 @@ extern "C" {
  */
 
 #ifdef BUILD_tcl
-#   define TCLAPI DLLEXPORT
+#   define TCLAPI extern DLLEXPORT
 #else
-#   define TCLAPI DLLIMPORT
+#   define TCLAPI extern DLLIMPORT
 #endif
 
 /*
@@ -264,7 +246,7 @@ typedef void *ClientData;
  */
 
 #if !defined(TCL_WIDE_INT_TYPE)&&!defined(TCL_WIDE_INT_IS_LONG)
-#   if defined(__WIN32__)
+#   if defined(_WIN32)
 #      define TCL_WIDE_INT_TYPE __int64
 #      ifdef __BORLANDC__
 #         define TCL_LL_MODIFIER	"L"
@@ -274,7 +256,7 @@ typedef void *ClientData;
 #   elif defined(__GNUC__)
 #      define TCL_WIDE_INT_TYPE long long
 #      define TCL_LL_MODIFIER	"ll"
-#   else /* ! __WIN32__ && ! __GNUC__ */
+#   else /* ! _WIN32 && ! __GNUC__ */
 /*
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
@@ -289,7 +271,7 @@ typedef void *ClientData;
 #	     define TCL_WIDE_INT_TYPE long long
 #         endif
 #      endif /* NO_LIMITS_H */
-#   endif /* __WIN32__ */
+#   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
 #   undef TCL_WIDE_INT_TYPE
@@ -321,7 +303,7 @@ typedef unsigned TCL_WIDE_INT_TYPE	Tcl_WideUInt;
 #   define Tcl_DoubleAsWide(val)	((Tcl_WideInt)((double)(val)))
 #endif /* TCL_WIDE_INT_IS_LONG */
 
-#if defined(__WIN32__)
+#if defined(_WIN32)
     typedef struct __stat64 Tcl_StatBuf;
 #elif defined(__CYGWIN__)
     typedef struct {
@@ -395,7 +377,7 @@ typedef struct Tcl_ZLibStream_ *Tcl_ZlibStream;
  * will be called as the main fuction of the new thread created by that call.
  */
 
-#if defined __WIN32__
+#if defined _WIN32
 typedef unsigned (__stdcall Tcl_ThreadCreateProc) (ClientData clientData);
 #else
 typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
@@ -407,7 +389,7 @@ typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
  * in generic/tclThreadTest.c for it's usage.
  */
 
-#if defined __WIN32__
+#if defined _WIN32
 #   define Tcl_ThreadCreateType		unsigned __stdcall
 #   define TCL_THREAD_CREATE_RETURN	return 0
 #else
@@ -2210,10 +2192,15 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  */
 
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
-	    (Tcl_FindExecutable(argv[0]), (Tcl_CreateInterp)()))
+	    ((Tcl_CreateInterp)()))
 TCLAPI void		Tcl_FindExecutable(const char *argv0);
+TCLAPI void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
 TCLAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+#if defined(_WIN32) && defined(UNICODE)
+TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
+	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
+#endif
 TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)

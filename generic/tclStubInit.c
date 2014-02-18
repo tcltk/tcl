@@ -10,7 +10,15 @@
  */
 
 #include "tclInt.h"
+#include "tclOOInt.h"
 #include "tommath.h"
+
+/*
+ * The actual definition of the variable holding the TclOO stub table.
+ */
+
+MODULE_SCOPE const TclOOStubs tclOOStubs;
+MODULE_SCOPE const TclOOIntStubs tclOOIntStubs;
 
 #ifdef __GNUC__
 #pragma GCC dependency "tcl.decls"
@@ -62,11 +70,10 @@ static int TclPkgProvide(
 	return TCL_ERROR;
 }
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #   define TclUnixWaitForFile 0
 #   define TclUnixCopyFile 0
 #   define TclUnixOpenTemporaryFile 0
-#   define TclpReaddir 0
 #   define TclpIsAtty 0
 #elif defined(__CYGWIN__)
 #   define TclpIsAtty TclPlatIsAtty
@@ -504,12 +511,13 @@ static const TclIntStubs tclIntStubs = {
     TclCopyChannel, /* 248 */
     TclDoubleDigits, /* 249 */
     TclSetSlaveCancelFlags, /* 250 */
+    TclRegisterLiteral, /* 251 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
     TclGetAndDetachPids, /* 0 */
     TclpCloseFile, /* 1 */
     TclpCreateCommandChannel, /* 2 */
@@ -520,10 +528,10 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
-    TclpReaddir, /* 10 */
+    0, /* 10 */
     0, /* 11 */
     0, /* 12 */
-    TclpInetNtoa, /* 13 */
+    0, /* 13 */
     TclUnixCopyFile, /* 14 */
     0, /* 15 */
     0, /* 16 */
@@ -542,7 +550,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinCPUID, /* 29 */
     TclUnixOpenTemporaryFile, /* 30 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
     0, /* 1 */
     TclWinGetServByName, /* 2 */
@@ -553,7 +561,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclWinSetSockOpt, /* 7 */
     TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
-    TclpReaddir, /* 10 */
+    0, /* 10 */
     TclGetAndDetachPids, /* 11 */
     TclpCloseFile, /* 12 */
     TclpCreateCommandChannel, /* 13 */
@@ -564,7 +572,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpMakeFile, /* 18 */
     TclpOpenFile, /* 19 */
     TclWinAddProcess, /* 20 */
-    TclpInetNtoa, /* 21 */
+    0, /* 21 */
     TclpCreateTempFile, /* 22 */
     0, /* 23 */
     TclWinNoBackslash, /* 24 */
@@ -586,10 +594,10 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclpOpenFile, /* 7 */
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
-    TclpReaddir, /* 10 */
+    0, /* 10 */
     0, /* 11 */
     0, /* 12 */
-    TclpInetNtoa, /* 13 */
+    0, /* 13 */
     TclUnixCopyFile, /* 14 */
     TclMacOSXGetFileAttribute, /* 15 */
     TclMacOSXSetFileAttribute, /* 16 */
@@ -613,7 +621,7 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 static const TclPlatStubs tclPlatStubs = {
     TCL_STUB_MAGIC,
     0,
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     Tcl_WinUtfToTChar, /* 0 */
     Tcl_WinTCharToUtf, /* 1 */
 #endif /* WIN */
@@ -695,7 +703,9 @@ const TclTomMathStubs tclTomMathStubs = {
 static const TclStubHooks tclStubHooks = {
     &tclPlatStubs,
     &tclIntStubs,
-    &tclIntPlatStubs
+    &tclIntPlatStubs,
+    &tclOOStubs,
+    &tclOOIntStubs
 };
 
 const TclStubs tclStubs = {
@@ -710,19 +720,19 @@ const TclStubs tclStubs = {
     Tcl_DbCkalloc, /* 6 */
     Tcl_DbCkfree, /* 7 */
     Tcl_DbCkrealloc, /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     0, /* 9 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     Tcl_CreateFileHandler, /* 9 */
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_DeleteFileHandler, /* 10 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     0, /* 10 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -884,10 +894,10 @@ const TclStubs tclStubs = {
     Tcl_GetMaster, /* 164 */
     Tcl_GetNameOfExecutable, /* 165 */
     Tcl_GetObjResult, /* 166 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     Tcl_GetOpenFile, /* 167 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     0, /* 167 */
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -955,7 +965,7 @@ const TclStubs tclStubs = {
     Tcl_SetErrno, /* 227 */
     Tcl_SetErrorCode, /* 228 */
     Tcl_SetMaxBlockTime, /* 229 */
-    Tcl_SetPanicProc, /* 230 */
+    0, /* 230 */
     Tcl_SetRecursionLimit, /* 231 */
     Tcl_SetResult, /* 232 */
     Tcl_SetServiceMode, /* 233 */

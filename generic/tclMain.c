@@ -47,7 +47,7 @@
  * we have to translate that to strcmp here.
  */
 
-#ifndef __WIN32__
+#ifndef _WIN32
 #   define TCHAR char
 #   define TEXT(arg) arg
 #   define _tcscmp strcmp
@@ -316,6 +316,9 @@ Tcl_MainEx(
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
     InteractiveState is;
+
+    TclpSetInitialEncodings();
+    TclpFindExecutable((const char *)argv[0]);
 
     Tcl_InitMemory(interp);
 

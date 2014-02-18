@@ -819,7 +819,9 @@ Tcl_AfterObjCmd(
      */
 
     if (objv[1]->typePtr == &tclIntType
+#ifndef TCL_WIDE_INT_IS_LONG
 	    || objv[1]->typePtr == &tclWideIntType
+#endif
 	    || objv[1]->typePtr == &tclBignumType
 	    || (Tcl_GetIndexFromObjStruct(NULL, objv[1], afterSubCmds,
 		    sizeof(char *), "", 0, &index) != TCL_OK)) {
@@ -1043,9 +1045,11 @@ AfterDelay(
 	if (iPtr->limit.timeEvent == NULL
 		|| TCL_TIME_BEFORE(endTime, iPtr->limit.time)) {
 	    diff = TCL_TIME_DIFF_MS_CEILING(endTime, now);
+#ifndef TCL_WIDE_INT_IS_LONG
 	    if (diff > LONG_MAX) {
 		diff = LONG_MAX;
 	    }
+#endif
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
@@ -1056,9 +1060,11 @@ AfterDelay(
 	    } else break;
 	} else {
 	    diff = TCL_TIME_DIFF_MS(iPtr->limit.time, now);
+#ifndef TCL_WIDE_INT_IS_LONG
 	    if (diff > LONG_MAX) {
 		diff = LONG_MAX;
 	    }
+#endif
 	    if (diff > TCL_TIME_MAXIMUM_SLICE) {
 		diff = TCL_TIME_MAXIMUM_SLICE;
 	    }
