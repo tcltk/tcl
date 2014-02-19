@@ -5201,6 +5201,9 @@ ReadBytes(
     if ((unsigned) toRead > (unsigned) srcLen) {
 	toRead = srcLen;
     }
+    if (toRead == 0) {
+	return 0;
+    }
 
     (void) Tcl_GetByteArrayFromObj(objPtr, &length);
     TclAppendBytesToByteArray(objPtr, NULL, toRead);
@@ -5209,7 +5212,7 @@ ReadBytes(
 
     if (statePtr->flags & INPUT_NEED_NL) {
 	ResetFlag(statePtr, INPUT_NEED_NL);
-	if ((srcLen == 0) || (*src != '\n')) {
+	if (*src != '\n') {
 	    *dst = '\r';
 	    length += 1;
 	    Tcl_SetByteArrayLength(objPtr, length);
