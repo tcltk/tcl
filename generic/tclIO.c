@@ -8900,7 +8900,6 @@ CopyAndTranslateBuffer(
 	if (bytesInBuffer == 0) {
 	    if ((statePtr->flags & (INPUT_SAW_CR | CHANNEL_EOF)) ==
 		    (INPUT_SAW_CR | CHANNEL_EOF)) {
-		Tcl_Panic("Untested");
 		result[0] = '\r';
 		ResetFlag(statePtr, INPUT_SAW_CR);
 		return 1;
