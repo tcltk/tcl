@@ -5060,6 +5060,7 @@ DoReadChars(
     ChannelBuffer *bufPtr;
     int offset, factor, copied, copiedNow, result;
     Tcl_Encoding encoding;
+    int binaryMode;
 #define UTF_EXPANSION_FACTOR	1024
 
     /*
@@ -5070,8 +5071,12 @@ DoReadChars(
     encoding = statePtr->encoding;
     factor = UTF_EXPANSION_FACTOR;
 
+    binaryMode = (encoding == NULL)
+	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF) 
+	    && (statePtr->inEofChar == NULL);
+
     if (appendFlag == 0) {
-	if (encoding == NULL) {
+	if (binaryMode) {
 	    Tcl_SetByteArrayLength(objPtr, 0);
 	} else {
 	    Tcl_SetObjLength(objPtr, 0);
@@ -5086,7 +5091,7 @@ DoReadChars(
 	}
 	offset = 0;
     } else {
-	if (encoding == NULL) {
+	if (binaryMode) {
 	    Tcl_GetByteArrayFromObj(objPtr, &offset);
 	} else {
 	    TclGetStringFromObj(objPtr, &offset);
@@ -5096,8 +5101,7 @@ DoReadChars(
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
-	    if (encoding == NULL
-		    && statePtr->inputTranslation == TCL_TRANSLATE_LF) {
+	    if (binaryMode) {
 		copiedNow = ReadBytes(statePtr, objPtr, toRead, &offset);
 	    } else {
 		copiedNow = ReadChars(statePtr, objPtr, toRead, &offset,
@@ -5146,7 +5150,7 @@ DoReadChars(
     }
 
     ResetFlag(statePtr, CHANNEL_BLOCKED);
-    if (encoding == NULL) {
+    if (binaryMode) {
 	Tcl_SetByteArrayLength(objPtr, offset);
     } else {
 	Tcl_SetObjLength(objPtr, offset);
