@@ -5096,7 +5096,8 @@ DoReadChars(
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
-	    if (encoding == NULL) {
+	    if (encoding == NULL
+		    && statePtr->inputTranslation == TCL_TRANSLATE_LF) {
 		copiedNow = ReadBytes(statePtr, objPtr, toRead, &offset);
 	    } else {
 		copiedNow = ReadChars(statePtr, objPtr, toRead, &offset,
@@ -5320,6 +5321,8 @@ ReadChars(
     char *src, *dst;
     Tcl_EncodingState oldState;
     int encEndFlagSuppressed = 0;
+    Tcl_Encoding encoding = statePtr->encoding? statePtr->encoding
+	    : GetBinaryEncoding();
 
     factor = *factorPtr;
     offset = *offsetPtr;
@@ -5424,7 +5427,7 @@ ReadChars(
 	 */
 
 	ResetFlag(statePtr, INPUT_NEED_NL);
-	Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 		dst, TCL_UTF_MAX + 1, &srcRead, &dstWrote, &numChars);
 	if ((dstWrote > 0) && (*dst == '\n')) {
@@ -5449,7 +5452,7 @@ ReadChars(
 	return 1;
     }
 
-    Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+    Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState, dst,
 	    dstNeeded + 1, &srcRead, &dstWrote, &numChars);
 
@@ -5522,7 +5525,7 @@ ReadChars(
 	    return -1;
 	}
 	statePtr->inputEncodingState = oldState;
-	Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 		dst, dstRead + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
 	TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead);
@@ -5545,7 +5548,7 @@ ReadChars(
 
 	eof = Tcl_UtfAtIndex(dst, toRead);
 	statePtr->inputEncodingState = oldState;
-	Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 		dst, eof - dst + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
 	dstRead = dstWrote;
