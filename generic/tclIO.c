@@ -8808,6 +8808,7 @@ CopyAndTranslateBuffer(
 				 * in the current input buffer? */
     int copied;			/* How many characters were already copied
 				 * into the destination space? */
+    int toCopy;
 
     /*
      * If there is no input at all, return zero. The invariant is that either
@@ -8822,30 +8823,51 @@ CopyAndTranslateBuffer(
     bufPtr = statePtr->inQueueHead;
     bytesInBuffer = BytesLeft(bufPtr);
 
+    copied = 0;
 #if 1
-    copied = space;
-    if (bytesInBuffer <= copied) {
-	copied = bytesInBuffer;
-    }
-    if (copied == 0) {
-	return 0;
-    }
     if (statePtr->flags & INPUT_NEED_NL) {
-	ResetFlag(statePtr, INPUT_NEED_NL);
 
-	if (RemovePoint(bufPtr)[0] == '\n') {
-	    bufPtr->nextRemoved++;
-	    *result = '\n';
-	} else {
+	/*
+	 * An earlier call to TranslateInputEOL ended in the read of a \r .
+	 * Only the next read from the same channel can complete the
+	 * translation sequence to tell us what character we should read.
+	 */
+
+	if (bytesInBuffer) {
+	    /* There's a next byte.  It will settle things. */
+	    ResetFlag(statePtr, INPUT_NEED_NL);
+
+	    if (RemovePoint(bufPtr)[0] == '\n') {
+		bufPtr->nextRemoved++;
+		bytesInBuffer--;
+		*result++ = '\n';
+	    } else {
+		*result++ = '\r';
+	    }
+	    copied++;
+	    space--;
+	} else if (statePtr->flags & CHANNEL_EOF) {
+	    /* There is no next byte, and there never will be (EOF). */
+	    ResetFlag(statePtr, INPUT_NEED_NL);
 	    *result = '\r';
+	    return 1;
+	} else {
+	    /* There is no next byte.  Ask the caller to read more. */
+	    return 0;
 	}
-	return 1;
+    }
+    toCopy = space;
+    if (bytesInBuffer <= toCopy) {
+	toCopy = bytesInBuffer;
+    }
+    if (toCopy == 0) {
+	return copied;
     }
     TranslateInputEOL(statePtr, result, RemovePoint(bufPtr),
-	    &copied, &bytesInBuffer);
+	    &toCopy, &bytesInBuffer);
     bufPtr->nextRemoved += bytesInBuffer;
+    copied += toCopy;
 #else
-    copied = 0;
     switch (statePtr->inputTranslation) {
     case TCL_TRANSLATE_LF:
 	if (bytesInBuffer == 0) {
