@@ -5073,7 +5073,7 @@ DoReadChars(
 
     binaryMode = (encoding == NULL)
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF) 
-	    && (statePtr->inEofChar == NULL);
+	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag == 0) {
 	if (binaryMode) {
