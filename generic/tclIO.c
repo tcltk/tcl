@@ -5242,6 +5242,10 @@ ReadBytes(
     }
     dst += offset;
 
+#if 1
+    memcpy(dst, src, (size_t) toRead);
+    srcRead = dstWrote = toRead;
+#else
     if (statePtr->flags & INPUT_NEED_NL) {
 	ResetFlag(statePtr, INPUT_NEED_NL);
 	if ((srcLen == 0) || (*src != '\n')) {
@@ -5262,6 +5266,7 @@ ReadBytes(
 	    return -1;
 	}
     }
+#endif
     bufPtr->nextRemoved += srcRead;
     *offsetPtr += dstWrote;
     return dstWrote;
