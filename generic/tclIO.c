@@ -5060,6 +5060,7 @@ DoReadChars(
     ChannelBuffer *bufPtr;
     int factor, copied, copiedNow, result;
     Tcl_Encoding encoding;
+    int binaryMode;
 #define UTF_EXPANSION_FACTOR	1024
 
     /*
@@ -5070,8 +5071,12 @@ DoReadChars(
     encoding = statePtr->encoding;
     factor = UTF_EXPANSION_FACTOR;
 
+    binaryMode = (encoding == NULL)
+	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF) 
+	    && (statePtr->inEofChar == '\0');
+
     if (appendFlag == 0) {
-	if (encoding == NULL) {
+	if (binaryMode) {
 	    Tcl_SetByteArrayLength(objPtr, 0);
 	} else {
 	    Tcl_SetObjLength(objPtr, 0);
@@ -5091,7 +5096,7 @@ DoReadChars(
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
-	    if (encoding == NULL) {
+	    if (binaryMode) {
 		copiedNow = ReadBytes(statePtr, objPtr, toRead);
 	    } else {
 		copiedNow = ReadChars(statePtr, objPtr, toRead, &factor);
@@ -5210,6 +5215,10 @@ ReadBytes(
     dst = (char *) Tcl_GetByteArrayFromObj(objPtr, NULL);
     dst += length;
 
+#if 1
+    memcpy(dst, src, (size_t) toRead);
+    srcRead = dstWrote = toRead;
+#else
     if (statePtr->flags & INPUT_NEED_NL) {
 	ResetFlag(statePtr, INPUT_NEED_NL);
 	if (*src != '\n') {
@@ -5232,6 +5241,7 @@ ReadBytes(
 	    return -1;
 	}
     }
+#endif
     bufPtr->nextRemoved += srcRead;
     length += dstWrote;
     Tcl_SetByteArrayLength(objPtr, length);
@@ -5292,6 +5302,8 @@ ReadChars(
     char *src, *dst;
     Tcl_EncodingState oldState;
     int encEndFlagSuppressed = 0;
+    Tcl_Encoding encoding = statePtr->encoding? statePtr->encoding
+	    : GetBinaryEncoding();
 
     factor = *factorPtr;
 
@@ -5373,7 +5385,7 @@ ReadChars(
 	 */
 
 	ResetFlag(statePtr, INPUT_NEED_NL);
-	Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 		dst, TCL_UTF_MAX + 1, &srcRead, &dstWrote, &numChars);
 	if ((dstWrote > 0) && (*dst == '\n')) {
@@ -5398,7 +5410,7 @@ ReadChars(
 	return 1;
     }
 
-    Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+    Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState, dst,
 	    dstNeeded + 1, &srcRead, &dstWrote, &numChars);
 
@@ -5474,7 +5486,7 @@ ReadChars(
 	    return -1;
 	}
 	statePtr->inputEncodingState = oldState;
-	Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 		dst, dstRead + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
 	TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead);
@@ -5497,7 +5509,7 @@ ReadChars(
 
 	eof = Tcl_UtfAtIndex(dst, toRead);
 	statePtr->inputEncodingState = oldState;
-	Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 		dst, eof - dst + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
 	dstRead = dstWrote;
