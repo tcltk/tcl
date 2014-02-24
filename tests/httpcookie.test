@@ -149,6 +149,172 @@ test http-cookiejar-4.7 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {}
+test http-cookiejar-4.8 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+    oo::objdefine ::cookiejar export Database
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    # Poke inside implementation!
+    cookiejar Database eval {SELECT count(*) FROM sessionCookies}
+} -cleanup {
+    ::cookiejar destroy
+} -result 1
+test http-cookiejar-4.9 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+    oo::objdefine ::cookiejar export Database
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    # Poke inside implementation!
+    cookiejar Database eval {SELECT count(*) FROM persistentCookies}
+} -cleanup {
+    ::cookiejar destroy
+} -result 0
+test http-cookiejar-4.10 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo bar [dict replace {
+	persistent 1
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+5}]]
+} -cleanup {
+    ::cookiejar destroy
+} -result {}
+test http-cookiejar-4.11 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+    oo::objdefine ::cookiejar export Database
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo bar [dict replace {
+	persistent 1
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+5}]]
+    # Poke inside implementation!
+    cookiejar Database eval {SELECT count(*) FROM sessionCookies}
+} -cleanup {
+    ::cookiejar destroy
+} -result 0
+test http-cookiejar-4.12 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+    oo::objdefine ::cookiejar export Database
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo bar [dict replace {
+	persistent 1
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+5}]]
+    # Poke inside implementation!
+    cookiejar Database eval {SELECT count(*) FROM persistentCookies}
+} -cleanup {
+    ::cookiejar destroy
+} -result 1
+test http-cookiejar-4.13 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    lappend result [cookiejar getCookies http www.example.com /]
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    lappend result [cookiejar getCookies http www.example.com /]
+} -cleanup {
+    ::cookiejar destroy
+} -result {{} {foo bar}}
+test http-cookiejar-4.14 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    lappend result [cookiejar getCookies http www.example.com /]
+    cookiejar storeCookie foo bar [dict replace {
+	persistent 1
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+5}]]
+    lappend result [cookiejar getCookies http www.example.com /]
+} -cleanup {
+    ::cookiejar destroy
+} -result {{} {foo bar}}
+test http-cookiejar-4.15 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    lappend result [cookiejar getCookies http www.example.com /]
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie foo bar [dict replace {
+	persistent 1
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+5}]]
+    lappend result [cookiejar getCookies http www.example.com /]
+} -cleanup {
+    ::cookiejar destroy
+} -result {{} {foo bar}}
+test http-cookiejar-4.16 {cookie storage} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    lappend result [cookiejar getCookies http www.example.com /]
+    cookiejar storeCookie foo1 bar {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie foo2 bar [dict replace {
+	persistent 1
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+5}]]
+    lappend result [lsort -stride 2 [cookiejar getCookies http www.example.com /]]
+} -cleanup {
+    ::cookiejar destroy
+} -result {{} {foo1 bar foo2 bar}}
 
 ::tcltest::cleanupTests
 
