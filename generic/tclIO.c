@@ -5194,31 +5194,13 @@ ReadBytes(
 				 * the bytes from the first buffer are
 				 * returned. */
 {
-    int toRead, srcLen, length;
-    ChannelBuffer *bufPtr;
-    char *src, *dst;
+    ChannelBuffer *bufPtr = statePtr->inQueueHead;
+    int srcLen = BytesLeft(bufPtr);
+    int toRead = bytesToRead>srcLen || bytesToRead<0 ? srcLen : bytesToRead;
 
-    bufPtr = statePtr->inQueueHead;
-    src = RemovePoint(bufPtr);
-    srcLen = BytesLeft(bufPtr);
-
-    toRead = bytesToRead;
-    if ((unsigned) toRead > (unsigned) srcLen) {
-	toRead = srcLen;
-    }
-    if (toRead == 0) {
-	return 0;
-    }
-
-    (void) Tcl_GetByteArrayFromObj(objPtr, &length);
-    TclAppendBytesToByteArray(objPtr, NULL, toRead);
-    dst = (char *) Tcl_GetByteArrayFromObj(objPtr, NULL);
-    dst += length;
-
-    memcpy(dst, src, (size_t) toRead);
+    TclAppendBytesToByteArray(objPtr, (unsigned char *) RemovePoint(bufPtr),
+	    toRead);
     bufPtr->nextRemoved += toRead;
-    length += toRead;
-    Tcl_SetByteArrayLength(objPtr, length);
     return toRead;
 }
 
