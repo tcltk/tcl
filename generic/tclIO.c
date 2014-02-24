@@ -5194,7 +5194,7 @@ ReadBytes(
 				 * the bytes from the first buffer are
 				 * returned. */
 {
-    int toRead, srcLen, length, srcRead, dstWrote;
+    int toRead, srcLen, length;
     ChannelBuffer *bufPtr;
     char *src, *dst;
 
@@ -5215,37 +5215,11 @@ ReadBytes(
     dst = (char *) Tcl_GetByteArrayFromObj(objPtr, NULL);
     dst += length;
 
-#if 1
     memcpy(dst, src, (size_t) toRead);
-    srcRead = dstWrote = toRead;
-#else
-    if (statePtr->flags & INPUT_NEED_NL) {
-	ResetFlag(statePtr, INPUT_NEED_NL);
-	if (*src != '\n') {
-	    *dst = '\r';
-	    length += 1;
-	    Tcl_SetByteArrayLength(objPtr, length);
-	    return 1;
-	}
-	*dst++ = '\n';
-	src++;
-	srcLen--;
-	toRead--;
-    }
-
-    srcRead = srcLen;
-    dstWrote = toRead;
-    if (TranslateInputEOL(statePtr, dst, src, &dstWrote, &srcRead) != 0) {
-	if (dstWrote == 0) {
-	    Tcl_SetByteArrayLength(objPtr, length);
-	    return -1;
-	}
-    }
-#endif
-    bufPtr->nextRemoved += srcRead;
-    length += dstWrote;
+    bufPtr->nextRemoved += toRead;
+    length += toRead;
     Tcl_SetByteArrayLength(objPtr, length);
-    return dstWrote;
+    return toRead;
 }
 
 /*
