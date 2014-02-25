@@ -1046,6 +1046,9 @@ test http-idna-4.9.1 {IDNA encoding: max lengths from RFC 5890} {
     dict get $opt -errorcode
 } {IDNA OVERLONG_PART xn--989aomsvi5e83db1d2a355cv1e0vak1dwrv93d5xbh15a0dt30a5jpsd879ccm6fea98c}
 unset overlong
+test http-idna-4.10 {IDNA encoding: edge cases} {
+    ::tcl::idna encode pass\u00e9.example.com
+} xn--pass-epa.example.com
 
 test http-idna-5.1 {IDNA decoding} {
     ::tcl::idna decode abc.def

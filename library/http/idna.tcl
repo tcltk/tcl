@@ -25,7 +25,7 @@ namespace eval ::tcl::idna {
 	# Split term from RFC 3490, Sec 3.1
 	foreach part [split $hostname "\u002E\u3002\uFF0E\uFF61"] {
 	    if {[regexp {[^-A-Za-z0-9]} $part]} {
-		if {[regexp {[^-A-Za-z0-9\u0100-\uffff]} $part ch]} {
+		if {[regexp {[^-A-Za-z0-9\u00a1-\uffff]} $part ch]} {
 		    scan $ch %c c
 		    if {$ch < "!" || $ch > "~"} {
 			set ch [format "\\u%04x" $c]

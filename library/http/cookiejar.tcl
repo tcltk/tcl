@@ -234,12 +234,15 @@ package provide cookiejar $::http::cookiejar_version
     method InitDomainList {} {
 	upvar 0 ::http::cookiejar_offline offline
 	if {!$offline} {
-	    set data [my GetDomainListOnline]
-	    if {[string length $data]} {
-		my InstallDomainData $data
-		return
+	    try {
+		set data [my GetDomainListOnline]
+		if {[string length $data]} {
+		    my InstallDomainData $data
+		    return
+		}
+	    } on error {} {
+		log warn "attempting to fall back to built in version"
 	    }
-	    log warn "attempting to fall back to built in version"
 	}
 	my InstallDomainData [my GetDomainListOffline]
     }
@@ -317,8 +320,13 @@ package provide cookiejar $::http::cookiejar_version
     }
 
     destructor {
-	after cancel $aid
-	db close
+	catch {
+	    after cancel $aid
+	}
+	catch {
+	    db close
+	}
+	return
     }
 
     method GetCookiesForHostAndPath {listVar secure host path fullhost} {
@@ -378,11 +386,22 @@ package provide cookiejar $::http::cookiejar_version
 
     method BadDomain options {
 	if {![dict exists $options domain]} {
+	    log error "no domain present in options"
 	    return 0
 	}
 	dict with options {}
 	if {$domain ne $origin} {
 	    log debug "cookie domain varies from origin ($domain, $origin)"
+	    if {[string match .* $domain]} {
+		set dotd $domain
+	    } else {
+		set dotd .$domain
+	    }
+	    if {![string equal -length [string length $dotd] \
+		    [string reverse $dotd] [string reverse $origin]]} {
+		log warn "bad cookie: domain not suffix of origin"
+		return 1
+	    }
 	}
 	if {![regexp {[^0-9.]} $domain]} {
 	    if {$domain eq $origin} {
