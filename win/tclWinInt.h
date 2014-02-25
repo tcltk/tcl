@@ -66,7 +66,7 @@ MODULE_SCOPE Tcl_Channel TclWinOpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 MODULE_SCOPE Tcl_Channel TclWinOpenSerialChannel(HANDLE handle,
 			    char *channelName, int permissions);
-MODULE_SCOPE HANDLE	TclWinSerialReopen(HANDLE handle, const TCHAR *name,
+MODULE_SCOPE HANDLE	TclWinSerialOpen(HANDLE handle, const TCHAR *name,
 			    DWORD access);
 MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const TCHAR *LinkOriginal,
 			    const TCHAR *LinkCopy);
