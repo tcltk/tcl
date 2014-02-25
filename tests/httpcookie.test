@@ -93,28 +93,28 @@ test http-cookiejar-3.7 {cookie storage: class} -setup {
     catch {rename ::cookiejar ""}
 } -result {wrong # args: should be "http::cookiejar create ::cookiejar ?path?"}
 
-test http-cookiejar-4.1 {cookie storage} -setup {
+test http-cookiejar-4.1 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
     cookiejar
 } -returnCodes error -cleanup {
     ::cookiejar destroy
 } -result {wrong # args: should be "cookiejar method ?arg ...?"}
-test http-cookiejar-4.2 {cookie storage} -setup {
+test http-cookiejar-4.2 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
     cookiejar ?
 } -returnCodes error -cleanup {
     ::cookiejar destroy
 } -result {unknown method "?": must be destroy, forceLoadDomainData, getCookies, lookup or storeCookie}
-test http-cookiejar-4.3 {cookie storage} -setup {
+test http-cookiejar-4.3 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
     lsort [info object methods cookiejar -all]
 } -cleanup {
     ::cookiejar destroy
 } -result {destroy forceLoadDomainData getCookies lookup storeCookie}
-test http-cookiejar-4.4 {cookie storage} -setup {
+test http-cookiejar-4.4 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
     cookiejar getCookies
@@ -128,14 +128,14 @@ test http-cookiejar-4.5 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {}
-test http-cookiejar-4.6 {cookie storage} -setup {
+test http-cookiejar-4.6 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
     cookiejar storeCookie
 } -returnCodes error -cleanup {
     ::cookiejar destroy
 } -result {wrong # args: should be "cookiejar storeCookie name value options"}
-test http-cookiejar-4.7 {cookie storage} -setup {
+test http-cookiejar-4.7 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
     cookiejar storeCookie foo bar {
@@ -149,7 +149,7 @@ test http-cookiejar-4.7 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {}
-test http-cookiejar-4.8 {cookie storage} -setup {
+test http-cookiejar-4.8 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
 } -constraints cookiejar -body {
@@ -166,7 +166,7 @@ test http-cookiejar-4.8 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result 1
-test http-cookiejar-4.9 {cookie storage} -setup {
+test http-cookiejar-4.9 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
 } -constraints cookiejar -body {
@@ -183,7 +183,7 @@ test http-cookiejar-4.9 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result 0
-test http-cookiejar-4.10 {cookie storage} -setup {
+test http-cookiejar-4.10 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
     cookiejar storeCookie foo bar [dict replace {
@@ -197,7 +197,7 @@ test http-cookiejar-4.10 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {}
-test http-cookiejar-4.11 {cookie storage} -setup {
+test http-cookiejar-4.11 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
 } -constraints cookiejar -body {
@@ -214,7 +214,7 @@ test http-cookiejar-4.11 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result 0
-test http-cookiejar-4.12 {cookie storage} -setup {
+test http-cookiejar-4.12 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
 } -constraints cookiejar -body {
@@ -231,7 +231,7 @@ test http-cookiejar-4.12 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result 1
-test http-cookiejar-4.13 {cookie storage} -setup {
+test http-cookiejar-4.13 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     set result {}
 } -constraints cookiejar -body {
@@ -248,7 +248,7 @@ test http-cookiejar-4.13 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {{} {foo bar}}
-test http-cookiejar-4.14 {cookie storage} -setup {
+test http-cookiejar-4.14 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     set result {}
 } -constraints cookiejar -body {
@@ -265,7 +265,7 @@ test http-cookiejar-4.14 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {{} {foo bar}}
-test http-cookiejar-4.15 {cookie storage} -setup {
+test http-cookiejar-4.15 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     set result {}
 } -constraints cookiejar -body {
@@ -290,7 +290,7 @@ test http-cookiejar-4.15 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {{} {foo bar}}
-test http-cookiejar-4.16 {cookie storage} -setup {
+test http-cookiejar-4.16 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     set result {}
 } -constraints cookiejar -body {
@@ -315,6 +315,189 @@ test http-cookiejar-4.16 {cookie storage} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {{} {foo1 bar foo2 bar}}
+test http-cookiejar-4.17 {cookie storage: instance} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar lookup a b c d
+} -returnCodes error -cleanup {
+    ::cookiejar destroy
+} -result {wrong # args: should be "cookiejar lookup ?host? ?key?"}
+test http-cookiejar-4.18 {cookie storage: instance} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    lappend result [cookiejar lookup]
+    lappend result [cookiejar lookup www.example.com]
+    lappend result [catch {cookiejar lookup www.example.com foo} value] $value
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    lappend result [cookiejar lookup]
+    lappend result [cookiejar lookup www.example.com]
+    lappend result [cookiejar lookup www.example.com foo]
+} -cleanup {
+    ::cookiejar destroy
+} -result {{} {} 1 {no such key for that host} www.example.com foo bar}
+test http-cookiejar-4.19 {cookie storage: instance} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie bar foo {
+	persistent 0
+	secure 0
+	domain www.example.org
+	origin www.example.org
+	path /
+	hostonly 1
+    }
+    lappend result [lsort [cookiejar lookup]]
+    lappend result [cookiejar lookup www.example.com]
+    lappend result [cookiejar lookup www.example.com foo]
+    lappend result [cookiejar lookup www.example.org]
+    lappend result [cookiejar lookup www.example.org bar]
+} -cleanup {
+    ::cookiejar destroy
+} -result {{www.example.com www.example.org} foo bar bar foo}
+test http-cookiejar-4.20 {cookie storage: instance} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo1 bar1 {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie foo2 bar2 [dict replace {
+	persistent 1
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+5}]]
+    lappend result [cookiejar lookup]
+    lappend result [lsort [cookiejar lookup www.example.com]]
+    lappend result [cookiejar lookup www.example.com foo1]
+    lappend result [cookiejar lookup www.example.com foo2]
+} -cleanup {
+    ::cookiejar destroy
+} -result {www.example.com {foo1 foo2} bar1 bar2}
+test http-cookiejar-4.21 {cookie storage: instance} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo1 bar1 {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie foo2 bar2 {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    lappend result [cookiejar lookup]
+    lappend result [lsort [cookiejar lookup www.example.com]]
+    lappend result [cookiejar lookup www.example.com foo1]
+    lappend result [cookiejar lookup www.example.com foo2]
+} -cleanup {
+    ::cookiejar destroy
+} -result {www.example.com {foo1 foo2} bar1 bar2}
+test http-cookiejar-4.22 {cookie storage: instance} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    cookiejar forceLoadDomainData x y z
+} -returnCodes error -cleanup {
+    ::cookiejar destroy
+} -result {wrong # args: should be "cookiejar forceLoadDomainData"}
+test http-cookiejar-4.23 {cookie storage: instance} -setup {
+    http::cookiejar create ::cookiejar
+    set result {}
+} -constraints cookiejar -body {
+    cookiejar forceLoadDomainData
+} -cleanup {
+    ::cookiejar destroy
+} -result {}
+
+test http-cookiejar-5.1 {cookie storage: constraints} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar forceLoadDomainData
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain com
+	origin com
+	path /
+	hostonly 1
+    }
+    cookiejar lookup
+} -cleanup {
+    ::cookiejar destroy
+} -result {}
+test http-cookiejar-5.2 {cookie storage: constraints} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar forceLoadDomainData
+    cookiejar storeCookie foo bar {
+	persistent 0
+	secure 0
+	domain foo.example.com
+	origin bar.example.org
+	path /
+	hostonly 1
+    }
+    cookiejar lookup
+} -cleanup {
+    ::cookiejar destroy
+} -result {}
+test http-cookiejar-5.3 {cookie storage: constraints} -setup {
+    http::cookiejar create ::cookiejar
+} -constraints cookiejar -body {
+    cookiejar forceLoadDomainData
+    cookiejar storeCookie foo1 bar {
+	persistent 0
+	secure 0
+	domain com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie foo2 bar {
+	persistent 0
+	secure 0
+	domain example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar lookup
+} -cleanup {
+    ::cookiejar destroy
+} -result {example.com}
 
 ::tcltest::cleanupTests
 
