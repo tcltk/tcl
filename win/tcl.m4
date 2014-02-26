@@ -247,7 +247,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #
 # Results:
 #
-#	Subst the following vars:
+#	Substitutes the following vars:
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
@@ -572,7 +572,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
       AC_CACHE_CHECK(for cross-compile version of gcc,
 	ac_cv_cross,
 	AC_TRY_COMPILE([
-	    #ifndef __WIN32__
+	    #ifndef _WIN32
 		#error cross-compiler
 	    #endif
 	], [],
@@ -639,7 +639,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_TRY_COMPILE([
-		#ifdef __WIN32__
+		#ifdef _WIN32
 		    #error win32
 		#endif
 	    ], [],
