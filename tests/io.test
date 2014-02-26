@@ -6786,6 +6786,62 @@ test io-52.15 {coverage of -translation crlf} {
     close $out
     file size $path(test2)
 } 8
+test io-52.16 {coverage of eofChar handling} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation lf -eofchar a
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 0
+test io-52.17 {coverage of eofChar handling} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation lf -eofchar d
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 3
+test io-52.18 {coverage of eofChar handling} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation crlf -eofchar h
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 8
+test io-52.19 {coverage of eofChar handling} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 10 -translation crlf -eofchar h
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 8
 
 test io-53.1 {CopyData} {fcopy} {
     file delete $path(test1)
