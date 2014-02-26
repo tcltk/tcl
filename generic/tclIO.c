@@ -5644,7 +5644,7 @@ TranslateInputEOL(
 
 	SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-	ResetFlag(statePtr, INPUT_SAW_CR | INPUT_NEED_NL);
+//	ResetFlag(statePtr, INPUT_SAW_CR | INPUT_NEED_NL);
 	return 1;
     }
 
@@ -8981,7 +8981,6 @@ CopyAndTranslateBuffer(
     if (statePtr->inEofChar != 0) {
 	int i;
 
-	Tcl_Panic("Untested");
 	for (i = 0; i < copied; i++) {
 	    if (result[i] == (char) statePtr->inEofChar) {
 		/*
