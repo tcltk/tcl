@@ -437,10 +437,12 @@ InitFoundation(
      * ensemble.
      */
 
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::next", TclOONextObjCmd, NULL,
-	    NULL);
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::nextto", TclOONextToObjCmd,
-	    NULL, NULL);
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::next",
+	    NULL, TclOONextObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectNextCmd;
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::nextto",
+	    NULL, TclOONextToObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectNextToCmd;
     cmdPtr = (Command *) Tcl_CreateObjCommand(interp, "::oo::Helpers::self",
 	    TclOOSelfObjCmd, NULL, NULL);
     cmdPtr->compileProc = TclCompileObjectSelfCmd;

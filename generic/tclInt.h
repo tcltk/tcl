@@ -1686,6 +1686,7 @@ typedef struct Command {
 #define CMD_TRACE_ACTIVE	    0x2
 #define CMD_HAS_EXEC_TRACES	    0x4
 #define CMD_COMPILES_EXPANDED	    0x8
+#define CMD_REDEF_IN_PROGRESS	    0x10
 
 /*
  *----------------------------------------------------------------
@@ -1809,7 +1810,14 @@ typedef struct Interp {
     ClientData interpInfo;	/* Information used by tclInterp.c to keep
 				 * track of master/slave interps on a
 				 * per-interp basis. */
-    Tcl_HashTable unused2;	/* No longer used (was mathFuncTable) */
+    union {
+	void (*optimizer)(void *envPtr);
+	Tcl_HashTable unused2;	/* No longer used (was mathFuncTable). The
+				 * unused space in interp was repurposed for
+				 * pluggable bytecode optimizers. The core
+				 * contains one optimizer, which can be
+				 * selectively overriden by extensions. */
+    } extra;
 
     /*
      * Information related to procedures and variables. See tclProc.c and
@@ -2632,6 +2640,8 @@ MODULE_SCOPE char *tclMemDumpFileName;
 MODULE_SCOPE TclPlatformType tclPlatform;
 MODULE_SCOPE Tcl_NotifierProcs tclNotifierHooks;
 
+MODULE_SCOPE Tcl_Encoding tclIdentityEncoding;
+
 /*
  * TIP #233 (Virtualized Time)
  * Data for the time hooks, if any.
@@ -3435,6 +3445,9 @@ MODULE_SCOPE int	TclCompileBreakCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileCatchCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileConcatCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileContinueCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -3534,6 +3547,9 @@ MODULE_SCOPE int	TclCompileLassignCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileLindexCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileLinsertCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileListCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -3558,6 +3574,9 @@ MODULE_SCOPE int	TclCompileNamespaceCodeCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileNamespaceCurrentCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileNamespaceOriginCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileNamespaceQualifiersCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -3571,6 +3590,12 @@ MODULE_SCOPE int	TclCompileNamespaceWhichCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileNoOp(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileObjectNextCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileObjectNextToCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileObjectSelfCmd(Tcl_Interp *interp,
@@ -3600,6 +3625,9 @@ MODULE_SCOPE int	TclCompileStringFirstCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileStringIndexCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringIsCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileStringLastCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -3613,6 +3641,27 @@ MODULE_SCOPE int	TclCompileStringMatchCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileStringRangeCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringReplaceCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringToLowerCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringToTitleCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringToUpperCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringTrimCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringTrimLCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringTrimRCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileSubstCmd(Tcl_Interp *interp,
@@ -3643,6 +3692,9 @@ MODULE_SCOPE int	TclCompileWhileCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileYieldCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileYieldToCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileBasic0ArgCmd(Tcl_Interp *interp,
