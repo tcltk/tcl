@@ -13,7 +13,7 @@
 #ifndef _TCLINTPLATDECLS
 #define _TCLINTPLATDECLS
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #   define Tcl_DirEntry void
 #   define DIR void
 #endif
@@ -45,7 +45,7 @@ extern "C" {
  * Exported function declarations:
  */
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 0 */
 EXTERN void		TclGetAndDetachPids(Tcl_Interp *interp,
 				Tcl_Channel chan);
@@ -104,7 +104,7 @@ EXTERN int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 				Tcl_Obj *basenameObj, Tcl_Obj *extensionObj,
 				Tcl_Obj *resultingNameObj);
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 /* 0 */
 EXTERN void		TclWinConvertError(DWORD errCode);
 /* 1 */
@@ -258,7 +258,7 @@ typedef struct TclIntPlatStubs {
     int magic;
     void *hooks;
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tclGetAndDetachPids) (Tcl_Interp *interp, Tcl_Channel chan); /* 0 */
     int (*tclpCloseFile) (TclFile file); /* 1 */
     Tcl_Channel (*tclpCreateCommandChannel) (TclFile readFile, TclFile writeFile, TclFile errorFile, int numPids, Tcl_Pid *pidPtr); /* 2 */
@@ -291,7 +291,7 @@ typedef struct TclIntPlatStubs {
     int (*tclWinCPUID) (unsigned int index, unsigned int *regs); /* 29 */
     int (*tclUnixOpenTemporaryFile) (Tcl_Obj *dirObj, Tcl_Obj *basenameObj, Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj); /* 30 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     void (*tclWinConvertError) (DWORD errCode); /* 0 */
     void (*tclWinConvertWSAError) (DWORD errCode); /* 1 */
     struct servent * (*tclWinGetServByName) (const char *nm, const char *proto); /* 2 */
@@ -371,7 +371,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
  * Inline function declarations:
  */
 
-#if !defined(__WIN32__) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(__CYGWIN__) && !defined(MAC_OSX_TCL) /* UNIX */
 #define TclGetAndDetachPids \
 	(tclIntPlatStubsPtr->tclGetAndDetachPids) /* 0 */
 #define TclpCloseFile \
@@ -420,7 +420,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclUnixOpenTemporaryFile \
 	(tclIntPlatStubsPtr->tclUnixOpenTemporaryFile) /* 30 */
 #endif /* UNIX */
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 #define TclWinConvertError \
 	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
 #define TclWinConvertWSAError \
@@ -550,7 +550,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpInetNtoa
 #define TclpInetNtoa inet_ntoa
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
 #   undef TclWinNToHS
 #   define TclWinNToHS ntohs
 #else

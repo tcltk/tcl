@@ -69,7 +69,7 @@ TCL_DECLARE_MUTEX(mountPointMap)
  * We will need this below.
  */
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #ifndef STATIC_BUILD
 
 /*
@@ -137,7 +137,7 @@ DllMain(
     return TRUE;
 }
 #endif /* !STATIC_BUILD */
-#endif /* __WIN32__ */
+#endif /* _WIN32 */
 
 /*
  *----------------------------------------------------------------------
@@ -181,11 +181,11 @@ void
 TclWinInit(
     HINSTANCE hInst)		/* Library instance handle. */
 {
-    OSVERSIONINFO os;
+    OSVERSIONINFOW os;
 
     hInstance = hInst;
-    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&os);
+    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+    GetVersionExW(&os);
     platformId = os.dwPlatformId;
 
     /*
