@@ -444,7 +444,7 @@ TclUnsetEnv(
      * that no = should be included, and Windows requires it.
      */
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
     string = ckalloc(length + 2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
@@ -453,7 +453,7 @@ TclUnsetEnv(
     string = ckalloc(length + 1);
     memcpy(string, name, (size_t) length);
     string[length] = '\0';
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
     string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
@@ -614,7 +614,8 @@ EnvTraceProc(
 	const char *value = TclGetEnv(name2, &valueString);
 
 	if (value == NULL) {
-	    return (char *) "no such variable";
+	    Tcl_UnsetVar2(interp, name1, name2, 0);
+	    return NULL;
 	}
 	Tcl_SetVar2(interp, name1, name2, value, 0);
 	Tcl_DStringFree(&valueString);

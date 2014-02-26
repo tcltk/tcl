@@ -17,16 +17,11 @@
 #include "tclOOInt.h"
 
 static inline Tcl_Object *AddConstructionFinalizer(Tcl_Interp *interp);
-static int		AfterNRDestructor(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		DecrRefsPostClassConstructor(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeConstruction(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		FinalizeEval(ClientData data[],
-			    Tcl_Interp *interp, int result);
-static int		RestoreFrame(ClientData data[],
-			    Tcl_Interp *interp, int result);
+static Tcl_NRPostProc	AfterNRDestructor;
+static Tcl_NRPostProc	DecrRefsPostClassConstructor;
+static Tcl_NRPostProc	FinalizeConstruction;
+static Tcl_NRPostProc	FinalizeEval;
+static Tcl_NRPostProc	NextRestoreFrame;
 
 /*
  * ----------------------------------------------------------------------
@@ -808,7 +803,7 @@ TclOONextObjCmd(
      * that this is like [uplevel 1] and not [eval].
      */
 
-    TclNRAddCallback(interp, RestoreFrame, framePtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, NextRestoreFrame, framePtr, NULL,NULL,NULL);
     iPtr->varFramePtr = framePtr->callerVarPtr;
     return TclNRObjectContextInvokeNext(interp, context, objc, objv, 1);
 }
@@ -826,6 +821,7 @@ TclOONextToObjCmd(
     CallContext *contextPtr;
     int i;
     Tcl_Object object;
+    const char *methodType;
 
     /*
      * Start with sanity checks on the calling context to make sure that we
@@ -877,8 +873,8 @@ TclOONextToObjCmd(
 	     * context. Note that this is like [uplevel 1] and not [eval].
 	     */
 
-	    TclNRAddCallback(interp, RestoreFrame, framePtr, contextPtr,
-		    INT2PTR(contextPtr->index), NULL);
+	    TclNRAddCallback(interp, NextRestoreFrame, framePtr,
+		    contextPtr, INT2PTR(contextPtr->index), NULL);
 	    contextPtr->index = i-1;
 	    iPtr->varFramePtr = framePtr->callerVarPtr;
 	    return TclNRObjectContextInvokeNext(interp,
@@ -891,24 +887,35 @@ TclOONextToObjCmd(
      * is on the chain but unreachable, or not on the chain at all.
      */
 
+    if (contextPtr->callPtr->flags & CONSTRUCTOR) {
+	methodType = "constructor";
+    } else if (contextPtr->callPtr->flags & DESTRUCTOR) {
+	methodType = "destructor";
+    } else {
+	methodType = "method";
+    }
+
     for (i=contextPtr->index ; i>=0 ; i--) {
 	struct MInvoke *miPtr = contextPtr->callPtr->chain + i;
 
 	if (!miPtr->isFilter && miPtr->mPtr->declaringClassPtr == classPtr) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "method implementation by \"%s\" not reachable from here",
-		    TclGetString(objv[1])));
+		    "%s implementation by \"%s\" not reachable from here",
+		    methodType, TclGetString(objv[1])));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_REACHABLE",
+		    NULL);
 	    return TCL_ERROR;
 	}
     }
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "method has no non-filter implementation by \"%s\"",
-	    TclGetString(objv[1])));
+	    "%s has no non-filter implementation by \"%s\"",
+	    methodType, TclGetString(objv[1])));
+    Tcl_SetErrorCode(interp, "TCL", "OO", "CLASS_NOT_THERE", NULL);
     return TCL_ERROR;
 }
 
 static int
-RestoreFrame(
+NextRestoreFrame(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
