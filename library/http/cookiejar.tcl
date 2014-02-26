@@ -79,11 +79,12 @@ namespace eval ::http {
 	    set ms [format %03d [expr {$ms % 1000}]]
 	    clock format $ts -format "%Y%m%dT%H%M%S.${ms}Z" -gmt 1
 	}
-	proc log {level msg} {
+	proc log {level msg args} {
 	    namespace upvar ::http cookiejar_loglevel loglevel
 	    set who [uplevel 1 self]
 	    set map {debug 0 info 1 warn 2 error 3}
 	    if {[string map $map $level] >= [string map $map $loglevel]} {
+		set msg [format $msg {*}$args]
 		::http::Log "[isoNow] [string toupper $level] cookiejar($who) - ${msg}"
 	    }
 	}
@@ -185,7 +186,7 @@ package provide cookiejar $::http::cookiejar_version
 	db eval {
 	    SELECT COUNT(*) AS cookieCount FROM persistentCookies
 	}
-	log info "$storeorigin with $cookieCount entries"
+	log info "%s with %s entries" $storeorigin $cookieCount
 
 	set aid [after $purgeinterval [namespace current]::my PurgeCookies]
 
@@ -199,13 +200,14 @@ package provide cookiejar $::http::cookiejar_version
 
     method GetDomainListOnline {} {
 	upvar 0 ::http::cookiejar_domainlist url
-	log debug "loading domain list from $url"
+	log debug "loading domain list from %s" $url
 	set tok [::http::geturl $url]
 	try {
 	    if {[::http::ncode $tok] == 200} {
 		return [::http::data $tok]
 	    } else {
-		log error "failed to fetch list of forbidden cookie domains from ${url}: [::http::error $tok]"
+		log error "failed to fetch list of forbidden cookie domains from %s: %s" \
+			$url [::http::error $tok]
 		return {}
 	    }
 	} finally {
@@ -214,7 +216,7 @@ package provide cookiejar $::http::cookiejar_version
     }
     method GetDomainListOffline {} {
 	upvar 0 ::http::cookiejar_domainfile filename
-	log debug "loading domain list from $filename"
+	log debug "loading domain list from %s" $filename
 	try {
 	    set f [open $filename]
 	    try {
@@ -227,7 +229,8 @@ package provide cookiejar $::http::cookiejar_version
 		close $f
 	    }
 	} on error {msg opt} {
-	    log error "failed to read list of forbidden cookie domains from ${filename}: $msg"
+	    log error "failed to read list of forbidden cookie domains from %s: %s" \
+		    $filename $msg
 	    return -options $opt $msg
 	}
     }
@@ -300,12 +303,13 @@ package provide cookiejar $::http::cookiejar_version
 		    }
 		}
 		if {$utf ne [::tcl::idna decode [string tolower $idna]]} {
-		    log warn "mismatch in IDNA handling for $idna ($line, $utf, [::tcl::idna decode $idna])"
+		    log warn "mismatch in IDNA handling for %s (%d, %s, %s)" \
+			    $idna $line $utf [::tcl::idna decode $idna]
 		}
 	    }
 	}
 	set n [expr {[db total_changes] - $n}]
-	log debug "processed $n inserts generated from domain list"
+	log debug "processed %d inserts generated from domain list" $n
     }
 
     # This forces the rebuild of the domain data, loading it from 
@@ -331,7 +335,7 @@ package provide cookiejar $::http::cookiejar_version
 
     method GetCookiesForHostAndPath {listVar secure host path fullhost} {
 	upvar 1 $listVar result
-	log debug "check for cookies for [locn $secure $host $path]"
+	log debug "check for cookies for %s" [locn $secure $host $path]
 	db eval {
 	    SELECT key, value FROM persistentCookies
 	    WHERE domain = $host AND path = $path AND secure <= $secure
@@ -391,7 +395,8 @@ package provide cookiejar $::http::cookiejar_version
 	}
 	dict with options {}
 	if {$domain ne $origin} {
-	    log debug "cookie domain varies from origin ($domain, $origin)"
+	    log debug "cookie domain varies from origin (%s, %s)" \
+		    $domain $origin
 	    if {[string match .* $domain]} {
 		set dotd $domain
 	    } else {
@@ -445,7 +450,8 @@ package provide cookiejar $::http::cookiejar_version
 		    WHERE domain = $domain AND path = $path AND key = $name AND secure <= $secure
 		}
 		incr deletions [db changes]
-		log debug "defined session cookie for [locn $secure $domain $path $name]"
+		log debug "defined session cookie for %s" \
+			[locn $secure $domain $path $name]
 	    } elseif {$expires < $now} {
 		db eval {
 		    DELETE FROM persistentCookies
@@ -459,7 +465,8 @@ package provide cookiejar $::http::cookiejar_version
 			AND secure <= $secure;
 		}
 		incr deletions [incr del [db changes]]
-		log debug "deleted $del cookies for [locn $secure $domain $path $name]"
+		log debug "deleted %d cookies for %s" \
+			$del [locn $secure $domain $path $name]
 	    } else {
 		db eval {
 		    INSERT OR REPLACE INTO persistentCookies (
@@ -469,7 +476,9 @@ package provide cookiejar $::http::cookiejar_version
 		    WHERE domain = $domain AND path = $path AND key = $name AND secure <= $secure
 		}
 		incr deletions [db changes]
-		log debug "defined persistent cookie for [locn $secure $domain $path $name], expires at [clock format $expires]"
+		log debug "defined persistent cookie for %s, expires at %s" \
+			[locn $secure $domain $path $name] \
+			[clock format $expires]
 	    }
 	}
     }
@@ -478,9 +487,10 @@ package provide cookiejar $::http::cookiejar_version
 	namespace upvar ::http \
 	    cookiejar_vacuumtrigger trigger \
 	    cookiejar_purgeinterval interval
+	catch {after cancel $aid}
 	set aid [after $interval [namespace current]::my PurgeCookies]
 	set now [clock seconds]
-	log debug "purging cookies that expired before [clock format $now]"
+	log debug "purging cookies that expired before %s" [clock format $now]
 	db transaction {
 	    db eval {
 		DELETE FROM persistentCookies WHERE expiry < $now

@@ -444,8 +444,8 @@ test http-cookiejar-4.23 {cookie storage: instance} -setup {
 
 test http-cookiejar-5.1 {cookie storage: constraints} -setup {
     http::cookiejar create ::cookiejar
-} -constraints cookiejar -body {
     cookiejar forceLoadDomainData
+} -constraints cookiejar -body {
     cookiejar storeCookie foo bar {
 	persistent 0
 	secure 0
@@ -460,8 +460,8 @@ test http-cookiejar-5.1 {cookie storage: constraints} -setup {
 } -result {}
 test http-cookiejar-5.2 {cookie storage: constraints} -setup {
     http::cookiejar create ::cookiejar
-} -constraints cookiejar -body {
     cookiejar forceLoadDomainData
+} -constraints cookiejar -body {
     cookiejar storeCookie foo bar {
 	persistent 0
 	secure 0
@@ -476,8 +476,8 @@ test http-cookiejar-5.2 {cookie storage: constraints} -setup {
 } -result {}
 test http-cookiejar-5.3 {cookie storage: constraints} -setup {
     http::cookiejar create ::cookiejar
-} -constraints cookiejar -body {
     cookiejar forceLoadDomainData
+} -constraints cookiejar -body {
     cookiejar storeCookie foo1 bar {
 	persistent 0
 	secure 0
@@ -498,6 +498,86 @@ test http-cookiejar-5.3 {cookie storage: constraints} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {example.com}
+test http-cookiejar-5.4 {cookie storage: constraints} -setup {
+    http::cookiejar create ::cookiejar
+    cookiejar forceLoadDomainData
+} -constraints cookiejar -body {
+    cookiejar storeCookie foo bar1 {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie foo bar2 {
+	persistent 0
+	secure 0
+	domain example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    lsort [cookiejar lookup]
+} -cleanup {
+    ::cookiejar destroy
+} -result {example.com www.example.com}
+
+test http-cookiejar-6.1 {cookie storage: expiry and lookup} -setup {
+    http::cookiejar create ::cookiejar
+    oo::objdefine cookiejar export PurgeCookies
+    set result {}
+    proc values cookies {
+	global result
+	lappend result [lsort [lmap {k v} $cookies {set v}]]
+    }
+} -constraints cookiejar -body {
+    values [cookiejar getCookies http www.example.com /]
+    cookiejar storeCookie foo session {
+	persistent 0
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    values [cookiejar getCookies http www.example.com /]
+    cookiejar storeCookie foo cookie [dict replace {
+	persistent 1
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+1}]]
+    values [cookiejar getCookies http www.example.com /]
+    cookiejar storeCookie foo session-global {
+	persistent 0
+	secure 0
+	domain example.com
+	origin www.example.com
+	path /
+	hostonly 0
+    }
+    values [cookiejar getCookies http www.example.com /]
+    after 2500
+    update
+    values [cookiejar getCookies http www.example.com /]
+    cookiejar PurgeCookies
+    values [cookiejar getCookies http www.example.com /]
+    cookiejar storeCookie foo go-away {
+	persistent 1
+	secure 0
+	domain example.com
+	origin www.example.com
+	path /
+	hostonly 0
+	expires 0
+    }
+    values [cookiejar getCookies http www.example.com /]
+} -cleanup {
+    ::cookiejar destroy
+} -result {{} session cookie {cookie session-global} {cookie session-global} session-global {}}
 
 ::tcltest::cleanupTests
 
