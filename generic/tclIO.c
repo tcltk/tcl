@@ -5644,7 +5644,7 @@ TranslateInputEOL(
 
 	SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-//	ResetFlag(statePtr, INPUT_SAW_CR | INPUT_NEED_NL);
+	ResetFlag(statePtr, INPUT_SAW_CR | INPUT_NEED_NL);
 	return 1;
     }
 
