@@ -5372,6 +5372,120 @@ ReadChars(
     }
     dst = objPtr->bytes + offset;
 
+#if 1
+
+    /*
+     * This routine is burdened with satisfying several constraints.
+     * It cannot append more than 'charsToRead` chars onto objPtr.
+     * This is measured after encoding and translation transformations
+     * are completed.  There is no precise number of src bytes that can
+     * be associated with the limit.  Yet, when we are done, we must know
+     * precisely the number of src bytes that were consumed to produce
+     * the appended chars, so that all subsequent bytes are left in
+     * the buffers for future read operations.
+     *
+     * The consequence is that we have no choice but to implement a
+     * "trial and error" approach, where in general we may need to
+     * perform transformations and copies multiple times to achieve
+     * a consistent set of results.  This takes the shape of a loop.
+     */
+
+    int dstLimit = dstNeeded + 1;
+    int savedFlags = statePtr->flags;
+    int savedIEFlags = statePtr->inputEncodingFlags;
+    Tcl_EncodingState savedState = statePtr->inputEncodingState;
+
+    while (1) {
+	int dstDecoded;
+
+	/*
+	 * Perform the encoding transformation.  Read no more than
+	 * srcLen bytes, write no more than dstLimit bytes.
+	 */
+
+//fprintf(stdout, "Start %d %d\n", dstLimit, srcLen); fflush(stdout);
+	int code = Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+		statePtr->inputEncodingFlags & (bufPtr->nextPtr
+		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
+		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
+
+	/*
+	 * Perform the translation transformation in place.  Read no more
+	 * than the dstDecoded bytes the encoding transformation actually
+	 * produced.  Capture the number of bytes written in dstWrote.
+	 * Capture the number of bytes actually consumed in dstRead.
+	 */
+
+//fprintf(stdout, "Key NS=%d MB=%d S=%d\n", TCL_CONVERT_NOSPACE,
+//TCL_CONVERT_MULTIBYTE, TCL_CONVERT_SYNTAX); fflush(stdout);
+//fprintf(stdout, "Decoded %d %d\n", dstDecoded,code); fflush(stdout);
+	dstWrote = dstRead = dstDecoded;
+	TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead);
+
+	if (dstRead < dstDecoded) {
+
+	    /*
+	     * The encoding transformation produced bytes that the
+	     * translation transformation did not consume.  Start over
+	     * and impose new limits so that doesn't happen again.
+	     */
+//fprintf(stdout, "X! %d %d\n", dstRead, dstDecoded); fflush(stdout);
+
+	    dstLimit = dstRead + TCL_UTF_MAX;
+	    statePtr->flags = savedFlags;
+	    statePtr->inputEncodingFlags = savedIEFlags;
+	    statePtr->inputEncodingState = savedState;
+	    continue;
+	}
+
+//fprintf(stdout, "check %d %d %d\n", dstWrote, dstRead, dstDecoded);
+//fflush(stdout);
+
+	/* 
+	 * The translation transformation can only reduce the number
+	 * of chars when it converts \r\n into \n.  The reduction in
+	 * the number of chars is the difference in bytes read and written.
+	 */
+
+	numChars -= (dstRead - dstWrote);
+
+	if (charsToRead > 0 && numChars > charsToRead) {
+
+	    /* 
+	     * We read more chars than allowed.  Reset limits to
+	     * prevent that and try again.
+	     */
+//fprintf(stdout, "Y!\n"); fflush(stdout);
+
+	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) - dst;
+	    statePtr->flags = savedFlags;
+	    statePtr->inputEncodingFlags = savedIEFlags;
+	    statePtr->inputEncodingState = savedState;
+	    continue;
+	}
+
+	if (dstWrote == 0) {
+
+//fprintf(stdout, "Z!\n"); fflush(stdout);
+	    /* 
+	     * Could not read anything.  Ask caller to get more data.
+	     */
+
+	    return -1;
+	}
+
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
+
+	bufPtr->nextRemoved += srcRead;
+	if (dstWrote > srcRead + 1) {
+	    *factorPtr = dstWrote * UTF_EXPANSION_FACTOR / srcRead;
+	}
+	*offsetPtr += dstWrote;
+//fprintf(stdout, "OK: %d\n", numChars); fflush(stdout);
+	return numChars;
+    }
+
+#else
     /*
      * [Bug 1462248]: The cause of the crash reported in this bug is this:
      *
@@ -5560,6 +5674,7 @@ ReadChars(
     }
     *offsetPtr += dstWrote;
     return numChars;
+#endif
 }
 
 /*
@@ -5661,7 +5776,9 @@ TranslateInputEOL(
 	    if (*src == '\r') {
 		src++;
 		if (src >= srcMax) {
-		    SetFlag(statePtr, INPUT_NEED_NL);
+//		    SetFlag(statePtr, INPUT_NEED_NL);
+//fprintf(stdout, "BREAK!\n"); fflush(stdout);
+src--; break;
 		} else if (*src == '\n') {
 		    *dst++ = *src++;
 		} else {
@@ -5673,6 +5790,7 @@ TranslateInputEOL(
 	}
 	srcLen = src - srcStart;
 	dstLen = dst - dstStart;
+//fprintf(stdout, "eh? %d %d\n", srcLen, dstLen); fflush(stdout);
 	break;
     }
     case TCL_TRANSLATE_AUTO: {
