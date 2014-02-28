@@ -163,6 +163,18 @@ static TclInitProcessGlobalValueProc InitializeHostName;
 static ProcessGlobalValue hostName =
 	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
 
+void printaddrinfo(struct addrinfo *addrlist, char *prefix)
+{
+    char host[NI_MAXHOST], port[NI_MAXSERV];
+    struct addrinfo *ai;
+    for (ai = addrlist; ai != NULL; ai = ai->ai_next) {
+	getnameinfo(ai->ai_addr, ai->ai_addrlen,
+		    host, sizeof(host),
+		    port, sizeof(port),
+		    NI_NUMERICHOST|NI_NUMERICSERV);
+	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
+    }
+}
 /*
  *----------------------------------------------------------------------
  *
@@ -1159,6 +1171,9 @@ Tcl_OpenTcpClient(
         }
         return NULL;
     }
+
+    printaddrinfo(myaddrlist, "local");
+    printaddrinfo(addrlist, "remote");
 
     /*
      * Allocate a new TcpState for this socket.
