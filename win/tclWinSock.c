@@ -47,7 +47,8 @@
 
 #include "tclWinInt.h"
 
-#if 1
+//#define DEBUGGING
+#ifdef DEBUGGING
 #define DEBUG(x) fprintf(stderr, ">>> %s(%d): %s<<<\n", __FUNCTION__, __LINE__, x)
 #else
 #define DEBUG(x)
@@ -284,7 +285,9 @@ void printaddrinfo(struct addrinfo *ai, char *prefix)
 		host, sizeof(host),
 		port, sizeof(port),
 		NI_NUMERICHOST|NI_NUMERICSERV);
+#ifdef DEBUGGING
     fprintf(stderr,"%s: [%s]:%s\n", prefix, host, port);
+#endif
 }
 void printaddrinfolist(struct addrinfo *addrlist, char *prefix)
 {
@@ -1250,7 +1253,9 @@ CreateClientSocket(
 		DWORD error = (DWORD) WSAGetLastError();
 
 		DEBUG("connect()");
+#ifdef DEBUGGING
 		// fprintf(stderr,"error = %lu\n", error);
+#endif
 		if (error == WSAEWOULDBLOCK) {
 		    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 		    DEBUG("WSAEWOULDBLOCK");
@@ -1268,7 +1273,9 @@ CreateClientSocket(
 		}
 	    reenter:
 		DEBUG("reenter");
+#ifdef DEBUGGING
 		fprintf(stderr, "lastError: %d\n", infoPtr->lastError);
+#endif
 		/*
 		 * The connection is progressing in the background.
 		 */
