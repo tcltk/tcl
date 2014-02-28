@@ -5289,6 +5289,274 @@ ReadChars(
 	dst = TclGetString(objPtr) + numBytes;
     }
 
+#if 0
+
+    /*
+     * This routine is burdened with satisfying several constraints.
+     * It cannot append more than 'charsToRead` chars onto objPtr.
+     * This is measured after encoding and translation transformations
+     * are completed.  There is no precise number of src bytes that can
+     * be associated with the limit.  Yet, when we are done, we must know
+     * precisely the number of src bytes that were consumed to produce
+     * the appended chars, so that all subsequent bytes are left in
+     * the buffers for future read operations.
+     *
+     * The consequence is that we have no choice but to implement a
+     * "trial and error" approach, where in general we may need to
+     * perform transformations and copies multiple times to achieve
+     * a consistent set of results.  This takes the shape of a loop.
+     */
+
+    int dstLimit = dstNeeded + 1;
+    int savedFlags = statePtr->flags;
+    int savedIEFlags = statePtr->inputEncodingFlags;
+    Tcl_EncodingState savedState = statePtr->inputEncodingState;
+
+    while (1) {
+	int dstDecoded;
+
+	/*
+	 * Perform the encoding transformation.  Read no more than
+	 * srcLen bytes, write no more than dstLimit bytes.
+	 */
+
+	int code = Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+		statePtr->inputEncodingFlags & (bufPtr->nextPtr
+		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
+		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
+
+	/*
+	 * Perform the translation transformation in place.  Read no more
+	 * than the dstDecoded bytes the encoding transformation actually
+	 * produced.  Capture the number of bytes written in dstWrote.
+	 * Capture the number of bytes actually consumed in dstRead.
+	 */
+
+	dstWrote = dstRead = dstDecoded;
+	TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead);
+
+	if (dstRead < dstDecoded) {
+
+	    /*
+	     * The encoding transformation produced bytes that the
+	     * translation transformation did not consume.  Why did
+	     * this happen?
+	     */
+
+	    if (statePtr->inEofChar && dst[dstRead] == statePtr->inEofChar) {
+		/*
+		 * 1) There's an eof char set on the channel, and
+		 *    we saw it and stopped translating at that point.
+		 *
+		 * NOTE the bizarre spec of TranslateInputEOL in this case.
+		 * Clearly the eof char had to be read in order to account
+		 * for the stopping, but the value of dstRead does not
+		 * include it.
+		 *
+		 * Also rather bizarre, our caller can only notice an
+		 * EOF condition if we return the value -1 as the number
+		 * of chars read.  This forces us to perform a 2-call
+		 * dance where the first call can read all the chars
+		 * up to the eof char, and the second call is solely
+		 * for consuming the encoded eof char then pointed at
+		 * by src so that we can return that magic -1 value.
+		 * This seems really wasteful, especially since
+		 * the first decoding pass of each call is likely to
+		 * decode many bytes beyond that eof char that's all we
+		 * care about.
+		 */
+
+		if (dstRead == 0) {
+		    /*
+		     * Curious choice in the eof char handling.  We leave
+		     * the eof char in the buffer.  So, no need to compute
+		     * a proper srcRead value.  At this point, there
+		     * are no chars before the eof char in the buffer.
+		     */
+		    return -1;
+		}
+
+		{
+		    /*
+		     * There are chars leading the buffer before the eof
+		     * char.  Adjust the dstLimit so we go back and read
+		     * only those and do not encounter the eof char this
+		     * time.
+		     */
+
+		    dstLimit = dstRead + TCL_UTF_MAX;
+		    statePtr->flags = savedFlags;
+		    statePtr->inputEncodingFlags = savedIEFlags;
+		    statePtr->inputEncodingState = savedState;
+		    continue;
+		}
+	    }
+
+	    /*
+	     * 2) The other way to read fewer bytes than are decoded
+	     *    is when the final byte is \r and we're in a CRLF
+	     *    translation mode so we cannot decide whether to
+	     *	  record \r or \n yet.
+	     */
+
+	    assert(dstRead + 1 == dstDecoded);
+	    assert(dst[dstRead] == '\r');
+	    assert(statePtr->inputTranslation == TCL_TRANSLATE_CRLF);
+
+	    if (dstWrote > 0) {
+		/*
+		 * There are chars we can read before we hit the bare cr.
+		 * Go back with a smaller dstLimit so we get them in the
+		 * next pass, compute a matching srcRead, and don't end
+		 * up back here in this call.
+		 */
+
+		dstLimit = dstRead + TCL_UTF_MAX;
+		statePtr->flags = savedFlags;
+		statePtr->inputEncodingFlags = savedIEFlags;
+		statePtr->inputEncodingState = savedState;
+		continue;
+	    }
+
+	    assert(dstWrote == 0);
+	    assert(dstRead == 0);
+	    assert(dstDecoded == 1);
+
+	    /*
+	     * We decoded only the bare cr, and we cannot read a
+	     * translated char from that alone.  We have to know what's
+	     * next.  So why do we only have the one decoded char?
+	     */
+
+	    if (code != TCL_OK) {
+		char buffer[TCL_UTF_MAX + 2];
+		int read, decoded, count;
+
+		/* 
+		 * Didn't get everything the buffer could offer
+		 */
+
+		statePtr->flags = savedFlags;
+		statePtr->inputEncodingFlags = savedIEFlags;
+		statePtr->inputEncodingState = savedState;
+
+		Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+		statePtr->inputEncodingFlags & (bufPtr->nextPtr
+		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
+		buffer, TCL_UTF_MAX + 2, &read, &decoded, &count);
+
+		if (count == 2) {
+		    if (buffer[1] == '\n') {
+			/* \r\n translate to \n */
+			dst[0] = '\n';
+			bufPtr->nextRemoved += read;
+		    } else {
+			dst[0] = '\r';
+			bufPtr->nextRemoved += srcRead;
+		    }
+
+		    dst[1] = '\0';
+		    statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
+
+		    Tcl_SetObjLength(objPtr, numBytes + 1);
+		   // *offsetPtr += 1;
+		    return 1;
+		}
+
+	    } else if (statePtr->flags & CHANNEL_EOF) {
+
+		/*
+		 * The bare \r is the only char and we will never read
+		 * a subsequent char to make the determination.
+		 */
+
+		dst[0] = '\r';
+		bufPtr->nextRemoved = bufPtr->nextAdded;
+		Tcl_SetObjLength(objPtr, numBytes + 1);
+		//*offsetPtr += 1;
+		return 1;
+	    }
+
+	    /* FALL THROUGH - get more data (dstWrote == 0) */
+	}
+
+	/* 
+	 * The translation transformation can only reduce the number
+	 * of chars when it converts \r\n into \n.  The reduction in
+	 * the number of chars is the difference in bytes read and written.
+	 */
+
+	numChars -= (dstRead - dstWrote);
+
+	if (charsToRead > 0 && numChars > charsToRead) {
+
+	    /* 
+	     * We read more chars than allowed.  Reset limits to
+	     * prevent that and try again.
+	     */
+
+	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) - dst;
+	    statePtr->flags = savedFlags;
+	    statePtr->inputEncodingFlags = savedIEFlags;
+	    statePtr->inputEncodingState = savedState;
+	    continue;
+	}
+
+	if (dstWrote == 0) {
+
+	    /*
+	     * We were not able to read any chars.  Maybe there were
+	     * not enough src bytes to decode into a char.  Maybe
+	     * a lone \r could not be translated (crlf mode).  Need
+	     * to combine any unused src bytes we have in the first
+	     * buffer with subsequent bytes to try again.
+	     */
+
+	    ChannelBuffer *nextPtr = bufPtr->nextPtr;
+
+	    if (nextPtr == NULL) {
+		if (srcLen > 0) {
+		    SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
+		}
+		return -1;
+	    }
+
+	    /*
+	     * Space is made at the beginning of the buffer to copy the
+	     * previous unused bytes there. Check first if the buffer we
+	     * are using actually has enough space at its beginning for
+	     * the data we are copying.  Because if not we will write over
+	     * the buffer management information, especially the 'nextPtr'.
+	     *
+	     * Note that the BUFFER_PADDING (See AllocChannelBuffer) is
+	     * used to prevent exactly this situation. I.e. it should never
+	     * happen.  Therefore it is ok to panic should it happen despite
+	     * the precautions.
+	     */
+
+	    if (nextPtr->nextRemoved - srcLen < 0) {
+		Tcl_Panic("Buffer Underflow, BUFFER_PADDING not enough");
+	    }
+
+	    nextPtr->nextRemoved -= srcLen;
+	    memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
+	    RecycleBuffer(statePtr, bufPtr, 0);
+	    statePtr->inQueueHead = nextPtr;
+	    return ReadChars(statePtr, objPtr, charsToRead, factorPtr);
+	}
+
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
+
+	bufPtr->nextRemoved += srcRead;
+	if (dstWrote > srcRead + 1) {
+	    *factorPtr = dstWrote * UTF_EXPANSION_FACTOR / srcRead;
+	}
+	Tcl_SetObjLength(objPtr, numBytes + dstWrote);
+	//*offsetPtr += dstWrote;
+	return numChars;
+    }
+
+#else
     /*
      * [Bug 1462248]: The cause of the crash reported in this bug is this:
      *
@@ -5480,6 +5748,7 @@ ReadChars(
     }
     Tcl_SetObjLength(objPtr, numBytes + dstWrote);
     return numChars;
+#endif
 }
 
 /*
@@ -5581,7 +5850,9 @@ TranslateInputEOL(
 	    if (*src == '\r') {
 		src++;
 		if (src >= srcMax) {
-		    SetFlag(statePtr, INPUT_NEED_NL);
+SetFlag(statePtr, INPUT_NEED_NL);
+//		    src--;
+//		    break;
 		} else if (*src == '\n') {
 		    *dst++ = *src++;
 		} else {
@@ -8792,7 +9063,7 @@ CopyAndTranslateBuffer(
     bytesInBuffer = BytesLeft(bufPtr);
 
     copied = 0;
-#if 1
+#if 0
     if (statePtr->flags & INPUT_NEED_NL) {
 
 	/*
