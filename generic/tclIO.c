@@ -5928,9 +5928,8 @@ TranslateInputEOL(
 	    if (*src == '\r') {
 		src++;
 		if (src >= srcMax) {
-//		    SetFlag(statePtr, INPUT_NEED_NL);
-//fprintf(stdout, "BREAK!\n"); fflush(stdout);
-src--; break;
+		    src--;
+		    break;
 		} else if (*src == '\n') {
 		    *dst++ = *src++;
 		} else {
@@ -5942,7 +5941,6 @@ src--; break;
 	}
 	srcLen = src - srcStart;
 	dstLen = dst - dstStart;
-//fprintf(stdout, "eh? %d %d\n", srcLen, dstLen); fflush(stdout);
 	break;
     }
     case TCL_TRANSLATE_AUTO: {
