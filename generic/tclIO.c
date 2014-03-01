@@ -5289,7 +5289,7 @@ ReadChars(
 	dst = TclGetString(objPtr) + numBytes;
     }
 
-#if 0
+#if 1
 
     /*
      * This routine is burdened with satisfying several constraints.
@@ -5373,6 +5373,7 @@ ReadChars(
 		     * a proper srcRead value.  At this point, there
 		     * are no chars before the eof char in the buffer.
 		     */
+		    Tcl_SetObjLength(objPtr, numBytes);
 		    return -1;
 		}
 
@@ -5459,7 +5460,6 @@ ReadChars(
 		    statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
 
 		    Tcl_SetObjLength(objPtr, numBytes + 1);
-		   // *offsetPtr += 1;
 		    return 1;
 		}
 
@@ -5473,7 +5473,6 @@ ReadChars(
 		dst[0] = '\r';
 		bufPtr->nextRemoved = bufPtr->nextAdded;
 		Tcl_SetObjLength(objPtr, numBytes + 1);
-		//*offsetPtr += 1;
 		return 1;
 	    }
 
@@ -5518,6 +5517,7 @@ ReadChars(
 		if (srcLen > 0) {
 		    SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
 		}
+		Tcl_SetObjLength(objPtr, numBytes);
 		return -1;
 	    }
 
@@ -5542,6 +5542,7 @@ ReadChars(
 	    memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	    statePtr->inQueueHead = nextPtr;
+	    Tcl_SetObjLength(objPtr, numBytes);
 	    return ReadChars(statePtr, objPtr, charsToRead, factorPtr);
 	}
 
@@ -5552,7 +5553,6 @@ ReadChars(
 	    *factorPtr = dstWrote * UTF_EXPANSION_FACTOR / srcRead;
 	}
 	Tcl_SetObjLength(objPtr, numBytes + dstWrote);
-	//*offsetPtr += dstWrote;
 	return numChars;
     }
 
@@ -5850,9 +5850,8 @@ TranslateInputEOL(
 	    if (*src == '\r') {
 		src++;
 		if (src >= srcMax) {
-SetFlag(statePtr, INPUT_NEED_NL);
-//		    src--;
-//		    break;
+		    src--;
+		    break;
 		} else if (*src == '\n') {
 		    *dst++ = *src++;
 		} else {
