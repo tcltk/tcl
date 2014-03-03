@@ -1207,7 +1207,7 @@ proc http::ParseCookie {token value} {
 
     # Convert the options into a list before feeding into the cookie store;
     # ugly, but quite easy.
-    set realopts {persistent 0 hostonly 1 path / secure 0 httponly 0}
+    set realopts {hostonly 1 path / secure 0 httponly 0}
     dict set realopts origin $state(host)
     dict set realopts domain $state(host)
     foreach opt [split [regsub -all {;\s+} $opts \u0000] \u0000] {
@@ -1218,13 +1218,11 @@ proc http::ParseCookie {token value} {
 		    #Sun, 06 Nov 1994 08:49:37 GMT
 		    dict set realopts expires \
 			[clock scan $opt -format "%a, %d %b %Y %T %Z"]
-		    dict set realopts persistent 1
 		}] && [catch {
 		    # Google does this one
 		    #Mon, 01-Jan-1990 00:00:00 GMT
 		    dict set realopts expires \
 			[clock scan $opt -format "%a, %d-%b-%Y %T %Z"]
-		    dict set realopts persistent 1
 		}] && [catch {
 		    # This is in the RFC, but it is also in the original
 		    # Netscape cookie spec, now online at:
@@ -1232,12 +1230,10 @@ proc http::ParseCookie {token value} {
 		    #Sunday, 06-Nov-94 08:49:37 GMT
 		    dict set realopts expires \
 			[clock scan $opt -format "%A, %d-%b-%y %T %Z"]
-		    dict set realopts persistent 1
 		}]} {catch {
 		    #Sun Nov  6 08:49:37 1994
 		    dict set realopts expires \
 			[clock scan $opt -gmt 1 -format "%a %b %d %T %Y"]
-		    dict set realopts persistent 1
 		}}
 	    }
 	    Max-Age=* {
@@ -1245,7 +1241,6 @@ proc http::ParseCookie {token value} {
 		set opt [string range $opt 8 end]
 		if {[string is integer -strict $opt]} {
 		    dict set realopts expires [expr {[clock seconds] + $opt}]
-		    dict set realopts persistent 1
 		}
 	    }
 	    Domain=* {
@@ -1267,7 +1262,9 @@ proc http::ParseCookie {token value} {
 	    }
 	}
     }
-    {*}$http(-cookiejar) storeCookie $cookiename $cookieval $realopts
+    dict set realopts key $cookiename
+    dict set realopts value $cookieval
+    {*}$http(-cookiejar) storeCookie $realopts
 }
 
 # http::getTextLine --

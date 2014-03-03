@@ -29,7 +29,7 @@ test http-cookiejar-2.1 {cookie storage: basics} -constraints cookiejar -body {
 } -returnCodes error -result {wrong # args: should be "http::cookiejar method ?arg ...?"}
 test http-cookiejar-2.2 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar ?
-} -returnCodes error -result {unknown method "?": must be create, destroy, loglevel or new}
+} -returnCodes error -result {unknown method "?": must be configure, create, destroy, loglevel or new}
 test http-cookiejar-2.3 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar loglevel
 } -result info
@@ -66,10 +66,10 @@ test http-cookiejar-3.2 {cookie storage: class} cookiejar {
 } 1
 test http-cookiejar-3.3 {cookie storage: class} cookiejar {
     lsort [info object methods http::cookiejar]
-} loglevel
+} {configure loglevel}
 test http-cookiejar-3.4 {cookie storage: class} cookiejar {
     lsort [info object methods http::cookiejar -all]
-} {create destroy loglevel new}
+} {configure create destroy loglevel new}
 test http-cookiejar-3.5 {cookie storage: class} -setup {
     catch {rename ::cookiejar ""}
 } -constraints cookiejar -body {
@@ -92,6 +92,21 @@ test http-cookiejar-3.7 {cookie storage: class} -setup {
 } -returnCodes error -cleanup {
     catch {rename ::cookiejar ""}
 } -result {wrong # args: should be "http::cookiejar create ::cookiejar ?path?"}
+test http-cookiejar-3.8 {cookie storage: class} cookiejar {
+    http::cookiejar configure
+} {-domainfile -domainlist -offline -purgeinterval -vacuumtrigger}
+test http-cookiejar-3.9 {cookie storage: class} -constraints cookiejar -body {
+    http::cookiejar configure a b c d e
+} -returnCodes error -result {wrong # args: should be "http::cookiejar configure ?optionName? ?optionValue?"}
+test http-cookiejar-3.10 {cookie storage: class} -constraints cookiejar -body {
+    http::cookiejar configure a
+} -returnCodes error -result {bad option "a": must be -domainfile, -domainlist, -offline, -purgeinterval, or -vacuumtrigger}
+test http-cookiejar-3.11 {cookie storage: class} -constraints cookiejar -body {
+    http::cookiejar configure -d
+} -returnCodes error -result {ambiguous option "-d": must be -domainfile, -domainlist, -offline, -purgeinterval, or -vacuumtrigger}
+test http-cookiejar-3.12 {cookie storage: class} -constraints cookiejar -body {
+    http::cookiejar configure -off
+} -match glob -result *
 
 test http-cookiejar-4.1 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
@@ -134,12 +149,13 @@ test http-cookiejar-4.6 {cookie storage: instance} -setup {
     cookiejar storeCookie
 } -returnCodes error -cleanup {
     ::cookiejar destroy
-} -result {wrong # args: should be "cookiejar storeCookie name value options"}
+} -result {wrong # args: should be "cookiejar storeCookie options"}
 test http-cookiejar-4.7 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -153,8 +169,9 @@ test http-cookiejar-4.8 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -170,8 +187,9 @@ test http-cookiejar-4.9 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -186,8 +204,9 @@ test http-cookiejar-4.9 {cookie storage: instance} -setup {
 test http-cookiejar-4.10 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar [dict replace {
-	persistent 1
+    cookiejar storeCookie [dict replace {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -201,8 +220,9 @@ test http-cookiejar-4.11 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar [dict replace {
-	persistent 1
+    cookiejar storeCookie [dict replace {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -218,8 +238,9 @@ test http-cookiejar-4.12 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     oo::objdefine ::cookiejar export Database
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar [dict replace {
-	persistent 1
+    cookiejar storeCookie [dict replace {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -236,8 +257,9 @@ test http-cookiejar-4.13 {cookie storage: instance} -setup {
     set result {}
 } -constraints cookiejar -body {
     lappend result [cookiejar getCookies http www.example.com /]
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -253,8 +275,9 @@ test http-cookiejar-4.14 {cookie storage: instance} -setup {
     set result {}
 } -constraints cookiejar -body {
     lappend result [cookiejar getCookies http www.example.com /]
-    cookiejar storeCookie foo bar [dict replace {
-	persistent 1
+    cookiejar storeCookie [dict replace {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -270,16 +293,18 @@ test http-cookiejar-4.15 {cookie storage: instance} -setup {
     set result {}
 } -constraints cookiejar -body {
     lappend result [cookiejar getCookies http www.example.com /]
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
 	path /
 	hostonly 1
     }
-    cookiejar storeCookie foo bar [dict replace {
-	persistent 1
+    cookiejar storeCookie [dict replace {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -295,16 +320,18 @@ test http-cookiejar-4.16 {cookie storage: instance} -setup {
     set result {}
 } -constraints cookiejar -body {
     lappend result [cookiejar getCookies http www.example.com /]
-    cookiejar storeCookie foo1 bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo1
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
 	path /
 	hostonly 1
     }
-    cookiejar storeCookie foo2 bar [dict replace {
-	persistent 1
+    cookiejar storeCookie [dict replace {
+	key foo2
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -329,8 +356,9 @@ test http-cookiejar-4.18 {cookie storage: instance} -setup {
     lappend result [cookiejar lookup]
     lappend result [cookiejar lookup www.example.com]
     lappend result [catch {cookiejar lookup www.example.com foo} value] $value
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -347,16 +375,18 @@ test http-cookiejar-4.19 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     set result {}
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain www.example.com
 	origin www.example.com
 	path /
 	hostonly 1
     }
-    cookiejar storeCookie bar foo {
-	persistent 0
+    cookiejar storeCookie {
+	key bar
+	value foo
 	secure 0
 	domain www.example.org
 	origin www.example.org
@@ -375,16 +405,18 @@ test http-cookiejar-4.20 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     set result {}
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo1 bar1 {
-	persistent 0
+    cookiejar storeCookie {
+	key foo1
+	value bar1
 	secure 0
 	domain www.example.com
 	origin www.example.com
 	path /
 	hostonly 1
     }
-    cookiejar storeCookie foo2 bar2 [dict replace {
-	persistent 1
+    cookiejar storeCookie [dict replace {
+	key foo2
+	value bar2
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -402,16 +434,18 @@ test http-cookiejar-4.21 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
     set result {}
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo1 bar1 {
-	persistent 0
+    cookiejar storeCookie {
+	key foo1
+	value bar1
 	secure 0
 	domain www.example.com
 	origin www.example.com
 	path /
 	hostonly 1
     }
-    cookiejar storeCookie foo2 bar2 {
-	persistent 0
+    cookiejar storeCookie {
+	key foo2
+	value bar2
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -446,8 +480,9 @@ test http-cookiejar-5.1 {cookie storage: constraints} -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain com
 	origin com
@@ -462,8 +497,9 @@ test http-cookiejar-5.2 {cookie storage: constraints} -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar
 	secure 0
 	domain foo.example.com
 	origin bar.example.org
@@ -478,16 +514,18 @@ test http-cookiejar-5.3 {cookie storage: constraints} -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo1 bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo1
+	value bar
 	secure 0
 	domain com
 	origin www.example.com
 	path /
 	hostonly 1
     }
-    cookiejar storeCookie foo2 bar {
-	persistent 0
+    cookiejar storeCookie {
+	key foo2
+	value bar
 	secure 0
 	domain example.com
 	origin www.example.com
@@ -502,16 +540,18 @@ test http-cookiejar-5.4 {cookie storage: constraints} -setup {
     http::cookiejar create ::cookiejar
     cookiejar forceLoadDomainData
 } -constraints cookiejar -body {
-    cookiejar storeCookie foo bar1 {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar1
 	secure 0
 	domain www.example.com
 	origin www.example.com
 	path /
 	hostonly 1
     }
-    cookiejar storeCookie foo bar2 {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value bar2
 	secure 0
 	domain example.com
 	origin www.example.com
@@ -533,8 +573,9 @@ test http-cookiejar-6.1 {cookie storage: expiry and lookup} -setup {
     }
 } -constraints cookiejar -body {
     values [cookiejar getCookies http www.example.com /]
-    cookiejar storeCookie foo session {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value session
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -542,8 +583,9 @@ test http-cookiejar-6.1 {cookie storage: expiry and lookup} -setup {
 	hostonly 1
     }
     values [cookiejar getCookies http www.example.com /]
-    cookiejar storeCookie foo cookie [dict replace {
-	persistent 1
+    cookiejar storeCookie [dict replace {
+	key foo
+	value cookie
 	secure 0
 	domain www.example.com
 	origin www.example.com
@@ -551,8 +593,9 @@ test http-cookiejar-6.1 {cookie storage: expiry and lookup} -setup {
 	hostonly 1
     } expires [expr {[clock seconds]+1}]]
     values [cookiejar getCookies http www.example.com /]
-    cookiejar storeCookie foo session-global {
-	persistent 0
+    cookiejar storeCookie {
+	key foo
+	value session-global
 	secure 0
 	domain example.com
 	origin www.example.com
@@ -565,8 +608,9 @@ test http-cookiejar-6.1 {cookie storage: expiry and lookup} -setup {
     values [cookiejar getCookies http www.example.com /]
     cookiejar PurgeCookies
     values [cookiejar getCookies http www.example.com /]
-    cookiejar storeCookie foo go-away {
-	persistent 1
+    cookiejar storeCookie {
+	key foo
+	value go-away
 	secure 0
 	domain example.com
 	origin www.example.com
