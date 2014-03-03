@@ -85,7 +85,8 @@ namespace eval ::http {
 	    set map {debug 0 info 1 warn 2 error 3}
 	    if {[string map $map $level] >= [string map $map $loglevel]} {
 		set msg [format $msg {*}$args]
-		::http::Log "[isoNow] [string toupper $level] cookiejar($who) - ${msg}"
+		set LVL [string toupper $level]
+		::http::Log "[isoNow] $LVL cookiejar($who) - $msg"
 	    }
 	}
     }
@@ -96,6 +97,25 @@ package provide cookiejar $::http::cookiejar_version
 
 # The implementation of the cookiejar package
 ::oo::define ::http::cookiejar {
+    self method configure {{optionName "\u0000\u0000"} {optionValue "\u0000\u0000"}} {
+	set tbl {
+	    -domainfile    {cookiejar_domainfile}
+	    -domainlist    {cookiejar_domainlist}
+	    -offline       {cookiejar_offline}
+	    -purgeinterval {cookiejar_purgeinterval}
+	    -vacuumtrigger {cookiejar_vacuumtrigger}
+	}
+	if {$optionName eq "\u0000\u0000"} {
+	    return [dict keys $tbl]
+	}
+	set opt [::tcl::prefix match -message "option" [dict keys $tbl] $optionName]
+	lassign [dict get $tbl $opt] varname
+	namespace upvar ::http $varname var
+	if {$optionValue ne "\u0000\u0000"} {
+	    set var $optionValue
+	}
+	return $var
+    }
     self method loglevel {{level "\u0000\u0000"}} {
 	namespace upvar ::http cookiejar_loglevel loglevel
 	if {$level ne "\u0000\u0000"} {
@@ -205,11 +225,10 @@ package provide cookiejar $::http::cookiejar_version
 	try {
 	    if {[::http::ncode $tok] == 200} {
 		return [::http::data $tok]
-	    } else {
-		log error "failed to fetch list of forbidden cookie domains from %s: %s" \
-			$url [::http::error $tok]
-		return {}
 	    }
+	    log error "failed to fetch list of forbidden cookie domains from %s: %s" \
+		    $url [::http::error $tok]
+	    return {}
 	} finally {
 	    ::http::cleanup $tok
 	}
@@ -339,7 +358,7 @@ package provide cookiejar $::http::cookiejar_version
 	db eval {
 	    SELECT key, value FROM persistentCookies
 	    WHERE domain = $host AND path = $path AND secure <= $secure
-	    AND (NOT originonly OR domain = $fullhost)
+		AND (NOT originonly OR domain = $fullhost)
 	} {
 	    lappend result $key $value
 	}
@@ -347,7 +366,7 @@ package provide cookiejar $::http::cookiejar_version
 	db eval {
 	    SELECT id, key, value FROM sessionCookies
 	    WHERE domain = $host AND path = $path AND secure <= $secure
-	    AND (NOT originonly OR domain = $fullhost)
+		AND (NOT originonly OR domain = $fullhost)
 	} {
 	    lappend result $key $value
 	    db eval {
@@ -433,51 +452,53 @@ package provide cookiejar $::http::cookiejar_version
 	return 0
     }
 
-    method storeCookie {name value options} {
-	set now [clock seconds]
+    method storeCookie {options} {
 	db transaction {
 	    if {[my BadDomain $options]} {
 		return
 	    }
 	    set now [clock seconds]
+	    set persistent [dict exists $options expires]
 	    dict with options {}
 	    if {!$persistent} {
 		db eval {
 		    INSERT OR REPLACE INTO sessionCookies (
 			secure, domain, path, key, value, originonly, creation, lastuse)
-		    VALUES ($secure, $domain, $path, $name, $value, $hostonly, $now, $now);
+		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $now, $now);
 		    DELETE FROM persistentCookies
-		    WHERE domain = $domain AND path = $path AND key = $name AND secure <= $secure
+		    WHERE domain = $domain AND path = $path AND key = $key
+			AND secure <= $secure
 		}
 		incr deletions [db changes]
 		log debug "defined session cookie for %s" \
-			[locn $secure $domain $path $name]
+			[locn $secure $domain $path $key]
 	    } elseif {$expires < $now} {
 		db eval {
 		    DELETE FROM persistentCookies
-		    WHERE domain = $domain AND path = $path AND key = $name
+		    WHERE domain = $domain AND path = $path AND key = $key
 			AND secure <= $secure;
 		}
 		set del [db changes]
 		db eval {
 		    DELETE FROM sessionCookies
-		    WHERE domain = $domain AND path = $path AND key = $name
+		    WHERE domain = $domain AND path = $path AND key = $key
 			AND secure <= $secure;
 		}
 		incr deletions [incr del [db changes]]
 		log debug "deleted %d cookies for %s" \
-			$del [locn $secure $domain $path $name]
+			$del [locn $secure $domain $path $key]
 	    } else {
 		db eval {
 		    INSERT OR REPLACE INTO persistentCookies (
 			secure, domain, path, key, value, originonly, expiry, creation)
-		    VALUES ($secure, $domain, $path, $name, $value, $hostonly, $expires, $now);
+		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $expires, $now);
 		    DELETE FROM sessionCookies
-		    WHERE domain = $domain AND path = $path AND key = $name AND secure <= $secure
+		    WHERE domain = $domain AND path = $path AND key = $key
+			AND secure <= $secure
 		}
 		incr deletions [db changes]
 		log debug "defined persistent cookie for %s, expires at %s" \
-			[locn $secure $domain $path $name] \
+			[locn $secure $domain $path $key] \
 			[clock format $expires]
 	    }
 	}
