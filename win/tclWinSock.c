@@ -681,7 +681,10 @@ SocketCheckProc(
     for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
 	if ((infoPtr->readyEvents & infoPtr->watchEvents)
-		&& !(infoPtr->flags & SOCKET_PENDING)) {
+		&& !(infoPtr->flags & SOCKET_PENDING)
+		|| ( infoPtr->flags & SOCKET_ASYNC_CONNECT )
+		&& ( infoPtr->readyEvents & FD_CONNECT )
+	) {
 	    infoPtr->flags |= SOCKET_PENDING;
 	    evPtr = ckalloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
@@ -875,7 +878,7 @@ SocketEventProc(
     if (events & FD_WRITE) {
 	mask |= TCL_WRITABLE;
     }
-    if (events & FD_CONNECT) {
+    if (infoPtr->readyEvents & FD_CONNECT) {
 	DEBUG("Calling CreateClientSocket...");
 	CreateClientSocket(NULL, infoPtr);
     }
@@ -1236,12 +1239,24 @@ CreateClientSocket(
 	    /*
 	     * Set the socket into nonblocking mode if the connect should
 	     * be done in the background.
+	     * Activate notification for a connect.
 	     */
-	    if (async && ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag)
-		== SOCKET_ERROR) {
-		DEBUG("FIONBIO");
-		TclWinConvertError((DWORD) WSAGetLastError());
-		continue;
+	    if (async) {
+		if (ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag)
+		    == SOCKET_ERROR) {
+		    DEBUG("FIONBIO");
+		    TclWinConvertError((DWORD) WSAGetLastError());
+		    continue;
+		}
+		{
+		    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+		    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
+		    infoPtr->selectEvents |= FD_CONNECT;
+
+		    ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
+		    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+				(LPARAM) infoPtr);
+		}
 	    }
 
 	    /*
@@ -1256,15 +1271,8 @@ CreateClientSocket(
 #ifdef DEBUGGING
 		// fprintf(stderr,"error = %lu\n", error);
 #endif
-		if (error == WSAEWOULDBLOCK) {
-		    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+		if (async && error == WSAEWOULDBLOCK) {
 		    DEBUG("WSAEWOULDBLOCK");
-		    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
-		    infoPtr->selectEvents |= FD_CONNECT;
-
-		    ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
-		    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-				(LPARAM) infoPtr);
 		    return TCL_OK;
 		} else {
 		    DEBUG("ELSE");
