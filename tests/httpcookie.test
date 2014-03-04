@@ -107,6 +107,27 @@ test http-cookiejar-3.11 {cookie storage: class} -constraints cookiejar -body {
 test http-cookiejar-3.12 {cookie storage: class} -constraints cookiejar -body {
     http::cookiejar configure -off
 } -match glob -result *
+test http-cookiejar-3.13 {cookie storage: class} -setup {
+    set oldval [http::cookiejar configure -offline]
+} -constraints cookiejar -body {
+    http::cookiejar configure -offline true
+} -cleanup {
+    catch {http::cookiejar configure -offline $oldval}
+} -result 1
+test http-cookiejar-3.14 {cookie storage: class} -setup {
+    set oldval [http::cookiejar configure -offline]
+} -constraints cookiejar -body {
+    http::cookiejar configure -offline nonbool
+} -cleanup {
+    catch {http::cookiejar configure -offline $oldval}
+} -returnCodes error -result {expected boolean value but got "nonbool"}
+test http-cookiejar-3.15 {cookie storage: class} -setup {
+    set oldval [http::cookiejar configure -purgeinterval]
+} -constraints cookiejar -body {
+    http::cookiejar configure -purge nonint
+} -cleanup {
+    catch {http::cookiejar configure -purgeinterval $oldval}
+} -returnCodes error -result {expected integer but got "nonint"}
 
 test http-cookiejar-4.1 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar

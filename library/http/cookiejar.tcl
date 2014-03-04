@@ -39,6 +39,23 @@ namespace eval ::http {
 	::oo::class create cookiejar
     }
 
+    namespace eval [info object namespace cookiejar] {
+	proc setInt {*var val} {
+	    upvar 1 ${*var} var
+	    if {[catch {incr dummy $val} msg]} {
+		return -code error $msg
+	    }
+	    set var $val
+	}
+	proc setBool {*var val} {
+	    upvar 1 ${*var} var
+	    if {[catch {if {$val} {}} msg]} {
+		return -code error $msg
+	    }
+	    set var [expr {!!$val}]
+	}
+    }
+
     # Some support procedures, none particularly useful in general
     namespace eval cookiejar_support {
 	# Set up a logger if the http package isn't actually loaded yet.
@@ -99,20 +116,20 @@ package provide cookiejar $::http::cookiejar_version
 ::oo::define ::http::cookiejar {
     self method configure {{optionName "\u0000\u0000"} {optionValue "\u0000\u0000"}} {
 	set tbl {
-	    -domainfile    {cookiejar_domainfile}
-	    -domainlist    {cookiejar_domainlist}
-	    -offline       {cookiejar_offline}
-	    -purgeinterval {cookiejar_purgeinterval}
-	    -vacuumtrigger {cookiejar_vacuumtrigger}
+	    -domainfile    {cookiejar_domainfile set}
+	    -domainlist    {cookiejar_domainlist set}
+	    -offline       {cookiejar_offline setBool}
+	    -purgeinterval {cookiejar_purgeinterval setInt}
+	    -vacuumtrigger {cookiejar_vacuumtrigger setInt}
 	}
 	if {$optionName eq "\u0000\u0000"} {
 	    return [dict keys $tbl]
 	}
 	set opt [::tcl::prefix match -message "option" [dict keys $tbl] $optionName]
-	lassign [dict get $tbl $opt] varname
+	lassign [dict get $tbl $opt] varname setter
 	namespace upvar ::http $varname var
 	if {$optionValue ne "\u0000\u0000"} {
-	    set var $optionValue
+	    $setter var $optionValue
 	}
 	return $var
     }
