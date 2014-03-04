@@ -47,7 +47,7 @@
 
 #include "tclWinInt.h"
 
-//#define DEBUGGING
+#define DEBUGGING
 #ifdef DEBUGGING
 #define DEBUG(x) fprintf(stderr, ">>> %s(%d): %s<<<\n", __FUNCTION__, __LINE__, x)
 #else
@@ -629,11 +629,13 @@ SocketSetupProc(
     /*
      * Check to see if there is a ready socket.	 If so, poll.
      */
-
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
-	if (infoPtr->readyEvents & infoPtr->watchEvents) {
+	if (infoPtr->readyEvents &
+	    (infoPtr->watchEvents | FD_CONNECT | FD_ACCEPT)
+	) {
+	    DEBUG("Tcl_SetMaxBlockTime");
 	    Tcl_SetMaxBlockTime(&blockTime);
 	    break;
 	}
@@ -667,6 +669,7 @@ SocketCheckProc(
     SocketEvent *evPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+    DEBUG("A");
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
     }
@@ -680,10 +683,9 @@ SocketCheckProc(
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
-	if ((infoPtr->readyEvents & infoPtr->watchEvents)
-		&& !(infoPtr->flags & SOCKET_PENDING)
-		|| ( infoPtr->flags & SOCKET_ASYNC_CONNECT )
-		&& ( infoPtr->readyEvents & FD_CONNECT )
+	if ((infoPtr->readyEvents &
+		(infoPtr->watchEvents | FD_CONNECT | FD_ACCEPT))
+	    && !(infoPtr->flags & SOCKET_PENDING)
 	) {
 	    infoPtr->flags |= SOCKET_PENDING;
 	    evPtr = ckalloc(sizeof(SocketEvent));
@@ -731,8 +733,7 @@ SocketEventProc(
     address addr;
     int len;
 
-    DEBUG("xxx");
-
+    DEBUG("");
     if (!(flags & TCL_FILE_EVENTS)) {
 	return 0;
     }
@@ -760,10 +761,17 @@ SocketEventProc(
 
     infoPtr->flags &= ~SOCKET_PENDING;
 
+    if (infoPtr->readyEvents & FD_CONNECT) {
+	DEBUG("FD_CONNECT");
+	SetEvent(tsdPtr->socketListLock);
+	CreateClientSocket(NULL, infoPtr);
+	infoPtr->readyEvents &= ~(FD_CONNECT);
+	return 1;
+    }
+
     /*
      * Handle connection requests directly.
      */
-
     if (infoPtr->readyEvents & FD_ACCEPT) {
 	for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
 
@@ -845,6 +853,7 @@ SocketEventProc(
 
 	Tcl_Time blockTime = { 0, 0 };
 
+	DEBUG("FD_CLOSE");
 	Tcl_SetMaxBlockTime(&blockTime);
 	mask |= TCL_READABLE|TCL_WRITABLE;
     } else if (events & FD_READ) {
@@ -858,6 +867,7 @@ SocketEventProc(
 	 * readable, notify the channel driver, otherwise reset the async
 	 * select handler and keep waiting.
 	 */
+	DEBUG("FD_READ");
 
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
 		(WPARAM) UNSELECT, (LPARAM) infoPtr);
@@ -876,11 +886,8 @@ SocketEventProc(
 	}
     }
     if (events & FD_WRITE) {
+	DEBUG("FD_WRITE");
 	mask |= TCL_WRITABLE;
-    }
-    if (infoPtr->readyEvents & FD_CONNECT) {
-	DEBUG("Calling CreateClientSocket...");
-	CreateClientSocket(NULL, infoPtr);
     }
     if (mask) {
 	DEBUG("Calling Tcl_NotifyChannel...");
@@ -1164,14 +1171,17 @@ CreateClientSocket(
     SocketInfo *infoPtr)
 {
     u_long flag = 1;		/* Indicates nonblocking mode. */
-    int async_callback = (infoPtr->addr != NULL);
-    int connected = 0;
     int async = infoPtr->flags & SOCKET_ASYNC_CONNECT;
-
-    DEBUG(async_callback ? "subsequent" : "first");
+    int async_callback = infoPtr->sockets->fd != INVALID_SOCKET;
+    ThreadSpecificData *tsdPtr;
+    
     DEBUG(async ? "async" : "sync");
+
     if (async_callback) {
+	DEBUG("subsequent call");
         goto reenter;
+    } else {
+	DEBUG("first call");
     }
     
     for (infoPtr->addr = infoPtr->addrlist; infoPtr->addr != NULL;
@@ -1199,13 +1209,12 @@ CreateClientSocket(
             /*
              * Close the socket if it is still open from the last unsuccessful
              * iteration.
-             */
-
+             */	    
 	    if (infoPtr->sockets->fd != INVALID_SOCKET) {
 		DEBUG("closesocket");
 		closesocket(infoPtr->sockets->fd);
 	    }
-
+	    
 	    infoPtr->sockets->fd = socket(infoPtr->myaddr->ai_family, SOCK_STREAM, 0);
 	    if (infoPtr->sockets->fd == INVALID_SOCKET) {
 		DEBUG("socket() failed");
@@ -1254,7 +1263,7 @@ CreateClientSocket(
 	    if (connect(infoPtr->sockets->fd, infoPtr->addr->ai_addr,
 			    infoPtr->addr->ai_addrlen) == SOCKET_ERROR) {
 		DWORD error = (DWORD) WSAGetLastError();
-
+		TclWinConvertError(error);
 		DEBUG("connect()");
 #ifdef DEBUGGING
 		// fprintf(stderr,"error = %lu\n", error);
@@ -1262,64 +1271,59 @@ CreateClientSocket(
 		if (error == WSAEWOULDBLOCK) {
 		    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 		    DEBUG("WSAEWOULDBLOCK");
-		    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
 		    infoPtr->selectEvents |= FD_CONNECT;
 
 		    ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
 		    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 				(LPARAM) infoPtr);
 		    return TCL_OK;
-		} else {
-		    DEBUG("ELSE");
-		    TclWinConvertError(error);
-		    continue;
+		reenter:
+		    Tcl_SetErrno(infoPtr->lastError);
+		    DEBUG("reenter");
+		    infoPtr->selectEvents &= ~(FD_CONNECT);
 		}
-	    reenter:
-		DEBUG("reenter");
-#ifdef DEBUGGING
-		fprintf(stderr, "lastError: %d\n", infoPtr->lastError);
-#endif
-		/*
-		 * The connection is progressing in the background.
-		 */
-		// infoPtr->selectEvents &= ~(FD_CONNECT);
 	    } else {
-		connected = 1;
-		goto connected;
+		DWORD error = (DWORD) WSAGetLastError();
+		TclWinConvertError(error);
+	    }
+#ifdef DEBUGGING
+	    fprintf(stderr, "lastError: %d\n", Tcl_GetErrno());
+#endif
+	    if (Tcl_GetErrno() == 0) {
+		goto out;
 	    }
 	}
     }
-    goto error;
-connected:
-    DEBUG("connected");
+
+out:
+    DEBUG("connected or finally failed");
+    if (Tcl_GetErrno() != 0 && interp != NULL) {
+	DEBUG("ERRNO");
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+				"couldn't open socket: %s", Tcl_PosixError(interp)));
+	}
+	return TCL_ERROR;
+    }
     /*
-     * Set up the select mask for read/write events. If the connect
-     * attempt has not completed, include connect events.
+     * Set up the select mask for read/write events.
      */
     
     infoPtr->selectEvents = FD_READ | FD_WRITE | FD_CLOSE;
-
-error:
+    
     /*
      * Register for interest in events in the select mask. Note that this
      * automatically places the socket into non-blocking mode.
      */
-
-    if (connected) {
-	ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-
-	ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
-	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+    
+    tsdPtr = TclThreadDataKeyGet(&dataKey);
+    ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 		(LPARAM) infoPtr);
-	return TCL_OK;
+    if (async_callback) {
+	Tcl_NotifyChannel(infoPtr->channel, TCL_WRITABLE);
     }
-
-    if (interp != NULL) {
-        Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't open socket: %s", Tcl_PosixError(interp)));
-    }
-
-    return TCL_ERROR;
+    return TCL_OK;
 }
 
 /*
@@ -1348,7 +1352,6 @@ WaitForSocketEvent(
     int result = 1;
     int oldMode;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-
     /*
      * Be sure to disable event servicing so we are truly modal.
      */
@@ -1464,7 +1467,7 @@ Tcl_OpenTcpClient(
     /*
      * Create a new client socket and wrap it in a channel.
      */
-    
+    DEBUG("");
     if (CreateClientSocket(interp, infoPtr) != TCL_OK) {
 	TcpCloseProc(infoPtr, NULL);
 	return NULL;
@@ -1702,7 +1705,6 @@ error:
 	 */
 	
 	infoPtr->selectEvents = FD_ACCEPT;
-	infoPtr->watchEvents |= FD_ACCEPT;
 	
 	/*
 	 * Register for interest in events in the select mask. Note that this
@@ -2289,6 +2291,9 @@ TcpGetOptionProc(
 	}
 	for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
 	    sock = fds->fd;
+#ifdef DEBUGGING
+	    fprintf(stderr, "sock == %d\n", sock);
+#endif
 	    size = sizeof(sockname);
 	    if (getsockname(sock, &(sockname.sa), &size) >= 0) {
 		int flags = reverseDNS;
@@ -2419,6 +2424,9 @@ TcpWatchProc(
 {
     SocketInfo *infoPtr = instanceData;
 
+    DEBUG((mask & TCL_READABLE) ? "+r":"-r");
+    DEBUG((mask & TCL_WRITABLE) ? "+w":"-w");
+
     /*
      * Update the watch events mask. Only if the socket is not a server
      * socket. [Bug 557878]
@@ -2427,10 +2435,10 @@ TcpWatchProc(
     if (!infoPtr->acceptProc) {
 	infoPtr->watchEvents = 0;
 	if (mask & TCL_READABLE) {
-	    infoPtr->watchEvents |= (FD_READ|FD_CLOSE|FD_ACCEPT);
+	    infoPtr->watchEvents |= (FD_READ|FD_CLOSE);
 	}
 	if (mask & TCL_WRITABLE) {
-	    infoPtr->watchEvents |= (FD_WRITE|FD_CLOSE|FD_CONNECT);
+	    infoPtr->watchEvents |= (FD_WRITE|FD_CLOSE);
 	}
 
 	/*
@@ -2613,10 +2621,16 @@ SocketProc(
 	 * eventState flag.
 	 */
 
+	DEBUG("FOO");
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+	DEBUG("BAR");
 	for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 		infoPtr = infoPtr->nextPtr) {
 	    for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
+#ifdef DEBUGGING
+		fprintf(stderr,"socket = %d, fd=%d, event = %d, error = %d\n",
+			socket, fds->fd, event, error);
+#endif
 		if (fds->fd == socket) {
 		    if (event & FD_READ) 
 			DEBUG("|->FD_READ");
@@ -2692,6 +2706,11 @@ SocketProc(
 	    infoPtr = (SocketInfo *) lParam;
 	    if (wParam == SELECT) {
 		DEBUG("SELECT");
+		if (infoPtr->selectEvents & FD_READ) DEBUG("  READ");
+		if (infoPtr->selectEvents & FD_WRITE) DEBUG("  WRITE");
+		if (infoPtr->selectEvents & FD_CLOSE) DEBUG("  CLOSE");
+		if (infoPtr->selectEvents & FD_CONNECT) DEBUG("  CONNECT");
+		if (infoPtr->selectEvents & FD_ACCEPT) DEBUG("  ACCEPT");
 		WSAAsyncSelect(fds->fd, hwnd,
 			SOCKET_MESSAGE, infoPtr->selectEvents);
 	    } else {
