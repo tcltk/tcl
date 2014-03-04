@@ -1239,24 +1239,12 @@ CreateClientSocket(
 	    /*
 	     * Set the socket into nonblocking mode if the connect should
 	     * be done in the background.
-	     * Activate notification for a connect.
 	     */
-	    if (async) {
-		if (ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag)
-		    == SOCKET_ERROR) {
-		    DEBUG("FIONBIO");
-		    TclWinConvertError((DWORD) WSAGetLastError());
-		    continue;
-		}
-		{
-		    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-		    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
-		    infoPtr->selectEvents |= FD_CONNECT;
-
-		    ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
-		    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-				(LPARAM) infoPtr);
-		}
+	    if (async && ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag)
+		== SOCKET_ERROR) {
+		DEBUG("FIONBIO");
+		TclWinConvertError((DWORD) WSAGetLastError());
+		continue;
 	    }
 
 	    /*
@@ -1271,8 +1259,15 @@ CreateClientSocket(
 #ifdef DEBUGGING
 		// fprintf(stderr,"error = %lu\n", error);
 #endif
-		if (async && error == WSAEWOULDBLOCK) {
+		if (error == WSAEWOULDBLOCK) {
+		    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 		    DEBUG("WSAEWOULDBLOCK");
+		    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
+		    infoPtr->selectEvents |= FD_CONNECT;
+
+		    ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
+		    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+				(LPARAM) infoPtr);
 		    return TCL_OK;
 		} else {
 		    DEBUG("ELSE");
