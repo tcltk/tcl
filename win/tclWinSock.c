@@ -726,7 +726,7 @@ SocketEventProc(
     int flags)			/* Flags that indicate what events to handle,
 				 * such as TCL_FILE_EVENTS. */
 {
-    SocketInfo *infoPtr;
+    SocketInfo *infoPtr = NULL; /* DEBUG */
     SocketEvent *eventPtr = (SocketEvent *) evPtr;
     int mask = 0, events;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
@@ -2578,7 +2578,7 @@ SocketProc(
 {
     int event, error;
     SOCKET socket;
-    SocketInfo *infoPtr;
+    SocketInfo *infoPtr = NULL; /* DEBUG */
     TcpFdList *fds = NULL;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 #ifdef _WIN64
