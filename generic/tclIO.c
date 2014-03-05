@@ -5320,7 +5320,7 @@ ReadChars(
 	 * srcLen bytes, write no more than dstLimit bytes.
 	 */
 
-	int code = Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+	int code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags & (bufPtr->nextPtr
 		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
@@ -5441,7 +5441,7 @@ ReadChars(
 		statePtr->inputEncodingFlags = savedIEFlags;
 		statePtr->inputEncodingState = savedState;
 
-		Tcl_ExternalToUtf(NULL, statePtr->encoding, src, srcLen,
+		Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags & (bufPtr->nextPtr
 		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
 		buffer, TCL_UTF_MAX + 2, &read, &decoded, &count);
