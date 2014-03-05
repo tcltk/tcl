@@ -1259,7 +1259,7 @@ CreateClientSocket(
 	     */
 	    if (async) {
 		ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-		infoPtr->selectEvents |= FD_CONNECT | FD_READ | FD_WRITE;
+		infoPtr->selectEvents |= FD_CONNECT;
 
 		ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
 		SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
@@ -2653,18 +2653,18 @@ SocketProc(
 
 		    if (event & FD_CONNECT) {
 			DEBUG("FD_CONNECT");
-			/*
-			 * The socket is now connected, clear the async connect
-			 * flag.
-			 */
 
-			//infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-
-			/*
-			 * Remember any error that occurred so we can report
-			 * connection failures.
-			 */
-			if (error != ERROR_SUCCESS) {
+			if (error == ERROR_SUCCESS) {
+			    /*
+			     * The socket is now connected, clear the async connect
+			     * flag.
+			     */
+			    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+			} else {
+			    /*
+			     * Remember any error that occurred so we can report
+			     * connection failures.
+			     */
 			    TclWinConvertError((DWORD) error);
 			    infoPtr->lastError = Tcl_GetErrno();
 			}
