@@ -25,7 +25,7 @@ namespace eval ::http {
     # TODO: is this the _right_ list of domains to use? Or is there an alias
     # for it that will persist longer?
     variable cookiejar_domainlist \
-	http://mxr.mozilla.org/mozilla-central/source/netwerk/dns/effective_tld_names.dat?raw=1
+	http://publicsuffix.org/list/effective_tld_names.dat
     variable cookiejar_domainfile \
 	[file join [file dirname [info script]] effective_tld_names.txt.gz]
     # The list is directed to from http://publicsuffix.org/list/
@@ -142,7 +142,7 @@ package provide cookiejar $::http::cookiejar_version
 	return $loglevel
     }
 
-    variable aid deletions
+    variable purgeTimer deletions
     constructor {{path ""}} {
 	namespace import ::http::cookiejar_support::*
 	namespace upvar ::http cookiejar_purgeinterval purgeinterval
@@ -194,6 +194,7 @@ package provide cookiejar $::http::cookiejar_version
 	    CREATE INDEX sessionLookup ON sessionCookies (domain, path);
 
 	    --;# View to allow for simple looking up of a cookie.
+	    --;# Deletion policy: NOT SUPPORTED via this view.
 	    CREATE TEMP VIEW cookies AS
 		SELECT id, domain, path, key, value, originonly, secure,
 		    1 AS persistent
@@ -225,7 +226,7 @@ package provide cookiejar $::http::cookiejar_version
 	}
 	log info "%s with %s entries" $storeorigin $cookieCount
 
-	set aid [after $purgeinterval [namespace current]::my PurgeCookies]
+	my PostponePurge
 
 	# TODO: domain list refresh policy
 	if {$path ne "" && ![db exists {
@@ -233,6 +234,12 @@ package provide cookiejar $::http::cookiejar_version
 	}]} then {
 	    my InitDomainList
 	}
+    }
+
+    method PostponePurge {} {
+	namespace upvar ::http cookiejar_purgeinterval interval
+	catch {after cancel $purgeTimer}
+	set purgeTimer [after $interval [namespace code {my PurgeCookies}]]
     }
 
     method GetDomainListOnline {} {
@@ -345,7 +352,7 @@ package provide cookiejar $::http::cookiejar_version
 	    }
 	}
 	set n [expr {[db total_changes] - $n}]
-	log debug "processed %d inserts generated from domain list" $n
+	log info "constructed domain info with %d entries" $n
     }
 
     # This forces the rebuild of the domain data, loading it from 
@@ -361,7 +368,7 @@ package provide cookiejar $::http::cookiejar_version
 
     destructor {
 	catch {
-	    after cancel $aid
+	    after cancel $purgeTimer
 	}
 	catch {
 	    db close
@@ -525,8 +532,7 @@ package provide cookiejar $::http::cookiejar_version
 	namespace upvar ::http \
 	    cookiejar_vacuumtrigger trigger \
 	    cookiejar_purgeinterval interval
-	catch {after cancel $aid}
-	set aid [after $interval [namespace current]::my PurgeCookies]
+	my PostponePurge
 	set now [clock seconds]
 	log debug "purging cookies that expired before %s" [clock format $now]
 	db transaction {
@@ -534,9 +540,9 @@ package provide cookiejar $::http::cookiejar_version
 		DELETE FROM persistentCookies WHERE expiry < $now
 	    }
 	    incr deletions [db changes]
+	    ### TODO: Cap the total number of cookies and session cookies,
+	    ### purging least frequently used
 	}
-	### TODO: Cap the total number of cookies and session cookies,
-	### purging least frequently used
 
 	# Once we've deleted a fair bit, vacuum the database. Must be done
 	# outside a transaction.

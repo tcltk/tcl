@@ -92,36 +92,64 @@ test http-cookiejar-3.7 {cookie storage: class} -setup {
 } -returnCodes error -cleanup {
     catch {rename ::cookiejar ""}
 } -result {wrong # args: should be "http::cookiejar create ::cookiejar ?path?"}
-test http-cookiejar-3.8 {cookie storage: class} cookiejar {
+test http-cookiejar-3.8 {cookie storage: class} -setup {
+    catch {rename ::cookiejar ""}
+    set f [makeFile "" cookiejar]
+    file delete $f
+} -constraints cookiejar -body {
+    http::cookiejar create ::cookiejar $f
+} -cleanup {
+    catch {rename ::cookiejar ""}
+    removeFile $f
+} -result ::cookiejar
+test http-cookiejar-3.9 {cookie storage: class} -setup {
+    catch {rename ::cookiejar ""}
+    set f [makeFile "bogus content for a database" cookiejar]
+} -constraints cookiejar -body {
+    http::cookiejar create ::cookiejar $f
+} -returnCodes error -cleanup {
+    catch {rename ::cookiejar ""}
+    removeFile $f
+} -result {file is encrypted or is not a database}
+test http-cookiejar-3.10 {cookie storage: class} -setup {
+    catch {rename ::cookiejar ""}
+    set dir [makeDirectory cookiejar]
+} -constraints cookiejar -body {
+    http::cookiejar create ::cookiejar $dir
+} -returnCodes error -cleanup {
+    catch {rename ::cookiejar ""}
+    removeDirectory $dir
+} -result {unable to open database file}
+test http-cookiejar-3.11 {cookie storage: class} cookiejar {
     http::cookiejar configure
 } {-domainfile -domainlist -offline -purgeinterval -vacuumtrigger}
-test http-cookiejar-3.9 {cookie storage: class} -constraints cookiejar -body {
+test http-cookiejar-3.12 {cookie storage: class} -constraints cookiejar -body {
     http::cookiejar configure a b c d e
 } -returnCodes error -result {wrong # args: should be "http::cookiejar configure ?optionName? ?optionValue?"}
-test http-cookiejar-3.10 {cookie storage: class} -constraints cookiejar -body {
+test http-cookiejar-3.13 {cookie storage: class} -constraints cookiejar -body {
     http::cookiejar configure a
 } -returnCodes error -result {bad option "a": must be -domainfile, -domainlist, -offline, -purgeinterval, or -vacuumtrigger}
-test http-cookiejar-3.11 {cookie storage: class} -constraints cookiejar -body {
+test http-cookiejar-3.14 {cookie storage: class} -constraints cookiejar -body {
     http::cookiejar configure -d
 } -returnCodes error -result {ambiguous option "-d": must be -domainfile, -domainlist, -offline, -purgeinterval, or -vacuumtrigger}
-test http-cookiejar-3.12 {cookie storage: class} -constraints cookiejar -body {
+test http-cookiejar-3.15 {cookie storage: class} -constraints cookiejar -body {
     http::cookiejar configure -off
 } -match glob -result *
-test http-cookiejar-3.13 {cookie storage: class} -setup {
+test http-cookiejar-3.16 {cookie storage: class} -setup {
     set oldval [http::cookiejar configure -offline]
 } -constraints cookiejar -body {
     http::cookiejar configure -offline true
 } -cleanup {
     catch {http::cookiejar configure -offline $oldval}
 } -result 1
-test http-cookiejar-3.14 {cookie storage: class} -setup {
+test http-cookiejar-3.17 {cookie storage: class} -setup {
     set oldval [http::cookiejar configure -offline]
 } -constraints cookiejar -body {
     http::cookiejar configure -offline nonbool
 } -cleanup {
     catch {http::cookiejar configure -offline $oldval}
 } -returnCodes error -result {expected boolean value but got "nonbool"}
-test http-cookiejar-3.15 {cookie storage: class} -setup {
+test http-cookiejar-3.18 {cookie storage: class} -setup {
     set oldval [http::cookiejar configure -purgeinterval]
 } -constraints cookiejar -body {
     http::cookiejar configure -purge nonint
@@ -495,6 +523,24 @@ test http-cookiejar-4.23 {cookie storage: instance} -setup {
     cookiejar forceLoadDomainData
 } -cleanup {
     ::cookiejar destroy
+} -result {}
+test http-cookiejar-4.23.a {cookie storage: instance} -setup {
+    set off [http::cookiejar configure -offline]
+} -constraints cookiejar -body {
+    http::cookiejar configure -offline 1
+    [http::cookiejar create ::cookiejar] destroy
+} -cleanup {
+    catch {::cookiejar destroy}
+    http::cookiejar configure -offline $off
+} -result {}
+test http-cookiejar-4.23.b {cookie storage: instance} -setup {
+    set off [http::cookiejar configure -offline]
+} -constraints cookiejar -body {
+    http::cookiejar configure -offline 0
+    [http::cookiejar create ::cookiejar] destroy
+} -cleanup {
+    catch {::cookiejar destroy}
+    http::cookiejar configure -offline $off
 } -result {}
 
 test http-cookiejar-5.1 {cookie storage: constraints} -setup {
