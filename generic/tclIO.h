@@ -252,9 +252,6 @@ typedef struct ChannelState {
 #define INPUT_SAW_CR		(1<<12)	/* Channel is in CRLF eol input
 					 * translation mode and the last byte
 					 * seen was a "\r". */
-#define INPUT_NEED_NL		(1<<15)	/* Saw a '\r' at end of last buffer,
-					 * and there should be a '\n' at
-					 * beginning of next buffer. */
 #define CHANNEL_DEAD		(1<<13)	/* The channel has been closed by the
 					 * exit handler (on exit) but not
 					 * deallocated. When any IO operation

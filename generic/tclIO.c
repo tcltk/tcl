@@ -5252,33 +5252,25 @@ ReadChars(
 				 * UTF-8. On output, contains another guess
 				 * based on the data seen so far. */
 {
-    int toRead, factor, srcLen, dstNeeded, numBytes;
-    int srcRead, dstWrote, numChars, dstRead;
-    ChannelBuffer *bufPtr;
-    char *src, *dst;
-    Tcl_EncodingState oldState;
-    int encEndFlagSuppressed = 0;
     Tcl_Encoding encoding = statePtr->encoding? statePtr->encoding
 	    : GetBinaryEncoding();
-
-    factor = *factorPtr;
-
-    bufPtr = statePtr->inQueueHead;
-    src = RemovePoint(bufPtr);
-    srcLen = BytesLeft(bufPtr);
-
-    toRead = charsToRead;
-    if ((unsigned)toRead > (unsigned)srcLen) {
-	toRead = srcLen;
-    }
+    Tcl_EncodingState savedState = statePtr->inputEncodingState;
+    ChannelBuffer *bufPtr = statePtr->inQueueHead;
+    int savedIEFlags = statePtr->inputEncodingFlags;
+    int savedFlags = statePtr->flags;
+    char *dst, *src = RemovePoint(bufPtr);
+    int dstLimit, numBytes, srcLen = BytesLeft(bufPtr);
+    int toRead = ((unsigned) charsToRead > srcLen) ? srcLen : charsToRead;
 
     /*
      * 'factor' is how much we guess that the bytes in the source buffer will
      * expand when converted to UTF-8 chars. This guess comes from analyzing
      * how many characters were produced by the previous pass.
      */
+    
+    int factor = *factorPtr;
+    int dstNeeded = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
-    dstNeeded = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
     (void) TclGetStringFromObj(objPtr, &numBytes);
     Tcl_AppendToObj(objPtr, NULL, dstNeeded);
     if (toRead == srcLen) {
@@ -5288,8 +5280,6 @@ ReadChars(
     } else {
 	dst = TclGetString(objPtr) + numBytes;
     }
-
-#if 1
 
     /*
      * This routine is burdened with satisfying several constraints.
@@ -5307,13 +5297,9 @@ ReadChars(
      * a consistent set of results.  This takes the shape of a loop.
      */
 
-    int dstLimit = dstNeeded + 1;
-    int savedFlags = statePtr->flags;
-    int savedIEFlags = statePtr->inputEncodingFlags;
-    Tcl_EncodingState savedState = statePtr->inputEncodingState;
-
+    dstLimit = dstNeeded + 1;
     while (1) {
-	int dstDecoded;
+	int dstDecoded, dstRead, dstWrote, srcRead, numChars;
 
 	/*
 	 * Perform the encoding transformation.  Read no more than
@@ -5555,200 +5541,6 @@ ReadChars(
 	Tcl_SetObjLength(objPtr, numBytes + dstWrote);
 	return numChars;
     }
-
-#else
-    /*
-     * [Bug 1462248]: The cause of the crash reported in this bug is this:
-     *
-     * - ReadChars, called with a single buffer, with a incomplete
-     *	 multi-byte character at the end (only the first byte of it).
-     * - Encoding translation fails, asks for more data
-     * - Data is read, and eof is reached, TCL_ENCODING_END (TEE) is set.
-     * - ReadChar is called again, converts the first buffer, but due to TEE
-     *	 it does not check for incomplete multi-byte data, and the character
-     *	 just after the end of the first buffer is a valid completion of the
-     *	 multi-byte header in the actual buffer. The conversion reads more
-     *	 characters from the buffer then present. This causes nextRemoved to
-     *	 overshoot nextAdded and the next reads compute a negative srcLen,
-     *	 cause further translations to fail, causing copying of data into the
-     *	 next buffer using bad arguments, causing the mecpy for to eventually
-     *	 fail.
-     *
-     * In the end it is a memory access bug spiraling out of control if the
-     * conditions are _just so_. And ultimate cause is that TEE is given to a
-     * conversion where it should not. TEE signals that this is the last
-     * buffer. Except in our case it is not.
-     *
-     * My solution is to suppress TEE if the first buffer is not the last. We
-     * will eventually need it given that EOF has been reached, but not right
-     * now. This is what the new flag "endEncSuppressFlag" is for.
-     *
-     * The bug in 'Tcl_Utf2UtfProc' where it read from memory behind the
-     * actual buffer has been fixed as well, and fixes the problem with the
-     * crash too, but this would still allow the generic layer to
-     * accidentially break a multi-byte sequence if the conditions are just
-     * right, because again the ExternalToUtf would be successful where it
-     * should not.
-     */
-
-    if ((statePtr->inputEncodingFlags & TCL_ENCODING_END) &&
-	    (bufPtr->nextPtr != NULL)) {
-	/*
-	 * TEE is set for a buffer which is not the last. Squash it for now,
-	 * and restore it later, before yielding control to our caller.
-	 */
-
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
-	encEndFlagSuppressed = 1;
-    }
-
-    oldState = statePtr->inputEncodingState;
-    if (statePtr->flags & INPUT_NEED_NL) {
-	/*
-	 * We want a '\n' because the last character we saw was '\r'.
-	 */
-
-	ResetFlag(statePtr, INPUT_NEED_NL);
-	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
-		dst, TCL_UTF_MAX + 1, &srcRead, &dstWrote, &numChars);
-	if ((dstWrote > 0) && (*dst == '\n')) {
-	    /*
-	     * The next char was a '\n'. Consume it and produce a '\n'.
-	     */
-
-	    bufPtr->nextRemoved += srcRead;
-	} else {
-	    /*
-	     * The next char was not a '\n'. Produce a '\r'.
-	     */
-
-	    *dst = '\r';
-	}
-	statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
-	Tcl_SetObjLength(objPtr, numBytes + 1);
-
-	if (encEndFlagSuppressed) {
-	    statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-	}
-	return 1;
-    }
-
-    Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState, dst,
-	    dstNeeded + 1, &srcRead, &dstWrote, &numChars);
-
-    if (encEndFlagSuppressed) {
-	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-    }
-
-    if (srcRead == 0) {
-	/*
-	 * Not enough bytes in src buffer to make a complete char. Copy the
-	 * bytes to the next buffer to make a new contiguous string, then tell
-	 * the caller to fill the buffer with more bytes.
-	 */
-
-	ChannelBuffer *nextPtr;
-
-	nextPtr = bufPtr->nextPtr;
-	if (nextPtr == NULL) {
-	    if (srcLen > 0) {
-		/*
-		 * There isn't enough data in the buffers to complete the next
-		 * character, so we need to wait for more data before the next
-		 * file event can be delivered. [Bug 478856]
-		 *
-		 * The exception to this is if the input buffer was completely
-		 * empty before we tried to convert its contents. Nothing in,
-		 * nothing out, and no incomplete character data. The
-		 * conversion before the current one was complete.
-		 */
-
-		SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
-	    }
-	    Tcl_SetObjLength(objPtr, numBytes);
-	    return -1;
-	}
-
-	/*
-	 * Space is made at the beginning of the buffer to copy the previous
-	 * unused bytes there. Check first if the buffer we are using actually
-	 * has enough space at its beginning for the data we are copying.
-	 * Because if not we will write over the buffer management
-	 * information, especially the 'nextPtr'.
-	 *
-	 * Note that the BUFFER_PADDING (See AllocChannelBuffer) is used to
-	 * prevent exactly this situation. I.e. it should never happen.
-	 * Therefore it is ok to panic should it happen despite the
-	 * precautions.
-	 */
-
-	if (nextPtr->nextRemoved - srcLen < 0) {
-	    Tcl_Panic("Buffer Underflow, BUFFER_PADDING not enough");
-	}
-
-	nextPtr->nextRemoved -= srcLen;
-	memcpy(RemovePoint(nextPtr), src, (size_t) srcLen);
-	RecycleBuffer(statePtr, bufPtr, 0);
-	statePtr->inQueueHead = nextPtr;
-	Tcl_SetObjLength(objPtr, numBytes);
-	return ReadChars(statePtr, objPtr, charsToRead, factorPtr);
-    }
-
-    dstRead = dstWrote;
-    if (TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead) != 0) {
-	/*
-	 * Hit EOF char. How many bytes of src correspond to where the EOF was
-	 * located in dst? Run the conversion again with an output buffer just
-	 * big enough to hold the data so we can get the correct value for
-	 * srcRead.
-	 */
-
-	if (dstWrote == 0) {
-	    Tcl_SetObjLength(objPtr, numBytes);
-	    return -1;
-	}
-	statePtr->inputEncodingState = oldState;
-	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
-		dst, dstRead + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
-	TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead);
-    }
-
-    /*
-     * The number of characters that we got may be less than the number that
-     * we started with because "\r\n" sequences may have been turned into just
-     * '\n' in dst.
-     */
-
-    numChars -= (dstRead - dstWrote);
-
-    if ((unsigned) numChars > (unsigned) toRead) {
-	/*
-	 * Got too many chars.
-	 */
-
-	const char *eof;
-
-	eof = Tcl_UtfAtIndex(dst, toRead);
-	statePtr->inputEncodingState = oldState;
-	Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
-		dst, eof - dst + TCL_UTF_MAX, &srcRead, &dstWrote, &numChars);
-	dstRead = dstWrote;
-	TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead);
-	numChars -= (dstRead - dstWrote);
-    }
-    statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
-
-    bufPtr->nextRemoved += srcRead;
-    if (dstWrote > srcRead + 1) {
-	*factorPtr = dstWrote * UTF_EXPANSION_FACTOR / srcRead;
-    }
-    Tcl_SetObjLength(objPtr, numBytes + dstWrote);
-    return numChars;
-#endif
 }
 
 /*
@@ -9060,7 +8852,6 @@ CopyAndTranslateBuffer(
     bufPtr = statePtr->inQueueHead;
     bytesInBuffer = BytesLeft(bufPtr);
 
-#if 1
     copied = space;
     if (bytesInBuffer <= copied) {
 	copied = bytesInBuffer;
@@ -9142,188 +8933,6 @@ CopyAndTranslateBuffer(
      */
 
     return copied;
-#else
-    copied = 0;
-    switch (statePtr->inputTranslation) {
-    case TCL_TRANSLATE_LF:
-	if (bytesInBuffer == 0) {
-	    return 0;
-	}
-
-	/*
-	 * Copy the current chunk into the result buffer.
-	 */
-
-	if (bytesInBuffer < space) {
-	    space = bytesInBuffer;
-	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
-	bufPtr->nextRemoved += space;
-	copied = space;
-	break;
-    case TCL_TRANSLATE_CR: {
-	char *end;
-
-	if (bytesInBuffer == 0) {
-	    return 0;
-	}
-
-	/*
-	 * Copy the current chunk into the result buffer, then replace all \r
-	 * with \n.
-	 */
-
-	if (bytesInBuffer < space) {
-	    space = bytesInBuffer;
-	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
-	bufPtr->nextRemoved += space;
-	copied = space;
-
-	for (end = result + copied; result < end; result++) {
-	    if (*result == '\r') {
-		*result = '\n';
-	    }
-	}
-	break;
-    }
-    case TCL_TRANSLATE_CRLF: {
-	char *src, *end, *dst;
-	int curByte;
-
-	/*
-	 * If there is a held-back "\r" at EOF, produce it now.
-	 */
-
-	if (bytesInBuffer == 0) {
-	    if ((statePtr->flags & (INPUT_SAW_CR | CHANNEL_EOF)) ==
-		    (INPUT_SAW_CR | CHANNEL_EOF)) {
-		result[0] = '\r';
-		ResetFlag(statePtr, INPUT_SAW_CR);
-		return 1;
-	    }
-	    return 0;
-	}
-
-	/*
-	 * Copy the current chunk and replace "\r\n" with "\n" (but not
-	 * standalone "\r"!).
-	 */
-
-	if (bytesInBuffer < space) {
-	    space = bytesInBuffer;
-	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
-	bufPtr->nextRemoved += space;
-	copied = space;
-
-	end = result + copied;
-	dst = result;
-	for (src = result; src < end; src++) {
-	    curByte = *src;
-	    if (curByte == '\n') {
-		ResetFlag(statePtr, INPUT_SAW_CR);
-	    } else if (statePtr->flags & INPUT_SAW_CR) {
-		ResetFlag(statePtr, INPUT_SAW_CR);
-		*dst = '\r';
-		dst++;
-	    }
-	    if (curByte == '\r') {
-		SetFlag(statePtr, INPUT_SAW_CR);
-	    } else {
-		*dst = (char) curByte;
-		dst++;
-	    }
-	}
-	copied = dst - result;
-	break;
-    }
-    case TCL_TRANSLATE_AUTO: {
-	char *src, *end, *dst;
-	int curByte;
-
-	if (bytesInBuffer == 0) {
-	    return 0;
-	}
-
-	/*
-	 * Loop over the current buffer, converting "\r" and "\r\n" to "\n".
-	 */
-
-	if (bytesInBuffer < space) {
-	    space = bytesInBuffer;
-	}
-	memcpy(result, RemovePoint(bufPtr), (size_t) space);
-	bufPtr->nextRemoved += space;
-	copied = space;
-
-	end = result + copied;
-	dst = result;
-	for (src = result; src < end; src++) {
-	    curByte = *src;
-	    if (curByte == '\r') {
-		SetFlag(statePtr, INPUT_SAW_CR);
-		*dst = '\n';
-		dst++;
-	    } else {
-		if ((curByte != '\n') || !(statePtr->flags & INPUT_SAW_CR)) {
-		    *dst = (char) curByte;
-		    dst++;
-		}
-		ResetFlag(statePtr, INPUT_SAW_CR);
-	    }
-	}
-	copied = dst - result;
-	break;
-    }
-    default:
-	Tcl_Panic("unknown eol translation mode");
-    }
-
-    /*
-     * If an in-stream EOF character is set for this channel, check that the
-     * input we copied so far does not contain the EOF char. If it does, copy
-     * only up to and excluding that character.
-     */
-
-    if (statePtr->inEofChar != 0) {
-	int i;
-
-	for (i = 0; i < copied; i++) {
-	    if (result[i] == (char) statePtr->inEofChar) {
-		/*
-		 * Set sticky EOF so that no further input is presented to the
-		 * caller.
-		 */
-
-		SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
-		statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-		copied = i;
-		break;
-	    }
-	}
-    }
-
-    /*
-     * If the current buffer is empty recycle it.
-     */
-
-    if (IsBufferEmpty(bufPtr)) {
-	statePtr->inQueueHead = bufPtr->nextPtr;
-	if (statePtr->inQueueHead == NULL) {
-	    statePtr->inQueueTail = NULL;
-	}
-	RecycleBuffer(statePtr, bufPtr, 0);
-    }
-
-    /*
-     * Return the number of characters copied into the result buffer. This may
-     * be different from the number of bytes consumed, because of EOL
-     * translations.
-     */
-
-    return copied;
-#endif
 }
 
 /*
