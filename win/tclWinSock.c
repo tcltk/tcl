@@ -49,7 +49,8 @@
 
 #define DEBUGGING
 #ifdef DEBUGGING
-#define DEBUG(x) fprintf(stderr, ">>> %s(%d): %s<<<\n", __FUNCTION__, __LINE__, x)
+#define DEBUG(x) fprintf(stderr, ">>> %p %s(%d): %s<<<\n", \
+			    infoPtr, __FUNCTION__, __LINE__, x)
 #else
 #define DEBUG(x)
 #endif
@@ -669,7 +670,6 @@ SocketCheckProc(
     SocketEvent *evPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    DEBUG("A");
     if (!(flags & TCL_FILE_EVENTS)) {
 	return;
     }
@@ -683,10 +683,12 @@ SocketCheckProc(
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
+    DEBUG("A");
 	if ((infoPtr->readyEvents &
 		(infoPtr->watchEvents | FD_CONNECT | FD_ACCEPT))
 	    && !(infoPtr->flags & SOCKET_PENDING)
 	) {
+    DEBUG("B");
 	    infoPtr->flags |= SOCKET_PENDING;
 	    evPtr = ckalloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
@@ -1356,6 +1358,7 @@ WaitForSocketEvent(
     /*
      * Be sure to disable event servicing so we are truly modal.
      */
+    DEBUG("=============");
 
     oldMode = Tcl_SetServiceMode(TCL_SERVICE_NONE);
 
@@ -2586,12 +2589,10 @@ SocketProc(
 
     switch (message) {
     default:
-	    DEBUG("default");
 	return DefWindowProc(hwnd, message, wParam, lParam);
 	break;
 
     case WM_CREATE:
-	    DEBUG("CREATE");
 	/*
 	 * Store the initial tsdPtr, it's from a different thread, so it's not
 	 * directly accessible, but needed.
@@ -2607,12 +2608,10 @@ SocketProc(
 	break;
 
     case WM_DESTROY:
-	    DEBUG("DESTROY");
 	PostQuitMessage(0);
 	break;
 
     case SOCKET_MESSAGE:
-	    DEBUG("SOCKET_MESSAGE");
 	event = WSAGETSELECTEVENT(lParam);
 	error = WSAGETSELECTERROR(lParam);
 	socket = (SOCKET) wParam;
@@ -2668,7 +2667,6 @@ SocketProc(
 			 * Remember any error that occurred so we can report
 			 * connection failures.
 			 */
-
 			if (error != ERROR_SUCCESS) {
 			    TclWinConvertError((DWORD) error);
 			    infoPtr->lastError = Tcl_GetErrno();
