@@ -1176,6 +1176,7 @@ CreateClientSocket(
     int async = infoPtr->flags & SOCKET_ASYNC_CONNECT;
     int async_callback = infoPtr->sockets->fd != INVALID_SOCKET;
     ThreadSpecificData *tsdPtr;
+    DWORD error;
     
     DEBUG(async ? "async" : "sync");
 
@@ -1258,7 +1259,7 @@ CreateClientSocket(
 	     */
 	    if (async) {
 		ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-		infoPtr->selectEvents |= FD_CONNECT;
+		infoPtr->selectEvents |= FD_CONNECT | FD_READ | FD_WRITE;
 
 		ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
 		SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
@@ -1268,26 +1269,22 @@ CreateClientSocket(
 	    /*
 	     * Attempt to connect to the remote socket.
 	     */
-
-	    if (connect(infoPtr->sockets->fd, infoPtr->addr->ai_addr,
-			    infoPtr->addr->ai_addrlen) == SOCKET_ERROR) {
-		DWORD error = (DWORD) WSAGetLastError();
-		TclWinConvertError(error);
-		DEBUG("connect()");
+	    
+	    DEBUG("connect()");
+	    connect(infoPtr->sockets->fd, infoPtr->addr->ai_addr,
+		    infoPtr->addr->ai_addrlen);
+	    error = WSAGetLastError();
+	    TclWinConvertError(error);
 #ifdef DEBUGGING
-		// fprintf(stderr,"error = %lu\n", error);
+	    // fprintf(stderr,"error = %lu\n", error);
 #endif
-		if (error == WSAEWOULDBLOCK) {
-		    DEBUG("WSAEWOULDBLOCK");
-		    return TCL_OK;
-		reenter:
-		    Tcl_SetErrno(infoPtr->lastError);
-		    DEBUG("reenter");
-		    infoPtr->selectEvents &= ~(FD_CONNECT);
-		}
-	    } else {
-		DWORD error = (DWORD) WSAGetLastError();
-		TclWinConvertError(error);
+	    if (error == WSAEWOULDBLOCK) {
+		DEBUG("WSAEWOULDBLOCK");
+		return TCL_OK;
+	    reenter:
+		Tcl_SetErrno(infoPtr->lastError);
+		DEBUG("reenter");
+		infoPtr->selectEvents &= ~(FD_CONNECT);
 	    }
 #ifdef DEBUGGING
 	    fprintf(stderr, "lastError: %d\n", Tcl_GetErrno());
@@ -1311,7 +1308,7 @@ out:
     /*
      * Set up the select mask for read/write events.
      */
-    
+    DEBUG("selectEvents = FD_READ | FD_WRITE | FD_CLOSE");    
     infoPtr->selectEvents = FD_READ | FD_WRITE | FD_CLOSE;
     
     /*
