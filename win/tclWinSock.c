@@ -1214,6 +1214,11 @@ CreateClientSocket(
 		DEBUG("closesocket");
 		closesocket(infoPtr->sockets->fd);
 	    }
+
+	    /*
+	     * Reset last error from last try
+	     */
+	    infoPtr->lastError = 0;
 	    
 	    infoPtr->sockets->fd = socket(infoPtr->myaddr->ai_family, SOCK_STREAM, 0);
 	    if (infoPtr->sockets->fd == INVALID_SOCKET) {
@@ -1249,11 +1254,13 @@ CreateClientSocket(
 	     * Set the socket into nonblocking mode if the connect should
 	     * be done in the background.
 	     */
-	    if (async && ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag)
-		== SOCKET_ERROR) {
-		DEBUG("FIONBIO");
-		TclWinConvertError((DWORD) WSAGetLastError());
-		continue;
+	    if (async) {
+		ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+		infoPtr->selectEvents |= FD_CONNECT;
+
+		ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
+		SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+			    (LPARAM) infoPtr);
 	    }
 
 	    /*
@@ -1269,13 +1276,7 @@ CreateClientSocket(
 		// fprintf(stderr,"error = %lu\n", error);
 #endif
 		if (error == WSAEWOULDBLOCK) {
-		    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 		    DEBUG("WSAEWOULDBLOCK");
-		    infoPtr->selectEvents |= FD_CONNECT;
-
-		    ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
-		    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-				(LPARAM) infoPtr);
 		    return TCL_OK;
 		reenter:
 		    Tcl_SetErrno(infoPtr->lastError);
