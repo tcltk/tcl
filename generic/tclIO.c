@@ -5914,7 +5914,7 @@ TranslateInputEOL(
 
 	SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-	ResetFlag(statePtr, INPUT_SAW_CR | INPUT_NEED_NL);
+	ResetFlag(statePtr, INPUT_SAW_CR);
 	return 1;
     }
 
@@ -9046,7 +9046,6 @@ CopyAndTranslateBuffer(
 				 * in the current input buffer? */
     int copied;			/* How many characters were already copied
 				 * into the destination space? */
-    int toCopy;
 
     /*
      * If there is no input at all, return zero. The invariant is that either
@@ -9061,51 +9060,90 @@ CopyAndTranslateBuffer(
     bufPtr = statePtr->inQueueHead;
     bytesInBuffer = BytesLeft(bufPtr);
 
-    copied = 0;
-#if 0
-    if (statePtr->flags & INPUT_NEED_NL) {
-
-	/*
-	 * An earlier call to TranslateInputEOL ended in the read of a \r .
-	 * Only the next read from the same channel can complete the
-	 * translation sequence to tell us what character we should read.
-	 */
-
-	if (bytesInBuffer) {
-	    /* There's a next byte.  It will settle things. */
-	    ResetFlag(statePtr, INPUT_NEED_NL);
-
-	    if (RemovePoint(bufPtr)[0] == '\n') {
-		bufPtr->nextRemoved++;
-		bytesInBuffer--;
-		*result++ = '\n';
-	    } else {
-		*result++ = '\r';
-	    }
-	    copied++;
-	    space--;
-	} else if (statePtr->flags & CHANNEL_EOF) {
-	    /* There is no next byte, and there never will be (EOF). */
-	    ResetFlag(statePtr, INPUT_NEED_NL);
-	    *result = '\r';
-	    return 1;
-	} else {
-	    /* There is no next byte.  Ask the caller to read more. */
-	    return 0;
-	}
+#if 1
+    copied = space;
+    if (bytesInBuffer <= copied) {
+	copied = bytesInBuffer;
     }
-    toCopy = space;
-    if (bytesInBuffer <= toCopy) {
-	toCopy = bytesInBuffer;
-    }
-    if (toCopy == 0) {
+    if (copied == 0) {
 	return copied;
     }
     TranslateInputEOL(statePtr, result, RemovePoint(bufPtr),
-	    &toCopy, &bytesInBuffer);
+	    &copied, &bytesInBuffer);
     bufPtr->nextRemoved += bytesInBuffer;
-    copied += toCopy;
+
+    /*
+     * If the current buffer is empty recycle it.
+     */
+
+    if (IsBufferEmpty(bufPtr)) {
+	statePtr->inQueueHead = bufPtr->nextPtr;
+	if (statePtr->inQueueHead == NULL) {
+	    statePtr->inQueueTail = NULL;
+	}
+	RecycleBuffer(statePtr, bufPtr, 0);
+    } else {
+
+	if (copied > 0) {
+	    return copied;
+	}
+
+	if (statePtr->inEofChar
+		&& RemovePoint(bufPtr)[0] == statePtr->inEofChar) {
+	    return 0;
+	}
+
+	if (BytesLeft(bufPtr) == 1) {
+
+	    ChannelBuffer *nextPtr = bufPtr->nextPtr;
+
+	    if (nextPtr == NULL) {
+
+		if (statePtr->flags & CHANNEL_EOF) {
+		    *result = '\r';
+		    bufPtr->nextRemoved += 1;
+		    return 1;
+		}
+
+		SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
+		return 0;
+	    }
+
+	    nextPtr->nextRemoved -= 1;
+	    memcpy(RemovePoint(nextPtr), RemovePoint(bufPtr), 1);
+	    RecycleBuffer(statePtr, bufPtr, 0);
+	    statePtr->inQueueHead = nextPtr;
+	    return 0;
+	}
+
+	if (statePtr->inEofChar
+		&& RemovePoint(bufPtr)[1] == statePtr->inEofChar) {
+	    *result = '\r';
+	    bufPtr->nextRemoved += 1;
+	    return 1;
+	}
+	/*
+	 * Buffer is not empty.  How can that be?
+	 * 0) We stopped early due to the value of "space".
+	 * 	=> copied > 0 and all is fine.
+	 * 1) We saw eof char and stopped the translation copy.
+	 *	=> if (copied > 0) or ((copied == 0) and @ eof char),
+	 *		return is fine.
+	 * 2) The buffer holds a \r while in CRLF translation, followed
+	 *    by either the end of the buffer, or the eof char.
+	 */
+
+    }
+
+    /*
+     * Return the number of characters copied into the result buffer. This may
+     * be different from the number of bytes consumed, because of EOL
+     * translations.
+     */
+
+    return copied;
 #else
+    copied = 0;
     switch (statePtr->inputTranslation) {
     case TCL_TRANSLATE_LF:
 	if (bytesInBuffer == 0) {
@@ -9265,7 +9303,6 @@ CopyAndTranslateBuffer(
 	    }
 	}
     }
-#endif
 
     /*
      * If the current buffer is empty recycle it.
@@ -9286,6 +9323,7 @@ CopyAndTranslateBuffer(
      */
 
     return copied;
+#endif
 }
 
 /*
@@ -10726,7 +10764,6 @@ DumpFlags(
     ChanFlag('S', CHANNEL_STICKY_EOF);
     ChanFlag('B', CHANNEL_BLOCKED);
     ChanFlag('/', INPUT_SAW_CR);
-    ChanFlag('*', INPUT_NEED_NL);
     ChanFlag('D', CHANNEL_DEAD);
     ChanFlag('R', CHANNEL_RAW_MODE);
 #ifdef TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING
