@@ -1855,12 +1855,15 @@ test socket-14.6 {[socket -async] with no event loop and [fconfigure -error] bef
     -constraints [list socket supported_inet supported_inet6] \
     -setup {
         proc accept {s a p} {
+            global s
             puts $s bye
             close $s
+            set s ok
         }
         set server [socket -server accept -myaddr 127.0.0.1 0]
         set port [lindex [fconfigure $server -sockname] 2]
         set x ""
+        set s ""
     } \
     -body {
         set client [socket -async localhost $port]
@@ -1869,6 +1872,9 @@ test socket-14.6 {[socket -async] with no event loop and [fconfigure -error] bef
             lappend x [fconfigure $client -error]
             update
         }
+        # This test blocked, as gets waits for the accept which did
+        # not run due to missing vwait
+        vwait sok
         lappend x [gets $client]
     } \
     -cleanup {
