@@ -4464,7 +4464,7 @@ FilterInputBytes(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    char *raw, *rawStart, *dst;
+    char *raw, *dst;
     int offset, toRead, dstNeeded, spaceLeft, result, rawLen;
     Tcl_Obj *objPtr;
 #define ENCODING_LINESIZE 20	/* Lower bound on how many bytes to convert at
@@ -4521,8 +4521,7 @@ FilterInputBytes(
      * string rep if we need more space.
      */
 
-    rawStart = RemovePoint(bufPtr);
-    raw = rawStart;
+    raw = RemovePoint(bufPtr);
     rawLen = BytesLeft(bufPtr);
 
     dst = *gsPtr->dstPtr;
