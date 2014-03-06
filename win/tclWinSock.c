@@ -47,7 +47,7 @@
 
 #include "tclWinInt.h"
 
-//#define DEBUGGING
+#define DEBUGGING
 #ifdef DEBUGGING
 #define DEBUG(x) fprintf(stderr, ">>> %p %s(%d): %s<<<\n", \
 			    infoPtr, __FUNCTION__, __LINE__, x)
@@ -768,12 +768,14 @@ SocketEventProc(
     infoPtr->flags &= ~SOCKET_PENDING;
 
     /* Continue async connect if pending and ready */
-    if ( (infoPtr->flags & SOCKET_REENTER_PENDING)
-	    && (infoPtr->readyEvents & FD_CONNECT) ) {
+    if ( infoPtr->readyEvents & FD_CONNECT ) {
+	infoPtr->readyEvents &= ~(FD_CONNECT);
 	DEBUG("FD_CONNECT");
-	SetEvent(tsdPtr->socketListLock);
-	CreateClientSocket(NULL, infoPtr);
-	return 1;
+        if ( infoPtr->flags & SOCKET_REENTER_PENDING ) {
+	    SetEvent(tsdPtr->socketListLock);
+	    CreateClientSocket(NULL, infoPtr);
+	    return 1;
+	}
     }
 
     /*
@@ -1192,8 +1194,6 @@ CreateClientSocket(
 
     if (async_callback) {
 	DEBUG("subsequent call");
-	/* Clear this pending reenter case */
-	infoPtr->flags &= ~(SOCKET_REENTER_PENDING);
         goto reenter;
     } else {
 	DEBUG("first call");
@@ -1242,6 +1242,9 @@ CreateClientSocket(
 		continue;
 	    }
 	    
+#ifdef DEBUGGING
+	    fprintf(stderr, "Client socket %d created\n", infoPtr->sockets->fd);
+#endif
 	    /*
 	     * Win-NT has a misfeature that sockets are inherited in child
 	     * processes by default. Turn off the inherit bit.
@@ -1287,12 +1290,11 @@ CreateClientSocket(
 		    infoPtr->addr->ai_addrlen);
 	    error = WSAGetLastError();
 	    TclWinConvertError(error);
-#ifdef DEBUGGING
-	    // fprintf(stderr,"error = %lu\n", error);
-#endif
-	    if (error == WSAEWOULDBLOCK) {
+	    if (async_connect && error == WSAEWOULDBLOCK) {
 		DEBUG("WSAEWOULDBLOCK");
-		/* Jump out and remember that we want to get back in */
+		/*
+		 * Activate FD_CONNECT notification and reenter jump
+		 */
 		infoPtr->flags |= SOCKET_REENTER_PENDING;
 		return TCL_OK;
 	    reenter:
@@ -1300,6 +1302,11 @@ CreateClientSocket(
 		DEBUG("reenter");
 		infoPtr->selectEvents &= ~(FD_CONNECT);
 	    }
+	    /*
+	     * Clear the reenter flag also for the (hypothetic) case
+	     * that connect did succeed emidiately
+	     */
+	    infoPtr->flags &= ~(SOCKET_REENTER_PENDING);
 #ifdef DEBUGGING
 	    fprintf(stderr, "lastError: %d\n", Tcl_GetErrno());
 #endif
@@ -1311,10 +1318,10 @@ CreateClientSocket(
 
 out:
     DEBUG("connected or finally failed");
+    /* Clear async flag (not really necessary, not used any more) */
+    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
     if (Tcl_GetErrno() != 0 && interp != NULL) {
 	DEBUG("ERRNO");
-        /* Clear async flag so if a read is done it does not block */
-        infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 				"couldn't open socket: %s", Tcl_PosixError(interp)));
@@ -1373,9 +1380,9 @@ WaitForAsyncConnect(
      * returns directly an error
      */
     if (infoPtr->flags & SOCKET_ASYNC) {
-	    *errorCodePtr = EWOULDBLOCK;
-	    return 0;
-	}
+	*errorCodePtr = EWOULDBLOCK;
+	return 0;
+    }
 
     /*
      * Be sure to disable event servicing so we are truly modal.
@@ -1387,21 +1394,15 @@ WaitForAsyncConnect(
      * Disable async connect as we continue now synchoneously
      */
 
-    /* ToDo: need thread protection * */
+    /* ToDo: need thread protection? */
     infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-
-    /*
-     * Reset WSAAsyncSelect so we have a fresh set of events pending.
-     */
-
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
-	    (LPARAM) infoPtr);
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-	    (LPARAM) infoPtr);
 
     while (1) {
 	/* Check for connect event */
 	if (infoPtr->readyEvents & FD_CONNECT) {
+	    /* Consume the connect event */
+	    /* ToDo: eventual signaling ? */
+	    infoPtr->readyEvents &= ~(FD_CONNECT);
 	    /* continue async connect syncroneously */
 	    result = CreateClientSocket(NULL, infoPtr);
 	    (void) Tcl_SetServiceMode(oldMode);
@@ -2745,39 +2746,23 @@ SocketProc(
 
 		    if (event & FD_CONNECT) {
 			DEBUG("FD_CONNECT");
-
-			if (error == ERROR_SUCCESS) {
-			    /*
-			     * The socket is now connected, clear the async connect
-			     * flag.
-			     */
-			    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-			} else {
-			    /*
-			     * Remember any error that occurred so we can report
-			     * connection failures.
-			     */
-			    TclWinConvertError((DWORD) error);
-			    infoPtr->lastError = Tcl_GetErrno();
-			}
-		    }
-#if 0
-		    if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
-			DEBUG("SOCKET_ASYNC_CONNECT");
-			// infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+			/*
+			 * Remember any error that occurred so we can report
+			 * connection failures.
+			 */
 			if (error != ERROR_SUCCESS) {
 			    TclWinConvertError((DWORD) error);
 			    infoPtr->lastError = Tcl_GetErrno();
 			}
-			infoPtr->readyEvents |= FD_WRITE;
 		    }
-#endif
+		    /*
+		     * Inform main thread about signaled events
+		     */
 		    infoPtr->readyEvents |= event;
 
 		    /*
 		     * Wake up the Main Thread.
 		     */
-
 		    SetEvent(tsdPtr->readyEvent);
 		    Tcl_ThreadAlert(tsdPtr->threadId);
 		    break;
@@ -2788,10 +2773,12 @@ SocketProc(
 	break;
 
     case SOCKET_SELECT:
-	    DEBUG("SOCKET_SELECT");
+	DEBUG("SOCKET_SELECT");
 	infoPtr = (SocketInfo *) lParam;
 	for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
-	    infoPtr = (SocketInfo *) lParam;
+#ifdef DEBUGGING
+	    fprintf(stderr,"loop over fd = %d\n",fds->fd);
+#endif
 	    if (wParam == SELECT) {
 		DEBUG("SELECT");
 		if (infoPtr->selectEvents & FD_READ) DEBUG("  READ");
