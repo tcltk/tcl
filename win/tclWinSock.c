@@ -47,7 +47,7 @@
 
 #include "tclWinInt.h"
 
-#define DEBUGGING
+//#define DEBUGGING
 #ifdef DEBUGGING
 #define DEBUG(x) fprintf(stderr, ">>> %p %s(%d): %s<<<\n", \
 			    infoPtr, __FUNCTION__, __LINE__, x)
@@ -207,6 +207,9 @@ typedef struct {
 #define SOCKET_ASYNC_CONNECT	(1<<2)	/* This socket uses async connect. */
 #define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
 					 * socket */
+#define SOCKET_REENTER_PENDING	(1<<4)	/* The reentering after a received
+					 * FD_CONNECT to CreateClientSocket
+					 * is pending */
 
 typedef struct {
     HWND hwnd;			/* Handle to window for socket messages. */
@@ -236,6 +239,7 @@ static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 			    LPARAM lParam);
 static int		SocketsEnabled(void);
 static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
+static int		WaitForAsyncConnect(SocketInfo *infoPtr, int *errorCodePtr);
 static int		WaitForSocketEvent(SocketInfo *infoPtr, int events,
 			    int *errorCodePtr);
 static DWORD WINAPI	SocketThread(LPVOID arg);
@@ -763,11 +767,12 @@ SocketEventProc(
 
     infoPtr->flags &= ~SOCKET_PENDING;
 
-    if (infoPtr->readyEvents & FD_CONNECT) {
+    /* Continue async connect if pending and ready */
+    if ( (infoPtr->flags & SOCKET_REENTER_PENDING)
+	    && (infoPtr->readyEvents & FD_CONNECT) ) {
 	DEBUG("FD_CONNECT");
 	SetEvent(tsdPtr->socketListLock);
 	CreateClientSocket(NULL, infoPtr);
-	infoPtr->readyEvents &= ~(FD_CONNECT);
 	return 1;
     }
 
@@ -1173,15 +1178,22 @@ CreateClientSocket(
     SocketInfo *infoPtr)
 {
     u_long flag = 1;		/* Indicates nonblocking mode. */
-    int async = infoPtr->flags & SOCKET_ASYNC_CONNECT;
+    /*
+     * We are started with async connect and the connect notification
+     * was not jet received
+     */
+    int async_connect = infoPtr->flags & SOCKET_ASYNC_CONNECT;
+    /* We were called by the event procedure and continue our loop */
     int async_callback = infoPtr->sockets->fd != INVALID_SOCKET;
     ThreadSpecificData *tsdPtr;
     DWORD error;
     
-    DEBUG(async ? "async" : "sync");
+    DEBUG(async_connect ? "async connect" : "sync connect");
 
     if (async_callback) {
 	DEBUG("subsequent call");
+	/* Clear this pending reenter case */
+	infoPtr->flags &= ~(SOCKET_REENTER_PENDING);
         goto reenter;
     } else {
 	DEBUG("first call");
@@ -1257,7 +1269,7 @@ CreateClientSocket(
 	     * Set the socket into nonblocking mode if the connect should
 	     * be done in the background.
 	     */
-	    if (async) {
+	    if (async_connect) {
 		ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 		infoPtr->selectEvents |= FD_CONNECT;
 
@@ -1280,6 +1292,8 @@ CreateClientSocket(
 #endif
 	    if (error == WSAEWOULDBLOCK) {
 		DEBUG("WSAEWOULDBLOCK");
+		/* Jump out and remember that we want to get back in */
+		infoPtr->flags |= SOCKET_REENTER_PENDING;
 		return TCL_OK;
 	    reenter:
 		Tcl_SetErrno(infoPtr->lastError);
@@ -1299,6 +1313,8 @@ out:
     DEBUG("connected or finally failed");
     if (Tcl_GetErrno() != 0 && interp != NULL) {
 	DEBUG("ERRNO");
+        /* Clear async flag so if a read is done it does not block */
+        infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 				"couldn't open socket: %s", Tcl_PosixError(interp)));
@@ -1324,6 +1340,82 @@ out:
 	Tcl_NotifyChannel(infoPtr->channel, TCL_WRITABLE);
     }
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * WaitForAsyncConnect --
+ *
+ *	Terminate an asyncroneous connect syncroneously.
+ *	This routine should only be called if flag ASYNC_CONNECT is set.
+ *
+ * Results:
+ *	Returns 1 on success or 0 on failure, with an error code in
+ *	errorCodePtr.
+ *
+ * Side effects:
+ *	Processes socket events off the system queue.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+WaitForAsyncConnect(
+    SocketInfo *infoPtr,	/* Information about this socket. */
+    int *errorCodePtr)		/* Where to store errors? */
+{
+    int result = 1;
+    int oldMode;
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+    /*
+     * A non blocking socket waiting for an asyncronous connect
+     * returns directly an error
+     */
+    if (infoPtr->flags & SOCKET_ASYNC) {
+	    *errorCodePtr = EWOULDBLOCK;
+	    return 0;
+	}
+
+    /*
+     * Be sure to disable event servicing so we are truly modal.
+     */
+
+    oldMode = Tcl_SetServiceMode(TCL_SERVICE_NONE);
+
+    /*
+     * Disable async connect as we continue now synchoneously
+     */
+
+    /* ToDo: need thread protection * */
+    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+
+    /*
+     * Reset WSAAsyncSelect so we have a fresh set of events pending.
+     */
+
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
+	    (LPARAM) infoPtr);
+    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+	    (LPARAM) infoPtr);
+
+    while (1) {
+	/* Check for connect event */
+	if (infoPtr->readyEvents & FD_CONNECT) {
+	    /* continue async connect syncroneously */
+	    result = CreateClientSocket(NULL, infoPtr);
+	    (void) Tcl_SetServiceMode(oldMode);
+	    /* Todo: find adequate error code */
+	    *errorCodePtr = EFAULT;
+	    return (result == TCL_OK);
+	}
+
+	/*
+	 * Wait until something happens.
+	 */
+
+	WaitForSingleObject(tsdPtr->readyEvent, INFINITE);
+    }
 }
 
 /*
@@ -1865,11 +1957,11 @@ TcpInputProc(
     }
 
     /*
-     * Check to see if the socket is connected before trying to read.
+     * Check if there is an async connect to terminate
      */
 
-    if ((infoPtr->flags & SOCKET_ASYNC_CONNECT)
-	    && !WaitForSocketEvent(infoPtr, FD_CONNECT, errorCodePtr)) {
+    if ( (infoPtr->flags & SOCKET_REENTER_PENDING)
+	    && !WaitForAsyncConnect(infoPtr, errorCodePtr)) {
 	return -1;
     }
 
@@ -1993,11 +2085,11 @@ TcpOutputProc(
     }
 
     /*
-     * Check to see if the socket is connected before trying to write.
+     * Check if there is an async connect to terminate
      */
 
-    if ((infoPtr->flags & SOCKET_ASYNC_CONNECT)
-	    && !WaitForSocketEvent(infoPtr, FD_CONNECT, errorCodePtr)) {
+    if ( (infoPtr->flags & SOCKET_REENTER_PENDING)
+	    && !WaitForAsyncConnect(infoPtr, errorCodePtr)) {
 	return -1;
     }
 
