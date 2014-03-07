@@ -5244,7 +5244,11 @@ ReadChars(
 				 * is larger than the number of characters
 				 * available in the first buffer, only the
 				 * characters from the first buffer are
-				 * returned. */
+				 * returned. The execption is when there is
+				 * not any complete character in the first
+				 * buffer.  In that case, a recursive call
+				 * effectively obtains chars from the
+				 * second buffer. */
     int *factorPtr)		/* On input, contains a guess of how many
 				 * bytes need to be allocated to hold the
 				 * result of converting N source bytes to
@@ -5259,6 +5263,15 @@ ReadChars(
     int savedFlags = statePtr->flags;
     char *dst, *src = RemovePoint(bufPtr);
     int dstLimit, numBytes, srcLen = BytesLeft(bufPtr);
+
+    /*
+     * One src byte can yield at most one character.  So when the
+     * number of src bytes we plan to read is less than the limit on
+     * character count to be read, clearly we will remain within that
+     * limit, and we can use the value of "srcLen" as a tighter limit
+     * for sizing receiving buffers.
+     */
+
     int toRead = ((unsigned) charsToRead > srcLen) ? srcLen : charsToRead;
 
     /*
@@ -5569,43 +5582,32 @@ TranslateInputEOL(
 				 * characters. */
     const char *srcStart,	/* Source characters. */
     int *dstLenPtr,		/* On entry, the maximum length of output
-				 * buffer in bytes; must be <= *srcLenPtr. On
-				 * exit, the number of bytes actually used in
-				 * output buffer. */
+				 * buffer in bytes. On exit, the number of
+				 * bytes actually used in output buffer. */
     int *srcLenPtr)		/* On entry, the length of source buffer. On
 				 * exit, the number of bytes read from the
 				 * source buffer. */
 {
-    int dstLen, srcLen, inEofChar;
-    const char *eof;
+    const char *eof = NULL;
+    int dstLen = *dstLenPtr;
+    int srcLen = *srcLenPtr;
+    int inEofChar = statePtr->inEofChar;
 
-    dstLen = *dstLenPtr;
-
-    eof = NULL;
-    inEofChar = statePtr->inEofChar;
     if (inEofChar != '\0') {
 	/*
-	 * Find EOF in translated buffer then compress out the EOL. The source
-	 * buffer may be much longer than the destination buffer - we only
-	 * want to return EOF if the EOF has been copied to the destination
-	 * buffer.
+	 * Make sure we do not read past any logical end of channel input
+	 * created by the presence of the input eof char.
 	 */
 
-	const char *src, *srcMax;
-
-	srcMax = srcStart + *srcLenPtr;
-	for (src = srcStart; src < srcMax; src++) {
-	    if (*src == inEofChar) {
-		eof = src;
-		srcLen = src - srcStart;
-		if (srcLen < dstLen) {
-		    dstLen = srcLen;
-		}
-		*srcLenPtr = srcLen;
-		break;
-	    }
+	if ((eof = memchr(srcStart, inEofChar, srcLen))) {
+	    srcLen = eof - srcStart;
 	}
     }
+
+    if (dstLen > srcLen) {
+	dstLen = srcLen;
+    }
+
     switch (statePtr->inputTranslation) {
     case TCL_TRANSLATE_LF:
 	if (dstStart != srcStart) {
@@ -5635,7 +5637,7 @@ TranslateInputEOL(
 	dst = dstStart;
 	src = srcStart;
 	srcEnd = srcStart + dstLen;
-	srcMax = srcStart + *srcLenPtr;
+	srcMax = srcStart + srcLen;
 
 	for ( ; src < srcEnd; ) {
 	    if (*src == '\r') {
@@ -5663,7 +5665,7 @@ TranslateInputEOL(
 	dst = dstStart;
 	src = srcStart;
 	srcEnd = srcStart + dstLen;
-	srcMax = srcStart + *srcLenPtr;
+	srcMax = srcStart + srcLen;
 
 	if ((statePtr->flags & INPUT_SAW_CR) && (src < srcMax)) {
 	    if (*src == '\n') {
@@ -5692,9 +5694,10 @@ TranslateInputEOL(
 	break;
     }
     default:
-	return 0;
+	Tcl_Panic("unknown input translation %d", statePtr->inputTranslation);
     }
     *dstLenPtr = dstLen;
+    *srcLenPtr = srcLen;
 
     if ((eof != NULL) && (srcStart + srcLen >= eof)) {
 	/*
@@ -5709,7 +5712,6 @@ TranslateInputEOL(
 	return 1;
     }
 
-    *srcLenPtr = srcLen;
     return 0;
 }
 
