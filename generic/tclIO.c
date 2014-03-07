@@ -5330,7 +5330,8 @@ ReadChars(
 	 * Capture the number of bytes actually consumed in dstRead.
 	 */
 
-	dstWrote = dstRead = dstDecoded;
+	dstWrote = dstLimit;
+	dstRead = dstDecoded;
 	TranslateInputEOL(statePtr, dst, dst, &dstWrote, &dstRead);
 
 	if (dstRead < dstDecoded) {
@@ -8852,14 +8853,11 @@ CopyAndTranslateBuffer(
     }
     bufPtr = statePtr->inQueueHead;
     bytesInBuffer = BytesLeft(bufPtr);
+    if (bytesInBuffer == 0) {
+	return 0;
+    }
 
     copied = space;
-    if (bytesInBuffer <= copied) {
-	copied = bytesInBuffer;
-    }
-    if (copied == 0) {
-	return copied;
-    }
     TranslateInputEOL(statePtr, result, RemovePoint(bufPtr),
 	    &copied, &bytesInBuffer);
     bufPtr->nextRemoved += bytesInBuffer;
