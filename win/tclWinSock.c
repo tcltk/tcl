@@ -1151,6 +1151,12 @@ NewSocketInfo(SOCKET socket)
  *
  *	This function opens a new socket in client mode.
  *
+ *	This might be called in 3 circumstances:
+ *	-   By a regular socket command
+ *	-   By the event handler to continue an asynchroneous connect
+ *	-   By a blocking socket function (gets/puts) to terminate the
+ *	    connect synchroneously
+ *
  * Results:
  *      TCL_OK, if the socket was successfully connected or an asynchronous
  *      connection is in progress. If an error occurs, TCL_ERROR is returned
@@ -1179,6 +1185,7 @@ CreateClientSocket(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     SocketInfo *infoPtr)
 {
+    DWORD error;
     u_long flag = 1;		/* Indicates nonblocking mode. */
     /*
      * We are started with async connect and the connect notification
@@ -1187,8 +1194,7 @@ CreateClientSocket(
     int async_connect = infoPtr->flags & SOCKET_ASYNC_CONNECT;
     /* We were called by the event procedure and continue our loop */
     int async_callback = infoPtr->sockets->fd != INVALID_SOCKET;
-    ThreadSpecificData *tsdPtr;
-    DWORD error;
+    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
     
     DEBUG(async_connect ? "async connect" : "sync connect");
 
@@ -1230,12 +1236,20 @@ CreateClientSocket(
 		closesocket(infoPtr->sockets->fd);
 	    }
 
+	    /* get infoPtr lock */
+	    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+
 	    /*
 	     * Reset last error from last try
 	     */
 	    infoPtr->lastError = 0;
 	    
 	    infoPtr->sockets->fd = socket(infoPtr->myaddr->ai_family, SOCK_STREAM, 0);
+	    
+	    /* Free list lock */
+	    SetEvent(tsdPtr->socketListLock);
+
+	    /* continue on socket creation error */
 	    if (infoPtr->sockets->fd == INVALID_SOCKET) {
 		DEBUG("socket() failed");
 		TclWinConvertError((DWORD) WSAGetLastError());
@@ -1273,12 +1287,21 @@ CreateClientSocket(
 	     * be done in the background.
 	     */
 	    if (async_connect) {
-		ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
+		/* get infoPtr lock */
+		WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+
+		/* Now get connect events */
 		infoPtr->selectEvents |= FD_CONNECT;
 
-		ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
+		/* Free list lock */
+		SetEvent(tsdPtr->socketListLock);
+
+		// ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
 		SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 			    (LPARAM) infoPtr);
+	    } else {
+		/* Free list lock */
+		SetEvent(tsdPtr->socketListLock);
 	    }
 
 	    /*
@@ -1300,7 +1323,11 @@ CreateClientSocket(
 	    reenter:
 		Tcl_SetErrno(infoPtr->lastError);
 		DEBUG("reenter");
+		/* get infoPtr lock */
+		WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 		infoPtr->selectEvents &= ~(FD_CONNECT);
+		/* Free list lock */
+		SetEvent(tsdPtr->socketListLock);
 	    }
 	    /*
 	     * Clear the reenter flag also for the (hypothetic) case
@@ -1390,26 +1417,38 @@ WaitForAsyncConnect(
 
     oldMode = Tcl_SetServiceMode(TCL_SERVICE_NONE);
 
-    /*
-     * Disable async connect as we continue now synchoneously
-     */
-
-    /* ToDo: need thread protection? */
-    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-
     while (1) {
+	
+	/* get infoPtr lock */
+        WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+	
 	/* Check for connect event */
 	if (infoPtr->readyEvents & FD_CONNECT) {
+
 	    /* Consume the connect event */
-	    /* ToDo: eventual signaling ? */
 	    infoPtr->readyEvents &= ~(FD_CONNECT);
+
+	    /*
+	     * Disable async connect as we continue now synchoneously
+	     */
+	    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+
+            /* Free list lock */
+            SetEvent(tsdPtr->socketListLock);
+
 	    /* continue async connect syncroneously */
 	    result = CreateClientSocket(NULL, infoPtr);
+
+	    /* Restore event service mode */
 	    (void) Tcl_SetServiceMode(oldMode);
+
 	    /* Todo: find adequate error code */
 	    *errorCodePtr = EFAULT;
 	    return (result == TCL_OK);
 	}
+
+        /* Free list lock */
+        SetEvent(tsdPtr->socketListLock);
 
 	/*
 	 * Wait until something happens.
