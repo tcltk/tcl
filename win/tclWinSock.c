@@ -1211,6 +1211,15 @@ WaitForSocketEvent(
 	    break;
 	} else if (infoPtr->readyEvents & events) {
 	    break;
+	} else if ((events == FD_CONNECT) && 
+		   !(infoPtr->flags & SOCKET_ASYNC_CONNECT)) {
+	    /* When waiting for FD_CONNECT Windows may not deliver this event,
+	     * causing us to get stuck. However, SocketProc()'s SOCKET_MESSAGE
+	     * handler has special code which detects this and resets the
+	     * infoPtr->flags async bit anyway (See (xxx)). That we can detect
+	     * here and break the loop as if we had gotten FD_CONNECT.
+	     */
+	    break;
 	} else if (infoPtr->flags & SOCKET_ASYNC) {
 	    *errorCodePtr = EWOULDBLOCK;
 	    result = 0;
@@ -2327,6 +2336,7 @@ SocketProc(
 		    }
 		}
 
+		/* (xxx) See corresponding marker in WaitForSocketEvent as well */
 		if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
 		    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
 		    if (error != ERROR_SUCCESS) {
