@@ -4725,6 +4725,77 @@ test io-35.17 {Tcl_Eof, eof char in middle, crlf write, crlf read} {
     close $f
     list $c $l $e
 } {21 8 1}
+test io-35.18 {Tcl_Eof, eof char, cr write, crlf read} -body {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    fconfigure $f -translation cr
+    puts $f abc\ndef
+    close $f
+    set s [file size $path(test1)]
+    set f [open $path(test1) r]
+    fconfigure $f -translation crlf
+    set l [string length [set in [read $f]]]
+    set e [eof $f]
+    close $f
+    list $s $l $e [scan [string index $in end] %c]
+} -result {8 8 1 13}
+test io-35.18a {Tcl_Eof, eof char, cr write, crlf read} -body {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    fconfigure $f -translation cr -eofchar \x1a
+    puts $f abc\ndef
+    close $f
+    set s [file size $path(test1)]
+    set f [open $path(test1) r]
+    fconfigure $f -translation crlf -eofchar \x1a
+    set l [string length [set in [read $f]]]
+    set e [eof $f]
+    close $f
+    list $s $l $e [scan [string index $in end] %c]
+} -result {9 8 1 13}
+test io-35.18b {Tcl_Eof, eof char, cr write, crlf read} -constraints knownBug -body {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    fconfigure $f -translation cr -eofchar \x1a
+    puts $f {}
+    close $f
+    set s [file size $path(test1)]
+    set f [open $path(test1) r]
+    fconfigure $f -translation crlf -eofchar \x1a
+    set l [string length [set in [read $f]]]
+    set e [eof $f]
+    close $f
+    list $s $l $e [scan [string index $in end] %c]
+} -result {2 1 1 13}
+test io-35.18c {Tcl_Eof, eof char, cr write, crlf read} -body {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    fconfigure $f -translation cr
+    puts $f {}
+    close $f
+    set s [file size $path(test1)]
+    set f [open $path(test1) r]
+    fconfigure $f -translation crlf
+    set l [string length [set in [read $f]]]
+    set e [eof $f]
+    close $f
+    list $s $l $e [scan [string index $in end] %c]
+} -result {1 1 1 13}
+test io-35.19 {Tcl_Eof, eof char in middle, cr write, crlf read} -body {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    fconfigure $f -translation cr -eofchar {}
+    set i [format abc\ndef\n%cqrs\nuvw 26]
+    puts $f $i
+    close $f
+    set c [file size $path(test1)]
+    set f [open $path(test1) r]
+    fconfigure $f -translation crlf -eofchar \x1a
+    set l [string length [set in [read $f]]]
+    set e [eof $f]
+    close $f
+    list $c $l $e [scan [string index $in end] %c]
+} -result {17 8 1 13}
 
 # Test Tcl_InputBlocked
 
