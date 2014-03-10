@@ -29,34 +29,65 @@ test http-cookiejar-2.1 {cookie storage: basics} -constraints cookiejar -body {
 } -returnCodes error -result {wrong # args: should be "http::cookiejar method ?arg ...?"}
 test http-cookiejar-2.2 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar ?
-} -returnCodes error -result {unknown method "?": must be configure, create, destroy, loglevel or new}
-test http-cookiejar-2.3 {cookie storage: basics} -constraints cookiejar -body {
-    http::cookiejar loglevel
-} -result info
+} -returnCodes error -result {unknown method "?": must be configure, create, destroy or new}
+test http-cookiejar-2.3 {cookie storage: basics} cookiejar {
+    http::cookiejar configure
+} {-domainfile -domainlist -loglevel -offline -purgeinterval -vacuumtrigger}
 test http-cookiejar-2.4 {cookie storage: basics} -constraints cookiejar -body {
-    http::cookiejar loglevel ?
-} -returnCodes error -result {bad log level "?": must be debug, info, warn, or error}
+    http::cookiejar configure a b c d e
+} -returnCodes error -result {wrong # args: should be "http::cookiejar configure ?optionName? ?optionValue?"}
 test http-cookiejar-2.5 {cookie storage: basics} -constraints cookiejar -body {
-    http::cookiejar loglevel ? ?
-} -returnCodes error -result {wrong # args: should be "http::cookiejar loglevel ?level?"}
-test http-cookiejar-2.6 {cookie storage: basics} -setup {
-    set old [http::cookiejar loglevel]
-} -constraints cookiejar -body {
-    list    [http::cookiejar loglevel] [http::cookiejar loglevel debug] \
-	    [http::cookiejar loglevel] [http::cookiejar loglevel error] \
-	    [http::cookiejar loglevel]
-} -cleanup {
-    http::cookiejar loglevel $old
-} -result {info debug debug error error}
+    http::cookiejar configure a
+} -returnCodes error -result {bad option "a": must be -domainfile, -domainlist, -loglevel, -offline, -purgeinterval, or -vacuumtrigger}
+test http-cookiejar-2.6 {cookie storage: basics} -constraints cookiejar -body {
+    http::cookiejar configure -d
+} -returnCodes error -result {ambiguous option "-d": must be -domainfile, -domainlist, -loglevel, -offline, -purgeinterval, or -vacuumtrigger}
 test http-cookiejar-2.7 {cookie storage: basics} -setup {
-    set old [http::cookiejar loglevel]
+    set old [http::cookiejar configure -loglevel]
 } -constraints cookiejar -body {
-    list    [http::cookiejar loglevel] [http::cookiejar loglevel d] \
-	    [http::cookiejar loglevel i] [http::cookiejar loglevel w] \
-	    [http::cookiejar loglevel e]
+    list [http::cookiejar configure -loglevel] \
+	[http::cookiejar configure -loglevel debug] \
+	[http::cookiejar configure -loglevel] \
+	[http::cookiejar configure -loglevel error] \
+	[http::cookiejar configure -loglevel]
 } -cleanup {
-    http::cookiejar loglevel $old
+    http::cookiejar configure -loglevel $old
+} -result {info debug debug error error}
+test http-cookiejar-2.8 {cookie storage: basics} -setup {
+    set old [http::cookiejar configure -loglevel]
+} -constraints cookiejar -body {
+    list [http::cookiejar configure -loglevel] \
+	[http::cookiejar configure -loglevel d] \
+	[http::cookiejar configure -loglevel i] \
+	[http::cookiejar configure -loglevel w] \
+	[http::cookiejar configure -loglevel e]
+} -cleanup {
+    http::cookiejar configure -loglevel $old
 } -result {info debug info warn error}
+test http-cookiejar-2.9 {cookie storage: basics} -constraints cookiejar -body {
+    http::cookiejar configure -off
+} -match glob -result *
+test http-cookiejar-2.10 {cookie storage: basics} -setup {
+    set oldval [http::cookiejar configure -offline]
+} -constraints cookiejar -body {
+    http::cookiejar configure -offline true
+} -cleanup {
+    catch {http::cookiejar configure -offline $oldval}
+} -result 1
+test http-cookiejar-2.11 {cookie storage: basics} -setup {
+    set oldval [http::cookiejar configure -offline]
+} -constraints cookiejar -body {
+    http::cookiejar configure -offline nonbool
+} -cleanup {
+    catch {http::cookiejar configure -offline $oldval}
+} -returnCodes error -result {expected boolean value but got "nonbool"}
+test http-cookiejar-2.12 {cookie storage: basics} -setup {
+    set oldval [http::cookiejar configure -purgeinterval]
+} -constraints cookiejar -body {
+    http::cookiejar configure -purge nonint
+} -cleanup {
+    catch {http::cookiejar configure -purgeinterval $oldval}
+} -returnCodes error -result {expected integer but got "nonint"}
 
 test http-cookiejar-3.1 {cookie storage: class} cookiejar {
     info object isa object http::cookiejar
@@ -66,10 +97,10 @@ test http-cookiejar-3.2 {cookie storage: class} cookiejar {
 } 1
 test http-cookiejar-3.3 {cookie storage: class} cookiejar {
     lsort [info object methods http::cookiejar]
-} {configure loglevel}
+} {configure}
 test http-cookiejar-3.4 {cookie storage: class} cookiejar {
     lsort [info object methods http::cookiejar -all]
-} {configure create destroy loglevel new}
+} {configure create destroy new}
 test http-cookiejar-3.5 {cookie storage: class} -setup {
     catch {rename ::cookiejar ""}
 } -constraints cookiejar -body {
@@ -120,42 +151,6 @@ test http-cookiejar-3.10 {cookie storage: class} -setup {
     catch {rename ::cookiejar ""}
     removeDirectory $dir
 } -result {unable to open database file}
-test http-cookiejar-3.11 {cookie storage: class} cookiejar {
-    http::cookiejar configure
-} {-domainfile -domainlist -offline -purgeinterval -vacuumtrigger}
-test http-cookiejar-3.12 {cookie storage: class} -constraints cookiejar -body {
-    http::cookiejar configure a b c d e
-} -returnCodes error -result {wrong # args: should be "http::cookiejar configure ?optionName? ?optionValue?"}
-test http-cookiejar-3.13 {cookie storage: class} -constraints cookiejar -body {
-    http::cookiejar configure a
-} -returnCodes error -result {bad option "a": must be -domainfile, -domainlist, -offline, -purgeinterval, or -vacuumtrigger}
-test http-cookiejar-3.14 {cookie storage: class} -constraints cookiejar -body {
-    http::cookiejar configure -d
-} -returnCodes error -result {ambiguous option "-d": must be -domainfile, -domainlist, -offline, -purgeinterval, or -vacuumtrigger}
-test http-cookiejar-3.15 {cookie storage: class} -constraints cookiejar -body {
-    http::cookiejar configure -off
-} -match glob -result *
-test http-cookiejar-3.16 {cookie storage: class} -setup {
-    set oldval [http::cookiejar configure -offline]
-} -constraints cookiejar -body {
-    http::cookiejar configure -offline true
-} -cleanup {
-    catch {http::cookiejar configure -offline $oldval}
-} -result 1
-test http-cookiejar-3.17 {cookie storage: class} -setup {
-    set oldval [http::cookiejar configure -offline]
-} -constraints cookiejar -body {
-    http::cookiejar configure -offline nonbool
-} -cleanup {
-    catch {http::cookiejar configure -offline $oldval}
-} -returnCodes error -result {expected boolean value but got "nonbool"}
-test http-cookiejar-3.18 {cookie storage: class} -setup {
-    set oldval [http::cookiejar configure -purgeinterval]
-} -constraints cookiejar -body {
-    http::cookiejar configure -purge nonint
-} -cleanup {
-    catch {http::cookiejar configure -purgeinterval $oldval}
-} -returnCodes error -result {expected integer but got "nonint"}
 
 test http-cookiejar-4.1 {cookie storage: instance} -setup {
     http::cookiejar create ::cookiejar
@@ -689,6 +684,46 @@ test http-cookiejar-6.1 {cookie storage: expiry and lookup} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {{} session cookie {cookie session-global} {cookie session-global} session-global {}}
+
+test http-cookiejar-7.1 {cookie storage: persistence of persistent cookies} -setup {
+    catch {rename ::cookiejar ""}
+    set f [makeFile "" cookiejar]
+    file delete $f
+} -constraints cookiejar -body {
+    http::cookiejar create ::cookiejar $f
+    ::cookiejar destroy
+    http::cookiejar create ::cookiejar $f
+} -cleanup {
+    catch {rename ::cookiejar ""}
+    removeFile $f
+} -result ::cookiejar
+test http-cookiejar-7.2 {cookie storage: persistence of persistent cookies} -setup {
+    catch {rename ::cookiejar ""}
+    set f [makeFile "" cookiejar]
+    file delete $f
+    set result {}
+} -constraints cookiejar -body {
+    http::cookiejar create ::cookiejar $f
+    cookiejar storeCookie [dict replace {
+	key foo
+	value cookie
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    } expires [expr {[clock seconds]+1}]]
+    lappend result [::cookiejar getCookies http www.example.com /]
+    ::cookiejar destroy
+    http::cookiejar create ::cookiejar
+    lappend result [::cookiejar getCookies http www.example.com /]
+    ::cookiejar destroy
+    http::cookiejar create ::cookiejar $f
+    lappend result [::cookiejar getCookies http www.example.com /]
+} -cleanup {
+    catch {rename ::cookiejar ""}
+    removeFile $f
+} -result {{foo cookie} {} {foo cookie}}
 
 ::tcltest::cleanupTests
 
