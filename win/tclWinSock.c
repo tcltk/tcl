@@ -47,8 +47,8 @@
 
 #include "tclWinInt.h"
 
-#define DEBUGGING
-#ifdef DEBUGGING
+//#define DEBUGGING
+//#ifdef DEBUGGING
 #define DEBUG(x) fprintf(stderr, ">>> %p %s(%d): %s<<<\n", \
 			    infoPtr, __FUNCTION__, __LINE__, x)
 #else
@@ -220,6 +220,10 @@ typedef struct {
 				 * socketThread has been initialized and has
 				 * started. */
     HANDLE socketListLock;	/* Win32 Event to lock the socketList */
+    SocketInfo *pendingSocketInfo;
+				/* This socket is opened but not jet in the
+				 * list. This value is also checked by
+				 * the event structure. */
     SocketInfo *socketList;	/* Every open socket in this thread has an
 				 * entry on this list. */
 } ThreadSpecificData;
@@ -239,9 +243,10 @@ static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 			    LPARAM lParam);
 static int		SocketsEnabled(void);
 static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
-static int		WaitForAsyncConnect(SocketInfo *infoPtr, int *errorCodePtr);
+static int		WaitForConnect(SocketInfo *infoPtr, int *errorCodePtr);
 static int		WaitForSocketEvent(SocketInfo *infoPtr, int events,
 			    int *errorCodePtr);
+static int		FindFDInList(SocketInfo *infoPtr, SOCKET socket);
 static DWORD WINAPI	SocketThread(LPVOID arg);
 static void		TcpThreadActionProc(ClientData instanceData,
 			    int action);
@@ -398,6 +403,7 @@ InitSockets(void)
      */
 
     tsdPtr = TCL_TSD_INIT(&dataKey);
+    tsdPtr->pendingSocketInfo = NULL;
     tsdPtr->socketList = NULL;
     tsdPtr->hwnd       = NULL;
     tsdPtr->threadId   = Tcl_GetCurrentThread();
@@ -687,12 +693,12 @@ SocketCheckProc(
     WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
     for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 	    infoPtr = infoPtr->nextPtr) {
-    DEBUG("A");
+	DEBUG("Socket loop");
 	if ((infoPtr->readyEvents &
 		(infoPtr->watchEvents | FD_CONNECT | FD_ACCEPT))
 	    && !(infoPtr->flags & SOCKET_PENDING)
 	) {
-    DEBUG("B");
+	    DEBUG("Event found");
 	    infoPtr->flags |= SOCKET_PENDING;
 	    evPtr = ckalloc(sizeof(SocketEvent));
 	    evPtr->header.proc = SocketEventProc;
@@ -1283,25 +1289,49 @@ CreateClientSocket(
 		continue;
 	    }
 	    /*
-	     * Set the socket into nonblocking mode if the connect should
-	     * be done in the background.
+	     * For asyncroneous connect set the socket in nonblocking mode
+	     * and activate connect notification
 	     */
 	    if (async_connect) {
+		SocketInfo *infoPtr2;
+		int in_socket_list = 0;
 		/* get infoPtr lock */
 		WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 
-		/* Now get connect events */
+		/*
+		 * Check if my infoPtr is already in the tsdPtr->socketList
+		 * It is set after this call by TcpThreadActionProc and is set
+		 * on a second round.
+		 *
+		 * If not, we buffer my infoPtr in the tsd memory so it is not
+		 * lost by the event procedure
+		 */
+
+		for (infoPtr2 = tsdPtr->socketList; infoPtr2 != NULL;
+			infoPtr2 = infoPtr->nextPtr) {
+		    if (infoPtr2 == infoPtr) {
+			in_socket_list = 1;
+			break;
+		    }
+		}
+		if (!in_socket_list) {
+		    tsdPtr->pendingSocketInfo = infoPtr;
+		}
+		/*
+		 * Set connect mask to connect events
+		 * This is activated by a SOCKET_SELECT message to the notifier
+		 * thread.
+		 */
 		infoPtr->selectEvents |= FD_CONNECT;
-
-		/* Free list lock */
+		
+		/*
+		 * Free list lock
+		 */
 		SetEvent(tsdPtr->socketListLock);
 
-		// ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
+    		/* activate accept notification */
 		SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-			    (LPARAM) infoPtr);
-	    } else {
-		/* Free list lock */
-		SetEvent(tsdPtr->socketListLock);
+			(LPARAM) infoPtr);
 	    }
 
 	    /*
@@ -1311,29 +1341,41 @@ CreateClientSocket(
 	    DEBUG("connect()");
 	    connect(infoPtr->sockets->fd, infoPtr->addr->ai_addr,
 		    infoPtr->addr->ai_addrlen);
+
 	    error = WSAGetLastError();
 	    TclWinConvertError(error);
+
 	    if (async_connect && error == WSAEWOULDBLOCK) {
-		DEBUG("WSAEWOULDBLOCK");
 		/*
-		 * Activate FD_CONNECT notification and reenter jump
+		 * Asynchroneous connect
+		 */
+		DEBUG("WSAEWOULDBLOCK");
+
+
+		/*
+		 * Remember that we jump back behind this next round
 		 */
 		infoPtr->flags |= SOCKET_REENTER_PENDING;
 		return TCL_OK;
+
 	    reenter:
-		Tcl_SetErrno(infoPtr->lastError);
 		DEBUG("reenter");
+		/*
+		 * Re-entry point for async connect after connect event or
+		 * blocking operation
+		 *
+		 * Clear the reenter flag
+		 */
+		infoPtr->flags &= ~(SOCKET_REENTER_PENDING);
 		/* get infoPtr lock */
 		WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+		/* Get signaled connect error */
+		Tcl_SetErrno(infoPtr->lastError);
+		/* Clear eventual connect flag */
 		infoPtr->selectEvents &= ~(FD_CONNECT);
 		/* Free list lock */
 		SetEvent(tsdPtr->socketListLock);
 	    }
-	    /*
-	     * Clear the reenter flag also for the (hypothetic) case
-	     * that connect did succeed emidiately
-	     */
-	    infoPtr->flags &= ~(SOCKET_REENTER_PENDING);
 #ifdef DEBUGGING
 	    fprintf(stderr, "lastError: %d\n", Tcl_GetErrno());
 #endif
@@ -1379,13 +1421,13 @@ out:
 /*
  *----------------------------------------------------------------------
  *
- * WaitForAsyncConnect --
+ * WaitForConnect --
  *
  *	Terminate an asyncroneous connect syncroneously.
  *	This routine should only be called if flag ASYNC_CONNECT is set.
  *
  * Results:
- *	Returns 1 on success or 0 on failure, with an error code in
+ *	Returns -1 on success or 0 on failure, with an error code in
  *	errorCodePtr.
  *
  * Side effects:
@@ -1395,11 +1437,11 @@ out:
  */
 
 static int
-WaitForAsyncConnect(
+WaitForConnect(
     SocketInfo *infoPtr,	/* Information about this socket. */
     int *errorCodePtr)		/* Where to store errors? */
 {
-    int result = 1;
+    int result;
     int oldMode;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
     /*
@@ -2001,7 +2043,7 @@ TcpInputProc(
      */
 
     if ( (infoPtr->flags & SOCKET_REENTER_PENDING)
-	    && !WaitForAsyncConnect(infoPtr, errorCodePtr)) {
+	    && !WaitForConnect(infoPtr, errorCodePtr)) {
 	return -1;
     }
 
@@ -2129,7 +2171,7 @@ TcpOutputProc(
      */
 
     if ( (infoPtr->flags & SOCKET_REENTER_PENDING)
-	    && !WaitForAsyncConnect(infoPtr, errorCodePtr)) {
+	    && !WaitForConnect(infoPtr, errorCodePtr)) {
 	return -1;
     }
 
@@ -2708,6 +2750,7 @@ SocketProc(
     int event, error;
     SOCKET socket;
     SocketInfo *infoPtr = NULL; /* DEBUG */
+    int info_found = 0;
     TcpFdList *fds = NULL;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 #ifdef _WIN64
@@ -2745,68 +2788,88 @@ SocketProc(
 	error = WSAGETSELECTERROR(lParam);
 	socket = (SOCKET) wParam;
 
+        #ifdef DEBUGGING
+	fprintf(stderr,"event = %d, error=%d\n",event,error);
+	#endif
+	if (event & FD_READ) DEBUG("READ Event");
+	if (event & FD_WRITE) DEBUG("WRITE Event");
+	if (event & FD_CLOSE) DEBUG("CLOSE Event");
+	if (event & FD_CONNECT)
+	    DEBUG("CONNECT Event");
+	if (event & FD_ACCEPT) DEBUG("ACCEPT Event");
+
+	DEBUG("Get list lock");
+	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+
 	/*
 	 * Find the specified socket on the socket list and update its
 	 * eventState flag.
 	 */
 
-	DEBUG("FOO");
-	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-	DEBUG("BAR");
 	for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 		infoPtr = infoPtr->nextPtr) {
-	    for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
-#ifdef DEBUGGING
-		fprintf(stderr,"socket = %d, fd=%d, event = %d, error = %d\n",
-			socket, fds->fd, event, error);
-#endif
-		if (fds->fd == socket) {
-		    if (event & FD_READ) 
-			DEBUG("|->FD_READ");
-		    if (event & FD_WRITE) 
-			DEBUG("|->FD_WRITE");
+    	    DEBUG("Cur InfoPtr");
+    	    if ( FindFDInList(infoPtr,socket) ) {
+    		info_found = 1;
+    		DEBUG("InfoPtr found");
+    		break;
+    	    }
+    	}
+    	/*
+    	 * Check if there is a pending info structure not jet in the
+    	 * list
+    	 */
+    	if ( !info_found
+    		&& tsdPtr->pendingSocketInfo != NULL
+    		&& FindFDInList(tsdPtr->pendingSocketInfo,socket) ) {
+    	    infoPtr = tsdPtr->pendingSocketInfo;
+    	    DEBUG("Pending InfoPtr found");
+    	    info_found = 1;
+    	}
+    	if (info_found) {
+	    if (event & FD_READ) 
+		DEBUG("|->FD_READ");
+	    if (event & FD_WRITE) 
+		DEBUG("|->FD_WRITE");
 
-		    /*
-		     * Update the socket state.
-		     *
-		     * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
-		     * happens, then clear the FD_ACCEPT count. Otherwise,
-		     * increment the count if the current event is an FD_ACCEPT.
-		     */
+	    /*
+	     * Update the socket state.
+	     *
+	     * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
+	     * happens, then clear the FD_ACCEPT count. Otherwise,
+	     * increment the count if the current event is an FD_ACCEPT.
+	     */
 
-		    if (event & FD_CLOSE) {
-			DEBUG("FD_CLOSE");
-			infoPtr->acceptEventCount = 0;
-			infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
-		    } else if (event & FD_ACCEPT) {
-			DEBUG("FD_ACCEPT");
-			    infoPtr->acceptEventCount++;
-		    }
+	    if (event & FD_CLOSE) {
+		DEBUG("FD_CLOSE");
+		infoPtr->acceptEventCount = 0;
+		infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
+	    } else if (event & FD_ACCEPT) {
+		DEBUG("FD_ACCEPT");
+		    infoPtr->acceptEventCount++;
+	    }
 
-		    if (event & FD_CONNECT) {
-			DEBUG("FD_CONNECT");
-			/*
-			 * Remember any error that occurred so we can report
-			 * connection failures.
-			 */
-			if (error != ERROR_SUCCESS) {
-			    TclWinConvertError((DWORD) error);
-			    infoPtr->lastError = Tcl_GetErrno();
-			}
-		    }
-		    /*
-		     * Inform main thread about signaled events
-		     */
-		    infoPtr->readyEvents |= event;
-
-		    /*
-		     * Wake up the Main Thread.
-		     */
-		    SetEvent(tsdPtr->readyEvent);
-		    Tcl_ThreadAlert(tsdPtr->threadId);
-		    break;
+	    if (event & FD_CONNECT) {
+		DEBUG("FD_CONNECT");
+		/*
+		 * Remember any error that occurred so we can report
+		 * connection failures.
+		 */
+		if (error != ERROR_SUCCESS) {
+		    TclWinConvertError((DWORD) error);
+		    infoPtr->lastError = Tcl_GetErrno();
 		}
 	    }
+	    /*
+	     * Inform main thread about signaled events
+	     */
+	    infoPtr->readyEvents |= event;
+
+	    /*
+	     * Wake up the Main Thread.
+	     */
+	    SetEvent(tsdPtr->readyEvent);
+	    Tcl_ThreadAlert(tsdPtr->threadId);
 	}
 	SetEvent(tsdPtr->socketListLock);
 	break;
@@ -2844,6 +2907,39 @@ SocketProc(
 	break;
     }
 
+    return 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * FindFDInList --
+ *
+ *	Return true, if the given file descriptior is contained in the
+ *	file descriptor list.
+ *
+ * Results:
+ *	true if found.
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+FindFDInList(
+    SocketInfo *infoPtr,
+    SOCKET socket)
+{
+    TcpFdList *fds;
+    for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
+        #ifdef DEBUGGING
+	fprintf(stderr,"socket = %d, fd=%d",socket,fds);
+	#endif
+	if (fds->fd == socket) {
+	    return 1;
+	}
+    }
     return 0;
 }
 
@@ -3064,8 +3160,15 @@ TcpThreadActionProc(
 	tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+	DEBUG("Inserting pointer to list");
 	infoPtr->nextPtr = tsdPtr->socketList;
 	tsdPtr->socketList = infoPtr;
+	
+	if (infoPtr == tsdPtr->pendingSocketInfo) {
+	    DEBUG("Clearing temporary info pointer");
+	    tsdPtr->pendingSocketInfo = NULL;
+	}
+	
 	SetEvent(tsdPtr->socketListLock);
 
 	notifyCmd = SELECT;
@@ -3081,6 +3184,7 @@ TcpThreadActionProc(
 	 */
 
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+	DEBUG("Removing pointer from list");
 	for (nextPtrPtr = &(tsdPtr->socketList); (*nextPtrPtr) != NULL;
 		nextPtrPtr = &((*nextPtrPtr)->nextPtr)) {
 	    if ((*nextPtrPtr) == infoPtr) {
