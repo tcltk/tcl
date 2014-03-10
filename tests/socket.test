@@ -2006,7 +2006,7 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
         set sock [socket -async localhost $port]
         fconfigure $sock -blocking 0
         for {set i 0} {$i < 50} {incr i } {
-            if {[set x [gets $sock]] ne ""} break
+            if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
             after 200
         }
         set x
@@ -2032,7 +2032,7 @@ test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IP
         set sock [socket -async localhost $port]
         fconfigure $sock -blocking 0
         for {set i 0} {$i < 50} {incr i } {
-            if {[set x [gets $sock]] ne ""} break
+            if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
             after 200
         }
         set x
