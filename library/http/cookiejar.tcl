@@ -17,47 +17,52 @@ package require tcl::idna 1.0
 # Configuration for the cookiejar package, plus basic support procedures.
 #
 
-namespace eval ::http {
+# This is the class that we are creating
+if {![llength [info commands ::http::cookiejar]]} {
+    ::oo::class create ::http::cookiejar
+}
+
+namespace eval [info object namespace ::http::cookiejar] {
+    proc setInt {*var val} {
+	upvar 1 ${*var} var
+	if {[catch {incr dummy $val} msg]} {
+	    return -code error $msg
+	}
+	set var $val
+    }
+    proc setBool {*var val} {
+	upvar 1 ${*var} var
+	if {[catch {if {$val} {}} msg]} {
+	    return -code error $msg
+	}
+	set var [expr {!!$val}]
+    }
+
+    proc setLog {*var val} {
+	upvar 1 ${*var} var
+	set var [::tcl::prefix match -message "log level" \
+		{debug info warn error} $val]
+    }
+
     # Keep this in sync with pkgIndex.tcl and with the install directories in
     # Makefiles
-    variable cookiejar_version 0.1
+    variable version 0.1
 
     # TODO: is this the _right_ list of domains to use? Or is there an alias
     # for it that will persist longer?
-    variable cookiejar_domainlist \
+    variable domainlist \
 	http://publicsuffix.org/list/effective_tld_names.dat
-    variable cookiejar_domainfile \
+    variable domainfile \
 	[file join [file dirname [info script]] effective_tld_names.txt.gz]
     # The list is directed to from http://publicsuffix.org/list/
-    variable cookiejar_loglevel info
-    variable cookiejar_vacuumtrigger 200
-    variable cookiejar_offline false
-    variable cookiejar_purgeinterval 60000
-
-    # This is the class that we are creating
-    if {![llength [info commands cookiejar]]} {
-	::oo::class create cookiejar
-    }
-
-    namespace eval [info object namespace cookiejar] {
-	proc setInt {*var val} {
-	    upvar 1 ${*var} var
-	    if {[catch {incr dummy $val} msg]} {
-		return -code error $msg
-	    }
-	    set var $val
-	}
-	proc setBool {*var val} {
-	    upvar 1 ${*var} var
-	    if {[catch {if {$val} {}} msg]} {
-		return -code error $msg
-	    }
-	    set var [expr {!!$val}]
-	}
-    }
+    variable loglevel info
+    variable vacuumtrigger 200
+    variable offline false
+    variable purgeinterval 60000
+    variable domaincache {}
 
     # Some support procedures, none particularly useful in general
-    namespace eval cookiejar_support {
+    namespace eval support {
 	# Set up a logger if the http package isn't actually loaded yet.
 	if {![llength [info commands ::http::Log]]} {
 	    proc ::http::Log args {
@@ -97,55 +102,52 @@ namespace eval ::http {
 	    clock format $ts -format "%Y%m%dT%H%M%S.${ms}Z" -gmt 1
 	}
 	proc log {level msg args} {
-	    namespace upvar ::http cookiejar_loglevel loglevel
-	    set who [uplevel 1 self]
+	    namespace upvar [info object namespace ::http::cookiejar] \
+		loglevel loglevel
+	    set who [uplevel 1 self class]
+	    set mth [uplevel 1 self method]
 	    set map {debug 0 info 1 warn 2 error 3}
 	    if {[string map $map $level] >= [string map $map $loglevel]} {
 		set msg [format $msg {*}$args]
 		set LVL [string toupper $level]
-		::http::Log "[isoNow] $LVL cookiejar($who) - $msg"
+		::http::Log "[isoNow] $LVL $who $mth - $msg"
 	    }
 	}
     }
 }
 
 # Now we have enough information to provide the package.
-package provide cookiejar $::http::cookiejar_version
+package provide cookiejar \
+    [set [info object namespace ::http::cookiejar]::version]
 
 # The implementation of the cookiejar package
 ::oo::define ::http::cookiejar {
-    self method configure {{optionName "\u0000\u0000"} {optionValue "\u0000\u0000"}} {
-	set tbl {
-	    -domainfile    {cookiejar_domainfile set}
-	    -domainlist    {cookiejar_domainlist set}
-	    -offline       {cookiejar_offline setBool}
-	    -purgeinterval {cookiejar_purgeinterval setInt}
-	    -vacuumtrigger {cookiejar_vacuumtrigger setInt}
+    self {
+	method configure {{optionName "\u0000\u0000"} {optionValue "\u0000\u0000"}} {
+	    set tbl {
+		-domainfile    {domainfile set}
+		-domainlist    {domainlist set}
+		-loglevel      {loglevel setLog}
+		-offline       {offline setBool}
+		-purgeinterval {purgeinterval setInt}
+		-vacuumtrigger {vacuumtrigger setInt}
+	    }
+	    if {$optionName eq "\u0000\u0000"} {
+		return [dict keys $tbl]
+	    }
+	    set opt [::tcl::prefix match -message "option" [dict keys $tbl] $optionName]
+	    lassign [dict get $tbl $opt] varname setter
+	    namespace upvar [namespace current] $varname var
+	    if {$optionValue ne "\u0000\u0000"} {
+		$setter var $optionValue
+	    }
+	    return $var
 	}
-	if {$optionName eq "\u0000\u0000"} {
-	    return [dict keys $tbl]
-	}
-	set opt [::tcl::prefix match -message "option" [dict keys $tbl] $optionName]
-	lassign [dict get $tbl $opt] varname setter
-	namespace upvar ::http $varname var
-	if {$optionValue ne "\u0000\u0000"} {
-	    $setter var $optionValue
-	}
-	return $var
-    }
-    self method loglevel {{level "\u0000\u0000"}} {
-	namespace upvar ::http cookiejar_loglevel loglevel
-	if {$level ne "\u0000\u0000"} {
-	    set loglevel [::tcl::prefix match -message "log level" \
-				  {debug info warn error} $level]
-	}
-	return $loglevel
     }
 
     variable purgeTimer deletions
     constructor {{path ""}} {
-	namespace import ::http::cookiejar_support::*
-	namespace upvar ::http cookiejar_purgeinterval purgeinterval
+	namespace import [info object namespace [self class]]::support::*
 
 	if {$path eq ""} {
 	    sqlite3 [namespace current]::db :memory:
@@ -237,17 +239,25 @@ package provide cookiejar $::http::cookiejar_version
     }
 
     method PostponePurge {} {
-	namespace upvar ::http cookiejar_purgeinterval interval
+	namespace upvar [info object namespace [self class]] \
+	    purgeinterval interval
 	catch {after cancel $purgeTimer}
 	set purgeTimer [after $interval [namespace code {my PurgeCookies}]]
     }
 
     method GetDomainListOnline {} {
-	upvar 0 ::http::cookiejar_domainlist url
+	namespace upvar [info object namespace [self class]] \
+	    domainlist url domaincache cache
+	lassign $cache when what
+	if {$when > [clock seconds] - 3600} {
+	    log debug "using cached value created at [clock format $when -format {%Y%m%dT%H%M%SZ} -gmt 1]"
+	    return $what
+	}
 	log debug "loading domain list from %s" $url
 	set tok [::http::geturl $url]
 	try {
 	    if {[::http::ncode $tok] == 200} {
+		set cache [list [clock seconds] [::http::data $tok]]
 		return [::http::data $tok]
 	    }
 	    log error "failed to fetch list of forbidden cookie domains from %s: %s" \
@@ -258,7 +268,8 @@ package provide cookiejar $::http::cookiejar_version
 	}
     }
     method GetDomainListOffline {} {
-	upvar 0 ::http::cookiejar_domainfile filename
+	namespace upvar [info object namespace [self class]] \
+	    domainfile filename
 	log debug "loading domain list from %s" $filename
 	try {
 	    set f [open $filename]
@@ -278,7 +289,8 @@ package provide cookiejar $::http::cookiejar_version
 	}
     }
     method InitDomainList {} {
-	upvar 0 ::http::cookiejar_offline offline
+	namespace upvar [info object namespace [self class]] \
+	    offline offline
 	if {!$offline} {
 	    try {
 		set data [my GetDomainListOnline]
@@ -529,9 +541,8 @@ package provide cookiejar $::http::cookiejar_version
     }
 
     method PurgeCookies {} {
-	namespace upvar ::http \
-	    cookiejar_vacuumtrigger trigger \
-	    cookiejar_purgeinterval interval
+	namespace upvar [info object namespace [self class]] \
+	    vacuumtrigger trigger  purgeinterval interval
 	my PostponePurge
 	set now [clock seconds]
 	log debug "purging cookies that expired before %s" [clock format $now]
