@@ -214,7 +214,7 @@ static int		StackSetBlockMode(Channel *chanPtr, int mode);
 static int		SetBlockMode(Tcl_Interp *interp, Channel *chanPtr,
 			    int mode);
 static void		StopCopy(CopyState *csPtr);
-static int		TranslateInputEOL(ChannelState *statePtr, char *dst,
+static void		TranslateInputEOL(ChannelState *statePtr, char *dst,
 			    const char *src, int *dstLenPtr, int *srcLenPtr);
 static void		UpdateInterest(Channel *chanPtr);
 static int		Write(Channel *chanPtr, const char *src,
@@ -5574,7 +5574,7 @@ ReadChars(
  *---------------------------------------------------------------------------
  */
 
-static int
+static void 
 TranslateInputEOL(
     ChannelState *statePtr,	/* Channel being read, for EOL translation and
 				 * EOF character. */
@@ -5594,6 +5594,29 @@ TranslateInputEOL(
     int srcLen = *srcLenPtr;
     int inEofChar = statePtr->inEofChar;
 
+    /*
+     * Depending on the translation mode in use, there's no need
+     * to scan more srcLen bytes at srcStart than can possibly transform
+     * to dstLen bytes.  This keeps the scan for eof char below from
+     * being pointlessly long.
+     */
+
+    switch (statePtr->inputTranslation) {
+    case TCL_TRANSLATE_LF:
+    case TCL_TRANSLATE_CR:
+	if (srcLen > dstLen) {
+	/* In these modes, each src byte become a dst byte. */
+	    srcLen = dstLen;
+	}
+	break;
+    default:
+	/* In other modes, at most 2 src bytes become a dst byte. */
+	if (srcLen > 2 * dstLen) {
+	    srcLen = 2 * dstLen;
+	}
+	break;
+    }
+
     if (inEofChar != '\0') {
 	/*
 	 * Make sure we do not read past any logical end of channel input
@@ -5605,36 +5628,29 @@ TranslateInputEOL(
 	}
     }
 
-    if (dstLen > srcLen) {
-	dstLen = srcLen;
-    }
-
     switch (statePtr->inputTranslation) {
     case TCL_TRANSLATE_LF:
+    case TCL_TRANSLATE_CR:
 	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) dstLen);
+	    memcpy(dstStart, srcStart, (size_t) srcLen);
 	}
-	srcLen = dstLen;
-	break;
-    case TCL_TRANSLATE_CR: {
-	char *dst, *dstEnd;
+	if (statePtr->inputTranslation == TCL_TRANSLATE_CR) {
+	    char *dst = dstStart;
+	    char *dstEnd = dstStart + srcLen;
 
-	if (dstStart != srcStart) {
-	    memcpy(dstStart, srcStart, (size_t) dstLen);
-	}
-	dstEnd = dstStart + dstLen;
-	for (dst = dstStart; dst < dstEnd; dst++) {
-	    if (*dst == '\r') {
-		*dst = '\n';
+	    while ((dst = memchr(dst, '\r', dstEnd - dst))) {
+		*dst++ = '\n';
 	    }
 	}
-	srcLen = dstLen;
+	dstLen = srcLen;
 	break;
-    }
     case TCL_TRANSLATE_CRLF: {
 	char *dst;
 	const char *src, *srcEnd, *srcMax;
 
+    if (dstLen > srcLen) {
+	dstLen = srcLen;
+    }
 	dst = dstStart;
 	src = srcStart;
 	srcEnd = srcStart + dstLen;
@@ -5660,29 +5676,23 @@ TranslateInputEOL(
 	break;
     }
     case TCL_TRANSLATE_AUTO: {
-	char *dst;
-	const char *src, *srcEnd, *srcMax;
+	const char *srcEnd = srcStart + srcLen;
+	const char *dstEnd = dstStart + dstLen;
+	const char *src = srcStart;
+	char *dst = dstStart;
 
-	dst = dstStart;
-	src = srcStart;
-	srcEnd = srcStart + dstLen;
-	srcMax = srcStart + srcLen;
-
-	if ((statePtr->flags & INPUT_SAW_CR) && (src < srcMax)) {
+	if ((statePtr->flags & INPUT_SAW_CR) && srcLen) {
 	    if (*src == '\n') {
 		src++;
 	    }
 	    ResetFlag(statePtr, INPUT_SAW_CR);
 	}
-	for ( ; src < srcEnd; ) {
+	for ( ; dst < dstEnd && src < srcEnd; ) {
 	    if (*src == '\r') {
 		src++;
-		if (src >= srcMax) {
+		if (src == srcEnd) {
 		    SetFlag(statePtr, INPUT_SAW_CR);
 		} else if (*src == '\n') {
-		    if (srcEnd < srcMax) {
-			srcEnd++;
-		    }
 		    src++;
 		}
 		*dst++ = '\n';
@@ -5710,10 +5720,7 @@ TranslateInputEOL(
 	SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
 	ResetFlag(statePtr, INPUT_SAW_CR);
-	return 1;
     }
-
-    return 0;
 }
 
 /*
