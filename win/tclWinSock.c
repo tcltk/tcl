@@ -1379,6 +1379,12 @@ CreateClientSocket(
 #ifdef DEBUGGING
 	    fprintf(stderr, "lastError: %d\n", Tcl_GetErrno());
 #endif
+	    /*
+	     * Clear the tsd socket list pointer if we did not wait for
+	     * the FD_CONNECT asyncroneously
+	     */
+	    tsdPtr->pendingSocketInfo = NULL;
+	    
 	    if (Tcl_GetErrno() == 0) {
 		goto out;
 	    }
