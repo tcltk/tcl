@@ -48,7 +48,7 @@
 #include "tclWinInt.h"
 
 //#define DEBUGGING
-//#ifdef DEBUGGING
+#ifdef DEBUGGING
 #define DEBUG(x) fprintf(stderr, ">>> %p %s(%d): %s<<<\n", \
 			    infoPtr, __FUNCTION__, __LINE__, x)
 #else
@@ -201,7 +201,7 @@ typedef struct {
  * structure.
  */
 
-#define SOCKET_ASYNC		(1<<0)	/* The socket is in blocking mode. */
+#define TCP_ASYNC_SOCKET	(1<<0)	/* The socket is in blocking mode. */
 #define SOCKET_EOF		(1<<1)	/* A zero read happened on the
 					 * socket. */
 #define SOCKET_ASYNC_CONNECT	(1<<2)	/* This socket uses async connect. */
@@ -937,9 +937,9 @@ TcpBlockProc(
     SocketInfo *infoPtr = instanceData;
 
     if (mode == TCL_MODE_NONBLOCKING) {
-	infoPtr->flags |= SOCKET_ASYNC;
+	infoPtr->flags |= TCP_ASYNC_SOCKET;
     } else {
-	infoPtr->flags &= ~(SOCKET_ASYNC);
+	infoPtr->flags &= ~(TCP_ASYNC_SOCKET);
     }
     return 0;
 }
@@ -1389,7 +1389,7 @@ out:
     DEBUG("connected or finally failed");
     /* Clear async flag (not really necessary, not used any more) */
     infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-    if (Tcl_GetErrno() != 0 && interp != NULL) {
+    if ( Tcl_GetErrno() != 0 ) {
 	DEBUG("ERRNO");
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -1427,7 +1427,7 @@ out:
  *	This routine should only be called if flag ASYNC_CONNECT is set.
  *
  * Results:
- *	Returns -1 on success or 0 on failure, with an error code in
+ *	Returns 1 on success or 0 on failure, with an error code in
  *	errorCodePtr.
  *
  * Side effects:
@@ -1444,14 +1444,6 @@ WaitForConnect(
     int result;
     int oldMode;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-    /*
-     * A non blocking socket waiting for an asyncronous connect
-     * returns directly an error
-     */
-    if (infoPtr->flags & SOCKET_ASYNC) {
-	*errorCodePtr = EWOULDBLOCK;
-	return 0;
-    }
 
     /*
      * Be sure to disable event servicing so we are truly modal.
@@ -1471,26 +1463,46 @@ WaitForConnect(
 	    infoPtr->readyEvents &= ~(FD_CONNECT);
 
 	    /*
-	     * Disable async connect as we continue now synchoneously
+	     * For blocking sockets disable async connect
+	     * as we continue now synchoneously
 	     */
-	    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+	    if (! ( infoPtr->flags & TCP_ASYNC_SOCKET ) ) {
+		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+	    }
 
             /* Free list lock */
             SetEvent(tsdPtr->socketListLock);
 
-	    /* continue async connect syncroneously */
+	    /* continue connect */
 	    result = CreateClientSocket(NULL, infoPtr);
 
 	    /* Restore event service mode */
 	    (void) Tcl_SetServiceMode(oldMode);
 
-	    /* Todo: find adequate error code */
+	    /* Succesfully connected or async connect restarted */
+	    if (result == TCL_OK) {
+		if ( infoPtr->flags & SOCKET_REENTER_PENDING ) {
+		    *errorCodePtr = EWOULDBLOCK;
+		    return 0;
+		}
+		return 1;
+	    }
+	    /* error case */
 	    *errorCodePtr = EFAULT;
-	    return (result == TCL_OK);
+	    return 1;
 	}
 
         /* Free list lock */
         SetEvent(tsdPtr->socketListLock);
+
+	/*
+	 * A non blocking socket waiting for an asyncronous connect
+	 * returns directly an error
+	 */
+	if ( infoPtr->flags & TCP_ASYNC_SOCKET ) {
+	    *errorCodePtr = EWOULDBLOCK;
+	    return 0;
+	}
 
 	/*
 	 * Wait until something happens.
@@ -1549,7 +1561,7 @@ WaitForSocketEvent(
 	    break;
 	} else if (infoPtr->readyEvents & events) {
 	    break;
-	} else if (infoPtr->flags & SOCKET_ASYNC) {
+	} else if (infoPtr->flags & TCP_ASYNC_SOCKET) {
 	    *errorCodePtr = EWOULDBLOCK;
 	    result = 0;
 	    break;
@@ -2101,7 +2113,7 @@ TcpInputProc(
 	 * Check for error condition or underflow in non-blocking case.
 	 */
 
-	if ((infoPtr->flags & SOCKET_ASYNC) || (error != WSAEWOULDBLOCK)) {
+	if ((infoPtr->flags & TCP_ASYNC_SOCKET) || (error != WSAEWOULDBLOCK)) {
 	    TclWinConvertError(error);
 	    *errorCodePtr = Tcl_GetErrno();
 	    bytesRead = -1;
@@ -2205,7 +2217,7 @@ TcpOutputProc(
 	error = WSAGetLastError();
 	if (error == WSAEWOULDBLOCK) {
 	    infoPtr->readyEvents &= ~(FD_WRITE);
-	    if (infoPtr->flags & SOCKET_ASYNC) {
+	    if (infoPtr->flags & TCP_ASYNC_SOCKET) {
 		*errorCodePtr = EWOULDBLOCK;
 		bytesWritten = -1;
 		break;
