@@ -5645,28 +5645,38 @@ TranslateInputEOL(
 	dstLen = srcLen;
 	break;
     case TCL_TRANSLATE_CRLF: {
-	const char *srcEnd = srcStart + srcLen;
-	const char *dstEnd = dstStart + dstLen;
-	const char *src = srcStart;
+	const char *crFound, *src = srcStart;
 	char *dst = dstStart;
+	int lesser = (dstLen < srcLen) ? dstLen : srcLen;
 
-	for ( ; dst < dstEnd && src < srcEnd; ) {
-	    if (*src == '\r') {
-		src++;
-		if (src == srcEnd) {
-		    src--;
-		    break;
-		} else if (*src == '\n') {
-		    *dst++ = *src++;
-		} else {
-		    *dst++ = '\r';
-		}
-	    } else {
-		*dst++ = *src++;
+	while ((crFound = memchr(src, '\r', lesser))) {
+	    int numBytes = crFound - src;
+	    memmove(dst, src, numBytes);
+
+	    dst += numBytes;
+	    src += numBytes;
+	    dstLen -= numBytes;
+	    srcLen -= numBytes;
+	    if (srcLen == 1) {
+		/* valid src bytes end in \r */
+		lesser = 0;
+		break;
 	    }
+	    if (src[1] == '\n') {
+		*dst++ = '\n';
+		srcLen -= 2;
+		src += 2;
+	    } else {
+		*dst++ = '\r';
+		srcLen--;
+		src++;
+	    }
+	    dstLen++;
+	    lesser = (dstLen < srcLen) ? dstLen : srcLen;
 	}
-	srcLen = src - srcStart;
-	dstLen = dst - dstStart;
+	memmove(dst, src, lesser);
+	srcLen = src + lesser - srcStart;
+	dstLen = dst + lesser - dstStart;
 	break;
     }
     case TCL_TRANSLATE_AUTO: {
