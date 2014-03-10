@@ -5645,21 +5645,15 @@ TranslateInputEOL(
 	dstLen = srcLen;
 	break;
     case TCL_TRANSLATE_CRLF: {
-	char *dst;
-	const char *src, *srcEnd, *srcMax;
+	const char *srcEnd = srcStart + srcLen;
+	const char *dstEnd = dstStart + dstLen;
+	const char *src = srcStart;
+	char *dst = dstStart;
 
-    if (dstLen > srcLen) {
-	dstLen = srcLen;
-    }
-	dst = dstStart;
-	src = srcStart;
-	srcEnd = srcStart + dstLen;
-	srcMax = srcStart + srcLen;
-
-	for ( ; src < srcEnd; ) {
+	for ( ; dst < dstEnd && src < srcEnd; ) {
 	    if (*src == '\r') {
 		src++;
-		if (src >= srcMax) {
+		if (src == srcEnd) {
 		    src--;
 		    break;
 		} else if (*src == '\n') {
@@ -5710,7 +5704,7 @@ TranslateInputEOL(
     *dstLenPtr = dstLen;
     *srcLenPtr = srcLen;
 
-    if ((eof != NULL) && (srcStart + srcLen >= eof)) {
+    if (srcStart + srcLen == eof) {
 	/*
 	 * EOF character was seen in EOL translated range. Leave current file
 	 * position pointing at the EOF character, but don't store the EOF
