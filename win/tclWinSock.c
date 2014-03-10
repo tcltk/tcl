@@ -1395,6 +1395,12 @@ out:
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 				"couldn't open socket: %s", Tcl_PosixError(interp)));
 	}
+	/*
+	 * In the final error case inform fileevent that we failed
+	 */
+	if (async_callback) {
+	    Tcl_NotifyChannel(infoPtr->channel, TCL_WRITABLE);
+	}
 	return TCL_ERROR;
     }
     /*
@@ -1423,8 +1429,11 @@ out:
  *
  * WaitForConnect --
  *
- *	Terminate an asyncroneous connect syncroneously.
- *	This routine should only be called if flag ASYNC_CONNECT is set.
+ *	Process an asyncroneous connect by gets/puts commands.
+ *	For blocking calls, terminate connect synchroneously.
+ *	For non blocking calls, do one asynchroneous step if possible.
+ *	This routine should only be called if flag SOCKET_REENTER_PENDING
+ *	is set.
  *
  * Results:
  *	Returns 1 on success or 0 on failure, with an error code in
@@ -1432,6 +1441,7 @@ out:
  *
  * Side effects:
  *	Processes socket events off the system queue.
+ *	May process asynchroneous connect.
  *
  *----------------------------------------------------------------------
  */
