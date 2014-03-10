@@ -417,7 +417,9 @@ WaitForConnect(
 	errno = 0;
 	state = TclUnixWaitForFile(statePtr->fds.fd,
 		TCL_WRITABLE | TCL_EXCEPTION, timeOut);
-        CreateClientSocket(NULL, statePtr);
+        if (state != 0) {
+            CreateClientSocket(NULL, statePtr);
+        }
         if (statePtr->flags & TCP_ASYNC_CONNECT) {
             /* We are still in progress, so ignore the result of the last
              * attempt */
