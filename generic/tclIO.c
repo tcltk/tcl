@@ -5671,7 +5671,7 @@ TranslateInputEOL(
 		srcLen--;
 		src++;
 	    }
-	    dstLen++;
+	    dstLen--;
 	    lesser = (dstLen < srcLen) ? dstLen : srcLen;
 	}
 	memmove(dst, src, lesser);
