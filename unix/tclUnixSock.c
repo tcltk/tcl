@@ -163,6 +163,8 @@ static TclInitProcessGlobalValueProc InitializeHostName;
 static ProcessGlobalValue hostName =
 	{0, 0, NULL, NULL, InitializeHostName, NULL, NULL};
 
+#if 0
+/* printf debugging */
 void printaddrinfo(struct addrinfo *addrlist, char *prefix)
 {
     char host[NI_MAXHOST], port[NI_MAXSERV];
@@ -175,6 +177,7 @@ void printaddrinfo(struct addrinfo *addrlist, char *prefix)
 	fprintf(stderr,"%s: %s:%s\n", prefix, host, port);
     }
 }
+#endif
 /*
  *----------------------------------------------------------------------
  *
@@ -409,17 +412,19 @@ WaitForConnect(
 	    timeOut = 0;
 	} else {
 	    timeOut = -1;
+	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
 	}
 	errno = 0;
 	state = TclUnixWaitForFile(statePtr->fds.fd,
 		TCL_WRITABLE | TCL_EXCEPTION, timeOut);
-	if (state & TCL_EXCEPTION) {
-	    return -1;
-	}
-	if (state & TCL_WRITABLE) {
-	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
-	} else if (timeOut == 0) {
+        CreateClientSocket(NULL, statePtr);
+        if (statePtr->flags & TCP_ASYNC_CONNECT) {
+            /* We are still in progress, so ignore the result of the last
+             * attempt */
 	    *errorCodePtr = errno = EWOULDBLOCK;
+	    return -1;
+        }
+	if (state & TCL_EXCEPTION) {
 	    return -1;
 	}
     }
@@ -1171,9 +1176,6 @@ Tcl_OpenTcpClient(
         }
         return NULL;
     }
-
-    printaddrinfo(myaddrlist, "local");
-    printaddrinfo(addrlist, "remote");
 
     /*
      * Allocate a new TcpState for this socket.
