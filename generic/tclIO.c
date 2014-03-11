@@ -5680,6 +5680,40 @@ TranslateInputEOL(
 	break;
     }
     case TCL_TRANSLATE_AUTO: {
+#if 1
+	const char *crFound, *src = srcStart;
+	char *dst = dstStart;
+	int lesser;
+
+	if ((statePtr->flags & INPUT_SAW_CR) && srcLen) {
+	    if (*src == '\n') {
+		src++;
+		srcLen--;
+	    }
+	    ResetFlag(statePtr, INPUT_SAW_CR);
+	}
+	lesser = (dstLen < srcLen) ? dstLen : srcLen;
+	while ((crFound = memchr(src, '\r', lesser))) {
+	    int numBytes = crFound - src;
+	    memmove(dst, src, numBytes);
+
+	    dst[numBytes] = '\n';
+	    dst += numBytes + 1;
+	    dstLen -= numBytes + 1;
+	    src += numBytes + 1;
+	    srcLen -= numBytes + 1;
+	    if (srcLen == 0) {
+		SetFlag(statePtr, INPUT_SAW_CR);
+	    } else if (*src == '\n') {
+		src++;
+		srcLen--;
+	    }
+	    lesser = (dstLen < srcLen) ? dstLen : srcLen;
+	}
+	memmove(dst, src, lesser);
+	srcLen = src + lesser - srcStart;
+	dstLen = dst + lesser - dstStart;
+#else
 	const char *srcEnd = srcStart + srcLen;
 	const char *dstEnd = dstStart + dstLen;
 	const char *src = srcStart;
@@ -5706,6 +5740,7 @@ TranslateInputEOL(
 	}
 	srcLen = src - srcStart;
 	dstLen = dst - dstStart;
+#endif
 	break;
     }
     default:
