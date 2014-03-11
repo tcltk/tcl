@@ -73,7 +73,7 @@ struct TcpState {
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
     int filehandlers;           /* Caches FileHandlers that get set up while
                                  * an async socket is not yet connected. */
-    int status;                 /* Cache status of async socket. */
+    int error;                  /* Cache SO_ERROR of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
 };
 
@@ -417,7 +417,7 @@ WaitForConnect(
 	errno = 0;
 	state = TclUnixWaitForFile(statePtr->fds.fd,
 		TCL_WRITABLE | TCL_EXCEPTION, timeOut);
-        if (state != 0) {
+        if (timeOut == -1 && state != 0) {
             CreateClientSocket(NULL, statePtr);
         }
         if (statePtr->flags & TCP_ASYNC_CONNECT) {
@@ -522,6 +522,7 @@ TcpOutputProc(
 	return -1;
     }
     written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
+
     if (written > -1) {
 	return written;
     }
@@ -752,24 +753,22 @@ TcpGetOptionProc(
     if ((len > 1) && (optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
 	socklen_t optlen = sizeof(int);
-	int err, ret;
 
-        if (statePtr->status == 0) {
-            ret = getsockopt(statePtr->fds.fd, SOL_SOCKET, SO_ERROR,
-                            (char *) &err, &optlen);
-            if (statePtr->flags & TCP_ASYNC_CONNECT) {
-                statePtr->status = err;
-            }
-            if (ret < 0) {
-                err = errno;
-            }
+        if (statePtr->flags & TCP_ASYNC_CONNECT) {
+            /* Suppress errors as long as we are not done */
+            errno = 0;
+        } else if (statePtr->error != 0) {
+            errno = statePtr->error;
+            statePtr->error = 0;
         } else {
-            err = statePtr->status;
-            statePtr->status = 0;
+            int err;
+            getsockopt(statePtr->fds.fd, SOL_SOCKET, SO_ERROR,
+                    (char *) &err, &optlen);
+            errno = err;
         }
-	if (err != 0) {
-	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(err), -1);
-	}
+        if (errno != 0) {
+	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(errno), -1);
+        }
 	return TCL_OK;
     }
 
@@ -982,7 +981,7 @@ CreateClientSocket(
 {
     socklen_t optlen;
     int async_callback = (state->addr != NULL);
-    int status;
+    int ret = -1, error;
     int async = state->flags & TCP_ASYNC_CONNECT;
 
     if (async_callback) {
@@ -991,8 +990,6 @@ CreateClientSocket(
 
     for (state->addr = state->addrlist; state->addr != NULL;
             state->addr = state->addr->ai_next) {
-	status = -1;
-
         for (state->myaddr = state->myaddrlist; state->myaddr != NULL;
                 state->myaddr = state->myaddr->ai_next) {
             int reuseaddr;
@@ -1014,6 +1011,7 @@ CreateClientSocket(
             if (state->fds.fd >= 0) {
 		close(state->fds.fd);
 		state->fds.fd = -1;
+                errno = 0;
 	    }
 
 	    state->fds.fd = socket(state->addr->ai_family, SOCK_STREAM, 0);
@@ -1035,19 +1033,18 @@ CreateClientSocket(
 	    TclSockMinimumBuffers(INT2PTR(state->fds.fd), SOCKET_BUFSIZE);
     
 	    if (async) {
-		status = TclUnixSetBlockingMode(state->fds.fd,
-                        TCL_MODE_NONBLOCKING);
-		if (status < 0) {
+                ret = TclUnixSetBlockingMode(state->fds.fd,TCL_MODE_NONBLOCKING);
+                if (ret < 0) {
                     continue;
-		}
-	    }
+                }
+            }
 
             reuseaddr = 1;
             (void) setsockopt(state->fds.fd, SOL_SOCKET, SO_REUSEADDR,
                     (char *) &reuseaddr, sizeof(reuseaddr));
-            status = bind(state->fds.fd, state->myaddr->ai_addr,
+            ret = bind(state->fds.fd, state->myaddr->ai_addr,
                     state->myaddr->ai_addrlen);
-            if (status < 0) {
+            if (ret < 0) {
                 continue;
             }
 
@@ -1058,9 +1055,10 @@ CreateClientSocket(
 	     * in being informed when the connect completes.
 	     */
 	    
-	    status = connect(state->fds.fd, state->addr->ai_addr,
-                    state->addr->ai_addrlen);
-	    if (status < 0 && errno == EINPROGRESS) {
+	    ret = connect(state->fds.fd, state->addr->ai_addr,
+                        state->addr->ai_addrlen);
+            error = errno;
+	    if (ret < 0 && errno == EINPROGRESS) {
                 Tcl_CreateFileHandler(state->fds.fd,
                         TCL_WRITABLE|TCL_EXCEPTION, TcpAsyncCallback, state);
                 return TCL_OK;
@@ -1077,23 +1075,18 @@ CreateClientSocket(
 
                 optlen = sizeof(int);
 
-                if (state->status == 0) {
-                    getsockopt(state->fds.fd, SOL_SOCKET, SO_ERROR,
-                            (char *) &status, &optlen);
-                    state->status = status;
-                } else {
-                    status = state->status;
-                    state->status = 0;
-                }
+                getsockopt(state->fds.fd, SOL_SOCKET, SO_ERROR,
+                        (char *) &error, &optlen);
+                errno = error;
             }
-	    if (status == 0) {
+	    if (ret == 0 || errno == 0) {
 		goto out;
 	    }
 	}
     }
 
 out:
-
+    state->error = errno;
     CLEAR_BITS(state->flags, TCP_ASYNC_CONNECT);
     if (async_callback) {
         /*
@@ -1113,7 +1106,7 @@ out:
          */
 
         Tcl_NotifyChannel(state->channel, TCL_WRITABLE);
-    } else if (status != 0) {
+    } else if (ret != 0) {
         /*
          * Failure for either a synchronous connection, or an async one that
          * failed before it could enter background mode, e.g. because an
