@@ -5653,10 +5653,8 @@ TranslateInputEOL(
 	    int numBytes = crFound - src;
 	    memmove(dst, src, numBytes);
 
-	    dst += numBytes;
-	    src += numBytes;
-	    dstLen -= numBytes;
-	    srcLen -= numBytes;
+	    dst += numBytes; dstLen -= numBytes;
+	    src += numBytes; srcLen -= numBytes;
 	    if (srcLen == 1) {
 		/* valid src bytes end in \r */
 		lesser = 0;
@@ -5664,12 +5662,10 @@ TranslateInputEOL(
 	    }
 	    if (src[1] == '\n') {
 		*dst++ = '\n';
-		srcLen -= 2;
-		src += 2;
+		src += 2; srcLen -= 2;
 	    } else {
 		*dst++ = '\r';
-		srcLen--;
-		src++;
+		src++; srcLen--;
 	    }
 	    dstLen--;
 	    lesser = (dstLen < srcLen) ? dstLen : srcLen;
@@ -5680,16 +5676,12 @@ TranslateInputEOL(
 	break;
     }
     case TCL_TRANSLATE_AUTO: {
-#if 1
 	const char *crFound, *src = srcStart;
 	char *dst = dstStart;
 	int lesser;
 
 	if ((statePtr->flags & INPUT_SAW_CR) && srcLen) {
-	    if (*src == '\n') {
-		src++;
-		srcLen--;
-	    }
+	    if (*src == '\n') { src++; srcLen--; }
 	    ResetFlag(statePtr, INPUT_SAW_CR);
 	}
 	lesser = (dstLen < srcLen) ? dstLen : srcLen;
@@ -5698,49 +5690,18 @@ TranslateInputEOL(
 	    memmove(dst, src, numBytes);
 
 	    dst[numBytes] = '\n';
-	    dst += numBytes + 1;
-	    dstLen -= numBytes + 1;
-	    src += numBytes + 1;
-	    srcLen -= numBytes + 1;
+	    dst += numBytes + 1; dstLen -= numBytes + 1;
+	    src += numBytes + 1; srcLen -= numBytes + 1;
 	    if (srcLen == 0) {
 		SetFlag(statePtr, INPUT_SAW_CR);
 	    } else if (*src == '\n') {
-		src++;
-		srcLen--;
+		src++; srcLen--;
 	    }
 	    lesser = (dstLen < srcLen) ? dstLen : srcLen;
 	}
 	memmove(dst, src, lesser);
 	srcLen = src + lesser - srcStart;
 	dstLen = dst + lesser - dstStart;
-#else
-	const char *srcEnd = srcStart + srcLen;
-	const char *dstEnd = dstStart + dstLen;
-	const char *src = srcStart;
-	char *dst = dstStart;
-
-	if ((statePtr->flags & INPUT_SAW_CR) && srcLen) {
-	    if (*src == '\n') {
-		src++;
-	    }
-	    ResetFlag(statePtr, INPUT_SAW_CR);
-	}
-	for ( ; dst < dstEnd && src < srcEnd; ) {
-	    if (*src == '\r') {
-		src++;
-		if (src == srcEnd) {
-		    SetFlag(statePtr, INPUT_SAW_CR);
-		} else if (*src == '\n') {
-		    src++;
-		}
-		*dst++ = '\n';
-	    } else {
-		*dst++ = *src++;
-	    }
-	}
-	srcLen = src - srcStart;
-	dstLen = dst - dstStart;
-#endif
 	break;
     }
     default:
