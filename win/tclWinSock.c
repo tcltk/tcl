@@ -1249,6 +1249,7 @@ CreateClientSocket(
 	     * Reset last error from last try
 	     */
 	    infoPtr->lastError = 0;
+	    Tcl_SetErrno(0);
 	    
 	    infoPtr->sockets->fd = socket(infoPtr->myaddr->ai_family, SOCK_STREAM, 0);
 	    
@@ -1504,8 +1505,8 @@ WaitForConnect(
 		return 1;
 	    }
 	    /* error case */
-	    *errorCodePtr = EFAULT;
-	    return 1;
+	    *errorCodePtr = Tcl_GetErrno();
+	    return 0;
 	}
 
         /* Free list lock */
@@ -2417,15 +2418,23 @@ TcpGetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
-	int optlen;
 	DWORD err;
-	int ret;
+	/*
+	 * Check if an asyncroneous connect is running
+	 * and return ok
+	 */
+	if (infoPtr->flags & SOCKET_REENTER_PENDING) {
+	    err = 0;
+	} else {
+	    int optlen;
+	    int ret;
 
-	optlen = sizeof(int);
-	ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
-		(char *)&err, &optlen);
-	if (ret == SOCKET_ERROR) {
-	    err = WSAGetLastError();
+	    optlen = sizeof(int);
+	    ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
+		    (char *)&err, &optlen);
+	    if (ret == SOCKET_ERROR) {
+		err = WSAGetLastError();
+	    }
 	}
 	if (err) {
 	    TclWinConvertError(err);
