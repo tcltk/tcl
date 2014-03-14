@@ -260,7 +260,7 @@ static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 static int		SocketsEnabled(void);
 static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr,
-			    int terminate_connect);
+			    int noblock);
 static int		WaitForSocketEvent(TcpState *statePtr, int events,
 			    int *errorCodePtr);
 static void		AddSocketInfoFd(TcpState *statePtr,  SOCKET socket);
@@ -556,19 +556,14 @@ TcpBlockModeProc(
  *
  * WaitForConnect --
  *
- *	Process an asyncroneous connect by other commands (gets... ).
- *	Do one connect step if pending as if the event loop would run.
- *
- *	Blocking commands may call in with terminate_connect to terminate
- *	the syncroneous connect syncroneously.
- *
- *	Ok is directly returned if no async connect is running.
+ *	Wait for a connection on an asynchronously opened socket to be
+ *	completed.  In nonblocking mode, just test if the connection
+ *	has completed without blocking. The noblock parameter allows to
+ *	enforce nonblocking behaviour even on sockets in blocking mode.
  *
  * Results:
- *	Returns 1 on success or 0 on failure, with a possix error code in
- *	errorCodePtr.
- *	If the connect is not terminated, errorCode is set to EWOULDBLOCK
- *	and 0 is returned.
+ * 	0 if the connection has completed, -1 if still in progress
+ * 	or there is an error.
  *
  * Side effects:
  *	Processes socket events off the system queue.
@@ -581,7 +576,7 @@ static int
 WaitForConnect(
     TcpState *statePtr,		/* State of the socket. */
     int *errorCodePtr,		/* Where to store errors? */
-    int terminate_connect)	/* Should the connect be terminated? */
+    int noblock)		/* Don't wait, even for sockets in blocking mode */
 {
     int result;
     int oldMode;
@@ -591,7 +586,7 @@ WaitForConnect(
      * Check if an async connect is running. If not return ok
      */
     if ( !(statePtr->flags & SOCKET_REENTER_PENDING) )
-	return 1;
+	return 0;
     
     /*
      * Be sure to disable event servicing so we are truly modal.
@@ -615,8 +610,8 @@ WaitForConnect(
 	     * For blocking sockets disable async connect
 	     * as we continue now synchoneously
 	     */
-	    if ( terminate_connect ) {
-		statePtr->flags &= ~(TCP_ASYNC_CONNECT);
+	    if ( !(noblock || (statePtr->flags & TCP_ASYNC_SOCKET)) ) {
+		CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
 	    }
 
 	    /* Free list lock */
@@ -632,13 +627,13 @@ WaitForConnect(
 	    if (result == TCL_OK) {
 		if ( statePtr->flags & SOCKET_REENTER_PENDING ) {
 		    *errorCodePtr = EWOULDBLOCK;
-		    return 0;
+		    return -1;
 		}
-		return 1;
+		return 0;
 	    }
 	    /* error case */
 	    *errorCodePtr = Tcl_GetErrno();
-	    return 0;
+	    return -1;
 	}
 
         /* Free list lock */
@@ -648,9 +643,9 @@ WaitForConnect(
 	 * A non blocking socket waiting for an asyncronous connect
 	 * returns directly an error
 	 */
-	if ( ! terminate_connect ) {
+	if ( noblock || (statePtr->flags & TCP_ASYNC_SOCKET) ) {
 	    *errorCodePtr = EWOULDBLOCK;
-	    return 0;
+	    return -1;
 	}
 
 	/*
@@ -722,8 +717,7 @@ TcpInputProc(
      * For a non blocking socket return EWOULDBLOCK if connect not terminated
      */
 
-    if ( !WaitForConnect(statePtr, errorCodePtr,
-	    ! ( statePtr->flags & TCP_ASYNC_SOCKET ))) {
+    if (WaitForConnect(statePtr, errorCodePtr, 0) != 0) {
 	return -1;
     }
 
@@ -852,8 +846,7 @@ TcpOutputProc(
      * For a non blocking socket return EWOULDBLOCK if connect not terminated
      */
 
-    if ( !WaitForConnect(statePtr, errorCodePtr,
-	    ! ( statePtr->flags & TCP_ASYNC_SOCKET ))) {
+    if (WaitForConnect(statePtr, errorCodePtr, 0) != 0) {
 	return -1;
     }
 
@@ -1176,6 +1169,7 @@ TcpGetOptionProc(
     char host[NI_MAXHOST], port[NI_MAXSERV];
     SOCKET sock;
     size_t len = 0;
+    int errorCode;
     int reverseDNS = 0;
 #define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
@@ -1193,6 +1187,9 @@ TcpGetOptionProc(
 	return TCL_ERROR;
     }
 
+    /* Go one step in async connect */
+    WaitForConnect(statePtr, &errorCode, 1);
+
     sock = statePtr->sockets->fd;
     if (optionName != NULL) {
 	len = strlen(optionName);
@@ -1201,23 +1198,10 @@ TcpGetOptionProc(
     if ((len > 1) && (optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
 
-	if ( (statePtr->flags & SOCKET_REENTER_PENDING) ) {
-
-	    /*
-	     * Asyncroneous connect is running.
-	     * Process it one step without blocking.
-	     * Return its error or nothing if connect not
-	     * terminated.
-	     */
-
-	    int errorCode;
-	    if (!WaitForConnect(statePtr, &errorCode, 0)
-		    && errorCode != EWOULDBLOCK) {
-		/* connect terminated with error */
-		Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(errorCode), -1);
-	    }
-
-	} else {
+	/*
+	* Do not return any errors if async connect is running
+	*/
+	if (! (statePtr->flags & SOCKET_REENTER_PENDING) ) {
 	    int optlen;
 	    int ret;
     	    DWORD err;
@@ -1244,6 +1228,14 @@ TcpGetOptionProc(
 	    }
 	}
 	return TCL_OK;
+    }
+
+    if ((len > 1) && (optionName[1] == 'c') &&
+	    (strncmp(optionName, "-connecting", len) == 0)) {
+
+        Tcl_DStringAppend(dsPtr,
+                        (statePtr->flags & SOCKET_REENTER_PENDING) ? "1" : "0", -1);
+        return TCL_OK;
     }
 
     if (interp != NULL && Tcl_GetVar(interp, SUPPRESS_RDNS_VAR, 0) != NULL) {
