@@ -170,8 +170,7 @@ struct SocketInfo {
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
     int status;                 /* Cache status of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
-    int lastError;		/* Error code from notifier thread. */
-    int connectError;		/* Error code from failed async connect. */
+    int lastError;		/* Error code from last message. */
     struct SocketInfo *nextPtr;	/* The next socket on the per-thread socket
 				 * list. */
 };
@@ -780,13 +779,9 @@ SocketEventProc(
 	infoPtr->readyEvents &= ~(FD_CONNECT);
 	DEBUG("FD_CONNECT");
         if ( infoPtr->flags & SOCKET_REENTER_PENDING ) {
-	    /* free list lock */
 	    SetEvent(tsdPtr->socketListLock);
-	    /* Do one connect step */
-	    if (TCL_OK != CreateClientSocket(NULL, infoPtr) ) {
-		/* On final fail save error for fconfigure -error */
-		infoPtr->connectError = Tcl_GetErrno();
-	    }
+	    CreateClientSocket(NULL, infoPtr);
+	    return 1;
 	}
     }
 
@@ -2476,26 +2471,31 @@ TcpGetOptionProc(
 		/* connect terminated with error */
 		Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(errorCode), -1);
 	    }
-	} else if (infoPtr->connectError != 0) {
-	    /*
-	     * An async connect error was not jet reported.
-	     */
-	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(infoPtr->connectError), -1);
-	    infoPtr->connectError = 0;
+
 	} else {
 	    int optlen;
 	    int ret;
     	    DWORD err;
 
+	    /*
+	     * Populater the err Variable with a possix error
+	     */
 	    optlen = sizeof(int);
 	    ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
 		    (char *)&err, &optlen);
+	    /*
+	     * The error was not returned directly but should be
+	     * taken from WSA
+	     */
 	    if (ret == SOCKET_ERROR) {
 		err = WSAGetLastError();
-		if (err) {
-		    TclWinConvertError(err);
-		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
-		}
+	    }
+	    /*
+	     * Return error message
+	     */
+	    if (err) {
+		TclWinConvertError(err);
+		Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
 	    }
 	}
 	return TCL_OK;
