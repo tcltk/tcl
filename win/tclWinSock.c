@@ -170,7 +170,8 @@ struct SocketInfo {
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
     int status;                 /* Cache status of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
-    int lastError;		/* Error code from last message. */
+    int lastError;		/* Error code from notifier thread. */
+    int connectError;		/* Error code from failed async connect. */
     struct SocketInfo *nextPtr;	/* The next socket on the per-thread socket
 				 * list. */
 };
@@ -243,7 +244,8 @@ static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 			    LPARAM lParam);
 static int		SocketsEnabled(void);
 static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
-static int		WaitForConnect(SocketInfo *infoPtr, int *errorCodePtr);
+static int		WaitForConnect(SocketInfo *infoPtr, int *errorCodePtr,
+			    int terminate_connect);
 static int		WaitForSocketEvent(SocketInfo *infoPtr, int events,
 			    int *errorCodePtr);
 static int		FindFDInList(SocketInfo *infoPtr, SOCKET socket);
@@ -778,9 +780,13 @@ SocketEventProc(
 	infoPtr->readyEvents &= ~(FD_CONNECT);
 	DEBUG("FD_CONNECT");
         if ( infoPtr->flags & SOCKET_REENTER_PENDING ) {
+	    /* free list lock */
 	    SetEvent(tsdPtr->socketListLock);
-	    CreateClientSocket(NULL, infoPtr);
-	    return 1;
+	    /* Do one connect step */
+	    if (TCL_OK != CreateClientSocket(NULL, infoPtr) ) {
+		/* On final fail save error for fconfigure -error */
+		infoPtr->connectError = Tcl_GetErrno();
+	    }
 	}
     }
 
@@ -1393,40 +1399,64 @@ CreateClientSocket(
     }
 
 out:
+    /*
+     * Socket connected or connection failed
+     */
     DEBUG("connected or finally failed");
     /* Clear async flag (not really necessary, not used any more) */
     infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-    if ( Tcl_GetErrno() != 0 ) {
-	DEBUG("ERRNO");
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-				"couldn't open socket: %s", Tcl_PosixError(interp)));
-	}
+
+    /*
+     * Final connect failure
+     */
+
+    if ( Tcl_GetErrno() == 0 ) {
 	/*
-	 * In the final error case inform fileevent that we failed
+	 * Succesfully connected
+	 */
+	/*
+	 * Set up the select mask for read/write events.
+	 */
+	DEBUG("selectEvents = FD_READ | FD_WRITE | FD_CLOSE");    
+	infoPtr->selectEvents = FD_READ | FD_WRITE | FD_CLOSE;
+        
+	/*
+	 * Register for interest in events in the select mask. Note that this
+	 * automatically places the socket into non-blocking mode.
+	 */
+        
+	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+		    (LPARAM) infoPtr);
+    } else {
+	/*
+	 * Connect failed
+	 */
+	DEBUG("ERRNO");
+
+	/*
+	 * For async connect schedule a writable event to report the fail.
 	 */
 	if (async_callback) {
-	    Tcl_NotifyChannel(infoPtr->channel, TCL_WRITABLE);
+	    /*
+	     * Set up the select mask for read/write events.
+	     */
+	    DEBUG("selectEvents = FD_WRITE for fail writable");    
+	    infoPtr->selectEvents = FD_WRITE;
+	    /* get infoPtr lock */
+	    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+	    /* Clear eventual connect flag */
+	    infoPtr->readyEvents |= FD_WRITE;
+	    /* Free list lock */
+	    SetEvent(tsdPtr->socketListLock);
+	}
+	/*
+	 * Error message on syncroneous connect
+	 */
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't open socket: %s", Tcl_PosixError(interp)));
 	}
 	return TCL_ERROR;
-    }
-    /*
-     * Set up the select mask for read/write events.
-     */
-    DEBUG("selectEvents = FD_READ | FD_WRITE | FD_CLOSE");    
-    infoPtr->selectEvents = FD_READ | FD_WRITE | FD_CLOSE;
-    
-    /*
-     * Register for interest in events in the select mask. Note that this
-     * automatically places the socket into non-blocking mode.
-     */
-    
-    tsdPtr = TclThreadDataKeyGet(&dataKey);
-    ioctlsocket(infoPtr->sockets->fd, (long) FIONBIO, &flag);
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-		(LPARAM) infoPtr);
-    if (async_callback) {
-	Tcl_NotifyChannel(infoPtr->channel, TCL_WRITABLE);
     }
     return TCL_OK;
 }
@@ -1436,15 +1466,20 @@ out:
  *
  * WaitForConnect --
  *
- *	Process an asyncroneous connect by gets/puts commands.
- *	For blocking calls, terminate connect synchroneously.
- *	For non blocking calls, do one asynchroneous step if possible.
+ *	Process an asyncroneous connect by other commands (gets... ).
+ *	Do one connect step if pending as if the event loop would run.
+ *
+ *	Blocking commands may call in with terminate_connect to terminate
+ *	the syncroneous connect syncroneously.
+ *
  *	This routine should only be called if flag SOCKET_REENTER_PENDING
  *	is set.
  *
  * Results:
- *	Returns 1 on success or 0 on failure, with an error code in
+ *	Returns 1 on success or 0 on failure, with a possix error code in
  *	errorCodePtr.
+ *	If the connect is not terminated, errorCode is set to EWOULDBLOCK
+ *	and 0 is returned.
  *
  * Side effects:
  *	Processes socket events off the system queue.
@@ -1456,7 +1491,8 @@ out:
 static int
 WaitForConnect(
     SocketInfo *infoPtr,	/* Information about this socket. */
-    int *errorCodePtr)		/* Where to store errors? */
+    int *errorCodePtr,		/* Where to store errors? */
+    int terminate_connect)	/* Should the connect be terminated? */
 {
     int result;
     int oldMode;
@@ -1483,7 +1519,7 @@ WaitForConnect(
 	     * For blocking sockets disable async connect
 	     * as we continue now synchoneously
 	     */
-	    if (! ( infoPtr->flags & TCP_ASYNC_SOCKET ) ) {
+	    if ( terminate_connect ) {
 		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
 	    }
 
@@ -1516,7 +1552,7 @@ WaitForConnect(
 	 * A non blocking socket waiting for an asyncronous connect
 	 * returns directly an error
 	 */
-	if ( infoPtr->flags & TCP_ASYNC_SOCKET ) {
+	if ( ! terminate_connect ) {
 	    *errorCodePtr = EWOULDBLOCK;
 	    return 0;
 	}
@@ -2068,11 +2104,14 @@ TcpInputProc(
     }
 
     /*
-     * Check if there is an async connect to terminate
+     * Check if there is an async connect running.
+     * For blocking sockets terminate connect, otherwise do one step.
+     * For a non blocking socket return EWOULDBLOCK if connect not terminated
      */
 
     if ( (infoPtr->flags & SOCKET_REENTER_PENDING)
-	    && !WaitForConnect(infoPtr, errorCodePtr)) {
+	    && !WaitForConnect(infoPtr, errorCodePtr,
+		! ( infoPtr->flags & TCP_ASYNC_SOCKET ))) {
 	return -1;
     }
 
@@ -2196,11 +2235,14 @@ TcpOutputProc(
     }
 
     /*
-     * Check if there is an async connect to terminate
+     * Check if there is an async connect running.
+     * For blocking sockets terminate connect, otherwise do one step.
+     * For a non blocking socket return EWOULDBLOCK if connect not terminated
      */
 
     if ( (infoPtr->flags & SOCKET_REENTER_PENDING)
-	    && !WaitForConnect(infoPtr, errorCodePtr)) {
+	    && !WaitForConnect(infoPtr, errorCodePtr,
+		! ( infoPtr->flags & TCP_ASYNC_SOCKET ))) {
 	return -1;
     }
 
@@ -2418,27 +2460,43 @@ TcpGetOptionProc(
 
     if ((len > 1) && (optionName[1] == 'e') &&
 	    (strncmp(optionName, "-error", len) == 0)) {
-	DWORD err;
-	/*
-	 * Check if an asyncroneous connect is running
-	 * and return ok
-	 */
-	if (infoPtr->flags & SOCKET_REENTER_PENDING) {
-	    err = 0;
+
+	if ( (infoPtr->flags & SOCKET_REENTER_PENDING) ) {
+
+	    /*
+	     * Asyncroneous connect is running.
+	     * Process it one step without blocking.
+	     * Return its error or nothing if connect not
+	     * terminated.
+	     */
+
+	    int errorCode;
+	    if (!WaitForConnect(infoPtr, &errorCode, 0)
+		    && errorCode != EWOULDBLOCK) {
+		/* connect terminated with error */
+		Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(errorCode), -1);
+	    }
+	} else if (infoPtr->connectError != 0) {
+	    /*
+	     * An async connect error was not jet reported.
+	     */
+	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(infoPtr->connectError), -1);
+	    infoPtr->connectError = 0;
 	} else {
 	    int optlen;
 	    int ret;
+    	    DWORD err;
 
 	    optlen = sizeof(int);
 	    ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
 		    (char *)&err, &optlen);
 	    if (ret == SOCKET_ERROR) {
 		err = WSAGetLastError();
+		if (err) {
+		    TclWinConvertError(err);
+		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
+		}
 	    }
-	}
-	if (err) {
-	    TclWinConvertError(err);
-	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
 	}
 	return TCL_OK;
     }
@@ -2971,7 +3029,7 @@ FindFDInList(
     TcpFdList *fds;
     for (fds = infoPtr->sockets; fds != NULL; fds = fds->next) {
         #ifdef DEBUGGING
-	fprintf(stderr,"socket = %d, fd=%d",socket,fds);
+	fprintf(stderr,"socket = %d, fd=%d\n",socket,fds);
 	#endif
 	if (fds->fd == socket) {
 	    return 1;
