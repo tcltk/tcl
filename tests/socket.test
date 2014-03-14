@@ -95,7 +95,7 @@ set lat1 [expr {($t2-$t1)*2}]; # doubled as a safety margin
 set t1 [clock milliseconds]
 catch {socket 127.0.0.1 [randport]}
 set t2 [clock milliseconds]
-set lat2 [expr {($t2-$t1)*2}]
+set lat2 [expr {($t2-$t1)*3}]
 
 # Use the maximum of the two latency calculations, but at least 100ms
 set latency [expr {$lat1 > $lat2 ? $lat1 : $lat2}]
@@ -1812,22 +1812,17 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
 test socket-14.2 {[socket -async] fileevent connection refused} \
     -constraints [list socket supported_any] \
     -body {
-        if {[catch {socket -async localhost [randport]} client]} {
-	    regexp {[^:]*: (.*)} $client -> x
-	} else {
-            fileevent $client writable {set x [fconfigure $client -error]}
-            set after [after $latency {set x timeout}]
-            vwait x
-	    after cancel $after
-            if {$x eq "timeout"} {
-                append x ": [fconfigure $client -error]"
-            }
-	    close $client
-	}
-        set x
+        set client [socket -async localhost [randport]]
+        fileevent $client writable {set x ok}
+        set after [after $latency {set x timeout}]
+        vwait x
+        after cancel $after
+        lappend x [fconfigure $client -error]
     } -cleanup {
-        unset x
-    } -result "connection refused"
+        after cancel $after
+        close $client
+        unset x after client
+    } -result {ok {connection refused}}
 test socket-14.3 {[socket -async] when server only listens on IPv6} \
     -constraints [list socket supported_any localhost_v6] \
     -setup {
@@ -2016,7 +2011,6 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
         fconfigure $sock -blocking 0
         for {set i 0} {$i < 50} {incr i } {
             if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
-            update
             after 200
         }
         set x
@@ -2043,7 +2037,6 @@ test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IP
         fconfigure $sock -blocking 0
         for {set i 0} {$i < 50} {incr i } {
             if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
-            update
             after 200
         }
         set x
@@ -2060,7 +2053,6 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
         fconfigure $sock -blocking 0
         for {set i 0} {$i < 50} {incr i } {
             if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
-            update
             after 200
         }
         fconfigure $sock -error
@@ -2191,7 +2183,22 @@ test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, f
         vwait x
         close $sock
     } -cleanup {
+        unset x
     } -result {broken pipe} -returnCodes 1
+test socket-14.12 {[socket -async] background progress triggered by [fconfigure -error]} \
+    -constraints {socket supported_inet supported_inet6} \
+    -body {
+        set s [socket -async localhost [randport]]
+        for {set i 0} {$i < 50} {incr i} {
+            set x [fconfigure $s -error]
+            if {$x != ""} break
+            after 200
+        }
+        set x
+    } -cleanup {
+        close $s
+        unset x s
+    } -result {connection refused}
 
 ::tcltest::cleanupTests
 flush stdout
