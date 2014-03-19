@@ -11,6 +11,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef NDEBUG
 #include "tclInt.h"
 #include "tclIO.h"
 #include <assert.h>
@@ -173,8 +174,6 @@ static void		CleanupChannelHandlers(Tcl_Interp *interp,
 static int		CloseChannel(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode);
 static void		CommonGetsCleanup(Channel *chanPtr);
-static int		CopyAndTranslateBuffer(ChannelState *statePtr,
-			    char *result, int space);
 static int		CopyBuffer(Channel *chanPtr, char *result, int space);
 static int		CopyData(CopyState *csPtr, int mask);
 static void		CopyEventProc(ClientData clientData, int mask);
@@ -188,7 +187,7 @@ static int		DetachChannel(Tcl_Interp *interp, Tcl_Channel chan);
 static void		DiscardInputQueued(ChannelState *statePtr,
 			    int discardSavedBuffers);
 static void		DiscardOutputQueued(ChannelState *chanPtr);
-static int		DoRead(Channel *chanPtr, char *srcPtr, int slen);
+static int		DoRead(Channel *chanPtr, char *dst, int bytesToRead);
 static int		DoReadChars(Channel *chan, Tcl_Obj *objPtr, int toRead,
 			    int appendFlag);
 static int		FilterInputBytes(Channel *chanPtr,
@@ -5363,7 +5362,7 @@ ReadChars(
 	     *	  record \r or \n yet.
 	     */
 
-	    assert(dstRead + 1 == dstDecoded);
+//	    assert(dstRead + 1 == dstDecoded);
 	    assert(dst[dstRead] == '\r');
 	    assert(statePtr->inputTranslation == TCL_TRANSLATE_CRLF);
 
@@ -5384,7 +5383,7 @@ ReadChars(
 
 	    assert(dstWrote == 0);
 	    assert(dstRead == 0);
-	    assert(dstDecoded == 1);
+//	    assert(dstDecoded == 1);
 
 	    /*
 	     * We decoded only the bare cr, and we cannot read a
@@ -5881,6 +5880,9 @@ DiscardInputQueued(
  * GetInput --
  *
  *	Reads input data from a device into a channel buffer.
+ *
+ *	IMPORTANT!  This routine is only called on a chanPtr argument
+ *	that is the top channel of a stack!
  *
  * Results:
  *	The return value is the Posix error code if an error occurred while
@@ -8633,13 +8635,24 @@ CopyData(
  *
  * DoRead --
  *
- *	Reads a given number of bytes from a channel.
+ *	Stores up to "bytesToRead" bytes in memory pointed to by "dst".
+ *	These bytes come from reading the channel "chanPtr" and 
+ *	performing the configured translations.
  *
  *	No encoding conversions are applied to the bytes being read.
  *
  * Results:
- *	The number of characters read, or -1 on error. Use Tcl_GetErrno() to
- *	retrieve the error code for the error that occurred.
+ *	The number of bytes actually stored (<= bytesToRead),
+ * 	or -1 if there is an error in reading the channel.  Use
+ * 	Tcl_GetErrno() to retrieve the error code for the error
+ *	that occurred.
+ *
+ *	The number of bytes stored can be less than the number
+ * 	requested when
+ *	  - EOF is reached on the channel; or
+ *	  - the channel is non-blocking, and we've read all we can
+ *	    without blocking.
+ *	  - a channel reading error occurs (and we return -1)
  *
  * Side effects:
  *	May cause input to be buffered.
@@ -8650,186 +8663,149 @@ CopyData(
 static int
 DoRead(
     Channel *chanPtr,		/* The channel from which to read. */
-    char *bufPtr,		/* Where to store input read. */
-    int toRead)			/* Maximum number of bytes to read. */
+    char *dst,		/* Where to store input read. */
+    int bytesToRead)		/* Maximum number of bytes to read. */
 {
     ChannelState *statePtr = chanPtr->state;
-				/* State info for channel */
-    int copied;			/* How many characters were copied into the
-				 * result string? */
-    int copiedNow;		/* How many characters were copied from the
-				 * current input buffer? */
-    int result;			/* Of calling GetInput. */
+    char *p = dst;
 
-    /*
-     * If we have not encountered a sticky EOF, clear the EOF bit. Either way
-     * clear the BLOCKED bit. We want to discover these anew during each
-     * operation.
-     */
-
-    if (!(statePtr->flags & CHANNEL_STICKY_EOF)) {
-	ResetFlag(statePtr, CHANNEL_EOF);
-    }
-    ResetFlag(statePtr, CHANNEL_BLOCKED | CHANNEL_NEED_MORE_DATA);
-
-    for (copied = 0; copied < toRead; copied += copiedNow) {
-	copiedNow = CopyAndTranslateBuffer(statePtr, bufPtr + copied,
-		toRead - copied);
-	if (copiedNow == 0) {
-	    if (statePtr->flags & CHANNEL_EOF) {
-		goto done;
-	    }
-	    if (statePtr->flags & CHANNEL_BLOCKED) {
-		if (statePtr->flags & CHANNEL_NONBLOCKING) {
-		    goto done;
-		}
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
-	    }
-	    result = GetInput(chanPtr);
-	    if (result != 0) {
-		if (result != EAGAIN) {
-		    copied = -1;
-		}
-		goto done;
-	    }
-	}
-    }
-
-    ResetFlag(statePtr, CHANNEL_BLOCKED);
-
-    /*
-     * Update the notifier state so we don't block while there is still data
-     * in the buffers.
-     */
-
-  done:
-    UpdateInterest(chanPtr);
-    return copied;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CopyAndTranslateBuffer --
- *
- *	Copy at most one buffer of input to the result space, doing eol
- *	translations according to mode in effect currently.
- *
- * Results:
- *	Number of bytes stored in the result buffer (as opposed to the number
- *	of bytes read from the channel). May return zero if no input is
- *	available to be translated.
- *
- * Side effects:
- *	Consumes buffered input. May deallocate one buffer.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-CopyAndTranslateBuffer(
-    ChannelState *statePtr,	/* Channel state from which to read input. */
-    char *result,		/* Where to store the copied input. */
-    int space)			/* How many bytes are available in result to
-				 * store the copied input? */
-{
-    ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
-    int bytesInBuffer;		/* How many bytes are available to be copied
-				 * in the current input buffer? */
-    int copied;			/* How many characters were already copied
-				 * into the destination space? */
-
-    /*
-     * If there is no input at all, return zero. The invariant is that either
-     * there is no buffer in the queue, or if the first buffer is empty, it is
-     * also the last buffer (and thus there is no input in the queue). Note
-     * also that if the buffer is empty, we leave it in the queue.
-     */
-
-    if (statePtr->inQueueHead == NULL) {
-	return 0;
-    }
-    bufPtr = statePtr->inQueueHead;
-    bytesInBuffer = BytesLeft(bufPtr);
-    if (bytesInBuffer == 0) {
-	return 0;
-    }
-
-    copied = space;
-    TranslateInputEOL(statePtr, result, RemovePoint(bufPtr),
-	    &copied, &bytesInBuffer);
-    bufPtr->nextRemoved += bytesInBuffer;
-
-    /*
-     * If the current buffer is empty recycle it.
-     */
-
-    if (IsBufferEmpty(bufPtr)) {
-	statePtr->inQueueHead = bufPtr->nextPtr;
-	if (statePtr->inQueueHead == NULL) {
-	    statePtr->inQueueTail = NULL;
-	}
-	RecycleBuffer(statePtr, bufPtr, 0);
-    } else {
-
-	if (copied > 0) {
-	    return copied;
-	}
-
-	if (statePtr->inEofChar
-		&& RemovePoint(bufPtr)[0] == statePtr->inEofChar) {
-	    return 0;
-	}
-
-	if (BytesLeft(bufPtr) == 1) {
-
-	    ChannelBuffer *nextPtr = bufPtr->nextPtr;
-
-	    if (nextPtr == NULL) {
-
-		if (statePtr->flags & CHANNEL_EOF) {
-		    *result = '\r';
-		    bufPtr->nextRemoved += 1;
-		    return 1;
-		}
-
-		SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
-		return 0;
-	    }
-
-	    nextPtr->nextRemoved -= 1;
-	    memcpy(RemovePoint(nextPtr), RemovePoint(bufPtr), 1);
-	    RecycleBuffer(statePtr, bufPtr, 0);
-	    statePtr->inQueueHead = nextPtr;
-	    return 0;
-	}
-
-	if (statePtr->inEofChar
-		&& RemovePoint(bufPtr)[1] == statePtr->inEofChar) {
-	    *result = '\r';
-	    bufPtr->nextRemoved += 1;
-	    return 1;
-	}
+    while (bytesToRead) {
 	/*
-	 * Buffer is not empty.  How can that be?
-	 * 0) We stopped early due to the value of "space".
-	 * 	=> copied > 0 and all is fine.
-	 * 1) We saw eof char and stopped the translation copy.
-	 *	=> if (copied > 0) or ((copied == 0) and @ eof char),
-	 *		return is fine.
-	 * 2) The buffer holds a \r while in CRLF translation, followed
-	 *    by either the end of the buffer, or the eof char.
+	 * Each pass through the loop is intended to process up to 
+	 * one channel buffer.
+	 * 
+	 * First, if there is no full buffer, we attempt to 
+	 * create and/or fill one.
 	 */
 
+	ChannelBuffer *bufPtr = statePtr->inQueueHead;
+
+	if (statePtr->flags & CHANNEL_EOF
+		&& (bufPtr == NULL || IsBufferEmpty(bufPtr))) {
+	    break;
+	}
+
+	while (bufPtr == NULL || !IsBufferFull(bufPtr)) {
+	    int code;
+
+	    ResetFlag(statePtr, CHANNEL_BLOCKED);
+	moreData:
+	    code = GetInput(chanPtr);
+	    bufPtr = statePtr->inQueueHead;
+	    if (statePtr->flags & (CHANNEL_EOF|CHANNEL_BLOCKED)) {
+		/* Further reads cannot do any more */
+		break;
+	    }
+	    
+	    if (code) {
+		/* Read error */
+		UpdateInterest(chanPtr);
+		return -1;
+	    }
+	}
+
+	/* Here we know bufPtr != NULL */
+	int bytesRead = BytesLeft(bufPtr);
+	int bytesWritten = bytesToRead;
+
+	if (bytesRead == 0 && statePtr->flags & CHANNEL_NONBLOCKING
+		&& statePtr->flags & CHANNEL_BLOCKED) {
+	    break;
+	}
+
+	TranslateInputEOL(statePtr, p, RemovePoint(bufPtr),
+		&bytesWritten, &bytesRead);
+	bufPtr->nextRemoved += bytesRead;
+	p += bytesWritten;
+	bytesToRead -= bytesWritten;
+
+	if (!IsBufferEmpty(bufPtr)) {
+	    /*
+	     * Buffer is not empty.  How can that be?
+	     *
+	     * 0) We stopped early because we got all the bytes
+	     *    we were seeking.  That's fine.
+	     */
+
+	    if (bytesToRead == 0) {
+		UpdateInterest(chanPtr);
+		break;
+	    }
+
+	    /*
+	     * 1) We're @EOF because we saw eof char.
+	     */
+
+	    if (statePtr->inEofChar
+		    && RemovePoint(bufPtr)[0] == statePtr->inEofChar) {
+		UpdateInterest(chanPtr);
+		break;
+	    }
+
+	    /*
+	     * 2) The buffer holds a \r while in CRLF translation, followed
+	     *    by either the end of the buffer, or the eof char.
+	     */
+
+	    assert(statePtr->inputTranslation == TCL_TRANSLATE_CRLF);
+	    assert(RemovePoint(bufPtr)[0] == '\r');
+
+	    if (BytesLeft(bufPtr) > 1) {
+
+		/* TODO: shift this to TIEOL */
+		assert(statePtr->inEofChar);
+		assert(RemovePoint(bufPtr)[1] == statePtr->inEofChar);
+
+		bufPtr->nextRemoved++;
+		*p++ = '\r';
+		bytesToRead--;
+		UpdateInterest(chanPtr);
+		break;
+	    }
+
+	    assert(BytesLeft(bufPtr) == 1);
+
+	    if (bufPtr->nextPtr == NULL) {
+		/* There's no more buffered data.... */
+
+		if (statePtr->flags & CHANNEL_EOF) {
+		    /* ...and there never will be. */
+
+		    *p++ = '\r';
+		    bytesToRead--;
+		    bufPtr->nextRemoved++;
+		} else if (statePtr->flags & CHANNEL_BLOCKED) {
+		    /* ...and we cannot get more now. */
+		    SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
+		    UpdateInterest(chanPtr);
+		    break;
+		} else {
+		    /* ... so we need to get some. */
+		    goto moreData;
+		}
+	    }
+
+	    if (bufPtr->nextPtr) {
+		/* There's a next buffer.  Shift orphan \r to it. */
+
+		ChannelBuffer *nextPtr = bufPtr->nextPtr;
+
+		nextPtr->nextRemoved -= 1;
+		RemovePoint(nextPtr)[0] = '\r';
+		bufPtr->nextRemoved++;
+	    }
+	}
+
+	if (IsBufferEmpty(bufPtr)) {
+	    statePtr->inQueueHead = bufPtr->nextPtr;
+	    if (statePtr->inQueueHead == NULL) {
+		statePtr->inQueueTail = NULL;
+	    }
+	    RecycleBuffer(statePtr, bufPtr, 0);
+	}
     }
 
-    /*
-     * Return the number of characters copied into the result buffer. This may
-     * be different from the number of bytes consumed, because of EOL
-     * translations.
-     */
-
-    return copied;
+    return (int)(p - dst);
 }
 
 /*
