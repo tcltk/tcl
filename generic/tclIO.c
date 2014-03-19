@@ -5362,7 +5362,7 @@ ReadChars(
 	     *	  record \r or \n yet.
 	     */
 
-//	    assert(dstRead + 1 == dstDecoded);
+	    assert(dstRead + 1 == dstDecoded);
 	    assert(dst[dstRead] == '\r');
 	    assert(statePtr->inputTranslation == TCL_TRANSLATE_CRLF);
 
@@ -5383,7 +5383,7 @@ ReadChars(
 
 	    assert(dstWrote == 0);
 	    assert(dstRead == 0);
-//	    assert(dstDecoded == 1);
+	    assert(dstDecoded == 1);
 
 	    /*
 	     * We decoded only the bare cr, and we cannot read a
@@ -5620,10 +5620,14 @@ TranslateInputEOL(
 	    src += numBytes; srcLen -= numBytes;
 	    if (srcLen == 1) {
 		/* valid src bytes end in \r */
-		lesser = 0;
-		break;
-	    }
-	    if (src[1] == '\n') {
+		if (eof) {
+		    *dst++ = '\r';
+		    src++; srcLen--;
+		} else {
+		    lesser = 0;
+		    break;
+		}
+	    } else if (src[1] == '\n') {
 		*dst++ = '\n';
 		src += 2; srcLen -= 2;
 	    } else {
@@ -8708,11 +8712,6 @@ DoRead(
 	int bytesRead = BytesLeft(bufPtr);
 	int bytesWritten = bytesToRead;
 
-	if (bytesRead == 0 && statePtr->flags & CHANNEL_NONBLOCKING
-		&& statePtr->flags & CHANNEL_BLOCKED) {
-	    break;
-	}
-
 	TranslateInputEOL(statePtr, p, RemovePoint(bufPtr),
 		&bytesWritten, &bytesRead);
 	bufPtr->nextRemoved += bytesRead;
@@ -8743,26 +8742,12 @@ DoRead(
 	    }
 
 	    /*
-	     * 2) The buffer holds a \r while in CRLF translation, followed
-	     *    by either the end of the buffer, or the eof char.
+	     * 2) The buffer holds a \r while in CRLF translation,
+	     *    followed by the end of the buffer.
 	     */
 
 	    assert(statePtr->inputTranslation == TCL_TRANSLATE_CRLF);
 	    assert(RemovePoint(bufPtr)[0] == '\r');
-
-	    if (BytesLeft(bufPtr) > 1) {
-
-		/* TODO: shift this to TIEOL */
-		assert(statePtr->inEofChar);
-		assert(RemovePoint(bufPtr)[1] == statePtr->inEofChar);
-
-		bufPtr->nextRemoved++;
-		*p++ = '\r';
-		bytesToRead--;
-		UpdateInterest(chanPtr);
-		break;
-	    }
-
 	    assert(BytesLeft(bufPtr) == 1);
 
 	    if (bufPtr->nextPtr == NULL) {
@@ -8802,6 +8787,11 @@ DoRead(
 		statePtr->inQueueTail = NULL;
 	    }
 	    RecycleBuffer(statePtr, bufPtr, 0);
+	}
+
+	if (statePtr->flags & CHANNEL_NONBLOCKING
+		&& statePtr->flags & CHANNEL_BLOCKED) {
+	    break;
 	}
     }
 
