@@ -2255,13 +2255,12 @@ RecycleBuffer(
     }
 
     /*
-     * TODO
-     * Only save buffers which are at least as big as the requested buffersize
-     * for the channel. This is to honor dynamic changes of the buffersize
+     * Only save buffers which have the requested buffersize for the
+     * channel. This is to honor dynamic changes of the buffersize
      * made by the user.
      */
 
-    if ((bufPtr->bufLength - BUFFER_PADDING) < statePtr->bufSize) {
+    if ((bufPtr->bufLength - BUFFER_PADDING) != statePtr->bufSize) {
 	ckfree((char *) bufPtr);
 	return;
     }
@@ -5952,14 +5951,13 @@ GetInput(
 	statePtr->saveInBufPtr = NULL;
 
 	/*
-	 * TODO
 	 * Check the actual buffersize against the requested buffersize.
-	 * Buffers which are smaller than requested are squashed. This is done
+	 * Saved buffers of the wrong size are squashed. This is done
 	 * to honor dynamic changes of the buffersize made by the user.
 	 */
 
 	if ((bufPtr != NULL)
-		&& (bufPtr->bufLength - BUFFER_PADDING < statePtr->bufSize)) {
+		&& (bufPtr->bufLength - BUFFER_PADDING != statePtr->bufSize)) {
 	    ckfree((char *) bufPtr);
 	    bufPtr = NULL;
 	}
@@ -5969,22 +5967,8 @@ GetInput(
 	}
 	bufPtr->nextPtr = NULL;
 
-	/*
-	 * TODO
-	 * SF #427196: Use the actual size of the buffer to determine the
-	 * number of bytes to read from the channel and not the size for new
-	 * buffers. They can be different if the buffersize was changed
-	 * between reads.
-	 *
-	 * Note: This affects performance negatively if the buffersize was
-	 * extended but this small buffer is reused for all subsequent reads.
-	 * The system never uses buffers with the requested bigger size in
-	 * that case. An adjunct patch could try and delete all unused buffers
-	 * it encounters and which are smaller than the formally requested
-	 * buffersize.
-	 */
-
 	toRead = SpaceLeft(bufPtr);
+	assert(toRead == statePtr->bufSize);
 
 	if (statePtr->inQueueTail == NULL) {
 	    statePtr->inQueueHead = bufPtr;
@@ -6727,7 +6711,6 @@ Tcl_SetChannelBufferSize(
     ChannelState *statePtr;	/* State of real channel structure. */
 
     /*
-     * TODO
      * Clip the buffer size to force it into the [1,1M] range
      */
 
@@ -6738,7 +6721,27 @@ Tcl_SetChannelBufferSize(
     }
 
     statePtr = ((Channel *) chan)->state;
+
+    if (statePtr->bufSize == sz) {
+	return;
+    }
     statePtr->bufSize = sz;
+
+    /*
+     * If bufsize changes, need to get rid of old utility buffer.
+     */
+
+    if (statePtr->saveInBufPtr != NULL) {
+	RecycleBuffer(statePtr, statePtr->saveInBufPtr, 1);
+	statePtr->saveInBufPtr = NULL;
+    }
+    if ((statePtr->inQueueHead != NULL)
+	    && (statePtr->inQueueHead->nextPtr == NULL)
+	    && IsBufferEmpty(statePtr->inQueueHead)) {
+	RecycleBuffer(statePtr, statePtr->inQueueHead, 1);
+	statePtr->inQueueHead = NULL;
+	statePtr->inQueueTail = NULL;
+    }
 }
 
 /*
@@ -7172,6 +7175,7 @@ Tcl_SetChannelOption(
 	    return TCL_ERROR;
 	}
 	Tcl_SetChannelBufferSize(chan, newBufferSize);
+	return TCL_OK;
     } else if (HaveOpt(2, "-encoding")) {
 	Tcl_Encoding encoding;
 
@@ -7202,6 +7206,7 @@ Tcl_SetChannelOption(
 	statePtr->outputEncodingFlags = TCL_ENCODING_START;
 	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
 	UpdateInterest(chanPtr);
+	return TCL_OK;
     } else if (HaveOpt(2, "-eofchar")) {
 	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
 	    return TCL_ERROR;
@@ -7361,23 +7366,6 @@ Tcl_SetChannelOption(
 		interp, optionName, newValue);
     } else {
 	return Tcl_BadChannelOption(interp, optionName, NULL);
-    }
-
-    /*
-     * TODO
-     * If bufsize changes, need to get rid of old utility buffer.
-     */
-
-    if (statePtr->saveInBufPtr != NULL) {
-	RecycleBuffer(statePtr, statePtr->saveInBufPtr, 1);
-	statePtr->saveInBufPtr = NULL;
-    }
-    if ((statePtr->inQueueHead != NULL)
-	    && (statePtr->inQueueHead->nextPtr == NULL)
-	    && IsBufferEmpty(statePtr->inQueueHead)) {
-	RecycleBuffer(statePtr, statePtr->inQueueHead, 1);
-	statePtr->inQueueHead = NULL;
-	statePtr->inQueueTail = NULL;
     }
 
     return TCL_OK;
