@@ -4701,7 +4701,7 @@ test io-35.17 {Tcl_Eof, eof char in middle, crlf write, crlf read} {
     close $f
     list $c $l $e
 } {21 8 1}
-test io-35.18 {Tcl_Eof, eof char, cr write, crlf read} {
+test io-35.18 {Tcl_Eof, eof char, cr write, crlf read} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -translation cr
@@ -4714,8 +4714,8 @@ test io-35.18 {Tcl_Eof, eof char, cr write, crlf read} {
     set e [eof $f]
     close $f
     list $s $l $e [scan [string index $in end] %c]
-} {8 8 1 13}
-test io-35.18a {Tcl_Eof, eof char, cr write, crlf read} {
+} -result {8 8 1 13}
+test io-35.18a {Tcl_Eof, eof char, cr write, crlf read} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -translation cr -eofchar \x1a
@@ -4728,8 +4728,8 @@ test io-35.18a {Tcl_Eof, eof char, cr write, crlf read} {
     set e [eof $f]
     close $f
     list $s $l $e [scan [string index $in end] %c]
-} {9 8 1 13}
-test io-35.18b {Tcl_Eof, eof char, cr write, crlf read} {
+} -result {9 8 1 13}
+test io-35.18b {Tcl_Eof, eof char, cr write, crlf read} -constraints knownBug -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -translation cr -eofchar \x1a
@@ -4742,8 +4742,8 @@ test io-35.18b {Tcl_Eof, eof char, cr write, crlf read} {
     set e [eof $f]
     close $f
     list $s $l $e [scan [string index $in end] %c]
-} {2 1 1 13}
-test io-35.18c {Tcl_Eof, eof char, cr write, crlf read} {
+} -result {2 1 1 13}
+test io-35.18c {Tcl_Eof, eof char, cr write, crlf read} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -translation cr
@@ -4756,8 +4756,8 @@ test io-35.18c {Tcl_Eof, eof char, cr write, crlf read} {
     set e [eof $f]
     close $f
     list $s $l $e [scan [string index $in end] %c]
-} {1 1 1 13}
-test io-35.19 {Tcl_Eof, eof char in middle, cr write, crlf read} {
+} -result {1 1 1 13}
+test io-35.19 {Tcl_Eof, eof char in middle, cr write, crlf read} -body {
     file delete $path(test1)
     set f [open $path(test1) w]
     fconfigure $f -translation cr -eofchar {}
@@ -4771,7 +4771,7 @@ test io-35.19 {Tcl_Eof, eof char in middle, cr write, crlf read} {
     set e [eof $f]
     close $f
     list $c $l $e [scan [string index $in end] %c]
-} {17 8 1 13}
+} -result {17 8 1 13}
 test io-35.20 {Tcl_Eof, eof char in middle, cr write, crlf read} {
     file delete $path(test1)
     set f [open $path(test1) w]
