@@ -4837,7 +4837,6 @@ Tcl_ReadRaw(
     int nread, result, copied, copiedNow;
 
     /*
-     * TODO VERIFY
      * The check below does too much because it will reject a call to this
      * function with a channel which is part of an 'fcopy'. But we have to
      * allow this here or else the chaining in the transformation drivers will
@@ -5742,16 +5741,11 @@ Tcl_Ungets(
     statePtr->flags = flags;
 
     /*
-     * If we have encountered a sticky EOF, just punt without storing (sticky
-     * EOF is set if we have seen the input eofChar, to prevent reading beyond
-     * the eofChar). Otherwise, clear the EOF flags, and clear the BLOCKED
-     * bit. We want to discover these conditions anew in each operation.
+     * Clear the EOF flags, and clear the BLOCKED bit.
      */
 
-    if (statePtr->flags & CHANNEL_STICKY_EOF) {
-	goto done;
-    }
-    ResetFlag(statePtr, CHANNEL_BLOCKED | CHANNEL_EOF);
+    ResetFlag(statePtr,
+	    CHANNEL_BLOCKED | CHANNEL_STICKY_EOF | CHANNEL_EOF | INPUT_SAW_CR);
 
     bufPtr = AllocChannelBuffer(len);
     memcpy(InsertPoint(bufPtr), str, (size_t) len);
@@ -6001,7 +5995,7 @@ GetInput(
     }
 
     /*
-     * TODO 
+     * TODO - consider escape before buffer alloc
      * If EOF is set, we should avoid calling the driver because on some
      * platforms it is impossible to read from a device after EOF.
      */
@@ -6523,16 +6517,10 @@ CheckChannelErrors(
 
     if (direction == TCL_READABLE) {
 	/*
-	 * TODO
-	 * If we have not encountered a sticky EOF, clear the EOF bit (sticky
-	 * EOF is set if we have seen the input eofChar, to prevent reading
-	 * beyond the eofChar). Also, always clear the BLOCKED bit. We want to
-	 * discover these conditions anew in each operation.
+	 * Clear the BLOCKED bit. We want to discover this condition
+	 * anew in each operation.
 	 */
 
-	if ((statePtr->flags & CHANNEL_STICKY_EOF) == 0) {
-	    ResetFlag(statePtr, CHANNEL_EOF);
-	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED | CHANNEL_NEED_MORE_DATA);
     }
 
