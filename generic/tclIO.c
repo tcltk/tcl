@@ -6,6 +6,7 @@
  *
  * Copyright (c) 1998-2000 Ajuba Solutions
  * Copyright (c) 1995-1997 Sun Microsystems, Inc.
+ * Contributions from Don Porter, NIST, 2014. (not subject to US copyright)
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -1679,17 +1680,17 @@ Tcl_StackChannel(
      */
 
     if (((mask & TCL_READABLE) != 0) && (statePtr->inQueueHead != NULL)) {
+
 	/*
-	 * Remark: It is possible that the channel buffers contain data from
-	 * some earlier push-backs.
+	 * When statePtr->inQueueHead is not NULL, we know
+	 * prevChanPtr->inQueueHead must be NULL.
 	 */
 
-	statePtr->inQueueTail->nextPtr = prevChanPtr->inQueueHead;
-	prevChanPtr->inQueueHead = statePtr->inQueueHead;
+	assert(prevChanPtr->inQueueHead == NULL);
+	assert(prevChanPtr->inQueueTail == NULL);
 
-	if (prevChanPtr->inQueueTail == NULL) {
-	    prevChanPtr->inQueueTail = statePtr->inQueueTail;
-	}
+	prevChanPtr->inQueueHead = statePtr->inQueueHead;
+	prevChanPtr->inQueueTail = statePtr->inQueueTail;
 
 	statePtr->inQueueHead = NULL;
 	statePtr->inQueueTail = NULL;
@@ -2254,6 +2255,7 @@ RecycleBuffer(
     }
 
     /*
+     * TODO
      * Only save buffers which are at least as big as the requested buffersize
      * for the channel. This is to honor dynamic changes of the buffersize
      * made by the user.
@@ -3696,9 +3698,7 @@ Write(
 		&statePtr->outputEncodingState, dst,
 		dstLen + BUFFER_PADDING, &srcRead, &dstWrote, NULL);
 
-	    if (srcRead != nlLen) {
-		Tcl_Panic("Can This Happen?");
-	    }
+	    assert (srcRead == nlLen);
 
 	    bufPtr->nextAdded += dstWrote;
 	    src++;
@@ -4837,6 +4837,7 @@ Tcl_ReadRaw(
     int nread, result, copied, copiedNow;
 
     /*
+     * TODO VERIFY
      * The check below does too much because it will reject a call to this
      * function with a channel which is part of an 'fcopy'. But we have to
      * allow this here or else the chaining in the transformation drivers will
@@ -5925,16 +5926,11 @@ GetInput(
      * channel in the stack and use them. They can be the result of a
      * transformation which went away without reading all the information
      * placed in the area when it was stacked.
-     *
-     * Two possibilities for the state: No buffers in it, or a single empty
-     * buffer. In the latter case we can recycle it now.
      */
 
     if (chanPtr->inQueueHead != NULL) {
-	if (statePtr->inQueueHead != NULL) {
-	    RecycleBuffer(statePtr, statePtr->inQueueHead, 0);
-	    statePtr->inQueueHead = NULL;
-	}
+
+	assert(statePtr->inQueueHead == NULL);
 
 	statePtr->inQueueHead = chanPtr->inQueueHead;
 	statePtr->inQueueTail = chanPtr->inQueueTail;
@@ -5962,6 +5958,7 @@ GetInput(
 	statePtr->saveInBufPtr = NULL;
 
 	/*
+	 * TODO
 	 * Check the actual buffersize against the requested buffersize.
 	 * Buffers which are smaller than requested are squashed. This is done
 	 * to honor dynamic changes of the buffersize made by the user.
@@ -5979,6 +5976,7 @@ GetInput(
 	bufPtr->nextPtr = NULL;
 
 	/*
+	 * TODO
 	 * SF #427196: Use the actual size of the buffer to determine the
 	 * number of bytes to read from the channel and not the size for new
 	 * buffers. They can be different if the buffersize was changed
@@ -6003,6 +6001,7 @@ GetInput(
     }
 
     /*
+     * TODO 
      * If EOF is set, we should avoid calling the driver because on some
      * platforms it is impossible to read from a device after EOF.
      */
@@ -6524,6 +6523,7 @@ CheckChannelErrors(
 
     if (direction == TCL_READABLE) {
 	/*
+	 * TODO
 	 * If we have not encountered a sticky EOF, clear the EOF bit (sticky
 	 * EOF is set if we have seen the input eofChar, to prevent reading
 	 * beyond the eofChar). Also, always clear the BLOCKED bit. We want to
@@ -6739,6 +6739,7 @@ Tcl_SetChannelBufferSize(
     ChannelState *statePtr;	/* State of real channel structure. */
 
     /*
+     * TODO
      * Clip the buffer size to force it into the [1,1M] range
      */
 
@@ -7375,6 +7376,7 @@ Tcl_SetChannelOption(
     }
 
     /*
+     * TODO
      * If bufsize changes, need to get rid of old utility buffer.
      */
 
@@ -8677,17 +8679,22 @@ DoRead(
 	/*
 	 * Each pass through the loop is intended to process up to 
 	 * one channel buffer.
-	 * 
-	 * First, if there is no full buffer, we attempt to 
-	 * create and/or fill one.
 	 */
 
+	int bytesRead, bytesWritten;
 	ChannelBuffer *bufPtr = statePtr->inQueueHead;
+
+	/*
+	 * When there's no buffered data to read, and we're at EOF,
+	 * escape to the caller.
+	 */
 
 	if (statePtr->flags & CHANNEL_EOF
 		&& (bufPtr == NULL || IsBufferEmpty(bufPtr))) {
 	    break;
 	}
+
+	/* If there is no full buffer, attempt to create and/or fill one. */
 
 	while (bufPtr == NULL || !IsBufferFull(bufPtr)) {
 	    int code;
@@ -8696,6 +8703,9 @@ DoRead(
 	moreData:
 	    code = GetInput(chanPtr);
 	    bufPtr = statePtr->inQueueHead;
+
+	    assert (bufPtr != NULL);
+
 	    if (statePtr->flags & (CHANNEL_EOF|CHANNEL_BLOCKED)) {
 		/* Further reads cannot do any more */
 		break;
@@ -8706,11 +8716,14 @@ DoRead(
 		UpdateInterest(chanPtr);
 		return -1;
 	    }
+
+	    assert (IsBufferFull(bufPtr));
 	}
 
-	/* Here we know bufPtr != NULL */
-	int bytesRead = BytesLeft(bufPtr);
-	int bytesWritten = bytesToRead;
+	assert (bufPtr != NULL);
+
+	bytesRead = BytesLeft(bufPtr);
+	bytesWritten = bytesToRead;
 
 	TranslateInputEOL(statePtr, p, RemovePoint(bufPtr),
 		&bytesWritten, &bytesRead);
@@ -10155,6 +10168,7 @@ SetChannelFromAny(
     }
     if (objPtr->typePtr == &chanObjType) {
 	/*
+	 * TODO: TAINT Flag and dup'd channel values?
 	 * The channel is valid until any call to DetachChannel occurs.
 	 * Ensure consistency checks are done.
 	 */
