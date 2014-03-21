@@ -1927,6 +1927,8 @@ test iocmd-32.0 {origin interpreter of moved channel gone} -match glob -body {
 
 test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -match glob -body {
 
+    # This test segfaults;  Ought to fix that.
+
     set ida [interp create];#puts <<$ida>>
     set idb [interp create];#puts <<$idb>>
 
@@ -1940,13 +1942,12 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	proc foo {args} {
 	    oninit; onfinal; track;
 	    # destroy interpreter during channel access
-	    # Actually not possible for an interp to destroy itself.
-	    interp delete {}
-	    return}
+	    suicide}
 	set chan [chan create {r w} foo]
 	fconfigure $chan -buffering none
 	set chan
     }]
+    interp alias $ida suicide {} interp delete $ida
 
     # Move channel to 2nd thread.
     interp eval $ida [list testchannel cut    $chan]
@@ -1965,7 +1966,7 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	set res
     }]
     set res
-} -constraints {testchannel impossible} \
+} -constraints {testchannel knownBug} \
     -result {Owner lost}
 
 test iocmd-32.2 {delete interp of reflected chan} {
