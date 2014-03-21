@@ -165,6 +165,7 @@ typedef struct CloseCallback {
 
 static ChannelBuffer *	AllocChannelBuffer(int length);
 static void		ChannelTimerProc(ClientData clientData);
+static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
 static int		CheckForDeadChannel(Tcl_Interp *interp,
