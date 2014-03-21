@@ -342,9 +342,30 @@ static Tcl_ObjType chanObjType = {
 #define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
 
 /*
- * ChanRead, dropped here by a time traveler, see 8.6
+ *---------------------------------------------------------------------------
+ *
+ * ChanRead --
+ *
+ *	Read up to bytes using the inputProc of chanPtr, store them at dst,
+ *	and return the number of bytes stored.
+ *
+ * Results:
+ *	The return value of the driver inputProc, 
+ *	  - number of bytes stored at dst, or
+ *	  - -1 on error, with a Posix error code available to the
+ *	    caller by calling Tcl_GetErrno().
+ *
+ * Side effects:
+ *	The CHANNEL_BLOCKED and CHANNEL_EOF flags of the channel
+ *	state are set as appropriate.
+ *	On EOF, the inputEncodingFlags are set to perform ending
+ *	operations on decoding.
+ *	TODO - Is this really the right place for that?
+ *
+ *---------------------------------------------------------------------------
  */
-static inline int
+
+static int
 ChanRead(
     Channel *chanPtr,
     char *dst,
