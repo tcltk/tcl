@@ -346,8 +346,8 @@ static Tcl_ObjType chanObjType = {
  *
  * ChanRead --
  *
- *	Read up to bytes using the inputProc of chanPtr, store them at dst,
- *	and return the number of bytes stored.
+ *	Read up to dstsize bytes using the inputProc of chanPtr, store
+ *	them at dst, and return the number of bytes stored.
  *
  * Results:
  *	The return value of the driver inputProc, 
@@ -372,6 +372,12 @@ ChanRead(
     int dstSize)
 {
     int bytesRead, result;
+
+    /*
+     * If the caller asked for zero bytes, we'd force the inputProc
+     * to return zero bytes, and then misinterpret that as EOF
+     */
+    assert(dstSize > 0);
 
     if (WillRead(chanPtr) < 0) {
         return -1;
