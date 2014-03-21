@@ -3012,52 +3012,22 @@ ZlibTransformInput(
 	    return -1;
 	} else if (readBytes == 0) {
 	    /*
-	     * Check wether we hit on EOF in 'parent' or not. If not,
-	     * differentiate between blocking and non-blocking modes. In
-	     * non-blocking mode we ran temporarily out of data. Signal this
-	     * to the caller via EWOULDBLOCK and error return (-1). In the
-	     * other cases we simply return what we got and let the caller
-	     * wait for more. On the other hand, if we got an EOF we have to
-	     * convert and flush all waiting partial data.
-	     */
-
-	    if (!Tcl_Eof(cd->parent)) {
-		/*
-		 * The state of the seek system is unchanged!
-		 */
-
-		if ((gotBytes == 0) && (cd->flags & ASYNC)) {
-		    *errorCodePtr = EWOULDBLOCK;
-		    return -1;
-		}
-		return gotBytes;
-	    }
-
-	    /*
-	     * (Semi-)Eof in parent.
-	     *
-	     * Now this is a bit different. The partial data waiting is
-	     * converted and returned.
+	     * The 'parent' is at EOF.   It will not deliver us any more
+	     * bytes.  Make one last decompression attempt where we flush
+	     * the streams.
 	     */
 
 	    if (ResultGenerate(cd, 0, Z_SYNC_FLUSH, errorCodePtr) != TCL_OK) {
 		return -1;
 	    }
 
-	    if (Tcl_DStringLength(&cd->decompressed) == 0) {
-		/*
-		 * The drain delivered nothing. Time to deliver what we've
-		 * got.
-		 */
-
-		return gotBytes;
-	    }
-
 	    /*
-	     * Reset eof, force caller to drain result buffer.
+	     * Note that in the case where gotBytes == 0 (nothing in
+	     * the decompressed buffer to begin with) and the flush
+	     * also produce no new output, we are returning 0, which
+	     * signals the EOF to our caller.
 	     */
-
-	    ((Channel *) cd->parent)->state->flags &= ~CHANNEL_EOF;
+	    return gotBytes + ResultCopy(cd, buf, toRead);
 	} else /* readBytes > 0 */ {
 	    /*
 	     * Transform the read chunk, which was not empty. Anything we get
