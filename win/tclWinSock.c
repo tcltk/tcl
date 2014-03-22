@@ -167,6 +167,10 @@ typedef struct {
 				 * socketThread has been initialized and has
 				 * started. */
     HANDLE socketListLock;	/* Win32 Event to lock the socketList */
+    SocketInfo *pendingSocketInfo;
+				/* This socket is opened but not jet in the
+				 * list. This value is also checked by
+				 * the event structure. */
     SocketInfo *socketList;	/* Every open socket in this thread has an
 				 * entry on this list. */
 } ThreadSpecificData;
@@ -329,6 +333,7 @@ InitSockets(void)
 
     if (tsdPtr == NULL) {
 	tsdPtr = TCL_TSD_INIT(&dataKey);
+	tsdPtr->pendingSocketInfo = NULL;
 	tsdPtr->socketList = NULL;
 	tsdPtr->hwnd       = NULL;
 	tsdPtr->threadId   = Tcl_GetCurrentThread();
@@ -923,12 +928,10 @@ CreateSocket(
 				 * asynchronously. */
 {
     u_long flag = 1;		/* Indicates nonblocking mode. */
-    int asyncConnect = 0;	/* Will be 1 if async connect is in
-				 * progress. */
     SOCKADDR_IN sockaddr;	/* Socket address */
     SOCKADDR_IN mysockaddr;	/* Socket address for client */
     SOCKET sock = INVALID_SOCKET;
-    SocketInfo *infoPtr;	/* The returned value. */
+    SocketInfo *infoPtr=NULL;	/* The returned value. */
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 	    TclThreadDataKeyGet(&dataKey);
 
@@ -1007,6 +1010,15 @@ CreateSocket(
 	infoPtr->selectEvents = FD_ACCEPT;
 	infoPtr->watchEvents |= FD_ACCEPT;
 
+	/*
+	 * Register for interest in events in the select mask. Note that this
+	 * automatically places the socket into non-blocking mode.
+	 */
+    
+	ioctlsocket(sock, (long) FIONBIO, &flag);
+	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+		(LPARAM) infoPtr);
+
     } else {
 	/*
 	 * Try to bind to a local port, if specified.
@@ -1020,14 +1032,48 @@ CreateSocket(
 	}
 
 	/*
+	 * Allocate socket info structure
+	 */
+
+	infoPtr = NewSocketInfo(sock);
+
+	/*
 	 * Set the socket into nonblocking mode if the connect should be done
-	 * in the background.
+	 * in the background. Activate connect notification.
 	 */
 
 	if (async) {
-	    if (ioctlsocket(sock, (long) FIONBIO, &flag) == SOCKET_ERROR) {
-		goto error;
-	    }
+
+	    /* get infoPtr lock */
+	    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+
+	    /*
+	     * Buffer new infoPtr in the tsd memory as long as it is not in
+	     * the info list. This allows the event procedure to process the
+	     * event.
+	     */
+
+	    tsdPtr->pendingSocketInfo = infoPtr;
+
+	    /*
+	     * Set connect mask to connect events
+	     * This is activated by a SOCKET_SELECT message to the notifier
+	     * thread.
+	     */
+
+	    infoPtr->selectEvents |= FD_CONNECT | FD_READ | FD_WRITE | FD_CLOSE;
+	    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
+	    
+	    /*
+	     * Free list lock
+	     */
+	    SetEvent(tsdPtr->socketListLock);
+
+	    /* activate accept notification and put in async mode */
+	    ioctlsocket(sock, (long) FIONBIO, &flag);
+	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+	            (LPARAM) infoPtr);
+
 	}
 
 	/*
@@ -1045,34 +1091,25 @@ CreateSocket(
 	     * The connection is progressing in the background.
 	     */
 
-	    asyncConnect = 1;
-	}
+	} else {
 
-	/*
-	 * Add this socket to the global list of sockets.
-	 */
+	    /*
+	     * Set up the select mask for read/write events. If the connect
+	     * attempt has not completed, include connect events.
+	     */
 
-	infoPtr = NewSocketInfo(sock);
+	    infoPtr->selectEvents = FD_READ | FD_WRITE | FD_CLOSE;
 
-	/*
-	 * Set up the select mask for read/write events. If the connect
-	 * attempt has not completed, include connect events.
-	 */
+	    /*
+	     * Register for interest in events in the select mask. Note that this
+	     * automatically places the socket into non-blocking mode.
+	     */
 
-	infoPtr->selectEvents = FD_READ | FD_WRITE | FD_CLOSE;
-	if (asyncConnect) {
-	    infoPtr->flags |= SOCKET_ASYNC_CONNECT;
-	    infoPtr->selectEvents |= FD_CONNECT;
+	    ioctlsocket(sock, (long) FIONBIO, &flag);
+	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+		    (LPARAM) infoPtr);
 	}
     }
-
-    /*
-     * Register for interest in events in the select mask. Note that this
-     * automatically places the socket into non-blocking mode.
-     */
-
-    ioctlsocket(sock, (long) FIONBIO, &flag);
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT, (LPARAM) infoPtr);
 
     return infoPtr;
 
@@ -1082,7 +1119,17 @@ CreateSocket(
 	Tcl_AppendResult(interp, "couldn't open socket: ",
 		Tcl_PosixError(interp), NULL);
     }
-    if (sock != INVALID_SOCKET) {
+    /*
+     * Clear the tsd socket list pointer if we did not wait for
+     * the FD_CONNECT asyncroneously
+     */
+    tsdPtr->pendingSocketInfo = NULL;
+    if (infoPtr != NULL) {
+	/*
+	 * Free the allocated socket info structure and close the socket
+	 */
+	TcpCloseProc(infoPtr, interp);
+    } else if (sock != INVALID_SOCKET) {
 	closesocket(sock);
     }
     return NULL;
@@ -1482,7 +1529,7 @@ TcpAccept(
     SetHandleInformation((HANDLE) newSocket, HANDLE_FLAG_INHERIT, 0);
 
     /*
-     * Add this socket to the global list of sockets.
+     * Allocate socket info structure
      */
 
     newInfoPtr = NewSocketInfo(newSocket);
@@ -2248,6 +2295,7 @@ SocketProc(
     int event, error;
     SOCKET socket;
     SocketInfo *infoPtr;
+    int info_found = 0;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 #ifdef _WIN64
 	    GetWindowLongPtr(hwnd, GWLP_USERDATA);
@@ -2293,58 +2341,72 @@ SocketProc(
 	for (infoPtr = tsdPtr->socketList; infoPtr != NULL;
 		infoPtr = infoPtr->nextPtr) {
 	    if (infoPtr->socket == socket) {
-		/*
-		 * Update the socket state.
-		 *
-		 * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
-		 * happens, then clear the FD_ACCEPT count. Otherwise,
-		 * increment the count if the current event is an FD_ACCEPT.
-		 */
-
-		if (event & FD_CLOSE) {
-		    infoPtr->acceptEventCount = 0;
-		    infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
-		} else if (event & FD_ACCEPT) {
-		    infoPtr->acceptEventCount++;
-		}
-
-		if (event & FD_CONNECT) {
-		    /*
-		     * The socket is now connected, clear the async connect
-		     * flag.
-		     */
-
-		    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-
-		    /*
-		     * Remember any error that occurred so we can report
-		     * connection failures.
-		     */
-
-		    if (error != ERROR_SUCCESS) {
-			TclWinConvertWSAError((DWORD) error);
-			infoPtr->lastError = Tcl_GetErrno();
-		    }
-		}
-
-		if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
-		    infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-		    if (error != ERROR_SUCCESS) {
-			TclWinConvertWSAError((DWORD) error);
-			infoPtr->lastError = Tcl_GetErrno();
-		    }
-		    infoPtr->readyEvents |= FD_WRITE;
-		}
-		infoPtr->readyEvents |= event;
-
-		/*
-		 * Wake up the Main Thread.
-		 */
-
-		SetEvent(tsdPtr->readyEvent);
-		Tcl_ThreadAlert(tsdPtr->threadId);
+		info_found = 1;
 		break;
 	    }
+	}
+	/*
+	 * Check if there is a pending info structure not jet in the
+	 * list
+	 */
+	if ( !info_found
+		&& tsdPtr->pendingSocketInfo != NULL
+		&& tsdPtr->pendingSocketInfo->socket ==socket ) {
+	    infoPtr = tsdPtr->pendingSocketInfo;
+	    info_found = 1;
+	}
+	if (info_found) {
+
+	    /*
+	     * Update the socket state.
+	     *
+	     * A count of FD_ACCEPTS is stored, so if an FD_CLOSE event
+	     * happens, then clear the FD_ACCEPT count. Otherwise,
+	     * increment the count if the current event is an FD_ACCEPT.
+	     */
+
+	    if (event & FD_CLOSE) {
+	        infoPtr->acceptEventCount = 0;
+	        infoPtr->readyEvents &= ~(FD_WRITE|FD_ACCEPT);
+	    } else if (event & FD_ACCEPT) {
+		infoPtr->acceptEventCount++;
+	    }
+
+	    if (event & FD_CONNECT) {
+		/*
+		 * The socket is now connected, clear the async connect
+		 * flag.
+		 */
+
+		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+
+		/*
+		 * Remember any error that occurred so we can report
+		 * connection failures.
+		 */
+
+		if (error != ERROR_SUCCESS) {
+		    TclWinConvertWSAError((DWORD) error);
+		    infoPtr->lastError = Tcl_GetErrno();
+		}
+	    }
+
+	    if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
+		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
+		if (error != ERROR_SUCCESS) {
+		    TclWinConvertWSAError((DWORD) error);
+		    infoPtr->lastError = Tcl_GetErrno();
+		}
+		infoPtr->readyEvents |= FD_WRITE;
+	    }
+	    infoPtr->readyEvents |= event;
+
+	    /*
+	     * Wake up the Main Thread.
+	     */
+
+	    SetEvent(tsdPtr->readyEvent);
+	    Tcl_ThreadAlert(tsdPtr->threadId);
 	}
 	SetEvent(tsdPtr->socketListLock);
 	break;
@@ -2580,6 +2642,11 @@ TcpThreadActionProc(
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	infoPtr->nextPtr = tsdPtr->socketList;
 	tsdPtr->socketList = infoPtr;
+	
+	if (infoPtr == tsdPtr->pendingSocketInfo) {
+	    tsdPtr->pendingSocketInfo = NULL;
+	}
+	
 	SetEvent(tsdPtr->socketListLock);
 
 	notifyCmd = SELECT;
