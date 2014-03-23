@@ -935,7 +935,7 @@ TcpCloseProc(
     TcpState *statePtr = instanceData;
     /* TIP #218 */
     int errorCode = 0;
-    /* ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey); */
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -967,6 +967,23 @@ TcpCloseProc(
     }
     if (statePtr->myaddrlist != NULL) {
         freeaddrinfo(statePtr->myaddrlist);
+    }
+
+    /*
+     * Clear an eventual tsd info list pointer.
+     * This may be called, if an async socket connect fails or is closed
+     * between connect and thread action callback.
+     */
+    if (tsdPtr->pendingTcpState != NULL
+	    && tsdPtr->pendingTcpState == statePtr) {
+
+	/* get infoPtr lock, because this concerns the notifier thread */
+	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+
+	tsdPtr->pendingTcpState = NULL;
+
+	/* Free list lock */
+	SetEvent(tsdPtr->socketListLock);
     }
 
     /*
@@ -1644,6 +1661,8 @@ CreateClientSocket(
 		WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 
 		/*
+		 * Bugfig for 336441ed59 to not ignore notifications until the
+		 * infoPtr is in the list.
 		 * Check if my statePtr is already in the tsdPtr->socketList
 		 * It is set after this call by TcpThreadActionProc and is set
 		 * on a second round.
