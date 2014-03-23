@@ -820,7 +820,7 @@ TcpCloseProc(
     SocketInfo *infoPtr = (SocketInfo *) instanceData;
     /* TIP #218 */
     int errorCode = 0;
-    /* ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey); */
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
     /*
      * Check that WinSock is initialized; do not call it if not, to prevent
@@ -839,6 +839,23 @@ TcpCloseProc(
 	    TclWinConvertWSAError((DWORD) WSAGetLastError());
 	    errorCode = Tcl_GetErrno();
 	}
+    }
+
+    /*
+     * Clear an eventual tsd info list pointer.
+     * This may be called, if an async socket connect fails or is closed
+     * between connect and thread action callback.
+     */
+    if (tsdPtr->pendingSocketInfo != NULL
+	    && tsdPtr->pendingSocketInfo == infoPtr) {
+
+	/* get infoPtr lock, because this concerns the notifier thread */
+	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+
+	tsdPtr->pendingSocketInfo = NULL;
+
+	/* Free list lock */
+	SetEvent(tsdPtr->socketListLock);
     }
 
     /*
@@ -1051,6 +1068,8 @@ CreateSocket(
 	     * Buffer new infoPtr in the tsd memory as long as it is not in
 	     * the info list. This allows the event procedure to process the
 	     * event.
+	     * Bugfig for 336441ed59 to not ignore notifications until the
+	     * infoPtr is in the list..
 	     */
 
 	    tsdPtr->pendingSocketInfo = infoPtr;
@@ -1069,7 +1088,11 @@ CreateSocket(
 	     */
 	    SetEvent(tsdPtr->socketListLock);
 
-	    /* activate accept notification and put in async mode */
+	    /*
+	     * Activate accept notification and put in async mode
+	     * Bug 336441ed59: activate notification before connect
+	     * so we do not miss a notification of a fialed connect.
+	     */
 	    ioctlsocket(sock, (long) FIONBIO, &flag);
 	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 	            (LPARAM) infoPtr);
@@ -1119,17 +1142,15 @@ CreateSocket(
 	Tcl_AppendResult(interp, "couldn't open socket: ",
 		Tcl_PosixError(interp), NULL);
     }
-    /*
-     * Clear the tsd socket list pointer if we did not wait for
-     * the FD_CONNECT asyncroneously
-     */
-    tsdPtr->pendingSocketInfo = NULL;
     if (infoPtr != NULL) {
 	/*
 	 * Free the allocated socket info structure and close the socket
 	 */
 	TcpCloseProc(infoPtr, interp);
     } else if (sock != INVALID_SOCKET) {
+	/*
+	 * No socket structure jet - just close
+	 */
 	closesocket(sock);
     }
     return NULL;
