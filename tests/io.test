@@ -4796,6 +4796,21 @@ test io-35.19 {Tcl_Eof, eof char in middle, cr write, crlf read} -body {
     close $f
     list $c $l $e [scan [string index $in end] %c]
 } -result {17 8 1 13}
+test io-35.20 {Tcl_Eof, eof char in middle, cr write, crlf read} {
+    file delete $path(test1)
+    set f [open $path(test1) w]
+    fconfigure $f -translation cr -eofchar {}
+    set i [format \n%cqrsuvw 26]
+    puts $f $i
+    close $f
+    set c [file size $path(test1)]
+    set f [open $path(test1) r]
+    fconfigure $f -translation crlf -eofchar \x1a
+    set l [string length [set in [read $f]]]
+    set e [eof $f]
+    close $f
+    list $c $l $e [scan [string index $in end] %c]
+} {9 1 1 13}
 
 # Test Tcl_InputBlocked
 
@@ -6824,6 +6839,147 @@ test io-52.11 {TclCopyChannel & encodings} {fcopy} {
 
     file size $path(kyrillic.txt)
 } 3
+
+test io-52.12 {coverage of -translation auto} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 29
+test io-52.13 {coverage of -translation cr} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation cr
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 30
+test io-52.14 {coverage of -translation crlf} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation crlf
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 29
+test io-52.14.1 {coverage of -translation crlf} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation crlf
+    set out [open $path(test2) w]
+    fcopy $in $out -size 2
+    close $in
+    close $out
+    file size $path(test2)
+} 2
+test io-52.14.2 {coverage of -translation crlf} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -translation crlf
+    set out [open $path(test2) w]
+    fcopy $in $out -size 9
+    close $in
+    close $out
+    file size $path(test2)
+} 9
+test io-52.15 {coverage of -translation crlf} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\r
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation crlf
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 8
+test io-52.16 {coverage of eofChar handling} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation lf -eofchar a
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 0
+test io-52.17 {coverage of eofChar handling} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation lf -eofchar d
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 3
+test io-52.18 {coverage of eofChar handling} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 8 -translation crlf -eofchar h
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 8
+test io-52.19 {coverage of eofChar handling} {
+    file delete $path(test1) $path(test2)
+    set out [open $path(test1) wb]
+    chan configure $out -translation lf
+    puts -nonewline $out abcdefg\rhijklmn\nopqrstu\r\nvwxyz
+    close $out
+    set in [open $path(test1)]
+    chan configure $in -buffersize 10 -translation crlf -eofchar h
+    set out [open $path(test2) w]
+    fcopy $in $out
+    close $in
+    close $out
+    file size $path(test2)
+} 8
 
 test io-53.1 {CopyData} {fcopy} {
     file delete $path(test1)
