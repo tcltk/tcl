@@ -181,7 +181,7 @@ struct TcpState {
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
     int status;                 /* Cache status of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
-    int lastError;		/* Error code from last message.
+    int connectError;		/* Async connect error set by notifier thread.
 				 * Set by notifier thread, access must be
 				 * protected by semaphore */
     struct TcpState *nextPtr;	/* The next socket on the per-thread socket
@@ -199,10 +199,13 @@ struct TcpState {
 					 * socket. */
 #define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
 					 * socket */
-#define SOCKET_REENTER_PENDING	(1<<4)	/* CreateClientSocket was called to
+#define TCP_ASYNC_CONNECT_REENTER_PENDING   (1<<4)
+					/* CreateClientSocket was called to
 					 * process an async connect. This
 					 * flag indicates that reentry is
 					 * still pending */
+#define TCP_ASYNC_CONNECT_FAILED    (1<<5)
+					/* An async connect finally failed */
 
 /*
  * The following structure is what is added to the Tcl event queue when a
@@ -585,7 +588,7 @@ WaitForConnect(
     /*
      * Check if an async connect is running. If not return ok
      */
-    if ( !(statePtr->flags & SOCKET_REENTER_PENDING) )
+    if ( !(statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING) )
 	return 0;
     
     /*
@@ -625,7 +628,7 @@ WaitForConnect(
 
 	    /* Succesfully connected or async connect restarted */
 	    if (result == TCL_OK) {
-		if ( statePtr->flags & SOCKET_REENTER_PENDING ) {
+		if ( statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING ) {
 		    *errorCodePtr = EWOULDBLOCK;
 		    return -1;
 		}
@@ -1218,7 +1221,7 @@ TcpGetOptionProc(
 	/*
 	* Do not return any errors if async connect is running
 	*/
-	if (! (statePtr->flags & SOCKET_REENTER_PENDING) ) {
+	if (! (statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING) ) {
 	    int optlen;
 	    int ret;
     	    DWORD err;
@@ -1250,8 +1253,9 @@ TcpGetOptionProc(
     if ((len > 1) && (optionName[1] == 'c') &&
 	    (strncmp(optionName, "-connecting", len) == 0)) {
 
-        Tcl_DStringAppend(dsPtr,
-                        (statePtr->flags & SOCKET_REENTER_PENDING) ? "1" : "0", -1);
+	Tcl_DStringAppend(dsPtr,
+		(statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING)
+		? "1" : "0", -1);
         return TCL_OK;
     }
 
@@ -1609,7 +1613,7 @@ CreateClientSocket(
 	    /*
 	     * Reset last error from last try
 	     */
-	    statePtr->lastError = 0;
+	    statePtr->connectError = 0;
 	    Tcl_SetErrno(0);
 	    
 	    statePtr->sockets->fd = socket(statePtr->myaddr->ai_family, SOCK_STREAM, 0);
@@ -1719,7 +1723,7 @@ CreateClientSocket(
 		/*
 		 * Remember that we jump back behind this next round
 		 */
-		statePtr->flags |= SOCKET_REENTER_PENDING;
+		statePtr->flags |= TCP_ASYNC_CONNECT_REENTER_PENDING;
 		return TCL_OK;
 
 	    reenter:
@@ -1730,18 +1734,18 @@ CreateClientSocket(
 		 *
 		 * Clear the reenter flag
 		 */
-		statePtr->flags &= ~(SOCKET_REENTER_PENDING);
+		statePtr->flags &= ~(TCP_ASYNC_CONNECT_REENTER_PENDING);
 		/* get statePtr lock */
 		WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 		/* Get signaled connect error */
-		Tcl_SetErrno(statePtr->lastError);
+		Tcl_SetErrno(statePtr->connectError);
 		/* Clear eventual connect flag */
 		statePtr->selectEvents &= ~(FD_CONNECT);
 		/* Free list lock */
 		SetEvent(tsdPtr->socketListLock);
 	    }
 #ifdef DEBUGGING
-	    fprintf(stderr, "lastError: %d\n", Tcl_GetErrno());
+	    fprintf(stderr, "connectError: %d\n", Tcl_GetErrno());
 #endif
 	    /*
 	     * Clear the tsd socket list pointer if we did not wait for
@@ -1760,8 +1764,6 @@ out:
      * Socket connected or connection failed
      */
     DEBUG("connected or finally failed");
-    /* Clear async flag (not really necessary, not used any more) */
-    statePtr->flags &= ~(TCP_ASYNC_CONNECT);
 
     /*
      * Final connect failure
@@ -1797,12 +1799,14 @@ out:
 	    /*
 	     * Set up the select mask for read/write events.
 	     */
-	    DEBUG("selectEvents = FD_WRITE for fail writable");    
-	    statePtr->selectEvents = FD_WRITE;
+	    DEBUG("selectEvents = FD_WRITE/FD_READ for connect fail");    
+	    statePtr->selectEvents = FD_WRITE|FD_READ;
 	    /* get statePtr lock */
 	    WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-	    /* Clear eventual connect flag */
-	    statePtr->readyEvents |= FD_WRITE;
+	    /* Signal ready readable and writable events */
+	    statePtr->readyEvents |= FD_WRITE | FD_READ;
+	    /* Flag error to event routine */
+	    statePtr->flags |= TCP_ASYNC_CONNECT_FAILED;
 	    /* Free list lock */
 	    SetEvent(tsdPtr->socketListLock);
 	}
@@ -2607,7 +2611,7 @@ SocketEventProc(
     if ( statePtr->readyEvents & FD_CONNECT ) {
 	statePtr->readyEvents &= ~(FD_CONNECT);
 	DEBUG("FD_CONNECT");
-        if ( statePtr->flags & SOCKET_REENTER_PENDING ) {
+	if ( statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING ) {
 	    SetEvent(tsdPtr->socketListLock);
 	    CreateClientSocket(NULL, statePtr);
 	    return 1;
@@ -2702,38 +2706,59 @@ SocketEventProc(
 	Tcl_SetMaxBlockTime(&blockTime);
 	mask |= TCL_READABLE|TCL_WRITABLE;
     } else if (events & FD_READ) {
-	fd_set readFds;
-	struct timeval timeout;
 
 	/*
-	 * We must check to see if data is really available, since someone
-	 * could have consumed the data in the meantime. Turn off async
-	 * notification so select will work correctly. If the socket is still
-	 * readable, notify the channel driver, otherwise reset the async
-	 * select handler and keep waiting.
+	 * Throw the readable event if an async connect failed.
 	 */
-	DEBUG("FD_READ");
 
-	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		(WPARAM) UNSELECT, (LPARAM) statePtr);
+	if ( statePtr->flags & TCP_ASYNC_CONNECT_FAILED ) {
 
-	FD_ZERO(&readFds);
-	FD_SET(statePtr->sockets->fd, &readFds);
-	timeout.tv_usec = 0;
-	timeout.tv_sec = 0;
-
-	if (select(0, &readFds, NULL, NULL, &timeout) != 0) {
 	    mask |= TCL_READABLE;
+	    
 	} else {
-	    statePtr->readyEvents &= ~(FD_READ);
+	    fd_set readFds;
+	    struct timeval timeout;
+
+	    /*
+	     * We must check to see if data is really available, since someone
+	     * could have consumed the data in the meantime. Turn off async
+	     * notification so select will work correctly. If the socket is still
+	     * readable, notify the channel driver, otherwise reset the async
+	     * select handler and keep waiting.
+	     */
+	    DEBUG("FD_READ");
+
 	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		    (WPARAM) SELECT, (LPARAM) statePtr);
+		    (WPARAM) UNSELECT, (LPARAM) statePtr);
+
+	    FD_ZERO(&readFds);
+	    FD_SET(statePtr->sockets->fd, &readFds);
+	    timeout.tv_usec = 0;
+	    timeout.tv_sec = 0;
+
+	    if (select(0, &readFds, NULL, NULL, &timeout) != 0) {
+		mask |= TCL_READABLE;
+	    } else {
+		statePtr->readyEvents &= ~(FD_READ);
+		SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+			(WPARAM) SELECT, (LPARAM) statePtr);
+	    }
 	}
     }
+
+    /*
+     * writable event
+     */
+
     if (events & FD_WRITE) {
 	DEBUG("FD_WRITE");
 	mask |= TCL_WRITABLE;
     }
+    
+    /*
+     * Call registered event procedures
+     */
+     
     if (mask) {
 	DEBUG("Calling Tcl_NotifyChannel...");
 	Tcl_NotifyChannel(statePtr->channel, mask);
@@ -2827,6 +2852,7 @@ NewSocketInfo(SOCKET socket)
  * WaitForSocketEvent --
  *
  *	Waits until one of the specified events occurs on a socket.
+ *	For event FD_CONNECT use WaitForConnect.
  *
  * Results:
  *	Returns 1 on success or 0 on failure, with an error code in
@@ -2841,7 +2867,9 @@ NewSocketInfo(SOCKET socket)
 static int
 WaitForSocketEvent(
     TcpState *statePtr,	/* Information about this socket. */
-    int events,			/* Events to look for. */
+    int events,			/* Events to look for. May be one of
+				 * FD_READ or FD_WRITE.
+				 */
     int *errorCodePtr)		/* Where to store errors? */
 {
     int result = 1;
@@ -2864,13 +2892,24 @@ WaitForSocketEvent(
 	    (LPARAM) statePtr);
 
     while (1) {
-	if (statePtr->lastError) {
-	    *errorCodePtr = statePtr->lastError;
-	    result = 0;
+	int event_found;
+
+	/* get statePtr lock */
+	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
+	
+	/* Check if event occured */
+	event_found = (statePtr->readyEvents & events);
+
+	/* Free list lock */
+	SetEvent(tsdPtr->socketListLock);
+
+	/* exit loop if event occured */
+	if (event_found) {
 	    break;
-	} else if (statePtr->readyEvents & events) {
-	    break;
-	} else if (statePtr->flags & TCP_ASYNC_SOCKET) {
+	}
+	
+	/* Exit loop if event did not occur but this is a non-blocking channel */
+	if (statePtr->flags & TCP_ASYNC_SOCKET) {
 	    *errorCodePtr = EWOULDBLOCK;
 	    result = 0;
 	    break;
@@ -3086,7 +3125,7 @@ SocketProc(
 		 */
 		if (error != ERROR_SUCCESS) {
 		    TclWinConvertError((DWORD) error);
-		    statePtr->lastError = Tcl_GetErrno();
+		    statePtr->connectError = Tcl_GetErrno();
 		}
 	    }
 	    /*
