@@ -7450,6 +7450,25 @@ test io-53.11 {Bug 2895565} -setup {
     removeFile out
     removeFile in
 } -result {40 bytes copied}
+test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix openpipe fcopy} {
+    file delete $path(pipe)
+    set f1 [open $path(pipe) w]
+    puts -nonewline $f1 {
+	fconfigure stdin -translation binary -blocking 0
+	fconfigure stdout -buffering none -translation binary
+	fcopy stdin stdout
+    }
+    close $f1
+    set f1 [open "|[list [interpreter] $path(pipe)]" r+]
+    fconfigure $f1 -translation binary -buffering none
+    puts -nonewline $f1 A
+    after 2000 {set ::done timeout}
+    fileevent $f1 readable {set ::done ok}
+    vwait ::done
+    set ch [read $f1 1]
+    close $f1
+    list $::done $ch
+} {ok A}
 
 test io-54.1 {Recursive channel events} {socket fileevent} {
     # This test checks to see if file events are delivered during recursive
