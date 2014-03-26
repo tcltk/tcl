@@ -2289,11 +2289,12 @@ StatError(
 }
 
 static WCHAR *
-winPathFromNative(
-    const char *native)
+winPathFromObj(
+    Tcl_Obj *fileName)
 {
-	int size;
-	WCHAR *winPath;
+    int size;
+    const char *native =  Tcl_FSGetNativePath(fileName);
+    WCHAR *winPath;
 
     size = cygwin_conv_path(1, native, NULL, 0);
     winPath = ckalloc(size);
@@ -2330,8 +2331,7 @@ GetUnixFileAttributes(
     Tcl_Obj **attributePtrPtr)	/* A pointer to return the object with. */
 {
     int fileAttributes;
-    const char *native = Tcl_FSGetNativePath(fileName);
-    WCHAR *winPath = winPathFromNative(native);
+    WCHAR *winPath = winPathFromObj(fileName);
 
     fileAttributes = GetFileAttributesW(winPath);
     ckfree(winPath);
@@ -2369,18 +2369,16 @@ SetUnixFileAttributes(
     Tcl_Obj *fileName,      /* The name of the file (UTF-8). */
     Tcl_Obj *attributePtr)  /* The attribute to set. */
 {
-    int yesNo, fileAttributes;
-    const char *native;
+    int yesNo, fileAttributes, old;
     WCHAR *winPath;
 
     if (Tcl_GetBooleanFromObj(interp, attributePtr, &yesNo) != TCL_OK) {
 	return TCL_ERROR;
     }
 
-    native = Tcl_FSGetNativePath(fileName);
-    winPath = winPathFromNative(native);
+    winPath = winPathFromObj(fileName);
 
-    fileAttributes = GetFileAttributesW(winPath);
+    fileAttributes = old = GetFileAttributesW(winPath);
 
     if (fileAttributes == -1) {
 	ckfree(winPath);
@@ -2394,7 +2392,8 @@ SetUnixFileAttributes(
 	fileAttributes &= ~attributeArray[objIndex];
     }
 
-    if (!SetFileAttributesW(winPath, fileAttributes)) {
+    if ((fileAttributes != old)
+	    && !SetFileAttributesW(winPath, fileAttributes)) {
 	ckfree(winPath);
 	StatError(interp, fileName);
 	return TCL_ERROR;
