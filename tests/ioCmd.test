@@ -1024,10 +1024,9 @@ test iocmd-23.11 {chan read, close pulls the rug out} -match glob -body {
     }
     set c [chan create {r} foo]
     note [read $c]
-    close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
+} -result {{read rc* 4096} {}}
 
 # --- === *** ###########################
 # method write
