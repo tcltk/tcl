@@ -736,6 +736,9 @@ install-binaries: binaries
 	    @INSTALL_STUB_LIB@ ; \
 	fi
 	@EXTRA_INSTALL_BINARIES@
+	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
+	@mkdir -p $(LIB_INSTALL_DIR)/pkgconfig
+	@$(INSTALL_DATA) tcl.pc $(LIB_INSTALL_DIR)/pkgconfig/tcl.pc
 
 install-libraries: libraries $(INSTALL_TZDATA) install-msgs
 	@for i in "$(INCLUDE_INSTALL_DIR)" "$(SCRIPT_INSTALL_DIR)"; \
@@ -905,7 +908,8 @@ clean:
 
 distclean: clean
 	rm -rf Makefile config.status config.cache config.log tclConfig.sh \
-		$(PACKAGE).* prototype tclConfig.h *.plist Tcl.framework
+		$(PACKAGE).* prototype tclConfig.h *.plist Tcl.framework \
+		tcl.pc
 	cd dltest ; $(MAKE) distclean
 
 depend:
@@ -1657,7 +1661,7 @@ $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
 EOLFIX=$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl
-dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(MAC_OSX_DIR)/configure genstubs
+dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure genstubs
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
 	cp -p $(UNIX_DIR)/*.[ch] $(DISTDIR)/unix
@@ -1668,7 +1672,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(MAC_OSX_DIR)/configure 
 		$(UNIX_DIR)/tclConfig.sh.in $(UNIX_DIR)/install-sh \
 		$(UNIX_DIR)/README $(UNIX_DIR)/ldAix $(UNIX_DIR)/tcl.spec \
 		$(UNIX_DIR)/installManPage $(UNIX_DIR)/tclConfig.h.in \
-		$(DISTDIR)/unix
+		$(UNIX_DIR)/tcl.pc.in $(DISTDIR)/unix
 	chmod 775 $(DISTDIR)/unix/configure $(DISTDIR)/unix/configure.in
 	chmod 775 $(DISTDIR)/unix/ldAix
 	@mkdir $(DISTDIR)/generic
