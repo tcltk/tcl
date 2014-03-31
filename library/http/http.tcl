@@ -1210,55 +1210,59 @@ proc http::ParseCookie {token value} {
     set realopts {hostonly 1 path / secure 0 httponly 0}
     dict set realopts origin $state(host)
     dict set realopts domain $state(host)
-    foreach opt [split [regsub -all {;\s+} $opts \u0000] \u0000] {
-	switch -glob -nocase -- $opt {
-	    Expires=* {
-		set opt [string range $opt 8 end]
+    foreach option [split [regsub -all {;\s+} $opts \u0000] \u0000] {
+	regexp {^(.*?)(?:=(.*))?$} $option -> optname optval
+	switch -exact -- [string tolower $optname] {
+	    expires {
 		if {[catch {
 		    #Sun, 06 Nov 1994 08:49:37 GMT
 		    dict set realopts expires \
-			[clock scan $opt -format "%a, %d %b %Y %T %Z"]
+			[clock scan $optval -format "%a, %d %b %Y %T %Z"]
 		}] && [catch {
 		    # Google does this one
 		    #Mon, 01-Jan-1990 00:00:00 GMT
 		    dict set realopts expires \
-			[clock scan $opt -format "%a, %d-%b-%Y %T %Z"]
+			[clock scan $optval -format "%a, %d-%b-%Y %T %Z"]
 		}] && [catch {
 		    # This is in the RFC, but it is also in the original
 		    # Netscape cookie spec, now online at:
 		    # <URL:http://curl.haxx.se/rfc/cookie_spec.html>
 		    #Sunday, 06-Nov-94 08:49:37 GMT
 		    dict set realopts expires \
-			[clock scan $opt -format "%A, %d-%b-%y %T %Z"]
+			[clock scan $optval -format "%A, %d-%b-%y %T %Z"]
 		}]} {catch {
 		    #Sun Nov  6 08:49:37 1994
 		    dict set realopts expires \
-			[clock scan $opt -gmt 1 -format "%a %b %d %T %Y"]
+			[clock scan $optval -gmt 1 -format "%a %b %d %T %Y"]
 		}}
 	    }
-	    Max-Age=* {
+	    max-age {
 		# Normalize
-		set opt [string range $opt 8 end]
-		if {[string is integer -strict $opt]} {
-		    dict set realopts expires [expr {[clock seconds] + $opt}]
+		if {[string is integer -strict $optval]} {
+		    dict set realopts expires [expr {[clock seconds] + $optval}]
 		}
 	    }
-	    Domain=* {
-		set opt [string trimleft [string range $opt 7 end] "."]
-		if {$opt ne "" && ![string match *. $opt]} {
-		    dict set realopts domain $opt
-		    dict set realopts hostonly 0
+	    domain {
+		# From the domain-matches definition [RFC 2109, section 2]:
+		#   Host A's name domain-matches host B's if [...]
+		#	A is a FQDN string and has the form NB, where N is a
+		#	non-empty name string, B has the form .B', and B' is a
+		#	FQDN string. (So, x.y.com domain-matches .y.com but
+		#	not y.com.)
+		if {$optval ne "" && ![string match *. $optval]} {
+		    dict set realopts domain [string trimleft $optval "."]
+		    dict set realopts hostonly [expr {
+			! [string match .* $optval]
+		    }]
 		}
 	    }
-	    Path=* {
-		set opt [string range $opt 5 end]
-		if {![string match /* $opt]} {
-		    set opt $state(path)
+	    path {
+		if {[string match /* $optval]} {
+		    dict set realopts path $optval
 		}
-		dict set realopts path $opt
 	    }
-	    Secure - HttpOnly {
-		dict set realopts [string tolower $opt] 1
+	    secure - httponly {
+		dict set realopts [string tolower $optname] 1
 	    }
 	}
     }
