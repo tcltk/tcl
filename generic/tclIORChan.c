@@ -586,6 +586,7 @@ TclChanCreateObjCmd(
     chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
 	    mode);
     rcPtr->chan = chan;
+    Tcl_Preserve(chan);
     chanPtr = (Channel *) chan;
 
     /*
@@ -2306,6 +2307,7 @@ FreeReflectedChannel(
 	ckfree(chanPtr->typePtr);
 	chanPtr->typePtr = NULL;
     }
+    Tcl_Release(chanPtr);
 
     FreeReflectedChannelArgs(rcPtr);
 

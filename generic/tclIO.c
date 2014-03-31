@@ -4261,6 +4261,7 @@ Tcl_GetsObj(
      */
 
     chanPtr = statePtr->topChanPtr;
+    Tcl_Preserve(chanPtr);
 
     bufPtr = statePtr->inQueueHead;
     encoding = statePtr->encoding;
@@ -4493,8 +4494,9 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-
+    /*
     chanPtr = statePtr->topChanPtr;
+     */
 
     bufPtr = gs.bufPtr;
     if (bufPtr == NULL) {
@@ -4528,9 +4530,9 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-
+    /*
     chanPtr = statePtr->topChanPtr;
-
+     */
     bufPtr = statePtr->inQueueHead;
     if (bufPtr == NULL) {
 	Tcl_Panic("Tcl_GetsObj: restore reached with bufPtr==NULL");
@@ -4570,10 +4572,11 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-
+    /*
     chanPtr = statePtr->topChanPtr;
-
+     */
     UpdateInterest(chanPtr);
+    Tcl_Release(chanPtr);
     return copiedTotal;
 }
 
@@ -4619,6 +4622,7 @@ TclGetsObjBinary(
      */
 
     chanPtr = statePtr->topChanPtr;
+    Tcl_Preserve(chanPtr);
 
     bufPtr = statePtr->inQueueHead;
 
@@ -4822,6 +4826,7 @@ TclGetsObjBinary(
 
   done:
     UpdateInterest(chanPtr);
+    Tcl_Release(chanPtr);
     return copiedTotal;
 }
 
@@ -5294,6 +5299,7 @@ Tcl_ReadRaw(
      * requests more bytes.
      */
 
+    Tcl_Preserve(chanPtr);
     for (copied = 0; copied < bytesToRead; copied += copiedNow) {
 	copiedNow = CopyBuffer(chanPtr, bufPtr + copied,
 		bytesToRead - copied);
@@ -5376,7 +5382,7 @@ Tcl_ReadRaw(
 			 * over EAGAIN/WOULDBLOCK handling.
 			 */
 
-			return copied;
+			goto done;
 		    }
 
 		    SetFlag(statePtr, CHANNEL_BLOCKED);
@@ -5384,14 +5390,17 @@ Tcl_ReadRaw(
 		}
 
 		Tcl_SetErrno(result);
-		return -1;
+		copied = -1;
+		goto done;
 	    }
 
-	    return copied + nread;
+	    copied += nread;
+	    goto done;
 	}
     }
 
   done:
+    Tcl_Release(chanPtr);
     return copied;
 }
 
@@ -5499,6 +5508,7 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     encoding = statePtr->encoding;
     factor = UTF_EXPANSION_FACTOR;
+    Tcl_Preserve(chanPtr);
 
     if (appendFlag == 0) {
 	if (encoding == NULL) {
@@ -5590,10 +5600,11 @@ DoReadChars(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-
+    /*
     chanPtr = statePtr->topChanPtr;
-
+     */
     UpdateInterest(chanPtr);
+    Tcl_Release(chanPtr);
     return copied;
 }
 
@@ -8061,6 +8072,11 @@ UpdateInterest(
 				/* State info for channel */
     int mask = statePtr->interestMask;
 
+    if (chanPtr->typePtr == NULL) {
+	/* Do not update interest on a closed channel */
+	return;
+    }
+
     /*
      * If there are flushed buffers waiting to be written, then we need to
      * watch for the channel to become writable.
@@ -9152,6 +9168,7 @@ DoRead(
      * operation.
      */
 
+    Tcl_Preserve(chanPtr);
     if (!GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
 	ResetFlag(statePtr, CHANNEL_EOF);
     }
@@ -9192,6 +9209,7 @@ DoRead(
 
   done:
     UpdateInterest(chanPtr);
+    Tcl_Release(chanPtr);
     return copied;
 }
 

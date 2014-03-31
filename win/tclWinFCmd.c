@@ -1825,12 +1825,12 @@ SetWinFileAttributes(
     Tcl_Obj *fileName,		/* The name of the file. */
     Tcl_Obj *attributePtr)	/* The new value of the attribute. */
 {
-    DWORD fileAttributes;
+    DWORD fileAttributes, old;
     int yesNo, result;
     const TCHAR *nativeName;
 
     nativeName = Tcl_FSGetNativePath(fileName);
-    fileAttributes = GetFileAttributes(nativeName);
+    fileAttributes = old = GetFileAttributes(nativeName);
 
     if (fileAttributes == 0xffffffff) {
 	StatError(interp, fileName);
@@ -1848,7 +1848,8 @@ SetWinFileAttributes(
 	fileAttributes &= ~(attributeArray[objIndex]);
     }
 
-    if (!SetFileAttributes(nativeName, fileAttributes)) {
+    if ((fileAttributes != old)
+	    && !SetFileAttributes(nativeName, fileAttributes)) {
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }

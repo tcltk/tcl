@@ -662,6 +662,10 @@ FileInputProc(
     *errorCode = 0;
 
     /*
+     * TODO: This comment appears to be out of date.  We *do* have a
+     * console driver, over in tclWinConsole.c.  After some Windows
+     * developer confirms, this comment should be revised.
+     *
      * Note that we will block on reads from a console buffer until a full
      * line has been entered. The only way I know of to get around this is to
      * write a console driver. We should probably do this at some point, but
