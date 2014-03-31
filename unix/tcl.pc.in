@@ -11,5 +11,5 @@ URL: http://www.tcl.tk/
 Version: @TCL_VERSION@
 Requires:
 Conflicts:
-Libs: -L${libdir} @TCL_LIBS@
+Libs: -L${libdir} @TCL_LIB_FLAG@ @TCL_LIBS@
 Cflags: -I${includedir}
