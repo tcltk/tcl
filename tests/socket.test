@@ -63,6 +63,12 @@
 package require tcltest 2
 namespace import -force ::tcltest::*
 
+# For some tests we need an IP address that never responds.
+# 169.254.0.0 seems to be a good candidate, because it is from a
+# reserved part of the zeroconf address space. Should it ever cause
+# any problems, a different known-unreachable adress can be set here.
+set unreachableIP 169.254.0.0
+
 # Some tests require the testthread and exec commands
 testConstraint testthread [llength [info commands testthread]]
 testConstraint exec [llength [info commands exec]]
@@ -1675,7 +1681,7 @@ test socket-13.1 {Testing use of shared socket between two threads} \
 test socket-14.11.0 {pending [socket -async] and blocking [puts], no listener, no flush} \
     -constraints {socket} \
     -body {
-        set sock [socket -async 169.254.0.0 42424]
+        set sock [socket -async $unreachableIP 42424]
         fconfigure $sock -blocking 0
         puts $sock ok
         fileevent $sock writable {set x 1}
@@ -1688,7 +1694,7 @@ test socket-14.11.0 {pending [socket -async] and blocking [puts], no listener, n
 test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, flush} \
     -constraints {socket} \
     -body {
-        set sock [socket -async 169.254.0.0 42424]
+        set sock [socket -async $unreachableIP 42424]
         fconfigure $sock -blocking 0
         puts $sock ok
         flush $sock
@@ -1697,7 +1703,7 @@ test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, f
         close $sock
     } -cleanup {
         catch {close $sock}
-        catch {unset x}
+        unset x
     } -result {host is unreachable} -returnCodes 1
 
 removeFile script1
