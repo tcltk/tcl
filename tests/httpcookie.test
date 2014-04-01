@@ -32,16 +32,16 @@ test http-cookiejar-2.2 {cookie storage: basics} -constraints cookiejar -body {
 } -returnCodes error -result {unknown method "?": must be configure, create, destroy or new}
 test http-cookiejar-2.3 {cookie storage: basics} cookiejar {
     http::cookiejar configure
-} {-domainfile -domainlist -loglevel -offline -purgeinterval -vacuumtrigger}
+} {-domainfile -domainlist -loglevel -offline -purgeinterval -retain -vacuumtrigger}
 test http-cookiejar-2.4 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar configure a b c d e
 } -returnCodes error -result {wrong # args: should be "http::cookiejar configure ?optionName? ?optionValue?"}
 test http-cookiejar-2.5 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar configure a
-} -returnCodes error -result {bad option "a": must be -domainfile, -domainlist, -loglevel, -offline, -purgeinterval, or -vacuumtrigger}
+} -returnCodes error -result {bad option "a": must be -domainfile, -domainlist, -loglevel, -offline, -purgeinterval, -retain, or -vacuumtrigger}
 test http-cookiejar-2.6 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar configure -d
-} -returnCodes error -result {ambiguous option "-d": must be -domainfile, -domainlist, -loglevel, -offline, -purgeinterval, or -vacuumtrigger}
+} -returnCodes error -result {ambiguous option "-d": must be -domainfile, -domainlist, -loglevel, -offline, -purgeinterval, -retain, or -vacuumtrigger}
 test http-cookiejar-2.7 {cookie storage: basics} -setup {
     set old [http::cookiejar configure -loglevel]
 } -constraints cookiejar -body {
