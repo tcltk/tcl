@@ -1672,6 +1672,33 @@ test socket-13.1 {Testing use of shared socket between two threads} \
 } -cleanup {
     removeFile script
 } -result {hello 1}
+test socket-14.11.0 {pending [socket -async] and blocking [puts], no listener, no flush} \
+    -constraints {socket} \
+    -body {
+        set sock [socket -async 169.254.0.0 42424]
+        fconfigure $sock -blocking 0
+        puts $sock ok
+        fileevent $sock writable {set x 1}
+        vwait x
+        close $sock
+    } -cleanup {
+        catch {close $sock}
+        unset x
+    } -result {host is unreachable} -returnCodes 1
+test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, flush} \
+    -constraints {socket} \
+    -body {
+        set sock [socket -async 169.254.0.0 42424]
+        fconfigure $sock -blocking 0
+        puts $sock ok
+        flush $sock
+        fileevent $sock writable {set x 1}
+        vwait x
+        close $sock
+    } -cleanup {
+        catch {close $sock}
+        catch {unset x}
+    } -result {host is unreachable} -returnCodes 1
 
 removeFile script1
 removeFile script2
