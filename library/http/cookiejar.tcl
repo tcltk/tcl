@@ -57,6 +57,7 @@ namespace eval [info object namespace ::http::cookiejar] {
     # The list is directed to from http://publicsuffix.org/list/
     variable loglevel info
     variable vacuumtrigger 200
+    variable retainlimit 100
     variable offline false
     variable purgeinterval 60000
     variable domaincache {}
@@ -130,6 +131,7 @@ package provide cookiejar \
 		-loglevel      {loglevel setLog}
 		-offline       {offline setBool}
 		-purgeinterval {purgeinterval setInt}
+		-retain        {retainlimit setInt}
 		-vacuumtrigger {vacuumtrigger setInt}
 	    }
 	    if {$optionName eq "\u0000\u0000"} {
@@ -171,6 +173,7 @@ package provide cookiejar \
 		value TEXT NOT NULL,
 		originonly INTEGER NOT NULL,
 		expiry INTEGER NOT NULL,
+		lastuse INTEGER NOT NULL,
 		creation INTEGER NOT NULL);
 	    CREATE UNIQUE INDEX IF NOT EXISTS persistentUnique
 		ON persistentCookies (domain, path, key);
@@ -391,18 +394,24 @@ package provide cookiejar \
     method GetCookiesForHostAndPath {listVar secure host path fullhost} {
 	upvar 1 $listVar result
 	log debug "check for cookies for %s" [locn $secure $host $path]
+	set exact [expr {$host eq $fullhost}]
 	db eval {
 	    SELECT key, value FROM persistentCookies
 	    WHERE domain = $host AND path = $path AND secure <= $secure
 		AND (NOT originonly OR domain = $fullhost)
+		AND originonly = $exact
 	} {
 	    lappend result $key $value
+	    db eval {
+		UPDATE persistentCookies SET lastuse = $now WHERE id = $id
+	    }
 	}
 	set now [clock seconds]
 	db eval {
 	    SELECT id, key, value FROM sessionCookies
 	    WHERE domain = $host AND path = $path AND secure <= $secure
 		AND (NOT originonly OR domain = $fullhost)
+		AND originonly = $exact
 	} {
 	    lappend result $key $value
 	    db eval {
@@ -499,11 +508,13 @@ package provide cookiejar \
 	    if {!$persistent} {
 		db eval {
 		    INSERT OR REPLACE INTO sessionCookies (
-			secure, domain, path, key, value, originonly, creation, lastuse)
-		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $now, $now);
+			secure, domain, path, key, value, originonly, creation,
+			lastuse)
+		    VALUES ($secure, $domain, $path, $key, $value, $hostonly,
+			$now, $now);
 		    DELETE FROM persistentCookies
 		    WHERE domain = $domain AND path = $path AND key = $key
-			AND secure <= $secure
+			AND secure <= $secure AND originonly = $hostonly
 		}
 		incr deletions [db changes]
 		log debug "defined session cookie for %s" \
@@ -512,13 +523,13 @@ package provide cookiejar \
 		db eval {
 		    DELETE FROM persistentCookies
 		    WHERE domain = $domain AND path = $path AND key = $key
-			AND secure <= $secure;
+			AND secure <= $secure AND originonly = $hostonly
 		}
 		set del [db changes]
 		db eval {
 		    DELETE FROM sessionCookies
 		    WHERE domain = $domain AND path = $path AND key = $key
-			AND secure <= $secure;
+			AND secure <= $secure AND originonly = $hostonly
 		}
 		incr deletions [incr del [db changes]]
 		log debug "deleted %d cookies for %s" \
@@ -526,11 +537,13 @@ package provide cookiejar \
 	    } else {
 		db eval {
 		    INSERT OR REPLACE INTO persistentCookies (
-			secure, domain, path, key, value, originonly, expiry, creation)
-		    VALUES ($secure, $domain, $path, $key, $value, $hostonly, $expires, $now);
+			secure, domain, path, key, value, originonly, expiry,
+			creation, lastuse)
+		    VALUES ($secure, $domain, $path, $key, $value, $hostonly,
+			$expires, $now, $now);
 		    DELETE FROM sessionCookies
 		    WHERE domain = $domain AND path = $path AND key = $key
-			AND secure <= $secure
+			AND secure <= $secure AND originonly = $hostonly
 		}
 		incr deletions [db changes]
 		log debug "defined persistent cookie for %s, expires at %s" \
@@ -542,7 +555,8 @@ package provide cookiejar \
 
     method PurgeCookies {} {
 	namespace upvar [info object namespace [self class]] \
-	    vacuumtrigger trigger  purgeinterval interval
+	    vacuumtrigger trigger  purgeinterval interval \
+	    retainlimit retain
 	my PostponePurge
 	set now [clock seconds]
 	log debug "purging cookies that expired before %s" [clock format $now]
@@ -551,8 +565,20 @@ package provide cookiejar \
 		DELETE FROM persistentCookies WHERE expiry < $now
 	    }
 	    incr deletions [db changes]
-	    ### TODO: Cap the total number of cookies and session cookies,
-	    ### purging least frequently used
+	    db eval {
+		DELETE FROM persistentCookies WHERE id IN (
+		    SELECT id FROM persistentCookies ORDER BY lastuse
+		    LIMIT MAX(0, (
+			SELECT COUNT(*) FROM persistentCookies) - $retain))
+	    }
+	    incr deletions [db changes]
+	    db eval {
+		DELETE FROM sessionCookies WHERE id IN (
+		    SELECT id FROM sessionCookies ORDER BY lastuse
+		    LIMIT MAX(0, (
+			SELECT COUNT(*) FROM sessionCookies) - $retain))
+	    }
+	    incr deletions [db changes]
 	}
 
 	# Once we've deleted a fair bit, vacuum the database. Must be done
