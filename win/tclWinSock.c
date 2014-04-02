@@ -98,29 +98,31 @@ static ProcessGlobalValue hostName = {
 /*
  * The following structure is used to store the data associated with each
  * socket.
+ * All members modified by the notifier thread are defined as volatile.
  */
 
 typedef struct SocketInfo {
     Tcl_Channel channel;	/* Channel associated with this socket. */
     SOCKET socket;		/* Windows SOCKET handle. */
-    int flags;			/* Bit field comprised of the flags described
+    volatile int flags;		/* Bit field comprised of the flags described
 				 * below. */
     int watchEvents;		/* OR'ed combination of FD_READ, FD_WRITE,
 				 * FD_CLOSE, FD_ACCEPT and FD_CONNECT that
 				 * indicate which events are interesting. */
-    int readyEvents;		/* OR'ed combination of FD_READ, FD_WRITE,
+    volatile int readyEvents;	/* OR'ed combination of FD_READ, FD_WRITE,
 				 * FD_CLOSE, FD_ACCEPT and FD_CONNECT that
 				 * indicate which events have occurred. */
     int selectEvents;		/* OR'ed combination of FD_READ, FD_WRITE,
 				 * FD_CLOSE, FD_ACCEPT and FD_CONNECT that
 				 * indicate which events are currently being
 				 * selected. */
-    int acceptEventCount;	/* Count of the current number of FD_ACCEPTs
+    volatile int acceptEventCount;
+				/* Count of the current number of FD_ACCEPTs
 				 * that have arrived and not yet processed. */
     Tcl_TcpAcceptProc *acceptProc;
 				/* Proc to call on accept. */
     ClientData acceptProcData;	/* The data for the accept proc. */
-    int lastError;		/* Error code from last message. */
+    volatile int lastError;	/* Error code from last message. */
     struct SocketInfo *nextPtr;	/* The next socket on the per-thread socket
 				 * list. */
 } SocketInfo;
