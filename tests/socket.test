@@ -67,6 +67,10 @@ namespace import -force ::tcltest::*
 testConstraint testthread [llength [info commands testthread]]
 testConstraint exec [llength [info commands exec]]
 
+# Produce a random port number in the Dynamic/Private range
+# from 49152 through 65535.
+proc randport {} { expr {int(rand()*16383+49152)} }
+
 # If remoteServerIP or remoteServerPort are not set, check in the
 # environment variables for externally set values.
 #
@@ -925,6 +929,19 @@ test socket-8.2 {testing writable event when quick failure} {socket win} {
     after cancel $a1
     set x
 } writable
+
+test socket-8.3 {testing fileevent readable on failed async socket connect} {socket} {
+    # Test for bug 581937ab1e
+
+    set a1 [after 5000 {set x timeout}]
+    # This connect should fail
+    set s [socket -async localhost [randport]]
+    fileevent $s readable {set x readable}
+    vwait x
+    catch {close $s}
+    after cancel $a1
+    set x
+} readable
 
 test socket-9.1 {testing spurious events} {socket} {
     set len 0
