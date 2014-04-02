@@ -146,7 +146,7 @@ struct TcpState {
     int watchEvents;		/* OR'ed combination of FD_READ, FD_WRITE,
 				 * FD_CLOSE, FD_ACCEPT and FD_CONNECT that
 				 * indicate which events are interesting. */
-    int readyEvents;		/* OR'ed combination of FD_READ, FD_WRITE,
+    volatile int readyEvents;	/* OR'ed combination of FD_READ, FD_WRITE,
 				 * FD_CLOSE, FD_ACCEPT and FD_CONNECT that
 				 * indicate which events have occurred.
 				 * Set by notifier thread, access must be
@@ -155,7 +155,8 @@ struct TcpState {
 				 * FD_CLOSE, FD_ACCEPT and FD_CONNECT that
 				 * indicate which events are currently being
 				 * selected. */
-    int acceptEventCount;	/* Count of the current number of FD_ACCEPTs
+    volatile int acceptEventCount;
+				/* Count of the current number of FD_ACCEPTs
 				 * that have arrived and not yet processed.
 				 * Set by notifier thread, access must be
 				 * protected by semaphore */
@@ -173,7 +174,7 @@ struct TcpState {
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
     int status;                 /* Cache status of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
-    int connectError;		/* Async connect error set by notifier thread.
+    volatile int connectError;	/* Async connect error set by notifier thread.
 				 * Set by notifier thread, access must be
 				 * protected by semaphore */
     struct TcpState *nextPtr;	/* The next socket on the per-thread socket
