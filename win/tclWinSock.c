@@ -719,42 +719,50 @@ SocketEventProc(
 	Tcl_SetMaxBlockTime(&blockTime);
 	mask |= TCL_READABLE|TCL_WRITABLE;
     } else if (events & FD_READ) {
-	fd_set readFds;
-	struct timeval timeout;
-
 	/*
-	 * We must check to see if data is really available, since someone
-	 * could have consumed the data in the meantime. Turn off async
-	 * notification so select will work correctly. If the socket is still
-	 * readable, notify the channel driver, otherwise reset the async
-	 * select handler and keep waiting.
+	 * Throw the readable event if an async connect failed.
 	 */
 
-	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		(WPARAM) UNSELECT, (LPARAM) infoPtr);
+	if (infoPtr->lastError) {
 
-	FD_ZERO(&readFds);
-	FD_SET(infoPtr->socket, &readFds);
-	timeout.tv_usec = 0;
-	timeout.tv_sec = 0;
-
-	if (select(0, &readFds, NULL, NULL, &timeout) != 0) {
 	    mask |= TCL_READABLE;
+	    
 	} else {
-	    infoPtr->readyEvents &= ~(FD_READ);
-	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		    (WPARAM) SELECT, (LPARAM) infoPtr);
-	}
-    }
-    if (events & (FD_WRITE | FD_CONNECT)) {
-	mask |= TCL_WRITABLE;
-	if (events & FD_CONNECT && infoPtr->lastError != NO_ERROR) {
+	    fd_set readFds;
+	    struct timeval timeout;
+
 	    /*
-	     * Connect errors should also fire the readable handler.
+	     * We must check to see if data is really available, since someone
+	     * could have consumed the data in the meantime. Turn off async
+	     * notification so select will work correctly. If the socket is still
+	     * readable, notify the channel driver, otherwise reset the async
+	     * select handler and keep waiting.
 	     */
 
-	    mask |= TCL_READABLE;
+	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+		    (WPARAM) UNSELECT, (LPARAM) infoPtr);
+
+	    FD_ZERO(&readFds);
+	    FD_SET(infoPtr->socket, &readFds);
+	    timeout.tv_usec = 0;
+	    timeout.tv_sec = 0;
+
+	    if (select(0, &readFds, NULL, NULL, &timeout) != 0) {
+		mask |= TCL_READABLE;
+	    } else {
+		infoPtr->readyEvents &= ~(FD_READ);
+		SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+			(WPARAM) SELECT, (LPARAM) infoPtr);
+	    }
 	}
+    }
+
+    /*
+     * writable event
+     */
+
+    if (events & FD_WRITE) {
+	mask |= TCL_WRITABLE;
     }
 
     if (mask) {
@@ -2409,19 +2417,18 @@ SocketProc(
 		 */
 
 		if (error != ERROR_SUCCESS) {
+		    /* Async Connect error */
 		    TclWinConvertWSAError((DWORD) error);
 		    infoPtr->lastError = Tcl_GetErrno();
+		    /* Fire also readable event on connect failure */
+		    infoPtr->readyEvents |= FD_READ;
 		}
+
+		/* fire writable event on connect */
+		infoPtr->readyEvents |= FD_WRITE;
+
 	    }
 
-	    if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
-		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-		if (error != ERROR_SUCCESS) {
-		    TclWinConvertWSAError((DWORD) error);
-		    infoPtr->lastError = Tcl_GetErrno();
-		}
-		infoPtr->readyEvents |= FD_WRITE;
-	    }
 	    infoPtr->readyEvents |= event;
 
 	    /*
