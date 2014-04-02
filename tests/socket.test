@@ -910,6 +910,22 @@ test socket-8.1 {testing -async flag on sockets} {socket} {
     set z
 } bye
 
+test socket-8.2 {testing writable event when quick failure} {socket win} {
+    # Test for bug 336441ed59 where a quick background fail was ignored
+
+    # Test only for windows as socket -async 255.255.255.255 fails directly
+    # on unix
+    
+    # The following connect should fail very quickly
+    set a1 [after 2000 {set x timeout}]
+    set s [socket -async 255.255.255.255 43434]
+    fileevent $s writable {set x writable}
+    vwait x
+    catch {close $s}
+    after cancel $a1
+    set x
+} writable
+
 test socket-9.1 {testing spurious events} {socket} {
     set len 0
     set spurious 0
