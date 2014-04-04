@@ -128,8 +128,7 @@ static int		TcpInputProc(ClientData instanceData, char *buf,
 static int		TcpOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
 static void		TcpWatchProc(ClientData instanceData, int mask);
-static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr,
-			    int noblock);
+static int		WaitForConnect(TcpState *statePtr, int noblock);
 
 /*
  * This structure describes the channel type structure for TCP socket
@@ -399,41 +398,33 @@ TcpBlockModeProc(
 static int
 WaitForConnect(
     TcpState *statePtr,		/* State of the socket. */
-    int *errorCodePtr,		/* Where to store errors? */
     int noblock)		/* Don't wait, even for sockets in blocking mode */
 {
-    int timeOut;		/* How long to wait. */
-    int state;			/* Of calling TclWaitForFile. */
-
     /*
      * If an asynchronous connect is in progress, attempt to wait for it to
      * complete before reading.
      */
 
     if (statePtr->flags & TCP_ASYNC_CONNECT) {
-	if (noblock || statePtr->flags & TCP_ASYNC_SOCKET) {
-	    timeOut = 0;
+	if (noblock || (statePtr->flags & TCP_ASYNC_SOCKET)) {
+            if (TclUnixWaitForFile(statePtr->fds.fd,
+                                    TCL_WRITABLE | TCL_EXCEPTION, 0) != 0) {
+                CreateClientSocket(NULL, statePtr);
+            }
 	} else {
-	    timeOut = -1;
-	    CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
-	}
-	errno = 0;
-	state = TclUnixWaitForFile(statePtr->fds.fd,
-		TCL_WRITABLE | TCL_EXCEPTION, timeOut);
-        if (state != 0) {
-            CreateClientSocket(NULL, statePtr);
+            while (statePtr->flags & TCP_ASYNC_CONNECT) {
+                if (TclUnixWaitForFile(statePtr->fds.fd,
+                                        TCL_WRITABLE | TCL_EXCEPTION, -1) != 0) {
+                    CreateClientSocket(NULL, statePtr);
+                }
+            }
         }
-        if (statePtr->flags & TCP_ASYNC_CONNECT) {
-            /* We are still in progress, so ignore the result of the last
-             * attempt */
-	    *errorCodePtr = errno = EWOULDBLOCK;
-	    return -1;
-        }
-	if (state & TCL_EXCEPTION) {
-	    return -1;
-	}
     }
-    return 0;
+    if (statePtr->error != 0) {
+        return -1;
+    } else {
+        return 0;
+    }
 }
 
 /*
@@ -471,7 +462,9 @@ TcpInputProc(
     int bytesRead;
 
     *errorCodePtr = 0;
-    if (WaitForConnect(statePtr, errorCodePtr, 0) != 0) {
+    if (WaitForConnect(statePtr, 0) != 0) {
+        *errorCodePtr = statePtr->error;
+        statePtr->error = 0;
 	return -1;
     }
     bytesRead = recv(statePtr->fds.fd, buf, (size_t) bufSize, 0);
@@ -521,7 +514,9 @@ TcpOutputProc(
     int written;
 
     *errorCodePtr = 0;
-    if (WaitForConnect(statePtr, errorCodePtr, 0) != 0) {
+    if (WaitForConnect(statePtr, 0) != 0) {
+        *errorCodePtr = statePtr->error;
+        statePtr->error = 0;
 	return -1;
     }
     written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
@@ -748,9 +743,8 @@ TcpGetOptionProc(
 {
     TcpState *statePtr = instanceData;
     size_t len = 0;
-    int errorCode;
 
-    WaitForConnect(statePtr, &errorCode, 1);
+    WaitForConnect(statePtr, 1);
 
     if (optionName != NULL) {
 	len = strlen(optionName);

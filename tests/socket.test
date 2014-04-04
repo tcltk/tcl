@@ -1993,7 +1993,7 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
         list $x [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused}}
+    } -match glob -result {{error reading "sock*": connection refused} {}}
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet supported_inet6} \
     -setup {
@@ -2055,10 +2055,10 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
             if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
             after 200
         }
-        fconfigure $sock -error
+        list $x [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {connection refused}
+    } -match glob -result {{error reading "sock*": connection refused} {}}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet supported_inet6} \
     -setup {
@@ -2171,7 +2171,9 @@ test socket-14.11.0 {pending [socket -async] and blocking [puts], no listener, n
         vwait x
         close $sock
     } -cleanup {
-    } -result {broken pipe} -returnCodes 1
+        catch {close $sock}
+        unset x
+    } -result {connection refused} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, flush} \
     -constraints {socket supported_inet supported_inet6} \
     -body {
@@ -2183,8 +2185,9 @@ test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, f
         vwait x
         close $sock
     } -cleanup {
+        catch {close $sock}
         unset x
-    } -result {broken pipe} -returnCodes 1
+    } -result {connection refused} -returnCodes 1
 test socket-14.12 {[socket -async] background progress triggered by [fconfigure -error]} \
     -constraints {socket supported_inet supported_inet6} \
     -body {
