@@ -172,7 +172,7 @@ struct TcpState {
     struct addrinfo *addr;	/* Iterator over addrlist. */
     struct addrinfo *myaddrlist;/* Local address. */
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
-    int status;                 /* Cache status of async socket. */
+    int error;			/* Cache status of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
     volatile int connectError;	/* Async connect error set by notifier thread.
 				 * Set by notifier thread, access must be
@@ -255,8 +255,7 @@ static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 			    LPARAM lParam);
 static int		SocketsEnabled(void);
 static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
-static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr,
-			    int noblock);
+static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
 static int		WaitForSocketEvent(TcpState *statePtr, int events,
 			    int *errorCodePtr);
 static void		AddSocketInfoFd(TcpState *statePtr,  SOCKET socket);
@@ -573,8 +572,13 @@ TcpBlockModeProc(
 static int
 WaitForConnect(
     TcpState *statePtr,		/* State of the socket. */
-    int *errorCodePtr,		/* Where to store errors? */
-    int noblock)		/* Don't wait, even for sockets in blocking mode */
+    int *errorCodePtr)		/* Where to store errors?
+				 * A passed null-pointer activates background mode.
+				 * In this case, an eventual error is stored in
+				 * statePtr->error.
+				 * In addition, we do never block and allow a next
+				 * processing cycle to happen.
+				 */
 {
     int result;
     int oldMode;
@@ -605,10 +609,11 @@ WaitForConnect(
 	    statePtr->readyEvents &= ~(FD_CONNECT);
 
 	    /*
-	     * For blocking sockets disable async connect
-	     * as we continue now synchoneously
+	     * For blocking sockets and foreground processing
+	     * disable async connect as we continue now synchoneously
 	     */
-	    if ( !(noblock || (statePtr->flags & TCP_ASYNC_SOCKET)) ) {
+	    if ( errorCodePtr != NULL &&
+		    ! (statePtr->flags & TCP_ASYNC_SOCKET) ) {
 		CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
 	    }
 
@@ -624,13 +629,19 @@ WaitForConnect(
 	    /* Succesfully connected or async connect restarted */
 	    if (result == TCL_OK) {
 		if ( statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING ) {
-		    *errorCodePtr = EWOULDBLOCK;
+		    if (errorCodePtr != NULL) {
+			*errorCodePtr = EWOULDBLOCK;
+		    }
 		    return -1;
 		}
 		return 0;
 	    }
 	    /* error case */
-	    *errorCodePtr = Tcl_GetErrno();
+	    if (errorCodePtr != NULL) {
+		*errorCodePtr = Tcl_GetErrno();
+	    } else {
+		statePtr->error = Tcl_GetErrno();
+	    }
 	    return -1;
 	}
 
@@ -641,7 +652,11 @@ WaitForConnect(
 	 * A non blocking socket waiting for an asyncronous connect
 	 * returns directly an error
 	 */
-	if ( noblock || (statePtr->flags & TCP_ASYNC_SOCKET) ) {
+	if ( errorCodePtr == NULL ) {
+	    /* Backround operation */
+	    return -1;
+	} else if (statePtr->flags & TCP_ASYNC_SOCKET) {
+	    /* foreground operation but non blocking socket */
 	    *errorCodePtr = EWOULDBLOCK;
 	    return -1;
 	}
@@ -715,7 +730,7 @@ TcpInputProc(
      * For a non blocking socket return EWOULDBLOCK if connect not terminated
      */
 
-    if (WaitForConnect(statePtr, errorCodePtr, 0) != 0) {
+    if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
 
@@ -844,7 +859,7 @@ TcpOutputProc(
      * For a non blocking socket return EWOULDBLOCK if connect not terminated
      */
 
-    if (WaitForConnect(statePtr, errorCodePtr, 0) != 0) {
+    if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
 
@@ -1184,7 +1199,7 @@ TcpGetOptionProc(
     char host[NI_MAXHOST], port[NI_MAXSERV];
     SOCKET sock;
     size_t len = 0;
-    int errorCode;
+    int errorCode = 0;
     int reverseDNS = 0;
 #define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
@@ -1202,8 +1217,11 @@ TcpGetOptionProc(
 	return TCL_ERROR;
     }
 
-    /* Go one step in async connect */
-    WaitForConnect(statePtr, &errorCode, 1);
+    /* 
+     * Go one step in async connect
+     * If any error is thrown save it as backround error to report eventually below
+     */
+    WaitForConnect(statePtr, NULL);
 
     sock = statePtr->sockets->fd;
     if (optionName != NULL) {
@@ -1216,30 +1234,52 @@ TcpGetOptionProc(
 	/*
 	* Do not return any errors if async connect is running
 	*/
-	if (! (statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING) ) {
-	    int optlen;
-	    int ret;
-    	    DWORD err;
+	if ( ! (statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING) ) {
 
-	    /*
-	     * Populater the err Variable with a possix error
-	     */
-	    optlen = sizeof(int);
-	    ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
-		    (char *)&err, &optlen);
-	    /*
-	     * The error was not returned directly but should be
-	     * taken from WSA
-	     */
-	    if (ret == SOCKET_ERROR) {
-		err = WSAGetLastError();
-	    }
-	    /*
-	     * Return error message
-	     */
-	    if (err) {
-		TclWinConvertError(err);
-		Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
+
+	    if ( statePtr->flags & TCP_ASYNC_CONNECT_FAILED ) {
+
+		/*
+		 * In case of a failed async connect, eventually report the
+		 * connect error only once.
+		 * Do not report the system error, as this comes again and again.
+		 */
+
+		if ( statePtr->error != 0 ) {
+		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(statePtr->error), -1);
+		    statePtr->error = 0;
+		}
+
+	    } else {
+
+		/*
+		 * Report an eventual last error of the socket system
+		 */
+
+		int optlen;
+		int ret;
+		DWORD err;
+
+		/*
+		 * Populater the err Variable with a possix error
+		 */
+		optlen = sizeof(int);
+		ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
+			(char *)&err, &optlen);
+		/*
+		 * The error was not returned directly but should be
+		 * taken from WSA
+		 */
+		if (ret == SOCKET_ERROR) {
+		    err = WSAGetLastError();
+		}
+		/*
+		 * Return error message
+		 */
+		if (err) {
+		    TclWinConvertError(err);
+		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
+		}
 	    }
 	}
 	return TCL_OK;
@@ -2555,16 +2595,36 @@ SocketEventProc(
 	return 1;
     }
 
+    /*
+     * Clear flag that (this) event is pending
+     */
+
     statePtr->flags &= ~SOCKET_PENDING;
 
-    /* Continue async connect if pending and ready */
+    /*
+     * Continue async connect if pending and ready
+     */
+
     if ( statePtr->readyEvents & FD_CONNECT ) {
-	statePtr->readyEvents &= ~(FD_CONNECT);
 	if ( statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING ) {
+
+	    /*
+	     * Do one step and save eventual connect error
+	     */
+
 	    SetEvent(tsdPtr->socketListLock);
-	    CreateClientSocket(NULL, statePtr);
-	    return 1;
+	    WaitForConnect(statePtr,NULL);
+
+	} else {
+	    
+	    /*
+	     * No async connect reenter pending. Just clear event.
+	     */
+
+	    statePtr->readyEvents &= ~(FD_CONNECT);
+	    SetEvent(tsdPtr->socketListLock);
 	}
+	return 1;
     }
 
     /*
