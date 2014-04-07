@@ -110,7 +110,7 @@ struct TcpState {
  * Static routines for this file:
  */
 
-static int		CreateClientSocket(Tcl_Interp *interp,
+static int		TcpConnect(Tcl_Interp *interp,
                                            TcpState *state);
 static void		TcpAccept(ClientData data, int mask);
 static int		TcpBlockModeProc(ClientData data, int mode);
@@ -409,13 +409,13 @@ WaitForConnect(
 	if (noblock || (statePtr->flags & TCP_ASYNC_SOCKET)) {
             if (TclUnixWaitForFile(statePtr->fds.fd,
                                     TCL_WRITABLE | TCL_EXCEPTION, 0) != 0) {
-                CreateClientSocket(NULL, statePtr);
+                TcpConnect(NULL, statePtr);
             }
 	} else {
             while (statePtr->flags & TCP_ASYNC_CONNECT) {
                 if (TclUnixWaitForFile(statePtr->fds.fd,
                                         TCL_WRITABLE | TCL_EXCEPTION, -1) != 0) {
-                    CreateClientSocket(NULL, statePtr);
+                    TcpConnect(NULL, statePtr);
                 }
             }
         }
@@ -936,7 +936,7 @@ TcpGetHandleProc(
  *
  * TcpAsyncCallback --
  *
- *	Called by the event handler that CreateClientSocket sets up
+ *	Called by the event handler that TcpConnect sets up
  *	internally for [socket -async] to get notified when the
  *	asyncronous connection attempt has succeeded or failed.
  *
@@ -949,13 +949,13 @@ TcpAsyncCallback(
 				 * TCL_READABLE, TCL_WRITABLE and
 				 * TCL_EXCEPTION. */
 {
-    CreateClientSocket(NULL, clientData);
+    TcpConnect(NULL, clientData);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * CreateClientSocket --
+ * TcpConnect --
  *
  *	This function opens a new socket in client mode.
  *
@@ -983,7 +983,7 @@ TcpAsyncCallback(
  */
 
 static int
-CreateClientSocket(
+TcpConnect(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     TcpState *statePtr)
 {
@@ -1198,7 +1198,7 @@ Tcl_OpenTcpClient(
     /*
      * Create a new client socket and wrap it in a channel.
      */
-    if (CreateClientSocket(interp, statePtr) != TCL_OK) {
+    if (TcpConnect(interp, statePtr) != TCL_OK) {
         TcpCloseProc(statePtr, NULL);
         return NULL;
     }
