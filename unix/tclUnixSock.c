@@ -73,7 +73,7 @@ struct TcpState {
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
     int filehandlers;           /* Caches FileHandlers that get set up while
                                  * an async socket is not yet connected. */
-    int error;                  /* Cache SO_ERROR of async socket. */
+    int connectError;           /* Cache SO_ERROR of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
 };
 
@@ -420,7 +420,7 @@ WaitForConnect(
             }
         }
     }
-    if (statePtr->error != 0) {
+    if (statePtr->connectError != 0) {
         return -1;
     } else {
         return 0;
@@ -463,8 +463,8 @@ TcpInputProc(
 
     *errorCodePtr = 0;
     if (WaitForConnect(statePtr, 0) != 0) {
-        *errorCodePtr = statePtr->error;
-        statePtr->error = 0;
+        *errorCodePtr = statePtr->connectError;
+        statePtr->connectError = 0;
 	return -1;
     }
     bytesRead = recv(statePtr->fds.fd, buf, (size_t) bufSize, 0);
@@ -515,8 +515,8 @@ TcpOutputProc(
 
     *errorCodePtr = 0;
     if (WaitForConnect(statePtr, 0) != 0) {
-        *errorCodePtr = statePtr->error;
-        statePtr->error = 0;
+        *errorCodePtr = statePtr->connectError;
+        statePtr->connectError = 0;
 	return -1;
     }
     written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
@@ -757,9 +757,9 @@ TcpGetOptionProc(
         if (statePtr->flags & TCP_ASYNC_CONNECT) {
             /* Suppress errors as long as we are not done */
             errno = 0;
-        } else if (statePtr->error != 0) {
-            errno = statePtr->error;
-            statePtr->error = 0;
+        } else if (statePtr->connectError != 0) {
+            errno = statePtr->connectError;
+            statePtr->connectError = 0;
         } else {
             int err;
             getsockopt(statePtr->fds.fd, SOL_SOCKET, SO_ERROR,
@@ -1070,7 +1070,7 @@ TcpConnect(
 	    if (ret < 0 && errno == EINPROGRESS) {
                 Tcl_CreateFileHandler(statePtr->fds.fd,
                         TCL_WRITABLE|TCL_EXCEPTION, TcpAsyncCallback, statePtr);
-                statePtr->error = errno = EWOULDBLOCK;
+                statePtr->connectError = errno = EWOULDBLOCK;
                 return TCL_OK;
 
             reenter:
@@ -1096,7 +1096,7 @@ TcpConnect(
     }
 
 out:
-    statePtr->error = error;
+    statePtr->connectError = error;
     CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
     if (async_callback) {
         /*
