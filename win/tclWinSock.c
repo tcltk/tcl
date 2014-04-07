@@ -172,11 +172,10 @@ struct TcpState {
     struct addrinfo *addr;	/* Iterator over addrlist. */
     struct addrinfo *myaddrlist;/* Local address. */
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
-    int error;			/* Cache status of async socket. */
+    int connectError;		/* Cache status of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
     volatile int connectError;	/* Async connect error set by notifier thread.
-				 * Set by notifier thread, access must be
-				 * protected by semaphore */
+				 * Access must be protected by semaphore */
     struct TcpState *nextPtr;	/* The next socket on the per-thread socket
 				 * list. */
 };
@@ -193,7 +192,7 @@ struct TcpState {
 #define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
 					 * socket */
 #define TCP_ASYNC_CONNECT_REENTER_PENDING   (1<<4)
-					/* CreateClientSocket was called to
+					/* TcpConnect was called to
 					 * process an async connect. This
 					 * flag indicates that reentry is
 					 * still pending */
@@ -246,7 +245,7 @@ static WNDCLASS windowClass;
  * Static routines for this file:
  */
 
-static int		CreateClientSocket(Tcl_Interp *interp,
+static int		TcpConnect(Tcl_Interp *interp,
 			    TcpState *state);
 static void		InitSockets(void);
 static TcpState *	NewSocketInfo(SOCKET socket);
@@ -553,10 +552,14 @@ TcpBlockModeProc(
  *
  * WaitForConnect --
  *
- *	Wait for a connection on an asynchronously opened socket to be
- *	completed.  In nonblocking mode, just test if the connection
- *	has completed without blocking. The noblock parameter allows to
- *	enforce nonblocking behaviour even on sockets in blocking mode.
+ *	Check the state of an async connect process. If a connection
+ *	attempt terminated, process it, which may finalize it or may
+ *	start the next attempt.
+ *	There are two modes of operation, defined by errorCodePtr:
+ *	 *  non-NULL: Called by explicite read/write command. block if
+ *	    socket is blocking. Return a possible error and clear it.
+ *	 *  Null: Called by a backround operation. Never block and
+ *	    save eventual error in statePtr->connectError.
  *
  * Results:
  * 	0 if the connection has completed, -1 if still in progress
@@ -574,9 +577,9 @@ WaitForConnect(
     TcpState *statePtr,		/* State of the socket. */
     int *errorCodePtr)		/* Where to store errors?
 				 * A passed null-pointer activates background mode.
-				 * In this case, an eventual error is stored in
-				 * statePtr->error.
-				 * In addition, we do never block and allow a next
+				 * In this case, a possible error is stored in
+				 * statePtr->connectError.
+				 * In addition, we do never block and allow the next
 				 * processing cycle to happen.
 				 */
 {
@@ -589,15 +592,16 @@ WaitForConnect(
      * If yes, report it now.
      */
 
-    if ( errorCodePtr != NULL && statePtr->error != 0 ) {
-	*errorCodePtr = statePtr->error;
-	statePtr->error = 0;
+    if ( errorCodePtr != NULL && statePtr->connectError != 0 ) {
+	*errorCodePtr = statePtr->connectError;
+	statePtr->connectError = 0;
 	return -1;
     }
 
     /*
      * Check if an async connect is running. If not return ok
      */
+
     if ( !(statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING) )
 	return 0;
 
@@ -632,7 +636,7 @@ WaitForConnect(
 	    SetEvent(tsdPtr->socketListLock);
 
 	    /* continue connect */
-	    result = CreateClientSocket(NULL, statePtr);
+	    result = TcpConnect(NULL, statePtr);
 
 	    /* Restore event service mode */
 	    (void) Tcl_SetServiceMode(oldMode);
@@ -651,7 +655,7 @@ WaitForConnect(
 	    if (errorCodePtr != NULL) {
 		*errorCodePtr = Tcl_GetErrno();
 	    } else {
-		statePtr->error = Tcl_GetErrno();
+		statePtr->connectError = Tcl_GetErrno();
 	    }
 	    return -1;
 	}
@@ -1256,9 +1260,10 @@ TcpGetOptionProc(
 		 * Do not report the system error, as this comes again and again.
 		 */
 
-		if ( statePtr->error != 0 ) {
-		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(statePtr->error), -1);
-		    statePtr->error = 0;
+		if ( statePtr->connectError != 0 ) {
+		    Tcl_DStringAppend(dsPtr,
+			    Tcl_ErrnoMsg(statePtr->connectError), -1);
+		    statePtr->connectError = 0;
 		}
 
 	    } else {
@@ -1558,7 +1563,7 @@ TcpGetHandleProc(
 /*
  *----------------------------------------------------------------------
  *
- * CreateClientSocket --
+ * TcpConnect --
  *
  *	This function opens a new socket in client mode.
  *
@@ -1592,7 +1597,7 @@ TcpGetHandleProc(
  */
 
 static int
-CreateClientSocket(
+TcpConnect(
     Tcl_Interp *interp,		/* For error reporting; can be NULL. */
     TcpState *statePtr)
 {
@@ -1904,7 +1909,7 @@ Tcl_OpenTcpClient(
     /*
      * Create a new client socket and wrap it in a channel.
      */
-    if (CreateClientSocket(interp, statePtr) != TCL_OK) {
+    if (TcpConnect(interp, statePtr) != TCL_OK) {
 	TcpCloseProc(statePtr, NULL);
 	return NULL;
     }
