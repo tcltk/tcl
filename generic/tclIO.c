@@ -3270,7 +3270,17 @@ Tcl_Close(
 	    Tcl_SetObjResult(interp,
 			     Tcl_NewStringObj(Tcl_PosixError(interp), -1));
 	}
-	flushcode = -1;
+	return TCL_ERROR;
+    }
+    /*
+     * Bug 97069ea11a: set error message if a flush code is set and no error
+     * message set up to now.
+     */
+    if (flushcode != 0 && interp != NULL
+	    && 0 == Tcl_GetCharLength(Tcl_GetObjResult(interp)) ) {
+	Tcl_SetErrno(flushcode);
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj(Tcl_PosixError(interp), -1));
     }
     if ((flushcode != 0) || (result != 0)) {
 	return TCL_ERROR;
