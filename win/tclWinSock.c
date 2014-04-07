@@ -585,11 +585,22 @@ WaitForConnect(
     ThreadSpecificData *tsdPtr;
 
     /*
+     * Check if an async connect error is not jet reported.
+     * If yes, report it now.
+     */
+
+    if ( errorCodePtr != NULL && statePtr->error != 0 ) {
+	*errorCodePtr = statePtr->error;
+	statePtr->error = 0;
+	return -1;
+    }
+
+    /*
      * Check if an async connect is running. If not return ok
      */
     if ( !(statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING) )
 	return 0;
-    
+
     /*
      * Be sure to disable event servicing so we are truly modal.
      */
