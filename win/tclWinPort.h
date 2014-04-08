@@ -532,6 +532,12 @@ typedef DWORD_PTR * PDWORD_PTR;
  * The following defines map from standard socket names to our internal
  * wrappers that redirect through the winSock function table (see the
  * file tclWinSock.c).
+ *
+ * Warning:
+ *	This check was useful in times of Windows98 where WinSock may
+ *	not be available. This is not the case any more.
+ *	This function may be removed with TCL 9.0
+ *
  */
 
 #define getservbyname	TclWinGetServByName
