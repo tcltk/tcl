@@ -595,8 +595,7 @@ WaitForConnect(
      * return the error ENOTCONN
      */
 
-    if ( errorCodePtr != NULL &&
-	    (statePtr->flags & TCP_ASYNC_FAILED) ) {
+    if (errorCodePtr != NULL && (statePtr->flags & TCP_ASYNC_FAILED)) {
 	*errorCodePtr = ENOTCONN;
 	return -1;
     }
@@ -605,8 +604,9 @@ WaitForConnect(
      * Check if an async connect is running. If not return ok
      */
      
-    if ( !(statePtr->flags & TCP_ASYNC_PENDING) )
+    if (!(statePtr->flags & TCP_ASYNC_CONNECT)) {
 	return 0;
+    }
 
     /*
      * Be sure to disable event servicing so we are truly modal.
@@ -1635,7 +1635,7 @@ TcpConnect(
      */
     int async_connect = statePtr->flags & TCP_ASYNC_CONNECT;
     /* We were called by the event procedure and continue our loop */
-    int async_callback = statePtr->sockets->fd != INVALID_SOCKET;
+    int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
     
     if (async_callback) {
@@ -1810,6 +1810,12 @@ out:
     /*
      * Socket connected or connection failed
      */
+
+    /*
+     * Async connect terminated
+     */
+
+    CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
 
     if ( Tcl_GetErrno() == 0 ) {
 	/*
