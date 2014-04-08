@@ -174,7 +174,9 @@ struct TcpState {
     struct addrinfo *myaddr;	/* Iterator over myaddrlist. */
     int connectError;		/* Cache status of async socket. */
     int cachedBlocking;         /* Cache blocking mode of async socket. */
-    volatile int connectError;	/* Async connect error set by notifier thread.
+    volatile int notifierConnectError;
+				/* Async connect error set by notifier thread.
+				 * This error is still a windows error code.
 				 * Access must be protected by semaphore */
     struct TcpState *nextPtr;	/* The next socket on the per-thread socket
 				 * list. */
@@ -185,19 +187,17 @@ struct TcpState {
  * structure.
  */
 
-#define TCP_ASYNC_SOCKET	(1<<0)	/* Asynchronous socket. */
+#define TCP_NONBLOCKING		(1<<0)	/* Socket with non-blocking I/O */
 #define TCP_ASYNC_CONNECT	(1<<1)	/* Async connect in progress. */
 #define SOCKET_EOF		(1<<2)	/* A zero read happened on the
 					 * socket. */
 #define SOCKET_PENDING		(1<<3)	/* A message has been sent for this
 					 * socket */
-#define TCP_ASYNC_CONNECT_REENTER_PENDING   (1<<4)
-					/* TcpConnect was called to
+#define TCP_ASYNC_PENDING	(1<<4)	/* TcpConnect was called to
 					 * process an async connect. This
 					 * flag indicates that reentry is
 					 * still pending */
-#define TCP_ASYNC_CONNECT_FAILED    (1<<5)
-					/* An async connect finally failed */
+#define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
 
 /*
  * The following structure is what is added to the Tcl event queue when a
@@ -540,9 +540,9 @@ TcpBlockModeProc(
     TcpState *statePtr = instanceData;
 
     if (mode == TCL_MODE_NONBLOCKING) {
-	statePtr->flags |= TCP_ASYNC_SOCKET;
+	statePtr->flags |= TCP_NONBLOCKING;
     } else {
-	statePtr->flags &= ~(TCP_ASYNC_SOCKET);
+	statePtr->flags &= ~(TCP_NONBLOCKING);
     }
     return 0;
 }
@@ -554,12 +554,19 @@ TcpBlockModeProc(
  *
  *	Check the state of an async connect process. If a connection
  *	attempt terminated, process it, which may finalize it or may
- *	start the next attempt.
+ *	start the next attempt. If a connect error occures, it is saved
+ *	in statePtr->connectError to be reported by 'fconfigure -error'.
+ *
  *	There are two modes of operation, defined by errorCodePtr:
  *	 *  non-NULL: Called by explicite read/write command. block if
- *	    socket is blocking. Return a possible error and clear it.
- *	 *  Null: Called by a backround operation. Never block and
- *	    save eventual error in statePtr->connectError.
+ *	    socket is blocking.
+ *	    May return two error codes:
+ *	     *	EWOULDBLOCK: if connect is still in progress
+ *	     *	ENOTCONN: if connect failed. This would be the error
+ *		message of a rect or sendto syscall so this is
+ *		emulated here.
+ *	 *  Null: Called by a backround operation. Do not block and
+ *	    don't return any error code.
  *
  * Results:
  * 	0 if the connection has completed, -1 if still in progress
@@ -577,10 +584,6 @@ WaitForConnect(
     TcpState *statePtr,		/* State of the socket. */
     int *errorCodePtr)		/* Where to store errors?
 				 * A passed null-pointer activates background mode.
-				 * In this case, a possible error is stored in
-				 * statePtr->connectError.
-				 * In addition, we do never block and allow the next
-				 * processing cycle to happen.
 				 */
 {
     int result;
@@ -588,21 +591,21 @@ WaitForConnect(
     ThreadSpecificData *tsdPtr;
 
     /*
-     * Check if an async connect error is not jet reported.
-     * If yes, report it now.
+     * Check if an async connect failed already and error reporting is demanded,
+     * return the error ENOTCONN
      */
 
-    if ( errorCodePtr != NULL && statePtr->connectError != 0 ) {
-	*errorCodePtr = statePtr->connectError;
-	statePtr->connectError = 0;
+    if ( errorCodePtr != NULL &&
+	    (statePtr->flags & TCP_ASYNC_FAILED) ) {
+	*errorCodePtr = ENOTCONN;
 	return -1;
     }
 
     /*
      * Check if an async connect is running. If not return ok
      */
-
-    if ( !(statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING) )
+     
+    if ( !(statePtr->flags & TCP_ASYNC_PENDING) )
 	return 0;
 
     /*
@@ -610,6 +613,10 @@ WaitForConnect(
      */
 
     oldMode = Tcl_SetServiceMode(TCL_SERVICE_NONE);
+
+    /*
+     * Loop in the blocking case until the connect signal is present
+     */
 
     while (1) {
 
@@ -628,22 +635,32 @@ WaitForConnect(
 	     * disable async connect as we continue now synchoneously
 	     */
 	    if ( errorCodePtr != NULL &&
-		    ! (statePtr->flags & TCP_ASYNC_SOCKET) ) {
+		    ! (statePtr->flags & TCP_NONBLOCKING) ) {
 		CLEAR_BITS(statePtr->flags, TCP_ASYNC_CONNECT);
 	    }
 
 	    /* Free list lock */
 	    SetEvent(tsdPtr->socketListLock);
 
-	    /* continue connect */
+	    /*
+	     * Continue connect.
+	     * If switched to synchroneous connect, the connect is terminated.
+	     */
 	    result = TcpConnect(NULL, statePtr);
 
 	    /* Restore event service mode */
 	    (void) Tcl_SetServiceMode(oldMode);
 
-	    /* Succesfully connected or async connect restarted */
+	    /*
+	     * Check for Succesfull connect or async connect restart
+	     */
+
 	    if (result == TCL_OK) {
-		if ( statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING ) {
+		/*
+		 * Check for async connect restart
+		 * (not possible for foreground blocking operation)
+		 */
+		if ( statePtr->flags & TCP_ASYNC_PENDING ) {
 		    if (errorCodePtr != NULL) {
 			*errorCodePtr = EWOULDBLOCK;
 		    }
@@ -651,11 +668,14 @@ WaitForConnect(
 		}
 		return 0;
 	    }
-	    /* error case */
+
+	    /*
+	     * Connect finally failed.
+	     * For foreground operation return ENOTCONN.
+	     */
+
 	    if (errorCodePtr != NULL) {
-		*errorCodePtr = Tcl_GetErrno();
-	    } else {
-		statePtr->connectError = Tcl_GetErrno();
+		*errorCodePtr = ENOTCONN;
 	    }
 	    return -1;
 	}
@@ -664,14 +684,20 @@ WaitForConnect(
         SetEvent(tsdPtr->socketListLock);
 
 	/*
-	 * A non blocking socket waiting for an asyncronous connect
-	 * returns directly an error
+	 * Background operation returns with no action as there was no connect
+	 * event
 	 */
+
 	if ( errorCodePtr == NULL ) {
-	    /* Backround operation */
 	    return -1;
-	} else if (statePtr->flags & TCP_ASYNC_SOCKET) {
-	    /* foreground operation but non blocking socket */
+	}
+
+	/*
+	 * A non blocking socket waiting for an asyncronous connect
+	 * returns directly the error EWOULDBLOCK
+	 */
+
+	if (statePtr->flags & TCP_NONBLOCKING) {
 	    *errorCodePtr = EWOULDBLOCK;
 	    return -1;
 	}
@@ -803,7 +829,7 @@ TcpInputProc(
 	 * Check for error condition or underflow in non-blocking case.
 	 */
 
-	if ((statePtr->flags & TCP_ASYNC_SOCKET) || (error != WSAEWOULDBLOCK)) {
+	if ((statePtr->flags & TCP_NONBLOCKING) || (error != WSAEWOULDBLOCK)) {
 	    TclWinConvertError(error);
 	    *errorCodePtr = Tcl_GetErrno();
 	    bytesRead = -1;
@@ -908,7 +934,7 @@ TcpOutputProc(
 	error = WSAGetLastError();
 	if (error == WSAEWOULDBLOCK) {
 	    statePtr->readyEvents &= ~(FD_WRITE);
-	    if (statePtr->flags & TCP_ASYNC_SOCKET) {
+	    if (statePtr->flags & TCP_NONBLOCKING) {
 		*errorCodePtr = EWOULDBLOCK;
 		written = -1;
 		break;
@@ -1249,10 +1275,10 @@ TcpGetOptionProc(
 	/*
 	* Do not return any errors if async connect is running
 	*/
-	if ( ! (statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING) ) {
+	if ( ! (statePtr->flags & TCP_ASYNC_PENDING) ) {
 
 
-	    if ( statePtr->flags & TCP_ASYNC_CONNECT_FAILED ) {
+	    if ( statePtr->flags & TCP_ASYNC_FAILED ) {
 
 		/*
 		 * In case of a failed async connect, eventually report the
@@ -1280,7 +1306,7 @@ TcpGetOptionProc(
 		 * Populater the err Variable with a possix error
 		 */
 		optlen = sizeof(int);
-		ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
+		ret = getsockopt(sock, SOL_SOCKET, SO_ERROR,
 			(char *)&err, &optlen);
 		/*
 		 * The error was not returned directly but should be
@@ -1305,7 +1331,7 @@ TcpGetOptionProc(
 	    (strncmp(optionName, "-connecting", len) == 0)) {
 
 	Tcl_DStringAppend(dsPtr,
-		(statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING)
+		(statePtr->flags & TCP_ASYNC_PENDING)
 		? "1" : "0", -1);
         return TCL_OK;
     }
@@ -1645,7 +1671,7 @@ TcpConnect(
 	    /*
 	     * Reset last error from last try
 	     */
-	    statePtr->connectError = 0;
+	    statePtr->notifierConnectError = 0;
 	    Tcl_SetErrno(0);
 	    
 	    statePtr->sockets->fd = socket(statePtr->myaddr->ai_family, SOCK_STREAM, 0);
@@ -1747,7 +1773,7 @@ TcpConnect(
 		/*
 		 * Remember that we jump back behind this next round
 		 */
-		statePtr->flags |= TCP_ASYNC_CONNECT_REENTER_PENDING;
+		statePtr->flags |= TCP_ASYNC_PENDING;
 		return TCL_OK;
 
 	    reenter:
@@ -1757,11 +1783,11 @@ TcpConnect(
 		 *
 		 * Clear the reenter flag
 		 */
-		statePtr->flags &= ~(TCP_ASYNC_CONNECT_REENTER_PENDING);
+		statePtr->flags &= ~(TCP_ASYNC_PENDING);
 		/* get statePtr lock */
 		WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 		/* Get signaled connect error */
-		Tcl_SetErrno(statePtr->connectError);
+		TclWinConvertError((DWORD) statePtr->notifierConnectError);
 		/* Clear eventual connect flag */
 		statePtr->selectEvents &= ~(FD_CONNECT);
 		/* Free list lock */
@@ -1819,7 +1845,9 @@ out:
 	    /* Signal ready readable and writable events */
 	    statePtr->readyEvents |= FD_WRITE | FD_READ;
 	    /* Flag error to event routine */
-	    statePtr->flags |= TCP_ASYNC_CONNECT_FAILED;
+	    statePtr->flags |= TCP_ASYNC_FAILED;
+	    /* Save connect error to be reported by 'fconfigure -error' */
+	    statePtr->connectError = Tcl_GetErrno();
 	    /* Free list lock */
 	    SetEvent(tsdPtr->socketListLock);
 	}
@@ -2260,6 +2288,12 @@ TcpAccept(
  *
  *	Assumes socketMutex is held.
  *
+ * Warning:
+ *	This check was useful in times of Windows98 where WinSock may
+ *	not be available. This is not the case any more.
+ *	This function may be removed with TCL 9.0.
+ *	Any failures may be reported as panics.
+ *
  * Results:
  *	None.
  *
@@ -2392,6 +2426,11 @@ InitSockets(void)
  * SocketsEnabled --
  *
  *	Check that the WinSock was successfully initialized.
+ *
+ * Warning:
+ *	This check was useful in times of Windows98 where WinSock may
+ *	not be available. This is not the case any more.
+ *	This function may be removed with TCL 9.0
  *
  * Results:
  *	1 if it is.
@@ -2622,7 +2661,7 @@ SocketEventProc(
      */
 
     if ( statePtr->readyEvents & FD_CONNECT ) {
-	if ( statePtr->flags & TCP_ASYNC_CONNECT_REENTER_PENDING ) {
+	if ( statePtr->flags & TCP_ASYNC_PENDING ) {
 
 	    /*
 	     * Do one step and save eventual connect error
@@ -2735,7 +2774,7 @@ SocketEventProc(
 	 * Throw the readable event if an async connect failed.
 	 */
 
-	if ( statePtr->flags & TCP_ASYNC_CONNECT_FAILED ) {
+	if ( statePtr->flags & TCP_ASYNC_FAILED ) {
 
 	    mask |= TCL_READABLE;
 	    
@@ -2928,7 +2967,7 @@ WaitForSocketEvent(
 	}
 	
 	/* Exit loop if event did not occur but this is a non-blocking channel */
-	if (statePtr->flags & TCP_ASYNC_SOCKET) {
+	if (statePtr->flags & TCP_NONBLOCKING) {
 	    *errorCodePtr = EWOULDBLOCK;
 	    result = 0;
 	    break;
@@ -3122,8 +3161,7 @@ SocketProc(
 		 * connection failures.
 		 */
 		if (error != ERROR_SUCCESS) {
-		    TclWinConvertError((DWORD) error);
-		    statePtr->connectError = Tcl_GetErrno();
+		    statePtr->notifierConnectError = error;
 		}
 	    }
 	    /*
@@ -3203,6 +3241,10 @@ FindFDInList(
  *	dynamically so we can run on systems that don't have the wsock32.dll.
  *	We need wrappers for these interfaces because they are called from the
  *	generic Tcl code.
+ *	Those functions are exported by the stubs table.
+ *
+ * Warning:
+ *	Those functions are depreciated and will be removed with TCL 9.0.
  *
  * Results:
  *	As defined for each function.
