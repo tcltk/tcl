@@ -82,8 +82,13 @@ struct TcpState {
  * structure.
  */
 
-#define TCP_ASYNC_SOCKET	(1<<0)	/* Asynchronous socket. */
+#define TCP_NONBLOCKING		(1<<0)	/* Socket with non-blocking I/O */
 #define TCP_ASYNC_CONNECT	(1<<1)	/* Async connect in progress. */
+#define TCP_ASYNC_PENDING	(1<<4)	/* TcpConnect was called to
+					 * process an async connect. This
+					 * flag indicates that reentry is
+					 * still pending */
+#define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
 
 /*
  * The following defines the maximum length of the listen queue. This is the
@@ -128,7 +133,7 @@ static int		TcpInputProc(ClientData instanceData, char *buf,
 static int		TcpOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
 static void		TcpWatchProc(ClientData instanceData, int mask);
-static int		WaitForConnect(TcpState *statePtr, int noblock);
+static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
 
 /*
  * This structure describes the channel type structure for TCP socket
@@ -364,9 +369,9 @@ TcpBlockModeProc(
     TcpState *statePtr = instanceData;
 
     if (mode == TCL_MODE_BLOCKING) {
-	CLEAR_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
+	CLEAR_BITS(statePtr->flags, TCP_NONBLOCKING);
     } else {
-	SET_BITS(statePtr->flags, TCP_ASYNC_SOCKET);
+	SET_BITS(statePtr->flags, TCP_NONBLOCKING);
     }
     if (statePtr->flags & TCP_ASYNC_CONNECT) {
         statePtr->cachedBlocking = mode;
@@ -383,14 +388,29 @@ TcpBlockModeProc(
  *
  * WaitForConnect --
  *
- *	Wait for a connection on an asynchronously opened socket to be
- *	completed.  In nonblocking mode, just test if the connection
- *	has completed without blocking. The noblock parameter allows to
- *	enforce nonblocking behaviour even on sockets in blocking mode.
+ *	Check the state of an async connect process. If a connection
+ *	attempt terminated, process it, which may finalize it or may
+ *	start the next attempt. If a connect error occures, it is saved
+ *	in statePtr->connectError to be reported by 'fconfigure -error'.
+ *
+ *	There are two modes of operation, defined by errorCodePtr:
+ *	 *  non-NULL: Called by explicite read/write command. block if
+ *	    socket is blocking.
+ *	    May return two error codes:
+ *	     *	EWOULDBLOCK: if connect is still in progress
+ *	     *	ENOTCONN: if connect failed. This would be the error
+ *		message of a rect or sendto syscall so this is
+ *		emulated here.
+ *	 *  NULL: Called by a backround operation. Do not block and
+ *	    don't return any error code.
  *
  * Results:
  * 	0 if the connection has completed, -1 if still in progress
  * 	or there is an error.
+ *
+ * Side effects:
+ *	Processes socket events off the system queue.
+ *	May process asynchroneous connect.
  *
  *----------------------------------------------------------------------
  */
@@ -398,33 +418,52 @@ TcpBlockModeProc(
 static int
 WaitForConnect(
     TcpState *statePtr,		/* State of the socket. */
-    int noblock)		/* Don't wait, even for sockets in blocking mode */
+    int *errorCodePtr)
 {
+    int timeout;
+
     /*
-     * If an asynchronous connect is in progress, attempt to wait for it to
-     * complete before reading.
+     * Check if an async connect failed already and error reporting is demanded,
+     * return the error ENOTCONN
      */
 
-    if (statePtr->flags & TCP_ASYNC_CONNECT) {
-	if (noblock || (statePtr->flags & TCP_ASYNC_SOCKET)) {
-            if (TclUnixWaitForFile(statePtr->fds.fd,
-                                    TCL_WRITABLE | TCL_EXCEPTION, 0) != 0) {
-                TcpConnect(NULL, statePtr);
-            }
-	} else {
-            while (statePtr->flags & TCP_ASYNC_CONNECT) {
-                if (TclUnixWaitForFile(statePtr->fds.fd,
-                                        TCL_WRITABLE | TCL_EXCEPTION, -1) != 0) {
-                    TcpConnect(NULL, statePtr);
-                }
-            }
+    if (errorCodePtr != NULL && (statePtr->flags & TCP_ASYNC_FAILED)) {
+	*errorCodePtr = ENOTCONN;
+	return -1;
+    }
+
+    /*
+     * Check if an async connect is running. If not return ok
+     */
+     
+    if (!(statePtr->flags & TCP_ASYNC_PENDING)) {
+	return 0;
+    }
+    
+    if (errorCodePtr == NULL || (statePtr->flags & TCP_NONBLOCKING)) {
+        timeout = 0;
+    } else {
+        timeout = -1;
+    }
+    do {
+        if (TclUnixWaitForFile(statePtr->fds.fd,
+                                TCL_WRITABLE | TCL_EXCEPTION, timeout) != 0) {
+            TcpConnect(NULL, statePtr);
+        }
+        /* Do this only once in the nonblocking case and repeat it until the
+         * socket is final when blocking */
+    } while (timeout == -1 && statePtr->flags & TCP_ASYNC_CONNECT);
+
+    if (errorCodePtr != NULL) {
+        if (statePtr->flags & TCP_ASYNC_PENDING) {
+            *errorCodePtr = EAGAIN;
+            return -1;
+        } else if (statePtr->connectError != 0) {
+            *errorCodePtr = ENOTCONN;
+            return -1;
         }
     }
-    if (statePtr->connectError != 0) {
-        return -1;
-    } else {
-        return 0;
-    }
+    return 0;
 }
 
 /*
@@ -462,9 +501,7 @@ TcpInputProc(
     int bytesRead;
 
     *errorCodePtr = 0;
-    if (WaitForConnect(statePtr, 0) != 0) {
-        *errorCodePtr = statePtr->connectError;
-        statePtr->connectError = 0;
+    if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
     bytesRead = recv(statePtr->fds.fd, buf, (size_t) bufSize, 0);
@@ -514,9 +551,7 @@ TcpOutputProc(
     int written;
 
     *errorCodePtr = 0;
-    if (WaitForConnect(statePtr, 0) != 0) {
-        *errorCodePtr = statePtr->connectError;
-        statePtr->connectError = 0;
+    if (WaitForConnect(statePtr, errorCodePtr) != 0) {
 	return -1;
     }
     written = send(statePtr->fds.fd, buf, (size_t) toWrite, 0);
@@ -744,7 +779,7 @@ TcpGetOptionProc(
     TcpState *statePtr = instanceData;
     size_t len = 0;
 
-    WaitForConnect(statePtr, 1);
+    WaitForConnect(statePtr, NULL);
 
     if (optionName != NULL) {
 	len = strlen(optionName);
@@ -888,7 +923,7 @@ TcpWatchProc(
     	return;
     }
      
-    if (statePtr->flags & TCP_ASYNC_CONNECT) {
+    if (statePtr->flags & TCP_ASYNC_PENDING) {
         /* Async sockets use a FileHandler internally while connecting, so we
          * need to cache this request until the connection has succeeded. */
         statePtr->filehandlers = mask;
@@ -988,8 +1023,8 @@ TcpConnect(
     TcpState *statePtr)
 {
     socklen_t optlen;
-    int async_callback = (statePtr->addr != NULL);
-    int ret = -1, error = 0;
+    int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
+    int ret = -1, error;
     int async = statePtr->flags & TCP_ASYNC_CONNECT;
 
     if (async_callback) {
@@ -998,9 +1033,10 @@ TcpConnect(
 
     for (statePtr->addr = statePtr->addrlist; statePtr->addr != NULL;
             statePtr->addr = statePtr->addr->ai_next) {
+
         for (statePtr->myaddr = statePtr->myaddrlist; statePtr->myaddr != NULL;
                 statePtr->myaddr = statePtr->myaddr->ai_next) {
-            int reuseaddr;
+            int reuseaddr = 1;
             
 	    /*
 	     * No need to try combinations of local and remote addresses of
@@ -1047,7 +1083,10 @@ TcpConnect(
                 }
             }
 
-            reuseaddr = 1;
+            /* Gotta reset the error variable here, before we use it for the
+             * first time in this iteration. */
+            error = 0;
+            
             (void) setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEADDR,
                     (char *) &reuseaddr, sizeof(reuseaddr));
             ret = bind(statePtr->fds.fd, statePtr->myaddr->ai_addr,
@@ -1070,10 +1109,12 @@ TcpConnect(
 	    if (ret < 0 && errno == EINPROGRESS) {
                 Tcl_CreateFileHandler(statePtr->fds.fd,
                         TCL_WRITABLE|TCL_EXCEPTION, TcpAsyncCallback, statePtr);
-                statePtr->connectError = errno = EWOULDBLOCK;
+                errno = EWOULDBLOCK;
+                SET_BITS(statePtr->flags, TCP_ASYNC_PENDING);
                 return TCL_OK;
 
             reenter:
+                CLEAR_BITS(statePtr->flags, TCP_ASYNC_PENDING);
                 Tcl_DeleteFileHandler(statePtr->fds.fd);
 
                 /*
@@ -1106,6 +1147,10 @@ out:
         TcpWatchProc(statePtr, statePtr->filehandlers);
         TclUnixSetBlockingMode(statePtr->fds.fd, statePtr->cachedBlocking);
 
+        if (error != 0) {
+            SET_BITS(statePtr->flags, TCP_ASYNC_FAILED);
+        }
+
         /*
          * We need to forward the writable event that brought us here, bcasue
          * upon reading of getsockopt(SO_ERROR), at least some OSes clear the
@@ -1115,7 +1160,11 @@ out:
          * the event mechanism one roundtrip through select().
          */
 
+        /* Note: disabling this for now as it causes spurious event triggering
+         * under Linux (see test socket-14.15). */
+#if 0
         Tcl_NotifyChannel(statePtr->channel, TCL_WRITABLE);
+#endif
     }
     if (error != 0) {
         /*
