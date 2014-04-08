@@ -2225,6 +2225,40 @@ test socket-14.14 {testing fileevent readable on failed async socket connect} -c
     after cancel $a1
 } -result readable
 
+test socket-14.15 {blocking read on async socket should not trigger event handlers} \
+    -constraints socket -body {
+        set s [socket -async localhost [randport]]
+        set x ok
+        fileevent $s writable {set x fail}
+        catch {read $s}
+        set x
+    } -result ok
+
+set num 0
+foreach servip {127.0.0.1 ::1 localhost} {
+    foreach cliip {127.0.0.1 ::1 localhost} {
+        if {$servip eq $cliip || "localhost" in [list $servip $cliip]} {
+            set result {-result "sock*" -match glob}
+        } else {
+            set result {
+                -result {couldn't open socket: connection refused}
+                -returnCodes 1
+            }
+        }
+        test socket-15.1.$num "Connect to $servip from $cliip" \
+            -constraints {socket supported_inet supported_inet6} -setup {
+                set server [socket -server accept -myaddr $servip 0]
+                proc accept {s h p} { close $s }
+                set port [lindex [fconfigure $server -sockname] 2]
+            } -body {
+                set s [socket $cliip $port]
+            } -cleanup {
+                close $server
+                catch {close $s}
+            } {*}$result
+        incr num
+    }
+}
 
 ::tcltest::cleanupTests
 flush stdout
