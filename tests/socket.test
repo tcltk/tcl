@@ -1981,10 +1981,10 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
     -body {
         set sock [socket -async localhost [randport]]
         catch {gets $sock} x
-        list $x [fconfigure $sock -error]
+        list $x [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": connection refused} {}}
+    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
     -constraints {socket supported_inet supported_inet6} \
     -setup {
@@ -2046,10 +2046,10 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
             if {[catch {gets $sock} x] || $x ne "" || ![fblocked $sock]} break
             after 200
         }
-        list $x [fconfigure $sock -error]
+        list $x [fconfigure $sock -error] [fconfigure $sock -error]
     } -cleanup {
         close $sock
-    } -match glob -result {{error reading "sock*": connection refused} {}}
+    } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
     -constraints {socket supported_inet supported_inet6} \
     -setup {
@@ -2164,7 +2164,7 @@ test socket-14.11.0 {pending [socket -async] and blocking [puts], no listener, n
     } -cleanup {
         catch {close $sock}
         unset x
-    } -result {connection refused} -returnCodes 1
+    } -result {socket is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, flush} \
     -constraints {socket supported_inet supported_inet6} \
     -body {
@@ -2178,7 +2178,7 @@ test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, f
     } -cleanup {
         catch {close $sock}
         unset x
-    } -result {connection refused} -returnCodes 1
+    } -result {socket is not connected} -returnCodes 1
 test socket-14.12 {[socket -async] background progress triggered by [fconfigure -error]} \
     -constraints {socket supported_inet supported_inet6} \
     -body {
