@@ -2898,6 +2898,7 @@ TclNativeCreateNativeRep(
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
     int len;
+    WCHAR *wp;
 
     if (TclFSCwdIsNative()) {
 	/*
@@ -2923,17 +2924,14 @@ TclNativeCreateNativeRep(
     }
 
     str = Tcl_GetStringFromObj(validPathPtr, &len);
-    if (str[0] == '/' && str[1] == '/' && str[2] == '?' && str[3] == '/') {
-	char *p;
-
-	for (p = str; p && *p; ++p) {
-	    if (*p == '/') {
-		*p = '\\';
-	    }
-	}
-    }
     Tcl_WinUtfToTChar(str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
+    wp = (WCHAR *) Tcl_DStringValue(&ds);
+    for (; *wp; ++wp) {
+	if (*wp=='/') {
+	    *wp = '\\';
+	}
+    }
     Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc(len);
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
