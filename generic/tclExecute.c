@@ -5990,6 +5990,15 @@ TEBCresume(
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
 	    type1 = 0;
 	}
+#ifndef TCL_WIDE_INT_IS_LONG
+	else if (type1 == TCL_NUMBER_WIDE) {
+		/** See bug [e663138a06] */
+	    Tcl_WideInt value = (OBJ_AT_TOS)->internalRep.wideValue;
+	    if ((-value <= ULONG_MAX) && (value <= ULONG_MAX)) {
+		type1 = TCL_NUMBER_LONG;
+	    }
+	}
+#endif
 	TclNewIntObj(objResultPtr, type1);
 	TRACE(("\"%.20s\" => %d\n", O2S(OBJ_AT_TOS), type1));
 	NEXT_INST_F(1, 1, 1);
