@@ -1816,6 +1816,9 @@ TclpObjChdir(
 
     nativePath = Tcl_FSGetNativePath(pathPtr);
 
+    if (!nativePath) {
+	return -1;
+    }
     result = SetCurrentDirectory(nativePath);
 
     if (result == 0) {
@@ -2929,6 +2932,12 @@ TclNativeCreateNativeRep(
     wp = (WCHAR *) Tcl_DStringValue(&ds);
     for (i=sizeof(WCHAR); i<len; ++wp,i+=sizeof(WCHAR)) {
 	if ( (*wp < ' ') || wcschr(L"\"*<>|", *wp) ){
+	    if (!*wp){
+		/* See bug [3118489]: NUL in filenames */
+		Tcl_DecrRefCount(validPathPtr);
+		Tcl_DStringFree(&ds);
+		return NULL;
+	    }
 	    *wp |= 0xF000;
 	}else if (*wp=='/') {
 	    *wp = '\\';
