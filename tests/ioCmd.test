@@ -793,6 +793,25 @@ test iocmd-21.19 {chan create, init failure -> no channel, no finalize} -match g
     rename foo {}
     set res
 } -result {{} {initialize rc* {read write}} 1 {*all required methods*} {}}
+test iocmd-21.20 {Bug 88aef05cda} -setup {
+    proc foo {method chan args} {
+	switch -- $method blocking {
+	    chan configure $chan -blocking [lindex $args 0]
+	    return
+	} initialize {
+	    return {initialize finalize watch blocking read write
+		    configure cget cgetall}
+	} finalize {
+	    return
+	}
+    }
+    set ch [chan create {read write} foo]
+} -body {
+    list [catch {chan configure $ch -blocking 0} m] $m
+} -cleanup {
+    close $ch
+    rename foo {}
+} -match glob -result {1 {*nested eval*}}
 
 # --- --- --- --------- --------- ---------
 # Helper commands to record the arguments to handler methods.
