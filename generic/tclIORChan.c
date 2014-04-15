@@ -110,6 +110,7 @@ typedef struct {
 				 * plus 4 placeholders for method, channel,
 				 * and at most two varying (method specific)
 				 * words. */
+    Tcl_Obj *cmd;		/*  */
     int methods;		/* Bitmask of supported methods */
 
     /*
@@ -2044,6 +2045,10 @@ NewReflectedChannel(
      */
 
     /* ASSERT: cmdpfxObj is a Tcl List */
+    rcPtr->cmd = TclListObjCopy(NULL, cmdpfxObj);
+    Tcl_ListObjAppendElement(NULL, rcPtr->cmd, Tcl_NewObj());
+    Tcl_ListObjAppendElement(NULL, rcPtr->cmd, handleObj);
+    Tcl_IncrRefCount(rcPtr->cmd);
 
     Tcl_ListObjGetElements(interp, cmdpfxObj, &listc, &listv);
 
@@ -2158,6 +2163,7 @@ FreeReflectedChannel(
      */
 
     Tcl_DecrRefCount(rcPtr->argv[n+1]);
+    Tcl_DecrRefCount(rcPtr->cmd);
 
     ckfree((char*) rcPtr->argv);
     ckfree((char*) rcPtr);
@@ -2200,6 +2206,8 @@ InvokeTclMethod(
     Tcl_InterpState sr;		/* State of handler interp */
     int result;			/* Result code of method invokation */
     Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
+    Tcl_Obj *cmd;
+    int len;
 
     if (!rcPtr->interp) {
 	/*
@@ -2236,6 +2244,11 @@ InvokeTclMethod(
     Tcl_IncrRefCount(methObj);
     rcPtr->argv[rcPtr->argc - 2] = methObj;
 
+    cmd = TclListObjCopy(NULL, rcPtr->cmd);
+    ListObjLength(cmd, len);
+    Tcl_ListObjReplace(NULL, cmd, len - 2, 1, 1, &methObj);
+
+
     /*
      * Append the additional argument containing method specific details
      * behind the channel id. If specified.
@@ -2244,9 +2257,11 @@ InvokeTclMethod(
     cmdc = rcPtr->argc;
     if (argOneObj) {
 	rcPtr->argv[cmdc] = argOneObj;
+	Tcl_ListObjAppendElement(NULL, cmd, argOneObj);
 	cmdc++;
 	if (argTwoObj) {
 	    rcPtr->argv[cmdc] = argTwoObj;
+	    Tcl_ListObjAppendElement(NULL, cmd, argTwoObj);
 	    cmdc++;
 	}
     }
@@ -2256,9 +2271,11 @@ InvokeTclMethod(
      * existing state intact.
      */
 
+    Tcl_IncrRefCount(cmd);
     sr = Tcl_SaveInterpState(rcPtr->interp, 0 /* Dummy */);
     Tcl_Preserve(rcPtr->interp);
-    result = Tcl_EvalObjv(rcPtr->interp, cmdc, rcPtr->argv, TCL_EVAL_GLOBAL);
+//    result = Tcl_EvalObjv(rcPtr->interp, cmdc, rcPtr->argv, TCL_EVAL_GLOBAL);
+    result = Tcl_GlobalEvalObj(rcPtr->interp, cmd);
 
     /*
      * We do not try to extract the result information if the caller has no
@@ -2284,7 +2301,7 @@ InvokeTclMethod(
 	     */
 
 	    if (result != TCL_ERROR) {
-		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rcPtr->argv);
+//		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rcPtr->argv);
 		int cmdLen;
 		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
@@ -2303,6 +2320,7 @@ InvokeTclMethod(
 	}
 	Tcl_IncrRefCount(resObj);
     }
+    Tcl_DecrRefCount(cmd);
     Tcl_RestoreInterpState(rcPtr->interp, sr);
     Tcl_Release(rcPtr->interp);
 
