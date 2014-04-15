@@ -99,25 +99,7 @@ typedef struct {
     Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. == Handler thread */
     Tcl_ThreadId owner;         /* Thread owning the structure.    == Channel thread */
 #endif
-
-    /* See [==] as well.
-     * Storage for the command prefix and the additional words required for
-     * the invocation of methods in the command handler.
-     *
-     * argv [0] ... [.] | [argc-2] [argc-1] | [argc]  [argc+2]
-     *      cmd ... pfx | method   chan     | detail1 detail2
-     *      ~~~~ CT ~~~            ~~ CT ~~
-     *
-     * CT = Belongs to the 'Command handler Thread'.
-     */
-
-    int argc;			/* Number of preallocated words - 2 */
-    Tcl_Obj **argv;		/* Preallocated array for calling the handler.
-				 * args[0] is placeholder for cmd word.
-				 * Followed by the arguments in the prefix,
-				 * plus 4 placeholders for method, channel,
-				 * and at most two varying (method specific)
-				 * words. */
+    Tcl_Obj *cmd;		/* Callback command prefix */
     int methods;		/* Bitmask of supported methods */
 
     /*
@@ -450,7 +432,6 @@ static ReflectedChannel * NewReflectedChannel(Tcl_Interp *interp,
 			    Tcl_Obj *cmdpfxObj, int mode, Tcl_Obj *handleObj);
 static Tcl_Obj *	NextHandle(void);
 static void		FreeReflectedChannel(ReflectedChannel *rcPtr);
-static void		FreeReflectedChannelArgs(ReflectedChannel *rcPtr);
 static int		InvokeTclMethod(ReflectedChannel *rcPtr,
 			    const char *method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
@@ -586,6 +567,7 @@ TclChanCreateObjCmd(
     chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
 	    mode);
     rcPtr->chan = chan;
+    Tcl_Preserve(chan);
     chanPtr = (Channel *) chan;
 
     /*
@@ -2159,8 +2141,6 @@ NewReflectedChannel(
     Tcl_Obj *handleObj)
 {
     ReflectedChannel *rcPtr;
-    int i, listc;
-    Tcl_Obj **listv;
 
     rcPtr = ckalloc(sizeof(ReflectedChannel));
 
@@ -2177,54 +2157,11 @@ NewReflectedChannel(
     rcPtr->mode = mode;
     rcPtr->interest = 0;		/* Initially no interest registered */
 
-    /*
-     * Method placeholder.
-     */
-
     /* ASSERT: cmdpfxObj is a Tcl List */
-
-    Tcl_ListObjGetElements(interp, cmdpfxObj, &listc, &listv);
-
-    /*
-     * See [==] as well.
-     * Storage for the command prefix and the additional words required for
-     * the invocation of methods in the command handler.
-     *
-     * listv [0] [listc-1] | [listc]  [listc+1] |
-     * argv  [0]   ... [.] | [argc-2] [argc-1]  | [argc]  [argc+2]
-     *       cmd   ... pfx | method   chan      | detail1 detail2
-     */
-
-    rcPtr->argc = listc + 2;
-    rcPtr->argv = ckalloc(sizeof(Tcl_Obj *) * (listc+4));
-
-    /*
-     * Duplicate object references.
-     */
-
-    for (i=0; i<listc ; i++) {
-	Tcl_Obj *word = rcPtr->argv[i] = listv[i];
-
-	Tcl_IncrRefCount(word);
-    }
-
-    i++;				/* Skip placeholder for method */
-
-    /*
-     * [Bug 1667990]: See [x] in FreeReflectedChannel for release
-     */
-
-    rcPtr->argv[i] = handleObj;
-    Tcl_IncrRefCount(handleObj);
-
-    /*
-     * The next two objects are kept empty, varying arguments.
-     */
-
-    /*
-     * Initialization complete.
-     */
-
+    rcPtr->cmd = TclListObjCopy(NULL, cmdpfxObj);
+    Tcl_ListObjAppendElement(NULL, rcPtr->cmd, Tcl_NewObj());
+    Tcl_ListObjAppendElement(NULL, rcPtr->cmd, handleObj);
+    Tcl_IncrRefCount(rcPtr->cmd);
     return rcPtr;
 }
 
@@ -2271,28 +2208,6 @@ NextHandle(void)
 }
 
 static void
-FreeReflectedChannelArgs(
-    ReflectedChannel *rcPtr)
-{
-    int i, n = rcPtr->argc - 2;
-
-    if (n < 0) {
-	return;
-    }
-    for (i=0; i<n; i++) {
-	Tcl_DecrRefCount(rcPtr->argv[i]);
-    }
-
-    /*
-     * [Bug 1667990]: See [x] in NewReflectedChannel for lock. n+1 = argc-1.
-     */
-
-    Tcl_DecrRefCount(rcPtr->argv[n+1]);
-
-    rcPtr->argc = 1;
-}
-
-static void
 FreeReflectedChannel(
     ReflectedChannel *rcPtr)
 {
@@ -2306,10 +2221,8 @@ FreeReflectedChannel(
 	ckfree(chanPtr->typePtr);
 	chanPtr->typePtr = NULL;
     }
-
-    FreeReflectedChannelArgs(rcPtr);
-
-    ckfree(rcPtr->argv);
+    Tcl_Release(chanPtr);
+    Tcl_DecrRefCount(rcPtr->cmd);
     ckfree(rcPtr);
 }
 
@@ -2345,11 +2258,12 @@ InvokeTclMethod(
     Tcl_Obj *argTwoObj,		/* NULL'able */
     Tcl_Obj **resultObjPtr)	/* NULL'able */
 {
-    int cmdc;			/* #words in constructed command */
     Tcl_Obj *methObj = NULL;	/* Method name in object form */
     Tcl_InterpState sr;		/* State of handler interp */
     int result;			/* Result code of method invokation */
     Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
+    Tcl_Obj *cmd;
+    int len;
 
     if (rcPtr->dead) {
 	/*
@@ -2378,13 +2292,14 @@ InvokeTclMethod(
      */
 
     /*
-     * Insert method into the pre-allocated area, after the command prefix,
+     * Insert method into the callback command, after the command prefix,
      * before the channel id.
      */
 
     methObj = Tcl_NewStringObj(method, -1);
-    Tcl_IncrRefCount(methObj);
-    rcPtr->argv[rcPtr->argc - 2] = methObj;
+    cmd = TclListObjCopy(NULL, rcPtr->cmd);
+    ListObjLength(cmd, len);
+    Tcl_ListObjReplace(NULL, cmd, len - 2, 1, 1, &methObj);
 
     /*
      * Append the additional argument containing method specific details
@@ -2394,13 +2309,10 @@ InvokeTclMethod(
      * The objects will survive the Tcl_EvalObjv without change.
      */
 
-    cmdc = rcPtr->argc;
     if (argOneObj) {
-	rcPtr->argv[cmdc] = argOneObj;
-	cmdc++;
+	Tcl_ListObjAppendElement(NULL, cmd, argOneObj);
 	if (argTwoObj) {
-	    rcPtr->argv[cmdc] = argTwoObj;
-	    cmdc++;
+	    Tcl_ListObjAppendElement(NULL, cmd, argTwoObj);
 	}
     }
 
@@ -2409,9 +2321,10 @@ InvokeTclMethod(
      * existing state intact.
      */
 
+    Tcl_IncrRefCount(cmd);
     sr = Tcl_SaveInterpState(rcPtr->interp, 0 /* Dummy */);
     Tcl_Preserve(rcPtr->interp);
-    result = Tcl_EvalObjv(rcPtr->interp, cmdc, rcPtr->argv, TCL_EVAL_GLOBAL);
+    result = Tcl_GlobalEvalObj(rcPtr->interp, cmd);
 
     /*
      * We do not try to extract the result information if the caller has no
@@ -2437,7 +2350,6 @@ InvokeTclMethod(
 	     */
 
 	    if (result != TCL_ERROR) {
-		Tcl_Obj *cmd = Tcl_NewListObj(cmdc, rcPtr->argv);
 		int cmdLen;
 		const char *cmdString = Tcl_GetStringFromObj(cmd, &cmdLen);
 
@@ -2456,18 +2368,9 @@ InvokeTclMethod(
 	}
 	Tcl_IncrRefCount(resObj);
     }
+    Tcl_DecrRefCount(cmd);
     Tcl_RestoreInterpState(rcPtr->interp, sr);
     Tcl_Release(rcPtr->interp);
-
-    /*
-     * Cleanup of the dynamic parts of the command.
-     *
-     * The detail objects survived the Tcl_EvalObjv without change because of
-     * the contract. Therefore there is no need to decrement the refcounts. Only
-     * the internal method object has to be disposed of.
-     */
-
-    Tcl_DecrRefCount(methObj);
 
     /*
      * The resObj has a ref count of 1 at this location. This means that the
@@ -2700,7 +2603,6 @@ DeleteReflectedChannelMap(
 	}
 
 	rcPtr->dead = 1;
-	FreeReflectedChannelArgs(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
 #endif
@@ -2840,7 +2742,6 @@ DeleteThreadReflectedChannelMap(
 	ReflectedChannel *rcPtr = Tcl_GetChannelInstanceData(chan);
 
 	rcPtr->dead = 1;
-	FreeReflectedChannelArgs(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     ckfree(rcmPtr);
@@ -3028,7 +2929,7 @@ ForwardProc(
 	}
 
 	/*
-	 * Freeing is done here, in the origin thread, because the argv[]
+	 * Freeing is done here, in the origin thread, callback command
 	 * objects belong to this thread. Deallocating them in a different
 	 * thread is not allowed
 	 *
@@ -3047,7 +2948,6 @@ ForwardProc(
                 Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 
-	FreeReflectedChannelArgs(rcPtr);
 	break;
 
     case ForwardedInput: {
