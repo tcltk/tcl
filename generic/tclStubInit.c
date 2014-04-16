@@ -90,7 +90,8 @@ TclpIsAtty(int fd)
     return isatty(fd);
 }
 
-int
+#define TclWinGetPlatformId winGetPlatformId
+static int
 TclWinGetPlatformId()
 {
     /* Don't bother to determine the real platform on cygwin,
@@ -106,7 +107,8 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
-char *
+#define TclWinNoBackslash winNoBackslash
+static char *
 TclWinNoBackslash(char *path)
 {
     char *p;
