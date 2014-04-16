@@ -33,6 +33,9 @@
 #undef Tcl_CreateHashEntry
 #undef TclpGetPid
 #undef TclSockMinimumBuffers
+#undef TclWinGetServByName
+#undef TclWinGetSockOpt
+#undef TclWinSetSockOpt
 #define TclUnusedStubEntry NULL
 
 /*
@@ -104,7 +107,8 @@ TclpIsAtty(int fd)
     return isatty(fd);
 }
 
-int
+#define TclWinGetPlatformId winGetPlatformId
+static int
 TclWinGetPlatformId()
 {
     /* Don't bother to determine the real platform on cygwin,
@@ -120,27 +124,31 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
-int
+#define TclWinSetSockOpt winSetSockOpt
+static int
 TclWinSetSockOpt(SOCKET s, int level, int optname,
 	    const char *optval, int optlen)
 {
     return setsockopt((int) s, level, optname, optval, optlen);
 }
 
-int
+#define TclWinGetSockOpt winGetSockOpt
+static int
 TclWinGetSockOpt(SOCKET s, int level, int optname,
 	    char *optval, int *optlen)
 {
     return getsockopt((int) s, level, optname, optval, optlen);
 }
 
-struct servent *
+#define TclWinGetServByName winGetServByName
+static struct servent *
 TclWinGetServByName(const char *name, const char *proto)
 {
     return getservbyname(name, proto);
 }
 
-char *
+#define TclWinNoBackslash winNoBackslash
+static char *
 TclWinNoBackslash(char *path)
 {
     char *p;
