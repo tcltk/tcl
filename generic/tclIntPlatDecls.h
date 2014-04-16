@@ -552,7 +552,13 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 
 #if defined(_WIN32) || defined(__CYGWIN__)
 #   undef TclWinNToHS
+#   undef TclWinGetServByName
+#   undef TclWinGetSockOpt
+#   undef TclWinSetSockOpt
 #   define TclWinNToHS ntohs
+#   define TclWinGetServByName getservbyname
+#   define TclWinGetSockOpt getsockopt
+#   define TclWinSetSockOpt setsockopt
 #else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
