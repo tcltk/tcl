@@ -135,11 +135,11 @@ TclpInitPlatform(void)
 
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
-	/*
-	 * Initialize the winsock library. On Windows XP and higher this
-	 * can never fail.
-	 */
-	WSAStartup(wVersionRequested, &wsaData);
+    /*
+     * Initialize the winsock library. On Windows XP and higher this
+     * can never fail.
+     */
+    WSAStartup(wVersionRequested, &wsaData);
 
 #ifdef STATIC_BUILD
     /*
