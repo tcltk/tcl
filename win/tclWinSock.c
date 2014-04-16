@@ -280,7 +280,7 @@ static const Tcl_ChannelType tcpChannelType = {
 static void
 InitSockets(void)
 {
-    DWORD id, err;
+    DWORD id;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     if (!initialized) {
@@ -2414,7 +2414,7 @@ SocketThread(
  *
  * Side effects:
  *	The flags for the given socket are updated to reflect the event that
- *	occured.
+ *	occurred.
  *
  *----------------------------------------------------------------------
  */
