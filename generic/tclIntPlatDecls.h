@@ -550,7 +550,7 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpInetNtoa
 #define TclpInetNtoa inet_ntoa
 
-#if defined(_WIN32) || defined(__CYGWIN__)
+#if defined(_WIN32)
 #   undef TclWinNToHS
 #   undef TclWinGetServByName
 #   undef TclWinGetSockOpt
