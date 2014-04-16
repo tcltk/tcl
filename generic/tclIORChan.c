@@ -2324,7 +2324,7 @@ InvokeTclMethod(
     Tcl_IncrRefCount(cmd);
     sr = Tcl_SaveInterpState(rcPtr->interp, 0 /* Dummy */);
     Tcl_Preserve(rcPtr->interp);
-    result = Tcl_GlobalEvalObj(rcPtr->interp, cmd);
+    result = Tcl_EvalObjEx(rcPtr->interp, cmd, TCL_EVAL_GLOBAL);
 
     /*
      * We do not try to extract the result information if the caller has no
