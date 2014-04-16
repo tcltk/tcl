@@ -847,9 +847,15 @@ extern TclIntPlatStubs *tclIntPlatStubsPtr;
 #undef TclpLocaltime_unix
 #undef TclpGmtime_unix
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(__WIN32__)
 #   undef TclWinNToHS
+#   undef TclWinGetServByName
+#   undef TclWinGetSockOpt
+#   undef TclWinSetSockOpt
 #   define TclWinNToHS ntohs
+#   define TclWinGetServByName getservbyname
+#   define TclWinGetSockOpt getsockopt
+#   define TclWinSetSockOpt setsockopt
 #else
 #   undef TclpGetPid
 #   define TclpGetPid(pid) ((unsigned long) (pid))
