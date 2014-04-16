@@ -106,26 +106,6 @@ void *TclWinGetTclInstance()
     return hInstance;
 }
 
-int
-TclWinSetSockOpt(SOCKET s, int level, int optname,
-	    const char *optval, int optlen)
-{
-    return setsockopt((int) s, level, optname, optval, optlen);
-}
-
-int
-TclWinGetSockOpt(SOCKET s, int level, int optname,
-	    char *optval, int *optlen)
-{
-    return getsockopt((int) s, level, optname, optval, optlen);
-}
-
-struct servent *
-TclWinGetServByName(const char *name, const char *proto)
-{
-    return getservbyname(name, proto);
-}
-
 char *
 TclWinNoBackslash(char *path)
 {
@@ -553,12 +533,12 @@ static const TclIntPlatStubs tclIntPlatStubs = {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     TclWinConvertError, /* 0 */
     0, /* 1 */
-    TclWinGetServByName, /* 2 */
-    TclWinGetSockOpt, /* 3 */
+    0, /* 2 */
+    0, /* 3 */
     TclWinGetTclInstance, /* 4 */
     TclUnixWaitForFile, /* 5 */
     0, /* 6 */
-    TclWinSetSockOpt, /* 7 */
+    0, /* 7 */
     TclpGetPid, /* 8 */
     TclWinGetPlatformId, /* 9 */
     0, /* 10 */
