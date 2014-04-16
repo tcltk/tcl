@@ -528,15 +528,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
 
-/*
- * The following defines map from standard socket names to our internal
- * wrappers that redirect through the winSock function table (see the
- * file tclWinSock.c).
- */
-
-#define getservbyname	TclWinGetServByName
-#define getsockopt	TclWinGetSockOpt
-#define setsockopt	TclWinSetSockOpt
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
 
