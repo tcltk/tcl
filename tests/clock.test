@@ -36927,6 +36927,15 @@ test clock-67.1 {clock format, %% with a letter following [Bug 2819334]} {
     clock format [clock seconds] -format %%r
 } %r
 
+test clock-67.2 {Bug d19a30db57} -body {
+    # error, not segfault
+    tcl::clock::GetJulianDayFromEraYearMonthDay {} 2361222
+} -returnCodes error -match glob -result *
+test clock-67.3 {Bug d19a30db57} -body {
+    # error, not segfault
+    tcl::clock::GetJulianDayFromEraYearWeekDay {} 2361222
+} -returnCodes error -match glob -result *
+
 # cleanup
 
 namespace delete ::testClock
