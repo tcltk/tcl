@@ -92,7 +92,6 @@ typedef struct {
     Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. */
 #endif
     Tcl_Obj *cmd;		/* Callback command prefix */
-    int methods;		/* Bitmask of supported methods */
 
     /*
      * NOTE (9): Should we have predefined shared literals for the method
@@ -436,9 +435,7 @@ static int              ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj* resObj);
  * list-quoting to keep the words of the message together. See also [x].
  */
 
-static const char *msg_read_unsup = "{read not supported by Tcl driver}";
 static const char *msg_read_toomuch = "{read delivered more than requested}";
-static const char *msg_write_unsup = "{write not supported by Tcl driver}";
 static const char *msg_write_toomuch = "{write wrote more than requested}";
 static const char *msg_write_nothing = "{write wrote nothing}";
 static const char *msg_seek_beforestart = "{Tried to seek before origin}";
@@ -550,11 +547,6 @@ TclChanCreateObjCmd(
 
     rcId = NextHandle();
     rcPtr = NewReflectedChannel(interp, cmdObj, mode, rcId);
-    chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
-	    mode);
-    rcPtr->chan = chan;
-    Tcl_Preserve(chan);
-    chanPtr = (Channel *) chan;
 
     /*
      * Invoke 'initialize' and validate that the handler is present and ok.
@@ -657,7 +649,11 @@ TclChanCreateObjCmd(
      * Everything is fine now.
      */
 
-    rcPtr->methods = methods;
+    chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
+	    mode);
+    rcPtr->chan = chan;
+    Tcl_Preserve(chan);
+    chanPtr = (Channel *) chan;
 
     if ((methods & NULLABLE_METHODS) != NULLABLE_METHODS) {
 	/*
@@ -720,12 +716,8 @@ TclChanCreateObjCmd(
     return TCL_OK;
 
  error:
-    /*
-     * Signal to ReflectClose to not call 'finalize'.
-     */
-
-    rcPtr->methods = 0;
-    Tcl_Close(interp, chan);
+    Tcl_DecrRefCount(rcPtr->cmd);
+    ckfree((char*) rcPtr);
     return TCL_ERROR;
 
 #undef MODE
@@ -1069,18 +1061,6 @@ ReflectClose(
     }
 
     /*
-     * -- No -- ASSERT rcPtr->methods & FLAG(METH_FINAL)
-     *
-     * A cleaned method mask here implies that the channel creation was
-     * aborted, and "finalize" must not be called.
-     */
-
-    if (rcPtr->methods == 0) {
-        Tcl_EventuallyFree (rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
-	return EOK;
-    }
-
-    /*
      * Are we in the correct thread?
      */
 
@@ -1174,18 +1154,6 @@ ReflectInput(
     int bytec;			/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
     Tcl_Obj *resObj;		/* Result data for 'read' */
-
-    /*
-     * The following check can be done before thread redirection, because we
-     * are reading from an item which is readonly, i.e. will never change
-     * during the lifetime of the channel.
-     */
-
-    if (!(rcPtr->methods & FLAG(METH_READ))) {
-	SetChannelErrorStr(rcPtr->chan, msg_read_unsup);
-	*errorCodePtr = EINVAL;
-	return -1;
-    }
 
     /*
      * Are we in the correct thread?
@@ -1289,18 +1257,6 @@ ReflectOutput(
     Tcl_Obj *bufObj;
     Tcl_Obj *resObj;		/* Result data for 'write' */
     int written;
-
-    /*
-     * The following check can be done before thread redirection, because we
-     * are reading from an item which is readonly, i.e. will never change
-     * during the lifetime of the channel.
-     */
-
-    if (!(rcPtr->methods & FLAG(METH_WRITE))) {
-	SetChannelErrorStr(rcPtr->chan, msg_write_unsup);
-	*errorCodePtr = EINVAL;
-	return -1;
-    }
 
     /*
      * Are we in the correct thread?
@@ -1523,8 +1479,6 @@ ReflectWatch(
 {
     ReflectedChannel *rcPtr = (ReflectedChannel *) clientData;
     Tcl_Obj *maskObj;
-
-    /* ASSERT rcPtr->methods & FLAG(METH_WATCH) */
 
     /*
      * We restrict the interest to what the channel can support. IOW there
@@ -2008,10 +1962,8 @@ NewReflectedChannel(
     rcPtr = (ReflectedChannel *) ckalloc(sizeof(ReflectedChannel));
 
     /* rcPtr->chan: Assigned by caller. Dummy data here. */
-    /* rcPtr->methods: Assigned by caller. Dummy data here. */
 
     rcPtr->chan = NULL;
-    rcPtr->methods = 0;
     rcPtr->interp = interp;
 #ifdef TCL_THREADS
     rcPtr->thread = Tcl_GetCurrentThread();
