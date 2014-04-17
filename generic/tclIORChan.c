@@ -92,11 +92,8 @@ typedef struct {
     Tcl_ThreadId thread;	/* Thread the 'interp' belongs to. */
 #endif
     Tcl_Obj *cmd;		/* Callback command prefix */
-
-    /*
-     * NOTE (9): Should we have predefined shared literals for the method
-     * names?
-     */
+    Tcl_Obj *methods;		/* Methods to append to command prefix */
+    Tcl_Obj *name;		/* Name of the channel as created */
 
     int mode;			/* Mask of R/W mode */
     int interest;		/* Mask of events the channel is interested
@@ -420,7 +417,7 @@ static ReflectedChannel * NewReflectedChannel(Tcl_Interp *interp,
 static Tcl_Obj *	NextHandle(void);
 static void		FreeReflectedChannel(ReflectedChannel *rcPtr);
 static int		InvokeTclMethod(ReflectedChannel *rcPtr,
-			    const char *method, Tcl_Obj *argOneObj,
+			    MethodName method, Tcl_Obj *argOneObj,
 			    Tcl_Obj *argTwoObj, Tcl_Obj **resultObjPtr);
 
 static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
@@ -560,7 +557,7 @@ TclChanCreateObjCmd(
 
     modeObj = DecodeEventMask(mode);
     /* assert modeObj.refCount == 1 */
-    result = InvokeTclMethod(rcPtr, "initialize", modeObj, NULL, &resObj);
+    result = InvokeTclMethod(rcPtr, METH_INIT, modeObj, NULL, &resObj);
     Tcl_DecrRefCount(modeObj);
     if (result != TCL_OK) {
 	UnmarshallErrorResult(interp, resObj);
@@ -716,6 +713,8 @@ TclChanCreateObjCmd(
     return TCL_OK;
 
  error:
+    Tcl_DecrRefCount(rcPtr->name);
+    Tcl_DecrRefCount(rcPtr->methods);
     Tcl_DecrRefCount(rcPtr->cmd);
     ckfree((char*) rcPtr);
     return TCL_ERROR;
@@ -1081,7 +1080,7 @@ ReflectClose(
 	}
     } else {
 #endif
-	result = InvokeTclMethod(rcPtr, "finalize", NULL, NULL, &resObj);
+	result = InvokeTclMethod(rcPtr, METH_FINAL, NULL, NULL, &resObj);
 	if ((result != TCL_OK) && (interp != NULL)) {
 	    Tcl_SetChannelErrorInterp(interp, resObj);
 	}
@@ -1193,7 +1192,7 @@ ReflectInput(
     toReadObj = Tcl_NewIntObj(toRead);
     Tcl_IncrRefCount(toReadObj);
 
-    if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK) {
+    if (InvokeTclMethod(rcPtr, METH_READ, toReadObj, NULL, &resObj)!=TCL_OK) {
 	int code = ErrnoReturn (rcPtr, resObj);
 
 	if (code < 0) {
@@ -1296,7 +1295,7 @@ ReflectOutput(
     bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
     Tcl_IncrRefCount(bufObj);
 
-    if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
+    if (InvokeTclMethod(rcPtr, METH_WRITE, bufObj, NULL, &resObj) != TCL_OK) {
 	int code = ErrnoReturn(rcPtr, resObj);
 
 	if (code < 0) {
@@ -1409,7 +1408,7 @@ ReflectSeekWide(
     Tcl_IncrRefCount(offObj);
     Tcl_IncrRefCount(baseObj);
 
-    if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj)!=TCL_OK) {
+    if (InvokeTclMethod(rcPtr, METH_SEEK, offObj, baseObj, &resObj)!=TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
         goto invalid;
     }
@@ -1522,7 +1521,7 @@ ReflectWatch(
 
     maskObj = DecodeEventMask(mask);
     /* assert maskObj.refCount == 1 */
-    (void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL);
+    (void) InvokeTclMethod(rcPtr, METH_WATCH, maskObj, NULL, NULL);
     Tcl_DecrRefCount(maskObj);
 
     Tcl_Release(rcPtr);
@@ -1581,7 +1580,7 @@ ReflectBlock(
 
     Tcl_Preserve(rcPtr);
 
-    if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL, &resObj) != TCL_OK) {
+    if (InvokeTclMethod(rcPtr, METH_BLOCKING, blockObj, NULL, &resObj) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, resObj);
 	errorNum = EINVAL;
     } else {
@@ -1655,7 +1654,7 @@ ReflectSetOption(
     Tcl_IncrRefCount(optionObj);
     Tcl_IncrRefCount(valueObj);
 
-    result = InvokeTclMethod(rcPtr, "configure",optionObj,valueObj, &resObj);
+    result = InvokeTclMethod(rcPtr, METH_CONFIGURE,optionObj,valueObj, &resObj);
     if (result != TCL_OK) {
 	UnmarshallErrorResult(interp, resObj);
     }
@@ -1700,7 +1699,7 @@ ReflectGetOption(
     Tcl_Obj *resObj;		/* Result data for 'configure' */
     int listc, result = TCL_OK;
     Tcl_Obj **listv;
-    const char *method;
+    MethodName method;
 
     /*
      * Are we in the correct thread?
@@ -1739,14 +1738,14 @@ ReflectGetOption(
 	 * Retrieve all options.
 	 */
 
-	method = "cgetall";
+	method = METH_CGETALL;
 	optionObj = NULL;
     } else {
 	/*
 	 * Retrieve the value of one option.
 	 */
 
-	method = "cget";
+	method = METH_CGET;
 	optionObj = Tcl_NewStringObj(optionName, -1);
         Tcl_IncrRefCount(optionObj);
     }
@@ -1958,6 +1957,7 @@ NewReflectedChannel(
     Tcl_Obj *handleObj)
 {
     ReflectedChannel *rcPtr;
+    MethodName mn = METH_BLOCKING;
 
     rcPtr = (ReflectedChannel *) ckalloc(sizeof(ReflectedChannel));
 
@@ -1973,9 +1973,15 @@ NewReflectedChannel(
 
     /* ASSERT: cmdpfxObj is a Tcl List */
     rcPtr->cmd = TclListObjCopy(NULL, cmdpfxObj);
-    Tcl_ListObjAppendElement(NULL, rcPtr->cmd, Tcl_NewObj());
-    Tcl_ListObjAppendElement(NULL, rcPtr->cmd, handleObj);
     Tcl_IncrRefCount(rcPtr->cmd);
+    rcPtr->methods = Tcl_NewListObj(METH_WRITE + 1, NULL);
+    while (mn <= METH_WRITE) {
+	Tcl_ListObjAppendElement(NULL, rcPtr->methods,
+		Tcl_NewStringObj(methodNames[mn++], -1));
+    }
+    Tcl_IncrRefCount(rcPtr->methods);
+    rcPtr->name = handleObj;
+    Tcl_IncrRefCount(rcPtr->name);
     return rcPtr;
 }
 
@@ -2035,6 +2041,8 @@ FreeReflectedChannel(
 	ckfree((char*) chanPtr->typePtr);
     }
     Tcl_Release(chanPtr);
+    Tcl_DecrRefCount(rcPtr->name);
+    Tcl_DecrRefCount(rcPtr->methods);
     Tcl_DecrRefCount(rcPtr->cmd);
     ckfree((char*) rcPtr);
 }
@@ -2066,7 +2074,7 @@ FreeReflectedChannel(
 static int
 InvokeTclMethod(
     ReflectedChannel *rcPtr,
-    const char *method,
+    MethodName method,
     Tcl_Obj *argOneObj,		/* NULL'able */
     Tcl_Obj *argTwoObj,		/* NULL'able */
     Tcl_Obj **resultObjPtr)	/* NULL'able */
@@ -2076,7 +2084,6 @@ InvokeTclMethod(
     int result;			/* Result code of method invokation */
     Tcl_Obj *resObj = NULL;	/* Result of method invokation. */
     Tcl_Obj *cmd;
-    int len;
 
     if (!rcPtr->interp) {
 	/*
@@ -2099,20 +2106,15 @@ InvokeTclMethod(
     }
 
     /*
-     * NOTE (5): Decide impl. issue: Cache objects with method names? Needs
-     * TSD data as reflections can be created in many different threads.
-     * NO: Caching of command resolutions means storage per channel.
-     */
-
-    /*
      * Insert method into the callback command, after the command prefix,
      * before the channel id.
      */
 
-    methObj = Tcl_NewStringObj(method, -1);
     cmd = TclListObjCopy(NULL, rcPtr->cmd);
-    ListObjLength(cmd, len);
-    Tcl_ListObjReplace(NULL, cmd, len - 2, 1, 1, &methObj);
+
+    Tcl_ListObjIndex(NULL, rcPtr->methods, method, &methObj);
+    Tcl_ListObjAppendElement(NULL, cmd, methObj);
+    Tcl_ListObjAppendElement(NULL, cmd, rcPtr->name);
 
     /*
      * Append the additional argument containing method specific details
@@ -2173,7 +2175,8 @@ InvokeTclMethod(
 		result = TCL_ERROR;
 	    }
 	    Tcl_AppendObjToErrorInfo(rcPtr->interp, Tcl_ObjPrintf(
-		    "\n    (chan handler subcommand \"%s\")", method));
+		    "\n    (chan handler subcommand \"%s\")",
+		    methodNames[method]));
 	    resObj = MarshallError(rcPtr->interp);
 	}
 	Tcl_IncrRefCount(resObj);
@@ -2700,7 +2703,7 @@ ForwardProc(
 	 * No parameters/results.
 	 */
 
-	if (InvokeTclMethod(rcPtr, "finalize", NULL, NULL, &resObj)!=TCL_OK) {
+	if (InvokeTclMethod(rcPtr, METH_FINAL, NULL, NULL, &resObj)!=TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
 
@@ -2732,7 +2735,7 @@ ForwardProc(
         Tcl_IncrRefCount(toReadObj);
 
         Tcl_Preserve(rcPtr);
-	if (InvokeTclMethod(rcPtr, "read", toReadObj, NULL, &resObj)!=TCL_OK){
+	if (InvokeTclMethod(rcPtr, METH_READ, toReadObj, NULL, &resObj)!=TCL_OK){
 	    int code = ErrnoReturn (rcPtr, resObj);
 
 	    if (code < 0) {
@@ -2772,7 +2775,7 @@ ForwardProc(
         Tcl_IncrRefCount(bufObj);
 
         Tcl_Preserve(rcPtr);
-	if (InvokeTclMethod(rcPtr, "write", bufObj, NULL, &resObj) != TCL_OK) {
+	if (InvokeTclMethod(rcPtr, METH_WRITE, bufObj, NULL, &resObj) != TCL_OK) {
 	    int code = ErrnoReturn(rcPtr, resObj);
 
 	    if (code < 0) {
@@ -2813,7 +2816,7 @@ ForwardProc(
         Tcl_IncrRefCount(baseObj);
 
         Tcl_Preserve(rcPtr);
-	if (InvokeTclMethod(rcPtr, "seek", offObj, baseObj, &resObj)!=TCL_OK){
+	if (InvokeTclMethod(rcPtr, METH_SEEK, offObj, baseObj, &resObj)!=TCL_OK){
 	    ForwardSetObjError(paramPtr, resObj);
 	    paramPtr->seek.offset = -1;
 	} else {
@@ -2847,7 +2850,7 @@ ForwardProc(
         /* assert maskObj.refCount == 1 */
 
         Tcl_Preserve(rcPtr);
-	(void) InvokeTclMethod(rcPtr, "watch", maskObj, NULL, NULL);
+	(void) InvokeTclMethod(rcPtr, METH_WATCH, maskObj, NULL, NULL);
 	Tcl_DecrRefCount(maskObj);
         Tcl_Release(rcPtr);
 	break;
@@ -2858,7 +2861,7 @@ ForwardProc(
         Tcl_IncrRefCount(blockObj);
 
         Tcl_Preserve(rcPtr);
-	if (InvokeTclMethod(rcPtr, "blocking", blockObj, NULL,
+	if (InvokeTclMethod(rcPtr, METH_BLOCKING, blockObj, NULL,
 		&resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
@@ -2874,7 +2877,7 @@ ForwardProc(
         Tcl_IncrRefCount(optionObj);
         Tcl_IncrRefCount(valueObj);
         Tcl_Preserve(rcPtr);
-	if (InvokeTclMethod(rcPtr, "configure", optionObj, valueObj,
+	if (InvokeTclMethod(rcPtr, METH_CONFIGURE, optionObj, valueObj,
 		&resObj) != TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
@@ -2893,7 +2896,7 @@ ForwardProc(
         Tcl_IncrRefCount(optionObj);
 
         Tcl_Preserve(rcPtr);
-	if (InvokeTclMethod(rcPtr, "cget", optionObj, NULL, &resObj)!=TCL_OK){
+	if (InvokeTclMethod(rcPtr, METH_CGET, optionObj, NULL, &resObj)!=TCL_OK){
 	    ForwardSetObjError(paramPtr, resObj);
 	} else {
 	    Tcl_DStringAppend(paramPtr->getOpt.value,
@@ -2910,7 +2913,7 @@ ForwardProc(
 	 */
 
         Tcl_Preserve(rcPtr);
-	if (InvokeTclMethod(rcPtr, "cgetall", NULL, NULL, &resObj) != TCL_OK){
+	if (InvokeTclMethod(rcPtr, METH_CGETALL, NULL, NULL, &resObj) != TCL_OK){
 	    ForwardSetObjError(paramPtr, resObj);
 	} else {
 	    /*
