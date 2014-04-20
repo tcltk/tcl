@@ -30,6 +30,14 @@ namespace eval [info object namespace ::http::cookiejar] {
 	}
 	set var $val
     }
+    proc setInterval {trigger *var val} {
+	upvar 1 ${*var} var
+	if {![string is integer -strict $val] || $val < 1} {
+	    return -code error "expected positive integer but got \"$val\""
+	}
+	set var $val
+	{*}$trigger
+    }
     proc setBool {*var val} {
 	upvar 1 ${*var} var
 	if {[catch {if {$val} {}} msg]} {
@@ -48,8 +56,6 @@ namespace eval [info object namespace ::http::cookiejar] {
     # Makefiles
     variable version 0.1
 
-    # TODO: is this the _right_ list of domains to use? Or is there an alias
-    # for it that will persist longer?
     variable domainlist \
 	http://publicsuffix.org/list/effective_tld_names.dat
     variable domainfile \
@@ -60,6 +66,7 @@ namespace eval [info object namespace ::http::cookiejar] {
     variable retainlimit 100
     variable offline false
     variable purgeinterval 60000
+    variable refreshinterval 10000000
     variable domaincache {}
 
     # Some support procedures, none particularly useful in general
@@ -128,26 +135,41 @@ package provide cookiejar \
 	    set tbl {
 		-domainfile    {domainfile set}
 		-domainlist    {domainlist set}
+		-domainrefresh {refreshinterval setInterval}
 		-loglevel      {loglevel setLog}
 		-offline       {offline setBool}
-		-purgeinterval {purgeinterval setInt}
+		-purgeold      {purgeinterval setInterval}
 		-retain        {retainlimit setInt}
 		-vacuumtrigger {vacuumtrigger setInt}
 	    }
+	    dict lappend tbl -domainrefresh [namespace code {
+		my IntervalTrigger PostponeRefresh
+	    }]
+	    dict lappend tbl -purgeold [namespace code {
+		my IntervalTrigger PostponePurge
+	    }]
 	    if {$optionName eq "\u0000\u0000"} {
 		return [dict keys $tbl]
 	    }
-	    set opt [::tcl::prefix match -message "option" [dict keys $tbl] $optionName]
-	    lassign [dict get $tbl $opt] varname setter
+	    set opt [::tcl::prefix match -message "option" \
+		    [dict keys $tbl] $optionName]
+	    set setter [lassign [dict get $tbl $opt] varname]
 	    namespace upvar [namespace current] $varname var
 	    if {$optionValue ne "\u0000\u0000"} {
-		$setter var $optionValue
+		{*}$setter var $optionValue
 	    }
 	    return $var
 	}
+
+	method IntervalTrigger {method} {
+	    # TODO: handle subclassing
+	    foreach obj [info class instances [self]] {
+		[info object namespace $obj]::my $method
+	    }
+	}
     }
 
-    variable purgeTimer deletions
+    variable purgeTimer deletions refreshTimer
     constructor {{path ""}} {
 	namespace import [info object namespace [self class]]::support::*
 
@@ -161,83 +183,100 @@ package provide cookiejar \
 	}
 
 	set deletions 0
-	db eval {
-	    --;# Store the persistent cookies in this table.
-	    --;# Deletion policy: once they expire, or if explicitly killed.
-	    CREATE TABLE IF NOT EXISTS persistentCookies (
-		id INTEGER PRIMARY KEY,
-		secure INTEGER NOT NULL,
-		domain TEXT NOT NULL COLLATE NOCASE,
-		path TEXT NOT NULL,
-		key TEXT NOT NULL,
-		value TEXT NOT NULL,
-		originonly INTEGER NOT NULL,
-		expiry INTEGER NOT NULL,
-		lastuse INTEGER NOT NULL,
-		creation INTEGER NOT NULL);
-	    CREATE UNIQUE INDEX IF NOT EXISTS persistentUnique
-		ON persistentCookies (domain, path, key);
-	    CREATE INDEX IF NOT EXISTS persistentLookup
-		ON persistentCookies (domain, path);
+	db transaction {
+	    db eval {
+		--;# Store the persistent cookies in this table.
+		--;# Deletion policy: once they expire, or if explicitly
+		--;# killed.
+		CREATE TABLE IF NOT EXISTS persistentCookies (
+		    id INTEGER PRIMARY KEY,
+		    secure INTEGER NOT NULL,
+		    domain TEXT NOT NULL COLLATE NOCASE,
+		    path TEXT NOT NULL,
+		    key TEXT NOT NULL,
+		    value TEXT NOT NULL,
+		    originonly INTEGER NOT NULL,
+		    expiry INTEGER NOT NULL,
+		    lastuse INTEGER NOT NULL,
+		    creation INTEGER NOT NULL);
+		CREATE UNIQUE INDEX IF NOT EXISTS persistentUnique
+		    ON persistentCookies (domain, path, key);
+		CREATE INDEX IF NOT EXISTS persistentLookup
+		    ON persistentCookies (domain, path);
 
-	    --;# Store the session cookies in this table.
-	    --;# Deletion policy: at cookiejar instance deletion, if
-	    --;# explicitly killed, or if the number of session cookies is too
-	    --;# large and the cookie has not been used recently.
-	    CREATE TEMP TABLE sessionCookies (
-		id INTEGER PRIMARY KEY,
-		secure INTEGER NOT NULL,
-		domain TEXT NOT NULL COLLATE NOCASE,
-		path TEXT NOT NULL,
-		key TEXT NOT NULL,
-		originonly INTEGER NOT NULL,
-		value TEXT NOT NULL,
-		lastuse INTEGER NOT NULL,
-		creation INTEGER NOT NULL);
-	    CREATE UNIQUE INDEX sessionUnique
-		ON sessionCookies (domain, path, key);
-	    CREATE INDEX sessionLookup ON sessionCookies (domain, path);
+		--;# Store the session cookies in this table.
+		--;# Deletion policy: at cookiejar instance deletion, if
+		--;# explicitly killed, or if the number of session cookies is
+		--;# too large and the cookie has not been used recently.
+		CREATE TEMP TABLE sessionCookies (
+		    id INTEGER PRIMARY KEY,
+		    secure INTEGER NOT NULL,
+		    domain TEXT NOT NULL COLLATE NOCASE,
+		    path TEXT NOT NULL,
+		    key TEXT NOT NULL,
+		    originonly INTEGER NOT NULL,
+		    value TEXT NOT NULL,
+		    lastuse INTEGER NOT NULL,
+		    creation INTEGER NOT NULL);
+		CREATE UNIQUE INDEX sessionUnique
+		    ON sessionCookies (domain, path, key);
+		CREATE INDEX sessionLookup ON sessionCookies (domain, path);
 
-	    --;# View to allow for simple looking up of a cookie.
-	    --;# Deletion policy: NOT SUPPORTED via this view.
-	    CREATE TEMP VIEW cookies AS
-		SELECT id, domain, path, key, value, originonly, secure,
-		    1 AS persistent
-		    FROM persistentCookies
-		UNION
-		SELECT id, domain, path, key, value, originonly, secure,
-		    0 AS persistent
-		    FROM sessionCookies;
+		--;# View to allow for simple looking up of a cookie.
+		--;# Deletion policy: NOT SUPPORTED via this view.
+		CREATE TEMP VIEW cookies AS
+		    SELECT id, domain, (
+			    CASE originonly WHEN 1 THEN path ELSE '.' || path END
+			) AS path, key, value, secure, 1 AS persistent
+			FROM persistentCookies
+		    UNION
+		    SELECT id, domain, (
+			    CASE originonly WHEN 1 THEN path ELSE '.' || path END
+			) AS path, key, value, secure, 0 AS persistent
+			FROM sessionCookies;
 
-	    --;# Encoded domain permission policy; if forbidden is 1, no
-	    --;# cookie may be ever set for the domain, and if forbidden is 0,
-	    --;# cookies *may* be created for the domain (overriding the
-	    --;# forbiddenSuper table).
-	    --;# Deletion policy: normally not modified.
-	    CREATE TABLE IF NOT EXISTS domains (
-		domain TEXT PRIMARY KEY NOT NULL,
-		forbidden INTEGER NOT NULL);
+		--;# Encoded domain permission policy; if forbidden is 1, no
+		--;# cookie may be ever set for the domain, and if forbidden
+		--;# is 0, cookies *may* be created for the domain (overriding
+		--;# the forbiddenSuper table).
+		--;# Deletion policy: normally not modified.
+		CREATE TABLE IF NOT EXISTS domains (
+		    domain TEXT PRIMARY KEY NOT NULL,
+		    forbidden INTEGER NOT NULL);
 
-	    --;# Domains that may not have a cookie defined for direct child
-	    --;# domains of them.
-	    --;# Deletion policy: normally not modified.
-	    CREATE TABLE IF NOT EXISTS forbiddenSuper (
-		domain TEXT PRIMARY KEY);
-	}
+		--;# Domains that may not have a cookie defined for direct
+		--;# child domains of them.
+		--;# Deletion policy: normally not modified.
+		CREATE TABLE IF NOT EXISTS forbiddenSuper (
+		    domain TEXT PRIMARY KEY);
 
-	set cookieCount "no"
-	db eval {
-	    SELECT COUNT(*) AS cookieCount FROM persistentCookies
-	}
-	log info "%s with %s entries" $storeorigin $cookieCount
+		--;# When we last retrieved the domain list.
+		CREATE TABLE IF NOT EXISTS domainCacheMetadata (
+		    id INTEGER PRIMARY KEY,
+		    retrievalDate INTEGER,
+		    installDate INTEGER);
+	    }
 
-	my PostponePurge
+	    set cookieCount "no"
+	    db eval {
+		SELECT COUNT(*) AS cookieCount FROM persistentCookies
+	    }
+	    log info "%s with %s entries" $storeorigin $cookieCount
 
-	# TODO: domain list refresh policy
-	if {$path ne "" && ![db exists {
-	    SELECT 1 FROM domains
-	}]} then {
-	    my InitDomainList
+	    my PostponePurge
+
+	    if {$path ne ""} {
+		if {[db exists {SELECT 1 FROM domains}]} {
+		    my RefreshDomains
+		} else {
+		    my InitDomainList
+		    my PostponeRefresh
+		}
+	    } else {
+		set data [my GetDomainListOffline metadata]
+		my InstallDomainData $data $metadata
+		my PostponeRefresh
+	    }
 	}
     }
 
@@ -248,29 +287,67 @@ package provide cookiejar \
 	set purgeTimer [after $interval [namespace code {my PurgeCookies}]]
     }
 
-    method GetDomainListOnline {} {
+    method PostponeRefresh {} {
+	namespace upvar [info object namespace [self class]] \
+	    refreshinterval interval
+	catch {after cancel $refreshTimer}
+	set refreshTimer [after $interval [namespace code {my RefreshDomains}]]
+    }
+
+    method RefreshDomains {} {
+	# TODO: domain list refresh policy
+	my PostponeRefresh
+    }
+
+    method HttpGet {url {timeout 0} {maxRedirects 5}} {
+	for {set r 0} {$r < $maxRedirects} {incr r} {
+	    set tok [::http::geturl $url -timeout $timeout]
+	    try {
+		if {[::http::status $tok] eq "timeout"} {
+		    return -code error "connection timed out"
+		} elseif {[::http::ncode $tok] == 200} {
+		    return [::http::data $tok]
+		} elseif {[::http::ncode $tok] >= 400} {
+		    return -code error [::http::error $tok]
+		} elseif {[dict exists [::http::meta $tok] Location]} {
+		    set url [dict get [::http::meta $tok] Location]
+		    continue
+		}
+		return -code error \
+		    "unexpected state: [::http::code $tok]"
+	    } finally {
+		::http::cleanup $tok
+	    }
+	}
+	return -code error "too many redirects"
+    }
+    method GetDomainListOnline {metaVar} {
+	upvar 1 $metaVar meta
 	namespace upvar [info object namespace [self class]] \
 	    domainlist url domaincache cache
-	lassign $cache when what
+	lassign $cache when data
 	if {$when > [clock seconds] - 3600} {
-	    log debug "using cached value created at [clock format $when -format {%Y%m%dT%H%M%SZ} -gmt 1]"
-	    return $what
+	    log debug "using cached value created at %s" \
+		[clock format $when -format {%Y%m%dT%H%M%SZ} -gmt 1]
+	    dict set meta retrievalDate $when
+	    return $data
 	}
 	log debug "loading domain list from %s" $url
-	set tok [::http::geturl $url]
 	try {
-	    if {[::http::ncode $tok] == 200} {
-		set cache [list [clock seconds] [::http::data $tok]]
-		return [::http::data $tok]
-	    }
+	    set when [clock seconds]
+	    set data [my HttpGet $url]
+	    set cache [list $when $data]
+	    # TODO: Should we use the Last-Modified header instead?
+	    dict set meta retrievalDate $when
+	    return $data
+	} on error msg {
 	    log error "failed to fetch list of forbidden cookie domains from %s: %s" \
-		    $url [::http::error $tok]
+		    $url $msg
 	    return {}
-	} finally {
-	    ::http::cleanup $tok
 	}
     }
-    method GetDomainListOffline {} {
+    method GetDomainListOffline {metaVar} {
+	upvar 1 $metaVar meta
 	namespace upvar [info object namespace [self class]] \
 	    domainfile filename
 	log debug "loading domain list from %s" $filename
@@ -281,6 +358,7 @@ package provide cookiejar \
 		    zlib push gunzip $f
 		}
 		fconfigure $f -encoding utf-8
+		dict set meta retrievalDate [file mtime $filename]
 		return [read $f]
 	    } finally {
 		close $f
@@ -296,19 +374,20 @@ package provide cookiejar \
 	    offline offline
 	if {!$offline} {
 	    try {
-		set data [my GetDomainListOnline]
+		set data [my GetDomainListOnline metadata]
 		if {[string length $data]} {
-		    my InstallDomainData $data
+		    my InstallDomainData $data $metadata
 		    return
 		}
 	    } on error {} {
 		log warn "attempting to fall back to built in version"
 	    }
 	}
-	my InstallDomainData [my GetDomainListOffline]
+	set data [my GetDomainListOffline metadata]
+	my InstallDomainData $data $metadata
     }
 
-    method InstallDomainData {data} {
+    method InstallDomainData {data meta} {
 	set n [db total_changes]
 	db transaction {
 	    foreach line [split $data "\n"] {
@@ -365,6 +444,15 @@ package provide cookiejar \
 			    $idna $line $utf [::tcl::idna decode $idna]
 		}
 	    }
+
+	    dict with meta {
+		set installDate [clock seconds]
+		db eval {
+		    INSERT OR REPLACE INTO domainCacheMetadata
+			(id, retrievalDate, installDate)
+		    VALUES (1, $retrievalDate, $installDate);
+		}
+	    }
 	}
 	set n [expr {[db total_changes] - $n}]
 	log info "constructed domain info with %d entries" $n
@@ -376,6 +464,9 @@ package provide cookiejar \
 	    db eval {
 		DELETE FROM domains;
 		DELETE FROM forbiddenSuper;
+		INSERT OR REPLACE INTO domainCacheMetadata
+		    (id, retrievalDate, installDate)
+		VALUES (1, -1, -1);
 	    }
 	    my InitDomainList
 	}
@@ -384,6 +475,9 @@ package provide cookiejar \
     destructor {
 	catch {
 	    after cancel $purgeTimer
+	}
+	catch {
+	    after cancel $refreshTimer
 	}
 	catch {
 	    db close
@@ -423,7 +517,12 @@ package provide cookiejar \
     method getCookies {proto host path} {
 	set result {}
 	set paths [splitPath $path]
-	set domains [splitDomain [string tolower [::tcl::idna encode $host]]]
+	if {[regexp {[^0-9.]} $host]} {
+	    set domains [splitDomain [string tolower [::tcl::idna encode $host]]]
+	} else {
+	    # Ugh, it's a numeric domain! Restrict it to just itself...
+	    set domains [list $host]
+	}
 	set secure [string equal -nocase $proto "https"]
 	# Open question: how to move these manipulations into the database
 	# engine (if that's where they *should* be).
@@ -436,20 +535,13 @@ package provide cookiejar \
 	# do the splitting exactly right, and it's far easier to work with
 	# strings in Tcl than in SQL.
 	db transaction {
-	    if {[regexp {[^0-9.]} $host]} {
-		foreach domain $domains {
-		    foreach p $paths {
-			my GetCookiesForHostAndPath result $secure $domain $p $host
-		    }
-		}
-	    } else {
-		# Ugh, it's a numeric domain! Restrict it...
+	    foreach domain $domains {
 		foreach p $paths {
-		    my GetCookiesForHostAndPath result $secure $host $p $host
+		    my GetCookiesForHostAndPath result $secure $domain $p $host
 		}
 	    }
+	    return $result
 	}
-	return $result
     }
 
     method BadDomain options {
@@ -555,8 +647,7 @@ package provide cookiejar \
 
     method PurgeCookies {} {
 	namespace upvar [info object namespace [self class]] \
-	    vacuumtrigger trigger  purgeinterval interval \
-	    retainlimit retain
+	    vacuumtrigger trigger  retainlimit retain
 	my PostponePurge
 	set now [clock seconds]
 	log debug "purging cookies that expired before %s" [clock format $now]
@@ -567,16 +658,14 @@ package provide cookiejar \
 	    incr deletions [db changes]
 	    db eval {
 		DELETE FROM persistentCookies WHERE id IN (
-		    SELECT id FROM persistentCookies ORDER BY lastuse
-		    LIMIT MAX(0, (
-			SELECT COUNT(*) FROM persistentCookies) - $retain))
+		    SELECT id FROM persistentCookies ORDER BY lastuse ASC
+		    LIMIT -1 OFFSET $retain)
 	    }
 	    incr deletions [db changes]
 	    db eval {
 		DELETE FROM sessionCookies WHERE id IN (
 		    SELECT id FROM sessionCookies ORDER BY lastuse
-		    LIMIT MAX(0, (
-			SELECT COUNT(*) FROM sessionCookies) - $retain))
+		    LIMIT -1 OFFSET $retain)
 	    }
 	    incr deletions [db changes]
 	}

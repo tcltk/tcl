@@ -32,16 +32,16 @@ test http-cookiejar-2.2 {cookie storage: basics} -constraints cookiejar -body {
 } -returnCodes error -result {unknown method "?": must be configure, create, destroy or new}
 test http-cookiejar-2.3 {cookie storage: basics} cookiejar {
     http::cookiejar configure
-} {-domainfile -domainlist -loglevel -offline -purgeinterval -retain -vacuumtrigger}
+} {-domainfile -domainlist -domainrefresh -loglevel -offline -purgeold -retain -vacuumtrigger}
 test http-cookiejar-2.4 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar configure a b c d e
 } -returnCodes error -result {wrong # args: should be "http::cookiejar configure ?optionName? ?optionValue?"}
 test http-cookiejar-2.5 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar configure a
-} -returnCodes error -result {bad option "a": must be -domainfile, -domainlist, -loglevel, -offline, -purgeinterval, -retain, or -vacuumtrigger}
+} -returnCodes error -result {bad option "a": must be -domainfile, -domainlist, -domainrefresh, -loglevel, -offline, -purgeold, -retain, or -vacuumtrigger}
 test http-cookiejar-2.6 {cookie storage: basics} -constraints cookiejar -body {
     http::cookiejar configure -d
-} -returnCodes error -result {ambiguous option "-d": must be -domainfile, -domainlist, -loglevel, -offline, -purgeinterval, -retain, or -vacuumtrigger}
+} -returnCodes error -result {ambiguous option "-d": must be -domainfile, -domainlist, -domainrefresh, -loglevel, -offline, -purgeold, -retain, or -vacuumtrigger}
 test http-cookiejar-2.7 {cookie storage: basics} -setup {
     set old [http::cookiejar configure -loglevel]
 } -constraints cookiejar -body {
@@ -82,12 +82,41 @@ test http-cookiejar-2.11 {cookie storage: basics} -setup {
     catch {http::cookiejar configure -offline $oldval}
 } -returnCodes error -result {expected boolean value but got "nonbool"}
 test http-cookiejar-2.12 {cookie storage: basics} -setup {
-    set oldval [http::cookiejar configure -purgeinterval]
+    set oldval [http::cookiejar configure -purgeold]
 } -constraints cookiejar -body {
     http::cookiejar configure -purge nonint
 } -cleanup {
-    catch {http::cookiejar configure -purgeinterval $oldval}
-} -returnCodes error -result {expected integer but got "nonint"}
+    catch {http::cookiejar configure -purgeold $oldval}
+} -returnCodes error -result {expected positive integer but got "nonint"}
+test http-cookiejar-2.13 {cookie storage: basics} -setup {
+    set oldval [http::cookiejar configure -domainrefresh]
+} -constraints cookiejar -body {
+    http::cookiejar configure -domainref nonint
+} -cleanup {
+    catch {http::cookiejar configure -domainrefresh $oldval}
+} -returnCodes error -result {expected positive integer but got "nonint"}
+test http-cookiejar-2.14 {cookie storage: basics} -setup {
+    set oldval [http::cookiejar configure -domainrefresh]
+} -constraints cookiejar -body {
+    http::cookiejar configure -domainref -42
+} -cleanup {
+    catch {http::cookiejar configure -domainrefresh $oldval}
+} -returnCodes error -result {expected positive integer but got "-42"}
+test http-cookiejar-2.15 {cookie storage: basics} -setup {
+    set oldval [http::cookiejar configure -domainrefresh]
+    set result unset
+    set tracer [http::cookiejar create tracer]
+} -constraints cookiejar -body {
+    oo::objdefine $tracer method PostponeRefresh {} {
+	set ::result set
+	next
+    }
+    http::cookiejar configure -domainref 12345
+    return $result
+} -cleanup {
+    $tracer destroy
+    catch {http::cookiejar configure -domainrefresh $oldval}
+} -result set
 
 test http-cookiejar-3.1 {cookie storage: class} cookiejar {
     info object isa object http::cookiejar
@@ -624,6 +653,98 @@ test http-cookiejar-5.4 {cookie storage: constraints} -setup {
 } -cleanup {
     ::cookiejar destroy
 } -result {example.com www.example.com}
+test http-cookiejar-5.5 {cookie storage: constraints} -setup {
+    http::cookiejar create ::cookiejar
+    cookiejar forceLoadDomainData
+} -constraints cookiejar -body {
+    cookiejar storeCookie {
+	key foo1
+	value 1
+	secure 0
+	domain com
+	origin www.example.com
+	path /
+	hostonly 0
+    }
+    cookiejar storeCookie {
+	key foo2
+	value 2
+	secure 0
+	domain com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie {
+	key foo3
+	value 3
+	secure 0
+	domain example.com
+	origin www.example.com
+	path /
+	hostonly 0
+    }
+    cookiejar storeCookie {
+	key foo4
+	value 4
+	secure 0
+	domain example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie {
+	key foo5
+	value 5
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 0
+    }
+    cookiejar storeCookie {
+	key foo6
+	value 6
+	secure 0
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie {
+	key foo7
+	value 7
+	secure 1
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 0
+    }
+    cookiejar storeCookie {
+	key foo8
+	value 8
+	secure 1
+	domain www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    cookiejar storeCookie {
+	key foo9
+	value 9
+	secure 0
+	domain sub.www.example.com
+	origin www.example.com
+	path /
+	hostonly 1
+    }
+    list [cookiejar getCookies http www.example.com /] \
+	[cookiejar getCookies http www2.example.com /] \
+	[cookiejar getCookies https www.example.com /] \
+	[cookiejar getCookies http sub.www.example.com /]
+} -cleanup {
+    ::cookiejar destroy
+} -result {{foo3 3 foo6 6} {foo3 3} {foo3 3 foo6 6 foo8 8} {foo3 3 foo5 5}}
 
 test http-cookiejar-6.1 {cookie storage: expiry and lookup} -setup {
     http::cookiejar create ::cookiejar
