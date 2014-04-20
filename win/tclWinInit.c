@@ -113,8 +113,8 @@ static int		ToUtf(const WCHAR *wSrc, char *dst);
  *
  * TclpInitPlatform --
  *
- *	Initialize all the platform-dependant things like signals and
- *	floating-point error handling.
+ *	Initialize all the platform-dependant things like signals,
+ *	floating-point error handling and sockets.
  *
  *	Called at process initialization time.
  *
@@ -130,20 +130,16 @@ static int		ToUtf(const WCHAR *wSrc, char *dst);
 void
 TclpInitPlatform(void)
 {
+    WSADATA wsaData;
+    WORD wVersionRequested = MAKEWORD(2, 2);
+
     tclPlatform = TCL_PLATFORM_WINDOWS;
 
     /*
-     * The following code stops Windows 3.X and Windows NT 3.51 from
-     * automatically putting up Sharing Violation dialogs, e.g, when someone
-     * tries to access a file that is locked or a drive with no disk in it.
-     * Tcl already returns the appropriate error to the caller, and they can
-     * decide to put up their own dialog in response to that failure.
-     *
-     * Under 95 and NT 4.0, this is a NOOP because the system doesn't
-     * automatically put up dialogs when the above operations fail.
+     * Initialize the winsock library. On Windows XP and higher this
+     * can never fail.
      */
-
-    SetErrorMode(SetErrorMode(0) | SEM_FAILCRITICALERRORS);
+    WSAStartup(wVersionRequested, &wsaData);
 
 #ifdef STATIC_BUILD
     /*

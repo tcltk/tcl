@@ -1108,7 +1108,12 @@ DoRemoveJustDirectory(
 
   end:
     if (errorPtr != NULL) {
+	char *p;
 	Tcl_WinTCharToUtf(nativePath, -1, errorPtr);
+	p = Tcl_DStringValue(errorPtr);
+	for (; *p; ++p) {
+	    if (*p == '\\') *p = '/';
+	}
     }
     return TCL_ERROR;
 
