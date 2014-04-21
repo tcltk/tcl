@@ -812,6 +812,38 @@ test iocmd-21.20 {Bug 88aef05cda} -setup {
     close $ch
     rename foo {}
 } -match glob -result {1 {*nested eval*}}
+test iocmd-21.21 {[close] in [read] segfaults} -setup {
+    proc foo {method chan args} {
+	switch -- $method initialize {
+	    return {initialize finalize watch read}
+	} finalize {} watch {} read {
+	    close $chan
+	    return a
+	}
+    }
+    set ch [chan create read foo]
+} -body {
+    read $ch 0
+} -cleanup {
+    close $ch
+    rename foo {}
+} -result {}
+test iocmd-21.22 {[close] in [read] segfaults} -setup {
+    proc foo {method chan args} {
+	switch -- $method initialize {
+	    return {initialize finalize watch read}
+	} finalize {} watch {} read {
+	    catch {close $chan}
+	    return a
+	}
+    }
+    set ch [chan create read foo]
+} -body {
+    read $ch 1
+} -returnCodes error -cleanup {
+    catch {close $ch}
+    rename foo {}
+} -match glob -result {*invalid argument*}
 
 # --- --- --- --------- --------- ---------
 # Helper commands to record the arguments to handler methods.
