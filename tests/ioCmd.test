@@ -785,11 +785,27 @@ test iocmd-21.21 {[close] in [read] segfaults} -setup {
     }
     set ch [chan create read foo]
 } -body {
-    read $ch 1
+    read $ch 0
 } -cleanup {
     close $ch
     rename foo {}
-} -result a
+} -result {}
+test iocmd-21.22 {[close] in [read] segfaults} -setup {
+    proc foo {method chan args} {
+	switch -- $method initialize {
+	    return {initialize finalize watch read}
+	} finalize {} watch {} read {
+	    catch {close $chan}
+	    return a
+	}
+    }
+    set ch [chan create read foo]
+} -body {
+    read $ch 1
+} -returnCodes error -cleanup {
+    catch {close $ch}
+    rename foo {}
+} -match glob -result {*invalid argument*}
 
 # --- --- --- --------- --------- ---------
 # Helper commands to record the arguments to handler methods.
