@@ -447,6 +447,7 @@ Tcl_ReadObjCmd(
 
     resultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(resultPtr);
+    Tcl_Preserve(chan);
     charactersRead = Tcl_ReadChars(chan, resultPtr, toRead, 0);
     if (charactersRead < 0) {
 	/*
@@ -462,6 +463,7 @@ Tcl_ReadObjCmd(
 		    TclGetString(chanObjPtr), "\": ",
 		    Tcl_PosixError(interp), NULL);
 	}
+	Tcl_Release(chan);
 	Tcl_DecrRefCount(resultPtr);
 	return TCL_ERROR;
     }
@@ -480,6 +482,7 @@ Tcl_ReadObjCmd(
 	}
     }
     Tcl_SetObjResult(interp, resultPtr);
+    Tcl_Release(chan);
     Tcl_DecrRefCount(resultPtr);
     return TCL_OK;
 }
