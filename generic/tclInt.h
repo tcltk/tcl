@@ -2552,6 +2552,7 @@ MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
+MODULE_SCOPE void	TclFinalizeThreadAllocThread(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE void	TclFinalizeThreadObjects(void);
 MODULE_SCOPE double	TclFloor(mp_int *a);
