@@ -1145,6 +1145,7 @@ ReflectClose(
 	    if (result != TCL_OK) {
 		FreeReceivedError(&p);
 	    }
+	    return EOK;
 	}
 #endif
 
@@ -1168,8 +1169,6 @@ ReflectClose(
          */
 
         Tcl_DeleteEvents(ReflectEventDelete, rcPtr);
-
-        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 
 	if (result != TCL_OK) {
 	    PassReceivedErrorInterp(interp, &p);
@@ -2903,6 +2902,7 @@ ForwardProc(
                 Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 
+	Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 	break;
 
     case ForwardedInput: {
