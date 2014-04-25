@@ -559,6 +559,26 @@ test iortrans-4.8.1 {chan read, bug 721ec69271} -setup {
     rename foo {}
 } -result {{read rt* {test data
 }} file*}
+test iortrans-4.8.2 {chan read, bug 721ec69271} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+	return x
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    chan configure $c -buffersize 1
+    lappend res [read $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* {test data
+}} file*}
 test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
     set res {}
 } -match glob -body {
