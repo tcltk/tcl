@@ -5611,6 +5611,11 @@ DoReadChars(
 		ResetFlag(statePtr, CHANNEL_BLOCKED);
 	    }
 	    result = GetInput(chanPtr);
+if (chanPtr != statePtr->topChanPtr) {
+Tcl_Release(chanPtr);
+chanPtr = statePtr->topChanPtr;
+Tcl_Preserve(chanPtr);
+}
 	    if (result != 0) {
 		if (result == EAGAIN) {
 		    break;
