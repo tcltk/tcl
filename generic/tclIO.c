@@ -2270,7 +2270,7 @@ RecycleBuffer(
      * Do we have to free the buffer to the OS?
      */
 
-    if (mustDiscard) {
+    if (1 || mustDiscard) {
 	ReleaseChannelBuffer(bufPtr);
 	return;
     }
