@@ -1585,46 +1585,54 @@ proc make-manpage-section {outputDir sectionDescriptor} {
 	    set width [string length $name]
 	}
     }
-    set perline [expr {118 / $width}]
-    set nrows [expr {([llength $manual(wing-toc)]+$perline)/$perline}]
-    set n 0
+    set perline [expr { max(1, min(5, 118 / $width)) }] ;# stylesheet allows 1 to 5 cols
     catch { unset toc }
+    catch { unset idx }
     foreach name [lsort $manual(wing-toc)] {
 	set tail $manual(name-$name)
 	if {[llength $tail] > 1} {
 	    puts stderr "\n$name is defined in more than one file: $tail"
 	    set tail [lindex $tail [expr {[llength $tail]-1}]]
 	}
-	set category ""
+        # Assign man page to a category
+	set category "Uncategorized"
 	set catMaster $name
 	if {[info exists manual(cat-master-$name)]} {
 	    set catMaster $manual(cat-master-$name)
 	}
 	if {[info exists manual(category-$catMaster)]} {
-#FIXME-TD we want to have the option to group contents by category, if enabled
 	    set category $manual(category-$catMaster)
+	} else {
+	    #puts stderr "\n$tail has no .SH CATEGORY"
 	}
+        # Render link
 	set tail [file tail $tail]
 	if {[info exists manual(tooltip-$manual(wing-file)/$tail.htm)]} {
 	    set tooltip $manual(tooltip-$manual(wing-file)/$tail.htm)
 	    set tooltip [string map {[ {\[} ] {\]} $ {\$} \\ \\\\} $tooltip]
 	    regsub {^[^-]+-\s*(.)} $tooltip {[string totitle \1]} tooltip
 	    lappend toc($category) \
-		"<li> <a href=\"$tail.htm\" title=\"[subst $tooltip]\">$name</a> $manual(descrip-$name)</li>"
+              "<TD class='command'> <A href=\"$tail.htm\" title=\"[subst $tooltip]\">$name</A> </TD><TD>$manual(descrip-$name)</TD>"
+            lappend idx "<LI> <A href=\"$tail.htm\" title=\"[subst $tooltip]\">$name</A> </LI>"
 	} else {
 	    lappend toc($category) \
-		"<li> <a href=\"$tail.htm\">$name</a> $manual(descrip-$name)</li>"
+              "<TD class='command'> <A href=\"$tail.htm\">$name</A> </TD><TD>$manual(descrip-$name)</TD>"
+            lappend idx "<LI> <A href=\"$tail.htm\">$name</A> </LI>"
 	}
 	incr n
     }
+    # Render the alphabetical index
+    puts $manual(wing-toc-fp) "<H4>Alphabetical Index</H4>"
+    puts $manual(wing-toc-fp) "<UL class='multicolumn ncols${perline}'>"
+    puts $manual(wing-toc-fp) [join $idx \n]
+    puts $manual(wing-toc-fp) "</UL>"
+    # Render the category lists    
+    puts $manual(wing-toc-fp) "<TABLE>"
     foreach category [lsort [array names toc]] {
-	if { $category ne "" } {
-	    puts $manual(wing-toc-fp) "<H4>$category</H4>"
-        }
-	puts $manual(wing-toc-fp) {<ul class="multicolumn">}
-	puts $manual(wing-toc-fp) [join $toc($category) \n]
-	puts $manual(wing-toc-fp) </ul>
+	puts $manual(wing-toc-fp) "<TR><TD colspan='2'><H4>$category</H4></TD></TR>"
+	puts $manual(wing-toc-fp) "<TR>[join $toc($category) "</TR>\n<TR>"]</TR>"
     }
+    puts $manual(wing-toc-fp) "</TABLE>"
 
     #
     # insert wing copyrights

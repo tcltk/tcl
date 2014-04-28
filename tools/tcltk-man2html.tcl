@@ -235,13 +235,21 @@ proc css-stylesheet {} {
 	font-size: 11px;
     }
     css-style ul.multicolumn {
+	list-style-type: none;
+	padding-left: 1em;
+	margin: 0;    
 	column-fill: balance;
-	column-count: 3;
-	-moz-column-count: 3;
-	-webkit-column-count: 3;
         column-gap: 20px;
 	-moz-column-gap: 20px;
 	-webkit-column-gap: 20px;
+    }
+    css-style ul.ncols1 { column-count: 1; -moz-column-count: 1; -webkit-column-count: 1; }
+    css-style ul.ncols2 { column-count: 2; -moz-column-count: 2; -webkit-column-count: 2; }
+    css-style ul.ncols3 { column-count: 3; -moz-column-count: 3; -webkit-column-count: 3; }
+    css-style ul.ncols4 { column-count: 4; -moz-column-count: 4; -webkit-column-count: 4; }
+    css-style ul.ncols5 { column-count: 5; -moz-column-count: 5; -webkit-column-count: 5; }
+    css-style td.command {
+	padding-left: 1em;
     }
     css-style ".keylist dt" ".arguments dt" {
 	width: 20em;
@@ -684,18 +692,23 @@ try {
 
 	    # ... but try to extract (name, version) from subdir contents
 	    try {
-		set f [open [file join $pkgsDir $dir configure.in]]
-		foreach line [split [read $f] \n] {
-		    if {2 == [scan $line \
-			    { AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
-			set description [list $n $v]
-			break
+		glob -directory [file join $pkgsDir $dir] -- \
+                  configure.in configure.ac unix/configure.in 
+	    } trap {TCL OPERATION GLOB NOMATCH} {e} {
+		puts stderr "warning: no 'configure.in' (or .ac) under '[file nativename [file join $pkgsDir $dir]]'"
+	    } on ok {flist} {
+		try {
+		    set f [open [lindex $flist 0]]
+		    foreach line [split [read $f] \n] {
+			if {2 == [scan $line \
+				{ AC_INIT ( [%[^]]] , [%[^]]] ) } n v]} {
+			    set description [list $n $v]
+			    break
+			}
 		    }
+        	} finally {
+		    catch {close $f; unset f}
 		}
-	    } trap {POSIX ENOENT} {e} {
-		puts stderr "warning: no 'configure.in' in '[file nativename [file join $pkgsDir $dir]]'"
-            } finally {
-		catch {close $f; unset f}
 	    }
 
 	    if {[file exists [file join $pkgsDir $dir configure]]} {
@@ -707,25 +720,29 @@ try {
 
     # Get the list of packages to try, and what their human-readable names
     # are. Note that the package directory list should be version-less.
-    try {
-	set packageDirNameMap {}
-	if {$build_tcl} {
-	    set f [open $tcltkdir/$tcldir/pkgs/package.list.txt]
-	    try {
-		foreach line [split [read $f] \n] {
-		    if {[string trim $line] eq ""} continue
-		    if {[string match #* $line]} continue
-		    lappend packageDirNameMap {*}$line
-		}
-	    } finally {
-		close $f
-	    }
-	}
-    } trap {POSIX ENOENT} {} {
+    set packageDirNameMap {}
+    if {$build_tcl} {
 	set packageDirNameMap {
 	    itcl {[incr Tcl]}
 	    tdbc {TDBC}
 	    thread Thread
+	}
+	foreach pkglistfile [list \
+    	    [file join $pkgsDir "package.list.txt"] \
+    	    "$tcltkdir/$tcldir/pkgs/package.list.txt" \
+	] {
+	    puts "checking for package map in '[file nativename [file normalize $pkglistfile]]'"
+	    if { ! [file exists $pkglistfile] } continue
+	    set f [open $pkglistfile r]
+	    try {
+		foreach line [split [read $f] \n] {
+		    if {[string trim $line] eq ""} continue
+		    if {[string match #* $line]} continue
+		    dict set packageDirNameMap {*}$line
+		}
+	    } finally {
+		close $f
+	    }
 	}
     }
 
