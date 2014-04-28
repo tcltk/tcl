@@ -46,8 +46,11 @@ non-blocking mode; the \fBfcopy\fR command takes care of that automatically.
 However, it is necessary to enter the event loop by using
 the \fBvwait\fR command or by using Tk.
 .PP
-You are not allowed to do other I/O operations with
-\fIinchan\fR or \fIoutchan\fR during a background \fBfcopy\fR.
+You are not allowed to do other input operations with \fIinchan\fR, or
+output operations with \fIoutchan\fR, during a background
+\fBfcopy\fR. The converse is entirely legitimate, as exhibited by the
+bidirectional fcopy example below.
+.PP
 If either \fIinchan\fR or \fIoutchan\fR get closed
 while the copy is in progress, the current copy is stopped
 and the command callback is \fInot\fR made.
@@ -57,7 +60,7 @@ then all data already queued for \fIoutchan\fR is written out.
 Note that \fIinchan\fR can become readable during a background copy.
 You should turn off any \fBfileevent\fR handlers during a background
 copy so those handlers do not interfere with the copy.
-Any I/O attempted by a \fBfileevent\fR handler will get a
+Any wrong-sided I/O attempted (by a \fBfileevent\fR handler or otherwise) will get a
 .QW "channel busy"
 error.
 .PP
@@ -147,6 +150,24 @@ set chunk 1024
 set total 0
 \fBfcopy\fR $in $out -size $chunk \e
         -command [list CopyMore $in $out $chunk]
+vwait done
+.CE
+.PP
+The fourth example starts an asynchronous, bidirectional fcopy between
+two sockets. Those could also be pipes from two [open "|hal 9000" r+]
+(though their conversation would remain secret to the script, since
+all four fileevent slots are busy).
+.PP
+.CS
+set flows 2
+proc Done {dir args} {
+     global flows done
+     puts "$dir is over."
+     incr flows -1
+     if {$flows<=0} {set done 1}
+}
+\fBfcopy\fR $sok1 $sok2 -command [list Done UP]
+\fBfcopy\fR $sok2 $sok1 -command [list Done DOWN]
 vwait done
 .CE
 .SH "SEE ALSO"
