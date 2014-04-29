@@ -164,6 +164,7 @@ typedef struct CloseCallback {
 static ChannelBuffer *	AllocChannelBuffer(int length);
 static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
+static int		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelTimerProc(ClientData clientData);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
@@ -2239,6 +2240,13 @@ ReleaseChannelBuffer(
     }
     ckfree((char *) bufPtr);
 }
+
+static int
+IsShared(
+    ChannelBuffer *bufPtr)
+{
+    return bufPtr->refCount > 1;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2269,6 +2277,9 @@ RecycleBuffer(
     /*
      * Do we have to free the buffer to the OS?
      */
+    if (IsShared(bufPtr)) {
+	mustDiscard = 1;
+    }
 
     if (mustDiscard) {
 	ReleaseChannelBuffer(bufPtr);
