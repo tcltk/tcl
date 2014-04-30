@@ -4570,6 +4570,9 @@ FilterInputBytes(
 	}
 	bufPtr = statePtr->inQueueTail;
 	gsPtr->bufPtr = bufPtr;
+	if (bufPtr == NULL) {
+	    Tcl_Panic("GetInput nuked buffers!");
+	}
     }
 
     /*
