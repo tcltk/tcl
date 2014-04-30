@@ -2086,7 +2086,7 @@ StringRangeCmd(
      * Unicode string rep to get the range.
      */
 
-    if (objv[1]->typePtr == &tclByteArrayType) {
+    if (objv[1]->typePtr == &tclByteArrayType && (objv[1]->bytes==NULL)) {
 	string = Tcl_GetByteArrayFromObj(objv[1], &length);
 	length--;
     } else {
