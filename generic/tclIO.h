@@ -36,6 +36,7 @@
  */
 
 typedef struct ChannelBuffer {
+    int refCount;		/* Current uses count */
     int nextAdded;		/* The next position into which a character
 				 * will be put in the buffer. */
     int nextRemoved;		/* Position of next byte to be removed from

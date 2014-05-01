@@ -82,10 +82,6 @@ test winpipe-1.4 {32 bit comprehensive tests: a lot from pipe} {win nt exec cat3
     exec [interpreter] $path(more) < $path(big) | $cat32 > $path(stdout) 2> $path(stderr)
     list [contents $path(stdout)] [contents $path(stderr)]
 } "{$big} stderr32"
-test winpipe-1.5 {32 bit comprehensive tests: a lot from pipe} {win 95 exec cat32} {
-    exec command /c type $path(big) |& $cat32 > $path(stdout) 2> $path(stderr)
-    list [contents $path(stdout)] [contents $path(stderr)]
-} "{$big} stderr32"
 test winpipe-1.6 {32 bit comprehensive tests: from console} \
 	{win cat32 AllocConsole} {
     # would block waiting for human input
@@ -174,10 +170,6 @@ test winpipe-1.21 {32 bit comprehensive tests: read/write application} \
     catch {close $f}
     set r
 } "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
-test winpipe-1.22 {Checking command.com for Win95/98 hanging} {win 95 exec} {
-    exec command.com /c dir /b
-    set result 1
-} 1
 
 test winpipe-4.1 {Tcl_WaitPid} {win nt exec cat32} {
     proc readResults {f} {

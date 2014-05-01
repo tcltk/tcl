@@ -5570,11 +5570,21 @@ TEBCresume(
 			length - toIdx);
 	    }
 	} else {
-	    objResultPtr = value3Ptr;
+	    /*
+	     * Be careful with splicing the stack in this case; we have a
+	     * refCount:1 object in value3Ptr and we want to append to it and
+	     * make it be the refCount:1 object at the top of the stack
+	     * afterwards. [Bug 82e7f67325]
+	     */
+
 	    if (toIdx < length) {
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+		Tcl_AppendUnicodeToObj(value3Ptr, ustring1 + toIdx + 1,
 			length - toIdx);
 	    }
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
+	    TclDecrRefCount(valuePtr);
+	    OBJ_AT_TOS = value3Ptr;	/* Tricky! */
+	    NEXT_INST_F(1, 0, 0);
 	}
 	TclDecrRefCount(value3Ptr);
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
