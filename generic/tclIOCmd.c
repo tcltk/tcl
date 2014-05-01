@@ -181,6 +181,7 @@ Tcl_PutsObjCmd(
 	return TCL_ERROR;
     }
 
+    Tcl_Preserve(chan);
     result = Tcl_WriteObj(chan, string);
     if (result < 0) {
 	goto error;
@@ -191,6 +192,7 @@ Tcl_PutsObjCmd(
 	    goto error;
 	}
     }
+    Tcl_Release(chan);
     return TCL_OK;
 
     /*
@@ -205,6 +207,7 @@ Tcl_PutsObjCmd(
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("error writing \"%s\": %s",
 		TclGetString(chanObjPtr), Tcl_PosixError(interp)));
     }
+    Tcl_Release(chan);
     return TCL_ERROR;
 }
 
@@ -252,6 +255,7 @@ Tcl_FlushObjCmd(
 	return TCL_ERROR;
     }
 
+    Tcl_Preserve(chan);
     if (Tcl_Flush(chan) != TCL_OK) {
 	/*
 	 * TIP #219.
@@ -265,8 +269,10 @@ Tcl_FlushObjCmd(
 		    "error flushing \"%s\": %s",
 		    TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	}
+	Tcl_Release(chan);
 	return TCL_ERROR;
     }
+    Tcl_Release(chan);
     return TCL_OK;
 }
 
@@ -299,6 +305,7 @@ Tcl_GetsObjCmd(
     int lineLen;		/* Length of line just read. */
     int mode;			/* Mode in which channel is opened. */
     Tcl_Obj *linePtr, *chanObjPtr;
+    int code = TCL_OK;
 
     if ((objc != 2) && (objc != 3)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId ?varName?");
@@ -315,6 +322,7 @@ Tcl_GetsObjCmd(
 	return TCL_ERROR;
     }
 
+    Tcl_Preserve(chan);
     linePtr = Tcl_NewObj();
     lineLen = Tcl_GetsObj(chan, linePtr);
     if (lineLen < 0) {
@@ -333,7 +341,8 @@ Tcl_GetsObjCmd(
 			"error reading \"%s\": %s",
 			TclGetString(chanObjPtr), Tcl_PosixError(interp)));
 	    }
-	    return TCL_ERROR;
+	    code = TCL_ERROR;
+	    goto done;
 	}
 	lineLen = -1;
     }
@@ -346,7 +355,9 @@ Tcl_GetsObjCmd(
     } else {
 	Tcl_SetObjResult(interp, linePtr);
     }
-    return TCL_OK;
+  done:
+    Tcl_Release(chan);
+    return code;
 }
 
 /*
@@ -547,6 +558,7 @@ Tcl_SeekObjCmd(
 	mode = modeArray[optionIndex];
     }
 
+    Tcl_Preserve(chan);
     result = Tcl_Seek(chan, offset, mode);
     if (result == Tcl_LongAsWide(-1)) {
 	/*
@@ -561,8 +573,10 @@ Tcl_SeekObjCmd(
 		    "error during seek on \"%s\": %s",
 		    TclGetString(objv[1]), Tcl_PosixError(interp)));
 	}
+	Tcl_Release(chan);
 	return TCL_ERROR;
     }
+    Tcl_Release(chan);
     return TCL_OK;
 }
 
@@ -593,6 +607,7 @@ Tcl_TellObjCmd(
 {
     Tcl_Channel chan;		/* The channel to tell on. */
     Tcl_WideInt newLoc;
+    int code;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "channelId");
@@ -608,6 +623,7 @@ Tcl_TellObjCmd(
 	return TCL_ERROR;
     }
 
+    Tcl_Preserve(chan);
     newLoc = Tcl_Tell(chan);
 
     /*
@@ -616,7 +632,10 @@ Tcl_TellObjCmd(
      * them into the regular interpreter result.
      */
 
-    if (TclChanCaughtErrorBypass(interp, chan)) {
+
+    code  = TclChanCaughtErrorBypass(interp, chan);
+    Tcl_Release(chan);
+    if (code) {
 	return TCL_ERROR;
     }
 
