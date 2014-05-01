@@ -710,7 +710,7 @@ test stringComp-14.1 {Bug 82e7f67325} {
 	lappend b [string length [string replace ___! 0 2 $a[unset a]]]
     }}
 } {3 3}
-test stringComp-14.2 {Bug 82e7f67325} {
+test stringComp-14.2 {Bug 82e7f67325} memory {
     # As in stringComp-14.1, but make sure we don't retain too many refs
     leaktest {
 	apply {{} {
