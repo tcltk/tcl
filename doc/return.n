@@ -6,8 +6,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH return n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -317,8 +317,8 @@ proc myReturn {args} {
 }
 .CE
 .SH "SEE ALSO"
-break(n), catch(n), continue(n), dict(n), error(n), proc(n),
-source(n), tclvars(n), throw(n), try(n)
+break(n), catch(n), continue(n), dict(n), error(n), errorCode(n),
+errorInfo(n), proc(n), source(n), throw(n), try(n)
 .SH KEYWORDS
 break, catch, continue, error, exception, procedure, result, return
 .\" Local Variables:

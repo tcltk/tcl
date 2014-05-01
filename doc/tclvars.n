@@ -5,12 +5,12 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH tclvars n 8.0 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_nonwordchars, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_precision, tcl_rcFileName, tcl_traceCompile, tcl_traceEval, tcl_wordchars, tcl_version \- Variables used by Tcl
+argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_nonwordchars, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_precision, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_wordchars, tcl_version \- Variables used by Tcl
 .BE
 .SH DESCRIPTION
 .PP

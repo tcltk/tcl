@@ -830,7 +830,7 @@ Tcl_UnloadObjCmd(
 	 * Unload the shared library from the application memory...
 	 */
 
-#if defined(TCL_UNLOAD_DLLS) || defined(__WIN32__)
+#if defined(TCL_UNLOAD_DLLS) || defined(_WIN32)
 	/*
 	 * Some Unix dlls are poorly behaved - registering things like atexit
 	 * calls that can't be unregistered. If you unload such dlls, you get
@@ -1151,7 +1151,7 @@ TclFinalizeLoad(void)
 	pkgPtr = firstPackagePtr;
 	firstPackagePtr = pkgPtr->nextPtr;
 
-#if defined(TCL_UNLOAD_DLLS) || defined(__WIN32__)
+#if defined(TCL_UNLOAD_DLLS) || defined(_WIN32)
 	/*
 	 * Some Unix dlls are poorly behaved - registering things like atexit
 	 * calls that can't be unregistered. If you unload such dlls, you get

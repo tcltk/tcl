@@ -1720,11 +1720,11 @@ Tcl_UniCharIsSpace(
      */
 
     if (ch < 0x80) {
-	return TclIsSpaceProc(ch);
+	return TclIsSpaceProc((char) ch);
     } else if (UNICODE_OUT_OF_RANGE(ch)) {
 	return 0;
     } else if (ch == 0x0085 || ch == 0x180e || ch == 0x200b
-	    || ch == 0x2060 || ch == 0xfeff) {
+	    || ch == 0x202f || ch == 0x2060 || ch == 0xfeff) {
 	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);

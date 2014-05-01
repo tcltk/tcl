@@ -93,6 +93,9 @@ typedef off_t		Tcl_SeekOffset;
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
+    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
+    __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
 
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
     __declspec(dllimport) extern int cygwin_conv_path_list(int, const void *, void *, int);
@@ -700,8 +703,6 @@ typedef int socklen_t;
 
 #ifdef TCL_THREADS
 #   include <pthread.h>
-#   undef inet_ntoa
-#   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
 
 /* FIXME - Hyper-enormous platform assumption! */

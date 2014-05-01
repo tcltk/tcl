@@ -1590,7 +1590,7 @@ FileAttrIsOwnedCmd(
 	 * test for equivalence to the current user.
 	 */
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
 	value = 1;
 #else
 	value = (geteuid() == buf.st_uid);

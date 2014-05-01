@@ -1147,41 +1147,38 @@ InfoFrameCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    int level, topLevel, code = TCL_OK;
-    CmdFrame *runPtr, *framePtr;
+    int level, code = TCL_OK;
+    CmdFrame *framePtr, **cmdFramePtrPtr = &iPtr->cmdFramePtr;
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+    int topLevel = 0;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?number?");
 	return TCL_ERROR;
     }
 
-    topLevel = ((iPtr->cmdFramePtr == NULL)
-	    ? 0
-	    : iPtr->cmdFramePtr->level);
-
-    if (corPtr) {
-	/*
-	 * A coroutine: must fix the level computations AND the cmdFrame chain,
-	 * which is interrupted at the base.
-	 */
-
-	CmdFrame *lastPtr = NULL;
-
-	runPtr = iPtr->cmdFramePtr;
-
-	/* TODO - deal with overflow */
-	topLevel += corPtr->caller.cmdFramePtr->level;
-	while (runPtr) {
-	    runPtr->level += corPtr->caller.cmdFramePtr->level;
-	    lastPtr = runPtr;
-	    runPtr = runPtr->nextPtr;
+    while (corPtr) {
+	while (*cmdFramePtrPtr) {
+	    topLevel++;
+	    cmdFramePtrPtr = &((*cmdFramePtrPtr)->nextPtr);
 	}
-	if (lastPtr) {
-	    lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
-	} else {
-	    iPtr->cmdFramePtr = corPtr->caller.cmdFramePtr;
+	if (corPtr->caller.cmdFramePtr) {
+	    *cmdFramePtrPtr = corPtr->caller.cmdFramePtr;
 	}
+	corPtr = corPtr->callerEEPtr->corPtr;
+    }
+    topLevel += (*cmdFramePtrPtr)->level;
+
+    if (topLevel != iPtr->cmdFramePtr->level) {
+	framePtr = iPtr->cmdFramePtr;
+	while (framePtr) {
+	    framePtr->level = topLevel--;
+	    framePtr = framePtr->nextPtr;
+	}
+	if (topLevel) {
+	    Tcl_Panic("Broken frame level calculation");
+	}
+	topLevel = iPtr->cmdFramePtr->level;
     }
 
     if (objc == 1) {
@@ -1231,20 +1228,27 @@ InfoFrameCmd(
     Tcl_SetObjResult(interp, TclInfoFrame(interp, framePtr));
 
   done:
-    if (corPtr) {
+    cmdFramePtrPtr = &iPtr->cmdFramePtr;
+    corPtr = iPtr->execEnvPtr->corPtr;
+    while (corPtr) {
+	CmdFrame *endPtr = corPtr->caller.cmdFramePtr;
 
-	if (iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr) {
-	    iPtr->cmdFramePtr = NULL;
-	} else {
-	    runPtr = iPtr->cmdFramePtr;
-	    while (runPtr->nextPtr != corPtr->caller.cmdFramePtr) {
-	    	runPtr->level -= corPtr->caller.cmdFramePtr->level;
-		runPtr = runPtr->nextPtr;
+	if (endPtr) {
+	    if (*cmdFramePtrPtr == endPtr) {
+		*cmdFramePtrPtr = NULL;
+	    } else {
+		CmdFrame *runPtr = *cmdFramePtrPtr;
+
+		while (runPtr->nextPtr != endPtr) {
+		    runPtr->level -= endPtr->level;
+		    runPtr = runPtr->nextPtr;
+		}
+		runPtr->level = 1;
+		runPtr->nextPtr = NULL;
 	    }
-	    runPtr->level = 1;
-	    runPtr->nextPtr = NULL;
+	    cmdFramePtrPtr = &corPtr->caller.cmdFramePtr;
 	}
-
+	corPtr = corPtr->callerEEPtr->corPtr;
     }
     return code;
 }
@@ -1302,28 +1306,12 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len));
-	break;
-
-    case TCL_LOCATION_EVAL_LIST:
-	/*
-	 * List optimized evaluation. Type, line, cmd, the latter through
-	 * listPtr, possibly a frame.
-	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(1));
-
-	/*
-	 * We put a duplicate of the command list obj into the result to
-	 * ensure that the 'pure List'-property of the command itself is not
-	 * destroyed. Otherwise the query here would disable the list
-	 * optimization path in Tcl_EvalObjEx.
-	 */
-
-	ADD_PAIR("cmd", Tcl_DuplicateObj(framePtr->cmd.listPtr));
+	if (framePtr->line) {
+	    ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	} else {
+	    ADD_PAIR("line", Tcl_NewIntObj(1));
+	}
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PREBC:
@@ -1371,8 +1359,7 @@ TclInfoFrame(
 	    Tcl_DecrRefCount(fPtr->data.eval.path);
 	}
 
-	ADD_PAIR("cmd",
-		Tcl_NewStringObj(fPtr->cmd.str.cmd, fPtr->cmd.str.len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1391,8 +1378,7 @@ TclInfoFrame(
 	 * the result list object.
 	 */
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PROC:
