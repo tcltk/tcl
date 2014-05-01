@@ -67,25 +67,6 @@ const TclFileAttrProcs tclpFileAttrProcs[] = {
 	{GetWinFileShortName, CannotSetAttribute},
 	{GetWinFileAttributes, SetWinFileAttributes}};
 
-#ifdef HAVE_NO_SEH
-
-/*
- * Unlike Borland and Microsoft, we don't register exception handlers by
- * pushing registration records onto the runtime stack. Instead, we register
- * them by creating an EXCEPTION_REGISTRATION within the activation record.
- */
-
-typedef struct EXCEPTION_REGISTRATION {
-    struct EXCEPTION_REGISTRATION *link;
-    EXCEPTION_DISPOSITION (*handler)(
-	    struct _EXCEPTION_RECORD *, void *, struct _CONTEXT *, void *);
-    void *ebp;
-    void *esp;
-    int status;
-} EXCEPTION_REGISTRATION;
-
-#endif
-
 /*
  * Prototype for the TraverseWinTree callback function.
  */
@@ -176,7 +157,7 @@ DoRenameFile(
 				 * (native). */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    EXCEPTION_REGISTRATION registration;
+    TCLEXCEPTION_REGISTRATION registration;
 #endif
     DWORD srcAttr, dstAttr;
     int retval = -1;
@@ -213,7 +194,7 @@ DoRenameFile(
 	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
 
 	/*
-	 * Construct an EXCEPTION_REGISTRATION to protect the call to
+	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
 	 * MoveFile.
 	 */
 
@@ -227,7 +208,7 @@ DoRenameFile(
 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
 
 	/*
-	 * Link the EXCEPTION_REGISTRATION on the chain.
+	 * Link the TCLEXCEPTION_REGISTRATION on the chain.
 	 */
 
 	"movl	    %%edx,	    %%fs:0"	    "\n\t"
@@ -242,7 +223,7 @@ DoRenameFile(
 	"call	    *%%eax"			    "\n\t"
 
 	/*
-	 * Come here on normal exit. Recover the EXCEPTION_REGISTRATION and
+	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
 	 * put the status return from MoveFile into it.
 	 */
 
@@ -251,7 +232,7 @@ DoRenameFile(
 	"jmp	    2f"				    "\n"
 
 	/*
-	 * Come here on an exception. Recover the EXCEPTION_REGISTRATION
+	 * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
 	 */
 
 	"1:"					    "\t"
@@ -260,7 +241,7 @@ DoRenameFile(
 
 	/*
 	 * Come here however we exited. Restore context from the
-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
 	 */
 
 	"2:"					    "\t"
@@ -563,7 +544,7 @@ DoCopyFile(
     const TCHAR *nativeDst)	/* Pathname of file to copy to (native). */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    EXCEPTION_REGISTRATION registration;
+    TCLEXCEPTION_REGISTRATION registration;
 #endif
     int retval = -1;
 
@@ -600,7 +581,7 @@ DoCopyFile(
 	"movl	    %[nativeSrc],   %%ecx"	    "\n\t"
 
 	/*
-	 * Construct an EXCEPTION_REGISTRATION to protect the call to
+	 * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
 	 * CopyFile.
 	 */
 
@@ -614,7 +595,7 @@ DoCopyFile(
 	"movl	    $0,		    0x10(%%edx)"    "\n\t" /* status */
 
 	/*
-	 * Link the EXCEPTION_REGISTRATION on the chain.
+	 * Link the TCLEXCEPTION_REGISTRATION on the chain.
 	 */
 
 	"movl	    %%edx,	    %%fs:0"	    "\n\t"
@@ -630,7 +611,7 @@ DoCopyFile(
 	"call	    *%%eax"			    "\n\t"
 
 	/*
-	 * Come here on normal exit. Recover the EXCEPTION_REGISTRATION and
+	 * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION and
 	 * put the status return from CopyFile into it.
 	 */
 
@@ -639,7 +620,7 @@ DoCopyFile(
 	"jmp	    2f"				    "\n"
 
 	/*
-	 * Come here on an exception. Recover the EXCEPTION_REGISTRATION
+	 * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
 	 */
 
 	"1:"					    "\t"
@@ -648,7 +629,7 @@ DoCopyFile(
 
 	/*
 	 * Come here however we exited. Restore context from the
-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
 	 */
 
 	"2:"					    "\t"
@@ -1105,49 +1086,6 @@ DoRemoveJustDirectory(
 		SetFileAttributes(nativePath,
 			attr | FILE_ATTRIBUTE_READONLY);
 	    }
-
-	    /*
-	     * Windows 95 reports removing a non-empty directory as
-	     * EACCES, not EEXIST. If the directory is not empty, change errno
-	     * so caller knows what's going on.
-	     */
-
-	    if (TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS) {
-		const char *path, *find;
-		HANDLE handle;
-		WIN32_FIND_DATAA data;
-		Tcl_DString buffer;
-		int len;
-
-		path = (const char *) nativePath;
-
-		Tcl_DStringInit(&buffer);
-		len = strlen(path);
-		find = Tcl_DStringAppend(&buffer, path, len);
-		if ((len > 0) && (find[len - 1] != '\\')) {
-		    TclDStringAppendLiteral(&buffer, "\\");
-		}
-		find = TclDStringAppendLiteral(&buffer, "*.*");
-		handle = FindFirstFileA(find, &data);
-		if (handle != INVALID_HANDLE_VALUE) {
-		    while (1) {
-			if ((strcmp(data.cFileName, ".") != 0)
-				&& (strcmp(data.cFileName, "..") != 0)) {
-			    /*
-			     * Found something in this directory.
-			     */
-
-			    Tcl_SetErrno(EEXIST);
-			    break;
-			}
-			if (FindNextFileA(handle, &data) == FALSE) {
-			    break;
-			}
-		    }
-		    FindClose(handle);
-		}
-		Tcl_DStringFree(&buffer);
-	    }
 	}
     }
 
@@ -1170,7 +1108,12 @@ DoRemoveJustDirectory(
 
   end:
     if (errorPtr != NULL) {
+	char *p;
 	Tcl_WinTCharToUtf(nativePath, -1, errorPtr);
+	p = Tcl_DStringValue(errorPtr);
+	for (; *p; ++p) {
+	    if (*p == '\\') *p = '/';
+	}
     }
     return TCL_ERROR;
 
@@ -1887,12 +1830,12 @@ SetWinFileAttributes(
     Tcl_Obj *fileName,		/* The name of the file. */
     Tcl_Obj *attributePtr)	/* The new value of the attribute. */
 {
-    DWORD fileAttributes;
+    DWORD fileAttributes, old;
     int yesNo, result;
     const TCHAR *nativeName;
 
     nativeName = Tcl_FSGetNativePath(fileName);
-    fileAttributes = GetFileAttributes(nativeName);
+    fileAttributes = old = GetFileAttributes(nativeName);
 
     if (fileAttributes == 0xffffffff) {
 	StatError(interp, fileName);
@@ -1910,7 +1853,8 @@ SetWinFileAttributes(
 	fileAttributes &= ~(attributeArray[objIndex]);
     }
 
-    if (!SetFileAttributes(nativeName, fileAttributes)) {
+    if ((fileAttributes != old)
+	    && !SetFileAttributes(nativeName, fileAttributes)) {
 	StatError(interp, fileName);
 	return TCL_ERROR;
     }

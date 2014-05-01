@@ -26,6 +26,7 @@
  *-   jumpTable testing
  *-   syntax (?)
  *-   returnCodeBranch
+ *-   tclooNext, tclooNextClass
  */
 
 #include "tclInt.h"
@@ -49,7 +50,7 @@ typedef enum BasicBlockCatchState {
     BBCS_UNKNOWN = 0,		/* Catch context has not yet been identified */
     BBCS_NONE,			/* Block is outside of any catch */
     BBCS_INCATCH,		/* Block is within a catch context */
-    BBCS_CAUGHT,		/* Block is within a catch context and
+    BBCS_CAUGHT 		/* Block is within a catch context and
 				 * may be executed after an exception fires */
 } BasicBlockCatchState;
 
@@ -120,7 +121,7 @@ enum BasicBlockFlags {
 				 * marking it as the start of a 'catch'
 				 * sequence. The 'jumpTarget' is the exception
 				 * exit from the catch block. */
-    BB_ENDCATCH = (1 << 5),	/* Block ends with an 'endCatch' instruction,
+    BB_ENDCATCH = (1 << 5)	/* Block ends with an 'endCatch' instruction,
 				 * unwinding the catch from the exception
 				 * stack. */
 };
@@ -183,7 +184,7 @@ typedef enum TalInstType {
 				 * produces N */
     ASSEM_SINT1,		/* One 1-byte signed-integer operand
 				 * (INCR_STK_IMM) */
-    ASSEM_SINT4_LVT4,		/* Signed 4-byte integer operand followed by
+    ASSEM_SINT4_LVT4		/* Signed 4-byte integer operand followed by
 				 * LVT entry.  Fixed arity */
 } TalInstType;
 
@@ -349,7 +350,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"bitnot",		ASSEM_1BYTE,	INST_BITNOT,		1,	1},
     {"bitor",		ASSEM_1BYTE,	INST_BITOR,		2,	1},
     {"bitxor",		ASSEM_1BYTE,	INST_BITXOR,		2,	1},
-    {"concat",		ASSEM_CONCAT1,	INST_CONCAT1,		INT_MIN,1},
+    {"concat",		ASSEM_CONCAT1,	INST_STR_CONCAT1,	INT_MIN,1},
+    {"concatStk",	ASSEM_LIST,	INST_CONCAT_STK,	INT_MIN,1},
     {"coroName",	ASSEM_1BYTE,	INST_COROUTINE_NAME,	0,	1},
     {"currentNamespace",ASSEM_1BYTE,	INST_NS_CURRENT,	0,	1},
     {"dictAppend",	ASSEM_LVT4,	INST_DICT_APPEND,	2,	1},
@@ -436,6 +438,8 @@ static const TalInstDesc TalInstructionTable[] = {
     {"nop",		ASSEM_1BYTE,	INST_NOP,		0,	0},
     {"not",		ASSEM_1BYTE,	INST_LNOT,		1,	1},
     {"nsupvar",		ASSEM_LVT4,	INST_NSUPVAR,		2,	1},
+    {"numericType",	ASSEM_1BYTE,	INST_NUM_TYPE,		1,	1},
+    {"originCmd",	ASSEM_1BYTE,	INST_ORIGIN_COMMAND,	1,	1},
     {"over",		ASSEM_OVER,	INST_OVER,		INT_MIN,-1-1},
     {"pop",		ASSEM_1BYTE,	INST_POP,		1,	0},
     {"pushReturnCode",	ASSEM_1BYTE,	INST_PUSH_RETURN_CODE,	0,	1},
@@ -452,7 +456,11 @@ static const TalInstDesc TalInstructionTable[] = {
 					 | INST_STORE_ARRAY4),	2,	1},
     {"storeArrayStk",	ASSEM_1BYTE,	INST_STORE_ARRAY_STK,	3,	1},
     {"storeStk",	ASSEM_1BYTE,	INST_STORE_STK,		2,	1},
+    {"strcaseLower",	ASSEM_1BYTE,	INST_STR_LOWER,		1,	1},
+    {"strcaseTitle",	ASSEM_1BYTE,	INST_STR_TITLE,		1,	1},
+    {"strcaseUpper",	ASSEM_1BYTE,	INST_STR_UPPER,		1,	1},
     {"strcmp",		ASSEM_1BYTE,	INST_STR_CMP,		2,	1},
+    {"strcat",		ASSEM_CONCAT1,	INST_STR_CONCAT1,	INT_MIN,1},
     {"streq",		ASSEM_1BYTE,	INST_STR_EQ,		2,	1},
     {"strfind",		ASSEM_1BYTE,	INST_STR_FIND,		2,	1},
     {"strindex",	ASSEM_1BYTE,	INST_STR_INDEX,		2,	1},
@@ -461,12 +469,17 @@ static const TalInstDesc TalInstructionTable[] = {
     {"strmatch",	ASSEM_BOOL,	INST_STR_MATCH,		2,	1},
     {"strneq",		ASSEM_1BYTE,	INST_STR_NEQ,		2,	1},
     {"strrange",	ASSEM_1BYTE,	INST_STR_RANGE,		3,	1},
+    {"strreplace",	ASSEM_1BYTE,	INST_STR_REPLACE,	4,	1},
     {"strrfind",	ASSEM_1BYTE,	INST_STR_FIND_LAST,	2,	1},
+    {"strtrim",		ASSEM_1BYTE,	INST_STR_TRIM,		2,	1},
+    {"strtrimLeft",	ASSEM_1BYTE,	INST_STR_TRIM_LEFT,	2,	1},
+    {"strtrimRight",	ASSEM_1BYTE,	INST_STR_TRIM_RIGHT,	2,	1},
     {"sub",		ASSEM_1BYTE,	INST_SUB,		2,	1},
     {"tclooClass",	ASSEM_1BYTE,	INST_TCLOO_CLASS,	1,	1},
     {"tclooIsObject",	ASSEM_1BYTE,	INST_TCLOO_IS_OBJECT,	1,	1},
     {"tclooNamespace",	ASSEM_1BYTE,	INST_TCLOO_NS,		1,	1},
     {"tclooSelf",	ASSEM_1BYTE,	INST_TCLOO_SELF,	0,	1},
+    {"tryCvtToBoolean",	ASSEM_1BYTE,	INST_TRY_CVT_TO_BOOLEAN,1,	2},
     {"tryCvtToNumeric",	ASSEM_1BYTE,	INST_TRY_CVT_TO_NUMERIC,1,	1},
     {"uminus",		ASSEM_1BYTE,	INST_UMINUS,		1,	1},
     {"unset",		ASSEM_BOOL_LVT4,INST_UNSET_SCALAR,	0,	0},
@@ -493,6 +506,7 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_PUSH1, INST_PUSH4, INST_POP, INST_DUP,			/* 1-4 */
     INST_JUMP1, INST_JUMP4,					/* 34-35 */
     INST_END_CATCH, INST_PUSH_RESULT, INST_PUSH_RETURN_CODE,	/* 70-72 */
+    INST_LIST,							/* 79 */
     INST_OVER,							/* 95 */
     INST_PUSH_RETURN_OPTIONS,					/* 108 */
     INST_REVERSE,						/* 126 */
@@ -502,7 +516,11 @@ static const unsigned char NonThrowingByteCodes[] = {
     INST_COROUTINE_NAME,					/* 149 */
     INST_NS_CURRENT,						/* 151 */
     INST_INFO_LEVEL_NUM,					/* 152 */
-    INST_RESOLVE_COMMAND					/* 154 */
+    INST_RESOLVE_COMMAND,					/* 154 */
+    INST_STR_TRIM, INST_STR_TRIM_LEFT, INST_STR_TRIM_RIGHT,	/* 166-168 */
+    INST_CONCAT_STK,						/* 169 */
+    INST_STR_UPPER, INST_STR_LOWER, INST_STR_TITLE,		/* 170-172 */
+    INST_NUM_TYPE						/* 180 */
 };
 
 /*
@@ -682,7 +700,7 @@ BBEmitInstInt4(
  * BBEmitInst1or4 --
  *
  *	Emits a 1- or 4-byte operation according to the magnitude of the
- *	operand
+ *	operand.
  *
  *-----------------------------------------------------------------------------
  */
@@ -930,6 +948,10 @@ TclCompileAssembleCmd(
 {
     Tcl_Token *tokenPtr;	/* Token in the input script */
 
+    int numCommands = envPtr->numCommands;
+    int offset = envPtr->codeNext - envPtr->codeStart;
+    int depth = envPtr->currStackDepth;
+
     /*
      * Make sure that the command has a single arg that is a simple word.
      */
@@ -943,10 +965,23 @@ TclCompileAssembleCmd(
     }
 
     /*
-     * Compile the code and return any error from the compilation.
+     * Compile the code and convert any error from the compilation into
+     * bytecode reporting the error;
      */
 
-    return TclAssembleCode(envPtr, tokenPtr[1].start, tokenPtr[1].size, 0);
+    if (TCL_ERROR == TclAssembleCode(envPtr, tokenPtr[1].start,
+	    tokenPtr[1].size, TCL_EVAL_DIRECT)) {
+
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (\"%.*s\" body, line %d)",
+		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
+		Tcl_GetErrorLine(interp)));
+	envPtr->numCommands = numCommands;
+	envPtr->codeNext = envPtr->codeStart + offset;
+	envPtr->currStackDepth = depth;
+	TclCompileSyntaxError(interp, envPtr);
+    }
+    return TCL_OK;
 }
 
 /*
@@ -985,8 +1020,6 @@ TclAssembleCode(
 
     const char* instPtr = codePtr;
 				/* Where to start looking for a line of code */
-    int instLen;		/* Length in bytes of the current line of
-				 * code */
     const char* nextPtr;	/* Pointer to the end of the line of code */
     int bytesLeft = codeLen;	/* Number of bytes of source code remaining to
 				 * be parsed */
@@ -1000,10 +1033,6 @@ TclAssembleCode(
 	 */
 
 	status = Tcl_ParseCommand(interp, instPtr, bytesLeft, 0, parsePtr);
-	instLen = parsePtr->commandSize;
-	if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
-	    --instLen;
-	}
 
 	/*
 	 * Report errors in the parse.
@@ -1012,7 +1041,7 @@ TclAssembleCode(
 	if (status != TCL_OK) {
 	    if (flags & TCL_EVAL_DIRECT) {
 		Tcl_LogCommandInfo(interp, codePtr, parsePtr->commandStart,
-			instLen);
+			parsePtr->term + 1 - parsePtr->commandStart);
 	    }
 	    FreeAssemblyEnv(assemEnvPtr);
 	    return TCL_ERROR;
@@ -1032,6 +1061,13 @@ TclAssembleCode(
 	 */
 
 	if (parsePtr->numWords > 0) {
+	    int instLen = parsePtr->commandSize;
+		    /* Length in bytes of the current command */
+
+	    if (parsePtr->term == parsePtr->commandStart + instLen - 1) {
+		--instLen;
+	    }
+
 	    /*
 	     * If tracing, show each line assembled as it happens.
 	     */
@@ -1107,7 +1143,7 @@ NewAssemblyEnv(
 
     assemEnvPtr->envPtr = envPtr;
     assemEnvPtr->parsePtr = parsePtr;
-    assemEnvPtr->cmdLine = envPtr->line;
+    assemEnvPtr->cmdLine = 1;
     assemEnvPtr->clNext = envPtr->clNext;
 
     /*
@@ -2599,6 +2635,7 @@ AllocBB(
     bb->minStackDepth = 0;
     bb->maxStackDepth = 0;
     bb->finalStackDepth = 0;
+    bb->catchDepth = 0;
     bb->enclosingCatch = NULL;
     bb->foreignExceptionBase = -1;
     bb->foreignExceptionCount = 0;
@@ -3029,7 +3066,7 @@ ResolveJumpTableTargets(
     auxDataIndex = TclGetInt4AtPtr(envPtr->codeStart + bbPtr->jumpOffset + 1);
     DEBUG_PRINT("bbPtr = %p jumpOffset = %d auxDataIndex = %d\n",
 	    bbPtr, bbPtr->jumpOffset, auxDataIndex);
-    realJumpTablePtr = envPtr->auxDataArrayPtr[auxDataIndex].clientData;
+    realJumpTablePtr = TclFetchAuxData(envPtr, auxDataIndex);
     realJumpHashPtr = &realJumpTablePtr->hashTable;
 
     /*

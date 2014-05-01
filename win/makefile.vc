@@ -450,7 +450,6 @@ TCLOBJS = $(COREOBJS) $(ZLIBOBJS) $(TOMMATHOBJS) $(PLATFORMOBJS)
 
 TCLSTUBOBJS = \
 	$(TMP_DIR)\tclStubLib.obj \
-	$(TMP_DIR)\tclStubLibTbl.obj \
 	$(TMP_DIR)\tclTomMathStubLib.obj \
 	$(TMP_DIR)\tclOOStubLib.obj
 
@@ -623,7 +622,7 @@ $**
 !endif
 
 $(TCLSTUBLIB): $(TCLSTUBOBJS)
-	$(lib32) -nologo $(LINKERFLAGS) -out:$@ $(TCLSTUBOBJS)
+	$(lib32) -nologo $(LINKERFLAGS) -nodefaultlib -out:$@ $(TCLSTUBOBJS)
 
 $(TCLSH): $(TCLSHOBJS) $(TCLSTUBLIB) $(TCLIMPLIB)
 	$(link32) $(conlflags) -stack:2300000 -out:$@ $(baselibs) $**
@@ -980,14 +979,17 @@ $(TMP_DIR)\tclWinDde.obj: $(WINDIR)\tclWinDde.c
 $(TMP_DIR)\tclStubLib.obj: $(GENERICDIR)\tclStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
-$(TMP_DIR)\tclStubLibTbl.obj: $(GENERICDIR)\tclStubLibTbl.c
-	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
-
 $(TMP_DIR)\tclTomMathStubLib.obj: $(GENERICDIR)\tclTomMathStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
 
 $(TMP_DIR)\tclOOStubLib.obj: $(GENERICDIR)\tclOOStubLib.c
 	$(cc32) $(STUB_CFLAGS) -Zl -DSTATIC_BUILD $(TCL_INCLUDES) -Fo$@ $?
+
+$(TMP_DIR)\tclsh.exe.manifest: $(WINDIR)\tclsh.exe.manifest.in
+	@nmakehlp -s << $** >$@
+@MACHINE@	  $(MACHINE:IX86=X86)
+@TCL_WIN_VERSION@  $(DOTVERSION).0.0
+<<
 
 #---------------------------------------------------------------------
 # Generate the source dependencies.  Having dependency rules will
@@ -1055,11 +1057,13 @@ $<
 <<
 
 {$(WINDIR)}.rc{$(TMP_DIR)}.res:
-	$(rc32) -fo $@ -r -i "$(GENERICDIR)" \
+	$(rc32) -fo $@ -r -i "$(GENERICDIR)" -i "$(TMP_DIR)" \
 	    -d DEBUG=$(DEBUG) -d UNCHECKED=$(UNCHECKED) \
 	    -d TCL_THREADS=$(TCL_THREADS) \
 	    -d STATIC_BUILD=$(STATIC_BUILD) \
 	    $<
+
+$(TMP_DIR)\tclsh.res: $(TMP_DIR)\tclsh.exe.manifest
 
 .SUFFIXES:
 .SUFFIXES:.c .rc
