@@ -1876,6 +1876,13 @@ Tcl_UnstackChannel(
 	 * into the old structure.
 	 */
 
+	/*
+	 * TODO: Figure out how to handle the situation where the chan
+	 * operations called below by this unstacking operation cause
+	 * another unstacking recursively.  In that case the downChanPtr
+	 * value we're holding on to will not be the right thing.
+	 */
+
 	Channel *downChanPtr = chanPtr->downChanPtr;
 
 	/*
@@ -1980,7 +1987,7 @@ Tcl_UnstackChannel(
 	 */
 
 	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
-	UpdateInterest(downChanPtr);
+	UpdateInterest(statePtr->topChanPtr);
 
 	if (result != 0) {
 	    Tcl_SetErrno(result);
