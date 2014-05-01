@@ -166,6 +166,7 @@ typedef struct CloseCallback {
 static ChannelBuffer *	AllocChannelBuffer(int length);
 static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
+static int		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelTimerProc(ClientData clientData);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
@@ -2312,6 +2313,13 @@ ReleaseChannelBuffer(
     }
     ckfree(bufPtr);
 }
+
+static int
+IsShared(
+    ChannelBuffer *bufPtr)
+{
+    return bufPtr->refCount > 1;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2342,6 +2350,9 @@ RecycleBuffer(
     /*
      * Do we have to free the buffer to the OS?
      */
+    if (IsShared(bufPtr)) {
+	mustDiscard = 1;
+    }
 
     if (mustDiscard) {
 	ReleaseChannelBuffer(bufPtr);
@@ -3204,7 +3215,8 @@ Tcl_Close(
 
     stickyError = 0;
 
-    if ((statePtr->encoding != NULL) && (statePtr->curOutPtr != NULL)
+    if ((statePtr->encoding != NULL)
+	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)
 	    && (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
 	statePtr->outputEncodingFlags |= TCL_ENCODING_END;
 	if (WriteChars(chanPtr, "", 0) < 0) {
@@ -4574,12 +4586,12 @@ Tcl_GetsObj(
     chanPtr = statePtr->topChanPtr;
      */
     bufPtr = statePtr->inQueueHead;
-    if (bufPtr == NULL) {
-	Tcl_Panic("Tcl_GetsObj: restore reached with bufPtr==NULL");
+    if (bufPtr != NULL) {
+	bufPtr->nextRemoved = oldRemoved;
+	bufPtr = bufPtr->nextPtr;
     }
-    bufPtr->nextRemoved = oldRemoved;
 
-    for (bufPtr = bufPtr->nextPtr; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
+    for ( ; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
 	bufPtr->nextRemoved = BUFFER_PADDING;
     }
     CommonGetsCleanup(chanPtr);
@@ -4720,6 +4732,9 @@ TclGetsObjBinary(
 		goto restore;
 	    }
 	    bufPtr = statePtr->inQueueTail;
+	    if (bufPtr == NULL) {
+		goto restore;
+	    }
 	}
 
 	dst = (unsigned char *) RemovePoint(bufPtr);
@@ -4832,12 +4847,12 @@ TclGetsObjBinary(
 
   restore:
     bufPtr = statePtr->inQueueHead;
-    if (bufPtr == NULL) {
-	Tcl_Panic("TclGetsObjBinary: restore reached with bufPtr==NULL");
+    if (bufPtr) {
+	bufPtr->nextRemoved = oldRemoved;
+	bufPtr = bufPtr->nextPtr;
     }
-    bufPtr->nextRemoved = oldRemoved;
 
-    for (bufPtr = bufPtr->nextPtr; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
+    for ( ; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
 	bufPtr->nextRemoved = BUFFER_PADDING;
     }
     CommonGetsCleanup(chanPtr);
@@ -4992,6 +5007,11 @@ FilterInputBytes(
 	}
 	bufPtr = statePtr->inQueueTail;
 	gsPtr->bufPtr = bufPtr;
+	if (bufPtr == NULL) {
+	    gsPtr->charsWrote = 0;
+	    gsPtr->rawRead = 0;
+	    return -1;
+	}
     }
 
     /*
@@ -7663,7 +7683,8 @@ Tcl_SetChannelOption(
 	 * iso2022, the terminated escape sequence must write to the buffer.
 	 */
 
-	if ((statePtr->encoding != NULL) && (statePtr->curOutPtr != NULL)
+	if ((statePtr->encoding != NULL)
+		&& !(statePtr->outputEncodingFlags & TCL_ENCODING_START)
 		&& (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
 	    statePtr->outputEncodingFlags |= TCL_ENCODING_END;
 	    WriteChars(chanPtr, "", 0);
