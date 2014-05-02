@@ -640,7 +640,7 @@ Tcl_HashStats(
     Tcl_HashTable *tablePtr)	/* Table for which to produce stats. */
 {
 #define NUM_COUNTERS 10
-    int count[NUM_COUNTERS], overflow, i, j;
+    size_t count[NUM_COUNTERS], overflow, i, j;
     double average, tmp;
     register Tcl_HashEntry *hPtr;
     char *result, *p;
@@ -675,16 +675,17 @@ Tcl_HashStats(
      */
 
     result = ckalloc((NUM_COUNTERS * 60) + 300);
-    sprintf(result, "%d entries in table, %d buckets\n",
-	    tablePtr->numEntries, tablePtr->numBuckets);
+    sprintf(result, "%" TCL_LL_MODIFIER "d entries in table, %"
+	    TCL_LL_MODIFIER "d buckets\n",
+	    (Tcl_WideInt) tablePtr->numEntries, (Tcl_WideInt)tablePtr->numBuckets);
     p = result + strlen(result);
     for (i = 0; i < NUM_COUNTERS; i++) {
-	sprintf(p, "number of buckets with %d entries: %d\n",
-		i, count[i]);
+	sprintf(p, "number of buckets with %" TCL_LL_MODIFIER "d entries: %" TCL_LL_MODIFIER "d\n",
+		(Tcl_WideInt) i, (Tcl_WideInt) count[i]);
 	p += strlen(p);
     }
-    sprintf(p, "number of buckets with %d or more entries: %d\n",
-	    NUM_COUNTERS, overflow);
+    sprintf(p, "number of buckets with %" TCL_LL_MODIFIER "d or more entries: %" TCL_LL_MODIFIER "d\n",
+	    (Tcl_WideInt) NUM_COUNTERS, (Tcl_WideInt) overflow);
     p += strlen(p);
     sprintf(p, "average search distance for entry: %.1f", average);
     return result;
