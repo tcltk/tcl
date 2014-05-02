@@ -2360,7 +2360,7 @@ RecycleBuffer(
 	mustDiscard = 1;
     }
 
-    if (1 || mustDiscard) {
+    if (mustDiscard) {
 	ReleaseChannelBuffer(bufPtr);
 	return;
     }
