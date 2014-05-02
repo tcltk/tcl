@@ -4554,9 +4554,12 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-    /*
-    chanPtr = statePtr->topChanPtr;
-     */
+
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
 
     bufPtr = gs.bufPtr;
     if (bufPtr == NULL) {
@@ -4590,9 +4593,11 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-    /*
-    chanPtr = statePtr->topChanPtr;
-     */
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
     bufPtr = statePtr->inQueueHead;
     if (bufPtr != NULL) {
 	bufPtr->nextRemoved = oldRemoved;
@@ -4632,9 +4637,11 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-    /*
-    chanPtr = statePtr->topChanPtr;
-     */
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
     UpdateInterest(chanPtr);
     Tcl_Release(chanPtr);
     return copiedTotal;
@@ -5638,11 +5645,11 @@ DoReadChars(
 		ResetFlag(statePtr, CHANNEL_BLOCKED);
 	    }
 	    result = GetInput(chanPtr);
-if (chanPtr != statePtr->topChanPtr) {
-Tcl_Release(chanPtr);
-chanPtr = statePtr->topChanPtr;
-Tcl_Preserve(chanPtr);
-}
+	    if (chanPtr != statePtr->topChanPtr) {
+		Tcl_Release(chanPtr);
+		chanPtr = statePtr->topChanPtr;
+		Tcl_Preserve(chanPtr);
+	    }
 	    if (result != 0) {
 		if (result == EAGAIN) {
 		    break;
@@ -5673,9 +5680,11 @@ Tcl_Preserve(chanPtr);
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-    /*
-    chanPtr = statePtr->topChanPtr;
-     */
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
     UpdateInterest(chanPtr);
     Tcl_Release(chanPtr);
     return copied;
