@@ -1654,6 +1654,10 @@ Tcl_StackChannel(
         csPtrW           = statePtr->csPtrW;
 	statePtr->csPtrW = NULL;
 
+	/*
+	 * TODO: Examine what can go wrong if Tcl_Flush() call disturbs
+	 * the stacking state of this channel during its operations.
+	 */
 	if (Tcl_Flush((Tcl_Channel) prevChanPtr) != TCL_OK) {
 	    statePtr->csPtrR = csPtrR;
 	    statePtr->csPtrW = csPtrW;
@@ -1786,6 +1790,13 @@ Tcl_UnstackChannel(
 	 * structure.
 	 */
 
+	/*
+	 * TODO: Figure out how to handle the situation where the chan
+	 * operations called below by this unstacking operation cause
+	 * another unstacking recursively.  In that case the downChanPtr
+	 * value we're holding on to will not be the right thing.
+	 */
+
 	Channel *downChanPtr = chanPtr->downChanPtr;
 
 	/*
@@ -1906,7 +1917,7 @@ Tcl_UnstackChannel(
 	 */
 
 	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
-	UpdateInterest(downChanPtr);
+	UpdateInterest(statePtr->topChanPtr);
 
 	if (result != 0) {
 	    Tcl_SetErrno(result);
@@ -4134,6 +4145,17 @@ Tcl_GetsObj(
      */
 
   gotEOL:
+    /*
+     * Regenerate the top channel, in case it was changed due to
+     * self-modifying reflected transforms.
+     */
+
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
+
     bufPtr = gs.bufPtr;
     if (bufPtr == NULL) {
 	Tcl_Panic("Tcl_GetsObj: gotEOL reached with bufPtr==NULL");
@@ -4162,6 +4184,15 @@ Tcl_GetsObj(
      */
 
   restore:
+    /*
+     * Regenerate the top channel, in case it was changed due to
+     * self-modifying reflected transforms.
+     */
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
     bufPtr = statePtr->inQueueHead;
     if (bufPtr != NULL) {
 	bufPtr->nextRemoved = oldRemoved;
@@ -4197,6 +4228,15 @@ Tcl_GetsObj(
      */
 
   done:
+    /*
+     * Regenerate the top channel, in case it was changed due to
+     * self-modifying reflected transforms.
+     */
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
     UpdateInterest(chanPtr);
     Tcl_Release(chanPtr);
     return copiedTotal;
@@ -5201,6 +5241,11 @@ DoReadChars(
 		ResetFlag(statePtr, CHANNEL_BLOCKED);
 	    }
 	    result = GetInput(chanPtr);
+	    if (chanPtr != statePtr->topChanPtr) {
+		Tcl_Release(chanPtr);
+		chanPtr = statePtr->topChanPtr;
+		Tcl_Preserve(chanPtr);
+	    }
 	    if (result != 0) {
 		if (result == EAGAIN) {
 		    break;
@@ -5227,6 +5272,15 @@ DoReadChars(
      */
 
   done:
+    /*
+     * Regenerate the top channel, in case it was changed due to
+     * self-modifying reflected transforms.
+     */
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
     UpdateInterest(chanPtr);
     Tcl_Release(chanPtr);
     return copied;
@@ -9341,12 +9395,15 @@ StackSetBlockMode(
 {
     int result = 0;
     Tcl_DriverBlockModeProc *blockModeProc;
+    ChannelState *statePtr = chanPtr->state;
 
     /*
      * Start at the top of the channel stack
+     * TODO: Examine what can go wrong when blockModeProc calls
+     * disturb the stacking state of the channel.
      */
 
-    chanPtr = chanPtr->state->topChanPtr;
+    chanPtr = statePtr->topChanPtr;
     while (chanPtr != NULL) {
 	blockModeProc = Tcl_ChannelBlockModeProc(chanPtr->typePtr);
 	if (blockModeProc != NULL) {
