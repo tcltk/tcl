@@ -1747,6 +1747,10 @@ Tcl_StackChannel(
 	statePtr->csPtrR = NULL;
 	statePtr->csPtrW = NULL;
 
+	/*
+	 * TODO: Examine what can go wrong if Tcl_Flush() call disturbs
+	 * the stacking state of this channel during its operations.
+	 */
 	if (Tcl_Flush((Tcl_Channel) prevChanPtr) != TCL_OK) {
 	    statePtr->csPtrR = csPtrR;
 	    statePtr->csPtrW = csPtrW;
@@ -9786,12 +9790,15 @@ StackSetBlockMode(
 {
     int result = 0;
     Tcl_DriverBlockModeProc *blockModeProc;
+    ChannelState *statePtr = chanPtr->state;
 
     /*
      * Start at the top of the channel stack
+     * TODO: Examine what can go wrong when blockModeProc calls
+     * disturb the stacking state of the channel.
      */
 
-    chanPtr = chanPtr->state->topChanPtr;
+    chanPtr = statePtr->topChanPtr;
     while (chanPtr != NULL) {
 	blockModeProc = Tcl_ChannelBlockModeProc(chanPtr->typePtr);
 	if (blockModeProc != NULL) {
