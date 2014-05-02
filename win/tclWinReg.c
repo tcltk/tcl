@@ -13,9 +13,9 @@
  */
 
 #undef STATIC_BUILD
-#undef USE_TCL_STUBS
-#define USE_TCL_STUBS
-
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #ifdef _MSC_VER
 #   pragma comment (lib, "advapi32.lib")
@@ -696,7 +696,7 @@ GetType(
      */
 
     if (type > lastType) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) type));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((int) type));
     } else {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(typeNames[type], -1));
     }
@@ -795,7 +795,7 @@ GetValue(
      */
 
     if (type == REG_DWORD || type == REG_DWORD_BIG_ENDIAN) {
-	Tcl_SetObjResult(interp, Tcl_NewIntObj((int) ConvertDWORD(type,
+	Tcl_SetObjResult(interp, Tcl_NewLongObj((long) ConvertDWORD(type,
 		*((DWORD *) Tcl_DStringValue(&data)))));
     } else if (type == REG_MULTI_SZ) {
 	char *p = Tcl_DStringValue(&data);

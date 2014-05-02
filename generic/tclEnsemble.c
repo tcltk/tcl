@@ -35,9 +35,6 @@ static void		MakeCachedEnsembleCommand(Tcl_Obj *objPtr,
 static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		StringOfEnsembleCmdRep(Tcl_Obj *objPtr);
-static int		CompileToCompiledCommand(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
-			    CompileEnv *envPtr);
 static void		CompileToInvokedCommand(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Tcl_Obj *replacements,
 			    Command *cmdPtr, CompileEnv *envPtr);
@@ -88,16 +85,6 @@ const Tcl_ObjType tclEnsembleCmdType = {
     NULL			/* setFromAnyProc */
 };
 
-/*
- * Copied from tclCompCmds.c
- */
-
-#define DefineLineInformation \
-    ExtCmdLoc *mapPtr = envPtr->extCmdMapPtr;				\
-    int eclIndex = mapPtr->nuloc - 1
-#define SetLineInformation(word) \
-    envPtr->line = mapPtr->loc[eclIndex].line[(word)];			\
-    envPtr->clNext = mapPtr->loc[eclIndex].next[(word)]
 
 static inline Tcl_Obj *
 NewNsObj(
@@ -1537,6 +1524,14 @@ TclMakeEnsemble(
 	    cmdName = nameParts[nameCount - 1];
 	}
     }
+
+    /*
+     * Switch on compilation always for core ensembles now that we can do
+     * nice bytecode things with them.  Do it now.  Waiting until later will
+     * just cause pointless epoch bumps.
+     */
+
+    ensembleFlags |= ENSEMBLE_COMPILE;
     ensemble = Tcl_CreateEnsemble(interp, cmdName, ns, ensembleFlags);
 
     /*
@@ -1588,14 +1583,6 @@ TclMakeEnsemble(
 	    }
 	}
 	Tcl_SetEnsembleMappingDict(interp, ensemble, mapDict);
-
-	/*
-	 * Switch on compilation always for core ensembles now that we can do
-	 * nice bytecode things with them.
-	 */
-
-	Tcl_SetEnsembleFlags(interp, ensemble,
-		ensembleFlags | ENSEMBLE_COMPILE);
     }
 
     Tcl_DStringFree(&buf);
@@ -3004,8 +2991,8 @@ TclCompileEnsemble(
      */
 
     invokeAnyway = 1;
-    if (CompileToCompiledCommand(interp, parsePtr, depth, cmdPtr,
-	    envPtr) == TCL_OK) {
+    if (TCL_OK == TclAttemptCompileProc(interp, parsePtr, depth, cmdPtr,
+	    envPtr)) {
 	ourResult = TCL_OK;
 	goto cleanup;
     }
@@ -3039,95 +3026,88 @@ TclCompileEnsemble(
     return ourResult;
 }
 
-/*
- * How to compile a subcommand using its own command compiler. To do that, we
- * have to perform some trickery to rewrite the arguments, as compilers *must*
- * have parse tokens that refer to addresses in the original script.
- */
-
-static int
-CompileToCompiledCommand(
+int
+TclAttemptCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
     int depth,
     Command *cmdPtr,
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Parse synthetic;
-    Tcl_Token *tokenPtr;
     int result, i;
-    int savedNumCmds = envPtr->numCommands;
+    Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
+    DefineLineInformation;
 
     if (cmdPtr->compileProc == NULL) {
 	return TCL_ERROR;
     }
 
-    TclParseInit(interp, NULL, 0, &synthetic);
-    synthetic.numWords = parsePtr->numWords - depth + 1;
-    TclGrowParseTokenArray(&synthetic, 2);
-    synthetic.numTokens = 2;
-
     /*
-     * Now we have the space to work in, install something rewritten. The
-     * first word will "officially" be the bytes of the structured ensemble
-     * name. That's technically wrong, but nobody will care; we just need
-     * *something* here...
+     * Advance parsePtr->tokenPtr so that it points at the last subcommand.
+     * This will be wrong, but it will not matter, and it will put the
+     * tokens for the arguments in the right place without the needed to
+     * allocate a synthetic Tcl_Parse struct, or copy tokens around.
      */
 
-    synthetic.tokenPtr[0].type = TCL_TOKEN_SIMPLE_WORD;
-    synthetic.tokenPtr[0].start = parsePtr->tokenPtr[0].start;
-    synthetic.tokenPtr[0].numComponents = 1;
-    synthetic.tokenPtr[1].type = TCL_TOKEN_TEXT;
-    synthetic.tokenPtr[1].start = parsePtr->tokenPtr[0].start;
-    synthetic.tokenPtr[1].numComponents = 0;
-    for (i=0,tokenPtr=parsePtr->tokenPtr ; i<depth ; i++) {
-	int sclen = (tokenPtr->start - synthetic.tokenPtr[0].start)
-		+ tokenPtr->size;
-
-	synthetic.tokenPtr[0].size = sclen;
-	synthetic.tokenPtr[1].size = sclen;
-	tokenPtr = TokenAfter(tokenPtr);
+    for (i = 0; i < depth - 1; i++) {
+	parsePtr->tokenPtr = TokenAfter(parsePtr->tokenPtr);
     }
+    parsePtr->numWords -= (depth - 1);
 
     /*
-     * Copy over the real argument tokens.
+     * Shift the line information arrays to account for different word
+     * index values.
      */
 
-    for (i=1; i<synthetic.numWords; i++) {
-	int toCopy;
-
-	toCopy = tokenPtr->numComponents + 1;
-	TclGrowParseTokenArray(&synthetic, toCopy);
-	memcpy(synthetic.tokenPtr + synthetic.numTokens, tokenPtr,
-		sizeof(Tcl_Token) * toCopy);
-	synthetic.numTokens += toCopy;
-	tokenPtr = TokenAfter(tokenPtr);
-    }
+    mapPtr->loc[eclIndex].line += (depth - 1);
+    mapPtr->loc[eclIndex].next += (depth - 1);
 
     /*
      * Hand off compilation to the subcommand compiler. At last!
      */
 
-    result = cmdPtr->compileProc(interp, &synthetic, cmdPtr, envPtr);
+    result = cmdPtr->compileProc(interp, parsePtr, cmdPtr, envPtr);
 
     /*
-     * If our target fails to compile, revert the number of commands and the
-     * pointer to the place to issue the next instruction. [Bug 3600328]
+     * Undo the shift. 
+     */
+
+    mapPtr->loc[eclIndex].line -= (depth - 1);
+    mapPtr->loc[eclIndex].next -= (depth - 1);
+
+    parsePtr->numWords += (depth - 1);
+    parsePtr->tokenPtr = saveTokenPtr;
+
+    /*
+     * If our target failed to compile, revert any data from failed partial
+     * compiles.  Note that envPtr->numCommands need not be checked because
+     * we avoid compiling subcommands that recursively call TclCompileScript().
      */
 
     if (result != TCL_OK) {
-	envPtr->numCommands = savedNumCmds;
 	envPtr->currStackDepth = savedStackDepth;
 	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
+#ifdef TCL_COMPILE_DEBUG
+    } else {
+	/*
+	 * Confirm that the command compiler generated a single value on
+	 * the stack as its result. This is only done in debugging mode,
+	 * as it *should* be correct and normal users have no reasonable
+	 * way to fix it anyway.
+	 */
+
+	int diff = envPtr->currStackDepth - savedStackDepth;
+
+	if (diff != 1) {
+	    Tcl_Panic("bad stack adjustment when compiling"
+		    " %.*s (was %d instead of 1)", parsePtr->tokenPtr->size,
+		    parsePtr->tokenPtr->start, diff);
+	}
+#endif
     }
 
-    /*
-     * Clean up if necessary.
-     */
-
-    Tcl_FreeParse(&synthetic);
     return result;
 }
 
@@ -3157,28 +3137,29 @@ CompileToInvokedCommand(
      */
 
     Tcl_ListObjGetElements(NULL, replacements, &numWords, &words);
-    for (i=0,tokPtr=parsePtr->tokenPtr ; i<parsePtr->numWords ; i++) {
+    for (i = 0, tokPtr = parsePtr->tokenPtr; i < parsePtr->numWords;
+	    i++, tokPtr = TokenAfter(tokPtr)) {
 	if (i > 0 && i < numWords+1) {
 	    bytes = Tcl_GetStringFromObj(words[i-1], &length);
 	    PushLiteral(envPtr, bytes, length);
-	} else if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
+	    continue;
+	}
+
+	SetLineInformation(i);
+	if (tokPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	    int literal = TclRegisterNewLiteral(envPtr,
 		    tokPtr[1].start, tokPtr[1].size);
 
 	    if (envPtr->clNext) {
 		TclContinuationsEnterDerived(
-			envPtr->literalArrayPtr[literal].objPtr,
+			TclFetchLiteral(envPtr, literal),
 			tokPtr[1].start - envPtr->source,
-			mapPtr->loc[eclIndex].next[i]);
+			envPtr->clNext);
 	    }
 	    TclEmitPush(literal, envPtr);
 	} else {
-	    if (envPtr->clNext) {
-		SetLineInformation(i);
-	    }
 	    CompileTokens(envPtr, tokPtr, interp);
 	}
-	tokPtr = TokenAfter(tokPtr);
     }
 
     /*
@@ -3190,7 +3171,7 @@ CompileToInvokedCommand(
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
     bytes = Tcl_GetStringFromObj(objPtr, &length);
     cmdLit = TclRegisterNewCmdLiteral(envPtr, bytes, length);
-    TclSetCmdNameObj(interp, envPtr->literalArrayPtr[cmdLit].objPtr, cmdPtr);
+    TclSetCmdNameObj(interp, TclFetchLiteral(envPtr, cmdLit), cmdPtr);
     TclEmitPush(cmdLit, envPtr);
     TclDecrRefCount(objPtr);
 
@@ -3198,9 +3179,7 @@ CompileToInvokedCommand(
      * Do the replacing dispatch.
      */
 
-    TclEmitInstInt4(INST_INVOKE_REPLACE, parsePtr->numWords, envPtr);
-    TclEmitInt1(numWords+1, envPtr);
-    TclAdjustStackDepth(-1, envPtr);	/* Correction to stack depth calcs. */
+    TclEmitInvoke(envPtr, INST_INVOKE_REPLACE, parsePtr->numWords,numWords+1);
 }
 
 /*
@@ -3224,51 +3203,13 @@ CompileBasicNArgCommand(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Tcl_Token *tokenPtr;
-    Tcl_Obj *objPtr;
-    char *bytes;
-    int length, i, literal;
-    DefineLineInformation;
+    Tcl_Obj *objPtr = Tcl_NewObj();
 
-    /*
-     * Push the name of the command we're actually dispatching to as part of
-     * the implementation.
-     */
-
-    objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
     Tcl_GetCommandFullName(interp, (Tcl_Command) cmdPtr, objPtr);
-    bytes = Tcl_GetStringFromObj(objPtr, &length);
-    literal = TclRegisterNewCmdLiteral(envPtr, bytes, length);
-    TclSetCmdNameObj(interp, envPtr->literalArrayPtr[literal].objPtr, cmdPtr);
-    TclEmitPush(literal, envPtr);
-    TclDecrRefCount(objPtr);
-
-    /*
-     * Push the words of the command.
-     */
-
-    tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i=1 ; i<parsePtr->numWords ; i++) {
-	if (envPtr->clNext) {
-	    SetLineInformation(i);
-	}
-	if (tokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	    PushLiteral(envPtr, tokenPtr[1].start, tokenPtr[1].size);
-	} else {
-	    CompileTokens(envPtr, tokenPtr, interp);
-	}
-	tokenPtr = TokenAfter(tokenPtr);
-    }
-
-    /*
-     * Do the standard dispatch.
-     */
-
-    if (i <= 255) {
-	TclEmitInstInt1(INST_INVOKE_STK1, i, envPtr);
-    } else {
-	TclEmitInstInt4(INST_INVOKE_STK4, i, envPtr);
-    }
+    TclCompileInvocation(interp, parsePtr->tokenPtr, objPtr,
+	    parsePtr->numWords, envPtr);
+    Tcl_DecrRefCount(objPtr);
     return TCL_OK;
 }
 

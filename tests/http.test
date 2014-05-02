@@ -119,7 +119,7 @@ test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk
 } -result {Unsupported URL: http:junk}
 set url //[info hostname]:$port
-set badurl //[info hostname]:6666
+set badurl //[info hostname]:[expr $port+1]
 test http-3.3 {http::geturl} -body {
     set token [http::geturl $url]
     http::data $token
@@ -131,10 +131,11 @@ test http-3.3 {http::geturl} -body {
 </body></html>"
 set tail /a/b/c
 set url //[info hostname]:$port/a/b/c
-set fullurl http://user:pass@[info hostname]:$port/a/b/c
+set fullurl HTTP://user:pass@[info hostname]:$port/a/b/c
 set binurl //[info hostname]:$port/binary
 set posturl //[info hostname]:$port/post
 set badposturl //[info hostname]:$port/droppost
+set authorityurl //[info hostname]:$port
 set ipv6url http://\[::1\]:$port/
 test http-3.4 {http::geturl} -body {
     set token [http::geturl $url]
@@ -391,7 +392,7 @@ Connection close
 Content-Type {text/plain;charset=utf-8}
 Accept-Encoding .*
 Content-Length 5}
-test http-3.29 "http::geturl $ipv6url" -body {
+test http-3.29 {http::geturl IPv6 address} -body {
     # We only want to see if the URL gets parsed correctly. This is
     # the case if http::geturl succeeds or returns a socket related
     # error. If the parsing is wrong, we'll get a parse error.
@@ -405,7 +406,18 @@ test http-3.29 "http::geturl $ipv6url" -body {
 } -cleanup {
     catch { http::cleanup $token }
 } -result 0
-
+test http-3.30 {http::geturl query without path} -body {
+    set token [http::geturl $authorityurl?var=val]
+    http::ncode $token
+} -cleanup {
+    catch { http::cleanup $token }
+} -result 200
+test http-3.31 {http::geturl fragment without path} -body {
+    set token [http::geturl "$authorityurl#fragment42"]
+    http::ncode $token
+} -cleanup {
+    catch { http::cleanup $token }
+} -result 200
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
     upvar #0 $token data
@@ -480,14 +492,10 @@ proc myProgress {token total current} {
     }
     set progress [list $total $current]
 }
-if 0 {
-    # This test hangs on Windows95 because the client never gets EOF
-    set httpLog 1
-    test http-4.6.1 {http::Event} knownBug {
-	set token [http::geturl $url -blocksize 50 -progress myProgress]
-	return $progress
-    } {111 111}
-}
+test http-4.6.1 {http::Event} knownBug {
+    set token [http::geturl $url -blocksize 50 -progress myProgress]
+    return $progress
+} {111 111}
 test http-4.7 {http::Event} -body {
     set token [http::geturl $url -keepalive 0 -progress myProgress]
     return $progress

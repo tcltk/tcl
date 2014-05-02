@@ -82,6 +82,12 @@ static ProcInfo *procList;
 #define PIPE_EXTRABYTE	(1<<3)	/* The reader thread has consumed one byte. */
 
 /*
+ * TODO: It appears the whole EXTRABYTE machinery is in place to support
+ * outdated Win 95 systems.  If this can be confirmed, much code can be
+ * deleted.
+ */
+
+/*
  * This structure describes per-instance data for a pipe based channel.
  */
 
@@ -1049,15 +1055,8 @@ TclpCreateProcess(
 	 * sink.
 	 */
 
-	if ((TclWinGetPlatformId() == VER_PLATFORM_WIN32_WINDOWS)
-		&& (applType == APPL_DOS)) {
-	    if (CreatePipe(&h, &startInfo.hStdOutput, &secAtts, 0) != FALSE) {
-		CloseHandle(h);
-	    }
-	} else {
-	    startInfo.hStdOutput = CreateFileA("NUL:", GENERIC_WRITE, 0,
-		    &secAtts, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
-	}
+	startInfo.hStdOutput = CreateFile(TEXT("NUL:"), GENERIC_WRITE, 0,
+		&secAtts, OPEN_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
 	DuplicateHandle(hProcess, outputHandle, hProcess,
 		&startInfo.hStdOutput, 0, TRUE, DUPLICATE_SAME_ACCESS);
@@ -1076,7 +1075,7 @@ TclpCreateProcess(
 	 * sink.
 	 */
 
-	startInfo.hStdError = CreateFileA("NUL:", GENERIC_WRITE, 0,
+	startInfo.hStdError = CreateFile(TEXT("NUL:"), GENERIC_WRITE, 0,
 		&secAtts, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     } else {
 	DuplicateHandle(hProcess, errorHandle, hProcess, &startInfo.hStdError,
@@ -1891,7 +1890,7 @@ PipeClose2Proc(
 		SetEvent(pipePtr->stopWriter);
 
 		if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
-		    return EAGAIN;
+		    return EWOULDBLOCK;
 		}
 
 	    } else {
@@ -2168,7 +2167,7 @@ PipeOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error;
     }
 
@@ -2718,7 +2717,7 @@ WaitForRead(
 	     * is in non-blocking mode.
 	     */
 
-	    errno = EAGAIN;
+	    errno = EWOULDBLOCK;
 	    return -1;
 	}
 

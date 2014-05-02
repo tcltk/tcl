@@ -986,7 +986,7 @@ int
 TclpUtfNcmp2(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    unsigned long numBytes)	/* Number of *bytes* to compare. */
+    size_t numBytes)	/* Number of *bytes* to compare. */
 {
     /*
      * We can't simply call 'memcmp(cs, ct, numBytes);' because we need to
@@ -1033,7 +1033,7 @@ int
 Tcl_UtfNcmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    unsigned long numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1, ch2;
 
@@ -1081,7 +1081,7 @@ int
 Tcl_UtfNcasecmp(
     const char *cs,		/* UTF string to compare to ct. */
     const char *ct,		/* UTF string cs is compared to. */
-    unsigned long numChars)	/* Number of UTF chars to compare. */
+    size_t numChars)	/* Number of UTF chars to compare. */
 {
     Tcl_UniChar ch1, ch2;
     while (numChars-- > 0) {
@@ -1102,6 +1102,46 @@ Tcl_UtfNcasecmp(
     }
     return 0;
 }
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_UtfNcasecmp --
+ *
+ *	Compare UTF chars of string cs to string ct case insensitively.
+ *	Replacement for strcasecmp in Tcl core, in places where UTF-8 should
+ *	be handled.
+ *
+ * Results:
+ *	Return <0 if cs < ct, 0 if cs == ct, or >0 if cs > ct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclUtfCasecmp(
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct)		/* UTF string cs is compared to. */
+{
+    while (*cs && *ct) {
+	Tcl_UniChar ch1, ch2;
+
+	cs += TclUtfToUniChar(cs, &ch1);
+	ct += TclUtfToUniChar(ct, &ch2);
+	if (ch1 != ch2) {
+	    ch1 = Tcl_UniCharToLower(ch1);
+	    ch2 = Tcl_UniCharToLower(ch2);
+	    if (ch1 != ch2) {
+		return ch1 - ch2;
+	    }
+	}
+    }
+    return UCHAR(*cs) - UCHAR(*ct);
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -1245,7 +1285,7 @@ int
 Tcl_UniCharNcmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    unsigned long numChars)	/* Number of unichars to compare. */
+    size_t numChars)	/* Number of unichars to compare. */
 {
 #ifdef WORDS_BIGENDIAN
     /*
@@ -1290,7 +1330,7 @@ int
 Tcl_UniCharNcasecmp(
     const Tcl_UniChar *ucs,	/* Unicode string to compare to uct. */
     const Tcl_UniChar *uct,	/* Unicode string ucs is compared to. */
-    unsigned long numChars)	/* Number of unichars to compare. */
+    size_t numChars)	/* Number of unichars to compare. */
 {
     for ( ; numChars != 0; numChars--, ucs++, uct++) {
 	if (*ucs != *uct) {
@@ -1515,9 +1555,10 @@ Tcl_UniCharIsSpace(
      */
 
     if (((Tcl_UniChar) ch) < ((Tcl_UniChar) 0x80)) {
-	return isspace(UCHAR(ch)); /* INTL: ISO space */
-    } else if ((Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x200b
-	    || (Tcl_UniChar) ch == 0x2060 || (Tcl_UniChar) ch == 0xfeff) {
+	return TclIsSpaceProc((char) ch);
+    } else if ((Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x180e
+	    || (Tcl_UniChar) ch == 0x200b || (Tcl_UniChar) ch == 0x2060
+	    || (Tcl_UniChar) ch == 0x202f || (Tcl_UniChar) ch == 0xfeff) {
 	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);

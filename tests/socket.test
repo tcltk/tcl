@@ -1841,6 +1841,7 @@ test socket-14.4 {[socket -async] and both, readdable and writable fileevents} \
         after cancel $after
         close $client
         close $server
+        unset x
     } -result {{} bye}
 test socket-14.5 {[socket -async] which fails before any connect() can be made} \
     -constraints [list socket supported_any] \
@@ -1850,6 +1851,33 @@ test socket-14.5 {[socket -async] which fails before any connect() can be made} 
     } \
     -returnCodes 1 \
     -result {couldn't open socket: cannot assign requested address}
+test socket-14.6 {[socket -async] with no event loop and [fconfigure -error] before the socket is connected} \
+    -constraints [list socket supported_inet supported_inet6] \
+    -setup {
+        proc accept {s a p} {
+            puts $s bye
+            close $s
+        }
+        set server [socket -server accept -myaddr 127.0.0.1 0]
+        set port [lindex [fconfigure $server -sockname] 2]
+        set x ""
+    } \
+    -body {
+        set client [socket -async localhost $port]
+        foreach _ {1 2} {
+            lappend x [lindex [fconfigure $client -sockname] 0]
+            lappend x [fconfigure $client -error]
+            update
+        }
+        lappend x [gets $client]
+    } \
+    -cleanup {
+        close $server
+        close $client
+        unset x
+    } \
+    -result [list ::1 "connection refused" 127.0.0.1 "" bye]
+
 ::tcltest::cleanupTests
 flush stdout
 return

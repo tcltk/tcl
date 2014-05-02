@@ -271,8 +271,8 @@ Tcl_ProcObjCmd(
 		cfPtr->data.eval.path = contextPtr->data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
 
 		hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
 			procPtr, &isNew);
@@ -837,7 +837,7 @@ TclObjGetFrame(
 	}
 	/* TODO: Consider skipping the typePtr checks */
     } else if (objPtr->typePtr == &tclIntType
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	    || objPtr->typePtr == &tclWideIntType
 #endif
 	    ) {
@@ -1347,17 +1347,9 @@ TclFreeLocalCache(
     for (i = 0; i < localCachePtr->numVars; i++, namePtrPtr++) {
 	register Tcl_Obj *objPtr = *namePtrPtr;
 
-	/*
-	 * Note that this can be called with interp==NULL, on interp deletion.
-	 * In that case, the literal table and objects go away on their own.
-	 */
-
 	if (objPtr) {
-	    if (interp) {
-		TclReleaseLiteral(interp, objPtr);
-	    } else {
-		Tcl_DecrRefCount(objPtr);
-	    }
+	    /* TclReleaseLiteral calls Tcl_DecrRefCount for us */
+	    TclReleaseLiteral(interp, objPtr);
 	}
     }
     ckfree(localCachePtr);
@@ -1863,9 +1855,39 @@ InterpProcNR2(
     }
 
     /*
-     * Process the result code.
+     * Free the stack-allocated compiled locals and CallFrame. It is important
+     * to pop the call frame without freeing it first: the compiledLocals
+     * cannot be freed before the frame is popped, as the local variables must
+     * be deleted. But the compiledLocals must be freed first, as they were
+     * allocated later on the stack.
      */
 
+    if (result != TCL_OK) {
+	goto process;
+    }
+    
+    done: 
+    if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
+	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
+	Tcl_Obj *r = Tcl_GetObjResult(interp);
+
+	TCL_DTRACE_PROC_RESULT(l < iPtr->varFramePtr->objc ?
+		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result,
+		TclGetString(r), r);
+    }
+
+    freePtr = iPtr->framePtr;
+    Tcl_PopCallFrame(interp);		/* Pop but do not free. */
+    TclStackFree(interp, freePtr->compiledLocals);
+					/* Free compiledLocals. */
+    TclStackFree(interp, freePtr);	/* Free CallFrame. */
+    return result;
+
+    /*
+     * Process any non-TCL_OK result code.
+     */
+
+    process:
     switch (result) {
     case TCL_RETURN:
 	/*
@@ -1900,46 +1922,8 @@ InterpProcNR2(
 	 */
 
 	errorProc(interp, procNameObj);
-
-    default:
-	/*
-	 * Process other results (OK and non-standard) by doing nothing
-	 * special, skipping directly to the code afterwards that cleans up
-	 * associated memory.
-	 *
-	 * Non-standard results are processed by passing them through quickly.
-	 * This means they all work as exceptions, unwinding the stack quickly
-	 * and neatly. Who knows how well they are handled by third-party code
-	 * though...
-	 */
-
-	(void) 0;		/* do nothing */
     }
-
-    if (TCL_DTRACE_PROC_RESULT_ENABLED()) {
-	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
-	Tcl_Obj *r = Tcl_GetObjResult(interp);
-
-	TCL_DTRACE_PROC_RESULT(l < iPtr->varFramePtr->objc ?
-		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result,
-		TclGetString(r), r);
-    }
-
-    /*
-     * Free the stack-allocated compiled locals and CallFrame. It is important
-     * to pop the call frame without freeing it first: the compiledLocals
-     * cannot be freed before the frame is popped, as the local variables must
-     * be deleted. But the compiledLocals must be freed first, as they were
-     * allocated later on the stack.
-     */
-
-    freePtr = iPtr->framePtr;
-    Tcl_PopCallFrame(interp);		/* Pop but do not free. */
-    TclStackFree(interp, freePtr->compiledLocals);
-					/* Free compiledLocals. */
-    TclStackFree(interp, freePtr);	/* Free CallFrame. */
-
-    return result;
+    goto done;
 }
 
 /*
@@ -2603,8 +2587,8 @@ SetLambdaFromAny(
 		cfPtr->data.eval.path = contextPtr->data.eval.path;
 		Tcl_IncrRefCount(cfPtr->data.eval.path);
 
-		cfPtr->cmd.str.cmd = NULL;
-		cfPtr->cmd.str.len = 0;
+		cfPtr->cmd = NULL;
+		cfPtr->len = 0;
 	    }
 
 	    /*

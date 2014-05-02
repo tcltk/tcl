@@ -5,8 +5,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH Tcl_CreateInterp 3 7.5 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_CreateInterp, Tcl_DeleteInterp, Tcl_InterpActive, Tcl_InterpDeleted \- create and delete Tcl command interpreters
@@ -41,8 +41,9 @@ may only be passed to Tcl routines called from the same thread as
 the original \fBTcl_CreateInterp\fR call.  It is not safe for multiple
 threads to pass the same token to Tcl's routines.
 The new interpreter is initialized with the built-in Tcl commands
-and with the variables documented in the \fBtclvars\fR manual page. To bind in
-additional commands, call \fBTcl_CreateCommand\fR.
+and with standard variables like \fBtcl_platform\fR and \fBenv\fR. To
+bind in additional commands, call \fBTcl_CreateCommand\fR, and to
+create additional variables, call \fBTcl_SetVar\fR.
 .PP
 \fBTcl_DeleteInterp\fR marks an interpreter as deleted; the interpreter
 will eventually be deleted when all calls to \fBTcl_Preserve\fR for it have
@@ -143,6 +144,6 @@ should be used to determine when an interpreter is a candidate for deletion
 due to inactivity.
 .VE 8.6
 .SH "SEE ALSO"
-Tcl_Preserve(3), Tcl_Release(3), tclvars(n)
+Tcl_Preserve(3), Tcl_Release(3)
 .SH KEYWORDS
 command, create, delete, interpreter

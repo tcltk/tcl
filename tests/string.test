@@ -408,13 +408,15 @@ test string-6.35 {string is double, false} {
 test string-6.36 {string is double, false} {
     list [string is double -fail var "\n"] $var
 } {0 0}
-test string-6.37 {string is double, false on int overflow} {
+test string-6.37 {string is double, false on int overflow} -setup {
+    set var priorValue
+} -body {
     # Make it the largest int recognizable, with one more digit for overflow
     # Since bignums arrived in Tcl 8.5, the sense of this test changed.
     # Now integer values that exceed native limits become bignums, and
     # bignums can convert to doubles without error.
     list [string is double -fail var [largest_int]0] $var
-} {1 0}
+} -result {1 priorValue}
 # string-6.38 removed, underflow on input is no longer an error.
 test string-6.39 {string is double, false} {
     # This test is non-portable because IRIX thinks 
@@ -1396,6 +1398,9 @@ test string-15.9 {string tolower} {
 test string-15.10 {string tolower, unicode} {
      string tolower ABCabc\xc7\xe7
 } "abcabc\xe7\xe7"
+test string-15.11 {string tolower, compiled} {
+    lindex [string tolower [list A B [list C]]] 1
+} b
 
 test string-16.1 {string toupper} {
     list [catch {string toupper} msg] $msg
@@ -1427,6 +1432,9 @@ test string-16.9 {string toupper} {
 test string-16.10 {string toupper, unicode} {
     string toupper ABCabc\xc7\xe7
 } "ABCABC\xc7\xc7"
+test string-16.11 {string toupper, compiled} {
+    lindex [string toupper [list a b [list c]]] 1
+} B
 
 test string-17.1 {string totitle} {
     list [catch {string totitle} msg] $msg
@@ -1449,6 +1457,9 @@ test string-17.6 {string totitle, unicode} {
 test string-17.7 {string totitle, unicode} {
     string totitle \u01f3BCabc\xc7\xe7
 } "\u01f2bcabc\xe7\xe7"
+test string-17.8 {string totitle, compiled} {
+    lindex [string totitle [list aa bb [list cc]]] 0
+} Aa
 
 test string-18.1 {string trim} {
     list [catch {string trim} msg] $msg

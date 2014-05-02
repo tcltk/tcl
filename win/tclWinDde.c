@@ -11,8 +11,9 @@
  */
 
 #undef STATIC_BUILD
-#undef USE_TCL_STUBS
-#define USE_TCL_STUBS
+#ifndef USE_TCL_STUBS
+#   define USE_TCL_STUBS
+#endif
 #include "tclInt.h"
 #include <dde.h>
 #include <ddeml.h>
@@ -359,7 +360,8 @@ DdeSetServerName(
 		    Tcl_DStringSetLength(&dString, offset + sizeof(TCHAR) * TCL_INTEGER_SPACE);
 		    actualName = (TCHAR *) Tcl_DStringValue(&dString);
 		}
-		_stprintf((TCHAR *) (Tcl_DStringValue(&dString) + offset), TEXT("%d"), suffix);
+		_sntprintf((TCHAR *) (Tcl_DStringValue(&dString) + offset),
+			TCL_INTEGER_SPACE, TEXT("%d"), suffix);
 	    }
 
 	    /*
@@ -558,18 +560,26 @@ ExecuteRemoteObject(
     returnPackagePtr = Tcl_NewListObj(0, NULL);
 
     Tcl_ListObjAppendElement(NULL, returnPackagePtr,
-	    Tcl_NewIntObj(result));
+	    Tcl_NewLongObj(result));
     Tcl_ListObjAppendElement(NULL, returnPackagePtr,
 	    Tcl_GetObjResult(riPtr->interp));
 
     if (result == TCL_ERROR) {
-	Tcl_Obj *errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorCode", NULL,
+	Tcl_Obj *errorObjPtr;
+	Tcl_Obj *varName = Tcl_NewStringObj("errorCode", -1);
+
+	Tcl_IncrRefCount(varName);
+	errorObjPtr = Tcl_ObjGetVar2(riPtr->interp, varName, NULL,
 		TCL_GLOBAL_ONLY);
+	Tcl_DecrRefCount(varName);
 	if (errorObjPtr) {
 	    Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
 	}
-	errorObjPtr = Tcl_GetVar2Ex(riPtr->interp, "errorInfo", NULL,
+	varName = Tcl_NewStringObj("errorInfo", -1);
+	Tcl_IncrRefCount(varName);
+	errorObjPtr = Tcl_ObjGetVar2(riPtr->interp, varName, NULL,
 		TCL_GLOBAL_ONLY);
+	Tcl_DecrRefCount(varName);
 	if (errorObjPtr) {
 	    Tcl_ListObjAppendElement(NULL, returnPackagePtr, errorObjPtr);
 	}
@@ -744,10 +754,15 @@ DdeServerProc(
 		} else {
 		    Tcl_DString ds;
 		    Tcl_Obj *variableObjPtr;
+		    Tcl_Obj *varName;
+
 		    Tcl_WinTCharToUtf(utilString, -1, &ds);
-		    variableObjPtr = Tcl_GetVar2Ex(
-			    convPtr->riPtr->interp, Tcl_DStringValue(&ds), NULL,
+		    varName = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+		    Tcl_IncrRefCount(varName);
+		    variableObjPtr = Tcl_ObjGetVar2(
+			    convPtr->riPtr->interp, varName, NULL,
 			    TCL_GLOBAL_ONLY);
+		    Tcl_DecrRefCount(varName);
 		    if (variableObjPtr != NULL) {
 			if (uFmt == CF_TEXT) {
 			    returnString = Tcl_GetString(
@@ -794,6 +809,7 @@ DdeServerProc(
 	if (convPtr && !Tcl_IsSafe(convPtr->riPtr->interp)) {
 	    Tcl_DString ds;
 	    Tcl_Obj *variableObjPtr;
+	    Tcl_Obj *varName;
 
 	    len = DdeQueryString(ddeInstance, ddeItem, NULL, 0, CP_WINUNICODE);
 	    Tcl_DStringInit(&dString);
@@ -809,9 +825,11 @@ DdeServerProc(
 		variableObjPtr = Tcl_NewUnicodeObj(utilString, -1);
 	    }
 
-	    Tcl_SetVar2Ex(convPtr->riPtr->interp, Tcl_DStringValue(&ds), NULL,
+	    varName = Tcl_NewStringObj(Tcl_DStringValue(&ds), -1);
+	    Tcl_IncrRefCount(varName);
+	    Tcl_ObjSetVar2(convPtr->riPtr->interp, varName, NULL,
 		    variableObjPtr, TCL_GLOBAL_ONLY);
-
+	    Tcl_DecrRefCount(varName);
 	    Tcl_DStringFree(&ds);
 	    Tcl_DStringFree(&dString);
 		ddeReturn = (HDDEDATA) DDE_FACK;
@@ -1708,20 +1726,26 @@ DdeObjCmd(
 	    }
 	    if (interp != sendInterp) {
 		if (result == TCL_ERROR) {
+		    Tcl_Obj *varName;
 		    /*
 		     * An error occurred, so transfer error information from
 		     * the destination interpreter back to our interpreter.
 		     */
 
 		    Tcl_ResetResult(interp);
-		    objPtr = Tcl_GetVar2Ex(sendInterp, "errorInfo", NULL,
+		    varName = Tcl_NewStringObj("errorInfo", -1);
+			Tcl_IncrRefCount(varName);
+		    objPtr = Tcl_ObjGetVar2(sendInterp, varName, NULL,
 			    TCL_GLOBAL_ONLY);
+		    Tcl_DecrRefCount(varName);
 		    if (objPtr) {
 			Tcl_AppendObjToErrorInfo(interp, objPtr);
 		    }
-
-		    objPtr = Tcl_GetVar2Ex(sendInterp, "errorCode", NULL,
+		    varName = Tcl_NewStringObj("errorCode", -1);
+			Tcl_IncrRefCount(varName);
+		    objPtr = Tcl_ObjGetVar2(sendInterp, varName, NULL,
 			    TCL_GLOBAL_ONLY);
+		    Tcl_DecrRefCount(varName);
 		    if (objPtr) {
 			Tcl_SetObjErrorCode(interp, objPtr);
 		    }

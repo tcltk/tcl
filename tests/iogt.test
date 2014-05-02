@@ -220,6 +220,26 @@ proc id_fulltrail {var op data} {
     return $res
 }
 
+proc id_torture {chan op data} {
+    switch -- $op {
+	create/write -
+	create/read  -
+	delete/write -
+	delete/read  -
+	clear_read   {;#ignore}
+	flush/write -
+	flush/read  -
+	write       -
+	read        {
+	    testchannel unstack $chan
+	    testchannel transform $chan \
+		-command [namespace code [list id_torture $chan]]
+	    return $data
+	}
+	query/maxRead {return -1}
+    }
+}
+
 proc counter {var op data} {
     namespace upvar [namespace current] $var n
 
@@ -326,6 +346,11 @@ proc audit_ops {var -attach channel} {
 proc audit_flow {var -attach channel} {
     testchannel transform $channel -command [namespace code [list id_fulltrail $var]]
 }
+
+proc torture {-attach channel} {
+    testchannel transform $channel -command [namespace code [list id_torture $channel]]
+}
+
 proc stopafter {var n -attach channel} {
     namespace upvar [namespace current] $var vn
     set vn $n
@@ -545,6 +570,16 @@ write {
 delete/read {} *ignored*
 flush/write {} {}
 delete/write {} *ignored*}
+
+test iogt-2.4 {basic I/O, mixed trail} {testchannel} {
+    set fh [open $path(dummy) r]
+    torture -attach $fh
+    chan configure $fh -buffersize 2
+    set x [read $fh]
+    testchannel unstack $fh
+    close   $fh
+    set x
+} {}
 
 test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} -setup {
     proc DoneCopy {n {err {}}} {

@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.6
+package provide http 2.8.8
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -113,7 +113,7 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 
 proc http::register {proto port command} {
     variable urlTypes
-    set urlTypes($proto) [list $port $command]
+    set urlTypes([string tolower $proto]) [list $port $command]
 }
 
 # http::unregister --
@@ -127,11 +127,12 @@ proc http::register {proto port command} {
 
 proc http::unregister {proto} {
     variable urlTypes
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	return -code error "unsupported url type \"$proto\""
     }
-    set old $urlTypes($proto)
-    unset urlTypes($proto)
+    set old $urlTypes($lower)
+    unset urlTypes($lower)
     return $old
 }
 
@@ -394,13 +395,16 @@ proc http::geturl {url args} {
     # First, before the colon, is the protocol scheme (e.g. http)
     # Second, for HTTP-like protocols, is the authority
     #	The authority is preceded by // and lasts up to (but not including)
-    #	the following / and it identifies up to four parts, of which only one,
-    #	the host, is required (if an authority is present at all). All other
-    #	parts of the authority (user name, password, port number) are optional.
+    #	the following / or ? and it identifies up to four parts, of which
+    #	only one, the host, is required (if an authority is present at all).
+    #	All other parts of the authority (user name, password, port number)
+    #	are optional.
     # Third is the resource name, which is split into two parts at a ?
     #	The first part (from the single "/" up to "?") is the path, and the
     #	second part (from that "?" up to "#") is the query. *HOWEVER*, we do
     #	not need to separate them; we send the whole lot to the server.
+    #	Both, path and query are allowed to be missing, including their
+    #	delimiting character.
     # Fourth is the fragment identifier, which is everything after the first
     #	"#" in the URL. The fragment identifier MUST NOT be sent to the server
     #	and indeed, we don't bother to validate it (it could be an error to
@@ -437,7 +441,7 @@ proc http::geturl {url args} {
 	    )
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
-	( / [^\#]*)?			# <path> (including query)
+	( [/\?] [^\#]*)?		# <path> (including query)
 	(?: \# (.*) )?			# <fragment>
 	$
     }
@@ -481,6 +485,12 @@ proc http::geturl {url args} {
 	}
     }
     if {$srvurl ne ""} {
+	# RFC 3986 allows empty paths (not even a /), but servers
+	# return 400 if the path in the HTTP request doesn't start
+	# with / , so add it here if needed.
+	if {[string index $srvurl 0] ne "/"} {
+	    set srvurl /$srvurl
+	}
 	# Check for validity according to RFC 3986, Appendix A
 	set validityRE {(?xi)
 	    ^
@@ -505,12 +515,13 @@ proc http::geturl {url args} {
     if {$proto eq ""} {
 	set proto http
     }
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	unset $token
 	return -code error "Unsupported URL type \"$proto\""
     }
-    set defport [lindex $urlTypes($proto) 0]
-    set defcmd [lindex $urlTypes($proto) 1]
+    set defport [lindex $urlTypes($lower) 0]
+    set defcmd [lindex $urlTypes($lower) 1]
 
     if {$port eq ""} {
 	set port $defport
@@ -641,7 +652,8 @@ proc http::Connected { token proto phost srvurl} {
     set host [lindex [split $state(socketinfo) :] 0]
     set port [lindex [split $state(socketinfo) :] 1]
 
-    set defport [lindex $urlTypes($proto) 0]
+    set lower [string tolower $proto]
+    set defport [lindex $urlTypes($lower) 0]
 
     # Send data in cr-lf format, but accept any line terminators
 

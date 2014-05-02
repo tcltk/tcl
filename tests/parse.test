@@ -27,6 +27,7 @@ testConstraint testparsevar [llength [info commands testparsevar]]
 testConstraint testasync [llength [info commands testasync]]
 testConstraint testcmdtrace [llength [info commands testcmdtrace]]
 testConstraint testevent [llength [info commands testevent]]
+testConstraint memory [llength [info commands memory]]
 
 test parse-1.1 {Tcl_ParseCommand procedure, computing string length} testparser {
     testparser [bytestring "foo\0 bar"] -1
@@ -678,6 +679,26 @@ test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} testparsevar
     unset -nocomplain abc
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg
 } {1 {invalid command name "bogus"}}
+test parse-13.6 {Tcl_ParseVar memory leak} -constraints memory -setup {
+    proc getbytes {} {
+	return [lindex [split [memory info] \n] 3 3]
+    }
+} -body {
+    set a() foo
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	set vn {}
+	set res [testparsevar [append vn $ a([string repeat {[]} 19]) bar]]
+	if {$res ne {foo bar}} {error "Unexpected result: $res"}
+
+	set tmp $end
+	set end [getbytes]
+    }
+    expr {$end - $tmp}
+} -cleanup {
+    unset -nocomplain a end i vn res tmp
+    rename getbytes {}
+} -result 0
 
 test parse-14.1 {Tcl_ParseBraces procedure, computing string length} testparser {
     testparser [bytestring "foo\0 bar"] -1
@@ -1097,6 +1118,12 @@ test parse-21.0 {Bug 1884496} testevent {
     testevent queue a head $::script
     vwait done
 } {}
+test parse-21.1 {TCL_EVAL_DIRECT coverage} testevent {
+    testevent queue a head {testevent delete a; \
+	set ::done [dict get [info frame 0] line]}
+    vwait done
+    set ::done
+} 2
 
 cleanupTests
 }

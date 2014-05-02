@@ -1,4 +1,4 @@
-# Commands covered:  coroutine, yield, [info coroutine]
+# Commands covered:  coroutine, yield, yieldto, [info coroutine]
 #
 # This file contains a collection of tests for experimental commands that are
 # found in ::tcl::unsupported. The tests will migrate to normal test files
@@ -342,6 +342,9 @@ test coroutine-3.6 {info frame, bug #2910094} -setup {
     rename stack {}
     rename a {}
 } -result {}
+test coroutine-3.7 {bug 0b874c344d} {
+    dict get [coroutine X coroutine Y info frame 0] cmd
+} {coroutine X coroutine Y info frame 0}
 
 test coroutine-4.1 {bug #2093188} -setup {
     proc foo {} {
@@ -439,7 +442,7 @@ test coroutine-4.5 {bug #2724403} -constraints {memory} \
 } -result 0
 
 test coroutine-4.6 {compile context, bug #3282869} -setup {
-    unset ::x
+    unset -nocomplain ::x
     proc f x {
 	coroutine D eval {yield X$x;yield Y}
     }
@@ -609,6 +612,121 @@ test coroutine-7.3 {yielding between coroutines} -body {
 } -cleanup {
     catch {rename juggler ""}
 } -result {{{a b c d e} ::j1 {a b c d} ::j2 {a b c} ::j3 {a b} ::j1 a ::j2} {} {} {}}
+test coroutine-7.4 {Bug 8ff0cb9fe1} -setup {
+    proc foo {a b} {catch yield; return 1}
+} -cleanup {
+    rename foo {}
+} -body {
+    coroutine demo lsort -command foo {a b}
+} -result {b a}
+test coroutine-7.5 {return codes} {
+    set result {}
+    foreach code {0 1 2 3 4 5} {
+	lappend result [catch {coroutine demo return -level 0 -code $code}]
+    }
+    set result
+} {0 1 2 3 4 5}
+test coroutine-7.6 {Early yield crashes} {
+    proc foo args {}
+    trace add execution foo enter {catch yield}
+    coroutine demo foo
+    rename foo {}
+} {}
+test coroutine-7.7 {Bug 2486550} -setup {
+    interp hide {} yield
+} -body {
+    coroutine demo interp invokehidden {} yield ok
+} -cleanup {
+    demo
+    interp expose {} yield
+} -result ok
+test coroutine-7.8 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	yieldto ::return -level 0 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    namespace delete cotest
+    namespace eval cotest {}
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.9 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	set y ::yieldto
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	$y ::return -level 0 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    namespace delete cotest
+    namespace eval cotest {}
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.10 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	yieldto ::return -level 0 -cotest [namespace delete ::cotest] 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+test coroutine-7.11 {yieldto context nuke: Bug a90d9331bc} -setup {
+    namespace eval cotest {}
+    set ::result ""
+} -body {
+    proc cotest::body {} {
+	set y ::yieldto
+	lappend ::result a
+	yield OUT
+	lappend ::result b
+	$y ::return -level 0 -cotest [namespace delete ::cotest] 123
+	lappend ::result c
+	return
+    }
+    lappend ::result [coroutine cotest cotest::body]
+    lappend ::result [cotest]
+    cotest
+    return $result
+} -returnCodes error -cleanup {
+    catch {namespace delete ::cotest}
+    catch {rename cotest ""}
+} -result {yieldto called in deleted namespace}
+
 
 # cleanup
 unset lambda

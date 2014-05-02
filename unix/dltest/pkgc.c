@@ -56,7 +56,7 @@ Pkgc_SubObjCmd(
 	    || (Tcl_GetIntFromObj(interp, objv[2], &second) != TCL_OK)) {
 	return TCL_ERROR;
     }
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(first - second));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj(first - second));
     return TCL_OK;
 }
 

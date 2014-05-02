@@ -1281,23 +1281,43 @@ Tcl_AppendObjToObj(
 
     if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
 	    && TclIsPureByteArray(appendObjPtr)) {
-	unsigned char *bytesSrc;
-	int lengthSrc, lengthTotal;
 
 	/*
-	 * We do not assume that objPtr and appendObjPtr must be distinct!
-	 * This makes this code a bit more complex than it otherwise would be,
-	 * but in turn makes it much safer.
+	 * You might expect the code here to be
+	 *
+	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
+	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
+	 *
+	 * and essentially all of the time that would be fine.  However,
+	 * it would run into trouble in the case where objPtr and
+	 * appendObjPtr point to the same thing.  That may never be a
+	 * good idea.  It seems to violate Copy On Write, and we don't
+	 * have any tests for the situation, since making any Tcl commands
+	 * that call Tcl_AppendObjToObj() do that appears impossible
+	 * (They honor Copy On Write!).  For the sake of extensions that
+	 * go off into that realm, though, here's a more complex approach
+	 * that can handle all the cases.
 	 */
+
+	/* Get lengths */
+	int lengthSrc;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
 	(void) Tcl_GetByteArrayFromObj(appendObjPtr, &lengthSrc);
-	lengthTotal = length + lengthSrc;
-	if (((length > lengthSrc) ? length : lengthSrc) > lengthTotal) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-	bytesSrc = Tcl_GetByteArrayFromObj(appendObjPtr, NULL);
-	TclAppendBytesToByteArray(objPtr, bytesSrc, lengthSrc);
+
+	/* Grow buffer enough for the append */
+	TclAppendBytesToByteArray(objPtr, NULL, lengthSrc);
+
+	/* Reset objPtr back to the original value */
+	Tcl_SetByteArrayLength(objPtr, length);
+
+	/*
+	 * Now do the append knowing that buffer growth cannot cause
+	 * any trouble.
+	 */
+
+	TclAppendBytesToByteArray(objPtr,
+		Tcl_GetByteArrayFromObj(appendObjPtr, NULL), lengthSrc);
 	return;
     }
 
@@ -2069,7 +2089,7 @@ Tcl_AppendFormatToObj(
 		const char *bytes;
 
 		if (useShort) {
-		    pure = Tcl_NewIntObj((int) s);
+		    pure = Tcl_NewLongObj((long) s);
 		} else if (useWide) {
 		    pure = Tcl_NewWideIntObj(w);
 		} else if (useBig) {
@@ -2543,7 +2563,7 @@ AppendPrintfToObjVA(
 		break;
 	    case '*':
 		lastNum = (int) va_arg(argList, int);
-		Tcl_ListObjAppendElement(NULL, list, Tcl_NewIntObj(lastNum));
+		Tcl_ListObjAppendElement(NULL, list, Tcl_NewLongObj(lastNum));
 		p++;
 		break;
 	    case '0': case '1': case '2': case '3': case '4':

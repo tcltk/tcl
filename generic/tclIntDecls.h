@@ -25,6 +25,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -361,7 +365,7 @@ TCLAPI int		TclListObjSetElement(Tcl_Interp *interp,
 /* Slot 168 is reserved */
 /* 169 */
 TCLAPI int		TclpUtfNcmp2(const char *s1, const char *s2,
-				unsigned long n);
+				size_t n);
 /* 170 */
 TCLAPI int		TclCheckInterpTraces(Tcl_Interp *interp,
 				const char *command, int numChars,
@@ -542,6 +546,9 @@ TCLAPI char *		TclDoubleDigits(double dv, int ndigits, int flags,
 /* 250 */
 TCLAPI void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
+/* 251 */
+TCLAPI int		TclRegisterLiteral(void *envPtr, char *bytes,
+				int length, int flags);
 
 typedef struct TclIntStubs {
     int magic;
@@ -716,7 +723,7 @@ typedef struct TclIntStubs {
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, int index, Tcl_Obj *valuePtr); /* 166 */
     void (*reserved167)(void);
     void (*reserved168)(void);
-    int (*tclpUtfNcmp2) (const char *s1, const char *s2, unsigned long n); /* 169 */
+    int (*tclpUtfNcmp2) (const char *s1, const char *s2, size_t n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
     int (*tclInThreadExit) (void); /* 172 */
@@ -798,12 +805,11 @@ typedef struct TclIntStubs {
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
+    int (*tclRegisterLiteral) (void *envPtr, char *bytes, int length, int flags); /* 251 */
 } TclIntStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclIntStubs *tclIntStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -1204,6 +1210,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
 #define TclSetSlaveCancelFlags \
 	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
+#define TclRegisterLiteral \
+	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

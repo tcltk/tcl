@@ -93,15 +93,20 @@ typedef off_t		Tcl_SeekOffset;
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
+    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
+    __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
 
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
     __declspec(dllimport) extern int cygwin_conv_path_list(int, const void *, void *, int);
 #   define USE_PUTENV 1
 #   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
+#ifndef __x86_64__
 #   define environ __cygwin_environ
-#   define timezone _timezone
     extern char **__cygwin_environ;
+#endif
+#   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
@@ -578,19 +583,6 @@ extern char **		environ;
 
 /*
  *---------------------------------------------------------------------------
- * The termios configure test program relies on the configure script being run
- * from a terminal, which is not the case e.g., when configuring from Xcode.
- * Since termios is known to be present on all Mac OS X releases since 10.0,
- * override the configure defines for serial API here. [Bug 497147]
- *---------------------------------------------------------------------------
- */
-
-#   define USE_TERMIOS 1
-#   undef USE_TERMIO
-#   undef USE_SGTTY
-
-/*
- *---------------------------------------------------------------------------
  * Include AvailabilityMacros.h here (when available) to ensure any symbolic
  * MAC_OS_X_VERSION_* constants passed on the command line are translated.
  *---------------------------------------------------------------------------
@@ -711,8 +703,6 @@ typedef int socklen_t;
 
 #ifdef TCL_THREADS
 #   include <pthread.h>
-#   undef inet_ntoa
-#   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
 
 /* FIXME - Hyper-enormous platform assumption! */

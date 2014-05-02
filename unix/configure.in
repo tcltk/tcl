@@ -259,12 +259,17 @@ if test "${TCL_THREADS}" = 1; then
 fi
 
 #---------------------------------------------------------------------------
-#	Determine which interface to use to talk to the serial port.
-#	Note that #include lines must begin in leftmost column for
-#	some compilers to recognize them as preprocessor directives.
+#	Check for serial port interface.
+#
+#	termios.h is present on all POSIX systems.
+#	sys/ioctl.h is almost always present, though what it contains
+#	is system-specific.
+#	sys/modem.h is needed on HP-UX.
 #---------------------------------------------------------------------------
 
-SC_SERIAL_PORT
+AC_CHECK_HEADERS(termios.h)
+AC_CHECK_HEADERS(sys/ioctl.h)
+AC_CHECK_HEADERS(sys/modem.h)
 
 #--------------------------------------------------------------------
 #	Include sys/select.h if it exists and if it supplies things
@@ -305,11 +310,7 @@ SC_TIME_HANDLER
 #	lack blkcnt_t.
 #--------------------------------------------------------------------
 
-if test "$ac_cv_cygwin" = "yes"; then
-    if test "x${SHARED_BUILD}" = "x1"; then
-	TCL_SHLIB_LD_EXTRAS="${TCL_SHLIB_LD_EXTRAS} \${COMPAT_DIR}/zlib/win32/zdll.lib"
-    fi
-else
+if test "$ac_cv_cygwin" != "yes"; then
     AC_CHECK_MEMBERS([struct stat.st_blocks, struct stat.st_blksize])
 fi
 AC_CHECK_TYPES([blkcnt_t])
@@ -575,7 +576,6 @@ if test "`uname -s`" = "Darwin" ; then
     if test $tcl_corefoundation = yes; then
 	AC_CHECK_HEADERS(libkern/OSAtomic.h)
 	AC_CHECK_FUNCS(OSSpinLockLock)
-	AC_CHECK_FUNCS(pthread_atfork)
     fi
     AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
     AC_DEFINE(TCL_DEFAULT_ENCODING, "utf-8",

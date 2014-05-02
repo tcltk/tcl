@@ -19,7 +19,7 @@
  */
 
 #include "tclInt.h"
-#ifdef __WIN32__
+#ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
 #include "tclFileSystem.h"
@@ -776,7 +776,7 @@ TclFinalizeFilesystem(void)
      * filesystem is likely to fail.
      */
 
-#ifdef __WIN32__
+#ifdef _WIN32
     TclWinEncodingsCleanup();
 #endif
 }
@@ -803,7 +803,7 @@ TclResetFilesystem(void)
     filesystemList = &nativeFilesystemRecord;
     theFilesystemEpoch++;
 
-#ifdef __WIN32__
+#ifdef _WIN32
     /*
      * Cleans up the win32 API filesystem proc lookup table. This must happen
      * very late in finalization so that deleting of copied dlls can occur.
@@ -3209,6 +3209,9 @@ Tcl_LoadFile(
      */
 
     copyToPtr = TclpTempFileNameForLibrary(interp, pathPtr);
+    if (copyToPtr == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_IncrRefCount(copyToPtr);
 
     copyFsPtr = Tcl_FSGetFileSystemForPath(copyToPtr);
@@ -3236,7 +3239,7 @@ Tcl_LoadFile(
 	return TCL_ERROR;
     }
 
-#ifndef __WIN32__
+#ifndef _WIN32
     /*
      * Do we need to set appropriate permissions on the file? This may be
      * required on some systems. On Unix we could loop over the file

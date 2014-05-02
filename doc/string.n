@@ -5,8 +5,8 @@
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 .\" 
-.so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 .\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -343,10 +343,13 @@ misleading.
 \fBstring bytelength \fIstring\fR
 .
 Returns a decimal string giving the number of bytes used to represent
-\fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
-represent Unicode characters, the byte length will not be the same as
-the character length in general.  The cases where a script cares about
-the byte length are rare.
+\fIstring\fR in memory when encoded as Tcl's internal modified UTF\-8;
+Tcl may use other encodings for \fIstring\fR as well, and does not
+guarantee to only use a single encoding for a particular \fIstring\fR.
+Because UTF\-8 uses a variable number of bytes to represent Unicode
+characters, the byte length will not be the same as the character
+length in general.  The cases where a script cares about the byte
+length are rare.
 .RS
 .PP
 In almost all cases, you should use the
@@ -354,10 +357,27 @@ In almost all cases, you should use the
 Tcl byte array value).  Refer to the \fBTcl_NumUtfChars\fR manual
 entry for more details on the UTF\-8 representation.
 .PP
+Formally, the \fBstring bytelength\fR operation returns the content of
+the \fIlength\fR field of the \fBTcl_Obj\fR structure, after calling
+\fBTcl_GetString\fR to ensure that the \fIbytes\fR field is populated.
+This is highly unlikely to be useful to Tcl scripts, as Tcl's internal
+encoding is not strict UTF\-8, but rather a modified CESU\-8 with a
+denormalized NUL (identical to that used in a number of places by
+Java's serialization mechanism) to enable basic processing with
+non-Unicode-aware C functions.  As this representation should only
+ever be used by Tcl's implementation, the number of bytes used to
+store the representation is of very low value (except to C extension
+code, which has direct access for the purpose of memory management,
+etc.)
+.PP
 \fICompatibility note:\fR it is likely that this subcommand will be
 withdrawn in a future version of Tcl. It is better to use the
 \fBencoding convertto\fR command to convert a string to a known
 encoding and then apply \fBstring length\fR to that.
+.PP
+.CS
+\fBstring length\fR [encoding convertto utf-8 $theString]
+.CE
 .RE
 .TP
 \fBstring wordend \fIstring charIndex\fR

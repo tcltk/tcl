@@ -371,7 +371,7 @@ ConvertErrorToList(
 
     default:
 	TclNewLiteralStringObj(objv[2], "UNKNOWN");
-	TclNewIntObj(objv[3], code);
+	TclNewLongObj(objv[3], code);
 	return Tcl_NewListObj(4, objv);
     }
 }
@@ -545,7 +545,7 @@ ExtractHeader(
 		&tmp);
 	SetValue(dictObj, "comment", TclDStringToObj(&tmp));
     }
-    SetValue(dictObj, "crc", Tcl_NewBooleanObj(headerPtr->hcrc));
+    SetValue(dictObj, "crc", Tcl_NewLongObj(headerPtr->hcrc!=0));
     if (headerPtr->name != Z_NULL) {
 	if (latin1enc == NULL) {
 	    /*
@@ -563,7 +563,7 @@ ExtractHeader(
 	SetValue(dictObj, "filename", TclDStringToObj(&tmp));
     }
     if (headerPtr->os != 255) {
-	SetValue(dictObj, "os", Tcl_NewIntObj(headerPtr->os));
+	SetValue(dictObj, "os", Tcl_NewLongObj(headerPtr->os));
     }
     if (headerPtr->time != 0 /* magic - no time */) {
 	SetValue(dictObj, "time", Tcl_NewLongObj((long) headerPtr->time));
@@ -2581,7 +2581,7 @@ ZlibStreamCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(Tcl_ZlibStreamEof(zstream)));
+	Tcl_SetObjResult(interp, Tcl_NewLongObj(Tcl_ZlibStreamEof(zstream)));
 	return TCL_OK;
     case zs_checksum:		/* $strm checksum */
 	if (objc != 2) {
@@ -3111,7 +3111,7 @@ ZlibTransformOutput(
 	e = deflate(&cd->outStream, Z_NO_FLUSH);
 	produced = cd->outAllocated - cd->outStream.avail_out;
 
-	if (e == Z_OK && cd->outStream.avail_out > 0) {
+	if (e == Z_OK && produced > 0) {
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
 		*errorCodePtr = Tcl_GetErrno();
 		return -1;
@@ -3890,8 +3890,10 @@ Tcl_ZlibStreamInit(
     Tcl_Obj *dictObj,
     Tcl_ZlibStream *zshandle)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 
@@ -3956,8 +3958,10 @@ Tcl_ZlibDeflate(
     int level,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 
@@ -3969,8 +3973,10 @@ Tcl_ZlibInflate(
     int bufferSize,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 

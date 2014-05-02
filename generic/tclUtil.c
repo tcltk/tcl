@@ -14,6 +14,7 @@
 
 #include "tclInt.h"
 #include "tclParse.h"
+#include "tclStringTrim.h"
 #include <math.h>
 
 /*
@@ -1719,8 +1720,7 @@ TclTrimLeft(
  */
 
 /* The whitespace characters trimmed during [concat] operations */
-#define CONCAT_WS " \f\v\r\t\n"
-#define CONCAT_WS_SIZE (int) (sizeof(CONCAT_WS "") - 1)
+#define CONCAT_WS_SIZE (int) (sizeof(CONCAT_TRIM_SET "") - 1)
 
 char *
 Tcl_Concat(
@@ -1776,7 +1776,8 @@ Tcl_Concat(
 	 * Trim away the leading whitespace.
 	 */
 
-	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimLeft(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	element += trim;
 	elemLength -= trim;
 
@@ -1785,7 +1786,8 @@ Tcl_Concat(
 	 * a final backslash character.
 	 */
 
-	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimRight(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	trim -= trim && (element[elemLength - trim - 1] == '\\');
 	elemLength -= trim;
 
@@ -1911,7 +1913,8 @@ Tcl_ConcatObj(
 	 * Trim away the leading whitespace.
 	 */
 
-	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimLeft(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	element += trim;
 	elemLength -= trim;
 
@@ -1920,7 +1923,8 @@ Tcl_ConcatObj(
 	 * a final backslash character.
 	 */
 
-	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimRight(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	trim -= trim && (element[elemLength - trim - 1] == '\\');
 	elemLength -= trim;
 
@@ -3128,7 +3132,7 @@ TclPrecTraceProc(
 
 
     if (flags & TCL_TRACE_READS) {
-	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewIntObj(*precisionPtr),
+	Tcl_SetVar2Ex(interp, name1, name2, Tcl_NewLongObj(*precisionPtr),
 		flags & TCL_GLOBAL_ONLY);
 	return NULL;
     }
@@ -3464,10 +3468,9 @@ UpdateStringOfEndOffset(
     register Tcl_Obj *objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + 5];
-    register int len;
+    register int len = 3;
 
     memcpy(buffer, "end", 4);
-    len = sizeof("end") - 1;
     if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
 	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));

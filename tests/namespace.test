@@ -303,7 +303,7 @@ test namespace-9.4 {Tcl_Import, simple import} {
     }
     test_ns_import::p
 } {cmd1: 123}
-test namespace-9.5 {Tcl_Import, can't redefine cmd unless allowOverwrite!=0} {
+test namespace-9.5 {Tcl_Import, RFE 1230597} {
     list [catch {namespace eval test_ns_import {namespace import ::test_ns_export::*}} msg] $msg
 } {0 {}}
 test namespace-9.6 {Tcl_Import, cmd redefinition ok if allowOverwrite!=0} {
@@ -558,6 +558,15 @@ test namespace-13.1 {DeleteImportedCmd, deletes imported cmds} {
         lappend l [info commands ::test_ns_import::*]
     }
 } {::test_ns_import::cmd1 {}}
+test namespace-13.2 {DeleteImportedCmd, Bug a4494e28ed} {
+    # Will panic if still buggy
+    namespace eval src {namespace export foo; proc foo {} {}}
+    namespace eval dst {namespace import [namespace parent]::src::foo}
+    trace add command src::foo delete \
+        "[list namespace delete [namespace current]::dst] ;#"
+    proc src::foo {} {}
+    namespace delete src
+} {}
 
 test namespace-14.1 {TclGetNamespaceForQualName, absolute names} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}
@@ -1111,6 +1120,14 @@ test namespace-26.7 {NamespaceExportCmd, -clear resets export list} {
     }
     list [lsort [info commands test_ns_2::*]] [test_ns_2::cmd4 hello]
 } [list [lsort {::test_ns_2::cmd4 ::test_ns_2::cmd1 ::test_ns_2::cmd3}] {cmd4: hello}]
+test namespace-26.8 {NamespaceExportCmd, -clear resets export list} {
+    catch {namespace delete foo}
+    namespace eval foo {
+	namespace export x
+	namespace export -clear
+    }
+    list [namespace eval foo namespace export] [namespace delete foo]
+} {{} {}}
 
 test namespace-27.1 {NamespaceForgetCmd, no args} {
     catch {namespace delete {*}[namespace children :: test_ns_*]}

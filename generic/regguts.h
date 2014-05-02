@@ -49,41 +49,15 @@
 #include <assert.h>
 #endif
 
-/* voids */
-#ifndef VOID
-#define	VOID	void		/* for function return values */
-#endif
-#ifndef DISCARD
-#define	DISCARD	void		/* for throwing values away */
-#endif
-#ifndef PVOID
-#define	PVOID	void *		/* generic pointer */
-#endif
-#ifndef VS
-#define	VS(x)	((void*)(x))	/* cast something to generic ptr */
-#endif
-#ifndef NOPARMS
-#define	NOPARMS	void		/* for empty parm lists */
-#endif
-
-/* function-pointer declarator */
-#ifndef FUNCPTR
-#if __STDC__ >= 1
-#define	FUNCPTR(name, args)	(*name)args
-#else
-#define	FUNCPTR(name, args)	(*name)()
-#endif
-#endif
-
 /* memory allocation */
 #ifndef MALLOC
 #define	MALLOC(n)	malloc(n)
 #endif
 #ifndef REALLOC
-#define	REALLOC(p, n)	realloc(VS(p), n)
+#define	REALLOC(p, n)	realloc((void*)(p), n)
 #endif
 #ifndef FREE
-#define	FREE(p)		free(VS(p))
+#define	FREE(p)		free((void*)(p))
 #endif
 
 /* want size of a char in bits, and max value in bounded quantifiers */
@@ -145,6 +119,7 @@
 
 typedef short color;		/* colors of characters */
 typedef int pcolor;		/* what color promotes to */
+#define MAX_COLOR	SHRT_MAX /* max color value */
 #define	COLORLESS	(-1)	/* impossible color */
 #define	WHITE		0	/* default color, parent of all others */
 
@@ -340,12 +315,12 @@ struct subre {
 #define	CAP	010		/* capturing parens below */
 #define	BACKR	020		/* back reference below */
 #define	INUSE	0100		/* in use in final tree */
-#define	LOCAL	03		/* bits which may not propagate up */
+#define	NOPROP	03		/* bits which may not propagate up */
 #define	LMIX(f)	((f)<<2)	/* LONGER -> MIXED */
 #define	SMIX(f)	((f)<<1)	/* SHORTER -> MIXED */
-#define	UP(f)	(((f)&~LOCAL) | (LMIX(f) & SMIX(f) & MIXED))
+#define	UP(f)	(((f)&~NOPROP) | (LMIX(f) & SMIX(f) & MIXED))
 #define	MESSY(f)	((f)&(MIXED|CAP|BACKR))
-#define	PREF(f)	((f)&LOCAL)
+#define	PREF(f)	((f)&NOPROP)
 #define	PREF2(f1, f2)	((PREF(f1) != 0) ? PREF(f1) : PREF(f2))
 #define	COMBINE(f1, f2)	(UP((f1)|(f2)) | PREF2(f1, f2))
     short retry;		/* index into retry memory */
@@ -366,7 +341,7 @@ struct subre {
  */
 
 struct fns {
-    VOID FUNCPTR(free, (regex_t *));
+    void (*free)(regex_t *);
 };
 
 /*
@@ -383,7 +358,7 @@ struct guts {
     struct cnfa search;		/* for fast preliminary search */
     int ntree;
     struct colormap cmap;
-    int FUNCPTR(compare, (const chr *, const chr *, size_t));
+    int (*compare) (const chr *, const chr *, size_t);
     struct subre *lacons;	/* lookahead-constraint vector */
     int nlacons;		/* size of lacons */
 };

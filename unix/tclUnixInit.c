@@ -33,7 +33,10 @@
 #endif
 
 #ifdef __CYGWIN__
-DLLIMPORT extern __stdcall unsigned char GetVersionExA(void *);
+DLLIMPORT extern __stdcall unsigned char GetVersionExW(void *);
+DLLIMPORT extern __stdcall void *LoadLibraryW(const void *);
+DLLIMPORT extern __stdcall void FreeLibrary(void *);
+DLLIMPORT extern __stdcall void *GetProcAddress(void *, const char *);
 DLLIMPORT extern __stdcall void GetSystemInfo(void *);
 
 #define NUMPLATFORMS 4
@@ -72,8 +75,8 @@ typedef struct {
   DWORD dwMinorVersion;
   DWORD dwBuildNumber;
   DWORD dwPlatformId;
-  char szCSDVersion[128];
-} OSVERSIONINFOA;
+  wchar_t szCSDVersion[128];
+} OSVERSIONINFOW;
 #endif
 
 #ifdef HAVE_COREFOUNDATION
@@ -748,7 +751,8 @@ TclpSetVariables(
 {
 #ifdef __CYGWIN__
     SYSTEM_INFO sysInfo;
-    OSVERSIONINFOA osInfo;
+    static OSVERSIONINFOW osInfo;
+    static int osInfoInitialized = 0;
     char buffer[TCL_INTEGER_SPACE * 2];
 #elif !defined(NO_UNAME)
     struct utsname name;
@@ -861,8 +865,20 @@ TclpSetVariables(
     unameOK = 0;
 #ifdef __CYGWIN__
 	unameOK = 1;
-    osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOA);
-    GetVersionExA(&osInfo);
+    if (!osInfoInitialized) {
+	HANDLE handle = LoadLibraryW(L"NTDLL");
+	int(__stdcall *getversion)(void *) =
+		(int(__stdcall *)(void *))GetProcAddress(handle, "RtlGetVersion");
+	osInfo.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+	if (!getversion || getversion(&osInfo)) {
+	    GetVersionExW(&osInfo);
+	}
+	if (handle) {
+	    FreeLibrary(handle);
+	}
+	osInfoInitialized = 1;
+    }
+
     GetSystemInfo(&sysInfo);
 
     if (osInfo.dwPlatformId < NUMPLATFORMS) {
