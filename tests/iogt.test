@@ -228,7 +228,7 @@ proc id_torture {chan op data} {
 	delete/read  -
 	clear_read   {;#ignore}
 	flush/write -
-	flush/read  -
+	flush/read  {}
 	write       -
 	read        {
 	    testchannel unstack $chan
