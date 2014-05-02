@@ -1045,14 +1045,16 @@ declare 0 win {
 #declare 1 win {
 #    void TclWinConvertWSAError(DWORD errCode)
 #}
-declare 2 win {
-    struct servent *TclWinGetServByName(const char *nm,
-	    const char *proto)
-}
-declare 3 win {
-    int TclWinGetSockOpt(SOCKET s, int level, int optname,
-	    char *optval, int *optlen)
-}
+# Removed in Tcl 9.0
+#declare 2 win {
+#    struct servent *TclWinGetServByName(const char *nm,
+#	    const char *proto)
+#}
+# Removed in Tcl 9.0
+#declare 3 win {
+#    int TclWinGetSockOpt(SOCKET s, int level, int optname,
+#	    char *optval, int *optlen)
+#}
 declare 4 win {
     HINSTANCE TclWinGetTclInstance(void)
 }
@@ -1068,10 +1070,11 @@ declare 5 win {
 #declare 6 win {
 #    unsigned short TclWinNToHS(unsigned short ns)
 #}
-declare 7 win {
-    int TclWinSetSockOpt(SOCKET s, int level, int optname,
-	    const char *optval, int optlen)
-}
+# Removed in Tcl 9.0
+#declare 7 win {
+#    int TclWinSetSockOpt(SOCKET s, int level, int optname,
+#	    const char *optval, int optlen)
+#}
 declare 8 win {
     int TclpGetPid(Tcl_Pid pid)
 }

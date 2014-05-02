@@ -677,6 +677,7 @@ TclpFreeAllocCache(
 	 */
 
 	TclFreeAllocCache(ptr);
+	pthread_setspecific(key, NULL);
 
     } else if (initialized) {
 	/*

@@ -303,7 +303,7 @@ test namespace-9.4 {Tcl_Import, simple import} {
     }
     test_ns_import::p
 } {cmd1: 123}
-test namespace-9.5 {Tcl_Import, can't redefine cmd unless allowOverwrite!=0} {
+test namespace-9.5 {Tcl_Import, RFE 1230597} {
     list [catch {namespace eval test_ns_import {namespace import ::test_ns_export::*}} msg] $msg
 } {0 {}}
 test namespace-9.6 {Tcl_Import, cmd redefinition ok if allowOverwrite!=0} {

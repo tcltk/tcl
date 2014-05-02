@@ -88,20 +88,14 @@ TCLAPI int		TclUnixOpenTemporaryFile(Tcl_Obj *dirObj,
 /* 0 */
 TCLAPI void		TclWinConvertError(DWORD errCode);
 /* Slot 1 is reserved */
-/* 2 */
-TCLAPI struct servent *	 TclWinGetServByName(const char *nm,
-				const char *proto);
-/* 3 */
-TCLAPI int		TclWinGetSockOpt(SOCKET s, int level, int optname,
-				char *optval, int *optlen);
+/* Slot 2 is reserved */
+/* Slot 3 is reserved */
 /* 4 */
 TCLAPI HINSTANCE	TclWinGetTclInstance(void);
 /* 5 */
 TCLAPI int		TclUnixWaitForFile(int fd, int mask, int timeout);
 /* Slot 6 is reserved */
-/* 7 */
-TCLAPI int		TclWinSetSockOpt(SOCKET s, int level, int optname,
-				const char *optval, int optlen);
+/* Slot 7 is reserved */
 /* 8 */
 TCLAPI int		TclpGetPid(Tcl_Pid pid);
 /* 9 */
@@ -266,12 +260,12 @@ typedef struct TclIntPlatStubs {
 #if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     void (*tclWinConvertError) (DWORD errCode); /* 0 */
     void (*reserved1)(void);
-    struct servent * (*tclWinGetServByName) (const char *nm, const char *proto); /* 2 */
-    int (*tclWinGetSockOpt) (SOCKET s, int level, int optname, char *optval, int *optlen); /* 3 */
+    void (*reserved2)(void);
+    void (*reserved3)(void);
     HINSTANCE (*tclWinGetTclInstance) (void); /* 4 */
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 5 */
     void (*reserved6)(void);
-    int (*tclWinSetSockOpt) (SOCKET s, int level, int optname, const char *optval, int optlen); /* 7 */
+    void (*reserved7)(void);
     int (*tclpGetPid) (Tcl_Pid pid); /* 8 */
     int (*tclWinGetPlatformId) (void); /* 9 */
     void (*reserved10)(void);
@@ -392,17 +386,14 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 #define TclWinConvertError \
 	(tclIntPlatStubsPtr->tclWinConvertError) /* 0 */
 /* Slot 1 is reserved */
-#define TclWinGetServByName \
-	(tclIntPlatStubsPtr->tclWinGetServByName) /* 2 */
-#define TclWinGetSockOpt \
-	(tclIntPlatStubsPtr->tclWinGetSockOpt) /* 3 */
+/* Slot 2 is reserved */
+/* Slot 3 is reserved */
 #define TclWinGetTclInstance \
 	(tclIntPlatStubsPtr->tclWinGetTclInstance) /* 4 */
 #define TclUnixWaitForFile \
 	(tclIntPlatStubsPtr->tclUnixWaitForFile) /* 5 */
 /* Slot 6 is reserved */
-#define TclWinSetSockOpt \
-	(tclIntPlatStubsPtr->tclWinSetSockOpt) /* 7 */
+/* Slot 7 is reserved */
 #define TclpGetPid \
 	(tclIntPlatStubsPtr->tclpGetPid) /* 8 */
 #define TclWinGetPlatformId \

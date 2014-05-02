@@ -93,6 +93,9 @@ typedef off_t		Tcl_SeekOffset;
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
+    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
+    __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
 
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
     __declspec(dllimport) extern int cygwin_conv_path_list(int, const void *, void *, int);
@@ -106,12 +109,12 @@ typedef off_t		Tcl_SeekOffset;
 #   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
-#elif defined(HAVE_NO_STRUCT_STAT64)
-#   define TclOSstat		stat
-#   define TclOSlstat		lstat
-#else
+#elif defined(HAVE_STRUCT_STAT64)
 #   define TclOSstat		stat64
 #   define TclOSlstat		lstat64
+#else
+#   define TclOSstat		stat
+#   define TclOSlstat		lstat
 #endif
 
 /*

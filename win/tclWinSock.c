@@ -47,13 +47,6 @@
 
 #include "tclWinInt.h"
 
-/*
- * Which version of the winsock API do we want?
- */
-
-#define WSA_VERSION_MAJOR	1
-#define WSA_VERSION_MINOR	1
-
 #ifdef _MSC_VER
 #   pragma comment (lib, "ws2_32")
 #endif
@@ -287,8 +280,7 @@ static const Tcl_ChannelType tcpChannelType = {
 static void
 InitSockets(void)
 {
-    DWORD id, err;
-    WSADATA wsaData;
+    DWORD id;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     if (!initialized) {
@@ -315,32 +307,6 @@ InitSockets(void)
 
 	if (!RegisterClass(&windowClass)) {
 	    TclWinConvertError(GetLastError());
-	    goto initFailure;
-	}
-
-	/*
-	 * Initialize the winsock library and check the interface version
-	 * actually loaded. We only ask for the 1.1 interface and do require
-	 * that it not be less than 1.1.
-	 */
-
-	err = WSAStartup((WORD) MAKEWORD(WSA_VERSION_MAJOR,WSA_VERSION_MINOR),
-		&wsaData);
-	if (err != 0) {
-	    TclWinConvertError(err);
-	    goto initFailure;
-	}
-
-	/*
-	 * Note the byte positions ae swapped for the comparison, so that
-	 * 0x0002 (2.0, MAKEWORD(2,0)) doesn't look less than 0x0101 (1.1). We
-	 * want the comparison to be 0x0200 < 0x0101.
-	 */
-
-	if (MAKEWORD(HIBYTE(wsaData.wVersion), LOBYTE(wsaData.wVersion))
-		< MAKEWORD(WSA_VERSION_MINOR, WSA_VERSION_MAJOR)) {
-	    TclWinConvertError(WSAVERNOTSUPPORTED);
-	    WSACleanup();
 	    goto initFailure;
 	}
     }
@@ -459,7 +425,6 @@ SocketExitHandler(
 
     TclpFinalizeSockets();
     UnregisterClass(classname, TclWinGetTclInstance());
-    WSACleanup();
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }
@@ -2114,7 +2079,7 @@ TcpGetOptionProc(
 	int ret;
 
 	optlen = sizeof(int);
-	ret = TclWinGetSockOpt(sock, SOL_SOCKET, SO_ERROR,
+	ret = getsockopt(sock, SOL_SOCKET, SO_ERROR,
 		(char *)&err, &optlen);
 	if (ret == SOCKET_ERROR) {
 	    err = WSAGetLastError();
@@ -2449,7 +2414,7 @@ SocketThread(
  *
  * Side effects:
  *	The flags for the given socket are updated to reflect the event that
- *	occured.
+ *	occurred.
  *
  *----------------------------------------------------------------------
  */
@@ -2673,85 +2638,6 @@ InitializeHostName(
     *valuePtr = ckalloc((*lengthPtr) + 1);
     memcpy(*valuePtr, Tcl_DStringValue(&ds), (size_t)(*lengthPtr)+1);
     Tcl_DStringFree(&ds);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclWinGetSockOpt, et al. --
- *
- *	These functions are wrappers that let us bind the WinSock API
- *	dynamically so we can run on systems that don't have the wsock32.dll.
- *	We need wrappers for these interfaces because they are called from the
- *	generic Tcl code.
- *
- * Results:
- *	As defined for each function.
- *
- * Side effects:
- *	As defined for each function.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclWinGetSockOpt(
-    SOCKET s,
-    int level,
-    int optname,
-    char *optval,
-    int *optlen)
-{
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return SOCKET_ERROR;
-    }
-
-    return getsockopt(s, level, optname, optval, optlen);
-}
-
-int
-TclWinSetSockOpt(
-    SOCKET s,
-    int level,
-    int optname,
-    const char *optval,
-    int optlen)
-{
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return SOCKET_ERROR;
-    }
-
-    return setsockopt(s, level, optname, optval, optlen);
-}
-
-struct servent *
-TclWinGetServByName(
-    const char *name,
-    const char *proto)
-{
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return NULL;
-    }
-
-    return getservbyname(name, proto);
 }
 
 /*
