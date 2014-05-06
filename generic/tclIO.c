@@ -2613,6 +2613,7 @@ FlushChannel(
 	     */
 
 	    DiscardOutputQueued(statePtr);
+	    ReleaseChannelBuffer(bufPtr);
 	    continue;
 	} else {
 	    wroteSome = 1;
