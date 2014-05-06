@@ -2930,8 +2930,36 @@ TclNativeCreateNativeRep(
     Tcl_WinUtfToTChar(str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
     wp = (WCHAR *) Tcl_DStringValue(&ds);
-    for (i=sizeof(WCHAR); i<len; ++wp,i+=sizeof(WCHAR)) {
-	if ( (*wp < ' ') || wcschr(L"\"*<>|", *wp) ){
+    i=sizeof(WCHAR);
+    if ((wp[0]=='/'||wp[0]=='\\') && (wp[1]=='/'||wp[1]=='\\')) {
+	if (wp[2]=='?'){
+	    /* Extended path prefix: convert slashes but not the '?' */
+	    wp[0] = wp[1] = wp[3] = '\\';
+	    i += 8; wp+=4;
+	    if (((wp[0]>='A'&&wp[0]<='Z') || (wp[0]>='a'&&wp[0]<='z'))
+		    && (wp[1]==':') && (wp[2]=='/' || wp[2]=='\\')) {
+		/* With drive, don't convert the ':' */
+		i += 4; wp+=2;
+	    }
+	}
+    } else {
+	if (((wp[0]>='A'&&wp[0]<='Z') || (wp[0]>='a'&&wp[0]<='z'))
+		&& (wp[1]==':') && (wp[2]=='/' || wp[2]=='\\')) {
+	    /* With drive, don't convert the ':' */
+	    i += 4; wp+=2;
+	    if (len > (MAX_PATH * sizeof(WCHAR))){
+		/* Path is too long, needs an extended path prefix. */
+		Tcl_DStringSetLength(&ds, len+=8);
+		Tcl_DStringSetLength(&ds, len+1); /* Must end with two NUL bytes */
+		wp = (WCHAR *) Tcl_DStringValue(&ds); /* wp might be re-allocated */
+		memmove(wp+4, wp, len-8);
+		memcpy(wp, L"\\\\?\\", 8);
+		i+=12; wp += 6;
+	    }
+	}
+    }
+    for (; i<len; ++wp,i+=sizeof(WCHAR)) {
+	if ( (*wp < ' ') || wcschr(L"\"*:<>?|", *wp) ){
 	    if (!*wp){
 		/* See bug [3118489]: NUL in filenames */
 		Tcl_DecrRefCount(validPathPtr);
