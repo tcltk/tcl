@@ -2713,8 +2713,11 @@ FlushChannel(
 		statePtr->outQueueTail = NULL;
 	    }
 	    RecycleBuffer(statePtr, bufPtr, 0);
+	    bufPtr = NULL;
 	}
-	ReleaseChannelBuffer(bufPtr);
+	if (bufPtr) {
+	    ReleaseChannelBuffer(bufPtr);
+	}
     }	/* Closes "while (1)". */
 
     /*
