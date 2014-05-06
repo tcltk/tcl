@@ -683,7 +683,6 @@ test iogt-2.5 {basic I/O, mixed trail} {testchannel} {
     flush $fh
     testchannel unstack $fh
     close   $fh
-    set x
 } {}
 
 test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
