@@ -2311,6 +2311,9 @@ static void
 PreserveChannelBuffer(
     ChannelBuffer *bufPtr)
 {
+    if (bufPtr->refCount == 0) {
+	Tcl_Panic("Reuse of ChannelBuffer!");
+    }
     bufPtr->refCount++;
 }
 
