@@ -3787,6 +3787,7 @@ Write(
 
 	if (IsBufferFull(bufPtr)) {
 	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
+		ReleaseChannelBuffer(bufPtr);
 		return -1;
 	    }
 	    flushed += statePtr->bufSize;
