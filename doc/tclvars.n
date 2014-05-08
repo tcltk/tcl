@@ -347,8 +347,8 @@ was compiled with threads enabled.
 .
 This identifies the
 current user based on the login information available on the platform.
-This comes from the USER or LOGNAME environment variable on Unix,
-and the value from GetUserName on Windows.
+This value comes from the getuid() and getpwuid() system calls on Unix,
+and the value from the GetUserName() system call on Windows.
 .TP
 \fBwordSize\fR
 .
