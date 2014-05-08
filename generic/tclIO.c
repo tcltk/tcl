@@ -2612,6 +2612,7 @@ FlushChannel(
 
 	    if (errorCode == EINTR) {
 		errorCode = 0;
+		ReleaseChannelBuffer(bufPtr);
 		continue;
 	    }
 
@@ -2633,6 +2634,7 @@ FlushChannel(
 		    UpdateInterest(chanPtr);
 		}
 		errorCode = 0;
+		ReleaseChannelBuffer(bufPtr);
 		break;
 	    }
 
@@ -2694,6 +2696,7 @@ FlushChannel(
 	     */
 
 	    DiscardOutputQueued(statePtr);
+	    ReleaseChannelBuffer(bufPtr);
 	    continue;
 	} else {
 	    wroteSome = 1;
@@ -4031,6 +4034,7 @@ WillRead(
 {
     if (chanPtr->typePtr == NULL) {
 	/* Prevent read attempts on a closed channel */
+        DiscardInputQueued(chanPtr->state, 0);
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -4211,6 +4215,7 @@ Write(
 
 	if (IsBufferFull(bufPtr)) {
 	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
+		ReleaseChannelBuffer(bufPtr);
 		return -1;
 	    }
 	    flushed += statePtr->bufSize;
