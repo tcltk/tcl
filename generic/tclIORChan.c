@@ -1111,6 +1111,7 @@ ReflectClose(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
 				 * this interp */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+    Tcl_ChannelType *tctPtr;
 
     if (TclInThreadExit()) {
 	/*
@@ -1149,6 +1150,11 @@ ReflectClose(
 	}
 #endif
 
+	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+	if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+	}
         Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 	return EOK;
     }
@@ -1213,6 +1219,11 @@ ReflectClose(
 	}
 #endif
 
+	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+	if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+	}
         Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 #ifdef TCL_THREADS
     }
@@ -2170,14 +2181,6 @@ FreeReflectedChannel(
 {
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
-    if (chanPtr->typePtr != &tclRChannelType) {
-	/*
-	 * Delete a cloned ChannelType structure.
-	 */
-
-	ckfree(chanPtr->typePtr);
-	chanPtr->typePtr = NULL;
-    }
     Tcl_Release(chanPtr);
     Tcl_DecrRefCount(rcPtr->name);
     Tcl_DecrRefCount(rcPtr->methods);
@@ -2873,10 +2876,12 @@ ForwardProc(
 	 * call upon for the driver.
 	 */
 
-    case ForwardedClose:
+    case ForwardedClose: {
 	/*
 	 * No parameters/results.
 	 */
+
+	Tcl_ChannelType *tctPtr;
 
 	if (InvokeTclMethod(rcPtr, METH_FINAL, NULL, NULL, &resObj)!=TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
@@ -2902,8 +2907,14 @@ ForwardProc(
                 Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 
-	Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+	if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+	}
+        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 	break;
+    }
 
     case ForwardedInput: {
 	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);
