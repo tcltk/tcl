@@ -2716,11 +2716,8 @@ FlushChannel(
 		statePtr->outQueueTail = NULL;
 	    }
 	    RecycleBuffer(statePtr, bufPtr, 0);
-	    bufPtr = NULL;
 	}
-	if (bufPtr) {
-	    ReleaseChannelBuffer(bufPtr);
-	}
+	ReleaseChannelBuffer(bufPtr);
     }	/* Closes "while (1)". */
 
     /*
