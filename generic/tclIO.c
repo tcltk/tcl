@@ -2313,7 +2313,7 @@ PreserveChannelBuffer(
     ChannelBuffer *bufPtr)
 {
     if (bufPtr->refCount == 0) {
-	Tcl_Panic("Reuse of ChannelBuffer!");
+	Tcl_Panic("Reuse of ChannelBuffer! %p", bufPtr);
     }
     bufPtr->refCount++;
 }
@@ -2703,9 +2703,7 @@ FlushChannel(
 	    wroteSome = 1;
 	}
 
-	if (!IsBufferEmpty(bufPtr)) {
-	    bufPtr->nextRemoved += written;
-	}
+	bufPtr->nextRemoved += written;
 
 	/*
 	 * If this buffer is now empty, recycle it.
@@ -2717,11 +2715,8 @@ FlushChannel(
 		statePtr->outQueueTail = NULL;
 	    }
 	    RecycleBuffer(statePtr, bufPtr, 0);
-	    bufPtr = NULL;
 	}
-	if (bufPtr) {
-	    ReleaseChannelBuffer(bufPtr);
-	}
+	ReleaseChannelBuffer(bufPtr);
     }	/* Closes "while (1)". */
 
     /*
