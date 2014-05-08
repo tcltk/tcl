@@ -3607,6 +3607,7 @@ static int WillRead(Channel *chanPtr)
 {
     if (chanPtr->typePtr == NULL) {
 	/* Prevent read attempts on a closed channel */
+        DiscardInputQueued(chanPtr->state, 0);
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
