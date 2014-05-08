@@ -2312,6 +2312,9 @@ static void
 PreserveChannelBuffer(
     ChannelBuffer *bufPtr)
 {
+    if (bufPtr->refCount == 0) {
+	Tcl_Panic("Reuse of ChannelBuffer!");
+    }
     bufPtr->refCount++;
 }
 
@@ -2610,6 +2613,7 @@ FlushChannel(
 
 	    if (errorCode == EINTR) {
 		errorCode = 0;
+		ReleaseChannelBuffer(bufPtr);
 		continue;
 	    }
 
@@ -2631,6 +2635,7 @@ FlushChannel(
 		    UpdateInterest(chanPtr);
 		}
 		errorCode = 0;
+		ReleaseChannelBuffer(bufPtr);
 		break;
 	    }
 
@@ -2692,6 +2697,7 @@ FlushChannel(
 	     */
 
 	    DiscardOutputQueued(statePtr);
+	    ReleaseChannelBuffer(bufPtr);
 	    continue;
 	} else {
 	    wroteSome = 1;
@@ -2711,8 +2717,11 @@ FlushChannel(
 		statePtr->outQueueTail = NULL;
 	    }
 	    RecycleBuffer(statePtr, bufPtr, 0);
+	    bufPtr = NULL;
 	}
-	ReleaseChannelBuffer(bufPtr);
+	if (bufPtr) {
+	    ReleaseChannelBuffer(bufPtr);
+	}
     }	/* Closes "while (1)". */
 
     /*
@@ -4026,6 +4035,7 @@ WillRead(
 {
     if (chanPtr->typePtr == NULL) {
 	/* Prevent read attempts on a closed channel */
+        DiscardInputQueued(chanPtr->state, 0);
 	Tcl_SetErrno(EINVAL);
 	return -1;
     }
@@ -4204,6 +4214,7 @@ Write(
 
 	if (IsBufferFull(bufPtr)) {
 	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
+		ReleaseChannelBuffer(bufPtr);
 		return -1;
 	    }
 	    flushed += statePtr->bufSize;
