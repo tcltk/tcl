@@ -1111,7 +1111,7 @@ ReflectClose(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
 				 * this interp */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
-    Tcl_ChannelType *tctPtr;
+    const Tcl_ChannelType *tctPtr;
 
     if (TclInThreadExit()) {
 	/*
@@ -2881,7 +2881,7 @@ ForwardProc(
 	 * No parameters/results.
 	 */
 
-	Tcl_ChannelType *tctPtr;
+	const Tcl_ChannelType *tctPtr;
 
 	if (InvokeTclMethod(rcPtr, METH_FINAL, NULL, NULL, &resObj)!=TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
