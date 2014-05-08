@@ -3001,6 +3001,8 @@ MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
+			    unsigned int *sizePtr);
 MODULE_SCOPE Tcl_Token *TclGetTokensFromObj(Tcl_Obj *objPtr,
 			    Tcl_Token **lastTokenPtrPtr);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
