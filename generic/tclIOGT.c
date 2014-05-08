@@ -210,7 +210,27 @@ struct TransformChannelData {
 				 * a transformation of incoming data. Also
 				 * serves as buffer of all data not yet
 				 * consumed by the reader. */
+    int refCount;
 };
+
+static void
+PreserveData(
+    TransformChannelData *dataPtr)
+{
+    dataPtr->refCount++;
+}
+
+static void
+ReleaseData(
+    TransformChannelData *dataPtr)
+{
+    if (--dataPtr->refCount) {
+	return;
+    }
+    ResultClear(&dataPtr->result);
+    Tcl_DecrRefCount(dataPtr->command);
+    ckfree(dataPtr);
+}
 
 /*
  *----------------------------------------------------------------------
@@ -240,10 +260,17 @@ TclChannelTransform(
     Channel *chanPtr;		/* The actual channel. */
     ChannelState *statePtr;	/* State info for channel. */
     int mode;			/* Read/write mode of the channel. */
+    int objc;
     TransformChannelData *dataPtr;
     Tcl_DString ds;
 
     if (chan == NULL) {
+	return TCL_ERROR;
+    }
+
+    if (TCL_OK != Tcl_ListObjLength(interp, cmdObjPtr, &objc)) {
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("-command value is not a list", -1));
 	return TCL_ERROR;
     }
 
@@ -261,6 +288,7 @@ TclChannelTransform(
 
     dataPtr = ckalloc(sizeof(TransformChannelData));
 
+    dataPtr->refCount = 1;
     Tcl_DStringInit(&ds);
     Tcl_GetChannelOption(interp, chan, "-blocking", &ds);
     dataPtr->readIsFlushed = 0;
@@ -270,7 +298,6 @@ TclChannelTransform(
     }
     Tcl_DStringFree(&ds);
 
-    dataPtr->self = chan;
     dataPtr->watchMask = 0;
     dataPtr->mode = mode;
     dataPtr->timer = NULL;
@@ -286,19 +313,20 @@ TclChannelTransform(
     if (dataPtr->self == NULL) {
 	Tcl_AppendPrintfToObj(Tcl_GetObjResult(interp),
 		"\nfailed to stack channel \"%s\"", Tcl_GetChannelName(chan));
-	Tcl_DecrRefCount(dataPtr->command);
-	ResultClear(&dataPtr->result);
-	ckfree(dataPtr);
+	ReleaseData(dataPtr);
 	return TCL_ERROR;
     }
+    Tcl_Preserve(dataPtr->self);
 
     /*
      * At last initialize the transformation at the script level.
      */
 
+    PreserveData(dataPtr);
     if ((dataPtr->mode & TCL_WRITABLE) && ExecuteCallback(dataPtr, NULL,
 	    A_CREATE_WRITE, NULL, 0, TRANSMIT_DONT, P_NO_PRESERVE) != TCL_OK){
 	Tcl_UnstackChannel(interp, chan);
+	ReleaseData(dataPtr);
 	return TCL_ERROR;
     }
 
@@ -307,9 +335,11 @@ TclChannelTransform(
 	ExecuteCallback(dataPtr, NULL, A_DELETE_WRITE, NULL, 0, TRANSMIT_DONT,
 		P_NO_PRESERVE);
 	Tcl_UnstackChannel(interp, chan);
+	ReleaseData(dataPtr);
 	return TCL_ERROR;
     }
 
+    ReleaseData(dataPtr);
     return TCL_OK;
 }
 
@@ -350,7 +380,10 @@ ExecuteCallback(
     unsigned char *resBuf;
     Tcl_InterpState state = NULL;
     int res = TCL_OK;
-    Tcl_Obj *command = Tcl_DuplicateObj(dataPtr->command);
+    Tcl_Obj *command = TclListObjCopy(NULL, dataPtr->command);
+    Tcl_Interp *eval = dataPtr->interp;
+
+    Tcl_Preserve(eval);
 
     /*
      * Step 1, create the complete command to execute. Do this by appending
@@ -361,26 +394,18 @@ ExecuteCallback(
      */
 
     if (preserve == P_PRESERVE) {
-	state = Tcl_SaveInterpState(dataPtr->interp, res);
+	state = Tcl_SaveInterpState(eval, res);
     }
 
     Tcl_IncrRefCount(command);
-    res = Tcl_ListObjAppendElement(dataPtr->interp, command,
-	    Tcl_NewStringObj((char *) op, -1));
-    if (res != TCL_OK) {
-	goto cleanup;
-    }
+    Tcl_ListObjAppendElement(NULL, command, Tcl_NewStringObj((char *) op, -1));
 
     /*
      * Use a byte-array to prevent the misinterpretation of binary data coming
      * through as UTF while at the tcl level.
      */
 
-    res = Tcl_ListObjAppendElement(dataPtr->interp, command,
-	    Tcl_NewByteArrayObj(buf, bufLen));
-    if (res != TCL_OK) {
-	goto cleanup;
-    }
+    Tcl_ListObjAppendElement(NULL, command, Tcl_NewByteArrayObj(buf, bufLen));
 
     /*
      * Step 2, execute the command at the global level of the interpreter used
@@ -390,13 +415,14 @@ ExecuteCallback(
      * current interpreter. Don't copy if in preservation mode.
      */
 
-    res = Tcl_EvalObjEx(dataPtr->interp, command, TCL_EVAL_GLOBAL);
+    res = Tcl_EvalObjEx(eval, command, TCL_EVAL_GLOBAL);
     Tcl_DecrRefCount(command);
     command = NULL;
 
-    if ((res != TCL_OK) && (interp != NULL) && (dataPtr->interp != interp)
+    if ((res != TCL_OK) && (interp != NULL) && (eval != interp)
 	    && (preserve == P_NO_PRESERVE)) {
-	Tcl_SetObjResult(interp, Tcl_GetObjResult(dataPtr->interp));
+	Tcl_SetObjResult(interp, Tcl_GetObjResult(eval));
+	Tcl_Release(eval);
 	return res;
     }
 
@@ -411,20 +437,26 @@ ExecuteCallback(
 	break;
 
     case TRANSMIT_DOWN:
-	resObj = Tcl_GetObjResult(dataPtr->interp);
+	if (dataPtr->self == NULL) {
+	    break;
+	}
+	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self), (char *) resBuf,
 		resLen);
 	break;
 
     case TRANSMIT_SELF:
-	resObj = Tcl_GetObjResult(dataPtr->interp);
+	if (dataPtr->self == NULL) {
+	    break;
+	}
+	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
 	break;
 
     case TRANSMIT_IBUF:
-	resObj = Tcl_GetObjResult(dataPtr->interp);
+	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	ResultAdd(&dataPtr->result, resBuf, resLen);
 	break;
@@ -434,24 +466,16 @@ ExecuteCallback(
 	 * Interpret result as integer number.
 	 */
 
-	resObj = Tcl_GetObjResult(dataPtr->interp);
-	TclGetIntFromObj(dataPtr->interp, resObj, &dataPtr->maxRead);
+	resObj = Tcl_GetObjResult(eval);
+	TclGetIntFromObj(eval, resObj, &dataPtr->maxRead);
 	break;
     }
 
-    Tcl_ResetResult(dataPtr->interp);
+    Tcl_ResetResult(eval);
     if (preserve == P_PRESERVE) {
-	(void) Tcl_RestoreInterpState(dataPtr->interp, state);
+	(void) Tcl_RestoreInterpState(eval, state);
     }
-    return res;
-
-  cleanup:
-    if (preserve == P_PRESERVE) {
-	(void) Tcl_RestoreInterpState(dataPtr->interp, state);
-    }
-    if (command != NULL) {
-	Tcl_DecrRefCount(command);
-    }
+    Tcl_Release(eval);
     return res;
 }
 
@@ -535,6 +559,7 @@ TransformCloseProc(
      * system rely on (f.e. signaling the close to interested parties).
      */
 
+    PreserveData(dataPtr);
     if (dataPtr->mode & TCL_WRITABLE) {
 	ExecuteCallback(dataPtr, interp, A_FLUSH_WRITE, NULL, 0,
 		TRANSMIT_DOWN, P_PRESERVE);
@@ -554,14 +579,15 @@ TransformCloseProc(
 	ExecuteCallback(dataPtr, interp, A_DELETE_READ, NULL, 0,
 		TRANSMIT_DONT, P_PRESERVE);
     }
+    ReleaseData(dataPtr);
 
     /*
      * General cleanup.
      */
 
-    ResultClear(&dataPtr->result);
-    Tcl_DecrRefCount(dataPtr->command);
-    ckfree(dataPtr);
+    Tcl_Release(dataPtr->self);
+    dataPtr->self = NULL;
+    ReleaseData(dataPtr);
     return TCL_OK;
 }
 
@@ -596,7 +622,7 @@ TransformInputProc(
      * Should assert(dataPtr->mode & TCL_READABLE);
      */
 
-    if (toRead == 0) {
+    if (toRead == 0 || dataPtr->self == NULL) {
 	/*
 	 * Catch a no-op.
 	 */
@@ -606,6 +632,7 @@ TransformInputProc(
     gotBytes = 0;
     downChan = Tcl_GetStackedChannel(dataPtr->self);
 
+    PreserveData(dataPtr);
     while (toRead > 0) {
 	/*
 	 * Loop until the request is satisfied (or no data is available from
@@ -623,7 +650,7 @@ TransformInputProc(
 	     * break out of the loop and return to the caller.
 	     */
 
-	    return gotBytes;
+	    break;
 	}
 
 	/*
@@ -647,7 +674,7 @@ TransformInputProc(
 	    }
 	} /* else: 'maxRead < 0' == Accept the current value of toRead. */
 	if (toRead <= 0) {
-	    return gotBytes;
+	    break;
 	}
 
 	/*
@@ -664,11 +691,12 @@ TransformInputProc(
 		int error = Tcl_GetErrno();
 
 	    if ((error == EAGAIN) && (gotBytes > 0)) {
-		return gotBytes;
+		break;
 	    }
 
 	    *errorCodePtr = error;
-	    return -1;
+	    gotBytes = -1;
+	    break;
 	} else if (read == 0) {
 	    /*
 	     * Check wether we hit on EOF in the underlying channel or not. If
@@ -683,9 +711,9 @@ TransformInputProc(
 	    if (!Tcl_Eof(downChan)) {
 		if ((gotBytes == 0) && (dataPtr->flags & CHANNEL_ASYNC)) {
 		    *errorCodePtr = EWOULDBLOCK;
-		    return -1;
+		    gotBytes = -1;
 		}
-		return gotBytes;
+		break;
 	    }
 
 	    if (dataPtr->readIsFlushed) {
@@ -693,7 +721,7 @@ TransformInputProc(
 		 * Already flushed, nothing to do anymore.
 		 */
 
-		return gotBytes;
+		break;
 	    }
 
 	    dataPtr->readIsFlushed = 1;
@@ -705,7 +733,7 @@ TransformInputProc(
 		 * We had nothing to flush.
 		 */
 
-		return gotBytes;
+		break;
 	    }
 
 	    continue;		/* at: while (toRead > 0) */
@@ -719,9 +747,11 @@ TransformInputProc(
 	if (ExecuteCallback(dataPtr, NULL, A_READ, UCHARP(buf), read,
 		TRANSMIT_IBUF, P_PRESERVE) != TCL_OK) {
 	    *errorCodePtr = EINVAL;
-	    return -1;
+	    gotBytes = -1;
+	    break;
 	}
     } /* while toRead > 0 */
+    ReleaseData(dataPtr);
 
     return gotBytes;
 }
@@ -763,11 +793,13 @@ TransformOutputProc(
 	return 0;
     }
 
+    PreserveData(dataPtr);
     if (ExecuteCallback(dataPtr, NULL, A_WRITE, UCHARP(buf), toWrite,
 	    TRANSMIT_DOWN, P_NO_PRESERVE) != TCL_OK) {
 	*errorCodePtr = EINVAL;
-	return -1;
+	toWrite = -1;
     }
+    ReleaseData(dataPtr);
 
     return toWrite;
 }
@@ -820,6 +852,7 @@ TransformSeekProc(
      * request down, unchanged.
      */
 
+    PreserveData(dataPtr);
     if (dataPtr->mode & TCL_WRITABLE) {
 	ExecuteCallback(dataPtr, NULL, A_FLUSH_WRITE, NULL, 0, TRANSMIT_DOWN,
 		P_NO_PRESERVE);
@@ -831,6 +864,7 @@ TransformSeekProc(
 	ResultClear(&dataPtr->result);
 	dataPtr->readIsFlushed = 0;
     }
+    ReleaseData(dataPtr);
 
     return parentSeekProc(Tcl_GetChannelInstanceData(parent), offset, mode,
 	    errorCodePtr);
@@ -891,6 +925,7 @@ TransformWideSeekProc(
      * request down, unchanged.
      */
 
+    PreserveData(dataPtr);
     if (dataPtr->mode & TCL_WRITABLE) {
 	ExecuteCallback(dataPtr, NULL, A_FLUSH_WRITE, NULL, 0, TRANSMIT_DOWN,
 		P_NO_PRESERVE);
@@ -902,6 +937,7 @@ TransformWideSeekProc(
 	ResultClear(&dataPtr->result);
 	dataPtr->readIsFlushed = 0;
     }
+    ReleaseData(dataPtr);
 
     /*
      * If we have a wide seek capability, we should stick with that.
@@ -1056,6 +1092,9 @@ TransformWatchProc(
      * unchanged.
      */
 
+    if (dataPtr->self == NULL) {
+	return;
+    }
     downChan = Tcl_GetStackedChannel(dataPtr->self);
 
     Tcl_GetChannelType(downChan)->watchProc(

@@ -162,6 +162,9 @@ typedef struct CloseCallback {
  */
 
 static ChannelBuffer *	AllocChannelBuffer(int length);
+static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
+static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
+static int		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelTimerProc(ClientData clientData);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
@@ -387,6 +390,7 @@ ChanRead(
     int *errnoPtr)
 {
     if (WillRead(chanPtr) < 0) {
+	*errnoPtr = Tcl_GetErrno();
         return -1;
     }
 
@@ -1743,6 +1747,10 @@ Tcl_StackChannel(
 	statePtr->csPtrR = NULL;
 	statePtr->csPtrW = NULL;
 
+	/*
+	 * TODO: Examine what can go wrong if Tcl_Flush() call disturbs
+	 * the stacking state of this channel during its operations.
+	 */
 	if (Tcl_Flush((Tcl_Channel) prevChanPtr) != TCL_OK) {
 	    statePtr->csPtrR = csPtrR;
 	    statePtr->csPtrW = csPtrW;
@@ -1872,6 +1880,13 @@ Tcl_UnstackChannel(
 	 * into the old structure.
 	 */
 
+	/*
+	 * TODO: Figure out how to handle the situation where the chan
+	 * operations called below by this unstacking operation cause
+	 * another unstacking recursively.  In that case the downChanPtr
+	 * value we're holding on to will not be the right thing.
+	 */
+
 	Channel *downChanPtr = chanPtr->downChanPtr;
 
 	/*
@@ -1976,7 +1991,7 @@ Tcl_UnstackChannel(
 	 */
 
 	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
-	UpdateInterest(downChanPtr);
+	UpdateInterest(statePtr->topChanPtr);
 
 	if (result != 0) {
 	    Tcl_SetErrno(result);
@@ -2288,7 +2303,35 @@ AllocChannelBuffer(
     bufPtr->nextRemoved	= BUFFER_PADDING;
     bufPtr->bufLength	= length + BUFFER_PADDING;
     bufPtr->nextPtr	= NULL;
+    bufPtr->refCount	= 1;
     return bufPtr;
+}
+
+static void
+PreserveChannelBuffer(
+    ChannelBuffer *bufPtr)
+{
+    if (bufPtr->refCount == 0) {
+	Tcl_Panic("Reuse of ChannelBuffer! %p", bufPtr);
+    }
+    bufPtr->refCount++;
+}
+
+static void
+ReleaseChannelBuffer(
+    ChannelBuffer *bufPtr)
+{
+    if (--bufPtr->refCount) {
+	return;
+    }
+    ckfree(bufPtr);
+}
+
+static int
+IsShared(
+    ChannelBuffer *bufPtr)
+{
+    return bufPtr->refCount > 1;
 }
 
 /*
@@ -2320,9 +2363,12 @@ RecycleBuffer(
     /*
      * Do we have to free the buffer to the OS?
      */
+    if (IsShared(bufPtr)) {
+	mustDiscard = 1;
+    }
 
     if (mustDiscard) {
-	ckfree(bufPtr);
+	ReleaseChannelBuffer(bufPtr);
 	return;
     }
 
@@ -2333,7 +2379,7 @@ RecycleBuffer(
      */
 
     if ((bufPtr->bufLength - BUFFER_PADDING) < statePtr->bufSize) {
-	ckfree(bufPtr);
+	ReleaseChannelBuffer(bufPtr);
 	return;
     }
 
@@ -2368,7 +2414,7 @@ RecycleBuffer(
      * If we reached this code we return the buffer to the OS.
      */
 
-    ckfree(bufPtr);
+    ReleaseChannelBuffer(bufPtr);
     return;
 
   keepBuffer:
@@ -2544,6 +2590,7 @@ FlushChannel(
 	 * Produce the output on the channel.
 	 */
 
+	PreserveChannelBuffer(bufPtr);
 	toWrite = BytesLeft(bufPtr);
 	if (toWrite == 0) {
             written = 0;
@@ -2565,6 +2612,7 @@ FlushChannel(
 
 	    if (errorCode == EINTR) {
 		errorCode = 0;
+		ReleaseChannelBuffer(bufPtr);
 		continue;
 	    }
 
@@ -2586,6 +2634,7 @@ FlushChannel(
 		    UpdateInterest(chanPtr);
 		}
 		errorCode = 0;
+		ReleaseChannelBuffer(bufPtr);
 		break;
 	    }
 
@@ -2647,14 +2696,13 @@ FlushChannel(
 	     */
 
 	    DiscardOutputQueued(statePtr);
+	    ReleaseChannelBuffer(bufPtr);
 	    continue;
 	} else {
 	    wroteSome = 1;
 	}
 
-	if (!IsBufferEmpty(bufPtr)) {
-	    bufPtr->nextRemoved += written;
-	}
+	bufPtr->nextRemoved += written;
 
 	/*
 	 * If this buffer is now empty, recycle it.
@@ -2667,6 +2715,7 @@ FlushChannel(
 	    }
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	}
+	ReleaseChannelBuffer(bufPtr);
     }	/* Closes "while (1)". */
 
     /*
@@ -2768,7 +2817,7 @@ CloseChannel(
      */
 
     if (statePtr->curOutPtr != NULL) {
-	ckfree(statePtr->curOutPtr);
+	ReleaseChannelBuffer(statePtr->curOutPtr);
 	statePtr->curOutPtr = NULL;
     }
 
@@ -3180,7 +3229,8 @@ Tcl_Close(
 
     stickyError = 0;
 
-    if ((statePtr->encoding != NULL) && (statePtr->curOutPtr != NULL)
+    if ((statePtr->encoding != NULL)
+	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)
 	    && (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
 	statePtr->outputEncodingFlags |= TCL_ENCODING_END;
 	if (WriteChars(chanPtr, "", 0) < 0) {
@@ -3977,6 +4027,12 @@ static int
 WillRead(
     Channel *chanPtr)
 {
+    if (chanPtr->typePtr == NULL) {
+	/* Prevent read attempts on a closed channel */
+        DiscardInputQueued(chanPtr->state, 0);
+	Tcl_SetErrno(EINVAL);
+	return -1;
+    }
     if ((chanPtr->typePtr->seekProc != NULL)
             && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
         if ((chanPtr->state->curOutPtr != NULL)
@@ -4063,6 +4119,7 @@ Write(
 	    bufPtr->nextAdded += saved;
 	    saved = 0;
 	}
+	PreserveChannelBuffer(bufPtr);
 	dst = InsertPoint(bufPtr);
 	dstLen = SpaceLeft(bufPtr);
 
@@ -4076,6 +4133,7 @@ Write(
 	
 	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
 	    /* We're reading from invalid/incomplete UTF-8 */
+	    ReleaseChannelBuffer(bufPtr);
 	    if (total == 0) {
 		Tcl_SetErrno(EINVAL);
 		return -1;
@@ -4152,6 +4210,7 @@ Write(
 
 	if (IsBufferFull(bufPtr)) {
 	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
+		ReleaseChannelBuffer(bufPtr);
 		return -1;
 	    }
 	    flushed += statePtr->bufSize;
@@ -4159,6 +4218,7 @@ Write(
 		needNlFlush = 0;
 	    }
 	}
+	ReleaseChannelBuffer(bufPtr);
     }
     if ((flushed < total) && (GotFlag(statePtr, CHANNEL_UNBUFFERED) ||
 	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED)))) {
@@ -4504,9 +4564,12 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-    /*
-    chanPtr = statePtr->topChanPtr;
-     */
+
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
 
     bufPtr = gs.bufPtr;
     if (bufPtr == NULL) {
@@ -4540,16 +4603,18 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-    /*
-    chanPtr = statePtr->topChanPtr;
-     */
-    bufPtr = statePtr->inQueueHead;
-    if (bufPtr == NULL) {
-	Tcl_Panic("Tcl_GetsObj: restore reached with bufPtr==NULL");
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
     }
-    bufPtr->nextRemoved = oldRemoved;
+    bufPtr = statePtr->inQueueHead;
+    if (bufPtr != NULL) {
+	bufPtr->nextRemoved = oldRemoved;
+	bufPtr = bufPtr->nextPtr;
+    }
 
-    for (bufPtr = bufPtr->nextPtr; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
+    for ( ; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
 	bufPtr->nextRemoved = BUFFER_PADDING;
     }
     CommonGetsCleanup(chanPtr);
@@ -4582,9 +4647,11 @@ Tcl_GetsObj(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-    /*
-    chanPtr = statePtr->topChanPtr;
-     */
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
     UpdateInterest(chanPtr);
     Tcl_Release(chanPtr);
     return copiedTotal;
@@ -4690,6 +4757,9 @@ TclGetsObjBinary(
 		goto restore;
 	    }
 	    bufPtr = statePtr->inQueueTail;
+	    if (bufPtr == NULL) {
+		goto restore;
+	    }
 	}
 
 	dst = (unsigned char *) RemovePoint(bufPtr);
@@ -4802,12 +4872,12 @@ TclGetsObjBinary(
 
   restore:
     bufPtr = statePtr->inQueueHead;
-    if (bufPtr == NULL) {
-	Tcl_Panic("TclGetsObjBinary: restore reached with bufPtr==NULL");
+    if (bufPtr) {
+	bufPtr->nextRemoved = oldRemoved;
+	bufPtr = bufPtr->nextPtr;
     }
-    bufPtr->nextRemoved = oldRemoved;
 
-    for (bufPtr = bufPtr->nextPtr; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
+    for ( ; bufPtr != NULL; bufPtr = bufPtr->nextPtr) {
 	bufPtr->nextRemoved = BUFFER_PADDING;
     }
     CommonGetsCleanup(chanPtr);
@@ -4962,6 +5032,11 @@ FilterInputBytes(
 	}
 	bufPtr = statePtr->inQueueTail;
 	gsPtr->bufPtr = bufPtr;
+	if (bufPtr == NULL) {
+	    gsPtr->charsWrote = 0;
+	    gsPtr->rawRead = 0;
+	    return -1;
+	}
     }
 
     /*
@@ -5580,6 +5655,11 @@ DoReadChars(
 		ResetFlag(statePtr, CHANNEL_BLOCKED);
 	    }
 	    result = GetInput(chanPtr);
+	    if (chanPtr != statePtr->topChanPtr) {
+		Tcl_Release(chanPtr);
+		chanPtr = statePtr->topChanPtr;
+		Tcl_Preserve(chanPtr);
+	    }
 	    if (result != 0) {
 		if (result == EAGAIN) {
 		    break;
@@ -5610,9 +5690,11 @@ DoReadChars(
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
      */
-    /*
-    chanPtr = statePtr->topChanPtr;
-     */
+    if (chanPtr != statePtr->topChanPtr) {
+	Tcl_Release(chanPtr);
+	chanPtr = statePtr->topChanPtr;
+	Tcl_Preserve(chanPtr);
+    }
     UpdateInterest(chanPtr);
     Tcl_Release(chanPtr);
     return copied;
@@ -6370,7 +6452,7 @@ DiscardInputQueued(
      */
 
     if (discardSavedBuffers && statePtr->saveInBufPtr != NULL) {
-	ckfree(statePtr->saveInBufPtr);
+	ReleaseChannelBuffer(statePtr->saveInBufPtr);
 	statePtr->saveInBufPtr = NULL;
     }
 }
@@ -6463,7 +6545,7 @@ GetInput(
 
 	if ((bufPtr != NULL)
 		&& (bufPtr->bufLength - BUFFER_PADDING < statePtr->bufSize)) {
-	    ckfree(bufPtr);
+	    ReleaseChannelBuffer(bufPtr);
 	    bufPtr = NULL;
 	}
 
@@ -6525,10 +6607,12 @@ GetInput(
     } else
 #endif /* TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING */
     {
+	PreserveChannelBuffer(bufPtr);
 	nread = ChanRead(chanPtr, InsertPoint(bufPtr), toRead, &result);
     }
 
     if (nread > 0) {
+	result = 0;
 	bufPtr->nextAdded += nread;
 
 	/*
@@ -6552,6 +6636,7 @@ GetInput(
 	}
 #endif /* TCL_IO_TRACK_OS_FOR_DRIVER_WITH_BAD_BLOCKING */
     } else if (nread == 0) {
+	result = 0;
 	SetFlag(statePtr, CHANNEL_EOF);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
     } else if (nread < 0) {
@@ -6560,9 +6645,9 @@ GetInput(
 	    result = EAGAIN;
 	}
 	Tcl_SetErrno(result);
-	return result;
     }
-    return 0;
+    ReleaseChannelBuffer(bufPtr);
+    return result;
 }
 
 /*
@@ -7700,7 +7785,8 @@ Tcl_SetChannelOption(
 	 * iso2022, the terminated escape sequence must write to the buffer.
 	 */
 
-	if ((statePtr->encoding != NULL) && (statePtr->curOutPtr != NULL)
+	if ((statePtr->encoding != NULL)
+		&& !(statePtr->outputEncodingFlags & TCL_ENCODING_START)
 		&& (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
 	    statePtr->outputEncodingFlags |= TCL_ENCODING_END;
 	    WriteChars(chanPtr, "", 0);
@@ -9710,12 +9796,15 @@ StackSetBlockMode(
 {
     int result = 0;
     Tcl_DriverBlockModeProc *blockModeProc;
+    ChannelState *statePtr = chanPtr->state;
 
     /*
      * Start at the top of the channel stack
+     * TODO: Examine what can go wrong when blockModeProc calls
+     * disturb the stacking state of the channel.
      */
 
-    chanPtr = chanPtr->state->topChanPtr;
+    chanPtr = statePtr->topChanPtr;
     while (chanPtr != NULL) {
 	blockModeProc = Tcl_ChannelBlockModeProc(chanPtr->typePtr);
 	if (blockModeProc != NULL) {

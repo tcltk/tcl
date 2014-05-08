@@ -511,12 +511,6 @@ test fCmd-6.6 {CopyRenameOneFile: errno != ENOENT} -setup {
 } -returnCodes error -cleanup {
     testchmod 755 td1
 } -result {error renaming "tf1" to "td1/tf1": permission denied}
-test fCmd-6.7 {CopyRenameOneFile: errno != ENOENT} -setup {
-    cleanup
-} -constraints {win 95} -returnCodes error -body {
-    createfile tf1
-    file rename tf1 $long
-} -result [subst {error renaming "tf1" to "$long": file name too long}]
 test fCmd-6.9 {CopyRenameOneFile: errno == ENOENT} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
