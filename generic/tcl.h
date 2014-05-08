@@ -2433,8 +2433,14 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 
 /*
  * Include platform specific public function declarations that are accessible
- * via the stubs table.
+ * via the stubs table. Make all TclOO symbols MODULE_SCOPE (which only
+ * has effect on building it as a shared library). See ticket [3010352].
  */
+
+#if defined(BUILD_tcl)
+#   undef TCLAPI
+#   define TCLAPI MODULE_SCOPE
+#endif
 
 #include "tclPlatDecls.h"
 
