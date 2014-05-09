@@ -45,7 +45,7 @@ testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
-testConstraint largefileSupport 0
+testConstraint largefileSupport 1
 
 # some tests can only be run is umask is 2
 # if "umask" cannot be run, the tests will be skipped.
@@ -4457,10 +4457,10 @@ test io-34.21 {Tcl_Seek and Tcl_Tell on large files} {largefileSupport} {
     puts -nonewline $f abcdef
     lappend l [tell $f]
     close $f
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
     # truncate...
     close [open $path(test3) w]
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
     set l
 } {0 6 6 4294967296 4294967302 4294967302 0}
 
