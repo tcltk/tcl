@@ -450,8 +450,8 @@ static const char *msg_write_nothing = "{write wrote nothing}";
 static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #ifdef TCL_THREADS
 static const char *msg_send_originlost = "{Channel thread lost}";
-static const char *msg_send_dstlost    = "{Owner lost}";
 #endif /* TCL_THREADS */
+static const char *msg_send_dstlost    = "{Owner lost}";
 static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
 
 /*
@@ -1397,6 +1397,7 @@ ReflectOutput(
     /* ASSERT: rcPtr->mode & TCL_WRITABLE */
 
     Tcl_Preserve(rcPtr);
+    Tcl_Preserve(rcPtr->interp);
 
     bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
     Tcl_IncrRefCount(bufObj);
@@ -1413,6 +1414,14 @@ ReflectOutput(
         goto invalid;
     }
 
+    if (Tcl_InterpDeleted(rcPtr->interp)) {
+	/*
+	 * The interp was destroyed during InvokeTclMethod().
+	 */
+
+	SetChannelErrorStr(rcPtr->chan, msg_send_dstlost);
+        goto invalid;
+    }
     if (Tcl_GetIntFromObj(rcPtr->interp, resObj, &written) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, MarshallError(rcPtr->interp));
         goto invalid;
@@ -1442,6 +1451,7 @@ ReflectOutput(
  stop:
     Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
+    Tcl_Release(rcPtr->interp);
     Tcl_Release(rcPtr);
     return written;
  invalid:
