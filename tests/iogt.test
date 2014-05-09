@@ -159,8 +159,8 @@ proc fevent {fdelay idelay blocks script data} {
 
     #puts stdout ">>>>>" ; flush stdout
 
-    uplevel #0 set sock $sk
-    set res [uplevel #0 $script]
+    uplevel 1 set sock $sk
+    set res [uplevel 1 $script]
 
     catch {close $sk}
     return $res
@@ -686,7 +686,7 @@ test iogt-2.5 {basic I/O, mixed trail} {testchannel} {
 } {}
 
 test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
-	{testchannel unknownFailure} {
+	{testchannel knownBug} {
     # This test to check the validity of aquired Tcl_Channel references is
     # not possible because even a backgrounded fcopy will immediately start
     # to copy data, without waiting for the event loop. This is done only in
@@ -703,6 +703,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
     set fin  [open $path(dummy) r]
 
     fevent 1000 500 {20 20 20 10 1 1} {
+	variable copy
 	close $fin
 
 	set          fout [open dummyout w]
@@ -740,7 +741,7 @@ test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} \
 } {1 {create/write create/read write flush/write flush/read delete/write delete/read}}
 
 
-test iogt-4.0 {fileevent readable, after transform} {testchannel unknownFailure} {
+test iogt-4.0 {fileevent readable, after transform} {testchannel knownBug} {
     set fin  [open $path(dummy) r]
     set data [read $fin]
     close $fin
@@ -770,10 +771,11 @@ test iogt-4.0 {fileevent readable, after transform} {testchannel unknownFailure}
     }
 
     fevent 1000 500 {20 20 20 10 1} {
+	variable stop
 	audit_flow trail   -attach $sock
 	rblocks_t  rbuf trail 23 -attach $sock
 
-	fileevent $sock readable [list Get $sock]
+	fileevent $sock readable [namespace code [list Get $sock]]
 
 	flush $sock ; # now, or fcopy will error us out
 	# But the 1 second delay should be enough to
@@ -871,7 +873,7 @@ delete/write {} *ignored*
 delete/read {} *ignored*}  ; # catch unescaped quote "
 
 
-test iogt-5.0 {EOF simulation} {testchannel unknownFailure} {
+test iogt-5.0 {EOF simulation} {testchannel knownBug} {
     set fin  [open $path(dummy)    r]
     set fout [open $path(dummyout) w]
 
