@@ -298,7 +298,6 @@ TclChannelTransform(
     }
     Tcl_DStringFree(&ds);
 
-    dataPtr->self = chan;
     dataPtr->watchMask = 0;
     dataPtr->mode = mode;
     dataPtr->timer = NULL;
@@ -317,6 +316,7 @@ TclChannelTransform(
 	ReleaseData(dataPtr);
 	return TCL_ERROR;
     }
+    Tcl_Preserve(dataPtr->self);
 
     /*
      * At last initialize the transformation at the script level.
@@ -437,6 +437,9 @@ ExecuteCallback(
 	break;
 
     case TRANSMIT_DOWN:
+	if (dataPtr->self == NULL) {
+	    break;
+	}
 	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	Tcl_WriteRaw(Tcl_GetStackedChannel(dataPtr->self), (char *) resBuf,
@@ -444,6 +447,9 @@ ExecuteCallback(
 	break;
 
     case TRANSMIT_SELF:
+	if (dataPtr->self == NULL) {
+	    break;
+	}
 	resObj = Tcl_GetObjResult(eval);
 	resBuf = Tcl_GetByteArrayFromObj(resObj, &resLen);
 	Tcl_WriteRaw(dataPtr->self, (char *) resBuf, resLen);
@@ -579,6 +585,8 @@ TransformCloseProc(
      * General cleanup.
      */
 
+    Tcl_Release(dataPtr->self);
+    dataPtr->self = NULL;
     ReleaseData(dataPtr);
     return TCL_OK;
 }
@@ -614,7 +622,7 @@ TransformInputProc(
      * Should assert(dataPtr->mode & TCL_READABLE);
      */
 
-    if (toRead == 0) {
+    if (toRead == 0 || dataPtr->self == NULL) {
 	/*
 	 * Catch a no-op.
 	 */
@@ -1084,6 +1092,9 @@ TransformWatchProc(
      * unchanged.
      */
 
+    if (dataPtr->self == NULL) {
+	return;
+    }
     downChan = Tcl_GetStackedChannel(dataPtr->self);
 
     Tcl_GetChannelType(downChan)->watchProc(

@@ -2230,6 +2230,11 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * via the stubs table.
  */
 
+#if defined(BUILD_tcl)
+#   undef TCLAPI
+#   define TCLAPI MODULE_SCOPE
+#endif
+
 #include "tclPlatDecls.h"
 
 /*

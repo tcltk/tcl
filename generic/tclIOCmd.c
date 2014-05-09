@@ -336,7 +336,8 @@ Tcl_GetsObjCmd(
     if (objc == 3) {
 	if (Tcl_ObjSetVar2(interp, objv[2], NULL, linePtr,
 		TCL_LEAVE_ERR_MSG) == NULL) {
-	    return TCL_ERROR;
+	    code = TCL_ERROR;
+	    goto done;
 	}
 	Tcl_SetObjResult(interp, Tcl_NewIntObj(lineLen));
     } else {

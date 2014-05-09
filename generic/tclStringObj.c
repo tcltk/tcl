@@ -1123,7 +1123,8 @@ Tcl_AppendLimitedToObj(
 	if (ellipsis == NULL) {
 	    ellipsis = "...";
 	}
-	toCopy = Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
+	toCopy = (bytes == NULL) ? limit
+		: Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
     }
 
     /*
@@ -1435,7 +1436,7 @@ AppendUnicodeToUnicodeRep(
 	 * the reallocs below.
 	 */
 
-	if (unicode >= stringPtr->unicode
+	if (unicode && unicode >= stringPtr->unicode
 		&& unicode <= stringPtr->unicode + stringPtr->maxChars) {
 	    offset = unicode - stringPtr->unicode;
 	}
@@ -1457,8 +1458,10 @@ AppendUnicodeToUnicodeRep(
      * trailing null.
      */
 
-    memmove(stringPtr->unicode + stringPtr->numChars, unicode,
-	    appendNumChars * sizeof(Tcl_UniChar));
+    if (unicode) {
+	memmove(stringPtr->unicode + stringPtr->numChars, unicode,
+		appendNumChars * sizeof(Tcl_UniChar));
+    }
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
     stringPtr->allocated = 0;
@@ -1597,7 +1600,7 @@ AppendUtfToUtfRep(
 	 * the reallocs below.
 	 */
 
-	if (bytes >= objPtr->bytes
+	if (bytes && bytes >= objPtr->bytes
 		&& bytes <= objPtr->bytes + objPtr->length) {
 	    offset = bytes - objPtr->bytes;
 	}
@@ -1625,7 +1628,9 @@ AppendUtfToUtfRep(
     stringPtr->numChars = -1;
     stringPtr->hasUnicode = 0;
 
-    memmove(objPtr->bytes + oldLength, bytes, numBytes);
+    if (bytes) {
+	memmove(objPtr->bytes + oldLength, bytes, numBytes);
+    }
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
 }
@@ -2658,6 +2663,38 @@ Tcl_ObjPrintf(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclGetStringStorage --
+ *
+ *	Returns the string storage space of a Tcl_Obj.
+ *
+ * Results:
+ *	The pointer value objPtr->bytes is returned and the number of bytes
+ *	allocated there is written to *sizePtr (if known).
+ *
+ * Side effects:
+ *	May set objPtr->bytes.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+char *
+TclGetStringStorage(
+    Tcl_Obj *objPtr,
+    unsigned int *sizePtr)
+{
+    String *stringPtr;
+
+    if (objPtr->typePtr != &tclStringType || objPtr->bytes == NULL) {
+	return TclGetStringFromObj(objPtr, (int *)sizePtr);
+    }
+
+    stringPtr = GET_STRING(objPtr);
+    *sizePtr = stringPtr->allocated;
+    return objPtr->bytes;
+}
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringObjReverse --
  *
  *	Implements the [string reverse] operation.
@@ -2848,7 +2885,11 @@ ExtendUnicodeRepWithString(
     }
 
     stringPtr->hasUnicode = 1;
-    stringPtr->numChars = needed;
+    if (bytes) {
+	stringPtr->numChars = needed;
+    } else {
+	numAppendChars = 0;
+    }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
 	bytes += TclUtfToUniChar(bytes, dst);
     }

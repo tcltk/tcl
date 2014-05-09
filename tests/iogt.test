@@ -228,8 +228,18 @@ proc id_torture {chan op data} {
 	delete/read  -
 	clear_read   {;#ignore}
 	flush/write -
-	flush/read  -
-	write       -
+	flush/read  {}
+	write       {
+	    global level
+	    if {$level} {
+		return
+	    }
+	    incr level
+	    testchannel unstack $chan
+	    testchannel transform $chan \
+		-command [namespace code [list id_torture $chan]]
+	    return $data
+	}
 	read        {
 	    testchannel unstack $chan
 	    testchannel transform $chan \
@@ -579,6 +589,15 @@ test iogt-2.4 {basic I/O, mixed trail} {testchannel} {
     testchannel unstack $fh
     close   $fh
     set x
+} {}
+test iogt-2.5 {basic I/O, mixed trail} {testchannel} {
+    set ::level 0
+    set fh [open $path(dummyout) w]
+    torture -attach $fh
+    puts -nonewline $fh abcdef
+    flush $fh
+    testchannel unstack $fh
+    close   $fh
 } {}
 
 test iogt-3.0 {Tcl_Channel valid after stack/unstack, fevent handling} -setup {

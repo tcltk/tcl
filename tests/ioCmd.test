@@ -2076,13 +2076,13 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	proc foo {args} {
 	    oninit; onfinal; track;
 	    # destroy interpreter during channel access
-	    # Actually not possible for an interp to destroy itself.
-	    interp delete {}
-	    return}
+	    suicide
+	}
 	set chan [chan create {r w} foo]
 	fconfigure $chan -buffering none
 	set chan
     }]
+    interp alias $ida suicide {} interp delete $ida
 
     # Move channel to 2nd thread.
     interp eval $ida [list testchannel cut    $chan]
@@ -2100,8 +2100,7 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	set res
     }]
     set res
-} -constraints {testchannel impossible} \
-    -result {Owner lost}
+} -constraints {testchannel} -result {Owner lost}
 
 test iocmd-32.2 {delete interp of reflected chan} {
     # Bug 3034840
@@ -2824,10 +2823,11 @@ test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
 
     set res
 } -cleanup {
+    after cancel $::timer
     rename LOG {}
     rename POST {}
     rename HANDLER {}
-    unset beat drive data forever res tid ch
+    unset beat drive data forever res tid ch timer
 } -match glob \
     -result {{initialize rc* read} {watch rc* read} {read rc* 4096} {watch rc* {}} {watch rc* read} {read rc* 4096} {watch rc* {}} {finalize rc*}}
 
