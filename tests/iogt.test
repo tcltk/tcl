@@ -968,6 +968,15 @@ test iogt-6.0 {Push back} testchannel {
 } {xxx}
 
 test iogt-6.1 {Push back and up} {testchannel knownBug} {
+
+    # This test demonstrates the bug/misfeature in the stacked
+    # channel implementation that data can be discarded if it is
+    # read into the buffers of one channel in the stack, and then
+    # that channel is popped before anything above it reads.
+    #
+    # This bug can be worked around by always setting -buffersize
+    # to 1, but who wants to do that?
+
     set f [open $path(dummy) r]
 
     # contents of dummy = "abcdefghi..."
