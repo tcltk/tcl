@@ -2010,6 +2010,7 @@ InvokeTclMethod(
 
     sr = Tcl_SaveInterpState(rtPtr->interp, 0 /* Dummy */);
     Tcl_Preserve(rtPtr);
+    Tcl_Preserve(rtPtr->interp);
     result = Tcl_EvalObjv(rtPtr->interp, cmdc, rtPtr->argv, TCL_EVAL_GLOBAL);
 
     /*
@@ -2054,6 +2055,7 @@ InvokeTclMethod(
 	Tcl_IncrRefCount(resObj);
     }
     Tcl_RestoreInterpState(rtPtr->interp, sr);
+    Tcl_Release(rtPtr->interp);
     Tcl_Release(rtPtr);
 
     /*

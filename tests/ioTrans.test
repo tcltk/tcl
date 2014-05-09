@@ -1034,7 +1034,7 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
     # Magic to get the test* commands in the slaves
     load {} Tcltest $ida
     load {} Tcltest $idb
-} -constraints {testchannel impossible} -match glob -body {
+} -constraints {testchannel} -match glob -body {
     # Set up channel in thread
     set chan [interp eval $ida $helperscript]
     set chan [interp eval $ida {
@@ -1042,14 +1042,14 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
 	    handle.initialize clear drain flush limit? read write
 	    handle.finalize
 	    lappend ::res $args
-	    # Destroy interpreter during channel access.  Actually not
-	    # possible for an interp to destroy itself.
-	    interp delete {}
-	    return}
+	    # Destroy interpreter during channel access.
+	    suicide
+	}
 	set chan [chan push [tempchan] foo]
 	fconfigure $chan -buffering none
 	set chan
     }]
+    interp alias $ida suicide {} interp delete $ida
     # Move channel to 2nd thread, transform goes with it.
     interp eval $ida [list testchannel cut $chan]
     interp eval $idb [list testchannel splice $chan]
