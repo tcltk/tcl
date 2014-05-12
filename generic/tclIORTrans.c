@@ -457,8 +457,7 @@ static void		TimerKill(ReflectedTransform *rtPtr);
 static void		TimerSetup(ReflectedTransform *rtPtr);
 static void		TimerRun(ClientData clientData);
 static int		TransformRead(ReflectedTransform *rtPtr,
-			    int *errorCodePtr, unsigned char *buf,
-			    int toRead);
+			    int *errorCodePtr, Tcl_Obj *bufObj);
 static int		TransformWrite(ReflectedTransform *rtPtr,
 			    int *errorCodePtr, unsigned char *buf,
 			    int toWrite);
@@ -1063,6 +1062,7 @@ ReflectInput(
 {
     ReflectedTransform *rtPtr = clientData;
     int gotBytes, copied, readBytes;
+    Tcl_Obj *bufObj;
 
     /*
      * The following check can be done before thread redirection, because we
@@ -1078,6 +1078,9 @@ ReflectInput(
 
     Tcl_Preserve(rtPtr);
 
+    /* TODO: Consider a more appropriate buffer size. */
+    bufObj = Tcl_NewByteArrayObj(NULL, toRead);
+    Tcl_IncrRefCount(bufObj);
     gotBytes = 0;
     while (toRead > 0) {
 	/*
@@ -1129,7 +1132,9 @@ ReflectInput(
 	    goto stop;
 	}
 
-	readBytes = Tcl_ReadRaw(rtPtr->parent, buf, toRead);
+
+	readBytes = Tcl_ReadRaw(rtPtr->parent,
+		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
 	if (readBytes < 0) {
 	    /*
 	     * Report errors to caller. The state of the seek system is
@@ -1213,12 +1218,20 @@ ReflectInput(
 	 * iteration will put it into the result.
 	 */
 
-	if (!TransformRead(rtPtr, errorCodePtr, UCHARP(buf), readBytes)) {
+	Tcl_SetByteArrayLength(bufObj, readBytes);
+	if (!TransformRead(rtPtr, errorCodePtr, bufObj)) {
 	    goto error;
 	}
+	if (Tcl_IsShared(bufObj)) {
+	    Tcl_DecrRefCount(bufObj);
+	    bufObj = Tcl_NewObj();
+	    Tcl_IncrRefCount(bufObj);
+	}
+	Tcl_SetByteArrayLength(bufObj, 0);
     } /* while toRead > 0 */
 
  stop:
+    Tcl_DecrRefCount(bufObj);
     Tcl_Release(rtPtr);
     return gotBytes;
 
@@ -3067,10 +3080,8 @@ static int
 TransformRead(
     ReflectedTransform *rtPtr,
     int *errorCodePtr,
-    unsigned char *buf,
-    int toRead)
+    Tcl_Obj *bufObj)
 {
-    Tcl_Obj *bufObj;
     Tcl_Obj *resObj;
     int bytec;			/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
@@ -3083,8 +3094,8 @@ TransformRead(
     if (rtPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
-	p.transform.buf = (char *) buf;
-	p.transform.size = toRead;
+	p.transform.buf = (char *) Tcl_GetByteArrayFromObj(bufObj,
+		&(p.transform.size));
 
 	ForwardOpToOwnerThread(rtPtr, ForwardedInput, &p);
 
@@ -3104,12 +3115,8 @@ TransformRead(
     /* ASSERT: rtPtr->method & FLAG(METH_READ) */
     /* ASSERT: rtPtr->mode & TCL_READABLE */
 
-    bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toRead);
-    Tcl_IncrRefCount(bufObj);
-
     if (InvokeTclMethod(rtPtr, "read", bufObj, NULL, &resObj) != TCL_OK) {
 	Tcl_SetChannelError(rtPtr->chan, resObj);
-	Tcl_DecrRefCount(bufObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	*errorCodePtr = EINVAL;
 	return 0;
@@ -3118,7 +3125,6 @@ TransformRead(
     bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
     ResultAdd(&rtPtr->result, bytev, bytec);
 
-    Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     return 1;
 }
