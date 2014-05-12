@@ -41,7 +41,7 @@ testConstraint testthread       [llength [info commands testthread]]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
-testConstraint largefileSupport 1
+testConstraint largefileSupport [expr {$::tcl_platform(os) ne "Darwin"}]
 
 # some tests can only be run is umask is 2
 # if "umask" cannot be run, the tests will be skipped.
