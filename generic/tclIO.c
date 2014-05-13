@@ -4985,7 +4985,7 @@ Tcl_ReadRaw(
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    int nread, copied, copiedNow;
+    int nread, copied, copiedNow = INT_MAX;
 
     /*
      * The check below does too much because it will reject a call to this
@@ -5010,44 +5010,28 @@ Tcl_ReadRaw(
      */
 
     Tcl_Preserve(chanPtr);
-    for (copied = 0; copied < bytesToRead; copied += copiedNow) {
-	copiedNow = CopyBuffer(chanPtr, bufPtr + copied,
-		bytesToRead - copied);
-	if (copiedNow == 0) {
-	    if (GotFlag(statePtr, CHANNEL_EOF)) {
-		break;
-	    }
-	    if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
-		if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		    break;
-		}
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
-	    }
+    for (copied = 0; bytesToRead > 0 && copiedNow > 0;
+	    bufPtr+=copiedNow, bytesToRead-=copiedNow, copied+=copiedNow) {
+	copiedNow = CopyBuffer(chanPtr, bufPtr, bytesToRead);
+    }
 
-	    /*
-	     * Now go to the driver to get as much as is possible to
-	     * fill the remaining request. Do all the error handling by
-	     * ourselves. The code was stolen from 'GetInput' and
-	     * slightly adapted (different return value here).
-	     *
-	     * The case of 'bytesToRead == 0' at this point cannot
-	     * happen.
-	     */
+    if (bytesToRead > 0) {
+	/*
+	 * Now go to the driver to get as much as is possible to
+	 * fill the remaining request.  Since we're directly filling
+	 * the caller's buffer, retain the blocked flag.
+	 */
 
-	    nread = ChanRead(chanPtr, bufPtr + copied,
-		    bytesToRead - copied);
-
-	    if (nread < 0) {
-		if (GotFlag(statePtr, CHANNEL_BLOCKED) && copied > 0) {
-/* TODO: comment out? */
-//		    ResetFlag(statePtr, CHANNEL_BLOCKED);
-		} else {
-		    copied = -1;
-		}
-	    } else {
-		copied += nread;
+	nread = ChanRead(chanPtr, bufPtr, bytesToRead);
+	if (nread < 0) {
+	    if (!GotFlag(statePtr, CHANNEL_BLOCKED) || copied == 0) {
+		copied = -1;
 	    }
-	    break;
+	} else {
+	    copied += nread;
+	}
+	if (copied != 0) {
+	    ResetFlag(statePtr, CHANNEL_EOF);
 	}
     }
 
