@@ -12,6 +12,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef NDEBUG
 #include "tclInt.h"
 #include "tclIO.h"
 #include <assert.h>
@@ -167,6 +168,7 @@ static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
 static int		IsShared(ChannelBuffer *bufPtr);
 static void		ChannelTimerProc(ClientData clientData);
+static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
 static int		CheckChannelErrors(ChannelState *statePtr,
 			    int direction);
 static int		CheckForDeadChannel(Tcl_Interp *interp,
@@ -345,22 +347,73 @@ static Tcl_ObjType chanObjType = {
 #define MAX_CHANNEL_BUFFER_SIZE (1024*1024)
 
 /*
- * ChanRead, dropped here by a time traveler, see 8.6
+ *---------------------------------------------------------------------------
+ *
+ * ChanRead --
+ *
+ *	Read up to dstSize bytes using the inputProc of chanPtr, store
+ *	them at dst, and return the number of bytes stored.
+ *
+ * Results:
+ *	The return value of the driver inputProc,
+ *	  - number of bytes stored at dst, ot
+ *	  - -1 on error, with a Posix error code available to the
+ *	    caller by calling Tcl_GetErrno().
+ *
+ * Side effects:
+ *	The CHANNEL_BLOCKED and CHANNEL_EOF flags of the channel state are
+ *	set as appropriate.
+ *	On EOF, the inputEncodingFlags are set to perform ending operations
+ *	on decoding.
+ *	TODO - Is this really the right place for that?
+ *
+ *---------------------------------------------------------------------------
  */
-static inline int
+static int
 ChanRead(
     Channel *chanPtr,
     char *dst,
-    int dstSize,
-    int *errnoPtr)
+    int dstSize)
 {
+    int bytesRead, result;
+
+    /*
+     * If the caller asked for zero bytes, we'd force the inputProc
+     * to return zero bytes, and then misinterpret that as EOF.
+     */
+    assert(dstSize > 0);
+
     if (WillRead(chanPtr) < 0) {
-	*errnoPtr = Tcl_GetErrno();
         return -1;
     }
 
-    return chanPtr->typePtr->inputProc(chanPtr->instanceData, dst, dstSize,
-	    errnoPtr);
+    bytesRead = chanPtr->typePtr->inputProc(chanPtr->instanceData,
+	    dst, dstSize, &result);
+
+    /* Stop any flag leakage through stacked channel levels */
+    ResetFlag(chanPtr->state, CHANNEL_BLOCKED | CHANNEL_EOF);
+    if (bytesRead > 0) {
+	/*
+	 * If we get a short read, signal up that we may be BLOCKED.
+	 * We should avoid calling the driver because on some
+	 * platforms we will block in the low level reading code even
+	 * though the channel is set into nonblocking mode.
+	 */
+
+	if (bytesRead < dstSize) {
+	    SetFlag(chanPtr->state, CHANNEL_BLOCKED);
+	}
+    } else if (bytesRead == 0) {
+	SetFlag(chanPtr->state, CHANNEL_EOF);
+	chanPtr->state->inputEncodingFlags |= TCL_ENCODING_END;
+    } else if (bytesRead < 0) {
+	if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
+	    SetFlag(chanPtr->state, CHANNEL_BLOCKED);
+	    result = EAGAIN;
+	}
+	Tcl_SetErrno(result);
+    }
+    return bytesRead;
 }
 
 static inline Tcl_WideInt
@@ -4932,7 +4985,7 @@ Tcl_ReadRaw(
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    int nread, result, copied, copiedNow;
+    int nread, copied, copiedNow;
 
     /*
      * The check below does too much because it will reject a call to this
@@ -4962,11 +5015,11 @@ Tcl_ReadRaw(
 		bytesToRead - copied);
 	if (copiedNow == 0) {
 	    if (GotFlag(statePtr, CHANNEL_EOF)) {
-		goto done;
+		break;
 	    }
 	    if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
 		if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		    goto done;
+		    break;
 		}
 		ResetFlag(statePtr, CHANNEL_BLOCKED);
 	    }
@@ -4982,49 +5035,22 @@ Tcl_ReadRaw(
 	     */
 
 	    nread = ChanRead(chanPtr, bufPtr + copied,
-		    bytesToRead - copied, &result);
+		    bytesToRead - copied);
 
-	    if (nread > 0) {
-		/*
-		 * If we get a short read, signal up that we may be BLOCKED.
-		 * We should avoid calling the driver because on some
-		 * platforms we will block in the low level reading code even
-		 * though the channel is set into nonblocking mode.
-		 */
-
-		if (nread < (bytesToRead - copied)) {
-		    SetFlag(statePtr, CHANNEL_BLOCKED);
+	    if (nread < 0) {
+		if (GotFlag(statePtr, CHANNEL_BLOCKED) && copied > 0) {
+/* TODO: comment out? */
+//		    ResetFlag(statePtr, CHANNEL_BLOCKED);
+		} else {
+		    copied = -1;
 		}
-	    } else if (nread == 0) {
-		SetFlag(statePtr, CHANNEL_EOF);
-		statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-
-	    } else if (nread < 0) {
-		if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
-		    if (copied > 0) {
-			/*
-			 * Information that was copied earlier has precedence
-			 * over EAGAIN/WOULDBLOCK handling.
-			 */
-
-			goto done;
-		    }
-
-		    SetFlag(statePtr, CHANNEL_BLOCKED);
-		    result = EAGAIN;
-		}
-
-		Tcl_SetErrno(result);
-		copied = -1;
-		goto done;
+	    } else {
+		copied += nread;
 	    }
-
-	    copied += nread;
-	    goto done;
+	    break;
 	}
     }
 
-  done:
     Tcl_Release(chanPtr);
     return copied;
 }
@@ -5201,11 +5227,10 @@ DoReadChars(
 		Tcl_Preserve(chanPtr);
 	    }
 	    if (result != 0) {
-		if (result == EAGAIN) {
-		    break;
+		if (!GotFlag(statePtr, CHANNEL_BLOCKED)) {
+		    copied = -1;
 		}
-		copied = -1;
-		goto done;
+		break;
 	    }
 	} else {
 	    copied += copiedNow;
@@ -5213,14 +5238,15 @@ DoReadChars(
 	}
     }
 
-    ResetFlag(statePtr, CHANNEL_BLOCKED);
-
     /*
-     * Update the notifier state so we don't block while there is still data
-     * in the buffers.
+     * Failure to fill a channel buffer may have left channel reporting
+     * a "blocked" state, but so long as we fulfilled the request here,
+     * the caller does not consider us blocked.
      */
+    if (toRead == 0) {
+	ResetFlag(statePtr, CHANNEL_BLOCKED);
+    }
 
-  done:
     /*
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
@@ -5230,6 +5256,11 @@ DoReadChars(
 	chanPtr = statePtr->topChanPtr;
 	Tcl_Preserve(chanPtr);
     }
+
+    /*
+     * Update the notifier state so we don't block while there is still data
+     * in the buffers.
+     */
     UpdateInterest(chanPtr);
     Tcl_Release(chanPtr);
     return copied;
@@ -6108,32 +6139,15 @@ GetInput(
     }
 
     PreserveChannelBuffer(bufPtr);
-    nread = ChanRead(chanPtr, InsertPoint(bufPtr), toRead, &result);
-    if (nread > 0) {
+    nread = ChanRead(chanPtr, InsertPoint(bufPtr), toRead);
+
+    if (nread < 0) {
+	result = Tcl_GetErrno();
+    } else {
 	result = 0;
 	bufPtr->nextAdded += nread;
-
-	/*
-	 * If we get a short read, signal up that we may be BLOCKED. We should
-	 * avoid calling the driver because on some platforms we will block in
-	 * the low level reading code even though the channel is set into
-	 * nonblocking mode.
-	 */
-
-	if (nread < toRead) {
-	    SetFlag(statePtr, CHANNEL_BLOCKED);
-	}
-    } else if (nread == 0) {
-	result = 0;
-	SetFlag(statePtr, CHANNEL_EOF);
-	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-    } else if (nread < 0) {
-	if ((result == EWOULDBLOCK) || (result == EAGAIN)) {
-	    SetFlag(statePtr, CHANNEL_BLOCKED);
-	    result = EAGAIN;
-	}
-	Tcl_SetErrno(result);
     }
+
     ReleaseChannelBuffer(bufPtr);
     return result;
 }
@@ -8805,6 +8819,7 @@ DoRead(
 
 	    ResetFlag(statePtr, CHANNEL_BLOCKED);
 	moreData:
+
 	    code = GetInput(chanPtr);
 	    bufPtr = statePtr->inQueueHead;
 
@@ -8911,6 +8926,9 @@ DoRead(
 		&& GotFlag(statePtr, CHANNEL_BLOCKED)) {
 	    break;
 	}
+    }
+    if (bytesToRead == 0) {
+	ResetFlag(statePtr, CHANNEL_BLOCKED);
     }
 
     Tcl_Release(chanPtr);
