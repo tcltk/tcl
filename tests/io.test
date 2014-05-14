@@ -6861,6 +6861,7 @@ test io-52.12 {coverage of -translation auto} {
     set in [open $path(test1)]
     chan configure $in -buffersize 8
     set out [open $path(test2) w]
+    chan configure $out -translation lf
     fcopy $in $out
     close $in
     close $out
@@ -6875,6 +6876,7 @@ test io-52.13 {coverage of -translation cr} {
     set in [open $path(test1)]
     chan configure $in -buffersize 8 -translation cr
     set out [open $path(test2) w]
+    chan configure $out -translation lf
     fcopy $in $out
     close $in
     close $out
@@ -6889,6 +6891,7 @@ test io-52.14 {coverage of -translation crlf} {
     set in [open $path(test1)]
     chan configure $in -buffersize 8 -translation crlf
     set out [open $path(test2) w]
+    chan configure $out -translation lf
     fcopy $in $out
     close $in
     close $out
