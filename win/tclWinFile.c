@@ -2962,18 +2962,17 @@ TclNativeCreateNativeRep(
     ** <http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath>
     **/
     if (((str[0]>='A'&&str[0]<='Z') || (str[0]>='a'&&str[0]<='z'))
-	    && str[1]==':' && (str[2]=='\\' || str[2]=='/')) {
-	if (wp==nativePathPtr && len>MAX_PATH) {
+	    && str[1]==':') {
+	if (wp==nativePathPtr && len>MAX_PATH && (str[2]=='\\' || str[2]=='/')) {
 	    memmove(wp+4, wp, len*sizeof(WCHAR));
 	    memcpy(wp, L"\\\\?\\", 4*sizeof(WCHAR));
 	    wp += 4;
 	}
 	/*
-	 ** If (remainder of) path starts with "<drive>:/" or "<drive>:\",
-	 ** leave the ':' intact but translate the backslash to a slash.
+	 ** If (remainder of) path starts with "<drive>:",
+	 ** leave the ':' intact.
 	 */
-	wp[2] = '\\';
-	wp += 3;
+	wp += 2;
     } else if (wp==nativePathPtr && len>MAX_PATH
 	    && (str[0]=='\\' || str[0]=='/')
 	    && (str[1]=='\\' || str[1]=='/') && str[2]!='?') {
