@@ -3960,6 +3960,26 @@ test io-32.11 {Tcl_Read from a pipe} {stdio openpipe} {
 } {{hello
 } {hello
 }}
+test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
+    file delete $path(pipe)
+    set f1 [open $path(pipe) w]
+    puts $f1 {chan configure stdout -translation crlf}
+    puts $f1 {puts [gets stdin]}
+    puts $f1 {puts [gets stdin]}
+    close $f1
+    set f1 [open "|[list [interpreter] $path(pipe)]" r+]
+    puts $f1 hello
+    flush $f1
+    set x ""
+    lappend x [read $f1 6]
+    puts $f1 hello
+    flush $f1
+    lappend x [read $f1]
+    close $f1
+    set x
+} {{hello
+} {hello
+}}
 test io-32.12 {Tcl_Read, -nonewline} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
