@@ -383,6 +383,11 @@ ChanRead(
      */
     assert(dstSize > 0);
 
+    /*
+     * Each read op must set the blocked and eof states anew, not let
+     * the effect of prior reads leak through.
+     */
+    ResetFlag(chanPtr->state, CHANNEL_BLOCKED | CHANNEL_EOF);
     if (WillRead(chanPtr) < 0) {
         return -1;
     }
@@ -3944,6 +3949,9 @@ Tcl_GetsObj(
 	goto done;
     }
 
+    /* TODO: Locate better place(s) to reset this flag */
+    ResetFlag(statePtr, CHANNEL_BLOCKED);
+
     /*
      * A binary version of Tcl_GetsObj. This could also handle encodings that
      * are ascii-7 pure (iso8859, utf-8, ...) with a final encoding conversion
@@ -4377,7 +4385,6 @@ TclGetsObjBinary(
 		if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 		    goto restore;
 		}
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
 	    }
 	    if (GetInput(chanPtr) != 0) {
 		goto restore;
@@ -4643,13 +4650,13 @@ FilterInputBytes(
 	 */
 
     read:
+	/* TODO: Move this check to the goto */
 	if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
 	    if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 		gsPtr->charsWrote = 0;
 		gsPtr->rawRead = 0;
 		return -1;
 	    }
-	    ResetFlag(statePtr, CHANNEL_BLOCKED);
 	}
 	if (GetInput(chanPtr) != 0) {
 	    gsPtr->charsWrote = 0;
@@ -5168,6 +5175,8 @@ DoReadChars(
 	}
     }
 
+    /* Must clear the BLOCKED flag here since we check before reading */
+    ResetFlag(statePtr, CHANNEL_BLOCKED);
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
@@ -5202,7 +5211,6 @@ DoReadChars(
 		if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
 		    break;
 		}
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
 	    }
 	    result = GetInput(chanPtr);
 	    if (chanPtr != statePtr->topChanPtr) {
@@ -6619,12 +6627,7 @@ CheckChannelErrors(
     }
 
     if (direction == TCL_READABLE) {
-	/*
-	 * Clear the BLOCKED bit. We want to discover this condition
-	 * anew in each operation.
-	 */
-
-	ResetFlag(statePtr, CHANNEL_BLOCKED | CHANNEL_NEED_MORE_DATA);
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
     }
 
     return 0;
@@ -8801,9 +8804,7 @@ DoRead(
 	while (bufPtr == NULL || !IsBufferFull(bufPtr)) {
 	    int code;
 
-	    ResetFlag(statePtr, CHANNEL_BLOCKED);
 	moreData:
-
 	    code = GetInput(chanPtr);
 	    bufPtr = statePtr->inQueueHead;
 
