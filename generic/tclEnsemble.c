@@ -2751,13 +2751,6 @@ TclCompileEnsemble(
     const char *word;
 
     Tcl_IncrRefCount(replaced);
-
-    /*
-     * This is where we return to if we are parsing multiple nested compiled
-     * ensembles. [info object] is such a beast.
-     */
-
-  checkNextWord:
     if (parsePtr->numWords < depth + 1) {
 	goto failed;
     }
@@ -2769,6 +2762,12 @@ TclCompileEnsemble(
 	goto failed;
     }
 
+    /*
+     * This is where we return to if we are parsing multiple nested compiled
+     * ensembles. [info object] is such a beast.
+     */
+
+  checkNextWord:
     word = tokenPtr[1].start;
     numBytes = tokenPtr[1].size;
 
@@ -2979,6 +2978,17 @@ TclCompileEnsemble(
 
     if (cmdPtr->compileProc == TclCompileEnsemble) {
 	tokenPtr = TokenAfter(tokenPtr);
+	if (parsePtr->numWords < depth + 1
+		|| tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	    /*
+	     * Too hard because the user has done something unpleasant like
+	     * omitting the sub-ensemble's command name or used a non-constant
+	     * name for a sub-ensemble's command name; we respond by bailing
+	     * out completely (this is a rare case). [Bug 6d2f249a01]
+	     */
+
+	    goto cleanup;
+	}
 	ensemble = (Tcl_Command) cmdPtr;
 	goto checkNextWord;
     }

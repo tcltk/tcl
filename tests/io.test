@@ -45,7 +45,7 @@ testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
-testConstraint largefileSupport 0
+testConstraint largefileSupport [expr {$::tcl_platform(os) ne "Darwin"}]
 
 # some tests can only be run is umask is 2
 # if "umask" cannot be run, the tests will be skipped.
@@ -1563,6 +1563,45 @@ test io-13.8 {TranslateInputEOL: auto mode: \r\n} {
     close $f
     set x
 } "abcd\ndef"
+test io-13.8.1 {TranslateInputEOL: auto mode: \r\n} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf
+    puts -nonewline $f "abcd\r\ndef"
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -translation auto
+    set x {}
+    lappend x [read $f 5]
+    lappend x [read $f]
+    close $f
+    set x
+} [list "abcd\n" "def"]
+test io-13.8.2 {TranslateInputEOL: auto mode: \r\n} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf
+    puts -nonewline $f "abcd\r\ndef"
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -translation auto -buffersize 6
+    set x {}
+    lappend x [read $f 5]
+    lappend x [read $f]
+    close $f
+    set x
+} [list "abcd\n" "def"]
+test io-13.8.3 {TranslateInputEOL: auto mode: \r\n} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf
+    puts -nonewline $f "abcd\r\n\r\ndef"
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -translation auto -buffersize 7
+    set x {}
+    lappend x [read $f 5]
+    lappend x [read $f]
+    close $f
+    set x
+} [list "abcd\n" "\ndef"]
 test io-13.9 {TranslateInputEOL: auto mode: \r followed by not \n} {
     set f [open $path(test1) w]
     fconfigure $f -translation lf
@@ -3984,6 +4023,46 @@ test io-32.11 {Tcl_Read from a pipe} {stdio openpipe} {
 } {{hello
 } {hello
 }}
+test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
+    file delete $path(pipe)
+    set f1 [open $path(pipe) w]
+    puts $f1 {chan configure stdout -translation crlf}
+    puts $f1 {puts [gets stdin]}
+    puts $f1 {puts [gets stdin]}
+    close $f1
+    set f1 [open "|[list [interpreter] $path(pipe)]" r+]
+    puts $f1 hello
+    flush $f1
+    set x ""
+    lappend x [read $f1 6]
+    puts $f1 hello
+    flush $f1
+    lappend x [read $f1]
+    close $f1
+    set x
+} {{hello
+} {hello
+}}
+test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
+    file delete $path(pipe)
+    set f1 [open $path(pipe) w]
+    puts $f1 {chan configure stdout -translation crlf}
+    puts $f1 {puts [gets stdin]}
+    puts $f1 {puts [gets stdin]}
+    close $f1
+    set f1 [open "|[list [interpreter] $path(pipe)]" r+]
+    puts $f1 hello
+    flush $f1
+    set x ""
+    lappend x [read $f1 6]
+    puts $f1 hello
+    flush $f1
+    lappend x [read $f1]
+    close $f1
+    set x
+} {{hello
+} {hello
+}}
 test io-32.12 {Tcl_Read, -nonewline} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
@@ -4457,10 +4536,10 @@ test io-34.21 {Tcl_Seek and Tcl_Tell on large files} {largefileSupport} {
     puts -nonewline $f abcdef
     lappend l [tell $f]
     close $f
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
     # truncate...
     close [open $path(test3) w]
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
     set l
 } {0 6 6 4294967296 4294967302 4294967302 0}
 
@@ -6849,6 +6928,7 @@ test io-52.12 {coverage of -translation auto} {
     set in [open $path(test1)]
     chan configure $in -buffersize 8
     set out [open $path(test2) w]
+    chan configure $out -translation lf
     fcopy $in $out
     close $in
     close $out
@@ -6863,6 +6943,7 @@ test io-52.13 {coverage of -translation cr} {
     set in [open $path(test1)]
     chan configure $in -buffersize 8 -translation cr
     set out [open $path(test2) w]
+    chan configure $out -translation lf
     fcopy $in $out
     close $in
     close $out
@@ -6877,6 +6958,7 @@ test io-52.14 {coverage of -translation crlf} {
     set in [open $path(test1)]
     chan configure $in -buffersize 8 -translation crlf
     set out [open $path(test2) w]
+    chan configure $out -translation lf
     fcopy $in $out
     close $in
     close $out
