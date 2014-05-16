@@ -3197,17 +3197,14 @@ TclNativeCreateNativeRep(
     }
 
     str = Tcl_GetStringFromObj(validPathPtr, &len);
-    if (str[0] == '/' && str[1] == '/' && str[2] == '?' && str[3] == '/') {
-	char *p;
-
-	for (p = str; p && *p; ++p) {
-	    if (*p == '/') {
-		*p = '\\';
-	    }
-	}
-    }
     Tcl_WinUtfToTChar(str, len, &ds);
     if (tclWinProcs->useWide) {
+	WCHAR *wp = (WCHAR *) Tcl_DStringValue(&ds);
+	for (; *wp; ++wp) {
+	    if (*wp=='/') {
+		*wp = '\\';
+	    }
+	}
 	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
     } else {
 	len = Tcl_DStringLength(&ds) + sizeof(char);
