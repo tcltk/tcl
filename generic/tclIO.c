@@ -12,7 +12,6 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#undef NDEBUG
 #include "tclInt.h"
 #include "tclIO.h"
 #include <assert.h>
