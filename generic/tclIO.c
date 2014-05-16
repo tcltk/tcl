@@ -3949,9 +3949,6 @@ Tcl_GetsObj(
 	goto done;
     }
 
-    /* TODO: Locate better place(s) to reset this flag */
-    ResetFlag(statePtr, CHANNEL_BLOCKED);
-
     /*
      * A binary version of Tcl_GetsObj. This could also handle encodings that
      * are ascii-7 pure (iso8859, utf-8, ...) with a final encoding conversion
@@ -4182,6 +4179,7 @@ Tcl_GetsObj(
 		Tcl_SetObjLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr);
 		copiedTotal = -1;
+		ResetFlag(statePtr, CHANNEL_BLOCKED);
 		goto done;
 	    }
 	    goto gotEOL;
@@ -4381,10 +4379,9 @@ TclGetsObjBinary(
 	     * device. Side effect is to allocate another channel buffer.
 	     */
 
-	    if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
-		if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		    goto restore;
-		}
+	    if (GotFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)
+		    == (CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)) {
+		goto restore;
 	    }
 	    if (GetInput(chanPtr) != 0) {
 		goto restore;
@@ -4447,6 +4444,7 @@ TclGetsObjBinary(
 		byteArray = Tcl_SetByteArrayLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr);
 		copiedTotal = -1;
+		ResetFlag(statePtr, CHANNEL_BLOCKED);
 		goto done;
 	    }
 	    goto gotEOL;
@@ -4650,14 +4648,6 @@ FilterInputBytes(
 	 */
 
     read:
-	/* TODO: Move this check to the goto */
-	if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
-	    if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		gsPtr->charsWrote = 0;
-		gsPtr->rawRead = 0;
-		return -1;
-	    }
-	}
 	if (GetInput(chanPtr) != 0) {
 	    gsPtr->charsWrote = 0;
 	    gsPtr->rawRead = 0;
@@ -4745,9 +4735,15 @@ FilterInputBytes(
 	    } else {
 		/*
 		 * There are no more cached raw bytes left. See if we can get
-		 * some more.
+		 * some more, but avoid blocking on a non-blocking channel.
 		 */
 
+		if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
+			== (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
+		    gsPtr->charsWrote = 0;
+		    gsPtr->rawRead = 0;
+		    return -1;
+		}
 		goto read;
 	    }
 	} else {
@@ -5207,10 +5203,9 @@ DoReadChars(
 	    if (GotFlag(statePtr, CHANNEL_EOF)) {
 		break;
 	    }
-	    if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
-		if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		    break;
-		}
+	    if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
+		    == (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
+		break;
 	    }
 	    result = GetInput(chanPtr);
 	    if (chanPtr != statePtr->topChanPtr) {
@@ -8935,8 +8930,8 @@ DoRead(
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	}
 
-	if (GotFlag(statePtr, CHANNEL_NONBLOCKING)
-		&& GotFlag(statePtr, CHANNEL_BLOCKED)) {
+	if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
+		== (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
 	    break;
 	}
     }
