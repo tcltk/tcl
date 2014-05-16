@@ -6079,6 +6079,18 @@ GetInput(
 	return EINVAL;
     }
 
+    /* 
+     * For a channel at EOF do not bother allocating buffers; there's
+     * nothing more to read.  Avoid calling the driver inputproc in
+     * case some of them do not react well to additional calls after
+     * they've reported an eof state..
+     * TODO: Candidate for a can't happen panic.
+     */
+
+    if (GotFlag(statePtr, CHANNEL_EOF)) {
+	return 0;
+    }
+
     /*
      * First check for more buffers in the pushback area of the topmost
      * channel in the stack and use them. They can be the result of a
@@ -6141,16 +6153,6 @@ GetInput(
 	    statePtr->inQueueTail->nextPtr = bufPtr;
 	}
 	statePtr->inQueueTail = bufPtr;
-    }
-
-    /*
-     * TODO - consider escape before buffer alloc
-     * If EOF is set, we should avoid calling the driver because on some
-     * platforms it is impossible to read from a device after EOF.
-     */
-
-    if (GotFlag(statePtr, CHANNEL_EOF)) {
-	return 0;
     }
 
     PreserveChannelBuffer(bufPtr);
