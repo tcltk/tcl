@@ -1559,6 +1559,45 @@ test io-13.8 {TranslateInputEOL: auto mode: \r\n} {
     close $f
     set x
 } "abcd\ndef"
+test io-13.8.1 {TranslateInputEOL: auto mode: \r\n} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf
+    puts -nonewline $f "abcd\r\ndef"
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -translation auto
+    set x {}
+    lappend x [read $f 5]
+    lappend x [read $f]
+    close $f
+    set x
+} [list "abcd\n" "def"]
+test io-13.8.2 {TranslateInputEOL: auto mode: \r\n} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf
+    puts -nonewline $f "abcd\r\ndef"
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -translation auto -buffersize 6
+    set x {}
+    lappend x [read $f 5]
+    lappend x [read $f]
+    close $f
+    set x
+} [list "abcd\n" "def"]
+test io-13.8.3 {TranslateInputEOL: auto mode: \r\n} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation lf
+    puts -nonewline $f "abcd\r\n\r\ndef"
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -translation auto -buffersize 7
+    set x {}
+    lappend x [read $f 5]
+    lappend x [read $f]
+    close $f
+    set x
+} [list "abcd\n" "\ndef"]
 test io-13.9 {TranslateInputEOL: auto mode: \r followed by not \n} {
     set f [open $path(test1) w]
     fconfigure $f -translation lf
