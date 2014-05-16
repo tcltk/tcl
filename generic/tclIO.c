@@ -421,6 +421,11 @@ ChanRead(
      */
     assert(dstSize > 0);
 
+    /*
+     * Each read op must set the blocked and eof states anew, not let
+     * the effect of prior reads leak through.
+     */
+    ResetFlag(chanPtr->state, CHANNEL_BLOCKED | CHANNEL_EOF);
     if (WillRead(chanPtr) < 0) {
         return -1;
     }
@@ -4598,6 +4603,7 @@ Tcl_GetsObj(
 		Tcl_SetObjLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr);
 		copiedTotal = -1;
+		ResetFlag(statePtr, CHANNEL_BLOCKED);
 		goto done;
 	    }
 	    goto gotEOL;
@@ -4801,11 +4807,9 @@ TclGetsObjBinary(
 	     * device. Side effect is to allocate another channel buffer.
 	     */
 
-	    if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
-		if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		    goto restore;
-		}
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
+	    if (GotFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)
+		    == (CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)) {
+		goto restore;
 	    }
 	    if (GetInput(chanPtr) != 0) {
 		goto restore;
@@ -4868,6 +4872,7 @@ TclGetsObjBinary(
 		byteArray = Tcl_SetByteArrayLength(objPtr, oldLength);
 		CommonGetsCleanup(chanPtr);
 		copiedTotal = -1;
+		ResetFlag(statePtr, CHANNEL_BLOCKED);
 		goto done;
 	    }
 	    goto gotEOL;
@@ -5071,14 +5076,6 @@ FilterInputBytes(
 	 */
 
     read:
-	if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
-	    if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		gsPtr->charsWrote = 0;
-		gsPtr->rawRead = 0;
-		return -1;
-	    }
-	    ResetFlag(statePtr, CHANNEL_BLOCKED);
-	}
 	if (GetInput(chanPtr) != 0) {
 	    gsPtr->charsWrote = 0;
 	    gsPtr->rawRead = 0;
@@ -5166,9 +5163,15 @@ FilterInputBytes(
 	    } else {
 		/*
 		 * There are no more cached raw bytes left. See if we can get
-		 * some more.
+		 * some more, but avoid blocking on a non-blocking channel.
 		 */
 
+		if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
+			== (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
+		    gsPtr->charsWrote = 0;
+		    gsPtr->rawRead = 0;
+		    return -1;
+		}
 		goto read;
 	    }
 	} else {
@@ -5596,6 +5599,8 @@ DoReadChars(
 	}
     }
 
+    /* Must clear the BLOCKED flag here since we check before reading */
+    ResetFlag(statePtr, CHANNEL_BLOCKED);
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
@@ -5625,11 +5630,9 @@ DoReadChars(
 	    if (GotFlag(statePtr, CHANNEL_EOF)) {
 		break;
 	    }
-	    if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
-		if (GotFlag(statePtr, CHANNEL_NONBLOCKING)) {
-		    break;
-		}
-		ResetFlag(statePtr, CHANNEL_BLOCKED);
+	    if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
+		    == (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
+		break;
 	    }
 	    result = GetInput(chanPtr);
 	    if (chanPtr != statePtr->topChanPtr) {
@@ -6503,6 +6506,18 @@ GetInput(
 	return EINVAL;
     }
 
+    /* 
+     * For a channel at EOF do not bother allocating buffers; there's
+     * nothing more to read.  Avoid calling the driver inputproc in
+     * case some of them do not react well to additional calls after
+     * they've reported an eof state..
+     * TODO: Candidate for a can't happen panic.
+     */
+
+    if (GotFlag(statePtr, CHANNEL_EOF)) {
+	return 0;
+    }
+
     /*
      * First check for more buffers in the pushback area of the topmost
      * channel in the stack and use them. They can be the result of a
@@ -6565,16 +6580,6 @@ GetInput(
 	    statePtr->inQueueTail->nextPtr = bufPtr;
 	}
 	statePtr->inQueueTail = bufPtr;
-    }
-
-    /*
-     * TODO - consider escape before buffer alloc
-     * If EOF is set, we should avoid calling the driver because on some
-     * platforms it is impossible to read from a device after EOF.
-     */
-
-    if (GotFlag(statePtr, CHANNEL_EOF)) {
-	return 0;
     }
 
     PreserveChannelBuffer(bufPtr);
@@ -7048,12 +7053,7 @@ CheckChannelErrors(
     }
 
     if (direction == TCL_READABLE) {
-	/*
-	 * Clear the BLOCKED bit. We want to discover this condition
-	 * anew in each operation.
-	 */
-
-	ResetFlag(statePtr, CHANNEL_BLOCKED | CHANNEL_NEED_MORE_DATA);
+	ResetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
     }
 
     return 0;
@@ -9248,9 +9248,7 @@ DoRead(
 	while (bufPtr == NULL || !IsBufferFull(bufPtr)) {
 	    int code;
 
-	    ResetFlag(statePtr, CHANNEL_BLOCKED);
 	moreData:
-
 	    code = GetInput(chanPtr);
 	    bufPtr = statePtr->inQueueHead;
 
@@ -9353,8 +9351,8 @@ DoRead(
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	}
 
-	if ((statePtr->flags & CHANNEL_NONBLOCKING || allowShortReads)
-		&& statePtr->flags & CHANNEL_BLOCKED) {
+	if ((GotFlag(statePtr, CHANNEL_NONBLOCKING) || allowShortReads)
+		&& GotFlag(statePtr, CHANNEL_BLOCKED)) {
 	    break;
 	}
     }
