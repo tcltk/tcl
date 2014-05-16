@@ -2552,6 +2552,7 @@ MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
+MODULE_SCOPE void	TclFinalizeThreadAllocThread(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE void	TclFinalizeThreadObjects(void);
 MODULE_SCOPE double	TclFloor(mp_int *a);
@@ -3668,6 +3669,24 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, CONST char *file,
 	((((unsigned char) *(str)) < 0xC0) ?		\
 	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
+
+/*
+ *----------------------------------------------------------------
+ * Macro that encapsulates the logic that determines when it is safe to
+ * interpret a string as a byte array directly. In summary, the object must be
+ * a byte array and must not have a string representation (as the operations
+ * that it is used in are defined on strings, not byte arrays). Theoretically
+ * it is possible to also be efficient in the case where the object's bytes
+ * field is filled by generation from the byte array (c.f. list canonicality)
+ * but we don't do that at the moment since this is purely about efficiency.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+ *----------------------------------------------------------------
+ */
+
+#define TclIsPureByteArray(objPtr) \
+	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
 
 /*
  *----------------------------------------------------------------
