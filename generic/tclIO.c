@@ -5904,7 +5904,6 @@ ReadChars(
 	     *	  record \r or \n yet.
 	     */
 
-	    assert(dstRead + 1 == dstDecoded);
 	    assert(dst[dstRead] == '\r');
 	    assert(statePtr->inputTranslation == TCL_TRANSLATE_CRLF);
 
@@ -5925,7 +5924,6 @@ ReadChars(
 
 	    assert(dstWrote == 0);
 	    assert(dstRead == 0);
-	    assert(dstDecoded == 1);
 
 	    /*
 	     * We decoded only the bare cr, and we cannot read a
@@ -5980,6 +5978,13 @@ ReadChars(
 		return 1;
 	    }
 
+	    /*
+	     * Revise the dstRead value so that the numChars calc
+	     * below correctly computes zero characters read.
+	     */
+
+	    dstRead = numChars;
+
 	    /* FALL THROUGH - get more data (dstWrote == 0) */
 	}
 
@@ -6006,16 +6011,38 @@ ReadChars(
 	}
 
 	if (dstWrote == 0) {
+	    ChannelBuffer *nextPtr;
 
-	    /*
-	     * We were not able to read any chars.  Maybe there were
-	     * not enough src bytes to decode into a char.  Maybe
-	     * a lone \r could not be translated (crlf mode).  Need
-	     * to combine any unused src bytes we have in the first
-	     * buffer with subsequent bytes to try again.
+	    /* We were not able to read any chars. */
+
+	    assert (numChars == 0);
+
+	    /* 
+	     * There is one situation where this is the correct final
+	     * result.  If the src buffer contains only a single \n
+	     * byte, and we are in TCL_TRANSLATE_AUTO mode, and
+	     * when the translation pass was made the INPUT_SAW_CR
+	     * flag was set on the channel.  In that case, the
+	     * correct behavior is to consume that \n and produce the
+	     * empty string.
 	     */
 
-	    ChannelBuffer *nextPtr = bufPtr->nextPtr;
+	    if (dst[0] == '\n') {
+		assert(statePtr->inputTranslation == TCL_TRANSLATE_AUTO);
+		assert(dstRead == 1);
+
+		goto consume;
+	    }
+
+	    /* Otherwise, reading zero characters indicates there's
+	     * something incomplete at the end of the src buffer.
+	     * Maybe there were not enough src bytes to decode into
+	     * a char.  Maybe a lone \r could not be translated (crlf
+	     * mode).  Need to combine any unused src bytes we have
+	     * in the first buffer with subsequent bytes to try again.
+	     */
+
+	    nextPtr = bufPtr->nextPtr;
 
 	    if (nextPtr == NULL) {
 		if (srcLen > 0) {
@@ -6052,6 +6079,7 @@ ReadChars(
 
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
 
+    consume:
 	bufPtr->nextRemoved += srcRead;
 	if (dstWrote > srcRead + 1) {
 	    *factorPtr = dstWrote * UTF_EXPANSION_FACTOR / srcRead;
