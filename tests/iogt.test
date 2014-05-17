@@ -480,6 +480,7 @@ query/maxRead
 read
 query/maxRead
 flush/read
+query/maxRead
 delete/read
 --------
 create/write
@@ -526,6 +527,7 @@ read {
 }
 query/maxRead {} -1
 flush/read {} {}
+query/maxRead {} -1
 delete/read {} *ignored*
 --------
 create/write {} *ignored*
@@ -577,6 +579,7 @@ write %^&*()_+-= %^&*()_+-=
 write {
 } {
 }
+query/maxRead {} -1
 delete/read {} *ignored*
 flush/write {} {}
 delete/write {} *ignored*}
