@@ -556,30 +556,6 @@ VarHashCreateVar(
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
 
 /*
- * Macro used in this file to save a function call for common uses of
- * Tcl_GetWideIntFromObj(). The ANSI C "prototype" is:
- *
- * MODULE_SCOPE int TclGetWideIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
- *			Tcl_WideInt *wideIntPtr);
- */
-
-#ifdef TCL_WIDE_INT_IS_LONG
-#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
-    (((objPtr)->typePtr == &tclIntType)					\
-	? (*(wideIntPtr) = (Tcl_WideInt)				\
-		((objPtr)->internalRep.longValue), TCL_OK) :		\
-	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
-#else /* !TCL_WIDE_INT_IS_LONG */
-#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
-    (((objPtr)->typePtr == &tclWideIntType)				\
-	? (*(wideIntPtr) = (objPtr)->internalRep.wideValue, TCL_OK) :	\
-    ((objPtr)->typePtr == &tclIntType)					\
-	? (*(wideIntPtr) = (Tcl_WideInt)				\
-		((objPtr)->internalRep.longValue), TCL_OK) :		\
-	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
-#endif /* TCL_WIDE_INT_IS_LONG */
-
-/*
  * Macro used to make the check for type overflow more mnemonic. This works by
  * comparing sign bits; the rest of the word is irrelevant. The ANSI C
  * "prototype" (where inttype_t is any integer type) is:
