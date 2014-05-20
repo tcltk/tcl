@@ -683,38 +683,33 @@ TransformInputProc(
 
 	read = Tcl_ReadRaw(downChan, buf, toRead);
 	if (read < 0) {
-	    /*
-	     * Report errors to caller. EAGAIN is a special situation. If we
-	     * had some data before we report that instead of the request to
-	     * re-try.
-	     */
-		int error = Tcl_GetErrno();
+	    if (Tcl_InputBlocked(downChan) && (gotBytes > 0)) {
+		/*
+		 * Zero bytes available from downChan because blocked.
+		 * But nonzero bytes already copied, so total is a
+		 * valid blocked short read. Return to caller.
+		 */
 
-	    if ((error == EAGAIN) && (gotBytes > 0)) {
 		break;
 	    }
 
-	    *errorCodePtr = error;
+	    /*
+	     * Either downChan is not blocked (there's a real error).
+	     * or it is and there are no bytes copied yet.  In either
+	     * case we want to pass the "error" along to the caller,
+	     * either to report an error, or to signal to the caller
+	     * that zero bytes are available because blocked.
+	     */
+
+	    *errorCodePtr = Tcl_GetErrno();
 	    gotBytes = -1;
 	    break;
 	} else if (read == 0) {
-	    /*
-	     * Check wether we hit on EOF in the underlying channel or not. If
-	     * not differentiate between blocking and non-blocking modes. In
-	     * non-blocking mode we ran temporarily out of data. Signal this
-	     * to the caller via EWOULDBLOCK and error return (-1). In the
-	     * other cases we simply return what we got and let the caller
-	     * wait for more. On the other hand, if we got an EOF we have to
-	     * convert and flush all waiting partial data.
-	     */
 
-	    if (!Tcl_Eof(downChan)) {
-		if ((gotBytes == 0) && (dataPtr->flags & CHANNEL_ASYNC)) {
-		    *errorCodePtr = EWOULDBLOCK;
-		    gotBytes = -1;
-		}
-		break;
-	    }
+	    /*
+	     * Zero returned from Tcl_ReadRaw() always indicates EOF
+	     * on the down channel.
+	     */
 
 	    if (dataPtr->readIsFlushed) {
 		/*
