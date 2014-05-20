@@ -6729,11 +6729,23 @@ test io-52.4 {TclCopyChannel} {fcopy} {
     fconfigure $f1 -translation lf -blocking 0
     fconfigure $f2 -translation cr -blocking 0
     fcopy $f1 $f2 -size 40
-    set result [list [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
+    set result [list [fblocked $f1] [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
     close $f1
     close $f2
     lappend result [file size $path(test1)]
-} {0 0 40}
+} {0 0 0 40}
+test io-52.4.1 {TclCopyChannel} {fcopy} {
+    file delete $path(test1)
+    set f1 [open $thisScript]
+    set f2 [open $path(test1) w]
+    fconfigure $f1 -translation lf -blocking 0 -buffersize 10000000
+    fconfigure $f2 -translation cr -blocking 0
+    fcopy $f1 $f2 -size 40
+    set result [list [fblocked $f1] [fconfigure $f1 -blocking] [fconfigure $f2 -blocking]]
+    close $f1
+    close $f2
+    lappend result [file size $path(test1)]
+} {0 0 0 40}
 test io-52.5 {TclCopyChannel, all} {fcopy} {
     file delete $path(test1)
     set f1 [open $thisScript]
