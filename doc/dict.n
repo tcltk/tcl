@@ -202,7 +202,7 @@ This operation takes the name of a variable containing a dictionary
 value and places an updated dictionary value in that variable
 containing a mapping from the given key to the given value. When
 multiple keys are present, this operation creates or updates a chain
-of nested dictionaries.
+of nested dictionaries. The updated dictionary value is returned.
 .TP
 \fBdict size \fIdictionaryValue\fR
 .
