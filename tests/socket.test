@@ -2098,7 +2098,7 @@ test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6}
         close $sock
         close $fd
     } -result {{} ok}
-test socket-14.10.0 {pending [socket -async] and blocking [puts], server is IPv4} \
+test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is IPv4} \
     -constraints {socket supported_inet supported_inet6} \
     -setup {
         makeFile {
@@ -2125,7 +2125,7 @@ test socket-14.10.0 {pending [socket -async] and blocking [puts], server is IPv4
         close $sock
         close $fd
     } -result {{} ok}
-test socket-14.10.1 {pending [socket -async] and blocking [puts], server is IPv6} \
+test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is IPv6} \
     -constraints {socket supported_inet supported_inet6} \
     -setup {
         makeFile {
@@ -2152,7 +2152,7 @@ test socket-14.10.1 {pending [socket -async] and blocking [puts], server is IPv6
         close $sock
         close $fd
     } -result {{} ok}
-test socket-14.11.0 {pending [socket -async] and blocking [puts], no listener, no flush} \
+test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener, no flush} \
     -constraints {socket supported_inet supported_inet6} \
     -body {
         set sock [socket -async localhost [randport]]
@@ -2165,7 +2165,7 @@ test socket-14.11.0 {pending [socket -async] and blocking [puts], no listener, n
         catch {close $sock}
         unset x
     } -result {socket is not connected} -returnCodes 1
-test socket-14.11.1 {pending [socket -async] and blocking [puts], no listener, flush} \
+test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
     -constraints {socket supported_inet supported_inet6} \
     -body {
         set sock [socket -async localhost [randport]]
