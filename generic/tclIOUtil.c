@@ -3197,7 +3197,6 @@ TclSkipUnlink (Tcl_Obj* shlibFile)
 #ifdef hpux
     return 1;
 #else
-    int   skip = 0;
     char* skipstr;
 
     skipstr = getenv ("TCL_TEMPLOAD_NO_UNLINK");
