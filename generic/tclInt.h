@@ -2420,6 +2420,30 @@ typedef struct List {
 #endif
 
 /*
+ * Macro used to save a function call for common uses of
+ * Tcl_GetWideIntFromObj(). The ANSI C "prototype" is:
+ *
+ * MODULE_SCOPE int TclGetWideIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+ *			Tcl_WideInt *wideIntPtr);
+ */
+
+#ifdef TCL_WIDE_INT_IS_LONG
+#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
+    (((objPtr)->typePtr == &tclIntType)					\
+	? (*(wideIntPtr) = (Tcl_WideInt)				\
+		((objPtr)->internalRep.longValue), TCL_OK) :		\
+	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
+#else /* !TCL_WIDE_INT_IS_LONG */
+#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
+    (((objPtr)->typePtr == &tclWideIntType)				\
+	? (*(wideIntPtr) = (objPtr)->internalRep.wideValue, TCL_OK) :	\
+    ((objPtr)->typePtr == &tclIntType)					\
+	? (*(wideIntPtr) = (Tcl_WideInt)				\
+		((objPtr)->internalRep.longValue), TCL_OK) :		\
+	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
+#endif /* TCL_WIDE_INT_IS_LONG */
+
+/*
  * Flag values for TclTraceDictPath().
  *
  * DICT_PATH_READ indicates that all entries on the path must exist but no

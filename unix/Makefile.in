@@ -2084,9 +2084,11 @@ alldist: dist
 html: ${NATIVE_TCLSH}
 	$(BUILD_HTML)
 	@EXTRA_BUILD_HTML@
+
 html-tcl: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tcl
 	@EXTRA_BUILD_HTML@
+
 html-tk: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@

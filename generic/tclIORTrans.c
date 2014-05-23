@@ -1136,50 +1136,36 @@ ReflectInput(
 	readBytes = Tcl_ReadRaw(rtPtr->parent,
 		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
 	if (readBytes < 0) {
-	    /*
-	     * Report errors to caller. The state of the seek system is
-	     * unchanged!
-	     */
+	    if (Tcl_InputBlocked(rtPtr->parent) && (gotBytes > 0)) {
 
-	    if ((Tcl_GetErrno() == EAGAIN) && (gotBytes > 0)) {
 		/*
-		 * EAGAIN is a special situation. If we had some data before
-		 * we report that instead of the request to re-try.
+		 * Down channel is blocked and offers zero additional bytes.
+		 * The nonzero gotBytes already returned makes the total
+		 * operation a valid short read.  Return to caller.
 		 */
 
 		goto stop;
 	    }
+
+	    /*
+	     * Either the down channel is not blocked (a real error)
+	     * or it is and there are gotBytes==0 byte copied so far.
+	     * In either case, pass up the error, so we either report
+	     * any real error, or do not mistakenly signal EOF by
+	     * returning 0 to the caller.
+	     */
 
 	    *errorCodePtr = Tcl_GetErrno();
 	    goto error;
 	}
 
 	if (readBytes == 0) {
+
 	    /*
-	     * Check wether we hit on EOF in 'parent' or not. If not
-	     * differentiate between blocking and non-blocking modes. In
-	     * non-blocking mode we ran temporarily out of data. Signal this
-	     * to the caller via EWOULDBLOCK and error return (-1). In the
-	     * other cases we simply return what we got and let the caller
-	     * wait for more. On the other hand, if we got an EOF we have to
-	     * convert and flush all waiting partial data.
+	     * Zero returned from Tcl_ReadRaw() always indicates EOF
+	     * on the down channel.
 	     */
-
-	    if (!Tcl_Eof(rtPtr->parent)) {
-		/*
-		 * The state of the seek system is unchanged!
-		 */
-
-		if ((gotBytes == 0) && rtPtr->nonblocking) {
-		    *errorCodePtr = EWOULDBLOCK;
-		    goto error;
-		}
-		goto stop;
-	    } else {
-		/*
-		 * Eof in parent.
-		 */
-
+	
 		if (rtPtr->readIsDrained) {
 		    goto stop;
 		}
@@ -1203,13 +1189,7 @@ ReflectInput(
 		    goto stop;
 		}
 
-		/*
-		 * Reset eof, force caller to drain result buffer.
-		 */
-
-		((Channel *) rtPtr->parent)->state->flags &= ~CHANNEL_EOF;
 		continue; /* at: while (toRead > 0) */
-	    }
 	} /* readBytes == 0 */
 
 	/*

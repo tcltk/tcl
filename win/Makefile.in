@@ -846,8 +846,10 @@ TOOL_DIR=$(ROOT_DIR)/tools
 HTML_INSTALL_DIR=$(ROOT_DIR)/html
 html:
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS)"
+
 html-tcl: $(TCLSH)
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS) --tcl"
+
 html-tk: $(TCLSH)
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS) --tk"
 
