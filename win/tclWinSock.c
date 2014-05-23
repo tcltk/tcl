@@ -1233,7 +1233,6 @@ TcpGetOptionProc(
     char host[NI_MAXHOST], port[NI_MAXSERV];
     SOCKET sock;
     size_t len = 0;
-    int errorCode = 0;
     int reverseDNS = 0;
 #define SUPPRESS_RDNS_VAR "::tcl::unsupported::noReverseDNS"
 
@@ -1621,7 +1620,6 @@ TcpConnect(
     TcpState *statePtr)
 {
     DWORD error;
-    u_long flag = 1;		/* Indicates nonblocking mode. */
     /*
      * We are started with async connect and the connect notification
      * was not jet received
