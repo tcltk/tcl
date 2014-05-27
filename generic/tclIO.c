@@ -2510,12 +2510,6 @@ FlushChannel(
 	return -1;
     }
 
-    /*
-     * Loop over the queued buffers and attempt to flush as much as possible
-     * of the queued output to the channel.
-     */
-
-    while (1) {
 	/*
 	 * If the queue is empty and there is a ready current buffer, OR if
 	 * the current buffer is full, then move the current buffer to the
@@ -2536,7 +2530,6 @@ FlushChannel(
 	    statePtr->outQueueTail = statePtr->curOutPtr;
 	    statePtr->curOutPtr = NULL;
 	}
-	bufPtr = statePtr->outQueueHead;
 
 	/*
 	 * If we are not being called from an async flush and an async flush
@@ -2547,13 +2540,13 @@ FlushChannel(
 	    return 0;
 	}
 
-	/*
-	 * If the output queue is still empty, break out of the while loop.
-	 */
+    /*
+     * Loop over the queued buffers and attempt to flush as much as possible
+     * of the queued output to the channel.
+     */
 
-	if (bufPtr == NULL) {
-	    break;	/* Out of the "while (1)". */
-	}
+    while (statePtr->outQueueHead) {
+	bufPtr = statePtr->outQueueHead;
 
 	/*
 	 * Produce the output on the channel.
