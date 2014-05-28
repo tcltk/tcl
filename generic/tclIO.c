@@ -3655,9 +3655,16 @@ static int WillRead(Channel *chanPtr)
     if ((chanPtr->typePtr->seekProc != NULL)
         && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
 
-	/* TODO: Consider when channel is nonblocking and this
-	 * FlushChannel() call may not finish the task of shoving
-	 * bytes out.  Then what? */
+	/*
+	 * CAVEAT - The assumption here is that FlushChannel() will
+	 * push out the bytes of any writes that are in progress.
+	 * Since this is a seekable channel, we assume it is not one
+	 * that can block and force bg flushing.  Channels we know that
+	 * can do that -- sockets, pipes -- are not seekable.  If the
+	 * assumption is wrong, more drastic measures may be required here
+	 * like temporarily setting the channel into blocking mode.
+	 */
+
         if (FlushChannel(NULL, chanPtr, 0) != 0) {
             return -1;
         }
