@@ -1149,15 +1149,6 @@ Tcl_UnregisterChannel(
      */
 
     if (statePtr->refCount <= 0) {
-	/*
-	 * Ensure that if there is another buffer, it gets flushed whether or
-	 * not we are doing a background flush.
-	 */
-
-	if ((statePtr->curOutPtr != NULL) &&
-		IsBufferReady(statePtr->curOutPtr)) {
-	    SetFlag(statePtr, BUFFER_READY);
-	}
 	Tcl_Preserve((ClientData)statePtr);
 	if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 	    /*
@@ -2491,8 +2482,6 @@ FlushChannel(
     ChannelState *statePtr = chanPtr->state;
 				/* State of the channel stack. */
     ChannelBuffer *bufPtr;	/* Iterates over buffered output queue. */
-    int toWrite;		/* Amount of output data in current buffer
-				 * available to be written. */
     int written;		/* Amount of output data actually written in
 				 * current round. */
     int errorCode = 0;		/* Stores POSIX error codes from channel
@@ -2511,36 +2500,42 @@ FlushChannel(
 	return -1;
     }
 
-	/*
-	 * If the queue is empty and there is a ready current buffer, OR if
-	 * the current buffer is full, then move the current buffer to the
-	 * queue.
-	 */
+    /*
+     * Should we shift the current output buffer over to the output queue?
+     * First check that there are bytes in it.  If so then...
+     * If the output queue is empty, then yes, trusting the caller called
+     * us only when written bytes ought to be flushed.
+     * If the current output buffer is full, then yes, so we can meet
+     * the post-condition that on a successful return to caller we've
+     * left space in the current output buffer for more writing (the flush
+     * call was to make new room).
+     * Otherwise, no.  Keep the current output buffer where it is so more
+     * can be written to it, possibly filling it, to promote more efficient
+     * buffer usage.
+     */
 
-	if (IsBufferFull(statePtr->curOutPtr)
-		|| (GotFlag(statePtr, BUFFER_READY) &&
-			(statePtr->outQueueHead == NULL))) {
-	    ResetFlag(statePtr, BUFFER_READY);
-	    statePtr->curOutPtr->nextPtr = NULL;
-	    if (statePtr->outQueueHead == NULL) {
-		statePtr->outQueueHead = statePtr->curOutPtr;
-	    } else {
-		statePtr->outQueueTail->nextPtr = statePtr->curOutPtr;
-	    }
-	    statePtr->outQueueTail = statePtr->curOutPtr;
-	    statePtr->curOutPtr = NULL;
+    bufPtr = statePtr->curOutPtr;
+    if (bufPtr && BytesLeft(bufPtr) && /* Keep empties off queue */
+	    (statePtr->outQueueHead == NULL || IsBufferFull(bufPtr))) {
+	if (statePtr->outQueueHead == NULL) {
+	    statePtr->outQueueHead = bufPtr;
+	} else {
+	    statePtr->outQueueTail->nextPtr = bufPtr;
 	}
+	statePtr->outQueueTail = bufPtr;
+	statePtr->curOutPtr = NULL;
+    }
 
     assert(!IsBufferFull(statePtr->curOutPtr));
 
-	/*
-	 * If we are not being called from an async flush and an async flush
-	 * is active, we just return without producing any output.
-	 */
+    /*
+     * If we are not being called from an async flush and an async flush
+     * is active, we just return without producing any output.
+     */
 
-	if (!calledFromAsyncFlush && GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
-	    return 0;
-	}
+    if (!calledFromAsyncFlush && GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
+	return 0;
+    }
 
     /*
      * Loop over the queued buffers and attempt to flush as much as possible
@@ -2555,14 +2550,8 @@ FlushChannel(
 	 */
 
 	PreserveChannelBuffer(bufPtr);
-	toWrite = BytesLeft(bufPtr);
-	if (toWrite == 0) {
-	    /* TODO: This cannot happen. */
-	    written = 0;
-	} else {
-	    written = (chanPtr->typePtr->outputProc)(chanPtr->instanceData,
-		RemovePoint(bufPtr), toWrite, &errorCode);
-	}
+	written = (chanPtr->typePtr->outputProc)(chanPtr->instanceData,
+		RemovePoint(bufPtr), BytesLeft(bufPtr), &errorCode);
 
 	/*
 	 * If the write failed completely attempt to start the asynchronous
@@ -2668,7 +2657,7 @@ FlushChannel(
 
 	    DiscardOutputQueued(statePtr);
 	    ReleaseChannelBuffer(bufPtr);
-	    continue;
+	    break;
 	} else {
 	    /* TODO: Consider detecting and reacting to short writes
 	     * on blocking channels.  Ought not happen.  See iocmd-24.2. */
@@ -2689,7 +2678,7 @@ FlushChannel(
 	    RecycleBuffer(statePtr, bufPtr, 0);
 	}
 	ReleaseChannelBuffer(bufPtr);
-    }	/* Closes "while (1)". */
+    }	/* Closes "while". */
 
     /*
      * If we wrote some data while flushing in the background, we are done.
@@ -3256,14 +3245,6 @@ Tcl_Close(
     ResetFlag(statePtr, CHANNEL_INCLOSE);
 
     /*
-     * Ensure that the last output buffer will be flushed.
-     */
-
-    if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
-	SetFlag(statePtr, BUFFER_READY);
-    }
-
-    /*
      * If this channel supports it, close the read side, since we don't need
      * it anymore and this will help avoid deadlocks on some channel types.
      */
@@ -3673,10 +3654,10 @@ static int WillRead(Channel *chanPtr)
     }
     if ((chanPtr->typePtr->seekProc != NULL)
         && (Tcl_OutputBuffered((Tcl_Channel) chanPtr) > 0)) {
-        if ((chanPtr->state->curOutPtr != NULL)
-            && IsBufferReady(chanPtr->state->curOutPtr)) {
-            SetFlag(chanPtr->state, BUFFER_READY);
-        }
+
+	/* TODO: Consider when channel is nonblocking and this
+	 * FlushChannel() call may not finish the task of shoving
+	 * bytes out.  Then what? */
         if (FlushChannel(NULL, chanPtr, 0) != 0) {
             return -1;
         }
@@ -3858,7 +3839,6 @@ Write(
     }
     if ((flushed < total) && (GotFlag(statePtr, CHANNEL_UNBUFFERED) ||
 	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED)))) {
-	SetFlag(statePtr, BUFFER_READY);
 	if (FlushChannel(NULL, chanPtr, 0) != 0) {
 	    return -1;
 	}
@@ -5977,14 +5957,6 @@ Tcl_Flush(
 	return -1;
     }
 
-    /*
-     * Force current output buffer to be output also.
-     */
-
-    if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
-	SetFlag(statePtr, BUFFER_READY);
-    }
-
     result = FlushChannel(NULL, chanPtr, 0);
     if (result != 0) {
 	return TCL_ERROR;
@@ -6295,15 +6267,6 @@ Tcl_Seek(
 	if (GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 	    ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 	}
-    }
-
-    /*
-     * If there is data buffered in statePtr->curOutPtr then mark the channel
-     * as ready to flush before invoking FlushChannel.
-     */
-
-    if ((statePtr->curOutPtr != NULL) && IsBufferReady(statePtr->curOutPtr)) {
-	SetFlag(statePtr, BUFFER_READY);
     }
 
     /*
@@ -10385,7 +10348,6 @@ DumpFlags(
     ChanFlag('n', CHANNEL_NONBLOCKING);
     ChanFlag('l', CHANNEL_LINEBUFFERED);
     ChanFlag('u', CHANNEL_UNBUFFERED);
-    ChanFlag('R', BUFFER_READY);
     ChanFlag('F', BG_FLUSH_SCHEDULED);
     ChanFlag('c', CHANNEL_CLOSED);
     ChanFlag('E', CHANNEL_EOF);
