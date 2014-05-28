@@ -2555,6 +2555,7 @@ FlushChannel(
 	PreserveChannelBuffer(bufPtr);
 	toWrite = BytesLeft(bufPtr);
 	if (toWrite == 0) {
+	    /* TODO: This cannot happen. */
 	    written = 0;
 	} else {
 	    written = (chanPtr->typePtr->outputProc)(chanPtr->instanceData,
@@ -2667,6 +2668,8 @@ FlushChannel(
 	    ReleaseChannelBuffer(bufPtr);
 	    continue;
 	} else {
+	    /* TODO: Consider detecting and reacting to short writes
+	     * on blocking channels.  Ought not happen.  See iocmd-24.2. */
 	    wroteSome = 1;
 	}
 
@@ -2700,6 +2703,12 @@ FlushChannel(
 	    ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 	    (chanPtr->typePtr->watchProc)(chanPtr->instanceData,
 		    statePtr->interestMask);
+	} else {
+	    /* TODO: If code reaches this point, it means a writable
+	     * event is being handled on the channel, but the channel
+	     * could not in fact be written to.  This ought not happen,
+	     * but Unix pipes appear to act this way (see io-53.4).
+	     * Also can imagine broken reflected channels. */
 	}
     }
 
