@@ -12,6 +12,7 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#undef NDEBUG
 #include "tclInt.h"
 #include "tclIO.h"
 #include <assert.h>
@@ -284,7 +285,7 @@ static int WillRead(Channel *chanPtr);
 
 #define IsBufferEmpty(bufPtr) ((bufPtr)->nextAdded == (bufPtr)->nextRemoved)
 
-#define IsBufferFull(bufPtr) ((bufPtr)->nextAdded >= (bufPtr)->bufLength)
+#define IsBufferFull(bufPtr) ((bufPtr) && (bufPtr)->nextAdded >= (bufPtr)->bufLength)
 
 #define IsBufferOverflowing(bufPtr) ((bufPtr)->nextAdded > (bufPtr)->bufLength)
 
@@ -2516,8 +2517,7 @@ FlushChannel(
 	 * queue.
 	 */
 
-	if (((statePtr->curOutPtr != NULL) &&
-		IsBufferFull(statePtr->curOutPtr))
+	if (IsBufferFull(statePtr->curOutPtr)
 		|| (GotFlag(statePtr, BUFFER_READY) &&
 			(statePtr->outQueueHead == NULL))) {
 	    ResetFlag(statePtr, BUFFER_READY);
@@ -2530,6 +2530,8 @@ FlushChannel(
 	    statePtr->outQueueTail = statePtr->curOutPtr;
 	    statePtr->curOutPtr = NULL;
 	}
+
+    assert(!IsBufferFull(statePtr->curOutPtr));
 
 	/*
 	 * If we are not being called from an async flush and an async flush
@@ -6122,9 +6124,8 @@ GetInput(
      */
 
     bufPtr = statePtr->inQueueTail;
-    if ((bufPtr != NULL) && !IsBufferFull(bufPtr)) {
-	toRead = SpaceLeft(bufPtr);
-    } else {
+
+    if ((bufPtr == NULL) || IsBufferFull(bufPtr)) {
 	bufPtr = statePtr->saveInBufPtr;
 	statePtr->saveInBufPtr = NULL;
 
@@ -6154,6 +6155,8 @@ GetInput(
 	    statePtr->inQueueTail->nextPtr = bufPtr;
 	}
 	statePtr->inQueueTail = bufPtr;
+    } else {
+	toRead = SpaceLeft(bufPtr);
     }
 
     PreserveChannelBuffer(bufPtr);
@@ -8827,7 +8830,7 @@ DoRead(
 
 	/* If there is no full buffer, attempt to create and/or fill one. */
 
-	while (bufPtr == NULL || !IsBufferFull(bufPtr)) {
+	while (!IsBufferFull(bufPtr)) {
 	    int code;
 
 	moreData:
