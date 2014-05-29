@@ -1856,6 +1856,9 @@ TclpObjChdir(
 
     nativePath = (const TCHAR *) Tcl_FSGetNativePath(pathPtr);
 
+    if (!nativePath) {
+	return -1;
+    }
     result = (*tclWinProcs->setCurrentDirectoryProc)(nativePath);
 
     if (result == 0) {
@@ -3197,19 +3200,72 @@ TclNativeCreateNativeRep(
     }
 
     str = Tcl_GetStringFromObj(validPathPtr, &len);
-    if (str[0] == '/' && str[1] == '/' && str[2] == '?' && str[3] == '/') {
-	char *p;
-
-	for (p = str; p && *p; ++p) {
-	    if (*p == '/') {
-		*p = '\\';
-	    }
-	}
-    }
     Tcl_WinUtfToTChar(str, len, &ds);
     if (tclWinProcs->useWide) {
+	WCHAR *wp = (WCHAR *) Tcl_DStringValue(&ds);
+	len = Tcl_DStringLength(&ds)>>1;
+	/*
+	** If path starts with "//?/" or "\\?\" (extended path), translate
+	** any slashes to backslashes but accept the '?' as being valid.
+	*/
+	if ((str[0]=='\\' || str[0]=='/') && (str[1]=='\\' || str[1]=='/')
+		&& str[2]=='?' && (str[3]=='\\' || str[3]=='/')) {
+	    wp[0] = wp[1] = wp[3] = '\\';
+	    str += 4;
+	    wp += 4;
+	    len -= 4;
+	}
+	/*
+	** If there is a drive prefix, the ':' must be considered valid.
+	**/
+	if (((str[0]>='A'&&str[0]<='Z') || (str[0]>='a'&&str[0]<='z'))
+		&& str[1]==':') {
+	    wp += 2;
+	    len -= 2;
+	}
+	while (len-->0) {
+	    if ((*wp < ' ') || wcschr(L"\"*:<>?|", *wp)) {
+		Tcl_DecrRefCount(validPathPtr);
+		Tcl_DStringFree(&ds);
+		return NULL;
+	    } else if (*wp=='/') {
+		*wp = '\\';
+	    }
+	    ++wp;
+	}
 	len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
     } else {
+	char *p = Tcl_DStringValue(&ds);
+	len = Tcl_DStringLength(&ds);
+	/*
+	** If path starts with "//?/" or "\\?\" (extended path), translate
+	** any slashes to backslashes but accept the '?' as being valid.
+	*/
+	if ((str[0]=='\\' || str[0]=='/') && (str[1]=='\\' || str[1]=='/')
+		&& str[2]=='?' && (str[3]=='\\' || str[3]=='/')) {
+	    p[0] = p[1] = p[3] = '\\';
+	    str += 4;
+	    p += 4;
+	    len -= 4;
+	}
+	/*
+	** If there is a drive prefix, the ':' must be considered valid.
+	**/
+	if (((str[0]>='A'&&str[0]<='Z') || (str[0]>='a'&&str[0]<='z'))
+		&& str[1]==':') {
+	    p += 2;
+	    len -= 2;
+	}
+	while (len-->0) {
+	    if ((*p < ' ') || strchr("\"*:<>?|", *p)) {
+		Tcl_DecrRefCount(validPathPtr);
+		Tcl_DStringFree(&ds);
+		return NULL;
+	    } else if (*p=='/') {
+		*p = '\\';
+	    }
+	    ++p;
+	}
 	len = Tcl_DStringLength(&ds) + sizeof(char);
     }
     Tcl_DecrRefCount(validPathPtr);

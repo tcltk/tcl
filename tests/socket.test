@@ -67,6 +67,10 @@ namespace import -force ::tcltest::*
 testConstraint testthread [llength [info commands testthread]]
 testConstraint exec [llength [info commands exec]]
 
+# Produce a random port number in the Dynamic/Private range
+# from 49152 through 65535.
+proc randport {} { expr {int(rand()*16383+49152)} }
+
 # If remoteServerIP or remoteServerPort are not set, check in the
 # environment variables for externally set values.
 #
@@ -910,22 +914,6 @@ test socket-8.1 {testing -async flag on sockets} {socket} {
     set z
 } bye
 
-test socket-8.2 {testing writable event when quick failure} {socket win} {
-    # Test for bug 336441ed59 where a quick background fail was ignored
-
-    # Test only for windows as socket -async 255.255.255.255 fails directly
-    # on unix
-    
-    # The following connect should fail very quickly
-    set a1 [after 2000 {set x timeout}]
-    set s [socket -async 255.255.255.255 43434]
-    fileevent $s writable {set x writable}
-    vwait x
-    catch {close $s}
-    after cancel $a1
-    set x
-} writable
-
 test socket-9.1 {testing spurious events} {socket} {
     set len 0
     set spurious 0
@@ -1699,6 +1687,37 @@ if {[string match sock* $commandSocket] == 1} {
 }
 catch {close $commandSocket}
 catch {close $remoteProcChan}
+test socket-14.13 {testing writable event when quick failure} -constraints {socket win supported_inet} -body {
+    # Test for bug 336441ed59 where a quick background fail was ignored
+    
+    # Test only for windows as socket -async 255.255.255.255 fails
+    # directly on unix
+    
+    # The following connect should fail very quickly
+    set a1 [after 2000 {set x timeout}]
+    set s [socket -async 255.255.255.255 43434]
+    fileevent $s writable {set x writable}
+    vwait x
+    set x
+} -cleanup {
+    catch {close $s}
+    after cancel $a1
+} -result writable
+
+test socket-14.14 {testing fileevent readable on failed async socket connect} -constraints [list socket] -body {
+    # Test for bug 581937ab1e
+    
+    set a1 [after 5000 {set x timeout}]
+    # This connect should fail
+    set s [socket -async localhost [randport]]
+    fileevent $s readable {set x readable}
+    vwait x
+    set x
+} -cleanup {
+    catch {close $s}
+    after cancel $a1
+} -result readable
+
 ::tcltest::cleanupTests
 flush stdout
 return

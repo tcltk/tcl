@@ -263,8 +263,6 @@ static void
 InitSockets(void)
 {
     DWORD id;
-    WSADATA wsaData;
-    DWORD err;
     ThreadSpecificData *tsdPtr = (ThreadSpecificData *)
 	    TclThreadDataKeyGet(&dataKey);
 
@@ -295,38 +293,6 @@ InitSockets(void)
 	    goto initFailure;
 	}
 
-	/*
-	 * Initialize the winsock library and check the interface version
-	 * actually loaded. We only ask for the 1.1 interface and do require
-	 * that it not be less than 1.1.
-	 */
-
-#define WSA_VERSION_MAJOR 1
-#define WSA_VERSION_MINOR 1
-#define WSA_VERSION_REQD  MAKEWORD(WSA_VERSION_MAJOR, WSA_VERSION_MINOR)
-
-	err = WSAStartup((WORD)WSA_VERSION_REQD, &wsaData);
-	if (err != 0) {
-	    TclWinConvertWSAError(err);
-	    goto initFailure;
-	}
-
-	/*
-	 * Note the byte positions are swapped for the comparison, so that
-	 * 0x0002 (2.0, MAKEWORD(2,0)) doesn't look less than 0x0101 (1.1).
-	 * We want the comparison to be 0x0200 < 0x0101.
-	 */
-
-	if (MAKEWORD(HIBYTE(wsaData.wVersion), LOBYTE(wsaData.wVersion))
-		< MAKEWORD(WSA_VERSION_MINOR, WSA_VERSION_MAJOR)) {
-	    TclWinConvertWSAError(WSAVERNOTSUPPORTED);
-	    WSACleanup();
-	    goto initFailure;
-	}
-
-#undef WSA_VERSION_REQD
-#undef WSA_VERSION_MAJOR
-#undef WSA_VERSION_MINOR
     }
 
     /*
@@ -434,7 +400,6 @@ SocketExitHandler(
 
     TclpFinalizeSockets();
     UnregisterClass("TclSocket", TclWinGetTclInstance());
-    WSACleanup();
     initialized = 0;
     Tcl_MutexUnlock(&socketMutex);
 }
@@ -719,42 +684,50 @@ SocketEventProc(
 	Tcl_SetMaxBlockTime(&blockTime);
 	mask |= TCL_READABLE|TCL_WRITABLE;
     } else if (events & FD_READ) {
-	fd_set readFds;
-	struct timeval timeout;
-
 	/*
-	 * We must check to see if data is really available, since someone
-	 * could have consumed the data in the meantime. Turn off async
-	 * notification so select will work correctly. If the socket is still
-	 * readable, notify the channel driver, otherwise reset the async
-	 * select handler and keep waiting.
+	 * Throw the readable event if an async connect failed.
 	 */
 
-	SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		(WPARAM) UNSELECT, (LPARAM) infoPtr);
+	if (infoPtr->lastError) {
 
-	FD_ZERO(&readFds);
-	FD_SET(infoPtr->socket, &readFds);
-	timeout.tv_usec = 0;
-	timeout.tv_sec = 0;
-
-	if (select(0, &readFds, NULL, NULL, &timeout) != 0) {
 	    mask |= TCL_READABLE;
+	    
 	} else {
-	    infoPtr->readyEvents &= ~(FD_READ);
-	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
-		    (WPARAM) SELECT, (LPARAM) infoPtr);
-	}
-    }
-    if (events & (FD_WRITE | FD_CONNECT)) {
-	mask |= TCL_WRITABLE;
-	if (events & FD_CONNECT && infoPtr->lastError != NO_ERROR) {
+	    fd_set readFds;
+	    struct timeval timeout;
+
 	    /*
-	     * Connect errors should also fire the readable handler.
+	     * We must check to see if data is really available, since someone
+	     * could have consumed the data in the meantime. Turn off async
+	     * notification so select will work correctly. If the socket is still
+	     * readable, notify the channel driver, otherwise reset the async
+	     * select handler and keep waiting.
 	     */
 
-	    mask |= TCL_READABLE;
+	    SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+		    (WPARAM) UNSELECT, (LPARAM) infoPtr);
+
+	    FD_ZERO(&readFds);
+	    FD_SET(infoPtr->socket, &readFds);
+	    timeout.tv_usec = 0;
+	    timeout.tv_sec = 0;
+
+	    if (select(0, &readFds, NULL, NULL, &timeout) != 0) {
+		mask |= TCL_READABLE;
+	    } else {
+		infoPtr->readyEvents &= ~(FD_READ);
+		SendMessage(tsdPtr->hwnd, SOCKET_SELECT,
+			(WPARAM) SELECT, (LPARAM) infoPtr);
+	    }
 	}
+    }
+
+    /*
+     * writable event
+     */
+
+    if (events & FD_WRITE) {
+	mask |= TCL_WRITABLE;
     }
 
     if (mask) {
@@ -2409,19 +2382,18 @@ SocketProc(
 		 */
 
 		if (error != ERROR_SUCCESS) {
+		    /* Async Connect error */
 		    TclWinConvertWSAError((DWORD) error);
 		    infoPtr->lastError = Tcl_GetErrno();
+		    /* Fire also readable event on connect failure */
+		    infoPtr->readyEvents |= FD_READ;
 		}
+
+		/* fire writable event on connect */
+		infoPtr->readyEvents |= FD_WRITE;
+
 	    }
 
-	    if (infoPtr->flags & SOCKET_ASYNC_CONNECT) {
-		infoPtr->flags &= ~(SOCKET_ASYNC_CONNECT);
-		if (error != ERROR_SUCCESS) {
-		    TclWinConvertWSAError((DWORD) error);
-		    infoPtr->lastError = Tcl_GetErrno();
-		}
-		infoPtr->readyEvents |= FD_WRITE;
-	    }
 	    infoPtr->readyEvents |= event;
 
 	    /*
@@ -2557,71 +2529,34 @@ InitializeHostName(
  *----------------------------------------------------------------------
  */
 
+#undef TclWinGetSockOpt
 int
 TclWinGetSockOpt(SOCKET s, int level, int optname, char *optval,
 	int *optlen)
 {
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return SOCKET_ERROR;
-    }
-
     return getsockopt(s, level, optname, optval, optlen);
 }
 
+#undef TclWinSetSockOpt
 int
 TclWinSetSockOpt(SOCKET s, int level, int optname, const char *optval,
     int optlen)
 {
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return SOCKET_ERROR;
-    }
-
     return setsockopt(s, level, optname, optval, optlen);
 }
 
 char *
 TclpInetNtoa(struct in_addr addr)
 {
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-        return NULL;
-    }
-
     return inet_ntoa(addr);
 }
 
+#undef TclWinGetServByName
 struct servent *
 TclWinGetServByName(
     const char *name,
     const char *proto)
 {
-    /*
-     * Check that WinSock is initialized; do not call it if not, to prevent
-     * system crashes. This can happen at exit time if the exit handler for
-     * WinSock ran before other exit handlers that want to use sockets.
-     */
-
-    if (!SocketsEnabled()) {
-	return NULL;
-    }
-
     return getservbyname(name, proto);
 }
 
