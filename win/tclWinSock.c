@@ -1239,13 +1239,17 @@ WaitForSocketEvent(
 
     /*
      * Reset WSAAsyncSelect so we have a fresh set of events pending.
+     * Don't do that if we are waiting for a connect as this may ignore
+     * a failed connect.
      */
 
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
-	    (LPARAM) infoPtr);
-
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-	    (LPARAM) infoPtr);
+    if ( 0 == (events & FD_CONNECT) ) {
+        SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
+                (LPARAM) infoPtr);
+    
+        SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+                (LPARAM) infoPtr);
+    }
 
     while (1) {
 	if (infoPtr->lastError) {
