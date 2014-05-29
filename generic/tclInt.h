@@ -2480,6 +2480,8 @@ MODULE_SCOPE char	tclEmptyString;
  *----------------------------------------------------------------
  */
 
+MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
+			    const unsigned char *bytes, int len);
 MODULE_SCOPE void       TclAdvanceContinuations(int* line, int** next, int loc);
 MODULE_SCOPE void       TclAdvanceLines(int *line, const char *start,
 			    const char *end);
@@ -2550,6 +2552,7 @@ MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
+MODULE_SCOPE void	TclFinalizeThreadAllocThread(void);
 MODULE_SCOPE void	TclFinalizeThreadData(void);
 MODULE_SCOPE void	TclFinalizeThreadObjects(void);
 MODULE_SCOPE double	TclFloor(mp_int *a);
@@ -2570,6 +2573,8 @@ MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 			    int *binaryPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
 MODULE_SCOPE const char *TclGetSrcInfoForCmd(Interp *iPtr, int *lenPtr);
+MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
+			    unsigned int *sizePtr);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
@@ -3664,6 +3669,24 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, CONST char *file,
 	((((unsigned char) *(str)) < 0xC0) ?		\
 	    ((*(chPtr) = (Tcl_UniChar) *(str)), 1)	\
 	    : Tcl_UtfToUniChar(str, chPtr))
+
+/*
+ *----------------------------------------------------------------
+ * Macro that encapsulates the logic that determines when it is safe to
+ * interpret a string as a byte array directly. In summary, the object must be
+ * a byte array and must not have a string representation (as the operations
+ * that it is used in are defined on strings, not byte arrays). Theoretically
+ * it is possible to also be efficient in the case where the object's bytes
+ * field is filled by generation from the byte array (c.f. list canonicality)
+ * but we don't do that at the moment since this is purely about efficiency.
+ * The ANSI C "prototype" for this macro is:
+ *
+ * MODULE_SCOPE int	TclIsPureByteArray(Tcl_Obj *objPtr);
+ *----------------------------------------------------------------
+ */
+
+#define TclIsPureByteArray(objPtr) \
+	(((objPtr)->typePtr==&tclByteArrayType) && ((objPtr)->bytes==NULL))
 
 /*
  *----------------------------------------------------------------
