@@ -227,11 +227,6 @@ typedef struct ChannelState {
 					 * flushed after every newline. */
 #define CHANNEL_UNBUFFERED	(1<<5)	/* Output to the channel must always
 					 * be flushed immediately. */
-#define BUFFER_READY		(1<<6)	/* Current output buffer (the
-					 * curOutPtr field in the channel
-					 * structure) should be output as soon
-					 * as possible even though it may not
-					 * be full. */
 #define BG_FLUSH_SCHEDULED	(1<<7)	/* A background flush of the queued
 					 * output buffers has been
 					 * scheduled. */

@@ -2810,7 +2810,7 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
     variable x running
     set l abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
     proc writelots {s l} {
-	for {set i 0} {$i < 2000} {incr i} {
+	for {set i 0} {$i < 9000} {incr i} {
 	    puts $s $l
 	}
     }
@@ -2841,7 +2841,7 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
     close $ss
     vwait [namespace which -variable x]
     set c
-} 2000
+} 9000
 test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotMac fileevent} {
     # On Mac, this test screws up sockets such that subsequent tests using port 2828
     # either cause errors or panic().
@@ -7144,17 +7144,17 @@ test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileeven
     for {set x 0} {$x < 12} {incr x} {
 	append big $big
     }
-    file delete $path(test1)
+#    file delete $path(test1)
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts $f1 {
 	puts ready
 	fcopy stdin stdout -command { set x }
 	vwait x
-	set f [open $path(test1) w]
-	fconfigure $f -translation lf
-	puts $f "done"
-	close $f
+#	set f [open $path(test1) w]
+#	fconfigure $f -translation lf
+#	puts $f "done"
+#	close $f
     }
     close $f1
     set f1 [open "|[list [interpreter] $path(pipe)]" r+]
