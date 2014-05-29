@@ -25,11 +25,12 @@ below for a description), depending on \fIoption\fR.  The legal
 This appends the given string (or strings) to the value that the given
 key maps to in the dictionary value contained in the given variable,
 writing the resulting dictionary value back to that variable.
-Non-existent keys are treated as if they map to an empty string.
+Non-existent keys are treated as if they map to an empty string. The
+updated dictionary value is returned.
 .TP
 \fBdict create \fR?\fIkey value ...\fR?
 .
-Create a new dictionary that contains each of the key/value mappings
+Return a new dictionary that contains each of the key/value mappings
 listed as arguments (keys and values alternating, with each key being
 followed by its associated value.)
 .TP
@@ -121,7 +122,8 @@ not specified) to the value that the given key maps to in the
 dictionary value contained in the given variable, writing the
 resulting dictionary value back to that variable. Non-existent keys
 are treated as if they map to 0. It is an error to increment a value
-for an existing key if that value is not an integer.
+for an existing key if that value is not an integer. The updated
+dictionary value is returned.
 .TP
 \fBdict info \fIdictionaryValue\fR
 .
@@ -145,7 +147,8 @@ to in the dictionary value contained in the given variable, writing
 the resulting dictionary value back to that variable. Non-existent
 keys are treated as if they map to an empty list, and it is legal for
 there to be no items to append to the list. It is an error for the
-value that the key maps to to not be representable as a list.
+value that the key maps to to not be representable as a list. The
+updated dictionary value is returned.
 .TP
 \fBdict map \fR{\fIkeyVar valueVar\fR} \fIdictionaryValue body\fR
 .
@@ -202,7 +205,7 @@ This operation takes the name of a variable containing a dictionary
 value and places an updated dictionary value in that variable
 containing a mapping from the given key to the given value. When
 multiple keys are present, this operation creates or updates a chain
-of nested dictionaries.
+of nested dictionaries. The updated dictionary value is returned.
 .TP
 \fBdict size \fIdictionaryValue\fR
 .
@@ -216,7 +219,8 @@ dictionary value in that variable that does not contain a mapping for
 the given key. Where multiple keys are present, this describes a path
 through nested dictionaries to the mapping to remove. At least one key
 must be specified, but the last key on the key-path need not exist.
-All other components on the path must exist.
+All other components on the path must exist. The updated dictionary
+value is returned.
 .TP
 \fBdict update \fIdictionaryVariable key varName \fR?\fIkey varName ...\fR? \fIbody\fR
 .
