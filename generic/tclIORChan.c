@@ -450,8 +450,8 @@ static const char *msg_write_nothing = "{write wrote nothing}";
 static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #ifdef TCL_THREADS
 static const char *msg_send_originlost = "{Channel thread lost}";
-static const char *msg_send_dstlost    = "{Owner lost}";
 #endif /* TCL_THREADS */
+static const char *msg_send_dstlost    = "{Owner lost}";
 static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
 
 /*
@@ -1111,6 +1111,7 @@ ReflectClose(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
 				 * this interp */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+    const Tcl_ChannelType *tctPtr;
 
     if (TclInThreadExit()) {
 	/*
@@ -1145,9 +1146,15 @@ ReflectClose(
 	    if (result != TCL_OK) {
 		FreeReceivedError(&p);
 	    }
+	    return EOK;
 	}
 #endif
 
+	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+	if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+	}
         Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 	return EOK;
     }
@@ -1168,8 +1175,6 @@ ReflectClose(
          */
 
         Tcl_DeleteEvents(ReflectEventDelete, rcPtr);
-
-        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 
 	if (result != TCL_OK) {
 	    PassReceivedErrorInterp(interp, &p);
@@ -1214,6 +1219,11 @@ ReflectClose(
 	}
 #endif
 
+	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+	if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+	}
         Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 #ifdef TCL_THREADS
     }
@@ -1387,6 +1397,7 @@ ReflectOutput(
     /* ASSERT: rcPtr->mode & TCL_WRITABLE */
 
     Tcl_Preserve(rcPtr);
+    Tcl_Preserve(rcPtr->interp);
 
     bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
     Tcl_IncrRefCount(bufObj);
@@ -1403,6 +1414,14 @@ ReflectOutput(
         goto invalid;
     }
 
+    if (Tcl_InterpDeleted(rcPtr->interp)) {
+	/*
+	 * The interp was destroyed during InvokeTclMethod().
+	 */
+
+	SetChannelErrorStr(rcPtr->chan, msg_send_dstlost);
+        goto invalid;
+    }
     if (Tcl_GetIntFromObj(rcPtr->interp, resObj, &written) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, MarshallError(rcPtr->interp));
         goto invalid;
@@ -1432,6 +1451,7 @@ ReflectOutput(
  stop:
     Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
+    Tcl_Release(rcPtr->interp);
     Tcl_Release(rcPtr);
     return written;
  invalid:
@@ -2171,14 +2191,6 @@ FreeReflectedChannel(
 {
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
-    if (chanPtr->typePtr != &tclRChannelType) {
-	/*
-	 * Delete a cloned ChannelType structure.
-	 */
-
-	ckfree(chanPtr->typePtr);
-	chanPtr->typePtr = NULL;
-    }
     Tcl_Release(chanPtr);
     Tcl_DecrRefCount(rcPtr->name);
     Tcl_DecrRefCount(rcPtr->methods);
@@ -2874,10 +2886,12 @@ ForwardProc(
 	 * call upon for the driver.
 	 */
 
-    case ForwardedClose:
+    case ForwardedClose: {
 	/*
 	 * No parameters/results.
 	 */
+
+	const Tcl_ChannelType *tctPtr;
 
 	if (InvokeTclMethod(rcPtr, METH_FINAL, NULL, NULL, &resObj)!=TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
@@ -2903,7 +2917,14 @@ ForwardProc(
                 Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
 
+	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+	if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+	}
+        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 	break;
+    }
 
     case ForwardedInput: {
 	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);

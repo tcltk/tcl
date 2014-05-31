@@ -28,6 +28,9 @@ TCL_MINOR_VERSION=6
 TCL_PATCH_LEVEL=".1"
 VERSION=${TCL_VERSION}
 
+EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
+EXTRA_BUILD_HTML=${EXTRA_BUILD_HTML:-"@:"}
+
 #------------------------------------------------------------------------
 # Setup configure arguments for bundled packages
 #------------------------------------------------------------------------
