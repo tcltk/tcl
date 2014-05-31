@@ -2694,11 +2694,18 @@ FlushChannel(
 	    (chanPtr->typePtr->watchProc)(chanPtr->instanceData,
 		    statePtr->interestMask);
 	} else {
-	    /* TODO: If code reaches this point, it means a writable
-	     * event is being handled on the channel, but the channel
-	     * could not in fact be written to.  This ought not happen,
-	     * but Unix pipes appear to act this way (see io-53.4).
-	     * Also can imagine broken reflected channels. */
+
+	    /*
+	     * When we are calledFromAsyncFlush, that means a writable
+	     * state on the channel triggered the call, so we should be
+	     * able to write something.  Either we did write something 
+	     * and wroteSome should be set, or there was nothing left to
+	     * write in this call, and we've completed the BG flush.
+	     * These are the two cases above.  If we get here, that means
+	     * there is some kind failure in the writable event machinery.
+	     */
+
+	    assert(!calledFromAsyncFlush);
 	}
     }
 
