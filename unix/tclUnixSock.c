@@ -1160,11 +1160,9 @@ out:
          * the event mechanism one roundtrip through select().
          */
 
-        /* Note: disabling this for now as it causes spurious event triggering
-         * under Linux (see test socket-14.15). */
-#if 0
-        Tcl_NotifyChannel(statePtr->channel, TCL_WRITABLE);
-#endif
+	if (statePtr->cachedBlocking == TCL_MODE_NONBLOCKING) {
+	    Tcl_NotifyChannel(statePtr->channel, TCL_WRITABLE);
+	}
     }
     if (error != 0) {
         /*
