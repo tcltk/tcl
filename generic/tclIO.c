@@ -2694,18 +2694,11 @@ FlushChannel(
 	    (chanPtr->typePtr->watchProc)(chanPtr->instanceData,
 		    statePtr->interestMask);
 	} else {
-
-	    /*
-	     * When we are calledFromAsyncFlush, that means a writable
-	     * state on the channel triggered the call, so we should be
-	     * able to write something.  Either we did write something 
-	     * and wroteSome should be set, or there was nothing left to
-	     * write in this call, and we've completed the BG flush.
-	     * These are the two cases above.  If we get here, that means
-	     * there is some kind failure in the writable event machinery.
-	     */
-
-	    assert(!calledFromAsyncFlush);
+	    /* TODO: If code reaches this point, it means a writable
+	     * event is being handled on the channel, but the channel
+	     * could not in fact be written to.  This ought not happen,
+	     * but Unix pipes appear to act this way (see io-53.4).
+	     * Also can imagine broken reflected channels. */
 	}
     }
 
@@ -3212,11 +3205,18 @@ Tcl_Close(
 
     stickyError = 0;
 
-    if ((statePtr->encoding != NULL)
-	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)
-	    && (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
-	statePtr->outputEncodingFlags |= TCL_ENCODING_END;
-	if (WriteChars(chanPtr, "", 0) < 0) {
+    if (GotFlag(statePtr, TCL_WRITABLE) && (statePtr->encoding != NULL)
+	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)) {
+
+	int code = CheckChannelErrors(statePtr, TCL_WRITABLE);
+
+	if (code == 0) {
+	    statePtr->outputEncodingFlags |= TCL_ENCODING_END;
+	    code = WriteChars(chanPtr, "", 0);
+	    statePtr->outputEncodingFlags &= ~TCL_ENCODING_END;
+	    statePtr->outputEncodingFlags |= TCL_ENCODING_START;
+	}
+	if (code < 0) {
 	    stickyError = Tcl_GetErrno();
 	}
 
@@ -7646,8 +7646,9 @@ Tcl_NotifyChannel(
      */
 
     if (GotFlag(statePtr, BG_FLUSH_SCHEDULED) && (mask & TCL_WRITABLE)) {
-	FlushChannel(NULL, chanPtr, 1);
-	mask &= ~TCL_WRITABLE;
+	if (0 == FlushChannel(NULL, chanPtr, 1)) {
+	    mask &= ~TCL_WRITABLE;
+	}
     }
 
     /*
