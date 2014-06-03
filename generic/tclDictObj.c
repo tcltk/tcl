@@ -1026,11 +1026,11 @@ Tcl_DictObjRemove(
 	}
     }
 
-    if (dictPtr->bytes != NULL) {
-	TclInvalidateStringRep(dictPtr);
-    }
     dict = dictPtr->internalRep.twoPtrValue.ptr1;
     if (DeleteChainEntry(dict, keyPtr)) {
+	if (dictPtr->bytes != NULL) {
+	    TclInvalidateStringRep(dictPtr);
+	}
 	dict->epoch++;
     }
     return TCL_OK;
@@ -1629,8 +1629,7 @@ DictReplaceCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
-    int i, result;
-    int allocatedDict = 0;
+    int i;
 
     if ((objc < 2) || (objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key value ...?");
@@ -1638,18 +1637,17 @@ DictReplaceCmd(
     }
 
     dictPtr = objv[1];
-    if (Tcl_IsShared(dictPtr)) {
-	dictPtr = Tcl_DuplicateObj(dictPtr);
-	allocatedDict = 1;
+    if (dictPtr->typePtr != &tclDictType) {
+	int result = SetDictFromAny(interp, dictPtr);
+	if (result != TCL_OK) {
+	    return result;
+	}
     }
     for (i=2 ; i<objc ; i+=2) {
-	result = Tcl_DictObjPut(interp, dictPtr, objv[i], objv[i+1]);
-	if (result != TCL_OK) {
-	    if (allocatedDict) {
-		TclDecrRefCount(dictPtr);
-	    }
-	    return TCL_ERROR;
+	if (Tcl_IsShared(dictPtr)) {
+	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
+	(void) Tcl_DictObjPut(interp, dictPtr, objv[i], objv[i+1]);
     }
     Tcl_SetObjResult(interp, dictPtr);
     return TCL_OK;
@@ -1681,8 +1679,7 @@ DictRemoveCmd(
     Tcl_Obj *const *objv)
 {
     Tcl_Obj *dictPtr;
-    int i, result;
-    int allocatedDict = 0;
+    int i;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "dictionary ?key ...?");
@@ -1690,18 +1687,17 @@ DictRemoveCmd(
     }
 
     dictPtr = objv[1];
-    if (Tcl_IsShared(dictPtr)) {
-	dictPtr = Tcl_DuplicateObj(dictPtr);
-	allocatedDict = 1;
+    if (dictPtr->typePtr != &tclDictType) {
+	int result = SetDictFromAny(interp, dictPtr);
+	if (result != TCL_OK) {
+	    return result;
+	}
     }
     for (i=2 ; i<objc ; i++) {
-	result = Tcl_DictObjRemove(interp, dictPtr, objv[i]);
-	if (result != TCL_OK) {
-	    if (allocatedDict) {
-		TclDecrRefCount(dictPtr);
-	    }
-	    return TCL_ERROR;
+	if (Tcl_IsShared(dictPtr)) {
+	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
+	(void) Tcl_DictObjRemove(interp, dictPtr, objv[i]);
     }
     Tcl_SetObjResult(interp, dictPtr);
     return TCL_OK;
