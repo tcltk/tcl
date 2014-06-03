@@ -3287,7 +3287,7 @@ Tcl_Close(
 
     stickyError = 0;
 
-    if ((statePtr->encoding != NULL)
+    if (GotFlag(statePtr, TCL_WRITABLE) && (statePtr->encoding != NULL)
 	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)) {
 
 	int code = CheckChannelErrors(statePtr, TCL_WRITABLE);
@@ -3295,6 +3295,8 @@ Tcl_Close(
 	if (code == 0) {
 	    statePtr->outputEncodingFlags |= TCL_ENCODING_END;
 	    code = WriteChars(chanPtr, "", 0);
+	    statePtr->outputEncodingFlags &= ~TCL_ENCODING_END;
+	    statePtr->outputEncodingFlags |= TCL_ENCODING_START;
 	}
 	if (code < 0) {
 	    stickyError = Tcl_GetErrno();
