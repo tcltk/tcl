@@ -7120,12 +7120,17 @@ test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileeven
     for {set x 0} {$x < 12} {incr x} {
 	append big $big
     }
+#    file delete $path(test1)
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts $f1 {
 	puts ready
 	fcopy stdin stdout -command { set x }
 	vwait x
+#	set f [open $path(test1) w]
+#	fconfigure $f -translation lf
+#	puts $f "done"
+#	close $f
     }
     close $f1
     set f1 [open "|[list [interpreter] $path(pipe)]" r+]
@@ -7133,6 +7138,7 @@ test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileeven
     fconfigure $f1 -blocking 0
     puts $f1 $big
     flush $f1
+    after 500
     set result ""
     fileevent $f1 read [namespace code {
 	append result [read $f1 1024]
