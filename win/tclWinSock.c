@@ -1239,13 +1239,17 @@ WaitForSocketEvent(
 
     /*
      * Reset WSAAsyncSelect so we have a fresh set of events pending.
+     * Don't do that if we are waiting for a connect as we may miss
+     * a connect (bug 336441ed59).
      */
 
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
-	    (LPARAM) infoPtr);
-
-    SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
-	    (LPARAM) infoPtr);
+    if ( 0 == (events & FD_CONNECT) ) {
+        SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) UNSELECT,
+                (LPARAM) infoPtr);
+    
+        SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
+                (LPARAM) infoPtr);
+    }
 
     while (1) {
 	if (infoPtr->lastError) {
@@ -2409,11 +2413,15 @@ SocketProc(
     case SOCKET_SELECT:
 	infoPtr = (SocketInfo *) lParam;
 	if (wParam == SELECT) {
+            /*
+             * Start notification by windows messages on socket events
+             */
+
 	    WSAAsyncSelect(infoPtr->socket, hwnd,
 		    SOCKET_MESSAGE, infoPtr->selectEvents);
 	} else {
 	    /*
-	     * Clear the selection mask
+	     * UNSELECT: Clear the selection mask
 	     */
 
 	    WSAAsyncSelect(infoPtr->socket, hwnd, 0, 0);
