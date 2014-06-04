@@ -176,9 +176,38 @@ test dict-4.12 {dict replace command: canonicality forced by update} {
 test dict-4.13 {dict replace command: type check is mandatory} -body {
     dict replace { a b c d e }
 } -returnCodes error -result {missing value to go with key}
+test dict-4.13a {dict replace command: type check is mandatory} {
+    catch {dict replace { a b c d e }} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY}
 test dict-4.14 {dict replace command: type check is mandatory} -body {
     dict replace { a b {}c d }
 } -returnCodes error -result {list element in braces followed by "c" instead of space}
+test dict-4.14a {dict replace command: type check is mandatory} {
+    catch {dict replace { a b {}c d }} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY}
+test dict-4.15 {dict replace command: type check is mandatory} -body {
+    dict replace { a b ""c d }
+} -returnCodes error -result {list element in quotes followed by "c" instead of space}
+test dict-4.15a {dict replace command: type check is mandatory} {
+    catch {dict replace { a b ""c d }} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY}
+test dict-4.16 {dict replace command: type check is mandatory} -body {
+    dict replace " a b \"c d "
+} -returnCodes error -result {unmatched open quote in list}
+test dict-4.16a {dict replace command: type check is mandatory} {
+    catch {dict replace " a b \"c d "} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY}
+test dict-4.17 {dict replace command: type check is mandatory} -body {
+    dict replace " a b \{c d "
+} -returnCodes error -result {unmatched open brace in list}
+test dict-4.17a {dict replace command: type check is mandatory} {
+    catch {dict replace " a b \{c d "} -> opt
+    dict get $opt -errorcode
+} {TCL VALUE DICTIONARY}
 
 test dict-5.1 {dict remove command} {dict remove {a b c d} a} {c d}
 test dict-5.2 {dict remove command} {dict remove {a b c d} c} {a b}
