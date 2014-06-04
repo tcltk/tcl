@@ -600,7 +600,7 @@ SetDictFromAny(
     Tcl_Obj *objPtr)
 {
     Tcl_HashEntry *hPtr;
-    int isNew, result;
+    int isNew;
     Dict *dict = ckalloc(sizeof(Dict));
 
     InitChainTable(dict);
@@ -651,10 +651,9 @@ SetDictFromAny(
 	    const char *elemStart;
 	    int elemSize, literal;
 
-	    result = TclFindElement(interp, nextElem, (limit - nextElem),
-		    &elemStart, &nextElem, &elemSize, &literal);
-	    if (result != TCL_OK) {
-		goto errorExit;
+	    if (TclFindElement(interp, nextElem, (limit - nextElem),
+		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {
+		goto errorInFindElement;
 	    }
 	    if (elemStart == limit) {
 		break;
@@ -673,11 +672,10 @@ SetDictFromAny(
 			keyPtr->bytes);
 	    }
 
-	    result = TclFindElement(interp, nextElem, (limit - nextElem),
-		    &elemStart, &nextElem, &elemSize, &literal);
-	    if (result != TCL_OK) {
+	    if (TclFindElement(interp, nextElem, (limit - nextElem),
+		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {
 		TclDecrRefCount(keyPtr);
-		goto errorExit;
+		goto errorInFindElement;
 	    }
 
 	    if (literal) {
@@ -722,16 +720,15 @@ SetDictFromAny(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing value to go with key", -1));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
-    }
-    result = TCL_ERROR;
-
-  errorExit:
-    if (interp != NULL) {
-	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+    } else {
+    errorInFindElement:
+	if (interp != NULL) {
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
+	}
     }
     DeleteChainTable(dict);
     ckfree(dict);
-    return result;
+    return TCL_ERROR;
 }
 
 /*
