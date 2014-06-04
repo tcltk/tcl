@@ -2503,6 +2503,11 @@ DiscardOutputQueued(
     }
     statePtr->outQueueHead = NULL;
     statePtr->outQueueTail = NULL;
+    bufPtr = statePtr->curOutPtr;
+    if (bufPtr && BytesLeft(bufPtr)) {
+	statePtr->curOutPtr = NULL;
+	RecycleBuffer(statePtr, bufPtr, 0);
+    }
 }
 
 /*
