@@ -89,6 +89,9 @@ struct TcpState {
 					 * flag indicates that reentry is
 					 * still pending */
 #define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
+#define TCP_ASYNC_TEST_MODE	(1<<6)	/* Async testing activated
+					 * Do not automatically continue connection
+					 * process */
 
 /*
  * The following defines the maximum length of the listen queue. This is the
@@ -125,6 +128,9 @@ static int		TcpClose2Proc(ClientData instanceData,
 			    Tcl_Interp *interp, int flags);
 static int		TcpGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
+static int              TcpSetOptionProc(ClientData instanceData,
+                            Tcl_Interp *interp, const char *optionName,
+                            const char *value);
 static int		TcpGetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -147,7 +153,7 @@ static const Tcl_ChannelType tcpChannelType = {
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
-    NULL,			/* Set option proc. */
+    TcpSetOptionProc,		/* Set option proc. */
     TcpGetOptionProc,		/* Get option proc. */
     TcpWatchProc,		/* Initialize notifier. */
     TcpGetHandleProc,		/* Get OS handles out of channel. */
@@ -438,6 +444,21 @@ WaitForConnect(
      
     if (!(statePtr->flags & TCP_ASYNC_PENDING)) {
 	return 0;
+    }
+
+    /*
+     * In socket test mode do not continue with the connect
+     * Exceptions are:
+     * - Call by recv/send and blocking socket
+     *   (errorCodePtr != NULL && ! flags & TCP_NONBLOCKING)
+     */
+
+    if ( (statePtr->flags & TCP_ASYNC_TEST_MODE)
+	    && !(errorCodePtr != NULL && !(statePtr->flags & TCP_NONBLOCKING))) {
+        if (errorCodePtr != NULL) {
+            *errorCodePtr = EWOULDBLOCK;
+        }
+	return -1;
     }
     
     if (errorCodePtr == NULL || (statePtr->flags & TCP_NONBLOCKING)) {
@@ -743,6 +764,50 @@ TcpHostPortList(
         Tcl_DStringAppendElement(dsPtr, nhost);
     }
     Tcl_DStringAppendElement(dsPtr, nport);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TcpSetOptionProc --
+ *
+ *	Sets Tcp channel specific options.
+ *
+ * Results:
+ *	None, unless an error happens.
+ *
+ * Side effects:
+ *	Changes attributes of the socket at the system level.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TcpSetOptionProc(
+    ClientData instanceData,	/* Socket state. */
+    Tcl_Interp *interp,		/* For error reporting - can be NULL. */
+    const char *optionName,	/* Name of the option to set. */
+    const char *value)		/* New value for option. */
+{
+    TcpState *statePtr = instanceData;
+
+    /*
+     * Set socket test int value
+     */
+    if (!strcmp(optionName, "-unsupported1")) {
+	int intValue;
+	if (Tcl_GetInt(interp, value, &intValue) != TCL_OK) {
+		return TCL_ERROR;
+	}
+	if (intValue & 1) {
+		SET_BITS(statePtr->flags,TCP_ASYNC_TEST_MODE);
+	} else {
+		CLEAR_BITS(statePtr->flags,TCP_ASYNC_TEST_MODE);
+	}
+	return TCL_OK;
+    }
+
+    return Tcl_BadChannelOption(interp, optionName, "");
 }
 
 /*
