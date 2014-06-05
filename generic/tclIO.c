@@ -5596,9 +5596,27 @@ ReadChars(
 	    /* 
 	     * We read more chars than allowed.  Reset limits to
 	     * prevent that and try again.
+             *
+             * Note how we are adding back TCL_UTF_MAX to ensure that the
+             * Tcl_External2Utf invoked by the next round will have enough
+             * space in the destination for at least one multi-byte
+             * character. Without that nothing will be copied and the system
+             * will try to consolidate the entire current and next buffer,
+             * likely triggering the "Buffer Underflow" panic.
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) - dst;
+            int newLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) - dst + TCL_UTF_MAX;
+
+            if (newLimit >= dstLimit) {
+                dstLimit --;
+            } else {
+                dstLimit = newLimit;
+            }
+
+            if (dstLimit <= TCL_UTF_MAX) {
+                Tcl_Panic ("Not enough space left for a single multi-byte character.");
+            }
+
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
@@ -5661,7 +5679,8 @@ ReadChars(
 	     */
 
 	    if (nextPtr->nextRemoved - srcLen < 0) {
-		Tcl_Panic("Buffer Underflow, BUFFER_PADDING not enough");
+		Tcl_Panic("Buffer Underflow, BUFFER_PADDING not enough (%d < %d)",
+                          nextPtr->nextRemoved, srcLen);
 	    }
 
 	    nextPtr->nextRemoved -= srcLen;
