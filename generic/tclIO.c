@@ -5595,10 +5595,13 @@ ReadChars(
 
 	    /* 
 	     * We read more chars than allowed.  Reset limits to
-	     * prevent that and try again.
+	     * prevent that and try again.  Don't forget the extra
+	     * padding of TCL_UTF_MAX - 1 bytes demanded by the
+	     * Tcl_ExternalToUtf() call!
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) - dst;
+	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) 
+		    + TCL_UTF_MAX - 1 - dst;
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
@@ -5676,8 +5679,12 @@ ReadChars(
 
     consume:
 	bufPtr->nextRemoved += srcRead;
-	if (dstWrote > srcRead + 1) {
-	    *factorPtr = dstWrote * UTF_EXPANSION_FACTOR / srcRead;
+	/*
+	 * If this read contained multibyte characters, revise factorPtr
+	 * so the next read will allocate bigger buffers.
+	 */
+	if (numChars && numChars < srcRead) {
+	    *factorPtr = srcRead * UTF_EXPANSION_FACTOR / numChars;
 	}
 	Tcl_SetObjLength(objPtr, numBytes + dstWrote);
 	return numChars;
