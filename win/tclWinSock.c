@@ -191,6 +191,9 @@ struct TcpState {
 					 * flag indicates that reentry is
 					 * still pending */
 #define TCP_ASYNC_FAILED	(1<<5)	/* An async connect finally failed */
+#define TCP_ASYNC_TEST_MODE	(1<<6)	/* Async testing activated
+					 * Do not automatically continue connection
+					 * process */
 
 /*
  * The following structure is what is added to the Tcl event queue when a
@@ -599,6 +602,20 @@ WaitForConnect(
      
     if (!(statePtr->flags & TCP_ASYNC_CONNECT)) {
 	return 0;
+    }
+
+    /*
+     * In socket test mode do not continue with the connect
+     * Exceptions are:
+     * - Call by recv/send and blocking socket
+     *   (errorCodePtr != NULL && ! flags & TCP_NONBLOCKING)
+     * - Call by the event queue (errorCodePtr == NULL)
+     */
+
+    if ( (statePtr->flags & TCP_ASYNC_TEST_MODE)
+	    && errorCodePtr != NULL && (statePtr->flags & TCP_NONBLOCKING)) {
+	*errorCodePtr = EWOULDBLOCK;
+	return -1;
     }
 
     /*
@@ -1123,6 +1140,7 @@ TcpSetOptionProc(
     const char *optionName,	/* Name of the option to set. */
     const char *value)		/* New value for option. */
 {
+    TcpState *statePtr = instanceData;
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
     TcpState *statePtr = instanceData;
     SOCKET sock;
@@ -1140,6 +1158,22 @@ TcpSetOptionProc(
 		    "winsock is not initialized", -1));
 	}
 	return TCL_ERROR;
+    }
+
+    /*
+     * Set socket test int value
+     */
+    if (!strcmp(optionName, "-unsupported1")) {
+	int intValue;
+	if (Tcl_GetInt(interp, value, &intValue) != TCL_OK) {
+		return TCL_ERROR;
+	}
+	if (intValue & 1) {
+		SET_BITS(statePtr->flags,TCP_ASYNC_TEST_MODE);
+	} else {
+		CLEAR_BITS(statePtr->flags,TCP_ASYNC_TEST_MODE);
+	}
+	return TCL_OK;
     }
 
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
@@ -1254,7 +1288,9 @@ TcpGetOptionProc(
      * Go one step in async connect
      * If any error is thrown save it as backround error to report eventually below
      */
-    WaitForConnect(statePtr, NULL);
+    if (! (statePtr->flags & TCP_ASYNC_TEST_MODE) ) {
+	WaitForConnect(statePtr, NULL);
+    }
 
     sock = statePtr->sockets->fd;
     if (optionName != NULL) {
