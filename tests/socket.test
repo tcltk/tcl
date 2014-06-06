@@ -640,7 +640,45 @@ test socket_$af-2.11 {detecting new data} -constraints [list socket supported_$a
     close $s
     close $sock
 } -result {a:one b: c:two}
-
+test socket_$af-2.12 {} [list socket stdio supported_$af] {
+    file delete $path(script)
+    set f [open $path(script) w]
+    puts $f {
+	set server [socket -server accept_client 0]
+	puts [lindex [chan configure $server -sockname] 2]
+	proc accept_client { client host port } {
+	    chan configure $client -blocking  0 -buffering line
+	    write_line $client
+	}
+	proc write_line client {
+	    if { [catch { chan puts $client [string repeat . 720000]}] } {
+		puts [catch {chan close $client}]
+	    } else {
+		puts signal1
+		after 0 write_line $client
+	    }
+	}
+	chan event stdin readable {set forever now}
+	vwait forever
+	exit
+    }
+    close $f
+    set f [open "|[list [interpreter] $path(script)]" r+]
+    gets $f port
+    set sock [socket $localhost $port]
+    chan event $sock readable [list read_lines $sock $f]
+    proc read_lines { sock pipe } {
+	gets $pipe
+	chan close $sock
+	chan event $pipe readable [list readpipe $pipe]
+    }
+    proc readpipe {pipe} {
+	while {![string is integer [set ::done [gets $pipe]]]} {}
+    }
+    vwait ::done
+    close $f
+    set ::done
+} 0
 test socket_$af-3.1 {socket conflict} -constraints [list socket supported_$af stdio] -setup {
     file delete $path(script)
     set f [open $path(script) w]
