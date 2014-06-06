@@ -1024,7 +1024,7 @@ TcpConnect(
 {
     socklen_t optlen;
     int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
-    int ret = -1, error;
+    int ret = -1, error = errno;
     int async = statePtr->flags & TCP_ASYNC_CONNECT;
 
     if (async_callback) {
@@ -1160,11 +1160,9 @@ out:
          * the event mechanism one roundtrip through select().
          */
 
-        /* Note: disabling this for now as it causes spurious event triggering
-         * under Linux (see test socket-14.15). */
-#if 0
-        Tcl_NotifyChannel(statePtr->channel, TCL_WRITABLE);
-#endif
+	if (statePtr->cachedBlocking == TCL_MODE_NONBLOCKING) {
+	    Tcl_NotifyChannel(statePtr->channel, TCL_WRITABLE);
+	}
     }
     if (error != 0) {
         /*

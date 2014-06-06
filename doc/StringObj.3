@@ -293,6 +293,7 @@ of \fBTcl_Format\fR with functionality equivalent to:
 Tcl_Obj *newPtr = \fBTcl_Format\fR(interp, format, objc, objv);
 if (newPtr == NULL) return TCL_ERROR;
 \fBTcl_AppendObjToObj\fR(objPtr, newPtr);
+\fBTcl_DecrRefCount\fR(newPtr);
 return TCL_OK;
 .CE
 .PP
@@ -337,7 +338,9 @@ Compile-time protection may be provided by some compilers.
 of \fBTcl_ObjPrintf\fR with functionality equivalent to
 .PP
 .CS
-\fBTcl_AppendObjToObj\fR(objPtr, \fBTcl_ObjPrintf\fR(format, ...));
+Tcl_Obj *newPtr = \fBTcl_ObjPrintf\fR(format, ...);
+\fBTcl_AppendObjToObj\fR(objPtr, newPtr);
+\fBTcl_DecrRefCount\fR(newPtr);
 .CE
 .PP
 but with greater convenience and efficiency when the appending
