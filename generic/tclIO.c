@@ -2503,6 +2503,11 @@ DiscardOutputQueued(
     }
     statePtr->outQueueHead = NULL;
     statePtr->outQueueTail = NULL;
+    bufPtr = statePtr->curOutPtr;
+    if (bufPtr && BytesLeft(bufPtr)) {
+	statePtr->curOutPtr = NULL;
+	RecycleBuffer(statePtr, bufPtr, 0);
+    }
 }
 
 /*
@@ -3287,11 +3292,18 @@ Tcl_Close(
 
     stickyError = 0;
 
-    if ((statePtr->encoding != NULL)
-	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)
-	    && (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
-	statePtr->outputEncodingFlags |= TCL_ENCODING_END;
-	if (WriteChars(chanPtr, "", 0) < 0) {
+    if (GotFlag(statePtr, TCL_WRITABLE) && (statePtr->encoding != NULL)
+	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)) {
+
+	int code = CheckChannelErrors(statePtr, TCL_WRITABLE);
+
+	if (code == 0) {
+	    statePtr->outputEncodingFlags |= TCL_ENCODING_END;
+	    code = WriteChars(chanPtr, "", 0);
+	    statePtr->outputEncodingFlags &= ~TCL_ENCODING_END;
+	    statePtr->outputEncodingFlags |= TCL_ENCODING_START;
+	}
+	if (code < 0) {
 	    stickyError = Tcl_GetErrno();
 	}
 
@@ -8034,8 +8046,9 @@ Tcl_NotifyChannel(
      */
 
     if (GotFlag(statePtr, BG_FLUSH_SCHEDULED) && (mask & TCL_WRITABLE)) {
-	FlushChannel(NULL, chanPtr, 1);
-	mask &= ~TCL_WRITABLE;
+	if (0 == FlushChannel(NULL, chanPtr, 1)) {
+	    mask &= ~TCL_WRITABLE;
+	}
     }
 
     /*
