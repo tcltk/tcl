@@ -651,9 +651,9 @@ SetDictFromAny(
 	    const char *elemStart;
 	    int elemSize, literal;
 
-	    if (TclFindElement(interp, nextElem, (limit - nextElem),
+	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
 		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {
-		goto errorInFindElement;
+		goto errorInFindDictElement;
 	    }
 	    if (elemStart == limit) {
 		break;
@@ -672,10 +672,10 @@ SetDictFromAny(
 			keyPtr->bytes);
 	    }
 
-	    if (TclFindElement(interp, nextElem, (limit - nextElem),
+	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
 		    &elemStart, &nextElem, &elemSize, &literal) != TCL_OK) {
 		TclDecrRefCount(keyPtr);
-		goto errorInFindElement;
+		goto errorInFindDictElement;
 	    }
 
 	    if (literal) {
@@ -720,12 +720,8 @@ SetDictFromAny(
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing value to go with key", -1));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
-    } else {
-    errorInFindElement:
-	if (interp != NULL) {
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "DICTIONARY", NULL);
-	}
     }
+  errorInFindDictElement:
     DeleteChainTable(dict);
     ckfree(dict);
     return TCL_ERROR;
