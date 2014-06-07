@@ -182,32 +182,32 @@ test dict-4.13a {dict replace command: type check is mandatory} {
 } {TCL VALUE DICTIONARY}
 test dict-4.14 {dict replace command: type check is mandatory} -body {
     dict replace { a b {}c d }
-} -returnCodes error -result {list element in braces followed by "c" instead of space}
+} -returnCodes error -result {dict element in braces followed by "c" instead of space}
 test dict-4.14a {dict replace command: type check is mandatory} {
     catch {dict replace { a b {}c d }} -> opt
     dict get $opt -errorcode
-} {TCL VALUE DICTIONARY}
+} {TCL VALUE DICTIONARY JUNK}
 test dict-4.15 {dict replace command: type check is mandatory} -body {
     dict replace { a b ""c d }
-} -returnCodes error -result {list element in quotes followed by "c" instead of space}
+} -returnCodes error -result {dict element in quotes followed by "c" instead of space}
 test dict-4.15a {dict replace command: type check is mandatory} {
     catch {dict replace { a b ""c d }} -> opt
     dict get $opt -errorcode
-} {TCL VALUE DICTIONARY}
+} {TCL VALUE DICTIONARY JUNK}
 test dict-4.16 {dict replace command: type check is mandatory} -body {
     dict replace " a b \"c d "
-} -returnCodes error -result {unmatched open quote in list}
+} -returnCodes error -result {unmatched open quote in dict}
 test dict-4.16a {dict replace command: type check is mandatory} {
     catch {dict replace " a b \"c d "} -> opt
     dict get $opt -errorcode
-} {TCL VALUE DICTIONARY}
+} {TCL VALUE DICTIONARY QUOTE}
 test dict-4.17 {dict replace command: type check is mandatory} -body {
     dict replace " a b \{c d "
-} -returnCodes error -result {unmatched open brace in list}
+} -returnCodes error -result {unmatched open brace in dict}
 test dict-4.17a {dict replace command: type check is mandatory} {
     catch {dict replace " a b \{c d "} -> opt
     dict get $opt -errorcode
-} {TCL VALUE DICTIONARY}
+} {TCL VALUE DICTIONARY BRACE}
 
 test dict-5.1 {dict remove command} {dict remove {a b c d} a} {c d}
 test dict-5.2 {dict remove command} {dict remove {a b c d} c} {a b}
@@ -234,7 +234,7 @@ test dict-5.11 {dict remove command: type check is mandatory} -body {
 } -returnCodes error -result {missing value to go with key}
 test dict-5.12 {dict remove command: type check is mandatory} -body {
     dict remove { a b {}c d }
-} -returnCodes error -result {list element in braces followed by "c" instead of space}
+} -returnCodes error -result {dict element in braces followed by "c" instead of space}
 
 test dict-6.1 {dict keys command} {dict keys {a b}} a
 test dict-6.2 {dict keys command} {dict keys {c d}} c
@@ -1296,7 +1296,7 @@ test dict-20.24 {dict merge command: type check is mandatory} -body {
 } -returnCodes error -result {missing value to go with key}
 test dict-20.25 {dict merge command: type check is mandatory} -body {
     dict merge { a b {}c d }
-} -returnCodes error -result {list element in braces followed by "c" instead of space}
+} -returnCodes error -result {dict element in braces followed by "c" instead of space}
 
 test dict-21.1 {dict update command} -returnCodes 1 -body {
     dict update
