@@ -640,7 +640,7 @@ namespace eval tcltest {
 	'b' is specified, and when tests start if 't' is specified.
 	ErrorInfo is displayed if 'e' is specified. Source file line
 	information of failed tests is displayed if 'l' is specified.
-	Description is also displayed on start if 'd' is specified. 
+	Description is also displayed if 'd' is specified. 
     } AcceptVerbose verbose
 
     # Match and skip patterns default to the empty list, except for
@@ -1857,6 +1857,7 @@ proc tcltest::test {name description args} {
     global tcl_platform
     variable testLevel
     variable coreModTime
+    variable xdesc
     DebugPuts 3 "test $name $args"
     DebugDo 1 {
 	variable TestNames
@@ -1950,6 +1951,12 @@ proc tcltest::test {name description args} {
 	}
     }
 
+    if {[IsVerbose desc]} {
+	set xdesc " ([string trim $description])"
+    } else {
+	set xdesc ""
+    }
+
     if {[Skipped $name $constraints]} {
 	incr testLevel -1
 	return
@@ -1975,11 +1982,7 @@ proc tcltest::test {name description args} {
 
 	# Verbose notification of $body start
 	if {[IsVerbose start]} {
-	    if {[IsVerbose desc]} {
-		puts [outputChannel] "---- $name start : [string trim $description]"
-	    } else {
-		puts [outputChannel] "---- $name start"
-	    }
+	    puts [outputChannel] "---- $name start$xdesc"
 	    flush [outputChannel]
 	}
 
@@ -2089,7 +2092,7 @@ proc tcltest::test {name description args} {
 	if {$testLevel == 1} {
 	    incr numTests(Passed)
 	    if {[IsVerbose pass]} {
-		puts [outputChannel] "++++ $name PASSED"
+		puts [outputChannel] "++++ $name PASSED$xdesc"
 	    }
 	}
 	incr testLevel -1
@@ -2215,6 +2218,7 @@ proc tcltest::Skipped {name constraints} {
     variable testLevel
     variable numTests
     variable testConstraints
+    variable xdesc
 
     if {$testLevel == 1} {
 	incr numTests(Total)
@@ -2285,7 +2289,7 @@ proc tcltest::Skipped {name constraints} {
 	
 	if {!$doTest} {
 	    if {[IsVerbose skip]} {
-		puts [outputChannel] "++++ $name SKIPPED: $constraints"
+		puts [outputChannel] "++++ $name SKIPPED: $constraints$xdesc"
 	    }
 
 	    if {$testLevel == 1} {

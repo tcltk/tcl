@@ -899,7 +899,7 @@ does not match its expected return code
 .IP "line (\fBl\fR)"
 Print source file line information of failed tests
 .IP "desc (\fBd\fR)"
-Also print test desription on start
+Also print test description between parentheses
 .PP
 The single letter abbreviations noted above are also recognized
 so that
