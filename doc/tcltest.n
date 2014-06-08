@@ -880,7 +880,7 @@ harness are doing.
 .
 Sets the type of output verbosity desired to \fIlevel\fR,
 a list of zero or more of the elements \fBbody\fR, \fBpass\fR,
-\fBskip\fR, \fBstart\fR, \fBerror\fR and \fBline\fR.  Default value
+\fBskip\fR, \fBstart\fR, \fBerror\fR, \fBline\fR and \fBdesc\fR.  Default value
 is
 .QW "\fBbody error\fR" .
 Levels are defined as: 
@@ -898,6 +898,8 @@ Print errorInfo and errorCode, if they exist, when a test return code
 does not match its expected return code
 .IP "line (\fBl\fR)"
 Print source file line information of failed tests
+.IP "desc (\fBd\fR)"
+Also print test desription on start
 .PP
 The single letter abbreviations noted above are also recognized
 so that
