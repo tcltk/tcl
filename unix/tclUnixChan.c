@@ -249,6 +249,7 @@ static int		TtySetOptionProc(ClientData instanceData,
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
 static Tcl_Channel	MakeTcpClientChannelMode(ClientData tcpSocket,
 			    int mode);
+static void		WrapNotify(ClientData clientData, int mask);
 
 /*
  * This structure describes the channel type structure for file based IO:
@@ -2215,8 +2216,13 @@ WrapNotify(
 	 * in a writable condition, and only a readable state is reported
 	 * present (see TcpWatchProc() below).  In that case, signal back
 	 * to the caller the writable state, which is really an error
-	 * condition.
+	 * condition.  As an extra check on that assumption, check for
+	 * a non-zero value of errno before reporting an artificial
+	 * writable state.
 	 */
+	if (errno == 0) {
+	    return;
+	}
 	newmask = TCL_WRITABLE;
     }
     Tcl_NotifyChannel(statePtr->channel, newmask);
