@@ -54,10 +54,10 @@ The key rule only matches those key/value pairs whose keys match any
 of the given patterns (in the style of \fBstring match\fR.)
 .VE 8.6
 .TP
-\fBdict filter \fIdictionaryValue \fBscript {\fIkeyVar valueVar\fB} \fIscript\fR
+\fBdict filter \fIdictionaryValue \fBscript {\fIkeyVariable valueVariable\fB} \fIscript\fR
 .
 The script rule tests for matching by assigning the key to the
-\fIkeyVar\fR and the value to the \fIvalueVar\fR, and then evaluating
+\fIkeyVariable\fR and the value to the \fIvalueVariable\fR, and then evaluating
 the given script which should return a boolean value (with the
 key/value pair only being included in the result of the \fBdict
 filter\fR when a true value is returned.)  Note that the first
@@ -75,7 +75,7 @@ of the given patterns (in the style of \fBstring match\fR.)
 .VE 8.6
 .RE
 .TP
-\fBdict for {\fIkeyVar valueVar\fB} \fIdictionaryValue body\fR
+\fBdict for {\fIkeyVariable valueVariable\fB} \fIdictionaryValue body\fR
 .
 This command takes three arguments, the first a two-element list of
 variable names (for the key and value respectively of each mapping in
@@ -150,7 +150,7 @@ there to be no items to append to the list. It is an error for the
 value that the key maps to to not be representable as a list. The
 updated dictionary value is returned.
 .TP
-\fBdict map \fR{\fIkeyVar valueVar\fR} \fIdictionaryValue body\fR
+\fBdict map \fR{\fIkeyVariable valueVariable\fR} \fIdictionaryValue body\fR
 .
 This command applies a transformation to each element of a dictionary,
 returning a new dictionary. It takes three arguments: the first is a
@@ -160,7 +160,7 @@ and the third a script to be evaluated for each mapping with the key and value
 variables set appropriately (in the manner of \fBlmap\fR). In an iteration
 where the evaluated script completes normally (\fBTCL_OK\fR, as opposed to an
 \fBerror\fR, etc.) the result of the script is put into an accumulator
-dictionary using the key that is the current contents of the \fIkeyVar\fR
+dictionary using the key that is the current contents of the \fIkeyVariable\fR
 variable at that point. The result of the \fBdict map\fR command is the
 accumulator dictionary after all keys have been iterated over.
 .RS
