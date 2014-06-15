@@ -167,12 +167,12 @@ test dict-4.8 {dict replace command} -returnCodes error -body {
 } -result {missing value to go with key}
 test dict-4.9 {dict replace command} {dict replace [list a a] a b} {a b}
 test dict-4.10 {dict replace command} {dict replace [list a a] a b a c} {a c}
-test dict-4.11 {dict replace command: canonicality not forced} {
-    dict replace { a b c d }
-} { a b c d }
-test dict-4.12 {dict replace command: canonicality forced by update} {
-    dict replace { a b c d } a b
+test dict-4.11 {dict replace command: canonicality is forced} {
+    dict replace { a b  c d }
 } {a b c d}
+test dict-4.12 {dict replace command: canonicality is forced} {
+    dict replace {a b c d a e}
+} {a e c d}
 test dict-4.13 {dict replace command: type check is mandatory} -body {
     dict replace { a b c d e }
 } -returnCodes error -result {missing value to go with key}
@@ -208,6 +208,10 @@ test dict-4.17a {dict replace command: type check is mandatory} {
     catch {dict replace " a b \{c d "} -> opt
     dict get $opt -errorcode
 } {TCL VALUE DICTIONARY BRACE}
+test dict-4.18 {dict replace command: canonicality forcing doesn't leak} {
+    set example { a b  c d }
+    list $example [dict replace $example]
+} {{ a b  c d } {a b c d}}
 
 test dict-5.1 {dict remove command} {dict remove {a b c d} a} {c d}
 test dict-5.2 {dict remove command} {dict remove {a b c d} c} {a b}
@@ -220,12 +224,12 @@ test dict-5.6 {dict remove command} {dict remove {a b} c} {a b}
 test dict-5.7 {dict remove command} -returnCodes error -body {
     dict remove
 } -result {wrong # args: should be "dict remove dictionary ?key ...?"}
-test dict-5.8 {dict remove command: canonicality not forced} {
-    dict remove { a b c d }
-} { a b c d }
-test dict-5.9 {dict remove command: canonicality not forced} {
-    dict remove { a b c d } e
-} { a b c d }
+test dict-5.8 {dict remove command: canonicality is forced} {
+    dict remove { a b  c d }
+} {a b c d}
+test dict-5.9 {dict remove command: canonicality is forced} {
+    dict remove {a b c d a e}
+} {a e c d}
 test dict-5.10 {dict remove command: canonicality forced by update} {
     dict remove { a b c d } c
 } {a b}
@@ -235,6 +239,10 @@ test dict-5.11 {dict remove command: type check is mandatory} -body {
 test dict-5.12 {dict remove command: type check is mandatory} -body {
     dict remove { a b {}c d }
 } -returnCodes error -result {dict element in braces followed by "c" instead of space}
+test dict-5.13 {dict remove command: canonicality forcing doesn't leak} {
+    set example { a b  c d }
+    list $example [dict remove $example]
+} {{ a b  c d } {a b c d}}
 
 test dict-6.1 {dict keys command} {dict keys {a b}} a
 test dict-6.2 {dict keys command} {dict keys {c d}} c
