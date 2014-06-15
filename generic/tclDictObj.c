@@ -2079,7 +2079,7 @@ DictIncrCmd(
     Tcl_Obj *dictPtr, *valuePtr = NULL;
 
     if (objc < 3 || objc > 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?increment?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?increment?");
 	return TCL_ERROR;
     }
 
@@ -2200,7 +2200,7 @@ DictLappendCmd(
     int i, allocatedDict = 0, allocatedValue = 0;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?value ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
 	return TCL_ERROR;
     }
 
@@ -2287,7 +2287,7 @@ DictAppendCmd(
     int i, allocatedDict = 0;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?value ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?value ...?");
 	return TCL_ERROR;
     }
 
@@ -2361,7 +2361,7 @@ DictForNRCmd(
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"{keyVar valueVar} dictionary script");
+		"{keyVarName valueVarName} dictionary script");
 	return TCL_ERROR;
     }
 
@@ -2555,7 +2555,7 @@ DictMapNRCmd(
 
     if (objc != 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"{keyVar valueVar} dictionary script");
+		"{keyVarName valueVarName} dictionary script");
 	return TCL_ERROR;
     }
 
@@ -2764,7 +2764,7 @@ DictSetCmd(
     int result, allocatedDict = 0;
 
     if (objc < 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?key ...? value");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...? value");
 	return TCL_ERROR;
     }
 
@@ -2824,7 +2824,7 @@ DictUnsetCmd(
     int result, allocatedDict = 0;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "varName key ?key ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName key ?key ...?");
 	return TCL_ERROR;
     }
 
@@ -2992,7 +2992,7 @@ DictFilterCmd(
     case FILTER_SCRIPT:
 	if (objc != 5) {
 	    Tcl_WrongNumArgs(interp, 1, objv,
-		    "dictionary script {keyVar valueVar} filterScript");
+		    "dictionary script {keyVarName valueVarName} filterScript");
 	    return TCL_ERROR;
 	}
 
@@ -3169,7 +3169,7 @@ DictUpdateCmd(
 
     if (objc < 5 || !(objc & 1)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"varName key varName ?key varName ...? script");
+		"dictVarName key varName ?key varName ...? script");
 	return TCL_ERROR;
     }
 
@@ -3325,7 +3325,7 @@ DictWithCmd(
     Tcl_Obj *dictPtr, *keysPtr, *pathPtr;
 
     if (objc < 3) {
-	Tcl_WrongNumArgs(interp, 1, objv, "dictVar ?key ...? script");
+	Tcl_WrongNumArgs(interp, 1, objv, "dictVarName ?key ...? script");
 	return TCL_ERROR;
     }
 
