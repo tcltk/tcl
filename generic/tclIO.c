@@ -2503,6 +2503,11 @@ DiscardOutputQueued(
     }
     statePtr->outQueueHead = NULL;
     statePtr->outQueueTail = NULL;
+    bufPtr = statePtr->curOutPtr;
+    if (bufPtr && BytesLeft(bufPtr)) {
+	statePtr->curOutPtr = NULL;
+	RecycleBuffer(statePtr, bufPtr, 0);
+    }
 }
 
 /*
@@ -2777,11 +2782,18 @@ FlushChannel(
 	    ResetFlag(statePtr, BG_FLUSH_SCHEDULED);
 	    ChanWatch(chanPtr, statePtr->interestMask);
 	} else {
-	    /* TODO: If code reaches this point, it means a writable
-	     * event is being handled on the channel, but the channel
-	     * could not in fact be written to.  This ought not happen,
-	     * but Unix pipes appear to act this way (see io-53.4).
-	     * Also can imagine broken reflected channels. */
+
+	    /*
+	     * When we are calledFromAsyncFlush, that means a writable
+	     * state on the channel triggered the call, so we should be
+	     * able to write something.  Either we did write something 
+	     * and wroteSome should be set, or there was nothing left to
+	     * write in this call, and we've completed the BG flush.
+	     * These are the two cases above.  If we get here, that means
+	     * there is some kind failure in the writable event machinery.
+	     */
+
+	    assert(!calledFromAsyncFlush);
 	}
     }
 
@@ -3280,11 +3292,18 @@ Tcl_Close(
 
     stickyError = 0;
 
-    if ((statePtr->encoding != NULL)
-	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)
-	    && (CheckChannelErrors(statePtr, TCL_WRITABLE) == 0)) {
-	statePtr->outputEncodingFlags |= TCL_ENCODING_END;
-	if (WriteChars(chanPtr, "", 0) < 0) {
+    if (GotFlag(statePtr, TCL_WRITABLE) && (statePtr->encoding != NULL)
+	    && !(statePtr->outputEncodingFlags & TCL_ENCODING_START)) {
+
+	int code = CheckChannelErrors(statePtr, TCL_WRITABLE);
+
+	if (code == 0) {
+	    statePtr->outputEncodingFlags |= TCL_ENCODING_END;
+	    code = WriteChars(chanPtr, "", 0);
+	    statePtr->outputEncodingFlags &= ~TCL_ENCODING_END;
+	    statePtr->outputEncodingFlags |= TCL_ENCODING_START;
+	}
+	if (code < 0) {
 	    stickyError = Tcl_GetErrno();
 	}
 
@@ -5997,10 +6016,13 @@ ReadChars(
 
 	    /* 
 	     * We read more chars than allowed.  Reset limits to
-	     * prevent that and try again.
+	     * prevent that and try again.  Don't forget the extra
+	     * padding of TCL_UTF_MAX - 1 bytes demanded by the
+	     * Tcl_ExternalToUtf() call!
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) - dst;
+	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) 
+		    + TCL_UTF_MAX - 1 - dst;
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
@@ -6078,8 +6100,12 @@ ReadChars(
 
     consume:
 	bufPtr->nextRemoved += srcRead;
-	if (dstWrote > srcRead + 1) {
-	    *factorPtr = dstWrote * UTF_EXPANSION_FACTOR / srcRead;
+	/*
+	 * If this read contained multibyte characters, revise factorPtr
+	 * so the next read will allocate bigger buffers.
+	 */
+	if (numChars && numChars < srcRead) {
+	    *factorPtr = srcRead * UTF_EXPANSION_FACTOR / numChars;
 	}
 	Tcl_SetObjLength(objPtr, numBytes + dstWrote);
 	return numChars;
@@ -8027,8 +8053,9 @@ Tcl_NotifyChannel(
      */
 
     if (GotFlag(statePtr, BG_FLUSH_SCHEDULED) && (mask & TCL_WRITABLE)) {
-	FlushChannel(NULL, chanPtr, 1);
-	mask &= ~TCL_WRITABLE;
+	if (0 == FlushChannel(NULL, chanPtr, 1)) {
+	    mask &= ~TCL_WRITABLE;
+	}
     }
 
     /*

@@ -2954,6 +2954,10 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclConvertElement(const char *src, int length,
 			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
+MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
+			    const char *dict, int dictLength,
+			    const char **elementPtr, const char **nextPtr,
+			    int *sizePtr, int *literalPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,

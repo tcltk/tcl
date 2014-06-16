@@ -99,7 +99,7 @@ set lat2 [expr {($t2-$t1)*3}]
 
 # Use the maximum of the two latency calculations, but at least 100ms
 set latency [expr {$lat1 > $lat2 ? $lat1 : $lat2}]
-set latency [expr {$latency > 100 ? $latency : 100}]
+set latency [expr {$latency > 100 ? $latency : 1000}]
 unset t1 t2 s1 s2 lat1 lat2 server
 
 # If remoteServerIP or remoteServerPort are not set, check in the environment
@@ -137,7 +137,6 @@ foreach {af localhost} {
     testConstraint supported_$af [expr {![catch {socket -server foo -myaddr $localhost 0} sock]}]
     catch {close $sock}
 }
-testConstraint supported_any [expr {[testConstraint supported_inet] || [testConstraint supported_inet6]}]
 
 set sock [socket -server foo -myaddr localhost 0]
 set sockname [fconfigure $sock -sockname]
@@ -151,6 +150,9 @@ foreach {af localhost} {
     inet 127.0.0.1
     inet6 ::1
 } {
+    if {![testConstraint supported_$af]} {
+        continue
+    }
     set ::tcl::unsupported::socketAF $af
 #
 # Check if we're supposed to do tests against the remote server
@@ -638,6 +640,86 @@ test socket_$af-2.11 {detecting new data} -constraints [list socket supported_$a
     close $s
     close $sock
 } -result {a:one b: c:two}
+test socket_$af-2.12 {} [list socket stdio supported_$af] {
+    file delete $path(script)
+    set f [open $path(script) w]
+    puts $f {
+	set server [socket -server accept_client 0]
+	puts [lindex [chan configure $server -sockname] 2]
+	proc accept_client { client host port } {
+	    chan configure $client -blocking  0 -buffering line
+	    write_line $client
+	}
+	proc write_line client {
+	    if { [catch { chan puts $client [string repeat . 720000]}] } {
+		puts [catch {chan close $client}]
+	    } else {
+		puts signal1
+		after 0 write_line $client
+	    }
+	}
+	chan event stdin readable {set forever now}
+	vwait forever
+	exit
+    }
+    close $f
+    set f [open "|[list [interpreter] $path(script)]" r+]
+    gets $f port
+    set sock [socket $localhost $port]
+    chan event $sock readable [list read_lines $sock $f]
+    proc read_lines { sock pipe } {
+	gets $pipe
+	chan close $sock
+	chan event $pipe readable [list readpipe $pipe]
+    }
+    proc readpipe {pipe} {
+	while {![string is integer [set ::done [gets $pipe]]]} {}
+    }
+    vwait ::done
+    close $f
+    set ::done
+} 0
+test socket_$af-2.13 {Bug 1758a0b603} {socket stdio} {
+    file delete $path(script)
+    set f [open $path(script) w]
+    puts $f {
+	set server [socket -server accept 0]
+	puts [lindex [chan configure $server -sockname] 2]
+	proc accept { client host port } {
+	    chan configure $client -blocking  0 -buffering line -buffersize 1
+	    puts $client [string repeat . 720000]
+	    puts ready
+	    chan event $client writable [list setup $client]
+	}
+	proc setup client {
+	    chan event $client writable {set forever write}
+	    after 5 {set forever timeout}
+	}
+	vwait forever
+	puts $forever
+    }
+    close $f
+    set pipe [open |[list [interpreter] $path(script)] r]
+    gets $pipe port
+    set sock [socket $localhost $port]
+    chan configure $sock -blocking  0 -buffering line
+    chan event $sock readable [list read_lines $sock $pipe ]
+    proc read_lines { sock pipe } {
+	gets $pipe
+	gets $sock line
+	after idle [list stop $sock $pipe]
+	chan event $sock readable {}
+    }
+    proc stop {sock pipe} {
+	variable done
+	close $sock
+	set done [gets $pipe]
+    }
+    variable done
+    vwait [namespace which -variable done]
+    close $pipe
+    set done
+} write
 
 test socket_$af-3.1 {socket conflict} -constraints [list socket supported_$af stdio] -setup {
     file delete $path(script)
@@ -1728,7 +1810,7 @@ catch {close $remoteProcChan}
 }
 unset ::tcl::unsupported::socketAF
 test socket-14.0.0 {[socket -async] when server only listens on IPv4} \
-    -constraints [list socket supported_any localhost_v4] \
+    -constraints {socket supported_inet localhost_v4} \
     -setup {
         proc accept {s a p} {
             global x
@@ -1750,7 +1832,7 @@ test socket-14.0.0 {[socket -async] when server only listens on IPv4} \
         unset x
     } -result ok
 test socket-14.0.1 {[socket -async] when server only listens on IPv6} \
-    -constraints [list socket supported_any localhost_v6] \
+    -constraints {socket supported_inet6 localhost_v6} \
     -setup {
         proc accept {s a p} {
             global x
@@ -1772,7 +1854,7 @@ test socket-14.0.1 {[socket -async] when server only listens on IPv6} \
         unset x
     } -result ok
 test socket-14.1 {[socket -async] fileevent while still connecting} \
-    -constraints [list socket supported_any] \
+    -constraints {socket} \
     -setup {
         proc accept {s a p} {
             global x
@@ -1801,7 +1883,7 @@ test socket-14.1 {[socket -async] fileevent while still connecting} \
         unset x
     } -result {{} ok}
 test socket-14.2 {[socket -async] fileevent connection refused} \
-    -constraints [list socket supported_any] \
+    -constraints {socket} \
     -body {
         set client [socket -async localhost [randport]]
         fileevent $client writable {set x ok}
@@ -1815,7 +1897,7 @@ test socket-14.2 {[socket -async] fileevent connection refused} \
         unset x after client
     } -result {ok {connection refused}}
 test socket-14.3 {[socket -async] when server only listens on IPv6} \
-    -constraints [list socket supported_any localhost_v6] \
+    -constraints {socket supported_inet6 localhost_v6} \
     -setup {
         proc accept {s a p} {
             global x
@@ -1837,7 +1919,7 @@ test socket-14.3 {[socket -async] when server only listens on IPv6} \
         unset x
     } -result ok
 test socket-14.4 {[socket -async] and both, readdable and writable fileevents} \
-    -constraints [list socket supported_any] \
+    -constraints {socket} \
     -setup {
         proc accept {s a p} {
             puts $s bye
@@ -1864,8 +1946,9 @@ test socket-14.4 {[socket -async] and both, readdable and writable fileevents} \
         close $server
         unset x
     } -result {{} bye}
+# FIXME: we should also have an IPv6 counterpart of this
 test socket-14.5 {[socket -async] which fails before any connect() can be made} \
-    -constraints [list socket supported_any] \
+    -constraints {socket supported_inet} \
     -body {
         # address from rfc5737
         socket -async -myaddr 192.0.2.42 127.0.0.1 [randport]
@@ -1873,7 +1956,7 @@ test socket-14.5 {[socket -async] which fails before any connect() can be made} 
     -returnCodes 1 \
     -result {couldn't open socket: cannot assign requested address}
 test socket-14.6.0 {[socket -async] with no event loop and server listening on IPv4} \
-    -constraints [list socket supported_inet supported_inet6] \
+    -constraints {socket supported_inet localhost_v4} \
     -setup {
         proc accept {s a p} {
             global x
@@ -1904,7 +1987,7 @@ test socket-14.6.0 {[socket -async] with no event loop and server listening on I
     } \
     -result {ok bye}
 test socket-14.6.1 {[socket -async] with no event loop and server listening on IPv6} \
-    -constraints [list socket supported_inet supported_inet6] \
+    -constraints {socket supported_inet6 localhost_v6} \
     -setup {
         proc accept {s a p} {
             global x
@@ -1935,9 +2018,10 @@ test socket-14.6.1 {[socket -async] with no event loop and server listening on I
     } \
     -result {ok bye}
 test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket supported_inet localhost_v4} \
     -setup {
         makeFile {
+            fileevent stdin readable exit
             set server [socket -server accept -myaddr 127.0.0.1 0]
             proc accept {s h p} {puts $s ok; close $s; set ::x 1}
             puts [lindex [fconfigure $server -sockname] 2]
@@ -1950,15 +2034,14 @@ test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4}
         set sock [socket -async localhost $port]
         list [fconfigure $sock -error] [gets $sock] [fconfigure $sock -error]
     } -cleanup {
-        # make sure the server exits
-        catch {socket 127.0.0.1 $port}
-        close $sock
         close $fd
+        close $sock
     } -result {{} ok {}}
 test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket supported_inet6 localhost_v6} \
     -setup {
         makeFile {
+            fileevent stdin readable exit
             set server [socket -server accept -myaddr ::1 0]
             proc accept {s h p} {puts $s ok; close $s; set ::x 1}
             puts [lindex [fconfigure $server -sockname] 2]
@@ -1971,13 +2054,11 @@ test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6}
         set sock [socket -async localhost $port]
         list [fconfigure $sock -error] [gets $sock] [fconfigure $sock -error]
     } -cleanup {
-        # make sure the server exits
-        catch {socket ::1 $port}
-        close $sock
         close $fd
+        close $sock
     } -result {{} ok {}}
 test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket} \
     -body {
         set sock [socket -async localhost [randport]]
         catch {gets $sock} x
@@ -1986,9 +2067,10 @@ test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
         close $sock
     } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
 test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IPv4} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket supported_inet localhost_v4} \
     -setup {
         makeFile {
+            fileevent stdin readable exit
             set server [socket -server accept -myaddr 127.0.0.1 0]
             proc accept {s h p} {puts $s ok; close $s; set ::x 1}
             puts [lindex [fconfigure $server -sockname] 2]
@@ -2006,15 +2088,14 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
         }
         set x
     } -cleanup {
-        # make sure the server exits
-        catch {socket 127.0.0.1 $port}
-        close $sock
         close $fd
+        close $sock
     } -result {ok}
 test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IPv6} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket supported_inet6 localhost_v6} \
     -setup {
         makeFile {
+            fileevent stdin readable exit
             set server [socket -server accept -myaddr ::1 0]
             proc accept {s h p} {puts $s ok; close $s; set ::x 1}
             puts [lindex [fconfigure $server -sockname] 2]
@@ -2032,13 +2113,11 @@ test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IP
         }
         set x
     } -cleanup {
-        # make sure the server exits
-        catch {socket ::1 $port}
-        close $sock
         close $fd
+        close $sock
     } -result {ok}
 test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0
@@ -2051,9 +2130,10 @@ test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener}
         close $sock
     } -match glob -result {{error reading "sock*": socket is not connected} {connection refused} {}}
 test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket supported_inet localhost_v4} \
     -setup {
         makeFile {
+            fileevent stdin readable exit
             set server [socket -server accept -myaddr 127.0.0.1 0]
             proc accept {s h p} {set ::x $s}
             puts [lindex [fconfigure $server -sockname] 2]
@@ -2069,15 +2149,14 @@ test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4}
         flush $sock
         list [fconfigure $sock -error] [gets $fd]
     } -cleanup {
-        # make sure the server exits
-        catch {socket 127.0.0.1 $port}
-        close $sock
         close $fd
+        close $sock
     } -result {{} ok}
 test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket supported_inet6 localhost_v6} \
     -setup {
         makeFile {
+            fileevent stdin readable exit
             set server [socket -server accept -myaddr ::1 0]
             proc accept {s h p} {set ::x $s}
             puts [lindex [fconfigure $server -sockname] 2]
@@ -2093,15 +2172,14 @@ test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6}
         flush $sock
         list [fconfigure $sock -error] [gets $fd]
     } -cleanup {
-        # make sure the server exits
-        catch {socket ::1 $port}
-        close $sock
         close $fd
+        close $sock
     } -result {{} ok}
 test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is IPv4} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket supported_inet localhost_v4} \
     -setup {
         makeFile {
+            fileevent stdin readable exit
             set server [socket -server accept -myaddr 127.0.0.1 0]
             proc accept {s h p} {set ::x $s}
             puts [lindex [fconfigure $server -sockname] 2]
@@ -2120,15 +2198,14 @@ test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is I
         vwait x
         list [fconfigure $sock -error] [gets $fd]
     } -cleanup {
-        # make sure the server exits
-        catch {socket 127.0.0.1 $port}
-        close $sock
         close $fd
+        close $sock
     } -result {{} ok}
 test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is IPv6} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket supported_inet6 localhost_v6} \
     -setup {
         makeFile {
+            fileevent stdin readable exit
             set server [socket -server accept -myaddr ::1 0]
             proc accept {s h p} {set ::x $s}
             puts [lindex [fconfigure $server -sockname] 2]
@@ -2147,13 +2224,11 @@ test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is I
         vwait x
         list [fconfigure $sock -error] [gets $fd]
     } -cleanup {
-        # make sure the server exits
-        catch {socket ::1 $port}
-        close $sock
         close $fd
+        close $sock
     } -result {{} ok}
 test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener, no flush} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0
@@ -2166,7 +2241,7 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
         unset x
     } -result {socket is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0
@@ -2177,10 +2252,10 @@ test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener
         close $sock
     } -cleanup {
         catch {close $sock}
-        unset x
+        catch {unset x}
     } -result {socket is not connected} -returnCodes 1
 test socket-14.12 {[socket -async] background progress triggered by [fconfigure -error]} \
-    -constraints {socket supported_inet supported_inet6} \
+    -constraints {socket} \
     -body {
         set s [socket -async localhost [randport]]
         for {set i 0} {$i < 50} {incr i} {
@@ -2194,7 +2269,9 @@ test socket-14.12 {[socket -async] background progress triggered by [fconfigure 
         unset x s
     } -result {connection refused}
 
-test socket-14.13 {testing writable event when quick failure} -constraints {socket win supported_inet} -body {
+test socket-14.13 {testing writable event when quick failure} \
+    -constraints {socket win supported_inet} \
+    -body {
     # Test for bug 336441ed59 where a quick background fail was ignored
     
     # Test only for windows as socket -async 255.255.255.255 fails
@@ -2211,7 +2288,8 @@ test socket-14.13 {testing writable event when quick failure} -constraints {sock
     after cancel $a1
 } -result writable
 
-test socket-14.14 {testing fileevent readable on failed async socket connect} -constraints [list socket] -body {
+test socket-14.14 {testing fileevent readable on failed async socket connect} \
+    -constraints {socket} -body {
     # Test for bug 581937ab1e
     
     set a1 [after 5000 {set x timeout}]
@@ -2235,18 +2313,35 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
     } -result ok
 
 set num 0
-foreach servip {127.0.0.1 ::1 localhost} {
-    foreach cliip {127.0.0.1 ::1 localhost} {
-        if {$servip eq $cliip || "localhost" in [list $servip $cliip]} {
-            set result {-result "sock*" -match glob}
-        } else {
-            set result {
-                -result {couldn't open socket: connection refused}
-                -returnCodes 1
+
+set x {localhost {socket} 127.0.0.1 {supported_inet} ::1 {supported_inet6}}
+set resultok {-result "sock*" -match glob}
+set resulterr {
+    -result {couldn't open socket: connection refused}
+    -returnCodes 1
+}
+foreach {servip sc} $x {
+    foreach {cliip cc} $x {
+        set constraints socket
+        lappend constraints $sc $cc
+        set result $resulterr
+        switch -- [lsort -unique [list $servip $cliip]] {
+            localhost - 127.0.0.1 - ::1 {
+                set result $resultok
+            }
+            {127.0.0.1 localhost} {
+                if {[testConstraint localhost_v4]} {
+                    set result $resultok
+                }
+            }
+            {::1 localhost} {
+                if {[testConstraint localhost_v6]} {
+                    set result $resultok
+                }
             }
         }
         test socket-15.1.$num "Connect to $servip from $cliip" \
-            -constraints {socket supported_inet supported_inet6} -setup {
+            -constraints $constraints -setup {
                 set server [socket -server accept -myaddr $servip 0]
                 proc accept {s h p} { close $s }
                 set port [lindex [fconfigure $server -sockname] 2]
