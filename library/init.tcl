@@ -398,7 +398,8 @@ proc unknown args {
 	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
 	}
     }
-    return -code error "invalid command name \"$name\""
+    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+	"invalid command name \"$name\""
 }
 
 # auto_load --
