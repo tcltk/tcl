@@ -616,6 +616,47 @@ test socket-2.12 {} {socket stdio} {
     close $f
     set ::done
 } 0
+test socket-2.13 {Bug 1758a0b603} {socket stdio} {
+    file delete $path(script)
+    set f [open $path(script) w]
+    puts $f {
+	set server [socket -server accept 0]
+	puts [lindex [chan configure $server -sockname] 2]
+	proc accept { client host port } {
+	    chan configure $client -blocking  0 -buffering line -buffersize 1
+	    puts $client [string repeat . 720000]
+	    puts ready
+	    chan event $client writable [list setup $client]
+	}
+	proc setup client {
+	    chan event $client writable {set forever write}
+	    after 5 {set forever timeout}
+	}
+	vwait forever
+	puts $forever
+    }
+    close $f
+    set pipe [open |[list [interpreter] $path(script)] r]
+    gets $pipe port
+    set sock [socket localhost $port]
+    chan configure $sock -blocking  0 -buffering line
+    chan event $sock readable [list read_lines $sock $pipe ]
+    proc read_lines { sock pipe } {
+	gets $pipe
+	gets $sock line
+	after idle [list stop $sock $pipe]
+	chan event $sock readable {}
+    }
+    proc stop {sock pipe} {
+	variable done
+	close $sock
+	set done [gets $pipe]
+    }
+    variable done
+    vwait [namespace which -variable done]
+    close $pipe
+    set done
+} write
 
 test socket-3.1 {socket conflict} {socket stdio} {
     file delete $path(script)
