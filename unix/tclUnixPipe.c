@@ -1143,7 +1143,7 @@ PipeWatchProc(
     if (psPtr->inFile) {
 	newmask = mask & (TCL_READABLE | TCL_EXCEPTION);
 	if (newmask) {
-	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), mask,
+	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), newmask,
 		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->inFile));
@@ -1152,7 +1152,7 @@ PipeWatchProc(
     if (psPtr->outFile) {
 	newmask = mask & (TCL_WRITABLE | TCL_EXCEPTION);
 	if (newmask) {
-	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), mask,
+	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), newmask,
 		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->outFile));

@@ -1449,6 +1449,39 @@ test io-12.5 {ReadChars: fileevents on partial characters} {stdio openpipe filee
     lappend x [catch {close $f} msg] $msg
     set x
 } "{} timeout {} timeout \u7266 {} eof 0 {}"
+test io-12.6 {ReadChars: too many chars read} {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [encoding convertto utf-8 \
+                        [string repeat \uBEEF 20][string repeat . 20]]
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+    set c [chan create read [namespace which driver]]
+    chan configure $c -encoding utf-8
+    while {![eof $c]} {
+        read $c 15
+    }
+    close $c
+} {}
 
 test io-13.1 {TranslateInputEOL: cr mode} {} {
     set f [open $path(test1) w]
@@ -2810,7 +2843,7 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
     variable x running
     set l abcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyzabcdefghijklmnopqrstuvwxyz
     proc writelots {s l} {
-	for {set i 0} {$i < 2000} {incr i} {
+	for {set i 0} {$i < 9000} {incr i} {
 	    puts $s $l
 	}
     }
@@ -2841,7 +2874,7 @@ test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMa
     close $ss
     vwait [namespace which -variable x]
     set c
-} 2000
+} 9000
 test io-29.35 {Tcl_Close vs fileevent vs multiple interpreters} {socket tempNotMac fileevent} {
     # On Mac, this test screws up sockets such that subsequent tests using port 2828
     # either cause errors or panic().
@@ -7144,17 +7177,12 @@ test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileeven
     for {set x 0} {$x < 12} {incr x} {
 	append big $big
     }
-    file delete $path(test1)
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts $f1 {
 	puts ready
 	fcopy stdin stdout -command { set x }
 	vwait x
-	set f [open $path(test1) w]
-	fconfigure $f -translation lf
-	puts $f "done"
-	close $f
     }
     close $f1
     set f1 [open "|[list [interpreter] $path(pipe)]" r+]
@@ -7162,7 +7190,6 @@ test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileeven
     fconfigure $f1 -blocking 0
     puts $f1 $big
     flush $f1
-    after 500
     set result ""
     fileevent $f1 read [namespace code {
 	append result [read $f1 1024]
