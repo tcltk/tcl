@@ -55,6 +55,8 @@ struct TcpState {
     TcpFdList fds;		/* The file descriptors of the sockets. */
     int flags;			/* ORed combination of the bitfields defined
 				 * below. */
+    int interest;		/* Event types of interest */
+
     /*
      * Only needed for server sockets
      */
@@ -134,6 +136,7 @@ static int		TcpOutputProc(ClientData instanceData,
 			    const char *buf, int toWrite, int *errorCode);
 static void		TcpWatchProc(ClientData instanceData, int mask);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
+static void		WrapNotify(ClientData clientData, int mask);
 
 /*
  * This structure describes the channel type structure for TCP socket
@@ -906,6 +909,35 @@ TcpGetOptionProc(
  */
 
 static void
+WrapNotify(
+    ClientData clientData,
+    int mask)
+{
+    TcpState *statePtr = (TcpState *) clientData;
+    int newmask = mask & statePtr->interest;
+
+    if (newmask == 0) {
+	/*
+	 * There was no overlap between the states the channel is
+	 * interested in notifications for, and the states that are
+	 * reported present on the file descriptor by select().  The
+	 * only way that can happen is when the channel is interested
+	 * in a writable condition, and only a readable state is reported
+	 * present (see TcpWatchProc() below).  In that case, signal back
+	 * to the caller the writable state, which is really an error
+	 * condition.  As an extra check on that assumption, check for
+	 * a non-zero value of errno before reporting an artificial
+	 * writable state.
+	 */
+	if (errno == 0) {
+	    return;
+	}
+	newmask = TCL_WRITABLE;
+    }
+    Tcl_NotifyChannel(statePtr->channel, newmask);
+}
+
+static void
 TcpWatchProc(
     ClientData instanceData,	/* The socket state. */
     int mask)			/* Events of interest; an OR-ed combination of
@@ -928,8 +960,30 @@ TcpWatchProc(
          * need to cache this request until the connection has succeeded. */
         statePtr->filehandlers = mask;
     } else if (mask) {
-        Tcl_CreateFileHandler(statePtr->fds.fd, mask,
-                (Tcl_FileProc *) Tcl_NotifyChannel, statePtr->channel);
+
+	/*
+	 * Whether it is a bug or feature or otherwise, it is a fact
+	 * of life that on at least some Linux kernels select() fails
+	 * to report that a socket file descriptor is writable when
+	 * the other end of the socket is closed.  This is in contrast
+	 * to the guarantees Tcl makes that its channels become
+	 * writable and fire writable events on an error conditon.
+	 * This has caused a leak of file descriptors in a state of
+	 * background flushing.  See Tcl ticket 1758a0b603.
+	 *
+	 * As a workaround, when our caller indicates an interest in
+	 * writable notifications, we must tell the notifier built
+	 * around select() that we are interested in the readable state
+	 * of the file descriptor as well, as that is the only reliable
+	 * means to get notified of error conditions.  Then it is the
+	 * task of WrapNotify() above to untangle the meaning of these
+	 * channel states and report the chan events as best it can.
+	 * We save a copy of the mask passed in to assist with that.
+	 */
+
+	statePtr->interest = mask;
+        Tcl_CreateFileHandler(statePtr->fds.fd, mask|TCL_READABLE,
+                (Tcl_FileProc *) WrapNotify, statePtr);
     } else {
         Tcl_DeleteFileHandler(statePtr->fds.fd);
     }
