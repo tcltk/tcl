@@ -2324,10 +2324,10 @@ test fCmd-28.2 {file link} -returnCodes error -body {
 } -result {wrong # args: should be "file link ?-linktype? linkname ?target?"}
 test fCmd-28.3 {file link} -returnCodes error -body {
     file link abc b c
-} -result {bad switch "abc": must be -symbolic or -hard}
+} -result {bad option "abc": must be -symbolic or -hard}
 test fCmd-28.4 {file link} -returnCodes error -body {
     file link -abc b c
-} -result {bad switch "-abc": must be -symbolic or -hard}
+} -result {bad option "-abc": must be -symbolic or -hard}
 cd [workingDirectory]
 makeDirectory abc.dir
 makeDirectory abc2.dir
