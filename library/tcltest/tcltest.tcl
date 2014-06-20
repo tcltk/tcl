@@ -1991,20 +1991,6 @@ proc tcltest::test {name description args} {
 	}
     }
 
-    # check if the return code matched the expected return code
-    set codeFailure 0
-    if {!$setupFailure && ($returnCode ni $returnCodes)} {
-	set codeFailure 1
-    }
-
-    # Always run the cleanup script
-    set code [catch {uplevel 1 $cleanup} cleanupMsg]
-    if {$code == 1} {
-	set errorInfo(cleanup) $::errorInfo
-	set errorCode(cleanup) $::errorCode
-    }
-    set cleanupFailure [expr {$code != 0}]
-
     set coreFailure 0
     set coreMsg ""
     # check for a core file first - if one was created by the test,
@@ -2036,6 +2022,12 @@ proc tcltest::test {name description args} {
 		}
 	    }
 	}
+    }
+
+    # check if the return code matched the expected return code
+    set codeFailure 0
+    if {!$setupFailure && ($returnCode ni $returnCodes)} {
+	set codeFailure 1
     }
 
     # If expected output/error strings exist, we have to compare
@@ -2075,6 +2067,14 @@ proc tcltest::test {name description args} {
     } else {
 	set scriptFailure 1
     }
+
+    # Always run the cleanup script
+    set code [catch {uplevel 1 $cleanup} cleanupMsg]
+    if {$code == 1} {
+	set errorInfo(cleanup) $::errorInfo
+	set errorCode(cleanup) $::errorCode
+    }
+    set cleanupFailure [expr {$code != 0}]
 
     # if we didn't experience any failures, then we passed
     variable numTests
