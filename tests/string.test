@@ -1801,8 +1801,8 @@ test string-26.7 {tcl::prefix} -body {
     tcl::prefix match -exact {apa bepa cepa depa} be
 } -returnCodes 1 -result {bad option "be": must be apa, bepa, cepa, or depa}
 test string-26.8 {tcl::prefix} -body {
-    tcl::prefix match -message switch {apa bepa bear depa} be
-} -returnCodes 1 -result {ambiguous switch "be": must be apa, bepa, bear, or depa}
+    tcl::prefix match -message wombat {apa bepa bear depa} be
+} -returnCodes 1 -result {ambiguous wombat "be": must be apa, bepa, bear, or depa}
 test string-26.9 {tcl::prefix} -body {
     tcl::prefix match -error {} {apa bepa bear depa} be
 } -returnCodes 0 -result {}

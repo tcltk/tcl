@@ -892,7 +892,7 @@ Tcl_ExecObjCmd(
 	if (string[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[skip], options, "switch",
+	if (Tcl_GetIndexFromObj(interp, objv[skip], options, "option",
 		TCL_EXACT, &index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -906,7 +906,7 @@ Tcl_ExecObjCmd(
 	}
     }
     if (objc <= skip) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?-switch ...? arg ?arg ...?");
+	Tcl_WrongNumArgs(interp, 1, objv, "?-option ...? arg ?arg ...?");
 	return TCL_ERROR;
     }
 
@@ -1673,7 +1673,7 @@ Tcl_FcopyObjCmd(
     toRead = -1;
     cmdPtr = NULL;
     for (i = 3; i < objc; i += 2) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "switch", 0,
+	if (Tcl_GetIndexFromObj(interp, objv[i], switches, "option", 0,
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}

@@ -2225,6 +2225,9 @@ DeleteReflectedTransformMap(
 	 */
 
 	evPtr = resultPtr->evPtr;
+	if (evPtr == NULL) {
+	    continue;
+	}
 	paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
@@ -2350,6 +2353,9 @@ DeleteThreadReflectedTransformMap(
 	 */
 
 	evPtr = resultPtr->evPtr;
+	if (evPtr == NULL) {
+	    continue;
+	}
 	paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;

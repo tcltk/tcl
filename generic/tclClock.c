@@ -1703,8 +1703,8 @@ ClockClicksObjCmd(
     case 1:
 	break;
     case 2:
-	if (Tcl_GetIndexFromObjStruct(interp, objv[1], clicksSwitches,
-		sizeof(char *), "switch", 0, &index) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], clicksSwitches, "option", 0,
+		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
 	break;
@@ -1873,9 +1873,9 @@ ClockParseformatargsObjCmd(
     localeObj = litPtr[LIT_C];
     timezoneObj = litPtr[LIT__NIL];
     for (i = 2; i < objc; i+=2) {
-	if (Tcl_GetIndexFromObjStruct(interp, objv[i], options,
-		sizeof(char *), "switch", 0, &optionIndex) != TCL_OK) {
-	    Tcl_SetErrorCode(interp, "CLOCK", "badSwitch",
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
+		&optionIndex) != TCL_OK) {
+	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
 		    Tcl_GetString(objv[i]), NULL);
 	    return TCL_ERROR;
 	}
