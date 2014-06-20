@@ -2384,10 +2384,18 @@ DeleteReflectedChannelMap(
 	/*
 	 * The receiver for the event exited, before processing the event. We
 	 * detach the result now, wake the originator up and signal failure.
+         *
+         * Attention: Results may have been detached already, by either the
+         * receiver, or this thread, as part of other parts in the thread
+         * teardown. Such results are ignored. See ticket [b47b176adf] for the
+         * identical race condition in Tcl 8.6 IORTrans.
 	 */
 
 	evPtr = resultPtr->evPtr;
 	paramPtr = evPtr->param;
+	if (!evPtr) {
+	    continue;
+	}
 
 	evPtr->resultPtr = NULL;
 	resultPtr->evPtr = NULL;
@@ -2515,10 +2523,18 @@ DeleteThreadReflectedChannelMap(
 	/*
 	 * The receiver for the event exited, before processing the event. We
 	 * detach the result now, wake the originator up and signal failure.
+         *
+         * Attention: Results may have been detached already, by either the
+         * receiver, or this thread, as part of other parts in the thread
+         * teardown. Such results are ignored. See ticket [b47b176adf] for the
+         * identical race condition in Tcl 8.6 IORTrans.
 	 */
 
 	evPtr = resultPtr->evPtr;
 	paramPtr = evPtr->param;
+	if (!evPtr) {
+	    continue;
+	}
 
 	evPtr->resultPtr = NULL;
 	resultPtr->evPtr = NULL;
