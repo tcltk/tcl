@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.3.7
+    variable Version 2.3.8
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -1991,14 +1991,6 @@ proc tcltest::test {name description args} {
 	}
     }
 
-    # Always run the cleanup script
-    set code [catch {uplevel 1 $cleanup} cleanupMsg]
-    if {$code == 1} {
-	set errorInfo(cleanup) $::errorInfo
-	set errorCode(cleanup) $::errorCode
-    }
-    set cleanupFailure [expr {$code != 0}]
-
     set coreFailure 0
     set coreMsg ""
     # check for a core file first - if one was created by the test,
@@ -2075,6 +2067,14 @@ proc tcltest::test {name description args} {
     } else {
 	set scriptFailure 1
     }
+
+    # Always run the cleanup script
+    set code [catch {uplevel 1 $cleanup} cleanupMsg]
+    if {$code == 1} {
+	set errorInfo(cleanup) $::errorInfo
+	set errorCode(cleanup) $::errorCode
+    }
+    set cleanupFailure [expr {$code != 0}]
 
     # if we didn't experience any failures, then we passed
     variable numTests
