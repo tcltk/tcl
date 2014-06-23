@@ -1991,39 +1991,6 @@ proc tcltest::test {name description args} {
 	}
     }
 
-    set coreFailure 0
-    set coreMsg ""
-    # check for a core file first - if one was created by the test,
-    # then the test failed
-    if {[preserveCore]} {
-	if {[file exists [file join [workingDirectory] core]]} {
-	    # There's only a test failure if there is a core file
-	    # and (1) there previously wasn't one or (2) the new
-	    # one is different from the old one.
-	    if {[info exists coreModTime]} {
-		if {$coreModTime != [file mtime \
-			[file join [workingDirectory] core]]} {
-		    set coreFailure 1
-		}
-	    } else {
-		set coreFailure 1
-	    }
-	
-	    if {([preserveCore] > 1) && ($coreFailure)} {
-		append coreMsg "\nMoving file to:\
-		    [file join [temporaryDirectory] core-$name]"
-		catch {file rename -force -- \
-		    [file join [workingDirectory] core] \
-		    [file join [temporaryDirectory] core-$name]
-		} msg
-		if {$msg ne {}} {
-		    append coreMsg "\nError:\
-			Problem renaming core file: $msg"
-		}
-	    }
-	}
-    }
-
     # check if the return code matched the expected return code
     set codeFailure 0
     if {!$setupFailure && ($returnCode ni $returnCodes)} {
@@ -2075,6 +2042,39 @@ proc tcltest::test {name description args} {
 	set errorCode(cleanup) $::errorCode
     }
     set cleanupFailure [expr {$code != 0}]
+
+    set coreFailure 0
+    set coreMsg ""
+    # check for a core file first - if one was created by the test,
+    # then the test failed
+    if {[preserveCore]} {
+	if {[file exists [file join [workingDirectory] core]]} {
+	    # There's only a test failure if there is a core file
+	    # and (1) there previously wasn't one or (2) the new
+	    # one is different from the old one.
+	    if {[info exists coreModTime]} {
+		if {$coreModTime != [file mtime \
+			[file join [workingDirectory] core]]} {
+		    set coreFailure 1
+		}
+	    } else {
+		set coreFailure 1
+	    }
+	
+	    if {([preserveCore] > 1) && ($coreFailure)} {
+		append coreMsg "\nMoving file to:\
+		    [file join [temporaryDirectory] core-$name]"
+		catch {file rename -force -- \
+		    [file join [workingDirectory] core] \
+		    [file join [temporaryDirectory] core-$name]
+		} msg
+		if {$msg ne {}} {
+		    append coreMsg "\nError:\
+			Problem renaming core file: $msg"
+		}
+	    }
+	}
+    }
 
     # if we didn't experience any failures, then we passed
     variable numTests
