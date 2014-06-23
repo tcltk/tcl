@@ -7324,7 +7324,7 @@ Tcl_GetChannelBufferSize(
  *	An error message is generated in interp's result object to indicate
  *	that a command was invoked with the a bad option. The message has the
  *	form:
- *		bad option "blah": should be one of
+ *		bad/ambiguous option "blah": should be one of
  *		<...generic options...>+<...specific options...>
  *	"blah" is the optionName argument and "<specific options>" is a space
  *	separated list of specific option words. The function takes good care
@@ -7361,7 +7361,9 @@ Tcl_BadChannelOption(
 	    Tcl_Panic("malformed option list in channel driver");
 	}
 	Tcl_ResetResult(interp);
-	errObj = Tcl_ObjPrintf("bad option \"%s\": should be one of ",
+        // FIXME
+	errObj = Tcl_ObjPrintf(
+                "unknown or ambiguous option \"%s\": should be one of ",
                 optionName);
 	argc--;
 	for (i = 0; i < argc; i++) {
@@ -7700,6 +7702,7 @@ Tcl_SetChannelOption(
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
                     "bad value for -buffering: must be one of"
                     " full, line, or none", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERING", NULL);
             return TCL_ERROR;
 	}
 	return TCL_OK;
@@ -7760,6 +7763,7 @@ Tcl_SetChannelOption(
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
                             "bad value for -eofchar: must be non-NUL ASCII"
                             " character", -1));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "EOFCHAR", NULL);
 		}
 		ckfree(argv);
 		return TCL_ERROR;
@@ -7775,6 +7779,7 @@ Tcl_SetChannelOption(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -eofchar: should be a list of zero,"
 			" one, or two elements", -1));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "EOFCHAR", NULL);
 	    }
 	    ckfree(argv);
 	    return TCL_ERROR;
@@ -7809,6 +7814,7 @@ Tcl_SetChannelOption(
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"bad value for -translation: must be a one or two"
 			" element list", -1));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TRANSLATION", NULL);
 	    }
 	    ckfree(argv);
 	    return TCL_ERROR;
@@ -7835,13 +7841,7 @@ Tcl_SetChannelOption(
 	    } else if (strcmp(readMode, "platform") == 0) {
 		translation = TCL_PLATFORM_TRANSLATION;
 	    } else {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "bad value for -translation: must be one of "
-                            "auto, binary, cr, lf, crlf, or platform", -1));
-		}
-		ckfree(argv);
-		return TCL_ERROR;
+		goto badTranslation;
 	    }
 
 	    /*
@@ -7885,17 +7885,20 @@ Tcl_SetChannelOption(
 	    } else if (strcmp(writeMode, "platform") == 0) {
 		statePtr->outputTranslation = TCL_PLATFORM_TRANSLATION;
 	    } else {
-		if (interp) {
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "bad value for -translation: must be one of "
-                            "auto, binary, cr, lf, crlf, or platform", -1));
-		}
-		ckfree(argv);
-		return TCL_ERROR;
+		goto badTranslation;
 	    }
 	}
 	ckfree(argv);
 	return TCL_OK;
+    badTranslation:
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "bad value for -translation: must be one of "
+		    "auto, binary, cr, lf, crlf, or platform", -1));
+            Tcl_SetErrorCode(interp, "TCL", "VALUE", "TRANSLATION", NULL);
+	}
+	ckfree(argv);
+	return TCL_ERROR;
     } else if (chanPtr->typePtr->setOptionProc != NULL) {
 	return chanPtr->typePtr->setOptionProc(chanPtr->instanceData, interp,
 		optionName, newValue);

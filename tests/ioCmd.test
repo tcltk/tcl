@@ -171,6 +171,9 @@ test iocmd-5.3 {seek command} -returnCodes error -body {
 test iocmd-5.4 {seek command} -returnCodes error -body {
     seek stdin 100 gugu
 } -result {bad origin "gugu": must be start, current, or end}
+test iocmd-5.5 {seek command} -returnCodes error -body {
+    seek stdin 100 ""
+} -result {ambiguous origin "": must be start, current, or end}
 
 test iocmd-6.1 {tell command} {
     list [catch {tell} msg] $msg
@@ -198,6 +201,13 @@ test iocmd-7.4 {close command} -setup {
 } -cleanup {
     close $chan
 } -returnCodes error -result "bad direction \"bar\": must be read or write"
+test iocmd-7.4a {close command} -setup {
+    set chan [open [info script] r]
+} -body {
+    chan close $chan ""
+} -cleanup {
+    close $chan
+} -returnCodes error -result "ambiguous direction \"\": must be read or write"
 test iocmd-7.5 {close command} -setup {
     set chan [open [info script] r]
 } -body {
@@ -221,7 +231,7 @@ test iocmd-8.4 {fconfigure command} {
     set x [list [catch {fconfigure $f1 froboz} msg] $msg]
     close $f1
     set x
-} {1 {bad option "froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+} {1 {unknown or ambiguous option "froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 test iocmd-8.5 {fconfigure command} {
     list [catch {fconfigure stdin -buffering froboz} msg] $msg
 } {1 {bad value for -buffering: must be one of full, line, or none}}
@@ -265,19 +275,19 @@ test iocmd-8.11 {fconfigure command} {
     set res [list [catch {fconfigure $chan -froboz blarfo} msg] $msg]
     close $chan
     set res
-} {1 {bad option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+} {1 {unknown or ambiguous option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 test iocmd-8.12 {fconfigure command} {
     set chan [open $path(fconfigure.dummy) r]
     set res [list [catch {fconfigure $chan -b blarfo} msg] $msg]
     close $chan
     set res
-} {1 {bad option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+} {1 {unknown or ambiguous option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 test iocmd-8.13 {fconfigure command} {
     set chan [open $path(fconfigure.dummy) r]
     set res [list [catch {fconfigure $chan -buffer blarfo} msg] $msg]
     close $chan
     set res
-} {1 {bad option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+} {1 {unknown or ambiguous option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 removeFile fconfigure.dummy
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
@@ -294,7 +304,7 @@ test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOr
     close $srv
     unset cli srv port
     rename iocmdSRV {}
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -peername, or -sockname}
+} -returnCodes error -result {unknown or ambiguous option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -peername, or -sockname}
 test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
@@ -337,7 +347,7 @@ test iocmd-8.18 {fconfigure command / unix tty channel} -constraints {nonPortabl
     if {$tty ne ""} {
 	close $tty
     }
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, or -mode}
+} -returnCodes error -result {unknown or ambiguous option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, or -mode}
 test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable win} -setup {
     set tty ""
 } -body {
@@ -348,7 +358,7 @@ test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable
     if {$tty ne ""} {
 	close $tty
     }
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -mode, -handshake, -pollinterval, -sysbuffer, -timeout, -ttycontrol, or -xchar}
+} -returnCodes error -result {unknown or ambiguous option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -mode, -handshake, -pollinterval, -sysbuffer, -timeout, -ttycontrol, or -xchar}
 # TODO: Test parsing of serial channel options (nonportable, since requires an
 # open channel to work with).
 
@@ -639,7 +649,10 @@ test iocmd-15.9 {Tcl_FcopyObjCmd} {fcopy} {
 } "1 {channel \"$rfile\" wasn't opened for writing}"
 test iocmd-15.10 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile foo bar} msg] $msg
-} {1 {bad option "foo": must be -size or -command}}
+} {1 {bad option "foo": must be -command or -size}}
+test iocmd-15.10a {Tcl_FcopyObjCmd} {fcopy} {
+    list [catch {fcopy $rfile $wfile - bar} msg] $msg
+} {1 {ambiguous option "-": must be -command or -size}}
 test iocmd-15.11 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}

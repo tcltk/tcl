@@ -1861,16 +1861,13 @@ StringMapCmd(
     }
 
     if (objc == 4) {
-	const char *string = TclGetStringFromObj(objv[1], &length2);
+	static const char *opt[] = { "-nocase", NULL };
+	int idx;
 
-	if ((length2 > 1) &&
-		strncmp(string, "-nocase", (size_t) length2) == 0) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], opt, "option",
+		TCL_MULTIPLE_CHARS, &idx) == TCL_OK) {
 	    nocase = 1;
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase", string));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string, NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -2127,17 +2124,13 @@ StringMatchCmd(
     }
 
     if (objc == 4) {
-	int length;
-	const char *string = TclGetStringFromObj(objv[1], &length);
+	static const char *opt[] = { "-nocase", NULL };
+	int idx;
 
-	if ((length > 1) &&
-	    strncmp(string, "-nocase", (size_t) length) == 0) {
+	if (Tcl_GetIndexFromObj(interp, objv[1], opt, "option",
+		TCL_MULTIPLE_CHARS, &idx) == TCL_OK) {
 	    nocase = TCL_MATCH_NOCASE;
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase", string));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string, NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -2573,6 +2566,8 @@ StringEqualCmd(
     int length1, length2, i, match, length, nocase = 0, reqlength = -1;
     typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
     strCmpFn_t strCmpFn;
+    static const char *opts[] = { "-length", "-nocase", NULL };
+    enum opts { OPT_LENGTH, OPT_NOCASE };
 
     if (objc < 3 || objc > 6) {
     str_cmp_args:
@@ -2582,25 +2577,24 @@ StringEqualCmd(
     }
 
     for (i = 1; i < objc-2; i++) {
-	string2 = TclGetStringFromObj(objv[i], &length2);
-	if ((length2 > 1) && !strncmp(string2, "-nocase", (size_t)length2)) {
+	int idx;
+
+	if (Tcl_GetIndexFromObj(interp, objv[i], opts, "option", 0,
+		&idx) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum opts) idx) {
+	case OPT_NOCASE:
 	    nocase = 1;
-	} else if ((length2 > 1)
-		&& !strncmp(string2, "-length", (size_t)length2)) {
-	    if (i+1 >= objc-2) {
+	    break;
+	case OPT_LENGTH:
+	    if (i >= objc-3) {
 		goto str_cmp_args;
 	    }
-	    i++;
-	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
+	    if (TclGetIntFromObj(interp, objv[++i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase or -length",
-		    string2));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string2, NULL);
-	    return TCL_ERROR;
+	    break;
 	}
     }
 
@@ -2723,6 +2717,8 @@ StringCmpCmd(
     int length1, length2, i, match, length, nocase = 0, reqlength = -1;
     typedef int (*strCmpFn_t)(const char *, const char *, unsigned int);
     strCmpFn_t strCmpFn;
+    static const char *opts[] = { "-length", "-nocase", NULL };
+    enum opts { OPT_LENGTH, OPT_NOCASE };
 
     if (objc < 3 || objc > 6) {
     str_cmp_args:
@@ -2732,25 +2728,24 @@ StringCmpCmd(
     }
 
     for (i = 1; i < objc-2; i++) {
-	string2 = TclGetStringFromObj(objv[i], &length2);
-	if ((length2 > 1) && !strncmp(string2, "-nocase", (size_t)length2)) {
+	int idx;
+
+	if (Tcl_GetIndexFromObj(interp, objv[i], opts, "option", 0,
+		&idx) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	switch ((enum opts) idx) {
+	case OPT_NOCASE:
 	    nocase = 1;
-	} else if ((length2 > 1)
-		&& !strncmp(string2, "-length", (size_t)length2)) {
-	    if (i+1 >= objc-2) {
+	    break;
+	case OPT_LENGTH:
+	    if (i >= objc-3) {
 		goto str_cmp_args;
 	    }
-	    i++;
-	    if (TclGetIntFromObj(interp, objv[i], &reqlength) != TCL_OK) {
+	    if (TclGetIntFromObj(interp, objv[++i], &reqlength) != TCL_OK) {
 		return TCL_ERROR;
 	    }
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad option \"%s\": must be -nocase or -length",
-		    string2));
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "option",
-		    string2, NULL);
-	    return TCL_ERROR;
+	    break;
 	}
     }
 

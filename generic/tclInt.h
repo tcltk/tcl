@@ -2653,6 +2653,14 @@ typedef struct ProcessGlobalValue {
 #define TCL_NUMBER_NAN		5
 
 /*
+ *----------------------------------------------------------------------
+ * Non-public flags for Tcl_GetIndexFromObj
+ *----------------------------------------------------------------------
+ */
+
+#define TCL_MULTIPLE_CHARS	2
+
+/*
  *----------------------------------------------------------------
  * Variables shared among Tcl modules but not used by the outside world.
  *----------------------------------------------------------------

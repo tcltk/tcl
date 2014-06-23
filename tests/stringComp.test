@@ -71,7 +71,7 @@ foreach {tname tbody tresult tcode} {
     } {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"} {error}
     {bad args} {
 	string compare a b c
-    } {bad option "a": must be -nocase or -length} {error}
+    } {bad option "a": must be -length or -nocase} {error}
     {bad args} {
 	string compare -length -nocase str1 str2
     } {expected integer but got "-nocase"} {error}

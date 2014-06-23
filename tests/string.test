@@ -40,7 +40,7 @@ test string-2.1 {string compare, too few args} {
 } {1 {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}}
 test string-2.2 {string compare, bad args} {
     list [catch {string compare a b c} msg] $msg
-} {1 {bad option "a": must be -nocase or -length}}
+} {1 {bad option "a": must be -length or -nocase}}
 test string-2.3 {string compare, bad args} {
     list [catch {string compare -length -nocase str1 str2} msg] $msg
 } {1 {expected integer but got "-nocase"}}

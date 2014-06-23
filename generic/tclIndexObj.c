@@ -329,7 +329,8 @@ Tcl_GetIndexFromObjStruct(
      * Check if we were instructed to disallow abbreviations.
      */
 
-    if ((flags & TCL_EXACT) || (key[0] == '\0') || (numAbbrev != 1)) {
+    if ((flags & TCL_EXACT) || (key[0] == '\0') || (numAbbrev != 1)
+	    || ((flags & TCL_MULTIPLE_CHARS) && (p1 - key == 1))) {
 	goto error;
     }
 

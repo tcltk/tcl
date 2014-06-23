@@ -132,9 +132,9 @@ static int ckallocInit = 0;
  */
 
 static int		CheckmemCmd(ClientData clientData, Tcl_Interp *interp,
-			    int argc, const char *argv[]);
+			    int argc, Tcl_Obj *const argv[]);
 static int		MemoryCmd(ClientData clientData, Tcl_Interp *interp,
-			    int argc, const char *argv[]);
+			    int argc, Tcl_Obj *const argv[]);
 static void		ValidateMemory(struct mem_header *memHeaderP,
 			    const char *file, int line, int nukeGuards);
 
@@ -814,28 +814,41 @@ MemoryCmd(
     ClientData clientData,
     Tcl_Interp *interp,
     int argc,
-    const char *argv[])
+    Tcl_Obj *const argv[])
 {
     const char *fileName;
     FILE *fileP;
     Tcl_DString buffer;
-    int result;
+    int result, idx;
     size_t len;
+    static const char *subcommands[] = {
+        "active", "display", "break_on_malloc", "info", "init", "objs",
+        "onexit", "tag", "trace", "trace_on_at_malloc", "validate",
+        NULL
+    };
+    enum MemSubcommands {
+        OPT_ACTIVE, OPT_DISPLAY, OPT_BREAK, OPT_INFO, OPT_INIT, OPT_OBJS,
+        OPT_ONEXIT, OPT_TAG, OPT_TRACE, OPT_TRACEON, OPT_VALIDATE
+    };
 
     if (argc < 2) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "wrong # args: should be \"%s option [args..]\"", argv[0]));
+        Tcl_WrongNumArgs(interp, 1, argv, "option [args..]");
 	return TCL_ERROR;
     }
 
-    if (strcmp(argv[1], "active") == 0 || strcmp(argv[1], "display") == 0) {
+    if (Tcl_GetIndexFromObj(interp, argv[1], subcommands, "option", 0,
+            &idx) != TCL_OK) {
+        return TCL_ERROR;
+    }
+
+    switch ((enum MemSubcommands) idx) {
+    case OPT_ACTIVE:
+    case OPT_DISPLAY:
 	if (argc != 3) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "wrong # args: should be \"%s %s file\"",
-                    argv[0], argv[1]));
-	    return TCL_ERROR;
+            goto missingFile;
 	}
-	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
+	fileName = Tcl_TranslateFileName(interp, Tcl_GetString(argv[2]),
+                &buffer);
 	if (fileName == NULL) {
 	    return TCL_ERROR;
 	}
@@ -843,21 +856,18 @@ MemoryCmd(
 	Tcl_DStringFree(&buffer);
 	if (result != TCL_OK) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("error accessing %s: %s",
-                    argv[2], Tcl_PosixError(interp)));
+                    Tcl_GetString(argv[2]), Tcl_PosixError(interp)));
 	    return TCL_ERROR;
 	}
 	return TCL_OK;
-    }
-    if (strcmp(argv[1],"break_on_malloc") == 0) {
+
+    case OPT_BREAK:
 	if (argc != 3) {
-	    goto argError;
+	    goto missingCount;
 	}
-	if (Tcl_GetInt(interp, argv[2], &break_on_malloc) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	return TCL_OK;
-    }
-    if (strcmp(argv[1],"info") == 0) {
+	return Tcl_GetIntFromObj(interp, argv[2], &break_on_malloc);
+
+    case OPT_INFO:
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"%-25s %10d\n%-25s %10d\n%-25s %10d\n%-25s %10lu\n%-25s %10d\n%-25s %10lu\n",
 		"total mallocs", total_mallocs, "total frees", total_frees,
@@ -866,21 +876,19 @@ MemoryCmd(
 		"maximum packets allocated", maximum_malloc_packets,
 		"maximum bytes allocated", (unsigned long)maximum_bytes_malloced));
 	return TCL_OK;
-    }
-    if (strcmp(argv[1], "init") == 0) {
+
+    case OPT_INIT:
 	if (argc != 3) {
-	    goto bad_suboption;
+	    goto missingBoolean;
 	}
-	init_malloced_bodies = (strcmp(argv[2],"on") == 0);
-	return TCL_OK;
-    }
-    if (strcmp(argv[1], "objs") == 0) {
+        return Tcl_GetBooleanFromObj(interp, argv[2], &init_malloced_bodies);
+
+    case OPT_OBJS:
 	if (argc != 3) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "wrong # args: should be \"%s objs file\"", argv[0]));
-	    return TCL_ERROR;
+            goto missingFile;
 	}
-	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
+	fileName = Tcl_TranslateFileName(interp, Tcl_GetString(argv[2]),
+                &buffer);
 	if (fileName == NULL) {
 	    return TCL_ERROR;
 	}
@@ -895,14 +903,13 @@ MemoryCmd(
 	fclose(fileP);
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
-    }
-    if (strcmp(argv[1],"onexit") == 0) {
+
+    case OPT_ONEXIT:
 	if (argc != 3) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "wrong # args: should be \"%s onexit file\"", argv[0]));
-	    return TCL_ERROR;
+            goto missingFile;
 	}
-	fileName = Tcl_TranslateFileName(interp, argv[2], &buffer);
+	fileName = Tcl_TranslateFileName(interp, Tcl_GetString(argv[2]),
+                &buffer);
 	if (fileName == NULL) {
 	    return TCL_ERROR;
 	}
@@ -910,61 +917,50 @@ MemoryCmd(
 	strcpy(onExitMemDumpFileName,fileName);
 	Tcl_DStringFree(&buffer);
 	return TCL_OK;
-    }
-    if (strcmp(argv[1],"tag") == 0) {
+
+    case OPT_TAG:
 	if (argc != 3) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "wrong # args: should be \"%s tag string\"", argv[0]));
+            Tcl_WrongNumArgs(interp, 2, argv, "string");
 	    return TCL_ERROR;
 	}
 	if ((curTagPtr != NULL) && (curTagPtr->refCount == 0)) {
 	    TclpFree((char *) curTagPtr);
 	}
-	len = strlen(argv[2]);
+	len = strlen(Tcl_GetString(argv[2]));
 	curTagPtr = (MemTag *) TclpAlloc(TAG_SIZE(len));
 	curTagPtr->refCount = 0;
-	memcpy(curTagPtr->string, argv[2], len + 1);
+	memcpy(curTagPtr->string, Tcl_GetString(argv[2]), len + 1);
 	return TCL_OK;
-    }
-    if (strcmp(argv[1],"trace") == 0) {
+
+    case OPT_TRACE:
 	if (argc != 3) {
-	    goto bad_suboption;
+	    goto missingBoolean;
 	}
-	alloc_tracing = (strcmp(argv[2],"on") == 0);
-	return TCL_OK;
+        return Tcl_GetBooleanFromObj(interp, argv[2], &alloc_tracing);
+
+    case OPT_TRACEON:
+	if (argc != 3) {
+	    goto missingCount;
+	}
+	return Tcl_GetIntFromObj(interp, argv[2], &trace_on_at_malloc);
+
+    case OPT_VALIDATE:
+	if (argc != 3) {
+	    goto missingBoolean;
+	}
+        return Tcl_GetBooleanFromObj(interp, argv[2], &validate_memory);
     }
 
-    if (strcmp(argv[1],"trace_on_at_malloc") == 0) {
-	if (argc != 3) {
-	    goto argError;
-	}
-	if (Tcl_GetInt(interp, argv[2], &trace_on_at_malloc) != TCL_OK) {
-	    return TCL_ERROR;
-	}
-	return TCL_OK;
-    }
-    if (strcmp(argv[1],"validate") == 0) {
-	if (argc != 3) {
-	    goto bad_suboption;
-	}
-	validate_memory = (strcmp(argv[2],"on") == 0);
-	return TCL_OK;
-    }
-
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-            "bad option \"%s\": should be active, break_on_malloc, info, "
-            "init, objs, onexit, tag, trace, trace_on_at_malloc, or validate",
-            argv[1]));
+  missingCount:
+    Tcl_WrongNumArgs(interp, 2, argv, "count");
     return TCL_ERROR;
 
-  argError:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-            "wrong # args: should be \"%s %s count\"", argv[0], argv[1]));
+  missingFile:
+    Tcl_WrongNumArgs(interp, 2, argv, "file");
     return TCL_ERROR;
 
-  bad_suboption:
-    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-            "wrong # args: should be \"%s %s on|off\"", argv[0], argv[1]));
+  missingBoolean:
+    Tcl_WrongNumArgs(interp, 2, argv, "on|off");
     return TCL_ERROR;
 }
 
@@ -991,15 +987,23 @@ CheckmemCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Interpreter for evaluation. */
     int argc,			/* Number of arguments. */
-    const char *argv[])		/* String values of arguments. */
+    Tcl_Obj *const argv[])	/* Values of arguments. */
 {
+    char *bytes;
+    int len;
+
     if (argc != 2) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                "wrong # args: should be \"%s fileName\"", argv[0]));
+        Tcl_WrongNumArgs(interp, 1, argv, "fileName");
 	return TCL_ERROR;
     }
+    bytes = Tcl_GetStringFromObj(argv[1], &len);
+    if (len > 99) {
+        Tcl_SetResult(interp, "string too long for internal buffer",
+                TCL_STATIC);
+        return TCL_ERROR;
+    }
     tclMemDumpFileName = dumpFile;
-    strcpy(tclMemDumpFileName, argv[1]);
+    strcpy(tclMemDumpFileName, bytes);
     return TCL_OK;
 }
 
@@ -1025,8 +1029,8 @@ Tcl_InitMemory(
 				 * added */
 {
     TclInitDbCkalloc();
-    Tcl_CreateCommand(interp, "memory", MemoryCmd, NULL, NULL);
-    Tcl_CreateCommand(interp, "checkmem", CheckmemCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "memory", MemoryCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "checkmem", CheckmemCmd, NULL, NULL);
 }
 
 
@@ -1054,9 +1058,7 @@ char *
 Tcl_Alloc(
     unsigned int size)
 {
-    char *result;
-
-    result = TclpAlloc(size);
+    char *result = (char *) TclpAlloc(size);
 
     /*
      * Most systems will not alloc(0), instead bumping it to one so that NULL
@@ -1080,9 +1082,7 @@ Tcl_DbCkalloc(
     const char *file,
     int line)
 {
-    char *result;
-
-    result = (char *) TclpAlloc(size);
+    char *result = (char *) TclpAlloc(size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
@@ -1106,10 +1106,7 @@ char *
 Tcl_AttemptAlloc(
     unsigned int size)
 {
-    char *result;
-
-    result = TclpAlloc(size);
-    return result;
+    return (char *) TclpAlloc(size);
 }
 
 char *
@@ -1118,10 +1115,7 @@ Tcl_AttemptDbCkalloc(
     const char *file,
     int line)
 {
-    char *result;
-
-    result = (char *) TclpAlloc(size);
-    return result;
+    return (char *) TclpAlloc(size);
 }
 
 /*
@@ -1140,9 +1134,7 @@ Tcl_Realloc(
     char *ptr,
     unsigned int size)
 {
-    char *result;
-
-    result = TclpRealloc(ptr, size);
+    char *result = (char *) TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
 	Tcl_Panic("unable to realloc %u bytes", size);
@@ -1157,9 +1149,7 @@ Tcl_DbCkrealloc(
     const char *file,
     int line)
 {
-    char *result;
-
-    result = (char *) TclpRealloc(ptr, size);
+    char *result = (char *) TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
@@ -1184,10 +1174,7 @@ Tcl_AttemptRealloc(
     char *ptr,
     unsigned int size)
 {
-    char *result;
-
-    result = TclpRealloc(ptr, size);
-    return result;
+    return (char *) TclpRealloc(ptr, size);
 }
 
 char *
@@ -1197,10 +1184,7 @@ Tcl_AttemptDbCkrealloc(
     const char *file,
     int line)
 {
-    char *result;
-
-    result = (char *) TclpRealloc(ptr, size);
-    return result;
+    return (char *) TclpRealloc(ptr, size);
 }
 
 /*
