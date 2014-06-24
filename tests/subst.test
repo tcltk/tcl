@@ -21,7 +21,7 @@ test subst-1.1 {basics} -returnCodes error -body {
 } -result {wrong # args: should be "subst ?-nobackslashes? ?-nocommands? ?-novariables? string"}
 test subst-1.2 {basics} -returnCodes error -body {
     subst a b c
-} -result {bad switch "a": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "a": must be -nobackslashes, -nocommands, or -novariables}
 
 test subst-2.1 {simple strings} {
     subst {}
@@ -119,13 +119,13 @@ test subst-6.1 {clear the result after command substitution} -body {
 
 test subst-7.1 {switches} -returnCodes error -body {
     subst foo bar
-} -result {bad switch "foo": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "foo": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.2 {switches} -returnCodes error -body {
     subst -no bar
-} -result {ambiguous switch "-no": must be -nobackslashes, -nocommands, or -novariables}
+} -result {ambiguous option "-no": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.3 {switches} -returnCodes error -body {
     subst -bogus bar
-} -result {bad switch "-bogus": must be -nobackslashes, -nocommands, or -novariables}
+} -result {bad option "-bogus": must be -nobackslashes, -nocommands, or -novariables}
 test subst-7.4 {switches} {
     set x 123
     subst -nobackslashes {abc $x [expr 1+2] \\\x41}
