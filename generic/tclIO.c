@@ -181,7 +181,6 @@ static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 			    int errorCode, int flags);
 static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
-static int		CopyBuffer(Channel *chanPtr, char *result, int space);
 static int		CopyData(CopyState *csPtr, int mask);
 static void		CopyEventProc(ClientData clientData, int mask);
 static void		CreateScriptRecord(Tcl_Interp *interp,
@@ -5405,63 +5404,77 @@ Tcl_Read(
 int
 Tcl_ReadRaw(
     Tcl_Channel chan,		/* The channel from which to read. */
-    char *bufPtr,		/* Where to store input read. */
+    char *readBuf,		/* Where to store input read. */
     int bytesToRead)		/* Maximum number of bytes to read. */
 {
     Channel *chanPtr = (Channel *) chan;
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
-    int nread, copied, copiedNow = INT_MAX;
-
-    /*
-     * The check below does too much because it will reject a call to this
-     * function with a channel which is part of an 'fcopy'. But we have to
-     * allow this here or else the chaining in the transformation drivers will
-     * fail with 'file busy' error instead of retrieving and transforming the
-     * data to copy.
-     *
-     * We let the check procedure now believe that there is no fcopy in
-     * progress. A better solution than this might be an additional flag
-     * argument to switch off specific checks.
-     */
+    int copied = 0;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE | CHANNEL_RAW_MODE) != 0) {
 	return -1;
     }
 
-    /*
-     * Check for information in the push-back buffers. If there is some, use
-     * it. Go to the driver only if there is none (anymore) and the caller
-     * requests more bytes.
-     */
+    /* First read bytes from the push-back buffers. */
 
-    Tcl_Preserve(chanPtr);
-    for (copied = 0; bytesToRead > 0 && copiedNow > 0;
-	    bufPtr+=copiedNow, bytesToRead-=copiedNow, copied+=copiedNow) {
-	copiedNow = CopyBuffer(chanPtr, bufPtr, bytesToRead);
+    while (chanPtr->inQueueHead && bytesToRead > 0) {
+	ChannelBuffer *bufPtr = chanPtr->inQueueHead;
+	int bytesInBuffer = BytesLeft(bufPtr);
+	int toCopy = (bytesInBuffer < bytesToRead) ? bytesInBuffer
+		: bytesToRead;
+
+	/* Copy the current chunk into the read buffer. */
+
+	memcpy(readBuf, RemovePoint(bufPtr), (size_t) toCopy);
+	bufPtr->nextRemoved += toCopy;
+	copied += toCopy;
+	readBuf += toCopy;
+	bytesToRead -= toCopy;
+
+	/* If the current buffer is empty recycle it. */
+
+	if (IsBufferEmpty(bufPtr)) {
+	    chanPtr->inQueueHead = bufPtr->nextPtr;
+	    if (chanPtr->inQueueHead == NULL) {
+		chanPtr->inQueueTail = NULL;
+	    }
+	    RecycleBuffer(chanPtr->state, bufPtr, 0);
+	}
     }
 
-    if (bytesToRead > 0) {
-	/*
-	 * Now go to the driver to get as much as is possible to
-	 * fill the remaining request.  Since we're directly filling
-	 * the caller's buffer, retain the blocked flag.
-	 */
+    /* Go to the driver if more data needed. */
 
-	nread = ChanRead(chanPtr, bufPtr, bytesToRead);
-	if (nread < 0) {
+    if (bytesToRead > 0) {
+
+	int nread = ChanRead(chanPtr, readBuf+copied, bytesToRead);
+
+	if (nread > 0) {
+	    /* Successful read (short is OK) - add to bytes copied */
+	    copied += nread;
+	} else if (nread < 0) {
+	    /*
+	     * An error signaled.  If CHANNEL_BLOCKED, then the error
+	     * is not real, but an indication of blocked state.  In
+	     * that case, retain the flag and let caller receive the
+	     * short read of copied bytes from the pushback.
+	     * HOWEVER, if copied==0 bytes from pushback then repeat
+	     * signalling the blocked state as an error to caller so
+	     * there is no false report of an EOF.
+	     * When !CHANNEL_BLOCKED, the error is real and passes on
+	     * to caller.
+	     */
 	    if (!GotFlag(statePtr, CHANNEL_BLOCKED) || copied == 0) {
 		copied = -1;
 	    }
-	} else {
-	    copied += nread;
-	}
-	if (copied != 0) {
+	} else if (copied > 0) {
+	    /*
+	     * nread == 0.  Driver is at EOF, but if copied>0 bytes
+	     * from pushback, then we should not signal it yet.
+	     */
 	    ResetFlag(statePtr, CHANNEL_EOF);
 	}
     }
-
-    Tcl_Release(chanPtr);
     return copied;
 }
 
@@ -9349,96 +9362,6 @@ DoRead(
 
     Tcl_Release(chanPtr);
     return (int)(p - dst);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * CopyBuffer --
- *
- *	Copy at most one buffer of input to the result space.
- *
- * Results:
- *	Number of bytes stored in the result buffer. May return zero if no
- *	input is available.
- *
- * Side effects:
- *	Consumes buffered input. May deallocate one buffer.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-CopyBuffer(
-    Channel *chanPtr,		/* Channel from which to read input. */
-    char *result,		/* Where to store the copied input. */
-    int space)			/* How many bytes are available in result to
-				 * store the copied input? */
-{
-    ChannelBuffer *bufPtr;	/* The buffer from which to copy bytes. */
-    int bytesInBuffer;		/* How many bytes are available to be copied
-				 * in the current input buffer? */
-    int copied;			/* How many characters were already copied
-				 * into the destination space? */
-
-    /*
-     * If there is no input at all, return zero. The invariant is that either
-     * there is no buffer in the queue, or if the first buffer is empty, it is
-     * also the last buffer (and thus there is no input in the queue). Note
-     * also that if the buffer is empty, we don't leave it in the queue, but
-     * recycle it.
-     */
-
-    if (chanPtr->inQueueHead == NULL) {
-	return 0;
-    }
-    bufPtr = chanPtr->inQueueHead;
-    bytesInBuffer = BytesLeft(bufPtr);
-
-    copied = 0;
-
-    if (bytesInBuffer == 0) {
-	RecycleBuffer(chanPtr->state, bufPtr, 0);
-	chanPtr->inQueueHead = NULL;
-	chanPtr->inQueueTail = NULL;
-	return 0;
-    }
-
-    /*
-     * Copy the current chunk into the result buffer.
-     */
-
-    if (bytesInBuffer < space) {
-	space = bytesInBuffer;
-    }
-
-    memcpy(result, RemovePoint(bufPtr), (size_t) space);
-    bufPtr->nextRemoved += space;
-    copied = space;
-
-    /*
-     * We don't care about in-stream EOF characters here as the data read here
-     * may still flow through one or more transformations, i.e. is not in its
-     * final state yet.
-     */
-
-    /*
-     * If the current buffer is empty recycle it.
-     */
-
-    if (IsBufferEmpty(bufPtr)) {
-	chanPtr->inQueueHead = bufPtr->nextPtr;
-	if (chanPtr->inQueueHead == NULL) {
-	    chanPtr->inQueueTail = NULL;
-	}
-	RecycleBuffer(chanPtr->state, bufPtr, 0);
-    }
-
-    /*
-     * Return the number of characters copied into the result buffer.
-     */
-
-    return copied;
 }
 
 /*
