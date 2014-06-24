@@ -60,7 +60,7 @@ TclMSB(
      * specific incantations to invoke those assembly instructions.
      */
 #if defined(__GNUC__) && ((__GNUC__ >= 4) || ((__GNUC__ == 3) && (__GNUC_MINOR__ >= 4)))
-	return M - 1 - __builtin_clzll(n);
+	return n ? M - 1 - __builtin_clzll(n) : 0;
 #endif
 
 #if defined(_MSC_VER) && _MSCVER >= 1300
