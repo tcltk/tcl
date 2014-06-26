@@ -4363,8 +4363,7 @@ Tcl_GetsObj(
     Tcl_EncodingState oldState;
 
     if (CheckChannelErrors(statePtr, TCL_READABLE) != 0) {
-	copiedTotal = -1;
-	goto done;
+	return -1;
     }
 
     /*
