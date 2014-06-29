@@ -556,30 +556,6 @@ VarHashCreateVar(
 	: Tcl_GetBooleanFromObj((interp), (objPtr), (boolPtr)))
 
 /*
- * Macro used in this file to save a function call for common uses of
- * Tcl_GetWideIntFromObj(). The ANSI C "prototype" is:
- *
- * MODULE_SCOPE int TclGetWideIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
- *			Tcl_WideInt *wideIntPtr);
- */
-
-#ifdef TCL_WIDE_INT_IS_LONG
-#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
-    (((objPtr)->typePtr == &tclIntType)					\
-	? (*(wideIntPtr) = (Tcl_WideInt)				\
-		((objPtr)->internalRep.longValue), TCL_OK) :		\
-	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
-#else /* !TCL_WIDE_INT_IS_LONG */
-#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
-    (((objPtr)->typePtr == &tclWideIntType)				\
-	? (*(wideIntPtr) = (objPtr)->internalRep.wideValue, TCL_OK) :	\
-    ((objPtr)->typePtr == &tclIntType)					\
-	? (*(wideIntPtr) = (Tcl_WideInt)				\
-		((objPtr)->internalRep.longValue), TCL_OK) :		\
-	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
-#endif /* TCL_WIDE_INT_IS_LONG */
-
-/*
  * Macro used to make the check for type overflow more mnemonic. This works by
  * comparing sign bits; the rest of the word is irrelevant. The ANSI C
  * "prototype" (where inttype_t is any integer type) is:
@@ -5392,6 +5368,7 @@ TEBCresume(
 	} else {
 	    length = Tcl_UtfToUpper(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, length);
+	    TclFreeIntRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5408,6 +5385,7 @@ TEBCresume(
 	} else {
 	    length = Tcl_UtfToLower(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, length);
+	    TclFreeIntRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5424,6 +5402,7 @@ TEBCresume(
 	} else {
 	    length = Tcl_UtfToTitle(TclGetString(valuePtr));
 	    Tcl_SetObjLength(valuePtr, length);
+	    TclFreeIntRep(valuePtr);
 	    TRACE_APPEND(("\"%.20s\"\n", O2S(valuePtr)));
 	    NEXT_INST_F(1, 0, 0);
 	}
@@ -5699,11 +5678,21 @@ TEBCresume(
 			length - toIdx);
 	    }
 	} else {
-	    objResultPtr = value3Ptr;
+	    /*
+	     * Be careful with splicing the stack in this case; we have a
+	     * refCount:1 object in value3Ptr and we want to append to it and
+	     * make it be the refCount:1 object at the top of the stack
+	     * afterwards. [Bug 82e7f67325]
+	     */
+
 	    if (toIdx < length) {
-		Tcl_AppendUnicodeToObj(objResultPtr, ustring1 + toIdx + 1,
+		Tcl_AppendUnicodeToObj(value3Ptr, ustring1 + toIdx + 1,
 			length - toIdx);
 	    }
+	    TRACE_APPEND(("\"%.30s\"\n", O2S(value3Ptr)));
+	    TclDecrRefCount(valuePtr);
+	    OBJ_AT_TOS = value3Ptr;	/* Tricky! */
+	    NEXT_INST_F(1, 0, 0);
 	}
 	TclDecrRefCount(value3Ptr);
 	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
@@ -5986,6 +5975,31 @@ TEBCresume(
     case INST_NUM_TYPE:
 	if (GetNumberFromObj(NULL, OBJ_AT_TOS, &ptr1, &type1) != TCL_OK) {
 	    type1 = 0;
+	} else if (type1 == TCL_NUMBER_LONG) {
+	    /* value is between LONG_MIN and LONG_MAX */
+	    /* [string is integer] is -UINT_MAX to UINT_MAX range */
+	    int i;
+
+	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) != TCL_OK) {
+		type1 = TCL_NUMBER_WIDE;
+	    }
+#ifndef TCL_WIDE_INT_IS_LONG
+	} else if (type1 == TCL_NUMBER_WIDE) {
+	    /* value is between WIDE_MIN and WIDE_MAX */
+	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
+	    int i;
+	    if (Tcl_GetIntFromObj(NULL, OBJ_AT_TOS, &i) == TCL_OK) {
+		type1 = TCL_NUMBER_LONG;
+	    }
+#endif
+	} else if (type1 == TCL_NUMBER_BIG) {
+	    /* value is an integer outside the WIDE_MIN to WIDE_MAX range */
+	    /* [string is wideinteger] is -UWIDE_MAX to UWIDE_MAX range */
+	    Tcl_WideInt w;
+
+	    if (Tcl_GetWideIntFromObj(NULL, OBJ_AT_TOS, &w) == TCL_OK) {
+		type1 = TCL_NUMBER_WIDE;
+	    }
 	}
 	TclNewIntObj(objResultPtr, type1);
 	TRACE(("\"%.20s\" => %d\n", O2S(OBJ_AT_TOS), type1));

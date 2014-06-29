@@ -161,7 +161,7 @@ Tcl_RegexpObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", TCL_EXACT,
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", TCL_EXACT,
 		&index) != TCL_OK) {
 	    goto optionError;
 	}
@@ -217,7 +217,7 @@ Tcl_RegexpObjCmd(
   endOfForLoop:
     if ((objc - i) < (2 - about)) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-	    "?-switch ...? exp string ?matchVar? ?subMatchVar ...?");
+		"?-option ...? exp string ?matchVar? ?subMatchVar ...?");
 	goto optionError;
     }
     objc -= i;
@@ -231,6 +231,8 @@ Tcl_RegexpObjCmd(
     if (doinline && ((objc - 2) != 0)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"regexp match variables not allowed when using -inline", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "REGEXP",
+		"MIX_VAR_INLINE", NULL);
 	goto optionError;
     }
 
@@ -519,7 +521,7 @@ Tcl_RegsubObjCmd(
 	if (name[0] != '-') {
 	    break;
 	}
-	if (Tcl_GetIndexFromObj(interp, objv[idx], options, "switch",
+	if (Tcl_GetIndexFromObj(interp, objv[idx], options, "option",
 		TCL_EXACT, &index) != TCL_OK) {
 	    goto optionError;
 	}
@@ -566,7 +568,7 @@ Tcl_RegsubObjCmd(
   endOfForLoop:
     if (objc-idx < 3 || objc-idx > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-switch ...? exp string subSpec ?varName?");
+		"?-option ...? exp string subSpec ?varName?");
     optionError:
 	if (startIndex) {
 	    Tcl_DecrRefCount(startIndex);
@@ -3391,7 +3393,7 @@ TclSubstOptions(
     for (i = 0; i < numOpts; i++) {
 	int optionIndex;
 
-	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "switch", 0,
+	if (Tcl_GetIndexFromObj(interp, opts[i], substOptions, "option", 0,
 		&optionIndex) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -3591,7 +3593,7 @@ TclNRSwitchObjCmd(
   finishedOptions:
     if (objc - i < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-		"?-switch ...? string ?pattern body ...? ?default body?");
+		"?-option ...? string ?pattern body ...? ?default body?");
 	return TCL_ERROR;
     }
     if (indexVarObj != NULL && mode != OPT_REGEXP) {
@@ -3638,7 +3640,7 @@ TclNRSwitchObjCmd(
 
 	if (objc < 1) {
 	    Tcl_WrongNumArgs(interp, 1, savedObjv,
-		    "?-switch ...? string {?pattern body ...? ?default body?}");
+		    "?-option ...? string {?pattern body ...? ?default body?}");
 	    return TCL_ERROR;
 	}
 	objv = listv;

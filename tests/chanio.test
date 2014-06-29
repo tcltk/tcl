@@ -44,7 +44,7 @@ namespace eval ::tcl::test::io {
 
     # You need a *very* special environment to do some tests.  In particular,
     # many file systems do not support large-files...
-    testConstraint largefileSupport 0
+    testConstraint largefileSupport [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # some tests can only be run is umask is 2 if "umask" cannot be run, the
     # tests will be skipped.
@@ -4520,10 +4520,10 @@ test chan-io-34.21 {Tcl_Seek and Tcl_Tell on large files} -setup {
     chan puts -nonewline $f abcdef
     lappend l [chan tell $f]
     chan close $f
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
     # truncate...
     chan close [open $path(test3) w]
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
 } -result {0 6 6 4294967296 4294967302 4294967302 0}
 
 # Test Tcl_Eof

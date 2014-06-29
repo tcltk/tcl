@@ -26,6 +26,22 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # Some tests require the testobj command
 
 testConstraint testobj [expr {[info commands testobj] != {}}]
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc getbytes {} {
+	set lines [split [memory info] \n]
+	return [lindex $lines 3 3]
+    }
+    proc leaktest {script {iterations 3}} {
+	set end [getbytes]
+	for {set i 0} {$i < $iterations} {incr i} {
+	    uplevel 1 $script
+	    set tmp $end
+	    set end [getbytes]
+	}
+	return [expr {$end - $tmp}]
+    }
+}
 
 test stringComp-1.1 {error conditions} {
     proc foo {} {string gorp a b}
@@ -687,7 +703,23 @@ test stringComp-12.1 {Bug 3588366: end-offsets before start} {
 ## not yet bc
 
 ## string replace
-## not yet bc
+test stringComp-14.1 {Bug 82e7f67325} {
+    apply {x {
+	set a [join $x {}]
+	lappend b [string length [string replace ___! 0 2 $a]]
+	lappend b [string length [string replace ___! 0 2 $a[unset a]]]
+    }} {a b}
+} {3 3}
+test stringComp-14.2 {Bug 82e7f67325} memory {
+    # As in stringComp-14.1, but make sure we don't retain too many refs
+    leaktest {
+	apply {x {
+	    set a [join $x {}]
+	    lappend b [string length [string replace ___! 0 2 $a]]
+	    lappend b [string length [string replace ___! 0 2 $a[unset a]]]
+	}} {a b}
+    }
+} {0}
 
 ## string tolower
 ## not yet bc
