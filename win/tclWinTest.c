@@ -17,7 +17,7 @@
 /*
  * For TestplatformChmod on Windows
  */
-#ifdef __WIN32__
+#ifdef _WIN32
 #include <aclapi.h>
 #endif
 
