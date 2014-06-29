@@ -492,14 +492,10 @@ proc myProgress {token total current} {
     }
     set progress [list $total $current]
 }
-if 0 {
-    # This test hangs on Windows95 because the client never gets EOF
-    set httpLog 1
-    test http-4.6.1 {http::Event} knownBug {
-	set token [http::geturl $url -blocksize 50 -progress myProgress]
-	return $progress
-    } {111 111}
-}
+test http-4.6.1 {http::Event} knownBug {
+    set token [http::geturl $url -blocksize 50 -progress myProgress]
+    return $progress
+} {111 111}
 test http-4.7 {http::Event} -body {
     set token [http::geturl $url -keepalive 0 -progress myProgress]
     return $progress
