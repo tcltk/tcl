@@ -4945,6 +4945,26 @@ test io-36.1 {Tcl_InputBlocked on nonblocking pipe} {stdio openpipe} {
     close $f1
     set x
 } {{} 1 hello 0 {} 1}
+test io-36.1.1 {Tcl_InputBlocked on nonblocking binary pipe} {stdio openpipe} {
+    set f1 [open "|[list [interpreter]]" r+]
+    chan configure $f1 -encoding binary -translation lf -eofchar {}
+    puts $f1 {puts hello_from_pipe}
+    flush $f1
+    gets $f1
+    fconfigure $f1 -blocking off -buffering full
+    puts $f1 {puts hello}
+    set x ""
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    flush $f1
+    after 200
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    close $f1
+    set x
+} {{} 1 hello 0 {} 1}
 test io-36.2 {Tcl_InputBlocked on blocking pipe} {stdio openpipe} {
     set f1 [open "|[list [interpreter]]" r+]
     fconfigure $f1 -buffering line
