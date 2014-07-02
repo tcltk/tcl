@@ -4377,11 +4377,6 @@ TclGetsObjBinary(
 	     * hasn't seen EOL. Need to read more bytes from the channel
 	     * device. Side effect is to allocate another channel buffer.
 	     */
-
-	    if (GotFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)
-		    == (CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)) {
-		goto restore;
-	    }
 	    if (GetInput(chanPtr) != 0) {
 		goto restore;
 	    }
@@ -4447,6 +4442,10 @@ TclGetsObjBinary(
 		goto done;
 	    }
 	    goto gotEOL;
+	}
+	if (GotFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)
+		== (CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)) {
+	    goto restore;
 	}
 
 	/*
