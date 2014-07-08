@@ -3178,7 +3178,7 @@ TransformWrite(
     }
 
     if (res < 0) {
-	*errorCodePtr = EINVAL;
+	*errorCodePtr = Tcl_GetErrno();
 	return 0;
     }
 
@@ -3288,7 +3288,7 @@ TransformFlush(
     }
 
     if (res < 0) {
-	*errorCodePtr = EINVAL;
+	*errorCodePtr = Tcl_GetErrno();
 	return 0;
     }
 
