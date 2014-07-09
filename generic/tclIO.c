@@ -182,6 +182,7 @@ static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyData(CopyState *csPtr, int mask);
+static int		MoveBytes(CopyState *csPtr);
 static void		CopyEventProc(ClientData clientData, int mask);
 static void		CreateScriptRecord(Tcl_Interp *interp,
 			    Channel *chanPtr, int mask, Tcl_Obj *scriptPtr);
@@ -8778,6 +8779,7 @@ TclCopyChannel(
     int readFlags, writeFlags;
     CopyState *csPtr;
     int nonBlocking = (cmdPtr) ? CHANNEL_NONBLOCKING : 0;
+    int moveBytes;
 
     inStatePtr = inPtr->state;
     outStatePtr = outPtr->state;
@@ -8829,13 +8831,27 @@ TclCopyChannel(
 	    | CHANNEL_UNBUFFERED;
 
     /*
+     * Very strict set of conditions where we know we can just move bytes
+     * from input channel to output channel with no transformation or even
+     * examination of the bytes themselves.
+     * TODO: Find ways to relax this.
+     */
+
+    moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
+	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
+	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
+	    && inStatePtr->encoding == NULL
+	    && outStatePtr->encoding == NULL
+	    && !nonBlocking;	/* First draft do only blocking case */
+
+    /*
      * Allocate a new CopyState to maintain info about the current copy in
      * progress. This structure will be deallocated when the copy is
      * completed.
      */
 
-    csPtr = ckalloc(sizeof(CopyState) + inStatePtr->bufSize);
-    csPtr->bufSize = inStatePtr->bufSize;
+    csPtr = ckalloc(sizeof(CopyState) + !moveBytes * inStatePtr->bufSize);
+    csPtr->bufSize = !moveBytes * inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
     csPtr->readFlags = readFlags;
@@ -8850,6 +8866,10 @@ TclCopyChannel(
 
     inStatePtr->csPtrR  = csPtr;
     outStatePtr->csPtrW = csPtr;
+
+    if (moveBytes) {
+	return MoveBytes(csPtr);
+    }
 
     /*
      * Special handling of -size 0 async transfers, so that the -command is
@@ -8884,6 +8904,101 @@ TclCopyChannel(
  *
  *----------------------------------------------------------------------
  */
+
+static int
+MoveBytes(
+    CopyState *csPtr)		/* State of copy operation. */
+{
+    ChannelState *inStatePtr = csPtr->readPtr->state;
+    ChannelState *outStatePtr = csPtr->writePtr->state;
+    ChannelBuffer *bufPtr = outStatePtr->curOutPtr;
+    int code = TCL_OK;
+
+    if (bufPtr && BytesLeft(bufPtr)) {
+	/* If we start with unflushed bytes in the destination
+	 * channel, flush them out of the way first. */
+
+	if (0 != FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0)) {
+	    code = TCL_ERROR;
+	    goto done;
+	}
+    }
+
+    while (csPtr->toRead != 0) {
+	ChannelBuffer *bufPtr = inStatePtr->inQueueHead;
+	ChannelBuffer *tail = NULL;
+	int inBytes = 0;
+
+	if (bufPtr == NULL || BytesLeft(bufPtr) == 0) {
+	    /* Nothing in the input queue;  Get more input. */
+
+	    if (0 != GetInput(inStatePtr->topChanPtr)) { 
+		code = TCL_ERROR;
+		break;
+	    }
+	    bufPtr = inStatePtr->inQueueHead;
+	}
+
+	/* Count up number of bytes waiting in the input queue */
+	while (bufPtr) {
+	    inBytes += BytesLeft(bufPtr);
+	    tail = bufPtr;
+	    if (csPtr->toRead != -1 && csPtr->toRead < inBytes) {
+		/* Queue has enough bytes to complete the copy */
+		break;
+	    }
+	    bufPtr = bufPtr->nextPtr;
+	}
+
+	if (bufPtr) {
+	    /* Split the overflowing buffer in two */
+	    int extra = inBytes - csPtr->toRead;
+
+	    bufPtr = AllocChannelBuffer(extra);
+
+	    tail->nextAdded -= extra;
+	    memcpy(InsertPoint(bufPtr), InsertPoint(tail), extra);
+	    bufPtr->nextAdded += extra;
+	    bufPtr->nextPtr = tail->nextPtr;
+	    tail->nextPtr = NULL;
+	    inBytes = csPtr->toRead;
+	}
+
+	/* Update the byte counts */
+	if (csPtr->toRead != -1) {
+	    csPtr->toRead -= inBytes;
+	}
+	csPtr->total += inBytes;
+
+	/* Move buffers from input to output channels */
+	if (outStatePtr->outQueueTail) {
+	    outStatePtr->outQueueTail->nextPtr = inStatePtr->inQueueHead;
+	} else {
+	    outStatePtr->outQueueHead = inStatePtr->inQueueHead;
+	}
+	outStatePtr->outQueueTail = tail;
+	inStatePtr->inQueueHead = bufPtr;
+	if (bufPtr == NULL) {
+	    inStatePtr->inQueueTail = NULL;
+	}
+
+	/* Flush destination */
+	if (0 != FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0)) {
+	    code = TCL_ERROR;
+	    break;
+	}
+	if (GotFlag(inStatePtr, CHANNEL_EOF)) {
+	    break;
+	}
+    }
+
+    if (code == TCL_OK) {
+	Tcl_SetObjResult(csPtr->interp, Tcl_NewWideIntObj(csPtr->total));
+    }
+  done:
+    StopCopy(csPtr);
+    return code;
+}
 
 static int
 CopyData(
