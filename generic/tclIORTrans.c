@@ -457,8 +457,7 @@ static void		TimerKill(ReflectedTransform *rtPtr);
 static void		TimerSetup(ReflectedTransform *rtPtr);
 static void		TimerRun(ClientData clientData);
 static int		TransformRead(ReflectedTransform *rtPtr,
-			    int *errorCodePtr, unsigned char *buf,
-			    int toRead);
+			    int *errorCodePtr, Tcl_Obj *bufObj);
 static int		TransformWrite(ReflectedTransform *rtPtr,
 			    int *errorCodePtr, unsigned char *buf,
 			    int toWrite);
@@ -1063,6 +1062,7 @@ ReflectInput(
 {
     ReflectedTransform *rtPtr = clientData;
     int gotBytes, copied, readBytes;
+    Tcl_Obj *bufObj;
 
     /*
      * The following check can be done before thread redirection, because we
@@ -1078,6 +1078,9 @@ ReflectInput(
 
     Tcl_Preserve(rtPtr);
 
+    /* TODO: Consider a more appropriate buffer size. */
+    bufObj = Tcl_NewByteArrayObj(NULL, toRead);
+    Tcl_IncrRefCount(bufObj);
     gotBytes = 0;
     while (toRead > 0) {
 	/*
@@ -1129,52 +1132,40 @@ ReflectInput(
 	    goto stop;
 	}
 
-	readBytes = Tcl_ReadRaw(rtPtr->parent, buf, toRead);
-	if (readBytes < 0) {
-	    /*
-	     * Report errors to caller. The state of the seek system is
-	     * unchanged!
-	     */
 
-	    if ((Tcl_GetErrno() == EAGAIN) && (gotBytes > 0)) {
+	readBytes = Tcl_ReadRaw(rtPtr->parent,
+		(char *) Tcl_SetByteArrayLength(bufObj, toRead), toRead);
+	if (readBytes < 0) {
+	    if (Tcl_InputBlocked(rtPtr->parent) && (gotBytes > 0)) {
+
 		/*
-		 * EAGAIN is a special situation. If we had some data before
-		 * we report that instead of the request to re-try.
+		 * Down channel is blocked and offers zero additional bytes.
+		 * The nonzero gotBytes already returned makes the total
+		 * operation a valid short read.  Return to caller.
 		 */
 
 		goto stop;
 	    }
+
+	    /*
+	     * Either the down channel is not blocked (a real error)
+	     * or it is and there are gotBytes==0 byte copied so far.
+	     * In either case, pass up the error, so we either report
+	     * any real error, or do not mistakenly signal EOF by
+	     * returning 0 to the caller.
+	     */
 
 	    *errorCodePtr = Tcl_GetErrno();
 	    goto error;
 	}
 
 	if (readBytes == 0) {
+
 	    /*
-	     * Check wether we hit on EOF in 'parent' or not. If not
-	     * differentiate between blocking and non-blocking modes. In
-	     * non-blocking mode we ran temporarily out of data. Signal this
-	     * to the caller via EWOULDBLOCK and error return (-1). In the
-	     * other cases we simply return what we got and let the caller
-	     * wait for more. On the other hand, if we got an EOF we have to
-	     * convert and flush all waiting partial data.
+	     * Zero returned from Tcl_ReadRaw() always indicates EOF
+	     * on the down channel.
 	     */
-
-	    if (!Tcl_Eof(rtPtr->parent)) {
-		/*
-		 * The state of the seek system is unchanged!
-		 */
-
-		if ((gotBytes == 0) && rtPtr->nonblocking) {
-		    *errorCodePtr = EWOULDBLOCK;
-		    goto error;
-		}
-		goto stop;
-	    } else {
-		/*
-		 * Eof in parent.
-		 */
-
+	
 		if (rtPtr->readIsDrained) {
 		    goto stop;
 		}
@@ -1198,13 +1189,7 @@ ReflectInput(
 		    goto stop;
 		}
 
-		/*
-		 * Reset eof, force caller to drain result buffer.
-		 */
-
-		((Channel *) rtPtr->parent)->state->flags &= ~CHANNEL_EOF;
 		continue; /* at: while (toRead > 0) */
-	    }
 	} /* readBytes == 0 */
 
 	/*
@@ -1213,12 +1198,20 @@ ReflectInput(
 	 * iteration will put it into the result.
 	 */
 
-	if (!TransformRead(rtPtr, errorCodePtr, UCHARP(buf), readBytes)) {
+	Tcl_SetByteArrayLength(bufObj, readBytes);
+	if (!TransformRead(rtPtr, errorCodePtr, bufObj)) {
 	    goto error;
 	}
+	if (Tcl_IsShared(bufObj)) {
+	    Tcl_DecrRefCount(bufObj);
+	    bufObj = Tcl_NewObj();
+	    Tcl_IncrRefCount(bufObj);
+	}
+	Tcl_SetByteArrayLength(bufObj, 0);
     } /* while toRead > 0 */
 
  stop:
+    Tcl_DecrRefCount(bufObj);
     Tcl_Release(rtPtr);
     return gotBytes;
 
@@ -2010,6 +2003,7 @@ InvokeTclMethod(
 
     sr = Tcl_SaveInterpState(rtPtr->interp, 0 /* Dummy */);
     Tcl_Preserve(rtPtr);
+    Tcl_Preserve(rtPtr->interp);
     result = Tcl_EvalObjv(rtPtr->interp, cmdc, rtPtr->argv, TCL_EVAL_GLOBAL);
 
     /*
@@ -2054,6 +2048,7 @@ InvokeTclMethod(
 	Tcl_IncrRefCount(resObj);
     }
     Tcl_RestoreInterpState(rtPtr->interp, sr);
+    Tcl_Release(rtPtr->interp);
     Tcl_Release(rtPtr);
 
     /*
@@ -2230,6 +2225,9 @@ DeleteReflectedTransformMap(
 	 */
 
 	evPtr = resultPtr->evPtr;
+	if (evPtr == NULL) {
+	    continue;
+	}
 	paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
@@ -2355,6 +2353,9 @@ DeleteThreadReflectedTransformMap(
 	 */
 
 	evPtr = resultPtr->evPtr;
+	if (evPtr == NULL) {
+	    continue;
+	}
 	paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
@@ -3065,10 +3066,8 @@ static int
 TransformRead(
     ReflectedTransform *rtPtr,
     int *errorCodePtr,
-    unsigned char *buf,
-    int toRead)
+    Tcl_Obj *bufObj)
 {
-    Tcl_Obj *bufObj;
     Tcl_Obj *resObj;
     int bytec;			/* Number of returned bytes */
     unsigned char *bytev;	/* Array of returned bytes */
@@ -3081,8 +3080,8 @@ TransformRead(
     if (rtPtr->thread != Tcl_GetCurrentThread()) {
 	ForwardParam p;
 
-	p.transform.buf = (char *) buf;
-	p.transform.size = toRead;
+	p.transform.buf = (char *) Tcl_GetByteArrayFromObj(bufObj,
+		&(p.transform.size));
 
 	ForwardOpToOwnerThread(rtPtr, ForwardedInput, &p);
 
@@ -3102,12 +3101,8 @@ TransformRead(
     /* ASSERT: rtPtr->method & FLAG(METH_READ) */
     /* ASSERT: rtPtr->mode & TCL_READABLE */
 
-    bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toRead);
-    Tcl_IncrRefCount(bufObj);
-
     if (InvokeTclMethod(rtPtr, "read", bufObj, NULL, &resObj) != TCL_OK) {
 	Tcl_SetChannelError(rtPtr->chan, resObj);
-	Tcl_DecrRefCount(bufObj);
 	Tcl_DecrRefCount(resObj);	/* Remove reference held from invoke */
 	*errorCodePtr = EINVAL;
 	return 0;
@@ -3116,7 +3111,6 @@ TransformRead(
     bytev = Tcl_GetByteArrayFromObj(resObj, &bytec);
     ResultAdd(&rtPtr->result, bytev, bytec);
 
-    Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
     return 1;
 }
@@ -3184,7 +3178,7 @@ TransformWrite(
     }
 
     if (res < 0) {
-	*errorCodePtr = EINVAL;
+	*errorCodePtr = Tcl_GetErrno();
 	return 0;
     }
 
@@ -3294,7 +3288,7 @@ TransformFlush(
     }
 
     if (res < 0) {
-	*errorCodePtr = EINVAL;
+	*errorCodePtr = Tcl_GetErrno();
 	return 0;
     }
 
