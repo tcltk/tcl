@@ -2309,6 +2309,7 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
         set x ok
         fileevent $s writable {set x fail}
         catch {read $s}
+	close $s
         set x
     } -result ok
 
