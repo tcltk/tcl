@@ -2453,6 +2453,30 @@ typedef struct List {
 #endif
 
 /*
+ * Macro used to save a function call for common uses of
+ * Tcl_GetWideIntFromObj(). The ANSI C "prototype" is:
+ *
+ * MODULE_SCOPE int TclGetWideIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+ *			Tcl_WideInt *wideIntPtr);
+ */
+
+#ifdef TCL_WIDE_INT_IS_LONG
+#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
+    (((objPtr)->typePtr == &tclIntType)					\
+	? (*(wideIntPtr) = (Tcl_WideInt)				\
+		((objPtr)->internalRep.longValue), TCL_OK) :		\
+	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
+#else /* !TCL_WIDE_INT_IS_LONG */
+#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
+    (((objPtr)->typePtr == &tclWideIntType)				\
+	? (*(wideIntPtr) = (objPtr)->internalRep.wideValue, TCL_OK) :	\
+    ((objPtr)->typePtr == &tclIntType)					\
+	? (*(wideIntPtr) = (Tcl_WideInt)				\
+		((objPtr)->internalRep.longValue), TCL_OK) :		\
+	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
+#endif /* TCL_WIDE_INT_IS_LONG */
+
+/*
  * Flag values for TclTraceDictPath().
  *
  * DICT_PATH_READ indicates that all entries on the path must exist but no
@@ -2857,6 +2881,10 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclConvertElement(const char *src, int length,
 			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
+MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
+			    const char *dict, int dictLength,
+			    const char **elementPtr, const char **nextPtr,
+			    int *sizePtr, int *literalPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
@@ -2922,6 +2950,8 @@ MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
+			    unsigned int *sizePtr);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);

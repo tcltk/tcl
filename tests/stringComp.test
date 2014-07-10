@@ -704,20 +704,20 @@ test stringComp-12.1 {Bug 3588366: end-offsets before start} {
 
 ## string replace
 test stringComp-14.1 {Bug 82e7f67325} {
-    apply {{} {
-	set a [join {a b} {}]
+    apply {x {
+	set a [join $x {}]
 	lappend b [string length [string replace ___! 0 2 $a]]
 	lappend b [string length [string replace ___! 0 2 $a[unset a]]]
-    }}
+    }} {a b}
 } {3 3}
 test stringComp-14.2 {Bug 82e7f67325} memory {
     # As in stringComp-14.1, but make sure we don't retain too many refs
     leaktest {
-	apply {{} {
-	    set a [join {a b} {}]
+	apply {x {
+	    set a [join $x {}]
 	    lappend b [string length [string replace ___! 0 2 $a]]
 	    lappend b [string length [string replace ___! 0 2 $a[unset a]]]
-	}}
+	}} {a b}
     }
 } {0}
 
