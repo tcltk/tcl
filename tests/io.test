@@ -4052,7 +4052,7 @@ test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
 } {{hello
 } {hello
 }}
-test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
+test io-32.11.2 {Tcl_Read from a pipe} {stdio openpipe} {
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts $f1 {chan configure stdout -translation crlf}
