@@ -5023,7 +5023,7 @@ Tcl_ReadRaw(
 
     if (bytesToRead > 0) {
 
-	int nread = ChanRead(chanPtr, readBuf+copied, bytesToRead);
+	int nread = ChanRead(chanPtr, readBuf, bytesToRead);
 
 	if (nread > 0) {
 	    /* Successful read (short is OK) - add to bytes copied */
