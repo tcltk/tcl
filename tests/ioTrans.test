@@ -1037,6 +1037,8 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
 } -constraints {testchannel} -match glob -body {
     # Set up channel in thread
     set chan [interp eval $ida $helperscript]
+    interp eval $ida [list ::variable tempchan [tempchan]]
+    interp transfer {} $::tempchan $ida
     set chan [interp eval $ida {
 	proc foo {args} {
 	    handle.initialize clear drain flush limit? read write
@@ -1045,7 +1047,7 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
 	    # Destroy interpreter during channel access.
 	    suicide
 	}
-	set chan [chan push [tempchan] foo]
+	set chan [chan push $tempchan foo]
 	fconfigure $chan -buffering none
 	set chan
     }]
