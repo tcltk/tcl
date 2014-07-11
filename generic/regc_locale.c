@@ -381,8 +381,8 @@ static const crange spaceRangeTable[] = {
 #define NUM_SPACE_RANGE (sizeof(spaceRangeTable)/sizeof(crange))
 
 static const chr spaceCharTable[] = {
-    0x20, 0xa0, 0x1680, 0x180e, 0x2028, 0x2029, 0x202f, 0x205f, 0x2060,
-    0x3000, 0xfeff
+    0x20, 0xa0, 0x1680, 0x180e, 0x2028, 0x2029, 0x202f, 0x205f,
+    0x3000
 };
 
 #define NUM_SPACE_CHAR (sizeof(spaceCharTable)/sizeof(chr))
