@@ -161,7 +161,8 @@ Any Unicode printing character, including space.
 .IP \fBpunct\fR 12
 Any Unicode punctuation character.
 .IP \fBspace\fR 12
-Any Unicode space character.
+Any Unicode whitespace character or mongolian vowel separator (U+180e),
+but not NEL/Next Line (U+0085).
 .IP \fBtrue\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 true.
