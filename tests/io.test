@@ -4076,7 +4076,7 @@ test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
 } {{hello
 } {hello
 }}
-test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
+test io-32.11.2 {Tcl_Read from a pipe} {stdio openpipe} {
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts $f1 {chan configure stdout -translation crlf}
@@ -4928,6 +4928,26 @@ test io-35.20 {Tcl_Eof, eof char in middle, cr write, crlf read} {
 
 test io-36.1 {Tcl_InputBlocked on nonblocking pipe} {stdio openpipe} {
     set f1 [open "|[list [interpreter]]" r+]
+    puts $f1 {puts hello_from_pipe}
+    flush $f1
+    gets $f1
+    fconfigure $f1 -blocking off -buffering full
+    puts $f1 {puts hello}
+    set x ""
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    flush $f1
+    after 200
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    close $f1
+    set x
+} {{} 1 hello 0 {} 1}
+test io-36.1.1 {Tcl_InputBlocked on nonblocking binary pipe} {stdio openpipe} {
+    set f1 [open "|[list [interpreter]]" r+]
+    chan configure $f1 -encoding binary -translation lf -eofchar {}
     puts $f1 {puts hello_from_pipe}
     flush $f1
     gets $f1

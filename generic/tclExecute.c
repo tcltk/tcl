@@ -7474,6 +7474,14 @@ TEBCresume(
 	searchPtr = ckalloc(sizeof(Tcl_DictSearch));
 	if (Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done) != TCL_OK) {
+
+	    /*
+	     * dictPtr is no longer on the stack, and we're not
+	     * moving it into the intrep of an iterator.  We need
+	     * to drop the refcount [Tcl Bug 9b352768e6].
+	     */
+
+	    Tcl_DecrRefCount(dictPtr);
 	    ckfree(searchPtr);
 	    TRACE_ERROR(interp);
 	    goto gotError;

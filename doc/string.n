@@ -131,8 +131,9 @@ Any Unicode printing character, including space.
 .IP \fBpunct\fR 12
 Any Unicode punctuation character.
 .IP \fBspace\fR 12
-Any Unicode whitespace character, zero width space (U+200b),
-word joiner (U+2060) and zero width no-break space (U+feff) (=BOM).
+Any Unicode whitespace character, mongolian vowel separator
+(U+180e), zero width space (U+200b), word joiner (U+2060) or
+zero width no-break space (U+feff) (=BOM).
 .IP \fBtrue\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 true.
