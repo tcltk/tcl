@@ -1749,7 +1749,7 @@ SerialSetOptionProc(
 	} else {
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad value \"%s\" for -handshake: must be one of"
+			"bad value \"%s\" for -handshake: should be one of"
 			" xonxoff, rtscts, dtrdsr or none", value));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "HANDSHAKE", NULL);
 	    }
@@ -1886,7 +1886,7 @@ SerialSetOptionProc(
 	    } else {
 		if (interp != NULL) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "bad signal name \"%s\" for -ttycontrol: must be"
+			    "bad signal name \"%s\" for -ttycontrol: should be"
 			    " DTR, RTS or BREAK", argv[i]));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "TTY_SIGNAL",
 			    NULL);

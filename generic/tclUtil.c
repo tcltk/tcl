@@ -3612,7 +3612,7 @@ TclGetIntForIndex(
     if (interp != NULL) {
 	bytes = Tcl_GetString(objPtr);
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad index \"%s\": must be integer?[+-]integer? or"
+		"bad index \"%s\": should be integer?[+-]integer? or"
 		" end?[+-]integer?", bytes));
 	if (!strncmp(bytes, "end-", 4)) {
 	    bytes += 4;
@@ -3705,7 +3705,7 @@ SetEndOffsetFromAny(
 	    (size_t)((length > 3) ? 3 : length)) != 0)) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad index \"%s\": must be end?[+-]integer?", bytes));
+		    "bad index \"%s\": should be end?[+-]integer?", bytes));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
 	}
 	return TCL_ERROR;
@@ -3740,7 +3740,7 @@ SetEndOffsetFromAny(
     badIndexFormat:
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad index \"%s\": must be end?[+-]integer?", bytes));
+		    "bad index \"%s\": should be end?[+-]integer?", bytes));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
 	}
 	return TCL_ERROR;

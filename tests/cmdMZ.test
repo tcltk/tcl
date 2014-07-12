@@ -95,10 +95,10 @@ test cmdMZ-return-1.0 {return checks for bad option values} -body {
 } -returnCodes error -match glob -result {bad -options value:*}
 test cmdMZ-return-1.1 {return checks for bad option values} -body {
     return -code err
-} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+} -returnCodes error -match glob -result {bad completion code "err": should be ok, error, return, break, continue*, or an integer}
 test cmdMZ-return-1.2 {return checks for bad option values} -body {
     return -code 0x100000000
-} -returnCodes error -match glob -result {bad completion code "0x100000000": must be ok, error, return, break, continue*, or an integer}
+} -returnCodes error -match glob -result {bad completion code "0x100000000": should be ok, error, return, break, continue*, or an integer}
 test cmdMZ-return-1.3 {return checks for bad option values} -body {
     return -level foo
 } -returnCodes error -match glob -result {bad -level value: *}
@@ -160,7 +160,7 @@ test cmdMZ-return-2.12 {return option handling} -body {
 } -returnCodes ok -result {}
 test cmdMZ-return-2.13 {return option handling} -body {
     return -level 0 -code error -options {-code err}
-} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+} -returnCodes error -match glob -result {bad completion code "err": should be ok, error, return, break, continue*, or an integer}
 test cmdMZ-return-2.14 {return option handling} -body {
     return -level 0 -code error -options {-code foo -options {-code break}}
 } -returnCodes break -result {}

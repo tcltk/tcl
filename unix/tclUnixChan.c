@@ -639,7 +639,7 @@ TtySetOptionProc(
 	} else {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"bad value for -handshake: must be one of"
+			"bad value for -handshake: should be one of"
 			" xonxoff, rtscts, dtrdsr or none", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", NULL);
@@ -758,7 +758,7 @@ TtySetOptionProc(
 	    } else {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "bad signal \"%s\" for -ttycontrol: must be"
+			    "bad signal \"%s\" for -ttycontrol: should be"
 			    " DTR, RTS or BREAK", argv[i]));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "FCONFIGURE",
 			"VALUE", NULL);
@@ -1216,7 +1216,7 @@ TtyParseMode(
     }
 
     /*
-     * Only allow setting mark/space parity on platforms that support it Make
+     * Only allow setting mark/space parity on platforms that support it. Make
      * sure to allow for the case where strchr is a macro. [Bug: 5089]
      *
      * We cannot if/else/endif the strchr arguments, it has to be the whole

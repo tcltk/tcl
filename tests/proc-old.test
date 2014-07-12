@@ -408,10 +408,10 @@ test proc-old-7.6 {return with special completion code} {
 } {-14 abc}
 test proc-old-7.7 {return with special completion code} -body {
     tproc err
-} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+} -returnCodes error -match glob -result {bad completion code "err": should be ok, error, return, break, continue*, or an integer}
 test proc-old-7.8 {return with special completion code} -body {
     tproc 10b
-} -returnCodes error -match glob -result {bad completion code "10b": must be ok, error, return, break, continue*, or an integer}
+} -returnCodes error -match glob -result {bad completion code "10b": should be ok, error, return, break, continue*, or an integer}
 test proc-old-7.9 {return with special completion code} {
     proc tproc2 {} {
 	tproc return

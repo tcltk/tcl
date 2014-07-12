@@ -589,7 +589,7 @@ test event-12.1 {Tcl_UpdateCmd procedure} -returnCodes error -body {
 } -result {wrong # args: should be "update ?idletasks?"}
 test event-12.2 {Tcl_UpdateCmd procedure} -returnCodes error -body {
     update bogus
-} -result {bad option "bogus": must be idletasks}
+} -result {bad option "bogus": should be idletasks}
 test event-12.3 {Tcl_UpdateCmd procedure} -setup {
     foreach i [after info] {
 	after cancel $i

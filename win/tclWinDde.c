@@ -557,7 +557,7 @@ ExecuteRemoteObject(
 
     if (riPtr->handlerPtr == NULL && Tcl_IsSafe(riPtr->interp)) {
 	Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj("permission denied: "
-		"a handler procedure must be defined for use in a safe "
+		"a handler procedure should be defined for use in a safe "
 		"interp", -1));
 	Tcl_SetErrorCode(riPtr->interp, "TCL", "DDE", "SECURITY_CHECK", NULL);
 	result = TCL_ERROR;
@@ -1714,7 +1714,7 @@ DdeObjCmd(
 
 	    if (Tcl_IsSafe(riPtr->interp) && riPtr->handlerPtr == NULL) {
 		Tcl_SetObjResult(riPtr->interp, Tcl_NewStringObj(
-			"permission denied: a handler procedure must be"
+			"permission denied: a handler procedure should be"
 			" defined for use in a safe interp", -1));
 		Tcl_SetErrorCode(interp, "TCL", "DDE", "SECURITY_CHECK",
 			NULL);

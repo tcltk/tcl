@@ -5017,7 +5017,7 @@ test chan-io-39.5 {Tcl_GetChannelOption, invariance} -setup {
     lappend l [chan configure $f1 -buffering]
 } -cleanup {
     chan close $f1
-} -result {full {1 {bad value for -buffering: must be one of full, line, or none}} full}
+} -result {full {1 {bad value for -buffering: should be one of full, line, or none}} full}
 test chan-io-39.6 {Tcl_SetChannelOption, multiple options} -setup {
     file delete $path(test1)
 } -body {
@@ -5491,7 +5491,7 @@ test chan-io-41.4 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
 } -returnCodes error -result {can not find channel named "gorp"}
 test chan-io-41.5 {Tcl_FileeventCmd: errors} -constraints fileevent -body {
     chan event gorp who-knows
-} -returnCodes error -result {bad event name "who-knows": must be readable or writable}
+} -returnCodes error -result {bad event name "who-knows": should be readable or writable}
 
 #
 # Test chan event on a file

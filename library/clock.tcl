@@ -1229,7 +1229,7 @@ proc ::tcl::clock::scan { args } {
 		return -code error \
 		    -errorcode [list CLOCK badOption $flag] \
 		    "bad option \"$flag\",\
-                     must be -base, -format, -gmt, -locale or -timezone"
+                     should be -base, -format, -gmt, -locale or -timezone"
 	    }
 	}
     }
@@ -4235,7 +4235,7 @@ proc ::tcl::clock::BSearch { list key } {
 # Parameters:
 #	clockval -- Starting time value
 #	count -- Amount of a unit of time to add
-#	unit -- Unit of time to add, must be one of:
+#	unit -- Unit of time to add, should be one of:
 #			years year months month weeks week
 #			days day hours hour minutes minute
 #			seconds second
@@ -4297,7 +4297,7 @@ proc ::tcl::clock::add { clockval args } {
 		default {
 		    throw [list CLOCK badOption $a] \
 			"bad option \"$a\",\
-                         must be -gmt, -locale or -timezone"
+                         should be -gmt, -locale or -timezone"
 		}
 	    }
 	}
@@ -4361,7 +4361,7 @@ proc ::tcl::clock::add { clockval args } {
 
 		default {
 		    throw [list CLOCK badUnit $unit] \
-			"unknown unit \"$unit\", must be \
+			"unknown unit \"$unit\", should be \
                         years, months, weeks, days, hours, minutes or seconds"
 		}
 	    }

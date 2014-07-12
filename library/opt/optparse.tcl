@@ -165,7 +165,7 @@ proc ::tcl::OptKeyRegister {desc {key ""}} {
     foreach item $desc {
 	if {$state == "args"} {
 	    # more items after 'args'...
-	    return -code error "'args' special argument must be the last one"
+	    return -code error "'args' special argument should be the last one"
 	}
         set res [OptNormalizeOne $item]
         set state [lindex $res 0]
@@ -829,7 +829,7 @@ proc ::tcl::OptCheckType {arg type {typeArgs ""}} {
         OptError "ambigous option \"$arg\", choose from:" [OptSelection $desc]
     }
     proc OptFlagUsage {desc arg} {
-        OptError "bad flag \"$arg\", must be one of" $desc
+        OptError "bad flag \"$arg\", should be one of" $desc
     }
     proc OptTooManyArgs {desc arguments} {
         OptError "too many arguments (unexpected argument(s): $arguments),\

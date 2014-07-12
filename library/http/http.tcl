@@ -161,13 +161,13 @@ proc http::config {args} {
     if {[llength $args] == 1} {
 	set flag [lindex $args 0]
 	if {![regexp -- $pat $flag]} {
-	    return -code error "Unknown option $flag, must be: $usage"
+	    return -code error "unknown option $flag, should be: $usage"
 	}
 	return $http($flag)
     } else {
 	foreach {flag value} $args {
 	    if {![regexp -- $pat $flag]} {
-		return -code error "Unknown option $flag, must be: $usage"
+		return -code error "unknown option $flag, should be: $usage"
 	    }
 	    set http($flag) $value
 	}
@@ -342,6 +342,7 @@ proc http::geturl {url args} {
     }
     set state(-keepalive) $defaultKeepalive
     set state(-strict) $strict
+    set state(accepttypes) $http(-accept)
     # These flags have their types verified [Bug 811170]
     array set type {
 	-binary		boolean
@@ -369,12 +370,12 @@ proc http::geturl {url args} {
 	    } {
 		unset $token
 		return -code error \
-		    "Bad value for $flag ($value), must be $type($flag)"
+		    "bad value for $flag ($value), should be $type($flag)"
 	    }
 	    set state($flag) $value
 	} else {
 	    unset $token
-	    return -code error "Unknown option $flag, can be: $usage"
+	    return -code error "unknown option $flag, should be: $usage"
 	}
     }
 
@@ -384,7 +385,7 @@ proc http::geturl {url args} {
     set isQuery [info exists state(-query)]
     if {$isQuery && $isQueryChannel} {
 	unset $token
-	return -code error "Can't combine -query and -querychannel options!"
+	return -code error "can't combine -query and -querychannel options!"
     }
 
     # Validate URL, determine the server host and port, and check proxy case
@@ -449,7 +450,7 @@ proc http::geturl {url args} {
     # Phase one: parse
     if {![regexp -- $URLmatcher $url -> proto user host port srvurl]} {
 	unset $token
-	return -code error "Unsupported URL: $url"
+	return -code error "unsupported URL: $url"
     }
     # Phase two: validate
     set host [string trim $host {[]}]; # strip square brackets from IPv6 address
@@ -457,13 +458,13 @@ proc http::geturl {url args} {
 	# Caller has to provide a host name; we do not have a "default host"
 	# that would enable us to handle relative URLs.
 	unset $token
-	return -code error "Missing host part: $url"
+	return -code error "missing host part: $url"
 	# Note that we don't check the hostname for validity here; if it's
 	# invalid, we'll simply fail to resolve it later on.
     }
     if {$port ne "" && $port > 65535} {
 	unset $token
-	return -code error "Invalid port number: $port"
+	return -code error "invalid port number: $port"
     }
     # The user identification and resource identification parts of the URL can
     # have encoded characters in them; take care!
@@ -479,9 +480,9 @@ proc http::geturl {url args} {
 	    # Provide a better error message in this error case
 	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f]).?.?} $user bad]} {
 		return -code error \
-			"Illegal encoding character usage \"$bad\" in URL user"
+			"illegal encoding character usage \"$bad\" in URL user"
 	    }
-	    return -code error "Illegal characters in URL user"
+	    return -code error "illegal characters in URL user"
 	}
     }
     if {$srvurl ne ""} {
@@ -505,9 +506,9 @@ proc http::geturl {url args} {
 	    # Provide a better error message in this error case
 	    if {[regexp {(?i)%(?![0-9a-f][0-9a-f])..} $srvurl bad]} {
 		return -code error \
-		    "Illegal encoding character usage \"$bad\" in URL path"
+		    "illegal encoding character usage \"$bad\" in URL path"
 	    }
-	    return -code error "Illegal characters in URL path"
+	    return -code error "illegal characters in URL path"
 	}
     } else {
 	set srvurl /
@@ -518,7 +519,7 @@ proc http::geturl {url args} {
     set lower [string tolower $proto]
     if {![info exists urlTypes($lower)]} {
 	unset $token
-	return -code error "Unsupported URL type \"$proto\""
+	return -code error "unsupported URL type \"$proto\""
     }
     set defport [lindex $urlTypes($lower) 0]
     set defcmd [lindex $urlTypes($lower) 1]
@@ -693,7 +694,7 @@ proc http::Connected { token proto phost srvurl} {
     }
     if {[catch {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
-	puts $sock "Accept: $http(-accept)"
+	puts $sock "Accept: $state(accepttypes)"
 	array set hdrs $state(-headers)
 	if {[info exists hdrs(Host)]} {
 	    # Allow Host spoofing. [Bug 928154]
@@ -1489,9 +1490,13 @@ proc http::make-transformation-chunked {chan command} {
         yield
         while {1} {
             chan configure $chan -translation {crlf binary}
-            while {[gets $chan line] < 1} { yield }
+            while {[gets $chan line] < 1} {
+		yield
+	    }
             chan configure $chan -translation {binary binary}
-            if {[scan $line %x size] != 1} { return -code error "invalid size: \"$line\"" }
+            if {[scan $line %x size] != 1} {
+		return -code error "invalid size: \"$line\""
+	    }
             set chunk ""
             while {$size && ![chan eof $chan]} {
                 set part [chan read $chan $size]

@@ -4014,7 +4014,7 @@ Tcl_ThrowObjCmd(
 	return TCL_ERROR;
     } else if (len < 1) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"type must be non-empty list", -1));
+		"type should be non-empty list", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "THROW", "BADEXCEPTION",
 		NULL);
 	return TCL_ERROR;
@@ -4199,14 +4199,14 @@ TclNRTryObjCmd(
 	case TryFinally:	/* finally script */
 	    if (i < objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"finally clause must be last", -1));
+			"finally clause should be last", -1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
 			"NONTERMINAL", NULL);
 		return TCL_ERROR;
 	    } else if (i == objc-1) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"wrong # args to finally clause: must be"
+			"wrong # args to finally clause: should be"
 			" \"... finally script\"", -1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "FINALLY",
@@ -4219,7 +4219,7 @@ TclNRTryObjCmd(
 	case TryOn:		/* on code variableList script */
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"wrong # args to on clause: must be \"... on code"
+			"wrong # args to on clause: should be \"... on code"
 			" variableList script\"", -1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "ON",
@@ -4238,7 +4238,7 @@ TclNRTryObjCmd(
 	    if (i > objc-4) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"wrong # args to trap clause: "
-			"must be \"... trap pattern variableList script\"",
+			"should be \"... trap pattern variableList script\"",
 			-1));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",
@@ -4248,7 +4248,7 @@ TclNRTryObjCmd(
 	    code = 1;
 	    if (Tcl_ListObjLength(NULL, objv[i+1], &dummy) != TCL_OK) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"bad prefix '%s': must be a list",
+			"bad prefix '%s': should be a list",
 			Tcl_GetString(objv[i+1])));
 		Tcl_DecrRefCount(handlersObj);
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "TRY", "TRAP",

@@ -32,7 +32,7 @@ test interp-1.1 {options for interp command} -returnCodes error -body {
 } -result {wrong # args: should be "interp cmd ?arg ...?"}
 test interp-1.2 {options for interp command} -returnCodes error -body {
     interp frobox
-} -result {bad option "frobox": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
+} -result {bad option "frobox": should be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
 test interp-1.3 {options for interp command} {
     interp delete
 } ""
@@ -50,13 +50,13 @@ test interp-1.6 {options for interp command} -returnCodes error -body {
 } -result {wrong # args: should be "interp slaves ?path?"}
 test interp-1.7 {options for interp command} -returnCodes error -body {
     interp hello
-} -result {bad option "hello": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
+} -result {bad option "hello": should be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
 test interp-1.8 {options for interp command} -returnCodes error -body {
     interp -froboz
-} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
+} -result {bad option "-froboz": should be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
 test interp-1.9 {options for interp command} -returnCodes error -body {
     interp -froboz -safe
-} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer} 
+} -result {bad option "-froboz": should be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer} 
 test interp-1.10 {options for interp command} -returnCodes error -body {
     interp target
 } -result {wrong # args: should be "interp target path alias"}
@@ -82,7 +82,7 @@ test interp-2.6 {basic interpreter creation} {
 } d
 test interp-2.7 {basic interpreter creation} {
     list [catch {interp create -froboz} msg] $msg
-} {1 {bad option "-froboz": must be -safe or --}}
+} {1 {bad option "-froboz": should be -safe or --}}
 test interp-2.8 {basic interpreter creation} {
     interp create -- -froboz
 } -froboz
@@ -2387,13 +2387,13 @@ test interp-29.1.5 {interp recursionlimit argument checking} {
     set result [catch {interp recursionlimit moo 0} msg]
     interp delete moo
     list $result $msg
-} {1 {recursion limit must be > 0}}
+} {1 {recursion limit should be > 0}}
 test interp-29.1.6 {interp recursionlimit argument checking} {
     interp create moo
     set result [catch {interp recursionlimit moo -1} msg]
     interp delete moo
     list $result $msg
-} {1 {recursion limit must be > 0}}
+} {1 {recursion limit should be > 0}}
 test interp-29.1.7 {interp recursionlimit argument checking} {
     interp create moo
     set result [catch {interp recursionlimit moo [expr {wide(1)<<32}]} msg]
@@ -2417,13 +2417,13 @@ test interp-29.1.10 {slave recursionlimit argument checking} {
     set result [catch {moo recursionlimit 0} msg]
     interp delete moo
     list $result $msg
-} {1 {recursion limit must be > 0}}
+} {1 {recursion limit should be > 0}}
 test interp-29.1.11 {slave recursionlimit argument checking} {
     interp create moo
     set result [catch {moo recursionlimit -1} msg]
     interp delete moo
     list $result $msg
-} {1 {recursion limit must be > 0}}
+} {1 {recursion limit should be > 0}}
 test interp-29.1.12 {slave recursionlimit argument checking} {
     interp create moo
     set result [catch {moo recursionlimit [expr {wide(1)<<32}]} msg]
@@ -3386,7 +3386,7 @@ test interp-35.2 {interp limit syntax} -body {
 } -returnCodes error -result {wrong # args: should be "interp limit path limitType ?-option value ...?"}
 test interp-35.3 {interp limit syntax} -body {
     interp limit {} foo
-} -returnCodes error -result {bad limit type "foo": must be commands or time}
+} -returnCodes error -result {bad limit type "foo": should be commands or time}
 test interp-35.4 {interp limit syntax} -body {
     set i [interp create]
     set dict [interp limit $i commands]
@@ -3415,7 +3415,7 @@ test interp-35.7 {interp limit syntax} -body {
     interp limit $i commands -foobar
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {bad option "-foobar": must be -command, -granularity, or -value}
+} -returnCodes error -result {bad option "-foobar": should be -command, -granularity, or -value}
 test interp-35.8 {interp limit syntax} -body {
     set i [interp create]
     interp limit $i commands -granularity foobar
@@ -3427,7 +3427,7 @@ test interp-35.9 {interp limit syntax} -body {
     interp limit $i commands -granularity 0
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {granularity must be at least 1}
+} -returnCodes error -result {granularity should be at least 1}
 test interp-35.10 {interp limit syntax} -body {
     set i [interp create]
     interp limit $i commands -value foobar
@@ -3439,7 +3439,7 @@ test interp-35.11 {interp limit syntax} -body {
     interp limit $i commands -value -1
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {command limit value must be at least 0}
+} -returnCodes error -result {command limit value should be at least 0}
 test interp-35.12 {interp limit syntax} -body {
     set i [interp create]
     set dict [interp limit $i time]
@@ -3468,7 +3468,7 @@ test interp-35.15 {interp limit syntax} -body {
     interp limit $i time -foobar
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {bad option "-foobar": must be -command, -granularity, -milliseconds, or -seconds}
+} -returnCodes error -result {bad option "-foobar": should be -command, -granularity, -milliseconds, or -seconds}
 test interp-35.16 {interp limit syntax} -body {
     set i [interp create]
     interp limit $i time -granularity foobar
@@ -3480,7 +3480,7 @@ test interp-35.17 {interp limit syntax} -body {
     interp limit $i time -granularity 0
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {granularity must be at least 1}
+} -returnCodes error -result {granularity should be at least 1}
 test interp-35.18 {interp limit syntax} -body {
     set i [interp create]
     interp limit $i time -seconds foobar
@@ -3492,7 +3492,7 @@ test interp-35.19 {interp limit syntax} -body {
     interp limit $i time -seconds -1
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {seconds must be at least 0}
+} -returnCodes error -result {seconds should be at least 0}
 test interp-35.20 {interp limit syntax} -body {
     set i [interp create]
     interp limit $i time -millis foobar
@@ -3504,7 +3504,7 @@ test interp-35.21 {interp limit syntax} -body {
     interp limit $i time -millis -1
 } -cleanup {
     interp delete $i
-} -returnCodes error -result {milliseconds must be at least 0}
+} -returnCodes error -result {milliseconds should be at least 0}
 test interp-35.22 {interp time limits normalize milliseconds} -body {
     set i [interp create]
     interp limit $i time -seconds 1 -millis 1500
@@ -3539,14 +3539,14 @@ test interp-36.4 {SlaveBgerror syntax} -setup {
     slave bgerror \{
 } -cleanup {
     interp delete slave
-} -returnCodes error -result {cmdPrefix must be list of length >= 1}
+} -returnCodes error -result {cmdPrefix should be list of length >= 1}
 test interp-36.5 {SlaveBgerror syntax} -setup {
     interp create slave
 } -body {
     slave bgerror {}
 } -cleanup {
     interp delete slave
-} -returnCodes error -result {cmdPrefix must be list of length >= 1}
+} -returnCodes error -result {cmdPrefix should be list of length >= 1}
 test interp-36.6 {SlaveBgerror returns handler} -setup {
     interp create slave
 } -body {
@@ -3626,7 +3626,7 @@ test interp-38.6 {interp debug basic setup} -body {
 } -returnCodes error -result {could not find interpreter "-frames"}
 test interp-38.7 {interp debug basic setup} -body {
     interp debug {} -frames
-} -returnCodes error -result {bad debug option "-frames": must be -frame}
+} -returnCodes error -result {bad debug option "-frames": should be -frame}
 test interp-38.8 {interp debug basic setup} -body {
     interp debug {} -frame 0 bogus
 } -returnCodes {

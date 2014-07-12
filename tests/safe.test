@@ -483,7 +483,7 @@ test safe-11.1a {testing safe encoding} -setup {
     interp eval $i encoding foobar
 } -returnCodes error -cleanup {
     safe::interpDelete $i
-} -match glob -result {bad option "foobar": must be *}
+} -match glob -result {bad option "foobar": should be *}
 test safe-11.2 {testing safe encoding} -setup {
     set i [safe::interpCreate]
 } -body {

@@ -2309,7 +2309,7 @@ SlaveBgerror(
 	if (TCL_ERROR == TclListObjLength(NULL, objv[0], &length)
 		|| (length < 1)) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "cmdPrefix must be list of length >= 1", -1));
+		    "cmdPrefix should be list of length >= 1", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 		    "BGERRORFORMAT", NULL);
 	    return TCL_ERROR;
@@ -2934,7 +2934,7 @@ SlaveRecursionLimit(
 	}
 	if (limit <= 0) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "recursion limit must be > 0", -1));
+		    "recursion limit should be > 0", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP", "BADLIMIT",
 		    NULL);
 	    return TCL_ERROR;
@@ -4536,7 +4536,7 @@ SlaveCommandLimitCmd(
 		}
 		if (gran < 1) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "granularity must be at least 1", -1));
+			    "granularity should be at least 1", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
@@ -4553,7 +4553,7 @@ SlaveCommandLimitCmd(
 		}
 		if (limit < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "command limit value must be at least 0", -1));
+			    "command limit value should be at least 0", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
@@ -4745,7 +4745,7 @@ SlaveTimeLimitCmd(
 		}
 		if (gran < 1) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "granularity must be at least 1", -1));
+			    "granularity should be at least 1", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
@@ -4762,7 +4762,7 @@ SlaveTimeLimitCmd(
 		}
 		if (tmp < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "milliseconds must be at least 0", -1));
+			    "milliseconds should be at least 0", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;
@@ -4780,7 +4780,7 @@ SlaveTimeLimitCmd(
 		}
 		if (tmp < 0) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			    "seconds must be at least 0", -1));
+			    "seconds should be at least 0", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "INTERP",
 			    "BADVALUE", NULL);
 		    return TCL_ERROR;

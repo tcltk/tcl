@@ -243,7 +243,7 @@ test history-9.1 {miscellaneous} history {catch {history gorp} msg} 1
 test history-9.2 {miscellaneous} history {
     catch {history gorp} msg
     set msg
-} {unknown or ambiguous subcommand "gorp": must be add, change, clear, event, info, keep, nextid, or redo}
+} {unknown or ambiguous subcommand "gorp": should be add, change, clear, event, info, keep, nextid, or redo}
 
 # cleanup
 ::tcltest::cleanupTests

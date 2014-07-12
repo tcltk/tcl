@@ -97,7 +97,7 @@ test http-1.4 {http::config} {
 } {-accept */* -proxyfilter myFilter -proxyhost nowhere.come -proxyport 8080 -urlencoding iso8859-1 -useragent {Tcl Test Suite}}
 test http-1.5 {http::config} -returnCodes error -body {
     http::config -proxyhost {} -junk 8080
-} -result {Unknown option -junk, must be: -accept, -proxyfilter, -proxyhost, -proxyport, -urlencoding, -useragent}
+} -result {unknown option -junk, should be: -accept, -proxyfilter, -proxyhost, -proxyport, -urlencoding, -useragent}
 test http-1.6 {http::config} -setup {
     set oldenc [http::config -urlencoding]
 } -body {
@@ -114,10 +114,10 @@ test http-2.1 {http::reset} {
 
 test http-3.1 {http::geturl} -returnCodes error -body {
     http::geturl -bogus flag
-} -result {Unknown option flag, can be: -binary, -blocksize, -channel, -command, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate}
+} -result {unknown option flag, should be: -binary, -blocksize, -channel, -command, -handler, -headers, -keepalive, -method, -myaddr, -progress, -protocol, -query, -queryblocksize, -querychannel, -queryprogress, -strict, -timeout, -type, -validate}
 test http-3.2 {http::geturl} -returnCodes error -body {
     http::geturl http:junk
-} -result {Unsupported URL: http:junk}
+} -result {unsupported URL: http:junk}
 set url //[info hostname]:$port
 set badurl //[info hostname]:[expr $port+1]
 test http-3.3 {http::geturl} -body {
@@ -318,34 +318,34 @@ test http-3.14 "http::geturl $fullurl" -body {
 } -result "HTTP/1.0 200 OK"
 test http-3.15 {http::geturl parse failures} -body {
     http::geturl "{invalid}:url"
-} -returnCodes error -result {Unsupported URL: {invalid}:url}
+} -returnCodes error -result {unsupported URL: {invalid}:url}
 test http-3.16 {http::geturl parse failures} -body {
     http::geturl http:relative/url
-} -returnCodes error -result {Unsupported URL: http:relative/url}
+} -returnCodes error -result {unsupported URL: http:relative/url}
 test http-3.17 {http::geturl parse failures} -body {
     http::geturl /absolute/url
-} -returnCodes error -result {Missing host part: /absolute/url}
+} -returnCodes error -result {missing host part: /absolute/url}
 test http-3.18 {http::geturl parse failures} -body {
     http::geturl http://somewhere:123456789/
-} -returnCodes error -result {Invalid port number: 123456789}
+} -returnCodes error -result {invalid port number: 123456789}
 test http-3.19 {http::geturl parse failures} -body {
     http::geturl http://{user}@somewhere
-} -returnCodes error -result {Illegal characters in URL user}
+} -returnCodes error -result {illegal characters in URL user}
 test http-3.20 {http::geturl parse failures} -body {
     http::geturl http://%user@somewhere
-} -returnCodes error -result {Illegal encoding character usage "%us" in URL user}
+} -returnCodes error -result {illegal encoding character usage "%us" in URL user}
 test http-3.21 {http::geturl parse failures} -body {
     http::geturl http://somewhere/{path}
-} -returnCodes error -result {Illegal characters in URL path}
+} -returnCodes error -result {illegal characters in URL path}
 test http-3.22 {http::geturl parse failures} -body {
     http::geturl http://somewhere/%path
-} -returnCodes error -result {Illegal encoding character usage "%pa" in URL path}
+} -returnCodes error -result {illegal encoding character usage "%pa" in URL path}
 test http-3.23 {http::geturl parse failures} -body {
     http::geturl http://somewhere/path?{query}?
-} -returnCodes error -result {Illegal characters in URL path}
+} -returnCodes error -result {illegal characters in URL path}
 test http-3.24 {http::geturl parse failures} -body {
     http::geturl http://somewhere/path?%query
-} -returnCodes error -result {Illegal encoding character usage "%qu" in URL path}
+} -returnCodes error -result {illegal encoding character usage "%qu" in URL path}
 test http-3.25 {http::meta} -setup {
     unset -nocomplain m token
 } -body {

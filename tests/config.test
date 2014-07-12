@@ -37,7 +37,7 @@ test pkgconfig-2.0 {error: missing subcommand} {
 test pkgconfig-2.1 {error: illegal subcommand} {
     catch {::tcl::pkgconfig foo} msg
     set msg
-} {bad subcommand "foo": must be get or list}
+} {bad subcommand "foo": should be get or list}
 test pkgconfig-2.2 {error: list with arguments} {
     catch {::tcl::pkgconfig list foo} msg
     set msg

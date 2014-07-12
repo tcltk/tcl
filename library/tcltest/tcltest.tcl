@@ -1135,7 +1135,7 @@ proc tcltest::ConstraintInitializer {constraint {script ""}} {
     }
     # Check for boolean values
     if {![info complete $script]} {
-	return -code error "ConstraintInitializer must be complete script"
+	return -code error "ConstraintInitializer should be complete script"
     }
     set ConstraintInitializer($constraint) $script
 }
@@ -1909,7 +1909,7 @@ proc tcltest::test {name description args} {
 		set sorted [lsort $validFlags]
 		set options [join [lrange $sorted 0 end-1] ", "]
 		append options ", or [lindex $sorted end]"
-		return -code error "bad option \"$flag\": must be $options"
+		return -code error "bad option \"$flag\": should be $options"
 	    }
 	}
 
@@ -1926,7 +1926,7 @@ proc tcltest::test {name description args} {
 	    set values [join [lrange $sorted 0 end-1] ", "]
 	    append values ", or [lindex $sorted end]"
 	    return -code error "bad -match value \"$match\":\
-		    must be $values"
+		    should be $values"
 	}
 
 	# Replace symbolic valies supplied for -returnCodes

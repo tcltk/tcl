@@ -306,10 +306,10 @@ test compile-11.1 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
 	# command that will add error to result
 	lindex a bogus
     }}
-} -returnCodes error -result {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}
+} -returnCodes error -result {bad index "bogus": should be integer?[+-]integer? or end?[+-]integer?}
 test compile-11.2 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; string index a bogus }}
-} -returnCodes error -result {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}
+} -returnCodes error -result {bad index "bogus": should be integer?[+-]integer? or end?[+-]integer?}
 test compile-11.3 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     apply {{} { set r [list foobar] ; string index a 0o9 }}
 } -returnCodes error -match glob -result {*invalid octal number*}
@@ -663,7 +663,7 @@ test compile-18.1 {disassembler - basics} -returnCodes error -body {
 } -match glob -result {wrong # args: should be "*"}
 test compile-18.2 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble ?
-} -match glob -result {bad type "?": must be *}
+} -match glob -result {bad type "?": should be *}
 test compile-18.3 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble lambda
 } -match glob -result {wrong # args: should be "* lambda lambdaTerm"}

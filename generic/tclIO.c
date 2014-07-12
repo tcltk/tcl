@@ -7346,7 +7346,8 @@ Tcl_BadChannelOption(
 	const char *genericopt =
 		"blocking buffering buffersize encoding eofchar translation";
 	const char **argv;
-	int argc, i;
+        char *problemType = "bad";
+	int argc, i, len = strlen(optionName);
 	Tcl_DString ds;
         Tcl_Obj *errObj;
 
@@ -7361,10 +7362,14 @@ Tcl_BadChannelOption(
 	    Tcl_Panic("malformed option list in channel driver");
 	}
 	Tcl_ResetResult(interp);
-        // FIXME
-	errObj = Tcl_ObjPrintf(
-                "unknown or ambiguous option \"%s\": should be one of ",
-                optionName);
+	for (i = 0; i < argc; i++) {
+            if (optionName[0]=='-' && strncmp(argv[i], optionName, len)==0) {
+                problemType = "ambiguous";
+                break;
+            }
+        }
+	errObj = Tcl_ObjPrintf("%s option \"%s\": should be one of ",
+                problemType, optionName);
 	argc--;
 	for (i = 0; i < argc; i++) {
 	    Tcl_AppendPrintfToObj(errObj, "-%s, ", argv[i]);
@@ -7700,7 +7705,7 @@ Tcl_SetChannelOption(
 	    SetFlag(statePtr, CHANNEL_UNBUFFERED);
 	} else if (interp) {
             Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                    "bad value for -buffering: must be one of"
+                    "bad value for -buffering: should be one of"
                     " full, line, or none", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERING", NULL);
             return TCL_ERROR;
@@ -7761,7 +7766,7 @@ Tcl_SetChannelOption(
 	    if (inValue & 0x80 || outValue & 0x80) {
 		if (interp) {
 		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                            "bad value for -eofchar: must be non-NUL ASCII"
+                            "bad value for -eofchar: should be non-NUL ASCII"
                             " character", -1));
 		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "EOFCHAR", NULL);
 		}
@@ -7812,7 +7817,7 @@ Tcl_SetChannelOption(
 	} else {
 	    if (interp) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"bad value for -translation: must be a one or two"
+			"bad value for -translation: should be a one or two"
 			" element list", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "TRANSLATION", NULL);
 	    }
@@ -7893,7 +7898,7 @@ Tcl_SetChannelOption(
     badTranslation:
 	if (interp) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "bad value for -translation: must be one of "
+		    "bad value for -translation: should be one of "
 		    "auto, binary, cr, lf, crlf, or platform", -1));
             Tcl_SetErrorCode(interp, "TCL", "VALUE", "TRANSLATION", NULL);
 	}

@@ -2612,7 +2612,7 @@ Tcl_LrepeatObjCmd(
     }
     if (elementCount < 0) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad count \"%d\": must be integer >= 0", elementCount));
+		"bad count \"%d\": should be integer >= 0", elementCount));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPEAT", "NEGARG",
 		NULL);
 	return TCL_ERROR;
@@ -3053,7 +3053,7 @@ Tcl_LsearchObjCmd(
 		    Tcl_DecrRefCount(startPtr);
 		}
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-index\" option must be followed by list index",
+			"\"-index\" option should be followed by list index",
 			-1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		return TCL_ERROR;
@@ -3691,7 +3691,7 @@ Tcl_LsortObjCmd(
 	case LSORT_COMMAND:
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-command\" option must be followed "
+			"\"-command\" option should be followed "
 			"by comparison command", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
@@ -3716,7 +3716,7 @@ Tcl_LsortObjCmd(
 
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-index\" option must be followed by list index",
+			"\"-index\" option should be followed by list index",
 			-1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
@@ -3767,7 +3767,7 @@ Tcl_LsortObjCmd(
 	case LSORT_STRIDE:
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-stride\" option must be "
+			"\"-stride\" option should be "
 			"followed by stride length", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 		sortInfo.resultCode = TCL_ERROR;
@@ -3779,7 +3779,7 @@ Tcl_LsortObjCmd(
 	    }
 	    if (groupSize < 2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"stride length must be at least 2", -1));
+			"stride length should be at least 2", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADSTRIDE", NULL);
 		sortInfo.resultCode = TCL_ERROR;
@@ -3876,7 +3876,7 @@ Tcl_LsortObjCmd(
     if (group) {
 	if (length % groupSize) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "list size must be a multiple of the stride length",
+		    "list size should be a multiple of the stride length",
 		    -1));
 	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT", "BADSTRIDE",
 		    NULL);
@@ -3897,7 +3897,7 @@ Tcl_LsortObjCmd(
 	    if (groupOffset < 0 || groupOffset >= groupSize) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
 			"when used with \"-stride\", the leading \"-index\""
-			" value must be within the group", -1));
+			" value should be within the group", -1));
 		Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LSORT",
 			"BADINDEX", NULL);
 		sortInfo.resultCode = TCL_ERROR;

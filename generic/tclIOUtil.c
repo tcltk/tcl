@@ -1659,9 +1659,9 @@ TclGetOpenModeEx(
 
 	    if (interp != NULL) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"invalid access mode \"%s\": must be RDONLY, WRONLY, "
-			"RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK,"
-			" or TRUNC", flag));
+			"invalid access mode \"%s\": should be RDONLY, "
+			"WRONLY, RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, "
+			"NONBLOCK, or TRUNC", flag));
 	    }
 	    ckfree(modeArgv);
 	    return -1;
@@ -1673,7 +1673,7 @@ TclGetOpenModeEx(
     if (!gotRW) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "access mode must include either RDONLY, WRONLY, or RDWR",
+		    "access mode should include either RDONLY, WRONLY, or RDWR",
 		    -1));
 	}
 	return -1;

@@ -189,10 +189,10 @@ test timer-6.1 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
 } -result {wrong # args: should be "after option ?arg ...?"}
 test timer-6.2 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after 2x
-} -result {unknown or ambiguous argument "2x": must be cancel, idle, info, or an integer}
+} -result {bad argument "2x": should be cancel, idle, info, or an integer}
 test timer-6.3 {Tcl_AfterCmd procedure, basics} -returnCodes error -body {
     after gorp
-} -result {unknown or ambiguous argument "gorp": must be cancel, idle, info, or an integer}
+} -result {bad argument "gorp": should be cancel, idle, info, or an integer}
 test timer-6.4 {Tcl_AfterCmd procedure, ms argument} {
     set x before
     after 400 {set x after}

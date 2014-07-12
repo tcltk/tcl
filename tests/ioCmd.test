@@ -170,10 +170,10 @@ test iocmd-5.3 {seek command} -returnCodes error -body {
 } -result {expected integer but got "gugu"}
 test iocmd-5.4 {seek command} -returnCodes error -body {
     seek stdin 100 gugu
-} -result {bad origin "gugu": must be start, current, or end}
+} -result {bad origin "gugu": should be start, current, or end}
 test iocmd-5.5 {seek command} -returnCodes error -body {
     seek stdin 100 ""
-} -result {ambiguous origin "": must be start, current, or end}
+} -result {ambiguous origin "": should be start, current, or end}
 
 test iocmd-6.1 {tell command} {
     list [catch {tell} msg] $msg
@@ -200,21 +200,21 @@ test iocmd-7.4 {close command} -setup {
     chan close $chan bar
 } -cleanup {
     close $chan
-} -returnCodes error -result "bad direction \"bar\": must be read or write"
+} -returnCodes error -result "bad direction \"bar\": should be read or write"
 test iocmd-7.4a {close command} -setup {
     set chan [open [info script] r]
 } -body {
     chan close $chan ""
 } -cleanup {
     close $chan
-} -returnCodes error -result "ambiguous direction \"\": must be read or write"
+} -returnCodes error -result "ambiguous direction \"\": should be read or write"
 test iocmd-7.5 {close command} -setup {
     set chan [open [info script] r]
 } -body {
     chan close $chan write
 } -cleanup {
     close $chan
-} -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
+} -returnCodes error -result "half-close of write-side not possible, side not opened or already closed"
 
 test iocmd-8.1 {fconfigure command} {
     list [catch {fconfigure} msg] $msg
@@ -231,13 +231,13 @@ test iocmd-8.4 {fconfigure command} {
     set x [list [catch {fconfigure $f1 froboz} msg] $msg]
     close $f1
     set x
-} {1 {unknown or ambiguous option "froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+} {1 {bad option "froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 test iocmd-8.5 {fconfigure command} {
     list [catch {fconfigure stdin -buffering froboz} msg] $msg
-} {1 {bad value for -buffering: must be one of full, line, or none}}
+} {1 {bad value for -buffering: should be one of full, line, or none}}
 test iocmd-8.6 {fconfigure command} {
     list [catch {fconfigure stdin -translation froboz} msg] $msg
-} {1 {bad value for -translation: must be one of auto, binary, cr, lf, crlf, or platform}}
+} {1 {bad value for -translation: should be one of auto, binary, cr, lf, crlf, or platform}}
 test iocmd-8.7 {fconfigure command} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
@@ -275,19 +275,19 @@ test iocmd-8.11 {fconfigure command} {
     set res [list [catch {fconfigure $chan -froboz blarfo} msg] $msg]
     close $chan
     set res
-} {1 {unknown or ambiguous option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+} {1 {bad option "-froboz": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 test iocmd-8.12 {fconfigure command} {
     set chan [open $path(fconfigure.dummy) r]
     set res [list [catch {fconfigure $chan -b blarfo} msg] $msg]
     close $chan
     set res
-} {1 {unknown or ambiguous option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+} {1 {bad option "-b": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 test iocmd-8.13 {fconfigure command} {
     set chan [open $path(fconfigure.dummy) r]
     set res [list [catch {fconfigure $chan -buffer blarfo} msg] $msg]
     close $chan
     set res
-} {1 {unknown or ambiguous option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
+} {1 {bad option "-buffer": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, or -translation}}
 removeFile fconfigure.dummy
 test iocmd-8.14 {fconfigure command} {
     fconfigure stdin -buffers
@@ -304,7 +304,7 @@ test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOr
     close $srv
     unset cli srv port
     rename iocmdSRV {}
-} -returnCodes error -result {unknown or ambiguous option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -peername, or -sockname}
+} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -peername, or -sockname}
 test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
@@ -465,14 +465,14 @@ unmatched open brace in list
 \"open \$path(test3) \"FOO \\{BAR BAZ\"\""
 test iocmd-12.7 {POSIX open access modes: errors} {
   list [catch {open $path(test3) {FOO BAR BAZ}} msg] $msg
-} {1 {invalid access mode "FOO": must be RDONLY, WRONLY, RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC}}
+} {1 {invalid access mode "FOO": should be RDONLY, WRONLY, RDWR, APPEND, BINARY, CREAT, EXCL, NOCTTY, NONBLOCK, or TRUNC}}
 test iocmd-12.8 {POSIX open access modes: errors} {
     list [catch {open $path(test3) {TRUNC CREAT}} msg] $msg
-} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+} {1 {access mode should include either RDONLY, WRONLY, or RDWR}}
 close [open $path(test3) w]
 test iocmd-12.9 {POSIX open access modes: BINARY} {
     list [catch {open $path(test1) BINARY} msg] $msg
-} {1 {access mode must include either RDONLY, WRONLY, or RDWR}}
+} {1 {access mode should include either RDONLY, WRONLY, or RDWR}}
 test iocmd-12.10 {POSIX open access modes: BINARY} {
     set f [open $path(test1) {WRONLY BINARY TRUNC}]
     puts $f a
@@ -649,10 +649,10 @@ test iocmd-15.9 {Tcl_FcopyObjCmd} {fcopy} {
 } "1 {channel \"$rfile\" wasn't opened for writing}"
 test iocmd-15.10 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile foo bar} msg] $msg
-} {1 {bad option "foo": must be -command or -size}}
+} {1 {bad option "foo": should be -command or -size}}
 test iocmd-15.10a {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile - bar} msg] $msg
-} {1 {ambiguous option "-": must be -command or -size}}
+} {1 {ambiguous option "-": should be -command or -size}}
 test iocmd-15.11 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}
@@ -672,7 +672,7 @@ test iocmd-20.0 {chan, wrong#args} {
 } {wrong # args: should be "chan subcommand ?arg ...?"}
 test iocmd-20.1 {chan, unknown method} -body {
     chan foo
-} -returnCodes error -match glob -result {unknown or ambiguous subcommand "foo": must be *}
+} -returnCodes error -match glob -result {unknown or ambiguous subcommand "foo": should be *}
 
 # --- --- --- --------- --------- ---------
 # chan create, and method "initalize"
@@ -696,7 +696,7 @@ test iocmd-21.3 {chan create, invalid r/w mode, bad string} {
     catch {chan create {c} foo} msg
     rename foo {}
     set msg
-} {bad mode "c": must be read or write}
+} {bad mode "c": should be read or write}
 test iocmd-21.4 {chan create, bad handler, not a list} {
     catch {chan create {r w} "foo \{"} msg
     set msg
@@ -740,13 +740,13 @@ test iocmd-21.11 {chan create, initialize failed, bad result, bogus method name}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} -match glob -result {*bad method "1": must be *}
+} -match glob -result {*bad method "1": should be *}
 test iocmd-21.12 {chan create, initialize failed, bad result, bogus method name} -body {
     proc foo {args} {return {a b c}}
     catch {chan create {r w} foo} msg
     rename foo {}
     set msg
-} -match glob -result {*bad method "c": must be *}
+} -match glob -result {*bad method "c": should be *}
 test iocmd-21.13 {chan create, initialize failed, bad result, required methods missing} -body {
     proc foo {args} {return {initialize finalize}}
     catch {chan create {r w} foo} msg
@@ -1984,7 +1984,7 @@ test iocmd-31.4 {chan postevent, bad input, illlegal keyword} -match glob -body 
     close $c
     rename foo {}
     set res
-} -result {{bad event "goo": must be read or write}}
+} -result {{bad event "goo": should be read or write}}
 test iocmd-31.5 {chan postevent, bad input, not a list} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}

@@ -30,7 +30,7 @@ testConstraint memory [llength [info commands memory]]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": should be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -40,7 +40,7 @@ test string-2.1 {string compare, too few args} {
 } {1 {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"}}
 test string-2.2 {string compare, bad args} {
     list [catch {string compare a b c} msg] $msg
-} {1 {bad option "a": must be -length or -nocase}}
+} {1 {bad option "a": should be -length or -nocase}}
 test string-2.3 {string compare, bad args} {
     list [catch {string compare -length -nocase str1 str2} msg] $msg
 } {1 {expected integer but got "-nocase"}}
@@ -180,7 +180,7 @@ test string-4.1 {string first, too few args} {
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
 test string-4.2 {string first, bad args} {
     list [catch {string first a b c} msg] $msg
-} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "c": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-4.3 {string first, too many args} {
     list [catch {string first a b 5 d} msg] $msg
 } {1 {wrong # args: should be "string first needleString haystackString ?startIndex?"}}
@@ -245,7 +245,7 @@ test string-5.6 {string index} {
 } {0 {}}
 test string-5.7 {string index} {
     list [catch {string index a xyz} msg] $msg
-} {1 {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "xyz": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-5.8 {string index} {
     string index abc end
 } c
@@ -315,10 +315,10 @@ test string-6.4 {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5 {string is, class check} {
     list [catch {string is bogus str} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": should be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6 {string is, ambiguous class} {
     list [catch {string is al str} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": should be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7 {string is alpha, all ok} {
     string is alpha -strict -failindex var abc
 } 1
@@ -759,7 +759,7 @@ test string-7.1 {string last, too few args} {
 } {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
 test string-7.2 {string last, bad args} {
     list [catch {string last a b c} msg] $msg
-} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "c": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-7.3 {string last, too many args} {
     list [catch {string last a b c d} msg] $msg
 } {1 {wrong # args: should be "string last needleString haystackString ?startIndex?"}}
@@ -845,7 +845,7 @@ test string-10.1 {string map, too few args} {
 } {1 {wrong # args: should be "string map ?-nocase? charMap string"}}
 test string-10.2 {string map, bad args} {
     list [catch {string map {a b} abba oops} msg] $msg
-} {1 {bad option "a b": must be -nocase}}
+} {1 {bad option "a b": should be -nocase}}
 test string-10.3 {string map, too many args} {
     list [catch {string map -nocase {a b} str1 str2} msg] $msg
 } {1 {wrong # args: should be "string map ?-nocase? charMap string"}}
@@ -1070,7 +1070,7 @@ test string-11.29 {string match} {
 } 1
 test string-11.30 {string match, bad args} {
     list [catch {string match - b c} msg] $msg
-} {1 {bad option "-": must be -nocase}}
+} {1 {ambiguous option "-": should be -nocase}}
 test string-11.31 {string match case} {
     string match a A
 } 0
@@ -1223,10 +1223,10 @@ test string-12.11 {string range} {
 } {abcdefghijklmnop}
 test string-12.12 {string range} {
     list [catch {string range abc abc 1} msg] $msg
-} {1 {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "abc": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-12.13 {string range} {
     list [catch {string range abc 1 eof} msg] $msg
-} {1 {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "eof": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-12.14 {string range} {
     string range abcdefghijklmnop end-1 end
 } {op}
@@ -1354,10 +1354,10 @@ test string-14.12 {string replace} {
 } {}
 test string-14.13 {string replace} {
     list [catch {string replace abc abc 1} msg] $msg
-} {1 {bad index "abc": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "abc": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-14.14 {string replace} {
     list [catch {string replace abc 1 eof} msg] $msg
-} {1 {bad index "eof": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "eof": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-14.15 {string replace} {
     string replace abcdefghijklmnop end-10 end-2 NEW
 } {abcdeNEWop}
@@ -1373,7 +1373,7 @@ test string-15.1 {string tolower too few args} {
 } {1 {wrong # args: should be "string tolower string ?first? ?last?"}}
 test string-15.2 {string tolower bad args} {
     list [catch {string tolower a b} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "b": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-15.3 {string tolower too many args} {
     list [catch {string tolower ABC 1 end oops} msg] $msg
 } {1 {wrong # args: should be "string tolower string ?first? ?last?"}}
@@ -1407,7 +1407,7 @@ test string-16.1 {string toupper} {
 } {1 {wrong # args: should be "string toupper string ?first? ?last?"}}
 test string-16.2 {string toupper} {
     list [catch {string toupper a b} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "b": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-16.3 {string toupper} {
     list [catch {string toupper a 1 end oops} msg] $msg
 } {1 {wrong # args: should be "string toupper string ?first? ?last?"}}
@@ -1441,7 +1441,7 @@ test string-17.1 {string totitle} {
 } {1 {wrong # args: should be "string totitle string ?first? ?last?"}}
 test string-17.2 {string totitle} {
     list [catch {string totitle a b} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "b": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-17.3 {string totitle} {
     string totitle abCDEf
 } {Abcdef}
@@ -1513,7 +1513,7 @@ test string-20.1 {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2 {string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": should be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3 {string trimright} {
     string trimright "    XYZ      "
 } {    XYZ}
@@ -1535,7 +1535,7 @@ test string-21.2 {string wordend} {
 } {1 {wrong # args: should be "string wordend string index"}}
 test string-21.3 {string wordend} {
     list [catch {string wordend a gorp} msg] $msg
-} {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "gorp": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-21.4 {string wordend} {
     string wordend abc. -1
 } 3
@@ -1572,7 +1572,7 @@ test string-21.14 {string wordend, unicode} {
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {unknown or ambiguous subcommand "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "word": should be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2 {string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
@@ -1581,7 +1581,7 @@ test string-22.3 {string wordstart} {
 } {1 {wrong # args: should be "string wordstart string index"}}
 test string-22.4 {string wordstart} {
     list [catch {string wordstart a gorp} msg] $msg
-} {1 {bad index "gorp": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "gorp": should be integer?[+-]integer? or end?[+-]integer?}}
 test string-22.5 {string wordstart} {
     string wordstart "one two three_words" 400
 } 8
@@ -1775,7 +1775,7 @@ test string-26.1 {tcl::prefix, too few args} -body {
 } -returnCodes 1 -result {wrong # args: should be "tcl::prefix match ?options? table string"}
 test string-26.2 {tcl::prefix, bad args} -body {
     tcl::prefix match a b c
-} -returnCodes 1 -result {bad option "a": must be -error, -exact, or -message}
+} -returnCodes 1 -result {bad option "a": should be -error, -exact, or -message}
 test string-26.2.1 {tcl::prefix, empty table} -body {
     tcl::prefix match {} foo
 } -returnCodes 1 -result {bad option "foo": no valid options}
@@ -1799,16 +1799,16 @@ test string-26.6 {tcl::prefix} {
 } bepa
 test string-26.7 {tcl::prefix} -body {
     tcl::prefix match -exact {apa bepa cepa depa} be
-} -returnCodes 1 -result {bad option "be": must be apa, bepa, cepa, or depa}
+} -returnCodes 1 -result {bad option "be": should be apa, bepa, cepa, or depa}
 test string-26.8 {tcl::prefix} -body {
     tcl::prefix match -message wombat {apa bepa bear depa} be
-} -returnCodes 1 -result {ambiguous wombat "be": must be apa, bepa, bear, or depa}
+} -returnCodes 1 -result {ambiguous wombat "be": should be apa, bepa, bear, or depa}
 test string-26.9 {tcl::prefix} -body {
     tcl::prefix match -error {} {apa bepa bear depa} be
 } -returnCodes 0 -result {}
 test string-26.10 {tcl::prefix} -body {
     tcl::prefix match -error {-level 1} {apa bepa bear depa} be
-} -returnCodes 2 -result {ambiguous option "be": must be apa, bepa, bear, or depa}
+} -returnCodes 2 -result {ambiguous option "be": should be apa, bepa, bear, or depa}
 test string-26.10.1 {tcl::prefix} -setup {
     proc _testprefix {args} {
         array set opts {-a x -b y -c y}
@@ -1823,7 +1823,7 @@ test string-26.10.1 {tcl::prefix} -setup {
     dict get $options -errorinfo
 } -cleanup {
     rename _testprefix {}
-} -result {bad option "-x": must be -a, -b, or -c
+} -result {bad option "-x": should be -a, -b, or -c
     while executing
 "_testprefix -x u"}
 

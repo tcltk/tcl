@@ -33,7 +33,7 @@ test dict-1.1 {dict command basic syntax} -returnCodes error -body {
 } -result {wrong # args: should be "dict subcommand ?arg ...?"}
 test dict-1.2 {dict command basic syntax} -returnCodes error -body {
     dict ?
-} -match glob -result {unknown or ambiguous subcommand "?": must be *}
+} -match glob -result {unknown or ambiguous subcommand "?": should be *}
 
 test dict-2.1 {dict create command} {
     dict create
@@ -1064,7 +1064,7 @@ test dict-17.21 {dict filter command} -returnCodes error -body {
 } -result {wrong # args: should be "dict filter dictionary filterType ?arg ...?"}
 test dict-17.22 {dict filter command} -returnCodes error -body {
     dict filter {a b} JUNK
-} -result {bad filterType "JUNK": must be key, script, or value}
+} -result {bad filterType "JUNK": should be key, script, or value}
 test dict-17.23 {dict filter command} -returnCodes error -body {
     dict filter a key *
 } -result {missing value to go with key}

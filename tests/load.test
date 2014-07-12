@@ -65,7 +65,7 @@ test load-1.6 {basic errors} {} {
 } {1 {package "Unknown" isn't loaded statically}}
 test load-1.7 {basic errors} {} {
     list [catch {load -abc foo} msg] $msg
-} "1 {bad option \"-abc\": must be -global, -lazy, or --}"
+} "1 {bad option \"-abc\": should be -global, -lazy, or --}"
 test load-1.8 {basic errors} {} {
     list [catch {load -global} msg] $msg
 } "1 {couldn't figure out package name for -global}"

@@ -335,7 +335,7 @@ test set-old-8.6 {array command} {
     catch {unset a}
     set a(22) 3
     list [catch {array gorp a} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be anymore, donesearch, exists, get, names, nextelement, set, size, startsearch, statistics, or unset}}
+} {1 {unknown or ambiguous subcommand "gorp": should be anymore, donesearch, exists, get, names, nextelement, set, size, startsearch, statistics, or unset}}
 test set-old-8.7 {array command, anymore option} {
     catch {unset a}
     list [catch {array anymore a x} msg] $msg
@@ -427,7 +427,7 @@ test set-old-8.22 {array command, names option} {
     catch {unset a}
     set a(22) 3
     list [catch {array names a 4 5} msg] $msg
-} {1 {bad option "4": must be -exact, -glob, or -regexp}}
+} {1 {bad option "4": should be -exact, -glob, or -regexp}}
 test set-old-8.23 {array command, names option} {
     catch {unset a}
     array names a

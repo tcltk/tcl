@@ -1112,7 +1112,7 @@ test assemble-9.7 {concat} {
     -body {
 	list [catch {assemble {concat 0}} result] $result $::errorCode
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -result {1 {operand should be positive} {TCL ASSEM POSITIVE}}
     -cleanup {unset result}
 }
 
@@ -1621,7 +1621,7 @@ test assemble-16.4 {invokeStk - no operands} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -result {1 {operand should be positive} {TCL ASSEM POSITIVE}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-16.5 {invokeStk1} {
@@ -1942,7 +1942,7 @@ test assemble-18.5 {lindexMulti - bad operand count} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -result {1 {operand should be positive} {TCL ASSEM POSITIVE}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-18.6 {lindexMulti} {
@@ -2008,7 +2008,7 @@ test assemble-19.5 {list - negative operand count} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be nonnegative} {TCL ASSEM NONNEGATIVE}}
+    -result {1 {operand should be nonnegative} {TCL ASSEM NONNEGATIVE}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-19.6 {list - no args} {
@@ -2074,7 +2074,7 @@ test assemble-20.5 {lsetFlat - negative operand count} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be >=2} {TCL ASSEM OPERAND>=2}}
+    -result {1 {operand should be >=2} {TCL ASSEM OPERAND>=2}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-20.6 {lsetFlat} {
@@ -2134,7 +2134,7 @@ test assemble-21.5 {over - negative operand count} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be nonnegative} {TCL ASSEM NONNEGATIVE}}
+    -result {1 {operand should be nonnegative} {TCL ASSEM NONNEGATIVE}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-21.6 {over} {
@@ -2226,7 +2226,7 @@ test assemble-22.5 {reverse - negative operand count} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be nonnegative} {TCL ASSEM NONNEGATIVE}}
+    -result {1 {operand should be nonnegative} {TCL ASSEM NONNEGATIVE}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-22.6 {reverse - zero operand count} {
@@ -2565,7 +2565,7 @@ test assemble-25.5 {dictGet - negative operand count} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -result {1 {operand should be positive} {TCL ASSEM POSITIVE}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-25.6 {dictGet - 1 index} {
@@ -2619,7 +2619,7 @@ test assemble-26.5 {dictSet - zero operand count} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -result {1 {operand should be positive} {TCL ASSEM POSITIVE}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-26.6 {dictSet - bad local} {
@@ -2688,7 +2688,7 @@ test assemble-27.5 {dictUnset - zero operand count} {
 	}
 	list [catch x result] $result $::errorCode
     }
-    -result {1 {operand must be positive} {TCL ASSEM POSITIVE}}
+    -result {1 {operand should be positive} {TCL ASSEM POSITIVE}}
     -cleanup {rename x {}; unset result}
 }
 test assemble-27.6 {dictUnset - bad local} {

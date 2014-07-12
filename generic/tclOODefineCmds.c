@@ -1186,7 +1186,7 @@ TclOODefineClassObjCmd(
 	return TCL_ERROR;
     }
     clsPtr = GetClassInOuterContext(interp, objv[1],
-	    "the class of an object must be a class");
+	    "the class of an object should be a class");
     if (clsPtr == NULL) {
 	return TCL_ERROR;
     }

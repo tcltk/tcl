@@ -548,7 +548,7 @@ test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
 } -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-14.3 {unknown switch} -constraints {exec} -body {
     exec -gorp
-} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
+} -returnCodes error -result {bad option "-gorp": should be -ignorestderr, -keepnewline, or --}
 test exec-14.4 {-- switch} -constraints {exec} -body {
     exec -- -gorp
 } -returnCodes error -result {couldn't execute "-gorp": no such file or directory}

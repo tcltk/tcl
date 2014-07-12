@@ -869,7 +869,7 @@ test trace-14.4 "trace command, wrong # args errors" {
 
 test trace-14.5 {trace command, invalid option} {
     list [catch {trace gorp} msg] $msg
-} [list 1 "bad option \"gorp\": must be add, info, remove, variable, vdelete, or vinfo"]
+} [list 1 "bad option \"gorp\": should be add, info, remove, variable, vdelete, or vinfo"]
 
 # Again, [trace ... command] and [trace ... variable] share syntax and
 # error message styles for their opList options; these loops test those 
@@ -883,15 +883,15 @@ foreach type {variable command execution} err $errs abbvlist $abbvs {
     foreach op {add remove} {
 	test trace-14.6.[incr i] "trace $op $type errors" {
 	    list [catch {trace $op $type x {y z w} a} msg] $msg
-	} [list 1 "bad operation \"y\": must be $err"]
+	} [list 1 "bad operation \"y\": should be $err"]
 	foreach abbv $abbvlist {
 	    test trace-14.6.[incr i] "trace $op $type rejects abbreviations" {
 		list [catch {trace $op $type x $abbv a} msg] $msg
-	    } [list 1 "bad operation \"$abbv\": must be $err"]
+	    } [list 1 "bad operation \"$abbv\": should be $err"]
 	}
 	test trace-14.6.[incr i] "trace $op $type rejects null opList" {
 	    list [catch {trace $op $type x {} a} msg] $msg
-	} [list 1 "bad operation list \"\": must be one or more of $err"]
+	} [list 1 "bad operation list \"\": should be one or more of $err"]
     }
 }
 rename x {}
@@ -910,7 +910,7 @@ test trace-14.10 {trace command, "trace variable" errors} {
 } [list 1 "wrong # args: should be \"trace variable name ops command\""]
 test trace-14.11 {trace command, "trace variable" errors} {
     list [catch {trace variable x y z} msg] $msg
-} [list 1 "bad operations \"y\": should be one or more of rwua"]
+} [list 1 "bad operations \"y\": should be one or more character of rwua"]
 
 
 test trace-14.12 {trace command ("remove variable" option)} {

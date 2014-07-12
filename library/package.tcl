@@ -668,7 +668,7 @@ proc ::tcl::Pkg::Create {args} {
     set err(wrongNumArgs) "wrong # args: should be \"$err(usage)\""
     set err(valueMissing) "value for \"%s\" missing: should be \"$err(usage)\""
     set err(unknownOpt)   "unknown option \"%s\": should be \"$err(usage)\""
-    set err(noLoadOrSource) "at least one of -load and -source must be given"
+    set err(noLoadOrSource) "at least one of -load and -source should be given"
 
     # process arguments
     set len [llength $args]

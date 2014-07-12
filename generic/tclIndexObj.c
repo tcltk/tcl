@@ -91,7 +91,7 @@ typedef struct {
  *	proper match, then TCL_ERROR is returned and an error message is left
  *	in interp's result (unless interp is NULL). The msg argument is used
  *	in the error message; for example, if msg has the value "option" then
- *	the error message will say something flag 'bad option "foo": must be
+ *	the error message will say something flag 'bad option "foo": should be
  *	...'
  *
  * Side effects:
@@ -370,12 +370,12 @@ Tcl_GetIndexFromObjStruct(
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	}
 	Tcl_AppendStringsToObj(resultPtr,
-		(numAbbrev>1 && !(flags & TCL_EXACT) ? "ambiguous " : "bad "),
+		(numAbbrev>0 && !(flags & TCL_EXACT) ? "ambiguous " : "bad "),
 		msg, " \"", key, NULL);
 	if (*entryPtr == NULL) {
 	    Tcl_AppendStringsToObj(resultPtr, "\": no valid options", NULL);
 	} else {
-	    Tcl_AppendStringsToObj(resultPtr, "\": must be ",
+	    Tcl_AppendStringsToObj(resultPtr, "\": should be ",
 		    *entryPtr, NULL);
 	    entryPtr = NEXT_ENTRY(entryPtr, offset);
 	    while (*entryPtr != NULL) {
@@ -845,7 +845,7 @@ PrefixLongestObjCmd(
  *	An error message is generated in interp's result object to indicate
  *	that a command was invoked with the wrong number of arguments. The
  *	message has the form
- *		wrong # args: should be "foo bar additional stuff"
+ *		wrong # args: must be "foo bar additional stuff"
  *	where "foo" and "bar" are the initial objects in objv (objc determines
  *	how many of these are printed) and "additional stuff" is the contents
  *	of the message argument.
@@ -1476,7 +1476,7 @@ TclGetCompletionCodeFromObj(
 
     if (interp != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad completion code \"%s\": must be"
+		"bad completion code \"%s\": should be"
 		" ok, error, return, break, continue, or an integer",
 		TclGetString(value)));
 	Tcl_SetErrorCode(interp, "TCL", "RESULT", "ILLEGAL_CODE", NULL);

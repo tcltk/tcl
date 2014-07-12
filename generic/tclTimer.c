@@ -830,7 +830,7 @@ Tcl_AfterObjCmd(
             const char *arg = Tcl_GetString(objv[1]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "unknown or ambiguous argument \"%s\": must be"
+                    "bad argument \"%s\": should be"
                     " cancel, idle, info, or an integer", arg));
             Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "INDEX", "argument",
                     arg, NULL);

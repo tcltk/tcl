@@ -166,7 +166,7 @@ test cmdAH-4.1 {Tcl_EncodingObjCmd} -returnCodes error -body {
 } -result {wrong # args: should be "encoding option ?arg ...?"}
 test cmdAH-4.2 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding foo
-} -result {bad option "foo": must be convertfrom, convertto, dirs, names, or system}
+} -result {bad option "foo": should be convertfrom, convertto, dirs, names, or system}
 test cmdAH-4.3 {Tcl_EncodingObjCmd} -returnCodes error -body {
     encoding convertto
 } -result {wrong # args: should be "encoding convertto ?encoding? data"}
@@ -231,7 +231,7 @@ test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
 } -result {wrong # args: should be "file subcommand ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "x": should be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -1442,25 +1442,25 @@ test cmdAH-29.5 {Tcl_FileObjCmd: type} {
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "gorp": should be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
-} -match glob -result {unknown or ambiguous subcommand "ex": must be *}
+} -match glob -result {unknown or ambiguous subcommand "ex": should be *}
 test cmdAH-30.3 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file is x
-} -match glob -result {unknown or ambiguous subcommand "is": must be *}
+} -match glob -result {unknown or ambiguous subcommand "is": should be *}
 test cmdAH-30.4 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file z x
-} -match glob -result {unknown or ambiguous subcommand "z": must be *}
+} -match glob -result {unknown or ambiguous subcommand "z": should be *}
 test cmdAH-30.5 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file read x
-} -match glob -result {unknown or ambiguous subcommand "read": must be *}
+} -match glob -result {unknown or ambiguous subcommand "read": should be *}
 test cmdAH-30.6 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file s x
-} -match glob -result {unknown or ambiguous subcommand "s": must be *}
+} -match glob -result {unknown or ambiguous subcommand "s": should be *}
 test cmdAH-30.7 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file t x
-} -match glob -result {unknown or ambiguous subcommand "t": must be *}
+} -match glob -result {unknown or ambiguous subcommand "t": should be *}
 test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file dirname ~woohgy
 } -result {user "woohgy" doesn't exist}

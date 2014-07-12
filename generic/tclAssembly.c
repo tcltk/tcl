@@ -1592,7 +1592,7 @@ AssembleOneLine(
 	if (opnd < 2) {
 	    if (assemEnvPtr->flags & TCL_EVAL_DIRECT) {
 		Tcl_SetObjResult(interp,
-			Tcl_NewStringObj("operand must be >=2", -1));
+			Tcl_NewStringObj("operand should be >=2", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ASSEM", "OPERAND>=2", NULL);
 	    }
 	    goto cleanup;
@@ -2435,7 +2435,7 @@ CheckNonNegative(
     Tcl_Obj* result;		/* Error message */
 
     if (value < 0) {
-	result = Tcl_NewStringObj("operand must be nonnegative", -1);
+	result = Tcl_NewStringObj("operand should be nonnegative", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "NONNEGATIVE", NULL);
 	return TCL_ERROR;
@@ -2468,7 +2468,7 @@ CheckStrictlyPositive(
     Tcl_Obj* result;		/* Error message */
 
     if (value <= 0) {
-	result = Tcl_NewStringObj("operand must be positive", -1);
+	result = Tcl_NewStringObj("operand should be positive", -1);
 	Tcl_SetObjResult(interp, result);
 	Tcl_SetErrorCode(interp, "TCL", "ASSEM", "POSITIVE", NULL);
 	return TCL_ERROR;

@@ -259,7 +259,7 @@ TclNamespaceEnsembleCmd(
 		    if (len < 1) {
 			Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				"ensemble subcommand implementations "
-				"must be non-empty lists", -1));
+				"should be non-empty lists", -1));
 			Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
 				"EMPTY_TARGET", NULL);
 			Tcl_DictObjDone(&search);
@@ -538,7 +538,7 @@ TclNamespaceEnsembleCmd(
 			if (len < 1) {
 			    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 				    "ensemble subcommand implementations "
-				    "must be non-empty lists", -1));
+				    "should be non-empty lists", -1));
 			    Tcl_SetErrorCode(interp, "TCL", "ENSEMBLE",
 				    "EMPTY_TARGET", NULL);
 			    Tcl_DictObjDone(&search);
@@ -1945,7 +1945,7 @@ NsEnsembleImplementationCmdNR(
 		TclGetString(objv[1+ensemblePtr->numParameters]), NULL);
 	return TCL_ERROR;
     }
-    errorObj = Tcl_ObjPrintf("unknown%s subcommand \"%s\": must be ",
+    errorObj = Tcl_ObjPrintf("unknown%s subcommand \"%s\": should be ",
 	    (ensemblePtr->flags & TCL_ENSEMBLE_PREFIX ? " or ambiguous" : ""),
 	    TclGetString(objv[1+ensemblePtr->numParameters]));
     if (ensemblePtr->subcommandTable.numEntries == 1) {

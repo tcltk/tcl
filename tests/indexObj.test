@@ -49,35 +49,35 @@ test indexObj-1.9 {exact match of empty values} testindexobj {
 
 test indexObj-2.1 {no match} testindexobj {
     list [catch {testindexobj 1 1 dddd abc def xalb xyz alm x} msg] $msg
-} {1 {bad token "dddd": must be abc, def, xalb, xyz, alm, or x}}
+} {1 {bad token "dddd": should be abc, def, xalb, xyz, alm, or x}}
 test indexObj-2.2 {no match} testindexobj {
     list [catch {testindexobj 1 1 dddd abc} msg] $msg
-} {1 {bad token "dddd": must be abc}}
+} {1 {bad token "dddd": should be abc}}
 test indexObj-2.3 {no match: no abbreviations} testindexobj {
     list [catch {testindexobj 1 0 xy abc def xalb xyz alm} msg] $msg
-} {1 {bad token "xy": must be abc, def, xalb, xyz, or alm}}
+} {1 {bad token "xy": should be abc, def, xalb, xyz, or alm}}
 test indexObj-2.4 {ambiguous value} testindexobj {
     list [catch {testindexobj 1 1 d dumb daughter a c} msg] $msg
-} {1 {ambiguous token "d": must be dumb, daughter, a, or c}}
+} {1 {ambiguous token "d": should be dumb, daughter, a, or c}}
 test indexObj-2.5 {omit error message} testindexobj {
     list [catch {testindexobj 0 1 d x} msg] $msg
 } {1 {}}
 test indexObj-2.6 {TCL_EXACT => no "ambiguous" error message} testindexobj {
     list [catch {testindexobj 1 0 d dumb daughter a c} msg] $msg
-} {1 {bad token "d": must be dumb, daughter, a, or c}}
+} {1 {bad token "d": should be dumb, daughter, a, or c}}
 test indexObj-2.7 {exact match of empty values} testindexobj {
     list [catch {testindexobj 1 1 {} a b c} msg] $msg
-} {1 {ambiguous token "": must be a, b, or c}}
+} {1 {ambiguous token "": should be a, b, or c}}
 test indexObj-2.8 {exact match of empty values: singleton case} testindexobj {
     list [catch {testindexobj 1 0 {} a} msg] $msg
-} {1 {bad token "": must be a}}
+} {1 {bad token "": should be a}}
 test indexObj-2.9 {non-exact match of empty values: singleton case} testindexobj {
     # NOTE this is a special case.  Although the empty string is a
     # unique prefix, we have an established history of rejecting
     # empty lookup keys, requiring any unique prefix match to have
     # at least one character.
     list [catch {testindexobj 1 1 {} a} msg] $msg
-} {1 {bad token "": must be a}}
+} {1 {ambiguous token "": should be a}}
 
 test indexObj-3.1 {cache result to skip next lookup} testindexobj {
     testindexobj check 42

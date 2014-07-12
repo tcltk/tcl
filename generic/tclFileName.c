@@ -1337,7 +1337,7 @@ Tcl_GlobObjCmd(
   endOfForLoop:
     if ((globFlags & TCL_GLOBMODE_TAILS) && (pathOrDir == NULL)) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"\"-tails\" must be used with either "
+		"\"-tails\" should be used with either "
 		"\"-directory\" or \"-path\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "GLOB",
 		"BADOPTIONCOMBINATION", NULL);

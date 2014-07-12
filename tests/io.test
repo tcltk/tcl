@@ -5148,7 +5148,7 @@ test io-39.5 {Tcl_GetChannelOption, invariance} {
     lappend l [fconfigure $f1 -buffering]
     close $f1
     set l
-} {full {1 {bad value for -buffering: must be one of full, line, or none}} full}
+} {full {1 {bad value for -buffering: should be one of full, line, or none}} full}
 test io-39.6 {Tcl_SetChannelOption, multiple options} {
     file delete $path(test1)
     set f1 [open $path(test1) w]
@@ -5599,7 +5599,7 @@ test io-41.4 {Tcl_FileeventCmd: errors} {fileevent} {
 } {1 {can not find channel named "gorp"}}
 test io-41.5 {Tcl_FileeventCmd: errors} {fileevent} {
     list [catch {fileevent gorp who-knows} msg] $msg
-} {1 {bad event name "who-knows": must be readable or writable}}
+} {1 {bad event name "who-knows": should be readable or writable}}
 
 #
 # Test fileevent on a file

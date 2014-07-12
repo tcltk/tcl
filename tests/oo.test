@@ -130,7 +130,7 @@ test oo-1.4 {basic test of OO functionality} -body {
 } -returnCodes 1 -result {object name must not be empty}
 test oo-1.5 {basic test of OO functionality} -body {
     oo::object doesnotexist
-} -returnCodes 1 -result {unknown method "doesnotexist": must be create, destroy or new}
+} -returnCodes 1 -result {unknown method "doesnotexist": should be create, destroy or new}
 test oo-1.5.1 {basic test of OO functionality} -setup {
     oo::object create aninstance
 } -returnCodes error -body {
@@ -581,7 +581,7 @@ test oo-4.1 {basic test of OO functionality: export} {
     lappend result [catch {$o Foo} msg] $msg
     oo::objdefine $o export Foo
     lappend result [$o Foo] [$o destroy]
-} {1 {unknown method "Foo": must be destroy} Foo {} {}}
+} {1 {unknown method "Foo": should be destroy} Foo {} {}}
 test oo-4.2 {basic test of OO functionality: unexport} {
     set o [oo::object new]
     set result {}
@@ -589,7 +589,7 @@ test oo-4.2 {basic test of OO functionality: unexport} {
     lappend result [$o foo]
     oo::objdefine $o unexport foo
     lappend result [catch {$o foo} msg] $msg [$o destroy]
-} {foo {} 1 {unknown method "foo": must be destroy} {}}
+} {foo {} 1 {unknown method "foo": should be destroy} {}}
 test oo-4.3 {exporting and error messages, Bug 1824958} -setup {
     oo::class create testClass
 } -cleanup {
@@ -597,7 +597,7 @@ test oo-4.3 {exporting and error messages, Bug 1824958} -setup {
 } -body {
     oo::define testClass self export Bad
     testClass Bad
-} -returnCodes 1 -result {unknown method "Bad": must be create, destroy or new}
+} -returnCodes 1 -result {unknown method "Bad": should be create, destroy or new}
 test oo-4.4 {exporting a class method from an object} -setup {
     oo::class create testClass
     testClass create testObject
@@ -640,7 +640,7 @@ test oo-5.1 {OO: manipulation of classes as objects} -setup {
 } -cleanup {
     oo::objdefine oo::object deletemethod foo
     $obj destroy
-} -result {1 {unknown method "foo": must be destroy} {in object}}
+} -result {1 {unknown method "foo": should be destroy} {in object}}
 test oo-5.2 {OO: manipulation of classes as objects} -setup {
     set obj [oo::object new]
 } -body {
@@ -650,7 +650,7 @@ test oo-5.2 {OO: manipulation of classes as objects} -setup {
 } -cleanup {
     oo::objdefine oo::object deletemethod foo
     $obj destroy
-} -result {1 {unknown method "foo": must be destroy} {in object}}
+} -result {1 {unknown method "foo": should be destroy} {in object}}
 test oo-5.3 {OO: manipulation of classes as objects} -setup {
     set obj [oo::object new]
 } -body {
@@ -662,7 +662,7 @@ test oo-5.3 {OO: manipulation of classes as objects} -setup {
 } -cleanup {
     oo::objdefine oo::object deletemethod foo
     $obj destroy
-} -result {1 {unknown method "foo": must be destroy} {in object}}
+} -result {1 {unknown method "foo": should be destroy} {in object}}
 test oo-5.4 {OO: manipulation of classes as objects} -setup {
     set obj [oo::object new]
 } -body {
@@ -674,7 +674,7 @@ test oo-5.4 {OO: manipulation of classes as objects} -setup {
 } -cleanup {
     oo::objdefine oo::object deletemethod foo
     $obj destroy
-} -result {1 {unknown method "foo": must be destroy} {in object}}
+} -result {1 {unknown method "foo": should be destroy} {in object}}
 test oo-5.5 {OO: manipulation of classes as objects} -setup {
     set obj [oo::object new]
 } -body {
@@ -688,7 +688,7 @@ test oo-5.5 {OO: manipulation of classes as objects} -setup {
 } -cleanup {
     oo::objdefine oo::object deletemethod foo
     $obj destroy
-} -result {1 {unknown method "foo": must be destroy} {in object}}
+} -result {1 {unknown method "foo": should be destroy} {in object}}
 
 test oo-6.1 {OO: forward} {
     oo::object create foo
@@ -1013,7 +1013,7 @@ test oo-7.1 {OO: inheritance 101} -setup {
 } -cleanup {
     subClass destroy
     superClass destroy
-} -result {1 {unknown method "doit": must be create, destroy or new} ok}
+} -result {1 {unknown method "doit": should be create, destroy or new} ok}
 test oo-7.2 {OO: inheritance 101} -setup {
     oo::class create superClass
     oo::class create subClass
@@ -1082,7 +1082,7 @@ test oo-7.4 {OO: inheritance from oo::class} -body {
 } -cleanup {
     catch {classinstance destroy}
     catch {meta destroy}
-} -result {1 {unknown method "create": must be destroy or make} {made ::classinstance} {in definition script in ::oo::define} ::classinstance ::instance}
+} -result {1 {unknown method "create": should be destroy or make} {made ::classinstance} {in definition script in ::oo::define} ::classinstance ::instance}
 test oo-7.5 {OO: inheritance from oo::class in the secondary chain} -body {
     oo::class create other
     oo::class create meta {
@@ -1110,7 +1110,7 @@ test oo-7.5 {OO: inheritance from oo::class in the secondary chain} -body {
     catch {classinstance destroy}
     catch {meta destroy}
     catch {other destroy}
-} -result {1 {unknown method "create": must be destroy or make} {made ::classinstance} {in definition script in ::oo::define} ::classinstance ::instance}
+} -result {1 {unknown method "create": should be destroy or make} {made ::classinstance} {in definition script in ::oo::define} ::classinstance ::instance}
 test oo-7.6 {OO: inheritance 101 - overridden methods should be oblivious} -setup {
     oo::class create Aclass
     oo::class create Bclass
@@ -1158,7 +1158,7 @@ test oo-7.7 {OO: inheritance and errorInfo} -setup {
     lappend result $msg $errorInfo
 } -cleanup {
     A destroy
-} -result {{unknown method "?": must be destroy or foo} foo! {foo!
+} -result {{unknown method "?": should be destroy or foo} foo! {foo!
     while executing
 "error foo!"
     (class "::A" method "foo" line 1)
@@ -1561,7 +1561,7 @@ test oo-14.1 {OO: mixins} {
     fooTest2 boo
     oo::objdefine fooTest2 mixin
     lappend result [Bclass destroy] [info command fooTest*] [Aclass destroy]
-} {1 {unknown method "?": must be bar, boo or destroy} {::fooTest in bar} {::fooTest in boo} {::fooTest2 in bar} {::fooTest2 in boo} {} fooTest2 {}}
+} {1 {unknown method "?": should be bar, boo or destroy} {::fooTest in bar} {::fooTest in boo} {::fooTest2 in bar} {::fooTest2 in boo} {} fooTest2 {}}
 test oo-14.2 {OO: mixins} {
     oo::class create Aclass {
 	method bar {} {return "[self object] in bar"}
@@ -1575,7 +1575,7 @@ test oo-14.2 {OO: mixins} {
     lappend result [catch {fooTest bar} msg] $msg
     lappend result [catch {fooTest boo} msg] $msg
     lappend result [Bclass destroy] [info commands Aclass]
-} {1 {unknown method "?": must be bar, boo or destroy} 0 {::fooTest in bar} 0 {::fooTest in boo} {} {}}
+} {1 {unknown method "?": should be bar, boo or destroy} 0 {::fooTest in bar} 0 {::fooTest in boo} {} {}}
 test oo-14.3 {OO and mixins and filters - advanced case} -setup {
     oo::class create mix
     oo::class create c {
@@ -1878,7 +1878,7 @@ test oo-16.2 {OO: object introspection} -body {
 } -returnCodes 1 -result {NOTANOBJECT does not refer to an object}
 test oo-16.3 {OO: object introspection} -body {
     info object gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, class, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": should be call, class, definition, filters, forward, isa, methods, methodtype, mixins, namespace, variables, or vars}
 test oo-16.4 {OO: object introspection} -setup {
     oo::class create meta { superclass oo::class }
     [meta create instance1] create instance2
@@ -2000,7 +2000,7 @@ test oo-17.3 {OO: class introspection} -setup {
 } -result {"foo" is not a class}
 test oo-17.4 {OO: class introspection} -body {
     info class gorp oo::object
-} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": must be call, constructor, definition, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
+} -returnCodes 1 -result {unknown or ambiguous subcommand "gorp": should be call, constructor, definition, destructor, filters, forward, instances, methods, methodtype, mixins, subclasses, superclasses, or variables}
 test oo-17.5 {OO: class introspection} -setup {
     oo::class create testClass
 } -body {
@@ -2759,7 +2759,7 @@ test oo-24.1 {unknown method method - Bug 1965063} -setup {
 	method unknown args {next {*}$args}
     }
     [cls new] foo bar
-} -result {unknown method "foo": must be destroy, dummy or unknown}
+} -result {unknown method "foo": should be destroy, dummy or unknown}
 test oo-24.2 {unknown method method - Bug 1965063} -setup {
     oo::class create cls
 } -cleanup {
@@ -2775,7 +2775,7 @@ test oo-24.2 {unknown method method - Bug 1965063} -setup {
 	method unknown args {next {*}$args}
     }
     obj foo bar
-} -result {unknown method "foo": must be destroy, dummy, dummy2 or unknown}
+} -result {unknown method "foo": should be destroy, dummy, dummy2 or unknown}
 test oo-24.3 {unknown method method - absent method name} -setup {
     set o [oo::object new]
 } -cleanup {
@@ -3157,7 +3157,7 @@ test oo-27.18 {variables declaration - multiple use} -setup {
     }
     foo create bar
     list [bar boo] [bar boo]
-} -returnCodes error -match glob -result {unknown method "-?": must be *}
+} -returnCodes error -match glob -result {unknown method "-?": should be *}
 test oo-27.19 {variables declaration and [info vars]: Bug 2712377} -setup {
     oo::class create Foo
     set result {}
@@ -3416,7 +3416,7 @@ test oo-33.4 {TIP 380: slots - errors} -setup {
     $s -grill q
 } -returnCodes error -cleanup {
     rename $s {}
-} -result {unknown method "-grill": must be -append, -clear, -set, contents or ops}
+} -result {unknown method "-grill": should be -append, -clear, -set, contents or ops}
 
 SampleSlot destroy
 

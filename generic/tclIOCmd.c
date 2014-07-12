@@ -705,7 +705,7 @@ Tcl_CloseObjCmd(
 
 	if (!(dir & Tcl_GetChannelMode(chan))) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "Half-close of %s-side not possible, side not opened"
+		    "half-close of %s-side not possible, side not opened"
 		    " or already closed", dirOptions[index]));
 	    return TCL_ERROR;
 	}

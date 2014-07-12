@@ -57,10 +57,10 @@ test obj-3.1 {Tcl_ConvertToType error} testobj {
     list [testdoubleobj set 1 12.34] \
 	[catch {testobj convert 1 end-offset} msg] \
 	 $msg
-} {12.34 1 {bad index "12.34": must be end?[+-]integer?}}
+} {12.34 1 {bad index "12.34": should be end?[+-]integer?}}
 test obj-3.2 {Tcl_ConvertToType error, "empty string" object} testobj {
     list [testobj newobj 1] [catch {testobj convert 1 end-offset} msg] $msg
-} {{} 1 {bad index "": must be end?[+-]integer?}}
+} {{} 1 {bad index "": should be end?[+-]integer?}}
 
 test obj-4.1 {Tcl_NewObj and AllocateFreeObjects} testobj {
     set result ""

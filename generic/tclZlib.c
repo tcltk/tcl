@@ -2125,7 +2125,7 @@ ZlibCmd(
     return TCL_ERROR;
 
   badLevel:
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("level must be 0 to 9", -1));
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("level should be 0 to 9", -1));
     Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", NULL);
     if (extraInfoStr) {
 	Tcl_AddErrorInfo(interp, extraInfoStr);
@@ -2133,7 +2133,7 @@ ZlibCmd(
     return TCL_ERROR;
   badBuffer:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-	    "buffer size must be %d to %d",
+	    "buffer size should be %d to %d",
 	    MIN_NONSTREAM_BUFFER_SIZE, MAX_BUFFER_SIZE));
     Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", NULL);
     return TCL_ERROR;
@@ -2269,7 +2269,7 @@ ZlibStreamSubcmd(
     } else if (Tcl_GetIntFromObj(interp, levelObj, &level) != TCL_OK) {
 	return TCL_ERROR;
     } else if (level < 0 || level > 9) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("level must be 0 to 9",-1));
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("level should be 0 to 9",-1));
 	Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL", NULL);
 	Tcl_AddErrorInfo(interp, "\n    (in -level option)");
 	return TCL_ERROR;
@@ -2421,7 +2421,7 @@ ZlibPushSubcmd(
 	    }
 	    if (level < 0 || level > 9) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"level must be 0 to 9", -1));
+			"level should be 0 to 9", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "COMPRESSIONLEVEL",
 			NULL);
 		goto genericOptionError;
@@ -2433,7 +2433,7 @@ ZlibPushSubcmd(
 	    }
 	    if (limit < 1 || limit > MAX_BUFFER_SIZE) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"read ahead limit must be 1 to %d",
+			"read ahead limit should be 1 to %d",
 			MAX_BUFFER_SIZE));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", NULL);
 		goto genericOptionError;
@@ -2650,7 +2650,7 @@ ZlibStreamAddCmd(
 	case ao_buffer: /* -buffer */
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-buffer\" option must be followed by integer "
+			"\"-buffer\" option should be followed by integer "
 			"decompression buffersize", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		return TCL_ERROR;
@@ -2660,7 +2660,7 @@ ZlibStreamAddCmd(
 	    }
 	    if (buffersize < 1 || buffersize > MAX_BUFFER_SIZE) {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"buffer size must be 1 to %d",
+			"buffer size should be 1 to %d",
 			MAX_BUFFER_SIZE));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "BUFFERSIZE", NULL);
 		return TCL_ERROR;
@@ -2669,7 +2669,7 @@ ZlibStreamAddCmd(
 	case ao_dictionary:
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-dictionary\" option must be followed by"
+			"\"-dictionary\" option should be followed by"
 			" compression dictionary bytes", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		return TCL_ERROR;
@@ -2774,7 +2774,7 @@ ZlibStreamPutCmd(
 	case po_dictionary:
 	    if (i == objc-2) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"\"-dictionary\" option must be followed by"
+			"\"-dictionary\" option should be followed by"
 			" compression dictionary bytes", -1));
 		Tcl_SetErrorCode(interp, "TCL", "ZIP", "NOVAL", NULL);
 		return TCL_ERROR;
@@ -3164,7 +3164,7 @@ ZlibTransformSetOption(			/* not used */
 		flushType = Z_SYNC_FLUSH;
 	    } else {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			"unknown -flush type \"%s\": must be full or sync",
+			"bad -flush type \"%s\": should be full or sync",
 			value));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "FLUSH", NULL);
 		return TCL_ERROR;
@@ -3209,7 +3209,7 @@ ZlibTransformSetOption(			/* not used */
 		return TCL_ERROR;
 	    } else if (newLimit < 1 || newLimit > MAX_BUFFER_SIZE) {
 		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"-limit must be between 1 and 65536", -1));
+			"-limit should be between 1 and 65536", -1));
 		Tcl_SetErrorCode(interp, "TCL", "VALUE", "READLIMIT", NULL);
 		return TCL_ERROR;
 	    }

@@ -74,10 +74,10 @@ test lrange-2.2 {error conditions} {
 } {1 {wrong # args: should be "lrange list first last"}}
 test lrange-2.3 {error conditions} {
     list [catch {lrange a b 6} msg] $msg
-} {1 {bad index "b": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "b": should be integer?[+-]integer? or end?[+-]integer?}}
 test lrange-2.4 {error conditions} {
     list [catch {lrange a 0 enigma} msg] $msg
-} {1 {bad index "enigma": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "enigma": should be integer?[+-]integer? or end?[+-]integer?}}
 test lrange-2.5 {error conditions} {
     list [catch {lrange "a \{b c" 3 4} msg] $msg
 } {1 {unmatched open brace in list}}

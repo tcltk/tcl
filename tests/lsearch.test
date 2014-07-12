@@ -59,7 +59,7 @@ test lsearch-2.9 {search modes} {
 } 1
 test lsearch-2.10 {search modes} -returnCodes error -body {
     lsearch -glib {b.x bx xy bcx} b.x
-} -result {bad option "-glib": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
+} -result {bad option "-glib": should be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
 test lsearch-2.11 {search modes with -nocase} {
     lsearch -exact -nocase {a b c A B C} A
 } 0
@@ -87,16 +87,16 @@ test lsearch-3.2 {lsearch errors} -returnCodes error -body {
 } -result {wrong # args: should be "lsearch ?-option value ...? list pattern"}
 test lsearch-3.3 {lsearch errors} -returnCodes error -body {
     lsearch a b c
-} -result {bad option "a": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
+} -result {bad option "a": should be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
 test lsearch-3.4 {lsearch errors} -returnCodes error -body {
     lsearch a b c d
-} -result {bad option "a": must be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
+} -result {bad option "a": should be -all, -ascii, -bisect, -decreasing, -dictionary, -exact, -glob, -increasing, -index, -inline, -integer, -nocase, -not, -real, -regexp, -sorted, -start, or -subindices}
 test lsearch-3.5 {lsearch errors} -returnCodes error -body {
     lsearch "\{" b
 } -result {unmatched open brace in list}
 test lsearch-3.6 {lsearch errors} -returnCodes error -body {
     lsearch -index a b
-} -result {"-index" option must be followed by list index}
+} -result {"-index" option should be followed by list index}
 test lsearch-3.7 {lsearch errors} -returnCodes error -body {
     lsearch -subindices -exact a b
 } -result {-subindices cannot be used without -index option}
@@ -300,7 +300,7 @@ test lsearch-10.3 {offset searching} {
 } 3
 test lsearch-10.4 {offset searching} -returnCodes error -body {
     lsearch -start foobar {a b c a b c} a
-} -result {bad index "foobar": must be integer?[+-]integer? or end?[+-]integer?}
+} -result {bad index "foobar": should be integer?[+-]integer? or end?[+-]integer?}
 test lsearch-10.5 {offset searching} -returnCodes error -body {
     lsearch -start 1 2
 } -result {missing starting index}
@@ -456,7 +456,7 @@ test lsearch-20.1 {lsearch -index option, index larger than sublists} -body {
 } -returnCodes error -result {element 2 missing from sublist "a c"}
 test lsearch-20.2 {lsearch -index option, malformed index} -body {
     lsearch -index foo {{a c} {a b} {a a}} a
-} -returnCodes error -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?}
+} -returnCodes error -result {bad index "foo": should be integer?[+-]integer? or end?[+-]integer?}
 test lsearch-20.3 {lsearch -index option, malformed index} -body {
     lsearch -index \{ {{a c} {a b} {a a}} a
 } -returnCodes error -result {unmatched open brace in list}

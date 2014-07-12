@@ -18,7 +18,7 @@ test tm-1.1 {tm: path command exists} {
 } ::tcl::tm::path
 test tm-1.2 {tm: path command syntax} -returnCodes error -body {
     ::tcl::tm::path foo
-} -result {unknown or ambiguous subcommand "foo": must be add, list, or remove}
+} -result {unknown or ambiguous subcommand "foo": should be add, list, or remove}
 test tm-1.3 {tm: path command syntax} {
     ::tcl::tm::path add
 } {}

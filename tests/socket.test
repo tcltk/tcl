@@ -283,7 +283,7 @@ test socket_$af-1.7 {arg parsing for socket command} -constraints [list socket s
 } -returnCodes error -result {wrong # args: should be "socket ?-myaddr addr? ?-myport myport? ?-async? host port" or "socket -server command ?-myaddr addr? port"}
 test socket_$af-1.8 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -froboz
-} -returnCodes error -result {bad option "-froboz": must be -async, -myaddr, -myport, or -server}
+} -returnCodes error -result {bad option "-froboz": should be -async, -myaddr, -myport, or -server}
 test socket_$af-1.9 {arg parsing for socket command} -constraints [list socket supported_$af] -body {
     socket -server foo -myport 2521 3333
 } -returnCodes error -result {option -myport is not valid for servers}

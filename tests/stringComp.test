@@ -46,7 +46,7 @@ if {[testConstraint memory]} {
 test stringComp-1.1 {error conditions} {
     proc foo {} {string gorp a b}
     list [catch {foo} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": should be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test stringComp-1.2 {error conditions} {
     proc foo {} {string}
     list [catch {foo} msg] $msg
@@ -71,7 +71,7 @@ foreach {tname tbody tresult tcode} {
     } {wrong # args: should be "string compare ?-nocase? ?-length int? string1 string2"} {error}
     {bad args} {
 	string compare a b c
-    } {bad option "a": must be -length or -nocase} {error}
+    } {bad option "a": should be -length or -nocase} {error}
     {bad args} {
 	string compare -length -nocase str1 str2
     } {expected integer but got "-nocase"} {error}
@@ -229,7 +229,7 @@ test stringComp-4.1 {string first, too few args} {
 test stringComp-4.2 {string first, bad args} {
     proc foo {} {string first a b c}
     list [catch {foo} msg] $msg
-} {1 {bad index "c": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "c": should be integer?[+-]integer? or end?[+-]integer?}}
 test stringComp-4.3 {string first, too many args} {
     proc foo {} {string first a b 5 d}
     list [catch {foo} msg] $msg
@@ -306,7 +306,7 @@ test stringComp-5.6 {string index} {
 test stringComp-5.7 {string index} {
     proc foo {} {string index a xyz}
     list [catch {foo} msg] $msg
-} {1 {bad index "xyz": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "xyz": should be integer?[+-]integer? or end?[+-]integer?}}
 test stringComp-5.8 {string index} {
     proc foo {} {string index abc end}
     foo
@@ -561,7 +561,7 @@ test stringComp-11.29 {string match} {
 test stringComp-11.30 {string match, bad args} {
     proc foo {} {string match - b c}
     list [catch {foo} msg] $msg
-} {1 {bad option "-": must be -nocase}}
+} {1 {ambiguous option "-": should be -nocase}}
 test stringComp-11.31 {string match case} {
     proc foo {} {string match a A}
     foo

@@ -908,7 +908,7 @@ test namespace-20.1 {Tcl_NamespaceObjCmd, bad subcommand} {
 } {1 {wrong # args: should be "namespace subcommand ?arg ...?"}}
 test namespace-20.2 {Tcl_NamespaceObjCmd, bad subcommand} -body {
     namespace wombat {}
-} -returnCodes error -match glob -result {unknown or ambiguous subcommand "wombat": must be *}
+} -returnCodes error -match glob -result {unknown or ambiguous subcommand "wombat": should be *}
 test namespace-20.3 {Tcl_NamespaceObjCmd, abbreviations are okay} {
     namespace ch :: test_ns_*
 } {}
@@ -1025,7 +1025,7 @@ test namespace-25.1 {NamespaceEvalCmd, bad args} {
 } {1 {wrong # args: should be "namespace eval name arg ?arg...?"}}
 test namespace-25.2 {NamespaceEvalCmd, bad args} -body {
     namespace test_ns_1
-} -returnCodes error -match glob -result {unknown or ambiguous subcommand "test_ns_1": must be *}
+} -returnCodes error -match glob -result {unknown or ambiguous subcommand "test_ns_1": should be *}
 catch {unset v}
 test namespace-25.3 {NamespaceEvalCmd, new namespace} {
     set v 123
@@ -1530,7 +1530,7 @@ test namespace-42.3 {ensembles: basic} {
     lappend result [info command ns::x1]
     namespace delete ns
     lappend result [info command ns::x1]
-} {1 2 1 {unknown or ambiguous subcommand "x": must be x1, or x2} ::ns::x1 {}}
+} {1 2 1 {unknown or ambiguous subcommand "x": should be x1, or x2} ::ns::x1 {}}
 test namespace-42.4 {ensembles: basic} -body {
     namespace eval ns {
 	namespace export y*
@@ -1553,7 +1553,7 @@ test namespace-42.5 {ensembles: basic} -body {
     list [catch {ns x} msg] $msg
 } -cleanup {
     namespace delete ns
-} -result {1 {unknown or ambiguous subcommand "x": must be x1, x2, or x3}}
+} -result {1 {unknown or ambiguous subcommand "x": should be x1, x2, or x3}}
 test namespace-42.6 {ensembles: nested} -body {
     namespace eval ns {
 	namespace export x*
@@ -1613,7 +1613,7 @@ test namespace-43.1 {ensembles: dict-driven} {
     set result [list [catch {ns c} msg] $msg [namespace ensemble exists ns]]
     rename ns {}
     lappend result [namespace ensemble exists ns]
-} {1 {unknown or ambiguous subcommand "c": must be a, or b} 1 0}
+} {1 {unknown or ambiguous subcommand "c": should be a, or b} 1 0}
 test namespace-43.2 {ensembles: dict-driven} -body {
     namespace eval ns {
 	namespace export x*
@@ -1642,7 +1642,7 @@ test namespace-43.3 {ensembles: list-driven} -setup $SETUP -body {
 } -result {}
 test namespace-43.4 {ensembles: list-driven} -setup $SETUP -body {
     ns a foo bar boo spong wibble
-} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "a": must be b, or c}
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "a": should be b, or c}
 test namespace-43.5 {ensembles: list-driven} -setup $SETUP -body {
     ns b foo bar boo spong wibble
 } -cleanup {namespace delete ns} -result 2,5
@@ -1651,7 +1651,7 @@ test namespace-43.6 {ensembles: list-driven} -setup $SETUP -body {
 } -cleanup {namespace delete ns} -result 3,5
 test namespace-43.7 {ensembles: list-driven} -setup $SETUP -body {
     ns d foo bar boo spong wibble
-} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "d": must be b, or c}
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "d": should be b, or c}
 set SETUP {
     namespace eval ns {
 	namespace export a b
@@ -1667,7 +1667,7 @@ test namespace-43.8 {ensembles: list-and-map-driven} -setup $SETUP -body {
 } -result {}
 test namespace-43.9 {ensembles: list-and-map-driven} -setup $SETUP -body {
     ns a foo bar boo spong wibble
-} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "a": must be b, or c}
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "a": should be b, or c}
 test namespace-43.10 {ensembles: list-and-map-driven} -setup $SETUP -body {
     ns b foo bar boo spong wibble
 } -cleanup {namespace delete ns} -result 2,5
@@ -1676,7 +1676,7 @@ test namespace-43.11 {ensembles: list-and-map-driven} -setup $SETUP -body {
 } -cleanup {namespace delete ns} -result 4,5
 test namespace-43.12 {ensembles: list-and-map-driven} -setup $SETUP -body {
     ns d foo bar boo spong wibble
-} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "d": must be b, or c}
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown or ambiguous subcommand "d": should be b, or c}
 set SETUP {
     namespace eval ns {
 	namespace export *
@@ -1690,13 +1690,13 @@ test namespace-43.13 {ensembles: turn off prefixes} -setup $SETUP -body {
 } -result {}
 test namespace-43.14 {ensembles: turn off prefixes} -setup $SETUP -body {
     ns fo
-} -cleanup {namespace delete ns} -returnCodes error -result {unknown subcommand "fo": must be foo, or spong}
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown subcommand "fo": should be foo, or spong}
 test namespace-43.15 {ensembles: turn off prefixes} -setup $SETUP -body {
     ns foo
 } -cleanup {namespace delete ns} -result bar
 test namespace-43.16 {ensembles: turn off prefixes} -setup $SETUP -body {
     ns s
-} -cleanup {namespace delete ns} -returnCodes error -result {unknown subcommand "s": must be foo, or spong}
+} -cleanup {namespace delete ns} -returnCodes error -result {unknown subcommand "s": should be foo, or spong}
 test namespace-43.17 {ensembles: turn off prefixes} -setup $SETUP -body {
     ns spong
 } -cleanup {namespace delete ns} -result wibble
@@ -1706,7 +1706,7 @@ test namespace-44.1 {ensemble: errors} {
 } {1 {wrong # args: should be "namespace ensemble subcommand ?arg ...?"}}
 test namespace-44.2 {ensemble: errors} {
     list [catch {namespace ensemble ?} msg] $msg
-} {1 {bad subcommand "?": must be configure, create, or exists}}
+} {1 {bad subcommand "?": should be configure, create, or exists}}
 test namespace-44.3 {ensemble: errors} {
     namespace eval ns {
 	list [catch {namespace ensemble create -map x} msg] $msg
@@ -1716,7 +1716,7 @@ test namespace-44.4 {ensemble: errors} {
     namespace eval ns {
 	list [catch {namespace ensemble create -map {x {}}} msg] $msg
     }
-} {1 {ensemble subcommand implementations must be non-empty lists}}
+} {1 {ensemble subcommand implementations should be non-empty lists}}
 test namespace-44.5 {ensemble: errors} -setup {
     namespace ensemble create -command foobar -subcommands {foobarcget foobarconfigure}
 } -body {
@@ -1780,7 +1780,7 @@ test namespace-46.2 {ensemble: ensembles really use current export list} {
     catch {ns ?} msg; lappend result $msg
     namespace delete ns
     set result
-} {{unknown or ambiguous subcommand "?": must be x1} {unknown or ambiguous subcommand "?": must be x1, or x2} {unknown or ambiguous subcommand "?": must be x2}}
+} {{unknown or ambiguous subcommand "?": should be x1} {unknown or ambiguous subcommand "?": should be x1, or x2} {unknown or ambiguous subcommand "?": should be x2}}
 test namespace-46.3 {ensemble: implementation errors} {
     namespace eval ns {
 	variable count 0
@@ -1857,7 +1857,7 @@ test namespace-46.9 {ensemble: configuring really configures things} {
     lappend result [catch {ns x} msg] $msg
     namespace delete ns
     set result
-} {1 {unknown subcommand "x": must be a} 1 {unknown subcommand "x": must be b}}
+} {1 {unknown subcommand "x": should be a} 1 {unknown subcommand "x": should be b}}
 
 test namespace-47.1 {ensemble: unknown handler} {
     set log {}
@@ -1920,7 +1920,7 @@ test namespace-47.3 {ensemble: unknown handler} {
 	namespace ensemble create -unknown ::ns::Magic
     }
     list [catch {ns spong} msg] $msg $ns::count [namespace delete ns]
-} {1 {unknown or ambiguous subcommand "spong": must be a, b, or c} 1 {}}
+} {1 {unknown or ambiguous subcommand "spong": should be a, b, or c} 1 {}}
 test namespace-47.4 {ensemble: unknown handler} {
     namespace eval ns {
 	namespace export {[a-z]*}
@@ -2762,7 +2762,7 @@ test namespace-53.3 {ensembles: parameters} -setup {
 } -result\
    {{1 x2} {2 x1}\
     1 {wrong # args: should be "ns param1 subcommand ?arg ...?"}\
-    1 {unknown or ambiguous subcommand "x": must be x1, or x2}\
+    1 {unknown or ambiguous subcommand "x": should be x1, or x2}\
     ::ns::x1 {}}
 test namespace-53.4 {ensembles: parameters} -setup {
     namespace eval ns {
@@ -2799,9 +2799,9 @@ test namespace-53.5 {ensembles: parameters} -setup {
 } -cleanup {
     namespace delete ns
 } -result\
-   {1 {unknown or ambiguous subcommand "x": must be x1, x2, or x3}\
+   {1 {unknown or ambiguous subcommand "x": should be x1, x2, or x3}\
     0 {1 x}\
-    1 {unknown or ambiguous subcommand "x": must be x1, x2, or x3}\
+    1 {unknown or ambiguous subcommand "x": should be x1, x2, or x3}\
     0 {1 x}}
 test namespace-53.6 {ensembles: nested} -setup {
     namespace eval ns {
@@ -2867,7 +2867,7 @@ test namespace-53.8 {ensemble: unknown handler changing -parameters} -setup {
 } -result\
    {0 {1 x2} {}\
     0 {1 x2} p1\
-    1 {unknown or ambiguous subcommand "x2": must be x1} {}}
+    1 {unknown or ambiguous subcommand "x2": should be x1} {}}
 test namespace-53.9 {ensemble: unknown handler changing -parameters,\
   thereby eating all args} -setup {
     namespace eval ns {

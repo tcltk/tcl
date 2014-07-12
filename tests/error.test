@@ -326,10 +326,10 @@ test error-8.8 {throw syntax checks} -returnCodes error -body {
 } -result {unmatched open brace in list}
 test error-8.9 {throw syntax checks} -returnCodes error -body {
     throw {} foo
-} -result {type must be non-empty list}
+} -result {type should be non-empty list}
 test error-8.10 {Bug 33b7abb8a2: throw stack usage} -returnCodes error -body {
     apply {code {throw $code foo}} {}
-} -result {type must be non-empty list}
+} -result {type should be non-empty list}
 test error-8.11 {Bug 7174354ecb: throw error message} -returnCodes error  -body {
     throw {not {}a list} x[]y
 } -result {list element in braces followed by "a" instead of space}
@@ -1130,10 +1130,10 @@ rename addmsg {}
 
 test error-20.1 {bad code name in on handler} -body {
     try { list a b c } on err {} {}
-} -returnCodes error -match glob -result {bad completion code "err": must be ok, error, return, break, continue*, or an integer}
+} -returnCodes error -match glob -result {bad completion code "err": should be ok, error, return, break, continue*, or an integer}
 test error-20.2 {bad code value in on handler} -body {
     try { list a b c } on 34985723094872345 {} {}
-} -returnCodes error -match glob -result {bad completion code "34985723094872345": must be ok, error, return, break, continue*, or an integer}
+} -returnCodes error -match glob -result {bad completion code "34985723094872345": should be ok, error, return, break, continue*, or an integer}
 
 test error-21.1 {memory leaks in try: Bug 2910044} memory {
     leaktest {

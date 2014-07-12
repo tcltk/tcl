@@ -22,7 +22,7 @@ test chan-1.1 {chan command general syntax} -body {
 } -returnCodes error -result "wrong # args: should be \"chan subcommand ?arg ...?\""
 test chan-1.2 {chan command general syntax} -body {
     chan FOOBAR
-} -returnCodes error -match glob -result "unknown or ambiguous subcommand \"FOOBAR\": must be *"
+} -returnCodes error -match glob -result "unknown or ambiguous subcommand \"FOOBAR\": should be *"
 
 test chan-2.1 {chan command: blocked subcommand} -body {
     chan blocked foo bar
@@ -36,14 +36,14 @@ test chan-3.2 {chan command: close subcommand} -setup {
     chan close $chan bar
 } -cleanup {
     close $chan
-} -returnCodes error -result "bad direction \"bar\": must be read or write"
+} -returnCodes error -result "bad direction \"bar\": should be read or write"
 test chan-3.3 {chan command: close subcommand} -setup {
     set chan [open [info script] r]
 } -body {
     chan close $chan write
 } -cleanup {
     close $chan
-} -returnCodes error -result "Half-close of write-side not possible, side not opened or already closed"
+} -returnCodes error -result "half-close of write-side not possible, side not opened or already closed"
 test chan-4.1 {chan command: configure subcommand} -body {
     chan configure
 } -returnCodes error -result "wrong # args: should be \"chan configure channelId ?-option value ...?\""
@@ -133,7 +133,7 @@ test chan-16.3 {chan command: pending subcommand} -body {
 } -returnCodes error -result "wrong # args: should be \"chan pending mode channelId\""
 test chan-16.4 {chan command: pending subcommand} -body {
     chan pending {input output} stdout
-} -returnCodes error -result "bad mode \"input output\": must be input or output"
+} -returnCodes error -result "bad mode \"input output\": should be input or output"
 test chan-16.5 {chan command: pending input subcommand} -body {
     chan pending input stdout 
 } -result -1

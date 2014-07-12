@@ -248,7 +248,7 @@ test winDde-5.4 {DDE eval bad arguments} -constraints dde -body {
 
 test winDde-6.1 {DDE servername bad arguments} -constraints dde -body {
     dde servername -z -z -z
-} -returnCodes error -result {bad option "-z": must be -force, -handler, or --}
+} -returnCodes error -result {bad option "-z": should be -force, -handler, or --}
 test winDde-6.2 {DDE servername set name} -constraints dde -body {
     dde servername -- winDde-6.2
 } -result {winDde-6.2}

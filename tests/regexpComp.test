@@ -326,7 +326,7 @@ test regexpComp-6.3 {regexp errors} {
     evalInProc {
 	list [catch {regexp -gorp a} msg] $msg
     }
-} {1 {bad option "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
+} {1 {bad option "-gorp": should be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
 test regexpComp-6.4 {regexp errors} {
     evalInProc {
 	list [catch {regexp a( b} msg] $msg
@@ -358,7 +358,7 @@ test regexpComp-6.9 {regexp errors, -start bad int check} {
     evalInProc {
 	list [catch {regexp -start bogus {^$} {}} msg] $msg
     }
-} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "bogus": should be integer?[+-]integer? or end?[+-]integer?}}
 
 test regexpComp-7.1 {basic regsub operation} {
     evalInProc {
@@ -582,7 +582,7 @@ test regexpComp-11.5 {regsub errors} {
     evalInProc {
 	list [catch {regsub -gorp a b c} msg] $msg
     }
-} {1 {bad option "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
+} {1 {bad option "-gorp": should be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
 test regexpComp-11.6 {regsub errors} {
     evalInProc {
 	list [catch {regsub -nocase a( b c d} msg] $msg
@@ -599,7 +599,7 @@ test regexpComp-11.8 {regsub errors, -start bad int check} {
     evalInProc {
 	list [catch {regsub -start bogus pattern string rep var} msg] $msg
     }
-} {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "bogus": should be integer?[+-]integer? or end?[+-]integer?}}
 
 # This test crashes on the Mac unless you increase the Stack Space to about 1
 # Meg.  This is probably bigger than most users want... 

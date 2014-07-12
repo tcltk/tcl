@@ -40,7 +40,7 @@ test lrepeat-1.4 {error cases} {
 	lrepeat -3 1
     }
     -returnCodes 1
-    -result {bad count "-3": must be integer >= 0} 
+    -result {bad count "-3": should be integer >= 0} 
 }
 test lrepeat-1.5 {Accept zero repetitions (TIP 323)} {
     -body {

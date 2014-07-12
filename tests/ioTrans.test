@@ -111,7 +111,7 @@ test iortrans-1.0 {chan, wrong#args} -returnCodes error -body {
 } -result {wrong # args: should be "chan subcommand ?arg ...?"}
 test iortrans-1.1 {chan, unknown method} -returnCodes error -body {
     chan foo
-} -match glob -result {unknown or ambiguous subcommand "foo": must be*}
+} -match glob -result {unknown or ambiguous subcommand "foo": should be*}
 
 # --- --- --- --------- --------- ---------
 # chan push, and method "initalize"
@@ -181,14 +181,14 @@ test iortrans-2.10 {chan push, initialize failed, bad result, bogus method name}
 } -returnCodes error -cleanup {
     tempdone
     rename foo {}
-} -match glob -result {*bad method "1": must be *}
+} -match glob -result {*bad method "1": should be *}
 test iortrans-2.11 {chan push, initialize failed, bad result, bogus method name} -body {
     proc foo {args} {return {a b c}}
     chan push [tempchan] foo
 } -returnCodes error -cleanup {
     tempdone
     rename foo {}
-} -match glob -result {*bad method "c": must be *}
+} -match glob -result {*bad method "c": should be *}
 test iortrans-2.12 {chan push, initialize failed, bad result, required methods missing} -body {
     # Required: initialize, and finalize.
     proc foo {args} {return {initialize}}
@@ -203,7 +203,7 @@ test iortrans-2.13 {chan push, initialize failed, bad result, illegal method nam
 } -returnCodes error -cleanup {
     tempdone
     rename foo {}
-} -match glob -result {*returned bad method "BOGUS": must be clear, drain, finalize, flush, initialize, limit?, read, or write}
+} -match glob -result {*returned bad method "BOGUS": should be clear, drain, finalize, flush, initialize, limit?, read, or write}
 test iortrans-2.14 {chan push, initialize failed, bad result, mode/handler mismatch} -body {
     proc foo {args} {return {initialize finalize}}
     chan push [tempchan] foo

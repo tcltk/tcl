@@ -119,7 +119,7 @@ TesteventloopCmd(
 	framePtr = oldFramePtr;
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be done or wait", NULL);
+		"\": should be done or wait", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;

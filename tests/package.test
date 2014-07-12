@@ -45,7 +45,7 @@ test package-1.5 {pkg::create gives error on no version given} -body {
 } -returnCodes error -match glob -result {value for "-version" missing: *}
 test package-1.6 {pkg::create gives error on no source or load options} -body {
     ::pkg::create -name foo -version 1.0 -version 2.0
-} -returnCodes error -result {at least one of -load and -source must be given}
+} -returnCodes error -result {at least one of -load and -source should be given}
 test package-1.7 {pkg::create gives correct output for 1 direct source} {
     ::pkg::create -name foo -version 1.0 -source test.tcl
 } {package ifneeded foo 1.0 [list source [file join $dir test.tcl]]}
@@ -826,7 +826,7 @@ test package-4.52 {Tcl_PackageCmd procedure, "vsatisfies" option} {
 } {0}
 test package-4.53 {Tcl_PackageCmd procedure, "versions" option} -body {
     package foo
-} -returnCodes error -result {bad option "foo": must be forget, ifneeded, names, prefer, present, provide, require, unknown, vcompare, versions, or vsatisfies}
+} -returnCodes error -result {bad option "foo": should be forget, ifneeded, names, prefer, present, provide, require, unknown, vcompare, versions, or vsatisfies}
 test package-4.54 {Tcl_PackageCmd procedure, "vsatisfies" option} -body {
     package vsatisfies 2.1 2.1-3.2-4.5
 } -returnCodes error -result {expected versionMin-versionMax but got "2.1-3.2-4.5"}
@@ -1248,7 +1248,7 @@ test package-14.0 {wrong\#args} -returnCodes error -body {
 } -result {wrong # args: should be "package prefer ?latest|stable?"}
 test package-14.1 {bogus argument} -returnCodes error -body {
     package prefer foo
-} -result {bad preference "foo": must be latest or stable}
+} -result {bad preference "foo": should be latest or stable}
 
 test package-15.0 {set, keep} {package prefer stable} stable
 test package-15.1 {set stable, keep} {prefer stable} {stable stable}

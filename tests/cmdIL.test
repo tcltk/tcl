@@ -25,7 +25,7 @@ test cmdIL-1.1 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
 } -result {wrong # args: should be "lsort ?-option value ...? list"}
 test cmdIL-1.2 {Tcl_LsortObjCmd procedure} -returnCodes error -body {
     lsort -foo {1 3 2 5}
-} -result {bad option "-foo": must be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -nocase, -real, -stride, or -unique}
+} -result {bad option "-foo": should be -ascii, -command, -decreasing, -dictionary, -increasing, -index, -indices, -integer, -nocase, -real, -stride, or -unique}
 test cmdIL-1.3 {Tcl_LsortObjCmd procedure, default options} {
     lsort {d e c b a \{ d35 d300}
 } {a b c d d300 d35 e \{}
@@ -34,7 +34,7 @@ test cmdIL-1.4 {Tcl_LsortObjCmd procedure, -ascii option} {
 } {a b c d d300 d35 e}
 test cmdIL-1.5 {Tcl_LsortObjCmd procedure, -command option} -body {
     lsort -command {1 3 2 5}
-} -returnCodes error -result {"-command" option must be followed by comparison command}
+} -returnCodes error -result {"-command" option should be followed by comparison command}
 test cmdIL-1.6 {Tcl_LsortObjCmd procedure, -command option} -setup {
     proc cmp {a b} {
 	expr {[string match x* $b] - [string match x* $a]}
@@ -58,10 +58,10 @@ test cmdIL-1.10 {Tcl_LsortObjCmd procedure, -increasing option} {
 } {a b c d d300 d35 e}
 test cmdIL-1.11 {Tcl_LsortObjCmd procedure, -index option} -body {
     lsort -index {1 3 2 5}
-} -returnCodes error -result {"-index" option must be followed by list index}
+} -returnCodes error -result {"-index" option should be followed by list index}
 test cmdIL-1.12 {Tcl_LsortObjCmd procedure, -index option} -body {
     lsort -index foo {1 3 2 5}
-} -returnCodes error -result {bad index "foo": must be integer?[+-]integer? or end?[+-]integer?}
+} -returnCodes error -result {bad index "foo": should be integer?[+-]integer? or end?[+-]integer?}
 test cmdIL-1.13 {Tcl_LsortObjCmd procedure, -index option} {
     lsort -index end -integer {{2 25} {10 20 50 100} {3 16 42} 1}
 } {1 {2 25} {3 16 42} {10 20 50 100}}
@@ -134,13 +134,13 @@ test cmdIL-1.32 {lsort -stride errors} -returnCodes error -body {
 } -result {expected integer but got "foo"}
 test cmdIL-1.33 {lsort -stride errors} -returnCodes error -body {
     lsort -stride 1 bar
-} -result {stride length must be at least 2}
+} -result {stride length should be at least 2}
 test cmdIL-1.34 {lsort -stride errors} -returnCodes error -body {
     lsort -stride 2 {a b c}
-} -result {list size must be a multiple of the stride length}
+} -result {list size should be a multiple of the stride length}
 test cmdIL-1.35 {lsort -stride errors} -returnCodes error -body {
     lsort -stride 2 -index 3 {a b c d}
-} -result {when used with "-stride", the leading "-index" value must be within the group}
+} -result {when used with "-stride", the leading "-index" value should be within the group}
 test cmdIL-1.36 {lsort -stride and -index: Bug 2918962} {
     lsort -stride 2 -index {0 1} {
 	{{c o d e} 54321} {{b l a h} 94729}

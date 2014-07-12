@@ -909,12 +909,12 @@ TestasyncCmd(
         Tcl_MutexUnlock(&asyncTestMutex);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, int, mark, or marklater", NULL);
+		"\": should be create, delete, int, mark, or marklater", NULL);
 	return TCL_ERROR;
 #else /* !TCL_THREADS */
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, int, or mark", NULL);
+		"\": should be create, delete, int, or mark", NULL);
 	return TCL_ERROR;
 #endif
     }
@@ -1087,7 +1087,7 @@ TestcmdinfoCmd(
 	}
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, get, or modify", NULL);
+		"\": should be create, delete, get, or modify", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1192,7 +1192,7 @@ TestcmdtokenCmd(
 	Tcl_DecrRefCount(objPtr);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create or name", NULL);
+		"\": should be create or name", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1300,7 +1300,7 @@ TestcmdtraceCmd(
 	Tcl_DStringFree(&buffer);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be tracetest, deletetest, doubletest or resulttest", NULL);
+		"\": should be tracetest, deletetest, doubletest or resulttest", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1436,7 +1436,7 @@ TestcreatecommandCmd(
 	Tcl_DeleteCommand(interp, "value:at:");
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create, delete, create2, or delete2", NULL);
+		"\": should be create, delete, create2, or delete2", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1833,7 +1833,7 @@ TestdstringCmd(
 	    Tcl_SetResult(interp, s, SpecialFree);
 	} else {
 	    Tcl_AppendResult(interp, "bad gresult option \"", argv[2],
-		    "\": must be staticsmall, staticlarge, free, or special",
+		    "\": should be staticsmall, staticlarge, free, or special",
 		    NULL);
 	    return TCL_ERROR;
 	}
@@ -1864,7 +1864,7 @@ TestdstringCmd(
 	Tcl_DStringStartSublist(&dstring);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be append, element, end, free, get, length, "
+		"\": should be append, element, end, free, get, length, "
 		"result, trunc, or start", NULL);
 	return TCL_ERROR;
     }
@@ -2072,7 +2072,7 @@ TestevalexObjCmd(
 	const char *global = Tcl_GetStringFromObj(objv[2], &length);
 	if (strcmp(global, "global") != 0) {
 	    Tcl_AppendResult(interp, "bad value \"", global,
-		    "\": must be global", NULL);
+		    "\": should be global", NULL);
 	    return TCL_ERROR;
 	}
 	flags = TCL_EVAL_GLOBAL;
@@ -2355,7 +2355,7 @@ TestexithandlerCmd(
 		(ClientData) INT2PTR(value));
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be create or delete", NULL);
+		"\": should be create or delete", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -5813,7 +5813,7 @@ TestChannelEventCmd(
 	    mask = 0;
 	} else {
 	    Tcl_AppendResult(interp, "bad event name \"", argv[3],
-		    "\": must be readable, writable, or none", NULL);
+		    "\": should be readable, writable, or none", NULL);
 	    return TCL_ERROR;
 	}
 
@@ -5844,7 +5844,7 @@ TestChannelEventCmd(
 	}
 	if (index < 0) {
 	    Tcl_AppendResult(interp, "bad event index: ", argv[3],
-		    ": must be nonnegative", NULL);
+		    ": should be nonnegative", NULL);
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
@@ -5932,7 +5932,7 @@ TestChannelEventCmd(
 	}
 	if (index < 0) {
 	    Tcl_AppendResult(interp, "bad event index: ", argv[3],
-		    ": must be nonnegative", NULL);
+		    ": should be nonnegative", NULL);
 	    return TCL_ERROR;
 	}
 	for (i = 0, esPtr = statePtr->scriptRecordPtr;
@@ -5954,7 +5954,7 @@ TestChannelEventCmd(
 	    mask = 0;
 	} else {
 	    Tcl_AppendResult(interp, "bad event name \"", argv[4],
-		    "\": must be readable, writable, or none", NULL);
+		    "\": should be readable, writable, or none", NULL);
 	    return TCL_ERROR;
 	}
 	esPtr->mask = mask;
@@ -5962,7 +5962,7 @@ TestChannelEventCmd(
 		TclChannelEventScriptInvoker, (ClientData) esPtr);
 	return TCL_OK;
     }
-    Tcl_AppendResult(interp, "bad command ", cmd, ", must be one of "
+    Tcl_AppendResult(interp, "bad command ", cmd, ", should be one of "
 	    "add, delete, list, set, or removeall", NULL);
     return TCL_ERROR;
 }

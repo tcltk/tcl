@@ -2734,7 +2734,7 @@ test binary-74.9 {binary encode uuencode} -body {
 }
 test binary-74.10 {binary encode uuencode} -returnCodes error -body {
     binary encode uuencode -foo 30 abcabcabc
-} -result {bad option "-foo": must be -maxlen or -wrapchar}
+} -result {bad option "-foo": should be -maxlen or -wrapchar}
 test binary-74.11 {binary encode uuencode} -returnCodes error -body {
     binary encode uuencode -maxlen 1 abcabcabc
 } -result {line length out of range}

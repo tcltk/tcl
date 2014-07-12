@@ -2581,7 +2581,7 @@ TclCompileThrowCmd(
 	OP(			POP);
 	OP(			POP);
     issueErrorForEmptyCode:
-	PUSH(			"type must be non-empty list");
+	PUSH(			"type should be non-empty list");
 	PUSH(			"-errorcode {TCL OPERATION THROW BADEXCEPTION}");
     }
     OP44(			RETURN_IMM, TCL_ERROR, 0);

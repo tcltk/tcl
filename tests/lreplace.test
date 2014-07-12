@@ -108,13 +108,13 @@ test lreplace-2.2 {lreplace errors} {
 } {1 {wrong # args: should be "lreplace list first last ?element ...?"}}
 test lreplace-2.3 {lreplace errors} {
     list [catch {lreplace x a 10} msg] $msg
-} {1 {bad index "a": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "a": should be integer?[+-]integer? or end?[+-]integer?}}
 test lreplace-2.4 {lreplace errors} {
     list [catch {lreplace x 10 x} msg] $msg
-} {1 {bad index "x": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "x": should be integer?[+-]integer? or end?[+-]integer?}}
 test lreplace-2.5 {lreplace errors} {
     list [catch {lreplace x 10 1x} msg] $msg
-} {1 {bad index "1x": must be integer?[+-]integer? or end?[+-]integer?}}
+} {1 {bad index "1x": should be integer?[+-]integer? or end?[+-]integer?}}
 test lreplace-2.6 {lreplace errors} {
     list [catch {lreplace x 3 2} msg] $msg
 } {1 {list doesn't contain element 3}}

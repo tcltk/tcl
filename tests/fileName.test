@@ -701,7 +701,7 @@ test filename-11.1 {Tcl_GlobCmd} -returnCodes error -body {
 } -result {no files matched glob patterns ""}
 test filename-11.2 {Tcl_GlobCmd} -returnCodes error -body {
     glob -gorp
-} -result {bad option "-gorp": must be -directory, -join, -nocomplain, -path, -tails, -types, or --}
+} -result {bad option "-gorp": should be -directory, -join, -nocomplain, -path, -tails, -types, or --}
 test filename-11.3 {Tcl_GlobCmd} -body {
     glob -nocomplai
 } -result {}
@@ -1014,11 +1014,11 @@ test filename-11.34 {Tcl_GlobCmd} -returnCodes error -body {
 } -result {missing argument to "-directory"}
 test filename-11.35 {Tcl_GlobCmd} -returnCodes error -body {
     glob -paths *
-} -result {bad option "-paths": must be -directory, -join, -nocomplain, -path, -tails, -types, or --}
+} -result {bad option "-paths": should be -directory, -join, -nocomplain, -path, -tails, -types, or --}
 # Test '-tails' flag to glob.
 test filename-11.36 {Tcl_GlobCmd} -returnCodes error -body {
     glob -tails *
-} -result {"-tails" must be used with either "-directory" or "-path"}
+} -result {"-tails" should be used with either "-directory" or "-path"}
 test filename-11.37 {Tcl_GlobCmd} {
     glob -type d -tails -path $globname *
 } [list $globname]
@@ -1043,7 +1043,7 @@ test filename-11.42 {Tcl_GlobCmd} -body {
 } -match compareWords -result equal
 test filename-11.43 {Tcl_GlobCmd} -returnCodes error -body {
     glob -t *
-} -result {ambiguous option "-t": must be -directory, -join, -nocomplain, -path, -tails, -types, or --}
+} -result {ambiguous option "-t": should be -directory, -join, -nocomplain, -path, -tails, -types, or --}
 test filename-11.44 {Tcl_GlobCmd} -returnCodes error -body {
     glob -tails -path hello -directory hello *
 } -result {"-directory" cannot be used with "-path"}

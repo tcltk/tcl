@@ -196,7 +196,7 @@ test fCmd-2.1 {TclFileCopyCmd} -constraints {notRoot} -setup {
 
 test fCmd-3.1 {FileCopyRename: FileForceOption fails} -constraints {notRoot} -body {
     file rename -xyz
-} -returnCodes error -result {bad option "-xyz": must be -force or --}
+} -returnCodes error -result {bad option "-xyz": should be -force or --}
 test fCmd-3.2 {FileCopyRename: not enough args} -constraints {notRoot} -body {
     file rename xyz
 } -returnCodes error -result {wrong # args: should be "file rename ?-option value ...? source ?source ...? target"}
@@ -394,7 +394,7 @@ test fCmd-4.16 {TclFileMakeDirsCmd: TclpCreateDirectory succeeds} -setup {
 
 test fCmd-5.1 {TclFileDeleteCmd: FileForceOption fails} -constraints {notRoot} -body {
     file delete -xyz
-} -returnCodes error -result {bad option "-xyz": must be -force or --}
+} -returnCodes error -result {bad option "-xyz": should be -force or --}
 test fCmd-5.2 {TclFileDeleteCmd: accept 0 files (TIP 323)} -body {
     file delete -force -force
 } -result {}
@@ -736,7 +736,7 @@ test fCmd-7.4 {FileForceOption: bad option} -constraints {notRoot} -setup {
     file delete -tf1
 } -returnCodes error -cleanup {
     file delete -- -tf1
-} -result {bad option "-tf1": must be -force or --}
+} -result {bad option "-tf1": should be -force or --}
 test fCmd-7.5 {FileForceOption: multiple times through loop} -setup {
     cleanup
 } -constraints {notRoot} -returnCodes error -body {
@@ -2324,10 +2324,10 @@ test fCmd-28.2 {file link} -returnCodes error -body {
 } -result {wrong # args: should be "file link ?-linktype? linkname ?target?"}
 test fCmd-28.3 {file link} -returnCodes error -body {
     file link abc b c
-} -result {bad option "abc": must be -symbolic or -hard}
+} -result {bad option "abc": should be -symbolic or -hard}
 test fCmd-28.4 {file link} -returnCodes error -body {
     file link -abc b c
-} -result {bad option "-abc": must be -symbolic or -hard}
+} -result {bad option "-abc": should be -symbolic or -hard}
 cd [workingDirectory]
 makeDirectory abc.dir
 makeDirectory abc2.dir

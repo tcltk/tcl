@@ -546,7 +546,7 @@ TclOO_Object_Unknown(
 	return TCL_ERROR;
     }
 
-    errorMsg = Tcl_ObjPrintf("unknown method \"%s\": must be ",
+    errorMsg = Tcl_ObjPrintf("unknown method \"%s\": should be ",
 	    TclGetString(objv[skip]));
     for (i=0 ; i<numMethodNames-1 ; i++) {
 	if (i) {

@@ -45,10 +45,10 @@ test registry-1.1b {argument parsing for registry command} {win reg} {
 } {1 {wrong # args: should be "registry ?-32bit|-64bit? option ?arg ...?"}}
 test registry-1.2 {argument parsing for registry command} {win reg} {
     list [catch {registry foo} msg] $msg
-} {1 {bad option "foo": must be broadcast, delete, get, keys, set, type, or values}}
+} {1 {bad option "foo": should be broadcast, delete, get, keys, set, type, or values}}
 test registry-1.2a {argument parsing for registry command} {win reg} {
     list [catch {registry -33bit foo} msg] $msg
-} {1 {bad mode "-33bit": must be -32bit or -64bit}}
+} {1 {bad mode "-33bit": should be -32bit or -64bit}}
 
 test registry-1.3 {argument parsing for registry command} {win reg} {
     list [catch {registry d} msg] $msg
@@ -157,7 +157,7 @@ test registry-1.23 {argument parsing for registry command} {win reg} {
 
 test registry-2.1 {DeleteKey: bad key} {win reg} {
     list [catch {registry delete foo} msg] $msg
-} {1 {bad root name "foo": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
+} {1 {bad root name "foo": should be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}}
 test registry-2.2 {DeleteKey: bad key} {win reg} {
     list [catch {registry delete HKEY_CLASSES_ROOT} msg] $msg
 } {1 {bad key: cannot delete root keys}}
@@ -600,19 +600,19 @@ test registry-9.2 {ParseKeyName: bad keys} -constraints {win reg} -body {
 } -returnCodes error -result {bad key "\foobar": must start with a valid root}
 test registry-9.3 {ParseKeyName: bad keys} -constraints {win reg} -body {
     registry values \\\\
-} -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
+} -returnCodes error -result {bad root name "": should be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
 test registry-9.4 {ParseKeyName: bad keys} -constraints {win reg} -body {
     registry values \\\\\\
-} -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
+} -returnCodes error -result {bad root name "": should be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
 test registry-9.5 {ParseKeyName: bad keys} -constraints {win reg english nt} -body {
     registry values \\\\\\HKEY_CLASSES_ROOT
 } -returnCodes error -result {unable to open key: The network address is invalid.}
 test registry-9.6 {ParseKeyName: bad keys} -constraints {win reg} -body {
     registry values \\\\gaspode
-} -returnCodes error -result {bad root name "": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
+} -returnCodes error -result {bad root name "": should be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
 test registry-9.7 {ParseKeyName: bad keys} -constraints {win reg} -body {
     registry values foobar
-} -returnCodes error -result {bad root name "foobar": must be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
+} -returnCodes error -result {bad root name "foobar": should be HKEY_LOCAL_MACHINE, HKEY_USERS, HKEY_CLASSES_ROOT, HKEY_CURRENT_USER, HKEY_CURRENT_CONFIG, HKEY_PERFORMANCE_DATA, or HKEY_DYN_DATA}
 test registry-9.8 {ParseKeyName: null keys} -constraints {win reg} -body {
     registry delete HKEY_CLASSES_ROOT\\
 } -returnCodes error -result {bad key: cannot delete root keys}

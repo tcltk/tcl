@@ -318,7 +318,7 @@ TestfilehandlerCmd(
 	Tcl_DoOneEvent(TCL_WINDOW_EVENTS|TCL_DONT_WAIT);
     } else {
 	Tcl_AppendResult(interp, "bad option \"", argv[1],
-		"\": must be close, clear, counts, create, empty, fill, "
+		"\": should be close, clear, counts, create, empty, fill, "
 		"fillpartial, oneevent, wait, or windowevent", NULL);
 	return TCL_ERROR;
     }
@@ -387,7 +387,7 @@ TestfilewaitCmd(
 	mask = TCL_WRITABLE|TCL_READABLE;
     } else {
 	Tcl_AppendResult(interp, "bad argument \"", argv[2],
-		"\": must be readable, writable, or both", NULL);
+		"\": should be readable, writable, or both", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetChannelHandle(channel,

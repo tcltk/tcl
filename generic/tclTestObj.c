@@ -379,7 +379,7 @@ TestbooleanobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, or not", NULL);
+		"\": should be set, get, or not", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -498,7 +498,7 @@ TestdoubleobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, mult10, or div10", NULL);
+		"\": should be set, get, mult10, or div10", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -805,7 +805,7 @@ TestintobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be set, get, get2, mult10, or div10", NULL);
+		"\": should be set, get, get2, mult10, or div10", NULL);
 	return TCL_ERROR;
     }
     return TCL_OK;
@@ -1105,7 +1105,7 @@ TestobjCmd(
     } else {
 	Tcl_AppendStringsToObj(Tcl_GetObjResult(interp),
 		"bad option \"", Tcl_GetString(objv[1]),
-		"\": must be assign, convert, duplicate, freeallvars, "
+		"\": should be assign, convert, duplicate, freeallvars, "
 		"newobj, objcount, objtype, refcount, type, or types", NULL);
 	return TCL_ERROR;
     }
