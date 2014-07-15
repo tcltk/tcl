@@ -2910,6 +2910,10 @@ ZlibTransformClose(
      * Release all memory.
      */
 
+    if (cd->compDictObj) {
+	Tcl_DecrRefCount(cd->compDictObj);
+	cd->compDictObj = NULL;
+    }
     Tcl_DStringFree(&cd->decompressed);
 
     if (cd->inBuffer) {
