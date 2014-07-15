@@ -626,14 +626,14 @@ declare 156 {
 declare 157 {
     Var *TclVarTraceExists(Tcl_Interp *interp, const char *varName)
 }
-# REMOVED - use public Tcl_SetStartupScript()
-#declare 158 {
-#    void TclSetStartupScriptFileName(const char *filename)
-#}
-# REMOVED - use public Tcl_GetStartupScript()
-#declare 159 {
-#    const char *TclGetStartupScriptFileName(void)
-#}
+# REMOVED (except from stub table) - use public Tcl_SetStartupScript()
+declare 158 {
+    void TclSetStartupScriptFileName(const char *filename)
+}
+# REMOVED (except from stub table) - use public Tcl_GetStartupScript()
+declare 159 {
+    const char *TclGetStartupScriptFileName(void)
+}
 #declare 160 {
 #    int TclpMatchFilesTypes(Tcl_Interp *interp, char *separators,
 #	    Tcl_DString *dirPtr, char *pattern, char *tail,
@@ -678,14 +678,14 @@ declare 166 {
 }
 
 # VFS-aware versions of Tcl*StartupScriptFileName (158 and 159 above)
-# REMOVED - use public Tcl_SetStartupScript()
-#declare 167 {
-#    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
-#}
-# REMOVED - use public Tcl_GetStartupScript()
-#declare 168 {
-#    Tcl_Obj *TclGetStartupScriptPath(void)
-#}
+# REMOVED (except from stub table) - use public Tcl_SetStartupScript()
+declare 167 {
+    void TclSetStartupScriptPath(Tcl_Obj *pathPtr)
+}
+# REMOVED (except from stub table) - use public Tcl_GetStartupScript()
+declare 168 {
+    Tcl_Obj *TclGetStartupScriptPath(void)
+}
 # variant of Tcl_UtfNCmp that takes n as bytes, not chars
 declare 169 {
     int TclpUtfNcmp2(const char *s1, const char *s2, unsigned long n)
@@ -1005,6 +1005,12 @@ declare 249 {
 # TIP #285: Script cancellation support.
 declare 250 {
     void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+}
+
+# Allow extensions for optimization
+declare 251 {
+    int TclRegisterLiteral(void *envPtr,
+	    char *bytes, int length, int flags)
 }
 
 ##############################################################################

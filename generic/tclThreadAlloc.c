@@ -573,7 +573,7 @@ TclThreadAllocObj(void)
 	    }
 	    while (--numMove >= 0) {
 		objPtr = &newObjsPtr[numMove];
-		objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
+		objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
 		cachePtr->firstObjPtr = objPtr;
 	    }
 	}
@@ -584,7 +584,7 @@ TclThreadAllocObj(void)
      */
 
     objPtr = cachePtr->firstObjPtr;
-    cachePtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
+    cachePtr->firstObjPtr = objPtr->internalRep.twoPtrValue.ptr1;
     cachePtr->numObjects--;
     return objPtr;
 }
@@ -621,7 +621,7 @@ TclThreadFreeObj(
      * Get this thread's list and push on the free Tcl_Obj.
      */
 
-    objPtr->internalRep.otherValuePtr = cachePtr->firstObjPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
     cachePtr->firstObjPtr = objPtr;
     cachePtr->numObjects++;
 
@@ -722,16 +722,16 @@ MoveObjs(
      */
 
     while (--numMove) {
-	objPtr = objPtr->internalRep.otherValuePtr;
+	objPtr = objPtr->internalRep.twoPtrValue.ptr1;
     }
-    fromPtr->firstObjPtr = objPtr->internalRep.otherValuePtr;
+    fromPtr->firstObjPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     /*
      * Move all objects as a block - they are already linked to each other, we
      * just have to update the first and last.
      */
 
-    objPtr->internalRep.otherValuePtr = toPtr->firstObjPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = toPtr->firstObjPtr;
     toPtr->firstObjPtr = fromFirstObjPtr;
 }
 
@@ -1021,6 +1021,33 @@ TclFinalizeThreadAlloc(void)
     listLockPtr = NULL;
 
     TclpFreeAllocCache(NULL);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFinalizeThreadAllocThread --
+ *
+ *	This procedure is used to destroy single thread private resources used
+ *	in this file. 
+ * Called in TclpFinalizeThreadData when a thread exits (Tcl_FinalizeThread).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFinalizeThreadAllocThread(void)
+{
+    Cache *cachePtr = TclpGetAllocCache();
+    if (cachePtr != NULL) {
+	TclpFreeAllocCache(cachePtr);
+    }
 }
 
 #else /* !(TCL_THREADS && USE_THREAD_ALLOC) */

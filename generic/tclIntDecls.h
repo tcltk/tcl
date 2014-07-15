@@ -52,6 +52,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -396,8 +400,10 @@ EXTERN void		TclRegError(Tcl_Interp *interp, const char *msg,
 /* 157 */
 EXTERN Var *		TclVarTraceExists(Tcl_Interp *interp,
 				const char *varName);
-/* Slot 158 is reserved */
-/* Slot 159 is reserved */
+/* 158 */
+EXTERN void		TclSetStartupScriptFileName(const char *filename);
+/* 159 */
+EXTERN const char *	TclGetStartupScriptFileName(void);
 /* Slot 160 is reserved */
 /* 161 */
 EXTERN int		TclChannelTransform(Tcl_Interp *interp,
@@ -415,8 +421,10 @@ EXTERN void		TclpSetInitialEncodings(void);
 EXTERN int		TclListObjSetElement(Tcl_Interp *interp,
 				Tcl_Obj *listPtr, int index,
 				Tcl_Obj *valuePtr);
-/* Slot 167 is reserved */
-/* Slot 168 is reserved */
+/* 167 */
+EXTERN void		TclSetStartupScriptPath(Tcl_Obj *pathPtr);
+/* 168 */
+EXTERN Tcl_Obj *	TclGetStartupScriptPath(void);
 /* 169 */
 EXTERN int		TclpUtfNcmp2(const char *s1, const char *s2,
 				unsigned long n);
@@ -606,6 +614,9 @@ EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
 /* 250 */
 EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 				int force);
+/* 251 */
+EXTERN int		TclRegisterLiteral(void *envPtr, char *bytes,
+				int length, int flags);
 
 typedef struct TclIntStubs {
     int magic;
@@ -769,8 +780,8 @@ typedef struct TclIntStubs {
     void (*reserved155)(void);
     void (*tclRegError) (Tcl_Interp *interp, const char *msg, int status); /* 156 */
     Var * (*tclVarTraceExists) (Tcl_Interp *interp, const char *varName); /* 157 */
-    void (*reserved158)(void);
-    void (*reserved159)(void);
+    void (*tclSetStartupScriptFileName) (const char *filename); /* 158 */
+    const char * (*tclGetStartupScriptFileName) (void); /* 159 */
     void (*reserved160)(void);
     int (*tclChannelTransform) (Tcl_Interp *interp, Tcl_Channel chan, Tcl_Obj *cmdObjPtr); /* 161 */
     void (*tclChannelEventScriptInvoker) (ClientData clientData, int flags); /* 162 */
@@ -778,8 +789,8 @@ typedef struct TclIntStubs {
     void (*tclExpandCodeArray) (void *envPtr); /* 164 */
     void (*tclpSetInitialEncodings) (void); /* 165 */
     int (*tclListObjSetElement) (Tcl_Interp *interp, Tcl_Obj *listPtr, int index, Tcl_Obj *valuePtr); /* 166 */
-    void (*reserved167)(void);
-    void (*reserved168)(void);
+    void (*tclSetStartupScriptPath) (Tcl_Obj *pathPtr); /* 167 */
+    Tcl_Obj * (*tclGetStartupScriptPath) (void); /* 168 */
     int (*tclpUtfNcmp2) (const char *s1, const char *s2, unsigned long n); /* 169 */
     int (*tclCheckInterpTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 170 */
     int (*tclCheckExecutionTraces) (Tcl_Interp *interp, const char *command, int numChars, Command *cmdPtr, int result, int traceFlags, int objc, Tcl_Obj *const objv[]); /* 171 */
@@ -862,12 +873,11 @@ typedef struct TclIntStubs {
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
+    int (*tclRegisterLiteral) (void *envPtr, char *bytes, int length, int flags); /* 251 */
 } TclIntStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclIntStubs *tclIntStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -1135,8 +1145,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclRegError) /* 156 */
 #define TclVarTraceExists \
 	(tclIntStubsPtr->tclVarTraceExists) /* 157 */
-/* Slot 158 is reserved */
-/* Slot 159 is reserved */
+#define TclSetStartupScriptFileName \
+	(tclIntStubsPtr->tclSetStartupScriptFileName) /* 158 */
+#define TclGetStartupScriptFileName \
+	(tclIntStubsPtr->tclGetStartupScriptFileName) /* 159 */
 /* Slot 160 is reserved */
 #define TclChannelTransform \
 	(tclIntStubsPtr->tclChannelTransform) /* 161 */
@@ -1150,8 +1162,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpSetInitialEncodings) /* 165 */
 #define TclListObjSetElement \
 	(tclIntStubsPtr->tclListObjSetElement) /* 166 */
-/* Slot 167 is reserved */
-/* Slot 168 is reserved */
+#define TclSetStartupScriptPath \
+	(tclIntStubsPtr->tclSetStartupScriptPath) /* 167 */
+#define TclGetStartupScriptPath \
+	(tclIntStubsPtr->tclGetStartupScriptPath) /* 168 */
 #define TclpUtfNcmp2 \
 	(tclIntStubsPtr->tclpUtfNcmp2) /* 169 */
 #define TclCheckInterpTraces \
@@ -1289,6 +1303,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
 #define TclSetSlaveCancelFlags \
 	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
+#define TclRegisterLiteral \
+	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -1297,6 +1313,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TCL_STORAGE_CLASS
 #define TCL_STORAGE_CLASS DLLIMPORT
 
+#undef TclGetStartupScriptFileName
+#undef TclSetStartupScriptFileName
+#undef TclGetStartupScriptPath
+#undef TclSetStartupScriptPath
 #undef TclBackgroundException
 
 #if defined(USE_TCL_STUBS) && defined(TCL_NO_DEPRECATED)
@@ -1343,5 +1363,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 #   define Tcl_GetCommandFullName \
 	   (tclStubsPtr->tcl_GetCommandFullName) /* 517 */
 #endif
+
+#undef TclCopyChannelOld
+#undef TclSockMinimumBuffersOld
 
 #endif /* _TCLINTDECLS */

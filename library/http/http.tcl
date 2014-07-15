@@ -11,7 +11,7 @@
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.6
+package provide http 2.8.8
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -113,7 +113,7 @@ if {[info command http::Log] eq {}} {proc http::Log {args} {}}
 
 proc http::register {proto port command} {
     variable urlTypes
-    set urlTypes($proto) [list $port $command]
+    set urlTypes([string tolower $proto]) [list $port $command]
 }
 
 # http::unregister --
@@ -127,11 +127,12 @@ proc http::register {proto port command} {
 
 proc http::unregister {proto} {
     variable urlTypes
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	return -code error "unsupported url type \"$proto\""
     }
-    set old $urlTypes($proto)
-    unset urlTypes($proto)
+    set old $urlTypes($lower)
+    unset urlTypes($lower)
     return $old
 }
 
@@ -394,13 +395,16 @@ proc http::geturl {url args} {
     # First, before the colon, is the protocol scheme (e.g. http)
     # Second, for HTTP-like protocols, is the authority
     #	The authority is preceded by // and lasts up to (but not including)
-    #	the following / and it identifies up to four parts, of which only one,
-    #	the host, is required (if an authority is present at all). All other
-    #	parts of the authority (user name, password, port number) are optional.
+    #	the following / or ? and it identifies up to four parts, of which
+    #	only one, the host, is required (if an authority is present at all).
+    #	All other parts of the authority (user name, password, port number)
+    #	are optional.
     # Third is the resource name, which is split into two parts at a ?
     #	The first part (from the single "/" up to "?") is the path, and the
     #	second part (from that "?" up to "#") is the query. *HOWEVER*, we do
     #	not need to separate them; we send the whole lot to the server.
+    #	Both, path and query are allowed to be missing, including their
+    #	delimiting character.
     # Fourth is the fragment identifier, which is everything after the first
     #	"#" in the URL. The fragment identifier MUST NOT be sent to the server
     #	and indeed, we don't bother to validate it (it could be an error to
@@ -437,7 +441,7 @@ proc http::geturl {url args} {
 	    )
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
-	( / [^\#]*)?			# <path> (including query)
+	( [/\?] [^\#]*)?		# <path> (including query)
 	(?: \# (.*) )?			# <fragment>
 	$
     }
@@ -481,6 +485,12 @@ proc http::geturl {url args} {
 	}
     }
     if {$srvurl ne ""} {
+	# RFC 3986 allows empty paths (not even a /), but servers
+	# return 400 if the path in the HTTP request doesn't start
+	# with / , so add it here if needed.
+	if {[string index $srvurl 0] ne "/"} {
+	    set srvurl /$srvurl
+	}
 	# Check for validity according to RFC 3986, Appendix A
 	set validityRE {(?xi)
 	    ^
@@ -505,12 +515,13 @@ proc http::geturl {url args} {
     if {$proto eq ""} {
 	set proto http
     }
-    if {![info exists urlTypes($proto)]} {
+    set lower [string tolower $proto]
+    if {![info exists urlTypes($lower)]} {
 	unset $token
 	return -code error "Unsupported URL type \"$proto\""
     }
-    set defport [lindex $urlTypes($proto) 0]
-    set defcmd [lindex $urlTypes($proto) 1]
+    set defport [lindex $urlTypes($lower) 0]
+    set defcmd [lindex $urlTypes($lower) 1]
 
     if {$port eq ""} {
 	set port $defport
@@ -537,11 +548,10 @@ proc http::geturl {url args} {
     # If a timeout is specified we set up the after event and arrange for an
     # asynchronous socket connection.
 
-    set sockopts [list]
+    set sockopts [list -async]
     if {$state(-timeout) > 0} {
 	set state(after) [after $state(-timeout) \
 		[list http::reset $token timeout]]
-	lappend sockopts -async
     }
 
     # If we are using the proxy, we must pass in the full URL that includes
@@ -597,10 +607,15 @@ proc http::geturl {url args} {
         set socketmap($state(socketinfo)) $sock
     }
 
-    # Wait for the connection to complete.
+    if {![info exists phost]} {
+	set phost ""
+    }
+    fileevent $sock writable [list http::Connect $token $proto $phost $srvurl]
 
-    if {$state(-timeout) > 0} {
-	fileevent $sock writable [list http::Connect $token]
+    # Wait for the connection to complete.
+    if {![info exists state(-command)]} {
+	# geturl does EVERYTHING asynchronously, so if the user
+	# calls it synchronously, we just do a wait here.
 	http::wait $token
 
 	if {![info exists state]} {
@@ -616,12 +631,29 @@ proc http::geturl {url args} {
 	    set err [lindex $state(error) 0]
 	    cleanup $token
 	    return -code error $err
-	} elseif {$state(status) ne "connect"} {
-	    # Likely to be connection timeout
-	    return $token
 	}
-	set state(status) ""
     }
+
+    return $token
+}
+
+
+proc http::Connected { token proto phost srvurl} {
+    variable http
+    variable urlTypes
+
+    variable $token
+    upvar 0 $token state
+
+    # Set back the variables needed here
+    set sock $state(sock)
+    set isQueryChannel [info exists state(-querychannel)]
+    set isQuery [info exists state(-query)]
+    set host [lindex [split $state(socketinfo) :] 0]
+    set port [lindex [split $state(socketinfo) :] 1]
+
+    set lower [string tolower $proto]
+    set defport [lindex $urlTypes($lower) 0]
 
     # Send data in cr-lf format, but accept any line terminators
 
@@ -753,35 +785,17 @@ proc http::geturl {url args} {
 	    fileevent $sock readable [list http::Event $sock $token]
 	}
 
-	if {![info exists state(-command)]} {
-	    # geturl does EVERYTHING asynchronously, so if the user calls it
-	    # synchronously, we just do a wait here.
-
-	    wait $token
-	    if {$state(status) eq "error"} {
-		# Something went wrong, so throw the exception, and the
-		# enclosing catch will do cleanup.
-		return -code error [lindex $state(error) 0]
-	    }
-	}
     } err]} {
 	# The socket probably was never connected, or the connection dropped
 	# later.
 
-	# Clean up after events and such, but DON'T call the command callback
-	# (if available) because we're going to throw an exception from here
-	# instead.
-
 	# if state(status) is error, it means someone's already called Finish
 	# to do the above-described clean up.
 	if {$state(status) ne "error"} {
-	    Finish $token $err 1
+	    Finish $token $err
 	}
-	cleanup $token
-	return -code error $err
     }
 
-    return $token
 }
 
 # Data access functions:
@@ -865,7 +879,7 @@ proc http::cleanup {token} {
 #	Sets the status of the connection, which unblocks
 # 	the waiting geturl call
 
-proc http::Connect {token} {
+proc http::Connect {token proto phost srvurl} {
     variable $token
     upvar 0 $token state
     set err "due to unexpected EOF"
@@ -873,10 +887,10 @@ proc http::Connect {token} {
 	[eof $state(sock)] ||
 	[set err [fconfigure $state(sock) -error]] ne ""
     } {
-	Finish $token "connect failed $err" 1
+	Finish $token "connect failed $err"
     } else {
-	set state(status) connect
 	fileevent $state(sock) writable {}
+	::http::Connected $token $proto $phost $srvurl
     }
     return
 }

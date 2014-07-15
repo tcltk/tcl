@@ -271,7 +271,7 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
 	    (ClientData) &tclOOStubs);
 }
 
@@ -437,10 +437,12 @@ InitFoundation(
      * ensemble.
      */
 
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::next", TclOONextObjCmd, NULL,
-	    NULL);
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::nextto", TclOONextToObjCmd,
-	    NULL, NULL);
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::next",
+	    NULL, TclOONextObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectNextCmd;
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::nextto",
+	    NULL, TclOONextToObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectNextToCmd;
     cmdPtr = (Command *) Tcl_CreateObjCommand(interp, "::oo::Helpers::self",
 	    TclOOSelfObjCmd, NULL, NULL);
     cmdPtr->compileProc = TclCompileObjectSelfCmd;
@@ -843,7 +845,7 @@ ObjectRenamedTrace(
 	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
 		    contextPtr, 0, NULL);
 	    if (result != TCL_OK) {
-		Tcl_BackgroundError(interp);
+		Tcl_BackgroundException(interp, result);
 	    }
 	    Tcl_RestoreInterpState(interp, state);
 	    TclOODeleteContext(contextPtr);

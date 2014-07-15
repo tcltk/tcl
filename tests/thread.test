@@ -84,28 +84,6 @@ if {[testConstraint testthread]} {
     }
 
     testthread errorproc ThreadError
-
-    set mainThread [testthread id]
-
-    proc ThreadNullError {id info} {
-	# ignore
-    }
-
-    proc threadReap {} {
-	testthread errorproc ThreadNullError
-	while {[llength [testthread names]] > 1} {
-	    foreach tid [testthread names] {
-		if {$tid != [testthread id]} {
-		    catch {
-			testthread send -async $tid {testthread exit}
-		    }
-		}
-	    }
-	    after 1
-	}
-	testthread errorproc ThreadError
-	return [llength [testthread names]]
-    }
 }
 
 # Some tests require manual draining of the event queue

@@ -171,7 +171,7 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
     {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, 0},
-    {"origin",	   NamespaceOriginCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"origin",	   NamespaceOriginCmd,	TclCompileNamespaceOriginCmd, NULL, NULL, 0},
     {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, 0},
@@ -505,9 +505,9 @@ EstablishErrorCodeTraces(
     const char *name2,
     int flags)
 {
-    Tcl_TraceVar(interp, "errorCode", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
+    Tcl_TraceVar2(interp, "errorCode", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_READS,
 	    ErrorCodeRead, NULL);
-    Tcl_TraceVar(interp, "errorCode", TCL_GLOBAL_ONLY | TCL_TRACE_UNSETS,
+    Tcl_TraceVar2(interp, "errorCode", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_UNSETS,
 	    EstablishErrorCodeTraces, NULL);
     return NULL;
 }
@@ -579,9 +579,9 @@ EstablishErrorInfoTraces(
     const char *name2,
     int flags)
 {
-    Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_READS,
+    Tcl_TraceVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_READS,
 	    ErrorInfoRead, NULL);
-    Tcl_TraceVar(interp, "errorInfo", TCL_GLOBAL_ONLY | TCL_TRACE_UNSETS,
+    Tcl_TraceVar2(interp, "errorInfo", NULL, TCL_GLOBAL_ONLY|TCL_TRACE_UNSETS,
 	    EstablishErrorInfoTraces, NULL);
     return NULL;
 }
@@ -673,6 +673,10 @@ Tcl_CreateNamespace(
     Tcl_DString *namePtr, *buffPtr;
     int newEntry, nameLen;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+    const char *nameStr;
+    Tcl_DString tmpBuffer;
+
+    Tcl_DStringInit(&tmpBuffer);
 
     /*
      * If there is no active namespace, the interpreter is being initialized.
@@ -686,50 +690,78 @@ Tcl_CreateNamespace(
 
 	parentPtr = NULL;
 	simpleName = "";
-    } else if (*name == '\0') {
+	goto doCreate;
+    }
+
+    /*
+     * Ensure that there are no trailing colons as that causes chaos when a
+     * deleteProc is specified. [Bug d614d63989]
+     */
+
+    if (deleteProc != NULL) {
+	nameStr = name + strlen(name) - 2;
+	if (nameStr >= name && nameStr[1] == ':' && nameStr[0] == ':') {
+	    Tcl_DStringAppend(&tmpBuffer, name, -1);
+	    while ((nameLen = Tcl_DStringLength(&tmpBuffer)) > 0
+		    && Tcl_DStringValue(&tmpBuffer)[nameLen-1] == ':') {
+		Tcl_DStringSetLength(&tmpBuffer, nameLen-1);
+	    }
+	    name = Tcl_DStringValue(&tmpBuffer);
+	}
+    }
+
+    /*
+     * If we've ended up with an empty string now, we're attempting to create
+     * the global namespace despite the global namespace existing. That's
+     * naughty!
+     */
+
+    if (*name == '\0') {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj("can't create namespace"
                 " \"\": only global namespace can have empty name", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
 		"CREATEGLOBAL", NULL);
+	Tcl_DStringFree(&tmpBuffer);
 	return NULL;
-    } else {
-	/*
-	 * Find the parent for the new namespace.
-	 */
+    }
 
-	TclGetNamespaceForQualName(interp, name, NULL,
-		/*flags*/ (TCL_CREATE_NS_IF_UNKNOWN | TCL_LEAVE_ERR_MSG),
-		&parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
+    /*
+     * Find the parent for the new namespace.
+     */
 
-	/*
-	 * If the unqualified name at the end is empty, there were trailing
-	 * "::"s after the namespace's name which we ignore. The new namespace
-	 * was already (recursively) created and is pointed to by parentPtr.
-	 */
+    TclGetNamespaceForQualName(interp, name, NULL, TCL_CREATE_NS_IF_UNKNOWN,
+	    &parentPtr, &dummy1Ptr, &dummy2Ptr, &simpleName);
 
-	if (*simpleName == '\0') {
-	    return (Tcl_Namespace *) parentPtr;
-	}
+    /*
+     * If the unqualified name at the end is empty, there were trailing "::"s
+     * after the namespace's name which we ignore. The new namespace was
+     * already (recursively) created and is pointed to by parentPtr.
+     */
 
-	/*
-	 * Check for a bad namespace name and make sure that the name does not
-	 * already exist in the parent namespace.
-	 */
+    if (*simpleName == '\0') {
+	Tcl_DStringFree(&tmpBuffer);
+	return (Tcl_Namespace *) parentPtr;
+    }
 
-	if (
+    /*
+     * Check for a bad namespace name and make sure that the name does not
+     * already exist in the parent namespace.
+     */
+
+    if (
 #ifndef BREAK_NAMESPACE_COMPAT
-	    Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL
+	Tcl_FindHashEntry(&parentPtr->childTable, simpleName) != NULL
 #else
-	    parentPtr->childTablePtr != NULL &&
-	    Tcl_FindHashEntry(parentPtr->childTablePtr, simpleName) != NULL
+	parentPtr->childTablePtr != NULL &&
+	Tcl_FindHashEntry(parentPtr->childTablePtr, simpleName) != NULL
 #endif
-	) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-                    "can't create namespace \"%s\": already exists", name));
-	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
-		    "CREATEEXISTING", NULL);
-	    return NULL;
-	}
+    ) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't create namespace \"%s\": already exists", name));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "NAMESPACE",
+		"CREATEEXISTING", NULL);
+	Tcl_DStringFree(&tmpBuffer);
+	return NULL;
     }
 
     /*
@@ -737,6 +769,7 @@ Tcl_CreateNamespace(
      * of namespaces created.
      */
 
+  doCreate:
     nsPtr = ckalloc(sizeof(Namespace));
     nameLen = strlen(simpleName) + 1;
     nsPtr->name = ckalloc(nameLen);
@@ -832,6 +865,7 @@ Tcl_CreateNamespace(
 
     Tcl_DStringFree(&buffer1);
     Tcl_DStringFree(&buffer2);
+    Tcl_DStringFree(&tmpBuffer);
 
     /*
      * If compilation of commands originating from the parent NS is
@@ -1330,8 +1364,7 @@ Tcl_Export(
      * Check that the pattern doesn't have namespace qualifiers.
      */
 
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &exportNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
@@ -1545,8 +1578,7 @@ Tcl_Import(
 	Tcl_SetErrorCode(interp, "TCL", "IMPORT", "EMPTY", NULL);
 	return TCL_ERROR;
     }
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &importNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (importNsPtr == NULL) {
@@ -1791,8 +1823,7 @@ Tcl_ForgetImport(
      * simple pattern.
      */
 
-    TclGetNamespaceForQualName(interp, pattern, nsPtr,
-	    /*flags*/ (TCL_LEAVE_ERR_MSG | TCL_NAMESPACE_ONLY),
+    TclGetNamespaceForQualName(interp, pattern, nsPtr, TCL_NAMESPACE_ONLY,
 	    &sourceNsPtr, &dummyPtr, &dummyPtr, &simplePattern);
 
     if (sourceNsPtr == NULL) {
@@ -1946,7 +1977,7 @@ InvokeImportedNRCmd(
     Command *realCmdPtr = dataPtr->realCmdPtr;
 
     TclSkipTailcall(interp);
-    return Tcl_NRCmdSwap(interp, (Tcl_Command) realCmdPtr, objc, objv, 0);
+    return TclNREvalObjv(interp, objc, objv, TCL_EVAL_NOERR, realCmdPtr);
 }
 
 static int
@@ -3435,10 +3466,7 @@ NamespaceExportCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
-    const char *pattern, *string;
-    int resetListFirst = 0;
-    int firstArg, patternCt, i, result;
+    int firstArg, i;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-clear? ?pattern pattern...?");
@@ -3446,42 +3474,27 @@ NamespaceExportCmd(
     }
 
     /*
-     * Process the optional "-clear" argument.
-     */
-
-    firstArg = 1;
-    if (firstArg < objc) {
-	string = TclGetString(objv[firstArg]);
-	if (strcmp(string, "-clear") == 0) {
-	    resetListFirst = 1;
-	    firstArg++;
-	}
-    }
-
-    /*
      * If no pattern arguments are given, and "-clear" isn't specified, return
      * the namespace's current export pattern list.
      */
 
-    patternCt = objc - firstArg;
-    if (patternCt == 0) {
-	if (firstArg > 1) {
-	    return TCL_OK;
-	} else {
-	    /*
-	     * Create list with export patterns.
-	     */
+    if (objc == 1) {
+	Tcl_Obj *listPtr = Tcl_NewObj();
 
-	    Tcl_Obj *listPtr = Tcl_NewListObj(0, NULL);
+	(void) Tcl_AppendExportList(interp, NULL, listPtr);
+	Tcl_SetObjResult(interp, listPtr);
+	return TCL_OK;
+    }
 
-	    result = Tcl_AppendExportList(interp, (Tcl_Namespace *) currNsPtr,
-		    listPtr);
-	    if (result != TCL_OK) {
-		return result;
-	    }
-	    Tcl_SetObjResult(interp, listPtr);
-	    return TCL_OK;
-	}
+    /*
+     * Process the optional "-clear" argument.
+     */
+
+    firstArg = 1;
+    if (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0) {
+	Tcl_Export(interp, NULL, "::", 1);
+	Tcl_ResetResult(interp);
+	firstArg++;
     }
 
     /*
@@ -3489,9 +3502,7 @@ NamespaceExportCmd(
      */
 
     for (i = firstArg;  i < objc;  i++) {
-	pattern = TclGetString(objv[i]);
-	result = Tcl_Export(interp, (Tcl_Namespace *) currNsPtr, pattern,
-		((i == firstArg)? resetListFirst : 0));
+	int result = Tcl_Export(interp, NULL, Tcl_GetString(objv[i]), 0);
 	if (result != TCL_OK) {
 	    return result;
 	}

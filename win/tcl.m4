@@ -247,7 +247,7 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #
 # Results:
 #
-#	Subst the following vars:
+#	Substitutes the following vars:
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
@@ -255,13 +255,13 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_LOAD_TCLCONFIG], [
-    AC_MSG_CHECKING([for existence of $TCL_BIN_DIR/tclConfig.sh])
+    AC_MSG_CHECKING([for existence of ${TCL_BIN_DIR}/tclConfig.sh])
 
-    if test -f "$TCL_BIN_DIR/tclConfig.sh" ; then
+    if test -f "${TCL_BIN_DIR}/tclConfig.sh" ; then
         AC_MSG_RESULT([loading])
-	. $TCL_BIN_DIR/tclConfig.sh
+	. "${TCL_BIN_DIR}/tclConfig.sh"
     else
-        AC_MSG_RESULT([file not found])
+        AC_MSG_RESULT([could not find ${TCL_BIN_DIR}/tclConfig.sh])
     fi
 
     #
@@ -310,7 +310,6 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 # SC_LOAD_TKCONFIG --
 #
 #	Load the tkConfig.sh file
-#	Currently a no-op for Windows
 #
 # Arguments:
 #
@@ -324,13 +323,13 @@ AC_DEFUN([SC_LOAD_TCLCONFIG], [
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_LOAD_TKCONFIG], [
-    AC_MSG_CHECKING([for existence of $TK_BIN_DIR/tkConfig.sh])
+    AC_MSG_CHECKING([for existence of ${TK_BIN_DIR}/tkConfig.sh])
 
-    if test -f "$TK_BIN_DIR/tkConfig.sh" ; then
+    if test -f "${TK_BIN_DIR}/tkConfig.sh" ; then
         AC_MSG_RESULT([loading])
-	. $TK_BIN_DIR/tkConfig.sh
+	. "${TK_BIN_DIR}/tkConfig.sh"
     else
-        AC_MSG_RESULT([could not find $TK_BIN_DIR/tkConfig.sh])
+        AC_MSG_RESULT([could not find ${TK_BIN_DIR}/tkConfig.sh])
     fi
 
 
@@ -364,7 +363,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
     AC_MSG_CHECKING([how to build libraries])
     AC_ARG_ENABLE(shared,
 	[  --enable-shared         build and link with shared libraries (default: on)],
-    [tcl_ok=$enableval], [tcl_ok=yes])
+	[tcl_ok=$enableval], [tcl_ok=yes])
 
     if test "${enable_shared+set}" = set; then
 	enableval="$enable_shared"
@@ -379,7 +378,7 @@ AC_DEFUN([SC_ENABLE_SHARED], [
     else
 	AC_MSG_RESULT([static])
 	SHARED_BUILD=0
-	AC_DEFINE(STATIC_BUILD)
+	AC_DEFINE(STATIC_BUILD, 1, [Is this a static build?])
     fi
 ])
 
@@ -422,7 +421,7 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 #------------------------------------------------------------------------
 # SC_ENABLE_SYMBOLS --
 #
-#	Specify if debugging symbols should be used
+#	Specify if debugging symbols should be used.
 #	Memory (TCL_MEM_DEBUG) and compile (TCL_COMPILE_DEBUG) debugging
 #	can also be enabled.
 #
@@ -524,6 +523,7 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #		RES
 #
 #		MAKE_LIB
+#		MAKE_STUB_LIB
 #		MAKE_EXE
 #		MAKE_DLL
 #
@@ -572,7 +572,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
       AC_CACHE_CHECK(for cross-compile version of gcc,
 	ac_cv_cross,
 	AC_TRY_COMPILE([
-	    #ifndef __WIN32__
+	    #ifndef _WIN32
 		#error cross-compiler
 	    #endif
 	], [],
@@ -634,10 +634,12 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # set various compiler flags depending on whether we are using gcc or cl
 
     if test "${GCC}" = "yes" ; then
+	extra_cflags="-pipe"
+	extra_ldflags="-pipe -static-libgcc"
 	AC_CACHE_CHECK(for mingw32 version of gcc,
 	    ac_cv_win32,
 	    AC_TRY_COMPILE([
-		#ifdef __WIN32__
+		#ifdef _WIN32
 		    #error win32
 		#endif
 	    ], [],
@@ -681,12 +683,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	RC_DEFINE=--define
 	RES=res.o
 	MAKE_LIB="\${STLIB_LD} \[$]@"
+	MAKE_STUB_LIB="\${STLIB_LD} \[$]@"
 	POST_MAKE_LIB="\${RANLIB} \[$]@"
 	MAKE_EXE="\${CC} -o \[$]@"
 	LIBPREFIX="lib"
-
-	extra_cflags="$extra_cflags -pipe"
-	extra_ldflags="$extra_ldflags -pipe"
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -711,9 +711,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
-	# -luser32 and -lmsvcrt by default. Make sure CFLAGS is
-	# included so -mno-cygwin passed the correct libs to the linker.
-	SHLIB_LD='${CC} -shared ${CFLAGS}'
+	# -luser32 and -lmsvcrt by default.
+	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \[$]@ ${extra_ldflags} \
 	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\[$]@)"
@@ -962,6 +961,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	RC_DEFINE=-d
 	RES=res
 	MAKE_LIB="\${STLIB_LD} -out:\[$]@"
+	MAKE_STUB_LIB="\${STLIB_LD} -nodefaultlib -out:\[$]@"
 	POST_MAKE_LIB=
 	MAKE_EXE="\${CC} -Fe\[$]@"
 	LIBPREFIX=""

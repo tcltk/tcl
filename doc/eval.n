@@ -5,8 +5,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH eval n "" Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -75,7 +75,8 @@ However, the last line would now normally be written without
 set var [linsert $var 0 {*}$args]
 .CE
 .SH "SEE ALSO"
-catch(n), concat(n), error(n), interp(n), list(n), namespace(n), subst(n), tclvars(n), uplevel(n)
+catch(n), concat(n), error(n), errorCode(n), errorInfo(n), interp(n), list(n),
+namespace(n), subst(n), uplevel(n)
 .SH KEYWORDS
 concatenate, evaluate, script
 '\" Local Variables:

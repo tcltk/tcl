@@ -17,7 +17,7 @@
 /*
  * For TestplatformChmod on Windows
  */
-#ifdef __WIN32__
+#ifdef _WIN32
 #include <aclapi.h>
 #endif
 
@@ -211,7 +211,7 @@ TestvolumetypeCmd(
 	TclWinConvertError(GetLastError());
 	return TCL_ERROR;
     }
-    Tcl_SetResult(interp, volType, TCL_VOLATILE);
+    Tcl_AppendResult(interp, volType, NULL);
     return TCL_OK;
 #undef VOL_BUF_SIZE
 }

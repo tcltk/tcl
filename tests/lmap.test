@@ -18,7 +18,7 @@ if {"::tcltest" ni [namespace children]} {
     namespace import -force ::tcltest::*
 }
 
-unset -nocomplain a i x
+unset -nocomplain a b i x
 
 # ----- Non-compiled operation -----------------------------------------------
 
@@ -404,14 +404,21 @@ test lmap-7.6 {lmap: related to "foreach" [Bug 1671087]} -setup {
     rename demo {}
 } -result {2 4}
 # Huge lists must not overflow the bytecode interpreter (development bug)
-test lmap-7.7 {huge list non-compiled} {
+test lmap-7.7 {huge list non-compiled} -setup {
+    unset -nocomplain a b x
+} -body {
     set x [lmap a [lrepeat 1000000 x] { set b y$a }]
     list $b [llength $x] [string length $x]
-} {yx 1000000 2999999}
-test lmap-7.8 {huge list compiled} {
-    set x [apply {{times} { lmap a [lrepeat $times x] { set b y$a }}} 1000000]
+} -result {yx 1000000 2999999}
+test lmap-7.8 {huge list compiled} -setup {
+    unset -nocomplain a b x
+} -body {
+    set x [apply {{times} {
+	global b
+	lmap a [lrepeat $times x] { set b Y$a }
+    }} 1000000]
     list $b [llength $x] [string length $x]
-} {yx 1000000 2999999}
+} -result {Yx 1000000 2999999}
 test lmap-7.9 {error then dereference loop var (dev bug)} {
     catch { lmap a 0 b {1 2 3} { error x } }
     set a

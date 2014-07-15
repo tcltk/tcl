@@ -19,7 +19,7 @@
  * Windows has mktime. The configurators do not check.
  */
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #define HAVE_MKTIME 1
 #endif
 
@@ -548,18 +548,21 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     }
     dict = objv[1];
     if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
+		 || fieldPtr == NULL
 	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
 		&era) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_YEAR],
-		&fieldPtr) != TCL_OK
+	    || Tcl_DictObjGet(interp, dict, literals[LIT_YEAR], &fieldPtr) != TCL_OK
+		 || fieldPtr == NULL
 	    || TclGetIntFromObj(interp, fieldPtr, &fields.year) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_MONTH],
-		&fieldPtr) != TCL_OK
+	    || Tcl_DictObjGet(interp, dict, literals[LIT_MONTH],	&fieldPtr) != TCL_OK
+		 || fieldPtr == NULL
 	    || TclGetIntFromObj(interp, fieldPtr, &fields.month) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFMONTH],
-		&fieldPtr) != TCL_OK
+	    || Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFMONTH], &fieldPtr) != TCL_OK
+		 || fieldPtr == NULL
 	    || TclGetIntFromObj(interp, fieldPtr, &fields.dayOfMonth)!=TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
+    if (fieldPtr == NULL)
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
 	return TCL_ERROR;
     }
     fields.era = era;
@@ -638,18 +641,21 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     }
     dict = objv[1];
     if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
+		 || fieldPtr == NULL
 	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
 		&era) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601YEAR],
-		&fieldPtr) != TCL_OK
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.iso8601Year)!=TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601WEEK],
-		&fieldPtr) != TCL_OK
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.iso8601Week)!=TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFWEEK],
-		&fieldPtr) != TCL_OK
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.dayOfWeek) != TCL_OK
+	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601YEAR], &fieldPtr) != TCL_OK
+		 || fieldPtr == NULL
+	    || TclGetIntFromObj(interp, fieldPtr, &(fields.iso8601Year)) != TCL_OK
+	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601WEEK], &fieldPtr) != TCL_OK
+		 || fieldPtr == NULL
+	    || TclGetIntFromObj(interp, fieldPtr, &(fields.iso8601Week)) != TCL_OK
+	    || Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFWEEK], &fieldPtr) != TCL_OK
+		 || fieldPtr == NULL
+	    || TclGetIntFromObj(interp, fieldPtr, &(fields.dayOfWeek)) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
+    if (fieldPtr == NULL)
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
 	return TCL_ERROR;
     }
     fields.era = era;
@@ -1697,7 +1703,7 @@ ClockClicksObjCmd(
     case 1:
 	break;
     case 2:
-	if (Tcl_GetIndexFromObj(interp, objv[1], clicksSwitches, "switch", 0,
+	if (Tcl_GetIndexFromObj(interp, objv[1], clicksSwitches, "option", 0,
 		&index) != TCL_OK) {
 	    return TCL_ERROR;
 	}
@@ -1867,9 +1873,9 @@ ClockParseformatargsObjCmd(
     localeObj = litPtr[LIT_C];
     timezoneObj = litPtr[LIT__NIL];
     for (i = 2; i < objc; i+=2) {
-	if (Tcl_GetIndexFromObj(interp, objv[i], options, "switch", 0,
+	if (Tcl_GetIndexFromObj(interp, objv[i], options, "option", 0,
 		&optionIndex) != TCL_OK) {
-	    Tcl_SetErrorCode(interp, "CLOCK", "badSwitch",
+	    Tcl_SetErrorCode(interp, "CLOCK", "badOption",
 		    Tcl_GetString(objv[i]), NULL);
 	    return TCL_ERROR;
 	}

@@ -82,6 +82,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  *---------------------------------------------------------------------------
  */
 
+#include <time.h>
 #include <wchar.h>
 #include <io.h>
 #include <errno.h>
@@ -92,11 +93,9 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <signal.h>
 #include <limits.h>
 
-#ifndef strncasecmp
-#   define strncasecmp strnicmp
-#endif
-#ifndef strcasecmp
-#   define strcasecmp stricmp
+#ifndef __GNUC__
+#    define strncasecmp _strnicmp
+#    define strcasecmp _stricmp
 #endif
 
 /*
@@ -113,8 +112,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #	include <sys/utime.h>
 #   endif /* __BORLANDC__ */
 #endif /* __MWERKS__ */
-
-#include <time.h>
 
 /*
  * The following defines redefine the Windows Socket errors as
@@ -469,10 +466,11 @@ typedef DWORD_PTR * PDWORD_PTR;
  * including the *printf family and others. Tell it to shut up.
  * (_MSC_VER is 1200 for VC6, 1300 or 1310 for vc7.net, 1400 for 8.0)
  */
-#if _MSC_VER >= 1400
-#pragma warning(disable:4996)
+#if defined(_MSC_VER) && (_MSC_VER >= 1400)
+#   pragma warning(disable:4244)
+#   pragma warning(disable:4267)
+#   pragma warning(disable:4996)
 #endif
-
 
 /*
  *---------------------------------------------------------------------------
@@ -530,15 +528,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 #define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
 
-/*
- * The following defines map from standard socket names to our internal
- * wrappers that redirect through the winSock function table (see the
- * file tclWinSock.c).
- */
-
-#define getservbyname	TclWinGetServByName
-#define getsockopt	TclWinGetSockOpt
-#define setsockopt	TclWinSetSockOpt
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
 

@@ -144,6 +144,30 @@ static const char *isArrayElement =
 #define HasLocalVars(framePtr) ((framePtr)->isProcCallFrame & FRAME_IS_PROC)
 
 /*
+ * The following structure describes an enumerative search in progress on an
+ * array variable; this are invoked with options to the "array" command.
+ */
+
+typedef struct ArraySearch {
+    int id;			/* Integer id used to distinguish among
+				 * multiple concurrent searches for the same
+				 * array. */
+    struct Var *varPtr;		/* Pointer to array variable that's being
+				 * searched. */
+    Tcl_HashSearch search;	/* Info kept by the hash module about progress
+				 * through the array. */
+    Tcl_HashEntry *nextEntry;	/* Non-null means this is the next element to
+				 * be enumerated (it's leftover from the
+				 * Tcl_FirstHashEntry call or from an "array
+				 * anymore" command). NULL means must call
+				 * Tcl_NextHashEntry to get value to
+				 * return. */
+    struct ArraySearch *nextPtr;/* Next in list of all active searches for
+				 * this variable, or NULL if this is the last
+				 * one. */
+} ArraySearch;
+
+/*
  * Forward references to functions defined later in this file:
  */
 
@@ -475,6 +499,9 @@ TclObjLookupVar(
 
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
+	if (createPart2) {
+	    Tcl_IncrRefCount(part2Ptr);
+	}
     }
 
     resPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
@@ -487,6 +514,12 @@ TclObjLookupVar(
     return resPtr;
 }
 
+/*
+ *	When createPart1 is 1, callers must IncrRefCount part1Ptr if they
+ *	plan to DecrRefCount it.
+ *	When createPart2 is 1, callers must IncrRefCount part2Ptr if they
+ *	plan to DecrRefCount it.
+ */
 Var *
 TclObjLookupVarEx(
     Tcl_Interp *interp,		/* Interpreter to use for lookup. */
@@ -627,7 +660,9 @@ TclObjLookupVarEx(
 	    part2 = newPart2 = part1Ptr->internalRep.twoPtrValue.ptr2;
 	    if (newPart2) {
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
-		Tcl_IncrRefCount(part2Ptr);
+		if (createPart2) {
+		    Tcl_IncrRefCount(part2Ptr);
+		}
 	    }
 	    part1Ptr = part1Ptr->internalRep.twoPtrValue.ptr1;
 	    typePtr = part1Ptr->typePtr;
@@ -673,7 +708,9 @@ TclObjLookupVarEx(
 		*(newPart2+len2) = '\0';
 		part2 = newPart2;
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
-		Tcl_IncrRefCount(part2Ptr);
+		if (createPart2) {
+		    Tcl_IncrRefCount(part2Ptr);
+		}
 
 		/*
 		 * Free the internal rep of the original part1Ptr, now renamed
@@ -1083,6 +1120,8 @@ TclLookupSimpleVar(
  *	The variable at arrayPtr may be converted to be an array if
  *	createPart1 is 1. A new hashtable entry may be created if createPart2
  *	is 1.
+ *	When createElem is 1, callers must incr elNamePtr if they plan
+ *	to decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1208,6 +1247,7 @@ TclLookupArrayElement(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetVar
 const char *
 Tcl_GetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -1217,11 +1257,9 @@ Tcl_GetVar(
 				 * TCL_NAMESPACE_ONLY or TCL_LEAVE_ERR_MSG
 				 * bits. */
 {
-    Tcl_Obj *varNamePtr, *resultPtr;
+    Tcl_Obj *varNamePtr = Tcl_NewStringObj(varName, -1);
+    Tcl_Obj *resultPtr = Tcl_ObjGetVar2(interp, varNamePtr, NULL, flags);
 
-    varNamePtr = Tcl_NewStringObj(varName, -1);
-    Tcl_IncrRefCount(varNamePtr);
-    resultPtr = Tcl_ObjGetVar2(interp, varNamePtr, NULL, flags);
     TclDecrRefCount(varNamePtr);
 
     if (resultPtr == NULL) {
@@ -1265,15 +1303,12 @@ Tcl_GetVar2(
 				 * TCL_NAMESPACE_ONLY and TCL_LEAVE_ERR_MSG *
 				 * bits. */
 {
-    Tcl_Obj *resultPtr, *part1Ptr, *part2Ptr;
+    Tcl_Obj *resultPtr;
+    Tcl_Obj *part2Ptr = NULL, *part1Ptr = Tcl_NewStringObj(part1, -1);
 
-    part1Ptr = Tcl_NewStringObj(part1, -1);
-    Tcl_IncrRefCount(part1Ptr);
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
 	Tcl_IncrRefCount(part2Ptr);
-    } else {
-	part2Ptr = NULL;
     }
 
     resultPtr = Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags);
@@ -1326,6 +1361,7 @@ Tcl_GetVar2Ex(
 
     if (part2) {
 	part2Ptr = Tcl_NewStringObj(part2, -1);
+	Tcl_IncrRefCount(part2Ptr);
     }
 
     resPtr = Tcl_ObjGetVar2(interp, part1Ptr, part2Ptr, flags);
@@ -1357,6 +1393,8 @@ Tcl_GetVar2Ex(
  *	The ref count for the returned object is _not_ incremented to reflect
  *	the returned reference; if you want to keep a reference to the object
  *	you must increment its ref count yourself.
+ *
+ *	Callers must incr part2Ptr if they plan to decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1552,6 +1590,7 @@ Tcl_SetObjCmd(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetVar
 const char *
 Tcl_SetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -1563,17 +1602,13 @@ Tcl_SetVar(
 				 * TCL_APPEND_VALUE, TCL_LIST_ELEMENT,
 				 * TCL_LEAVE_ERR_MSG. */
 {
-    Tcl_Obj *valuePtr, *varNamePtr, *varValuePtr;
+    Tcl_Obj *varValuePtr, *varNamePtr = Tcl_NewStringObj(varName, -1);
 
-    varNamePtr = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(varNamePtr);
-    valuePtr = Tcl_NewStringObj(newValue, -1);
-    Tcl_IncrRefCount(valuePtr);
-
-    varValuePtr = Tcl_ObjSetVar2(interp, varNamePtr, NULL, valuePtr, flags);
-
+    varValuePtr = Tcl_ObjSetVar2(interp, varNamePtr, NULL, 
+	    Tcl_NewStringObj(newValue, -1), flags);
     Tcl_DecrRefCount(varNamePtr);
-    Tcl_DecrRefCount(valuePtr);
+
     if (varValuePtr == NULL) {
 	return NULL;
     }
@@ -1721,6 +1756,7 @@ Tcl_SetVar2Ex(
  *	The value of the given variable is set. If either the array or the
  *	entry didn't exist then a new variable is created.
  *	Callers must Incr part1Ptr if they plan to Decr it.
+ *	Callers must Incr part2Ptr if they plan to Decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -1922,6 +1958,9 @@ TclPtrSetVar(
 		    Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
 		}
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+		if (newValuePtr->refCount == 0) {
+		    Tcl_DecrRefCount(newValuePtr);
+		}
 	    }
 	}
     } else if (newValuePtr != oldValuePtr) {
@@ -2011,6 +2050,7 @@ TclPtrSetVar(
  *	incremented to reflect the returned reference; if you want to keep a
  *	reference to the object you must increment its ref count yourself.
  *	Callers must Incr part1Ptr if they plan to Decr it.
+ *	Callers must Incr part2Ptr if they plan to Decr it.
  *
  *----------------------------------------------------------------------
  */
@@ -2036,8 +2076,8 @@ TclIncrObjVar2(
     varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr, flags, "read",
 	    1, 1, &arrayPtr);
     if (varPtr == NULL) {
-	Tcl_AddObjErrorInfo(interp,
-		"\n    (reading value of variable to increment)", -1);
+	Tcl_AddErrorInfo(interp,
+		"\n    (reading value of variable to increment)");
 	return NULL;
     }
     return TclPtrIncrObjVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
@@ -2156,6 +2196,7 @@ TclPtrIncrObjVar(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UnsetVar
 int
 Tcl_UnsetVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -3812,6 +3853,53 @@ ArrayNamesCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclFindArrayPtrElements --
+ *
+ *	Fill out a hash table (which *must* use Tcl_Obj* keys) with an entry
+ *	for each existing element of the given array. The provided hash table
+ *	is assumed to be initially empty.
+ *
+ * Result:
+ *	none
+ *
+ * Side effects:
+ *	The keys of the array gain an extra reference. The supplied hash table
+ *	has elements added to it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFindArrayPtrElements(
+    Var *arrayPtr,
+    Tcl_HashTable *tablePtr)
+{
+    Var *varPtr;
+    Tcl_HashSearch search;
+
+    if ((arrayPtr == NULL) || !TclIsVarArray(arrayPtr)
+	    || TclIsVarUndefined(arrayPtr)) {
+	return;
+    }
+
+    for (varPtr=VarHashFirstVar(arrayPtr->value.tablePtr, &search);
+	    varPtr!=NULL ; varPtr=VarHashNextVar(&search)) {
+	Tcl_HashEntry *hPtr;
+	Tcl_Obj *nameObj;
+	int dummy;
+
+	if (TclIsVarUndefined(varPtr)) {
+	    continue;
+	}
+	nameObj = VarHashGetKey(varPtr);
+	hPtr = Tcl_CreateHashEntry(tablePtr, (char *) nameObj, &dummy);
+	Tcl_SetHashValue(hPtr, nameObj);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ArraySetCmd --
  *
  *	This object-based function is invoked to process the "array set" Tcl
@@ -4515,6 +4603,7 @@ TclPtrObjMakeUpvar(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UpVar
 int
 Tcl_UpVar(
     Tcl_Interp *interp,		/* Command interpreter in which varName is to
@@ -5108,7 +5197,8 @@ ParseSearchId(
      * Parse the id.
      */
 
-    if (Tcl_ConvertToType(interp, handleObj, &tclArraySearchType) != TCL_OK) {
+    if ((handleObj->typePtr != &tclArraySearchType)
+	    && (SetArraySearchObj(interp, handleObj) != TCL_OK)) {
 	return NULL;
     }
 

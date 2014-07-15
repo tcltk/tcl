@@ -80,10 +80,7 @@ proc slave {msgVar args} {
 
     # Need to capture output in msg
 
-    set code [catch {i eval {source $argv0}} foo]
-if $code {
-#puts "$code: $foo\n$::errorInfo"
-}
+    set code [catch {i eval {source $argv0}}]
     i eval {close $tcltest::outputChannel}
     interp delete [namespace current]::i
     set f [open $of]
@@ -99,8 +96,6 @@ if $code {
 	append msg \n$err
     }
     return $code
-
-#    return [catch {uplevel 1 [linsert $args 0  exec [interpreter]]} msg]
 }
 test tcltest-2.0 {tcltest (verbose default - 'b')} {unixOrPc} {
     set result [slave msg test.tcl]
@@ -549,7 +544,7 @@ set notWriteableDir [file join [temporaryDirectory] notwriteable]
 makeDirectory notreadable
 makeDirectory notwriteable
 switch -- $::tcl_platform(platform) {
-    "unix" {
+    unix {
 	file attributes $notReadableDir -permissions 00333
 	file attributes $notWriteableDir -permissions 00555
     }
@@ -716,8 +711,8 @@ test tcltest-8.60 {::workingDirectory}  {
 
 # clean up from directory testing
 
-switch $::tcl_platform(platform) {
-    "unix" {
+switch -- $::tcl_platform(platform) {
+    unix {
 	file attributes $notReadableDir -permissions 777
 	file attributes $notWriteableDir -permissions 777
     }
@@ -727,7 +722,7 @@ switch $::tcl_platform(platform) {
     }
 }
 
-file delete -force $notReadableDir $notWriteableDir
+file delete -force -- $notReadableDir $notWriteableDir
 removeFile a.tcl
 removeFile thisdirectoryisafile
 removeDirectory normaldirectory
@@ -1150,7 +1145,7 @@ test tcltest-19.1 {TCLTEST_OPTIONS default} -setup {
     } -cleanup {
 	interp delete slave2
 	interp delete slave1
-	if {$oldoptions == "none"} {
+	if {$oldoptions eq "none"} {
 	    unset ::env(TCLTEST_OPTIONS) 
 	} else {
 	    set ::env(TCLTEST_OPTIONS) $oldoptions

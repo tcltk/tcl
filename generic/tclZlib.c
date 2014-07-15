@@ -643,7 +643,6 @@ Tcl_ZlibStreamInit(
     int e;
     ZlibStreamHandle *zshPtr = NULL;
     Tcl_DString cmdname;
-    Tcl_CmdInfo cmdinfo;
     GzipHeader *gzHeaderPtr = NULL;
 
     switch (mode) {
@@ -769,8 +768,8 @@ Tcl_ZlibStreamInit(
 	Tcl_DStringInit(&cmdname);
 	TclDStringAppendLiteral(&cmdname, "::tcl::zlib::streamcmd_");
 	TclDStringAppendObj(&cmdname, Tcl_GetObjResult(interp));
-	if (Tcl_GetCommandInfo(interp, Tcl_DStringValue(&cmdname),
-		&cmdinfo) == 1) {
+	if (Tcl_FindCommand(interp, Tcl_DStringValue(&cmdname),
+		NULL, 0) != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "BUG: Stream command name already exists", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "BUG", "EXISTING_CMD", NULL);
@@ -2994,47 +2993,18 @@ ZlibTransformInput(
 	 */
 
 	if (readBytes < 0) {
-	    /*
-	     * Report errors to caller. The state of the seek system is
-	     * unchanged!
-	     */
 
-	    if ((Tcl_GetErrno() == EAGAIN) && (gotBytes > 0)) {
-		/*
-		 * EAGAIN is a special situation. If we had some data before
-		 * we report that instead of the request to re-try.
-		 */
-
+	    /* See ReflectInput() in tclIORTrans.c */
+	    if (Tcl_InputBlocked(cd->parent) && (gotBytes > 0)) {
 		return gotBytes;
 	    }
 
 	    *errorCodePtr = Tcl_GetErrno();
 	    return -1;
-	} else if (readBytes == 0) {
+	}
+	if (readBytes == 0) {
 	    /*
-	     * Check wether we hit on EOF in 'parent' or not. If not,
-	     * differentiate between blocking and non-blocking modes. In
-	     * non-blocking mode we ran temporarily out of data. Signal this
-	     * to the caller via EWOULDBLOCK and error return (-1). In the
-	     * other cases we simply return what we got and let the caller
-	     * wait for more. On the other hand, if we got an EOF we have to
-	     * convert and flush all waiting partial data.
-	     */
-
-	    if (!Tcl_Eof(cd->parent)) {
-		/*
-		 * The state of the seek system is unchanged!
-		 */
-
-		if ((gotBytes == 0) && (cd->flags & ASYNC)) {
-		    *errorCodePtr = EWOULDBLOCK;
-		    return -1;
-		}
-		return gotBytes;
-	    }
-
-	    /*
-	     * (Semi-)Eof in parent.
+	     * Eof in parent.
 	     *
 	     * Now this is a bit different. The partial data waiting is
 	     * converted and returned.
@@ -3052,12 +3022,6 @@ ZlibTransformInput(
 
 		return gotBytes;
 	    }
-
-	    /*
-	     * Reset eof, force caller to drain result buffer.
-	     */
-
-	    ((Channel *) cd->parent)->state->flags &= ~CHANNEL_EOF;
 	} else /* readBytes > 0 */ {
 	    /*
 	     * Transform the read chunk, which was not empty. Anything we get
@@ -3111,7 +3075,7 @@ ZlibTransformOutput(
 	e = deflate(&cd->outStream, Z_NO_FLUSH);
 	produced = cd->outAllocated - cd->outStream.avail_out;
 
-	if (e == Z_OK && cd->outStream.avail_out > 0) {
+	if (e == Z_OK && produced > 0) {
 	    if (Tcl_WriteRaw(cd->parent, cd->outBuffer, produced) < 0) {
 		*errorCodePtr = Tcl_GetErrno();
 		return -1;
@@ -3891,8 +3855,10 @@ Tcl_ZlibStreamInit(
     Tcl_Obj *dictObj,
     Tcl_ZlibStream *zshandle)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 
@@ -3957,8 +3923,10 @@ Tcl_ZlibDeflate(
     int level,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 
@@ -3970,8 +3938,10 @@ Tcl_ZlibInflate(
     int bufferSize,
     Tcl_Obj *gzipHeaderDictObj)
 {
-    Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
-    Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    if (interp) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("unimplemented", -1));
+	Tcl_SetErrorCode(interp, "TCL", "UNIMPLEMENTED", NULL);
+    }
     return TCL_ERROR;
 }
 

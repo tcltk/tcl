@@ -1030,14 +1030,8 @@ TclInitSubsystems(void)
 
 	TclpInitLock();
 	if (subsystemsInitialized == 0) {
-	    /*
-	     * Have to set this bit here to avoid deadlock with the routines
-	     * below us that call into TclInitSubsystems.
-	     */
 
-	    subsystemsInitialized = 1;
-
-	    /*
+		/*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -1061,6 +1055,7 @@ TclInitSubsystems(void)
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclpSetInterfaces();
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();
     }
@@ -1175,8 +1170,6 @@ Tcl_Finalize(void)
      */
 
     TclFinalizeEncodingSubsystem();
-
-    Tcl_SetPanicProc(NULL);
 
     /*
      * Repeat finalization of the thread local storage once more. Although
@@ -1402,7 +1395,7 @@ Tcl_VwaitObjCmd(
 	return TCL_ERROR;
     }
     nameString = Tcl_GetString(objv[1]);
-    if (Tcl_TraceVar(interp, nameString,
+    if (Tcl_TraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done) != TCL_OK) {
 	return TCL_ERROR;
@@ -1420,7 +1413,7 @@ Tcl_VwaitObjCmd(
 	    break;
 	}
     }
-    Tcl_UntraceVar(interp, nameString,
+    Tcl_UntraceVar2(interp, nameString, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    VwaitVarProc, &done);
 

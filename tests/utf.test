@@ -293,15 +293,15 @@ test utf-20.1 {TclUniCharNcmp} {
 } {}
 
 test utf-21.1 {TclUniCharIsAlnum} {
-    # this returns 1 with Unicode 6 compliance
+    # this returns 1 with Unicode 7 compliance
     string is alnum \u1040\u021f\u0220
 } {1}
 test utf-21.2 {unicode alnum char in regc_locale.c} {
-    # this returns 1 with Unicode 6 compliance
+    # this returns 1 with Unicode 7 compliance
     list [regexp {^[[:alnum:]]+$} \u1040\u021f\u0220] [regexp {^\w+$} \u1040\u021f\u0220]
 } {1 1}
 test utf-21.3 {unicode print char in regc_locale.c} {
-    # this returns 1 with Unicode 6 compliance
+    # this returns 1 with Unicode 7 compliance
     regexp {^[[:print:]]+$} \ufbc1
 } 1
 test utf-21.4 {TclUniCharIsGraph} {
@@ -334,11 +334,11 @@ test utf-21.10 {unicode print char in regc_locale.c} {
 } {0}
 test utf-21.11 {TclUniCharIsControl} {
     # [Bug 3464428]
-    string is control \u00ad
+    string is control \u0000\u001f\u00ad\u0605\u061c\u180e\u2066\ufeff
 } {1}
 test utf-21.12 {unicode control char in regc_locale.c} {
-    # [Bug 3464428]
-    regexp {^[[:cntrl:]]$} \u00ad
+    # [Bug 3464428], [Bug a876646efe]
+    regexp {^[[:cntrl:]]*$} \u0000\u001f\u00ad\u0605\u061c\u180e\u2066\ufeff
 } {1}
 
 test utf-22.1 {TclUniCharIsWordChar} {
@@ -349,30 +349,30 @@ test utf-22.2 {TclUniCharIsWordChar} {
 } 10
 
 test utf-23.1 {TclUniCharIsAlpha} {
-    # this returns 1 with Unicode 6 compliance
-    string is alpha \u021f\u0220
+    # this returns 1 with Unicode 7 compliance
+    string is alpha \u021f\u0220\u037f\u052f
 } {1}
 test utf-23.2 {unicode alpha char in regc_locale.c} {
-    # this returns 1 with Unicode 6 compliance
-    regexp {^[[:alpha:]]+$} \u021f\u0220
+    # this returns 1 with Unicode 7 compliance
+    regexp {^[[:alpha:]]+$} \u021f\u0220\u037f\u052f
 } {1}
 
 test utf-24.1 {TclUniCharIsDigit} {
-    # this returns 1 with Unicode 6 compliance
+    # this returns 1 with Unicode 7 compliance
     string is digit \u1040\uabf0
 } {1}
 test utf-24.2 {unicode digit char in regc_locale.c} {
-    # this returns 1 with Unicode 6 compliance
+    # this returns 1 with Unicode 7 compliance
     list [regexp {^[[:digit:]]+$} \u1040\uabf0] [regexp {^\d+$} \u1040\uabf0]
 } {1 1}
 
 test utf-24.3 {TclUniCharIsSpace} {
-    # this returns 1 with Unicode 6 compliance
-    string is space \u1680\u180e
+    # this returns 1 with Unicode 7/TIP 413 compliance
+    string is space \u0085\u1680\u180e\u200b\u202f\u2060
 } {1}
 test utf-24.4 {unicode space char in regc_locale.c} {
-    # this returns 1 with Unicode 6 compliance
-    list [regexp {^[[:space:]]+$} \u1680\u180e] [regexp {^\s+$} \u1680\u180e]
+    # this returns 1 with Unicode 7/TIP 413 compliance
+    list [regexp {^[[:space:]]+$} \u0085\u1680\u180e\u200b\u202f\u2060] [regexp {^\s+$} \u0085\u1680\u180e\u200b\u202f\u2060]
 } {1 1}
 
 testConstraint teststringobj [llength [info commands teststringobj]]
