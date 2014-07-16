@@ -1288,9 +1288,6 @@ TclInfoFrame(
     };
     Proc *procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
 
-    /* Super ugly hack added to the pile so we can plug memleak */
-    int needsFree = -1;
-
     /*
      * Pull the information and construct the dictionary to return, as list.
      * Regarding use of the CmdFrame fields see tclInt.h, and its definition.
@@ -1363,7 +1360,6 @@ TclInfoFrame(
 	}
 
 	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
-	needsFree = lc-1;
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1451,11 +1447,7 @@ TclInfoFrame(
 	}
     }
 
-    tmpObj = Tcl_NewListObj(lc, lv);
-    if (needsFree >= 0) {
-	Tcl_DecrRefCount(lv[needsFree]);
-    }
-    return tmpObj;
+    return Tcl_NewListObj(lc, lv);
 }
 
 /*
