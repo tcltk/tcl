@@ -5601,6 +5601,7 @@ TEBCresume(
 		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
 		}
 		Tcl_InvalidateStringRep(objResultPtr);
+		TclDecrRefCount(value3Ptr);
 		TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 1, 1);
 	    } else {
@@ -5627,6 +5628,7 @@ TEBCresume(
 		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
 		}
 		Tcl_InvalidateStringRep(valuePtr);
+		TclDecrRefCount(value3Ptr);
 		TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
 		NEXT_INST_F(1, 0, 0);
 	    }
