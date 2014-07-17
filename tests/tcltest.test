@@ -717,7 +717,7 @@ switch -- $::tcl_platform(platform) {
 	file attributes $notWriteableDir -permissions 777
     }
     default {
-	catch {testchmod 0777 $notWriteableDir}
+	catch {testchmod 0o777 $notWriteableDir}
 	catch {file attributes $notWriteableDir -readonly 0}
     }
 }
