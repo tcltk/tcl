@@ -340,7 +340,7 @@ test winFCmd-1.33 {TclpRenameFile: After removing dst dir, MoveFile fails} \
     catch {testfile mv c:/tf1 d:/td1} msg
     list $msg [file writable d:/td1]
 } -cleanup {
-    catch {testchmod 0666 d:/td1}
+    catch {testchmod 0o666 d:/td1}
     file delete d:/td1
     file delete -force c:/tf1
 } -result {EXDEV 0}
@@ -493,7 +493,7 @@ test winFCmd-2.12 {TclpCopyFile: CopyFile succeeds} -setup {
     testfile cp tf1 tf2
     list [contents tf2] [file writable tf2]
 } -cleanup {
-    catch {testchmod 0666 tf1}
+    catch {testchmod 0o666 tf1}
     cleanup
 } -result {tf1 0}
 test winFCmd-2.13 {TclpCopyFile: CopyFile fails} -setup {
@@ -539,7 +539,7 @@ test winFCmd-2.17 {TclpCopyFile: dst is readonly} -setup {
     testfile cp tf1 tf2
     list [file writable tf2] [contents tf2]
 } -cleanup {
-    catch {testchmod 0666 tf2}
+    catch {testchmod 0o666 tf2}
     cleanup
 } -result {1 tf1}
 
@@ -617,7 +617,7 @@ test winFCmd-3.11 {TclpDeleteFile: still can't remove path} -setup {
     testfile rm tf1
 } -cleanup {
     close $fd
-    catch {testchmod 0666 tf1}
+    catch {testchmod 0o666 tf1}
     cleanup
 } -returnCodes error -result EACCES
 
@@ -662,7 +662,7 @@ test winFCmd-6.1 {TclpRemoveDirectory: errno: EACCES} -setup {
     testfile rmdir td1
     file exists td1
 } -returnCodes error -cleanup {
-    catch {testchmod 0666 td1}
+    catch {testchmod 0o666 td1}
     cleanup
 } -result {td1 EACCES}
 # This next test has a very hokey way of matching...
@@ -716,7 +716,7 @@ test winFCmd-6.9 {TclpRemoveDirectory: errno == EACCES} -setup {
     testfile rmdir td1
     file exists td1
 } -returnCodes error -cleanup {
-    catch {testchmod 0666 td1}
+    catch {testchmod 0o666 td1}
     cleanup
 } -result {td1 EACCES}
 test winFCmd-6.11 {TclpRemoveDirectory: attr == -1} -setup {
@@ -734,7 +734,7 @@ test winFCmd-6.13 {TclpRemoveDirectory: write-protected} -setup {
     testfile rmdir td1
     file exists td1
 } -cleanup {
-    catch {testchmod 0666 td1}
+    catch {testchmod 0o666 td1}
     cleanup
 } -returnCodes error -result {td1 EACCES}
 # This next test has a very hokey way of matching...
@@ -834,7 +834,7 @@ test winFCmd-7.11 {TraverseWinTree: call TraversalCopy: DOTREE_PRED} -setup {
     testfile cpdir td1 td2
     list [file exists td2] [file writable td2]
 } -cleanup {
-    catch {testchmod 0666 td1}
+    catch {testchmod 0o666 td1}
     cleanup
 } -result {1 1}
 test winFCmd-7.12 {TraverseWinTree: call TraversalDelete: DOTREE_PRED} -setup {
@@ -905,7 +905,7 @@ test winFCmd-7.19 {TraverseWinTree: call TraversalCopy: DOTREE_POSTD} -setup {
     testfile cpdir td1 td2
     list [file exists td2] [file writable td2]
 } -cleanup {
-    catch {testchmod 0666 td1}
+    catch {testchmod 0o666 td1}
     cleanup
 } -result {1 1}
 test winFCmd-7.20 {TraverseWinTree: call TraversalDelete: DOTREE_POSTD} -setup {
@@ -936,7 +936,7 @@ test winFCmd-8.2 {TraversalCopy: DOTREE_PRED} -setup {
     testfile cpdir td1 td2
     list [file writable td1] [file writable td1/td2]
 } -cleanup {
-    catch {testchmod 0666 td1}
+    catch {testchmod 0o666 td1}
     cleanup
 } -result {0 1}
 test winFCmd-8.3 {TraversalCopy: DOTREE_POSTD} -setup {
@@ -963,7 +963,7 @@ test winFCmd-9.3 {TraversalDelete: DOTREE_PRED} -setup {
     testfile rmdir -force td1
     file exists td1
 } -cleanup {
-    catch {testchmod 0666 td1}
+    catch {testchmod 0o666 td1}
     cleanup
 } -returnCodes error -result {td1 EACCES}
 test winFCmd-9.4 {TraversalDelete: DOTREE_POSTD} -setup {
