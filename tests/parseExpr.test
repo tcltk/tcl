@@ -20,6 +20,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # of "<<" are integers.
 
 testConstraint testexprparser [llength [info commands testexprparser]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -81,8 +82,8 @@ testConstraint ieeeFloatingPoint [testIEEE]
 
 ######################################################################
 
-test parseExpr-1.1 {Tcl_ParseExpr procedure, computing string length} testexprparser {
-    testexprparser [bytestring "1+2\0 +3"] -1
+test parseExpr-1.1 {Tcl_ParseExpr procedure, computing string length} {testexprparser testbytestring} {
+    testexprparser [testbytestring "1+2\0 +3"] -1
 } {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
 test parseExpr-1.2 {Tcl_ParseExpr procedure, computing string length} testexprparser {
     testexprparser "1  + 2" -1

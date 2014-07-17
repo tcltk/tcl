@@ -13,10 +13,16 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2}]} {
-    chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
-    return
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
+
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
 
@@ -7426,11 +7432,11 @@ test chan-io-59.1 {Thread reference of channels} {testmainthread testchannel} {
     string equal $result [testmainthread]
 } {1}
 
-test chan-io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
+test chan-io-60.1 {writing illegal utf sequences} {openpipe fileevent testbytestring} {
     # This test will hang in older revisions of the core.
     set out [open $path(script) w]
     chan puts $out {
-	chan puts [encoding convertfrom identity \xe2]
+	chan puts [testbytestring \xe2]
 	exit 1
     }
     proc readit {pipe} {

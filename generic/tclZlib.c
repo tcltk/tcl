@@ -643,7 +643,6 @@ Tcl_ZlibStreamInit(
     int e;
     ZlibStreamHandle *zshPtr = NULL;
     Tcl_DString cmdname;
-    Tcl_CmdInfo cmdinfo;
     GzipHeader *gzHeaderPtr = NULL;
 
     switch (mode) {
@@ -769,8 +768,8 @@ Tcl_ZlibStreamInit(
 	Tcl_DStringInit(&cmdname);
 	TclDStringAppendLiteral(&cmdname, "::tcl::zlib::streamcmd_");
 	TclDStringAppendObj(&cmdname, Tcl_GetObjResult(interp));
-	if (Tcl_GetCommandInfo(interp, Tcl_DStringValue(&cmdname),
-		&cmdinfo) == 1) {
+	if (Tcl_FindCommand(interp, Tcl_DStringValue(&cmdname),
+		NULL, 0) != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		    "BUG: Stream command name already exists", -1));
 	    Tcl_SetErrorCode(interp, "TCL", "BUG", "EXISTING_CMD", NULL);
@@ -2911,6 +2910,10 @@ ZlibTransformClose(
      * Release all memory.
      */
 
+    if (cd->compDictObj) {
+	Tcl_DecrRefCount(cd->compDictObj);
+	cd->compDictObj = NULL;
+    }
     Tcl_DStringFree(&cd->decompressed);
 
     if (cd->inBuffer) {

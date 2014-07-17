@@ -1863,6 +1863,9 @@ TclPtrSetVar(
 		    Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
 		}
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+		if (newValuePtr->refCount == 0) {
+		    Tcl_DecrRefCount(newValuePtr);
+		}
 	    }
 	}
     } else if (newValuePtr != oldValuePtr) {
