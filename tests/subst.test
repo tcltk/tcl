@@ -45,7 +45,7 @@ test subst-3.1 {backslash substitutions} {
     subst {\x\$x\[foo bar]\\}
 } "x\$x\[foo bar]\\"
 test subst-3.2 {backslash substitutions with utf chars} {
-    # 'j' is just a char that doesn't mean anything, and \344 is '�'
+    # 'j' is just a char that doesn't mean anything, and \344 is 'ä'
     # that also doesn't mean anything, but is multi-byte in UTF-8.
     list [subst \j] [subst \\j] [subst \\344] [subst \\\344]
 } "j j \344 \344"

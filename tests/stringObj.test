@@ -339,7 +339,7 @@ test stringObj-10.2 {Tcl_GetRange with some mixed width chars} {testobj testdstr
     # Because this test does not use \uXXXX notation below instead of
     # hardcoding the values, it may fail in multibyte locales. However, we
     # need to test that the parser produces untyped objects even when there
-    # are high-ASCII characters in the input (like "�"). I don't know what
+    # are high-ASCII characters in the input (like "ï"). I don't know what
     # else to do but inline those characters here.
     testdstring free
     testdstring append "abc\u00ef\u00efdef" -1
@@ -348,7 +348,7 @@ test stringObj-10.2 {Tcl_GetRange with some mixed width chars} {testobj testdstr
 	    [testobj objtype $x] [testobj objtype $y]
 } [list none "bc\u00EF\u00EFde" string string]
 test stringObj-10.3 {Tcl_GetRange with some mixed width chars} testobj {
-    # set x "abc��def"
+    # set x "abcïïdef"
     # Use \uXXXX notation below instead of hardcoding the values, otherwise
     # the test will fail in multibyte locales.
     set x "abc\u00EF\u00EFdef"
@@ -357,7 +357,7 @@ test stringObj-10.3 {Tcl_GetRange with some mixed width chars} testobj {
 	    [testobj objtype $x] [testobj objtype $y]
 } [list string "bc\u00EF\u00EFde" string string]
 test stringObj-10.4 {Tcl_GetRange with some mixed width chars} testobj {
-    # set a "�a�b�c�d�"
+    # set a "ïa¿b®cï¿d®"
     # Use \uXXXX notation below instead of hardcoding the values, otherwise
     # the test will fail in multibyte locales.
     set a "\u00EFa\u00BFb\u00AEc\u00EF\u00BFd\u00AE"
@@ -417,13 +417,13 @@ test stringObj-13.4 {Tcl_GetCharLength with mixed width chars} testobj {
     string length "\u00ae" 
 } 1
 test stringObj-13.5 {Tcl_GetCharLength with mixed width chars} testobj {
-    # string length "￮￮" 
+    # string length "ï¿®ï¿®" 
     # Use \uXXXX notation below instead of hardcoding the values, otherwise
     # the test will fail in multibyte locales.
     string length "\u00EF\u00BF\u00AE\u00EF\u00BF\u00AE"
 } 6
 test stringObj-13.6 {Tcl_GetCharLength with mixed width chars} testobj {
-    # set a "�a�b�c�d�"
+    # set a "ïa¿b®cï¿d®"
     # Use \uXXXX notation below instead of hardcoding the values, otherwise
     # the test will fail in multibyte locales.
     set a "\u00EFa\u00BFb\u00AEc\u00EF\u00BFd\u00AE"
@@ -433,7 +433,7 @@ test stringObj-13.7 {Tcl_GetCharLength with identity nulls} {testobj testbytestr
     # SF bug #684699
     string length [testbytestring \x00]
 } 1
-test stringObj-13.8 {Tcl_GetCharLength with identity nulls}  {testobj testbytestring} {
+test stringObj-13.8 {Tcl_GetCharLength with identity nulls} {testobj testbytestring} {
     string length [testbytestring \x01\x00\x02]
 } 3
 
