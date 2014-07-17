@@ -72,10 +72,10 @@ testConstraint exec [llength [info commands exec]]
 # from 49152 through 65535.
 proc randport {} { expr {int(rand()*16383+49152)} }
 
-# Check if socket_test option is available
-testConstraint sockettest [expr {![catch {
+# Check if testsocket testflags is available
+testConstraint testsocket_testflags [expr {![catch {
         set h [socket -async localhost [randport]]
-        fconfigure $h -unsupported1 1
+        testsocket testflags $h 0
         close $h
     }]}]
 
@@ -2170,14 +2170,17 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
         unset x
     } -result {socket is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
-    -constraints {socket sockettest} \
+    -constraints {socket testsocket_testflags} \
     -body {
         set sock [socket -async localhost [randport]]
-        fconfigure $sock -unsupported1 1
+        # Set the socket in async test mode.
+        # The async connect will not be continued on the following fconfigure
+        # and puts/flush. Thus, the connect will fail after them.
+        testsocket testflags $sock 1
         fconfigure $sock -blocking 0
         puts $sock ok
         flush $sock
-        fconfigure $sock -unsupported1 0
+        testsocket testflags $sock 0
         fileevent $sock writable {set x 1}
         vwait x
         close $sock
