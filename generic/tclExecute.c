@@ -2204,10 +2204,6 @@ TEBCresume(
     } else {
         /* resume from invocation */
 	CACHE_STACK_INFO();
-	if (iPtr->execEnvPtr->rewind) {
-	    result = TCL_ERROR;
-	    goto abnormalReturn;
-	}
 
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	if (bcFramePtr->cmdObj) {
@@ -2218,6 +2214,10 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    TclArgumentBCRelease(interp, bcFramePtr);
+	}
+	if (iPtr->execEnvPtr->rewind) {
+	    result = TCL_ERROR;
+	    goto abnormalReturn;
 	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
