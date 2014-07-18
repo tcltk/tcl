@@ -1287,6 +1287,7 @@ TclInfoFrame(
 	"eval", "eval", "eval", "precompiled", "source", "proc"
     };
     Proc *procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
+    int needsFree = -1;
 
     /*
      * Pull the information and construct the dictionary to return, as list.
@@ -1360,6 +1361,9 @@ TclInfoFrame(
 	}
 
 	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
+	if (fPtr->cmdObj && framePtr->cmdObj == NULL) {
+	    needsFree = lc - 1;
+	}
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1447,7 +1451,11 @@ TclInfoFrame(
 	}
     }
 
-    return Tcl_NewListObj(lc, lv);
+    tmpObj = Tcl_NewListObj(lc, lv);
+    if (needsFree >= 0) {
+	Tcl_DecrRefCount(lv[needsFree]);
+    }
+    return tmpObj;
 }
 
 /*
@@ -2655,7 +2663,7 @@ Tcl_LrepeatObjCmd(
      * number of times.
      */
 
-    CLANG_ASSERT(dataArray);
+    CLANG_ASSERT(dataArray || totalElems == 0 );
     if (objc == 1) {
 	register Tcl_Obj *tmpPtr = objv[0];
 
