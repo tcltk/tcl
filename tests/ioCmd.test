@@ -639,7 +639,7 @@ test iocmd-15.9 {Tcl_FcopyObjCmd} {fcopy} {
 } "1 {channel \"$rfile\" wasn't opened for writing}"
 test iocmd-15.10 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile foo bar} msg] $msg
-} {1 {bad switch "foo": must be -size or -command}}
+} {1 {bad option "foo": must be -size or -command}}
 test iocmd-15.11 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}

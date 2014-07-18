@@ -13,13 +13,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2}]} {
-    puts stderr "Skipping tests in [info script].  tcltest 2 required."
-    return
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
@@ -1449,6 +1451,39 @@ test io-12.5 {ReadChars: fileevents on partial characters} {stdio openpipe filee
     lappend x [catch {close $f} msg] $msg
     set x
 } "{} timeout {} timeout \u7266 {} eof 0 {}"
+test io-12.6 {ReadChars: too many chars read} {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [encoding convertto utf-8 \
+                        [string repeat \uBEEF 20][string repeat . 20]]
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+    set c [chan create read [namespace which driver]]
+    chan configure $c -encoding utf-8
+    while {![eof $c]} {
+        read $c 15
+    }
+    close $c
+} {}
 
 test io-13.1 {TranslateInputEOL: cr mode} {} {
     set f [open $path(test1) w]
@@ -4043,7 +4078,7 @@ test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
 } {{hello
 } {hello
 }}
-test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
+test io-32.11.2 {Tcl_Read from a pipe} {stdio openpipe} {
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts $f1 {chan configure stdout -translation crlf}
@@ -4895,6 +4930,26 @@ test io-35.20 {Tcl_Eof, eof char in middle, cr write, crlf read} {
 
 test io-36.1 {Tcl_InputBlocked on nonblocking pipe} {stdio openpipe} {
     set f1 [open "|[list [interpreter]]" r+]
+    puts $f1 {puts hello_from_pipe}
+    flush $f1
+    gets $f1
+    fconfigure $f1 -blocking off -buffering full
+    puts $f1 {puts hello}
+    set x ""
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    flush $f1
+    after 200
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    lappend x [gets $f1]
+    lappend x [fblocked $f1]
+    close $f1
+    set x
+} {{} 1 hello 0 {} 1}
+test io-36.1.1 {Tcl_InputBlocked on nonblocking binary pipe} {stdio openpipe} {
+    set f1 [open "|[list [interpreter]]" r+]
+    chan configure $f1 -encoding binary -translation lf -eofchar {}
     puts $f1 {puts hello_from_pipe}
     flush $f1
     gets $f1
@@ -7807,12 +7862,12 @@ test io-59.1 {Thread reference of channels} {testmainthread testchannel} {
     string equal $result [testmainthread]
 } {1}
 
-test io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
+test io-60.1 {writing illegal utf sequences} {openpipe fileevent testbytestring} {
     # This test will hang in older revisions of the core.
 
     set out [open $path(script) w]
     puts $out {
-	puts [encoding convertfrom identity \xe2]
+	puts [testbytestring \xe2]
 	exit 1
     }
     proc readit {pipe} {
