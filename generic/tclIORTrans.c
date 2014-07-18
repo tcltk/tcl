@@ -2225,6 +2225,9 @@ DeleteReflectedTransformMap(
 	 */
 
 	evPtr = resultPtr->evPtr;
+	if (evPtr == NULL) {
+	    continue;
+	}
 	paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
@@ -2350,6 +2353,9 @@ DeleteThreadReflectedTransformMap(
 	 */
 
 	evPtr = resultPtr->evPtr;
+	if (evPtr == NULL) {
+	    continue;
+	}
 	paramPtr = evPtr->param;
 
 	evPtr->resultPtr = NULL;
@@ -3172,7 +3178,7 @@ TransformWrite(
     }
 
     if (res < 0) {
-	*errorCodePtr = EINVAL;
+	*errorCodePtr = Tcl_GetErrno();
 	return 0;
     }
 
@@ -3282,7 +3288,7 @@ TransformFlush(
     }
 
     if (res < 0) {
-	*errorCodePtr = EINVAL;
+	*errorCodePtr = Tcl_GetErrno();
 	return 0;
     }
 

@@ -649,6 +649,86 @@ test socket_$af-2.11 {detecting new data} -constraints [list socket supported_$a
     close $s
     close $sock
 } -result {a:one b: c:two}
+test socket_$af-2.12 {} [list socket stdio supported_$af] {
+    file delete $path(script)
+    set f [open $path(script) w]
+    puts $f {
+	set server [socket -server accept_client 0]
+	puts [lindex [chan configure $server -sockname] 2]
+	proc accept_client { client host port } {
+	    chan configure $client -blocking  0 -buffering line
+	    write_line $client
+	}
+	proc write_line client {
+	    if { [catch { chan puts $client [string repeat . 720000]}] } {
+		puts [catch {chan close $client}]
+	    } else {
+		puts signal1
+		after 0 write_line $client
+	    }
+	}
+	chan event stdin readable {set forever now}
+	vwait forever
+	exit
+    }
+    close $f
+    set f [open "|[list [interpreter] $path(script)]" r+]
+    gets $f port
+    set sock [socket $localhost $port]
+    chan event $sock readable [list read_lines $sock $f]
+    proc read_lines { sock pipe } {
+	gets $pipe
+	chan close $sock
+	chan event $pipe readable [list readpipe $pipe]
+    }
+    proc readpipe {pipe} {
+	while {![string is integer [set ::done [gets $pipe]]]} {}
+    }
+    vwait ::done
+    close $f
+    set ::done
+} 0
+test socket_$af-2.13 {Bug 1758a0b603} {socket stdio} {
+    file delete $path(script)
+    set f [open $path(script) w]
+    puts $f {
+	set server [socket -server accept 0]
+	puts [lindex [chan configure $server -sockname] 2]
+	proc accept { client host port } {
+	    chan configure $client -blocking  0 -buffering line -buffersize 1
+	    puts $client [string repeat . 720000]
+	    puts ready
+	    chan event $client writable [list setup $client]
+	}
+	proc setup client {
+	    chan event $client writable {set forever write}
+	    after 5 {set forever timeout}
+	}
+	vwait forever
+	puts $forever
+    }
+    close $f
+    set pipe [open |[list [interpreter] $path(script)] r]
+    gets $pipe port
+    set sock [socket $localhost $port]
+    chan configure $sock -blocking  0 -buffering line
+    chan event $sock readable [list read_lines $sock $pipe ]
+    proc read_lines { sock pipe } {
+	gets $pipe
+	gets $sock line
+	after idle [list stop $sock $pipe]
+	chan event $sock readable {}
+    }
+    proc stop {sock pipe} {
+	variable done
+	close $sock
+	set done [gets $pipe]
+    }
+    variable done
+    vwait [namespace which -variable done]
+    close $pipe
+    set done
+} write
 
 test socket_$af-3.1 {socket conflict} -constraints [list socket supported_$af stdio] -setup {
     file delete $path(script)
@@ -1965,6 +2045,7 @@ test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4}
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok {}}
 test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
@@ -1985,6 +2066,7 @@ test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6}
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok {}}
 test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
     -constraints {socket} \
@@ -2019,6 +2101,7 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {ok}
 test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
@@ -2044,6 +2127,7 @@ test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IP
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {ok}
 test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener} \
     -constraints {socket} \
@@ -2080,6 +2164,7 @@ test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4}
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok}
 test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
@@ -2103,6 +2188,7 @@ test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6}
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok}
 test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
@@ -2129,6 +2215,7 @@ test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is I
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok}
 test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
@@ -2155,6 +2242,7 @@ test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is I
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok}
 test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener, no flush} \
     -constraints {socket } \
@@ -2243,6 +2331,7 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
         set x ok
         fileevent $s writable {set x fail}
         catch {read $s}
+	close $s
         set x
     } -result ok
 

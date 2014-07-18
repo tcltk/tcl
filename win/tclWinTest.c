@@ -32,8 +32,8 @@
  * Forward declarations of functions defined later in this file:
  */
 
-static int		TesteventloopCmd(ClientData dummy, Tcl_Interp *interp,
-			    int argc, const char **argv);
+static int		TesteventloopCmd(ClientData dummy, Tcl_Interp* interp,
+			    int objc, Tcl_Obj *const objv[]);
 static int		TestvolumetypeCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -43,8 +43,8 @@ static int		TestwinsleepCmd(ClientData dummy, Tcl_Interp* interp,
 			    int objc, Tcl_Obj *const objv[]);
 static Tcl_ObjCmdProc	TestExceptionCmd;
 static int		TestplatformChmod(const char *nativePath, int pmode);
-static int		TestchmodCmd(ClientData dummy,
-			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestchmodCmd(ClientData dummy, Tcl_Interp* interp,
+			    int objc, Tcl_Obj *const objv[]);
 
 /*
  *----------------------------------------------------------------------
@@ -71,8 +71,8 @@ TclplatformtestInit(
      * Add commands for platform specific tests for Windows here.
      */
 
-    Tcl_CreateCommand(interp, "testchmod", TestchmodCmd, NULL, NULL);
-    Tcl_CreateCommand(interp, "testeventloop", TesteventloopCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testchmod", TestchmodCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testeventloop", TesteventloopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testvolumetype", TestvolumetypeCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwinclock", TestwinclockCmd, NULL, NULL);
@@ -103,21 +103,20 @@ static int
 TesteventloopCmd(
     ClientData clientData,	/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
 {
     static int *framePtr = NULL;/* Pointer to integer on stack frame of
 				 * innermost invocation of the "wait"
 				 * subcommand. */
 
-    if (argc < 2) {
-	Tcl_AppendResult(interp, "wrong # arguments: should be \"", argv[0],
-		" option ... \"", NULL);
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "option ...");
 	return TCL_ERROR;
     }
-    if (strcmp(argv[1], "done") == 0) {
+    if (strcmp(Tcl_GetString(objv[1]), "done") == 0) {
 	*framePtr = 1;
-    } else if (strcmp(argv[1], "wait") == 0) {
+    } else if (strcmp(Tcl_GetString(objv[1]), "wait") == 0) {
 	int *oldFramePtr, done;
 	int oldMode = Tcl_SetServiceMode(TCL_SERVICE_ALL);
 
@@ -152,7 +151,7 @@ TesteventloopCmd(
 	(void) Tcl_SetServiceMode(oldMode);
 	framePtr = oldFramePtr;
     } else {
-	Tcl_AppendResult(interp, "bad option \"", argv[1],
+	Tcl_AppendResult(interp, "bad option \"", Tcl_GetString(objv[1]),
 		"\": must be done or wait", NULL);
 	return TCL_ERROR;
     }
@@ -623,29 +622,25 @@ static int
 TestchmodCmd(
     ClientData dummy,		/* Not used. */
     Tcl_Interp *interp,		/* Current interpreter. */
-    int argc,			/* Number of arguments. */
-    const char **argv)		/* Argument strings. */
+    int objc,			/* Parameter count */
+    Tcl_Obj *const * objv)	/* Parameter vector */
 {
     int i, mode;
-    char *rest;
 
-    if (argc < 2) {
-    usage:
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" mode file ?file ...?", NULL);
+    if (objc < 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
 	return TCL_ERROR;
     }
 
-    mode = (int) strtol(argv[1], &rest, 8);
-    if ((rest == argv[1]) || (*rest != '\0')) {
-	goto usage;
+    if (Tcl_GetIntFromObj(interp, objv[1], &mode) != TCL_OK) {
+	return TCL_ERROR;
     }
 
-    for (i = 2; i < argc; i++) {
+    for (i = 2; i < objc; i++) {
 	Tcl_DString buffer;
 	const char *translated;
 
-	translated = Tcl_TranslateFileName(interp, argv[i], &buffer);
+	translated = Tcl_TranslateFileName(interp, Tcl_GetString(objv[i]), &buffer);
 	if (translated == NULL) {
 	    return TCL_ERROR;
 	}
