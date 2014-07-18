@@ -2204,10 +2204,6 @@ TEBCresume(
     } else {
         /* resume from invocation */
 	CACHE_STACK_INFO();
-	if (iPtr->execEnvPtr->rewind) {
-	    result = TCL_ERROR;
-	    goto abnormalReturn;
-	}
 
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	if (bcFramePtr->cmdObj) {
@@ -2218,6 +2214,10 @@ TEBCresume(
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    TclArgumentBCRelease(interp, bcFramePtr);
+	}
+	if (iPtr->execEnvPtr->rewind) {
+	    result = TCL_ERROR;
+	    goto abnormalReturn;
 	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
@@ -5601,6 +5601,7 @@ TEBCresume(
 		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
 		}
 		Tcl_InvalidateStringRep(objResultPtr);
+		TclDecrRefCount(value3Ptr);
 		TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
 		NEXT_INST_F(1, 1, 1);
 	    } else {
@@ -5627,6 +5628,7 @@ TEBCresume(
 		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
 		}
 		Tcl_InvalidateStringRep(valuePtr);
+		TclDecrRefCount(value3Ptr);
 		TRACE_APPEND(("\"%.30s\"\n", O2S(valuePtr)));
 		NEXT_INST_F(1, 0, 0);
 	    }
@@ -7474,6 +7476,14 @@ TEBCresume(
 	searchPtr = ckalloc(sizeof(Tcl_DictSearch));
 	if (Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done) != TCL_OK) {
+
+	    /*
+	     * dictPtr is no longer on the stack, and we're not
+	     * moving it into the intrep of an iterator.  We need
+	     * to drop the refcount [Tcl Bug 9b352768e6].
+	     */
+
+	    Tcl_DecrRefCount(dictPtr);
 	    ckfree(searchPtr);
 	    TRACE_ERROR(interp);
 	    goto gotError;
