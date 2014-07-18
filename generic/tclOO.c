@@ -1280,6 +1280,7 @@ TclOORemoveFromInstances(
 
   removeInstance:
     if (Deleted(clsPtr->thisPtr)) {
+	DelRef(clsPtr->instances.list[i]);
 	clsPtr->instances.list[i] = NULL;
     } else {
 	clsPtr->instances.num--;
