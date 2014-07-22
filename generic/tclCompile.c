@@ -668,6 +668,19 @@ InstructionDesc const tclInstructionTable[] = {
 	 * satisfy the class check (standard definition of "all").
 	 * Stack:  ... stringValue => ... boolean */
 
+    {"lappendList",	 5,	0,	1,	{OPERAND_LVT4}},
+	/* Lappend list to scalar variable at op4 in frame.
+	 * Stack:  ... list => ... listVarContents */
+    {"lappendListArray", 5,	-1,	1,	{OPERAND_LVT4}},
+	/* Lappend list to array element; array at op4.
+	 * Stack:  ... elem list => ... listVarContents */
+    {"lappendListArrayStk", 1,	-2,	0,	{OPERAND_NONE}},
+	/* Lappend list to array element.
+	 * Stack:  ... arrayName elem list => ... listVarContents */
+    {"lappendListStk",	 1,	-1,	0,	{OPERAND_NONE}},
+	/* Lappend list to general variable.
+	 * Stack:  ... varName list => ... listVarContents */
+
     {NULL, 0, 0, 0, {OPERAND_NONE}}
 };
 

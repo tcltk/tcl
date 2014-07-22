@@ -860,28 +860,16 @@ TclCompileLappendCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar, localIndex, numWords, i, fwd, offsetFwd;
+    int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
-
-    /*
-     * If we're not in a procedure, don't compile.
-     */
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
     if (numWords == 1) {
 	return TCL_ERROR;
     }
-    if (numWords != 3) {
-	/*
-	 * LAPPEND instructions currently only handle one value, but we can
-	 * handle some multi-value cases by stringing them together.
-	 */
 
+    if (numWords != 3 || envPtr->procPtr == NULL) {
 	goto lappendMultiple;
     }
 
@@ -935,42 +923,28 @@ TclCompileLappendCmd(
     return TCL_OK;
 
   lappendMultiple:
-    /*
-     * Can only handle the case where we are appending to a local scalar when
-     * there are multiple values to append.  Fortunately, this is common.
-     */
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
+    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
 	    &localIndex, &isScalar, 1);
-    if (!isScalar || localIndex < 0) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Definitely appending to a local scalar; generate the words and append
-     * them.
-     */
-
     valueTokenPtr = TokenAfter(varTokenPtr);
     for (i = 2 ; i < numWords ; i++) {
 	CompileWord(envPtr, valueTokenPtr, interp, i);
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
-    TclEmitInstInt4(	  INST_LIST, numWords-2,		envPtr);
-    TclEmitInstInt4(	  INST_EXIST_SCALAR, localIndex,	envPtr);
-    offsetFwd = CurrentOffset(envPtr);
-    TclEmitInstInt1(	  INST_JUMP_FALSE1, 0,			envPtr);
-    Emit14Inst(		  INST_LOAD_SCALAR, localIndex,		envPtr);
-    TclEmitInstInt4(	  INST_REVERSE, 2,			envPtr);
-    TclEmitOpcode(	  INST_LIST_CONCAT,			envPtr);
-    fwd = CurrentOffset(envPtr) - offsetFwd;
-    TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
-    Emit14Inst(		  INST_STORE_SCALAR, localIndex,	envPtr);
-
+    TclEmitInstInt4(	    INST_LIST, numWords-2,		envPtr);
+    if (isScalar) {
+	if (localIndex < 0) {
+	    TclEmitOpcode(  INST_LAPPEND_LIST_STK,		envPtr);
+	} else {
+	    TclEmitInstInt4(INST_LAPPEND_LIST, localIndex,	envPtr);
+	}
+    } else {
+	if (localIndex < 0) {
+	    TclEmitOpcode(  INST_LAPPEND_LIST_ARRAY_STK,	envPtr);
+	} else {
+	    TclEmitInstInt4(INST_LAPPEND_LIST_ARRAY, localIndex,envPtr);
+	}
+    }
     return TCL_OK;
 }
 

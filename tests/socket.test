@@ -2036,6 +2036,7 @@ test socket-14.7.0 {pending [socket -async] and blocking [gets], server is IPv4}
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok {}}
 test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
@@ -2056,6 +2057,7 @@ test socket-14.7.1 {pending [socket -async] and blocking [gets], server is IPv6}
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok {}}
 test socket-14.7.2 {pending [socket -async] and blocking [gets], no listener} \
     -constraints {socket} \
@@ -2090,6 +2092,7 @@ test socket-14.8.0 {pending [socket -async] and nonblocking [gets], server is IP
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {ok}
 test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
@@ -2115,6 +2118,7 @@ test socket-14.8.1 {pending [socket -async] and nonblocking [gets], server is IP
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {ok}
 test socket-14.8.2 {pending [socket -async] and nonblocking [gets], no listener} \
     -constraints {socket} \
@@ -2151,6 +2155,7 @@ test socket-14.9.0 {pending [socket -async] and blocking [puts], server is IPv4}
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok}
 test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
@@ -2174,6 +2179,7 @@ test socket-14.9.1 {pending [socket -async] and blocking [puts], server is IPv6}
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok}
 test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is IPv4} \
     -constraints {socket supported_inet localhost_v4} \
@@ -2200,6 +2206,7 @@ test socket-14.10.0 {pending [socket -async] and nonblocking [puts], server is I
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok}
 test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is IPv6} \
     -constraints {socket supported_inet6 localhost_v6} \
@@ -2226,6 +2233,7 @@ test socket-14.10.1 {pending [socket -async] and nonblocking [puts], server is I
     } -cleanup {
         close $fd
         close $sock
+	removeFile script
     } -result {{} ok}
 test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener, no flush} \
     -constraints {socket} \
@@ -2309,6 +2317,7 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
         set x ok
         fileevent $s writable {set x fail}
         catch {read $s}
+	close $s
         set x
     } -result ok
 

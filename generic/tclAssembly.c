@@ -410,6 +410,10 @@ static const TalInstDesc TalInstructionTable[] = {
     {"lappendArray",	ASSEM_LVT,	(INST_LAPPEND_ARRAY1<<8
 					 | INST_LAPPEND_ARRAY4),2,	1},
     {"lappendArrayStk", ASSEM_1BYTE,	INST_LAPPEND_ARRAY_STK,	3,	1},
+    {"lappendList",	ASSEM_LVT4,	INST_LAPPEND_LIST,	1,	1},
+    {"lappendListArray",ASSEM_LVT4,	INST_LAPPEND_LIST_ARRAY,2,	1},
+    {"lappendListArrayStk", ASSEM_1BYTE,INST_LAPPEND_LIST_ARRAY_STK, 3,	1},
+    {"lappendListStk",	ASSEM_1BYTE,	INST_LAPPEND_LIST_STK,	2,	1},
     {"lappendStk",	ASSEM_1BYTE,	INST_LAPPEND_STK,	2,	1},
     {"le",		ASSEM_1BYTE,	INST_LE,		2,	1},
     {"lindexMulti",	ASSEM_LINDEX_MULTI,
