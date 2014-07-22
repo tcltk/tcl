@@ -436,6 +436,7 @@ static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
 static void		DeleteReflectedChannelMap(ClientData clientData,
 			    Tcl_Interp *interp);
 static int		ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj *resObj);
+static void		MarkDead(ReflectedChannel *rcPtr);
 
 /*
  * Global constant strings (messages). ==================
@@ -1146,7 +1147,6 @@ ReflectClose(
 	    if (result != TCL_OK) {
 		FreeReceivedError(&p);
 	    }
-	    return EOK;
 	}
 #endif
 
@@ -1217,17 +1217,14 @@ ReflectClose(
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
-#endif
-
-	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
-	if (tctPtr && tctPtr != &tclRChannelType) {
-	    ckfree((char *)tctPtr);
-	    ((Channel *)rcPtr->chan)->typePtr = NULL;
-	}
-        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
-#ifdef TCL_THREADS
     }
 #endif
+    tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+    if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+    }
+    Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
     return (result == TCL_OK) ? EOK : EINVAL;
 }
 
@@ -2192,9 +2189,15 @@ FreeReflectedChannel(
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
     Tcl_Release(chanPtr);
-    Tcl_DecrRefCount(rcPtr->name);
-    Tcl_DecrRefCount(rcPtr->methods);
-    Tcl_DecrRefCount(rcPtr->cmd);
+    if (rcPtr->name) {
+	Tcl_DecrRefCount(rcPtr->name);
+    }
+    if (rcPtr->methods) {
+	Tcl_DecrRefCount(rcPtr->methods);
+    }
+    if (rcPtr->cmd) {
+	Tcl_DecrRefCount(rcPtr->cmd);
+    }
     ckfree(rcPtr);
 }
 
@@ -2460,6 +2463,28 @@ GetReflectedChannelMap(
  */
 
 static void
+MarkDead(
+    ReflectedChannel *rcPtr)
+{
+    if (rcPtr->dead) {
+	return;
+    }
+    if (rcPtr->name) {
+	Tcl_DecrRefCount(rcPtr->name);
+	rcPtr->name = NULL;
+    }
+    if (rcPtr->methods) {
+	Tcl_DecrRefCount(rcPtr->methods);
+	rcPtr->methods = NULL;
+    }
+    if (rcPtr->cmd) {
+	Tcl_DecrRefCount(rcPtr->cmd);
+	rcPtr->cmd = NULL;
+    }
+    rcPtr->dead = 1;
+}
+
+static void
 DeleteReflectedChannelMap(
     ClientData clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
@@ -2494,7 +2519,7 @@ DeleteReflectedChannelMap(
 	chan = Tcl_GetHashValue(hPtr);
 	rcPtr = Tcl_GetChannelInstanceData(chan);
 
-	rcPtr->dead = 1;
+	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(&rcmPtr->map);
@@ -2577,7 +2602,7 @@ DeleteReflectedChannelMap(
 	    continue;
 	}
 
-	rcPtr->dead = 1;
+	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
 #endif
@@ -2724,7 +2749,7 @@ DeleteThreadReflectedChannelMap(
 	Tcl_Channel chan = Tcl_GetHashValue(hPtr);
 	ReflectedChannel *rcPtr = Tcl_GetChannelInstanceData(chan);
 
-	rcPtr->dead = 1;
+	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     ckfree(rcmPtr);
@@ -2907,8 +2932,6 @@ ForwardProc(
 	 * No parameters/results.
 	 */
 
-	const Tcl_ChannelType *tctPtr;
-
 	if (InvokeTclMethod(rcPtr, METH_FINAL, NULL, NULL, &resObj)!=TCL_OK) {
 	    ForwardSetObjError(paramPtr, resObj);
 	}
@@ -2932,13 +2955,7 @@ ForwardProc(
 	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
                 Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
-
-	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
-	if (tctPtr && tctPtr != &tclRChannelType) {
-	    ckfree((char *)tctPtr);
-	    ((Channel *)rcPtr->chan)->typePtr = NULL;
-	}
-        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+	MarkDead(rcPtr);
 	break;
     }
 
