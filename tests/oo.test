@@ -258,6 +258,19 @@ test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
     rename test-oo-1.18 {}
     A destroy
 } -result ::C
+test oo-1.18.1 {Bug 75b8433707: memory leak in oo-1.18} -setup {
+    proc test-oo-1.18 {} return
+} -constraints memory -body {
+    leaktest {
+	oo::class create A
+	oo::class create B {superclass A}
+	oo::define B constructor {} {A create test-oo-1.18}
+	B create C
+	A destroy
+    }
+} -cleanup {
+    rename test-oo-1.18 {}
+} -result 0
 test oo-1.19 {basic test of OO functionality: teardown order} -body {
     oo::object create o
     namespace delete [info object namespace o]
