@@ -2814,7 +2814,9 @@ test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
 	    update
 	}
 	LOG THREAD-LOOP-DONE
-	thread::exit
+	#thread::exit
+	# Thread exits cause leaks;  Use clean thread shutdown
+	set forever yourGirl
     }
 
     LOG MAIN_WAITING
