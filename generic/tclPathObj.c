@@ -2437,19 +2437,13 @@ SetFsPathFromAny(
 		}
 		TclDecrRefCount(parts);
 	    } else {
-		/*
-		 * Simple case. "rest" is relative path. Just join it. The
-		 * "rest" object will be freed when Tcl_FSJoinToPath returns
-		 * (unless something else claims a refCount on it).
-		 */
+		Tcl_Obj *pair[2];
 
-		Tcl_Obj *joined;
-		Tcl_Obj *rest = Tcl_NewStringObj(name+split+1, -1);
-
-		Tcl_IncrRefCount(transPtr);
-		joined = Tcl_FSJoinToPath(transPtr, 1, &rest);
-		TclDecrRefCount(transPtr);
-		transPtr = joined;
+		pair[0] = transPtr;
+		pair[1] = Tcl_NewStringObj(name+split+1, -1);
+		transPtr = TclJoinPath(2, pair);
+		Tcl_DecrRefCount(pair[0]);
+		Tcl_DecrRefCount(pair[1]);
 	    }
 	}
     } else {
