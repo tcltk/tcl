@@ -8840,9 +8840,7 @@ TclCopyChannel(
     moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
 	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
 	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
-	    && ((inStatePtr->encoding == NULL
-		&& outStatePtr->encoding == NULL)
-		|| (inStatePtr->encoding == outStatePtr->encoding))
+	    && inStatePtr->encoding == outStatePtr->encoding
 	    && !nonBlocking;	/* First draft do only blocking case */
 
     /*
