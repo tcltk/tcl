@@ -8920,6 +8920,10 @@ MoveBytes(
 	 * channel, flush them out of the way first. */
 
 	if (0 != FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0)) {
+	    Tcl_SetObjResult(csPtr->interp, Tcl_ObjPrintf(
+		"error writing \"%s\": %s",
+		Tcl_GetChannelName((Tcl_Channel)csPtr->writePtr), 
+		Tcl_PosixError(csPtr->interp)));
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -8989,6 +8993,10 @@ MoveBytes(
 
 	/* Flush destination */
 	if (0 != FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0)) {
+	    Tcl_SetObjResult(csPtr->interp, Tcl_ObjPrintf(
+		"error writing \"%s\": %s",
+		Tcl_GetChannelName((Tcl_Channel)csPtr->writePtr), 
+		Tcl_PosixError(csPtr->interp)));
 	    code = TCL_ERROR;
 	    break;
 	}
