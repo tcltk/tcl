@@ -2748,10 +2748,9 @@ test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
 	    init* {set ret {initialize finalize watch read}}
 	    watch {
 		set l [lindex $args 0]
+		catch {after cancel $::timer}
 		if {[llength $l]} {
 		    set ::timer [after $::drive [list POST $ch]]
-		} else {
-		    after cancel $::timer
 		}
 	    }
 	    finalize {
