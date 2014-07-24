@@ -8931,9 +8931,13 @@ MoveBytes(
 	int inBytes = 0;
 
 	if (bufPtr == NULL || BytesLeft(bufPtr) == 0) {
-	    /* Nothing in the input queue;  Get more input. */
 
+	    /* Nothing in the input queue;  Get more input. */
 	    if (0 != GetInput(inStatePtr->topChanPtr)) { 
+		Tcl_SetObjResult(csPtr->interp, Tcl_ObjPrintf(
+			"error reading \"%s\": %s",
+			Tcl_GetChannelName((Tcl_Channel)csPtr->readPtr), 
+			Tcl_PosixError(csPtr->interp)));
 		code = TCL_ERROR;
 		break;
 	    }
