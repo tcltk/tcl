@@ -8945,12 +8945,21 @@ MBError(
 {
     Tcl_Channel inChan = (Tcl_Channel) csPtr->readPtr;
     Tcl_Channel outChan = (Tcl_Channel) csPtr->writePtr;
+    Tcl_Obj *errObj;
 
     Tcl_SetErrno(errorCode);
-    MBCallback(csPtr, Tcl_ObjPrintf( "error %sing \"%s\": %s",
+
+    errObj = Tcl_ObjPrintf( "error %sing \"%s\": %s",
 	    (mask & TCL_READABLE) ? "read" : "writ",
 	    Tcl_GetChannelName((mask & TCL_READABLE) ? inChan : outChan),
-	    Tcl_PosixError(csPtr->interp)));
+	    Tcl_PosixError(csPtr->interp));
+
+    if (csPtr->cmdPtr) {
+	MBCallback(csPtr, errObj);
+    } else {
+	Tcl_SetObjResult(csPtr->interp, errObj);
+	StopCopy(csPtr);
+    }
 }
 
 static void
@@ -9065,19 +9074,16 @@ MoveBytes(
     ChannelState *inStatePtr = csPtr->readPtr->state;
     ChannelState *outStatePtr = csPtr->writePtr->state;
     ChannelBuffer *bufPtr = outStatePtr->curOutPtr;
-    int code = TCL_OK;
+    int errorCode, code = TCL_OK;
 
     if (bufPtr && BytesLeft(bufPtr)) {
 	/* If we start with unflushed bytes in the destination
 	 * channel, flush them out of the way first. */
 
-	if (0 != FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0)) {
-	    Tcl_SetObjResult(csPtr->interp, Tcl_ObjPrintf(
-		"error writing \"%s\": %s",
-		Tcl_GetChannelName((Tcl_Channel)csPtr->writePtr), 
-		Tcl_PosixError(csPtr->interp)));
-	    code = TCL_ERROR;
-	    goto done;
+	errorCode = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
+	if (errorCode != 0) {
+	    MBError(csPtr, TCL_WRITABLE, errorCode);
+	    return TCL_ERROR;
 	}
     }
 
@@ -9095,13 +9101,10 @@ MoveBytes(
 	if (bufPtr == NULL || BytesLeft(bufPtr) == 0) {
 
 	    /* Nothing in the input queue;  Get more input. */
-	    if (0 != GetInput(inStatePtr->topChanPtr)) { 
-		Tcl_SetObjResult(csPtr->interp, Tcl_ObjPrintf(
-			"error reading \"%s\": %s",
-			Tcl_GetChannelName((Tcl_Channel)csPtr->readPtr), 
-			Tcl_PosixError(csPtr->interp)));
-		code = TCL_ERROR;
-		break;
+	    errorCode = GetInput(inStatePtr->topChanPtr);
+	    if (errorCode != 0) { 
+		MBError(csPtr, TCL_READABLE, errorCode);
+		return TCL_ERROR;
 	    }
 	    bufPtr = inStatePtr->inQueueHead;
 	}
@@ -9150,13 +9153,10 @@ MoveBytes(
 	}
 
 	/* Flush destination */
-	if (0 != FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0)) {
-	    Tcl_SetObjResult(csPtr->interp, Tcl_ObjPrintf(
-		"error writing \"%s\": %s",
-		Tcl_GetChannelName((Tcl_Channel)csPtr->writePtr), 
-		Tcl_PosixError(csPtr->interp)));
-	    code = TCL_ERROR;
-	    break;
+	errorCode = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
+	if (errorCode != 0) {
+	    MBError(csPtr, TCL_WRITABLE, errorCode);
+	    return TCL_ERROR;
 	}
 	if (GotFlag(inStatePtr, CHANNEL_EOF)) {
 	    break;
@@ -9166,7 +9166,6 @@ MoveBytes(
     if (code == TCL_OK) {
 	Tcl_SetObjResult(csPtr->interp, Tcl_NewWideIntObj(csPtr->total));
     }
-  done:
     StopCopy(csPtr);
     return code;
 }
