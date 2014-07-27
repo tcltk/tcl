@@ -187,7 +187,8 @@ static int		MoveBytes(CopyState *csPtr);
 static void		MBCallback(CopyState *csPtr, Tcl_Obj *errObj);
 static void		MBError(CopyState *csPtr, int mask, int errorCode);
 static void		MBRead(ClientData clientData, int mask);
-static void		MBWrite(ClientData clientData, int mask);
+static int		MBWrite(CopyState *csPtr, int mask);
+static void		MBEvent(ClientData clientData, int mask);
 
 static void		CopyEventProc(ClientData clientData, int mask);
 static void		CreateScriptRecord(Tcl_Interp *interp,
@@ -8963,6 +8964,20 @@ MBError(
 }
 
 static void
+MBEvent(
+    ClientData clientData,
+    int mask)
+{
+    CopyState *csPtr = (CopyState *) clientData;
+
+    if (mask & TCL_WRITABLE) {
+	(void) MBWrite(csPtr, mask);
+    } else if (mask & TCL_READABLE) {
+	(void) MBRead(clientData, mask);
+    }
+}
+
+static void
 MBRead(
     ClientData clientData,
     int mask)
@@ -8979,7 +8994,7 @@ MBRead(
 
     if (code == 0) {
 	/* Successful read -- set up to write the bytes we read */
-	Tcl_CreateChannelHandler(outChan, TCL_WRITABLE, MBWrite, csPtr);
+	Tcl_CreateChannelHandler(outChan, TCL_WRITABLE, MBEvent, csPtr);
 
 	/* When at least one full buffer is present, stop reading. */
 	if (IsBufferFull(inStatePtr->inQueueHead)
@@ -8991,12 +9006,11 @@ MBRead(
     }
 }
 
-static void
+static int 
 MBWrite(
-    ClientData clientData,
+    CopyState *csPtr,
     int mask)
 {
-    CopyState *csPtr = (CopyState *) clientData;
     ChannelState *inStatePtr = csPtr->readPtr->state;
     ChannelState *outStatePtr = csPtr->writePtr->state;
 
@@ -9010,7 +9024,7 @@ MBWrite(
     assert (mask & TCL_WRITABLE);
 
     Tcl_DeleteChannelHandler(inChan, MBRead, csPtr);
-    Tcl_DeleteChannelHandler(outChan, MBWrite, csPtr);
+    Tcl_DeleteChannelHandler(outChan, MBEvent, csPtr);
 
     /* Count up number of bytes waiting in the input queue */
     while (bufPtr) {
@@ -9058,12 +9072,21 @@ MBWrite(
     code = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
     if (code == 0) {
 	if (csPtr->toRead == 0 || Tcl_Eof(inChan)) {
-	    MBCallback(csPtr, NULL);
-	} else {
+	    if (csPtr->cmdPtr) {
+		MBCallback(csPtr, NULL);
+	    } else {
+		Tcl_SetObjResult(csPtr->interp,
+			Tcl_NewWideIntObj(csPtr->total));
+		StopCopy(csPtr);
+	    }
+	    return TCL_OK;
+	} else if (csPtr->cmdPtr) {
 	    Tcl_CreateChannelHandler(inChan, TCL_READABLE, MBRead, csPtr);
 	}
+	return TCL_CONTINUE;
     } else {
 	MBError(csPtr, mask, code);
+	return TCL_ERROR;
     }
 }
 
@@ -9074,7 +9097,7 @@ MoveBytes(
     ChannelState *inStatePtr = csPtr->readPtr->state;
     ChannelState *outStatePtr = csPtr->writePtr->state;
     ChannelBuffer *bufPtr = outStatePtr->curOutPtr;
-    int errorCode, code = TCL_OK;
+    int errorCode;
 
     if (bufPtr && BytesLeft(bufPtr)) {
 	/* If we start with unflushed bytes in the destination
@@ -9093,10 +9116,9 @@ MoveBytes(
 	return TCL_OK;
     }
 
-    while (csPtr->toRead != 0) {
+    while (1) {
 	ChannelBuffer *bufPtr = inStatePtr->inQueueHead;
-	ChannelBuffer *tail = NULL;
-	int inBytes = 0;
+	int code;
 
 	if (bufPtr == NULL || BytesLeft(bufPtr) == 0) {
 
@@ -9108,66 +9130,17 @@ MoveBytes(
 	    }
 	    bufPtr = inStatePtr->inQueueHead;
 	}
-
-	/* Count up number of bytes waiting in the input queue */
-	while (bufPtr) {
-	    inBytes += BytesLeft(bufPtr);
-	    tail = bufPtr;
-	    if (csPtr->toRead != -1 && csPtr->toRead < inBytes) {
-		/* Queue has enough bytes to complete the copy */
-		break;
-	    }
-	    bufPtr = bufPtr->nextPtr;
+	code = MBWrite(csPtr, TCL_WRITABLE);
+	if (code == TCL_CONTINUE) {
+	    continue;
 	}
-
-	if (bufPtr) {
-	    /* Split the overflowing buffer in two */
-	    int extra = inBytes - csPtr->toRead;
-
-	    bufPtr = AllocChannelBuffer(extra);
-
-	    tail->nextAdded -= extra;
-	    memcpy(InsertPoint(bufPtr), InsertPoint(tail), extra);
-	    bufPtr->nextAdded += extra;
-	    bufPtr->nextPtr = tail->nextPtr;
-	    tail->nextPtr = NULL;
-	    inBytes = csPtr->toRead;
-	}
-
-	/* Update the byte counts */
-	if (csPtr->toRead != -1) {
-	    csPtr->toRead -= inBytes;
-	}
-	csPtr->total += inBytes;
-
-	/* Move buffers from input to output channels */
-	if (outStatePtr->outQueueTail) {
-	    outStatePtr->outQueueTail->nextPtr = inStatePtr->inQueueHead;
+	if (code == TCL_OK) {
+	    return TCL_OK;
 	} else {
-	    outStatePtr->outQueueHead = inStatePtr->inQueueHead;
-	}
-	outStatePtr->outQueueTail = tail;
-	inStatePtr->inQueueHead = bufPtr;
-	if (bufPtr == NULL) {
-	    inStatePtr->inQueueTail = NULL;
-	}
-
-	/* Flush destination */
-	errorCode = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
-	if (errorCode != 0) {
-	    MBError(csPtr, TCL_WRITABLE, errorCode);
 	    return TCL_ERROR;
 	}
-	if (GotFlag(inStatePtr, CHANNEL_EOF)) {
-	    break;
-	}
     }
-
-    if (code == TCL_OK) {
-	Tcl_SetObjResult(csPtr->interp, Tcl_NewWideIntObj(csPtr->total));
-    }
-    StopCopy(csPtr);
-    return code;
+    return TCL_OK;	/* Silence compiler warnings */
 }
 
 static int
@@ -9734,7 +9707,7 @@ StopCopy(
 	    Tcl_DeleteChannelHandler(outChan, CopyEventProc, csPtr);
 	}
 	Tcl_DeleteChannelHandler(inChan, MBRead, csPtr);
-	Tcl_DeleteChannelHandler(outChan, MBWrite, csPtr);
+	Tcl_DeleteChannelHandler(outChan, MBEvent, csPtr);
 	TclDecrRefCount(csPtr->cmdPtr);
     }
     inStatePtr->csPtrR = NULL;
