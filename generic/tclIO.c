@@ -8969,9 +8969,20 @@ MBEvent(
     int mask)
 {
     CopyState *csPtr = (CopyState *) clientData;
+    Tcl_Channel inChan = (Tcl_Channel) csPtr->readPtr;
+    Tcl_Channel outChan = (Tcl_Channel) csPtr->writePtr;
 
     if (mask & TCL_WRITABLE) {
-	(void) MBWrite(csPtr, mask);
+	Tcl_DeleteChannelHandler(inChan, MBRead, csPtr);
+	Tcl_DeleteChannelHandler(outChan, MBEvent, csPtr);
+	switch (MBWrite(csPtr, mask)) {
+	case TCL_OK:
+	    MBCallback(csPtr, NULL);
+	    break;
+	case TCL_CONTINUE:
+	    Tcl_CreateChannelHandler(inChan, TCL_READABLE, MBRead, csPtr);
+	    break;
+	}
     } else if (mask & TCL_READABLE) {
 	(void) MBRead(clientData, mask);
     }
@@ -9013,18 +9024,11 @@ MBWrite(
 {
     ChannelState *inStatePtr = csPtr->readPtr->state;
     ChannelState *outStatePtr = csPtr->writePtr->state;
-
-    Tcl_Channel inChan = (Tcl_Channel) csPtr->readPtr;
-    Tcl_Channel outChan = (Tcl_Channel) csPtr->writePtr;
-
     ChannelBuffer *bufPtr = inStatePtr->inQueueHead;
     ChannelBuffer *tail = NULL;
     int code, inBytes = 0;
 
     assert (mask & TCL_WRITABLE);
-
-    Tcl_DeleteChannelHandler(inChan, MBRead, csPtr);
-    Tcl_DeleteChannelHandler(outChan, MBEvent, csPtr);
 
     /* Count up number of bytes waiting in the input queue */
     while (bufPtr) {
@@ -9070,24 +9074,14 @@ MBWrite(
     }
 
     code = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
-    if (code == 0) {
-	if (csPtr->toRead == 0 || Tcl_Eof(inChan)) {
-	    if (csPtr->cmdPtr) {
-		MBCallback(csPtr, NULL);
-	    } else {
-		Tcl_SetObjResult(csPtr->interp,
-			Tcl_NewWideIntObj(csPtr->total));
-		StopCopy(csPtr);
-	    }
-	    return TCL_OK;
-	} else if (csPtr->cmdPtr) {
-	    Tcl_CreateChannelHandler(inChan, TCL_READABLE, MBRead, csPtr);
-	}
-	return TCL_CONTINUE;
-    } else {
+    if (code) {
 	MBError(csPtr, mask, code);
 	return TCL_ERROR;
     }
+    if (csPtr->toRead == 0 || GotFlag(inStatePtr, CHANNEL_EOF)) {
+	return TCL_OK;
+    }
+    return TCL_CONTINUE;
 }
 
 static int
@@ -9131,14 +9125,15 @@ MoveBytes(
 	    bufPtr = inStatePtr->inQueueHead;
 	}
 	code = MBWrite(csPtr, TCL_WRITABLE);
-	if (code == TCL_CONTINUE) {
-	    continue;
-	}
 	if (code == TCL_OK) {
+	    Tcl_SetObjResult(csPtr->interp, Tcl_NewWideIntObj(csPtr->total));
+	    StopCopy(csPtr);
 	    return TCL_OK;
-	} else {
+	}
+	if (code == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
+	/* code == TCL_CONTINUE --> continue the loop */
     }
     return TCL_OK;	/* Silence compiler warnings */
 }
