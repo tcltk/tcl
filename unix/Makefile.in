@@ -1660,6 +1660,7 @@ $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
+EOLFIX=$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure genstubs
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
@@ -1755,7 +1756,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(TOOL_DIR)/tcl.wse.in $(TOOL_DIR)/*.bmp \
 		$(TOOL_DIR)/tcl.hpj.in \
 		$(DISTDIR)/tools
-	@$(TCL_EXE) $(TOOL_DIR)/eolFix.tcl -crlf $(DISTDIR)/tools/tcl.hpj.in \
+	@$(EOLFIX) -crlf $(DISTDIR)/tools/tcl.hpj.in \
 		$(DISTDIR)/tools/tcl.wse.in
 	@mkdir $(DISTDIR)/libtommath
 	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h \
