@@ -522,6 +522,26 @@ ClockGetdatefieldsObjCmd(
  */
 
 static int
+FetchIntField(
+    Tcl_Interp *interp,
+    Tcl_Obj *dict,
+    Tcl_Obj *key,
+    int *storePtr)
+{
+    Tcl_Obj *value = NULL;
+
+    if (Tcl_DictObjGet(interp, dict, key, &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (value == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"expected key(s) not found in dictionary", -1));
+	return TCL_ERROR;
+    }
+    return TclGetIntFromObj(interp, value, storePtr);
+}
+
+static int
 ClockGetjuliandayfromerayearmonthdayObjCmd(
     ClientData clientData,	/* Opaque pointer to literal pool, etc. */
     Tcl_Interp *interp,		/* Tcl interpreter */
@@ -551,18 +571,13 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 		 || fieldPtr == NULL
 	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
 		&era) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_YEAR], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.year) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_MONTH],	&fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.month) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFMONTH], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &fields.dayOfMonth)!=TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_YEAR], &fields.year)
+		!= TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_MONTH], &fields.month)
+		!= TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_DAYOFMONTH],
+		&fields.dayOfMonth) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
-    if (fieldPtr == NULL)
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
 	return TCL_ERROR;
     }
     fields.era = era;
@@ -644,18 +659,13 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 		 || fieldPtr == NULL
 	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
 		&era) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601YEAR], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &(fields.iso8601Year)) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_ISO8601WEEK], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &(fields.iso8601Week)) != TCL_OK
-	    || Tcl_DictObjGet(interp, dict, literals[LIT_DAYOFWEEK], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || TclGetIntFromObj(interp, fieldPtr, &(fields.dayOfWeek)) != TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_ISO8601YEAR],
+		&fields.iso8601Year) != TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_ISO8601WEEK],
+		&fields.iso8601Week) != TCL_OK
+	    || FetchIntField(interp, dict, literals[LIT_DAYOFWEEK],
+		&fields.dayOfWeek) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
-    if (fieldPtr == NULL)
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
 	return TCL_ERROR;
     }
     fields.era = era;
