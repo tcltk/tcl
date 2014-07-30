@@ -522,6 +522,26 @@ ClockGetdatefieldsObjCmd(
  */
 
 static int
+FetchEraField(
+    Tcl_Interp *interp,
+    Tcl_Obj *dict,
+    Tcl_Obj *key,
+    int *storePtr)
+{
+    Tcl_Obj *value = NULL;
+
+    if (Tcl_DictObjGet(interp, dict, key, &value) != TCL_OK) {
+	return TCL_ERROR;
+    }
+    if (value == NULL) {
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"expected key(s) not found in dictionary", -1));
+	return TCL_ERROR;
+    }
+    return Tcl_GetIndexFromObj(interp, value, eras, "era", TCL_EXACT, storePtr);
+}
+
+static int
 FetchIntField(
     Tcl_Interp *interp,
     Tcl_Obj *dict,
@@ -552,7 +572,6 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
     Tcl_Obj *dict;
     ClockClientData *data = clientData;
     Tcl_Obj *const *literals = data->literals;
-    Tcl_Obj *fieldPtr;
     int changeover;
     int copied = 0;
     int status;
@@ -567,10 +586,7 @@ ClockGetjuliandayfromerayearmonthdayObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
-		&era) != TCL_OK
+    if (FetchEraField(interp, dict, literals[LIT_ERA], &era) != TCL_OK
 	    || FetchIntField(interp, dict, literals[LIT_YEAR], &fields.year)
 		!= TCL_OK
 	    || FetchIntField(interp, dict, literals[LIT_MONTH], &fields.month)
@@ -640,7 +656,6 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
     Tcl_Obj *dict;
     ClockClientData *data = clientData;
     Tcl_Obj *const *literals = data->literals;
-    Tcl_Obj *fieldPtr;
     int changeover;
     int copied = 0;
     int status;
@@ -655,10 +670,7 @@ ClockGetjuliandayfromerayearweekdayObjCmd(
 	return TCL_ERROR;
     }
     dict = objv[1];
-    if (Tcl_DictObjGet(interp, dict, literals[LIT_ERA], &fieldPtr) != TCL_OK
-		 || fieldPtr == NULL
-	    || Tcl_GetIndexFromObj(interp, fieldPtr, eras, "era", TCL_EXACT,
-		&era) != TCL_OK
+    if (FetchEraField(interp, dict, literals[LIT_ERA], &era) != TCL_OK
 	    || FetchIntField(interp, dict, literals[LIT_ISO8601YEAR],
 		&fields.iso8601Year) != TCL_OK
 	    || FetchIntField(interp, dict, literals[LIT_ISO8601WEEK],
