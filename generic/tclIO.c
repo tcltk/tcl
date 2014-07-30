@@ -1903,12 +1903,7 @@ void
 TclChannelPreserve(
     Tcl_Channel chan)
 {
-    Channel *chanPtr = (Channel *) chan;
-
-    if (chanPtr->refCount == 0) {
-	Tcl_Preserve(chan);
-    }
-    chanPtr->refCount++;
+    ((Channel *)chan)->refCount++;
 }
 
 void
@@ -1917,10 +1912,15 @@ TclChannelRelease(
 {
     Channel *chanPtr = (Channel *) chan;
 
+    if (chanPtr->refCount == 0) {
+	Tcl_Panic("Channel released more than preserved");
+    }
     if (--chanPtr->refCount) {
 	return;
     }
-    Tcl_Release(chan);
+    if (chanPtr->typePtr == NULL) {
+	ckfree(chanPtr);
+    }
 }
 
 
@@ -2071,11 +2071,6 @@ Tcl_UnstackChannel(
 	result = ChanClose(chanPtr, interp);
 	chanPtr->typePtr = NULL;
 
-	/*
-	 * AK: Tcl_NotifyChannel may hold a reference to this block of memory
-	 */
-
-	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 	UpdateInterest(statePtr->topChanPtr);
 
 	if (result != 0) {
@@ -3028,7 +3023,6 @@ CloseChannel(
 	downChanPtr->upChanPtr = NULL;
 	chanPtr->typePtr = NULL;
 
-	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 	return Tcl_Close(interp, (Tcl_Channel) downChanPtr);
     }
 
@@ -3036,13 +3030,11 @@ CloseChannel(
      * There is only the TOP Channel, so we free the remaining pointers we
      * have and then ourselves. Since this is the last of the channels in the
      * stack, make sure to free the ChannelState structure associated with it.
-     * We use Tcl_EventuallyFree to allow for any last references.
      */
 
     chanPtr->typePtr = NULL;
 
     Tcl_EventuallyFree(statePtr, TCL_DYNAMIC);
-    Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 
     return errorCode;
 }
