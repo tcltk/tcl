@@ -658,7 +658,7 @@ TclChanCreateObjCmd(
     chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
 	    mode);
     rcPtr->chan = chan;
-    Tcl_Preserve(chan);
+    TclChannelPreserve(chan);
     chanPtr = (Channel *) chan;
 
     if ((methods & NULLABLE_METHODS) != NULLABLE_METHODS) {
@@ -2188,7 +2188,7 @@ FreeReflectedChannel(
 {
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     if (rcPtr->name) {
 	Tcl_DecrRefCount(rcPtr->name);
     }
