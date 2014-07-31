@@ -112,6 +112,8 @@ typedef struct Channel {
 
     ChannelBuffer *inQueueHead;	/* Points at first buffer in input queue. */
     ChannelBuffer *inQueueTail;	/* Points at last buffer in input queue. */
+
+    int refCount;
 } Channel;
 
 /*
