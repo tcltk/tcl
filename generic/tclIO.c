@@ -1652,6 +1652,7 @@ Tcl_CreateChannel(
     chanPtr->upChanPtr		= NULL;
     chanPtr->inQueueHead	= NULL;
     chanPtr->inQueueTail	= NULL;
+    chanPtr->refCount		= 0;
 
     /*
      * TIP #219, Tcl Channel Reflection API
@@ -1872,6 +1873,7 @@ Tcl_StackChannel(
     chanPtr->upChanPtr		= NULL;
     chanPtr->inQueueHead	= NULL;
     chanPtr->inQueueTail	= NULL;
+    chanPtr->refCount		= 0;
 
     /*
      * Place new block at the head of a possibly existing list of previously
@@ -1896,6 +1898,31 @@ Tcl_StackChannel(
 
     return (Tcl_Channel) chanPtr;
 }
+
+void
+TclChannelPreserve(
+    Tcl_Channel chan)
+{
+    ((Channel *)chan)->refCount++;
+}
+
+void
+TclChannelRelease(
+    Tcl_Channel chan)
+{
+    Channel *chanPtr = (Channel *) chan;
+
+    if (chanPtr->refCount == 0) {
+	Tcl_Panic("Channel released more than preserved");
+    }
+    if (--chanPtr->refCount) {
+	return;
+    }
+    if (chanPtr->typePtr == NULL) {
+	ckfree(chanPtr);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2044,11 +2071,6 @@ Tcl_UnstackChannel(
 	result = ChanClose(chanPtr, interp);
 	chanPtr->typePtr = NULL;
 
-	/*
-	 * AK: Tcl_NotifyChannel may hold a reference to this block of memory
-	 */
-
-	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 	UpdateInterest(statePtr->topChanPtr);
 
 	if (result != 0) {
@@ -2642,7 +2664,7 @@ FlushChannel(
      * of the queued output to the channel.
      */
 
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
     while (statePtr->outQueueHead) {
 	bufPtr = statePtr->outQueueHead;
 
@@ -2833,7 +2855,7 @@ FlushChannel(
     }
 
   done:
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return errorCode;
 }
 
@@ -3001,7 +3023,6 @@ CloseChannel(
 	downChanPtr->upChanPtr = NULL;
 	chanPtr->typePtr = NULL;
 
-	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 	return Tcl_Close(interp, (Tcl_Channel) downChanPtr);
     }
 
@@ -3009,13 +3030,11 @@ CloseChannel(
      * There is only the TOP Channel, so we free the remaining pointers we
      * have and then ourselves. Since this is the last of the channels in the
      * stack, make sure to free the ChannelState structure associated with it.
-     * We use Tcl_EventuallyFree to allow for any last references.
      */
 
     chanPtr->typePtr = NULL;
 
     Tcl_EventuallyFree(statePtr, TCL_DYNAMIC);
-    Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 
     return errorCode;
 }
@@ -4391,7 +4410,7 @@ Tcl_GetsObj(
      */
 
     chanPtr = statePtr->topChanPtr;
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
 
     bufPtr = statePtr->inQueueHead;
     encoding = statePtr->encoding;
@@ -4627,9 +4646,9 @@ Tcl_GetsObj(
      */
 
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_Release(chanPtr);
+	TclChannelRelease((Tcl_Channel)chanPtr);
 	chanPtr = statePtr->topChanPtr;
-	Tcl_Preserve(chanPtr);
+	TclChannelPreserve((Tcl_Channel)chanPtr);
     }
 
     bufPtr = gs.bufPtr;
@@ -4665,9 +4684,9 @@ Tcl_GetsObj(
      * self-modifying reflected transforms.
      */
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_Release(chanPtr);
+	TclChannelRelease((Tcl_Channel)chanPtr);
 	chanPtr = statePtr->topChanPtr;
-	Tcl_Preserve(chanPtr);
+	TclChannelPreserve((Tcl_Channel)chanPtr);
     }
     bufPtr = statePtr->inQueueHead;
     if (bufPtr != NULL) {
@@ -4709,12 +4728,12 @@ Tcl_GetsObj(
      * self-modifying reflected transforms.
      */
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_Release(chanPtr);
+	TclChannelRelease((Tcl_Channel)chanPtr);
 	chanPtr = statePtr->topChanPtr;
-	Tcl_Preserve(chanPtr);
+	TclChannelPreserve((Tcl_Channel)chanPtr);
     }
     UpdateInterest(chanPtr);
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return copiedTotal;
 }
 
@@ -4760,7 +4779,7 @@ TclGetsObjBinary(
      */
 
     chanPtr = statePtr->topChanPtr;
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
 
     bufPtr = statePtr->inQueueHead;
 
@@ -4965,7 +4984,7 @@ TclGetsObjBinary(
 
   done:
     UpdateInterest(chanPtr);
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return copiedTotal;
 }
 
@@ -5589,7 +5608,7 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     encoding = statePtr->encoding;
     factor = UTF_EXPANSION_FACTOR;
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
 
     binaryMode = (encoding == NULL)
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF) 
@@ -5650,9 +5669,9 @@ DoReadChars(
 	    }
 	    result = GetInput(chanPtr);
 	    if (chanPtr != statePtr->topChanPtr) {
-		Tcl_Release(chanPtr);
+		TclChannelRelease((Tcl_Channel)chanPtr);
 		chanPtr = statePtr->topChanPtr;
-		Tcl_Preserve(chanPtr);
+		TclChannelPreserve((Tcl_Channel)chanPtr);
 	    }
 	    if (result != 0) {
 		if (!GotFlag(statePtr, CHANNEL_BLOCKED)) {
@@ -5680,9 +5699,9 @@ DoReadChars(
      * self-modifying reflected transforms.
      */
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_Release(chanPtr);
+	TclChannelRelease((Tcl_Channel)chanPtr);
 	chanPtr = statePtr->topChanPtr;
-	Tcl_Preserve(chanPtr);
+	TclChannelPreserve((Tcl_Channel)chanPtr);
     }
 
     /*
@@ -5690,7 +5709,7 @@ DoReadChars(
      * in the buffers.
      */
     UpdateInterest(chanPtr);
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return copied;
 }
 
@@ -8062,7 +8081,7 @@ Tcl_NotifyChannel(
      * Preserve the channel struct in case the script closes it.
      */
 
-    Tcl_Preserve(channel);
+    TclChannelPreserve((Tcl_Channel)channel);
     Tcl_Preserve(statePtr);
 
     /*
@@ -8112,7 +8131,7 @@ Tcl_NotifyChannel(
     }
 
     Tcl_Release(statePtr);
-    Tcl_Release(channel);
+    TclChannelRelease(channel);
 
     tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
 }
@@ -8594,7 +8613,7 @@ TclChannelEventScriptInvoker(
      */
 
     Tcl_Preserve(interp);
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
     result = Tcl_EvalObjEx(interp, esPtr->scriptPtr, TCL_EVAL_GLOBAL);
 
     /*
@@ -8611,7 +8630,7 @@ TclChannelEventScriptInvoker(
 	}
 	Tcl_BackgroundException(interp, result);
     }
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     Tcl_Release(interp);
 }
 
@@ -9464,7 +9483,7 @@ DoRead(
     ChannelState *statePtr = chanPtr->state;
     char *p = dst;
 
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
     while (bytesToRead) {
 	/*
 	 * Each pass through the loop is intended to process up to 
@@ -9503,7 +9522,7 @@ DoRead(
 	    if (code) {
 		/* Read error */
 		UpdateInterest(chanPtr);
-		Tcl_Release(chanPtr);
+		TclChannelRelease((Tcl_Channel)chanPtr);
 		return -1;
 	    }
 
@@ -9601,7 +9620,7 @@ DoRead(
 	ResetFlag(statePtr, CHANNEL_BLOCKED);
     }
 
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return (int)(p - dst);
 }
 
