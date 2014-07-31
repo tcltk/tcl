@@ -104,7 +104,7 @@ TclpLoadMemory(
     int size,			/* Dummy: unused by this implementation */
     int codeSize,		/* Dummy: unused by this implementation */
     Tcl_LoadHandle *loadHandle,	/* Dummy: unused by this implementation */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr, int flags)
 				/* Dummy: unused by this implementation */
 {
     Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "

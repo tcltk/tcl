@@ -544,7 +544,11 @@ extern int errno;
  *---------------------------------------------------------------------------
  */
 
-#if defined(__APPLE__) && defined(__DYNAMIC__)
+#ifdef __APPLE__
+#include "TargetConditionals.h"
+#endif
+
+#if defined(__APPLE__) && defined(__DYNAMIC__) && TARGET_OS_MAC
 #   include <crt_externs.h>
 #   define environ	(*_NSGetEnviron())
 #   define USE_PUTENV	1
