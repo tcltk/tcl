@@ -163,23 +163,23 @@ TclCompileGlobalCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TclCompileIdCmd --
+ * TclCompileKCmd --
  *
- *	Procedure called to compile the "id" command.
+ *	Procedure called to compile the "K" combinator command.
  *
  * Results:
  *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
  *	evaluation to runtime.
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "id" command at
+ *	Instructions are added to envPtr to execute the "K" command at
  *	runtime.
  *
  *----------------------------------------------------------------------
  */
 
 int
-TclCompileIdCmd(
+TclCompileKCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
@@ -188,24 +188,25 @@ TclCompileIdCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     /*
-     * General syntax: [id value]
+     * General syntax: [K ?value ...?]
      */
     int numWords = parsePtr->numWords;
     Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     DefineLineInformation;	/* TIP #280 */
 
-    if (numWords!=2) {
-	/*
-	 * Wrong #args. Clear the error message,
-	 * and report back to the compiler that this must be interpreted at
-	 * runtime.
-	 */
+    if (numWords>=2) {
+	int i;
 
-	Tcl_ResetResult(interp);
-	return TCL_ERROR;
+	for (i = 1; i < numWords; i++) {
+	    CompileWord(envPtr, wordTokenPtr, interp, i);
+	    wordTokenPtr = TokenAfter(wordTokenPtr);
+	    if (i>1) {
+		TclEmitOpcode(INST_POP,	envPtr);
+	    }
+	}
+    } else {
+	PushStringLiteral(envPtr, "");
     }
-    
-    CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
 
     return TCL_OK;
 }
