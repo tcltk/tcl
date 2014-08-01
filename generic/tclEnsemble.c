@@ -3019,8 +3019,24 @@ TclCompileEnsemble(
 		cmdPtr = oldCmdPtr;
 		depth--;
 	    }
-	    (void) Tcl_ListObjReplace(NULL, replaced, depth, 2, 0, NULL);
 	}
+	/*
+	 * The length of the "replaced" list must be depth-1.  Trim back
+	 * any extra elements that might have been appended by failing
+	 * pathways above.
+	 */
+	(void) Tcl_ListObjReplace(NULL, replaced, depth-1, INT_MAX, 0, NULL);
+
+	/*
+	 * TODO: Reconsider whether we ought to call CompileToInvokedCommand()
+	 * when depth==1.  In that case we are choosing to emit the
+	 * INST_INVOKE_REPLACE bytecode when there is in fact no replacing
+	 * to be done.  It would be equally functional and presumably more
+	 * performant to fall through to cleanup below, return TCL_ERROR,
+	 * and let the compiler harness emit the INST_INVOKE_STK
+	 * implementation for us.
+	 */
+
 	CompileToInvokedCommand(interp, parsePtr, replaced, cmdPtr, envPtr);
 	ourResult = TCL_OK;
     }
