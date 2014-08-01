@@ -5405,7 +5405,7 @@ ReadChars(
      * for sizing receiving buffers.
      */
 
-    int toRead = ((unsigned) charsToRead > srcLen) ? srcLen : charsToRead;
+    int toRead = ((unsigned) charsToRead > (unsigned) srcLen) ? srcLen : charsToRead;
 
     /*
      * 'factor' is how much we guess that the bytes in the source buffer will
