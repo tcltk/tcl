@@ -191,6 +191,42 @@ static const EnsembleImplMap defaultInfoMap[] = {
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_IdObjCmd --
+ *
+ *	This procedure is invoked to process the "id" Tcl command. See the
+ *	user documentation for details on what it does.
+ *
+ *	With the bytecode compiler, this procedure is only called in case of
+ *	wrong #args, or if the #args is not known at compile time (expand
+ *	operator).
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_IdObjCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    if (objc !=2) {
+	Tcl_WrongNumArgs(interp, 0, objv, "id value");
+	return TCL_ERROR;
+    }
+    Tcl_SetObjResult(interp, objv[1]);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_IfObjCmd --
  *
  *	This procedure is invoked to process the "if" Tcl command. See the

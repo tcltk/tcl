@@ -163,6 +163,56 @@ TclCompileGlobalCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclCompileIdCmd --
+ *
+ *	Procedure called to compile the "id" command.
+ *
+ * Results:
+ *	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
+ *	evaluation to runtime.
+ *
+ * Side effects:
+ *	Instructions are added to envPtr to execute the "id" command at
+ *	runtime.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclCompileIdCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    /*
+     * General syntax: [id value]
+     */
+    int numWords = parsePtr->numWords;
+    Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    DefineLineInformation;	/* TIP #280 */
+
+    if (numWords!=2) {
+	/*
+	 * Wrong #args. Clear the error message,
+	 * and report back to the compiler that this must be interpreted at
+	 * runtime.
+	 */
+
+	Tcl_ResetResult(interp);
+	return TCL_ERROR;
+    }
+    
+    CompileWord(envPtr, wordTokenPtr, interp, numWords-1);
+
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclCompileIfCmd --
  *
  *	Procedure called to compile the "if" command.
