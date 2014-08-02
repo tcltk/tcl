@@ -405,6 +405,7 @@ DupDictInternalRep(
      */
 
     DICT(copyPtr) = newDict;
+    copyPtr->internalRep.twoPtrValue.ptr2 = NULL;
     copyPtr->typePtr = &tclDictType;
 }
 
@@ -720,6 +721,7 @@ SetDictFromAny(
     dict->chain = NULL;
     dict->refcount = 1;
     DICT(objPtr) = dict;
+    objPtr->internalRep.twoPtrValue.ptr2 = NULL;
     objPtr->typePtr = &tclDictType;
     return TCL_OK;
 
@@ -1390,6 +1392,7 @@ Tcl_NewDictObj(void)
     dict->chain = NULL;
     dict->refcount = 1;
     DICT(dictPtr) = dict;
+    dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;
     return dictPtr;
 #endif
@@ -1439,6 +1442,7 @@ Tcl_DbNewDictObj(
     dict->chain = NULL;
     dict->refcount = 1;
     DICT(dictPtr) = dict;
+    dictPtr->internalRep.twoPtrValue.ptr2 = NULL;
     dictPtr->typePtr = &tclDictType;
     return dictPtr;
 #else /* !TCL_MEM_DEBUG */

@@ -59,7 +59,7 @@ if {[testConstraint unix]} {
 }
 
 proc openup {path} {
-    testchmod 777 $path
+    testchmod 0o777 $path
     if {[file isdirectory $path]} {
 	catch {
 	    foreach p [glob -directory $path *] {
