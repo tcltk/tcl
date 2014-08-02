@@ -2838,6 +2838,76 @@ StringCmpCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * StringCatCmd --
+ *
+ *	This procedure is invoked to process the "string cat" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StringCatCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int tot, i, length;
+    char *bytes, *p;
+    Tcl_Obj *objResultPtr;
+
+    /*
+     * NOTE: this implementation aims for simplicity, not speed, because all
+     * speed-critical uses of [string cat] will involve the compiled variant
+     * anyway. Thus we avoid code duplication (from TEBC/INST_CONCAT1) without
+     * sacrificing perf.
+     */
+	
+    if (objc < 2) {
+	/*
+	 * If there are no args, the result is an empty object.
+	 * Just leave the preset empty interp result.
+	 */
+	return TCL_OK;
+    }
+    tot = 0;
+    for(i = 1;i < objc;i++) {
+	bytes = TclGetStringFromObj(objv[i], &length);
+	if (bytes != NULL) {
+	    tot += length;
+	}
+    }
+    if (tot < 0) {
+	/* TODO: convert panic to error ? */
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
+    p = ckalloc(tot + 1);
+    TclNewObj(objResultPtr);
+    objResultPtr->bytes = p;
+    objResultPtr->length = tot;
+    for (i = 1;i < objc;i++) {
+	bytes = TclGetStringFromObj(objv[i], &length);
+	if (bytes != NULL) {
+	    memcpy(p, bytes, (size_t) length);
+	    p += length;
+	}
+    }
+    *p = '\0';
+    Tcl_SetObjResult(interp,objResultPtr);
+    
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * StringBytesCmd --
  *
  *	This procedure is invoked to process the "string bytelength" Tcl
@@ -3330,6 +3400,7 @@ TclInitStringCmd(
 {
     static const EnsembleImplMap stringImplMap[] = {
 	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
 	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
