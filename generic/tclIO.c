@@ -535,6 +535,8 @@ TclFinalizeIOSubsystem(void)
 	     * for all data to flush out.
 	     */
 
+	    TclChannelPreserve((Tcl_Channel)chanPtr);
+
 	    (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
 		    "-blocking", "on");
 
@@ -586,6 +588,7 @@ TclFinalizeIOSubsystem(void)
 		chanPtr->instanceData = NULL;
 		SetFlag(statePtr, CHANNEL_DEAD);
 	    }
+	    TclChannelRelease((Tcl_Channel)chanPtr);
 	}
     }
 
