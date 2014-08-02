@@ -743,21 +743,21 @@ test stringComp-29.1 {string cat, no arg} {
 } ""
 test stringComp-29.2 {string cat, single arg} {
     proc foo {} {
-	set x [pid]
+	set x FOO
 	string compare $x [string cat $x]
     }
     foo
 } 0
 test stringComp-29.3 {string cat, two args} {
     proc foo {} {
-	set x [pid]
+	set x FOO
 	string compare $x$x [string cat $x $x]
     }
     foo
 } 0
 test stringComp-29.4 {string cat, many args} {
     proc foo {} {
-	set x [pid]
+	set x FOO
 	set n 260
 	set xx [string repeat $x $n]
 	set vv [string repeat {$x} $n]
