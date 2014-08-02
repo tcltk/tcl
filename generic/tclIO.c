@@ -182,6 +182,14 @@ static int		CloseChannelPart(Tcl_Interp *interp, Channel *chanPtr,
 static int		CloseWrite(Tcl_Interp *interp, Channel *chanPtr);
 static void		CommonGetsCleanup(Channel *chanPtr);
 static int		CopyData(CopyState *csPtr, int mask);
+static int		MoveBytes(CopyState *csPtr);
+
+static void		MBCallback(CopyState *csPtr, Tcl_Obj *errObj);
+static void		MBError(CopyState *csPtr, int mask, int errorCode);
+static int		MBRead(CopyState *csPtr);
+static int		MBWrite(CopyState *csPtr);
+static void		MBEvent(ClientData clientData, int mask);
+
 static void		CopyEventProc(ClientData clientData, int mask);
 static void		CreateScriptRecord(Tcl_Interp *interp,
 			    Channel *chanPtr, int mask, Tcl_Obj *scriptPtr);
@@ -618,6 +626,7 @@ TclFinalizeIOSubsystem(void)
 
 	if (active) {
 
+	    TclChannelPreserve((Tcl_Channel)chanPtr);
 	    /*
 	     * TIP #398:  by default, we no  longer set the  channel back into
              * blocking  mode.  To  restore  the old  blocking  behavior,  the
@@ -676,6 +685,7 @@ TclFinalizeIOSubsystem(void)
 		chanPtr->instanceData = NULL;
 		SetFlag(statePtr, CHANNEL_DEAD);
 	    }
+	    TclChannelRelease((Tcl_Channel)chanPtr);
 	}
     }
 
@@ -1644,6 +1654,7 @@ Tcl_CreateChannel(
     chanPtr->upChanPtr		= NULL;
     chanPtr->inQueueHead	= NULL;
     chanPtr->inQueueTail	= NULL;
+    chanPtr->refCount		= 0;
 
     /*
      * TIP #219, Tcl Channel Reflection API
@@ -1864,6 +1875,7 @@ Tcl_StackChannel(
     chanPtr->upChanPtr		= NULL;
     chanPtr->inQueueHead	= NULL;
     chanPtr->inQueueTail	= NULL;
+    chanPtr->refCount		= 0;
 
     /*
      * Place new block at the head of a possibly existing list of previously
@@ -1888,6 +1900,31 @@ Tcl_StackChannel(
 
     return (Tcl_Channel) chanPtr;
 }
+
+void
+TclChannelPreserve(
+    Tcl_Channel chan)
+{
+    ((Channel *)chan)->refCount++;
+}
+
+void
+TclChannelRelease(
+    Tcl_Channel chan)
+{
+    Channel *chanPtr = (Channel *) chan;
+
+    if (chanPtr->refCount == 0) {
+	Tcl_Panic("Channel released more than preserved");
+    }
+    if (--chanPtr->refCount) {
+	return;
+    }
+    if (chanPtr->typePtr == NULL) {
+	ckfree(chanPtr);
+    }
+}
+
 
 /*
  *----------------------------------------------------------------------
@@ -2036,11 +2073,6 @@ Tcl_UnstackChannel(
 	result = ChanClose(chanPtr, interp);
 	chanPtr->typePtr = NULL;
 
-	/*
-	 * AK: Tcl_NotifyChannel may hold a reference to this block of memory
-	 */
-
-	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 	UpdateInterest(statePtr->topChanPtr);
 
 	if (result != 0) {
@@ -2634,7 +2666,7 @@ FlushChannel(
      * of the queued output to the channel.
      */
 
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
     while (statePtr->outQueueHead) {
 	bufPtr = statePtr->outQueueHead;
 
@@ -2825,7 +2857,7 @@ FlushChannel(
     }
 
   done:
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return errorCode;
 }
 
@@ -2993,7 +3025,6 @@ CloseChannel(
 	downChanPtr->upChanPtr = NULL;
 	chanPtr->typePtr = NULL;
 
-	Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 	return Tcl_Close(interp, (Tcl_Channel) downChanPtr);
     }
 
@@ -3001,13 +3032,11 @@ CloseChannel(
      * There is only the TOP Channel, so we free the remaining pointers we
      * have and then ourselves. Since this is the last of the channels in the
      * stack, make sure to free the ChannelState structure associated with it.
-     * We use Tcl_EventuallyFree to allow for any last references.
      */
 
     chanPtr->typePtr = NULL;
 
     Tcl_EventuallyFree(statePtr, TCL_DYNAMIC);
-    Tcl_EventuallyFree(chanPtr, TCL_DYNAMIC);
 
     return errorCode;
 }
@@ -4383,7 +4412,7 @@ Tcl_GetsObj(
      */
 
     chanPtr = statePtr->topChanPtr;
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
 
     bufPtr = statePtr->inQueueHead;
     encoding = statePtr->encoding;
@@ -4619,9 +4648,9 @@ Tcl_GetsObj(
      */
 
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_Release(chanPtr);
+	TclChannelRelease((Tcl_Channel)chanPtr);
 	chanPtr = statePtr->topChanPtr;
-	Tcl_Preserve(chanPtr);
+	TclChannelPreserve((Tcl_Channel)chanPtr);
     }
 
     bufPtr = gs.bufPtr;
@@ -4657,9 +4686,9 @@ Tcl_GetsObj(
      * self-modifying reflected transforms.
      */
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_Release(chanPtr);
+	TclChannelRelease((Tcl_Channel)chanPtr);
 	chanPtr = statePtr->topChanPtr;
-	Tcl_Preserve(chanPtr);
+	TclChannelPreserve((Tcl_Channel)chanPtr);
     }
     bufPtr = statePtr->inQueueHead;
     if (bufPtr != NULL) {
@@ -4701,12 +4730,12 @@ Tcl_GetsObj(
      * self-modifying reflected transforms.
      */
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_Release(chanPtr);
+	TclChannelRelease((Tcl_Channel)chanPtr);
 	chanPtr = statePtr->topChanPtr;
-	Tcl_Preserve(chanPtr);
+	TclChannelPreserve((Tcl_Channel)chanPtr);
     }
     UpdateInterest(chanPtr);
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return copiedTotal;
 }
 
@@ -4752,7 +4781,7 @@ TclGetsObjBinary(
      */
 
     chanPtr = statePtr->topChanPtr;
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
 
     bufPtr = statePtr->inQueueHead;
 
@@ -4957,7 +4986,7 @@ TclGetsObjBinary(
 
   done:
     UpdateInterest(chanPtr);
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return copiedTotal;
 }
 
@@ -5581,7 +5610,7 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     encoding = statePtr->encoding;
     factor = UTF_EXPANSION_FACTOR;
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
 
     binaryMode = (encoding == NULL)
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF) 
@@ -5642,9 +5671,9 @@ DoReadChars(
 	    }
 	    result = GetInput(chanPtr);
 	    if (chanPtr != statePtr->topChanPtr) {
-		Tcl_Release(chanPtr);
+		TclChannelRelease((Tcl_Channel)chanPtr);
 		chanPtr = statePtr->topChanPtr;
-		Tcl_Preserve(chanPtr);
+		TclChannelPreserve((Tcl_Channel)chanPtr);
 	    }
 	    if (result != 0) {
 		if (!GotFlag(statePtr, CHANNEL_BLOCKED)) {
@@ -5672,9 +5701,9 @@ DoReadChars(
      * self-modifying reflected transforms.
      */
     if (chanPtr != statePtr->topChanPtr) {
-	Tcl_Release(chanPtr);
+	TclChannelRelease((Tcl_Channel)chanPtr);
 	chanPtr = statePtr->topChanPtr;
-	Tcl_Preserve(chanPtr);
+	TclChannelPreserve((Tcl_Channel)chanPtr);
     }
 
     /*
@@ -5682,7 +5711,7 @@ DoReadChars(
      * in the buffers.
      */
     UpdateInterest(chanPtr);
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return copied;
 }
 
@@ -8054,7 +8083,7 @@ Tcl_NotifyChannel(
      * Preserve the channel struct in case the script closes it.
      */
 
-    Tcl_Preserve(channel);
+    TclChannelPreserve((Tcl_Channel)channel);
     Tcl_Preserve(statePtr);
 
     /*
@@ -8104,7 +8133,7 @@ Tcl_NotifyChannel(
     }
 
     Tcl_Release(statePtr);
-    Tcl_Release(channel);
+    TclChannelRelease(channel);
 
     tsdPtr->nestedHandlerPtr = nh.nestedHandlerPtr;
 }
@@ -8586,7 +8615,7 @@ TclChannelEventScriptInvoker(
      */
 
     Tcl_Preserve(interp);
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
     result = Tcl_EvalObjEx(interp, esPtr->scriptPtr, TCL_EVAL_GLOBAL);
 
     /*
@@ -8603,7 +8632,7 @@ TclChannelEventScriptInvoker(
 	}
 	Tcl_BackgroundException(interp, result);
     }
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     Tcl_Release(interp);
 }
 
@@ -8778,6 +8807,7 @@ TclCopyChannel(
     int readFlags, writeFlags;
     CopyState *csPtr;
     int nonBlocking = (cmdPtr) ? CHANNEL_NONBLOCKING : 0;
+    int moveBytes;
 
     inStatePtr = inPtr->state;
     outStatePtr = outPtr->state;
@@ -8829,13 +8859,24 @@ TclCopyChannel(
 	    | CHANNEL_UNBUFFERED;
 
     /*
+     * Test for conditions where we know we can just move bytes from input
+     * channel to output channel with no transformation or even examination
+     * of the bytes themselves.
+     */
+
+    moveBytes = inStatePtr->inEofChar == '\0'	/* No eofChar to stop input */
+	    && inStatePtr->inputTranslation == TCL_TRANSLATE_LF
+	    && outStatePtr->outputTranslation == TCL_TRANSLATE_LF
+	    && inStatePtr->encoding == outStatePtr->encoding;
+
+    /*
      * Allocate a new CopyState to maintain info about the current copy in
      * progress. This structure will be deallocated when the copy is
      * completed.
      */
 
-    csPtr = ckalloc(sizeof(CopyState) + inStatePtr->bufSize);
-    csPtr->bufSize = inStatePtr->bufSize;
+    csPtr = ckalloc(sizeof(CopyState) + !moveBytes * inStatePtr->bufSize);
+    csPtr->bufSize = !moveBytes * inStatePtr->bufSize;
     csPtr->readPtr = inPtr;
     csPtr->writePtr = outPtr;
     csPtr->readFlags = readFlags;
@@ -8850,6 +8891,10 @@ TclCopyChannel(
 
     inStatePtr->csPtrR  = csPtr;
     outStatePtr->csPtrW = csPtr;
+
+    if (moveBytes) {
+	return MoveBytes(csPtr);
+    }
 
     /*
      * Special handling of -size 0 async transfers, so that the -command is
@@ -8884,6 +8929,225 @@ TclCopyChannel(
  *
  *----------------------------------------------------------------------
  */
+
+static void
+MBCallback(
+    CopyState *csPtr,
+    Tcl_Obj *errObj)
+{
+    Tcl_Obj *cmdPtr = Tcl_DuplicateObj(csPtr->cmdPtr);
+    Tcl_WideInt total = csPtr->total;
+    Tcl_Interp *interp = csPtr->interp;
+    int code;
+
+    Tcl_IncrRefCount(cmdPtr);
+    StopCopy(csPtr);
+
+    /* TODO: What if cmdPtr is not a list?! */
+
+    Tcl_ListObjAppendElement(NULL, cmdPtr, Tcl_NewWideIntObj(total));
+    if (errObj) {
+	Tcl_ListObjAppendElement(NULL, cmdPtr, errObj);
+    }
+
+    Tcl_Preserve(interp);
+    code = Tcl_EvalObjEx(interp, cmdPtr, TCL_EVAL_GLOBAL);
+    if (code != TCL_OK) {
+	Tcl_BackgroundException(interp, code);
+    }
+    Tcl_Release(interp);
+    TclDecrRefCount(cmdPtr);
+}
+
+static void
+MBError(
+    CopyState *csPtr,
+    int mask,
+    int errorCode)
+{
+    Tcl_Channel inChan = (Tcl_Channel) csPtr->readPtr;
+    Tcl_Channel outChan = (Tcl_Channel) csPtr->writePtr;
+    Tcl_Obj *errObj;
+
+    Tcl_SetErrno(errorCode);
+
+    errObj = Tcl_ObjPrintf( "error %sing \"%s\": %s",
+	    (mask & TCL_READABLE) ? "read" : "writ",
+	    Tcl_GetChannelName((mask & TCL_READABLE) ? inChan : outChan),
+	    Tcl_PosixError(csPtr->interp));
+
+    if (csPtr->cmdPtr) {
+	MBCallback(csPtr, errObj);
+    } else {
+	Tcl_SetObjResult(csPtr->interp, errObj);
+	StopCopy(csPtr);
+    }
+}
+
+static void
+MBEvent(
+    ClientData clientData,
+    int mask)
+{
+    CopyState *csPtr = (CopyState *) clientData;
+    Tcl_Channel inChan = (Tcl_Channel) csPtr->readPtr;
+    Tcl_Channel outChan = (Tcl_Channel) csPtr->writePtr;
+    ChannelState *inStatePtr = csPtr->readPtr->state;
+
+    if (mask & TCL_WRITABLE) {
+	Tcl_DeleteChannelHandler(inChan, MBEvent, csPtr);
+	Tcl_DeleteChannelHandler(outChan, MBEvent, csPtr);
+	switch (MBWrite(csPtr)) {
+	case TCL_OK:
+	    MBCallback(csPtr, NULL);
+	    break;
+	case TCL_CONTINUE:
+	    Tcl_CreateChannelHandler(inChan, TCL_READABLE, MBEvent, csPtr);
+	    break;
+	}
+    } else if (mask & TCL_READABLE) {
+	if (TCL_OK == MBRead(csPtr)) {
+	    /* When at least one full buffer is present, stop reading. */
+	    if (IsBufferFull(inStatePtr->inQueueHead)
+		    || !Tcl_InputBlocked(inChan)) {
+		Tcl_DeleteChannelHandler(inChan, MBEvent, csPtr);
+	    }
+
+	    /* Successful read -- set up to write the bytes we read */
+	    Tcl_CreateChannelHandler(outChan, TCL_WRITABLE, MBEvent, csPtr);
+	}
+    }
+}
+
+static int 
+MBRead(
+    CopyState *csPtr)
+{
+    ChannelState *inStatePtr = csPtr->readPtr->state;
+    ChannelBuffer *bufPtr = inStatePtr->inQueueHead;
+    int code;
+
+    if (bufPtr && BytesLeft(bufPtr) > 0) {
+	return TCL_OK;
+    }
+
+    code = GetInput(inStatePtr->topChanPtr);
+    if (code == 0) {
+	return TCL_OK;
+    } else {
+	MBError(csPtr, TCL_READABLE, code);
+	return TCL_ERROR;
+    }
+}
+
+static int 
+MBWrite(
+    CopyState *csPtr)
+{
+    ChannelState *inStatePtr = csPtr->readPtr->state;
+    ChannelState *outStatePtr = csPtr->writePtr->state;
+    ChannelBuffer *bufPtr = inStatePtr->inQueueHead;
+    ChannelBuffer *tail = NULL;
+    int code, inBytes = 0;
+
+    /* Count up number of bytes waiting in the input queue */
+    while (bufPtr) {
+	inBytes += BytesLeft(bufPtr);
+	tail = bufPtr;
+	if (csPtr->toRead != -1 && csPtr->toRead < inBytes) {
+	    /* Queue has enough bytes to complete the copy */
+	    break;
+	}
+	bufPtr = bufPtr->nextPtr;
+    }
+
+    if (bufPtr) {
+	/* Split the overflowing buffer in two */
+	int extra = inBytes - csPtr->toRead;
+
+	bufPtr = AllocChannelBuffer(extra);
+
+	tail->nextAdded -= extra;
+	memcpy(InsertPoint(bufPtr), InsertPoint(tail), extra);
+	bufPtr->nextAdded += extra;
+	bufPtr->nextPtr = tail->nextPtr;
+	tail->nextPtr = NULL;
+	inBytes = csPtr->toRead;
+    }
+
+    /* Update the byte counts */
+    if (csPtr->toRead != -1) {
+	csPtr->toRead -= inBytes;
+    }
+    csPtr->total += inBytes;
+
+    /* Move buffers from input to output channels */
+    if (outStatePtr->outQueueTail) {
+	outStatePtr->outQueueTail->nextPtr = inStatePtr->inQueueHead;
+    } else {
+	outStatePtr->outQueueHead = inStatePtr->inQueueHead;
+    }
+    outStatePtr->outQueueTail = tail;
+    inStatePtr->inQueueHead = bufPtr;
+    if (bufPtr == NULL) {
+	inStatePtr->inQueueTail = NULL;
+    }
+
+    code = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
+    if (code) {
+	MBError(csPtr, TCL_WRITABLE, code);
+	return TCL_ERROR;
+    }
+    if (csPtr->toRead == 0 || GotFlag(inStatePtr, CHANNEL_EOF)) {
+	return TCL_OK;
+    }
+    return TCL_CONTINUE;
+}
+
+static int
+MoveBytes(
+    CopyState *csPtr)		/* State of copy operation. */
+{
+    ChannelState *outStatePtr = csPtr->writePtr->state;
+    ChannelBuffer *bufPtr = outStatePtr->curOutPtr;
+    int errorCode;
+
+    if (bufPtr && BytesLeft(bufPtr)) {
+	/* If we start with unflushed bytes in the destination
+	 * channel, flush them out of the way first. */
+
+	errorCode = FlushChannel(csPtr->interp, outStatePtr->topChanPtr, 0);
+	if (errorCode != 0) {
+	    MBError(csPtr, TCL_WRITABLE, errorCode);
+	    return TCL_ERROR;
+	}
+    }
+
+    if (csPtr->cmdPtr) {
+	Tcl_Channel inChan = (Tcl_Channel) csPtr->readPtr;
+	Tcl_CreateChannelHandler(inChan, TCL_READABLE, MBEvent, csPtr);
+	return TCL_OK;
+    }
+
+    while (1) {
+	int code;
+
+	if (TCL_ERROR == MBRead(csPtr)) {
+	    return TCL_ERROR;
+	}
+	code = MBWrite(csPtr);
+	if (code == TCL_OK) {
+	    Tcl_SetObjResult(csPtr->interp, Tcl_NewWideIntObj(csPtr->total));
+	    StopCopy(csPtr);
+	    return TCL_OK;
+	}
+	if (code == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	/* code == TCL_CONTINUE --> continue the loop */
+    }
+    return TCL_OK;	/* Silence compiler warnings */
+}
 
 static int
 CopyData(
@@ -9221,7 +9485,7 @@ DoRead(
     ChannelState *statePtr = chanPtr->state;
     char *p = dst;
 
-    Tcl_Preserve(chanPtr);
+    TclChannelPreserve((Tcl_Channel)chanPtr);
     while (bytesToRead) {
 	/*
 	 * Each pass through the loop is intended to process up to 
@@ -9260,7 +9524,7 @@ DoRead(
 	    if (code) {
 		/* Read error */
 		UpdateInterest(chanPtr);
-		Tcl_Release(chanPtr);
+		TclChannelRelease((Tcl_Channel)chanPtr);
 		return -1;
 	    }
 
@@ -9358,7 +9622,7 @@ DoRead(
 	ResetFlag(statePtr, CHANNEL_BLOCKED);
     }
 
-    Tcl_Release(chanPtr);
+    TclChannelRelease((Tcl_Channel)chanPtr);
     return (int)(p - dst);
 }
 
@@ -9410,12 +9674,16 @@ StopCopy(
     CopyState *csPtr)		/* State for bg copy to stop . */
 {
     ChannelState *inStatePtr, *outStatePtr;
+    Tcl_Channel inChan, outChan;
+
     int nonBlocking;
 
     if (!csPtr) {
 	return;
     }
 
+    inChan = (Tcl_Channel) csPtr->readPtr;
+    outChan = (Tcl_Channel) csPtr->writePtr;
     inStatePtr = csPtr->readPtr->state;
     outStatePtr = csPtr->writePtr->state;
 
@@ -9440,12 +9708,12 @@ StopCopy(
 	    csPtr->writeFlags & (CHANNEL_LINEBUFFERED | CHANNEL_UNBUFFERED);
 
     if (csPtr->cmdPtr) {
-	Tcl_DeleteChannelHandler((Tcl_Channel) csPtr->readPtr, CopyEventProc,
-		csPtr);
-	if (csPtr->readPtr != csPtr->writePtr) {
-	    Tcl_DeleteChannelHandler((Tcl_Channel) csPtr->writePtr,
-		    CopyEventProc, csPtr);
+	Tcl_DeleteChannelHandler(inChan, CopyEventProc, csPtr);
+	if (inChan != outChan) {
+	    Tcl_DeleteChannelHandler(outChan, CopyEventProc, csPtr);
 	}
+	Tcl_DeleteChannelHandler(inChan, MBEvent, csPtr);
+	Tcl_DeleteChannelHandler(outChan, MBEvent, csPtr);
 	TclDecrRefCount(csPtr->cmdPtr);
     }
     inStatePtr->csPtrR = NULL;
