@@ -2929,7 +2929,7 @@ TclNativeCreateNativeRep(
     str = Tcl_GetString(validPathPtr);
     len = validPathPtr->length;
 
-    if (strlen(str)!=len) {
+    if (strlen(str)!=(unsigned int)len) {
 	/* String contains NUL-bytes. This is invalid. */
 	return 0;
     }
