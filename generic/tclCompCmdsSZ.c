@@ -269,6 +269,39 @@ TclCompileSetCmd(
  */
 
 int
+TclCompileStringCatCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    int numWords = parsePtr->numWords;
+    Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    DefineLineInformation;	/* TIP #280 */
+
+    if (numWords>=2) {
+	int i;
+
+	for (i = 1; i < numWords; i++) {
+	    CompileWord(envPtr, wordTokenPtr, interp, i);
+	    wordTokenPtr = TokenAfter(wordTokenPtr);
+	}
+	while (numWords > 256) {
+	    TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
+	    numWords -= 254;	/* concat pushes 1 obj, the result */
+	}
+	if (numWords > 2) {
+	    TclEmitInstInt1(INST_STR_CONCAT1, numWords - 1, envPtr);
+	}
+    } else {
+	PushStringLiteral(envPtr, "");
+    }
+    return TCL_OK;
+}
+
+int
 TclCompileStringCmpCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
