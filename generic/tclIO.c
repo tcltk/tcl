@@ -626,6 +626,7 @@ TclFinalizeIOSubsystem(void)
 
 	if (active) {
 
+	    TclChannelPreserve((Tcl_Channel)chanPtr);
 	    /*
 	     * TIP #398:  by default, we no  longer set the  channel back into
              * blocking  mode.  To  restore  the old  blocking  behavior,  the
@@ -684,6 +685,7 @@ TclFinalizeIOSubsystem(void)
 		chanPtr->instanceData = NULL;
 		SetFlag(statePtr, CHANNEL_DEAD);
 	    }
+	    TclChannelRelease((Tcl_Channel)chanPtr);
 	}
     }
 
