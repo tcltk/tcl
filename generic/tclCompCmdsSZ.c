@@ -277,27 +277,57 @@ TclCompileStringCatCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int numWords = parsePtr->numWords;
-    Tcl_Token *wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    int i,numWords = parsePtr->numWords;
+    Tcl_Token *wordTokenPtr;
+    Tcl_Obj *obj, *folded;
     DefineLineInformation;	/* TIP #280 */
 
-    if (numWords>=2) {
-	int i;
+    /* Trivial case, no arg */
 
-	for (i = 1; i < numWords; i++) {
-	    CompileWord(envPtr, wordTokenPtr, interp, i);
-	    wordTokenPtr = TokenAfter(wordTokenPtr);
-	}
-	while (numWords > 256) {
-	    TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
-	    numWords -= 254;	/* concat pushes 1 obj, the result */
-	}
-	if (numWords > 2) {
-	    TclEmitInstInt1(INST_STR_CONCAT1, numWords - 1, envPtr);
-	}
-    } else {
+    if (numWords<2) {
 	PushStringLiteral(envPtr, "");
+	return TCL_OK;
     }
+	
+    /* Detection of foldable constants. Often used for mixed quoting. */
+
+    folded = Tcl_NewObj();
+    wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    for (i = 1; i < numWords; i++) {
+	obj = Tcl_NewObj();
+	if (TclWordKnownAtCompileTime(wordTokenPtr, obj)) {
+	    Tcl_AppendObjToObj(folded, obj);
+	} else {
+	    Tcl_DecrRefCount(obj);
+	    Tcl_DecrRefCount(folded);
+	    folded = NULL;
+	    break;
+	}
+	wordTokenPtr = TokenAfter(wordTokenPtr);
+    }
+    if (folded) {
+	int len;
+	const char *bytes = Tcl_GetStringFromObj(folded, &len);
+	
+	PushLiteral(envPtr, bytes, len);
+	return TCL_OK;
+    }
+
+    /* General case: just issue CONCAT1's (by chunks of 255 if needed) */
+
+    wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    for (i = 1; i < numWords; i++) {
+	CompileWord(envPtr, wordTokenPtr, interp, i);
+	wordTokenPtr = TokenAfter(wordTokenPtr);
+    }
+    while (numWords > 256) {
+	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
+	numWords -= 254;	/* concat pushes 1 obj, the result */
+    }
+    if (numWords > 2) {
+	TclEmitInstInt1(INST_STR_CONCAT1, numWords - 1, envPtr);
+    }
+
     return TCL_OK;
 }
 
