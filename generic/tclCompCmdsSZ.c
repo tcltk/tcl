@@ -289,7 +289,7 @@ TclCompileStringCatCmd(
 	return TCL_OK;
     }
 	
-    /* General case: issue CONCAT1's (by chunks of 255 if needed), folding
+    /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
        contiguous constants along the way */
 
     numArgs = 0;
