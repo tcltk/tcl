@@ -277,7 +277,7 @@ TclCompileStringCatCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    int i,numWords = parsePtr->numWords;
+    int i, numWords = parsePtr->numWords, numArgs;
     Tcl_Token *wordTokenPtr;
     Tcl_Obj *obj, *folded;
     DefineLineInformation;	/* TIP #280 */
@@ -315,17 +315,19 @@ TclCompileStringCatCmd(
 
     /* General case: just issue CONCAT1's (by chunks of 255 if needed) */
 
+    numArgs = 0;
     wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (i = 1; i < numWords; i++) {
 	CompileWord(envPtr, wordTokenPtr, interp, i);
+	numArgs ++;
+	if (numArgs == 255) {
+	    TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
+	    numArgs = 1;	/* concat pushes 1 obj, the result */
+	}
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
-    while (numWords > 256) {
-	TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
-	numWords -= 254;	/* concat pushes 1 obj, the result */
-    }
-    if (numWords > 2) {
-	TclEmitInstInt1(INST_STR_CONCAT1, numWords - 1, envPtr);
+    if (numArgs > 1) {
+	TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
     }
 
     return TCL_OK;
