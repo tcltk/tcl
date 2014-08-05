@@ -289,19 +289,38 @@ TclCompileStringCatCmd(
 	return TCL_OK;
     }
 	
-    /* Detection of foldable constants. Often used for mixed quoting. */
+    /* General case: issue CONCAT1's (by chunks of 255 if needed), folding
+       contiguous constants along the way */
 
-    folded = Tcl_NewObj();
+    numArgs = 0;
+    folded = NULL;
     wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
     for (i = 1; i < numWords; i++) {
 	obj = Tcl_NewObj();
 	if (TclWordKnownAtCompileTime(wordTokenPtr, obj)) {
-	    Tcl_AppendObjToObj(folded, obj);
+	    if (folded) {
+		Tcl_AppendObjToObj(folded, obj);
+		Tcl_DecrRefCount(obj);
+	    } else {
+		folded = obj;
+	    }
 	} else {
 	    Tcl_DecrRefCount(obj);
-	    Tcl_DecrRefCount(folded);
-	    folded = NULL;
-	    break;
+	    if (folded) {
+		int len;
+		const char *bytes = Tcl_GetStringFromObj(folded, &len);
+		
+		PushLiteral(envPtr, bytes, len);
+		Tcl_DecrRefCount(folded);
+		folded = NULL;
+		numArgs ++;
+	    }
+	    CompileWord(envPtr, wordTokenPtr, interp, i);
+	    numArgs ++;
+	    if (numArgs >= 254) { /* 254 to take care of the possible +1 of "folded" above */
+		TclEmitInstInt1(INST_STR_CONCAT1, 254, envPtr);
+		numArgs -= 253;	/* concat pushes 1 obj, the result */
+	    }
 	}
 	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
@@ -310,21 +329,9 @@ TclCompileStringCatCmd(
 	const char *bytes = Tcl_GetStringFromObj(folded, &len);
 	
 	PushLiteral(envPtr, bytes, len);
-	return TCL_OK;
-    }
-
-    /* General case: just issue CONCAT1's (by chunks of 255 if needed) */
-
-    numArgs = 0;
-    wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    for (i = 1; i < numWords; i++) {
-	CompileWord(envPtr, wordTokenPtr, interp, i);
+	Tcl_DecrRefCount(folded);
+	folded = NULL;
 	numArgs ++;
-	if (numArgs == 255) {
-	    TclEmitInstInt1(INST_STR_CONCAT1, 255, envPtr);
-	    numArgs = 1;	/* concat pushes 1 obj, the result */
-	}
-	wordTokenPtr = TokenAfter(wordTokenPtr);
     }
     if (numArgs > 1) {
 	TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
