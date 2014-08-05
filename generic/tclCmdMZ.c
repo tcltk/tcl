@@ -2859,17 +2859,9 @@ StringCatCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int tot, i, length;
-    char *bytes, *p;
+    int i;
     Tcl_Obj *objResultPtr;
 
-    /*
-     * NOTE: this implementation aims for simplicity, not speed, because all
-     * speed-critical uses of [string cat] will involve the compiled variant
-     * anyway. Thus we avoid code duplication (from TEBC/INST_CONCAT1) without
-     * sacrificing perf.
-     */
-	
     if (objc < 2) {
 	/*
 	 * If there are no args, the result is an empty object.
@@ -2877,30 +2869,21 @@ StringCatCmd(
 	 */
 	return TCL_OK;
     }
-    tot = 0;
-    for(i = 1;i < objc;i++) {
-	bytes = TclGetStringFromObj(objv[i], &length);
-	if (bytes != NULL) {
-	    tot += length;
-	}
+    if (objc == 2) {
+	/*
+	 * Other trivial case, single arg, just return it.
+	 */
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
     }
-    if (tot < 0) {
-	/* TODO: convert panic to error ? */
-	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    objResultPtr = objv[1];
+    if (Tcl_IsShared(objResultPtr)) {
+	objResultPtr = Tcl_DuplicateObj(objResultPtr);
     }
-    p = ckalloc(tot + 1);
-    TclNewObj(objResultPtr);
-    objResultPtr->bytes = p;
-    objResultPtr->length = tot;
-    for (i = 1;i < objc;i++) {
-	bytes = TclGetStringFromObj(objv[i], &length);
-	if (bytes != NULL) {
-	    memcpy(p, bytes, (size_t) length);
-	    p += length;
-	}
+    for(i = 2;i < objc;i++) {
+	Tcl_AppendObjToObj(objResultPtr, objv[i]);
     }
-    *p = '\0';
-    Tcl_SetObjResult(interp,objResultPtr);
+    Tcl_SetObjResult(interp, objResultPtr);
     
     return TCL_OK;
 }
