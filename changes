@@ -7791,3 +7791,106 @@ Many revisions to better support a Cygwin environment (nijtmans)
 2013-09-13 (bug fix)[bdd91c] crash in exec stack mem management (azazel)
 
 --- Released 8.5.15, September 16, 2013 --- http://core.tcl.tk/tcl/ for details
+
+2013-09-19 (bug fix)[3487626] [dict] compile segfaults (porter)
+
+2013-09-19 (bug fix) [info frame] line OBOEs in bytecode (porter)
+
+2013-09-25 (bug fix)[d614d63] namespace matching *:: deletion fail (fellows)
+
+2013-10-05 tzdata updated to Olson's tzdata2013g (kenny)
+
+2013-10-22 (bug fix)[3556215] [scan %E%G%X] support (fellows)
+
+2013-10-25 (bug fix)[3eb2ec1] upper case scheme names in url. (nijtmans)
+=> http 2.7.13
+
+2013-10-29 (bug fix)[414d103] HP-UX: restore [exec] in threaded Tcl (nijtmans)
+
+2013-11-04 (bug fix) C++ friendly stubs struct declarations (nijtmans)
+
+2013-11-05 (bug fix)[426679e] OpenBSD man page rendering (nijtmans)
+
+2013-11-20 (bug fix) Improved environment variable management (nijtmans)
+=> tcltest 2.3.7
+
+2013-11-21 (platforms) Support for Windows 8.1 (nijtmans)
+
+2014-02-06 (bug fix)[a4494e2] panic in test namespace-13.2 (porter)
+
+2014-02-24 (bug fix)[2413550] Win: avoid serial double open (oehlmann)
+
+2014-03-20 (bug fix)[2f7cbd0] FreeBSD 10.0 build failure (nijtmans)
+
+2014-03-27 (bug fix) segfault iocmd-23.11 (porter)
+
+2014-04-02 (bug fix)[336441e] Win: async socket connect stall (oehlmann)
+
+2014-04-04 (bug fix)[581937a,97069ea] async socket connect fail (oehlmann)
+
+2014-04-10 (bug fix)[792641f] Win: no \ in normalized path (nijtmans)
+
+2014-04-15 (bug fix)[88aef05] segfault iocmd-21.20 (porter)
+
+2014-04-16 (update) Win: use Winsock 2.2 (nijtmans)
+
+2014-04-16 (bug fix)[d19a30d] segfault clock-67.[23] (sebres)
+
+2014-04-21 (bug fix) segfault iocmd-21.2[12] (porter)
+
+2014-04-22 (bug fix) segfault iogt-2.4 (porter)
+
+2014-04-23 (bug fix)[3493120] memleak in thread exit
+
+2014-04-30 (bug fix) segfault iocmd-21.2[34] (porter)
+
+2014-05-01 (bug fix)[0e92c40] bytearray optimization validity (nijtmans)
+
+2014-05-06 (bug fix) segfault iogt-2.5 (porter)
+
+2014-05-06 (memleaks) io-29.27 io-29.34 io-33.7 (porter)
+
+2014-05-07 (memleaks) io-53.5, cloned Tcl_ChannelTypes (porter)
+
+2014-05-08 (memleak) iocmd-21.22 (porter)
+
+2014-05-08 refactoring of core I/O functions (porter)
+
+2014-05-09 (bug fix) segfault iocmd-32.1 (porter)
+
+2014-05-15 (bug fix)[3118489] protect NUL in filenames (nijtmans)
+
+2014-05-16 (bug fix) Fix for failing tests *io-32.11* (porter)
+
+2014-05-20 (bug fix) Stop eof and blocked state leaking thru stacks (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2014-05-22 (platforms) work around systems that fail when a shared library
+is deleted after it is [load]ed (kupries)
+
+2014-05-31 (bug fix) chan events on pipes must be on proper ends (porter)
+
+2014-06-04 (bug fix) socket-2.12 (porter)
+
+2014-06-05 (bug fix) io-12.6 (kupries,porter)
+
+2014-06-16 (bug fix) socket-2.13 workaround broken select() (porter)
+
+2014-06-20 (bug fix)[b47b176] iortrans.tf-11.0 (porter)
+
+2014-06-22 (RFE)[2f9df4c] -cleanup scripts before -out compare (nijtmans)
+
+2014-07-04 (update) Update Unicode data to 7.0 (nijtmans)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2014-07-10 (bug fix)[7368d2] memleak Tcl_SetVar2(..,TCL_APPEND_VALUE) (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2014-08-01 (enhancement) use refcounts, not Tcl_Preserve to manage lifetime
+of Tcl_Channel  (porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2014-08-01 (update) "macosx*-i386-x86_64" "macosx-universal" no longer compatible (kupries)
+=> platform 1.0.13
+
+--- Released 8.5.16, August, 2014 --- http://core.tcl.tk/tcl/ for details
