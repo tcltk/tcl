@@ -5209,7 +5209,7 @@ DoReadChars(
     }
 
     /* Must clear the BLOCKED flag here since we check before reading */
-    ResetFlag(statePtr, CHANNEL_BLOCKED);
+    ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
