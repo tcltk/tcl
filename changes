@@ -7798,8 +7798,6 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 2013-09-25 (bug fix)[d614d63] namespace matching *:: deletion fail (fellows)
 
-2013-10-05 tzdata updated to Olson's tzdata2013g (kenny)
-
 2013-10-22 (bug fix)[3556215] [scan %E%G%X] support (fellows)
 
 2013-10-25 (bug fix)[3eb2ec1] upper case scheme names in url. (nijtmans)
@@ -7892,5 +7890,7 @@ of Tcl_Channel  (porter)
 
 2014-08-01 (update) "macosx*-i386-x86_64" "macosx-universal" no longer compatible (kupries)
 => platform 1.0.13
+
+2014-08-12 tzdata updated to Olson's tzdata2014f (kenny)
 
 --- Released 8.5.16, August, 2014 --- http://core.tcl.tk/tcl/ for details
