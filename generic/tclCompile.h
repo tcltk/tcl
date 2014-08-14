@@ -799,8 +799,13 @@ typedef struct ByteCode {
 #define INST_TRY_CVT_TO_BOOLEAN		183
 #define INST_STR_CLASS			184
 
+#define INST_LAPPEND_LIST		185
+#define INST_LAPPEND_LIST_ARRAY		186
+#define INST_LAPPEND_LIST_ARRAY_STK	187
+#define INST_LAPPEND_LIST_STK		188
+
 /* The last opcode */
-#define LAST_INST_OPCODE		184
+#define LAST_INST_OPCODE		188
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

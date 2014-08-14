@@ -311,6 +311,7 @@ Tcl_InitNotifier(void)
 	 * pipe to the original notifier thread
 	 */
 	if (notifierCount > 0 && processIDInitialized != getpid()) {
+	    Tcl_ConditionFinalize(&notifierCV);
 	    notifierCount = 0;
 	    processIDInitialized = 0;
 	    close(triggerPipe);
@@ -1375,8 +1376,7 @@ AtForkParent(void)
 static void
 AtForkChild(void)
 {
-    notifierMutex = NULL;
-    notifierCV = NULL;
+    Tcl_MutexFinalize(&notifierMutex);
     Tcl_InitNotifier();
 }
 #endif /* HAVE_PTHREAD_ATFORK */

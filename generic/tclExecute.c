@@ -3215,7 +3215,7 @@ TEBCresume(
      */
 
     {
-	int storeFlags;
+	int storeFlags, len;
 
     case INST_STORE_ARRAY4:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -3453,6 +3453,171 @@ TEBCresume(
 	    NEXT_INST_V((pcAdjustment+1), cleanup, 0);
 	}
 #endif
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
+
+    case INST_LAPPEND_LIST:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	valuePtr = OBJ_AT_TOS;
+	varPtr = LOCAL(opnd);
+	cleanup = 1;
+	pcAdjustment = 5;
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	TRACE(("%u <- \"%.30s\" => ", opnd, O2S(valuePtr)));
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
+		!= TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	if (TclIsVarDirectReadable(varPtr)
+		&& TclIsVarDirectWritable(varPtr)) {
+	    goto lappendListDirect;
+	}
+	arrayPtr = NULL;
+	part1Ptr = part2Ptr = NULL;
+	goto lappendListPtr;
+
+    case INST_LAPPEND_LIST_ARRAY:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	valuePtr = OBJ_AT_TOS;
+	part1Ptr = NULL;
+	part2Ptr = OBJ_UNDER_TOS;
+	arrayPtr = LOCAL(opnd);
+	cleanup = 2;
+	pcAdjustment = 5;
+	while (TclIsVarLink(arrayPtr)) {
+	    arrayPtr = arrayPtr->value.linkPtr;
+	}
+	TRACE(("%u \"%.30s\" \"%.30s\" => ",
+		opnd, O2S(part2Ptr), O2S(valuePtr)));
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
+		!= TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	if (TclIsVarArray(arrayPtr) && !ReadTraced(arrayPtr)
+		&& !WriteTraced(arrayPtr)) {
+	    varPtr = VarHashFindVar(arrayPtr->value.tablePtr, part2Ptr);
+	    if (varPtr && TclIsVarDirectReadable(varPtr)
+		    && TclIsVarDirectWritable(varPtr)) {
+		goto lappendListDirect;
+	    }
+	}
+	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr,
+		TCL_LEAVE_ERR_MSG, "set", 1, 1, arrayPtr, opnd);
+	if (varPtr == NULL) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	goto lappendListPtr;
+
+    case INST_LAPPEND_LIST_ARRAY_STK:
+	pcAdjustment = 1;
+	cleanup = 3;
+	valuePtr = OBJ_AT_TOS;
+	part2Ptr = OBJ_UNDER_TOS;	/* element name */
+	part1Ptr = OBJ_AT_DEPTH(2);	/* array name */
+	TRACE(("\"%.30s(%.30s)\" \"%.30s\" => ",
+		O2S(part1Ptr), O2S(part2Ptr), O2S(valuePtr)));
+	goto lappendList;
+
+    case INST_LAPPEND_LIST_STK:
+	pcAdjustment = 1;
+	cleanup = 2;
+	valuePtr = OBJ_AT_TOS;
+	part2Ptr = NULL;
+	part1Ptr = OBJ_UNDER_TOS;	/* variable name */
+	TRACE(("\"%.30s\" \"%.30s\" => ", O2S(part1Ptr), O2S(valuePtr)));
+	goto lappendList;
+
+    lappendListDirect:
+	objResultPtr = varPtr->value.objPtr;
+	if (TclListObjLength(interp, objResultPtr, &len) != TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	if (Tcl_IsShared(objResultPtr)) {
+	    Tcl_Obj *newValue = Tcl_DuplicateObj(objResultPtr);
+
+	    TclDecrRefCount(objResultPtr);
+	    varPtr->value.objPtr = objResultPtr = newValue;
+	    Tcl_IncrRefCount(newValue);
+	}
+	if (Tcl_ListObjReplace(interp, objResultPtr, len, 0, objc, objv)
+		!= TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
+
+    lappendList:
+	opnd = -1;
+	if (TclListObjGetElements(interp, valuePtr, &objc, &objv)
+		!= TCL_OK) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+	DECACHE_STACK_INFO();
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, part2Ptr,
+		TCL_LEAVE_ERR_MSG, "set", 1, 1, &arrayPtr);
+	CACHE_STACK_INFO();
+	if (!varPtr) {
+	    TRACE_ERROR(interp);
+	    goto gotError;
+	}
+
+    lappendListPtr:
+	if (TclIsVarInHash(varPtr)) {
+	    VarHashRefCount(varPtr)++;
+	}
+	if (arrayPtr && TclIsVarInHash(arrayPtr)) {
+	    VarHashRefCount(arrayPtr)++;
+	}
+	DECACHE_STACK_INFO();
+	objResultPtr = TclPtrGetVar(interp, varPtr, arrayPtr,
+		part1Ptr, part2Ptr, TCL_LEAVE_ERR_MSG, opnd);
+	CACHE_STACK_INFO();
+	if (TclIsVarInHash(varPtr)) {
+	    VarHashRefCount(varPtr)--;
+	}
+	if (arrayPtr && TclIsVarInHash(arrayPtr)) {
+	    VarHashRefCount(arrayPtr)--;
+	}
+
+	{
+	    int createdNewObj = 0;
+
+	    if (!objResultPtr) {
+		objResultPtr = valuePtr;
+	    } else if (TclListObjLength(interp, objResultPtr, &len)!=TCL_OK) {
+		TRACE_ERROR(interp);
+		goto gotError;
+	    } else {
+		if (Tcl_IsShared(objResultPtr)) {
+		    objResultPtr = Tcl_DuplicateObj(objResultPtr);
+		    createdNewObj = 1;
+		}
+		if (Tcl_ListObjReplace(interp, objResultPtr, len,0, objc,objv)
+			!= TCL_OK) {
+		    goto errorInLappendListPtr;
+		}
+	    }
+	    DECACHE_STACK_INFO();
+	    objResultPtr = TclPtrSetVar(interp, varPtr, arrayPtr, part1Ptr,
+		    part2Ptr, objResultPtr, TCL_LEAVE_ERR_MSG, opnd);
+	    CACHE_STACK_INFO();
+	    if (!objResultPtr) {
+	    errorInLappendListPtr:
+		if (createdNewObj) {
+		    TclDecrRefCount(objResultPtr);
+		}
+		TRACE_ERROR(interp);
+		goto gotError;
+	    }
+	}
 	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 	NEXT_INST_V(pcAdjustment, cleanup, 1);
     }
@@ -4782,7 +4947,7 @@ TEBCresume(
 
 	valuePtr = OBJ_AT_TOS;
 	opnd = TclGetInt4AtPtr(pc+1);
-	TRACE(("\%.30s\" %d => ", O2S(valuePtr), opnd));
+	TRACE(("\"%.30s\" %d => ", O2S(valuePtr), opnd));
 
 	/*
 	 * Get the contents of the list, making sure that it really is a list
