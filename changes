@@ -7792,7 +7792,7 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 --- Released 8.5.15, September 16, 2013 --- http://core.tcl.tk/tcl/ for details
 
-2013-09-19 (bug fix)[3487626] [dict] compile segfaults (porter)
+2013-09-19 (bug fix)[3487626] segfaults in [dict] compilers (porter)
 
 2013-09-19 (bug fix) [info frame] line OBOEs in bytecode (porter)
 
