@@ -7612,6 +7612,66 @@ test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix op
     close $f1
     list $::done $ch
 } {ok A}
+test io-53.13 {TclCopyChannel: read error reporting} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                return {initialize finalize watch read}
+            }
+            finalize {
+                return
+            }
+            watch {}
+            read {
+		error FAIL
+            }
+        }
+    }
+    set outFile [makeFile {} out]
+} -body {
+    set in [chan create read [namespace which driver]]
+    chan configure $in -translation binary
+    set out [open $outFile wb]
+    chan copy $in $out
+} -cleanup {
+    catch {close $in}
+    catch {close $out}
+    removeFile out
+    rename driver {}
+} -result {error reading "*": *} -returnCodes error -match glob
+test io-53.14 {TclCopyChannel: write error reporting} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                return {initialize finalize watch write}
+            }
+            finalize {
+                return
+            }
+            watch {}
+            write {
+                error FAIL
+            }
+        }
+    }
+    set inFile [makeFile {aaa} in]
+} -body {
+    set in [open $inFile rb]
+    set out [chan create write [namespace which driver]]
+    chan configure $out -translation binary
+    chan copy $in $out
+} -cleanup {
+    catch {close $in}
+    catch {close $out}
+    removeFile in
+    rename driver {}
+} -result {error writing "*": *} -returnCodes error -match glob
 
 test io-54.1 {Recursive channel events} {socket fileevent} {
     # This test checks to see if file events are delivered during recursive

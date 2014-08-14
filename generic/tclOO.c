@@ -1008,6 +1008,12 @@ ReleaseClassContents(
 	    }
 	    if (!Deleted(instancePtr)) {
 		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+		/*
+		 * Tcl_DeleteCommandFromToken() may have done to whole
+		 * job for us.  Roll back and check again.
+		 */
+		i--;
+		continue;
 	    }
 	    DelRef(instancePtr);
 	}
@@ -1280,6 +1286,7 @@ TclOORemoveFromInstances(
 
   removeInstance:
     if (Deleted(clsPtr->thisPtr)) {
+	DelRef(clsPtr->instances.list[i]);
 	clsPtr->instances.list[i] = NULL;
     } else {
 	clsPtr->instances.num--;
