@@ -567,7 +567,7 @@ TclThreadAllocObj(void)
 	    Tcl_Obj *newObjsPtr;
 
 	    cachePtr->numObjects = numMove = NOBJALLOC;
-	    newObjsPtr = malloc(sizeof(Tcl_Obj) * numMove);
+	    newObjsPtr = (Tcl_Obj *)(((ObjChunkHeader *)malloc(sizeof(ObjChunkHeader) + sizeof(Tcl_Obj) * numMove)) + 1);
 	    if (newObjsPtr == NULL) {
 		Tcl_Panic("alloc: could not allocate %d new objects", numMove);
 	    }
@@ -575,6 +575,15 @@ TclThreadAllocObj(void)
 		objPtr = &newObjsPtr[numMove];
 		objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
 		cachePtr->firstObjPtr = objPtr;
+	    }
+	    {
+		ObjChunkHeader *chunk = ((ObjChunkHeader *)newObjsPtr) - 1;
+
+		chunk->end = newObjsPtr + NOBJALLOC;
+		Tcl_MutexLock(objLockPtr);
+		chunk->next = tclObjChunkList;
+		tclObjChunkList = chunk;
+		Tcl_MutexUnlock(objLockPtr);
 	    }
 	}
     }
@@ -1048,6 +1057,61 @@ TclFinalizeThreadAllocThread(void)
     if (cachePtr != NULL) {
 	TclpFreeAllocCache(cachePtr);
     }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpLockAlloc, TclpUnlockAlloc, TclpGetGlobalFreeObj, TclpGetLocalFreeObj --
+ *     These functions allow outside callers to reach safely into our internal
+ *     state for inspection or gc.
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpLockAlloc(void)
+{
+    Tcl_MutexLock(objLockPtr);
+}
+
+void
+TclpUnlockAlloc(void)
+{
+    Tcl_MutexUnlock(objLockPtr);
+}
+
+Tcl_Obj **
+TclpGetGlobalFreeObj(void)
+{
+    return &sharedPtr->firstObjPtr;
+}
+
+Tcl_Obj **
+TclpGetLocalFreeObj(void)
+{
+    Cache *cachePtr;
+
+    GETCACHE(cachePtr);
+    return &cachePtr->firstObjPtr;
+}
+
+void TclpRecomputeGlobalNumObj(void)
+{
+    int n;
+    Tcl_Obj *obj;
+
+    for(n=0,obj=sharedPtr->firstObjPtr;obj;obj=(Tcl_Obj *)obj->internalRep.twoPtrValue.ptr1,n++);
+    sharedPtr->numObjects = n;
+}
+void TclpRecomputeLocalNumObj(void)
+{
+    int n;
+    Tcl_Obj *obj;
+    Cache *cachePtr;
+
+    GETCACHE(cachePtr);
+    for(n=0,obj=cachePtr->firstObjPtr;obj;obj=(Tcl_Obj *)obj->internalRep.twoPtrValue.ptr1,n++);
+    cachePtr->numObjects = n;
 }
 
 #else /* !(TCL_THREADS && USE_THREAD_ALLOC) */

@@ -1736,6 +1736,41 @@ enum PkgPreferOptions {
 
 /*
  *----------------------------------------------------------------
+ * These structures support gc
+ *----------------------------------------------------------------
+ */
+
+/*
+ * Header starting each chunk of Tcl_Obj, to chain them for use by gc
+ */
+
+typedef struct ObjChunkHeader {
+    struct ObjChunkHeader *next; /* chaining          */
+    Tcl_Obj *end;                /* address of last+1 */
+} ObjChunkHeader;
+
+MODULE_SCOPE ObjChunkHeader *tclObjChunkList; /* initialised in tclObj.c */
+
+/*
+ * Cell of temporary sorted array of chunk ranges and counters, for
+ * dichotomic search in gc
+ */
+
+typedef struct ObjChunkInfo {
+    Tcl_Obj *beg,*end;           /* [beg,end[ is the chunk's range */
+    int free;                    /* temporary counter for gc       */
+} ObjChunkInfo;
+
+MODULE_SCOPE void TclpLockAlloc(void);
+MODULE_SCOPE void TclpUnlockAlloc(void);
+MODULE_SCOPE Tcl_Obj **TclpGetGlobalFreeObj(void);
+MODULE_SCOPE Tcl_Obj **TclpGetLocalFreeObj(void);
+MODULE_SCOPE void TclpRecomputeGlobalNumObj(void);
+MODULE_SCOPE void TclpRecomputeLocalNumObj(void);
+
+
+/*
+ *----------------------------------------------------------------
  * This structure shadows the first few fields of the memory cache for the
  * allocator defined in tclThreadAlloc.c; it has to be kept in sync with the
  * definition there.
@@ -3283,6 +3318,9 @@ MODULE_SCOPE int	Tcl_ForeachObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_FormatObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_GcCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_GetsObjCmd(ClientData clientData,

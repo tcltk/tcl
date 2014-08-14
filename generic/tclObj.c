@@ -51,6 +51,8 @@ Tcl_Mutex tclObjMutex;
 char tclEmptyString = '\0';
 char *tclEmptyStringRep = &tclEmptyString;
 
+ObjChunkHeader *tclObjChunkList = NULL;
+
 #if defined(TCL_MEM_DEBUG) && defined(TCL_THREADS)
 /*
  * Structure for tracking the source file and line number where a given
@@ -1237,8 +1239,9 @@ Tcl_DbNewObj(
 void
 TclAllocateFreeObjects(void)
 {
-    size_t bytesToAlloc = (OBJS_TO_ALLOC_EACH_TIME * sizeof(Tcl_Obj));
+    size_t bytesToAlloc = (sizeof(ObjChunkHeader) + OBJS_TO_ALLOC_EACH_TIME * sizeof(Tcl_Obj));
     char *basePtr;
+    ObjChunkHeader *header;
     register Tcl_Obj *prevPtr, *objPtr;
     register int i;
 
@@ -1251,7 +1254,12 @@ TclAllocateFreeObjects(void)
      * Purify apparently can't figure that out, and fires a false alarm.
      */
 
-    basePtr = ckalloc(bytesToAlloc);
+    header = (ObjChunkHeader *) ckalloc(bytesToAlloc);
+    header->next = tclObjChunkList;
+    header->end = (Tcl_Obj *)(((char *)header) + bytesToAlloc);
+    tclObjChunkList = header;
+
+    basePtr = (char *) (header + 1);
 
     prevPtr = NULL;
     objPtr = (Tcl_Obj *) basePtr;
@@ -4487,6 +4495,229 @@ Tcl_RepresentationCmd(
     }
 
     Tcl_SetObjResult(interp, descObj);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_GcCmd --
+ *
+ *	Implementation of the "tcl::unsupported::gc" command.
+ *
+ * Results:
+ *	{purged $nbobj chunks {$start $total $used $start $total $used ...}} 
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int ComparePointers(const void *a, const void *b)
+{
+    return (*(char **)a)-(*(char **)b);
+}
+
+#define GC_BISECT_MIN_RECURS 4
+
+static ObjChunkInfo *GC_FindChunkInfo(Tcl_Obj *obj, ObjChunkInfo *itab, int len) {
+    while (1) {
+        int mid;
+
+        if (len <= GC_BISECT_MIN_RECURS) {
+            int i;
+
+            for(i = 0; i < len; i++, itab++) {
+                if ((obj>=itab->beg)&&(obj<itab->end)) {
+                    return itab;
+                }
+            }
+            fprintf(stderr,"# GC internal error: no chunk enclosing obj %p\n",obj);
+            return NULL;
+        }
+        mid = len / 2;
+        if (obj >= itab[mid].beg) {
+            itab += mid;
+            len -= mid;
+        } else {
+            len = mid;
+        }
+    }
+}
+
+#ifndef USE_THREAD_ALLOC
+void TclpLockAlloc(void)
+{
+    Tcl_MutexLock(&tclObjMutex);
+}
+void TclpUnlockAlloc(void)
+{
+    Tcl_MutexUnlock(&tclObjMutex);
+}
+Tcl_Obj **
+TclpGetGlobalFreeObj(void)
+{
+    return &tclFreeObjList;
+}
+Tcl_Obj **
+TclpGetLocalFreeObj(void)
+{
+    return NULL;
+}
+void TclpRecomputeGlobalNumObj(void)
+{
+}
+void TclpRecomputeLocalNumObj(void)
+{
+}
+
+
+
+# define FREE_INTERNAL ckfree
+#else
+# define FREE_INTERNAL free
+#endif
+
+static Tcl_Obj *DerefIf(Tcl_Obj **src)
+{
+    return (src ? (*src) : NULL);
+}
+
+int
+Tcl_GcCmd(
+    ClientData clientData,
+    Tcl_Interp *interp,
+    int objc,
+    Tcl_Obj *const objv[])
+{
+    int nch, i, npurge;
+    ObjChunkHeader *chunk, **tmp;
+    ObjChunkInfo *info, *infotab;
+    Tcl_Obj *obj;
+
+    if (objc != 1) {
+	Tcl_WrongNumArgs(interp, 1, objv, "");
+	return TCL_ERROR;
+    }
+
+    TclpLockAlloc();
+
+    fprintf(stderr, "GC Phase 1: prepare sorted list of chunk info\n");
+    nch = 0;
+    for (chunk = tclObjChunkList; chunk; chunk = chunk->next) {
+        nch++;
+    }
+    infotab = (ObjChunkInfo *) malloc(nch * sizeof(ObjChunkInfo));
+    tmp = (ObjChunkHeader **) infotab; /* pointers are smaller, so they fit */
+    for (chunk = tclObjChunkList; chunk; chunk = chunk->next) {
+        *(tmp++) = chunk;
+    }
+    qsort(infotab, nch, sizeof(ObjChunkHeader *), ComparePointers);
+
+    /* in-place cacheing of chunk headers into chunk infos */
+    for(i = nch - 1; i >= 0; i--) {
+        chunk = ((ObjChunkHeader **)infotab)[i];
+        info = infotab + i;
+        info->beg = (Tcl_Obj *)(chunk + 1);
+        info->end = chunk->end;
+        info->free = 0;
+    }
+
+    fprintf(stderr, "GC Phase 2: scan free lists, locating each obj's chunk and updating its free count\n");
+    for (obj = DerefIf(TclpGetLocalFreeObj()); obj; obj = (Tcl_Obj *)obj->internalRep.twoPtrValue.ptr1) {
+        info = GC_FindChunkInfo(obj, infotab, nch);
+        if (info) info->free++;
+    }
+    for (obj = DerefIf(TclpGetGlobalFreeObj()); obj; obj = (Tcl_Obj *)obj->internalRep.twoPtrValue.ptr1) {
+        info = GC_FindChunkInfo(obj, infotab, nch);
+        if (info) info->free++;
+    }
+
+    fprintf(stderr, "GC Phase 3: locate chunks entirely made of free objs and mark them with chunk->end=NULL and info->free=-1 \n");
+    npurge = 0;
+    for (i = 0, info = infotab; i < nch; i++, info++) {
+        int room, delta;
+
+        room = info->end - info->beg;
+        delta = info->free - room;
+        chunk = ((ObjChunkHeader *)info->beg) - 1;
+        if (delta > 0) {
+            fprintf(stderr,"# GC internal error: chunk at %p counts %d frees but has room for %d only !\n",
+                    chunk,
+                    info->free,
+                    room);
+            break;
+        }
+        if (delta < 0) {
+            fprintf(stderr," . chunk %p : %d / %d\n",
+                    chunk,
+                    -delta,
+                    room);
+            continue;
+        }
+        /* here we have a purgeable chunk */
+        npurge += room;
+        chunk->end = NULL ; /* mark it for final sweep of chunks */
+        info->free = -1 ; /* mark it for final sweep of objs*/
+        fprintf(stderr," PURGE chunk %p : 0 / %d\n",
+                chunk,
+                room);
+    }
+
+    if (!npurge) {
+        fprintf(stderr," Sorry - nothing to purge :(\n");
+    } else {
+        {
+            Tcl_Obj **pobj;
+            int n,p;
+
+            fprintf(stderr, "GC Phase 4: remove the soon-to-be-purged objs from free lists\n");
+            
+            n = p = 0;
+            for (pobj = TclpGetLocalFreeObj(); (*pobj);) {
+                n++;
+                info = GC_FindChunkInfo(*pobj, infotab, nch);
+                if (info->free != -1) {
+                    pobj = (Tcl_Obj **)&(**pobj).internalRep.twoPtrValue.ptr1;
+                } else {
+                    *pobj = (Tcl_Obj *)(**pobj).internalRep.twoPtrValue.ptr1;
+                    p++;
+                }
+            }
+            TclpRecomputeLocalNumObj();
+            fprintf(stderr," (local: purge %d / %d\n",p,n);
+            n = p = 0;
+            for (pobj = TclpGetGlobalFreeObj(); (*pobj);) {
+                n++;
+                info = GC_FindChunkInfo(*pobj, infotab, nch);
+                if (info->free != -1) {
+                    pobj = (Tcl_Obj **)&(**pobj).internalRep.twoPtrValue.ptr1;
+                } else {
+                    *pobj = (Tcl_Obj *)(**pobj).internalRep.twoPtrValue.ptr1;
+                    p++;
+                }
+            }
+            TclpRecomputeGlobalNumObj();
+            fprintf(stderr," (global: purge %d / %d\n",p,n);
+
+        }
+        {
+            ObjChunkHeader **pchunk;
+            
+            fprintf(stderr, "GC Phase 5: free the located chunks, totalling %d objs\n", npurge);
+            for (pchunk = &tclObjChunkList; (chunk = *pchunk); ) {
+                if (chunk->end) {
+                    pchunk=&chunk->next;
+                } else {
+                    *pchunk = chunk->next;
+                    FREE_INTERNAL(chunk);
+                }
+            }
+        }
+    }
+    TclpUnlockAlloc();
+
     return TCL_OK;
 }
 
