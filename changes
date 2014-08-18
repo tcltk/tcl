@@ -7816,7 +7816,7 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 2014-02-06 (bug fix)[a4494e2] panic in test namespace-13.2 (porter)
 
-2014-02-24 (bug fix)[2413550] Win: avoid serial double open (oehlmann)
+2014-02-24 (bug fix)[2413550] Win: avoid serial double open (schroeter)
 
 2014-03-20 (bug fix)[2f7cbd0] FreeBSD 10.0 build failure (nijtmans)
 
