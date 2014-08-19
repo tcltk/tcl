@@ -9048,7 +9048,8 @@ MBWrite(
     ChannelState *outStatePtr = csPtr->writePtr->state;
     ChannelBuffer *bufPtr = inStatePtr->inQueueHead;
     ChannelBuffer *tail = NULL;
-    int code, inBytes = 0;
+    int code;
+    Tcl_WideInt inBytes = 0;
 
     /* Count up number of bytes waiting in the input queue */
     while (bufPtr) {
@@ -9063,7 +9064,14 @@ MBWrite(
 
     if (bufPtr) {
 	/* Split the overflowing buffer in two */
-	int extra = inBytes - csPtr->toRead;
+	int extra = (int) (inBytes - csPtr->toRead);
+        /* Note that going with int for extra assumes that inBytes is not too
+         * much over toRead to require a wide itself. If that gets violated
+         * then the calculations involving extra must be made wide too.
+         *
+         * Noted with Win32/MSVC debug build treating the warning (possible of
+         * data in int64 to int conversion) as error.
+         */
 
 	bufPtr = AllocChannelBuffer(extra);
 
