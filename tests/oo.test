@@ -283,6 +283,23 @@ test oo-1.20 {basic test of OO functionality: my teardown post rename} -body {
     obj destroy
     info commands ::AGlobalName
 } -result {}
+test oo-1.21 {basic test of OO functionality: default relations} -setup {
+    set fresh [interp create]
+} -body {
+    lmap x [$fresh eval {
+	foreach cmd {instances subclasses mixins superclass} {
+	    foreach initial {object class Slot} {
+		lappend x [info class $cmd ::oo::$initial]
+	    }
+	}
+	foreach initial {object class Slot} {
+	    lappend x [info object class ::oo::$initial]
+	}
+	return $x
+    }] {lsort $x}
+} -cleanup {
+    interp delete $fresh
+} -result {{} {::oo::Slot ::oo::class ::oo::object} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
