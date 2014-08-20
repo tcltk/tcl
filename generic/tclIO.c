@@ -228,8 +228,10 @@ static int WillRead(Channel *chanPtr);
 
 #define WriteChars(chanPtr, src, srcLen) \
 			Write(chanPtr, src, srcLen, chanPtr->state->encoding)
-#define WriteBytes(chanPtr, src, srcLen) \
-			Write(chanPtr, src, srcLen, tclIdentityEncoding)
+//#define WriteBytes(chanPtr, src, srcLen) \
+//			Write(chanPtr, src, srcLen, tclIdentityEncoding)
+static int		WriteBytes(Channel *chanPtr, const char *src,
+			    int srcLen);
 
 /*
  * Simplifying helper macros. All may use their argument(s) multiple times.
@@ -3737,6 +3739,168 @@ Write(
 {
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
+    char *nextNewLine = NULL;
+    int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
+
+    if (srcLen) {
+        WillWrite(chanPtr);
+    }
+
+    /*
+     * Write the terminated escape sequence even if srcLen is 0.
+     */
+
+    endEncoding = ((statePtr->outputEncodingFlags & TCL_ENCODING_END) != 0);
+
+    if (GotFlag(statePtr, CHANNEL_LINEBUFFERED)
+	    || (statePtr->outputTranslation != TCL_TRANSLATE_LF)) {
+	nextNewLine = memchr(src, '\n', srcLen);
+    }
+
+    while (srcLen + saved + endEncoding > 0) {
+	ChannelBuffer *bufPtr;
+	char *dst, safe[BUFFER_PADDING];
+	int result, srcRead, dstLen, dstWrote, srcLimit = srcLen;
+
+	if (nextNewLine) {
+	    srcLimit = nextNewLine - src;
+	}
+	
+	/* Get space to write into */
+	bufPtr = statePtr->curOutPtr;
+	if (bufPtr == NULL) {
+	    bufPtr = AllocChannelBuffer(statePtr->bufSize);
+	    statePtr->curOutPtr = bufPtr;
+	}
+	if (saved) {
+	    /*
+	     * Here's some translated bytes left over from the last buffer
+	     * that we need to stick at the beginning of this buffer.
+	     */
+
+	    memcpy(InsertPoint(bufPtr), safe, (size_t) saved);
+	    bufPtr->nextAdded += saved;
+	    saved = 0;
+	}
+	PreserveChannelBuffer(bufPtr);
+	dst = InsertPoint(bufPtr);
+	dstLen = SpaceLeft(bufPtr);
+
+	result = Tcl_UtfToExternal(NULL, encoding, src, srcLimit,
+		statePtr->outputEncodingFlags,
+		&statePtr->outputEncodingState, dst,
+		dstLen + BUFFER_PADDING, &srcRead, &dstWrote, NULL);
+
+	/* See chan-io-1.[89]. Tcl Bug 506297. */
+	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
+	
+	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
+	    /* We're reading from invalid/incomplete UTF-8 */
+	    ReleaseChannelBuffer(bufPtr);
+	    if (total == 0) {
+		Tcl_SetErrno(EINVAL);
+		return -1;
+	    }
+	    break;
+	}
+
+	bufPtr->nextAdded += dstWrote;
+	src += srcRead;
+	srcLen -= srcRead;
+	total += dstWrote;
+	dst += dstWrote;
+	dstLen -= dstWrote;
+
+	if (src == nextNewLine && dstLen > 0) {
+	    static char crln[3] = "\r\n";
+	    char *nl = NULL;
+	    int nlLen = 0;
+
+	    switch (statePtr->outputTranslation) {
+	    case TCL_TRANSLATE_LF:
+		nl = crln + 1;
+		nlLen = 1;
+		break;
+	    case TCL_TRANSLATE_CR:
+		nl = crln;
+		nlLen = 1;
+		break;
+	    case TCL_TRANSLATE_CRLF:
+		nl = crln;
+		nlLen = 2;
+		break;
+	    default:
+		Tcl_Panic("unknown output translation requested");
+		break;
+	    }
+	
+	    result |= Tcl_UtfToExternal(NULL, encoding, nl, nlLen,
+		statePtr->outputEncodingFlags,
+		&statePtr->outputEncodingState, dst,
+		dstLen + BUFFER_PADDING, &srcRead, &dstWrote, NULL);
+
+	    assert (srcRead == nlLen);
+
+	    bufPtr->nextAdded += dstWrote;
+	    src++;
+	    srcLen--;
+	    total += dstWrote;
+	    dst += dstWrote;
+	    dstLen -= dstWrote;
+	    nextNewLine = memchr(src, '\n', srcLen);
+	    needNlFlush = 1;
+	}
+
+	if (IsBufferOverflowing(bufPtr)) {
+	    /*
+	     * When translating from UTF-8 to external encoding, we
+	     * allowed the translation to produce a character that crossed
+	     * the end of the output buffer, so that we would get a
+	     * completely full buffer before flushing it. The extra bytes
+	     * will be moved to the beginning of the next buffer.
+	     */
+
+	    saved = -SpaceLeft(bufPtr);
+	    memcpy(safe, dst + dstLen, (size_t) saved);
+	    bufPtr->nextAdded = bufPtr->bufLength;
+	}
+
+	if ((srcLen + saved == 0) && (result == TCL_OK)) {
+	    endEncoding = 0;
+	}
+
+	if (IsBufferFull(bufPtr)) {
+	    if (FlushChannel(NULL, chanPtr, 0) != 0) {
+		ReleaseChannelBuffer(bufPtr);
+		return -1;
+	    }
+	    flushed += statePtr->bufSize;
+	    if (saved == 0 || src[-1] != '\n') {
+		needNlFlush = 0;
+	    }
+	}
+	ReleaseChannelBuffer(bufPtr);
+    }
+    if ((flushed < total) && (GotFlag(statePtr, CHANNEL_UNBUFFERED) ||
+	    (needNlFlush && GotFlag(statePtr, CHANNEL_LINEBUFFERED)))) {
+	if (FlushChannel(NULL, chanPtr, 0) != 0) {
+	    return -1;
+	}
+    }
+
+    return total;
+}
+
+static int
+WriteBytes(
+    Channel *chanPtr,		/* The channel to buffer output for. */
+    const char *src,		/* UTF-8 string to write. */
+    int srcLen)			/* Length of UTF-8 string in bytes. */
+{
+    ChannelState *statePtr = chanPtr->state;
+				/* State info for channel */
+    Tcl_Encoding encoding = tclIdentityEncoding;
+
     char *nextNewLine = NULL;
     int endEncoding, saved = 0, total = 0, flushed = 0, needNlFlush = 0;
 
