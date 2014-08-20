@@ -8355,6 +8355,8 @@ Many optmizations, improvements, and tightened stack management in bytecode.
 
 2014-03-27 (bug fix) segfault iocmd-23.11 (porter)
 
+2014-04-02 (bug fix)[581937a] Win: readable event on async connect failure
+
 2014-04-04 (bug fix)[581937a,97069ea] async socket connect fail (oehlmann)
 
 2014-04-10 (bug fix)[792641f] Win: no \ in normalized path (nijtmans)
@@ -8386,6 +8388,8 @@ Many optmizations, improvements, and tightened stack management in bytecode.
 
 2014-05-20 (bug fix) Stop eof and blocked state leaking thru stacks (porter)
         *** POTENTIAL INCOMPATIBILITY ***
+
+2014-05-20 (bug fix)[13d3af3] Win: socket -async tried only first IP address
 
 2014-05-28 (platforms) work around systems that fail when a shared library
 is deleted after it is [load]ed (kupries)
