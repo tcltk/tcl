@@ -8855,6 +8855,7 @@ DoRead(
 
 	/* If there is no full buffer, attempt to create and/or fill one. */
 
+if (bufPtr == NULL || BytesLeft(bufPtr) < bytesToRead) {
 	while (!IsBufferFull(bufPtr)) {
 	    int code;
 
@@ -8880,6 +8881,7 @@ DoRead(
 	}
 
 	assert (bufPtr != NULL);
+}
 
 	bytesRead = BytesLeft(bufPtr);
 	bytesWritten = bytesToRead;
