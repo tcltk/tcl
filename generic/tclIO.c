@@ -8115,7 +8115,7 @@ Tcl_NotifyChannel(
 
 	if ((chPtr->mask & mask) != 0) {
 	    nh.nextHandlerPtr = chPtr->nextPtr;
-	    chPtr->proc(chPtr->clientData, mask);
+	    chPtr->proc(chPtr->clientData, chPtr->mask & mask);
 	    chPtr = nh.nextHandlerPtr;
 	} else {
 	    chPtr = chPtr->nextPtr;
@@ -9513,33 +9513,21 @@ DoRead(
 	    break;
 	}
 
-	/* If there is no full buffer, attempt to create and/or fill one. */
+	/*
+	 * If there is not enough data in the buffers to possibly
+	 * complete the read, then go get more.
+	 */
 
-	while (!IsBufferFull(bufPtr)) {
-	    int code;
-
+	if (bufPtr == NULL || BytesLeft(bufPtr) < bytesToRead) {
 	moreData:
-	    code = GetInput(chanPtr);
-	    bufPtr = statePtr->inQueueHead;
-
-	    assert (bufPtr != NULL);
-
-	    if (statePtr->flags & (CHANNEL_EOF|CHANNEL_BLOCKED)) {
-		/* Further reads cannot do any more */
-		break;
-	    }
-	    
-	    if (code) {
+	    if (GetInput(chanPtr)) {
 		/* Read error */
 		UpdateInterest(chanPtr);
 		TclChannelRelease((Tcl_Channel)chanPtr);
 		return -1;
 	    }
-
-	    assert (IsBufferFull(bufPtr));
+	    bufPtr = statePtr->inQueueHead;
 	}
-
-	assert (bufPtr != NULL);
 
 	bytesRead = BytesLeft(bufPtr);
 	bytesWritten = bytesToRead;
