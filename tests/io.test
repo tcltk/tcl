@@ -4950,7 +4950,10 @@ test io-36.1 {Tcl_InputBlocked on nonblocking pipe} {stdio openpipe} {
 test io-36.1.1 {Tcl_InputBlocked on nonblocking binary pipe} {stdio openpipe} {
     set f1 [open "|[list [interpreter]]" r+]
     chan configure $f1 -encoding binary -translation lf -eofchar {}
-    puts $f1 {puts hello_from_pipe}
+    puts $f1 {
+	chan configure stdout -encoding binary -translation lf -eofchar {}
+	puts hello_from_pipe
+    }
     flush $f1
     gets $f1
     fconfigure $f1 -blocking off -buffering full
