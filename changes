@@ -8449,4 +8449,4 @@ of Tcl_Channel  (porter)
 2014-08-17 (bug fix)[7d52e11] [info class subclasses oo::object] should
 include ::oo::class (fellows)
 
---- Released 8.6.2, August, 2014 --- http://core.tcl.tk/tcl/ for details 
+--- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details 
