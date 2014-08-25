@@ -1335,7 +1335,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL=".15"
+TCL_PATCH_LEVEL=".16"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
@@ -18915,7 +18915,7 @@ TCL_SHARED_BUILD=${SHARED_BUILD}
 
 
 
-                              ac_config_files="$ac_config_files Makefile:../unix/Makefile.in dltest/Makefile:../unix/dltest/Makefile.in tclConfig.sh:../unix/tclConfig.sh.in tcl.pc:../unix/tcl.pc.in"
+                                        ac_config_files="$ac_config_files Makefile:../unix/Makefile.in dltest/Makefile:../unix/dltest/Makefile.in tclConfig.sh:../unix/tclConfig.sh.in tcl.pc:../unix/tcl.pc.in"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
