@@ -25,7 +25,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL=".15"
+TCL_PATCH_LEVEL=".16"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
