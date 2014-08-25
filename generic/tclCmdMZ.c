@@ -2838,6 +2838,59 @@ StringCmpCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * StringCatCmd --
+ *
+ *	This procedure is invoked to process the "string cat" Tcl command.
+ *	See the user documentation for details on what it does.
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+StringCatCmd(
+    ClientData dummy,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* Argument objects. */
+{
+    int i;
+    Tcl_Obj *objResultPtr;
+
+    if (objc < 2) {
+	/*
+	 * If there are no args, the result is an empty object.
+	 * Just leave the preset empty interp result.
+	 */
+	return TCL_OK;
+    }
+    if (objc == 2) {
+	/*
+	 * Other trivial case, single arg, just return it.
+	 */
+	Tcl_SetObjResult(interp, objv[1]);
+	return TCL_OK;
+    }
+    objResultPtr = objv[1];
+    if (Tcl_IsShared(objResultPtr)) {
+	objResultPtr = Tcl_DuplicateObj(objResultPtr);
+    }
+    for(i = 2;i < objc;i++) {
+	Tcl_AppendObjToObj(objResultPtr, objv[i]);
+    }
+    Tcl_SetObjResult(interp, objResultPtr);
+    
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * StringBytesCmd --
  *
  *	This procedure is invoked to process the "string bytelength" Tcl
@@ -3330,6 +3383,7 @@ TclInitStringCmd(
 {
     static const EnsembleImplMap stringImplMap[] = {
 	{"bytelength",	StringBytesCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+	{"cat",		StringCatCmd,	TclCompileStringCatCmd, NULL, NULL, 0},
 	{"compare",	StringCmpCmd,	TclCompileStringCmpCmd, NULL, NULL, 0},
 	{"equal",	StringEqualCmd,	TclCompileStringEqualCmd, NULL, NULL, 0},
 	{"first",	StringFirstCmd,	TclCompileStringFirstCmd, NULL, NULL, 0},
