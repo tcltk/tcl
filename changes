@@ -8449,4 +8449,6 @@ of Tcl_Channel  (porter)
 2014-08-17 (bug fix)[7d52e11] [info class subclasses oo::object] should
 include ::oo::class (fellows)
 
+2014-08-25 (TIP 429) New command [string cat] (leitgeb,ferrieux)
+
 --- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details 
