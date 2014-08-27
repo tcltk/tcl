@@ -269,6 +269,78 @@ TclCompileSetCmd(
  */
 
 int
+TclCompileStringCatCmd(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
+				 * created by Tcl_ParseCommand. */
+    Command *cmdPtr,		/* Points to defintion of command being
+				 * compiled. */
+    CompileEnv *envPtr)		/* Holds resulting instructions. */
+{
+    int i, numWords = parsePtr->numWords, numArgs;
+    Tcl_Token *wordTokenPtr;
+    Tcl_Obj *obj, *folded;
+    DefineLineInformation;	/* TIP #280 */
+
+    /* Trivial case, no arg */
+
+    if (numWords<2) {
+	PushStringLiteral(envPtr, "");
+	return TCL_OK;
+    }
+	
+    /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
+       contiguous constants along the way */
+
+    numArgs = 0;
+    folded = NULL;
+    wordTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    for (i = 1; i < numWords; i++) {
+	obj = Tcl_NewObj();
+	if (TclWordKnownAtCompileTime(wordTokenPtr, obj)) {
+	    if (folded) {
+		Tcl_AppendObjToObj(folded, obj);
+		Tcl_DecrRefCount(obj);
+	    } else {
+		folded = obj;
+	    }
+	} else {
+	    Tcl_DecrRefCount(obj);
+	    if (folded) {
+		int len;
+		const char *bytes = Tcl_GetStringFromObj(folded, &len);
+		
+		PushLiteral(envPtr, bytes, len);
+		Tcl_DecrRefCount(folded);
+		folded = NULL;
+		numArgs ++;
+	    }
+	    CompileWord(envPtr, wordTokenPtr, interp, i);
+	    numArgs ++;
+	    if (numArgs >= 254) { /* 254 to take care of the possible +1 of "folded" above */
+		TclEmitInstInt1(INST_STR_CONCAT1, 254, envPtr);
+		numArgs -= 253;	/* concat pushes 1 obj, the result */
+	    }
+	}
+	wordTokenPtr = TokenAfter(wordTokenPtr);
+    }
+    if (folded) {
+	int len;
+	const char *bytes = Tcl_GetStringFromObj(folded, &len);
+	
+	PushLiteral(envPtr, bytes, len);
+	Tcl_DecrRefCount(folded);
+	folded = NULL;
+	numArgs ++;
+    }
+    if (numArgs > 1) {
+	TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
+    }
+
+    return TCL_OK;
+}
+
+int
 TclCompileStringCmpCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command

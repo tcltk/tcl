@@ -19,6 +19,21 @@ string \- Manipulate strings
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
+\fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
+.VS 8.6.2
+Concatenate the given \fIstring\fRs just like placing them directly
+next to each other and return the resulting compound string.  If no
+\fIstring\fRs are present, the result is an empty string.
+.RS
+.PP
+This primitive is occasionally handier than juxtaposition of strings
+when mixed quoting is wanted, or when the aim is to return the result
+of a concatenation without resorting to \fBreturn\fR \fB\-level 0\fR,
+and is more efficient than building a list of arguments and using
+\fBjoin\fR with an empty join string.
+.RE
+.VE
+.TP
 \fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
