@@ -26,7 +26,7 @@
  * interface, even if that is mostly true).
  */
 
-#define TCL_ZLIB_VERSION	"2.0"
+#define TCL_ZLIB_VERSION	"2.0.1"
 
 /*
  * Magic flags used with wbits fields to indicate that we're handling the gzip
