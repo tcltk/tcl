@@ -14,6 +14,8 @@
 #include "tclInt.h"	/* Internal definitions for Tcl. */
 #include "tclIO.h"	/* To get Channel type declaration. */
 
+#include <poll.h>
+
 #undef SUPPORTS_TTY
 #if defined(HAVE_TERMIOS_H)
 #   define SUPPORTS_TTY 1
@@ -1726,21 +1728,15 @@ TclUnixWaitForFile(
 				 * forever. */
 {
     Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
-    struct timeval blockTime, *timeoutPtr;
+    struct timeval blockTime = {0, 0};
     int numFound, result = 0;
-    fd_set readableMask;
-    fd_set writableMask;
-    fd_set exceptionMask;
+    struct pollfd pfd;
 
 #ifndef _DARWIN_C_SOURCE
     /*
      * Sanity check fd.
      */
 
-    if (fd >= FD_SETSIZE) {
-	Tcl_Panic("TclUnixWaitForFile can't handle file id %d", fd);
-	/* must never get here, or select masks overrun will occur below */
-    }
 #endif
 
     /*
@@ -1756,22 +1752,7 @@ TclUnixWaitForFile(
 	    abortTime.usec -= 1000000;
 	    abortTime.sec += 1;
 	}
-	timeoutPtr = &blockTime;
-    } else if (timeout == 0) {
-	timeoutPtr = &blockTime;
-	blockTime.tv_sec = 0;
-	blockTime.tv_usec = 0;
-    } else {
-	timeoutPtr = NULL;
     }
-
-    /*
-     * Initialize the select masks.
-     */
-
-    FD_ZERO(&readableMask);
-    FD_ZERO(&writableMask);
-    FD_ZERO(&exceptionMask);
 
     /*
      * Loop in a mini-event loop of our own, waiting for either the file to
@@ -1792,34 +1773,35 @@ TclUnixWaitForFile(
 	    }
 	}
 
+	pfd.fd=fd;
+	pfd.events=0;
+	pfd.revents=0;
+
 	/*
 	 * Setup the select masks for the fd.
 	 */
 
 	if (mask & TCL_READABLE) {
-	    FD_SET(fd, &readableMask);
+	    pfd.events |= POLLIN;
 	}
 	if (mask & TCL_WRITABLE) {
-	    FD_SET(fd, &writableMask);
-	}
-	if (mask & TCL_EXCEPTION) {
-	    FD_SET(fd, &exceptionMask);
+	    pfd.events |= POLLOUT;
 	}
 
 	/*
 	 * Wait for the event or a timeout.
 	 */
 
-	numFound = select(fd + 1, &readableMask, &writableMask,
-		&exceptionMask, timeoutPtr);
+	numFound = poll(&pfd, 1, 
+	        (blockTime.tv_sec * 1000 + blockTime.tv_usec / 1000));
 	if (numFound == 1) {
-	    if (FD_ISSET(fd, &readableMask)) {
+	    if (pfd.revents &  (POLLIN|POLLHUP)) {
 		SET_BITS(result, TCL_READABLE);
 	    }
-	    if (FD_ISSET(fd, &writableMask)) {
+	    if (pfd.revents &  POLLOUT) {
 		SET_BITS(result, TCL_WRITABLE);
 	    }
-	    if (FD_ISSET(fd, &exceptionMask)) { 
+	    if (pfd.revents &  POLLERR) {
 		SET_BITS(result, TCL_EXCEPTION);
 	    }
 	    result &= mask;
