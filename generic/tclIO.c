@@ -8115,7 +8115,7 @@ Tcl_NotifyChannel(
 
 	if ((chPtr->mask & mask) != 0) {
 	    nh.nextHandlerPtr = chPtr->nextPtr;
-	    chPtr->proc(chPtr->clientData, mask);
+	    chPtr->proc(chPtr->clientData, chPtr->mask & mask);
 	    chPtr = nh.nextHandlerPtr;
 	} else {
 	    chPtr = chPtr->nextPtr;
@@ -9048,7 +9048,8 @@ MBWrite(
     ChannelState *outStatePtr = csPtr->writePtr->state;
     ChannelBuffer *bufPtr = inStatePtr->inQueueHead;
     ChannelBuffer *tail = NULL;
-    int code, inBytes = 0;
+    int code;
+    Tcl_WideInt inBytes = 0;
 
     /* Count up number of bytes waiting in the input queue */
     while (bufPtr) {
@@ -9063,7 +9064,14 @@ MBWrite(
 
     if (bufPtr) {
 	/* Split the overflowing buffer in two */
-	int extra = inBytes - csPtr->toRead;
+	int extra = (int) (inBytes - csPtr->toRead);
+        /* Note that going with int for extra assumes that inBytes is not too
+         * much over toRead to require a wide itself. If that gets violated
+         * then the calculations involving extra must be made wide too.
+         *
+         * Noted with Win32/MSVC debug build treating the warning (possible of
+         * data in int64 to int conversion) as error.
+         */
 
 	bufPtr = AllocChannelBuffer(extra);
 
@@ -9505,33 +9513,21 @@ DoRead(
 	    break;
 	}
 
-	/* If there is no full buffer, attempt to create and/or fill one. */
+	/*
+	 * If there is not enough data in the buffers to possibly
+	 * complete the read, then go get more.
+	 */
 
-	while (!IsBufferFull(bufPtr)) {
-	    int code;
-
+	if (bufPtr == NULL || BytesLeft(bufPtr) < bytesToRead) {
 	moreData:
-	    code = GetInput(chanPtr);
-	    bufPtr = statePtr->inQueueHead;
-
-	    assert (bufPtr != NULL);
-
-	    if (statePtr->flags & (CHANNEL_EOF|CHANNEL_BLOCKED)) {
-		/* Further reads cannot do any more */
-		break;
-	    }
-	    
-	    if (code) {
+	    if (GetInput(chanPtr)) {
 		/* Read error */
 		UpdateInterest(chanPtr);
 		TclChannelRelease((Tcl_Channel)chanPtr);
 		return -1;
 	    }
-
-	    assert (IsBufferFull(bufPtr));
+	    bufPtr = statePtr->inQueueHead;
 	}
-
-	assert (bufPtr != NULL);
 
 	bytesRead = BytesLeft(bufPtr);
 	bytesWritten = bytesToRead;
