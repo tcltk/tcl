@@ -287,7 +287,7 @@ TclFreeAllocCache(
     *nextPtrPtr = cachePtr->nextPtr;
     cachePtr->nextPtr = NULL;
     Tcl_MutexUnlock(listLockPtr);
-    free(cachePtr);
+    TclpSysFree(cachePtr);
 }
 
 /*
@@ -332,7 +332,7 @@ TclpAlloc(
 
     /*
      * Increment the requested size to include room for the Block structure.
-     * Call malloc() directly if the required amount is greater than the
+     * Call TclpSysAlloc() directly if the required amount is greater than the
      * largest block, otherwise pop the smallest block large enough,
      * allocating more blocks if necessary.
      */
@@ -344,7 +344,7 @@ TclpAlloc(
 #endif
     if (size > MAXALLOC) {
 	bucket = NBUCKETS;
-	blockPtr = malloc(size);
+	blockPtr = TclpSysAlloc(size, 0);
 	if (blockPtr != NULL) {
 	    cachePtr->totalAssigned += reqSize;
 	}
@@ -407,7 +407,7 @@ TclpFree(
     bucket = blockPtr->sourceBucket;
     if (bucket == NBUCKETS) {
 	cachePtr->totalAssigned -= blockPtr->blockReqSize;
-	free(blockPtr);
+	TclpSysFree(blockPtr);
 	return;
     }
 
@@ -472,7 +472,7 @@ TclpRealloc(
     /*
      * If the block is not a system block and fits in place, simply return the
      * existing pointer. Otherwise, if the block is a system block and the new
-     * size would also require a system block, call realloc() directly.
+     * size would also require a system block, call TclpSysRealloc() directly.
      */
 
     blockPtr = Ptr2Block(ptr);
@@ -495,7 +495,7 @@ TclpRealloc(
     } else if (size > MAXALLOC) {
 	cachePtr->totalAssigned -= blockPtr->blockReqSize;
 	cachePtr->totalAssigned += reqSize;
-	blockPtr = realloc(blockPtr, size);
+	blockPtr = TclpSysRealloc(blockPtr, size);
 	if (blockPtr == NULL) {
 	    return NULL;
 	}
@@ -567,7 +567,7 @@ TclThreadAllocObj(void)
 	    Tcl_Obj *newObjsPtr;
 
 	    cachePtr->numObjects = numMove = NOBJALLOC;
-	    newObjsPtr = malloc(sizeof(Tcl_Obj) * numMove);
+	    newObjsPtr = TclpSysAlloc(sizeof(Tcl_Obj) * numMove, 0);
 	    if (newObjsPtr == NULL) {
 		Tcl_Panic("alloc: could not allocate %d new objects", numMove);
 	    }
@@ -964,7 +964,7 @@ GetBlocks(
 
 	if (blockPtr == NULL) {
 	    size = MAXALLOC;
-	    blockPtr = malloc(size);
+	    blockPtr = TclpSysAlloc(size, 0);
 	    if (blockPtr == NULL) {
 		return 0;
 	    }
