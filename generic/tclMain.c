@@ -382,6 +382,12 @@ Tcl_MainEx(
      */
 
     Tcl_Preserve(interp);
+    
+    /*
+     * Check if this shell has an attached VFS
+     */
+    CONST char *cp=Tcl_GetNameOfExecutable();
+    
     if (appInitProc(interp) != TCL_OK) {
 	chan = Tcl_GetStdChannel(TCL_STDERR);
 	if (chan) {

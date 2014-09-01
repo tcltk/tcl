@@ -15,7 +15,7 @@
 #undef BUILD_tcl
 #undef STATIC_BUILD
 #include "tcl.h"
-
+#include "tclInt.h"
 #ifdef TCL_TEST
 extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
@@ -108,6 +108,29 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
+    CONST char *cp=Tcl_GetNameOfExecutable();
+    /* We have to initialize the virtual filesystem before calling
+    ** Tcl_Init().  Otherwise, Tcl_Init() will not be able to find
+    ** its startup script files.
+    */
+    Tcl_Zvfs_Init(interp);
+    if(!Tcl_Zvfs_Mount(interp, cp, "/zvfs")) {
+      Tcl_Obj *vfsinitscript=Tcl_NewStringObj("/zvfs/main.tcl",-1);
+      Tcl_Obj *vfstcllib=Tcl_NewStringObj("/zvfs/tcl8.6",-1);
+
+      Tcl_IncrRefCount(vfsinitscript);
+      Tcl_IncrRefCount(vfstcllib);
+
+      if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+        Tcl_SetStartupScript(vfsinitscript,NULL);
+      }
+      if(Tcl_FSAccess(vfstcllib,F_OK)==0) {
+        Tcl_SetVar2(interp, "env", "TCL_LIBRARY", Tcl_GetString(vfstcllib), TCL_GLOBAL_ONLY);
+      }
+      Tcl_DecrRefCount(vfsinitscript);
+      Tcl_DecrRefCount(vfstcllib);
+    }
+    
     if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
@@ -124,7 +147,7 @@ Tcl_AppInit(
     }
     Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
 #endif /* TCL_TEST */
-
+    
     /*
      * Call the init procedures for included packages. Each call should look
      * like this:

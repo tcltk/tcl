@@ -15,6 +15,7 @@
  */
 
 #include "tcl.h"
+#include "tclInt.h"
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
@@ -151,6 +152,27 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
+    CONST char *cp=Tcl_GetNameOfExecutable();
+    /* We have to initialize the virtual filesystem before calling
+    ** Tcl_Init().  Otherwise, Tcl_Init() will not be able to find
+    ** its startup script files.
+    */
+    Tcl_Zvfs_Init(interp);
+    if(!Tcl_Zvfs_Mount(interp, cp, "/zvfs")) {
+      Tcl_Obj *vfsinitscript=Tcl_NewStringObj("/zvfs/main.tcl",-1);
+      Tcl_Obj *vfstcllib=Tcl_NewStringObj("/zvfs/tcl8.6",-1);
+
+      Tcl_IncrRefCount(vfsinitscript);
+      if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+        Tcl_SetStartupScript(vfsinitscript,NULL);
+      }
+      //Tcl_DecrRefCount(vfsinitscript);
+      if(Tcl_FSAccess(vfstcllib,F_OK)==0) {
+        Tcl_SetVar2(interp, "env", "TCL_LIBRARY", Tcl_GetString(vfstcllib), TCL_GLOBAL_ONLY);
+      }
+      Tcl_DecrRefCount(vfstcllib);
+    }
+    
     if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
