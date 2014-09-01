@@ -8452,3 +8452,5 @@ include ::oo::class (fellows)
 2014-08-25 (TIP 429) New command [string cat] (leitgeb,ferrieux)
 
 --- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details 
+
+2014-08-29 (TIP TBD) Added a C Implementation of ZipVFS to provide Tcl/Wishkit building capbilities in the core (hypnotoad)

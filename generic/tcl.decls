@@ -2326,6 +2326,22 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
+# ZipVfs
+declare 631 {
+  int Tcl_Zvfs_Init(Tcl_Interp *interp)
+}
+
+declare 632 {
+  int Tcl_Zvfs_Mount(
+    Tcl_Interp *interp,
+    CONST char *zArchive,
+    CONST char *zMountPoint
+  )
+}
+
+declare 633 {
+  int Tcl_Zvfs_Umount(CONST char *zArchive)
+}
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
