@@ -163,13 +163,15 @@ Tcl_AppInit(
       Tcl_Obj *vfstcllib=Tcl_NewStringObj("/zvfs/tcl8.6",-1);
 
       Tcl_IncrRefCount(vfsinitscript);
+      Tcl_IncrRefCount(vfstcllib);
+
       if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
         Tcl_SetStartupScript(vfsinitscript,NULL);
       }
-      //Tcl_DecrRefCount(vfsinitscript);
       if(Tcl_FSAccess(vfstcllib,F_OK)==0) {
         Tcl_SetVar2(interp, "env", "TCL_LIBRARY", Tcl_GetString(vfstcllib), TCL_GLOBAL_ONLY);
       }
+      Tcl_DecrRefCount(vfsinitscript);
       Tcl_DecrRefCount(vfstcllib);
     }
     
