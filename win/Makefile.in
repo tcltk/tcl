@@ -424,14 +424,16 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 
-$(TCLKIT): $(TCLSH_OBJS) @LIBRARIES@ ${TCL_OBJS} tclsh.$(RES)
+tclkit: $(TCLKIT)
+
+$(TCLKIT): $(TCLSH_OBJS) @LIBRARIES@ ${TCL_OBJS} $(CAT32) tclsh.$(RES)
 	$(CC) $(CFLAGS) ${TCL_OBJS} $(TCLSH_OBJS) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	PWD=`pwd`
 	rm -f tclkit.zip
 	cp $(TCLSH) $(TCLKIT)
-	cd $(SCRIPT_INSTALL_DIR) ; zip -rAq ${PWD}/tclkit.zip tcl8 tcl8.6
-	$(CAT32) tclkit.zip >> $(TCLKIT)
+	cd ${prefix}/lib ; zip -rq ${PWD}/tclkit.zip tcl8 tcl8.6
+	cat tclkit.zip >> $(TCLKIT)
 
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
@@ -878,6 +880,6 @@ html-tk: $(TCLSH)
 .PHONY: install-doc install-private-headers test test-tcl runtest shell
 .PHONY: gdb depend cleanhelp clean distclean packages install-packages
 .PHONY: test-packages clean-packages distclean-packages genstubs html
-.PHONY: html-tcl html-tk
+.PHONY: html-tcl html-tk tclkit
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
