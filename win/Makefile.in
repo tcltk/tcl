@@ -145,6 +145,7 @@ SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
+TCLKIT			= tclkit$(VER)${EXESUFFIX}
 CAT32			= cat32$(EXEEXT)
 MAN2TCL			= man2tcl$(EXEEXT)
 
@@ -294,7 +295,8 @@ GENERIC_OBJS = \
 	tclUtf.$(OBJEXT) \
 	tclUtil.$(OBJEXT) \
 	tclVar.$(OBJEXT) \
-	tclZlib.$(OBJEXT)
+	tclZlib.$(OBJEXT) \
+	tclZipVfs.$(OBJEXT)
 
 TOMMATH_OBJS = \
 	bncore.${OBJEXT} \
@@ -421,6 +423,15 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 	$(CC) $(CFLAGS) $(TCLSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
+
+$(TCLKIT): $(TCLSH_OBJS) @LIBRARIES@ ${TCL_OBJS} tclsh.$(RES)
+	$(CC) $(CFLAGS) ${TCL_OBJS} $(TCLSH_OBJS) $(LIBS) \
+        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	PWD=`pwd`
+	rm -f tclkit.zip
+	cp $(TCLSH) $(TCLKIT)
+	cd $(SCRIPT_INSTALL_DIR) ; zip -rAq ${PWD}/tclkit.zip tcl8 tcl8.6
+	$(CAT32) tclkit.zip >> $(TCLKIT)
 
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)

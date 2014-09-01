@@ -275,6 +275,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclWinSock.obj \
 	$(TMPDIR)\tclWinThrd.obj \
 	$(TMPDIR)\tclWinTime.obj \
+	$(TMP_DIR)\tclZipVfs.obj \
 	$(TMPDIR)\tclZlib.obj
 
 TCLSTUBOBJS	= \

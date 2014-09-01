@@ -167,6 +167,7 @@ INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 # Do not use SHELL_ENV for NATIVE_TCLSH unless it is the tclsh being built.
 EXE_SUFFIX		= @EXEEXT@
 TCL_EXE			= tclsh${EXE_SUFFIX}
+TCLKIT_EXE		= tclkit${EXE_SUFFIX}
 TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 NATIVE_TCLSH		= @TCLSH_PROG@
 
@@ -307,7 +308,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
-	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
+	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o tclZipVfs.o \
 	tclTomMathInterface.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
@@ -462,6 +463,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c \
 	$(GENERIC_DIR)/tclAssembly.c \
+	$(GENERIC_DIR)/tclZipVfs.obj \
 	$(GENERIC_DIR)/tclZlib.c
 
 OO_SRCS = \
@@ -647,6 +649,14 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
 
+${TCLKIT_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} 
+	${CC} ${CFLAGS} ${LDFLAGS} ${OBJS} ${TCLSH_OBJS} \
+		${LIBS} @EXTRA_TCLSH_LIBS@ \
+		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
+	PWD=`pwd`
+	cd $(SCRIPT_INSTALL_DIR) ; zip -rAq ${PWD}/tclkit.zip tcl8 tcl8.6
+	cat tclkit.zip >> ${TCLKIT_EXE}
+	
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
 ${NATIVE_TCLSH}:
 
@@ -1318,6 +1328,9 @@ tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
 
 tclVar.o: $(GENERIC_DIR)/tclVar.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
+
+tclZipVfs.o:  $(GENERIC_DIR)/tclZipVfs.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclZipVfs.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
