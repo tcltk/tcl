@@ -21,6 +21,7 @@
  * This version has been modified to run under Tcl 8.6
  */
 #include "tcl.h"
+#include <stddef.h>
 #include <ctype.h>
 #include <zlib.h>
 #include <errno.h>
@@ -36,8 +37,8 @@
  * Size of the decompression input buffer
  */
 #define COMPR_BUF_SIZE		8192
-static int maptolower=0;
-static int openarch=0;		/* Set to 1 when opening archive. */
+/*TODO: use thread-local as appropriate*/
+static int openarch = 0;	/* Set to 1 when opening archive. */
 
 /*
  * All static variables are collected into a structure named "local".  That
@@ -150,7 +151,7 @@ newZFile(
     int nName,
     ZFile **ppList)
 {
-    ZFile *pNew = Tcl_Alloc( sizeof(*pNew) + nName + 1 );
+    ZFile *pNew = (void *) Tcl_Alloc(sizeof(*pNew) + nName + 1);
 
     memset(pNew, 0, sizeof(*pNew));
     pNew->zName = (char*)&pNew[1];
@@ -263,51 +264,50 @@ CanonicalPath(
     int i, j, c;
 
 #ifdef __WIN32__
-    if( isalpha(zTail[0]) && zTail[1]==':' ){
+    if (isalpha(zTail[0]) && zTail[1] == ':') {
 	zTail += 2;
     }
-    if( zTail[0]=='\\' ){
+    if (zTail[0] == '\\') {
 	zRoot = "";
 	zTail++;
     }
 #endif
-    if( zTail[0]=='/' ){
+    if (zTail[0] == '/') {
 	zRoot = "";
 	zTail++;
     }
-    zPath = Tcl_Alloc( strlen(zRoot) + strlen(zTail) + 2 );
-    if( zPath==0 ) {
-	return 0;
-    }
+    zPath = Tcl_Alloc(strlen(zRoot) + strlen(zTail) + 2);
     if (zTail[0]) {
 	sprintf(zPath, "%s/%s", zRoot, zTail);
     } else {
 	strcpy(zPath, zRoot);
     }
-    for(i=j=0; (c = zPath[i])!=0; i++){
+    for (i=j=0 ; (c = zPath[i]) != 0 ; i++) {
 #ifdef __WIN32__
-	if( isupper(c) ) {
+	if (isupper(c)) {
 	    if (maptolower) {
 		c = tolower(c);
 	    }
-	} else if( c=='\\' ) {
+	} else if (c == '\\') {
 	    c = '/';
 	}
 #endif
-	if( c=='/' ){
+	if (c == '/') {
 	    int c2 = zPath[i+1];
-	    if( c2=='/' ) {
+
+	    if (c2 == '/') {
 		continue;
 	    }
-	    if( c2=='.' ){
+	    if (c2 == '.') {
 		int c3 = zPath[i+2];
-		if( c3=='/' || c3==0 ){
+
+		if (c3 == '/' || c3 == 0) {
 		    i++;
 		    continue;
 		}
-		if( c3=='.' && (zPath[i+3]=='.' || zPath[i+3]==0) ){
+		if (c3 == '.' && (zPath[i+3] == '.' || zPath[i+3] == 0)) {
 		    i += 2;
-		    while( j>0 && zPath[j-1]!='/' ){
+		    while (j > 0 && zPath[j-1] != '/') {
 			j--;
 		    }
 		    continue;
@@ -316,7 +316,7 @@ CanonicalPath(
 	}
 	zPath[j++] = c;
     }
-    if( j==0 ){
+    if (j == 0) {
 	zPath[j++] = '/';
     }
     /* if (j>1 && zPath[j-1] == '/') j--; */
@@ -340,19 +340,19 @@ AbsolutePath(
     if (zRelative[0] == '~' && zRelative[1] == '/') {
 	/* TODO: do this for all paths??? */
 	if (Tcl_TranslateFileName(0, zRelative, &pwd) != NULL) {
-	    zResult = CanonicalPath( "", Tcl_DStringValue(&pwd));
+	    zResult = CanonicalPath("", Tcl_DStringValue(&pwd));
 	    goto done;
 	}
-    } else if( zRelative[0] != '/'){
+    } else if (zRelative[0] != '/') {
 #ifdef __WIN32__
-	if(!(zRelative[0]=='\\' || (zRelative[0] && zRelative[1] == ':'))) {
+	if (!(zRelative[0]=='\\' || (zRelative[0] && zRelative[1] == ':'))) {
 	    /*Tcl_GetCwd(0, &pwd); */
 	}
 #else
 	Tcl_GetCwd(0, &pwd);
 #endif
     }
-    zResult = CanonicalPath( Tcl_DStringValue(&pwd), zRelative);
+    zResult = CanonicalPath(Tcl_DStringValue(&pwd), zRelative);
   done:
     Tcl_DStringFree(&pwd);
     len = strlen(zResult);
@@ -369,16 +369,10 @@ ZvfsReadTOCStart(
     ZFile **pList,
     int *iStart)
 {
-    char *zArchiveName = 0;	/* A copy of zArchive */
     int nFile;			/* Number of files in the archive */
     int iPos;			/* Current position in the archive file */
-    ZvfsArchive *pArchive;	/* The ZIP archive being mounted */
-    Tcl_HashEntry *pEntry;	/* Hash table entry */
-    int isNew;			/* Flag to tell use when a hash entry is
-				 * new */
     unsigned char zBuf[100];	/* Space into which to read from the ZIP
 				 * archive */
-    Tcl_HashSearch zSearch;	/* Search all mount points */
     ZFile *p;
     int zipStart;
 
@@ -399,7 +393,7 @@ ZvfsReadTOCStart(
      */
 
     iPos = Tcl_Seek(chan, -22, SEEK_END);
-    Tcl_Read(chan, zBuf, 22);
+    Tcl_Read(chan, (char *) zBuf, 22);
     if (memcmp(zBuf, "\120\113\05\06", 4)) {
 	/* Tcl_AppendResult(interp, "not a ZIP archive", NULL); */
 	return TCL_BREAK;
@@ -415,18 +409,12 @@ ZvfsReadTOCStart(
     iPos -= INT32(zBuf,12);
     Tcl_Seek(chan, iPos, SEEK_SET);
 
-    while(1) {
+    while (1) {
 	int lenName;		/* Length of the next filename */
 	int lenExtra;		/* Length of "extra" data for next file */
 	int iData;		/* Offset to start of file data */
-	int dosTime;
-	int dosDate;
-	int isdir;
-	ZvfsFile *pZvfs;	/* A new virtual file */
-	char *zFullPath;	/* Full pathname of the virtual file */
-	char zName[1024];	/* Space to hold the filename */
 
-	if (nFile-- <= 0 ){
+	if (nFile-- <= 0) {
 	    break;
 	}
 
@@ -436,7 +424,7 @@ ZvfsReadTOCStart(
 	 * archive file of the file data.
 	 */
 
-	Tcl_Read(chan, zBuf, 46);
+	Tcl_Read(chan, (char *) zBuf, 46);
 	if (memcmp(zBuf, "\120\113\01\02", 4)) {
 	    Tcl_AppendResult(interp, "ill-formed central directory entry",
 		    NULL);
@@ -445,7 +433,7 @@ ZvfsReadTOCStart(
 	lenName = INT16(zBuf,28);
 	lenExtra = INT16(zBuf,30) + INT16(zBuf,32);
 	iData = INT32(zBuf,42);
-	if (iData<zipStart) {
+	if (iData < zipStart) {
 	    zipStart = iData;
 	}
 
@@ -456,7 +444,7 @@ ZvfsReadTOCStart(
 
 	Tcl_Read(chan, p->zName, lenName);
 	p->zName[lenName] = 0;
-	if (lenName>0 && p->zName[lenName-1] == '/') {
+	if (lenName > 0 && p->zName[lenName-1] == '/') {
 	    p->isSpecial = 1;
 	}
 	p->dosDate = INT16(zBuf, 14);
@@ -489,7 +477,7 @@ ZvfsReadTOC(
 {
     int iStart;
 
-    return ZvfsReadTOCStart( interp, chan, pList, &iStart);
+    return ZvfsReadTOCStart(interp, chan, pList, &iStart);
 }
 
 /*
@@ -517,7 +505,7 @@ Tcl_Zvfs_Mount(
     Tcl_HashSearch zSearch;	/* Search all mount points */
     unsigned int startZip;
 
-    if( !local.isInit ) {
+    if (!local.isInit) {
 	return TCL_ERROR;
     }
 
@@ -529,13 +517,14 @@ Tcl_Zvfs_Mount(
 	Tcl_DString dStr;
 
 	Tcl_DStringInit(&dStr);
-	pEntry=Tcl_FirstHashEntry(&local.archiveHash,&zSearch);
+	pEntry = Tcl_FirstHashEntry(&local.archiveHash,&zSearch);
 	while (pEntry) {
-	    if (pArchive = Tcl_GetHashValue(pEntry)) {
+	    pArchive = Tcl_GetHashValue(pEntry);
+	    if (pArchive) {
 		Tcl_DStringAppendElement(&dStr, pArchive->zName);
 		Tcl_DStringAppendElement(&dStr, pArchive->zMountPoint);
 	    }
-	    pEntry=Tcl_NextHashEntry(&zSearch);
+	    pEntry = Tcl_NextHashEntry(&zSearch);
 	}
 	Tcl_DStringResult(interp, &dStr);
 	return TCL_OK;
@@ -547,10 +536,11 @@ Tcl_Zvfs_Mount(
 
     /*TODO: cleanup allocations of Absolute() path.*/
     if (!zMountPoint) {
-	zTrueName=AbsolutePath(zArchive);
-	pEntry = Tcl_FindHashEntry(&local.archiveHash,zTrueName);
+	zTrueName = AbsolutePath(zArchive);
+	pEntry = Tcl_FindHashEntry(&local.archiveHash, zTrueName);
 	if (pEntry) {
-	    if (pArchive = Tcl_GetHashValue(pEntry)) {
+	    pArchive = Tcl_GetHashValue(pEntry);
+	    if (pArchive) {
 		Tcl_AppendResult(interp, pArchive->zMountPoint, 0);
 	    }
 	}
@@ -574,7 +564,7 @@ Tcl_Zvfs_Mount(
      */
 
     iPos = Tcl_Seek(chan, -22, SEEK_END);
-    Tcl_Read(chan, zBuf, 22);
+    Tcl_Read(chan, (char *) zBuf, 22);
     if (memcmp(zBuf, "\120\113\05\06", 4)) {
 	Tcl_AppendResult(interp, "not a ZIP archive", NULL);
 	return TCL_ERROR;
@@ -586,7 +576,7 @@ Tcl_Zvfs_Mount(
 
     zArchiveName = AbsolutePath(zArchive);
     pEntry = Tcl_CreateHashEntry(&local.archiveHash, zArchiveName, &isNew);
-    if( !isNew ){
+    if (!isNew) {
 	pArchive = Tcl_GetHashValue(pEntry);
 	Tcl_AppendResult(interp, "already mounted at ", pArchive->zMountPoint,
 		0);
@@ -603,9 +593,9 @@ Tcl_Zvfs_Mount(
 	zMountPoint = zTrueName = AbsolutePath(zArchive);
     }
 
-    pArchive = Tcl_Alloc(sizeof(*pArchive) + strlen(zMountPoint)+1);
+    pArchive = (void *) Tcl_Alloc(sizeof(*pArchive) + strlen(zMountPoint)+1);
     pArchive->zName = zArchiveName;
-    pArchive->zMountPoint = (char*)&pArchive[1];
+    pArchive->zMountPoint = (char *) &pArchive[1];
     strcpy(pArchive->zMountPoint, zMountPoint);
     pArchive->pFiles = 0;
     Tcl_SetHashValue(pEntry, pArchive);
@@ -615,12 +605,12 @@ Tcl_Zvfs_Mount(
      * iPos then seek to that location.
      */
 
-    nFile = INT16(zBuf,8);
-    iPos -= INT32(zBuf,12);
+    nFile = INT16(zBuf, 8);
+    iPos -= INT32(zBuf, 12);
     Tcl_Seek(chan, iPos, SEEK_SET);
     startZip = iPos;
 
-    while(1) {
+    while (1) {
 	int lenName;		/* Length of the next filename */
 	int lenExtra;		/* Length of "extra" data for next file */
 	int iData;		/* Offset to start of file data */
@@ -631,7 +621,7 @@ Tcl_Zvfs_Mount(
 	char *zFullPath;	/* Full pathname of the virtual file */
 	char zName[1024];	/* Space to hold the filename */
 
-	if (nFile-- <= 0 ){
+	if (nFile-- <= 0) {
 	    isdir = 1;
 	    zFullPath = CanonicalPath(zMountPoint, "");
 	    iData = startZip;
@@ -644,7 +634,7 @@ Tcl_Zvfs_Mount(
 	 * archive file of the file data.
 	 */
 
-	Tcl_Read(chan, zBuf, 46);
+	Tcl_Read(chan, (char *) zBuf, 46);
 	if (memcmp(zBuf, "\120\113\01\02", 4)) {
 	    Tcl_AppendResult(interp, "ill-formed central directory entry",
 		    NULL);
@@ -653,16 +643,16 @@ Tcl_Zvfs_Mount(
 	    }
 	    return TCL_ERROR;
 	}
-	lenName = INT16(zBuf,28);
-	lenExtra = INT16(zBuf,30) + INT16(zBuf,32);
-	iData = INT32(zBuf,42);
+	lenName = INT16(zBuf, 28);
+	lenExtra = INT16(zBuf, 30) + INT16(zBuf, 32);
+	iData = INT32(zBuf, 42);
 
 	/*
 	 * If the virtual filename is too big to fit in zName[], then skip
 	 * this file
 	 */
 
-	if( lenName >= sizeof(zName) ){
+	if (lenName >= sizeof(zName)) {
 	    Tcl_Seek(chan, lenName + lenExtra, SEEK_CUR);
 	    continue;
 	}
@@ -672,21 +662,21 @@ Tcl_Zvfs_Mount(
 	 */
 
 	Tcl_Read(chan, zName, lenName);
-	isdir=0;
-	if (lenName>0 && zName[lenName-1] == '/') {
+	isdir = 0;
+	if (lenName > 0 && zName[lenName-1] == '/') {
 	    lenName--;
-	    isdir=2;
+	    isdir = 2;
 	}
 	zName[lenName] = 0;
 	zFullPath = CanonicalPath(zMountPoint, zName);
     addentry:
-	pZvfs = (ZvfsFile*)Tcl_Alloc( sizeof(*pZvfs) );
+	pZvfs = (void *) Tcl_Alloc(sizeof(*pZvfs));
 	pZvfs->zName = zFullPath;
 	pZvfs->pArchive = pArchive;
 	pZvfs->isdir = isdir;
-	pZvfs->depth=strchrcnt(zFullPath,'/');
+	pZvfs->depth = strchrcnt(zFullPath, '/');
 	pZvfs->iOffset = iData;
-	if (iData<startZip) {
+	if (iData < startZip) {
 	    startZip = iData;
 	}
 	dosDate = INT16(zBuf, 14);
@@ -695,10 +685,10 @@ Tcl_Zvfs_Mount(
 	pZvfs->nByte = INT32(zBuf, 24);
 	pZvfs->nByteCompr = INT32(zBuf, 20);
 	pZvfs->pNext = pArchive->pFiles;
-	pZvfs->permissions = (0xffff&(INT32(zBuf, 38) >> 16));
+	pZvfs->permissions = 0xffff & (INT32(zBuf, 38) >> 16);
 	pArchive->pFiles = pZvfs;
 	pEntry = Tcl_CreateHashEntry(&local.fileHash, zFullPath, &isNew);
-	if( isNew ){
+	if (isNew) {
 	    pZvfs->pNextName = 0;
 	} else {
 	    ZvfsFile *pOld = Tcl_GetHashValue(pEntry);
@@ -721,7 +711,7 @@ Tcl_Zvfs_Mount(
 	Tcl_Seek(chan, lenExtra, SEEK_CUR);
     }
     Tcl_Close(interp, chan);
-  done:
+
     if (zTrueName) {
 	Tcl_Free(zTrueName);
     }
@@ -740,7 +730,7 @@ ZvfsLookup(
     Tcl_HashEntry *pEntry;
     ZvfsFile *pFile;
 
-    if( local.isInit==0 ) {
+    if (local.isInit == 0) {
 	return 0;
     }
     zTrueName = AbsolutePath(zFilename);
@@ -760,19 +750,20 @@ ZvfsLookupMount(
     ZvfsArchive *pArchive;	/* The ZIP archive being mounted */
     int match=0;
 
-    if( local.isInit==0 ) {
+    if (local.isInit == 0) {
 	return 0;
     }
     zTrueName = AbsolutePath(zFilename);
-    pEntry=Tcl_FirstHashEntry(&local.archiveHash,&zSearch);
+    pEntry = Tcl_FirstHashEntry(&local.archiveHash, &zSearch);
     while (pEntry) {
-	if (pArchive = Tcl_GetHashValue(pEntry)) {
-	    if (!strcmp(pArchive->zMountPoint,zTrueName)) {
-		match=1;
+	pArchive = Tcl_GetHashValue(pEntry);
+	if (pArchive) {
+	    if (!strcmp(pArchive->zMountPoint, zTrueName)) {
+		match = 1;
 		break;
 	    }
 	}
-	pEntry=Tcl_NextHashEntry(&zSearch);
+	pEntry = Tcl_NextHashEntry(&zSearch);
     }
     Tcl_Free(zTrueName);
     return match;
@@ -793,31 +784,31 @@ Tcl_Zvfs_Umount(
     zArchiveName = AbsolutePath(zArchive);
     pEntry = Tcl_FindHashEntry(&local.archiveHash, zArchiveName);
     Tcl_Free(zArchiveName);
-    if( pEntry==0 ) {
+    if (pEntry == 0) {
 	return 0;
     }
     pArchive = Tcl_GetHashValue(pEntry);
     Tcl_DeleteHashEntry(pEntry);
     Tcl_Free(pArchive->zName);
-    for(pFile=pArchive->pFiles; pFile; pFile=pNextFile){
+    for(pFile=pArchive->pFiles ; pFile; pFile=pNextFile) {
 	pNextFile = pFile->pNext;
-	if( pFile->pNextName ){
+	if (pFile->pNextName) {
 	    pFile->pNextName->pPrevName = pFile->pPrevName;
 	}
-	if( pFile->pPrevName ){
+	if (pFile->pPrevName) {
 	    pFile->pPrevName->pNextName = pFile->pNextName;
-	}else{
+	} else {
 	    pEntry = Tcl_FindHashEntry(&local.fileHash, pFile->zName);
-	    if( pEntry==0 ){
+	    if (pEntry == 0) {
 		Tcl_Panic("This should never happen");
-	    }else if( pFile->pNextName ){
+	    } else if (pFile->pNextName) {
 		Tcl_SetHashValue(pEntry, pFile->pNextName);
-	    }else{
+	    } else {
 		Tcl_DeleteHashEntry(pEntry);
 	    }
 	}
 	Tcl_Free(pFile->zName);
-	Tcl_Free((char*)pFile);
+	Tcl_Free((void *) pFile);
     }
     return 1;
 }
@@ -848,12 +839,12 @@ ZvfsMountCmd(
     const char *argv[])		/* Values of all arguments */
 {
     /*TODO: Convert to Tcl_Obj API!*/
-    if( argc>3 ){
+    if (argc > 3) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		" ? ZIP-FILE ? MOUNT-POINT ? ?\"", 0);
 	return TCL_ERROR;
     }
-    return Tcl_Zvfs_Mount(interp, argc>1?argv[1]:0, argc>2?argv[2]:0);
+    return Tcl_Zvfs_Mount(interp, argc>1?argv[1]:NULL, argc>2?argv[2]:NULL);
 }
 
 /*
@@ -872,7 +863,7 @@ ZvfsUnmountCmd(
     Tcl_HashEntry *pEntry;	/* Hash table entry */
     Tcl_HashSearch zSearch;	/* Search all mount points */
     
-    if( argc!=2 ){
+    if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
 		" ZIP-FILE\"", 0);
 	return TCL_ERROR;
@@ -881,23 +872,24 @@ ZvfsUnmountCmd(
 	return TCL_OK;
     }
 
-    if( !local.isInit ) {
+    if (!local.isInit) {
 	return TCL_ERROR;
     }
-    pEntry=Tcl_FirstHashEntry(&local.archiveHash,&zSearch);
+    pEntry = Tcl_FirstHashEntry(&local.archiveHash,&zSearch);
     while (pEntry) {
-	if (((pArchive = Tcl_GetHashValue(pEntry)))
-		&& pArchive->zMountPoint[0]
+	pArchive = Tcl_GetHashValue(pEntry);
+	if (pArchive && pArchive->zMountPoint[0]
 		&& (strcmp(pArchive->zMountPoint, argv[1]) == 0)) {
 	    if (Tcl_Zvfs_Umount(pArchive->zName)) {
 		return TCL_OK;
 	    }
 	    break;
 	}
-	pEntry=Tcl_NextHashEntry(&zSearch);
+	pEntry = Tcl_NextHashEntry(&zSearch);
     }
 
-    Tcl_AppendResult(interp, "unknown zvfs mount point or file: ", argv[1], 0);
+    Tcl_AppendResult(interp, "unknown zvfs mount point or file: ", argv[1],
+	    NULL);
     return TCL_ERROR;
 }
 
@@ -916,12 +908,12 @@ ZvfsExistsObjCmd(
 {
     char *zFilename;
 
-    if( objc!=2 ){
+    if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
 	return TCL_ERROR;
     }
     zFilename = Tcl_GetString(objv[1]);
-    Tcl_SetBooleanObj( Tcl_GetObjResult(interp), ZvfsLookup(zFilename)!=0);
+    Tcl_SetBooleanObj(Tcl_GetObjResult(interp), ZvfsLookup(zFilename)!=0);
     return TCL_OK;
 }
 
@@ -946,13 +938,13 @@ ZvfsInfoObjCmd(
     char *zFilename;
     ZvfsFile *pFile;
 
-    if( objc!=2 ){
+    if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
 	return TCL_ERROR;
     }
     zFilename = Tcl_GetString(objv[1]);
     pFile = ZvfsLookup(zFilename);
-    if( pFile ){
+    if (pFile) {
 	Tcl_Obj *pResult = Tcl_GetObjResult(interp);
 
 	Tcl_ListObjAppendElement(interp, pResult, 
@@ -986,55 +978,60 @@ ZvfsListObjCmd(
     Tcl_HashSearch sSearch;
     Tcl_Obj *pResult = Tcl_GetObjResult(interp);
 
-    if( objc>3 ){
+    if (objc > 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?(-glob|-regexp)? ?PATTERN?");
 	return TCL_ERROR;
     }
-    if( local.isInit==0 ) {
+    if (local.isInit == 0) {
 	return TCL_OK;
     }
-    if( objc==3 ){
+    if (objc == 3) {
 	int n;
 	char *zSwitch = Tcl_GetStringFromObj(objv[1], &n);
 
-	if( n>=2 && strncmp(zSwitch,"-glob",n)==0 ){
+	if (n >= 2 && strncmp(zSwitch,"-glob",n) == 0) {
 	    zPattern = Tcl_GetString(objv[2]);
-	}else if( n>=2 && strncmp(zSwitch,"-regexp",n)==0 ){
+	} else if (n >= 2 && strncmp(zSwitch,"-regexp",n) == 0) {
 	    pRegexp = Tcl_RegExpCompile(interp, Tcl_GetString(objv[2]));
-	    if( pRegexp==0 ) {
+	    if (pRegexp == 0) {
 		return TCL_ERROR;
 	    }
-	}else{
+	} else {
 	    Tcl_AppendResult(interp, "unknown option: ", zSwitch, 0);
 	    return TCL_ERROR;
 	}
-    } else if( objc==2 ){
+    } else if (objc == 2) {
 	zPattern = Tcl_GetString(objv[1]);
     }
-    if( zPattern ){
+
+    /*
+     * Do the listing.
+     */
+
+    if (zPattern) {
+	for (pEntry = Tcl_FirstHashEntry(&local.fileHash, &sSearch);
+		pEntry; pEntry = Tcl_NextHashEntry(&sSearch)){
+	    ZvfsFile *pFile = Tcl_GetHashValue(pEntry);
+	    char *z = pFile->zName;
+
+	    if (Tcl_StringCaseMatch(z, zPattern, 1)) {
+		Tcl_ListObjAppendElement(interp, pResult,
+			Tcl_NewStringObj(z, -1));
+	    }
+	}
+    } else if (pRegexp) {
 	for(pEntry = Tcl_FirstHashEntry(&local.fileHash, &sSearch);
 		pEntry; pEntry = Tcl_NextHashEntry(&sSearch)){
 	    ZvfsFile *pFile = Tcl_GetHashValue(pEntry);
 	    char *z = pFile->zName;
 
-	    if( Tcl_StringCaseMatch(z, zPattern,1) ){
+	    if (Tcl_RegExpExec(interp, pRegexp, z, z)) {
 		Tcl_ListObjAppendElement(interp, pResult,
 			Tcl_NewStringObj(z, -1));
 	    }
 	}
-    }else if( pRegexp ){
-	for(pEntry = Tcl_FirstHashEntry(&local.fileHash, &sSearch);
-		pEntry; pEntry = Tcl_NextHashEntry(&sSearch)){
-	    ZvfsFile *pFile = Tcl_GetHashValue(pEntry);
-	    char *z = pFile->zName;
-
-	    if( Tcl_RegExpExec(interp, pRegexp, z, z) ){
-		Tcl_ListObjAppendElement(interp, pResult,
-			Tcl_NewStringObj(z, -1));
-	    }
-	}
-    }else{
-	for(pEntry = Tcl_FirstHashEntry(&local.fileHash, &sSearch);
+    } else {
+	for (pEntry = Tcl_FirstHashEntry(&local.fileHash, &sSearch);
 		pEntry; pEntry = Tcl_NextHashEntry(&sSearch)){
 	    ZvfsFile *pFile = Tcl_GetHashValue(pEntry);
 	    char *z = pFile->zName;
@@ -1091,15 +1088,15 @@ vfsClose(
 {
     ZvfsChannelInfo* pInfo = instanceData;
 
-    if( pInfo->zBuf ){
-	Tcl_Free(pInfo->zBuf);
+    if (pInfo->zBuf) {
+	Tcl_Free((void *) pInfo->zBuf);
 	inflateEnd(&pInfo->stream);
     }
-    if( pInfo->chan ){
+    if (pInfo->chan) {
 	Tcl_Close(interp, pInfo->chan);
 	Tcl_DeleteExitHandler(vfsExit, pInfo);
     }
-    Tcl_Free((char*)pInfo);
+    Tcl_Free((void *) pInfo);
     return TCL_OK;
 }
 
@@ -1116,17 +1113,17 @@ vfsInput(
 {
     ZvfsChannelInfo* pInfo = instanceData;
 
-    if( toRead > pInfo->nByte ){
+    if (toRead > pInfo->nByte) {
 	toRead = pInfo->nByte;
     }
-    if( toRead == 0 ){
+    if (toRead == 0) {
 	return 0;
     }
-    if( pInfo->isCompressed ){
+    if (pInfo->isCompressed) {
 	int err = Z_OK;
 	z_stream *stream = &pInfo->stream;
 
-	stream->next_out = buf;
+	stream->next_out = (unsigned char *) buf;
 	stream->avail_out = toRead;
 	while (stream->avail_out) {
 	    if (!stream->avail_in) {
@@ -1135,7 +1132,7 @@ vfsInput(
 		if (len > COMPR_BUF_SIZE) {
 		    len = COMPR_BUF_SIZE;
 		}
-		len = Tcl_Read(pInfo->chan, pInfo->zBuf, len);
+		len = Tcl_Read(pInfo->chan, (char *) pInfo->zBuf, len);
 		pInfo->nByteCompr -= len;
 		stream->next_in = pInfo->zBuf;
 		stream->avail_in = len;
@@ -1146,15 +1143,15 @@ vfsInput(
 	    }
 	}
 	if (err == Z_STREAM_END) {
-	    if ((stream->avail_out != 0)) {
+	    if (stream->avail_out != 0) {
 		*pErrorCode = err; /* premature end */
 		return -1;
 	    }
-	}else if( err ){
+	}else if (err) {
 	    *pErrorCode = err; /* some other zlib error */
 	    return -1;
 	}
-    }else{
+    } else {
 	toRead = Tcl_Read(pInfo->chan, buf, toRead);
     }
     pInfo->nByte -= toRead;
@@ -1190,7 +1187,7 @@ vfsSeek(
 {
     ZvfsChannelInfo* pInfo = instanceData;
 
-    switch( mode ){
+    switch (mode) {
     case SEEK_CUR:
 	offset += pInfo->readSoFar;
 	break;
@@ -1204,12 +1201,12 @@ vfsSeek(
     if (offset < 0) {
 	offset = 0;
     }
-    if( !pInfo->isCompressed ){
+    if (!pInfo->isCompressed) {
 	Tcl_Seek(pInfo->chan, offset + pInfo->startOfData, SEEK_SET);
 	pInfo->nByte = pInfo->nData;
 	pInfo->readSoFar = offset;
-    }else{
-	if( offset<pInfo->readSoFar ){
+    } else {
+	if (offset < pInfo->readSoFar) {
 	    z_stream *stream = &pInfo->stream;
 
 	    inflateEnd(stream);
@@ -1226,12 +1223,12 @@ vfsSeek(
 	    pInfo->nByteCompr = pInfo->nData;
 	    pInfo->readSoFar = 0;
 	}
-	while( pInfo->readSoFar < offset ){
+	while (pInfo->readSoFar < offset) {
 	    int toRead, errCode;
 	    char zDiscard[100];
 
 	    toRead = offset - pInfo->readSoFar;
-	    if( toRead>sizeof(zDiscard) ) {
+	    if (toRead > sizeof(zDiscard)) {
 		toRead = sizeof(zDiscard);
 	    }
 	    vfsInput(instanceData, zDiscard, toRead, &errCode);
@@ -1303,13 +1300,13 @@ ZvfsFileOpen(
     unsigned char zBuf[50];
 
     pFile = ZvfsLookup(zFilename);
-    if( pFile==0 ) {
+    if (pFile == 0) {
 	return NULL;
     }
-    openarch=1;
+    openarch = 1;
     chan = Tcl_OpenFileChannel(interp, pFile->pArchive->zName, "r", 0);
-    openarch=0;
-    if( chan==0 ){
+    openarch = 0;
+    if (chan == 0) {
 	return 0;
     }
     if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
@@ -1319,41 +1316,40 @@ ZvfsFileOpen(
 	return 0;
     }
     Tcl_Seek(chan, pFile->iOffset, SEEK_SET);
-    Tcl_Read(chan, zBuf, 30);
-    if( memcmp(zBuf, "\120\113\03\04", 4) ){
-	if( interp ){
+    Tcl_Read(chan, (char *) zBuf, 30);
+    if (memcmp(zBuf, "\120\113\03\04", 4)) {
+	if (interp) {
 	    Tcl_AppendResult(interp, "local header mismatch: ", NULL);
 	}
 	Tcl_Close(interp, chan);
 	return 0;
     }
-    pInfo = Tcl_Alloc( sizeof(*pInfo) );
+    pInfo = (void *) Tcl_Alloc(sizeof(*pInfo));
     pInfo->chan = chan;
     Tcl_CreateExitHandler(vfsExit, pInfo);
     pInfo->isCompressed = INT16(zBuf, 8);
-    if( pInfo->isCompressed ){
+    if (pInfo->isCompressed) {
 	z_stream *stream = &pInfo->stream;
 
-	pInfo->zBuf = Tcl_Alloc(COMPR_BUF_SIZE);
-	stream->zalloc = (alloc_func)0;
-	stream->zfree = (free_func)0;
-	stream->opaque = (voidpf)0;
+	pInfo->zBuf = (void *) Tcl_Alloc(COMPR_BUF_SIZE);
+	stream->zalloc = NULL;
+	stream->zfree = NULL;
+	stream->opaque = NULL;
 	stream->avail_in = 2;
 	stream->next_in = pInfo->zBuf;
 	pInfo->zBuf[0] = 0x78;
 	pInfo->zBuf[1] = 0x01;
 	inflateInit(&pInfo->stream);
-    }else{
+    } else {
 	pInfo->zBuf = 0;
     }
-    pInfo->nByte = INT32(zBuf,22);
-    pInfo->nByteCompr = pInfo->nData = INT32(zBuf,18);
+    pInfo->nByte = INT32(zBuf, 22);
+    pInfo->nByteCompr = pInfo->nData = INT32(zBuf, 18);
     pInfo->readSoFar = 0;
-    Tcl_Seek(chan, INT16(zBuf,26)+INT16(zBuf,28), SEEK_CUR);
+    Tcl_Seek(chan, INT16(zBuf, 26) + INT16(zBuf, 28), SEEK_CUR);
     pInfo->startOfData = Tcl_Tell(chan);
-    sprintf(zName,"vfs_%x_%x",((int)pFile)>>12,count++);
-    chan = Tcl_CreateChannel(&vfsChannelType, zName, 
-	    (ClientData)pInfo, TCL_READABLE);
+    sprintf(zName, "vfs_%lx_%x", ((ptrdiff_t)pFile)>>12, count++);
+    chan = Tcl_CreateChannel(&vfsChannelType, zName, pInfo, TCL_READABLE);
     return chan;
 }
 
@@ -1368,7 +1364,7 @@ ZvfsFileStat(
     ZvfsFile *pFile;
 
     pFile = ZvfsLookup(path);
-    if( pFile==0 ){
+    if (pFile == 0) {
 	return -1;
     }
     memset(buf, 0, sizeof(*buf));
@@ -1395,11 +1391,11 @@ ZvfsFileAccess(
 {
     ZvfsFile *pFile;
 
-    if( mode & 3 ){
+    if (mode & 3) {
 	return -1;
     }
     pFile = ZvfsLookup(path);
-    if( pFile==0 ){
+    if (pFile == 0) {
 	return -1;
     }
     return 0; 
@@ -1449,6 +1445,7 @@ Tobe_FSOpenFileChannelProc(
 {
     static int inopen=0;
     Tcl_Channel chan;
+
     if (inopen) {
 	puts("recursive zvfs open");
 	return NULL;
@@ -1508,28 +1505,29 @@ Tobe_FSMatchInDirectoryProc(
 	return TCL_ERROR;
     }
     if (pattern != NULL) {
-	l=strlen(pattern);
+	l = strlen(pattern);
 	if (!zp) {
-	    zPattern=strdup(pattern);
+	    zPattern = Tcl_Alloc(len + 1);
+	    memcpy(zPattern, pattern, len + 1);
 	} else {
-	    zPattern=(char*)malloc(len+l+3);
-	    sprintf(zPattern,"%s%s%s", zp, zp[len-1]=='/'?"":"/",pattern);
+	    zPattern = Tcl_Alloc(len + l + 3);
+	    sprintf(zPattern, "%s%s%s", zp, zp[len-1]=='/'?"":"/", pattern);
 	}
-	scnt=strchrcnt(zPattern,'/');
+	scnt = strchrcnt(zPattern, '/');
     }
     dirglob = (types && types->type && (types->type&TCL_GLOB_TYPE_DIR));
     dirmnt = (types && types->type && (types->type&TCL_GLOB_TYPE_MOUNT));
     if (strcmp(zp, "/") == 0 && strcmp(zPattern, ".*") == 0) {
 	/*TODO: What goes here?*/
     }
-    for(pEntry = Tcl_FirstHashEntry(&local.fileHash, &sSearch);
+    for (pEntry = Tcl_FirstHashEntry(&local.fileHash, &sSearch);
 	    pEntry; pEntry = Tcl_NextHashEntry(&sSearch)){
 	ZvfsFile *pFile = Tcl_GetHashValue(pEntry);
 	char *z = pFile->zName;
 
 	if (zPattern != NULL) {
-	    if( Tcl_StringCaseMatch(z, zPattern, 0) == 0 || 
-		    (scnt!=pFile->depth /* && !dirglob */ )) { // TODO: ???
+	    if (Tcl_StringCaseMatch(z, zPattern, 0) == 0 || 
+		    (scnt != pFile->depth /* && !dirglob */)) { // TODO: ???
 		continue;
 	    }
 	} else {
@@ -1545,7 +1543,7 @@ Tobe_FSMatchInDirectoryProc(
 	    if (!pFile->isdir) {
 		continue;
 	    }
-	} else if (types && !(types->type&TCL_GLOB_TYPE_DIR)) {
+	} else if (types && !(types->type & TCL_GLOB_TYPE_DIR)) {
 	    if (pFile->isdir) {
 		continue;
 	    }
@@ -1553,7 +1551,7 @@ Tobe_FSMatchInDirectoryProc(
 	Tcl_ListObjAppendElement(interp, result, Tcl_NewStringObj(z, -1));
     }
     if (zPattern) {
-	free(zPattern);
+	Tcl_Free(zPattern);
     }
     return TCL_OK;
 }
@@ -1568,7 +1566,7 @@ Tobe_FSPathInFilesystemProc(
     ClientData *clientDataPtr)
 {
     ZvfsFile *zFile;
-    char *path=Tcl_GetString(pathPtr);
+    char *path = Tcl_GetString(pathPtr);
 
 //  if (ZvfsLookupMount(path)!=0)
 //    return TCL_OK;
@@ -1577,7 +1575,7 @@ Tobe_FSPathInFilesystemProc(
 	return -1;
     }
     zFile = ZvfsLookup(path);
-    if (zFile!=NULL && strcmp(path,zFile->pArchive->zName)) {
+    if (zFile != NULL && strcmp(path, zFile->pArchive->zName)) {
 	return TCL_OK;
     }
     return -1;
@@ -1589,21 +1587,20 @@ Tobe_FSListVolumesProc(void)
     Tcl_HashEntry *pEntry;	/* Hash table entry */
     Tcl_HashSearch zSearch;	/* Search all mount points */
     ZvfsArchive *pArchive;	/* The ZIP archive being mounted */
-    Tcl_Obj *pVols=NULL, *pVol;
+    Tcl_Obj *pVols = NULL, *pVol;
 
-    pEntry=Tcl_FirstHashEntry(&local.archiveHash,&zSearch);
+    pEntry = Tcl_FirstHashEntry(&local.archiveHash,&zSearch);
     while (pEntry) {
-	if (pArchive = Tcl_GetHashValue(pEntry)) {
+	pArchive = Tcl_GetHashValue(pEntry);
+	if (pArchive) {
 	    if (!pVols) {
-		pVols=Tcl_NewListObj(0,0);
+		pVols = Tcl_NewListObj(0, 0);
 		Tcl_IncrRefCount(pVols);
 	    }
-	    pVol=Tcl_NewStringObj(pArchive->zMountPoint,-1);
-	    Tcl_IncrRefCount(pVol);
-	    Tcl_ListObjAppendElement(NULL, pVols,pVol);
-	    Tcl_DecrRefCount(pVol);
+	    pVol = Tcl_NewStringObj(pArchive->zMountPoint, -1);
+	    Tcl_ListObjAppendElement(NULL, pVols, pVol);
 	}
-	pEntry=Tcl_NextHashEntry(&zSearch);
+	pEntry = Tcl_NextHashEntry(&zSearch);
     }
     return pVols;
 }
@@ -1616,20 +1613,22 @@ Tobe_FSChdirProc(
     return TCL_OK;
 }
 
-const char **
+const char * const*
 Tobe_FSFileAttrStringsProc(
     Tcl_Obj *pathPtr,
     Tcl_Obj** objPtrRef)
 {
-    Tcl_Obj *listPtr;
-    Tcl_Interp *interp = NULL;
-    char *path=Tcl_GetString(pathPtr);
+    char *path = Tcl_GetString(pathPtr);
 #ifdef __WIN32__
-    static CONST char *attrs[] = { "-archive", "-hidden", "-readonly", "-system", "-shortname", 0 };
+    static const char *attrs[] = {
+	"-archive", "-hidden", "-readonly", "-system", "-shortname", 0
+    };
 #else
-    static CONST char *attrs[] = { "-group", "-owner", "-permissions", 0 };
+    static const char *attrs[] = {
+	"-group", "-owner", "-permissions", 0
+    };
 #endif
-    if (ZvfsLookup(path)==0) {
+    if (ZvfsLookup(path) == 0) {
 	return NULL;
     }
     return attrs;
@@ -1642,12 +1641,13 @@ Tobe_FSFileAttrsGetProc(
     Tcl_Obj *pathPtr,
     Tcl_Obj **objPtrRef)
 {
-    char *path=Tcl_GetString(pathPtr);
+    char *path = Tcl_GetString(pathPtr);
     char buf[50];
-    ZvfsFile *zFile;
+    ZvfsFile *zFile = ZvfsLookup(path);
 
-    if ((zFile = ZvfsLookup(path))==0)
+    if (zFile == 0) {
 	return TCL_ERROR;
+    }
 
     switch (index) {
 #ifdef __WIN32__
@@ -1884,11 +1884,11 @@ static Tcl_Filesystem Tobe_Filesystem = {
 
 //////////////////////////////////////////////////////////////
 
-void (*Zvfs_PostInit)(Tcl_Interp *)=0;
-static int ZvfsAppendObjCmd( void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
-static int ZvfsAddObjCmd( void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
-static int ZvfsDumpObjCmd( void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
-static int ZvfsStartObjCmd( void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
+void (*Zvfs_PostInit)(Tcl_Interp *) = 0;
+static int ZvfsAppendObjCmd(void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
+static int ZvfsAddObjCmd(void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
+static int ZvfsDumpObjCmd(void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
+static int ZvfsStartObjCmd(void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
 
 /*
  * Initialize the ZVFS system.
@@ -1900,7 +1900,7 @@ Zvfs_doInit(
 {
     int n;
 #ifdef USE_TCL_STUBS
-    if( Tcl_InitStubs(interp,"8.0",0)==0 ){
+    if (Tcl_InitStubs(interp, "8.0", 0) == 0) {
 	return TCL_ERROR;
     }
 #endif
@@ -1916,12 +1916,13 @@ Zvfs_doInit(
     Tcl_CreateObjCommand(interp, "zvfs::list", ZvfsListObjCmd, 0, 0);
     Tcl_CreateObjCommand(interp, "zvfs::dump", ZvfsDumpObjCmd, 0, 0);
     Tcl_CreateObjCommand(interp, "zvfs::start", ZvfsStartObjCmd, 0, 0);
-    Tcl_SetVar(interp, "::zvfs::auto_ext", ".tcl .tk .itcl .htcl .txt .c .h .tht", TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "::zvfs::auto_ext",
+	    ".tcl .tk .itcl .htcl .txt .c .h .tht", TCL_GLOBAL_ONLY);
     /* Tcl_CreateObjCommand(interp, "zip::open", ZipOpenObjCmd, 0, 0); */
 #ifndef USE_TCL_VFS
     Tcl_GlobalEval(interp, zFileCopy);
 #endif
-    if( !local.isInit ){
+    if (!local.isInit) {
 	/* One-time initialization of the ZVFS */
 #ifdef USE_TCL_VFS
 	n = Tcl_FSRegister(0, &Tobe_Filesystem);
@@ -1948,14 +1949,14 @@ int
 Tcl_Zvfs_Init(
     Tcl_Interp *interp)
 {
-    return Zvfs_doInit(interp,0);
+    return Zvfs_doInit(interp, 0);
 }
 
 int
 Tcl_Zvfs_SafeInit(
     Tcl_Interp *interp)
 {
-    return Zvfs_doInit(interp,1);
+    return Zvfs_doInit(interp, 1);
 }
 
 /************************************************************************/
@@ -1984,23 +1985,23 @@ ZvfsDumpObjCmd(
     int rc;
     Tcl_Obj *pResult;
 
-    if( objc!=2 ){
+    if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
 	return TCL_ERROR;
     }
     zFilename = Tcl_GetString(objv[1]);
     chan = Tcl_OpenFileChannel(interp, zFilename, "r", 0);
-    if( chan==0 ) {
+    if (chan == 0) {
 	return TCL_ERROR;
     }
     rc = ZvfsReadTOC(interp, chan, &pList);
-    if( rc==TCL_ERROR ){
+    if (rc == TCL_ERROR) {
 	deleteZFileList(pList);
 	return rc;
     }
     Tcl_Close(interp, chan);
     pResult = Tcl_GetObjResult(interp);
-    while( pList ){
+    while (pList) {
 	Tcl_Obj *pEntry = Tcl_NewObj();
 	ZFile *pNext;
 	char zDateTime[100];
@@ -2019,7 +2020,7 @@ ZvfsDumpObjCmd(
 		Tcl_NewIntObj(pList->nByteCompr));
 	Tcl_ListObjAppendElement(interp, pResult, pEntry);
 	pNext = pList->pNext;
-	Tcl_Free((char*)pList);
+	Tcl_Free((void *) pList);
 	pList = pList->pNext;
     }
     return TCL_OK;
@@ -2062,7 +2063,7 @@ writeFile(
     strcpy(p->zName, zDest);
     p->isSpecial = 0;
     Tcl_Stat(zSrc, &stat);
-    now=stat.st_mtime;
+    now = stat.st_mtime;
     tm = localtime(&now);
     UnixTimeDate(tm, &p->dosDate, &p->dosTime);
     p->iOffset = Tcl_Tell(out);
@@ -2104,13 +2105,13 @@ writeFile(
      * Write the compressed file.  Compute the CRC as we progress.
      */
 
-    stream.zalloc = (alloc_func)0;
-    stream.zfree = (free_func)0;
+    stream.zalloc = NULL;
+    stream.zfree = NULL;
     stream.opaque = 0;
     stream.avail_in = 0;
-    stream.next_in = zInBuf;
+    stream.next_in = (unsigned char *) zInBuf;
     stream.avail_out = sizeof(zOutBuf);
-    stream.next_out = zOutBuf;
+    stream.next_out = (unsigned char *) zOutBuf;
 #if 1
     deflateInit(&stream, 9);
 #else
@@ -2123,40 +2124,42 @@ writeFile(
 #endif
 
     p->iCRC = crc32(0, 0, 0);
-    while( !Tcl_Eof(in) ){
-	if( stream.avail_in==0 ){
+    while (!Tcl_Eof(in)) {
+	if (stream.avail_in == 0) {
 	    int amt = Tcl_Read(in, zInBuf, sizeof(zInBuf));
 
-	    if( amt<=0 ) {
+	    if (amt <= 0) {
 		break;
 	    }
-	    p->iCRC = crc32(p->iCRC, zInBuf, amt);
+	    p->iCRC = crc32(p->iCRC, (unsigned char *) zInBuf, amt);
 	    stream.avail_in = amt;
-	    stream.next_in = zInBuf;
+	    stream.next_in = (unsigned char *) zInBuf;
 	}
 	deflate(&stream, 0);
 	toOut = sizeof(zOutBuf) - stream.avail_out;
-	if( toOut>skip ){
+	if (toOut > skip) {
 	    Tcl_Write(out, &zOutBuf[skip], toOut - skip);
 	    skip = 0;
-	}else{
+	} else {
 	    skip -= toOut;
 	}
 	stream.avail_out = sizeof(zOutBuf);
-	stream.next_out = zOutBuf;
+	stream.next_out = (unsigned char *) zOutBuf;
     }
+
     do{
 	stream.avail_out = sizeof(zOutBuf);
-	stream.next_out = zOutBuf;
+	stream.next_out = (unsigned char *) zOutBuf;
 	deflate(&stream, Z_FINISH);
 	toOut = sizeof(zOutBuf) - stream.avail_out;
-	if( toOut>skip ){
+	if (toOut > skip) {
 	    Tcl_Write(out, &zOutBuf[skip], toOut - skip);
 	    skip = 0;
-	}else{
+	} else {
 	    skip -= toOut;
 	}
-    }while( stream.avail_out==0 );
+    } while (stream.avail_out == 0);
+
     p->nByte = stream.total_in;
     p->nByteCompr = stream.total_out - 2;
     deflateEnd(&stream);
@@ -2199,24 +2202,24 @@ mergeZFiles(
     ZFile *pTail;
 
     pTail = &fakeHead;
-    while( pLeft && pRight ){
+    while (pLeft && pRight) {
 	ZFile *p;
 
-	if( pLeft->iOffset <= pRight->iOffset ){
+	if (pLeft->iOffset <= pRight->iOffset) {
 	    p = pLeft;
 	    pLeft = p->pNext;
-	}else{
+	} else {
 	    p = pRight;
 	    pRight = p->pNext;
 	}
 	pTail->pNext = p;
 	pTail = p;
     }
-    if( pLeft ){
+    if (pLeft) {
 	pTail->pNext = pLeft;
-    }else if( pRight ){
+    } else if (pRight) {
 	pTail->pNext = pRight;
-    }else{
+    } else {
 	pTail->pNext = 0;
     }
     return fakeHead.pNext;
@@ -2234,22 +2237,22 @@ sortZFiles(
     ZFile *p;
     ZFile *aBin[NBIN+1];
 
-    for(i=0; i<=NBIN; i++) {
+    for (i=0; i<=NBIN; i++) {
 	aBin[i] = 0;
     }
-    while( pList ){
+    while (pList) {
 	p = pList;
 	pList = p->pNext;
 	p->pNext = 0;
-	for(i=0; i<NBIN && aBin[i]; i++){
+	for (i=0; i<NBIN && aBin[i]; i++) {
 	    p = mergeZFiles(aBin[i],p);
 	    aBin[i] = 0;
 	}
 	aBin[i] = aBin[i] ? mergeZFiles(aBin[i], p) : p;
     }
     p = 0;
-    for(i=0; i<=NBIN; i++){
-	if( aBin[i]==0 ) {
+    for (i=0; i<=NBIN; i++) {
+	if (aBin[i] == 0) {
 	    continue;
 	}
 	p = mergeZFiles(p, aBin[i]);
@@ -2271,8 +2274,8 @@ writeTOC(
     char zBuf[100];
 
     iTocStart = Tcl_Tell(chan);
-    for(; pList; pList=pList->pNext){
-	if( pList->isSpecial ) {
+    for (; pList; pList=pList->pNext) {
+	if (pList->isSpecial) {
 	    continue;
 	}
 	put32(&zBuf[0], 0x02014b50);
@@ -2294,7 +2297,7 @@ writeTOC(
 	put32(&zBuf[42], pList->iOffset);
 	Tcl_Write(chan, zBuf, 46);
 	Tcl_Write(chan, pList->zName, strlen(pList->zName));
-	for(i=pList->nExtra; i>0; i-=40){
+	for (i=pList->nExtra; i>0; i-=40) {
 	    int toWrite = i<40 ? i : 40;
 
 	    /* CAREFUL! String below is intentionally 40 spaces! */
@@ -2347,20 +2350,20 @@ ZvfsAppendObjCmd(
      * Open the archive and read the table of contents
      */
 
-    if( objc<2 || (objc&1)!=0 ){
+    if (objc<2 || (objc&1)!=0) {
 	Tcl_WrongNumArgs(interp, 1, objv, "ARCHIVE (SRC DEST)+");
 	return TCL_ERROR;
     }
 
     zArchive = Tcl_GetString(objv[1]);
     chan = Tcl_OpenFileChannel(interp, zArchive, "r+", 0644);
-    if( chan==0 ) {
+    if (chan == 0) {
 	chan = Tcl_OpenFileChannel(interp, zArchive, "w+", 0644);
-	if( chan==0 ) {
+	if (chan == 0) {
 	    return TCL_ERROR;
 	}
     }
-    if(Tcl_SetChannelOption(interp, chan, "-translation", "binary")
+    if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
 	    || Tcl_SetChannelOption(interp, chan, "-encoding", "binary")){
 	/* this should never happen */
 	Tcl_Close(0, chan);
@@ -2371,27 +2374,25 @@ ZvfsAppendObjCmd(
 	/* Null file is ok, we're creating new one. */
     } else {
 	Tcl_Seek(chan, 0, SEEK_SET);
-	rc = ZvfsReadTOC(interp, chan, &pList);
-	if( rc==TCL_ERROR ){
+	if (ZvfsReadTOC(interp, chan, &pList) == TCL_ERROR) {
 	    deleteZFileList(pList);
 	    Tcl_Close(interp, chan);
-	    return rc;
-	} else {
-	    rc=TCL_OK;
+	    return TCL_ERROR;
 	}
+	rc = TCL_OK;
     }
 
     /*
      * Move the file pointer to the start of the table of contents.
      */
-    for(pToc=pList; pToc; pToc=pToc->pNext){
-	if( pToc->isSpecial && strcmp(pToc->zName,"*TOC*")==0 ) {
+    for (pToc=pList; pToc; pToc=pToc->pNext) {
+	if (pToc->isSpecial && strcmp(pToc->zName, "*TOC*") == 0) {
 	    break;
 	}
     }
-    if( pToc ){
+    if (pToc) {
 	Tcl_Seek(chan, pToc->iOffset, SEEK_SET);
-    }else{
+    } else {
 	Tcl_Seek(chan, 0, SEEK_END);
     }
 
@@ -2399,7 +2400,7 @@ ZvfsAppendObjCmd(
      * Add new files to the end of the archive.
      */
 
-    for(i=2; rc==TCL_OK && i<objc; i+=2){
+    for (i=2; rc==TCL_OK && i<objc; i+=2) {
 	char *zSrc = Tcl_GetString(objv[i]);
 	char *zDest = Tcl_GetString(objv[i+1]);
 	Tcl_Channel in;
@@ -2409,10 +2410,10 @@ ZvfsAppendObjCmd(
 	 */
 
 	in = Tcl_OpenFileChannel(interp, zSrc, "r", 0);
-	if( in==0 ){
+	if (in == 0) {
 	    break;
 	}
-	if(Tcl_SetChannelOption(interp, in, "-translation", "binary")
+	if (Tcl_SetChannelOption(interp, in, "-translation", "binary")
 		|| Tcl_SetChannelOption(interp, in, "-encoding", "binary")){
 	    /* this should never happen */
 	    Tcl_Close(0, in);
@@ -2500,7 +2501,7 @@ ZvfsAddObjCmd(
      * Open the archive and read the table of contents
      */
 
-    if (objc>3) {
+    if (objc > 3) {
 	zOpts = Tcl_GetStringFromObj(objv[1], &oLen);
 	if (!strncmp("-fconfigure", zOpts, oLen)) {
 	    confOpts = objv[2];
@@ -2512,21 +2513,24 @@ ZvfsAddObjCmd(
 	    objv += 2;
 	}
     }
-    if( objc==2) {
+    if (objc == 2) {
 	return TCL_OK;
     }
 
-    if( objc<3) {
+    if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv,
 		"?-fconfigure OPTPAIRS? ARCHIVE FILE1 FILE2 ..");
 	return TCL_ERROR;
     }
+
     zArchive = Tcl_GetString(objv[1]);
     chan = Tcl_OpenFileChannel(interp, zArchive, "r+", 0644);
-    if( chan==0 ) {
+    if (chan == 0) {
 	chan = Tcl_OpenFileChannel(interp, zArchive, "w+", 0644);
+	if (chan == 0) {
+	    return TCL_ERROR;
+	}
     }
-    if( chan==0 ) return TCL_ERROR;
     if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
 	    || Tcl_SetChannelOption(interp, chan, "-encoding", "binary")){
 	/* this should never happen */
@@ -2538,27 +2542,26 @@ ZvfsAddObjCmd(
 	/* Null file is ok, we're creating new one. */
     } else {
 	Tcl_Seek(chan, 0, SEEK_SET);
-	rc = ZvfsReadTOC(interp, chan, &pList);
-	if( rc==TCL_ERROR ){
+	if (ZvfsReadTOC(interp, chan, &pList) == TCL_ERROR) {
 	    deleteZFileList(pList);
 	    Tcl_Close(interp, chan);
-	    return rc;
+	    return TCL_ERROR;
 	}
-	rc=TCL_OK;
+	rc = TCL_OK;
     }
 
     /*
      * Move the file pointer to the start of the table of contents.
      */
 
-    for(pToc=pList; pToc; pToc=pToc->pNext){
-	if( pToc->isSpecial && strcmp(pToc->zName, "*TOC*")==0 ) {
+    for (pToc=pList; pToc; pToc=pToc->pNext) {
+	if (pToc->isSpecial && strcmp(pToc->zName, "*TOC*") == 0) {
 	    break;
 	}
     }
-    if( pToc ){
+    if (pToc) {
 	Tcl_Seek(chan, pToc->iOffset, SEEK_SET);
-    }else{
+    } else {
 	Tcl_Seek(chan, 0, SEEK_END);
     }
 
@@ -2566,22 +2569,25 @@ ZvfsAddObjCmd(
      * Add new files to the end of the archive.
      */
 
-    for(i=2; rc==TCL_OK && i<objc; i++){
+    for (i=2; rc==TCL_OK && i<objc; i++) {
 	char *zSrc = Tcl_GetString(objv[i]);
 	Tcl_Channel in;
+
 	/*
 	 * Open the file that is to be added to the ZIP archive
 	 */
+
 	in = Tcl_OpenFileChannel(interp, zSrc, "r", 0);
-	if( in==0 ){
+	if (in == 0) {
 	    break;
 	}
 	if (confOpts == NULL) {
 	    const char *ext = GetExtension(zSrc);
+
 	    if (ext != NULL) {
 		/* Use auto translation for known text files. */
 		if (varObj == NULL) {
-		    varObj=Tcl_GetVar2Ex(interp, "::zvfs::auto_ext", NULL,
+		    varObj = Tcl_GetVar2Ex(interp, "::zvfs::auto_ext", NULL,
 			    TCL_GLOBAL_ONLY);
 		}
 		if (varObj && TCL_OK != Tcl_ListObjGetElements(interp, varObj,
@@ -2591,7 +2597,7 @@ ZvfsAddObjCmd(
 			    break;
 			}
 		    }
-		    if (j>=tobjc) {
+		    if (j >= tobjc) {
 			ext = NULL;
 		    }
 		}
@@ -2654,26 +2660,20 @@ ZvfsStartObjCmd(
 {
     char *zArchive;
     Tcl_Channel chan;
-    ZFile *pList = NULL, *pToc;
-    int rc = TCL_OK, i, j, oLen;
-    char *zOpts = NULL;
-    Tcl_Obj *confOpts = NULL;
-    int tobjc;
-    Tcl_Obj **tobjv;
-    Tcl_Obj *varObj = NULL;
+    ZFile *pList = NULL;
     int zipStart;
 
     /*
      * Open the archive and read the table of contents
      */
 
-    if( objc != 2) {
+    if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "ARCHIVE");
 	return TCL_ERROR;
     }
     zArchive = Tcl_GetString(objv[1]);
     chan = Tcl_OpenFileChannel(interp, zArchive, "r", 0644);
-    if( chan==0 ) {
+    if (chan == 0) {
 	return TCL_ERROR;
     }
     if (Tcl_SetChannelOption(interp, chan, "-translation", "binary")
@@ -2689,8 +2689,7 @@ ZvfsStartObjCmd(
     }
 
     Tcl_Seek(chan, 0, SEEK_SET);
-    rc = ZvfsReadTOCStart(interp, chan, &pList, &zipStart);
-    if( rc!=TCL_OK ){
+    if (ZvfsReadTOCStart(interp, chan, &pList, &zipStart) != TCL_OK) {
 	deleteZFileList(pList);
 	Tcl_Close(interp, chan);
 	Tcl_AppendResult(interp, "not an archive", 0);
