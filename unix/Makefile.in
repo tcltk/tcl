@@ -654,7 +654,7 @@ ${TCLKIT_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE}
 		${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
 	PWD=`pwd`
-	cd $(SCRIPT_INSTALL_DIR) ; zip -rAq ${PWD}/tclkit.zip tcl8 tcl8.6
+	cd ${prefix}/lib ; zip -rAq ${PWD}/tclkit.zip tcl8 tcl8.6
 	cat tclkit.zip >> ${TCLKIT_EXE}
 	
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
