@@ -29,10 +29,6 @@
 #include <sys/stat.h>
 #include <time.h>
 
-#ifdef TCL_FILESYSTEM_VERSION_1
-#define USE_TCL_VFS 1
-#endif
-
 /*
  * Size of the decompression input buffer
  */
@@ -285,9 +281,7 @@ CanonicalPath(
     for (i=j=0 ; (c = zPath[i]) != 0 ; i++) {
 #ifdef __WIN32__
 	if (isupper(c)) {
-	    if (maptolower) {
-		c = tolower(c);
-	    }
+	    c = tolower(c);
 	} else if (c == '\\') {
 	    c = '/';
 	}
@@ -411,7 +405,7 @@ ZvfsReadTOCStart(
 
     while (1) {
 	int lenName;		/* Length of the next filename */
-	int lenExtra;		/* Length of "extra" data for next file */
+	int lenExtra=0;		/* Length of "extra" data for next file */
 	int iData;		/* Offset to start of file data */
 
 	if (nFile-- <= 0) {
@@ -612,7 +606,7 @@ Tcl_Zvfs_Mount(
 
     while (1) {
 	int lenName;		/* Length of the next filename */
-	int lenExtra;		/* Length of "extra" data for next file */
+	int lenExtra=0;		/* Length of "extra" data for next file */
 	int iData;		/* Offset to start of file data */
 	int dosTime;
 	int dosDate;
@@ -740,35 +734,6 @@ ZvfsLookup(
     return pFile;
 }
 
-static int
-ZvfsLookupMount(
-    char *zFilename)
-{
-    char *zTrueName;
-    Tcl_HashEntry *pEntry;	/* Hash table entry */
-    Tcl_HashSearch zSearch;	/* Search all mount points */
-    ZvfsArchive *pArchive;	/* The ZIP archive being mounted */
-    int match=0;
-
-    if (local.isInit == 0) {
-	return 0;
-    }
-    zTrueName = AbsolutePath(zFilename);
-    pEntry = Tcl_FirstHashEntry(&local.archiveHash, &zSearch);
-    while (pEntry) {
-	pArchive = Tcl_GetHashValue(pEntry);
-	if (pArchive) {
-	    if (!strcmp(pArchive->zMountPoint, zTrueName)) {
-		match = 1;
-		break;
-	    }
-	}
-	pEntry = Tcl_NextHashEntry(&zSearch);
-    }
-    Tcl_Free(zTrueName);
-    return match;
-}
-
 /*
  * Unmount all the files in the given ZIP archive.
  */
@@ -813,13 +778,6 @@ Tcl_Zvfs_Umount(
     return 1;
 }
 
-static void
-Zvfs_Unmount(
-    const char *zArchive)
-{
-    Tcl_Zvfs_Umount(zArchive);
-}
-
 /*
  * zvfs::mount  Zip-archive-name  mount-point
  *
@@ -832,19 +790,19 @@ Zvfs_Unmount(
  * string, mount on file path.
  */
 static int
-ZvfsMountCmd(
+ZvfsMountObjCmd(
     ClientData clientData,	/* Client data for this command */
     Tcl_Interp *interp,		/* The interpreter used to report errors */
-    int argc,			/* Number of arguments */
-    const char *argv[])		/* Values of all arguments */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const* objv)		/* Values of all arguments */
 {
     /*TODO: Convert to Tcl_Obj API!*/
-    if (argc > 3) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+    if (objc > 3) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"", Tcl_GetString(objv[0]),
 		" ? ZIP-FILE ? MOUNT-POINT ? ?\"", 0);
 	return TCL_ERROR;
     }
-    return Tcl_Zvfs_Mount(interp, argc>1?argv[1]:NULL, argc>2?argv[2]:NULL);
+    return Tcl_Zvfs_Mount(interp, objc>1?Tcl_GetString(objv[1]):NULL, objc>2?Tcl_GetString(objv[2]):NULL);
 }
 
 /*
@@ -853,33 +811,33 @@ ZvfsMountCmd(
  * Undo the effects of zvfs::mount.
  */
 static int
-ZvfsUnmountCmd(
+ZvfsUnmountObjCmd(
     ClientData clientData,	/* Client data for this command */
     Tcl_Interp *interp,		/* The interpreter used to report errors */
-    int argc,			/* Number of arguments */
-    const char *argv[])		/* Values of all arguments */
+    int objc,			/* Number of arguments */
+    Tcl_Obj *const* objv)		/* Values of all arguments */
 {
     ZvfsArchive *pArchive;	/* The ZIP archive being mounted */
     Tcl_HashEntry *pEntry;	/* Hash table entry */
     Tcl_HashSearch zSearch;	/* Search all mount points */
-    
-    if (argc != 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
+    char *zFilename;
+    if (objc != 2) {
+	Tcl_AppendResult(interp, "wrong # args: should be \"", Tcl_GetString(objv[0]),
 		" ZIP-FILE\"", 0);
 	return TCL_ERROR;
     }
-    if (Tcl_Zvfs_Umount(argv[1])) {
-	return TCL_OK;
-    }
-
     if (!local.isInit) {
 	return TCL_ERROR;
+    }
+    zFilename=Tcl_GetString(objv[1]);
+    if (Tcl_Zvfs_Umount(zFilename)) {
+	return TCL_OK;
     }
     pEntry = Tcl_FirstHashEntry(&local.archiveHash,&zSearch);
     while (pEntry) {
 	pArchive = Tcl_GetHashValue(pEntry);
 	if (pArchive && pArchive->zMountPoint[0]
-		&& (strcmp(pArchive->zMountPoint, argv[1]) == 0)) {
+		&& (strcmp(pArchive->zMountPoint, zFilename) == 0)) {
 	    if (Tcl_Zvfs_Umount(pArchive->zName)) {
 		return TCL_OK;
 	    }
@@ -888,7 +846,7 @@ ZvfsUnmountCmd(
 	pEntry = Tcl_NextHashEntry(&zSearch);
     }
 
-    Tcl_AppendResult(interp, "unknown zvfs mount point or file: ", argv[1],
+    Tcl_AppendResult(interp, "unknown zvfs mount point or file: ", zFilename,
 	    NULL);
     return TCL_ERROR;
 }
@@ -1348,7 +1306,7 @@ ZvfsFileOpen(
     pInfo->readSoFar = 0;
     Tcl_Seek(chan, INT16(zBuf, 26) + INT16(zBuf, 28), SEEK_CUR);
     pInfo->startOfData = Tcl_Tell(chan);
-    sprintf(zName, "vfs_%lx_%x", ((ptrdiff_t)pFile)>>12, count++);
+    sprintf(zName, "zvfs_%x",count++);
     chan = Tcl_CreateChannel(&vfsChannelType, zName, pInfo, TCL_READABLE);
     return chan;
 }
@@ -1357,10 +1315,11 @@ ZvfsFileOpen(
  * This routine does a stat() system call for a ZVFS file.
  */
 static int
-ZvfsFileStat(
-    char *path,
-    struct stat *buf)
+Tobe_FSStatProc(
+    Tcl_Obj *pathObj,
+    Tcl_StatBuf *buf)
 {
+    char *path=Tcl_GetString(pathObj);
     ZvfsFile *pFile;
 
     pFile = ZvfsLookup(path);
@@ -1385,10 +1344,11 @@ ZvfsFileStat(
  * This routine does an access() system call for a ZVFS file.
  */
 static int
-ZvfsFileAccess(
-    char *path,
+Tobe_FSAccessProc(
+    Tcl_Obj *pathPtr,
     int mode)
 {
+    char *path=Tcl_GetString(pathPtr);
     ZvfsFile *pFile;
 
     if (mode & 3) {
@@ -1400,41 +1360,6 @@ ZvfsFileAccess(
     }
     return 0; 
 }
-
-#ifndef USE_TCL_VFS
-
-/*
- * This TCL procedure can be used to copy a file.  The built-in "file copy"
- * command of TCL bypasses the I/O system and does not work with zvfs.  You
- * have to use a procedure like the following instead.
- */
-static char zFileCopy[] = 
-"proc zvfs::filecopy {from to {outtype binary}} {\n"
-"  set f [open $from r]\n"
-"  if {[catch {\n"
-"    fconfigure $f -translation binary\n"
-"    set t [open $to w]\n"
-"  } msg]} {\n"
-"    close $f\n"
-"    error $msg\n"
-"  }\n"
-"  if {[catch {\n"
-"    fconfigure $t -translation $outtype\n"
-"    set size [file size $from]\n"
-"    for {set i 0} {$i<$size} {incr i 40960} {\n"
-"      puts -nonewline $t [read $f 40960]\n"
-"    }\n"
-"  } msg]} {\n"
-"    close $f\n"
-"    close $t\n"
-"    error $msg\n"
-"  }\n"
-"  close $f\n"
-"  close $t\n"
-"}\n"
-;
-
-#else
 
 Tcl_Channel
 Tobe_FSOpenFileChannelProc(
@@ -1457,31 +1382,9 @@ Tobe_FSOpenFileChannelProc(
     return chan;
 }
 
-/*
- * This routine does a stat() system call for a ZVFS file.
- */
-int
-Tobe_FSStatProc(
-    Tcl_Obj *pathPtr,
-    struct stat *buf)
-{
-    return ZvfsFileStat(Tcl_GetString(pathPtr), buf);
-}
-
-/*
- * This routine does an access() system call for a ZVFS file.
- */
-int
-Tobe_FSAccessProc(
-    Tcl_Obj *pathPtr,
-    int mode)
-{
-    return ZvfsFileAccess(Tcl_GetString(pathPtr), mode);
-}
-
-/* Tcl_Obj* Tobe_FSFilesystemSeparatorProc(Tcl_Obj *pathPtr) { 
+Tcl_Obj* Tobe_FSFilesystemSeparatorProc(Tcl_Obj *pathPtr) { 
   return Tcl_NewStringObj("/",-1);;
-} */
+}
 
 /*
  * Function to process a 'Tobe_FSMatchInDirectory()'.  If not implemented,
@@ -1567,10 +1470,7 @@ Tobe_FSPathInFilesystemProc(
 {
     ZvfsFile *zFile;
     char *path = Tcl_GetString(pathPtr);
-
-//  if (ZvfsLookupMount(path)!=0)
-//    return TCL_OK;
-// // TODO: also check this is the archive.
+    
     if (openarch) {
 	return -1;
     }
@@ -1605,14 +1505,6 @@ Tobe_FSListVolumesProc(void)
     return pVols;
 }
 
-int
-Tobe_FSChdirProc(
-    Tcl_Obj *pathPtr)
-{
-    /* Someday, we should actually check if this is a valid path. */
-    return TCL_OK;
-}
-
 const char * const*
 Tobe_FSFileAttrStringsProc(
     Tcl_Obj *pathPtr,
@@ -1642,7 +1534,9 @@ Tobe_FSFileAttrsGetProc(
     Tcl_Obj **objPtrRef)
 {
     char *path = Tcl_GetString(pathPtr);
+#ifndef __WIN32__
     char buf[50];
+#endif
     ZvfsFile *zFile = ZvfsLookup(path);
 
     if (zFile == 0) {
@@ -1677,79 +1571,15 @@ Tobe_FSFileAttrsGetProc(
 
 /****************************************************/
 
-// At some point, some of the following might get implemented?
-
-#if 1
-#define Tobe_FSFilesystemSeparatorProc 0
-#define Tobe_FSLoadFileProc 0
-#define Tobe_FSUnloadFileProc 0
-#define Tobe_FSGetCwdProc 0
-#define Tobe_FSGetCwdProc 0
-#define Tobe_FSCreateDirectoryProc 0
-#define Tobe_FSDeleteFileProc 0
-#define Tobe_FSCopyDirectoryProc 0
-#define Tobe_FSCopyFileProc 0
-#define Tobe_FSRemoveDirectoryProc 0
-#define Tobe_FSFileAttrsSetProc 0
-#define Tobe_FSNormalizePathProc 0
-#define Tobe_FSUtimeProc 0
-#define Tobe_FSRenameFileProc 0
-#define Tobe_FSCreateInternalRepProc 0
-#define Tobe_FSInternalToNormalizedProc 0
-#define Tobe_FSDupInternalRepProc 0
-#define Tobe_FSFreeInternalRepProc 0
-#define Tobe_FSFilesystemPathTypeProc 0
-#define Tobe_FSLinkProc 0
-#else
-
-/*
- * Function to process a 'Tobe_FSLoadFile()' call.  If not implemented, Tcl
- * will fall back on a copy to native-temp followed by a Tobe_FSLoadFile on
- * that temporary copy.
- */
-int
-Tobe_FSLoadFileProc(
-    Tcl_Interp * interp,
-    Tcl_Obj *pathPtr,
-    char * sym1,
-    char * sym2,
-    Tcl_PackageInitProc ** proc1Ptr,
-    Tcl_PackageInitProc ** proc2Ptr,
-    ClientData * clientDataPtr)
-{
-    return 0;
-}
-
 /*
  * Function to unload a previously successfully loaded file.  If load was
  * implemented, then this should also be implemented, if there is any cleanup
  * action required.
  */
-void Tobe_FSUnloadFileProc(ClientData clientData) { return; }
-Tcl_Obj* Tobe_FSGetCwdProc(Tcl_Interp *interp) { return 0; }
-int Tobe_FSCreateDirectoryProc(Tcl_Obj *pathPtr) { return 0; }
-int Tobe_FSDeleteFileProc(Tcl_Obj *pathPtr) { return 0; }
-int Tobe_FSCopyDirectoryProc(Tcl_Obj *srcPathPtr, Tcl_Obj *destPathPtr,
-			     Tcl_Obj **errorPtr) { return 0; }
-int Tobe_FSCopyFileProc(Tcl_Obj *srcPathPtr,
-			Tcl_Obj *destPathPtr) { return 0; }
-int Tobe_FSRemoveDirectoryProc(Tcl_Obj *pathPtr, int recursive,
-			       Tcl_Obj **errorPtr) { return 0; }
-int Tobe_FSRenameFileProc(Tcl_Obj *srcPathPtr,
-			  Tcl_Obj *destPathPtr) { return 0; }
 /* We have to declare the utime structure here. */
 int Tobe_FSUtimeProc(Tcl_Obj *pathPtr, struct utimbuf *tval) { return 0; }
-int Tobe_FSNormalizePathProc(Tcl_Interp *interp, Tcl_Obj *pathPtr,
-			     int nextCheckpoint) { return 0; }
 int Tobe_FSFileAttrsSetProc(Tcl_Interp *interp, int index, Tcl_Obj *pathPtr,
 			    Tcl_Obj *objPtr) { return 0; }
-Tcl_Obj* Tobe_FSLinkProc(Tcl_Obj *pathPtr) { return 0; }
-Tcl_Obj* Tobe_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr) { return 0; }
-void Tobe_FSFreeInternalRepProc(ClientData clientData) { return; }
-ClientData Tobe_FSDupInternalRepProc(ClientData clientData) { return 0; }
-Tcl_Obj* Tobe_FSInternalToNormalizedProc(ClientData clientData) { return 0; }
-ClientData Tobe_FSCreateInternalRepProc(Tcl_Obj *pathPtr) { return 0; }
-#endif
 
 static Tcl_Filesystem Tobe_Filesystem = {
     "tobe",			/* The name of the filesystem. */
@@ -1759,17 +1589,17 @@ static Tcl_Filesystem Tobe_Filesystem = {
     Tobe_FSPathInFilesystemProc,/* Function to check whether a path is in this
 				 * filesystem.  This is the most important
 				 * filesystem procedure. */
-    Tobe_FSDupInternalRepProc,	/* Function to duplicate internal fs rep.  May
+    NULL,	/* Function to duplicate internal fs rep.  May
 				 * be NULL (but then fs is less efficient). */
-    Tobe_FSFreeInternalRepProc,	/* Function to free internal fs rep.  Must be
+    NULL,	/* Function to free internal fs rep.  Must be
 				 * implemented, if internal representations
 				 * need freeing, otherwise it can be NULL. */
-    Tobe_FSInternalToNormalizedProc,
+    NULL,
 				/* Function to convert internal representation
 				 * to a normalized path.  Only required if the
 				 * fs creates pure path objects with no
 				 * string/path representation. */
-    Tobe_FSCreateInternalRepProc,
+    NULL,
 				/* Function to create a filesystem-specific
 				 * internal representation.  May be NULL if
 				 * paths have no internal representation, or
@@ -1777,11 +1607,11 @@ static Tcl_Filesystem Tobe_Filesystem = {
 				 * filesystem always immediately creates an
 				 * internal representation for paths it
 				 * accepts. */
-    Tobe_FSNormalizePathProc,	/* Function to normalize a path.  Should be
+    NULL,	/* Function to normalize a path.  Should be
 				 * implemented for all filesystems which can
 				 * have multiple string representations for
 				 * the same path object. */
-    Tobe_FSFilesystemPathTypeProc,
+    NULL,
 				/* Function to determine the type of a path in
 				 * this filesystem.  May be NULL. */
     Tobe_FSFilesystemSeparatorProc,
@@ -1808,7 +1638,7 @@ static Tcl_Filesystem Tobe_Filesystem = {
 				 * reading) of times with 'file mtime', 'file
 				 * atime' and the open-r/open-w/fcopy
 				 * implementation of 'file copy'. */
-    Tobe_FSLinkProc,		/* Function to process a 'Tobe_FSLink()' call.
+    NULL,		/* Function to process a 'Tobe_FSLink()' call.
 				 * Should be implemented only if the
 				 * filesystem supports links. */
     Tobe_FSListVolumesProc,	/* Function to list any filesystem volumes
@@ -1828,42 +1658,42 @@ static Tcl_Filesystem Tobe_Filesystem = {
     Tobe_FSFileAttrsSetProc,	/* Function to process a
 				 * 'Tobe_FSFileAttrsSet()' call, used by 'file
 				 * attributes'.  */
-    Tobe_FSCreateDirectoryProc, /* Function to process a
+    NULL, /* Function to process a
 				 * 'Tobe_FSCreateDirectory()' call. Should be
 				 * implemented unless the FS is read-only. */
-    Tobe_FSRemoveDirectoryProc, /* Function to process a
+    NULL, /* Function to process a
 				 * 'Tobe_FSRemoveDirectory()' call. Should be
 				 * implemented unless the FS is read-only. */
-    Tobe_FSDeleteFileProc,	/* Function to process a 'Tobe_FSDeleteFile()'
+    NULL,	/* Function to process a 'Tobe_FSDeleteFile()'
 				 * call.  Should be implemented unless the FS
 				 * is read-only. */
-    Tobe_FSCopyFileProc,	/* Function to process a 'Tobe_FSCopyFile()'
+    NULL,	/* Function to process a 'Tobe_FSCopyFile()'
 				 * call.  If not implemented Tcl will fall
 				 * back on open-r, open-w and fcopy as a
 				 * copying mechanism. */
-    Tobe_FSRenameFileProc,	/* Function to process a 'Tobe_FSRenameFile()'
+    NULL,	/* Function to process a 'Tobe_FSRenameFile()'
 				 * call.  If not implemented, Tcl will fall
 				 * back on a copy and delete mechanism. */
-    Tobe_FSCopyDirectoryProc,	/* Function to process a
+    NULL,	/* Function to process a
 				 * 'Tobe_FSCopyDirectory()' call.  If not
 				 * implemented, Tcl will fall back on a
 				 * recursive create-dir, file copy
 				 * mechanism. */
-    Tobe_FSLoadFileProc,	/* Function to process a 'Tobe_FSLoadFile()'
+    NULL,	/* Function to process a 'Tobe_FSLoadFile()'
 				 * call. If not implemented, Tcl will fall
 				 * back on a copy to native-temp followed by a
 				 * Tobe_FSLoadFile on that temporary copy. */
-    Tobe_FSUnloadFileProc,	/* Function to unload a previously
+    NULL,	/* Function to unload a previously
 				 * successfully loaded file.  If load was
 				 * implemented, then this should also be
 				 * implemented, if there is any cleanup action
 				 * required. */
-    Tobe_FSGetCwdProc,		/* Function to process a 'Tobe_FSGetCwd()'
+    NULL,		/* Function to process a 'Tobe_FSGetCwd()'
 				 * call. Most filesystems need not implement
 				 * this. It will usually only be called once,
 				 * if 'getcwd' is called before 'chdir'.  May
 				 * be NULL. */
-    Tobe_FSChdirProc,		/* Function to process a 'Tobe_FSChdir()'
+    NULL,		/* Function to process a 'Tobe_FSChdir()'
 				 * call. If filesystems do not implement this,
 				 * it will be emulated by a series of
 				 * directory access checks. Otherwise, virtual
@@ -1879,8 +1709,6 @@ static Tcl_Filesystem Tobe_Filesystem = {
 				 * and 'pwd' will fail inside the
 				 * filesystem. */
 };
-
-#endif
 
 //////////////////////////////////////////////////////////////
 
@@ -1898,7 +1726,6 @@ Zvfs_doInit(
     Tcl_Interp *interp,
     int safe)
 {
-    int n;
 #ifdef USE_TCL_STUBS
     if (Tcl_InitStubs(interp, "8.0", 0) == 0) {
 	return TCL_ERROR;
@@ -1906,8 +1733,8 @@ Zvfs_doInit(
 #endif
     Tcl_StaticPackage(interp, "zvfs", Tcl_Zvfs_Init, Tcl_Zvfs_SafeInit);
     if (!safe) {
-	Tcl_CreateCommand(interp, "zvfs::mount", ZvfsMountCmd, 0, 0);
-	Tcl_CreateCommand(interp, "zvfs::unmount", ZvfsUnmountCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "zvfs::mount", ZvfsMountObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "zvfs::unmount", ZvfsUnmountObjCmd, 0, 0);
 	Tcl_CreateObjCommand(interp, "zvfs::append", ZvfsAppendObjCmd, 0, 0);
 	Tcl_CreateObjCommand(interp, "zvfs::add", ZvfsAddObjCmd, 0, 0);
     }
@@ -1919,22 +1746,12 @@ Zvfs_doInit(
     Tcl_SetVar(interp, "::zvfs::auto_ext",
 	    ".tcl .tk .itcl .htcl .txt .c .h .tht", TCL_GLOBAL_ONLY);
     /* Tcl_CreateObjCommand(interp, "zip::open", ZipOpenObjCmd, 0, 0); */
-#ifndef USE_TCL_VFS
-    Tcl_GlobalEval(interp, zFileCopy);
-#endif
+
     if (!local.isInit) {
 	/* One-time initialization of the ZVFS */
-#ifdef USE_TCL_VFS
-	n = Tcl_FSRegister(0, &Tobe_Filesystem);
-#else
-	extern void TclAccessInsertProc();
-	extern void TclStatInsertProc();
-	extern void TclOpenFileChannelInsertProc();
-
-	TclAccessInsertProc(ZvfsFileAccess);
-	TclStatInsertProc(ZvfsFileStat);
-	TclOpenFileChannelInsertProc(ZvfsFileOpen);
-#endif
+	if(Tcl_FSRegister(NULL, &Tobe_Filesystem)) {
+	  return TCL_ERROR;
+	}
 	Tcl_InitHashTable(&local.fileHash, TCL_STRING_KEYS);
 	Tcl_InitHashTable(&local.archiveHash, TCL_STRING_KEYS);
 	local.isInit = 1;
@@ -1979,7 +1796,7 @@ ZvfsDumpObjCmd(
     int objc,			/* Number of arguments */
     Tcl_Obj *const* objv)	/* Values of all arguments */
 {
-    char *zFilename;
+    Tcl_Obj *zFilenameObj;
     Tcl_Channel chan;
     ZFile *pList;
     int rc;
@@ -1989,8 +1806,8 @@ ZvfsDumpObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "FILENAME");
 	return TCL_ERROR;
     }
-    zFilename = Tcl_GetString(objv[1]);
-    chan = Tcl_OpenFileChannel(interp, zFilename, "r", 0);
+    zFilenameObj=objv[1];
+    chan = Tcl_FSOpenFileChannel(interp, zFilenameObj, "r", 0);
     if (chan == 0) {
 	return TCL_ERROR;
     }
@@ -2021,7 +1838,7 @@ ZvfsDumpObjCmd(
 	Tcl_ListObjAppendElement(interp, pResult, pEntry);
 	pNext = pList->pNext;
 	Tcl_Free((void *) pList);
-	pList = pList->pNext;
+	pList = pNext;
     }
     return TCL_OK;
 }
@@ -2037,10 +1854,12 @@ writeFile(
     Tcl_Interp *interp,		/* Leave an error message here */
     Tcl_Channel out,		/* Write the file here */
     Tcl_Channel in,		/* Read data from this file */
-    char *zSrc,			/* Name the new ZIP file entry this */
-    char *zDest,		/* Name the new ZIP file entry this */
+    Tcl_Obj *zSrcPtr,		/* Name the new ZIP file entry this */
+    Tcl_Obj *zDestPtr,		/* Name the new ZIP file entry this */
     ZFile **ppList)		/* Put a ZFile struct for the new file here */
 {
+    char *zDest=Tcl_GetString(zDestPtr);
+
     z_stream stream;
     ZFile *p;
     int iEndOfData;
@@ -2052,7 +1871,7 @@ writeFile(
     char zOutBuf[100000];
     struct tm *tm;
     time_t now;
-    struct stat stat;
+    Tcl_StatBuf stat;
 
     /*
      * Create a new ZFile structure for this file.
@@ -2062,7 +1881,7 @@ writeFile(
     p = newZFile(nameLen, ppList);
     strcpy(p->zName, zDest);
     p->isSpecial = 0;
-    Tcl_Stat(zSrc, &stat);
+    Tcl_FSStat(zSrcPtr, &stat);
     now = stat.st_mtime;
     tm = localtime(&now);
     UnixTimeDate(tm, &p->dosDate, &p->dosTime);
@@ -2112,16 +1931,8 @@ writeFile(
     stream.next_in = (unsigned char *) zInBuf;
     stream.avail_out = sizeof(zOutBuf);
     stream.next_out = (unsigned char *) zOutBuf;
-#if 1
     deflateInit(&stream, 9);
-#else
-    {
-	int i, err, WSIZE = 0x8000, windowBits, level=6;
 
-	for (i = ((unsigned)WSIZE), windowBits = 0; i != 1; i >>= 1, ++windowBits);
-	err = deflateInit2(&stream, level, Z_DEFLATED, -windowBits, 8, 0);
-    }
-#endif
 
     p->iCRC = crc32(0, 0, 0);
     while (!Tcl_Eof(in)) {
@@ -2341,7 +2152,7 @@ ZvfsAppendObjCmd(
     int objc,			/* Number of arguments */
     Tcl_Obj *const* objv)	/* Values of all arguments */
 {
-    char *zArchive;
+    Tcl_Obj *zArchiveObj;
     Tcl_Channel chan;
     ZFile *pList = NULL, *pToc;
     int rc = TCL_OK, i;
@@ -2355,10 +2166,10 @@ ZvfsAppendObjCmd(
 	return TCL_ERROR;
     }
 
-    zArchive = Tcl_GetString(objv[1]);
-    chan = Tcl_OpenFileChannel(interp, zArchive, "r+", 0644);
+    zArchiveObj=objv[1];
+    chan = Tcl_FSOpenFileChannel(interp, zArchiveObj, "r+", 0644);
     if (chan == 0) {
-	chan = Tcl_OpenFileChannel(interp, zArchive, "w+", 0644);
+	chan = Tcl_FSOpenFileChannel(interp, zArchiveObj, "w+", 0644);
 	if (chan == 0) {
 	    return TCL_ERROR;
 	}
@@ -2401,15 +2212,15 @@ ZvfsAppendObjCmd(
      */
 
     for (i=2; rc==TCL_OK && i<objc; i+=2) {
-	char *zSrc = Tcl_GetString(objv[i]);
-	char *zDest = Tcl_GetString(objv[i+1]);
+	Tcl_Obj *zSrcObj=objv[i];
+	Tcl_Obj *zDestObj=objv[i+1];
 	Tcl_Channel in;
 
 	/*
 	 * Open the file that is to be added to the ZIP archive
 	 */
 
-	in = Tcl_OpenFileChannel(interp, zSrc, "r", 0);
+	in = Tcl_FSOpenFileChannel(interp, zSrcObj, "r", 0);
 	if (in == 0) {
 	    break;
 	}
@@ -2421,7 +2232,7 @@ ZvfsAppendObjCmd(
 	    break;
 	}
 
-	rc = writeFile(interp, chan, in, zSrc, zDest, &pList);
+	rc = writeFile(interp, chan, in, zSrcObj, zDestObj, &pList);
     }
 
     /*
@@ -2487,7 +2298,7 @@ ZvfsAddObjCmd(
     int objc,			/* Number of arguments */
     Tcl_Obj *const* objv)	/* Values of all arguments */
 {
-    char *zArchive;
+    Tcl_Obj *zArchiveObj;
     Tcl_Channel chan;
     ZFile *pList = NULL, *pToc;
     int rc = TCL_OK, i, j, oLen;
@@ -2523,10 +2334,10 @@ ZvfsAddObjCmd(
 	return TCL_ERROR;
     }
 
-    zArchive = Tcl_GetString(objv[1]);
-    chan = Tcl_OpenFileChannel(interp, zArchive, "r+", 0644);
+    zArchiveObj = objv[1];
+    chan = Tcl_FSOpenFileChannel(interp, zArchiveObj, "r+", 0644);
     if (chan == 0) {
-	chan = Tcl_OpenFileChannel(interp, zArchive, "w+", 0644);
+	chan = Tcl_FSOpenFileChannel(interp, zArchiveObj, "w+", 0644);
 	if (chan == 0) {
 	    return TCL_ERROR;
 	}
@@ -2570,14 +2381,15 @@ ZvfsAddObjCmd(
      */
 
     for (i=2; rc==TCL_OK && i<objc; i++) {
-	char *zSrc = Tcl_GetString(objv[i]);
+	Tcl_Obj *zSrcObj=objv[i];
+	char *zSrc = Tcl_GetString(zSrcObj);
 	Tcl_Channel in;
 
 	/*
 	 * Open the file that is to be added to the ZIP archive
 	 */
 
-	in = Tcl_OpenFileChannel(interp, zSrc, "r", 0);
+	in = Tcl_FSOpenFileChannel(interp, zSrcObj, "r", 0);
 	if (in == 0) {
 	    break;
 	}
@@ -2623,7 +2435,7 @@ ZvfsAddObjCmd(
 	    }
 	}
 	if (rc == TCL_OK) {
-	    rc = writeFile(interp, chan, in, zSrc, zSrc, &pList);
+	    rc = writeFile(interp, chan, in, zSrcObj, zSrcObj, &pList);
 	}
     }
 
@@ -2658,7 +2470,7 @@ ZvfsStartObjCmd(
     int objc,			/* Number of arguments */
     Tcl_Obj *const* objv)	/* Values of all arguments */
 {
-    char *zArchive;
+    Tcl_Obj *zArchiveObj;
     Tcl_Channel chan;
     ZFile *pList = NULL;
     int zipStart;
@@ -2671,8 +2483,8 @@ ZvfsStartObjCmd(
 	Tcl_WrongNumArgs(interp, 1, objv, "ARCHIVE");
 	return TCL_ERROR;
     }
-    zArchive = Tcl_GetString(objv[1]);
-    chan = Tcl_OpenFileChannel(interp, zArchive, "r", 0644);
+    zArchiveObj=objv[1];
+    chan = Tcl_FSOpenFileChannel(interp, zArchiveObj, "r", 0644);
     if (chan == 0) {
 	return TCL_ERROR;
     }
