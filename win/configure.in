@@ -126,20 +126,16 @@ AS_IF([test "${enable_shared+set}" = "set"], [
 ], [
   tcl_ok=yes
 ])
-AS_IF([test "$tcl_ok" = "yes"], [
-  AC_SUBST(ZLIB_DLL_FILE,[\${ZLIB_DLL_FILE}])
-  AS_IF([test "$do64bit" = "yes"], [
-    AS_IF([test "$GCC" == "yes"],[
-      AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win64/libz.dll.a])
-    ], [
-      AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win64/zdll.lib])
-    ])
-  ], [
-    AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
-  ])
-], [
-  AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
-])
+AC_ARG_WITH(zlib, [  --with-zlib       use Native Zlib library],
+    with_zlib=$withval, with_zlib=NO_ZLIB
+)
+AS_IF(
+  [test "with_zlib" = "NO_ZLIB"], [AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])],
+  [test "$tcl_ok" != "yes"], [AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])],
+  [test "$do64bit" = "yes"], [AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])],
+  [test "$with_zlib" = "yes"] , [AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])],
+  [AC_SUBST(ZLIB_LIBS,[$with_zlib])]
+)
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
 AC_CHECK_TYPE([intptr_t], [
