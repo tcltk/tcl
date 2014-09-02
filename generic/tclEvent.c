@@ -1299,7 +1299,7 @@ Tcl_FinalizeThread(void)
 	TclFinalizeAsync();
 	TclFinalizeThreadObjects();
     }
-    if (!TclInExit()) {
+    if (TclFullFinalizationRequested()) {
 	/*
 	 * Blow away all thread local storage blocks.
 	 *
