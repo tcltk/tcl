@@ -1,0 +1,39 @@
+'\"
+'\" Copyright (c) 2014 Sean Woods
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\"
+.TH zvfs n 0.1 Zvfs "Zvfs Commands"
+.so man.macros
+.BS
+'\" Note:  do not modify the .SH NAME line immediately below!
+.SH NAME
+http \- Client-side implementation of the HTTP/1.1 protocol
+.SH SYNOPSIS
+\fBpackage require zvfs ?0.1?\fR
+.sp
+\fB::zvfs::mount \fIZIPFILE \fIMOUNTPOINT\fR ...?
+.sp
+\fB::zvfs::unmount \fIZIPFILE\fR ...?
+.sp
+\fB::zvfs::append ?\fI\-option value\fR ...?
+.sp
+\fB::zvfs::add ?\fI\-option value\fR ...?
+.sp
+\fB::zvfs::exists ?\fI\-option value\fR ...?
+.sp
+\fB::zvfs::info ?\fI\-option value\fR ...?
+.sp
+\fB::zvfs::list ?\fI\-option value\fR ...?
+.sp
+\fB::zvfs::dump ?\fI\-option value\fR ...?
+.sp
+\fB::zvfs::start ?\fI\-option value\fR ...?
+.BE
+.SH DESCRIPTION
+.PP
+The \fBzvfs\fR package provides tcl with the ability to manipulate
+the contents of a zip file archive as a virtual file system.
+.PP
+The \fB::zvfs::mount\fR procedure mounts a zipfile as a VFS.
