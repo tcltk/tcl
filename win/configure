@@ -678,8 +678,9 @@ VC_MANIFEST_EMBED_EXE
 VC_MANIFEST_EMBED_DLL
 LDFLAGS_DEFAULT
 CFLAGS_DEFAULT
-ZLIB_LIBS
 ZLIB_OBJS
+ZLIB_LIBS
+ZLIB_DLL_FILE
 CFLAGS_WARNING
 CFLAGS_OPTIMIZE
 CFLAGS_DEBUG
@@ -4669,20 +4670,42 @@ else
 
 fi
 
-if test "with_zlib" = "NO_ZLIB"; then :
-  ZLIB_OBJS=\${ZLIB_OBJS}
+if test "$tcl_ok" = "yes"; then :
 
+  ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
+
+
+fi
+tcl_no_zlib_dll=no
+if test "$with_zlib" = "NO_ZLIB"; then :
+  tcl_no_zlib_dll=yes
 elif test "$tcl_ok" != "yes"; then :
-  ZLIB_OBJS=\${ZLIB_OBJS}
-
+  tcl_no_zlib_dll=yes
 elif test "$do64bit" = "yes"; then :
-  ZLIB_OBJS=\${ZLIB_OBJS}
-
+  tcl_no_zlib_dll=yes
 elif test "$with_zlib" = "yes" ; then :
-  ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+
+    ZLIB_DLL_FILE=\${ZLIB_DLL_FILE}
+
+    ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+
 
 else
-  ZLIB_LIBS=$with_zlib
+
+    ZLIB_DLL_FILE=${with_zlib}
+
+    ZLIB_LIBS=$with_zlib
+
+
+
+fi
+if test "$tcl_no_zlib_dll" = "yes"; then :
+
+    ZLIB_OBJS=\${ZLIB_OBJS}
+
+    ZLIB_DLL_FILE=""
+
+    ZLIB_LIBS=""
 
 
 fi
