@@ -426,13 +426,11 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 
 tclkit: $(TCLKIT)
 
-$(TCLKIT): $(TCLSH_OBJS) @LIBRARIES@ ${TCL_OBJS} $(CAT32) tclsh.$(RES)
-	$(CC) $(CFLAGS) ${TCL_OBJS} $(TCLSH_OBJS) $(LIBS) \
-        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
-	PWD=`pwd`
+$(TCLKIT): $(TCLSH)
 	rm -f tclkit.zip
-	cp $(TCLSH) $(TCLKIT)
+	PWD=`pwd`
 	cd ${prefix}/lib ; zip -rq ${PWD}/tclkit.zip tcl8 tcl8.6
+	cp -f $(TCLSH) $(TCLKIT)
 	cat tclkit.zip >> $(TCLKIT)
 
 cat32.$(OBJEXT): cat.c
