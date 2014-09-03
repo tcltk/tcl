@@ -1412,9 +1412,7 @@ const TclStubs tclStubs = {
     Tcl_FindSymbol, /* 628 */
     Tcl_FSUnloadFile, /* 629 */
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
-    Tcl_Zvfs_Init, /* 631 */
-    Tcl_Zvfs_Mount, /* 632 */
-    Tcl_Zvfs_Umount, /* 633 */
+    Tcl_Zvfs_Boot, /* 631 */
 };
 
 /* !END!: Do not edit above this line. */
