@@ -654,7 +654,6 @@ null.zip:
 	zip null.zip .empty 
 
 ${TCLKIT_EXE}: ${TCL_EXE} null.zip
-	rm -f tclkit.zip
 	PWD=`pwd`
 	cp -f ${TCL_EXE} ${TCLKIT_EXE}
 	cat null.zip >> ${TCLKIT_EXE}
