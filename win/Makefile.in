@@ -432,7 +432,7 @@ null.zip:
 	
 $(TCLKIT): $(TCLSH) null.zip
 	PWD=`pwd`
-	cp -f $(WISH) $(TCLKIT)
+	cp -f $(TCLSH) $(TCLKIT)
 	cat null.zip >> $(TCLKIT)
 	cd ${prefix}/lib ; zip -rAq ${PWD}/$(TCLKIT) tcl8 tcl8.6
 
