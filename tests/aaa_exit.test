@@ -16,22 +16,35 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
-
 test exit-1.1 {normal, quick exit} {
-     set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 0;exit}\" 2>@ stderr" r]
-     set aft [after 5000 {set done "Quick exit hangs !!!"}]
+     set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 0;exit}\"" r]
+     set aft [after 1000 {set done "Quick exit hangs !!!"}]
      fileevent $f readable {after cancel $aft;set done OK}
      vwait done
-     catch {fconfigure $f -blocking 0;close $f}
+     if {$done != "OK"} {
+     	fconfigure $f -blocking 0
+	close $f
+     } else {
+	if {[catch {close $f} err]} {
+	    set done "Quick exit misbehaves: $err"
+	}
+     }
      set done
 } OK
 
 test exit-1.2 {full-finalized exit} {
-     set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 1;exit}\" 2>@ stderr" r]
-     set aft [after 5000 {set done "Full-finalized exit hangs !!!"}]
+     set f [open "|[interpreter] << \"exec [interpreter] << {set ::env(TCL_FINALIZE_ON_EXIT) 1;exit}\"" r]
+     set aft [after 1000 {set done "Full-finalized exit hangs !!!"}]
      fileevent $f readable {after cancel $aft;set done OK}
      vwait done
-     catch {fconfigure $f -blocking 0;close $f}
+     if {$done != "OK"} {
+     	fconfigure $f -blocking 0
+	close $f
+     } else {
+	if {[catch {close $f} err]} {
+	    set done "Full-finalized exit misbehaves: $err"
+	}
+     }
      set done
 } OK
 
