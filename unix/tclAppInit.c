@@ -108,28 +108,7 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-    CONST char *cp=Tcl_GetNameOfExecutable();
-    /* We have to initialize the virtual filesystem before calling
-    ** Tcl_Init().  Otherwise, Tcl_Init() will not be able to find
-    ** its startup script files.
-    */
-    Tcl_Zvfs_Init(interp);
-    if(!Tcl_Zvfs_Mount(interp, cp, "/zvfs")) {
-      Tcl_Obj *vfsinitscript=Tcl_NewStringObj("/zvfs/main.tcl",-1);
-      Tcl_Obj *vfstcllib=Tcl_NewStringObj("/zvfs/tcl8.6",-1);
-
-      Tcl_IncrRefCount(vfsinitscript);
-      Tcl_IncrRefCount(vfstcllib);
-
-      if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
-        Tcl_SetStartupScript(vfsinitscript,NULL);
-      }
-      if(Tcl_FSAccess(vfstcllib,F_OK)==0) {
-        Tcl_SetVar2(interp, "env", "TCL_LIBRARY", Tcl_GetString(vfstcllib), TCL_GLOBAL_ONLY);
-      }
-      Tcl_DecrRefCount(vfsinitscript);
-      Tcl_DecrRefCount(vfstcllib);
-    }
+    Tcl_Zvfs_Boot(interp);
     
     if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;

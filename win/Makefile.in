@@ -426,12 +426,15 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
 
 tclkit: $(TCLKIT)
 
-$(TCLKIT): $(TCLSH)
-	rm -f tclkit.zip
+null.zip:
+	touch .empty
+	zip null.zip .empty
+	
+$(TCLKIT): $(TCLSH) null.zip
 	PWD=`pwd`
-	cd ${prefix}/lib ; zip -rq ${PWD}/tclkit.zip tcl8 tcl8.6
-	cp -f $(TCLSH) $(TCLKIT)
-	cat tclkit.zip >> $(TCLKIT)
+	cp -f $(WISH) $(TCLKIT)
+	cat null.zip >> $(TCLKIT)
+	cd ${prefix}/lib ; zip -rAq ${PWD}/$(TCLKIT) tcl8 tcl8.6
 
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
