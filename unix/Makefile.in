@@ -649,12 +649,15 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
 
-${TCLKIT_EXE}: ${TCL_EXE}
-	rm -f tclkit.zip
+null.zip:
+	touch .empty
+	zip null.zip .empty 
+
+${TCLKIT_EXE}: ${TCL_EXE} null.zip
 	PWD=`pwd`
-	cd ${prefix}/lib ; zip -rAq ${PWD}/tclkit.zip tcl8 tcl8.6
 	cp -f ${TCL_EXE} ${TCLKIT_EXE}
-	cat tclkit.zip >> ${TCLKIT_EXE}
+	cat null.zip >> ${TCLKIT_EXE}
+	cd ${prefix}/lib ; zip -rAq ${PWD}/${TCLKIT_EXE} tcl8 tcl8.6
 	
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
 ${NATIVE_TCLSH}:
