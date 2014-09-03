@@ -345,18 +345,20 @@ COREOBJS = \
 	$(TMP_DIR)\tclVar.obj \
 	$(TMP_DIR)\tclZlib.obj
 
-ZLIBOBJS = \
-	$(TMP_DIR)\adler32.obj \
-	$(TMP_DIR)\compress.obj \
-	$(TMP_DIR)\crc32.obj \
-	$(TMP_DIR)\deflate.obj \
-	$(TMP_DIR)\infback.obj \
-	$(TMP_DIR)\inffast.obj \
-	$(TMP_DIR)\inflate.obj \
-	$(TMP_DIR)\inftrees.obj \
-	$(TMP_DIR)\trees.obj \
-	$(TMP_DIR)\uncompr.obj \
-	$(TMP_DIR)\zutil.obj
+ZLIBOBJS = $(TMP_DIR)\miniz.obj
+
+#ZLIBOBJS = \
+#	$(TMP_DIR)\adler32.obj \
+#	$(TMP_DIR)\compress.obj \
+#	$(TMP_DIR)\crc32.obj \
+#	$(TMP_DIR)\deflate.obj \
+#	$(TMP_DIR)\infback.obj \
+#	$(TMP_DIR)\inffast.obj \
+#	$(TMP_DIR)\inflate.obj \
+#	$(TMP_DIR)\inftrees.obj \
+#	$(TMP_DIR)\trees.obj \
+#	$(TMP_DIR)\uncompr.obj \
+#	$(TMP_DIR)\zutil.obj
 
 TOMMATHOBJS = \
 	$(TMP_DIR)\bncore.obj \
@@ -1052,6 +1054,11 @@ $<
 <<
 
 {$(COMPATDIR)\zlib}.c{$(TMP_DIR)}.obj::
+	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
+$<
+<<
+
+{$(COMPATDIR)\miniz}.c{$(TMP_DIR)}.obj::
 	$(cc32) $(TCL_CFLAGS) -DBUILD_tcl -Fo$(TMP_DIR)\ @<<
 $<
 <<

@@ -102,6 +102,7 @@ WIN_DIR			= $(TOP_DIR)/win
 COMPAT_DIR		= $(TOP_DIR)/compat
 PKGS_DIR		= $(TOP_DIR)/pkgs
 ZLIB_DIR		= $(COMPAT_DIR)/zlib
+MZLIB_DIR		= $(COMPAT_DIR)/miniz
 
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
@@ -160,7 +161,7 @@ TCL_EXE			= @TCL_EXE@
 # Setting the VPATH variable to a list of paths will cause the Makefile to
 # look into these paths when resolving .c to .obj dependencies.
 
-VPATH = $(GENERIC_DIR):$(TOMMATH_DIR):$(WIN_DIR):$(COMPAT_DIR):$(ZLIB_DIR)
+VPATH = $(GENERIC_DIR):$(TOMMATH_DIR):$(WIN_DIR):$(COMPAT_DIR):$(MZLIB_DIR)
 
 AR		= @AR@
 RANLIB		= @RANLIB@
@@ -390,18 +391,19 @@ STUB_OBJS = \
 
 TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
-ZLIB_OBJS = \
-	adler32.$(OBJEXT) \
-	compress.$(OBJEXT) \
-	crc32.$(OBJEXT) \
-	deflate.$(OBJEXT) \
-	infback.$(OBJEXT) \
-	inffast.$(OBJEXT) \
-	inflate.$(OBJEXT) \
-	inftrees.$(OBJEXT) \
-	trees.$(OBJEXT) \
-	uncompr.$(OBJEXT) \
-	zutil.$(OBJEXT)
+ZLIB_OBJS = miniz.$(OBJEXT)
+#ZLIB_OBJS = \
+#	adler32.$(OBJEXT) \
+#	compress.$(OBJEXT) \
+#	crc32.$(OBJEXT) \
+#	deflate.$(OBJEXT) \
+#	infback.$(OBJEXT) \
+#	inffast.$(OBJEXT) \
+#	inflate.$(OBJEXT) \
+#	inftrees.$(OBJEXT) \
+#	trees.$(OBJEXT) \
+#	uncompr.$(OBJEXT) \
+#	zutil.$(OBJEXT)
 
 TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@
 

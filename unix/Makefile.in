@@ -239,6 +239,8 @@ DLTEST_DIR		= @TCL_SRC_DIR@/unix/dltest
 TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 
 ZLIB_DIR		= ${COMPAT_DIR}/zlib
+MZLIB_DIR		= ${COMPAT_DIR}/miniz
+
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 
 CC			= @CC@
@@ -353,8 +355,10 @@ CYGWIN_OBJS = tclWinError.o
 
 DTRACE_OBJ = tclDTrace.o
 
-ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
-	Zinffast.o Zinflate.o Zinftrees.o Ztrees.o Zuncompr.o Zzutil.o
+#ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
+#	Zinffast.o Zinflate.o Zinftrees.o Ztrees.o Zuncompr.o Zzutil.o
+
+ZLIB_OBJS = miniz.o
 
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
@@ -587,18 +591,20 @@ DTRACE_HDR = tclDTrace.h
 
 DTRACE_SRC = $(GENERIC_DIR)/tclDTrace.d
 
-ZLIB_SRCS = \
-	$(ZLIB_DIR)/adler32.c \
-	$(ZLIB_DIR)/compress.c \
-	$(ZLIB_DIR)/crc32.c \
-	$(ZLIB_DIR)/deflate.c \
-	$(ZLIB_DIR)/infback.c \
-	$(ZLIB_DIR)/inffast.c \
-	$(ZLIB_DIR)/inflate.c \
-	$(ZLIB_DIR)/inftrees.c \
-	$(ZLIB_DIR)/trees.c \
-	$(ZLIB_DIR)/uncompr.c \
-	$(ZLIB_DIR)/zutil.c
+#ZLIB_SRCS = \
+#	$(ZLIB_DIR)/adler32.c \
+#	$(ZLIB_DIR)/compress.c \
+#	$(ZLIB_DIR)/crc32.c \
+#	$(ZLIB_DIR)/deflate.c \
+#	$(ZLIB_DIR)/infback.c \
+#	$(ZLIB_DIR)/inffast.c \
+#	$(ZLIB_DIR)/inflate.c \
+#	$(ZLIB_DIR)/inftrees.c \
+#	$(ZLIB_DIR)/trees.c \
+#	$(ZLIB_DIR)/uncompr.c \
+#	$(ZLIB_DIR)/zutil.c
+
+ZLIB_SRCS=$(MZLIB_DIR)/miniz.c
 
 # Note: don't include DL_SRCS or MAC_OSX_SRCS in SRCS: most of those files
 # won't compile on the current machine, and they will cause problems for
@@ -1665,29 +1671,33 @@ waitpid.o: $(COMPAT_DIR)/waitpid.c
 fake-rfc2553.o: $(COMPAT_DIR)/fake-rfc2553.c
 	$(CC) -c $(STUB_CC_SWITCHES) $(COMPAT_DIR)/fake-rfc2553.c
 
+# For building miniz
+miniz.o: $(MZLIB_DIR)/miniz.c
+	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(MZLIB_DIR)/miniz.c
+
 # For building zlib, only used in some build configurations
-Zadler32.o: $(ZLIB_DIR)/adler32.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/adler32.c
-Zcompress.o: $(ZLIB_DIR)/compress.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/compress.c
-Zcrc32.o:    $(ZLIB_DIR)/crc32.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/crc32.c
-Zdeflate.o:  $(ZLIB_DIR)/deflate.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/deflate.c
-Zinfback.o:  $(ZLIB_DIR)/infback.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/infback.c
-Zinffast.o:  $(ZLIB_DIR)/inffast.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inffast.c
-Zinflate.o:  $(ZLIB_DIR)/inflate.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inflate.c
-Zinftrees.o: $(ZLIB_DIR)/inftrees.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inftrees.c
-Ztrees.o:    $(ZLIB_DIR)/trees.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/trees.c
-Zuncompr.o:  $(ZLIB_DIR)/uncompr.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/uncompr.c
-Zzutil.o:    $(ZLIB_DIR)/zutil.c
-	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/zutil.c
+#Zadler32.o: $(ZLIB_DIR)/adler32.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/adler32.c
+#Zcompress.o: $(ZLIB_DIR)/compress.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/compress.c
+#Zcrc32.o:    $(ZLIB_DIR)/crc32.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/crc32.c
+#Zdeflate.o:  $(ZLIB_DIR)/deflate.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/deflate.c
+#Zinfback.o:  $(ZLIB_DIR)/infback.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/infback.c
+#Zinffast.o:  $(ZLIB_DIR)/inffast.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inffast.c
+#Zinflate.o:  $(ZLIB_DIR)/inflate.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inflate.c
+#Zinftrees.o: $(ZLIB_DIR)/inftrees.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/inftrees.c
+#Ztrees.o:    $(ZLIB_DIR)/trees.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/trees.c
+#Zuncompr.o:  $(ZLIB_DIR)/uncompr.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/uncompr.c
+#Zzutil.o:    $(ZLIB_DIR)/zutil.c
+#	$(CC) -c -o $@ $(CC_SWITCHES) -I$(ZLIB_DIR) $(ZLIB_DIR)/zutil.c
 
 #--------------------------------------------------------------------------
 # Stub library binaries, these must be compiled for use in a shared library
