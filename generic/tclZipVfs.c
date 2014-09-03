@@ -1762,6 +1762,43 @@ Zvfs_doInit(
     return TCL_OK;
 }
 
+/*
+** Boot a shell, mount the executable's VFS, detect main.tcl
+*/
+int Tcl_Zvfs_Boot(Tcl_Interp *interp) {
+
+  CONST char *cp=Tcl_GetNameOfExecutable();
+  /* We have to initialize the virtual filesystem before calling
+  ** Tcl_Init().  Otherwise, Tcl_Init() will not be able to find
+  ** its startup script files.
+  */
+  if(Zvfs_doInit(interp, 0)) {
+    return TCL_ERROR;
+  }
+  if(!Tcl_Zvfs_Mount(interp, cp, "/zvfs")) {
+      Tcl_Obj *vfsinitscript=Tcl_NewStringObj("/zvfs/main.tcl",-1);
+      Tcl_Obj *vfstcllib=Tcl_NewStringObj("/zvfs/tcl8.6",-1);
+      Tcl_Obj *vfstklib=Tcl_NewStringObj("/zvfs/tk8.6",-1);
+
+      Tcl_IncrRefCount(vfsinitscript);
+      Tcl_IncrRefCount(vfstcllib);
+      Tcl_IncrRefCount(vfstklib);
+      
+      if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+        Tcl_SetStartupScript(vfsinitscript,NULL);
+      }
+      if(Tcl_FSAccess(vfstcllib,F_OK)==0) {
+        Tcl_SetVar2(interp, "env", "TCL_LIBRARY", Tcl_GetString(vfstcllib), TCL_GLOBAL_ONLY);
+      }
+      if(Tcl_FSAccess(vfstklib,F_OK)==0) {
+        Tcl_SetVar2(interp, "env", "TK_LIBRARY", Tcl_GetString(vfstklib), TCL_GLOBAL_ONLY);
+      }
+      Tcl_DecrRefCount(vfsinitscript);
+      Tcl_DecrRefCount(vfstcllib);
+  }
+  return TCL_OK;
+}
+
 int
 Tcl_Zvfs_Init(
     Tcl_Interp *interp)
