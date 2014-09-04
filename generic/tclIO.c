@@ -58,17 +58,6 @@ typedef struct NextChannelHandler {
 } NextChannelHandler;
 
 /*
- * The following structure describes the event that is added to the Tcl
- * event queue by the channel handler check procedure.
- */
-
-typedef struct ChannelHandlerEvent {
-    Tcl_Event header;		/* Standard header for all events. */
-    Channel *chanPtr;		/* The channel that is ready. */
-    int readyMask;		/* Events that have occurred. */
-} ChannelHandlerEvent;
-
-/*
  * The following structure is used by Tcl_GetsObj() to encapsulates the
  * state for a "gets" operation.
  */
