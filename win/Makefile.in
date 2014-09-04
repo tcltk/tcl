@@ -392,6 +392,9 @@ STUB_OBJS = \
 
 TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
+TCLKIT_OBJS = tclKitInit.$(OBJEXT)
+
+
 ZLIB_OBJS = \
 	adler32.$(OBJEXT) \
 	compress.$(OBJEXT) \
@@ -428,11 +431,13 @@ tclkit: $(TCLKIT)
 
 null.zip:
 	touch .empty
-	zip null.zip .empty
+	zip -q null.zip .empty
 	
-$(TCLKIT): $(TCLSH) null.zip
+$(TCLKIT): $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip
+	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
+        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	@VC_MANIFEST_EMBED_EXE@
 	PWD=`pwd`
-	cp -f $(TCLSH) $(TCLKIT)
 	cat null.zip >> $(TCLKIT)
 	cd ${prefix}/lib ; zip -rAq ${PWD}/$(TCLKIT) tcl8 tcl8.6
 
@@ -498,6 +503,9 @@ testMain.${OBJEXT}: tclAppInit.c
 
 tclMain2.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
+
+tclKitInit.$(OBJEXT): tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) -DTCL_KIT @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
 #
