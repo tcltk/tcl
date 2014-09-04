@@ -285,6 +285,9 @@ ${AC_FLAGS} ${PROTO_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
 
 TCLSH_OBJS = tclAppInit.o
 
+TCLKIT_OBJS = tclKitInit.o
+
+
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o
 
@@ -648,19 +651,24 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
+	
+# Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
+${NATIVE_TCLSH}:
 
 null.zip:
 	touch .empty
 	zip null.zip .empty 
 
-${TCLKIT_EXE}: ${TCL_EXE} null.zip
+${TCLKIT_EXE}: ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip
+	$(CC) -c $(APP_CC_SWITCHES) \
+		-DTCL_KIT $(UNIX_DIR)/tclAppInit.c -o tclKitInit.o
+	${CC} ${CFLAGS} ${LDFLAGS} tclKitInit.o \
+		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
+		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
 	PWD=`pwd`
 	cp -f ${TCL_EXE} ${TCLKIT_EXE}
 	cat null.zip >> ${TCLKIT_EXE}
 	cd ${prefix}/lib ; zip -rAq ${PWD}/${TCLKIT_EXE} tcl8 tcl8.6
-	
-# Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
-${NATIVE_TCLSH}:
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -1035,7 +1043,7 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
 	fi;
-
+	
 # Object files used on all Unix systems:
 
 REGHDRS=$(GENERIC_DIR)/regex.h $(GENERIC_DIR)/regguts.h \
