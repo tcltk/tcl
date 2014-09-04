@@ -666,7 +666,6 @@ ${TCLKIT_EXE}: ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
 	PWD=`pwd`
-	cp -f ${TCL_EXE} ${TCLKIT_EXE}
 	cat null.zip >> ${TCLKIT_EXE}
 	cd ${prefix}/lib ; zip -rAq ${PWD}/${TCLKIT_EXE} tcl8 tcl8.6
 
