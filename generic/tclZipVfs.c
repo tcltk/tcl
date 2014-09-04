@@ -1785,7 +1785,10 @@ int Tcl_Zvfs_Boot(Tcl_Interp *interp) {
       Tcl_IncrRefCount(vfstklib);
       
       if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+	/* Startup script should be set before calling Tcl_AppInit */
         Tcl_SetStartupScript(vfsinitscript,NULL);
+      } else {
+        Tcl_SetStartupScript(NULL,NULL);
       }
       if(Tcl_FSAccess(vfstcllib,F_OK)==0) {
         Tcl_SetVar2(interp, "env", "TCL_LIBRARY", Tcl_GetString(vfstcllib), TCL_GLOBAL_ONLY);
