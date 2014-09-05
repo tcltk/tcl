@@ -35,15 +35,15 @@ typedef struct ChannelHandler {
 
 /*
  * This structure keeps track of the current ChannelHandler being invoked in
- * the current invocation of ChannelHandlerEventProc. There is a potential
+ * the current invocation of Tcl_NotifyChannel. There is a potential
  * problem if a ChannelHandler is deleted while it is the current one, since
- * ChannelHandlerEventProc needs to look at the nextPtr field. To handle this
+ * Tcl_NotifyChannel needs to look at the nextPtr field. To handle this
  * problem, structures of the type below indicate the next handler to be
  * processed for any (recursively nested) dispatches in progress. The
  * nextHandlerPtr field is updated if the handler being pointed to is deleted.
- * The nextPtr field is used to chain together all recursive invocations, so
- * that Tcl_DeleteChannelHandler can find all the recursively nested
- * invocations of ChannelHandlerEventProc and compare the handler being
+ * The nestedHandlerPtr field is used to chain together all recursive
+ * invocations, so that Tcl_DeleteChannelHandler can find all the recursively
+ * nested invocations of Tcl_NotifyChannel and compare the handler being
  * deleted against the NEXT handler to be invoked in that invocation; when it
  * finds such a situation, Tcl_DeleteChannelHandler updates the nextHandlerPtr
  * field of the structure to the next handler.
@@ -54,7 +54,7 @@ typedef struct NextChannelHandler {
 					 * this invocation. */
     struct NextChannelHandler *nestedHandlerPtr;
 					/* Next nested invocation of
-					 * ChannelHandlerEventProc. */
+					 * Tcl_NotifyChannel. */
 } NextChannelHandler;
 
 /*
@@ -119,7 +119,7 @@ typedef struct CopyState {
 typedef struct ThreadSpecificData {
     NextChannelHandler *nestedHandlerPtr;
 				/* This variable holds the list of nested
-				 * ChannelHandlerEventProc invocations. */
+				 * Tcl_NotifyChannel invocations. */
     ChannelState *firstCSPtr;	/* List of all channels currently open,
 				 * indexed by ChannelState, as only one
 				 * ChannelState exists per set of stacked
@@ -8089,7 +8089,7 @@ Tcl_NotifyChannel(
 
     /*
      * Add this invocation to the list of recursive invocations of
-     * ChannelHandlerEventProc.
+     * Tcl_NotifyChannel.
      */
 
     nh.nextHandlerPtr = NULL;
@@ -8408,7 +8408,7 @@ Tcl_DeleteChannelHandler(
     }
 
     /*
-     * If ChannelHandlerEventProc is about to process this handler, tell it to
+     * If Tcl_NotifyChannel is about to process this handler, tell it to
      * process the next one instead - we are going to delete *this* one.
      */
 
