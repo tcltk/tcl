@@ -1480,7 +1480,7 @@ TclCompileLreplaceCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
-    int idx1, idx2, i, offset;
+    int idx1, idx2, i, offset, offset2;
 
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
@@ -1586,12 +1586,18 @@ TclCompileLreplaceCmd(
 	TclEmitOpcode(		INST_GT,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	offset2 = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
 	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+		envPtr->codeStart + offset2 + 1);
 	TclAdjustStackDepth(-1, envPtr);
     }
     TclEmitOpcode(		INST_DUP,			envPtr);
@@ -1636,12 +1642,18 @@ TclCompileLreplaceCmd(
 	TclEmitOpcode(		INST_GT,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	offset2 = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
 	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+		envPtr->codeStart + offset2 + 1);
 	TclAdjustStackDepth(-1, envPtr);
     }
     TclEmitOpcode(		INST_DUP,			envPtr);
