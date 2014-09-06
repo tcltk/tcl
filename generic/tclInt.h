@@ -1758,7 +1758,7 @@ MODULE_SCOPE ObjChunkHeader *tclObjChunkList; /* initialised in tclObj.c */
 
 typedef struct ObjChunkInfo {
     Tcl_Obj *beg,*end;           /* [beg,end[ is the chunk's range */
-    int free;                    /* temporary counter for gc       */
+    long free;                   /* temporary counter for gc ; long for word-aligt  */
 } ObjChunkInfo;
 
 MODULE_SCOPE void TclpLockAlloc(void);

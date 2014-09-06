@@ -581,6 +581,7 @@ TclThreadAllocObj(void)
 		ObjChunkHeader *chunk = ((ObjChunkHeader *)newObjsPtr) - 1;
 
 		chunk->end = newObjsPtr + NOBJALLOC;
+
 		Tcl_MutexLock(objLockPtr);
 		chunk->next = tclObjChunkList;
 		tclObjChunkList = chunk;

@@ -4516,7 +4516,17 @@ Tcl_RepresentationCmd(
 
 static int ComparePointers(const void *a, const void *b)
 {
-    return (*(char **)a)-(*(char **)b);
+    char *aa = *(char **)a;
+    char *bb = *(char **)b;
+
+    /*
+     * BEWARE: ptr difference (aa-bb) is *not* a proper order
+     * (an extra bit is needed for that)
+     * Hence we resort to explicit pointer comparison
+     * Which stores this bit in the Carry flag.
+     */
+
+    return (aa<bb)?-1:((aa>bb)?1:0);
 }
 
 #define GC_BISECT_MIN_RECURS 4
@@ -4533,8 +4543,9 @@ static ObjChunkInfo *GC_FindChunkInfo(Tcl_Obj *obj, ObjChunkInfo *itab, int len)
                     return itab;
                 }
             }
-            fprintf(stderr,"# GC internal error: no chunk enclosing obj %p\n",obj);
-            return NULL;
+            /* no Panic : avoid dumping core with a huge heap */
+            fprintf(stderr,"### GC internal error: no chunk enclosing obj %p\n",obj);
+            exit(-1);
         }
         mid = len / 2;
         if (obj >= itab[mid].beg) {
@@ -4613,6 +4624,7 @@ Tcl_GcCmd(
     for (chunk = tclObjChunkList; chunk; chunk = chunk->next) {
         *(tmp++) = chunk;
     }
+
     qsort(infotab, nch, sizeof(ObjChunkHeader *), ComparePointers);
 
     /* in-place cacheing of chunk headers into chunk infos */
@@ -4643,26 +4655,30 @@ Tcl_GcCmd(
         delta = info->free - room;
         chunk = ((ObjChunkHeader *)info->beg) - 1;
         if (delta > 0) {
-            fprintf(stderr,"# GC internal error: chunk at %p counts %d frees but has room for %d only !\n",
+            fprintf(stderr,"# GC internal error: chunk at %p counts %ld frees but has room for %d only !\n",
                     chunk,
                     info->free,
                     room);
-            break;
+            exit(-1);
         }
         if (delta < 0) {
+#if 0
             fprintf(stderr," . chunk %p : %d / %d\n",
                     chunk,
                     -delta,
                     room);
+#endif
             continue;
         }
         /* here we have a purgeable chunk */
         npurge += room;
         chunk->end = NULL ; /* mark it for final sweep of chunks */
         info->free = -1 ; /* mark it for final sweep of objs*/
+#if 0
         fprintf(stderr," PURGE chunk %p : 0 / %d\n",
                 chunk,
                 room);
+#endif
     }
 
     if (!npurge) {
