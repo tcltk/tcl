@@ -1765,9 +1765,10 @@ Zvfs_doInit(
 /*
 ** Boot a shell, mount the executable's VFS, detect main.tcl
 */
-int Tcl_Zvfs_Boot(Tcl_Interp *interp) {
-
+int Tcl_Zvfs_Boot(Tcl_Interp *interp,const char *vfsmountpoint,const char *initscript) {
   CONST char *cp=Tcl_GetNameOfExecutable();
+  char filepath[256];
+  
   /* We have to initialize the virtual filesystem before calling
   ** Tcl_Init().  Otherwise, Tcl_Init() will not be able to find
   ** its startup script files.
@@ -1775,15 +1776,34 @@ int Tcl_Zvfs_Boot(Tcl_Interp *interp) {
   if(Zvfs_doInit(interp, 0)) {
     return TCL_ERROR;
   }
-  if(!Tcl_Zvfs_Mount(interp, cp, "/zvfs")) {
-      Tcl_Obj *vfsinitscript=Tcl_NewStringObj("/zvfs/main.tcl",-1);
-      Tcl_Obj *vfstcllib=Tcl_NewStringObj("/zvfs/tcl8.6",-1);
-      Tcl_Obj *vfstklib=Tcl_NewStringObj("/zvfs/tk8.6",-1);
-
+  if(!Tcl_Zvfs_Mount(interp, cp, vfsmountpoint)) {
+      Tcl_Obj *vfsinitscript;
+      Tcl_Obj *vfstcllib;
+      Tcl_Obj *vfstklib;
+      
+      
+      strcpy(filepath,vfsmountpoint);
+      strcat(filepath,"/");
+      strcat(filepath,initscript);
+      vfsinitscript=Tcl_NewStringObj(filepath,-1);
+      strcpy(filepath,vfsmountpoint);
+      strcat(filepath,"/tcl8.6");
+      vfstcllib=Tcl_NewStringObj(filepath,-1);      
+      strcpy(filepath,vfsmountpoint);
+      strcat(filepath,"/tk8.6");
+      vfstklib=Tcl_NewStringObj(filepath,-1);
+      
       Tcl_IncrRefCount(vfsinitscript);
       Tcl_IncrRefCount(vfstcllib);
       Tcl_IncrRefCount(vfstklib);
       
+      if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
+	/* Startup script should be set before calling Tcl_AppInit */
+        Tcl_SetStartupScript(vfsinitscript,NULL);
+      } else {
+        Tcl_SetStartupScript(NULL,NULL);
+      }
+
       if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
 	/* Startup script should be set before calling Tcl_AppInit */
         Tcl_SetStartupScript(vfsinitscript,NULL);
@@ -1796,11 +1816,14 @@ int Tcl_Zvfs_Boot(Tcl_Interp *interp) {
       if(Tcl_FSAccess(vfstklib,F_OK)==0) {
         Tcl_SetVar2(interp, "env", "TK_LIBRARY", Tcl_GetString(vfstklib), TCL_GLOBAL_ONLY);
       }
+      
       Tcl_DecrRefCount(vfsinitscript);
       Tcl_DecrRefCount(vfstcllib);
+      Tcl_DecrRefCount(vfstklib);
   }
   return TCL_OK;
 }
+
 
 int
 Tcl_Zvfs_Init(

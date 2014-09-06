@@ -2328,7 +2328,7 @@ declare 630 {
 
 # ZipVfs
 declare 631 {
-  int Tcl_Zvfs_Boot(Tcl_Interp *interp)
+int Tcl_Zvfs_Boot(Tcl_Interp *interp,const char *vfsmountpoint,const char *initscript)
 }
 
 ##############################################################################
