@@ -4774,6 +4774,7 @@ Tcl_GcCmd(
                 }
             }
         }
+        free(infotab);
     }
     TclpUnlockAlloc();
 
