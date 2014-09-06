@@ -123,11 +123,7 @@ _tmain(
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
 #endif
-#if defined TCL_KIT
-    /* This voodoo ensures that Tcl_Main does not eat the first argument */
-    Tcl_FindExecutable(argv[0]);
-    Tcl_SetStartupScript(Tcl_NewStringObj("/zvfs/main.tcl",-1),NULL);
-#endif
+
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
@@ -155,9 +151,6 @@ int
 Tcl_AppInit(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-#if defined TCL_KIT
-    Tcl_Zvfs_Boot(interp);
-#endif
     if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }

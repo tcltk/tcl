@@ -433,13 +433,19 @@ null.zip:
 	touch .empty
 	zip -q null.zip .empty
 	
-$(TCLKIT): $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip
-	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
-        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+# Rather than force an install, pack the files we need into a
+# file system under our control
+tclkit.vfs:
+	make install-libraries DESTDIR=tclkit.vfs
+	make install-tzdata DESTDIR=tclkit.vfs
+	make install-packages DESTDIR=tclkit.vfs
+	
+$(TCLKIT): $(TCLKIT_OBJS) $(TCL_OBJS) $(TOMMATH_OBJS) $(ZLIB_OBJS) tclsh.$(RES) null.zip tclkit.vfs
+	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_OBJS) $(TOMMATH_OBJS) $(ZLIB_OBJS) \
+	$(LIBS) tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
-	PWD=`pwd`
 	cat null.zip >> $(TCLKIT)
-	cd ${prefix}/lib ; zip -rAq ${PWD}/$(TCLKIT) tcl8 tcl8.6
+	cd tclkit.vfs${prefix}/lib ; zip -rAq $(WIN_DIR)/$(TCLKIT) tcl8 tcl8.6
 
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
