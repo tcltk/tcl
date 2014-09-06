@@ -103,6 +103,10 @@ COMPAT_DIR		= $(TOP_DIR)/compat
 PKGS_DIR		= $(TOP_DIR)/pkgs
 ZLIB_DIR		= $(COMPAT_DIR)/zlib
 
+VFS_SCRIPT_INSTALL_DIR  = $(WIN_DIR)/tclvfs.zip/tcl$(VERSION)
+VFS_PKG_INSTALL_DIR  = $(WIN_DIR)/tclvfs.zip/lib
+
+
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
 
@@ -392,9 +396,6 @@ STUB_OBJS = \
 
 TCLSH_OBJS = tclAppInit.$(OBJEXT)
 
-TCLKIT_OBJS = tclKitInit.$(OBJEXT)
-
-
 ZLIB_OBJS = \
 	adler32.$(OBJEXT) \
 	compress.$(OBJEXT) \
@@ -409,6 +410,10 @@ ZLIB_OBJS = \
 	zutil.$(OBJEXT)
 
 TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@
+
+TCLKIT_OBJS = tclKitInit.$(OBJEXT) \
+	${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS}
+
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
@@ -435,17 +440,17 @@ null.zip:
 	
 # Rather than force an install, pack the files we need into a
 # file system under our control
-tclkit.vfs:
-	make install-libraries DESTDIR=tclkit.vfs
-	make install-tzdata DESTDIR=tclkit.vfs
-	make install-packages DESTDIR=tclkit.vfs
-	
-$(TCLKIT): $(TCLKIT_OBJS) $(TCL_OBJS) $(TOMMATH_OBJS) $(ZLIB_OBJS) tclsh.$(RES) null.zip tclkit.vfs
-	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_OBJS) $(TOMMATH_OBJS) $(ZLIB_OBJS) \
-	$(LIBS) tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+tclkit.vfs: $(TCLSH) $(DDE_DLL_FILE) $(REG_DLL_FILE)
+	@echo "Building VFS File system in tclkit.vfs"
+	@$(TCL_EXE) "$(ROOT_DIR)/tools/mkVfs.tcl" \
+	    "$(WIN_DIR)/tclkit.vfs/tcl$(VERSION)" "$(ROOT_DIR)"  windows
+
+$(TCLKIT): $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
+	$(CC) $(CFLAGS) -DSTATIC_BUILD -UUSE_STUBS $(TCLKIT_OBJS)  $(LIBS) \
+        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 	cat null.zip >> $(TCLKIT)
-	cd tclkit.vfs${prefix}/lib ; zip -rAq $(WIN_DIR)/$(TCLKIT) tcl8 tcl8.6
+	cd tclkit.vfs ; zip -rAq $(WIN_DIR)/$(TCLKIT) .
 
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
@@ -509,9 +514,6 @@ testMain.${OBJEXT}: tclAppInit.c
 
 tclMain2.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
-
-tclKitInit.$(OBJEXT): tclAppInit.c
-	$(CC) -c $(CC_SWITCHES) -DTCL_KIT @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
 #
@@ -762,8 +764,9 @@ cleanhelp:
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(CAT32)
+	$(RM) $(TCLSH) $(CAT32) $(TCLKIT) null.zip
 	$(RM) *.pch *.ilk *.pdb
+	$(RMDIR) tclkit.vfs
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \

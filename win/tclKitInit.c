@@ -14,7 +14,8 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#include "tcl.h"
+#include "tclWinInt.h"
+
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
@@ -152,15 +153,15 @@ TclKit_AppInit(
 	return TCL_ERROR;
     }
 
-    if (Registry_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
-
-    if (Dde_Init(interp) == TCL_ERROR) {
-	return TCL_ERROR;
-    }
-    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
+//    if (Registry_Init(interp) == TCL_ERROR) {
+//	return TCL_ERROR;
+//    }
+//    Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
+//
+//    if (Dde_Init(interp) == TCL_ERROR) {
+//	return TCL_ERROR;
+//    }
+//    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
 
     /*
      * Call the init procedures for included packages. Each call should look
