@@ -4514,7 +4514,27 @@ Tcl_RepresentationCmd(
  *----------------------------------------------------------------------
  */
 
-static int ComparePointers(const void *a, const void *b)
+static void
+BailOut(void)
+{
+    exit(127);
+}
+
+static void
+GcLog(
+    const char *fmt, ...)
+{
+    va_list ap;
+
+    va_start(ap, fmt);
+    vfprintf(stderr, fmt, ap);
+    va_end(ap);
+}
+
+static int
+ComparePointers(
+    const void *a,
+    const void *b)
 {
     char *aa = *(char **)a;
     char *bb = *(char **)b;
@@ -4531,7 +4551,12 @@ static int ComparePointers(const void *a, const void *b)
 
 #define GC_BISECT_MIN_RECURS 4
 
-static ObjChunkInfo *GC_FindChunkInfo(Tcl_Obj *obj, ObjChunkInfo *itab, int len) {
+static ObjChunkInfo *
+GC_FindChunkInfo(
+    Tcl_Obj *obj,
+    ObjChunkInfo *itab,
+    int len)
+{
     while (1) {
         int mid;
 
@@ -4544,8 +4569,8 @@ static ObjChunkInfo *GC_FindChunkInfo(Tcl_Obj *obj, ObjChunkInfo *itab, int len)
                 }
             }
             /* no Panic : avoid dumping core with a huge heap */
-            fprintf(stderr,"### GC internal error: no chunk enclosing obj %p\n",obj);
-            exit(-1);
+            GcLog("### GC internal error: no chunk enclosing obj %p\n",obj);
+            BailOut();
         }
         mid = len / 2;
         if (obj >= itab[mid].beg) {
@@ -4558,42 +4583,54 @@ static ObjChunkInfo *GC_FindChunkInfo(Tcl_Obj *obj, ObjChunkInfo *itab, int len)
 }
 
 #ifndef USE_THREAD_ALLOC
-void TclpLockAlloc(void)
+void
+TclpLockAlloc(void)
 {
     Tcl_MutexLock(&tclObjMutex);
 }
-void TclpUnlockAlloc(void)
+
+void
+TclpUnlockAlloc(void)
 {
     Tcl_MutexUnlock(&tclObjMutex);
 }
+
 Tcl_Obj **
 TclpGetGlobalFreeObj(void)
 {
     return &tclFreeObjList;
 }
+
 Tcl_Obj **
 TclpGetLocalFreeObj(void)
 {
     return NULL;
 }
-void TclpRecomputeGlobalNumObj(void)
-{
-}
-void TclpRecomputeLocalNumObj(void)
+
+void
+TclpRecomputeGlobalNumObj(void)
 {
 }
 
-
+void
+TclpRecomputeLocalNumObj(void)
+{
+}
 
 # define FREE_INTERNAL ckfree
 #else
 # define FREE_INTERNAL free
 #endif
 
-static Tcl_Obj *DerefIf(Tcl_Obj **src)
+static Tcl_Obj *
+DerefIf(
+    Tcl_Obj **src)
 {
     return (src ? (*src) : NULL);
 }
+
+#define NEXT_OBJ(objPtr) \
+    ((objPtr)->internalRep.twoPtrValue.ptr1)
 
 int
 Tcl_GcCmd(
@@ -4614,11 +4651,12 @@ Tcl_GcCmd(
 
     TclpLockAlloc();
 
-    fprintf(stderr, "GC Phase 1: prepare sorted list of chunk info\n");
+    GcLog("GC Phase 1: prepare sorted list of chunk info\n");
     nch = 0;
     for (chunk = tclObjChunkList; chunk; chunk = chunk->next) {
         nch++;
     }
+    // TODO: No obivious free() for this malloc()?
     infotab = (ObjChunkInfo *) malloc(nch * sizeof(ObjChunkInfo));
     tmp = (ObjChunkHeader **) infotab; /* pointers are smaller, so they fit */
     for (chunk = tclObjChunkList; chunk; chunk = chunk->next) {
@@ -4629,24 +4667,32 @@ Tcl_GcCmd(
 
     /* in-place cacheing of chunk headers into chunk infos */
     for(i = nch - 1; i >= 0; i--) {
-        chunk = ((ObjChunkHeader **)infotab)[i];
+        chunk = ((ObjChunkHeader **) infotab)[i];
         info = infotab + i;
         info->beg = (Tcl_Obj *)(chunk + 1);
         info->end = chunk->end;
         info->free = 0;
     }
 
-    fprintf(stderr, "GC Phase 2: scan free lists, locating each obj's chunk and updating its free count\n");
-    for (obj = DerefIf(TclpGetLocalFreeObj()); obj; obj = (Tcl_Obj *)obj->internalRep.twoPtrValue.ptr1) {
+    GcLog("GC Phase 2: scan free lists, locating each obj's chunk and "
+            "updating its free count\n");
+    for (obj = DerefIf(TclpGetLocalFreeObj()); obj != NULL;
+            obj = (Tcl_Obj *) NEXT_OBJ(obj)) {
         info = GC_FindChunkInfo(obj, infotab, nch);
-        if (info) info->free++;
+        if (info) {
+            info->free++;
+        }
     }
-    for (obj = DerefIf(TclpGetGlobalFreeObj()); obj; obj = (Tcl_Obj *)obj->internalRep.twoPtrValue.ptr1) {
+    for (obj = DerefIf(TclpGetGlobalFreeObj()); obj != NULL;
+            obj = (Tcl_Obj *) NEXT_OBJ(obj)) {
         info = GC_FindChunkInfo(obj, infotab, nch);
-        if (info) info->free++;
+        if (info) {
+            info->free++;
+        }
     }
 
-    fprintf(stderr, "GC Phase 3: locate chunks entirely made of free objs and mark them with chunk->end=NULL and info->free=-1 \n");
+    GcLog("GC Phase 3: locate chunks entirely made of free objs and mark them "
+            "with chunk->end=NULL and info->free=-1\n");
     npurge = 0;
     for (i = 0, info = infotab; i < nch; i++, info++) {
         int room, delta;
@@ -4655,18 +4701,13 @@ Tcl_GcCmd(
         delta = info->free - room;
         chunk = ((ObjChunkHeader *)info->beg) - 1;
         if (delta > 0) {
-            fprintf(stderr,"# GC internal error: chunk at %p counts %ld frees but has room for %d only !\n",
-                    chunk,
-                    info->free,
-                    room);
-            exit(-1);
+            GcLog("# GC internal error: chunk at %p counts %ld frees but has "
+                    "room for %d only !\n", chunk, info->free, room);
+            BailOut();
         }
         if (delta < 0) {
 #if 0
-            fprintf(stderr," . chunk %p : %d / %d\n",
-                    chunk,
-                    -delta,
-                    room);
+            GcLog(" . chunk %p : %d / %d\n", chunk, -delta, room);
 #endif
             continue;
         }
@@ -4675,56 +4716,58 @@ Tcl_GcCmd(
         chunk->end = NULL ; /* mark it for final sweep of chunks */
         info->free = -1 ; /* mark it for final sweep of objs*/
 #if 0
-        fprintf(stderr," PURGE chunk %p : 0 / %d\n",
-                chunk,
-                room);
+        GcLog(" PURGE chunk %p : 0 / %d\n", chunk, room);
 #endif
     }
 
     if (!npurge) {
-        fprintf(stderr," Sorry - nothing to purge :(\n");
+        GcLog(" Sorry - nothing to purge :(\n");
     } else {
+        GcLog("GC Phase 4: remove the soon-to-be-purged objs from free "
+                "lists\n");
+            
         {
             Tcl_Obj **pobj;
-            int n,p;
+            int n, p;
 
-            fprintf(stderr, "GC Phase 4: remove the soon-to-be-purged objs from free lists\n");
-            
             n = p = 0;
-            for (pobj = TclpGetLocalFreeObj(); (*pobj);) {
+            for (pobj = TclpGetLocalFreeObj(); *pobj != NULL ;) {
                 n++;
                 info = GC_FindChunkInfo(*pobj, infotab, nch);
                 if (info->free != -1) {
-                    pobj = (Tcl_Obj **)&(**pobj).internalRep.twoPtrValue.ptr1;
+                    pobj = (Tcl_Obj **) & NEXT_OBJ(*pobj);
                 } else {
-                    *pobj = (Tcl_Obj *)(**pobj).internalRep.twoPtrValue.ptr1;
+                    *pobj = (Tcl_Obj *) NEXT_OBJ(*pobj);
                     p++;
                 }
             }
             TclpRecomputeLocalNumObj();
-            fprintf(stderr," (local: purge %d / %d\n",p,n);
+            GcLog(" (local: purge %d / %d\n", p, n);
             n = p = 0;
-            for (pobj = TclpGetGlobalFreeObj(); (*pobj);) {
+            for (pobj = TclpGetGlobalFreeObj(); *pobj != NULL ;) {
                 n++;
                 info = GC_FindChunkInfo(*pobj, infotab, nch);
                 if (info->free != -1) {
-                    pobj = (Tcl_Obj **)&(**pobj).internalRep.twoPtrValue.ptr1;
+                    pobj = (Tcl_Obj **) & NEXT_OBJ(*pobj);
                 } else {
-                    *pobj = (Tcl_Obj *)(**pobj).internalRep.twoPtrValue.ptr1;
+                    *pobj = (Tcl_Obj *) NEXT_OBJ(*pobj);
                     p++;
                 }
             }
             TclpRecomputeGlobalNumObj();
-            fprintf(stderr," (global: purge %d / %d\n",p,n);
+            GcLog(" (global: purge %d / %d\n", p, n);
 
         }
+
+        GcLog("GC Phase 5: free the located chunks, totalling %d objs\n",
+                npurge);
+
         {
             ObjChunkHeader **pchunk;
             
-            fprintf(stderr, "GC Phase 5: free the located chunks, totalling %d objs\n", npurge);
-            for (pchunk = &tclObjChunkList; (chunk = *pchunk); ) {
+            for (pchunk = &tclObjChunkList; (chunk = *pchunk) != NULL; ) {
                 if (chunk->end) {
-                    pchunk=&chunk->next;
+                    pchunk = &chunk->next;
                 } else {
                     *pchunk = chunk->next;
                     FREE_INTERNAL(chunk);
