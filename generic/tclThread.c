@@ -357,7 +357,12 @@ TclFinalizeThreadData(void)
 {
     TclFinalizeThreadDataThread();
 #if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
-    TclFinalizeThreadAllocThread();
+    if ((!TclInExit())||TclFullFinalizationRequested()) {
+	/*
+	 * Quick exit principle makes it useless to terminate allocators
+	 */
+	TclFinalizeThreadAllocThread();
+    }
 #endif
 }
 
