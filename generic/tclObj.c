@@ -4656,7 +4656,6 @@ Tcl_GcCmd(
     for (chunk = tclObjChunkList; chunk; chunk = chunk->next) {
         nch++;
     }
-    // TODO: No obivious free() for this malloc()?
     infotab = (ObjChunkInfo *) malloc(nch * sizeof(ObjChunkInfo));
     tmp = (ObjChunkHeader **) infotab; /* pointers are smaller, so they fit */
     for (chunk = tclObjChunkList; chunk; chunk = chunk->next) {
