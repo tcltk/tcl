@@ -271,6 +271,16 @@ test oo-1.18.1 {Bug 75b8433707: memory leak in oo-1.18} -setup {
 } -cleanup {
     rename test-oo-1.18 {}
 } -result 0
+test oo-1.18.2 {Bug 21c144f0f5} -setup {
+    interp create slave
+} -body {
+    slave eval {
+	oo::define [oo::class create foo] superclass oo::class
+	oo::class destroy
+    }
+} -cleanup {
+    interp delete slave
+} 
 test oo-1.19 {basic test of OO functionality: teardown order} -body {
     oo::object create o
     namespace delete [info object namespace o]
