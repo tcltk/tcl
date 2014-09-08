@@ -370,7 +370,7 @@ TclpGetGrNam(
 #else
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-#ifdef HAVE_GETGRNAM_R_5
+#if defined(HAVE_GETGRNAM_R_5)
     struct group *grPtr = NULL;
 
     /*
