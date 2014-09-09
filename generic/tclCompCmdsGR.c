@@ -2270,7 +2270,7 @@ TclCompileRegexpCmd(
 	 * converted pattern as a literal.
 	 */
 
-	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact)
+	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact, NULL)
 		== TCL_OK) {
 	    simple = 1;
 	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
@@ -2362,7 +2362,7 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, result = TCL_ERROR;
+    int len, exact, quantified, result = TCL_ERROR;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2422,7 +2422,8 @@ TclCompileRegsubCmd(
      */
 
     bytes = Tcl_GetStringFromObj(patternObj, &len);
-    if (TclReToGlob(NULL, bytes, len, &pattern, &exact) != TCL_OK || exact) {
+    if (TclReToGlob(NULL, bytes, len, &pattern, &exact, &quantified)
+	    != TCL_OK || exact || quantified) {
 	goto done;
     }
     bytes = Tcl_DStringValue(&pattern);
