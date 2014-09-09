@@ -642,20 +642,25 @@ TCL_HAS_LONGLONG
 TCL_UNSHARED_LIB_SUFFIX
 TCL_SHARED_LIB_SUFFIX
 TCL_LIB_VERSIONS_OK
-TCL_BUILD_LIB_SPEC
 LD_LIBRARY_PATH_VAR
 TCL_SHARED_BUILD
 CFG_TCL_UNSHARED_LIB_SUFFIX
 CFG_TCL_SHARED_LIB_SUFFIX
 TCL_SRC_DIR
+TCL_INCLUDE_SPEC
+TCL_BUILD_KIT_LIB_PATH
+TCL_BUILD_KIT_LIB_SPEC
+TCL_KIT_LIB_PATH
+TCL_KIT_LIB_SPEC
+TCL_KIT_LIB_FLAG
+TCL_KIT_LIB_FILE
 TCL_BUILD_STUB_LIB_PATH
 TCL_BUILD_STUB_LIB_SPEC
-TCL_INCLUDE_SPEC
-TCL_KIT_LIB_FILE
 TCL_STUB_LIB_PATH
 TCL_STUB_LIB_SPEC
 TCL_STUB_LIB_FLAG
 TCL_STUB_LIB_FILE
+TCL_BUILD_LIB_SPEC
 TCL_LIB_SPEC
 TCL_LIB_FLAG
 TCL_LIB_FILE
@@ -10288,10 +10293,6 @@ eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
-eval "TCL_KIT_LIB_FILE=libtclkit${UNSHARED_LIB_SUFFIX}"
-eval "TCL_KIT_LIB_FILE=${TCL_KIT_LIB_FILE}"
-
-
 TCL_LIBRARY='$(prefix)/lib/tcl$(VERSION)'
 PRIVATE_INCLUDE_DIR='$(includedir)'
 HTML_DIR='$(DISTDIR)/html'
@@ -10428,6 +10429,29 @@ fi
 
 #--------------------------------------------------------------------
 #       The statements below define various symbols relating to Tcl
+#       core vfs and kit support.
+#--------------------------------------------------------------------
+
+eval "TCL_KIT_LIB_FILE=libtclkit${UNSHARED_LIB_SUFFIX}"
+eval "TCL_KIT_LIB_FILE=${TCL_KIT_LIB_FILE}"
+
+eval "TCL_KIT_LIB_FILE=libtclkit${TCL_UNSHARED_LIB_SUFFIX}"
+eval "TCL_KIT_LIB_FILE=\"${TCL_KIT_LIB_FILE}\""
+eval "TCL_KIT_LIB_DIR=${libdir}"
+
+if test "${TCL_LIB_VERSIONS_OK}" = "ok"; then
+    TCL_KIT_LIB_FLAG="-ltclkit${TCL_VERSION}"
+else
+    TCL_KIT_LIB_FLAG="-ltclkit`echo ${TCL_VERSION} | tr -d .`"
+fi
+
+TCL_BUILD_KIT_LIB_SPEC="-L`pwd | sed -e 's/ /\\\\ /g'` ${TCL_KIT_LIB_FLAG}"
+TCL_KIT_LIB_SPEC="-L${TCL_KIT_LIB_DIR} ${TCL_KIT_LIB_FLAG}"
+TCL_BUILD_KIT_LIB_PATH="`pwd`/${TCL_KIT_LIB_FILE}"
+TCL_KIT_LIB_PATH="${TCL_KIT_LIB_DIR}/${TCL_KIT_LIB_FILE}"
+
+#--------------------------------------------------------------------
+#       The statements below define various symbols relating to Tcl
 #       stub support.
 #--------------------------------------------------------------------
 
@@ -10457,6 +10481,14 @@ eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 #------------------------------------------------------------------------
 
 TCL_SHARED_BUILD=${SHARED_BUILD}
+
+
+
+
+
+
+
+
 
 
 
