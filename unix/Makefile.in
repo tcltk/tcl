@@ -168,6 +168,7 @@ INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 EXE_SUFFIX		= @EXEEXT@
 TCL_EXE			= tclsh${EXE_SUFFIX}
 TCLKIT_EXE		= tclkit${EXE_SUFFIX}
+TCLKIT_LIB		= tclkit${EXE_SUFFIX}
 TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 NATIVE_TCLSH		= @TCLSH_PROG@
 
@@ -202,6 +203,9 @@ BUILD_DLTEST		= @BUILD_DLTEST@
 
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 #TCL_LIB_FILE		= libtcl.a
+
+TCL_KIT_LIB_FILE	= @TCL_KIT_LIB_FILE@
+#TCL_KIT_LIB_FILE	= libtclkit.a
 
 # Generic lib name used in rules that apply to tcl and tk
 LIB_FILE		= ${TCL_LIB_FILE}
@@ -588,8 +592,6 @@ MAC_OSX_SRCS = \
 CYGWIN_SRCS = \
 	$(TOP_DIR)/win/tclWinError.c
 
-TCLKIT_SRCS = $(UNIX_DIR)/tclKitInit.c
-
 DTRACE_HDR = tclDTrace.h
 
 DTRACE_SRC = $(GENERIC_DIR)/tclDTrace.d
@@ -612,7 +614,7 @@ ZLIB_SRCS = \
 # things like "make depend".
 
 SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
-	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@ $TCLKIT_SRCS
+	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
 
 PWD=`pwd`
 VFS_INSTALL_DIR=${PWD}/tclkit.vfs/tcl8.6
@@ -642,6 +644,11 @@ ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	rm -f $@
 	@MAKE_STUB_LIB@
 
+
+${TCL_KIT_LIB_FILE}: ${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS}
+	rm -f $@
+	@MAKE_KIT_LIB@
+	
 # Make target which outputs the list of the .o contained in the Tcl lib useful
 # to build a single big shared library containing Tcl and other extensions.
 # Used for the Tcl Plugin.  -- dl
@@ -667,19 +674,19 @@ null.zip:
 # Rather than force an install, pack the files we need into a
 # file system under our control
 tclkit.vfs:
-	@echo "Building VFS File system in tclkit.vfs"
-	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
-	    "$(UNIX_DIR)/tclkit.vfs" "$(VERSION)" "$(TOP_DIR)"  unix ${TCL_LIB_FILE}
-
+	make install-libraries DESTDIR=tclkit.vfs
+	make install-tzdata DESTDIR=tclkit.vfs
+	make install-packages DESTDIR=tclkit.vfs
+	
 # Assemble all of the tcl sources into a single executable
-${TCLKIT_EXE}:  ${TCL_EXE} $(TCLKIT_OBJS) ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${ZLIB_OBJS} null.zip tclkit.vfs
+${TCLKIT_EXE}:  ${TCLKIT_OBJS} ${TCL_KIT_LIB_FILE} null.zip tclkit.vfs
 	${CC} ${CFLAGS} ${LDFLAGS} \
-		$(TCLKIT_OBJS) ${ZLIB_OBJS} \
-		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
+		${TCLKIT_OBJS} \
+		@TCL_BUILD_LIB_SPEC@ ${TCL_KIT_LIB_FILE} \
+		${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
-	cp -f ${TCLKIT_EXE}  ${TCLKIT_EXE}.raw
 	cat null.zip >> ${TCLKIT_EXE}
-	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
+	cd tclkit.vfs${prefix}/lib ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -844,6 +851,10 @@ install-binaries: binaries
 	@if test "$(STUB_LIB_FILE)" != "" ; then \
 	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    @INSTALL_STUB_LIB@ ; \
+	fi
+	@if test "$(TCL_KIT_LIB_FILE)" != "" ; then \
+	    echo "Installing $(TCL_KIT_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
+	    @INSTALL_KIT_LIB@ ; \
 	fi
 	@EXTRA_INSTALL_BINARIES@
 	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
@@ -1199,9 +1210,6 @@ tclIORChan.o: $(GENERIC_DIR)/tclIORChan.c $(IOHDR)
 
 tclIORTrans.o: $(GENERIC_DIR)/tclIORTrans.c $(IOHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIORTrans.c
-
-tclKitInit.o: $(UNIX_DIR)/tclKitInit.c
-	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclKitInit.c
 
 tclLink.o: $(GENERIC_DIR)/tclLink.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLink.c
