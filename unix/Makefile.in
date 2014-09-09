@@ -588,6 +588,8 @@ MAC_OSX_SRCS = \
 CYGWIN_SRCS = \
 	$(TOP_DIR)/win/tclWinError.c
 
+TCLKIT_SRCS = $(UNIX_DIR)/tclKitInit.c
+
 DTRACE_HDR = tclDTrace.h
 
 DTRACE_SRC = $(GENERIC_DIR)/tclDTrace.d
@@ -610,7 +612,7 @@ ZLIB_SRCS = \
 # things like "make depend".
 
 SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
-	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
+	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@ $TCLKIT_SRCS
 
 PWD=`pwd`
 VFS_INSTALL_DIR=${PWD}/tclkit.vfs/tcl8.6
@@ -665,18 +667,18 @@ null.zip:
 # Rather than force an install, pack the files we need into a
 # file system under our control
 tclkit.vfs:
-	make install-libraries DESTDIR=tclkit.vfs
-	make install-tzdata DESTDIR=tclkit.vfs
-	make install-packages DESTDIR=tclkit.vfs
+	@echo "Building VFS File system in tclkit.vfs"
+	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
+	    "$(UNIX_DIR)/tclkit.vfs" "$(VERSION)" "$(TOP_DIR)"  unix ${TCL_LIB_FILE}
 
 # Assemble all of the tcl sources into a single executable
-${TCLKIT_EXE}:  ${TCLKIT_OBJS} ${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS} null.zip tclkit.vfs
+${TCLKIT_EXE}:  ${TCL_EXE} $(TCLKIT_OBJS) ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} ${ZLIB_OBJS} null.zip tclkit.vfs
 	${CC} ${CFLAGS} ${LDFLAGS} \
-		${TCLKIT_OBJS} ${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS} \
-		${LIBS} @EXTRA_TCLSH_LIBS@ \
+		$(TCLKIT_OBJS) ${ZLIB_OBJS} \
+		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
 	cat null.zip >> ${TCLKIT_EXE}
-	cd tclkit.vfs${prefix}/lib ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
+	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -1194,6 +1196,9 @@ tclIORChan.o: $(GENERIC_DIR)/tclIORChan.c $(IOHDR)
 
 tclIORTrans.o: $(GENERIC_DIR)/tclIORTrans.c $(IOHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclIORTrans.c
+
+tclKitInit.o: $(UNIX_DIR)/tclKitInit.c
+	$(CC) -c $(APP_CC_SWITCHES) $(UNIX_DIR)/tclKitInit.c
 
 tclLink.o: $(GENERIC_DIR)/tclLink.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclLink.c
