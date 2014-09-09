@@ -443,7 +443,7 @@ null.zip:
 tclkit.vfs: $(TCLSH) $(DDE_DLL_FILE) $(REG_DLL_FILE)
 	@echo "Building VFS File system in tclkit.vfs"
 	@$(TCL_EXE) "$(ROOT_DIR)/tools/mkVfs.tcl" \
-	    "$(WIN_DIR)/tclkit.vfs/tcl$(VERSION)" "$(ROOT_DIR)"  windows
+	    "$(WIN_DIR)/tclkit.vfs" "$(VERSION)" "$(ROOT_DIR)"  windows $(TCL_LIB_FILE)
 
 $(TCLKIT): $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
 	$(CC) $(CFLAGS) -DSTATIC_BUILD -UUSE_STUBS $(TCLKIT_OBJS)  $(LIBS) \

@@ -53,14 +53,20 @@ proc copyDir {d1 d2} {
     }
 }
 
-if {[llength $argv] < 3} {
-    puts "Usage: VFS_ROOT TCLSRC_ROOT PLATFORM"
+if {[llength $argv] < 4} {
+    puts "Usage: VFS_ROOT TCLSRC_ROOT PLATFORM TCLDLL"
     exit 1
 }
-set TCL_SCRIPT_DIR [lindex $argv 0]
-set TCLSRC_ROOT    [lindex $argv 1]
-set PLATFORM       [lindex $argv 2]
+set VFSROOT        [lindex $argv 0]
+set VERSION        [lindex $argv 1]
+set TCLSRC_ROOT    [lindex $argv 2]
+set PLATFORM       [lindex $argv 3]
+set TCLDLL         [lindex $argv 4]
 
+file mkdir [file join $VFSROOT bin]
+file copy -force $TCLDLL [file join $VFSROOT bin $TCLDLL]
+
+set TCL_SCRIPT_DIR [file join $VFSROOT tcl$VERSION]
 puts "Building [file tail $TCL_SCRIPT_DIR] for $PLATFORM"
 copyDir ${TCLSRC_ROOT}/library ${TCL_SCRIPT_DIR}
 
