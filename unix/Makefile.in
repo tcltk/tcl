@@ -621,7 +621,7 @@ VFS_INSTALL_DIR=${PWD}/tclkit.vfs/tcl8.6
 
 all: binaries libraries doc packages
 
-binaries: ${LIB_FILE} ${TCL_EXE}
+binaries: ${LIB_FILE} ${TCL_EXE} ${TCLKIT_EXE}
 
 libraries:
 
@@ -831,6 +831,8 @@ install-binaries: binaries
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
+	@echo "Installing ${TCLKIT_EXE} as $(BIN_INSTALL_DIR)/tclkit$(VERSION)${EXE_SUFFIX}"
+	@$(INSTALL_PROGRAM) ${TCLKIT_EXE} "$(BIN_INSTALL_DIR)/tclkit$(VERSION)${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
 	@echo "Installing tclooConfig.sh to $(CONFIG_INSTALL_DIR)/"
