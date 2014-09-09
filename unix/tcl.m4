@@ -2060,6 +2060,14 @@ dnl # preprocessing tests use only CPPFLAGS.
         ])
     ])
 
+    AS_IF([test "$RANLIB" = ""], [
+	MAKE_KIT_LIB='$(STLIB_LD) [$]@ ${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS}'
+	INSTALL_KIT_LIB='$(INSTALL_LIBRARY) $(TCL_KIT_LIB_FILE) "$(LIB_INSTALL_DIR)/$(TCL_KIT_LIB_FILE)"'
+    ], [
+	MAKE_KIT_LIB='${STLIB_LD} [$]@ ${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS} ; ${RANLIB} [$]@'
+	INSTALL_KIT_LIB='$(INSTALL_LIBRARY) $(TCL_KIT_LIB_FILE) "$(LIB_INSTALL_DIR)/$(TCL_KIT_LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(TCL_KIT_LIB_FILE))'
+    ])
+
     # Stub lib does not depend on shared/static configuration
     AS_IF([test "$RANLIB" = ""], [
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
@@ -2126,10 +2134,12 @@ dnl # preprocessing tests use only CPPFLAGS.
 	[What is the default extension for shared libraries?])
 
     AC_SUBST(MAKE_LIB)
+    AC_SUBST(MAKE_KIT_LIB)
     AC_SUBST(MAKE_STUB_LIB)
     AC_SUBST(INSTALL_LIB)
     AC_SUBST(DLL_INSTALL_DIR)
     AC_SUBST(INSTALL_STUB_LIB)
+    AC_SUBST(INSTALL_KIT_LIB)
     AC_SUBST(RANLIB)
 ])
 

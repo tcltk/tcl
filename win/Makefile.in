@@ -411,7 +411,8 @@ ZLIB_OBJS = \
 
 TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@
 
-TCLKIT_OBJS = tclKitInit.$(OBJEXT) ${ZLIB_OBJS}
+TCLKIT_OBJS = tclKitInit.$(OBJEXT) \
+	${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS}
 
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
@@ -420,7 +421,7 @@ all: binaries libraries doc packages
 
 tcltest: $(TCLSH) $(TEST_DLL_FILE)
 
-binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ $(DDE_DLL_FILE) $(REG_DLL_FILE) $(TCLSH)
+binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ $(DDE_DLL_FILE) $(REG_DLL_FILE) $(TCLSH) $(TCLKIT)
 
 libraries:
 
@@ -442,10 +443,10 @@ null.zip:
 tclkit.vfs: $(TCLSH) $(DDE_DLL_FILE) $(REG_DLL_FILE)
 	@echo "Building VFS File system in tclkit.vfs"
 	@$(TCL_EXE) "$(ROOT_DIR)/tools/mkVfs.tcl" \
-	    "$(WIN_DIR)/tclkit.vfs" "$(VERSION)" "$(ROOT_DIR)"  windows $(TCL_LIB_FILE)
+	    "$(WIN_DIR)/tclkit.vfs/tcl$(VERSION)" "$(ROOT_DIR)"  windows
 
 $(TCLKIT): $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
-	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
+	$(CC) $(CFLAGS) -DSTATIC_BUILD -UUSE_STUBS $(TCLKIT_OBJS)  $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 	cat null.zip >> $(TCLKIT)
@@ -598,7 +599,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TCLSH); \
+	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TCLSH) $(TCLKIT); \
 	    do \
 	    if [ -f $$i ]; then \
 		echo "Installing $$i to $(BIN_INSTALL_DIR)/"; \
