@@ -39,6 +39,9 @@ TCL_SHARED_BUILD=@TCL_SHARED_BUILD@
 # The name of the Tcl library (may be either a .a file or a shared library):
 TCL_LIB_FILE='@TCL_LIB_FILE@'
 
+# The name of the static Tcl library (intended for kits):
+TCL_KIT_LIB_FILE='@TCL_KIT_LIB_FILE@'
+
 # Additional libraries to use when linking Tcl.
 TCL_LIBS='@TCL_LIBS@'
 
@@ -141,6 +144,31 @@ TCL_SRC_DIR='@TCL_SRC_DIR@'
 # "package require" commands.  Contains the "prefix" directory plus also
 # the "exec_prefix" directory, if it is different.
 TCL_PACKAGE_PATH='@TCL_PACKAGE_PATH@'
+
+# Core VFS Kit Support
+TCL_SUPPORT_KITS=1
+
+# The name of the Tcl kit library (.a):
+TCL_KIT_LIB_FILE='@TCL_KIT_LIB_FILE@'
+
+# -l flag to pass to the linker to pick up the Tcl kit library
+TCL_KIT_LIB_FLAG='@TCL_KIT_LIB_FLAG@'
+
+# String to pass to linker to pick up the Tcl kit library from its
+# build directory.
+TCL_BUILD_KIT_LIB_SPEC='@TCL_BUILD_KIT_LIB_SPEC@'
+
+# String to pass to linker to pick up the Tcl kit library from its
+# installed directory.
+TCL_KIT_LIB_SPEC='@TCL_KIT_LIB_SPEC@'
+
+# Path to the Tcl kit library in the build directory.
+TCL_BUILD_KIT_LIB_PATH='@TCL_BUILD_KIT_LIB_PATH@'
+
+# Path to the Tcl kit library in the install directory.
+TCL_KIT_LIB_PATH='@TCL_KIT_LIB_PATH@'
+
+# END VFS SUPPORT
 
 # Tcl supports stub.
 TCL_SUPPORTS_STUBS=1
