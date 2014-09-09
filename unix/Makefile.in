@@ -649,12 +649,6 @@ ${TCL_KIT_LIB_FILE}: ${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS}
 	rm -f $@
 	@MAKE_KIT_LIB@
 	
-	#${SHLIB_LD} $@ ${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS} ; ${RANLIB} $@
-	#${CC} ${CFLAGS} ${LDFLAGS} \
-	#	${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS} \
-	#	${CC_SEARCH_FLAGS} -o ${TCL_KIT_LIB_FILE}
-
-
 # Make target which outputs the list of the .o contained in the Tcl lib useful
 # to build a single big shared library containing Tcl and other extensions.
 # Used for the Tcl Plugin.  -- dl
