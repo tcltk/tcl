@@ -3605,9 +3605,8 @@ ObjMakeUpvar(
 			|| !HasLocalVars(varFramePtr)
 			|| (strstr(TclGetString(myNamePtr), "::") != NULL))) {
 	    Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
-		    TclGetString(myNamePtr), "\": upvar won't create "
-		    "namespace variable that refers to procedure variable",
-		    NULL);
+		    TclGetString(myNamePtr), "\": can't create namespace "
+		    "variable that refers to procedure variable", NULL);
 	    return TCL_ERROR;
 	}
     }
@@ -3705,8 +3704,8 @@ TclPtrObjMakeUpvar(
 		 */
 
 		Tcl_AppendResult((Tcl_Interp *) iPtr, "bad variable name \"",
-			myName, "\": upvar won't create a scalar variable "
-			"that looks like an array element", NULL);
+			myName, "\": can't create a scalar variable that "
+			"looks like an array element", NULL);
 		return TCL_ERROR;
 	    }
 	}
