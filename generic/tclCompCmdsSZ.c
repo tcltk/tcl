@@ -3038,6 +3038,7 @@ IssueTryClausesInstructions(
 	if (!handlerTokens[i]) {
 	    forwardsNeedFixing = 1;
 	    JUMP4(			JUMP, forwardsToFix[i]);
+	    TclAdjustStackDepth(1, envPtr);
 	} else {
 	    int dontChangeOptions;
 
