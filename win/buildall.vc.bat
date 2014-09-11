@@ -1,4 +1,5 @@
 @echo off
+
 ::  This is an example batchfile for building everything. Please
 ::  edit this (or make your own) for your needs and wants using
 ::  the instructions for calling makefile.vc found in makefile.vc
@@ -26,10 +27,11 @@ cd > nul
 :: path or have already run vcvars32.bat.  Testing these envars proves
 :: cl.exe and friends are in your path.
 ::
-if defined VCINSTALLDIR (goto :startBuilding)
-if defined MSDRVDIR     (goto :startBuilding)
-if defined MSVCDIR      (goto :startBuilding)
-if defined MSSDK        (goto :startBuilding)
+if defined VCINSTALLDIR  (goto :startBuilding)
+if defined MSDEVDIR      (goto :startBuilding)
+if defined MSVCDIR       (goto :startBuilding)
+if defined MSSDK         (goto :startBuilding)
+if defined WINDOWSSDKDIR (goto :startBuilding)
 
 :: We need to run the development environment batch script that comes
 :: with developer studio (v4,5,6,7,etc...)  All have it.  This path
@@ -62,40 +64,11 @@ if not %SYMBOLS%.==. set OPTS=symbols
 nmake -nologo -f makefile.vc release htmlhelp OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
-:: Build the static core, dlls and shell.
-::
-set OPTS=static
-if not %SYMBOLS%.==. set OPTS=symbols,static
-nmake -nologo -f makefile.vc release OPTS=%OPTS% %1
-if errorlevel 1 goto error
-
-:: Build the special static libraries that use the dynamic runtime.
+:: Build the static core and shell.
 ::
 set OPTS=static,msvcrt
 if not %SYMBOLS%.==. set OPTS=symbols,static,msvcrt
-nmake -nologo -f makefile.vc core dlls OPTS=%OPTS% %1
-if errorlevel 1 goto error
-
-:: Build the core and shell for thread support.
-::
-set OPTS=threads
-if not %SYMBOLS%.==. set OPTS=symbols,threads
 nmake -nologo -f makefile.vc shell OPTS=%OPTS% %1
-if errorlevel 1 goto error
-
-:: Build a static, thread support core library with a shell.
-::
-set OPTS=static,threads
-if not %SYMBOLS%.==. set OPTS=symbols,static,threads
-nmake -nologo -f makefile.vc shell OPTS=%OPTS% %1
-if errorlevel 1 goto error
-
-:: Build the special static libraries that use the dynamic runtime,
-:: but now with thread support.
-::
-set OPTS=static,msvcrt,threads
-if not %SYMBOLS%.==. set OPTS=symbols,static,msvcrt,threads
-nmake -nologo -f makefile.vc core dlls OPTS=%OPTS% %1
 if errorlevel 1 goto error
 
 set OPTS=

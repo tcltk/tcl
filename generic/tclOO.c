@@ -3,7 +3,7 @@
  *
  *	This file contains the object-system core (NB: not Tcl_Obj, but ::oo)
  *
- * Copyright (c) 2005-2011 by Donal K. Fellows
+ * Copyright (c) 2005-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -271,7 +271,7 @@ TclOOInit(
 	return TCL_ERROR;
     }
 
-    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_VERSION,
+    return Tcl_PkgProvideEx(interp, "TclOO", TCLOO_PATCHLEVEL,
 	    (ClientData) &tclOOStubs);
 }
 
@@ -314,6 +314,7 @@ InitFoundation(
     Foundation *fPtr = ckalloc(sizeof(Foundation));
     Tcl_Obj *namePtr, *argsPtr, *bodyPtr;
     Tcl_DString buffer;
+    Command *cmdPtr;
     int i;
 
     /*
@@ -393,6 +394,7 @@ InitFoundation(
     fPtr->classCls->flags |= ROOT_CLASS;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
+    TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
     AddRef(fPtr->objectCls->thisPtr);
     AddRef(fPtr->objectCls);
 
@@ -436,12 +438,15 @@ InitFoundation(
      * ensemble.
      */
 
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::next", TclOONextObjCmd, NULL,
-	    NULL);
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::nextto", TclOONextToObjCmd,
-	    NULL, NULL);
-    Tcl_CreateObjCommand(interp, "::oo::Helpers::self", TclOOSelfObjCmd, NULL,
-	    NULL);
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::next",
+	    NULL, TclOONextObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectNextCmd;
+    cmdPtr = (Command *) Tcl_NRCreateCommand(interp, "::oo::Helpers::nextto",
+	    NULL, TclOONextToObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectNextToCmd;
+    cmdPtr = (Command *) Tcl_CreateObjCommand(interp, "::oo::Helpers::self",
+	    TclOOSelfObjCmd, NULL, NULL);
+    cmdPtr->compileProc = TclCompileObjectSelfCmd;
     Tcl_CreateObjCommand(interp, "::oo::define", TclOODefineObjCmd, NULL,
 	    NULL);
     Tcl_CreateObjCommand(interp, "::oo::objdefine", TclOOObjDefObjCmd, NULL,
@@ -841,7 +846,7 @@ ObjectRenamedTrace(
 	    result = Tcl_NRCallObjProc(interp, TclOOInvokeContext,
 		    contextPtr, 0, NULL);
 	    if (result != TCL_OK) {
-		Tcl_BackgroundError(interp);
+		Tcl_BackgroundException(interp, result);
 	    }
 	    Tcl_RestoreInterpState(interp, state);
 	    TclOODeleteContext(contextPtr);
@@ -1004,6 +1009,12 @@ ReleaseClassContents(
 	    }
 	    if (!Deleted(instancePtr)) {
 		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+		/*
+		 * Tcl_DeleteCommandFromToken() may have done to whole
+		 * job for us.  Roll back and check again.
+		 */
+		i--;
+		continue;
 	    }
 	    DelRef(instancePtr);
 	}
@@ -1276,6 +1287,9 @@ TclOORemoveFromInstances(
 
   removeInstance:
     if (Deleted(clsPtr->thisPtr)) {
+	if (!IsRootClass(clsPtr)) {
+	    DelRef(clsPtr->instances.list[i]);
+	}
 	clsPtr->instances.list[i] = NULL;
     } else {
 	clsPtr->instances.num--;

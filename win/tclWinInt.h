@@ -14,6 +14,23 @@
 
 #include "tclInt.h"
 
+#ifdef HAVE_NO_SEH
+/*
+ * Unlike Borland and Microsoft, we don't register exception handlers by
+ * pushing registration records onto the runtime stack. Instead, we register
+ * them by creating an TCLEXCEPTION_REGISTRATION within the activation record.
+ */
+
+typedef struct TCLEXCEPTION_REGISTRATION {
+    struct TCLEXCEPTION_REGISTRATION *link;
+    EXCEPTION_DISPOSITION (*handler)(
+	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
+    void *ebp;
+    void *esp;
+    int status;
+} TCLEXCEPTION_REGISTRATION;
+#endif
+
 /*
  * Some versions of Borland C have a define for the OSVERSIONINFO for
  * Win32s and for NT, but not for Windows 95.
@@ -25,12 +42,6 @@
 #endif
 #ifndef VER_PLATFORM_WIN32_CE
 #define VER_PLATFORM_WIN32_CE 3
-#endif
-
-#ifdef _WIN64
-#         define TCL_I_MODIFIER        "I"
-#else
-#         define TCL_I_MODIFIER        ""
 #endif
 
 #ifdef _WIN64
@@ -55,7 +66,7 @@ MODULE_SCOPE Tcl_Channel TclWinOpenFileChannel(HANDLE handle, char *channelName,
 			    int permissions, int appendMode);
 MODULE_SCOPE Tcl_Channel TclWinOpenSerialChannel(HANDLE handle,
 			    char *channelName, int permissions);
-MODULE_SCOPE HANDLE	TclWinSerialReopen(HANDLE handle, const TCHAR *name,
+MODULE_SCOPE HANDLE	TclWinSerialOpen(HANDLE handle, const TCHAR *name,
 			    DWORD access);
 MODULE_SCOPE int	TclWinSymLinkCopyDirectory(const TCHAR *LinkOriginal,
 			    const TCHAR *LinkCopy);

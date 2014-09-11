@@ -188,28 +188,16 @@ TclFile
 TclpCreateTempFile(
     const char *contents)	/* String to write into temp file, or NULL. */
 {
-    char fileName[L_tmpnam + 9];
-    const char *native;
-    Tcl_DString dstring;
-    int fd;
+    int fd = TclUnixOpenTemporaryFile(NULL, NULL, NULL, NULL);
 
-    /*
-     * We should also check against making more then TMP_MAX of these.
-     */
-
-    strcpy(fileName, P_tmpdir);				/* INTL: Native. */
-    if (fileName[strlen(fileName) - 1] != '/') {
-	strcat(fileName, "/");				/* INTL: Native. */
-    }
-    strcat(fileName, "tclXXXXXX");
-    fd = mkstemp(fileName);				/* INTL: Native. */
     if (fd == -1) {
 	return NULL;
     }
     fcntl(fd, F_SETFD, FD_CLOEXEC);
-    unlink(fileName);					/* INTL: Native. */
-
     if (contents != NULL) {
+	Tcl_DString dstring;
+	char *native;
+
 	native = Tcl_UtfToExternalDString(NULL, contents, -1, &dstring);
 	if (write(fd, native, Tcl_DStringLength(&dstring)) == -1) {
 	    close(fd);
@@ -241,29 +229,22 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    char fileName[L_tmpnam + 9];
-    Tcl_Obj *result = NULL;
+    Tcl_Obj *retVal, *nameObj = Tcl_NewObj();
     int fd;
 
-    /*
-     * We should also check against making more then TMP_MAX of these.
-     */
-
-    strcpy(fileName, P_tmpdir);		/* INTL: Native. */
-    if (fileName[strlen(fileName) - 1] != '/') {
-	strcat(fileName, "/");		/* INTL: Native. */
-    }
-    strcat(fileName, "tclXXXXXX");
-    fd = mkstemp(fileName);		/* INTL: Native. */
+    Tcl_IncrRefCount(nameObj);
+    fd = TclUnixOpenTemporaryFile(NULL, NULL, NULL, nameObj);
     if (fd == -1) {
+	Tcl_DecrRefCount(nameObj);
 	return NULL;
     }
-    fcntl(fd, F_SETFD, FD_CLOEXEC);
-    unlink(fileName);			/* INTL: Native. */
 
-    result = TclpNativeToNormalized(fileName);
+    fcntl(fd, F_SETFD, FD_CLOEXEC);
+    TclpObjDeleteFile(nameObj);
     close(fd);
-    return result;
+    retVal = Tcl_DuplicateObj(nameObj);
+    Tcl_DecrRefCount(nameObj);
+    return retVal;
 }
 
 /*
@@ -1164,7 +1145,7 @@ PipeWatchProc(
     if (psPtr->inFile) {
 	newmask = mask & (TCL_READABLE | TCL_EXCEPTION);
 	if (newmask) {
-	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), mask,
+	    Tcl_CreateFileHandler(GetFd(psPtr->inFile), newmask,
 		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->inFile));
@@ -1173,7 +1154,7 @@ PipeWatchProc(
     if (psPtr->outFile) {
 	newmask = mask & (TCL_WRITABLE | TCL_EXCEPTION);
 	if (newmask) {
-	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), mask,
+	    Tcl_CreateFileHandler(GetFd(psPtr->outFile), newmask,
 		    (Tcl_FileProc *) Tcl_NotifyChannel, psPtr->channel);
 	} else {
 	    Tcl_DeleteFileHandler(GetFd(psPtr->outFile));

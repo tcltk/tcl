@@ -787,7 +787,6 @@
 		F96D443208F272B8004A47F5 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		F96D443308F272B8004A47F5 /* regexpTestLib.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = regexpTestLib.tcl; sourceTree = "<group>"; };
 		F96D443508F272B8004A47F5 /* tcl.hpj.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.hpj.in; sourceTree = "<group>"; };
-		F96D443608F272B8004A47F5 /* tcl.wse.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.wse.in; sourceTree = "<group>"; };
 		F96D443908F272B9004A47F5 /* tcltk-man2html.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = "tcltk-man2html.tcl"; sourceTree = "<group>"; };
 		F96D443A08F272B9004A47F5 /* tclZIC.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = tclZIC.tcl; sourceTree = "<group>"; };
 		F96D443B08F272B9004A47F5 /* uniClass.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = uniClass.tcl; sourceTree = "<group>"; };
@@ -1686,7 +1685,6 @@
 				F96D443208F272B8004A47F5 /* README */,
 				F96D443308F272B8004A47F5 /* regexpTestLib.tcl */,
 				F96D443508F272B8004A47F5 /* tcl.hpj.in */,
-				F96D443608F272B8004A47F5 /* tcl.wse.in */,
 				F96D443908F272B9004A47F5 /* tcltk-man2html.tcl */,
 				F96D443A08F272B9004A47F5 /* tclZIC.tcl */,
 				F92D7F100DE777240033A13A /* tsdPerf.tcl */,

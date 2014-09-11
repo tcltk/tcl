@@ -4,7 +4,7 @@
  *	This file contains the structure definitions and some of the function
  *	declarations for the object-system (NB: not Tcl_Obj, but ::oo).
  *
- * Copyright (c) 2006-2011 by Donal K. Fellows
+ * Copyright (c) 2006-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -122,12 +122,6 @@ typedef struct ForwardMethod {
     Tcl_Obj *prefixObj;		/* The list of values to use to replace the
 				 * object and method name with. Will be a
 				 * non-empty list. */
-    int fullyQualified;		/* If 1, the command name is fully qualified
-				 * and we should let the default Tcl mechanism
-				 * handle the command lookup because it is
-				 * more efficient. If 0, we need to do a
-				 * specialized lookup based on the current
-				 * object's namespace. */
 } ForwardMethod;
 
 /*

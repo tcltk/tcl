@@ -13,10 +13,16 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2}]} {
-    chan puts stderr "Skipping tests in [info script].  tcltest 2 required."
-    return
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
+
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
 
@@ -40,11 +46,11 @@ namespace eval ::tcl::test::io {
     testConstraint testfevent       [llength [info commands testfevent]]
     testConstraint testchannelevent [llength [info commands testchannelevent]]
     testConstraint testmainthread   [llength [info commands testmainthread]]
-    testConstraint thread [expr {0 == [catch {package require Thread 2.6}]}]
+    testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
     # You need a *very* special environment to do some tests.  In particular,
     # many file systems do not support large-files...
-    testConstraint largefileSupport 0
+    testConstraint largefileSupport [expr {$::tcl_platform(os) ne "Darwin"}]
 
     # some tests can only be run is umask is 2 if "umask" cannot be run, the
     # tests will be skipped.
@@ -2214,13 +2220,17 @@ test chan-io-28.7 {Tcl_CloseEx (half-close) socket} -setup {
 	puts $sok DONE
 	exit 0
     } echo.tcl]
-} -body {
+    variable done
+    unset -nocomplain done
+    set done ""
+    set timer ""
     set ff [openpipe r $echo]
     gets $ff port
+} -body {
     set s [socket 127.0.0.1 $port]
     puts $s Hey
     close $s w
-    set timer [after 1000 [namespace code {set ::done Failed}]]
+    set timer [after 1000 [namespace code {set done Failed}]]
     set acc {}
     fileevent $s readable [namespace code {
 	if {[gets $s line]<0} {
@@ -2230,11 +2240,11 @@ test chan-io-28.7 {Tcl_CloseEx (half-close) socket} -setup {
 	}
     }]
     vwait [namespace which -variable done]
-    after cancel $timer
-    close $s r
-    close $ff
     list $done $acc
 } -cleanup {
+    catch {close $s}
+    close $ff
+    after cancel $timer
     removeFile echo.tcl
 } -result {Succeeded {Hey DONE}}
 
@@ -4516,10 +4526,10 @@ test chan-io-34.21 {Tcl_Seek and Tcl_Tell on large files} -setup {
     chan puts -nonewline $f abcdef
     lappend l [chan tell $f]
     chan close $f
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
     # truncate...
     chan close [open $path(test3) w]
-    lappend l [file size $f]
+    lappend l [file size $path(test3)]
 } -result {0 6 6 4294967296 4294967302 4294967302 0}
 
 # Test Tcl_Eof
@@ -7422,11 +7432,11 @@ test chan-io-59.1 {Thread reference of channels} {testmainthread testchannel} {
     string equal $result [testmainthread]
 } {1}
 
-test chan-io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
+test chan-io-60.1 {writing illegal utf sequences} {openpipe fileevent testbytestring} {
     # This test will hang in older revisions of the core.
     set out [open $path(script) w]
     chan puts $out {
-	chan puts [encoding convertfrom identity \xe2]
+	chan puts [testbytestring \xe2]
 	exit 1
     }
     proc readit {pipe} {

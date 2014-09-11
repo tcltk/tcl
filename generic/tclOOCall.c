@@ -4,7 +4,7 @@
  *	This file contains the method call chain management code for the
  *	object-system core.
  *
- * Copyright (c) 2005-2011 by Donal K. Fellows
+ * Copyright (c) 2005-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -38,6 +38,12 @@ struct ChainBuilder {
 #define DEFINITE_PUBLIC    0x200000
 #define KNOWN_STATE	   (DEFINITE_PROTECTED | DEFINITE_PUBLIC)
 #define SPECIAL		   (CONSTRUCTOR | DESTRUCTOR | FORCE_UNKNOWN)
+#define BUILDING_MIXINS	   0x400000
+#define TRAVERSED_MIXIN	   0x800000
+#define OBJECT_MIXIN	   0x1000000
+#define MIXIN_CONSISTENT(flags) \
+    (((flags) & OBJECT_MIXIN) ||					\
+	!((flags) & BUILDING_MIXINS) == !((flags) & TRAVERSED_MIXIN))
 
 /*
  * Function declarations for things defined in this file.
@@ -45,13 +51,13 @@ struct ChainBuilder {
 
 static void		AddClassFiltersToCallContext(Object *const oPtr,
 			    Class *clsPtr, struct ChainBuilder *const cbPtr,
-			    Tcl_HashTable *const doneFilters);
+			    Tcl_HashTable *const doneFilters, int flags);
 static void		AddClassMethodNames(Class *clsPtr, const int flags,
 			    Tcl_HashTable *const namesPtr);
 static inline void	AddMethodToCallChain(Method *const mPtr,
 			    struct ChainBuilder *const cbPtr,
 			    Tcl_HashTable *const doneFilters,
-			    Class *const filterDecl);
+			    Class *const filterDecl, int flags);
 static inline void	AddSimpleChainToCallContext(Object *const oPtr,
 			    Tcl_Obj *const methodNameObj,
 			    struct ChainBuilder *const cbPtr,
@@ -150,7 +156,7 @@ void
 TclOODeleteChain(
     CallChain *callPtr)
 {
-    if (--callPtr->refCount >= 1) {
+    if (callPtr == NULL || --callPtr->refCount >= 1) {
 	return;
     }
     if (callPtr->chain != callPtr->staticChain) {
@@ -178,7 +184,7 @@ StashCallChain(
     callPtr->refCount++;
     TclFreeIntRep(objPtr);
     objPtr->typePtr = &methodNameType;
-    objPtr->internalRep.otherValuePtr = callPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = callPtr;
 }
 
 void
@@ -205,10 +211,10 @@ DupMethodNameRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dstPtr)
 {
-    register CallChain *callPtr = srcPtr->internalRep.otherValuePtr;
+    register CallChain *callPtr = srcPtr->internalRep.twoPtrValue.ptr1;
 
     dstPtr->typePtr = &methodNameType;
-    dstPtr->internalRep.otherValuePtr = callPtr;
+    dstPtr->internalRep.twoPtrValue.ptr1 = callPtr;
     callPtr->refCount++;
 }
 
@@ -216,10 +222,9 @@ static void
 FreeMethodNameRep(
     Tcl_Obj *objPtr)
 {
-    register CallChain *callPtr = objPtr->internalRep.otherValuePtr;
+    register CallChain *callPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     TclOODeleteChain(callPtr);
-    objPtr->internalRep.otherValuePtr = NULL;
     objPtr->typePtr = NULL;
 }
 
@@ -435,7 +440,7 @@ TclOOGetSortedMethodList(
 
     AddClassMethodNames(oPtr->selfCls, flags, &names);
     FOREACH(mixinPtr, oPtr->mixins) {
-	AddClassMethodNames(mixinPtr, flags, &names);
+	AddClassMethodNames(mixinPtr, flags|TRAVERSED_MIXIN, &names);
     }
 
     /*
@@ -599,7 +604,7 @@ AddClassMethodNames(
 
 	/* TODO: Beware of infinite loops! */
 	FOREACH(mixinPtr, clsPtr->mixins) {
-	    AddClassMethodNames(mixinPtr, flags, namesPtr);
+	    AddClassMethodNames(mixinPtr, flags|TRAVERSED_MIXIN, namesPtr);
 	}
     }
 
@@ -696,13 +701,13 @@ AddSimpleChainToCallContext(
 
 	FOREACH(mixinPtr, oPtr->mixins) {
 	    AddSimpleClassChainToCallContext(mixinPtr, methodNameObj, cbPtr,
-		    doneFilters, flags, filterDecl);
+		    doneFilters, flags|TRAVERSED_MIXIN, filterDecl);
 	}
 	if (oPtr->methodsPtr) {
 	    hPtr = Tcl_FindHashEntry(oPtr->methodsPtr, (char*) methodNameObj);
 	    if (hPtr != NULL) {
 		AddMethodToCallChain(Tcl_GetHashValue(hPtr), cbPtr,
-			doneFilters, filterDecl);
+			doneFilters, filterDecl, flags);
 	    }
 	}
     }
@@ -733,9 +738,15 @@ AddMethodToCallChain(
 				 * processed. If NULL, not processing filters.
 				 * Note that this function does not update
 				 * this hashtable. */
-    Class *const filterDecl)	/* The class that declared the filter. If
+    Class *const filterDecl,	/* The class that declared the filter. If
 				 * NULL, either the filter was declared by the
 				 * object or this isn't a filter. */
+    int flags)			/* Used to check if we're mixin-consistent
+				 * only. Mixin-consistent means that either
+				 * we're looking to add things from a mixin
+				 * and we have passed a mixin, or we're not
+				 * looking to add things from a mixin and have
+				 * not passed a mixin. */
 {
     register CallChain *callPtr = cbPtr->callChainPtr;
     int i;
@@ -744,9 +755,11 @@ AddMethodToCallChain(
      * Return if this is just an entry used to record whether this is a public
      * method. If so, there's nothing real to call and so nothing to add to
      * the call chain.
+     *
+     * This is also where we enforce mixin-consistency.
      */
 
-    if (mPtr == NULL || mPtr->typePtr == NULL) {
+    if (mPtr == NULL || mPtr->typePtr == NULL || !MIXIN_CONSISTENT(flags)) {
 	return;
     }
 
@@ -952,7 +965,7 @@ TclOOGetCallContext(
 	const int reuseMask = ((flags & PUBLIC_METHOD) ? ~0 : ~PUBLIC_METHOD);
 
 	if (cacheInThisObj->typePtr == &methodNameType) {
-	    callPtr = cacheInThisObj->internalRep.otherValuePtr;
+	    callPtr = cacheInThisObj->internalRep.twoPtrValue.ptr1;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
@@ -1002,6 +1015,8 @@ TclOOGetCallContext(
 
     if (flags & FORCE_UNKNOWN) {
 	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
+		&cb, NULL, BUILDING_MIXINS, NULL);
+	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
 		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
 	callPtr->epoch = -1;
@@ -1025,21 +1040,32 @@ TclOOGetCallContext(
 	doFilters = 1;
 	Tcl_InitObjHashTable(&doneFilters);
 	FOREACH(mixinPtr, oPtr->mixins) {
-	    AddClassFiltersToCallContext(oPtr, mixinPtr, &cb, &doneFilters);
+	    AddClassFiltersToCallContext(oPtr, mixinPtr, &cb, &doneFilters,
+		    TRAVERSED_MIXIN|BUILDING_MIXINS|OBJECT_MIXIN);
+	    AddClassFiltersToCallContext(oPtr, mixinPtr, &cb, &doneFilters,
+		    OBJECT_MIXIN);
 	}
 	FOREACH(filterObj, oPtr->filters) {
+	    AddSimpleChainToCallContext(oPtr, filterObj, &cb, &doneFilters,
+		    BUILDING_MIXINS, NULL);
 	    AddSimpleChainToCallContext(oPtr, filterObj, &cb, &doneFilters, 0,
 		    NULL);
 	}
-	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, &cb, &doneFilters);
+	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, &cb, &doneFilters,
+		BUILDING_MIXINS);
+	AddClassFiltersToCallContext(oPtr, oPtr->selfCls, &cb, &doneFilters,
+		0);
 	Tcl_DeleteHashTable(&doneFilters);
     }
     count = cb.filterLength = callPtr->numChain;
 
     /*
-     * Add the actual method implementations.
+     * Add the actual method implementations. We have to do this twice to
+     * handle class mixins right.
      */
 
+    AddSimpleChainToCallContext(oPtr, methodNameObj, &cb, NULL,
+	    flags|BUILDING_MIXINS, NULL);
     AddSimpleChainToCallContext(oPtr, methodNameObj, &cb, NULL, flags, NULL);
 
     /*
@@ -1058,6 +1084,8 @@ TclOOGetCallContext(
 	    TclOODeleteChain(callPtr);
 	    return NULL;
 	}
+	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
+		&cb, NULL, BUILDING_MIXINS, NULL);
 	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
 		&cb, NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
@@ -1202,7 +1230,9 @@ TclOOGetStereotypeCallChain(
      */
 
     Tcl_InitObjHashTable(&doneFilters);
-    AddClassFiltersToCallContext(&obj, clsPtr, &cb, &doneFilters);
+    AddClassFiltersToCallContext(&obj, clsPtr, &cb, &doneFilters,
+	    BUILDING_MIXINS);
+    AddClassFiltersToCallContext(&obj, clsPtr, &cb, &doneFilters, 0);
     Tcl_DeleteHashTable(&doneFilters);
     count = cb.filterLength = callPtr->numChain;
 
@@ -1210,6 +1240,8 @@ TclOOGetStereotypeCallChain(
      * Add the actual method implementations.
      */
 
+    AddSimpleChainToCallContext(&obj, methodNameObj, &cb, NULL,
+	    flags|BUILDING_MIXINS, NULL);
     AddSimpleChainToCallContext(&obj, methodNameObj, &cb, NULL, flags, NULL);
 
     /*
@@ -1219,6 +1251,8 @@ TclOOGetStereotypeCallChain(
      */
 
     if (count == callPtr->numChain) {
+	AddSimpleChainToCallContext(&obj, fPtr->unknownMethodNameObj, &cb,
+		NULL, BUILDING_MIXINS, NULL);
 	AddSimpleChainToCallContext(&obj, fPtr->unknownMethodNameObj, &cb,
 		NULL, 0, NULL);
 	callPtr->flags |= OO_UNKNOWN_METHOD;
@@ -1260,12 +1294,15 @@ AddClassFiltersToCallContext(
     Class *clsPtr,		/* Class to get the filters from. */
     struct ChainBuilder *const cbPtr,
 				/* Context to fill with call chain entries. */
-    Tcl_HashTable *const doneFilters)
+    Tcl_HashTable *const doneFilters,
 				/* Where to record what filters have been
 				 * processed. Keys are objects, values are
 				 * ignored. */
+    int flags)			/* Whether we've gone along a mixin link
+				 * yet. */
 {
-    int i;
+    int i, clearedFlags =
+	    flags & ~(TRAVERSED_MIXIN|OBJECT_MIXIN|BUILDING_MIXINS);
     Class *superPtr, *mixinPtr;
     Tcl_Obj *filterObj;
 
@@ -1280,7 +1317,8 @@ AddClassFiltersToCallContext(
      */
 
     FOREACH(mixinPtr, clsPtr->mixins) {
-	AddClassFiltersToCallContext(oPtr, mixinPtr, cbPtr, doneFilters);
+	AddClassFiltersToCallContext(oPtr, mixinPtr, cbPtr, doneFilters,
+		flags|TRAVERSED_MIXIN);
     }
 
     /*
@@ -1289,13 +1327,18 @@ AddClassFiltersToCallContext(
      * override how filters work to extend their behaviour.
      */
 
-    FOREACH(filterObj, clsPtr->filters) {
-	int isNew;
+    if (MIXIN_CONSISTENT(flags)) {
+	FOREACH(filterObj, clsPtr->filters) {
+	    int isNew;
 
-	(void) Tcl_CreateHashEntry(doneFilters, (char *) filterObj, &isNew);
-	if (isNew) {
-	    AddSimpleChainToCallContext(oPtr, filterObj, cbPtr, doneFilters,
-		    0, clsPtr);
+	    (void) Tcl_CreateHashEntry(doneFilters, (char *) filterObj,
+		    &isNew);
+	    if (isNew) {
+		AddSimpleChainToCallContext(oPtr, filterObj, cbPtr,
+			doneFilters, clearedFlags|BUILDING_MIXINS, clsPtr);
+		AddSimpleChainToCallContext(oPtr, filterObj, cbPtr,
+			doneFilters, clearedFlags, clsPtr);
+	    }
 	}
     }
 
@@ -1309,7 +1352,8 @@ AddClassFiltersToCallContext(
 	goto tailRecurse;
     default:
 	FOREACH(superPtr, clsPtr->superclasses) {
-	    AddClassFiltersToCallContext(oPtr, superPtr, cbPtr, doneFilters);
+	    AddClassFiltersToCallContext(oPtr, superPtr, cbPtr, doneFilters,
+		    flags);
 	}
     case 0:
 	return;
@@ -1356,16 +1400,16 @@ AddSimpleClassChainToCallContext(
   tailRecurse:
     FOREACH(superPtr, classPtr->mixins) {
 	AddSimpleClassChainToCallContext(superPtr, methodNameObj, cbPtr,
-		doneFilters, flags, filterDecl);
+		doneFilters, flags|TRAVERSED_MIXIN, filterDecl);
     }
 
     if (flags & CONSTRUCTOR) {
 	AddMethodToCallChain(classPtr->constructorPtr, cbPtr, doneFilters,
-		filterDecl);
+		filterDecl, flags);
 
     } else if (flags & DESTRUCTOR) {
 	AddMethodToCallChain(classPtr->destructorPtr, cbPtr, doneFilters,
-		filterDecl);
+		filterDecl, flags);
     } else {
 	Tcl_HashEntry *hPtr = Tcl_FindHashEntry(&classPtr->classMethods,
 		(char *) methodNameObj);
@@ -1384,7 +1428,7 @@ AddSimpleClassChainToCallContext(
 		    flags |= DEFINITE_PROTECTED;
 		}
 	    }
-	    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl);
+	    AddMethodToCallChain(mPtr, cbPtr, doneFilters, filterDecl, flags);
 	}
     }
 

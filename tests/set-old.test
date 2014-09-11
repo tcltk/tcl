@@ -678,6 +678,11 @@ test set-old-8.57 {array command, array get with trivial pattern} {
     set a(y) 2
     array get a x
 } {x 1}
+test set-old-8.58 {array command, array set with LVT and odd length literal} {
+    list [catch {apply {{} {
+	array set a {b c d}
+    }}} msg] $msg
+} {1 {list must have an even number of elements}}
 
 test set-old-9.1 {ids for array enumeration} {
     catch {unset a}

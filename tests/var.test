@@ -289,7 +289,7 @@ test var-3.11 {MakeUpvar, my var looks like array elem} -setup {
 } -returnCodes error -body {
     set aaaaa 789789
     upvar #0 aaaaa foo(bar)
-} -result {bad variable name "foo(bar)": upvar won't create a scalar variable that looks like an array element}
+} -result {bad variable name "foo(bar)": can't create a scalar variable that looks like an array element}
 
 test var-4.1 {Tcl_GetVariableName, global variable} testgetvarfullname {
     catch {unset a}
@@ -748,6 +748,9 @@ test var-15.1 {segfault in [unset], [Bug 735335]} {
     namespace eval test A useSomeUnlikelyNameHere
     namespace eval test unset useSomeUnlikelyNameHere
 } {}
+test var-15.2 {compiled unset evaluation order, Bug 3970f54c4e} {
+    apply {{} {unset foo [return ok]}}
+} ok
 
 test var-16.1 {CallVarTraces: save/restore interp error state} {
     trace add variable ::errorCode write " ;#"
@@ -793,6 +796,88 @@ test var-19.1 {crash when freeing locals hashtable: Bug 3037525} {
     foo ; # This crashes without the fix for the bug
     rename foo {}
 } {}
+
+test var-20.1 {array set compilation correctness: Bug 3603163} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	global x
+	array set x {a 1}
+    }}
+    array size x
+} -result 1
+test var-20.2 {array set compilation correctness: Bug 3603163} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	global x
+	array set x {}
+    }}
+    array size x
+} -result 0
+test var-20.3 {array set compilation correctness: Bug 3603163} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	array set ::x {a 1}
+    }}
+    array size x
+} -result 1
+test var-20.4 {array set compilation correctness: Bug 3603163} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	array set ::x {}
+    }}
+    array size x
+} -result 0
+test var-20.5 {array set compilation correctness: Bug 3603163} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	global x
+	eval {array set x {a 1}}
+    }}
+    array size x
+} -result 1
+test var-20.6 {array set compilation correctness: Bug 3603163} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	global x
+	eval {array set x {}}
+    }}
+    array size x
+} -result 0
+test var-20.7 {array set compilation correctness: Bug 3603163} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	eval {array set ::x {a 1}}
+    }}
+    array size x
+} -result 1
+test var-20.8 {array set compilation correctness: Bug 3603163} -setup {
+    unset -nocomplain x
+} -body {
+    apply {{} {
+	eval {array set ::x {}}
+    }}
+    array size x
+} -result 0
+
+test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+	set foo bar
+        unset foo {*}{
+        } [return [incr n -[linenumber]]]
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+
 
 catch {namespace delete ns}
 catch {unset arr}

@@ -11,7 +11,6 @@
  */
 
 #include "tclWinInt.h"
-#include <sys/stat.h>
 
 /*
  * The following variable is used to tell whether this module has been
@@ -757,6 +756,13 @@ ConsoleInputProc(
 
     if (ReadConsoleBytes(infoPtr->handle, (LPVOID) buf, (DWORD) bufSize,
 	    &count) == TRUE) {
+	/*
+	 * TODO: This potentially writes beyond the limits specified
+	 * by the caller.  In practice this is harmless, since all writes
+	 * are into ChannelBuffers, and those have padding, but still
+	 * ought to remove this, unless some Windows wizard can give
+	 * a reason not to.  
+	 */
 	buf[count] = '\0';
 	return count;
     }
@@ -801,7 +807,7 @@ ConsoleOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error;
     }
 
@@ -1080,7 +1086,7 @@ WaitForRead(
 	     * is in non-blocking mode.
 	     */
 
-	    errno = EAGAIN;
+	    errno = EWOULDBLOCK;
 	    return -1;
 	}
 

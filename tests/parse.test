@@ -20,15 +20,18 @@ namespace eval ::tcl::test::parse {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testparser [llength [info commands testparser]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testevalobjv [llength [info commands testevalobjv]]
 testConstraint testevalex [llength [info commands testevalex]]
 testConstraint testparsevarname [llength [info commands testparsevarname]]
 testConstraint testparsevar [llength [info commands testparsevar]]
 testConstraint testasync [llength [info commands testasync]]
 testConstraint testcmdtrace [llength [info commands testcmdtrace]]
+testConstraint testevent [llength [info commands testevent]]
+testConstraint memory [llength [info commands memory]]
 
-test parse-1.1 {Tcl_ParseCommand procedure, computing string length} testparser {
-    testparser [bytestring "foo\0 bar"] -1
+test parse-1.1 {Tcl_ParseCommand procedure, computing string length} {testparser testbytestring} {
+    testparser [testbytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-1.2 {Tcl_ParseCommand procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -299,9 +302,9 @@ test parse-6.15 {ParseTokens procedure, backslash-newline} testparser {
 test parse-6.16 {ParseTokens procedure, backslash substitution} testparser {
     testparser {\n\a\x7f} 0
 } {- {\n\a\x7f} 1 word {\n\a\x7f} 3 backslash {\n} 0 backslash {\a} 0 backslash {\x7f} 0 {}}
-test parse-6.17 {ParseTokens procedure, null characters} testparser {
-    testparser [bytestring "foo\0zz"] 0
-} "- [bytestring foo\0zz] 1 word [bytestring foo\0zz] 3 text foo 0 text [bytestring \0] 0 text zz 0 {}"
+test parse-6.17 {ParseTokens procedure, null characters} {testparser testbytestring} {
+    testparser [testbytestring "foo\0zz"] 0
+} "- [testbytestring foo\0zz] 1 word [testbytestring foo\0zz] 3 text foo 0 text [testbytestring \0] 0 text zz 0 {}"
 test parse-6.18 {ParseTokens procedure, seek past numBytes for close-bracket} testparser {
     # Test for Bug 681841
     list [catch {testparser {[a]} 2} msg] $msg
@@ -438,7 +441,7 @@ test parse-8.12 {Tcl_EvalObjv procedure, TCL_EVAL_INVOKE} {
 
 
 test parse-9.1 {Tcl_LogCommandInfo, line numbers} testevalex {
-    catch {unset x}
+    unset -nocomplain x
     list [catch {testevalex {for {} 1 {} {
 
 
@@ -479,7 +482,7 @@ test parse-10.3 {Tcl_EvalTokens, nested commands} testevalex {
     testevalex {concat [expr 2 + 6]}
 } {8}
 test parse-10.4 {Tcl_EvalTokens, nested commands} testevalex {
-    catch {unset a}
+    unset -nocomplain a
     list [catch {testevalex {concat xxx[expr $a]}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-10.5 {Tcl_EvalTokens, simple variables} testevalex {
@@ -487,21 +490,21 @@ test parse-10.5 {Tcl_EvalTokens, simple variables} testevalex {
     testevalex {concat $a}
 } {hello}
 test parse-10.6 {Tcl_EvalTokens, array variables} testevalex {
-    catch {unset a}
+    unset -nocomplain a
     set a(12) 46
     testevalex {concat $a(12)}
 } {46}
 test parse-10.7 {Tcl_EvalTokens, array variables} testevalex {
-    catch {unset a}
+    unset -nocomplain a
     set a(12) 46
     testevalex {concat $a(1[expr 3 - 1])}
 } {46}
 test parse-10.8 {Tcl_EvalTokens, array variables} testevalex {
-    catch {unset a}
+    unset -nocomplain a
     list [catch {testevalex {concat $x($a)}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-10.9 {Tcl_EvalTokens, array variables} testevalex {
-    catch {unset a}
+    unset -nocomplain a
     list [catch {testevalex {concat xyz$a(1)}} msg] $msg
 } {1 {can't read "a(1)": no such variable}}
 test parse-10.10 {Tcl_EvalTokens, object values} testevalex {
@@ -541,11 +544,11 @@ test parse-11.2 {Tcl_EvalEx, error while parsing} testevalex {
     list [catch {testevalex {concat "abc}} msg] $msg
 } {1 {missing "}}
 test parse-11.3 {Tcl_EvalEx, error while collecting words} testevalex {
-    catch {unset a}
+    unset -nocomplain a
     list [catch {testevalex {concat xyz $a}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-11.4 {Tcl_EvalEx, error in Tcl_EvalObjv call} testevalex {
-    catch {unset a}
+    unset -nocomplain a
     list [catch {testevalex {_bogus_ a b c d}} msg] $msg
 } {1 {invalid command name "_bogus_"}}
 test parse-11.5 {Tcl_EvalEx, exceptional return} testevalex {
@@ -564,7 +567,7 @@ test parse-11.8 {Tcl_EvalEx, multiple commands in script} testevalex {
     }] $a $c
 } {d b d}
 test parse-11.9 {Tcl_EvalEx, freeing memory after error} testevalex {
-    catch {unset a}
+    unset -nocomplain a
     list [catch {testevalex {concat a b c d e f g h i j k l m n o p q r s t u v w x y z $a}} msg] $msg
 } {1 {can't read "a": no such variable}}
 test parse-11.10 {Tcl_EvalTokens, empty commands} testevalex {
@@ -670,16 +673,36 @@ test parse-13.3 {Tcl_ParseVar procedure, no variable name} testparsevar {
     testparsevar {$.123}
 } {{$} .123}
 test parse-13.4 {Tcl_ParseVar procedure, error looking up variable} testparsevar {
-    catch {unset abc}
+    unset -nocomplain abc
     list [catch {testparsevar {$abc}} msg] $msg
 } {1 {can't read "abc": no such variable}}
 test parse-13.5 {Tcl_ParseVar procedure, error looking up variable} testparsevar {
-    catch {unset abc}
+    unset -nocomplain abc
     list [catch {testparsevar {$abc([bogus x y z])}} msg] $msg
 } {1 {invalid command name "bogus"}}
+test parse-13.6 {Tcl_ParseVar memory leak} -constraints memory -setup {
+    proc getbytes {} {
+	return [lindex [split [memory info] \n] 3 3]
+    }
+} -body {
+    set a() foo
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	set vn {}
+	set res [testparsevar [append vn $ a([string repeat {[]} 19]) bar]]
+	if {$res ne {foo bar}} {error "Unexpected result: $res"}
 
-test parse-14.1 {Tcl_ParseBraces procedure, computing string length} testparser {
-    testparser [bytestring "foo\0 bar"] -1
+	set tmp $end
+	set end [getbytes]
+    }
+    expr {$end - $tmp}
+} -cleanup {
+    unset -nocomplain a end i vn res tmp
+    rename getbytes {}
+} -result 0
+
+test parse-14.1 {Tcl_ParseBraces procedure, computing string length} {testparser testbytestring} {
+    testparser [testbytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-14.2 {Tcl_ParseBraces procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -715,8 +738,8 @@ test parse-14.12 {Tcl_ParseBraces procedure, missing close brace} testparser {
     list [catch {testparser "foo \{xy\\\nz" 0} msg] $msg $::errorInfo
 } {1 {missing close-brace} missing\ close-brace\n\ \ \ \ (remainder\ of\ script:\ \"\{xy\\\nz\")\n\ \ \ \ invoked\ from\ within\n\"testparser\ \"foo\ \\\{xy\\\\\\nz\"\ 0\"}
 
-test parse-15.1 {Tcl_ParseQuotedString procedure, computing string length} testparser {
-    testparser [bytestring "foo\0 bar"] -1
+test parse-15.1 {Tcl_ParseQuotedString procedure, computing string length} {testparser testbytestring} {
+    testparser [testbytestring "foo\0 bar"] -1
 } {- foo 1 simple foo 1 text foo 0 {}}
 test parse-15.2 {Tcl_ParseQuotedString procedure, computing string length} testparser {
     testparser "foo bar" -1
@@ -881,11 +904,11 @@ test parse-15.53 {CommandComplete procedure} "
 test parse-15.54 {CommandComplete procedure} "
     info complete \"foo bar;# \{\"
 " 1
-test parse-15.55 {CommandComplete procedure} {
-    info complete "set x [bytestring \0]; puts hi"
+test parse-15.55 {CommandComplete procedure} testbytestring {
+    info complete "set x [testbytestring \0]; puts hi"
 } 1
-test parse-15.56 {CommandComplete procedure} {
-    info complete "set x [bytestring \0]; \{"
+test parse-15.56 {CommandComplete procedure} testbytestring {
+    info complete "set x [testbytestring \0]; \{"
 } 0
 test parse-15.57 {CommandComplete procedure} {
     info complete "# Comment should be complete command"
@@ -895,7 +918,7 @@ test parse-15.58 {CommandComplete procedure, memory leaks} {
 } 1
 test parse-15.59 {CommandComplete procedure} {
     # Test for Tcl Bug 684744
-    info complete [encoding convertfrom identity "\x00;if 1 \{"]
+    info complete [testbytestring "\x00;if 1 \{"]
 } 0
 test parse-15.60 {CommandComplete procedure} {
     # Test for Tcl Bug 1968882
@@ -1089,6 +1112,19 @@ test parse-20.11 {TclParseBackslash: truncated escape} testparser {
 test parse-20.12 {TclParseBackslash: truncated escape} testparser {
     testparser {\x12X} 5
 } {- {\x12X} 1 word {\x12X} 2 backslash {\x12} 0 text X 0 {}}
+
+test parse-21.0 {Bug 1884496} testevent {
+    set ::script {testevent delete a; set a [p]; set ::done $a}
+    proc ::p {} {string first s $::script}
+    testevent queue a head $::script
+    vwait done
+} {}
+test parse-21.1 {TCL_EVAL_DIRECT coverage} testevent {
+    testevent queue a head {testevent delete a; \
+	set ::done [dict get [info frame 0] line]}
+    vwait done
+    set ::done
+} 2
 
 cleanupTests
 }

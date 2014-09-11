@@ -13,17 +13,20 @@
 package require Tcl 8.5
 # When the version number changes, be sure to update the pkgIndex.tcl file,
 # and the installation directory in the Makefiles.
-package provide msgcat 1.4.5
+package provide msgcat 1.5.2
 
 namespace eval msgcat {
     namespace export mc mcload mclocale mcmax mcmset mcpreferences mcset \
-	    mcunknown
+	    mcunknown mcflset mcflmset
 
     # Records the current locale as passed to mclocale
     variable Locale ""
 
     # Records the list of locales to search
     variable Loclist {}
+
+    # Records the locale of the currently sourced message catalogue file
+    variable FileLocale
 
     # Records the mapping between source strings and translated strings.  The
     # dict key is of the form "<locale> <namespace> <src>", where locale and
@@ -277,16 +280,29 @@ proc msgcat::mcpreferences {} {
 #	Returns the number of message catalogs that were loaded.
 
 proc msgcat::mcload {langdir} {
+    variable FileLocale
+    # Save the file locale if we are recursively called
+    if {[info exists FileLocale]} {
+	set nestedFileLocale $FileLocale
+    }
     set x 0
     foreach p [mcpreferences] {
-	if { $p eq {} } {
+	if {$p eq {}} {
 	    set p ROOT
 	}
 	set langfile [file join $langdir $p.msg]
 	if {[file exists $langfile]} {
 	    incr x
+	    set FileLocale [string tolower [file tail [file rootname $langfile]]]
+	    if {"root" eq $FileLocale} {
+		set FileLocale ""
+	    }
 	    uplevel 1 [list ::source -encoding utf-8 $langfile]
+	    unset FileLocale
 	}
+    }
+    if {[info exists nestedFileLocale]} {
+	set FileLocale $nestedFileLocale
     }
     return $x
 }
@@ -318,6 +334,35 @@ proc msgcat::mcset {locale src {dest ""}} {
     return $dest
 }
 
+# msgcat::mcflset --
+#
+#	Set the translation for a given string in the current file locale.
+#
+# Arguments:
+#	src		The source string.
+#	dest		(Optional) The translated string.  If omitted,
+#			the source string is used.
+#
+# Results:
+#	Returns the new locale.
+
+proc msgcat::mcflset {src {dest ""}} {
+    variable FileLocale
+    variable Msgs
+
+    if {![info exists FileLocale]} {
+	return -code error \
+	    "must only be used inside a message catalog loaded with ::msgcat::mcload"
+    }
+    if {[llength [info level 0]] == 2} { ;# dest not specified
+	set dest $src
+    }
+
+    set ns [uplevel 1 [list ::namespace current]]
+    dict set Msgs $FileLocale $ns $src $dest
+    return $dest
+}
+
 # msgcat::mcmset --
 #
 #	Set the translation for multiple strings in a specified locale.
@@ -329,7 +374,7 @@ proc msgcat::mcset {locale src {dest ""}} {
 # Results:
 #	Returns the number of pairs processed
 
-proc msgcat::mcmset {locale pairs } {
+proc msgcat::mcmset {locale pairs} {
     variable Msgs
 
     set length [llength $pairs]
@@ -345,7 +390,38 @@ proc msgcat::mcmset {locale pairs } {
 	dict set Msgs $locale $ns $src $dest
     }
 
-    return $length
+    return [expr {$length / 2}]
+}
+
+# msgcat::mcflmset --
+#
+#	Set the translation for multiple strings in the mc file locale.
+#
+# Arguments:
+#	pairs		One or more src/dest pairs (must be even length)
+#
+# Results:
+#	Returns the number of pairs processed
+
+proc msgcat::mcflmset {pairs} {
+    variable FileLocale
+    variable Msgs
+
+    if {![info exists FileLocale]} {
+	return -code error \
+	    "must only be used inside a message catalog loaded with ::msgcat::mcload"
+    }
+    set length [llength $pairs]
+    if {$length % 2} {
+	return -code error "bad translation list:\
+		should be \"[lindex [info level 0] 0] locale {src dest ...}\""
+    }
+
+    set ns [uplevel 1 [list ::namespace current]]
+    foreach {src dest} $pairs {
+	dict set Msgs $FileLocale $ns $src $dest
+    }
+    return [expr {$length / 2}]
 }
 
 # msgcat::mcunknown --
@@ -465,8 +541,11 @@ proc msgcat::Init {} {
     # settings, or fall back on locale of "C".
     #
 
-    # First check registry value LocalName present from Windows Vista
-    # which contains the local string as RFC5646, composed of:
+    # On Vista and later:
+    # HCU/Control Panel/Desktop : PreferredUILanguages is for language packs,
+    # HCU/Control Pannel/International : localName is the default locale.
+    #
+    # They contain the local string as RFC5646, composed of:
     # [a-z]{2,3} : language
     # -[a-z]{4}  : script (optional, translated by table Latn->latin)
     # -[a-z]{2}|[0-9]{3} : territory (optional, numerical region codes not used)
@@ -474,26 +553,25 @@ proc msgcat::Init {} {
     # Those are translated to local strings.
     # Examples: de-CH -> de_ch, sr-Latn-CS -> sr_cs@latin, es-419 -> es
     #
-    set key {HKEY_CURRENT_USER\Control Panel\International}
-    if {([registry values $key "LocaleName"] ne "")
-	    && [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
-	    [string tolower [registry get $key "LocaleName"]] match locale\
-	    script territory]} {
-	if {"" ne $territory} {
-	    append locale _ $territory
-	}
-	set modifierDict [dict create latn latin cyrl cyrillic]
-	if {[dict exists $modifierDict $script]} {
-	    append locale @ [dict get $modifierDict $script]
-	}
-	if {![catch {
-	    mclocale [ConvertLocale $locale]
-	}]} {
-	    return
+    foreach key {{HKEY_CURRENT_USER\Control Panel\Desktop} {HKEY_CURRENT_USER\Control Panel\International}}\
+	    value {PreferredUILanguages localeName} {
+	if {![catch {registry get $key $value} localeName]
+		&& [regexp {^([a-z]{2,3})(?:-([a-z]{4}))?(?:-([a-z]{2}))?(?:-.+)?$}\
+		    [string tolower $localeName] match locale script territory]} {
+	    if {"" ne $territory} {
+		append locale _ $territory
+	    }
+	    set modifierDict [dict create latn latin cyrl cyrillic]
+	    if {[dict exists $modifierDict $script]} {
+		append locale @ [dict get $modifierDict $script]
+	    }
+	    if {![catch {mclocale [ConvertLocale $locale]}]} {
+		return
+	    }
 	}
     }
 
-    # then check key locale which contains a numerical language ID
+    # then check value locale which contains a numerical language ID
     if {[catch {
 	set locale [registry get $key "locale"]
     }]} {

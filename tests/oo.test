@@ -2,12 +2,12 @@
 # Sourcing this file into Tcl runs the tests and generates output for errors.
 # No output means no errors were found.
 #
-# Copyright (c) 2006-2011 Donal K. Fellows
+# Copyright (c) 2006-2013 Donal K. Fellows
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require -exact TclOO 0.6.3 ;# Must match value in generic/tclOO.h
+package require TclOO 1.0.1
 package require tcltest 2
 if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
@@ -101,7 +101,7 @@ test oo-0.8 {leak in variable management} -setup {
 test oo-0.9 {various types of presence of the TclOO package} {
     list [lsearch -nocase -all -inline [package names] tcloo] \
 	[package present TclOO] [package versions TclOO]
-} [list TclOO $::oo::version $::oo::version]
+} [list TclOO $::oo::patchlevel $::oo::patchlevel]
 
 test oo-1.1 {basic test of OO functionality: no classes} {
     set result {}
@@ -258,6 +258,29 @@ test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
     rename test-oo-1.18 {}
     A destroy
 } -result ::C
+test oo-1.18.1 {Bug 75b8433707: memory leak in oo-1.18} -setup {
+    proc test-oo-1.18 {} return
+} -constraints memory -body {
+    leaktest {
+	oo::class create A
+	oo::class create B {superclass A}
+	oo::define B constructor {} {A create test-oo-1.18}
+	B create C
+	A destroy
+    }
+} -cleanup {
+    rename test-oo-1.18 {}
+} -result 0
+test oo-1.18.2 {Bug 21c144f0f5} -setup {
+    interp create slave
+} -body {
+    slave eval {
+	oo::define [oo::class create foo] superclass oo::class
+	oo::class destroy
+    }
+} -cleanup {
+    interp delete slave
+} 
 test oo-1.19 {basic test of OO functionality: teardown order} -body {
     oo::object create o
     namespace delete [info object namespace o]
@@ -270,6 +293,23 @@ test oo-1.20 {basic test of OO functionality: my teardown post rename} -body {
     obj destroy
     info commands ::AGlobalName
 } -result {}
+test oo-1.21 {basic test of OO functionality: default relations} -setup {
+    set fresh [interp create]
+} -body {
+    lmap x [$fresh eval {
+	foreach cmd {instances subclasses mixins superclass} {
+	    foreach initial {object class Slot} {
+		lappend x [info class $cmd ::oo::$initial]
+	    }
+	}
+	foreach initial {object class Slot} {
+	    lappend x [info object class ::oo::$initial]
+	}
+	return $x
+    }] {lsort $x}
+} -cleanup {
+    interp delete $fresh
+} -result {{} {::oo::Slot ::oo::class ::oo::object} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -936,6 +976,69 @@ test oo-6.18 {Bug 3408830: more forwarding cases} -setup {
 } -returnCodes error -cleanup {
     fooClass destroy
 } -result {wrong # args: should be "::foo len string"}
+test oo-6.19 {Bug 3610404: forwarding resolution + traces} -setup {
+    oo::object create foo
+    unset -nocomplain ::result
+    set ::result {}
+} -body {
+    proc ::my {method} {lappend ::result global}
+    oo::objdefine foo {
+	method target {} {lappend ::result instance}
+	forward bar my target
+	method bump {} {
+	    set ns [info object namespace ::foo]
+	    rename ${ns}::my ${ns}::
+	    rename ${ns}:: ${ns}::my
+	}
+    }
+    proc harness {} {
+	foo target
+	foo bar
+	foo target
+    }
+    trace add execution harness enterstep {apply {{cmd args} {foo bump}}}
+    foo target
+    foo bar
+    foo bump
+    foo bar
+    harness
+} -cleanup {
+    catch {rename harness {}}
+    catch {rename ::my {}}
+    foo destroy
+} -result {instance instance instance instance instance instance}
+test oo-6.20 {Bug 3610404: forwarding resolution + traces} -setup {
+    oo::class create fooClass
+    fooClass create foo
+    unset -nocomplain ::result
+    set ::result {}
+} -body {
+    proc ::my {method} {lappend ::result global}
+    oo::define fooClass {
+	method target {} {lappend ::result class}
+	forward bar my target
+	method bump {} {
+	    set ns [info object namespace [self]]
+	    rename ${ns}::my ${ns}::
+	    rename ${ns}:: ${ns}::my
+	}
+    }
+    proc harness {} {
+	foo target
+	foo bar
+	foo target
+    }
+    trace add execution harness enterstep {apply {{cmd args} {foo bump}}}
+    foo target
+    foo bar
+    foo bump
+    foo bar
+    harness
+} -cleanup {
+    catch {rename harness {}}
+    catch {rename ::my {}}
+    fooClass destroy
+} -result {class class class class class class}
 
 test oo-7.1 {OO: inheritance 101} -setup {
     oo::class create superClass
@@ -1776,6 +1879,36 @@ test oo-15.9 {ensemble rewriting must not bleed through oo::copy} -setup {
 } -returnCodes error -cleanup {
     Foo destroy
 } -result {wrong # args: should be "::bar <cloned> a b"}
+test oo-15.10 {variable binding must not bleed through oo::copy} -setup {
+    oo::class create FooClass
+    set result {}
+} -body {
+    set obj1 [FooClass new]
+    oo::objdefine $obj1 {
+	variable var 
+	method m {} {
+	    set var foo
+	}
+	method get {} {
+	    return $var
+	}
+	export eval
+    }
+
+    $obj1 m
+    lappend result [$obj1 get]
+    set obj2 [oo::copy $obj1]
+    $obj2 eval {
+	set var bar
+    }
+    lappend result [$obj2 get]
+    $obj1 eval {
+	set var grill
+    }
+    lappend result [$obj1 get] [$obj2 get]
+} -cleanup {
+    FooClass destroy
+} -result {foo bar grill bar}
 
 test oo-16.1 {OO: object introspection} -body {
     info object
@@ -2204,6 +2337,25 @@ test oo-19.2 {OO: varname method: Bug 2883857} -setup {
 } -cleanup {
     SpecialClass destroy
 } -result ::oo_test::x(y)
+test oo-19.3 {OO: varname method and variable decl: Bug 3603695} -setup {
+    oo::class create testClass {
+	variable foo
+	export varname
+	constructor {} {
+	    variable foo x
+	}
+	method bar {obj} {
+	    my varname foo
+	    $obj varname foo
+	}
+    }
+} -body {
+    testClass create A
+    testClass create B
+    lsearch [list [A varname foo] [B varname foo]] [B bar A]
+} -cleanup {
+    testClass destroy
+} -result 0
 
 test oo-20.1 {OO: variable method} -body {
     oo::class create testClass {
@@ -3355,6 +3507,42 @@ test oo-34.8 {TIP 380: slots - presence} {
 test oo-34.9 {TIP 380: slots - presence} {
     getMethods oo::objdefine::variable
 } {{-append -clear -set} {Get Set}}
+
+test oo-35.1 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
+    oo::class create fruit {
+	method eat {} {}
+    }
+    set result {}
+} -body {
+    lappend result [fruit create ::apple] [info class superclasses fruit]
+    oo::define fruit superclass
+    lappend result [info class superclasses fruit] \
+	[info object class apple oo::object] \
+	[info class call fruit destroy] \
+	[catch { apple }]
+} -cleanup {
+    unset -nocomplain result
+    fruit destroy
+} -result {::apple ::oo::object ::oo::object 1 {{method destroy ::oo::object {core method: "destroy"}}} 1}
+test oo-35.2 {Bug 9d61624b3d: Empty superclass must not cause crash} -setup {
+    oo::class create fruitMetaclass {
+	superclass oo::class
+	method eat {} {}
+    }
+    set result {}
+} -body {
+    lappend result [fruitMetaclass create ::appleClass] \
+	[appleClass create orange] \
+	[info class superclasses fruitMetaclass]
+    oo::define fruitMetaclass superclass
+    lappend result [info class superclasses fruitMetaclass] \
+	[info object class appleClass oo::class] \
+	[catch { orange }] [info object class orange] \
+	[appleClass create pear]
+} -cleanup {
+    unset -nocomplain result
+    fruitMetaclass destroy
+} -result {::appleClass ::orange ::oo::class ::oo::class 1 1 ::appleClass ::pear}
 
 cleanupTests
 return

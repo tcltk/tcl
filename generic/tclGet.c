@@ -137,7 +137,7 @@ Tcl_GetBoolean(
     obj.length = strlen(src);
     obj.typePtr = NULL;
 
-    code = Tcl_ConvertToType(interp, &obj, &tclBooleanType);
+    code = TclSetBooleanFromAny(interp, &obj);
     if (obj.refCount > 1) {
 	Tcl_Panic("invalid sharing of Tcl_Obj on C stack");
     }

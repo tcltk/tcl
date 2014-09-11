@@ -12,10 +12,11 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 
+# This test intentionally written in pre-7.5 Tcl 
 if {[info commands package] == ""} {
     error "version mismatch: library\nscripts expect Tcl version 7.5b1 or later but the loaded version is\nonly [info patchlevel]"
 }
-package require -exact Tcl 8.6b2
+package require -exact Tcl 8.6.2
 
 # Compute the auto path to use in this interpreter.
 # The values on the path come from several locations:
@@ -116,9 +117,10 @@ namespace eval tcl {
 if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
     namespace eval tcl {
 	proc EnvTraceProc {lo n1 n2 op} {
-	    set x $::env($n2)
-	    set ::env($lo) $x
-	    set ::env([string toupper $lo]) $x
+	    global env
+	    set x $env($n2)
+	    set env($lo) $x
+	    set env([string toupper $lo]) $x
 	}
 	proc InitWinEnv {} {
 	    global env tcl_platform
@@ -128,9 +130,9 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 		    switch -- $u {
 			COMSPEC -
 			PATH {
-			    if {![info exists env($u)]} {
-				set env($u) $env($p)
-			    }
+			    set temp $env($p)
+			    unset env($p)
+			    set env($u) $temp
 			    trace add variable env($p) write \
 				    [namespace code [list EnvTraceProc $p]]
 			    trace add variable env($u) write \
@@ -140,11 +142,7 @@ if {(![interp issafe]) && ($tcl_platform(platform) eq "windows")} {
 		}
 	    }
 	    if {![info exists env(COMSPEC)]} {
-		if {$tcl_platform(os) eq "Windows NT"} {
-		    set env(COMSPEC) cmd.exe
-		} else {
-		    set env(COMSPEC) command.com
-		}
+		set env(COMSPEC) cmd.exe
 	    }
 	}
 	InitWinEnv
@@ -159,8 +157,8 @@ if {[interp issafe]} {
 } else {
     # Set up search for Tcl Modules (TIP #189).
     # and setup platform specific unknown package handlers
-    if {$::tcl_platform(os) eq "Darwin"
-	    && $::tcl_platform(platform) eq "unix"} {
+    if {$tcl_platform(os) eq "Darwin"
+	    && $tcl_platform(platform) eq "unix"} {
 	package unknown {::tcl::tm::UnknownHandler \
 		{::tcl::MacOSXPkgUnknown ::tclPkgUnknown}}
     } else {
@@ -233,14 +231,13 @@ if {[namespace which -command tclLog] eq ""} {
 
 proc unknown args {
     variable ::tcl::UnknownPending
-    global auto_noexec auto_noload env tcl_interactive
+    global auto_noexec auto_noload env tcl_interactive errorInfo errorCode
 
-
-    if {[info exists ::errorInfo]} {
-	set savedErrorInfo $::errorInfo
+    if {[info exists errorInfo]} {
+	set savedErrorInfo $errorInfo
     }
-    if {[info exists ::errorCode]} {
-	set savedErrorCode $::errorCode
+    if {[info exists errorCode]} {
+	set savedErrorCode $errorCode
     }
 
     set name [lindex $args 0]
@@ -271,9 +268,9 @@ proc unknown args {
 		unset -nocomplain ::errorCode
 	    }
 	    if {[info exists savedErrorInfo]} {
-		set ::errorInfo $savedErrorInfo
+		set errorInfo $savedErrorInfo
 	    } else {
-		unset -nocomplain ::errorInfo
+		unset -nocomplain errorInfo
 	    }
 	    set code [catch {uplevel 1 $args} msg opts]
 	    if {$code ==  1} {
@@ -282,8 +279,8 @@ proc unknown args {
 		# Note the dependence on how Tcl_AddErrorInfo, etc.
 		# construct the stack trace.
 		#
-		set errorInfo [dict get $opts -errorinfo]
-		set errorCode [dict get $opts -errorcode]
+		set errInfo [dict get $opts -errorinfo]
+		set errCode [dict get $opts -errorcode]
 		set cinfo $args
 		if {[string bytelength $cinfo] > 150} {
 		    set cinfo [string range $cinfo 0 150]
@@ -300,7 +297,7 @@ proc unknown args {
 		# and trim the extra contribution from the matching case
 		#
 		set expect "$msg\n    while executing\n\"$cinfo"
-		if {$errorInfo eq $expect} {
+		if {$errInfo eq $expect} {
 		    #
 		    # The stack has only the eval from the expanded command
 		    # Do not generate any stack trace here.
@@ -315,18 +312,18 @@ proc unknown args {
 		#
 		set expect "\n    invoked from within\n\"$cinfo"
 		set exlen [string length $expect]
-		set eilen [string length $errorInfo]
+		set eilen [string length $errInfo]
 		set i [expr {$eilen - $exlen - 1}]
-		set einfo [string range $errorInfo 0 $i]
+		set einfo [string range $errInfo 0 $i]
 		#
-		# For now verify that $errorInfo consists of what we are about
+		# For now verify that $errInfo consists of what we are about
 		# to return plus what we expected to trim off.
 		#
-		if {$errorInfo ne "$einfo$expect"} {
+		if {$errInfo ne "$einfo$expect"} {
 		    error "Tcl bug: unexpected stack trace in \"unknown\"" {} \
-			[list CORE UNKNOWN BADTRACE $einfo $expect $errorInfo]
+			[list CORE UNKNOWN BADTRACE $einfo $expect $errInfo]
 		}
-		return -code error -errorcode $errorCode \
+		return -code error -errorcode $errCode \
 			-errorinfo $einfo $msg
 	    } else {
 		dict incr opts -level
@@ -335,7 +332,7 @@ proc unknown args {
 	}
     }
 
-    if {([info level] == 1) && ([info script] eq "") \
+    if {([info level] == 1) && ([info script] eq "") 
 	    && [info exists tcl_interactive] && $tcl_interactive} {
 	if {![info exists auto_noexec]} {
 	    set new [auto_execok $name]
@@ -401,7 +398,8 @@ proc unknown args {
 	    return -code error "ambiguous command name \"$name\": [lsort $cmds]"
 	}
     }
-    return -code error "invalid command name \"$name\""
+    return -code error -errorcode [list TCL LOOKUP COMMAND $name] \
+	"invalid command name \"$name\""
 }
 
 # auto_load --
@@ -788,7 +786,7 @@ proc tcl::CopyDirectory {action src dest} {
 	    lappend existing {*}[glob -nocomplain -directory $dest \
 		    -type hidden * .*]
 	    foreach s $existing {
-		if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
+		if {[file tail $s] ni {. ..}} {
 		    return -code error "error $action \"$src\" to\
 		      \"$dest\": file already exists"
 		}
@@ -796,7 +794,7 @@ proc tcl::CopyDirectory {action src dest} {
 	}
     } else {
 	if {[string first $nsrc $ndest] != -1} {
-	    set srclen [expr {[llength [file split $nsrc]] -1}]
+	    set srclen [expr {[llength [file split $nsrc]] - 1}]
 	    set ndest [lindex [file split $ndest] $srclen]
 	    if {$ndest eq [file tail $nsrc]} {
 		return -code error "error $action \"$src\" to\
@@ -816,37 +814,9 @@ proc tcl::CopyDirectory {action src dest} {
       [glob -nocomplain -directory $src -types hidden *]]
 
     foreach s [lsort -unique $filelist] {
-	if {([file tail $s] ne ".") && ([file tail $s] ne "..")} {
-	    file copy -force $s [file join $dest [file tail $s]]
+	if {[file tail $s] ni {. ..}} {
+	    file copy -force -- $s [file join $dest [file tail $s]]
 	}
     }
     return
-}
-
-# TIP 131
-if 0 {
-proc tcl::rmmadwiw {} {
-    set magic {
-        42 83 fe f6 ff f8 f1 e5 c6 f9 eb fd ff fb f1 e5 cc f5 ec f5 e3 fd fe
-        ff f5 fa f3 e1 c7 f9 f2 fd ff f9 fe f9 ed f4 fa f6 e6 f9 f2 e6 fd f9
-        ff f9 f6 e6 fa fd ff fc fb fc f9 f1 ed
-    }
-    foreach mystic [lassign $magic tragic] {
-        set comic [expr (0x$mystic ^ 0x$tragic) - 255 + 0x$tragic]
-        append logic [format %x $comic]
-        set tragic $mystic
-    }
-    binary format H* $logic
-}
-
-proc tcl::mathfunc::rmmadwiw {} {
-    set age [expr {9*6}]
-    set mind ""
-    while {$age} {
-        lappend mind [expr {$age%13}]
-        set age [expr {$age/13}]
-    }
-    set matter [lreverse $mind]
-    return [join $matter ""]
-}
 }

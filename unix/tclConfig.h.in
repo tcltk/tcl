@@ -4,6 +4,9 @@
     #ifndef _TCLCONFIG
     #define _TCLCONFIG
 
+/* Define if building universal (internal helper macro) */
+#undef AC_APPLE_UNIVERSAL_BUILD
+
 /* Is gettimeofday() actually declared in <sys/time.h>? */
 #undef GETTOD_NOT_DECLARED
 
@@ -13,8 +16,8 @@
 /* Define to 1 if the system has the type `blkcnt_t'. */
 #undef HAVE_BLKCNT_T
 
-/* Do we have BSDgettimeofday()? */
-#undef HAVE_BSDGETTIMEOFDAY
+/* Defined when compiler supports casting to union type. */
+#undef HAVE_CAST_TO_UNION
 
 /* Define to 1 if you have the `chflags' function. */
 #undef HAVE_CHFLAGS
@@ -27,6 +30,9 @@
 
 /* Do we have access to Darwin CoreFoundation.framework? */
 #undef HAVE_COREFOUNDATION
+
+/* Is the cpuid instruction usable? */
+#undef HAVE_CPUID
 
 /* Define to 1 if you have the `freeaddrinfo' function. */
 #undef HAVE_FREEADDRINFO
@@ -108,6 +114,9 @@
 
 /* Define to 1 if you have the `gmtime_r' function. */
 #undef HAVE_GMTIME_R
+
+/* Compiler support for module scope symbols */
+#undef HAVE_HIDDEN
 
 /* Do we have the intptr_t type? */
 #undef HAVE_INTPTR_T
@@ -205,10 +214,10 @@
 /* Is 'struct stat64' in <sys/stat.h>? */
 #undef HAVE_STRUCT_STAT64
 
-/* Define to 1 if `st_blksize' is member of `struct stat'. */
+/* Define to 1 if `st_blksize' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLKSIZE
 
-/* Define to 1 if `st_blocks' is member of `struct stat'. */
+/* Define to 1 if `st_blocks' is a member of `struct stat'. */
 #undef HAVE_STRUCT_STAT_ST_BLOCKS
 
 /* Define to 1 if you have the <sys/filio.h> header file. */
@@ -234,6 +243,9 @@
 
 /* Define to 1 if you have the <sys/types.h> header file. */
 #undef HAVE_SYS_TYPES_H
+
+/* Define to 1 if you have the <termios.h> header file. */
+#undef HAVE_TERMIOS_H
 
 /* Should we use the global timezone variable? */
 #undef HAVE_TIMEZONE_VAR
@@ -270,6 +282,9 @@
 
 /* Default libtommath precision. */
 #undef MP_PREC
+
+/* Is no debugging enabled? */
+#undef NDEBUG
 
 /* Use compat implementation of getaddrinfo() and friends */
 #undef NEED_FAKE_RFC2553
@@ -331,9 +346,6 @@
 /* Do we have <values.h>? */
 #undef NO_VALUES_H
 
-/* No visibility attribute */
-#undef NO_VIZ
-
 /* Do we have wait3() */
 #undef NO_WAIT3
 
@@ -349,6 +361,9 @@
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
 
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
+
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION
 
@@ -360,9 +375,6 @@
 
 /* What encoding should be used for embedded configuration info? */
 #undef TCL_CFGVAL_ENCODING
-
-/* Is debugging enabled? */
-#undef NDEBUG
 
 /* Is this a 64-bit build? */
 #undef TCL_CFG_DO64BIT
@@ -424,24 +436,23 @@
 /* Should we use FIONBIO? */
 #undef USE_FIONBIO
 
-/* Use the sgtty API for serial lines */
-#undef USE_SGTTY
-
-/* Use the termio API for serial lines */
-#undef USE_TERMIO
-
-/* Use the termios API for serial lines */
-#undef USE_TERMIOS
-
 /* Do we want to use the threaded memory allocator? */
 #undef USE_THREAD_ALLOC
 
 /* Should we use vfork() instead of fork()? */
 #undef USE_VFORK
 
-/* Define to 1 if your processor stores words with the most significant byte
-   first (like Motorola and SPARC, unlike Intel and VAX). */
-#undef WORDS_BIGENDIAN
+/* Define WORDS_BIGENDIAN to 1 if your processor stores words with the most
+   significant byte first (like Motorola and SPARC, unlike Intel). */
+#if defined AC_APPLE_UNIVERSAL_BUILD
+# if defined __BIG_ENDIAN__
+#  define WORDS_BIGENDIAN 1
+# endif
+#else
+# ifndef WORDS_BIGENDIAN
+#  undef WORDS_BIGENDIAN
+# endif
+#endif
 
 /* Are Darwin SUSv3 extensions available? */
 #undef _DARWIN_C_SOURCE
@@ -496,7 +507,7 @@
 /* Define to `int' if <sys/types.h> does not define. */
 #undef pid_t
 
-/* Define to `unsigned' if <sys/types.h> does not define. */
+/* Define to `unsigned int' if <sys/types.h> does not define. */
 #undef size_t
 
 /* Define as int if socklen_t is not available */

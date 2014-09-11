@@ -16,9 +16,6 @@
 #include <mach/mach_time.h>
 #endif
 
-#define TM_YEAR_BASE 1900
-#define IsLeapYear(x)	(((x)%4 == 0) && ((x)%100 != 0 || (x)%400 == 0))
-
 /*
  * TclpGetDate is coded to return a pointer to a 'struct tm'. For thread
  * safety, this structure must be in thread-specific data. The 'tmKey'
@@ -503,7 +500,7 @@ SetTZIfNecessary(void)
 	if (lastTZ == NULL) {
 	    Tcl_CreateExitHandler(CleanupMemory, NULL);
 	} else {
-	    Tcl_Free(lastTZ);
+	    ckfree(lastTZ);
 	}
 	lastTZ = ckalloc(strlen(newTZ) + 1);
 	strcpy(lastTZ, newTZ);

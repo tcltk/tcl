@@ -4,8 +4,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH define n 0.3 TclOO "TclOO Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -152,7 +152,7 @@ and
 operates identically to
 .QW "\fBoo::objdefine \fIcls subcommand ...\fR" .
 .TP
-\fBsuperclass\fI ?\fI\-slotOperation\fR? \fR?\fIclassName ...\fR?
+\fBsuperclass\fR ?\fI\-slotOperation\fR? ?\fIclassName ...\fR?
 .VS
 This slot (see \fBSLOTTED DEFINITIONS\fR below)
 .VE
