@@ -299,9 +299,8 @@ GENERIC_OBJS = \
 	tclUtf.$(OBJEXT) \
 	tclUtil.$(OBJEXT) \
 	tclVar.$(OBJEXT) \
-	tclZlib.$(OBJEXT) \
-	tclZipVfs.$(OBJEXT)
-
+	tclZlib.$(OBJEXT)
+	
 TOMMATH_OBJS = \
 	bncore.${OBJEXT} \
 	bn_reverse.${OBJEXT} \
@@ -411,9 +410,7 @@ ZLIB_OBJS = \
 
 TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@
 
-TCLKIT_OBJS = tclKitInit.$(OBJEXT) \
-	${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS}
-
+TCLKIT_OBJS = tclKitInit.$(OBJEXT) tclZipVfs.$(OBJEXT)
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
@@ -445,8 +442,31 @@ tclkit.vfs: $(TCLSH) $(DDE_DLL_FILE) $(REG_DLL_FILE)
 	@$(TCL_EXE) "$(ROOT_DIR)/tools/mkVfs.tcl" \
 	    "$(WIN_DIR)/tclkit.vfs/tcl$(VERSION)" "$(ROOT_DIR)"  windows
 
-$(TCLKIT): $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
-	$(CC) $(CFLAGS) -DSTATIC_BUILD -UUSE_STUBS $(TCLKIT_OBJS)  $(LIBS) \
+$(TCLKIT): tclkit-direct
+
+# Builds an executable directly from the Tcl sources
+tclkit-direct:  $(TCLKIT_OBJS) ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS} @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
+	rm *.$(OBJEXT)
+	$(CC) $(CFLAGS) -DSTATIC_BUILD -UUSE_STUBS $(TCLKIT_OBJS) \
+	${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS} \
+	$(LIBS) \
+        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	@VC_MANIFEST_EMBED_EXE@
+	rm *.$(OBJEXT)
+	cat null.zip >> $(TCLKIT)
+	cd tclkit.vfs ; zip -rAq $(WIN_DIR)/$(TCLKIT) .
+
+
+# Builds an executable linked to the Tcl dynamic library
+tclkit-dynamic: $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
+	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
+        tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
+	@VC_MANIFEST_EMBED_EXE@
+	cat null.zip >> $(TCLKIT)
+	cd tclkit.vfs ; zip -rAq $(WIN_DIR)/$(TCLKIT) .
+
+tclkit-kitlib: $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
+	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 	cat null.zip >> $(TCLKIT)
@@ -514,6 +534,9 @@ testMain.${OBJEXT}: tclAppInit.c
 
 tclMain2.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
+
+tclKitInit.${OBJEXT}: tclAppInit.c
+	$(CC) -c $(CC_SWITCHES) -DTCL_ZIPVFS @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
 #
@@ -899,5 +922,7 @@ html-tk: $(TCLSH)
 .PHONY: gdb depend cleanhelp clean distclean packages install-packages
 .PHONY: test-packages clean-packages distclean-packages genstubs html
 .PHONY: html-tcl html-tk tclkit
+.PHONY: tclkit-direct tclkit-dynamic tclkit-kitlib
+
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.

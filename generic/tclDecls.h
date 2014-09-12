@@ -1815,10 +1815,6 @@ EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_ZlibStream zhandle,
 				Tcl_Obj *compressionDictionaryObj);
-/* 631 */
-EXTERN int		Tcl_Zvfs_Boot(Tcl_Interp *interp,
-				const char *vfsmountpoint,
-				const char *initscript);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2485,7 +2481,6 @@ typedef struct TclStubs {
     void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
-    int (*tcl_Zvfs_Boot) (Tcl_Interp *interp, const char *vfsmountpoint, const char *initscript); /* 631 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3778,8 +3773,6 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
 #define Tcl_ZlibStreamSetCompressionDictionary \
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
-#define Tcl_Zvfs_Boot \
-	(tclStubsPtr->tcl_Zvfs_Boot) /* 631 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

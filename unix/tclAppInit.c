@@ -40,7 +40,10 @@ extern Tcl_PackageInitProc Tclxttest_Init;
 #endif
 MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 MODULE_SCOPE int main(int, char **);
-
+#ifdef TCL_ZIPVFS
+  MODULE_SCOPE int Tcl_Zvfs_Boot(const char *,const char *,const char *);
+  MODULE_SCOPE int TclZvfsInit(Tcl_Interp *);
+#endif /* TCL_ZIPVFS */
 /*
  * The following #if block allows you to change how Tcl finds the startup
  * script, prime the library or encoding paths, fiddle with the argv, etc.,
@@ -80,7 +83,13 @@ main(
 #ifdef TCL_LOCAL_MAIN_HOOK
     TCL_LOCAL_MAIN_HOOK(&argc, &argv);
 #endif
-
+#ifdef TCL_ZIPVFS
+    #define TCLKIT_INIT     "main.tcl"
+    #define TCLKIT_VFSMOUNT "/zvfs"
+    Tcl_FindExecutable(argv[0]);
+    CONST char *cp=Tcl_GetNameOfExecutable();
+    Tcl_Zvfs_Boot(cp,TCLKIT_VFSMOUNT,TCLKIT_INIT);
+#endif
     Tcl_Main(argc, argv, TCL_LOCAL_APPINIT);
     return 0;			/* Needed only to prevent compiler warning. */
 }
@@ -111,7 +120,12 @@ Tcl_AppInit(
     if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-
+#ifdef TCL_ZIPVFS
+    /* Load the ZipVfs package */
+    if (TclZvfsInit(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+#endif
 #ifdef TCL_XT_TEST
     if (Tclxttest_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
