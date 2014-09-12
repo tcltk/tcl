@@ -15,7 +15,7 @@ proc pkgIndexDir {root fout d1} {
 	if {[file isdirectory $f] && [string compare CVS $ftail]} {
 	    pkgIndexDir $root $fout $f
 	} elseif {[file tail $f] eq "pkgIndex.tcl"} {
-	    puts $fout "set dir \$HERE[string range $d1 $idx end]"
+	    puts $fout "set dir \${VFSROOT}[string range $d1 $idx end]"
 	    puts $fout [cat $f]
 	}
     }
@@ -87,7 +87,7 @@ set fout [open ${TCL_SCRIPT_DIR}/tclIndex a]
 puts $fout {#
 # MANIFEST OF INCLUDED PACKAGES
 #
-set HERE $dir
+set VFSROOT $dir
 }
 pkgIndexDir ${TCL_SCRIPT_DIR} $fout ${TCL_SCRIPT_DIR}
 close $fout
@@ -96,12 +96,10 @@ puts $fout {
 # Save Tcl the trouble of hunting for these packages
 }
 set ddedll [glob -nocomplain ${TCLSRC_ROOT}/win/tcldde*.dll]
-puts "DDE DLL $ddedll"
 if {$ddedll != {}} {
     puts $fout [cat ${TCL_SCRIPT_DIR}/dde/pkgIndex.tcl]
 }
 set regdll [glob -nocomplain ${TCLSRC_ROOT}/win/tclreg*.dll]
-puts "REG DLL $ddedll"
 if {$regdll != {}} {
     puts $fout [cat ${TCL_SCRIPT_DIR}/reg/pkgIndex.tcl]
 }

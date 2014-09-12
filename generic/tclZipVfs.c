@@ -1,7 +1,7 @@
 /*
  * Copyright (c) 2000 D. Richard Hipp
  * Copyright (c) 2007 PDQ Interfaces Inc.
- * Copyright (c) 2013 Sean Woods
+ * Copyright (c) 2013-2014 Sean Woods
  *
  * This file is now released under the BSD style license outlined in the
  * included file license.terms.
@@ -105,7 +105,7 @@ struct ZFile {
 
 EXTERN int Tcl_Zvfs_Mount(Tcl_Interp *interp,const char *zArchive,const char *zMountPoint);
 EXTERN int Tcl_Zvfs_Umount(const char *zArchive);
-EXTERN int Tcl_Zvfs_Init(Tcl_Interp *interp);
+EXTERN int TclZvfsInit(Tcl_Interp *interp);
 EXTERN int Tcl_Zvfs_SafeInit(Tcl_Interp *interp);
 
 /*
@@ -534,7 +534,7 @@ Tcl_Zvfs_Mount(
 	pEntry = Tcl_FindHashEntry(&local.archiveHash, zTrueName);
 	if (pEntry) {
 	    pArchive = Tcl_GetHashValue(pEntry);
-	    if (pArchive) {
+	    if (pArchive && interp) {
 		Tcl_AppendResult(interp, pArchive->zMountPoint, 0);
 	    }
 	}
@@ -560,7 +560,7 @@ Tcl_Zvfs_Mount(
     iPos = Tcl_Seek(chan, -22, SEEK_END);
     Tcl_Read(chan, (char *) zBuf, 22);
     if (memcmp(zBuf, "\120\113\05\06", 4)) {
-	Tcl_AppendResult(interp, "not a ZIP archive", NULL);
+	if(interp) Tcl_AppendResult(interp, "not a ZIP archive", NULL);
 	return TCL_ERROR;
     }
 
@@ -572,8 +572,9 @@ Tcl_Zvfs_Mount(
     pEntry = Tcl_CreateHashEntry(&local.archiveHash, zArchiveName, &isNew);
     if (!isNew) {
 	pArchive = Tcl_GetHashValue(pEntry);
-	Tcl_AppendResult(interp, "already mounted at ", pArchive->zMountPoint,
-		0);
+	if (interp) {
+          Tcl_AppendResult(interp, "already mounted at ", pArchive->zMountPoint,0);
+	}
 	Tcl_Free(zArchiveName);
 	Tcl_Close(interp, chan);
 	return TCL_ERROR;
@@ -630,12 +631,13 @@ Tcl_Zvfs_Mount(
 
 	Tcl_Read(chan, (char *) zBuf, 46);
 	if (memcmp(zBuf, "\120\113\01\02", 4)) {
-	    Tcl_AppendResult(interp, "ill-formed central directory entry",
-		    NULL);
-	    if (zTrueName) {
-		Tcl_Free(zTrueName);
-	    }
-	    return TCL_ERROR;
+          if(interp) {
+	    Tcl_AppendResult(interp, "ill-formed central directory entry",NULL);
+          }
+          if (zTrueName) {
+              Tcl_Free(zTrueName);
+          }
+          return TCL_ERROR;
 	}
 	lenName = INT16(zBuf, 28);
 	lenExtra = INT16(zBuf, 30) + INT16(zBuf, 32);
@@ -1718,6 +1720,18 @@ static int ZvfsAddObjCmd(void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *c
 static int ZvfsDumpObjCmd(void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
 static int ZvfsStartObjCmd(void *NotUsed, Tcl_Interp *interp, int objc, Tcl_Obj *const* objv);
 
+static int Zvfs_Common_Init(Tcl_Interp *interp) {
+  if (local.isInit) return TCL_OK;
+  /* One-time initialization of the ZVFS */
+  if(Tcl_FSRegister(interp, &Tobe_Filesystem)) {
+    return TCL_ERROR;
+  }
+  Tcl_InitHashTable(&local.fileHash, TCL_STRING_KEYS);
+  Tcl_InitHashTable(&local.archiveHash, TCL_STRING_KEYS);
+  local.isInit = 1;
+  return TCL_OK;
+}
+
 /*
  * Initialize the ZVFS system.
  */
@@ -1731,7 +1745,7 @@ Zvfs_doInit(
 	return TCL_ERROR;
     }
 #endif
-    Tcl_StaticPackage(interp, "zvfs", Tcl_Zvfs_Init, Tcl_Zvfs_SafeInit);
+    Tcl_StaticPackage(interp, "zvfs", TclZvfsInit, Tcl_Zvfs_SafeInit);
     if (!safe) {
 	Tcl_CreateObjCommand(interp, "zvfs::mount", ZvfsMountObjCmd, 0, 0);
 	Tcl_CreateObjCommand(interp, "zvfs::unmount", ZvfsUnmountObjCmd, 0, 0);
@@ -1746,16 +1760,10 @@ Zvfs_doInit(
     Tcl_SetVar(interp, "::zvfs::auto_ext",
 	    ".tcl .tk .itcl .htcl .txt .c .h .tht", TCL_GLOBAL_ONLY);
     /* Tcl_CreateObjCommand(interp, "zip::open", ZipOpenObjCmd, 0, 0); */
-
-    if (!local.isInit) {
-	/* One-time initialization of the ZVFS */
-	if(Tcl_FSRegister(NULL, &Tobe_Filesystem)) {
-	  return TCL_ERROR;
-	}
-	Tcl_InitHashTable(&local.fileHash, TCL_STRING_KEYS);
-	Tcl_InitHashTable(&local.archiveHash, TCL_STRING_KEYS);
-	local.isInit = 1;
+    if(Zvfs_Common_Init(interp)) {
+      return TCL_ERROR;
     }
+
     if (Zvfs_PostInit) {
 	Zvfs_PostInit(interp);
     }
@@ -1765,43 +1773,58 @@ Zvfs_doInit(
 /*
 ** Boot a shell, mount the executable's VFS, detect main.tcl
 */
-int Tcl_Zvfs_Boot(Tcl_Interp *interp,const char *vfsmountpoint,const char *initscript) {
-  CONST char *cp=Tcl_GetNameOfExecutable();
-  char filepath[256];
-  
+int Tcl_Zvfs_Boot(const char *archive,const char *vfsmountpoint,const char *initscript) {
+  FILE *fout;
+  Zvfs_Common_Init(NULL);
+  if(!vfsmountpoint) {
+    vfsmountpoint="/zvfs";
+  }
+  if(!initscript) {
+    initscript="main.tcl";
+  }
   /* We have to initialize the virtual filesystem before calling
   ** Tcl_Init().  Otherwise, Tcl_Init() will not be able to find
   ** its startup script files.
   */
-  if(Zvfs_doInit(interp, 0)) {
-    return TCL_ERROR;
-  }
-  if(!Tcl_Zvfs_Mount(interp, cp, vfsmountpoint)) {
+  if(!Tcl_Zvfs_Mount(NULL, archive, vfsmountpoint)) {
+      Tcl_DString filepath;
+      Tcl_DString preinit;
+
       Tcl_Obj *vfsinitscript;
       Tcl_Obj *vfstcllib;
       Tcl_Obj *vfstklib;
+      Tcl_Obj *vfspreinit;
       
+      Tcl_DStringInit(&filepath);
+      Tcl_DStringInit(&preinit);
+          
+      Tcl_DStringInit(&filepath);
+      Tcl_DStringAppend(&filepath,vfsmountpoint,-1);
+      Tcl_DStringAppend(&filepath,"/",-1);
+      Tcl_DStringAppend(&filepath,initscript,-1);
+      vfsinitscript=Tcl_NewStringObj(Tcl_DStringValue(&filepath),-1);
+      Tcl_DStringFree(&filepath);
       
-      strcpy(filepath,vfsmountpoint);
-      strcat(filepath,"/");
-      strcat(filepath,initscript);
-      vfsinitscript=Tcl_NewStringObj(filepath,-1);
-      strcpy(filepath,vfsmountpoint);
-      strcat(filepath,"/tcl8.6");
-      vfstcllib=Tcl_NewStringObj(filepath,-1);      
-      strcpy(filepath,vfsmountpoint);
-      strcat(filepath,"/tk8.6");
-      vfstklib=Tcl_NewStringObj(filepath,-1);
-      
+      Tcl_DStringInit(&filepath);
+      Tcl_DStringAppend(&filepath,vfsmountpoint,-1);
+      Tcl_DStringAppend(&filepath,"/tcl8.6",-1);
+      vfstcllib=Tcl_NewStringObj(Tcl_DStringValue(&filepath),-1);
+      Tcl_DStringFree(&filepath);
+
+      Tcl_DStringInit(&filepath);
+      Tcl_DStringAppend(&filepath,vfsmountpoint,-1);
+      Tcl_DStringAppend(&filepath,"/tk8.6",-1);
+      vfstklib=Tcl_NewStringObj(Tcl_DStringValue(&filepath),-1);
+      Tcl_DStringFree(&filepath);
+
       Tcl_IncrRefCount(vfsinitscript);
       Tcl_IncrRefCount(vfstcllib);
       Tcl_IncrRefCount(vfstklib);
       
       if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
 	/* Startup script should be set before calling Tcl_AppInit */
+        fprintf(fout,"%s\n",Tcl_GetString(vfsinitscript));
         Tcl_SetStartupScript(vfsinitscript,NULL);
-      } else {
-        Tcl_SetStartupScript(NULL,NULL);
       }
 
       if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
@@ -1811,12 +1834,18 @@ int Tcl_Zvfs_Boot(Tcl_Interp *interp,const char *vfsmountpoint,const char *inits
         Tcl_SetStartupScript(NULL,NULL);
       }
       if(Tcl_FSAccess(vfstcllib,F_OK)==0) {
-        Tcl_SetVar2(interp, "env", "TCL_LIBRARY", Tcl_GetString(vfstcllib), TCL_GLOBAL_ONLY);
+        Tcl_DStringAppend(&preinit,"\nset tcl_library ",-1);
+        Tcl_DStringAppendElement(&preinit,Tcl_GetString(vfstcllib));
       }
       if(Tcl_FSAccess(vfstklib,F_OK)==0) {
-        Tcl_SetVar2(interp, "env", "TK_LIBRARY", Tcl_GetString(vfstklib), TCL_GLOBAL_ONLY);
+        Tcl_DStringAppend(&preinit,"\nset tk_library ",-1);
+        Tcl_DStringAppendElement(&preinit,Tcl_GetString(vfstklib));
       }
-      
+      vfspreinit=Tcl_NewStringObj(Tcl_DStringValue(&preinit),-1);
+      /* NOTE: We never decr this refcount, lest the contents of the script be deallocated */
+      Tcl_IncrRefCount(vfspreinit);
+      TclSetPreInitScript(Tcl_GetString(vfspreinit));
+
       Tcl_DecrRefCount(vfsinitscript);
       Tcl_DecrRefCount(vfstcllib);
       Tcl_DecrRefCount(vfstklib);
@@ -1826,7 +1855,7 @@ int Tcl_Zvfs_Boot(Tcl_Interp *interp,const char *vfsmountpoint,const char *inits
 
 
 int
-Tcl_Zvfs_Init(
+TclZvfsInit(
     Tcl_Interp *interp)
 {
     return Zvfs_doInit(interp, 0);
