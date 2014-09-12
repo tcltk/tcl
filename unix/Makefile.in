@@ -312,7 +312,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclResolve.o tclResult.o tclScan.o tclStringObj.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
-	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o tclZipVfs.o \
+	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
 	tclTomMathInterface.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
@@ -364,7 +364,7 @@ ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
-TCLKIT_OBJS = tclKitInit.o
+TCLKIT_OBJS = tclKitInit.o tclZipVfs.o
 
 OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@
 
@@ -558,7 +558,6 @@ UNIX_HDRS = \
 
 UNIX_SRCS = \
 	$(UNIX_DIR)/tclAppInit.c \
-	$(UNIX_DIR)/tclKitInit.c \
 	$(UNIX_DIR)/tclUnixChan.c \
 	$(UNIX_DIR)/tclUnixEvent.c \
 	$(UNIX_DIR)/tclUnixFCmd.c \
@@ -674,19 +673,41 @@ null.zip:
 # Rather than force an install, pack the files we need into a
 # file system under our control
 tclkit.vfs:
-	make install-libraries DESTDIR=tclkit.vfs
-	make install-tzdata DESTDIR=tclkit.vfs
-	make install-packages DESTDIR=tclkit.vfs
+	@echo "Building VFS File system in tclkit.vfs"
+	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
+	    "$(UNIX_DIR)/tclkit.vfs/tcl$(VERSION)" "$(TOP_DIR)"  unix
 	
 # Assemble all of the tcl sources into a single executable
-${TCLKIT_EXE}:  ${TCLKIT_OBJS} ${TCL_KIT_LIB_FILE} null.zip tclkit.vfs
+${TCLKIT_EXE}:
+
+# Builds an executable directly from the Tcl sources
+tclkit-direct: ${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} null.zip tclkit.vfs
 	${CC} ${CFLAGS} ${LDFLAGS} \
-		${TCLKIT_OBJS} \
-		@TCL_BUILD_LIB_SPEC@ ${TCL_KIT_LIB_FILE} \
+		${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} \
 		${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
 	cat null.zip >> ${TCLKIT_EXE}
-	cd tclkit.vfs${prefix}/lib ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
+	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
+
+# Builds an executable linked to the Tcl dynamic library
+tclkit-dynamic: ${TCLKIT_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip tclkit.vfs
+	${CC} ${CFLAGS} ${LDFLAGS} \
+		${TCLKIT_OBJS} \
+		@TCL_BUILD_LIB_SPEC@ \
+		${LIBS} @EXTRA_TCLSH_LIBS@ \
+		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
+	cat null.zip >> ${TCLKIT_EXE}
+	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
+
+# Builds a tcl static library, as well as an executable linked to the Tcl static library
+tclkit-kitlib: ${TCLKIT_OBJS} ${TCL_KIT_LIB_FILE} null.zip tclkit.vfs
+	${CC} ${CFLAGS} ${LDFLAGS} \
+		${TCLKIT_OBJS} \
+		@TCL_BUILD_KIT_LIB_SPEC@ \
+		${LIBS} @EXTRA_TCLSH_LIBS@ \
+		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
+	cat null.zip >> ${TCLKIT_EXE}
+	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -1069,6 +1090,10 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
 	fi;
+	
+tclKitInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
+	$(CC) -c $(APP_CC_SWITCHES) \
+		-DTCL_ZIPVFS $(UNIX_DIR)/tclAppInit.c -o tclKitInit.o
 	
 # Object files used on all Unix systems:
 
@@ -2171,6 +2196,7 @@ BUILD_HTML = \
 .PHONY: install-tzdata install-msgs
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
+.PHONY: tclkit-direct tclkit-dynamic tclkit-kitlib
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.
