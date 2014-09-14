@@ -289,7 +289,7 @@ test var-3.11 {MakeUpvar, my var looks like array elem} -setup {
 } -returnCodes error -body {
     set aaaaa 789789
     upvar #0 aaaaa foo(bar)
-} -result {bad variable name "foo(bar)": upvar won't create a scalar variable that looks like an array element}
+} -result {bad variable name "foo(bar)": can't create a scalar variable that looks like an array element}
 
 test var-4.1 {Tcl_GetVariableName, global variable} testgetvarfullname {
     catch {unset a}

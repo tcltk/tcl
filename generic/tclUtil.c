@@ -4249,7 +4249,8 @@ TclReToGlob(
     const char *reStr,
     int reStrLen,
     Tcl_DString *dsPtr,
-    int *exactPtr)
+    int *exactPtr,
+    int *quantifiersFoundPtr)
 {
     int anchorLeft, anchorRight, lastIsStar, numStars;
     char *dsStr, *dsStrStart;
@@ -4257,6 +4258,9 @@ TclReToGlob(
 
     strEnd = reStr + reStrLen;
     Tcl_DStringInit(dsPtr);
+    if (quantifiersFoundPtr != NULL) {
+	*quantifiersFoundPtr = 0;
+    }
 
     /*
      * "***=xxx" == "*xxx*", watch for glob-sensitive chars.
@@ -4369,6 +4373,9 @@ TclReToGlob(
 	    }
 	    break;
 	case '.':
+	    if (quantifiersFoundPtr != NULL) {
+		*quantifiersFoundPtr = 1;
+	    }
 	    anchorLeft = 0; /* prevent exact match */
 	    if (p+1 < strEnd) {
 		if (p[1] == '*') {
