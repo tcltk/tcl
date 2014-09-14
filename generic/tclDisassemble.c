@@ -1107,10 +1107,12 @@ DisassembleByteCodeAsDicts(
 		Tcl_NewIntObj(codeOffset));
 	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("codeto", -1),
 		Tcl_NewIntObj(codeOffset + codeLength - 1));
+
 	/*
 	 * Convert byte offsets to character offsets; important if multibyte
 	 * characters are present in the source!
 	 */
+
 	Tcl_DictObjPut(NULL, cmd, Tcl_NewStringObj("scriptfrom", -1),
 		Tcl_NewIntObj(Tcl_NumUtfChars(codePtr->source,
 			sourceOffset)));
