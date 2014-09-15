@@ -109,6 +109,7 @@ CFLAGS			= @CFLAGS_DEFAULT@ @CFLAGS@
 LDFLAGS_DEBUG		= @LDFLAGS_DEBUG@
 LDFLAGS_OPTIMIZE	= @LDFLAGS_OPTIMIZE@
 LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
+SHARED_BUILD		= @TCL_SHARED_BUILD@
 
 # To disable ANSI-C procedure prototypes reverse the comment characters on the
 # following lines:
@@ -167,7 +168,13 @@ INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 # Do not use SHELL_ENV for NATIVE_TCLSH unless it is the tclsh being built.
 EXE_SUFFIX		= @EXEEXT@
 TCL_EXE			= tclsh${EXE_SUFFIX}
-TCLKIT_EXE		= tclkit${EXE_SUFFIX}
+ifeq ($(SHARED_BUILD),0)
+TCLKIT_BASE		= tclkits
+else
+TCLKIT_BASE		= tclkitd
+endif
+TCLKIT_EXE		= ${TCLKIT_BASE}${EXE_SUFFIX}
+
 TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 NATIVE_TCLSH		= @TCLSH_PROG@
 
@@ -675,7 +682,7 @@ ${TCLKIT_EXE}: ${TCLKIT_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip tclk
 	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
 
 # Builds an executable directly from the Tcl sources
-tclkit-direct: ${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} null.zip tclkit.vfs
+tclkit-static: ${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} null.zip tclkit.vfs
 	${CC} ${CFLAGS} ${LDFLAGS} \
 		${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} \
 		${LIBS} @EXTRA_TCLSH_LIBS@ \
@@ -836,8 +843,8 @@ install-binaries: binaries
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
-	@echo "Installing ${TCLKIT_EXE} as $(BIN_INSTALL_DIR)/tclkit$(VERSION)${EXE_SUFFIX}"
-	@$(INSTALL_PROGRAM) ${TCLKIT_EXE} "$(BIN_INSTALL_DIR)/tclkit$(VERSION)${EXE_SUFFIX}"
+	@echo "Installing ${TCLKIT_EXE} as $(BIN_INSTALL_DIR)/${TCLKIT_BASE}$(VERSION)${EXE_SUFFIX}"
+	@$(INSTALL_PROGRAM) ${TCLKIT_EXE} "$(BIN_INSTALL_DIR)/${TCLKIT_BASE}$(VERSION)${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
 	@echo "Installing tclooConfig.sh to $(CONFIG_INSTALL_DIR)/"
@@ -2166,7 +2173,7 @@ BUILD_HTML = \
 .PHONY: install-tzdata install-msgs
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
-.PHONY: tclkit-direct
+.PHONY: tclkit-static
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.
