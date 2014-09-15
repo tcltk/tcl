@@ -168,7 +168,6 @@ INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 EXE_SUFFIX		= @EXEEXT@
 TCL_EXE			= tclsh${EXE_SUFFIX}
 TCLKIT_EXE		= tclkit${EXE_SUFFIX}
-TCLKIT_LIB		= tclkit${EXE_SUFFIX}
 TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 NATIVE_TCLSH		= @TCLSH_PROG@
 
@@ -203,9 +202,6 @@ BUILD_DLTEST		= @BUILD_DLTEST@
 
 TCL_LIB_FILE		= @TCL_LIB_FILE@
 #TCL_LIB_FILE		= libtcl.a
-
-TCL_KIT_LIB_FILE	= @TCL_KIT_LIB_FILE@
-#TCL_KIT_LIB_FILE	= libtclkit.a
 
 # Generic lib name used in rules that apply to tcl and tk
 LIB_FILE		= ${TCL_LIB_FILE}
@@ -469,7 +465,6 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c \
 	$(GENERIC_DIR)/tclAssembly.c \
-	$(GENERIC_DIR)/tclZipVfs.obj \
 	$(GENERIC_DIR)/tclZlib.c
 
 OO_SRCS = \
@@ -615,9 +610,6 @@ ZLIB_SRCS = \
 SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
 
-PWD=`pwd`
-VFS_INSTALL_DIR=${PWD}/tclkit.vfs/tcl8.6
-
 #--------------------------------------------------------------------------
 # Start of rules
 #--------------------------------------------------------------------------
@@ -642,11 +634,6 @@ ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	fi
 	rm -f $@
 	@MAKE_STUB_LIB@
-
-
-${TCL_KIT_LIB_FILE}: ${TCL_OBJS} ${TOMMATH_OBJS} ${ZLIB_OBJS}
-	rm -f $@
-	@MAKE_KIT_LIB@
 	
 # Make target which outputs the list of the .o contained in the Tcl lib useful
 # to build a single big shared library containing Tcl and other extensions.
@@ -677,20 +664,8 @@ tclkit.vfs:
 	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
 	    "$(UNIX_DIR)/tclkit.vfs/tcl$(VERSION)" "$(TOP_DIR)"  unix
 	
-# Assemble all of the tcl sources into a single executable
-${TCLKIT_EXE}:
-
-# Builds an executable directly from the Tcl sources
-tclkit-direct: ${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} null.zip tclkit.vfs
-	${CC} ${CFLAGS} ${LDFLAGS} \
-		${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} \
-		${LIBS} @EXTRA_TCLSH_LIBS@ \
-		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
-	cat null.zip >> ${TCLKIT_EXE}
-	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
-
 # Builds an executable linked to the Tcl dynamic library
-tclkit-dynamic: ${TCLKIT_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip tclkit.vfs
+${TCLKIT_EXE}: ${TCLKIT_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip tclkit.vfs
 	${CC} ${CFLAGS} ${LDFLAGS} \
 		${TCLKIT_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ \
@@ -699,11 +674,10 @@ tclkit-dynamic: ${TCLKIT_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip tcl
 	cat null.zip >> ${TCLKIT_EXE}
 	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
 
-# Builds a tcl static library, as well as an executable linked to the Tcl static library
-tclkit-kitlib: ${TCLKIT_OBJS} ${TCL_KIT_LIB_FILE} null.zip tclkit.vfs
+# Builds an executable directly from the Tcl sources
+tclkit-direct: ${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} null.zip tclkit.vfs
 	${CC} ${CFLAGS} ${LDFLAGS} \
-		${TCLKIT_OBJS} \
-		@TCL_BUILD_KIT_LIB_SPEC@ \
+		${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} \
 		${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
 	cat null.zip >> ${TCLKIT_EXE}
@@ -872,10 +846,6 @@ install-binaries: binaries
 	@if test "$(STUB_LIB_FILE)" != "" ; then \
 	    echo "Installing $(STUB_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
 	    @INSTALL_STUB_LIB@ ; \
-	fi
-	@if test "$(TCL_KIT_LIB_FILE)" != "" ; then \
-	    echo "Installing $(TCL_KIT_LIB_FILE) to $(LIB_INSTALL_DIR)/"; \
-	    @INSTALL_KIT_LIB@ ; \
 	fi
 	@EXTRA_INSTALL_BINARIES@
 	@echo "Installing pkg-config file to $(LIB_INSTALL_DIR)/pkgconfig/"
@@ -2196,7 +2166,7 @@ BUILD_HTML = \
 .PHONY: install-tzdata install-msgs
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
-.PHONY: tclkit-direct tclkit-dynamic tclkit-kitlib
+.PHONY: tclkit-direct
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.

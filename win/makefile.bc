@@ -159,6 +159,7 @@ TCLPLUGINDLLNAME	= $(NAMEPREFIX)$(VERSION)p$(DBGX).dll
 TCLPLUGINDLL	= $(OUTDIR)\$(TCLPLUGINDLLNAME)
 TCLSH		= $(OUTDIR)\$(NAMEPREFIX)sh$(VERSION)$(DBGX).exe
 TCLSHP		= $(OUTDIR)\$(NAMEPREFIX)shp$(VERSION)$(DBGX).exe
+TCLKIT		= $(OUTDIR)\$(NAMEPREFIX)kit$(VERSION)$(DBGX).exe
 TCLREGDLLNAME	= $(NAMEPREFIX)reg$(REGVERSION)$(DBGX).dll
 TCLREGDLL	= $(OUTDIR)\$(TCLREGDLLNAME)
 TCLDDEDLLNAME	= $(NAMEPREFIX)dde$(DDEVERSION)$(DBGX).dll
@@ -176,6 +177,10 @@ INCLUDE_INSTALL_DIR	= $(INSTALLDIR)\include
 
 TCLSHOBJS	= \
 	$(TMPDIR)\tclAppInit.obj
+
+TCLKITOBJS	= \
+	$(TMP_DIR)\tclZipVfs.obj \
+	$(TMPDIR)\tclKitInit.obj
 
 TCLTESTOBJS	= \
 	$(TMPDIR)\tclTest.obj \
@@ -275,7 +280,6 @@ TCLOBJS	= \
 	$(TMPDIR)\tclWinSock.obj \
 	$(TMPDIR)\tclWinThrd.obj \
 	$(TMPDIR)\tclWinTime.obj \
-	$(TMP_DIR)\tclZipVfs.obj \
 	$(TMPDIR)\tclZlib.obj
 
 TCLSTUBOBJS	= \
@@ -390,6 +394,11 @@ $(TCLSHP): $(TCLSHOBJS) $(TCLPLUGINLIB) $(TMPDIR)\tclsh.res
 $(TCLTEST): $(TCLTESTOBJS) $(TCLLIB) $(TMPDIR)\$(NAMEPREFIX)sh.res
 	$(link32) $(ldebug) -S:2400000 $(LNFLAGS) $(LNFLAGS_CONS) $(TOOLS32)\lib\c0x32 @&&!
 		$(TCLTESTOBJS), $@, -x, $(LNLIBS) $(TCLLIB),, $(TMPDIR)\$(NAMEPREFIX)sh.res
+!
+
+$(TCLKIT): $(TCLKITOBJS) $(TCLLIB) $(TMPDIR)\$(NAMEPREFIX)sh.res
+	$(link32) $(ldebug) -S:2400000 $(LNFLAGS) $(LNFLAGS_CONS) $(TOOLS32)\lib\c0x32 @&&!
+		$(TCLSHOBJS), $@, -x, $(LNLIBS) $(TCLLIB),, $(TMPDIR)\$(NAMEPREFIX)sh.res
 !
 
 $(TCLDDEDLL): $(TMPDIR)\tclWinDde.obj $(TCLSTUBLIB)
@@ -511,6 +520,10 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 
 $(TMPDIR)\tclAppInit.obj : $(WINDIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) -o$(TMPDIR)\$@ $?
+
+$(TMPDIR)\tclKitInit.obj : $(WINDIR)\tclAppInit.c
+	$(cc32) $(TCL_CFLAGS) -DDTCL_ZIPVFS -o$(TMPDIR)\$@ $?
+
 
 # The following objects should be built using the stub interfaces
 
