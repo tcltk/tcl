@@ -209,6 +209,9 @@ TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 TCLSHNAME	= $(PROJECT)sh$(VERSION)$(SUFX).exe
 TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
 
+TCLKITNAME	= $(PROJECT)kit$(VERSION)$(SUFX).exe
+TCLKIT		= $(OUT_DIR)\$(TCLSHNAME)
+
 TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
 TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 
@@ -243,6 +246,18 @@ TCLSHOBJS = \
 !endif
 !endif
 	$(TMP_DIR)\tclsh.res
+
+TCLKITOBJS = \
+	$(TMP_DIR)\tclKitInit.obj \
+	$(TMP_DIR)\tclZipVfs.obj \
+!if !$(STATIC_BUILD)
+!if $(TCL_USE_STATIC_PACKAGES)
+	$(TMP_DIR)\tclWinReg.obj \
+	$(TMP_DIR)\tclWinDde.obj \
+!endif
+!endif
+	$(TMP_DIR)\tclsh.res
+
 
 TCLTESTOBJS = \
 	$(TMP_DIR)\tclTest.obj \
@@ -343,7 +358,6 @@ COREOBJS = \
 	$(TMP_DIR)\tclUtf.obj \
 	$(TMP_DIR)\tclUtil.obj \
 	$(TMP_DIR)\tclVar.obj \
-	$(TMP_DIR)\tclZipVfs.obj \
 	$(TMP_DIR)\tclZlib.obj
 
 ZLIBOBJS = \
@@ -955,6 +969,12 @@ $(TMP_DIR)\tclPkgConfig.obj: $(GENERICDIR)\tclPkgConfig.c
 $(TMP_DIR)\tclAppInit.obj: $(WINDIR)\tclAppInit.c
 	$(cc32) $(TCL_CFLAGS) \
 	    -DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
+	    -Fo$@ $?
+
+$(TMP_DIR)\tclKitInit.obj: $(WINDIR)\tclAppInit.c
+	$(cc32) $(TCL_CFLAGS) \
+	    -DTCL_USE_STATIC_PACKAGES=$(TCL_USE_STATIC_PACKAGES) \
+	    -DTCL_ZIPVFS \
 	    -Fo$@ $?
 
 ### The following objects should be built using the stub interfaces
