@@ -91,17 +91,3 @@ set VFSROOT $dir
 }
 pkgIndexDir ${TCL_SCRIPT_DIR} $fout ${TCL_SCRIPT_DIR}
 close $fout
-exit 0
-puts $fout {
-# Save Tcl the trouble of hunting for these packages
-}
-set ddedll [glob -nocomplain ${TCLSRC_ROOT}/win/tcldde*.dll]
-if {$ddedll != {}} {
-    puts $fout [cat ${TCL_SCRIPT_DIR}/dde/pkgIndex.tcl]
-}
-set regdll [glob -nocomplain ${TCLSRC_ROOT}/win/tclreg*.dll]
-if {$regdll != {}} {
-    puts $fout [cat ${TCL_SCRIPT_DIR}/reg/pkgIndex.tcl]
-}
-close $fout
-file attributes ${TCL_SCRIPT_DIR}/tclIndex -readonly 1
