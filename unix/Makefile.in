@@ -670,7 +670,9 @@ tclkit.vfs:
 	@echo "Building VFS File system in tclkit.vfs"
 	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
 	    "$(UNIX_DIR)/tclkit.vfs/tcl$(VERSION)" "$(TOP_DIR)"  unix
-	
+
+tclkit: ${TCLKIT_EXE}
+
 # Builds an executable linked to the Tcl dynamic library
 ${TCLKIT_EXE}: ${TCLKIT_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip tclkit.vfs
 	${CC} ${CFLAGS} ${LDFLAGS} \
@@ -2173,7 +2175,7 @@ BUILD_HTML = \
 .PHONY: install-tzdata install-msgs
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
-.PHONY: tclkit-static
+.PHONY: tclkit-static tclkit
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.
