@@ -1774,7 +1774,6 @@ Zvfs_doInit(
 ** Boot a shell, mount the executable's VFS, detect main.tcl
 */
 int Tcl_Zvfs_Boot(const char *archive,const char *vfsmountpoint,const char *initscript) {
-  FILE *fout;
   Zvfs_Common_Init(NULL);
   if(!vfsmountpoint) {
     vfsmountpoint="/zvfs";
@@ -1823,7 +1822,6 @@ int Tcl_Zvfs_Boot(const char *archive,const char *vfsmountpoint,const char *init
       
       if(Tcl_FSAccess(vfsinitscript,F_OK)==0) {
 	/* Startup script should be set before calling Tcl_AppInit */
-        fprintf(fout,"%s\n",Tcl_GetString(vfsinitscript));
         Tcl_SetStartupScript(vfsinitscript,NULL);
       }
 
