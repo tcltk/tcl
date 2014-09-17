@@ -946,7 +946,8 @@ CompileRegexp(
      * Tcl_RegExpExecObj to optionally do a fast match (avoids RE engine).
      */
 
-    if (TclReToGlob(NULL, string, length, &stringBuf, &exact) == TCL_OK) {
+    if (TclReToGlob(NULL, string, length, &stringBuf, &exact,
+	    NULL) == TCL_OK) {
 	regexpPtr->globObjPtr = TclDStringToObj(&stringBuf);
 	Tcl_IncrRefCount(regexpPtr->globObjPtr);
     } else {
