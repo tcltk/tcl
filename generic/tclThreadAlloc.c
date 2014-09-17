@@ -217,10 +217,11 @@ GetCache(void)
 
     cachePtr = TclpGetAllocCache();
     if (cachePtr == NULL) {
-	cachePtr = calloc(1, sizeof(Cache));
+	cachePtr = TclpSysAlloc(sizeof(Cache), 0);
 	if (cachePtr == NULL) {
 	    Tcl_Panic("alloc: could not allocate new cache");
 	}
+        memset(cachePtr, 0, sizeof(Cache));
 	Tcl_MutexLock(listLockPtr);
 	cachePtr->nextPtr = firstCachePtr;
 	firstCachePtr = cachePtr;

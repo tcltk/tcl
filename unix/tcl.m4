@@ -1475,7 +1475,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		LDFLAGS=""
 		;;
 	    *)
-		SHLIB_CFLAGS="-fPIC"
+		case "$arch" in
+		alpha|sparc64)
+		    SHLIB_CFLAGS="-fPIC"
+		    ;;
+		*)
+		    SHLIB_CFLAGS="-fpic"
+		    ;;
+		esac
 		SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
 		SHLIB_SUFFIX=".so"
 		DL_OBJS="tclLoadDl.o"
