@@ -88,7 +88,7 @@ static const Tcl_ObjType levelReferenceType = {
  *
  * Internally, ptr1 is a pointer to a Proc instance that is not bound to a
  * command name, and ptr2 is a pointer to the namespace that the Proc instance
- * will execute within.
+ * will execute within. IF YOU CHANGE THIS, CHECK IN tclDisassemble.c TOO.
  */
 
 const Tcl_ObjType tclLambdaType = {

@@ -21,6 +21,7 @@
  * Prototypes for procedures defined later in this file:
  */
 
+static Tcl_Obj *	DisassembleByteCodeAsDicts(Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		PrintSourceToObj(Tcl_Obj *appendObj,
@@ -39,6 +40,13 @@ static const Tcl_ObjType tclInstNameType = {
     UpdateStringOfInstName,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
 };
+
+/*
+ * How to get the bytecode out of a Tcl_Obj.
+ */
+
+#define BYTECODE(objPtr)					\
+    ((ByteCode *) (objPtr)->internalRep.twoPtrValue.ptr1)
 
 #ifdef TCL_COMPILE_DEBUG
 /*
@@ -181,7 +189,7 @@ Tcl_Obj *
 TclDisassembleByteCodeObj(
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr = BYTECODE(objPtr);
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
@@ -858,7 +866,7 @@ static Tcl_Obj *
 DisassembleByteCodeAsDicts(
     Tcl_Obj *objPtr)		/* The bytecode-holding value to take apart */
 {
-    ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr = BYTECODE(objPtr);
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
     Tcl_Obj *aux, *exn, *commands;
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
@@ -1201,6 +1209,8 @@ Tcl_DisassembleObjCmd(
 
 	/*
 	 * Compile (if uncompiled) and disassemble a lambda term.
+	 *
+	 * WARNING! Pokes inside the lambda objtype.
 	 */
 
 	if (objc != 3) {
@@ -1368,8 +1378,7 @@ Tcl_DisassembleObjCmd(
      * Do the actual disassembly.
      */
 
-    if (((ByteCode *) codeObjPtr->internalRep.twoPtrValue.ptr1)->flags
-	    & TCL_BYTECODE_PRECOMPILED) {
+    if (BYTECODE(codeObjPtr)->flags & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not disassemble prebuilt bytecode", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
