@@ -248,6 +248,8 @@ static LRESULT CALLBACK	SocketProc(HWND hwnd, UINT message, WPARAM wParam,
 static int		SocketsEnabled(void);
 static void		TcpAccept(TcpFdList *fds, SOCKET newSocket, address addr);
 static int		WaitForConnect(TcpState *statePtr, int *errorCodePtr);
+static int		GetSocketError(TcpState *statePtr);
+
 static int		WaitForSocketEvent(TcpState *statePtr, int events,
 			    int *errorCodePtr);
 static void		AddSocketInfoFd(TcpState *statePtr,  SOCKET socket);
@@ -1123,6 +1125,7 @@ TcpSetOptionProc(
     const char *optionName,	/* Name of the option to set. */
     const char *value)		/* New value for option. */
 {
+    TcpState *statePtr = instanceData;
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
     TcpState *statePtr = instanceData;
     SOCKET sock;
@@ -1140,6 +1143,93 @@ TcpSetOptionProc(
 		    "winsock is not initialized", -1));
 	}
 	return TCL_ERROR;
+    }
+
+    /* 
+     * Go one step in async connect
+     * If any error is thrown save it as backround error to report eventually below
+     */
+    WaitForConnect(statePtr, NULL);
+
+    /*
+     * Option -error otherVar: Return socket error and socket error dict (TIP 428)
+     */
+    if (!strcmp(optionName, "-error")) {
+
+	Tcl_Obj *errorDictPtr;
+
+	/*
+	 * Get error code and clear it
+	 */
+	int errorCode=GetSocketError(statePtr);
+	
+	/*
+	 * Check for interpreter - otherwise we can not output
+	 */
+	if (!interp) {
+	    return TCL_OK;
+	}
+	
+	/*
+	 * Clear any existing result
+	 */
+	Tcl_ResetResult(interp);
+	
+	/*
+	 * Write -code key to dictionary with value 0/1
+	 */
+	errorDictPtr = Tcl_NewDictObj();
+	if ( TCL_ERROR == Tcl_DictObjPut(interp, errorDictPtr,
+		Tcl_NewStringObj("-code",-1), Tcl_NewBooleanObj(errorCode)) ) {
+	    return TCL_ERROR;
+	}
+
+	if (0 != errorCode) {
+
+	    /*
+	     * Add key -errorcode with list value: POSIX id message
+	     */
+	    Tcl_Obj *errorMessagePtr;
+	    Tcl_Obj *valuePtr = Tcl_NewObj();
+	    errorMessagePtr = Tcl_NewStringObj(Tcl_ErrnoMsg(errorCode),-1);
+	    Tcl_SetErrno(errorCode);
+	    if (TCL_ERROR == Tcl_ListObjAppendElement(interp, valuePtr,
+			Tcl_NewStringObj("POSSIX",-1)) ||
+		    TCL_ERROR == Tcl_ListObjAppendElement(interp, valuePtr,
+			Tcl_NewStringObj(Tcl_ErrnoId(),-1)) ||
+		    TCL_ERROR == Tcl_ListObjAppendElement(interp, valuePtr,
+			errorMessagePtr)) {
+		return TCL_ERROR;
+	    } 
+
+	    if ( TCL_ERROR == Tcl_DictObjPut(interp, errorDictPtr,
+		    Tcl_NewStringObj("-errorcode",-1), valuePtr) ) {
+		return TCL_ERROR;
+	    }
+
+	    /*
+	     * Set the result to the error message (shared with last list
+	     * member of the -errorcode value).
+	     */
+	    Tcl_SetObjResult(interp,errorMessagePtr);
+	}
+
+	/*
+	 * Save to specified variable
+	 */
+	if ( NULL ==
+		Tcl_SetVar2Ex(interp, value, NULL, errorDictPtr, TCL_LEAVE_ERR_MSG ))
+	{
+	    /*
+	     * Setting variable failed. This may also due to a variable name issue
+	     * like an existing array with the same name.
+	     * Thus treat this gracefully and clear temporary memory.
+	     */
+	    Tcl_DecrRefCount(errorDictPtr);
+	    return TCL_ERROR;
+	}
+	
+	return TCL_OK;
     }
 
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
@@ -1192,9 +1282,9 @@ TcpSetOptionProc(
 	return TCL_OK;
     }
 
-    return Tcl_BadChannelOption(interp, optionName, "keepalive nagle");
+    return Tcl_BadChannelOption(interp, optionName, "error keepalive nagle");
 #else
-    return Tcl_BadChannelOption(interp, optionName, "");
+    return Tcl_BadChannelOption(interp, optionName, "error");
 #endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
 }
 
@@ -1265,56 +1355,14 @@ TcpGetOptionProc(
 	    (strncmp(optionName, "-error", len) == 0)) {
 
 	/*
-	* Do not return any errors if async connect is running
-	*/
-	if ( ! (statePtr->flags & TCP_ASYNC_PENDING) ) {
-
-
-	    if ( statePtr->flags & TCP_ASYNC_FAILED ) {
-
-		/*
-		 * In case of a failed async connect, eventually report the
-		 * connect error only once.
-		 * Do not report the system error, as this comes again and again.
-		 */
-
-		if ( statePtr->connectError != 0 ) {
-		    Tcl_DStringAppend(dsPtr,
-			    Tcl_ErrnoMsg(statePtr->connectError), -1);
-		    statePtr->connectError = 0;
-		}
-
-	    } else {
-
-		/*
-		 * Report an eventual last error of the socket system
-		 */
-
-		int optlen;
-		int ret;
-		DWORD err;
-
-		/*
-		 * Populater the err Variable with a possix error
-		 */
-		optlen = sizeof(int);
-		ret = getsockopt(sock, SOL_SOCKET, SO_ERROR,
-			(char *)&err, &optlen);
-		/*
-		 * The error was not returned directly but should be
-		 * taken from WSA
-		 */
-		if (ret == SOCKET_ERROR) {
-		    err = WSAGetLastError();
-		}
-		/*
-		 * Return error message
-		 */
-		if (err) {
-		    TclWinConvertError(err);
-		    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(Tcl_GetErrno()), -1);
-		}
-	    }
+	 * Get error code and clear it
+	 */
+	int errorCode=GetSocketError(statePtr);
+	/*
+	 * Return error message
+	 */
+	if (errorCode != 0) {
+	    Tcl_DStringAppend(dsPtr, Tcl_ErrnoMsg(errorCode), -1);
 	}
 	return TCL_OK;
     }
@@ -1489,6 +1537,75 @@ TcpGetOptionProc(
     }
 
     return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * GetSocketError --
+ *
+ *	Get the error code for fconfigure -error.
+ *
+ * Results:
+ *	error code.
+ *
+ * Side effects:
+ *	Resets the error state.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+GetSocketError(
+    TcpState *statePtr)		/* The socket state. */
+{
+    int errorCode = 0;
+    
+    /*
+     * Do not return any errors if async connect is running
+     */
+    if ( (statePtr->flags & TCP_ASYNC_PENDING) ) {
+	return 0;
+    }
+    if ( statePtr->flags & TCP_ASYNC_FAILED ) {
+
+	/*
+	 * In case of a failed async connect, eventually report the
+	 * connect error only once.
+	 * Do not report the system error, as this comes again and again.
+	 */
+
+	errorCode = statePtr->connectError;
+	statePtr->connectError = 0;
+    } else {
+
+	/*
+	 * Report an eventual last error of the socket system
+	 */
+
+	int optlen;
+	int ret;
+	DWORD err;
+
+	/*
+	 * Populater the err Variable with a possix error
+	 */
+	optlen = sizeof(int);
+	ret = getsockopt(statePtr->sockets->fd, SOL_SOCKET, SO_ERROR,
+		(char *)&err, &optlen);
+	/*
+	 * The error was not returned directly but should be
+	 * taken from WSA
+	 */
+	if (ret == SOCKET_ERROR) {
+	    err = WSAGetLastError();
+	}
+	if (err) {
+	    TclWinConvertError(err);
+	    errorCode = Tcl_GetErrno();
+	}
+    }
+    return errorCode;
 }
 
 /*

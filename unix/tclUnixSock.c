@@ -127,6 +127,9 @@ static int		TcpClose2Proc(ClientData instanceData,
 			    Tcl_Interp *interp, int flags);
 static int		TcpGetHandleProc(ClientData instanceData,
 			    int direction, ClientData *handlePtr);
+static int		TcpSetOptionProc(ClientData instanceData,
+			    Tcl_Interp *interp, const char *optionName,
+			    const char *value);
 static int		TcpGetOptionProc(ClientData instanceData,
 			    Tcl_Interp *interp, const char *optionName,
 			    Tcl_DString *dsPtr);
@@ -150,7 +153,7 @@ static const Tcl_ChannelType tcpChannelType = {
     TcpInputProc,		/* Input proc. */
     TcpOutputProc,		/* Output proc. */
     NULL,			/* Seek proc. */
-    NULL,			/* Set option proc. */
+    TcpSetOptionProc,		/* Set option proc. */
     TcpGetOptionProc,		/* Get option proc. */
     TcpWatchProc,		/* Initialize notifier. */
     TcpGetHandleProc,		/* Get OS handles out of channel. */
@@ -751,6 +754,34 @@ TcpHostPortList(
 /*
  *----------------------------------------------------------------------
  *
+ * TcpSetOptionProc --
+ *
+ *	Sets Tcp channel specific options.
+ *
+ * Results:
+ *	None, unless an error happens.
+ *
+ * Side effects:
+ *	Changes attributes of the socket at the system level.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TcpSetOptionProc(
+    ClientData instanceData,	/* Socket state. */
+    Tcl_Interp *interp,		/* For error reporting - can be NULL. */
+    const char *optionName,	/* Name of the option to set. */
+    const char *value)		/* New value for option. */
+{
+    TcpState *statePtr = instanceData;
+
+    return Tcl_BadChannelOption(interp, optionName, "");
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TcpGetOptionProc --
  *
  *	Computes an option value for a TCP socket based channel, or a list of
@@ -894,7 +925,7 @@ TcpGetOptionProc(
 /*
  *----------------------------------------------------------------------
  *
- * TcpWatchProc --
+ * WrapNotify --
  *
  *	Initialize the notifier to watch the fd from this channel.
  *
