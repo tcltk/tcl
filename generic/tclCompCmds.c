@@ -2401,7 +2401,6 @@ TclCompileForCmd(
 
     SetLineInformation(2);
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-    TclClearNumConversion(envPtr);
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
     if (jumpDist > 127) {
