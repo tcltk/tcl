@@ -207,6 +207,7 @@ TCLOBJS	= \
 	$(TMPDIR)\tclConfig.obj \
 	$(TMPDIR)\tclDate.obj \
 	$(TMPDIR)\tclDictObj.obj \
+	$(TMPDIR)\tclDisassemble.obj \
 	$(TMPDIR)\tclEncoding.obj \
 	$(TMPDIR)\tclEnsemble.obj \
 	$(TMPDIR)\tclEnv.obj \
@@ -583,3 +584,7 @@ clean:
 	-@$(RM) $(TMPDIR)\*.exe
 	-@$(RMDIR) $(OUTDIR)
 	-@$(RMDIR) $(TMPDIR)
+
+# Local Variables:
+# mode: makefile
+# End:
