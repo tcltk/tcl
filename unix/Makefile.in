@@ -294,7 +294,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclAssembly.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
 	tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
-	tclCompile.o tclConfig.o tclDate.o tclDictObj.o \
+	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
 	tclEncoding.o tclEnsemble.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
@@ -406,6 +406,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclConfig.c \
 	$(GENERIC_DIR)/tclDate.c \
 	$(GENERIC_DIR)/tclDictObj.c \
+	$(GENERIC_DIR)/tclDisassemble.c \
 	$(GENERIC_DIR)/tclEncoding.c \
 	$(GENERIC_DIR)/tclEnsemble.c \
 	$(GENERIC_DIR)/tclEnv.c \
@@ -1106,6 +1107,9 @@ tclConfig.o: $(GENERIC_DIR)/tclConfig.c
 tclDictObj.o: $(GENERIC_DIR)/tclDictObj.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDictObj.c
 
+tclDisassemble.o: $(GENERIC_DIR)/tclDisassemble.c $(COMPILEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDisassemble.c
+
 tclEncoding.o: $(GENERIC_DIR)/tclEncoding.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEncoding.c
 
@@ -1572,10 +1576,9 @@ tclUnixThrd.o: $(UNIX_DIR)/tclUnixThrd.c
 tclUnixTime.o: $(UNIX_DIR)/tclUnixTime.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTime.c
 
+TCL_LOCATIONS=-DTCL_LIBRARY="\"${TCL_LIBRARY}\"" -DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\""
 tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
-	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
-		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
-		$(UNIX_DIR)/tclUnixInit.c
+	$(CC) -c $(CC_SWITCHES) $(TCL_LOCATIONS) $(UNIX_DIR)/tclUnixInit.c
 
 tclUnixCompat.o: $(UNIX_DIR)/tclUnixCompat.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixCompat.c
