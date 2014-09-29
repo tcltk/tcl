@@ -34,6 +34,7 @@
  */
 
 #include "tclPort.h"
+#include "tclBrodnik.h"
 
 #include <stdio.h>
 
@@ -259,17 +260,10 @@ typedef struct Namespace {
     TclVarHashTable varTable;	/* Contains all the (global) variables
 				 * currently in this namespace. Indexed by
 				 * strings; values have type (Var *). */
-    char **exportArrayPtr;	/* Points to an array of string patterns
-				 * specifying which commands are exported. A
-				 * pattern may include "string match" style
-				 * wildcard characters to specify multiple
-				 * commands; however, no namespace qualifiers
-				 * are allowed. NULL if no export patterns are
-				 * registered. */
-    int numExportPatterns;	/* Number of export patterns currently
-				 * registered using "namespace export". */
-    int maxExportPatterns;	/* Mumber of export patterns for which space
-				 * is currently allocated. */
+    Tcl_Obj *exportPatternList;
+				/* Set of "string match" style patterns that
+				 * specify which commands are exported. 
+				 * No namespace qualifiers are allowed. */
     int cmdRefEpoch;		/* Incremented if a newly added command
 				 * shadows a command for which this namespace
 				 * has already cached a Command* pointer; this
@@ -2542,6 +2536,46 @@ typedef Tcl_ObjCmdProc *TclObjCmdProcType;
 
 /*
  *----------------------------------------------------------------
+ * Internal definitions related to parsing, substitution, evaluation
+ *----------------------------------------------------------------
+ */
+
+/*
+ * New internal Tcl_Token types.
+ *
+ * TCL_TOKEN_SCRIPT -           Leading Tcl_Token type for an entire script.
+ *                              The numComponents field stores the number of
+ *                              commands in the script.
+ * TCL_TOKEN_SCRIPT_SUBST -     So-called "command substituion" in Tcl is
+ *                              really "script substitution" and this internal
+ *                              Tcl_Token type indicates it.  Unlike
+ *                              the TCL_TOKEN_COMMAND type, which also denotes
+ *                              "command substitution", the numComponents field
+ *                              is *not* always 0, so we can store the results
+ *                              of nested parsing, and avoid reparsing the
+ *                              same string again and again.  The numComponents
+ *                              field stores the number of following Tcl_Tokens
+ *                              that are parsed from the nested script.  The
+ *                              numComponents value is always at least 1, for
+ *                              the TCL_TOKEN_SCRIPT token that follows.
+ * TCL_TOKEN_CMD -              Leading Tcl_Token type for a parsed Tcl command. *                              There will be one of these tokens for each
+ *                              command in a script.  The numComponents field
+ *                              stores the number of words in the command.
+ * TCL_TOKEN_ERROR -            This Tcl_Token type is used to represent a
+ *                              parse error.  It may appear following all
+ *                              the commands that follow a TCL_TOKEN_SCRIPT
+ *                              token.  The TCL_TOKEN_ERROR token represents
+ *                              the remainder of the original string that
+ *                              could not be parsed into commands.
+ */
+
+#define TCL_TOKEN_SCRIPT        512
+#define TCL_TOKEN_SCRIPT_SUBST  1024
+#define TCL_TOKEN_CMD           2048
+#define TCL_TOKEN_ERROR         4096
+
+/*
+ *----------------------------------------------------------------
  * Data structures for process-global values.
  *----------------------------------------------------------------
  */
@@ -2688,6 +2722,42 @@ MODULE_SCOPE char *	tclEmptyStringRep;
 MODULE_SCOPE char	tclEmptyString;
 
 /*
+ * Flags used to control details of parsing.
+ * The first three are #define'd in tcl.h, so that may be set by callers
+ * of Tcl_SubstObj().  See the docs for what they do.
+ *
+ * #define TCL_SUBST_COMMANDS           001
+ * #define TCL_SUBST_VARIABLES          002
+ * #define TCL_SUBST_BACKSLASHES        004
+ *
+ * tcl.h also #define's their combination for brevity:
+ *
+ * #define TCL_SUBST_ALL                007
+ *
+ * The other flag values that control parsing are:
+ *
+ * PARSE_NESTED -               Passed to ParseCommand to indicate that the
+ *                              close bracket character should be treated as
+ *                              a command terminator, as well as newlines,
+ *                              semi-colons, and end of string.
+ *
+ * PARSE_APPEND -               Passed throughout the Parse routines to 
+ *                              indicate that parsing should append to the
+ *                              Tcl_Parse structure passed in (by reference).
+ *                              If this flag is not set, some routines will
+ *                              re-initialize the Tcl_Parse structure.
+ *
+ * PARSE_USE_INTERNAL_TOKENS -  Passed throughout the Parse routines to
+ *                              indicate the parse is being done for Tcl's
+ *                              internal use, so it is acceptable to use
+ *                              Tcl_Token types that are known only internally.
+ */
+
+#define PARSE_NESTED                    010
+#define PARSE_APPEND                    020
+#define PARSE_USE_INTERNAL_TOKENS       040
+
+/*
  *----------------------------------------------------------------
  * Procedures shared among Tcl modules but not used by the outside world,
  * introduced by/for NRE.
@@ -2816,6 +2886,9 @@ MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
 			    CmdFrame **cfPtrPtr, int *wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
+MODULE_SCOPE void	TclBAConvertIndices(size_t index, unsigned int *hiPtr,
+			    unsigned int *loPtr);
+MODULE_SCOPE size_t	TclBAInvertIndices(unsigned int hi, unsigned int lo);
 MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
 MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
@@ -2846,6 +2919,10 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
 			    int *clNextOuter, const char *outerScript);
+MODULE_SCOPE int	TclEvalScriptTokens(Tcl_Interp *interp,
+			    Tcl_Token *tokenPtr, int length, int flags,
+			    int line, int* clNextOuter,
+			    const char* outerScript);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
@@ -2863,6 +2940,8 @@ MODULE_SCOPE char *	TclDStringAppendObj(Tcl_DString *dsPtr,
 MODULE_SCOPE char *	TclDStringAppendDString(Tcl_DString *dsPtr,
 			    Tcl_DString *toAppendPtr);
 MODULE_SCOPE Tcl_Obj *	TclDStringToObj(Tcl_DString *dsPtr);
+MODULE_SCOPE void	TclFillTableWithExports(Namespace *nsPtr,
+			    Tcl_HashTable *hash);
 MODULE_SCOPE void	TclFinalizeAllocSubsystem(void);
 MODULE_SCOPE void	TclFinalizeAsync(void);
 MODULE_SCOPE void	TclFinalizeDoubleConversion(void);
@@ -2909,6 +2988,8 @@ MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    unsigned int *sizePtr);
+MODULE_SCOPE Tcl_Token *TclGetTokensFromObj(Tcl_Obj *objPtr,
+			    Tcl_Token **lastTokenPtrPtr);
 MODULE_SCOPE int	TclIncrObj(Tcl_Interp *interp, Tcl_Obj *valuePtr,
 			    Tcl_Obj *incrPtr);
 MODULE_SCOPE Tcl_Obj *	TclIncrObjVar2(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -2962,6 +3043,7 @@ MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
+MODULE_SCOPE int	TclMSB(size_t n);
 MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
@@ -2975,6 +3057,8 @@ MODULE_SCOPE int	TclObjUnsetVar2(Tcl_Interp *interp,
 			    Tcl_Obj *part1Ptr, Tcl_Obj *part2Ptr, int flags);
 MODULE_SCOPE int	TclParseBackslash(const char *src,
 			    int numBytes, int *readPtr, char *dst);
+MODULE_SCOPE int	TclParseCommand(Tcl_Interp *interp, const char *start,
+			    int numBytes, int flags, Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclParseHex(const char *src, int numBytes,
 			    int *resultPtr);
 MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
@@ -2982,6 +3066,18 @@ MODULE_SCOPE int	TclParseNumber(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int numBytes, const char **endPtrPtr, int flags);
 MODULE_SCOPE void	TclParseInit(Tcl_Interp *interp, const char *string,
 			    int numBytes, Tcl_Parse *parsePtr);
+
+MODULE_SCOPE int	TclParseQuotedString(Tcl_Interp *interp,
+			    const char *start, int numBytes,
+			    Tcl_Parse *parsePtr, int flags,
+			    const char **termPtr);
+MODULE_SCOPE Tcl_Token *TclParseScript(Tcl_Interp *interp, const char *script,
+			    int numBytes, int flags,
+			    Tcl_Token **lastTokenPtrPtr, const char **termPtr);
+MODULE_SCOPE int	TclParseScriptSubst(const char *src, int numBytes,
+			    Tcl_Parse *parsePtr, int flags);
+MODULE_SCOPE int	TclParseVarName(Tcl_Interp *interp, const char *start,
+			    int numBytes, Tcl_Parse *parsePtr, int flags);
 MODULE_SCOPE int	TclParseAllWhiteSpace(const char *src, int numBytes);
 MODULE_SCOPE int	TclProcessReturn(Tcl_Interp *interp,
 			    int code, int level, Tcl_Obj *returnOpts);
@@ -3075,11 +3171,12 @@ MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
 MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, int numOpts,
 			    Tcl_Obj *const opts[], int *flagPtr);
 MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
-			    int numBytes, int flags, Tcl_Parse *parsePtr,
-			    Tcl_InterpState *statePtr);
+			    int numBytes, int flags, Tcl_Parse *parsePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 			    int count, int *tokensLeftPtr, int line,
-			    int *clNextOuter, const char *outerScript);
+			    int* clNextOuter, const char* outerScript,
+			    int flags);
+MODULE_SCOPE Tcl_Obj *	TclTokensCopy(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
@@ -4382,7 +4479,7 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
  */
 
 #define TclInvalidateNsCmdLookup(nsPtr) \
-    if ((nsPtr)->numExportPatterns) {		\
+    if ((nsPtr)->exportPatternList) {		\
 	(nsPtr)->exportLookupEpoch++;		\
     }						\
     if ((nsPtr)->commandPathLength) {		\

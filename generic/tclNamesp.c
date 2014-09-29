@@ -790,9 +790,7 @@ Tcl_CreateNamespace(
     nsPtr->refCount = 0;
     Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
     TclInitVarHashTable(&nsPtr->varTable, nsPtr);
-    nsPtr->exportArrayPtr = NULL;
-    nsPtr->numExportPatterns = 0;
-    nsPtr->maxExportPatterns = 0;
+    nsPtr->exportPatternList = NULL;
     nsPtr->cmdRefEpoch = 0;
     nsPtr->resolverEpoch = 0;
     nsPtr->cmdResProc = NULL;
@@ -1107,7 +1105,6 @@ TclTeardownNamespace(
     Tcl_HashSearch search;
     Tcl_Namespace *childNsPtr;
     Tcl_Command cmd;
-    int i;
 
     /*
      * Start by destroying the namespace's variable table, since variables
@@ -1202,14 +1199,9 @@ TclTeardownNamespace(
      * Free the namespace's export pattern array.
      */
 
-    if (nsPtr->exportArrayPtr != NULL) {
-	for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
-	    ckfree(nsPtr->exportArrayPtr[i]);
-	}
-	ckfree(nsPtr->exportArrayPtr);
-	nsPtr->exportArrayPtr = NULL;
-	nsPtr->numExportPatterns = 0;
-	nsPtr->maxExportPatterns = 0;
+    if (nsPtr->exportPatternList != NULL) {
+	Tcl_DecrRefCount(nsPtr->exportPatternList);
+	nsPtr->exportPatternList = NULL;
     }
 
     /*
@@ -1325,12 +1317,9 @@ Tcl_Export(
     int resetListFirst)		/* If nonzero, resets the namespace's export
 				 * list before appending. */
 {
-#define INIT_EXPORT_PATTERNS 5
     Namespace *nsPtr, *exportNsPtr, *dummyPtr;
     Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     const char *simplePattern;
-    char *patternCpy;
-    int neededElems, len, i;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1347,17 +1336,10 @@ Tcl_Export(
      * pattern list.
      */
 
-    if (resetListFirst) {
-	if (nsPtr->exportArrayPtr != NULL) {
-	    for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
-		ckfree(nsPtr->exportArrayPtr[i]);
-	    }
-	    ckfree(nsPtr->exportArrayPtr);
-	    nsPtr->exportArrayPtr = NULL;
-	    TclInvalidateNsCmdLookup(nsPtr);
-	    nsPtr->numExportPatterns = 0;
-	    nsPtr->maxExportPatterns = 0;
-	}
+    if (resetListFirst && nsPtr->exportPatternList) {
+	TclInvalidateNsCmdLookup(nsPtr);
+	Tcl_DecrRefCount(nsPtr->exportPatternList);
+	nsPtr->exportPatternList = NULL;
     }
 
     /*
@@ -1378,9 +1360,13 @@ Tcl_Export(
      * Make sure that we don't already have the pattern in the array
      */
 
-    if (nsPtr->exportArrayPtr != NULL) {
-	for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
-	    if (strcmp(pattern, nsPtr->exportArrayPtr[i]) == 0) {
+    if (nsPtr->exportPatternList != NULL) {
+	int objc;
+	Tcl_Obj **objv;
+
+	Tcl_ListObjGetElements(NULL, nsPtr->exportPatternList, &objc, &objv);
+	while (objc--) {
+	    if (strcmp(pattern, Tcl_GetString(*objv++)) == 0) {
 		/*
 		 * The pattern already exists in the list.
 		 */
@@ -1388,31 +1374,16 @@ Tcl_Export(
 		return TCL_OK;
 	    }
 	}
+    } else {
+	nsPtr->exportPatternList = Tcl_NewObj();
     }
 
     /*
-     * Make sure there is room in the namespace's pattern array for the new
-     * pattern.
+     * Add the pattern to the namespace's list of export patterns.
      */
 
-    neededElems = nsPtr->numExportPatterns + 1;
-    if (neededElems > nsPtr->maxExportPatterns) {
-	nsPtr->maxExportPatterns = nsPtr->maxExportPatterns ?
-		2 * nsPtr->maxExportPatterns : INIT_EXPORT_PATTERNS;
-	nsPtr->exportArrayPtr = ckrealloc(nsPtr->exportArrayPtr,
-		sizeof(char *) * nsPtr->maxExportPatterns);
-    }
-
-    /*
-     * Add the pattern to the namespace's array of export patterns.
-     */
-
-    len = strlen(pattern);
-    patternCpy = ckalloc(len + 1);
-    memcpy(patternCpy, pattern, (unsigned) len + 1);
-
-    nsPtr->exportArrayPtr[nsPtr->numExportPatterns] = patternCpy;
-    nsPtr->numExportPatterns++;
+    Tcl_ListObjAppendElement(NULL, nsPtr->exportPatternList,
+	    Tcl_NewStringObj(pattern, -1));
 
     /*
      * The list of commands actually exported from the namespace might have
@@ -1423,7 +1394,6 @@ Tcl_Export(
     TclInvalidateNsCmdLookup(nsPtr);
 
     return TCL_OK;
-#undef INIT_EXPORT_PATTERNS
 }
 
 /*
@@ -1457,7 +1427,6 @@ Tcl_AppendExportList(
 				 * export pattern list is appended. */
 {
     Namespace *nsPtr;
-    int i, result;
 
     /*
      * If the specified namespace is NULL, use the current namespace.
@@ -1473,14 +1442,81 @@ Tcl_AppendExportList(
      * Append the export pattern list onto objPtr.
      */
 
-    for (i = 0;  i < nsPtr->numExportPatterns;  i++) {
-	result = Tcl_ListObjAppendElement(interp, objPtr,
-		Tcl_NewStringObj(nsPtr->exportArrayPtr[i], -1));
-	if (result != TCL_OK) {
-	    return result;
+    if (nsPtr->exportPatternList == NULL) {
+	return TCL_OK;
+    }
+    return Tcl_ListObjAppendList(interp, objPtr, nsPtr->exportPatternList);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclFillTableWithExports --
+ *
+ *	Discover what commands are actually exported by *nsPtr.
+ *	What we have is an array of patterns and a hash table whose keys
+ *	are the command names defined in the namespace (the contents do
+ *	not matter here.) We must find out what commands are actually
+ *	exported by filtering each command in the namespace against each of
+ *	the patterns in the export list.  Store the exported command
+ * 	set in hash, with fully qualified command prefix as value.
+ *
+ *	Suggestion for future enhancement: compute the unique prefixes and
+ *	place them in the hash too, which should make for even faster
+ *	matching.
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFillTableWithExports(
+    Namespace *nsPtr,
+    Tcl_HashTable *hash)
+{
+    Tcl_HashSearch search;
+    Tcl_HashEntry *hPtr;
+
+    if (nsPtr->exportPatternList == NULL) {
+	return;
+    }
+
+    hPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+    for (; hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
+	int objc;
+	Tcl_Obj **objv;
+	char *nsCmdName = Tcl_GetHashKey(&nsPtr->cmdTable, hPtr);
+
+	Tcl_ListObjGetElements(NULL, nsPtr->exportPatternList, &objc, &objv);
+	while (objc--) {
+	    if (Tcl_StringMatch(nsCmdName, Tcl_GetString(*objv++))) {
+		int isNew;
+		Tcl_HashEntry *exportPtr = Tcl_CreateHashEntry(hash,
+			nsCmdName, &isNew);
+
+		/*
+		 * Remember, hash entries have a full reference to the
+		 * substituted part of the command (as a list) as their
+		 * content!
+		 */
+
+		if (isNew) {
+		    Tcl_Obj *cmdObj, *cmdPrefixObj;
+
+		    TclNewObj(cmdObj);
+		    Tcl_AppendStringsToObj(cmdObj, nsPtr->fullName,
+			    (nsPtr->parentPtr ? "::" : ""), nsCmdName, NULL);
+		    cmdPrefixObj = Tcl_NewListObj(1, &cmdObj);
+		    Tcl_SetHashValue(exportPtr, cmdPrefixObj);
+		    Tcl_IncrRefCount(cmdPrefixObj);
+		}
+		break;
+	    }
 	}
     }
-    return TCL_OK;
 }
 
 /*
@@ -1659,7 +1695,8 @@ DoImport(
     Namespace *importNsPtr,
     int allowOverwrite)
 {
-    int i = 0, exported = 0;
+    int objc, exported = 0;
+    Tcl_Obj **objv;
     Tcl_HashEntry *found;
 
     /*
@@ -1667,9 +1704,13 @@ DoImport(
      * whether it was exported. If it wasn't, we ignore it.
      */
 
-    while (!exported && (i < importNsPtr->numExportPatterns)) {
-	exported |= Tcl_StringMatch(cmdName,
-		importNsPtr->exportArrayPtr[i++]);
+    if (importNsPtr->exportPatternList == NULL) {
+	return TCL_OK;
+    }
+
+    Tcl_ListObjGetElements(NULL, importNsPtr->exportPatternList, &objc, &objv);
+    while (!exported && objc--) {
+	exported |= Tcl_StringMatch(cmdName, Tcl_GetString(*objv++));
     }
     if (!exported) {
 	return TCL_OK;
@@ -3466,7 +3507,10 @@ NamespaceExportCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    int firstArg, i;
+    Namespace *nsPtr;
+    Tcl_Obj *dict, *value;
+    int startSize, endSize, firstArg, i, changed = 0;
+    int code = TCL_OK;
 
     if (objc < 1) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?-clear? ?pattern pattern...?");
@@ -3478,11 +3522,12 @@ NamespaceExportCmd(
      * the namespace's current export pattern list.
      */
 
+    nsPtr = (Namespace *) TclGetCurrentNamespace(interp);
     if (objc == 1) {
-	Tcl_Obj *listPtr = Tcl_NewObj();
-
-	(void) Tcl_AppendExportList(interp, NULL, listPtr);
-	Tcl_SetObjResult(interp, listPtr);
+	if (nsPtr->exportPatternList) {
+	    Tcl_SetObjResult(interp,
+		    TclListObjCopy(NULL, nsPtr->exportPatternList));
+	}
 	return TCL_OK;
     }
 
@@ -3492,22 +3537,81 @@ NamespaceExportCmd(
 
     firstArg = 1;
     if (strcmp("-clear", Tcl_GetString(objv[firstArg])) == 0) {
-	Tcl_Export(interp, NULL, "::", 1);
-	Tcl_ResetResult(interp);
+	if (nsPtr->exportPatternList) {
+	    Tcl_DecrRefCount(nsPtr->exportPatternList);
+	    nsPtr->exportPatternList = NULL;
+	    changed = 1;
+	}
 	firstArg++;
     }
 
     /*
      * Add each pattern to the namespace's export pattern list.
+     * Use a dict as a simple way to screen out duplicates.
      */
 
-    for (i = firstArg;  i < objc;  i++) {
-	int result = Tcl_Export(interp, NULL, Tcl_GetString(objv[i]), 0);
-	if (result != TCL_OK) {
-	    return result;
+    dict = Tcl_NewDictObj();
+    value = Tcl_NewObj();
+    Tcl_IncrRefCount(value);
+    if (nsPtr->exportPatternList) {
+	int epc;
+	Tcl_Obj **epv;
+
+	Tcl_ListObjGetElements(NULL, nsPtr->exportPatternList, &epc, &epv);
+	while (epc--) {
+	    Tcl_DictObjPut(NULL, dict, *epv++, value);
 	}
     }
-    return TCL_OK;
+    Tcl_DictObjSize(NULL, dict, &startSize);
+
+    for (i = firstArg;  i < objc;  i++) {
+	Namespace *exportNsPtr, *dummyPtr;
+	const char *simplePattern, *pattern = Tcl_GetString(objv[i]);
+
+	TclGetNamespaceForQualName(interp, pattern, nsPtr,
+		TCL_NAMESPACE_ONLY, &exportNsPtr, &dummyPtr, &dummyPtr,
+		&simplePattern);
+
+	if ((exportNsPtr != nsPtr) || (strcmp(pattern, simplePattern) != 0)) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf("invalid export pattern"
+		    " \"%s\": pattern can't specify a namespace", pattern));
+	    Tcl_SetErrorCode(interp, "TCL", "EXPORT", "INVALID", NULL);
+	    code = TCL_ERROR;
+	    break;
+	}
+
+	Tcl_DictObjPut(NULL, dict, objv[i], value);
+    }
+    Tcl_DictObjSize(NULL, dict, &endSize);
+    changed |= (endSize > startSize);
+
+    if (endSize > startSize) {
+	int done;
+	Tcl_Obj *ep;
+	Tcl_DictSearch search;
+
+	if (nsPtr->exportPatternList == NULL) {
+	    nsPtr->exportPatternList = Tcl_NewObj();
+	    Tcl_IncrRefCount(nsPtr->exportPatternList);
+	}
+
+	i = 0;
+	Tcl_DictObjFirst(NULL, dict, &search, &ep, NULL, &done);
+	for (; !done; i++, Tcl_DictObjNext(&search, &ep, NULL, &done)) {
+	    if (i < startSize) {
+		continue;
+	    }
+	    Tcl_ListObjAppendElement(NULL, nsPtr->exportPatternList, ep);
+	}
+	Tcl_DictObjDone(&search);
+    }
+    Tcl_DecrRefCount(value);
+    Tcl_DecrRefCount(dict);
+
+    if (changed) {
+	TclInvalidateNsCmdLookup(nsPtr);
+    }
+    return code;
 }
 
 /*

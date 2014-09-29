@@ -480,20 +480,6 @@ static const unsigned char Lexeme[] = {
 };
 
 /*
- * The JumpList struct is used to create a stack of data needed for the
- * TclEmitForwardJump() and TclFixupForwardJump() calls that are performed
- * when compiling the short-circuiting operators QUESTION/COLON, AND, and OR.
- * Keeping a stack permits the CompileExprTree() routine to be non-recursive.
- */
-
-typedef struct JumpList {
-    JumpFixup jump;		/* Pass this argument to matching calls of
-				 * TclEmitForwardJump() and 
-				 * TclFixupForwardJump(). */
-    struct JumpList *next;	/* Point to next item on the stack */
-} JumpList;
-
-/*
  * Declarations for local functions to this file:
  */
 
@@ -880,8 +866,10 @@ ParseExpr(
 
 	    switch (lexeme) {
 	    case QUOTED:
-		code = Tcl_ParseQuotedString(NULL, start, numBytes,
-			parsePtr, 1, &end);
+		code = parseOnly ?  Tcl_ParseQuotedString(NULL, start,
+			numBytes, parsePtr, 1, &end)
+			: TclParseQuotedString(NULL, start, numBytes, parsePtr,
+			PARSE_APPEND | PARSE_USE_INTERNAL_TOKENS, &end);
 		scanned = end - start;
 		break;
 
@@ -892,7 +880,9 @@ ParseExpr(
 		break;
 
 	    case VARIABLE:
-		code = Tcl_ParseVarName(NULL, start, numBytes, parsePtr, 1);
+		code = parseOnly ? Tcl_ParseVarName(NULL, start, numBytes,
+			parsePtr, 1) : TclParseVarName(NULL, start, numBytes,
+			parsePtr, PARSE_APPEND | PARSE_USE_INTERNAL_TOKENS);
 
 		/*
 		 * Handle the quirk that Tcl_ParseVarName reports a successful
@@ -908,7 +898,8 @@ ParseExpr(
 		scanned = tokenPtr->size;
 		break;
 
-	    case SCRIPT: {
+	    case SCRIPT:
+	      if (parseOnly) {
 		Tcl_Parse *nestedPtr =
 			TclStackAlloc(interp, sizeof(Tcl_Parse));
 
@@ -952,7 +943,10 @@ ParseExpr(
 		tokenPtr->size = scanned;
 		parsePtr->numTokens++;
 		break;
-	    }			/* SCRIPT case */
+	      }
+		code = TclParseScriptSubst(start, numBytes, parsePtr, 0);
+		scanned = parsePtr->term + 1 - start;
+		break;
 	    }
 	    if (code != TCL_OK) {
 		/*
@@ -2244,12 +2238,12 @@ CompileExprTree(
     OpNode *nodePtr = nodes + index;
     OpNode *rootPtr = nodePtr;
     int numWords = 0;
-    JumpList *jumpPtr = NULL;
+    JumpFixup *jumpPtr = NULL;
+    BA_JumpFixup *stack = NULL;
     int convert = 1;
 
     while (1) {
 	int next;
-	JumpList *freePtr, *newJump;
 
 	if (nodePtr->mark == MARK_LEFT) {
 	    next = nodePtr->left;
@@ -2288,30 +2282,29 @@ CompileExprTree(
 		break;
 	    }
 	    case QUESTION:
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
+		if (stack == NULL) {
+		    stack = BA_JumpFixup_Create();
+		}
+		jumpPtr = BA_JumpFixup_Append(stack);
+		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, jumpPtr);
 		break;
 	    case COLON:
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
-		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&jumpPtr->jump);
+		jumpPtr = BA_JumpFixup_Append(stack);
+		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, jumpPtr);
 		TclAdjustStackDepth(-1, envPtr);
 		if (convert) {
-		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
+		    jumpPtr->jumpType = TCL_TRUE_JUMP;
 		}
 		convert = 1;
 		break;
 	    case AND:
 	    case OR:
-		newJump = TclStackAlloc(interp, sizeof(JumpList));
-		newJump->next = jumpPtr;
-		jumpPtr = newJump;
+		if (stack == NULL) {
+		    stack = BA_JumpFixup_Create();
+		}
+		jumpPtr = BA_JumpFixup_Append(stack);
 		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
-			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
+			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, jumpPtr);
 		break;
 	    }
 	} else {
@@ -2355,27 +2348,23 @@ CompileExprTree(
 		numWords++;
 		break;
 	    case COLON:
+		jumpPtr = BA_JumpFixup_Detach(stack);
 		CLANG_ASSERT(jumpPtr);
-		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
-		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
+		if (jumpPtr->jumpType == TCL_TRUE_JUMP) {
+		    jumpPtr->jumpType = TCL_UNCONDITIONAL_JUMP;
 		    convert = 1;
 		}
-		target = jumpPtr->jump.codeOffset + 2;
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
+		target = jumpPtr->codeOffset + 2;
+		if (TclFixupForwardJumpToHere(envPtr, jumpPtr, 127)) {
 		    target += 3;
 		}
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
-		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			target - jumpPtr->jump.codeOffset, 127);
-
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
+		jumpPtr = BA_JumpFixup_Detach(stack);
+		TclFixupForwardJump(envPtr, jumpPtr,
+			target - jumpPtr->codeOffset, 127);
 		break;
 	    case AND:
 	    case OR:
+		jumpPtr = BA_JumpFixup_Detach(stack);
 		CLANG_ASSERT(jumpPtr);
 		pc1 = CurrentOffset(envPtr);
 		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
@@ -2387,7 +2376,7 @@ CompileExprTree(
 		TclAdjustStackDepth(-1, envPtr);
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc1,
 			envPtr->codeStart + pc1 + 1);
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
+		if (TclFixupForwardJumpToHere(envPtr, jumpPtr, 127)) {
 		    pc2 += 3;
 		}
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
@@ -2395,9 +2384,6 @@ CompileExprTree(
 		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
 			envPtr->codeStart + pc2 + 1);
 		convert = 0;
-		freePtr = jumpPtr;
-		jumpPtr = jumpPtr->next;
-		TclStackFree(interp, freePtr);
 		break;
 	    default:
 		TclEmitOpcode(instruction[nodePtr->lexeme], envPtr);
@@ -2407,6 +2393,9 @@ CompileExprTree(
 	    if (nodePtr == rootPtr) {
 		/* We're done */
 
+		if (stack) {
+		    BA_JumpFixup_Destroy(stack);
+		}
 		return;
 	    }
 	    nodePtr = nodes + nodePtr->p.parent;

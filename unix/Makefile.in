@@ -291,8 +291,8 @@ XTTEST_OBJS = xtTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o tclXtNotify.o tclXtTest.o
 
 GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
-	tclAssembly.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
-	tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
+	tclAssembly.o tclAsync.o tclBasic.o tclBinary.o tclBrodnik.o \
+	tclCkalloc.o tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
 	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
 	tclEncoding.o tclEnsemble.o \
@@ -393,6 +393,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclAsync.c \
 	$(GENERIC_DIR)/tclBasic.c \
 	$(GENERIC_DIR)/tclBinary.c \
+	$(GENERIC_DIR)/tclBrodnik.c \
 	$(GENERIC_DIR)/tclCkalloc.c \
 	$(GENERIC_DIR)/tclClock.c \
 	$(GENERIC_DIR)/tclCmdAH.c \
@@ -1067,6 +1068,9 @@ tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
 
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c
+
+tclBrodnik.o: $(GENERIC_DIR)/tclBrodnik.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBrodnik.c
 
 tclCkalloc.o: $(GENERIC_DIR)/tclCkalloc.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclCkalloc.c

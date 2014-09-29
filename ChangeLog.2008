@@ -1811,6 +1811,15 @@
 	* generic/tclExecute.c: Fix for [Bug 2038069] by dgp.
 	* tests/execute.test:
 
+2008-08-04  Don Porter  <dgp@users.sourceforge.net>S
+
+	[dgp-refactor branch]
+
+	* generic/tclBasic.c:	Move toplevel exception handling code into
+	TclEvalScriptTokens where the right data is available to construct
+	the stack trace, and out of callers which lacked that data.  Fixes
+	long failing basic-46.* tests.
+
 2008-08-04  Miguel Sofer  <msofer@users.sf.net>
 
 	* tests/nre.test: Added tests for [if], [while] and [for]. A test

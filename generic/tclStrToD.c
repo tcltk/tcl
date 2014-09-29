@@ -1952,7 +1952,8 @@ NormalizeRightward(
  *	Determines the number of bits needed to hold an intger.
  *
  * Results:
- *	Returns the position of the most significant bit (0 - 63).  Returns 0
+ *	Returns the position of the most significant bit (1 - 64), starting
+ * 	the counting at 1 for the LSB.  (RP(1) -> 1).  Returns 0
  *	if the number is zero.
  *
  *----------------------------------------------------------------------
@@ -1964,6 +1965,13 @@ RequiredPrecision(
 {
     int rv;
     unsigned long wi;
+
+    if (w == 0) {
+	return 0;
+    }
+    if (sizeof(Tcl_WideUInt) <= sizeof(size_t)) {
+	return 1 + TclMSB(w);
+    }
 
     if (w & ((Tcl_WideUInt) 0xffffffff << 32)) {
 	wi = (unsigned long) (w >> 32); rv = 32;

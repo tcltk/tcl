@@ -945,7 +945,7 @@ int
 TclCompileAssembleCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
-				 * created by Tcl_ParseCommand. */
+				 * created by TclParseCommand. */
     Command *cmdPtr,		/* Points to defintion of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
@@ -980,7 +980,7 @@ TclCompileAssembleCmd(
 		"\n    (\"%.*s\" body, line %d)",
 		parsePtr->tokenPtr->size, parsePtr->tokenPtr->start,
 		Tcl_GetErrorLine(interp)));
-	envPtr->numCommands = numCommands;
+	TclDisposeFailedCompile(envPtr, numCommands);
 	envPtr->codeNext = envPtr->codeStart + offset;
 	envPtr->currStackDepth = depth;
 	TclCompileSyntaxError(interp, envPtr);
@@ -1036,7 +1036,8 @@ TclAssembleCode(
 	 * Parse out one command line from the assembly script.
 	 */
 
-	status = Tcl_ParseCommand(interp, instPtr, bytesLeft, 0, parsePtr);
+	status = TclParseCommand(interp, instPtr, bytesLeft,
+		PARSE_USE_INTERNAL_TOKENS, parsePtr);
 
 	/*
 	 * Report errors in the parse.

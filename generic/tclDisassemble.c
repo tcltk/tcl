@@ -223,7 +223,7 @@ TclDisassembleByteCodeObj(
     Tcl_AppendPrintfToObj(bufferObj,
 	    "\n  Cmds %d, src %d, inst %d, litObjs %u, aux %d, stkDepth %u, code/src %.2f\n",
 	    numCmds, codePtr->numSrcBytes, codePtr->numCodeBytes,
-	    codePtr->numLitObjects, codePtr->numAuxDataItems,
+	    codePtr->numLitObjects, (int) BA_AuxData_Size(codePtr->auxData),
 	    codePtr->maxStackDepth,
 #ifdef TCL_COMPILE_STATS
 	    codePtr->numSrcBytes?
@@ -239,7 +239,7 @@ TclDisassembleByteCodeObj(
 	    codePtr->numCodeBytes,
 	    (unsigned long) (codePtr->numLitObjects * sizeof(Tcl_Obj *)),
 	    (unsigned long) (codePtr->numExceptRanges*sizeof(ExceptionRange)),
-	    (unsigned long) (codePtr->numAuxDataItems * sizeof(AuxData)),
+	    (unsigned long) (BA_AuxData_Size(codePtr->auxData) * sizeof(AuxData)),
 	    codePtr->numCmdLocBytes);
 #endif /* TCL_COMPILE_STATS */
 
@@ -535,7 +535,7 @@ FormatInstruction(
 	case OPERAND_AUX4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
-	    auxPtr = &codePtr->auxDataArrayPtr[opnd];
+	    auxPtr = BA_AuxData_At(codePtr->auxData,opnd);
 	    break;
 	case OPERAND_IDX4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
@@ -1037,9 +1037,10 @@ DisassembleByteCodeAsDicts(
      * Get the auxiliary data from the bytecode.
      */
 
+    /* TODO: convert to loop over an iterating BP */
     aux = Tcl_NewObj();
-    for (i=0 ; i<codePtr->numAuxDataItems ; i++) {
-	AuxData *auxData = &codePtr->auxDataArrayPtr[i];
+    for (i=0 ; i<BA_AuxData_Size(codePtr->auxData) ; i++) {
+	AuxData *auxData = BA_AuxData_At(codePtr->auxData,i);
 	Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
 
 	if (auxData->type->disassembleProc) {
