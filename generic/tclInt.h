@@ -1735,7 +1735,7 @@ enum PkgPreferOptions {
  * definition there.
  * Some macros require knowledge of some fields in the struct in order to
  * avoid hitting the TSD unnecessarily. In order to facilitate this, a pointer
- * to the relevant fields is kept in the objCache field in struct Interp.
+ * to the relevant fields is kept in the allocCache field in struct Interp.
  *----------------------------------------------------------------
  */
 

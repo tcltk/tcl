@@ -322,8 +322,8 @@ TclCompileStringCatCmd(
 	    CompileWord(envPtr, wordTokenPtr, interp, i);
 	    numArgs ++;
 	    if (numArgs >= 254) { /* 254 to take care of the possible +1 of "folded" above */
-		TclEmitInstInt1(INST_STR_CONCAT1, 254, envPtr);
-		numArgs -= 253;	/* concat pushes 1 obj, the result */
+		TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
+		numArgs = 1;	/* concat pushes 1 obj, the result */
 	    }
 	}
 	wordTokenPtr = TokenAfter(wordTokenPtr);
@@ -3788,7 +3788,6 @@ TclCompileWhileCmd(
 	}
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-	TclClearNumConversion(envPtr);
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {
