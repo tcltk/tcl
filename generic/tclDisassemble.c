@@ -1039,24 +1039,30 @@ DisassembleByteCodeAsDicts(
 
     /* TODO: convert to loop over an iterating BP */
     aux = Tcl_NewObj();
-    for (i=0 ; i<BA_AuxData_Size(codePtr->auxData) ; i++) {
-	AuxData *auxData = BA_AuxData_At(codePtr->auxData,i);
-	Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
+    if (codePtr->auxData) {
+	BP_AuxData ptr;
+	AuxData *auxData = BA_AuxData_First(codePtr->auxData, &ptr);
 
-	if (auxData->type->disassembleProc) {
-	    Tcl_Obj *desc = Tcl_NewObj();
+	while (auxData) {
+	    Tcl_Obj *auxDesc = Tcl_NewStringObj(auxData->type->name, -1);
 
-	    Tcl_DictObjPut(NULL, desc, Tcl_NewStringObj("name", -1), auxDesc);
-	    auxDesc = desc;
-	    auxData->type->disassembleProc(auxData->clientData, auxDesc,
-		    codePtr, 0);
-	} else if (auxData->type->printProc) {
-	    Tcl_Obj *desc = Tcl_NewObj();
+	    if (auxData->type->disassembleProc) {
+		Tcl_Obj *desc = Tcl_NewObj();
 
-	    auxData->type->printProc(auxData->clientData, desc, codePtr, 0);
-	    Tcl_ListObjAppendElement(NULL, auxDesc, desc);
+		Tcl_DictObjPut(NULL, desc, Tcl_NewStringObj("name", -1),
+			auxDesc);
+		auxDesc = desc;
+		auxData->type->disassembleProc(auxData->clientData, auxDesc,
+			codePtr, 0);
+	    } else if (auxData->type->printProc) {
+		Tcl_Obj *desc = Tcl_NewObj();
+
+		auxData->type->printProc(auxData->clientData, desc, codePtr, 0);
+		Tcl_ListObjAppendElement(NULL, auxDesc, desc);
+	    }
+	    Tcl_ListObjAppendElement(NULL, aux, auxDesc);
+	    auxData = BP_AuxData_Next(&ptr);
 	}
-	Tcl_ListObjAppendElement(NULL, aux, auxDesc);
     }
 
     /*
