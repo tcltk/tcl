@@ -1037,7 +1037,6 @@ DisassembleByteCodeAsDicts(
      * Get the auxiliary data from the bytecode.
      */
 
-    /* TODO: convert to loop over an iterating BP */
     aux = Tcl_NewObj();
     if (codePtr->auxData) {
 	BP_AuxData ptr;
