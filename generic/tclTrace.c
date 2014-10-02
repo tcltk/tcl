@@ -2511,7 +2511,11 @@ TclObjCallVarTraces(
     if (!part1Ptr) {
 	part1Ptr = localName(iPtr->varFramePtr, index);
     }
-    part1 = TclGetString(part1Ptr);
+    if (part1Ptr) {
+	part1 = TclGetString(part1Ptr);
+    } else {
+	part1 = tclEmptyString;
+    }
     part2 = part2Ptr? TclGetString(part2Ptr) : NULL;
 
     return TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags,
