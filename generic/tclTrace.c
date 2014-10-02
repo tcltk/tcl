@@ -2511,11 +2511,10 @@ TclObjCallVarTraces(
     if (!part1Ptr) {
 	part1Ptr = localName(iPtr->varFramePtr, index);
     }
-    if (part1Ptr) {
-	part1 = TclGetString(part1Ptr);
-    } else {
-	part1 = tclEmptyString;
+    if (!part1Ptr) {
+	Tcl_Panic("Cannot trace a variable with no name");
     }
+    part1 = TclGetString(part1Ptr);
     part2 = part2Ptr? TclGetString(part2Ptr) : NULL;
 
     return TclCallVarTraces(iPtr, arrayPtr, varPtr, part1, part2, flags,
