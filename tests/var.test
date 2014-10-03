@@ -865,6 +865,17 @@ test var-20.8 {array set compilation correctness: Bug 3603163} -setup {
     }}
     array size x
 } -result 0
+test var-20.9 {[bc1a96407a] array set compiled w/ trace} {
+    variable foo
+    lappend lambda {}
+    lappend lambda [list array set [namespace which -variable foo] {a 1}]
+    after 0 [list apply $lambda]
+    vwait [namespace which -variable foo]
+    unset -nocomplain lambda foo
+} {}
+test var-20.10 {[bc1a96407a] array set don't compile bad varname} -body {
+    apply {{} {set name foo(bar); array set $name {a 1}}}
+} -returnCodes error -match glob -result *
 
 test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
     proc linenumber {} {dict get [info frame -1] line}
