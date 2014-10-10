@@ -8853,20 +8853,38 @@ DoRead(
 	}
 
 	/*
-	 * If there is not enough data in the buffers to possibly
-	 * complete the read, then go get more.
+	 * Don't read more data if we have what we need. 
 	 */
 
-	if (bufPtr == NULL || BytesLeft(bufPtr) < bytesToRead) {
+	while (!bufPtr ||			/* We got no buffer!   OR */
+		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
+		(BytesLeft(bufPtr) < bytesToRead) ) ) {
+						/* Not enough bytes in it 
+						 * yet to fill the dst */
+	    int code;
+
 	moreData:
-	    if (GetInput(chanPtr)) {
+	    code = GetInput(chanPtr);
+	    bufPtr = statePtr->inQueueHead;
+
+	    assert (bufPtr != NULL);
+
+	    if (GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)) {
+		/* Further reads cannot do any more */
+		break;
+	    }
+
+	    if (code) {
 		/* Read error */
 		UpdateInterest(chanPtr);
 		TclChannelRelease((Tcl_Channel)chanPtr);
 		return -1;
 	    }
-	    bufPtr = statePtr->inQueueHead;
+
+	    assert (IsBufferFull(bufPtr));
 	}
+
+	assert (bufPtr != NULL);
 
 	bytesRead = BytesLeft(bufPtr);
 	bytesWritten = bytesToRead;
