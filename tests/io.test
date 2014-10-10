@@ -7708,6 +7708,94 @@ test io-53.14 {TclCopyChannel: write error reporting} -setup {
     removeFile in
     rename driver {}
 } -result {error writing "*": *} -returnCodes error -match glob
+test io-53.15 {[ed29c4da21] DoRead: fblocked seen as error} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        variable blocked
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [encoding convertto utf-8 \
+                        [string repeat a 100]]
+                set blocked($chan) 1
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan) blocked($chan)
+                return
+            }
+            watch {}
+            read {
+                if {$blocked($chan)} {
+                    set blocked($chan) [expr {!$blocked($chan)}]
+                    return -code error EAGAIN
+                }
+                set n [lindex $args 1]
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+    set c [chan create read [namespace which driver]]
+    chan configure $c -encoding utf-8
+    set out [makeFile {} out]
+    set outChan [open $out w]
+    chan configure $outChan -encoding utf-8
+} -body {
+    chan copy $c $outChan
+} -cleanup {
+    close $outChan
+    close $c
+    removeFile out
+} -result 100
+test io-53.16 {[ed29c4da21] MBRead: fblocked seen as error} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        variable blocked
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [encoding convertto utf-8 \
+                        [string repeat a 100]]
+                set blocked($chan) 1
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan) blocked($chan)
+                return
+            }
+            watch {}
+            read {
+                if {$blocked($chan)} {
+                    set blocked($chan) [expr {!$blocked($chan)}]
+                    return -code error EAGAIN
+                }
+                set n [lindex $args 1]
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+    set c [chan create read [namespace which driver]]
+    chan configure $c -encoding utf-8 -translation lf
+    set out [makeFile {} out]
+    set outChan [open $out w]
+    chan configure $outChan -encoding utf-8 -translation lf
+} -body {
+    chan copy $c $outChan
+} -cleanup {
+    close $outChan
+    close $c
+    removeFile out
+} -result 100
 
 test io-54.1 {Recursive channel events} {socket fileevent} {
     # This test checks to see if file events are delivered during recursive
