@@ -9020,7 +9020,7 @@ MBRead(
     }
 
     code = GetInput(inStatePtr->topChanPtr);
-    if (code == 0) {
+    if (code == 0 || GotFlag(inStatePtr, CHANNEL_BLOCKED)) {
 	return TCL_OK;
     } else {
 	MBError(csPtr, TCL_READABLE, code);
@@ -9270,6 +9270,10 @@ CopyData(
 			csPtr);
 	    }
 	    if (size == 0) {
+		if (!GotFlag(inStatePtr, CHANNEL_NONBLOCKING)) {
+		    /* We allowed a short read.  Keep trying. */
+		    continue;
+		}
 		if (bufObj != NULL) {
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
