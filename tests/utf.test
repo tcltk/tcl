@@ -287,9 +287,11 @@ test utf-18.5 {Tcl_UniCharToTitle, no delta} {
     string totitle !
 } !
 
-test utf-19.1 {TclUniCharLen} {
+test utf-19.1 {TclUniCharLen} -body {
     list [regexp \\d abc456def foo] $foo
-} {1 4}
+} -cleanup {
+    unset -nocomplain foo
+} -result {1 4}
 
 test utf-20.1 {TclUniCharNcmp} {
 } {}
