@@ -3484,7 +3484,10 @@ Tcl_Write(
     if (srcLen < 0) {
 	srcLen = strlen(src);
     }
-    return WriteBytes(chanPtr, src, srcLen);
+    if (WriteBytes(chanPtr, src, srcLen) < 0) {
+	return -1;
+    }
+    return srcLen;
 }
 
 /*
