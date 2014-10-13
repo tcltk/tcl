@@ -7894,3 +7894,13 @@ of Tcl_Channel  (porter)
 2014-08-12 tzdata updated to Olson's tzdata2014f (kenny)
 
 --- Released 8.5.16, August 25, 2014 --- http://core.tcl.tk/tcl/ for details
+
+2014-10-02 (bug)[bc5b79] Hang in some [read]s of limited size (rogers,porter)
+
+2014-10-08 (bug)[59a2e7] MSVC14 compile support (dower,nijtmans)
+
+2014-10-10 (bug)[ed29c4] [fcopy] treats [blocked] as error (rowen,porter)
+
+2014-10-10 (bug)[bf7135] regression in Tcl_Write() interface (porter)
+
+--- Released 8.5.17, October 25, 2014 --- http://core.tcl.tk/tcl/ for details
