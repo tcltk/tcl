@@ -854,7 +854,20 @@ TcpGetOptionProc(
         address peername;
         socklen_t size = sizeof(peername);
 
-	if (getpeername(statePtr->fds.fd, &peername.sa, &size) >= 0) {
+	if ( (statePtr->flags & TCP_ASYNC_CONNECT) ) {
+	    /*
+	     * In async connect output an empty string
+	     */
+	    if (len == 0) {
+		Tcl_DStringAppendElement(dsPtr, "-peername");
+		Tcl_DStringAppendElement(dsPtr, "");
+	    } else {
+		return TCL_OK;
+	    }
+	} else if (getpeername(statePtr->fds.fd, &peername.sa, &size) >= 0) {
+	    /*
+	     * Peername fetch succeeded - output list
+	     */
 	    if (len == 0) {
 		Tcl_DStringAppendElement(dsPtr, "-peername");
 		Tcl_DStringStartSublist(dsPtr);
@@ -894,11 +907,18 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
 	}
-	for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
-	    size = sizeof(sockname);
-	    if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
-		found = 1;
-                TcpHostPortList(interp, dsPtr, sockname, size);
+	if ( (statePtr->flags & TCP_ASYNC_CONNECT) ) {
+	    /*
+	     * In async connect output an empty string
+	     */
+	     found = 1;
+	} else {
+	    for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
+		size = sizeof(sockname);
+		if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
+		    found = 1;
+		    TcpHostPortList(interp, dsPtr, sockname, size);
+		}
 	    }
 	}
         if (found) {

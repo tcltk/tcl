@@ -1414,18 +1414,6 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
     } while (0)
 
 /*
- * If the expr compiler finished with TRY_CONVERT, macro to remove it when the
- * job is done by the following instruction.
- */
-
-#define TclClearNumConversion(envPtr) \
-    do {								\
-	if (*(envPtr->codeNext - 1) == INST_TRY_CVT_TO_NUMERIC) {	\
-	    envPtr->codeNext--;						\
-	}								\
-    } while (0)
-
-/*
  * Macros to update a (signed or unsigned) integer starting at a pointer. The
  * two variants depend on the number of bytes. The ANSI C "prototypes" for
  * these macros are:

@@ -1385,7 +1385,20 @@ TcpGetOptionProc(
 	address peername;
 	socklen_t size = sizeof(peername);
 
-	if (getpeername(sock, (LPSOCKADDR) &(peername.sa), &size) == 0) {
+	if ( (statePtr->flags & TCP_ASYNC_PENDING) ) {
+	    /*
+	     * In async connect output an empty string
+	     */
+	    if (len == 0) {
+		Tcl_DStringAppendElement(dsPtr, "-peername");
+		Tcl_DStringAppendElement(dsPtr, "");
+	    } else {
+		return TCL_OK;
+	    }
+	} else if ( getpeername(sock, (LPSOCKADDR) &(peername.sa), &size) == 0) {
+	    /*
+	     * Peername fetch succeeded - output list
+	     */
 	    if (len == 0) {
 		Tcl_DStringAppendElement(dsPtr, "-peername");
 		Tcl_DStringStartSublist(dsPtr);
@@ -1434,49 +1447,55 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
 	}
-	for (fds = statePtr->sockets; fds != NULL; fds = fds->next) {
-	    sock = fds->fd;
-	    size = sizeof(sockname);
-	    if (getsockname(sock, &(sockname.sa), &size) >= 0) {
-		int flags = reverseDNS;
+	if ( (statePtr->flags & TCP_ASYNC_PENDING ) ) {
+	    /*
+	     * In async connect output an empty string
+	     */
+	     found = 1;
+	} else {
+	    for (fds = statePtr->sockets; fds != NULL; fds = fds->next) {
+		sock = fds->fd;
+		size = sizeof(sockname);
+		if (getsockname(sock, &(sockname.sa), &size) >= 0) {
+		    int flags = reverseDNS;
 
-		found = 1;
-		getnameinfo(&sockname.sa, size, host, sizeof(host),
-			NULL, 0, NI_NUMERICHOST);
-		Tcl_DStringAppendElement(dsPtr, host);
+		    found = 1;
+		    getnameinfo(&sockname.sa, size, host, sizeof(host),
+			    NULL, 0, NI_NUMERICHOST);
+		    Tcl_DStringAppendElement(dsPtr, host);
 
-		/*
-		 * We don't want to resolve INADDR_ANY and sin6addr_any; they
-		 * can sometimes cause problems (and never have a name).
-		 */
-		flags |= NI_NUMERICSERV;
-		if (sockname.sa.sa_family == AF_INET) {
-		    if (sockname.sa4.sin_addr.s_addr == INADDR_ANY) {
-			flags |= NI_NUMERICHOST;
+		    /*
+		     * We don't want to resolve INADDR_ANY and sin6addr_any; they
+		     * can sometimes cause problems (and never have a name).
+		     */
+		    flags |= NI_NUMERICSERV;
+		    if (sockname.sa.sa_family == AF_INET) {
+			if (sockname.sa4.sin_addr.s_addr == INADDR_ANY) {
+			    flags |= NI_NUMERICHOST;
+			}
+		    } else if (sockname.sa.sa_family == AF_INET6) {
+			if ((IN6_ARE_ADDR_EQUAL(&sockname.sa6.sin6_addr,
+				    &in6addr_any)) ||
+				(IN6_IS_ADDR_V4MAPPED(&sockname.sa6.sin6_addr)
+				&& sockname.sa6.sin6_addr.s6_addr[12] == 0
+				&& sockname.sa6.sin6_addr.s6_addr[13] == 0
+				&& sockname.sa6.sin6_addr.s6_addr[14] == 0
+				&& sockname.sa6.sin6_addr.s6_addr[15] == 0)) {
+			    flags |= NI_NUMERICHOST;
+			}
 		    }
-		} else if (sockname.sa.sa_family == AF_INET6) {
-		    if ((IN6_ARE_ADDR_EQUAL(&sockname.sa6.sin6_addr,
-				&in6addr_any)) ||
-			    (IN6_IS_ADDR_V4MAPPED(&sockname.sa6.sin6_addr)
-			    && sockname.sa6.sin6_addr.s6_addr[12] == 0
-			    && sockname.sa6.sin6_addr.s6_addr[13] == 0
-			    && sockname.sa6.sin6_addr.s6_addr[14] == 0
-			    && sockname.sa6.sin6_addr.s6_addr[15] == 0)) {
-			flags |= NI_NUMERICHOST;
-		    }
+		    getnameinfo(&sockname.sa, size, host, sizeof(host),
+			    port, sizeof(port), flags);
+		    Tcl_DStringAppendElement(dsPtr, host);
+		    Tcl_DStringAppendElement(dsPtr, port);
 		}
-		getnameinfo(&sockname.sa, size, host, sizeof(host),
-			port, sizeof(port), flags);
-		Tcl_DStringAppendElement(dsPtr, host);
-		Tcl_DStringAppendElement(dsPtr, port);
 	    }
 	}
 	if (found) {
-	    if (len == 0) {
-		Tcl_DStringEndSublist(dsPtr);
-	    } else {
+	    if (len) {
 		return TCL_OK;
 	    }
+	    Tcl_DStringEndSublist(dsPtr);
 	} else {
 	    if (interp) {
 		TclWinConvertError((DWORD) WSAGetLastError());
