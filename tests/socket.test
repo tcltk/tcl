@@ -2321,6 +2321,28 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
         set x
     } -result ok
 
+# v4 and v6 is required to prevent that the async connect does not terminate
+# before the fconfigure command. There is always an additional ip to try.
+test socket-14.16 {empty -peername while [socket -async] connecting} \
+    -constraints {socket localhost_v4 localhost_v6} \
+    -body {
+        set client [socket -async localhost [randport]]
+        fconfigure $client -peername
+    } -cleanup {
+        catch {close $client}
+    } -result {}
+
+# v4 and v6 is required to prevent that the async connect does not terminate
+# before the fconfigure command. There is always an additional ip to try.
+test socket-14.17 {empty -sockname while [socket -async] connecting} \
+    -constraints {socket localhost_v4 localhost_v6} \
+    -body {
+        set client [socket -async localhost [randport]]
+        fconfigure $client -sockname
+    } -cleanup {
+        catch {close $client}
+    } -result {}
+
 set num 0
 
 set x {localhost {socket} 127.0.0.1 {supported_inet} ::1 {supported_inet6}}
