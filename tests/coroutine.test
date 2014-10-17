@@ -726,6 +726,20 @@ test coroutine-7.11 {yieldto context nuke: Bug a90d9331bc} -setup {
     catch {namespace delete ::cotest}
     catch {rename cotest ""}
 } -result {yieldto called in deleted namespace}
+test coroutine-7.12 {coro floor above street level #3008307} -body {
+    proc c {} {
+	yield
+    }
+    proc cc {} {
+	coroutine C c
+    }
+    proc boom {} {
+	cc ; # coro created at level 2
+	C  ; # and called at level 1
+    }
+    boom   ; # does not crash: the coro floor is a good insulator
+    list
+} -result {}
 
 
 # cleanup
