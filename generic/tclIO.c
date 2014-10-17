@@ -4453,7 +4453,6 @@ Tcl_GetsObj(
     eof = NULL;
     inEofChar = statePtr->inEofChar;
 
-    ResetFlag(statePtr, CHANNEL_BLOCKED);
     while (1) {
 	if (dst >= dstEnd) {
 	    if (FilterInputBytes(chanPtr, &gs) != 0) {
@@ -4622,10 +4621,6 @@ Tcl_GetsObj(
 		goto done;
 	    }
 	    goto gotEOL;
-	}
-	if (GotFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)
-		== (CHANNEL_BLOCKED|CHANNEL_NONBLOCKING)) {
-	    goto restore;
 	}
 	dst = dstEnd;
     }
