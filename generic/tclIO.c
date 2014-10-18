@@ -4042,6 +4042,7 @@ Tcl_GetsObj(
     eof = NULL;
     inEofChar = statePtr->inEofChar;
 
+    ResetFlag(statePtr, CHANNEL_BLOCKED);
     while (1) {
 	if (dst >= dstEnd) {
 	    if (FilterInputBytes(chanPtr, &gs) != 0) {
@@ -4386,6 +4387,7 @@ TclGetsObjBinary(
     /* Only handle TCL_TRANSLATE_LF and TCL_TRANSLATE_CR */
     eolChar = (statePtr->inputTranslation == TCL_TRANSLATE_LF) ? '\n' : '\r';
 
+    ResetFlag(statePtr, CHANNEL_BLOCKED);
     while (1) {
 	/*
 	 * Subtract the number of bytes that were removed from channel
@@ -4674,6 +4676,12 @@ FilterInputBytes(
 	 */
 
     read:
+	if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
+		== (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
+	    gsPtr->charsWrote = 0;
+	    gsPtr->rawRead = 0;
+	    return -1;
+	}
 	if (GetInput(chanPtr) != 0) {
 	    gsPtr->charsWrote = 0;
 	    gsPtr->rawRead = 0;
@@ -4764,12 +4772,6 @@ FilterInputBytes(
 		 * some more, but avoid blocking on a non-blocking channel.
 		 */
 
-		if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
-			== (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
-		    gsPtr->charsWrote = 0;
-		    gsPtr->rawRead = 0;
-		    return -1;
-		}
 		goto read;
 	    }
 	} else {
