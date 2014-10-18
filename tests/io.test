@@ -4325,6 +4325,110 @@ test io-33.10 {Tcl_Gets, exercising double buffering} {
     close $f
     set y
 } 300
+test io-33.11 {TclGetsObjBinary, [10dc6daa37]} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .......
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+		if {$n > 3} {set n 3}
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+} -body {
+    set c [chan create read [namespace which driver]]
+    chan configure $c -translation binary -blocking 0
+    list [gets $c] [gets $c] [gets $c] [gets $c]
+} -cleanup {
+    close $c
+    rename driver {}
+} -result {{} {} {} .......}
+test io-33.12 {Tcl_GetsObj, [10dc6daa37]} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .......
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+		if {$n > 3} {set n 3}
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+} -body {
+    set c [chan create read [namespace which driver]]
+    chan configure $c -blocking 0
+    list [gets $c] [gets $c] [gets $c] [gets $c]
+} -cleanup {
+    close $c
+    rename driver {}
+} -result {{} {} {} .......}
+test io-33.13 {Tcl_GetsObj, [10dc6daa37]} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [string repeat \
+                        [string repeat . 64]\n[string repeat . 25] 2]
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                if {$n > 65} {set n 65}
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+} -body {
+    set c [chan create read [namespace which driver]]
+    chan configure $c -blocking 0
+    list [gets $c] [gets $c] [gets $c] [gets $c] [gets $c]
+} -cleanup {
+    close $c
+    rename driver {}
+} -result [list [string repeat . 64] {} [string repeat . 89] \
+	[string repeat . 25] {}]
 
 # Test Tcl_Seek and Tcl_Tell.
 
