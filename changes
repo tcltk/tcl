@@ -7903,4 +7903,6 @@ of Tcl_Channel  (porter)
 
 2014-10-10 (bug)[bf7135] regression in Tcl_Write() interface (porter)
 
+2014-10-18 (bug)[10dc6d] fix [gets] on non-blocking channels (fassel,porter)
+
 --- Released 8.5.17, October 25, 2014 --- http://core.tcl.tk/tcl/ for details
