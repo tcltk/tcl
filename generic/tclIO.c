@@ -3894,7 +3894,10 @@ Tcl_Write(
     if (srcLen < 0) {
 	srcLen = strlen(src);
     }
-    return WriteBytes(chanPtr, src, srcLen);
+    if (WriteBytes(chanPtr, src, srcLen) < 0) {
+	return -1;
+    }
+    return srcLen;
 }
 
 /*
@@ -4450,6 +4453,7 @@ Tcl_GetsObj(
     eof = NULL;
     inEofChar = statePtr->inEofChar;
 
+    ResetFlag(statePtr, CHANNEL_BLOCKED);
     while (1) {
 	if (dst >= dstEnd) {
 	    if (FilterInputBytes(chanPtr, &gs) != 0) {
@@ -4798,6 +4802,7 @@ TclGetsObjBinary(
 
     eolChar = (statePtr->inputTranslation == TCL_TRANSLATE_LF) ? '\n' : '\r';
 
+    ResetFlag(statePtr, CHANNEL_BLOCKED);
     while (1) {
 	/*
 	 * Subtract the number of bytes that were removed from channel
@@ -5086,6 +5091,12 @@ FilterInputBytes(
 	 */
 
     read:
+	if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
+		== (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
+	    gsPtr->charsWrote = 0;
+	    gsPtr->rawRead = 0;
+	    return -1;
+	}
 	if (GetInput(chanPtr) != 0) {
 	    gsPtr->charsWrote = 0;
 	    gsPtr->rawRead = 0;
@@ -5176,12 +5187,6 @@ FilterInputBytes(
 		 * some more, but avoid blocking on a non-blocking channel.
 		 */
 
-		if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
-			== (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
-		    gsPtr->charsWrote = 0;
-		    gsPtr->rawRead = 0;
-		    return -1;
-		}
 		goto read;
 	    }
 	} else {
@@ -6046,12 +6051,11 @@ ReadChars(
 	    /* 
 	     * We read more chars than allowed.  Reset limits to
 	     * prevent that and try again.  Don't forget the extra
-	     * padding of TCL_UTF_MAX - 1 bytes demanded by the
+	     * padding of TCL_UTF_MAX bytes demanded by the
 	     * Tcl_ExternalToUtf() call!
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead + 1) 
-		    + TCL_UTF_MAX - 1 - dst;
+	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) + TCL_UTF_MAX - dst;
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
@@ -9021,7 +9025,7 @@ MBRead(
     }
 
     code = GetInput(inStatePtr->topChanPtr);
-    if (code == 0) {
+    if (code == 0 || GotFlag(inStatePtr, CHANNEL_BLOCKED)) {
 	return TCL_OK;
     } else {
 	MBError(csPtr, TCL_READABLE, code);
@@ -9271,6 +9275,10 @@ CopyData(
 			csPtr);
 	    }
 	    if (size == 0) {
+		if (!GotFlag(inStatePtr, CHANNEL_NONBLOCKING)) {
+		    /* We allowed a short read.  Keep trying. */
+		    continue;
+		}
 		if (bufObj != NULL) {
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
@@ -9503,20 +9511,38 @@ DoRead(
 	}
 
 	/*
-	 * If there is not enough data in the buffers to possibly
-	 * complete the read, then go get more.
+	 * Don't read more data if we have what we need. 
 	 */
 
-	if (bufPtr == NULL || BytesLeft(bufPtr) < bytesToRead) {
+	while (!bufPtr ||			/* We got no buffer!   OR */
+		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
+		(BytesLeft(bufPtr) < bytesToRead) ) ) {
+						/* Not enough bytes in it 
+						 * yet to fill the dst */
+	    int code;
+
 	moreData:
-	    if (GetInput(chanPtr)) {
+	    code = GetInput(chanPtr);
+	    bufPtr = statePtr->inQueueHead;
+
+	    assert (bufPtr != NULL);
+
+	    if (GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)) {
+		/* Further reads cannot do any more */
+		break;
+	    }
+
+	    if (code) {
 		/* Read error */
 		UpdateInterest(chanPtr);
 		TclChannelRelease((Tcl_Channel)chanPtr);
 		return -1;
 	    }
-	    bufPtr = statePtr->inQueueHead;
+
+	    assert (IsBufferFull(bufPtr));
 	}
+
+	assert (bufPtr != NULL);
 
 	bytesRead = BytesLeft(bufPtr);
 	bytesWritten = bytesToRead;
