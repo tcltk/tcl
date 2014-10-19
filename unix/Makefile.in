@@ -674,15 +674,20 @@ tclkit.vfs:
 
 tclkit: ${TCLKIT_EXE}
 
-# Builds an executable linked to the Tcl dynamic library
-${TCLKIT_EXE}: ${TCLKIT_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE} null.zip tclkit.vfs
+${TCLKIT_BASE}_bare: ${TCLKIT_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 	${CC} ${CFLAGS} ${LDFLAGS} \
 		${TCLKIT_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ \
 		${LIBS} @EXTRA_TCLSH_LIBS@ \
-		${CC_SEARCH_FLAGS} -o ${TCLKIT_EXE}
-	cat null.zip >> ${TCLKIT_EXE}
-	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_EXE} .
+		${CC_SEARCH_FLAGS} -o ${TCLKIT_BASE}_bare
+
+
+# Builds an executable linked to the Tcl dynamic library
+${TCLKIT_EXE}: ${TCLKIT_BASE}_bare  null.zip tclkit.vfs
+	cp -f ${TCLKIT_BASE}_bare ${TCLKIT_BASE}.zip
+	cat null.zip >> ${TCLKIT_BASE}.zip
+	cd tclkit.vfs ; zip -rAq ${UNIX_DIR}/${TCLKIT_BASE}.zip .
+	mv ${TCLKIT_BASE}.zip ${TCLKIT_EXE}
 
 # Builds an executable directly from the Tcl sources
 tclkit-static: ${TCLKIT_OBJS} ${OBJS} ${ZLIB_OBJS} null.zip tclkit.vfs
@@ -701,7 +706,7 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 clean: clean-packages
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@ \
-		${TCLKIT_EXE}
+		${TCLKIT_EXE} tclkit*
 	rm -rf tclkit.vfs null.zip
 	cd dltest ; $(MAKE) clean
 
