@@ -301,7 +301,8 @@ TclCompileArraySetCmd(
      * a proc, we cannot do a better compile than generic.
      */
 
-    if (envPtr->procPtr == NULL && !(isDataEven && len == 0)) {
+    if ((varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) ||
+	    (envPtr->procPtr == NULL && !(isDataEven && len == 0))) {
 	code = TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
 	goto done;
     }
@@ -342,8 +343,9 @@ TclCompileArraySetCmd(
 	 * a non-local variable: upvar from a local one! This consumes the
 	 * variable name that was left at stacktop.
 	 */
-	
-	localIndex = AnonymousLocal(envPtr);
+
+	localIndex = TclFindCompiledLocal(varTokenPtr->start,
+		varTokenPtr->size, 1, envPtr);
 	PushStringLiteral(envPtr, "0");
 	TclEmitInstInt4(INST_REVERSE, 2,        		envPtr);
 	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
@@ -2401,7 +2403,6 @@ TclCompileForCmd(
 
     SetLineInformation(2);
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-    TclClearNumConversion(envPtr);
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
     if (jumpDist > 127) {
