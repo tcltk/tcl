@@ -411,7 +411,7 @@ ZLIB_OBJS = \
 
 TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@
 
-TCLKIT_OBJS = tclKitInit.$(OBJEXT) tclZipVfs.$(OBJEXT)
+TCLKIT_OBJS = tclKitInit.$(OBJEXT) tclZipVfs.$(OBJEXT) tclZipVfsBoot.$(OBJEXT)
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 

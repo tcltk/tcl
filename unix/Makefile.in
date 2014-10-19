@@ -367,7 +367,7 @@ ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
-TCLKIT_OBJS = tclKitInit.o tclZipVfs.o
+TCLKIT_OBJS = tclKitInit.o tclZipVfs.o tclZipVfsBoot.o
 
 OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@
 
@@ -670,7 +670,7 @@ null.zip:
 tclkit.vfs:
 	@echo "Building VFS File system in tclkit.vfs"
 	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
-	    "$(UNIX_DIR)/tclkit.vfs/tcl$(VERSION)" "$(TOP_DIR)"  unix
+	    "$(UNIX_DIR)/tclkit.vfs/boot/tcl" "$(TOP_DIR)"  unix
 
 tclkit: ${TCLKIT_EXE}
 
@@ -1375,6 +1375,9 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 
 tclZipVfs.o:  $(GENERIC_DIR)/tclZipVfs.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclZipVfs.c
+
+tclZipVfsBoot.o:  $(GENERIC_DIR)/tclZipVfsBoot.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclZipVfsBoot.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
