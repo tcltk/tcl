@@ -42,7 +42,9 @@ MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
 MODULE_SCOPE int main(int, char **);
 #ifdef TCL_ZIPVFS
   MODULE_SCOPE int Tcl_Zvfs_Boot(const char *,const char *,const char *);
-  MODULE_SCOPE int TclZvfsInit(Tcl_Interp *);
+  MODULE_SCOPE int Zvfs_Init(Tcl_Interp *);
+  MODULE_SCOPE int Zvfs_SafeInit(Tcl_Interp *);
+
 #endif /* TCL_ZIPVFS */
 /*
  * The following #if block allows you to change how Tcl finds the startup
@@ -122,7 +124,8 @@ Tcl_AppInit(
     }
 #ifdef TCL_ZIPVFS
     /* Load the ZipVfs package */
-    if (TclZvfsInit(interp) == TCL_ERROR) {
+    Tcl_StaticPackage(interp, "zvfs", Zvfs_Init, Zvfs_SafeInit);
+    if(Zvfs_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
 #endif
