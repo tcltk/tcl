@@ -443,12 +443,16 @@ tclkit.vfs: $(TCLSH) $(DDE_DLL_FILE) $(REG_DLL_FILE)
 	@$(TCL_EXE) "$(ROOT_DIR)/tools/mkVfs.tcl" \
 	    "$(WIN_DIR)/tclkit.vfs/tcl$(VERSION)" "$(ROOT_DIR)"  windows
 
-$(TCLKIT): $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
+tclkit_bare: $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) 
 	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
-	cat null.zip >> $(TCLKIT)
-	cd tclkit.vfs ; zip -rAq $(WIN_DIR)/$(TCLKIT) .
+
+$(TCLKIT): tclkit_bare null.zip tclkit.vfs
+	cp tclkit_bare tclkit.zip
+	cat null.zip >> tclkit.zip
+	cd tclkit.vfs ; zip -rAq $(WIN_DIR)/tclkit.zip .
+	mv tclkit.zip $(TCLKIT)
 
 # Builds an executable directly from the Tcl sources
 tclkit-direct:  $(TCLKIT_OBJS) ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS} @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
@@ -778,7 +782,7 @@ cleanhelp:
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
 	$(RM) $(TCLSH) $(CAT32) $(TCLKIT) null.zip
-	$(RM) *.pch *.ilk *.pdb
+	$(RM) *.pch *.ilk *.pdb tclkit*
 	$(RMDIR) tclkit.vfs
 
 distclean: distclean-packages clean
