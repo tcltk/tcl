@@ -149,7 +149,7 @@ SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
 TCLSH			= tclsh$(VER)${EXESUFFIX}
-TCLKIT			= tclkit$(VER)${EXESUFFIX}
+TCLZSH			= tclzsh$(VER)${EXESUFFIX}
 CAT32			= cat32$(EXEEXT)
 MAN2TCL			= man2tcl$(EXEEXT)
 
@@ -411,7 +411,7 @@ ZLIB_OBJS = \
 
 TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@
 
-TCLKIT_OBJS = tclKitInit.$(OBJEXT) tclZipVfs.$(OBJEXT) tclZipVfsBoot.$(OBJEXT)
+TCLZSH_OBJS = tclZipShInit.$(OBJEXT) tclZipVfs.$(OBJEXT) tclZipVfsBoot.$(OBJEXT)
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
@@ -419,7 +419,7 @@ all: binaries libraries doc packages
 
 tcltest: $(TCLSH) $(TEST_DLL_FILE)
 
-binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ $(DDE_DLL_FILE) $(REG_DLL_FILE) $(TCLSH) $(TCLKIT)
+binaries: $(TCL_STUB_LIB_FILE) @LIBRARIES@ $(DDE_DLL_FILE) $(REG_DLL_FILE) $(TCLSH)
 
 libraries:
 
@@ -430,7 +430,7 @@ $(TCLSH): $(TCLSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES)
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 
-tclkit: $(TCLKIT)
+tclzsh: $(TCLZSH)
 
 null.zip:
 	touch .empty
@@ -438,33 +438,33 @@ null.zip:
 	
 # Rather than force an install, pack the files we need into a
 # file system under our control
-tclkit.vfs: $(TCLSH) $(DDE_DLL_FILE) $(REG_DLL_FILE)
-	@echo "Building VFS File system in tclkit.vfs"
+tclzsh.vfs: $(TCLSH) $(DDE_DLL_FILE) $(REG_DLL_FILE)
+	@echo "Building VFS File system in tclzsh.vfs"
 	@$(TCL_EXE) "$(ROOT_DIR)/tools/mkVfs.tcl" \
-	    "$(WIN_DIR)/tclkit.vfs/tcl$(VERSION)" "$(ROOT_DIR)"  windows
+	    "$(WIN_DIR)/tclzsh.vfs/tcl$(VERSION)" "$(ROOT_DIR)"  windows
 
-tclkit_bare: $(TCLKIT_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) 
-	$(CC) $(CFLAGS) $(TCLKIT_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
+tclzsh_bare: $(TCLZSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) 
+	$(CC) $(CFLAGS) $(TCLZSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 
-$(TCLKIT): tclkit_bare null.zip tclkit.vfs
-	cp tclkit_bare tclkit.zip
-	cat null.zip >> tclkit.zip
-	cd tclkit.vfs ; zip -rAq $(WIN_DIR)/tclkit.zip .
-	mv tclkit.zip $(TCLKIT)
+$(TCLZSH): tclzsh_bare null.zip tclzsh.vfs
+	cp tclzsh_bare tclzsh.zip
+	cat null.zip >> tclzsh.zip
+	cd tclzsh.vfs ; zip -rAq $(WIN_DIR)/tclzsh.zip .
+	mv tclzsh.zip $(TCLZSH)
 
 # Builds an executable directly from the Tcl sources
-tclkit-direct:  $(TCLKIT_OBJS) ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS} @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclkit.vfs
+tclzsh-direct:  $(TCLZSH_OBJS) ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS} @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclzsh.vfs
 	rm *.$(OBJEXT)
-	$(CC) $(CFLAGS) -DSTATIC_BUILD -UUSE_STUBS $(TCLKIT_OBJS) \
+	$(CC) $(CFLAGS) -DSTATIC_BUILD -UUSE_STUBS $(TCLZSH_OBJS) \
 	${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS} \
 	$(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 	rm *.$(OBJEXT)
-	cat null.zip >> $(TCLKIT)
-	cd tclkit.vfs ; zip -rAq $(WIN_DIR)/$(TCLKIT) .
+	cat null.zip >> $(TCLZSH)
+	cd tclzsh.vfs ; zip -rAq $(WIN_DIR)/$(TCLZSH) .
 
 cat32.$(OBJEXT): cat.c
 	$(CC) -c $(CC_SWITCHES) @DEPARG@ $(CC_OBJNAME)
@@ -529,7 +529,7 @@ testMain.${OBJEXT}: tclAppInit.c
 tclMain2.${OBJEXT}: tclMain.c
 	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl -DTCL_ASCII_MAIN @DEPARG@ $(CC_OBJNAME)
 
-tclKitInit.${OBJEXT}: tclAppInit.c
+tclZipShInit.${OBJEXT}: tclAppInit.c
 	$(CC) -c $(CC_SWITCHES) -DTCL_ZIPVFS @DEPARG@ $(CC_OBJNAME)
 
 # TIP #59, embedding of configuration information into the binary library.
@@ -616,7 +616,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TCLSH) $(TCLKIT); \
+	@for i in $(TCL_DLL_FILE) $(ZLIB_DLL_FILE) $(TCLSH) $(TCLZSH); \
 	    do \
 	    if [ -f $$i ]; then \
 		echo "Installing $$i to $(BIN_INSTALL_DIR)/"; \
@@ -781,9 +781,9 @@ cleanhelp:
 
 clean: cleanhelp clean-packages
 	$(RM) *.lib *.a *.exp *.dll *.$(RES) *.${OBJEXT} *~ \#* TAGS a.out
-	$(RM) $(TCLSH) $(CAT32) $(TCLKIT) null.zip
-	$(RM) *.pch *.ilk *.pdb tclkit*
-	$(RMDIR) tclkit.vfs
+	$(RM) $(TCLSH) $(CAT32) $(TCLZSH) null.zip
+	$(RM) *.pch *.ilk *.pdb tclzsh*
+	$(RMDIR) tclzsh.vfs
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
@@ -915,8 +915,8 @@ html-tk: $(TCLSH)
 .PHONY: install-doc install-private-headers test test-tcl runtest shell
 .PHONY: gdb depend cleanhelp clean distclean packages install-packages
 .PHONY: test-packages clean-packages distclean-packages genstubs html
-.PHONY: html-tcl html-tk tclkit
-.PHONY: tclkit-direct tclkit-dynamic tclkit-kitlib
+.PHONY: html-tcl html-tk tclzsh
+.PHONY: tclzsh-direct tclzsh-dynamic tclzsh-kitlib
 
 
 # DO NOT DELETE THIS LINE -- make depend depends on it.
