@@ -57,6 +57,8 @@
 #include <stdlib.h>
 #include "tcl.h"
 
+TCL_DECLARE_MUTEX(ArchiveFileAccess)
+
 #undef ZIPVFSCRYPT
 #ifdef ZIPVFSCRYPT
 /* Some modifications to support encrypted files */
@@ -79,8 +81,9 @@ extern const unsigned long *crc_32_tab;
 */
 #define COMPR_BUF_SIZE   32768
 static int openarch = 0;	/* Set to 1 when opening archive. */
+#ifdef __WIN32__
 static int maptolower=0;
-
+#endif
 /*
 ** All static variables are collected into a structure named "local".
 ** That way, it is clear in the code when we are using a static
@@ -140,19 +143,6 @@ typedef struct ZvfsFile {
 #define INT16(B, N) (B[N] + (B[N+1]<<8))
 #define INT32(B, N) (INT16(B,N) + (B[N+2]<<16) + (B[N+3]<<24))
 
-/*
-** Write a 16- or 32-bit integer as little-endian into the given buffer.
-*/
-static void put16(char *z, int v){
-  z[0] = v & 0xff;
-  z[1] = (v>>8) & 0xff;
-}
-static void put32(char *z, int v){
-  z[0] = v & 0xff;
-  z[1] = (v>>8) & 0xff;
-  z[2] = (v>>16) & 0xff;
-  z[3] = (v>>24) & 0xff;
-}
 
 /* Convert DOS time to unix time. */
 static time_t DosTimeDate(int dosDate, int dosTime){
@@ -167,25 +157,6 @@ static time_t DosTimeDate(int dosDate, int dosTime){
   tm->tm_min=(dosTime&0x7e)>>5;
   tm->tm_sec=(dosTime&0x1f);
   return mktime(tm);
-}
-
-/*
-** Translate a DOS time and date stamp into a human-readable string.
-*/
-static void translateDosTimeDate(char *zStr, int dosDate, int dosTime){
-  static char *zMonth[] = { "nil",
-    "Jan", "Feb", "Mar", "Apr", "May", "Jun",
-    "Jul", "Aug", "Sep", "Oct", "Nov", "Dec",
-  };
- 
-  sprintf(zStr, "%02d-%s-%d %02d:%02d:%02d", 
-    dosDate & 0x1f,
-    zMonth[ ((dosDate&0x1e0)>>5) ],
-    ((dosDate&0xfe00)>>9) + 1980,
-    (dosTime&0xf800)>>11,
-    (dosTime&0x7e)>>5,
-    dosTime&0x1f
-  );
 }
 
 /* Return count of char ch in str */
@@ -476,15 +447,17 @@ int Zvfs_Mount(
 	Tcl_Free((char *)zTrueName);
 	return TCL_OK;
     }
+    Tcl_MutexLock(&ArchiveFileAccess);
     chan = Tcl_OpenFileChannel(interp, zArchive, "r", 0);
     if (!chan) {
-	return TCL_ERROR;
+        Tcl_MutexUnlock(&ArchiveFileAccess);
+        return TCL_ERROR;
     }
     if (Tcl_SetChannelOption(interp, chan, "-translation", "binary") != TCL_OK){
-	return TCL_ERROR;
+	goto closeReleaseDie;
     }
     if (Tcl_SetChannelOption(interp, chan, "-encoding", "binary") != TCL_OK) {
-	return TCL_ERROR;
+	goto closeReleaseDie;
     }
 
     /*
@@ -496,7 +469,7 @@ int Zvfs_Mount(
     Tcl_Read(chan, (char *) zBuf, 22);
     if (memcmp(zBuf, "\120\113\05\06", 4)) {
 	if(interp) Tcl_AppendResult(interp, "not a ZIP archive", NULL);
-	return TCL_ERROR;
+        goto closeReleaseDie;
     }
 
     /*
@@ -510,9 +483,7 @@ int Zvfs_Mount(
 	if (interp) {
           Tcl_AppendResult(interp, "already mounted at ", pArchive->zMountPoint,0);
 	}
-	Tcl_Free(zArchiveName);
-	Tcl_Close(interp, chan);
-	return TCL_ERROR;
+        goto closeReleaseDie;
     }
 
     /*
@@ -641,11 +612,16 @@ int Zvfs_Mount(
 	Tcl_Seek(chan, lenExtra, SEEK_CUR);
     }
     Tcl_Close(interp, chan);
-
     if (zTrueName) {
 	Tcl_Free(zTrueName);
     }
+    Tcl_MutexUnlock(&ArchiveFileAccess);
     return TCL_OK;
+
+closeReleaseDie:
+  Tcl_Close(interp, chan);
+  Tcl_MutexUnlock(&ArchiveFileAccess);
+  return TCL_ERROR;
 }
 
 /*
@@ -682,6 +658,7 @@ static int Zvfs_Unmount(
     if (pEntry == 0) {
 	return 0;
     }
+    Tcl_MutexLock(&ArchiveFileAccess);
     pArchive = Tcl_GetHashValue(pEntry);
     Tcl_DeleteHashEntry(pEntry);
     Tcl_Free(pArchive->zName);
@@ -705,6 +682,7 @@ static int Zvfs_Unmount(
 	Tcl_Free(pFile->zName);
 	Tcl_Free((void *) pFile);
     }
+    Tcl_MutexUnlock(&ArchiveFileAccess);
     return 1;
 }
 
@@ -980,6 +958,7 @@ static int vfsClose(
     Tcl_Close(interp, pInfo->chan);
     Tcl_DeleteExitHandler(vfsExit, pInfo);
   }
+  Tcl_MutexUnlock(&ArchiveFileAccess);
   Tcl_Free((char*)pInfo);
   return TCL_OK;
 }
@@ -1019,12 +998,14 @@ static int vfsRead (
   int *pErrorCode          /* Location of error flag */
   ){ /* Read and decompress all data for the associated file into the specified buffer */
   ZvfsChannelInfo* pInfo = (ZvfsChannelInfo*) instanceData;
+  int len;
+#ifdef ZIPVFSCRYPT
   unsigned char encryptHdr[12];
   int C;
   int temp;
   int i;
-  int len;
   char pwdbuf[20];
+#endif
 
   if( (unsigned long)toRead > pInfo->nByte ){
     toRead = pInfo->nByte;
@@ -1054,7 +1035,7 @@ static int vfsRead (
   if( pInfo->isCompressed ){
     int err = Z_OK;
     z_stream *stream = &pInfo->stream;
-    stream->next_out = buf;
+    stream->next_out = (unsigned char *)buf;
     stream->avail_out = toRead;
     while (stream->avail_out) {
       if (!stream->avail_in) {
@@ -1062,7 +1043,7 @@ static int vfsRead (
         if (len > COMPR_BUF_SIZE) {
           len = COMPR_BUF_SIZE;
         }
-        len = Tcl_Read(pInfo->chan, pInfo->zBuf, len);
+        len = Tcl_Read(pInfo->chan, (char *)pInfo->zBuf, len);
 #ifdef ZIPVFSCRYPT
 
 		if (pInfo->isEncrypted) {
@@ -1224,6 +1205,8 @@ static Tcl_Channel ZvfsFileOpen(
     return NULL;
   }
   openarch = 1;
+  
+  Tcl_MutexLock(&ArchiveFileAccess);
   chan = Tcl_OpenFileChannel(interp, pFile->pArchive->zName, "r", 0);
   openarch = 0;
   
@@ -1231,23 +1214,22 @@ static Tcl_Channel ZvfsFileOpen(
 	local.firstMount = pFile->pArchive->zName;
   }
   if( chan==0 ){
+    Tcl_MutexUnlock(&ArchiveFileAccess);
     return 0;
   }
   if(  Tcl_SetChannelOption(interp, chan, "-translation", "binary")
     || Tcl_SetChannelOption(interp, chan, "-encoding", "binary")
   ){
     /* this should never happen */
-    Tcl_Close(0, chan);
-    return 0;
+    goto closeReleaseDie;
   }
   Tcl_Seek(chan, pFile->iOffset, SEEK_SET);
-  Tcl_Read(chan, zBuf, 30);
+  Tcl_Read(chan, (char *)zBuf, 30);
   if( memcmp(zBuf, "\120\113\03\04", 4) ){
     if( interp ){
       Tcl_AppendResult(interp, "local header mismatch: ", NULL);
     }
-    Tcl_Close(interp, chan);
-    return 0;
+    goto closeReleaseDie;
   }
   pInfo = (ZvfsChannelInfo*)Tcl_Alloc( sizeof(*pInfo) );
   pInfo->chan = chan;
@@ -1297,11 +1279,17 @@ static Tcl_Channel ZvfsFileOpen(
   /* Read and decompress the file contents */
   if (pInfo->uBuf) {
     pInfo->uBuf[0] = 0;
-    vfsRead(pInfo, pInfo->uBuf, pInfo->nByte, &errCode);
+    vfsRead(pInfo, (char *)pInfo->uBuf, pInfo->nByte, &errCode);
     pInfo->readSoFar = 0;
   }
 
   return chan;
+
+closeReleaseDie:
+  Tcl_Close(interp, chan);
+  Tcl_MutexUnlock(&ArchiveFileAccess);
+  return NULL;
+
 }
 
 Tcl_Channel Tobe_FSOpenFileChannelProc
@@ -1342,7 +1330,6 @@ int Tobe_FSStatProc _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf)) {
 ** This routine does an access() system call for a ZVFS file.
 */
 int Tobe_FSAccessProc _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode)) {
-  int len;
     char *path=Tcl_GetString(pathPtr);
     ZvfsFile *pFile;
 
@@ -1401,7 +1388,6 @@ int Tobe_FSMatchInDirectoryProc (
       Tcl_HashEntry *pEntry;     /* Hash table entry */
       Tcl_HashSearch zSearch;   /* Search all mount points */
       ZvfsArchive *pArchive;     /* The ZIP archive being mounted */
-      Tcl_Obj *pVols=0, *pVol;
       char mountpt[200];
       int i=1;
       mountpt[0]='/';
@@ -1474,7 +1460,7 @@ int Tobe_FSMatchInDirectoryProc (
           }
       }
     }
-done:
+
     if (zPattern) {
 	free(zPattern);
     }
@@ -1801,7 +1787,6 @@ int Zvfs_Common_Init(Tcl_Interp *interp) {
 }
 
 int Zvfs_Init(Tcl_Interp *interp){
-  int n;
 #ifdef USE_TCL_STUBS
   if( Tcl_InitStubs(interp,"8.0",0)==0 ){
     return TCL_ERROR;
@@ -1819,7 +1804,6 @@ int Zvfs_Init(Tcl_Interp *interp){
 }
 
 int Zvfs_SafeInit(Tcl_Interp *interp){
-  int n;
 #ifdef USE_TCL_STUBS
   if( Tcl_InitStubs(interp,"8.0",0)==0 ){
     return TCL_ERROR;
