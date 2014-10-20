@@ -167,105 +167,6 @@ int strchrcnt(char *str, char ch) {
   return cnt;
 }
 
-#ifdef FREEWRAP
-/*
-** Concatenate zTail onto zRoot to form a pathname.  zRoot will begin
-** with "/".  After concatenation, simplify the pathname be removing
-** unnecessary ".." and "." directories.  Under windows, make all
-** characters lower case.
-**
-** Resulting pathname is returned.  Space to hold the returned path is
-** obtained from Tcl_Alloc() and should be freed by the calling function.
-*/
-static char *CanonicalPath(const char *zRoot, const char *zTail){
-  char *zPath;
-  int i, j, c;
-
-#ifdef __WIN32__
-  if( isalpha(zTail[0]) && zTail[1]==':' ){ zTail += 2; }
-  if( zTail[0]=='\\' ){ zRoot = ""; zTail++; }
-  if( zTail[0]=='\\' ){ zRoot = "/"; zTail++; }	// account for UNC style path
-#endif
-  if( zTail[0]=='/' ){ zRoot = ""; zTail++; }
-  if( zTail[0]=='/' ){ zRoot = "/"; zTail++; }		// account for UNC style path
-  zPath = (void *)Tcl_Alloc( strlen(zRoot) + strlen(zTail) + 2 );
-  if( zPath==0 ) return 0;
-  sprintf(zPath, "%s/%s", zRoot, zTail);
-  for(i=j=0; (c = zPath[i])!=0; i++){
-#ifdef __WIN32__
-    if( isupper(c) ) { if (maptolower) c = tolower(c); }
-    else if( c=='\\' ) c = '/';
-#endif
-    if( c=='/' ){
-      int c2 = zPath[i+1];
-      if( c2=='/' ) continue;
-      if( c2=='.' ){
-        int c3 = zPath[i+2];
-        if( c3=='/' || c3==0 ){
-          i++;
-          continue;
-        }
-        if( c3=='.' && (zPath[i+3]=='.' || zPath[i+3]==0) ){
-          i += 2;
-          while( j>0 && zPath[j-1]!='/' ){ j--; }
-          continue;
-        }
-      }
-    }
-    zPath[j++] = c;
-  }
-  if( j==0 ){ zPath[j++] = '/'; }
-  zPath[j] = 0;
-  return zPath;
-}
-/*
-** Construct an absolute pathname in memory obtained from Tcl_Alloc
-** that means the same file as the pathname given.
-**
-** Under windows, all backslash (\) charaters are converted to foward
-** slash (/) and all upper case letters are converted to lower case.
-** The drive letter (if present) is preserved.
-*/
-static char *AbsolutePath(const char *z){
-  Tcl_DString pwd;
-  char *zResult;
-  Tcl_DStringInit(&pwd);
-  if( *z!='/'
-#ifdef __WIN32__
-    && *z!='\\' && (!isalpha(*z) || z[1]!=':')
-#endif
-  ){
-    /* Case 1:  "z" is a relative path.  So prepend the current working
-    ** directory in order to generate an absolute path.  Note that the
-    ** CanonicalPath() function takes care of converting upper to lower
-    ** case and (\) to (/) under windows.
-    */
-    Tcl_GetCwd(0, &pwd);
-    zResult = CanonicalPath( Tcl_DStringValue(&pwd), z);
-    Tcl_DStringFree(&pwd);
-  } else {
-    /* Case 2:  "z" is an absolute path already.  We just need to make
-    ** a copy of it.  Under windows, we need to convert upper to lower
-    ** case and (\) into (/) on the copy.
-    */
-    zResult = (void *)Tcl_Alloc( strlen(z) + 1 );
-    if( zResult==0 ) return 0;
-    strcpy(zResult, z);
-#ifdef __WIN32__
-    {
-      int i, c;
-      for(i=0; (c=zResult[i])!=0; i++){
-        if( isupper(c) ) {
-		// zResult[i] = tolower(c);
-	    }
-        else if( c=='\\' ) zResult[i] = '/';
-      }
-    }
-#endif
-  }
-  return zResult;
-}
-#else
 /*
 ** Concatenate zTail onto zRoot to form a pathname.  zRoot will begin
 ** with "/".  After concatenation, simplify the pathname be removing
@@ -379,7 +280,6 @@ AbsolutePath(
     }
     return zResult;
 }
-#endif
 
 /*
 ** Read a ZIP archive and make entries in the virutal file hash table for all
