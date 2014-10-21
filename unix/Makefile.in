@@ -624,7 +624,7 @@ SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 
 all: binaries libraries doc packages
 
-binaries: ${LIB_FILE} ${TCL_EXE}
+binaries: ${LIB_FILE} ${TCL_EXE} ${TCLZSH_EXE}
 
 libraries:
 
@@ -679,7 +679,7 @@ ${TCLZSH_BASE}_bare: ${TCLZSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 
 # Builds an executable linked to the Tcl dynamic library
 ${TCLZSH_EXE}: ${TCLZSH_BASE}_bare  tclzsh.vfs
-	./${TCLZSH_BASE}_bare ../tools/mkzip.tcl ${TCLZSH_EXE} \
+	@$(TCL_EXE) ../tools/mkzip.tcl ${TCLZSH_EXE} \
 		-runtime ${TCLZSH_BASE}_bare \
 		-directory tclzsh.vfs
 	chmod a+x ${TCLZSH_EXE}	
