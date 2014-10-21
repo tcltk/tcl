@@ -13,7 +13,6 @@
 # * building a file system from a zip archive
 
 package require Tcl 8.6
-package require zvfs 1.0
 # Cop
 #
 #        Create ZIP archives in Tcl.
@@ -307,7 +306,11 @@ proc ::zvfs::copy_file {zipbase destbase file} {
 
 # ### ### ### ######### ######### #########
 ## Convenience command, decode and copy to dir
+## This routine relies on zvfs::mount, so we only load
+## it when the zvfs package is present
+##
 proc ::zvfs::unzip {in out} {
+    package require zvfs 1.0
     set root /ziptmp#[incr ::zvfs::count]
     zvfs::mount $in $root
     set out [file normalize $out]
@@ -317,5 +320,4 @@ proc ::zvfs::unzip {in out} {
     zvfs::unmount $in
     return
 }
-
 package provide zvfstools 0.1
