@@ -441,18 +441,18 @@ null.zip:
 tclzsh.vfs: $(TCLSH) $(DDE_DLL_FILE) $(REG_DLL_FILE)
 	@echo "Building VFS File system in tclzsh.vfs"
 	@$(TCL_EXE) "$(ROOT_DIR)/tools/mkVfs.tcl" \
-	    "$(WIN_DIR)/tclzsh.vfs/tcl$(VERSION)" "$(ROOT_DIR)"  windows
+	    "$(WIN_DIR)/tclzsh.vfs/boot/tcl" "$(ROOT_DIR)"  windows
 
 tclzsh_bare: $(TCLZSH_OBJS) @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) 
 	$(CC) $(CFLAGS) $(TCLZSH_OBJS) $(TCL_LIB_FILE) $(TCL_STUB_LIB_FILE) $(LIBS) \
         tclsh.$(RES) $(CC_EXENAME) $(LDFLAGS_CONSOLE)
 	@VC_MANIFEST_EMBED_EXE@
 
-$(TCLZSH): tclzsh_bare null.zip tclzsh.vfs
-	cp tclzsh_bare tclzsh.zip
-	cat null.zip >> tclzsh.zip
-	cd tclzsh.vfs ; zip -rAq $(WIN_DIR)/tclzsh.zip .
-	mv tclzsh.zip $(TCLZSH)
+$(TCLZSH): tclzsh_bare tclzsh.vfs
+	./${TCLZSH_BASE}_bare ../tools/mkzip.tcl ${TCLZSH_EXE} \
+		-runtime ${TCLZSH_BASE}_bare \
+		-directory tclzsh.vfs
+	chmod a+x ${TCLZSH_EXE}
 
 # Builds an executable directly from the Tcl sources
 tclzsh-direct:  $(TCLZSH_OBJS) ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} ${ZLIB_OBJS} @LIBRARIES@ $(TCL_STUB_LIB_FILE) tclsh.$(RES) null.zip tclzsh.vfs
