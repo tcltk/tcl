@@ -661,10 +661,6 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
 ${NATIVE_TCLSH}:
 
-null.zip:
-	touch .empty
-	zip null.zip .empty 
-
 # Rather than force an install, pack the files we need into a
 # file system under our control
 tclzsh.vfs:
@@ -681,13 +677,12 @@ ${TCLZSH_BASE}_bare: ${TCLZSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 		${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCLZSH_BASE}_bare
 
-
 # Builds an executable linked to the Tcl dynamic library
-${TCLZSH_EXE}: ${TCLZSH_BASE}_bare  null.zip tclzsh.vfs
-	cp -f ${TCLZSH_BASE}_bare ${TCLZSH_BASE}.zip
-	cat null.zip >> ${TCLZSH_BASE}.zip
-	cd tclzsh.vfs ; zip -rAq ${UNIX_DIR}/${TCLZSH_BASE}.zip .
-	mv ${TCLZSH_BASE}.zip ${TCLZSH_EXE}
+${TCLZSH_EXE}: ${TCLZSH_BASE}_bare  tclzsh.vfs
+	./${TCLZSH_BASE}_bare ../tools/mkzip.tcl ${TCLZSH_EXE} \
+		-runtime ${TCLZSH_BASE}_bare \
+		-directory tclzsh.vfs
+	chmod a+x ${TCLZSH_EXE}	
 
 # Builds an executable directly from the Tcl sources
 tclzsh-static: ${TCLZSH_OBJS} ${OBJS} ${ZLIB_OBJS} null.zip tclzsh.vfs
