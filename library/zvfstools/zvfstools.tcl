@@ -80,6 +80,7 @@ proc ::zvfs::walk {base {excludes ""} {match *} {path {}}} {
         if {!$excluded} {lappend result $file}
     }
     foreach dir [glob -nocomplain -tails -types d -directory $base $imatch] {
+        lappend result $dir
         set subdir [walk $base $excludes $match $dir]
         if {[llength $subdir]>0} {
             set result [concat $result [list $dir] $subdir]
@@ -137,7 +138,7 @@ proc ::zvfs::add_file_to_archive {zipchan base path {comment ""}} {
                    [string length $utfpath] [string length $extra]]
     append local $utfpath $extra
     puts -nonewline $zipchan $local
-  
+
     if {[file isfile $fullpath]} {
         # If the file is under 2MB then zip in one chunk, otherwize we use
         # streaming to avoid requiring excess memory. This helps to prevent
@@ -242,12 +243,24 @@ proc ::zvfs::mkzip {filename args} {
       fcopy $rt $zf
       close $rt
   } elseif {$opts(-zipkit)} {
-      set zkd "#!/usr/bin/env tclkit\n\# This is a zip-based Tcl Module\n"
-      append zkd "package require vfs::zip\n"
-      append zkd "vfs::zip::Mount \[info script\] \[info script\]\n"
-      append zkd "if {\[file exists \[file join \[info script\] main.tcl\]\]} \{\n"
-      append zkd "    source \[file join \[info script\] main.tcl\]\n"
-      append zkd "\}\n"
+      set zkd {#!/usr/bin/env tclsh
+# This is a zip-based Tcl Module
+if {![package vsatisfies [package provide zvfs] 1.0]} {
+  package require vfs::zip
+  vfs::zip::Mount [info script] [info script]
+} else {
+  zvfs::mount [info script] [info script]
+}
+# Load any CLIP file present
+if {[file exists [file join [info script] pkgIndex.tcl]] } {
+  set dir [info script]
+  source [file join [info script] pkgIndex.tcl]
+}
+# Run any main.tcl present
+if {[file exists [file join [info script] main.tcl]] } {
+  source [file join [info script] main.tcl]
+}
+      }
       append zkd \x1A
       puts -nonewline $zf $zkd
   }
@@ -261,7 +274,6 @@ proc ::zvfs::mkzip {filename args} {
       set paths [glob -nocomplain {*}$args]
   }
   foreach path $paths {
-      puts $path
       append cd [add_file_to_archive $zf $opts(-directory) $path]
       incr count
   }
