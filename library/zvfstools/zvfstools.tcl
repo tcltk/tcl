@@ -21,6 +21,8 @@ package require Tcl 8.6
 # or a zipfile using mkzip filename.zip -directory dirname -exclude "*~"
 #
 
+namespace eval ::zvfs {}
+
 proc ::zvfs::setbinary chan {
   fconfigure $chan \
       -encoding    binary \
