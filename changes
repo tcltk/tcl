@@ -8460,7 +8460,7 @@ include ::oo::class (fellows)
 
 2014-09-08 (bug)<oo-1.18.2> Crash regression in [oo::class destroy] (porter)
 
-2014-09-09 (bug)[84af11] Regress [regsub -all {\(.*} a(b) {}] (oehlmann,fellows)
+2014-09-09 (bug)[84af11] Regress [regsub -all {\(.*} a(b) {}] (fellows)
 
 2014-09-10 (bug)[cee90e] [try {} on ok {} - on return {} {}] panic (porter)
 
