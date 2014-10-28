@@ -1410,22 +1410,23 @@ SerialWriterThread(
 /*
  *----------------------------------------------------------------------
  *
- * TclWinSerialOpen --
+ * TclWinSerialReopen --
  *
- *	Opens or Reopens the serial port with the OVERLAPPED FLAG set
+ *	Reopens the serial port with the OVERLAPPED FLAG set
  *
  * Results:
- *	Returns the new handle, or INVALID_HANDLE_VALUE. 
- *	If an existing channel is specified it is closed and reopened.
+ *	Returns the new handle, or INVALID_HANDLE_VALUE. Normally there
+ *	shouldn't be any error, because the same channel has previously been
+ *	succeesfully opened.
  *
  * Side effects:
- *	May close/reopen the original handle
+ *	May close the original handle
  *
  *----------------------------------------------------------------------
  */
 
 HANDLE
-TclWinSerialOpen(
+TclWinSerialReopen(
     HANDLE handle,
     const TCHAR *name,
     DWORD access)
@@ -1433,22 +1434,16 @@ TclWinSerialOpen(
     SerialInit();
 
     /*
-     * If an open channel is specified, close it
-     */
-
-    if ( handle != INVALID_HANDLE_VALUE && CloseHandle(handle) == FALSE) {
-	return INVALID_HANDLE_VALUE;
-    }
-
-    /*
      * Multithreaded I/O needs the overlapped flag set otherwise
      * ClearCommError blocks under Windows NT/2000 until serial output is
      * finished
      */
 
+    if (CloseHandle(handle) == FALSE) {
+	return INVALID_HANDLE_VALUE;
+    }
     handle = CreateFile(name, access, 0, 0, OPEN_EXISTING,
 	    FILE_FLAG_OVERLAPPED, 0);
-
     return handle;
 }
 

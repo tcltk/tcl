@@ -95,7 +95,7 @@ static void		FileThreadActionProc(ClientData instanceData,
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
-static int		NativeIsComPort(CONST TCHAR *nativeName);
+
 /*
  * This structure describes the channel type structure for file based IO.
  */
@@ -889,33 +889,6 @@ TclpOpenFileChannel(
     }
 
     /*
-     * [2413550] Avoid double-open of serial ports on Windows
-     * Special handling for Windows serial ports by a "name-hint"
-     * to directly open it with the OVERLAPPED flag set.
-     */
-
-    if( NativeIsComPort(nativeName) ) {
-
-	handle = TclWinSerialOpen(INVALID_HANDLE_VALUE, nativeName, accessMode);
-	if (handle == INVALID_HANDLE_VALUE) {
-	    TclWinConvertError(GetLastError());
-	    if (interp != (Tcl_Interp *) NULL) {
-		Tcl_AppendResult(interp, "couldn't open serial \"",
-			TclGetString(pathPtr), "\": ",
-			Tcl_PosixError(interp), NULL);
-	    }
-	    return NULL;
-	}
-
-	/*
-	* For natively named Windows serial ports we are done.
-	*/
-	channel = TclWinOpenSerialChannel(handle, channelName,
-		channelPermissions);
-
-	return channel;
-    }
-    /*
      * If the file is being created, get the file attributes from the
      * permissions argument, else use the existing file attributes.
      */
@@ -966,15 +939,11 @@ TclpOpenFileChannel(
     switch (FileGetType(handle)) {
     case FILE_TYPE_SERIAL:
 	/*
-	 * Natively named serial ports "com1-9", "\\\\.\\comXX" are 
-	 * already done with the code above.
-	 * Here we handle all other serial port names.
-	 *
 	 * Reopen channel for OVERLAPPED operation. Normally this shouldn't
 	 * fail, because the channel exists.
 	 */
 
-	handle = TclWinSerialOpen(handle, nativeName, accessMode);
+	handle = TclWinSerialReopen(handle, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
 	    if (interp != (Tcl_Interp *) NULL) {
@@ -1512,74 +1481,6 @@ FileGetType(
     }
 
     return type;
-}
-
- /*
- *----------------------------------------------------------------------
- *
- * NativeIsComPort --
- *
- *	Determines if a path refers to a Windows serial port.
- *	A simple and efficient solution is to use a "name hint" to detect 
- *      COM ports by their filename instead of resorting to a syscall 
- *	to detect serialness after the fact.
- *	The following patterns cover common serial port names:
- *	    COM[1-9]:?
- *	    //./COM[0-9]+
- *	    \\.\COM[0-9]+
- *
- * Results:
- *	1 = serial port, 0 = not.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-NativeIsComPort(
-    const TCHAR *nativePath)	/* Path of file to access, native encoding. */
-{
-    const WCHAR *p = (const WCHAR *) nativePath;
-    int i, len = wcslen(p);
-
-    /*
-     * 1. Look for com[1-9]:?
-     */
-
-    if ( (len >= 4) && (len <= 5) 
-	    && (_wcsnicmp(p, L"com", 3) == 0) ) {
-	/*
-	* The 4th character must be a digit 1..9 optionally followed by a ":"
-	*/
-	
-	if ( (p[3] < L'1') || (p[3] > L'9') ) {
-	    return 0;
-	}
-	if ( (len == 5) && (p[4] != L':') ) {
-	    return 0;
-	}
-	return 1;
-    }
-    
-    /*
-     * 2. Look for //./com[0-9]+ or \\.\com[0-9]+
-     */
-    
-    if ( (len >= 8) && ( 
-	       (_wcsnicmp(p, L"//./com", 7) == 0)
-	    || (_wcsnicmp(p, L"\\\\.\\com", 7) == 0) ) )
-    {
-	/*
-	* Charaters 8..end must be a digits 0..9
-	*/
-    
-	for ( i=7; i<len; i++ ) {
-	    if ( (p[i] < '0') || (p[i] > '9') ) {
-		return 0;
-	    }
-	}
-	return 1;
-    }
-    return 0;
 }
 
 /*
