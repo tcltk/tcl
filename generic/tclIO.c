@@ -4414,6 +4414,17 @@ TclGetsObjBinary(
 	    if (bufPtr == NULL) {
 		goto restore;
 	    }
+	} else {
+	    /*
+	     * There's something already in the buffer.  If
+	     * CHANNEL_STICKY_EOF is set we know that something begins
+	     * with the eofchar.  Otherwise, if CHANNEL_EOF is set, we
+	     * know some earlier inputproc call returned zero bytes when
+	     * we were trying to get more bytes to put in the buffer.
+	     * which means..... ????  Place to probe with tests.
+	     */
+	    assert (GotFlag(statePtr, CHANNEL_STICKY_EOF) 
+		    || !GotFlag(statePtr, CHANNEL_EOF) );
 	}
 
 	dst = (unsigned char *) RemovePoint(bufPtr);
@@ -4694,6 +4705,9 @@ FilterInputBytes(
 	    gsPtr->rawRead = 0;
 	    return -1;
 	}
+    } else {
+	assert( GotFlag(statePtr, CHANNEL_STICKY_EOF)
+		|| !GotFlag(statePtr, CHANNEL_EOF) );
     }
 
     /*
@@ -5018,6 +5032,7 @@ Tcl_ReadRaw(
 				/* State info for channel */
     int copied = 0;
 
+    assert(bytesToRead > 0);
     if (CheckChannelErrors(statePtr, TCL_READABLE | CHANNEL_RAW_MODE) != 0) {
 	return -1;
     }
@@ -5049,8 +5064,19 @@ Tcl_ReadRaw(
 	}
     }
 
-    /* Go to the driver if more data needed. */
+    /*
+     * Go to the driver only if we got nothing from pushback.
+     * Have to do it this way to avoid EOF mis-timings when we
+     * consider the ability that EOF may not be a permanent
+     * condition in the driver, and in that case we have to
+     * synchronize.
+     */
 
+    if (copied) {
+	return copied;
+    }
+
+    /* This test not needed. */
     if (bytesToRead > 0) {
 
 	int nread = ChanRead(chanPtr, readBuf, bytesToRead);
@@ -5073,12 +5099,10 @@ Tcl_ReadRaw(
 	    if (!GotFlag(statePtr, CHANNEL_BLOCKED) || copied == 0) {
 		copied = -1;
 	    }
-	} else if (copied > 0) {
+	} else {
 	    /*
-	     * nread == 0.  Driver is at EOF, but if copied>0 bytes
-	     * from pushback, then we should not signal it yet.
+	     * nread == 0.  Driver is at EOF. Let that state filter up.
 	     */
-	    ResetFlag(statePtr, CHANNEL_EOF);
 	}
     }
     return copied;
@@ -6120,16 +6144,37 @@ GetInput(
     }
 
     /* 
-     * For a channel at EOF do not bother allocating buffers; there's
-     * nothing more to read.  Avoid calling the driver inputproc in
-     * case some of them do not react well to additional calls after
-     * they've reported an eof state..
-     * TODO: Candidate for a can't happen panic.
+     * Strangely named "STICKY_EOF" really means we've seen the
+     * eofchar for this channel, and nothing since has reset it.
+     * (changed the eofchar, [seek]ed to a new offset, etc.) So,
+     * we know we're still poised to read that eofchar again, and
+     * there's no need to actually do it.
      */
 
-    if (GotFlag(statePtr, CHANNEL_EOF)) {
+    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
+	assert(statePtr->inEofChar);
+	assert(statePtr->inQueueHead);
+	assert(RemovePoint(statePtr->inQueueHead)[0] == statePtr->inEofChar);
 	return 0;
     }
+
+    /*
+     * WARNING: There was once a comment here claiming that it was
+     * a bad idea to make another call to the inputproc of a channel
+     * driver when EOF has already been detected on the channel.  Through
+     * much of Tcl's history, this warning was then completely negated
+     * by having all (most?) read paths clear the EOF setting before
+     * reaching here.  So we had a guard that was never triggered.
+     *
+     * Don't be tempted to restore the guard.  Even if EOF is set on
+     * the channel, continue through and call the inputproc again.  This
+     * is the way to enable the ability to [read] again beyond the EOF,
+     * which seems a strange thing to do, but for which use cases exist
+     * [Tcl Bug 5adc350683] and which may even be essential for channels
+     * representing things like ttys or other devices where the stream
+     * might take the logical form of a series of 'files' separated by
+     * an EOF condition.
+     */
 
     /*
      * First check for more buffers in the pushback area of the topmost
@@ -8848,16 +8893,6 @@ DoRead(
 	ChannelBuffer *bufPtr = statePtr->inQueueHead;
 
 	/*
-	 * When there's no buffered data to read, and we're at EOF,
-	 * escape to the caller.
-	 */
-
-	if (GotFlag(statePtr, CHANNEL_EOF)
-		&& (bufPtr == NULL || IsBufferEmpty(bufPtr))) {
-	    break;
-	}
-
-	/*
 	 * Don't read more data if we have what we need. 
 	 */
 
@@ -8969,10 +9004,21 @@ DoRead(
 		statePtr->inQueueTail = NULL;
 	    }
 	    RecycleBuffer(statePtr, bufPtr, 0);
+	    bufPtr = statePtr->inQueueHead;
 	}
 
 	if (GotFlag(statePtr, CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)
 		== (CHANNEL_NONBLOCKING|CHANNEL_BLOCKED)) {
+	    break;
+	}
+
+	/*
+	 * When there's no buffered data to read, and we're at EOF,
+	 * escape to the caller.
+	 */
+
+	if (GotFlag(statePtr, CHANNEL_EOF)
+		&& (bufPtr == NULL || IsBufferEmpty(bufPtr))) {
 	    break;
 	}
     }
