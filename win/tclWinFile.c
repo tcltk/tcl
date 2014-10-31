@@ -3203,7 +3203,10 @@ TclNativeCreateNativeRep(
     Tcl_WinUtfToTChar(str, len, &ds);
     if (tclWinProcs->useWide) {
 	WCHAR *wp = (WCHAR *) Tcl_DStringValue(&ds);
-	len = Tcl_DStringLength(&ds)>>1;
+	/* For a reserved device, strip a possible postfix ':' */
+	len = WinIsReserved(str);
+	/* For normal devices */
+	if (len == 0) len = Tcl_DStringLength(&ds)>>1;
 	/*
 	** If path starts with "//?/" or "\\?\" (extended path), translate
 	** any slashes to backslashes but accept the '?' as being valid.
