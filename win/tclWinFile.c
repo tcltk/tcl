@@ -2933,11 +2933,15 @@ TclNativeCreateNativeRep(
 	/* String contains NUL-bytes. This is invalid. */
 	return 0;
     }
-    /* Let MultiByteToWideChar check for other invalid sequences, like
-     * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
-    len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
-    if (len==0) {
-	return 0;
+    /* For a reserved device, strip a possible postfix ':' */
+    len = WinIsReserved(str);
+    if (len == 0) {
+	/* Let MultiByteToWideChar check for other invalid sequences, like
+	 * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
+	len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
+	if (len==0) {
+	    return 0;
+	}
     }
     /* Overallocate 6 chars, making some room for extended paths */
     wp = nativePathPtr = ckalloc( (len+6) * sizeof(WCHAR) );
