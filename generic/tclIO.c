@@ -2811,9 +2811,15 @@ FlushChannel(
 	     * write in this call, and we've completed the BG flush.
 	     * These are the two cases above.  If we get here, that means
 	     * there is some kind failure in the writable event machinery.
-	     */
+	     *
+	     * The tls extension indeed suffers from flaws in its channel
+	     * event mgmt.  See http://core.tcl.tk/tcl/info/c31ca233ca.
+	     * Until that patch is broadly distributed, disable the
+	     * assertion checking here, so that programs using Tcl and
+	     * tls can be debugged.
 
 	    assert(!calledFromAsyncFlush);
+	     */
 	}
     }
 
