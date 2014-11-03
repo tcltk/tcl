@@ -677,6 +677,18 @@ TransformInputProc(
 	    break;
 	}
 
+	if (dataPtr->readIsFlushed) {
+	    /*
+	     * Already saw EOF from downChan; don't ask again.
+	     * NOTE: Could move this up to avoid the last maxRead
+	     * execution.  Believe this would still be correct behavior,
+	     * but the test suite tests the whole command callback 
+	     * sequence, so leave it unchanged for now.
+	     */
+
+	    break;
+	}
+
 	/*
 	 * Get bytes from the underlying channel.
 	 */
@@ -710,14 +722,6 @@ TransformInputProc(
 	     * Zero returned from Tcl_ReadRaw() always indicates EOF
 	     * on the down channel.
 	     */
-
-	    if (dataPtr->readIsFlushed) {
-		/*
-		 * Already flushed, nothing to do anymore.
-		 */
-
-		break;
-	    }
 
 	    dataPtr->readIsFlushed = 1;
 	    ExecuteCallback(dataPtr, NULL, A_FLUSH_READ, NULL, 0,
