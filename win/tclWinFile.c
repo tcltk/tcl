@@ -1225,9 +1225,9 @@ WinIsReserved(
     if ((path[0] == 'c' || path[0] == 'C')
 	    && (path[1] == 'o' || path[1] == 'O')) {
 	if ((path[2] == 'm' || path[2] == 'M')
-		&& path[3] >= '1' && path[3] <= '4') {
+		&& path[3] >= '1' && path[3] <= '9') {
 	    /*
-	     * May have match for 'com[1-4]:?', which is a serial port.
+	     * May have match for 'com[1-9]:?', which is a serial port.
 	     */
 
 	    if (path[4] == '\0') {
@@ -3203,7 +3203,10 @@ TclNativeCreateNativeRep(
     Tcl_WinUtfToTChar(str, len, &ds);
     if (tclWinProcs->useWide) {
 	WCHAR *wp = (WCHAR *) Tcl_DStringValue(&ds);
-	len = Tcl_DStringLength(&ds)>>1;
+	/* For a reserved device, strip a possible postfix ':' */
+	len = WinIsReserved(str);
+	/* For normal devices */
+	if (len == 0) len = Tcl_DStringLength(&ds)>>1;
 	/*
 	** If path starts with "//?/" or "\\?\" (extended path), translate
 	** any slashes to backslashes but accept the '?' as being valid.
