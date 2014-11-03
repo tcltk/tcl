@@ -1097,6 +1097,11 @@ ReflectInput(
 	    goto stop;
 	}
 
+		if (rtPtr->readIsDrained) {
+		    goto stop;
+		}
+
+
 	/*
 	 * The buffer is exhausted, but the caller wants even more. We now
 	 * have to go to the underlying channel, get more bytes and then
@@ -1166,10 +1171,6 @@ ReflectInput(
 	     * on the down channel.
 	     */
 	
-		if (rtPtr->readIsDrained) {
-		    goto stop;
-		}
-
 		/*
 		 * Now this is a bit different. The partial data waiting is
 		 * converted and returned.
