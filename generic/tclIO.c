@@ -3977,6 +3977,21 @@ Tcl_GetsObj(
     }
 
     /*
+     * If we're sitting ready to read the eofchar, there's no need to
+     * do it.
+     */
+
+    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
+	SetFlag(statePtr, CHANNEL_EOF);
+	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
+	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
+
+	/* TODO: Do we need this? */
+	UpdateInterest(chanPtr);
+	return -1;
+    }
+
+    /*
      * A binary version of Tcl_GetsObj. This could also handle encodings that
      * are ascii-7 pure (iso8859, utf-8, ...) with a final encoding conversion
      * done on objPtr.
@@ -4194,6 +4209,7 @@ Tcl_GetsObj(
 	    dstEnd = eof;
 	    SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	    statePtr->inputEncodingFlags |= TCL_ENCODING_END;
+	    ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
 	}
 	if (GotFlag(statePtr, CHANNEL_EOF)) {
 	    skip = 0;
@@ -4307,6 +4323,13 @@ Tcl_GetsObj(
      */
 
   done:
+	assert(!GotFlag(statePtr, CHANNEL_EOF)
+		|| GotFlag(statePtr, CHANNEL_STICKY_EOF)
+		|| Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
+
+	assert( !(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
+		== (CHANNEL_EOF|CHANNEL_BLOCKED)) );
+
     /*
      * Regenerate the top channel, in case it was changed due to
      * self-modifying reflected transforms.
@@ -4329,6 +4352,11 @@ Tcl_GetsObj(
  *	A variation of Tcl_GetsObj that works directly on the buffers until
  *	end-of-line or end-of-file has been seen. Bytes read from the input
  *	channel return as a ByteArray obj.
+ *
+ *	WARNING!  The notion of "binary" used here is different from
+ *	notions of "binary" used in other places.  In particular, this
+ *	"binary" routine may be called when an -eofchar is set on the
+ * 	channel.
  *
  * Results:
  *	Number of characters accumulated in the object or -1 if error,
@@ -4416,15 +4444,15 @@ TclGetsObjBinary(
 	    }
 	} else {
 	    /*
-	     * There's something already in the buffer.  If
-	     * CHANNEL_STICKY_EOF is set we know that something begins
-	     * with the eofchar.  Otherwise, if CHANNEL_EOF is set, we
-	     * know some earlier inputproc call returned zero bytes when
-	     * we were trying to get more bytes to put in the buffer.
-	     * which means..... ????  Place to probe with tests.
-	     */
-	    assert (GotFlag(statePtr, CHANNEL_STICKY_EOF) 
-		    || !GotFlag(statePtr, CHANNEL_EOF) );
+	     * Incoming CHANNEL_STICKY_EOF is filtered out on entry.
+	     * A new CHANNEL_STICKY_EOF set in this routine leads to
+	     * return before coming back here.  When we are not dealing
+	     * with CHANNEL_STICKY_EOF, a CHANNEL_EOF implies an
+	     * empty buffer.  Here the buffer is non-empty so we know
+	     * we're a non-EOF */
+
+	    assert ( !GotFlag(statePtr, CHANNEL_STICKY_EOF) );
+	    assert ( !GotFlag(statePtr, CHANNEL_EOF) );
 	}
 
 	dst = (unsigned char *) RemovePoint(bufPtr);
@@ -4466,6 +4494,7 @@ TclGetsObjBinary(
 
 	    SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	    statePtr->inputEncodingFlags |= TCL_ENCODING_END;
+	    ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
 	}
 	if (GotFlag(statePtr, CHANNEL_EOF)) {
 	    skip = 0;
@@ -4575,6 +4604,11 @@ TclGetsObjBinary(
      */
 
   done:
+	assert(!GotFlag(statePtr, CHANNEL_EOF)
+		|| GotFlag(statePtr, CHANNEL_STICKY_EOF)
+		|| Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
+	assert( !(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
+		== (CHANNEL_EOF|CHANNEL_BLOCKED)) );
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copiedTotal;
@@ -4706,8 +4740,16 @@ FilterInputBytes(
 	    return -1;
 	}
     } else {
-	assert( GotFlag(statePtr, CHANNEL_STICKY_EOF)
-		|| !GotFlag(statePtr, CHANNEL_EOF) );
+	/*
+	 * Incoming CHANNEL_STICKY_EOF is filtered out on entry.
+	 * A new CHANNEL_STICKY_EOF set in this routine leads to
+	 * return before coming back here.  When we are not dealing
+	 * with CHANNEL_STICKY_EOF, a CHANNEL_EOF implies an
+	 * empty buffer.  Here the buffer is non-empty so we know
+	 * we're a non-EOF */
+
+	assert ( !GotFlag(statePtr, CHANNEL_STICKY_EOF) );
+	assert ( !GotFlag(statePtr, CHANNEL_EOF) );
     }
 
     /*
@@ -5201,19 +5243,11 @@ DoReadChars(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
     ChannelBuffer *bufPtr;
-    int factor, copied, copiedNow, result;
-    Tcl_Encoding encoding;
+    int copied, copiedNow, result;
+    Tcl_Encoding encoding = statePtr->encoding;
     int binaryMode;
 #define UTF_EXPANSION_FACTOR	1024
-
-    /*
-     * This operation should occur at the top of a channel stack.
-     */
-
-    chanPtr = statePtr->topChanPtr;
-    encoding = statePtr->encoding;
-    factor = UTF_EXPANSION_FACTOR;
-    TclChannelPreserve((Tcl_Channel)chanPtr);
+    int factor = UTF_EXPANSION_FACTOR;
 
     binaryMode = (encoding == NULL)
 	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF) 
@@ -5236,6 +5270,36 @@ DoReadChars(
 	    TclGetString(objPtr);
 	}
     }
+
+    /*
+     * Early out when next read will see eofchar.
+     *
+     * NOTE: See DoRead for argument that it's a bug (one we're keeping)
+     * to have this escape before the one for zero-char read request.
+     */
+
+    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
+	SetFlag(statePtr, CHANNEL_EOF);
+	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
+	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
+
+	UpdateInterest(chanPtr);
+	return 0;
+    }
+
+    /* Special handling for zero-char read request. */
+    if (toRead == 0) {
+	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
+	UpdateInterest(chanPtr);
+	return 0;
+    }
+
+    /*
+     * This operation should occur at the top of a channel stack.
+     */
+
+    chanPtr = statePtr->topChanPtr;
+    TclChannelPreserve((Tcl_Channel)chanPtr);
 
     /* Must clear the BLOCKED flag here since we check before reading */
     ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
@@ -5314,6 +5378,11 @@ DoReadChars(
      * Update the notifier state so we don't block while there is still data
      * in the buffers.
      */
+	assert(!GotFlag(statePtr, CHANNEL_EOF)
+		|| GotFlag(statePtr, CHANNEL_STICKY_EOF)
+		|| Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
+	assert( !(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
+		== (CHANNEL_EOF|CHANNEL_BLOCKED)) );
     UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
     return copied;
@@ -5922,7 +5991,7 @@ TranslateInputEOL(
 
 	SetFlag(statePtr, CHANNEL_EOF | CHANNEL_STICKY_EOF);
 	statePtr->inputEncodingFlags |= TCL_ENCODING_END;
-	ResetFlag(statePtr, INPUT_SAW_CR);
+	ResetFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR);
     }
 }
 
@@ -6132,6 +6201,14 @@ GetInput(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
 
+    /* 
+     * Verify that all callers know better than to call us when
+     * it's recorded that the next char waiting to be read is the
+     * eofchar.
+     */
+
+    assert( !GotFlag(statePtr, CHANNEL_STICKY_EOF) );
+
     /*
      * Prevent reading from a dead channel -- a channel that has been closed
      * but not yet deallocated, which can happen if the exit handler for
@@ -6141,21 +6218,6 @@ GetInput(
 
     if (CheckForDeadChannel(NULL, statePtr)) {
 	return EINVAL;
-    }
-
-    /* 
-     * Strangely named "STICKY_EOF" really means we've seen the
-     * eofchar for this channel, and nothing since has reset it.
-     * (changed the eofchar, [seek]ed to a new offset, etc.) So,
-     * we know we're still poised to read that eofchar again, and
-     * there's no need to actually do it.
-     */
-
-    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
-	assert(statePtr->inEofChar);
-	assert(statePtr->inQueueHead);
-	assert(RemovePoint(statePtr->inQueueHead)[0] == statePtr->inEofChar);
-	return 0;
     }
 
     /*
@@ -6185,6 +6247,7 @@ GetInput(
 
     if (chanPtr->inQueueHead != NULL) {
 
+	/* TODO: Tests to cover this. */
 	assert(statePtr->inQueueHead == NULL);
 
 	statePtr->inQueueHead = chanPtr->inQueueHead;
@@ -6215,6 +6278,7 @@ GetInput(
 	 * Check the actual buffersize against the requested buffersize.
 	 * Saved buffers of the wrong size are squashed. This is done
 	 * to honor dynamic changes of the buffersize made by the user.
+	 * TODO: Tests to cover this.
 	 */
 
 	if ((bufPtr != NULL)
@@ -6758,9 +6822,7 @@ Tcl_Eof(
     ChannelState *statePtr = ((Channel *) chan)->state;
 				/* State of real channel structure. */
 
-    return (GotFlag(statePtr, CHANNEL_STICKY_EOF) ||
-	    (GotFlag(statePtr, CHANNEL_EOF) &&
-	    (Tcl_InputBuffered(chan) == 0))) ? 1 : 0;
+    return GotFlag(statePtr, CHANNEL_EOF) ? 1 : 0;
 }
 
 /*
@@ -8882,6 +8944,36 @@ DoRead(
     ChannelState *statePtr = chanPtr->state;
     char *p = dst;
 
+    assert (bytesToRead >= 0);
+
+    /*
+     * Early out when we know a read will get the eofchar.
+     *
+     * NOTE: This seems to be a bug.  The special handling for
+     * a zero-char read request ought to come first.  As coded
+     * the EOF due to eofchar has distinguishing behavior from
+     * the EOF due to reported EOF on the underlying device, and
+     * that seems undesirable.  However recent history indicates
+     * that new inconsistent behavior in a patchlevel has problems
+     * too.  Keep on keeping on for now.
+     */
+
+    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
+	SetFlag(statePtr, CHANNEL_EOF);
+	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
+	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
+
+	UpdateInterest(chanPtr);
+	return 0;
+    }
+
+    /* Special handling for zero-char read request. */
+    if (bytesToRead == 0) {
+	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
+	UpdateInterest(chanPtr);
+	return 0;
+    }
+
     TclChannelPreserve((Tcl_Channel)chanPtr);
     while (bytesToRead) {
 	/*
@@ -8952,8 +9044,7 @@ DoRead(
 	     * 1) We're @EOF because we saw eof char.
 	     */
 
-	    if (statePtr->inEofChar
-		    && RemovePoint(bufPtr)[0] == statePtr->inEofChar) {
+	    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
 		UpdateInterest(chanPtr);
 		break;
 	    }
@@ -9026,6 +9117,11 @@ DoRead(
 	ResetFlag(statePtr, CHANNEL_BLOCKED);
     }
 
+	assert(!GotFlag(statePtr, CHANNEL_EOF)
+		|| GotFlag(statePtr, CHANNEL_STICKY_EOF)
+		|| Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
+	assert( !(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
+		== (CHANNEL_EOF|CHANNEL_BLOCKED)) );
     TclChannelRelease((Tcl_Channel)chanPtr);
     return (int)(p - dst);
 }
