@@ -8465,6 +8465,26 @@ test io-73.2 {channel Tcl_Obj SetChannelFromAny, bug 2407783} -setup {
     close $f
 } -result {1 {can not find channel named "@@"}}
 
+test io-73.3 {[5adc350683] [gets] after EOF} -setup {
+    set fn [makeFile {} io-73.3]
+    set rfd [open $fn r]
+    set wfd [open $fn a]
+    chan configure $wfd -buffering line
+    read $rfd
+} -body {
+    set result [eof $rfd]
+    puts $wfd "more data"
+    lappend result [eof $rfd]
+    lappend result [gets $rfd]
+    lappend result [eof $rfd]
+    lappend result [gets $rfd]
+    lappend result [eof $rfd]
+} -cleanup {
+    close $wfd
+    close $rfd
+    removeFile io-73.3
+} -result {1 1 {more data} 0 {} 1}
+
 # ### ### ### ######### ######### #########
 
 # cleanup
