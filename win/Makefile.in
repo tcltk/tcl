@@ -459,10 +459,11 @@ ${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 
 # use pre-built zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
-	@if test "@ZLIB_LIBS@set" != "${ZLIB_DIR}/win32/zdll.libset" ; then \
+	@if test "@ZLIB_LIBS@set" != "-L. -lzset" -a "@ZLIB_LIBS@set" != "${ZLIB_DIR}/win32/zdll.libset"; then \
 		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
 	else \
 		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
+		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} libz.dll.a; \
 	fi;
 
 # Add the object extension to the implicit rules. By default .obj is not

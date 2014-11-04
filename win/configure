@@ -4377,7 +4377,17 @@ fi
 
 else
 
-    ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+    if test "$GCC" == "yes"; then
+
+      ZLIB_LIBS="-L. -lz"
+
+
+else
+
+      ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+
+
+fi
 
 
 fi

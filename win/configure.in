@@ -135,7 +135,11 @@ AS_IF([test "$tcl_ok" = "yes"], [
       AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win64/zdll.lib])
     ])
   ], [
-    AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
+    AS_IF([test "$GCC" == "yes"],[
+      AC_SUBST(ZLIB_LIBS,["-L. -lz"])
+    ], [
+      AC_SUBST(ZLIB_LIBS,[\${ZLIB_DIR}/win32/zdll.lib])
+    ])
   ])
 ], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
