@@ -597,6 +597,62 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
     rename foo {}
 } -result {{read rt* {test data
 }} {}}
+test iortrans-4.10 {[5adbc350683] chan read, handle fleeting EOF} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .....
+                return {initialize finalize watch read}
+            }
+            finalize {
+                if {![info exists index($chan)]} {return}
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                if {![info exists index($chan)]} {
+                    driver initialize $chan
+                }
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                if {[string length $result] == 0} {
+                    driver finalize $chan
+                }
+                return $result
+            }
+        }
+    }
+    proc idxform {cmd handle args} {
+      switch -- $cmd {
+        initialize {
+            return {initialize finalize read}
+        }
+        finalize {
+            return
+        }
+        read {
+            lassign $args buffer
+            return $buffer
+        }
+      }
+    }
+} -body {
+    set chan [chan push [chan create read driver] idxform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+    rename idxform {}
+    rename driver {}
+} -result {0 ..... 1 {} 0 ..... 1}
+
 
 # --- === *** ###########################
 # method write (via puts)
