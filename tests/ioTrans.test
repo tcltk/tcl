@@ -676,7 +676,7 @@ test iortrans-4.10.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
 
 rename idxform {}
 
-# Channel read transform that delays the data
+# Channel read transform that delays the data and always returns something
     proc delayxform {cmd handle args} {
       variable store
       switch -- $cmd {
@@ -732,6 +732,40 @@ test iortrans-4.11.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
 } -result {0 ..... 1 {} 0 ..... 1}
 
     rename delayxform {}
+
+# Channel read transform that delays the data and may return {}
+    proc delay2xform {cmd handle args} {
+      variable store
+      switch -- $cmd {
+        initialize {
+	    set store($handle) {}
+            return {initialize finalize read drain}
+        }
+        finalize {
+	    unset store($handle)
+            return
+        }
+        read {
+            lassign $args buffer
+		set reply $store($handle)
+		set store($handle) $buffer
+            return $reply
+        }
+	drain {
+	    delay2xform read $handle {}
+	}
+      }
+    }
+
+test iortrans-4.12 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delay2xform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+    rename delay2xform {}
     rename driver {}
 
 
