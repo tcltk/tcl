@@ -597,7 +597,9 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
     rename foo {}
 } -result {{read rt* {test data
 }} {}}
-test iortrans-4.10 {[5adbc350683] chan read, handle fleeting EOF} -setup {
+
+# Driver for a base channel that emits several short "files"
+# with each terminated by a fleeting EOF
     proc driver {cmd args} {
         variable buffer
         variable index
@@ -629,6 +631,8 @@ test iortrans-4.10 {[5adbc350683] chan read, handle fleeting EOF} -setup {
             }
         }
     }
+
+# Channel read transform that is just the identity - pass all through
     proc idxform {cmd handle args} {
       switch -- $cmd {
         initialize {
@@ -643,15 +647,92 @@ test iortrans-4.10 {[5adbc350683] chan read, handle fleeting EOF} -setup {
         }
       }
     }
-} -body {
+
+# Test that all EOFs pass through full xform stack.  Proper data boundaries.
+# Check robustness against buffer sizes.
+test iortrans-4.10 {[5adbc350683] chan read, handle fleeting EOF} -body {
     set chan [chan push [chan create read driver] idxform]
     list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
         [read $chan] [eof $chan]
 } -cleanup {
     close $chan
-    rename idxform {}
-    rename driver {}
 } -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.10.1 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] idxform]
+    chan configure $chan -buffersize 3
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.10.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] idxform]
+    chan configure $chan -buffersize 5
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+rename idxform {}
+
+# Channel read transform that delays the data
+    proc delayxform {cmd handle args} {
+      variable store
+      switch -- $cmd {
+        initialize {
+	    set store($handle) {}
+            return {initialize finalize read drain}
+        }
+        finalize {
+	    unset store($handle)
+            return
+        }
+        read {
+            lassign $args buffer
+	    if {$store($handle) eq {}} {
+		set reply [string index $buffer 0]
+		set store($handle) [string range $buffer 1 end]
+	    } else {
+		set reply $store($handle)
+		set store($handle) $buffer
+	    }
+            return $reply
+        }
+	drain {
+	    delayxform read $handle {}
+	}
+      }
+    }
+
+# Test that all EOFs pass through full xform stack.  Proper data boundaries.
+# Check robustness against buffer sizes.
+test iortrans-4.11 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.11.1 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    chan configure $chan -buffersize 3
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.11.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    chan configure $chan -buffersize 5
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+    rename delayxform {}
+    rename driver {}
 
 
 # --- === *** ###########################
