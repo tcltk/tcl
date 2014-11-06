@@ -161,6 +161,7 @@ typedef struct {
     int mode;			/* Mask of R/W mode */
     int nonblocking;		/* Flag: Channel is blocking or not. */
     int readIsDrained;		/* Flag: Read buffers are flushed. */
+    int eofPending;		/* Flag: EOF seen down, but not raised up */
     int dead;			/* Boolean signal that some operations
 				 * should no longer be attempted. */
     ResultBuffer result;
@@ -1082,6 +1083,10 @@ ReflectInput(
     bufObj = Tcl_NewByteArrayObj(NULL, toRead);
     Tcl_IncrRefCount(bufObj);
     gotBytes = 0;
+    if (rtPtr->eofPending) {
+	goto stop;
+    }
+    rtPtr->readIsDrained = 0;
     while (toRead > 0) {
 	/*
 	 * Loop until the request is satisfied (or no data available from
@@ -1096,6 +1101,11 @@ ReflectInput(
 	if (toRead == 0) {
 	    goto stop;
 	}
+
+	if (rtPtr->eofPending) {
+	    goto stop;
+	}
+
 
 	/*
 	 * The buffer is exhausted, but the caller wants even more. We now
@@ -1165,11 +1175,9 @@ ReflectInput(
 	     * Zero returned from Tcl_ReadRaw() always indicates EOF
 	     * on the down channel.
 	     */
-	
-		if (rtPtr->readIsDrained) {
-		    goto stop;
-		}
 
+	    rtPtr->eofPending = 1;
+	
 		/*
 		 * Now this is a bit different. The partial data waiting is
 		 * converted and returned.
@@ -1211,6 +1219,9 @@ ReflectInput(
     } /* while toRead > 0 */
 
  stop:
+    if (gotBytes == 0) {
+	rtPtr->eofPending = 0;
+    }
     Tcl_DecrRefCount(bufObj);
     Tcl_Release(rtPtr);
     return gotBytes;
@@ -1766,6 +1777,7 @@ NewReflectedTransform(
     rtPtr->timer = NULL;
     rtPtr->mode = 0;
     rtPtr->readIsDrained = 0;
+    rtPtr->eofPending = 0;
     rtPtr->nonblocking =
 	    (((Channel *) parentChan)->state->flags & CHANNEL_NONBLOCKING);
     rtPtr->dead = 0;
@@ -3318,6 +3330,7 @@ TransformClear(
     (void) InvokeTclMethod(rtPtr, "clear", NULL, NULL, NULL);
 
     rtPtr->readIsDrained = 0;
+    rtPtr->eofPending = 0;
     ResultClear(&rtPtr->result);
 }
 
