@@ -187,6 +187,7 @@ struct TransformChannelData {
     Tcl_Channel self;		/* Our own Channel handle. */
     int readIsFlushed;		/* Flag to note whether in.flushProc was
 				 * called or not. */
+    int eofPending;		/* Flag: EOF seen down, not raised up */
     int flags;			/* Currently CHANNEL_ASYNC or zero. */
     int watchMask;		/* Current watch/event/interest mask. */
     int mode;			/* Mode of parent channel, OR'ed combination
@@ -292,6 +293,7 @@ TclChannelTransform(
     Tcl_DStringInit(&ds);
     Tcl_GetChannelOption(interp, chan, "-blocking", &ds);
     dataPtr->readIsFlushed = 0;
+    dataPtr->eofPending = 0;
     dataPtr->flags = 0;
     if (ds.string[0] == '0') {
 	dataPtr->flags |= CHANNEL_ASYNC;
@@ -624,7 +626,7 @@ TransformInputProc(
 
     if (toRead == 0 || dataPtr->self == NULL) {
 	/*
-	 * Catch a no-op.
+	 * Catch a no-op. TODO: Is this a panic()?
 	 */
 	return 0;
     }
@@ -676,6 +678,17 @@ TransformInputProc(
 	if (toRead <= 0) {
 	    break;
 	}
+	if (dataPtr->eofPending) {
+	    /*
+	     * Already saw EOF from downChan; don't ask again.
+	     * NOTE: Could move this up to avoid the last maxRead
+	     * execution.  Believe this would still be correct behavior,
+	     * but the test suite tests the whole command callback 
+	     * sequence, so leave it unchanged for now.
+	     */
+
+	    break;
+	}
 
 	/*
 	 * Get bytes from the underlying channel.
@@ -712,14 +725,7 @@ TransformInputProc(
 	     * on the down channel.
 	     */
 
-	    if (dataPtr->readIsFlushed) {
-		/*
-		 * Already flushed, nothing to do anymore.
-		 */
-
-		break;
-	    }
-
+	    dataPtr->eofPending = 1;
 	    dataPtr->readIsFlushed = 1;
 	    ExecuteCallback(dataPtr, NULL, A_FLUSH_READ, NULL, 0,
 		    TRANSMIT_IBUF, P_PRESERVE);
@@ -747,8 +753,11 @@ TransformInputProc(
 	    break;
 	}
     } /* while toRead > 0 */
-    ReleaseData(dataPtr);
 
+    if (gotBytes == 0) {
+	dataPtr->eofPending = 0;
+    }
+    ReleaseData(dataPtr);
     return gotBytes;
 }
 
@@ -859,6 +868,7 @@ TransformSeekProc(
 		P_NO_PRESERVE);
 	ResultClear(&dataPtr->result);
 	dataPtr->readIsFlushed = 0;
+	dataPtr->eofPending = 0;
     }
     ReleaseData(dataPtr);
 
@@ -932,6 +942,7 @@ TransformWideSeekProc(
 		P_NO_PRESERVE);
 	ResultClear(&dataPtr->result);
 	dataPtr->readIsFlushed = 0;
+	dataPtr->eofPending = 0;
     }
     ReleaseData(dataPtr);
 
