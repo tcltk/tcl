@@ -303,8 +303,10 @@ test parse-6.16 {ParseTokens procedure, backslash substitution} testparser {
     testparser {\n\a\x7f} 0
 } {- {\n\a\x7f} 1 word {\n\a\x7f} 3 backslash {\n} 0 backslash {\a} 0 backslash {\x7f} 0 {}}
 test parse-6.17 {ParseTokens procedure, null characters} {testparser testbytestring} {
-    testparser [testbytestring "foo\0zz"] 0
-} "- [testbytestring foo\0zz] 1 word [testbytestring foo\0zz] 3 text foo 0 text [testbytestring \0] 0 text zz 0 {}"
+    expr {[testparser [testbytestring "foo\0zz"] 0] eq
+"- [testbytestring foo\0zz] 1 word [testbytestring foo\0zz] 3 text foo 0 text [testbytestring \0] 0 text zz 0 {}"
+	}
+} 1
 test parse-6.18 {ParseTokens procedure, seek past numBytes for close-bracket} testparser {
     # Test for Bug 681841
     list [catch {testparser {[a]} 2} msg] $msg
