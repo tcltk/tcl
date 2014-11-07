@@ -8482,4 +8482,12 @@ include ::oo::class (fellows)
 
 2014-10-18 (bug)[10dc6d] fix [gets] on non-blocking channels (fassel,porter)
 
---- Released 8.6.3, October 29, 2014 --- http://core.tcl.tk/tcl/ for details
+2014-10-26 Support for Windows 10 (nijtmans)
+
+2014-10-31 (bug)[dcc034] restore [open comX: r+] (lll,nijtmans)
+
+2014-11-05 (bug)[214cc0] Restore [lappend v] return value (sayers,porter)
+
+2014-11-06 (bug)[5adc35] Stop forcing EOF to be permanent (porter)
+
+--- Released 8.6.3, November 12, 2014 --- http://core.tcl.tk/tcl/ for details
