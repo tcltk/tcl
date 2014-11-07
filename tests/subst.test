@@ -38,8 +38,8 @@ test subst-2.3 {simple strings} {
 } abcdefg
 test subst-2.4 {simple strings} testbytestring {
     # Tcl Bug 685106
-    subst [testbytestring bar\x00soom]
-} [testbytestring bar\x00soom]
+    expr {[subst [testbytestring bar\x00soom]] eq [testbytestring bar\x00soom]}
+} 1
 
 test subst-3.1 {backslash substitutions} {
     subst {\x\$x\[foo bar]\\}
