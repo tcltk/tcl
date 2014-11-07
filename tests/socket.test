@@ -2249,7 +2249,7 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
         unset x
     } -result {socket is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
-    -constraints {socket} \
+    -constraints {socket nonportable} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0
