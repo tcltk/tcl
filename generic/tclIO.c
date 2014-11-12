@@ -155,6 +155,7 @@ static ChannelBuffer *	AllocChannelBuffer(int length);
 static void		PreserveChannelBuffer(ChannelBuffer *bufPtr);
 static void		ReleaseChannelBuffer(ChannelBuffer *bufPtr);
 static int		IsShared(ChannelBuffer *bufPtr);
+static void		ChannelFree(Channel *chanPtr);
 static void		ChannelTimerProc(ClientData clientData);
 static int		ChanRead(Channel *chanPtr, char *dst, int dstSize);
 static int		CheckChannelErrors(ChannelState *statePtr,
@@ -1914,6 +1915,16 @@ TclChannelRelease(
     }
 }
 
+static void
+ChannelFree(
+    Channel *chanPtr)
+{
+    if (chanPtr->refCount == 0) {
+	ckfree(chanPtr);
+	return;
+    }
+    chanPtr->typePtr = NULL;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -2060,7 +2071,7 @@ Tcl_UnstackChannel(
 	 */
 
 	result = ChanClose(chanPtr, interp);
-	chanPtr->typePtr = NULL;
+	ChannelFree(chanPtr);
 
 	UpdateInterest(statePtr->topChanPtr);
 
@@ -3018,7 +3029,8 @@ CloseChannel(
 
 	statePtr->topChanPtr = downChanPtr;
 	downChanPtr->upChanPtr = NULL;
-	chanPtr->typePtr = NULL;
+
+	ChannelFree(chanPtr);
 
 	return Tcl_Close(interp, (Tcl_Channel) downChanPtr);
     }
@@ -3029,7 +3041,7 @@ CloseChannel(
      * stack, make sure to free the ChannelState structure associated with it.
      */
 
-    chanPtr->typePtr = NULL;
+    ChannelFree(chanPtr);
 
     Tcl_EventuallyFree(statePtr, TCL_DYNAMIC);
 
