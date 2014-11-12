@@ -601,8 +601,8 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
 # Driver for a base channel that emits several short "files"
 # with each terminated by a fleeting EOF
     proc driver {cmd args} {
-        variable buffer
-        variable index
+        variable ::tcl::buffer
+        variable ::tcl::index
         set chan [lindex $args 0]
         switch -- $cmd {
             initialize {
@@ -613,6 +613,8 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
             finalize {
                 if {![info exists index($chan)]} {return}
                 unset index($chan) buffer($chan)
+		array unset index
+		array unset buffer
                 return
             }
             watch {}
