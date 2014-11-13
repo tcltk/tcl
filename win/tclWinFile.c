@@ -1241,9 +1241,9 @@ WinIsReserved(
     if ((path[0] == 'c' || path[0] == 'C')
 	    && (path[1] == 'o' || path[1] == 'O')) {
 	if ((path[2] == 'm' || path[2] == 'M')
-		&& path[3] >= '1' && path[3] <= '4') {
+		&& path[3] >= '1' && path[3] <= '9') {
 	    /*
-	     * May have match for 'com[1-4]:?', which is a serial port.
+	     * May have match for 'com[1-9]:?', which is a serial port.
 	     */
 
 	    if (path[4] == '\0') {
@@ -1262,9 +1262,9 @@ WinIsReserved(
     } else if ((path[0] == 'l' || path[0] == 'L')
 	    && (path[1] == 'p' || path[1] == 'P')
 	    && (path[2] == 't' || path[2] == 'T')) {
-	if (path[3] >= '1' && path[3] <= '3') {
+	if (path[3] >= '1' && path[3] <= '9') {
 	    /*
-	     * May have match for 'lpt[1-3]:?'
+	     * May have match for 'lpt[1-9]:?'
 	     */
 
 	    if (path[4] == '\0') {
@@ -2933,18 +2933,22 @@ TclNativeCreateNativeRep(
 	/* String contains NUL-bytes. This is invalid. */
 	return 0;
     }
-    /* Let MultiByteToWideChar check for other invalid sequences, like
-     * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
-    len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
-    if (len==0) {
-	return 0;
+    /* For a reserved device, strip a possible postfix ':' */
+    len = WinIsReserved(str);
+    if (len == 0) {
+	/* Let MultiByteToWideChar check for other invalid sequences, like
+	 * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
+	len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
+	if (len==0) {
+	    return 0;
+	}
     }
     /* Overallocate 6 chars, making some room for extended paths */
     wp = nativePathPtr = ckalloc( (len+6) * sizeof(WCHAR) );
     if (nativePathPtr==0) {
       return 0;
     }
-    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr, len);
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr, len+1);
     /*
     ** If path starts with "//?/" or "\\?\" (extended path), translate
     ** any slashes to backslashes but leave the '?' intact
