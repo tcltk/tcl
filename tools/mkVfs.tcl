@@ -60,6 +60,8 @@ if {[llength $argv] < 3} {
 set TCL_SCRIPT_DIR [lindex $argv 0]
 set TCLSRC_ROOT    [lindex $argv 1]
 set PLATFORM       [lindex $argv 2]
+set TKDLL          [lindex $argv 3]
+set TKVER          [lindex $argv 4]
 
 puts "Building [file tail $TCL_SCRIPT_DIR] for $PLATFORM"
 copyDir ${TCLSRC_ROOT}/library ${TCL_SCRIPT_DIR}
@@ -88,6 +90,10 @@ puts $fout {#
 # MANIFEST OF INCLUDED PACKAGES
 #
 set VFSROOT $dir
+}
+if {$TKDLL ne {} && [file exists $TKDLL]} {
+  file copy $TKDLL ${TCL_SCRIPT_DIR}
+  puts $fout [list package ifneeded Tk $TKVER "load \$dir $TKDLL"]
 }
 pkgIndexDir ${TCL_SCRIPT_DIR} $fout ${TCL_SCRIPT_DIR}
 close $fout
