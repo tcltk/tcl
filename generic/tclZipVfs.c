@@ -1192,9 +1192,12 @@ closeReleaseDie:
 
 }
 
-Tcl_Channel Tobe_FSOpenFileChannelProc
-        _ANSI_ARGS_((Tcl_Interp *interp, Tcl_Obj *pathPtr,
-        int mode, int permissions)) {
+Tcl_Channel Tobe_FSOpenFileChannelProc (
+  Tcl_Interp *interp, 
+  Tcl_Obj *pathPtr,
+  int mode, 
+  int permissions
+) {
   int len;
   /* if (mode != O_RDONLY) return NULL; */
   return ZvfsFileOpen(interp, Tcl_GetStringFromObj(pathPtr,&len), 0,
@@ -1204,7 +1207,10 @@ Tcl_Channel Tobe_FSOpenFileChannelProc
 /*
 ** This routine does a stat() system call for a ZVFS file.
 */
-int Tobe_FSStatProc _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf)) {
+int Tobe_FSStatProc (
+   Tcl_Obj *pathPtr, 
+   Tcl_StatBuf *buf
+) {
     char *path=Tcl_GetString(pathPtr);
     ZvfsFile *pFile;
 
@@ -1229,7 +1235,7 @@ int Tobe_FSStatProc _ANSI_ARGS_((Tcl_Obj *pathPtr, Tcl_StatBuf *buf)) {
 /*
 ** This routine does an access() system call for a ZVFS file.
 */
-int Tobe_FSAccessProc _ANSI_ARGS_((Tcl_Obj *pathPtr, int mode)) {
+int Tobe_FSAccessProc (Tcl_Obj *pathPtr, int mode) {
     char *path=Tcl_GetString(pathPtr);
     ZvfsFile *pFile;
 
@@ -1370,8 +1376,10 @@ int Tobe_FSMatchInDirectoryProc (
 /* Function to check whether a path is in 
 * this filesystem.  This is the most
 * important filesystem procedure. */
-int Tobe_FSPathInFilesystemProc _ANSI_ARGS_((Tcl_Obj *pathPtr,
-                            ClientData *clientDataPtr)) {
+int Tobe_FSPathInFilesystemProc (
+    Tcl_Obj *pathPtr,
+    ClientData *clientDataPtr
+) {
     ZvfsFile *zFile;
     char *path = Tcl_GetString(pathPtr);
     
@@ -1385,7 +1393,7 @@ int Tobe_FSPathInFilesystemProc _ANSI_ARGS_((Tcl_Obj *pathPtr,
     return -1;
 }
 
-Tcl_Obj *Tobe_FSListVolumesProc _ANSI_ARGS_((void)) {
+Tcl_Obj *Tobe_FSListVolumesProc (void) {
     Tcl_HashEntry *pEntry;     /* Hash table entry */
     Tcl_HashSearch zSearch;   /* Search all mount points */
     ZvfsArchive *pArchive;     /* The ZIP archive being mounted */
@@ -1411,7 +1419,7 @@ Tcl_Obj *Tobe_FSListVolumesProc _ANSI_ARGS_((void)) {
     return pVols;
 }
 
-int Tobe_FSChdirProc _ANSI_ARGS_((Tcl_Obj *pathPtr)) {
+int Tobe_FSChdirProc (Tcl_Obj *pathPtr) {
    /* Someday, we should actually check if this is a valid path. */
    return TCL_OK;
 }
@@ -1437,9 +1445,12 @@ Tobe_FSFileAttrStringsProc(
     return attrs;
 }
 
-int Tobe_FSFileAttrsGetProc _ANSI_ARGS_((Tcl_Interp *interp,
-                            int index, Tcl_Obj *pathPtr,
-                            Tcl_Obj **objPtrRef)) {
+int Tobe_FSFileAttrsGetProc (
+  Tcl_Interp *interp,
+  int index, 
+  Tcl_Obj *pathPtr,
+  Tcl_Obj **objPtrRef
+) {
   char *zFilename;
   ZvfsFile *pFile;
   zFilename = Tcl_GetString(pathPtr);
@@ -1489,12 +1500,13 @@ int Tobe_FSFileAttrsGetProc _ANSI_ARGS_((Tcl_Interp *interp,
   }
   return TCL_OK;
 }
-int Tobe_FSFileAttrsSetProc _ANSI_ARGS_((Tcl_Interp *interp,
-                            int index, Tcl_Obj *pathPtr,
-                            Tcl_Obj *objPtr)) { return TCL_ERROR; }
+int Tobe_FSFileAttrsSetProc (
+  Tcl_Interp *interp,
+  int index,
+  Tcl_Obj *pathPtr,
+  Tcl_Obj *objPtr) { return TCL_ERROR; }
 
-Tcl_Obj* Tobe_FSFilesystemPathTypeProc
-                            _ANSI_ARGS_((Tcl_Obj *pathPtr)) {
+Tcl_Obj* Tobe_FSFilesystemPathTypeProc (Tcl_Obj *pathPtr) {
     return Tcl_NewStringObj("zip",-1);
 }
 
