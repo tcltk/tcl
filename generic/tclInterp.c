@@ -3584,6 +3584,7 @@ Tcl_LimitAddHandler(
 	return;
     }
 
+    ckfree(handlerPtr); /* pacify coverity CID 487047 */
     Tcl_Panic("unknown type of resource limit");
 }
 
