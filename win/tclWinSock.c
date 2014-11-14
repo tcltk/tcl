@@ -596,7 +596,7 @@ WaitForConnect(
     /*
      * Check if an async connect is running. If not return ok
      */
-     
+
     if (!(statePtr->flags & TCP_ASYNC_CONNECT)) {
 	return 0;
     }
@@ -616,7 +616,7 @@ WaitForConnect(
 	/* get statePtr lock */
         tsdPtr = TclThreadDataKeyGet(&dataKey);
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-	
+
 	/* Check for connect event */
 	if (statePtr->readyEvents & FD_CONNECT) {
 
@@ -1250,7 +1250,7 @@ TcpGetOptionProc(
 	return TCL_ERROR;
     }
 
-    /* 
+    /*
      * Go one step in async connect
      * If any error is thrown save it as backround error to report eventually below
      */
@@ -1337,7 +1337,20 @@ TcpGetOptionProc(
 	address peername;
 	socklen_t size = sizeof(peername);
 
-	if (getpeername(sock, (LPSOCKADDR) &(peername.sa), &size) == 0) {
+	if ( (statePtr->flags & TCP_ASYNC_PENDING) ) {
+	    /*
+	     * In async connect output an empty string
+	     */
+	    if (len == 0) {
+		Tcl_DStringAppendElement(dsPtr, "-peername");
+		Tcl_DStringAppendElement(dsPtr, "");
+	    } else {
+		return TCL_OK;
+	    }
+	} else if ( getpeername(sock, (LPSOCKADDR) &(peername.sa), &size) == 0) {
+	    /*
+	     * Peername fetch succeeded - output list
+	     */
 	    if (len == 0) {
 		Tcl_DStringAppendElement(dsPtr, "-peername");
 		Tcl_DStringStartSublist(dsPtr);
@@ -1386,49 +1399,55 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
 	}
-	for (fds = statePtr->sockets; fds != NULL; fds = fds->next) {
-	    sock = fds->fd;
-	    size = sizeof(sockname);
-	    if (getsockname(sock, &(sockname.sa), &size) >= 0) {
-		int flags = reverseDNS;
+	if ( (statePtr->flags & TCP_ASYNC_PENDING ) ) {
+	    /*
+	     * In async connect output an empty string
+	     */
+	     found = 1;
+	} else {
+	    for (fds = statePtr->sockets; fds != NULL; fds = fds->next) {
+		sock = fds->fd;
+		size = sizeof(sockname);
+		if (getsockname(sock, &(sockname.sa), &size) >= 0) {
+		    int flags = reverseDNS;
 
-		found = 1;
-		getnameinfo(&sockname.sa, size, host, sizeof(host),
-			NULL, 0, NI_NUMERICHOST);
-		Tcl_DStringAppendElement(dsPtr, host);
+		    found = 1;
+		    getnameinfo(&sockname.sa, size, host, sizeof(host),
+			    NULL, 0, NI_NUMERICHOST);
+		    Tcl_DStringAppendElement(dsPtr, host);
 
-		/*
-		 * We don't want to resolve INADDR_ANY and sin6addr_any; they
-		 * can sometimes cause problems (and never have a name).
-		 */
-		flags |= NI_NUMERICSERV;
-		if (sockname.sa.sa_family == AF_INET) {
-		    if (sockname.sa4.sin_addr.s_addr == INADDR_ANY) {
-			flags |= NI_NUMERICHOST;
+		    /*
+		     * We don't want to resolve INADDR_ANY and sin6addr_any; they
+		     * can sometimes cause problems (and never have a name).
+		     */
+		    flags |= NI_NUMERICSERV;
+		    if (sockname.sa.sa_family == AF_INET) {
+			if (sockname.sa4.sin_addr.s_addr == INADDR_ANY) {
+			    flags |= NI_NUMERICHOST;
+			}
+		    } else if (sockname.sa.sa_family == AF_INET6) {
+			if ((IN6_ARE_ADDR_EQUAL(&sockname.sa6.sin6_addr,
+				    &in6addr_any)) ||
+				(IN6_IS_ADDR_V4MAPPED(&sockname.sa6.sin6_addr)
+				&& sockname.sa6.sin6_addr.s6_addr[12] == 0
+				&& sockname.sa6.sin6_addr.s6_addr[13] == 0
+				&& sockname.sa6.sin6_addr.s6_addr[14] == 0
+				&& sockname.sa6.sin6_addr.s6_addr[15] == 0)) {
+			    flags |= NI_NUMERICHOST;
+			}
 		    }
-		} else if (sockname.sa.sa_family == AF_INET6) {
-		    if ((IN6_ARE_ADDR_EQUAL(&sockname.sa6.sin6_addr,
-				&in6addr_any)) ||
-			    (IN6_IS_ADDR_V4MAPPED(&sockname.sa6.sin6_addr)
-			    && sockname.sa6.sin6_addr.s6_addr[12] == 0
-			    && sockname.sa6.sin6_addr.s6_addr[13] == 0
-			    && sockname.sa6.sin6_addr.s6_addr[14] == 0
-			    && sockname.sa6.sin6_addr.s6_addr[15] == 0)) {
-			flags |= NI_NUMERICHOST;
-		    }
+		    getnameinfo(&sockname.sa, size, host, sizeof(host),
+			    port, sizeof(port), flags);
+		    Tcl_DStringAppendElement(dsPtr, host);
+		    Tcl_DStringAppendElement(dsPtr, port);
 		}
-		getnameinfo(&sockname.sa, size, host, sizeof(host),
-			port, sizeof(port), flags);
-		Tcl_DStringAppendElement(dsPtr, host);
-		Tcl_DStringAppendElement(dsPtr, port);
 	    }
 	}
 	if (found) {
-	    if (len == 0) {
-		Tcl_DStringEndSublist(dsPtr);
-	    } else {
+	    if (len) {
 		return TCL_OK;
 	    }
+	    Tcl_DStringEndSublist(dsPtr);
 	} else {
 	    if (interp) {
 		TclWinConvertError((DWORD) WSAGetLastError());
@@ -1628,14 +1647,14 @@ TcpConnect(
     /* We were called by the event procedure and continue our loop */
     int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-    
+
     if (async_callback) {
         goto reenter;
     }
-    
+
     for (statePtr->addr = statePtr->addrlist; statePtr->addr != NULL;
 	 statePtr->addr = statePtr->addr->ai_next) {
-	
+
         for (statePtr->myaddr = statePtr->myaddrlist; statePtr->myaddr != NULL;
 	     statePtr->myaddr = statePtr->myaddr->ai_next) {
 
@@ -1651,7 +1670,7 @@ TcpConnect(
             /*
              * Close the socket if it is still open from the last unsuccessful
              * iteration.
-             */	    
+             */
 	    if (statePtr->sockets->fd != INVALID_SOCKET) {
 		closesocket(statePtr->sockets->fd);
 	    }
@@ -1664,9 +1683,9 @@ TcpConnect(
 	     */
 	    statePtr->notifierConnectError = 0;
 	    Tcl_SetErrno(0);
-	    
+
 	    statePtr->sockets->fd = socket(statePtr->myaddr->ai_family, SOCK_STREAM, 0);
-	    
+
 	    /* Free list lock */
 	    SetEvent(tsdPtr->socketListLock);
 
@@ -1735,7 +1754,7 @@ TcpConnect(
 		 * thread.
 		 */
 		statePtr->selectEvents |= FD_CONNECT;
-		
+
 		/*
 		 * Free list lock
 		 */
@@ -1749,7 +1768,7 @@ TcpConnect(
 	    /*
 	     * Attempt to connect to the remote socket.
 	     */
-	    
+
 	    connect(statePtr->sockets->fd, statePtr->addr->ai_addr,
 		    statePtr->addr->ai_addrlen);
 
@@ -1790,7 +1809,7 @@ TcpConnect(
 	     * the FD_CONNECT asyncroneously
 	     */
 	    tsdPtr->pendingTcpState = NULL;
-	    
+
 	    if (Tcl_GetErrno() == 0) {
 		goto out;
 	    }
@@ -1816,12 +1835,12 @@ out:
 	 * Set up the select mask for read/write events.
 	 */
 	statePtr->selectEvents = FD_READ | FD_WRITE | FD_CLOSE;
-        
+
 	/*
 	 * Register for interest in events in the select mask. Note that this
 	 * automatically places the socket into non-blocking mode.
 	 */
-        
+
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 		    (LPARAM) statePtr);
     } else {
@@ -2073,20 +2092,20 @@ Tcl_OpenTcpServer(
 	    TclWinConvertError((DWORD) WSAGetLastError());
 	    continue;
 	}
-	
+
 	/*
 	 * Win-NT has a misfeature that sockets are inherited in child
 	 * processes by default. Turn off the inherit bit.
 	 */
-	
+
 	SetHandleInformation((HANDLE) sock, HANDLE_FLAG_INHERIT, 0);
-	
+
 	/*
 	 * Set kernel space buffering
 	 */
-	
+
 	TclSockMinimumBuffers((void *)sock, TCP_BUFFER_SIZE);
-	
+
 	/*
 	 * Make sure we use the same port when opening two server sockets
 	 * for IPv4 and IPv6.
@@ -2094,12 +2113,12 @@ Tcl_OpenTcpServer(
 	 * As sockaddr_in6 uses the same offset and size for the port
 	 * member as sockaddr_in, we can handle both through the IPv4 API.
 	 */
-	
+
 	if (port == 0 && chosenport != 0) {
 	    ((struct sockaddr_in *) addrPtr->ai_addr)->sin_port =
 		htons(chosenport);
 	}
-	
+
 	/*
 	 * Bind to the specified port. Note that we must not call
 	 * setsockopt with SO_REUSEADDR because Microsoft allows addresses
@@ -2109,7 +2128,7 @@ Tcl_OpenTcpServer(
 	 * set into nonblocking mode. If there is trouble, this is one
 	 * place to look for bugs.
 	 */
-	
+
 	if (bind(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
 	    == SOCKET_ERROR) {
 	    TclWinConvertError((DWORD) WSAGetLastError());
@@ -2119,29 +2138,29 @@ Tcl_OpenTcpServer(
 	if (port == 0 && chosenport == 0) {
 	    address sockname;
 	    socklen_t namelen = sizeof(sockname);
-	    
+
 	    /*
 	     * Synchronize port numbers when binding to port 0 of multiple
 	     * addresses.
 	     */
-	    
+
 	    if (getsockname(sock, &sockname.sa, &namelen) >= 0) {
 		chosenport = ntohs(sockname.sa4.sin_port);
 	    }
 	}
-	
+
 	/*
 	 * Set the maximum number of pending connect requests to the max
 	 * value allowed on each platform (Win32 and Win32s may be
 	 * different, and there may be differences between TCP/IP stacks).
 	 */
-	
+
 	if (listen(sock, SOMAXCONN) == SOCKET_ERROR) {
 	    TclWinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
 	    continue;
 	}
-	
+
 	if (statePtr == NULL) {
 	    /*
 	     * Add this socket to the global list of sockets.
@@ -2167,9 +2186,9 @@ error:
 	/*
 	 * Set up the select mask for connection request events.
 	 */
-	
+
 	statePtr->selectEvents = FD_ACCEPT;
-	
+
 	/*
 	 * Register for interest in events in the select mask. Note that this
 	 * automatically places the socket into non-blocking mode.
@@ -2633,7 +2652,7 @@ SocketEventProc(
 	    WaitForConnect(statePtr,NULL);
 
 	} else {
-	    
+
 	    /*
 	     * No async connect reenter pending. Just clear event.
 	     */
@@ -2662,7 +2681,7 @@ SocketEventProc(
 	     * network stack conditions that can result in FD_ACCEPT but a subsequent
 	     * failure on accept() by the time we get around to it.
 	     * Access to sockets (acceptEventCount, readyEvents) in socketList
-	     * is still protected by the lock (prevents reintroduction of 
+	     * is still protected by the lock (prevents reintroduction of
 	     * SF Tcl Bug 3056775.
 	     */
 
@@ -2694,9 +2713,9 @@ SocketEventProc(
 	    return 1;
 	}
 
-	/* Loop terminated with no sockets accepted; clear the ready mask so 
-	 * we can detect the next connection request. Note that connection 
-	 * requests are level triggered, so if there is a request already 
+	/* Loop terminated with no sockets accepted; clear the ready mask so
+	 * we can detect the next connection request. Note that connection
+	 * requests are level triggered, so if there is a request already
 	 * pending, a new event will be generated.
 	 */
 	statePtr->acceptEventCount = 0;
@@ -2739,7 +2758,7 @@ SocketEventProc(
 	if ( statePtr->flags & TCP_ASYNC_FAILED ) {
 
 	    mask |= TCL_READABLE;
-	    
+
 	} else {
 	    fd_set readFds;
 	    struct timeval timeout;
@@ -2777,11 +2796,11 @@ SocketEventProc(
     if (events & FD_WRITE) {
 	mask |= TCL_WRITABLE;
     }
-    
+
     /*
      * Call registered event procedures
      */
-     
+
     if (mask) {
 	Tcl_NotifyChannel(statePtr->channel, mask);
     }
@@ -2793,7 +2812,7 @@ SocketEventProc(
  *
  * AddSocketInfoFd --
  *
- *	This function adds a SOCKET file descriptor to the 'sockets' linked 
+ *	This function adds a SOCKET file descriptor to the 'sockets' linked
  *	list of a TcpState structure.
  *
  * Results:
@@ -2807,7 +2826,7 @@ SocketEventProc(
 
 static void
 AddSocketInfoFd(
-    TcpState *statePtr, 
+    TcpState *statePtr,
     SOCKET socket)
 {
     TcpFdList *fds = statePtr->sockets;
@@ -2821,7 +2840,7 @@ AddSocketInfoFd(
 	while ( fds->next != NULL ) {
 	    fds = fds->next;
 	}
-    
+
 	fds->next = ckalloc(sizeof(TcpFdList));
 	fds = fds->next;
     }
@@ -2832,7 +2851,7 @@ AddSocketInfoFd(
     fds->next = NULL;
 }
 
-    
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2916,7 +2935,7 @@ WaitForSocketEvent(
 
 	/* get statePtr lock */
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-	
+
 	/* Check if event occured */
 	event_found = (statePtr->readyEvents & events);
 
@@ -2927,7 +2946,7 @@ WaitForSocketEvent(
 	if (event_found) {
 	    break;
 	}
-	
+
 	/* Exit loop if event did not occur but this is a non-blocking channel */
 	if (statePtr->flags & TCP_NONBLOCKING) {
 	    *errorCodePtr = EWOULDBLOCK;
@@ -3294,11 +3313,11 @@ TcpThreadActionProc(
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	statePtr->nextPtr = tsdPtr->socketList;
 	tsdPtr->socketList = statePtr;
-	
+
 	if (statePtr == tsdPtr->pendingTcpState) {
 	    tsdPtr->pendingTcpState = NULL;
 	}
-	
+
 	SetEvent(tsdPtr->socketListLock);
 
 	notifyCmd = SELECT;
