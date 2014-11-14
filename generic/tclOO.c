@@ -394,6 +394,7 @@ InitFoundation(
     fPtr->classCls->flags |= ROOT_CLASS;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
+    TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
     AddRef(fPtr->objectCls->thisPtr);
     AddRef(fPtr->objectCls);
 
@@ -1008,6 +1009,12 @@ ReleaseClassContents(
 	    }
 	    if (!Deleted(instancePtr)) {
 		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+		/*
+		 * Tcl_DeleteCommandFromToken() may have done to whole
+		 * job for us.  Roll back and check again.
+		 */
+		i--;
+		continue;
 	    }
 	    DelRef(instancePtr);
 	}
@@ -1280,6 +1287,9 @@ TclOORemoveFromInstances(
 
   removeInstance:
     if (Deleted(clsPtr->thisPtr)) {
+	if (!IsRootClass(clsPtr)) {
+	    DelRef(clsPtr->instances.list[i]);
+	}
 	clsPtr->instances.list[i] = NULL;
     } else {
 	clsPtr->instances.num--;

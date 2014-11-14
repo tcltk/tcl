@@ -1,4 +1,4 @@
-#------------------------------------------------------------- -*- makefile -*-
+#-------------------------------------------------------------
 # makefile.vc --
 #
 #	Microsoft Visual C++ makefile for use with nmake.exe v1.62+ (VC++ 5.0+)
@@ -281,6 +281,7 @@ COREOBJS = \
 	$(TMP_DIR)\tclConfig.obj \
 	$(TMP_DIR)\tclDate.obj \
 	$(TMP_DIR)\tclDictObj.obj \
+	$(TMP_DIR)\tclDisassemble.obj \
 	$(TMP_DIR)\tclEncoding.obj \
 	$(TMP_DIR)\tclEnsemble.obj \
 	$(TMP_DIR)\tclEnv.obj \
@@ -1229,3 +1230,7 @@ realclean: hose
 hose:
 	@echo Hosing $(OUT_DIR)\* ...
 	@if exist $(OUT_DIR)\nul $(RMDIR) $(OUT_DIR)
+
+# Local Variables:
+# mode: makefile
+# End:

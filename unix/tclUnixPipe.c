@@ -229,7 +229,7 @@ TclpCreateTempFile(
 Tcl_Obj *
 TclpTempFileName(void)
 {
-    Tcl_Obj *nameObj = Tcl_NewObj();
+    Tcl_Obj *retVal, *nameObj = Tcl_NewObj();
     int fd;
 
     Tcl_IncrRefCount(nameObj);
@@ -242,7 +242,9 @@ TclpTempFileName(void)
     fcntl(fd, F_SETFD, FD_CLOEXEC);
     TclpObjDeleteFile(nameObj);
     close(fd);
-    return nameObj;
+    retVal = Tcl_DuplicateObj(nameObj);
+    Tcl_DecrRefCount(nameObj);
+    return retVal;
 }
 
 /*
@@ -259,7 +261,7 @@ TclpTempFileName(void)
  *
  * On Unix, it works to load a shared object from a file of any name, so this
  * function is merely a thin wrapper around TclpTempFileName().
- *	
+ *
  *----------------------------------------------------------------------------
  */
 
@@ -967,7 +969,7 @@ PipeClose2Proc(
 	    pipePtr->outFile = NULL;
 	}
     }
-    
+
     /*
      * If half-closing, stop here.
      */

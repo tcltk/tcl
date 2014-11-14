@@ -13,13 +13,15 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-if {[catch {package require tcltest 2}]} {
-    puts stderr "Skipping tests in [info script].  tcltest 2 required."
-    return
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
 }
 
 ::tcltest::loadTestedCommands
 catch [list package require -exact Tcltest [info patchlevel]]
+
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
@@ -1479,6 +1481,39 @@ test io-12.6 {ReadChars: too many chars read} {
     chan configure $c -encoding utf-8
     while {![eof $c]} {
         read $c 15
+    }
+    close $c
+} {}
+test io-12.7 {ReadChars: too many chars read [bc5b790099]} {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [encoding convertto utf-8 \
+                        [string repeat \uBEEF 10]....\uBEEF]
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+    set c [chan create read [namespace which driver]]
+    chan configure $c -encoding utf-8
+    while {![eof $c]} {
+        read $c 7
     }
     close $c
 } {}
@@ -4076,7 +4111,7 @@ test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
 } {{hello
 } {hello
 }}
-test io-32.11.1 {Tcl_Read from a pipe} {stdio openpipe} {
+test io-32.11.2 {Tcl_Read from a pipe} {stdio openpipe} {
     file delete $path(pipe)
     set f1 [open $path(pipe) w]
     puts $f1 {chan configure stdout -translation crlf}
@@ -4290,6 +4325,110 @@ test io-33.10 {Tcl_Gets, exercising double buffering} {
     close $f
     set y
 } 300
+test io-33.11 {TclGetsObjBinary, [10dc6daa37]} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .......
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+		if {$n > 3} {set n 3}
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+} -body {
+    set c [chan create read [namespace which driver]]
+    chan configure $c -translation binary -blocking 0
+    list [gets $c] [gets $c] [gets $c] [gets $c]
+} -cleanup {
+    close $c
+    rename driver {}
+} -result {{} {} {} .......}
+test io-33.12 {Tcl_GetsObj, [10dc6daa37]} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .......
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+		if {$n > 3} {set n 3}
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+} -body {
+    set c [chan create read [namespace which driver]]
+    chan configure $c -blocking 0
+    list [gets $c] [gets $c] [gets $c] [gets $c]
+} -cleanup {
+    close $c
+    rename driver {}
+} -result {{} {} {} .......}
+test io-33.13 {Tcl_GetsObj, [10dc6daa37]} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [string repeat \
+                        [string repeat . 64]\n[string repeat . 25] 2]
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                if {$n > 65} {set n 65}
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+} -body {
+    set c [chan create read [namespace which driver]]
+    chan configure $c -blocking 0
+    list [gets $c] [gets $c] [gets $c] [gets $c] [gets $c]
+} -cleanup {
+    close $c
+    rename driver {}
+} -result [list [string repeat . 64] {} [string repeat . 89] \
+	[string repeat . 25] {}]
 
 # Test Tcl_Seek and Tcl_Tell.
 
@@ -4948,7 +5087,10 @@ test io-36.1 {Tcl_InputBlocked on nonblocking pipe} {stdio openpipe} {
 test io-36.1.1 {Tcl_InputBlocked on nonblocking binary pipe} {stdio openpipe} {
     set f1 [open "|[list [interpreter]]" r+]
     chan configure $f1 -encoding binary -translation lf -eofchar {}
-    puts $f1 {puts hello_from_pipe}
+    puts $f1 {
+	chan configure stdout -encoding binary -translation lf -eofchar {}
+	puts hello_from_pipe
+    }
     flush $f1
     gets $f1
     fconfigure $f1 -blocking off -buffering full
@@ -7610,6 +7752,154 @@ test io-53.12 {CopyData: foreground short reads, aka bug 3096275} {stdio unix op
     close $f1
     list $::done $ch
 } {ok A}
+test io-53.13 {TclCopyChannel: read error reporting} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                return {initialize finalize watch read}
+            }
+            finalize {
+                return
+            }
+            watch {}
+            read {
+		error FAIL
+            }
+        }
+    }
+    set outFile [makeFile {} out]
+} -body {
+    set in [chan create read [namespace which driver]]
+    chan configure $in -translation binary
+    set out [open $outFile wb]
+    chan copy $in $out
+} -cleanup {
+    catch {close $in}
+    catch {close $out}
+    removeFile out
+    rename driver {}
+} -result {error reading "*": *} -returnCodes error -match glob
+test io-53.14 {TclCopyChannel: write error reporting} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                return {initialize finalize watch write}
+            }
+            finalize {
+                return
+            }
+            watch {}
+            write {
+                error FAIL
+            }
+        }
+    }
+    set inFile [makeFile {aaa} in]
+} -body {
+    set in [open $inFile rb]
+    set out [chan create write [namespace which driver]]
+    chan configure $out -translation binary
+    chan copy $in $out
+} -cleanup {
+    catch {close $in}
+    catch {close $out}
+    removeFile in
+    rename driver {}
+} -result {error writing "*": *} -returnCodes error -match glob
+test io-53.15 {[ed29c4da21] DoRead: fblocked seen as error} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        variable blocked
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [encoding convertto utf-8 \
+                        [string repeat a 100]]
+                set blocked($chan) 1
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan) blocked($chan)
+                return
+            }
+            watch {}
+            read {
+                if {$blocked($chan)} {
+                    set blocked($chan) [expr {!$blocked($chan)}]
+                    return -code error EAGAIN
+                }
+                set n [lindex $args 1]
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+    set c [chan create read [namespace which driver]]
+    chan configure $c -encoding utf-8
+    set out [makeFile {} out]
+    set outChan [open $out w]
+    chan configure $outChan -encoding utf-8
+} -body {
+    chan copy $c $outChan
+} -cleanup {
+    close $outChan
+    close $c
+    removeFile out
+} -result 100
+test io-53.16 {[ed29c4da21] MBRead: fblocked seen as error} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        variable blocked
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [encoding convertto utf-8 \
+                        [string repeat a 100]]
+                set blocked($chan) 1
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan) blocked($chan)
+                return
+            }
+            watch {}
+            read {
+                if {$blocked($chan)} {
+                    set blocked($chan) [expr {!$blocked($chan)}]
+                    return -code error EAGAIN
+                }
+                set n [lindex $args 1]
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+    set c [chan create read [namespace which driver]]
+    chan configure $c -encoding utf-8 -translation lf
+    set out [makeFile {} out]
+    set outChan [open $out w]
+    chan configure $outChan -encoding utf-8 -translation lf
+} -body {
+    chan copy $c $outChan
+} -cleanup {
+    close $outChan
+    close $c
+    removeFile out
+} -result 100
 
 test io-54.1 {Recursive channel events} {socket fileevent} {
     # This test checks to see if file events are delivered during recursive
@@ -7860,12 +8150,12 @@ test io-59.1 {Thread reference of channels} {testmainthread testchannel} {
     string equal $result [testmainthread]
 } {1}
 
-test io-60.1 {writing illegal utf sequences} {openpipe fileevent} {
+test io-60.1 {writing illegal utf sequences} {openpipe fileevent testbytestring} {
     # This test will hang in older revisions of the core.
 
     set out [open $path(script) w]
     puts $out {
-	puts [encoding convertfrom identity \xe2]
+	puts [testbytestring \xe2]
 	exit 1
     }
     proc readit {pipe} {
@@ -8174,6 +8464,26 @@ test io-73.2 {channel Tcl_Obj SetChannelFromAny, bug 2407783} -setup {
 } -cleanup {
     close $f
 } -result {1 {can not find channel named "@@"}}
+
+test io-73.3 {[5adc350683] [gets] after EOF} -setup {
+    set fn [makeFile {} io-73.3]
+    set rfd [open $fn r]
+    set wfd [open $fn a]
+    chan configure $wfd -buffering line
+    read $rfd
+} -body {
+    set result [eof $rfd]
+    puts $wfd "more data"
+    lappend result [eof $rfd]
+    lappend result [gets $rfd]
+    lappend result [eof $rfd]
+    lappend result [gets $rfd]
+    lappend result [eof $rfd]
+} -cleanup {
+    close $wfd
+    close $rfd
+    removeFile io-73.3
+} -result {1 1 {more data} 0 {} 1}
 
 # ### ### ### ######### ######### #########
 
