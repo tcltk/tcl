@@ -438,11 +438,11 @@ WaitForConnect(
     /*
      * Check if an async connect is running. If not return ok
      */
-     
+
     if (!(statePtr->flags & TCP_ASYNC_PENDING)) {
 	return 0;
     }
-    
+
     if (errorCodePtr == NULL || (statePtr->flags & TCP_NONBLOCKING)) {
         timeout = 0;
     } else {
@@ -601,7 +601,7 @@ TcpCloseProc(
      * handlers are already deleted in the generic IO channel closing code
      * that called this function, so we do not have to delete them here.
      */
-    
+
     for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
 	if (fds->fd < 0) {
 	    continue;
@@ -610,7 +610,7 @@ TcpCloseProc(
 	if (close(fds->fd) < 0) {
 	    errorCode = errno;
 	}
-    
+
     }
     fds = statePtr->fds.next;
     while (fds != NULL) {
@@ -823,7 +823,20 @@ TcpGetOptionProc(
         address peername;
         socklen_t size = sizeof(peername);
 
-	if (getpeername(statePtr->fds.fd, &peername.sa, &size) >= 0) {
+	if ( (statePtr->flags & TCP_ASYNC_CONNECT) ) {
+	    /*
+	     * In async connect output an empty string
+	     */
+	    if (len == 0) {
+		Tcl_DStringAppendElement(dsPtr, "-peername");
+		Tcl_DStringAppendElement(dsPtr, "");
+	    } else {
+		return TCL_OK;
+	    }
+	} else if (getpeername(statePtr->fds.fd, &peername.sa, &size) >= 0) {
+	    /*
+	     * Peername fetch succeeded - output list
+	     */
 	    if (len == 0) {
 		Tcl_DStringAppendElement(dsPtr, "-peername");
 		Tcl_DStringStartSublist(dsPtr);
@@ -863,11 +876,18 @@ TcpGetOptionProc(
 	    Tcl_DStringAppendElement(dsPtr, "-sockname");
 	    Tcl_DStringStartSublist(dsPtr);
 	}
-	for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
-	    size = sizeof(sockname);
-	    if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
-		found = 1;
-                TcpHostPortList(interp, dsPtr, sockname, size);
+	if ( (statePtr->flags & TCP_ASYNC_CONNECT) ) {
+	    /*
+	     * In async connect output an empty string
+	     */
+	     found = 1;
+	} else {
+	    for (fds = &statePtr->fds; fds != NULL; fds = fds->next) {
+		size = sizeof(sockname);
+		if (getsockname(fds->fd, &(sockname.sa), &size) >= 0) {
+		    found = 1;
+		    TcpHostPortList(interp, dsPtr, sockname, size);
+		}
 	    }
 	}
         if (found) {
@@ -954,7 +974,7 @@ TcpWatchProc(
          */
     	return;
     }
-     
+
     if (statePtr->flags & TCP_ASYNC_PENDING) {
         /* Async sockets use a FileHandler internally while connecting, so we
          * need to cache this request until the connection has succeeded. */
@@ -1091,7 +1111,7 @@ TcpConnect(
         for (statePtr->myaddr = statePtr->myaddrlist; statePtr->myaddr != NULL;
                 statePtr->myaddr = statePtr->myaddr->ai_next) {
             int reuseaddr = 1;
-            
+
 	    /*
 	     * No need to try combinations of local and remote addresses of
 	     * different families.
@@ -1121,15 +1141,15 @@ TcpConnect(
 	     * Set the close-on-exec flag so that the socket will not get
 	     * inherited by child processes.
 	     */
-	    
+
 	    fcntl(statePtr->fds.fd, F_SETFD, FD_CLOEXEC);
-	    
+
 	    /*
 	     * Set kernel space buffering
 	     */
-	    
+
 	    TclSockMinimumBuffers(INT2PTR(statePtr->fds.fd), SOCKET_BUFSIZE);
-    
+
 	    if (async) {
                 ret = TclUnixSetBlockingMode(statePtr->fds.fd,TCL_MODE_NONBLOCKING);
                 if (ret < 0) {
@@ -1140,7 +1160,7 @@ TcpConnect(
             /* Gotta reset the error variable here, before we use it for the
              * first time in this iteration. */
             error = 0;
-            
+
             (void) setsockopt(statePtr->fds.fd, SOL_SOCKET, SO_REUSEADDR,
                     (char *) &reuseaddr, sizeof(reuseaddr));
             ret = bind(statePtr->fds.fd, statePtr->myaddr->ai_addr,
@@ -1156,7 +1176,7 @@ TcpConnect(
 	     * will set up a file handler on the socket if she is interested
 	     * in being informed when the connect completes.
 	     */
-	    
+
 	    ret = connect(statePtr->fds.fd, statePtr->addr->ai_addr,
                         statePtr->addr->ai_addrlen);
             if (ret < 0) error = errno;
@@ -1439,28 +1459,28 @@ Tcl_OpenTcpServer(
 	    }
 	    continue;
 	}
-	
+
 	/*
 	 * Set the close-on-exec flag so that the socket will not get
 	 * inherited by child processes.
 	 */
-	
+
 	fcntl(sock, F_SETFD, FD_CLOEXEC);
-	
+
 	/*
 	 * Set kernel space buffering
 	 */
-	
+
 	TclSockMinimumBuffers(INT2PTR(sock), SOCKET_BUFSIZE);
-	
+
 	/*
 	 * Set up to reuse server addresses automatically and bind to the
 	 * specified port.
 	 */
-	
-	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR, 
+
+	(void) setsockopt(sock, SOL_SOCKET, SO_REUSEADDR,
 		(char *) &reuseaddr, sizeof(reuseaddr));
-	
+
         /*
          * Make sure we use the same port number when opening two server
          * sockets for IPv4 and IPv6 on a random port.
@@ -1489,7 +1509,7 @@ Tcl_OpenTcpServer(
 	    if (howfar < BIND) {
 		howfar = BIND;
 		my_errno = errno;
-	    }       
+	    }
             close(sock);
             sock = -1;
             continue;
@@ -1521,7 +1541,7 @@ Tcl_OpenTcpServer(
             /*
              * Allocate a new TcpState for this socket.
              */
-            
+
             statePtr = ckalloc(sizeof(TcpState));
             memset(statePtr, 0, sizeof(TcpState));
             statePtr->acceptProc = acceptProc;
@@ -1536,12 +1556,12 @@ Tcl_OpenTcpServer(
         newfds->fd = sock;
         newfds->statePtr = statePtr;
         fds = newfds;
-	
+
         /*
          * Set up the callback mechanism for accepting connections from new
          * clients.
          */
-        
+
         Tcl_CreateFileHandler(sock, TCL_READABLE, TcpAccept, fds);
     }
 
@@ -1600,7 +1620,7 @@ TcpAccept(
     socklen_t len;		/* For accept interface */
     char channelName[SOCK_CHAN_LENGTH];
     char host[NI_MAXHOST], port[NI_MAXSERV];
-    
+
     len = sizeof(addr);
     newsock = accept(fds->fd, &addr.sa, &len);
     if (newsock < 0) {
