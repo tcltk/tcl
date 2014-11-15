@@ -300,17 +300,6 @@ int ZvfsReadTOCStart(
   return TCL_OK;
 }
 
-int ZvfsReadTOC(
-  Tcl_Interp *interp,    /* Leave error messages in this interpreter */
-  Tcl_Channel chan,
-  ZFile **pList
-) {
-    int iStart;
-    return ZvfsReadTOCStart( interp, chan, pList, &iStart);
-}
-
-
-
 /************************************************************************/
 /************************************************************************/
 /************************************************************************/
@@ -334,7 +323,7 @@ static int ZvfsDumpObjCmd(
   char *zFilename;
   Tcl_Channel chan;
   ZFile *pList;
-  int rc;
+  int rc,zipstart;
   Tcl_Obj *pResult;
 
   if( objc!=2 ){
@@ -344,7 +333,7 @@ static int ZvfsDumpObjCmd(
   zFilename = Tcl_GetString(objv[1]);
   chan = Tcl_OpenFileChannel(interp, zFilename, "r", 0);
   if( chan==0 ) return TCL_ERROR;
-  rc = ZvfsReadTOC(interp, chan, &pList);
+  rc = ZvfsReadTOCStart(interp, chan, &pList,&zipstart);
   if( rc==TCL_ERROR ){
     deleteZFileList(pList);
     return rc;
@@ -652,7 +641,7 @@ static int ZvfsAppendObjCmd(
   char *zArchive;
   Tcl_Channel chan;
   ZFile *pList = NULL, *pToc;
-  int rc = TCL_OK, i;
+  int rc = TCL_OK, i,zipstart;
 
   /* Open the archive and read the table of contents
   */
@@ -679,7 +668,7 @@ static int ZvfsAppendObjCmd(
       /* Null file is ok, we're creating new one. */
   } else {
     Tcl_Seek(chan, 0, SEEK_SET);
-    rc = ZvfsReadTOC(interp, chan, &pList);
+    rc = ZvfsReadTOCStart(interp, chan, &pList,&zipstart);
     if( rc==TCL_ERROR ){
       deleteZFileList(pList);
       Tcl_Close(interp, chan);
@@ -786,6 +775,7 @@ static int ZvfsAddObjCmd(
   int tobjc;
   Tcl_Obj **tobjv;
   Tcl_Obj *varObj = NULL;
+  int zipstart;
   
   /* Open the archive and read the table of contents
   */
@@ -826,7 +816,7 @@ static int ZvfsAddObjCmd(
       /* Null file is ok, we're creating new one. */
   } else {
     Tcl_Seek(chan, 0, SEEK_SET);
-    rc = ZvfsReadTOC(interp, chan, &pList);
+    rc = ZvfsReadTOCStart(interp, chan, &pList,&zipstart);
     if( rc==TCL_ERROR ){
       deleteZFileList(pList);
       Tcl_Close(interp, chan);

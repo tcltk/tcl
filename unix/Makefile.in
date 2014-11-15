@@ -890,6 +890,10 @@ install-libraries: libraries
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
 
+
+	@echo "Installing package zvfstools 0.1 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/zvfstools/zvfstools.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/zvfstools-0.1.tm;
+
 	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
 		$(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/encoding; \
