@@ -160,7 +160,7 @@ static time_t DosTimeDate(int dosDate, int dosTime){
 }
 
 /* Return count of char ch in str */
-int strchrcnt(char *str, char ch) {
+static int strchrcnt(char *str, char ch) {
   int cnt=0;
   char *cp=str;
   while ((cp=strchr(cp,ch))) { cp++; cnt++; }

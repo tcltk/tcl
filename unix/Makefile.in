@@ -285,7 +285,7 @@ LIBS		= @TCL_LIBS@
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 ${AC_FLAGS} ${PROTO_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
 
-TCLSH_OBJS = tclAppInit.o tclZipVfs.o tclZipVfsBoot.o
+TCLSH_OBJS = tclAppInit.o tclZipVfs.o tclZipVfsBoot.o tclZipTools.o
 
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o
@@ -662,14 +662,14 @@ basekit.vfs:
 	    "$(UNIX_DIR)/basekit.vfs/boot/tcl" "$(TOP_DIR)"  unix
 
 # Builds an executable directly from the Tcl sources
-${BASEKIT_EXE}: ${TCLSH_OBJS} ${OBJS} ${ZLIB_OBJS} basekit.vfs
+${BASEKIT_EXE}: ${TCLSH_OBJS} ${OBJS} ${ZLIB_OBJS} ${TCL_EXE} basekit.vfs
 
 	${CC} ${CFLAGS} ${LDFLAGS} \
 		${TCLSH_OBJS} ${OBJS} ${ZLIB_OBJS} \
 		${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${BASEKIT_EXE}_bare
-	@echo zipping...
-	@$(TCL_EXE) ../tools/mkzip.tcl ${BASEKIT_EXE} \
+	@echo zipping... $(TCL_EXE)
+	./$(TCL_EXE) ../tools/mkzip.tcl ${BASEKIT_EXE} \
 		-runtime ${BASEKIT_EXE}_bare \
 		-directory basekit.vfs
 	chmod a+x ${BASEKIT_EXE}	
@@ -1361,6 +1361,9 @@ tclZipVfs.o:  $(GENERIC_DIR)/tclZipVfs.c
 
 tclZipVfsBoot.o:  $(GENERIC_DIR)/tclZipVfsBoot.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclZipVfsBoot.c
+
+tclZipTools.o:  $(GENERIC_DIR)/tclZipTools.c
+	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZipTools.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
