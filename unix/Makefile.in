@@ -168,12 +168,7 @@ INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 # Do not use SHELL_ENV for NATIVE_TCLSH unless it is the tclsh being built.
 EXE_SUFFIX		= @EXEEXT@
 TCL_EXE			= tclsh${EXE_SUFFIX}
-ifeq ($(SHARED_BUILD),0)
-TCLZSH_BASE		= tclzshs
-else
-TCLZSH_BASE		= tclzshd
-endif
-TCLZSH_EXE		= ${TCLZSH_BASE}${EXE_SUFFIX}
+BASEKIT_EXE		= basekit${EXE_SUFFIX}
 
 TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 NATIVE_TCLSH		= @TCLSH_PROG@
@@ -290,7 +285,7 @@ LIBS		= @TCL_LIBS@
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 ${AC_FLAGS} ${PROTO_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
 
-TCLSH_OBJS = tclAppInit.o
+TCLSH_OBJS = tclAppInit.o tclZipVfs.o tclZipVfsBoot.o
 
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o
@@ -366,8 +361,6 @@ ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
-
-TCLZSH_OBJS = tclZipShInit.o tclZipVfs.o tclZipVfsBoot.o
 
 OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@
 
@@ -624,7 +617,7 @@ SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 
 all: binaries libraries doc packages
 
-binaries: ${LIB_FILE} ${TCL_EXE} ${TCLZSH_EXE}
+binaries: ${LIB_FILE} ${TCL_EXE} ${BASEKIT_EXE}
 
 libraries:
 
@@ -663,35 +656,24 @@ ${NATIVE_TCLSH}:
 
 # Rather than force an install, pack the files we need into a
 # file system under our control
-tclzsh.vfs:
-	@echo "Building VFS File system in tclzsh.vfs"
+basekit.vfs:
+	@echo "Building VFS File system in basekit.vfs"
 	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
-	    "$(UNIX_DIR)/tclzsh.vfs/boot/tcl" "$(TOP_DIR)"  unix
-
-tclzsh: ${TCLZSH_EXE}
-
-${TCLZSH_BASE}_bare: ${TCLZSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
-	${CC} ${CFLAGS} ${LDFLAGS} \
-		${TCLZSH_OBJS} \
-		@TCL_BUILD_LIB_SPEC@ \
-		${LIBS} @EXTRA_TCLSH_LIBS@ \
-		${CC_SEARCH_FLAGS} -o ${TCLZSH_BASE}_bare
-
-# Builds an executable linked to the Tcl dynamic library
-${TCLZSH_EXE}: ${TCLZSH_BASE}_bare  tclzsh.vfs
-	@$(TCL_EXE) ../tools/mkzip.tcl ${TCLZSH_EXE} \
-		-runtime ${TCLZSH_BASE}_bare \
-		-directory tclzsh.vfs
-	chmod a+x ${TCLZSH_EXE}	
+	    "$(UNIX_DIR)/basekit.vfs/boot/tcl" "$(TOP_DIR)"  unix
 
 # Builds an executable directly from the Tcl sources
-tclzsh-static: ${TCLZSH_OBJS} ${OBJS} ${ZLIB_OBJS} null.zip tclzsh.vfs
+${BASEKIT_EXE}: ${TCLSH_OBJS} ${OBJS} ${ZLIB_OBJS} basekit.vfs
+
 	${CC} ${CFLAGS} ${LDFLAGS} \
-		${TCLZSH_OBJS} ${OBJS} ${ZLIB_OBJS} \
+		${TCLSH_OBJS} ${OBJS} ${ZLIB_OBJS} \
 		${LIBS} @EXTRA_TCLSH_LIBS@ \
-		${CC_SEARCH_FLAGS} -o ${TCLZSH_EXE}
-	cat null.zip >> ${TCLZSH_EXE}
-	cd tclzsh.vfs ; zip -rAq ${UNIX_DIR}/${TCLZSH_EXE} .
+		${CC_SEARCH_FLAGS} -o ${BASEKIT_EXE}_bare
+	@echo zipping...
+	@$(TCL_EXE) ../tools/mkzip.tcl ${BASEKIT_EXE} \
+		-runtime ${BASEKIT_EXE}_bare \
+		-directory basekit.vfs
+	chmod a+x ${BASEKIT_EXE}	
+
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -699,10 +681,10 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 #	$(SHELL) config.status
 
 clean: clean-packages
-	rm -rf tclzsh.vfs null.zip
+	rm -rf basekit.vfs null.zip
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@ \
-		${TCLZSH_EXE} tclzsh*
+		${BASEKIT_EXE} basekit*
 	cd dltest ; $(MAKE) clean
 
 distclean: distclean-packages clean
@@ -846,8 +828,9 @@ install-binaries: binaries
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
-	@echo "Installing ${TCLZSH_EXE} as $(BIN_INSTALL_DIR)/${TCLZSH_BASE}$(VERSION)${EXE_SUFFIX}"
-	@$(INSTALL_PROGRAM) ${TCLZSH_EXE} "$(BIN_INSTALL_DIR)/${TCLZSH_BASE}$(VERSION)${EXE_SUFFIX}"
+	@echo "Installing ${BASEKIT_EXE} as $(BIN_INSTALL_DIR)/${BASEKIT_EXE}$(VERSION)${EXE_SUFFIX}"
+	@$(INSTALL_PROGRAM) ${BASEKIT_EXE} "$(BIN_INSTALL_DIR)/${BASEKIT_EXE}$(VERSION)${EXE_SUFFIX}"
+
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
 	@echo "Installing tclooConfig.sh to $(CONFIG_INSTALL_DIR)/"
@@ -2181,7 +2164,6 @@ BUILD_HTML = \
 .PHONY: install-tzdata install-msgs
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
-.PHONY: tclzsh-static tclzsh
 
 #--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.
