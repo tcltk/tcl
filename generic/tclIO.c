@@ -4578,14 +4578,14 @@ Tcl_GetsObj(
 		     * Skip the raw bytes that make up the '\n'.
 		     */
 
-		    char tmp[1 + TCL_UTF_MAX];
+		    char tmp[TCL_UTF_MAX];
 		    int rawRead;
 
 		    bufPtr = gs.bufPtr;
 		    Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr),
-			    gs.rawRead, statePtr->inputEncodingFlags,
-			    &gs.state, tmp, 1 + TCL_UTF_MAX, &rawRead, NULL,
-			    NULL);
+			    gs.rawRead, statePtr->inputEncodingFlags
+				| TCL_ENCODING_NO_TERMINATE, &gs.state, tmp,
+			    TCL_UTF_MAX, &rawRead, NULL, NULL);
 		    bufPtr->nextRemoved += rawRead;
 		    gs.rawRead -= rawRead;
 		    gs.bytesWrote--;
@@ -4686,8 +4686,9 @@ Tcl_GetsObj(
     }
     statePtr->inputEncodingState = gs.state;
     Tcl_ExternalToUtf(NULL, gs.encoding, RemovePoint(bufPtr), gs.rawRead,
-	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState, dst,
-	    eol - dst + skip + TCL_UTF_MAX, &gs.rawRead, NULL,
+	    statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE,
+	    &statePtr->inputEncodingState, dst,
+	    eol - dst + skip + TCL_UTF_MAX - 1, &gs.rawRead, NULL,
 	    &gs.charsWrote);
     bufPtr->nextRemoved += gs.rawRead;
 
@@ -5219,9 +5220,9 @@ FilterInputBytes(
     }
     gsPtr->state = statePtr->inputEncodingState;
     result = Tcl_ExternalToUtf(NULL, gsPtr->encoding, raw, rawLen,
-	    statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
-	    dst, spaceLeft+1, &gsPtr->rawRead, &gsPtr->bytesWrote,
-	    &gsPtr->charsWrote);
+	    statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE,
+	    &statePtr->inputEncodingState, dst, spaceLeft, &gsPtr->rawRead,
+	    &gsPtr->bytesWrote, &gsPtr->charsWrote);
 
     /*
      * Make sure that if we go through 'gets', that we reset the
@@ -5975,7 +5976,7 @@ ReadChars(
      * a consistent set of results.  This takes the shape of a loop.
      */
 
-    dstLimit = dstNeeded + 1;
+    dstLimit = dstNeeded;
     while (1) {
 	int dstDecoded, dstRead, dstWrote, srcRead, numChars;
 
@@ -5985,9 +5986,10 @@ ReadChars(
 	 */
 
 	int code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		statePtr->inputEncodingFlags & (bufPtr->nextPtr
-		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
-		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
+		(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE)
+		& (bufPtr->nextPtr ? ~0 : ~TCL_ENCODING_END),
+		&statePtr->inputEncodingState, dst, dstLimit, &srcRead,
+		&dstDecoded, &numChars);
 
 	/*
 	 * Perform the translation transformation in place.  Read no more
@@ -6050,7 +6052,7 @@ ReadChars(
 		     * time.
 		     */
 
-		    dstLimit = dstRead + TCL_UTF_MAX;
+		    dstLimit = dstRead - 1 + TCL_UTF_MAX;
 		    statePtr->flags = savedFlags;
 		    statePtr->inputEncodingFlags = savedIEFlags;
 		    statePtr->inputEncodingState = savedState;
@@ -6076,7 +6078,7 @@ ReadChars(
 		 * up back here in this call.
 		 */
 
-		dstLimit = dstRead + TCL_UTF_MAX;
+		dstLimit = dstRead - 1 + TCL_UTF_MAX;
 		statePtr->flags = savedFlags;
 		statePtr->inputEncodingFlags = savedIEFlags;
 		statePtr->inputEncodingState = savedState;
@@ -6093,7 +6095,7 @@ ReadChars(
 	     */
 
 	    if (code != TCL_OK) {
-		char buffer[TCL_UTF_MAX + 2];
+		char buffer[TCL_UTF_MAX + 1];
 		int read, decoded, count;
 
 		/* 
@@ -6105,9 +6107,10 @@ ReadChars(
 		statePtr->inputEncodingState = savedState;
 
 		Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		statePtr->inputEncodingFlags & (bufPtr->nextPtr
-		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
-		buffer, TCL_UTF_MAX + 2, &read, &decoded, &count);
+		(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE)
+		& (bufPtr->nextPtr ? ~0 : ~TCL_ENCODING_END),
+		&statePtr->inputEncodingState, buffer, TCL_UTF_MAX + 1,
+		&read, &decoded, &count);
 
 		if (count == 2) {
 		    if (buffer[1] == '\n') {
@@ -6119,7 +6122,6 @@ ReadChars(
 			bufPtr->nextRemoved += srcRead;
 		    }
 
-		    dst[1] = '\0';
 		    statePtr->inputEncodingFlags &= ~TCL_ENCODING_START;
 
 		    Tcl_SetObjLength(objPtr, numBytes + 1);
@@ -6166,7 +6168,7 @@ ReadChars(
 	     * Tcl_ExternalToUtf() call!
 	     */
 
-	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) + TCL_UTF_MAX - dst;
+	    dstLimit = Tcl_UtfAtIndex(dst, charsToRead) - 1 + TCL_UTF_MAX - dst;
 	    statePtr->flags = savedFlags;
 	    statePtr->inputEncodingFlags = savedIEFlags;
 	    statePtr->inputEncodingState = savedState;
