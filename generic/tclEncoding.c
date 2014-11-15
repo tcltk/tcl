@@ -1203,8 +1203,10 @@ Tcl_ExternalToUtf(
 				 * output buffer. */
 {
     const Encoding *encodingPtr;
-    int result, srcRead, dstWrote, dstChars;
+    int result, srcRead, dstWrote, dstChars = 0;
     int noTerminate = flags & TCL_ENCODING_NO_TERMINATE;
+    int charLimited = (flags & TCL_ENCODING_CHAR_LIMIT) && dstCharsPtr;
+    int maxChars = INT_MAX;
     Tcl_EncodingState state;
 
     if (encoding == NULL) {
@@ -1229,6 +1231,9 @@ Tcl_ExternalToUtf(
     }
     if (dstCharsPtr == NULL) {
 	dstCharsPtr = &dstChars;
+	flags &= ~TCL_ENCODING_CHAR_LIMIT;
+    } else if (charLimited) {
+	maxChars = *dstCharsPtr;
     }
 
     if (!noTerminate) {
@@ -1241,9 +1246,20 @@ Tcl_ExternalToUtf(
 
 	dstLen--;
     }
-    result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
-	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
-	    dstCharsPtr);
+    do {
+	int savedFlags = flags;
+	Tcl_EncodingState savedState = *statePtr;
+
+	result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
+		flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
+		dstCharsPtr);
+	if (*dstCharsPtr <= maxChars) {
+	    break;
+	}
+	dstLen = Tcl_UtfAtIndex(dst, maxChars) - 1 - dst + TCL_UTF_MAX;
+	flags = savedFlags;
+	*statePtr = savedState;
+    } while (1);
     if (!noTerminate) {
 	/* ...and then append it */
 
