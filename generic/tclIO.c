@@ -5929,7 +5929,7 @@ ReadChars(
     int savedIEFlags = statePtr->inputEncodingFlags;
     int savedFlags = statePtr->flags;
     char *dst, *src = RemovePoint(bufPtr);
-    int dstLimit, numBytes, srcLen = BytesLeft(bufPtr);
+    int numBytes, srcLen = BytesLeft(bufPtr);
 
     /*
      * One src byte can yield at most one character.  So when the
@@ -5948,14 +5948,14 @@ ReadChars(
      */
     
     int factor = *factorPtr;
-    int dstNeeded = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
+    int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
     (void) TclGetStringFromObj(objPtr, &numBytes);
-    Tcl_AppendToObj(objPtr, NULL, dstNeeded);
+    Tcl_AppendToObj(objPtr, NULL, dstLimit);
     if (toRead == srcLen) {
 	unsigned int size;
 	dst = TclGetStringStorage(objPtr, &size) + numBytes;
-	dstNeeded = size - numBytes;
+	dstLimit = size - numBytes;
     } else {
 	dst = TclGetString(objPtr) + numBytes;
     }
@@ -5976,7 +5976,6 @@ ReadChars(
      * a consistent set of results.  This takes the shape of a loop.
      */
 
-    dstLimit = dstNeeded;
     while (1) {
 	int dstDecoded, dstRead, dstWrote, srcRead, numChars;
 
