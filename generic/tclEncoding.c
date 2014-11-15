@@ -1204,6 +1204,7 @@ Tcl_ExternalToUtf(
 {
     const Encoding *encodingPtr;
     int result, srcRead, dstWrote, dstChars;
+    int noTerminate = flags & TCL_ENCODING_NO_TERMINATE;
     Tcl_EncodingState state;
 
     if (encoding == NULL) {
@@ -1230,17 +1231,24 @@ Tcl_ExternalToUtf(
 	dstCharsPtr = &dstChars;
     }
 
-    /*
-     * If there are any null characters in the middle of the buffer, they will
-     * converted to the UTF-8 null character (\xC080). To get the actual \0 at
-     * the end of the destination buffer, we need to append it manually.
-     */
+    if (!noTerminate) {
+	/*
+	 * If there are any null characters in the middle of the buffer,
+	 * they will converted to the UTF-8 null character (\xC080). To get
+	 * the actual \0 at the end of the destination buffer, we need to
+	 * append it manually.  First make room for it...
+	 */
 
-    dstLen--;
+	dstLen--;
+    }
     result = encodingPtr->toUtfProc(encodingPtr->clientData, src, srcLen,
 	    flags, statePtr, dst, dstLen, srcReadPtr, dstWrotePtr,
 	    dstCharsPtr);
-    dst[*dstWrotePtr] = '\0';
+    if (!noTerminate) {
+	/* ...and then append it */
+
+	dst[*dstWrotePtr] = '\0';
+    }
 
     return result;
 }
