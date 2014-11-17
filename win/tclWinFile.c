@@ -1262,9 +1262,9 @@ WinIsReserved(
     } else if ((path[0] == 'l' || path[0] == 'L')
 	    && (path[1] == 'p' || path[1] == 'P')
 	    && (path[2] == 't' || path[2] == 'T')) {
-	if (path[3] >= '1' && path[3] <= '3') {
+	if (path[3] >= '1' && path[3] <= '9') {
 	    /*
-	     * May have match for 'lpt[1-3]:?'
+	     * May have match for 'lpt[1-9]:?'
 	     */
 
 	    if (path[4] == '\0') {
