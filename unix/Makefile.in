@@ -617,7 +617,7 @@ SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 
 all: binaries libraries doc packages
 
-binaries: ${LIB_FILE} ${TCL_EXE} ${BASEKIT_EXE}
+binaries: ${LIB_FILE} ${TCL_EXE} ${BASEKIT_EXE}_bare basekit.zip
 
 libraries:
 
@@ -660,6 +660,10 @@ basekit.vfs:
 	@echo "Building VFS File system in basekit.vfs"
 	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
 	    "$(UNIX_DIR)/basekit.vfs/boot/tcl" "$(TOP_DIR)"  unix
+
+basekit.zip: basekit.vfs
+	@$(TCL_EXE) ../tools/mkzip.tcl basekit.zip \
+		-directory basekit.vfs
 
 # Builds an executable directly from the Tcl sources
 ${BASEKIT_EXE}: ${TCLSH_OBJS} ${OBJS} ${ZLIB_OBJS} basekit.vfs
@@ -828,8 +832,12 @@ install-binaries: binaries
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
-	@echo "Installing ${BASEKIT_EXE} as $(BIN_INSTALL_DIR)/${BASEKIT_EXE}$(VERSION)${EXE_SUFFIX}"
-	@$(INSTALL_PROGRAM) ${BASEKIT_EXE} "$(BIN_INSTALL_DIR)/${BASEKIT_EXE}$(VERSION)${EXE_SUFFIX}"
+	@echo "Installing ${BASEKIT_EXE}_bare as $(BIN_INSTALL_DIR)/${BASEKIT_EXE}$(VERSION)${EXE_SUFFIX}"
+	@$(INSTALL_PROGRAM) ${BASEKIT_EXE}_bare "$(BIN_INSTALL_DIR)/${BASEKIT_EXE}$(VERSION)${EXE_SUFFIX}"
+
+	@echo "Installing basekit.zip as $(BIN_INSTALL_DIR)/basekit$(VERSION).zip"
+	@$(INSTALL_PROGRAM) basekit.zip "$(BIN_INSTALL_DIR)/basekit$(VERSION).zip"
+
 
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
@@ -889,6 +897,9 @@ install-libraries: libraries
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.13.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
+
+	@echo "Installing package zvfstools 0.1 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/zvfstools/zvfstools.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/zvfstools-0.1.tm;
 
 	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
