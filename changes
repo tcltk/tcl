@@ -8303,11 +8303,11 @@ reported usage of large expressions (porter)
 
 Many optmizations, improvements, and tightened stack management in bytecode.
 
---- Released 8.6.1, September 20, 2013 --- http://core.tcl.tk/tcl/ for details 
+--- Released 8.6.1, September 20, 2013 --- http://core.tcl.tk/tcl/ for details
 
 2013-09-27 (enhancement) improved ::env synchronization (fellows)
 
-2013-10-20 (bug fix)[2835313] segfault from 
+2013-10-20 (bug fix)[2835313] segfault from
 [apply {{} {while 1 {a {*}[return -level 0 -code continue]}}}] (fellows)
 
 2013-10-22 (bug fix)[3556215] [scan %E%G%X] support (fellows)
@@ -8451,7 +8451,7 @@ include ::oo::class (fellows)
 
 2014-08-25 (TIP 429) New command [string cat] (leitgeb,ferrieux)
 
---- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details 
+--- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details
 
 2014-08-28 (bug)[b9e1a3] Correct Method Search Order (nadkarni,fellows)
 => TclOO 1.0.3
