@@ -81,9 +81,7 @@ int tclTraceExec = 0;
 
 static const char *const operatorStrings[] = {
     "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
-    "+", "-", "*", "/", "%", "+", "-", "~", "!",
-    "BUILTIN FUNCTION", "FUNCTION",
-    "", "", "", "", "", "", "", "", "eq", "ne"
+    "+", "-", "*", "/", "%", "+", "-", "~", "!"
 };
 
 /*
@@ -9830,7 +9828,7 @@ IllegalExprOperandType(
 
     if (opcode == INST_EXPON) {
 	operator = "**";
-    } else if (opcode <= INST_STR_NEQ) {
+    } else if (opcode <= INST_LNOT) {
 	operator = operatorStrings[opcode - INST_LOR];
     }
 
