@@ -1438,6 +1438,9 @@ Tcl_ParseVarName(
 		offset = Tcl_UtfToUniChar(utfBytes, &ch);
 	    }
 	    c = UCHAR(ch);
+	    if (c != ch) {
+		break;
+	    }
 	    if (isalnum(c) || (c == '_')) {	/* INTL: ISO only, UCHAR. */
 		src += offset;
 		numBytes -= offset;
