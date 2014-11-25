@@ -80,40 +80,8 @@ int tclTraceExec = 0;
  */
 
 static const char *const operatorStrings[] = {
-        "||",                   /* 0 */
-        "&&",                   /* 1 */
-        "|",                    /* 2 */
-        "^",                    /* 3 */
-        "&",                    /* 4 */
-        "==",                   /* 5 */
-        "!=",                   /* 6 */
-        "<",                    /* 7 */
-        ">",                    /* 8 */
-        "<=",                   /* 9 */
-        ">=",                   /* 10 */
-        "<<",                   /* 11 */
-        ">>",                   /* 12 */
-        "+",                    /* 13 */
-        "-",                    /* 14 */
-        "*",                    /* 15 */
-        "/",                    /* 16 */
-        "%",                    /* 17 */
-        "+",                    /* 18 */
-        "-",                    /* 19 */
-        "~",                    /* 20 */
-        "!",                    /* 21 */
-        "BUILTIN FUNCTION",     /* 22 */
-        "FUNCTION",             /* 23 */
-        "",                     /* 24 */
-        "",                     /* 25 */
-        "",                     /* 26 */
-        "",                     /* 27 */
-        "",                     /* 28 */
-        "",                     /* 29 */
-        "",                     /* 30 */
-        "",                     /* 31 */
-        "eq",                   /* 32 */
-        "ne"                    /* 33 */
+    "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
+    "+", "-", "*", "/", "%", "+", "-", "~", "!"
 };
 
 /*
@@ -9860,8 +9828,8 @@ IllegalExprOperandType(
 
     if (opcode == INST_EXPON) {
 	operator = "**";
-    } else if (opcode <= INST_STR_NEQ) {
-	operator = operatorStrings[opcode - INST_LOR -1];
+    } else if (opcode <= INST_LNOT) {
+	operator = operatorStrings[opcode - INST_LOR];
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
