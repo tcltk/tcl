@@ -1051,6 +1051,12 @@ test parseExpr-22.18 {Bug 3401704} -constraints testexprparser -body {
     testexprparser 0b02 -1
 } -returnCodes error -match glob -result {*invalid binary number*}
 
+test parseExpr-22.19 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser \u0433 -1
+} -returnCodes error -match glob -result {*invalid character*}
+test parseExpr-22.20 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser \u043f -1
+} -returnCodes error -match glob -result {*invalid character*}
 
 # cleanup
 cleanupTests
