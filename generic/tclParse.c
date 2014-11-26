@@ -1344,8 +1344,7 @@ Tcl_ParseVarName(
     Tcl_Token *tokenPtr;
     register const char *src;
     unsigned char c;
-    int varIndex, offset;
-    Tcl_UniChar ch;
+    int varIndex;
     unsigned array;
 
     if ((numBytes == 0) || (start == NULL)) {
@@ -1428,22 +1427,10 @@ Tcl_ParseVarName(
 	tokenPtr->numComponents = 0;
 
 	while (numBytes) {
-	    if (Tcl_UtfCharComplete(src, numBytes)) {
-		offset = Tcl_UtfToUniChar(src, &ch);
-	    } else {
-		char utfBytes[TCL_UTF_MAX];
-
-		memcpy(utfBytes, src, (size_t) numBytes);
-		utfBytes[numBytes] = '\0';
-		offset = Tcl_UtfToUniChar(utfBytes, &ch);
-	    }
-	    c = UCHAR(ch);
-	    if (c != ch) {
-		break;
-	    }
+	    c = UCHAR(*src);
 	    if (isalnum(c) || (c == '_')) {	/* INTL: ISO only, UCHAR. */
-		src += offset;
-		numBytes -= offset;
+		src += 1;
+		numBytes -= 1;
 		continue;
 	    }
 	    if ((c == ':') && (numBytes != 1) && (src[1] == ':')) {
