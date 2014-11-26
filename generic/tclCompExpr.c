@@ -1969,31 +1969,23 @@ ParseLexeme(
 	}
     }
 
-    if (Tcl_UtfCharComplete(start, numBytes)) {
-	scanned = Tcl_UtfToUniChar(start, &ch);
-    } else {
-	char utfBytes[TCL_UTF_MAX];
-	memcpy(utfBytes, start, (size_t) numBytes);
-	utfBytes[numBytes] = '\0';
-	scanned = Tcl_UtfToUniChar(utfBytes, &ch);
-    }
-    if (!isalnum(UCHAR(ch))) {
+    if (!isalnum(UCHAR(*start))) {
+	if (Tcl_UtfCharComplete(start, numBytes)) {
+	    scanned = Tcl_UtfToUniChar(start, &ch);
+	} else {
+	    char utfBytes[TCL_UTF_MAX];
+	    memcpy(utfBytes, start, (size_t) numBytes);
+	    utfBytes[numBytes] = '\0';
+	    scanned = Tcl_UtfToUniChar(utfBytes, &ch);
+	}
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);
 	return scanned;
     }
     end = start;
-    while (isalnum(UCHAR(ch)) || (UCHAR(ch) == '_')) {
-	end += scanned;
-	numBytes -= scanned;
-	if (Tcl_UtfCharComplete(end, numBytes)) {
-	    scanned = Tcl_UtfToUniChar(end, &ch);
-	} else {
-	    char utfBytes[TCL_UTF_MAX];
-	    memcpy(utfBytes, end, (size_t) numBytes);
-	    utfBytes[numBytes] = '\0';
-	    scanned = Tcl_UtfToUniChar(utfBytes, &ch);
-	}
+    while (numBytes && (isalnum(UCHAR(*end)) || (UCHAR(*end) == '_'))) {
+	end += 1;
+	numBytes -= 1;
     }
     *lexemePtr = BAREWORD;
     if (literalPtr) {
