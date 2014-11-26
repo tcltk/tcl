@@ -2249,7 +2249,7 @@ test socket-14.11.0 {pending [socket -async] and nonblocking [puts], no listener
         unset x
     } -result {socket is not connected} -returnCodes 1
 test socket-14.11.1 {pending [socket -async] and nonblocking [puts], no listener, flush} \
-    -constraints {socket} \
+    -constraints {socket nonportable} \
     -body {
         set sock [socket -async localhost [randport]]
         fconfigure $sock -blocking 0
@@ -2320,6 +2320,28 @@ test socket-14.15 {blocking read on async socket should not trigger event handle
 	close $s
         set x
     } -result ok
+
+# v4 and v6 is required to prevent that the async connect does not terminate
+# before the fconfigure command. There is always an additional ip to try.
+test socket-14.16 {empty -peername while [socket -async] connecting} \
+    -constraints {socket localhost_v4 localhost_v6} \
+    -body {
+        set client [socket -async localhost [randport]]
+        fconfigure $client -peername
+    } -cleanup {
+        catch {close $client}
+    } -result {}
+
+# v4 and v6 is required to prevent that the async connect does not terminate
+# before the fconfigure command. There is always an additional ip to try.
+test socket-14.17 {empty -sockname while [socket -async] connecting} \
+    -constraints {socket localhost_v4 localhost_v6} \
+    -body {
+        set client [socket -async localhost [randport]]
+        fconfigure $client -sockname
+    } -cleanup {
+        catch {close $client}
+    } -result {}
 
 set num 0
 

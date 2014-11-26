@@ -794,7 +794,7 @@ TtySetOptionProc(
  *
  * Results:
  *	A standard Tcl result. Also sets the supplied DString to the string
- *	value of the option(s) returned.  Sets error message if needed 
+ *	value of the option(s) returned.  Sets error message if needed
  *	(by calling Tcl_BadChannelOption).
  *
  *----------------------------------------------------------------------
@@ -1203,7 +1203,7 @@ TtyParseMode(
     char parity;
     const char *bad = "bad value for -mode";
 
-    i = sscanf(mode, "%d,%c,%d,%d%n", 
+    i = sscanf(mode, "%d,%c,%d,%d%n",
 	    &ttyPtr->baud,
 	    &parity,
 	    &ttyPtr->data,
@@ -1294,7 +1294,7 @@ TtyInit(
 	    || iostate.c_lflag != 0
 	    || iostate.c_cflag & CREAD
 	    || iostate.c_cc[VMIN] != 1
-	    || iostate.c_cc[VTIME] != 0) 
+	    || iostate.c_cc[VTIME] != 0)
     {
 	iostate.c_iflag = IGNBRK;
 	iostate.c_oflag = 0;
@@ -1363,6 +1363,11 @@ TclpOpenFileChannel(
 
     native = Tcl_FSGetNativePath(pathPtr);
     if (native == NULL) {
+	if (interp != (Tcl_Interp *) NULL) {
+	    Tcl_AppendResult(interp, "couldn't open \"",
+	    TclGetString(pathPtr), "\": filename is invalid on this platform",
+	    NULL);
+	}
 	return NULL;
     }
 

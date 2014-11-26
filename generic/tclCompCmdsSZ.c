@@ -28,6 +28,9 @@ static void		FreeJumptableInfo(ClientData clientData);
 static void		PrintJumptableInfo(ClientData clientData,
 			    Tcl_Obj *appendObj, ByteCode *codePtr,
 			    unsigned int pcOffset);
+static void		DisassembleJumptableInfo(ClientData clientData,
+			    Tcl_Obj *dictObj, ByteCode *codePtr,
+			    unsigned int pcOffset);
 static int		CompileAssociativeBinaryOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, const char *identity,
 			    int instruction, CompileEnv *envPtr);
@@ -72,7 +75,8 @@ const AuxDataType tclJumptableInfoType = {
     "JumptableInfo",		/* name */
     DupJumptableInfo,		/* dupProc */
     FreeJumptableInfo,		/* freeProc */
-    PrintJumptableInfo		/* printProc */
+    PrintJumptableInfo,		/* printProc */
+    DisassembleJumptableInfo	/* disassembleProc */
 };
 
 /*
@@ -318,8 +322,8 @@ TclCompileStringCatCmd(
 	    CompileWord(envPtr, wordTokenPtr, interp, i);
 	    numArgs ++;
 	    if (numArgs >= 254) { /* 254 to take care of the possible +1 of "folded" above */
-		TclEmitInstInt1(INST_STR_CONCAT1, 254, envPtr);
-		numArgs -= 253;	/* concat pushes 1 obj, the result */
+		TclEmitInstInt1(INST_STR_CONCAT1, numArgs, envPtr);
+		numArgs = 1;	/* concat pushes 1 obj, the result */
 	    }
 	}
 	wordTokenPtr = TokenAfter(wordTokenPtr);
@@ -2091,7 +2095,7 @@ IssueSwitchChainedTests(
 		     */
 
 		    if (TclReToGlob(NULL, bodyToken[i]->start,
-			    bodyToken[i]->size, &ds, &exact) == TCL_OK) {
+			    bodyToken[i]->size, &ds, &exact, NULL) == TCL_OK){
 			simple = 1;
 			PushLiteral(envPtr, Tcl_DStringValue(&ds),
 				Tcl_DStringLength(&ds));
@@ -2441,11 +2445,13 @@ IssueSwitchJumpTable(
  *	DupJumptableInfo: a copy of the jump-table
  *	FreeJumptableInfo: none
  *	PrintJumptableInfo: none
+ *	DisassembleJumptableInfo: none
  *
  * Side effects:
  *	DupJumptableInfo: allocates memory
  *	FreeJumptableInfo: releases memory
  *	PrintJumptableInfo: none
+ *	DisassembleJumptableInfo: none
  *
  *----------------------------------------------------------------------
  */
@@ -2507,6 +2513,30 @@ PrintJumptableInfo(
 	Tcl_AppendPrintfToObj(appendObj, "\"%s\"->pc %d",
 		keyPtr, pcOffset + offset);
     }
+}
+
+static void
+DisassembleJumptableInfo(
+    ClientData clientData,
+    Tcl_Obj *dictObj,
+    ByteCode *codePtr,
+    unsigned int pcOffset)
+{
+    register JumptableInfo *jtPtr = clientData;
+    Tcl_Obj *mapping = Tcl_NewObj();
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    const char *keyPtr;
+    int offset;
+
+    hPtr = Tcl_FirstHashEntry(&jtPtr->hashTable, &search);
+    for (; hPtr ; hPtr = Tcl_NextHashEntry(&search)) {
+	keyPtr = Tcl_GetHashKey(&jtPtr->hashTable, hPtr);
+	offset = PTR2INT(Tcl_GetHashValue(hPtr));
+	Tcl_DictObjPut(NULL, mapping, Tcl_NewStringObj(keyPtr, -1),
+		Tcl_NewIntObj(offset));
+    }
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("mapping", -1), mapping);
 }
 
 /*
@@ -3038,6 +3068,7 @@ IssueTryClausesInstructions(
 	if (!handlerTokens[i]) {
 	    forwardsNeedFixing = 1;
 	    JUMP4(			JUMP, forwardsToFix[i]);
+	    TclAdjustStackDepth(1, envPtr);
 	} else {
 	    int dontChangeOptions;
 
@@ -3751,7 +3782,6 @@ TclCompileWhileCmd(
 	}
 	SetLineInformation(1);
 	TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-	TclClearNumConversion(envPtr);
 
 	jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
 	if (jumpDist > 127) {
