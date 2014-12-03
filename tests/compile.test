@@ -468,7 +468,7 @@ test compile-14.2 {testing element name "$"} -body {
     set a() 1
     set a(1) 2 
     set a($) 3
-    list [set a()] [set a(1)] [set a($)] [unset a(); lindex [array names a] 0]
+    list [set a()] [set a(1)] [set a($)] [unset a() a(1); lindex [array names a] 0]
 } -cleanup {unset a} -result [list 1 2 3 {$}]
 
 
