@@ -464,11 +464,12 @@ test compile-14.1 {testing errors in element name; segfault?} {} {
 } {{wrong # args: should be "error message ?errorInfo? ?errorCode?"} {can't read "abba": no such variable}}
 
 test compile-14.2 {testing element name "$"} -body {
-    unset a
+    unset -nocomplain a
     set a() 1
-    set a($) 2
-    list [set a()] [set a($)] [unset a(); lindex [array names a] 0]
-} -cleanup {unset a} -result {1 2 $}
+    set a(1) 2 
+    set a($) 3
+    list [set a()] [set a(1)] [set a($)] [unset a(); lindex [array names a] 0]
+} -cleanup {unset a} -result [list 1 2 3 {$}]
 
 
 # Tests compile-15.* cover Tcl Bug 633204
