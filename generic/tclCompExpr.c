@@ -1883,7 +1883,7 @@ ParseLexeme(
 
     case 'i':
 	if ((numBytes > 1) && (start[1] == 'n')
-		&& ((numBytes == 2) || !isalpha(UCHAR(start[2])))) {
+		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(start[2]))) {
 
 	    /*
 	     * Must make this check so we can tell the difference between
@@ -1898,14 +1898,15 @@ ParseLexeme(
 
     case 'e':
 	if ((numBytes > 1) && (start[1] == 'q')
-		&& ((numBytes == 2) || !isalpha(UCHAR(start[2])))) {
+		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(start[2]))) {
 	    *lexemePtr = STREQ;
 	    return 2;
 	}
 	break;
 
     case 'n':
-	if ((numBytes > 1) && ((numBytes == 2) || !isalpha(UCHAR(start[2])))) {
+	if ((numBytes > 1)
+		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(start[2]))) {
 	    switch (start[1]) {
 	    case 'e':
 		*lexemePtr = STRNEQ;
