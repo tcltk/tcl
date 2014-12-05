@@ -1967,7 +1967,7 @@ ParseLexeme(
 
     case 'i':
 	if ((numBytes > 1) && (start[1] == 'n')
-		&& ((numBytes == 2) || !isalpha(UCHAR(start[2])))) {
+		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(start[2]))) {
 	    /*
 	     * Must make this check so we can tell the difference between the
 	     * "in" operator and the "int" function name and the "infinity"
@@ -1981,14 +1981,15 @@ ParseLexeme(
 
     case 'e':
 	if ((numBytes > 1) && (start[1] == 'q')
-		&& ((numBytes == 2) || !isalpha(UCHAR(start[2])))) {
+		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(start[2]))) {
 	    *lexemePtr = STREQ;
 	    return 2;
 	}
 	break;
 
     case 'n':
-	if ((numBytes > 1) && ((numBytes == 2) || !isalpha(UCHAR(start[2])))) {
+	if ((numBytes > 1)
+		&& ((numBytes == 2) || start[2] & 0x80 || !isalpha(start[2]))) {
 	    switch (start[1]) {
 	    case 'e':
 		*lexemePtr = STRNEQ;
@@ -2003,8 +2004,7 @@ ParseLexeme(
     literal = Tcl_NewObj();
     if (TclParseNumber(NULL, literal, NULL, start, numBytes, &end,
 	    TCL_PARSE_NO_WHITESPACE) == TCL_OK) {
-	if (end < start + numBytes && !isalnum(UCHAR(*end))
-		&& UCHAR(*end) != '_') {
+	if (end < start + numBytes && !TclIsBareword(*end)) {
 	
 	number:
 	    TclInitStringRep(literal, start, end-start);
@@ -2029,7 +2029,7 @@ ParseLexeme(
 		const char *p = start;
 
 		while (p < end) {
-		    if (!isalnum(UCHAR(*p++))) {
+		    if (!TclIsBareword(*p++)) {
 			/*
 			 * The number has non-bareword characters, so we 
 			 * must treat it as a number.
@@ -2054,33 +2054,30 @@ ParseLexeme(
 	}
     }
 
-    if (Tcl_UtfCharComplete(start, numBytes)) {
-	scanned = Tcl_UtfToUniChar(start, &ch);
-    } else {
-	char utfBytes[TCL_UTF_MAX];
+    /*
+     * We reject leading underscores in bareword.  No sensible reason why.
+     * Might be inspired by reserved identifier rules in C, which of course
+     * have no direct relevance here.
+     */  
 
-	memcpy(utfBytes, start, (size_t) numBytes);
-	utfBytes[numBytes] = '\0';
-	scanned = Tcl_UtfToUniChar(utfBytes, &ch);
-    }
-    if (!isalnum(UCHAR(ch))) {
+    if (!TclIsBareword(*start) || *start == '_') {
+	if (Tcl_UtfCharComplete(start, numBytes)) {
+	    scanned = Tcl_UtfToUniChar(start, &ch);
+	} else {
+	    char utfBytes[TCL_UTF_MAX];
+
+	    memcpy(utfBytes, start, (size_t) numBytes);
+	    utfBytes[numBytes] = '\0';
+	    scanned = Tcl_UtfToUniChar(utfBytes, &ch);
+	}
 	*lexemePtr = INVALID;
 	Tcl_DecrRefCount(literal);
 	return scanned;
     }
     end = start;
-    while (isalnum(UCHAR(ch)) || (UCHAR(ch) == '_')) {
-	end += scanned;
-	numBytes -= scanned;
-	if (Tcl_UtfCharComplete(end, numBytes)) {
-	    scanned = Tcl_UtfToUniChar(end, &ch);
-	} else {
-	    char utfBytes[TCL_UTF_MAX];
-
-	    memcpy(utfBytes, end, (size_t) numBytes);
-	    utfBytes[numBytes] = '\0';
-	    scanned = Tcl_UtfToUniChar(utfBytes, &ch);
-	}
+    while (numBytes && TclIsBareword(*end)) {
+	end += 1;
+	numBytes -= 1;
     }
     *lexemePtr = BAREWORD;
     if (literalPtr) {
