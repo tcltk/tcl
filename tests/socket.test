@@ -2343,6 +2343,24 @@ test socket-14.17 {empty -sockname while [socket -async] connecting} \
         catch {close $client}
     } -result {}
 
+# test for bug c6ed4acfd8: running async socket connect with other connect
+# established will block tcl as it goes in an infinite loop in vwait
+test socket-14.18 {bug c6ed4acfd8: running async socket connect made other connect block} \
+    -constraints {socket} \
+    -body {
+        proc accept {channel address port} {}
+        set port [randport]
+        set ssock [socket -server accept $port]
+        set csock1 [socket -async localhost [randport]]
+        set csock2 [socket localhost $port]
+        after 1000 {set done ok}
+        vwait done
+} -cleanup {
+        catch {close $ssock}
+        catch {close $csock1}
+        catch {close $csock2}
+    } -result {}
+
 set num 0
 
 set x {localhost {socket} 127.0.0.1 {supported_inet} ::1 {supported_inet6}}
