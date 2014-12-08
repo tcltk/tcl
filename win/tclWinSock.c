@@ -1739,7 +1739,7 @@ TcpConnect(
 		 */
 
 		for (statePtr2 = tsdPtr->socketList; statePtr2 != NULL;
-			statePtr2 = statePtr->nextPtr) {
+			statePtr2 = statePtr2->nextPtr) {
 		    if (statePtr2 == statePtr) {
 			in_socket_list = 1;
 			break;

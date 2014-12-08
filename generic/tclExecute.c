@@ -81,9 +81,7 @@ int tclTraceExec = 0;
 
 static const char *const operatorStrings[] = {
     "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
-    "+", "-", "*", "/", "%", "+", "-", "~", "!",
-    "BUILTIN FUNCTION", "FUNCTION",
-    "", "", "", "", "", "", "", "", "eq", "ne"
+    "+", "-", "*", "/", "%", "+", "-", "~", "!"
 };
 
 /*
@@ -5280,8 +5278,8 @@ TEBCresume(
 		s1 = (char *) Tcl_GetByteArrayFromObj(valuePtr, &s1len);
 		s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 		memCmpFn = memcmp;
-	    } else if (((valuePtr->typePtr == &tclStringType)
-		    && (value2Ptr->typePtr == &tclStringType))) {
+	    } else if ((valuePtr->typePtr == &tclStringType)
+		    && (value2Ptr->typePtr == &tclStringType)) {
 		/*
 		 * Do a unicode-specific comparison if both of the args are of
 		 * String type. If the char length == byte length, we can do a
@@ -5292,7 +5290,9 @@ TEBCresume(
 		s1len = Tcl_GetCharLength(valuePtr);
 		s2len = Tcl_GetCharLength(value2Ptr);
 		if ((s1len == valuePtr->length)
-			&& (s2len == value2Ptr->length)) {
+			&& (valuePtr->bytes != NULL)
+			&& (s2len == value2Ptr->length)
+			&& (value2Ptr->bytes != NULL)) {
 		    s1 = valuePtr->bytes;
 		    s2 = value2Ptr->bytes;
 		    memCmpFn = memcmp;
@@ -9688,7 +9688,7 @@ IllegalExprOperandType(
 
     if (opcode == INST_EXPON) {
 	operator = "**";
-    } else if (opcode <= INST_STR_NEQ) {
+    } else if (opcode <= INST_LNOT) {
 	operator = operatorStrings[opcode - INST_LOR];
     }
 
