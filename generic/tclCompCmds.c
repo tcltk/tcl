@@ -1284,32 +1284,26 @@ TclCompileDictLappendCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr, *valueTokenPtr;
-    int dictVarIndex, nameChars;
-    const char *name;
+    int isSimple, dictVarIndex = -1, isScalar = 0;
+    DefineLineInformation;	/* TIP #280 */
 
     /*
      * There must be three arguments after the command.
      */
 
-    if (parsePtr->numWords != 4 || procPtr == NULL) {
+    if (parsePtr->numWords != 4) {
 	return TCL_ERROR;
     }
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     keyTokenPtr = TokenAfter(varTokenPtr);
     valueTokenPtr = TokenAfter(keyTokenPtr);
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+	    &dictVarIndex, &isSimple, &isScalar, 1);
+    if (!isScalar || dictVarIndex < 0) {
 	return TCL_ERROR;
     }
-    name = varTokenPtr[1].start;
-    nameChars = varTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
-    }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
     CompileWord(envPtr, keyTokenPtr, interp, 2);
     CompileWord(envPtr, valueTokenPtr, interp, 3);
     TclEmitInstInt4( INST_DICT_LAPPEND, dictVarIndex, envPtr);
