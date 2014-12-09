@@ -2288,8 +2288,8 @@ TclFindCompiledLocal(
 				 * scalar or array variable. If NULL, a
 				 * temporary var should be created. */
     int nameBytes,		/* Number of bytes in the name. */
-    int create,			/* If 1, allocate a local frame entry for the
-				 * variable if it is new. */
+    int create,			/* If non-zero, allocate a local frame entry
+				 * for the variable if it is new. */
     register Proc *procPtr)	/* Points to structure describing procedure
 				 * containing the variable reference. */
 {
