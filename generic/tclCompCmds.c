@@ -683,17 +683,15 @@ TclCompileDictSetCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr;
-    Proc *procPtr = envPtr->procPtr;
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr;
-    int i, dictVarIndex, nameChars;
-    const char *name;
+    int i, isSimple, isScalar = 0, dictVarIndex = -1;
+    DefineLineInformation;	/* TIP #280 */
 
     /*
-     * There must be at least one argument after the command.
+     * There must be at least three arguments after the (sub-)command.
      */
 
-    if (parsePtr->numWords < 4 || procPtr == NULL) {
+    if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
     }
 
@@ -704,15 +702,11 @@ TclCompileDictSetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+	    &dictVarIndex, &isSimple, &isScalar, 1);
+    if (!isScalar || dictVarIndex < 0) {
 	return TCL_ERROR;
     }
-    name = varTokenPtr[1].start;
-    nameChars = varTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
-    }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
 
     /*
      * Remaining words (key path and value to set) can be handled normally.
