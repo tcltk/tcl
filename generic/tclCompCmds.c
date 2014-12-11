@@ -379,8 +379,7 @@ TclCompileCatchCmd(
 {
     JumpFixup jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    const char *name;
-    int resultIndex, optsIndex, nameChars, range;
+    int resultIndex, optsIndex, isSimple, isScalar, range;
     int initStackDepth = envPtr->currStackDepth;
     int savedStackDepth;
     DefineLineInformation;	/* TIP #280 */
@@ -395,15 +394,6 @@ TclCompileCatchCmd(
     }
 
     /*
-     * If variables were specified and the catch command is at global level
-     * (not in a procedure), don't compile it inline: the payoff is too small.
-     */
-
-    if ((parsePtr->numWords >= 3) && (envPtr->procPtr == NULL)) {
-	return TCL_ERROR;
-    }
-
-    /*
      * Make sure the variable names, if any, have no substitutions and just
      * refer to local scalars.
      */
@@ -412,36 +402,17 @@ TclCompileCatchCmd(
     cmdTokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (parsePtr->numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
-	/* DGP */
-	if (resultNameTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+	PushVarNameWord(interp, resultNameTokenPtr, envPtr, TCL_CREATE_VAR,
+		&resultIndex, &isSimple, &isScalar, 2);
+	if (!isScalar || resultIndex < 0) {
 	    return TCL_ERROR;
 	}
 
-	name = resultNameTokenPtr[1].start;
-	nameChars = resultNameTokenPtr[1].size;
-	if (!TclIsLocalScalar(name, nameChars)) {
-	    return TCL_ERROR;
-	}
-	resultIndex = TclFindCompiledLocal(resultNameTokenPtr[1].start,
-		resultNameTokenPtr[1].size, /*create*/ 1, envPtr->procPtr);
-	if (resultIndex < 0) {
-	    return TCL_ERROR;
-	}
-
-	/* DKF */
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
-	    if (optsNameTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-		return TCL_ERROR;
-	    }
-	    name = optsNameTokenPtr[1].start;
-	    nameChars = optsNameTokenPtr[1].size;
-	    if (!TclIsLocalScalar(name, nameChars)) {
-		return TCL_ERROR;
-	    }
-	    optsIndex = TclFindCompiledLocal(optsNameTokenPtr[1].start,
-		    optsNameTokenPtr[1].size, /*create*/ 1, envPtr->procPtr);
-	    if (optsIndex < 0) {
+	    PushVarNameWord(interp, optsNameTokenPtr, envPtr, TCL_CREATE_VAR,
+		    &optsIndex, &isSimple, &isScalar, 2);
+	    if (!isScalar || resultIndex < 0) {
 		return TCL_ERROR;
 	    }
 	}
