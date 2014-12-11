@@ -411,7 +411,7 @@ TclCompileCatchCmd(
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
 	    PushVarNameWord(interp, optsNameTokenPtr, envPtr, TCL_CREATE_VAR,
-		    &optsIndex, &isSimple, &isScalar, 2);
+		    &optsIndex, &isSimple, &isScalar, 3);
 	    if (!isScalar || resultIndex < 0) {
 		return TCL_ERROR;
 	    }
