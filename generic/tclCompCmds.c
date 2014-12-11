@@ -818,7 +818,7 @@ TclCompileDictForCmd(
     Tcl_DString buffer;
 
     /*
-     * There must be at least three argument after the command.
+     * There must be exactly three arguments after the command.
      */
 
     if (parsePtr->numWords != 4 || procPtr == NULL) {
@@ -1004,21 +1004,11 @@ TclCompileDictUpdateCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
-    DefineLineInformation;	/* TIP #280 */
-    const char *name;
-    int i, nameChars, dictIndex, numVars, range, infoIndex;
+    int i, dictIndex, numVars, range, infoIndex, isSimple, isScalar;
     Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr, *tokenPtr;
     DictUpdateInfo *duiPtr;
     JumpFixup jumpFixup;
-
-    /*
-     * There must be at least one argument after the command.
-     */
-
-    if (parsePtr->numWords < 5 || procPtr == NULL) {
-	return TCL_ERROR;
-    }
+    DefineLineInformation;	/* TIP #280 */
 
     /*
      * Parse the command. Expect the following:
@@ -1029,6 +1019,9 @@ TclCompileDictUpdateCmd(
 	return TCL_ERROR;
     }
     numVars = (parsePtr->numWords - 3) / 2;
+    if (numVars < 1) {
+	return TCL_ERROR;
+    }
 
     /*
      * The dictionary variable must be a local scalar that is knowable at
@@ -1037,15 +1030,11 @@ TclCompileDictUpdateCmd(
      */
 
     dictVarTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (dictVarTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    PushVarNameWord(interp, dictVarTokenPtr, envPtr, TCL_CREATE_VAR,
+	    &dictIndex, &isSimple, &isScalar, 1);
+    if (!isScalar || dictIndex < 0) {
 	return TCL_ERROR;
     }
-    name = dictVarTokenPtr[1].start;
-    nameChars = dictVarTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
-    }
-    dictIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
 
     /*
      * Assemble the instruction metadata. This is complex enough that it is
@@ -1061,6 +1050,8 @@ TclCompileDictUpdateCmd(
     tokenPtr = TokenAfter(dictVarTokenPtr);
 
     for (i=0 ; i<numVars ; i++) {
+	int index;
+
 	/*
 	 * Put keys to one side for later compilation to bytecode.
 	 */
@@ -1072,14 +1063,9 @@ TclCompileDictUpdateCmd(
 	 */
 
 	tokenPtr = TokenAfter(tokenPtr);
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    ckfree((char *) duiPtr);
-	    TclStackFree(interp, keyTokenPtrs);
-	    return TCL_ERROR;
-	}
-	name = tokenPtr[1].start;
-	nameChars = tokenPtr[1].size;
-	if (!TclIsLocalScalar(name, nameChars)) {
+	PushVarNameWord(interp, tokenPtr, envPtr, TCL_CREATE_VAR,
+	    &index, &isSimple, &isScalar, 1);
+	if (!isScalar || index < 0) {
 	    ckfree((char *) duiPtr);
 	    TclStackFree(interp, keyTokenPtrs);
 	    return TCL_ERROR;
@@ -1089,8 +1075,7 @@ TclCompileDictUpdateCmd(
 	 * Stash the index in the auxiliary data.
 	 */
 
-	duiPtr->varIndices[i] =
-		TclFindCompiledLocal(name, nameChars, 1, procPtr);
+	duiPtr->varIndices[i] = index;
 	tokenPtr = TokenAfter(tokenPtr);
     }
     if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
