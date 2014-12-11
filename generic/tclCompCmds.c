@@ -707,48 +707,16 @@ TclCompileDictIncrCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varTokenPtr, *keyTokenPtr;
-    int dictVarIndex, nameChars, incrAmount;
-    const char *name;
+    int dictVarIndex, incrAmount, isScalar, isSimple;
+    DefineLineInformation;	/* TIP #280 */
 
     /*
      * There must be at least two arguments after the command.
      */
 
-    if (parsePtr->numWords < 3 || parsePtr->numWords > 4 || procPtr == NULL) {
+    if (parsePtr->numWords < 3 || parsePtr->numWords > 4) {
 	return TCL_ERROR;
-    }
-    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    keyTokenPtr = TokenAfter(varTokenPtr);
-
-    /*
-     * Parse the increment amount, if present.
-     */
-
-    if (parsePtr->numWords == 4) {
-	const char *word;
-	int numBytes, code;
-	Tcl_Token *incrTokenPtr;
-	Tcl_Obj *intObj;
-
-	incrTokenPtr = TokenAfter(keyTokenPtr);
-	if (incrTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    return TCL_ERROR;
-	}
-	word = incrTokenPtr[1].start;
-	numBytes = incrTokenPtr[1].size;
-
-	intObj = Tcl_NewStringObj(word, numBytes);
-	Tcl_IncrRefCount(intObj);
-	code = TclGetIntFromObj(NULL, intObj, &incrAmount);
-	TclDecrRefCount(intObj);
-	if (code != TCL_OK) {
-	    return TCL_ERROR;
-	}
-    } else {
-	incrAmount = 1;
     }
 
     /*
@@ -757,15 +725,31 @@ TclCompileDictIncrCmd(
      * discover what the index is.
      */
 
-    if (varTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    varTokenPtr = TokenAfter(parsePtr->tokenPtr);
+    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+	    &dictVarIndex, &isSimple, &isScalar, 1);
+    if (!isScalar || dictVarIndex < 0) {
 	return TCL_ERROR;
     }
-    name = varTokenPtr[1].start;
-    nameChars = varTokenPtr[1].size;
-    if (!TclIsLocalScalar(name, nameChars)) {
-	return TCL_ERROR;
+
+    keyTokenPtr = TokenAfter(varTokenPtr);
+
+    /*
+     * Parse the increment amount, if present.
+     */
+
+    if (parsePtr->numWords == 4) {
+	Tcl_Token *incrTokenPtr = TokenAfter(keyTokenPtr);
+	Tcl_Obj *intObj = Tcl_NewObj();
+	int fail = (!TclWordKnownAtCompileTime(incrTokenPtr, intObj)
+		|| TCL_ERROR == TclGetIntFromObj(NULL, intObj, &incrAmount));
+	Tcl_DecrRefCount(intObj);
+	if (fail) {
+	    return TCL_ERROR;
+	}
+    } else {
+	incrAmount = 1;
     }
-    dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
 
     /*
      * Emit the key and the code to actually do the increment.
