@@ -1156,18 +1156,17 @@ TclCompileDictAppendCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    Proc *procPtr = envPtr->procPtr;
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, dictVarIndex;
+    int i, isSimple, isScalar, dictVarIndex;
+    DefineLineInformation;	/* TIP #280 */
 
     /*
-     * There must be at least two argument after the command. And we impose an
-     * (arbirary) safe limit; anyone exceeding it should stop worrying about
-     * speed quite so much. ;-)
+     * There must be at least two argument after the command. Since we
+     * implement using INST_CONCAT1, make sure the number of arguments
+     * stays within its range.
      */
 
-    if (parsePtr->numWords<4 || parsePtr->numWords>100 || procPtr==NULL) {
+    if (parsePtr->numWords<4 || parsePtr->numWords>258) {
 	return TCL_ERROR;
     }
 
@@ -1176,16 +1175,10 @@ TclCompileDictAppendCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+    PushVarNameWord(interp, tokenPtr, envPtr, TCL_CREATE_VAR,
+	    &dictVarIndex, &isSimple, &isScalar, 1);
+    if (!isScalar || dictVarIndex < 0) {
 	return TCL_ERROR;
-    } else {
-	register const char *name = tokenPtr[1].start;
-	register int nameChars = tokenPtr[1].size;
-
-	if (!TclIsLocalScalar(name, nameChars)) {
-	    return TCL_ERROR;
-	}
-	dictVarIndex = TclFindCompiledLocal(name, nameChars, 1, procPtr);
     }
 
     /*
