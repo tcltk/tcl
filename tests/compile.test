@@ -455,13 +455,21 @@ test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
     list [catch {exec [interpreter] << $script} msg] $msg
 } {0 OK}
 
-# Special test for compiling tokens from a copy of the source string. [Bug
-# 599788]
+# Tests compile-14.* for [Bug 599788] [Bug 0c043a175a47da8c2342]
 test compile-14.1 {testing errors in element name; segfault?} {} {
      catch {set a([error])} msg1
      catch {set bubba([join $abba $jubba]) $vol} msg2
      list $msg1 $msg2
 } {{wrong # args: should be "error message ?errorInfo? ?errorCode?"} {can't read "abba": no such variable}}
+
+test compile-14.2 {testing element name "$"} -body {
+    unset -nocomplain a
+    set a() 1
+    set a(1) 2 
+    set a($) 3
+    list [set a()] [set a(1)] [set a($)] [unset a() a(1); lindex [array names a] 0]
+} -cleanup {unset a} -result [list 1 2 3 {$}]
+
 
 # Tests compile-15.* cover Tcl Bug 633204
 test compile-15.1 {proper TCL_RETURN code from [return]} {
