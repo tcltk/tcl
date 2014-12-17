@@ -905,7 +905,7 @@ TcpGetOptionProc(
     }
 
     if (len > 0) {
-	return Tcl_BadChannelOption(interp, optionName, "peername sockname");
+	return Tcl_BadChannelOption(interp, optionName, "connecting peername sockname");
     }
 
     return TCL_OK;
