@@ -3289,16 +3289,7 @@ TclPushVarName(
     nameChars = elNameChars = 0;
     localIndex = -1;
 
-    /*
-     * Check not only that the type is TCL_TOKEN_SIMPLE_WORD, but whether
-     * curly braces surround the variable name. This really matters for array
-     * elements to handle things like
-     *    set {x($foo)} 5
-     * which raises an undefined var error if we are not careful here.
-     */
-
-    if ((varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) &&
-	    (varTokenPtr->start[0] != '{')) {
+    if (varTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
 	/*
 	 * A simple variable name. Divide it up into "name" and "elName"
 	 * strings. If it is not a local variable, look it up at runtime.
@@ -3373,7 +3364,7 @@ TclPushVarName(
 	    nameChars = p - varTokenPtr[1].start;
 	    elName = p + 1;
 	    remainingChars = (varTokenPtr[2].start - p) - 1;
-	    elNameChars = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 2;
+	    elNameChars = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
 
 	    if (remainingChars) {
 		/*

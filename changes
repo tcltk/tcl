@@ -8303,11 +8303,11 @@ reported usage of large expressions (porter)
 
 Many optmizations, improvements, and tightened stack management in bytecode.
 
---- Released 8.6.1, September 20, 2013 --- http://core.tcl.tk/tcl/ for details 
+--- Released 8.6.1, September 20, 2013 --- http://core.tcl.tk/tcl/ for details
 
 2013-09-27 (enhancement) improved ::env synchronization (fellows)
 
-2013-10-20 (bug fix)[2835313] segfault from 
+2013-10-20 (bug fix)[2835313] segfault from
 [apply {{} {while 1 {a {*}[return -level 0 -code continue]}}}] (fellows)
 
 2013-10-22 (bug fix)[3556215] [scan %E%G%X] support (fellows)
@@ -8451,4 +8451,43 @@ include ::oo::class (fellows)
 
 2014-08-25 (TIP 429) New command [string cat] (leitgeb,ferrieux)
 
---- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details 
+--- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details
+
+2014-08-28 (bug)[b9e1a3] Correct Method Search Order (nadkarni,fellows)
+=> TclOO 1.0.3
+
+2014-09-05 (bug)[ccc2c2] Regression [lreplace {} 1 1] (bron,fellows)
+
+2014-09-08 (bug)<oo-1.18.2> Crash regression in [oo::class destroy] (porter)
+
+2014-09-09 (bug)[84af11] Regress [regsub -all {\(.*} a(b) {}] (fellows)
+
+2014-09-10 (bug)[cee90e] [try {} on ok {} - on return {} {}] panic (porter)
+
+2014-09-20 (feature) [tcl::unsupported::getbytecode] disassember (fellows)
+
+2014-09-27 (enhancement) [string cat] bytecode optimization (leitgeb,ferrieux)
+
+2014-09-27 (bug)[82521b] segfault in mangled bytecode (ogilvie,sofer)
+
+2014-10-02 (bug)[bc5b79] Hang in some [read]s of limited size (rogers,porter)
+
+2014-10-03 (bug)[bc1a96] segfault in [array set] of traced array (tab,porter)
+
+2014-10-08 (bug)[59a2e7] MSVC14 compile support (dower,nijtmans)
+
+2014-10-10 (bug)[ed29c4] [fcopy] treats [blocked] as error (rowen,porter)
+
+2014-10-10 (bug)[bf7135] regression in Tcl_Write() interface (porter)
+
+2014-10-18 (bug)[10dc6d] fix [gets] on non-blocking channels (fassel,porter)
+
+2014-10-26 Support for Windows 10 (nijtmans)
+
+2014-10-31 (bug)[dcc034] restore [open comX: r+] (lll,nijtmans)
+
+2014-11-05 (bug)[214cc0] Restore [lappend v] return value (sayers,porter)
+
+2014-11-06 (bug)[5adc35] Stop forcing EOF to be permanent (porter)
+
+--- Released 8.6.3, November 12, 2014 --- http://core.tcl.tk/tcl/ for details
