@@ -1543,7 +1543,7 @@ TclCompileForeachCmd(
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
     int jumpBackDist, jumpBackOffset, infoIndex, range;
-    int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
+    int numWords, numLists, numVars, loopIndex, tempVar, i, j, code = TCL_OK;
     int savedStackDepth = envPtr->currStackDepth;
     Tcl_Obj *varListObj = NULL;
     DefineLineInformation;	/* TIP #280 */
@@ -1612,7 +1612,6 @@ TclCompileForeachCmd(
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
-	Tcl_DString varList;
 	ForeachVarList *varListPtr;
 
 	if (i%2 != 1) {
@@ -1632,21 +1631,6 @@ TclCompileForeachCmd(
 	    goto done;
 	}
 
-	/*
-	 * Lots of copying going on here. Need a ListObj wizard to show a
-	 * better way.
-	 */
-
-	Tcl_DStringInit(&varList);
-	Tcl_DStringAppend(&varList, tokenPtr[1].start, tokenPtr[1].size);
-	code = Tcl_SplitList(interp, Tcl_DStringValue(&varList),
-		&numVars, &varvList[loopIndex]);
-	Tcl_DStringFree(&varList);
-	if (code != TCL_OK) {
-	    code = TCL_ERROR;
-	    goto done;
-	}
-
 	varListPtr = (ForeachVarList *) ckalloc((unsigned)
 		sizeof(ForeachVarList) + numVars*sizeof(int));
 	varListPtr->numVars = numVars;
@@ -1655,12 +1639,14 @@ TclCompileForeachCmd(
 
 	for (j = 0;  j < numVars;  j++) {
 	    Tcl_Obj *varNameObj;
-	    Tcl_Token token;
+	    Tcl_Token token[2];
 	    int varIndex, isSimple, isScalar;
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    token.start = Tcl_GetStringFromObj(varNameObj, &token.size);
-	    PushVarNameWord(interp, &token, envPtr, TCL_CREATE_VAR,
+	    token[0].type = TCL_TOKEN_SIMPLE_WORD;
+	    token[0].numComponents = 1;
+	    token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
+	    PushVarNameWord(interp, token, envPtr, TCL_CREATE_VAR,
 		&varIndex, &isSimple, &isScalar, 0 /* ignored */);
 	    if (!isScalar || varIndex < 0) {
 		code = TCL_ERROR;
@@ -1692,19 +1678,6 @@ TclCompileForeachCmd(
     }
     infoPtr->loopCtTemp = TclFindCompiledLocal(NULL, 0, 1, procPtr);
 
-#if 0
-    for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	ForeachVarList *varListPtr = infoPtr->varLists[loopIndex];
-	numVars = varListPtr->numVars;
-	for (j = 0;  j < numVars;  j++) {
-	    const char *varName = varvList[loopIndex][j];
-	    int nameChars = strlen(varName);
-
-	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
-		    nameChars, /*create*/ 1, procPtr);
-	}
-    }
-#endif
     infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
 
     /*
