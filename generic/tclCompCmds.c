@@ -1543,7 +1543,7 @@ TclCompileForeachCmd(
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
     int jumpBackDist, jumpBackOffset, infoIndex, range;
-    int numWords, numLists, numVars, loopIndex, tempVar, i, j, code = TCL_OK;
+    int numWords, numLists, numVars, tempVar, i, j, code = TCL_OK;
     int savedStackDepth = envPtr->currStackDepth;
     Tcl_Obj *varListObj = NULL;
     DefineLineInformation;	/* TIP #280 */
@@ -1592,7 +1592,6 @@ TclCompileForeachCmd(
      * a scalar, or if any var list needs substitutions.
      */
 
-    loopIndex = 0;
     varListObj = Tcl_NewObj();
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
@@ -1619,7 +1618,7 @@ TclCompileForeachCmd(
 	varListPtr = (ForeachVarList *) ckalloc((unsigned)
 		sizeof(ForeachVarList) + numVars*sizeof(int));
 	varListPtr->numVars = numVars;
-	infoPtr->varLists[loopIndex] = varListPtr;
+	infoPtr->varLists[i/2] = varListPtr;
 	infoPtr->numLists++;
 
 	for (j = 0;  j < numVars;  j++) {
@@ -1641,7 +1640,6 @@ TclCompileForeachCmd(
 	}
 
 	Tcl_SetObjLength(varListObj, 0);
-	loopIndex++;
     }
 
     /*
@@ -1656,7 +1654,7 @@ TclCompileForeachCmd(
 
     tempVar = TclFindCompiledLocal(NULL, 0, 1, procPtr);
     infoPtr->firstValueTemp = tempVar;
-    for (loopIndex = 1;  loopIndex < numLists;  loopIndex++) {
+    for (i= 1;  i < numLists;  i++) {
 	TclFindCompiledLocal(NULL, 0, 1, procPtr);
     }
     infoPtr->loopCtTemp = TclFindCompiledLocal(NULL, 0, 1, procPtr);
@@ -1673,7 +1671,6 @@ TclCompileForeachCmd(
      * Evaluate then store each value list in the associated temporary.
      */
 
-    loopIndex = 0;
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
@@ -1686,7 +1683,7 @@ TclCompileForeachCmd(
 		TclEmitInstInt4(INST_STORE_SCALAR4, tempVar, envPtr);
 	    }
 	    TclEmitOpcode(INST_POP, envPtr);
-	    loopIndex++; tempVar++;
+	    tempVar++;
 	}
     }
 
