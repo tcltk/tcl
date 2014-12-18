@@ -1553,11 +1553,9 @@ TclCompileForeachCmd(
 
     /*
      * We parse the variable list argument words and create two arrays:
-     *    varcList[i] is number of variables in i-th var list.
      *    varvList[i] points to array of var names in i-th var list.
      */
 
-    int *varcList;
     const char ***varvList;
 
     /*
@@ -1592,8 +1590,6 @@ TclCompileForeachCmd(
      */
 
     numLists = (numWords - 2)/2;
-    varcList = (int *) TclStackAlloc(interp, numLists * sizeof(int));
-    memset(varcList, 0, numLists * sizeof(int));
     varvList = (const char ***) TclStackAlloc(interp,
 	    numLists * sizeof(const char **));
     memset((char*) varvList, 0, numLists * sizeof(const char **));
@@ -1637,13 +1633,12 @@ TclCompileForeachCmd(
 	Tcl_DStringInit(&varList);
 	Tcl_DStringAppend(&varList, tokenPtr[1].start, tokenPtr[1].size);
 	code = Tcl_SplitList(interp, Tcl_DStringValue(&varList),
-		&varcList[loopIndex], &varvList[loopIndex]);
+		&numVars, &varvList[loopIndex]);
 	Tcl_DStringFree(&varList);
 	if (code != TCL_OK) {
 	    code = TCL_ERROR;
 	    goto done;
 	}
-	numVars = varcList[loopIndex];
 
 	varListPtr = (ForeachVarList *) ckalloc((unsigned)
 		sizeof(ForeachVarList) + numVars*sizeof(int));
@@ -1831,7 +1826,6 @@ TclCompileForeachCmd(
 	}
     }
     TclStackFree(interp, (void *)varvList);
-    TclStackFree(interp, varcList);
     return code;
 }
 
