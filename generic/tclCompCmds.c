@@ -1539,10 +1539,6 @@ TclCompileForeachCmd(
     ForeachInfo *infoPtr = NULL;/* Points to the structure describing this
 				 * foreach command. Stored in a AuxData
 				 * record in the ByteCode. */
-    int firstValueTemp;		/* Index of the first temp var in the frame
-				 * used to point to a value list. */
-    int loopCtTemp;		/* Index of temp var holding the loop's
-				 * iteration count. */
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
@@ -1679,19 +1675,14 @@ TclCompileForeachCmd(
      */
 
     code = TCL_OK;
-    firstValueTemp = -1;
-    for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	tempVar = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-		/*create*/ 1, procPtr);
-	if (loopIndex == 0) {
-	    firstValueTemp = tempVar;
-	}
-    }
-    loopCtTemp = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
-	    /*create*/ 1, procPtr);
 
-    infoPtr->firstValueTemp = firstValueTemp;
-    infoPtr->loopCtTemp = loopCtTemp;
+    tempVar = TclFindCompiledLocal(NULL, 0, 1, procPtr);
+    infoPtr->firstValueTemp = tempVar;
+    for (loopIndex = 1;  loopIndex < numLists;  loopIndex++) {
+	TclFindCompiledLocal(NULL, 0, 1, procPtr);
+    }
+    infoPtr->loopCtTemp = TclFindCompiledLocal(NULL, 0, 1, procPtr);
+
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	ForeachVarList *varListPtr = infoPtr->varLists[loopIndex];
 	numVars = varListPtr->numVars;
@@ -1722,14 +1713,13 @@ TclCompileForeachCmd(
 	if ((i%2 == 0) && (i > 0)) {
 	    SetLineInformation (i);
 	    CompileTokens(envPtr, tokenPtr, interp);
-	    tempVar = (firstValueTemp + loopIndex);
 	    if (tempVar <= 255) {
 		TclEmitInstInt1(INST_STORE_SCALAR1, tempVar, envPtr);
 	    } else {
 		TclEmitInstInt4(INST_STORE_SCALAR4, tempVar, envPtr);
 	    }
 	    TclEmitOpcode(INST_POP, envPtr);
-	    loopIndex++;
+	    loopIndex++; tempVar++;
 	}
     }
 
