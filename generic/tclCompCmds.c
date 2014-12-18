@@ -1536,7 +1536,7 @@ TclCompileForeachCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Proc *procPtr = envPtr->procPtr;
-    ForeachInfo *infoPtr;	/* Points to the structure describing this
+    ForeachInfo *infoPtr = NULL;/* Points to the structure describing this
 				 * foreach command. Stored in a AuxData
 				 * record in the ByteCode. */
     int firstValueTemp;		/* Index of the first temp var in the frame
@@ -1599,6 +1599,16 @@ TclCompileForeachCmd(
     memset((char*) varvList, 0, numLists * sizeof(const char **));
 
     /*
+     * Create and initialize the ForeachInfo and ForeachVarList data
+     * structures describing this command. Then create a AuxData record
+     * pointing to the ForeachInfo structure.
+     */
+
+    infoPtr = (ForeachInfo *) ckalloc((unsigned)
+	    sizeof(ForeachInfo) + numLists*sizeof(ForeachVarList *));
+    infoPtr->numLists = 0;	/* Count this up as we go */
+
+    /*
      * Break up each var list and set the varcList and varvList arrays. Don't
      * compile the foreach inline if any var name needs substitutions or isn't
      * a scalar, or if any var list needs substitutions.
@@ -1609,6 +1619,7 @@ TclCompileForeachCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	Tcl_DString varList;
+	ForeachVarList *varListPtr;
 
 	if (i%2 != 1) {
 	    continue;
@@ -1633,6 +1644,12 @@ TclCompileForeachCmd(
 	    goto done;
 	}
 	numVars = varcList[loopIndex];
+
+	varListPtr = (ForeachVarList *) ckalloc((unsigned)
+		sizeof(ForeachVarList) + numVars*sizeof(int));
+	varListPtr->numVars = numVars;
+	infoPtr->varLists[loopIndex] = varListPtr;
+	infoPtr->numLists++;
 
 	/*
 	 * If the variable list is empty, we can enter an infinite loop when
@@ -1678,23 +1695,11 @@ TclCompileForeachCmd(
     loopCtTemp = TclFindCompiledLocal(NULL, /*nameChars*/ 0,
 	    /*create*/ 1, procPtr);
 
-    /*
-     * Create and initialize the ForeachInfo and ForeachVarList data
-     * structures describing this command. Then create a AuxData record
-     * pointing to the ForeachInfo structure.
-     */
-
-    infoPtr = (ForeachInfo *) ckalloc((unsigned)
-	    sizeof(ForeachInfo) + numLists*sizeof(ForeachVarList *));
-    infoPtr->numLists = numLists;
     infoPtr->firstValueTemp = firstValueTemp;
     infoPtr->loopCtTemp = loopCtTemp;
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	ForeachVarList *varListPtr;
-	numVars = varcList[loopIndex];
-	varListPtr = (ForeachVarList *) ckalloc((unsigned)
-		sizeof(ForeachVarList) + numVars*sizeof(int));
-	varListPtr->numVars = numVars;
+	ForeachVarList *varListPtr = infoPtr->varLists[loopIndex];
+	numVars = varListPtr->numVars;
 	for (j = 0;  j < numVars;  j++) {
 	    const char *varName = varvList[loopIndex][j];
 	    int nameChars = strlen(varName);
@@ -1702,7 +1707,6 @@ TclCompileForeachCmd(
 	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
 		    nameChars, /*create*/ 1, procPtr);
 	}
-	infoPtr->varLists[loopIndex] = varListPtr;
     }
     infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
 
@@ -1816,6 +1820,11 @@ TclCompileForeachCmd(
     envPtr->currStackDepth = savedStackDepth + 1;
 
   done:
+    if (code == TCL_ERROR) {
+	if (infoPtr) {
+	    FreeForeachInfo(infoPtr);
+	}
+    }
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	if (varvList[loopIndex] != NULL) {
 	    ckfree((char *) varvList[loopIndex]);
