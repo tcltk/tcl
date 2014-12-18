@@ -1545,6 +1545,7 @@ TclCompileForeachCmd(
     int jumpBackDist, jumpBackOffset, infoIndex, range;
     int numWords, numLists, numVars, loopIndex, tempVar, i, j, code;
     int savedStackDepth = envPtr->currStackDepth;
+    Tcl_Obj *varListObj = NULL;
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -1607,6 +1608,7 @@ TclCompileForeachCmd(
      */
 
     loopIndex = 0;
+    varListObj = Tcl_NewObj();
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
@@ -1616,7 +1618,16 @@ TclCompileForeachCmd(
 	if (i%2 != 1) {
 	    continue;
 	}
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+
+	/*
+	 * If the variable list is empty, we can enter an infinite loop when
+	 * the interpreted version would not. Take care to ensure this does
+	 * not happen. [Bug 1671138]
+	 */
+
+	if (!TclWordKnownAtCompileTime(tokenPtr, varListObj) ||
+		TCL_OK != Tcl_ListObjLength(NULL, varListObj, &numVars) ||
+		numVars == 0) {
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -1642,25 +1653,23 @@ TclCompileForeachCmd(
 	infoPtr->varLists[loopIndex] = varListPtr;
 	infoPtr->numLists++;
 
-	/*
-	 * If the variable list is empty, we can enter an infinite loop when
-	 * the interpreted version would not. Take care to ensure this does
-	 * not happen. [Bug 1671138]
-	 */
-
-	if (numVars == 0) {
-	    code = TCL_ERROR;
-	    goto done;
-	}
-
 	for (j = 0;  j < numVars;  j++) {
-	    const char *varName = varvList[loopIndex][j];
+	    Tcl_Obj *varNameObj;
+	    Tcl_Token token;
+	    int varIndex, isSimple, isScalar;
 
-	    if (!TclIsLocalScalar(varName, (int) strlen(varName))) {
+	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
+	    token.start = Tcl_GetStringFromObj(varNameObj, &token.size);
+	    PushVarNameWord(interp, &token, envPtr, TCL_CREATE_VAR,
+		&varIndex, &isSimple, &isScalar, 0 /* ignored */);
+	    if (!isScalar || varIndex < 0) {
 		code = TCL_ERROR;
 		goto done;
 	    }
+	    varListPtr->varIndexes[j] = varIndex;
 	}
+
+	Tcl_SetObjLength(varListObj, 0);
 	loopIndex++;
     }
 
@@ -1683,6 +1692,7 @@ TclCompileForeachCmd(
     }
     infoPtr->loopCtTemp = TclFindCompiledLocal(NULL, 0, 1, procPtr);
 
+#if 0
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	ForeachVarList *varListPtr = infoPtr->varLists[loopIndex];
 	numVars = varListPtr->numVars;
@@ -1694,6 +1704,7 @@ TclCompileForeachCmd(
 		    nameChars, /*create*/ 1, procPtr);
 	}
     }
+#endif
     infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
 
     /*
@@ -1809,6 +1820,9 @@ TclCompileForeachCmd(
 	if (infoPtr) {
 	    FreeForeachInfo(infoPtr);
 	}
+    }
+    if (varListObj) {
+	Tcl_DecrRefCount(varListObj);
     }
     for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
 	if (varvList[loopIndex] != NULL) {
