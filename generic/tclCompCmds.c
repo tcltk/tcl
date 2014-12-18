@@ -1540,6 +1540,7 @@ TclCompileForeachCmd(
 				 * foreach command. Stored in a AuxData
 				 * record in the ByteCode. */
     Tcl_Token *tokenPtr, *bodyTokenPtr;
+    Tcl_Token token[2];
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
     int jumpBackDist, jumpBackOffset, infoIndex, range;
@@ -1593,6 +1594,8 @@ TclCompileForeachCmd(
      */
 
     varListObj = Tcl_NewObj();
+    token[0].type = TCL_TOKEN_SIMPLE_WORD;
+    token[0].numComponents = 1;
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
@@ -1623,12 +1626,9 @@ TclCompileForeachCmd(
 
 	for (j = 0;  j < numVars;  j++) {
 	    Tcl_Obj *varNameObj;
-	    Tcl_Token token[2];
 	    int varIndex, isSimple, isScalar;
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    token[0].type = TCL_TOKEN_SIMPLE_WORD;
-	    token[0].numComponents = 1;
 	    token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
 	    PushVarNameWord(interp, token, envPtr, TCL_CREATE_VAR,
 		&varIndex, &isSimple, &isScalar, 0 /* ignored */);
@@ -1638,13 +1638,11 @@ TclCompileForeachCmd(
 	    }
 	    varListPtr->varIndexes[j] = varIndex;
 	}
-
 	Tcl_SetObjLength(varListObj, 0);
     }
 
     /*
-     * We will compile the foreach command. Reserve (numLists + 1) temporary
-     * variables:
+     * Reserve (numLists + 1) temporary variables:
      *    - numLists temps to hold each value list
      *    - 1 temp for the loop counter (index of next element in each list)
      *
