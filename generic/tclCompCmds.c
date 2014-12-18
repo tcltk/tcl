@@ -1549,13 +1549,6 @@ TclCompileForeachCmd(
     DefineLineInformation;	/* TIP #280 */
 
     /*
-     * We parse the variable list argument words and create two arrays:
-     *    varvList[i] points to array of var names in i-th var list.
-     */
-
-    const char ***varvList;
-
-    /*
      * If the foreach command isn't in a procedure, don't compile it inline:
      * the payoff is too small.
      */
@@ -1583,26 +1576,18 @@ TclCompileForeachCmd(
     }
 
     /*
-     * Allocate storage for the varcList and varvList arrays if necessary.
-     */
-
-    numLists = (numWords - 2)/2;
-    varvList = (const char ***) TclStackAlloc(interp,
-	    numLists * sizeof(const char **));
-    memset((char*) varvList, 0, numLists * sizeof(const char **));
-
-    /*
      * Create and initialize the ForeachInfo and ForeachVarList data
      * structures describing this command. Then create a AuxData record
      * pointing to the ForeachInfo structure.
      */
 
+    numLists = (numWords - 2)/2;
     infoPtr = (ForeachInfo *) ckalloc((unsigned)
 	    sizeof(ForeachInfo) + numLists*sizeof(ForeachVarList *));
     infoPtr->numLists = 0;	/* Count this up as we go */
 
     /*
-     * Break up each var list and set the varcList and varvList arrays. Don't
+     * Parse each var list into sequence of var names. Don't
      * compile the foreach inline if any var name needs substitutions or isn't
      * a scalar, or if any var list needs substitutions.
      */
@@ -1668,8 +1653,6 @@ TclCompileForeachCmd(
      * At this time we don't try to reuse temporaries; if there are two
      * nonoverlapping foreach loops, they don't share any temps.
      */
-
-    code = TCL_OK;
 
     tempVar = TclFindCompiledLocal(NULL, 0, 1, procPtr);
     infoPtr->firstValueTemp = tempVar;
@@ -1797,12 +1780,6 @@ TclCompileForeachCmd(
     if (varListObj) {
 	Tcl_DecrRefCount(varListObj);
     }
-    for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	if (varvList[loopIndex] != NULL) {
-	    ckfree((char *) varvList[loopIndex]);
-	}
-    }
-    TclStackFree(interp, (void *)varvList);
     return code;
 }
 
