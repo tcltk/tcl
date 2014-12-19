@@ -402,7 +402,7 @@ TclCompileCatchCmd(
     cmdTokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (parsePtr->numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
-	PushVarNameWord(interp, resultNameTokenPtr, envPtr, TCL_CREATE_VAR,
+	PushVarNameWord(NULL, resultNameTokenPtr, envPtr, TCL_CREATE_VAR,
 		&resultIndex, &isSimple, &isScalar, 2);
 	if (!isScalar || resultIndex < 0) {
 	    return TCL_ERROR;
@@ -410,7 +410,7 @@ TclCompileCatchCmd(
 
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
-	    PushVarNameWord(interp, optsNameTokenPtr, envPtr, TCL_CREATE_VAR,
+	    PushVarNameWord(NULL, optsNameTokenPtr, envPtr, TCL_CREATE_VAR,
 		    &optsIndex, &isSimple, &isScalar, 3);
 	    if (!isScalar || resultIndex < 0) {
 		return TCL_ERROR;
@@ -673,7 +673,7 @@ TclCompileDictSetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarNameWord(NULL, varTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &dictVarIndex, &isSimple, &isScalar, 1);
     if (!isScalar || dictVarIndex < 0) {
 	return TCL_ERROR;
@@ -726,7 +726,7 @@ TclCompileDictIncrCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarNameWord(NULL, varTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &dictVarIndex, &isSimple, &isScalar, 1);
     if (!isScalar || dictVarIndex < 0) {
 	return TCL_ERROR;
@@ -849,7 +849,7 @@ TclCompileDictForCmd(
 
     Tcl_ListObjIndex(NULL, varListObj, 0, &varNameObj);
     token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
-    PushVarNameWord(interp, token, envPtr, TCL_CREATE_VAR,
+    PushVarNameWord(NULL, token, envPtr, TCL_CREATE_VAR,
 	    &keyVarIndex, &isSimple, &isScalar, 0 /* ignored */);
     if (!isScalar || keyVarIndex < 0) {
 	Tcl_DecrRefCount(varListObj);
@@ -858,7 +858,7 @@ TclCompileDictForCmd(
 
     Tcl_ListObjIndex(NULL, varListObj, 1, &varNameObj);
     token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
-    PushVarNameWord(interp, token, envPtr, TCL_CREATE_VAR,
+    PushVarNameWord(NULL, token, envPtr, TCL_CREATE_VAR,
 	    &valueVarIndex, &isSimple, &isScalar, 0 /* ignored */);
     if (!isScalar || valueVarIndex < 0) {
 	Tcl_DecrRefCount(varListObj);
@@ -1031,7 +1031,7 @@ TclCompileDictUpdateCmd(
      */
 
     dictVarTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, dictVarTokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarNameWord(NULL, dictVarTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &dictIndex, &isSimple, &isScalar, 1);
     if (!isScalar || dictIndex < 0) {
 	return TCL_ERROR;
@@ -1064,7 +1064,7 @@ TclCompileDictUpdateCmd(
 	 */
 
 	tokenPtr = TokenAfter(tokenPtr);
-	PushVarNameWord(interp, tokenPtr, envPtr, TCL_CREATE_VAR,
+	PushVarNameWord(NULL, tokenPtr, envPtr, TCL_CREATE_VAR,
 	    &index, &isSimple, &isScalar, 1);
 	if (!isScalar || index < 0) {
 	    ckfree((char *) duiPtr);
@@ -1176,7 +1176,7 @@ TclCompileDictAppendCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, tokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarNameWord(NULL, tokenPtr, envPtr, TCL_CREATE_VAR,
 	    &dictVarIndex, &isSimple, &isScalar, 1);
     if (!isScalar || dictVarIndex < 0) {
 	return TCL_ERROR;
@@ -1227,7 +1227,7 @@ TclCompileDictLappendCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     keyTokenPtr = TokenAfter(varTokenPtr);
     valueTokenPtr = TokenAfter(keyTokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_CREATE_VAR,
+    PushVarNameWord(NULL, varTokenPtr, envPtr, TCL_CREATE_VAR,
 	    &dictVarIndex, &isSimple, &isScalar, 1);
     if (!isScalar || dictVarIndex < 0) {
 	return TCL_ERROR;
@@ -1632,7 +1632,7 @@ TclCompileForeachCmd(
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
 	    token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
-	    PushVarNameWord(interp, token, envPtr, TCL_CREATE_VAR,
+	    PushVarNameWord(NULL, token, envPtr, TCL_CREATE_VAR,
 		&varIndex, &isSimple, &isScalar, 0 /* ignored */);
 	    if (!isScalar || varIndex < 0) {
 		code = TCL_ERROR;
@@ -4805,7 +4805,7 @@ PushVarName(
 		elemTokenCount = 1;
 	    }
 	}
-    } else if (((n = varTokenPtr->numComponents) > 1)
+    } else if (interp && ((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
@@ -4907,7 +4907,7 @@ PushVarName(
 		localIndex = -1;
 	    }
 	}
-	if (localIndex < 0) {
+	if (interp && localIndex < 0) {
 	    PushLiteral(envPtr, name, nameChars);
 	}
 
@@ -4915,7 +4915,7 @@ PushVarName(
 	 * Compile the element script, if any.
 	 */
 
-	if (elName != NULL) {
+	if (interp && elName != NULL) {
 	    if (elNameChars) {
 		envPtr->line = line;
 		envPtr->clNext = clNext;
@@ -4924,7 +4924,7 @@ PushVarName(
 		PushLiteral(envPtr, "", 0);
 	    }
 	}
-    } else {
+    } else if (interp) {
 	/*
 	 * The var name isn't simple: compile and push it.
 	 */
@@ -5708,7 +5708,7 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	PushVarNameWord(interp, localTokenPtr, envPtr, TCL_CREATE_VAR,
+	PushVarNameWord(NULL, localTokenPtr, envPtr, TCL_CREATE_VAR,
 			&localIndex, &simpleVarName, &isScalar, i+1);
 
 	if((localIndex < 0) || !isScalar) {
@@ -5800,7 +5800,7 @@ TclCompileNamespaceCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	PushVarNameWord(interp, localTokenPtr, envPtr, TCL_CREATE_VAR,
+	PushVarNameWord(NULL, localTokenPtr, envPtr, TCL_CREATE_VAR,
 			&localIndex, &simpleVarName, &isScalar, i+1);
 
 	if((localIndex < 0) || !isScalar) {
