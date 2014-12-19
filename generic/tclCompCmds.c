@@ -1544,7 +1544,7 @@ TclCompileForeachCmd(
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
     int jumpBackDist, jumpBackOffset, infoIndex, range;
-    int numWords, numLists, numVars, tempVar, i, j, code = TCL_OK;
+    int numWords, numLists, tempVar, i, j, code = TCL_OK;
     int savedStackDepth = envPtr->currStackDepth;
     Tcl_Obj *varListObj = NULL;
     DefineLineInformation;	/* TIP #280 */
@@ -1600,6 +1600,7 @@ TclCompileForeachCmd(
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
 	ForeachVarList *varListPtr;
+	int numVars;
 
 	if (i%2 != 1) {
 	    continue;
