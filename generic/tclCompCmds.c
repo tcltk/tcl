@@ -152,8 +152,10 @@ static void		FreeJumptableInfo(ClientData clientData);
 static void		PrintJumptableInfo(ClientData clientData,
 			    Tcl_Obj *appendObj, ByteCode *codePtr,
 			    unsigned int pcOffset);
-static int		GetLocalScalarIndex(Tcl_Token *tokenPtr,
-			    CompileEnv *envPtr, int *indexPtr);
+static int		LocalScalarFromToken(Tcl_Token *tokenPtr,
+			    CompileEnv *envPtr);
+static int		LocalScalar(const char *bytes, int numBytes,
+			    CompileEnv *envPtr);
 static int		PushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
@@ -404,13 +406,15 @@ TclCompileCatchCmd(
     cmdTokenPtr = TokenAfter(parsePtr->tokenPtr);
     if (parsePtr->numWords >= 3) {
 	resultNameTokenPtr = TokenAfter(cmdTokenPtr);
-	if (!GetLocalScalarIndex(resultNameTokenPtr, envPtr, &resultIndex)) {
+	resultIndex = LocalScalarFromToken(resultNameTokenPtr, envPtr);
+	if (resultIndex < 0) {
 	    return TCL_ERROR;
 	}
 
 	if (parsePtr->numWords == 4) {
 	    optsNameTokenPtr = TokenAfter(resultNameTokenPtr);
-	    if (!GetLocalScalarIndex(optsNameTokenPtr, envPtr, &optsIndex)) {
+	    optsIndex = LocalScalarFromToken(optsNameTokenPtr, envPtr);
+	    if (optsIndex < 0) {
 		return TCL_ERROR;
 	    }
 	}
@@ -670,7 +674,8 @@ TclCompileDictSetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (!GetLocalScalarIndex(varTokenPtr, envPtr, &dictVarIndex)) {
+    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
+    if (dictVarIndex < 0) {
 	return TCL_ERROR;
     }
 
@@ -721,7 +726,8 @@ TclCompileDictIncrCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (!GetLocalScalarIndex(varTokenPtr, envPtr, &dictVarIndex)) {
+    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
+    if (dictVarIndex < 0) {
 	return TCL_ERROR;
     }
 
@@ -802,13 +808,12 @@ TclCompileDictForCmd(
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
     int keyVarIndex, valueVarIndex, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
-    int numVars, endTargetOffset;
+    int numVars, endTargetOffset, numBytes;
+    const char *bytes;
     int savedStackDepth = envPtr->currStackDepth;
 				/* Needed because jumps confuse the stack
 				 * space calculator. */
     Tcl_Obj *varNameObj, *varListObj = NULL;
-    Tcl_Token token[2] =	{{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
-				 {TCL_TOKEN_TEXT, NULL, 0, 0}};
     DefineLineInformation;	/* TIP #280 */
 
     /*
@@ -841,15 +846,17 @@ TclCompileDictForCmd(
     }
 
     Tcl_ListObjIndex(NULL, varListObj, 0, &varNameObj);
-    token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
-    if (!GetLocalScalarIndex(token, envPtr, &keyVarIndex)) {
+    bytes = Tcl_GetStringFromObj(varNameObj, &numBytes);
+    keyVarIndex = LocalScalar(bytes, numBytes, envPtr);
+    if (keyVarIndex < 0) {
 	Tcl_DecrRefCount(varListObj);
 	return TCL_ERROR;
     }
 
     Tcl_ListObjIndex(NULL, varListObj, 1, &varNameObj);
-    token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
-    if (!GetLocalScalarIndex(token, envPtr, &valueVarIndex)) {
+    bytes = Tcl_GetStringFromObj(varNameObj, &numBytes);
+    valueVarIndex = LocalScalar(bytes, numBytes, envPtr);
+    if (valueVarIndex < 0) {
 	Tcl_DecrRefCount(varListObj);
 	return TCL_ERROR;
     }
@@ -1020,7 +1027,8 @@ TclCompileDictUpdateCmd(
      */
 
     dictVarTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (!GetLocalScalarIndex(dictVarTokenPtr, envPtr, &dictIndex)) {
+    dictIndex = LocalScalarFromToken(dictVarTokenPtr, envPtr);
+    if (dictIndex < 0) {
 	return TCL_ERROR;
     }
 
@@ -1051,7 +1059,8 @@ TclCompileDictUpdateCmd(
 	 */
 
 	tokenPtr = TokenAfter(tokenPtr);
-	if (!GetLocalScalarIndex(tokenPtr, envPtr, &index)) {
+	index = LocalScalarFromToken(tokenPtr, envPtr);
+	if (index < 0) {
 	    ckfree((char *) duiPtr);
 	    TclStackFree(interp, keyTokenPtrs);
 	    return TCL_ERROR;
@@ -1161,7 +1170,8 @@ TclCompileDictAppendCmd(
      */
 
     tokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (!GetLocalScalarIndex(tokenPtr, envPtr, &dictVarIndex)) {
+    dictVarIndex = LocalScalarFromToken(tokenPtr, envPtr);
+    if (dictVarIndex < 0) {
 	return TCL_ERROR;
     }
 
@@ -1210,7 +1220,8 @@ TclCompileDictLappendCmd(
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
     keyTokenPtr = TokenAfter(varTokenPtr);
     valueTokenPtr = TokenAfter(keyTokenPtr);
-    if (!GetLocalScalarIndex(varTokenPtr, envPtr, &dictVarIndex)) {
+    dictVarIndex = LocalScalarFromToken(varTokenPtr, envPtr);
+    if (dictVarIndex < 0) {
 	return TCL_ERROR;
     }
     CompileWord(envPtr, keyTokenPtr, interp, 2);
@@ -1522,7 +1533,6 @@ TclCompileForeachCmd(
 				 * foreach command. Stored in a AuxData
 				 * record in the ByteCode. */
     Tcl_Token *tokenPtr, *bodyTokenPtr;
-    Tcl_Token token[2];
     unsigned char *jumpPc;
     JumpFixup jumpFalseFixup;
     int jumpBackDist, jumpBackOffset, infoIndex, range;
@@ -1576,8 +1586,6 @@ TclCompileForeachCmd(
      */
 
     varListObj = Tcl_NewObj();
-    token[0].type = TCL_TOKEN_SIMPLE_WORD;
-    token[0].numComponents = 1;
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
@@ -1609,11 +1617,13 @@ TclCompileForeachCmd(
 
 	for (j = 0;  j < numVars;  j++) {
 	    Tcl_Obj *varNameObj;
+	    int numBytes;
+	    const char *bytes;
 
 	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
-	    token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
-	    if (!GetLocalScalarIndex(token, envPtr,
-		    varListPtr->varIndexes + j)) {
+	    bytes = Tcl_GetStringFromObj(varNameObj, &numBytes);
+	    varListPtr->varIndexes[j] = LocalScalar(bytes, numBytes, envPtr);
+	    if (varListPtr->varIndexes[j] < 0) {
 		code = TCL_ERROR;
 		goto done;
 	    }
@@ -4695,33 +4705,50 @@ TclCompileWhileCmd(
 /*
  *----------------------------------------------------------------------
  *
- * GetLocalScalarIndex --
+ * LocalScalar(FromToken) --
  *
- *	Procedure used in the compiling where pushing a variable name is
- *	necessary (append, lappend, set).
+ *	Get the index into the table of compiled locals that corresponds
+ *	to a local scalar variable name.
  *
  * Results:
- * 	Returns TCL_OK for a successful compile. Returns TCL_ERROR to defer
- * 	evaluation to runtime.
+ * 	Returns the non-negative integer index value into the table of
+ *	compiled locals corresponding to a local scalar variable name.
+ *	If the arguments passed in do not identify a local scalar variable
+ *	then return -1.
  *
  * Side effects:
- *	Instructions are added to envPtr to execute the "set" command at
- *	runtime.
+ *	May add an entry into the table of compiled locals.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-GetLocalScalarIndex(
+LocalScalarFromToken(
     Tcl_Token *tokenPtr,
-    CompileEnv *envPtr,
-    int *indexPtr)
+    CompileEnv *envPtr)
 {
-    int isSimple, isScalar;
+    int isSimple, isScalar, index;
 
-    PushVarName(NULL, tokenPtr, envPtr, TCL_CREATE_VAR, indexPtr,
+    PushVarName(NULL, tokenPtr, envPtr, TCL_CREATE_VAR, &index,
 	    &isSimple, &isScalar, 0 /* ignored */, NULL /* ignored */);
-    return (isScalar && *indexPtr >= 0);
+    if (!isScalar) {
+	index = -1;
+    }
+    return index;
+}
+
+static int
+LocalScalar(
+    const char *bytes,
+    int numBytes,
+    CompileEnv *envPtr)
+{
+    Tcl_Token token[2] =	{{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
+				 {TCL_TOKEN_TEXT, NULL, 0, 0}};
+
+    token[1].start = bytes;
+    token[1].size = numBytes;
+    return LocalScalarFromToken(token, envPtr);
 }
 
 /*
@@ -5718,7 +5745,8 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	if (!GetLocalScalarIndex(localTokenPtr, envPtr, &localIndex)) {
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(INST_UPVAR, localIndex, envPtr);
@@ -5807,7 +5835,8 @@ TclCompileNamespaceCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	if (!GetLocalScalarIndex(localTokenPtr, envPtr, &localIndex)) {
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(INST_NSUPVAR, localIndex, envPtr);
