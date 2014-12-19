@@ -806,16 +806,17 @@ TclCompileDictForCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Proc *procPtr = envPtr->procPtr;
-    DefineLineInformation;	/* TIP #280 */
     Tcl_Token *varsTokenPtr, *dictTokenPtr, *bodyTokenPtr;
-    int keyVarIndex, valueVarIndex, nameChars, loopRange, catchRange;
+    int keyVarIndex, valueVarIndex, loopRange, catchRange;
     int infoIndex, jumpDisplacement, bodyTargetOffset, emptyTargetOffset;
-    int numVars, endTargetOffset;
+    int numVars, endTargetOffset, isSimple, isScalar;
     int savedStackDepth = envPtr->currStackDepth;
 				/* Needed because jumps confuse the stack
 				 * space calculator. */
-    const char **argv;
-    Tcl_DString buffer;
+    Tcl_Obj *varNameObj, *varListObj = NULL;
+    Tcl_Token token[2] =	{{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
+				 {TCL_TOKEN_TEXT, NULL, 0, 0}};
+    DefineLineInformation;	/* TIP #280 */
 
     /*
      * There must be exactly three arguments after the command.
@@ -828,8 +829,8 @@ TclCompileDictForCmd(
     varsTokenPtr = TokenAfter(parsePtr->tokenPtr);
     dictTokenPtr = TokenAfter(varsTokenPtr);
     bodyTokenPtr = TokenAfter(dictTokenPtr);
-    if (varsTokenPtr->type != TCL_TOKEN_SIMPLE_WORD ||
-	    bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
+
+    if (bodyTokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	return TCL_ERROR;
     }
 
@@ -838,33 +839,33 @@ TclCompileDictForCmd(
      * Then extract their indices in the LVT.
      */
 
-    Tcl_DStringInit(&buffer);
-    Tcl_DStringAppend(&buffer, varsTokenPtr[1].start, varsTokenPtr[1].size);
-    if (Tcl_SplitList(NULL, Tcl_DStringValue(&buffer), &numVars,
-	    &argv) != TCL_OK) {
-	Tcl_DStringFree(&buffer);
-	return TCL_ERROR;
-    }
-    Tcl_DStringFree(&buffer);
-    if (numVars != 2) {
-	ckfree((char *) argv);
+    varListObj = Tcl_NewObj();
+    if (!TclWordKnownAtCompileTime(varsTokenPtr, varListObj) ||
+	    TCL_OK != Tcl_ListObjLength(NULL, varListObj, &numVars) ||
+	    numVars != 2) {
+	Tcl_DecrRefCount(varListObj);
 	return TCL_ERROR;
     }
 
-    nameChars = strlen(argv[0]);
-    if (!TclIsLocalScalar(argv[0], nameChars)) {
-	ckfree((char *) argv);
+    Tcl_ListObjIndex(NULL, varListObj, 0, &varNameObj);
+    token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
+    PushVarNameWord(interp, token, envPtr, TCL_CREATE_VAR,
+	    &keyVarIndex, &isSimple, &isScalar, 0 /* ignored */);
+    if (!isScalar || keyVarIndex < 0) {
+	Tcl_DecrRefCount(varListObj);
 	return TCL_ERROR;
     }
-    keyVarIndex = TclFindCompiledLocal(argv[0], nameChars, 1, procPtr);
 
-    nameChars = strlen(argv[1]);
-    if (!TclIsLocalScalar(argv[1], nameChars)) {
-	ckfree((char *) argv);
+    Tcl_ListObjIndex(NULL, varListObj, 1, &varNameObj);
+    token[1].start = Tcl_GetStringFromObj(varNameObj, &token[1].size);
+    PushVarNameWord(interp, token, envPtr, TCL_CREATE_VAR,
+	    &valueVarIndex, &isSimple, &isScalar, 0 /* ignored */);
+    if (!isScalar || valueVarIndex < 0) {
+	Tcl_DecrRefCount(varListObj);
 	return TCL_ERROR;
     }
-    valueVarIndex = TclFindCompiledLocal(argv[1], nameChars, 1, procPtr);
-    ckfree((char *) argv);
+
+    Tcl_DecrRefCount(varListObj);
 
     /*
      * Allocate a temporary variable to store the iterator reference. The
