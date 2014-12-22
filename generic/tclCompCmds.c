@@ -3328,7 +3328,7 @@ TclPushVarName(
 		elemTokenCount = 1;
 	    }
 	}
-    } else if (((n = varTokenPtr->numComponents) > 1)
+    } else if (interp && ((n = varTokenPtr->numComponents) > 1)
 	    && (varTokenPtr[1].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].type == TCL_TOKEN_TEXT)
 	    && (varTokenPtr[n].start[varTokenPtr[n].size - 1] == ')')) {
@@ -3429,7 +3429,7 @@ TclPushVarName(
 		localIndex = -1;
 	    }
 	}
-	if (localIndex < 0) {
+	if (interp && localIndex < 0) {
 	    PushLiteral(envPtr, name, nameChars);
 	}
 
@@ -3446,7 +3446,7 @@ TclPushVarName(
 		PushStringLiteral(envPtr, "");
 	    }
 	}
-    } else {
+    } else if (interp) {
 	/*
 	 * The var name isn't simple: compile and push it.
 	 */
