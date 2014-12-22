@@ -3234,6 +3234,54 @@ TclCompileFormatCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclLocalScalarFromToken --
+ *
+ *	Get the index into the table of compiled locals that corresponds
+ *	to a local scalar variable name.
+ *
+ * Results:
+ * 	Returns the non-negative integer index value into the table of
+ * 	compiled locals corresponding to a local scalar variable name.
+ * 	If the arguments passed in do not identify a local scalar variable
+ * 	then return -1.
+ *
+ * Side effects:
+ *	May add an entery into the table of compiled locals.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclLocalScalarFromToken(
+    Tcl_Token *tokenPtr,
+    CompileEnv *envPtr)
+{
+    int isScalar, index;
+
+    TclPushVarName(NULL, tokenPtr, envPtr, TCL_NO_ELEMENT, &index, &isScalar);
+    if (!isScalar) {
+	index = -1;
+    }
+    return index;
+}
+
+int
+TclLocalScalar(
+    const char *bytes,
+    int numBytes,
+    CompileEnv *envPtr)
+{
+    Tcl_Token token[2] =        {{TCL_TOKEN_SIMPLE_WORD, NULL, 0, 1},
+                                 {TCL_TOKEN_TEXT, NULL, 0, 0}};
+
+    token[1].start = bytes;
+    token[1].size = numBytes;
+    return TclLocalScalarFromToken(token, envPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclPushVarName --
  *
  *	Procedure used in the compiling where pushing a variable name is
