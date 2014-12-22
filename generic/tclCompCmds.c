@@ -4826,7 +4826,7 @@ PushVarName(
 		}
 	    }
 
-	    if ((elName != NULL) && elNameChars) {
+	    if (interp && (elName != NULL) && elNameChars) {
 		/*
 		 * An array element, the element name is a simple string:
 		 * assemble the corresponding token.
