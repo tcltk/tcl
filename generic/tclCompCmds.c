@@ -3313,7 +3313,7 @@ TclPushVarName(
 		}
 	    }
 
-	    if ((elName != NULL) && elNameChars) {
+	    if (!(flags & TCL_NO_ELEMENT) && (elName != NULL) && elNameChars) {
 		/*
 		 * An array element, the element name is a simple string:
 		 * assemble the corresponding token.
@@ -3366,7 +3366,8 @@ TclPushVarName(
 	    remainingChars = (varTokenPtr[2].start - p) - 1;
 	    elNameChars = (varTokenPtr[n].start-p) + varTokenPtr[n].size - 1;
 
-	    if (remainingChars) {
+	    if (!(flags & TCL_NO_ELEMENT)) {
+	      if (remainingChars) {
 		/*
 		 * Make a first token with the extra characters in the first
 		 * token.
@@ -3386,13 +3387,14 @@ TclPushVarName(
 
 		memcpy(elemTokenPtr+1, varTokenPtr+2,
 			(n-1) * sizeof(Tcl_Token));
-	    } else {
+	      } else {
 		/*
 		 * Use the already available tokens.
 		 */
 
 		elemTokenPtr = &varTokenPtr[2];
 		elemTokenCount = n - 1;
+	      }
 	    }
 	}
     }
