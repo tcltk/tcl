@@ -177,9 +177,9 @@ TclCompileAppendCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
-	    &localIndex, &isScalar, 1);
-    if (!isScalar || localIndex < 0) {
+
+    localIndex = LocalScalarFromToken(varTokenPtr, envPtr);
+    if (localIndex < 0) {
 	return TCL_ERROR;
     }
 
