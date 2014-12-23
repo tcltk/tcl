@@ -5977,16 +5977,21 @@ ReadChars(
      */
 
     while (1) {
-	int dstDecoded, dstRead, dstWrote, srcRead, numChars;
+	int dstDecoded, dstRead, dstWrote, srcRead, numChars, code;
+	int flags = statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE;
+	
+	if (charsToRead > 0) {
+	    flags |= TCL_ENCODING_CHAR_LIMIT;
+	    numChars = charsToRead;
+	}
 
 	/*
 	 * Perform the encoding transformation.  Read no more than
 	 * srcLen bytes, write no more than dstLimit bytes.
 	 */
 
-	int code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		(statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE)
-		& (bufPtr->nextPtr ? ~0 : ~TCL_ENCODING_END),
+	code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
+		flags & (bufPtr->nextPtr ? ~0 : ~TCL_ENCODING_END),
 		&statePtr->inputEncodingState, dst, dstLimit, &srcRead,
 		&dstDecoded, &numChars);
 
@@ -6161,6 +6166,8 @@ ReadChars(
 	if (charsToRead > 0 && numChars > charsToRead) {
 
 	    /* 
+	     * TODO: This cannot happen anymore.
+	     *
 	     * We read more chars than allowed.  Reset limits to
 	     * prevent that and try again.  Don't forget the extra
 	     * padding of TCL_UTF_MAX bytes demanded by the
