@@ -4199,10 +4199,11 @@ TclInitAuxDataTypeTable(void)
     Tcl_InitHashTable(&auxDataTypeTable, TCL_STRING_KEYS);
 
     /*
-     * There are only three AuxData types at this time, so register them here.
+     * There are only four AuxData types at this time, so register them here.
      */
 
     RegisterAuxDataType(&tclForeachInfoType);
+    RegisterAuxDataType(&tclNewForeachInfoType);
     RegisterAuxDataType(&tclJumptableInfoType);
     RegisterAuxDataType(&tclDictUpdateInfoType);
 }

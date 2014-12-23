@@ -596,7 +596,7 @@ WaitForConnect(
     /*
      * Check if an async connect is running. If not return ok
      */
-     
+
     if (!(statePtr->flags & TCP_ASYNC_CONNECT)) {
 	return 0;
     }
@@ -616,7 +616,7 @@ WaitForConnect(
 	/* get statePtr lock */
         tsdPtr = TclThreadDataKeyGet(&dataKey);
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-	
+
 	/* Check for connect event */
 	if (statePtr->readyEvents & FD_CONNECT) {
 
@@ -1250,7 +1250,7 @@ TcpGetOptionProc(
 	return TCL_ERROR;
     }
 
-    /* 
+    /*
      * Go one step in async connect
      * If any error is thrown save it as backround error to report eventually below
      */
@@ -1501,9 +1501,9 @@ TcpGetOptionProc(
     if (len > 0) {
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
 	return Tcl_BadChannelOption(interp, optionName,
-		"peername sockname keepalive nagle");
+		"connecting peername sockname keepalive nagle");
 #else
-	return Tcl_BadChannelOption(interp, optionName, "peername sockname");
+	return Tcl_BadChannelOption(interp, optionName, "connecting peername sockname");
 #endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
     }
 
@@ -1647,14 +1647,14 @@ TcpConnect(
     /* We were called by the event procedure and continue our loop */
     int async_callback = statePtr->flags & TCP_ASYNC_PENDING;
     ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
-    
+
     if (async_callback) {
         goto reenter;
     }
-    
+
     for (statePtr->addr = statePtr->addrlist; statePtr->addr != NULL;
 	 statePtr->addr = statePtr->addr->ai_next) {
-	
+
         for (statePtr->myaddr = statePtr->myaddrlist; statePtr->myaddr != NULL;
 	     statePtr->myaddr = statePtr->myaddr->ai_next) {
 
@@ -1670,7 +1670,7 @@ TcpConnect(
             /*
              * Close the socket if it is still open from the last unsuccessful
              * iteration.
-             */	    
+             */
 	    if (statePtr->sockets->fd != INVALID_SOCKET) {
 		closesocket(statePtr->sockets->fd);
 	    }
@@ -1683,9 +1683,9 @@ TcpConnect(
 	     */
 	    statePtr->notifierConnectError = 0;
 	    Tcl_SetErrno(0);
-	    
+
 	    statePtr->sockets->fd = socket(statePtr->myaddr->ai_family, SOCK_STREAM, 0);
-	    
+
 	    /* Free list lock */
 	    SetEvent(tsdPtr->socketListLock);
 
@@ -1739,7 +1739,7 @@ TcpConnect(
 		 */
 
 		for (statePtr2 = tsdPtr->socketList; statePtr2 != NULL;
-			statePtr2 = statePtr->nextPtr) {
+			statePtr2 = statePtr2->nextPtr) {
 		    if (statePtr2 == statePtr) {
 			in_socket_list = 1;
 			break;
@@ -1754,7 +1754,7 @@ TcpConnect(
 		 * thread.
 		 */
 		statePtr->selectEvents |= FD_CONNECT;
-		
+
 		/*
 		 * Free list lock
 		 */
@@ -1768,7 +1768,7 @@ TcpConnect(
 	    /*
 	     * Attempt to connect to the remote socket.
 	     */
-	    
+
 	    connect(statePtr->sockets->fd, statePtr->addr->ai_addr,
 		    statePtr->addr->ai_addrlen);
 
@@ -1809,7 +1809,7 @@ TcpConnect(
 	     * the FD_CONNECT asyncroneously
 	     */
 	    tsdPtr->pendingTcpState = NULL;
-	    
+
 	    if (Tcl_GetErrno() == 0) {
 		goto out;
 	    }
@@ -1835,12 +1835,12 @@ out:
 	 * Set up the select mask for read/write events.
 	 */
 	statePtr->selectEvents = FD_READ | FD_WRITE | FD_CLOSE;
-        
+
 	/*
 	 * Register for interest in events in the select mask. Note that this
 	 * automatically places the socket into non-blocking mode.
 	 */
-        
+
 	SendMessage(tsdPtr->hwnd, SOCKET_SELECT, (WPARAM) SELECT,
 		    (LPARAM) statePtr);
     } else {
@@ -2092,20 +2092,20 @@ Tcl_OpenTcpServer(
 	    TclWinConvertError((DWORD) WSAGetLastError());
 	    continue;
 	}
-	
+
 	/*
 	 * Win-NT has a misfeature that sockets are inherited in child
 	 * processes by default. Turn off the inherit bit.
 	 */
-	
+
 	SetHandleInformation((HANDLE) sock, HANDLE_FLAG_INHERIT, 0);
-	
+
 	/*
 	 * Set kernel space buffering
 	 */
-	
+
 	TclSockMinimumBuffers((void *)sock, TCP_BUFFER_SIZE);
-	
+
 	/*
 	 * Make sure we use the same port when opening two server sockets
 	 * for IPv4 and IPv6.
@@ -2113,12 +2113,12 @@ Tcl_OpenTcpServer(
 	 * As sockaddr_in6 uses the same offset and size for the port
 	 * member as sockaddr_in, we can handle both through the IPv4 API.
 	 */
-	
+
 	if (port == 0 && chosenport != 0) {
 	    ((struct sockaddr_in *) addrPtr->ai_addr)->sin_port =
 		htons(chosenport);
 	}
-	
+
 	/*
 	 * Bind to the specified port. Note that we must not call
 	 * setsockopt with SO_REUSEADDR because Microsoft allows addresses
@@ -2128,7 +2128,7 @@ Tcl_OpenTcpServer(
 	 * set into nonblocking mode. If there is trouble, this is one
 	 * place to look for bugs.
 	 */
-	
+
 	if (bind(sock, addrPtr->ai_addr, addrPtr->ai_addrlen)
 	    == SOCKET_ERROR) {
 	    TclWinConvertError((DWORD) WSAGetLastError());
@@ -2138,29 +2138,29 @@ Tcl_OpenTcpServer(
 	if (port == 0 && chosenport == 0) {
 	    address sockname;
 	    socklen_t namelen = sizeof(sockname);
-	    
+
 	    /*
 	     * Synchronize port numbers when binding to port 0 of multiple
 	     * addresses.
 	     */
-	    
+
 	    if (getsockname(sock, &sockname.sa, &namelen) >= 0) {
 		chosenport = ntohs(sockname.sa4.sin_port);
 	    }
 	}
-	
+
 	/*
 	 * Set the maximum number of pending connect requests to the max
 	 * value allowed on each platform (Win32 and Win32s may be
 	 * different, and there may be differences between TCP/IP stacks).
 	 */
-	
+
 	if (listen(sock, SOMAXCONN) == SOCKET_ERROR) {
 	    TclWinConvertError((DWORD) WSAGetLastError());
 	    closesocket(sock);
 	    continue;
 	}
-	
+
 	if (statePtr == NULL) {
 	    /*
 	     * Add this socket to the global list of sockets.
@@ -2186,9 +2186,9 @@ error:
 	/*
 	 * Set up the select mask for connection request events.
 	 */
-	
+
 	statePtr->selectEvents = FD_ACCEPT;
-	
+
 	/*
 	 * Register for interest in events in the select mask. Note that this
 	 * automatically places the socket into non-blocking mode.
@@ -2652,7 +2652,7 @@ SocketEventProc(
 	    WaitForConnect(statePtr,NULL);
 
 	} else {
-	    
+
 	    /*
 	     * No async connect reenter pending. Just clear event.
 	     */
@@ -2681,7 +2681,7 @@ SocketEventProc(
 	     * network stack conditions that can result in FD_ACCEPT but a subsequent
 	     * failure on accept() by the time we get around to it.
 	     * Access to sockets (acceptEventCount, readyEvents) in socketList
-	     * is still protected by the lock (prevents reintroduction of 
+	     * is still protected by the lock (prevents reintroduction of
 	     * SF Tcl Bug 3056775.
 	     */
 
@@ -2713,9 +2713,9 @@ SocketEventProc(
 	    return 1;
 	}
 
-	/* Loop terminated with no sockets accepted; clear the ready mask so 
-	 * we can detect the next connection request. Note that connection 
-	 * requests are level triggered, so if there is a request already 
+	/* Loop terminated with no sockets accepted; clear the ready mask so
+	 * we can detect the next connection request. Note that connection
+	 * requests are level triggered, so if there is a request already
 	 * pending, a new event will be generated.
 	 */
 	statePtr->acceptEventCount = 0;
@@ -2758,7 +2758,7 @@ SocketEventProc(
 	if ( statePtr->flags & TCP_ASYNC_FAILED ) {
 
 	    mask |= TCL_READABLE;
-	    
+
 	} else {
 	    fd_set readFds;
 	    struct timeval timeout;
@@ -2796,11 +2796,11 @@ SocketEventProc(
     if (events & FD_WRITE) {
 	mask |= TCL_WRITABLE;
     }
-    
+
     /*
      * Call registered event procedures
      */
-     
+
     if (mask) {
 	Tcl_NotifyChannel(statePtr->channel, mask);
     }
@@ -2812,7 +2812,7 @@ SocketEventProc(
  *
  * AddSocketInfoFd --
  *
- *	This function adds a SOCKET file descriptor to the 'sockets' linked 
+ *	This function adds a SOCKET file descriptor to the 'sockets' linked
  *	list of a TcpState structure.
  *
  * Results:
@@ -2826,7 +2826,7 @@ SocketEventProc(
 
 static void
 AddSocketInfoFd(
-    TcpState *statePtr, 
+    TcpState *statePtr,
     SOCKET socket)
 {
     TcpFdList *fds = statePtr->sockets;
@@ -2840,7 +2840,7 @@ AddSocketInfoFd(
 	while ( fds->next != NULL ) {
 	    fds = fds->next;
 	}
-    
+
 	fds->next = ckalloc(sizeof(TcpFdList));
 	fds = fds->next;
     }
@@ -2851,7 +2851,7 @@ AddSocketInfoFd(
     fds->next = NULL;
 }
 
-    
+
 /*
  *----------------------------------------------------------------------
  *
@@ -2935,7 +2935,7 @@ WaitForSocketEvent(
 
 	/* get statePtr lock */
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
-	
+
 	/* Check if event occured */
 	event_found = (statePtr->readyEvents & events);
 
@@ -2946,7 +2946,7 @@ WaitForSocketEvent(
 	if (event_found) {
 	    break;
 	}
-	
+
 	/* Exit loop if event did not occur but this is a non-blocking channel */
 	if (statePtr->flags & TCP_NONBLOCKING) {
 	    *errorCodePtr = EWOULDBLOCK;
@@ -3253,11 +3253,11 @@ TcpThreadActionProc(
 	WaitForSingleObject(tsdPtr->socketListLock, INFINITE);
 	statePtr->nextPtr = tsdPtr->socketList;
 	tsdPtr->socketList = statePtr;
-	
+
 	if (statePtr == tsdPtr->pendingTcpState) {
 	    tsdPtr->pendingTcpState = NULL;
 	}
-	
+
 	SetEvent(tsdPtr->socketListLock);
 
 	notifyCmd = SELECT;

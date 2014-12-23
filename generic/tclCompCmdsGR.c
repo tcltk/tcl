@@ -2036,7 +2036,7 @@ TclCompileNamespaceUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
     if (envPtr->procPtr == NULL) {
@@ -2071,10 +2071,8 @@ TclCompileNamespaceUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, i+1);
-
-	if ((localIndex < 0) || !isScalar) {
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
@@ -2755,7 +2753,7 @@ TclCompileUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *objPtr;
 
@@ -2818,10 +2816,8 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, i+1);
-
-	if ((localIndex < 0) || !isScalar) {
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(	INST_UPVAR, localIndex,		envPtr);
