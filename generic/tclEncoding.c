@@ -180,9 +180,9 @@ TCL_DECLARE_MUTEX(encodingMutex)
  * the system encoding will be used to perform the conversion.
  */
 
-static Tcl_Encoding defaultEncoding;
-static Tcl_Encoding systemEncoding;
-Tcl_Encoding tclIdentityEncoding;
+static Tcl_Encoding defaultEncoding = NULL;
+static Tcl_Encoding systemEncoding = NULL;
+Tcl_Encoding tclIdentityEncoding = NULL;
 
 /*
  * The following variable is used in the sparse matrix code for a
@@ -652,7 +652,10 @@ TclFinalizeEncodingSubsystem(void)
     Tcl_MutexLock(&encodingMutex);
     encodingsInitialized = 0;
     FreeEncoding(systemEncoding);
+    systemEncoding = NULL;
+    defaultEncoding = NULL;
     FreeEncoding(tclIdentityEncoding);
+    tclIdentityEncoding = NULL;
 
     hPtr = Tcl_FirstHashEntry(&encodingTable, &search);
     while (hPtr != NULL) {
@@ -2898,7 +2901,9 @@ TableFreeProc(
      */
 
     ckfree(dataPtr->toUnicode);
+    dataPtr->toUnicode = NULL;
     ckfree(dataPtr->fromUnicode);
+    dataPtr->fromUnicode = NULL;
     ckfree(dataPtr);
 }
 
@@ -3371,6 +3376,7 @@ EscapeFreeProc(
 	subTablePtr = dataPtr->subTables;
 	for (i = 0; i < dataPtr->numSubTables; i++) {
 	    FreeEncoding((Tcl_Encoding) subTablePtr->encodingPtr);
+	    subTablePtr->encodingPtr = NULL;
 	    subTablePtr++;
 	}
     }
