@@ -1933,11 +1933,28 @@ typedef struct Tcl_EncodingType {
  *				substituting one or more "close" characters in
  *				the destination buffer and then continue to
  *				convert the source.
+ * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf will not append a
+ *				terminating NUL byte.  Knowing that it will
+ *				not need space to do so, it will fill all
+ *				dstLen bytes with encoded UTF-8 content, as
+ *				other circumstances permit.  If clear, the
+ *				default behavior is to reserve a byte in
+ *				the dst space for NUL termination, and to
+ *				append the NUL byte.
+ * TCL_ENCODING_CHAR_LIMIT -	If set and dstCharsPtr is not NULL, then
+ *				Tcl_ExternalToUtf takes the initial value
+ *				of *dstCharsPtr is taken as a limit of the
+ *				maximum number of chars to produce in the
+ *				encoded UTF-8 content.  Otherwise, the 
+ *				number of chars produced is controlled only
+ *				by other limiting factors.
  */
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
 #define TCL_ENCODING_STOPONERROR	0x04
+#define TCL_ENCODING_NO_TERMINATE	0x08
+#define TCL_ENCODING_CHAR_LIMIT		0x10
 
 /*
  * The following definitions are the error codes returned by the conversion
