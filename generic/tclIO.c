@@ -9216,6 +9216,9 @@ MBWrite(
     }
     outStatePtr->outQueueTail = tail;
     inStatePtr->inQueueHead = bufPtr;
+    if (inStatePtr->inQueueTail == tail) {
+	inStatePtr->inQueueTail = bufPtr;
+    }
     if (bufPtr == NULL) {
 	inStatePtr->inQueueTail = NULL;
     }
