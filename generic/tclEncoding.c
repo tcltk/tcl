@@ -2131,6 +2131,9 @@ BinaryProc(
     if (dstLen < 0) {
 	dstLen = 0;
     }
+    if ((flags & TCL_ENCODING_CHAR_LIMIT) && srcLen > *dstCharsPtr) {
+	srcLen = *dstCharsPtr;
+    }
     if (srcLen > dstLen) {
 	srcLen = dstLen;
 	result = TCL_CONVERT_NOSPACE;
