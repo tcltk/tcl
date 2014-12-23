@@ -1501,9 +1501,9 @@ TcpGetOptionProc(
     if (len > 0) {
 #ifdef TCL_FEATURE_KEEPALIVE_NAGLE
 	return Tcl_BadChannelOption(interp, optionName,
-		"peername sockname keepalive nagle");
+		"connecting peername sockname keepalive nagle");
 #else
-	return Tcl_BadChannelOption(interp, optionName, "peername sockname");
+	return Tcl_BadChannelOption(interp, optionName, "connecting peername sockname");
 #endif /*TCL_FEATURE_KEEPALIVE_NAGLE*/
     }
 
