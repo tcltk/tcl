@@ -1151,6 +1151,10 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
+MODULE_SCOPE int	TclLocalScalar(const char *bytes, int numBytes,
+			    CompileEnv *envPtr);
+MODULE_SCOPE int	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
@@ -1678,11 +1682,9 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 #define AnonymousLocal(envPtr) \
     (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
 #define LocalScalar(chars,len,envPtr) \
-    (!TclIsLocalScalar((chars), (len)) ? -1 : \
-	TclFindCompiledLocal((chars), (len), /*create*/ 1, (envPtr)))
+    TclLocalScalar(chars, len, envPtr)
 #define LocalScalarFromToken(tokenPtr,envPtr) \
-    ((tokenPtr)->type != TCL_TOKEN_SIMPLE_WORD ? -1 : \
-	LocalScalar((tokenPtr)[1].start, (tokenPtr)[1].size, (envPtr)))
+    TclLocalScalarFromToken(tokenPtr, envPtr)
 
 /*
  * Flags bits used by TclPushVarName.
