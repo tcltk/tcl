@@ -2826,8 +2826,11 @@ Iso88591ToUtfProc(
 {
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
-    int result, numChars;
+    int result, numChars, charLimit = INT_MAX;
 
+    if (flags & TCL_ENCODING_CHAR_LIMIT) {
+	charLimit = *dstCharsPtr;
+    }
     srcStart = src;
     srcEnd = src + srcLen;
 
@@ -2835,7 +2838,7 @@ Iso88591ToUtfProc(
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
     result = TCL_OK;
-    for (numChars = 0; src < srcEnd; numChars++) {
+    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	Tcl_UniChar ch;
 
 	if (dst > dstEnd) {
