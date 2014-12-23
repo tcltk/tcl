@@ -2408,9 +2408,12 @@ UnicodeToUtfProc(
 {
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
-    int result, numChars;
+    int result, numChars, charLimit = INT_MAX;
     Tcl_UniChar ch;
 
+    if (flags & TCL_ENCODING_CHAR_LIMIT) {
+	charLimit = *dstCharsPtr;
+    }
     result = TCL_OK;
     if ((srcLen % sizeof(Tcl_UniChar)) != 0) {
 	result = TCL_CONVERT_MULTIBYTE;
@@ -2424,7 +2427,7 @@ UnicodeToUtfProc(
     dstStart = dst;
     dstEnd = dst + dstLen - TCL_UTF_MAX;
 
-    for (numChars = 0; src < srcEnd; numChars++) {
+    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
