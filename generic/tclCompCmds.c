@@ -2527,23 +2527,15 @@ CompileEachloopCmd(
 				 * (TCL_EACH_*) */
 {
     Proc *procPtr = envPtr->procPtr;
-    ForeachInfo *infoPtr;	/* Points to the structure describing this
+    ForeachInfo *infoPtr=NULL;	/* Points to the structure describing this
 				 * foreach command. Stored in a AuxData
 				 * record in the ByteCode. */
     
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     int jumpBackOffset, infoIndex, range;
-    int numWords, numLists, numVars, loopIndex, i, j, code;
+    int numWords, numLists, i, j, code = TCL_OK;
+    Tcl_Obj *varListObj = NULL;
     DefineLineInformation;	/* TIP #280 */
-
-    /*
-     * We parse the variable list argument words and create two arrays:
-     *    varcList[i] is number of variables in i-th var list.
-     *    varvList[i] points to array of var names in i-th var list.
-     */
-
-    int *varcList;
-    const char ***varvList;
 
     /*
      * If the foreach command isn't in a procedure, don't compile it inline:
@@ -2573,105 +2565,73 @@ CompileEachloopCmd(
     }
 
     /*
-     * Allocate storage for the varcList and varvList arrays if necessary.
+     * Create and initialize the ForeachInfo and ForeachVarList data
+     * structures describing this command. Then create a AuxData record
+     * pointing to the ForeachInfo structure.
      */
 
     numLists = (numWords - 2)/2;
-    varcList = TclStackAlloc(interp, numLists * sizeof(int));
-    memset(varcList, 0, numLists * sizeof(int));
-    varvList = (const char ***) TclStackAlloc(interp,
-	    numLists * sizeof(const char **));
-    memset((char*) varvList, 0, numLists * sizeof(const char **));
+    infoPtr = ckalloc(sizeof(ForeachInfo)
+	    + (numLists - 1) * sizeof(ForeachVarList *));
+    infoPtr->numLists = 0;	/* Count this up as we go */
 
     /*
-     * Break up each var list and set the varcList and varvList arrays. Don't
+     * Parse each var list into sequence of var names.  Don't
      * compile the foreach inline if any var name needs substitutions or isn't
      * a scalar, or if any var list needs substitutions.
      */
 
-    loopIndex = 0;
+    varListObj = Tcl_NewObj();
     for (i = 0, tokenPtr = parsePtr->tokenPtr;
 	    i < numWords-1;
 	    i++, tokenPtr = TokenAfter(tokenPtr)) {
-	Tcl_DString varList;
+	ForeachVarList *varListPtr;
+	int numVars;
 
 	if (i%2 != 1) {
 	    continue;
 	}
-	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
-	    code = TCL_ERROR;
-	    goto done;
-	}
-
-	/*
-	 * Lots of copying going on here. Need a ListObj wizard to show a
-	 * better way.
-	 */
-
-	Tcl_DStringInit(&varList);
-	TclDStringAppendToken(&varList, &tokenPtr[1]);
-	code = Tcl_SplitList(NULL, Tcl_DStringValue(&varList),
-		&varcList[loopIndex], &varvList[loopIndex]);
-	Tcl_DStringFree(&varList);
-	if (code != TCL_OK) {
-	    code = TCL_ERROR;
-	    goto done;
-	}
-	numVars = varcList[loopIndex];
 
 	/*
 	 * If the variable list is empty, we can enter an infinite loop when
-	 * the interpreted version would not. Take care to ensure this does
-	 * not happen. [Bug 1671138]
+	 * the interpreted version would not.  Take care to ensure this does
+	 * not happen.  [Bug 1671138]
 	 */
 
-	if (numVars == 0) {
+	if (!TclWordKnownAtCompileTime(tokenPtr, varListObj) ||
+		TCL_OK != Tcl_ListObjLength(NULL, varListObj, &numVars) ||
+		numVars == 0) {
 	    code = TCL_ERROR;
 	    goto done;
 	}
 
-	for (j = 0;  j < numVars;  j++) {
-	    const char *varName = varvList[loopIndex][j];
+	varListPtr = ckalloc(sizeof(ForeachVarList)
+		+ (numVars - 1) * sizeof(int));
+	varListPtr->numVars = numVars;
+	infoPtr->varLists[i/2] = varListPtr;
+	infoPtr->numLists++;
 
-	    if (!TclIsLocalScalar(varName, (int) strlen(varName))) {
+	for (j = 0;  j < numVars;  j++) {
+	    Tcl_Obj *varNameObj;
+	    const char *bytes;
+	    int numBytes, varIndex;
+
+	    Tcl_ListObjIndex(NULL, varListObj, j, &varNameObj);
+	    bytes = Tcl_GetStringFromObj(varNameObj, &numBytes);
+	    varIndex = LocalScalar(bytes, numBytes, envPtr);
+	    if (varIndex < 0) {
 		code = TCL_ERROR;
 		goto done;
 	    }
+	    varListPtr->varIndexes[j] = varIndex;
 	}
-	loopIndex++;
+	Tcl_SetObjLength(varListObj, 0);
     }
 
     /*
      * We will compile the foreach command.
      */
 
-    code = TCL_OK;
-
-    /*
-     * Create and initialize the ForeachInfo and ForeachVarList data
-     * structures describing this command. Then create a AuxData record
-     * pointing to the ForeachInfo structure.
-     */
-
-    infoPtr = ckalloc(sizeof(ForeachInfo)
-	    + (numLists - 1) * sizeof(ForeachVarList *));
-    infoPtr->numLists = numLists;
-    for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	ForeachVarList *varListPtr;
-
-	numVars = varcList[loopIndex];
-	varListPtr = ckalloc(sizeof(ForeachVarList)
-		+ (numVars - 1) * sizeof(int));
-	varListPtr->numVars = numVars;
-	for (j = 0;  j < numVars;  j++) {
-	    const char *varName = varvList[loopIndex][j];
-	    int nameChars = strlen(varName);
-
-	    varListPtr->varIndexes[j] = TclFindCompiledLocal(varName,
-		    nameChars, /*create*/ 1, envPtr);
-	}
-	infoPtr->varLists[loopIndex] = varListPtr;
-    }
     infoIndex = TclCreateAuxData(infoPtr, &tclNewForeachInfoType, envPtr);
 
     /*
@@ -2743,13 +2703,14 @@ CompileEachloopCmd(
     }
     
     done:
-    for (loopIndex = 0;  loopIndex < numLists;  loopIndex++) {
-	if (varvList[loopIndex] != NULL) {
-	    ckfree(varvList[loopIndex]);
+    if (code == TCL_ERROR) {
+	if (infoPtr) {
+	    FreeForeachInfo(infoPtr);
 	}
     }
-    TclStackFree(interp, (void *)varvList);
-    TclStackFree(interp, varcList);
+    if (varListObj) {
+	Tcl_DecrRefCount(varListObj);
+    }
     return code;
 }
 
