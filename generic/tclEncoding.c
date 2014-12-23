@@ -2595,12 +2595,15 @@ TableToUtfProc(
 {
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart, *prefixBytes;
-    int result, byte, numChars;
+    int result, byte, numChars, charLimit = INT_MAX;
     Tcl_UniChar ch;
     const unsigned short *const *toUnicode;
     const unsigned short *pageZero;
     TableEncodingData *dataPtr = clientData;
 
+    if (flags & TCL_ENCODING_CHAR_LIMIT) {
+	charLimit = *dstCharsPtr;
+    }
     srcStart = src;
     srcEnd = src + srcLen;
 
@@ -2612,7 +2615,7 @@ TableToUtfProc(
     pageZero = toUnicode[0];
 
     result = TCL_OK;
-    for (numChars = 0; src < srcEnd; numChars++) {
+    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
@@ -3054,9 +3057,12 @@ EscapeToUtfProc(
     const char *prefixBytes, *tablePrefixBytes, *srcStart, *srcEnd;
     const unsigned short *const *tableToUnicode;
     const Encoding *encodingPtr;
-    int state, result, numChars;
+    int state, result, numChars, charLimit = INT_MAX;
     const char *dstStart, *dstEnd;
 
+    if (flags & TCL_ENCODING_CHAR_LIMIT) {
+	charLimit = *dstCharsPtr;
+    }
     result = TCL_OK;
     tablePrefixBytes = NULL;	/* lint. */
     tableToUnicode = NULL;	/* lint. */
@@ -3074,7 +3080,7 @@ EscapeToUtfProc(
 	state = 0;
     }
 
-    for (numChars = 0; src < srcEnd; ) {
+    for (numChars = 0; src < srcEnd && numChars <= charLimit; ) {
 	int byte, hi, lo, ch;
 
 	if (dst > dstEnd) {
