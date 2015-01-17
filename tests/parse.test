@@ -663,6 +663,9 @@ test parse-12.24 {Tcl_ParseVarName procedure, missing close paren in array refer
 test parse-12.25 {Tcl_ParseVarName procedure, nested array reference} testparser {
     testparser {$x(a$y(b$z))} 0
 } {- {$x(a$y(b$z))} 1 word {$x(a$y(b$z))} 8 variable {$x(a$y(b$z))} 7 text x 0 text a 0 variable {$y(b$z)} 4 text y 0 text b 0 variable {$z} 1 text z 0 {}}
+test parse-12.26 {Tcl_ParseVarName [d2ffcca163] non-ascii} testparser {
+    testparser "$\u0433" -1
+} "- {$\u0433} 1 word {$\u0433} 2 text {$} 0 text \u0433 0 {}"
 
 test parse-13.1 {Tcl_ParseVar procedure} testparsevar {
     set abc 24
