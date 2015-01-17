@@ -119,6 +119,7 @@ static char *		VwaitVarProc(ClientData clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
 static void		InvokeExitHandlers(void);
+static void		FinalizeThread(int quick);
 
 /*
  *----------------------------------------------------------------------
@@ -983,7 +984,7 @@ Tcl_Exit(
 	     * Tcl_Channels that may have data enqueued.
 	     */
 	    
-	    Tcl_FinalizeThread();
+	    FinalizeThread(/* quick */ 1);
 	}
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
@@ -1183,7 +1184,7 @@ Tcl_Finalize(void)
      * This fixes the Tcl Bug #990552.
      */
 
-    TclFinalizeThreadData();
+    TclFinalizeThreadData(/* quick */ 0);
 
     /*
      * Now we can free constants for conversions to/from double.
@@ -1269,6 +1270,13 @@ Tcl_Finalize(void)
 void
 Tcl_FinalizeThread(void)
 {
+    FinalizeThread(/* quick */ 0);
+}
+
+void
+FinalizeThread(
+    int quick)
+{
     ExitHandler *exitPtr;
     ThreadSpecificData *tsdPtr;
 
@@ -1309,7 +1317,7 @@ Tcl_FinalizeThread(void)
      *
      * Fix [Bug #571002]
      */
-    TclFinalizeThreadData();
+    TclFinalizeThreadData(quick);
 }
 
 /*
