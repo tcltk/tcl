@@ -672,6 +672,7 @@ Tcl_GetRange(
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
+    int i, firstoffset = 0, lastoffset = 0;
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -716,7 +717,17 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
-    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
+    for (i = 0; i <= last + lastoffset + firstoffset; i++) {
+        if ((stringPtr->unicode[i] & 0xfc00) == 0xd800) {
+            if (i < first + firstoffset) {
+                firstoffset++;
+            } else {
+                lastoffset++;
+            }
+        }
+    }
+
+    return Tcl_NewUnicodeObj(stringPtr->unicode + first + firstoffset, last-first+1 + lastoffset + firstoffset);
 }
 
 /*
@@ -2866,8 +2877,8 @@ ExtendUnicodeRepWithString(
     int numAppendChars)
 {
     String *stringPtr = GET_STRING(objPtr);
-    int needed, numOrigChars = 0;
-    Tcl_UniChar *dst;
+    int incr, needed, numOrigChars = 0;
+    Tcl_UniChar *dst, unichar = 0;
 
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
@@ -2890,7 +2901,12 @@ ExtendUnicodeRepWithString(
 	numAppendChars = 0;
     }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
-	bytes += TclUtfToUniChar(bytes, dst);
+	bytes += (incr = TclUtfToUniChar(bytes, &unichar));
+	*dst = unichar;
+	if (!incr) {
+	    bytes += TclUtfToUniChar(bytes, &unichar);
+	    *++dst = unichar;
+	}
     }
     *dst = 0;
 }
@@ -3095,7 +3111,7 @@ ExtendStringRepWithUnicode(
      * Pre-condition: this is the "string" Tcl_ObjType.
      */
 
-    int i, origLength, size = 0;	
+    int incr, i, origLength, size = 0, offset = 0;
     char *dst, buf[TCL_UTF_MAX];
     String *stringPtr = GET_STRING(objPtr);
 
@@ -3121,8 +3137,9 @@ ExtendStringRepWithUnicode(
 	goto copyBytes;
     }
 
-    for (i = 0; i < numChars && size >= 0; i++) {
-	size += Tcl_UniCharToUtf((int) unicode[i], buf);
+    for (i = 0; i < numChars + offset && size >= 0; i++) {
+	size += (incr = Tcl_UniCharToUtf((int) unicode[i], buf));
+	if (!incr) offset++;
     }
     if (size < 0) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);

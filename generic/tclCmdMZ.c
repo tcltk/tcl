@@ -1085,6 +1085,10 @@ Tcl_SplitObjCmd(
 
 	for ( ; stringPtr < end; stringPtr += len) {
 	    len = TclUtfToUniChar(stringPtr, &ch);
+	    
+	    if (!len) {
+	        continue;
+	    }
 
 	    /*
 	     * Assume Tcl_UniChar is an integral type...
