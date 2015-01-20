@@ -1548,6 +1548,15 @@ Tcl_CreateChannel(
      */
 
     assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
+    assert(NULL!=typePtr->closeProc);
+    assert(NULL!=typePtr->inputProc);
+    assert(NULL!=typePtr->outputProc);
+    assert(NULL!=typePtr->watchProc);
+    assert(NULL!=typePtr->truncateProc);
+    assert(NULL!=typePtr->getHandleProc);
+    if (NULL!=typePtr->wideSeekProc) {
+      assert(NULL!=typePtr->seekProc && "Must define seekProc if defining wideSeekProc");
+    }
 
     /*
      * JH: We could subsequently memset these to 0 to avoid the numerous
