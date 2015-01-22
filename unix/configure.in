@@ -215,6 +215,7 @@ AC_CHECK_FUNC(strerror, , [AC_DEFINE(NO_STRERROR, 1, [Do we have strerror()])])
 AC_CHECK_FUNC(getwd, , [AC_DEFINE(NO_GETWD, 1, [Do we have getwd()])])
 AC_CHECK_FUNC(wait3, , [AC_DEFINE(NO_WAIT3, 1, [Do we have wait3()])])
 AC_CHECK_FUNC(uname, , [AC_DEFINE(NO_UNAME, 1, [Do we have uname()])])
+AC_CHECK_FUNC(dladdr, , [AC_DEFINE(NO_DLADDR)])
 
 if test "`uname -s`" = "Darwin" && test "${TCL_THREADS}" = 1 && \
 	test "`uname -r | awk -F. '{print [$]1}'`" -lt 7; then

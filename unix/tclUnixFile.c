@@ -12,6 +12,9 @@
 
 #include "tclInt.h"
 #include "tclFileSystem.h"
+#if !defined(NO_DLADDR) && !defined(NO_DLFCN_H)
+#include <dlfcn.h>
+#endif
 
 static int NativeMatchType(Tcl_Interp *interp, const char* nativeEntry,
 	const char* nativeName, Tcl_GlobTypeData *types);
@@ -58,11 +61,57 @@ TclpFindExecutable(
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
+#if !defined(__APPLE__) && !defined(DJGPP)
+    int i;
+    unsigned long pid;
+    static CONST char *exepaths[] = {
+	"/proc/%lu/exe", "/proc/%lu/file", "/proc/%lu/object/a.out"
+    };
+    char buf1[PATH_MAX+1], buf2[64];
+#endif
+#if !defined(NO_DLADDR) && !defined(NO_DLFCN_H)
+    Dl_info dlinfoBuffer;
+    void *sym;
+#endif
 
     if (argv0 == NULL) {
 	return;
     }
     Tcl_DStringInit(&buffer);
+
+    /*
+     * The executable name is sometimes available to us directly, which is
+     * useful because it's not always there in argv[0]; that's a value that is
+     * set by the code that invoked this process and it sometimes lies.  [Bug
+     * 1224888]
+     *
+     * Our options for independently determining it are to scrape it out of
+     * /proc (if that's mounted, and we have readlink(2)) or to pick the
+     * information out of the dynamic loader (assuming we're using a
+     * compatible one and it supports the relevant - common - extension).
+     */
+
+#if !defined(__APPLE__) && !defined(DJGPP)
+    pid = getpid();
+    for (i=0 ; i<sizeof(exepaths)/sizeof(*exepaths) ; i++) {
+	sprintf(buf2, exepaths[i], pid);
+	if (readlink(buf2, buf1, PATH_MAX) > 0 && buf1[0] == '/') {
+	    name = buf1;
+	    goto gotName;
+	}
+    }
+#endif
+#if !defined(NO_DLADDR) && !defined(NO_DLFCN_H)
+    sym = dlsym(RTLD_DEFAULT, "main");
+    if (sym == NULL) {
+	sym = dlsym(RTLD_DEFAULT, "_main");
+    }
+    if (sym != NULL && dladdr(sym, &dlinfoBuffer)
+	    && dlinfoBuffer.dli_fname[0] == '/') {
+	name = dlinfoBuffer.dli_fname;
+	goto gotName;
+    }
+#endif
 
     name = argv0;
     for (p = name; *p != '\0'; p++) {

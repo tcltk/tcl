@@ -39,7 +39,7 @@ extern Tcl_PackageInitProc Tclxttest_Init;
 #   define MODULE_SCOPE extern
 #endif
 MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
-MODULE_SCOPE int main(int, char **);
+int main(int, char **);
 
 /*
  * The following #if block allows you to change how Tcl finds the startup
