@@ -6198,9 +6198,8 @@ ReadChars(
 	     * empty string.
 	     */
 
-	    if (dst[0] == '\n') {
+	    if (dstRead == 1 && dst[0] == '\n') {
 		assert(statePtr->inputTranslation == TCL_TRANSLATE_AUTO);
-		assert(dstRead == 1);
 
 		goto consume;
 	    }
