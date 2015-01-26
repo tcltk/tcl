@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP AR ac_ct_AR RANLIB ac_ct_RANLIB RC ac_ct_RC SET_MAKE TCL_THREADS CYGPATH CELIB_DIR DL_LIBS CFLAGS_DEBUG CFLAGS_OPTIMIZE CFLAGS_WARNING ZLIB_DLL_FILE ZLIB_LIBS ZLIB_OBJS CFLAGS_DEFAULT LDFLAGS_DEFAULT VC_MANIFEST_EMBED_DLL VC_MANIFEST_EMBED_EXE TCL_VERSION TCL_MAJOR_VERSION TCL_MINOR_VERSION TCL_PATCH_LEVEL PKG_CFG_ARGS TCL_EXE TCL_LIB_FILE TCL_LIB_FLAG TCL_STATIC_LIB_FILE TCL_STATIC_LIB_FLAG TCL_IMPORT_LIB_FILE TCL_IMPORT_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_STUB_LIB_PATH TCL_INCLUDE_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_PATH TCL_DLL_FILE TCL_SRC_DIR TCL_BIN_DIR TCL_DBGX CFG_TCL_SHARED_LIB_SUFFIX CFG_TCL_UNSHARED_LIB_SUFFIX CFG_TCL_EXPORT_FILE_SUFFIX EXTRA_CFLAGS DEPARG CC_OBJNAME CC_EXENAME LDFLAGS_DEBUG LDFLAGS_OPTIMIZE LDFLAGS_CONSOLE LDFLAGS_WINDOW STLIB_LD SHLIB_LD SHLIB_LD_LIBS SHLIB_CFLAGS SHLIB_SUFFIX TCL_SHARED_BUILD LIBS_GUI DLLSUFFIX LIBPREFIX LIBSUFFIX EXESUFFIX LIBRARIES MAKE_LIB POST_MAKE_LIB MAKE_DLL MAKE_EXE TCL_BUILD_LIB_SPEC TCL_LD_SEARCH_FLAGS TCL_NEEDS_EXP_FILE TCL_BUILD_EXP_FILE TCL_EXP_FILE TCL_LIB_VERSIONS_OK TCL_PACKAGE_PATH TCL_DDE_VERSION TCL_DDE_MAJOR_VERSION TCL_DDE_MINOR_VERSION TCL_REG_VERSION TCL_REG_MAJOR_VERSION TCL_REG_MINOR_VERSION RC_OUT RC_TYPE RC_INCLUDE RC_DEFINE RC_DEFINES RES LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP AR ac_ct_AR RANLIB ac_ct_RANLIB RC ac_ct_RC SET_MAKE TCL_THREADS CYGPATH CELIB_DIR DL_LIBS CFLAGS_DEBUG CFLAGS_OPTIMIZE CFLAGS_WARNING ZLIB_DLL_FILE ZLIB_LIBS ZLIB_OBJS CFLAGS_DEFAULT LDFLAGS_DEFAULT VC_MANIFEST_EMBED_DLL VC_MANIFEST_EMBED_EXE TCL_WIN_VERSION MACHINE TCL_VERSION TCL_MAJOR_VERSION TCL_MINOR_VERSION TCL_PATCH_LEVEL PKG_CFG_ARGS TCL_EXE TCL_LIB_FILE TCL_LIB_FLAG TCL_STATIC_LIB_FILE TCL_STATIC_LIB_FLAG TCL_IMPORT_LIB_FILE TCL_IMPORT_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_STUB_LIB_PATH TCL_INCLUDE_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_PATH TCL_DLL_FILE TCL_SRC_DIR TCL_BIN_DIR TCL_DBGX CFG_TCL_SHARED_LIB_SUFFIX CFG_TCL_UNSHARED_LIB_SUFFIX CFG_TCL_EXPORT_FILE_SUFFIX EXTRA_CFLAGS DEPARG CC_OBJNAME CC_EXENAME LDFLAGS_DEBUG LDFLAGS_OPTIMIZE LDFLAGS_CONSOLE LDFLAGS_WINDOW STLIB_LD SHLIB_LD SHLIB_LD_LIBS SHLIB_CFLAGS SHLIB_SUFFIX TCL_SHARED_BUILD LIBS_GUI DLLSUFFIX LIBPREFIX LIBSUFFIX EXESUFFIX LIBRARIES MAKE_LIB MAKE_STUB_LIB POST_MAKE_LIB MAKE_DLL MAKE_EXE TCL_BUILD_LIB_SPEC TCL_LD_SEARCH_FLAGS TCL_NEEDS_EXP_FILE TCL_BUILD_EXP_FILE TCL_EXP_FILE TCL_LIB_VERSIONS_OK TCL_PACKAGE_PATH TCL_DDE_VERSION TCL_DDE_MAJOR_VERSION TCL_DDE_MINOR_VERSION TCL_REG_VERSION TCL_REG_MAJOR_VERSION TCL_REG_MINOR_VERSION RC_OUT RC_TYPE RC_INCLUDE RC_DEFINE RC_DEFINES RES LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -1311,7 +1311,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".0"
+TCL_PATCH_LEVEL=".3"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -3340,7 +3340,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-	    #ifndef __WIN32__
+	    #ifndef _WIN32
 		#error cross-compiler
 	    #endif
 
@@ -3449,6 +3449,8 @@ echo "${ECHO_T}yes" >&6
     # set various compiler flags depending on whether we are using gcc or cl
 
     if test "${GCC}" = "yes" ; then
+	extra_cflags="-pipe"
+	extra_ldflags="-pipe -static-libgcc"
 	echo "$as_me:$LINENO: checking for mingw32 version of gcc" >&5
 echo $ECHO_N "checking for mingw32 version of gcc... $ECHO_C" >&6
 if test "${ac_cv_win32+set}" = set; then
@@ -3461,7 +3463,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-		#ifdef __WIN32__
+		#ifdef _WIN32
 		    #error win32
 		#endif
 
@@ -3595,12 +3597,10 @@ echo $ECHO_N "checking compiler flags... $ECHO_C" >&6
 	RC_DEFINE=--define
 	RES=res.o
 	MAKE_LIB="\${STLIB_LD} \$@"
+	MAKE_STUB_LIB="\${STLIB_LD} \$@"
 	POST_MAKE_LIB="\${RANLIB} \$@"
 	MAKE_EXE="\${CC} -o \$@"
 	LIBPREFIX="lib"
-
-	extra_cflags="$extra_cflags -pipe"
-	extra_ldflags="$extra_ldflags -pipe"
 
 	if test "${SHARED_BUILD}" = "0" ; then
 	    # static
@@ -3630,9 +3630,8 @@ echo "$as_me: error: ${CC} does not support the -shared option.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	fi
 	# Link with gcc since ld does not link to default libs like
-	# -luser32 and -lmsvcrt by default. Make sure CFLAGS is
-	# included so -mno-cygwin passed the correct libs to the linker.
-	SHLIB_LD='${CC} -shared ${CFLAGS}'
+	# -luser32 and -lmsvcrt by default.
+	SHLIB_LD='${CC} -shared'
 	SHLIB_LD_LIBS='${LIBS}'
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -o \$@ ${extra_ldflags} \
 	    -Wl,--out-implib,\$(patsubst %.dll,lib%.a,\$@)"
@@ -4004,6 +4003,7 @@ _ACEOF
 	RC_DEFINE=-d
 	RES=res
 	MAKE_LIB="\${STLIB_LD} -out:\$@"
+	MAKE_STUB_LIB="\${STLIB_LD} -nodefaultlib -out:\$@"
 	POST_MAKE_LIB=
 	MAKE_EXE="\${CC} -Fe\$@"
 	LIBPREFIX=""
@@ -4362,7 +4362,17 @@ if test "$tcl_ok" = "yes"; then
 
   if test "$do64bit" = "yes"; then
 
-    ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+    if test "$GCC" == "yes"; then
+
+      ZLIB_LIBS=\${ZLIB_DIR}/win64/libz.dll.a
+
+
+else
+
+      ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+
+
+fi
 
 
 else
@@ -4376,10 +4386,6 @@ fi
 else
 
   ZLIB_OBJS=\${ZLIB_OBJS}
-
-  cat >>confdefs.h <<_ACEOF
-#define NO_VIZ 1
-_ACEOF
 
 
 fi
@@ -5162,6 +5168,19 @@ else
     TCL_PACKAGE_PATH="${prefix}/lib"
 fi
 
+# The tclsh.exe.manifest requires these
+# TCL_WIN_VERSION is the 4 dotted pair Windows version format which needs
+# the release level, and must account for interim release versioning
+case "$TCL_PATCH_LEVEL" in
+     *a*) TCL_RELEASE_LEVEL=0 ;;
+     *b*) TCL_RELEASE_LEVEL=1 ;;
+     *)   TCL_RELEASE_LEVEL=2 ;;
+esac
+TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
+
+# X86|AMD64|IA64 for manifest
+
+
 
 
 
@@ -5229,6 +5248,7 @@ fi
 
 
 
+
 # empty on win, but needs sub'ing
 
 
@@ -5255,7 +5275,7 @@ fi
 
 
 
-                              ac_config_files="$ac_config_files Makefile tclConfig.sh tcl.hpj"
+                                        ac_config_files="$ac_config_files Makefile tclConfig.sh tcl.hpj tclsh.exe.manifest"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -5809,6 +5829,7 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "tclConfig.sh" ) CONFIG_FILES="$CONFIG_FILES tclConfig.sh" ;;
   "tcl.hpj" ) CONFIG_FILES="$CONFIG_FILES tcl.hpj" ;;
+  "tclsh.exe.manifest" ) CONFIG_FILES="$CONFIG_FILES tclsh.exe.manifest" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
@@ -5922,6 +5943,8 @@ s,@CFLAGS_DEFAULT@,$CFLAGS_DEFAULT,;t t
 s,@LDFLAGS_DEFAULT@,$LDFLAGS_DEFAULT,;t t
 s,@VC_MANIFEST_EMBED_DLL@,$VC_MANIFEST_EMBED_DLL,;t t
 s,@VC_MANIFEST_EMBED_EXE@,$VC_MANIFEST_EMBED_EXE,;t t
+s,@TCL_WIN_VERSION@,$TCL_WIN_VERSION,;t t
+s,@MACHINE@,$MACHINE,;t t
 s,@TCL_VERSION@,$TCL_VERSION,;t t
 s,@TCL_MAJOR_VERSION@,$TCL_MAJOR_VERSION,;t t
 s,@TCL_MINOR_VERSION@,$TCL_MINOR_VERSION,;t t
@@ -5970,6 +5993,7 @@ s,@LIBSUFFIX@,$LIBSUFFIX,;t t
 s,@EXESUFFIX@,$EXESUFFIX,;t t
 s,@LIBRARIES@,$LIBRARIES,;t t
 s,@MAKE_LIB@,$MAKE_LIB,;t t
+s,@MAKE_STUB_LIB@,$MAKE_STUB_LIB,;t t
 s,@POST_MAKE_LIB@,$POST_MAKE_LIB,;t t
 s,@MAKE_DLL@,$MAKE_DLL,;t t
 s,@MAKE_EXE@,$MAKE_EXE,;t t

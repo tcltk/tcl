@@ -119,6 +119,7 @@ static char *		VwaitVarProc(ClientData clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
 static void		InvokeExitHandlers(void);
+static void		FinalizeThread(int quick);
 
 /*
  *----------------------------------------------------------------------
@@ -983,7 +984,7 @@ Tcl_Exit(
 	     * Tcl_Channels that may have data enqueued.
 	     */
 	    
-	    Tcl_FinalizeThread();
+	    FinalizeThread(/* quick */ 1);
 	}
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
@@ -1030,14 +1031,8 @@ TclInitSubsystems(void)
 
 	TclpInitLock();
 	if (subsystemsInitialized == 0) {
-	    /*
-	     * Have to set this bit here to avoid deadlock with the routines
-	     * below us that call into TclInitSubsystems.
-	     */
 
-	    subsystemsInitialized = 1;
-
-	    /*
+		/*
 	     * Initialize locks used by the memory allocators before anything
 	     * interesting happens so we can use the allocators in the
 	     * implementation of self-initializing locks.
@@ -1061,6 +1056,7 @@ TclInitSubsystems(void)
 	    TclInitEncodingSubsystem();	/* Process wide encoding init. */
 	    TclpSetInterfaces();
 	    TclInitNamespaceSubsystem();/* Register ns obj type (mutexed). */
+	    subsystemsInitialized = 1;
 	}
 	TclpInitUnlock();
     }
@@ -1176,8 +1172,6 @@ Tcl_Finalize(void)
 
     TclFinalizeEncodingSubsystem();
 
-    Tcl_SetPanicProc(NULL);
-
     /*
      * Repeat finalization of the thread local storage once more. Although
      * this step is already done by the Tcl_FinalizeThread call above, series
@@ -1190,7 +1184,7 @@ Tcl_Finalize(void)
      * This fixes the Tcl Bug #990552.
      */
 
-    TclFinalizeThreadData();
+    TclFinalizeThreadData(/* quick */ 0);
 
     /*
      * Now we can free constants for conversions to/from double.
@@ -1276,6 +1270,13 @@ Tcl_Finalize(void)
 void
 Tcl_FinalizeThread(void)
 {
+    FinalizeThread(/* quick */ 0);
+}
+
+void
+FinalizeThread(
+    int quick)
+{
     ExitHandler *exitPtr;
     ThreadSpecificData *tsdPtr;
 
@@ -1316,8 +1317,7 @@ Tcl_FinalizeThread(void)
      *
      * Fix [Bug #571002]
      */
-
-    TclFinalizeThreadData();
+    TclFinalizeThreadData(quick);
 }
 
 /*

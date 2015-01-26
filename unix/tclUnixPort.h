@@ -93,15 +93,20 @@ typedef off_t		Tcl_SeekOffset;
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
+    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
+    __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
 
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
     __declspec(dllimport) extern int cygwin_conv_path_list(int, const void *, void *, int);
 #   define USE_PUTENV 1
 #   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
+#ifndef __x86_64__
 #   define environ __cygwin_environ
-#   define timezone _timezone
     extern char **__cygwin_environ;
+#endif
+#   define timezone _timezone
     extern int TclOSstat(const char *name, void *statBuf);
     extern int TclOSlstat(const char *name, void *statBuf);
 #elif defined(HAVE_STRUCT_STAT64) && !defined(__APPLE__)
@@ -698,8 +703,6 @@ typedef int socklen_t;
 
 #ifdef TCL_THREADS
 #   include <pthread.h>
-#   undef inet_ntoa
-#   define inet_ntoa(x)	TclpInetNtoa(x)
 #endif /* TCL_THREADS */
 
 /* FIXME - Hyper-enormous platform assumption! */

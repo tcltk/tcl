@@ -31,6 +31,10 @@
 
 /* !BEGIN!: Do not edit below this line. */
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 /*
  * Exported function declarations:
  */
@@ -59,7 +63,7 @@ EXTERN void		Tcl_DbCkfree(char *ptr, const char *file, int line);
 /* 8 */
 EXTERN char *		Tcl_DbCkrealloc(char *ptr, unsigned int size,
 				const char *file, int line);
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 9 */
 EXTERN void		Tcl_CreateFileHandler(int fd, int mask,
 				Tcl_FileProc *proc, ClientData clientData);
@@ -69,7 +73,7 @@ EXTERN void		Tcl_CreateFileHandler(int fd, int mask,
 EXTERN void		Tcl_CreateFileHandler(int fd, int mask,
 				Tcl_FileProc *proc, ClientData clientData);
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 10 */
 EXTERN void		Tcl_DeleteFileHandler(int fd);
 #endif /* UNIX */
@@ -507,7 +511,7 @@ EXTERN Tcl_Interp *	Tcl_GetMaster(Tcl_Interp *interp);
 EXTERN const char *	Tcl_GetNameOfExecutable(void);
 /* 166 */
 EXTERN Tcl_Obj *	Tcl_GetObjResult(Tcl_Interp *interp);
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 167 */
 EXTERN int		Tcl_GetOpenFile(Tcl_Interp *interp,
 				const char *chanID, int forWriting,
@@ -1831,19 +1835,19 @@ typedef struct TclStubs {
     char * (*tcl_DbCkalloc) (unsigned int size, const char *file, int line); /* 6 */
     void (*tcl_DbCkfree) (char *ptr, const char *file, int line); /* 7 */
     char * (*tcl_DbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     void (*reserved9)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_DeleteFileHandler) (int fd); /* 10 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     void (*reserved10)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -2005,10 +2009,10 @@ typedef struct TclStubs {
     Tcl_Interp * (*tcl_GetMaster) (Tcl_Interp *interp); /* 164 */
     const char * (*tcl_GetNameOfExecutable) (void); /* 165 */
     Tcl_Obj * (*tcl_GetObjResult) (Tcl_Interp *interp); /* 166 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tcl_GetOpenFile) (Tcl_Interp *interp, const char *chanID, int forWriting, int checkUsage, ClientData *filePtr); /* 167 */
 #endif /* UNIX */
-#if defined(__WIN32__) /* WIN */
+#if defined(_WIN32) /* WIN */
     void (*reserved167)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -2479,10 +2483,8 @@ typedef struct TclStubs {
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
 } TclStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclStubs *tclStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -2511,7 +2513,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_DbCkfree) /* 7 */
 #define Tcl_DbCkrealloc \
 	(tclStubsPtr->tcl_DbCkrealloc) /* 8 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_CreateFileHandler \
 	(tclStubsPtr->tcl_CreateFileHandler) /* 9 */
 #endif /* UNIX */
@@ -2519,7 +2521,7 @@ extern const TclStubs *tclStubsPtr;
 #define Tcl_CreateFileHandler \
 	(tclStubsPtr->tcl_CreateFileHandler) /* 9 */
 #endif /* MACOSX */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_DeleteFileHandler \
 	(tclStubsPtr->tcl_DeleteFileHandler) /* 10 */
 #endif /* UNIX */
@@ -2839,7 +2841,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_GetNameOfExecutable) /* 165 */
 #define Tcl_GetObjResult \
 	(tclStubsPtr->tcl_GetObjResult) /* 166 */
-#if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
+#if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 #define Tcl_GetOpenFile \
 	(tclStubsPtr->tcl_GetOpenFile) /* 167 */
 #endif /* UNIX */
@@ -3809,9 +3811,102 @@ extern const TclStubs *tclStubsPtr;
 #undef Tcl_SeekOld
 #undef Tcl_TellOld
 
+#undef Tcl_PkgPresent
+#define Tcl_PkgPresent(interp, name, version, exact) \
+	Tcl_PkgPresentEx(interp, name, version, exact, NULL)
+#undef Tcl_PkgProvide
+#define Tcl_PkgProvide(interp, name, version) \
+	Tcl_PkgProvideEx(interp, name, version, NULL)
+#undef Tcl_PkgRequire
+#define Tcl_PkgRequire(interp, name, version, exact) \
+	Tcl_PkgRequireEx(interp, name, version, exact, NULL)
+#undef Tcl_GetIndexFromObj
+#define Tcl_GetIndexFromObj(interp, objPtr, tablePtr, msg, flags, indexPtr) \
+	Tcl_GetIndexFromObjStruct(interp, objPtr, tablePtr, \
+	sizeof(char *), msg, flags, indexPtr)
+#undef Tcl_NewBooleanObj
+#define Tcl_NewBooleanObj(boolValue) \
+	Tcl_NewIntObj((boolValue)!=0)
+#undef Tcl_DbNewBooleanObj
+#define Tcl_DbNewBooleanObj(boolValue, file, line) \
+	Tcl_DbNewLongObj((boolValue)!=0, file, line)
+#undef Tcl_SetBooleanObj
+#define Tcl_SetBooleanObj(objPtr, boolValue) \
+	Tcl_SetIntObj((objPtr), (boolValue)!=0)
+#undef Tcl_SetVar
+#define Tcl_SetVar(interp, varName, newValue, flags) \
+	Tcl_SetVar2(interp, varName, NULL, newValue, flags)
+#undef Tcl_UnsetVar
+#define Tcl_UnsetVar(interp, varName, flags) \
+	Tcl_UnsetVar2(interp, varName, NULL, flags)
+#undef Tcl_GetVar
+#define Tcl_GetVar(interp, varName, flags) \
+	Tcl_GetVar2(interp, varName, NULL, flags)
+#undef Tcl_TraceVar
+#define Tcl_TraceVar(interp, varName, flags, proc, clientData) \
+	Tcl_TraceVar2(interp, varName, NULL, flags, proc, clientData)
+#undef Tcl_UntraceVar
+#define Tcl_UntraceVar(interp, varName, flags, proc, clientData) \
+	Tcl_UntraceVar2(interp, varName, NULL, flags, proc, clientData)
+#undef Tcl_VarTraceInfo
+#define Tcl_VarTraceInfo(interp, varName, flags, proc, prevClientData) \
+	Tcl_VarTraceInfo2(interp, varName, NULL, flags, proc, prevClientData)
+#undef Tcl_UpVar
+#define Tcl_UpVar(interp, frameName, varName, localName, flags) \
+	Tcl_UpVar2(interp, frameName, varName, NULL, localName, flags)
+
+#if defined(USE_TCL_STUBS) && !defined(USE_TCL_STUB_PROCS)
+#   if defined(__CYGWIN__) && defined(TCL_WIDE_INT_IS_LONG)
+/* On Cygwin64, long is 64-bit while on Win64 long is 32-bit. Therefore
+ * we have to make sure that all stub entries on Cygwin64 follow the
+ * Win64 signature. Cygwin64 stubbed extensions cannot use those stub
+ * entries any more, they should use the 64-bit alternatives where
+ * possible. Tcl 9 must find a better solution, but that cannot be done
+ * without introducing a binary incompatibility.
+ */
+#	undef Tcl_DbNewLongObj
+#	undef Tcl_GetLongFromObj
+#	undef Tcl_NewLongObj
+#	undef Tcl_SetLongObj
+#	undef Tcl_ExprLong
+#	undef Tcl_ExprLongObj
+#	undef Tcl_UniCharNcmp
+#	undef Tcl_UtfNcmp
+#	undef Tcl_UtfNcasecmp
+#	undef Tcl_UniCharNcasecmp
+#	define Tcl_DbNewLongObj ((Tcl_Obj*(*)(long,const char*,int))Tcl_DbNewWideIntObj)
+#	define Tcl_GetLongFromObj ((int(*)(Tcl_Interp*,Tcl_Obj*,long*))Tcl_GetWideIntFromObj)
+#	define Tcl_NewLongObj ((Tcl_Obj*(*)(long))Tcl_NewWideIntObj)
+#	define Tcl_SetLongObj ((void(*)(Tcl_Obj*,long))Tcl_SetWideIntObj)
+#	define Tcl_ExprLong TclExprLong
+	static inline int TclExprLong(Tcl_Interp *interp, const char *string, long *ptr){
+	    int intValue;
+	    int result = tclStubsPtr->tcl_ExprLong(interp, string, (long *)&intValue);
+	    if (result == TCL_OK) *ptr = (long)intValue;
+	    return result;
+	}
+#	define Tcl_ExprLongObj TclExprLongObj
+	static inline int TclExprLongObj(Tcl_Interp *interp, Tcl_Obj *obj, long *ptr){
+	    int intValue;
+	    int result = tclStubsPtr->tcl_ExprLongObj(interp, obj, (long *)&intValue);
+	    if (result == TCL_OK) *ptr = (long)intValue;
+	    return result;
+	}
+#	define Tcl_UniCharNcmp(ucs,uct,n) \
+		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcmp)(ucs,uct,(unsigned int)(n))
+#	define Tcl_UtfNcmp(s1,s2,n) \
+		((int(*)(const char*,const char*,unsigned int))tclStubsPtr->tcl_UtfNcmp)(s1,s2,(unsigned int)(n))
+#	define Tcl_UtfNcasecmp(s1,s2,n) \
+		((int(*)(const char*,const char*,unsigned int))tclStubsPtr->tcl_UtfNcasecmp)(s1,s2,(unsigned int)(n))
+#	define Tcl_UniCharNcasecmp(ucs,uct,n) \
+		((int(*)(const Tcl_UniChar*,const Tcl_UniChar*,unsigned int))tclStubsPtr->tcl_UniCharNcasecmp)(ucs,uct,(unsigned int)(n))
+#   endif
+#endif
+
 /*
  * Deprecated Tcl procedures:
  */
+
 #undef Tcl_EvalObj
 #define Tcl_EvalObj(interp,objPtr) \
     Tcl_EvalObjEx((interp),(objPtr),0)

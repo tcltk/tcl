@@ -225,12 +225,14 @@ GENERIC_OBJS = \
 	tclCmdIL.$(OBJEXT) \
 	tclCmdMZ.$(OBJEXT) \
 	tclCompCmds.$(OBJEXT) \
+	tclCompCmdsGR.$(OBJEXT) \
 	tclCompCmdsSZ.$(OBJEXT) \
 	tclCompExpr.$(OBJEXT) \
 	tclCompile.$(OBJEXT) \
 	tclConfig.$(OBJEXT) \
 	tclDate.$(OBJEXT) \
 	tclDictObj.$(OBJEXT) \
+	tclDisassemble.$(OBJEXT) \
 	tclEncoding.$(OBJEXT) \
 	tclEnsemble.$(OBJEXT) \
 	tclEnv.$(OBJEXT) \
@@ -266,6 +268,7 @@ GENERIC_OBJS = \
 	tclOOMethod.$(OBJEXT) \
 	tclOOStubInit.$(OBJEXT) \
 	tclObj.$(OBJEXT) \
+	tclOptimize.$(OBJEXT) \
 	tclPanic.$(OBJEXT) \
 	tclParse.$(OBJEXT) \
 	tclPathObj.$(OBJEXT) \
@@ -431,7 +434,7 @@ $(CAT32): cat32.$(OBJEXT)
 
 ${TCL_STUB_LIB_FILE}: ${STUB_OBJS}
 	@$(RM) ${TCL_STUB_LIB_FILE}
-	@MAKE_LIB@ ${STUB_OBJS}
+	@MAKE_STUB_LIB@ ${STUB_OBJS}
 	@POST_MAKE_LIB@
 
 ${TCL_DLL_FILE}: ${TCL_OBJS} tcl.$(RES) @ZLIB_DLL_FILE@
@@ -444,19 +447,19 @@ ${TCL_LIB_FILE}: ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@MAKE_LIB@ ${TCL_OBJS} ${DDE_OBJS} ${REG_OBJS}
 	@POST_MAKE_LIB@
 
-${DDE_DLL_FILE}: ${DDE_OBJS} ${TCL_STUB_LIB_FILE}
+${DDE_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${DDE_OBJS}
 	@MAKE_DLL@ ${DDE_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
-${REG_DLL_FILE}: ${REG_OBJS} ${TCL_STUB_LIB_FILE}
+${REG_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${REG_OBJS}
 	@MAKE_DLL@ ${REG_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
-${TEST_DLL_FILE}: ${TCLTEST_OBJS} ${TCL_STUB_LIB_FILE}
+${TEST_DLL_FILE}: ${TCL_STUB_LIB_FILE} ${TCLTEST_OBJS}
 	@$(RM) ${TEST_DLL_FILE} ${TEST_LIB_FILE}
 	@MAKE_DLL@ ${TCLTEST_OBJS} $(TCL_STUB_LIB_FILE) $(SHLIB_LD_LIBS)
 
 # use pre-built zlib1.dll
 ${ZLIB_DLL_FILE}: ${TCL_STUB_LIB_FILE}
-	@if test "@ZLIB_LIBS@set" == "${ZLIB_DIR}/win64/zdll.libset" ; then \
+	@if test "@ZLIB_LIBS@set" != "${ZLIB_DIR}/win32/zdll.libset" ; then \
 		$(COPY) $(ZLIB_DIR)/win64/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
 	else \
 		$(COPY) $(ZLIB_DIR)/win32/${ZLIB_DLL_FILE} ${ZLIB_DLL_FILE}; \
@@ -582,23 +585,23 @@ install-binaries: binaries
 	    fi; \
 	    done
 	@if [ -f $(DDE_DLL_FILE) ]; then \
-	    echo installing $(DDE_DLL_FILE); \
+	    echo Installing $(DDE_DLL_FILE); \
 	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
 		$(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
-	    echo installing $(DDE_LIB_FILE); \
+	    echo Installing $(DDE_LIB_FILE); \
 	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
-	    echo installing $(REG_DLL_FILE); \
+	    echo Installing $(REG_DLL_FILE); \
 	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
 	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
 		$(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
-	    echo installing $(REG_LIB_FILE); \
+	    echo Installing $(REG_LIB_FILE); \
 	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
 	    fi
 
@@ -639,19 +642,19 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing package http 2.8.7 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.8.7.tm;
+	@echo "Installing package http 2.8.8 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.8.8.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
-	@echo "Installing package msgcat 1.5.1 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.1.tm;
-	@echo "Installing package tcltest 2.3.5 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.5.tm;
-	@echo "Installing package platform 1.0.11 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.11.tm;
+	@echo "Installing package msgcat 1.5.2 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.2.tm;
+	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.8.tm;
+	@echo "Installing package platform 1.0.13 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.13.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform/shell-1.1.4.tm;
 	@echo "Installing encodings";
@@ -848,8 +851,10 @@ TOOL_DIR=$(ROOT_DIR)/tools
 HTML_INSTALL_DIR=$(ROOT_DIR)/html
 html:
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS)"
+
 html-tcl: $(TCLSH)
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS) --tcl"
+
 html-tk: $(TCLSH)
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS) --tk"
 

@@ -22,7 +22,7 @@ namespace eval tcltest {
     # When the version number changes, be sure to update the pkgIndex.tcl file,
     # and the install directory in the Makefiles.  When the minor version
     # changes (new feature) be sure to update the man page as well.
-    variable Version 2.3.5
+    variable Version 2.3.8
 
     # Compatibility support for dumb variables defined in tcltest 1
     # Do not use these.  Call [package provide Tcl] and [info patchlevel]
@@ -1991,47 +1991,6 @@ proc tcltest::test {name description args} {
 	}
     }
 
-    # Always run the cleanup script
-    set code [catch {uplevel 1 $cleanup} cleanupMsg]
-    if {$code == 1} {
-	set errorInfo(cleanup) $::errorInfo
-	set errorCode(cleanup) $::errorCode
-    }
-    set cleanupFailure [expr {$code != 0}]
-
-    set coreFailure 0
-    set coreMsg ""
-    # check for a core file first - if one was created by the test,
-    # then the test failed
-    if {[preserveCore]} {
-	if {[file exists [file join [workingDirectory] core]]} {
-	    # There's only a test failure if there is a core file
-	    # and (1) there previously wasn't one or (2) the new
-	    # one is different from the old one.
-	    if {[info exists coreModTime]} {
-		if {$coreModTime != [file mtime \
-			[file join [workingDirectory] core]]} {
-		    set coreFailure 1
-		}
-	    } else {
-		set coreFailure 1
-	    }
-	
-	    if {([preserveCore] > 1) && ($coreFailure)} {
-		append coreMsg "\nMoving file to:\
-		    [file join [temporaryDirectory] core-$name]"
-		catch {file rename -force -- \
-		    [file join [workingDirectory] core] \
-		    [file join [temporaryDirectory] core-$name]
-		} msg
-		if {$msg ne {}} {
-		    append coreMsg "\nError:\
-			Problem renaming core file: $msg"
-		}
-	    }
-	}
-    }
-
     # check if the return code matched the expected return code
     set codeFailure 0
     if {!$setupFailure && ($returnCode ni $returnCodes)} {
@@ -2074,6 +2033,47 @@ proc tcltest::test {name description args} {
 	set scriptFailure [expr {!$scriptMatch}]
     } else {
 	set scriptFailure 1
+    }
+
+    # Always run the cleanup script
+    set code [catch {uplevel 1 $cleanup} cleanupMsg]
+    if {$code == 1} {
+	set errorInfo(cleanup) $::errorInfo
+	set errorCode(cleanup) $::errorCode
+    }
+    set cleanupFailure [expr {$code != 0}]
+
+    set coreFailure 0
+    set coreMsg ""
+    # check for a core file first - if one was created by the test,
+    # then the test failed
+    if {[preserveCore]} {
+	if {[file exists [file join [workingDirectory] core]]} {
+	    # There's only a test failure if there is a core file
+	    # and (1) there previously wasn't one or (2) the new
+	    # one is different from the old one.
+	    if {[info exists coreModTime]} {
+		if {$coreModTime != [file mtime \
+			[file join [workingDirectory] core]]} {
+		    set coreFailure 1
+		}
+	    } else {
+		set coreFailure 1
+	    }
+	
+	    if {([preserveCore] > 1) && ($coreFailure)} {
+		append coreMsg "\nMoving file to:\
+		    [file join [temporaryDirectory] core-$name]"
+		catch {file rename -force -- \
+		    [file join [workingDirectory] core] \
+		    [file join [temporaryDirectory] core-$name]
+		} msg
+		if {$msg ne {}} {
+		    append coreMsg "\nError:\
+			Problem renaming core file: $msg"
+		}
+	    }
+	}
     }
 
     # if we didn't experience any failures, then we passed
@@ -2498,16 +2498,14 @@ proc tcltest::cleanupTests {{calledFromAllFile 0}} {
 	    if {![info exists originalEnv($index)]} {
 		lappend newEnv $index
 		unset ::env($index)
-	    } else {
-		if {$::env($index) != $originalEnv($index)} {
-		    lappend changedEnv $index
-		    set ::env($index) $originalEnv($index)
-		}
 	    }
 	}
 	foreach index [array names originalEnv] {
 	    if {![info exists ::env($index)]} {
 		lappend removedEnv $index
+		set ::env($index) $originalEnv($index)
+	    } elseif {$::env($index) ne $originalEnv($index)} {
+		lappend changedEnv $index
 		set ::env($index) $originalEnv($index)
 	    }
 	}

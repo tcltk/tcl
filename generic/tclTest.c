@@ -201,8 +201,9 @@ static int		EncodingFromUtfProc(ClientData clientData,
 			    int *dstCharsPtr);
 static void		ExitProcEven(ClientData clientData);
 static void		ExitProcOdd(ClientData clientData);
-static int		GetTimesCmd(ClientData clientData,
-			    Tcl_Interp *interp, int argc, const char **argv);
+static int		GetTimesObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static void		MainLoop(void);
 static int		NoopCmd(ClientData clientData,
 			    Tcl_Interp *interp, int argc, const char **argv);
@@ -219,6 +220,9 @@ static void		SpecialFree(char *blockPtr);
 static int		StaticInitProc(Tcl_Interp *interp);
 static int		TestasyncCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
+static int		TestbytestringObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 static int		TestcmdinfoCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestcmdtokenCmd(ClientData dummy,
@@ -414,7 +418,7 @@ static int		TestNRELevels(ClientData clientData,
 static int		TestInterpResolverCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-#if defined(HAVE_CPUID) || defined(__WIN32__)
+#if defined(HAVE_CPUID) || defined(_WIN32)
 static int		TestcpuidCmd(ClientData dummy,
 			    Tcl_Interp* interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -556,9 +560,10 @@ Tcltest_Init(
      * Create additional commands and math functions for testing Tcl.
      */
 
-    Tcl_CreateCommand(interp, "gettimes", GetTimesCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "gettimes", GetTimesObjCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "noop", NoopCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "noop", NoopObjCmd, NULL, NULL);
+    Tcl_CreateObjCommand(interp, "testbytestring", TestbytestringObjCmd, NULL, NULL);
     Tcl_CreateObjCommand(interp, "testwrongnumargs", TestWrongNumArgsObjCmd,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testfilesystem", TestFilesystemObjCmd,
@@ -681,7 +686,7 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testexitmainloop", TestexitmainloopCmd,
 	    NULL, NULL);
-#if defined(HAVE_CPUID) || defined(__WIN32__)
+#if defined(HAVE_CPUID) || defined(_WIN32)
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    (ClientData) 0, NULL);
 #endif
@@ -1555,14 +1560,14 @@ DelCallbackProc(
  *
  * TestdelCmd --
  *
- *	This procedure implements the "testdcall" command.  It is used
- *	to test Tcl_CallWhenDeleted.
+ *	This procedure implements the "testdel" command.  It is used
+ *	to test calling of command deletion callbacks.
  *
  * Results:
  *	A standard Tcl result.
  *
  * Side effects:
- *	Creates and deletes interpreters.
+ *	Creates a command.
  *
  *----------------------------------------------------------------------
  */
@@ -1856,7 +1861,7 @@ TestdstringCmd(
 	if (Tcl_GetInt(interp, argv[2], &count) != TCL_OK) {
 	    return TCL_ERROR;
 	}
-	Tcl_DStringTrunc(&dstring, count);
+	Tcl_DStringSetLength(&dstring, count);
     } else if (strcmp(argv[1], "start") == 0) {
 	if (argc != 2) {
 	    goto wrongNumArgs;
@@ -4408,8 +4413,26 @@ TestseterrorcodeCmd(
 	Tcl_SetResult(interp, "too many args", TCL_STATIC);
 	return TCL_ERROR;
     }
-    Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4],
-	    argv[5], NULL);
+    switch (argc) {
+    case 1:
+	Tcl_SetErrorCode(interp, "NONE", NULL);
+	break;
+    case 2:
+	Tcl_SetErrorCode(interp, argv[1], NULL);
+	break;
+    case 3:
+	Tcl_SetErrorCode(interp, argv[1], argv[2], NULL);
+	break;
+    case 4:
+	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], NULL);
+	break;
+    case 5:
+	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4], NULL);
+	break;
+    case 6:
+	Tcl_SetErrorCode(interp, argv[1], argv[2], argv[3], argv[4],
+		argv[5], NULL);
+    }
     return TCL_ERROR;
 }
 
@@ -4699,7 +4722,7 @@ TestgetvarfullnameCmd(
 /*
  *----------------------------------------------------------------------
  *
- * GetTimesCmd --
+ * GetTimesObjCmd --
  *
  *	This procedure implements the "gettimes" command.  It is used for
  *	computing the time needed for various basic operations such as reading
@@ -4715,11 +4738,11 @@ TestgetvarfullnameCmd(
  */
 
 static int
-GetTimesCmd(
+GetTimesObjCmd(
     ClientData unused,		/* Unused. */
     Tcl_Interp *interp,		/* The current interpreter. */
-    int argc,			/* The number of arguments. */
-    const char **argv)		/* The argument strings. */
+    int notused1,			/* Number of arguments. */
+    Tcl_Obj *const notused2[])	/* The argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
     int i, n;
@@ -4927,6 +4950,42 @@ NoopObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* The argument objects. */
 {
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TestbytestringObjCmd --
+ *
+ *	This object-based procedure constructs a string which can
+ *	possibly contain invalid UTF-8 bytes.
+ *
+ * Results:
+ *	Returns the TCL_OK result code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+TestbytestringObjCmd(
+    ClientData unused,		/* Not used. */
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const objv[])	/* The argument objects. */
+{
+    int n;
+    const char *p;
+
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "bytearray");
+	return TCL_ERROR;
+    }
+    p = (const char *)Tcl_GetByteArrayFromObj(objv[1], &n);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(p, n));
     return TCL_OK;
 }
 
@@ -6630,7 +6689,7 @@ TestNumUtfCharsCmd(
     return TCL_OK;
 }
 
-#if defined(HAVE_CPUID) || defined(__WIN32__)
+#if defined(HAVE_CPUID) || defined(_WIN32)
 /*
  *----------------------------------------------------------------------
  *

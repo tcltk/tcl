@@ -194,8 +194,7 @@ Tcl_CaseObjCmd(
     for (i = 0;  i < caseObjc;  i += 2) {
 	int patObjc, j;
 	const char **patObjv;
-	const char *pat;
-	unsigned char *p;
+	const char *pat, *p;
 
 	if (i == caseObjc-1) {
 	    Tcl_ResetResult(interp);
@@ -210,8 +209,8 @@ Tcl_CaseObjCmd(
 	 */
 
 	pat = TclGetString(caseObjv[i]);
-	for (p = (unsigned char *) pat; *p != '\0'; p++) {
-	    if (isspace(*p) || (*p == '\\')) {	/* INTL: ISO space, UCHAR */
+	for (p = pat; *p != '\0'; p++) {
+	    if (TclIsSpaceProc(*p) || (*p == '\\')) {
 		break;
 	    }
 	}
@@ -1591,7 +1590,7 @@ FileAttrIsOwnedCmd(
 	 * test for equivalence to the current user.
 	 */
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(_WIN32) || defined(__CYGWIN__)
 	value = 1;
 #else
 	value = (geteuid() == buf.st_uid);

@@ -15,6 +15,7 @@
  
 #include "tclInt.h"
 #include "tclParse.h"
+#include <assert.h>
 
 /*
  * The following table provides parsing information about each possible 8-bit
@@ -615,6 +616,47 @@ TclIsSpaceProc(
     char byte)
 {
     return CHAR_TYPE(byte) & (TYPE_SPACE) || byte == '\n';
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclIsBareword--
+ *
+ *	Report whether byte is one that can be part of a "bareword".
+ *	This concept is named in expression parsing, where it determines
+ *	what can be a legal function name, but is the same definition used
+ *	in determining what variable names can be parsed as variable
+ *	substitutions without the benefit of enclosing braces.  The set of
+ *	ASCII chars that are accepted are the numeric chars ('0'-'9'),
+ *	the alphabetic chars ('a'-'z', 'A'-'Z')	and underscore ('_').
+ *
+ * Results:
+ *	Returns 1, if byte is in the accepted set of chars, 0 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclIsBareword(
+    char byte)
+{
+    if (byte < '0' || byte > 'z') {
+	return 0;
+    }
+    if (byte <= '9' || byte >= 'a') {
+	return 1;
+    }
+    if (byte == '_') {
+	return 1;
+    }
+    if (byte < 'A' || byte > 'Z') {
+	return 0;
+    }
+    return 1;
 }
 
 /*
@@ -1345,9 +1387,7 @@ Tcl_ParseVarName(
 {
     Tcl_Token *tokenPtr;
     register const char *src;
-    unsigned char c;
-    int varIndex, offset;
-    Tcl_UniChar ch;
+    int varIndex;
     unsigned array;
 
     if ((numBytes == 0) || (start == NULL)) {
@@ -1430,22 +1470,12 @@ Tcl_ParseVarName(
 	tokenPtr->numComponents = 0;
 
 	while (numBytes) {
-	    if (Tcl_UtfCharComplete(src, numBytes)) {
-		offset = Tcl_UtfToUniChar(src, &ch);
-	    } else {
-		char utfBytes[TCL_UTF_MAX];
-
-		memcpy(utfBytes, src, (size_t) numBytes);
-		utfBytes[numBytes] = '\0';
-		offset = Tcl_UtfToUniChar(utfBytes, &ch);
-	    }
-	    c = UCHAR(ch);
-	    if (isalnum(c) || (c == '_')) {	/* INTL: ISO only, UCHAR. */
-		src += offset;
-		numBytes -= offset;
+	    if (TclIsBareword(*src)) {
+		src += 1;
+		numBytes -= 1;
 		continue;
 	    }
-	    if ((c == ':') && (numBytes != 1) && (src[1] == ':')) {
+	    if ((src[0] == ':') && (numBytes != 1) && (src[1] == ':')) {
 		src += 2;
 		numBytes -= 2;
 		while (numBytes && (*src == ':')) {
@@ -1567,6 +1597,7 @@ Tcl_ParseVar(
 
     code = TclSubstTokens(interp, parsePtr->tokenPtr, parsePtr->numTokens,
 	    NULL, 1, NULL, NULL);
+    Tcl_FreeParse(parsePtr);
     TclStackFree(interp, parsePtr);
     if (code != TCL_OK) {
 	return NULL;
@@ -1577,16 +1608,13 @@ Tcl_ParseVar(
      * At this point we should have an object containing the value of a
      * variable. Just return the string from that object.
      *
-     * This should have returned the object for the user to manage, but
-     * instead we have some weak reference to the string value in the object,
-     * which is why we make sure the object exists after resetting the result.
-     * This isn't ideal, but it's the best we can do with the current
-     * documented interface. -- hobbs
+     * Since TclSubstTokens above returned TCL_OK, we know that objPtr
+     * is shared.  It is in both the interp result and the value of the
+     * variable.  Returning the string relies on that to be true.
      */
 
-    if (!Tcl_IsShared(objPtr)) {
-	Tcl_IncrRefCount(objPtr);
-    }
+    assert( Tcl_IsShared(objPtr) );
+
     Tcl_ResetResult(interp);
     return TclGetString(objPtr);
 }
@@ -2495,56 +2523,6 @@ TclObjCommandComplete(
     const char *script = Tcl_GetStringFromObj(objPtr, &length);
 
     return CommandComplete(script, length);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclIsLocalScalar --
- *
- *	Check to see if a given string is a legal scalar variable name with no
- *	namespace qualifiers or substitutions.
- *
- * Results:
- *	Returns 1 if the variable is a local scalar.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclIsLocalScalar(
-    const char *src,
-    int len)
-{
-    const char *p;
-    const char *lastChar = src + (len - 1);
-
-    for (p=src ; p<=lastChar ; p++) {
-	if ((CHAR_TYPE(*p) != TYPE_NORMAL)
-		&& (CHAR_TYPE(*p) != TYPE_COMMAND_END)) {
-	    /*
-	     * TCL_COMMAND_END is returned for the last character of the
-	     * string. By this point we know it isn't an array or namespace
-	     * reference.
-	     */
-
-	    return 0;
-	}
-	if (*p == '(') {
-	    if (*lastChar == ')') {	/* We have an array element */
-		return 0;
-	    }
-	} else if (*p == ':') {
-	    if ((p != lastChar) && *(p+1) == ':') {	/* qualified name */
-		return 0;
-	    }
-	}
-    }
-
-    return 1;
 }
 
 /*

@@ -324,7 +324,7 @@ proc ::tcl::clock::Initialize {} {
 	{-10800 0 3600 0 2 0 2 2 0 0 0 0 10 0 3 2 0 0 0} :America/Sao_Paulo
 	{-10800 0 3600 0 10 0 5 2 0 0 0 0 4 0 1 2 0 0 0} :America/Godthab
 	{-10800 0 3600 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0}  :America/Buenos_Aires
-        {-10800 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Brasilia
+        {-10800 0 3600 0 2 0 5 2 0 0 0 0 11 0 1 2 0 0 0} :America/Bahia
         {-10800 0 3600 0 3 0 2 2 0 0 0 0 10 0 1 2 0 0 0} :America/Montevideo
 	{-7200 0 3600 0 9 0 5 2 0 0 0 0 3 0 5 2 0 0 0}   :America/Noronha
 	{-3600 0 3600 0 10 0 5 3 0 0 0 0 3 0 5 2 0 0 0}  :Atlantic/Azores
@@ -1227,8 +1227,8 @@ proc ::tcl::clock::scan { args } {
 	    }
 	    default {
 		return -code error \
-		    -errorcode [list CLOCK badSwitch $flag] \
-		    "bad switch \"$flag\",\
+		    -errorcode [list CLOCK badOption $flag] \
+		    "bad option \"$flag\",\
                      must be -base, -format, -gmt, -locale or -timezone"
 	    }
 	}
@@ -3861,7 +3861,7 @@ proc ::tcl::clock::ProcessPosixTimeZone { z } {
 
     # Put DST in effect in all years from 1916 to 2099.
 
-    for { set y 1916 } { $y < 2099 } { incr y } {
+    for { set y 1916 } { $y < 2100 } { incr y } {
 	set startTime [DeterminePosixDSTTime $z start $y]
 	incr startTime [expr { - wide($stdOffset) }]
 	set endTime [DeterminePosixDSTTime $z end $y]
@@ -4295,8 +4295,8 @@ proc ::tcl::clock::add { clockval args } {
 		    set timezone $b
 		}
 		default {
-		    throw [list CLOCK badSwitch $a] \
-			"bad switch \"$a\",\
+		    throw [list CLOCK badOption $a] \
+			"bad option \"$a\",\
                          must be -gmt, -locale or -timezone"
 		}
 	    }

@@ -824,7 +824,7 @@ duptraverse(
      * make all normal tests (not reg-33.14) pass.
      */
 #ifndef DUPTRAVERSE_MAX_DEPTH
-#define DUPTRAVERSE_MAX_DEPTH 700
+#define DUPTRAVERSE_MAX_DEPTH 15000
 #endif
 
     if (depth++ > DUPTRAVERSE_MAX_DEPTH) {
@@ -1345,7 +1345,7 @@ fixempties(
     for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
 	nexts = s->next;
 	/* Ensure tmp fields are clear for next step */
-	assert(s->tmp = NULL);
+	assert(s->tmp == NULL);
 	if (s->flag || s->nins != 1) {
 	    continue;
 	}

@@ -1958,6 +1958,9 @@ TclPtrSetVar(
 		    Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
 		}
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+		if (newValuePtr->refCount == 0) {
+		    Tcl_DecrRefCount(newValuePtr);
+		}
 	    }
 	}
     } else if (newValuePtr != oldValuePtr) {
@@ -3850,6 +3853,53 @@ ArrayNamesCmd(
 /*
  *----------------------------------------------------------------------
  *
+ * TclFindArrayPtrElements --
+ *
+ *	Fill out a hash table (which *must* use Tcl_Obj* keys) with an entry
+ *	for each existing element of the given array. The provided hash table
+ *	is assumed to be initially empty.
+ *
+ * Result:
+ *	none
+ *
+ * Side effects:
+ *	The keys of the array gain an extra reference. The supplied hash table
+ *	has elements added to it.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclFindArrayPtrElements(
+    Var *arrayPtr,
+    Tcl_HashTable *tablePtr)
+{
+    Var *varPtr;
+    Tcl_HashSearch search;
+
+    if ((arrayPtr == NULL) || !TclIsVarArray(arrayPtr)
+	    || TclIsVarUndefined(arrayPtr)) {
+	return;
+    }
+
+    for (varPtr=VarHashFirstVar(arrayPtr->value.tablePtr, &search);
+	    varPtr!=NULL ; varPtr=VarHashNextVar(&search)) {
+	Tcl_HashEntry *hPtr;
+	Tcl_Obj *nameObj;
+	int dummy;
+
+	if (TclIsVarUndefined(varPtr)) {
+	    continue;
+	}
+	nameObj = VarHashGetKey(varPtr);
+	hPtr = Tcl_CreateHashEntry(tablePtr, (char *) nameObj, &dummy);
+	Tcl_SetHashValue(hPtr, nameObj);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ArraySetCmd --
  *
  *	This object-based function is invoked to process the "array set" Tcl
@@ -4355,8 +4405,8 @@ ObjMakeUpvar(
 			|| !HasLocalVars(varFramePtr)
 			|| (strstr(TclGetString(myNamePtr), "::") != NULL))) {
 	    Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-		    "bad variable name \"%s\": upvar won't create "
-		    "namespace variable that refers to procedure variable",
+		    "bad variable name \"%s\": can't create namespace "
+		    "variable that refers to procedure variable",
 		    TclGetString(myNamePtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", NULL);
 	    return TCL_ERROR;
@@ -4456,9 +4506,8 @@ TclPtrObjMakeUpvar(
 		 */
 
 		Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-			"bad variable name \"%s\": upvar won't create a"
-			" scalar variable that looks like an array element",
-			myName));
+			"bad variable name \"%s\": can't create a scalar "
+			"variable that looks like an array element", myName));
 		Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT",
 			NULL);
 		return TCL_ERROR;

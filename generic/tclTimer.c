@@ -819,7 +819,7 @@ Tcl_AfterObjCmd(
      */
 
     if (objv[1]->typePtr == &tclIntType
-#ifndef NO_WIDE_TYPE
+#ifndef TCL_WIDE_INT_IS_LONG
 	    || objv[1]->typePtr == &tclWideIntType
 #endif
 	    || objv[1]->typePtr == &tclBignumType

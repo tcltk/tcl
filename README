@@ -1,8 +1,7 @@
 README:  Tcl
-    This is the Tcl 8.6.0 source distribution.
-	http://tcl.sourceforge.net/
-    You can get any source release of Tcl from the file distributions
-    link at the above URL.
+    This is the Tcl 8.6.3 source distribution.
+	http://sourceforge.net/projects/tcl/files/Tcl/
+    You can get any source release of Tcl from the URL above.
 
 Contents
 --------
@@ -27,9 +26,14 @@ Tcl can also be used for a variety of web-related tasks and for creating
 powerful command languages for applications.
 
 Tcl is maintained, enhanced, and distributed freely by the Tcl community.
-The home for Tcl/Tk releases and bug/patch database is on SourceForge:
+Source code development and tracking of bug reports and feature requests
+takes place at:
 
-	http://tcl.sourceforge.net/
+	http://core.tcl.tk/
+
+Tcl/Tk release and mailing list services are hosted by SourceForge:
+
+	http://sourceforge.net/projects/tcl/
 
 with the Tcl Developer Xchange hosted at:
 
@@ -49,7 +53,7 @@ The home page for this release, including new features, is
 
 Detailed release notes can be found at the file distributions page
 by clicking on the relevant version.
-	http://sourceforge.net/projects/tcl/files/
+	http://sourceforge.net/projects/tcl/files/Tcl/
 
 Information about Tcl itself can be found at
 	http://www.tcl.tk/about/
@@ -146,18 +150,13 @@ and go to the Mailing Lists page.
 ------------------------
 
 We are very interested in receiving bug reports, patches, and suggestions
-for improvements.  We prefer that you send this information to us via the
-bug form at SourceForge, rather than emailing us directly.  The bug
-database is at:
+for improvements.  We prefer that you send this information to us as
+tickets entered into our tracker at:
 
-	http://tcl.sourceforge.net/
-
-The bug form was designed to give uniform structure to bug reports as
-well as to solicit enough information to minimize followup questions.
+	http://core.tcl.tk/tcl/reportlist
 
 We will log and follow-up on each bug, although we cannot promise a
-specific turn-around time.  Enhancements, reported via the Feature
-Requests form at the same web site, may take longer and may not happen
+specific turn-around time.  Enhancements may take longer and may not happen
 at all unless there is widespread support for them (we're trying to
 slow the rate at which Tcl/Tk turns into a kitchen sink).  It's very
 difficult to make incompatible changes to Tcl/Tk at this point, due to

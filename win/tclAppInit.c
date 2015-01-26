@@ -3,7 +3,8 @@
  *
  *	Provides a default version of the main program and Tcl_AppInit
  *	procedure for tclsh and other Tcl-based applications (without Tk).
- *	Note that this program must be built in Win32 console mode to work properly.
+ *	Note that this program must be built in Win32 console mode to work
+ *	properly.
  *
  * Copyright (c) 1993 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
@@ -33,13 +34,14 @@ extern Tcl_PackageInitProc Dde_SafeInit;
 #endif
 
 #ifdef TCL_BROKEN_MAINARGS
+int _CRT_glob = 0;
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
-#endif
+#endif /* TCL_BROKEN_MAINARGS */
 
 /*
  * The following #if block allows you to change the AppInit function by using
  * a #define of TCL_LOCAL_APPINIT instead of rewriting this entire file. The
- * #if checks for that #define and uses Tcl_AppInit if it doesn't exist.
+ * #if checks for that #define and uses Tcl_AppInit if it does not exist.
  */
 
 #ifndef TCL_LOCAL_APPINIT
@@ -80,15 +82,15 @@ MODULE_SCOPE int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
 #ifdef TCL_BROKEN_MAINARGS
 int
 main(
-    int argc,
-    char *dummy[])
+    int argc,			/* Number of command-line arguments. */
+    char *dummy[])		/* Not used. */
 {
     TCHAR **argv;
 #else
 int
 _tmain(
-    int argc,
-    TCHAR *argv[])
+    int argc,			/* Number of command-line arguments. */
+    TCHAR *argv[])		/* Values of command-line arguments. */
 {
 #endif
     TCHAR *p;
@@ -102,7 +104,7 @@ _tmain(
 
 #ifdef TCL_BROKEN_MAINARGS
     /*
-     * Get our args from the c-runtime. Ignore lpszCmdLine.
+     * Get our args from the c-runtime. Ignore command line.
      */
 
     setargv(&argc, &argv);
@@ -192,8 +194,8 @@ Tcl_AppInit(
     /*
      * Specify a user-specific startup file to invoke if the application is
      * run interactively. Typically the startup file is "~/.apprc" where "app"
-     * is the name of the application. If this line is deleted then no user-
-     * specific startup file will be run under any conditions.
+     * is the name of the application. If this line is deleted then no
+     * user-specific startup file will be run under any conditions.
      */
 
     (Tcl_ObjSetVar2)(interp, Tcl_NewStringObj("tcl_rcFileName", -1), NULL,

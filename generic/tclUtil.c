@@ -14,6 +14,7 @@
 
 #include "tclInt.h"
 #include "tclParse.h"
+#include "tclStringTrim.h"
 #include <math.h>
 
 /*
@@ -110,7 +111,11 @@ static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
 static int		SetEndOffsetFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
-
+static int		FindElement(Tcl_Interp *interp, const char *string,
+			    int stringLength, const char *typeStr,
+			    const char *typeCode, const char **elementPtr,
+			    const char **nextPtr, int *sizePtr,
+			    int *literalPtr);
 /*
  * The following is the Tcl object type definition for an object that
  * represents a list index in the form, "end-offset". It is used as a
@@ -236,7 +241,7 @@ const Tcl_ObjType tclEndOffsetType = {
  *   of either braces or quotes to delimit it.
  *
  * This collection of parsing rules is implemented in the routine
- * TclFindElement().
+ * FindElement().
  *
  * In order to produce lists that can be parsed by these rules, we need the
  * ability to distinguish between characters that are part of a list element
@@ -504,9 +509,70 @@ TclFindElement(
 				 * does not/does require a call to 
 				 * TclCopyAndCollapse() by the caller. */
 {
-    const char *p = list;
+    return FindElement(interp, list, listLength, "list", "LIST", elementPtr,
+	    nextPtr, sizePtr, literalPtr);
+}
+
+int
+TclFindDictElement(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
+				 * NULL, then no error message is left after
+				 * errors. */
+    const char *dict,		/* Points to the first byte of a string
+				 * containing a Tcl dictionary with zero or
+				 * more keys and values (possibly in
+				 * braces). */
+    int dictLength,		/* Number of bytes in the dict's string. */
+    const char **elementPtr,	/* Where to put address of first significant
+				 * character in the first element (i.e., key
+				 * or value) of dict. */
+    const char **nextPtr,	/* Fill in with location of character just
+				 * after all white space following end of
+				 * element (next arg or end of list). */
+    int *sizePtr,		/* If non-zero, fill in with size of
+				 * element. */
+    int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
+				 * indicate that the substring of *sizePtr
+				 * bytes starting at **elementPtr is/is not
+				 * the literal key or value and therefore
+				 * does not/does require a call to 
+				 * TclCopyAndCollapse() by the caller. */
+{
+    return FindElement(interp, dict, dictLength, "dict", "DICTIONARY",
+	    elementPtr, nextPtr, sizePtr, literalPtr);
+}
+
+static int
+FindElement(
+    Tcl_Interp *interp,		/* Interpreter to use for error reporting. If
+				 * NULL, then no error message is left after
+				 * errors. */
+    const char *string,		/* Points to the first byte of a string
+				 * containing a Tcl list or dictionary with
+				 * zero or more elements (possibly in
+				 * braces). */
+    int stringLength,		/* Number of bytes in the string. */
+    const char *typeStr,	/* The name of the type of thing we are
+				 * parsing, for error messages. */
+    const char *typeCode,	/* The type code for thing we are parsing, for
+				 * error messages. */
+    const char **elementPtr,	/* Where to put address of first significant
+				 * character in first element. */
+    const char **nextPtr,	/* Fill in with location of character just
+				 * after all white space following end of
+				 * argument (next arg or end of list/dict). */
+    int *sizePtr,		/* If non-zero, fill in with size of
+				 * element. */
+    int *literalPtr)		/* If non-zero, fill in with non-zero/zero to
+				 * indicate that the substring of *sizePtr
+				 * bytes starting at **elementPtr is/is not
+				 * the literal list/dict element and therefore
+				 * does not/does require a call to 
+				 * TclCopyAndCollapse() by the caller. */
+{
+    const char *p = string;
     const char *elemStart;	/* Points to first byte of first element. */
-    const char *limit;		/* Points just after list's last byte. */
+    const char *limit;		/* Points just after list/dict's last byte. */
     int openBraces = 0;		/* Brace nesting level during parse. */
     int inQuotes = 0;
     int size = 0;		/* lint. */
@@ -516,11 +582,11 @@ TclFindElement(
 
     /*
      * Skim off leading white space and check for an opening brace or quote.
-     * We treat embedded NULLs in the list as bytes belonging to a list
-     * element.
+     * We treat embedded NULLs in the list/dict as bytes belonging to a list 
+     * element (or dictionary key or value).
      */
 
-    limit = (list + listLength);
+    limit = (string + stringLength);
     while ((p < limit) && (TclIsSpaceProc(*p))) {
 	p++;
     }
@@ -581,9 +647,9 @@ TclFindElement(
 			p2++;
 		    }
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "list element in braces followed by \"%.*s\" "
-			    "instead of space", (int) (p2-p), p));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "JUNK",
+			    "%s element in braces followed by \"%.*s\" "
+			    "instead of space", typeStr, (int) (p2-p), p));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
 			    NULL);
 		}
 		return TCL_ERROR;
@@ -650,9 +716,9 @@ TclFindElement(
 			p2++;
 		    }
 		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "list element in quotes followed by \"%.*s\" "
-			    "instead of space", (int) (p2-p), p));
-		    Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "JUNK",
+			    "%s element in quotes followed by \"%.*s\" "
+			    "instead of space", typeStr, (int) (p2-p), p));
+		    Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "JUNK",
 			    NULL);
 		}
 		return TCL_ERROR;
@@ -663,23 +729,23 @@ TclFindElement(
     }
 
     /*
-     * End of list: terminate element.
+     * End of list/dict: terminate element.
      */
 
     if (p == limit) {
 	if (openBraces != 0) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"unmatched open brace in list", -1));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "BRACE",
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unmatched open brace in %s", typeStr));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "BRACE",
 			NULL);
 	    }
 	    return TCL_ERROR;
 	} else if (inQuotes) {
 	    if (interp != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(
-			"unmatched open quote in list", -1));
-		Tcl_SetErrorCode(interp, "TCL", "VALUE", "LIST", "QUOTE",
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"unmatched open quote in %s", typeStr));
+		Tcl_SetErrorCode(interp, "TCL", "VALUE", typeCode, "QUOTE",
 			NULL);
 	    }
 	    return TCL_ERROR;
@@ -1768,8 +1834,7 @@ TclTrimLeft(
  */
 
 /* The whitespace characters trimmed during [concat] operations */
-#define CONCAT_WS " \f\v\r\t\n"
-#define CONCAT_WS_SIZE (int) (sizeof(CONCAT_WS "") - 1)
+#define CONCAT_WS_SIZE (int) (sizeof(CONCAT_TRIM_SET "") - 1)
 
 char *
 Tcl_Concat(
@@ -1825,7 +1890,8 @@ Tcl_Concat(
 	 * Trim away the leading whitespace.
 	 */
 
-	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimLeft(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	element += trim;
 	elemLength -= trim;
 
@@ -1834,7 +1900,8 @@ Tcl_Concat(
 	 * a final backslash character.
 	 */
 
-	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimRight(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	trim -= trim && (element[elemLength - trim - 1] == '\\');
 	elemLength -= trim;
 
@@ -1959,7 +2026,8 @@ Tcl_ConcatObj(
 	 * Trim away the leading whitespace.
 	 */
 
-	trim = TclTrimLeft(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimLeft(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	element += trim;
 	elemLength -= trim;
 
@@ -1968,7 +2036,8 @@ Tcl_ConcatObj(
 	 * a final backslash character.
 	 */
 
-	trim = TclTrimRight(element, elemLength, CONCAT_WS, CONCAT_WS_SIZE);
+	trim = TclTrimRight(element, elemLength, CONCAT_TRIM_SET,
+		CONCAT_WS_SIZE);
 	trim -= trim && (element[elemLength - trim - 1] == '\\');
 	elemLength -= trim;
 
@@ -3580,10 +3649,9 @@ UpdateStringOfEndOffset(
     register Tcl_Obj *objPtr)
 {
     char buffer[TCL_INTEGER_SPACE + 5];
-    register int len;
+    register int len = 3;
 
     memcpy(buffer, "end", 4);
-    len = sizeof("end") - 1;
     if (objPtr->internalRep.longValue != 0) {
 	buffer[len++] = '-';
 	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
@@ -4181,7 +4249,8 @@ TclReToGlob(
     const char *reStr,
     int reStrLen,
     Tcl_DString *dsPtr,
-    int *exactPtr)
+    int *exactPtr,
+    int *quantifiersFoundPtr)
 {
     int anchorLeft, anchorRight, lastIsStar, numStars;
     char *dsStr, *dsStrStart;
@@ -4189,6 +4258,9 @@ TclReToGlob(
 
     strEnd = reStr + reStrLen;
     Tcl_DStringInit(dsPtr);
+    if (quantifiersFoundPtr != NULL) {
+	*quantifiersFoundPtr = 0;
+    }
 
     /*
      * "***=xxx" == "*xxx*", watch for glob-sensitive chars.
@@ -4301,6 +4373,9 @@ TclReToGlob(
 	    }
 	    break;
 	case '.':
+	    if (quantifiersFoundPtr != NULL) {
+		*quantifiersFoundPtr = 1;
+	    }
 	    anchorLeft = 0; /* prevent exact match */
 	    if (p+1 < strEnd) {
 		if (p[1] == '*') {

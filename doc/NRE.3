@@ -4,11 +4,11 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH NRE 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
-Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
+Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -207,7 +207,7 @@ is something like:
 .PP
 .CS
 int
-\fITheCmdObjProc\fR(
+\fITheCmdOldObjProc\fR(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -225,7 +225,7 @@ int
     return result;
 }
 \fBTcl_CreateObjCommand\fR(interp, "theCommand",
-        \fITheCmdObjProc\fR, clientData, TheCmdDeleteProc);
+        \fITheCmdOldObjProc\fR, clientData, TheCmdDeleteProc);
 .CE
 .PP
 To enable a command like this one for trampoline-based evaluation,
@@ -255,8 +255,8 @@ int
     int objc,
     Tcl_Obj *const objv[])
 {
-    return \fBTcl_NRCallObjProc\fR(interp, name,
-            \fITheCmdNRObjProc\fR, clientData, objc, objv);
+    return \fBTcl_NRCallObjProc\fR(interp, \fITheCmdNRObjProc\fR, 
+            clientData, objc, objv);
 }
 .CE
 .PP
@@ -317,7 +317,7 @@ and the second is for use when there is already a trampoline in place.
 .PP
 .CS
 \fBTcl_NRCreateCommand\fR(interp, "theCommand",
-        \fITheCmdObjProc\fR, \fITheCmdNRObjProc\fR, clientData,
+        \fITheCmdNewObjProc\fR, \fITheCmdNRObjProc\fR, clientData,
         TheCmdDeleteProc);
 .CE
 .SH "SEE ALSO"
