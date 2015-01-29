@@ -5735,8 +5735,8 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     TclChannelPreserve((Tcl_Channel)chanPtr);
 
-    /* Must clear the BLOCKED flag here since we check before reading */
-    ResetFlag(statePtr, CHANNEL_BLOCKED);
+    /* Must clear the BLOCKED|EOF flags here since we check before reading */
+    ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
