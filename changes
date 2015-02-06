@@ -7906,3 +7906,24 @@ of Tcl_Channel  (porter)
 2014-10-18 (bug)[10dc6d] fix [gets] on non-blocking channels (fassel,porter)
 
 --- Released 8.5.17, October 25, 2014 --- http://core.tcl.tk/tcl/ for details
+
+2014-10-26 Support for Windows 10 (nijtmans)
+
+2014-10-31 (bug)[dcc034] restore [open comX: r+] (lll,nijtmans)
+
+2014-11-06 (bug)[5adc35] Stop forcing EOF to be permanent (porter)
+
+2014-12-03 (bug)[0c043a] Fix compiled [set var($) val] (porter)
+
+2014-12-04 (bug)[d2ffcc] Limit $... and bareword parsing to ASCII (ladayaroslav,porter)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2014-12-10 tzdata updated to Olson's tzdata2014j (venkat)
+
+2015-01-26 (bug)[df0848] Trouble with INFINITY macro (dower,nijtmans)
+
+2015-01-29 (bug) Stop crashes when extension var resolvers misbehave (porter)
+
+2015-02-05 (bug) Plug stacked channel memleak (porter)
+
+--- Released 8.5.18, February 28, 2015 --- http://core.tcl.tk/tcl/ for details
