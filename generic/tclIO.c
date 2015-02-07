@@ -1548,13 +1548,23 @@ Tcl_CreateChannel(
      */
 
     assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
-    assert(NULL!=typePtr->closeProc);
-    assert(NULL!=typePtr->inputProc);
-    assert(NULL!=typePtr->outputProc);
-    assert(NULL!=typePtr->watchProc);
-    assert(NULL!=typePtr->getHandleProc);
-    if (NULL!=typePtr->wideSeekProc) {
-      assert(NULL!=typePtr->seekProc && "Must define seekProc if defining wideSeekProc");
+    if (NULL == typePtr->closeProc)
+      Tcl_Panic("Required closeProc is unset.");
+
+    if (NULL == typePtr->inputProc)
+      Tcl_Panic("Required inputProc is unset.");
+
+    if (NULL == typePtr->outputProc)
+      Tcl_Panic("Required outputProc is unset.");
+
+    if (NULL == typePtr->watchProc)
+      Tcl_Panic("Required watchProc is unset.");
+
+    if (NULL == typePtr->getHandleProc)
+      Tcl_Panic("Required getHandleProc is unset.");
+
+    if ((NULL!=typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
+      Tcl_Panic("Must define seekProc if defining wideSeekProc");
     }
 
     /*
