@@ -1551,10 +1551,10 @@ Tcl_CreateChannel(
     if (NULL == typePtr->closeProc)
       Tcl_Panic("Required closeProc is unset.");
 
-    if (NULL == typePtr->inputProc)
+    if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc))
       Tcl_Panic("Required inputProc is unset.");
 
-    if (NULL == typePtr->outputProc)
+    if ((TCL_WRITABLE & mask) &&  (NULL == typePtr->outputProc))
       Tcl_Panic("Required outputProc is unset.");
 
     if (NULL == typePtr->watchProc)
