@@ -1548,23 +1548,24 @@ Tcl_CreateChannel(
      */
 
     assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
-    if (NULL == typePtr->closeProc)
-      Tcl_Panic("Required closeProc is unset.");
-
-    if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc))
-      Tcl_Panic("Required inputProc is unset.");
-
-    if ((TCL_WRITABLE & mask) &&  (NULL == typePtr->outputProc))
-      Tcl_Panic("Required outputProc is unset.");
-
-    if (NULL == typePtr->watchProc)
-      Tcl_Panic("Required watchProc is unset.");
-
-    if (NULL == typePtr->getHandleProc)
-      Tcl_Panic("Required getHandleProc is unset.");
-
+    assert(typePtr->typeName != NULL);
+    if (NULL == typePtr->closeProc) {
+	Tcl_Panic("channel type %s must define closeProc", typePtr->typeName);
+    }
+    if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc)) {
+	Tcl_Panic("channel type %s must define inputProc when used for reader channel", typePtr->typeName);
+    }
+    if ((TCL_WRITABLE & mask) &&  (NULL == typePtr->outputProc)) {
+	Tcl_Panic("channel type %s must define outputProc when used for writer channel", typePtr->typeName);
+    }
+    if (NULL == typePtr->watchProc) {
+	Tcl_Panic("channel type %s must define watchProc", typePtr->typeName);
+    }
+    if (NULL == typePtr->getHandleProc) {
+	Tcl_Panic("channel type %s must define getHandleProc", typePtr->typeName);
+    }
     if ((NULL!=typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
-      Tcl_Panic("Must define seekProc if defining wideSeekProc");
+	Tcl_Panic("channel type %s must define seekProc if defining wideSeekProc", typePtr->typeName);
     }
 
     /*
