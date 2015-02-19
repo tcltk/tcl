@@ -1551,7 +1551,7 @@ TclCompileLreplaceCmd(
 	idx1 = 0;
 	goto replaceTail;
     } else {
-	if (idx1 >= 0 && idx2 > 0 && idx2 < idx1) {
+	if (idx1 > 0 && idx2 > 0 && idx2 < idx1) {
 	    idx2 = idx1 - 1;
 	} else if (idx1 < 0 && idx2 < 0 && idx2 < idx1) {
 	    idx2 = idx1 - 1;
