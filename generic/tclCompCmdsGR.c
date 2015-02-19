@@ -1524,6 +1524,9 @@ TclCompileLreplaceCmd(
 		tmpObj = Tcl_NewIntObj(idx1);
 		Tcl_IncrRefCount(tmpObj);
 	    }
+	    if(idx2 < idx1) {
+		idx2 = idx1-1;
+	    }
 	    goto dropRange;
 	}
     }
@@ -1547,7 +1550,7 @@ TclCompileLreplaceCmd(
 	idx1 = 0;
 	goto replaceTail;
     } else {
-	if (idx1 > 0 && idx2 > 0 && idx2 < idx1) {
+	if (idx1 >= 0 && idx2 > 0 && idx2 < idx1) {
 	    idx2 = idx1 - 1;
 	} else if (idx1 < 0 && idx2 < 0 && idx2 < idx1) {
 	    idx2 = idx1 - 1;
