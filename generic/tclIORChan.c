@@ -30,8 +30,6 @@
 /*
  * Signatures of all functions used in the C layer of the reflection.
  */
-static int		ReflectGetHandle( ClientData instanceData,
-			int direction, ClientData *handlePtr);
 
 static int		ReflectClose(ClientData clientData,
 			    Tcl_Interp *interp);
@@ -70,7 +68,7 @@ static const Tcl_ChannelType tclRChannelType = {
     ReflectSetOption,	   /* Set options.			NULL'able */
     ReflectGetOption,	   /* Get options.			NULL'able */
     ReflectWatch,	   /* Initialize notifier			  */
-    ReflectGetHandle,	   /* Get OS handle from the channel.		  */
+    NULL,		   /* Get OS handle from the channel.	NULL'able */
     NULL,		   /* No close2 support.		NULL'able */
     ReflectBlock,	   /* Set blocking/nonblocking.		NULL'able */
     NULL,		   /* Flush channel. Not used by core.	NULL'able */
@@ -1641,32 +1639,6 @@ ReflectWatch(
     Tcl_DecrRefCount(maskObj);
 
     Tcl_Release(rcPtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * ReflectGetHandle --
- *
- *	This function is invoked to return OS channel handles, or EINVAL
- *	if not applicable or otherwise invalid.
- *
- * Results:
- *	EINVAL.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-ReflectGetHandle(
-    ClientData instanceData,
-    int direction,
-    ClientData *handlePtr)
-{
-  return EINVAL;
 }
 
 /*
