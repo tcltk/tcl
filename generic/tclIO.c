@@ -1561,9 +1561,6 @@ Tcl_CreateChannel(
     if (NULL == typePtr->watchProc) {
 	Tcl_Panic("channel type %s must define watchProc", typePtr->typeName);
     }
-    if (NULL == typePtr->getHandleProc) {
-	Tcl_Panic("channel type %s must define getHandleProc", typePtr->typeName);
-    }
     if ((NULL!=typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
 	Tcl_Panic("channel type %s must define seekProc if defining wideSeekProc", typePtr->typeName);
     }
