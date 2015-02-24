@@ -7926,4 +7926,6 @@ of Tcl_Channel  (porter)
 
 2015-02-05 (bug) Plug stacked channel memleak (porter)
 
+2015-02-11 tzdata updated to Olson's tzdata2015a (venkat)
+
 --- Released 8.5.18, February 28, 2015 --- http://core.tcl.tk/tcl/ for details
