@@ -1493,6 +1493,10 @@ TclCompileLreplaceCmd(
 	return TCL_ERROR;
     }
 
+    if(idx2 != INDEX_END && idx2 < idx1) {
+	idx2 = idx1-1;
+    }
+
     /*
      * Work out what this [lreplace] is actually doing.
      */
