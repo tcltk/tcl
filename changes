@@ -8492,4 +8492,19 @@ include ::oo::class (fellows)
 
 --- Released 8.6.3, November 12, 2014 --- http://core.tcl.tk/tcl/ for details
 
+2014-11-21 (bug)[743338] Win: socket error encoding (ladayaroslav,nijtmans)
+
+2014-12-01 (bug) restore tbcload/tclcompiler support (kupries)
+
+2014-12-03 (bug)[0c043a] Fix compiled [set var($) val] (porter)
+
+
 2014-12-17 (TIP 427) [fconfigure $h -connecting, -peername, -sockname] (oehlmann,rmax)
+
+
+
+
+
+
+
+--- Released 8.6.4, March 12, 2015 --- http://core.tcl.tk/tcl/ for details
