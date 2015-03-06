@@ -352,6 +352,7 @@ application are competing for the console at the same time.  If the command
 pipeline is started from a script, so that Tcl is not accessing the console,
 or if the command pipeline does not use standard input or output, but is
 redirected from or to a file, then the above problems do not occur.  
+.RE
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
 Valid values for \fIfileName\fR to open a serial port are generally of the
