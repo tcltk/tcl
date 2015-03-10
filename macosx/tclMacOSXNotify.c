@@ -1412,7 +1412,8 @@ UpdateWaitingListAndServiceEvents(
 		(tsdPtr->runLoopNestingLevel > 1
 			|| !tsdPtr->runLoopRunning)) {
 	    tsdPtr->runLoopServicingEvents = 1;
-	    while (Tcl_ServiceAll() && tsdPtr->waitTime == 0) {}
+            /* This call seems to simply force event processing through and prevents hangups that have long been observed with Tk-Cocoa.  */
+	    Tcl_ServiceAll();
 	    tsdPtr->runLoopServicingEvents = 0;
 	}
 	break;
