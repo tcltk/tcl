@@ -8523,4 +8523,7 @@ include ::oo::class (fellows)
 
 2015-02-20 (bug)[32b615] Fix compiled [lreplace] (lreplace-4.[345]) (aspect)
 
+2015-03-10 (enhancement) Revise OS X notifier for better Cocoa (walzer)
+        *** POTENTIAL INCOMPATIBILITY ***
+
 --- Released 8.6.4, March 12, 2015 --- http://core.tcl.tk/tcl/ for details
