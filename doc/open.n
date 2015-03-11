@@ -370,9 +370,8 @@ works for serial ports from 1 to 9.  An attempt to open a serial port that
 does not exist or has a number greater than 9 will fail.  An alternate
 form of opening serial ports is to use the filename \fB//./comX\fR,
 where X is any number that corresponds to a serial port.
-.RS
 .PP
-.
+.RS
 When running Tcl interactively, there may be some strange interactions
 between the real console, if one is present, and a command pipeline that uses
 standard input or output.  If a command pipeline is opened for reading, some
@@ -384,6 +383,7 @@ application are competing for the console at the same time.  If the command
 pipeline is started from a script, so that Tcl is not accessing the console,
 or if the command pipeline does not use standard input or output, but is
 redirected from or to a file, then the above problems do not occur.  
+.RE
 .TP
 \fBUnix\fR\0\0\0\0\0\0\0
 .
