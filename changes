@@ -8492,4 +8492,38 @@ include ::oo::class (fellows)
 
 --- Released 8.6.3, November 12, 2014 --- http://core.tcl.tk/tcl/ for details
 
+2014-11-21 (bug)[743338] Win: socket error encoding (ladayaroslav,nijtmans)
+
+2014-12-01 (bug) restore tbcload/tclcompiler support (kupries)
+
+2014-12-03 (bug)[0c043a] Fix compiled [set var($) val] (porter)
+
+2014-12-04 (bug)[d2ffcc] Limit $... and bareword parsing to ASCII (ladayaroslav,porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2014-12-06 (bug)[c6cd4a] Win: hang in async socket connection (shults,nadkarni)
+
+2014-12-10 tzdata updated to Olson's tzdata2014j (venkat)
+
+2014-12-13 fix header files installation on OS X (houben)
+
 2014-12-17 (TIP 427) [fconfigure $h -connecting, -peername, -sockname] (oehlmann,rmax)
+
+2014-12-18 (bug)[af08c8] Crash in full finalize encoding teardown (porter)
+
+2014-12-18 (bug)[7c187a] [chan copy] crash (io-53.17) (benno,porter)
+
+2015-01-26 (bug)[df0848] Trouble with INFINITY macro (dower,nijtmans)
+
+2015-01-29 (bug) Stop crashes when extension var resolvers misbehave (porter)
+
+2015-01-29 (bug)[088727] [read] past EOF (io-73.4) (fenugrec,porter)
+
+2015-02-11 tzdata updated to Olson's tzdata2015a (venkat)
+
+2015-02-20 (bug)[32b615] Fix compiled [lreplace] (lreplace-4.[345]) (aspect)
+
+2015-03-10 (enhancement) Revise OS X notifier for better Cocoa (walzer)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+--- Released 8.6.4, March 12, 2015 --- http://core.tcl.tk/tcl/ for details

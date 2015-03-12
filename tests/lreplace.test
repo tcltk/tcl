@@ -143,7 +143,7 @@ test lreplace-4.3 {lreplace edge case} {
 test lreplace-4.4 {lreplace edge case} {
     lreplace {1 2 3 4 5} 3 1
 } {1 2 3 4 5}
-test lreplace-4.4 {lreplace edge case} {
+test lreplace-4.5 {lreplace edge case} {
     lreplace {1 2 3 4 5} 3 0 _
 } {1 2 3 _ 4 5}
 
