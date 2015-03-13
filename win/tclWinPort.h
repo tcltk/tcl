@@ -33,7 +33,9 @@
 #endif
 
 #define WIN32_LEAN_AND_MEAN
+#define STRICT		/* See MSDN Article Q83456 */
 #include <windows.h>
+#undef STRICT
 #undef WIN32_LEAN_AND_MEAN
 
 /* Compatibility to older visual studio / windows platform SDK */
