@@ -288,6 +288,19 @@ const Tcl_ObjType tclBignumType = {
     NULL			/* setFromAnyProc */
 };
 
+
+/*
+ * Type dispatch table for TclHashValueType used for caching computed hashes.
+ */
+const Tcl_ObjType tclHashValueType = {
+    "hashcache",	/* name */
+    NULL,		/* freeIntRepProc */
+    NULL,		/* dupIntRepProc */
+    NULL,		/* Hash always computed from string rep so don't need
+                           to have an updateStringProc */
+    NULL		/* setFromAnyProc */
+};
+
 /*
  * The structure below defines the Tcl obj hash key type.
  */
@@ -3959,6 +3972,15 @@ TclCompareObjKeys(
     }
 
     /*
+     * If the cached hash values are different, strings cannot be the same.
+     * The converse obviously does not hold!
+     */
+    if (objPtr1->typePtr == &tclHashValueType &&
+        objPtr2->typePtr == &tclHashValueType &&
+        objPtr1->internalRep.longValue != objPtr2->internalRep.longValue)
+        return 0;
+
+    /*
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
      * in a register.
      */
@@ -4037,8 +4059,14 @@ TclHashObjKey(
 {
     Tcl_Obj *objPtr = keyPtr;
     int length;
-    const char *string = TclGetStringFromObj(objPtr, &length);
+    const char *string;
     unsigned int result = 0;
+
+    /* Return cached hash value if it exists */
+    if (objPtr->typePtr == &tclHashValueType)
+        return objPtr->internalRep.longValue;
+
+    string = TclGetStringFromObj(objPtr, &length);
 
     /*
      * I tried a zillion different hash functions and asked many other people
@@ -4080,6 +4108,16 @@ TclHashObjKey(
 	    result += (result << 3) + UCHAR(*++string);
 	}
     }
+
+    /*
+     * We do not want to shimmer other object types so only cache the 
+     * hash if there is no associated type
+     */
+    if (objPtr->typePtr == NULL) {
+        objPtr->typePtr = &tclHashValueType;
+        objPtr->internalRep.longValue = result;
+    }
+
     return result;
 }
 
