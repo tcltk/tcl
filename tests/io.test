@@ -7900,6 +7900,44 @@ test io-53.16 {[ed29c4da21] MBRead: fblocked seen as error} -setup {
     close $c
     removeFile out
 } -result 100
+test io-53.17 {[7c187a3773] MBWrite: proper inQueueTail handling} -setup {
+    proc driver {cmd args} {
+        variable buffer
+        variable index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) [encoding convertto utf-8 \
+                        line\n[string repeat a 100]line\n]
+                return {initialize finalize watch read}
+            }
+            finalize {
+                unset index($chan) buffer($chan)
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                return $result
+            }
+        }
+    }
+    set c [chan create read [namespace which driver]]
+    chan configure $c -encoding utf-8 -translation lf -buffersize 107
+    set out [makeFile {} out]
+    set outChan [open $out w]
+    chan configure $outChan -encoding utf-8 -translation lf
+} -body {
+    list [gets $c] [chan copy $c $outChan -size 100] [gets $c]
+} -cleanup {
+    close $outChan
+    close $c
+    removeFile out
+} -result {line 100 line}
 
 test io-54.1 {Recursive channel events} {socket fileevent} {
     # This test checks to see if file events are delivered during recursive
@@ -8484,6 +8522,25 @@ test io-73.3 {[5adc350683] [gets] after EOF} -setup {
     close $rfd
     removeFile io-73.3
 } -result {1 1 {more data} 0 {} 1}
+
+test io-73.4 {[5adc350683] [read] after EOF} -setup {
+    set fn [makeFile {} io-73.4]
+    set rfd [open $fn r]
+    set wfd [open $fn a]
+    chan configure $wfd -buffering line
+    read $rfd
+} -body {
+    set result [eof $rfd]
+    puts $wfd "more data"
+    lappend result [eof $rfd]
+    lappend result [read $rfd]
+    lappend result [eof $rfd]
+} -cleanup {
+    close $wfd
+    close $rfd
+    removeFile io-73.4
+} -result {1 1 {more data
+} 1}
 
 # ### ### ### ######### ######### #########
 

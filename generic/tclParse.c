@@ -2526,56 +2526,6 @@ TclObjCommandComplete(
 }
 
 /*
- *----------------------------------------------------------------------
- *
- * TclIsLocalScalar --
- *
- *	Check to see if a given string is a legal scalar variable name with no
- *	namespace qualifiers or substitutions.
- *
- * Results:
- *	Returns 1 if the variable is a local scalar.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-int
-TclIsLocalScalar(
-    const char *src,
-    int len)
-{
-    const char *p;
-    const char *lastChar = src + (len - 1);
-
-    for (p=src ; p<=lastChar ; p++) {
-	if ((CHAR_TYPE(*p) != TYPE_NORMAL)
-		&& (CHAR_TYPE(*p) != TYPE_COMMAND_END)) {
-	    /*
-	     * TCL_COMMAND_END is returned for the last character of the
-	     * string. By this point we know it isn't an array or namespace
-	     * reference.
-	     */
-
-	    return 0;
-	}
-	if (*p == '(') {
-	    if (*lastChar == ')') {	/* We have an array element */
-		return 0;
-	    }
-	} else if (*p == ':') {
-	    if ((p != lastChar) && *(p+1) == ':') {	/* qualified name */
-		return 0;
-	    }
-	}
-    }
-
-    return 1;
-}
-
-/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4
