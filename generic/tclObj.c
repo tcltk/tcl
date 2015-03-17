@@ -203,6 +203,14 @@ static Tcl_ThreadDataKey pendingObjDataKey;
     }
 
 /*
+ * How the hashcode is stored in a Tcl_Obj of type tclHashValueType. Note that
+ * this macro must give an L-value; it will be written through.
+ */
+
+#define OBJHASH(objPtr) \
+    ((objPtr)->internalRep.longValue)
+
+/*
  * Prototypes for functions defined later in this file:
  */
 
@@ -3975,10 +3983,12 @@ TclCompareObjKeys(
      * If the cached hash values are different, strings cannot be the same.
      * The converse obviously does not hold!
      */
-    if (objPtr1->typePtr == &tclHashValueType &&
-        objPtr2->typePtr == &tclHashValueType &&
-        objPtr1->internalRep.longValue != objPtr2->internalRep.longValue)
+
+    if (objPtr1->typePtr == &tclHashValueType
+            && objPtr2->typePtr == &tclHashValueType
+            && OBJHASH(objPtr1) != OBJHASH(objPtr2)) {
         return 0;
+    }
 
     /*
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
@@ -4062,9 +4072,13 @@ TclHashObjKey(
     const char *string;
     unsigned int result = 0;
 
-    /* Return cached hash value if it exists */
-    if (objPtr->typePtr == &tclHashValueType)
-        return objPtr->internalRep.longValue;
+    /*
+     * Return cached hash value if it exists.
+     */
+
+    if (objPtr->typePtr == &tclHashValueType) {
+        return OBJHASH(objPtr);
+    }
 
     string = TclGetStringFromObj(objPtr, &length);
 
@@ -4110,12 +4124,13 @@ TclHashObjKey(
     }
 
     /*
-     * We do not want to shimmer other object types so only cache the 
-     * hash if there is no associated type
+     * We do not want to shimmer other object types so only cache the hash if
+     * there is no associated type.
      */
+
     if (objPtr->typePtr == NULL) {
         objPtr->typePtr = &tclHashValueType;
-        objPtr->internalRep.longValue = result;
+        OBJHASH(objPtr) = result;
     }
 
     return result;
