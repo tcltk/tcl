@@ -15,6 +15,9 @@
 #if !defined(NO_DLADDR) && !defined(NO_DLFCN_H)
 #include <dlfcn.h>
 #endif
+#ifdef __APPLE__
+#include <mach-o/dyld.h>
+#endif
 
 static int NativeMatchType(Tcl_Interp *interp, const char* nativeEntry,
 	const char* nativeName, Tcl_GlobTypeData *types);
@@ -47,6 +50,7 @@ TclpFindExecutable(
     int length;
     char buf[PATH_MAX * 2];
     char name[PATH_MAX * TCL_UTF_MAX + 1];
+
     GetModuleFileNameW(NULL, buf, PATH_MAX);
     cygwin_conv_path(3, buf, name, PATH_MAX);
     length = strlen(name);
@@ -61,11 +65,15 @@ TclpFindExecutable(
     const char *name, *p;
     Tcl_StatBuf statBuf;
     Tcl_DString buffer, nameString, cwd, utfName;
-#if !defined(__APPLE__) && !defined(DJGPP)
+#ifdef __APPLE__
+    char *buf;
+    uint32_t bufSize;
+#elif !defined(DJGPP)
     int i;
     unsigned long pid;
     static CONST char *exepaths[] = {
-	"/proc/%lu/exe", "/proc/%lu/file", "/proc/%lu/object/a.out"
+	"/proc/%lu/exe", "/proc/%lu/file", "/proc/%lu/object/a.out",
+	"/proc/curproc/file"
     };
     char buf1[PATH_MAX+1], buf2[64];
 #endif
@@ -89,7 +97,30 @@ TclpFindExecutable(
      * /proc (if that's mounted, and we have readlink(2)) or to pick the
      * information out of the dynamic loader (assuming we're using a
      * compatible one and it supports the relevant - common - extension).
+     *
+     * On OSX, we can use the _NSGetExecutablePath function to retrieve the
+     * name of the main process. This is documented on the dyld(3) manual
+     * page.
+     *
+     * For a list of various techniques and links to more details on how to
+     * implement them, see the Stack Overflow master question at
+     * http://stackoverflow.com/q/1023306/301832
      */
+
+#ifdef __APPLE__
+    buf = NULL;
+    bufSize = 0;
+    _NSGetExecutablePath(buf, &bufSize);
+    if (bufSize > 0) {
+	buf = ckalloc(bufSize+1);
+	if (_NSGetExecutablePath(buf, &bufSize) == 0) {
+	    name = buf;
+	    goto gotName;
+	}
+	ckfree(buf);
+	buf = NULL;
+    }
+#endif /* __APPLE__ */
 
 #if !defined(__APPLE__) && !defined(DJGPP)
     pid = getpid();
@@ -101,6 +132,7 @@ TclpFindExecutable(
 	}
     }
 #endif
+
 #if !defined(NO_DLADDR) && !defined(NO_DLFCN_H)
     sym = dlsym(RTLD_DEFAULT, "main");
     if (sym == NULL) {
@@ -237,6 +269,11 @@ TclpFindExecutable(
     Tcl_DStringFree(&utfName);
 
   done:
+#ifdef __APPLE__
+    if (buf != NULL) {
+	ckfree(buf);
+    }
+#endif /* __APPLE__ */
     Tcl_DStringFree(&buffer);
 #endif
 }
