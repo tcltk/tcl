@@ -1548,6 +1548,22 @@ Tcl_CreateChannel(
      */
 
     assert(sizeof(Tcl_ChannelTypeVersion) == sizeof(Tcl_DriverBlockModeProc *));
+    assert(typePtr->typeName != NULL);
+    if (NULL == typePtr->closeProc) {
+	Tcl_Panic("channel type %s must define closeProc", typePtr->typeName);
+    }
+    if ((TCL_READABLE & mask) && (NULL == typePtr->inputProc)) {
+	Tcl_Panic("channel type %s must define inputProc when used for reader channel", typePtr->typeName);
+    }
+    if ((TCL_WRITABLE & mask) &&  (NULL == typePtr->outputProc)) {
+	Tcl_Panic("channel type %s must define outputProc when used for writer channel", typePtr->typeName);
+    }
+    if (NULL == typePtr->watchProc) {
+	Tcl_Panic("channel type %s must define watchProc", typePtr->typeName);
+    }
+    if ((NULL!=typePtr->wideSeekProc) && (NULL == typePtr->seekProc)) {
+	Tcl_Panic("channel type %s must define seekProc if defining wideSeekProc", typePtr->typeName);
+    }
 
     /*
      * JH: We could subsequently memset these to 0 to avoid the numerous
@@ -5735,8 +5751,8 @@ DoReadChars(
     chanPtr = statePtr->topChanPtr;
     TclChannelPreserve((Tcl_Channel)chanPtr);
 
-    /* Must clear the BLOCKED flag here since we check before reading */
-    ResetFlag(statePtr, CHANNEL_BLOCKED);
+    /* Must clear the BLOCKED|EOF flags here since we check before reading */
+    ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
