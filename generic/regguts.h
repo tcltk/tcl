@@ -99,7 +99,7 @@
 #define	xxx		1
 
 #define	DUPMAX	_POSIX2_RE_DUP_MAX
-#define	INFINITY	(DUPMAX+1)
+#define	DUPINF	(DUPMAX+1)
 
 #define	REMAGIC	0xfed7		/* magic number for main struct */
 
