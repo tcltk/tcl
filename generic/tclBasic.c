@@ -8181,8 +8181,8 @@ Tcl_NRCmdSwap(
  *   2. when the CallFrame is popped, it calls TclSetTailcall to store the
  *      callback in the proper NRCommand callback - the spot where the command
  *      that pushed the CallFrame is completely cleaned up
- *   3. The NRCommand schedules the tailcall callback to run immediately after
- *      NRCommand returns
+ *   3. when the NRCommand callback runs, it schedules the tailcall callback
+ *      to run immediately after it returns
  *
  *   One delicate point is to properly define the NRCommand where the tailcall
  *   will execute. There are functions whose purpose is to help define the
@@ -8222,6 +8222,18 @@ TclPushTailcallPoint(
     ((Interp *) interp)->numLevels++;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetTailcall --
+ *
+ *	Splice a tailcall command in the proper spot of the NRE callback
+ *	stack, so that it runs at the right time.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TclSetTailcall(
     Tcl_Interp *interp,
@@ -8245,6 +8257,23 @@ TclSetTailcall(
     }
     runPtr->data[1] = listPtr;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNRTailcallObjCmd --
+ *
+ *	Prepare the tailcall as a list and store it in the current
+ *	varFrame. When the frame is later popped the tailcall will be spliced
+ *	at the proper place.
+ *
+ * Results:
+ *	The first NRCommand callback that is not marked to be skipped is
+ *	updated so that its data[1] field contains the tailcall list.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclNRTailcallObjCmd(
@@ -8304,6 +8333,17 @@ TclNRTailcallObjCmd(
     }
     return TCL_RETURN;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNRTailcallEval --
+ *
+ *	This NREcallback actually causes the tailcall to be evaluated.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclNRTailcallEval(
