@@ -62,16 +62,6 @@ extern "C" {
 #define TCL_PATCH_LEVEL	    "9.0a0"
 
 /*
- * STRICT: See MSDN Article Q83456
- */
-
-#ifdef _WIN32
-#   ifndef STRICT
-#	define STRICT
-#   endif
-#endif /* _WIN32 */
-
-/*
  * A special definition used to allow this header file to be included from
  * windows resource files so that they can obtain version information.
  * RC_INVOKED is defined by default by the windows RC tool.
