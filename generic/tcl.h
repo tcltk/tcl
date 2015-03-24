@@ -392,16 +392,12 @@ typedef long LONG;
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
-#      ifdef NO_LIMITS_H
-#	  error please define either TCL_WIDE_INT_TYPE or TCL_WIDE_INT_IS_LONG
-#      else /* !NO_LIMITS_H */
-#	  include <limits.h>
-#	  if (INT_MAX < LONG_MAX)
-#	     define TCL_WIDE_INT_IS_LONG	1
-#	  else
-#	     define TCL_WIDE_INT_TYPE long long
-#         endif
-#      endif /* NO_LIMITS_H */
+#      include <limits.h>
+#      if (INT_MAX < LONG_MAX)
+#         define TCL_WIDE_INT_IS_LONG	1
+#      else
+#         define TCL_WIDE_INT_TYPE long long
+#      endif
 #   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
