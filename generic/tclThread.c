@@ -50,6 +50,7 @@ static void		RememberSyncObject(void *objPtr,
 #undef Tcl_MutexLock
 #undef Tcl_MutexUnlock
 #undef Tcl_MutexFinalize
+#undef Tcl_MutexUnlockAndFinalize
 #undef Tcl_ConditionNotify
 #undef Tcl_ConditionWait
 #undef Tcl_ConditionFinalize
@@ -277,6 +278,38 @@ Tcl_MutexFinalize(
     TclpFinalizeMutex(mutexPtr);
 #endif
     TclpMasterLock();
+    ForgetSyncObject(mutexPtr, &mutexRecord);
+    TclpMasterUnlock();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_MutexUnlockAndFinalize --
+ *
+ *	This procedure is invoked to unlock and then finalize a mutex.
+ *	The mutex must have been locked by Tcl_MutexLock.  It is also
+ *	removed from the list of remembered objects.  The mutex can no
+ *	longer be used after calling this procedure.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Remove the mutex from the list.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_MutexUnlockAndFinalize(
+    Tcl_Mutex *mutexPtr)
+{
+    TclpMasterLock();
+#ifdef TCL_THREADS
+    Tcl_MutexUnlock(mutexPtr);
+    TclpFinalizeMutex(mutexPtr);
+#endif
     ForgetSyncObject(mutexPtr, &mutexRecord);
     TclpMasterUnlock();
 }
