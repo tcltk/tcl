@@ -135,6 +135,7 @@ static int	GetBlocks(Cache *cachePtr, int bucket);
 static Block *	Ptr2Block(char *ptr);
 static char *	Block2Ptr(Block *blockPtr, int bucket, unsigned int reqSize);
 static void	MoveObjs(Cache *fromPtr, Cache *toPtr, int numMove);
+static void	PutObjs(Cache *fromPtr, int numMove);
 
 /*
  * Local variables defined in this file and initialized at startup.
@@ -271,9 +272,7 @@ TclFreeAllocCache(
      */
 
     if (cachePtr->numObjects > 0) {
-	Tcl_MutexLock(objLockPtr);
-	MoveObjs(cachePtr, sharedPtr, cachePtr->numObjects);
-	Tcl_MutexUnlock(objLockPtr);
+	PutObjs(cachePtr, cachePtr->numObjects);
     }
 
     /*
@@ -632,9 +631,7 @@ TclThreadFreeObj(
      */
 
     if (cachePtr->numObjects > NOBJHIGH) {
-	Tcl_MutexLock(objLockPtr);
-	MoveObjs(cachePtr, sharedPtr, NOBJALLOC);
-	Tcl_MutexUnlock(objLockPtr);
+	PutObjs(cachePtr, NOBJALLOC);
     }
 }
 
@@ -734,6 +731,60 @@ MoveObjs(
 
     objPtr->internalRep.twoPtrValue.ptr1 = toPtr->firstObjPtr;
     toPtr->firstObjPtr = fromFirstObjPtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * PutObjs --
+ *
+ *	Move Tcl_Obj's from thread cache to shared cache.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+PutObjs(
+    Cache *fromPtr,
+    int numMove)
+{
+    int keep = fromPtr->numObjects - numMove;
+    Tcl_Obj *firstPtr, *lastPtr;
+
+    fromPtr->numObjects = keep;
+    firstPtr = fromPtr->firstObjPtr;
+    if (keep == 0) {
+	fromPtr->firstObjPtr = NULL;
+    } else {
+	do {
+	    lastPtr = firstPtr;
+	    firstPtr = firstPtr->internalRep.twoPtrValue.ptr1;
+	} while (--keep > 0);
+	lastPtr->internalRep.twoPtrValue.ptr1 = NULL;
+    }
+
+    /* TODO: We could avoid this walk to lastPtr if we kept a lastPtr field */
+    lastPtr = firstPtr;
+    while (lastPtr->internalRep.twoPtrValue.ptr1) {
+	lastPtr = lastPtr->internalRep.twoPtrValue.ptr1;
+    }
+    
+    /*
+     * Move all objects as a block - they are already linked to each other, we
+     * just have to update the first and last.
+     */
+
+    Tcl_MutexLock(objLockPtr);
+    lastPtr->internalRep.twoPtrValue.ptr1 = sharedPtr->firstObjPtr;
+    sharedPtr->firstObjPtr = firstPtr;
+    sharedPtr->numObjects += numMove;
+    Tcl_MutexUnlock(objLockPtr);
 }
 
 /*
@@ -848,20 +899,39 @@ PutBlocks(
     int bucket,
     int numMove)
 {
-    register Block *lastPtr, *firstPtr;
-    register int n = numMove;
-
     /*
-     * Before acquiring the lock, walk the block list to find the last block
-     * to be moved.
+     * We have numFree.  Want to shed numMove. So compute how many
+     * Blocks to keep.
      */
 
-    firstPtr = lastPtr = cachePtr->buckets[bucket].firstPtr;
-    while (--n > 0) {
+    int keep = cachePtr->buckets[bucket].numFree - numMove;
+    Block *lastPtr, *firstPtr;
+
+    cachePtr->buckets[bucket].numFree = keep;
+    firstPtr = cachePtr->buckets[bucket].firstPtr;
+    if (keep == 0) {
+	cachePtr->buckets[bucket].firstPtr = NULL;
+    } else {
+	do {
+	    lastPtr = firstPtr;
+	    firstPtr = firstPtr->nextBlock;
+	} while (--keep > 0);
+	lastPtr->nextBlock = NULL;
+    }
+
+    /* 
+     * firstPtr now points to the first Block to return to shared.
+     */
+
+    /* TODO: We could avoid this walk to lastPtr if we kept a lastPtr field */
+    lastPtr = firstPtr;
+    while (lastPtr->nextBlock) {
 	lastPtr = lastPtr->nextBlock;
     }
-    cachePtr->buckets[bucket].firstPtr = lastPtr->nextBlock;
-    cachePtr->buckets[bucket].numFree -= numMove;
+
+    /*
+     * lastPtr now points to the last Block to return to shared.
+     */
 
     /*
      * Aquire the lock and place the list of blocks at the front of the shared
