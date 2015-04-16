@@ -84,6 +84,7 @@ typedef union Block {
 
 typedef struct Bucket {
     Block *firstPtr;		/* First block available */
+    Block *lastPtr;		/* End of block list */
     long numFree;		/* Number of blocks available */
 
     /* All fields below for accounting only */
@@ -107,6 +108,7 @@ typedef struct Cache {
     Tcl_ThreadId owner;		/* Which thread's cache is this? */
     Tcl_Obj *firstObjPtr;	/* List of free objects for thread */
     int numObjects;		/* Number of objects for thread */
+    Tcl_Obj *lastPtr;		/* Last object in this cache */
     int totalAssigned;		/* Total space assigned to thread */
     Bucket buckets[NBUCKETS];	/* The buckets for this thread */
 } Cache;
@@ -414,6 +416,9 @@ TclpFree(
     cachePtr->buckets[bucket].totalAssigned -= blockPtr->blockReqSize;
     blockPtr->nextBlock = cachePtr->buckets[bucket].firstPtr;
     cachePtr->buckets[bucket].firstPtr = blockPtr;
+    if (cachePtr->buckets[bucket].numFree == 0) {
+	cachePtr->buckets[bucket].lastPtr = blockPtr;
+    }
     cachePtr->buckets[bucket].numFree++;
     cachePtr->buckets[bucket].numInserts++;
 
@@ -571,11 +576,13 @@ TclThreadAllocObj(void)
 	    if (newObjsPtr == NULL) {
 		Tcl_Panic("alloc: could not allocate %d new objects", numMove);
 	    }
+	    cachePtr->lastPtr = newObjsPtr + numMove - 1;
+	    objPtr = cachePtr->firstObjPtr;	/* NULL */
 	    while (--numMove >= 0) {
-		objPtr = &newObjsPtr[numMove];
-		objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
-		cachePtr->firstObjPtr = objPtr;
+		newObjsPtr[numMove].internalRep.twoPtrValue.ptr1 = objPtr;
+		objPtr = newObjsPtr + numMove;
 	    }
+	    cachePtr->firstObjPtr = newObjsPtr;
 	}
     }
 
@@ -623,6 +630,9 @@ TclThreadFreeObj(
 
     objPtr->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr;
     cachePtr->firstObjPtr = objPtr;
+    if (cachePtr->numObjects == 0) {
+	cachePtr->lastPtr = objPtr;
+    }
     cachePtr->numObjects++;
 
     /*
@@ -729,7 +739,8 @@ MoveObjs(
      * just have to update the first and last.
      */
 
-    objPtr->internalRep.twoPtrValue.ptr1 = toPtr->firstObjPtr;
+    toPtr->lastPtr = objPtr;
+    objPtr->internalRep.twoPtrValue.ptr1 = toPtr->firstObjPtr; /* NULL */
     toPtr->firstObjPtr = fromFirstObjPtr;
 }
 
@@ -755,7 +766,7 @@ PutObjs(
     int numMove)
 {
     int keep = fromPtr->numObjects - numMove;
-    Tcl_Obj *firstPtr, *lastPtr;
+    Tcl_Obj *firstPtr, *lastPtr = NULL;
 
     fromPtr->numObjects = keep;
     firstPtr = fromPtr->firstObjPtr;
@@ -769,22 +780,21 @@ PutObjs(
 	lastPtr->internalRep.twoPtrValue.ptr1 = NULL;
     }
 
-    /* TODO: We could avoid this walk to lastPtr if we kept a lastPtr field */
-    lastPtr = firstPtr;
-    while (lastPtr->internalRep.twoPtrValue.ptr1) {
-	lastPtr = lastPtr->internalRep.twoPtrValue.ptr1;
-    }
-    
     /*
      * Move all objects as a block - they are already linked to each other, we
      * just have to update the first and last.
      */
 
     Tcl_MutexLock(objLockPtr);
-    lastPtr->internalRep.twoPtrValue.ptr1 = sharedPtr->firstObjPtr;
+    fromPtr->lastPtr->internalRep.twoPtrValue.ptr1 = sharedPtr->firstObjPtr;
     sharedPtr->firstObjPtr = firstPtr;
+    if (sharedPtr->numObjects == 0) {
+	sharedPtr->lastPtr = fromPtr->lastPtr;
+    }
     sharedPtr->numObjects += numMove;
     Tcl_MutexUnlock(objLockPtr);
+
+    fromPtr->lastPtr = lastPtr;
 }
 
 /*
@@ -905,7 +915,7 @@ PutBlocks(
      */
 
     int keep = cachePtr->buckets[bucket].numFree - numMove;
-    Block *lastPtr, *firstPtr;
+    Block *lastPtr = NULL, *firstPtr;
 
     cachePtr->buckets[bucket].numFree = keep;
     firstPtr = cachePtr->buckets[bucket].firstPtr;
@@ -919,30 +929,23 @@ PutBlocks(
 	lastPtr->nextBlock = NULL;
     }
 
-    /* 
-     * firstPtr now points to the first Block to return to shared.
-     */
-
-    /* TODO: We could avoid this walk to lastPtr if we kept a lastPtr field */
-    lastPtr = firstPtr;
-    while (lastPtr->nextBlock) {
-	lastPtr = lastPtr->nextBlock;
-    }
-
-    /*
-     * lastPtr now points to the last Block to return to shared.
-     */
-
     /*
      * Aquire the lock and place the list of blocks at the front of the shared
      * cache bucket.
      */
 
     LockBucket(cachePtr, bucket);
-    lastPtr->nextBlock = sharedPtr->buckets[bucket].firstPtr;
+    cachePtr->buckets[bucket].lastPtr->nextBlock
+	    = sharedPtr->buckets[bucket].firstPtr;
     sharedPtr->buckets[bucket].firstPtr = firstPtr;
+    if (sharedPtr->buckets[bucket].numFree == 0) {
+	sharedPtr->buckets[bucket].lastPtr
+		= cachePtr->buckets[bucket].lastPtr;
+    }
     sharedPtr->buckets[bucket].numFree += numMove;
     UnlockBucket(cachePtr, bucket);
+
+    cachePtr->buckets[bucket].lastPtr = lastPtr;
 }
 
 /*
@@ -989,6 +992,8 @@ GetBlocks(
 	    if (n >= sharedPtr->buckets[bucket].numFree) {
 		cachePtr->buckets[bucket].firstPtr =
 			sharedPtr->buckets[bucket].firstPtr;
+		cachePtr->buckets[bucket].lastPtr =
+			sharedPtr->buckets[bucket].lastPtr;
 		cachePtr->buckets[bucket].numFree =
 			sharedPtr->buckets[bucket].numFree;
 		sharedPtr->buckets[bucket].firstPtr = NULL;
@@ -1002,6 +1007,7 @@ GetBlocks(
 		    blockPtr = blockPtr->nextBlock;
 		}
 		sharedPtr->buckets[bucket].firstPtr = blockPtr->nextBlock;
+		cachePtr->buckets[bucket].lastPtr = blockPtr;
 		blockPtr->nextBlock = NULL;
 	    }
 	}
@@ -1053,6 +1059,7 @@ GetBlocks(
 		((char *) blockPtr + bucketInfo[bucket].blockSize);
 	    blockPtr = blockPtr->nextBlock;
 	}
+	cachePtr->buckets[bucket].lastPtr = blockPtr;
 	blockPtr->nextBlock = NULL;
     }
     return 1;
