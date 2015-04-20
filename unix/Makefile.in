@@ -96,7 +96,7 @@ CFLAGS_WARNING		= @CFLAGS_WARNING@
 
 # The default switches for optimization or debugging
 CFLAGS_DEBUG		= @CFLAGS_DEBUG@
-CFLAGS_OPTIMIZE		= -DNDEBUG @CFLAGS_OPTIMIZE@
+CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
 
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
