@@ -5566,7 +5566,7 @@ ReadChars(
 
 	int code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags & (bufPtr->nextPtr
-		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
+		? ~TCL_ENCODING_END : ~0), &statePtr->inputEncodingState,
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
 
 	/*
@@ -5686,7 +5686,7 @@ ReadChars(
 
 		Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
 		statePtr->inputEncodingFlags & (bufPtr->nextPtr
-		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
+		? ~TCL_ENCODING_END : ~0), &statePtr->inputEncodingState,
 		buffer, TCL_UTF_MAX + 2, &read, &decoded, &count);
 
 		if (count == 2) {
