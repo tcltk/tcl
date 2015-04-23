@@ -704,7 +704,7 @@ NativeReadReparse(
     HANDLE hFile;
     DWORD returnedLength;
 
-    hFile = (*tclWinProcs->createFileProc)(linkDirPath, desiredAccess, 0,
+    hFile = (*tclWinProcs->createFileProc)(linkDirPath, desiredAccess, FILE_SHARE_READ,
 	    NULL, OPEN_EXISTING,
 	    FILE_FLAG_OPEN_REPARSE_POINT|FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
