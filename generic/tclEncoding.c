@@ -2283,7 +2283,7 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if (pureNullMode == 1 && UCHAR(*src) == 0xc0 &&
-		UCHAR(*(src+1)) == 0x80) {
+		(src + 1 < srcEnd) && UCHAR(*(src+1)) == 0x80) {
 	    /*
 	     * Convert 0xc080 to real nulls when we are in output mode.
 	     */
