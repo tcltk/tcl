@@ -386,7 +386,11 @@ ChanRead(
      * Each read op must set the blocked and eof states anew, not let
      * the effect of prior reads leak through.
      */
+    if (GotFlag(chanPtr->state, CHANNEL_EOF)) {
+        chanPtr->state->inputEncodingFlags |= TCL_ENCODING_START;
+    }
     ResetFlag(chanPtr->state, CHANNEL_BLOCKED | CHANNEL_EOF);
+    chanPtr->state->inputEncodingFlags &= ~TCL_ENCODING_END;
     if (WillRead(chanPtr) < 0) {
         return -1;
     }
@@ -395,7 +399,11 @@ ChanRead(
 	    dst, dstSize, &result);
 
     /* Stop any flag leakage through stacked channel levels */
+    if (GotFlag(chanPtr->state, CHANNEL_EOF)) {
+        chanPtr->state->inputEncodingFlags |= TCL_ENCODING_START;
+    }
     ResetFlag(chanPtr->state, CHANNEL_BLOCKED | CHANNEL_EOF);
+    chanPtr->state->inputEncodingFlags &= ~TCL_ENCODING_END;
     if (bytesRead > 0) {
 	/*
 	 * If we get a short read, signal up that we may be BLOCKED.
@@ -5301,7 +5309,11 @@ DoReadChars(
 
     /* Special handling for zero-char read request. */
     if (toRead == 0) {
+	if (GotFlag(statePtr, CHANNEL_EOF)) {
+	    statePtr->inputEncodingFlags |= TCL_ENCODING_START;
+	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -5314,7 +5326,11 @@ DoReadChars(
     TclChannelPreserve((Tcl_Channel)chanPtr);
 
     /* Must clear the BLOCKED flag here since we check before reading */
+    if (GotFlag(statePtr, CHANNEL_EOF)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_START;
+    }
     ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
+    statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
     for (copied = 0; (unsigned) toRead > 0; ) {
 	copiedNow = -1;
 	if (statePtr->inQueueHead != NULL) {
@@ -5557,16 +5573,28 @@ ReadChars(
 
     dstLimit = dstNeeded + 1;
     while (1) {
-	int dstDecoded, dstRead, dstWrote, srcRead, numChars;
+	int dstDecoded, dstRead, dstWrote, srcRead, numChars, code;
 
 	/*
 	 * Perform the encoding transformation.  Read no more than
 	 * srcLen bytes, write no more than dstLimit bytes.
+	 *
+	 * Some trickiness with encoding flags here.  We do not want
+	 * the end of a buffer to be treated as the end of all input
+	 * when the presence of bytes in a next buffer are already
+	 * known to exist.  This is checked with an assert() because
+	 * so far no test case causing the assertion to be false has
+	 * been created.  The normal operations of channel reading
+	 * appear to cause EOF and TCL_ENCODING_END setting to appear
+	 * only in situations where there are no further bytes in
+	 * any buffers.
 	 */
 
-	int code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		statePtr->inputEncodingFlags & (bufPtr->nextPtr
-		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
+	assert(bufPtr->nextPtr == NULL || BytesLeft(bufPtr->nextPtr) == 0
+		|| (statePtr->inputEncodingFlags & TCL_ENCODING_END) == 0);
+
+	code = Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
+		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 		dst, dstLimit, &srcRead, &dstDecoded, &numChars);
 
 	/*
@@ -5684,9 +5712,12 @@ ReadChars(
 		statePtr->inputEncodingFlags = savedIEFlags;
 		statePtr->inputEncodingState = savedState;
 
+		assert(bufPtr->nextPtr == NULL
+			|| BytesLeft(bufPtr->nextPtr) == 0 || 0 ==
+			(statePtr->inputEncodingFlags & TCL_ENCODING_END));
+
 		Tcl_ExternalToUtf(NULL, encoding, src, srcLen,
-		statePtr->inputEncodingFlags & (bufPtr->nextPtr
-		? ~0 : ~TCL_ENCODING_END), &statePtr->inputEncodingState,
+		statePtr->inputEncodingFlags, &statePtr->inputEncodingState,
 		buffer, TCL_UTF_MAX + 2, &read, &decoded, &count);
 
 		if (count == 2) {
@@ -6060,9 +6091,13 @@ Tcl_Ungets(
     /*
      * Clear the EOF flags, and clear the BLOCKED bit.
      */
-
+ 
+    if (GotFlag(statePtr, CHANNEL_EOF)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_START;
+    }
     ResetFlag(statePtr,
 	    CHANNEL_BLOCKED | CHANNEL_STICKY_EOF | CHANNEL_EOF | INPUT_SAW_CR);
+    statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 
     bufPtr = AllocChannelBuffer(len);
     memcpy(InsertPoint(bufPtr), str, (size_t) len);
@@ -6432,8 +6467,12 @@ Tcl_Seek(
      * point. Also clear CR related flags.
      */
 
+    if (GotFlag(statePtr, CHANNEL_EOF)) {
+	statePtr->inputEncodingFlags |= TCL_ENCODING_START;
+    }
     statePtr->flags &=
 	~(CHANNEL_EOF | CHANNEL_STICKY_EOF | CHANNEL_BLOCKED | INPUT_SAW_CR);
+    statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 
     /*
      * If the channel is in asynchronous output mode, switch it back to
@@ -7550,8 +7589,12 @@ Tcl_SetChannelOption(
 	 * ahead'. Ditto for blocked.
 	 */
 
+	if (GotFlag(statePtr, CHANNEL_EOF)) {
+	    statePtr->inputEncodingFlags |= TCL_ENCODING_START;
+	}
 	statePtr->flags &=
 		~(CHANNEL_EOF | CHANNEL_STICKY_EOF | CHANNEL_BLOCKED);
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 
 	return TCL_OK;
     } else if (HaveOpt(1, "-translation")) {
@@ -8981,7 +9024,11 @@ DoRead(
 
     /* Special handling for zero-char read request. */
     if (bytesToRead == 0) {
+	if (GotFlag(statePtr, CHANNEL_EOF)) {
+	    statePtr->inputEncodingFlags |= TCL_ENCODING_START;
+	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
+	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	UpdateInterest(chanPtr);
 	return 0;
     }
