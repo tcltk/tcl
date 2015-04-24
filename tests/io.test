@@ -1511,6 +1511,39 @@ test io-12.7 {ReadChars: too many chars read [bc5b790099]} {
     }
     close $c
 } {}
+test io-12.8 {ReadChars: multibyte chars split} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation binary
+    puts -nonewline $f [string repeat a 9]\xc2\xa0
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -encoding utf-8 -buffersize 10
+    set in [read $f]
+    close $f
+    scan [string index $in end] %c
+} 160
+test io-12.9 {ReadChars: multibyte chars split} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation binary
+    puts -nonewline $f [string repeat a 9]\xc2
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -encoding utf-8 -buffersize 10
+    set in [read $f]
+    close $f
+    scan [string index $in end] %c
+} 194
+test io-12.10 {ReadChars: multibyte chars split} {
+    set f [open $path(test1) w]
+    fconfigure $f -translation binary
+    puts -nonewline $f [string repeat a 9]\xc2
+    close $f
+    set f [open $path(test1)]
+    fconfigure $f -encoding utf-8 -buffersize 11
+    set in [read $f]
+    close $f
+    scan [string index $in end] %c
+} 194
 
 test io-13.1 {TranslateInputEOL: cr mode} {} {
     set f [open $path(test1) w]
@@ -8437,6 +8470,25 @@ test io-73.4 {[5adc350683] [read] after EOF} -setup {
     removeFile io-73.4
 } -result {1 1 {more data
 } 1}
+
+test io-73.5 {effect of eof on encoding end flags} -setup {
+    set fn [makeFile {} io-73.5]
+    set rfd [open $fn r]
+    set wfd [open $fn a]
+    chan configure $wfd -buffering none -translation binary
+    chan configure $rfd -buffersize 5 -encoding utf-8
+    read $rfd
+} -body {
+    set result [eof $rfd]
+    puts -nonewline $wfd "more\u00c2\u00a0data"
+    lappend result [eof $rfd]
+    lappend result [read $rfd]
+    lappend result [eof $rfd]
+} -cleanup {
+    close $wfd
+    close $rfd
+    removeFile io-73.5
+} -result [list 1 1 more\u00a0data 1]
 
 # ### ### ### ######### ######### #########
 
