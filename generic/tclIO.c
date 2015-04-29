@@ -2516,6 +2516,7 @@ FlushChannel(
 	 * queue.
 	 */
 
+start:
 	if (((statePtr->curOutPtr != NULL) &&
 		IsBufferFull(statePtr->curOutPtr))
 		|| (GotFlag(statePtr, BUFFER_READY) &&
@@ -2701,6 +2702,8 @@ FlushChannel(
 	    (chanPtr->typePtr->watchProc)(chanPtr->instanceData,
 		    statePtr->interestMask);
 	}
+    } else if (statePtr->curOutPtr && BytesLeft(statePtr->curOutPtr)) {
+	goto start;
     }
 
     /*
