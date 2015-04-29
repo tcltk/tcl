@@ -54,7 +54,7 @@ if {![file exists $httpdFile]} {
 }
 
 if {[info commands testthread] == "testthread" && [file exists $httpdFile]} {
-    set httpthread [testthread create "
+    set httpthread [testthread create -joinable "
 	source [list $httpdFile]
 	testthread wait
     "]
@@ -554,6 +554,7 @@ if {[info exists httpthread]} {
     testthread send -async $httpthread {
 	testthread exit
     }
+    testthread join $httpthread
 } else {
     close $listen
 }
