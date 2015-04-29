@@ -2657,6 +2657,8 @@ FlushChannel(
      * the post-condition that on a successful return to caller we've
      * left space in the current output buffer for more writing (the flush
      * call was to make new room).
+     * If the channel is blocking, then yes, so we guarantee that 
+     * blocking flushes actually flush all pending data.
      * Otherwise, no.  Keep the current output buffer where it is so more
      * can be written to it, possibly filling it, to promote more efficient
      * buffer usage.
@@ -2664,7 +2666,8 @@ FlushChannel(
 
     bufPtr = statePtr->curOutPtr;
     if (bufPtr && BytesLeft(bufPtr) && /* Keep empties off queue */
-	    (statePtr->outQueueHead == NULL || IsBufferFull(bufPtr))) {
+	    (statePtr->outQueueHead == NULL || IsBufferFull(bufPtr)
+		    || !GotFlag(statePtr, CHANNEL_NONBLOCKING))) {
 	if (statePtr->outQueueHead == NULL) {
 	    statePtr->outQueueHead = bufPtr;
 	} else {
