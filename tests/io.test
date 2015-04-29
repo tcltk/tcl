@@ -7142,7 +7142,7 @@ test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileeven
     set result ""
     fileevent $f1 read [namespace code {
 	append result [read $f1 1024]
-	if {[string length $result] >= [string length $big]} {
+	if {[string length $result] >= [string length $big]+1} {
 	    set x done
 	}
     }]
@@ -7151,6 +7151,37 @@ test io-53.4 {CopyData: background write overflow} {stdio unix openpipe fileeven
     set big {}
     set x
 } done
+test io-53.4.1 {Bug 894da183c8} {stdio fcopy} {
+    set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
+    variable x
+    for {set x 0} {$x < 12} {incr x} {
+	append big $big
+    }
+    file delete $path(pipe)
+    set f1 [open $path(pipe) w]
+    puts $f1 [list file delete $path(test1)]
+    puts $f1 {
+	puts ready
+	set f [open io-53.4.1 w]
+	fcopy stdin $f -command { set x }
+	vwait x
+	close $f
+    }
+    puts $f1 "close \[[list open $path(test1) w]]"
+    close $f1
+    set f1 [open "|[list [interpreter] $path(pipe)]" r+]
+    set result [gets $f1]
+    fconfigure $f1 -blocking 0 -buffersize 125000
+    puts $f1 $big
+    fconfigure $f1 -blocking 1
+    close $f1
+    set big {}
+    while {[catch {glob $path(test1)}]} {after 50}
+    file delete $path(test1)
+    set check [file size io-53.4.1]
+    file delete io-53.4.1
+    set check
+} 266241
 set result {}
 proc FcopyTestAccept {sock args} {
     after 1000 "close $sock"
