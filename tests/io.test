@@ -7409,6 +7409,7 @@ test io-53.4.1 {Bug 894da183c8} {stdio fcopy} {
     puts $f1 {
 	puts ready
 	set f [open io-53.4.1 w]
+	chan configure $f -translation lf
 	fcopy stdin $f -command { set x }
 	vwait x
 	close $f
@@ -7417,7 +7418,7 @@ test io-53.4.1 {Bug 894da183c8} {stdio fcopy} {
     close $f1
     set f1 [open "|[list [interpreter] $path(pipe)]" r+]
     set result [gets $f1]
-    fconfigure $f1 -blocking 0 -buffersize 125000
+    fconfigure $f1 -blocking 0 -buffersize 125000 -translation lf
     puts $f1 $big
     fconfigure $f1 -blocking 1
     close $f1
