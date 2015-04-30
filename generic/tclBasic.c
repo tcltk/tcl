@@ -7455,9 +7455,16 @@ Tcl_NRCmdSwap(
  *
  *   One delicate point is to properly define the NRCommand where the tailcall
  *   will execute. There are functions whose purpose is to help define the
- *   precise spot: TclMarkTailcall ("this is the spot") and TclSkipTailcall
- *   ("skip the next command: we are redirecting to it, tailcalls should run
- *   after WE return"), TclPushTailcallPoint (special for OO).
+ *   precise spot:
+ *     TclMarkTailcall: if the NEXT command to be pushed tailcalls, execution
+ *         should continue right here
+ *     TclSkipTailcall:  if the NEXT command to be pushed tailcalls, execution
+ *         should continue after the CURRENT command is fully returned ("skip
+ *         the next command: we are redirecting to it, tailcalls should run
+ *         after WE return") 
+ *     TclPushTailcallPoint: the search for a tailcalling spot cannot traverse
+ *         this point. This is special for OO, as some of the oo constructs
+ *         that behave like commands may not push an NRCommand callback.
  */
 
 void

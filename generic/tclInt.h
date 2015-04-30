@@ -171,6 +171,14 @@ typedef struct Tcl_ResolverInfo {
 
 /*
  *----------------------------------------------------------------
+ * Declarations for the HAMT interface routines.
+ *----------------------------------------------------------------
+ */
+
+#include "tclHAMT.h"
+
+/*
+ *----------------------------------------------------------------
  * Data structures related to namespaces.
  *----------------------------------------------------------------
  */
@@ -4171,7 +4179,8 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 	AllocCache *cachePtr;						\
 	if (((interp) == NULL) ||					\
 		((cachePtr = ((Interp *)(interp))->allocCache),		\
-			(cachePtr->numObjects >= ALLOC_NOBJHIGH))) {	\
+			((cachePtr->numObjects == 0) ||			\
+			(cachePtr->numObjects >= ALLOC_NOBJHIGH)))) {	\
 	    TclThreadFreeObj(objPtr);					\
 	} else {							\
 	    (objPtr)->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr; \
