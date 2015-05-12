@@ -866,6 +866,201 @@ test oo-call-3.4 {current call introspection: in destructors} -setup {
 } -cleanup {
     root destroy
 } -result {{{{method <destructor> ::B method} {method <destructor> ::A method}} 0} {{{method <destructor> ::B method} {method <destructor> ::A method}} 1}}
+
+# Contributed tests from aspect, related to [0f42ff7871]
+#
+# dkf's "Principles Leading to a Fix"
+#
+#   A method ought to work "the same" whether or not it has been overridden by
+#   a subclass. A tailcalled command ought to have as parent stack the same
+#   thing you'd get with uplevel 1. A subclass will often expect the
+#   superclass's result to be the result that would be returned if the subclass
+#   was not there. 
+#
+
+# common setup:
+#  any invocation of bar should emit "abc\nhi\n" then return to its caller
+set testopts {
+    -setup {
+        oo::class create Foo {
+            method bar {} {
+                puts abc
+                tailcall puts hi
+                puts xyz
+            }
+        }
+    }
+    -cleanup {
+        catch {Foo destroy}
+        catch {Foo2 destroy}    ;# created by some tests
+    }
+}
+
+# these succeed, showing that without [next] the bug doesn't fire
+test next-tailcall-simple-1 "trivial case with one method" {*}$testopts -body {
+    [Foo create foo] bar
+} -output [join {abc hi} \n]\n
+
+test next-tailcall-simple-2 "my bar" {*}$testopts -body {
+    oo::define Foo method baz {} {
+        puts a
+        my bar
+        puts b
+    }
+    [Foo create foo] baz
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-simple-3 "\[self\] bar" {*}$testopts -body {
+    oo::define Foo method baz {} {
+        puts a
+        [self] bar
+        puts b
+    }
+    [Foo create foo] baz
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-simple-4 "foo bar" {*}$testopts -body {
+    oo::define Foo method baz {} {
+        puts a
+        foo bar
+        puts b
+    }
+    [Foo create foo] baz
+} -output [join {a abc hi b} \n]\n
+
+# everything from here on uses [next], and fails on 8.6.4 with compilation
+test next-tailcall-superclass-1 "next superclass" {*}$testopts -body {
+    oo::class create Foo2 {
+        superclass Foo
+        method bar {} {
+            puts a
+            next
+            puts b
+        }
+    }
+    [Foo2 create foo] bar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-superclass-2 "nextto superclass" {*}$testopts -body {
+    oo::class create Foo2 {
+        superclass Foo
+        method bar {} {
+            puts a
+            nextto Foo
+            puts b
+        }
+    }
+    [Foo2 create foo] bar
+} -output [join {a abc hi b} \n]\n
+
+
+test next-tailcall-mixin-1 "class mixin" {*}$testopts -body {
+    oo::class create Foo2 {
+        method Bar {} {
+            puts a
+            next
+            puts b
+        }
+        filter Bar
+    }
+    oo::define Foo mixin Foo2
+    Foo create foo
+    foo bar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-objmixin-1 "object mixin" {*}$testopts -body {
+    oo::class create Foo2 {
+        method Bar {} {
+            puts a
+            next
+            puts b
+        }
+        filter Bar
+    }
+    Foo create foo
+    oo::objdefine foo mixin Foo2
+    foo bar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-filter-1 "filter method" {*}$testopts -body {
+    oo::define Foo method Filter {} {
+        puts a
+        next
+        puts b
+    }
+    oo::define Foo filter Filter
+    [Foo new] bar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-forward-1 "forward method" {*}$testopts -body {
+    proc foobar {} {
+        puts "abc"
+        tailcall puts "hi"
+        puts "xyz"
+    }
+    oo::define Foo forward foobar foobar
+    oo::class create Foo2 {
+        superclass Foo
+        method foobar {} {
+            puts a
+            next
+            puts b
+        }
+    }
+    [Foo2 new] foobar
+} -output [join {a abc hi b} \n]\n
+
+test next-tailcall-constructor-1 "next in constructor" -body {
+    oo::class create Foo {
+        constructor {} {
+            puts abc
+            tailcall puts hi
+            puts xyz
+        }
+    }
+    oo::class create Foo2 {
+        superclass Foo
+        constructor {} {
+            puts a
+            next
+            puts b
+        }
+    }
+    list [Foo new] [Foo2 new]
+    return ""
+} -cleanup {
+    Foo destroy
+} -output [join {abc hi a abc hi b} \n]\n
+
+
+test next-tailcall-destructor-1 "next in destructor" -body {
+    oo::class create Foo {
+        destructor {
+            puts abc
+            tailcall puts hi
+            puts xyz
+        }
+    }
+    oo::class create Foo2 {
+        superclass Foo
+        destructor {
+            puts a
+            next
+            puts b
+        }
+    }
+    Foo  create foo
+    Foo2 create foo2
+    foo destroy
+    foo2 destroy
+} -output [join {abc hi a abc hi b} \n]\n
+
+
+
+
+unset testopts
+
+
 
 cleanupTests
 return
