@@ -96,7 +96,7 @@ CFLAGS_WARNING		= @CFLAGS_WARNING@
 
 # The default switches for optimization or debugging
 CFLAGS_DEBUG		= @CFLAGS_DEBUG@
-CFLAGS_OPTIMIZE		= -DNDEBUG @CFLAGS_OPTIMIZE@
+CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
 
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
@@ -1200,7 +1200,6 @@ tclLoadDld.o: $(UNIX_DIR)/tclLoadDld.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDld.c
 
 tclLoadDyld.o: $(UNIX_DIR)/tclLoadDyld.c
-	@echo Warnings are expected from compiling tclLoadDyld.c: deprecated API use
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDyld.c
 
 tclLoadNone.o: $(GENERIC_DIR)/tclLoadNone.c
