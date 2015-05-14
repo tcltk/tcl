@@ -11,7 +11,7 @@
 package require Tcl 8.6-
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.8
+package provide http 2.8.9
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -739,7 +739,7 @@ proc http::Connected { token proto phost srvurl} {
 	    }
 	}
         if {!$accept_encoding_seen && ![info exists state(-handler)]} {
-	    puts $sock "Accept-Encoding: deflate,gzip,compress"
+	    puts $sock "Accept-Encoding: gzip,deflate,compress"
         }
 	if {$isQueryChannel && $state(querylength) == 0} {
 	    # Try to determine size of data in channel. If we cannot seek, the
@@ -1299,7 +1299,7 @@ proc http::Eof {token {force 0}} {
 		set state(body) [zlib $coding $state(body)]
 	    }
 	} err]} {
-	    Log "error doing $coding '$state(body)'"
+	    Log "error doing decompression: $err"
 	    return [Finish $token $err]
 	}
 
