@@ -739,7 +739,7 @@ proc http::Connected { token proto phost srvurl} {
 	    }
 	}
         if {!$accept_encoding_seen && ![info exists state(-handler)]} {
-	    puts $sock "Accept-Encoding: deflate,gzip,compress"
+	    puts $sock "Accept-Encoding: gzip,deflate,compress"
         }
 	if {$isQueryChannel && $state(querylength) == 0} {
 	    # Try to determine size of data in channel. If we cannot seek, the
