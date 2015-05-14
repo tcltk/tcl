@@ -1299,7 +1299,7 @@ proc http::Eof {token {force 0}} {
 		set state(body) [zlib $coding $state(body)]
 	    }
 	} err]} {
-	    Log "error doing $coding '$state(body)'"
+	    Log "error doing decompression: $err"
 	    return [Finish $token $err]
 	}
 
