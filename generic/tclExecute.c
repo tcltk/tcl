@@ -4946,6 +4946,7 @@ TEBCresume(
 	pc += pcAdjustment;
 	TEBC_YIELD();
 
+	TclPushTailcallPoint(interp);
 	oPtr = contextPtr->oPtr;
 	if (oPtr->flags & FILTER_HANDLING) {
 	    TclNRAddCallback(interp, FinalizeOONextFilter,
