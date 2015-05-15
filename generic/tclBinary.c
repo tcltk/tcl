@@ -1912,7 +1912,9 @@ FormatNumber(
 	 * valid range for float.
 	 */
 
-	if (fabs(dvalue) > (double)FLT_MAX) {
+	if (fabs(dvalue) > (FLT_MAX + pow(2, (FLT_MAX_EXP - FLT_MANT_DIG - 1)))) {
+	    fvalue = (dvalue >= 0.0) ? INFINITY : -INFINITY;	// c99
+	} else if (fabs(dvalue) >= FLT_MAX) {
 	    fvalue = (dvalue >= 0.0) ? FLT_MAX : -FLT_MAX;
 	} else {
 	    fvalue = (float) dvalue;

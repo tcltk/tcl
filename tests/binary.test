@@ -508,10 +508,10 @@ test binary-13.11 {Tcl_BinaryObjCmd: format} littleEndian {
 } \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
 test binary-13.12 {Tcl_BinaryObjCmd: float overflow} bigEndian {
     binary format f -3.402825e+38
-} \xff\x7f\xff\xff
+} \xff\x80\x00\x00
 test binary-13.13 {Tcl_BinaryObjCmd: float overflow} littleEndian {
     binary format f -3.402825e+38
-} \xff\xff\x7f\xff
+} \x00\x00\x80\xff
 test binary-13.14 {Tcl_BinaryObjCmd: float underflow} bigEndian {
     binary format f -3.402825e-100
 } \x80\x00\x00\x00
@@ -533,6 +533,18 @@ test binary-13.19 {Tcl_BinaryObjCmd: format} littleEndian {
     set a {1.6 3.4}
     binary format f1 $a
 } \xcd\xcc\xcc\x3f
+test binary-13.20 {Tcl_BinaryObjCmd: format float Inf} bigEndian {
+    binary format f Inf
+} \x7f\x80\x00\x00
+test binary-13.21 {Tcl_BinaryObjCmd: format float Inf} littleEndian {
+    binary format f Inf
+} \x00\x00\x80\x7f
+test binary-13.22 {Tcl_BinaryObjCmd: format float -Inf} bigEndian {
+    binary format f -Inf
+} \xff\x80\x00\x00
+test binary-13.23 {Tcl_BinaryObjCmd: format float -Inf} littleEndian {
+    binary format f -Inf
+} \x00\x00\x80\xff
 
 test binary-14.1 {Tcl_BinaryObjCmd: format} -returnCodes error -body {
     binary format d
@@ -1941,10 +1953,10 @@ test binary-53.11 {Tcl_BinaryObjCmd: format} {} {
 } \xcd\xcc\xcc\x3f\x9a\x99\x59\x40
 test binary-53.12 {Tcl_BinaryObjCmd: float overflow} {} {
     binary format R -3.402825e+38
-} \xff\x7f\xff\xff
+} \xff\x80\x00\x00
 test binary-53.13 {Tcl_BinaryObjCmd: float overflow} {} {
     binary format r -3.402825e+38
-} \xff\xff\x7f\xff
+} \x00\x00\x80\xff
 test binary-53.14 {Tcl_BinaryObjCmd: float underflow} {} {
     binary format R -3.402825e-100
 } \x80\x00\x00\x00
@@ -1966,6 +1978,41 @@ test binary-53.19 {Tcl_BinaryObjCmd: format} {} {
     set a {1.6 3.4}
     binary format r1 $a
 } \xcd\xcc\xcc\x3f
+test binary-53.20 {Tcl_BinaryObjCmd: float Inf} {} {
+    binary format R Inf
+} \x7f\x80\x00\x00
+test binary-53.21 {Tcl_BinaryObjCmd: float Inf} {} {
+    binary format r Inf
+} \x00\x00\x80\x7f
+test binary-53.22 {Binary float Inf round trip} -body {
+    binary scan [binary format R Inf] R inf
+    binary scan [binary format R -Inf] R inf_
+    list $inf $inf_
+} -result {Inf -Inf}
+test binary-53.23 {Binary float round to FLT_MAX} -body {
+    binary scan [binary format H* 7f7fffff] R fltmax
+    binary scan [binary format H* 47effffff0000000] Q round_to_fltmax
+    binary scan [binary format R $round_to_fltmax] R fltmax1
+    expr {$fltmax eq $fltmax1}
+} -result 1
+test binary-53.24 {Binary float round to -FLT_MAX} -body {
+    binary scan [binary format H* ff7fffff] R fltmax
+    binary scan [binary format H* c7effffff0000000] Q round_to_fltmax
+    binary scan [binary format R $round_to_fltmax] R fltmax1
+    expr {$fltmax eq $fltmax1}
+} -result 1
+test binary-53.25 {Binary float round to Inf} -body {
+    binary scan [binary format H* 47effffff0000001] Q round_to_inf
+    binary scan [binary format R $round_to_inf] R inf1
+    expr {$inf1 eq Inf}
+} -result 1
+test binary-53.26 {Binary float round to -Inf} -body {
+    binary scan [binary format H* c7effffff0000001] Q round_to_inf
+    binary scan [binary format R $round_to_inf] R inf1
+    expr {$inf1 eq -Inf}
+} -result 1
+
+
 
 # scan t (s)
 test binary-54.1 {Tcl_BinaryObjCmd: scan} -returnCodes error -body {
@@ -2367,6 +2414,22 @@ test binary-62.5 {infinity} ieeeFloatingPoint {
 } Inf
 test binary-62.6 {infinity} ieeeFloatingPoint {
     binary scan [binary format w 0xfff0000000000000] q d
+    set d
+} -Inf
+test binary-62.7 {infinity} ieeeFloatingPoint {
+    binary scan [binary format r Inf] iu i
+    format 0x%08x $i
+} 0x7f800000
+test binary-62.8 {infinity} ieeeFloatingPoint {
+    binary scan [binary format r -Inf] iu i
+    format 0x%08x $i
+} 0xff800000
+test binary-62.9 {infinity} ieeeFloatingPoint {
+    binary scan [binary format i 0x7f800000] r d
+    set d
+} Inf
+test binary-62.10 {infinity} ieeeFloatingPoint {
+    binary scan [binary format i 0xff800000] r d
     set d
 } -Inf
 
