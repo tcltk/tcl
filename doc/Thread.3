@@ -142,9 +142,10 @@ of code by calling \fBTcl_MutexLock\fR and \fBTcl_MutexUnlock\fR.
 If one thread holds a mutex, any other thread calling \fBTcl_MutexLock\fR will
 block until \fBTcl_MutexUnlock\fR is called.
 A mutex can be destroyed after its use by calling \fBTcl_MutexFinalize\fR or
-\fBTcl_MutexUnlockAndFinalize\fR.  It is illegal to destroy a locked mutex
-with \fBTcl_MutexFinalize\fR; however, it is legal to destroy a locked mutex
-with \fBTcl_MutexUnlockAndFinalize\fR.
+\fBTcl_MutexUnlockAndFinalize\fR.  The \fBTcl_MutexFinalize\fR function may
+only be used on unlocked mutexes; otherwise, its behavior is undefined.  The
+\fBTcl_MutexUnlockAndFinalize\fR function may only be used on locked mutexes;
+otherwise, its behavior is undefined.
 The result of locking a mutex twice from the same thread is undefined.
 On some platforms it will result in a deadlock.
 The \fBTcl_MutexLock\fR, \fBTcl_MutexUnlock\fR, \fBTcl_MutexFinalize\fR, and
