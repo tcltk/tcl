@@ -416,6 +416,31 @@ test oo-2.8 {construction, method calls and ensembles - Bug 3514761} -setup {
 } -returnCodes error -cleanup {
     namespace delete k
 } -result {wrong # args: should be "k next j"}
+test oo-2.9 {construction failures and self creation} -setup {
+    set ::result {}
+    oo::class create Root
+} -body {
+    oo::class create A {
+	superclass Root
+	constructor {} {
+	    lappend ::result "in A"
+	    error "failure in A"
+	}
+	destructor {lappend ::result [self]}
+    }
+    oo::class create B {
+	superclass Root
+	constructor {} {
+	    lappend ::result "in B [self]"
+	    error "failure in B"
+	}
+	destructor {lappend ::result [self]}
+    }
+    lappend ::result [catch {A create a} msg] $msg
+    lappend ::result [catch {B create b} msg] $msg
+} -cleanup {
+    Root destroy
+} -result {{in A} ::a 1 {failure in A} {in B ::b} ::b 1 {failure in B}}
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as we're
@@ -1544,6 +1569,34 @@ test oo-12.7 {OO: filters} -setup {
 } -cleanup {
     Aclass destroy
 } -result {foo {{::Aclass outerfoo} {::Aclass InnerFoo}}}
+test oo-12.8 {OO: filters and destructors} -setup {
+    oo::class create Aclass
+    Aclass create Aobject
+    set ::log {}
+} -body {
+    oo::define Aclass {
+	constructor {} {
+	    lappend ::log "in constructor"
+	}
+	destructor {
+	    lappend ::log "in destructor"
+	}
+	method bar {} {
+	    lappend ::log "in method"
+	}
+	method Boo args {
+	    lappend ::log [self target]
+	    next {*}$args
+	}
+	filter Boo
+    }
+    set obj [Aclass new]
+    $obj bar
+    $obj destroy
+    return $::log
+} -cleanup {
+    Aclass destroy
+} -result {{in constructor} {::Aclass bar} {in method} {::oo::object destroy} {in destructor}}
 
 test oo-13.1 {OO: changing an object's class} {
     oo::class create Aclass
