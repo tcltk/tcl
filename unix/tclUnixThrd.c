@@ -31,7 +31,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 #ifndef TCL_MUTEX_LOCK_SLEEP_TIME
-#  define TCL_MUTEX_LOCK_SLEEP_TIME	(0)
+#  define TCL_MUTEX_LOCK_SLEEP_TIME	(50)
 #endif
 
 /*
@@ -529,7 +529,11 @@ retry:
 	 *         "thread-17.11a".  Really, what we want here is just
 	 *         to yield to other threads for a while.
 	 */
+#if 1
+	usleep(TCL_MUTEX_LOCK_SLEEP_TIME);
+#else
 	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
+#endif
     }
 }
 
