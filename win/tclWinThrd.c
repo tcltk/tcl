@@ -647,8 +647,8 @@ retry:
         TclpMutexUnlock();
         goto retry;
     }
-    EnterCriticalSection(csPtr);
     TclpMutexUnlock();
+    EnterCriticalSection(csPtr);
 }
 
 /*
