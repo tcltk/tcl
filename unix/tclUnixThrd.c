@@ -22,6 +22,19 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 
 /*
+ * This is the number of milliseconds to wait between internal retries in
+ * the Tcl_MutexLock function.  This value must be greater than zero and
+ * should be a suitable value for the given platform.
+ *
+ * TODO: This may need to be dynamically determined, based on the relative
+ *       performance of the running process.
+ */
+
+#ifndef TCL_MUTEX_LOCK_SLEEP_TIME
+#  define TCL_MUTEX_LOCK_SLEEP_TIME	(0)
+#endif
+
+/*
  * masterLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the
  * ability to statically initialize the mutex.
@@ -496,14 +509,28 @@ retry:
 	}
 	MASTER_UNLOCK;
     }
-    TclpMutexLock();
-    pmutexPtr = *((pthread_mutex_t **)mutexPtr);
-    if (pmutexPtr == NULL) {
-        TclpMutexUnlock();
-        goto retry;
+    while (1) {
+	TclpMutexLock();
+	pmutexPtr = *((pthread_mutex_t **)mutexPtr);
+	if (pmutexPtr == NULL) {
+	    TclpMutexUnlock();
+	    goto retry;
+	}
+	if (pthread_mutex_trylock(pmutexPtr) == 0) {
+	    TclpMutexUnlock();
+	    return;
+	}
+	TclpMutexUnlock();
+	/*
+	 * BUGBUG: All core and Thread package tests pass when usleep()
+	 *         is used; however, the Thread package tests hang at
+	 *         various places when Tcl_Sleep() is used, typically
+	 *         while running test "thread-17.8", "thread-17.9", or
+	 *         "thread-17.11a".  Really, what we want here is just
+	 *         to yield to other threads for a while.
+	 */
+	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
     }
-    TclpMutexUnlock();
-    pthread_mutex_lock(pmutexPtr);
 }
 
 /*
