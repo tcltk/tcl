@@ -502,8 +502,8 @@ retry:
         TclpMutexUnlock();
         goto retry;
     }
-    pthread_mutex_lock(pmutexPtr);
     TclpMutexUnlock();
+    pthread_mutex_lock(pmutexPtr);
 }
 
 /*
