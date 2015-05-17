@@ -305,12 +305,17 @@ void
 Tcl_MutexUnlockAndFinalize(
     Tcl_Mutex *mutexPtr)
 {
+    Tcl_Mutex mutex;
     TclpMasterLock();
+    TclpMutexLock();
 #ifdef TCL_THREADS
-    Tcl_MutexUnlock(mutexPtr);
-    TclpFinalizeMutex(mutexPtr);
+    mutex = *mutexPtr;
+    *mutexPtr = NULL; /* Force it to be created again. */
+    Tcl_MutexUnlock(&mutex);
+    TclpFinalizeMutex(&mutex);
 #endif
-    ForgetSyncObject(mutexPtr, &mutexRecord);
+    ForgetSyncObject(&mutex, &mutexRecord);
+    TclpMutexUnlock();
     TclpMasterUnlock();
 }
 
