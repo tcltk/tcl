@@ -2326,7 +2326,7 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-# TIP #XXX
+# TIP #435
 declare 631 {
     void Tcl_MutexUnlockAndFinalize(Tcl_Mutex *mutex)
 }
