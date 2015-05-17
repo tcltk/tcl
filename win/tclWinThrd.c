@@ -24,6 +24,16 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
 #endif
 
 /*
+ * This is the number of milliseconds to wait between internal retries in
+ * the Tcl_MutexLock function.  This value must be greater than or equal
+ * to zero and should be a suitable value for the given platform.
+ */
+
+#ifndef TCL_MUTEX_LOCK_SLEEP_TIME
+#  define TCL_MUTEX_LOCK_SLEEP_TIME	(0)
+#endif
+
+/*
  * This is the master lock used to serialize access to other serialization
  * data structures.
  */
@@ -641,14 +651,20 @@ retry:
 	}
 	MASTER_UNLOCK;
     }
-    TclpMutexLock();
-    csPtr = *((CRITICAL_SECTION **)mutexPtr);
-    if (csPtr == NULL) {
-        TclpMutexUnlock();
-        goto retry;
+    while (1) {
+	TclpMutexLock();
+	csPtr = *((CRITICAL_SECTION **)mutexPtr);
+	if (csPtr == NULL) {
+	    TclpMutexUnlock();
+	    goto retry;
+	}
+	if (TryEnterCriticalSection(csPtr)) {
+	    TclpMutexUnlock();
+	    return;
+	}
+	TclpMutexUnlock();
+	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
     }
-    TclpMutexUnlock();
-    EnterCriticalSection(csPtr);
 }
 
 /*
