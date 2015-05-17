@@ -314,7 +314,7 @@ Tcl_MutexUnlockAndFinalize(
     Tcl_MutexUnlock(&mutex);
     TclpFinalizeMutex(&mutex);
 #endif
-    ForgetSyncObject(&mutex, &mutexRecord);
+    ForgetSyncObject(mutexPtr, &mutexRecord);
     TclpMutexUnlock();
     TclpMasterUnlock();
 }
