@@ -57,6 +57,13 @@ static int allocOnce = 0;
 #endif /* TCL_THREADS */
 
 /*
+ * The mutexLock serializes Tcl_MutexLock. This is necessary to prevent
+ * races when finalizing a mutex that some other thread may want to lock.
+ */
+
+static CRITICAL_SECTION mutexLock;
+
+/*
  * The joinLock serializes Create- and ExitThread. This is necessary to
  * prevent a race where a new joinable thread exits before the creating thread
  * had the time to create the necessary data structures in the emulation
@@ -369,6 +376,7 @@ TclpInitLock(void)
 	 */
 
 	init = 1;
+	InitializeCriticalSection(&mutexLock);
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
@@ -464,6 +472,52 @@ TclpMasterUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpMutexLock
+ *
+ *	This procedure is used to grab a lock that serializes locking
+ *	another mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexLock(void)
+{
+    EnterCriticalSection(&mutexLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpMutexUnlock
+ *
+ *	This procedure is used to release a lock that serializes locking
+ *	another mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexUnlock(void)
+{
+    LeaveCriticalSection(&mutexLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
@@ -516,6 +570,7 @@ void
 TclFinalizeLock(void)
 {
     MASTER_LOCK;
+    DeleteCriticalSection(&mutexLock);
     DeleteCriticalSection(&joinLock);
 
     /*
@@ -569,6 +624,8 @@ Tcl_MutexLock(
 {
     CRITICAL_SECTION *csPtr;
 
+retry:
+
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 
@@ -584,8 +641,14 @@ Tcl_MutexLock(
 	}
 	MASTER_UNLOCK;
     }
+    TclpMutexLock();
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
+    if (csPtr == NULL) {
+        TclpMutexUnlock();
+        goto retry;
+    }
     EnterCriticalSection(csPtr);
+    TclpMutexUnlock();
 }
 
 /*
