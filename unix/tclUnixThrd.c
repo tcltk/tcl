@@ -45,6 +45,13 @@ static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t *allocLockPtr = &allocLock;
 
 /*
+ * The mutexLock serializes Tcl_MutexLock. This is necessary to prevent
+ * races when finalizing a mutex that some other thread may want to lock.
+ */
+
+static pthread_mutex_t mutexLock = PTHREAD_MUTEX_INITIALIZER;
+
+/*
  * These are for the critical sections inside this file.
  */
 
@@ -365,6 +372,58 @@ TclpMasterUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpMutexLock
+ *
+ *	This procedure is used to grab a lock that serializes locking
+ *	another mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexLock(void)
+{
+#ifdef TCL_THREADS
+    pthread_mutex_lock(&mutexLock);
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpMutexUnlock
+ *
+ *	This procedure is used to release a lock that serializes locking
+ *	another mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexUnlock(void)
+{
+#ifdef TCL_THREADS
+    pthread_mutex_unlock(&mutexLock);
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
@@ -421,6 +480,8 @@ Tcl_MutexLock(
 {
     pthread_mutex_t *pmutexPtr;
 
+retry:
+
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 	if (*mutexPtr == NULL) {
@@ -435,8 +496,14 @@ Tcl_MutexLock(
 	}
 	MASTER_UNLOCK;
     }
+    TclpMutexLock();
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
+    if (pmutexPtr == NULL) {
+        TclpMutexUnlock();
+        goto retry;
+    }
     pthread_mutex_lock(pmutexPtr);
+    TclpMutexUnlock();
 }
 
 /*
