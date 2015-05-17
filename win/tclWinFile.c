@@ -668,7 +668,7 @@ NativeReadReparse(
     HANDLE hFile;
     DWORD returnedLength;
 
-    hFile = CreateFile(linkDirPath, desiredAccess, 0, NULL, OPEN_EXISTING,
+    hFile = CreateFile(linkDirPath, desiredAccess, FILE_SHARE_READ, NULL, OPEN_EXISTING,
 	    FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
