@@ -56,10 +56,10 @@ extern "C" {
 #define TCL_MAJOR_VERSION   8
 #define TCL_MINOR_VERSION   6
 #define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  3
+#define TCL_RELEASE_SERIAL  4
 
 #define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6.3"
+#define TCL_PATCH_LEVEL	    "8.6.4"
 
 /*
  *----------------------------------------------------------------------------
@@ -75,16 +75,6 @@ extern "C" {
 #	define WIN32
 #   endif
 #endif
-
-/*
- * STRICT: See MSDN Article Q83456
- */
-
-#ifdef _WIN32
-#   ifndef STRICT
-#	define STRICT
-#   endif
-#endif /* _WIN32 */
 
 /*
  * Utility macros: STRINGIFY takes an argument and wraps it in "" (double
@@ -402,16 +392,12 @@ typedef long LONG;
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
-#      ifdef NO_LIMITS_H
-#	  error please define either TCL_WIDE_INT_TYPE or TCL_WIDE_INT_IS_LONG
-#      else /* !NO_LIMITS_H */
-#	  include <limits.h>
-#	  if (INT_MAX < LONG_MAX)
-#	     define TCL_WIDE_INT_IS_LONG	1
-#	  else
-#	     define TCL_WIDE_INT_TYPE long long
-#         endif
-#      endif /* NO_LIMITS_H */
+#      include <limits.h>
+#      if (INT_MAX < LONG_MAX)
+#         define TCL_WIDE_INT_IS_LONG	1
+#      else
+#         define TCL_WIDE_INT_TYPE long long
+#      endif
 #   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
@@ -2436,9 +2422,7 @@ EXTERN void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 EXTERN const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-#endif
 
 /*
  *----------------------------------------------------------------------------

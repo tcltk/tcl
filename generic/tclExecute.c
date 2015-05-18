@@ -3185,8 +3185,8 @@ TEBCresume(
 	pc += 6;
 	TEBC_YIELD();
 
+	TclMarkTailcall(interp);
 	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
-	TclSkipTailcall(interp);
 	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE, NULL, INT_MIN);
 
     /*
@@ -5591,7 +5591,7 @@ TEBCresume(
 	    TclNewObj(objResultPtr);
 	} else if (TclIsPureByteArray(valuePtr)) {
 	    objResultPtr = Tcl_NewByteArrayObj(
-		    Tcl_GetByteArrayFromObj(valuePtr, &length)+index, 1);
+		    Tcl_GetByteArrayFromObj(valuePtr, NULL)+index, 1);
 	} else if (valuePtr->bytes && length == valuePtr->length) {
 	    objResultPtr = Tcl_NewStringObj((const char *)
 		    valuePtr->bytes+index, 1);

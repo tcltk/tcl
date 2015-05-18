@@ -144,11 +144,7 @@ typedef off_t		Tcl_SeekOffset;
 #if HAVE_INTTYPES_H
 #   include <inttypes.h>
 #endif
-#ifdef NO_LIMITS_H
-#   include "../compat/limits.h"
-#else
-#   include <limits.h>
-#endif
+#include <limits.h>
 #if HAVE_STDINT_H
 #   include <stdint.h>
 #endif
