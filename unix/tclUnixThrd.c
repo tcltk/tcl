@@ -31,7 +31,15 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 #ifndef TCL_MUTEX_LOCK_SLEEP_TIME
-#  define TCL_MUTEX_LOCK_SLEEP_TIME	(50)
+#  define TCL_MUTEX_LOCK_SLEEP_TIME	(25)
+#endif
+
+/*
+ * TODO: Remove this section and add the necessary "auto* magic".
+ */
+
+#ifndef HAVE_USLEEP
+#  define HAVE_USLEEP
 #endif
 
 /*
@@ -529,7 +537,7 @@ retry:
 	 *         "thread-17.11a".  Really, what we want here is just
 	 *         to yield to other threads for a while.
 	 */
-#if 1
+#ifdef HAVE_USLEEP
 	usleep(TCL_MUTEX_LOCK_SLEEP_TIME);
 #else
 	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
