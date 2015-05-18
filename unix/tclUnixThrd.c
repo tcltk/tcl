@@ -35,14 +35,6 @@ static Tcl_ThreadDataKey dataKey;
 #endif
 
 /*
- * TODO: Remove this section and add the necessary "auto* magic".
- */
-
-#ifndef HAVE_USLEEP
-#  define HAVE_USLEEP
-#endif
-
-/*
  * masterLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the
  * ability to statically initialize the mutex.
