@@ -566,6 +566,10 @@ proc http::geturl {url args} {
     # Proxy connections aren't shared among different hosts.
     set state(socketinfo) $host:$port
 
+    # Save the accept types at this point to prevent a race condition. [Bug
+    # c11a51c482]
+    set state(accept-types) $http(-accept)
+
     # See if we are supposed to use a previously opened channel.
     if {$state(-keepalive)} {
 	variable socketmap
@@ -637,8 +641,20 @@ proc http::geturl {url args} {
     return $token
 }
 
+# http::Connected --
+#
+#	Callback used when the connection to the HTTP server is actually
+#	established.
+#
+# Arguments:
+#       token	State token.
+#       proto	What protocol (http, https, etc.) was used to connect.
+#	phost	Are we using keep-alive? Non-empty if yes.
+#	srvurl	Service-local URL that we're requesting
+# Results:
+#	None.
 
-proc http::Connected { token proto phost srvurl} {
+proc http::Connected {token proto phost srvurl} {
     variable http
     variable urlTypes
 
@@ -691,13 +707,12 @@ proc http::Connected { token proto phost srvurl} {
     if {[info exists state(-handler)]} {
 	set state(-protocol) 1.0
     }
+    set accept_types_seen 0
     if {[catch {
 	puts $sock "$how $srvurl HTTP/$state(-protocol)"
-	puts $sock "Accept: $http(-accept)"
-	array set hdrs $state(-headers)
-	if {[info exists hdrs(Host)]} {
+	if {[dict exists $state(-headers) Host]} {
 	    # Allow Host spoofing. [Bug 928154]
-	    puts $sock "Host: $hdrs(Host)"
+	    puts $sock "Host: [dict get $state(-headers) Host]"
 	} elseif {$port == $defport} {
 	    # Don't add port in this case, to handle broken servers. [Bug
 	    # #504508]
@@ -705,7 +720,6 @@ proc http::Connected { token proto phost srvurl} {
 	} else {
 	    puts $sock "Host: $host:$port"
 	}
-	unset hdrs
 	puts $sock "User-Agent: $http(-useragent)"
         if {$state(-protocol) == 1.0 && $state(-keepalive)} {
 	    puts $sock "Connection: keep-alive"
@@ -718,18 +732,21 @@ proc http::Connected { token proto phost srvurl} {
         }
         set accept_encoding_seen 0
 	set content_type_seen 0
-	foreach {key value} $state(-headers) {
+	dict for {key value} $state(-headers) {
+	    set value [string map [list \n "" \r ""] $value]
+	    set key [string map {" " -} [string trim $key]]
 	    if {[string equal -nocase $key "host"]} {
 		continue
 	    }
 	    if {[string equal -nocase $key "accept-encoding"]} {
 		set accept_encoding_seen 1
 	    }
+	    if {[string equal -nocase $key "accept"]} {
+		set accept_types_seen 1
+	    }
 	    if {[string equal -nocase $key "content-type"]} {
 		set content_type_seen 1
 	    }
-	    set value [string map [list \n "" \r ""] $value]
-	    set key [string trim $key]
 	    if {[string equal -nocase $key "content-length"]} {
 		set contDone 1
 		set state(querylength) $value
@@ -737,6 +754,11 @@ proc http::Connected { token proto phost srvurl} {
 	    if {[string length $key]} {
 		puts $sock "$key: $value"
 	    }
+	}
+	# Allow overriding the Accept header on a per-connection basis. Useful
+	# for working with REST services. [Bug c11a51c482]
+	if {!$accept_types_seen} {
+	    puts $sock "Accept: $state(accept-types)"
 	}
         if {!$accept_encoding_seen && ![info exists state(-handler)]} {
 	    puts $sock "Accept-Encoding: gzip,deflate,compress"
@@ -795,7 +817,6 @@ proc http::Connected { token proto phost srvurl} {
 	    Finish $token $err
 	}
     }
-
 }
 
 # Data access functions:
