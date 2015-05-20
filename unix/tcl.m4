@@ -2060,11 +2060,10 @@ dnl # preprocessing tests use only CPPFLAGS.
 
         AS_IF([test "$RANLIB" = ""], [
             MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         ], [
             MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
         ])
+        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
     ])
 
     # Stub lib does not depend on shared/static configuration
