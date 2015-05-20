@@ -1202,20 +1202,7 @@ TclCompileListCmd(
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
     if (listObj != NULL) {
-	int len;
-	const char *bytes = Tcl_GetStringFromObj(listObj, &len);
-
-	PushLiteral(envPtr, bytes, len);
-	Tcl_DecrRefCount(listObj);
-	if (len > 0) {
-	    /*
-	     * Force list interpretation!
-	     */
-
-	    TclEmitOpcode(	INST_DUP,		envPtr);
-	    TclEmitOpcode(	INST_LIST_LENGTH,	envPtr);
-	    TclEmitOpcode(	INST_POP,		envPtr);
-	}
+	TclEmitPush(TclAddLiteralObj(envPtr, listObj, NULL), envPtr);
 	return TCL_OK;
     }
 
