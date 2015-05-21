@@ -1334,6 +1334,7 @@ NotifierThreadProc(
 static void
 AtForkPrepare(void)
 {
+    Tcl_MutexLock(&notifierMutex);
 }
 
 /*
@@ -1355,6 +1356,7 @@ AtForkPrepare(void)
 static void
 AtForkParent(void)
 {
+    Tcl_MutexUnlock(&notifierMutex);
 }
 
 /*
