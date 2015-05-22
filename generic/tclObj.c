@@ -1315,6 +1315,13 @@ TclFreeObj(
     register Tcl_Obj *objPtr)	/* The object to be freed. */
 {
     register Tcl_ObjType *typePtr = objPtr->typePtr;
+
+    /*
+     * This macro declares a variable, so must come here...
+     */
+
+    ObjInitDeletionContext(context);
+
 # ifdef TCL_THREADS
     /*
      * Check to make sure that the Tcl_Obj was allocated by the current
@@ -1347,12 +1354,6 @@ TclFreeObj(
 	}
     }
 # endif
-
-    /*
-     * This macro declares a variable, so must come here...
-     */
-
-    ObjInitDeletionContext(context);
 
     /*
      * Check for a double free of the same value.  This is slightly tricky
