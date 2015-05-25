@@ -91,9 +91,6 @@ typedef off_t		Tcl_SeekOffset;
 	    const char *, int, const char *, const char *);
 
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
-    __declspec(dllimport) extern int cygwin_conv_path_list(int, const void *, void *, int);
-#   define USE_PUTENV 1
-#   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
 #ifndef __x86_64__
 #   define environ __cygwin_environ
