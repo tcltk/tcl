@@ -1335,6 +1335,8 @@ static void
 AtForkPrepare(void)
 {
     Tcl_MutexLock(&notifierMutex);
+    TclpMasterLock();
+    TclpMutexLock();
 }
 
 /*
@@ -1356,6 +1358,8 @@ AtForkPrepare(void)
 static void
 AtForkParent(void)
 {
+    TclpMutexLock();
+    TclpMasterLock();
     Tcl_MutexUnlock(&notifierMutex);
 }
 
@@ -1378,6 +1382,8 @@ AtForkParent(void)
 static void
 AtForkChild(void)
 {
+    TclpMutexLock();
+    TclpMasterLock();
     Tcl_MutexUnlockAndFinalize(&notifierMutex);
     Tcl_InitNotifier();
 }
