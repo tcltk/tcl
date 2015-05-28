@@ -8455,6 +8455,7 @@ include ::oo::class (fellows)
 
 2014-08-28 (bug)[b9e1a3] Correct Method Search Order (nadkarni,fellows)
 => TclOO 1.0.3
+        *** POTENTIAL INCOMPATIBILITY ***
 
 2014-09-05 (bug)[ccc2c2] Regression [lreplace {} 1 1] (bron,fellows)
 
