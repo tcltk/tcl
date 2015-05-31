@@ -58,6 +58,8 @@ namespace eval ::tcl::clock {
 
     # Import the message catalog commands that we use.
 
+    namespace import ::msgcat::mcload
+    namespace import ::msgcat::mclocale
     namespace import ::msgcat::mc
     namespace import ::msgcat::mcpackagelocale
 
@@ -1269,7 +1271,6 @@ proc ::tcl::clock::scan { args } {
 	return [$scanner $string $base $timezone]
     } trap CLOCK {result opts} {
 	# Conceal location of generation of expected errors
-
 	dict unset opts -errorinfo
 	return -options $opts $result
     }
@@ -2291,16 +2292,12 @@ proc ::tcl::clock::MakeParseCodeFromFields { dateFields parseActions } {
 #
 # Parameters:
 #	locale -- Desired locale
-#	oldLocaleVar -- Name of a variable in caller's scope that
-#		        tracks the previous locale name.
 #
 # Results:
 #	Returns the locale that was previously current.
 #
 # Side effects:
-#	Does [mclocale].  If necessary, uses [mcload] to load the designated
-#	locale's files, and tracks that it has done so in the 'McLoaded'
-#	variable.
+#	Does [mclocale].  If necessary, loades the designated locale's files.
 #
 #----------------------------------------------------------------------
 
@@ -2317,7 +2314,7 @@ proc ::tcl::clock::EnterLocale { locale } {
 	    # Control Panel.  First, load the 'current' locale if it's not yet
 	    # loaded
 
-	    mcpackagelocale [mclocale]
+	    mcpackagelocale set [mclocale]
 
 	    # Make a new locale string for the system locale, and get the
 	    # Control Panel information
@@ -2512,7 +2509,7 @@ proc ::tcl::clock::LocalizeFormat { locale format } {
     lappend list %Ec [string map $list [mc LOCALE_DATE_TIME_FORMAT]]
     set format [string map $list $format]
 
-    mcset $locale $key $format
+    ::msgcat::mcset $locale $key $format
     return $format
 }
 
@@ -4375,7 +4372,6 @@ proc ::tcl::clock::add { clockval args } {
 #----------------------------------------------------------------------
 
 proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
-
     variable DaysInRomanMonthInCommonYear
     variable DaysInRomanMonthInLeapYear
     variable TZData
@@ -4509,9 +4505,6 @@ proc ::tcl::clock::ClearCaches {} {
 
     catch {unset FormatProc}
     set LocaleNumeralCache {}
-    # this removes many required keys and makes the module unusable
-    mcpackagelocale set ""
-    mcpackagelocale clear
     catch {unset CachedSystemTimeZone}
     set TimeZoneBad {}
     InitTZData
