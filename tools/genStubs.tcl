@@ -283,7 +283,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
     set text ""
     switch $plat {
 	win {
-	    append text "#if defined(__WIN32__)"
+	    append text "#if defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
@@ -294,7 +294,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(__WIN32__)"
+	    append text "#if !defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " && !defined(__CYGWIN__)"
 	    }
@@ -320,7 +320,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* AQUA */\n"
 	}
 	x11 {
-	    append text "#if !(defined(__WIN32__)"
+	    append text "#if !(defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
@@ -828,7 +828,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	    append text [addPlatformGuard $plat $temp {} true]
 	}
 	## macosx ##
-	if {$block(macosx) && !$block(aqua) && !$block(x11)} {
+	if {($block(unix) || $block(macosx)) && !$block(aqua) && !$block(x11)} {
 	    set temp {}
 	    set lastNum -1
 	    foreach plat {unix macosx} {
@@ -983,10 +983,12 @@ proc genStubs::emitHeader {name} {
 	append text "#define ${CAPName}_STUBS_REVISION $revision\n"
     }
 
+    append text "\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
+
     emitDeclarations $name text
 
     if {[info exists hooks($name)]} {
-	append text "\ntypedef struct ${capName}StubHooks {\n"
+	append text "\ntypedef struct {\n"
 	foreach hook $hooks($name) {
 	    set capHook [string toupper [string index $hook 0]]
 	    append capHook [string range $hook 1 end]
@@ -1000,14 +1002,17 @@ proc genStubs::emitHeader {name} {
 	append text "    int epoch;\n"
 	append text "    int revision;\n"
     }
-    append text "    const struct ${capName}StubHooks *hooks;\n\n"
+    if {[info exists hooks($name)]} {
+	append text "    const ${capName}StubHooks *hooks;\n\n"
+    } else {
+	append text "    void *hooks;\n\n"
+    }
 
     emitSlots $name text
 
     append text "} ${capName}Stubs;\n\n"
 
-    append text "#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
-    append text "extern const ${capName}Stubs *${name}StubsPtr;\n"
+    append text "extern const ${capName}Stubs *${name}StubsPtr;\n\n"
     append text "#ifdef __cplusplus\n}\n#endif\n"
 
     emitMacros $name text

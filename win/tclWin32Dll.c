@@ -25,23 +25,6 @@
 static HINSTANCE hInstance;	/* HINSTANCE of this DLL. */
 static int platformId;		/* Running under NT, or 95/98? */
 
-#ifdef HAVE_NO_SEH
-/*
- * Unlike Borland and Microsoft, we don't register exception handlers by
- * pushing registration records onto the runtime stack. Instead, we register
- * them by creating an EXCEPTION_REGISTRATION within the activation record.
- */
-
-typedef struct EXCEPTION_REGISTRATION {
-    struct EXCEPTION_REGISTRATION *link;
-    EXCEPTION_DISPOSITION (*handler)(
-	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
-    void *ebp;
-    void *esp;
-    int status;
-} EXCEPTION_REGISTRATION;
-#endif
-
 /*
  * VC++ 5.x has no 'cpuid' assembler instruction, so we must emulate it
  */
@@ -86,7 +69,7 @@ TCL_DECLARE_MUTEX(mountPointMap)
  * We will need this below.
  */
 
-#ifdef __WIN32__
+#ifdef _WIN32
 #ifndef STATIC_BUILD
 
 /*
@@ -154,7 +137,7 @@ DllMain(
     return TRUE;
 }
 #endif /* !STATIC_BUILD */
-#endif /* __WIN32__ */
+#endif /* _WIN32 */
 
 /*
  *----------------------------------------------------------------------
@@ -198,11 +181,11 @@ void
 TclWinInit(
     HINSTANCE hInst)		/* Library instance handle. */
 {
-    OSVERSIONINFO os;
+    OSVERSIONINFOW os;
 
     hInstance = hInst;
-    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFO);
-    GetVersionEx(&os);
+    os.dwOSVersionInfoSize = sizeof(OSVERSIONINFOW);
+    GetVersionExW(&os);
     platformId = os.dwPlatformId;
 
     /*
@@ -281,16 +264,9 @@ TclWinNoBackslash(
 /*
  *---------------------------------------------------------------------------
  *
- * TclWinSetInterfaces --
+ * TclpSetInterfaces --
  *
- *	A helper proc that allows the test library to change the tclWinProcs
- *	structure to dispatch to either the wide-character or multi-byte
- *	versions of the operating system calls, depending on whether Unicode
- *	is the system encoding.
- *
- *	As well as this, we can also try to load in some additional procs
- *	which may/may not be present depending on the current Windows version
- *	(e.g. Win95 will not have the procs below).
+ *	A helper proc that initializes winTCharEncoding.
  *
  * Results:
  *	None.
@@ -302,15 +278,10 @@ TclWinNoBackslash(
  */
 
 void
-TclWinSetInterfaces(
-    int wide)			/* Non-zero to use wide interfaces, 0
-				 * otherwise. */
+TclpSetInterfaces(void)
 {
-	TclWinResetInterfaces();
-
-    if (wide) {
-	winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
-    }
+    TclWinResetInterfaces();
+    winTCharEncoding = Tcl_GetEncoding(NULL, "unicode");
 }
 
 /*
@@ -318,9 +289,7 @@ TclWinSetInterfaces(
  *
  * TclWinEncodingsCleanup --
  *
- *	Called during finalization to free up any encodings we use. The
- *	tclWinProcs-> look up table is still ok to use after this call,
- *	provided no encoding conversion is required.
+ *	Called during finalization to free up any encodings we use.
  *
  *	We also clean up any memory allocated in our mount point map which is
  *	used to follow certain kinds of symlinks. That code should never be
@@ -363,8 +332,6 @@ TclWinEncodingsCleanup(void)
  * TclWinResetInterfaces --
  *
  *	Called during finalization to reset us to a safe state for reuse.
- *	After this call, it is best not to use the tclWinProcs-> look up table
- *	since it is likely to be different to what is expected.
  *
  * Results:
  *	None.
@@ -678,7 +645,7 @@ TclWinCPUID(
 
 #   else
 
-    EXCEPTION_REGISTRATION registration;
+    TCLEXCEPTION_REGISTRATION registration;
 
     /*
      * Execute the CPUID instruction with the given index, and store results
@@ -687,7 +654,7 @@ TclWinCPUID(
 
     __asm__ __volatile__(
 	/*
-	 * Construct an EXCEPTION_REGISTRATION to protect the CPUID
+	 * Construct an TCLEXCEPTION_REGISTRATION to protect the CPUID
 	 * instruction (early 486's don't have CPUID)
 	 */
 
@@ -701,7 +668,7 @@ TclWinCPUID(
 	"movl	%[error],	0x10(%%edx)"	"\n\t" /* status */
 
 	/*
-	 * Link the EXCEPTION_REGISTRATION on the chain
+	 * Link the TCLEXCEPTION_REGISTRATION on the chain
 	 */
 
 	"movl	%%edx,		%%fs:0"		"\n\t"
@@ -720,7 +687,7 @@ TclWinCPUID(
 	"movl	%%edx,		0xc(%%edi)"	"\n\t"
 
 	/*
-	 * Come here on a normal exit. Recover the EXCEPTION_REGISTRATION and
+	 * Come here on a normal exit. Recover the TCLEXCEPTION_REGISTRATION and
 	 * store a TCL_OK status.
 	 */
 
@@ -730,7 +697,7 @@ TclWinCPUID(
 	"jmp	2f"				"\n"
 
 	/*
-	 * Come here on an exception. Get the EXCEPTION_REGISTRATION that we
+	 * Come here on an exception. Get the TCLEXCEPTION_REGISTRATION that we
 	 * previously put on the chain.
 	 */
 
@@ -740,7 +707,7 @@ TclWinCPUID(
 
 	/*
 	 * Come here however we exited. Restore context from the
-	 * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	 * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
 	 */
 
 	"2:"					"\t"

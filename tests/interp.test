@@ -1599,6 +1599,20 @@ test interp-20.50 {Bug 2486550} -setup {
 } -cleanup {
     interp delete slave
 } -returnCodes error -match glob -result *
+test interp-20.50.1 {Bug 2486550} -setup {
+    interp create slave
+} -body {
+    slave hide coroutine
+    catch {slave invokehidden coroutine} m o
+    dict get $o -errorinfo
+} -cleanup {
+    unset -nocomplain m 0
+    interp delete slave
+} -returnCodes ok -result {wrong # args: should be "coroutine name cmd ?arg ...?"
+    while executing
+"coroutine"
+    invoked from within
+"slave invokehidden coroutine"}
 
 test interp-21.1 {interp hidden} {
     interp hidden {}
@@ -3601,10 +3615,10 @@ test interp-38.3 {interp debug wrong args} -body {
 } -returnCodes {
     error
 } -result {wrong # args: should be "interp debug path ?-frame ?bool??"}
-test interp-38.4 {interp debug basic setup} -body {
+test interp-38.4 {interp debug basic setup} -constraints {!singleTestInterp} -body {
     interp debug {}
 } -result {-frame 0}
-test interp-38.5 {interp debug basic setup} -body {
+test interp-38.5 {interp debug basic setup} -constraints {!singleTestInterp} -body {
     interp debug {} -f
 } -result {0}
 test interp-38.6 {interp debug basic setup} -body {

@@ -5,8 +5,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH Tcl_Hash 3 "" Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_InitHashTable, Tcl_InitCustomHashTable, Tcl_InitObjHashTable, Tcl_DeleteHashTable, Tcl_CreateHashEntry, Tcl_DeleteHashEntry, Tcl_FindHashEntry, Tcl_GetHashValue, Tcl_SetHashValue, Tcl_GetHashKey, Tcl_FirstHashEntry, Tcl_NextHashEntry, Tcl_HashStats \- procedures to manage hash tables
@@ -310,14 +310,14 @@ typedef Tcl_HashEntry *\fBTcl_AllocHashEntryProc\fR(
         void *\fIkeyPtr\fR);
 .CE
 .PP
-If this is NULL then Tcl_Alloc is used to allocate enough space for a
+If this is NULL then \fBTcl_Alloc\fR is used to allocate enough space for a
 Tcl_HashEntry, the key pointer is assigned to key.oneWordValue and the
 clientData is set to NULL. String keys and array keys use this function to
 allocate enough space for the entry and the key in one block, rather than
 doing it in two blocks. This saves space for a pointer to the key from the
 entry and another memory allocation. Tcl_Obj* keys use this function to
 allocate enough space for an entry and increment the reference count on the
-object.
+value.
 .PP
 The \fIfreeEntryProc\fR member contains the address of a function called to
 free space for an entry.
@@ -327,8 +327,8 @@ typedef void \fBTcl_FreeHashEntryProc\fR(
         Tcl_HashEntry *\fIhPtr\fR);
 .CE
 .PP
-If this is NULL then Tcl_Free is used to free the space for the entry.
+If this is NULL then \fBTcl_Free\fR is used to free the space for the entry.
 Tcl_Obj* keys use this function to decrement the reference count on the
-object.
+value.
 .SH KEYWORDS
 hash table, key, lookup, search, value

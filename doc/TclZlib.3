@@ -4,8 +4,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH TclZlib 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -49,9 +49,11 @@ int
 .sp
 int
 \fBTcl_ZlibStreamGet\fR(\fIzshandle, dataObj, count\fR)
+.sp
+\fBTcl_ZlibStreamSetCompressionDictionary\fR(\fIzshandle, compDict\fR)
 .fi
 .SH ARGUMENTS
-.AS Tcl_ZlibStream *zshandlePtr out
+.AS Tcl_ZlibStream zshandle in
 .AP Tcl_Interp *interp in
 The interpreter to store resulting compressed or uncompressed data in. Also
 where any error messages are written. For \fBTcl_ZlibStreamInit\fR, this can
@@ -64,7 +66,7 @@ addition, for decompression only, \fBTCL_ZLIB_FORMAT_AUTO\fR may also be
 chosen which can automatically detect whether the compressed data was in zlib
 or gzip format.
 .AP Tcl_Obj *dataObj in/out
-A byte-array object containing the data to be compressed or decompressed, or
+A byte-array value containing the data to be compressed or decompressed, or
 to which the data extracted from the stream is appended when passed to
 \fBTcl_ZlibStreamGet\fR.
 .AP int level in
@@ -108,6 +110,13 @@ trailer demanded by the format is written.
 .AP int count in
 The maximum number of bytes to get from the stream, or -1 to get all remaining
 bytes from the stream's buffers.
+.AP Tcl_Obj *compDict in
+A byte array value that is the compression dictionary to use with the stream.
+Note that this is \fInot a Tcl dictionary\fR, and it is recommended that this
+only ever be used with streams that were created with their \fIformat\fR set
+to \fBTCL_ZLIB_FORMAT_ZLIB\fR because the other formats have no mechanism to
+indicate whether a compression dictionary was present other than to fail on
+decompression.
 .BE
 .SH DESCRIPTION
 These functions form the interface from the Tcl library to the Zlib
@@ -122,7 +131,7 @@ the dictionary is only used when the \fIformat\fR parameter is
 \fBTCL_ZLIB_FORMAT_GZIP\fR or \fBTCL_ZLIB_FORMAT_AUTO\fR. For details of the
 contents of the dictionary, see the \fBGZIP OPTIONS DICTIONARY\fR section
 below. Upon success, both functions leave the resulting compressed or
-decompressed data in a byte-array object that is the Tcl interpreter's result;
+decompressed data in a byte-array value that is the Tcl interpreter's result;
 the returned value is a standard Tcl result code.
 .PP
 \fBTcl_ZlibAdler32\fR and \fBTcl_ZlibCRC32\fR compute checksums on arrays of
@@ -154,7 +163,7 @@ the \fBGZIP OPTIONS DICTIONARY\fR section below) can be given via the
 headers, and on decompression allows discovery of the existing headers. Note
 that the dictionary will be written to on decompression once sufficient data
 has been read to have a complete header. This means that the dictionary must
-be an unshared object in that case; a blank object created with
+be an unshared value in that case; a blank value created with
 \fBTcl_NewObj\fR is suggested.
 .PP
 Once a stream has been constructed, \fBTcl_ZlibStreamPut\fR is used to add
@@ -162,8 +171,8 @@ data to the stream and \fBTcl_ZlibStreamGet\fR is used to retrieve data from
 the stream after processing. Both return normal Tcl result codes and leave an
 error message in the result of the interpreter that the stream is registered
 with in the error case (if such a registration has been performed). With
-\fBTcl_ZlibStreamPut\fR, the data buffer object passed to it should not be
-modified afterwards. With \fBTcl_ZlibStreamGet\fR, the data buffer object
+\fBTcl_ZlibStreamPut\fR, the data buffer value passed to it should not be
+modified afterwards. With \fBTcl_ZlibStreamGet\fR, the data buffer value
 passed to it will have the data bytes appended to it. Internally to the
 stream, data is kept compressed so as to minimize the cost of buffer space.
 .PP
@@ -171,6 +180,25 @@ stream, data is kept compressed so as to minimize the cost of buffer space.
 uncompressed data according to the format, and \fBTcl_ZlibStreamEof\fR returns
 a boolean value indicating whether the end of the uncompressed data has been
 reached.
+.PP
+\fBTcl_ZlibStreamSetCompressionDictionary\fR is used to control the
+compression dictionary used with the stream, a compression dictionary being an
+array of bytes (such as might be created with \fBTcl_NewByteArrayObj\fR) that
+is used to initialize the compression engine rather than leaving it to create
+it on the fly from the data being compressed. Setting a compression dictionary
+allows for more efficient compression in the case where the start of the data
+is highly regular, but it does require both the compressor and the
+decompressor to agreee on the value to use. Compression dictionaries are only
+fully supported for zlib-format data; on compression, they must be set before
+any data is sent in with \fBTcl_ZlibStreamPut\fR, and on decompression they
+should be set when \fBTcl_ZlibStreamGet\fR produces an \fBerror\fR with its
+\fB\-errorcode\fR set to
+.QW "\fBZLIB NEED_DICT\fI code\fR" ;
+the \fIcode\fR will be the Adler-32 checksum (see \fBTcl_ZlibAdler32\fR) of
+the compression dictionary sought. (Note that this is only true for
+zlib-format streams; gzip streams ignore compression dictionaries as the
+format specification doesn't permit them, and raw streams just produce a data
+error if the compression dictionary is missing or incorrect.)
 .PP
 If you wish to clear a stream and reuse it for a new compression or
 decompression action, \fBTcl_ZlibStreamReset\fR will do this and return a
@@ -187,9 +215,9 @@ and \fBTcl_ZlibStreamInit\fR is used to pass a dictionary of options about
 that is used to describe the gzip header in the compressed data. When creating
 compressed data, the dictionary is read and when unpacking compressed data the
 dictionary is written (in which case the \fIdictObj\fR parameter must refer to
-an unshared dictionary object).
+an unshared dictionary value).
 .PP
-The following fields in the dictionary object are understood. All other fields
+The following fields in the dictionary value are understood. All other fields
 are ignored. No field is required when creating a gzip-format stream.
 .TP
 \fBcomment\fR

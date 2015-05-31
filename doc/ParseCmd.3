@@ -4,8 +4,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH Tcl_ParseCommand 3 8.3 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_ParseCommand, Tcl_ParseExpr, Tcl_ParseBraces, Tcl_ParseQuotedString, Tcl_ParseVarName, Tcl_ParseVar, Tcl_FreeParse, Tcl_EvalTokens, Tcl_EvalTokensStandard \- parse Tcl scripts and expressions
@@ -194,9 +194,9 @@ result; it can be retrieved using \fBTcl_GetObjResult\fR.
 .PP
 \fBTcl_EvalTokens\fR differs from \fBTcl_EvalTokensStandard\fR only in
 the return convention used: it returns the result in a new Tcl_Obj.
-The reference count of the object returned as result has been
+The reference count of the value returned as result has been
 incremented, so the caller must
-invoke \fBTcl_DecrRefCount\fR when it is finished with the object.
+invoke \fBTcl_DecrRefCount\fR when it is finished with the value.
 If an error or other exception occurs while evaluating the tokens
 (such as a reference to a non-existent variable) then the return value
 is NULL and an error message is left in \fIinterp\fR's result. The use

@@ -12,9 +12,26 @@
 #include "tclInt.h"
 
 #if defined(_WIN32) && defined(UNICODE)
-/* On Windows, we always need the ASCII version. */
-#   undef gai_strerror
-#   define gai_strerror gai_strerrorA
+/* On Windows, we need to do proper Unicode->UTF-8 conversion. */
+
+typedef struct ThreadSpecificData {
+    int initialized;
+    Tcl_DString errorMsg; /* UTF-8 encoded error-message */
+} ThreadSpecificData;
+static Tcl_ThreadDataKey dataKey;
+
+#undef gai_strerror
+static const char *gai_strerror(int code) {
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+ 
+    if (tsdPtr->initialized) {
+	Tcl_DStringFree(&tsdPtr->errorMsg);
+    } else {
+	tsdPtr->initialized = 1;
+    }
+    Tcl_WinTCharToUtf(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
+    return Tcl_DStringValue(&tsdPtr->errorMsg);
+}
 #endif
 
 /*
@@ -151,7 +168,7 @@ TclCreateSocketAddress(
     struct addrinfo *p;
     struct addrinfo *v4head = NULL, *v4ptr = NULL;
     struct addrinfo *v6head = NULL, *v6ptr = NULL;
-    char *native = NULL, portstring[TCL_INTEGER_SPACE];
+    char *native = NULL, portbuf[TCL_INTEGER_SPACE], *portstring;
     const char *family = NULL;
     Tcl_DString ds;
     int result, i;
@@ -159,7 +176,18 @@ TclCreateSocketAddress(
     if (host != NULL) {
 	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
     }
-    TclFormatInt(portstring, port);
+
+    /*
+     * Workaround for OSX's apparent inability to resolve "localhost", "0"
+     * when the loopback device is the only available network interface.
+     */
+    if (host != NULL && port == 0) {
+        portstring = NULL;
+    } else {
+        TclFormatInt(portbuf, port);
+        portstring = portbuf;
+    }
+    
     (void) memset(&hints, 0, sizeof(hints));
     hints.ai_family = AF_UNSPEC;
 
