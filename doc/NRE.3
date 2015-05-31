@@ -4,11 +4,11 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH NRE 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
-Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
+Tcl_NRCreateCommand, Tcl_NRCallObjProc, Tcl_NREvalObj, Tcl_NREvalObjv, Tcl_NRCmdSwap, Tcl_NRExprObj, Tcl_NRAddCallback \- Non-Recursive (stackless) evaluation of Tcl scripts.
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -57,7 +57,7 @@ is \fBNULL\fR, then no procedure is called before the command is deleted.
 .AP int objc in
 Count of parameters provided to the implementation of a command.
 .AP Tcl_Obj **objv in
-Pointer to an array of Tcl objects. Each object holds the value of a
+Pointer to an array of Tcl values. Each value holds the value of a
 single word in the command to execute.
 .AP Tcl_Obj *objPtr in
 Pointer to a Tcl_Obj whose value is a script or expression to execute.
@@ -141,10 +141,10 @@ trampoline.
 .PP
 \fBTcl_NRCmdSwap\fR allows for trampoline evaluation of a command whose
 resolution is already known.  The \fIcmd\fR parameter gives a
-\fBTcl_Command\fR object (returned from \fBTcl_CreateObjCommand\fR or
+\fBTcl_Command\fR token (returned from \fBTcl_CreateObjCommand\fR or
 \fBTcl_GetCommandFromObj\fR) identifying the command to be invoked in
 the trampoline; this command must match the word in \fIobjv[0]\fR.
-The remaining arguments are as for \fBTcl_NREvalObj\fR.
+The remaining arguments are as for \fBTcl_NREvalObjv\fR.
 .PP
 \fBTcl_NREvalObj\fR, \fBTcl_NREvalObjv\fR and \fBTcl_NRCmdSwap\fR
 all accept a \fIflags\fR parameter, which is an OR-ed-together set of
@@ -207,7 +207,7 @@ is something like:
 .PP
 .CS
 int
-\fITheCmdObjProc\fR(
+\fITheCmdOldObjProc\fR(
     ClientData clientData,
     Tcl_Interp *interp,
     int objc,
@@ -225,7 +225,7 @@ int
     return result;
 }
 \fBTcl_CreateObjCommand\fR(interp, "theCommand",
-        \fITheCmdObjProc\fR, clientData, TheCmdDeleteProc);
+        \fITheCmdOldObjProc\fR, clientData, TheCmdDeleteProc);
 .CE
 .PP
 To enable a command like this one for trampoline-based evaluation,
@@ -255,8 +255,8 @@ int
     int objc,
     Tcl_Obj *const objv[])
 {
-    return \fBTcl_NRCallObjProc\fR(interp, name,
-            \fITheCmdNRObjProc\fR, clientData, objc, objv);
+    return \fBTcl_NRCallObjProc\fR(interp, \fITheCmdNRObjProc\fR, 
+            clientData, objc, objv);
 }
 .CE
 .PP
@@ -295,7 +295,7 @@ int
     int result)
 {
     /* \fIdata[0] .. data[3]\fR are the four words of data
-     * passed to \fBTcl_NREvalObj\fR */
+     * passed to \fBTcl_NRAddCallback\fR */
 
     \fI... postprocessing ...\fR
 
@@ -317,12 +317,12 @@ and the second is for use when there is already a trampoline in place.
 .PP
 .CS
 \fBTcl_NRCreateCommand\fR(interp, "theCommand",
-        \fITheCmdObjProc\fR, \fITheCmdNRObjProc\fR, clientData,
+        \fITheCmdNewObjProc\fR, \fITheCmdNRObjProc\fR, clientData,
         TheCmdDeleteProc);
 .CE
 .SH "SEE ALSO"
 Tcl_CreateCommand(3), Tcl_CreateObjCommand(3), Tcl_EvalObjEx(3), Tcl_GetCommandFromObj(3), Tcl_ExprObj(3)
 .SH KEYWORDS
-stackless, nonrecursive, execute, command, global, object, result, script
+stackless, nonrecursive, execute, command, global, value, result, script
 .SH COPYRIGHT
 Copyright (c) 2008 by Kevin B. Kenny

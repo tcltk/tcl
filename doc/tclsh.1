@@ -5,14 +5,14 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH tclsh 1 "" Tcl "Tcl Applications"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 tclsh \- Simple shell containing Tcl interpreter
 .SH SYNOPSIS
-\fBtclsh\fR ?-encoding \fIname\fR? ?\fIfileName arg arg ...\fR?
+\fBtclsh\fR ?\fB\-encoding \fIname\fR? ?\fIfileName arg arg ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -102,7 +102,9 @@ but also the disadvantage of making it harder to write scripts that
 start up uniformly across different versions of Tcl.
 .SH "VARIABLES"
 .PP
-\fBTclsh\fR sets the following Tcl variables:
+\fBTclsh\fR sets the following global Tcl variables in addition to those
+created by the Tcl library itself (such as \fBenv\fR, which maps
+environment variables such as \fBPATH\fR into Tcl):
 .TP 15
 \fBargc\fR
 .
@@ -129,7 +131,7 @@ device), 0 otherwise.
 When \fBtclsh\fR is invoked interactively it normally prompts for each
 command with
 .QW "\fB% \fR" .
-You can change the prompt by setting the
+You can change the prompt by setting the global
 variables \fBtcl_prompt1\fR and \fBtcl_prompt2\fR.  If variable
 \fBtcl_prompt1\fR exists then it must consist of a Tcl script
 to output a prompt;  instead of outputting a prompt \fBtclsh\fR
@@ -142,6 +144,6 @@ incomplete commands.
 .PP
 See \fBTcl_StandardChannels\fR for more explanations.
 .SH "SEE ALSO"
-encoding(n), fconfigure(n), tclvars(n)
+auto_path(n), encoding(n), env(n), fconfigure(n)
 .SH KEYWORDS
 application, argument, interpreter, prompt, script file, shell

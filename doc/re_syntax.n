@@ -683,9 +683,33 @@ earlier in the RE taking priority over ones starting later. Note that
 outer subexpressions thus take priority over their component
 subexpressions.
 .PP
-Note that the quantifiers \fB{1,1}\fR and \fB{1,1}?\fR can be used to
+The quantifiers \fB{1,1}\fR and \fB{1,1}?\fR can be used to
 force longest and shortest preference, respectively, on a
 subexpression or a whole RE.
+.RS
+.PP
+\fBNOTE:\fR This means that you can usually make a RE be non-greedy overall by
+putting \fB{1,1}?\fR after one of the first non-constraint atoms or
+parenthesized sub-expressions in it. \fIIt pays to experiment\fR with the
+placing of this non-greediness override on a suitable range of input texts
+when you are writing a RE if you are using this level of complexity.
+.PP
+For example, this regular expression is non-greedy, and will match the
+shortest substring possible given that
+.QW \fBabc\fR
+will be matched as early as possible (the quantifier does not change that):
+.PP
+.CS
+ab{1,1}?c.*x.*cba
+.CE
+.PP
+The atom
+.QW \fBa\fR
+has no greediness preference, we explicitly give one for
+.QW \fBb\fR ,
+and the remaining quantifiers are overridden to be non-greedy by the preceding
+non-greedy quantifier.
+.RE
 .PP
 Match lengths are measured in characters, not collating elements. An
 empty string is considered longer than no match at all. For example,

@@ -5,8 +5,8 @@
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 .\" 
-.so man.macros
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 .\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -19,25 +19,22 @@ string \- Manipulate strings
 Performs one of several string operations, depending on \fIoption\fR.
 The legal \fIoption\fRs (which may be abbreviated) are:
 .TP
-\fBstring bytelength \fIstring\fR
-.
-Returns a decimal string giving the number of bytes used to represent
-\fIstring\fR in memory.  Because UTF\-8 uses one to three bytes to
-represent Unicode characters, the byte length will not be the same as
-the character length in general.  The cases where a script cares about
-the byte length are rare.  In almost all cases, you should use the
-\fBstring length\fR operation (including determining the length of a
-Tcl ByteArray object).  Refer to the \fBTcl_NumUtfChars\fR manual
-entry for more details on the UTF\-8 representation.
+\fBstring cat\fR ?\fIstring1\fR? ?\fIstring2...\fR?
+.VS 8.6.2
+Concatenate the given \fIstring\fRs just like placing them directly
+next to each other and return the resulting compound string.  If no
+\fIstring\fRs are present, the result is an empty string.
 .RS
 .PP
-\fICompatibility note:\fR it is likely that this subcommand will be
-withdrawn in a future version of Tcl. It is better to use the
-\fBencoding convertto\fR command to convert a string to a known
-encoding and then apply \fBstring length\fR to that.
+This primitive is occasionally handier than juxtaposition of strings
+when mixed quoting is wanted, or when the aim is to return the result
+of a concatenation without resorting to \fBreturn\fR \fB\-level 0\fR,
+and is more efficient than building a list of arguments and using
+\fBjoin\fR with an empty join string.
 .RE
+.VE
 .TP
-\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring compare\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns \-1, 0, or 1, depending on whether
@@ -47,7 +44,7 @@ first \fIlength\fR characters are used in the comparison.  If
 \fB\-length\fR is negative, it is ignored.  If \fB\-nocase\fR is
 specified, then the strings are compared in a case-insensitive manner.
 .TP
-\fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length int\fR? \fIstring1 string2\fR
+\fBstring equal\fR ?\fB\-nocase\fR? ?\fB\-length\fI length\fR? \fIstring1 string2\fR
 .
 Perform a character-by-character comparison of strings \fIstring1\fR
 and \fIstring2\fR.  Returns 1 if \fIstring1\fR and \fIstring2\fR are
@@ -149,7 +146,9 @@ Any Unicode printing character, including space.
 .IP \fBpunct\fR 12
 Any Unicode punctuation character.
 .IP \fBspace\fR 12
-Any Unicode space character.
+Any Unicode whitespace character, mongolian vowel separator
+(U+180e), zero width space (U+200b), word joiner (U+2060) or
+zero width no-break space (U+feff) (=BOM).
 .IP \fBtrue\fR 12
 Any of the forms allowed to \fBTcl_GetBoolean\fR where the value is
 true.
@@ -198,9 +197,9 @@ will return \fB1\fR.
 .
 Returns a decimal string giving the number of characters in
 \fIstring\fR.  Note that this is not necessarily the same as the
-number of bytes used to store the string.  If the object is a
-ByteArray object (such as those returned from reading a binary encoded
-channel), then this will return the actual byte length of the object.
+number of bytes used to store the string.  If the value is a
+byte array value (such as those returned from reading a binary encoded
+channel), then this will return the actual byte length of the value.
 .TP
 \fBstring map\fR ?\fB\-nocase\fR? \fImapping string\fR
 .
@@ -335,22 +334,67 @@ specified using the forms described in \fBSTRING INDICES\fR.
 .
 Returns a value equal to \fIstring\fR except that any leading or
 trailing characters present in the string given by \fIchars\fR are removed.  If
-\fIchars\fR is not specified then white space is removed (spaces,
-tabs, newlines, and carriage returns).
+\fIchars\fR is not specified then white space is removed (any character
+for which \fBstring is space\fR returns 1, and "\0").
 .TP
 \fBstring trimleft \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any leading
 characters present in the string given by \fIchars\fR are removed.  If
-\fIchars\fR is not specified then white space is removed (spaces,
-tabs, newlines, and carriage returns).
+\fIchars\fR is not specified then white space is removed (any character
+for which \fBstring is space\fR returns 1, and "\0").
 .TP
 \fBstring trimright \fIstring\fR ?\fIchars\fR?
 .
 Returns a value equal to \fIstring\fR except that any trailing
 characters present in the string given by \fIchars\fR are removed.  If
-\fIchars\fR is not specified then white space is removed (spaces,
-tabs, newlines, and carriage returns).
+\fIchars\fR is not specified then white space is removed (any character
+for which \fBstring is space\fR returns 1, and "\0").
+.SS "OBSOLETE SUBCOMMANDS"
+.PP
+These subcommands are currently supported, but are likely to go away in a
+future release as their functionality is either virtually never used or highly
+misleading.
+.TP
+\fBstring bytelength \fIstring\fR
+.
+Returns a decimal string giving the number of bytes used to represent
+\fIstring\fR in memory when encoded as Tcl's internal modified UTF\-8;
+Tcl may use other encodings for \fIstring\fR as well, and does not
+guarantee to only use a single encoding for a particular \fIstring\fR.
+Because UTF\-8 uses a variable number of bytes to represent Unicode
+characters, the byte length will not be the same as the character
+length in general.  The cases where a script cares about the byte
+length are rare.
+.RS
+.PP
+In almost all cases, you should use the
+\fBstring length\fR operation (including determining the length of a
+Tcl byte array value).  Refer to the \fBTcl_NumUtfChars\fR manual
+entry for more details on the UTF\-8 representation.
+.PP
+Formally, the \fBstring bytelength\fR operation returns the content of
+the \fIlength\fR field of the \fBTcl_Obj\fR structure, after calling
+\fBTcl_GetString\fR to ensure that the \fIbytes\fR field is populated.
+This is highly unlikely to be useful to Tcl scripts, as Tcl's internal
+encoding is not strict UTF\-8, but rather a modified CESU\-8 with a
+denormalized NUL (identical to that used in a number of places by
+Java's serialization mechanism) to enable basic processing with
+non-Unicode-aware C functions.  As this representation should only
+ever be used by Tcl's implementation, the number of bytes used to
+store the representation is of very low value (except to C extension
+code, which has direct access for the purpose of memory management,
+etc.)
+.PP
+\fICompatibility note:\fR it is likely that this subcommand will be
+withdrawn in a future version of Tcl. It is better to use the
+\fBencoding convertto\fR command to convert a string to a known
+encoding and then apply \fBstring length\fR to that.
+.PP
+.CS
+\fBstring length\fR [encoding convertto utf-8 $theString]
+.CE
+.RE
 .TP
 \fBstring wordend \fIstring charIndex\fR
 .

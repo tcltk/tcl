@@ -1105,6 +1105,12 @@ TclNativeCreateNativeRep(
     str = Tcl_GetStringFromObj(validPathPtr, &len);
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
+    if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {
+	/* See bug [3118489]: NUL in filenames */
+	Tcl_DecrRefCount(validPathPtr);
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
     Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc(len);
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
@@ -1181,9 +1187,10 @@ TclpUtime(
 int
 TclOSstat(
     const char *name,
-    Tcl_StatBuf *statBuf)
+    void *cygstat)
 {
     struct stat buf;
+    Tcl_StatBuf *statBuf = cygstat;
     int result = stat(name, &buf);
 
     statBuf->st_mode = buf.st_mode;
@@ -1203,9 +1210,10 @@ TclOSstat(
 int
 TclOSlstat(
     const char *name,
-    Tcl_StatBuf *statBuf)
+    void *cygstat)
 {
     struct stat buf;
+    Tcl_StatBuf *statBuf = cygstat;
     int result = lstat(name, &buf);
 
     statBuf->st_mode = buf.st_mode;
