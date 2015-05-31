@@ -39,10 +39,11 @@ TclpDlopen(
     Tcl_LoadHandle *loadHandle,	/* Filled with token for dynamically loaded
 				 * file which will be passed back to
 				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
+    Tcl_FSUnloadFileProc **unloadProcPtr,
 				/* Filled with address of Tcl_FSUnloadFileProc
 				 * function which should be used for this
 				 * file. */
+    int flags)
 {
     Tcl_SetObjResult(interp, Tcl_NewStringObj(
 	    "dynamic loading is not currently available on this system",
@@ -79,6 +80,41 @@ TclGuessPackageName(
 {
     return 0;
 }
+
+/*
+ * These functions are fallbacks if we somehow determine that the platform can
+ * do loading from memory but the user wishes to disable it. They just report
+ * (gracefully) that they fail.
+ */
+
+#ifdef TCL_LOAD_FROM_MEMORY
+
+MODULE_SCOPE void *
+TclpLoadMemoryGetBuffer(
+    Tcl_Interp *interp,		/* Dummy: unused by this implementation */
+    int size)			/* Dummy: unused by this implementation */
+{
+    return NULL;
+}
+
+MODULE_SCOPE int
+TclpLoadMemory(
+    Tcl_Interp *interp,		/* Used for error reporting. */
+    void *buffer,		/* Dummy: unused by this implementation */
+    int size,			/* Dummy: unused by this implementation */
+    int codeSize,		/* Dummy: unused by this implementation */
+    Tcl_LoadHandle *loadHandle,	/* Dummy: unused by this implementation */
+    Tcl_FSUnloadFileProc **unloadProcPtr,
+				/* Dummy: unused by this implementation */
+    int flags)
+				/* Dummy: unused by this implementation */
+{
+    Tcl_SetObjResult(interp, Tcl_NewStringObj("dynamic loading from memory "
+	    "is not available on this system", -1));
+    return TCL_ERROR;
+}
+
+#endif /* TCL_LOAD_FROM_MEMORY */
 
 /*
  * Local Variables:

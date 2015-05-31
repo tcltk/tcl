@@ -26,8 +26,6 @@
 #ifndef __dlfcn_h__
 #define __dlfcn_h__
 
-#include "tcl.h"
-
 #ifdef __cplusplus
 extern "C" {
 #endif

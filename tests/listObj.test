@@ -196,6 +196,10 @@ test listobj-10.1 {Bug [2971669]} {*}{
     -result {{a b c d e} {} {a b c d e f}}
 }
 
+test listobj-11.1 {Bug 3598580: Tcl_ListObjReplace refcount management} testobj {
+    testobj bug3598580
+} 123
+
 # cleanup
 ::tcltest::cleanupTests
 return

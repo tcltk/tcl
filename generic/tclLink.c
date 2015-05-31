@@ -112,8 +112,8 @@ Tcl_LinkVar(
     Link *linkPtr;
     int code;
 
-    linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
-	    LinkTraceProc, (ClientData) NULL);
+    linkPtr = (Link *) Tcl_VarTraceInfo2(interp, varName, NULL,
+	    TCL_GLOBAL_ONLY, LinkTraceProc, (ClientData) NULL);
     if (linkPtr != NULL) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"variable '%s' is already linked", varName));
@@ -138,8 +138,9 @@ Tcl_LinkVar(
 	ckfree(linkPtr);
 	return TCL_ERROR;
     }
-    code = Tcl_TraceVar(interp, varName, TCL_GLOBAL_ONLY|TCL_TRACE_READS
-	    |TCL_TRACE_WRITES|TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
+    code = Tcl_TraceVar2(interp, varName, NULL,
+	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
+	    LinkTraceProc, linkPtr);
     if (code != TCL_OK) {
 	Tcl_DecrRefCount(linkPtr->varName);
 	ckfree(linkPtr);
@@ -170,13 +171,13 @@ Tcl_UnlinkVar(
     Tcl_Interp *interp,		/* Interpreter containing variable to unlink */
     const char *varName)	/* Global variable in interp to unlink. */
 {
-    Link *linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName,
+    Link *linkPtr = (Link *) Tcl_VarTraceInfo2(interp, varName, NULL,
 	    TCL_GLOBAL_ONLY, LinkTraceProc, NULL);
 
     if (linkPtr == NULL) {
 	return;
     }
-    Tcl_UntraceVar(interp, varName,
+    Tcl_UntraceVar2(interp, varName, NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    LinkTraceProc, linkPtr);
     Tcl_DecrRefCount(linkPtr->varName);
@@ -207,7 +208,7 @@ Tcl_UpdateLinkedVar(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
     const char *varName)	/* Name of global variable that is linked. */
 {
-    Link *linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName,
+    Link *linkPtr = (Link *) Tcl_VarTraceInfo2(interp, varName, NULL,
 	    TCL_GLOBAL_ONLY, LinkTraceProc, NULL);
     int savedFlag;
 
@@ -221,8 +222,8 @@ Tcl_UpdateLinkedVar(
     /*
      * Callback may have unlinked the variable. [Bug 1740631]
      */
-    linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
-	    LinkTraceProc, NULL);
+    linkPtr = (Link *) Tcl_VarTraceInfo2(interp, varName, NULL,
+	    TCL_GLOBAL_ONLY, LinkTraceProc, NULL);
     if (linkPtr != NULL) {
 	linkPtr->flags = (linkPtr->flags & ~LINK_BEING_UPDATED) | savedFlag;
     }
@@ -278,7 +279,7 @@ LinkTraceProc(
 	} else if (flags & TCL_TRACE_DESTROYED) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);
-	    Tcl_TraceVar(interp, Tcl_GetString(linkPtr->varName),
+	    Tcl_TraceVar2(interp, Tcl_GetString(linkPtr->varName), NULL,
 		    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES
 		    |TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
 	}

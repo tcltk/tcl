@@ -5,11 +5,18 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH Tcl_CreateMathFunc 3 8.4 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_CreateMathFunc, Tcl_GetMathFuncInfo, Tcl_ListMathFuncs \- Define, query and enumerate math functions for expressions
+.SH "NOTICE OF EVENTUAL DEPRECATION"
+.PP
+The \fBTcl_CreateMathFunc\fR and \fBTcl_GetMathFuncInfo\fR functions
+are rendered somewhat obsolete by the ability to create functions for
+expressions by placing commands in the \fBtcl::mathfunc\fR namespace,
+as described in the \fBmathfunc\fR manual page; the API described on
+this page is not expected to be maintained indefinitely.
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -146,9 +153,9 @@ will not be modified.  The variable pointed to by \fInumArgsPointer\fR
 will contain -1, and no argument types will be stored in the variable
 pointed to by \fIargTypesPointer\fR.
 .PP
-\fBTcl_ListMathFuncs\fR returns a Tcl object containing a list of all
+\fBTcl_ListMathFuncs\fR returns a Tcl value containing a list of all
 the math functions defined in the interpreter whose name matches
-\fIpattern\fR.  The returned object has a reference count of zero.
+\fIpattern\fR.  The returned value has a reference count of zero.
 .SH "SEE ALSO"
 expr(n), info(n), Tcl_CreateObjCommand(3), Tcl_Free(3), Tcl_NewListObj(3)
 .SH KEYWORDS
