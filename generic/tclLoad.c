@@ -132,9 +132,34 @@ Tcl_LoadObjCmd(
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch;
     unsigned len;
+    int index, flags = 0;
+    Tcl_Obj *const *savedobjv = objv;
+    static const char *const options[] = {
+	"-global",		"-lazy",		"--",	NULL
+    };
+    enum options {
+	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
+    };
 
+    while (objc > 2) {
+	if (TclGetString(objv[1])[0] != '-') {
+	    break;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	++objv; --objc;
+	if (LOAD_GLOBAL == (enum options) index) {
+	    flags |= TCL_LOAD_GLOBAL;
+	} else if (LOAD_LAZY == (enum options) index) {
+	    flags |= TCL_LOAD_LAZY;
+	} else {
+		break;
+	}
+    }
     if ((objc < 2) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "fileName ?packageName? ?interp?");
+	Tcl_WrongNumArgs(interp, 1, savedobjv, "?-global? ?-lazy? ?--? fileName ?packageName? ?interp?");
 	return TCL_ERROR;
     }
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
@@ -365,7 +390,7 @@ Tcl_LoadObjCmd(
 	symbols[1] = NULL;
 
 	Tcl_MutexLock(&packageMutex);
-	code = Tcl_LoadFile(interp, objv[1], symbols, 0, &initProc,
+	code = Tcl_LoadFile(interp, objv[1], symbols, flags, &initProc,
 		&loadHandle);
 	Tcl_MutexUnlock(&packageMutex);
 	if (code != TCL_OK) {
@@ -391,7 +416,7 @@ Tcl_LoadObjCmd(
 	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&unloadName));
-	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *) 
+	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *)
 		Tcl_FindSymbol(interp, loadHandle,
 			Tcl_DStringValue(&safeUnloadName));
 	pkgPtr->interpRefCount	   = 0;
@@ -805,7 +830,7 @@ Tcl_UnloadObjCmd(
 	 * Unload the shared library from the application memory...
 	 */
 
-#if defined(TCL_UNLOAD_DLLS) || defined(__WIN32__)
+#if defined(TCL_UNLOAD_DLLS) || defined(_WIN32)
 	/*
 	 * Some Unix dlls are poorly behaved - registering things like atexit
 	 * calls that can't be unregistered. If you unload such dlls, you get
@@ -1126,7 +1151,7 @@ TclFinalizeLoad(void)
 	pkgPtr = firstPackagePtr;
 	firstPackagePtr = pkgPtr->nextPtr;
 
-#if defined(TCL_UNLOAD_DLLS) || defined(__WIN32__)
+#if defined(TCL_UNLOAD_DLLS) || defined(_WIN32)
 	/*
 	 * Some Unix dlls are poorly behaved - registering things like atexit
 	 * calls that can't be unregistered. If you unload such dlls, you get

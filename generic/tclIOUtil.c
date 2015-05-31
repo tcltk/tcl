@@ -18,14 +18,17 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
-#if defined(HAVE_SYS_STAT_H) && !defined _WIN32
-#   include <sys/stat.h>
-#endif
 #include "tclInt.h"
-#ifdef __WIN32__
+#ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
 #include "tclFileSystem.h"
+
+#ifdef TCL_TEMPLOAD_NO_UNLINK
+#ifndef NO_FSTATFS
+#include <sys/statfs.h>
+#endif
+#endif
 
 /*
  * struct FilesystemRecord --
@@ -182,8 +185,8 @@ const Tcl_Filesystem tclNativeFilesystem = {
     TclpObjRenameFile,
     TclpObjCopyDirectory,
     TclpObjLstat,
-    TclpDlopen,
-    /* Needs a cast since we're using version_2. */
+    /* Needs casts since we're using version_2. */
+    (Tcl_FSLoadFileProc *) TclpDlopen,
     (Tcl_FSGetCwdProc *) TclpGetNativeCwd,
     TclpObjChdir
 };
@@ -795,7 +798,7 @@ TclFinalizeFilesystem(void)
      * filesystem is likely to fail.
      */
 
-#ifdef __WIN32__
+#ifdef _WIN32
     TclWinEncodingsCleanup();
 #endif
 }
@@ -822,7 +825,7 @@ TclResetFilesystem(void)
     filesystemList = &nativeFilesystemRecord;
     theFilesystemEpoch++;
 
-#ifdef __WIN32__
+#ifdef _WIN32
     /*
      * Cleans up the win32 API filesystem proc lookup table. This must happen
      * very late in finalization so that deleting of copied dlls can occur.
@@ -3113,6 +3116,82 @@ Tcl_FSLoadFile(
  *----------------------------------------------------------------------
  */
 
+/*
+ * Workaround for issue with modern HPUX which do allow the unlink (no ETXTBSY
+ * error) yet somehow trash some internal data structures which prevents the
+ * second and further shared libraries from getting properly loaded. Only the
+ * first is ok. We try to get around the issue by not unlinking,
+ * i.e. emulating the behaviour of the older HPUX which denied removal.
+ *
+ * Doing the unlink is also an issue within docker containers, whose AUFS
+ * bungles this as well, see
+ *     https://github.com/dotcloud/docker/issues/1911
+ *
+ * For these situations the change below makes the execution of the unlink
+ * semi-controllable at runtime.
+ *
+ *     An AUFS filesystem (if it can be detected) will force avoidance of
+ *     unlink. The env variable TCL_TEMPLOAD_NO_UNLINK allows detection of a
+ *     users general request (unlink and not.
+ *
+ * By default the unlink is done (if not in AUFS). However if the variable is
+ * present and set to true (any integer > 0) then the unlink is skipped.
+ */
+
+int
+TclSkipUnlink (Tcl_Obj* shlibFile)
+{
+    /* Order of testing:
+     * 1. On hpux we generally want to skip unlink in general
+     *
+     * Outside of hpux then:
+     * 2. For a general user request   (TCL_TEMPLOAD_NO_UNLINK present, non-empty, => int)
+     * 3. For general AUFS environment (statfs, if available).
+     *
+     * Ad 2: This variable can disable/override the AUFS detection, i.e. for
+     * testing if a newer AUFS does not have the bug any more.
+     * 
+     * Ad 3: This is conditionally compiled in. Condition currently must be set manually.
+     *       This part needs proper tests in the configure(.in).
+     */
+
+#ifdef hpux
+    return 1;
+#else
+    char* skipstr;
+
+    skipstr = getenv ("TCL_TEMPLOAD_NO_UNLINK");
+    if (skipstr && (skipstr[0] != '\0')) {
+	return atoi(skipstr);
+    }
+
+#ifdef TCL_TEMPLOAD_NO_UNLINK
+#ifndef NO_FSTATFS
+    {
+	struct statfs fs;
+	/* Have fstatfs. May not have the AUFS super magic ... Indeed our build
+	 * box is too old to have it directly in the headers. Define taken from
+	 *     http://mooon.googlecode.com/svn/trunk/linux_include/linux/aufs_type.h
+	 *     http://aufs.sourceforge.net/
+	 * Better reference will be gladly taken.
+	 */
+#ifndef AUFS_SUPER_MAGIC
+#define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
+#endif /* AUFS_SUPER_MAGIC */
+	if ((statfs(Tcl_GetString (shlibFile), &fs) == 0) &&
+	    (fs.f_type == AUFS_SUPER_MAGIC)) {
+	    return 1;
+	}
+    }
+#endif /* ... NO_FSTATFS */
+#endif /* ... TCL_TEMPLOAD_NO_UNLINK */
+
+    /* Fallback: !hpux, no EV override, no AUFS (detection, nor detected):
+     * Don't skip */
+    return 0;
+#endif /* hpux */
+}
+
 int
 Tcl_LoadFile(
     Tcl_Interp *interp,		/* Used for error reporting. */
@@ -3120,7 +3199,7 @@ Tcl_LoadFile(
 				 * code. */
     const char *const symbols[],/* Names of functions to look up in the file's
 				 * symbol table. */
-    int flags,			/* Flags (unused) */
+    int flags,			/* Flags */
     void *procVPtrs,		/* Where to return the addresses corresponding
 				 * to symbols[]. */
     Tcl_LoadHandle *handlePtr)	/* Filled with token for shared library
@@ -3145,8 +3224,8 @@ Tcl_LoadFile(
     }
 
     if (fsPtr->loadFileProc != NULL) {
-	int retVal = fsPtr->loadFileProc(interp, pathPtr, handlePtr,
-		&unloadProcPtr);
+	int retVal = ((Tcl_FSLoadFileProc2 *)(fsPtr->loadFileProc))
+		(interp, pathPtr, handlePtr, &unloadProcPtr, flags);
 
 	if (retVal == TCL_OK) {
 	    if (*handlePtr == NULL) {
@@ -3212,7 +3291,7 @@ Tcl_LoadFile(
 	ret = Tcl_Read(data, buffer, size);
 	Tcl_Close(interp, data);
 	ret = TclpLoadMemory(interp, buffer, size, ret, handlePtr,
-		&unloadProcPtr);
+		&unloadProcPtr, flags);
 	if (ret == TCL_OK && *handlePtr != NULL) {
 	    goto resolveSymbols;
 	}
@@ -3228,6 +3307,9 @@ Tcl_LoadFile(
      */
 
     copyToPtr = TclpTempFileNameForLibrary(interp, pathPtr);
+    if (copyToPtr == NULL) {
+	return TCL_ERROR;
+    }
     Tcl_IncrRefCount(copyToPtr);
 
     copyFsPtr = Tcl_FSGetFileSystemForPath(copyToPtr);
@@ -3255,7 +3337,7 @@ Tcl_LoadFile(
 	return TCL_ERROR;
     }
 
-#ifndef __WIN32__
+#ifndef _WIN32
     /*
      * Do we need to set appropriate permissions on the file? This may be
      * required on some systems. On Unix we could loop over the file
@@ -3283,7 +3365,7 @@ Tcl_LoadFile(
 
     Tcl_ResetResult(interp);
 
-    retVal = Tcl_LoadFile(interp, copyToPtr, symbols, 0, procPtrs,
+    retVal = Tcl_LoadFile(interp, copyToPtr, symbols, flags, procPtrs,
 	    &newLoadHandle);
     if (retVal != TCL_OK) {
 	/*
@@ -3300,7 +3382,9 @@ Tcl_LoadFile(
      * avoids any worries about leaving the copy laying around on exit.
      */
 
-    if (Tcl_FSDeleteFile(copyToPtr) == TCL_OK) {
+    if (
+	!TclSkipUnlink (copyToPtr) &&
+	(Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 
 	/*
@@ -3512,50 +3596,6 @@ DivertUnloadFile(
 
     ckfree(tvdlPtr);
     ckfree(loadHandle);
-}
-
-/*
- * This function used to be in the platform specific directories, but it has
- * now been made to work cross-platform.
- */
-
-int
-TclpLoadFile(
-    Tcl_Interp *interp,		/* Used for error reporting. */
-    Tcl_Obj *pathPtr,		/* Name of the file containing the desired
-				 * code (UTF-8). */
-    const char *sym1, const char *sym2,
-				/* Names of two functions to look up in the
-				 * file's symbol table. */
-    Tcl_PackageInitProc **proc1Ptr, Tcl_PackageInitProc **proc2Ptr,
-				/* Where to return the addresses corresponding
-				 * to sym1 and sym2. */
-    ClientData *clientDataPtr,	/* Filled with token for dynamically loaded
-				 * file which will be passed back to
-				 * (*unloadProcPtr)() to unload the file. */
-    Tcl_FSUnloadFileProc **unloadProcPtr)
-				/* Filled with address of Tcl_FSUnloadFileProc
-				 * function which should be used for this
-				 * file. */
-{
-    Tcl_LoadHandle handle = NULL;
-    int res;
-
-    res = TclpDlopen(interp, pathPtr, &handle, unloadProcPtr);
-
-    if (res != TCL_OK) {
-	return res;
-    }
-
-    if (handle == NULL) {
-	return TCL_ERROR;
-    }
-
-    *clientDataPtr = handle;
-
-    *proc1Ptr = (Tcl_PackageInitProc*) Tcl_FindSymbol(interp, handle, sym1);
-    *proc2Ptr = (Tcl_PackageInitProc*) Tcl_FindSymbol(interp, handle, sym2);
-    return TCL_OK;
 }
 
 /*

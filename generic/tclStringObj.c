@@ -140,9 +140,9 @@ typedef struct String {
 #define stringAttemptRealloc(ptr, numChars) \
     (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
 #define GET_STRING(objPtr) \
-	((String *) (objPtr)->internalRep.otherValuePtr)
+	((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
 #define SET_STRING(objPtr, stringPtr) \
-	((objPtr)->internalRep.otherValuePtr = (void *) (stringPtr))
+	((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -1123,7 +1123,8 @@ Tcl_AppendLimitedToObj(
 	if (ellipsis == NULL) {
 	    ellipsis = "...";
 	}
-	toCopy = Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
+	toCopy = (bytes == NULL) ? limit
+		: Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
     }
 
     /*
@@ -1281,23 +1282,43 @@ Tcl_AppendObjToObj(
 
     if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
 	    && TclIsPureByteArray(appendObjPtr)) {
-	unsigned char *bytesSrc;
-	int lengthSrc, lengthTotal;
 
 	/*
-	 * We do not assume that objPtr and appendObjPtr must be distinct!
-	 * This makes this code a bit more complex than it otherwise would be,
-	 * but in turn makes it much safer.
+	 * You might expect the code here to be
+	 *
+	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
+	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
+	 *
+	 * and essentially all of the time that would be fine.  However,
+	 * it would run into trouble in the case where objPtr and
+	 * appendObjPtr point to the same thing.  That may never be a
+	 * good idea.  It seems to violate Copy On Write, and we don't
+	 * have any tests for the situation, since making any Tcl commands
+	 * that call Tcl_AppendObjToObj() do that appears impossible
+	 * (They honor Copy On Write!).  For the sake of extensions that
+	 * go off into that realm, though, here's a more complex approach
+	 * that can handle all the cases.
 	 */
+
+	/* Get lengths */
+	int lengthSrc;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
 	(void) Tcl_GetByteArrayFromObj(appendObjPtr, &lengthSrc);
-	lengthTotal = length + lengthSrc;
-	if (((length > lengthSrc) ? length : lengthSrc) > lengthTotal) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-	bytesSrc = Tcl_GetByteArrayFromObj(appendObjPtr, NULL);
-	TclAppendBytesToByteArray(objPtr, bytesSrc, lengthSrc);
+
+	/* Grow buffer enough for the append */
+	TclAppendBytesToByteArray(objPtr, NULL, lengthSrc);
+
+	/* Reset objPtr back to the original value */
+	Tcl_SetByteArrayLength(objPtr, length);
+
+	/*
+	 * Now do the append knowing that buffer growth cannot cause
+	 * any trouble.
+	 */
+
+	TclAppendBytesToByteArray(objPtr,
+		Tcl_GetByteArrayFromObj(appendObjPtr, NULL), lengthSrc);
 	return;
     }
 
@@ -1415,7 +1436,7 @@ AppendUnicodeToUnicodeRep(
 	 * the reallocs below.
 	 */
 
-	if (unicode >= stringPtr->unicode
+	if (unicode && unicode >= stringPtr->unicode
 		&& unicode <= stringPtr->unicode + stringPtr->maxChars) {
 	    offset = unicode - stringPtr->unicode;
 	}
@@ -1437,8 +1458,10 @@ AppendUnicodeToUnicodeRep(
      * trailing null.
      */
 
-    memmove(stringPtr->unicode + stringPtr->numChars, unicode,
-	    appendNumChars * sizeof(Tcl_UniChar));
+    if (unicode) {
+	memmove(stringPtr->unicode + stringPtr->numChars, unicode,
+		appendNumChars * sizeof(Tcl_UniChar));
+    }
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
     stringPtr->allocated = 0;
@@ -1577,7 +1600,7 @@ AppendUtfToUtfRep(
 	 * the reallocs below.
 	 */
 
-	if (bytes >= objPtr->bytes
+	if (bytes && bytes >= objPtr->bytes
 		&& bytes <= objPtr->bytes + objPtr->length) {
 	    offset = bytes - objPtr->bytes;
 	}
@@ -1605,7 +1628,9 @@ AppendUtfToUtfRep(
     stringPtr->numChars = -1;
     stringPtr->hasUnicode = 0;
 
-    memmove(objPtr->bytes + oldLength, bytes, numBytes);
+    if (bytes) {
+	memmove(objPtr->bytes + oldLength, bytes, numBytes);
+    }
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
 }
@@ -2638,6 +2663,38 @@ Tcl_ObjPrintf(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclGetStringStorage --
+ *
+ *	Returns the string storage space of a Tcl_Obj.
+ *
+ * Results:
+ *	The pointer value objPtr->bytes is returned and the number of bytes
+ *	allocated there is written to *sizePtr (if known).
+ *
+ * Side effects:
+ *	May set objPtr->bytes.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+char *
+TclGetStringStorage(
+    Tcl_Obj *objPtr,
+    unsigned int *sizePtr)
+{
+    String *stringPtr;
+
+    if (objPtr->typePtr != &tclStringType || objPtr->bytes == NULL) {
+	return TclGetStringFromObj(objPtr, (int *)sizePtr);
+    }
+
+    stringPtr = GET_STRING(objPtr);
+    *sizePtr = stringPtr->allocated;
+    return objPtr->bytes;
+}
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringObjReverse --
  *
  *	Implements the [string reverse] operation.
@@ -2828,7 +2885,11 @@ ExtendUnicodeRepWithString(
     }
 
     stringPtr->hasUnicode = 1;
-    stringPtr->numChars = needed;
+    if (bytes) {
+	stringPtr->numChars = needed;
+    } else {
+	numAppendChars = 0;
+    }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
 	bytes += TclUtfToUniChar(bytes, dst);
     }

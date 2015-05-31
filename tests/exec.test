@@ -157,7 +157,7 @@ test exec-2.6 {redirecting input from immediate source, with UTF} -setup {
     encoding system iso8859-1
     proc quotenonascii s {
 	regsub -all {\[|\\|\]} $s {\\&} s
-	regsub -all {[\u007f-\uffff]} $s \
+	regsub -all "\[\u007f-\uffff\]" $s \
 	    {[apply {c {format {\u%04x} [scan $c %c]}} &]} s
 	return [subst -novariables $s]
     }
@@ -370,7 +370,7 @@ err}
 
 test exec-10.1 {errors in exec invocation} -constraints {exec} -body {
     exec
-} -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-10.2 {errors in exec invocation} -constraints {exec} -body {
     exec | cat
 } -returnCodes error -result {illegal use of | or |& in command}
@@ -545,10 +545,10 @@ test exec-14.1 {-keepnewline switch} {exec} {
 } "foo\n"
 test exec-14.2 {-keepnewline switch} -constraints {exec} -body {
     exec -keepnewline
-} -returnCodes error -result {wrong # args: should be "exec ?-switch ...? arg ?arg ...?"}
+} -returnCodes error -result {wrong # args: should be "exec ?-option ...? arg ?arg ...?"}
 test exec-14.3 {unknown switch} -constraints {exec} -body {
     exec -gorp
-} -returnCodes error -result {bad switch "-gorp": must be -ignorestderr, -keepnewline, or --}
+} -returnCodes error -result {bad option "-gorp": must be -ignorestderr, -keepnewline, or --}
 test exec-14.4 {-- switch} -constraints {exec} -body {
     exec -- -gorp
 } -returnCodes error -result {couldn't execute "-gorp": no such file or directory}

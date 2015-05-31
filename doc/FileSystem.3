@@ -5,8 +5,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH Filesystem 3 8.4 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_FSRegister, Tcl_FSUnregister, Tcl_FSData, Tcl_FSMountsChanged, Tcl_FSGetFileSystemForPath, Tcl_FSGetPathType, Tcl_FSCopyFile, Tcl_FSCopyDirectory, Tcl_FSCreateDirectory, Tcl_FSDeleteFile, Tcl_FSRemoveDirectory, Tcl_FSRenameFile, Tcl_FSListVolumes, Tcl_FSEvalFile, Tcl_FSEvalFileEx, Tcl_FSLoadFile, Tcl_FSUnloadFile, Tcl_FSMatchInDirectory, Tcl_FSLink, Tcl_FSLstat, Tcl_FSUtime, Tcl_FSFileAttrsGet, Tcl_FSFileAttrsSet, Tcl_FSFileAttrStrings, Tcl_FSStat, Tcl_FSAccess, Tcl_FSOpenFileChannel, Tcl_FSGetCwd, Tcl_FSChdir, Tcl_FSPathSeparator, Tcl_FSJoinPath, Tcl_FSSplitPath, Tcl_FSEqualPaths, Tcl_FSGetNormalizedPath, Tcl_FSJoinToPath, Tcl_FSConvertToPathType, Tcl_FSGetInternalRep, Tcl_FSGetTranslatedPath, Tcl_FSGetTranslatedStringPath, Tcl_FSNewNativePath, Tcl_FSGetNativePath, Tcl_FSFileSystemInfo, Tcl_GetAccessTimeFromStat, Tcl_GetBlockSizeFromStat, Tcl_GetBlocksFromStat, Tcl_GetChangeTimeFromStat, Tcl_GetDeviceTypeFromStat, Tcl_GetFSDeviceFromStat, Tcl_GetFSInodeFromStat, Tcl_GetGroupIdFromStat, Tcl_GetLinkCountFromStat, Tcl_GetModeFromStat, Tcl_GetModificationTimeFromStat, Tcl_GetSizeFromStat, Tcl_GetUserIdFromStat, Tcl_AllocStatBuf \- procedures to interact with any filesystem
@@ -86,7 +86,7 @@ int
 int
 \fBTcl_FSFileAttrsSet\fR(\fIinterp, int index, pathPtr, Tcl_Obj *objPtr\fR)
 .sp
-const char **
+const char *const *
 \fBTcl_FSFileAttrStrings\fR(\fIpathPtr, objPtrRef\fR)
 .sp
 int
@@ -192,8 +192,8 @@ int
 Points to a structure containing the addresses of procedures that
 can be called to perform the various filesystem operations.
 .AP Tcl_Obj *pathPtr in
-The path represented by this object is used for the operation in
-question. If the object does not already have an internal \fBpath\fR
+The path represented by this value is used for the operation in
+question. If the value does not already have an internal \fBpath\fR
 representation, it will be converted to have one.
 .AP Tcl_Obj *srcPathPtr in
 As for \fIpathPtr\fR, but used for the source file for a copy or
@@ -213,12 +213,12 @@ this structure will be returned. This parameter may be NULL.
 Interpreter to use either for results, evaluation, or reporting error
 messages.
 .AP ClientData clientData in
-The native description of the path object to create.
+The native description of the path value to create.
 .AP Tcl_Obj *firstPtr in
-The first of two path objects to compare. The object may be converted
+The first of two path values to compare. The value may be converted
 to \fBpath\fR type.
 .AP Tcl_Obj *secondPtr in
-The second of two path objects to compare. The object may be converted
+The second of two path values to compare. The value may be converted
 to \fBpath\fR type.
 .AP Tcl_Obj *listObj in
 The list of path elements to operate on with a \fBjoin\fR operation.
@@ -226,12 +226,12 @@ The list of path elements to operate on with a \fBjoin\fR operation.
 If non-negative, the number of elements in the \fIlistObj\fR which should
 be joined together. If negative, then all elements are joined.
 .AP Tcl_Obj **errorPtr out
-In the case of an error, filled with an object containing the name of
+In the case of an error, filled with a value containing the name of
 the file which caused an error in the various copy/rename operations.
 .AP Tcl_Obj **objPtrRef out
-Filled with an object containing the result of the operation.
+Filled with a value containing the result of the operation.
 .AP Tcl_Obj *resultPtr out
-Pre-allocated object in which to store (using
+Pre-allocated value in which to store (using
 \fBTcl_ListObjAppendElement\fR) the list of
 files or directories which are successfully matched.
 .AP int mode in
@@ -331,17 +331,17 @@ buffer is actually
 declared to be, allowing the same code to be used both on systems with
 and systems without support for files larger than 2GB in size.
 .PP
-The \fBTcl_FS\fR API is objectified and may cache internal
+The \fBTcl_FS\fR API is \fBTcl_Obj\fR-ified and may cache internal
 representations and other path-related strings (e.g.\ the current working
-directory). One side-effect of this is that one must not pass in objects
+directory). One side-effect of this is that one must not pass in values
 with a reference count of zero to any of these functions. If such calls were
 handled, they might result
 in memory leaks (under some circumstances, the filesystem code may wish
-to retain a reference to the passed in object, and so one must not assume
-that after any of these calls return, the object still has a reference count of
+to retain a reference to the passed in value, and so one must not assume
+that after any of these calls return, the value still has a reference count of
 zero - it may have been incremented) or in a direct segmentation fault
 (or other memory access error)
-due to the object being freed part way through the complex object
+due to the value being freed part way through the complex value
 manipulation required to ensure that the path is fully normalized and
 absolute for filesystem determination. The practical lesson to learn
 from this is that
@@ -354,9 +354,9 @@ Tcl_DecrRefCount(path);
 .PP
 is wrong, and may cause memory errors. The \fIpath\fR must have its
 reference count incremented before passing it in, or
-decrementing it. For this reason, objects with a reference count of zero are
+decrementing it. For this reason, values with a reference count of zero are
 considered not to be valid filesystem paths and calling any Tcl_FS API
-function with such an object will result in no action being taken.
+function with such a value will result in no action being taken.
 .SS "FS API FUNCTIONS"
 \fBTcl_FSCopyFile\fR attempts to copy the file given by \fIsrcPathPtr\fR to the
 path name given by \fIdestPathPtr\fR. If the two paths given lie in the same
@@ -484,7 +484,7 @@ If the \fItoPtr\fR is NULL, a
 action is performed. The result
 is a Tcl_Obj specifying the contents of the symbolic link given by
 \fIlinkNamePtr\fR, or NULL if the link could not be read. The result is owned
-by the caller, which should call Tcl_DecrRefCount when the result is no
+by the caller, which should call \fBTcl_DecrRefCount\fR when the result is no
 longer needed. If the \fItoPtr\fR is not NULL, Tcl should create a link
 of one of the types passed in in the \fIlinkAction\fR flag. This flag is
 an ORed combination of \fBTCL_CREATE_SYMBOLIC_LINK\fR and \fBTCL_CREATE_HARD_LINK\fR.
@@ -523,7 +523,7 @@ values of the file given.
 attributes\fR subcommand. The appropriate function for the filesystem to
 which \fIpathPtr\fR belongs will be called.
 .PP
-If the result is \fBTCL_OK\fR, then an object was placed in
+If the result is \fBTCL_OK\fR, then a value was placed in
 \fIobjPtrRef\fR, which
 will only be temporarily valid (unless \fBTcl_IncrRefCount\fR is called).
 .PP
@@ -541,7 +541,7 @@ will take that list and first increment its reference count before using it.
 On completion of that use, Tcl will decrement its reference count. Hence if
 the list should be disposed of by Tcl when done, it should have a
 reference count of zero, and if the list should not be disposed of, the
-filesystem should ensure it retains a reference count to the object.
+filesystem should ensure it retains a reference count to the value.
 .PP
 \fBTcl_FSAccess\fR checks whether the process would be allowed to read,
 write or test for existence of the file (or other filesystem object)
@@ -622,29 +622,29 @@ The separator is returned as a Tcl_Obj containing a string of length
 .PP
 \fBTcl_FSJoinPath\fR takes the given Tcl_Obj, which must be a valid
 list (which is allowed to have a reference count of zero), and returns the path
-object given by considering the first \fIelements\fR elements as valid path
+value given by considering the first \fIelements\fR elements as valid path
 segments (each path segment may be a complete path, a partial path or
 just a single possible directory or file name). If any path segment is
 actually an absolute path, then all prior path segments are discarded.
 If \fIelements\fR is less than 0, we use the entire list.
 .PP
-It is possible that the returned object is actually an element
+It is possible that the returned value is actually an element
 of the given list, so the caller should be careful to increment the
 reference count of the result before freeing the list.
 .PP
-The returned object, typically with a reference count of zero (but it
+The returned value, typically with a reference count of zero (but it
 could be shared
 under some conditions), contains the joined path. The caller must
-add a reference count to the object before using it. In particular, the
-returned object could be an element of the given list, so freeing the
-list might free the object prematurely if no reference count has been taken.
-If the number of elements is zero, then the returned object will be
+add a reference count to the value before using it. In particular, the
+returned value could be an element of the given list, so freeing the
+list might free the value prematurely if no reference count has been taken.
+If the number of elements is zero, then the returned value will be
 an empty-string Tcl_Obj.
 .PP
 \fBTcl_FSSplitPath\fR takes the given Tcl_Obj, which should be a valid path,
-and returns a Tcl list object containing each segment of that path as
+and returns a Tcl list value containing each segment of that path as
 an element.
-It returns a list object with a reference count of zero. If the
+It returns a list value with a reference count of zero. If the
 passed in \fIlenPtr\fR is non-NULL, the variable it points to will be
 updated to contain the number of elements in the returned list.
 .PP
@@ -657,7 +657,7 @@ either path is NULL, 0 is always returned.
 from the given Tcl_Obj a unique normalized path representation, whose
 string value can be used as a unique identifier for the file.
 .PP
-It returns the normalized path object, owned by Tcl, or NULL if the path
+It returns the normalized path value, owned by Tcl, or NULL if the path
 was invalid or could otherwise not be successfully converted.
 Extraction of absolute, normalized paths is very efficient (because the
 filesystem operates on these representations internally), although the
@@ -665,35 +665,36 @@ result when the filesystem contains numerous symbolic links may not be
 the most user-friendly version of a path. The return value is owned by
 Tcl and has a lifetime equivalent to that of the \fIpathPtr\fR passed in
 (unless that is a relative path, in which case the normalized path
-object may be freed any time the cwd changes) - the caller can of
-course increment the refCount if it wishes to maintain a copy for longer.
+value may be freed any time the cwd changes) - the caller can of
+course increment the reference count if it wishes to maintain a copy for longer.
 .PP
-\fBTcl_FSJoinToPath\fR takes the given object, which should usually be a
+\fBTcl_FSJoinToPath\fR takes the given value, which should usually be a
 valid path or NULL, and joins onto it the array of paths segments
 given.
 .PP
-Returns object, typically with refCount of zero (but it could be shared
+Returns a value, typically with reference count of zero (but it could be shared
 under some conditions), containing the joined path. The caller must
-add a refCount to the object before using it. If any of the objects
-passed into this function (pathPtr or path elements) have a refCount
+add a reference count to the value before using it. If any of the values
+passed into this function (\fIpathPtr\fR or \fIpath\fR elements) have
+a reference count
 of zero, they will be freed when this function returns.
 .PP
 \fBTcl_FSConvertToPathType\fR tries to convert the given Tcl_Obj to a valid
 Tcl path type, taking account of the fact that the cwd may have changed
-even if this object is already supposedly of the correct type.
+even if this value is already supposedly of the correct type.
 The filename may begin with
 .QW ~
 (to indicate current user's home directory) or
 .QW ~<user>
 (to indicate any user's home directory).
 .PP
-If the conversion succeeds (i.e.\ the object is a valid path in one of
+If the conversion succeeds (i.e.\ the value is a valid path in one of
 the current filesystems), then \fBTCL_OK\fR is returned. Otherwise
 \fBTCL_ERROR\fR is returned, and an error message may
 be left in the interpreter.
 .PP
 \fBTcl_FSGetInternalRep\fR extracts the internal representation of a given
-path object, in the given filesystem. If the path object belongs to a
+path value, in the given filesystem. If the path value belongs to a
 different filesystem, we return NULL. If the internal representation is
 currently NULL, we attempt to generate it, by calling the filesystem's
 \fBTcl_FSCreateInternalRepProc\fR.
@@ -705,7 +706,7 @@ not require additional conversions.
 \fBTcl_FSGetTranslatedPath\fR attempts to extract the translated path
 from the given Tcl_Obj.
 .PP
-If the translation succeeds (i.e.\ the object is a valid path), then it is
+If the translation succeeds (i.e.\ the value is a valid path), then it is
 returned. Otherwise NULL will be returned, and an error message may be
 left in the interpreter. A
 .QW translated
@@ -714,8 +715,8 @@ path is one which contains no
 or
 .QW ~user
 sequences (these have been expanded to their current
-representation in the filesystem). The object returned is owned by the
-caller, which must store it or call Tcl_DecrRefCount to ensure memory is
+representation in the filesystem). The value returned is owned by the
+caller, which must store it or call \fBTcl_DecrRefCount\fR to ensure memory is
 freed. This function is of little practical use, and
 \fBTcl_FSGetNormalizedPath\fR or \fBTcl_FSGetNativePath\fR are usually
 better functions to use for most purposes.
@@ -731,11 +732,11 @@ better functions to use for most purposes.
 usual obj->path->nativerep conversions. If some code retrieves a path
 in native form (from, e.g.\ \fBreadlink\fR or a native dialog), and that path
 is to be used at the Tcl level, then calling this function is an
-efficient way of creating the appropriate path object type.
+efficient way of creating the appropriate path value type.
 .PP
-The resulting object is a pure
+The resulting value is a pure
 .QW path
-object, which will only receive
+value, which will only receive
 a UTF-8 string representation if that is required by some Tcl code.
 .PP
 \fBTcl_FSGetNativePath\fR is for use by the Win/Unix native
@@ -773,7 +774,7 @@ given path within that filesystem (which is filesystem dependent). The
 second element may be empty if the filesystem does not provide a
 further categorization of files.
 .PP
-A valid list object is returned, unless the path object is not
+A valid list value is returned, unless the path value is not
 recognized, when NULL will be returned.
 .PP
 \fBTcl_FSGetFileSystemForPath\fR returns a pointer to the
@@ -1001,14 +1002,14 @@ The \fIversion\fR field should be set to \fBTCL_FILESYSTEM_VERSION_1\fR.
 .SS PATHINFILESYSTEMPROC
 .PP
 The \fIpathInFilesystemProc\fR field contains the address of a function
-which is called to determine whether a given path object belongs to this
+which is called to determine whether a given path value belongs to this
 filesystem or not. Tcl will only call the rest of the filesystem
 functions with a path for which this function has returned \fBTCL_OK\fR.
 If the path does not belong, -1 should be returned (the behavior of Tcl
 for any other return value is not defined). If \fBTCL_OK\fR is returned,
 then the optional \fIclientDataPtr\fR output parameter can be used to
 return an internal (filesystem specific) representation of the path,
-which will be cached inside the path object, and may be retrieved
+which will be cached inside the path value, and may be retrieved
 efficiently by the other filesystem functions. Tcl will simultaneously
 cache the fact that this path belongs to this filesystem. Such caches
 are invalidated when filesystem structures are added or removed from
@@ -1022,7 +1023,7 @@ typedef int \fBTcl_FSPathInFilesystemProc\fR(
 .SS DUPINTERNALREPPROC
 .PP
 This function makes a copy of a path's internal representation, and is
-called when Tcl needs to duplicate a path object. If NULL, Tcl will
+called when Tcl needs to duplicate a path value. If NULL, Tcl will
 simply not copy the internal representation, which may then need to be
 regenerated later.
 .PP
@@ -1042,8 +1043,8 @@ typedef void \fBTcl_FSFreeInternalRepProc\fR(
 .SS INTERNALTONORMALIZEDPROC
 .PP
 Function to convert internal representation to a normalized path. Only
-required if the filesystem creates pure path objects with no string/path
-representation. The return value is a Tcl object whose string
+required if the filesystem creates pure path values with no string/path
+representation. The return value is a Tcl value whose string
 representation is the normalized path.
 .PP
 .CS
@@ -1052,9 +1053,9 @@ typedef Tcl_Obj *\fBTcl_FSInternalToNormalizedProc\fR(
 .CE
 .SS CREATEINTERNALREPPROC
 .PP
-Function to take a path object, and calculate an internal
+Function to take a path value, and calculate an internal
 representation for it, and store that native representation in the
-object. May be NULL if paths have no internal representation, or if
+value. May be NULL if paths have no internal representation, or if
 the \fITcl_FSPathInFilesystemProc\fR for this filesystem always
 immediately creates an internal representation for paths it accepts.
 .PP
@@ -1066,7 +1067,7 @@ typedef ClientData \fBTcl_FSCreateInternalRepProc\fR(
 .PP
 Function to normalize a path. Should be implemented for all
 filesystems which can have multiple string representations for the same
-path object. In Tcl, every
+path value. In Tcl, every
 .QW path
 must have a single unique
 .QW normalized
@@ -1078,7 +1079,7 @@ reference to a home directory such as
 .QW ~ ,
 a path containing symbolic
 links, etc). If the very last component in the path is a symbolic
-link, it should not be converted into the object it points to (but
+link, it should not be converted into the value it points to (but
 its case or other aspects should be made unique). All other path
 components should be converted from symbolic links. This one
 exception is required to agree with Tcl's semantics with \fBfile
@@ -1122,7 +1123,7 @@ which is returned. A typical return value might be
 or
 .QW ftp .
 The Tcl_Obj result is owned by the filesystem and so Tcl will
-increment the refCount of that object if it wishes to retain a reference
+increment the reference count of that value if it wishes to retain a reference
 to it.
 .PP
 .CS
@@ -1137,7 +1138,7 @@ different separator than the standard string
 .QW / .
 Amongst other
 uses, it is returned by the \fBfile separator\fR command. The
-return value should be an object with refCount of zero.
+return value should be a value with reference count of zero.
 .PP
 .CS
 typedef Tcl_Obj *\fBTcl_FSFilesystemSeparatorProc\fR(
@@ -1256,7 +1257,7 @@ The return value is a standard Tcl result indicating whether an error
 occurred in the matching process. Error messages are placed in
 \fIinterp\fR, unless \fIinterp\fR in NULL in which case no error
 message need be generated; on a \fBTCL_OK\fR result, results should be 
-added to the \fIresultPtr\fR object given (which can be assumed to be a 
+added to the \fIresultPtr\fR value given (which can be assumed to be a 
 valid unshared Tcl list). The matches added
 to \fIresultPtr\fR should include any path prefix given in \fIpathPtr\fR
 (this usually means they will be absolute path specifications).
@@ -1326,7 +1327,7 @@ contents of a link. The result is a Tcl_Obj specifying the contents of
 the link given by \fIlinkNamePtr\fR, or NULL if the link could
 not be read. The result is owned by the caller (and should therefore
 have its ref count incremented before being returned). Any callers
-should call Tcl_DecrRefCount on this result when it is no longer needed.
+should call \fBTcl_DecrRefCount\fR on this result when it is no longer needed.
 If \fItoPtr\fR is not NULL, the function should attempt to create a link.
 The result in this case should be \fItoPtr\fR if the link was successful
 and NULL otherwise. In this case the result is not owned by the caller
@@ -1344,16 +1345,16 @@ typedef Tcl_Obj *\fBTcl_FSListVolumesProc\fR(void);
 .CE
 .PP
 The result should be a list of volumes added by this filesystem, or
-NULL (or an empty list) if no volumes are provided. The result object
+NULL (or an empty list) if no volumes are provided. The result value
 is considered to be owned by the filesystem (not by Tcl's core), but
-should be given a refCount for Tcl. Tcl will use the contents of the
-list and then decrement that refCount. This allows filesystems to
+should be given a reference count for Tcl. Tcl will use the contents of the
+list and then decrement that reference count. This allows filesystems to
 choose whether they actually want to retain a
 .QW "master list"
 of volumes
 or not (if not, they generate the list on the fly and pass it to Tcl
-with a refCount of 1 and then forget about the list, if yes, then
-they simply increment the refCount of their master list and pass it
+with a reference count of 1 and then forget about the list, if yes, then
+they simply increment the reference count of their master list and pass it
 to Tcl which will copy the contents and then decrement the count back
 to where it was).
 .PP
@@ -1379,7 +1380,7 @@ will take that list and first increment its reference count before using it.
 On completion of that use, Tcl will decrement its reference count. Hence if
 the list should be disposed of by Tcl when done, it should have a
 reference count of zero, and if the list should not be disposed of, the
-filesystem should ensure it returns an object with a reference count
+filesystem should ensure it returns a value with a reference count
 of at least one.
 .SS FILEATTRSGETPROC
 .PP
