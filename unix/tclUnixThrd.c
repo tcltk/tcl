@@ -659,6 +659,7 @@ TclpReaddir(
     return TclOSreaddir(dir);
 }
 
+#undef TclpInetNtoa
 char *
 TclpInetNtoa(
     struct in_addr addr)
@@ -726,6 +727,7 @@ TclpFreeAllocCache(
 	 */
 
 	TclFreeAllocCache(ptr);
+	pthread_setspecific(key, NULL);
 
     } else if (initialized) {
 	/*

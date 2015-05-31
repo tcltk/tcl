@@ -20,7 +20,7 @@ testConstraint dde 0
 if {[testConstraint win]} {
     if {![catch {
 	    ::tcltest::loadTestedCommands
-	    set ::ddever [package require dde 1.4.0b1]
+	    set ::ddever [package require dde 1.4.0]
 	    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]}]} {
 	testConstraint dde 1
     }
@@ -104,7 +104,7 @@ proc createChildProcess {ddeServerName args} {
 # -------------------------------------------------------------------------
 test winDde-1.0 {check if we are testing the right dll} {win dde} {
     set ::ddever
-} {1.4.0b1}
+} {1.4.0}
 
 test winDde-1.1 {Settings the server's topic name} -constraints dde -body {
     list [dde servername foobar] [dde servername] [dde servername self]
@@ -203,8 +203,8 @@ test winDde-4.3 {DDE request remotely} -constraints {dde stdio} -body {
     set \xe1 ""
     set name ch\xEDld-4.3
     set child [createChildProcess $name]
-    dde execute TclEval $name [list set a foo]
-    set \xe1 [dde request TclEval $name a]
+    dde execute TclEval $name [list set \xe1 foo]
+    set \xe1 [dde request TclEval $name \xe1]
     dde execute TclEval $name {set done 1}
     update
     set \xe1

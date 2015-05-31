@@ -5,8 +5,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-.so man.macros
 .TH socket n 8.6 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
@@ -97,6 +97,10 @@ writable channel event on the socket to get notified when the
 asynchronous connection has succeeded or failed. See the \fBvwait\fR
 and the \fBchan\fR commands for more details on the event loop and
 channel events.
+.PP
+The \fBchan configure\fR option \fB-connecting\fR may be used to check if the connect is still running. To verify a successful connect, the option \fB-error\fR may be checked when \fB-connecting\fR returned 0. 
+.PP
+Operation without the event queue requires at the moment calls to \fBchan configure\fR to advance the internal state machine. 
 .RE
 .SH "SERVER SOCKETS"
 .PP
@@ -186,6 +190,10 @@ sockets, this option returns a list of three elements; these are the
 address, the host name and the port to which the peer socket is connected
 or bound. If the host name cannot be computed, the second element of the
 list is identical to the address, its first element.
+.TP
+\fB\-connecting\fR
+.
+This option is not supported by server sockets. For client sockets, this option returns 1 if an asyncroneous connect is still in progress, 0 otherwise.
 .PP
 .SH "EXAMPLES"
 .PP

@@ -241,13 +241,13 @@ test regexp-5.5 {exercise cache of compiled expressions} {
 
 test regexp-6.1 {regexp errors} {
     list [catch {regexp a} msg] $msg
-} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar ...?"}}
+} {1 {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"}}
 test regexp-6.2 {regexp errors} {
     list [catch {regexp -nocase a} msg] $msg
-} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar ...?"}}
+} {1 {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"}}
 test regexp-6.3 {regexp errors} {
     list [catch {regexp -gorp a} msg] $msg
-} {1 {bad switch "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
+} {1 {bad option "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
 test regexp-6.4 {regexp errors} {
     list [catch {regexp a( b} msg] $msg
 } {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
@@ -441,19 +441,19 @@ test regexp-10.5 {inverse partial newline sensitivity in regsub} {
 
 test regexp-11.1 {regsub errors} {
     list [catch {regsub a b} msg] $msg
-} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexp-11.2 {regsub errors} {
     list [catch {regsub -nocase a b} msg] $msg
-} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexp-11.3 {regsub errors} {
     list [catch {regsub -nocase -all a b} msg] $msg
-} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexp-11.4 {regsub errors} {
     list [catch {regsub a b c d e f} msg] $msg
-} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexp-11.5 {regsub errors} {
     list [catch {regsub -gorp a b c} msg] $msg
-} {1 {bad switch "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
+} {1 {bad option "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
 test regexp-11.6 {regsub errors} {
     list [catch {regsub -nocase a( b c d} msg] $msg
 } {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
@@ -819,6 +819,67 @@ test regexp-22.1 {Bug 1810038} {
 test regexp-22.2 {regexp compile and backrefs, Bug 1857126} {
     regexp -- {([bc])\1} bb
 } 1
+test regexp-22.3 {Bug 3604074} {
+    # This will hang in interps where the bug is not fixed
+    regexp ((((((((a)*)*)*)*)*)*)*)* a
+} 1
+test regexp-22.4 {Bug 3606139} -setup {
+    interp alias {} a {} string repeat a
+} -body {
+    # This crashes in interps where the bug is not fixed
+    regexp [join [list [a 160]([a 55])[a 668]([a 55])[a 669]([a 55]) \
+	[a 668]([a 55])[a 649]([a 55])[a 668]([a 55])[a 668]([a 55]) \
+	[a 672]([a 55])[a 669]([a 55])[a 671]([a 55])[a 671]([a 55]) \
+	[a 672]([a 55])[a 652]([a 55])[a 672]([a 55])[a 671]([a 55]) \
+	[a 671]([a 55])[a 671]([a 55])[a 653]([a 55])[a 672]([a 55]) \
+	[a 653]([a 55])[a 672]([a 55])[a 672]([a 55])[a 652]([a 55]) \
+	[a 671]([a 55])[a 652]([a 55])[a 652]([a 55])[a 672]([a 55]) \
+	[a 672]([a 55])[a 672]([a 55])[a 653]([a 55])[a 671]([a 55]) \
+	[a 669]([a 55])[a 649]([a 55])[a 668]([a 55])[a 668]([a 55]) \
+	[a 668]([a 55])[a 650]([a 55])[a 650]([a 55])[a 672]([a 55]) \
+	[a 669]([a 55])[a 669]([a 55])[a 668]([a 55])[a 668]([a 55]) \
+	[a 668]([a 55])[a 669]([a 55])[a 672]([a 55])[a 669]([a 55]) \
+	[a 669]([a 55])[a 669]([a 55])[a 669]([a 55])[a 672]([a 55]) \
+	[a 670]([a 55])[a 671]([a 55])[a 672]([a 55])[a 672]([a 55]) \
+	[a 671]([a 55])[a 671]([a 55])[a 672]([a 55])[a 669]([a 55]) \
+	[a 668]([a 55])[a 668]([a 55])[a 669]([a 55])[a 668]([a 55]) \
+	[a 669]([a 55])[a 668]([a 55])[a 669]([a 55])[a 669]([a 55]) \
+	[a 668]([a 55])[a 668]([a 55])[a 669]([a 55])[a 668]([a 55]) \
+	[a 669]([a 55])[a 669]([a 55])[a 669]([a 55])[a 669]([a 55]) \
+	[a 668]([a 55])[a 669]([a 55])[a 672]([a 55])[a 669]([a 55]) \
+	[a 669]([a 55])[a 669]([a 55])[a 669]([a 55])[a 668]([a 55]) \
+	[a 669]([a 55])[a 669]([a 55])[a 668]([a 55])[a 668]([a 55]) \
+	[a 668]([a 55])[a 669]([a 55])[a 668]([a 55])[a 669]([a 55]) \
+	[a 672]([a 55])[a 669]([a 55])[a 669]([a 55])[a 710]([a 55]) \
+	[a 668]([a 55])[a 669]([a 55])[a 668]([a 55])[a 669]([a 55]) \
+	[a 668]([a 55])[a 669]([a 55])[a 668]([a 55])[a 668]([a 55]) \
+	[a 668]([a 55])[a 668]([a 55])[a 668]([a 55])[a 669]([a 55]) \
+	[a 672]([a 55])[a 669]([a 55])[a 669]([a 55])[a 668]([a 55]) \
+	[a 669]([a 55])[a 669]([a 55])[a 668]([a 55])[a 668]([a 55]) \
+	[a 668]([a 55])[a 668]([a 55])[a 668]([a 55])[a 668]([a 55]) \
+	[a 667]([a 55])[a 668]([a 55])[a 669]([a 55])[a 668]([a 55]) \
+	[a 671]([a 55])[a 669]([a 55])[a 668]([a 55])[a 669]([a 55]) \
+	[a 669]([a 55])[a 669]([a 55])[a 668]([a 55])[a 669]([a 55]) \
+	[a 668]([a 55])[a 710]([a 55])[a 668]([a 55])[a 668]([a 55]) \
+	[a 668]([a 55])[a 668]([a 55])[a 668]([a 55])[a 511]] {}] a
+} -cleanup {
+    rename a {}
+} -returnCodes 1 -result {couldn't compile regular expression pattern: nfa has too many states}
+test regexp-22.5 {Bug 3610026} -setup {
+    set e {}
+    set cp 99
+    while {$cp < 32864} {
+	append e [format %c [incr cp]]
+    }
+} -body {
+    regexp -about $e
+} -cleanup {
+    unset -nocomplain e cp
+} -returnCodes error  -match glob -result {*too many colors*}
+test regexp-22.6 {Bug 6585b21ca8} {
+    expr {[regexp {(\w).*?\1} Programmer m] ? $m : "<NONE>"}
+} rogr
+
 
 test regexp-23.1 {regexp -all and -line} {
     set string ""

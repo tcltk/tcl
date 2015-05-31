@@ -1106,6 +1106,46 @@ Tcl_UtfNcasecmp(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_UtfNcasecmp --
+ *
+ *	Compare UTF chars of string cs to string ct case insensitively.
+ *	Replacement for strcasecmp in Tcl core, in places where UTF-8 should
+ *	be handled.
+ *
+ * Results:
+ *	Return <0 if cs < ct, 0 if cs == ct, or >0 if cs > ct.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclUtfCasecmp(
+    const char *cs,		/* UTF string to compare to ct. */
+    const char *ct)		/* UTF string cs is compared to. */
+{
+    while (*cs && *ct) {
+	Tcl_UniChar ch1, ch2;
+
+	cs += TclUtfToUniChar(cs, &ch1);
+	ct += TclUtfToUniChar(ct, &ch2);
+	if (ch1 != ch2) {
+	    ch1 = Tcl_UniCharToLower(ch1);
+	    ch2 = Tcl_UniCharToLower(ch2);
+	    if (ch1 != ch2) {
+		return ch1 - ch2;
+	    }
+	}
+    }
+    return UCHAR(*cs) - UCHAR(*ct);
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_UniCharToUpper --
  *
  *	Compute the uppercase equivalent of the given Unicode character.
@@ -1515,7 +1555,11 @@ Tcl_UniCharIsSpace(
      */
 
     if (((Tcl_UniChar) ch) < ((Tcl_UniChar) 0x80)) {
-	return isspace(UCHAR(ch)); /* INTL: ISO space */
+	return TclIsSpaceProc((char) ch);
+    } else if ((Tcl_UniChar) ch == 0x0085 || (Tcl_UniChar) ch == 0x180e
+	    || (Tcl_UniChar) ch == 0x200b || (Tcl_UniChar) ch == 0x2060
+	    || (Tcl_UniChar) ch == 0x202f || (Tcl_UniChar) ch == 0xfeff) {
+	return 1;
     } else {
 	return ((SPACE_BITS >> GetCategory(ch)) & 1);
     }

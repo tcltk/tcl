@@ -29,7 +29,7 @@
 typedef struct SortElement {
     union {			/* The value that we sorting by. */
 	const char *strValuePtr;
-	long intValue;
+	Tcl_WideInt wideValue;
 	double doubleValue;
 	Tcl_Obj *objValuePtr;
     } collationKey;
@@ -161,30 +161,30 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
  */
 
 static const EnsembleImplMap defaultInfoMap[] = {
-    {"args",		   InfoArgsCmd,		    NULL, NULL, NULL, 0},
-    {"body",		   InfoBodyCmd,		    NULL, NULL, NULL, 0},
-    {"cmdcount",	   InfoCmdCountCmd,	    NULL, NULL, NULL, 0},
-    {"commands",	   InfoCommandsCmd,	    NULL, NULL, NULL, 0},
-    {"complete",	   InfoCompleteCmd,	    NULL, NULL, NULL, 0},
-    {"coroutine",	   TclInfoCoroutineCmd,     NULL, NULL, NULL, 0},
-    {"default",		   InfoDefaultCmd,	    NULL, NULL, NULL, 0},
-    {"errorstack",	   InfoErrorStackCmd,	    NULL, NULL, NULL, 0},
+    {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
+    {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
+    {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, NULL, 0},
+    {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
-    {"frame",		   InfoFrameCmd,	    NULL, NULL, NULL, 0},
-    {"functions",	   InfoFunctionsCmd,	    NULL, NULL, NULL, 0},
-    {"globals",		   TclInfoGlobalsCmd,	    NULL, NULL, NULL, 0},
-    {"hostname",	   InfoHostnameCmd,	    NULL, NULL, NULL, 0},
-    {"level",		   InfoLevelCmd,	    NULL, NULL, NULL, 0},
-    {"library",		   InfoLibraryCmd,	    NULL, NULL, NULL, 0},
-    {"loaded",		   InfoLoadedCmd,	    NULL, NULL, NULL, 0},
-    {"locals",		   TclInfoLocalsCmd,	    NULL, NULL, NULL, 0},
-    {"nameofexecutable",   InfoNameOfExecutableCmd, NULL, NULL, NULL, 0},
-    {"patchlevel",	   InfoPatchLevelCmd,	    NULL, NULL, NULL, 0},
-    {"procs",		   InfoProcsCmd,	    NULL, NULL, NULL, 0},
-    {"script",		   InfoScriptCmd,	    NULL, NULL, NULL, 0},
-    {"sharedlibextension", InfoSharedlibCmd,	    NULL, NULL, NULL, 0},
-    {"tclversion",	   InfoTclVersionCmd,	    NULL, NULL, NULL, 0},
-    {"vars",		   TclInfoVarsCmd,	    NULL, NULL, NULL, 0},
+    {"frame",		   InfoFrameCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"hostname",	   InfoHostnameCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"level",		   InfoLevelCmd,	    TclCompileInfoLevelCmd, NULL, NULL, 0},
+    {"library",		   InfoLibraryCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"loaded",		   InfoLoadedCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"locals",		   TclInfoLocalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"nameofexecutable",   InfoNameOfExecutableCmd, TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"patchlevel",	   InfoPatchLevelCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"procs",		   InfoProcsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"script",		   InfoScriptCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
+    {"sharedlibextension", InfoSharedlibCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"tclversion",	   InfoTclVersionCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
+    {"vars",		   TclInfoVarsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {NULL, NULL, NULL, NULL, NULL, 0}
 };
 
@@ -1147,41 +1147,38 @@ InfoFrameCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Interp *iPtr = (Interp *) interp;
-    int level, topLevel, code = TCL_OK;
-    CmdFrame *runPtr, *framePtr;
+    int level, code = TCL_OK;
+    CmdFrame *framePtr, **cmdFramePtrPtr = &iPtr->cmdFramePtr;
     CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+    int topLevel = 0;
 
     if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?number?");
 	return TCL_ERROR;
     }
 
-    topLevel = ((iPtr->cmdFramePtr == NULL)
-	    ? 0
-	    : iPtr->cmdFramePtr->level);
-
-    if (corPtr) {
-	/*
-	 * A coroutine: must fix the level computations AND the cmdFrame chain,
-	 * which is interrupted at the base.
-	 */
-
-	CmdFrame *lastPtr = NULL;
-
-	runPtr = iPtr->cmdFramePtr;
-
-	/* TODO - deal with overflow */
-	topLevel += corPtr->caller.cmdFramePtr->level;
-	while (runPtr) {
-	    runPtr->level += corPtr->caller.cmdFramePtr->level;
-	    lastPtr = runPtr;
-	    runPtr = runPtr->nextPtr;
+    while (corPtr) {
+	while (*cmdFramePtrPtr) {
+	    topLevel++;
+	    cmdFramePtrPtr = &((*cmdFramePtrPtr)->nextPtr);
 	}
-	if (lastPtr) {
-	    lastPtr->nextPtr = corPtr->caller.cmdFramePtr;
-	} else {
-	    iPtr->cmdFramePtr = corPtr->caller.cmdFramePtr;
+	if (corPtr->caller.cmdFramePtr) {
+	    *cmdFramePtrPtr = corPtr->caller.cmdFramePtr;
 	}
+	corPtr = corPtr->callerEEPtr->corPtr;
+    }
+    topLevel += (*cmdFramePtrPtr)->level;
+
+    if (topLevel != iPtr->cmdFramePtr->level) {
+	framePtr = iPtr->cmdFramePtr;
+	while (framePtr) {
+	    framePtr->level = topLevel--;
+	    framePtr = framePtr->nextPtr;
+	}
+	if (topLevel) {
+	    Tcl_Panic("Broken frame level calculation");
+	}
+	topLevel = iPtr->cmdFramePtr->level;
     }
 
     if (objc == 1) {
@@ -1231,20 +1228,27 @@ InfoFrameCmd(
     Tcl_SetObjResult(interp, TclInfoFrame(interp, framePtr));
 
   done:
-    if (corPtr) {
+    cmdFramePtrPtr = &iPtr->cmdFramePtr;
+    corPtr = iPtr->execEnvPtr->corPtr;
+    while (corPtr) {
+	CmdFrame *endPtr = corPtr->caller.cmdFramePtr;
 
-	if (iPtr->cmdFramePtr == corPtr->caller.cmdFramePtr) {
-	    iPtr->cmdFramePtr = NULL;
-	} else {
-	    runPtr = iPtr->cmdFramePtr;
-	    while (runPtr->nextPtr != corPtr->caller.cmdFramePtr) {
-	    	runPtr->level -= corPtr->caller.cmdFramePtr->level;
-		runPtr = runPtr->nextPtr;
+	if (endPtr) {
+	    if (*cmdFramePtrPtr == endPtr) {
+		*cmdFramePtrPtr = NULL;
+	    } else {
+		CmdFrame *runPtr = *cmdFramePtrPtr;
+
+		while (runPtr->nextPtr != endPtr) {
+		    runPtr->level -= endPtr->level;
+		    runPtr = runPtr->nextPtr;
+		}
+		runPtr->level = 1;
+		runPtr->nextPtr = NULL;
 	    }
-	    runPtr->level = 1;
-	    runPtr->nextPtr = NULL;
+	    cmdFramePtrPtr = &corPtr->caller.cmdFramePtr;
 	}
-
+	corPtr = corPtr->callerEEPtr->corPtr;
     }
     return code;
 }
@@ -1283,6 +1287,7 @@ TclInfoFrame(
 	"eval", "eval", "eval", "precompiled", "source", "proc"
     };
     Proc *procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
+    int needsFree = -1;
 
     /*
      * Pull the information and construct the dictionary to return, as list.
@@ -1302,28 +1307,12 @@ TclInfoFrame(
 	 */
 
 	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len));
-	break;
-
-    case TCL_LOCATION_EVAL_LIST:
-	/*
-	 * List optimized evaluation. Type, line, cmd, the latter through
-	 * listPtr, possibly a frame.
-	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(1));
-
-	/*
-	 * We put a duplicate of the command list obj into the result to
-	 * ensure that the 'pure List'-property of the command itself is not
-	 * destroyed. Otherwise the query here would disable the list
-	 * optimization path in Tcl_EvalObjEx.
-	 */
-
-	ADD_PAIR("cmd", Tcl_DuplicateObj(framePtr->cmd.listPtr));
+	if (framePtr->line) {
+	    ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
+	} else {
+	    ADD_PAIR("line", Tcl_NewIntObj(1));
+	}
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PREBC:
@@ -1371,8 +1360,10 @@ TclInfoFrame(
 	    Tcl_DecrRefCount(fPtr->data.eval.path);
 	}
 
-	ADD_PAIR("cmd",
-		Tcl_NewStringObj(fPtr->cmd.str.cmd, fPtr->cmd.str.len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
+	if (fPtr->cmdObj && framePtr->cmdObj == NULL) {
+	    needsFree = lc - 1;
+	}
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1391,8 +1382,7 @@ TclInfoFrame(
 	 * the result list object.
 	 */
 
-	ADD_PAIR("cmd", Tcl_NewStringObj(framePtr->cmd.str.cmd,
-		framePtr->cmd.str.len));
+	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
 	break;
 
     case TCL_LOCATION_PROC:
@@ -1461,7 +1451,11 @@ TclInfoFrame(
 	}
     }
 
-    return Tcl_NewListObj(lc, lv);
+    tmpObj = Tcl_NewListObj(lc, lv);
+    if (needsFree >= 0) {
+	Tcl_DecrRefCount(lv[needsFree]);
+    }
+    return tmpObj;
 }
 
 /*
@@ -1492,19 +1486,42 @@ InfoFunctionsCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    const char *pattern;
+    Tcl_Obj *script;
+    int code;
 
-    if (objc == 1) {
-	pattern = NULL;
-    } else if (objc == 2) {
-	pattern = TclGetString(objv[1]);
-    } else {
+    if (objc > 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "?pattern?");
 	return TCL_ERROR;
     }
 
-    Tcl_SetObjResult(interp, Tcl_ListMathFuncs(interp, pattern));
-    return TCL_OK;
+    script = Tcl_NewStringObj(
+"	    ::apply [::list {{pattern *}} {\n"
+"		::set cmds {}\n"
+"		::foreach cmd [::info commands ::tcl::mathfunc::$pattern] {\n"
+"		    ::lappend cmds [::namespace tail $cmd]\n"
+"		}\n"
+"		::foreach cmd [::info commands tcl::mathfunc::$pattern] {\n"
+"		    ::set cmd [::namespace tail $cmd]\n"
+"		    ::if {$cmd ni $cmds} {\n"
+"			::lappend cmds $cmd\n"
+"		    }\n"
+"		}\n"
+"		::return $cmds\n"
+"	    } [::namespace current]] ", -1);
+
+    if (objc == 2) {
+	Tcl_Obj *arg = Tcl_NewListObj(1, &(objv[1]));
+
+	Tcl_AppendObjToObj(script, arg);
+	Tcl_DecrRefCount(arg);
+    }
+
+    Tcl_IncrRefCount(script);
+    code = Tcl_EvalObjEx(interp, script, 0);
+
+    Tcl_DecrRefCount(script);
+
+    return code;
 }
 
 /*
@@ -2646,7 +2663,7 @@ Tcl_LrepeatObjCmd(
      * number of times.
      */
 
-    CLANG_ASSERT(dataArray);
+    CLANG_ASSERT(dataArray || totalElems == 0 );
     if (objc == 1) {
 	register Tcl_Obj *tmpPtr = objv[0];
 
@@ -2884,7 +2901,8 @@ Tcl_LsearchObjCmd(
 {
     const char *bytes, *patternBytes;
     int i, match, index, result, listc, length, elemLen, bisect;
-    int dataType, isIncreasing, lower, upper, patInt, objInt, offset;
+    int dataType, isIncreasing, lower, upper, offset;
+    Tcl_WideInt patWide, objWide;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
     SortInfo sortInfo;
@@ -2982,7 +3000,7 @@ Tcl_LsearchObjCmd(
 	    dataType = INTEGER;
 	    break;
 	case LSEARCH_NOCASE:		/* -nocase */
-	    strCmpFn = strcasecmp;
+	    strCmpFn = TclUtfCasecmp;
 	    noCase = 1;
 	    break;
 	case LSEARCH_NOT:		/* -not */
@@ -3203,7 +3221,7 @@ Tcl_LsearchObjCmd(
 	    patternBytes = TclGetStringFromObj(patObj, &length);
 	    break;
 	case INTEGER:
-	    result = TclGetIntFromObj(interp, patObj, &patInt);
+	    result = TclGetWideIntFromObj(interp, patObj, &patWide);
 	    if (result != TCL_OK) {
 		goto done;
 	    }
@@ -3272,13 +3290,13 @@ Tcl_LsearchObjCmd(
 		match = DictionaryCompare(patternBytes, bytes);
 		break;
 	    case INTEGER:
-		result = TclGetIntFromObj(interp, itemPtr, &objInt);
+		result = TclGetWideIntFromObj(interp, itemPtr, &objWide);
 		if (result != TCL_OK) {
 		    goto done;
 		}
-		if (patInt == objInt) {
+		if (patWide == objWide) {
 		    match = 0;
-		} else if (patInt < objInt) {
+		} else if (patWide < objWide) {
 		    match = -1;
 		} else {
 		    match = 1;
@@ -3377,7 +3395,7 @@ Tcl_LsearchObjCmd(
 			 */
 
 			if (noCase) {
-			    match = (strcasecmp(bytes, patternBytes) == 0);
+			    match = (TclUtfCasecmp(bytes, patternBytes) == 0);
 			} else {
 			    match = (memcmp(bytes, patternBytes,
 				    (size_t) length) == 0);
@@ -3391,14 +3409,14 @@ Tcl_LsearchObjCmd(
 		    break;
 
 		case INTEGER:
-		    result = TclGetIntFromObj(interp, itemPtr, &objInt);
+		    result = TclGetWideIntFromObj(interp, itemPtr, &objWide);
 		    if (result != TCL_OK) {
 			if (listPtr != NULL) {
 			    Tcl_DecrRefCount(listPtr);
 			}
 			goto done;
 		    }
-		    match = (objInt == patInt);
+		    match = (objWide == patWide);
 		    break;
 
 		case REAL:
@@ -3622,7 +3640,8 @@ Tcl_LsortObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument values. */
 {
-    int i, j, index, indices, length, nocase = 0, sortMode, indexc;
+    int i, j, index, indices, length, nocase = 0, indexc;
+    int sortMode = SORTMODE_ASCII;
     int group, groupSize, groupOffset, idx, allocatedIndexVector = 0;
     Tcl_Obj *resultPtr, *cmdPtr, **listObjPtrs, *listObj, *indexPtr;
     SortElement *elementArray, *elementPtr;
@@ -3961,14 +3980,14 @@ Tcl_LsortObjCmd(
 	if (sortMode == SORTMODE_ASCII) {
 	    elementArray[i].collationKey.strValuePtr = TclGetString(indexPtr);
 	} else if (sortMode == SORTMODE_INTEGER) {
-	    long a;
+	    Tcl_WideInt a;
 
-	    if (TclGetLongFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
+	    if (TclGetWideIntFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
 	    }
-	    elementArray[i].collationKey.intValue = a;
-	} else if (sortInfo.sortMode == SORTMODE_REAL) {
+	    elementArray[i].collationKey.wideValue = a;
+	} else if (sortMode == SORTMODE_REAL) {
 	    double a;
 
 	    if (Tcl_GetDoubleFromObj(sortInfo.interp, indexPtr,
@@ -4065,7 +4084,7 @@ Tcl_LsortObjCmd(
     TclStackFree(interp, elementArray);
 
   done:
-    if (sortInfo.sortMode == SORTMODE_COMMAND) {
+    if (sortMode == SORTMODE_COMMAND) {
 	TclDecrRefCount(sortInfo.compareCmdPtr);
 	TclDecrRefCount(listObj);
 	sortInfo.compareCmdPtr = NULL;
@@ -4210,16 +4229,16 @@ SortCompare(
 	order = strcmp(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_ASCII_NC) {
-	order = strcasecmp(elemPtr1->collationKey.strValuePtr,
+	order = TclUtfCasecmp(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_DICTIONARY) {
 	order = DictionaryCompare(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_INTEGER) {
-	long a, b;
+	Tcl_WideInt a, b;
 
-	a = elemPtr1->collationKey.intValue;
-	b = elemPtr2->collationKey.intValue;
+	a = elemPtr1->collationKey.wideValue;
+	b = elemPtr2->collationKey.wideValue;
 	order = ((a >= b) - (a <= b));
     } else if (infoPtr->sortMode == SORTMODE_REAL) {
 	double a, b;

@@ -95,7 +95,7 @@ static void		FileThreadActionProc(ClientData instanceData,
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
-
+static int		NativeIsComPort(CONST TCHAR *nativeName);
 /*
  * This structure describes the channel type structure for file based IO.
  */
@@ -119,23 +119,6 @@ static const Tcl_ChannelType fileChannelType = {
     FileThreadActionProc,	/* Thread action proc. */
     FileTruncateProc		/* Truncate proc. */
 };
-
-#ifdef HAVE_NO_SEH
-/*
- * Unlike Borland and Microsoft, we don't register exception handlers by
- * pushing registration records onto the runtime stack. Instead, we register
- * them by creating an EXCEPTION_REGISTRATION within the activation record.
- */
-
-typedef struct EXCEPTION_REGISTRATION {
-    struct EXCEPTION_REGISTRATION *link;
-    EXCEPTION_DISPOSITION (*handler)(
-	    struct _EXCEPTION_RECORD*, void*, struct _CONTEXT*, void*);
-    void *ebp;
-    void *esp;
-    int status;
-} EXCEPTION_REGISTRATION;
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -679,6 +662,10 @@ FileInputProc(
     *errorCode = 0;
 
     /*
+     * TODO: This comment appears to be out of date.  We *do* have a
+     * console driver, over in tclWinConsole.c.  After some Windows
+     * developer confirms, this comment should be revised.
+     *
      * Note that we will block on reads from a console buffer until a full
      * line has been entered. The only way I know of to get around this is to
      * write a console driver. We should probably do this at some point, but
@@ -856,6 +843,11 @@ TclpOpenFileChannel(
 
     nativeName = Tcl_FSGetNativePath(pathPtr);
     if (nativeName == NULL) {
+	if (interp != (Tcl_Interp *) NULL) {
+	    Tcl_AppendResult(interp, "couldn't open \"",
+	    TclGetString(pathPtr), "\": filename is invalid on this platform",
+	    NULL);
+	}
 	return NULL;
     }
 
@@ -901,6 +893,33 @@ TclpOpenFileChannel(
 	break;
     }
 
+    /*
+     * [2413550] Avoid double-open of serial ports on Windows
+     * Special handling for Windows serial ports by a "name-hint"
+     * to directly open it with the OVERLAPPED flag set.
+     */
+
+    if( NativeIsComPort(nativeName) ) {
+
+	handle = TclWinSerialOpen(INVALID_HANDLE_VALUE, nativeName, accessMode);
+	if (handle == INVALID_HANDLE_VALUE) {
+	    TclWinConvertError(GetLastError());
+	    if (interp != (Tcl_Interp *) NULL) {
+		Tcl_AppendResult(interp, "couldn't open serial \"",
+			TclGetString(pathPtr), "\": ",
+			Tcl_PosixError(interp), NULL);
+	    }
+	    return NULL;
+	}
+
+	/*
+	* For natively named Windows serial ports we are done.
+	*/
+	channel = TclWinOpenSerialChannel(handle, channelName,
+		channelPermissions);
+
+	return channel;
+    }
     /*
      * If the file is being created, get the file attributes from the
      * permissions argument, else use the existing file attributes.
@@ -952,11 +971,15 @@ TclpOpenFileChannel(
     switch (FileGetType(handle)) {
     case FILE_TYPE_SERIAL:
 	/*
+	 * Natively named serial ports "com1-9", "\\\\.\\comXX" are
+	 * already done with the code above.
+	 * Here we handle all other serial port names.
+	 *
 	 * Reopen channel for OVERLAPPED operation. Normally this shouldn't
 	 * fail, because the channel exists.
 	 */
 
-	handle = TclWinSerialReopen(handle, nativeName, accessMode);
+	handle = TclWinSerialOpen(handle, nativeName, accessMode);
 	if (handle == INVALID_HANDLE_VALUE) {
 	    TclWinConvertError(GetLastError());
 	    if (interp != (Tcl_Interp *) NULL) {
@@ -1030,7 +1053,7 @@ Tcl_MakeFileChannel(
 				 * TCL_WRITABLE to indicate file mode. */
 {
 #if defined(HAVE_NO_SEH) && !defined(_WIN64)
-    EXCEPTION_REGISTRATION registration;
+    TCLEXCEPTION_REGISTRATION registration;
 #endif
     char channelName[16 + TCL_INTEGER_SPACE];
     Tcl_Channel channel = NULL;
@@ -1111,7 +1134,7 @@ Tcl_MakeFileChannel(
 	    "movl       %[dupedHandle], %%ebx"          "\n\t"
 
 	    /*
-	     * Construct an EXCEPTION_REGISTRATION to protect the call to
+	     * Construct an TCLEXCEPTION_REGISTRATION to protect the call to
 	     * CloseHandle.
 	     */
 
@@ -1125,7 +1148,7 @@ Tcl_MakeFileChannel(
 	    "movl       $0,             0x10(%%edx)"    "\n\t" /* status */
 
 	    /*
-	     * Link the EXCEPTION_REGISTRATION on the chain.
+	     * Link the TCLEXCEPTION_REGISTRATION on the chain.
 	     */
 
 	    "movl       %%edx,          %%fs:0"         "\n\t"
@@ -1138,7 +1161,7 @@ Tcl_MakeFileChannel(
 	    "call       _CloseHandle@4"                 "\n\t"
 
 	    /*
-	     * Come here on normal exit. Recover the EXCEPTION_REGISTRATION
+	     * Come here on normal exit. Recover the TCLEXCEPTION_REGISTRATION
 	     * and put a TRUE status return into it.
 	     */
 
@@ -1148,7 +1171,7 @@ Tcl_MakeFileChannel(
 	    "jmp        2f"                             "\n"
 
 	    /*
-	     * Come here on an exception. Recover the EXCEPTION_REGISTRATION
+	     * Come here on an exception. Recover the TCLEXCEPTION_REGISTRATION
 	     */
 
 	    "1:"                                        "\t"
@@ -1157,7 +1180,7 @@ Tcl_MakeFileChannel(
 
 	    /*
 	     * Come here however we exited. Restore context from the
-	     * EXCEPTION_REGISTRATION in case the stack is unbalanced.
+	     * TCLEXCEPTION_REGISTRATION in case the stack is unbalanced.
 	     */
 
 	    "2:"                                        "\t"
@@ -1494,6 +1517,66 @@ FileGetType(
     }
 
     return type;
+}
+
+ /*
+ *----------------------------------------------------------------------
+ *
+ * NativeIsComPort --
+ *
+ *	Determines if a path refers to a Windows serial port.
+ *	A simple and efficient solution is to use a "name hint" to detect
+ *      COM ports by their filename instead of resorting to a syscall
+ *	to detect serialness after the fact.
+ *	The following patterns cover common serial port names:
+ *	    COM[1-9]
+ *	    \\.\COM[0-9]+
+ *
+ * Results:
+ *	1 = serial port, 0 = not.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+NativeIsComPort(
+    const TCHAR *nativePath)	/* Path of file to access, native encoding. */
+{
+    const WCHAR *p = (const WCHAR *) nativePath;
+    int i, len = wcslen(p);
+
+    /*
+     * 1. Look for com[1-9]:?
+     */
+
+    if ( (len == 4) && (_wcsnicmp(p, L"com", 3) == 0) ) {
+	/*
+	* The 4th character must be a digit 1..9
+	*/
+
+	if ( (p[3] < L'1') || (p[3] > L'9') ) {
+	    return 0;
+	}
+	return 1;
+    }
+
+    /*
+     * 2. Look for \\.\com[0-9]+
+     */
+
+    if ((len >= 8) && (_wcsnicmp(p, L"\\\\.\\com", 7) == 0)) {
+	/*
+	* Charaters 8..end must be a digits 0..9
+	*/
+
+	for ( i=7; i<len; i++ ) {
+	    if ( (p[i] < '0') || (p[i] > '9') ) {
+		return 0;
+	    }
+	}
+	return 1;
+    }
+    return 0;
 }
 
 /*

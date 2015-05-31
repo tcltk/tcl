@@ -84,7 +84,7 @@ int fake_getnameinfo(const struct sockaddr *sa, size_t salen, char *host,
 
 	if (host != NULL) {
 		if (flags & NI_NUMERICHOST) {
-			int len;
+			size_t len;
 			Tcl_MutexLock(&netdbMutex);
 			len = strlcpy(host, inet_ntoa(sin->sin_addr), hostlen);
 			Tcl_MutexUnlock(&netdbMutex);
@@ -135,7 +135,7 @@ fake_gai_strerror(int err)
 
 #ifndef HAVE_FREEADDRINFO
 void
-freeaddrinfo(struct addrinfo *ai)
+fake_freeaddrinfo(struct addrinfo *ai)
 {
 	struct addrinfo *next;
 
@@ -199,7 +199,7 @@ fake_getaddrinfo(const char *hostname, const char *servname,
 
 		port = strtol(servname, &cp, 10);
 		if (port > 0 && port <= 65535 && *cp == '\0')
-			port = htons(port);
+			port = htons((unsigned short)port);
 		else if ((sp = getservbyname(servname, NULL)) != NULL)
 			port = sp->s_port;
 		else

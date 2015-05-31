@@ -4,18 +4,18 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH load n 7.5 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
 load \- Load machine code and initialize new commands
 .SH SYNOPSIS
-\fBload \fIfileName\fR
+\fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName\fR
 .br
-\fBload \fIfileName packageName\fR
+\fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName packageName\fR
 .br
-\fBload \fIfileName packageName interp\fR
+\fBload\fR ?\fB\-global\fR? ?\fB\-lazy\fR? ?\fB\-\-\fR? \fIfileName packageName interp\fR
 .BE
 .SH DESCRIPTION
 .PP
@@ -104,6 +104,22 @@ Otherwise, the \fBload\fR command searches for a dynamically loaded
 package by that name, and uses it if it is found.  If several
 different files have been \fBload\fRed with different versions of
 the package, Tcl picks the file that was loaded first.
+.PP
+If \fB\-global\fR is specified preceding the filename, all symbols
+found in the shared library are exported for global use by other
+libraries. The option \fB\-lazy\fR delays the actual loading of
+symbols until their first actual use. The options may be abbreviated.
+The option \fB\-\-\fR indicates the end of the options, and should
+be used if you wish to use a filename which starts with \fB\-\fR
+and you provide a packageName to the \fBload\fR command.
+.PP
+On platforms which do not support the \fB\-global\fR or \fB\-lazy\fR
+options, the options still exist but have no effect. Note that use
+of the \fB\-global\fR or \fB\-lazy\fR option may lead to crashes
+in your application later (in case of symbol conflicts resp. missing
+symbols), which cannot be detected during the \fBload\fR. So, only
+use this when you know what you are doing, you will not get a nice
+error message when something is wrong with the loaded library.
 .SH "PORTABILITY ISSUES"
 .TP
 \fBWindows\fR\0\0\0\0\0

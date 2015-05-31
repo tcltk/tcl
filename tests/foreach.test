@@ -254,6 +254,17 @@ test foreach-9.1 {compiled empty var list} {
     list [catch { foo } msg] $msg
 } {1 {foreach varlist is empty}}
 
+test foreach-9.2 {line numbers} -setup {
+    proc linenumber {} {dict get [info frame -1] line}
+} -body {
+    apply {n {
+        foreach x y {*}{
+        } {return [incr n -[linenumber]]}
+    }} [linenumber]
+} -cleanup {
+    rename linenumber {}
+} -result 1
+
 test foreach-10.1 {foreach: [Bug 1671087]} -setup {
     proc demo {} {
 	set vals {1 2 3 4}
@@ -265,6 +276,15 @@ test foreach-10.1 {foreach: [Bug 1671087]} -setup {
 } -cleanup {
     rename demo {}
 } -result {}
+
+test foreach-11.1 {error then dereference loop var (dev bug)} {
+  catch { foreach a 0 b {1 2 3} { error x } }
+  set a
+} 0
+test foreach-11.2 {error then dereference loop var (dev bug)} {
+  catch { foreach a 0 b {1 2 3} { incr a $b; error x } }
+  set a
+} 1
 
 # cleanup
 catch {unset a}

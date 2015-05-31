@@ -5,8 +5,8 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-.so man.macros
 .TH Load 3 8.6 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_LoadFile, Tcl_FindSymbol \- platform-independent dynamic library loading
@@ -31,7 +31,8 @@ Array of names of symbols to be resolved during the load of the library, or
 NULL if no symbols are to be resolved. If an array is given, the last entry in
 the array must be NULL.
 .AP int flags in
-Reserved for future expansion. Must be 0.
+The value should normally be 0, but \fITCL_LOAD_GLOBAL\fR or \fITCL_LOAD_LAZY\fR
+or a combination of those two is allowed as well.
 .AP void *procPtrs out
 Points to an array that will hold the addresses of the functions described in
 the \fIsymbols\fR argument. Should be NULL if no symbols are to be resolved.

@@ -79,7 +79,7 @@ Use the Makefile "install" target to install Tcl.  It will install it
 according to the prefix options you provided in the correct directory
 structure.
 
-Note that in order to run tclsh85.exe, you must ensure that tcl85.dll is
+Note that in order to run tclsh86.exe, you must ensure that tcl86.dll is
 on your path, in the system directory, or in the directory containing
 tclsh86.exe.
 
@@ -91,9 +91,9 @@ Note: Tcl no longer provides support for Win32s.
 This distribution contains an extensive test suite for Tcl.  Some of the
 tests are timing dependent and will fail from time to time.  If a test is
 failing consistently, please send us a bug report with as much detail as
-you can manage.  Please use the online database at
+you can manage to our tracker:
 
-	http://tcl.sourceforge.net/
+	http://core.tcl.tk/tcl/reportlist
 
 In order to run the test suite, you build the "test" target using the
 appropriate makefile for your compiler.
