@@ -17,8 +17,8 @@ if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
-if {[catch {package require msgcat 1.5}]} {
-    puts stderr "Skipping tests in [info script].  No msgcat 1.5 found to test."
+if {[catch {package require msgcat 1.6}]} {
+    puts stderr "Skipping tests in [info script].  No msgcat 1.6 found to test."
     return
 }
 
@@ -412,9 +412,14 @@ namespace eval ::msgcat::test {
     foreach loc {foo foo_BAR foo_BAR_baz} {
 	test msgcat-5.$count {mcload} -setup {
 	    variable locale [mclocale]
+	    ::msgcat::mclocale ""
+	    ::msgcat::mcloadedlocales clear
+	    ::msgcat::mcpackageconfig unset mcfolder 
 	    mclocale $loc
 	} -cleanup {
 	    mclocale $locale
+	    ::msgcat::mcloadedlocales clear
+	    ::msgcat::mcpackageconfig unset mcfolder 
 	} -body {
 	    mcload $msgdir
 	} -result [expr { $count+1 }]
@@ -428,6 +433,8 @@ namespace eval ::msgcat::test {
 	    mclocale foo_BAR_notexist
 	} -cleanup {
 	    mclocale $locale
+	    ::msgcat::mcloadedlocales clear
+	    ::msgcat::mcpackageconfig unset mcfolder 
 	} -body {
 	    mcload $msgdir
 	} -result 3
@@ -437,6 +444,8 @@ namespace eval ::msgcat::test {
 	    mclocale no_FI_notexist
 	} -cleanup {
 	    mclocale $locale
+	    ::msgcat::mcloadedlocales clear
+	    ::msgcat::mcpackageconfig unset mcfolder 
 	} -body {
 	    mcload $msgdir
 	} -result 1
