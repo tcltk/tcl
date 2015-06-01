@@ -435,7 +435,7 @@ proc msgcat::mcloadedlocales {subcommand} {
 #	default data, if no package locale is set.
 #
 # Arguments:
-#	subcommand		One of get, init, present, add or remove
+#	subcommand		see list above
 #	locale			package locale (only set subcommand)
 #
 # Results:
