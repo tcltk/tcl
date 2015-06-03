@@ -9995,10 +9995,8 @@ GetSrcInfoForPc(
     int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
     int bestCmdIdx = -1;
 
-    if ((pcOffset < 0) || (pcOffset >= codePtr->numCodeBytes)) {
-	if (pcBeg != NULL) *pcBeg = NULL;
-	return NULL;
-    }
+    /* The pc must point within the bytecode */
+    assert ((pcOffset >= 0) && (pcOffset < codePtr->numCodeBytes));
 
     /*
      * Decode the code and source offset and length for each command. The
@@ -10083,16 +10081,16 @@ GetSrcInfoForPc(
 	*pcBeg = prev;
     }
 
-    if (bestDist == INT_MAX) {
-	return NULL;
-    }
-
     if (lengthPtr != NULL) {
 	*lengthPtr = bestSrcLength;
     }
 
     if (cmdIdxPtr != NULL) {
 	*cmdIdxPtr = bestCmdIdx;
+    }
+
+    if (bestDist == INT_MAX) {
+	return NULL;
     }
 
     return (codePtr->source + bestSrcOffset);
