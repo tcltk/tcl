@@ -8235,6 +8235,7 @@ TEBCresume(
 	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL, NULL);
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    pc += (opnd-1);
+	    assert(bytes);
 	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
 	    goto instEvalStk;
 	}
@@ -9900,7 +9901,12 @@ TclGetSourceFromFrame(
             cfPtr->cmd = GetSrcInfoForPc((unsigned char *)
 		    cfPtr->data.tebc.pc, codePtr, &cfPtr->len, NULL, NULL);
         }
-        cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
+	if (cfPtr->cmd) {
+	    cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
+	} else {
+	    cfPtr->cmdObj = Tcl_NewListObj(objc, objv);
+	    cfPtr->cmd = Tcl_GetStringFromObj(cfPtr->cmdObj, &cfPtr->len);
+	}
         Tcl_IncrRefCount(cfPtr->cmdObj);
     }
     return cfPtr->cmdObj;
@@ -10081,16 +10087,16 @@ GetSrcInfoForPc(
 	*pcBeg = prev;
     }
 
+    if (bestDist == INT_MAX) {
+	return NULL;
+    }
+
     if (lengthPtr != NULL) {
 	*lengthPtr = bestSrcLength;
     }
 
     if (cmdIdxPtr != NULL) {
 	*cmdIdxPtr = bestCmdIdx;
-    }
-
-    if (bestDist == INT_MAX) {
-	return NULL;
     }
 
     return (codePtr->source + bestSrcOffset);
