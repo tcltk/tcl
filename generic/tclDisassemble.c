@@ -842,10 +842,10 @@ PrintSourceToObj(
 	    continue;
 	}
     }
-    Tcl_AppendToObj(appendObj, "\"", -1);
     if (*p != '\0') {
 	Tcl_AppendToObj(appendObj, "...", -1);
     }
+    Tcl_AppendToObj(appendObj, "\"", -1);
 }
 
 /*
