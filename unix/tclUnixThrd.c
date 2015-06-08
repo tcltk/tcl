@@ -530,7 +530,7 @@ retry:
 	 *         to yield to other threads for a while.
 	 */
 #ifdef HAVE_USLEEP
-	usleep(TCL_MUTEX_LOCK_SLEEP_TIME);
+	usleep(TCL_MUTEX_LOCK_SLEEP_TIME * 1000);
 #else
 	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
 #endif
