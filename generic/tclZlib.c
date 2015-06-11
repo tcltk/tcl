@@ -1757,6 +1757,7 @@ Tcl_ZlibInflate(
     if (headerPtr) {
 	e = inflateGetHeader(&stream, headerPtr);
 	if (e != Z_OK) {
+	    inflateEnd(&stream);
 	    goto error;
 	}
     }
@@ -1780,7 +1781,7 @@ Tcl_ZlibInflate(
 
 	if ((stream.avail_in == 0) && (stream.avail_out > 0)) {
 	    e = Z_STREAM_ERROR;
-	    goto error;
+	    break;
 	}
 	newBufferSize = bufferSize + 5 * stream.avail_in;
 	if (newBufferSize == bufferSize) {
