@@ -78,7 +78,7 @@ created.  \fIClientData\fR typically points to an application-specific
 data structure that describes what to do when \fIproc\fR is invoked.
 \fIOldName\fR gives the name of the command being renamed, and
 \fInewName\fR gives the name that the command is being renamed to (or
-an empty string or NULL when the command is being deleted.)
+NULL when the command is being deleted.)
 \fIFlags\fR is an OR'ed combination of bits potentially providing
 several pieces of information.  One of the bits \fBTCL_TRACE_RENAME\fR and
 \fBTCL_TRACE_DELETE\fR will be set in \fIflags\fR to indicate which
