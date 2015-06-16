@@ -2326,11 +2326,6 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-# TIP #435
-declare 631 {
-    void Tcl_MutexUnlockAndFinalize(Tcl_Mutex *mutex)
-}
-
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
