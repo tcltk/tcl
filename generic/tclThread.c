@@ -50,7 +50,6 @@ static void		RememberSyncObject(void *objPtr,
 #undef Tcl_MutexLock
 #undef Tcl_MutexUnlock
 #undef Tcl_MutexFinalize
-#undef Tcl_MutexUnlockAndFinalize
 #undef Tcl_ConditionNotify
 #undef Tcl_ConditionWait
 #undef Tcl_ConditionFinalize
@@ -285,7 +284,7 @@ Tcl_MutexFinalize(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_MutexUnlockAndFinalize --
+ * TclpMutexUnlockAndFinalize --
  *
  *	This procedure is invoked to unlock and then finalize a mutex.
  *	The mutex must have been locked by Tcl_MutexLock.  It is also
@@ -302,7 +301,7 @@ Tcl_MutexFinalize(
  */
 
 void
-Tcl_MutexUnlockAndFinalize(
+TclpMutexUnlockAndFinalize(
     Tcl_Mutex *mutexPtr)
 {
     Tcl_Mutex mutex;
