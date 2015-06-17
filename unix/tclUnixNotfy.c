@@ -1384,7 +1384,7 @@ AtForkChild(void)
 {
     TclpMutexUnlock();
     TclpMasterUnlock();
-    TclpMutexUnlockAndFinalize(&notifierMutex);
+    TclMutexUnlockAndFinalize(&notifierMutex);
     Tcl_InitNotifier();
 }
 #endif /* HAVE_PTHREAD_ATFORK */
