@@ -284,7 +284,7 @@ Tcl_MutexFinalize(
 /*
  *----------------------------------------------------------------------
  *
- * TclpMutexUnlockAndFinalize --
+ * TclMutexUnlockAndFinalize --
  *
  *	This procedure is invoked to unlock and then finalize a mutex.
  *	The mutex must have been locked by Tcl_MutexLock.  It is also
@@ -301,7 +301,7 @@ Tcl_MutexFinalize(
  */
 
 void
-TclpMutexUnlockAndFinalize(
+TclMutexUnlockAndFinalize(
     Tcl_Mutex *mutexPtr)
 {
     Tcl_Mutex mutex;
