@@ -1301,6 +1301,39 @@ TclFreeObj(
 
     ObjInitDeletionContext(context);
 
+# ifdef TCL_THREADS
+    /*
+     * Check to make sure that the Tcl_Obj was allocated by the current
+     * thread. Don't do this check when shutting down since thread local
+     * storage can be finalized before the last Tcl_Obj is freed.
+     */
+
+    if (!TclInExit()) {
+	Tcl_HashTable *tablePtr;
+	Tcl_HashEntry *hPtr;
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+	tablePtr = tsdPtr->objThreadMap;
+	if (!tablePtr) {
+	    Tcl_Panic("TclFreeObj: object table not initialized");
+	}
+	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	if (hPtr) {
+	    /*
+	     * As the Tcl_Obj is going to be deleted we remove the entry.
+	     */
+
+	    ObjData *objData = Tcl_GetHashValue(hPtr);
+
+	    if (objData != NULL) {
+		ckfree(objData);
+	    }
+
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    }
+# endif
+
     /*
      * Check for a double free of the same value.  This is slightly tricky
      * because it is customary to free a Tcl_Obj when its refcount falls
@@ -3766,20 +3799,6 @@ Tcl_DbDecrRefCount(
 	if (!hPtr) {
 	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
                     "decr ref count");
-	}
-
-	/*
-	 * If the Tcl_Obj is going to be deleted, remove the entry.
-	 */
-
-	if (objPtr->refCount < 2) {
-	    ObjData *objData = Tcl_GetHashValue(hPtr);
-
-	    if (objData != NULL) {
-		ckfree(objData);
-	    }
-
-	    Tcl_DeleteHashEntry(hPtr);
 	}
     }
 # endif /* TCL_THREADS */

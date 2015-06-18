@@ -20,6 +20,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 # of "<<" are integers.
 
 testConstraint testexprparser [llength [info commands testexprparser]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 # Big test for correct ordering of data in [expr]
 
@@ -81,8 +82,8 @@ testConstraint ieeeFloatingPoint [testIEEE]
 
 ######################################################################
 
-test parseExpr-1.1 {Tcl_ParseExpr procedure, computing string length} testexprparser {
-    testexprparser [bytestring "1+2\0 +3"] -1
+test parseExpr-1.1 {Tcl_ParseExpr procedure, computing string length} {testexprparser testbytestring} {
+    testexprparser [testbytestring "1+2\0 +3"] -1
 } {- {} 0 subexpr 1+2 5 operator + 0 subexpr 1 1 text 1 0 subexpr 2 1 text 2 0 {}}
 test parseExpr-1.2 {Tcl_ParseExpr procedure, computing string length} testexprparser {
     testexprparser "1  + 2" -1
@@ -1062,6 +1063,15 @@ test parseExpr-22.18 {Bug 3401704} -constraints testexprparser -body {
     dict get $o -errorcode
 } -result {TCL PARSE EXPR BADNUMBER BINARY}
 
+test parseExpr-22.19 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser \u0433 -1
+} -returnCodes error -match glob -result {*invalid character*}
+test parseExpr-22.20 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser \u043f -1
+} -returnCodes error -match glob -result {*invalid character*}
+test parseExpr-22.21 {Bug d2ffcca163} -constraints testexprparser -body {
+    testexprparser in\u0433(0) -1
+} -returnCodes error -match glob -result {missing operand*}
 
 # cleanup
 cleanupTests

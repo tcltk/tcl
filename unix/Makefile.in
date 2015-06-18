@@ -96,7 +96,7 @@ CFLAGS_WARNING		= @CFLAGS_WARNING@
 
 # The default switches for optimization or debugging
 CFLAGS_DEBUG		= @CFLAGS_DEBUG@
-CFLAGS_OPTIMIZE		= -DNDEBUG @CFLAGS_OPTIMIZE@
+CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
 
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
@@ -294,7 +294,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclAssembly.o tclAsync.o tclBasic.o tclBinary.o tclCkalloc.o \
 	tclClock.o tclCmdAH.o tclCmdIL.o tclCmdMZ.o \
 	tclCompCmds.o tclCompCmdsGR.o tclCompCmdsSZ.o tclCompExpr.o \
-	tclCompile.o tclConfig.o tclDate.o tclDictObj.o \
+	tclCompile.o tclConfig.o tclDate.o tclDictObj.o tclDisassemble.o \
 	tclEncoding.o tclEnsemble.o \
 	tclEnv.o tclEvent.o tclExecute.o tclFCmd.o tclFileName.o tclGet.o \
 	tclHash.o tclHistory.o tclIndexObj.o tclInterp.o tclIO.o tclIOCmd.o \
@@ -406,6 +406,7 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclConfig.c \
 	$(GENERIC_DIR)/tclDate.c \
 	$(GENERIC_DIR)/tclDictObj.c \
+	$(GENERIC_DIR)/tclDisassemble.c \
 	$(GENERIC_DIR)/tclEncoding.c \
 	$(GENERIC_DIR)/tclEnsemble.c \
 	$(GENERIC_DIR)/tclEnv.c \
@@ -780,10 +781,6 @@ install-strip:
 		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
 		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
 
-# Note: before running ranlib below, must cd to target directory because some
-# ranlibs write to current directory, and this might not always be possible
-# (e.g. if installing as root).
-
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" \
 		"$(CONFIG_INSTALL_DIR)"; \
@@ -841,8 +838,8 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
-	@echo "Installing package http 2.8.8 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.8.tm;
+	@echo "Installing package http 2.8.9 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.9.tm;
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
@@ -850,11 +847,11 @@ install-libraries: libraries
 	    done;
 	@echo "Installing package msgcat 1.5.2 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.5.2.tm;
-	@echo "Installing package tcltest 2.3.7 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.7.tm;
+	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.8.tm;
 
-	@echo "Installing package platform 1.0.12 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.12.tm;
+	@echo "Installing package platform 1.0.13 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.13.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
 
@@ -1106,6 +1103,9 @@ tclConfig.o: $(GENERIC_DIR)/tclConfig.c
 tclDictObj.o: $(GENERIC_DIR)/tclDictObj.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDictObj.c
 
+tclDisassemble.o: $(GENERIC_DIR)/tclDisassemble.c $(COMPILEHDR)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclDisassemble.c
+
 tclEncoding.o: $(GENERIC_DIR)/tclEncoding.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEncoding.c
 
@@ -1194,7 +1194,6 @@ tclLoadDld.o: $(UNIX_DIR)/tclLoadDld.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDld.c
 
 tclLoadDyld.o: $(UNIX_DIR)/tclLoadDyld.c
-	@echo Warnings are expected from compiling tclLoadDyld.c: deprecated API use
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDyld.c
 
 tclLoadNone.o: $(GENERIC_DIR)/tclLoadNone.c
@@ -1572,10 +1571,9 @@ tclUnixThrd.o: $(UNIX_DIR)/tclUnixThrd.c
 tclUnixTime.o: $(UNIX_DIR)/tclUnixTime.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixTime.c
 
+TCL_LOCATIONS=-DTCL_LIBRARY="\"${TCL_LIBRARY}\"" -DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\""
 tclUnixInit.o: $(UNIX_DIR)/tclUnixInit.c tclConfig.sh
-	$(CC) -c $(CC_SWITCHES) -DTCL_LIBRARY=\"${TCL_LIBRARY}\" \
-		-DTCL_PACKAGE_PATH="\"${TCL_PACKAGE_PATH}\"" \
-		$(UNIX_DIR)/tclUnixInit.c
+	$(CC) -c $(CC_SWITCHES) $(TCL_LOCATIONS) $(UNIX_DIR)/tclUnixInit.c
 
 tclUnixCompat.o: $(UNIX_DIR)/tclUnixCompat.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclUnixCompat.c
@@ -1970,7 +1968,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(GENERIC_DIR)/*.decls $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/README $(DISTDIR)/generic
 	cp -p $(GENERIC_DIR)/tclGetDate.y $(DISTDIR)/generic
-	cp -p $(TOP_DIR)/changes $(TOP_DIR)/ChangeLog $(TOP_DIR)/README* \
+	cp -p $(TOP_DIR)/changes $(TOP_DIR)/ChangeLog $(TOP_DIR)/README \
 		$(TOP_DIR)/ChangeLog.[12]??? $(TOP_DIR)/license.terms \
 		$(DISTDIR)
 	@mkdir $(DISTDIR)/library
@@ -2011,6 +2009,7 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp $(TOP_DIR)/win/configure.in $(TOP_DIR)/win/configure \
 		$(TOP_DIR)/win/tclConfig.sh.in $(TOP_DIR)/win/tclooConfig.sh \
 		$(TOP_DIR)/win/tcl.m4 $(TOP_DIR)/win/aclocal.m4 \
+		$(TOP_DIR)/win/tclsh.exe.manifest.in \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
@@ -2084,9 +2083,11 @@ alldist: dist
 html: ${NATIVE_TCLSH}
 	$(BUILD_HTML)
 	@EXTRA_BUILD_HTML@
+
 html-tcl: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tcl
 	@EXTRA_BUILD_HTML@
+
 html-tk: ${NATIVE_TCLSH}
 	$(BUILD_HTML) --tk
 	@EXTRA_BUILD_HTML@

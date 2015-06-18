@@ -394,6 +394,7 @@ InitFoundation(
     fPtr->classCls->flags |= ROOT_CLASS;
     TclOOAddToInstances(fPtr->objectCls->thisPtr, fPtr->classCls);
     TclOOAddToInstances(fPtr->classCls->thisPtr, fPtr->classCls);
+    TclOOAddToSubclasses(fPtr->classCls, fPtr->objectCls);
     AddRef(fPtr->objectCls->thisPtr);
     AddRef(fPtr->objectCls);
 
@@ -792,7 +793,7 @@ ObjectRenamedTrace(
     ClientData clientData,	/* The object being deleted. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     const char *oldName,	/* What the object was (last) called. */
-    const char *newName,	/* Always NULL. */
+    const char *newName,	/* What it's getting renamed to. (unused) */
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = clientData;
@@ -1008,6 +1009,12 @@ ReleaseClassContents(
 	    }
 	    if (!Deleted(instancePtr)) {
 		Tcl_DeleteCommandFromToken(interp, instancePtr->command);
+		/*
+		 * Tcl_DeleteCommandFromToken() may have done to whole
+		 * job for us.  Roll back and check again.
+		 */
+		i--;
+		continue;
 	    }
 	    DelRef(instancePtr);
 	}
@@ -1280,6 +1287,9 @@ TclOORemoveFromInstances(
 
   removeInstance:
     if (Deleted(clsPtr->thisPtr)) {
+	if (!IsRootClass(clsPtr)) {
+	    DelRef(clsPtr->instances.list[i]);
+	}
 	clsPtr->instances.list[i] = NULL;
     } else {
 	clsPtr->instances.num--;
@@ -1665,10 +1675,13 @@ Tcl_NewObjectInstance(
 
 		/*
 		 * Take care to not delete a deleted object; that would be
-		 * bad. [Bug 2903011]
+		 * bad. [Bug 2903011] Also take care to make sure that we have
+		 * the name of the command before we delete it. [Bug
+		 * 9dd1bd7a74]
 		 */
 
 		if (!Deleted(oPtr)) {
+		    (void) TclOOObjectName(interp, oPtr);
 		    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 		}
 		return NULL;
@@ -1811,10 +1824,12 @@ FinalizeAlloc(
 
 	/*
 	 * Take care to not delete a deleted object; that would be bad. [Bug
-	 * 2903011]
+	 * 2903011] Also take care to make sure that we have the name of the
+	 * command before we delete it. [Bug 9dd1bd7a74]
 	 */
 
 	if (!Deleted(oPtr)) {
+	    (void) TclOOObjectName(interp, oPtr);
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	}
 	DelRef(oPtr);

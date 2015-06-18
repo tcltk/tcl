@@ -433,17 +433,17 @@ typedef DWORD_PTR * PDWORD_PTR;
  * EDEADLK as the same value, which confuses Tcl_ErrnoId().
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define environ _environ
 #   if defined(_MSC_VER) && (_MSC_VER < 1600)
 #	define hypot _hypot
 #   endif
 #   define exception _exception
 #   undef EDEADLOCK
-#   if defined(__MINGW32__) && !defined(__MSVCRT__)
+#   if defined(_MSC_VER) && (_MSC_VER >= 1700)
 #	define timezone _timezone
 #   endif
-#endif /* _MSC_VER || __MINGW32__ */
+#endif /* _MSC_VER || __MSVCRT__ */
 
 /*
  * Borland's timezone and environ functions.
@@ -503,7 +503,7 @@ typedef DWORD_PTR * PDWORD_PTR;
  * Msvcrt's putenv() copies the string rather than takes ownership of it.
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__)
+#if defined(_MSC_VER) || defined(__MSVCRT__)
 #   define HAVE_PUTENV_THAT_COPIES 1
 #endif
 

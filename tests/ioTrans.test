@@ -539,7 +539,7 @@ test iortrans-4.8 {chan read, read, bug 2921116} -setup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} file*}
+}} {}}
 test iortrans-4.8.1 {chan read, bug 721ec69271} -setup {
     set res {}
 } -match glob -body {
@@ -557,8 +557,28 @@ test iortrans-4.8.1 {chan read, bug 721ec69271} -setup {
 } -cleanup {
     tempdone
     rename foo {}
-} -result {{read rt* {test data
-}} file*}
+} -result {{read rt* te} {read rt* st} {read rt* { d}} {read rt* at} {read rt* {a
+}} {}}
+test iortrans-4.8.2 {chan read, bug 721ec69271} -setup {
+    set res {}
+} -match glob -body {
+    proc foo {fd args} {
+	handle.initialize
+	handle.finalize
+	lappend ::res $args
+	# Kill and recreate transform while it is operating
+	chan pop $fd
+	chan push $fd [list foo $fd]
+	return x
+    }
+    set c [chan push [set c [tempchan]] [list foo $c]]
+    chan configure $c -buffersize 1
+    lappend res [read $c]
+} -cleanup {
+    tempdone
+    rename foo {}
+} -result {{read rt* t} {read rt* e} {read rt* s} {read rt* t} {read rt* { }} {read rt* d} {read rt* a} {read rt* t} {read rt* a} {read rt* {
+}} {}}
 test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
     set res {}
 } -match glob -body {
@@ -576,7 +596,180 @@ test iortrans-4.9 {chan read, gets, bug 2921116} -setup {
     tempdone
     rename foo {}
 } -result {{read rt* {test data
-}} file*}
+}} {}}
+
+# Driver for a base channel that emits several short "files"
+# with each terminated by a fleeting EOF
+    proc driver {cmd args} {
+        variable ::tcl::buffer
+        variable ::tcl::index
+        set chan [lindex $args 0]
+        switch -- $cmd {
+            initialize {
+                set index($chan) 0
+                set buffer($chan) .....
+                return {initialize finalize watch read}
+            }
+            finalize {
+                if {![info exists index($chan)]} {return}
+                unset index($chan) buffer($chan)
+		array unset index
+		array unset buffer
+                return
+            }
+            watch {}
+            read {
+                set n [lindex $args 1]
+                if {![info exists index($chan)]} {
+                    driver initialize $chan
+                }
+                set new [expr {$index($chan) + $n}]
+                set result [string range $buffer($chan) $index($chan) $new-1]
+                set index($chan) $new
+                if {[string length $result] == 0} {
+                    driver finalize $chan
+                }
+                return $result
+            }
+        }
+    }
+
+# Channel read transform that is just the identity - pass all through
+    proc idxform {cmd handle args} {
+      switch -- $cmd {
+        initialize {
+            return {initialize finalize read}
+        }
+        finalize {
+            return
+        }
+        read {
+            lassign $args buffer
+            return $buffer
+        }
+      }
+    }
+
+# Test that all EOFs pass through full xform stack.  Proper data boundaries.
+# Check robustness against buffer sizes.
+test iortrans-4.10 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] idxform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.10.1 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] idxform]
+    chan configure $chan -buffersize 3
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.10.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] idxform]
+    chan configure $chan -buffersize 5
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+rename idxform {}
+
+# Channel read transform that delays the data and always returns something
+    proc delayxform {cmd handle args} {
+      variable store
+      switch -- $cmd {
+        initialize {
+	    set store($handle) {}
+            return {initialize finalize read drain}
+        }
+        finalize {
+	    unset store($handle)
+            return
+        }
+        read {
+            lassign $args buffer
+	    if {$store($handle) eq {}} {
+		set reply [string index $buffer 0]
+		set store($handle) [string range $buffer 1 end]
+	    } else {
+		set reply $store($handle)
+		set store($handle) $buffer
+	    }
+            return $reply
+        }
+	drain {
+	    delayxform read $handle {}
+	}
+      }
+    }
+
+# Test that all EOFs pass through full xform stack.  Proper data boundaries.
+# Check robustness against buffer sizes.
+test iortrans-4.11 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.11.1 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    chan configure $chan -buffersize 3
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+test iortrans-4.11.2 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delayxform]
+    chan configure $chan -buffersize 5
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+    rename delayxform {}
+
+# Channel read transform that delays the data and may return {}
+    proc delay2xform {cmd handle args} {
+      variable store
+      switch -- $cmd {
+        initialize {
+	    set store($handle) {}
+            return {initialize finalize read drain}
+        }
+        finalize {
+	    unset store($handle)
+            return
+        }
+        read {
+            lassign $args buffer
+		set reply $store($handle)
+		set store($handle) $buffer
+            return $reply
+        }
+	drain {
+	    delay2xform read $handle {}
+	}
+      }
+    }
+
+test iortrans-4.12 {[5adbc350683] chan read, handle fleeting EOF} -body {
+    set chan [chan push [chan create read driver] delay2xform]
+    list [eof $chan] [read $chan] [eof $chan] [read $chan 0] [eof $chan] \
+        [read $chan] [eof $chan]
+} -cleanup {
+    close $chan
+} -result {0 ..... 1 {} 0 ..... 1}
+
+    rename delay2xform {}
+    rename driver {}
+
 
 # --- === *** ###########################
 # method write (via puts)
@@ -1014,22 +1207,24 @@ test iortrans-11.1 {origin interpreter of moved transform destroyed during acces
     # Magic to get the test* commands in the slaves
     load {} Tcltest $ida
     load {} Tcltest $idb
-} -constraints {testchannel impossible} -match glob -body {
+} -constraints {testchannel} -match glob -body {
     # Set up channel in thread
     set chan [interp eval $ida $helperscript]
+    interp eval $ida [list ::variable tempchan [tempchan]]
+    interp transfer {} $::tempchan $ida
     set chan [interp eval $ida {
 	proc foo {args} {
 	    handle.initialize clear drain flush limit? read write
 	    handle.finalize
 	    lappend ::res $args
-	    # Destroy interpreter during channel access.  Actually not
-	    # possible for an interp to destroy itself.
-	    interp delete {}
-	    return}
-	set chan [chan push [tempchan] foo]
+	    # Destroy interpreter during channel access.
+	    suicide
+	}
+	set chan [chan push $tempchan foo]
 	fconfigure $chan -buffering none
 	set chan
     }]
+    interp alias $ida suicide {} interp delete $ida
     # Move channel to 2nd thread, transform goes with it.
     interp eval $ida [list testchannel cut $chan]
     interp eval $idb [list testchannel splice $chan]

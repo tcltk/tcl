@@ -48,6 +48,13 @@ MODULE_SCOPE int 	tclTraceCompile;
 
 MODULE_SCOPE int 	tclTraceExec;
 #endif
+
+/*
+ * The type of lambda expressions. Note that every lambda will *always* have a
+ * string representation.
+ */
+
+MODULE_SCOPE const Tcl_ObjType tclLambdaType;
 
 /*
  *------------------------------------------------------------------------
@@ -238,6 +245,16 @@ typedef struct AuxDataType {
     AuxDataPrintProc *printProc;/* Callback function to invoke when printing
 				 * the aux data as part of debugging. NULL
 				 * means that the data can't be printed. */
+    AuxDataPrintProc *disassembleProc;
+				/* Callback function to invoke when doing a
+				 * disassembly of the aux data (like the
+				 * printProc, except that the output is
+				 * intended to be script-readable). The
+				 * appendObj argument should be filled in with
+				 * a descriptive dictionary; it will start out
+				 * with "name" mapped to the content of the
+				 * name field. NULL means that the printProc
+				 * should be used instead. */
 } AuxDataType;
 
 /*
@@ -799,8 +816,13 @@ typedef struct ByteCode {
 #define INST_TRY_CVT_TO_BOOLEAN		183
 #define INST_STR_CLASS			184
 
+#define INST_LAPPEND_LIST		185
+#define INST_LAPPEND_LIST_ARRAY		186
+#define INST_LAPPEND_LIST_ARRAY_STK	187
+#define INST_LAPPEND_LIST_STK		188
+
 /* The last opcode */
-#define LAST_INST_OPCODE		184
+#define LAST_INST_OPCODE		188
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -827,6 +849,12 @@ typedef enum InstOperandType {
 				 * variable table. */
     OPERAND_AUX4,		/* Four byte unsigned index into the aux data
 				 * table. */
+    OPERAND_OFFSET1,		/* One byte signed jump offset. */
+    OPERAND_OFFSET4,		/* Four byte signed jump offset. */
+    OPERAND_LIT1,		/* One byte unsigned index into table of
+				 * literals. */
+    OPERAND_LIT4,		/* Four byte unsigned index into table of
+				 * literals. */
     OPERAND_SCLS1		/* Index into tclStringClassTable. */
 } InstOperandType;
 
@@ -1123,6 +1151,10 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
+MODULE_SCOPE int	TclLocalScalar(const char *bytes, int numBytes,
+			    CompileEnv *envPtr);
+MODULE_SCOPE int	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
@@ -1160,12 +1192,15 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
-					  const char *script,
-					  const char *command, int length,
-					  const unsigned char *pc, Tcl_Obj **tosPtr); 
+			    const char *script, const char *command,
+			    int length, const unsigned char *pc,
+			    Tcl_Obj **tosPtr); 
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
-					    const unsigned char *pc, Tcl_Obj **tosPtr);
+			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
+MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
+			    register Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], int isLambda);
 
 
 /*
@@ -1380,18 +1415,6 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	} else {						 \
 	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
 	}							 \
-    } while (0)
-
-/*
- * If the expr compiler finished with TRY_CONVERT, macro to remove it when the
- * job is done by the following instruction.
- */
-
-#define TclClearNumConversion(envPtr) \
-    do {								\
-	if (*(envPtr->codeNext - 1) == INST_TRY_CVT_TO_NUMERIC) {	\
-	    envPtr->codeNext--;						\
-	}								\
     } while (0)
 
 /*
@@ -1659,11 +1682,9 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 #define AnonymousLocal(envPtr) \
     (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
 #define LocalScalar(chars,len,envPtr) \
-    (!TclIsLocalScalar((chars), (len)) ? -1 : \
-	TclFindCompiledLocal((chars), (len), /*create*/ 1, (envPtr)))
+    TclLocalScalar(chars, len, envPtr)
 #define LocalScalarFromToken(tokenPtr,envPtr) \
-    ((tokenPtr)->type != TCL_TOKEN_SIMPLE_WORD ? -1 : \
-	LocalScalar((tokenPtr)[1].start, (tokenPtr)[1].size, (envPtr)))
+    TclLocalScalarFromToken(tokenPtr, envPtr)
 
 /*
  * Flags bits used by TclPushVarName.

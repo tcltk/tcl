@@ -294,7 +294,7 @@ test iocmd-8.15.1 {fconfigure command / tcp channel} -constraints {socket unixOr
     close $srv
     unset cli srv port
     rename iocmdSRV {}
-} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -peername, or -sockname}
+} -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -connecting, -peername, or -sockname}
 test iocmd-8.16 {fconfigure command / tcp channel} -constraints socket -setup {
     set srv [socket -server iocmdSRV -myaddr 127.0.0.1 0]
     set port [lindex [fconfigure $srv -sockname] 2]
@@ -639,7 +639,7 @@ test iocmd-15.9 {Tcl_FcopyObjCmd} {fcopy} {
 } "1 {channel \"$rfile\" wasn't opened for writing}"
 test iocmd-15.10 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile foo bar} msg] $msg
-} {1 {bad switch "foo": must be -size or -command}}
+} {1 {bad option "foo": must be -size or -command}}
 test iocmd-15.11 {Tcl_FcopyObjCmd} {fcopy} {
     list [catch {fcopy $rfile $wfile -size foo} msg] $msg
 } {1 {expected integer but got "foo"}}
@@ -2076,13 +2076,13 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	proc foo {args} {
 	    oninit; onfinal; track;
 	    # destroy interpreter during channel access
-	    # Actually not possible for an interp to destroy itself.
-	    interp delete {}
-	    return}
+	    suicide
+	}
 	set chan [chan create {r w} foo]
 	fconfigure $chan -buffering none
 	set chan
     }]
+    interp alias $ida suicide {} interp delete $ida
 
     # Move channel to 2nd thread.
     interp eval $ida [list testchannel cut    $chan]
@@ -2100,8 +2100,7 @@ test iocmd-32.1 {origin interpreter of moved channel destroyed during access} -m
 	set res
     }]
     set res
-} -constraints {testchannel impossible} \
-    -result {Owner lost}
+} -constraints {testchannel} -result {Owner lost}
 
 test iocmd-32.2 {delete interp of reflected chan} {
     # Bug 3034840
@@ -2749,10 +2748,9 @@ test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
 	    init* {set ret {initialize finalize watch read}}
 	    watch {
 		set l [lindex $args 0]
+		catch {after cancel $::timer}
 		if {[llength $l]} {
 		    set ::timer [after $::drive [list POST $ch]]
-		} else {
-		    after cancel $::timer
 		}
 	    }
 	    finalize {
@@ -2815,7 +2813,9 @@ test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
 	    update
 	}
 	LOG THREAD-LOOP-DONE
-	thread::exit
+	#thread::exit
+	# Thread exits cause leaks;  Use clean thread shutdown
+	set forever yourGirl
     }
 
     LOG MAIN_WAITING
@@ -2824,10 +2824,11 @@ test iocmd.tf-24.17.bug3522560 {postevent for transfered channel} \
 
     set res
 } -cleanup {
+    after cancel $::timer
     rename LOG {}
     rename POST {}
     rename HANDLER {}
-    unset beat drive data forever res tid ch
+    unset beat drive data forever res tid ch timer
 } -match glob \
     -result {{initialize rc* read} {watch rc* read} {read rc* 4096} {watch rc* {}} {watch rc* read} {read rc* 4096} {watch rc* {}} {finalize rc*}}
 

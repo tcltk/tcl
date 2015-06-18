@@ -1863,6 +1863,9 @@ TclPtrSetVar(
 		    Tcl_IncrRefCount(oldValuePtr);	/* Since var is ref */
 		}
 		Tcl_AppendObjToObj(oldValuePtr, newValuePtr);
+		if (newValuePtr->refCount == 0) {
+		    Tcl_DecrRefCount(newValuePtr);
+		}
 	    }
 	}
     } else if (newValuePtr != oldValuePtr) {
@@ -4258,8 +4261,8 @@ ObjMakeUpvar(
 			|| !HasLocalVars(varFramePtr)
 			|| (strstr(TclGetString(myNamePtr), "::") != NULL))) {
 	    Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-		    "bad variable name \"%s\": upvar won't create "
-		    "namespace variable that refers to procedure variable",
+		    "bad variable name \"%s\": can't create namespace "
+		    "variable that refers to procedure variable",
 		    TclGetString(myNamePtr)));
 	    Tcl_SetErrorCode(interp, "TCL", "UPVAR", "INVERTED", NULL);
 	    return TCL_ERROR;
@@ -4359,9 +4362,8 @@ TclPtrObjMakeUpvar(
 		 */
 
 		Tcl_SetObjResult((Tcl_Interp *) iPtr, Tcl_ObjPrintf(
-			"bad variable name \"%s\": upvar won't create a"
-			" scalar variable that looks like an array element",
-			myName));
+			"bad variable name \"%s\": can't create a scalar "
+			"variable that looks like an array element", myName));
 		Tcl_SetErrorCode(interp, "TCL", "UPVAR", "LOCAL_ELEMENT",
 			NULL);
 		return TCL_ERROR;
@@ -4545,7 +4547,7 @@ Tcl_GetVariableFullName(
     } else if (iPtr->varFramePtr->procPtr) {
 	int index = varPtr - iPtr->varFramePtr->compiledLocals;
 
-	if (index < iPtr->varFramePtr->numCompiledLocals) {
+	if (index >= 0 && index < iPtr->varFramePtr->numCompiledLocals) {
 	    namePtr = localName(iPtr->varFramePtr, index);
 	    Tcl_AppendObjToObj(objPtr, namePtr);
 	}
