@@ -306,7 +306,6 @@ test http-3.13 {http::geturl socket leak test} {
     for {set i 0} {$i < 3} {incr i} {
 	catch {http::geturl $badurl -timeout 5000}
     }
-
     # No extra channels should be taken
     expr {[llength [file channels]] == $chanCount}
 } 1
@@ -372,11 +371,11 @@ test http-3.27 {http::geturl: -headers override -type} -body {
     http::data $token
 } -cleanup {
     http::cleanup $token
-} -match regexp -result {(?n)Accept \*/\*
-Host .*
+} -match regexp -result {(?n)Host .*
 User-Agent .*
 Connection close
 Content-Type {text/plain;charset=utf-8}
+Accept \*/\*
 Accept-Encoding .*
 Content-Length 5}
 test http-3.28 {http::geturl: -headers override -type default} -body {
@@ -385,11 +384,11 @@ test http-3.28 {http::geturl: -headers override -type default} -body {
     http::data $token
 } -cleanup {
     http::cleanup $token
-} -match regexp -result {(?n)Accept \*/\*
-Host .*
+} -match regexp -result {(?n)Host .*
 User-Agent .*
 Connection close
 Content-Type {text/plain;charset=utf-8}
+Accept \*/\*
 Accept-Encoding .*
 Content-Length 5}
 test http-3.29 {http::geturl IPv6 address} -body {
@@ -418,6 +417,21 @@ test http-3.31 {http::geturl fragment without path} -body {
 } -cleanup {
     catch { http::cleanup $token }
 } -result 200
+# Bug c11a51c482
+test http-3.32 {http::geturl: -headers override -accept default} -body {
+    set token [http::geturl $url/headers -query dummy \
+	    -headers [list "Accept" "text/plain,application/tcl-test-value"]]
+    http::data $token
+} -cleanup {
+    http::cleanup $token
+} -match regexp -result {(?n)Host .*
+User-Agent .*
+Connection close
+Accept text/plain,application/tcl-test-value
+Accept-Encoding .*
+Content-Type application/x-www-form-urlencoded
+Content-Length 5}
+
 test http-4.1 {http::Event} -body {
     set token [http::geturl $url -keepalive 0]
     upvar #0 $token data

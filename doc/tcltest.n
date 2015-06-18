@@ -642,14 +642,6 @@ This test can only be run on any Windows platform.
 .
 This test can only be run on any Windows NT platform.
 .TP
-\fI95\fR
-.
-This test can only be run on any Windows 95 platform.
-.TP
-\fI98\fR
-.
-This test can only be run on any Windows 98 platform.
-.TP
 \fImac\fR
 .
 This test can only be run on any Mac platform.
