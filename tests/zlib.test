@@ -35,7 +35,7 @@ test zlib-1.3 {zlib basics} -constraints zlib -body {
 } -result zlibVersion
 test zlib-1.4 {zlib basics} -constraints zlib -body {
     package present zlib
-} -result 2.0
+} -result 2.0.1
 
 test zlib-2.1 {zlib compress/decompress} zlib {
     zlib decompress [zlib compress abcdefghijklm]
@@ -215,7 +215,7 @@ test zlib-8.5 {transformation and flushing and fileevents: Bug 3525907} -setup {
     set ::res
 } -cleanup {
     catch {close $r}
-} -result {qwertyuiop MIDDLE asdfghjkl}
+} -result {qwertyuiop MIDDLE asdfghjkl {}}
 test zlib-8.6 {transformation and fconfigure} -setup {
     set file [makeFile {} test.z]
     set fd [open $file wb]

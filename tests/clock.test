@@ -273,7 +273,7 @@ test clock-1.4 "clock format - bad flag" {*}{
     list [catch {clock format 0 -oops badflag} msg] $msg $::errorCode
     } 
     -match glob
-    -result {1 {bad switch "-oops": must be -format, -gmt, -locale, or -timezone} {CLOCK badSwitch -oops}}
+    -result {1 {bad option "-oops": must be -format, -gmt, -locale, or -timezone} {CLOCK badOption -oops}}
 }
 
 test clock-1.5 "clock format - bad timezone" {
@@ -35450,7 +35450,7 @@ test clock-33.2 {clock clicks tests} {
 } {1}
 test clock-33.3 {clock clicks tests} {
     list [catch {clock clicks foo} msg] $msg
-} {1 {bad switch "foo": must be -milliseconds or -microseconds}}
+} {1 {bad option "foo": must be -milliseconds or -microseconds}}
 test clock-33.4 {clock clicks tests} {
     expr [clock clicks -milliseconds]+1
     concat {}
@@ -35485,10 +35485,10 @@ test clock-33.5a {clock tests, millisecond timing test} {
 } {ok}
 test clock-33.6 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks ? } msg] $msg
-} {1 {bad switch "?": must be -milliseconds or -microseconds}}
+} {1 {bad option "?": must be -milliseconds or -microseconds}}
 test clock-33.7 {clock clicks, milli with too much abbreviation} {
     list [catch { clock clicks - } msg] $msg
-} {1 {ambiguous switch "-": must be -milliseconds or -microseconds}}
+} {1 {ambiguous option "-": must be -milliseconds or -microseconds}}
 
 test clock-33.8 {clock clicks test, microsecond timing test} {
     # This test can fail on a system that is so heavily loaded that
@@ -35607,7 +35607,7 @@ test clock-34.8 {clock scan tests} {
 } {Oct 23,1992 15:00 GMT}
 test clock-34.9 {clock scan tests} {
     list [catch {clock scan "Jan 12" -bad arg} msg] $msg
-} {1 {bad switch "-bad", must be -base, -format, -gmt, -locale or -timezone}}
+} {1 {bad option "-bad", must be -base, -format, -gmt, -locale or -timezone}}
 # The following two two tests test the two year date policy
 test clock-34.10 {clock scan tests} {
     set time [clock scan "1/1/71" -gmt true]
@@ -36907,7 +36907,7 @@ test clock-65.1 {clock add, bad option [Bug 2481670]} {*}{
     }
     -match glob
     -returnCodes error
-    -result {bad switch "-foo"*}
+    -result {bad option "-foo"*}
 }
 
 test clock-66.1 {clock scan, no date, never-before-seen timezone} {*}{

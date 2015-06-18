@@ -1196,8 +1196,8 @@ TclFileLinkCmd(
 	    static const char *const linkTypes[] = {
 		"-symbolic", "-hard", NULL
 	    };
-	    if (Tcl_GetIndexFromObjStruct(interp, objv[1], linkTypes,
-		    sizeof(char *), "switch", 0, &linkAction) != TCL_OK) {
+	    if (Tcl_GetIndexFromObj(interp, objv[1], linkTypes, "option", 0,
+		    &linkAction) != TCL_OK) {
 		return TCL_ERROR;
 	    }
 	    if (linkAction == 0) {

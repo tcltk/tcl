@@ -62,16 +62,6 @@ extern "C" {
 #define TCL_PATCH_LEVEL	    "9.0a0"
 
 /*
- * STRICT: See MSDN Article Q83456
- */
-
-#ifdef _WIN32
-#   ifndef STRICT
-#	define STRICT
-#   endif
-#endif /* _WIN32 */
-
-/*
  * A special definition used to allow this header file to be included from
  * windows resource files so that they can obtain version information.
  * RC_INVOKED is defined by default by the windows RC tool.
@@ -262,16 +252,12 @@ typedef void *ClientData;
  * Don't know what platform it is and configure hasn't discovered what is
  * going on for us. Try to guess...
  */
-#      ifdef NO_LIMITS_H
-#	  error please define either TCL_WIDE_INT_TYPE or TCL_WIDE_INT_IS_LONG
-#      else /* !NO_LIMITS_H */
-#	  include <limits.h>
-#	  if (INT_MAX < LONG_MAX)
-#	     define TCL_WIDE_INT_IS_LONG	1
-#	  else
-#	     define TCL_WIDE_INT_TYPE long long
-#         endif
-#      endif /* NO_LIMITS_H */
+#      include <limits.h>
+#      if (INT_MAX < LONG_MAX)
+#         define TCL_WIDE_INT_IS_LONG	1
+#      else
+#         define TCL_WIDE_INT_TYPE long long
+#      endif
 #   endif /* _WIN32 */
 #endif /* !TCL_WIDE_INT_TYPE & !TCL_WIDE_INT_IS_LONG */
 #ifdef TCL_WIDE_INT_IS_LONG
@@ -955,18 +941,6 @@ typedef Tcl_HashEntry * (Tcl_AllocHashEntryProc) (Tcl_HashTable *tablePtr,
 typedef void (Tcl_FreeHashEntryProc) (Tcl_HashEntry *hPtr);
 
 /*
- * This flag controls whether the hash table stores the hash of a key, or
- * recalculates it. There should be no reason for turning this flag off as it
- * is completely binary and source compatible unless you directly access the
- * bucketPtr member of the Tcl_HashTableEntry structure. This member has been
- * removed and the space used to store the hash value.
- */
-
-#ifndef TCL_HASH_KEY_STORE_HASH
-#   define TCL_HASH_KEY_STORE_HASH 1
-#endif
-
-/*
  * Structure definition for an entry in a hash table. No-one outside Tcl
  * should access any of these fields directly; use the macros defined below.
  */
@@ -975,15 +949,9 @@ struct Tcl_HashEntry {
     Tcl_HashEntry *nextPtr;	/* Pointer to next entry in this hash bucket,
 				 * or NULL for end of chain. */
     Tcl_HashTable *tablePtr;	/* Pointer to table containing entry. */
-#if TCL_HASH_KEY_STORE_HASH
     void *hash;			/* Hash value, stored as pointer to ensure
 				 * that the offsets of the fields in this
 				 * structure are not changed. */
-#else
-    Tcl_HashEntry **bucketPtr;	/* Pointer to bucket that points to first
-				 * entry in this entry's chain: used for
-				 * deleting the entry. */
-#endif
     ClientData clientData;	/* Application stores something here with
 				 * Tcl_SetHashValue. */
     union {			/* Key has one of these forms: */
@@ -1933,11 +1901,28 @@ typedef struct Tcl_EncodingType {
  *				substituting one or more "close" characters in
  *				the destination buffer and then continue to
  *				convert the source.
+ * TCL_ENCODING_NO_TERMINATE - 	If set, Tcl_ExternalToUtf will not append a
+ *				terminating NUL byte.  Knowing that it will
+ *				not need space to do so, it will fill all
+ *				dstLen bytes with encoded UTF-8 content, as
+ *				other circumstances permit.  If clear, the
+ *				default behavior is to reserve a byte in
+ *				the dst space for NUL termination, and to
+ *				append the NUL byte.
+ * TCL_ENCODING_CHAR_LIMIT -	If set and dstCharsPtr is not NULL, then
+ *				Tcl_ExternalToUtf takes the initial value
+ *				of *dstCharsPtr is taken as a limit of the
+ *				maximum number of chars to produce in the
+ *				encoded UTF-8 content.  Otherwise, the 
+ *				number of chars produced is controlled only
+ *				by other limiting factors.
  */
 
 #define TCL_ENCODING_START		0x01
 #define TCL_ENCODING_END		0x02
 #define TCL_ENCODING_STOPONERROR	0x04
+#define TCL_ENCODING_NO_TERMINATE	0x08
+#define TCL_ENCODING_CHAR_LIMIT		0x10
 
 /*
  * The following definitions are the error codes returned by the conversion
@@ -2213,9 +2198,7 @@ TCLAPI void Tcl_MainExW(int argc, wchar_t **argv,
 #endif
 TCLAPI const char *	Tcl_PkgInitStubsCheck(Tcl_Interp *interp,
 			    const char *version, int exact);
-#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
 TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
-#endif
 
 /*
  *----------------------------------------------------------------------------
@@ -2229,6 +2212,11 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * Include platform specific public function declarations that are accessible
  * via the stubs table.
  */
+
+#if defined(BUILD_tcl)
+#   undef TCLAPI
+#   define TCLAPI MODULE_SCOPE
+#endif
 
 #include "tclPlatDecls.h"
 

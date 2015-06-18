@@ -1217,8 +1217,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LD_SEARCH_FLAGS=""
 	    TCL_NEEDS_EXP_FILE=1
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
-	    TCL_SHLIB_LD_EXTRAS='-Wl,--out-implib,$[@].a'
-	    TK_SHLIB_LD_EXTRAS='-Wl,--out-implib,$[@].a'
+	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$[@].a"
 	    AC_CACHE_CHECK(for Cygwin version of gcc,
 		ac_cv_cygwin,
 		AC_TRY_COMPILE([
@@ -1237,9 +1236,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	    do64bit_ok=yes
 	    if test "x${SHARED_BUILD}" = "x1"; then
-		echo "running cd ../win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		echo "running cd ${TCL_SRC_DIR}/win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
 		# The eval makes quoting arguments work.
-		if cd ../win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		if cd ${TCL_SRC_DIR}/win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
 		then :
 		else
 		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
@@ -1476,7 +1475,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		LDFLAGS=""
 		;;
 	    *)
-		SHLIB_CFLAGS="-fPIC"
+		case "$arch" in
+		alpha|sparc64)
+		    SHLIB_CFLAGS="-fPIC"
+		    ;;
+		*)
+		    SHLIB_CFLAGS="-fpic"
+		    ;;
+		esac
 		SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
 		SHLIB_SUFFIX=".so"
 		DL_OBJS="tclLoadDl.o"
@@ -1531,8 +1537,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
-	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname=\$[@]"
-	    TK_SHLIB_LD_EXTRAS="-Wl,-soname,\$[@]"
+	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$[@]"
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -2043,7 +2048,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${TCL_SHLIB_LD_EXTRAS} ${SHLIB_LD_LIBS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
@@ -2055,21 +2060,19 @@ dnl # preprocessing tests use only CPPFLAGS.
 
         AS_IF([test "$RANLIB" = ""], [
             MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         ], [
             MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
         ])
+        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
     ])
 
     # Stub lib does not depend on shared/static configuration
     AS_IF([test "$RANLIB" = ""], [
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
     ], [
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE))'
     ])
+    INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
 
     # Define TCL_LIBS now that we know what DL_LIBS is.
     # The trick here is that we don't want to change the value of TCL_LIBS if
@@ -2153,7 +2156,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 #	Defines some of the following vars:
 #		NO_DIRENT_H
 #		NO_VALUES_H
-#		HAVE_LIMITS_H or NO_LIMITS_H
 #		NO_STDLIB_H
 #		NO_STRING_H
 #		NO_SYS_WAIT_H
@@ -2193,9 +2195,6 @@ closedir(d);
 
     AC_CHECK_HEADER(float.h, , [AC_DEFINE(NO_FLOAT_H, 1, [Do we have <float.h>?])])
     AC_CHECK_HEADER(values.h, , [AC_DEFINE(NO_VALUES_H, 1, [Do we have <values.h>?])])
-    AC_CHECK_HEADER(limits.h,
-	[AC_DEFINE(HAVE_LIMITS_H, 1, [Do we have <limits.h>?])],
-	[AC_DEFINE(NO_LIMITS_H, 1, [Do we have <limits.h>?])])
     AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
     AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)

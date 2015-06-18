@@ -436,6 +436,7 @@ static ReflectedChannelMap *	GetReflectedChannelMap(Tcl_Interp *interp);
 static void		DeleteReflectedChannelMap(ClientData clientData,
 			    Tcl_Interp *interp);
 static int		ErrnoReturn(ReflectedChannel *rcPtr, Tcl_Obj *resObj);
+static void		MarkDead(ReflectedChannel *rcPtr);
 
 /*
  * Global constant strings (messages). ==================
@@ -450,8 +451,8 @@ static const char *msg_write_nothing = "{write wrote nothing}";
 static const char *msg_seek_beforestart = "{Tried to seek before origin}";
 #ifdef TCL_THREADS
 static const char *msg_send_originlost = "{Channel thread lost}";
-static const char *msg_send_dstlost    = "{Owner lost}";
 #endif /* TCL_THREADS */
+static const char *msg_send_dstlost    = "{Owner lost}";
 static const char *msg_dstlost    = "-code 1 -level 0 -errorcode NONE -errorinfo {} -errorline 1 {Owner lost}";
 
 /*
@@ -657,7 +658,7 @@ TclChanCreateObjCmd(
     chan = Tcl_CreateChannel(&tclRChannelType, TclGetString(rcId), rcPtr,
 	    mode);
     rcPtr->chan = chan;
-    Tcl_Preserve(chan);
+    TclChannelPreserve(chan);
     chanPtr = (Channel *) chan;
 
     if ((methods & NULLABLE_METHODS) != NULLABLE_METHODS) {
@@ -1111,6 +1112,7 @@ ReflectClose(
     ReflectedChannelMap *rcmPtr;/* Map of reflected channels with handlers in
 				 * this interp */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+    const Tcl_ChannelType *tctPtr;
 
     if (TclInThreadExit()) {
 	/*
@@ -1145,10 +1147,14 @@ ReflectClose(
 	    if (result != TCL_OK) {
 		FreeReceivedError(&p);
 	    }
-	    return EOK;
 	}
 #endif
 
+	tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+	if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+	}
         Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
 	return EOK;
     }
@@ -1211,12 +1217,14 @@ ReflectClose(
 	if (hPtr) {
 	    Tcl_DeleteHashEntry(hPtr);
 	}
-#endif
-
-        Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
-#ifdef TCL_THREADS
     }
 #endif
+    tctPtr = ((Channel *)rcPtr->chan)->typePtr;
+    if (tctPtr && tctPtr != &tclRChannelType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rcPtr->chan)->typePtr = NULL;
+    }
+    Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
     return (result == TCL_OK) ? EOK : EINVAL;
 }
 
@@ -1386,6 +1394,7 @@ ReflectOutput(
     /* ASSERT: rcPtr->mode & TCL_WRITABLE */
 
     Tcl_Preserve(rcPtr);
+    Tcl_Preserve(rcPtr->interp);
 
     bufObj = Tcl_NewByteArrayObj((unsigned char *) buf, toWrite);
     Tcl_IncrRefCount(bufObj);
@@ -1402,6 +1411,14 @@ ReflectOutput(
         goto invalid;
     }
 
+    if (Tcl_InterpDeleted(rcPtr->interp)) {
+	/*
+	 * The interp was destroyed during InvokeTclMethod().
+	 */
+
+	SetChannelErrorStr(rcPtr->chan, msg_send_dstlost);
+        goto invalid;
+    }
     if (Tcl_GetIntFromObj(rcPtr->interp, resObj, &written) != TCL_OK) {
 	Tcl_SetChannelError(rcPtr->chan, MarshallError(rcPtr->interp));
         goto invalid;
@@ -1431,6 +1448,7 @@ ReflectOutput(
  stop:
     Tcl_DecrRefCount(bufObj);
     Tcl_DecrRefCount(resObj);		/* Remove reference held from invoke */
+    Tcl_Release(rcPtr->interp);
     Tcl_Release(rcPtr);
     return written;
  invalid:
@@ -2170,18 +2188,16 @@ FreeReflectedChannel(
 {
     Channel *chanPtr = (Channel *) rcPtr->chan;
 
-    if (chanPtr->typePtr != &tclRChannelType) {
-	/*
-	 * Delete a cloned ChannelType structure.
-	 */
-
-	ckfree((void *) chanPtr->typePtr);
-	chanPtr->typePtr = NULL;
+    TclChannelRelease((Tcl_Channel)chanPtr);
+    if (rcPtr->name) {
+	Tcl_DecrRefCount(rcPtr->name);
     }
-    Tcl_Release(chanPtr);
-    Tcl_DecrRefCount(rcPtr->name);
-    Tcl_DecrRefCount(rcPtr->methods);
-    Tcl_DecrRefCount(rcPtr->cmd);
+    if (rcPtr->methods) {
+	Tcl_DecrRefCount(rcPtr->methods);
+    }
+    if (rcPtr->cmd) {
+	Tcl_DecrRefCount(rcPtr->cmd);
+    }
     ckfree(rcPtr);
 }
 
@@ -2447,6 +2463,28 @@ GetReflectedChannelMap(
  */
 
 static void
+MarkDead(
+    ReflectedChannel *rcPtr)
+{
+    if (rcPtr->dead) {
+	return;
+    }
+    if (rcPtr->name) {
+	Tcl_DecrRefCount(rcPtr->name);
+	rcPtr->name = NULL;
+    }
+    if (rcPtr->methods) {
+	Tcl_DecrRefCount(rcPtr->methods);
+	rcPtr->methods = NULL;
+    }
+    if (rcPtr->cmd) {
+	Tcl_DecrRefCount(rcPtr->cmd);
+	rcPtr->cmd = NULL;
+    }
+    rcPtr->dead = 1;
+}
+
+static void
 DeleteReflectedChannelMap(
     ClientData clientData,	/* The per-interpreter data structure. */
     Tcl_Interp *interp)		/* The interpreter being deleted. */
@@ -2481,7 +2519,7 @@ DeleteReflectedChannelMap(
 	chan = Tcl_GetHashValue(hPtr);
 	rcPtr = Tcl_GetChannelInstanceData(chan);
 
-	rcPtr->dead = 1;
+	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     Tcl_DeleteHashTable(&rcmPtr->map);
@@ -2514,6 +2552,11 @@ DeleteReflectedChannelMap(
 	/*
 	 * The receiver for the event exited, before processing the event. We
 	 * detach the result now, wake the originator up and signal failure.
+         *
+         * Attention: Results may have been detached already, by either the
+         * receiver, or this thread, as part of other parts in the thread
+         * teardown. Such results are ignored. See ticket [b47b176adf] for the
+         * identical race condition in Tcl 8.6 IORTrans.
 	 */
 
 	evPtr = resultPtr->evPtr;
@@ -2523,6 +2566,9 @@ DeleteReflectedChannelMap(
 	    continue;
 	}
 	paramPtr = evPtr->param;
+	if (!evPtr) {
+	    continue;
+	}
 
 	evPtr->resultPtr = NULL;
 	resultPtr->evPtr = NULL;
@@ -2556,7 +2602,7 @@ DeleteReflectedChannelMap(
 	    continue;
 	}
 
-	rcPtr->dead = 1;
+	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
 #endif
@@ -2653,6 +2699,11 @@ DeleteThreadReflectedChannelMap(
 	/*
 	 * The receiver for the event exited, before processing the event. We
 	 * detach the result now, wake the originator up and signal failure.
+         *
+         * Attention: Results may have been detached already, by either the
+         * receiver, or this thread, as part of other parts in the thread
+         * teardown. Such results are ignored. See ticket [b47b176adf] for the
+         * identical race condition in Tcl 8.6 IORTrans.
 	 */
 
 	evPtr = resultPtr->evPtr;
@@ -2662,6 +2713,9 @@ DeleteThreadReflectedChannelMap(
 	    continue;
 	}
 	paramPtr = evPtr->param;
+	if (!evPtr) {
+	    continue;
+	}
 
 	evPtr->resultPtr = NULL;
 	resultPtr->evPtr = NULL;
@@ -2695,7 +2749,7 @@ DeleteThreadReflectedChannelMap(
 	Tcl_Channel chan = Tcl_GetHashValue(hPtr);
 	ReflectedChannel *rcPtr = Tcl_GetChannelInstanceData(chan);
 
-	rcPtr->dead = 1;
+	MarkDead(rcPtr);
 	Tcl_DeleteHashEntry(hPtr);
     }
     ckfree(rcmPtr);
@@ -2873,7 +2927,7 @@ ForwardProc(
 	 * call upon for the driver.
 	 */
 
-    case ForwardedClose:
+    case ForwardedClose: {
 	/*
 	 * No parameters/results.
 	 */
@@ -2901,9 +2955,9 @@ ForwardProc(
 	hPtr = Tcl_FindHashEntry(&rcmPtr->map,
                 Tcl_GetChannelName(rcPtr->chan));
 	Tcl_DeleteHashEntry(hPtr);
-
-	Tcl_EventuallyFree(rcPtr, (Tcl_FreeProc *) FreeReflectedChannel);
+	MarkDead(rcPtr);
 	break;
+    }
 
     case ForwardedInput: {
 	Tcl_Obj *toReadObj = Tcl_NewIntObj(paramPtr->input.toRead);

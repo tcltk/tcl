@@ -2949,6 +2949,10 @@ test namespace-54.1 {leak on namespace deletion} -constraints {memory} \
     rename getbytes {}
     unset i ns start end
 } -result 0
+
+test namespace-55.1 {compiled ensembles inside compiled ensembles: Bug 6d2f249a01} {
+    info class [format %s constructor] oo::object
+} ""
 
 # cleanup
 catch {rename cmd1 {}}

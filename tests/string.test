@@ -30,7 +30,7 @@ testConstraint memory [llength [info commands memory]]
 
 test string-1.1 {error conditions} {
     list [catch {string gorp a b} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-1.2 {error conditions} {
     list [catch {string} msg] $msg
 } {1 {wrong # args: should be "string subcommand ?arg ...?"}}
@@ -54,7 +54,7 @@ test string-2.6 {string compare} {
     string compare abcde abdef
 } -1
 test string-2.7 {string compare, shortest method name} {
-    string c abcde ABCDE
+    string co abcde ABCDE
 } 1
 test string-2.8 {string compare} {
     string compare abcde abcde
@@ -81,7 +81,7 @@ test string-2.13 {string compare -nocase} {
     string compare -nocase abcde abdef
 } -1
 test string-2.14 {string compare -nocase} {
-    string c -nocase abcde ABCDE
+    string compare -nocase abcde ABCDE
 } 0
 test string-2.15 {string compare -nocase} {
     string compare -nocase abcde abcde
@@ -1513,7 +1513,7 @@ test string-20.1 {string trimright errors} {
 } {1 {wrong # args: should be "string trimright string ?chars?"}}
 test string-20.2 {string trimright errors} {
     list [catch {string trimg a} msg] $msg
-} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "trimg": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-20.3 {string trimright} {
     string trimright "    XYZ      "
 } {    XYZ}
@@ -1572,7 +1572,7 @@ test string-21.14 {string wordend, unicode} {
 
 test string-22.1 {string wordstart} {
     list [catch {string word a} msg] $msg
-} {1 {unknown or ambiguous subcommand "word": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "word": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test string-22.2 {string wordstart} {
     list [catch {string wordstart a} msg] $msg
 } {1 {wrong # args: should be "string wordstart string index"}}
@@ -1801,8 +1801,8 @@ test string-26.7 {tcl::prefix} -body {
     tcl::prefix match -exact {apa bepa cepa depa} be
 } -returnCodes 1 -result {bad option "be": must be apa, bepa, cepa, or depa}
 test string-26.8 {tcl::prefix} -body {
-    tcl::prefix match -message switch {apa bepa bear depa} be
-} -returnCodes 1 -result {ambiguous switch "be": must be apa, bepa, bear, or depa}
+    tcl::prefix match -message wombat {apa bepa bear depa} be
+} -returnCodes 1 -result {ambiguous wombat "be": must be apa, bepa, bear, or depa}
 test string-26.9 {tcl::prefix} -body {
     tcl::prefix match -error {} {apa bepa bear depa} be
 } -returnCodes 0 -result {}
@@ -1968,6 +1968,30 @@ test string-28.13 {tcl::prefix longest} {
     # Test UTF8 handling
     tcl::prefix longest {ax\x90 bep ax\x91} a
 } ax
+
+test string-29.1 {string cat, no arg} {
+    string cat
+} ""
+test string-29.2 {string cat, single arg} {
+    set x FOO
+    string compare $x [string cat $x]
+} 0
+test string-29.3 {string cat, two args} {
+    set x FOO
+    string compare $x$x [string cat $x $x]
+} 0
+test string-29.4 {string cat, many args} {
+    set x FOO
+    set n 260
+    set xx [string repeat $x $n]
+    set vv [string repeat {$x} $n]
+    set vvs [string repeat {$x } $n]
+    set r1 [string compare $xx [subst $vv]]
+    set r2 [string compare $xx [eval "string cat $vvs"]]
+    list $r1 $r2
+} {0 0}
+
+
 
 # cleanup
 rename MemStress {}

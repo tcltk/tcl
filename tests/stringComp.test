@@ -46,7 +46,7 @@ if {[testConstraint memory]} {
 test stringComp-1.1 {error conditions} {
     proc foo {} {string gorp a b}
     list [catch {foo} msg] $msg
-} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
+} {1 {unknown or ambiguous subcommand "gorp": must be bytelength, cat, compare, equal, first, index, is, last, length, map, match, range, repeat, replace, reverse, tolower, totitle, toupper, trim, trimleft, trimright, wordend, or wordstart}}
 test stringComp-1.2 {error conditions} {
     proc foo {} {string}
     list [catch {foo} msg] $msg
@@ -210,7 +210,7 @@ foreach {tname tbody tresult tcode} {
 
 # need a few extra tests short abbr cmd
 test stringComp-3.1 {string compare, shortest method name} {
-    proc foo {} {string c abcde ABCDE}
+    proc foo {} {string co abcde ABCDE}
     foo
 } 1
 test stringComp-3.2 {string equal, shortest method name} {
@@ -720,6 +720,14 @@ test stringComp-14.2 {Bug 82e7f67325} memory {
 	}} {a b}
     }
 } {0}
+test stringComp-14.3 {Bug 0dca3bfa8f} {
+    apply {arg {
+	set argCopy $arg
+	set arg [string replace $arg 1 2 aa]
+	# Crashes in comparison before fix
+	expr {$arg ne $argCopy}
+    }} abcde
+} 1
 
 ## string tolower
 ## not yet bc
@@ -735,6 +743,40 @@ test stringComp-14.2 {Bug 82e7f67325} memory {
 
 ## string word*
 ## not yet bc
+
+## string cat
+test stringComp-29.1 {string cat, no arg} {
+    proc foo {} {string cat}
+    foo
+} ""
+test stringComp-29.2 {string cat, single arg} {
+    proc foo {} {
+	set x FOO
+	string compare $x [string cat $x]
+    }
+    foo
+} 0
+test stringComp-29.3 {string cat, two args} {
+    proc foo {} {
+	set x FOO
+	string compare $x$x [string cat $x $x]
+    }
+    foo
+} 0
+test stringComp-29.4 {string cat, many args} {
+    proc foo {} {
+	set x FOO
+	set n 260
+	set xx [string repeat $x $n]
+	set vv [string repeat {$x} $n]
+	set vvs [string repeat {$x } $n]
+	set r1 [string compare $xx [subst $vv]]
+	set r2 [string compare $xx [eval "string cat $vvs"]]
+	list $r1 $r2
+    }
+    foo
+} {0 0}
+
 
 # cleanup
 catch {rename foo {}}
