@@ -190,7 +190,6 @@ sockets, this option returns a list of three elements; these are the
 address, the host name and the port to which the peer socket is connected
 or bound. If the host name cannot be computed, the second element of the
 list is identical to the address, its first element.
-.RE
 .TP
 \fB\-connecting\fR
 .

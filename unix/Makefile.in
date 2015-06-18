@@ -96,7 +96,7 @@ CFLAGS_WARNING		= @CFLAGS_WARNING@
 
 # The default switches for optimization or debugging
 CFLAGS_DEBUG		= @CFLAGS_DEBUG@
-CFLAGS_OPTIMIZE		= -DNDEBUG @CFLAGS_OPTIMIZE@
+CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
 
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
@@ -783,10 +783,6 @@ install-strip:
 		INSTALL_PROGRAM="$(INSTALL_PROGRAM) ${INSTALL_STRIP_PROGRAM}" \
 		INSTALL_LIBRARY="$(INSTALL_LIBRARY) ${INSTALL_STRIP_LIBRARY}"
 
-# Note: before running ranlib below, must cd to target directory because some
-# ranlibs write to current directory, and this might not always be possible
-# (e.g. if installing as root).
-
 install-binaries: binaries
 	@for i in "$(LIB_INSTALL_DIR)" "$(BIN_INSTALL_DIR)" \
 		"$(CONFIG_INSTALL_DIR)"; \
@@ -844,8 +840,8 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
-	@echo "Installing package http 2.8.8 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.8.tm;
+	@echo "Installing package http 2.8.9 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.9.tm;
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
@@ -1200,7 +1196,6 @@ tclLoadDld.o: $(UNIX_DIR)/tclLoadDld.c
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDld.c
 
 tclLoadDyld.o: $(UNIX_DIR)/tclLoadDyld.c
-	@echo Warnings are expected from compiling tclLoadDyld.c: deprecated API use
 	$(CC) -c $(CC_SWITCHES) $(UNIX_DIR)/tclLoadDyld.c
 
 tclLoadNone.o: $(GENERIC_DIR)/tclLoadNone.c
