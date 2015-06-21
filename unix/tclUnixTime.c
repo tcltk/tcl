@@ -529,7 +529,10 @@ static void
 CleanupMemory(
     ClientData ignored)
 {
-    ckfree(lastTZ);
+    if (lastTZ != NULL) {
+	ckfree(lastTZ);
+	lastTZ = NULL;
+    }
 }
 
 /*

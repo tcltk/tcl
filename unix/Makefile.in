@@ -308,7 +308,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
-	tclTomMathInterface.o
+	tclTomMathInterface.o zipfs.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
@@ -382,7 +382,8 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclPatch.h \
 	$(GENERIC_DIR)/tclPlatDecls.h \
 	$(GENERIC_DIR)/tclPort.h \
-	$(GENERIC_DIR)/tclRegexp.h
+	$(GENERIC_DIR)/tclRegexp.h \
+	$(GENERIC_DIR)/zipfs.h
 
 GENERIC_SRCS = \
 	$(GENERIC_DIR)/regcomp.c \
@@ -463,7 +464,8 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c \
 	$(GENERIC_DIR)/tclAssembly.c \
-	$(GENERIC_DIR)/tclZlib.c
+	$(GENERIC_DIR)/tclZlib.c \
+	$(GENERIC_DIR)/zipfs.c
 
 OO_SRCS = \
 	$(GENERIC_DIR)/tclOO.c \
@@ -1320,6 +1322,9 @@ tclVar.o: $(GENERIC_DIR)/tclVar.c
 
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
+
+zipfs.o: $(GENERIC_DIR)/zipfs.c
+	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/zipfs.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c

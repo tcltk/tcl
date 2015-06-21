@@ -100,19 +100,35 @@ static Tcl_Config const cfg[] = {
 
     /* Runtime paths to various stuff */
 
+#ifdef ANDROID
+    {"libdir,runtime",		""},
+    {"bindir,runtime",		""},
+    {"scriptdir,runtime",	""},
+    {"includedir,runtime",	""},
+    {"docdir,runtime",		""},
+#else
     {"libdir,runtime",		CFG_RUNTIME_LIBDIR},
     {"bindir,runtime",		CFG_RUNTIME_BINDIR},
     {"scriptdir,runtime",	CFG_RUNTIME_SCRDIR},
     {"includedir,runtime",	CFG_RUNTIME_INCDIR},
     {"docdir,runtime",		CFG_RUNTIME_DOCDIR},
+#endif
 
     /* Installation paths to various stuff */
 
+#ifdef ANDROID
+    {"libdir,install",		""},
+    {"bindir,install",		""},
+    {"scriptdir,install",	""},
+    {"includedir,install",	""},
+    {"docdir,install",		""},
+#else
     {"libdir,install",		CFG_INSTALL_LIBDIR},
     {"bindir,install",		CFG_INSTALL_BINDIR},
     {"scriptdir,install",	CFG_INSTALL_SCRDIR},
     {"includedir,install",	CFG_INSTALL_INCDIR},
     {"docdir,install",		CFG_INSTALL_DOCDIR},
+#endif
 
     /* Last entry, closes the array */
     {NULL, NULL}
@@ -123,6 +139,10 @@ TclInitEmbeddedConfigurationInformation(
     Tcl_Interp *interp)		/* Interpreter the configuration command is
 				 * registered in. */
 {
+#if defined(ANDROID) && !defined(TCL_CFGVAL_ENCODING)
+#define TCL_CFGVAL_ENCODING "utf-8"
+#endif
+
     Tcl_RegisterConfig(interp, "tcl", cfg, TCL_CFGVAL_ENCODING);
 }
 

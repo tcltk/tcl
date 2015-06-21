@@ -34,6 +34,10 @@
 
 #include "tclInt.h"
 
+#ifdef ZIPFS_IN_TCL
+#include "zipfs.h"
+#endif
+
 /*
  * The default prompt used when the user has not overridden it.
  */
@@ -51,6 +55,7 @@
 #   define TCHAR char
 #   define TEXT(arg) arg
 #   define _tcscmp strcmp
+#   define _tcsncmp strncmp
 #endif
 
 /*
@@ -308,10 +313,16 @@ Tcl_MainEx(
 {
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
-    int code, exitCode = 0;
+    int code, length, exitCode = 0;
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
     InteractiveState is;
+    const char *zipFile = NULL;
+    Tcl_Obj *zipval = NULL;
+    int autoRun = 1;
+#ifdef ZIPFS_IN_TCL
+    int zipOk = TCL_ERROR;
+#endif
 
     TclpSetInitialEncodings();
     TclpFindExecutable((const char *)argv[0]);
@@ -344,6 +355,24 @@ Tcl_MainEx(
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
+	} else if (argc > 2) {
+	    length = strlen((char *) argv[1]);
+	    if ((length >= 2) &&
+		(0 == _tcsncmp(TEXT("-zip"), argv[1], length))) {
+		argc--;
+		argv++;
+		if ((argc > 1) && (argv[1][0] != (TCHAR) '-')) {
+		    zipval = NewNativeObj(argv[1], -1);
+		    zipFile = Tcl_GetString(zipval);
+		    autoRun = 0;
+		    argc--;
+		    argv++;
+		}
+	    } else if ('-' != argv[1][0]) {
+		Tcl_SetStartupScript(NewNativeObj(argv[1], -1), NULL);
+		argc--;
+		argv++;
+	    }
 	} else if ((argc > 1) && ('-' != argv[1][0])) {
 	    Tcl_SetStartupScript(NewNativeObj(argv[1], -1), NULL);
 	    argc--;
@@ -377,6 +406,51 @@ Tcl_MainEx(
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
 	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
+#ifdef ZIPFS_IN_TCL
+    zipOk = Tclzipfs_Init(interp);
+    if (zipOk == TCL_OK) {
+        int relax = 0;
+
+        if (zipFile == NULL) {
+            relax = 1;
+#ifdef ANDROID
+            zipFile = getenv("PACKAGE_CODE_PATH");
+            if (zipFile == NULL) {
+                zipFile = Tcl_GetNameOfExecutable();
+            }
+#else
+            zipFile = Tcl_GetNameOfExecutable();
+#endif
+        }
+        if (zipFile != NULL) {
+            zipOk = Tclzipfs_Mount(interp, zipFile, "", NULL);
+            if (!relax && (zipOk != TCL_OK)) {
+                exitCode = 1;
+                goto done;
+            }
+        } else {
+            zipOk = TCL_ERROR;
+        }
+        Tcl_ResetResult(interp);
+    }
+    if (zipOk == TCL_OK) {
+        char *tcl_lib = "/assets/tcl" TCL_VERSION;
+        char *tcl_pkg = "/assets";
+
+        Tcl_SetVar2(interp, "env", "TCL_LIBRARY", tcl_lib, TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "auto_path", tcl_lib,
+                   TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT);
+
+    }
+#endif
+    if (zipval != NULL) {
+	Tcl_DecrRefCount(zipval);
+	zipval = NULL;
+    }
+	
     /*
      * Invoke application-specific initialization.
      */
@@ -405,6 +479,76 @@ Tcl_MainEx(
 	/* ARGH Munchhausen effect */
 	Tcl_CreateExitHandler(FreeMainInterp, interp);
     }
+
+#ifdef ZIPFS_IN_TCL
+    /*
+     * Setup auto loading info to point to mounted ZIP file.
+     */
+
+    if (zipOk == TCL_OK) {
+        char *tcl_lib = "/assets/tcl" TCL_VERSION;
+        char *tcl_pkg = "/assets";
+
+        Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
+        Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
+
+        /*
+         * We need to re-init encoding (after initializing Tcl),
+         * otherwise "encoding system" will return "identity"
+         */
+
+        TclpSetInitialEncodings();
+    }
+
+    /*
+     * Set embedded application startup file, if any.
+     */
+
+    if ((zipOk == TCL_OK) && autoRun) {
+        char *filename;
+        Tcl_Channel chan;
+
+        filename = "/assets/app/main.tcl";
+        chan = Tcl_OpenFileChannel(NULL, filename, "r", 0);
+        if (chan != (Tcl_Channel) NULL) {
+            Tcl_Obj *arg;
+
+            Tcl_Close(NULL, chan);
+
+            /*
+             * Push back script file to argv, if any.
+             */
+            if ((arg = Tcl_GetStartupScript(NULL)) != NULL) {
+                Tcl_Obj *v, *no;
+
+                no = Tcl_NewStringObj("argv", 4);
+                v = Tcl_ObjGetVar2(interp, no, NULL, TCL_GLOBAL_ONLY);
+                if (v != NULL) {
+                    Tcl_Obj **objv, *nv;
+                    int objc, i;
+
+                    objc = 0;
+                    Tcl_ListObjGetElements(NULL, v, &objc, &objv);
+                    nv = Tcl_NewListObj(1, &arg);
+                    for (i = 0; i < objc; i++) {
+                        Tcl_ListObjAppendElement(NULL, nv, objv[i]);
+                    }
+                    Tcl_IncrRefCount(nv);
+                    if (Tcl_ObjSetVar2(interp, no, NULL, nv, TCL_GLOBAL_ONLY)
+                        != NULL) {
+                        Tcl_GlobalEval(interp, "incr argc");
+                    } 
+                    Tcl_DecrRefCount(nv);
+                }
+                Tcl_DecrRefCount(no);
+            }
+            Tcl_SetStartupScript(Tcl_NewStringObj(filename, -1), NULL);
+            Tcl_SetVar(interp, "argv0", filename, TCL_GLOBAL_ONLY);
+            Tcl_SetVar(interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
+        }
+    }
+#endif
 
     /*
      * Invoke the script specified on the command line, if any. Must fetch it
