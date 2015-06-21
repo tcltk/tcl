@@ -191,6 +191,10 @@ const Tcl_Filesystem tclNativeFilesystem = {
     TclpObjChdir
 };
 
+#ifdef ZIPFS_IN_TCL
+extern Tcl_Filesystem zipfsFilesystem;
+#endif
+
 /*
  * Define the tail of the linked list. Note that for unconventional uses of
  * Tcl without a native filesystem, we may in the future wish to modify the
@@ -790,7 +794,9 @@ TclFinalizeFilesystem(void)
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	theFilesystemEpoch = 1;
+    }
     filesystemList = NULL;
 
     /*
@@ -823,7 +829,9 @@ void
 TclResetFilesystem(void)
 {
     filesystemList = &nativeFilesystemRecord;
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	theFilesystemEpoch = 1;
+    }
 
 #ifdef _WIN32
     /*
@@ -908,7 +916,9 @@ Tcl_FSRegister(
      * conceivably now belong to different filesystems.
      */
 
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	theFilesystemEpoch = 1;
+    }
     Tcl_MutexUnlock(&filesystemMutex);
 
     return TCL_OK;
@@ -973,7 +983,9 @@ Tcl_FSUnregister(
 	     * (which would of course lead to memory exceptions).
 	     */
 
-	    theFilesystemEpoch++;
+	    if (++theFilesystemEpoch == 0) {
+		theFilesystemEpoch = 1;
+	    }
 
 	    ckfree(fsRecPtr);
 
@@ -1304,7 +1316,9 @@ Tcl_FSMountsChanged(
      */
 
     Tcl_MutexLock(&filesystemMutex);
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	theFilesystemEpoch = 1;
+    }
     Tcl_MutexUnlock(&filesystemMutex);
 }
 
@@ -1399,6 +1413,24 @@ TclFSNormalizeToUniquePath(
 
     Claim();
     for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
+#ifdef ZIPFS_IN_TCL
+	if (fsRecPtr->fsPtr == &zipfsFilesystem) {
+	    ClientData clientData = NULL;
+	    /*
+	     * Allow mounted zipfs filesystem to overtake entire normalisation.
+	     * This is needed on unix for mounts on symlinks right below root.
+	     */
+
+	    if (fsRecPtr->fsPtr->pathInFilesystemProc != NULL) {
+		if (fsRecPtr->fsPtr->pathInFilesystemProc(pathPtr,
+			&clientData)!=-1) {
+		    TclFSSetPathDetails(pathPtr, fsRecPtr->fsPtr, clientData);
+		    break;
+		}
+	    }
+	    continue;
+	}
+#endif
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
 	    continue;
 	}
@@ -1423,6 +1455,11 @@ TclFSNormalizeToUniquePath(
 	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
 	    continue;
 	}
+#ifdef ZIPFS_IN_TCL
+	if (fsRecPtr->fsPtr == &zipfsFilesystem) {
+	    continue;
+	}
+#endif
 
 	if (fsRecPtr->fsPtr->normalizePathProc != NULL) {
 	    startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,
@@ -2890,15 +2927,32 @@ int
 Tcl_FSChdir(
     Tcl_Obj *pathPtr)
 {
-    const Tcl_Filesystem *fsPtr;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
+    const Tcl_Filesystem *fsPtr, *oldFsPtr = NULL;
     int retVal = -1;
 
+    if (tsdPtr->cwdPathPtr != NULL) {
+	oldFsPtr = Tcl_FSGetFileSystemForPath(tsdPtr->cwdPathPtr);
+    }
     if (Tcl_FSGetNormalizedPath(NULL, pathPtr) == NULL) {
 	Tcl_SetErrno(ENOENT);
 	return retVal;
     }
 
     fsPtr = Tcl_FSGetFileSystemForPath(pathPtr);
+
+    if ((fsPtr != NULL) && (fsPtr != &tclNativeFilesystem)) {
+	/*
+	 * Watch out for tilde substitution.
+	 * Only valid in native filesystem.
+	 */
+	char *name = Tcl_GetString(pathPtr);
+
+	if ((name != NULL) && (*name == '~')) {
+	    fsPtr = &tclNativeFilesystem;
+	}
+    }
+
     if (fsPtr != NULL) {
 	if (fsPtr->chdirProc != NULL) {
 	    /*
@@ -3008,6 +3062,14 @@ Tcl_FSChdir(
 	    }
 	} else {
 	    FsUpdateCwd(normDirName, NULL);
+	}
+
+	/*
+	 * If the filesystem changed between old and new cwd
+	 * force filesystem refresh on path objects.
+	 */
+	if (oldFsPtr != NULL && fsPtr != oldFsPtr) {
+	    Tcl_FSMountsChanged(NULL);
 	}
     }
 

@@ -296,7 +296,8 @@ GENERIC_OBJS = \
 	tclUtf.$(OBJEXT) \
 	tclUtil.$(OBJEXT) \
 	tclVar.$(OBJEXT) \
-	tclZlib.$(OBJEXT)
+	tclZlib.$(OBJEXT) \
+	zipfs.$(OBJEXT)
 
 TOMMATH_OBJS = \
 	bncore.${OBJEXT} \
@@ -741,7 +742,7 @@ clean: cleanhelp clean-packages
 
 distclean: distclean-packages clean
 	$(RM) Makefile config.status config.cache config.log tclConfig.sh \
-		tcl.hpj config.status.lineno
+		tcl.hpj config.status.lineno tclsh.exe.manifest
 
 #
 # Bundled package targets

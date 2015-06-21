@@ -447,8 +447,10 @@ extern int	gettimeofday(struct timeval *tp,
  *---------------------------------------------------------------------------
  */
 
+#ifndef ANDROID
 #ifndef L_tmpnam
 #   define L_tmpnam	100
+#endif
 #endif
 
 /*
