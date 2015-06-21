@@ -541,6 +541,11 @@ TclpInitLibraryPath(
 	     */
 
 	    str = defaultLibraryDir;
+#ifdef ZIPFS_IN_TCL
+	    if (Tclzipfs_Mount(NULL, NULL, NULL, NULL) == TCL_OK) {
+		str = "";
+	    }
+#endif
 	}
 	if (str[0] != '\0') {
 	    objPtr = Tcl_NewStringObj(str, -1);

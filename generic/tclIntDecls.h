@@ -617,6 +617,16 @@ EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
 /* 251 */
 EXTERN int		TclRegisterLiteral(void *envPtr, char *bytes,
 				int length, int flags);
+/* 252 */
+EXTERN int		Tclzipfs_Init(Tcl_Interp *interp);
+/* 253 */
+EXTERN int		Tclzipfs_Mount(Tcl_Interp *interp,
+				const char *zipname, const char *mntpt,
+				const char *passwd);
+/* 254 */
+EXTERN int		Tclzipfs_Unmount(Tcl_Interp *interp,
+				const char *zipname);
+
 
 typedef struct TclIntStubs {
     int magic;
@@ -874,6 +884,9 @@ typedef struct TclIntStubs {
     char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
     void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
     int (*tclRegisterLiteral) (void *envPtr, char *bytes, int length, int flags); /* 251 */
+    int (*tclzipfs_Init) (Tcl_Interp *interp); /* 252 */
+    int (*tclzipfs_Mount) (Tcl_Interp *interp, const char *zipname, const char *mntpt, const char *passwd); /* 253 */
+    int (*tclzipfs_Unmount) (Tcl_Interp *interp, const char *zipname); /* 254 */
 } TclIntStubs;
 
 extern const TclIntStubs *tclIntStubsPtr;
@@ -1305,6 +1318,12 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
 #define TclRegisterLiteral \
 	(tclIntStubsPtr->tclRegisterLiteral) /* 251 */
+#define Tclzipfs_Init \
+	(tclIntStubsPtr->tclzipfs_Init) /* 252 */
+#define Tclzipfs_Mount \
+	(tclIntStubsPtr->tclzipfs_Mount) /* 253 */
+#define Tclzipfs_Unmount \
+	(tclIntStubsPtr->tclzipfs_Unmount) /* 254 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

@@ -1012,6 +1012,18 @@ declare 251 {
     int TclRegisterLiteral(void *envPtr,
 	    char *bytes, int length, int flags)
 }
+
+declare 252 {
+    int Tclzipfs_Init(Tcl_Interp *interp)
+}
+declare 253 {
+    int Tclzipfs_Mount(Tcl_Interp *interp, const char *zipname,
+        const char *mntpt, const char *passwd)
+}
+declare 254 {
+    int Tclzipfs_Unmount(Tcl_Interp *interp, const char *zipname)
+}
+
 
 ##############################################################################
 

@@ -97,7 +97,11 @@ TclpDlopen(
     } else {
     	dlopenflags |= RTLD_NOW;
     }
-    handle = dlopen(native, dlopenflags);
+    if (native == NULL) {
+	handle = NULL;
+    } else {
+	handle = dlopen(native, dlopenflags);
+    }
     if (handle == NULL) {
 	/*
 	 * Let the OS loader examine the binary search path for whatever
@@ -115,7 +119,41 @@ TclpDlopen(
 	handle = dlopen(native, dlopenflags);
 	Tcl_DStringFree(&ds);
     }
+#ifdef ANDROID
+    /*
+     * If not an absolute or relative path, try to load
+     * from $INTERNAL_STORAGE/../lib (the place where the
+     * system has installed bundled .so files from the .APK)
+     */
+    if (handle == NULL) {
+	native = Tcl_GetString(pathPtr);
+	if ((native != NULL) && (strchr(native, '/') == NULL)) {
+	    char *storage = getenv("INTERNAL_STORAGE");
+	    Tcl_DString ds2;
 
+	    if ((storage != NULL) && (storage[0] != '\0')) {
+		Tcl_DStringInit(&ds2);
+		Tcl_DStringAppend(&ds2, storage, -1);
+		Tcl_DStringAppend(&ds2, "/../lib/", -1);
+		Tcl_DStringAppend(&ds2, native, -1);
+		handle = dlopen(Tcl_DStringValue(&ds2), RTLD_NOW | RTLD_GLOBAL);
+		Tcl_DStringFree(&ds2);
+	    }
+	    if (handle == NULL) {
+		storage = getenv("TK_TCL_WISH_LD_LIBS");
+		if ((storage != NULL) && (storage[0] != '\0')) {
+		    Tcl_DStringInit(&ds2);
+		    Tcl_DStringAppend(&ds2, storage, -1);
+		    Tcl_DStringAppend(&ds2, "/", -1);
+		    Tcl_DStringAppend(&ds2, native, -1);
+		    handle =
+			dlopen(Tcl_DStringValue(&ds2), RTLD_NOW | RTLD_GLOBAL);
+		    Tcl_DStringFree(&ds2);
+		}
+	    }
+	}
+    }
+ #endif
     if (handle == NULL) {
 	/*
 	 * Write the string to a variable first to work around a compiler bug
