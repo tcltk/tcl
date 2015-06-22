@@ -1351,7 +1351,7 @@ CloneProcedureMethod(
 /*
  * ----------------------------------------------------------------------
  *
- * TclOONewForwardMethod --
+ * TclOONewForwardInstanceMethod --
  *
  *	Create a forwarded method for an object.
  *
@@ -1369,7 +1369,6 @@ TclOONewForwardInstanceMethod(
 {
     int prefixLen;
     register ForwardMethod *fmPtr;
-    Tcl_Obj *cmdObj;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1383,7 +1382,6 @@ TclOONewForwardInstanceMethod(
 
     fmPtr = ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
-    Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr,
 	    nameObj, flags, &fwdMethodType, fmPtr);
@@ -1410,7 +1408,6 @@ TclOONewForwardMethod(
 {
     int prefixLen;
     register ForwardMethod *fmPtr;
-    Tcl_Obj *cmdObj;
 
     if (Tcl_ListObjLength(interp, prefixObj, &prefixLen) != TCL_OK) {
 	return NULL;
@@ -1424,7 +1421,6 @@ TclOONewForwardMethod(
 
     fmPtr = ckalloc(sizeof(ForwardMethod));
     fmPtr->prefixObj = prefixObj;
-    Tcl_ListObjIndex(interp, prefixObj, 0, &cmdObj);
     Tcl_IncrRefCount(prefixObj);
     return (Method *) Tcl_NewMethod(interp, (Tcl_Class) clsPtr, nameObj,
 	    flags, &fwdMethodType, fmPtr);
