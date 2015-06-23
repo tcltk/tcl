@@ -172,7 +172,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.3.0");
+    return Tcl_PkgProvide(interp, "registry", "1.3.1");
 }
 
 /*
@@ -415,7 +415,6 @@ DeleteKey(
     const TCHAR *nativeTail;
     HKEY rootKey, subkey;
     DWORD result;
-    int length;
     Tcl_DString buf;
     REGSAM saveMode = mode;
 
@@ -423,8 +422,8 @@ DeleteKey(
      * Find the parent of the key being deleted and open it.
      */
 
-    keyName = Tcl_GetStringFromObj(keyNameObj, &length);
-    buffer = ckalloc(length + 1);
+    keyName = Tcl_GetString(keyNameObj);
+    buffer = ckalloc(keyNameObj->length + 1);
     strcpy(buffer, keyName);
 
     if (ParseKeyName(interp, buffer, &hostName, &rootKey,
@@ -1408,7 +1407,7 @@ BroadcastValue(
 	}
     }
 
-    str = Tcl_GetStringFromObj(objv[0], &len);
+    str = (char*)Tcl_GetUnicodeFromObj(objv[0], &len);
     if (len == 0) {
 	str = NULL;
     }
@@ -1417,7 +1416,7 @@ BroadcastValue(
      * Use the ignore the result.
      */
 
-    result = SendMessageTimeoutA(HWND_BROADCAST, WM_SETTINGCHANGE,
+    result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
 	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, timeout, &sendResult);
 
     objPtr = Tcl_NewObj();
