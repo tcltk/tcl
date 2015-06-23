@@ -2653,7 +2653,7 @@ Tcl_PidObjCmd(
     if (objc == 1) {
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
     } else {
-	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
+	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]),
 		NULL);
 	if (chan == (Tcl_Channel) NULL) {
 	    return TCL_ERROR;
