@@ -1913,7 +1913,7 @@ typedef struct Tcl_EncodingType {
  *				Tcl_ExternalToUtf takes the initial value
  *				of *dstCharsPtr is taken as a limit of the
  *				maximum number of chars to produce in the
- *				encoded UTF-8 content.  Otherwise, the 
+ *				encoded UTF-8 content.  Otherwise, the
  *				number of chars produced is controlled only
  *				by other limiting factors.
  */

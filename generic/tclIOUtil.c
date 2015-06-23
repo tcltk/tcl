@@ -2874,9 +2874,13 @@ int
 Tcl_FSChdir(
     Tcl_Obj *pathPtr)
 {
-    const Tcl_Filesystem *fsPtr;
+    const Tcl_Filesystem *fsPtr, *oldFsPtr = NULL;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
     int retVal = -1;
 
+    if (tsdPtr->cwdPathPtr != NULL) {
+	oldFsPtr = Tcl_FSGetFileSystemForPath(tsdPtr->cwdPathPtr);
+    }
     if (Tcl_FSGetNormalizedPath(NULL, pathPtr) == NULL) {
 	Tcl_SetErrno(ENOENT);
 	return retVal;
@@ -2976,7 +2980,6 @@ Tcl_FSChdir(
 	     * instead. This should be examined by someone on Unix.
 	     */
 
-	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 	    ClientData cd;
 	    ClientData oldcd = tsdPtr->cwdClientData;
 
@@ -2992,6 +2995,14 @@ Tcl_FSChdir(
 	    }
 	} else {
 	    FsUpdateCwd(normDirName, NULL);
+	}
+
+	/*
+	 * If the filesystem changed between old and new cwd
+	 * force filesystem refresh on path objects.
+	 */
+	if (oldFsPtr != NULL && fsPtr != oldFsPtr) {
+	    Tcl_FSMountsChanged(NULL);
 	}
     }
 
@@ -3134,7 +3145,7 @@ TclSkipUnlink (Tcl_Obj* shlibFile)
      *
      * Ad 2: This variable can disable/override the AUFS detection, i.e. for
      * testing if a newer AUFS does not have the bug any more.
-     * 
+     *
      * Ad 3: This is conditionally compiled in. Condition currently must be set manually.
      *       This part needs proper tests in the configure(.in).
      */
