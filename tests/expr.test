@@ -7134,6 +7134,10 @@ test expr-50.1 {test sqrt() of bignums with non-Inf answer} {
     expr {sqrt("1[string repeat 0 616]") == 1e308}
 } 1
 
+test expr-51.1 {test round-to-even on input} {
+    expr 6.9294956446009195e15
+} 6929495644600920.0
+
 
 
 # cleanup
