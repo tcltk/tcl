@@ -225,7 +225,7 @@ ReadConsoleBytes(
      * success with ntchars == 0 and GetLastError() will be
      * ERROR_OPERATION_ABORTED. We do not want to treat this case
      * as EOF so we will loop around again. If no Ctrl signal handlers
-     * have been established, the default signal OS handler in a separate 
+     * have been established, the default signal OS handler in a separate
      * thread will terminate the program. If a Ctrl signal handler
      * has been established (through an extension for example), it
      * will run and take whatever action it deems appropriate.

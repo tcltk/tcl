@@ -163,7 +163,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvideEx(interp, "registry", "1.3.0", NULL);
+    return Tcl_PkgProvideEx(interp, "registry", "1.3.1", NULL);
 }
 
 /*
@@ -281,7 +281,7 @@ RegistryObjCmd(
 	return TCL_ERROR;
     }
 
-    if (Tcl_GetStringFromObj(objv[n], NULL)[0] == '-') {
+    if (Tcl_GetString(objv[n])[0] == '-') {
 	if (Tcl_GetIndexFromObjStruct(interp, objv[n++], modes,
 		sizeof(char *), "mode", 0, &index) != TCL_OK) {
 	    return TCL_ERROR;
@@ -406,7 +406,6 @@ DeleteKey(
     const TCHAR *nativeTail;
     HKEY rootKey, subkey;
     DWORD result;
-    int length;
     Tcl_DString buf;
     REGSAM saveMode = mode;
 
@@ -414,8 +413,8 @@ DeleteKey(
      * Find the parent of the key being deleted and open it.
      */
 
-    keyName = Tcl_GetStringFromObj(keyNameObj, &length);
-    buffer = ckalloc(length + 1);
+    keyName = Tcl_GetString(keyNameObj);
+    buffer = ckalloc(keyNameObj->length + 1);
     strcpy(buffer, keyName);
 
     if (ParseKeyName(interp, buffer, &hostName, &rootKey,
@@ -520,8 +519,8 @@ DeleteValue(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to delete value \"%s\" from key \"%s\": ",
-		Tcl_GetStringFromObj(valueNameObj, NULL),
-		Tcl_GetStringFromObj(keyNameObj, NULL)));
+		Tcl_GetString(valueNameObj),
+		Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	result = TCL_ERROR;
     } else {
@@ -569,7 +568,7 @@ GetKeyNames(
     Tcl_DString ds;		/* Buffer to translate subkey name to UTF-8 */
 
     if (patternObj) {
-	pattern = Tcl_GetStringFromObj(patternObj, NULL);
+	pattern = Tcl_GetString(patternObj);
     } else {
 	pattern = NULL;
     }
@@ -598,7 +597,7 @@ GetKeyNames(
 	    } else {
 		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 			"unable to enumerate subkeys of \"%s\": ",
-			Tcl_GetStringFromObj(keyNameObj, NULL)));
+			Tcl_GetString(keyNameObj)));
 		AppendSystemError(interp, result);
 		result = TCL_ERROR;
 	    }
@@ -681,8 +680,8 @@ GetType(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get type of value \"%s\" from key \"%s\": ",
-		Tcl_GetStringFromObj(valueNameObj, NULL),
-		Tcl_GetStringFromObj(keyNameObj, NULL)));
+		Tcl_GetString(valueNameObj),
+		Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	return TCL_ERROR;
     }
@@ -776,8 +775,8 @@ GetValue(
     if (result != ERROR_SUCCESS) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"unable to get value \"%s\" from key \"%s\": ",
-		Tcl_GetStringFromObj(valueNameObj, NULL),
-		Tcl_GetStringFromObj(keyNameObj, NULL)));
+		Tcl_GetString(valueNameObj),
+		Tcl_GetString(keyNameObj)));
 	AppendSystemError(interp, result);
 	Tcl_DStringFree(&data);
 	return TCL_ERROR;
@@ -881,7 +880,7 @@ GetValueNames(
     result = TCL_OK;
 
     if (patternObj) {
-	pattern = Tcl_GetStringFromObj(patternObj, NULL);
+	pattern = Tcl_GetString(patternObj);
     } else {
 	pattern = NULL;
     }
@@ -1402,7 +1401,7 @@ BroadcastValue(
 	}
     }
 
-    str = Tcl_GetStringFromObj(objv[0], &len);
+    str = (char*)Tcl_GetUnicodeFromObj(objv[0], &len);
     if (len == 0) {
 	str = NULL;
     }
