@@ -793,7 +793,7 @@ ObjectRenamedTrace(
     ClientData clientData,	/* The object being deleted. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     const char *oldName,	/* What the object was (last) called. */
-    const char *newName,	/* Always NULL. */
+    const char *newName,	/* What it's getting renamed to. (unused) */
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = clientData;

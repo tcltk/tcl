@@ -2653,7 +2653,7 @@ Tcl_PidObjCmd(
     if (objc == 1) {
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
     } else {
-	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
+	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]),
 		NULL);
 	if (chan == (Tcl_Channel) NULL) {
 	    return TCL_ERROR;
@@ -3106,9 +3106,9 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(TCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
+	const char *string = Tcl_GetString(basenameObj);
 
-	Tcl_WinUtfToTChar(string, length, &buf);
+	Tcl_WinUtfToTChar(string, basenameObj->length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);

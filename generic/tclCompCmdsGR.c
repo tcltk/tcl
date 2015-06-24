@@ -1480,7 +1480,7 @@ TclCompileLreplaceCmd(
 	return TCL_ERROR;
     }
 
-    if(idx2 != INDEX_END && idx2 < idx1) {
+    if(idx2 != INDEX_END && idx2 >= 0 && idx2 < idx1) {
 	idx2 = idx1-1;
     }
 

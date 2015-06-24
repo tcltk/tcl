@@ -1179,25 +1179,25 @@ typedef struct CmdFrame {
      *
      * Field	  TEBC		  EvalEx
      * =======	  ====		  ======
-     * level	  yes		  yes	
+     * level	  yes		  yes
      * type	  BC/PREBC	  SRC/EVAL
-     * line0	  yes		  yes	
-     * framePtr	  yes		  yes	
+     * line0	  yes		  yes
+     * framePtr	  yes		  yes
      * =======	  ====		  ======
      *
      * =======	  ====		  ========= union data
-     * line1	  -		  yes	
-     * line3	  -		  yes	
-     * path	  -		  yes	
+     * line1	  -		  yes
+     * line3	  -		  yes
+     * path	  -		  yes
      * -------	  ----		  ------
-     * codePtr	  yes		  -	
-     * pc	  yes		  -	
+     * codePtr	  yes		  -
+     * pc	  yes		  -
      * =======	  ====		  ======
      *
      * =======	  ====		  ========= union cmd
-     * str.cmd	  yes		  yes	
-     * str.len	  yes		  yes	
-     * -------	  ----		  ------	
+     * str.cmd	  yes		  yes
+     * str.len	  yes		  yes
+     * -------	  ----		  ------
      */
 
     union {
@@ -3284,15 +3284,15 @@ MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-			    
-/* Assemble command function */			    
+
+/* Assemble command function */
 MODULE_SCOPE int	Tcl_AssembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);			    
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclNRAssembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);			    
-			    
+			    Tcl_Obj *const objv[]);
+
 MODULE_SCOPE int	Tcl_EncodingObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3963,7 +3963,7 @@ MODULE_SCOPE int	TclStreqOpCmd(ClientData clientData,
 MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
-			    
+
 MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);

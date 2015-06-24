@@ -2272,9 +2272,9 @@ TesteventDeleteProc(
 	return 0;
     }
     targetName = (Tcl_Obj *) clientData;
-    targetNameStr = (char *) Tcl_GetStringFromObj(targetName, NULL);
+    targetNameStr = (char *) Tcl_GetString(targetName);
     ev = (TestEvent *) event;
-    evNameStr = Tcl_GetStringFromObj(ev->tag, NULL);
+    evNameStr = Tcl_GetString(ev->tag);
     if (strcmp(evNameStr, targetNameStr) == 0) {
 	Tcl_DecrRefCount(ev->tag);
 	Tcl_DecrRefCount(ev->command);
