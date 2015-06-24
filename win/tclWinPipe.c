@@ -3106,9 +3106,9 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(TCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
+	const char *string = Tcl_GetString(basenameObj);
 
-	Tcl_WinUtfToTChar(string, length, &buf);
+	Tcl_WinUtfToTChar(string, basenameObj->length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);

@@ -1728,7 +1728,7 @@ RefineApproximation(
     double quot;		/* Correction term. */
     double minincr;		/* Lower bound on the absolute value of the
 				 * correction term. */
-    int roundToEven;		/* Flag == TRUE if we need to invoke
+    int roundToEven = 0;	/* Flag == TRUE if we need to invoke
 				 * "round to even" functionality */
     double rteSignificand;	/* Significand of the round-to-even result */
     int rteExponent;		/* Exponent of the round-to-even result */
@@ -1845,7 +1845,6 @@ RefineApproximation(
 	roundToEven = 1;
 	break;
     case MP_GT:
-	roundToEven = 0;
 	break;
     }
 
