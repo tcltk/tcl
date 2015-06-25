@@ -165,7 +165,7 @@ AC_CHECK_FUNC(realpath, , [AC_DEFINE(NO_REALPATH, 1, [Do we have realpath()])])
 
 SC_TCL_GETADDRINFO
 
-#-------------------------------------------------------------------- 
+#--------------------------------------------------------------------
 #	Look for thread-safe variants of some library functions.
 #--------------------------------------------------------------------
 
@@ -339,7 +339,7 @@ AC_CHECK_TYPE([intptr_t], [
     for tcl_cv_intptr_t in "int" "long" "long long" none; do
 	if test "$tcl_cv_intptr_t" != none; then
 	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])], 
+		    [[sizeof (void *) <= sizeof ($tcl_cv_intptr_t)]])],
 		[tcl_ok=yes], [tcl_ok=no])
 	    test "$tcl_ok" = yes && break; fi
     done])
@@ -355,7 +355,7 @@ AC_CHECK_TYPE([uintptr_t], [
 	    none; do
 	if test "$tcl_cv_uintptr_t" != none; then
 	    AC_COMPILE_IFELSE([AC_LANG_BOOL_COMPILE_TRY([AC_INCLUDES_DEFAULT],
-		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])], 
+		    [[sizeof (void *) <= sizeof ($tcl_cv_uintptr_t)]])],
 		[tcl_ok=yes], [tcl_ok=no])
 	    test "$tcl_ok" = yes && break; fi
     done])
@@ -622,7 +622,7 @@ AC_ARG_WITH(tzdata,
 # Any directories that get added here must also be added to the
 # search path in ::tcl::clock::Initialize (library/clock.tcl).
 #
-case $tcl_ok in 
+case $tcl_ok in
     no)
 	AC_MSG_RESULT([supplied by OS vendor])
     ;;
@@ -649,7 +649,7 @@ case $tcl_ok in
 	fi
     ;;
     *)
-	AC_MSG_ERROR([invalid argument: $tcl_ok])	
+	AC_MSG_ERROR([invalid argument: $tcl_ok])
     ;;
 esac
 if test $tcl_ok = yes
@@ -749,7 +749,7 @@ TCL_SHARED_LIB_SUFFIX=${SHARED_LIB_SUFFIX}
 eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
-# since on some platforms TCL_LIB_FILE contains shell escapes. 
+# since on some platforms TCL_LIB_FILE contains shell escapes.
 # (See also: TCL_TRIM_DOTS).
 
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"

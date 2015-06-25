@@ -66,7 +66,7 @@ a better first place to look now.
 	(https://groups.google.com/forum/?fromgroups#!topic/comp.lang.tcl/vfpI3bc-DkQ),
 	diagnosed by dgp to be a close relative of [Bug 781585], which was
 	fixed by commit	[f46fb50cb3]. This bug was introduced by myself in
-	commit [cbfe055d8c]. 
+	commit [cbfe055d8c].
 
 2013-05-28 Harald Oehlmann  <oehhar@users.sf.net>
 
@@ -268,7 +268,7 @@ a better first place to look now.
 
 2013-02-05  Don Porter  <dgp@users.sourceforge.net>
 
-	* win/tclWinFile.c:	[Bug 3603434]: Make sure TclpObjNormalizePath() 
+	* win/tclWinFile.c:	[Bug 3603434]: Make sure TclpObjNormalizePath()
 	properly declares "a:/" to be normalized, even when no "A:" drive is
 	present on the system.
 
