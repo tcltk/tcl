@@ -7678,7 +7678,7 @@ Many revisions to better support a Cygwin environment (nijtmans)
 
 2012-10-14 (bug fix) [tcl::Bgerror] crash on non-dict options (nijtmans)
 
-2012-11-06 (bug fix)[3581754] avoid multiple callback on keep-alive (fellows) 
+2012-11-06 (bug fix)[3581754] avoid multiple callback on keep-alive (fellows)
 => http 2.7.10
 
 2012-11-07 (bug fix)[3574493] hang in Windows socket finalization (fassel)
