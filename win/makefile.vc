@@ -522,7 +522,7 @@ release:    setup $(TCLSH) $(TCLSTUBLIB) dlls
 core:	    setup $(TCLLIB) $(TCLSTUBLIB)
 shell:	    setup $(TCLSH)
 dlls:	    setup $(TCLPIPEDLL) $(TCLREGLIB) $(TCLDDELIB)
-all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32) 
+all:	    setup $(TCLSH) $(TCLSTUBLIB) dlls $(CAT32)
 tcltest:    setup $(TCLTEST) dlls $(CAT32)
 install:    install-binaries install-libraries install-docs
 
