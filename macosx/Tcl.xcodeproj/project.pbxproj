@@ -768,7 +768,6 @@
 		F96D43D108F272B8004A47F5 /* checkLibraryDoc.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = checkLibraryDoc.tcl; sourceTree = "<group>"; };
 		F96D43D208F272B8004A47F5 /* configure */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text.script.sh; path = configure; sourceTree = "<group>"; };
 		F96D43D308F272B8004A47F5 /* configure.in */ = {isa = PBXFileReference; explicitFileType = text.script.sh; fileEncoding = 4; path = configure.in; sourceTree = "<group>"; };
-		F96D442208F272B8004A47F5 /* eolFix.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = eolFix.tcl; sourceTree = "<group>"; };
 		F96D442408F272B8004A47F5 /* fix_tommath_h.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = fix_tommath_h.tcl; sourceTree = "<group>"; };
 		F96D442508F272B8004A47F5 /* genStubs.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = genStubs.tcl; sourceTree = "<group>"; };
 		F96D442708F272B8004A47F5 /* index.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = index.tcl; sourceTree = "<group>"; };
@@ -1665,7 +1664,6 @@
 				F96D43D108F272B8004A47F5 /* checkLibraryDoc.tcl */,
 				F96D43D208F272B8004A47F5 /* configure */,
 				F96D43D308F272B8004A47F5 /* configure.in */,
-				F96D442208F272B8004A47F5 /* eolFix.tcl */,
 				F96D442408F272B8004A47F5 /* fix_tommath_h.tcl */,
 				F96D442508F272B8004A47F5 /* genStubs.tcl */,
 				F96D442708F272B8004A47F5 /* index.tcl */,
