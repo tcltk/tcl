@@ -4,6 +4,7 @@
 #	message catalog facility for Tcl programs.  It should be
 #	loaded with the command "package require msgcat".
 #
+# Copyright (c) 2010-2015 by Harald Oehlmann.
 # Copyright (c) 1998-2000 by Ajuba Solutions.
 # Copyright (c) 1998 by Mark Harrison.
 #
@@ -217,7 +218,7 @@ proc msgcat::mc {src args} {
     }
     # call package local or default unknown command
     set args [linsert $args 0 [lindex $loclist 0] $src]
-    switch -exact -- [Invoke unknowncmd $args $ns result] {
+    switch -exact -- [Invoke unknowncmd $args $ns result 1] {
 	0 { return [uplevel 1 [linsert $args 0 [namespace origin mcunknown]]] }
 	1 { return [DefaultUnknown {*}$args] }
 	default { return $result }
@@ -469,7 +470,7 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 	loaded { return [PackageLocales $ns] }
 	isset {	return [dict exists $PackageConfig loclist $ns] }
 	set {	# set a package locale or add a package locale
-		
+
 	    # Copy the default locale if no package locale set so far
 	    if {![dict exists $PackageConfig loclist $ns]} {
 		dict set PackageConfig loclist $ns $Loclist
@@ -511,14 +512,23 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 	    }
 	}
 	unset {	# unset package locale and restore default locales
-	    
+
 	    if { ![dict exists $PackageConfig loclist $ns] } { return }
-	    
+
 	    # unset package locale
 	    set loadLocales [ListComplement\
 		    [dict get $PackageConfig loadedlocales $ns] $LoadedLocales]
 	    dict unset PackageConfig loadedlocales $ns
 	    dict unset PackageConfig loclist $ns
+
+	    # unset keys not in global loaded locales
+	    if {[dict exists $Msgs $ns]} {
+		foreach locale [dict keys [dict get $Msgs $ns]] {
+		    if {$locale ni $LoadedLocales} {
+			dict unset Msgs $ns $locale
+		    }
+		}
+	    }
 
 	    # Add missing locales
 	    Load $ns $loadLocales
@@ -848,15 +858,17 @@ proc msgcat::Load {ns locales {callbackonly 0}} {
 #			If not given or empty, check all registered packages.
 #	resultname	Variable to save the callback result of the last called
 #			callback to. May be set to "" to discard the result.
+#	failerror (0)	Fail on error if true. Otherwise call bgerror.
 #
 # Results:
 #	Possible values:
 #	- 0: no valid command registered
 #	- 1: registered command was the empty string
 #	- 2: registered command called, resultname is set
+#	- 3: registered command failed
 #	If multiple commands are called, the maximum of all results is returned.
 
-proc msgcat::Invoke {index arglist {ns ""} {resultname ""}} {
+proc msgcat::Invoke {index arglist {ns ""} {resultname ""} {failerror 0}} {
     variable PackageConfig
     variable Config
     if {"" ne $resultname} {
@@ -874,8 +886,17 @@ proc msgcat::Invoke {index arglist {ns ""} {resultname ""}} {
 	    if {"" eq $cmd} {
 		if {$ret == 0} {set ret 1}
 	    } else {
-		set result [namespace inscope $ns $cmd {*}$arglist]
-		set ret 2
+		if {$failerror} {
+		    set result [namespace inscope $ns $cmd {*}$arglist]
+		    set ret 2
+		} elseif {1 == [catch {
+		    set result [namespace inscope $ns $cmd {*}$arglist]
+		    if {$ret < 2} {set ret 2}
+		} err derr]} {
+		    after idle [concat [::interp bgerror ""]\
+			    [list $err $derr]]
+		    set ret 3
+		}
 	    }
 	}
     }
