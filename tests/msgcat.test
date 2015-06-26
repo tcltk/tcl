@@ -32,6 +32,8 @@ namespace eval ::msgcat::test {
 
     # Tests msgcat-0.*: locale initialization
 
+    # Calculate set of all permutations of a list
+    # PowerSet {1 2 3} -> {1 2 3} {2 3} {1 3} 3 {1 2} 2 1 {}
     proc PowerSet {l} {
 	if {[llength $l] == 0} {return [list [list]]}
 	set element [lindex $l 0]
@@ -666,6 +668,99 @@ namespace eval ::msgcat::test {
     removeDirectory msgdir2
     removeDirectory msgdir3
 
+    # Tests msgcat-9.*: [mcexists]
+
+	test msgcat-9.1 {mcexists no parameter} -body {
+	    mcexists
+	} -returnCodes 1\
+	-result {wrong # args: should be "mcexists ?-exactnamespace? ?-exactlocale? src"}
+    
+	test msgcat-9.2 {mcexists unknown option} -body {
+	    mcexists -unknown src 
+	} -returnCodes 1\
+	-result {unknown option "-unknown"}
+    
+	test msgcat-9.3 {mcexists} -setup {
+	    mcforgetpackage
+	    variable locale [mclocale]
+	    mclocale foo
+	    mcset foo k1 v1
+	} -cleanup {
+	    mclocale $locale
+	} -body {
+	    list [mcexists k1] [mcexists k2]
+	} -result {1 0}
+
+	test msgcat-9.4 {mcexists descendent preference} -setup {
+	    mcforgetpackage
+	    variable locale [mclocale]
+	    mclocale foo_bar
+	    mcset foo k1 v1
+	} -cleanup {
+	    mclocale $locale
+	} -body {
+	    list [mcexists k1] [mcexists -exactlocale k1]
+	} -result {1 0}
+    
+	test msgcat-9.5 {mcexists parent namespace} -setup {
+	    mcforgetpackage
+	    variable locale [mclocale]
+	    mclocale foo_bar
+	    mcset foo k1 v1
+	} -cleanup {
+	    mclocale $locale
+	} -body {
+	    namespace eval ::msgcat::test::sub {
+		list [::msgcat::mcexists k1]\
+			[::msgcat::mcexists -exactnamespace k1]
+	    }
+	} -result {1 0}
+    
+    # Tests msgcat-10.*: [mcloadedlocales]
+
+	test msgcat-10.1 {mcloadedlocales no arg} -body {
+	    mcloadedlocales
+	} -returnCodes 1\
+	-result {wrong # args: should be "mcloadedlocales subcommand"}
+    
+	test msgcat-10.2 {mcloadedlocales wrong subcommand} -body {
+	    mcloadedlocales junk
+	} -returnCodes 1\
+	-result {unknown subcommand "junk": must be clear, or loaded}
+    
+	test msgcat-10.3 {mcloadedlocales loaded} -setup {
+	    mcforgetpackage
+	    variable locale [mclocale]
+	    mclocale {}
+	    mcloadedlocales clear
+	} -cleanup {
+	    mclocale $locale
+	} -body {
+	    mclocale foo_bar
+	    set resultlist [mcloadedlocales loaded]
+	    # The result is position independent so check length and existence
+	    list [llength $resultlist] [expr {"" in $resultlist}]\
+		    [expr {"foo" in $resultlist}]\
+		    [expr {"foo_bar" in $resultlist}]
+	} -result {3 1 1 1}
+    
+	test msgcat-10.4 {mcloadedlocales clear} -setup {
+	    mcforgetpackage
+	    variable locale [mclocale]
+	    mclocale {}
+	    mcloadedlocales clear
+	} -cleanup {
+	    mclocale $locale
+	} -body {
+	    mclocale foo
+	    mcset foo k1 v1
+	    set res [mcexists k1]
+	    mclocale ""
+	    mcloadedlocales clear
+	    mclocale foo
+	    lappend res [mcexists k1]
+	} -result {1 0}
+    
     cleanupTests
 }
 namespace delete ::msgcat::test
