@@ -248,7 +248,7 @@ proc msgcat::mcexists {args} {
     set ns [uplevel 1 [list ::namespace current]]
     set loclist [PackagePreferences $ns]
 
-    while {[llength $args] > 1} {
+    while {[llength $args] != 1} {
 	set args [lassign $args option]
 	switch -glob -- $option {
 	    -exactnamespace { set exactnamespace 1 }
