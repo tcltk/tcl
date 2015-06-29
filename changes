@@ -8528,3 +8528,7 @@ include ::oo::class (fellows)
         *** POTENTIAL INCOMPATIBILITY ***
 
 --- Released 8.6.4, March 12, 2015 --- http://core.tcl.tk/tcl/ for details
+
+2015-06-25 (TIP 412) msgcat dynamic locale change and package private locale (oehlmann)
+=> msgcat 1.6.0
+
