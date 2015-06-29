@@ -468,8 +468,9 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
 	get { return [lindex [PackagePreferences $ns] 0] }
 	preferences { return [PackagePreferences $ns] }
 	loaded { return [PackageLocales $ns] }
-	isset {	return [dict exists $PackageConfig loclist $ns] }
-	set {	# set a package locale or add a package locale
+	present { return [expr {$locale in [PackageLocales $ns]} ]}
+	isset { return [dict exists $PackageConfig loclist $ns] }
+	set { # set a package locale or add a package locale
 
 	    # Copy the default locale if no package locale set so far
 	    if {![dict exists $PackageConfig loclist $ns]} {
@@ -667,7 +668,7 @@ proc msgcat::mcpackageconfig {subcommand option {value ""}} {
 	}
 	default {
 	    return -code error "unknown subcommand \"$subcommand\":\
-		    must be get, isset, unset, or set"
+		    must be get, isset, set, or unset"
 	}
     }
     return
