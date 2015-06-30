@@ -1649,7 +1649,7 @@ FreeExprCodeInternalRep(
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    if (codePtr->refCount-- < 2) {
+    if (codePtr->refCount-- <= 1) {
 	TclCleanupByteCode(codePtr);
     }
 }
