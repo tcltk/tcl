@@ -5713,8 +5713,8 @@ FreeNsVarName(
 {
     register Var *varPtr = objPtr->internalRep.twoPtrValue.ptr2;
 
-    if (TclIsVarInHash(varPtr)) {
-	if ((varPtr->refCount-- == 1) && TclIsVarUndefined(varPtr)) {
+    if (TclIsVarInHash(varPtr) && TclIsVarUndefined(varPtr)) {
+	if ((varPtr->refCount-- <= 1)) {
 	    CleanupVar(varPtr, NULL);
 	}
     }
