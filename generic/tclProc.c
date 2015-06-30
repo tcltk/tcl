@@ -1842,7 +1842,7 @@ InterpProcNR2(
 	TCL_DTRACE_PROC_RETURN(l < iPtr->varFramePtr->objc ?
 		TclGetString(iPtr->varFramePtr->objv[l]) : NULL, result);
     }
-    if (--procPtr->refCount <= 0) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
 
@@ -2403,7 +2403,7 @@ ProcBodyFree(
 {
     Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    if (procPtr->refCount-- < 2) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
 }
@@ -2446,7 +2446,7 @@ FreeLambdaInternalRep(
     Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
     Tcl_Obj *nsObjPtr = objPtr->internalRep.twoPtrValue.ptr2;
 
-    if (procPtr->refCount-- == 1) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
     TclDecrRefCount(nsObjPtr);
