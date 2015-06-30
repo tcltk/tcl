@@ -818,16 +818,16 @@ typedef struct Tcl_Obj {
 	double doubleValue;	/*   - a double-precision floating value. */
 	void *otherValuePtr;	/*   - another, type-specific value. */
 	Tcl_WideInt wideValue;	/*   - a long long value. */
-	struct {		/*   - internal rep as two pointers. */
+	struct {		/*   - internal rep as two pointers.
+				 *     the main use of which is a bignum's
+				 *     tightly packed fields, where the alloc,
+				 *     used and signum flags are packed into
+				 *     ptr2 with everything else hung off ptr1. */
 	    void *ptr1;
 	    void *ptr2;
 	} twoPtrValue;
 	struct {		/*   - internal rep as a pointer and a long,
-				 *     the main use of which is a bignum's
-				 *     tightly packed fields, where the alloc,
-				 *     used and signum flags are packed into a
-				 *     single word with everything else hung
-				 *     off the pointer. */
+	                       not used internally any more. */
 	    void *ptr;
 	    unsigned long value;
 	} ptrAndLongRep;
