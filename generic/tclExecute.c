@@ -198,14 +198,14 @@ typedef struct TEBCdata {
 	if (auxObjList) {					\
 	    objPtr->length += auxObjList->length;		\
 	}							\
-	objPtr->internalRep.ptrAndLongRep.ptr = auxObjList;	\
+	objPtr->internalRep.twoPtrValue.ptr1 = auxObjList;	\
 	auxObjList = objPtr;					\
     } while (0)
 
 #define POP_TAUX_OBJ() \
     do {							\
 	tmpPtr = auxObjList;					\
-	auxObjList = tmpPtr->internalRep.ptrAndLongRep.ptr;	\
+	auxObjList = tmpPtr->internalRep.twoPtrValue.ptr1;	\
 	Tcl_DecrRefCount(tmpPtr);				\
     } while (0)
 
@@ -1649,8 +1649,7 @@ FreeExprCodeInternalRep(
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
+    if (codePtr->refCount-- < 2) {
 	TclCleanupByteCode(codePtr);
     }
 }
@@ -2858,7 +2857,7 @@ TEBCresume(
 	 */
 
 	TclNewObj(objPtr);
-	objPtr->internalRep.ptrAndLongRep.value = CURR_DEPTH;
+	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(CURR_DEPTH);
 	objPtr->length = 0;
 	PUSH_TAUX_OBJ(objPtr);
 	TRACE(("=> mark depth as %d\n", (int) CURR_DEPTH));
@@ -2872,7 +2871,7 @@ TEBCresume(
 	 */
 
 	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
+	objc = CURR_DEPTH - PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2);
 	POP_TAUX_OBJ();
 #ifdef TCL_COMPILE_DEBUG
 	/* Ugly abuse! */
@@ -2973,7 +2972,7 @@ TEBCresume(
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
+	objc = CURR_DEPTH - PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2);
 	POP_TAUX_OBJ();
 	if (objc) {
 	    pcAdjustment = 1;
@@ -8066,7 +8065,7 @@ TEBCresume(
 	while (auxObjList) {
 	    if ((catchTop != initCatchTop)
 		    && (*catchTop > (ptrdiff_t)
-			auxObjList->internalRep.ptrAndLongRep.value)) {
+			auxObjList->internalRep.twoPtrValue.ptr2)) {
 		break;
 	    }
 	    POP_TAUX_OBJ();
