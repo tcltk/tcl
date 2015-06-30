@@ -215,9 +215,9 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
  * Types of Tcl_Objs used to cache variable lookups.
  *
  * localVarName - INTERNALREP DEFINITION:
- *   ptrAndLongRep.ptr:   pointer to name obj in varFramePtr->localCache
+ *   twoPtrValue.ptr1:   pointer to name obj in varFramePtr->localCache
  *			  or NULL if it is this same obj
- *   ptrAndLongRep.value: index into locals table
+ *   twoPtrValue.ptr2: index into locals table
  *
  * nsVarName - INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1:	pointer to the namespace containing the reference
@@ -579,7 +579,7 @@ TclObjLookupVarEx(
 	int localIndex;
 
     localVarNameTypeHandling:
-	localIndex = (int) part1Ptr->internalRep.ptrAndLongRep.value;
+	localIndex = PTR2INT(part1Ptr->internalRep.twoPtrValue.ptr2);
 	if (HasLocalVars(varFramePtr)
 		&& !(flags & (TCL_GLOBAL_ONLY | TCL_NAMESPACE_ONLY))
 		&& (localIndex < varFramePtr->numCompiledLocals)) {
@@ -587,7 +587,7 @@ TclObjLookupVarEx(
 	     * Use the cached index if the names coincide.
 	     */
 
-	    Tcl_Obj *namePtr = part1Ptr->internalRep.ptrAndLongRep.ptr;
+	    Tcl_Obj *namePtr = part1Ptr->internalRep.twoPtrValue.ptr1;
 	    Tcl_Obj *checkNamePtr = localName(iPtr->varFramePtr, localIndex);
 
 	    if ((!namePtr && (checkNamePtr == part1Ptr)) ||
@@ -774,14 +774,14 @@ TclObjLookupVarEx(
 
 	part1Ptr->typePtr = &localVarNameType;
 	if (part1Ptr != localName(iPtr->varFramePtr, index)) {
-	    part1Ptr->internalRep.ptrAndLongRep.ptr =
+	    part1Ptr->internalRep.twoPtrValue.ptr1 =
 		    localName(iPtr->varFramePtr, index);
 	    Tcl_IncrRefCount((Tcl_Obj *)
-		    part1Ptr->internalRep.ptrAndLongRep.ptr);
+		    part1Ptr->internalRep.twoPtrValue.ptr1);
 	} else {
-	    part1Ptr->internalRep.ptrAndLongRep.ptr = NULL;
+	    part1Ptr->internalRep.twoPtrValue.ptr1 = NULL;
 	}
-	part1Ptr->internalRep.ptrAndLongRep.value = (long) index;
+	part1Ptr->internalRep.twoPtrValue.ptr2 = INT2PTR(index);
 #if ENABLE_NS_VARNAME_CACHING
     } else if (index > -3) {
 	/*
@@ -5663,16 +5663,16 @@ PanicOnSetVarName(
  * localVarName -
  *
  * INTERNALREP DEFINITION:
- *   ptrAndLongRep.ptr:   pointer to name obj in varFramePtr->localCache
+ *   twoPtrValue.ptr1:   pointer to name obj in varFramePtr->localCache
  *			  or NULL if it is this same obj
- *   ptrAndLongRep.value: index into locals table
+ *   twoPtrValue.ptr2: index into locals table
  */
 
 static void
 FreeLocalVarName(
     Tcl_Obj *objPtr)
 {
-    Tcl_Obj *namePtr = objPtr->internalRep.ptrAndLongRep.ptr;
+    Tcl_Obj *namePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     if (namePtr) {
 	Tcl_DecrRefCount(namePtr);
@@ -5685,16 +5685,16 @@ DupLocalVarName(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dupPtr)
 {
-    Tcl_Obj *namePtr = srcPtr->internalRep.ptrAndLongRep.ptr;
+    Tcl_Obj *namePtr = srcPtr->internalRep.twoPtrValue.ptr1;
 
     if (!namePtr) {
 	namePtr = srcPtr;
     }
-    dupPtr->internalRep.ptrAndLongRep.ptr = namePtr;
+    dupPtr->internalRep.twoPtrValue.ptr1 = namePtr;
     Tcl_IncrRefCount(namePtr);
 
-    dupPtr->internalRep.ptrAndLongRep.value =
-	    srcPtr->internalRep.ptrAndLongRep.value;
+    dupPtr->internalRep.twoPtrValue.ptr2 =
+	    srcPtr->internalRep.twoPtrValue.ptr2;
     dupPtr->typePtr = &localVarNameType;
 }
 
@@ -5714,8 +5714,7 @@ FreeNsVarName(
     register Var *varPtr = objPtr->internalRep.twoPtrValue.ptr2;
 
     if (TclIsVarInHash(varPtr)) {
-	varPtr->refCount--;
-	if (TclIsVarUndefined(varPtr) && (varPtr->refCount == 0)) {
+	if ((varPtr->refCount-- == 1) && TclIsVarUndefined(varPtr)) {
 	    CleanupVar(varPtr, NULL);
 	}
     }
