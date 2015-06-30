@@ -2320,7 +2320,7 @@ proc ::tcl::clock::EnterLocale { locale } {
 	    # Control Panel information
 
 	    set locale [mclocale]_windows
-	    if { $locale ni [::msgcat::mcpackagelocale loaded] } {
+	    if { ! [mcpackagelocale present $locale] } {
 		LoadWindowsDateTimeFormats $locale
 	    }
 	}
