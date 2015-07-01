@@ -412,27 +412,25 @@ InfoObjectIsACmd(
 	return TCL_ERROR;
     }
 
-    if (idx == IsObject) {
-	int ok = (Tcl_GetObjectFromObj(interp, objv[2]) != NULL);
-
-	if (!ok) {
-	    Tcl_ResetResult(interp);
-	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(ok ? 1 : 0));
-	return TCL_OK;
-    }
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
     if (oPtr == NULL) {
-	return TCL_ERROR;
+	goto failPrecondition;
     }
 
     switch ((enum IsACats) idx) {
+    case IsObject:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
+	    return TCL_ERROR;
+	}
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
+	return TCL_OK;
     case IsClass:
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
 	    return TCL_ERROR;
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(oPtr->classPtr ? 1 : 0));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!!oPtr->classPtr));
 	return TCL_OK;
     case IsMetaclass:
 	if (objc != 3) {
@@ -440,12 +438,12 @@ InfoObjectIsACmd(
 	    return TCL_ERROR;
 	}
 	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
 	} else {
 	    Class *classCls = TclOOGetFoundation(interp)->classCls;
 
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(
-		    TclOOIsReachable(classCls, oPtr->classPtr) ? 1 : 0));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+		    TclOOIsReachable(classCls, oPtr->classPtr)));
 	}
 	return TCL_OK;
     case IsMixin:
@@ -455,24 +453,19 @@ InfoObjectIsACmd(
 	}
 	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[3]);
 	if (o2Ptr == NULL) {
-	    return TCL_ERROR;
+	    goto failPrecondition;
 	}
-	if (o2Ptr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "non-classes cannot be mixins", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "NONCLASS", NULL);
-	    return TCL_ERROR;
-	} else {
+	if (o2Ptr->classPtr != NULL) {
 	    Class *mixinPtr;
 
 	    FOREACH(mixinPtr, oPtr->mixins) {
 		if (mixinPtr == o2Ptr->classPtr) {
-		    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+		    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
 		    return TCL_OK;
 		}
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
 	return TCL_OK;
     case IsType:
 	if (objc != 4) {
@@ -481,24 +474,22 @@ InfoObjectIsACmd(
 	}
 	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[3]);
 	if (o2Ptr == NULL) {
-	    return TCL_ERROR;
+	    goto failPrecondition;
 	}
 	if (o2Ptr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		    "non-classes cannot be types", -1));
-	    Tcl_SetErrorCode(interp, "TCL", "OO", "NONCLASS", NULL);
-	    return TCL_ERROR;
-	}
-	if (TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)) {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(1));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
 	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
+		    TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)));
 	}
 	return TCL_OK;
-    case IsObject:
-	Tcl_Panic("unexpected fallthrough");
     }
     return TCL_ERROR;
+
+  failPrecondition:
+    Tcl_ResetResult(interp);
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
+    return TCL_OK;
 }
 
 /*
