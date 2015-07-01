@@ -401,7 +401,7 @@ InfoObjectIsACmd(
 	IsClass, IsMetaclass, IsMixin, IsObject, IsType
     };
     Object *oPtr, *o2Ptr;
-    int idx, i;
+    int idx, i, result = 0;
 
     if (objc < 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "category objName ?arg ...?");
@@ -412,6 +412,34 @@ InfoObjectIsACmd(
 	return TCL_ERROR;
     }
 
+    /*
+     * Now we know what test we are doing, we can check we've got the right
+     * number of arguments.
+     */
+
+    switch ((enum IsACats) idx) {
+    case IsObject:
+    case IsClass:
+    case IsMetaclass:
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
+	    return TCL_ERROR;
+	}
+	break;
+    case IsMixin:
+    case IsType:
+	if (objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "objName className");
+	    return TCL_ERROR;
+	}
+	break;
+    }
+
+    /*
+     * Perform the check. Note that we can guarantee that we will not fail
+     * from here on; "failures" result in a false-TCL_OK result.
+     */
+
     oPtr = (Object *) Tcl_GetObjectFromObj(interp, objv[2]);
     if (oPtr == NULL) {
 	goto failPrecondition;
@@ -419,38 +447,18 @@ InfoObjectIsACmd(
 
     switch ((enum IsACats) idx) {
     case IsObject:
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
-	return TCL_OK;
+	result = 1;
+	break;
     case IsClass:
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
-	    return TCL_ERROR;
-	}
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(!!oPtr->classPtr));
-	return TCL_OK;
+	result = (oPtr->classPtr != NULL);
+	break;
     case IsMetaclass:
-	if (objc != 3) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName");
-	    return TCL_ERROR;
+	if (oPtr->classPtr != NULL) {
+	    result = TclOOIsReachable(TclOOGetFoundation(interp)->classCls,
+		    oPtr->classPtr);
 	}
-	if (oPtr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-	} else {
-	    Class *classCls = TclOOGetFoundation(interp)->classCls;
-
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		    TclOOIsReachable(classCls, oPtr->classPtr)));
-	}
-	return TCL_OK;
+	break;
     case IsMixin:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName className");
-	    return TCL_ERROR;
-	}
 	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[3]);
 	if (o2Ptr == NULL) {
 	    goto failPrecondition;
@@ -459,32 +467,25 @@ InfoObjectIsACmd(
 	    Class *mixinPtr;
 
 	    FOREACH(mixinPtr, oPtr->mixins) {
-		if (mixinPtr == o2Ptr->classPtr) {
-		    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(1));
-		    return TCL_OK;
+		if (TclOOIsReachable(o2Ptr->classPtr, mixinPtr)) {
+		    result = 1;
+		    break;
 		}
 	    }
 	}
-	Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-	return TCL_OK;
+	break;
     case IsType:
-	if (objc != 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv, "objName className");
-	    return TCL_ERROR;
-	}
 	o2Ptr = (Object *) Tcl_GetObjectFromObj(interp, objv[3]);
 	if (o2Ptr == NULL) {
 	    goto failPrecondition;
 	}
-	if (o2Ptr->classPtr == NULL) {
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(0));
-	} else {
-	    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(
-		    TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls)));
+	if (o2Ptr->classPtr != NULL) {
+	    result = TclOOIsReachable(o2Ptr->classPtr, oPtr->selfCls);
 	}
-	return TCL_OK;
+	break;
     }
-    return TCL_ERROR;
+    Tcl_SetObjResult(interp, Tcl_NewBooleanObj(result));
+    return TCL_OK;
 
   failPrecondition:
     Tcl_ResetResult(interp);
