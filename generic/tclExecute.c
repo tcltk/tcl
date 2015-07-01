@@ -1138,7 +1138,7 @@ GrowEvaluationStack(
     }
     needed = growth + moveWords + WALLOCALIGN;
 
-    
+
     /*
      * Check if there is enough room in the next stack (if there is one, it
      * should be both empty and the last one!)
@@ -1176,7 +1176,7 @@ GrowEvaluationStack(
 #else
     newElems = needed;
 #endif
-    
+
     newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
@@ -2152,7 +2152,7 @@ TEBCresume(
     const unsigned char *pc = data[1];
                                 /* The current program counter. */
     unsigned char inst;         /* The currently running instruction */
-    
+
     /*
      * Transfer variables - needed only between opcodes, but not while
      * executing an instruction.
@@ -2357,7 +2357,7 @@ TEBCresume(
      */
 
     inst = *pc;
-    
+
     peepholeStart:
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.instructionCount[*pc]++;
@@ -2377,7 +2377,7 @@ TEBCresume(
 #endif /* TCL_COMPILE_DEBUG */
 
     TCL_DTRACE_INST_NEXT();
-    
+
     if (inst == INST_LOAD_SCALAR1) {
 	goto instLoadScalar1;
     } else if (inst == INST_PUSH1) {
@@ -2389,7 +2389,7 @@ TEBCresume(
 	/*
 	 * Peephole: do not run INST_START_CMD, just skip it
 	 */
-	
+
 	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
 	if (checkInterp) {
 	    checkInterp = 0;
@@ -2410,7 +2410,7 @@ TEBCresume(
 	}
 	goto peepholeStart;
     }
-    
+
     switch (inst) {
     case INST_SYNTAX:
     case INST_RETURN_IMM: {
@@ -2557,7 +2557,7 @@ TEBCresume(
 	/* TIP #280: Record the last piece of info needed by
 	 * 'TclGetSrcInfoForPc', and push the frame.
 	 */
-	
+
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
@@ -5763,7 +5763,7 @@ TEBCresume(
 		     * at this point (post Tcl_GetUnicodeFromObj).
 		     */
 
-		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
+		    ((int *) objResultPtr->internalRep.twoPtrValue.ptr1)[1] = 0;
 		}
 		Tcl_InvalidateStringRep(objResultPtr);
 		TclDecrRefCount(value3Ptr);
@@ -5790,7 +5790,7 @@ TEBCresume(
 		     * at this point (post Tcl_GetUnicodeFromObj).
 		     */
 
-		    ((int *) objResultPtr->internalRep.otherValuePtr)[1] = 0;
+		    ((int *) objResultPtr->internalRep.twoPtrValue.ptr1)[1] = 0;
 		}
 		Tcl_InvalidateStringRep(valuePtr);
 		TclDecrRefCount(value3Ptr);
@@ -7111,7 +7111,7 @@ TEBCresume(
 	 */
 
 	TclNewObj(tmpPtr);
-	tmpPtr->internalRep.otherValuePtr = infoPtr;
+	tmpPtr->internalRep.twoPtrValue.ptr1 = infoPtr;
 	PUSH_OBJECT(tmpPtr); /* infoPtr object */
 	TRACE_APPEND(("jump to loop step\n"));
 
@@ -7129,7 +7129,7 @@ TEBCresume(
 	 */
 
 	tmpPtr = OBJ_AT_TOS;
-	infoPtr = tmpPtr->internalRep.otherValuePtr;
+	infoPtr = tmpPtr->internalRep.twoPtrValue.ptr1;
 	numLists = infoPtr->numLists;
 	TRACE(("=> "));
 
@@ -7213,7 +7213,7 @@ TEBCresume(
     case INST_FOREACH_END:
 	/* THIS INSTRUCTION IS ONLY CALLED AS A BREAK TARGET */
 	tmpPtr = OBJ_AT_TOS;
-	infoPtr = tmpPtr->internalRep.otherValuePtr;
+	infoPtr = tmpPtr->internalRep.twoPtrValue.ptr1;
 	numLists = infoPtr->numLists;
 	TRACE(("=> loop terminated\n"));
 	NEXT_INST_V(1, numLists+2, 0);
@@ -7230,10 +7230,10 @@ TEBCresume(
 	 */
 
 	tmpPtr = OBJ_AT_DEPTH(1);
-	infoPtr = tmpPtr->internalRep.otherValuePtr;
+	infoPtr = tmpPtr->internalRep.twoPtrValue.ptr1;
 	numLists = infoPtr->numLists;
 	TRACE_APPEND(("=> appending to list at depth %d\n", 3 + numLists));
-	
+
 	objPtr = OBJ_AT_DEPTH(3 + numLists);
 	Tcl_ListObjAppendElement(NULL, objPtr, OBJ_AT_TOS);
 	NEXT_INST_F(1, 1, 0);
@@ -8195,7 +8195,7 @@ TEBCresume(
     }
 
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-    if (--codePtr->refCount <= 0) {
+    if (codePtr->refCount-- <= 1) {
 	TclCleanupByteCode(codePtr);
     }
     TclStackFree(interp, TD);	/* free my stack */
@@ -9774,7 +9774,7 @@ ValidatePcAndStackTop(
 		(unsigned) opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
-    if (checkStack && 
+    if (checkStack &&
 	    ((stackTop < 0) || (stackTop > stackUpperBound))) {
 	int numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL, NULL);
@@ -9987,7 +9987,7 @@ GetSrcInfoForPc(
 				 * where the current instruction starts.
 				 * If NULL; no pointer is stored. */
     int *cmdIdxPtr)		/* If non-NULL, the location where the index
-				 * of the command containing the pc should 
+				 * of the command containing the pc should
 				 * be stored. */
 {
     register int pcOffset = (pc - codePtr->codeStart);
