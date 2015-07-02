@@ -2927,8 +2927,8 @@ int
 Tcl_FSChdir(
     Tcl_Obj *pathPtr)
 {
-    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
     const Tcl_Filesystem *fsPtr, *oldFsPtr = NULL;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
     int retVal = -1;
 
     if (tsdPtr->cwdPathPtr != NULL) {
@@ -3046,7 +3046,6 @@ Tcl_FSChdir(
 	     * instead. This should be examined by someone on Unix.
 	     */
 
-	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 	    ClientData cd;
 	    ClientData oldcd = tsdPtr->cwdClientData;
 
@@ -3212,7 +3211,7 @@ TclSkipUnlink (Tcl_Obj* shlibFile)
      *
      * Ad 2: This variable can disable/override the AUFS detection, i.e. for
      * testing if a newer AUFS does not have the bug any more.
-     * 
+     *
      * Ad 3: This is conditionally compiled in. Condition currently must be set manually.
      *       This part needs proper tests in the configure(.in).
      */
@@ -3522,7 +3521,7 @@ Tcl_LoadFile(
     return retVal;
 
   resolveSymbols:
-    /* 
+    /*
      * At this point, *handlePtr is already set up to the handle for the
      * loaded library. We now try to resolve the symbols.
      */
@@ -3531,7 +3530,7 @@ Tcl_LoadFile(
 	for (i=0 ; symbols[i] != NULL; i++) {
 	    procPtrs[i] = Tcl_FindSymbol(interp, *handlePtr, symbols[i]);
 	    if (procPtrs[i] == NULL) {
-		/* 
+		/*
 		 * At least one symbol in the list was not found.  Unload the
 		 * file, and report the problem back to the caller.
 		 * (Tcl_FindSymbol should already have left an appropriate
@@ -3551,7 +3550,7 @@ Tcl_LoadFile(
  *----------------------------------------------------------------------
  *
  * DivertFindSymbol --
- *	
+ *
  *	Find a symbol in a shared library loaded by copy-from-VFS.
  *
  *----------------------------------------------------------------------
