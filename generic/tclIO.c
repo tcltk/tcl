@@ -1930,7 +1930,7 @@ TclChannelRelease(
     if (chanPtr->refCount == 0) {
 	Tcl_Panic("Channel released more than preserved");
     }
-    if (chanPtr->refCount-- > 1) {
+    if (--chanPtr->refCount) {
 	return;
     }
     if (chanPtr->typePtr == NULL) {
@@ -2426,7 +2426,7 @@ static void
 ReleaseChannelBuffer(
     ChannelBuffer *bufPtr)
 {
-    if (bufPtr->refCount-- > 1) {
+    if (--bufPtr->refCount) {
 	return;
     }
     ckfree(bufPtr);

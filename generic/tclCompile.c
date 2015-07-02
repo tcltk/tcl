@@ -1117,7 +1117,7 @@ TclCleanupByteCode(
 	}
     }
 
-    if (codePtr->localCachePtr && (codePtr->localCachePtr->refCount-- <= 1)) {
+    if (codePtr->localCachePtr && (--codePtr->localCachePtr->refCount == 0)) {
 	TclFreeLocalCache(interp, codePtr->localCachePtr);
     }
 

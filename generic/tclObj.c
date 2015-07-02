@@ -4289,7 +4289,7 @@ FreeCmdNameInternalRep(
 	 * there are no more uses, free the ResolvedCmdName structure.
 	 */
 
-	if (resPtr->refCount-- <= 1) {
+	if (resPtr->refCount-- == 1) {
 	    /*
 	     * Now free the cached command, unless it is still in its hash
 	     * table or if there are other references to it from other cmdName
@@ -4405,7 +4405,7 @@ SetCmdNameFromAny(
 
 	    Command *oldCmdPtr = resPtr->cmdPtr;
 
-	    if (oldCmdPtr->refCount-- <= 1) {
+	    if (--oldCmdPtr->refCount == 0) {
 		TclCleanupCommandMacro(oldCmdPtr);
 	    }
 	} else {
