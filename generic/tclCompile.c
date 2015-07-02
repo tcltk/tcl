@@ -1117,7 +1117,7 @@ TclCleanupByteCode(
 	}
     }
 
-    if (codePtr->localCachePtr && (--codePtr->localCachePtr->refCount == 0)) {
+    if (codePtr->localCachePtr && (codePtr->localCachePtr->refCount-- <= 1)) {
 	TclFreeLocalCache(interp, codePtr->localCachePtr);
     }
 
@@ -1624,7 +1624,7 @@ TclFreeCompileEnv(
 	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
     }
     if (envPtr->iPtr) {
-	/* 
+	/*
 	 * We never converted to Bytecode, so free the things we would
 	 * have transferred to it.
 	 */
@@ -1856,7 +1856,7 @@ CompileExpanded(
     int wordIdx = 0;
     DefineLineInformation;
     int depth = TclGetStackDepth(envPtr);
-    
+
     StartExpanding(envPtr);
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1905,7 +1905,7 @@ CompileExpanded(
     TclCheckStackDepth(depth+1, envPtr);
 }
 
-static int 
+static int
 CompileCmdCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -2006,7 +2006,7 @@ CompileCommandTokens(
     int cmdIdx = envPtr->numCommands;
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
     int depth = TclGetStackDepth(envPtr);
-    
+
     assert (parsePtr->numWords > 0);
 
     /* Pre-Compile */
@@ -4035,7 +4035,7 @@ TclEmitInvoke(
     int arg1, arg2, wordCount = 0, expandCount = 0;
     int loopRange = 0, breakRange = 0, continueRange = 0;
     int cleanup, depth = TclGetStackDepth(envPtr);
-    
+
     /*
      * Parse the arguments.
      */

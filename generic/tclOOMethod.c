@@ -272,7 +272,7 @@ void
 TclOODelMethodRef(
     Method *mPtr)
 {
-    if ((mPtr != NULL) && (--mPtr->refCount <= 0)) {
+    if ((mPtr != NULL) && (mPtr->refCount-- <= 1)) {
 	if (mPtr->typePtr != NULL && mPtr->typePtr->deleteProc != NULL) {
 	    mPtr->typePtr->deleteProc(mPtr->clientData);
 	}
@@ -720,7 +720,7 @@ InvokeProcedureMethod(
 
 	    Tcl_PopCallFrame(interp);
 	    TclStackFree(interp, fdPtr->framePtr);
-	    if (--pmPtr->refCount < 1) {
+	    if (pmPtr->refCount-- <= 1) {
 		DeleteProcedureMethodRecord(pmPtr);
 	    }
 	    TclStackFree(interp, fdPtr);
@@ -771,7 +771,7 @@ FinalizePMCall(
      * sensitive when it comes to performance!
      */
 
-    if (--pmPtr->refCount < 1) {
+    if (pmPtr->refCount-- <= 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
     TclStackFree(interp, fdPtr);
@@ -961,7 +961,7 @@ ProcedureMethodVarResolver(
 {
     int result;
     Tcl_ResolvedVarInfo *rPtr = NULL;
-    
+
     result = ProcedureMethodCompiledVarResolver(interp, varName,
 	    strlen(varName), contextNs, &rPtr);
 
@@ -1278,7 +1278,7 @@ DeleteProcedureMethod(
 {
     register ProcedureMethod *pmPtr = clientData;
 
-    if (--pmPtr->refCount < 1) {
+    if (pmPtr->refCount-- <= 1) {
 	DeleteProcedureMethodRecord(pmPtr);
     }
 }
@@ -1473,7 +1473,7 @@ FinalizeForwardCall(
     int result)
 {
     Tcl_Obj **argObjs = data[0];
-    
+
     TclStackFree(interp, argObjs);
     return result;
 }
