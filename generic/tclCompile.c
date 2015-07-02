@@ -978,8 +978,7 @@ FreeByteCodeInternalRep(
     register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
+    if (codePtr->refCount-- <= 1) {
 	TclCleanupByteCode(codePtr);
     }
 }
@@ -1118,7 +1117,7 @@ TclCleanupByteCode(
 	}
     }
 
-    if (codePtr->localCachePtr && (--codePtr->localCachePtr->refCount == 0)) {
+    if (codePtr->localCachePtr && (codePtr->localCachePtr->refCount-- <= 1)) {
 	TclFreeLocalCache(interp, codePtr->localCachePtr);
     }
 
@@ -1295,8 +1294,8 @@ CompileSubstObj(
     if (objPtr->typePtr == &substCodeType) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
-	if ((unsigned long)flags != objPtr->internalRep.ptrAndLongRep.value
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+	if (flags != PTR2INT(objPtr->internalRep.twoPtrValue.ptr2)
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1322,8 +1321,8 @@ CompileSubstObj(
 	TclFreeCompileEnv(&compEnv);
 
 	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
-	objPtr->internalRep.ptrAndLongRep.ptr = codePtr;
-	objPtr->internalRep.ptrAndLongRep.value = flags;
+	objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
+	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(flags);
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1362,11 +1361,10 @@ static void
 FreeSubstCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
+    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
+    if (codePtr->refCount-- <= 1) {
 	TclCleanupByteCode(codePtr);
     }
 }
@@ -1626,7 +1624,7 @@ TclFreeCompileEnv(
 	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
     }
     if (envPtr->iPtr) {
-	/* 
+	/*
 	 * We never converted to Bytecode, so free the things we would
 	 * have transferred to it.
 	 */
@@ -1858,7 +1856,7 @@ CompileExpanded(
     int wordIdx = 0;
     DefineLineInformation;
     int depth = TclGetStackDepth(envPtr);
-    
+
     StartExpanding(envPtr);
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1907,7 +1905,7 @@ CompileExpanded(
     TclCheckStackDepth(depth+1, envPtr);
 }
 
-static int 
+static int
 CompileCmdCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -2008,7 +2006,7 @@ CompileCommandTokens(
     int cmdIdx = envPtr->numCommands;
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
     int depth = TclGetStackDepth(envPtr);
-    
+
     assert (parsePtr->numWords > 0);
 
     /* Pre-Compile */
@@ -4037,7 +4035,7 @@ TclEmitInvoke(
     int arg1, arg2, wordCount = 0, expandCount = 0;
     int loopRange = 0, breakRange = 0, continueRange = 0;
     int cleanup, depth = TclGetStackDepth(envPtr);
-    
+
     /*
      * Parse the arguments.
      */
