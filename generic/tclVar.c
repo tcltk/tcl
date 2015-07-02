@@ -235,25 +235,6 @@ static const Tcl_ObjType localVarNameType = {
     FreeLocalVarName, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
 
-/*
- * Caching of namespace variables disabled: no simple way was found to avoid
- * interfering with the resolver's idea of variable existence. A cached
- * varName may keep a variable's name in the namespace's hash table, which is
- * the resolver's criterion for existence (see test namespace-17.10).
- */
-
-#define ENABLE_NS_VARNAME_CACHING 0
-
-#if ENABLE_NS_VARNAME_CACHING
-static Tcl_FreeInternalRepProc FreeNsVarName;
-static Tcl_DupInternalRepProc DupNsVarName;
-
-static const Tcl_ObjType tclNsVarNameType = {
-    "namespaceVarName",
-    FreeNsVarName, DupNsVarName, PanicOnUpdateVarName, PanicOnSetVarName
-};
-#endif
-
 static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
     FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, PanicOnSetVarName
@@ -554,26 +535,9 @@ TclObjLookupVarEx(
     const Tcl_ObjType *typePtr = part1Ptr->typePtr;
     const char *errMsg = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
-#if ENABLE_NS_VARNAME_CACHING
-    Namespace *nsPtr;
-#endif
     const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
     char *newPart2 = NULL;
-
     *arrayPtrPtr = NULL;
-
-#if ENABLE_NS_VARNAME_CACHING
-    if (varFramePtr) {
-	nsPtr = varFramePtr->nsPtr;
-    } else {
-	/*
-	 * Some variables in the global ns have to be initialized before the
-	 * root call frame is in place.
-	 */
-
-	nsPtr = NULL;
-    }
-#endif
 
     if (typePtr == &localVarNameType) {
 	int localIndex;
@@ -597,44 +561,6 @@ TclObjLookupVarEx(
 	    }
 	}
 	goto doneParsing;
-#if ENABLE_NS_VARNAME_CACHING
-    } else if (typePtr == &tclNsVarNameType) {
-	int useGlobal, useReference;
-	Namespace *cachedNsPtr = part1Ptr->internalRep.twoPtrValue.ptr1;
-	varPtr = part1Ptr->internalRep.twoPtrValue.ptr2;
-
-	useGlobal = (cachedNsPtr == iPtr->globalNsPtr) && (
-		(flags & TCL_GLOBAL_ONLY) ||
-		(part1[0]==':' && part1[1]==':') ||
-		(!HasLocalVars(varFramePtr) && (nsPtr==iPtr->globalNsPtr)));
-
-	useReference = useGlobal || ((cachedNsPtr == nsPtr) && (
-		(flags & TCL_NAMESPACE_ONLY) ||
-		(!HasLocalVars(varFramePtr) && !(flags & TCL_GLOBAL_ONLY) &&
-		/*
-		 * Careful: an undefined ns variable could be hiding a valid
-		 * global reference.
-		 */
-		!TclIsVarUndefined(varPtr))));
-
-	if (useReference && !TclIsVarDeadHash(varPtr)) {
-	    /*
-	     * A straight global or namespace reference, use it. It isn't so
-	     * simple to deal with 'implicit' namespace references, i.e.,
-	     * those where the reference could be to either a namespace or a
-	     * global variable. Those we lookup again.
-	     *
-	     * If TclIsVarDeadHash(varPtr), this might be a reference to a
-	     * variable in a deleted namespace, kept alive by e.g. part1Ptr.
-	     * We could conceivably be so unlucky that a new namespace was
-	     * created at the same address as the deleted one, so to be safe
-	     * we test for a valid hPtr.
-	     */
-
-	    goto donePart1;
-	}
-	goto doneParsing;
-#endif
     }
 
     /*
@@ -782,20 +708,6 @@ TclObjLookupVarEx(
 	    part1Ptr->internalRep.twoPtrValue.ptr1 = NULL;
 	}
 	part1Ptr->internalRep.twoPtrValue.ptr2 = INT2PTR(index);
-#if ENABLE_NS_VARNAME_CACHING
-    } else if (index > -3) {
-	/*
-	 * A cacheable namespace or global variable.
-	 */
-
-	Namespace *nsPtr;
-
-	nsPtr = ((index == -1) ? iPtr->globalNsPtr : varFramePtr->nsPtr);
-	varPtr->refCount++;
-	part1Ptr->typePtr = &tclNsVarNameType;
-	part1Ptr->internalRep.twoPtrValue.ptr1 = nsPtr;
-	part1Ptr->internalRep.twoPtrValue.ptr2 = varPtr;
-#endif
     } else {
 	/*
 	 * At least mark part1Ptr as already parsed.
@@ -807,18 +719,6 @@ TclObjLookupVarEx(
     }
 
   donePart1:
-#if 0 /* ENABLE_NS_VARNAME_CACHING perhaps? */
-    if (varPtr == NULL) {
-	if (flags & TCL_LEAVE_ERR_MSG) {
-	    part1 = TclGetString(part1Ptr);
-	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg,
-		    "cached variable reference is NULL.", -1);
-	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
-		    TclGetString(part1Ptr), NULL);
-	}
-	return NULL;
-    }
-#endif
     while (TclIsVarLink(varPtr)) {
 	varPtr = varPtr->value.linkPtr;
     }
@@ -1912,17 +1812,6 @@ TclPtrSetVar(
 	varPtr->value.objPtr = NULL;
     }
     if (flags & (TCL_APPEND_VALUE|TCL_LIST_ELEMENT)) {
-#if 0 /* ENABLE_NS_VARNAME_CACHING perhaps? */
-	/*
-	 * Can't happen now!
-	 */
-
-	if (TclIsVarUndefined(varPtr) && (oldValuePtr != NULL)) {
-	    TclDecrRefCount(oldValuePtr);	/* Discard old value. */
-	    varPtr->value.objPtr = NULL;
-	    oldValuePtr = NULL;
-	}
-#endif
 	if (flags & TCL_LIST_ELEMENT) {		/* Append list element. */
 	    if (oldValuePtr == NULL) {
 		TclNewObj(oldValuePtr);
@@ -2387,18 +2276,6 @@ TclPtrUnsetVar(
 	    Tcl_SetErrorCode(interp, "TCL", "UNSET", "VARNAME", NULL);
 	}
     }
-
-#if ENABLE_NS_VARNAME_CACHING
-    /*
-     * Try to avoid keeping the Var struct allocated due to a tclNsVarNameType
-     * keeping a reference. This removes some additional exteriorisations of
-     * [Bug 736729], but may be a good thing independently of the bug.
-     */
-
-    if (part1Ptr->typePtr == &tclNsVarNameType) {
-	TclFreeIntRep(part1Ptr);
-    }
-#endif
 
     /*
      * Finally, if the variable is truly not in use then free up its Var
@@ -5697,46 +5574,6 @@ DupLocalVarName(
 	    srcPtr->internalRep.twoPtrValue.ptr2;
     dupPtr->typePtr = &localVarNameType;
 }
-
-#if ENABLE_NS_VARNAME_CACHING
-/*
- * nsVarName -
- *
- * INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1: pointer to the namespace containing the reference.
- *   twoPtrValue.ptr2: pointer to the corresponding Var
- */
-
-static void
-FreeNsVarName(
-    Tcl_Obj *objPtr)
-{
-    register Var *varPtr = objPtr->internalRep.twoPtrValue.ptr2;
-
-    if (TclIsVarInHash(varPtr) && TclIsVarUndefined(varPtr)) {
-	if ((varPtr->refCount-- <= 1)) {
-	    CleanupVar(varPtr, NULL);
-	}
-    }
-    objPtr->typePtr = NULL;
-}
-
-static void
-DupNsVarName(
-    Tcl_Obj *srcPtr,
-    Tcl_Obj *dupPtr)
-{
-    Namespace *nsPtr = srcPtr->internalRep.twoPtrValue.ptr1;
-    register Var *varPtr = srcPtr->internalRep.twoPtrValue.ptr2;
-
-    dupPtr->internalRep.twoPtrValue.ptr1 = nsPtr;
-    dupPtr->internalRep.twoPtrValue.ptr2 = varPtr;
-    if (TclIsVarInHash(varPtr)) {
-	varPtr->refCount++;
-    }
-    dupPtr->typePtr = &tclNsVarNameType;
-}
-#endif
 
 /*
  * parsedVarName -
