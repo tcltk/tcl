@@ -8274,7 +8274,7 @@ Dropped support for OS X versions less than 10.4 (Tiger) (fellows)
 2013-08-01 (bug fix)[1905562] RE recursion limit increased to support
 reported usage of large expressions (porter)
 
-2013-08-02 (bug fix)[9d6162] superclass slot empty crash (vdgoot,fellows)2013-08-02 (bug fix)[9d6162] superclass slot empty crash (vdgoot,fellows)
+2013-08-02 (bug fix)[9d6162] superclass slot empty crash (vdgoot,fellows)
 
 2013-08-03 (enhancement)[3611643] [auto_mkindex] support TclOO (fellows)
 
@@ -8303,4 +8303,232 @@ reported usage of large expressions (porter)
 
 Many optmizations, improvements, and tightened stack management in bytecode.
 
---- Released 8.6.1, Septemer 20, 2013 --- http://core.tcl.tk/tcl/ for details 
+--- Released 8.6.1, September 20, 2013 --- http://core.tcl.tk/tcl/ for details
+
+2013-09-27 (enhancement) improved ::env synchronization (fellows)
+
+2013-10-20 (bug fix)[2835313] segfault from
+[apply {{} {while 1 {a {*}[return -level 0 -code continue]}}}] (fellows)
+
+2013-10-22 (bug fix)[3556215] [scan %E%G%X] support (fellows)
+
+2013-10-25 (bug fix)[3eb2ec1] upper case scheme names in url. (nijtmans)
+=> http 2.8.8
+
+2013-10-29 (bug fix)[414d103] HP-UX: restore [exec] in threaded Tcl (nijtmans)
+
+2013-11-04 (bug fix) C++ friendly stubs struct declarations (nijtmans)
+
+2013-11-05 (bug fix)[426679e] OpenBSD man page rendering (nijtmans)
+
+2013-11-12 (bug fix)[5425f2c] [fconfigure -error] breaks [socket -async]
+
+2013-11-20 (bug fix) Improved environment variable management (nijtmans)
+=> tcltest 2.3.7
+
+2013-11-21 (platforms) Support for Windows 8.1 (nijtmans)
+
+2013-12-06 (RFE) improved [foreach] bytecode (fellows)
+
+2013-12-10 (RFE) improved [lmap] bytecode (sofer)
+
+2013-12-11 (RFE) improved [catch] bytecode (sofer)
+
+2013-12-18 (bug fix)[0b874c3] SEGV [coroutine X coroutine Y info frame] (porter)
+
+2013-12-20 (RFE) reduced numeric conversion in bytecode (sofer)
+
+2014-01-07 (RFE) compilers for  [concat], [linsert], [namespace origin],
+[next], [string replace], [string tolower], [string totitle], [string toupper],
+[string trim], [string trimleft], [string trimright] (fellows)
+
+2014-01-22 (RFE) compilers for [nextto], [yieldto] (fellows)
+
+2014-02-02 (RFE) compiler for [string is] (fellows)
+
+2014-02-06 (bug fix)[a4494e2] panic in test namespace-13.2 (porter)
+
+2014-03-20 (bug fix)[2f7cbd0] FreeBSD 10.0 build failure (nijtmans)
+
+2014-03-26 (RFE)[b42b208] Cygwin: [file attr -readonly -archive -hidden -system]
+(nijtmans)
+
+2014-03-27 (bug fix) segfault iocmd-23.11 (porter)
+
+2014-04-02 (bug fix)[581937a] Win: readable event on async connect failure
+
+2014-04-04 (bug fix)[581937a,97069ea] async socket connect fail (oehlmann)
+
+2014-04-10 (bug fix)[792641f] Win: no \ in normalized path (nijtmans)
+
+2014-04-11 (bug fix)[3118489] protect NUL in filenames (nijtmans)
+
+2014-04-15 (bug fix)[88aef05] segfault iocmd-21.20 (porter)
+
+2014-04-16 (update) Win: use Winsock 2.2 (nijtmans)
+
+2014-04-16 (bug fix)[d19a30d] segfault clock-67.[23] (sebres)
+
+2014-04-21 (bug fix) segfault iocmd-21.2[12] (porter)
+
+2014-04-22 (bug fix) segfault iogt-2.4 (porter)
+
+2014-04-23 (bug fix)[3493120] memleak in thread exit
+
+2014-05-08 refactoring of core I/O functions (porter)
+
+2014-05-09 (bug fix)[3389978] Win: extended paths support (nijtmans)
+
+2014-05-09 (bug fix) segfault iocmd-32.1 (porter)
+
+2014-05-11 (bug fix)[6d2f249] nested ensemble compile failure (fellows)
+
+2014-05-17 (RFE)[47d6625] wideint support in [lsearch -integer] [lsort -integer] (nijtmans)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2014-05-20 (bug fix) Stop eof and blocked state leaking thru stacks (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2014-05-20 (bug fix)[13d3af3] Win: socket -async tried only first IP address
+
+2014-05-28 (platforms) work around systems that fail when a shared library
+is deleted after it is [load]ed (kupries)
+
+2014-05-31 (bug fix) chan events on pipes must be on proper ends (porter)
+
+2014-06-04 (bug fix) socket-2.12 (porter)
+
+2014-06-05 (bug fix) io-12.6 (kupries,porter)
+
+2014-06-15 (RFE)[1b0266d] [dict replace|remove] return canonical dict (fellows)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2014-06-16 (bug fix) socket-2.13 workaround broken select() (porter)
+
+2014-06-20 (bug fix)[b47b176] iortrans.tf-11.0 (porter)
+
+2014-06-22 (RFE)[2f9df4c] -cleanup scripts before -out compare (nijtmans)
+
+2014-07-04 (update) Update Unicode data to 7.0 (nijtmans)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2014-07-08 (bug) [chan push] converts blocked writes to error (aspect,porter)
+
+2014-07-10 (bug fix)[7368d2] memleak Tcl_SetVar2(..,TCL_APPEND_VALUE) (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2014-07-11 (bug) leaks in SetFsPathFromAny, [info frame] (porter)
+
+2014-07-15 (bug) compress dict leak in zlib xform channel close (porter)
+
+2014-07-17 (bug fix)[9969cf8] leak trace data in coroutine deletion (porter)
+
+2014-07-18 (RFE)[b43f2b4] fix [lappend] multi performance collapse (fellows)
+
+2014-07-19 (bug fix)[75b8433] memleak managing oo instance lists (porter)
+
+2014-07-21 (bug fix)[e6477e1] memleak in AtForkChild() (porter)
+
+2014-07-22 (bug fix)[12b0997] memleak in iocmd.tf-32.0 (porter)
+
+2014-07-28 (RFE) Optimized binary [chan copy] by moving buffers (porter)
+
+2014-07-30 (enhancement) use refcounts, not Tcl_Preserve to manage lifetime
+of Tcl_Channel  (porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2014-07-31 (bug fix)[a84a720] double free in oo chain deletion (porter)
+
+2014-08-01 (bug fix)[e75faba] SEGV [apply {{} {namespace upvar a b [x]}}] (porter)
+
+2014-08-01 (update) "macosx*-i386-x86_64" "macosx-universal" no longer compatible (kupries)
+=> platform 1.0.13
+
+2014-08-12 tzdata updated to Olson's tzdata2014f (kenny)
+
+2014-08-17 (bug fix)[7d52e11] [info class subclasses oo::object] should
+include ::oo::class (fellows)
+
+2014-08-25 (TIP 429) New command [string cat] (leitgeb,ferrieux)
+
+--- Released 8.6.2, August 27, 2014 --- http://core.tcl.tk/tcl/ for details
+
+2014-08-28 (bug)[b9e1a3] Correct Method Search Order (nadkarni,fellows)
+=> TclOO 1.0.3
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2014-09-05 (bug)[ccc2c2] Regression [lreplace {} 1 1] (bron,fellows)
+
+2014-09-08 (bug)<oo-1.18.2> Crash regression in [oo::class destroy] (porter)
+
+2014-09-09 (bug)[84af11] Regress [regsub -all {\(.*} a(b) {}] (fellows)
+
+2014-09-10 (bug)[cee90e] [try {} on ok {} - on return {} {}] panic (porter)
+
+2014-09-20 (feature) [tcl::unsupported::getbytecode] disassember (fellows)
+
+2014-09-27 (enhancement) [string cat] bytecode optimization (leitgeb,ferrieux)
+
+2014-09-27 (bug)[82521b] segfault in mangled bytecode (ogilvie,sofer)
+
+2014-10-02 (bug)[bc5b79] Hang in some [read]s of limited size (rogers,porter)
+
+2014-10-03 (bug)[bc1a96] segfault in [array set] of traced array (tab,porter)
+
+2014-10-08 (bug)[59a2e7] MSVC14 compile support (dower,nijtmans)
+
+2014-10-10 (bug)[ed29c4] [fcopy] treats [blocked] as error (rowen,porter)
+
+2014-10-10 (bug)[bf7135] regression in Tcl_Write() interface (porter)
+
+2014-10-18 (bug)[10dc6d] fix [gets] on non-blocking channels (fassel,porter)
+
+2014-10-26 Support for Windows 10 (nijtmans)
+
+2014-10-31 (bug)[dcc034] restore [open comX: r+] (lll,nijtmans)
+
+2014-11-05 (bug)[214cc0] Restore [lappend v] return value (sayers,porter)
+
+2014-11-06 (bug)[5adc35] Stop forcing EOF to be permanent (porter)
+
+--- Released 8.6.3, November 12, 2014 --- http://core.tcl.tk/tcl/ for details
+
+2014-11-21 (bug)[743338] Win: socket error encoding (ladayaroslav,nijtmans)
+
+2014-12-01 (bug) restore tbcload/tclcompiler support (kupries)
+
+2014-12-03 (bug)[0c043a] Fix compiled [set var($) val] (porter)
+
+2014-12-04 (bug)[d2ffcc] Limit $... and bareword parsing to ASCII (ladayaroslav,porter)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+2014-12-06 (bug)[c6cd4a] Win: hang in async socket connection (shults,nadkarni)
+
+2014-12-10 tzdata updated to Olson's tzdata2014j (venkat)
+
+2014-12-13 fix header files installation on OS X (houben)
+
+2014-12-17 (TIP 427) [fconfigure $h -connecting, -peername, -sockname] (oehlmann,rmax)
+
+2014-12-18 (bug)[af08c8] Crash in full finalize encoding teardown (porter)
+
+2014-12-18 (bug)[7c187a] [chan copy] crash (io-53.17) (benno,porter)
+
+2015-01-26 (bug)[df0848] Trouble with INFINITY macro (dower,nijtmans)
+
+2015-01-29 (bug) Stop crashes when extension var resolvers misbehave (porter)
+
+2015-01-29 (bug)[088727] [read] past EOF (io-73.4) (fenugrec,porter)
+
+2015-02-11 tzdata updated to Olson's tzdata2015a (venkat)
+
+2015-02-20 (bug)[32b615] Fix compiled [lreplace] (lreplace-4.[345]) (aspect)
+
+2015-03-10 (enhancement) Revise OS X notifier for better Cocoa (walzer)
+        *** POTENTIAL INCOMPATIBILITY ***
+
+--- Released 8.6.4, March 12, 2015 --- http://core.tcl.tk/tcl/ for details
+
+2015-06-25 (TIP 412) msgcat dynamic locale change and package private locale (oehlmann)
+=> msgcat 1.6.0
+

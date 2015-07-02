@@ -195,7 +195,7 @@ Tcl_Release(
 	    continue;
 	}
 
-	if (--refPtr->refCount != 0) {
+	if (refPtr->refCount-- > 1) {
 	    Tcl_MutexUnlock(&preserveMutex);
 	    return;
 	}
@@ -459,8 +459,7 @@ TclHandleRelease(
 		handlePtr, handlePtr->ptr2, handlePtr->ptr);
     }
 #endif
-    handlePtr->refCount--;
-    if ((handlePtr->refCount == 0) && (handlePtr->ptr == NULL)) {
+    if ((handlePtr->refCount-- <= 1) && (handlePtr->ptr == NULL)) {
 	ckfree(handlePtr);
     }
 }
