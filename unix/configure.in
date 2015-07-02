@@ -25,8 +25,11 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".1"
+TCL_PATCH_LEVEL=".4"
 VERSION=${TCL_VERSION}
+
+EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
+EXTRA_BUILD_HTML=${EXTRA_BUILD_HTML:-"@:"}
 
 #------------------------------------------------------------------------
 # Setup configure arguments for bundled packages

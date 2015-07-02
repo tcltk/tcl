@@ -167,6 +167,36 @@ test compile-3.6 {TclCompileCatchCmd: error in storing result [Bug 3098302]} {*}
     -cleanup {namespace delete catchtest}
 }
 
+test compile-3.7 {TclCompileCatchCmd: error in storing options [Bug 3098302]} {*}{
+     -setup {
+	 namespace eval catchtest {
+	     variable options1 {}
+	 }
+	 trace add variable catchtest::options1 write catchtest::failtrace
+	 proc catchtest::failtrace {n1 n2 op} {
+	     return -code error "trace on $n1 fails by request"
+	 }
+     }
+    -body {
+	proc catchtest::x {} {
+	    variable options1
+	    set count 0
+	    for {set i 0} {$i < 10} {incr i} {
+		set status2 [catch {
+		    set status1 [catch {
+			return -code error -level 0 "original failure"
+		    } result1 options1]
+		} result2 options2]
+		incr count
+	    }
+	    list $count $result2
+	}
+	catchtest::x
+    }
+    -result {10 {can't set "options1": trace on options1 fails by request}}
+    -cleanup {namespace delete catchtest}
+}
+
 test compile-4.1 {TclCompileForCmd: command substituted test expression} {
     set i 0
     set j 0
@@ -425,13 +455,21 @@ test compile-13.1 {testing underestimate of maxStackSize in list cmd} {exec} {
     list [catch {exec [interpreter] << $script} msg] $msg
 } {0 OK}
 
-# Special test for compiling tokens from a copy of the source string. [Bug
-# 599788]
+# Tests compile-14.* for [Bug 599788] [Bug 0c043a175a47da8c2342]
 test compile-14.1 {testing errors in element name; segfault?} {} {
      catch {set a([error])} msg1
      catch {set bubba([join $abba $jubba]) $vol} msg2
      list $msg1 $msg2
 } {{wrong # args: should be "error message ?errorInfo? ?errorCode?"} {can't read "abba": no such variable}}
+
+test compile-14.2 {testing element name "$"} -body {
+    unset -nocomplain a
+    set a() 1
+    set a(1) 2 
+    set a($) 3
+    list [set a()] [set a(1)] [set a($)] [unset a() a(1); lindex [array names a] 0]
+} -cleanup {unset a} -result [list 1 2 3 {$}]
+
 
 # Tests compile-15.* cover Tcl Bug 633204
 test compile-15.1 {proper TCL_RETURN code from [return]} {
@@ -628,12 +666,15 @@ test compile-17.2 {Command interpretation binding for non-compiled code} -setup 
 # does not check the format of disassembled bytecode though; that's liable to
 # change without warning.
 
+set disassemblables [linsert [join {
+    lambda method objmethod proc script
+} ", "] end-1 or]
 test compile-18.1 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble
 } -match glob -result {wrong # args: should be "*"}
 test compile-18.2 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble ?
-} -match glob -result {bad type "?": must be *}
+} -result "bad type \"?\": must be $disassemblables"
 test compile-18.3 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::disassemble lambda
 } -match glob -result {wrong # args: should be "* lambda lambdaTerm"}
@@ -707,6 +748,83 @@ test compile-18.19 {disassembler - basics} -setup {
 } -cleanup {
     foo destroy
 } -match glob -result *
+# There never was a compile-18.20.
+# The keys of the dictionary produced by [getbytecode] are defined.
+set bytecodekeys {literals variables exception instructions auxiliary commands script namespace stackdepth exceptdepth}
+test compile-18.21 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode
+} -match glob -result {wrong # args: should be "*"}
+test compile-18.22 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode ?
+} -result "bad type \"?\": must be $disassemblables"
+test compile-18.23 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode lambda
+} -match glob -result {wrong # args: should be "* lambda lambdaTerm"}
+test compile-18.24 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode lambda \{
+} -result "can't interpret \"\{\" as a lambda expression"
+test compile-18.25 {disassembler - basics} -body {
+    dict keys [tcl::unsupported::getbytecode lambda {{} {}}]
+} -result $bytecodekeys
+test compile-18.26 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode proc
+} -match glob -result {wrong # args: should be "* proc procName"}
+test compile-18.27 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode proc nosuchproc
+} -result {"nosuchproc" isn't a procedure}
+test compile-18.28 {disassembler - basics} -setup {
+    proc chewonthis {} {}
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename chewonthis {}
+} -result $bytecodekeys
+test compile-18.29 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode script
+} -match glob -result {wrong # args: should be "* script script"}
+test compile-18.30 {disassembler - basics} -body {
+    dict keys [tcl::unsupported::getbytecode script {}]
+} -result $bytecodekeys
+test compile-18.31 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode method
+} -match glob -result {wrong # args: should be "* method className methodName"}
+test compile-18.32 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode method nosuchclass foo
+} -result {nosuchclass does not refer to an object}
+test compile-18.33 {disassembler - basics} -returnCodes error -setup {
+    oo::object create justanobject
+} -body {
+    tcl::unsupported::getbytecode method justanobject foo
+} -cleanup {
+    justanobject destroy
+} -result {"justanobject" is not a class}
+test compile-18.34 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode method oo::object nosuchmethod
+} -result {unknown method "nosuchmethod"}
+test compile-18.35 {disassembler - basics} -setup {
+    oo::class create foo {method bar {} {}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode method foo bar]
+} -cleanup {
+    foo destroy
+} -result $bytecodekeys
+test compile-18.36 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode objmethod
+} -match glob -result {wrong # args: should be "* objmethod objectName methodName"}
+test compile-18.37 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode objmethod nosuchobject foo
+} -result {nosuchobject does not refer to an object}
+test compile-18.38 {disassembler - basics} -returnCodes error -body {
+    tcl::unsupported::getbytecode objmethod oo::object nosuchmethod
+} -result {unknown method "nosuchmethod"}
+test compile-18.39 {disassembler - basics} -setup {
+    oo::object create foo
+    oo::objdefine foo {method bar {} {}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode objmethod foo bar]
+} -cleanup {
+    foo destroy
+} -result $bytecodekeys
 
 test compile-19.0 {Bug 3614102: reset stack housekeeping} -body {
     # This will panic in a --enable-symbols=compile build, unless bug is fixed.

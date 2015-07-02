@@ -70,11 +70,8 @@ proc check_crc {tok args} {
     return "ok"
 }
 
-makeFile "<html><head><title>test</title></head>\
-<body><p>this is a test</p>\n\
-[string repeat {<p>This is a tcl test file.</p>} 4192]\n\
-</body></html>" testdoc.html
-
+makeFile "<html><head><title>test</title></head><body><p>this is a test</p>\n[string repeat {<p>This is a tcl test file.</p>} 4192]\n</body></html>" testdoc.html
+
 # -------------------------------------------------------------------------
 
 test http11-1.0 "normal request for document " -setup {
@@ -447,7 +444,8 @@ test http11-2.10 "-channel,deflate,keepalive" -setup {
     set chan [open [makeFile {} testfile.tmp] wb+]
 } -body {
     set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
-                 -timeout 5000 -channel $chan -keepalive 1]
+                 -timeout 5000 -channel $chan -keepalive 1 \
+		 -headers {accept-encoding deflate}]
     http::wait $tok
     seek $chan 0
     set data [read $chan]
@@ -481,6 +479,27 @@ test http11-2.11 "-channel,identity,keepalive" -setup {
     removeFile testfile.tmp
     halt_httpd
 } -result {ok {HTTP/1.1 200 OK} ok {} {} chunked}
+
+test http11-2.12 "-channel,negotiate,keepalive" -setup {
+    variable httpd [create_httpd]
+    set chan [open [makeFile {} testfile.tmp] wb+]
+} -body {
+    set tok [http::geturl http://localhost:$httpd_port/testdoc.html \
+                 -timeout 5000 -channel $chan -keepalive 1]
+    http::wait $tok
+    seek $chan 0
+    set data [read $chan]
+    list [http::status $tok] [http::code $tok] [check_crc $tok $data]\
+        [meta $tok connection] [meta $tok content-encoding]\
+        [meta $tok transfer-encoding] [meta $tok x-requested-encodings]\
+        [expr {[file size testdoc.html]-[file size testfile.tmp]}]
+} -cleanup {
+    http::cleanup $tok
+    close $chan
+    removeFile testfile.tmp
+    halt_httpd
+} -result {ok {HTTP/1.1 200 OK} ok {} gzip chunked gzip,deflate,compress 0}
+
 
 # -------------------------------------------------------------------------
 #
@@ -644,7 +663,7 @@ test http11-4.3 "normal post request, check channel query length" -setup {
     removeFile testfile.tmp
     halt_httpd
 } -result {status ok code {HTTP/1.1 200 OK} crc ok connection close query-length 122880}
-
+
 # -------------------------------------------------------------------------
 
 foreach p {create_httpd httpd_read halt_httpd meta check_crc} {
