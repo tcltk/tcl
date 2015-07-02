@@ -225,7 +225,7 @@ static void
 ReleaseData(
     TransformChannelData *dataPtr)
 {
-    if (dataPtr->refCount-- > 1) {
+    if (--dataPtr->refCount) {
 	return;
     }
     ResultClear(&dataPtr->result);
