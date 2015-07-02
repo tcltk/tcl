@@ -336,7 +336,7 @@ typedef struct Tcl_ChannelType {
 It is not necessary to provide implementations for all channel
 operations.  Those which are not necessary may be set to NULL in the
 struct: \fIblockModeProc\fR, \fIseekProc\fR, \fIsetOptionProc\fR,
-\fIgetOptionProc\fR, and \fIclose2Proc\fR, in addition to
+\fIgetOptionProc\fR, \fIgetHandleProc\fR, and \fIclose2Proc\fR, in addition to
 \fIflushProc\fR, \fIhandlerProc\fR, \fIthreadActionProc\fR, and
 \fItruncateProc\fR.  Other functions that cannot be implemented in a
 meaningful way should return \fBEINVAL\fR when called, to indicate

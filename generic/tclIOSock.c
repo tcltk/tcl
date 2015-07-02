@@ -12,9 +12,26 @@
 #include "tclInt.h"
 
 #if defined(_WIN32) && defined(UNICODE)
-/* On Windows, we always need the ASCII version. */
-#   undef gai_strerror
-#   define gai_strerror gai_strerrorA
+/* On Windows, we need to do proper Unicode->UTF-8 conversion. */
+
+typedef struct ThreadSpecificData {
+    int initialized;
+    Tcl_DString errorMsg; /* UTF-8 encoded error-message */
+} ThreadSpecificData;
+static Tcl_ThreadDataKey dataKey;
+
+#undef gai_strerror
+static const char *gai_strerror(int code) {
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+ 
+    if (tsdPtr->initialized) {
+	Tcl_DStringFree(&tsdPtr->errorMsg);
+    } else {
+	tsdPtr->initialized = 1;
+    }
+    Tcl_WinTCharToUtf(gai_strerrorW(code), -1, &tsdPtr->errorMsg);
+    return Tcl_DStringValue(&tsdPtr->errorMsg);
+}
 #endif
 
 /*
@@ -139,7 +156,7 @@ int
 TclCreateSocketAddress(
     Tcl_Interp *interp,                 /* Interpreter for querying
 					 * the desired socket family */
-    void **addrlist,		/* Socket address list */
+    struct addrinfo **addrlist,		/* Socket address list */
     const char *host,			/* Host. NULL implies INADDR_ANY */
     int port,				/* Port number */
     int willBind,			/* Is this an address to bind() to or
@@ -213,7 +230,7 @@ TclCreateSocketAddress(
 	hints.ai_flags |= AI_PASSIVE;
     } 
 
-    result = getaddrinfo(native, portstring, &hints, (struct addrinfo **) addrlist);
+    result = getaddrinfo(native, portstring, &hints, addrlist);
 
     if (host != NULL) {
 	Tcl_DStringFree(&ds);

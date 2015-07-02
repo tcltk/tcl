@@ -130,9 +130,6 @@
 /* Define to 1 if you have the <libkern/OSAtomic.h> header file. */
 #undef HAVE_LIBKERN_OSATOMIC_H
 
-/* Do we have <limits.h>? */
-#undef HAVE_LIMITS_H
-
 /* Define to 1 if you have the `localtime_r' function. */
 #undef HAVE_LOCALTIME_R
 
@@ -315,9 +312,6 @@
 
 /* Do we have a usable 'isnan'? */
 #undef NO_ISNAN
-
-/* Do we have <limits.h>? */
-#undef NO_LIMITS_H
 
 /* Do we have memmove()? */
 #undef NO_MEMMOVE

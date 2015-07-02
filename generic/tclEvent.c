@@ -119,6 +119,7 @@ static char *		VwaitVarProc(ClientData clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
 static void		InvokeExitHandlers(void);
+static void		FinalizeThread(int quick);
 
 /*
  *----------------------------------------------------------------------
@@ -262,7 +263,7 @@ HandleBgErrors(
 
 	    if (errChannel != NULL) {
 		Tcl_Obj *options = Tcl_GetReturnOptions(interp, code);
-		Tcl_Obj *keyPtr, *valuePtr;
+		Tcl_Obj *keyPtr, *valuePtr = NULL;
 
 		TclNewLiteralStringObj(keyPtr, "-errorinfo");
 		Tcl_IncrRefCount(keyPtr);
@@ -314,7 +315,7 @@ TclDefaultBgErrorHandlerObjCmd(
 {
     Tcl_Obj *keyPtr, *valuePtr;
     Tcl_Obj *tempObjv[2];
-    int code, level;
+    int result, code, level;
     Tcl_InterpState saved;
 
     if (objc != 3) {
@@ -328,9 +329,9 @@ TclDefaultBgErrorHandlerObjCmd(
 
     TclNewLiteralStringObj(keyPtr, "-level");
     Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
-    if (valuePtr == NULL) {
+    if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-level\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
@@ -341,9 +342,9 @@ TclDefaultBgErrorHandlerObjCmd(
     }
     TclNewLiteralStringObj(keyPtr, "-code");
     Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
-    if (valuePtr == NULL) {
+    if (result != TCL_OK || valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-code\"", -1));
 	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
@@ -406,17 +407,17 @@ TclDefaultBgErrorHandlerObjCmd(
 
     TclNewLiteralStringObj(keyPtr, "-errorcode");
     Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
-    if (valuePtr) {
+    if (result == TCL_OK && valuePtr != NULL) {
 	Tcl_SetObjErrorCode(interp, valuePtr);
     }
 
     TclNewLiteralStringObj(keyPtr, "-errorinfo");
     Tcl_IncrRefCount(keyPtr);
-    Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
+    result = Tcl_DictObjGet(NULL, objv[2], keyPtr, &valuePtr);
     Tcl_DecrRefCount(keyPtr);
-    if (valuePtr) {
+    if (result == TCL_OK && valuePtr != NULL) {
 	Tcl_AppendObjToErrorInfo(interp, valuePtr);
     }
 
@@ -983,7 +984,7 @@ Tcl_Exit(
 	     * Tcl_Channels that may have data enqueued.
 	     */
 	    
-	    Tcl_FinalizeThread();
+	    FinalizeThread(/* quick */ 1);
 	}
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
@@ -1183,7 +1184,7 @@ Tcl_Finalize(void)
      * This fixes the Tcl Bug #990552.
      */
 
-    TclFinalizeThreadData();
+    TclFinalizeThreadData(/* quick */ 0);
 
     /*
      * Now we can free constants for conversions to/from double.
@@ -1269,6 +1270,13 @@ Tcl_Finalize(void)
 void
 Tcl_FinalizeThread(void)
 {
+    FinalizeThread(/* quick */ 0);
+}
+
+void
+FinalizeThread(
+    int quick)
+{
     ExitHandler *exitPtr;
     ThreadSpecificData *tsdPtr;
 
@@ -1309,8 +1317,7 @@ Tcl_FinalizeThread(void)
      *
      * Fix [Bug #571002]
      */
-
-    TclFinalizeThreadData();
+    TclFinalizeThreadData(quick);
 }
 
 /*
