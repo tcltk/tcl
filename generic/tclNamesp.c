@@ -402,7 +402,7 @@ Tcl_PopCallFrame(
     }
     if (framePtr->numCompiledLocals > 0) {
 	TclDeleteCompiledLocalVars(iPtr, framePtr);
-	if (framePtr->localCachePtr->refCount-- <= 1) {
+	if (--framePtr->localCachePtr->refCount == 0) {
 	    TclFreeLocalCache(interp, framePtr->localCachePtr);
 	}
 	framePtr->localCachePtr = NULL;
