@@ -2147,8 +2147,7 @@ TclProcDeleteProc(
 {
     Proc *procPtr = clientData;
 
-    procPtr->refCount--;
-    if (procPtr->refCount <= 0) {
+    if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
     }
 }
