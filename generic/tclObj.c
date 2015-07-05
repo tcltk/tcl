@@ -180,26 +180,26 @@ static Tcl_ThreadDataKey pendingObjDataKey;
     if ((bignum).used > 0x7fff) {                                       \
 	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int));     \
 	*temp = bignum;                                                 \
-	(objPtr)->internalRep.ptrAndLongRep.ptr = temp;                 \
-	(objPtr)->internalRep.ptrAndLongRep.value = (unsigned long)(-1); \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
     } else {                                                            \
 	if ((bignum).alloc > 0x7fff) {                                  \
 	    mp_shrink(&(bignum));                                       \
 	}                                                               \
-	(objPtr)->internalRep.ptrAndLongRep.ptr = (void *) (bignum).dp; \
-	(objPtr)->internalRep.ptrAndLongRep.value = ( ((bignum).sign << 30) \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (bignum).dp; \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
 		| ((bignum).alloc << 15) | ((bignum).used));            \
     }
 
 #define UNPACK_BIGNUM(objPtr, bignum) \
-    if ((objPtr)->internalRep.ptrAndLongRep.value == (unsigned long)(-1)) { \
-	(bignum) = *((mp_int *) ((objPtr)->internalRep.ptrAndLongRep.ptr)); \
+    if ((objPtr)->internalRep.twoPtrValue.ptr2 == INT2PTR(-1)) { \
+	(bignum) = *((mp_int *) ((objPtr)->internalRep.twoPtrValue.ptr1)); \
     } else {                                                            \
-	(bignum).dp = (objPtr)->internalRep.ptrAndLongRep.ptr;          \
-	(bignum).sign = (objPtr)->internalRep.ptrAndLongRep.value >> 30; \
+	(bignum).dp = (objPtr)->internalRep.twoPtrValue.ptr1;          \
+	(bignum).sign = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 30; \
 	(bignum).alloc =                                                \
-		((objPtr)->internalRep.ptrAndLongRep.value >> 15) & 0x7fff; \
-	(bignum).used = (objPtr)->internalRep.ptrAndLongRep.value & 0x7fff; \
+		(PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 15) & 0x7fff; \
+	(bignum).used = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) & 0x7fff; \
     }
 
 /*
@@ -3182,8 +3182,8 @@ FreeBignum(
 
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
-    if ((long) objPtr->internalRep.ptrAndLongRep.value < 0) {
-	ckfree(objPtr->internalRep.ptrAndLongRep.ptr);
+    if (PTR2INT(objPtr->internalRep.twoPtrValue.ptr2) < 0) {
+	ckfree(objPtr->internalRep.twoPtrValue.ptr1);
     }
     objPtr->typePtr = NULL;
 }
@@ -3394,8 +3394,8 @@ GetBignumFromObj(
 		mp_init_copy(bignumValue, &temp);
 	    } else {
 		UNPACK_BIGNUM(objPtr, *bignumValue);
-		objPtr->internalRep.ptrAndLongRep.ptr = NULL;
-		objPtr->internalRep.ptrAndLongRep.value = 0;
+		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
 		if (objPtr->bytes == NULL) {
 		    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
@@ -3804,7 +3804,7 @@ Tcl_DbDecrRefCount(
 # endif /* TCL_THREADS */
 #endif /* TCL_MEM_DEBUG */
 
-    if ((objPtr)->refCount-- < 2) {
+    if (objPtr->refCount-- <= 1) {
 	TclFreeObj(objPtr);
     }
 }
@@ -4289,8 +4289,7 @@ FreeCmdNameInternalRep(
 	 * there are no more uses, free the ResolvedCmdName structure.
 	 */
 
-	resPtr->refCount--;
-	if (resPtr->refCount == 0) {
+	if (resPtr->refCount-- == 1) {
 	    /*
 	     * Now free the cached command, unless it is still in its hash
 	     * table or if there are other references to it from other cmdName

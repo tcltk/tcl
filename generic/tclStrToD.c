@@ -1852,6 +1852,8 @@ RefineApproximation(
 	rteSignificand = frexp(approxResult, &rteExponent);
 	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
 	if ((rteSigWide & 1) == 0) {
+	    mp_clear(&twoMd);
+	    mp_clear(&twoMv);
 	    return approxResult;
 	}
     }	

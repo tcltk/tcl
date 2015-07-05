@@ -4101,7 +4101,7 @@ typedef const char *TclDTraceStr;
 # define TclDecrRefCount(objPtr) \
     do { \
 	Tcl_Obj *_objPtr = (objPtr); \
-	if (_objPtr->refCount-- < 2) { \
+	if (_objPtr->refCount-- <= 1) { \
 	    if (!_objPtr->typePtr || !_objPtr->typePtr->freeIntRepProc) { \
 		TCL_DTRACE_OBJ_FREE(_objPtr); \
 		if (_objPtr->bytes \
@@ -4716,7 +4716,7 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
  */
 
 #define TclCleanupCommandMacro(cmdPtr) \
-    if (--(cmdPtr)->refCount <= 0) { \
+    if ((cmdPtr)->refCount-- <= 1) { \
 	ckfree((char *) (cmdPtr));\
     }
 

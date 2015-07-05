@@ -847,8 +847,8 @@ install-libraries: libraries
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
 	    done;
-	@echo "Installing package msgcat 1.5.2 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.5.2.tm;
+	@echo "Installing package msgcat 1.6.0 as a Tcl Module";
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.6.0.tm;
 	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.8.tm;
 
@@ -1955,7 +1955,6 @@ $(MAC_OSX_DIR)/configure: $(MAC_OSX_DIR)/configure.ac $(UNIX_DIR)/configure
 $(UNIX_DIR)/tclConfig.h.in: $(MAC_OSX_DIR)/configure
 	cd $(MAC_OSX_DIR); autoheader; touch $@
 
-EOLFIX=$(NATIVE_TCLSH) $(TOOL_DIR)/eolFix.tcl
 dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(MAC_OSX_DIR)/configure genstubs dist-packages ${NATIVE_TCLSH}
 	rm -rf $(DISTDIR)
 	mkdir -p $(DISTDIR)/unix
@@ -2022,17 +2021,11 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 	cp -p $(TOP_DIR)/win/*.[ch] $(TOP_DIR)/win/*.ico $(TOP_DIR)/win/*.rc \
 		$(DISTDIR)/win
 	cp -p $(TOP_DIR)/win/*.bat $(DISTDIR)/win
-	@$(EOLFIX) -crlf $(DISTDIR)/win/*.bat
 	cp -p $(TOP_DIR)/win/makefile.* $(DISTDIR)/win
-	@$(EOLFIX) -crlf $(DISTDIR)/win/makefile.bc $(DISTDIR)/win/makefile.vc
 	cp -p $(TOP_DIR)/win/rules.vc $(DISTDIR)/win
-	@$(EOLFIX) -crlf $(DISTDIR)/win/rules.vc
 	cp -p $(TOP_DIR)/win/coffbase.txt $(DISTDIR)/win
-	@$(EOLFIX) -crlf $(DISTDIR)/win/coffbase.txt
 	cp -p $(TOP_DIR)/win/tcl.hpj.in $(DISTDIR)/win
-	@$(EOLFIX) -crlf $(DISTDIR)/win/tcl.hpj.in
 	cp -p $(TOP_DIR)/win/tcl.ds* $(DISTDIR)/win
-	@$(EOLFIX) -crlf $(DISTDIR)/win/tcl.ds*
 	cp -p $(TOP_DIR)/win/README $(DISTDIR)/win
 	cp -p $(TOP_DIR)/license.terms $(DISTDIR)/win
 	@mkdir $(DISTDIR)/macosx
@@ -2058,7 +2051,6 @@ dist: $(UNIX_DIR)/configure $(UNIX_DIR)/tclConfig.h.in $(UNIX_DIR)/tcl.pc.in $(M
 		$(TOOL_DIR)/*.tcl $(TOOL_DIR)/man2tcl.c \
 		$(TOOL_DIR)/*.bmp $(TOOL_DIR)/tcl.hpj.in \
 		$(DISTDIR)/tools
-	@$(EOLFIX) -crlf $(DISTDIR)/tools/tcl.hpj.in
 	@mkdir $(DISTDIR)/libtommath
 	cp -p $(TOMMATH_SRCS) $(TOMMATH_DIR)/*.h $(DISTDIR)/libtommath
 	@mkdir $(DISTDIR)/pkgs

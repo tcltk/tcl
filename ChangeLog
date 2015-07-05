@@ -895,6 +895,14 @@ a better first place to look now.
 	* win/nmakehlp.c: Let "nmakehlp -V" start searching digits after the
 	found match (suggested by Harald Oehlmann).
 
+2012-09-19  Harald Oehlmann  <oehhar@users.sf.net>
+
+	IMPLEMENTATION OF TIP#412.
+
+	* library/msgcat/msgcat.tcl:	dynamic locale change with mc file
+	* library/clock.tcl:            load on locale change.
+	clock uses new msgcat features.
+
 2012-09-07  Harald Oehlmann  <oehhar@users.sf.net>
 
 	*** 8.6b3 TAGGED FOR RELEASE ***
