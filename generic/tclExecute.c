@@ -9754,7 +9754,6 @@ TclGetSourceFromFrame(
 	    cfPtr->cmdObj = Tcl_NewStringObj(cfPtr->cmd, cfPtr->len);
 	} else {
 	    cfPtr->cmdObj = Tcl_NewListObj(objc, objv);
-	    cfPtr->cmd = Tcl_GetStringFromObj(cfPtr->cmdObj, &cfPtr->len);
 	}
         Tcl_IncrRefCount(cfPtr->cmdObj);
     }
