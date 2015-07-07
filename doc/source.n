@@ -45,6 +45,8 @@ or
 which will be safely substituted by the Tcl interpreter into
 .QW ^Z .
 .PP
+A leading BOM (Byte order mark) contained in the file is ignored for unicode encodings (utf-8, unicode).
+.PP
 .VS 8.5
 The \fB\-encoding\fR option is used to specify the encoding of
 the data stored in \fIfileName\fR.  When the \fB\-encoding\fR option
