@@ -35894,6 +35894,7 @@ test clock-38.1 {regression - convertUTCToLocalViaC - east of Greenwich} \
     -result {01:00:00}
 
 test clock-38.2 {make sure TZ is not cached after unset} \
+    -constraints { $::tcl_platform(platform) ne {windows} } \
     -setup {
 	if { [info exists env(TZ)] } {
 	    set oldTZ $env(TZ)
