@@ -35618,6 +35618,47 @@ test clock-34.11 {clock scan tests} {
     clock format $time -format {%b %d,%Y %H:%M GMT} -gmt true
 } {Jan 01,2037 00:00 GMT}
 
+test clock-34.11.1 {clock scan tests (-TZ)} {
+    set time [clock scan "31 Jan 14 23:59:59 -0100"]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Feb 01,2014 00:59:59 GMT}
+test clock-34.11.2 {clock scan tests (+TZ)} {
+    set time [clock scan "31 Jan 14 23:59:59 +0100"]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 31,2014 22:59:59 GMT}
+test clock-34.11.3 {clock scan tests (-TZ)} {
+    set time [clock scan "23:59:59 -0100" -base 0]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 02,1970 00:59:59 GMT}
+test clock-34.11.4 {clock scan tests (+TZ)} {
+    set time [clock scan "23:59:59 +0100" -base 0]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 01,1970 22:59:59 GMT}
+test clock-34.11.5 {clock scan tests (TZ)} {
+    set time [clock scan "Mon, 30 Jun 2014 23:59:59 CEST"]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jun 30,2014 21:59:59 GMT}
+test clock-34.11.6 {clock scan tests (TZ)} {
+    set time [clock scan "Fri, 31 Jan 2014 23:59:59 CET"]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 31,2014 22:59:59 GMT}
+test clock-34.11.7 {clock scan tests (relspec, day unit not TZ)} {
+    set time [clock scan "23:59:59 +15 day" -base 2000000]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Feb 08,1970 22:59:59 GMT}
+test clock-34.11.8 {clock scan tests (relspec, day unit not TZ)} {
+    set time [clock scan "23:59:59 -15 day" -base 2000000]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 09,1970 22:59:59 GMT}
+test clock-34.11.9 {clock scan tests (merid and TZ)} {
+    set time [clock scan "10:59 pm CET" -base 2000000]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 24,1970 21:59:00 GMT}
+test clock-34.11.10 {clock scan tests (merid and TZ)} {
+    set time [clock scan "10:59 pm +0100" -base 2000000]
+    clock format $time -format {%b %d,%Y %H:%M:%S %Z} -gmt true
+} {Jan 24,1970 21:59:00 GMT}
+
 test clock-34.12 {clock scan, relative times} {
     set time [clock scan "Oct 23, 1992 -1 day"]
     clock format $time -format {%b %d, %Y}
