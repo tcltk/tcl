@@ -2077,6 +2077,30 @@ test oo-16.13 {OO: object introspection} -setup {
     oo::objdefine foo method Bar {} {return "ok in foo"}
     [info object namespace foo]::my Bar
 } -result "ok in foo"
+test oo-16.14 {OO: object introspection: TIP #436} -setup {
+    oo::class create meta { superclass oo::class }
+    [meta create instance1] create instance2
+} -body {
+    list class [list [info object isa class NOTANOBJECT] \
+		    [info object isa class list]] \
+	meta [list [info object isa metaclass NOTANOBJECT] \
+		  [info object isa metaclass list] \
+		  [info object isa metaclass oo::object]] \
+	type [list [info object isa typeof oo::object NOTANOBJECT] \
+		  [info object isa typeof NOTANOBJECT oo::object] \
+		  [info object isa typeof list NOTANOBJECT] \
+		  [info object isa typeof NOTANOBJECT list] \
+		  [info object isa typeof oo::object list] \
+		  [info object isa typeof list oo::object]] \
+	mix [list [info object isa mixin oo::object NOTANOBJECT] \
+		 [info object isa mixin NOTANOBJECT oo::object] \
+		 [info object isa mixin list NOTANOBJECT] \
+		 [info object isa mixin NOTANOBJECT list] \
+		 [info object isa mixin oo::object list] \
+		 [info object isa mixin list oo::object]]
+} -cleanup {
+    meta destroy
+} -result {class {0 0} meta {0 0 0} type {0 0 0 0 0 0} mix {0 0 0 0 0 0}}
 
 test oo-17.1 {OO: class introspection} -body {
     info class
