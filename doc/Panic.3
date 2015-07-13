@@ -62,8 +62,8 @@ and you want to implicitly use the stderr channel of your
 application's C runtime (in stead of the stderr channel of the
 C runtime used by Tcl), you can call \fBTcl_SetPanicProc\fR
 with \fBTcl_ConsolePanic\fR as its argument. On platforms which
-only have one C runtime (almost all platforms except Windows
-and Cygwin) \fBTcl_ConsolePanic\fR is equivalent to NULL.
+only have one C runtime (almost all platforms except Windows)
+\fBTcl_ConsolePanic\fR is equivalent to NULL.
 .PP
 \fBTcl_SetPanicProc\fR may be used to modify the behavior of
 \fBTcl_Panic\fR.  The \fIpanicProc\fR argument should match the
