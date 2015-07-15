@@ -374,7 +374,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
 	 * the variable referred to by the first immediate argument. The list
-	 * of keys (top of the stack, not poppsed) must be the same length as
+	 * of keys (top of the stack, not popped) must be the same length as
 	 * the list of variables.
 	 * Stack:  ... keyList => ... keyList */
     {"dictUpdateEnd",	  9,    -1,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
@@ -536,7 +536,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * case. Also runs the whole-array trace on the named variable, so can
 	 * throw anything.
 	 * Stack:  ... varName => ... boolean */
-    {"arrayExistsImm",	 5,	+1,	  1,	{OPERAND_UINT4}},
+    {"arrayExistsImm",	 5,	+1,	  1,	{OPERAND_LVT4}},
 	/* Looks up the variable indexed by opnd and tests whether it is an
 	 * array. Pushes a boolean describing whether this is the case. Also
 	 * runs the whole-array trace on the named variable, so can throw
@@ -546,7 +546,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Forces the element on the top of the stack to be the name of an
 	 * array.
 	 * Stack:  ... varName => ... */
-    {"arrayMakeImm",	 5,	0,	  1,	{OPERAND_UINT4}},
+    {"arrayMakeImm",	 5,	0,	  1,	{OPERAND_LVT4}},
 	/* Forces the variable indexed by opnd to be an array. Does not touch
 	 * the stack. */
 
