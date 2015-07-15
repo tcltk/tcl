@@ -48,6 +48,12 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 
+#ifndef ZIPFS_IN_TCL
+# define Tclzipfs_Init 0
+# define Tclzipfs_Mount 0
+# define Tclzipfs_Unmount 0
+#endif
+
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
 #   define TclSockMinimumBuffersOld 0
@@ -441,7 +447,7 @@ static const TclIntStubs tclIntStubs = {
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
     TclpHasSockets, /* 132 */
-    TclpGetDate, /* 133 */
+    0, /* 133 */
     0, /* 134 */
     0, /* 135 */
     0, /* 136 */
@@ -490,8 +496,8 @@ static const TclIntStubs tclIntStubs = {
     Tcl_GetStartupScript, /* 179 */
     0, /* 180 */
     0, /* 181 */
-    TclpLocaltime, /* 182 */
-    TclpGmtime, /* 183 */
+    0, /* 182 */
+    0, /* 183 */
     0, /* 184 */
     0, /* 185 */
     0, /* 186 */
@@ -560,15 +566,9 @@ static const TclIntStubs tclIntStubs = {
     TclDoubleDigits, /* 249 */
     TclSetSlaveCancelFlags, /* 250 */
     TclRegisterLiteral, /* 251 */
-#ifdef ZIPFS_IN_TCL
     Tclzipfs_Init, /* 252 */
     Tclzipfs_Mount, /* 253 */
     Tclzipfs_Unmount, /* 254 */
-#else
-    0, /* 252 */
-    0, /* 253 */
-    0, /* 254 */
-#endif
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {

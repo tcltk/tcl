@@ -533,9 +533,10 @@ declare 131 {
 declare 132 {
     int TclpHasSockets(Tcl_Interp *interp)
 }
-declare 133 {
-    struct tm *TclpGetDate(const time_t *time, int useGMT)
-}
+# Removed in androwish
+#declare 133 {
+#    struct tm *TclpGetDate(const time_t *time, int useGMT)
+#}
 # Removed in 8.5
 #declare 134 {
 #    size_t TclpStrftime(char *s, size_t maxsize, const char *format,
@@ -749,14 +750,14 @@ declare 179 {
 #	    const char *file, int line)
 #}
 
-# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
+# TclpGmtime and TclpLocaltime removed from androwish
 
-declare 182 {
-     struct tm *TclpLocaltime(const time_t *clock)
-}
-declare 183 {
-     struct tm *TclpGmtime(const time_t *clock)
-}
+#declare 182 {
+#     struct tm *TclpLocaltime(const time_t *clock)
+#}
+#declare 183 {
+#     struct tm *TclpGmtime(const time_t *clock)
+#}
 
 # For the new "Thread Storage" subsystem.
 
