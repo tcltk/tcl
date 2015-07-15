@@ -59,12 +59,12 @@ typedef struct FilesystemRecord {
 
 typedef struct ThreadSpecificData {
     int initialized;
-    int cwdPathEpoch;
-    int filesystemEpoch;
+    size_t cwdPathEpoch;
+    size_t filesystemEpoch;
     Tcl_Obj *cwdPathPtr;
     ClientData cwdClientData;
     FilesystemRecord *filesystemList;
-    int claims;
+    size_t claims;
 } ThreadSpecificData;
 
 /*
@@ -215,7 +215,7 @@ static FilesystemRecord nativeFilesystemRecord = {
  * trigger cache cleanup in all threads.
  */
 
-static int theFilesystemEpoch = 1;
+static size_t theFilesystemEpoch = 1;
 
 /*
  * Stores the linked list of filesystems. A 1:1 copy of this list is also
@@ -231,7 +231,7 @@ TCL_DECLARE_MUTEX(filesystemMutex)
  */
 
 static Tcl_Obj *cwdPathPtr = NULL;
-static int cwdPathEpoch = 0;
+static size_t cwdPathEpoch = 0;
 static ClientData cwdClientData = NULL;
 TCL_DECLARE_MUTEX(cwdMutex)
 
@@ -645,7 +645,7 @@ FsGetFirstFilesystem(void)
 
 int
 TclFSEpochOk(
-    int filesystemEpoch)
+    size_t filesystemEpoch)
 {
     return (filesystemEpoch == 0 || filesystemEpoch == theFilesystemEpoch);
 }
@@ -666,7 +666,7 @@ Disclaim(void)
     tsdPtr->claims--;
 }
 
-int
+size_t
 TclFSEpoch(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
@@ -713,7 +713,9 @@ FsUpdateCwd(
 	cwdClientData = TclNativeDupInternalRep(clientData);
     }
 
-    cwdPathEpoch++;
+    if (++cwdPathEpoch == 0) {
+	++cwdPathEpoch;
+    }
     tsdPtr->cwdPathEpoch = cwdPathEpoch;
     Tcl_MutexUnlock(&cwdMutex);
 
@@ -790,7 +792,9 @@ TclFinalizeFilesystem(void)
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	++theFilesystemEpoch;
+    }
     filesystemList = NULL;
 
     /*
@@ -823,7 +827,9 @@ void
 TclResetFilesystem(void)
 {
     filesystemList = &nativeFilesystemRecord;
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	++theFilesystemEpoch;
+    }
 
 #ifdef _WIN32
     /*
@@ -908,7 +914,9 @@ Tcl_FSRegister(
      * conceivably now belong to different filesystems.
      */
 
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	++theFilesystemEpoch;
+    }
     Tcl_MutexUnlock(&filesystemMutex);
 
     return TCL_OK;
@@ -973,7 +981,9 @@ Tcl_FSUnregister(
 	     * (which would of course lead to memory exceptions).
 	     */
 
-	    theFilesystemEpoch++;
+	    if (++theFilesystemEpoch == 0) {
+		++theFilesystemEpoch;
+	    }
 
 	    ckfree(fsRecPtr);
 
@@ -1304,7 +1314,9 @@ Tcl_FSMountsChanged(
      */
 
     Tcl_MutexLock(&filesystemMutex);
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	++theFilesystemEpoch;
+    }
     Tcl_MutexUnlock(&filesystemMutex);
 }
 
