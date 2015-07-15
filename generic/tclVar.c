@@ -600,7 +600,7 @@ TclObjLookupVarEx(
     }
     part1 = TclGetStringFromObj(part1Ptr, &len1);
 
-    if (!parsed && (*(part1 + len1 - 1) == ')')) {
+    if (!parsed && len1 && (*(part1 + len1 - 1) == ')')) {
 	/*
 	 * part1Ptr is possibly an unparsed array element.
 	 */
