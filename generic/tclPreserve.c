@@ -459,8 +459,7 @@ TclHandleRelease(
 		handlePtr, handlePtr->ptr2, handlePtr->ptr);
     }
 #endif
-    handlePtr->refCount--;
-    if ((handlePtr->refCount == 0) && (handlePtr->ptr == NULL)) {
+    if ((--handlePtr->refCount == 0) && (handlePtr->ptr == NULL)) {
 	ckfree(handlePtr);
     }
 }

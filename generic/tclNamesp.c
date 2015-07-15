@@ -343,7 +343,7 @@ Tcl_PushCallFrame(
     framePtr->clientData = NULL;
     framePtr->localCachePtr = NULL;
     framePtr->tailcallPtr = NULL;
-    
+
     /*
      * Push the new call frame onto the interpreter's stack of procedure call
      * frames making it the current frame.
@@ -3056,7 +3056,7 @@ NamespaceCodeCmd(
      */
 
     arg = TclGetStringFromObj(objv[1], &length);
-    if (*arg==':' && length > 20 
+    if (*arg==':' && length > 20
 	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
@@ -4929,7 +4929,7 @@ TclLogCommandInfo(
 
     if (Tcl_IsShared(iPtr->errorStack)) {
 	Tcl_Obj *newObj;
-	    
+
 	newObj = Tcl_DuplicateObj(iPtr->errorStack);
 	Tcl_DecrRefCount(iPtr->errorStack);
 	Tcl_IncrRefCount(newObj);
@@ -4961,7 +4961,7 @@ TclLogCommandInfo(
 	    Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
 		    Tcl_NewStringObj(command, length));
 	}
-    } 
+    }
 
     if (!iPtr->framePtr->objc) {
 	/*
@@ -5014,7 +5014,7 @@ TclErrorStackResetIf(
 
     if (Tcl_IsShared(iPtr->errorStack)) {
 	Tcl_Obj *newObj;
-	    
+
 	newObj = Tcl_DuplicateObj(iPtr->errorStack);
 	Tcl_DecrRefCount(iPtr->errorStack);
 	Tcl_IncrRefCount(newObj);
@@ -5034,7 +5034,7 @@ TclErrorStackResetIf(
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
 		Tcl_NewStringObj(msg, length));
-    } 
+    }
 }
 
 /*
