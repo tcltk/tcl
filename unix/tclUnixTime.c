@@ -17,25 +17,6 @@
 #endif
 
 /*
- * TclpGetDate is coded to return a pointer to a 'struct tm'. For thread
- * safety, this structure must be in thread-specific data. The 'tmKey'
- * variable is the key to this buffer.
- */
-
-static Tcl_ThreadDataKey tmKey;
-typedef struct ThreadSpecificData {
-    struct tm gmtime_buf;
-    struct tm localtime_buf;
-} ThreadSpecificData;
-
-/*
- * If we fall back on the thread-unsafe versions of gmtime and localtime, use
- * this mutex to try to protect them.
- */
-
-TCL_DECLARE_MUTEX(tmMutex)
-
-/*
  * Static functions declared in this file.
  */
 
