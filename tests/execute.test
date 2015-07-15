@@ -1057,6 +1057,15 @@ test execute-11.2 {Bug 268b23df11} -setup {
     rename crash {}
     rename zero {}
 } -result 0
+test execute-11.3 {Bug a0ece9d6d4} -setup {
+    proc crash {} {expr {rand()}}
+    trace add execution crash enterstep {apply {args {info frame -2}}}
+} -body {
+    string is double [crash]
+} -cleanup {
+    trace remove execution crash enterstep {apply {args {info frame -2}}}
+    rename crash {}
+} -result 1
 
 # cleanup
 if {[info commands testobj] != {}} {

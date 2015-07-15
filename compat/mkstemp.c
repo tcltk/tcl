@@ -1,4 +1,4 @@
-/* 
+/*
  * mkstemp.c --
  *
  *	Source code for the "mkstemp" library routine.
