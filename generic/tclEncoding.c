@@ -496,11 +496,7 @@ FillEncodingFileMap(void)
 	Tcl_Obj *directory, *matchFileList = Tcl_NewObj();
 	Tcl_Obj **filev;
 	Tcl_GlobTypeData readableFiles = {
-#ifdef ZIPFS_IN_TCL
-	    TCL_GLOB_TYPE_FILE | TCL_GLOB_TYPE_DIR, TCL_GLOB_PERM_R, NULL, NULL
-#else
 	    TCL_GLOB_TYPE_FILE, TCL_GLOB_PERM_R, NULL, NULL
-#endif
 	};
 
 	Tcl_ListObjIndex(NULL, searchPath, i, &directory);
@@ -512,13 +508,7 @@ FillEncodingFileMap(void)
 	Tcl_ListObjGetElements(NULL, matchFileList, &numFiles, &filev);
 	for (j=0; j<numFiles; j++) {
 	    Tcl_Obj *encodingName, *fileObj;
-#ifdef ZIPFS_IN_TCL
-	    Tcl_StatBuf stat;
 
-	    if ((0 != Tcl_FSStat(filev[j], &stat)) || !S_ISREG(stat.st_mode)) {
-		continue;
-	    }
-#endif
 	    fileObj = TclPathPart(NULL, filev[j], TCL_PATH_TAIL);
 	    encodingName = TclPathPart(NULL, fileObj, TCL_PATH_ROOT);
 	    Tcl_DictObjPut(NULL, map, encodingName, directory);
