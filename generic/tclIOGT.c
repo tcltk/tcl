@@ -683,7 +683,7 @@ TransformInputProc(
 	     * Already saw EOF from downChan; don't ask again.
 	     * NOTE: Could move this up to avoid the last maxRead
 	     * execution.  Believe this would still be correct behavior,
-	     * but the test suite tests the whole command callback 
+	     * but the test suite tests the whole command callback
 	     * sequence, so leave it unchanged for now.
 	     */
 
