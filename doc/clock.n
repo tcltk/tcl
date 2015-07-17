@@ -2,8 +2,8 @@
 '\" Generated from file './doc/clock.dt' by tcllib/doctools with format 'nroff'
 '\" Copyright (c) 2004 Kevin B. Kenny <kennykb@acm.org>. All rights reserved.
 '\"
-.so man.macros
 .TH "clock" n 8.5 Tcl "Tcl Built-In Commands"
+.so man.macros
 .BS
 .SH NAME
 clock \- Obtain and manipulate dates and times
@@ -637,8 +637,9 @@ On output, produces a locale-dependent time of day representation on a
 12-hour clock. On input, accepts whatever \fB%r\fR produces.
 .TP
 \fB%R\fR
-On output, produces a locale-dependent time of day representation on a
-24-hour clock. On input, accepts whatever \fB%R\fR produces.
+On output, the time in 24-hour notation (%H:%M). For a version
+including the seconds, see \fB%T\fR below. On input, accepts whatever
+\fB%R\fR produces.
 .TP
 \fB%s\fR
 On output, simply formats the \fItimeVal\fR argument as a decimal

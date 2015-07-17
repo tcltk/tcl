@@ -1184,6 +1184,12 @@ test error-21.8 {memory leaks in try: Bug 2910044} memory {
     }
 } 0
 
+test error-21.9 {Bug cee90e4e88} {
+    # Just don't panic.
+    apply {{} {try {} on ok {} - on return {} {}}}
+} {}
+
+
 # negative case try tests - bad "trap" handler
 # what is the effect if we attempt to trap an errorcode that is not a list?
 # nested try

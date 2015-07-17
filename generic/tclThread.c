@@ -339,8 +339,9 @@ Tcl_ConditionFinalize(
  *
  * TclFinalizeThreadData --
  *
- *	This function cleans up the thread-local storage. This is called once
- *	for each thread.
+ *	This function cleans up the thread-local storage. Secondary, it cleans
+ *	thread alloc cache.
+ *	This is called once for each thread before thread exits.
  *
  * Results:
  *	None.
@@ -352,9 +353,17 @@ Tcl_ConditionFinalize(
  */
 
 void
-TclFinalizeThreadData(void)
+TclFinalizeThreadData(int quick)
 {
     TclFinalizeThreadDataThread();
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+    if (!quick) {
+	/*
+	 * Quick exit principle makes it useless to terminate allocators
+	 */
+	TclFinalizeThreadAllocThread();
+    }
+#endif
 }
 
 /*

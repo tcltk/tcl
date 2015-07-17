@@ -942,6 +942,248 @@ test for-7.8 {Bug 3614226: ensure that continue only cleans up the right amount}
 	expr {$end - $tmp}
     }}
 } 0
+test for-7.9 {Bug 3614226: ensure that break from invoked command cleans up the stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [apply {{} {return -code break}}] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.10 {Bug 3614226: ensure that continue from invoked command cleans up the stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [apply {{} {return -code continue}}] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.11 {Bug 3614226: ensure that break from invoked command cleans up the expansion stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[apply {{} {return -code break}}] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.12 {Bug 3614226: ensure that continue from invoked command cleans up the expansion stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[apply {{} {
+		    return -code continue
+		}}] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.13 {Bug 3614226: ensure that break from invoked command cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[apply {{} {
+		    return -code break
+		}}] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.14 {Bug 3614226: ensure that continue from invoked command cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[apply {{} {
+		    return -code continue
+		}}] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.15 {Bug 3614226: ensure that break from invoked command only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[apply {{} {
+		    return -code break
+		}}] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.16 {Bug 3614226: ensure that continue from invoked command only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[apply {{} {
+		    return -code continue
+		}}] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.17 {Bug 3614226: ensure that break from expanded command cleans up the stack} memory {
+    apply {op {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [{*}$op] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code break}
+} 0
+test for-7.18 {Bug 3614226: ensure that continue from expanded command cleans up the stack} memory {
+    apply {op {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [{*}$op] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code continue}
+} 0
+test for-7.19 {Bug 3614226: ensure that break from expanded command cleans up the expansion stack} memory {
+    apply {op {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[{*}$op] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code break}
+} 0
+test for-7.20 {Bug 3614226: ensure that continue from expanded command cleans up the expansion stack} memory {
+    apply {op {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[{*}$op] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code continue}
+} 0
+test for-7.21 {Bug 3614226: ensure that break from expanded command cleans up the combination of main and expansion stack} memory {
+    apply {op {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[{*}$op] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code break}
+} 0
+test for-7.22 {Bug 3614226: ensure that continue from expanded command cleans up the combination of main and expansion stack} memory {
+    apply {op {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[{*}$op] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code continue}
+} 0
+test for-7.23 {Bug 3614226: ensure that break from expanded command only cleans up the right amount} memory {
+    apply {op {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[{*}$op] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code break}
+} 0
+test for-7.24 {Bug 3614226: ensure that continue from expanded command only cleans up the right amount} memory {
+    apply {op {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[{*}$op] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }} {return -level 0 -code continue}
+} 0
 
 # cleanup
 ::tcltest::cleanupTests

@@ -544,7 +544,7 @@ TraceExecutionObjCmd(
 
 			tcmdPtr->flags = 0;
 		    }
-		    if ((--tcmdPtr->refCount) <= 0) {
+		    if (tcmdPtr->refCount-- <= 1) {
 			ckfree(tcmdPtr);
 		    }
 		    break;
@@ -748,7 +748,7 @@ TraceCommandObjCmd(
 		    Tcl_UntraceCommand(interp, name, flags | TCL_TRACE_DELETE,
 			    TraceCommandProc, clientData);
 		    tcmdPtr->flags |= TCL_TRACE_DESTROYED;
-		    if ((--tcmdPtr->refCount) <= 0) {
+		    if (tcmdPtr->refCount-- <= 1) {
 			ckfree(tcmdPtr);
 		    }
 		    break;
@@ -1130,7 +1130,7 @@ Tcl_TraceCommand(
 	/*
 	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
 	 */
-	
+
 	if ((cmdPtr->compileProc != NULL) && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES)){
 	    Interp *iPtr = (Interp *) interp;
 	    iPtr->compileEpoch++;
@@ -1138,7 +1138,7 @@ Tcl_TraceCommand(
 	cmdPtr->flags |= CMD_HAS_EXEC_TRACES;
     }
 
-    
+
     return TCL_OK;
 }
 
@@ -1223,7 +1223,7 @@ Tcl_UntraceCommand(
     }
     tracePtr->flags = 0;
 
-    if ((--tracePtr->refCount) <= 0) {
+    if (tracePtr->refCount-- <= 1) {
 	ckfree(tracePtr);
     }
 
@@ -1245,7 +1245,7 @@ Tcl_UntraceCommand(
         /*
 	 * Bug 3484621: up the interp's epoch if this is a BC'ed command
 	 */
-	
+
 	if (cmdPtr->compileProc != NULL) {
 	    Interp *iPtr = (Interp *) interp;
 	    iPtr->compileEpoch++;
@@ -1382,7 +1382,7 @@ TraceCommandProc(
 	Tcl_RestoreInterpState(interp, state);
 	tcmdPtr->refCount--;
     }
-    if ((--tcmdPtr->refCount) <= 0) {
+    if (tcmdPtr->refCount-- <= 1) {
 	ckfree(tcmdPtr);
     }
 }
@@ -1474,7 +1474,7 @@ TclCheckExecutionTraces(
 		}
 		traceCode = TraceExecutionProc(tcmdPtr, interp, curLevel,
 			command, (Tcl_Command) cmdPtr, objc, objv);
-		if ((--tcmdPtr->refCount) <= 0) {
+		if (tcmdPtr->refCount-- <= 1) {
 		    ckfree(tcmdPtr);
 		}
 	    }
@@ -1721,7 +1721,7 @@ CommandObjTraceDeleted(
 {
     TraceCommandInfo *tcmdPtr = clientData;
 
-    if ((--tcmdPtr->refCount) <= 0) {
+    if (tcmdPtr->refCount-- <= 1) {
 	ckfree(tcmdPtr);
     }
 }
@@ -1936,7 +1936,7 @@ TraceExecutionProc(
 	}
     }
     if (call) {
-	if ((--tcmdPtr->refCount) <= 0) {
+	if (tcmdPtr->refCount-- <= 1) {
 	    ckfree(tcmdPtr);
 	}
     }
@@ -2510,6 +2510,9 @@ TclObjCallVarTraces(
 
     if (!part1Ptr) {
 	part1Ptr = localName(iPtr->varFramePtr, index);
+    }
+    if (!part1Ptr) {
+	Tcl_Panic("Cannot trace a variable with no name");
     }
     part1 = TclGetString(part1Ptr);
     part2 = part2Ptr? TclGetString(part2Ptr) : NULL;
