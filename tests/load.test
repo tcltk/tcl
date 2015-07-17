@@ -215,6 +215,12 @@ test load-10.1 {load from vfs} \
     -body {list [catch {load simplefs:/pkgd$ext pkgd} msg] $msg} \
     -result {0 {}} \
     -cleanup {testsimplefilesystem 0; cd $dir; unset dir}
+
+test load-11.1 {Load TclOO extension using Stubs (Bug [f51efe99a7])} \
+	[list $dll $loaded] {
+    load [file join $testDir pkgooa$ext]
+    list [pkgooa_stubsok] [lsort [info commands pkgooa_*]]
+} {1 pkgooa_stubsok}
 
 # cleanup
 unset ext

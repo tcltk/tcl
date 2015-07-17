@@ -20,6 +20,7 @@ namespace import ::tcltest::*
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testwordend [llength [info commands testwordend]]
+testConstraint testbytestring [llength [info commands testbytestring]]
 
 # Save the argv value for restoration later
 set savedArgv $argv
@@ -261,15 +262,15 @@ test parseOld-7.10 {backslash substitution} {
 test parseOld-7.11 {backslash substitution} {
     eval "list a \"b c\"\\\nd e"
 } {a {b c} d e}
-test parseOld-7.12 {backslash substitution} {
-    list \ua2
-} [bytestring "\xc2\xa2"]
-test parseOld-7.13 {backslash substitution} {
-    list \u4e21
-} [bytestring "\xe4\xb8\xa1"]
-test parseOld-7.14 {backslash substitution} {
-    list \u4e2k
-} [bytestring "\xd3\xa2k"]
+test parseOld-7.12 {backslash substitution} testbytestring {
+    expr {[list \ua2] eq [testbytestring "\xc2\xa2"]}
+} 1
+test parseOld-7.13 {backslash substitution} testbytestring {
+    expr {[list \u4e21] eq [testbytestring "\xe4\xb8\xa1"]}
+} 1
+test parseOld-7.14 {backslash substitution} testbytestring {
+    expr {[list \u4e2k] eq [testbytestring "\xd3\xa2k"]}
+} 1
 
 # Semi-colon.
 

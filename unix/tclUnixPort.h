@@ -93,11 +93,11 @@ typedef off_t		Tcl_SeekOffset;
 	    WCHAR *, int);
     __declspec(dllimport) extern __stdcall void OutputDebugStringW(const WCHAR *);
     __declspec(dllimport) extern __stdcall int IsDebuggerPresent();
+    __declspec(dllimport) extern __stdcall int GetLastError();
+    __declspec(dllimport) extern __stdcall int GetFileAttributesW(const WCHAR *);
+    __declspec(dllimport) extern __stdcall int SetFileAttributesW(const WCHAR *, int);
 
     __declspec(dllimport) extern int cygwin_conv_path(int, const void *, void *, int);
-    __declspec(dllimport) extern int cygwin_conv_path_list(int, const void *, void *, int);
-#   define USE_PUTENV 1
-#   define USE_PUTENV_FOR_UNSET 1
 /* On Cygwin, the environment is imported from the Cygwin DLL. */
 #ifndef __x86_64__
 #   define environ __cygwin_environ
@@ -141,11 +141,7 @@ typedef off_t		Tcl_SeekOffset;
 #if HAVE_INTTYPES_H
 #   include <inttypes.h>
 #endif
-#ifdef NO_LIMITS_H
-#   include "../compat/limits.h"
-#else
-#   include <limits.h>
-#endif
+#include <limits.h>
 #if HAVE_STDINT_H
 #   include <stdint.h>
 #endif
@@ -443,16 +439,6 @@ extern int	gettimeofday(struct timeval *tp,
 #   else
 #	define MAXNAMLEN	255
 #   endif
-#endif
-
-/*
- *---------------------------------------------------------------------------
- * Make sure that L_tmpnam is defined.
- *---------------------------------------------------------------------------
- */
-
-#ifndef L_tmpnam
-#   define L_tmpnam	100
 #endif
 
 /*

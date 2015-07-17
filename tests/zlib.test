@@ -16,6 +16,13 @@ if {"::tcltest" ni [namespace children]} {
 }
 
 testConstraint zlib [llength [info commands zlib]]
+testConstraint recentZlib 0
+catch {
+    # Work around a bug in some versions of zlib; known to manifest on at
+    # least Mac OS X Mountain Lion...
+    testConstraint recentZlib \
+	    [package vsatisfies [zlib::pkgconfig get zlibVersion] 1.2.6]
+}
 
 test zlib-1.1 {zlib basics} -constraints zlib -returnCodes error -body {
     zlib
@@ -28,7 +35,7 @@ test zlib-1.3 {zlib basics} -constraints zlib -body {
 } -result zlibVersion
 test zlib-1.4 {zlib basics} -constraints zlib -body {
     package present zlib
-} -result 2.0
+} -result 2.0.1
 
 test zlib-2.1 {zlib compress/decompress} zlib {
     zlib decompress [zlib compress abcdefghijklm]
@@ -208,7 +215,7 @@ test zlib-8.5 {transformation and flushing and fileevents: Bug 3525907} -setup {
     set ::res
 } -cleanup {
     catch {close $r}
-} -result {qwertyuiop MIDDLE asdfghjkl}
+} -result {qwertyuiop MIDDLE asdfghjkl {}}
 test zlib-8.6 {transformation and fconfigure} -setup {
     set file [makeFile {} test.z]
     set fd [open $file wb]
@@ -269,7 +276,7 @@ test zlib-8.9 {transformation and fconfigure} -setup {
 } -result {3064818174 358 358}
 test zlib-8.10 {transformation and fconfigure} -setup {
     lassign [chan pipe] inSide outSide
-} -constraints zlib -body {
+} -constraints {zlib recentZlib} -body {
     zlib push deflate $outSide -dictionary $spdyDict
     fconfigure $outSide -blocking 0 -translation binary -buffering none
     fconfigure $inSide -blocking 0 -translation binary
