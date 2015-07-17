@@ -16,7 +16,9 @@
 
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
+#define STRICT			/* See MSDN Article Q83456 */
 #include <windows.h>
+#undef STRICT
 #undef WIN32_LEAN_AND_MEAN
 #include <locale.h>
 #include <stdlib.h>
@@ -34,6 +36,7 @@ extern Tcl_PackageInitProc Dde_SafeInit;
 #endif
 
 #ifdef TCL_BROKEN_MAINARGS
+int _CRT_glob = 0;
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
 #endif /* TCL_BROKEN_MAINARGS */
 

@@ -19,10 +19,16 @@
  */
 
 #include "tclInt.h"
-#ifdef __WIN32__
+#ifdef _WIN32
 #   include "tclWinInt.h"
 #endif
 #include "tclFileSystem.h"
+
+#ifdef TCL_TEMPLOAD_NO_UNLINK
+#ifndef NO_FSTATFS
+#include <sys/statfs.h>
+#endif
+#endif
 
 /*
  * struct FilesystemRecord --
@@ -53,12 +59,12 @@ typedef struct FilesystemRecord {
 
 typedef struct ThreadSpecificData {
     int initialized;
-    int cwdPathEpoch;
-    int filesystemEpoch;
+    size_t cwdPathEpoch;
+    size_t filesystemEpoch;
     Tcl_Obj *cwdPathPtr;
     ClientData cwdClientData;
     FilesystemRecord *filesystemList;
-    int claims;
+    size_t claims;
 } ThreadSpecificData;
 
 /*
@@ -209,7 +215,7 @@ static FilesystemRecord nativeFilesystemRecord = {
  * trigger cache cleanup in all threads.
  */
 
-static int theFilesystemEpoch = 1;
+static size_t theFilesystemEpoch = 1;
 
 /*
  * Stores the linked list of filesystems. A 1:1 copy of this list is also
@@ -225,7 +231,7 @@ TCL_DECLARE_MUTEX(filesystemMutex)
  */
 
 static Tcl_Obj *cwdPathPtr = NULL;
-static int cwdPathEpoch = 0;
+static size_t cwdPathEpoch = 0;
 static ClientData cwdClientData = NULL;
 TCL_DECLARE_MUTEX(cwdMutex)
 
@@ -639,7 +645,7 @@ FsGetFirstFilesystem(void)
 
 int
 TclFSEpochOk(
-    int filesystemEpoch)
+    size_t filesystemEpoch)
 {
     return (filesystemEpoch == 0 || filesystemEpoch == theFilesystemEpoch);
 }
@@ -660,7 +666,7 @@ Disclaim(void)
     tsdPtr->claims--;
 }
 
-int
+size_t
 TclFSEpoch(void)
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
@@ -707,7 +713,9 @@ FsUpdateCwd(
 	cwdClientData = TclNativeDupInternalRep(clientData);
     }
 
-    cwdPathEpoch++;
+    if (++cwdPathEpoch == 0) {
+	++cwdPathEpoch;
+    }
     tsdPtr->cwdPathEpoch = cwdPathEpoch;
     Tcl_MutexUnlock(&cwdMutex);
 
@@ -784,7 +792,9 @@ TclFinalizeFilesystem(void)
 	}
 	fsRecPtr = tmpFsRecPtr;
     }
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	++theFilesystemEpoch;
+    }
     filesystemList = NULL;
 
     /*
@@ -792,7 +802,7 @@ TclFinalizeFilesystem(void)
      * filesystem is likely to fail.
      */
 
-#ifdef __WIN32__
+#ifdef _WIN32
     TclWinEncodingsCleanup();
 #endif
 }
@@ -817,9 +827,11 @@ void
 TclResetFilesystem(void)
 {
     filesystemList = &nativeFilesystemRecord;
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	++theFilesystemEpoch;
+    }
 
-#ifdef __WIN32__
+#ifdef _WIN32
     /*
      * Cleans up the win32 API filesystem proc lookup table. This must happen
      * very late in finalization so that deleting of copied dlls can occur.
@@ -902,7 +914,9 @@ Tcl_FSRegister(
      * conceivably now belong to different filesystems.
      */
 
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	++theFilesystemEpoch;
+    }
     Tcl_MutexUnlock(&filesystemMutex);
 
     return TCL_OK;
@@ -967,7 +981,9 @@ Tcl_FSUnregister(
 	     * (which would of course lead to memory exceptions).
 	     */
 
-	    theFilesystemEpoch++;
+	    if (++theFilesystemEpoch == 0) {
+		++theFilesystemEpoch;
+	    }
 
 	    ckfree(fsRecPtr);
 
@@ -1298,7 +1314,9 @@ Tcl_FSMountsChanged(
      */
 
     Tcl_MutexLock(&filesystemMutex);
-    theFilesystemEpoch++;
+    if (++theFilesystemEpoch == 0) {
+	++theFilesystemEpoch;
+    }
     Tcl_MutexUnlock(&filesystemMutex);
 }
 
@@ -2884,9 +2902,13 @@ int
 Tcl_FSChdir(
     Tcl_Obj *pathPtr)
 {
-    const Tcl_Filesystem *fsPtr;
+    const Tcl_Filesystem *fsPtr, *oldFsPtr = NULL;
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
     int retVal = -1;
 
+    if (tsdPtr->cwdPathPtr != NULL) {
+	oldFsPtr = Tcl_FSGetFileSystemForPath(tsdPtr->cwdPathPtr);
+    }
     if (Tcl_FSGetNormalizedPath(NULL, pathPtr) == NULL) {
 	Tcl_SetErrno(ENOENT);
 	return retVal;
@@ -2986,7 +3008,6 @@ Tcl_FSChdir(
 	     * instead. This should be examined by someone on Unix.
 	     */
 
-	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&fsDataKey);
 	    ClientData cd;
 	    ClientData oldcd = tsdPtr->cwdClientData;
 
@@ -3002,6 +3023,14 @@ Tcl_FSChdir(
 	    }
 	} else {
 	    FsUpdateCwd(normDirName, NULL);
+	}
+
+	/*
+	 * If the filesystem changed between old and new cwd
+	 * force filesystem refresh on path objects.
+	 */
+	if (oldFsPtr != NULL && fsPtr != oldFsPtr) {
+	    Tcl_FSMountsChanged(NULL);
 	}
     }
 
@@ -3109,6 +3138,82 @@ Tcl_FSLoadFile(
  *
  *----------------------------------------------------------------------
  */
+
+/*
+ * Workaround for issue with modern HPUX which do allow the unlink (no ETXTBSY
+ * error) yet somehow trash some internal data structures which prevents the
+ * second and further shared libraries from getting properly loaded. Only the
+ * first is ok. We try to get around the issue by not unlinking,
+ * i.e. emulating the behaviour of the older HPUX which denied removal.
+ *
+ * Doing the unlink is also an issue within docker containers, whose AUFS
+ * bungles this as well, see
+ *     https://github.com/dotcloud/docker/issues/1911
+ *
+ * For these situations the change below makes the execution of the unlink
+ * semi-controllable at runtime.
+ *
+ *     An AUFS filesystem (if it can be detected) will force avoidance of
+ *     unlink. The env variable TCL_TEMPLOAD_NO_UNLINK allows detection of a
+ *     users general request (unlink and not.
+ *
+ * By default the unlink is done (if not in AUFS). However if the variable is
+ * present and set to true (any integer > 0) then the unlink is skipped.
+ */
+
+int
+TclSkipUnlink (Tcl_Obj* shlibFile)
+{
+    /* Order of testing:
+     * 1. On hpux we generally want to skip unlink in general
+     *
+     * Outside of hpux then:
+     * 2. For a general user request   (TCL_TEMPLOAD_NO_UNLINK present, non-empty, => int)
+     * 3. For general AUFS environment (statfs, if available).
+     *
+     * Ad 2: This variable can disable/override the AUFS detection, i.e. for
+     * testing if a newer AUFS does not have the bug any more.
+     *
+     * Ad 3: This is conditionally compiled in. Condition currently must be set manually.
+     *       This part needs proper tests in the configure(.in).
+     */
+
+#ifdef hpux
+    return 1;
+#else
+    char* skipstr;
+
+    skipstr = getenv ("TCL_TEMPLOAD_NO_UNLINK");
+    if (skipstr && (skipstr[0] != '\0')) {
+	return atoi(skipstr);
+    }
+
+#ifdef TCL_TEMPLOAD_NO_UNLINK
+#ifndef NO_FSTATFS
+    {
+	struct statfs fs;
+	/* Have fstatfs. May not have the AUFS super magic ... Indeed our build
+	 * box is too old to have it directly in the headers. Define taken from
+	 *     http://mooon.googlecode.com/svn/trunk/linux_include/linux/aufs_type.h
+	 *     http://aufs.sourceforge.net/
+	 * Better reference will be gladly taken.
+	 */
+#ifndef AUFS_SUPER_MAGIC
+#define AUFS_SUPER_MAGIC ('a' << 24 | 'u' << 16 | 'f' << 8 | 's')
+#endif /* AUFS_SUPER_MAGIC */
+	if ((statfs(Tcl_GetString (shlibFile), &fs) == 0) &&
+	    (fs.f_type == AUFS_SUPER_MAGIC)) {
+	    return 1;
+	}
+    }
+#endif /* ... NO_FSTATFS */
+#endif /* ... TCL_TEMPLOAD_NO_UNLINK */
+
+    /* Fallback: !hpux, no EV override, no AUFS (detection, nor detected):
+     * Don't skip */
+    return 0;
+#endif /* hpux */
+}
 
 int
 Tcl_LoadFile(
@@ -3255,7 +3360,7 @@ Tcl_LoadFile(
 	return TCL_ERROR;
     }
 
-#ifndef __WIN32__
+#ifndef _WIN32
     /*
      * Do we need to set appropriate permissions on the file? This may be
      * required on some systems. On Unix we could loop over the file
@@ -3300,7 +3405,9 @@ Tcl_LoadFile(
      * avoids any worries about leaving the copy laying around on exit.
      */
 
-    if (Tcl_FSDeleteFile(copyToPtr) == TCL_OK) {
+    if (
+	!TclSkipUnlink (copyToPtr) &&
+	(Tcl_FSDeleteFile(copyToPtr) == TCL_OK)) {
 	Tcl_DecrRefCount(copyToPtr);
 
 	/*
@@ -3376,7 +3483,7 @@ Tcl_LoadFile(
     return retVal;
 
   resolveSymbols:
-    /* 
+    /*
      * At this point, *handlePtr is already set up to the handle for the
      * loaded library. We now try to resolve the symbols.
      */
@@ -3385,7 +3492,7 @@ Tcl_LoadFile(
 	for (i=0 ; symbols[i] != NULL; i++) {
 	    procPtrs[i] = Tcl_FindSymbol(interp, *handlePtr, symbols[i]);
 	    if (procPtrs[i] == NULL) {
-		/* 
+		/*
 		 * At least one symbol in the list was not found.  Unload the
 		 * file, and report the problem back to the caller.
 		 * (Tcl_FindSymbol should already have left an appropriate
@@ -3405,7 +3512,7 @@ Tcl_LoadFile(
  *----------------------------------------------------------------------
  *
  * DivertFindSymbol --
- *	
+ *
  *	Find a symbol in a shared library loaded by copy-from-VFS.
  *
  *----------------------------------------------------------------------
