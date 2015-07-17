@@ -194,7 +194,7 @@ static Tcl_ThreadId notifierThread;
 
 #ifdef TCL_THREADS
 static void	NotifierThreadProc(ClientData clientData);
-#ifdef HAVE_PTHREAD_ATFORK
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
 static int	atForkInit = 0;
 static void	AtForkPrepare(void);
 static void	AtForkParent(void);
@@ -290,7 +290,7 @@ Tcl_InitNotifier(void)
 	 */
 
 	Tcl_MutexLock(&notifierMutex);
-#ifdef HAVE_PTHREAD_ATFORK
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
 	/*
 	 * Install pthread_atfork handlers to reinitialize the notifier in the
 	 * child of a fork.
@@ -304,13 +304,14 @@ Tcl_InitNotifier(void)
 	    }
 	    atForkInit = 1;
 	}
-#endif
+#endif /* HAVE_PTHREAD_ATFORK */
 	/*
 	 * Check if my process id changed, e.g. I was forked
 	 * In this case, restart the notifier thread and close the
 	 * pipe to the original notifier thread
 	 */
 	if (notifierCount > 0 && processIDInitialized != getpid()) {
+	    Tcl_ConditionFinalize(&notifierCV);
 	    notifierCount = 0;
 	    processIDInitialized = 0;
 	    close(triggerPipe);
@@ -1313,7 +1314,7 @@ NotifierThreadProc(
     TclpThreadExit(0);
 }
 
-#ifdef HAVE_PTHREAD_ATFORK
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
 /*
  *----------------------------------------------------------------------
  *
@@ -1375,8 +1376,7 @@ AtForkParent(void)
 static void
 AtForkChild(void)
 {
-    notifierMutex = NULL;
-    notifierCV = NULL;
+    Tcl_MutexFinalize(&notifierMutex);
     Tcl_InitNotifier();
 }
 #endif /* HAVE_PTHREAD_ATFORK */
