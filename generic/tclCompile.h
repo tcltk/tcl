@@ -48,6 +48,13 @@ MODULE_SCOPE int 	tclTraceCompile;
 
 MODULE_SCOPE int 	tclTraceExec;
 #endif
+
+/*
+ * The type of lambda expressions. Note that every lambda will *always* have a
+ * string representation.
+ */
+
+MODULE_SCOPE const Tcl_ObjType tclLambdaType;
 
 /*
  *------------------------------------------------------------------------
@@ -238,6 +245,16 @@ typedef struct AuxDataType {
     AuxDataPrintProc *printProc;/* Callback function to invoke when printing
 				 * the aux data as part of debugging. NULL
 				 * means that the data can't be printed. */
+    AuxDataPrintProc *disassembleProc;
+				/* Callback function to invoke when doing a
+				 * disassembly of the aux data (like the
+				 * printProc, except that the output is
+				 * intended to be script-readable). The
+				 * appendObj argument should be filled in with
+				 * a descriptive dictionary; it will start out
+				 * with "name" mapped to the content of the
+				 * name field. NULL means that the printProc
+				 * should be used instead. */
 } AuxDataType;
 
 /*
@@ -512,7 +529,7 @@ typedef struct ByteCode {
 #define INST_PUSH4			2
 #define INST_POP			3
 #define INST_DUP			4
-#define INST_CONCAT1			5
+#define INST_STR_CONCAT1		5
 #define INST_INVOKE_STK1		6
 #define INST_INVOKE_STK4		7
 #define INST_EVAL_STK			8
@@ -586,8 +603,8 @@ typedef struct ByteCode {
 #define INST_CONTINUE			66
 
 /* Opcodes 67 to 68 */
-#define INST_FOREACH_START4		67
-#define INST_FOREACH_STEP4		68
+#define INST_FOREACH_START4		67 /* DEPRECATED */
+#define INST_FOREACH_STEP4		68 /* DEPRECATED */
 
 /* Opcodes 69 to 72 */
 #define INST_BEGIN_CATCH4		69
@@ -751,6 +768,8 @@ typedef struct ByteCode {
 #define INST_INFO_LEVEL_NUM		152
 #define INST_INFO_LEVEL_ARGS		153
 #define INST_RESOLVE_COMMAND		154
+
+/* For compilation relating to TclOO */
 #define INST_TCLOO_SELF			155
 #define INST_TCLOO_CLASS		156
 #define INST_TCLOO_NS			157
@@ -768,8 +787,42 @@ typedef struct ByteCode {
 
 #define INST_EXPAND_DROP		165
 
+/* New foreach implementation */
+#define INST_FOREACH_START              166
+#define INST_FOREACH_STEP               167
+#define INST_FOREACH_END                168
+#define INST_LMAP_COLLECT               169
+
+/* For compilation of [string trim] and related */
+#define INST_STR_TRIM			170
+#define INST_STR_TRIM_LEFT		171
+#define INST_STR_TRIM_RIGHT		172
+
+#define INST_CONCAT_STK			173
+
+#define INST_STR_UPPER			174
+#define INST_STR_LOWER			175
+#define INST_STR_TITLE			176
+#define INST_STR_REPLACE		177
+
+#define INST_ORIGIN_COMMAND		178
+
+#define INST_TCLOO_NEXT			179
+#define INST_TCLOO_NEXT_CLASS		180
+
+#define INST_YIELD_TO_INVOKE		181
+
+#define INST_NUM_TYPE			182
+#define INST_TRY_CVT_TO_BOOLEAN		183
+#define INST_STR_CLASS			184
+
+#define INST_LAPPEND_LIST		185
+#define INST_LAPPEND_LIST_ARRAY		186
+#define INST_LAPPEND_LIST_ARRAY_STK	187
+#define INST_LAPPEND_LIST_STK		188
+
 /* The last opcode */
-#define LAST_INST_OPCODE		165
+#define LAST_INST_OPCODE		188
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -794,8 +847,15 @@ typedef enum InstOperandType {
 				 * variable table. */
     OPERAND_LVT4,		/* Four byte unsigned index into the local
 				 * variable table. */
-    OPERAND_AUX4		/* Four byte unsigned index into the aux data
+    OPERAND_AUX4,		/* Four byte unsigned index into the aux data
 				 * table. */
+    OPERAND_OFFSET1,		/* One byte signed jump offset. */
+    OPERAND_OFFSET4,		/* Four byte signed jump offset. */
+    OPERAND_LIT1,		/* One byte unsigned index into table of
+				 * literals. */
+    OPERAND_LIT4,		/* Four byte unsigned index into table of
+				 * literals. */
+    OPERAND_SCLS1		/* Index into tclStringClassTable. */
 } InstOperandType;
 
 typedef struct InstructionDesc {
@@ -812,6 +872,40 @@ typedef struct InstructionDesc {
 } InstructionDesc;
 
 MODULE_SCOPE InstructionDesc const tclInstructionTable[];
+
+/*
+ * Constants used by INST_STRING_CLASS to indicate character classes. These
+ * correspond closely by name with what [string is] can support, but there is
+ * no requirement to keep the values the same.
+ */
+
+typedef enum InstStringClassType {
+    STR_CLASS_ALNUM,		/* Unicode alphabet or digit characters. */
+    STR_CLASS_ALPHA,		/* Unicode alphabet characters. */
+    STR_CLASS_ASCII,		/* Characters in range U+000000..U+00007F. */
+    STR_CLASS_CONTROL,		/* Unicode control characters. */
+    STR_CLASS_DIGIT,		/* Unicode digit characters. */
+    STR_CLASS_GRAPH,		/* Unicode printing characters, excluding
+				 * space. */
+    STR_CLASS_LOWER,		/* Unicode lower-case alphabet characters. */
+    STR_CLASS_PRINT,		/* Unicode printing characters, including
+				 * spaces. */
+    STR_CLASS_PUNCT,		/* Unicode punctuation characters. */
+    STR_CLASS_SPACE,		/* Unicode space characters. */
+    STR_CLASS_UPPER,		/* Unicode upper-case alphabet characters. */
+    STR_CLASS_WORD,		/* Unicode word (alphabetic, digit, connector
+				 * punctuation) characters. */
+    STR_CLASS_XDIGIT		/* Characters that can be used as digits in
+				 * hexadecimal numbers ([0-9A-Fa-f]). */
+} InstStringClassType;
+
+typedef struct StringClassDesc {
+    const char *name;		/* Name of the class. */
+    int (*comparator)(int);	/* Function to test if a single unicode
+				 * character is a member of the class. */
+} StringClassDesc;
+
+MODULE_SCOPE StringClassDesc const tclStringClassTable[];
 
 /*
  * Compilation of some Tcl constructs such as if commands and the logical or
@@ -902,6 +996,7 @@ typedef struct ForeachInfo {
 } ForeachInfo;
 
 MODULE_SCOPE const AuxDataType tclForeachInfoType;
+MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
 
 #define FOREACHINFO(envPtr, index) \
     ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
@@ -1021,6 +1116,7 @@ MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
 MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
 			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
+MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
 MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
@@ -1055,7 +1151,11 @@ MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
 #endif
-MODULE_SCOPE void	TclOptimizeBytecode(CompileEnv *envPtr);
+MODULE_SCOPE int	TclLocalScalar(const char *bytes, int numBytes,
+			    CompileEnv *envPtr);
+MODULE_SCOPE int	TclLocalScalarFromToken(Tcl_Token *tokenPtr,
+			    CompileEnv *envPtr);
+MODULE_SCOPE void	TclOptimizeBytecode(void *envPtr);
 #ifdef TCL_COMPILE_DEBUG
 MODULE_SCOPE void	TclPrintByteCodeObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
@@ -1070,10 +1170,8 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
-MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
-			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
-MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
+MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -1094,12 +1192,15 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
-					  const char *script,
-					  const char *command, int length,
-					  const unsigned char *pc, Tcl_Obj **tosPtr); 
+			    const char *script, const char *command,
+			    int length, const unsigned char *pc,
+			    Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
-					    const unsigned char *pc, Tcl_Obj **tosPtr);
+			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
+MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
+			    register Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[], int isLambda);
 
 
 /*
@@ -1160,6 +1261,21 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 	    }								\
 	}								\
 	(envPtr)->currStackDepth += (delta);				\
+    } while (0)
+
+#define TclGetStackDepth(envPtr)		\
+    ((envPtr)->currStackDepth)
+
+#define TclSetStackDepth(depth, envPtr)		\
+    (envPtr)->currStackDepth = (depth)
+
+#define TclCheckStackDepth(depth, envPtr)				\
+    do {								\
+	int dd = (depth);						\
+	if (dd != (envPtr)->currStackDepth) {				\
+	    Tcl_Panic("bad stack depth computations: is %i, should be %i", \
+		    (envPtr)->currStackDepth, dd);		\
+	}								\
     } while (0)
 
 /*
@@ -1544,7 +1660,7 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 
 #define PushVarNameWord(i,v,e,f,l,sc,word) \
     SetLineInformation(word);						\
-    TclPushVarName(i,v,e,f,l,sc)					
+    TclPushVarName(i,v,e,f,l,sc)
 
 /*
  * Often want to issue one of two versions of an instruction based on whether
@@ -1566,11 +1682,9 @@ MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
 #define AnonymousLocal(envPtr) \
     (TclFindCompiledLocal(NULL, /*nameChars*/ 0, /*create*/ 1, (envPtr)))
 #define LocalScalar(chars,len,envPtr) \
-    (!TclIsLocalScalar((chars), (len)) ? -1 : \
-	TclFindCompiledLocal((chars), (len), /*create*/ 1, (envPtr)))
+    TclLocalScalar(chars, len, envPtr)
 #define LocalScalarFromToken(tokenPtr,envPtr) \
-    ((tokenPtr)->type != TCL_TOKEN_SIMPLE_WORD ? -1 : \
-	LocalScalar((tokenPtr)[1].start, (tokenPtr)[1].size, (envPtr)))
+    TclLocalScalarFromToken(tokenPtr, envPtr)
 
 /*
  * Flags bits used by TclPushVarName.

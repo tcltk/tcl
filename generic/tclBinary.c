@@ -610,9 +610,7 @@ UpdateStringOfByteArray(
  *
  *	This function appends an array of bytes to a byte array object. Note
  *	that the object *must* be unshared, and the array of bytes *must not*
- *	refer to the object being appended to.  Also the caller must have
- *	already checked that the final length of the bytearray after the
- *	append operations is complete will not overflow the int range.
+ *	refer to the object being appended to.
  *
  * Results:
  *	None.
@@ -631,6 +629,7 @@ TclAppendBytesToByteArray(
     int len)
 {
     ByteArray *byteArrayPtr;
+    int needed;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
@@ -639,64 +638,57 @@ TclAppendBytesToByteArray(
 	Tcl_Panic("%s must be called with definite number of bytes to append",
 		"TclAppendBytesToByteArray");
     }
+    if (len == 0) {
+	/* Append zero bytes is a no-op. */
+	return;
+    }
     if (objPtr->typePtr != &tclByteArrayType) {
 	SetByteArrayFromAny(NULL, objPtr);
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
 
+    if (len > INT_MAX - byteArrayPtr->used) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
+
+    needed = byteArrayPtr->used + len;
     /*
      * If we need to, resize the allocated space in the byte array.
      */
 
-    if (byteArrayPtr->used + len > byteArrayPtr->allocated) {
-	unsigned int attempt, used = byteArrayPtr->used;
-	ByteArray *tmpByteArrayPtr = NULL;
+    if (needed > byteArrayPtr->allocated) {
+	ByteArray *ptr = NULL;
+	int attempt;
 
-	attempt = byteArrayPtr->allocated;
-	if (attempt < 1) {
-	    /*
-	     * No allocated bytes, so must be none used too. We use this
-	     * method to calculate how many bytes to allocate because we can
-	     * end up with a zero-length buffer otherwise, when doubling can
-	     * cause trouble. [Bug 3067036]
-	     */
-
-	    attempt = len + 1;
-	} else {
-	    do {
-		attempt *= 2;
-	    } while (attempt < used+len);
+	if (needed <= INT_MAX/2) {
+	    /* Try to allocate double the total space that is needed. */
+	    attempt = 2 * needed;
+	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
+	if (ptr == NULL) {
+	    /* Try to allocate double the increment that is needed (plus). */
+	    unsigned int limit = INT_MAX - needed;
+	    unsigned int extra = len + TCL_MIN_GROWTH;
+	    int growth = (int) ((extra > limit) ? limit : extra);
 
-	if (BYTEARRAY_SIZE(attempt) > BYTEARRAY_SIZE(used)) {
-	    tmpByteArrayPtr = attemptckrealloc(byteArrayPtr,
-		    BYTEARRAY_SIZE(attempt));
+	    attempt = needed + growth;
+	    ptr = attemptckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
-
-	if (tmpByteArrayPtr == NULL) {
-	    attempt = used + len;
-	    if (BYTEARRAY_SIZE(attempt) < BYTEARRAY_SIZE(used)) {
-		Tcl_Panic("attempt to allocate a bigger buffer than we can handle");
-	    }
-	    tmpByteArrayPtr = ckrealloc(byteArrayPtr,
-		    BYTEARRAY_SIZE(attempt));
+	if (ptr == NULL) {
+	    /* Last chance: Try to allocate exactly what is needed. */
+	    attempt = needed;
+	    ptr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(attempt));
 	}
-
-	byteArrayPtr = tmpByteArrayPtr;
+	byteArrayPtr = ptr;
 	byteArrayPtr->allocated = attempt;
-	byteArrayPtr->used = used;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
 
-    /*
-     * Do the append if there's any point.
-     */
-
-    if (len > 0) {
+    if (bytes) {
 	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
-	byteArrayPtr->used += len;
-	TclInvalidateStringRep(objPtr);
     }
+    byteArrayPtr->used += len;
+    TclInvalidateStringRep(objPtr);
 }
 
 /*
@@ -2500,7 +2492,8 @@ BinaryEncode64(
 		return TCL_ERROR;
 	    }
 	    if (maxlen < 0) {
-		Tcl_SetResult(interp, "line length out of range", TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;
@@ -2606,7 +2599,8 @@ BinaryEncodeUu(
 		return TCL_ERROR;
 	    }
 	    if (lineLength < 3 || lineLength > 85) {
-		Tcl_SetResult(interp, "line length out of range", TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"line length out of range", -1));
 		Tcl_SetErrorCode(interp, "TCL", "BINARY", "ENCODE",
 			"LINE_LENGTH", NULL);
 		return TCL_ERROR;
