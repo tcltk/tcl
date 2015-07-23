@@ -303,6 +303,7 @@ Tcl_InitNotifier(void)
      * pipe to the original notifier thread
      */
     if (notifierCount > 0 && processIDInitialized != getpid()) {
+	Tcl_ConditionFinalize(&notifierCV);
 	notifierCount = 0;
 	processIDInitialized = 0;
 	close(triggerPipe);
@@ -1270,7 +1271,7 @@ NotifierThreadProc(
     Tcl_ConditionNotify(&notifierCV);
     Tcl_MutexUnlock(&notifierMutex);
 
-    TclpThreadExit (0);
+    TclpThreadExit(0);
 }
 
 #if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
@@ -1293,6 +1294,9 @@ NotifierThreadProc(
 static void
 AtForkPrepare(void)
 {
+    Tcl_MutexLock(&notifierMutex);
+    TclpMasterLock();
+    TclpMutexLock();
 }
 
 /*
@@ -1314,6 +1318,9 @@ AtForkPrepare(void)
 static void
 AtForkParent(void)
 {
+    TclpMutexUnlock();
+    TclpMasterUnlock();
+    Tcl_MutexUnlock(&notifierMutex);
 }
 
 /*
@@ -1335,15 +1342,16 @@ AtForkParent(void)
 static void
 AtForkChild(void)
 {
-    notifierMutex = NULL;
-    notifierCV = NULL;
+    TclpMutexUnlock();
+    TclpMasterUnlock();
+    TclMutexUnlockAndFinalize(&notifierMutex);
     Tcl_InitNotifier();
 }
 #endif /* HAVE_PTHREAD_ATFORK */
 
 #endif /* TCL_THREADS */
 
-#endif /* HAVE_COREFOUNDATION */
+#endif /* !HAVE_COREFOUNDATION */
 
 /*
  * Local Variables:
