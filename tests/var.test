@@ -25,6 +25,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testupvar [llength [info commands testupvar]]
 testConstraint testgetvarfullname [llength [info commands testgetvarfullname]]
 testConstraint testsetnoerr [llength [info commands testsetnoerr]]
+testConstraint memory [llength [info commands memory]]
 
 catch {rename p ""}
 catch {namespace delete test_ns_var}
@@ -893,6 +894,33 @@ test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
 } -cleanup {
     rename linenumber {}
 } -result 1
+
+test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
+    proc getbytes {} {
+	lindex [split [memory info] \n] 3 3
+    }
+    proc doit k {
+	variable A
+	set A($k) {}
+	foreach n [array names A] {
+	    if {$n <= $k-1} {
+		unset A($n)
+	    }
+	}
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	doit $i
+        set tmp $end
+        set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    array unset A
+    rename getbytes {}
+    rename doit {}
+} -result 0
 
 
 catch {namespace delete ns}

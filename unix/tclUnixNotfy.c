@@ -1334,6 +1334,9 @@ NotifierThreadProc(
 static void
 AtForkPrepare(void)
 {
+    Tcl_MutexLock(&notifierMutex);
+    TclpMasterLock();
+    TclpMutexLock();
 }
 
 /*
@@ -1355,6 +1358,9 @@ AtForkPrepare(void)
 static void
 AtForkParent(void)
 {
+    TclpMutexUnlock();
+    TclpMasterUnlock();
+    Tcl_MutexUnlock(&notifierMutex);
 }
 
 /*
@@ -1376,7 +1382,9 @@ AtForkParent(void)
 static void
 AtForkChild(void)
 {
-    Tcl_MutexFinalize(&notifierMutex);
+    TclpMutexUnlock();
+    TclpMasterUnlock();
+    TclMutexUnlockAndFinalize(&notifierMutex);
     Tcl_InitNotifier();
 }
 #endif /* HAVE_PTHREAD_ATFORK */
