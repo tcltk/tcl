@@ -3581,16 +3581,16 @@ TclCompileUnsetCmd(
 	    }
 	    return TCL_ERROR;
 	}
-	if (i == 1) {
+	if (varCount == 0) {
 	    const char *bytes;
 	    int len;
 
 	    bytes = Tcl_GetStringFromObj(leadingWord, &len);
-	    if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {
+	    if (i == 1 && len == 11 && !strncmp("-nocomplain", bytes, 11)) {
 		flags = 0;
-		haveFlags = 1;
-	    } else if (len == 2 && !strncmp("--", bytes, 2)) {
-		haveFlags = 1;
+		haveFlags++;
+	    } else if (i == (2 - flags) && len == 2 && !strncmp("--", bytes, 2)) {
+		haveFlags++;
 	    } else {
 		varCount++;
 	    }
@@ -3605,7 +3605,7 @@ TclCompileUnsetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (haveFlags) {
+    for (i=0; i<haveFlags;i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
     }
     for (i=1+haveFlags ; i<parsePtr->numWords ; i++) {

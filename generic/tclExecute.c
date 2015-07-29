@@ -4049,6 +4049,9 @@ TEBCresume(
 
 		if (!TclIsVarUndefined(varPtr)) {
 		    TclDecrRefCount(varPtr->value.objPtr);
+		    TclSetVarUndefined(varPtr);
+		    TclClearVarNamespaceVar(varPtr);
+		    TclCleanupVar(varPtr, arrayPtr);
 		} else if (flags & TCL_LEAVE_ERR_MSG) {
 		    goto slowUnsetArray;
 		}

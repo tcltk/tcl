@@ -4333,7 +4333,18 @@ Write(
 		return -1;
 	    }
 	    flushed += statePtr->bufSize;
-	    if (saved == 0 || src[-1] != '\n') {
+
+	    /*
+ 	     * We just flushed.  So if we have needNlFlush set to record
+ 	     * that we need to flush because theres a (translated) newline
+ 	     * in the buffer, that's likely not true any more.  But there
+ 	     * is a tricky exception.  If we have saved bytes that did not
+ 	     * really get flushed and those bytes came from a translation
+ 	     * of a newline as the last thing taken from the src array,
+ 	     * then needNlFlush needs to remain set to flag that the
+ 	     * next buffer still needs a newline flush.
+ 	     */
+	    if (needNlFlush && (saved == 0 || src[-1] != '\n')) {
 		needNlFlush = 0;
 	    }
 	}
