@@ -16,6 +16,19 @@
 #ifdef TCL_THREADS
 
 /*
+ * This is the number of milliseconds to wait between internal retries in
+ * the Tcl_MutexLock function.  This value must be greater than zero and
+ * should be a suitable value for the given platform.
+ *
+ * TODO: This may need to be dynamically determined, based on the relative
+ *       performance of the running process.
+ */
+
+#ifndef TCL_MUTEX_LOCK_SLEEP_TIME
+#  define TCL_MUTEX_LOCK_SLEEP_TIME	(25)
+#endif
+
+/*
  * masterLock is used to serialize creation of mutexes, condition variables,
  * and thread local storage. This is the only place that can count on the
  * ability to statically initialize the mutex.
@@ -37,6 +50,13 @@ static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 
 static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t *allocLockPtr = &allocLock;
+
+/*
+ * The mutexLock serializes Tcl_MutexLock. This is necessary to prevent
+ * races when finalizing a mutex that some other thread may want to lock.
+ */
+
+static pthread_mutex_t mutexLock = PTHREAD_MUTEX_INITIALIZER;
 
 /*
  * These are for the critical sections inside this file.
@@ -359,6 +379,58 @@ TclpMasterUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpMutexLock
+ *
+ *	This procedure is used to grab a lock that serializes locking
+ *	another mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexLock(void)
+{
+#ifdef TCL_THREADS
+    pthread_mutex_lock(&mutexLock);
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpMutexUnlock
+ *
+ *	This procedure is used to release a lock that serializes locking
+ *	another mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexUnlock(void)
+{
+#ifdef TCL_THREADS
+    pthread_mutex_unlock(&mutexLock);
+#endif
+}
+
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
@@ -415,6 +487,8 @@ Tcl_MutexLock(
 {
     pthread_mutex_t *pmutexPtr;
 
+retry:
+
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 	if (*mutexPtr == NULL) {
@@ -429,8 +503,32 @@ Tcl_MutexLock(
 	}
 	MASTER_UNLOCK;
     }
-    pmutexPtr = *((pthread_mutex_t **)mutexPtr);
-    pthread_mutex_lock(pmutexPtr);
+    while (1) {
+	TclpMutexLock();
+	pmutexPtr = *((pthread_mutex_t **)mutexPtr);
+	if (pmutexPtr == NULL) {
+	    TclpMutexUnlock();
+	    goto retry;
+	}
+	if (pthread_mutex_trylock(pmutexPtr) == 0) {
+	    TclpMutexUnlock();
+	    return;
+	}
+	TclpMutexUnlock();
+	/*
+	 * BUGBUG: All core and Thread package tests pass when usleep()
+	 *         is used; however, the Thread package tests hang at
+	 *         various places when Tcl_Sleep() is used, typically
+	 *         while running test "thread-17.8", "thread-17.9", or
+	 *         "thread-17.11a".  Really, what we want here is just
+	 *         to yield to other threads for a while.
+	 */
+#ifdef HAVE_USLEEP
+	usleep(TCL_MUTEX_LOCK_SLEEP_TIME * 1000);
+#else
+	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
+#endif
+    }
 }
 
 /*
