@@ -2897,7 +2897,7 @@ ClientData
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
-    WCHAR *nativePathPtr;
+    WCHAR *nativePathPtr = NULL;
     const char *str;
     Tcl_Obj *validPathPtr;
     size_t len;
@@ -2911,15 +2911,21 @@ TclNativeCreateNativeRep(
 	 */
 
 	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
+	if (validPathPtr == NULL) {
+	    return NULL;
+	}
+	/* refCount of validPathPtr was already incremented in Tcl_FSGetTranslatedPath */
     } else {
 	/*
 	 * Make sure the normalized path is set.
 	 */
 
 	validPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-    }
-    if (validPathPtr == NULL) {
-	return NULL;
+	if (validPathPtr == NULL) {
+	    return NULL;
+	}
+	/* validPathPtr returned from Tcl_FSGetNormalizedPath is owned by Tcl, so incr refCount here */
+	Tcl_IncrRefCount(validPathPtr);
     }
 
     str = Tcl_GetString(validPathPtr);
@@ -2927,7 +2933,7 @@ TclNativeCreateNativeRep(
 
     if (strlen(str)!=(unsigned int)len) {
 	/* String contains NUL-bytes. This is invalid. */
-	return 0;
+	goto done;
     }
     /* For a reserved device, strip a possible postfix ':' */
     len = WinIsReserved(str);
@@ -2936,13 +2942,13 @@ TclNativeCreateNativeRep(
 	 * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
 	len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
 	if (len==0) {
-	    return 0;
+	    goto done;
 	}
     }
     /* Overallocate 6 chars, making some room for extended paths */
     wp = nativePathPtr = ckalloc( (len+6) * sizeof(WCHAR) );
     if (nativePathPtr==0) {
-      return 0;
+      goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr, len+1);
     /*
@@ -2993,6 +2999,10 @@ TclNativeCreateNativeRep(
 	}
 	++wp;
     }
+
+  done:
+    
+    TclDecrRefCount(validPathPtr);
     return nativePathPtr;
 }
 
