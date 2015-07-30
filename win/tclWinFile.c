@@ -2911,19 +2911,15 @@ TclNativeCreateNativeRep(
 	 */
 
 	validPathPtr = Tcl_FSGetTranslatedPath(NULL, pathPtr);
-	if (validPathPtr == NULL) {
-	    return NULL;
-	}
     } else {
 	/*
 	 * Make sure the normalized path is set.
 	 */
 
 	validPathPtr = Tcl_FSGetNormalizedPath(NULL, pathPtr);
-	if (validPathPtr == NULL) {
-	    return NULL;
-	}
-	Tcl_IncrRefCount(validPathPtr);
+    }
+    if (validPathPtr == NULL) {
+	return NULL;
     }
 
     str = Tcl_GetString(validPathPtr);
