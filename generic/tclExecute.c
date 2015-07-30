@@ -2920,7 +2920,6 @@ TEBCresume(
 		 * stack-allocated parameter, update the stack pointers.
 		 */
 
-		esPtr = iPtr->execEnvPtr->execStackPtr;
 		TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
 
 		catchTop += moved;
@@ -8251,6 +8250,7 @@ TEBCresume(
 #undef auxObjList
 #undef catchTop
 #undef TCONST
+#undef esPtr
 
 static int
 FinalizeOONext(
