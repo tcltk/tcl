@@ -2704,13 +2704,9 @@ CompileEachloopCmd(
     
     done:
     if (code == TCL_ERROR) {
-	if (infoPtr) {
-	    FreeForeachInfo(infoPtr);
-	}
+	FreeForeachInfo(infoPtr);
     }
-    if (varListObj) {
-	Tcl_DecrRefCount(varListObj);
-    }
+    Tcl_DecrRefCount(varListObj);
     return code;
 }
 
