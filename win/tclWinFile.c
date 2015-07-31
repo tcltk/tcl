@@ -3171,7 +3171,7 @@ ClientData
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
-    char *nativePathPtr, *str;
+    char *nativePathPtr = NULL, *str;
     Tcl_DString ds;
     Tcl_Obj *validPathPtr;
     int len;
@@ -3187,6 +3187,7 @@ TclNativeCreateNativeRep(
 	if (validPathPtr == NULL) {
 	    return NULL;
 	}
+	/* refCount of validPathPtr was already incremented in Tcl_FSGetTranslatedPath */
     } else {
 	/*
 	 * Make sure the normalized path is set.
@@ -3196,6 +3197,7 @@ TclNativeCreateNativeRep(
 	if (validPathPtr == NULL) {
 	    return NULL;
 	}
+	/* validPathPtr returned from Tcl_FSGetNormalizedPath is owned by Tcl, so incr refCount here */
 	Tcl_IncrRefCount(validPathPtr);
     }
 
@@ -3228,9 +3230,7 @@ TclNativeCreateNativeRep(
 	}
 	while (len-->0) {
 	    if ((*wp < ' ') || wcschr(L"\"*:<>?|", *wp)) {
-		Tcl_DecrRefCount(validPathPtr);
-		Tcl_DStringFree(&ds);
-		return NULL;
+		goto done;
 	    } else if (*wp=='/') {
 		*wp = '\\';
 	    }
@@ -3261,9 +3261,7 @@ TclNativeCreateNativeRep(
 	}
 	while (len-->0) {
 	    if ((*p < ' ') || strchr("\"*:<>?|", *p)) {
-		Tcl_DecrRefCount(validPathPtr);
-		Tcl_DStringFree(&ds);
-		return NULL;
+		goto done;
 	    } else if (*p=='/') {
 		*p = '\\';
 	    }
@@ -3271,10 +3269,14 @@ TclNativeCreateNativeRep(
 	}
 	len = Tcl_DStringLength(&ds) + sizeof(char);
     }
-    Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc((unsigned) len);
+    if (nativePathPtr == 0)
+	goto done;
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
 
+  done:
+    
+    Tcl_DecrRefCount(validPathPtr);
     Tcl_DStringFree(&ds);
     return (ClientData) nativePathPtr;
 }
