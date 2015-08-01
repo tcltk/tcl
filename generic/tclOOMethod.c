@@ -875,11 +875,8 @@ PushMethodCallFrame(
      * This operation may fail.
      */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr, FRAME_IS_PROC|FRAME_IS_METHOD);
-    if (result != TCL_OK) {
-	goto failureReturn;
-    }
 
     fdPtr->framePtr->clientData = contextPtr;
     fdPtr->framePtr->objc = objc;
