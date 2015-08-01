@@ -646,7 +646,6 @@ InitDefineContext(
     Tcl_Obj *const objv[])
 {
     CallFrame *framePtr, **framePtrPtr = &framePtr;
-    int result;
 
     if (namespacePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
@@ -658,11 +657,8 @@ InitDefineContext(
 
     /* framePtrPtr is needed to satisfy GCC 3.3's strict aliasing rules */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, FRAME_IS_OO_DEFINE);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
     framePtr->clientData = oPtr;
     framePtr->objc = objc;
     framePtr->objv = objv;	/* Reference counts do not need to be
