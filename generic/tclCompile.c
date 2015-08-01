@@ -4101,7 +4101,7 @@ TclEmitInvoke(
 	    && auxContinuePtr->expandTarget == envPtr->expandCount-expandCount) {
 	auxContinuePtr = NULL;
     } else {
-	continueRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
+	continueRange = auxContinuePtr - envPtr->exceptAuxArrayPtr;
     }
 
     if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
