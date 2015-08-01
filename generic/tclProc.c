@@ -1642,12 +1642,9 @@ TclPushProcCallFrame(
      */
 
     framePtrPtr = &framePtr;
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    (Tcl_Namespace *) nsPtr,
 	    (isLambda? (FRAME_IS_PROC|FRAME_IS_LAMBDA) : FRAME_IS_PROC));
-    if (result != TCL_OK) {
-	return result;
-    }
 
     framePtr->objc = objc;
     framePtr->objv = objv;
@@ -2055,7 +2052,7 @@ TclProcCompileProc(
 	    procPtr->numCompiledLocals = procPtr->numArgs;
 	}
 
-	TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
+	(void) TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
 		/* isProcCallFrame */ 0);
 
 	/*
