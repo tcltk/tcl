@@ -10112,13 +10112,14 @@ GetSrcInfoForPc(
  *	ExceptionRange.
  *
  * Results:
- *	In the normal case, catchOnly is 0 (false) and this procedure returns
- *	a pointer to the most closely enclosing ExceptionRange structure
- *	regardless of whether it is a loop or catch exception range. This is
- *	appropriate when processing a TCL_BREAK or TCL_CONTINUE, which will be
- *	"handled" either by a loop exception range or a closer catch range. If
- *	catchOnly is nonzero, this procedure ignores loop exception ranges and
- *	returns a pointer to the closest catch range. If no matching
+ *	If the searchMode is TCL_ERROR, this procedure ignores loop exception
+ *	ranges and returns a pointer to the closest catch range. If the
+ *	searchMode is TCL_BREAK, this procedure returns a pointer to the most
+ *	closely enclosing ExceptionRange regardless of whether it is a loop or
+ *	catch exception range. If the searchMode is TCL_CONTINUE, this
+ *	procedure returns a pointer to the most closely enclosing
+ *	ExceptionRange (of any type) skipping only loop exception ranges if
+ *	they don't have a sensible continueOffset defined. If no matching
  *	ExceptionRange is found that encloses pc, a NULL is returned.
  *
  * Side effects:
