@@ -4083,16 +4083,6 @@ TclEmitInvoke(
      * calls from inside a [for] increment clause).
      */
 
-    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxBreakPtr);
-    if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
-	auxBreakPtr = NULL;
-    } else if (auxBreakPtr->stackDepth == envPtr->currStackDepth-wordCount
-	    && auxBreakPtr->expandTarget == envPtr->expandCount-expandCount) {
-	auxBreakPtr = NULL;
-    } else {
-	breakRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
-    }
-
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE,
 	    &auxContinuePtr);
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
@@ -4101,7 +4091,18 @@ TclEmitInvoke(
 	    && auxContinuePtr->expandTarget == envPtr->expandCount-expandCount) {
 	auxContinuePtr = NULL;
     } else {
-	continueRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
+	continueRange = auxContinuePtr - envPtr->exceptAuxArrayPtr;
+    }
+
+    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxBreakPtr);
+    if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
+	auxBreakPtr = NULL;
+    } else if (auxContinuePtr == NULL
+	    && auxBreakPtr->stackDepth == envPtr->currStackDepth-wordCount
+	    && auxBreakPtr->expandTarget == envPtr->expandCount-expandCount) {
+	auxBreakPtr = NULL;
+    } else {
+	breakRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
     }
 
     if (auxBreakPtr != NULL || auxContinuePtr != NULL) {

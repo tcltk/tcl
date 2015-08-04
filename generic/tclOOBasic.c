@@ -402,7 +402,6 @@ TclOO_Object_Eval(
     register const int skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
-    int result;
     CmdFrame *invoker;
 
     if (objc-1 < skip) {
@@ -415,11 +414,8 @@ TclOO_Object_Eval(
      * command(s).
      */
 
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    Tcl_GetObjectNamespace(object), 0);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
     framePtr->objc = objc;
     framePtr->objv = objv;	/* Reference counts do not need to be
 				 * incremented here. */
