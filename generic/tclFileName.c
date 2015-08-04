@@ -830,10 +830,10 @@ Tcl_FSJoinToPath(
 	return TclJoinPath(2, pair);
     } else {
 	int elemc = objc + 1;
-	Tcl_Obj *ret, **elemv = ckalloc(elemc*sizeof(Tcl_Obj **));
+	Tcl_Obj *ret, **elemv = ckalloc(elemc*sizeof(Tcl_Obj *));
 
 	elemv[0] = pathPtr;
-	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj **));
+	memcpy(elemv+1, objv, objc*sizeof(Tcl_Obj *));
 	ret = TclJoinPath(elemc, elemv);
 	ckfree(elemv);
 	return ret;

@@ -4495,7 +4495,6 @@ TestgetvarfullnameCmd(
     Tcl_Namespace *namespacePtr;
     Tcl_CallFrame *framePtr;
     Tcl_Var variable;
-    int result;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name scope");
@@ -4523,11 +4522,8 @@ TestgetvarfullnameCmd(
 	if (namespacePtr == NULL) {
 	    return TCL_ERROR;
 	}
-	result = TclPushStackFrame(interp, &framePtr, namespacePtr,
+	(void) TclPushStackFrame(interp, &framePtr, namespacePtr,
 		/*isProcCallFrame*/ 0);
-	if (result != TCL_OK) {
-	    return result;
-	}
     }
 
     variable = Tcl_FindNamespaceVar(interp, name, NULL,
