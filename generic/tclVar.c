@@ -2250,8 +2250,8 @@ UnsetVarStruct(
 	    tracePtr = NULL;
 	    if (TclIsVarTraced(&dummyVar)) {
 		tPtr = Tcl_FindHashEntry(&iPtr->varTraces, &dummyVar);
-		tracePtr = Tcl_GetHashValue(tPtr);
 		if (tPtr) {
+		    tracePtr = Tcl_GetHashValue(tPtr);
 		    Tcl_DeleteHashEntry(tPtr);
 		}
 	    }
