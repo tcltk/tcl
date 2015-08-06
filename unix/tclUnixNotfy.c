@@ -1,3 +1,6 @@
+#define LAZY_THREAD_CREATE 1
+#define AT_FORK_INIT_VALUE 0
+#define DEACTIVATE_ATFORK_MUTEX 0
 /*
  * tclUnixNotify.c --
  *
@@ -160,6 +163,18 @@ static int triggerPipe = -1;
 
 TCL_DECLARE_MUTEX(notifierMutex)
 
+#if LAZY_THREAD_CREATE == 1
+TCL_DECLARE_MUTEX(notifierInitMutex)
+
+/*
+ * The following static indicates if the notifier thread is running.
+ *
+ * You must hold the notifierInitLock before accessing this variable.
+ */
+
+static int notifierThreadRunning = 0;
+#endif
+
 /*
  * The notifier thread signals the notifierCV when it has finished
  * initializing the triggerPipe and right before the notifier thread
@@ -195,7 +210,7 @@ static Tcl_ThreadId notifierThread;
 #ifdef TCL_THREADS
 static void	NotifierThreadProc(ClientData clientData);
 #if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
-static int	atForkInit = 0;
+static int	atForkInit = AT_FORK_INIT_VALUE;
 static void	AtForkPrepare(void);
 static void	AtForkParent(void);
 static void	AtForkChild(void);
@@ -257,6 +272,33 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
 static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && __CYGWIN__ */
+
+#if LAZY_THREAD_CREATE == 1
+static void
+StartNotifierThread(void)
+{
+    fprintf(stderr, "=== StartNotifierThread()\n");
+    Tcl_MutexLock(&notifierInitMutex);
+    TclpMasterLock();
+    TclpMutexLock();
+    fprintf(stderr, "=== StartNotifierThread() locked notifierThreadRunning %d notifierCount %d\n", notifierThreadRunning, notifierCount);
+    if (!notifierCount) {
+	Tcl_Panic("StartNotifierThread: notifier not initialized");
+    }
+    if (!notifierThreadRunning) {
+         fprintf(stderr, "=== StartNotifierThread() really start\n");
+	 if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
+	     TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
+	        Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread");
+	 }
+	 processIDInitialized = getpid();
+	 notifierThreadRunning = 1;
+    }
+    TclpMutexUnlock();
+    TclpMasterUnlock();
+    Tcl_MutexUnlock(&notifierInitMutex);
+}
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -277,11 +319,11 @@ static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 ClientData
 Tcl_InitNotifier(void)
 {
+    //fprintf(stderr, "==== Tcl_InitNotifier atForkInit %d notifierCount %d\n", atForkInit, notifierCount);
     if (tclNotifierHooks.initNotifierProc) {
 	return tclNotifierHooks.initNotifierProc();
     } else {
-	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey); 
 #ifdef TCL_THREADS
 	tsdPtr->eventReady = 0;
 
@@ -295,9 +337,9 @@ Tcl_InitNotifier(void)
 	 * Install pthread_atfork handlers to reinitialize the notifier in the
 	 * child of a fork.
 	 */
-
 	if (!atForkInit) {
 	    int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
+            fprintf(stderr, "==== calling pthread_atfork()\n");
 
 	    if (result) {
 		Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed");
@@ -310,22 +352,28 @@ Tcl_InitNotifier(void)
 	 * In this case, restart the notifier thread and close the
 	 * pipe to the original notifier thread
 	 */
+#if LAZY_THREAD_CREATE == 0
 	if (notifierCount > 0 && processIDInitialized != getpid()) {
+            // fprintf(stderr, "==== reset notifierCount for %d\n", getpid());
 	    Tcl_ConditionFinalize(&notifierCV);
 	    notifierCount = 0;
 	    processIDInitialized = 0;
 	    close(triggerPipe);
 	    triggerPipe = -1;
 	}
+#endif
 	if (notifierCount == 0) {
+#if LAZY_THREAD_CREATE == 0
 	    if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
 		    TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
 		Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread");
 	    }
 	    processIDInitialized = getpid();
+#endif
 	}
 	notifierCount++;
 
+#if LAZY_THREAD_CREATE == 0
 	/*
 	 * Wait for the notifier pipe to be created.
 	 */
@@ -333,6 +381,7 @@ Tcl_InitNotifier(void)
 	while (triggerPipe < 0) {
 	    Tcl_ConditionWait(&notifierCV, &notifierMutex, NULL);
 	}
+#endif
 
 	Tcl_MutexUnlock(&notifierMutex);
 #endif /* TCL_THREADS */
@@ -371,6 +420,7 @@ Tcl_FinalizeNotifier(
 
 	Tcl_MutexLock(&notifierMutex);
 	notifierCount--;
+    //fprintf(stderr, "==== Tcl_Tcl_FinalizeNotifier (after decr) atForkInit %d notifierCount %d\n", atForkInit, notifierCount);
 
 	/*
 	 * If this is the last thread to use the notifier, close the notifier
@@ -378,7 +428,38 @@ Tcl_FinalizeNotifier(
 	 */
 
 	if (notifierCount == 0) {
+#if LAZY_THREAD_CREATE == 1
+	    if (triggerPipe != -1) {
+	        if (write(triggerPipe, "q", 1) != 1) {
+		    Tcl_Panic("Tcl_FinalizeNotifier: %s",
+			    "unable to write q to triggerPipe");
+	        }
+    	        close(triggerPipe);
+                triggerPipe = -1;
+
+	        if (notifierThreadRunning) {
+	            int result = Tcl_JoinThread(notifierThread, NULL);
+
+		    if (result) {
+		        Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier "
+		    	    "thread");
+	    	    }
+		    notifierThreadRunning = 0;
+	        }
+            }
+#else
 	    int result;
+
+# if AT_FORK_INIT_VALUE == 1
+	    if (triggerPipe != -1) {
+	        if (write(triggerPipe, "q", 1) != 1) {
+		    Tcl_Panic("Tcl_FinalizeNotifier: %s",
+			    "unable to write q to triggerPipe");
+	        }
+    	        close(triggerPipe);
+                triggerPipe = -1;
+            }
+# else
 
 	    if (triggerPipe < 0) {
 		Tcl_Panic("Tcl_FinalizeNotifier: %s",
@@ -410,6 +491,8 @@ Tcl_FinalizeNotifier(
 		Tcl_Panic("Tcl_FinalizeNotifier: %s",
 			"unable to join notifier thread");
 	    }
+# endif
+#endif
 	}
 
 	/*
@@ -524,11 +607,18 @@ Tcl_ServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
+    fprintf(stderr, "==== Tcl_ServiceModeHook mode %d\n", mode);
     if (tclNotifierHooks.serviceModeHookProc) {
 	tclNotifierHooks.serviceModeHookProc(mode);
 	return;
     } else {
+#if LAZY_THREAD_CREATE == 1
+       if (mode == TCL_SERVICE_ALL) {
+           StartNotifierThread();
+       }
+#else
 	/* Does nothing in this implementation. */
+#endif
     }
 }
 
@@ -881,6 +971,9 @@ Tcl_WaitForEvent(
 	 * Place this thread on the list of interested threads, signal the
 	 * notifier thread, and wait for a response or a timeout.
 	 */
+#if LAZY_THREAD_CREATE == 1
+	StartNotifierThread();
+#endif
 
 #ifdef __CYGWIN__
 	if (!tsdPtr->hwnd) {
@@ -1147,6 +1240,7 @@ NotifierThreadProc(
 		"could not make trigger pipe close-on-exec");
     }
 
+// fprintf(stderr, "=== Starting Notifier Thread\n");
     /*
      * Install the write end of the pipe into the global variable.
      */
@@ -1304,6 +1398,7 @@ NotifierThreadProc(
      * Clean up the read end of the pipe and signal any threads waiting on
      * termination of the notifier thread.
      */
+fprintf(stderr, "=== Stopping Notifier Thread\n");
 
     close(receivePipe);
     Tcl_MutexLock(&notifierMutex);
@@ -1334,9 +1429,11 @@ NotifierThreadProc(
 static void
 AtForkPrepare(void)
 {
+#if DEACTIVATE_ATFORK_MUTEX == 0
     Tcl_MutexLock(&notifierMutex);
     TclpMasterLock();
     TclpMutexLock();
+#endif
 }
 
 /*
@@ -1358,9 +1455,12 @@ AtForkPrepare(void)
 static void
 AtForkParent(void)
 {
+#if DEACTIVATE_ATFORK_MUTEX == 0
     TclpMutexUnlock();
     TclpMasterUnlock();
     Tcl_MutexUnlock(&notifierMutex);
+#endif
+    //fprintf(stderr, "====  atParent %d notifierCount %d atForkInit %d\n", atForkInit, notifierCount, atForkInit);
 }
 
 /*
@@ -1382,9 +1482,25 @@ AtForkParent(void)
 static void
 AtForkChild(void)
 {
+#if DEACTIVATE_ATFORK_MUTEX == 0
     TclpMutexUnlock();
     TclpMasterUnlock();
     TclMutexUnlockAndFinalize(&notifierMutex);
+#endif
+
+#if LAZY_THREAD_CREATE == 1
+    //Tcl_MutexLock(&notifierInitMutex);
+    notifierThreadRunning = 0;
+    if (notifierCount > 0) {
+         Tcl_ConditionFinalize(&notifierCV);
+         notifierCount = 0;
+         processIDInitialized = 0;
+         close(triggerPipe);
+         triggerPipe = -1;
+    }
+    //Tcl_MutexUnlock(&notifierInitMutex);
+#endif
+    // fprintf(stderr, "==== AtForkChild() notifierCount %d notifierThreadRunning %d atForkInit %d\n",notifierCount,notifierThreadRunning, atForkInit);
     Tcl_InitNotifier();
 }
 #endif /* HAVE_PTHREAD_ATFORK */
