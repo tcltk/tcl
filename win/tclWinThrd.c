@@ -24,6 +24,16 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
 #endif
 
 /*
+ * This is the number of milliseconds to wait between internal retries in
+ * the Tcl_MutexLock function.  This value must be greater than or equal
+ * to zero and should be a suitable value for the given platform.
+ */
+
+#ifndef TCL_MUTEX_LOCK_SLEEP_TIME
+#  define TCL_MUTEX_LOCK_SLEEP_TIME	(0)
+#endif
+
+/*
  * This is the master lock used to serialize access to other serialization
  * data structures.
  */
@@ -55,6 +65,13 @@ static Tcl_Mutex allocLockPtr = &allocLock;
 static int allocOnce = 0;
 
 #endif /* TCL_THREADS */
+
+/*
+ * The mutexLock serializes Tcl_MutexLock. This is necessary to prevent
+ * races when finalizing a mutex that some other thread may want to lock.
+ */
+
+static CRITICAL_SECTION mutexLock;
 
 /*
  * The joinLock serializes Create- and ExitThread. This is necessary to
@@ -369,6 +386,7 @@ TclpInitLock(void)
 	 */
 
 	init = 1;
+	InitializeCriticalSection(&mutexLock);
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
@@ -464,6 +482,52 @@ TclpMasterUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpMutexLock
+ *
+ *	This procedure is used to grab a lock that serializes locking
+ *	another mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexLock(void)
+{
+    EnterCriticalSection(&mutexLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclpMutexUnlock
+ *
+ *	This procedure is used to release a lock that serializes locking
+ *	another mutex.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexUnlock(void)
+{
+    LeaveCriticalSection(&mutexLock);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
@@ -516,6 +580,7 @@ void
 TclFinalizeLock(void)
 {
     MASTER_LOCK;
+    DeleteCriticalSection(&mutexLock);
     DeleteCriticalSection(&joinLock);
 
     /*
@@ -569,6 +634,8 @@ Tcl_MutexLock(
 {
     CRITICAL_SECTION *csPtr;
 
+retry:
+
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 
@@ -584,8 +651,20 @@ Tcl_MutexLock(
 	}
 	MASTER_UNLOCK;
     }
-    csPtr = *((CRITICAL_SECTION **)mutexPtr);
-    EnterCriticalSection(csPtr);
+    while (1) {
+	TclpMutexLock();
+	csPtr = *((CRITICAL_SECTION **)mutexPtr);
+	if (csPtr == NULL) {
+	    TclpMutexUnlock();
+	    goto retry;
+	}
+	if (TryEnterCriticalSection(csPtr)) {
+	    TclpMutexUnlock();
+	    return;
+	}
+	TclpMutexUnlock();
+	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
+    }
 }
 
 /*

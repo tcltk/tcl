@@ -472,7 +472,6 @@ Tcl_CreateInterp(void)
 #endif /* TCL_COMPILE_STATS */
     char mathFuncName[32];
     CallFrame *framePtr;
-    int result;
 
     TclInitSubsystems();
 
@@ -642,11 +641,8 @@ Tcl_CreateInterp(void)
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
     framePtr = ckalloc(sizeof(CallFrame));
-    result = Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
+    (void) Tcl_PushCallFrame(interp, (Tcl_CallFrame *) framePtr,
 	    (Tcl_Namespace *) iPtr->globalNsPtr, /*isProcCallFrame*/ 0);
-    if (result != TCL_OK) {
-	Tcl_Panic("Tcl_CreateInterp: failed to push the root stack frame");
-    }
     framePtr->objc = 0;
 
     iPtr->framePtr = framePtr;
@@ -6518,11 +6514,7 @@ TclObjInvokeNamespace(
      * command.
      */
 
-    result = TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcFrame*/0);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
-
+    (void) TclPushStackFrame(interp, &framePtr, nsPtr, /*isProcFrame*/0);
     result = TclObjInvoke(interp, objc, objv, flags);
 
     TclPopStackFrame(interp);
