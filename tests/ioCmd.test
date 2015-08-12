@@ -1949,26 +1949,26 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     set c [chan create {r w} foo]
     note [fileevent $c readable {note TOCK}]
     set stop [after 10000 {note TIMEOUT}]
-    after  1000 {note [chan postevent $c r]}
+    after  1000 {chan postevent $c r}
     vwait ::res
     catch {after cancel $stop}
     close $c
     rename foo {}
     set res
-} -result {{watch rc* read} {} TOCK {} {watch rc* {}}}
+} -result {{watch rc* read} {} TOCK {watch rc* {}}}
 test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
     set c [chan create {r w} foo]
     note [fileevent $c writable {note TOCK}]
     set stop [after 10000 {note TIMEOUT}]
-    after  1000 {note [chan postevent $c w]}
+    after  1000 {chan postevent $c w}
     vwait ::res
     catch {after cancel $stop}
     close $c
     rename foo {}
     set res
-} -result {{watch rc* write} {} TOCK {} {watch rc* {}}}
+} -result {{watch rc* write} {} TOCK {watch rc* {}}}
 test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
     proc foo {args} {oninit; onfinal; track; return}
     proc dummy args { return }
