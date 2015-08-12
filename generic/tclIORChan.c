@@ -741,6 +741,24 @@ TclChanCreateObjCmd(
  *----------------------------------------------------------------------
  */
 
+typedef struct PostEvent {
+    Tcl_Event event;		/* Basic event data, has to be first item */
+    Tcl_Channel chan;
+    int events;
+} PostEvent;
+
+static int
+CallNotify(
+    Tcl_Event *evPtr,
+    int flags)
+{
+    PostEvent *pevPtr = (PostEvent *)evPtr;
+
+    Tcl_NotifyChannel(pevPtr->chan, pevPtr->events);
+    TclChannelRelease(pevPtr->chan);
+    return 1;
+}
+
 int
 TclChanPostEventObjCmd(
     ClientData clientData,
@@ -769,6 +787,7 @@ TclChanPostEventObjCmd(
     int events;			/* Mask of events to post */
     ReflectedChannelMap* rcmPtr; /* Map of reflected channels with handlers in this interp */
     Tcl_HashEntry* hPtr;         /* Entry in the above map */
+    PostEvent *pevPtr;
 
     /*
      * Number of arguments...
@@ -857,7 +876,12 @@ TclChanPostEventObjCmd(
      * We have the channel and the events to post.
      */
 
-    Tcl_NotifyChannel(chan, events);
+    pevPtr = (PostEvent *)ckalloc(sizeof(PostEvent));
+    pevPtr->event.proc = CallNotify;
+    pevPtr->chan = chan;
+    pevPtr->events = events;
+    TclChannelPreserve(chan);
+    Tcl_QueueEvent((Tcl_Event *)pevPtr, TCL_QUEUE_HEAD);
 
     /*
      * Squash interp results left by the event script.
