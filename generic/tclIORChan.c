@@ -1535,7 +1535,7 @@ ReflectWatch(
 
     mask &= rcPtr->mode;
 
-    if (mask == rcPtr->interest) {
+    if (0 && mask == rcPtr->interest) {
 	/*
 	 * Same old, same old, why should we do something?
 	 */
