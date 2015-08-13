@@ -753,8 +753,11 @@ CallNotify(
     int flags)
 {
     PostEvent *pevPtr = (PostEvent *)evPtr;
+    Channel *chanPtr = (Channel *)pevPtr->chan;
 
-    Tcl_NotifyChannel(pevPtr->chan, pevPtr->events);
+    if (chanPtr->typePtr != NULL) {
+	Tcl_NotifyChannel(pevPtr->chan, pevPtr->events);
+    }
     TclChannelRelease(pevPtr->chan);
     return 1;
 }
