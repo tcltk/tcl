@@ -120,6 +120,7 @@ static Tcl_ThreadDataKey dataKey;
  *
  * You must hold the notifierMutex lock before accessing this variable.
  */
+
 static int notifierCount = 0;
 
 /*
@@ -167,6 +168,7 @@ static int notifierThreadRunning = 0;
  * initializing the triggerPipe and right before the notifier thread
  * terminates.
  */
+
 static pthread_cond_t notifierCV = PTHREAD_COND_INITIALIZER;
 
 /*
@@ -258,7 +260,6 @@ extern unsigned char __stdcall	TranslateMessage(const MSG *);
 static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && __CYGWIN__ */
-
 
 #if TCL_THREADS
 /*
@@ -327,6 +328,7 @@ Tcl_InitNotifier(void)
 	return tclNotifierHooks.initNotifierProc();
     } else {
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
 #ifdef TCL_THREADS
 	tsdPtr->eventReady = 0;
 
@@ -341,25 +343,25 @@ Tcl_InitNotifier(void)
 #endif
 
 	pthread_mutex_lock(&notifierInitMutex);
-
-# if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
+#if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
 	/*
-	 * Register pthread_atfork handlers once per process
+	 * Install pthread_atfork handlers to clean up the notifier in the
+	 * child of a fork.
 	 */
+
 	if (!atForkInit) {
 	    int result = pthread_atfork(AtForkPrepare, AtForkParent, AtForkChild);
-            fprintf(stderr, "==== calling pthread_atfork()\n");
 
 	    if (result) {
 		Tcl_Panic("Tcl_InitNotifier: pthread_atfork failed");
 	    }
 	    atForkInit = 1;
 	}
-# endif /* HAVE_PTHREAD_ATFORK */
+#endif /* HAVE_PTHREAD_ATFORK */
 
 	notifierCount++;
 
-        pthread_mutex_unlock(&notifierInitMutex);
+	pthread_mutex_unlock(&notifierInitMutex);
 
 #endif /* TCL_THREADS */
 	return tsdPtr;
@@ -395,6 +397,9 @@ Tcl_FinalizeNotifier(
 #ifdef TCL_THREADS
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
+	pthread_mutex_lock(&notifierInitMutex);
+	notifierCount--;
+
 	/*
 	 * Check if FinializeNotifier was called without a prior InitNotifier
 	 * in this thread.
@@ -402,9 +407,6 @@ Tcl_FinalizeNotifier(
 #ifndef __CYGWIN__
 	assert(tsdPtr->waitCVinitialized == 1);
 #endif
-
-	pthread_mutex_lock(&notifierInitMutex);
-	notifierCount--;
 
 	/*
 	 * If this is the last thread to use the notifier, close the notifier
@@ -414,24 +416,24 @@ Tcl_FinalizeNotifier(
 	if (notifierCount == 0) {
 
 	    if (triggerPipe != -1) {
-	        if (write(triggerPipe, "q", 1) != 1) {
+		if (write(triggerPipe, "q", 1) != 1) {
 		    Tcl_Panic("Tcl_FinalizeNotifier: %s",
 			    "unable to write q to triggerPipe");
-	        }
-    	        close(triggerPipe);
-	        while(triggerPipe != -1) {
-                    pthread_cond_wait(&notifierCV, &notifierMutex);
-	        }
-	        if (notifierThreadRunning) {
-                    int result = pthread_join((pthread_t) notifierThread, NULL);
+		}
+		close(triggerPipe);
+		while(triggerPipe != -1) {
+		    pthread_cond_wait(&notifierCV, &notifierMutex);
+		}
+		if (notifierThreadRunning) {
+		    int result = pthread_join((pthread_t) notifierThread, NULL);
 
 		    if (result) {
-		        Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier "
-		    	    "thread");
-	    	    }
+			Tcl_Panic("Tcl_FinalizeNotifier: unable to join notifier "
+				"thread");
+		    }
 		    notifierThreadRunning = 0;
-	        }
-            }
+		}
+	    }
 	}
 
 	/*
@@ -444,8 +446,7 @@ Tcl_FinalizeNotifier(
 	pthread_cond_destroy(&tsdPtr->waitCV);
 #endif /* __CYGWIN__ */
 
-        pthread_mutex_unlock(&notifierInitMutex);
-
+	pthread_mutex_unlock(&notifierInitMutex);
 #endif /* TCL_THREADS */
     }
 }
@@ -480,16 +481,15 @@ Tcl_AlertNotifier(
 #ifdef TCL_THREADS
 	ThreadSpecificData *tsdPtr = clientData;
 
-        pthread_mutex_lock(&notifierMutex);
+	pthread_mutex_lock(&notifierMutex);
 	tsdPtr->eventReady = 1;
 
-# ifdef __CYGWIN__
+#   ifdef __CYGWIN__
 	PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
-# else
+#   else
 	pthread_cond_broadcast(&tsdPtr->waitCV);
-# endif /* __CYGWIN__ */
-
-        pthread_mutex_unlock(&notifierMutex);
+#   endif /* __CYGWIN__ */
+	pthread_mutex_unlock(&notifierMutex);
 #endif /* TCL_THREADS */
     }
 }
@@ -549,7 +549,6 @@ Tcl_ServiceModeHook(
     int mode)			/* Either TCL_SERVICE_ALL, or
 				 * TCL_SERVICE_NONE. */
 {
-    fprintf(stderr, "==== Tcl_ServiceModeHook mode %d\n", mode);
     if (tclNotifierHooks.serviceModeHookProc) {
 	tclNotifierHooks.serviceModeHookProc(mode);
 	return;
@@ -600,7 +599,6 @@ Tcl_CreateFileHandler(
 #ifndef __CYGWIN__
 	assert(tsdPtr->waitCVinitialized == 1);
 #endif
-
 	for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
 		filePtr = filePtr->nextPtr) {
 	    if (filePtr->fd == fd) {
@@ -791,7 +789,8 @@ FileHandlerEventProc(
     assert(tsdPtr->waitCVinitialized == 1);
 #endif
 
-    for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL; filePtr = filePtr->nextPtr) {
+    for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
+	    filePtr = filePtr->nextPtr) {
 	if (filePtr->fd != fileEvPtr->fd) {
 	    continue;
 	}
@@ -964,7 +963,7 @@ Tcl_WaitForEvent(
 	}
 #endif /* __CYGWIN */
 
-        pthread_mutex_lock(&notifierInitMutex);
+	pthread_mutex_lock(&notifierInitMutex);
 
 	if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
 #if defined(__APPLE__) && defined(__LP64__)
@@ -1137,7 +1136,7 @@ Tcl_WaitForEvent(
 	    filePtr->readyMask = mask;
 	}
 #ifdef TCL_THREADS
-        pthread_mutex_unlock(&notifierInitMutex);
+	pthread_mutex_unlock(&notifierInitMutex);
 #endif /* TCL_THREADS */
 	return 0;
     }
@@ -1209,12 +1208,13 @@ NotifierThreadProc(
      * Install the write end of the pipe into the global variable.
      */
 
+    pthread_mutex_lock(&notifierMutex);
+    triggerPipe = fds[1];
+
     /*
      * Signal any threads that are waiting.
      */
 
-    pthread_mutex_lock(&notifierMutex);
-    triggerPipe = fds[1];
     pthread_cond_broadcast(&notifierCV);
     pthread_mutex_unlock(&notifierMutex);
 
@@ -1232,8 +1232,7 @@ NotifierThreadProc(
 	 * notifiers.
 	 */
 
-        pthread_mutex_lock(&notifierMutex);
-
+	pthread_mutex_lock(&notifierMutex);
 	timePtr = NULL;
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    for (i = tsdPtr->numFdBits-1; i >= 0; --i) {
@@ -1260,7 +1259,7 @@ NotifierThreadProc(
 		timePtr = &poll;
 	    }
 	}
-        pthread_mutex_unlock(&notifierMutex);
+	pthread_mutex_unlock(&notifierMutex);
 
 	/*
 	 * Set up the select mask to include the receive pipe.
@@ -1270,6 +1269,7 @@ NotifierThreadProc(
 	    numFdBits = receivePipe + 1;
 	}
 	FD_SET(receivePipe, &readableMask);
+
 	if (select(numFdBits, &readableMask, &writableMask, &exceptionMask,
 		timePtr) == -1) {
 	    /*
@@ -1283,8 +1283,7 @@ NotifierThreadProc(
 	 * Alert any threads that are waiting on a ready file descriptor.
 	 */
 
-        pthread_mutex_lock(&notifierMutex);
-
+	pthread_mutex_lock(&notifierMutex);
 	for (tsdPtr = waitingListPtr; tsdPtr; tsdPtr = tsdPtr->nextPtr) {
 	    found = 0;
 
@@ -1335,13 +1334,14 @@ NotifierThreadProc(
 #endif /* __CYGWIN__ */
 	    }
 	}
-        pthread_mutex_unlock(&notifierMutex);
+	pthread_mutex_unlock(&notifierMutex);
 
 	/*
 	 * Consume the next byte from the notifier pipe if the pipe was
 	 * readable. Note that there may be multiple bytes pending, but to
 	 * avoid a race condition we only read one at a time.
 	 */
+
 	if (FD_ISSET(receivePipe, &readableMask)) {
 	    i = read(receivePipe, buf, 1);
 
@@ -1361,10 +1361,8 @@ NotifierThreadProc(
      * Clean up the read end of the pipe and signal any threads waiting on
      * termination of the notifier thread.
      */
-fprintf(stderr, "=== Stopping Notifier Thread\n");
 
     close(receivePipe);
-
     pthread_mutex_lock(&notifierMutex);
     triggerPipe = -1;
     pthread_cond_broadcast(&notifierCV);
@@ -1421,7 +1419,6 @@ AtForkParent(void)
     pthread_mutex_unlock(&notifierInitMutex);
 #endif
 }
-
 
 /*
  *----------------------------------------------------------------------
@@ -1443,7 +1440,7 @@ static void
 AtForkChild(void)
 {
     if (notifierThreadRunning == 1) {
-    	pthread_cond_destroy(&notifierCV);
+	pthread_cond_destroy(&notifierCV);
     }
 #if RESET_ATFORK_MUTEX == 0
     pthread_mutex_unlock(&notifierInitMutex);
