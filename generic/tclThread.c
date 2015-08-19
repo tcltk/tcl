@@ -284,43 +284,6 @@ Tcl_MutexFinalize(
 /*
  *----------------------------------------------------------------------
  *
- * TclMutexUnlockAndFinalize --
- *
- *	This procedure is invoked to unlock and then finalize a mutex.
- *	The mutex must have been locked by Tcl_MutexLock.  It is also
- *	removed from the list of remembered objects.  The mutex can no
- *	longer be used after calling this procedure.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Remove the mutex from the list.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclMutexUnlockAndFinalize(
-    Tcl_Mutex *mutexPtr)
-{
-    Tcl_Mutex mutex;
-    TclpMasterLock();
-    TclpMutexLock();
-#ifdef TCL_THREADS
-    mutex = *mutexPtr;
-    *mutexPtr = NULL; /* Force it to be created again. */
-    Tcl_MutexUnlock(&mutex);
-    TclpFinalizeMutex(&mutex);
-#endif
-    ForgetSyncObject(mutexPtr, &mutexRecord);
-    TclpMutexUnlock();
-    TclpMasterUnlock();
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclRememberCondition
  *
  *	Keep a list of condition variables used during finalization.
