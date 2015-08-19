@@ -71,7 +71,7 @@ the build instructions.
 #		Sets where to install Tcl from the built binaries.
 #		C:\Progra~1\Tcl is assumed when not specified.
 #
-#	OPTS=loimpact,msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,tclalloc,unchecked,none
+#	OPTS=loimpact,msvcrt,nothreads,pdbs,profile,static,staticpkg,symbols,thrdalloc,tclalloc,unchecked,ucrt,none
 #		Sets special options for the core.  The default is for none.
 #		Any combination of the above may be used (comma separated).
 #		'none' will over-ride everything to nothing.
@@ -102,6 +102,11 @@ the build instructions.
 #		unchecked= Allows a symbols build to not use the debug
 #			   enabled runtime (msvcrt.dll not msvcrtd.dll
 #			   or libcmt.lib not libcmtd.lib).
+#		ucrt= Uses ucrt.lib and libvcruntime.lib, which
+#			   ensures Tcl will run on machines with only the subset
+#			   of the C runtime that is part of the operating system.
+#			   If omitted, builds with VC 14.0 or later will require
+#			   the full C runtime redistributable.
 #
 #	STATS=compdbg,memdbg,none
 #		Sets optional memory and bytecode compiler debugging code added
@@ -488,7 +493,13 @@ cdebug	= -Zi -WX $(DEBUGFLAGS)
 cwarn = $(WARNINGS) -D _CRT_SECURE_NO_DEPRECATE -D _CRT_NONSTDC_NO_DEPRECATE
 cflags = -nologo -c $(COMPILERFLAGS) $(cwarn) -Fp$(TMP_DIR)^\
 
-!if $(MSVCRT)
+!if $(UCRT)
+!if $(DEBUG) && !$(UNCHECKED)
+crt = -MDd
+!else
+crt = -MT
+!endif
+!elseif $(MSVCRT)
 !if $(DEBUG) && !$(UNCHECKED)
 crt = -MDd
 !else
@@ -530,6 +541,10 @@ lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 lflags	= $(lflags) -profile
 !endif
 
+!if $(UCRT) && !($(DEBUG) && !$(UNCHECKED))
+lflags	= $(lflags) -nodefaultlib:libucrt.lib
+!endif
+
 !if $(ALIGN98_HACK) && !$(STATIC_BUILD)
 ### Align sections for PE size savings.
 lflags	= $(lflags) -opt:nowin98
@@ -553,6 +568,9 @@ baselibs   = netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib
 !if $(VCVERSION) > 1399 && $(VCVERSION) < 1500
 baselibs   = $(baselibs) bufferoverflowU.lib
 !endif
+!endif
+!if $(UCRT) && !($(DEBUG) && !$(UNCHECKED))
+baselibs   = $(baselibs) ucrt.lib
 !endif
 
 #---------------------------------------------------------------------
