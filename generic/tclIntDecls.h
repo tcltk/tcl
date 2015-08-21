@@ -349,8 +349,7 @@ EXTERN void		Tcl_SetNamespaceResolvers(
 				Tcl_ResolveCompiledVarProc *compiledVarProc);
 /* 132 */
 EXTERN int		TclpHasSockets(Tcl_Interp *interp);
-/* 133 */
-EXTERN struct tm *	TclpGetDate(const time_t *time, int useGMT);
+/* Slot 133 is reserved */
 /* Slot 134 is reserved */
 /* Slot 135 is reserved */
 /* Slot 136 is reserved */
@@ -463,10 +462,8 @@ EXTERN void		Tcl_SetStartupScript(Tcl_Obj *pathPtr,
 EXTERN Tcl_Obj *	Tcl_GetStartupScript(const char **encodingNamePtr);
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
-/* 182 */
-EXTERN struct tm *	TclpLocaltime(const time_t *clock);
-/* 183 */
-EXTERN struct tm *	TclpGmtime(const time_t *clock);
+/* Slot 182 is reserved */
+/* Slot 183 is reserved */
 /* Slot 184 is reserved */
 /* Slot 185 is reserved */
 /* Slot 186 is reserved */
@@ -764,7 +761,7 @@ typedef struct TclIntStubs {
     int (*tcl_RemoveInterpResolvers) (Tcl_Interp *interp, const char *name); /* 130 */
     void (*tcl_SetNamespaceResolvers) (Tcl_Namespace *namespacePtr, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 131 */
     int (*tclpHasSockets) (Tcl_Interp *interp); /* 132 */
-    struct tm * (*tclpGetDate) (const time_t *time, int useGMT); /* 133 */
+    void (*reserved133)(void);
     void (*reserved134)(void);
     void (*reserved135)(void);
     void (*reserved136)(void);
@@ -813,8 +810,8 @@ typedef struct TclIntStubs {
     Tcl_Obj * (*tcl_GetStartupScript) (const char **encodingNamePtr); /* 179 */
     void (*reserved180)(void);
     void (*reserved181)(void);
-    struct tm * (*tclpLocaltime) (const time_t *clock); /* 182 */
-    struct tm * (*tclpGmtime) (const time_t *clock); /* 183 */
+    void (*reserved182)(void);
+    void (*reserved183)(void);
     void (*reserved184)(void);
     void (*reserved185)(void);
     void (*reserved186)(void);
@@ -1115,8 +1112,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tcl_SetNamespaceResolvers) /* 131 */
 #define TclpHasSockets \
 	(tclIntStubsPtr->tclpHasSockets) /* 132 */
-#define TclpGetDate \
-	(tclIntStubsPtr->tclpGetDate) /* 133 */
+/* Slot 133 is reserved */
 /* Slot 134 is reserved */
 /* Slot 135 is reserved */
 /* Slot 136 is reserved */
@@ -1201,10 +1197,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tcl_GetStartupScript) /* 179 */
 /* Slot 180 is reserved */
 /* Slot 181 is reserved */
-#define TclpLocaltime \
-	(tclIntStubsPtr->tclpLocaltime) /* 182 */
-#define TclpGmtime \
-	(tclIntStubsPtr->tclpGmtime) /* 183 */
+/* Slot 182 is reserved */
+/* Slot 183 is reserved */
 /* Slot 184 is reserved */
 /* Slot 185 is reserved */
 /* Slot 186 is reserved */
