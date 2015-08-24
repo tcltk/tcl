@@ -156,7 +156,7 @@ void
 TclOODeleteChain(
     CallChain *callPtr)
 {
-    if (callPtr == NULL || --callPtr->refCount >= 1) {
+    if (callPtr == NULL || callPtr->refCount-- > 1) {
 	return;
     }
     if (callPtr->chain != callPtr->staticChain) {

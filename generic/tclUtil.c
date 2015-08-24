@@ -2014,7 +2014,7 @@ Tcl_ConcatObj(
      */
 
     TclNewObj(resPtr);
-    Tcl_AttemptSetObjLength(resPtr, bytesNeeded + objc - 1);
+    (void) Tcl_AttemptSetObjLength(resPtr, bytesNeeded + objc - 1);
     Tcl_SetObjLength(resPtr, 0);
 
     for (i = 0;  i < objc;  i++) {

@@ -356,7 +356,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Create the variables (described in the aux data referred to by the
 	 * second immediate argument) to mirror the state of the dictionary in
 	 * the variable referred to by the first immediate argument. The list
-	 * of keys (top of the stack, not poppsed) must be the same length as
+	 * of keys (top of the stack, not popped) must be the same length as
 	 * the list of variables.
 	 * Stack:  ... keyList => ... keyList */
     {"dictUpdateEnd",	  9,    -1,	   2,	{OPERAND_LVT4, OPERAND_AUX4}},
@@ -518,7 +518,7 @@ InstructionDesc const tclInstructionTable[] = {
 	 * case. Also runs the whole-array trace on the named variable, so can
 	 * throw anything.
 	 * Stack:  ... varName => ... boolean */
-    {"arrayExistsImm",	 5,	+1,	  1,	{OPERAND_UINT4}},
+    {"arrayExistsImm",	 5,	+1,	  1,	{OPERAND_LVT4}},
 	/* Looks up the variable indexed by opnd and tests whether it is an
 	 * array. Pushes a boolean describing whether this is the case. Also
 	 * runs the whole-array trace on the named variable, so can throw
@@ -528,7 +528,7 @@ InstructionDesc const tclInstructionTable[] = {
 	/* Forces the element on the top of the stack to be the name of an
 	 * array.
 	 * Stack:  ... varName => ... */
-    {"arrayMakeImm",	 5,	0,	  1,	{OPERAND_UINT4}},
+    {"arrayMakeImm",	 5,	0,	  1,	{OPERAND_LVT4}},
 	/* Forces the variable indexed by opnd to be an array. Does not touch
 	 * the stack. */
 
@@ -978,8 +978,7 @@ FreeByteCodeInternalRep(
     register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
+    if (codePtr->refCount-- <= 1) {
 	TclCleanupByteCode(codePtr);
     }
 }
@@ -1295,8 +1294,8 @@ CompileSubstObj(
     if (objPtr->typePtr == &substCodeType) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
-	if ((unsigned long)flags != objPtr->internalRep.ptrAndLongRep.value
+	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+	if (flags != PTR2INT(objPtr->internalRep.twoPtrValue.ptr2)
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1322,8 +1321,8 @@ CompileSubstObj(
 	TclFreeCompileEnv(&compEnv);
 
 	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
-	objPtr->internalRep.ptrAndLongRep.ptr = codePtr;
-	objPtr->internalRep.ptrAndLongRep.value = flags;
+	objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
+	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(flags);
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1362,11 +1361,10 @@ static void
 FreeSubstCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.ptrAndLongRep.ptr;
+    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
     objPtr->typePtr = NULL;
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
+    if (codePtr->refCount-- <= 1) {
 	TclCleanupByteCode(codePtr);
     }
 }
@@ -1626,7 +1624,7 @@ TclFreeCompileEnv(
 	envPtr->localLitTable.buckets = envPtr->localLitTable.staticBuckets;
     }
     if (envPtr->iPtr) {
-	/* 
+	/*
 	 * We never converted to Bytecode, so free the things we would
 	 * have transferred to it.
 	 */
@@ -1858,7 +1856,7 @@ CompileExpanded(
     int wordIdx = 0;
     DefineLineInformation;
     int depth = TclGetStackDepth(envPtr);
-    
+
     StartExpanding(envPtr);
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1907,7 +1905,7 @@ CompileExpanded(
     TclCheckStackDepth(depth+1, envPtr);
 }
 
-static int 
+static int
 CompileCmdCompileProc(
     Tcl_Interp *interp,
     Tcl_Parse *parsePtr,
@@ -2008,7 +2006,7 @@ CompileCommandTokens(
     int cmdIdx = envPtr->numCommands;
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
     int depth = TclGetStackDepth(envPtr);
-    
+
     assert (parsePtr->numWords > 0);
 
     /* Pre-Compile */
@@ -4037,7 +4035,7 @@ TclEmitInvoke(
     int arg1, arg2, wordCount = 0, expandCount = 0;
     int loopRange = 0, breakRange = 0, continueRange = 0;
     int cleanup, depth = TclGetStackDepth(envPtr);
-    
+
     /*
      * Parse the arguments.
      */
@@ -4085,16 +4083,6 @@ TclEmitInvoke(
      * calls from inside a [for] increment clause).
      */
 
-    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxBreakPtr);
-    if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
-	auxBreakPtr = NULL;
-    } else if (auxBreakPtr->stackDepth == envPtr->currStackDepth-wordCount
-	    && auxBreakPtr->expandTarget == envPtr->expandCount-expandCount) {
-	auxBreakPtr = NULL;
-    } else {
-	breakRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
-    }
-
     rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE,
 	    &auxContinuePtr);
     if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
@@ -4103,7 +4091,18 @@ TclEmitInvoke(
 	    && auxContinuePtr->expandTarget == envPtr->expandCount-expandCount) {
 	auxContinuePtr = NULL;
     } else {
-	continueRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
+	continueRange = auxContinuePtr - envPtr->exceptAuxArrayPtr;
+    }
+
+    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxBreakPtr);
+    if (rangePtr == NULL || rangePtr->type != LOOP_EXCEPTION_RANGE) {
+	auxBreakPtr = NULL;
+    } else if (auxContinuePtr == NULL
+	    && auxBreakPtr->stackDepth == envPtr->currStackDepth-wordCount
+	    && auxBreakPtr->expandTarget == envPtr->expandCount-expandCount) {
+	auxBreakPtr = NULL;
+    } else {
+	breakRange = auxBreakPtr - envPtr->exceptAuxArrayPtr;
     }
 
     if (auxBreakPtr != NULL || auxContinuePtr != NULL) {
