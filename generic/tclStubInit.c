@@ -294,10 +294,6 @@ static int formatInt(char *buffer, int n){
 #define TclFormatInt (int(*)(char *, long))formatInt
 
 #endif
-
-#else /* UNIX and MAC */
-#   define TclpLocaltime_unix TclpLocaltime
-#   define TclpGmtime_unix TclpGmtime
 #endif
 
 /*
@@ -586,8 +582,8 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    TclpLocaltime_unix, /* 11 */
-    TclpGmtime_unix, /* 12 */
+    0, /* 11 */
+    0, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
     0, /* 15 */
@@ -652,8 +648,8 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    TclpLocaltime_unix, /* 11 */
-    TclpGmtime_unix, /* 12 */
+    0, /* 11 */
+    0, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
     TclMacOSXGetFileAttribute, /* 15 */
