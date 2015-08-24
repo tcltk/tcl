@@ -534,7 +534,7 @@ declare 132 {
     int TclpHasSockets(Tcl_Interp *interp)
 }
 # Removed in androwish
-#declare 133 {
+# declare 133 {
 #    struct tm *TclpGetDate(const time_t *time, int useGMT)
 #}
 # Removed in 8.5
@@ -749,6 +749,8 @@ declare 179 {
 #    Tcl_Obj *TclDbNewListObjDirect(int objc, Tcl_Obj **objv,
 #	    const char *file, int line)
 #}
+
+# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
 # Removed in androwish
 #declare 182 {
@@ -1218,12 +1220,14 @@ declare 10 unix {
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
 # generic Stubs
-declare 11 unix {
-    struct tm *TclpLocaltime_unix(const time_t *clock)
-}
-declare 12 unix {
-    struct tm *TclpGmtime_unix(const time_t *clock)
-}
+# Removed in androwish
+#declare 11 unix {
+#    struct tm *TclpLocaltime_unix(const time_t *clock)
+#}
+# Removed in androwish
+#declare 12 unix {
+#    struct tm *TclpGmtime_unix(const time_t *clock)
+#}
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)
 }
