@@ -12,10 +12,6 @@
 
 #include "tclInt.h"
 
-#define SECSPERDAY	(60L * 60L * 24L)
-#define SECSPERYEAR	(SECSPERDAY * 365L)
-#define SECSPER4YEAR	(SECSPERYEAR * 4L + SECSPERDAY)
-
 /*
  * Number of samples over which to estimate the performance counter.
  */
@@ -23,29 +19,10 @@
 #define SAMPLES		64
 
 /*
- * The following arrays contain the day of year for the last day of each
- * month, where index 1 is January.
- */
-
-static const int normalDays[] = {
-    -1, 30, 58, 89, 119, 150, 180, 211, 242, 272, 303, 333, 364
-};
-
-static const int leapDays[] = {
-    -1, 30, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365
-};
-
-typedef struct ThreadSpecificData {
-    char tzName[64];		/* Time zone name */
-    struct tm tm;		/* time information */
-} ThreadSpecificData;
-static Tcl_ThreadDataKey dataKey;
-
-/*
  * Data for managing high-resolution timers.
  */
 
-typedef struct TimeInfo {
+typedef struct {
     CRITICAL_SECTION cs;	/* Mutex guarding this structure. */
     int initialized;		/* Flag == 1 if this structure is
 				 * initialized. */
@@ -810,67 +787,6 @@ AccumulateSample(
 
 	return estFreq;
     }
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpGmtime --
- *
- *	Wrapper around the 'gmtime' library function to make it thread safe.
- *
- * Results:
- *	Returns a pointer to a 'struct tm' in thread-specific data.
- *
- * Side effects:
- *	Invokes gmtime or gmtime_r as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-struct tm *
-TclpGmtime(
-    const time_t *timePtr)	/* Pointer to the number of seconds since the
-				 * local system's epoch */
-{
-    /*
-     * The MS implementation of gmtime is thread safe because it returns the
-     * time in a block of thread-local storage, and Windows does not provide a
-     * Posix gmtime_r function.
-     */
-
-    return gmtime(timePtr);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpLocaltime --
- *
- *	Wrapper around the 'localtime' library function to make it thread
- *	safe.
- *
- * Results:
- *	Returns a pointer to a 'struct tm' in thread-specific data.
- *
- * Side effects:
- *	Invokes localtime or localtime_r as appropriate.
- *
- *----------------------------------------------------------------------
- */
-
-struct tm *
-TclpLocaltime(
-    const time_t *timePtr)	/* Pointer to the number of seconds since the
-				 * local system's epoch */
-{
-    /*
-     * The MS implementation of localtime is thread safe because it returns
-     * the time in a block of thread-local storage, and Windows does not
-     * provide a Posix localtime_r function.
-     */
-
-    return localtime(timePtr);
 }
 
 /*
