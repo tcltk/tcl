@@ -982,6 +982,7 @@ parseqatom(
 	NOERR();
 	assert(v->nextvalue > 0);
 	atom = subre(v, 'b', BACKR, lp, rp);
+	NOERR();
 	subno = v->nextvalue;
 	atom->subno = subno;
 	EMPTYARC(lp, rp);	/* temporarily, so there's something */
@@ -1129,6 +1130,7 @@ parseqatom(
      */
 
     t = subre(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
+    NOERR();
     t->left = atom;
     atomp = &t->left;
 
@@ -1142,6 +1144,7 @@ parseqatom(
 
     assert(top->op == '=' && top->left == NULL && top->right == NULL);
     top->left = subre(v, '=', top->flags, top->begin, lp);
+    NOERR();
     top->op = '.';
     top->right = t;
 

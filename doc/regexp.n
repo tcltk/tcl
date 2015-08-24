@@ -51,7 +51,7 @@ the \fB(?x)\fR embedded option (see the \fBre_syntax\fR manual page).
 .TP 15
 \fB\-indices\fR
 .
-Changes what is stored in the \fIsubMatchVar\fRs. 
+Changes what is stored in the \fImatchVar\fR and \fIsubMatchVar\fRs. 
 Instead of storing the matching characters from \fIstring\fR,
 each variable
 will contain a list of two decimal strings giving the indices

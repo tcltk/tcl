@@ -80,7 +80,10 @@ NewNativeObj(
  * source directory to make their own modified versions).
  */
 
+#if defined _MSC_VER && _MSC_VER < 1900
+/* isatty is always defined on MSVC 14.0, but not necessarily as CRTIMPORT. */
 extern CRTIMPORT int	isatty(int fd);
+#endif
 
 /*
  * The thread-local variables for this file's functions.
