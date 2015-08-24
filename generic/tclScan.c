@@ -72,7 +72,7 @@ BuildCharSet(
     CharSet *cset,
     const char *format)		/* Points to first char of set. */
 {
-    Tcl_UniChar ch, start;
+    Tcl_UniChar ch = 0, start;
     int offset, nranges;
     const char *end;
 
@@ -257,7 +257,7 @@ ValidateFormat(
 {
     int gotXpg, gotSequential, value, i, flags;
     char *end;
-    Tcl_UniChar ch;
+    Tcl_UniChar ch = 0;
     int objIndex, xpgSize, nspace = numVars;
     int *nassign = TclStackAlloc(interp, nspace * sizeof(int));
     char buf[TCL_UTF_MAX+1];
@@ -582,7 +582,7 @@ Tcl_ScanObjCmd(
     char op = 0;
     int width, underflow = 0;
     Tcl_WideInt wideValue;
-    Tcl_UniChar ch, sch;
+    Tcl_UniChar ch = 0, sch = 0;
     Tcl_Obj **objs = NULL, *objPtr = NULL;
     int flags;
     char buf[513];		/* Temporary buffer to hold scanned number
@@ -885,9 +885,15 @@ Tcl_ScanObjCmd(
 	     * Scan a single Unicode character.
 	     */
 
-	    string += Tcl_UtfToUniChar(string, &sch);
+	    offset = Tcl_UtfToUniChar(string, &sch);
+	    i = (int)sch;
+	    if (!offset) {
+		offset = Tcl_UtfToUniChar(string, &sch);
+		i = (((i<<10) & 0x0FFC00) + 0x10000) + (sch & 0x3FF);
+	    }
+	    string += offset;
 	    if (!(flags & SCAN_SUPPRESS)) {
-		objPtr = Tcl_NewIntObj((int)sch);
+		objPtr = Tcl_NewIntObj(i);
 		Tcl_IncrRefCount(objPtr);
 		CLANG_ASSERT(objs);
 		objs[objIndex++] = objPtr;

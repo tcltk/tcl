@@ -332,9 +332,14 @@ test encoding-16.1 {UnicodeToUtfProc} {
     set val [encoding convertfrom unicode NN]
     list $val [format %x [scan $val %c]]
 } "\u4e4e 4e4e"
+test encoding-16.2 {UnicodeToUtfProc} -constraints utf16 -body {
+    set val [encoding convertfrom unicode "\xd8\xd8\xdc\xdc"]
+    list $val [format %x [scan $val %c]]
+} -result "\U460dc 460dc"
 
-test encoding-17.1 {UtfToUnicodeProc} {
-} {}
+test encoding-17.1 {UtfToUnicodeProc} -constraints utf16 -body {
+    encoding convertto unicode "\U460dc"
+} -result "\xd8\xd8\xdc\xdc"
 
 test encoding-18.1 {TableToUtfProc} {
 } {}
