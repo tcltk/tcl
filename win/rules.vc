@@ -223,7 +223,6 @@ LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 1
 UNCHECKED	= 0
-UCRT		= 0
 !else
 !if [nmakehlp -f $(OPTS) "static"]
 !message *** Doing static
@@ -302,12 +301,6 @@ UNCHECKED = 1
 !else
 UNCHECKED = 0
 !endif
-!endif
-!if [nmakehlp -f $(OPTS) "ucrt"] && $(VCVERSION) >= 1900
-!message *** Doing UCRT
-UCRT = 1
-!else
-UCRT = 0
 !endif
 
 #----------------------------------------------------------
