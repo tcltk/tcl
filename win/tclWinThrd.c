@@ -633,6 +633,7 @@ Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* The lock */
 {
     CRITICAL_SECTION *csPtr;
+    int nRetry = 0;
 
 retry:
 
@@ -663,7 +664,8 @@ retry:
 	    return;
 	}
 	TclpMutexUnlock();
-	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
+	nRetry++;
+	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
     }
 }
 
