@@ -758,7 +758,7 @@ static Tcl_Obj *	ExecuteExtendedUnaryMathOp(int opcode,
 			    Tcl_Obj *valuePtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
-			    int catchOnly, ByteCode *codePtr);
+			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, int *lengthPtr,
 			    const unsigned char **pcBeg, int *cmdIdxPtr);
@@ -2920,7 +2920,6 @@ TEBCresume(
 		 * stack-allocated parameter, update the stack pointers.
 		 */
 
-		esPtr = iPtr->execEnvPtr->execStackPtr;
 		TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
 
 		catchTop += moved;
@@ -4187,7 +4186,6 @@ TEBCresume(
 		} else if (flags & TCL_LEAVE_ERR_MSG) {
 		    goto slowUnsetArray;
 		}
-		varPtr->value.objPtr = NULL;
 		TRACE_APPEND(("OK\n"));
 		NEXT_INST_F(6, 1, 0);
 	    } else if (!varPtr && !(flags & TCL_LEAVE_ERR_MSG)) {
@@ -7956,7 +7954,7 @@ TEBCresume(
 	}
 #endif
 	if ((result == TCL_CONTINUE) || (result == TCL_BREAK)) {
-	    rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 0, codePtr);
+	    rangePtr = GetExceptRangeForPc(pc, result, codePtr);
 	    if (rangePtr == NULL) {
 		TRACE_APPEND(("no encl. loop or catch, returning %s\n",
 			StringForResultCode(result)));
@@ -8117,7 +8115,7 @@ TEBCresume(
 #endif
 	    goto abnormalReturn;
 	}
-	rangePtr = GetExceptRangeForPc(pc, /*catchOnly*/ 1, codePtr);
+	rangePtr = GetExceptRangeForPc(pc, TCL_ERROR, codePtr);
 	if (rangePtr == NULL) {
 	    /*
 	     * This is only possible when compiling a [catch] that sends its
@@ -8251,6 +8249,7 @@ TEBCresume(
 #undef auxObjList
 #undef catchTop
 #undef TCONST
+#undef esPtr
 
 static int
 FinalizeOONext(
@@ -10112,13 +10111,14 @@ GetSrcInfoForPc(
  *	ExceptionRange.
  *
  * Results:
- *	In the normal case, catchOnly is 0 (false) and this procedure returns
- *	a pointer to the most closely enclosing ExceptionRange structure
- *	regardless of whether it is a loop or catch exception range. This is
- *	appropriate when processing a TCL_BREAK or TCL_CONTINUE, which will be
- *	"handled" either by a loop exception range or a closer catch range. If
- *	catchOnly is nonzero, this procedure ignores loop exception ranges and
- *	returns a pointer to the closest catch range. If no matching
+ *	If the searchMode is TCL_ERROR, this procedure ignores loop exception
+ *	ranges and returns a pointer to the closest catch range. If the
+ *	searchMode is TCL_BREAK, this procedure returns a pointer to the most
+ *	closely enclosing ExceptionRange regardless of whether it is a loop or
+ *	catch exception range. If the searchMode is TCL_CONTINUE, this
+ *	procedure returns a pointer to the most closely enclosing
+ *	ExceptionRange (of any type) skipping only loop exception ranges if
+ *	they don't have a sensible continueOffset defined. If no matching
  *	ExceptionRange is found that encloses pc, a NULL is returned.
  *
  * Side effects:
@@ -10129,14 +10129,16 @@ GetSrcInfoForPc(
 
 static ExceptionRange *
 GetExceptRangeForPc(
-    const unsigned char *pc, /* The program counter value for which to
+    const unsigned char *pc,	/* The program counter value for which to
 				 * search for a closest enclosing exception
 				 * range. This points to a bytecode
 				 * instruction in codePtr's code. */
-    int catchOnly,		/* If 0, consider either loop or catch
-				 * ExceptionRanges in search. If nonzero
+    int searchMode,		/* If TCL_BREAK, consider either loop or catch
+				 * ExceptionRanges in search. If TCL_ERROR
 				 * consider only catch ranges (and ignore any
-				 * closer loop ranges). */
+				 * closer loop ranges). If TCL_CONTINUE, look
+				 * for loop ranges that define a continue
+				 * point or a catch range. */
     ByteCode *codePtr)		/* Points to the ByteCode in which to search
 				 * for the enclosing ExceptionRange. */
 {
@@ -10162,8 +10164,13 @@ GetExceptRangeForPc(
 	start = rangePtr->codeOffset;
 	if ((start <= pcOffset) &&
 		(pcOffset < (start + rangePtr->numCodeBytes))) {
-	    if ((!catchOnly)
-		    || (rangePtr->type == CATCH_EXCEPTION_RANGE)) {
+	    if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
+		return rangePtr;
+	    }
+	    if (searchMode == TCL_BREAK) {
+		return rangePtr;
+	    }
+	    if (searchMode == TCL_CONTINUE && rangePtr->continueOffset != -1){
 		return rangePtr;
 	    }
 	}

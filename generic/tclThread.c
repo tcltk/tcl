@@ -305,7 +305,9 @@ void
 Tcl_MutexUnlockAndFinalize(
     Tcl_Mutex *mutexPtr)
 {
+#ifdef TCL_THREADS
     Tcl_Mutex mutex;
+#endif
     TclpMasterLock();
     TclpMutexLock();
 #ifdef TCL_THREADS
