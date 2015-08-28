@@ -22,9 +22,11 @@ typedef struct ThreadSpecificData {
 static Tcl_ThreadDataKey dataKey;
 
 /*
- * This is the number of milliseconds to wait between internal retries in
- * the Tcl_MutexLock function.  This value must be greater than zero and
- * should be a suitable value for the given platform.
+ * This is the base number of milliseconds to wait between internal retries
+ * in the Tcl_MutexLock function.  This value must be greater than zero and
+ * should be a suitable value for the given platform.  It may be multiplied
+ * by an integer of zero or more, depending on how many times the delay has
+ * already been performed.
  *
  * TODO: This may need to be dynamically determined, based on the relative
  *       performance of the running process.
@@ -32,6 +34,16 @@ static Tcl_ThreadDataKey dataKey;
 
 #ifndef TCL_MUTEX_LOCK_SLEEP_TIME
 #  define TCL_MUTEX_LOCK_SLEEP_TIME	(10)
+#endif
+
+/*
+ * This is the number of retries before resetting the retry count to zero.
+ * It is multiplied with TCL_MUTEX_LOCK_SLEEP_TIME in order to obtain the
+ * number of milliseconds to sleep.
+ */
+
+#ifndef TCL_MUTEX_LOCK_RESET_LIMIT
+#  define TCL_MUTEX_LOCK_RESET_LIMIT	(10)
 #endif
 
 /*
@@ -492,7 +504,7 @@ Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
 {
     pthread_mutex_t *pmutexPtr;
-    int nRetry = 0;
+    int nRetry = 0; /* NOTE: Hopefully, zero milliseconds means "yield". */
 
 retry:
 
@@ -530,12 +542,15 @@ retry:
 	 *         "thread-17.11a".  Really, what we want here is just
 	 *         to yield to other threads for a while.
 	 */
-	nRetry++;
+	if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
+	    nRetry = 0;
+	}
 #ifdef HAVE_USLEEP
 	usleep(TCL_MUTEX_LOCK_SLEEP_TIME * 1000 * nRetry);
 #else
 	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
 #endif
+	nRetry++;
     }
 }
 

@@ -24,13 +24,25 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
 #endif
 
 /*
- * This is the number of milliseconds to wait between internal retries in
- * the Tcl_MutexLock function.  This value must be greater than or equal
- * to zero and should be a suitable value for the given platform.
+ * This is the base number of milliseconds to wait between internal retries
+ * in the Tcl_MutexLock function.  This value must be greater than or equal
+ * to zero and should be a suitable value for the given platform.  It may
+ * be multiplied by an integer of zero or more, depending on how many times
+ * the delay has already been performed.
  */
 
 #ifndef TCL_MUTEX_LOCK_SLEEP_TIME
 #  define TCL_MUTEX_LOCK_SLEEP_TIME	(0)
+#endif
+
+/*
+ * This is the number of retries before resetting the retry count to zero.
+ * It is multiplied with TCL_MUTEX_LOCK_SLEEP_TIME in order to obtain the
+ * number of milliseconds to sleep.
+ */
+
+#ifndef TCL_MUTEX_LOCK_RESET_LIMIT
+#  define TCL_MUTEX_LOCK_RESET_LIMIT	(10)
 #endif
 
 /*
@@ -633,7 +645,7 @@ Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* The lock */
 {
     CRITICAL_SECTION *csPtr;
-    int nRetry = 0;
+    int nRetry = 0; /* NOTE: Hopefully, zero milliseconds means "yield". */
 
 retry:
 
@@ -664,8 +676,11 @@ retry:
 	    return;
 	}
 	TclpMutexUnlock();
-	nRetry++;
+	if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
+	    nRetry = 0;
+	}
 	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
+	nRetry++;
     }
 }
 
