@@ -196,10 +196,11 @@ bin or bin/\fIarch\fR directory;
 relative to the executable file in the current build tree;
 relative to the executable file in a parallel build tree.
 .TP
-\fBparray \fIarrayName\fR\ ?\fIpattern\fR?
-Prints on standard output the names and values of all the elements
-in the array \fIarrayName\fR that match \fIpattern\fR (using the
-matching rules of \fBstring match\fR).
+\fBparray \fIarrayName\fR ?\fIpattern\fR?
+Prints on standard output the names and values of all the elements in the
+array \fIarrayName\fR, or just the names that match \fIpattern\fR (using the
+matching rules of \fBstring match\fR) and their values if \fIpattern\fR is
+given.
 \fIArrayName\fR must be an array accessible to the caller of \fBparray\fR.
 It may be either local or global.
 .TP
