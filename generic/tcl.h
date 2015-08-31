@@ -2198,7 +2198,7 @@ typedef struct Tcl_EncodingType {
  */
 
 #ifndef TCL_UTF_MAX
-#define TCL_UTF_MAX		4
+#define TCL_UTF_MAX		3
 #endif
 
 /*

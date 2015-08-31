@@ -794,6 +794,7 @@ PrintSourceToObj(
 {
     register const char *p;
     register int i = 0, len;
+    Tcl_UniChar ch = 0;
 
     if (stringPtr == NULL) {
 	Tcl_AppendToObj(appendObj, "\"\"", -1);
@@ -803,7 +804,6 @@ PrintSourceToObj(
     Tcl_AppendToObj(appendObj, "\"", -1);
     p = stringPtr;
     for (;  (*p != '\0') && (i < maxChars);  p+=len) {
-	Tcl_UniChar ch;
 
 	len = TclUtfToUniChar(p, &ch);
 	switch (ch) {
@@ -832,6 +832,12 @@ PrintSourceToObj(
 	    i += 2;
 	    continue;
 	default:
+#if TCL_UTF_MAX > 4
+	    if ((int) ch > 0xffff) {
+		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", (int) ch);
+		i += 10;
+	    } else
+#endif
 	    if (ch < 0x20 || ch >= 0x7f) {
 		Tcl_AppendPrintfToObj(appendObj, "\\u%04x", ch);
 		i += 6;
