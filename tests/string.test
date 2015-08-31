@@ -576,12 +576,12 @@ test string-6.85 {string is control} {
 } 0
 test string-6.86 {string is graph} {
     ## graph is any print char, except space
-    list [string is gra -fail var "0123abc!@#\$\u0100\UE0100\UE01EF "] $var
-} {0 14}
+    list [string is gra -fail var "0123abc!@#\$\u0100 "] $var
+} {0 12}
 test string-6.87 {string is print} {
     ## basically any printable char
-    list [string is print -fail var "0123abc!@#\$\u0100 \UE0100\UE01EF\u0010"] $var
-} {0 15}
+    list [string is print -fail var "0123abc!@#\$\u0100 \u0010"] $var
+} {0 13}
 test string-6.88 {string is punct} {
     ## any graph char that isn't alnum
     list [string is punct -fail var "_!@#\u00beq0"] $var

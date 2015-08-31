@@ -2295,11 +2295,8 @@ UtfToUtfProc(
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    Tcl_UniChar ch;
 
-    if (flags & TCL_ENCODING_START) {
-    	*chPtr = 0;
-    }
     result = TCL_OK;
 
     srcStart = src;
@@ -2351,14 +2348,12 @@ UtfToUtfProc(
 	     * incomplete char its byts are made to represent themselves.
 	     */
 
-		*chPtr = (unsigned char) *src;
+	    ch = (unsigned char) *src;
 	    src += 1;
-	    dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    dst += Tcl_UniCharToUtf(ch, dst);
 	} else {
-	    int n = Tcl_UtfToUniChar(src, chPtr);
-	    src += n;
-	    if (!n) numChars--;
-	    dst += Tcl_UniCharToUtf(*chPtr, dst);
+	    src += Tcl_UtfToUniChar(src, &ch);
+	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
     }
 
@@ -2414,11 +2409,8 @@ UnicodeToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart;
     int result, numChars, charLimit = INT_MAX;
-    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    Tcl_UniChar ch;
 
-    if (flags & TCL_ENCODING_START) {
-    	*chPtr = 0;
-    }
     if (flags & TCL_ENCODING_CHAR_LIMIT) {
 	charLimit = *dstCharsPtr;
     }
@@ -2446,13 +2438,11 @@ UnicodeToUtfProc(
 	 * Tcl_UniChar-size data.
 	 */
 
-	*chPtr = *(Tcl_UniChar *)src;
-	if (*chPtr && *chPtr < 0x80) {
-	    *dst++ = (*chPtr & 0xFF);
+	ch = *(Tcl_UniChar *)src;
+	if (ch && ch < 0x80) {
+	    *dst++ = (ch & 0xFF);
 	} else {
-	    int n = Tcl_UniCharToUtf(*chPtr, dst);
-	    dst += n;
-	    if (!n) --numChars;/* Don't count high surrogates */
+	    dst += Tcl_UniCharToUtf(ch, dst);
 	}
 	src += sizeof(Tcl_UniChar);
     }
@@ -2509,11 +2499,8 @@ UtfToUnicodeProc(
 {
     const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
     int result, numChars;
-    Tcl_UniChar *chPtr = (Tcl_UniChar *) statePtr;
+    Tcl_UniChar ch;
 
-    if (flags & TCL_ENCODING_START) {
-    	*chPtr = 0;
-    }
     srcStart = src;
     srcEnd = src + srcLen;
     srcClose = srcEnd;
@@ -2538,21 +2525,34 @@ UtfToUnicodeProc(
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
-        }
-	src += TclUtfToUniChar(src, chPtr);
+	}
+	src += TclUtfToUniChar(src, &ch);
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by
 	 * casting dst to a Tcl_UniChar. [Bug 1122671]
-	 * XXX: This hard-codes the assumed size of Tcl_UniChar as 2.
 	 */
 
 #ifdef WORDS_BIGENDIAN
-	*dst++ = (*chPtr >> 8);
-	*dst++ = (*chPtr & 0xFF);
+#if TCL_UTF_MAX > 4
+	*dst++ = (ch >> 24);
+	*dst++ = ((ch >> 16) & 0xFF);
+	*dst++ = ((ch >> 8) & 0xFF);
+	*dst++ = (ch & 0xFF);
 #else
-	*dst++ = (*chPtr & 0xFF);
-	*dst++ = (*chPtr >> 8);
+	*dst++ = (ch >> 8);
+	*dst++ = (ch & 0xFF);
+#endif
+#else
+#if TCL_UTF_MAX > 4
+	*dst++ = (ch & 0xFF);
+	*dst++ = ((ch >> 8) & 0xFF);
+	*dst++ = ((ch >> 16) & 0xFF);
+	*dst++ = (ch >> 24);
+#else
+	*dst++ = (ch & 0xFF);
+	*dst++ = (ch >> 8);
+#endif
 #endif
     }
     *srcReadPtr = src - srcStart;
@@ -2609,7 +2609,7 @@ TableToUtfProc(
     const char *srcStart, *srcEnd;
     const char *dstEnd, *dstStart, *prefixBytes;
     int result, byte, numChars, charLimit = INT_MAX;
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar ch;
     const unsigned short *const *toUnicode;
     const unsigned short *pageZero;
     TableEncodingData *dataPtr = clientData;
@@ -2721,7 +2721,7 @@ TableFromUtfProc(
 {
     const char *srcStart, *srcEnd, *srcClose;
     const char *dstStart, *dstEnd, *prefixBytes;
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar ch;
     int result, len, word, numChars;
     TableEncodingData *dataPtr = clientData;
     const unsigned short *const *fromUnicode;

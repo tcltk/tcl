@@ -454,7 +454,7 @@ SetByteArrayFromAny(
     const char *src, *srcEnd;
     unsigned char *dst;
     ByteArray *byteArrayPtr;
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar ch;
 
     if (objPtr->typePtr != &tclByteArrayType) {
 	src = TclGetStringFromObj(objPtr, &length);
@@ -462,11 +462,8 @@ SetByteArrayFromAny(
 
 	byteArrayPtr = ckalloc(BYTEARRAY_SIZE(length));
 	for (dst = byteArrayPtr->bytes; src < srcEnd; ) {
-	    int n = Tcl_UtfToUniChar(src, &ch);
-	    if (n) {
-		src += n;
-		*dst++ = UCHAR(ch);
-	    }
+	    src += Tcl_UtfToUniChar(src, &ch);
+	    *dst++ = UCHAR(ch);
 	}
 
 	byteArrayPtr->used = dst - byteArrayPtr->bytes;
@@ -1213,7 +1210,7 @@ BinaryFormatCmd(
 
  badField:
     {
-	Tcl_UniChar ch = 0;
+	Tcl_UniChar ch;
 	char buf[TCL_UTF_MAX + 1];
 
 	Tcl_UtfToUniChar(errorString, &ch);
@@ -1583,7 +1580,7 @@ BinaryScanCmd(
 
  badField:
     {
-	Tcl_UniChar ch = 0;
+	Tcl_UniChar ch;
 	char buf[TCL_UTF_MAX + 1];
 
 	Tcl_UtfToUniChar(errorString, &ch);
