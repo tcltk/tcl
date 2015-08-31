@@ -2538,21 +2538,34 @@ UtfToUnicodeProc(
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
-        }
+	}
 	src += TclUtfToUniChar(src, chPtr);
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by
 	 * casting dst to a Tcl_UniChar. [Bug 1122671]
-	 * XXX: This hard-codes the assumed size of Tcl_UniChar as 2.
 	 */
 
 #ifdef WORDS_BIGENDIAN
+#if TCL_UTF_MAX > 4
+	*dst++ = (*chPtr >> 24);
+	*dst++ = ((*chPtr >> 16) & 0xFF);
+	*dst++ = ((*chPtr >> 8) & 0xFF);
+	*dst++ = (*chPtr & 0xFF);
+#else
 	*dst++ = (*chPtr >> 8);
 	*dst++ = (*chPtr & 0xFF);
+#endif
+#else
+#if TCL_UTF_MAX > 4
+	*dst++ = (*chPtr & 0xFF);
+	*dst++ = ((*chPtr >> 8) & 0xFF);
+	*dst++ = ((*chPtr >> 16) & 0xFF);
+	*dst++ = (*chPtr >> 24);
 #else
 	*dst++ = (*chPtr & 0xFF);
 	*dst++ = (*chPtr >> 8);
+#endif
 #endif
     }
     *srcReadPtr = src - srcStart;
