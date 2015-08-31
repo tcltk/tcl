@@ -1032,7 +1032,18 @@ Tcl_WaitForEvent(
 		pthread_mutex_lock(&notifierMutex);
 	    }
 #else
-	    pthread_cond_wait(&tsdPtr->waitCV, &notifierMutex);
+	    if (timePtr != NULL) {
+	       Tcl_Time now;
+	       struct timespec ptime;
+
+	       Tcl_GetTime(&now);
+	       ptime.tv_sec = timePtr->sec + now.sec + (timePtr->usec + now.usec) / 1000000;
+	       ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+
+	       pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
+	    } else {
+	       pthread_cond_wait(&tsdPtr->waitCV, &notifierMutex);
+	    }
 #endif /* __CYGWIN__ */
 	}
 	tsdPtr->eventReady = 0;
