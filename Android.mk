@@ -12,6 +12,8 @@ tcl_path := $(LOCAL_PATH)
 
 include $(tcl_path)/tcl-config.mk
 
+LOCAL_ADDITIONAL_DEPENDENCIES += $(tcl_path)/tcl-config.mk
+
 LOCAL_MODULE := tcl
 
 LOCAL_ARM_MODE := arm
