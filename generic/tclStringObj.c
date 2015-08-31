@@ -531,7 +531,7 @@ Tcl_GetCharLength(
  *----------------------------------------------------------------------
  */
 
-int
+Tcl_UniChar
 Tcl_GetUniChar(
     Tcl_Obj *objPtr,		/* The object to get the Unicode charater
 				 * from. */
@@ -548,7 +548,7 @@ Tcl_GetUniChar(
     if (TclIsPureByteArray(objPtr)) {
 	unsigned char *bytes = Tcl_GetByteArrayFromObj(objPtr, NULL);
 
-	return (int) bytes[index];
+	return (Tcl_UniChar) bytes[index];
     }
 
     /*
@@ -572,7 +572,7 @@ Tcl_GetUniChar(
 	FillUnicodeRep(objPtr);
 	stringPtr = GET_STRING(objPtr);
     }
-    return (int) stringPtr->unicode[index];
+    return stringPtr->unicode[index];
 }
 
 /*
@@ -672,7 +672,6 @@ Tcl_GetRange(
 {
     Tcl_Obj *newObjPtr;		/* The Tcl object to find the range of. */
     String *stringPtr;
-    int i, firstoffset = 0, lastoffset = 0;
 
     /*
      * Optimize the case where we're really dealing with a bytearray object
@@ -717,17 +716,7 @@ Tcl_GetRange(
 	stringPtr = GET_STRING(objPtr);
     }
 
-    for (i = 0; i <= last + lastoffset + firstoffset; i++) {
-        if ((stringPtr->unicode[i] & 0xfc00) == 0xd800) {
-            if (i < first + firstoffset) {
-                firstoffset++;
-            } else {
-                lastoffset++;
-            }
-        }
-    }
-
-    return Tcl_NewUnicodeObj(stringPtr->unicode + first + firstoffset, last-first+1 + lastoffset + firstoffset);
+    return Tcl_NewUnicodeObj(stringPtr->unicode + first, last-first+1);
 }
 
 /*
@@ -1744,7 +1733,6 @@ Tcl_AppendFormatToObj(
     const char *span = format, *msg, *errCode;
     int numBytes = 0, objIndex = 0, gotXpg = 0, gotSequential = 0;
     int originalLength, limit;
-    Tcl_UniChar ch = 0;
     static const char *mixedXPG =
 	    "cannot mix \"%\" and \"%n$\" conversion specifiers";
     static const char *const badIndex[2] = {
@@ -1769,6 +1757,7 @@ Tcl_AppendFormatToObj(
 	int width, gotPrecision, precision, useShort, useWide, useBig;
 	int newXpg, numChars, allocSegment = 0, segmentLimit, segmentNumBytes;
 	Tcl_Obj *segment;
+	Tcl_UniChar ch;
 	int step = Tcl_UtfToUniChar(format, &ch);
 
 	format += step;
@@ -2748,7 +2737,7 @@ TclStringObjReverse(
     Tcl_Obj *objPtr)
 {
     String *stringPtr;
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar ch;
 
     if (TclIsPureByteArray(objPtr)) {
 	int numBytes;
@@ -2776,6 +2765,7 @@ TclStringObjReverse(
 	     * Tcl_SetObjLength into growing the unicode rep buffer.
 	     */
 
+	    ch = 0;
 	    objPtr = Tcl_NewUnicodeObj(&ch, 1);
 	    Tcl_SetObjLength(objPtr, stringPtr->numChars);
 	    to = Tcl_GetUnicode(objPtr);
@@ -2877,8 +2867,8 @@ ExtendUnicodeRepWithString(
     int numAppendChars)
 {
     String *stringPtr = GET_STRING(objPtr);
-    int incr, needed, numOrigChars = 0;
-    Tcl_UniChar *dst, unichar = 0;
+    int needed, numOrigChars = 0;
+    Tcl_UniChar *dst;
 
     if (stringPtr->hasUnicode) {
 	numOrigChars = stringPtr->numChars;
@@ -2901,12 +2891,7 @@ ExtendUnicodeRepWithString(
 	numAppendChars = 0;
     }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
-	bytes += (incr = TclUtfToUniChar(bytes, &unichar));
-	*dst = unichar;
-	if (!incr) {
-	    bytes += TclUtfToUniChar(bytes, &unichar);
-	    *++dst = unichar;
-	}
+	bytes += TclUtfToUniChar(bytes, dst);
     }
     *dst = 0;
 }
@@ -3111,7 +3096,7 @@ ExtendStringRepWithUnicode(
      * Pre-condition: this is the "string" Tcl_ObjType.
      */
 
-    int incr, i, origLength, size = 0, offset = 0;
+    int i, origLength, size = 0;	
     char *dst, buf[TCL_UTF_MAX];
     String *stringPtr = GET_STRING(objPtr);
 
@@ -3137,9 +3122,8 @@ ExtendStringRepWithUnicode(
 	goto copyBytes;
     }
 
-    for (i = 0; i < numChars + offset && size >= 0; i++) {
-	size += (incr = Tcl_UniCharToUtf((int) unicode[i], buf));
-	if (!incr) offset++;
+    for (i = 0; i < numChars && size >= 0; i++) {
+	size += Tcl_UniCharToUtf((int) unicode[i], buf);
     }
     if (size < 0) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);

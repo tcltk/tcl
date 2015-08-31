@@ -313,7 +313,7 @@ Tcl_RegexpObjCmd(
 	    eflags = 0;
 	} else if (offset > stringLength) {
 	    eflags = TCL_REG_NOTBOL;
-	} else if (Tcl_GetUniChar(objPtr, offset-1) == '\n') {
+	} else if (Tcl_GetUniChar(objPtr, offset-1) == (Tcl_UniChar)'\n') {
 	    eflags = 0;
 	} else {
 	    eflags = TCL_REG_NOTBOL;
@@ -495,7 +495,7 @@ Tcl_RegsubObjCmd(
     Tcl_RegExp regExpr;
     Tcl_RegExpInfo info;
     Tcl_Obj *resultPtr, *subPtr, *objPtr, *startIndex = NULL;
-    Tcl_UniChar ch = 0, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
+    Tcl_UniChar ch, *wsrc, *wfirstChar, *wstring, *wsubspec, *wend;
 
     static const char *const options[] = {
 	"-all",		"-nocase",	"-expanded",
@@ -1041,7 +1041,7 @@ Tcl_SplitObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar ch;
     int len;
     const char *splitChars;
     const char *stringPtr;
@@ -1085,10 +1085,6 @@ Tcl_SplitObjCmd(
 
 	for ( ; stringPtr < end; stringPtr += len) {
 	    len = TclUtfToUniChar(stringPtr, &ch);
-	    
-	    if (!len) {
-	        continue;
-	    }
 
 	    /*
 	     * Assume Tcl_UniChar is an integral type...
@@ -1130,7 +1126,7 @@ Tcl_SplitObjCmd(
     } else {
 	const char *element, *p, *splitEnd;
 	int splitLen;
-	Tcl_UniChar splitChar = 0;
+	Tcl_UniChar splitChar;
 
 	/*
 	 * Normal case: split on any of a given set of characters. Discard
@@ -1459,7 +1455,7 @@ StringIsCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     const char *string1, *end, *stop;
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar ch;
     int (*chcomp)(int) = NULL;	/* The UniChar comparison function. */
     int i, failat = 0, result = 1, strict = 0, index, length1, length2;
     Tcl_Obj *objPtr, *failVarObj = NULL;
@@ -1791,14 +1787,8 @@ StringIsCmd(
 	}
 	end = string1 + length1;
 	for (; string1 < end; string1 += length2, failat++) {
-	    int fullchar;
 	    length2 = TclUtfToUniChar(string1, &ch);
-	    fullchar = ch;
-	    if (!length2) {
-	    	length2 = TclUtfToUniChar(string1, &ch);
-	    	fullchar = (((fullchar & 0x3ff) << 10) | (ch & 0x3ff)) + 0x10000;
-	    }
-	    if (!chcomp(fullchar)) {
+	    if (!chcomp(ch)) {
 		result = 0;
 		break;
 	    }
@@ -2450,7 +2440,7 @@ StringStartCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar ch;
     const char *p, *string;
     int cur, index, length, numChars;
 
@@ -2511,7 +2501,7 @@ StringEndCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    Tcl_UniChar ch = 0;
+    Tcl_UniChar ch;
     const char *p, *end, *string;
     int cur, index, length, numChars;
 
