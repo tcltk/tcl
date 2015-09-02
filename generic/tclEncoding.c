@@ -269,6 +269,18 @@ static int		Iso88591ToUtfProc(ClientData clientData,
 			    Tcl_EncodingState *statePtr, char *dst,
 			    int dstLen, int *srcReadPtr, int *dstWrotePtr,
 			    int *dstCharsPtr);
+#if TCL_UTF_MAX > 4
+static int		Utf16ToUtfProc(ClientData clientData,
+			    const char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr);
+static int		UtfToUtf16Proc(ClientData clientData,
+			    const char *src, int srcLen, int flags,
+			    Tcl_EncodingState *statePtr, char *dst, int dstLen,
+			    int *srcReadPtr, int *dstWrotePtr,
+			    int *dstCharsPtr);
+#endif
 
 /*
  * A Tcl_ObjType for holding a cached Tcl_Encoding in the twoPtrValue.ptr1 field
@@ -578,13 +590,31 @@ TclInitEncodingSubsystem(void)
     type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
 
+#if TCL_UTF_MAX > 4
+    type.encodingName   = "utf-32";
+#else
     type.encodingName   = "unicode";
+#endif
     type.toUtfProc	= UnicodeToUtfProc;
     type.fromUtfProc    = UtfToUnicodeProc;
+    type.freeProc	= NULL;
+#if TCL_UTF_MAX > 4
+    type.nullSize	= 4;
+#else
+    type.nullSize	= 2;
+#endif
+    type.clientData	= NULL;
+    Tcl_CreateEncoding(&type);
+
+#if TCL_UTF_MAX > 4
+    type.encodingName   = "unicode";
+    type.toUtfProc	= Utf16ToUtfProc;
+    type.fromUtfProc    = UtfToUtf16Proc;
     type.freeProc	= NULL;
     type.nullSize	= 2;
     type.clientData	= NULL;
     Tcl_CreateEncoding(&type);
+#endif
 
     /*
      * Need the iso8859-1 encoding in order to process binary data, so force
@@ -2985,6 +3015,212 @@ Iso88591FromUtfProc(
     *dstCharsPtr = numChars;
     return result;
 }
+
+#if TCL_UTF_MAX > 4
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Utf16ToUtfProc --
+ *
+ *	Convert from UTF-16 to UTF-8.
+ *
+ * Results:
+ *	Returns TCL_OK if conversion was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+Utf16ToUtfProc(
+    ClientData clientData,	/* Not used. */
+    const char *src,		/* Source string in Unicode. */
+    int srcLen,			/* Source string length in bytes. */
+    int flags,			/* Conversion control flags. */
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    int dstLen,			/* The maximum length of output buffer in
+				 * bytes. */
+    int *srcReadPtr,		/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    int *dstWrotePtr,		/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    int *dstCharsPtr)		/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
+{
+    const char *srcStart, *srcEnd;
+    const char *dstEnd, *dstStart;
+    int result, numChars, charLimit = INT_MAX;
+    Tcl_UniChar ch;
+
+    if (flags & TCL_ENCODING_CHAR_LIMIT) {
+	charLimit = *dstCharsPtr;
+    }
+    result = TCL_OK;
+    if ((srcLen % sizeof(unsigned short)) != 0) {
+	result = TCL_CONVERT_MULTIBYTE;
+	srcLen /= sizeof(unsigned short);
+	srcLen *= sizeof(unsigned short);
+    }
+
+    srcStart = src;
+    srcEnd = src + srcLen;
+
+    dstStart = dst;
+    dstEnd = dst + dstLen - sizeof(unsigned short);
+
+    for (numChars = 0; src < srcEnd && numChars <= charLimit; numChars++) {
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	    break;
+	}
+	ch = *(unsigned short *)src;
+	if (ch && ch < 0x80) {
+	    *dst++ = (ch & 0xFF);
+	} else if ((ch >= 0xD800) && (ch <= 0xDBFF)) {
+	    Tcl_UniChar ch2 = *(unsigned short *)(src + sizeof(unsigned short));
+
+	    if ((ch2 >= 0xDC00) && (ch2 <= 0xDFFF)) {
+		ch = ((ch & 0x3FF) << 10) + 0x10000 + (ch2 & 0x3FF);
+		src += sizeof(unsigned short);
+	    }
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	} else {
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	}
+	src += sizeof(unsigned short);
+    }
+
+    *srcReadPtr = src - srcStart;
+    *dstWrotePtr = dst - dstStart;
+    *dstCharsPtr = numChars;
+    return result;
+}
+#endif
+
+#if TCL_UTF_MAX > 4
+/*
+ *-------------------------------------------------------------------------
+ *
+ * UtfToUtf16Proc --
+ *
+ *	Convert from UTF-8 to UTF-16.
+ *
+ * Results:
+ *	Returns TCL_OK if conversion was successful.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+static int
+UtfToUtf16Proc(
+    ClientData clientData,	/* TableEncodingData that specifies
+				 * encoding. */
+    const char *src,		/* Source string in UTF-8. */
+    int srcLen,			/* Source string length in bytes. */
+    int flags,			/* Conversion control flags. */
+    Tcl_EncodingState *statePtr,/* Place for conversion routine to store state
+				 * information used during a piecewise
+				 * conversion. Contents of statePtr are
+				 * initialized and/or reset by conversion
+				 * routine under control of flags argument. */
+    char *dst,			/* Output buffer in which converted string is
+				 * stored. */
+    int dstLen,			/* The maximum length of output buffer in
+				 * bytes. */
+    int *srcReadPtr,		/* Filled with the number of bytes from the
+				 * source string that were converted. This may
+				 * be less than the original source length if
+				 * there was a problem converting some source
+				 * characters. */
+    int *dstWrotePtr,		/* Filled with the number of bytes that were
+				 * stored in the output buffer as a result of
+				 * the conversion. */
+    int *dstCharsPtr)		/* Filled with the number of characters that
+				 * correspond to the bytes stored in the
+				 * output buffer. */
+{
+    const char *srcStart, *srcEnd, *srcClose, *dstStart, *dstEnd;
+    int result, numChars;
+    Tcl_UniChar ch;
+
+    srcStart = src;
+    srcEnd = src + srcLen;
+    srcClose = srcEnd;
+    if ((flags & TCL_ENCODING_END) == 0) {
+	srcClose -= TCL_UTF_MAX;
+    }
+
+    dstStart = dst;
+    dstEnd   = dst + dstLen - 2 * sizeof(unsigned short);
+
+    result = TCL_OK;
+    for (numChars = 0; src < srcEnd; numChars++) {
+	if ((src > srcClose) && (!Tcl_UtfCharComplete(src, srcEnd - src))) {
+	    /*
+	     * If there is more string to follow, this will ensure that the
+	     * last UTF-8 character in the source buffer hasn't been cut off.
+	     */
+
+	    result = TCL_CONVERT_MULTIBYTE;
+	    break;
+	}
+	if (dst > dstEnd) {
+	    result = TCL_CONVERT_NOSPACE;
+	    break;
+        }
+	src += TclUtfToUniChar(src, &ch);
+
+	if (ch > 0x10FFFF) {
+	    ch = 0xFFFD;
+	}
+
+	/*
+	 * Need to handle this in a way that won't cause misalignment by
+	 * casting dst to a Tcl_UniChar. [Bug 1122671]
+	 */
+
+	if (ch > 0xFFFF) {
+	    int high = (((ch - 0x10000) >> 10) & 0x3FF) | 0xD800;
+
+	    ch = ((ch - 0x10000) & 0x3FF) | 0xDC00;
+#ifdef WORDS_BIGENDIAN
+	    *dst++ = ((high >> 8) & 0xFF);
+    	    *dst++ = (high & 0xFF);
+#else
+    	    *dst++ = (high & 0xFF);
+	    *dst++ = ((high >> 8) & 0xFF);
+#endif
+	}
+#ifdef WORDS_BIGENDIAN
+	*dst++ = ((ch >> 8) & 0xFF);
+	*dst++ = (ch & 0xFF);
+#else
+    	*dst++ = (ch & 0xFF);
+	*dst++ = ((ch >> 8) & 0xFF);
+#endif
+    }
+    *srcReadPtr = src - srcStart;
+    *dstWrotePtr = dst - dstStart;
+    *dstCharsPtr = numChars;
+    return result;
+}
+#endif
 
 /*
  *---------------------------------------------------------------------------
