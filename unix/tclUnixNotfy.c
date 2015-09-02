@@ -962,7 +962,7 @@ Tcl_WaitForEvent(
 	}
 #endif /* __CYGWIN */
 
-	pthread_mutex_lock(&notifierInitMutex);
+	pthread_mutex_lock(&notifierMutex);
 
 	if (timePtr != NULL && timePtr->sec == 0 && (timePtr->usec == 0
 #if defined(__APPLE__) && defined(__LP64__)
@@ -1146,7 +1146,7 @@ Tcl_WaitForEvent(
 	    filePtr->readyMask = mask;
 	}
 #ifdef TCL_THREADS
-	pthread_mutex_unlock(&notifierInitMutex);
+	pthread_mutex_unlock(&notifierMutex);
 #endif /* TCL_THREADS */
 	return 0;
     }
