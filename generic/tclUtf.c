@@ -117,25 +117,10 @@ UtfCount(
     if (ch <= 0x7FF) {
 	return 2;
     }
-    if (ch <= 0xFFFF) {
-	return 3;
-    }
 #if TCL_UTF_MAX > 3
-#if TCL_UTF_MAX == 4
-    if (ch <= 0x10FFFF) {
+    if ((ch > 0xFFFF) && (ch <= 0x10FFFF)) {
 	return 4;
     }
-#else
-    if (ch <= 0x1FFFFF) {
-	return 4;
-    }
-    if (ch <= 0x3FFFFFF) {
-	return 5;
-    }
-    if (ch <= 0x7FFFFFFF) {
-	return 6;
-    }
-#endif
 #endif
     return 3;
 }
@@ -203,7 +188,6 @@ Tcl_UniCharToUtf(
 	}
 
 #if TCL_UTF_MAX > 3
-#if TCL_UTF_MAX == 4
 	if (ch <= 0x10FFFF) {
 	    buf[3] = (char) ((ch | 0x80) & 0xBF);
 	    buf[2] = (char) (((ch >> 6) | 0x80) & 0xBF);
@@ -211,32 +195,6 @@ Tcl_UniCharToUtf(
 	    buf[0] = (char) ((ch >> 18) | 0xF0);
 	    return 4;
 	}
-#else
-	if (ch <= 0x1FFFFF) {
-	    buf[3] = (char) ((ch | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 18) | 0xF0);
-	    return 4;
-	}
-	if (ch <= 0x3FFFFFF) {
-	    buf[4] = (char) ((ch | 0x80) & 0xBF);
-	    buf[3] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 18) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 24) | 0xF8);
-	    return 5;
-	}
-	if (ch <= 0x7FFFFFFF) {
-	    buf[5] = (char) ((ch | 0x80) & 0xBF);
-	    buf[4] = (char) (((ch >> 6) | 0x80) & 0xBF);
-	    buf[3] = (char) (((ch >> 12) | 0x80) & 0xBF);
-	    buf[2] = (char) (((ch >> 18) | 0x80) & 0xBF);
-	    buf[1] = (char) (((ch >> 24) | 0x80) & 0xBF);
-	    buf[0] = (char) ((ch >> 30) | 0xFC);
-	    return 6;
-	}
-#endif
 #endif
     }
 
@@ -706,6 +664,7 @@ Tcl_UtfNext(
     const char *src)		/* The current location in the string. */
 {
     Tcl_UniChar ch = 0;
+
     return src + TclUtfToUniChar(src, &ch);
 }
 
@@ -1711,8 +1670,8 @@ int
 Tcl_UniCharIsSpace(
     int ch)			/* Unicode character to test. */
 {
-	/* Ignore upper 11 bits. */
-	ch &= 0x1fffff;
+    /* Ignore upper 11 bits. */
+    ch &= 0x1fffff;
 
     /*
      * If the character is within the first 127 characters, just use the
