@@ -262,7 +262,7 @@ proc msgcat::mcexists {args} {
 	}
     }
     set src [lindex $args 0]
-    
+
     while {$ns ne ""} {
 	foreach loc $loclist {
 	    if {[dict exists $Msgs $ns $loc $src]} {
@@ -305,7 +305,7 @@ proc msgcat::mclocale {args} {
 	}
 	if {[lindex $Loclist 0] ne $newLocale} {
 	    set Loclist [GetPreferences $newLocale]
-	    
+
 	    # locale not loaded jet
 	    LoadAll $Loclist
 	    # Invoke callback
@@ -463,7 +463,7 @@ proc msgcat::mcpackagelocale {subcommand {locale ""}} {
         set locale [string tolower $locale]
     }
     set ns [uplevel 1 {::namespace current}]
-    
+
     switch -exact -- $subcommand {
 	get { return [lindex [PackagePreferences $ns] 0] }
 	preferences { return [PackagePreferences $ns] }
@@ -646,7 +646,7 @@ proc msgcat::mcpackageconfig {subcommand option {value ""}} {
 	isset {	return [dict exists $PackageConfig $option $ns] }
 	unset {	dict unset PackageConfig $option $ns }
 	set {	# Set option
-	
+
 	    if {$option eq "mcfolder"} {
 		set value [file normalize $value]
 	    }
@@ -779,7 +779,7 @@ proc msgcat::LoadAll {locales} {
     set locales [ListComplement $LoadedLocales $locales]
     if {0 == [llength $locales]} { return {} }
     lappend LoadedLocales {*}$locales
-    
+
     set packages [lsort -unique [concat\
 	    [dict keys [dict get $PackageConfig loadcmd]]\
 	    [dict keys [dict get $PackageConfig mcfolder]]]]
@@ -812,14 +812,14 @@ proc msgcat::Load {ns locales {callbackonly 0}} {
 
     # Invoke callback
     Invoke loadcmd $locales $ns
-    
+
     if {$callbackonly || ![dict exists $PackageConfig mcfolder $ns]} {
 	return 0
     }
 
     # Invoke file load
     set langdir [dict get $PackageConfig mcfolder $ns]
-    
+
     # Save the file locale if we are recursively called
     if {[info exists FileLocale]} {
 	set nestedFileLocale $FileLocale
