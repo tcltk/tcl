@@ -103,8 +103,8 @@ typedef struct ThreadSpecificData {
     pthread_cond_t waitCV;	/* Any other thread alerts a notifier that an
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
-    int waitCVinitialized;  /* Variable to flag initialization of the structure */
 #endif /* __CYGWIN__ */
+    int waitCVinitialized;  /* Variable to flag initialization of the structure */
     int eventReady;		/* True if an event is ready to be processed.
 				 * Used as condition flag together with waitCV
 				 * above. */
@@ -254,9 +254,10 @@ extern unsigned char __stdcall	ResetEvent(void *);
 extern unsigned char __stdcall	TranslateMessage(const MSG *);
 
 /*
- * Threaded-cygwin specific functions in this file:
+ * Threaded-cygwin specific constants and functions in this file:
  */
 
+static const WCHAR NotfyClassName[] = L"TclNotifier";
 static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
 			    void *wParam, void *lParam);
 #endif /* TCL_THREADS && __CYGWIN__ */
@@ -331,15 +332,35 @@ Tcl_InitNotifier(void)
 #ifdef TCL_THREADS
 	tsdPtr->eventReady = 0;
 
-#ifndef __CYGWIN__
 	/*
 	 * Initialize thread specific condition variable for this thread.
 	 */
 	if (tsdPtr->waitCVinitialized == 0) {
+#ifdef __CYGWIN__
+	    WNDCLASS class;
+
+	    class.style = 0;
+	    class.cbClsExtra = 0;
+	    class.cbWndExtra = 0;
+	    class.hInstance = TclWinGetTclInstance();
+	    class.hbrBackground = NULL;
+	    class.lpszMenuName = NULL;
+	    class.lpszClassName = NotfyClassName;
+	    class.lpfnWndProc = NotifierProc;
+	    class.hIcon = NULL;
+	    class.hCursor = NULL;
+
+	    RegisterClassW(&class);
+	    tsdPtr->hwnd = CreateWindowExW(NULL, class.lpszClassName,
+		    class.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL,
+		    TclWinGetTclInstance(), NULL);
+	    tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
+		    0 /* !signaled */, NULL);
+#else
 	    pthread_cond_init(&tsdPtr->waitCV, NULL);
+#endif /* __CYGWIN */
 	    tsdPtr->waitCVinitialized = 1;
 	}
-#endif
 
 	pthread_mutex_lock(&notifierInitMutex);
 #if defined(HAVE_PTHREAD_ATFORK) && !defined(__APPLE__) && !defined(__hpux)
@@ -403,9 +424,7 @@ Tcl_FinalizeNotifier(
 	 * Check if FinializeNotifier was called without a prior InitNotifier
 	 * in this thread.
 	 */
-#ifndef __CYGWIN__
 	assert(tsdPtr->waitCVinitialized == 1);
-#endif
 
 	/*
 	 * If this is the last thread to use the notifier, close the notifier
@@ -440,10 +459,12 @@ Tcl_FinalizeNotifier(
 	 */
 
 #ifdef __CYGWIN__
+	DestroyWindow(tsdPtr->hwnd);
 	CloseHandle(tsdPtr->event);
 #else /* __CYGWIN__ */
 	pthread_cond_destroy(&tsdPtr->waitCV);
 #endif /* __CYGWIN__ */
+	tsdPtr->waitCVinitialized = 0;
 
 	pthread_mutex_unlock(&notifierInitMutex);
 #endif /* TCL_THREADS */
@@ -595,9 +616,7 @@ Tcl_CreateFileHandler(
 	/*
 	 * Check if InitNotifier was called before in this thread
 	 */
-#ifndef __CYGWIN__
 	assert(tsdPtr->waitCVinitialized == 1);
-#endif
 	for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
 		filePtr = filePtr->nextPtr) {
 	    if (filePtr->fd == fd) {
@@ -672,9 +691,7 @@ Tcl_DeleteFileHandler(
 	/*
 	 * Check if InitNotifier was called before in this thread
 	 */
-#ifndef __CYGWIN__
 	assert(tsdPtr->waitCVinitialized == 1);
-#endif
 
 	/*
 	 * Find the entry for the given file (and return if there isn't one).
@@ -784,9 +801,7 @@ FileHandlerEventProc(
     /*
      * Check if InitNotifier was called before in this thread
      */
-#ifndef __CYGWIN__
     assert(tsdPtr->waitCVinitialized == 1);
-#endif
 
     for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
 	    filePtr = filePtr->nextPtr) {
@@ -889,9 +904,7 @@ Tcl_WaitForEvent(
 	/*
 	 *  Check if InitNotifier was called before in this thread
 	 */
-#ifndef __CYGWIN__
 	assert(tsdPtr->waitCVinitialized == 1);
-#endif
 
 	/*
 	 * Set up the timeout structure. Note that if there are no events to
@@ -937,30 +950,6 @@ Tcl_WaitForEvent(
 	 * response or a timeout.
 	 */
 	StartNotifierThread();
-
-#ifdef __CYGWIN__
-	if (!tsdPtr->hwnd) {
-	    WNDCLASS class;
-
-	    class.style = 0;
-	    class.cbClsExtra = 0;
-	    class.cbWndExtra = 0;
-	    class.hInstance = TclWinGetTclInstance();
-	    class.hbrBackground = NULL;
-	    class.lpszMenuName = NULL;
-	    class.lpszClassName = L"TclNotifier";
-	    class.lpfnWndProc = NotifierProc;
-	    class.hIcon = NULL;
-	    class.hCursor = NULL;
-
-	    RegisterClassW(&class);
-	    tsdPtr->hwnd = CreateWindowExW(NULL, class.lpszClassName,
-		    class.lpszClassName, 0, 0, 0, 0, 0, NULL, NULL,
-		    TclWinGetTclInstance(), NULL);
-	    tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
-		    0 /* !signaled */, NULL);
-	}
-#endif /* __CYGWIN */
 
 	pthread_mutex_lock(&notifierMutex);
 
@@ -1471,9 +1460,7 @@ AtForkChild(void)
 
 	notifierCount = 0;
 	if (notifierThreadRunning == 1) {
-#ifndef __CYGWIN__
 	    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-#endif
 	    notifierThreadRunning = 0;
 
 	    close(triggerPipe);
@@ -1489,8 +1476,13 @@ AtForkChild(void)
 	     * The tsdPtr from before the fork is copied as well.  But since
 	     * we are paranoic, we don't trust its condvar and reset it.
 	     */
-#ifndef __CYGWIN__
 	    assert(tsdPtr->waitCVinitialized == 1);
+#ifdef __CYGWIN__
+	    tsdPtr->hwnd = CreateWindowExW(NULL, NotfyClassName,
+		    NotfyClassName, 0, 0, 0, 0, 0, NULL, NULL,
+		    TclWinGetTclInstance(), NULL);
+	    ResetEvent(tsdPtr->event);
+#else
 	    pthread_cond_destroy(&tsdPtr->waitCV);
 	    pthread_cond_init(&tsdPtr->waitCV, NULL);
 #endif
