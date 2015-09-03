@@ -17,7 +17,6 @@
 #ifndef HAVE_COREFOUNDATION	/* Darwin/Mac OS X CoreFoundation notifier is
 				 * in tclMacOSXNotify.c */
 #include <signal.h>
-#include <assert.h>
 
 /*
  * This structure is used to keep track of the notifier info for a registered
@@ -279,29 +278,30 @@ static DWORD __stdcall	NotifierProc(void *hwnd, unsigned int message,
  *----------------------------------------------------------------------
  */
 static void
-StartNotifierThread(void)
+StartNotifierThread(const char *proc)
 {
-
-    pthread_mutex_lock(&notifierInitMutex);
     if (!notifierThreadRunning) {
-	if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
-			     TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
-	    Tcl_Panic("Tcl_InitNotifier: unable to start notifier thread");
+	pthread_mutex_lock(&notifierInitMutex);
+	if (!notifierThreadRunning) {
+	    if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
+		    TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
+		Tcl_Panic("%s: unable to start notifier thread", proc);
+	    }
+
+	    pthread_mutex_lock(&notifierMutex);
+	    /*
+	     * Wait for the notifier pipe to be created.
+	     */
+
+	    while (triggerPipe < 0) {
+		pthread_cond_wait(&notifierCV, &notifierMutex);
+	    }
+	    pthread_mutex_unlock(&notifierMutex);
+
+	    notifierThreadRunning = 1;
 	}
-
-	pthread_mutex_lock(&notifierMutex);
-	/*
-	 * Wait for the notifier pipe to be created.
-	 */
-
-	while (triggerPipe < 0) {
-	    pthread_cond_wait(&notifierCV, &notifierMutex);
-	}
-	pthread_mutex_unlock(&notifierMutex);
-
-	notifierThreadRunning = 1;
+	pthread_mutex_unlock(&notifierInitMutex);
     }
-    pthread_mutex_unlock(&notifierInitMutex);
 }
 #endif /* TCL_THREADS */
 
@@ -358,7 +358,7 @@ Tcl_InitNotifier(void)
 		    0 /* !signaled */, NULL);
 #else
 	    pthread_cond_init(&tsdPtr->waitCV, NULL);
-#endif /* __CYGWIN */
+#endif /* __CYGWIN__ */
 	    tsdPtr->waitCVinitialized = 1;
 	}
 
@@ -419,12 +419,6 @@ Tcl_FinalizeNotifier(
 
 	pthread_mutex_lock(&notifierInitMutex);
 	notifierCount--;
-
-	/*
-	 * Check if FinializeNotifier was called without a prior InitNotifier
-	 * in this thread.
-	 */
-	assert(tsdPtr->waitCVinitialized == 1);
 
 	/*
 	 * If this is the last thread to use the notifier, close the notifier
@@ -574,7 +568,7 @@ Tcl_ServiceModeHook(
 	return;
     } else if (mode == TCL_SERVICE_ALL) {
 #if TCL_THREADS
-	StartNotifierThread();
+	StartNotifierThread("Tcl_ServiceModeHook");
 #endif
     }
 }
@@ -613,10 +607,6 @@ Tcl_CreateFileHandler(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 	FileHandler *filePtr;
 
-	/*
-	 * Check if InitNotifier was called before in this thread
-	 */
-	assert(tsdPtr->waitCVinitialized == 1);
 	for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
 		filePtr = filePtr->nextPtr) {
 	    if (filePtr->fd == fd) {
@@ -687,11 +677,6 @@ Tcl_DeleteFileHandler(
 	FileHandler *filePtr, *prevPtr;
 	int i;
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-
-	/*
-	 * Check if InitNotifier was called before in this thread
-	 */
-	assert(tsdPtr->waitCVinitialized == 1);
 
 	/*
 	 * Find the entry for the given file (and return if there isn't one).
@@ -798,11 +783,6 @@ FileHandlerEventProc(
 
     tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    /*
-     * Check if InitNotifier was called before in this thread
-     */
-    assert(tsdPtr->waitCVinitialized == 1);
-
     for (filePtr = tsdPtr->firstFileHandlerPtr; filePtr != NULL;
 	    filePtr = filePtr->nextPtr) {
 	if (filePtr->fd != fileEvPtr->fd) {
@@ -902,11 +882,6 @@ Tcl_WaitForEvent(
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
 	/*
-	 *  Check if InitNotifier was called before in this thread
-	 */
-	assert(tsdPtr->waitCVinitialized == 1);
-
-	/*
 	 * Set up the timeout structure. Note that if there are no events to
 	 * check for, we return with a negative result rather than blocking
 	 * forever.
@@ -949,7 +924,7 @@ Tcl_WaitForEvent(
 	 * interested threads, signal the notifier thread, and wait for a
 	 * response or a timeout.
 	 */
-	StartNotifierThread();
+	StartNotifierThread("Tcl_WaitForEvent");
 
 	pthread_mutex_lock(&notifierMutex);
 
@@ -1476,8 +1451,8 @@ AtForkChild(void)
 	     * The tsdPtr from before the fork is copied as well.  But since
 	     * we are paranoic, we don't trust its condvar and reset it.
 	     */
-	    assert(tsdPtr->waitCVinitialized == 1);
 #ifdef __CYGWIN__
+	    DestroyWindow(tsdPtr->hwnd);
 	    tsdPtr->hwnd = CreateWindowExW(NULL, NotfyClassName,
 		    NotfyClassName, 0, 0, 0, 0, 0, NULL, NULL,
 		    TclWinGetTclInstance(), NULL);
@@ -1492,9 +1467,6 @@ AtForkChild(void)
 	     */
 	}
     }
-    assert(notifierCount == 0);
-    assert(triggerPipe == -1);
-    assert(waitingListPtr == NULL);
 
     Tcl_InitNotifier();
 }
