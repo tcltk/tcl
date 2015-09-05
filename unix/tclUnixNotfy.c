@@ -1462,6 +1462,12 @@ AtForkChild(void)
 	    pthread_cond_init(&tsdPtr->waitCV, NULL);
 #endif
 	    /*
+	     * In case, we had multiple threads running before the fork,
+	     * make sure, we don't try to reach out to their thread local data.
+	     */
+	    tsdPtr->nextPtr = tsdPtr->prevPtr = NULL;
+
+	    /*
 	     * The list of registered event handlers at fork time is in
 	     * tsdPtr->firstFileHandlerPtr;
 	     */
