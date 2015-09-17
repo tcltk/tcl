@@ -819,10 +819,13 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
     if (!isNew) {
 	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 	if (interp != NULL) {
-	    Tcl_AppendResult(interp, "already mounted at ", zf->mntpt,
-			     (char *) NULL);
+	    Tcl_AppendResult(interp, "already mounted on \"", zf->mntptlen ?
+			     zf->mntpt : "/", "\"", (char *) NULL);
 	}
-	goto error;
+	Unlock();
+	Tcl_DStringFree(&ds);
+	ZipFSCloseArchive(interp, &zf0);
+	return TCL_ERROR;
     }
     if (strcmp(mntpt, "/") == 0) {
 	mntpt = "";
@@ -915,6 +918,7 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 	    goto nextent;
 	}
 	if (!isdir && (mntpt[0] == '\0') && !CountSlashes(path)) {
+	    /* regular files skipped when mounting on root */
 	    goto nextent;
 	}
 	Tcl_DStringSetLength(&fpBuf, 0);
@@ -947,7 +951,7 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 	z->data = NULL;
 	hPtr = Tcl_CreateHashEntry(&ZipFS.fileHash, fullpath, &isNew);
 	if (!isNew) {
-	    /* skip it */
+	    /* should not happen but skip it anyway */
 	    Tcl_Free((char *) z);
 	} else {
 	    Tcl_SetHashValue(hPtr, (ClientData) z);
@@ -988,7 +992,7 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 		    zd->data = NULL;
 		    hPtr = Tcl_CreateHashEntry(&ZipFS.fileHash, dir, &isNew);
 		    if (!isNew) {
-			/* should never happen but skip it */
+			/* should not happen but skip it anyway */
 			Tcl_Free((char *) zd);
 		    } else {
 			Tcl_SetHashValue(hPtr, (ClientData) zd);
@@ -1012,13 +1016,6 @@ nextent:
     Unlock();
     Tcl_FSMountsChanged(NULL);
     return TCL_OK;
-
-error:
-    Tcl_DStringFree(&ds);
-    Unlock();
-    ZipFSCloseArchive(interp, zf);
-    Tcl_Free((char *) zf);
-    return TCL_ERROR;
 }
 
 int
@@ -1039,7 +1036,7 @@ Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname)
     }
     hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, realname);
     if (hPtr == NULL) {
-	/* does not report error */
+	/* don't report error */
 	goto done;
     }
     zf = (ZipFile *) Tcl_GetHashValue(hPtr);
@@ -1707,7 +1704,8 @@ ZipFSListObjCmd(ClientData clientData, Tcl_Interp *interp,
 		return TCL_ERROR;
 	    }
 	} else {
-	    Tcl_AppendResult(interp, "unknown option: ", what, (char *) NULL);
+	    Tcl_AppendResult(interp, "unknown option \"", what,
+			     "\"", (char *) NULL);
 	    return TCL_ERROR;
 	}
     } else if (objc == 2) {
