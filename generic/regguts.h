@@ -186,7 +186,14 @@ struct colordesc {
     union tree *block;		/* block of solid color, if any */
 };
 
-/* the color map itself */
+/*
+ * The color map itself
+ *
+ * Much of the data in the colormap struct is only used at compile time.
+ * However, the bulk of the space usage is in the "tree" structure, so it's
+ * not clear that there's much point in converting the rest to a more compact
+ * form when compilation is finished.
+ */
 struct colormap {
     int magic;
 #define	CMMAGIC	0x876
@@ -242,15 +249,14 @@ struct cvec {
 struct state;
 
 struct arc {
-    int type;
-#define	ARCFREE	'\0'
+    int type;			/* 0 if free, else an NFA arc type code */
     color co;
     struct state *from;		/* where it's from (and contained within) */
     struct state *to;		/* where it's to */
-    struct arc *outchain;	/* *from's outs chain or free chain */
+    struct arc *outchain;	/* link in *from's outs chain or free chain */
 #define	freechain	outchain
-    struct arc *inchain;	/* *to's ins chain */
-    struct arc *colorchain;	/* color's arc chain */
+    struct arc *inchain;	/* link in *to's ins chain */
+    struct arc *colorchain;	/* link in color's arc chain */
     struct arc *colorchainRev;	/* back-link in color's arc chain */
 };
 
@@ -297,11 +303,22 @@ struct nfa {
 
 /*
  * definitions for compacted NFA
+ *
+ * The main space savings in a compacted NFA is from making the arcs as small
+ * as possible.  We store only the transition color and next-state number for
+ * each arc.  The list of out arcs for each state is an array beginning at
+ * cnfa.states[statenumber], and terminated by a dummy carc struct with
+ * co == COLORLESS.
+ *
+ * The non-dummy carc structs are of two types: plain arcs and LACON arcs.
+ * Plain arcs just store the transition color number as "co".  LACON arcs
+ * store the lookahead constraint number plus cnfa.ncolors as "co".  LACON
+ * arcs can be distinguished from plain by testing for co >= cnfa.ncolors.
  */
 
 struct carc {
     color co;			/* COLORLESS is list terminator */
-    int to;			/* state number */
+    int to;			/* next-state number */
 };
 
 struct cnfa {
@@ -313,7 +330,10 @@ struct cnfa {
     int post;			/* teardown state number */
     color bos[2];		/* colors, if any, assigned to BOS and BOL */
     color eos[2];		/* colors, if any, assigned to EOS and EOL */
+    char *stflags;		/* vector of per-state flags bytes */
+#define CNFA_NOPROGRESS	01	/* flag bit for a no-progress state */
     struct carc **states;	/* vector of pointers to outarc lists */
+    /* states[n] are pointers into a single malloc'd array of arcs */
     struct carc *arcs;		/* the area for the lists */
 };
 #define	ZAPCNFA(cnfa)	((cnfa).nstates = 0)
@@ -366,7 +386,7 @@ struct subre {
 #define	PREF(f)	((f)&NOPROP)
 #define	PREF2(f1, f2)	((PREF(f1) != 0) ? PREF(f1) : PREF(f2))
 #define	COMBINE(f1, f2)	(UP((f1)|(f2)) | PREF2(f1, f2))
-    short id;			/* ID of subre (1..ntree) */
+    short id;			/* ID of subre (1..ntree-1) */
     int subno;			/* subexpression number (for 'b' and '(') */
     short min;			/* min repetitions for iteration or backref */
     short max;			/* max repetitions for iteration or backref */
@@ -399,7 +419,7 @@ struct guts {
     size_t nsub;		/* copy of re_nsub */
     struct subre *tree;
     struct cnfa search;		/* for fast preliminary search */
-    int ntree;
+    int ntree;			/* number of subre's, plus one */
     struct colormap cmap;
     int FUNCPTR(compare, (const chr *, const chr *, size_t));
     struct subre *lacons;	/* lookahead-constraint vector */
