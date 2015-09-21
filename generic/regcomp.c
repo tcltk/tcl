@@ -83,9 +83,6 @@ static int lexdigits(struct vars *, int, int, int);
 static int brenext(struct vars *, pchr);
 static void skip(struct vars *);
 static chr newline(NOPARMS);
-#ifdef REG_DEBUG
-static const chr *ch(NOPARMS);
-#endif
 static chr chrnamed(struct vars *, const chr *, const chr *, pchr);
 /* === regc_color.c === */
 static void initcm(struct vars *, struct colormap *);
@@ -165,7 +162,7 @@ static void dumparc(struct arc *, struct state *, FILE *);
 #endif
 static void dumpcnfa(struct cnfa *, FILE *);
 #ifdef REG_DEBUG
-static void dumpcstate(int, struct carc *, struct cnfa *, FILE *);
+static void dumpcstate(int, struct cnfa *, FILE *);
 #endif
 /* === regc_cvec.c === */
 static struct cvec *clearcvec(struct cvec *);
@@ -210,7 +207,7 @@ struct vars {
     struct subre *tree;		/* subexpression tree */
     struct subre *treechain;	/* all tree nodes allocated */
     struct subre *treefree;	/* any free tree nodes */
-    int ntree;			/* number of tree nodes */
+    int ntree;			/* number of tree nodes, plus one */
     struct cvec *cv;		/* interface cvec */
     struct cvec *cv2;		/* utility cvec */
     struct subre *lacons;	/* lookahead-constraint vector */
@@ -223,13 +220,13 @@ struct vars {
 #define	EAT(t)	(SEE(t) && next(v))	/* if next is this, swallow it */
 #define	VISERR(vv)	((vv)->err != 0)/* have we seen an error yet? */
 #define	ISERR()	VISERR(v)
-#define	VERR(vv,e) \
-	((vv)->nexttype = EOS, ((vv)->err) ? (vv)->err : ((vv)->err = (e)))
+#define VERR(vv,e)	((vv)->nexttype = EOS, \
+			 (vv)->err = ((vv)->err ? (vv)->err : (e)))
 #define	ERR(e)	VERR(v, e)		/* record an error */
 #define	NOERR()	{if (ISERR()) return;}	/* if error seen, return */
 #define	NOERRN()	{if (ISERR()) return NULL;}	/* NOERR with retval */
 #define	NOERRZ()	{if (ISERR()) return 0;}	/* NOERR with retval */
-#define	INSIST(c, e)	((c) ? 0 : ERR(e))	/* if condition false, error */
+#define INSIST(c, e) do { if (!(c)) ERR(e); } while (0)	/* error if c false */
 #define	NOTE(b)	(v->re->re_info |= (b))		/* note visible condition */
 #define	EMPTYARC(x, y)	newarc(v->nfa, EMPTY, 0, x, y)
 
@@ -258,12 +255,14 @@ struct vars {
 	((a)->type == PLAIN || (a)->type == AHEAD || (a)->type == BEHIND)
 
 /* static function list */
-static struct fns functions = {
+static const struct fns functions = {
     rfree,			/* regfree insides */
 };
 
 /*
  - compile - compile regular expression
+ * Note: on failure, no resources remain allocated, so regfree()
+ * need not be applied to re.
  ^ int compile(regex_t *, const chr *, size_t, int);
  */
 int
@@ -1788,7 +1787,8 @@ freesrnode(
     }
     sr->flags = 0;
 
-    if (v != NULL) {
+    if (v != NULL && v->treechain != NULL) {
+	/* we're still parsing, maybe we can reuse the subre */
 	sr->left = v->treefree;
 	v->treefree = sr;
     } else {
@@ -1841,6 +1841,19 @@ numst(
 
 /*
  - markst - mark tree nodes as INUSE
+ * Note: this is a great deal more subtle than it looks.  During initial
+ * parsing of a regex, all subres are linked into the treechain list;
+ * discarded ones are also linked into the treefree list for possible reuse.
+ * After we are done creating all subres required for a regex, we run markst()
+ * then cleanst(), which results in discarding all subres not reachable from
+ * v->tree.  We then clear v->treechain, indicating that subres must be found
+ * by descending from v->tree.  This changes the behavior of freesubre(): it
+ * will henceforth FREE() unwanted subres rather than sticking them into the
+ * treefree list.  (Doing that any earlier would result in dangling links in
+ * the treechain list.)  This all means that freev() will clean up correctly
+ * if invoked before or after markst()+cleanst(); but it would not work if
+ * called partway through this state conversion, so we mustn't error out
+ * in or between these two functions.
  ^ static void markst(struct subre *);
  */
 static void
@@ -1947,24 +1960,26 @@ newlacon(
     struct state *end,
     int pos)
 {
-    struct subre *sub;
     int n;
+    struct subre *newlacons;
+    struct subre *sub;
 
     if (v->nlacons == 0) {
-	v->lacons = (struct subre *) MALLOC(2 * sizeof(struct subre));
 	n = 1;		/* skip 0th */
-	v->nlacons = 2;
+	newlacons = (struct subre *) MALLOC(2 * sizeof(struct subre));
     } else {
-	v->lacons = (struct subre *) REALLOC(v->lacons,
-		(v->nlacons+1)*sizeof(struct subre));
-	n = v->nlacons++;
+	n = v->nlacons;
+	newlacons = (struct subre *) REALLOC(v->lacons,
+					     (n + 1) * sizeof(struct subre));
     }
 
-    if (v->lacons == NULL) {
+    if (newlacons == NULL) {
 	ERR(REG_ESPACE);
 	return 0;
     }
 
+    v->lacons = newlacons;
+    v->nlacons = n + 1;
     sub = &v->lacons[n];
     sub->begin = begin;
     sub->end = end;
@@ -2012,18 +2027,20 @@ rfree(
     g = (struct guts *) re->re_guts;
     re->re_guts = NULL;
     re->re_fns = NULL;
-    g->magic = 0;
-    freecm(&g->cmap);
-    if (g->tree != NULL) {
-	freesubre(NULL, g->tree);
+    if (g != NULL) {
+	g->magic = 0;
+	freecm(&g->cmap);
+	if (g->tree != NULL) {
+	    freesubre(NULL, g->tree);
+	}
+	if (g->lacons != NULL) {
+	    freelacons(g->lacons, g->nlacons);
+	}
+	if (!NULLCNFA(g->search)) {
+	    freecnfa(&g->search);
+	}
+	FREE(g);
     }
-    if (g->lacons != NULL) {
-	freelacons(g->lacons, g->nlacons);
-    }
-    if (!NULLCNFA(g->search)) {
-	freecnfa(&g->search);
-    }
-    FREE(g);
 }
 
 /*
@@ -2055,7 +2072,7 @@ dump(
 
     fprintf(f, "\n\n\n========= DUMP ==========\n");
     fprintf(f, "nsub %d, info 0%lo, csize %d, ntree %d\n",
-	    re->re_nsub, re->re_info, re->re_csize, g->ntree);
+	    (int) re->re_nsub, re->re_info, re->re_csize, g->ntree);
 
     dumpcolors(&g->cmap, f);
     if (!NULLCNFA(g->search)) {

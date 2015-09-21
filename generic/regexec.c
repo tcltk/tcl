@@ -107,12 +107,13 @@ struct vars {
     chr *start;			/* start of string */
     chr *stop;			/* just past end of string */
     int err;			/* error code if any (0 none) */
+    struct dfa **subdfas;	/* per-subre DFAs */
     struct smalldfa dfa1;
     struct smalldfa dfa2;
 };
 #define	VISERR(vv) ((vv)->err != 0)	/* have we seen an error yet? */
 #define	ISERR()	VISERR(v)
-#define	VERR(vv,e) (((vv)->err) ? (vv)->err : ((vv)->err = (e)))
+#define VERR(vv,e) ((vv)->err = ((vv)->err ? (vv)->err : (e)))
 #define	ERR(e)	VERR(v, e)	/* record an error */
 #define	NOERR()	{if (ISERR()) return v->err;}	/* if error seen, return it */
 #define	OFF(p)	((p) - v->start)
@@ -125,6 +126,7 @@ struct vars {
 /* automatically gathered by fwd; do not hand-edit */
 /* === regexec.c === */
 int exec(regex_t *, const chr *, size_t, rm_detail_t *, size_t, regmatch_t [], int);
+static struct dfa *getsubdfa(struct vars *, struct subre *);
 static int simpleFind(struct vars *const, struct cnfa *const, struct colormap *const);
 static int complicatedFind(struct vars *const, struct cnfa *const, struct colormap *const);
 static int complicatedFindLoop(struct vars *const, struct cnfa *const, struct colormap *const, struct dfa *const, struct dfa *const, chr **const);
@@ -171,8 +173,11 @@ exec(
     AllocVars(v);
     int st, backref;
     size_t n;
+    size_t i;
 #define	LOCALMAT	20
     regmatch_t mat[LOCALMAT];
+#define LOCALDFAS	40
+    struct dfa *subdfas[LOCALDFAS];
 
     /*
      * Sanity checks.
@@ -230,6 +235,20 @@ exec(
     v->start = (chr *)string;
     v->stop = (chr *)string + len;
     v->err = 0;
+    assert(v->g->ntree >= 0);
+    n = (size_t) v->g->ntree;
+    if (n <= LOCALDFAS)
+	v->subdfas = subdfas;
+    else
+	v->subdfas = (struct dfa **) MALLOC(n * sizeof(struct dfa *));
+    if (v->subdfas == NULL) {
+	if (v->pmatch != pmatch && v->pmatch != mat)
+	    FREE(v->pmatch);
+	FreeVars(v);
+	return REG_ESPACE;
+    }
+    for (i = 0; i < n; i++)
+	v->subdfas[i] = NULL;
 
     /*
      * Do it.
@@ -259,8 +278,32 @@ exec(
     if (v->pmatch != pmatch && v->pmatch != mat) {
 	FREE(v->pmatch);
     }
+    n = (size_t) v->g->ntree;
+    for (i = 0; i < n; i++) {
+	if (v->subdfas[i] != NULL)
+	    freeDFA(v->subdfas[i]);
+    }
+    if (v->subdfas != subdfas)
+	FREE(v->subdfas);
     FreeVars(v);
     return st;
+}
+
+/*
+ - getsubdfa - create or re-fetch the DFA for a subre node
+ * We only need to create the DFA once per overall regex execution.
+ * The DFA will be freed by the cleanup step in exec().
+ */
+static struct dfa *
+getsubdfa(struct vars * v,
+	  struct subre * t)
+{
+    if (v->subdfas[t->id] == NULL) {
+	v->subdfas[t->id] = newDFA(v, &t->cnfa, &v->g->cmap, DOMALLOC);
+	if (ISERR())
+	    return NULL;
+    }
+    return v->subdfas[t->id];
 }
 
 /*
@@ -327,7 +370,10 @@ simpleFind(
 	} else {
 	    end = longest(v, d, begin, v->stop, &hitend);
 	}
-	NOERR();
+	if (ISERR()) {
+	    freeDFA(d);
+	    return v->err;
+	}
 	if (hitend && cold == NULL) {
 	    cold = begin;
 	}
@@ -470,6 +516,7 @@ complicatedFindLoop(
 		}
 		if (er != REG_NOMATCH) {
 		    ERR(er);
+		    *coldp = cold;
 		    return er;
 		}
 		if ((shorter) ? end == estop : end == begin) {
@@ -636,7 +683,7 @@ cdissect(
 }
 
 /*
- - ccondissect - concatenation subexpression matches (with complications)
+ - ccondissect - dissect match for concatenation node
  ^ static int ccondissect(struct vars *, struct subre *, chr *, chr *);
  */
 static int			/* regexec return code */
@@ -654,15 +701,11 @@ ccondissect(
     assert(t->right != NULL && t->right->cnfa.nstates > 0);
     assert(!(t->left->flags & SHORTER));
 
-    d = newDFA(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
-    if (ISERR()) {
-	return v->err;
-    }
-    d2 = newDFA(v, &t->right->cnfa, &v->g->cmap, DOMALLOC);
-    if (ISERR()) {
-	freeDFA(d);
-	return v->err;
-    }
+    d = getsubdfa(v, t->left);
+    NOERR();
+    d2 = getsubdfa(v, t->right);
+    NOERR();
+
     MDEBUG(("cConcat %d\n", t->id));
 
     /*
@@ -670,8 +713,6 @@ ccondissect(
      */
     mid = longest(v, d, begin, end, (int *) NULL);
     if (mid == NULL) {
-	freeDFA(d);
-	freeDFA(d2);
 	return REG_NOMATCH;
     }
     MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
@@ -696,14 +737,10 @@ ccondissect(
 		     */
 
 		    MDEBUG(("successful\n"));
-		    freeDFA(d);
-		    freeDFA(d2);
 		    return REG_OKAY;
 		}
 	    }
 	    if (er != REG_NOMATCH) {
-		freeDFA(d);
-		freeDFA(d2);
 		return er;
 	    }
 	}
@@ -718,8 +755,6 @@ ccondissect(
 	     */
 
 	    MDEBUG(("%d no midpoint\n", t->id));
-	    freeDFA(d);
-	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	mid = longest(v, d, begin, mid-1, NULL);
@@ -729,8 +764,6 @@ ccondissect(
 	     */
 
 	    MDEBUG(("%d failed midpoint\n", t->id));
-	    freeDFA(d);
-	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	MDEBUG(("%d: new midpoint %ld\n", t->id, LOFF(mid)));
@@ -758,15 +791,11 @@ crevcondissect(
     assert(t->right != NULL && t->right->cnfa.nstates > 0);
     assert(t->left->flags&SHORTER);
 
-    d = newDFA(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
-    if (ISERR()) {
-	return v->err;
-    }
-    d2 = newDFA(v, &t->right->cnfa, &v->g->cmap, DOMALLOC);
-    if (ISERR()) {
-	freeDFA(d);
-	return v->err;
-    }
+    d = getsubdfa(v, t->left);
+    NOERR();
+    d2 = getsubdfa(v, t->right);
+    NOERR();
+
     MDEBUG(("crevcon %d\n", t->id));
 
     /*
@@ -775,8 +804,6 @@ crevcondissect(
 
     mid = shortest(v, d, begin, begin, end, (chr **) NULL, (int *) NULL);
     if (mid == NULL) {
-	freeDFA(d);
-	freeDFA(d2);
 	return REG_NOMATCH;
     }
     MDEBUG(("tentative midpoint %ld\n", LOFF(mid)));
@@ -801,14 +828,10 @@ crevcondissect(
 		     */
 
 		    MDEBUG(("successful\n"));
-		    freeDFA(d);
-		    freeDFA(d2);
 		    return REG_OKAY;
 		}
 	    }
 	    if (er != REG_NOMATCH) {
-		freeDFA(d);
-		freeDFA(d2);
 		return er;
 	    }
 	}
@@ -823,8 +846,6 @@ crevcondissect(
 	     */
 
 	    MDEBUG(("%d no midpoint\n", t->id));
-	    freeDFA(d);
-	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	mid = shortest(v, d, begin, mid+1, end, NULL, NULL);
@@ -834,8 +855,6 @@ crevcondissect(
 	     */
 
 	    MDEBUG(("%d failed midpoint\n", t->id));
-	    freeDFA(d);
-	    freeDFA(d2);
 	    return REG_NOMATCH;
 	}
 	MDEBUG(("%d: new midpoint %ld\n", t->id, LOFF(mid)));
@@ -943,17 +962,15 @@ caltdissect(
 
 	MDEBUG(("calt n%d\n", t->id));
 
-	d = newDFA(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
+	d = getsubdfa(v, t->left);
 	NOERR();
 	if (longest(v, d, begin, end, (int *) NULL) == end) {
-	    freeDFA(d);
 	    MDEBUG(("calt matched\n"));
 	    er = cdissect(v, t->left, begin, end);
 	    if (er != REG_NOMATCH) {
 		return er;
 	    }
 	}
-	freeDFA(d);
 
 	t = t->right;
     }
@@ -1017,7 +1034,7 @@ citerdissect(struct vars * v,
 	return REG_ESPACE;
     endpts[0] = begin;
 
-    d = newDFA(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
+    d = getsubdfa(v, t->left);
     if (ISERR()) {
 	FREE(endpts);
 	return v->err;
@@ -1094,7 +1111,6 @@ citerdissect(struct vars * v,
 	    if (er == REG_NOMATCH)
 		break;
 	    /* oops, something failed */
-	    freeDFA(d);
 	    FREE(endpts);
 	    return er;
 	}
@@ -1102,7 +1118,6 @@ citerdissect(struct vars * v,
 	if (i > k) {
 	    /* satisfaction */
 	    MDEBUG(("%d successful\n", t->id));
-	    freeDFA(d);
 	    FREE(endpts);
 	    return REG_OKAY;
 	}
@@ -1132,7 +1147,6 @@ citerdissect(struct vars * v,
 
     /* all possibilities exhausted */
     MDEBUG(("%d failed\n", t->id));
-    freeDFA(d);
     FREE(endpts);
     return REG_NOMATCH;
 }
@@ -1193,7 +1207,7 @@ creviterdissect(struct vars * v,
 	return REG_ESPACE;
     endpts[0] = begin;
 
-    d = newDFA(v, &t->left->cnfa, &v->g->cmap, DOMALLOC);
+    d = getsubdfa(v, t->left);
     if (ISERR()) {
 	FREE(endpts);
 	return v->err;
@@ -1276,7 +1290,6 @@ creviterdissect(struct vars * v,
 	    if (er == REG_NOMATCH)
 		break;
 	    /* oops, something failed */
-	    freeDFA(d);
 	    FREE(endpts);
 	    return er;
 	}
@@ -1284,7 +1297,6 @@ creviterdissect(struct vars * v,
 	if (i > k) {
 	    /* satisfaction */
 	    MDEBUG(("%d successful\n", t->id));
-	    freeDFA(d);
 	    FREE(endpts);
 	    return REG_OKAY;
 	}
@@ -1308,7 +1320,6 @@ creviterdissect(struct vars * v,
 
     /* all possibilities exhausted */
     MDEBUG(("%d failed\n", t->id));
-    freeDFA(d);
     FREE(endpts);
     return REG_NOMATCH;
 }
