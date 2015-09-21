@@ -259,7 +259,7 @@ newcolor(
 	    return COLORLESS;		/* too many colors */
 	}
 	n = cm->ncds * 2;
-	if (n < MAX_COLOR + 1) {
+	if (n > MAX_COLOR + 1) {
 	    n = MAX_COLOR + 1;
 	}
 	if (cm->cd == cm->cdspace) {
