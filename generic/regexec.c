@@ -622,10 +622,10 @@ subset(
  */
 static int			/* regexec return code */
 cdissect(
-    struct vars *const v,
-    struct subre *const t,
-    chr *const begin,		/* beginning of relevant substring */
-    chr *const end)		/* end of same */
+    struct vars *v,
+    struct subre *t,
+    chr *begin,		/* beginning of relevant substring */
+    chr *end)		/* end of same */
 {
     int er;
 
@@ -688,10 +688,10 @@ cdissect(
  */
 static int			/* regexec return code */
 ccondissect(
-    struct vars *const v,
-    struct subre *const t,
-    chr *const begin,		/* beginning of relevant substring */
-    chr *const end)		/* end of same */
+    struct vars *v,
+    struct subre *t,
+    chr *begin,		/* beginning of relevant substring */
+    chr *end)		/* end of same */
 {
     struct dfa *d, *d2;
     chr *mid;
@@ -778,10 +778,10 @@ ccondissect(
  */
 static int			/* regexec return code */
 crevcondissect(
-    struct vars *const v,
-    struct subre *const t,
-    chr *const begin,		/* beginning of relevant substring */
-    chr *const end)		/* end of same */
+    struct vars *v,
+    struct subre *t,
+    chr *begin,		/* beginning of relevant substring */
+    chr *end)		/* end of same */
 {
     struct dfa *d, *d2;
     chr *mid;
@@ -869,10 +869,10 @@ crevcondissect(
  */
 static int			/* regexec return code */
 cbrdissect(
-    struct vars *const v,
-    struct subre *const t,
-    chr *const begin,		/* beginning of relevant substring */
-    chr *const end)		/* end of same */
+    struct vars *v,
+    struct subre *t,
+    chr *begin,		/* beginning of relevant substring */
+    chr *end)		/* end of same */
 {
     int n = t->subno, min = t->min, max = t->max;
     size_t numreps;
@@ -926,7 +926,7 @@ cbrdissect(
     if (tlen % brlen != 0)
 	return REG_NOMATCH;
     numreps = tlen / brlen;
-    if (numreps < min || (numreps > max && max != DUPINF))
+    if (numreps < (size_t)min || (numreps > (size_t)max && max != DUPINF))
 	return REG_NOMATCH;
 
     /* okay, compare the actual string contents */
@@ -947,10 +947,10 @@ cbrdissect(
  */
 static int			/* regexec return code */
 caltdissect(
-    struct vars *const v,
+    struct vars *v,
     struct subre *t,
-    chr *const begin,		/* beginning of relevant substring */
-    chr *const end)		/* end of same */
+    chr *begin,		/* beginning of relevant substring */
+    chr *end)		/* end of same */
 {
     struct dfa *d;
     int er;
@@ -1025,9 +1025,9 @@ citerdissect(struct vars * v,
      * sub-match endpoints in endpts[1..max_matches].
      */
     max_matches = end - begin;
-    if (max_matches > t->max && t->max != DUPINF)
+    if (max_matches > (size_t)t->max && t->max != DUPINF)
 	max_matches = t->max;
-    if (max_matches < min_matches)
+    if (max_matches < (size_t)min_matches)
 	max_matches = min_matches;
     endpts = (chr **) MALLOC((max_matches + 1) * sizeof(chr *));
     if (endpts == NULL)
@@ -1074,7 +1074,7 @@ citerdissect(struct vars * v,
 
 	if (endpts[k] != end) {
 	    /* haven't reached end yet, try another iteration if allowed */
-	    if (k >= max_matches) {
+	    if ((size_t)k >= max_matches) {
 		/* must try to shorten some previous match */
 		k--;
 		goto backtrack;
@@ -1198,9 +1198,9 @@ creviterdissect(struct vars * v,
      * sub-match endpoints in endpts[1..max_matches].
      */
     max_matches = end - begin;
-    if (max_matches > t->max && t->max != DUPINF)
+    if (max_matches > (size_t)t->max && t->max != DUPINF)
 	max_matches = t->max;
-    if (max_matches < min_matches)
+    if (max_matches < (size_t)min_matches)
 	max_matches = min_matches;
     endpts = (chr **) MALLOC((max_matches + 1) * sizeof(chr *));
     if (endpts == NULL)
@@ -1238,7 +1238,7 @@ creviterdissect(struct vars * v,
 	    limit++;
 
 	/* if this is the last allowed sub-match, it must reach to the end */
-	if (k >= max_matches)
+	if ((size_t)k >= max_matches)
 	    limit = end;
 
 	/* try to find an endpoint for the k'th sub-match */
@@ -1258,7 +1258,7 @@ creviterdissect(struct vars * v,
 
 	if (endpts[k] != end) {
 	    /* haven't reached end yet, try another iteration if allowed */
-	    if (k >= max_matches) {
+	    if ((size_t)k >= max_matches) {
 		/* must try to lengthen some previous match */
 		k--;
 		goto backtrack;
