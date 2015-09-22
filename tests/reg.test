@@ -663,7 +663,13 @@ expectError	14.19 -		{a(b)c\2}	ESUBREG
 expectMatch	14.20 bR	{a\(b*\)c\1}	abbcbb	abbcbb	bb
 expectMatch	14.21 RP	{^([bc])\1*$}	bbb	bbb	b
 expectMatch	14.22 RP	{^([bc])\1*$}	ccc	ccc	c
-knownBug expectNomatch 14.23 R	{^([bc])\1*$}	bcb
+expectNomatch	14.23 RP	{^([bc])\1*$}	bcb
+expectMatch	14.24 LRP	{^(\w+)( \1)+$}	{abc abc abc} {abc abc abc} abc { abc}
+expectNomatch	14.25 LRP	{^(\w+)( \1)+$}	{abc abd abc}
+expectNomatch	14.26 LRP	{^(\w+)( \1)+$}	{abc abc abd}
+expectMatch	14.27 RP	{^(.+)( \1)+$}	{abc abc abc} {abc abc abc} abc { abc}
+expectNomatch	14.28 RP	{^(.+)( \1)+$}	{abc abd abc}
+expectNomatch	14.29 RP	{^(.+)( \1)+$}	{abc abc abd}
 
 
 doing 15 "octal escapes vs back references"
@@ -790,6 +796,7 @@ expectMatch	21.31 LP	"\\y(\\w+)\\y"	"-- abc-"	"abc"	"abc"
 expectMatch	21.32 -		a((b|c)d+)+	abacdbd	acdbd	bd	b
 expectMatch	21.33 N		(.*).*		abc	abc	abc
 expectMatch	21.34 N		(a*)*		bc	""	""
+expectMatch	21.35 M		{ TO (([a-z0-9._]+|"([^"]+|"")+")+)}	{asd TO foo}	{ TO foo} foo o {}
 
 
 doing 22 "multicharacter collating elements"
@@ -842,6 +849,7 @@ expectMatch	24.9  -		3z*		123zzzz456	3zzzz
 expectMatch	24.10 PT	3z*?		123zzzz456	3
 expectMatch	24.11 -		z*4		123zzzz456	zzzz4
 expectMatch	24.12 PT	z*?4		123zzzz456	zzzz4
+expectMatch	24.13 PT	{^([^/]+?)(?:/([^/]+?))(?:/([^/]+?))?$}	{foo/bar/baz}	{foo/bar/baz} {foo} {bar} {baz}
 
 
 doing 25 "mixed quantifiers"

@@ -3001,7 +3001,7 @@ TclNativeCreateNativeRep(
     }
 
   done:
-    
+
     TclDecrRefCount(validPathPtr);
     return nativePathPtr;
 }
