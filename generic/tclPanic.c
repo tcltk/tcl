@@ -15,7 +15,7 @@
 
 #include "tclInt.h"
 #if defined(_WIN32) || defined(__CYGWIN__)
-    MODULE_SCOPE void tclWinDebugPanic(const char *format, ...);
+    MODULE_SCOPE TCL_NORETURN void tclWinDebugPanic(const char *format, ...);
 #endif
 
 /*
@@ -24,9 +24,9 @@
  */
 
 #if defined(__CYGWIN__)
-static Tcl_PanicProc *panicProc = tclWinDebugPanic;
+static TCL_NORETURN Tcl_PanicProc *panicProc = tclWinDebugPanic;
 #else
-static Tcl_PanicProc *panicProc = NULL;
+static TCL_NORETURN1 Tcl_PanicProc *panicProc = NULL;
 #endif
 
 /*
@@ -47,7 +47,7 @@ static Tcl_PanicProc *panicProc = NULL;
 
 void
 Tcl_SetPanicProc(
-    Tcl_PanicProc *proc)
+    TCL_NORETURN1 Tcl_PanicProc *proc)
 {
 #if defined(_WIN32)
     /* tclWinDebugPanic only installs if there is no panicProc yet. */
