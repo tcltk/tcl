@@ -529,6 +529,10 @@ lflags	= -nologo -machine:$(MACHINE) $(LINKERFLAGS) $(ldebug)
 lflags	= $(lflags) -profile
 !endif
 
+!if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
+lflags	= $(lflags) -nodefaultlib:libucrt.lib
+!endif
+
 !if $(ALIGN98_HACK) && !$(STATIC_BUILD)
 ### Align sections for PE size savings.
 lflags	= $(lflags) -opt:nowin98
@@ -552,6 +556,9 @@ baselibs   = netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib
 !if $(VCVERSION) > 1399 && $(VCVERSION) < 1500
 baselibs   = $(baselibs) bufferoverflowU.lib
 !endif
+!endif
+!if $(MSVCRT) && !($(DEBUG) && !$(UNCHECKED)) && $(VCVERSION) >= 1900
+baselibs   = $(baselibs) ucrt.lib
 !endif
 
 #---------------------------------------------------------------------

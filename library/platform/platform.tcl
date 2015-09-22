@@ -323,7 +323,7 @@ proc ::platform::patterns {id} {
 	    lappend res macosx-universal macosx-i386-x86_64
 	}
 	macosx*-*    {
-	    # 10.5+ 
+	    # 10.5+
 	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
 
 		switch -exact -- $cpu {

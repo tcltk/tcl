@@ -49,6 +49,7 @@ newnfa(
 
     nfa = (struct nfa *) MALLOC(sizeof(struct nfa));
     if (nfa == NULL) {
+	ERR(REG_ESPACE);
 	return NULL;
     }
 
@@ -1651,13 +1652,16 @@ compact(
     narcs = 0;
     for (s = nfa->states; s != NULL; s = s->next) {
 	nstates++;
-	narcs += 1 + s->nouts + 1;
-	/* 1 as a fake for flags, nouts for arcs, 1 as endmarker */
+	narcs += s->nouts + 1;	/* need one extra for endmarker */
     }
 
+    cnfa->stflags = (char *) MALLOC(nstates * sizeof(char));
     cnfa->states = (struct carc **) MALLOC(nstates * sizeof(struct carc *));
     cnfa->arcs = (struct carc *) MALLOC(narcs * sizeof(struct carc));
-    if (cnfa->states == NULL || cnfa->arcs == NULL) {
+    if (cnfa->stflags == NULL || cnfa->states == NULL || cnfa->arcs == NULL) {
+	if (cnfa->stflags != NULL) {
+	    FREE(cnfa->stflags);
+	}
 	if (cnfa->states != NULL) {
 	    FREE(cnfa->states);
 	}
@@ -1680,9 +1684,8 @@ compact(
     ca = cnfa->arcs;
     for (s = nfa->states; s != NULL; s = s->next) {
 	assert((size_t) s->no < nstates);
+	cnfa->stflags[s->no] = 0;
 	cnfa->states[s->no] = ca;
-	ca->co = 0;		/* clear and skip flags "arc" */
-	ca++;
 	first = ca;
 	for (a = s->outs; a != NULL; a = a->outchain) {
 	    switch (a->type) {
@@ -1716,9 +1719,9 @@ compact(
      */
 
     for (a = nfa->pre->outs; a != NULL; a = a->outchain) {
-	cnfa->states[a->to->no]->co = 1;
+	cnfa->stflags[a->to->no] = CNFA_NOPROGRESS;
     }
-    cnfa->states[nfa->pre->no]->co = 1;
+    cnfa->stflags[nfa->pre->no] = CNFA_NOPROGRESS;
 }
 
 /*
@@ -1762,6 +1765,7 @@ freecnfa(
 {
     assert(cnfa->nstates != 0);	/* not empty already */
     cnfa->nstates = 0;
+    FREE(cnfa->stflags);
     FREE(cnfa->states);
     FREE(cnfa->arcs);
 }
@@ -1984,7 +1988,7 @@ dumpcnfa(
     }
     fprintf(f, "\n");
     for (st = 0; st < cnfa->nstates; st++) {
-	dumpcstate(st, cnfa->states[st], cnfa, f);
+	dumpcstate(st, cnfa, f);
     }
     fflush(f);
 #endif
@@ -1997,25 +2001,24 @@ dumpcnfa(
 
 /*
  - dumpcstate - dump a compacted-NFA state in human-readable form
- ^ static void dumpcstate(int, struct carc *, struct cnfa *, FILE *);
+ ^ static void dumpcstate(int, struct cnfa *, FILE *);
  */
 static void
 dumpcstate(
     int st,
-    struct carc *ca,
     struct cnfa *cnfa,
     FILE *f)
 {
-    int i;
+    struct carc *ca;
     int pos;
 
-    fprintf(f, "%d%s", st, (ca[0].co) ? ":" : ".");
+    fprintf(f, "%d%s", st, (cnfa->stflags[st] & CNFA_NOPROGRESS) ? ":" : ".");
     pos = 1;
-    for (i = 1; ca[i].co != COLORLESS; i++) {
-	if (ca[i].co < cnfa->ncolors) {
-	    fprintf(f, "\t[%ld]->%d", (long) ca[i].co, ca[i].to);
+    for (ca = cnfa->states[st]; ca->co != COLORLESS; ca++) {
+	if (ca->co < cnfa->ncolors) {
+	    fprintf(f, "\t[%ld]->%d", (long) ca->co, ca->to);
 	} else {
-	    fprintf(f, "\t:%ld:->%d", (long) ca[i].co-cnfa->ncolors,ca[i].to);
+	    fprintf(f, "\t:%ld:->%d", (long) (ca->co - cnfa->ncolors), ca->to);
 	}
 	if (pos == 5) {
 	    fprintf(f, "\n");
@@ -2024,7 +2027,7 @@ dumpcstate(
 	    pos++;
 	}
     }
-    if (i == 1 || pos != 1) {
+    if (ca == cnfa->states[st] || pos != 1) {
 	fprintf(f, "\n");
     }
     fflush(f);
