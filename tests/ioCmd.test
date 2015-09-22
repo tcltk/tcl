@@ -349,7 +349,7 @@ test iocmd-8.19 {fconfigure command / win tty channel} -constraints {nonPortable
 	close $tty
     }
 } -returnCodes error -result {bad option "-blah": should be one of -blocking, -buffering, -buffersize, -encoding, -eofchar, -translation, -mode, -handshake, -pollinterval, -sysbuffer, -timeout, -ttycontrol, or -xchar}
-# TODO: Test parsing of serial channel options (nonportable, since requires an
+# TODO: Test parsing of serial channel options (nonPortable, since requires an
 # open channel to work with).
 
 test iocmd-9.1 {eof command} {
@@ -3770,7 +3770,7 @@ test iocmd.tf-32.0 {origin thread of moved channel gone} -match glob -body {
 # The test iocmd.tf-32.1 unavoidably exhibits a memory leak.  We are testing
 # the ability of the reflected channel system to react to the situation where
 # the thread in which the driver routines runs exits during driver operations.
-# In this case, thread exit handlers signal back to the owner thread so that the 
+# In this case, thread exit handlers signal back to the owner thread so that the
 # channel operation does not hang.  There's no way to test this without actually
 # exiting a thread in mid-operation, and that action is unavoidably leaky (which
 # is why [thread::exit] is advised against).
