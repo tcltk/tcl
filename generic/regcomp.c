@@ -593,13 +593,15 @@ makesearch(
 		break;
 	    }
 	}
+ 
+	/*
+	 * We want to mark states as being in the list already by having non
+	 * NULL tmp fields, but we can't just store the old slist value in tmp
+	 * because that doesn't work for the first such state.  Instead, the
+	 * first list entry gets its own address in tmp.
+	 */
 	if (b != NULL && s->tmp == NULL) {
-	    /*
-	     * Must be split if not already in the list (fixes bugs 505048,
-	     * 230589, 840258, 504785).
-	     */
-
-	    s->tmp = slist;
+	    s->tmp = (slist != NULL) ? slist : s;
 	    slist = s;
 	}
     }
@@ -620,7 +622,7 @@ makesearch(
 		freearc(nfa, a);
 	    }
 	}
-	s2 = s->tmp;
+	s2 = (s->tmp != s) ? s->tmp : NULL;
 	s->tmp = NULL;		/* clean up while we're at it */
     }
 }
@@ -982,6 +984,7 @@ parseqatom(
 	NOERR();
 	assert(v->nextvalue > 0);
 	atom = subre(v, 'b', BACKR, lp, rp);
+	NOERR();
 	subno = v->nextvalue;
 	atom->subno = subno;
 	EMPTYARC(lp, rp);	/* temporarily, so there's something */
@@ -1129,6 +1132,7 @@ parseqatom(
      */
 
     t = subre(v, '.', COMBINE(qprefer, atom->flags), lp, rp);
+    NOERR();
     t->left = atom;
     atomp = &t->left;
 
@@ -1142,6 +1146,7 @@ parseqatom(
 
     assert(top->op == '=' && top->left == NULL && top->right == NULL);
     top->left = subre(v, '=', top->flags, top->begin, lp);
+    NOERR();
     top->op = '.';
     top->right = t;
 
