@@ -783,6 +783,13 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    EXESUFFIX="\${DBGX}.exe"
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	    SHLIB_LD_LIBS='${LIBS}'
+	    case "x`echo \${VisualStudioVersion}`" in
+		x14*)
+		    lflags="${lflags} -nodefaultlib:libucrt.lib"
+		    ;;
+		*)
+		    ;;
+	    esac
 	fi
 	# DLLSUFFIX is separate because it is the building block for
 	# users of tclConfig.sh that may build shared or static.
@@ -817,6 +824,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	fi
 
 	LIBS="user32.lib advapi32.lib ws2_32.lib"
+
+	case "x`echo \${VisualStudioVersion}`" in
+		x14*)
+		    LIBS="$LIBS ucrt.lib"
+		    ;;
+		*)
+		    ;;
+	esac
+
 	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the
@@ -831,7 +847,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="-nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
+	    lflags="${lflags} -nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
 	    LINKBIN="\"${PATH64}/link.exe\""
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
@@ -843,7 +859,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
 	    # -O2 - create fast code (/Og /Oi /Ot /Oy /Ob2 /Gs /GF /Gy)
 	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
-	    lflags="-nologo"
+	    lflags="${lflags} -nologo"
 	    LINKBIN="link"
 	fi
 
