@@ -582,6 +582,8 @@ proc genStubs::makeSlot {name decl index} {
     }
     if {[string range $rtype end-8 end] eq "__stdcall"} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
+    } elseif {[string range $rtype 0 11] eq "TCL_NORETURN"} {
+	append text "TCL_NORETURN1 " [string trim [string range $rtype 12 end]] " (*" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
