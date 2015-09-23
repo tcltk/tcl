@@ -5336,6 +5336,7 @@ DoReadChars(
 	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
 	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
 
+	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -5347,6 +5348,7 @@ DoReadChars(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -7929,6 +7931,11 @@ Tcl_NotifyChannel(
      */
 
     if (chanPtr->typePtr != NULL) {
+	/*
+	 * TODO: This call may not be needed.  If a handler induced a
+	 * change in interest, that handler should have made its own
+	 * UpdateInterest() call, one would think.
+	 */
 	UpdateInterest(chanPtr);
     }
 
@@ -9065,6 +9072,7 @@ DoRead(
 	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
 	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
 
+	/* TODO: Don't need this call */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -9076,6 +9084,7 @@ DoRead(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	/* TODO: Don't need this call */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -9142,7 +9151,6 @@ DoRead(
 	     */
 
 	    if (bytesToRead == 0) {
-		UpdateInterest(chanPtr);
 		break;
 	    }
 
@@ -9151,7 +9159,6 @@ DoRead(
 	     */
 
 	    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
-		UpdateInterest(chanPtr);
 		break;
 	    }
 
@@ -9176,7 +9183,6 @@ DoRead(
 		} else if (GotFlag(statePtr, CHANNEL_BLOCKED)) {
 		    /* ...and we cannot get more now. */
 		    SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
-		    UpdateInterest(chanPtr);
 		    break;
 		} else {
 		    /* ... so we need to get some. */
@@ -9228,6 +9234,7 @@ DoRead(
 		|| Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
 	assert( !(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
 		== (CHANNEL_EOF|CHANNEL_BLOCKED)) );
+    UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
     return (int)(p - dst);
 }
