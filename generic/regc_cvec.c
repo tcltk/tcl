@@ -81,6 +81,7 @@ addchr(
     struct cvec *cv,		/* character vector */
     pchr c)			/* character to add */
 {
+    assert(cv->nchrs < cv->chrspace);
     cv->chrs[cv->nchrs++] = (chr)c;
 }
 
