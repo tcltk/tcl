@@ -114,6 +114,7 @@ typedef struct CopyState {
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
     int refCount;		/* Claim count on the struct */
+    int bufInUse;		/* Flag to govern access to buffer */
     int bufSize;		/* Size of appended buffer. */
     char buffer[1];		/* Copy buffer, this must be the last
                                  * field. */
@@ -8661,6 +8662,7 @@ TclCopyChannel(
     }
     csPtr->cmdPtr = cmdPtr;
     csPtr->refCount = 1;
+    csPtr->bufInUse = 0;
 
     inStatePtr->csPtrR  = csPtr;
     PreserveCopyState(csPtr);
@@ -8717,6 +8719,9 @@ CopyData(
 				/* Encoding control */
     int underflow;		/* Input underflow */
 
+    if (csPtr->bufInUse) {
+	return TCL_OK;
+    }
     PreserveCopyState(csPtr);
 
     inChan	= (Tcl_Channel) csPtr->readPtr;
@@ -8780,6 +8785,7 @@ CopyData(
 		sizeb = csPtr->toRead;
 	    }
 
+	    csPtr->bufInUse = 1;
 	    if (inBinary || sameEncoding) {
 		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb);
 	    } else {
@@ -8851,6 +8857,7 @@ CopyData(
 	} else {
 	    sizeb = WriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
+	csPtr->bufInUse = 0;
 
 	/*
 	 * [Bug 2895565]. At this point 'size' still contains the number of
