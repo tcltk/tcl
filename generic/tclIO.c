@@ -113,10 +113,31 @@ typedef struct CopyState {
     Tcl_WideInt total;		/* Total bytes transferred (written). */
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
+    int refCount;		/* Claim count on the struct */
     int bufSize;		/* Size of appended buffer. */
     char buffer[1];		/* Copy buffer, this must be the last
                                  * field. */
 } CopyState;
+
+static void
+PreserveCopyState(
+    CopyState *csPtr)
+{
+    csPtr->refCount++;
+fprintf(stdout, "PRESERVE -> %d %p\n", csPtr->refCount, csPtr); fflush(stdout);
+}
+
+static void
+ReleaseCopyState(
+    CopyState *csPtr)
+{
+fprintf(stdout, "%d -> RELEASE %p\n", csPtr->refCount, csPtr); fflush(stdout);
+    if (--csPtr->refCount) {
+	return;
+    }
+fprintf(stdout, "FREE %p\n", csPtr); fflush(stdout);
+    ckfree((char *) csPtr);
+}
 
 /*
  * All static variables used in this file are collected into a single instance
@@ -8642,9 +8663,12 @@ TclCopyChannel(
 	Tcl_IncrRefCount(cmdPtr);
     }
     csPtr->cmdPtr = cmdPtr;
+    csPtr->refCount = 1;
 
     inStatePtr->csPtrR  = csPtr;
+    PreserveCopyState(csPtr);
     outStatePtr->csPtrW = csPtr;
+    PreserveCopyState(csPtr);
 
     /*
      * Special handling of -size 0 async transfers, so that the -command is
@@ -8695,6 +8719,9 @@ CopyData(
     int inBinary, outBinary, sameEncoding;
 				/* Encoding control */
     int underflow;		/* Input underflow */
+
+fprintf(stdout, "CD: %p\n", csPtr); fflush(stdout);
+    PreserveCopyState(csPtr);
 
     inChan	= (Tcl_Channel) csPtr->readPtr;
     outChan	= (Tcl_Channel) csPtr->writePtr;
@@ -8807,6 +8834,8 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
+fprintf(stdout, "ECD 1: %p\n", csPtr); fflush(stdout);
+		ReleaseCopyState(csPtr);
 		return TCL_OK;
 	    }
 	}
@@ -8898,6 +8927,8 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
+fprintf(stdout, "ECD 2: %p\n", csPtr); fflush(stdout);
+	    ReleaseCopyState(csPtr);
 	    return TCL_OK;
 	}
 
@@ -8920,6 +8951,8 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
+fprintf(stdout, "ECD 3: %p\n", csPtr); fflush(stdout);
+	    ReleaseCopyState(csPtr);
 	    return TCL_OK;
 	}
     } /* while */
@@ -8971,6 +9004,8 @@ CopyData(
 	    }
 	}
     }
+fprintf(stdout, "ECD 4: %p\n", csPtr); fflush(stdout);
+    ReleaseCopyState(csPtr);
     return result;
 }
 
@@ -9253,6 +9288,7 @@ StopCopy(
 	return;
     }
 
+fprintf(stdout, "SC: %p\n", csPtr); fflush(stdout);
     inStatePtr = csPtr->readPtr->state;
     outStatePtr = csPtr->writePtr->state;
 
@@ -9285,9 +9321,17 @@ StopCopy(
 	}
 	TclDecrRefCount(csPtr->cmdPtr);
     }
-    inStatePtr->csPtrR = NULL;
-    outStatePtr->csPtrW = NULL;
-    ckfree((char *) csPtr);
+    if (inStatePtr->csPtrR) {
+	ReleaseCopyState(inStatePtr->csPtrR);
+	inStatePtr->csPtrR = NULL;
+    }
+    if (outStatePtr->csPtrW) {
+	ReleaseCopyState(outStatePtr->csPtrW);
+	outStatePtr->csPtrW = NULL;
+    }
+    ReleaseCopyState(csPtr);
+//    ckfree((char *) csPtr);
+fprintf(stdout, "ESC: %p\n", csPtr); fflush(stdout);
 }
 
 /*
