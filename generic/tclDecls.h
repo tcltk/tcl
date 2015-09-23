@@ -37,7 +37,7 @@ TCLAPI const char *	Tcl_PkgRequireEx(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact, void *clientDataPtr);
 /* 2 */
-TCLAPI void		Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
+TCLAPI TCL_NORETURN void Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 3 */
 TCLAPI char *		Tcl_Alloc(unsigned int size);
 /* 4 */
@@ -770,7 +770,7 @@ TCLAPI void		Tcl_SetErrorCodeVA(Tcl_Interp *interp,
 /* 277 */
 TCLAPI Tcl_Pid		Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options);
 /* 278 */
-TCLAPI void		Tcl_PanicVA(const char *format, va_list argList);
+TCLAPI TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList);
 /* 279 */
 TCLAPI void		Tcl_GetVersion(int *major, int *minor,
 				int *patchLevel, int *type);
@@ -1745,7 +1745,7 @@ typedef struct TclStubs {
 
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     const char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
-    void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
+    TCL_NORETURN1 void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
     char * (*tcl_Alloc) (unsigned int size); /* 3 */
     void (*tcl_Free) (char *ptr); /* 4 */
     char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
@@ -2045,7 +2045,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
     void (*reserved276)(void);
     Tcl_Pid (*tcl_WaitPid) (Tcl_Pid pid, int *statPtr, int options); /* 277 */
-    void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
+    TCL_NORETURN1 void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
     void (*tcl_GetVersion) (int *major, int *minor, int *patchLevel, int *type); /* 279 */
     void (*tcl_InitMemory) (Tcl_Interp *interp); /* 280 */
     Tcl_Channel (*tcl_StackChannel) (Tcl_Interp *interp, const Tcl_ChannelType *typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan); /* 281 */
