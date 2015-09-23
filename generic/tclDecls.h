@@ -48,7 +48,7 @@ EXTERN CONST84_RETURN char * Tcl_PkgRequireEx(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact, void *clientDataPtr);
 /* 2 */
-EXTERN void		Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
+EXTERN TCL_NORETURN void Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 3 */
 EXTERN char *		Tcl_Alloc(unsigned int size);
 /* 4 */
@@ -686,7 +686,8 @@ EXTERN void		Tcl_SetErrorCode(Tcl_Interp *interp, ...);
 /* 229 */
 EXTERN void		Tcl_SetMaxBlockTime(const Tcl_Time *timePtr);
 /* 230 */
-EXTERN void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
+EXTERN void		Tcl_SetPanicProc(
+				TCL_NORETURN1 Tcl_PanicProc *panicProc);
 /* 231 */
 EXTERN int		Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth);
 /* 232 */
@@ -835,7 +836,7 @@ EXTERN int		Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList);
 /* 277 */
 EXTERN Tcl_Pid		Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options);
 /* 278 */
-EXTERN void		Tcl_PanicVA(const char *format, va_list argList);
+EXTERN TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList);
 /* 279 */
 EXTERN void		Tcl_GetVersion(int *major, int *minor,
 				int *patchLevel, int *type);
@@ -1828,7 +1829,7 @@ typedef struct TclStubs {
 
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
-    void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
+    TCL_NORETURN1 void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
     char * (*tcl_Alloc) (unsigned int size); /* 3 */
     void (*tcl_Free) (char *ptr); /* 4 */
     char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
@@ -2080,7 +2081,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrno) (int err); /* 227 */
     void (*tcl_SetErrorCode) (Tcl_Interp *interp, ...); /* 228 */
     void (*tcl_SetMaxBlockTime) (const Tcl_Time *timePtr); /* 229 */
-    void (*tcl_SetPanicProc) (Tcl_PanicProc *panicProc); /* 230 */
+    void (*tcl_SetPanicProc) (TCL_NORETURN1 Tcl_PanicProc *panicProc); /* 230 */
     int (*tcl_SetRecursionLimit) (Tcl_Interp *interp, int depth); /* 231 */
     void (*tcl_SetResult) (Tcl_Interp *interp, char *result, Tcl_FreeProc *freeProc); /* 232 */
     int (*tcl_SetServiceMode) (int mode); /* 233 */
@@ -2128,7 +2129,7 @@ typedef struct TclStubs {
     void (*tcl_SetErrorCodeVA) (Tcl_Interp *interp, va_list argList); /* 275 */
     int (*tcl_VarEvalVA) (Tcl_Interp *interp, va_list argList); /* 276 */
     Tcl_Pid (*tcl_WaitPid) (Tcl_Pid pid, int *statPtr, int options); /* 277 */
-    void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
+    TCL_NORETURN1 void (*tcl_PanicVA) (const char *format, va_list argList); /* 278 */
     void (*tcl_GetVersion) (int *major, int *minor, int *patchLevel, int *type); /* 279 */
     void (*tcl_InitMemory) (Tcl_Interp *interp); /* 280 */
     Tcl_Channel (*tcl_StackChannel) (Tcl_Interp *interp, const Tcl_ChannelType *typePtr, ClientData instanceData, int mask, Tcl_Channel prevChan); /* 281 */
