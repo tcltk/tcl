@@ -381,7 +381,7 @@ TclWinConvertError(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {
