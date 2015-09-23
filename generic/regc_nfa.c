@@ -49,6 +49,7 @@ newnfa(
 
     nfa = (struct nfa *) MALLOC(sizeof(struct nfa));
     if (nfa == NULL) {
+	ERR(REG_ESPACE);
 	return NULL;
     }
 

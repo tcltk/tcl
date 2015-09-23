@@ -113,10 +113,29 @@ typedef struct CopyState {
     Tcl_WideInt total;		/* Total bytes transferred (written). */
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
+    int refCount;		/* Claim count on the struct */
+    int bufInUse;		/* Flag to govern access to buffer */
     int bufSize;		/* Size of appended buffer. */
     char buffer[1];		/* Copy buffer, this must be the last
                                  * field. */
 } CopyState;
+
+static void
+PreserveCopyState(
+    CopyState *csPtr)
+{
+    csPtr->refCount++;
+}
+
+static void
+ReleaseCopyState(
+    CopyState *csPtr)
+{
+    if (--csPtr->refCount) {
+	return;
+    }
+    ckfree((char *) csPtr);
+}
 
 /*
  * All static variables used in this file are collected into a single instance
@@ -8649,9 +8668,13 @@ TclCopyChannel(
 	Tcl_IncrRefCount(cmdPtr);
     }
     csPtr->cmdPtr = cmdPtr;
+    csPtr->refCount = 1;
+    csPtr->bufInUse = 0;
 
     inStatePtr->csPtrR  = csPtr;
+    PreserveCopyState(csPtr);
     outStatePtr->csPtrW = csPtr;
+    PreserveCopyState(csPtr);
 
     /*
      * Special handling of -size 0 async transfers, so that the -command is
@@ -8702,6 +8725,11 @@ CopyData(
     int inBinary, outBinary, sameEncoding;
 				/* Encoding control */
     int underflow;		/* Input underflow */
+
+    if (csPtr->bufInUse) {
+	return TCL_OK;
+    }
+    PreserveCopyState(csPtr);
 
     inChan	= (Tcl_Channel) csPtr->readPtr;
     outChan	= (Tcl_Channel) csPtr->writePtr;
@@ -8764,6 +8792,7 @@ CopyData(
 		sizeb = csPtr->toRead;
 	    }
 
+	    csPtr->bufInUse = 1;
 	    if (inBinary || sameEncoding) {
 		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb);
 	    } else {
@@ -8814,6 +8843,7 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
+		ReleaseCopyState(csPtr);
 		return TCL_OK;
 	    }
 	}
@@ -8834,6 +8864,7 @@ CopyData(
 	} else {
 	    sizeb = WriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
+	csPtr->bufInUse = 0;
 
 	/*
 	 * [Bug 2895565]. At this point 'size' still contains the number of
@@ -8905,6 +8936,7 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
+	    ReleaseCopyState(csPtr);
 	    return TCL_OK;
 	}
 
@@ -8927,6 +8959,7 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
+	    ReleaseCopyState(csPtr);
 	    return TCL_OK;
 	}
     } /* while */
@@ -8942,15 +8975,14 @@ CopyData(
      */
 
     total = csPtr->total;
-    if (cmdPtr && interp) {
+    if (cmdPtr && interp && csPtr->cmdPtr) {
 	int code;
 	/*
 	 * Get a private copy of the command so we can mutate it by adding
 	 * arguments. Note that StopCopy frees our saved reference to the
 	 * original command obj.
 	 */
-
-	cmdPtr = Tcl_DuplicateObj(cmdPtr);
+	cmdPtr = Tcl_DuplicateObj(csPtr->cmdPtr);
 	Tcl_IncrRefCount(cmdPtr);
 	StopCopy(csPtr);
 	Tcl_Preserve(interp);
@@ -8978,6 +9010,7 @@ CopyData(
 	    }
 	}
     }
+    ReleaseCopyState(csPtr);
     return result;
 }
 
@@ -9291,10 +9324,16 @@ StopCopy(
 		    CopyEventProc, csPtr);
 	}
 	TclDecrRefCount(csPtr->cmdPtr);
+	csPtr->cmdPtr = NULL;
     }
+    if (inStatePtr->csPtrR == NULL) {
+	return;
+    }
+    ReleaseCopyState(inStatePtr->csPtrR);
     inStatePtr->csPtrR = NULL;
+    ReleaseCopyState(outStatePtr->csPtrW);
     outStatePtr->csPtrW = NULL;
-    ckfree((char *) csPtr);
+    ReleaseCopyState(csPtr);
 }
 
 /*
