@@ -171,7 +171,7 @@ static const EnsembleImplMap defaultNamespaceMap[] = {
     {"forget",	   NamespaceForgetCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"import",	   NamespaceImportCmd,	TclCompileBasicMin0ArgCmd, NULL, NULL, 0},
     {"inscope",	   NamespaceInscopeCmd,	NULL, NRNamespaceInscopeCmd, NULL, 0},
-    {"origin",	   NamespaceOriginCmd,	TclCompileBasic1ArgCmd, NULL, NULL, 0},
+    {"origin",	   NamespaceOriginCmd,	TclCompileNamespaceOriginCmd, NULL, NULL, 0},
     {"parent",	   NamespaceParentCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"path",	   NamespacePathCmd,	TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"qualifiers", NamespaceQualifiersCmd, TclCompileNamespaceQualifiersCmd, NULL, NULL, 0},
@@ -343,7 +343,7 @@ Tcl_PushCallFrame(
     framePtr->clientData = NULL;
     framePtr->localCachePtr = NULL;
     framePtr->tailcallPtr = NULL;
-    
+
     /*
      * Push the new call frame onto the interpreter's stack of procedure call
      * frames making it the current frame.
@@ -3056,7 +3056,7 @@ NamespaceCodeCmd(
      */
 
     arg = TclGetStringFromObj(objv[1], &length);
-    if (*arg==':' && length > 20 
+    if (*arg==':' && length > 20
 	    && strncmp(arg, "::namespace inscope ", 20) == 0) {
 	Tcl_SetObjResult(interp, objv[1]);
 	return TCL_OK;
@@ -3309,11 +3309,8 @@ NRNamespaceEvalCmd(
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
     framePtrPtr = &framePtr;
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
 
     if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	framePtr->objc = objc;
@@ -3730,7 +3727,7 @@ NRNamespaceInscopeCmd(
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
     register Interp *iPtr = (Interp *) interp;
-    int i, result;
+    int i;
     Tcl_Obj *cmdObjPtr;
 
     if (objc < 3) {
@@ -3752,11 +3749,8 @@ NRNamespaceInscopeCmd(
 
     framePtrPtr = &framePtr;		/* This is needed to satisfy GCC's
 					 * strict aliasing rules. */
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
-    if (result != TCL_OK) {
-	return result;
-    }
 
     if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	framePtr->objc = objc;
@@ -4929,7 +4923,7 @@ TclLogCommandInfo(
 
     if (Tcl_IsShared(iPtr->errorStack)) {
 	Tcl_Obj *newObj;
-	    
+
 	newObj = Tcl_DuplicateObj(iPtr->errorStack);
 	Tcl_DecrRefCount(iPtr->errorStack);
 	Tcl_IncrRefCount(newObj);
@@ -4961,7 +4955,7 @@ TclLogCommandInfo(
 	    Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
 		    Tcl_NewStringObj(command, length));
 	}
-    } 
+    }
 
     if (!iPtr->framePtr->objc) {
 	/*
@@ -5014,7 +5008,7 @@ TclErrorStackResetIf(
 
     if (Tcl_IsShared(iPtr->errorStack)) {
 	Tcl_Obj *newObj;
-	    
+
 	newObj = Tcl_DuplicateObj(iPtr->errorStack);
 	Tcl_DecrRefCount(iPtr->errorStack);
 	Tcl_IncrRefCount(newObj);
@@ -5034,7 +5028,7 @@ TclErrorStackResetIf(
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack, iPtr->innerLiteral);
 	Tcl_ListObjAppendElement(NULL, iPtr->errorStack,
 		Tcl_NewStringObj(msg, length));
-    } 
+    }
 }
 
 /*

@@ -147,6 +147,36 @@ test tailcall-0.5 {tailcall is constant space} -constraints testnrelevels -setup
     rename b {}
 } -result {0 0 0 0 0 0}
 
+test tailcall-0.5.1 {tailcall is constant space} -constraints testnrelevels -setup {
+    # 
+    # This test is related to [bug d87cb182053fd79b3]: the fix to that bug was
+    # to remove a call to TclSkipTailcall, which caused a violation of the
+    # constant-space property of tailcall in that particular
+    # configuration. This test was added to detect that, and insure that the
+    # problem is fixed.
+    #
+
+    proc b i {
+	if {$i == 1} {
+	    depthDiff
+	}
+	if {[incr i] > 10} {
+	    return [depthDiff]
+	}
+	tailcall dict b $i
+    }
+    set map0 [namespace ensemble configure dict -map]
+    set map $map0
+    dict set map b b
+    namespace ensemble configure dict -map $map
+} -body {
+    dict b 0
+} -cleanup {
+    rename b {}
+    namespace ensemble configure dict -map $map0
+    unset map map0
+} -result {0 0 0 0 0 0}
+
 test tailcall-0.6 {tailcall is constant space} -constraints {testnrelevels knownBug} -setup {
     #
     # This test fails because ns-unknown is not NR-enabled

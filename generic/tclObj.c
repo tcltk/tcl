@@ -180,26 +180,26 @@ static Tcl_ThreadDataKey pendingObjDataKey;
     if ((bignum).used > 0x7fff) {                                       \
 	mp_int *temp = (void *) ckalloc((unsigned) sizeof(mp_int));     \
 	*temp = bignum;                                                 \
-	(objPtr)->internalRep.ptrAndLongRep.ptr = temp;                 \
-	(objPtr)->internalRep.ptrAndLongRep.value = (unsigned long)(-1); \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = temp;                 \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR(-1); \
     } else {                                                            \
 	if ((bignum).alloc > 0x7fff) {                                  \
 	    mp_shrink(&(bignum));                                       \
 	}                                                               \
-	(objPtr)->internalRep.ptrAndLongRep.ptr = (void *) (bignum).dp; \
-	(objPtr)->internalRep.ptrAndLongRep.value = ( ((bignum).sign << 30) \
+	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (bignum).dp; \
+	(objPtr)->internalRep.twoPtrValue.ptr2 = INT2PTR( ((bignum).sign << 30) \
 		| ((bignum).alloc << 15) | ((bignum).used));            \
     }
 
 #define UNPACK_BIGNUM(objPtr, bignum) \
-    if ((objPtr)->internalRep.ptrAndLongRep.value == (unsigned long)(-1)) { \
-	(bignum) = *((mp_int *) ((objPtr)->internalRep.ptrAndLongRep.ptr)); \
+    if ((objPtr)->internalRep.twoPtrValue.ptr2 == INT2PTR(-1)) { \
+	(bignum) = *((mp_int *) ((objPtr)->internalRep.twoPtrValue.ptr1)); \
     } else {                                                            \
-	(bignum).dp = (objPtr)->internalRep.ptrAndLongRep.ptr;          \
-	(bignum).sign = (objPtr)->internalRep.ptrAndLongRep.value >> 30; \
+	(bignum).dp = (objPtr)->internalRep.twoPtrValue.ptr1;          \
+	(bignum).sign = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 30; \
 	(bignum).alloc =                                                \
-		((objPtr)->internalRep.ptrAndLongRep.value >> 15) & 0x7fff; \
-	(bignum).used = (objPtr)->internalRep.ptrAndLongRep.value & 0x7fff; \
+		(PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) >> 15) & 0x7fff; \
+	(bignum).used = PTR2INT((objPtr)->internalRep.twoPtrValue.ptr2) & 0x7fff; \
     }
 
 /*
@@ -1300,6 +1300,39 @@ TclFreeObj(
      */
 
     ObjInitDeletionContext(context);
+
+# ifdef TCL_THREADS
+    /*
+     * Check to make sure that the Tcl_Obj was allocated by the current
+     * thread. Don't do this check when shutting down since thread local
+     * storage can be finalized before the last Tcl_Obj is freed.
+     */
+
+    if (!TclInExit()) {
+	Tcl_HashTable *tablePtr;
+	Tcl_HashEntry *hPtr;
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+	tablePtr = tsdPtr->objThreadMap;
+	if (!tablePtr) {
+	    Tcl_Panic("TclFreeObj: object table not initialized");
+	}
+	hPtr = Tcl_FindHashEntry(tablePtr, (char *) objPtr);
+	if (hPtr) {
+	    /*
+	     * As the Tcl_Obj is going to be deleted we remove the entry.
+	     */
+
+	    ObjData *objData = Tcl_GetHashValue(hPtr);
+
+	    if (objData != NULL) {
+		ckfree(objData);
+	    }
+
+	    Tcl_DeleteHashEntry(hPtr);
+	}
+    }
+# endif
 
     /*
      * Check for a double free of the same value.  This is slightly tricky
@@ -3148,8 +3181,8 @@ FreeBignum(
 
     UNPACK_BIGNUM(objPtr, toFree);
     mp_clear(&toFree);
-    if ((long) objPtr->internalRep.ptrAndLongRep.value < 0) {
-	ckfree(objPtr->internalRep.ptrAndLongRep.ptr);
+    if (PTR2INT(objPtr->internalRep.twoPtrValue.ptr2) < 0) {
+	ckfree(objPtr->internalRep.twoPtrValue.ptr1);
     }
     objPtr->typePtr = NULL;
 }
@@ -3360,8 +3393,8 @@ GetBignumFromObj(
 		mp_init_copy(bignumValue, &temp);
 	    } else {
 		UNPACK_BIGNUM(objPtr, *bignumValue);
-		objPtr->internalRep.ptrAndLongRep.ptr = NULL;
-		objPtr->internalRep.ptrAndLongRep.value = 0;
+		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
+		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
 		if (objPtr->bytes == NULL) {
 		    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
@@ -3766,25 +3799,11 @@ Tcl_DbDecrRefCount(
 	    Tcl_Panic("Trying to %s of Tcl_Obj allocated in another thread",
                     "decr ref count");
 	}
-
-	/*
-	 * If the Tcl_Obj is going to be deleted, remove the entry.
-	 */
-
-	if ((objPtr->refCount - 1) <= 0) {
-	    ObjData *objData = Tcl_GetHashValue(hPtr);
-
-	    if (objData != NULL) {
-		ckfree(objData);
-	    }
-
-	    Tcl_DeleteHashEntry(hPtr);
-	}
     }
 # endif /* TCL_THREADS */
 #endif /* TCL_MEM_DEBUG */
 
-    if (--(objPtr)->refCount <= 0) {
+    if (objPtr->refCount-- <= 1) {
 	TclFreeObj(objPtr);
     }
 }
@@ -3952,12 +3971,11 @@ TclCompareObjKeys(
 
     /*
      * If the object pointers are the same then they match.
-     */
-
-    if (objPtr1 == objPtr2) {
-	return 1;
-    }
-
+     * OPT: this comparison was moved to the caller
+     
+       if (objPtr1 == objPtr2) return 1;
+    */
+    
     /*
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being
      * in a register.
@@ -4269,8 +4287,7 @@ FreeCmdNameInternalRep(
 	 * there are no more uses, free the ResolvedCmdName structure.
 	 */
 
-	resPtr->refCount--;
-	if (resPtr->refCount == 0) {
+	if (resPtr->refCount-- == 1) {
 	    /*
 	     * Now free the cached command, unless it is still in its hash
 	     * table or if there are other references to it from other cmdName

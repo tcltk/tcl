@@ -59,7 +59,7 @@ if {[testConstraint unix]} {
 }
 
 proc openup {path} {
-    testchmod 777 $path
+    testchmod 0o777 $path
     if {[file isdirectory $path]} {
 	catch {
 	    foreach p [glob -directory $path *] {
@@ -385,7 +385,7 @@ file delete -force -- foo.test
 test unixFCmd-18.1 {Unix pwd} -constraints {unix notRoot nonPortable} -setup {
     set cd [pwd]
 } -body {
-    # This test is nonportable because SunOS generates a weird error
+    # This test is nonPortable because SunOS generates a weird error
     # message when the current directory isn't readable.
     set nd $cd/tstdir
     file mkdir $nd

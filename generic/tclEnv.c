@@ -43,11 +43,6 @@ static char *		EnvTraceProc(ClientData clientData, Tcl_Interp *interp,
 static void		ReplaceString(const char *oldStr, char *newStr);
 MODULE_SCOPE void	TclSetEnv(const char *name, const char *value);
 MODULE_SCOPE void	TclUnsetEnv(const char *name);
-
-#if defined(__CYGWIN__)
-    static void TclCygwinPutenv(char *string);
-#   define putenv TclCygwinPutenv
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -444,7 +439,7 @@ TclUnsetEnv(
      * that no = should be included, and Windows requires it.
      */
 
-#if defined(__WIN32__) || defined(__CYGWIN__)
+#if defined(_WIN32)
     string = ckalloc(length + 2);
     memcpy(string, name, (size_t) length);
     string[length] = '=';
@@ -453,7 +448,7 @@ TclUnsetEnv(
     string = ckalloc(length + 1);
     memcpy(string, name, (size_t) length);
     string[length] = '\0';
-#endif /* WIN32 */
+#endif /* _WIN32 */
 
     Tcl_UtfToExternalDString(NULL, string, -1, &envString);
     string = ckrealloc(string, Tcl_DStringLength(&envString) + 1);
@@ -614,7 +609,8 @@ EnvTraceProc(
 	const char *value = TclGetEnv(name2, &valueString);
 
 	if (value == NULL) {
-	    return (char *) "no such variable";
+	    Tcl_UnsetVar2(interp, name1, name2, 0);
+	    return NULL;
 	}
 	Tcl_SetVar2(interp, name1, name2, value, 0);
 	Tcl_DStringFree(&valueString);
@@ -738,98 +734,6 @@ TclFinalizeEnvironment(void)
 #endif
     }
 }
-
-#if defined(__CYGWIN__)
-
-/*
- * When using cygwin, when an environment variable changes, we need to synch
- * with both the cygwin environment (in case the application C code calls
- * fork) and the Windows environment (in case the application TCL code calls
- * exec, which calls the Windows CreateProcess function).
- */
-DLLIMPORT extern void __stdcall SetEnvironmentVariableA(const char*, const char *);
-
-static void
-TclCygwinPutenv(
-    char *str)
-{
-    char *name, *value;
-
-    /*
-     * Get the name and value, so that we can change the environment variable
-     * for Windows.
-     */
-
-    name = alloca(strlen(str) + 1);
-    strcpy(name, str);
-    for (value=name ; *value!='=' && *value!='\0' ; ++value) {
-	/* Empty body */
-    }
-    if (*value == '\0') {
-	/* Can't happen. */
-	return;
-    }
-    *(value++) = '\0';
-    if (*value == '\0') {
-	value = NULL;
-    }
-
-    /*
-     * Set the cygwin environment variable.
-     */
-
-#undef putenv
-    if (value == NULL) {
-	unsetenv(name);
-    } else {
-	putenv(str);
-    }
-
-    /*
-     * Before changing the environment variable in Windows, if this is PATH,
-     * we need to convert the value back to a Windows style path.
-     *
-     * FIXME: The calling program may know it is running under windows, and
-     * may have set the path to a Windows path, or, worse, appended or
-     * prepended a Windows path to PATH.
-     */
-
-    if (strcmp(name, "PATH") != 0) {
-	/*
-	 * If this is Path, eliminate any PATH variable, to prevent any
-	 * confusion.
-	 */
-
-	if (strcmp(name, "Path") == 0) {
-	    SetEnvironmentVariableA("PATH", NULL);
-	    unsetenv("PATH");
-	}
-
-	SetEnvironmentVariableA(name, value);
-    } else {
-	char *buf;
-
-	/*
-	 * Eliminate any Path variable, to prevent any confusion.
-	 */
-
-	SetEnvironmentVariableA("Path", NULL);
-	unsetenv("Path");
-
-	if (value == NULL) {
-	    buf = NULL;
-	} else {
-	    int size;
-
-	    size = cygwin_conv_path_list(0, value, NULL, 0);
-	    buf = alloca(size + 1);
-	    cygwin_conv_path_list(0, value, buf, size);
-	}
-
-	SetEnvironmentVariableA(name, buf);
-    }
-}
-#endif /* __CYGWIN__ */
 
 /*
  * Local Variables:

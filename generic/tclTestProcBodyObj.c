@@ -245,7 +245,7 @@ ProcBodyTestProcObjCmd(
      * Find the Command pointer to this procedure
      */
 
-    fullName = Tcl_GetStringFromObj(objv[3], NULL);
+    fullName = Tcl_GetString(objv[3]);
     procCmd = Tcl_FindCommand(interp, fullName, NULL, TCL_LEAVE_ERR_MSG);
     if (procCmd == NULL) {
 	return TCL_ERROR;
