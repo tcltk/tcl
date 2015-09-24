@@ -102,10 +102,29 @@ typedef struct CopyState {
     Tcl_WideInt total;		/* Total bytes transferred (written). */
     Tcl_Interp *interp;		/* Interp that started the copy. */
     Tcl_Obj *cmdPtr;		/* Command to be invoked at completion. */
+    int refCount;		/* Claim count on the struct */
+    int bufInUse;		/* Flag to govern access to buffer */
     int bufSize;		/* Size of appended buffer. */
     char buffer[1];		/* Copy buffer, this must be the last
                                  * field. */
 } CopyState;
+
+static void
+PreserveCopyState(
+    CopyState *csPtr)
+{
+    csPtr->refCount++;
+}
+
+static void
+ReleaseCopyState(
+    CopyState *csPtr)
+{
+    if (--csPtr->refCount) {
+	return;
+    }
+    ckfree(csPtr);
+}
 
 /*
  * All static variables used in this file are collected into a single instance
@@ -5754,6 +5773,7 @@ DoReadChars(
 	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
 	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
 
+	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -5765,6 +5785,7 @@ DoReadChars(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -8326,6 +8347,11 @@ Tcl_NotifyChannel(
      */
 
     if (chanPtr->typePtr != NULL) {
+	/*
+	 * TODO: This call may not be needed.  If a handler induced a
+	 * change in interest, that handler should have made its own
+	 * UpdateInterest() call, one would think.
+	 */
 	UpdateInterest(chanPtr);
     }
 
@@ -9085,9 +9111,13 @@ TclCopyChannel(
 	Tcl_IncrRefCount(cmdPtr);
     }
     csPtr->cmdPtr = cmdPtr;
+    csPtr->refCount = 1;
+    csPtr->bufInUse = 0;
 
     inStatePtr->csPtrR  = csPtr;
+    PreserveCopyState(csPtr);
     outStatePtr->csPtrW = csPtr;
+    PreserveCopyState(csPtr);
 
     if (moveBytes) {
 	return MoveBytes(csPtr);
@@ -9373,6 +9403,11 @@ CopyData(
 				/* Encoding control */
     int underflow;		/* Input underflow */
 
+    if (csPtr->bufInUse) {
+	return TCL_OK;
+    }
+    PreserveCopyState(csPtr);
+
     inChan	= (Tcl_Channel) csPtr->readPtr;
     outChan	= (Tcl_Channel) csPtr->writePtr;
     inStatePtr	= csPtr->readPtr->state;
@@ -9435,6 +9470,7 @@ CopyData(
 		sizeb = (int) csPtr->toRead;
 	    }
 
+	    csPtr->bufInUse = 1;
 	    if (inBinary || sameEncoding) {
 		size = DoRead(inStatePtr->topChanPtr, csPtr->buffer, sizeb,
                               !GotFlag(inStatePtr, CHANNEL_NONBLOCKING));
@@ -9490,6 +9526,7 @@ CopyData(
 		    TclDecrRefCount(bufObj);
 		    bufObj = NULL;
 		}
+		ReleaseCopyState(csPtr);
 		return TCL_OK;
 	    }
 	}
@@ -9510,6 +9547,7 @@ CopyData(
 	} else {
 	    sizeb = WriteChars(outStatePtr->topChanPtr, buffer, sizeb);
 	}
+	csPtr->bufInUse = 0;
 
 	/*
 	 * [Bug 2895565]. At this point 'size' still contains the number of
@@ -9581,6 +9619,7 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
+	    ReleaseCopyState(csPtr);
 	    return TCL_OK;
 	}
 
@@ -9603,6 +9642,7 @@ CopyData(
 		TclDecrRefCount(bufObj);
 		bufObj = NULL;
 	    }
+	    ReleaseCopyState(csPtr);
 	    return TCL_OK;
 	}
     } /* while */
@@ -9618,7 +9658,7 @@ CopyData(
      */
 
     total = csPtr->total;
-    if (cmdPtr && interp) {
+    if (cmdPtr && interp && csPtr->cmdPtr) {
 	int code;
 
 	/*
@@ -9626,8 +9666,7 @@ CopyData(
 	 * arguments. Note that StopCopy frees our saved reference to the
 	 * original command obj.
 	 */
-
-	cmdPtr = Tcl_DuplicateObj(cmdPtr);
+	cmdPtr = Tcl_DuplicateObj(csPtr->cmdPtr);
 	Tcl_IncrRefCount(cmdPtr);
 	StopCopy(csPtr);
 	Tcl_Preserve(interp);
@@ -9655,6 +9694,7 @@ CopyData(
 	    }
 	}
     }
+    ReleaseCopyState(csPtr);
     return result;
 }
 
@@ -9716,6 +9756,7 @@ DoRead(
 	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
 	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
 
+	/* TODO: Don't need this call */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -9727,6 +9768,7 @@ DoRead(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	/* TODO: Don't need this call */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -9793,7 +9835,6 @@ DoRead(
 	     */
 
 	    if (bytesToRead == 0) {
-		UpdateInterest(chanPtr);
 		break;
 	    }
 
@@ -9802,7 +9843,6 @@ DoRead(
 	     */
 
 	    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
-		UpdateInterest(chanPtr);
 		break;
 	    }
 
@@ -9827,7 +9867,6 @@ DoRead(
 		} else if (statePtr->flags & CHANNEL_BLOCKED) {
 		    /* ...and we cannot get more now. */
 		    SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
-		    UpdateInterest(chanPtr);
 		    break;
 		} else {
 		    /* ... so we need to get some. */
@@ -9879,6 +9918,7 @@ DoRead(
 		|| Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
 	assert( !(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
 		== (CHANNEL_EOF|CHANNEL_BLOCKED)) );
+    UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
     return (int)(p - dst);
 }
@@ -9972,10 +10012,16 @@ StopCopy(
 	Tcl_DeleteChannelHandler(inChan, MBEvent, csPtr);
 	Tcl_DeleteChannelHandler(outChan, MBEvent, csPtr);
 	TclDecrRefCount(csPtr->cmdPtr);
+	csPtr->cmdPtr = NULL;
     }
+    if (inStatePtr->csPtrR == NULL) {
+	return;
+    }
+    ReleaseCopyState(inStatePtr->csPtrR);
     inStatePtr->csPtrR = NULL;
+    ReleaseCopyState(outStatePtr->csPtrW);
     outStatePtr->csPtrW = NULL;
-    ckfree(csPtr);
+    ReleaseCopyState(csPtr);
 }
 
 /*
