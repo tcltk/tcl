@@ -1311,7 +1311,7 @@ SHELL=/bin/sh
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".1"
+TCL_PATCH_LEVEL=".4"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4
@@ -3340,7 +3340,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-	    #ifndef __WIN32__
+	    #ifndef _WIN32
 		#error cross-compiler
 	    #endif
 
@@ -3463,7 +3463,7 @@ cat confdefs.h >>conftest.$ac_ext
 cat >>conftest.$ac_ext <<_ACEOF
 /* end confdefs.h.  */
 
-		#ifdef __WIN32__
+		#ifdef _WIN32
 		    #error win32
 		#endif
 
@@ -3757,6 +3757,13 @@ echo "${ECHO_T}using shared flags" >&6
 	    # Add SHLIB_LD_LIBS to the Make rule, not here.
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	    EXESUFFIX="\${DBGX}.exe"
+	    case "x`echo \${VisualStudioVersion}`" in
+		x14*)
+		    lflags="${lflags} -nodefaultlib:libucrt.lib"
+		    ;;
+		*)
+		    ;;
+	    esac
 	fi
 	MAKE_DLL="\${SHLIB_LD} \$(LDFLAGS) -out:\$@"
 	# DLLSUFFIX is separate because it is the building block for
@@ -3797,6 +3804,15 @@ echo "${ECHO_T}   Using 64-bit $MACHINE mode" >&6
 	fi
 
 	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib"
+
+	case "x`echo \${VisualStudioVersion}`" in
+		x14*)
+		    LIBS="$LIBS ucrt.lib"
+		    ;;
+		*)
+		    ;;
+	esac
+
 	if test "$do64bit" != "no" ; then
 	    # The space-based-path will work for the Makefile, but will
 	    # not work if AC_TRY_COMPILE is called.  TEA has the
@@ -3871,7 +3887,7 @@ fi
 	    CFLAGS_DEBUG="-nologo -Zi -Od ${runtime}d"
 	    # Do not use -O2 for Win64 - this has proved buggy in code gen.
 	    CFLAGS_OPTIMIZE="-nologo -O1 ${runtime}"
-	    lflags="-nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
+	    lflags="${lflags} -nologo -MACHINE:${MACHINE} -LIBPATH:\"${MSSDK}/Lib/${MACHINE}\""
 	    LINKBIN="\"${PATH64}/link.exe\""
 	    # Avoid 'unresolved external symbol __security_cookie' errors.
 	    # c.f. http://support.microsoft.com/?id=894573
@@ -3883,7 +3899,7 @@ fi
 	    CFLAGS_DEBUG="-nologo -Z7 -Od -WX ${runtime}d"
 	    # -O2 - create fast code (/Og /Oi /Ot /Oy /Ob2 /Gs /GF /Gy)
 	    CFLAGS_OPTIMIZE="-nologo -O2 ${runtime}"
-	    lflags="-nologo"
+	    lflags="${lflags} -nologo"
 	    LINKBIN="link"
 	fi
 
@@ -4364,12 +4380,12 @@ if test "$tcl_ok" = "yes"; then
 
     if test "$GCC" == "yes"; then
 
-      ZLIB_LIBS=\${ZLIB_DIR}/win64/libz.dll.a
+      ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/libz.dll.a
 
 
 else
 
-      ZLIB_LIBS=\${ZLIB_DIR}/win64/zdll.lib
+      ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win64/zdll.lib
 
 
 fi
@@ -4377,7 +4393,7 @@ fi
 
 else
 
-    ZLIB_LIBS=\${ZLIB_DIR}/win32/zdll.lib
+    ZLIB_LIBS=\${ZLIB_DIR_NATIVE}/win32/zdll.lib
 
 
 fi
@@ -5169,6 +5185,19 @@ else
     TCL_PACKAGE_PATH="${prefix}/lib"
 fi
 
+# The tclsh.exe.manifest requires these
+# TCL_WIN_VERSION is the 4 dotted pair Windows version format which needs
+# the release level, and must account for interim release versioning
+case "$TCL_PATCH_LEVEL" in
+     *a*) TCL_RELEASE_LEVEL=0 ;;
+     *b*) TCL_RELEASE_LEVEL=1 ;;
+     *)   TCL_RELEASE_LEVEL=2 ;;
+esac
+TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d ab.`"
+
+# X86|AMD64|IA64 for manifest
+
+
 
 
 
@@ -5264,7 +5293,7 @@ fi
 
 
 
-                              ac_config_files="$ac_config_files Makefile tclConfig.sh tcl.hpj"
+                                        ac_config_files="$ac_config_files Makefile tclConfig.sh tcl.hpj tclsh.exe.manifest"
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
 # tests run on this system so they can be shared between configure
@@ -5818,6 +5847,7 @@ do
   "Makefile" ) CONFIG_FILES="$CONFIG_FILES Makefile" ;;
   "tclConfig.sh" ) CONFIG_FILES="$CONFIG_FILES tclConfig.sh" ;;
   "tcl.hpj" ) CONFIG_FILES="$CONFIG_FILES tcl.hpj" ;;
+  "tclsh.exe.manifest" ) CONFIG_FILES="$CONFIG_FILES tclsh.exe.manifest" ;;
   *) { { echo "$as_me:$LINENO: error: invalid argument: $ac_config_target" >&5
 echo "$as_me: error: invalid argument: $ac_config_target" >&2;}
    { (exit 1); exit 1; }; };;
@@ -5931,6 +5961,8 @@ s,@CFLAGS_DEFAULT@,$CFLAGS_DEFAULT,;t t
 s,@LDFLAGS_DEFAULT@,$LDFLAGS_DEFAULT,;t t
 s,@VC_MANIFEST_EMBED_DLL@,$VC_MANIFEST_EMBED_DLL,;t t
 s,@VC_MANIFEST_EMBED_EXE@,$VC_MANIFEST_EMBED_EXE,;t t
+s,@TCL_WIN_VERSION@,$TCL_WIN_VERSION,;t t
+s,@MACHINE@,$MACHINE,;t t
 s,@TCL_VERSION@,$TCL_VERSION,;t t
 s,@TCL_MAJOR_VERSION@,$TCL_MAJOR_VERSION,;t t
 s,@TCL_MINOR_VERSION@,$TCL_MINOR_VERSION,;t t

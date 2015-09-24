@@ -1043,6 +1043,29 @@ test execute-11.1 {Bug 3142026: GrowEvaluationStack off-by-one} -setup {
 } -cleanup {
     interp delete slave
 } -result ok
+
+test execute-11.2 {Bug 268b23df11} -setup {
+    proc zero {} {return 0}
+    proc crash {} {expr {abs([zero])}}
+    proc noop args {}
+    trace add execution crash enterstep noop
+} -body {
+    crash
+} -cleanup {
+    trace remove execution crash enterstep noop
+    rename noop {}
+    rename crash {}
+    rename zero {}
+} -result 0
+test execute-11.3 {Bug a0ece9d6d4} -setup {
+    proc crash {} {expr {rand()}}
+    trace add execution crash enterstep {apply {args {info frame -2}}}
+} -body {
+    string is double [crash]
+} -cleanup {
+    trace remove execution crash enterstep {apply {args {info frame -2}}}
+    rename crash {}
+} -result 1
 
 # cleanup
 if {[info commands testobj] != {}} {

@@ -155,6 +155,11 @@ TclpFindExecutable(
 	goto done;
     }
 
+    if (TclpGetCwd(NULL, &cwd) == NULL) {
+	TclSetObjNameOfExecutable(Tcl_NewObj(), NULL);
+	goto done;
+    }
+
     /*
      * The name is relative to the current working directory. First strip off
      * a leading "./", if any, then add the full path name of the current
@@ -167,8 +172,6 @@ TclpFindExecutable(
 
     Tcl_DStringInit(&nameString);
     Tcl_DStringAppend(&nameString, name, -1);
-
-    TclpGetCwd(NULL, &cwd);
 
     Tcl_DStringFree(&buffer);
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&cwd),
@@ -1105,6 +1108,12 @@ TclNativeCreateNativeRep(
     str = Tcl_GetStringFromObj(validPathPtr, &len);
     Tcl_UtfToExternalDString(NULL, str, len, &ds);
     len = Tcl_DStringLength(&ds) + sizeof(char);
+    if (strlen(Tcl_DStringValue(&ds)) < len - sizeof(char)) {
+	/* See bug [3118489]: NUL in filenames */
+	Tcl_DecrRefCount(validPathPtr);
+	Tcl_DStringFree(&ds);
+	return NULL;
+    }
     Tcl_DecrRefCount(validPathPtr);
     nativePathPtr = ckalloc(len);
     memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);

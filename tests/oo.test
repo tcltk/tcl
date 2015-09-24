@@ -7,7 +7,7 @@
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require TclOO 1.0.1
+package require TclOO 1.0.3
 package require tcltest 2
 if {"::tcltest" in [namespace children]} {
     namespace import -force ::tcltest::*
@@ -258,6 +258,29 @@ test oo-1.18 {OO: create object in NS with same name as global cmd} -setup {
     rename test-oo-1.18 {}
     A destroy
 } -result ::C
+test oo-1.18.1 {Bug 75b8433707: memory leak in oo-1.18} -setup {
+    proc test-oo-1.18 {} return
+} -constraints memory -body {
+    leaktest {
+	oo::class create A
+	oo::class create B {superclass A}
+	oo::define B constructor {} {A create test-oo-1.18}
+	B create C
+	A destroy
+    }
+} -cleanup {
+    rename test-oo-1.18 {}
+} -result 0
+test oo-1.18.2 {Bug 21c144f0f5} -setup {
+    interp create slave
+} -body {
+    slave eval {
+	oo::define [oo::class create foo] superclass oo::class
+	oo::class destroy
+    }
+} -cleanup {
+    interp delete slave
+} 
 test oo-1.19 {basic test of OO functionality: teardown order} -body {
     oo::object create o
     namespace delete [info object namespace o]
@@ -270,6 +293,23 @@ test oo-1.20 {basic test of OO functionality: my teardown post rename} -body {
     obj destroy
     info commands ::AGlobalName
 } -result {}
+test oo-1.21 {basic test of OO functionality: default relations} -setup {
+    set fresh [interp create]
+} -body {
+    lmap x [$fresh eval {
+	foreach cmd {instances subclasses mixins superclass} {
+	    foreach initial {object class Slot} {
+		lappend x [info class $cmd ::oo::$initial]
+	    }
+	}
+	foreach initial {object class Slot} {
+	    lappend x [info object class ::oo::$initial]
+	}
+	return $x
+    }] {lsort $x}
+} -cleanup {
+    interp delete $fresh
+} -result {{} {::oo::Slot ::oo::class ::oo::object} {::oo::define::filter ::oo::define::mixin ::oo::define::superclass ::oo::define::variable ::oo::objdefine::filter ::oo::objdefine::mixin ::oo::objdefine::variable} {::oo::Slot ::oo::class} {} {} {} {} {} {} ::oo::object ::oo::object ::oo::class ::oo::class ::oo::class}
 
 test oo-2.1 {basic test of OO functionality: constructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as
@@ -376,6 +416,31 @@ test oo-2.8 {construction, method calls and ensembles - Bug 3514761} -setup {
 } -returnCodes error -cleanup {
     namespace delete k
 } -result {wrong # args: should be "k next j"}
+test oo-2.9 {construction failures and self creation} -setup {
+    set ::result {}
+    oo::class create Root
+} -body {
+    oo::class create A {
+	superclass Root
+	constructor {} {
+	    lappend ::result "in A"
+	    error "failure in A"
+	}
+	destructor {lappend ::result [self]}
+    }
+    oo::class create B {
+	superclass Root
+	constructor {} {
+	    lappend ::result "in B [self]"
+	    error "failure in B"
+	}
+	destructor {lappend ::result [self]}
+    }
+    lappend ::result [catch {A create a} msg] $msg
+    lappend ::result [catch {B create b} msg] $msg
+} -cleanup {
+    Root destroy
+} -result {{in A} ::a 1 {failure in A} {in B ::b} ::b 1 {failure in B}}
 
 test oo-3.1 {basic test of OO functionality: destructor} -setup {
     # This is a bit complex because it needs to run in a sub-interp as we're
@@ -1504,6 +1569,34 @@ test oo-12.7 {OO: filters} -setup {
 } -cleanup {
     Aclass destroy
 } -result {foo {{::Aclass outerfoo} {::Aclass InnerFoo}}}
+test oo-12.8 {OO: filters and destructors} -setup {
+    oo::class create Aclass
+    Aclass create Aobject
+    set ::log {}
+} -body {
+    oo::define Aclass {
+	constructor {} {
+	    lappend ::log "in constructor"
+	}
+	destructor {
+	    lappend ::log "in destructor"
+	}
+	method bar {} {
+	    lappend ::log "in method"
+	}
+	method Boo args {
+	    lappend ::log [self target]
+	    next {*}$args
+	}
+	filter Boo
+    }
+    set obj [Aclass new]
+    $obj bar
+    $obj destroy
+    return $::log
+} -cleanup {
+    Aclass destroy
+} -result {{in constructor} {::Aclass bar} {in method} {::oo::object destroy} {in destructor}}
 
 test oo-13.1 {OO: changing an object's class} {
     oo::class create Aclass
@@ -1984,6 +2077,30 @@ test oo-16.13 {OO: object introspection} -setup {
     oo::objdefine foo method Bar {} {return "ok in foo"}
     [info object namespace foo]::my Bar
 } -result "ok in foo"
+test oo-16.14 {OO: object introspection: TIP #436} -setup {
+    oo::class create meta { superclass oo::class }
+    [meta create instance1] create instance2
+} -body {
+    list class [list [info object isa class NOTANOBJECT] \
+		    [info object isa class list]] \
+	meta [list [info object isa metaclass NOTANOBJECT] \
+		  [info object isa metaclass list] \
+		  [info object isa metaclass oo::object]] \
+	type [list [info object isa typeof oo::object NOTANOBJECT] \
+		  [info object isa typeof NOTANOBJECT oo::object] \
+		  [info object isa typeof list NOTANOBJECT] \
+		  [info object isa typeof NOTANOBJECT list] \
+		  [info object isa typeof oo::object list] \
+		  [info object isa typeof list oo::object]] \
+	mix [list [info object isa mixin oo::object NOTANOBJECT] \
+		 [info object isa mixin NOTANOBJECT oo::object] \
+		 [info object isa mixin list NOTANOBJECT] \
+		 [info object isa mixin NOTANOBJECT list] \
+		 [info object isa mixin oo::object list] \
+		 [info object isa mixin list oo::object]]
+} -cleanup {
+    meta destroy
+} -result {class {0 0} meta {0 0 0} type {0 0 0 0 0 0} mix {0 0 0 0 0 0}}
 
 test oo-17.1 {OO: class introspection} -body {
     info class

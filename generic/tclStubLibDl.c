@@ -37,13 +37,13 @@
 
 MODULE_SCOPE const char *
 Tcl_InitSubsystems(
-	Tcl_PanicProc *panicProc)
+	TCL_NORETURN1 Tcl_PanicProc *panicProc)
 {
 	static struct info {
 		const TclStubs *stubs;
 		char version[255];
 	} info = {NULL, ""};
-    const char *(*initSubsystems)(Tcl_PanicProc *);
+    const char *(*initSubsystems)(TCL_NORETURN1 Tcl_PanicProc *);
     int a,b,c,d;
 
     if (!info.version[0]) {
@@ -90,8 +90,8 @@ Tcl_InitSubsystems(
 	    stubs->tcl_GetVersion(&a, &b, &c, &d);
 	    info.stubs = stubs;
 	    if (a>9) {
-		sprintf(info.version+1, "%d.%d%c%d", a/10, b, "ab."[d], c);
-		info.version[0] = '0' + (a%10);
+		sprintf(info.version+1, "%d.%d%c%d", a%10, b, "ab."[d], c);
+		info.version[0] = '0' + (a/10);
 	    } else {
 		sprintf(info.version+1, ".%d%c%d", b, "ab."[d], c);
 		info.version[0] = '0' + a;

@@ -5,112 +5,116 @@
 #ifndef _TCLOODECLS
 #define _TCLOODECLS
 
-#undef TCL_STORAGE_CLASS
-#ifdef BUILD_tcl
-#   define TCL_STORAGE_CLASS DLLEXPORT
-#else
-#   ifdef USE_TCL_STUBS
-#      undef USE_TCLOO_STUBS
-#      define USE_TCLOO_STUBS
-#      define TCL_STORAGE_CLASS
+#ifndef TCLAPI
+#   ifdef BUILD_tcl
+#	define TCLAPI extern DLLEXPORT
 #   else
-#      define TCL_STORAGE_CLASS DLLIMPORT
+#	define TCLAPI extern DLLIMPORT
 #   endif
 #endif
 
+#ifdef USE_TCL_STUBS
+#   undef USE_TCLOO_STUBS
+#   define USE_TCLOO_STUBS
+#endif
+
 /* !BEGIN!: Do not edit below this line. */
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /*
  * Exported function declarations:
  */
 
 /* 0 */
-EXTERN Tcl_Object	Tcl_CopyObjectInstance(Tcl_Interp *interp,
+TCLAPI Tcl_Object	Tcl_CopyObjectInstance(Tcl_Interp *interp,
 				Tcl_Object sourceObject,
 				const char *targetName,
 				const char *targetNamespaceName);
 /* 1 */
-EXTERN Tcl_Object	Tcl_GetClassAsObject(Tcl_Class clazz);
+TCLAPI Tcl_Object	Tcl_GetClassAsObject(Tcl_Class clazz);
 /* 2 */
-EXTERN Tcl_Class	Tcl_GetObjectAsClass(Tcl_Object object);
+TCLAPI Tcl_Class	Tcl_GetObjectAsClass(Tcl_Object object);
 /* 3 */
-EXTERN Tcl_Command	Tcl_GetObjectCommand(Tcl_Object object);
+TCLAPI Tcl_Command	Tcl_GetObjectCommand(Tcl_Object object);
 /* 4 */
-EXTERN Tcl_Object	Tcl_GetObjectFromObj(Tcl_Interp *interp,
+TCLAPI Tcl_Object	Tcl_GetObjectFromObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr);
 /* 5 */
-EXTERN Tcl_Namespace *	Tcl_GetObjectNamespace(Tcl_Object object);
+TCLAPI Tcl_Namespace *	Tcl_GetObjectNamespace(Tcl_Object object);
 /* 6 */
-EXTERN Tcl_Class	Tcl_MethodDeclarerClass(Tcl_Method method);
+TCLAPI Tcl_Class	Tcl_MethodDeclarerClass(Tcl_Method method);
 /* 7 */
-EXTERN Tcl_Object	Tcl_MethodDeclarerObject(Tcl_Method method);
+TCLAPI Tcl_Object	Tcl_MethodDeclarerObject(Tcl_Method method);
 /* 8 */
-EXTERN int		Tcl_MethodIsPublic(Tcl_Method method);
+TCLAPI int		Tcl_MethodIsPublic(Tcl_Method method);
 /* 9 */
-EXTERN int		Tcl_MethodIsType(Tcl_Method method,
+TCLAPI int		Tcl_MethodIsType(Tcl_Method method,
 				const Tcl_MethodType *typePtr,
 				ClientData *clientDataPtr);
 /* 10 */
-EXTERN Tcl_Obj *	Tcl_MethodName(Tcl_Method method);
+TCLAPI Tcl_Obj *	Tcl_MethodName(Tcl_Method method);
 /* 11 */
-EXTERN Tcl_Method	Tcl_NewInstanceMethod(Tcl_Interp *interp,
+TCLAPI Tcl_Method	Tcl_NewInstanceMethod(Tcl_Interp *interp,
 				Tcl_Object object, Tcl_Obj *nameObj,
 				int isPublic, const Tcl_MethodType *typePtr,
 				ClientData clientData);
 /* 12 */
-EXTERN Tcl_Method	Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
+TCLAPI Tcl_Method	Tcl_NewMethod(Tcl_Interp *interp, Tcl_Class cls,
 				Tcl_Obj *nameObj, int isPublic,
 				const Tcl_MethodType *typePtr,
 				ClientData clientData);
 /* 13 */
-EXTERN Tcl_Object	Tcl_NewObjectInstance(Tcl_Interp *interp,
+TCLAPI Tcl_Object	Tcl_NewObjectInstance(Tcl_Interp *interp,
 				Tcl_Class cls, const char *nameStr,
 				const char *nsNameStr, int objc,
 				Tcl_Obj *const *objv, int skip);
 /* 14 */
-EXTERN int		Tcl_ObjectDeleted(Tcl_Object object);
+TCLAPI int		Tcl_ObjectDeleted(Tcl_Object object);
 /* 15 */
-EXTERN int		Tcl_ObjectContextIsFiltering(
+TCLAPI int		Tcl_ObjectContextIsFiltering(
 				Tcl_ObjectContext context);
 /* 16 */
-EXTERN Tcl_Method	Tcl_ObjectContextMethod(Tcl_ObjectContext context);
+TCLAPI Tcl_Method	Tcl_ObjectContextMethod(Tcl_ObjectContext context);
 /* 17 */
-EXTERN Tcl_Object	Tcl_ObjectContextObject(Tcl_ObjectContext context);
+TCLAPI Tcl_Object	Tcl_ObjectContextObject(Tcl_ObjectContext context);
 /* 18 */
-EXTERN int		Tcl_ObjectContextSkippedArgs(
+TCLAPI int		Tcl_ObjectContextSkippedArgs(
 				Tcl_ObjectContext context);
 /* 19 */
-EXTERN ClientData	Tcl_ClassGetMetadata(Tcl_Class clazz,
+TCLAPI ClientData	Tcl_ClassGetMetadata(Tcl_Class clazz,
 				const Tcl_ObjectMetadataType *typePtr);
 /* 20 */
-EXTERN void		Tcl_ClassSetMetadata(Tcl_Class clazz,
+TCLAPI void		Tcl_ClassSetMetadata(Tcl_Class clazz,
 				const Tcl_ObjectMetadataType *typePtr,
 				ClientData metadata);
 /* 21 */
-EXTERN ClientData	Tcl_ObjectGetMetadata(Tcl_Object object,
+TCLAPI ClientData	Tcl_ObjectGetMetadata(Tcl_Object object,
 				const Tcl_ObjectMetadataType *typePtr);
 /* 22 */
-EXTERN void		Tcl_ObjectSetMetadata(Tcl_Object object,
+TCLAPI void		Tcl_ObjectSetMetadata(Tcl_Object object,
 				const Tcl_ObjectMetadataType *typePtr,
 				ClientData metadata);
 /* 23 */
-EXTERN int		Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
+TCLAPI int		Tcl_ObjectContextInvokeNext(Tcl_Interp *interp,
 				Tcl_ObjectContext context, int objc,
 				Tcl_Obj *const *objv, int skip);
 /* 24 */
-EXTERN Tcl_ObjectMapMethodNameProc * Tcl_ObjectGetMethodNameMapper(
+TCLAPI Tcl_ObjectMapMethodNameProc * Tcl_ObjectGetMethodNameMapper(
 				Tcl_Object object);
 /* 25 */
-EXTERN void		Tcl_ObjectSetMethodNameMapper(Tcl_Object object,
+TCLAPI void		Tcl_ObjectSetMethodNameMapper(Tcl_Object object,
 				Tcl_ObjectMapMethodNameProc *mapMethodNameProc);
 /* 26 */
-EXTERN void		Tcl_ClassSetConstructor(Tcl_Interp *interp,
+TCLAPI void		Tcl_ClassSetConstructor(Tcl_Interp *interp,
 				Tcl_Class clazz, Tcl_Method method);
 /* 27 */
-EXTERN void		Tcl_ClassSetDestructor(Tcl_Interp *interp,
+TCLAPI void		Tcl_ClassSetDestructor(Tcl_Interp *interp,
 				Tcl_Class clazz, Tcl_Method method);
 /* 28 */
-EXTERN Tcl_Obj *	Tcl_GetObjectName(Tcl_Interp *interp,
+TCLAPI Tcl_Obj *	Tcl_GetObjectName(Tcl_Interp *interp,
 				Tcl_Object object);
 
 typedef struct {
@@ -152,10 +156,8 @@ typedef struct TclOOStubs {
     Tcl_Obj * (*tcl_GetObjectName) (Tcl_Interp *interp, Tcl_Object object); /* 28 */
 } TclOOStubs;
 
-#ifdef __cplusplus
-extern "C" {
-#endif
 extern const TclOOStubs *tclOOStubsPtr;
+
 #ifdef __cplusplus
 }
 #endif
@@ -229,6 +231,4 @@ extern const TclOOStubs *tclOOStubsPtr;
 
 /* !END!: Do not edit above this line. */
 
-#undef TCL_STORAGE_CLASS
-#define TCL_STORAGE_CLASS DLLIMPORT
 #endif /* _TCLOODECLS */

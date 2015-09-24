@@ -3,9 +3,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Tcl_StringObj 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_NewStringObj, Tcl_NewUnicodeObj, Tcl_SetStringObj, Tcl_SetUnicodeObj, Tcl_GetStringFromObj, Tcl_GetString, Tcl_GetUnicodeFromObj, Tcl_GetUnicode, Tcl_GetUniChar, Tcl_GetCharLength, Tcl_GetRange, Tcl_AppendToObj, Tcl_AppendUnicodeToObj, Tcl_AppendObjToObj, Tcl_AppendStringsToObj, Tcl_AppendStringsToObjVA, Tcl_AppendLimitedToObj, Tcl_Format, Tcl_AppendFormatToObj, Tcl_ObjPrintf, Tcl_AppendPrintfToObj, Tcl_SetObjLength, Tcl_AttemptSetObjLength, Tcl_ConcatObj \- manipulate Tcl values as strings
@@ -293,6 +293,7 @@ of \fBTcl_Format\fR with functionality equivalent to:
 Tcl_Obj *newPtr = \fBTcl_Format\fR(interp, format, objc, objv);
 if (newPtr == NULL) return TCL_ERROR;
 \fBTcl_AppendObjToObj\fR(objPtr, newPtr);
+\fBTcl_DecrRefCount\fR(newPtr);
 return TCL_OK;
 .CE
 .PP
@@ -307,7 +308,7 @@ sprintf(buf, format, ...);
 \fBTcl_NewStringObj\fR(buf, -1);
 .CE
 .PP
-but with greater convenience and no need to 
+but with greater convenience and no need to
 determine \fBSOME_SUITABLE_LENGTH\fR. The formatting is done with the same
 core formatting engine used by \fBTcl_Format\fR.  This means the set of
 supported conversion specifiers is that of the \fBformat\fR command and
@@ -328,8 +329,8 @@ Tcl_Obj *objPtr = \fBTcl_ObjPrintf\fR("Value is %d", x);
 .PP
 If the value of \fIformat\fR contains internal inconsistencies or invalid
 specifier formats, the formatted string result produced by
-\fBTcl_ObjPrintf\fR will be an error message describing the error. 
-It is impossible however to provide runtime protection against 
+\fBTcl_ObjPrintf\fR will be an error message describing the error.
+It is impossible however to provide runtime protection against
 mismatches between the format and any subsequent arguments.
 Compile-time protection may be provided by some compilers.
 .PP
@@ -337,7 +338,9 @@ Compile-time protection may be provided by some compilers.
 of \fBTcl_ObjPrintf\fR with functionality equivalent to
 .PP
 .CS
-\fBTcl_AppendObjToObj\fR(objPtr, \fBTcl_ObjPrintf\fR(format, ...));
+Tcl_Obj *newPtr = \fBTcl_ObjPrintf\fR(format, ...);
+\fBTcl_AppendObjToObj\fR(objPtr, newPtr);
+\fBTcl_DecrRefCount\fR(newPtr);
 .CE
 .PP
 but with greater convenience and efficiency when the appending

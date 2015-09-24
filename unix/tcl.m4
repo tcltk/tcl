@@ -111,9 +111,9 @@ AC_DEFUN([SC_PATH_TCLCONFIG], [
 			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]] 2>/dev/null` \
 			`ls -dr ${srcdir}/../tcl[[8-9]].[[0-9]]* 2>/dev/null` ; do
 		    if test -f "$i/unix/tclConfig.sh" ; then
-		    ac_cv_c_tclconfig="`(cd $i/unix; pwd)`"
-		    break
-		fi
+			ac_cv_c_tclconfig="`(cd $i/unix; pwd)`"
+			break
+		    fi
 		done
 	    fi
 	])
@@ -271,11 +271,10 @@ AC_DEFUN([SC_PATH_TKCONFIG], [
 #
 # Results:
 #
-#	Subst the following vars:
+#	Substitutes the following vars:
 #		TCL_BIN_DIR
 #		TCL_SRC_DIR
 #		TCL_LIB_FILE
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_LOAD_TCLCONFIG], [
@@ -439,11 +438,11 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 #	extension can't assume that an executable Tcl shell exists at
 #	build time.
 #
-# Arguments
+# Arguments:
 #	none
 #
-# Results
-#	Subst's the following values:
+# Results:
+#	Substitutes the following vars:
 #		TCLSH_PROG
 #------------------------------------------------------------------------
 
@@ -484,11 +483,11 @@ AC_DEFUN([SC_PROG_TCLSH], [
 #	when running tests from an extension build directory. It is not
 #	correct to use the TCLSH_PROG in cases like this.
 #
-# Arguments
+# Arguments:
 #	none
 #
-# Results
-#	Subst's the following values:
+# Results:
+#	Substitutes the following values:
 #		BUILD_TCLSH
 #------------------------------------------------------------------------
 
@@ -775,6 +774,48 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 ])
 
 #------------------------------------------------------------------------
+# SC_ENABLE_USLEEP --
+#
+#	Allows use of usleep function.
+#	This is only relevant for Unix.
+#
+# Arguments:
+#	none
+#
+# Results:
+#
+#	Adds the following arguments to configure:
+#		--enable-usleep=yes|no (default is yes)
+#
+#	Defines the following vars:
+#		HAVE_USLEEP	Triggers use of usleep if defined.
+#------------------------------------------------------------------------
+
+AC_DEFUN([SC_ENABLE_USLEEP], [
+    AC_ARG_ENABLE(usleep,
+	AC_HELP_STRING([--enable-usleep],
+	    [use usleep if possible to sleep, otherwise use Tcl_Sleep (default: on)]),
+	[usleep_ok=$enableval], [usleep_ok=yes])
+
+    HAVE_USLEEP=0
+    if test "$usleep_ok" = "yes"; then
+	AC_CHECK_HEADER(unistd.h,[usleep_ok=yes],[usleep_ok=no])
+    fi
+    AC_MSG_CHECKING([whether to use usleep])
+    if test "$usleep_ok" = "yes"; then
+	AC_CACHE_VAL(tcl_cv_usleep_h, [
+	    AC_TRY_COMPILE([#include <unistd.h>], [usleep(0);],
+		    [tcl_cv_usleep_h=yes],[tcl_cv_usleep_h=no])])
+	AC_MSG_RESULT([$tcl_cv_usleep_h])
+	if test $tcl_cv_usleep_h = yes; then
+	    AC_DEFINE(HAVE_USLEEP, 1, [Do we have usleep()?])
+	fi
+    else
+	AC_MSG_RESULT([$usleep_ok])
+    fi
+])
+
+#------------------------------------------------------------------------
 # SC_ENABLE_LANGINFO --
 #
 #	Allows use of modern nl_langinfo check for better l10n.
@@ -790,7 +831,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 #
 #	Defines the following vars:
 #		HAVE_LANGINFO	Triggers use of nl_langinfo if defined.
-#
 #------------------------------------------------------------------------
 
 AC_DEFUN([SC_ENABLE_LANGINFO], [
@@ -1045,34 +1085,17 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 
     AC_CACHE_CHECK([if compiler supports visibility "hidden"],
 	tcl_cv_cc_visibility_hidden, [
-	    AS_IF([test "$SHARED_BUILD" = 1], [
-		hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -fvisibility=hidden -Werror"
-		AC_TRY_COMPILE(,[#if !defined(__GNUC__) || __GNUC__ < 4
-#error visibility hidden is not supported for this compiler
-#endif
-		], tcl_cv_cc_visibility_hidden=yes,
-		    tcl_cv_cc_visibility_hidden=no)
-		CFLAGS=$hold_cflags
-	    ], [
-		tcl_cv_cc_visibility_hidden=no
-	    ])
-    ])
-    AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
-	CFLAGS="$CFLAGS -fvisibility=hidden"
-	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
-    ], [
 	hold_cflags=$CFLAGS; CFLAGS="$CFLAGS -Werror"
 	AC_TRY_LINK([
 	    extern __attribute__((__visibility__("hidden"))) void f(void);
 	    void f(void) {}], [f();], tcl_cv_cc_visibility_hidden=yes,
 	    tcl_cv_cc_visibility_hidden=no)
-	CFLAGS=$hold_cflags
-	AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
-	    AC_DEFINE(MODULE_SCOPE,
-		[extern __attribute__((__visibility__("hidden")))],
-		[Compiler support for module scope symbols])
-	    AC_DEFINE(HAVE_HIDDEN, [1], [Compiler support for module scope symbols])
-	])
+	CFLAGS=$hold_cflags])
+    AS_IF([test $tcl_cv_cc_visibility_hidden = yes], [
+	AC_DEFINE(MODULE_SCOPE,
+	    [extern __attribute__((__visibility__("hidden")))],
+	    [Compiler support for module scope symbols])
+	AC_DEFINE(HAVE_HIDDEN, [1], [Compiler support for module scope symbols])
     ])
 
     # Step 0.d: Disable -rpath support?
@@ -1236,7 +1259,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LD_SEARCH_FLAGS=""
 	    TCL_NEEDS_EXP_FILE=1
 	    TCL_EXPORT_FILE_SUFFIX='${VERSION}\$\{DBGX\}.dll.a'
-	    TCL_SHLIB_LD_EXTRAS='-Wl,--out-implib,$[@].a'
+	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,--out-implib,\$[@].a"
 	    AC_CACHE_CHECK(for Cygwin version of gcc,
 		ac_cv_cygwin,
 		AC_TRY_COMPILE([
@@ -1253,8 +1276,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    if test "x${TCL_THREADS}" = "x0"; then
 		AC_MSG_ERROR([CYGWIN compile is only supported with --enable-threads])
 	    fi
-	    if test "x${SHARED_BUILD}" = "x1" -a ! -f "../win/tcldde14.dll" -a ! -f "../win/tk86.dll"; then
-		AC_MSG_ERROR([Please configure and make the ../win directory first.])
+	    do64bit_ok=yes
+	    if test "x${SHARED_BUILD}" = "x1"; then
+		echo "running cd ${TCL_SRC_DIR}/win; ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args"
+		# The eval makes quoting arguments work.
+		if cd ${TCL_SRC_DIR}/win; eval ${CONFIG_SHELL-/bin/sh} ./configure $ac_configure_args; cd ../unix
+		then :
+		else
+		    { echo "configure: error: configure failed for ../win" 1>&2; exit 1; }
+		fi
 	    fi
 	    ;;
 	dgux*)
@@ -1487,7 +1517,14 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		LDFLAGS=""
 		;;
 	    *)
-		SHLIB_CFLAGS="-fPIC"
+		case "$arch" in
+		alpha|sparc64)
+		    SHLIB_CFLAGS="-fPIC"
+		    ;;
+		*)
+		    SHLIB_CFLAGS="-fpic"
+		    ;;
+		esac
 		SHLIB_LD='${CC} -shared ${SHLIB_CFLAGS}'
 		SHLIB_SUFFIX=".so"
 		DL_OBJS="tclLoadDl.o"
@@ -1542,7 +1579,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # This configuration from FreeBSD Ports.
 	    SHLIB_CFLAGS="-fPIC"
 	    SHLIB_LD="${CC} -shared"
-	    TCL_SHLIB_LD_EXTRAS="-Wl,-soname=\$[@]"
+	    SHLIB_LD_LIBS="${SHLIB_LD_LIBS} -Wl,-soname,\$[@]"
 	    SHLIB_SUFFIX=".so"
 	    DL_OBJS="tclLoadDl.o"
 	    DL_LIBS=""
@@ -1555,11 +1592,15 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		LIBS=`echo $LIBS | sed s/-pthread//`
 		CFLAGS="$CFLAGS $PTHREAD_CFLAGS"
 		LDFLAGS="$LDFLAGS $PTHREAD_LIBS"])
-	    # Version numbers are dot-stripped by system policy.
-	    TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}\$\{DBGX\}.so.1'
-	    TCL_LIB_VERSIONS_OK=nodots
+	    case $system in
+	    FreeBSD-3.*)
+		# Version numbers are dot-stripped by system policy.
+		TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
+		UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
+		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
+		TCL_LIB_VERSIONS_OK=nodots
+		;;
+	    esac
 	    ;;
 	Darwin-*)
 	    CFLAGS_OPTIMIZE="-Os"
@@ -1638,7 +1679,6 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    AS_IF([test "$tcl_cv_cc_visibility_hidden" != yes], [
 		AC_DEFINE(MODULE_SCOPE, [__private_extern__],
 		    [Compiler support for module scope symbols])
-		tcl_cv_cc_visibility_hidden=yes
 	    ])
 	    CC_SEARCH_FLAGS=""
 	    LD_SEARCH_FLAGS=""
@@ -2050,7 +2090,7 @@ dnl # preprocessing tests use only CPPFLAGS.
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [
         LIB_SUFFIX=${SHARED_LIB_SUFFIX}
-        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${TCL_SHLIB_LD_EXTRAS} ${SHLIB_LD_LIBS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
+        MAKE_LIB='${SHLIB_LD} -o [$]@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         AS_IF([test "${SHLIB_SUFFIX}" = ".dll"], [
             INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
@@ -2062,21 +2102,19 @@ dnl # preprocessing tests use only CPPFLAGS.
 
         AS_IF([test "$RANLIB" = ""], [
             MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         ], [
             MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
         ])
+        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
     ])
 
     # Stub lib does not depend on shared/static configuration
     AS_IF([test "$RANLIB" = ""], [
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
     ], [
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE))'
     ])
+    INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
 
     # Define TCL_LIBS now that we know what DL_LIBS is.
     # The trick here is that we don't want to change the value of TCL_LIBS if
@@ -2160,7 +2198,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 #	Defines some of the following vars:
 #		NO_DIRENT_H
 #		NO_VALUES_H
-#		HAVE_LIMITS_H or NO_LIMITS_H
 #		NO_STDLIB_H
 #		NO_STRING_H
 #		NO_SYS_WAIT_H
@@ -2200,9 +2237,6 @@ closedir(d);
 
     AC_CHECK_HEADER(float.h, , [AC_DEFINE(NO_FLOAT_H, 1, [Do we have <float.h>?])])
     AC_CHECK_HEADER(values.h, , [AC_DEFINE(NO_VALUES_H, 1, [Do we have <values.h>?])])
-    AC_CHECK_HEADER(limits.h,
-	[AC_DEFINE(HAVE_LIMITS_H, 1, [Do we have <limits.h>?])],
-	[AC_DEFINE(NO_LIMITS_H, 1, [Do we have <limits.h>?])])
     AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
     AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)

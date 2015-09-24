@@ -25,6 +25,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 testConstraint testupvar [llength [info commands testupvar]]
 testConstraint testgetvarfullname [llength [info commands testgetvarfullname]]
 testConstraint testsetnoerr [llength [info commands testsetnoerr]]
+testConstraint memory [llength [info commands memory]]
 
 catch {rename p ""}
 catch {namespace delete test_ns_var}
@@ -289,7 +290,7 @@ test var-3.11 {MakeUpvar, my var looks like array elem} -setup {
 } -returnCodes error -body {
     set aaaaa 789789
     upvar #0 aaaaa foo(bar)
-} -result {bad variable name "foo(bar)": upvar won't create a scalar variable that looks like an array element}
+} -result {bad variable name "foo(bar)": can't create a scalar variable that looks like an array element}
 
 test var-4.1 {Tcl_GetVariableName, global variable} testgetvarfullname {
     catch {unset a}
@@ -865,6 +866,22 @@ test var-20.8 {array set compilation correctness: Bug 3603163} -setup {
     }}
     array size x
 } -result 0
+test var-20.9 {[bc1a96407a] array set compiled w/ trace} -setup {
+    variable foo
+    variable lambda
+    unset -nocomplain lambda foo
+    array set foo {}
+    lappend lambda {}
+    lappend lambda [list array set [namespace which -variable foo] {a 1}]
+} -body {
+    after 0 [list apply $lambda]
+    vwait [namespace which -variable foo]
+} -cleanup {
+    unset -nocomplain lambda foo
+} -result {}
+test var-20.10 {[bc1a96407a] array set don't compile bad varname} -body {
+    apply {{} {set name foo(bar); array set $name {a 1}}}
+} -returnCodes error -match glob -result *
 
 test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
     proc linenumber {} {dict get [info frame -1] line}
@@ -877,6 +894,33 @@ test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
 } -cleanup {
     rename linenumber {}
 } -result 1
+
+test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
+    proc getbytes {} {
+	lindex [split [memory info] \n] 3 3
+    }
+    proc doit k {
+	variable A
+	set A($k) {}
+	foreach n [array names A] {
+	    if {$n <= $k-1} {
+		unset A($n)
+	    }
+	}
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	doit $i
+        set tmp $end
+        set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    array unset A
+    rename getbytes {}
+    rename doit {}
+} -result 0
 
 
 catch {namespace delete ns}
