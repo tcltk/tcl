@@ -202,7 +202,7 @@ static void	AtForkChild(void);
 #endif /* HAVE_PTHREAD_ATFORK */
 #endif /* TCL_THREADS */
 static int	FileHandlerEventProc(Tcl_Event *evPtr, int flags);
-
+
 /*
  * Import of Windows API when building threaded with Cygwin.
  */
@@ -1272,7 +1272,7 @@ NotifierThreadProc(
 		}
 #ifdef __CYGWIN__
 		PostMessageW(tsdPtr->hwnd, 1024, 0, 0);
-#else
+#else /* __CYGWIN__ */
 		Tcl_ConditionNotify(&tsdPtr->waitCV);
 #endif /* __CYGWIN__ */
 	    }
