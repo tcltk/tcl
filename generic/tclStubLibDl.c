@@ -46,7 +46,7 @@ Tcl_InitSubsystems(
     const char *(*initSubsystems)(TCL_NORETURN1 Tcl_PanicProc *);
     int a,b,c,d;
 
-    if (!info.version[0]) {
+    if (!info.stubs) {
 	void *handle = dlopen(TCL_DLL_FILE, RTLD_NOW|RTLD_LOCAL);
 	if (!handle) {
 	    handle = dlopen(TCL_PREV_DLL_FILE, RTLD_NOW|RTLD_LOCAL);
@@ -67,12 +67,11 @@ Tcl_InitSubsystems(
 	if (initSubsystems) {
 	    /* If the core has TIP #414, use it. */
 	    const char *version = initSubsystems(panicProc);
+	    strcpy(info.version, version);
 	    info.stubs = ((const TclStubs **)version)[-1];
-	    strcpy(info.version+1, version+1);
-	    info.version[0] = version[0];
 	} else {
 	    const TclStubs *stubs;
-	    const char *(*setPanicProc)(Tcl_PanicProc *);
+	    const char *(*setPanicProc)(TCL_NORETURN1 Tcl_PanicProc *);
 	    Tcl_Interp *interp, *(*createInterp)(void);
 
 	    setPanicProc = dlsym(handle, "Tcl_SetPanicProc");
@@ -88,14 +87,8 @@ Tcl_InitSubsystems(
 	    stubs = ((Interp *) interp)->stubTable;
 	    stubs->tcl_DeleteInterp(interp);
 	    stubs->tcl_GetVersion(&a, &b, &c, &d);
+	    sprintf(info.version, "%d.%d%c%d", a, b, "ab."[d], c);
 	    info.stubs = stubs;
-	    if (a>9) {
-		sprintf(info.version+1, "%d.%d%c%d", a%10, b, "ab."[d], c);
-		info.version[0] = '0' + (a/10);
-	    } else {
-		sprintf(info.version+1, ".%d%c%d", b, "ab."[d], c);
-		info.version[0] = '0' + a;
-	    }
 	}
     }
     return info.version;
