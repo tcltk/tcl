@@ -16,6 +16,7 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
 catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint controversialNaN 1
+testConstraint testbytestring [llength [info commands testbytestring]]
 testConstraint testdstring [llength [info commands testdstring]]
 testConstraint testconcatobj [llength [info commands testconcatobj]]
 testConstraint testdoubledigits [llength [info commands testdoubledigits]]
@@ -274,10 +275,10 @@ test util-5.17 {Tcl_StringMatch: UTF-8} {
     # get 1 UTF-8 character
     Wrapper_Tcl_StringMatch "a\[a\u4e4fc]c" "a\u4e4fc"
 } 1
-test util-5.18 {Tcl_StringMatch: UTF-8} {
+test util-5.18 {Tcl_StringMatch: UTF-8} testbytestring {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);
     # proper advance: wrong answer would match on UTF trail byte of \u4e4f
-    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [bytestring a\u008fc]
+    Wrapper_Tcl_StringMatch {a[a\u4e4fc]c} [testbytestring a\u008fc]
 } 0
 test util-5.19 {Tcl_StringMatch: UTF-8} {
     # pattern += Tcl_UtfToUniChar(pattern, &endChar);

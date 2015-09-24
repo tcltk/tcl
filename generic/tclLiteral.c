@@ -358,7 +358,7 @@ TclFetchLiteral(
 
 int
 TclRegisterLiteral(
-    CompileEnv *envPtr,		/* Points to the CompileEnv in whose object
+    void *ePtr,		/* Points to the CompileEnv in whose object
 				 * array an object is found or created. */
     register char *bytes,	/* Points to string for which to find or
 				 * create an object in CompileEnv's object
@@ -372,6 +372,7 @@ TclRegisterLiteral(
 				 * the literal should not be shared accross
 				 * namespaces. */
 {
+    CompileEnv *envPtr = ePtr;
     Interp *iPtr = envPtr->iPtr;
     LiteralTable *localTablePtr = &envPtr->localLitTable;
     LiteralEntry *globalPtr, *localPtr;
@@ -716,16 +717,22 @@ ExpandLocalLiteralArray(
     LiteralEntry *currArrayPtr = envPtr->literalArrayPtr;
     LiteralEntry *newArrayPtr;
     int i;
+    unsigned int newSize = (currBytes <= UINT_MAX / 2) ? 2*currBytes : UINT_MAX;
+
+    if (currBytes == newSize) {
+	Tcl_Panic("max size of Tcl literal array (%d literals) exceeded",
+		currElems);
+    }
 
     if (envPtr->mallocedLiteralArray) {
-	newArrayPtr = ckrealloc(currArrayPtr, 2 * currBytes);
+	newArrayPtr = ckrealloc(currArrayPtr, newSize);
     } else {
 	/*
 	 * envPtr->literalArrayPtr isn't a ckalloc'd pointer, so we must
 	 * code a ckrealloc equivalent for ourselves.
 	 */
 
-	newArrayPtr = ckalloc(2 * currBytes);
+	newArrayPtr = ckalloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
 	envPtr->mallocedLiteralArray = 1;
     }
@@ -750,7 +757,7 @@ ExpandLocalLiteralArray(
     }
 
     envPtr->literalArrayPtr = newArrayPtr;
-    envPtr->literalArrayEnd = (2 * currElems);
+    envPtr->literalArrayEnd = newSize / sizeof(LiteralEntry);
 }
 
 /*
@@ -940,6 +947,16 @@ RebuildLiteralTable(
      * Allocate and initialize the new bucket array, and set up hashing
      * constants for new array size.
      */
+
+    if (oldSize > UINT_MAX/(4 * sizeof(LiteralEntry *))) {
+	/*
+	 * Memory allocator limitations will not let us create the
+	 * next larger table size.  Best option is to limp along
+	 * with what we have.
+	 */
+
+	return;
+    }
 
     tablePtr->numBuckets *= 4;
     tablePtr->buckets = ckalloc(tablePtr->numBuckets * sizeof(LiteralEntry*));

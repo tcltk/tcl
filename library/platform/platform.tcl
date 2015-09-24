@@ -313,13 +313,25 @@ proc ::platform::patterns {id} {
 		}
 	    }
 	}
+	macosx-powerpc {
+	    lappend res macosx-universal
+	}
+	macosx-x86_64 {
+	    lappend res macosx-i386-x86_64
+	}
+	macosx-ix86 {
+	    lappend res macosx-universal macosx-i386-x86_64
+	}
 	macosx*-*    {
-	    # 10.5+ 
+	    # 10.5+
 	    if {[regexp {macosx([^-]*)-(.*)} $id -> v cpu]} {
 
 		switch -exact -- $cpu {
-		    ix86    -
-		    x86_64  { set alt i386-x86_64 }
+		    ix86    {
+			lappend alt i386-x86_64
+			lappend alt universal
+		    }
+		    x86_64  { lappend alt i386-x86_64 }
 		    default { set alt {} }
 		}
 
@@ -330,34 +342,25 @@ proc ::platform::patterns {id} {
 		    set res {}
 		    for {set j $minor} {$j >= 5} {incr j -1} {
 			lappend res macosx${major}.${j}-${cpu}
-			lappend res macosx${major}.${j}-universal
-			if {$alt ne {}} {
-			    lappend res macosx${major}.${j}-$alt
+			foreach a $alt {
+			    lappend res macosx${major}.${j}-$a
 			}
 		    }
 
 		    # Add unversioned patterns for 10.3/10.4 builds.
 		    lappend res macosx-${cpu}
-		    lappend res macosx-universal
-		    if {$alt ne {}} {
-			lappend res macosx-$alt
+		    foreach a $alt {
+			lappend res macosx-$a
 		    }
 		} else {
-		    lappend res macosx-universal
-		    if {$alt ne {}} {
-			lappend res macosx-$alt
+		    # No version, just do unversioned patterns.
+		    foreach a $alt {
+			lappend res macosx-$a
 		    }
 		}
 	    } else {
-		lappend res macosx-universal
+		# no v, no cpu ... nothing
 	    }
-	}
-	macosx-powerpc {
-	    lappend res macosx-universal
-	}
-	macosx-x86_64 -
-	macosx-ix86 {
-	    lappend res macosx-universal macosx-i386-x86_64
 	}
     }
     lappend res tcl ; # Pure tcl packages are always compatible.
@@ -368,7 +371,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.12
+package provide platform 1.0.13
 
 # ### ### ### ######### ######### #########
 ## Demo application
