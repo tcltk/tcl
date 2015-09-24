@@ -1601,14 +1601,6 @@ ReflectWatch(
 
     mask &= rcPtr->mode;
 
-    if (mask == rcPtr->interest) {
-	/*
-	 * Same old, same old, why should we do something?
-	 */
-
-	return;
-    }
-
     rcPtr->interest = mask;
 
     /*
