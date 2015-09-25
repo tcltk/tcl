@@ -379,58 +379,6 @@ TclpMasterUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMutexLock
- *
- *	This procedure is used to grab a lock that serializes locking
- *	another mutex.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpMutexLock(void)
-{
-#ifdef TCL_THREADS
-    pthread_mutex_lock(&mutexLock);
-#endif
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpMutexUnlock
- *
- *	This procedure is used to release a lock that serializes locking
- *	another mutex.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpMutexUnlock(void)
-{
-#ifdef TCL_THREADS
-    pthread_mutex_unlock(&mutexLock);
-#endif
-}
-
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
@@ -504,17 +452,17 @@ retry:
 	MASTER_UNLOCK;
     }
     while (1) {
-	TclpMutexLock();
+	pthread_mutex_lock(&mutexLock);
 	pmutexPtr = *((pthread_mutex_t **)mutexPtr);
 	if (pmutexPtr == NULL) {
-	    TclpMutexUnlock();
+	    pthread_mutex_unlock(&mutexLock);
 	    goto retry;
 	}
 	if (pthread_mutex_trylock(pmutexPtr) == 0) {
-	    TclpMutexUnlock();
+	    pthread_mutex_unlock(&mutexLock);
 	    return;
 	}
-	TclpMutexUnlock();
+	pthread_mutex_unlock(&mutexLock);
 	/*
 	 * BUGBUG: All core and Thread package tests pass when usleep()
 	 *         is used; however, the Thread package tests hang at
