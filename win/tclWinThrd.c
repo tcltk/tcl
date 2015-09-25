@@ -480,52 +480,6 @@ TclpMasterUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMutexLock
- *
- *	This procedure is used to grab a lock that serializes locking
- *	another mutex.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpMutexLock(void)
-{
-    EnterCriticalSection(&mutexLock);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclpMutexUnlock
- *
- *	This procedure is used to release a lock that serializes locking
- *	another mutex.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpMutexUnlock(void)
-{
-    LeaveCriticalSection(&mutexLock);
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
@@ -650,17 +604,17 @@ retry:
 	MASTER_UNLOCK;
     }
     while (1) {
-	TclpMutexLock();
+	EnterCriticalSection(&mutexLock);
 	csPtr = *((CRITICAL_SECTION **)mutexPtr);
 	if (csPtr == NULL) {
-	    TclpMutexUnlock();
+	    LeaveCriticalSection(&mutexLock);
 	    goto retry;
 	}
 	if (TryEnterCriticalSection(csPtr)) {
-	    TclpMutexUnlock();
+	    LeaveCriticalSection(&mutexLock);
 	    return;
 	}
-	TclpMutexUnlock();
+	LeaveCriticalSection(&mutexLock);
 	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME);
     }
 }
