@@ -981,7 +981,7 @@ test iocmd-23.1 {chan read, regular data return} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} {read rc* 4096} {watch rc* {}} snarfsnarf}
+} -result {{read rc* 4096} {read rc* 4096} snarfsnarf}
 test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
     set res {}
     proc foo {args} {
@@ -993,7 +993,7 @@ test iocmd-23.2 {chan read, bad data return, to much} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} {watch rc* {}} 1 {read delivered more than requested}}
+} -result {{read rc* 4096} 1 {read delivered more than requested}}
 test iocmd-23.3 {chan read, for non-readable channel} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1016,7 +1016,7 @@ test iocmd-23.4 {chan read, error return} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} {watch rc* {}} 1 BOOM!}
+} -result {{read rc* 4096} 1 BOOM!}
 test iocmd-23.5 {chan read, break return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1028,7 +1028,7 @@ test iocmd-23.5 {chan read, break return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} {watch rc* {}} 1 *bad code*}
+} -result {{read rc* 4096} 1 *bad code*}
 test iocmd-23.6 {chan read, continue return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1040,7 +1040,7 @@ test iocmd-23.6 {chan read, continue return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} {watch rc* {}} 1 *bad code*}
+} -result {{read rc* 4096} 1 *bad code*}
 test iocmd-23.7 {chan read, custom return is error} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1052,7 +1052,7 @@ test iocmd-23.7 {chan read, custom return is error} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} {watch rc* {}} 1 *bad code*}
+} -result {{read rc* 4096} 1 *bad code*}
 test iocmd-23.8 {chan read, level is squashed} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1064,7 +1064,7 @@ test iocmd-23.8 {chan read, level is squashed} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{read rc* 4096} {watch rc* {}} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
+} -result {{read rc* 4096} 1 *bad code* {-code 1 -level 0 -errorcode NONE -errorline 1 -errorinfo *bad code*subcommand "read"*}}
 test iocmd-23.9 {chan read, no data means eof} -match glob -setup {
     set res {}
     proc foo {args} {
@@ -1080,7 +1080,7 @@ test iocmd-23.9 {chan read, no data means eof} -match glob -setup {
     close $c
     rename foo {}
     unset res
-} -result {{read rc* 4096} {watch rc* {}} {} 1}
+} -result {{read rc* 4096} {} 1}
 test iocmd-23.10 {chan read, EAGAIN means no data, yet no eof either} -match glob -setup {
     set res {}
     proc foo {args} {
@@ -1096,7 +1096,7 @@ test iocmd-23.10 {chan read, EAGAIN means no data, yet no eof either} -match glo
     close $c
     rename foo {}
     unset res
-} -result {{read rc* 4096} {watch rc* {}} {} 0}
+} -result {{read rc* 4096} {} 0}
 test iocmd-23.11 {chan read, close pulls the rug out} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1410,14 +1410,14 @@ test iocmd-25.10 {chan configure, cgetall, level is ignored} -match glob -body {
 test iocmd-26.1 {chan configure, set standard option} -match glob -body {
     set res {}
     proc foo {args} {
-	oninit configure; onfinal; track; return
+	oninit configure; onfinal; track; note MUST_NOT_HAPPEN; return
     }
     set c [chan create {r w} foo]
     note [fconfigure $c -translation lf]
     close $c
     rename foo {}
     set res
-} -result {{watch rc* {}} {}}
+} -result {{}}
 test iocmd-26.2 {chan configure, set option, error return} -match glob -body {
     set res {}
     proc foo {args} {
@@ -1955,7 +1955,7 @@ test iocmd-31.6 {chan postevent, posted events do happen} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{watch rc* read} {} TOCK {watch rc* read} {} {watch rc* {}}}
+} -result {{watch rc* read} {} TOCK {} {watch rc* {}}}
 test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     set res {}
     proc foo {args} {oninit; onfinal; track; return}
@@ -1968,7 +1968,7 @@ test iocmd-31.7 {chan postevent, posted events do happen} -match glob -body {
     close $c
     rename foo {}
     set res
-} -result {{watch rc* write} {} TOCK {watch rc* write} {} {watch rc* {}}}
+} -result {{watch rc* write} {} TOCK {} {watch rc* {}}}
 test iocmd-31.8 {chan postevent after close throws error} -match glob -setup {
     proc foo {args} {oninit; onfinal; track; return}
     proc dummy args { return }
