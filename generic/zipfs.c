@@ -918,8 +918,36 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 	    goto nextent;
 	}
 	if (!isdir && (mntpt[0] == '\0') && !CountSlashes(path)) {
-	    /* regular files skipped when mounting on root */
+#ifdef ANDROID
+	    /*
+	     * Try to remap regular files on root to /assets/.root/...
+	     * /assets/.root/... should not be in a valid APK due to
+	     * leading dot in file name component. This trick should
+	     * make the files AndroidManifest.xml, resources.arsc,
+	     * and classes.dex visible to Tcl.
+	     */
+	    Tcl_DString ds2;
+
+	    Tcl_DStringInit(&ds2);
+	    Tcl_DStringAppend(&ds2, "assets/.root/", -1);
+	    Tcl_DStringAppend(&ds2, path, -1);
+	    hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, Tcl_DStringValue(&ds2));
+	    if (hPtr != NULL) {
+		/* should not happen but skip it anyway */
+		Tcl_DStringFree(&ds2);
+		goto nextent;
+	    }
+	    Tcl_DStringSetLength(&ds, 0);
+	    Tcl_DStringAppend(&ds, Tcl_DStringValue(&ds2),
+			      Tcl_DStringLength(&ds2));
+	    path = Tcl_DStringValue(&ds);
+	    Tcl_DStringFree(&ds2);
+#else
+	    /*
+	     * Regular files skipped when mounting on root.
+	     */
 	    goto nextent;
+#endif
 	}
 	Tcl_DStringSetLength(&fpBuf, 0);
 	fullpath = CanonicalPath(mntpt, path, &fpBuf);
