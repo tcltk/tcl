@@ -98,19 +98,21 @@ extern "C" {
 /*
  *----------------------------------------------------------------------------
  * Support for functions with a variable number of arguments.
- *
- * The following TCL_VARARGS* macros are to support old extensions
- * written for older versions of Tcl where the macros permitted
- * support for the varargs.h system as well as stdarg.h .
- *
- * New code should just directly be written to use stdarg.h conventions.
  */
 
 #include <stdarg.h>
 #if defined(__GNUC__) && (__GNUC__ > 2)
 #   define TCL_FORMAT_PRINTF(a,b) __attribute__ ((__format__ (__printf__, a, b)))
+#   define TCL_NORETURN __attribute__ ((noreturn))
+#   define TCL_NORETURN1 __attribute__ ((noreturn))
 #else
 #   define TCL_FORMAT_PRINTF(a,b)
+#   if defined(_MSC_VER) && (_MSC_VER >= 1310)
+#	define TCL_NORETURN _declspec(noreturn)
+#   else
+#	define TCL_NORETURN /* nothing */
+#   endif
+#   define TCL_NORETURN1 /* nothing */
 #endif
 
 /*
@@ -2190,7 +2192,7 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
 #define Tcl_Main(argc, argv, proc) Tcl_MainEx(argc, argv, proc, \
 	    ((Tcl_CreateInterp)()))
 TCLAPI void		Tcl_FindExecutable(const char *argv0);
-TCLAPI void		Tcl_SetPanicProc(Tcl_PanicProc *panicProc);
+TCLAPI void		Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc);
 TCLAPI void		Tcl_MainEx(int argc, char **argv,
 			    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #if defined(_WIN32) && defined(UNICODE)

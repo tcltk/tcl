@@ -2250,8 +2250,8 @@ UnsetVarStruct(
 	    tracePtr = NULL;
 	    if (TclIsVarTraced(&dummyVar)) {
 		tPtr = Tcl_FindHashEntry(&iPtr->varTraces, &dummyVar);
-		tracePtr = Tcl_GetHashValue(tPtr);
 		if (tPtr) {
+		    tracePtr = Tcl_GetHashValue(tPtr);
 		    Tcl_DeleteHashEntry(tPtr);
 		}
 	    }
@@ -6165,12 +6165,11 @@ CompareVarKeys(
 
     /*
      * If the object pointers are the same then they match.
-     */
-
-    if (objPtr1 == objPtr2) {
-	return 1;
-    }
-
+     * OPT: this comparison was moved to the caller
+     
+       if (objPtr1 == objPtr2) return 1;
+    */
+    
     /*
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being in a
      * register.

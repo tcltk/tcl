@@ -39,7 +39,7 @@ declare 1 {
 	    void *clientDataPtr)
 }
 declare 2 {
-    void Tcl_Panic(const char *format, ...)
+    TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
     char *Tcl_Alloc(unsigned int size)
@@ -1009,7 +1009,7 @@ declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
 declare 278 {
-    void Tcl_PanicVA(const char *format, va_list argList)
+    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
 }
 declare 279 {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, int *type)

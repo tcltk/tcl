@@ -3350,11 +3350,8 @@ NRNamespaceEvalCmd(
 
     /* This is needed to satisfy GCC 3.3's strict aliasing rules */
     framePtrPtr = &framePtr;
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
-    if (result != TCL_OK) {
-	return TCL_ERROR;
-    }
 
     if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	framePtr->objc = objc;
@@ -3834,7 +3831,7 @@ NRNamespaceInscopeCmd(
     Tcl_Namespace *namespacePtr;
     CallFrame *framePtr, **framePtrPtr;
     register Interp *iPtr = (Interp *) interp;
-    int i, result;
+    int i;
     Tcl_Obj *cmdObjPtr;
 
     if (objc < 3) {
@@ -3856,11 +3853,8 @@ NRNamespaceInscopeCmd(
 
     framePtrPtr = &framePtr;		/* This is needed to satisfy GCC's
 					 * strict aliasing rules. */
-    result = TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
+    (void) TclPushStackFrame(interp, (Tcl_CallFrame **) framePtrPtr,
 	    namespacePtr, /*isProcCallFrame*/ 0);
-    if (result != TCL_OK) {
-	return result;
-    }
 
     if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	framePtr->objc = objc;

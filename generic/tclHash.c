@@ -324,7 +324,7 @@ CreateHashEntry(
 	    if (hash != PTR2UINT(hPtr->hash)) {
 		continue;
 	    }
-	    if (compareKeysProc((void *) key, hPtr)) {
+	    if (((void *) key == hPtr) || compareKeysProc((void *) key, hPtr)) {
 		if (newPtr) {
 		    *newPtr = 0;
 		}

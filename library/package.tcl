@@ -729,7 +729,7 @@ proc ::tcl::Pkg::Create {args} {
     foreach key {load source} {
 	foreach filespec $opts(-$key) {
 	    lassign $filespec filename proclist
-	    
+
 	    if { [llength $proclist] == 0 } {
 		set cmd "\[list $key \[file join \$dir [list $filename]\]\]"
 		lappend cmdList $cmd
