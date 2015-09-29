@@ -1107,7 +1107,7 @@ TclFinalizeThreadAlloc(void)
  * TclFinalizeThreadAllocThread --
  *
  *	This procedure is used to destroy single thread private resources used
- *	in this file. 
+ *	in this file.
  * Called in TclpFinalizeThreadData when a thread exits (Tcl_FinalizeThread).
  *
  * Results:
