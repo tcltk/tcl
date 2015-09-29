@@ -95,7 +95,11 @@ proc ::platform::generic {} {
 
     switch -- $plat {
 	windows {
-	    set plat win32
+	    if {$tcl_platform(platform) == "unix"} {
+		set plat cygwin_nt
+	    } else {
+		set plat win32
+	    }
 	    if {$cpu eq "amd64"} {
 		# Do not check wordSize, win32-x64 is an IL32P64 platform.
 		set cpu x86_64
@@ -158,9 +162,12 @@ proc ::platform::identify {} {
     global tcl_platform
 
     set id [generic]
-    regexp {^([^-]+)-([^-]+)$} $id -> plat cpu
+    regexp {^([^-]+)(-[0-9\.]+)?(-wow)?-([^-]+)$} $id -> plat ver wow cpu
 
     switch -- $plat {
+	cygwin_nt {
+	    return "${plat}-${cpu}"
+	}
 	solaris {
 	    regsub {^5} $tcl_platform(osVersion) 2 text
 	    append plat $text
@@ -371,7 +378,7 @@ proc ::platform::patterns {id} {
 # ### ### ### ######### ######### #########
 ## Ready
 
-package provide platform 1.0.13
+package provide platform 1.0.14
 
 # ### ### ### ######### ######### #########
 ## Demo application
