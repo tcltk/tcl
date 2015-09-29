@@ -1505,7 +1505,7 @@ Tcl_SetVar(
     Tcl_Obj *varValuePtr, *varNamePtr = Tcl_NewStringObj(varName, -1);
 
     Tcl_IncrRefCount(varNamePtr);
-    varValuePtr = Tcl_ObjSetVar2(interp, varNamePtr, NULL, 
+    varValuePtr = Tcl_ObjSetVar2(interp, varNamePtr, NULL,
 	    Tcl_NewStringObj(newValue, -1), flags);
     Tcl_DecrRefCount(varNamePtr);
 
@@ -2038,7 +2038,7 @@ TclPtrIncrObjVar(
     if (Tcl_IsShared(varValuePtr)) {
 	/* Copy on write */
 	varValuePtr = Tcl_DuplicateObj(varValuePtr);
-	
+
 	if (TCL_OK == TclIncrObj(interp, varValuePtr, incrPtr)) {
 	    return TclPtrSetVar(interp, varPtr, arrayPtr, part1Ptr, part2Ptr,
 		    varValuePtr, flags, index);
@@ -4340,7 +4340,7 @@ TclPtrMakeUpvar(
 }
 
 /* Callers must Incr myNamePtr if they plan to Decr it. */
- 
+
 int
 TclPtrObjMakeUpvar(
     Tcl_Interp *interp,		/* Interpreter containing variables. Used for
@@ -6365,10 +6365,10 @@ CompareVarKeys(
     /*
      * If the object pointers are the same then they match.
      * OPT: this comparison was moved to the caller
-     
+
        if (objPtr1 == objPtr2) return 1;
     */
-    
+
     /*
      * Don't use Tcl_GetStringFromObj as it would prevent l1 and l2 being in a
      * register.
