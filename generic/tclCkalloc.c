@@ -20,11 +20,9 @@
 #define FALSE	0
 #define TRUE	1
 
-#undef Tcl_Alloc
-#undef Tcl_Free
-#undef Tcl_Realloc
-#undef Tcl_AttemptAlloc
-#undef Tcl_AttemptRealloc
+#undef Tcl_MemFree
+#undef Tcl_AttemptMemAlloc
+#undef Tcl_AttemptMemRealloc
 
 #ifdef TCL_MEM_DEBUG
 
@@ -751,35 +749,35 @@ Tcl_AttemptDbCkrealloc(
  */
 
 char *
-Tcl_Alloc(
+Tcl_MemAlloc(
     unsigned int size)
 {
     return Tcl_DbCkalloc(size, "unknown", 0);
 }
 
 char *
-Tcl_AttemptAlloc(
+Tcl_AttemptMemAlloc(
     unsigned int size)
 {
     return Tcl_AttemptDbCkalloc(size, "unknown", 0);
 }
 
 void
-Tcl_Free(
+Tcl_MemFree(
     char *ptr)
 {
     Tcl_DbCkfree(ptr, "unknown", 0);
 }
 
 char *
-Tcl_Realloc(
+Tcl_MemRealloc(
     char *ptr,
     unsigned int size)
 {
     return Tcl_DbCkrealloc(ptr, size, "unknown", 0);
 }
 char *
-Tcl_AttemptRealloc(
+Tcl_AttemptMemRealloc(
     char *ptr,
     unsigned int size)
 {
@@ -1042,7 +1040,7 @@ Tcl_InitMemory(
 /*
  *----------------------------------------------------------------------
  *
- * Tcl_Alloc --
+ * Tcl_MemAlloc --
  *
  *	Interface to TclpAlloc when TCL_MEM_DEBUG is disabled. It does check
  *	that memory was actually allocated.
@@ -1050,11 +1048,11 @@ Tcl_InitMemory(
  *----------------------------------------------------------------------
  */
 
-char *
-Tcl_Alloc(
-    unsigned int size)
+void *
+Tcl_MemAlloc(
+    size_t size)
 {
-    char *result;
+    void *result;
 
     result = TclpAlloc(size);
 
@@ -1069,24 +1067,25 @@ Tcl_Alloc(
      */
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to alloc %u bytes", size);
+	Tcl_Panic("unable to alloc %" TCL_LL_MODIFIER "u bytes", (Tcl_WideInt)size);
     }
     return result;
 }
 
-char *
+void *
 Tcl_DbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result;
+    void *result;
 
-    result = (char *) TclpAlloc(size);
+    result = TclpAlloc(size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to alloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to alloc %" TCL_LL_MODIFIER "u bytes, %s line %d",
+		(Tcl_WideInt)size, file, line);
     }
     return result;
 }
@@ -1102,25 +1101,25 @@ Tcl_DbCkalloc(
  *----------------------------------------------------------------------
  */
 
-char *
-Tcl_AttemptAlloc(
-    unsigned int size)
+void *
+Tcl_AttemptMemAlloc(
+    size_t size)
 {
-    char *result;
+    void *result;
 
     result = TclpAlloc(size);
     return result;
 }
 
-char *
+void *
 Tcl_AttemptDbCkalloc(
-    unsigned int size,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result;
+    void *result;
 
-    result = (char *) TclpAlloc(size);
+    result = TclpAlloc(size);
     return result;
 }
 
@@ -1135,35 +1134,36 @@ Tcl_AttemptDbCkalloc(
  *----------------------------------------------------------------------
  */
 
-char *
-Tcl_Realloc(
-    char *ptr,
-    unsigned int size)
+void *
+Tcl_MemRealloc(
+    void *ptr,
+    size_t size)
 {
     char *result;
 
     result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
-	Tcl_Panic("unable to realloc %u bytes", size);
+	Tcl_Panic("unable to realloc %" TCL_LL_MODIFIER "u bytes", (Tcl_WideInt)size);
     }
     return result;
 }
 
-char *
+void *
 Tcl_DbCkrealloc(
-    char *ptr,
-    unsigned int size,
+    void *ptr,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result;
+    void *result;
 
-    result = (char *) TclpRealloc(ptr, size);
+    result = TclpRealloc(ptr, size);
 
     if ((result == NULL) && size) {
 	fflush(stdout);
-	Tcl_Panic("unable to realloc %u bytes, %s line %d", size, file, line);
+	Tcl_Panic("unable to realloc %" TCL_LL_MODIFIER "u bytes, %s line %d",
+		(Tcl_WideInt)size, file, line);
     }
     return result;
 }
@@ -1179,27 +1179,27 @@ Tcl_DbCkrealloc(
  *----------------------------------------------------------------------
  */
 
-char *
-Tcl_AttemptRealloc(
-    char *ptr,
-    unsigned int size)
+void *
+Tcl_AttemptMemRealloc(
+    void *ptr,
+    size_t size)
 {
-    char *result;
+    void *result;
 
     result = TclpRealloc(ptr, size);
     return result;
 }
 
-char *
+void *
 Tcl_AttemptDbCkrealloc(
-    char *ptr,
-    unsigned int size,
+    void *ptr,
+    size_t size,
     const char *file,
     int line)
 {
-    char *result;
+    void *result;
 
-    result = (char *) TclpRealloc(ptr, size);
+    result = TclpRealloc(ptr, size);
     return result;
 }
 
@@ -1216,15 +1216,15 @@ Tcl_AttemptDbCkrealloc(
  */
 
 void
-Tcl_Free(
-    char *ptr)
+Tcl_MemFree(
+    void *ptr)
 {
     TclpFree(ptr);
 }
 
 void
 Tcl_DbCkfree(
-    char *ptr,
+    void *ptr,
     const char *file,
     int line)
 {

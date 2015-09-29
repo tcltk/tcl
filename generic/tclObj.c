@@ -1692,7 +1692,7 @@ Tcl_GetStringFromObj(
     (void) TclGetString(objPtr);
 
     if (lengthPtr != NULL) {
-	*lengthPtr = objPtr->length;
+	*lengthPtr = (objPtr->length < INT_MAX)? objPtr->length: INT_MAX;
     }
     return objPtr->bytes;
 }

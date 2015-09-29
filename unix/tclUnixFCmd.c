@@ -1505,9 +1505,10 @@ SetGroupAttribute(
 	Tcl_DString ds;
 	struct group *groupPtr = NULL;
 	const char *string;
-	int length;
+	size_t length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = Tcl_GetString(attributePtr);
+	length = attributePtr->length;
 
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	groupPtr = TclpGetGrNam(native); /* INTL: Native. */
@@ -1572,9 +1573,10 @@ SetOwnerAttribute(
 	Tcl_DString ds;
 	struct passwd *pwPtr = NULL;
 	const char *string;
-	int length;
+	size_t length;
 
-	string = Tcl_GetStringFromObj(attributePtr, &length);
+	string = Tcl_GetString(attributePtr);
+	length = attributePtr->length;
 
 	native = Tcl_UtfToExternalDString(NULL, string, length, &ds);
 	pwPtr = TclpGetPwNam(native);			/* INTL: Native. */
@@ -1944,15 +1946,16 @@ TclpObjNormalizePath(
     int nextCheckpoint)
 {
     const char *currentPathEndPosition;
-    int pathLen;
+    size_t pathLen;
     char cur;
-    const char *path = Tcl_GetStringFromObj(pathPtr, &pathLen);
+    const char *path = Tcl_GetString(pathPtr);
     Tcl_DString ds;
     const char *nativePath;
 #ifndef NO_REALPATH
     char normPath[MAXPATHLEN];
 #endif
 
+    pathLen = pathPtr->length;
     /*
      * We add '1' here because if nextCheckpoint is zero we know that '/'
      * exists, and if it isn't zero, it must point at a directory separator
@@ -2175,14 +2178,16 @@ TclUnixOpenTemporaryFile(
 {
     Tcl_DString template, tmp;
     const char *string;
-    int len, fd;
+    size_t len;
+    int fd;
 
     /*
      * We should also check against making more then TMP_MAX of these.
      */
 
     if (dirObj) {
-	string = Tcl_GetStringFromObj(dirObj, &len);
+	string = Tcl_GetString(dirObj);
+	len = dirObj->length;
 	Tcl_UtfToExternalDString(NULL, string, len, &template);
     } else {
 	Tcl_DStringInit(&template);
@@ -2192,7 +2197,8 @@ TclUnixOpenTemporaryFile(
     TclDStringAppendLiteral(&template, "/");
 
     if (basenameObj) {
-	string = Tcl_GetStringFromObj(basenameObj, &len);
+	string = Tcl_GetString(basenameObj);
+	len = basenameObj->length;
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
 	TclDStringAppendDString(&template, &tmp);
 	Tcl_DStringFree(&tmp);
@@ -2204,7 +2210,8 @@ TclUnixOpenTemporaryFile(
 
 #ifdef HAVE_MKSTEMPS
     if (extensionObj) {
-	string = Tcl_GetStringFromObj(extensionObj, &len);
+	string = Tcl_GetString(extensionObj);
+	len = extensionObj->length;
 	Tcl_UtfToExternalDString(NULL, string, len, &tmp);
 	TclDStringAppendDString(&template, &tmp);
 	fd = mkstemps(Tcl_DStringValue(&template), Tcl_DStringLength(&tmp));

@@ -263,7 +263,7 @@ setargv(
     }
 
     /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
-    #undef Tcl_Alloc
+    #undef Tcl_MemAlloc
     #undef Tcl_DbCkalloc
 
     argSpace = ckalloc(size * sizeof(char *)

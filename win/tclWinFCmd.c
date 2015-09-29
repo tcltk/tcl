@@ -1525,8 +1525,8 @@ GetWinFileAttributes(
 	 * We test for, and fix that case, here.
 	 */
 
-	int len;
-	const char *str = Tcl_GetStringFromObj(fileName,&len);
+	const char *str = Tcl_GetString(fileName);
+	size_t len = fileName->length;
 
 	if (len < 4) {
 	    if (len == 0) {
@@ -1611,12 +1611,11 @@ ConvertFileNameFormat(
     for (i = 0; i < pathc; i++) {
 	Tcl_Obj *elt;
 	char *pathv;
-	int pathLen;
 
 	Tcl_ListObjIndex(NULL, splitPath, i, &elt);
 
-	pathv = Tcl_GetStringFromObj(elt, &pathLen);
-	if ((pathv[0] == '/') || ((pathLen == 3) && (pathv[1] == ':'))
+	pathv = Tcl_GetString(elt);
+	if ((pathv[0] == '/') || ((elt->length == 3) && (pathv[1] == ':'))
 		|| (strcmp(pathv, ".") == 0) || (strcmp(pathv, "..") == 0)) {
 	    /*
 	     * Handle "/", "//machine/export", "c:/", "." or ".." by just
@@ -1639,7 +1638,6 @@ ConvertFileNameFormat(
 	    Tcl_DString dsTemp;
 	    const TCHAR *nativeName;
 	    const char *tempString;
-	    int tempLen;
 	    WIN32_FIND_DATA data;
 	    HANDLE handle;
 	    DWORD attr;
@@ -1653,8 +1651,8 @@ ConvertFileNameFormat(
 	     */
 
 	    Tcl_DStringInit(&ds);
-	    tempString = Tcl_GetStringFromObj(tempPath,&tempLen);
-	    nativeName = Tcl_WinUtfToTChar(tempString, tempLen, &ds);
+	    tempString = Tcl_GetString(tempPath);
+	    nativeName = Tcl_WinUtfToTChar(tempString, tempPath->length, &ds);
 	    Tcl_DecrRefCount(tempPath);
 	    handle = FindFirstFile(nativeName, &data);
 	    if (handle == INVALID_HANDLE_VALUE) {

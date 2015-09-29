@@ -538,16 +538,16 @@ typedef void (Tcl_DupInternalRepProc) (struct Tcl_Obj *srcPtr,
 typedef int (Tcl_EncodingConvertProc) (ClientData clientData, const char *src,
 	int srcLen, int flags, Tcl_EncodingState *statePtr, char *dst,
 	int dstLen, int *srcReadPtr, int *dstWrotePtr, int *dstCharsPtr);
-typedef void (Tcl_EncodingFreeProc) (ClientData clientData);
 typedef int (Tcl_EventProc) (Tcl_Event *evPtr, int flags);
 typedef void (Tcl_EventCheckProc) (ClientData clientData, int flags);
 typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, ClientData clientData);
 typedef void (Tcl_EventSetupProc) (ClientData clientData, int flags);
-typedef void (Tcl_ExitProc) (ClientData clientData);
 typedef void (Tcl_FileProc) (ClientData clientData, int mask);
-typedef void (Tcl_FileFreeProc) (ClientData clientData);
 typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);
-typedef void (Tcl_FreeProc) (char *blockPtr);
+typedef void (Tcl_FreeProc) (void *blockPtr);
+#define Tcl_EncodingFreeProc Tcl_FreeProc
+#define Tcl_ExitProc Tcl_FreeProc
+#define Tcl_FileFreeProc Tcl_FreeProc
 typedef void (Tcl_IdleProc) (ClientData clientData);
 typedef void (Tcl_InterpDeleteProc) (ClientData clientData,
 	Tcl_Interp *interp);
@@ -1043,11 +1043,11 @@ struct Tcl_HashTable {
     Tcl_HashEntry *staticBuckets[TCL_SMALL_HASH_TABLE];
 				/* Bucket array used for small tables (to
 				 * avoid mallocs and frees). */
-    int numBuckets;		/* Total number of buckets allocated at
+    size_t numBuckets;		/* Total number of buckets allocated at
 				 * **bucketPtr. */
-    int numEntries;		/* Total number of entries present in
+    size_t numEntries;		/* Total number of entries present in
 				 * table. */
-    int rebuildSize;		/* Enlarge table when numEntries gets to be
+    size_t rebuildSize;		/* Enlarge table when numEntries gets to be
 				 * this large. */
     int downShift;		/* Shift count used in hashing function.
 				 * Designed to use high-order bits of
@@ -1458,7 +1458,7 @@ typedef int (Tcl_FSPathInFilesystemProc) (Tcl_Obj *pathPtr,
 	ClientData *clientDataPtr);
 typedef Tcl_Obj * (Tcl_FSFilesystemPathTypeProc) (Tcl_Obj *pathPtr);
 typedef Tcl_Obj * (Tcl_FSFilesystemSeparatorProc) (Tcl_Obj *pathPtr);
-typedef void (Tcl_FSFreeInternalRepProc) (ClientData clientData);
+#define Tcl_FSFreeInternalRepProc Tcl_FreeProc
 typedef ClientData (Tcl_FSDupInternalRepProc) (ClientData clientData);
 typedef Tcl_Obj * (Tcl_FSInternalToNormalizedProc) (ClientData clientData);
 typedef ClientData (Tcl_FSCreateInternalRepProc) (Tcl_Obj *pathPtr);
@@ -1864,7 +1864,7 @@ typedef struct Tcl_EncodingType {
     Tcl_EncodingConvertProc *fromUtfProc;
 				/* Function to convert from UTF-8 into
 				 * external encoding. */
-    Tcl_EncodingFreeProc *freeProc;
+    Tcl_FreeProc *freeProc;
 				/* If non-NULL, function to call when this
 				 * encoding is deleted. */
     ClientData clientData;	/* Arbitrary value associated with encoding
@@ -2230,37 +2230,43 @@ TCLAPI void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
  * defined in tclCkalloc.c.
  */
 
+#define Tcl_Alloc ckalloc
+#define Tcl_Free ckfree
+#define Tcl_Realloc ckrealloc
+#define Tcl_AttemptAlloc attemptckalloc
+#define Tcl_AttemptRealloc attemptckrealloc
+
 #ifdef TCL_MEM_DEBUG
 
 #   define ckalloc(x) \
-    ((void *) Tcl_DbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    (Tcl_DbCkalloc((x), __FILE__, __LINE__))
 #   define ckfree(x) \
-    Tcl_DbCkfree((char *)(x), __FILE__, __LINE__)
+    Tcl_DbCkfree((x), __FILE__, __LINE__)
 #   define ckrealloc(x,y) \
-    ((void *) Tcl_DbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    (Tcl_DbCkrealloc((x), (y), __FILE__, __LINE__))
 #   define attemptckalloc(x) \
-    ((void *) Tcl_AttemptDbCkalloc((unsigned)(x), __FILE__, __LINE__))
+    (Tcl_AttemptDbCkalloc((x), __FILE__, __LINE__))
 #   define attemptckrealloc(x,y) \
-    ((void *) Tcl_AttemptDbCkrealloc((char *)(x), (unsigned)(y), __FILE__, __LINE__))
+    (Tcl_AttemptDbCkrealloc((x), (y), __FILE__, __LINE__))
 
 #else /* !TCL_MEM_DEBUG */
 
 /*
- * If we are not using the debugging allocator, we should call the Tcl_Alloc,
+ * If we are not using the debugging allocator, we should call the Tcl_MemAlloc,
  * et al. routines in order to guarantee that every module is using the same
  * memory allocator both inside and outside of the Tcl library.
  */
 
-#   define ckalloc(x) \
-    ((void *) Tcl_Alloc((unsigned)(x)))
-#   define ckfree(x) \
-    Tcl_Free((char *)(x))
-#   define ckrealloc(x,y) \
-    ((void *) Tcl_Realloc((char *)(x), (unsigned)(y)))
-#   define attemptckalloc(x) \
-    ((void *) Tcl_AttemptAlloc((unsigned)(x)))
-#   define attemptckrealloc(x,y) \
-    ((void *) Tcl_AttemptRealloc((char *)(x), (unsigned)(y)))
+#   define ckalloc \
+    Tcl_MemAlloc
+#   define ckfree \
+    Tcl_MemFree
+#   define ckrealloc \
+    Tcl_MemRealloc
+#   define attemptckalloc \
+    Tcl_AttemptMemAlloc
+#   define attemptckrealloc \
+    Tcl_AttemptMemRealloc
 #   undef  Tcl_InitMemory
 #   define Tcl_InitMemory(x)
 #   undef  Tcl_DumpActiveMemory
