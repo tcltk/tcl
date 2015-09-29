@@ -76,7 +76,7 @@ static void		RememberSyncObject(void *objPtr,
 void *
 Tcl_GetThreadData(
     Tcl_ThreadDataKey *keyPtr,	/* Identifier for the data chunk */
-    int size)			/* Size of storage block */
+    size_t size)			/* Size of storage block */
 {
     void *result;
 #ifdef TCL_THREADS
@@ -88,13 +88,13 @@ Tcl_GetThreadData(
 
     if (result == NULL) {
 	result = ckalloc(size);
-	memset(result, 0, (size_t) size);
+	memset(result, 0, size);
 	TclThreadStorageKeySet(keyPtr, result);
     }
 #else /* TCL_THREADS */
     if (*keyPtr == NULL) {
 	result = ckalloc(size);
-	memset(result, 0, (size_t)size);
+	memset(result, 0, size);
 	*keyPtr = result;
 	RememberSyncObject(keyPtr, &keyRecord);
     } else {

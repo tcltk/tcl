@@ -39,18 +39,18 @@ TCLAPI const char *	Tcl_PkgRequireEx(Tcl_Interp *interp,
 /* 2 */
 TCLAPI TCL_NORETURN void Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 3 */
-TCLAPI char *		Tcl_Alloc(unsigned int size);
+TCLAPI void *		Tcl_MemAlloc(size_t size);
 /* 4 */
-TCLAPI void		Tcl_Free(char *ptr);
+TCLAPI void		Tcl_MemFree(void *ptr);
 /* 5 */
-TCLAPI char *		Tcl_Realloc(char *ptr, unsigned int size);
+TCLAPI void *		Tcl_MemRealloc(void *ptr, size_t size);
 /* 6 */
-TCLAPI char *		Tcl_DbCkalloc(unsigned int size, const char *file,
+TCLAPI void *		Tcl_DbCkalloc(size_t size, const char *file,
 				int line);
 /* 7 */
-TCLAPI void		Tcl_DbCkfree(char *ptr, const char *file, int line);
+TCLAPI void		Tcl_DbCkfree(void *ptr, const char *file, int line);
 /* 8 */
-TCLAPI char *		Tcl_DbCkrealloc(char *ptr, unsigned int size,
+TCLAPI void *		Tcl_DbCkrealloc(void *ptr, size_t size,
 				const char *file, int line);
 #if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
 /* 9 */
@@ -83,7 +83,7 @@ TCLAPI int		Tcl_AppendAllObjTypes(Tcl_Interp *interp,
 TCLAPI void		Tcl_AppendStringsToObj(Tcl_Obj *objPtr, ...);
 /* 16 */
 TCLAPI void		Tcl_AppendToObj(Tcl_Obj *objPtr, const char *bytes,
-				int length);
+				size_t length);
 /* 17 */
 TCLAPI Tcl_Obj *	Tcl_ConcatObj(int objc, Tcl_Obj *const objv[]);
 /* 18 */
@@ -116,7 +116,7 @@ TCLAPI Tcl_Obj *	Tcl_DbNewLongObj(long longValue, const char *file,
 /* 27 */
 TCLAPI Tcl_Obj *	Tcl_DbNewObj(const char *file, int line);
 /* 28 */
-TCLAPI Tcl_Obj *	Tcl_DbNewStringObj(const char *bytes, int length,
+TCLAPI Tcl_Obj *	Tcl_DbNewStringObj(const char *bytes, size_t length,
 				const char *file, int line);
 /* 29 */
 TCLAPI Tcl_Obj *	Tcl_DuplicateObj(Tcl_Obj *objPtr);
@@ -194,10 +194,11 @@ TCLAPI Tcl_Obj *	Tcl_NewStringObj(const char *bytes, int length);
 /* 57 */
 TCLAPI void		Tcl_SetBooleanObj(Tcl_Obj *objPtr, int boolValue);
 /* 58 */
-TCLAPI unsigned char *	Tcl_SetByteArrayLength(Tcl_Obj *objPtr, int length);
+TCLAPI unsigned char *	Tcl_SetByteArrayLength(Tcl_Obj *objPtr,
+				size_t length);
 /* 59 */
 TCLAPI void		Tcl_SetByteArrayObj(Tcl_Obj *objPtr,
-				const unsigned char *bytes, int length);
+				const unsigned char *bytes, size_t length);
 /* 60 */
 TCLAPI void		Tcl_SetDoubleObj(Tcl_Obj *objPtr, double doubleValue);
 /* 61 */
@@ -208,10 +209,10 @@ TCLAPI void		Tcl_SetListObj(Tcl_Obj *objPtr, int objc,
 /* 63 */
 TCLAPI void		Tcl_SetLongObj(Tcl_Obj *objPtr, long longValue);
 /* 64 */
-TCLAPI void		Tcl_SetObjLength(Tcl_Obj *objPtr, int length);
+TCLAPI void		Tcl_SetObjLength(Tcl_Obj *objPtr, size_t length);
 /* 65 */
 TCLAPI void		Tcl_SetStringObj(Tcl_Obj *objPtr, const char *bytes,
-				int length);
+				size_t length);
 /* 66 */
 TCLAPI void		Tcl_AddErrorInfo(Tcl_Interp *interp,
 				const char *message);
@@ -844,7 +845,7 @@ TCLAPI int		Tcl_GetIndexFromObjStruct(Tcl_Interp *interp,
 				int *indexPtr);
 /* 305 */
 TCLAPI void *		Tcl_GetThreadData(Tcl_ThreadDataKey *keyPtr,
-				int size);
+				size_t size);
 /* 306 */
 TCLAPI Tcl_Obj *	Tcl_GetVar2Ex(Tcl_Interp *interp, const char *part1,
 				const char *part2, int flags);
@@ -1027,9 +1028,9 @@ TCLAPI Tcl_Obj *	Tcl_NewUnicodeObj(const Tcl_UniChar *unicode,
 				int numChars);
 /* 379 */
 TCLAPI void		Tcl_SetUnicodeObj(Tcl_Obj *objPtr,
-				const Tcl_UniChar *unicode, int numChars);
+				const Tcl_UniChar *unicode, size_t numChars);
 /* 380 */
-TCLAPI int		Tcl_GetCharLength(Tcl_Obj *objPtr);
+TCLAPI size_t		Tcl_GetCharLength(Tcl_Obj *objPtr);
 /* 381 */
 TCLAPI Tcl_UniChar	Tcl_GetUniChar(Tcl_Obj *objPtr, int index);
 /* 382 */
@@ -1038,7 +1039,7 @@ TCLAPI Tcl_UniChar *	Tcl_GetUnicode(Tcl_Obj *objPtr);
 TCLAPI Tcl_Obj *	Tcl_GetRange(Tcl_Obj *objPtr, int first, int last);
 /* 384 */
 TCLAPI void		Tcl_AppendUnicodeToObj(Tcl_Obj *objPtr,
-				const Tcl_UniChar *unicode, int length);
+				const Tcl_UniChar *unicode, size_t length);
 /* 385 */
 TCLAPI int		Tcl_RegExpMatchObj(Tcl_Interp *interp,
 				Tcl_Obj *textObj, Tcl_Obj *patternObj);
@@ -1163,17 +1164,18 @@ TCLAPI void		Tcl_UntraceCommand(Tcl_Interp *interp,
 				Tcl_CommandTraceProc *proc,
 				ClientData clientData);
 /* 428 */
-TCLAPI char *		Tcl_AttemptAlloc(unsigned int size);
+TCLAPI void *		Tcl_AttemptMemAlloc(size_t size);
 /* 429 */
-TCLAPI char *		Tcl_AttemptDbCkalloc(unsigned int size,
-				const char *file, int line);
+TCLAPI void *		Tcl_AttemptDbCkalloc(size_t size, const char *file,
+				int line);
 /* 430 */
-TCLAPI char *		Tcl_AttemptRealloc(char *ptr, unsigned int size);
+TCLAPI void *		Tcl_AttemptMemRealloc(void *ptr, size_t size);
 /* 431 */
-TCLAPI char *		Tcl_AttemptDbCkrealloc(char *ptr, unsigned int size,
+TCLAPI void *		Tcl_AttemptDbCkrealloc(void *ptr, size_t size,
 				const char *file, int line);
 /* 432 */
-TCLAPI int		Tcl_AttemptSetObjLength(Tcl_Obj *objPtr, int length);
+TCLAPI int		Tcl_AttemptSetObjLength(Tcl_Obj *objPtr,
+				size_t length);
 /* 433 */
 TCLAPI Tcl_ThreadId	Tcl_GetChannelThread(Tcl_Channel channel);
 /* 434 */
@@ -1571,8 +1573,8 @@ TCLAPI void		Tcl_AppendObjToErrorInfo(Tcl_Interp *interp,
 				Tcl_Obj *objPtr);
 /* 575 */
 TCLAPI void		Tcl_AppendLimitedToObj(Tcl_Obj *objPtr,
-				const char *bytes, int length, int limit,
-				const char *ellipsis);
+				const char *bytes, size_t length,
+				size_t limit, const char *ellipsis);
 /* 576 */
 TCLAPI Tcl_Obj *	Tcl_Format(Tcl_Interp *interp, const char *format,
 				int objc, Tcl_Obj *const objv[]);
@@ -1746,12 +1748,12 @@ typedef struct TclStubs {
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     const char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
     TCL_NORETURN1 void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
-    char * (*tcl_Alloc) (unsigned int size); /* 3 */
-    void (*tcl_Free) (char *ptr); /* 4 */
-    char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
-    char * (*tcl_DbCkalloc) (unsigned int size, const char *file, int line); /* 6 */
-    void (*tcl_DbCkfree) (char *ptr, const char *file, int line); /* 7 */
-    char * (*tcl_DbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 8 */
+    void * (*tcl_MemAlloc) (size_t size); /* 3 */
+    void (*tcl_MemFree) (void *ptr); /* 4 */
+    void * (*tcl_MemRealloc) (void *ptr, size_t size); /* 5 */
+    void * (*tcl_DbCkalloc) (size_t size, const char *file, int line); /* 6 */
+    void (*tcl_DbCkfree) (void *ptr, const char *file, int line); /* 7 */
+    void * (*tcl_DbCkrealloc) (void *ptr, size_t size, const char *file, int line); /* 8 */
 #if !defined(_WIN32) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* UNIX */
@@ -1775,7 +1777,7 @@ typedef struct TclStubs {
     int (*tcl_WaitForEvent) (const Tcl_Time *timePtr); /* 13 */
     int (*tcl_AppendAllObjTypes) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 14 */
     void (*tcl_AppendStringsToObj) (Tcl_Obj *objPtr, ...); /* 15 */
-    void (*tcl_AppendToObj) (Tcl_Obj *objPtr, const char *bytes, int length); /* 16 */
+    void (*tcl_AppendToObj) (Tcl_Obj *objPtr, const char *bytes, size_t length); /* 16 */
     Tcl_Obj * (*tcl_ConcatObj) (int objc, Tcl_Obj *const objv[]); /* 17 */
     int (*tcl_ConvertToType) (Tcl_Interp *interp, Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 18 */
     void (*tcl_DbDecrRefCount) (Tcl_Obj *objPtr, const char *file, int line); /* 19 */
@@ -1787,7 +1789,7 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_DbNewListObj) (int objc, Tcl_Obj *const *objv, const char *file, int line); /* 25 */
     Tcl_Obj * (*tcl_DbNewLongObj) (long longValue, const char *file, int line); /* 26 */
     Tcl_Obj * (*tcl_DbNewObj) (const char *file, int line); /* 27 */
-    Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, int length, const char *file, int line); /* 28 */
+    Tcl_Obj * (*tcl_DbNewStringObj) (const char *bytes, size_t length, const char *file, int line); /* 28 */
     Tcl_Obj * (*tcl_DuplicateObj) (Tcl_Obj *objPtr); /* 29 */
     void (*tclFreeObj) (Tcl_Obj *objPtr); /* 30 */
     int (*tcl_GetBoolean) (Tcl_Interp *interp, const char *src, int *boolPtr); /* 31 */
@@ -1817,14 +1819,14 @@ typedef struct TclStubs {
     Tcl_Obj * (*tcl_NewObj) (void); /* 55 */
     Tcl_Obj * (*tcl_NewStringObj) (const char *bytes, int length); /* 56 */
     void (*tcl_SetBooleanObj) (Tcl_Obj *objPtr, int boolValue); /* 57 */
-    unsigned char * (*tcl_SetByteArrayLength) (Tcl_Obj *objPtr, int length); /* 58 */
-    void (*tcl_SetByteArrayObj) (Tcl_Obj *objPtr, const unsigned char *bytes, int length); /* 59 */
+    unsigned char * (*tcl_SetByteArrayLength) (Tcl_Obj *objPtr, size_t length); /* 58 */
+    void (*tcl_SetByteArrayObj) (Tcl_Obj *objPtr, const unsigned char *bytes, size_t length); /* 59 */
     void (*tcl_SetDoubleObj) (Tcl_Obj *objPtr, double doubleValue); /* 60 */
     void (*tcl_SetIntObj) (Tcl_Obj *objPtr, int intValue); /* 61 */
     void (*tcl_SetListObj) (Tcl_Obj *objPtr, int objc, Tcl_Obj *const objv[]); /* 62 */
     void (*tcl_SetLongObj) (Tcl_Obj *objPtr, long longValue); /* 63 */
-    void (*tcl_SetObjLength) (Tcl_Obj *objPtr, int length); /* 64 */
-    void (*tcl_SetStringObj) (Tcl_Obj *objPtr, const char *bytes, int length); /* 65 */
+    void (*tcl_SetObjLength) (Tcl_Obj *objPtr, size_t length); /* 64 */
+    void (*tcl_SetStringObj) (Tcl_Obj *objPtr, const char *bytes, size_t length); /* 65 */
     void (*tcl_AddErrorInfo) (Tcl_Interp *interp, const char *message); /* 66 */
     void (*reserved67)(void);
     void (*tcl_AllowExceptions) (Tcl_Interp *interp); /* 68 */
@@ -2072,7 +2074,7 @@ typedef struct TclStubs {
     const char * (*tcl_GetEncodingName) (Tcl_Encoding encoding); /* 302 */
     void (*tcl_GetEncodingNames) (Tcl_Interp *interp); /* 303 */
     int (*tcl_GetIndexFromObjStruct) (Tcl_Interp *interp, Tcl_Obj *objPtr, const void *tablePtr, int offset, const char *msg, int flags, int *indexPtr); /* 304 */
-    void * (*tcl_GetThreadData) (Tcl_ThreadDataKey *keyPtr, int size); /* 305 */
+    void * (*tcl_GetThreadData) (Tcl_ThreadDataKey *keyPtr, size_t size); /* 305 */
     Tcl_Obj * (*tcl_GetVar2Ex) (Tcl_Interp *interp, const char *part1, const char *part2, int flags); /* 306 */
     ClientData (*tcl_InitNotifier) (void); /* 307 */
     void (*tcl_MutexLock) (Tcl_Mutex *mutexPtr); /* 308 */
@@ -2146,12 +2148,12 @@ typedef struct TclStubs {
     int (*tcl_RegExpExecObj) (Tcl_Interp *interp, Tcl_RegExp regexp, Tcl_Obj *textObj, int offset, int nmatches, int flags); /* 376 */
     void (*tcl_RegExpGetInfo) (Tcl_RegExp regexp, Tcl_RegExpInfo *infoPtr); /* 377 */
     Tcl_Obj * (*tcl_NewUnicodeObj) (const Tcl_UniChar *unicode, int numChars); /* 378 */
-    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int numChars); /* 379 */
-    int (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
+    void (*tcl_SetUnicodeObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t numChars); /* 379 */
+    size_t (*tcl_GetCharLength) (Tcl_Obj *objPtr); /* 380 */
     Tcl_UniChar (*tcl_GetUniChar) (Tcl_Obj *objPtr, int index); /* 381 */
     Tcl_UniChar * (*tcl_GetUnicode) (Tcl_Obj *objPtr); /* 382 */
     Tcl_Obj * (*tcl_GetRange) (Tcl_Obj *objPtr, int first, int last); /* 383 */
-    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, int length); /* 384 */
+    void (*tcl_AppendUnicodeToObj) (Tcl_Obj *objPtr, const Tcl_UniChar *unicode, size_t length); /* 384 */
     int (*tcl_RegExpMatchObj) (Tcl_Interp *interp, Tcl_Obj *textObj, Tcl_Obj *patternObj); /* 385 */
     void (*tcl_SetNotifier) (Tcl_NotifierProcs *notifierProcPtr); /* 386 */
     Tcl_Mutex * (*tcl_GetAllocMutex) (void); /* 387 */
@@ -2195,11 +2197,11 @@ typedef struct TclStubs {
     ClientData (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData); /* 425 */
     int (*tcl_TraceCommand) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *proc, ClientData clientData); /* 426 */
     void (*tcl_UntraceCommand) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *proc, ClientData clientData); /* 427 */
-    char * (*tcl_AttemptAlloc) (unsigned int size); /* 428 */
-    char * (*tcl_AttemptDbCkalloc) (unsigned int size, const char *file, int line); /* 429 */
-    char * (*tcl_AttemptRealloc) (char *ptr, unsigned int size); /* 430 */
-    char * (*tcl_AttemptDbCkrealloc) (char *ptr, unsigned int size, const char *file, int line); /* 431 */
-    int (*tcl_AttemptSetObjLength) (Tcl_Obj *objPtr, int length); /* 432 */
+    void * (*tcl_AttemptMemAlloc) (size_t size); /* 428 */
+    void * (*tcl_AttemptDbCkalloc) (size_t size, const char *file, int line); /* 429 */
+    void * (*tcl_AttemptMemRealloc) (void *ptr, size_t size); /* 430 */
+    void * (*tcl_AttemptDbCkrealloc) (void *ptr, size_t size, const char *file, int line); /* 431 */
+    int (*tcl_AttemptSetObjLength) (Tcl_Obj *objPtr, size_t length); /* 432 */
     Tcl_ThreadId (*tcl_GetChannelThread) (Tcl_Channel channel); /* 433 */
     Tcl_UniChar * (*tcl_GetUnicodeFromObj) (Tcl_Obj *objPtr, int *lengthPtr); /* 434 */
     void (*reserved435)(void);
@@ -2342,7 +2344,7 @@ typedef struct TclStubs {
     const char * (*tcl_GetEncodingNameFromEnvironment) (Tcl_DString *bufPtr); /* 572 */
     int (*tcl_PkgRequireProc) (Tcl_Interp *interp, const char *name, int objc, Tcl_Obj *const objv[], void *clientDataPtr); /* 573 */
     void (*tcl_AppendObjToErrorInfo) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 574 */
-    void (*tcl_AppendLimitedToObj) (Tcl_Obj *objPtr, const char *bytes, int length, int limit, const char *ellipsis); /* 575 */
+    void (*tcl_AppendLimitedToObj) (Tcl_Obj *objPtr, const char *bytes, size_t length, size_t limit, const char *ellipsis); /* 575 */
     Tcl_Obj * (*tcl_Format) (Tcl_Interp *interp, const char *format, int objc, Tcl_Obj *const objv[]); /* 576 */
     int (*tcl_AppendFormatToObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, const char *format, int objc, Tcl_Obj *const objv[]); /* 577 */
     Tcl_Obj * (*tcl_ObjPrintf) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 578 */
@@ -2418,12 +2420,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_PkgRequireEx) /* 1 */
 #define Tcl_Panic \
 	(tclStubsPtr->tcl_Panic) /* 2 */
-#define Tcl_Alloc \
-	(tclStubsPtr->tcl_Alloc) /* 3 */
-#define Tcl_Free \
-	(tclStubsPtr->tcl_Free) /* 4 */
-#define Tcl_Realloc \
-	(tclStubsPtr->tcl_Realloc) /* 5 */
+#define Tcl_MemAlloc \
+	(tclStubsPtr->tcl_MemAlloc) /* 3 */
+#define Tcl_MemFree \
+	(tclStubsPtr->tcl_MemFree) /* 4 */
+#define Tcl_MemRealloc \
+	(tclStubsPtr->tcl_MemRealloc) /* 5 */
 #define Tcl_DbCkalloc \
 	(tclStubsPtr->tcl_DbCkalloc) /* 6 */
 #define Tcl_DbCkfree \
@@ -3254,12 +3256,12 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_TraceCommand) /* 426 */
 #define Tcl_UntraceCommand \
 	(tclStubsPtr->tcl_UntraceCommand) /* 427 */
-#define Tcl_AttemptAlloc \
-	(tclStubsPtr->tcl_AttemptAlloc) /* 428 */
+#define Tcl_AttemptMemAlloc \
+	(tclStubsPtr->tcl_AttemptMemAlloc) /* 428 */
 #define Tcl_AttemptDbCkalloc \
 	(tclStubsPtr->tcl_AttemptDbCkalloc) /* 429 */
-#define Tcl_AttemptRealloc \
-	(tclStubsPtr->tcl_AttemptRealloc) /* 430 */
+#define Tcl_AttemptMemRealloc \
+	(tclStubsPtr->tcl_AttemptMemRealloc) /* 430 */
 #define Tcl_AttemptDbCkrealloc \
 	(tclStubsPtr->tcl_AttemptDbCkrealloc) /* 431 */
 #define Tcl_AttemptSetObjLength \
@@ -3785,5 +3787,14 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_GlobalEvalObj(interp,objPtr) \
 	    Tcl_EvalObjEx((interp),(objPtr),TCL_EVAL_GLOBAL)
 #endif /* !TCL_NO_DEPRECATED */
+
+#if defined(USE_TCL_STUBS) && !defined(TCL_COMPAT_8)
+#   undef Tcl_GetString
+#   define Tcl_GetString(obj) \
+	((obj)?((obj)->bytes?(obj)->bytes:tclStubsPtr->tcl_GetString(obj)):(char *)(obj))
+#   undef Tcl_GetStringFromObj
+#   define Tcl_GetStringFromObj(obj, lengthPtr) \
+	((obj)?(Tcl_GetString(obj),(*(lengthPtr)=(obj)->length),(obj)->bytes):((*(lengthPtr)=0),(char *)(obj)))
+#endif
 
 #endif /* _TCLDECLS */

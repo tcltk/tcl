@@ -340,7 +340,7 @@ void printaddrinfolist(struct addrinfo *addrlist, char *prefix)
 void
 InitializeHostName(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
     TCHAR tbuf[MAX_COMPUTERNAME_LENGTH + 1];

@@ -461,7 +461,7 @@ TclpInitPlatform(void)
 void
 TclpInitLibraryPath(
     char **valuePtr,
-    int *lengthPtr,
+    size_t *lengthPtr,
     Tcl_Encoding *encodingPtr)
 {
 #define LIBRARY_SIZE	    32
@@ -550,9 +550,10 @@ TclpInitLibraryPath(
     Tcl_DStringFree(&buffer);
 
     *encodingPtr = Tcl_GetEncoding(NULL, NULL);
-    str = Tcl_GetStringFromObj(pathPtr, lengthPtr);
+    str = Tcl_GetString(pathPtr);
+    *lengthPtr = pathPtr->length;
     *valuePtr = ckalloc((*lengthPtr) + 1);
-    memcpy(*valuePtr, str, (size_t)(*lengthPtr)+1);
+    memcpy(*valuePtr, str, (*lengthPtr)+1);
     Tcl_DecrRefCount(pathPtr);
 }
 
