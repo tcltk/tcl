@@ -3115,7 +3115,7 @@ TclAttemptCompileProc(
     result = cmdPtr->compileProc(interp, parsePtr, cmdPtr, envPtr);
 
     /*
-     * Undo the shift. 
+     * Undo the shift.
      */
 
     mapPtr->loc[eclIndex].line -= (depth - 1);
