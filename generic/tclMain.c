@@ -623,7 +623,7 @@ Tcl_MainEx(
 
     if (!Tcl_InterpDeleted(interp) && !Tcl_LimitExceeded(interp)) {
 	Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
-	    
+
 	Tcl_IncrRefCount(cmd);
 	Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
 	Tcl_DecrRefCount(cmd);
@@ -721,7 +721,7 @@ TclFullFinalizationRequested(void)
     const char *fin;
     Tcl_DString ds;
     int finalize = 0;
-    
+
     fin = TclGetEnv("TCL_FINALIZE_ON_EXIT", &ds);
     finalize = ((fin != NULL) && strcmp(fin, "0"));
     if (fin != NULL) {
