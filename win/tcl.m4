@@ -784,7 +784,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	    SHLIB_LD_LIBS='${LIBS}'
 	    case "x`echo \${VisualStudioVersion}`" in
-		x14*)
+		x1[4-9]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
 		    ;;
 		*)
@@ -826,7 +826,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	LIBS="user32.lib advapi32.lib ws2_32.lib"
 
 	case "x`echo \${VisualStudioVersion}`" in
-		x14*)
+		x1[4-9]*)
 		    LIBS="$LIBS ucrt.lib"
 		    ;;
 		*)
