@@ -792,7 +792,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	    EXESUFFIX="\${DBGX}.exe"
 	    case "x`echo \${VisualStudioVersion}`" in
-		x14*)
+		x1[4-9]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
 		    ;;
 		*)
@@ -837,7 +837,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib"
 
 	case "x`echo \${VisualStudioVersion}`" in
-		x14*)
+		x1[4-9]*)
 		    LIBS="$LIBS ucrt.lib"
 		    ;;
 		*)
