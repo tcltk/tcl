@@ -104,6 +104,7 @@ proc ::platform::generic {} {
 		# Do not check wordSize, win32-x64 is an IL32P64 platform.
 		set cpu x86_64
 	    }
+	    append plat -$tcl_platform(osVersion)
 	}
 	sunos {
 	    set plat solaris
