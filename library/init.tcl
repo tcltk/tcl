@@ -636,12 +636,8 @@ proc auto_execok name {
     }
     set auto_execs($name) ""
 
-    set shellBuiltins [list cls copy date del erase dir echo mkdir \
-	    md rename ren rmdir rd time type ver vol]
-    if {$tcl_platform(os) eq "Windows NT"} {
-	# NT includes the 'start' built-in
-	lappend shellBuiltins "start"
-    }
+    set shellBuiltins [list cls copy date del dir echo erase md mkdir \
+	    mklink rd ren rename rmdir start time type ver vol]
     if {[info exists env(PATHEXT)]} {
 	# Add an initial ; to have the {} extension check first.
 	set execExtensions [split ";$env(PATHEXT)" ";"]
