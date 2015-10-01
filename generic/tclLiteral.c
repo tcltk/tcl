@@ -153,7 +153,7 @@ TclDeleteLiteralTable(
  *	Find, or if necessary create, an object in the interpreter's literal
  *	table that has a string representation matching the argument
  *	string. If nsPtr!=NULL then only literals stored for the namespace are
- *	considered. 
+ *	considered.
  *
  * Results:
  *	The literal object. If it was created in this call *newPtr is set to
@@ -161,7 +161,7 @@ TclDeleteLiteralTable(
  *
  * Side effects:
  *      Increments the ref count of the global LiteralEntry since the caller
- *      now holds a reference. 
+ *      now holds a reference.
  *	If LITERAL_ON_HEAP is set in flags, this function is given ownership
  *	of the string: if an object is created then its string representation
  *	is set directly from string, otherwise the string is freed. Typically,
@@ -186,7 +186,7 @@ TclCreateLiteral(
     LiteralEntry *globalPtr;
     int globalHash;
     Tcl_Obj *objPtr;
-    
+
     /*
      * Is it in the interpreter's global literal table?
      */
@@ -709,7 +709,7 @@ ExpandLocalLiteralArray(
     if (currArrayPtr != newArrayPtr) {
 	for (i=0 ; i<currElems ; i++) {
 	    if (newArrayPtr[i].nextPtr != NULL) {
-		newArrayPtr[i].nextPtr = newArrayPtr 
+		newArrayPtr[i].nextPtr = newArrayPtr
 			+ (newArrayPtr[i].nextPtr - currArrayPtr);
 	    }
 	}
@@ -882,7 +882,8 @@ RebuildLiteralTable(
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     char *bytes;
-    int oldSize, count, index, length;
+    unsigned int oldSize;
+    int count, index, length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;

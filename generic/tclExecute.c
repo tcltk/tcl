@@ -822,12 +822,12 @@ TclFinalizeExecution(void)
 }
 
 /*
- * Auxiliary code to insure that GrowEvaluationStack always returns correctly 
+ * Auxiliary code to insure that GrowEvaluationStack always returns correctly
  * aligned memory.
  *
  * WALLOCALIGN represents the alignment reqs in words, just as TCL_ALLOCALIGN
  * represents the reqs in bytes. This assumes that TCL_ALLOCALIGN is a
- * multiple of the wordsize 'sizeof(Tcl_Obj *)'. 
+ * multiple of the wordsize 'sizeof(Tcl_Obj *)'.
  */
 
 #define WALLOCALIGN \
@@ -849,7 +849,7 @@ wordSkip(
 }
 
 /*
- * Given a marker, compute where the following aligned memory starts. 
+ * Given a marker, compute where the following aligned memory starts.
  */
 
 #define MEMSTART(markerPtr)			\
@@ -902,13 +902,13 @@ GrowEvaluationStack(
 
 	if (needed + offset < 0) {
 	    /*
-	     * Put a marker pointing to the previous marker in this stack, and 
+	     * Put a marker pointing to the previous marker in this stack, and
 	     * store it in esPtr as the current marker. Return a pointer to
 	     * the start of aligned memory.
 	     */
 
 	    esPtr->markerPtr = tmpMarkerPtr;
-	    memStart = tmpMarkerPtr + offset; 
+	    memStart = tmpMarkerPtr + offset;
 	    esPtr->tosPtr = memStart - 1;
 	    *esPtr->markerPtr = (Tcl_Obj *) markerPtr;
 	    return memStart;
@@ -982,7 +982,7 @@ GrowEvaluationStack(
     esPtr->markerPtr = &esPtr->stackWords[0];
     memStart = MEMSTART(esPtr->markerPtr);
     esPtr->tosPtr = memStart - 1;
-    
+
     if (move) {
 	memcpy(memStart, MEMSTART(markerPtr), moveWords*sizeof(Tcl_Obj *));
 	esPtr->tosPtr += moveWords;
@@ -1486,19 +1486,19 @@ TclCompEvalObj(
 		     * Note: Type BC => ctx.data.eval.path    is not used.
 		     *		    ctx.data.tebc.codePtr used instead
 		     */
-		    
+
 		    TclGetSrcInfoForPc(ctxPtr);
 		    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
 			/*
 			 * The reference made by 'TclGetSrcInfoForPc' is
 			 * dead.
 			 */
-			
+
 			Tcl_DecrRefCount(ctxPtr->data.eval.path);
 			ctxPtr->data.eval.path = NULL;
 		    }
 		}
-		
+
 		if (word < ctxPtr->nline) {
 		    /*
 		     * Note: We do not care if the line[word] is -1. This
@@ -1510,15 +1510,15 @@ TclCompEvalObj(
 		     * test info-32.0 using literal of info-24.8
 		     *     (dict with ... vs           set body ...).
 		     */
-		    
+
 		    redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
 			    && (eclPtr->start != ctxPtr->line[word]))
 			|| ((eclPtr->type == TCL_LOCATION_BC)
 				&& (ctxPtr->type == TCL_LOCATION_SOURCE));
 		}
-		
+
 		TclStackFree(interp, ctxPtr);
-	    
+
 		if (redo) {
 		    goto recompileObj;
 		}
@@ -1778,7 +1778,7 @@ TclExecuteByteCode(
     int traceInstructions = (tclTraceExec == 3);
     char cmdNameBuf[21];
 #endif
-    char *curInstName = NULL;
+    const char *curInstName = NULL;
 
     /*
      * The execution uses a unified stack: first the catch stack, immediately
@@ -5802,9 +5802,9 @@ TclExecuteByteCode(
 	    /*
 	     * We refuse to accept exponent arguments that exceed
 	     * one mp_digit which means the max exponent value is
-	     * 2**28-1 = 0x0fffffff = 268435455, which fits into 
+	     * 2**28-1 = 0x0fffffff = 268435455, which fits into
 	     * a signed 32 bit int which is within the range of the
-	     * long int type.  This means any numeric Tcl_Obj value 
+	     * long int type.  This means any numeric Tcl_Obj value
 	     * not using TCL_NUMBER_LONG type must hold a value larger
 	     * than we accept.
 	     */

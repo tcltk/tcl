@@ -53,7 +53,7 @@ static Pipe testPipes[MAX_PIPES];
  * The stuff below is used by the testalarm and testgotsig ommands.
  */
 
-static char *gotsig = "0";
+static const char *gotsig = "0";
 
 /*
  * Forward declarations of functions defined later in this file:

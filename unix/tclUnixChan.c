@@ -2181,7 +2181,7 @@ TcpGetOptionProc(
 		 * We don't want to resolve INADDR_ANY; it can sometimes cause
 		 * problems (and never has a name).
 		 */
-                
+
                 hostEntPtr = NULL;
             } else {
                 hostEntPtr = TclpGetHostByAddr(		/* INTL: Native. */
@@ -2292,7 +2292,7 @@ TcpWatchProc(
 	     * to the guarantees Tcl makes that its channels become
 	     * writable and fire writable events on an error conditon.
 	     * This has caused a leak of file descriptors in a state of
-	     * background flushing.  See Tcl ticket 1758a0b603. 
+	     * background flushing.  See Tcl ticket 1758a0b603.
 	     *
 	     * As a workaround, when our caller indicates an interest in
 	     * writable notifications, we must tell the notifier built
@@ -2303,7 +2303,7 @@ TcpWatchProc(
 	     * channel states and report the chan events as best it can.
 	     * We save a copy of the mask passed in to assist with that.
 	     */
-		
+
 	    statePtr->interest = mask;
 	    Tcl_CreateFileHandler(statePtr->fd, mask|TCL_READABLE,
 		    (Tcl_FileProc *) WrapNotify, (ClientData) statePtr);
@@ -2927,7 +2927,7 @@ TclpGetDefaultStdChannel(
     Tcl_Channel channel = NULL;
     int fd = 0;			/* Initializations needed to prevent */
     int mode = 0;		/* compiler warning (used before set). */
-    char *bufMode = NULL;
+    const char *bufMode = NULL;
 
     /*
      * Some #def's to make the code a little clearer!
@@ -3216,7 +3216,7 @@ TclUnixWaitForFile(
 	    if (FD_ISSET(fd, &writableMask))  {
 		SET_BITS(result, TCL_WRITABLE);
 	    }
-	    if (FD_ISSET(fd, &exceptionalMask)) { 
+	    if (FD_ISSET(fd, &exceptionalMask)) {
 		SET_BITS(result, TCL_EXCEPTION);
 	    }
 	    result &= mask;
