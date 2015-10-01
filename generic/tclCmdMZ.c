@@ -991,7 +991,8 @@ Tcl_SplitObjCmd(
 {
     Tcl_UniChar ch;
     int len;
-    char *splitChars, *stringPtr, *end;
+    const char *splitChars;
+    char *stringPtr, *end;
     int splitCharLen, stringLen;
     Tcl_Obj *listPtr, *objPtr;
 
@@ -1069,7 +1070,8 @@ Tcl_SplitObjCmd(
 	TclNewStringObj(objPtr, stringPtr, end - stringPtr);
 	Tcl_ListObjAppendElement(NULL, listPtr, objPtr);
     } else {
-	char *element, *p, *splitEnd;
+	char *element;
+	const char *p, *splitEnd;
 	int splitLen;
 	Tcl_UniChar splitChar;
 
