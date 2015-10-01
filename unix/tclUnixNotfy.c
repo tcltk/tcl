@@ -238,7 +238,7 @@ typedef struct {
     void *hCursor;
     void *hbrBackground;
     void *lpszMenuName;
-    void *lpszClassName;
+    const void *lpszClassName;
 } WNDCLASS;
 
 extern void __stdcall	CloseHandle(void *);

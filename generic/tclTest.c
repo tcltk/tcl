@@ -909,7 +909,7 @@ TestasyncCmd(
 
 static int
 AsyncHandlerProc(
-    ClientData clientData,	/* If of TestAsyncHandler structure. 
+    ClientData clientData,	/* If of TestAsyncHandler structure.
                                  * in global list. */
     Tcl_Interp *interp,		/* Interpreter in which command was
 				 * executed, or NULL. */
@@ -3606,7 +3606,7 @@ PrintParse(
     Tcl_Parse *parsePtr)	/* Parse structure to print out. */
 {
     Tcl_Obj *objPtr;
-    char *typeString;
+    const char *typeString;
     Tcl_Token *tokenPtr;
     int i;
 
@@ -6518,7 +6518,7 @@ TestGetIndexFromObjStructObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    char *ary[] = {
+    const char *ary[] = {
 	"a", "b", "c", "d", "e", "f", NULL, NULL
     };
     int idx,target;
