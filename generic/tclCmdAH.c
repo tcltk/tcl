@@ -25,7 +25,7 @@ static int		EncodingDirsObjCmd(ClientData dummy,
 			    Tcl_Obj *const objv[]);
 static int		GetStatBuf(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 			    Tcl_FSStatProc *statProc, Tcl_StatBuf *statPtr);
-static char *		GetTypeFromMode(int mode);
+static const char *		GetTypeFromMode(int mode);
 static int		StoreStatData(Tcl_Interp *interp, Tcl_Obj *varName,
 			    Tcl_StatBuf *statPtr);
 
@@ -1289,7 +1289,7 @@ Tcl_FileObjCmd(
 	    return TCL_ERROR;
 	}
 	if (objc == 2) {
-	    char *separator = NULL; /* lint */
+	    const char *separator = NULL; /* lint */
 
 	    switch (tclPlatform) {
 	    case TCL_PLATFORM_UNIX:
@@ -1554,7 +1554,7 @@ StoreStatData(
  *----------------------------------------------------------------------
  */
 
-static char *
+static const char *
 GetTypeFromMode(
     int mode)
 {
@@ -1757,7 +1757,7 @@ Tcl_ForeachObjCmd(
 
     maxj = 0;
     for (i=0 ; i<numLists ; i++) {
-	
+
 	vCopyList[i] = TclListObjCopy(interp, objv[1+i*2]);
 	if (vCopyList[i] == NULL) {
 	    result = TCL_ERROR;
