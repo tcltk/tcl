@@ -63,7 +63,7 @@ static ProcessGlobalValue executableName = {
  * CONVERT_MASK		A mask value used to extract the conversion mode from
  *			the flags argument.
  *			Also indicates a strange conversion mode where all
- *			special characters are escaped with backslashes 
+ *			special characters are escaped with backslashes
  *			*except for braces*.  This is a strange and unnecessary
  *			case, but it's part of the historical way in which
  *			lists have been formatted in Tcl.  To experiment with
@@ -81,7 +81,7 @@ static ProcessGlobalValue executableName = {
  *			in other cases this means an overestimate of the
  *			required size.
  *
- * For more details, see the comments on the Tcl*Scan*Element and 
+ * For more details, see the comments on the Tcl*Scan*Element and
  * Tcl*Convert*Element routines.
  */
 
@@ -171,12 +171,12 @@ Tcl_ObjType tclEndOffsetType = {
  * rules similar to the parsing of the words of a command in a Tcl script.
  * Backslash substitution plays a key role, and is defined exactly as it is
  * in command parsing.  The same routine, TclParseBackslash() is used in both
- * command parsing and list parsing.  
+ * command parsing and list parsing.
  *
  * NOTE:  This means that if and when backslash substitution rules ever
  * change for command parsing, the interpretation of strings as lists also
  * changes.
- * 
+ *
  * Backslash substitution replaces an "escape sequence" of one or more
  * characters starting with
  *		\u005c	\	BACKSLASH
@@ -189,7 +189,7 @@ Tcl_ObjType tclEndOffsetType = {
  *
  * * If the first character of a formatted substring is
  *		\u007b	{	OPEN BRACE
- *   then the end of the substring is the matching 
+ *   then the end of the substring is the matching
  *		\u007d	}	CLOSE BRACE
  *   character, where matching is determined by counting nesting levels,
  *   and not including any brace characters that are contained within a
@@ -211,7 +211,7 @@ Tcl_ObjType tclEndOffsetType = {
  *   that includes an unbalanced brace not in a backslash escape sequence,
  *   and any value that ends with a backslash not itself in a backslash
  *   escape sequence.
- * 
+ *
  * * If the first character of a formatted substring is
  *		\u0022	"	QUOTE
  *   then the end of the substring is the next QUOTE character, not counting
@@ -246,7 +246,7 @@ Tcl_ObjType tclEndOffsetType = {
  * minimum be able to produce escape sequences for the 10 characters
  * identified above that have significance to a list parser.
  *
- *	*	*	CANONICAL LISTS	*	*	*	*	*	
+ *	*	*	CANONICAL LISTS	*	*	*	*	*
  *
  * In addition to the basic rules for parsing strings into Tcl lists, there
  * are additional properties to be met by the set of list values that are
@@ -297,7 +297,7 @@ Tcl_ObjType tclEndOffsetType = {
  *   This sort of coding was once fairly common, though it's become more
  *   idiomatic to see the following instead:
  *	set script [list puts [list $one $two $three]]; eval $script
- *   In order to support this guarantee, every canonical list must have 
+ *   In order to support this guarantee, every canonical list must have
  *   balance when counting those braces that are not in escape sequences.
  *
  * Within these constraints, the canonical list generation routines
@@ -339,7 +339,7 @@ Tcl_ObjType tclEndOffsetType = {
  * #if COMPAT directives.  This makes it easy to experiment with eliminating
  * this formatting mode simply with "#define COMPAT 0" above.  I believe
  * this is worth considering.
- * 
+ *
  * Another consideration is the treatment of QUOTE characters in list elements.
  * TclConvertElement() must have the ability to produce the escape sequence
  * \" so that when a list element begins with a QUOTE we do not confuse
@@ -396,7 +396,7 @@ TclMaxListLength(
     }
 
     /* No list element before leading white space */
-    count += 1 - TclIsSpaceProc(*bytes); 
+    count += 1 - TclIsSpaceProc(*bytes);
 
     /* Count white space runs as potential element separators */
     while (numBytes) {
@@ -420,7 +420,7 @@ TclMaxListLength(
     }
 
     /* No list element following trailing white space */
-    count -= TclIsSpaceProc(bytes[-1]); 
+    count -= TclIsSpaceProc(bytes[-1]);
 
     done:
     if (endPtr) {
@@ -488,7 +488,7 @@ TclFindElement(
 				 * indicate that the substring of *sizePtr
 				 * bytes starting at **elementPtr is/is not
 				 * the literal list element and therefore
-				 * does not/does require a call to 
+				 * does not/does require a call to
 				 * TclCopyAndCollapse() by the caller. */
 {
     CONST char *p = list;
@@ -945,7 +945,7 @@ TclScanElement(
     int preferBrace = 0;	/* CONVERT_MASK mode. */
     int braceCount = 0;		/* Count of all braces '{' '}' seen. */
 #endif
-    
+
     if ((p == NULL) || (length == 0) || ((*p == '\0') && (length == -1))) {
 	/* Empty string element must be brace quoted. */
 	*flagPtr = CONVERT_BRACE;
@@ -1012,7 +1012,7 @@ TclScanElement(
 	    extra++;				/* Escape '\' => '\\' */
 	    if ((length == 1) || ((length == -1) && (p[1] == '\0'))) {
 		/* Final backslash. Cannot format with brace quoting. */
-		requireEscape = 1;		
+		requireEscape = 1;
 		break;
 	    }
 	    if (p[1] == '\n') {
@@ -1087,7 +1087,7 @@ TclScanElement(
 	if (preferEscape && !preferBrace) {
 	    /*
 	     * If we are quoting solely due to ] or internal " characters
-	     * use the CONVERT_MASK mode where we escape all special 
+	     * use the CONVERT_MASK mode where we escape all special
 	     * characters except for braces.  "extra" counted space needed
 	     * to escape braces too, so substract "braceCount" to get our
 	     * actual needs.
@@ -1351,7 +1351,7 @@ int TclConvertElement(
 	    if (length == -1) {
 		return p - dst;
 	    }
-	    /* 
+	    /*
 	     * If we reach this point, there's an embedded NULL in the
 	     * string range being processed, which should not happen when
 	     * the encoding rules for Tcl strings are properly followed.
@@ -1417,7 +1417,7 @@ Tcl_Merge(
 	/*
 	 * We cannot allocate a large enough flag array to format this
 	 * list in one pass.  We could imagine converting this routine
-	 * to a multi-pass implementation, but for sizeof(int) == 4, 
+	 * to a multi-pass implementation, but for sizeof(int) == 4,
 	 * the limit is a max of 2^30 list elements and since each element
 	 * is at least one byte formatted, and requires one byte space
 	 * between it and the next one, that a minimum space requirement
@@ -1678,7 +1678,7 @@ Tcl_Concat(
     }
     if (bytesNeeded + argc - 1 < 0) {
 	/*
-	 * Panic test could be tighter, but not going to bother for 
+	 * Panic test could be tighter, but not going to bother for
 	 * this legacy routine.
 	 */
 	Tcl_Panic("Tcl_Concat: max size of Tcl value exceeded");
@@ -1689,7 +1689,7 @@ Tcl_Concat(
     for (p = result, i = 0;  i < argc;  i++) {
 	int trim, elemLength;
 	const char *element;
-	
+
 	element = argv[i];
 	elemLength = strlen(argv[i]);
 
@@ -1827,7 +1827,7 @@ Tcl_ConcatObj(
 
     for (i = 0;  i < objc;  i++) {
 	int trim;
-	
+
 	element = TclGetStringFromObj(objv[i], &elemLength);
 
 	/* Trim away the leading whitespace */
@@ -2828,7 +2828,7 @@ Tcl_PrintDouble(
 	/*
 	 * Remember to copy the terminating NUL too.
 	 */
-	
+
 	    if (value < 0) {
 	    memcpy(dst, "-Inf", 5);
 	    } else {
@@ -2885,7 +2885,7 @@ Tcl_PrintDouble(
 	 */
 
 	digits = TclDoubleDigits(value, *precisionPtr,
-				 TCL_DD_E_FORMAT /* | TCL_DD_SHORTEN_FLAG */, 
+				 TCL_DD_E_FORMAT /* | TCL_DD_SHORTEN_FLAG */,
 				 &exponent, &signum, &end);
     }
 	if (signum) {
@@ -2896,7 +2896,7 @@ Tcl_PrintDouble(
 	/*
 	 * E format for numbers < 1e-3 or >= 1e17.
 	 */
-	
+
 	*dst++ = *p++;
 	c = *p;
 	if (c != '\0') {
@@ -2906,7 +2906,7 @@ Tcl_PrintDouble(
 		c = *++p;
 	    }
 	}
-	/* 
+	/*
 	 * Tcl 8.4 appears to format with at least a two-digit exponent; \
 	 * preserve that behaviour when tcl_precision != 0
 	 */
@@ -2919,7 +2919,7 @@ Tcl_PrintDouble(
 	/*
 	 * F format for others.
 	 */
-	
+
 	if (exponent < 0) {
 	    *dst++ = '0';
 	}

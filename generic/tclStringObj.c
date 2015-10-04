@@ -1392,7 +1392,7 @@ AppendUnicodeToUnicodeRep(
 		+ stringPtr->uallocated / sizeof(Tcl_UniChar)) {
 	    offset = unicode - stringPtr->unicode;
 	}
-	
+
 	GrowUnicodeBuffer(objPtr, numChars);
 	stringPtr = GET_STRING(objPtr);
 
@@ -1575,7 +1575,7 @@ AppendUtfToUtfRep(
 	    unsigned int limit = INT_MAX - newLength;
 	    unsigned int extra = numBytes + TCL_GROWTH_MIN_ALLOC;
 	    int growth = (int) ((extra > limit) ? limit : extra);
-	
+
 	    Tcl_SetObjLength(objPtr, newLength + growth);
 	}
 
