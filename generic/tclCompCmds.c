@@ -351,7 +351,7 @@ TclCompileArraySetCmd(
 	TclEmitInstInt4(INST_UPVAR, localIndex, 		envPtr);
 	TclEmitOpcode(INST_POP,          			envPtr);
     }
-    
+
     /*
      * Prepare for the internal foreach.
      */
@@ -547,7 +547,7 @@ TclCompileCatchCmd(
     int resultIndex, optsIndex, range, dropScript = 0;
     DefineLineInformation;	/* TIP #280 */
     int depth = TclGetStackDepth(envPtr);
-    
+
     /*
      * If syntax does not match what we expect for [catch], do not compile.
      * Let runtime checks determine if syntax has changed.
@@ -626,7 +626,7 @@ TclCompileCatchCmd(
     }
     ExceptionRangeEnds(envPtr, range);
 
-    
+
     /*
      * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
      * and jump around the "error case" code.
@@ -636,14 +636,14 @@ TclCompileCatchCmd(
     PushStringLiteral(envPtr, "0");
     TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
 
-    /* 
+    /*
      * Emit the "error case" epilogue. Push the interpreter result and the
      * return code.
      */
 
     ExceptionRangeTarget(envPtr, range, catchOffset);
     TclSetStackDepth(depth + dropScript, envPtr);
-    
+
     if (dropScript) {
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
@@ -2530,7 +2530,7 @@ CompileEachloopCmd(
     ForeachInfo *infoPtr=NULL;	/* Points to the structure describing this
 				 * foreach command. Stored in a AuxData
 				 * record in the ByteCode. */
-    
+
     Tcl_Token *tokenPtr, *bodyTokenPtr;
     int jumpBackOffset, infoIndex, range;
     int numWords, numLists, i, j, code = TCL_OK;
@@ -2637,11 +2637,11 @@ CompileEachloopCmd(
     /*
      * Create the collecting object, unshared.
      */
-    
+
     if (collect == TCL_EACH_COLLECT) {
 	TclEmitInstInt4(INST_LIST, 0, envPtr);
     }
-	    
+
     /*
      * Evaluate each value list and leave it on stack.
      */
@@ -2655,7 +2655,7 @@ CompileEachloopCmd(
     }
 
     TclEmitInstInt4(INST_FOREACH_START, infoIndex, envPtr);
-    
+
     /*
      * Inline compile the loop body.
      */
@@ -2665,7 +2665,7 @@ CompileEachloopCmd(
     ExceptionRangeStarts(envPtr, range);
     BODY(bodyTokenPtr, numWords - 1);
     ExceptionRangeEnds(envPtr, range);
-    
+
     if (collect == TCL_EACH_COLLECT) {
 	TclEmitOpcode(INST_LMAP_COLLECT, envPtr);
     } else {
@@ -2674,7 +2674,7 @@ CompileEachloopCmd(
 
     /*
      * Bottom of loop code: assign each loop variable and check whether
-     * to terminate the loop. Set the loop's break target. 
+     * to terminate the loop. Set the loop's break target.
      */
 
     ExceptionRangeTarget(envPtr, range, continueOffset);
@@ -2688,7 +2688,7 @@ CompileEachloopCmd(
      * Set the jumpback distance from INST_FOREACH_STEP to the start of the
      * body's code. Misuse loopCtTemp for storing the jump size.
      */
-    
+
     jumpBackOffset = envPtr->exceptArrayPtr[range].continueOffset -
 	    envPtr->exceptArrayPtr[range].codeOffset;
     infoPtr->loopCtTemp = -jumpBackOffset;
@@ -2701,7 +2701,7 @@ CompileEachloopCmd(
     if (collect != TCL_EACH_COLLECT) {
 	PushStringLiteral(envPtr, "");
     }
-    
+
     done:
     if (code == TCL_ERROR) {
 	FreeForeachInfo(infoPtr);
