@@ -892,7 +892,7 @@ Tcl_SetExitProc(
  *----------------------------------------------------------------------
  */
 static void
-InvokeExitHandlers(void) 
+InvokeExitHandlers(void)
 {
     ExitHandler *exitPtr;
 
@@ -968,22 +968,22 @@ Tcl_Exit(
 	    /*
 	     * Fast and deterministic exit (default behavior)
 	     */
-	    
+
 	    InvokeExitHandlers();
-	    
+
 	    /*
 	     * Ensure the thread-specific data is initialised as it is used in
 	     * Tcl_FinalizeThread()
 	     */
-	    
+
 	    (void) TCL_TSD_INIT(&dataKey);
-	    
+
 	    /*
 	     * Now finalize the calling thread only (others are not safely
 	     * reachable).  Among other things, this triggers a flush of the
 	     * Tcl_Channels that may have data enqueued.
 	     */
-	    
+
 	    FinalizeThread(/* quick */ 1);
 	}
 	TclpExit(status);
@@ -1090,7 +1090,7 @@ Tcl_Finalize(void)
      * Invoke exit handlers first.
      */
 
-    InvokeExitHandlers();   
+    InvokeExitHandlers();
 
     TclpInitLock();
     if (subsystemsInitialized == 0) {
