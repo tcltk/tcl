@@ -103,7 +103,7 @@ typedef struct ThreadSpecificData {
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
 #endif /* __CYGWIN__ */
-    int waitCVinitialized;  /* Variable to flag initialization of the structure */
+    int waitCVinitialized;	/* Variable to flag initialization of the structure */
     int eventReady;		/* True if an event is ready to be processed.
 				 * Used as condition flag together with waitCV
 				 * above. */
