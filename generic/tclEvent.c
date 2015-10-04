@@ -418,7 +418,7 @@ TclDefaultBgErrorHandlerObjCmd(
      */
 
     saved = Tcl_SaveInterpState(interp, code);
-    
+
     /* Invoke the bgerror command. */
     Tcl_AllowExceptions(interp);
     code = Tcl_EvalObjv(interp, 2, tempObjv, TCL_EVAL_GLOBAL);
