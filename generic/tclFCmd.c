@@ -735,7 +735,7 @@ CopyRenameOneFile(
 
 	    errfile = target;
 	}
-	/* 
+	/*
 	 * We now need to reset the result, because the above call,
 	 * may have left set it.  (Ideally we would prefer not to pass
 	 * an interpreter in above, but the channel IO code used by
