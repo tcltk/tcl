@@ -558,7 +558,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # Set some defaults (may get changed below)
     EXTRA_CFLAGS=""
 
-    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
+    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -m, echo)
 
     SHLIB_SUFFIX=".dll"
 
