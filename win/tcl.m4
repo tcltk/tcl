@@ -559,7 +559,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     EXTRA_CFLAGS=""
 	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
 
-    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
+    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -m, echo)
 
     SHLIB_SUFFIX=".dll"
 
@@ -792,7 +792,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	    EXESUFFIX="\${DBGX}.exe"
 	    case "x`echo \${VisualStudioVersion}`" in
-		x1[4-9]*)
+		x1[[4-9]]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
 		    ;;
 		*)
@@ -837,7 +837,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib"
 
 	case "x`echo \${VisualStudioVersion}`" in
-		x1[4-9]*)
+		x1[[4-9]]*)
 		    LIBS="$LIBS ucrt.lib"
 		    ;;
 		*)
