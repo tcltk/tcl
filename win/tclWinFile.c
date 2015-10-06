@@ -17,6 +17,7 @@
 #include <winioctl.h>
 #include <shlobj.h>
 #include <lmaccess.h>		/* For TclpGetUserHome(). */
+#include <userenv.h>		/* For TclpGetUserHome(). */
 
 /*
  * The number of 100-ns intervals between the Windows system epoch (1601-01-01
@@ -176,6 +177,10 @@ typedef NET_API_STATUS NET_API_FUNCTION NETAPIBUFFERFREEPROC(LPVOID Buffer);
 
 typedef NET_API_STATUS NET_API_FUNCTION NETGETDCNAMEPROC(
 	LPWSTR servername, LPWSTR domainname, LPBYTE *bufptr);
+
+typedef BOOL WINAPI GETPROFILESDIRECTORYPROC(
+	LPWSTR  lpProfilesDir, LPDWORD lpcchSize
+);
 
 /*
  * Declarations for local functions defined in this file:
@@ -1418,15 +1423,18 @@ TclpGetUserHome(
 {
     char *result;
     HINSTANCE netapiInst;
+    HINSTANCE userenvInst;
 
     result = NULL;
     Tcl_DStringInit(bufferPtr);
 
     netapiInst = LoadLibraryA("netapi32.dll");
-    if (netapiInst != NULL) {
+    userenvInst = LoadLibraryA("userenv.dll");
+    if (netapiInst != NULL && userenvInst != NULL) {
 	NETAPIBUFFERFREEPROC *netApiBufferFreeProc;
 	NETGETDCNAMEPROC *netGetDCNameProc;
 	NETUSERGETINFOPROC *netUserGetInfoProc;
+	GETPROFILESDIRECTORYPROC *getProfilesDirectoryProc;
 
 	netApiBufferFreeProc = (NETAPIBUFFERFREEPROC *)
 		GetProcAddress(netapiInst, "NetApiBufferFree");
@@ -1434,8 +1442,10 @@ TclpGetUserHome(
 		GetProcAddress(netapiInst, "NetGetDCName");
 	netUserGetInfoProc = (NETUSERGETINFOPROC *)
 		GetProcAddress(netapiInst, "NetUserGetInfo");
+	getProfilesDirectoryProc = (GETPROFILESDIRECTORYPROC *)
+		GetProcAddress(userenvInst, "GetProfilesDirectoryW");
 	if ((netUserGetInfoProc != NULL) && (netGetDCNameProc != NULL)
-		&& (netApiBufferFreeProc != NULL)) {
+		&& (netApiBufferFreeProc != NULL) && (getProfilesDirectoryProc != NULL)) {
 	    USER_INFO_1 *uiPtr, **uiPtrPtr = &uiPtr;
 	    Tcl_DString ds;
 	    int nameLen, badDomain;
@@ -1467,12 +1477,17 @@ TclpGetUserHome(
 		    } else {
 			/*
 			 * User exists but has no home dir. Return
-			 * "{Windows Drive}:/users/default".
+			 * "{GetProfilesDirectory}/<user>".
 			 */
-
-			GetWindowsDirectoryW(buf, MAX_PATH);
-			Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
-			Tcl_DStringAppend(bufferPtr, "/users/default", -1);
+			DWORD size = MAX_PATH;
+			int i;
+			getProfilesDirectoryProc(buf, &size);
+			for (i = 0; i < size; ++i){
+			    if (buf[i] == '\\') buf[i] = '/';
+			}
+			Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+			Tcl_DStringAppend(bufferPtr, "/", -1);
+			Tcl_DStringAppend(bufferPtr, name, -1);
 		    }
 		    result = Tcl_DStringValue(bufferPtr);
 		    (*netApiBufferFreeProc)((void *) uiPtr);
@@ -1483,6 +1498,7 @@ TclpGetUserHome(
 		(*netApiBufferFreeProc)((void *) wDomain);
 	    }
 	}
+	FreeLibrary(userenvInst);
 	FreeLibrary(netapiInst);
     }
     if (result == NULL) {
