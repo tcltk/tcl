@@ -1926,7 +1926,7 @@ RefineApproximation(
 	    mp_clear(&twoMv);
 	    return approxResult;
 	}
-    }	
+    }
 
     /*
      * Convert the numerator and denominator of the corrector term accurately
@@ -4049,7 +4049,7 @@ StrictBignumConversion(
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
- *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it 
+ *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it
  *		also returns fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. In any case,
  *		strings of trailing zeroes are suppressed.
@@ -4583,7 +4583,7 @@ TclBignumToDouble(
 
 
     /*
-     * We need a 'mantBits'-bit significand.  Determine what shift will 
+     * We need a 'mantBits'-bit significand.  Determine what shift will
      * give us that.
      */
 
@@ -4598,7 +4598,7 @@ TclBignumToDouble(
     }
     shift = mantBits - bits;
 
-    /* 
+    /*
      * If shift > 0, shift the significand left by the requisite number of
      * bits.  If shift == 0, the significand is already exactly 'mantBits'
      * in length.  If shift < 0, we will need to shift the significand right
