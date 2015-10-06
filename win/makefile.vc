@@ -550,7 +550,7 @@ dlllflags = $(lflags) -dll
 conlflags = $(lflags) -subsystem:console
 guilflags = $(lflags) -subsystem:windows
 
-baselibs   = netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib
+baselibs   = netapi32.lib kernel32.lib user32.lib advapi32.lib userenv.lib ws2_32.lib
 # Avoid 'unresolved external symbol __security_cookie' errors.
 # c.f. http://support.microsoft.com/?id=894573
 !if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
