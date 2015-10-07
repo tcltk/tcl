@@ -833,8 +833,19 @@ PrintSourceToObj(
 	    continue;
 	default:
 #if TCL_UTF_MAX > 4
-	    if ((int) ch > 0xffff) {
-		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", (int) ch);
+	    if (ch > 0xffff) {
+		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ch);
+		i += 10;
+	    } else
+#elif TCL_UTF_MAX > 3
+	    /* If len == 0, this means we have a char > 0xffff, resulting in
+	     * TclUtfToUniChar producing a surrogate pair. We want to output
+	     * this pair as a single Unicode character.
+	     */
+	    if (len == 0) {
+		int upper = ((ch & 0x3ff) + 1) << 10;
+		len = TclUtfToUniChar(p, &ch);
+		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", upper + (ch & 0x3ff));
 		i += 10;
 	    } else
 #endif

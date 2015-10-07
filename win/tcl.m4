@@ -559,7 +559,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     EXTRA_CFLAGS=""
 	AC_DEFINE(MODULE_SCOPE, [extern], [No need to mark inidividual symbols as hidden])
 
-    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -w, echo)
+    AC_CHECK_PROG(CYGPATH, cygpath, cygpath -m, echo)
 
     SHLIB_SUFFIX=".dll"
 
@@ -673,7 +673,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     if test "${GCC}" = "yes" ; then
 	SHLIB_LD=""
 	SHLIB_LD_LIBS='${LIBS}'
-	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -lws2_32"
+	LIBS="-lnetapi32 -lkernel32 -luser32 -ladvapi32 -luserenv -lws2_32"
 	# mingw needs to link ole32 and oleaut32 for [send], but MSVC doesn't
 	LIBS_GUI="-lgdi32 -lcomdlg32 -limm32 -lcomctl32 -lshell32 -luuid -lole32 -loleaut32"
 	STLIB_LD='${AR} cr'
@@ -792,7 +792,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    LIBRARIES="\${SHARED_LIBRARIES}"
 	    EXESUFFIX="\${DBGX}.exe"
 	    case "x`echo \${VisualStudioVersion}`" in
-		x14*)
+		x1[[4-9]]*)
 		    lflags="${lflags} -nodefaultlib:libucrt.lib"
 		    ;;
 		*)
@@ -834,10 +834,10 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    fi
 	fi
 
-	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib ws2_32.lib"
+	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib userenv.lib ws2_32.lib"
 
 	case "x`echo \${VisualStudioVersion}`" in
-		x14*)
+		x1[[4-9]]*)
 		    LIBS="$LIBS ucrt.lib"
 		    ;;
 		*)

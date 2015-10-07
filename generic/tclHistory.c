@@ -161,7 +161,7 @@ Tcl_RecordAndEvalObj(
 	Tcl_Obj *list[3];
 
 	/*
-	 * Do recording by eval'ing a tcl history command: history add $cmd. 
+	 * Do recording by eval'ing a tcl history command: history add $cmd.
 	 */
 
 	list[0] = histObjsPtr->historyObj;
@@ -175,7 +175,7 @@ Tcl_RecordAndEvalObj(
 	/*
 	 * One possible failure mode above: exceeding a resource limit.
 	 */
-	
+
 	if (Tcl_LimitExceeded(interp)) {
 	    return TCL_ERROR;
 	}

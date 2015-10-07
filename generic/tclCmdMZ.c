@@ -38,7 +38,7 @@ static int		UniCharIsHexDigit(int character);
  * UTF-8 literal string containing all Unicode space characters [TIP #413]
  */
 
-const char tclDefaultTrimSet[] = 
+const char tclDefaultTrimSet[] =
 	"\x09\x0a\x0b\x0c\x0d " /* ASCII */
 	"\xc0\x80" /*     nul (U+0000) */
 	"\xc2\x85" /*     next line (U+0085) */
@@ -2894,7 +2894,7 @@ StringCatCmd(
 	Tcl_AppendObjToObj(objResultPtr, objv[i]);
     }
     Tcl_SetObjResult(interp, objResultPtr);
-    
+
     return TCL_OK;
 }
 

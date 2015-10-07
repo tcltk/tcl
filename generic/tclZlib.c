@@ -1534,7 +1534,7 @@ Tcl_ZlibDeflate(
     if (!interp) {
 	return TCL_ERROR;
     }
- 
+
     /*
      * Compressed format is specified by the wbits parameter. See zlib.h for
      * details.
