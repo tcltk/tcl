@@ -480,7 +480,7 @@ declare 132 {
     void Tcl_EventuallyFree(ClientData clientData, Tcl_FreeProc *freeProc)
 }
 declare 133 {
-    void Tcl_Exit(int status)
+    TCL_NORETURN void Tcl_Exit(int status)
 }
 declare 134 {
     int Tcl_ExposeCommand(Tcl_Interp *interp, const char *hiddenCmdToken,
@@ -1872,7 +1872,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf
