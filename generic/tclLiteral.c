@@ -414,7 +414,7 @@ TclRegisterLiteral(
 
     objPtr = CreateLiteral(iPtr, bytes, length, &globalNew, nsPtr,
 	    flags, &globalPtr);
-    
+
     hePtr = Tcl_CreateHashEntry(&envPtr->litMap, objPtr, &new);
     if (new) {
 	objIndex = TclAddLiteralObj(envPtr, objPtr, NULL);
@@ -804,7 +804,8 @@ RebuildLiteralTable(
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    int oldSize, count, index, length;
+    unsigned int oldSize;
+    int count, index, length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
@@ -873,7 +874,7 @@ RebuildLiteralTable(
  * Results:
  *	None.
  *
- * Side effects: 
+ * Side effects:
  *	Resets the internal representation of the CmdName Tcl_Obj
  *	using TclFreeIntRep().
  *

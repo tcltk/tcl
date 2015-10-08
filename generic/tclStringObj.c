@@ -188,7 +188,7 @@ GrowStringBuffer(
     int flag)
 {
     /*
-     * Pre-conditions: 
+     * Pre-conditions:
      *	objPtr->typePtr == &tclStringType
      *	needed > stringPtr->allocated
      *	flag || objPtr->bytes != NULL
@@ -238,7 +238,7 @@ GrowUnicodeBuffer(
     int needed)
 {
     /*
-     * Pre-conditions: 
+     * Pre-conditions:
      *	objPtr->typePtr == &tclStringType
      *	needed > stringPtr->maxChars
      *	needed < STRING_MAXCHARS
@@ -1334,7 +1334,7 @@ Tcl_AppendObjToObj(
      * appendObjPtr and append it.
      */
 
-    if (stringPtr->hasUnicode 
+    if (stringPtr->hasUnicode
 #if COMPAT
 		&& stringPtr->numChars > 0
 #endif
@@ -2314,7 +2314,7 @@ Tcl_AppendFormatToObj(
 		p += sprintf(p, "%d", width);
 		if (width > length) {
 		    length = width;
-		} 
+		}
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
@@ -2878,7 +2878,7 @@ ExtendUnicodeRepWithString(
     }
     needed = numOrigChars + numAppendChars;
     stringCheckLimits(needed);
-	
+
     if (needed > stringPtr->maxChars) {
 	GrowUnicodeBuffer(objPtr, needed);
 	stringPtr = GET_STRING(objPtr);
@@ -3096,7 +3096,7 @@ ExtendStringRepWithUnicode(
      * Pre-condition: this is the "string" Tcl_ObjType.
      */
 
-    int i, origLength, size = 0;	
+    int i, origLength, size = 0;
     char *dst, buf[TCL_UTF_MAX];
     String *stringPtr = GET_STRING(objPtr);
 
@@ -3112,12 +3112,12 @@ ExtendStringRepWithUnicode(
 	objPtr->length = 0;
     }
     size = origLength = objPtr->length;
-    
+
     /*
      * Quick cheap check in case we have more than enough room.
      */
 
-    if (numChars <= (INT_MAX - size)/TCL_UTF_MAX 
+    if (numChars <= (INT_MAX - size)/TCL_UTF_MAX
 	    && stringPtr->allocated >= size + numChars * TCL_UTF_MAX) {
 	goto copyBytes;
     }

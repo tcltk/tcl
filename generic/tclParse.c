@@ -968,7 +968,7 @@ TclParseCommand(
 		    listStart = nextElem = tokenPtr[1].start;
 		    while (nextElem < listEnd) {
 			int quoted;
-	
+
 			tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
 			tokenPtr->numComponents = 1;
 
