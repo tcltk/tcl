@@ -391,7 +391,7 @@ TCLAPI const char *	Tcl_ErrnoMsg(int err);
 TCLAPI void		Tcl_EventuallyFree(ClientData clientData,
 				Tcl_FreeProc *freeProc);
 /* 133 */
-TCLAPI void		Tcl_Exit(int status);
+TCLAPI TCL_NORETURN void Tcl_Exit(int status);
 /* 134 */
 TCLAPI int		Tcl_ExposeCommand(Tcl_Interp *interp,
 				const char *hiddenCmdToken,
@@ -1414,7 +1414,7 @@ TCLAPI void		Tcl_GetCommandFullName(Tcl_Interp *interp,
 TCLAPI int		Tcl_FSEvalFileEx(Tcl_Interp *interp,
 				Tcl_Obj *fileName, const char *encodingName);
 /* 519 */
-TCLAPI Tcl_ExitProc *	Tcl_SetExitProc(Tcl_ExitProc *proc);
+TCLAPI Tcl_ExitProc *	Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc);
 /* 520 */
 TCLAPI void		Tcl_LimitAddHandler(Tcl_Interp *interp, int type,
 				Tcl_LimitHandlerProc *handlerProc,
@@ -1892,7 +1892,7 @@ typedef struct TclStubs {
     void (*reserved130)(void);
     void (*reserved131)(void);
     void (*tcl_EventuallyFree) (ClientData clientData, Tcl_FreeProc *freeProc); /* 132 */
-    void (*tcl_Exit) (int status); /* 133 */
+    TCL_NORETURN1 void (*tcl_Exit) (int status); /* 133 */
     int (*tcl_ExposeCommand) (Tcl_Interp *interp, const char *hiddenCmdToken, const char *cmdName); /* 134 */
     int (*tcl_ExprBoolean) (Tcl_Interp *interp, const char *expr, int *ptr); /* 135 */
     int (*tcl_ExprBooleanObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int *ptr); /* 136 */
@@ -2286,7 +2286,7 @@ typedef struct TclStubs {
     Tcl_Command (*tcl_GetCommandFromObj) (Tcl_Interp *interp, Tcl_Obj *objPtr); /* 516 */
     void (*tcl_GetCommandFullName) (Tcl_Interp *interp, Tcl_Command command, Tcl_Obj *objPtr); /* 517 */
     int (*tcl_FSEvalFileEx) (Tcl_Interp *interp, Tcl_Obj *fileName, const char *encodingName); /* 518 */
-    Tcl_ExitProc * (*tcl_SetExitProc) (Tcl_ExitProc *proc); /* 519 */
+    Tcl_ExitProc * (*tcl_SetExitProc) (TCL_NORETURN1 Tcl_ExitProc *proc); /* 519 */
     void (*tcl_LimitAddHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, ClientData clientData, Tcl_LimitHandlerDeleteProc *deleteProc); /* 520 */
     void (*tcl_LimitRemoveHandler) (Tcl_Interp *interp, int type, Tcl_LimitHandlerProc *handlerProc, ClientData clientData); /* 521 */
     int (*tcl_LimitReady) (Tcl_Interp *interp); /* 522 */
