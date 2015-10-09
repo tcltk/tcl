@@ -22,6 +22,7 @@ exec_prefix		= @exec_prefix@
 bindir			= @bindir@
 libdir			= @libdir@
 includedir		= @includedir@
+datarootdir		= @datarootdir@
 mandir			= @mandir@
 
 # The following definition can be set to non-null for special systems like AFS
