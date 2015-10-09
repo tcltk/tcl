@@ -3294,7 +3294,9 @@ Tcl_LoadFile(
 	    if (*handlePtr == NULL) {
 		return TCL_ERROR;
 	    }
-	    Tcl_ResetResult(interp);
+	    if (interp) {
+		Tcl_ResetResult(interp);
+	    }
 	    goto resolveSymbols;
 	}
 	if (Tcl_GetErrno() != EXDEV) {
@@ -3310,9 +3312,11 @@ Tcl_LoadFile(
      */
 
     if (Tcl_FSAccess(pathPtr, R_OK) != 0) {
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"couldn't load library \"%s\": %s",
-		Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "couldn't load library \"%s\": %s",
+		    Tcl_GetString(pathPtr), Tcl_PosixError(interp)));
+	}
 	return TCL_ERROR;
     }
 
@@ -3361,7 +3365,9 @@ Tcl_LoadFile(
     }
 
   mustCopyToTempAnyway:
-    Tcl_ResetResult(interp);
+    if (interp) {
+	Tcl_ResetResult(interp);
+    }
 #endif /* TCL_LOAD_FROM_MEMORY */
 
     /*
@@ -3385,8 +3391,10 @@ Tcl_LoadFile(
 
 	Tcl_FSDeleteFile(copyToPtr);
 	Tcl_DecrRefCount(copyToPtr);
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"couldn't load from current filesystem", -1));
+	if (interp) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "couldn't load from current filesystem", -1));
+	}
 	return TCL_ERROR;
     }
 
@@ -3426,7 +3434,9 @@ Tcl_LoadFile(
      * have stored the number of bytes in the result.
      */
 
-    Tcl_ResetResult(interp);
+    if (interp) {
+	Tcl_ResetResult(interp);
+    }
 
     retVal = Tcl_LoadFile(interp, copyToPtr, symbols, flags, procPtrs,
 	    &newLoadHandle);
@@ -3458,7 +3468,9 @@ Tcl_LoadFile(
 	 */
 
 	*handlePtr = newLoadHandle;
-	Tcl_ResetResult(interp);
+	if (interp) {
+	    Tcl_ResetResult(interp);
+	}
 	return TCL_OK;
     }
 
@@ -3519,7 +3531,9 @@ Tcl_LoadFile(
     divertedLoadHandle->unloadFileProcPtr = DivertUnloadFile;
     *handlePtr = divertedLoadHandle;
 
-    Tcl_ResetResult(interp);
+    if (interp) {
+	Tcl_ResetResult(interp);
+    }
     return retVal;
 
   resolveSymbols:
