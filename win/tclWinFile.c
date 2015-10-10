@@ -1479,8 +1479,7 @@ TclpGetUserHome(
 			 * User exists but has no home dir. Return
 			 * "{GetProfilesDirectory}/<user>".
 			 */
-			DWORD size = MAX_PATH;
-			int i;
+			DWORD i, size = MAX_PATH;
 			getProfilesDirectoryProc(buf, &size);
 			for (i = 0; i < size; ++i){
 			    if (buf[i] == '\\') buf[i] = '/';
