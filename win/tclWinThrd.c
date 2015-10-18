@@ -569,8 +569,6 @@ Tcl_MutexLock(
 {
     CRITICAL_SECTION *csPtr;
 
-retry:
-
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 
@@ -586,11 +584,7 @@ retry:
 	}
 	MASTER_UNLOCK;
     }
-
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
-    if (csPtr == NULL) {
-	goto retry;
-    }
     EnterCriticalSection(csPtr);
 }
 
