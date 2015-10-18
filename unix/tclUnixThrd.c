@@ -420,8 +420,6 @@ Tcl_MutexLock(
 {
     pthread_mutex_t *pmutexPtr;
 
-retry:
-
     if (*mutexPtr == NULL) {
 	MASTER_LOCK;
 	if (*mutexPtr == NULL) {
@@ -436,11 +434,7 @@ retry:
 	}
 	MASTER_UNLOCK;
     }
-
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
-    if (pmutexPtr == NULL) {
-	goto retry;
-    }
     pthread_mutex_lock(pmutexPtr);
 }
 
