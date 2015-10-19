@@ -7527,7 +7527,7 @@ fi
 		;;
 	    *)
 		case "$arch" in
-		alpha|sparc64)
+		alpha|sparc|sparc64)
 		    SHLIB_CFLAGS="-fPIC"
 		    ;;
 		*)
