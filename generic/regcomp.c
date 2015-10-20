@@ -144,9 +144,9 @@ static void cleartraverse(struct nfa *, struct state *);
 static void specialcolors(struct nfa *);
 static long optimize(struct nfa *, FILE *);
 static void pullback(struct nfa *, FILE *);
-static int pull(struct nfa *, struct arc *);
+static int pull(struct nfa *, struct arc *, struct state **);
 static void pushfwd(struct nfa *, FILE *);
-static int push(struct nfa *, struct arc *);
+static int push(struct nfa *, struct arc *, struct state **);
 #define	INCOMPATIBLE	1	/* destroys arc */
 #define	SATISFIED	2	/* constraint satisfied */
 #define	COMPATIBLE	3	/* compatible but not satisfied yet */
