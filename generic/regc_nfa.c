@@ -1518,6 +1518,7 @@ pullback(
     struct state *nexts;
     struct arc *a;
     struct arc *nexta;
+    struct state *intermediates;
     int progress;
 
     /*
@@ -1528,14 +1529,26 @@ pullback(
 	progress = 0;
 	for (s=nfa->states ; s!=NULL && !NISERR() ; s=nexts) {
 	    nexts = s->next;
+	    intermediates = NULL;
 	    for (a=s->outs ; a!=NULL && !NISERR() ; a=nexta) {
 		nexta = a->outchain;
 		if (a->type == '^' || a->type == BEHIND) {
-		    if (pull(nfa, a)) {
+		    if (pull(nfa, a, &intermediates)) {
 			progress = 1;
 		    }
 		}
 		assert(nexta == NULL || s->no != FREESTATE);
+	    }
+	    /* clear tmp fields of intermediate states created here */
+	    while (intermediates != NULL) {
+		struct state *ns = intermediates->tmp;
+
+		intermediates->tmp = NULL;
+		intermediates = ns;
+	    }
+	    /* if s is now useless, get rid of it */
+	    if ((s->nins == 0 || s->nouts == 0) && !s->flag) {
+		dropstate(nfa, s);
 	    }
 	}
 	if (progress && f != NULL) {
@@ -1564,15 +1577,28 @@ pullback(
 
 /*
  - pull - pull a back constraint backward past its source state
- * A significant property of this function is that it deletes at most
- * one state -- the constraint's from state -- and only if the constraint
- * was that state's last outarc.
+ *
+ * Returns 1 if successful (which it always is unless the source is the
+ * start state or we have an internal error), 0 if nothing happened.
+ *
+ * A significant property of this function is that it deletes no pre-existing
+ * states, and no outarcs of the constraint's from state other than the given
+ * constraint arc.  This makes the loops in pullback() safe, at the cost that
+ * we may leave useless states behind.  Therefore, we leave it to pullback()
+ * to delete such states.
+ *
+ * If the from state has multiple back-constraint outarcs, and/or multiple
+ * compatible constraint inarcs, we only need to create one new intermediate
+ * state per combination of predecessor and successor states.  *intermediates
+ * points to a list of such intermediate states for this from state (chained
+ * through their tmp fields).
  ^ static int pull(struct nfa *, struct arc *);
  */
-static int			/* 0 couldn't, 1 could */
+static int
 pull(
     struct nfa *nfa,
-    struct arc *con)
+    struct arc *con,
+    struct state **intermediates)
 {
     struct state *from = con->from;
     struct state *to = con->to;
@@ -1590,7 +1616,9 @@ pull(
     }
 
     /*
-     * First, clone from state if necessary to avoid other outarcs.
+     * First, clone from state if necessary to avoid other outarcs.  This may
+     * seem wasteful, but it simplifies the logic, and we'll get rid of the
+     * clone state again at the bottom.
      */
 
     if (from->nouts > 1) {
@@ -1601,6 +1629,9 @@ pull(
 	copyins(nfa, from, s, 1);	/* duplicate inarcs */
 	cparc(nfa, con, s, to);		/* move constraint arc */
 	freearc(nfa, con);
+	if (NISERR()) {
+	    return 0;
+	}
 	from = s;
 	con = from->outs;
     }
@@ -1610,7 +1641,7 @@ pull(
      * Propagate the constraint into the from state's inarcs.
      */
 
-    for (a=from->ins ; a!=NULL ; a=nexta) {
+    for (a=from->ins ; a!=NULL && !NISERR(); a=nexta) {
 	nexta = a->inchain;
 	switch (combine(con, a)) {
 	case INCOMPATIBLE:	/* destroy the arc */
@@ -1619,17 +1650,25 @@ pull(
 	case SATISFIED:		/* no action needed */
 	    break;
 	case COMPATIBLE:	/* swap the two arcs, more or less */
-	    s = newstate(nfa);
-	    if (NISERR()) {
-		return 0;
+	    /* need an intermediate state, but might have one already */
+	    for (s = *intermediates; s != NULL; s = s->tmp) {
+		assert(s->nins > 0 && s->nouts > 0);
+		if (s->ins->from == a->from && s->outs->to == to) {
+		    break;
+		}
 	    }
-	    cparc(nfa, a, s, to);	/* anticipate move */
-	    cparc(nfa, con, a->from, s);
-	    if (NISERR()) {
-		return 0;
+	    if (s == NULL) {
+		s = newstate(nfa);
+		if (NISERR()) {
+		    return 0;
+		}
+		s->tmp = *intermediates;
+		*intermediates = s;
 	    }
-	    freearc(nfa, a);
-	    break;
+  	    cparc(nfa, con, a->from, s);
+	    cparc(nfa, a, s, to);
+ 	    freearc(nfa, a);
+  	    break;
 	default:
 	    assert(NOTREACHED);
 	    break;
@@ -1641,7 +1680,8 @@ pull(
      */
 
     moveins(nfa, from, to);
-    dropstate(nfa, from);	/* will free the constraint */
+    freearc(nfa, con);
+    /* from state is now useless, but we leave it to pullback() to clean up */
     return 1;
 }
 
@@ -1658,6 +1698,7 @@ pushfwd(
     struct state *nexts;
     struct arc *a;
     struct arc *nexta;
+    struct state *intermediates;
     int progress;
 
     /*
@@ -1668,14 +1709,25 @@ pushfwd(
 	progress = 0;
 	for (s=nfa->states ; s!=NULL && !NISERR() ; s=nexts) {
 	    nexts = s->next;
+	    intermediates = NULL;
 	    for (a = s->ins; a != NULL && !NISERR(); a = nexta) {
 		nexta = a->inchain;
 		if (a->type == '$' || a->type == AHEAD) {
-		    if (push(nfa, a)) {
+		    if (push(nfa, a, &intermediates)) {
 			progress = 1;
 		    }
 		}
-		assert(nexta == NULL || s->no != FREESTATE);
+	    }
+	    /* clear tmp fields of intermediate states created here */
+	    while (intermediates != NULL) {
+		struct state *ns = intermediates->tmp;
+
+		intermediates->tmp = NULL;
+		intermediates = ns;
+	    }
+	    /* if s is now useless, get rid of it */
+	    if ((s->nins == 0 || s->nouts == 0) && !s->flag) {
+		dropstate(nfa, s);
 	    }
 	}
 	if (progress && f != NULL) {
@@ -1704,15 +1756,28 @@ pushfwd(
 
 /*
  - push - push a forward constraint forward past its destination state
- * A significant property of this function is that it deletes at most
- * one state -- the constraint's to state -- and only if the constraint
- * was that state's last inarc.
+ *
+ * Returns 1 if successful (which it always is unless the destination is the
+ * post state or we have an internal error), 0 if nothing happened.
+ *
+ * A significant property of this function is that it deletes no pre-existing
+ * states, and no inarcs of the constraint's to state other than the given
+ * constraint arc.  This makes the loops in pushfwd() safe, at the cost that
+ * we may leave useless states behind.  Therefore, we leave it to pushfwd()
+ * to delete such states.
+ *
+ * If the to state has multiple forward-constraint inarcs, and/or multiple
+ * compatible constraint outarcs, we only need to create one new intermediate
+ * state per combination of predecessor and successor states.  *intermediates
+ * points to a list of such intermediate states for this to state (chained
+ * through their tmp fields).
  ^ static int push(struct nfa *, struct arc *);
  */
-static int			/* 0 couldn't, 1 could */
+static int
 push(
     struct nfa *nfa,
-    struct arc *con)
+    struct arc *con,
+    struct state **intermediates)
 {
     struct state *from = con->from;
     struct state *to = con->to;
@@ -1730,7 +1795,9 @@ push(
     }
 
     /*
-     * First, clone to state if necessary to avoid other inarcs.
+     * First, clone to state if necessary to avoid other inarcs.  This may
+     * seem wasteful, but it simplifies the logic, and we'll get rid of the
+     * clone state again at the bottom.
      */
 
     if (to->nins > 1) {
@@ -1739,8 +1806,11 @@ push(
 	    return 0;
 	}
 	copyouts(nfa, to, s, 1);	/* duplicate outarcs */
-	cparc(nfa, con, from, s);	/* move constraint */
+	cparc(nfa, con, from, s);	/* move constraint arc */
 	freearc(nfa, con);
+	if (NISERR()) {
+	    return 0;
+	}
 	to = s;
 	con = to->ins;
     }
@@ -1750,7 +1820,7 @@ push(
      * Propagate the constraint into the to state's outarcs.
      */
 
-    for (a = to->outs; a != NULL; a = nexta) {
+    for (a = to->outs; a != NULL && !NISERR(); a = nexta) {
 	nexta = a->outchain;
 	switch (combine(con, a)) {
 	case INCOMPATIBLE:	/* destroy the arc */
@@ -1759,17 +1829,25 @@ push(
 	case SATISFIED:		/* no action needed */
 	    break;
 	case COMPATIBLE:	/* swap the two arcs, more or less */
-	    s = newstate(nfa);
-	    if (NISERR()) {
-		return 0;
+	    /* need an intermediate state, but might have one already */
+	    for (s = *intermediates; s != NULL; s = s->tmp) {
+		assert(s->nins > 0 && s->nouts > 0);
+		if (s->ins->from == from && s->outs->to == a->to) {
+		    break;
+		}
 	    }
-	    cparc(nfa, con, s, a->to);	/* anticipate move */
-	    cparc(nfa, a, from, s);
-	    if (NISERR()) {
-		return 0;
+	    if (s == NULL) {
+		s = newstate(nfa);
+		if (NISERR()) {
+		    return 0;
+		}
+		s->tmp = *intermediates;
+		*intermediates = s;
 	    }
-	    freearc(nfa, a);
-	    break;
+	    cparc(nfa, con, s, a->to);
+  	    cparc(nfa, a, from, s);
+  	    freearc(nfa, a);
+  	    break;
 	default:
 	    assert(NOTREACHED);
 	    break;
@@ -1781,7 +1859,8 @@ push(
      */
 
     moveouts(nfa, to, from);
-    dropstate(nfa, to);		/* will free the constraint */
+    freearc(nfa, con);
+    /* to state is now useless, but we leave it to pushfwd() to clean up */
     return 1;
 }
 
