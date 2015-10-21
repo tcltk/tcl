@@ -51,7 +51,7 @@ static void		RememberSyncObject(void *objPtr,
  * This is a mutex wait procedure that does nothing.
  */
 
-static void		MutexWaitNone(Tcl_Mutex *mutexPtr, int retry,
+static void		MutexWaitNone(Tcl_Mutex *mutexPtr, int *retry,
 			    ClientData clientData);
 
 /*
@@ -479,7 +479,7 @@ Tcl_MutexWaitProc *TclGetMutexWaitProc(void)
 static void
 MutexWaitNone(
     Tcl_Mutex *mutexPtr,	/* Mutex passed to Tcl_MutexLock. */
-    int retry,			/* The number of retries so far. */
+    int *retry,			/* The number of retries so far. */
     ClientData clientData)	/* The extra data, if any. */
 {
     /* Do nothing. */

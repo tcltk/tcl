@@ -481,6 +481,49 @@ Tcl_GetAllocMutex(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpMutexWait
+ *
+ *	This procedure is used to delay for a short interval while
+ *	waiting for a mutex to be unlocked by another thread.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The value of the retry parameter is changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexWait(
+    Tcl_Mutex *mutexPtr,	/* Mutex passed to Tcl_MutexLock. */
+    int *retry,			/* The number of retries so far. */
+    ClientData clientData)	/* The extra data, if any. */
+{
+    int nRetry = (retry != NULL) ? *retry : 0;
+    if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
+	nRetry = 0;
+    }
+    /*
+     * BUGBUG: All core and Thread package tests pass when usleep()
+     *         is used; however, the Thread package tests hang at
+     *         various places when Tcl_Sleep() is used, typically
+     *         while running test "thread-17.8", "thread-17.9", or
+     *         "thread-17.11a".  Really, what we want here is just
+     *         to yield to other threads for a while.
+     */
+#ifdef HAVE_USLEEP
+    usleep(TCL_MUTEX_LOCK_SLEEP_TIME * 1000 * nRetry);
+#else
+    Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
+#endif
+    if (retry != NULL) *retry = nRetry;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_MutexLock --
  *
  *	This procedure is invoked to lock a mutex. This procedure handles
@@ -537,24 +580,9 @@ retry:
 	TclpMutexUnlock();
 	mutexWaitProc = TclGetMutexWaitProc();
 	if (mutexWaitProc != NULL) {
-	    mutexWaitProc(mutexPtr, nRetry, NULL);
+	    mutexWaitProc(mutexPtr, &nRetry, NULL);
 	} else {
-	    if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
-		nRetry = 0;
-	    }
-	    /*
-	     * BUGBUG: All core and Thread package tests pass when usleep()
-	     *         is used; however, the Thread package tests hang at
-	     *         various places when Tcl_Sleep() is used, typically
-	     *         while running test "thread-17.8", "thread-17.9", or
-	     *         "thread-17.11a".  Really, what we want here is just
-	     *         to yield to other threads for a while.
-	     */
-#ifdef HAVE_USLEEP
-	    usleep(TCL_MUTEX_LOCK_SLEEP_TIME * 1000 * nRetry);
-#else
-	    Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
-#endif
+	    TclpMutexWait(mutexPtr, &nRetry, NULL);
 	}
 	nRetry++;
     }

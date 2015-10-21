@@ -626,6 +626,37 @@ static void		FinalizeConditionEvent(ClientData data);
 /*
  *----------------------------------------------------------------------
  *
+ * TclpMutexWait
+ *
+ *	This procedure is used to delay for a short interval while
+ *	waiting for a mutex to be unlocked by another thread.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The value of the retry parameter is changed.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMutexWait(
+    Tcl_Mutex *mutexPtr,	/* Mutex passed to Tcl_MutexLock. */
+    int *retry,			/* The number of retries so far. */
+    ClientData clientData)	/* The extra data, if any. */
+{
+    int nRetry = (retry != NULL) ? *retry : 0;
+    if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
+	nRetry = 0;
+    }
+    Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
+    if (retry != NULL) *retry = nRetry;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_MutexLock --
  *
  *	This procedure is invoked to lock a mutex. This is a self initializing
@@ -679,12 +710,9 @@ retry:
 	TclpMutexUnlock();
 	mutexWaitProc = TclGetMutexWaitProc();
 	if (mutexWaitProc != NULL) {
-	    mutexWaitProc(mutexPtr, nRetry, NULL);
+	    mutexWaitProc(mutexPtr, &nRetry, NULL);
 	} else {
-	    if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
-		nRetry = 0;
-	    }
-	    Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
+	    TclpMutexWait(mutexPtr, &nRetry, NULL);
 	}
 	nRetry++;
     }

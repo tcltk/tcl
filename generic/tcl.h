@@ -746,7 +746,7 @@ typedef void (Tcl_EventCheckProc) (ClientData clientData, int flags);
 typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, ClientData clientData);
 typedef void (Tcl_EventSetupProc) (ClientData clientData, int flags);
 typedef void (Tcl_ExitProc) (ClientData clientData);
-typedef void (Tcl_MutexWaitProc) (Tcl_Mutex *mutexPtr, int retry,
+typedef void (Tcl_MutexWaitProc) (Tcl_Mutex *mutexPtr, int *retry,
 	ClientData clientData);
 typedef void (Tcl_FileProc) (ClientData clientData, int mask);
 typedef void (Tcl_FileFreeProc) (ClientData clientData);

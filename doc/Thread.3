@@ -87,6 +87,10 @@ thread, or (for \fBTcl_SetMutexWaitProc\fR) NULL to uninstall the current
 mutex wait procedure.  The special value \fBTCL_MUTEX_WAIT_NONE\fR can be
 used to indicate that the default mutex wait handling should be disabled
 and no wait procedure should be called.
+.AP int *retry in/out
+The number of times the current mutex lock operation has been retried.
+Initially, this value will be zero.  This value may be modified by the
+current mutex wait procedure.
 .BE
 .SH INTRODUCTION
 Beginning with the 8.1 release, the Tcl core is thread safe, which
@@ -160,7 +164,7 @@ The \fIProc\fR passed to Tcl_SetMutexWaitProc should match the type
 .CS
 typedef void \fBTcl_MutexWaitProc\fR(
         Tcl_Mutex *\fImutexPtr\fR,
-        int \fIretry\fR,
+        int *\fIretry\fR,
         ClientData \fIclientData\fR);
 .CE
 .PP

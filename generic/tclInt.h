@@ -3062,6 +3062,8 @@ MODULE_SCOPE void	TclpMasterLock(void);
 MODULE_SCOPE void	TclpMasterUnlock(void);
 MODULE_SCOPE void	TclpMutexLock(void);
 MODULE_SCOPE void	TclpMutexUnlock(void);
+MODULE_SCOPE void	TclpMutexWait(Tcl_Mutex *mutexPtr, int *retry,
+			    ClientData clientData);
 MODULE_SCOPE int	TclpMatchFiles(Tcl_Interp *interp, char *separators,
 			    Tcl_DString *dirPtr, char *pattern, char *tail);
 MODULE_SCOPE int	TclpObjNormalizePath(Tcl_Interp *interp,
