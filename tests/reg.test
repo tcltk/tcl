@@ -1093,6 +1093,34 @@ test reg-33.21 {constraint fixes} {
 test reg-33.22 {constraint fixes} {
     regexp {(^(?!aa)(?!bb)(?!cc))+} {dd x}
 } 1
+
+test reg-33.23 {} {
+    regexp {abcd(\m)+xyz} x
+} 0
+test reg-33.24 {} {
+    regexp {abcd(\m)+xyz} a
+} 0
+test reg-33.25 {} {
+    regexp {^abcd*(((((^(a c(e?d)a+|)+|)+|)+|)+|a)+|)} x
+} 0
+test reg-33.26 {} {
+    regexp {a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$} x
+} 0
+test reg-33.27 {} {
+    regexp {xyz(\Y\Y)+} x
+} 0
+test reg-33.28 {} {
+    regexp {x|(?:\M)+} x
+} 1
+test reg-33.29 {} {
+    # This is near the limits of the RE engine
+    regexp [string repeat x*y*z* 480] x
+} 1
+
+test reg-33.30 {Bug 1080042} {
+    regexp {(\Y)+} foo
+} 1
+
 
 # cleanup
 ::tcltest::cleanupTests
