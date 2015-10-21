@@ -190,6 +190,7 @@ TclThread_Init(
  *	thread event
  *	thread exit
  *	thread id ?-main?
+ *	thread mutexwait enable
  *	thread names
  *	thread wait
  *	thread errorproc proc
@@ -216,13 +217,13 @@ ThreadObjCmd(
     int option;
     static const char *const threadOptions[] = {
 	"cancel", "create", "event", "exit", "id",
-	"join", "names", "send", "wait", "errorproc",
-	NULL
+	"join", "mutexwait", "names", "send", "wait",
+	"errorproc", NULL
     };
     enum options {
 	THREAD_CANCEL, THREAD_CREATE, THREAD_EVENT, THREAD_EXIT,
-	THREAD_ID, THREAD_JOIN, THREAD_NAMES, THREAD_SEND,
-	THREAD_WAIT, THREAD_ERRORPROC
+	THREAD_ID, THREAD_JOIN, THREAD_MUTEXWAIT, THREAD_NAMES,
+	THREAD_SEND, THREAD_WAIT, THREAD_ERRORPROC
     };
 
     if (objc < 2) {
@@ -376,6 +377,20 @@ ThreadObjCmd(
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
+    }
+    case THREAD_MUTEXWAIT: {
+	int boolValue;
+	Tcl_MutexWaitProc *proc;
+	if (objc != 3) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "enable");
+	    return TCL_ERROR;
+	}
+	if (Tcl_GetBooleanFromObj(interp, objv[2], &boolValue) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	proc = Tcl_SetMutexWaitProc(boolValue ? NULL : TCL_MUTEX_WAIT_NONE);
+	Tcl_SetObjResult(interp, Tcl_NewIntObj((proc == NULL) ? 1 : 0));
+	return TCL_OK;
     }
     case THREAD_NAMES:
 	if (objc > 2) {

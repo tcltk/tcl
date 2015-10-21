@@ -504,6 +504,7 @@ Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* Really (pthread_mutex_t **) */
 {
     pthread_mutex_t *pmutexPtr;
+    Tcl_MutexWaitProc *mutexWaitProc;
     int nRetry = 0; /* NOTE: Hopefully, zero milliseconds means "yield". */
 
 retry:
@@ -534,22 +535,27 @@ retry:
 	    return;
 	}
 	TclpMutexUnlock();
-	/*
-	 * BUGBUG: All core and Thread package tests pass when usleep()
-	 *         is used; however, the Thread package tests hang at
-	 *         various places when Tcl_Sleep() is used, typically
-	 *         while running test "thread-17.8", "thread-17.9", or
-	 *         "thread-17.11a".  Really, what we want here is just
-	 *         to yield to other threads for a while.
-	 */
-	if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
-	    nRetry = 0;
-	}
+	mutexWaitProc = TclGetMutexWaitProc();
+	if (mutexWaitProc != NULL) {
+	    mutexWaitProc(mutexPtr, nRetry, NULL);
+	} else {
+	    if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
+		nRetry = 0;
+	    }
+	    /*
+	     * BUGBUG: All core and Thread package tests pass when usleep()
+	     *         is used; however, the Thread package tests hang at
+	     *         various places when Tcl_Sleep() is used, typically
+	     *         while running test "thread-17.8", "thread-17.9", or
+	     *         "thread-17.11a".  Really, what we want here is just
+	     *         to yield to other threads for a while.
+	     */
 #ifdef HAVE_USLEEP
-	usleep(TCL_MUTEX_LOCK_SLEEP_TIME * 1000 * nRetry);
+	    usleep(TCL_MUTEX_LOCK_SLEEP_TIME * 1000 * nRetry);
 #else
-	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
+	    Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
 #endif
+	}
 	nRetry++;
     }
 }

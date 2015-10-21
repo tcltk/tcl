@@ -28,6 +28,13 @@ typedef struct {
     void **list;	/* List of pointers */
 } SyncObjRecord;
 
+/*
+ * This holds the mutex wait procedure (TIP #435).  When non-NULL, it will
+ * be called from within Tcl_MutexLock once per retry when attempting to
+ * lock a given mutex.
+ */
+static Tcl_MutexWaitProc *appMutexWaitPtr = NULL;
+
 static SyncObjRecord keyRecord = {0, 0, NULL};
 static SyncObjRecord mutexRecord = {0, 0, NULL};
 static SyncObjRecord condRecord = {0, 0, NULL};
@@ -39,6 +46,13 @@ static SyncObjRecord condRecord = {0, 0, NULL};
 static void		ForgetSyncObject(void *objPtr, SyncObjRecord *recPtr);
 static void		RememberSyncObject(void *objPtr,
 			    SyncObjRecord *recPtr);
+
+/*
+ * This is a mutex wait procedure that does nothing.
+ */
+
+static void		MutexWaitNone(Tcl_Mutex *mutexPtr, int retry,
+			    ClientData clientData);
 
 /*
  * Several functions are #defined to nothing in tcl.h if TCL_THREADS is not
@@ -324,6 +338,49 @@ Tcl_MutexUnlockAndFinalize(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_SetMutexWaitProc --
+ *
+ *	This function sets the application wide mutex wait handler that
+ *	will be called by Tcl_MutexLock once per retry to obtain a lock
+ *	on a given mutex.  If the mutex wait handler is NULL, the default
+ *	mutex wait handling is used, which may involve sleeping.
+ *
+ * Results:
+ *	The previously set application wide mutex wait handler.
+ *
+ * Side effects:
+ *	Sets the application wide mutex wait handler to the specified
+ *	value.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_MutexWaitProc *
+Tcl_SetMutexWaitProc(
+    Tcl_MutexWaitProc *proc)	/* New mutex wait handler for app or NULL */
+{
+    Tcl_MutexWaitProc *prevMutexWaitProc;
+
+    /*
+     * Swap the old mutex wait proc for the new one, saving the old one
+     * for our return value.
+     */
+
+    TclpMasterLock();
+    prevMutexWaitProc = appMutexWaitPtr;
+    if (proc != TCL_MUTEX_WAIT_NONE) {
+	appMutexWaitPtr = proc;
+    } else {
+	appMutexWaitPtr = MutexWaitNone;
+    }
+    TclpMasterUnlock();
+
+    return prevMutexWaitProc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * TclRememberCondition
  *
  *	Keep a list of condition variables used during finalization.
@@ -372,6 +429,59 @@ Tcl_ConditionFinalize(
     TclpMasterLock();
     ForgetSyncObject(condPtr, &condRecord);
     TclpMasterUnlock();
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetMutexWaitProc --
+ *
+ *	This function returns the application wide mutex wait handler.
+ *
+ * Results:
+ *	The application wide mutex wait handler, which may be NULL.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+Tcl_MutexWaitProc *TclGetMutexWaitProc(void)
+{
+    Tcl_MutexWaitProc *mutexWaitProc;
+
+    TclpMasterLock();
+    mutexWaitProc = appMutexWaitPtr;
+    TclpMasterUnlock();
+
+    return mutexWaitProc;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * MutexWaitNone --
+ *
+ *	This function is a Tcl_MutexWaitProc that never waits (i.e. it
+ *	is a noop).
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+MutexWaitNone(
+    Tcl_Mutex *mutexPtr,	/* Mutex passed to Tcl_MutexLock. */
+    int retry,			/* The number of retries so far. */
+    ClientData clientData)	/* The extra data, if any. */
+{
+    /* Do nothing. */
 }
 
 /*

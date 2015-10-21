@@ -1438,6 +1438,21 @@ test thread-8.1 {threaded fork stress} -constraints {thread} -setup {
     unset -nocomplain ::threadCount ::execCount ::threads ::thread
 } -result {}
 
+test thread-9.1 {mutex wait procedure} -constraints {testthread} -setup {
+    unset -nocomplain res
+} -body {
+    catch {testthread mutexwait} res(1)
+    catch {testthread mutexwait 0 0} res(2)
+    catch {testthread mutexwait 0} res(3)
+    catch {testthread mutexwait 1} res(4)
+    catch {testthread mutexwait 0} res(5)
+    catch {testthread mutexwait 1} res(6)
+    list $res(1) $res(2) $res(3) $res(4) $res(5) $res(6)
+} -cleanup {
+    unset -nocomplain res
+} -result {{wrong # args: should be "testthread mutexwait enable"} {wrong #\
+args: should be "testthread mutexwait enable"} 1 0 1 0}
+
 # cleanup
 ::tcltest::cleanupTests
 return

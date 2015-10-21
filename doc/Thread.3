@@ -9,7 +9,7 @@
 .so man.macros
 .BS
 .SH NAME
-Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData, Tcl_MutexLock, Tcl_MutexUnlock, Tcl_MutexFinalize, Tcl_MutexUnlockAndFinalize, Tcl_CreateThread, Tcl_JoinThread \- Tcl thread support
+Tcl_ConditionNotify, Tcl_ConditionWait, Tcl_ConditionFinalize, Tcl_GetThreadData, Tcl_MutexLock, Tcl_MutexUnlock, Tcl_MutexFinalize, Tcl_MutexUnlockAndFinalize, Tcl_CreateThread, Tcl_JoinThread, Tcl_SetMutexWaitProc \- Tcl thread support
 .SH SYNOPSIS
 .nf
 \fB#include <tcl.h>\fR
@@ -43,6 +43,9 @@ int
 .sp
 int
 \fBTcl_JoinThread\fR(\fIid, result\fR)
+.sp
+Tcl_MutexWaitProc *
+\fBTcl_SetMutexWaitProc\fR(\fIproc\fR)
 .SH ARGUMENTS
 .AS Tcl_CreateThreadProc proc out
 .AP Tcl_Condition *condPtr in
@@ -78,6 +81,12 @@ the new thread.
 .AP int *result out
 The referred storage is used to place the exit code of the thread
 waited upon into it.
+.AP Tcl_MutexWaitProc *proc in
+Procedure to invoke when waiting for a mutex to be unlocked by another
+thread, or (for \fBTcl_SetMutexWaitProc\fR) NULL to uninstall the current
+mutex wait procedure.  The special value \fBTCL_MUTEX_WAIT_NONE\fR can be
+used to indicate that the default mutex wait handling should be disabled
+and no wait procedure should be called.
 .BE
 .SH INTRODUCTION
 Beginning with the 8.1 release, the Tcl core is thread safe, which
@@ -142,6 +151,19 @@ A mutex is a lock that is used to serialize all threads through a piece
 of code by calling \fBTcl_MutexLock\fR and \fBTcl_MutexUnlock\fR.
 If one thread holds a mutex, any other thread calling \fBTcl_MutexLock\fR will
 block until \fBTcl_MutexUnlock\fR is called.
+If \fBTcl_MutexLock\fR is called when the mutex is locked by another thread,
+it will retry the locking operation; if \fBTcl_SetMutexWaitProc\fR is used,
+the configured mutex wait procedure will be called once per retry.
+The \fIProc\fR passed to Tcl_SetMutexWaitProc should match the type
+\fBTcl_MutexWaitProc\fR:
+.PP
+.CS
+typedef void \fBTcl_MutexWaitProc\fR(
+        Tcl_Mutex *\fImutexPtr\fR,
+        int \fIretry\fR,
+        ClientData \fIclientData\fR);
+.CE
+.PP
 A mutex can be destroyed after its use by calling \fBTcl_MutexFinalize\fR or
 \fBTcl_MutexUnlockAndFinalize\fR.  The \fBTcl_MutexFinalize\fR function may
 only be used on unlocked mutexes; otherwise, its behavior is undefined.  The

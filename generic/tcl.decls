@@ -2326,9 +2326,14 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
-# TIP #435
+# TIP #435 (part 1, atomic mutex unlock-and-finalize)
 declare 631 {
     void Tcl_MutexUnlockAndFinalize(Tcl_Mutex *mutex)
+}
+
+# TIP #435 (part 2, custom mutex wait handler)
+declare 632 {
+    Tcl_MutexWaitProc *Tcl_SetMutexWaitProc(Tcl_MutexWaitProc *proc)
 }
 
 ##############################################################################

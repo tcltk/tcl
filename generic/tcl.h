@@ -112,6 +112,10 @@ extern "C" {
 #define TCL_DECLARE_MUTEX(name)
 #endif
 
+#ifndef TCL_MUTEX_WAIT_NONE
+#define TCL_MUTEX_WAIT_NONE ((Tcl_MutexWaitProc *)(-1))
+#endif
+
 /*
  * Tcl's public routine Tcl_FSSeek() uses the values SEEK_SET, SEEK_CUR, and
  * SEEK_END, all #define'd by stdio.h .
@@ -742,6 +746,8 @@ typedef void (Tcl_EventCheckProc) (ClientData clientData, int flags);
 typedef int (Tcl_EventDeleteProc) (Tcl_Event *evPtr, ClientData clientData);
 typedef void (Tcl_EventSetupProc) (ClientData clientData, int flags);
 typedef void (Tcl_ExitProc) (ClientData clientData);
+typedef void (Tcl_MutexWaitProc) (Tcl_Mutex *mutexPtr, int retry,
+	ClientData clientData);
 typedef void (Tcl_FileProc) (ClientData clientData, int mask);
 typedef void (Tcl_FileFreeProc) (ClientData clientData);
 typedef void (Tcl_FreeInternalRepProc) (struct Tcl_Obj *objPtr);

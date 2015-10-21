@@ -645,6 +645,7 @@ Tcl_MutexLock(
     Tcl_Mutex *mutexPtr)	/* The lock */
 {
     CRITICAL_SECTION *csPtr;
+    Tcl_MutexWaitProc *mutexWaitProc;
     int nRetry = 0; /* NOTE: Hopefully, zero milliseconds means "yield". */
 
 retry:
@@ -676,10 +677,15 @@ retry:
 	    return;
 	}
 	TclpMutexUnlock();
-	if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
-	    nRetry = 0;
+	mutexWaitProc = TclGetMutexWaitProc();
+	if (mutexWaitProc != NULL) {
+	    mutexWaitProc(mutexPtr, nRetry, NULL);
+	} else {
+	    if (nRetry > TCL_MUTEX_LOCK_RESET_LIMIT) {
+		nRetry = 0;
+	    }
+	    Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
 	}
-	Tcl_Sleep(TCL_MUTEX_LOCK_SLEEP_TIME * nRetry);
 	nRetry++;
     }
 }

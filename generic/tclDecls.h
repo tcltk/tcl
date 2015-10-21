@@ -1818,6 +1818,8 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_Obj *compressionDictionaryObj);
 /* 631 */
 EXTERN void		Tcl_MutexUnlockAndFinalize(Tcl_Mutex *mutex);
+/* 632 */
+EXTERN Tcl_MutexWaitProc * Tcl_SetMutexWaitProc(Tcl_MutexWaitProc *proc);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2485,6 +2487,7 @@ typedef struct TclStubs {
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
     void (*tcl_MutexUnlockAndFinalize) (Tcl_Mutex *mutex); /* 631 */
+    Tcl_MutexWaitProc * (*tcl_SetMutexWaitProc) (Tcl_MutexWaitProc *proc); /* 632 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3779,6 +3782,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 #define Tcl_MutexUnlockAndFinalize \
 	(tclStubsPtr->tcl_MutexUnlockAndFinalize) /* 631 */
+#define Tcl_SetMutexWaitProc \
+	(tclStubsPtr->tcl_SetMutexWaitProc) /* 632 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
