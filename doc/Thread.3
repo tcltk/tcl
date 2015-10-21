@@ -4,7 +4,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH Threads 3 "8.1" Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
@@ -82,9 +82,10 @@ waited upon into it.
 .SH INTRODUCTION
 Beginning with the 8.1 release, the Tcl core is thread safe, which
 allows you to incorporate Tcl into multithreaded applications without
-customizing the Tcl core.  To enable Tcl multithreading support,
-you must include the \fB\-\|\-enable-threads\fR option to \fBconfigure\fR
-when you configure and compile your Tcl core.
+customizing the Tcl core.  Starting with the 8.6 release, Tcl
+multithreading support is on by default. To disable Tcl multithreading
+support, you must include the \fB\-\|\-disable-threads\fR option to
+\fBconfigure\fR when you configure and compile your Tcl core.
 .PP
 An important constraint of the Tcl threads implementation is that
 \fIonly the thread that created a Tcl interpreter can use that
@@ -129,7 +130,7 @@ will cause a memory leak.
 .PP
 The \fBTcl_GetThreadData\fR call returns a pointer to a block of
 thread-private data.  Its argument is a key that is shared by all threads
-and a size for the block of storage.  The storage is automatically 
+and a size for the block of storage.  The storage is automatically
 allocated and initialized to all zeros the first time each thread asks for it.
 The storage is automatically deallocated by \fBTcl_FinalizeThread\fR.
 .SS "SYNCHRONIZATION AND COMMUNICATION"

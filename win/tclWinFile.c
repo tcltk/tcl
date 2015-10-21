@@ -17,7 +17,11 @@
 #include <winioctl.h>
 #include <shlobj.h>
 #include <lm.h>		/* For TclpGetUserHome(). */
+#include <userenv.h>		/* For TclpGetUserHome(). */
 
+#ifdef _MSC_VER
+#   pragma comment(lib, "userenv.lib")
+#endif
 /*
  * The number of 100-ns intervals between the Windows system epoch (1601-01-01
  * on the proleptic Gregorian calendar) and the Posix epoch (1970-01-01).
@@ -172,7 +176,7 @@ static int		WinLink(const TCHAR *LinkSource,
 			    const TCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const TCHAR *LinkDirectory,
 			    const TCHAR *LinkTarget);
-MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
+MODULE_SCOPE TCL_NORETURN void	tclWinDebugPanic(const char *format, ...);
 
 /*
  *--------------------------------------------------------------------
@@ -789,7 +793,7 @@ NativeWriteReparse(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -1461,12 +1465,16 @@ TclpGetUserHome(
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
-		 * "{Windows Drive}:/users/default".
+		 * "{GetProfilesDirectory}/<user>".
 		 */
-
-		GetWindowsDirectoryW(buf, MAX_PATH);
-		Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
-		TclDStringAppendLiteral(bufferPtr, "/users/default");
+		DWORD i, size = MAX_PATH;
+		GetProfilesDirectoryW(buf, &size);
+		for (i = 0; i < size; ++i){
+		    if (buf[i] == '\\') buf[i] = '/';
+		}
+		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+		Tcl_DStringAppend(bufferPtr, "/", -1);
+		Tcl_DStringAppend(bufferPtr, name, -1);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
 	    NetApiBufferFree((void *) uiPtr);

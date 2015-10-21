@@ -383,7 +383,7 @@ PkgRequireCore(
 	if (pkgPtr->clientData != NULL) {
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		    "circular package dependency:"
-		    " attempt to provide %s %s requires %s", 
+		    " attempt to provide %s %s requires %s",
 		    name, (char *) pkgPtr->clientData, name));
 	    AddRequirementsToResult(interp, reqc, reqv);
 	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", NULL);

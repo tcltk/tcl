@@ -22,6 +22,7 @@ exec_prefix		= @exec_prefix@
 bindir			= @bindir@
 libdir			= @libdir@
 includedir		= @includedir@
+datarootdir		= @datarootdir@
 mandir			= @mandir@
 
 # The following definition can be set to non-null for special systems like AFS
@@ -106,11 +107,16 @@ ZLIB_DIR		= $(COMPAT_DIR)/zlib
 # Converts a POSIX path to a Windows native path.
 CYGPATH			= @CYGPATH@
 
-GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)' | sed 's!\\!/!g')
-TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)' | sed 's!\\!/!g')
-WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)' | sed 's!\\!/!g')
-ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's!\\!/!g')
-ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)' | sed 's!\\!/!g')
+libdir_native	= $(shell $(CYGPATH) '$(libdir)')
+bindir_native	= $(shell $(CYGPATH) '$(bindir)')
+includedir_native = $(shell $(CYGPATH) '$(includedir)')
+mandir_native = $(shell $(CYGPATH) '$(mandir)')
+TCL_LIBRARY_NATIVE	= $(shell $(CYGPATH) '$(TCL_LIBRARY)')
+GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)')
+TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)')
+WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)')
+ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)')
+ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)')
 #GENERIC_DIR_NATIVE	= $(GENERIC_DIR)
 #TOMMATH_DIR_NATIVE	= $(TOMMATH_DIR)
 #WIN_DIR_NATIVE		= $(WIN_DIR)
@@ -119,7 +125,7 @@ ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)' | sed 's!\\!/!g')
 # Fully qualify library path so that `make test`
 # does not depend on the current directory.
 LIBRARY_DIR1		= $(shell cd '$(ROOT_DIR_NATIVE)/library' ; pwd -P)
-LIBRARY_DIR             = $(shell $(CYGPATH) '$(LIBRARY_DIR1)' | sed 's!\\!/!g')
+LIBRARY_DIR             = $(shell $(CYGPATH) '$(LIBRARY_DIR1)')
 DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
 EXESUFFIX		= @EXESUFFIX@
@@ -182,7 +188,7 @@ SHLIB_LD	= @SHLIB_LD@
 SHLIB_LD_LIBS	= @SHLIB_LD_LIBS@
 SHLIB_CFLAGS	= @SHLIB_CFLAGS@
 SHLIB_SUFFIX	= @SHLIB_SUFFIX@
-LIBS		= @LIBS@ @ZLIB_LIBS@
+LIBS		= @LIBS@ $(shell $(CYGPATH) '@ZLIB_LIBS@')
 
 RMDIR		= rm -rf
 MKDIR		= mkdir -p
@@ -497,17 +503,17 @@ tclMain2.${OBJEXT}: tclMain.c
 
 tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 	$(CC)	-c $(CC_SWITCHES)			\
-		-DCFG_INSTALL_LIBDIR=\"$(LIB_INSTALL_DIR)\" \
-		-DCFG_INSTALL_BINDIR=\"$(BIN_INSTALL_DIR)\" \
-		-DCFG_INSTALL_SCRDIR=\"$(SCRIPT_INSTALL_DIR)\" \
-		-DCFG_INSTALL_INCDIR=\"$(INCLUDE_INSTALL_DIR)\" \
+		-DCFG_INSTALL_LIBDIR=\"$(LIB_INSTALL_DIR_NATIVE)\" \
+		-DCFG_INSTALL_BINDIR=\"$(BIN_INSTALL_DIR_NATIVE)\" \
+		-DCFG_INSTALL_SCRDIR=\"$(SCRIPT_INSTALL_DIR_NATIVE)\" \
+		-DCFG_INSTALL_INCDIR=\"$(INCLUDE_INSTALL_DIR_NATIVE)\" \
 		-DCFG_INSTALL_DOCDIR=\"$(MAN_INSTALL_DIR)\" \
 		\
-		-DCFG_RUNTIME_LIBDIR=\"$(libdir)\" \
-		-DCFG_RUNTIME_BINDIR=\"$(bindir)\" \
-		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY)\" \
-		-DCFG_RUNTIME_INCDIR=\"$(includedir)\" \
-		-DCFG_RUNTIME_DOCDIR=\"$(mandir)\" \
+		-DCFG_RUNTIME_LIBDIR=\"$(libdir_native)\" \
+		-DCFG_RUNTIME_BINDIR=\"$(bindir_native)\" \
+		-DCFG_RUNTIME_SCRDIR=\"$(TCL_LIBRARY_NATIVE)\" \
+		-DCFG_RUNTIME_INCDIR=\"$(includedir_native)\" \
+		-DCFG_RUNTIME_DOCDIR=\"$(mandir_native)\" \
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
@@ -607,7 +613,7 @@ install-binaries: binaries
 	    fi
 
 install-libraries: libraries install-tzdata install-msgs
-	@for i in $(prefix)/lib $(INCLUDE_INSTALL_DIR) \
+	@for i in "$$($(CYGPATH) $(prefix)/lib)" "$(INCLUDE_INSTALL_DIR)" \
 		$(SCRIPT_INSTALL_DIR); \
 	    do \
 	    if [ ! -d $$i ] ; then \
@@ -654,8 +660,8 @@ install-libraries: libraries install-tzdata install-msgs
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.6.0.tm;
 	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.8.tm;
-	@echo "Installing package platform 1.0.13 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.13.tm;
+	@echo "Installing package platform 1.0.14 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform/shell-1.1.4.tm;
 	@echo "Installing encodings";
@@ -751,7 +757,7 @@ PKG_CFG_ARGS		= @PKG_CFG_ARGS@
 PKG_DIR			= ./pkgs
 
 packages:
-	@builddir=`pwd -P`; \
+	@builddir=`$(CYGPATH) $$(pwd -P)`; \
 	for i in $(PKGS_DIR)/*; do \
 	  if [ -d $$i ] ; then \
 	    if [ -x $$i/configure ] ; then \
@@ -759,8 +765,8 @@ packages:
 	      mkdir -p $(PKG_DIR)/$$pkg; \
 	      if [ ! -f $(PKG_DIR)/$$pkg/Makefile ]; then \
 	        ( cd $(PKG_DIR)/$$pkg; \
-	          echo "Configuring package '$$i' wd = `pwd -P`"; \
-	          $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR) $(PKG_CFG_ARGS) --enable-shared --enable-threads; ) \
+	          echo "Configuring package '$$i' wd = `$(CYGPATH) $$(pwd -P)`"; \
+	          $$i/configure --with-tcl=$$builddir --with-tclinclude=$(GENERIC_DIR_NATIVE) $(PKG_CFG_ARGS) --enable-shared --enable-threads; ) \
 	      fi ; \
 	      echo "Building package '$$pkg'"; \
 	      ( cd $(PKG_DIR)/$$pkg; $(MAKE); ) \
