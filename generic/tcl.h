@@ -2613,6 +2613,8 @@ EXTERN void		Tcl_GetMemoryInfo(Tcl_DString *dsPtr);
 #define Tcl_MutexUnlock(mutexPtr)
 #undef  Tcl_MutexUnlockAndFinalize
 #define Tcl_MutexUnlockAndFinalize(mutexPtr)
+#undef  Tcl_SetMutexWaitProc
+#define Tcl_SetMutexWaitProc(mutexPtr, retry, clientData)
 #undef  Tcl_MutexFinalize
 #define Tcl_MutexFinalize(mutexPtr)
 #undef  Tcl_ConditionNotify

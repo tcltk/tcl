@@ -65,6 +65,7 @@ static void		MutexWaitNone(Tcl_Mutex *mutexPtr, int retry,
 #undef Tcl_MutexUnlock
 #undef Tcl_MutexFinalize
 #undef Tcl_MutexUnlockAndFinalize
+#undef Tcl_SetMutexWaitProc
 #undef Tcl_ConditionNotify
 #undef Tcl_ConditionWait
 #undef Tcl_ConditionFinalize
