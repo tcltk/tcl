@@ -7929,3 +7929,42 @@ of Tcl_Channel  (porter)
 2015-02-11 tzdata updated to Olson's tzdata2015a (venkat)
 
 --- Released 8.5.18, March 6, 2015 --- http://core.tcl.tk/tcl/ for details
+
+2015-03-10 (bug)[3028676] Refinement in OS X notifier (steffen,walzer,lars_h)
+
+2015-04-23 (bug)[19ea02] Win: shared read from linked dirs (bogdan,oehhar)
+
+2015-04-24 (bug)[879a07] Incomplete chars @ buffer ends (leunissen,porter)
+
+2015-04-29 (bug)[894da1] Hang flushing blocking channels (yorick)
+
+2015-05-27 (enhancement) Relax memdebug constraint on extensions (kupries)
+
+2015-06-16 (bug)[e770d9] Higher baud on serial channels (woods,nijtmans)
+
+2015-06-18 (update) Update Unicode data to 8.0 (nijtmans)
+	*** POTENTIAL INCOMPATIBILITY ***
+
+2015-07-15 (bug)[b1534b][9bad63] writes beyond buffer bounds (hanno,porter)
+
+2015-07-29 (bug)[3e7eca] Allocation overflow in expr parsing (rickyb,porter)
+
+2015-08-12 tzdata updated to Olson's tzdata2015f (venkat)
+
+2015-08-19 (bug)[00189c] MSVC 14: semi-static UCRT support (dower,nijtmans)
+
+2015-08-26 (bug)[0df7a1] Tolerate getcwd() failures (cato,nijtmans)
+
+2015-09-23 (bug)[e0a7b3] Input buffer draining & file events (griffin,porter)
+
+2015-09-24 (bug)[57945b] lock in forking/multi-threading (neumann,mistachkin)
+
+2015-09-29 (bug)[219866] Cygwin support error (yorick,nijtmans)
+=> platform 1.0.14
+
+2015-10-06 (bug)[b42a85] Win: [file normalize ~user] wrong dir (nadkarni)
+
+2015-10-21 (bug)[818a1a][a3c350][d7ea9f][8f2450][1080042] Many fixes and
+improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
+
+--- Released 8.5.19, December 1, 2015 --- http://core.tcl.tk/tcl/ for details
