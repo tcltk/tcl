@@ -971,7 +971,7 @@ TclpFreeAllocMutex(
 }
 
 void
-TclInitThreadAlloc(void)
+TclpInitThreadAlloc(void)
 {
     /*
      * We need to make sure that TclpFreeAllocCache is called on each
