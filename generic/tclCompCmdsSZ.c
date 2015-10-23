@@ -292,7 +292,7 @@ TclCompileStringCatCmd(
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
     }
-	
+
     /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
        contiguous constants along the way */
 
@@ -313,7 +313,7 @@ TclCompileStringCatCmd(
 	    if (folded) {
 		int len;
 		const char *bytes = Tcl_GetStringFromObj(folded, &len);
-		
+
 		PushLiteral(envPtr, bytes, len);
 		Tcl_DecrRefCount(folded);
 		folded = NULL;
@@ -331,7 +331,7 @@ TclCompileStringCatCmd(
     if (folded) {
 	int len;
 	const char *bytes = Tcl_GetStringFromObj(folded, &len);
-	
+
 	PushLiteral(envPtr, bytes, len);
 	Tcl_DecrRefCount(folded);
 	folded = NULL;
@@ -1003,7 +1003,7 @@ TclCompileStringRangeCmd(
 
     /*
      * Push the operands onto the stack and then the substring operation.
-     */    
+     */
 
   nonConstantIndices:
     CompileWord(envPtr, stringTokenPtr,			interp, 1);
@@ -2182,7 +2182,7 @@ IssueSwitchChainedTests(
 	}
 
 	/*
-	 * Now do the actual compilation. Note that we do not use BODY() 
+	 * Now do the actual compilation. Note that we do not use BODY()
 	 * because we may have synthesized the tokens in a non-standard
 	 * pattern.
 	 */
@@ -2640,7 +2640,7 @@ TclCompileThrowCmd(
     }
     CompileWord(envPtr, msgToken, interp, 2);
 
-    codeIsList = codeKnown && (TCL_OK == 
+    codeIsList = codeKnown && (TCL_OK ==
 	    Tcl_ListObjLength(interp, objPtr, &len));
     codeIsValid = codeIsList && (len != 0);
 
