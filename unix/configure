@@ -1337,7 +1337,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.5
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=5
-TCL_PATCH_LEVEL=".18"
+TCL_PATCH_LEVEL=".19"
 VERSION=${TCL_VERSION}
 
 #------------------------------------------------------------------------
