@@ -165,7 +165,7 @@ proc ::platform::identify {} {
     global tcl_platform
 
     set id [generic]
-    regexp {^([^-]+)(-[0-9\.]+)?(-wow)?-([^-]+)$} $id -> plat ver wow cpu
+    regexp {^([^-]+)-([^-]+)$} $id -> plat cpu
 
     switch -- $plat {
 	solaris {
