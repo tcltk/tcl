@@ -2116,9 +2116,14 @@ TEBCresume(
      * sporadically: no special need for speed.
      */
 
-    int instructionCount = ASYNC_CHECK_COUNT;
+    unsigned interruptCounter = 1;
 				/* Counter that is used to work out when to
-				 * call Tcl_AsyncReady() */
+				 * call Tcl_AsyncReady(). This must be 1
+				 * initially so that we call the async-check
+				 * stanza early, otherwise there are command
+				 * sequences that can make the interpreter
+				 * busy-loop without an opportunity to
+				 * recognise an interrupt. */
     const char *curInstName;
 #ifdef TCL_COMPILE_DEBUG
     int traceInstructions;	/* Whether we are doing instruction-level
@@ -2319,8 +2324,8 @@ TEBCresume(
      * ASYNC_CHECK_COUNT instructions.
      */
 
-    if (!(--instructionCount)) {
-	instructionCount = ASYNC_CHECK_COUNT;
+    if ((--interruptCounter) == 0) {
+	interruptCounter = ASYNC_CHECK_COUNT;
 	DECACHE_STACK_INFO();
 	if (TclAsyncReady(iPtr)) {
 	    result = Tcl_AsyncInvoke(interp, result);
