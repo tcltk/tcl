@@ -3202,20 +3202,28 @@ TEBCresume(
 
     case INST_LOAD_SCALAR1:
     instLoadScalar1:
+	/*
+	 * micro-optimization by drh: eliminate a compare-and-jump on the
+	 * hottest path (no var link), at the cost of adding a few comparisons
+	 * in the less frequent cases (var links: upvar, global,
+	 * variable). We used to follow links first (causing a C&J in the
+	 * non-link case), now we check for direct-readability first
+	 */
+
 	opnd = TclGetUInt1AtPtr(pc+1);
 	varPtr = LOCAL(opnd);
-	while (TclIsVarLink(varPtr)) {
-	    varPtr = varPtr->value.linkPtr;
-	}
-	TRACE(("%u => ", opnd));
-	if (TclIsVarDirectReadable(varPtr)) {
-	    /*
-	     * No errors, no traces: just get the value.
-	     */
-
-	    objResultPtr = varPtr->value.objPtr;
-	    TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
-	    NEXT_INST_F(2, 0, 1);
+	while (1) {
+	    if (TclIsVarDirectReadable(varPtr)) {
+		TRACE(("%u => ", opnd));
+		objResultPtr = varPtr->value.objPtr;
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_F(2, 0, 1);
+	    }
+	    if (TclIsVarLink(varPtr)) {
+		varPtr = varPtr->value.linkPtr;
+		continue;
+	    }
+	    break;
 	}
 	pcAdjustment = 2;
 	cleanup = 0;
