@@ -1516,6 +1516,37 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 		    (*((p)+3)))
 
 /*
+ * Override TclGetUInt4AtPtr or TclGetInt4AtPtr macros if
+ * a known better version exists.
+ */
+#ifdef WORDS_BIGENDIAN
+#define OVERRIDE_INT4(i) (i)
+#elif defined(__GNUC__) && (__GNUC__ > 4) || ((__GNUC__ == 4) && (__GNUC_MINOR__ >= 3))
+#define OVERRIDE_INT4(i) __builtin_bswap32(i)
+#elif defined(_MSC_VER) && _MSC_VER>=1300
+#define OVERRIDE_INT4(i) _byteswap_ulong(i)
+#endif
+
+#ifdef OVERRIDE_INT4
+#undef TclGetUInt4AtPtr
+static inline unsigned int
+TclGetUInt4AtPtr(const unsigned char *p)
+{
+    uint32_t i;
+    memcpy(&i,p,4);
+    return OVERRIDE_INT4(i);
+}
+#undef TclGetInt4AtPtr
+static inline signed int
+TclGetInt4AtPtr(const unsigned char *p)
+{
+    int32_t i;
+    memcpy(&i,p,4);
+    return OVERRIDE_INT4(i);
+}
+#endif /* OVERRIDE_INT4 */
+
+/*
  * Macros used to compute the minimum and maximum of two integers. The ANSI C
  * "prototypes" for these macros are:
  *
