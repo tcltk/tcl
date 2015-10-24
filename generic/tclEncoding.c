@@ -1388,7 +1388,7 @@ Tcl_UtfToExternal(
  *
  * Side effects:
  *	The absolute pathname for the application is computed and stored to be
- *	returned later be [info nameofexecutable].
+ *	returned later by [info nameofexecutable].
  *
  *---------------------------------------------------------------------------
  */

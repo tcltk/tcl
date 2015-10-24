@@ -111,6 +111,7 @@ proc ::tcl::clock::Initialize {} {
     mcpackagelocale set {}
     ::msgcat::mcpackageconfig set mcfolder [file join $LibDir msgs]
     ::msgcat::mcpackageconfig set unknowncmd ""
+    ::msgcat::mcpackageconfig set changecmd ChangeCurrentLocale
 
     # Define the message catalog for the root locale.
 
@@ -4471,6 +4472,41 @@ proc ::tcl::clock::AddDays { days clockval timezone changeover } {
 
     return [dict get $date seconds]
 
+}
+
+#----------------------------------------------------------------------
+#
+# ChangeCurrentLocale --
+#
+#        The global locale was changed within msgcat.
+#        Clears the buffered parse functions of the current locale.
+#
+# Parameters:
+#        loclist (ignored)
+#
+# Results:
+#        None.
+#
+# Side effects:
+#        Buffered parse functions are cleared.
+#
+#----------------------------------------------------------------------
+
+proc ::tcl::clock::ChangeCurrentLocale {args} {
+    variable FormatProc
+    variable LocaleNumeralCache
+    variable CachedSystemTimeZone
+    variable TimeZoneBad
+
+    foreach p [info procs [namespace current]::scanproc'*'current] {
+        rename $p {}
+    }
+    foreach p [info procs [namespace current]::formatproc'*'current] {
+        rename $p {}
+    }
+
+    catch {array unset FormatProc *'current}
+    set LocaleNumeralCache {}
 }
 
 #----------------------------------------------------------------------

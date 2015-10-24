@@ -1082,7 +1082,8 @@ test reg-33.13 {Bug 1810264 - infinite loop} {
 test reg-33.14 {Bug 1810264 - super-expensive expression} nonPortable {
     regexp {(x{200}){200}$y} {x}
 } 0
-test reg-33.15 {Bug 3603557 - an "in the wild" RE} {
+
+test reg-33.15.1 {Bug 3603557 - an "in the wild" RE} {
     lindex [regexp -expanded -about {
 	^TETRA_MODE_CMD				# Message Type
 	([[:blank:]]+)				# Pad
@@ -1157,10 +1158,62 @@ test reg-33.15 {Bug 3603557 - an "in the wild" RE} {
 	(.*)					# ConditionalFields
     }] 0
 } 68
-test reg-33.16 {Bug [8d2c0da36d]- another "in the wild" RE} {
+test reg-33.16.1 {Bug [8d2c0da36d]- another "in the wild" RE} {
     lindex [regexp -about "^MRK:client1: =1339 14HKelly Talisman 10011000 (\[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]*) \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 8 0 8 0 0 0 77 77 1 1 2 0 11 { 1 3 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 13HC6 My Creator 2 3 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 31HC7 Slightly offensive name, huh 3 8 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 23HE-mail:kelly@hotbox.com 4 9 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 17Hcompface must die 5 10 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 0 3HAir 6 12 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 14HPGP public key 7 13 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 16Hkelly@hotbox.com 8 30 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 0 12H2 text/plain 9 30 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 0 13H2 x-kom/basic 10 33 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 1H0 11 14 8 \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* \[0-9\]* 00000000 1 1H3 }\r?"] 0
 } 1
-
+
+test reg-33.15 {constraint fixes} {
+    regexp {(^)+^} x
+} 1
+test reg-33.16 {constraint fixes} {
+    regexp {($^)+} x
+} 0
+test reg-33.17 {constraint fixes} {
+    regexp {(^$)*} x
+} 1
+test reg-33.18 {constraint fixes} {
+    regexp {(^(?!aa))+} {aa bb cc}
+} 0
+test reg-33.19 {constraint fixes} {
+    regexp {(^(?!aa)(?!bb)(?!cc))+} {aa x}
+} 0
+test reg-33.20 {constraint fixes} {
+    regexp {(^(?!aa)(?!bb)(?!cc))+} {bb x}
+} 0
+test reg-33.21 {constraint fixes} {
+    regexp {(^(?!aa)(?!bb)(?!cc))+} {cc x}
+} 0
+test reg-33.22 {constraint fixes} {
+    regexp {(^(?!aa)(?!bb)(?!cc))+} {dd x}
+} 1
+
+test reg-33.23 {} {
+    regexp {abcd(\m)+xyz} x
+} 0
+test reg-33.24 {} {
+    regexp {abcd(\m)+xyz} a
+} 0
+test reg-33.25 {} {
+    regexp {^abcd*(((((^(a c(e?d)a+|)+|)+|)+|)+|a)+|)} x
+} 0
+test reg-33.26 {} {
+    regexp {a^(^)bcd*xy(((((($a+|)+|)+|)+$|)+|)+|)^$} x
+} 0
+test reg-33.27 {} {
+    regexp {xyz(\Y\Y)+} x
+} 0
+test reg-33.28 {} {
+    regexp {x|(?:\M)+} x
+} 1
+test reg-33.29 {} {
+    # This is near the limits of the RE engine
+    regexp [string repeat x*y*z* 480] x
+} 1
+
+test reg-33.30 {Bug 1080042} {
+    regexp {(\Y)+} foo
+} 1
+
 # cleanup
 ::tcltest::cleanupTests
 return
