@@ -4649,7 +4649,13 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #    ifdef NO_ISNAN
 #	 define TclIsNaN(d)	((d) != (d))
 #    else
-#	 define TclIsNaN(d)	(isnan(d))
+/*
+ * This is called a lot for double-using code and isnan() is a noticable
+ * slowdown, so we stay with the comparison operation here. It should only
+ * make a difference for signalling NaN and those should not happen anyway.
+ */
+#	 define TclIsNaN(d)	((d) != (d))
+/*#	 define TclIsNaN(d)	(isnan(d))*/
 #    endif
 #endif
 
