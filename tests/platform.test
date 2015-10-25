@@ -63,10 +63,10 @@ test platform-3.1 {CPU ID on Windows/UNIX} \
 package require platform
 test platform-4.1 {format of platform::identify result} -match regexp -body {
     platform::identify
-} -result {^[^-]+-[^-]+$}
+} -result {^([^-]+-)+[^-]+$}
 test platform-4.2 {format of platform::generic result} -match regexp -body {
     platform::generic
-} -result {^[^-]+-[^-]+$}
+} -result {^([^-]+-)+[^-]+$}
 
 # cleanup
 cleanupTests

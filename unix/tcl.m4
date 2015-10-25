@@ -774,48 +774,6 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 ])
 
 #------------------------------------------------------------------------
-# SC_ENABLE_USLEEP --
-#
-#	Allows use of usleep function.
-#	This is only relevant for Unix.
-#
-# Arguments:
-#	none
-#
-# Results:
-#
-#	Adds the following arguments to configure:
-#		--enable-usleep=yes|no (default is yes)
-#
-#	Defines the following vars:
-#		HAVE_USLEEP	Triggers use of usleep if defined.
-#------------------------------------------------------------------------
-
-AC_DEFUN([SC_ENABLE_USLEEP], [
-    AC_ARG_ENABLE(usleep,
-	AC_HELP_STRING([--enable-usleep],
-	    [use usleep if possible to sleep, otherwise use Tcl_Sleep (default: on)]),
-	[usleep_ok=$enableval], [usleep_ok=yes])
-
-    HAVE_USLEEP=0
-    if test "$usleep_ok" = "yes"; then
-	AC_CHECK_HEADER(unistd.h,[usleep_ok=yes],[usleep_ok=no])
-    fi
-    AC_MSG_CHECKING([whether to use usleep])
-    if test "$usleep_ok" = "yes"; then
-	AC_CACHE_VAL(tcl_cv_usleep_h, [
-	    AC_TRY_COMPILE([#include <unistd.h>], [usleep(0);],
-		    [tcl_cv_usleep_h=yes],[tcl_cv_usleep_h=no])])
-	AC_MSG_RESULT([$tcl_cv_usleep_h])
-	if test $tcl_cv_usleep_h = yes; then
-	    AC_DEFINE(HAVE_USLEEP, 1, [Do we have usleep()?])
-	fi
-    else
-	AC_MSG_RESULT([$usleep_ok])
-    fi
-])
-
-#------------------------------------------------------------------------
 # SC_ENABLE_LANGINFO --
 #
 #	Allows use of modern nl_langinfo check for better l10n.
