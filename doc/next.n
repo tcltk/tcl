@@ -96,9 +96,11 @@ forward to the proper implementation of the method (which it does by invoking
 the \fBnext\fR command as filters are inserted into the front of the method
 call chain) and is responsible for returning the result of \fBnext\fR.
 .PP
-Filters are not invoked when processing an invocation of the \fBunknown\fR
-method because of a failure to locate a method implementation, or when
-invoking either constructors or destructors.
+Filters are invoked when processing an invokation of the \fBunknown\fR
+method because of a failure to locate a method implementation, but \fInot\fR
+when invoking either constructors or destructors. (Note however that the
+\fBdestroy\fR method is a conventional method, and filters are invoked as
+normal when it is called.)
 .SH EXAMPLES
 .PP
 This example demonstrates how to use the \fBnext\fR command to call the
@@ -120,7 +122,7 @@ oo::class create theSubclass {
     }
 }
 theSubclass create obj
-oo::define obj method example args {
+oo::objdefine obj method example args {
     puts "per-object method, args = $args"
     \fBnext\fR x {*}$args y
     \fBnext\fR
@@ -174,7 +176,7 @@ oo::class create cache {
 }
 
 oo::object create demo
-oo::define demo {
+oo::objdefine demo {
     mixin cache
     method compute {a b c} {
         after 3000 \fI;# Simulate deep thought\fR

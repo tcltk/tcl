@@ -602,7 +602,7 @@ SearchKnownEncodings(
     int left = 0;
     int right = sizeof(localeTable)/sizeof(LocaleTable);
 
-    while (left <= right) {
+    while (left < right) {
 	int test = (left + right)/2;
 	int code = strcmp(localeTable[test].lang, encoding);
 

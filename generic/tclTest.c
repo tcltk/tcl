@@ -928,7 +928,7 @@ TestasyncCmd(
 
 static int
 AsyncHandlerProc(
-    ClientData clientData,	/* If of TestAsyncHandler structure. 
+    ClientData clientData,	/* If of TestAsyncHandler structure.
                                  * in global list. */
     Tcl_Interp *interp,		/* Interpreter in which command was
 				 * executed, or NULL. */
@@ -2306,9 +2306,9 @@ TesteventDeleteProc(
 	return 0;
     }
     targetName = (Tcl_Obj *) clientData;
-    targetNameStr = (char *) Tcl_GetStringFromObj(targetName, NULL);
+    targetNameStr = (char *) Tcl_GetString(targetName);
     ev = (TestEvent *) event;
-    evNameStr = Tcl_GetStringFromObj(ev->tag, NULL);
+    evNameStr = Tcl_GetString(ev->tag);
     if (strcmp(evNameStr, targetNameStr) == 0) {
 	Tcl_DecrRefCount(ev->tag);
 	Tcl_DecrRefCount(ev->command);
@@ -4671,7 +4671,6 @@ TestgetvarfullnameCmd(
     Tcl_Namespace *namespacePtr;
     Tcl_CallFrame *framePtr;
     Tcl_Var variable;
-    int result;
 
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "name scope");
@@ -4699,11 +4698,8 @@ TestgetvarfullnameCmd(
 	if (namespacePtr == NULL) {
 	    return TCL_ERROR;
 	}
-	result = TclPushStackFrame(interp, &framePtr, namespacePtr,
+	(void) TclPushStackFrame(interp, &framePtr, namespacePtr,
 		/*isProcCallFrame*/ 0);
-	if (result != TCL_OK) {
-	    return result;
-	}
     }
 
     variable = Tcl_FindNamespaceVar(interp, name, NULL,

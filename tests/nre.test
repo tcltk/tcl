@@ -151,6 +151,27 @@ test nre-4.1 {ensembles are not recursive} -setup {
     testnrelevels
 } -result {{0 2 1 1} 0}
 
+test nre-4.2 {(compiled) ensembles do not break tailcall} -setup {
+    # Fix Bug d87cb18205
+    proc b {} {
+	tailcall append result first
+    }
+    set map [namespace ensemble configure ::dict -map]
+    dict set map a b
+    namespace ensemble configure ::dict -map $map
+    proc demo {} {
+	dict a
+	append result second
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+    namespace ensemble configure ::dict -map [dict remove $map a]
+    unset map
+    rename b {}
+} -result firstsecond
+
 test nre-5.1 {[namespace eval] is not recursive} -setup {
     namespace eval ::foo {
 	setabs

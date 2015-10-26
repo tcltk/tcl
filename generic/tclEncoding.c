@@ -1450,7 +1450,7 @@ Tcl_UtfToExternal(
  *
  * Side effects:
  *	The absolute pathname for the application is computed and stored to be
- *	returned later be [info nameofexecutable].
+ *	returned later by [info nameofexecutable].
  *
  *---------------------------------------------------------------------------
  */
@@ -2334,7 +2334,7 @@ UtfToUtfProc(
 
 	    *dst++ = *src++;
 	} else if (pureNullMode == 1 && UCHAR(*src) == 0xc0 &&
-		UCHAR(*(src+1)) == 0x80) {
+		(src + 1 < srcEnd) && UCHAR(*(src+1)) == 0x80) {
 	    /*
 	     * Convert 0xc080 to real nulls when we are in output mode.
 	     */
@@ -2525,21 +2525,34 @@ UtfToUnicodeProc(
 	if (dst > dstEnd) {
 	    result = TCL_CONVERT_NOSPACE;
 	    break;
-        }
+	}
 	src += TclUtfToUniChar(src, &ch);
 
 	/*
 	 * Need to handle this in a way that won't cause misalignment by
 	 * casting dst to a Tcl_UniChar. [Bug 1122671]
-	 * XXX: This hard-codes the assumed size of Tcl_UniChar as 2.
 	 */
 
 #ifdef WORDS_BIGENDIAN
+#if TCL_UTF_MAX > 4
+	*dst++ = (ch >> 24);
+	*dst++ = ((ch >> 16) & 0xFF);
+	*dst++ = ((ch >> 8) & 0xFF);
+	*dst++ = (ch & 0xFF);
+#else
 	*dst++ = (ch >> 8);
 	*dst++ = (ch & 0xFF);
+#endif
+#else
+#if TCL_UTF_MAX > 4
+	*dst++ = (ch & 0xFF);
+	*dst++ = ((ch >> 8) & 0xFF);
+	*dst++ = ((ch >> 16) & 0xFF);
+	*dst++ = (ch >> 24);
 #else
 	*dst++ = (ch & 0xFF);
 	*dst++ = (ch >> 8);
+#endif
 #endif
     }
     *srcReadPtr = src - srcStart;
