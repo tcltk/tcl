@@ -259,7 +259,7 @@ newcolor(
 	    return COLORLESS;		/* too many colors */
 	}
 	n = cm->ncds * 2;
-	if (n < MAX_COLOR + 1) {
+	if (n > MAX_COLOR + 1) {
 	    n = MAX_COLOR + 1;
 	}
 	if (cm->cd == cm->cdspace) {
@@ -777,17 +777,18 @@ dumpcolors(
 	    }
 
 	    /*
-	     * It's hard to do this more efficiently.
+	     * Unfortunately, it's hard to do this next bit more efficiently.
+	     *
+	     * Spencer's original coding has the loop iterating from CHR_MIN
+	     * to CHR_MAX, but that's utterly unusable for 32-bit chr, or
+	     * even 16-bit.  For debugging purposes it seems fine to print
+	     * only chr codes up to 1000 or so.
 	     */
 
-	    for (c=CHR_MIN ; c<CHR_MAX ; c++) {
+	    for (c=CHR_MIN ; c<1000 ; c++) {
 		if (GETCOLOR(cm, c) == co) {
 		    dumpchr(c, f);
 		}
-	    }
-	    assert(c == CHR_MAX);
-	    if (GETCOLOR(cm, c) == co) {
-		dumpchr(c, f);
 	    }
 	    fprintf(f, "\n");
 	}

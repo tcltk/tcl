@@ -426,7 +426,7 @@ TclRegisterLiteral(
     } else {
 	nsPtr = NULL;
     }
-    
+
     /*
      * Is it in the interpreter's global literal table? If not, create it.
      */
@@ -717,16 +717,22 @@ ExpandLocalLiteralArray(
     LiteralEntry *currArrayPtr = envPtr->literalArrayPtr;
     LiteralEntry *newArrayPtr;
     int i;
+    unsigned int newSize = (currBytes <= UINT_MAX / 2) ? 2*currBytes : UINT_MAX;
+
+    if (currBytes == newSize) {
+	Tcl_Panic("max size of Tcl literal array (%d literals) exceeded",
+		currElems);
+    }
 
     if (envPtr->mallocedLiteralArray) {
-	newArrayPtr = ckrealloc(currArrayPtr, 2 * currBytes);
+	newArrayPtr = ckrealloc(currArrayPtr, newSize);
     } else {
 	/*
 	 * envPtr->literalArrayPtr isn't a ckalloc'd pointer, so we must
 	 * code a ckrealloc equivalent for ourselves.
 	 */
 
-	newArrayPtr = ckalloc(2 * currBytes);
+	newArrayPtr = ckalloc(newSize);
 	memcpy(newArrayPtr, currArrayPtr, currBytes);
 	envPtr->mallocedLiteralArray = 1;
     }
@@ -751,7 +757,7 @@ ExpandLocalLiteralArray(
     }
 
     envPtr->literalArrayPtr = newArrayPtr;
-    envPtr->literalArrayEnd = (2 * currElems);
+    envPtr->literalArrayEnd = newSize / sizeof(LiteralEntry);
 }
 
 /*
@@ -932,7 +938,8 @@ RebuildLiteralTable(
     register LiteralEntry *entryPtr;
     LiteralEntry **bucketPtr;
     const char *bytes;
-    int oldSize, count, index, length;
+    unsigned int oldSize;
+    int count, index, length;
 
     oldSize = tablePtr->numBuckets;
     oldBuckets = tablePtr->buckets;
@@ -941,6 +948,16 @@ RebuildLiteralTable(
      * Allocate and initialize the new bucket array, and set up hashing
      * constants for new array size.
      */
+
+    if (oldSize > UINT_MAX/(4 * sizeof(LiteralEntry *))) {
+	/*
+	 * Memory allocator limitations will not let us create the
+	 * next larger table size.  Best option is to limp along
+	 * with what we have.
+	 */
+
+	return;
+    }
 
     tablePtr->numBuckets *= 4;
     tablePtr->buckets = ckalloc(tablePtr->numBuckets * sizeof(LiteralEntry*));
@@ -991,7 +1008,7 @@ RebuildLiteralTable(
  * Results:
  *	None.
  *
- * Side effects: 
+ * Side effects:
  *	Resets the internal representation of the CmdName Tcl_Obj
  *	using TclFreeIntRep().
  *

@@ -793,7 +793,7 @@ ObjectRenamedTrace(
     ClientData clientData,	/* The object being deleted. */
     Tcl_Interp *interp,		/* The interpreter containing the object. */
     const char *oldName,	/* What the object was (last) called. */
-    const char *newName,	/* Always NULL. */
+    const char *newName,	/* What it's getting renamed to. (unused) */
     int flags)			/* Why was the object deleted? */
 {
     Object *oPtr = clientData;
@@ -1675,10 +1675,13 @@ Tcl_NewObjectInstance(
 
 		/*
 		 * Take care to not delete a deleted object; that would be
-		 * bad. [Bug 2903011]
+		 * bad. [Bug 2903011] Also take care to make sure that we have
+		 * the name of the command before we delete it. [Bug
+		 * 9dd1bd7a74]
 		 */
 
 		if (!Deleted(oPtr)) {
+		    (void) TclOOObjectName(interp, oPtr);
 		    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 		}
 		return NULL;
@@ -1821,10 +1824,12 @@ FinalizeAlloc(
 
 	/*
 	 * Take care to not delete a deleted object; that would be bad. [Bug
-	 * 2903011]
+	 * 2903011] Also take care to make sure that we have the name of the
+	 * command before we delete it. [Bug 9dd1bd7a74]
 	 */
 
 	if (!Deleted(oPtr)) {
+	    (void) TclOOObjectName(interp, oPtr);
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	}
 	DelRef(oPtr);

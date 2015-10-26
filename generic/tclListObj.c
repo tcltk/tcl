@@ -137,7 +137,7 @@ NewListIntRep(
  *	Creates a list internal rep with space for objc elements.  objc
  *	must be > 0.  If objv!=NULL, initializes with the first objc values
  *	in that array.  If objv==NULL, initalize list internal rep to have
- *	0 elements, with space to add objc more.  
+ *	0 elements, with space to add objc more.
  *
  * Results:
  *	A new List struct with refCount 0 is returned. If some failure
@@ -1726,7 +1726,7 @@ FreeListInternalRep(
 {
     List *listRepPtr = ListRepPtr(listPtr);
 
-    if (--listRepPtr->refCount <= 0) {
+    if (listRepPtr->refCount-- <= 1) {
 	Tcl_Obj **elemPtrs = &listRepPtr->elements;
 	int i, numElems = listRepPtr->elemCount;
 

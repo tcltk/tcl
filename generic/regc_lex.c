@@ -1139,24 +1139,6 @@ newline(void)
 }
 
 /*
- - ch - return the chr sequence for regc_locale.c's fake collating element ch
- * This helps confine use of CHR to this source file.  Beware that the caller
- * knows how long the sequence is.
- ^ #ifdef REG_DEBUG
- ^ static const chr *ch(NOPARMS);
- ^ #endif
- */
-#ifdef REG_DEBUG
-static const chr *
-ch(void)
-{
-    static const chr chstr[] = { CHR('c'), CHR('h'), CHR('\0') };
-
-    return chstr;
-}
-#endif
-
-/*
  - chrnamed - return the chr known by a given (chr string) name
  * The code is a bit clumsy, but this routine gets only such specialized
  * use that it hardly matters.
