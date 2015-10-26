@@ -853,7 +853,7 @@ proc ::safe::AliasSource {slave args} {
 	return -code error $msg
     }
     set file [lindex $args $at]
-    
+
     # get the real path from the virtual one.
     if {[catch {
 	set realfile [TranslatePath $slave $file]
@@ -861,7 +861,7 @@ proc ::safe::AliasSource {slave args} {
 	Log $slave $msg
 	return -code error "permission denied"
     }
-    
+
     # check that the path is in the access path of that slave
     if {[catch {
 	FileInAccessPath $slave $realfile

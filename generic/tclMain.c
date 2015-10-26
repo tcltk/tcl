@@ -80,7 +80,10 @@ NewNativeObj(
  * source directory to make their own modified versions).
  */
 
+#if defined _MSC_VER && _MSC_VER < 1900
+/* isatty is always defined on MSVC 14.0, but not necessarily as CRTIMPORT. */
 extern CRTIMPORT int	isatty(int fd);
+#endif
 
 /*
  * The thread-local variables for this file's functions.
@@ -616,7 +619,7 @@ Tcl_MainEx(
 
     if (!Tcl_InterpDeleted(interp) && !Tcl_LimitExceeded(interp)) {
 	Tcl_Obj *cmd = Tcl_ObjPrintf("exit %d", exitCode);
-	    
+
 	Tcl_IncrRefCount(cmd);
 	Tcl_EvalObjEx(interp, cmd, TCL_EVAL_GLOBAL);
 	Tcl_DecrRefCount(cmd);
@@ -729,7 +732,7 @@ TclFullFinalizationRequested(void)
     const char *fin;
     Tcl_DString ds;
     int finalize = 0;
-    
+
     fin = TclGetEnv("TCL_FINALIZE_ON_EXIT", &ds);
     finalize = ((fin != NULL) && strcmp(fin, "0"));
     if (fin != NULL) {

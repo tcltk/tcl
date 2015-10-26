@@ -774,6 +774,48 @@ AC_DEFUN([SC_ENABLE_SYMBOLS], [
 ])
 
 #------------------------------------------------------------------------
+# SC_ENABLE_USLEEP --
+#
+#	Allows use of usleep function.
+#	This is only relevant for Unix.
+#
+# Arguments:
+#	none
+#
+# Results:
+#
+#	Adds the following arguments to configure:
+#		--enable-usleep=yes|no (default is yes)
+#
+#	Defines the following vars:
+#		HAVE_USLEEP	Triggers use of usleep if defined.
+#------------------------------------------------------------------------
+
+AC_DEFUN([SC_ENABLE_USLEEP], [
+    AC_ARG_ENABLE(usleep,
+	AC_HELP_STRING([--enable-usleep],
+	    [use usleep if possible to sleep, otherwise use Tcl_Sleep (default: on)]),
+	[usleep_ok=$enableval], [usleep_ok=yes])
+
+    HAVE_USLEEP=0
+    if test "$usleep_ok" = "yes"; then
+	AC_CHECK_HEADER(unistd.h,[usleep_ok=yes],[usleep_ok=no])
+    fi
+    AC_MSG_CHECKING([whether to use usleep])
+    if test "$usleep_ok" = "yes"; then
+	AC_CACHE_VAL(tcl_cv_usleep_h, [
+	    AC_TRY_COMPILE([#include <unistd.h>], [usleep(0);],
+		    [tcl_cv_usleep_h=yes],[tcl_cv_usleep_h=no])])
+	AC_MSG_RESULT([$tcl_cv_usleep_h])
+	if test $tcl_cv_usleep_h = yes; then
+	    AC_DEFINE(HAVE_USLEEP, 1, [Do we have usleep()?])
+	fi
+    else
+	AC_MSG_RESULT([$usleep_ok])
+    fi
+])
+
+#------------------------------------------------------------------------
 # SC_ENABLE_LANGINFO --
 #
 #	Allows use of modern nl_langinfo check for better l10n.
@@ -1476,7 +1518,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		;;
 	    *)
 		case "$arch" in
-		alpha|sparc64)
+		alpha|sparc|sparc64)
 		    SHLIB_CFLAGS="-fPIC"
 		    ;;
 		*)
@@ -2060,21 +2102,19 @@ dnl # preprocessing tests use only CPPFLAGS.
 
         AS_IF([test "$RANLIB" = ""], [
             MAKE_LIB='$(STLIB_LD) [$]@ ${OBJS}'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
         ], [
             MAKE_LIB='${STLIB_LD} [$]@ ${OBJS} ; ${RANLIB} [$]@'
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(LIB_FILE))'
         ])
+        INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(LIB_INSTALL_DIR)/$(LIB_FILE)"'
     ])
 
     # Stub lib does not depend on shared/static configuration
     AS_IF([test "$RANLIB" = ""], [
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS}'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
     ], [
         MAKE_STUB_LIB='${STLIB_LD} [$]@ ${STUB_LIB_OBJS} ; ${RANLIB} [$]@'
-        INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)" ; (cd "$(LIB_INSTALL_DIR)" ; $(RANLIB) $(STUB_LIB_FILE))'
     ])
+    INSTALL_STUB_LIB='$(INSTALL_LIBRARY) $(STUB_LIB_FILE) "$(LIB_INSTALL_DIR)/$(STUB_LIB_FILE)"'
 
     # Define TCL_LIBS now that we know what DL_LIBS is.
     # The trick here is that we don't want to change the value of TCL_LIBS if
@@ -2158,7 +2198,6 @@ dnl # preprocessing tests use only CPPFLAGS.
 #	Defines some of the following vars:
 #		NO_DIRENT_H
 #		NO_VALUES_H
-#		HAVE_LIMITS_H or NO_LIMITS_H
 #		NO_STDLIB_H
 #		NO_STRING_H
 #		NO_SYS_WAIT_H
@@ -2198,9 +2237,6 @@ closedir(d);
 
     AC_CHECK_HEADER(float.h, , [AC_DEFINE(NO_FLOAT_H, 1, [Do we have <float.h>?])])
     AC_CHECK_HEADER(values.h, , [AC_DEFINE(NO_VALUES_H, 1, [Do we have <values.h>?])])
-    AC_CHECK_HEADER(limits.h,
-	[AC_DEFINE(HAVE_LIMITS_H, 1, [Do we have <limits.h>?])],
-	[AC_DEFINE(NO_LIMITS_H, 1, [Do we have <limits.h>?])])
     AC_CHECK_HEADER(stdlib.h, tcl_ok=1, tcl_ok=0)
     AC_EGREP_HEADER(strtol, stdlib.h, , tcl_ok=0)
     AC_EGREP_HEADER(strtoul, stdlib.h, , tcl_ok=0)

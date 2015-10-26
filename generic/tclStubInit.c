@@ -82,7 +82,7 @@ static const char *TclGetStartupScriptFileName(void)
     if (path == NULL) {
 	return NULL;
     }
-    return Tcl_GetStringFromObj(path, NULL);
+    return Tcl_GetString(path);
 }
 
 #if defined(_WIN32) || defined(__CYGWIN__)

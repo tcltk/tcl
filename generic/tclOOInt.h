@@ -588,7 +588,7 @@ MODULE_SCOPE void	TclOOSetupVariableResolver(Tcl_Namespace *nsPtr);
 
 #define AddRef(ptr) ((ptr)->refCount++)
 #define DelRef(ptr) do {			\
-	if (--(ptr)->refCount < 1) {		\
+	if ((ptr)->refCount-- <= 1) {		\
 	    ckfree((char *) (ptr));		\
 	}					\
     } while(0)

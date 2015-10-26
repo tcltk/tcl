@@ -435,7 +435,7 @@ proc ::tcl::OptProcArgGiven {argname} {
 	    } elseif {$state == "optValue"} {
 		set state next; # not used, for debug only
 		# go to next state
-		return 
+		return
 	    } else {
 		return -code error [OptMissingValue $descriptions]
 	    }
@@ -538,7 +538,7 @@ proc ::tcl::OptKeyParse {descKey arglist} {
 
     # Analyse the result
     # Walk through the tree:
-    OptTreeVars $desc "#[expr {[info level]-1}]" 
+    OptTreeVars $desc "#[expr {[info level]-1}]"
 }
 
     # determine string length for nice tabulated output

@@ -360,7 +360,6 @@ TclpMasterUnlock(void)
     pthread_mutex_unlock(&masterLock);
 #endif
 }
-
 
 /*
  *----------------------------------------------------------------------
