@@ -726,6 +726,14 @@ AddSimpleChainToCallContext(
  * ----------------------------------------------------------------------
  */
 
+static TCL_NOINLINE void
+AddMethodToCallChainCore(
+    Method *const mPtr,
+    struct ChainBuilder *const cbPtr,
+    Tcl_HashTable *const doneFilters,
+    Class *const filterDecl,
+    int flags);
+
 static inline void
 AddMethodToCallChain(
     Method *const mPtr,		/* Actual method implementation to add to call
@@ -748,20 +756,43 @@ AddMethodToCallChain(
 				 * looking to add things from a mixin and have
 				 * not passed a mixin. */
 {
-    register CallChain *callPtr = cbPtr->callChainPtr;
-    int i;
-
     /*
-     * Return if this is just an entry used to record whether this is a public
+     * Check if this is just an entry used to record whether this is a public
      * method. If so, there's nothing real to call and so nothing to add to
      * the call chain.
      *
      * This is also where we enforce mixin-consistency.
      */
 
-    if (mPtr == NULL || mPtr->typePtr == NULL || !MIXIN_CONSISTENT(flags)) {
-	return;
+    if (mPtr && mPtr->typePtr && MIXIN_CONSISTENT(flags)) {
+	AddMethodToCallChainCore(mPtr, cbPtr, doneFilters, filterDecl, flags);
     }
+}
+
+static TCL_NOINLINE void
+AddMethodToCallChainCore(
+    Method *const mPtr,		/* Actual method implementation to add to call
+				 * chain (or NULL, a no-op). */
+    struct ChainBuilder *const cbPtr,
+				/* The call chain to add the method
+				 * implementation to. */
+    Tcl_HashTable *const doneFilters,
+				/* Where to record what filters have been
+				 * processed. If NULL, not processing filters.
+				 * Note that this function does not update
+				 * this hashtable. */
+    Class *const filterDecl,	/* The class that declared the filter. If
+				 * NULL, either the filter was declared by the
+				 * object or this isn't a filter. */
+    int flags)			/* Used to check if we're mixin-consistent
+				 * only. Mixin-consistent means that either
+				 * we're looking to add things from a mixin
+				 * and we have passed a mixin, or we're not
+				 * looking to add things from a mixin and have
+				 * not passed a mixin. */
+{
+    register CallChain *callPtr = cbPtr->callChainPtr;
+    int i;
 
     /*
      * Enforce real private method handling here. We will skip adding this
