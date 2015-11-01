@@ -4393,17 +4393,12 @@ MODULE_SCOPE void	TclDbInitNewObj(Tcl_Obj *objPtr, const char *file,
 /*
  *----------------------------------------------------------------------
  *
- * Core procedures added to libtommath for bignum manipulation.
+ * Core procedure added to libtommath for bignum manipulation.
  *
  *----------------------------------------------------------------------
  */
 
 MODULE_SCOPE Tcl_PackageInitProc TclTommath_Init;
-MODULE_SCOPE void	TclBNInitBignumFromLong(mp_int *bignum, long initVal);
-MODULE_SCOPE void	TclBNInitBignumFromWideInt(mp_int *bignum,
-			    Tcl_WideInt initVal);
-MODULE_SCOPE void	TclBNInitBignumFromWideUInt(mp_int *bignum,
-			    Tcl_WideUInt initVal);
 
 /*
  *----------------------------------------------------------------------
