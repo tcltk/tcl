@@ -1,3 +1,14 @@
+/*
+ * zipfs.c --
+ *
+ *	Implementation of the ZIP filesystem used in AndroWish.
+ *
+ * Copyright (c) 2013-2015 Christian Werner <chw@ch-werner.de>
+ *
+ * See the file "license.terms" for information on usage and redistribution of
+ * this file, and for a DISCLAIMER OF ALL WARRANTIES.
+ */
+
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/mman.h>
 #endif
@@ -17,8 +28,13 @@
 
 #ifdef HAVE_ZLIB
 
+/*
+ * Various constants and offsets found in ZIP archive files.
+ */
+
 #define ZIP_SIG_LEN                     4
 
+/* Local header of ZIP archive member (at very beginning of each member). */
 #define ZIP_LOCAL_HEADER_SIG            0x04034b50
 #define ZIP_LOCAL_HEADER_LEN            30
 #define ZIP_LOCAL_SIG_OFFS              0
@@ -33,6 +49,7 @@
 #define ZIP_LOCAL_PATHLEN_OFFS          26
 #define ZIP_LOCAL_EXTRALEN_OFFS         28
 
+/* Central header of ZIP archive member at end of ZIP file. */
 #define ZIP_CENTRAL_HEADER_SIG          0x02014b50
 #define ZIP_CENTRAL_HEADER_LEN          46
 #define ZIP_CENTRAL_SIG_OFFS            0
@@ -53,6 +70,7 @@
 #define ZIP_CENTRAL_EATTR_OFFS          38
 #define ZIP_CENTRAL_LOCALHDR_OFFS       42
 
+/* Central end signature at very end of ZIP file. */
 #define ZIP_CENTRAL_END_SIG             0x06054b50
 #define ZIP_CENTRAL_END_LEN             22
 #define ZIP_CENTRAL_END_SIG_OFFS        0
@@ -70,6 +88,10 @@
 
 #define ZIP_PASSWORD_END_SIG            0x5a5a4b50
 
+/*
+ * Macros to read and write 16 and 32 bit integers from/to ZIP archives.
+ */
+
 #define zip_read_int(p)         \
     ((p)[0] | ((p)[1] << 8) | ((p)[2] << 16) | ((p)[3] << 24))
 #define zip_read_short(p)       \
@@ -81,16 +103,30 @@
 #define zip_write_short(p, v)	\
     (p)[0] = (v) & 0xff; (p)[1] = ((v) >> 8) & 0xff;
 
+/*
+ * Windows drive letters.
+ */
+
 #if defined(_WIN32) || defined(_WIN64)
-static CONST char alpha[] =
+static CONST char drvletters[] =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 #endif
 
+/*
+ * Mutex to protect localtime(3) when no reentrant version available.
+ */
+
 #if !defined(_WIN32) && !defined(_WIN64)
 #ifndef HAVE_LOCALTIME_R
+#ifdef TCL_THREADS
 TCL_DECLARE_MUTEX(localtimeMutex)
 #endif
 #endif
+#endif
+
+/*
+ * In-core description of mounted ZIP archive file.
+ */
 
 typedef struct ZipFile {
     char *name;               /* Archive name */
@@ -113,6 +149,10 @@ typedef struct ZipFile {
     char mntpt[1];            /* Mount point */
 } ZipFile;
 
+/*
+ * In-core description of file contained in mounted ZIP archive.
+ */
+
 typedef struct ZipEntry {
     char *name;               /* The full pathname of the virtual file */
     ZipFile *zipfile;         /* The ZIP file holding this virtual file */
@@ -130,6 +170,10 @@ typedef struct ZipEntry {
     struct ZipEntry *tnext;   /* Next top-level dir in archive */
 } ZipEntry;
 
+/*
+ * File channel for file contained in mounted ZIP archive.
+ */
+
 typedef struct ZipChannel {
     ZipFile *zipfile;         /* The ZIP file holding this channel */
     ZipEntry *zipentry;       /* Pointer back to virtual file */
@@ -144,67 +188,43 @@ typedef struct ZipChannel {
     unsigned long keys[3];    /* Key for decryption */
 } ZipChannel;
 
+/*
+ * Global variables.
+ *
+ * Most are kept in single ZipFS struct. When build with threading
+ * support this struct is protected by the ZipFSMutex (see below).
+ *
+ * The "fileHash" component is the process wide global table of all known
+ * ZIP archive members in all mounted ZIP archives.
+ *
+ * The "zipHash" components is the process wide global table of all mounted
+ * ZIP archive files.
+ */
+
 static struct {
-    int initialized;          /* True when initialized */
-    int lock;                 /* RW lock, see below */
-    int waiters;              /* RW lock, see below */
-    int wrmax;                /* Maximum write size of a file  */
-    Tcl_HashTable fileHash;   /* File name to ZipEntry mapping */
-    Tcl_HashTable zipHash;    /* Mount to ZipFile mapping */
+    int initialized;		/* True when initialized */
+    int lock;			/* RW lock, see below */
+    int waiters;		/* RW lock, see below */
+    int wrmax;			/* Maximum write size of a file */
+    int idCount;		/* Counter for channel names */
+    Tcl_HashTable fileHash;	/* File name to ZipEntry mapping */
+    Tcl_HashTable zipHash;	/* Mount to ZipFile mapping */
 } ZipFS = {
-    0, 0, 0, 0,
+    0, 0, 0, 0, 0,
 };
 
-/* POSIX like rwlock (multiple reader, single writer) */
-
-TCL_DECLARE_MUTEX(ZipFSMutex)
-static Tcl_Condition ZipFSCond;
-
-static void
-ReadLock(void)
-{
-    Tcl_MutexLock(&ZipFSMutex);
-    while (ZipFS.lock < 0) {
-	ZipFS.waiters++;
-	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, NULL);
-	ZipFS.waiters--;
-    }
-    ZipFS.lock++;
-    Tcl_MutexUnlock(&ZipFSMutex);
-}
-
-static void
-WriteLock(void)
-{
-    Tcl_MutexLock(&ZipFSMutex);
-    while (ZipFS.lock != 0) {
-	ZipFS.waiters++;
-	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, NULL);
-	ZipFS.waiters--;
-    }
-    ZipFS.lock = -1;
-    Tcl_MutexUnlock(&ZipFSMutex);
-}
-
-static void
-Unlock(void)
-{
-    Tcl_MutexLock(&ZipFSMutex);
-    if (ZipFS.lock > 0) {
-	--ZipFS.lock;
-    } else if (ZipFS.lock < 0) {
-	ZipFS.lock = 0;
-    }
-    if ((ZipFS.lock == 0) && (ZipFS.waiters > 0)) {
-	Tcl_ConditionNotify(&ZipFSCond);
-    }
-    Tcl_MutexUnlock(&ZipFSMutex);
-}
+/*
+ * For password rotation.
+ */
 
 static CONST char pwrot[16] = {
     0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
     0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0
 };
+
+/*
+ * Table to compute CRC32.
+ */
 
 static CONST unsigned int crc32tab[256] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
@@ -260,6 +280,83 @@ static CONST unsigned int crc32tab[256] = {
     0x5d681b02, 0x2a6f2b94, 0xb40bbe37, 0xc30c8ea1, 0x5a05df1b,
     0x2d02ef8d,
 };
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ReadLock, WriteLock, Unlock --
+ *
+ *	POSIX like rwlock functions to support multiple readers
+ *	and single writer on internal structs.
+ *
+ *-------------------------------------------------------------------------
+ */
+
+TCL_DECLARE_MUTEX(ZipFSMutex)
+
+#ifdef TCL_THREADS
+
+static Tcl_Condition ZipFSCond;
+
+static void
+ReadLock(void)
+{
+    Tcl_MutexLock(&ZipFSMutex);
+    while (ZipFS.lock < 0) {
+	ZipFS.waiters++;
+	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, NULL);
+	ZipFS.waiters--;
+    }
+    ZipFS.lock++;
+    Tcl_MutexUnlock(&ZipFSMutex);
+}
+
+static void
+WriteLock(void)
+{
+    Tcl_MutexLock(&ZipFSMutex);
+    while (ZipFS.lock != 0) {
+	ZipFS.waiters++;
+	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, NULL);
+	ZipFS.waiters--;
+    }
+    ZipFS.lock = -1;
+    Tcl_MutexUnlock(&ZipFSMutex);
+}
+
+static void
+Unlock(void)
+{
+    Tcl_MutexLock(&ZipFSMutex);
+    if (ZipFS.lock > 0) {
+	--ZipFS.lock;
+    } else if (ZipFS.lock < 0) {
+	ZipFS.lock = 0;
+    }
+    if ((ZipFS.lock == 0) && (ZipFS.waiters > 0)) {
+	Tcl_ConditionNotify(&ZipFSCond);
+    }
+    Tcl_MutexUnlock(&ZipFSMutex);
+}
+
+#else
+
+#define ReadLock()	do {} while (0)
+#define WriteLock()	do {} while (0)
+#define Unlock()	do {} while (0)
+
+#endif
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * DosTimeDate, ToDosTime, ToDosDate --
+ *
+ *	Functions to perform conversions between DOS time stamps
+ *	and POSIX time_t.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static time_t
 DosTimeDate(int dosDate, int dosTime)
@@ -268,7 +365,9 @@ DosTimeDate(int dosDate, int dosTime)
     struct tm *tmp, tm;
 
     now = time(NULL);
+#ifdef TCL_THREADS
 #if defined(_WIN32) || defined(_WIN64)
+    /* Win32 uses thread local storage */
     tmp = localtime(&now);
     tm = *tmp;
 #else
@@ -281,6 +380,10 @@ DosTimeDate(int dosDate, int dosTime)
     tm = *tmp;
     Tcl_MutexUnlock(&localtimeMutex);
 #endif
+#endif
+#else
+    tmp = localtime(&now);
+    tm = *tmp;
 #endif
     tm.tm_year = (((dosDate & 0xfe00) >> 9) + 80);
     tm.tm_mon = ((dosDate & 0x1e0) >> 5) - 1;
@@ -296,7 +399,9 @@ ToDosTime(time_t when)
 {
     struct tm *tmp, tm;
 
+#ifdef TCL_THREADS
 #if defined(_WIN32) || defined(_WIN64)
+    /* Win32 uses thread local storage */
     tmp = localtime(&when);
     tm = *tmp;
 #else
@@ -309,6 +414,10 @@ ToDosTime(time_t when)
     tm = *tmp;
     Tcl_MutexUnlock(&localtimeMutex);
 #endif
+#endif
+#else
+    tmp = localtime(&when);
+    tm = *tmp;
 #endif
     return (tm.tm_hour << 11) | (tm.tm_min << 5) | (tm.tm_sec >> 1);
 }
@@ -318,7 +427,9 @@ ToDosDate(time_t when)
 {
     struct tm *tmp, tm;
 
+#ifdef TCL_THREADS
 #if defined(_WIN32) || defined(_WIN64)
+    /* Win32 uses thread local storage */
     tmp = localtime(&when);
     tm = *tmp;
 #else
@@ -332,8 +443,28 @@ ToDosDate(time_t when)
     Tcl_MutexUnlock(&localtimeMutex);
 #endif
 #endif
+#else
+    tmp = localtime(&when);
+    tm = *tmp;
+#endif
     return ((tm.tm_year - 80) << 9) | ((tm.tm_mon + 1) << 5) | tm.tm_mday;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * CountSlashes --
+ *
+ *	This function counts the number of slashes in a pathname string.
+ *
+ * Results:
+ *	Number of slashes found in string.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 CountSlashes(CONST char *string)
@@ -349,6 +480,24 @@ CountSlashes(CONST char *string)
     }
     return count;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * CanonicalPath --
+ *
+ *	This function computes the canonical path from a directory
+ *	and file name components into the specified Tcl_DString.
+ *
+ * Results:
+ *	Returns the pointer to the canonical path contained in the
+ *	specified Tcl_DString.
+ *
+ * Side effects:
+ *	Modifies the specified Tcl_DString.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static char *
 CanonicalPath(CONST char *root, CONST char *tail, Tcl_DString *dsPtr)
@@ -357,7 +506,7 @@ CanonicalPath(CONST char *root, CONST char *tail, Tcl_DString *dsPtr)
     int i, j, c, isunc = 0;
 
 #if defined(_WIN32) || defined(_WIN64)
-    if ((tail[0] != '\0') && (strchr(alpha, tail[0]) != NULL) &&
+    if ((tail[0] != '\0') && (strchr(drvletters, tail[0]) != NULL) &&
 	(tail[1] == ':')) {
 	tail += 2;
     }
@@ -438,6 +587,24 @@ CanonicalPath(CONST char *root, CONST char *tail, Tcl_DString *dsPtr)
     Tcl_DStringSetLength(dsPtr, j);
     return Tcl_DStringValue(dsPtr);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * AbsolutePath --
+ *
+ *	This function computes the absolute path from a given
+ *	(relative) path name into the specified Tcl_DString.
+ *
+ * Results:
+ *	Returns the pointer to the absolute path contained in the
+ *	specified Tcl_DString.
+ *
+ * Side effects:
+ *	Modifies the specified Tcl_DString.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static char *
 AbsolutePath(CONST char *path, Tcl_DString *dsPtr)
@@ -451,7 +618,7 @@ AbsolutePath(CONST char *path, Tcl_DString *dsPtr)
     if ((*path != '/')
 #if defined(_WIN32) || defined(_WIN64)
 	&& (*path != '\\') &&
-	(((*path != '\0') && (strchr(alpha, *path) == NULL)) ||
+	(((*path != '\0') && (strchr(drvletters, *path) == NULL)) ||
 	 (path[1] != ':'))
 #endif
 	) {
@@ -462,7 +629,7 @@ AbsolutePath(CONST char *path, Tcl_DString *dsPtr)
 	Tcl_GetCwd(NULL, &pwd);
 	result = Tcl_DStringValue(&pwd);
 #if defined(_WIN32) || defined(_WIN64)
-	if ((result[0] != '\0') && (strchr(alpha, result[0]) != NULL) &&
+	if ((result[0] != '\0') && (strchr(drvletters, result[0]) != NULL) &&
 	    (result[1] == ':')) {
 	    result += 2;
 	}
@@ -475,6 +642,25 @@ AbsolutePath(CONST char *path, Tcl_DString *dsPtr)
     }
     return result;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSLookup --
+ *
+ *	This function returns the ZIP entry struct corresponding to
+ *	the ZIP archive member of the given file name.
+ *
+ * Results:
+ *	Returns the pointer to ZIP entry struct or NULL if the
+ *	the given file name could not be found in the global list
+ *	of ZIP archive members.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static ZipEntry *
 ZipFSLookup(char *filename)
@@ -493,6 +679,24 @@ ZipFSLookup(char *filename)
 }
 
 #ifdef NEVER_USED
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSLookupMount --
+ *
+ *	This function returns an indication if the given file name
+ *	corresponds to a mounted ZIP archive file.
+ *
+ * Results:
+ *	Returns true, if the given file name is a mounted ZIP archive file.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 static int
 ZipFSLookupMount(char *filename)
 {
@@ -519,6 +723,23 @@ ZipFSLookupMount(char *filename)
     return match;
 }
 #endif
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSCloseArchive --
+ *
+ *	This function closes a mounted ZIP archive file.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	A memory mapped ZIP archive is unmapped, allocated memory is
+ *	released.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static void
 ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
@@ -544,6 +765,29 @@ ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
     Tcl_Close(interp, zf->chan);
     zf->chan = NULL;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSOpenArchive --
+ *
+ *	This function opens a ZIP archive file for reading. An attempt
+ *	is made to memory map that file. Otherwise it is read into
+ *	an allocated memory buffer. The ZIP archive header is verified
+ *	and must be valid for the function to succeed. When "needZip"
+ *	is zero an embedded ZIP archive in an executable file is accepted.
+ *
+ * Results:
+ *	TCL_OK on success, TCL_ERROR otherwise with an error message
+ *	placed into the given "interp" if it is not NULL.
+ *
+ * Side effects:
+ *	ZIP archive is memory mapped or read into allocated memory,
+ *	the given ZipFile struct is filled with information about
+ *	the ZIP archive file.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSOpenArchive(Tcl_Interp *interp, CONST char *zipname, int needZip,
@@ -736,6 +980,24 @@ error:
     ZipFSCloseArchive(interp, zf);
     return TCL_ERROR;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zipfs_Mount --
+ *
+ *      This procedure is invoked to mount a given ZIP archive file on
+ *	a given mountpoint with optional ZIP password.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      A ZIP archive file is read, analyzed and mounted, resources are
+ *	allocated.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 int
 Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
@@ -920,11 +1182,13 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 	if (!isdir && (mntpt[0] == '\0') && !CountSlashes(path)) {
 #ifdef ANDROID
 	    /*
-	     * Try to remap regular files on root to /assets/.root/...
-	     * /assets/.root/... should not be in a valid APK due to
-	     * leading dot in file name component. This trick should
-	     * make the files AndroidManifest.xml, resources.arsc,
-	     * and classes.dex visible to Tcl.
+	     * When mounting the ZIP archive on the root directory try
+	     * to remap top level regular files of the archive to
+	     * /assets/.root/... since this directory should not be
+	     * in a valid APK due to the leading dot in the file name
+	     * component. This trick should make the files
+	     * AndroidManifest.xml, resources.arsc, and classes.dex
+	     * visible to Tcl.
 	     */
 	    Tcl_DString ds2;
 
@@ -1045,6 +1309,22 @@ nextent:
     Tcl_FSMountsChanged(NULL);
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zipfs_Unmount --
+ *
+ *      This procedure is invoked to unmount a given ZIP archive.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      A mounted ZIP archive file is unmounted, resources are free'd.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 int
 Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname)
@@ -1099,6 +1379,22 @@ done:
     }
     return ret;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSMountCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::mount" command.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      A ZIP archive file is mounted, resources are allocated.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSMountCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1113,6 +1409,22 @@ ZipFSMountCmd(ClientData clientData, Tcl_Interp *interp,
 		       (argc > 2) ? argv[2] : NULL,
 		       (argc > 3) ? argv[3] : NULL);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSUnmountCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::unmount" command.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      A mounted ZIP archive file is unmounted, resources are free'd.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSUnmountCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1125,6 +1437,23 @@ ZipFSUnmountCmd(ClientData clientData, Tcl_Interp *interp,
     }
     return Zipfs_Unmount(interp, argv[1]);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSMountCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::mkkey" command.
+ *	It produces a rotated password to be embedded into an image file.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSMkKeyCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1164,6 +1493,26 @@ ZipFSMkKeyCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_AppendResult(interp, pwbuf, (char *) NULL);
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipAddFile --
+ *
+ *      This procedure is used by ZipFSMkZipOrImgCmd() to add a single
+ *	file to the output ZIP archive file being written. A ZipEntry
+ *	struct about the input file is added to the given fileHash table
+ *	for later creation of the central ZIP directory.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *	Input file is read and (compressed and) written to the output
+ *	ZIP archive file.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipAddFile(Tcl_Interp *interp, CONST char *path, Tcl_Channel out,
@@ -1424,7 +1773,7 @@ seekErr:
     z->data = NULL;
     hPtr = Tcl_CreateHashEntry(fileHash, zpath, &isNew);
     if (!isNew) {
-	Tcl_AppendResult(interp, "not unique path name \"", path, "\"",
+	Tcl_AppendResult(interp, "non-unique path name \"", path, "\"",
 			 (char *) NULL);
 	Tcl_Free((char *) z);
 	return TCL_ERROR;
@@ -1469,6 +1818,25 @@ seekErr:
     }
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSMkZipOrImgCmd --
+ *
+ *      This procedure is creates a new ZIP archive file or image file
+ *	given output filename, input directory of files to be archived,
+ *	optional password, and optional image to be prepended to the
+ *	output ZIP archive file.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *	A new ZIP archive file or image file is written.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1645,6 +2013,23 @@ done:
     Tcl_DeleteHashTable(&fileHash);
     return ret;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSMkZipCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::mkzip" command.
+ *	See description of ZipFSMkZipOrImgCmd().
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *	See description of ZipFSMkZipOrImgCmd().
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSMkZipCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1652,6 +2037,23 @@ ZipFSMkZipCmd(ClientData clientData, Tcl_Interp *interp,
 {
     return ZipFSMkZipOrImgCmd(clientData, interp, 0, argc, argv);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSMkImgCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::mkimg" command.
+ *	See description of ZipFSMkZipOrImgCmd().
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *	See description of ZipFSMkZipOrImgCmd().
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSMkImgCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1659,6 +2061,24 @@ ZipFSMkImgCmd(ClientData clientData, Tcl_Interp *interp,
 {
     return ZipFSMkZipOrImgCmd(clientData, interp, 1, argc, argv);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSExistsObjCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::exists" command.
+ *	It tests for the existence of a file in the ZIP filesystem and
+ *	places a boolean into the interp's result.
+ *
+ * Results:
+ *      Always TCL_OK.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSExistsObjCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1678,6 +2098,25 @@ ZipFSExistsObjCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_SetBooleanObj(Tcl_GetObjResult(interp), exists);
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSInfoObjCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::info" command.
+ *	On success, it returns a Tcl list made up of name of ZIP archive
+ *	file, size uncompressed, size compressed, and archive offset of
+ *	a file in the ZIP filesystem.
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSInfoObjCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1705,6 +2144,24 @@ ZipFSInfoObjCmd(ClientData clientData, Tcl_Interp *interp,
     Unlock();
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipFSListObjCmd --
+ *
+ *      This procedure is invoked to process the "zipfs::list" command.
+ *	On success, it returns a Tcl list of files of the ZIP filesystem
+ *	which match a search pattern (glob or regexp).
+ *
+ * Results:
+ *      A standard Tcl result.
+ *
+ * Side effects:
+ *      None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipFSListObjCmd(ClientData clientData, Tcl_Interp *interp,
@@ -1772,6 +2229,22 @@ ZipFSListObjCmd(ClientData clientData, Tcl_Interp *interp,
     Unlock();
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipChannelClose --
+ *
+ *	This function is called to close a channel.
+ *
+ * Results:
+ *	Always TCL_OK.
+ *
+ * Side effects:
+ *	Resources are free'd.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipChannelClose(ClientData instanceData, Tcl_Interp *interp)
@@ -1814,6 +2287,22 @@ ZipChannelClose(ClientData instanceData, Tcl_Interp *interp)
     Tcl_Free((char *) info);
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipChannelRead --
+ *
+ *	This function is called to read data from channel.
+ *
+ * Results:
+ *	Number of bytes read or -1 on error with error number set.
+ *
+ * Side effects:
+ *	Data is read and file pointer is advanced.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipChannelRead(ClientData instanceData, char *buf, int toRead, int *errloc)
@@ -1847,6 +2336,22 @@ ZipChannelRead(ClientData instanceData, char *buf, int toRead, int *errloc)
     *errloc = 0;
     return toRead;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipChannelWrite --
+ *
+ *	This function is called to write data into channel.
+ *
+ * Results:
+ *	Number of bytes written or -1 on error with error number set.
+ *
+ * Side effects:
+ *	Data is written and file pointer is advanced.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipChannelWrite(ClientData instanceData, CONST char *buf,
@@ -1875,6 +2380,22 @@ ZipChannelWrite(ClientData instanceData, CONST char *buf,
     *errloc = 0;
     return toWrite;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipChannelSeek --
+ *
+ *	This function is called to position file pointer of channel.
+ *
+ * Results:
+ *	New file position or -1 on error with error number set.
+ *
+ * Side effects:
+ *	File pointer is repositioned according to offset and mode.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipChannelSeek(ClientData instanceData, long offset, int mode, int *errloc)
@@ -1917,18 +2438,56 @@ ZipChannelSeek(ClientData instanceData, long offset, int mode, int *errloc)
     info->nread = (unsigned long) offset;
     return info->nread;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipChannelWatchChannel --
+ *
+ *	This function is called for event notifications on channel.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static void
 ZipChannelWatchChannel(ClientData instanceData, int mask)
 {
     return;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipChannelGetFile --
+ *
+ *	This function is called to retrieve OS handle for channel.
+ *
+ * Results:
+ *	Always TCL_ERROR since there's never an OS handle for a
+ *	file within a ZIP archive.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 static int
 ZipChannelGetFile(ClientData instanceData, int direction,
 		  ClientData *handlePtr)
 {
     return TCL_ERROR;
 }
+
+/*
+ * The channel type/driver definition used for ZIP archive members.
+ */
 
 static Tcl_ChannelType ZipChannelType = {
     "zip",                  /* Type name. */
@@ -1960,13 +2519,29 @@ static Tcl_ChannelType ZipChannelType = {
     ZipChannelGetFile,      /* Get OS handle from the channel */
 #endif
 };
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipChannelOpen --
+ *
+ *	This function opens a Tcl_Channel on a file from a mounted ZIP
+ *	archive according to given open mode.
+ *
+ * Results:
+ *	Tcl_Channel on success, or NULL on error.
+ *
+ * Side effects:
+ *	Memory is allocated, the file from the ZIP archive is uncompressed.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static Tcl_Channel
 ZipChannelOpen(Tcl_Interp *interp, char *filename, int mode, int permissions)
 {
     ZipEntry *z;
     ZipChannel *info;
-    static int count = 1;
     int i, ch, trunc, wr, flags = 0;
     char cname[128];
 
@@ -2216,7 +2791,7 @@ cerror:
 	}
     }
 wrapchan:
-    sprintf(cname, "zipfs_%lx_%d", (unsigned long) z->offset, count++);
+    sprintf(cname, "zipfs_%lx_%d", (unsigned long) z->offset, ZipFS.idCount++);
     z->zipfile->nopen++;
     Unlock();
     return Tcl_CreateChannel(&ZipChannelType, cname, (ClientData) info, flags);
@@ -2225,6 +2800,23 @@ error:
     Unlock();
     return NULL;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipEntryStat --
+ *
+ *	This function implements the ZIP filesystem specific version
+ *	of the library version of stat.
+ *
+ * Results:
+ *	See stat documentation.
+ *
+ * Side effects:
+ *	See stat documentation.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipEntryStat(char *path, Tcl_StatBuf *buf)
@@ -2252,6 +2844,23 @@ done:
     Unlock();
     return ret;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * ZipEntryAccess --
+ *
+ *	This function implements the ZIP filesystem specific version
+ *	of the library version of access.
+ *
+ * Results:
+ *	See access documentation.
+ *
+ * Side effects:
+ *	See access documentation.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 ZipEntryAccess(char *path, int mode)
@@ -2266,6 +2875,18 @@ ZipEntryAccess(char *path, int mode)
     Unlock();
     return (z != NULL) ? 0 : -1;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSOpenFileChannelProc --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static Tcl_Channel
 Zip_FSOpenFileChannelProc(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -2276,6 +2897,23 @@ Zip_FSOpenFileChannelProc(Tcl_Interp *interp, Tcl_Obj *pathPtr,
     return ZipChannelOpen(interp, Tcl_GetStringFromObj(pathPtr, &len),
 			  mode, permissions);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSStatProc --
+ *
+ *	This function implements the ZIP filesystem specific version
+ *	of the library version of stat.
+ *
+ * Results:
+ *	See stat documentation.
+ *
+ * Side effects:
+ *	See stat documentation.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 Zip_FSStatProc(Tcl_Obj *pathPtr, Tcl_StatBuf *buf)
@@ -2284,6 +2922,23 @@ Zip_FSStatProc(Tcl_Obj *pathPtr, Tcl_StatBuf *buf)
 
     return ZipEntryStat(Tcl_GetStringFromObj(pathPtr, &len), buf);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSAccessProc --
+ *
+ *	This function implements the ZIP filesystem specific version
+ *	of the library version of access.
+ *
+ * Results:
+ *	See access documentation.
+ *
+ * Side effects:
+ *	See access documentation.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 Zip_FSAccessProc(Tcl_Obj *pathPtr, int mode)
@@ -2292,12 +2947,50 @@ Zip_FSAccessProc(Tcl_Obj *pathPtr, int mode)
 
     return ZipEntryAccess(Tcl_GetStringFromObj(pathPtr, &len), mode);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSFilesystemSeparatorProc --
+ *
+ *	This function returns the separator to be used for a given path. The
+ *	object returned should have a refCount of zero
+ *
+ * Results:
+ *	A Tcl object, with a refCount of zero. If the caller needs to retain a
+ *	reference to the object, it should call Tcl_IncrRefCount, and should
+ *	otherwise free the object.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static Tcl_Obj *
 Zip_FSFilesystemSeparatorProc(Tcl_Obj *pathPtr)
 {
     return Tcl_NewStringObj("/", -1);
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSMatchInDirectoryProc --
+ *
+ *	This routine is used by the globbing code to search a directory for
+ *	all files which match a given pattern.
+ *
+ * Results:
+ *	The return value is a standard Tcl result indicating whether an
+ *	error occurred in globbing. Errors are left in interp, good
+ *	results are lappend'ed to resultPtr (which must be a valid object).
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
@@ -2315,7 +3008,7 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 
 #if defined(_WIN32) || defined(_WIN64)
     if ((pattern != NULL) && (pattern[0] != '\0') &&
-	(strchr(alpha, pattern[0]) != NULL) && (pattern[1] == ':')) {
+	(strchr(drvletters, pattern[0]) != NULL) && (pattern[1] == ':')) {
 	pattern += 2;
     }
 #endif
@@ -2333,7 +3026,7 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	prefix = NULL;
     } else {
 #if defined(_WIN32) || defined(_WIN64)
-	if ((strchr(alpha, prefix[0]) != NULL) && (prefix[1] == ':')) {
+	if ((strchr(drvletters, prefix[0]) != NULL) && (prefix[1] == ':')) {
 	    if (strcmp(prefix + 2, path) == 0) {
 		strncpy(drivePrefix, prefix, 3);
 		drivePrefix[2] = '\0';
@@ -2484,6 +3177,22 @@ end:
     Tcl_DStringFree(&ds);
     return TCL_OK;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSNormalizePathProc --
+ *
+ *	Function to normalize given path object.
+ *
+ * Results:
+ *	Length of final absolute path name.
+ *
+ * Side effects:
+ *	Path object gets converted to an absolute path.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 Zip_FSNormalizePathProc(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -2502,6 +3211,23 @@ Zip_FSNormalizePathProc(Tcl_Interp *interp, Tcl_Obj *pathPtr,
     Tcl_DStringFree(&ds);
     return nextCheckpoint;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSPathInFilesystemProc --
+ *
+ *	This function determines if the given path object is in the
+ *	ZIP filesystem.
+ *
+ * Results:
+ *	TCL_OK when the path object is in the ZIP filesystem, -1 otherwise.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
@@ -2518,7 +3244,7 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
     path = AbsolutePath(path, &ds);
     len = Tcl_DStringLength(&ds);
 #if defined(_WIN32) || defined(_WIN64)
-    if (len && (strchr(alpha, path[0]) != NULL) && (path[1] == ':')) {
+    if (len && (strchr(drvletters, path[0]) != NULL) && (path[1] == ':')) {
 	path += 2;
 	len -= 2;
     }
@@ -2557,6 +3283,22 @@ endloop:
     Tcl_DStringFree(&ds);
     return ret;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSListVolumesProc --
+ *
+ *	Lists the currently mounted ZIP filesystem volumes.
+ *
+ * Results:
+ *	The list of volumes.
+ *
+ * Side effects:
+ *	None
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static Tcl_Obj *
 Zip_FSListVolumesProc(void)
@@ -2578,6 +3320,23 @@ Zip_FSListVolumesProc(void)
     Unlock();
     return vols;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSChdirProc --
+ *
+ *	If the path object refers to a directory within the ZIP
+ *	filesystem the current directory is set to this directory.
+ *
+ * Results:
+ *	TCL_OK on success, -1 on error with error number set.
+ *
+ * Side effects:
+ *	The global cwdPathPtr may change value.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 Zip_FSChdirProc(Tcl_Obj *pathPtr)
@@ -2601,6 +3360,23 @@ Zip_FSChdirProc(Tcl_Obj *pathPtr)
     Tcl_DStringFree(&ds);
     return ret;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSFileAttrStringsProc --
+ *
+ *	This function implements the ZIP filesystem dependent 'file attributes'
+ *	subcommand, for listing the set of possible attribute strings.
+ *
+ * Results:
+ *	An array of strings
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static CONST char *CONST86 *
 Zip_FSFileAttrStringsProc(Tcl_Obj *pathPtr, Tcl_Obj** objPtrRef)
@@ -2617,6 +3393,26 @@ Zip_FSFileAttrStringsProc(Tcl_Obj *pathPtr, Tcl_Obj** objPtrRef)
 
     return attrs;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSFileAttrsGetProc --
+ *
+ *	This function implements the ZIP filesystem specific
+ *	'file attributes' subcommand, for 'get' operations.
+ *
+ * Results:
+ *	Standard Tcl return code. The object placed in objPtrRef (if TCL_OK
+ *	was returned) is likely to have a refCount of zero. Either way we must
+ *	either store it somewhere (e.g. the Tcl result), or Incr/Decr its
+ *	refCount to ensure it is properly freed.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 Zip_FSFileAttrsGetProc(Tcl_Interp *interp, int index, Tcl_Obj *pathPtr,
@@ -2664,6 +3460,23 @@ done:
     Unlock();
     return ret;
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSFileAttrsSetProc --
+ *
+ *	This function implements the ZIP filesystem specific
+ *	'file attributes' subcommand, for 'set' operations.
+ *
+ * Results:
+ *	Standard Tcl return code.
+ *
+ * Side effects:
+ *	None.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static int
 Zip_FSFileAttrsSetProc(Tcl_Interp *interp, int index, Tcl_Obj *pathPtr,
@@ -2674,7 +3487,18 @@ Zip_FSFileAttrsSetProc(Tcl_Interp *interp, int index, Tcl_Obj *pathPtr,
     }
     return TCL_ERROR;
 }
-
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSFilesystemPathTypeProc --
+ *
+ * Results:
+ *
+ * Side effects:
+ *
+ *-------------------------------------------------------------------------
+ */
 
 static Tcl_Obj *
 Zip_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr)
@@ -2683,6 +3507,29 @@ Zip_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr)
 }
 
 #ifndef ANDROID
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zip_FSLoadFile --
+ *
+ *	This functions deals with loading native object code. If
+ *	the given path object refers to a file within the ZIP
+ *	filesystem, an approriate error code is returned to delegate
+ *	loading to the caller (by copying the file to temp store
+ *	and loading from there). As fallback when the file refers
+ *	to the ZIP file system but is not present, it is looked up
+ *	relative to the executable and loaded from there when available.
+ *
+ * Results:
+ *	TCL_OK on success, -1 otherwise with error number set.
+ *
+ * Side effects:
+ *	Loads native code into the process address space.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 static int
 Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	       Tcl_FSUnloadFileProc **unloadProcPtr, int flags)
@@ -2741,6 +3588,11 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 }
 #endif
 
+
+/*
+ * Define the ZIP filesystem dispatch table.
+ */
+
 Tcl_Filesystem zipfsFilesystem = {
     "zipfs",
     sizeof (Tcl_Filesystem),
@@ -2781,6 +3633,24 @@ Tcl_Filesystem zipfsFilesystem = {
 
 #endif /* HAVE_ZLIB */
 
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zipfs_doInit --
+ *
+ *	Perform per interpreter initialization of this module.
+ *
+ * Results:
+ *	The return value is a standard Tcl result.
+ *
+ * Side effects:
+ *	Initializes this module if not already initialized, and adds
+ *	module related commands to the given interpreter.
+ *
+ *-------------------------------------------------------------------------
+ */
+
 static int
 Zipfs_doInit(Tcl_Interp *interp, int safe)
 {
@@ -2809,20 +3679,28 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
     /* one-time initialization */
     WriteLock();
     if (!ZipFS.initialized) {
+#ifdef TCL_THREADS
 	static const Tcl_Time t = { 0, 0 };
 
-	/* inflate condition */
+	/*
+	 * Inflate condition variable.
+	 */
 	Tcl_MutexLock(&ZipFSMutex);
 	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, &t);
 	Tcl_MutexUnlock(&ZipFSMutex);
+#endif
 #ifdef ANDROID
-	/* force loadFileProc to native one */
+	/*
+	 * Force loadFileProc to native implementation since the
+	 * package manger already extracted the shared libraries
+	 * from the APK at install time.
+	 */ 
 	zipfsFilesystem.loadFileProc = tclNativeFilesystem.loadFileProc;
 #endif
 	Tcl_FSRegister(NULL, &zipfsFilesystem);
 	Tcl_InitHashTable(&ZipFS.fileHash, TCL_STRING_KEYS);
 	Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
-	ZipFS.initialized = 1;
+	ZipFS.initialized = ZipFS.idCount = 1;
 #if defined(ZIPFS_IN_TCL) || defined(ZIPFS_IN_TK)
 	Tcl_StaticPackage(interp, "zipfs", Zipfs_Init, Zipfs_SafeInit);
 #endif
@@ -2854,6 +3732,24 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
     return TCL_ERROR;
 #endif
 }
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zipfs_Init, Zipfs_SafeInit --
+ *
+ *	These functions are invoked to perform per interpreter initialization
+ *	of this module.
+ *
+ * Results:
+ *	The return value is a standard Tcl result.
+ *
+ * Side effects:
+ *	Initializes this module if not already initialized, and adds
+ *	module related commands to the given interpreter.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 int
 Zipfs_Init(Tcl_Interp *interp)
@@ -2868,6 +3764,16 @@ Zipfs_SafeInit(Tcl_Interp *interp)
 }
 
 #ifndef HAVE_ZLIB
+
+/*
+ *-------------------------------------------------------------------------
+ *
+ * Zipfs_Mount, Zipfs_Unmount --
+ *
+ *	Dummy version when no ZLIB support available.
+ *
+ *-------------------------------------------------------------------------
+ */
 
 int
 Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
