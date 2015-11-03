@@ -830,7 +830,14 @@ ZipFSOpenArchive(Tcl_Interp *interp, CONST char *zipname, int needZip,
 	    goto error;
 	}
 	Tcl_Seek(zf->chan, 0, SEEK_SET);
-	zf->tofree = zf->data = (unsigned char *) Tcl_Alloc(zf->length);
+	zf->tofree = zf->data = (unsigned char *) Tcl_AttemptAlloc(zf->length);
+	if (zf->tofree == NULL) {
+	    if (interp) {
+		Tcl_SetObjResult(interp,
+				 Tcl_NewStringObj("out of memory", -1));
+	    }
+	    goto error;
+	}
 	i = Tcl_Read(zf->chan, (char *) zf->data, zf->length);
 	if (i != zf->length) {
 	    if (interp) {
@@ -1092,7 +1099,16 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
     if (strcmp(mntpt, "/") == 0) {
 	mntpt = "";
     }
-    zf = (ZipFile *) Tcl_Alloc(sizeof (*zf) + strlen(mntpt) + 1);
+    zf = (ZipFile *) Tcl_AttemptAlloc(sizeof (*zf) + strlen(mntpt) + 1);
+    if (zf == NULL) {
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "out of memory", (char *) NULL);
+	}
+	Unlock();
+	Tcl_DStringFree(&ds);
+	ZipFSCloseArchive(interp, &zf0);
+	return TCL_ERROR;
+    }
     *zf = zf0;
     zf->name = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
     strcpy(zf->mntpt, mntpt);
@@ -2263,8 +2279,8 @@ ZipChannelClose(ClientData instanceData, Tcl_Interp *interp)
 	ZipEntry *z = info->zipentry;
 	unsigned char *newdata;
 
-	newdata =
-	    (unsigned char *) Tcl_Realloc((char *) info->ubuf, info->nread);
+	newdata = (unsigned char *)
+	    Tcl_AttemptRealloc((char *) info->ubuf, info->nread);
 	if (newdata != NULL) {
 	    if (z->data != NULL) {
 		Tcl_Free((char *) z->data);
@@ -2595,7 +2611,13 @@ ZipChannelOpen(Tcl_Interp *interp, char *filename, int mode, int permissions)
     } else {
 	flags = TCL_WRITABLE;
     }
-    info = (ZipChannel *) Tcl_Alloc (sizeof (*info));
+    info = (ZipChannel *) Tcl_AttemptAlloc(sizeof (*info));
+    if (info == NULL) {
+	if (interp != NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("out of memory", -1));
+	}
+	goto error;
+    }
     info->zipfile = z->zipfile;
     info->zipentry = z;
     info->nread = 0;
@@ -2606,7 +2628,19 @@ ZipChannelOpen(Tcl_Interp *interp, char *filename, int mode, int permissions)
 	info->nmax = ZipFS.wrmax;
 	info->iscompr = 0;
 	info->isenc = 0;
-	info->ubuf = (unsigned char *) Tcl_Alloc(info->nmax);
+	info->ubuf = (unsigned char *) Tcl_AttemptAlloc(info->nmax);
+	if (info->ubuf == NULL) {
+merror0:
+	    if (info->ubuf != NULL) {
+		Tcl_Free((char *) info->ubuf);
+	    }
+	    Tcl_Free((char *) info);
+	    if (interp != NULL) {
+		Tcl_SetObjResult(interp,
+		    Tcl_NewStringObj("out of memory", -1));
+	    }
+	    goto error;
+	}
 	memset(info->ubuf, 0, info->nmax);
 	if (trunc) {
 	    info->nbyte = 0;
@@ -2650,7 +2684,11 @@ ZipChannelOpen(Tcl_Interp *interp, char *filename, int mode, int permissions)
 		    stream.avail_in = z->nbytecompr;
 		    if (z->isenc) {
 			stream.avail_in -= 12;
-			cbuf = (unsigned char *) Tcl_Alloc(stream.avail_in);
+			cbuf = (unsigned char *)
+			    Tcl_AttemptAlloc(stream.avail_in);
+			if (cbuf == NULL) {
+			    goto merror0;
+			}
 			for (i = 0; i < stream.avail_in; i++) {
 			    ch = info->ubuf[i];
 			    cbuf[i] = zdecode(info->keys, crc32tab, ch);
@@ -2747,7 +2785,11 @@ cerror0:
 	    stream.avail_in = z->nbytecompr;
 	    if (info->isenc) {
 		stream.avail_in -= 12;
-		ubuf = (unsigned char *) Tcl_Alloc(stream.avail_in);
+		ubuf = (unsigned char *) Tcl_AttemptAlloc(stream.avail_in);
+		if (ubuf == NULL) {
+		    info->ubuf = NULL;
+		    goto merror;
+		}
 		for (i = 0; i < stream.avail_in; i++) {
 		    ch = info->ubuf[i];
 		    ubuf[i] = zdecode(info->keys, crc32tab, ch);
@@ -2757,7 +2799,21 @@ cerror0:
 		stream.next_in = info->ubuf;
 	    }
 	    stream.next_out = info->ubuf =
-		(unsigned char *) Tcl_Alloc(info->nbyte);
+		(unsigned char *) Tcl_AttemptAlloc(info->nbyte);
+	    if (info->ubuf == NULL) {
+merror:
+		if (ubuf != NULL) {
+		    info->isenc = 0;
+		    memset(info->keys, 0, sizeof (info->keys));
+		    Tcl_Free((char *) ubuf);
+		}
+		Tcl_Free((char *) info);
+		if (interp != NULL) {
+		    Tcl_SetObjResult(interp,
+			Tcl_NewStringObj("out of memory", -1));
+		}
+		goto error;
+	    }
 	    stream.avail_out = info->nbyte;
 	    if (inflateInit2(&stream, -15) != Z_OK) {
 		goto cerror;
