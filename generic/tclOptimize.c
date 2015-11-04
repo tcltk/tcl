@@ -474,7 +474,7 @@ CompactCode(
     int pc, nops;
     int inst, i, nextpc;
     int codeSize = (envPtr->codeNext - envPtr->codeStart);
-    int NEW[codeSize + 1];
+    int *NEW = (int*) ckalloc(sizeof(int)*(codeSize + 1));
 
     /*
      * First pass: shrink jumps and push, compute new positions.
@@ -538,7 +538,7 @@ CompactCode(
     }
 
     if (nops == 0) {
-	return;
+	goto done;
     }
     NEW[codeSize] = codeSize - nops;
     
@@ -596,25 +596,25 @@ CompactCode(
 		target = pc + GET_INT4_AT_PC(pc+1);
 		offset = NEW[target]-NEW[pc];
 		SET_INT4_AT_PC(offset, pc+1);
-		if (inst != INST_START_CMD) {
+		if (inst == INST_START_CMD) break;
+		if ((offset < 127) && (offset > -128)) {
 		    if (offset == 5) {
 			if (inst == INST_JUMP4) {
 			    INST_AT_PC(pc)   = INST_NOP;
 			    INST_AT_PC(pc+1) = INST_NOP;
+			    nops += 2;
 			} else {
 			    INST_AT_PC(pc) -= 1;
 			    SET_INT1_AT_PC(2, pc+1);
 			}
-			goto push3nops;
 		    } else if ((offset < 127) && (offset > -128)) {
 			INST_AT_PC(pc) -= 1;
 			SET_INT1_AT_PC(offset, pc+1);
-			push3nops:
-			INST_AT_PC(pc+2) = INST_NOP;
-			INST_AT_PC(pc+3) = INST_NOP;
-			INST_AT_PC(pc+4) = INST_NOP;
-			nops += 5;
 		    }
+		    INST_AT_PC(pc+2) = INST_NOP;
+		    INST_AT_PC(pc+3) = INST_NOP;
+		    INST_AT_PC(pc+4) = INST_NOP;
+		    nops += 3;
 		}
 		break;
 
@@ -705,6 +705,9 @@ CompactCode(
 	codeSize = NEW[codeSize];
 	goto restart;
     }
+
+    done:
+    ckfree((char*) NEW);
 }
 
 /*
