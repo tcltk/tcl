@@ -1374,7 +1374,10 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  */
 
 #define TclEmitPush(objIndex, envPtr) \
-    TclEmitInstInt4(INST_PUSH4, objIndex, (envPtr))
+    do {							 \
+	register int objIndexCopy = (objIndex);			 \
+	TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr));	 \
+    } while (0)
 
 /*
  * Macros to update a (signed or unsigned) integer starting at a pointer. The
