@@ -37,7 +37,7 @@ declare 1 {
 	    void *clientDataPtr)
 }
 declare 2 {
-    void Tcl_Panic(const char *format, ...)
+    TCL_NORETURN void Tcl_Panic(const char *format, ...)
 }
 declare 3 {
     char *Tcl_Alloc(unsigned int size)
@@ -480,7 +480,7 @@ declare 132 {
     void Tcl_EventuallyFree(ClientData clientData, Tcl_FreeProc *freeProc)
 }
 declare 133 {
-    void Tcl_Exit(int status)
+    TCL_NORETURN void Tcl_Exit(int status)
 }
 declare 134 {
     int Tcl_ExposeCommand(Tcl_Interp *interp, const char *hiddenCmdToken,
@@ -815,7 +815,7 @@ declare 229 {
     void Tcl_SetMaxBlockTime(const Tcl_Time *timePtr)
 }
 declare 230 {
-    void Tcl_SetPanicProc(Tcl_PanicProc *panicProc)
+    void Tcl_SetPanicProc(TCL_NORETURN1 Tcl_PanicProc *panicProc)
 }
 declare 231 {
     int Tcl_SetRecursionLimit(Tcl_Interp *interp, int depth)
@@ -986,7 +986,7 @@ declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
 }
 declare 278 {
-    void Tcl_PanicVA(const char *format, va_list argList)
+    TCL_NORETURN void Tcl_PanicVA(const char *format, va_list argList)
 }
 declare 279 {
     void Tcl_GetVersion(int *major, int *minor, int *patchLevel, int *type)
@@ -1872,7 +1872,7 @@ declare 518 {
 
 # TIP#121 (exit handler) dkf for Joe Mistachkin
 declare 519 {
-    Tcl_ExitProc *Tcl_SetExitProc(Tcl_ExitProc *proc)
+    Tcl_ExitProc *Tcl_SetExitProc(TCL_NORETURN1 Tcl_ExitProc *proc)
 }
 
 # TIP#143 (resource limits) dkf

@@ -284,7 +284,7 @@ TclCompileStringCatCmd(
 	PushStringLiteral(envPtr, "");
 	return TCL_OK;
     }
-	
+
     /* General case: issue CONCAT1's (by chunks of 254 if needed), folding
        contiguous constants along the way */
 
@@ -305,7 +305,7 @@ TclCompileStringCatCmd(
 	    if (folded) {
 		int len;
 		const char *bytes = Tcl_GetStringFromObj(folded, &len);
-		
+
 		PushLiteral(envPtr, bytes, len);
 		Tcl_DecrRefCount(folded);
 		folded = NULL;
@@ -323,7 +323,7 @@ TclCompileStringCatCmd(
     if (folded) {
 	int len;
 	const char *bytes = Tcl_GetStringFromObj(folded, &len);
-	
+
 	PushLiteral(envPtr, bytes, len);
 	Tcl_DecrRefCount(folded);
 	folded = NULL;
@@ -995,7 +995,7 @@ TclCompileStringRangeCmd(
 
     /*
      * Push the operands onto the stack and then the substring operation.
-     */    
+     */
 
   nonConstantIndices:
     CompileWord(envPtr, stringTokenPtr,			interp, 1);
@@ -2149,7 +2149,7 @@ IssueSwitchChainedTests(
 	}
 
 	/*
-	 * Now do the actual compilation. Note that we do not use BODY() 
+	 * Now do the actual compilation. Note that we do not use BODY()
 	 * because we may have synthesized the tokens in a non-standard
 	 * pattern.
 	 */
@@ -2590,7 +2590,7 @@ TclCompileThrowCmd(
     }
     CompileWord(envPtr, msgToken, interp, 2);
 
-    codeIsList = codeKnown && (TCL_OK == 
+    codeIsList = codeKnown && (TCL_OK ==
 	    Tcl_ListObjLength(interp, objPtr, &len));
     codeIsValid = codeIsList && (len != 0);
 
@@ -3525,16 +3525,16 @@ TclCompileUnsetCmd(
 	    }
 	    return TCL_ERROR;
 	}
-	if (i == 1) {
+	if (varCount == 0) {
 	    const char *bytes;
 	    int len;
 
 	    bytes = Tcl_GetStringFromObj(leadingWord, &len);
-	    if (len == 11 && !strncmp("-nocomplain", bytes, 11)) {
+	    if (i == 1 && len == 11 && !strncmp("-nocomplain", bytes, 11)) {
 		flags = 0;
-		haveFlags = 1;
-	    } else if (len == 2 && !strncmp("--", bytes, 2)) {
-		haveFlags = 1;
+		haveFlags++;
+	    } else if (i == (2 - flags) && len == 2 && !strncmp("--", bytes, 2)) {
+		haveFlags++;
 	    } else {
 		varCount++;
 	    }
@@ -3549,7 +3549,7 @@ TclCompileUnsetCmd(
      */
 
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    if (haveFlags) {
+    for (i=0; i<haveFlags;i++) {
 	varTokenPtr = TokenAfter(varTokenPtr);
     }
     for (i=1+haveFlags ; i<parsePtr->numWords ; i++) {

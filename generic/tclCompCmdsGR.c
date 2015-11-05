@@ -144,7 +144,7 @@ TclCompileGlobalCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass throug the 
+	/* TODO: Consider what value can pass throug the
 	 * IndexTailVarIfKnown() screen.  Full CompileWord()
 	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);
@@ -1180,20 +1180,7 @@ TclCompileListCmd(
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
     if (listObj != NULL) {
-	int len;
-	const char *bytes = Tcl_GetStringFromObj(listObj, &len);
-
-	PushLiteral(envPtr, bytes, len);
-	Tcl_DecrRefCount(listObj);
-	if (len > 0) {
-	    /*
-	     * Force list interpretation!
-	     */
-
-	    TclEmitOpcode(	INST_DUP,		envPtr);
-	    TclEmitOpcode(	INST_LIST_LENGTH,	envPtr);
-	    TclEmitOpcode(	INST_POP,		envPtr);
-	}
+	TclEmitPush(TclAddLiteralObj(envPtr, listObj, NULL), envPtr);
 	return TCL_OK;
     }
 
@@ -1471,7 +1458,7 @@ TclCompileLreplaceCmd(
 	return TCL_ERROR;
     }
 
-    if(idx2 != INDEX_END && idx2 < idx1) {
+    if(idx2 != INDEX_END && idx2 >= 0 && idx2 < idx1) {
 	idx2 = idx1-1;
     }
 
@@ -2873,7 +2860,7 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass throug the 
+	/* TODO: Consider what value can pass throug the
 	 * IndexTailVarIfKnown() screen.  Full CompileWord()
 	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);

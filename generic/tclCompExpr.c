@@ -672,10 +672,12 @@ ParseExpr(
 
 	if (nodesUsed >= nodesAvailable) {
 	    int size = nodesUsed * 2;
-	    OpNode *newPtr;
+	    OpNode *newPtr = NULL;
 
 	    do {
+	      if (size <= UINT_MAX/sizeof(OpNode)) {
 		newPtr = attemptckrealloc(nodes, size * sizeof(OpNode));
+	      }
 	    } while ((newPtr == NULL)
 		    && ((size -= (size - nodesUsed) / 2) > nodesUsed));
 	    if (newPtr == NULL) {

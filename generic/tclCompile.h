@@ -1137,7 +1137,7 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
-MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
+MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
@@ -1160,7 +1160,7 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
 			    const char *script, const char *command,
 			    int length, const unsigned char *pc,
-			    Tcl_Obj **tosPtr); 
+			    Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj **tosPtr);
 MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
@@ -1642,7 +1642,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 
 #define PushVarNameWord(i,v,e,f,l,sc,word) \
     SetLineInformation(word);						\
-    TclPushVarName(i,v,e,f,l,sc)					
+    TclPushVarName(i,v,e,f,l,sc)
 
 /*
  * Often want to issue one of two versions of an instruction based on whether

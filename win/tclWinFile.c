@@ -17,7 +17,11 @@
 #include <winioctl.h>
 #include <shlobj.h>
 #include <lm.h>		/* For TclpGetUserHome(). */
+#include <userenv.h>		/* For TclpGetUserHome(). */
 
+#ifdef _MSC_VER
+#   pragma comment(lib, "userenv.lib")
+#endif
 /*
  * The number of 100-ns intervals between the Windows system epoch (1601-01-01
  * on the proleptic Gregorian calendar) and the Posix epoch (1970-01-01).
@@ -172,7 +176,7 @@ static int		WinLink(const TCHAR *LinkSource,
 			    const TCHAR *LinkTarget, int linkAction);
 static int		WinSymLinkDirectory(const TCHAR *LinkDirectory,
 			    const TCHAR *LinkTarget);
-MODULE_SCOPE void	tclWinDebugPanic(const char *format, ...);
+MODULE_SCOPE TCL_NORETURN void	tclWinDebugPanic(const char *format, ...);
 
 /*
  *--------------------------------------------------------------------
@@ -789,7 +793,7 @@ NativeWriteReparse(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {
@@ -1461,12 +1465,16 @@ TclpGetUserHome(
 	    } else {
 		/*
 		 * User exists but has no home dir. Return
-		 * "{Windows Drive}:/users/default".
+		 * "{GetProfilesDirectory}/<user>".
 		 */
-
-		GetWindowsDirectoryW(buf, MAX_PATH);
-		Tcl_UniCharToUtfDString(buf, 2, bufferPtr);
-		TclDStringAppendLiteral(bufferPtr, "/users/default");
+		DWORD i, size = MAX_PATH;
+		GetProfilesDirectoryW(buf, &size);
+		for (i = 0; i < size; ++i){
+		    if (buf[i] == '\\') buf[i] = '/';
+		}
+		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+		Tcl_DStringAppend(bufferPtr, "/", -1);
+		Tcl_DStringAppend(bufferPtr, name, -1);
 	    }
 	    result = Tcl_DStringValue(bufferPtr);
 	    NetApiBufferFree((void *) uiPtr);
@@ -2897,7 +2905,7 @@ ClientData
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
-    WCHAR *nativePathPtr;
+    WCHAR *nativePathPtr = NULL;
     const char *str;
     Tcl_Obj *validPathPtr;
     size_t len;
@@ -2914,6 +2922,7 @@ TclNativeCreateNativeRep(
 	if (validPathPtr == NULL) {
 	    return NULL;
 	}
+	/* refCount of validPathPtr was already incremented in Tcl_FSGetTranslatedPath */
     } else {
 	/*
 	 * Make sure the normalized path is set.
@@ -2923,6 +2932,7 @@ TclNativeCreateNativeRep(
 	if (validPathPtr == NULL) {
 	    return NULL;
 	}
+	/* validPathPtr returned from Tcl_FSGetNormalizedPath is owned by Tcl, so incr refCount here */
 	Tcl_IncrRefCount(validPathPtr);
     }
 
@@ -2931,7 +2941,7 @@ TclNativeCreateNativeRep(
 
     if (strlen(str)!=(unsigned int)len) {
 	/* String contains NUL-bytes. This is invalid. */
-	return 0;
+	goto done;
     }
     /* For a reserved device, strip a possible postfix ':' */
     len = WinIsReserved(str);
@@ -2940,13 +2950,13 @@ TclNativeCreateNativeRep(
 	 * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
 	len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
 	if (len==0) {
-	    return 0;
+	    goto done;
 	}
     }
     /* Overallocate 6 chars, making some room for extended paths */
     wp = nativePathPtr = ckalloc( (len+6) * sizeof(WCHAR) );
     if (nativePathPtr==0) {
-      return 0;
+      goto done;
     }
     MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr, len+1);
     /*
@@ -2997,6 +3007,10 @@ TclNativeCreateNativeRep(
 	}
 	++wp;
     }
+
+  done:
+
+    TclDecrRefCount(validPathPtr);
     return nativePathPtr;
 }
 

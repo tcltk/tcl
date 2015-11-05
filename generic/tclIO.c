@@ -578,11 +578,11 @@ TclFinalizeIOSubsystem(void)
     int active = 1;		/* Flag == 1 while there's still work to do */
     int doflushnb;
 
-    /* Fetch the pre-TIP#398 compatibility flag */ 
+    /* Fetch the pre-TIP#398 compatibility flag */
     {
         const char *s;
         Tcl_DString ds;
-        
+
         s = TclGetEnv("TCL_FLUSH_NONBLOCKING_ON_EXIT", &ds);
         doflushnb = ((s != NULL) && strcmp(s, "0"));
         if (s != NULL) {
@@ -635,9 +635,9 @@ TclFinalizeIOSubsystem(void)
                     /* Set the channel back into blocking mode to ensure that we wait
                      * for all data to flush out.
                      */
-                
+
                 (void) Tcl_SetChannelOption(NULL, (Tcl_Channel) chanPtr,
-                                            "-blocking", "on");                    
+                                            "-blocking", "on");
             }
 
 	    if ((chanPtr == (Channel *) tsdPtr->stdinChannel) ||
@@ -1022,8 +1022,7 @@ DeleteChannelTable(
 
 	Tcl_DeleteHashEntry(hPtr);
 	SetFlag(statePtr, CHANNEL_TAINTED);
-	statePtr->refCount--;
-	if (statePtr->refCount <= 0) {
+	if (statePtr->refCount-- <= 1) {
 	    if (!GotFlag(statePtr, BG_FLUSH_SCHEDULED)) {
 		(void) Tcl_Close(interp, (Tcl_Channel) chanPtr);
 	    }
@@ -2657,7 +2656,7 @@ FlushChannel(
      * the post-condition that on a successful return to caller we've
      * left space in the current output buffer for more writing (the flush
      * call was to make new room).
-     * If the channel is blocking, then yes, so we guarantee that 
+     * If the channel is blocking, then yes, so we guarantee that
      * blocking flushes actually flush all pending data.
      * Otherwise, no.  Keep the current output buffer where it is so more
      * can be written to it, possibly filling it, to promote more efficient
@@ -2844,7 +2843,7 @@ FlushChannel(
 	    /*
 	     * When we are calledFromAsyncFlush, that means a writable
 	     * state on the channel triggered the call, so we should be
-	     * able to write something.  Either we did write something 
+	     * able to write something.  Either we did write something
 	     * and wroteSome should be set, or there was nothing left to
 	     * write in this call, and we've completed the BG flush.
 	     * These are the two cases above.  If we get here, that means
@@ -4224,7 +4223,7 @@ Write(
 	if (nextNewLine) {
 	    srcLimit = nextNewLine - src;
 	}
-	
+
 	/* Get space to write into */
 	bufPtr = statePtr->curOutPtr;
 	if (bufPtr == NULL) {
@@ -4252,7 +4251,7 @@ Write(
 
 	/* See chan-io-1.[89]. Tcl Bug 506297. */
 	statePtr->outputEncodingFlags &= ~TCL_ENCODING_START;
-	
+
 	if ((result != TCL_OK) && (srcRead + dstWrote == 0)) {
 	    /* We're reading from invalid/incomplete UTF-8 */
 	    ReleaseChannelBuffer(bufPtr);
@@ -4292,7 +4291,7 @@ Write(
 		Tcl_Panic("unknown output translation requested");
 		break;
 	    }
-	
+
 	    result |= Tcl_UtfToExternal(NULL, encoding, nl, nlLen,
 		statePtr->outputEncodingFlags,
 		&statePtr->outputEncodingState, dst,
@@ -4334,7 +4333,18 @@ Write(
 		return -1;
 	    }
 	    flushed += statePtr->bufSize;
-	    if (saved == 0 || src[-1] != '\n') {
+
+	    /*
+ 	     * We just flushed.  So if we have needNlFlush set to record
+ 	     * that we need to flush because theres a (translated) newline
+ 	     * in the buffer, that's likely not true any more.  But there
+ 	     * is a tricky exception.  If we have saved bytes that did not
+ 	     * really get flushed and those bytes came from a translation
+ 	     * of a newline as the last thing taken from the src array,
+ 	     * then needNlFlush needs to remain set to flag that the
+ 	     * next buffer still needs a newline flush.
+ 	     */
+	    if (needNlFlush && (saved == 0 || src[-1] != '\n')) {
 		needNlFlush = 0;
 	    }
 	}
@@ -5711,7 +5721,7 @@ DoReadChars(
     int factor = UTF_EXPANSION_FACTOR;
 
     binaryMode = (encoding == NULL)
-	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF) 
+	    && (statePtr->inputTranslation == TCL_TRANSLATE_LF)
 	    && (statePtr->inEofChar == '\0');
 
     if (appendFlag == 0) {
@@ -5744,6 +5754,7 @@ DoReadChars(
 	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
 	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
 
+	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -5755,6 +5766,7 @@ DoReadChars(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	/* TODO: We don't need this call? */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -5981,7 +5993,7 @@ ReadChars(
      * expand when converted to UTF-8 chars. This guess comes from analyzing
      * how many characters were produced by the previous pass.
      */
-    
+
     int factor = *factorPtr;
     int dstLimit = TCL_UTF_MAX - 1 + toRead * factor / UTF_EXPANSION_FACTOR;
 
@@ -6014,7 +6026,7 @@ ReadChars(
     while (1) {
 	int dstDecoded, dstRead, dstWrote, srcRead, numChars, code;
 	int flags = statePtr->inputEncodingFlags | TCL_ENCODING_NO_TERMINATE;
-	
+
 	if (charsToRead > 0) {
 	    flags |= TCL_ENCODING_CHAR_LIMIT;
 	    numChars = charsToRead;
@@ -6149,7 +6161,7 @@ ReadChars(
 		char buffer[TCL_UTF_MAX + 1];
 		int read, decoded, count;
 
-		/* 
+		/*
 		 * Didn't get everything the buffer could offer
 		 */
 
@@ -6205,7 +6217,7 @@ ReadChars(
 	    /* FALL THROUGH - get more data (dstWrote == 0) */
 	}
 
-	/* 
+	/*
 	 * The translation transformation can only reduce the number
 	 * of chars when it converts \r\n into \n.  The reduction in
 	 * the number of chars is the difference in bytes read and written.
@@ -6215,7 +6227,7 @@ ReadChars(
 
 	if (charsToRead > 0 && numChars > charsToRead) {
 
-	    /* 
+	    /*
 	     * TODO: This cannot happen anymore.
 	     *
 	     * We read more chars than allowed.  Reset limits to
@@ -6238,7 +6250,7 @@ ReadChars(
 
 	    assert (numChars == 0);
 
-	    /* 
+	    /*
 	     * There is one situation where this is the correct final
 	     * result.  If the src buffer contains only a single \n
 	     * byte, and we are in TCL_TRANSLATE_AUTO mode, and
@@ -6331,7 +6343,7 @@ ReadChars(
  *---------------------------------------------------------------------------
  */
 
-static void 
+static void
 TranslateInputEOL(
     ChannelState *statePtr,	/* Channel being read, for EOL translation and
 				 * EOF character. */
@@ -6537,7 +6549,7 @@ Tcl_Ungets(
     /*
      * Clear the EOF flags, and clear the BLOCKED bit.
      */
- 
+
     if (GotFlag(statePtr, CHANNEL_EOF)) {
 	statePtr->inputEncodingFlags |= TCL_ENCODING_START;
     }
@@ -6694,7 +6706,7 @@ GetInput(
     ChannelState *statePtr = chanPtr->state;
 				/* State info for channel */
 
-    /* 
+    /*
      * Verify that all callers know better than to call us when
      * it's recorded that the next char waiting to be read is the
      * eofchar.
@@ -8316,6 +8328,11 @@ Tcl_NotifyChannel(
      */
 
     if (chanPtr->typePtr != NULL) {
+	/*
+	 * TODO: This call may not be needed.  If a handler induced a
+	 * change in interest, that handler should have made its own
+	 * UpdateInterest() call, one would think.
+	 */
 	UpdateInterest(chanPtr);
     }
 
@@ -9206,7 +9223,7 @@ MBEvent(
     }
 }
 
-static int 
+static int
 MBRead(
     CopyState *csPtr)
 {
@@ -9227,7 +9244,7 @@ MBRead(
     }
 }
 
-static int 
+static int
 MBWrite(
     CopyState *csPtr)
 {
@@ -9654,7 +9671,7 @@ CopyData(
  * DoRead --
  *
  *	Stores up to "bytesToRead" bytes in memory pointed to by "dst".
- *	These bytes come from reading the channel "chanPtr" and 
+ *	These bytes come from reading the channel "chanPtr" and
  *	performing the configured translations.  No encoding conversions
  *	are applied to the bytes being read.
  *
@@ -9706,6 +9723,7 @@ DoRead(
 	assert( statePtr->inputEncodingFlags & TCL_ENCODING_END );
 	assert( !GotFlag(statePtr, CHANNEL_BLOCKED|INPUT_SAW_CR) );
 
+	/* TODO: Don't need this call */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -9717,6 +9735,7 @@ DoRead(
 	}
 	ResetFlag(statePtr, CHANNEL_BLOCKED|CHANNEL_EOF);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
+	/* TODO: Don't need this call */
 	UpdateInterest(chanPtr);
 	return 0;
     }
@@ -9724,7 +9743,7 @@ DoRead(
     TclChannelPreserve((Tcl_Channel)chanPtr);
     while (bytesToRead) {
 	/*
-	 * Each pass through the loop is intended to process up to 
+	 * Each pass through the loop is intended to process up to
 	 * one channel buffer.
 	 */
 
@@ -9732,13 +9751,13 @@ DoRead(
 	ChannelBuffer *bufPtr = statePtr->inQueueHead;
 
 	/*
-	 * Don't read more data if we have what we need. 
+	 * Don't read more data if we have what we need.
 	 */
 
 	while (!bufPtr ||			/* We got no buffer!   OR */
 		(!IsBufferFull(bufPtr) && 	/* Our buffer has room AND */
 		(BytesLeft(bufPtr) < bytesToRead) ) ) {
-						/* Not enough bytes in it 
+						/* Not enough bytes in it
 						 * yet to fill the dst */
 	    int code;
 
@@ -9783,7 +9802,6 @@ DoRead(
 	     */
 
 	    if (bytesToRead == 0) {
-		UpdateInterest(chanPtr);
 		break;
 	    }
 
@@ -9792,7 +9810,6 @@ DoRead(
 	     */
 
 	    if (GotFlag(statePtr, CHANNEL_STICKY_EOF)) {
-		UpdateInterest(chanPtr);
 		break;
 	    }
 
@@ -9817,7 +9834,6 @@ DoRead(
 		} else if (statePtr->flags & CHANNEL_BLOCKED) {
 		    /* ...and we cannot get more now. */
 		    SetFlag(statePtr, CHANNEL_NEED_MORE_DATA);
-		    UpdateInterest(chanPtr);
 		    break;
 		} else {
 		    /* ... so we need to get some. */
@@ -9869,6 +9885,7 @@ DoRead(
 		|| Tcl_InputBuffered((Tcl_Channel)chanPtr) == 0);
 	assert( !(GotFlag(statePtr, CHANNEL_EOF|CHANNEL_BLOCKED)
 		== (CHANNEL_EOF|CHANNEL_BLOCKED)) );
+    UpdateInterest(chanPtr);
     TclChannelRelease((Tcl_Channel)chanPtr);
     return (int)(p - dst);
 }

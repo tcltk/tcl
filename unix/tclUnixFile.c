@@ -155,6 +155,11 @@ TclpFindExecutable(
 	goto done;
     }
 
+    if (TclpGetCwd(NULL, &cwd) == NULL) {
+	TclSetObjNameOfExecutable(Tcl_NewObj(), NULL);
+	goto done;
+    }
+
     /*
      * The name is relative to the current working directory. First strip off
      * a leading "./", if any, then add the full path name of the current
@@ -167,8 +172,6 @@ TclpFindExecutable(
 
     Tcl_DStringInit(&nameString);
     Tcl_DStringAppend(&nameString, name, -1);
-
-    TclpGetCwd(NULL, &cwd);
 
     Tcl_DStringFree(&buffer);
     Tcl_UtfToExternalDString(NULL, Tcl_DStringValue(&cwd),

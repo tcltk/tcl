@@ -122,7 +122,7 @@ oo::class create theSubclass {
     }
 }
 theSubclass create obj
-oo::define obj method example args {
+oo::objdefine obj method example args {
     puts "per-object method, args = $args"
     \fBnext\fR x {*}$args y
     \fBnext\fR
@@ -176,7 +176,7 @@ oo::class create cache {
 }
 
 oo::object create demo
-oo::define demo {
+oo::objdefine demo {
     mixin cache
     method compute {a b c} {
         after 3000 \fI;# Simulate deep thought\fR
