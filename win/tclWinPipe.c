@@ -82,6 +82,12 @@ static ProcInfo *procList;
 #define PIPE_EXTRABYTE	(1<<3)	/* The reader thread has consumed one byte. */
 
 /*
+ * TODO: It appears the whole EXTRABYTE machinery is in place to support
+ * outdated Win 95 systems.  If this can be confirmed, much code can be
+ * deleted.
+ */
+
+/*
  * This structure describes per-instance data for a pipe based channel.
  */
 

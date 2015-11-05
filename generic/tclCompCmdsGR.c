@@ -281,7 +281,6 @@ TclCompileIfCmd(
 		SetLineInformation(wordIdx);
 		Tcl_ResetResult(interp);
 		TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
-		TclClearNumConversion(envPtr);
 		if (jumpFalseFixupArray.next >= jumpFalseFixupArray.end) {
 		    TclExpandJumpFixupArray(&jumpFalseFixupArray);
 		}
@@ -501,7 +500,6 @@ TclCompileIncrCmd(
 	} else {
 	    SetLineInformation(2);
 	    CompileTokens(envPtr, incrTokenPtr, interp);
-	    TclClearNumConversion(envPtr);
 	}
     } else {			/* No incr amount given so use 1. */
 	haveImmValue = 1;
@@ -838,28 +836,16 @@ TclCompileLappendCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *varTokenPtr, *valueTokenPtr;
-    int isScalar, localIndex, numWords, i, offsetFwd;
+    int isScalar, localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
-
-    /*
-     * If we're not in a procedure, don't compile.
-     */
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
 
     /* TODO: Consider support for compiling expanded args. */
     numWords = parsePtr->numWords;
-    if (numWords == 1) {
+    if (numWords < 3) {
 	return TCL_ERROR;
     }
-    if (numWords != 3) {
-	/*
-	 * LAPPEND instructions currently only handle one value, but we can
-	 * handle some multi-value cases by stringing them together.
-	 */
 
+    if (numWords != 3 || envPtr->procPtr == NULL) {
 	goto lappendMultiple;
     }
 
@@ -913,41 +899,28 @@ TclCompileLappendCmd(
     return TCL_OK;
 
   lappendMultiple:
-    /*
-     * Can only handle the case where we are appending to a local scalar when
-     * there are multiple values to append.  Fortunately, this is common.
-     */
-
-    if (envPtr->procPtr == NULL) {
-	return TCL_ERROR;
-    }
     varTokenPtr = TokenAfter(parsePtr->tokenPtr);
-    PushVarNameWord(interp, varTokenPtr, envPtr, TCL_NO_ELEMENT,
+    PushVarNameWord(interp, varTokenPtr, envPtr, 0,
 	    &localIndex, &isScalar, 1);
-    if (!isScalar || localIndex < 0) {
-	return TCL_ERROR;
-    }
-
-    /*
-     * Definitely appending to a local scalar; generate the words and append
-     * them.
-     */
-
     valueTokenPtr = TokenAfter(varTokenPtr);
     for (i = 2 ; i < numWords ; i++) {
 	CompileWord(envPtr, valueTokenPtr, interp, i);
 	valueTokenPtr = TokenAfter(valueTokenPtr);
     }
-    TclEmitInstInt4(	  INST_LIST, numWords-2,		envPtr);
-    TclEmitInstInt4(	  INST_EXIST_SCALAR, localIndex,	envPtr);
-    TclEmitForwardJump(envPtr, JUMP_FALSE, &offsetFwd);
-    Emit14Inst(		  INST_LOAD_SCALAR, localIndex,		envPtr);
-    TclEmitInstInt4(	  INST_REVERSE, 2,			envPtr);
-    TclEmitOpcode(	  INST_LIST_CONCAT,			envPtr);
-
-    TclFixupForwardJumpToHere(envPtr, offsetFwd);
-    Emit14Inst(		  INST_STORE_SCALAR, localIndex,	envPtr);
-
+    TclEmitInstInt4(	    INST_LIST, numWords-2,		envPtr);
+    if (isScalar) {
+	if (localIndex < 0) {
+	    TclEmitOpcode(  INST_LAPPEND_LIST_STK,		envPtr);
+	} else {
+	    TclEmitInstInt4(INST_LAPPEND_LIST, localIndex,	envPtr);
+	}
+    } else {
+	if (localIndex < 0) {
+	    TclEmitOpcode(  INST_LAPPEND_LIST_ARRAY_STK,	envPtr);
+	} else {
+	    TclEmitInstInt4(INST_LAPPEND_LIST_ARRAY, localIndex,envPtr);
+	}
+    }
     return TCL_OK;
 }
 
@@ -1475,7 +1448,7 @@ TclCompileLreplaceCmd(
     Tcl_Token *tokenPtr, *listTokenPtr;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *tmpObj;
-    int idx1, idx2, i, offset;
+    int idx1, idx2, i, offset, offset2;
 
     if (parsePtr->numWords < 4) {
 	return TCL_ERROR;
@@ -1496,6 +1469,10 @@ TclCompileLreplaceCmd(
     tokenPtr = TokenAfter(tokenPtr);
     if (GetIndexFromToken(tokenPtr, &idx2) != TCL_OK) {
 	return TCL_ERROR;
+    }
+
+    if(idx2 != INDEX_END && idx2 < idx1) {
+	idx2 = idx1-1;
     }
 
     /*
@@ -1581,12 +1558,18 @@ TclCompileLreplaceCmd(
 	TclEmitOpcode(		INST_GT,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	offset2 = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
 	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+		envPtr->codeStart + offset2 + 1);
 	TclAdjustStackDepth(-1, envPtr);
     }
     TclEmitOpcode(		INST_DUP,			envPtr);
@@ -1631,12 +1614,18 @@ TclCompileLreplaceCmd(
 	TclEmitOpcode(		INST_GT,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitOpcode(		INST_DUP,			envPtr);
+	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+	offset2 = CurrentOffset(envPtr);
+	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
 	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
+	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+		envPtr->codeStart + offset2 + 1);
 	TclAdjustStackDepth(-1, envPtr);
     }
     TclEmitOpcode(		INST_DUP,			envPtr);
@@ -2029,7 +2018,7 @@ TclCompileNamespaceUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
 
     if (envPtr->procPtr == NULL) {
@@ -2064,10 +2053,8 @@ TclCompileNamespaceUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, i+1);
-
-	if ((localIndex < 0) || !isScalar) {
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(	INST_NSUPVAR, localIndex,	envPtr);
@@ -2253,7 +2240,7 @@ TclCompileRegexpCmd(
 	 * converted pattern as a literal.
 	 */
 
-	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact)
+	if (TclReToGlob(NULL, varTokenPtr[1].start, len, &ds, &exact, NULL)
 		== TCL_OK) {
 	    simple = 1;
 	    PushLiteral(envPtr, Tcl_DStringValue(&ds),Tcl_DStringLength(&ds));
@@ -2345,7 +2332,7 @@ TclCompileRegsubCmd(
     Tcl_Obj *patternObj = NULL, *replacementObj = NULL;
     Tcl_DString pattern;
     const char *bytes;
-    int len, exact, result = TCL_ERROR;
+    int len, exact, quantified, result = TCL_ERROR;
 
     if (parsePtr->numWords < 5 || parsePtr->numWords > 6) {
 	return TCL_ERROR;
@@ -2405,7 +2392,8 @@ TclCompileRegsubCmd(
      */
 
     bytes = Tcl_GetStringFromObj(patternObj, &len);
-    if (TclReToGlob(NULL, bytes, len, &pattern, &exact) != TCL_OK || exact) {
+    if (TclReToGlob(NULL, bytes, len, &pattern, &exact, &quantified)
+	    != TCL_OK || exact || quantified) {
 	goto done;
     }
     bytes = Tcl_DStringValue(&pattern);
@@ -2747,7 +2735,7 @@ TclCompileUpvarCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *tokenPtr, *otherTokenPtr, *localTokenPtr;
-    int isScalar, localIndex, numWords, i;
+    int localIndex, numWords, i;
     DefineLineInformation;	/* TIP #280 */
     Tcl_Obj *objPtr;
 
@@ -2810,10 +2798,8 @@ TclCompileUpvarCmd(
 	localTokenPtr = TokenAfter(otherTokenPtr);
 
 	CompileWord(envPtr, otherTokenPtr, interp, i);
-	PushVarNameWord(interp, localTokenPtr, envPtr, 0,
-		&localIndex, &isScalar, i+1);
-
-	if ((localIndex < 0) || !isScalar) {
+	localIndex = LocalScalarFromToken(localTokenPtr, envPtr);
+	if (localIndex < 0) {
 	    return TCL_ERROR;
 	}
 	TclEmitInstInt4(	INST_UPVAR, localIndex,		envPtr);

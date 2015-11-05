@@ -31,7 +31,7 @@
  * until Tcl uses config.h properly.
  */
 
-#if defined(_MSC_VER) || defined(__MINGW32__) || defined(__BORLANDC__)
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
 typedef unsigned long caddr_t;
 #endif
 

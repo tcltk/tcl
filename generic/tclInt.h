@@ -1686,6 +1686,7 @@ typedef struct Command {
 #define CMD_TRACE_ACTIVE	    0x2
 #define CMD_HAS_EXEC_TRACES	    0x4
 #define CMD_COMPILES_EXPANDED	    0x8
+#define CMD_REDEF_IN_PROGRESS	    0x10
 
 /*
  *----------------------------------------------------------------
@@ -1740,7 +1741,7 @@ enum PkgPreferOptions {
  * definition there.
  * Some macros require knowledge of some fields in the struct in order to
  * avoid hitting the TSD unnecessarily. In order to facilitate this, a pointer
- * to the relevant fields is kept in the objCache field in struct Interp.
+ * to the relevant fields is kept in the allocCache field in struct Interp.
  *----------------------------------------------------------------
  */
 
@@ -2452,6 +2453,30 @@ typedef struct List {
 #endif
 
 /*
+ * Macro used to save a function call for common uses of
+ * Tcl_GetWideIntFromObj(). The ANSI C "prototype" is:
+ *
+ * MODULE_SCOPE int TclGetWideIntFromObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
+ *			Tcl_WideInt *wideIntPtr);
+ */
+
+#ifdef TCL_WIDE_INT_IS_LONG
+#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr) \
+    (((objPtr)->typePtr == &tclIntType)					\
+	? (*(wideIntPtr) = (Tcl_WideInt)				\
+		((objPtr)->internalRep.longValue), TCL_OK) :		\
+	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
+#else /* !TCL_WIDE_INT_IS_LONG */
+#define TclGetWideIntFromObj(interp, objPtr, wideIntPtr)		\
+    (((objPtr)->typePtr == &tclWideIntType)				\
+	? (*(wideIntPtr) = (objPtr)->internalRep.wideValue, TCL_OK) :	\
+    ((objPtr)->typePtr == &tclIntType)					\
+	? (*(wideIntPtr) = (Tcl_WideInt)				\
+		((objPtr)->internalRep.longValue), TCL_OK) :		\
+	Tcl_GetWideIntFromObj((interp), (objPtr), (wideIntPtr)))
+#endif /* TCL_WIDE_INT_IS_LONG */
+
+/*
  * Flag values for TclTraceDictPath().
  *
  * DICT_PATH_READ indicates that all entries on the path must exist but no
@@ -2839,6 +2864,8 @@ MODULE_SCOPE int	TclByteArrayMatch(const unsigned char *string,
 			    int strLen, const unsigned char *pattern,
 			    int ptnLen, int flags);
 MODULE_SCOPE double	TclCeil(const mp_int *a);
+MODULE_SCOPE void	TclChannelPreserve(Tcl_Channel chan);
+MODULE_SCOPE void	TclChannelRelease(Tcl_Channel chan);
 MODULE_SCOPE int	TclCheckBadOctal(Tcl_Interp *interp,
 			    const char *value);
 MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
@@ -2856,6 +2883,10 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclConvertElement(const char *src, int length,
 			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
+MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
+			    const char *dict, int dictLength,
+			    const char **elementPtr, const char **nextPtr,
+			    int *sizePtr, int *literalPtr);
 /* TIP #280 - Modified token based evulation, with line information. */
 MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
 			    int numBytes, int flags, int line,
@@ -2895,7 +2926,8 @@ MODULE_SCOPE void	TclFinalizeObjects(void);
 MODULE_SCOPE void	TclFinalizePreserve(void);
 MODULE_SCOPE void	TclFinalizeSynchronization(void);
 MODULE_SCOPE void	TclFinalizeThreadAlloc(void);
-MODULE_SCOPE void	TclFinalizeThreadData(void);
+MODULE_SCOPE void	TclFinalizeThreadAllocThread(void);
+MODULE_SCOPE void	TclFinalizeThreadData(int quick);
 MODULE_SCOPE void	TclFinalizeThreadObjects(void);
 MODULE_SCOPE double	TclFloor(const mp_int *a);
 MODULE_SCOPE void	TclFormatNaN(double value, char *buffer);
@@ -2920,6 +2952,8 @@ MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
+			    unsigned int *sizePtr);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
 			    Tcl_Obj *unquotedPrefix, int globFlags,
 			    Tcl_GlobTypeData *types);
@@ -2951,8 +2985,8 @@ MODULE_SCOPE void	TclInitNotifier(void);
 MODULE_SCOPE void	TclInitObjSubsystem(void);
 MODULE_SCOPE void	TclInitSubsystems(void);
 MODULE_SCOPE int	TclInterpReady(Tcl_Interp *interp);
-MODULE_SCOPE int	TclIsLocalScalar(const char *src, int len);
 MODULE_SCOPE int	TclIsSpaceProc(char byte);
+MODULE_SCOPE int	TclIsBareword(char byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[]);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
@@ -3061,7 +3095,8 @@ MODULE_SCOPE void	TclRememberJoinableThread(Tcl_ThreadId id);
 MODULE_SCOPE void	TclRememberMutex(Tcl_Mutex *mutex);
 MODULE_SCOPE void	TclRemoveScriptLimitCallbacks(Tcl_Interp *interp);
 MODULE_SCOPE int	TclReToGlob(Tcl_Interp *interp, const char *reStr,
-			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr);
+			    int reStrLen, Tcl_DString *dsPtr, int *flagsPtr,
+			    int *quantifiersFoundPtr);
 MODULE_SCOPE int	TclScanElement(const char *string, int length,
 			    int *flagPtr);
 MODULE_SCOPE void	TclSetBgErrorHandler(Tcl_Interp *interp,
@@ -3612,6 +3647,9 @@ MODULE_SCOPE int	TclCompileReturnCmd(Tcl_Interp *interp,
 MODULE_SCOPE int	TclCompileSetCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
+MODULE_SCOPE int	TclCompileStringCatCmd(Tcl_Interp *interp,
+			    Tcl_Parse *parsePtr, Command *cmdPtr,
+			    struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclCompileStringCmpCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
@@ -4078,7 +4116,8 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 	AllocCache *cachePtr;						\
 	if (((interp) == NULL) ||					\
 		((cachePtr = ((Interp *)(interp))->allocCache),		\
-			(cachePtr->numObjects >= ALLOC_NOBJHIGH))) {	\
+			((cachePtr->numObjects == 0) ||			\
+			(cachePtr->numObjects >= ALLOC_NOBJHIGH)))) {	\
 	    TclThreadFreeObj(objPtr);					\
 	} else {							\
 	    (objPtr)->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr; \

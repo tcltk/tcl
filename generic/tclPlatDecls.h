@@ -50,7 +50,7 @@ extern "C" {
  * Exported function declarations:
  */
 
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 /* 0 */
 EXTERN TCHAR *		Tcl_WinUtfToTChar(const char *str, int len,
 				Tcl_DString *dsPtr);
@@ -75,7 +75,7 @@ typedef struct TclPlatStubs {
     int magic;
     void *hooks;
 
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
     TCHAR * (*tcl_WinUtfToTChar) (const char *str, int len, Tcl_DString *dsPtr); /* 0 */
     char * (*tcl_WinTCharToUtf) (const TCHAR *str, int len, Tcl_DString *dsPtr); /* 1 */
 #endif /* WIN */
@@ -97,7 +97,7 @@ extern const TclPlatStubs *tclPlatStubsPtr;
  * Inline function declarations:
  */
 
-#if defined(__WIN32__) || defined(__CYGWIN__) /* WIN */
+#if defined(_WIN32) || defined(__CYGWIN__) /* WIN */
 #define Tcl_WinUtfToTChar \
 	(tclPlatStubsPtr->tcl_WinUtfToTChar) /* 0 */
 #define Tcl_WinTCharToUtf \

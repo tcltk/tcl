@@ -110,6 +110,7 @@ GENERIC_DIR_NATIVE	= $(shell $(CYGPATH) '$(GENERIC_DIR)' | sed 's!\\!/!g')
 TOMMATH_DIR_NATIVE	= $(shell $(CYGPATH) '$(TOMMATH_DIR)' | sed 's!\\!/!g')
 WIN_DIR_NATIVE		= $(shell $(CYGPATH) '$(WIN_DIR)' | sed 's!\\!/!g')
 ROOT_DIR_NATIVE		= $(shell $(CYGPATH) '$(ROOT_DIR)' | sed 's!\\!/!g')
+ZLIB_DIR_NATIVE		= $(shell $(CYGPATH) '$(ZLIB_DIR)' | sed 's!\\!/!g')
 #GENERIC_DIR_NATIVE	= $(GENERIC_DIR)
 #TOMMATH_DIR_NATIVE	= $(TOMMATH_DIR)
 #WIN_DIR_NATIVE		= $(WIN_DIR)
@@ -189,10 +190,10 @@ SHELL		= @SHELL@
 RM		= rm -f
 COPY		= cp
 
-CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} -I"${ZLIB_DIR}" \
--I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" \
--I"${WIN_DIR_NATIVE}" ${AC_FLAGS} \
-${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
+CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
+-I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH \
+-DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
+${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
@@ -232,6 +233,7 @@ GENERIC_OBJS = \
 	tclConfig.$(OBJEXT) \
 	tclDate.$(OBJEXT) \
 	tclDictObj.$(OBJEXT) \
+	tclDisassemble.$(OBJEXT) \
 	tclEncoding.$(OBJEXT) \
 	tclEnsemble.$(OBJEXT) \
 	tclEnv.$(OBJEXT) \
@@ -641,8 +643,8 @@ install-libraries: libraries install-tzdata install-msgs
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
-	@echo "Installing package http 2.8.8 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.8.8.tm;
+	@echo "Installing package http 2.8.9 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.8.9.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
@@ -650,10 +652,10 @@ install-libraries: libraries install-tzdata install-msgs
 	    done;
 	@echo "Installing package msgcat 1.5.2 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.5.2.tm;
-	@echo "Installing package tcltest 2.3.7 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.7.tm;
-	@echo "Installing package platform 1.0.12 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.12.tm;
+	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.8.tm;
+	@echo "Installing package platform 1.0.13 as a Tcl Module";
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.13.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform/shell-1.1.4.tm;
 	@echo "Installing encodings";
@@ -850,8 +852,10 @@ TOOL_DIR=$(ROOT_DIR)/tools
 HTML_INSTALL_DIR=$(ROOT_DIR)/html
 html:
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS)"
+
 html-tcl: $(TCLSH)
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS) --tcl"
+
 html-tk: $(TCLSH)
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS) --tk"
 

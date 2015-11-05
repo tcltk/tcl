@@ -283,7 +283,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
     set text ""
     switch $plat {
 	win {
-	    append text "#if defined(__WIN32__)"
+	    append text "#if defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
@@ -294,7 +294,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(__WIN32__)"
+	    append text "#if !defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " && !defined(__CYGWIN__)"
 	    }
@@ -320,7 +320,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* AQUA */\n"
 	}
 	x11 {
-	    append text "#if !(defined(__WIN32__)"
+	    append text "#if !(defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }

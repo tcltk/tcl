@@ -10,7 +10,7 @@
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_nonwordchars, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_precision, tcl_rcFileName, tcl_traceCompile, tcl_traceEval, tcl_wordchars, tcl_version \- Variables used by Tcl
+argc, argv, argv0, auto_path, env, errorCode, errorInfo, tcl_interactive, tcl_library, tcl_nonwordchars, tcl_patchLevel, tcl_pkgPath, tcl_platform, tcl_precision, tcl_rcFileName, tcl_traceCompile, tcl_traceExec, tcl_wordchars, tcl_version \- Variables used by Tcl
 .BE
 .SH DESCRIPTION
 .PP
@@ -308,18 +308,13 @@ is the value returned by \fBuname -m\fR.
 \fBos\fR
 .
 The name of the operating system running on this machine,
-such as \fBWindows 95\fR, \fBWindows NT\fR, or \fBSunOS\fR.
+such as \fBWindows NT\fR or \fBSunOS\fR.
 On UNIX machines, this is the value returned by \fBuname -s\fR.
-On Windows 95 and Windows 98, the value returned will be \fBWindows
-95\fR to provide better backwards compatibility to Windows 95; to
-distinguish between the two, check the \fBosVersion\fR.
 .TP
 \fBosVersion\fR
 .
 The version number for the operating system running on this machine.
-On UNIX machines, this is the value returned by \fBuname -r\fR.  On
-Windows 95, the version will be 4.0; on Windows 98, the version will
-be 4.10.
+On UNIX machines, this is the value returned by \fBuname -r\fR.
 .TP
 \fBpathSeparator\fR
 .VS 8.6
@@ -347,8 +342,8 @@ was compiled with threads enabled.
 .
 This identifies the
 current user based on the login information available on the platform.
-This comes from the USER or LOGNAME environment variable on Unix,
-and the value from GetUserName on Windows.
+This value comes from the getuid() and getpwuid() system calls on Unix,
+and the value from the GetUserName() system call on Windows.
 .TP
 \fBwordSize\fR
 .

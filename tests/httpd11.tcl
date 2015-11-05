@@ -158,13 +158,13 @@ proc Service {chan addr port} {
         }
         
         if {$protocol eq "HTTP/1.1"} {
-            if {[string match "*deflate*" [dict get? $meta accept-encoding]]} {
-                set encoding deflate
-            } elseif {[string match "*gzip*" [dict get? $meta accept-encoding]]} {
-                set encoding gzip
-            } elseif {[string match "*compress*" [dict get? $meta accept-encoding]]} {
-                set encoding compress
-            }
+	    foreach enc [split [dict get? $meta accept-encoding] ,] {
+		set enc [string trim $enc]
+		if {$enc in {deflate gzip compress}} {
+		    set encoding $enc
+		    break
+		}
+	    }
             set transfer chunked
         } else {
             set close 1
@@ -189,6 +189,7 @@ proc Service {chan addr port} {
         if {$close} {
             Puts $chan "connection: close"
         }
+	Puts $chan "x-requested-encodings: [dict get? $meta accept-encoding]"
         if {$encoding eq "identity"} {
             Puts $chan "content-length: [string length $data]"
         } else {

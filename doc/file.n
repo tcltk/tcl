@@ -241,11 +241,9 @@ as relative to the cwd).  Furthermore,
 paths are always expanded
 to absolute form.  When creating links on filesystems that either do not
 support any links, or do not support the specific type requested, an
-error message will be returned.  In particular Windows 95, 98 and ME do
-not support any links at present, but most Unix platforms support both
-symbolic and hard links (the latter for files only) and Windows
-NT/2000/XP (on NTFS drives) support symbolic
-directory links and hard file links.
+error message will be returned.  Most Unix platforms support both
+symbolic and hard links (the latter for files only). Windows
+supports symbolic directory links and hard file links on NTFS drives.
 .RE
 .TP
 \fBfile lstat \fIname varName\fR

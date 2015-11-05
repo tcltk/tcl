@@ -29,7 +29,7 @@
 typedef struct SortElement {
     union {			/* The value that we sorting by. */
 	const char *strValuePtr;
-	long intValue;
+	Tcl_WideInt wideValue;
 	double doubleValue;
 	Tcl_Obj *objValuePtr;
     } collationKey;
@@ -1287,6 +1287,7 @@ TclInfoFrame(
 	"eval", "eval", "eval", "precompiled", "source", "proc"
     };
     Proc *procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
+    int needsFree = -1;
 
     /*
      * Pull the information and construct the dictionary to return, as list.
@@ -1360,6 +1361,9 @@ TclInfoFrame(
 	}
 
 	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
+	if (fPtr->cmdObj && framePtr->cmdObj == NULL) {
+	    needsFree = lc - 1;
+	}
 	TclStackFree(interp, fPtr);
 	break;
     }
@@ -1447,7 +1451,11 @@ TclInfoFrame(
 	}
     }
 
-    return Tcl_NewListObj(lc, lv);
+    tmpObj = Tcl_NewListObj(lc, lv);
+    if (needsFree >= 0) {
+	Tcl_DecrRefCount(lv[needsFree]);
+    }
+    return tmpObj;
 }
 
 /*
@@ -2655,7 +2663,7 @@ Tcl_LrepeatObjCmd(
      * number of times.
      */
 
-    CLANG_ASSERT(dataArray);
+    CLANG_ASSERT(dataArray || totalElems == 0 );
     if (objc == 1) {
 	register Tcl_Obj *tmpPtr = objv[0];
 
@@ -2893,7 +2901,8 @@ Tcl_LsearchObjCmd(
 {
     const char *bytes, *patternBytes;
     int i, match, index, result, listc, length, elemLen, bisect;
-    int dataType, isIncreasing, lower, upper, patInt, objInt, offset;
+    int dataType, isIncreasing, lower, upper, offset;
+    Tcl_WideInt patWide, objWide;
     int allMatches, inlineReturn, negatedMatch, returnSubindices, noCase;
     double patDouble, objDouble;
     SortInfo sortInfo;
@@ -3212,7 +3221,7 @@ Tcl_LsearchObjCmd(
 	    patternBytes = TclGetStringFromObj(patObj, &length);
 	    break;
 	case INTEGER:
-	    result = TclGetIntFromObj(interp, patObj, &patInt);
+	    result = TclGetWideIntFromObj(interp, patObj, &patWide);
 	    if (result != TCL_OK) {
 		goto done;
 	    }
@@ -3281,13 +3290,13 @@ Tcl_LsearchObjCmd(
 		match = DictionaryCompare(patternBytes, bytes);
 		break;
 	    case INTEGER:
-		result = TclGetIntFromObj(interp, itemPtr, &objInt);
+		result = TclGetWideIntFromObj(interp, itemPtr, &objWide);
 		if (result != TCL_OK) {
 		    goto done;
 		}
-		if (patInt == objInt) {
+		if (patWide == objWide) {
 		    match = 0;
-		} else if (patInt < objInt) {
+		} else if (patWide < objWide) {
 		    match = -1;
 		} else {
 		    match = 1;
@@ -3400,14 +3409,14 @@ Tcl_LsearchObjCmd(
 		    break;
 
 		case INTEGER:
-		    result = TclGetIntFromObj(interp, itemPtr, &objInt);
+		    result = TclGetWideIntFromObj(interp, itemPtr, &objWide);
 		    if (result != TCL_OK) {
 			if (listPtr != NULL) {
 			    Tcl_DecrRefCount(listPtr);
 			}
 			goto done;
 		    }
-		    match = (objInt == patInt);
+		    match = (objWide == patWide);
 		    break;
 
 		case REAL:
@@ -3971,13 +3980,13 @@ Tcl_LsortObjCmd(
 	if (sortMode == SORTMODE_ASCII) {
 	    elementArray[i].collationKey.strValuePtr = TclGetString(indexPtr);
 	} else if (sortMode == SORTMODE_INTEGER) {
-	    long a;
+	    Tcl_WideInt a;
 
-	    if (TclGetLongFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
+	    if (TclGetWideIntFromObj(sortInfo.interp, indexPtr, &a) != TCL_OK) {
 		sortInfo.resultCode = TCL_ERROR;
 		goto done1;
 	    }
-	    elementArray[i].collationKey.intValue = a;
+	    elementArray[i].collationKey.wideValue = a;
 	} else if (sortMode == SORTMODE_REAL) {
 	    double a;
 
@@ -4226,10 +4235,10 @@ SortCompare(
 	order = DictionaryCompare(elemPtr1->collationKey.strValuePtr,
 		elemPtr2->collationKey.strValuePtr);
     } else if (infoPtr->sortMode == SORTMODE_INTEGER) {
-	long a, b;
+	Tcl_WideInt a, b;
 
-	a = elemPtr1->collationKey.intValue;
-	b = elemPtr2->collationKey.intValue;
+	a = elemPtr1->collationKey.wideValue;
+	b = elemPtr2->collationKey.wideValue;
 	order = ((a >= b) - (a <= b));
     } else if (infoPtr->sortMode == SORTMODE_REAL) {
 	double a, b;

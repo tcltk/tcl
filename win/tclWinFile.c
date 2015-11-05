@@ -668,7 +668,7 @@ NativeReadReparse(
     HANDLE hFile;
     DWORD returnedLength;
 
-    hFile = CreateFile(linkDirPath, desiredAccess, 0, NULL, OPEN_EXISTING,
+    hFile = CreateFile(linkDirPath, desiredAccess, FILE_SHARE_READ, NULL, OPEN_EXISTING,
 	    FILE_FLAG_OPEN_REPARSE_POINT | FILE_FLAG_BACKUP_SEMANTICS, NULL);
 
     if (hFile == INVALID_HANDLE_VALUE) {
@@ -1241,9 +1241,9 @@ WinIsReserved(
     if ((path[0] == 'c' || path[0] == 'C')
 	    && (path[1] == 'o' || path[1] == 'O')) {
 	if ((path[2] == 'm' || path[2] == 'M')
-		&& path[3] >= '1' && path[3] <= '4') {
+		&& path[3] >= '1' && path[3] <= '9') {
 	    /*
-	     * May have match for 'com[1-4]:?', which is a serial port.
+	     * May have match for 'com[1-9]:?', which is a serial port.
 	     */
 
 	    if (path[4] == '\0') {
@@ -1262,9 +1262,9 @@ WinIsReserved(
     } else if ((path[0] == 'l' || path[0] == 'L')
 	    && (path[1] == 'p' || path[1] == 'P')
 	    && (path[2] == 't' || path[2] == 'T')) {
-	if (path[3] >= '1' && path[3] <= '3') {
+	if (path[3] >= '1' && path[3] <= '9') {
 	    /*
-	     * May have match for 'lpt[1-3]:?'
+	     * May have match for 'lpt[1-9]:?'
 	     */
 
 	    if (path[4] == '\0') {
@@ -1816,6 +1816,9 @@ TclpObjChdir(
 
     nativePath = Tcl_FSGetNativePath(pathPtr);
 
+    if (!nativePath) {
+	return -1;
+    }
     result = SetCurrentDirectory(nativePath);
 
     if (result == 0) {
@@ -2894,10 +2897,11 @@ ClientData
 TclNativeCreateNativeRep(
     Tcl_Obj *pathPtr)
 {
-    char *nativePathPtr, *str;
-    Tcl_DString ds;
+    WCHAR *nativePathPtr;
+    const char *str;
     Tcl_Obj *validPathPtr;
-    int len;
+    size_t len;
+    WCHAR *wp;
 
     if (TclFSCwdIsNative()) {
 	/*
@@ -2922,23 +2926,77 @@ TclNativeCreateNativeRep(
 	Tcl_IncrRefCount(validPathPtr);
     }
 
-    str = Tcl_GetStringFromObj(validPathPtr, &len);
-    if (str[0] == '/' && str[1] == '/' && str[2] == '?' && str[3] == '/') {
-	char *p;
+    str = Tcl_GetString(validPathPtr);
+    len = validPathPtr->length;
 
-	for (p = str; p && *p; ++p) {
-	    if (*p == '/') {
-		*p = '\\';
-	    }
+    if (strlen(str)!=(unsigned int)len) {
+	/* String contains NUL-bytes. This is invalid. */
+	return 0;
+    }
+    /* For a reserved device, strip a possible postfix ':' */
+    len = WinIsReserved(str);
+    if (len == 0) {
+	/* Let MultiByteToWideChar check for other invalid sequences, like
+	 * 0xC0 0x80 (== overlong NUL). See bug [3118489]: NUL in filenames */
+	len = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, 0, 0);
+	if (len==0) {
+	    return 0;
 	}
     }
-    Tcl_WinUtfToTChar(str, len, &ds);
-    len = Tcl_DStringLength(&ds) + sizeof(WCHAR);
-    Tcl_DecrRefCount(validPathPtr);
-    nativePathPtr = ckalloc(len);
-    memcpy(nativePathPtr, Tcl_DStringValue(&ds), (size_t) len);
-
-    Tcl_DStringFree(&ds);
+    /* Overallocate 6 chars, making some room for extended paths */
+    wp = nativePathPtr = ckalloc( (len+6) * sizeof(WCHAR) );
+    if (nativePathPtr==0) {
+      return 0;
+    }
+    MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, str, -1, nativePathPtr, len+1);
+    /*
+    ** If path starts with "//?/" or "\\?\" (extended path), translate
+    ** any slashes to backslashes but leave the '?' intact
+    */
+    if ((str[0]=='\\' || str[0]=='/') && (str[1]=='\\' || str[1]=='/')
+	    && str[2]=='?' && (str[3]=='\\' || str[3]=='/')) {
+	wp[0] = wp[1] = wp[3] = '\\';
+	str += 4;
+	wp += 4;
+    }
+    /*
+    ** If there is no "\\?\" prefix but there is a drive or UNC
+    ** path prefix and the path is larger than MAX_PATH chars,
+    ** no Win32 API function can handle that unless it is
+    ** prefixed with the extended path prefix. See:
+    ** <http://msdn.microsoft.com/en-us/library/aa365247(VS.85).aspx#maxpath>
+    **/
+    if (((str[0]>='A'&&str[0]<='Z') || (str[0]>='a'&&str[0]<='z'))
+	    && str[1]==':') {
+	if (wp==nativePathPtr && len>MAX_PATH && (str[2]=='\\' || str[2]=='/')) {
+	    memmove(wp+4, wp, len*sizeof(WCHAR));
+	    memcpy(wp, L"\\\\?\\", 4*sizeof(WCHAR));
+	    wp += 4;
+	}
+	/*
+	 ** If (remainder of) path starts with "<drive>:",
+	 ** leave the ':' intact.
+	 */
+	wp += 2;
+    } else if (wp==nativePathPtr && len>MAX_PATH
+	    && (str[0]=='\\' || str[0]=='/')
+	    && (str[1]=='\\' || str[1]=='/') && str[2]!='?') {
+	memmove(wp+6, wp, len*sizeof(WCHAR));
+	memcpy(wp, L"\\\\?\\UNC", 7*sizeof(WCHAR));
+	wp += 7;
+    }
+    /*
+    ** In the remainder of the path, translate invalid characters to
+    ** characters in the Unicode private use area.
+    */
+    while (*wp != '\0') {
+	if ((*wp < ' ') || wcschr(L"\"*:<>?|", *wp)) {
+	    *wp |= 0xF000;
+	} else if (*wp == '/') {
+	    *wp = '\\';
+	}
+	++wp;
+    }
     return nativePathPtr;
 }
 

@@ -210,7 +210,8 @@ proc httpHandlerCallback {socket token} {
 .TP
 \fB\-headers\fR \fIkeyvaluelist\fR
 .
-This option is used to add extra headers to the HTTP request.  The
+This option is used to add headers not already specified
+by \fB::http::config\fR to the HTTP request.  The
 \fIkeyvaluelist\fR argument must be a list with an even number of
 elements that alternate between keys and values.  The keys become
 header field names.  Newlines are stripped from the values so the

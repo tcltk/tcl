@@ -1345,7 +1345,7 @@ fixempties(
     for (s = nfa->states; s != NULL && !NISERR(); s = nexts) {
 	nexts = s->next;
 	/* Ensure tmp fields are clear for next step */
-	assert(s->tmp = NULL);
+	assert(s->tmp == NULL);
 	if (s->flag || s->nins != 1) {
 	    continue;
 	}

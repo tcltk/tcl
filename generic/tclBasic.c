@@ -840,7 +840,9 @@ Tcl_CreateInterp(void)
      */
 
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::disassemble",
-	    Tcl_DisassembleObjCmd, NULL, NULL);
+	    Tcl_DisassembleObjCmd, INT2PTR(0), NULL);
+    Tcl_CreateObjCommand(interp, "::tcl::unsupported::getbytecode",
+	    Tcl_DisassembleObjCmd, INT2PTR(1), NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
 
@@ -2085,10 +2087,19 @@ Tcl_CreateCommand(
 	 */
 
 	cmdPtr = Tcl_GetHashValue(hPtr);
-	oldRefPtr = cmdPtr->importRefPtr;
-	cmdPtr->importRefPtr = NULL;
+	cmdPtr->refCount++;
+	if (cmdPtr->importRefPtr) {
+	    cmdPtr->flags |= CMD_REDEF_IN_PROGRESS;
+	}
 
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+
+	if (cmdPtr->flags & CMD_REDEF_IN_PROGRESS) {
+	    oldRefPtr = cmdPtr->importRefPtr;
+	    cmdPtr->importRefPtr = NULL;
+	}
+	TclCleanupCommandMacro(cmdPtr);
+
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
 	if (!isNew) {
 	    /*
@@ -2272,10 +2283,19 @@ Tcl_CreateObjCommand(
 	 * intact.
 	 */
 
-	oldRefPtr = cmdPtr->importRefPtr;
-	cmdPtr->importRefPtr = NULL;
+	cmdPtr->refCount++;
+	if (cmdPtr->importRefPtr) {
+	    cmdPtr->flags |= CMD_REDEF_IN_PROGRESS;
+	}
 
 	Tcl_DeleteCommandFromToken(interp, (Tcl_Command) cmdPtr);
+
+	if (cmdPtr->flags & CMD_REDEF_IN_PROGRESS) {
+	    oldRefPtr = cmdPtr->importRefPtr;
+	    cmdPtr->importRefPtr = NULL;
+	}
+	TclCleanupCommandMacro(cmdPtr);
+
 	hPtr = Tcl_CreateHashEntry(&nsPtr->cmdTable, tail, &isNew);
 	if (!isNew) {
 	    /*
@@ -3117,12 +3137,13 @@ Tcl_DeleteCommandFromToken(
      * commands were created that refer back to this command. Delete these
      * imported commands now.
      */
-
-    for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
-	    refPtr = nextRefPtr) {
-	nextRefPtr = refPtr->nextPtr;
-	importCmd = (Tcl_Command) refPtr->importedCmdPtr;
-	Tcl_DeleteCommandFromToken(interp, importCmd);
+    if (!(cmdPtr->flags & CMD_REDEF_IN_PROGRESS)) {
+	for (refPtr = cmdPtr->importRefPtr; refPtr != NULL;
+		refPtr = nextRefPtr) {
+	    nextRefPtr = refPtr->nextPtr;
+	    importCmd = (Tcl_Command) refPtr->importedCmdPtr;
+	    Tcl_DeleteCommandFromToken(interp, importCmd);
+	}
     }
 
     /*
@@ -4121,8 +4142,9 @@ TclNREvalObjv(
 
     /*
      * data[1] stores a marker for use by tailcalls; it will be set to 1 by
-     * command redirectors (imports, alias, ensembles) so that tailcalls
-     * finishes the source command and not just the target.
+     * command redirectors (imports, alias, ensembles) so that tailcall skips
+     * this callback (that marks the end of the target command) and goes back
+     * to the end of the source command. 
      */
 
     if (iPtr->deferredCallbacks) {
@@ -4385,7 +4407,7 @@ NRCommand(
     iPtr->numLevels--;
 
      /*
-      * If there is a tailcall, schedule it
+      * If there is a tailcall, schedule it next
       */
  
     if (data[1] && (data[1] != INT2PTR(1))) {
@@ -8149,27 +8171,31 @@ Tcl_NRCmdSwap(
 }
 
 /*****************************************************************************
- * Stuff for tailcalls
+ * Tailcall related code
  *****************************************************************************
  *
- * Just to show that IT CAN BE DONE! The precise semantics are not simple,
- * require more thought. Possibly need a new Tcl return code to do it right?
- * Questions include:
- *   (1) How is the objc/objv tailcall to be run? My current thinking is that
- *	 it should essentially be
- *	     [tailcall a b c] <=> [uplevel 1 [list a b c]]
- *	 with two caveats
- *	     (a) the current frame is dropped first, after running all pending
- *		 cleanup tasks and saving its namespace
- *	     (b) 'a' is looked up in the returning frame's namespace, but the
- *		 command is run in the context to which we are returning
- *	 Current implementation does this if [tailcall] is called from within
- *	 a proc, errors otherwise.
- *   (2) Should a tailcall bypass [catch] in the returning frame? Current
- *	 implementation does not (or does it? Changed, test!) - it causes an
- *	 error.
+ * The steps of the tailcall dance are as follows:
  *
- * FIXME NRE!
+ *   1. when [tailcall] is invoked, it stores the corresponding callback in
+ *      the current CallFrame and returns TCL_RETURN
+ *   2. when the CallFrame is popped, it calls TclSetTailcall to store the
+ *      callback in the proper NRCommand callback - the spot where the command
+ *      that pushed the CallFrame is completely cleaned up
+ *   3. when the NRCommand callback runs, it schedules the tailcall callback
+ *      to run immediately after it returns
+ *
+ *   One delicate point is to properly define the NRCommand where the tailcall
+ *   will execute. There are functions whose purpose is to help define the
+ *   precise spot:
+ *     TclMarkTailcall: if the NEXT command to be pushed tailcalls, execution
+ *         should continue right here
+ *     TclSkipTailcall:  if the NEXT command to be pushed tailcalls, execution
+ *         should continue after the CURRENT command is fully returned ("skip
+ *         the next command: we are redirecting to it, tailcalls should run
+ *         after WE return") 
+ *     TclPushTailcallPoint: the search for a tailcalling spot cannot traverse
+ *         this point. This is special for OO, as some of the oo constructs
+ *         that behave like commands may not push an NRCommand callback.
  */
 
 void
@@ -8203,6 +8229,18 @@ TclPushTailcallPoint(
     ((Interp *) interp)->numLevels++;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclSetTailcall --
+ *
+ *	Splice a tailcall command in the proper spot of the NRE callback
+ *	stack, so that it runs at the right time.
+ *
+ *----------------------------------------------------------------------
+ */
+
 void
 TclSetTailcall(
     Tcl_Interp *interp,
@@ -8227,6 +8265,23 @@ TclSetTailcall(
     runPtr->data[1] = listPtr;
 }
 
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNRTailcallObjCmd --
+ *
+ *	Prepare the tailcall as a list and store it in the current
+ *	varFrame. When the frame is later popped the tailcall will be spliced
+ *	at the proper place.
+ *
+ * Results:
+ *	The first NRCommand callback that is not marked to be skipped is
+ *	updated so that its data[1] field contains the tailcall list.
+ *
+ *----------------------------------------------------------------------
+ */
+
 int
 TclNRTailcallObjCmd(
     ClientData clientData,
@@ -8241,9 +8296,9 @@ TclNRTailcallObjCmd(
 	return TCL_ERROR;
     }
 
-    if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {	/* or is upleveled */
+    if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
         Tcl_SetObjResult(interp, Tcl_NewStringObj(
-                "tailcall can only be called from a proc or lambda", -1));
+                "tailcall can only be called from a proc, lambda or method", -1));
         Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
 	return TCL_ERROR;
     }
@@ -8261,8 +8316,7 @@ TclNRTailcallObjCmd(
     /*
      * Create the callback to actually evaluate the tailcalled
      * command, then set it in the varFrame so that PopCallFrame can use it
-     * at the proper time. Being lazy: exploit the TclNRAddCallBack macro to
-     * build the callback.
+     * at the proper time.
      */
 
     if (objc > 1) {
@@ -8286,6 +8340,17 @@ TclNRTailcallObjCmd(
     }
     return TCL_RETURN;
 }
+
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclNRTailcallEval --
+ *
+ *	This NREcallback actually causes the tailcall to be evaluated.
+ *
+ *----------------------------------------------------------------------
+ */
 
 int
 TclNRTailcallEval(
