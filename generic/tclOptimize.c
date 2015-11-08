@@ -210,22 +210,23 @@ Initialize(
 
     MARK(0);
 
+    /*
+     * Make sure that instructions that are only reachable through [break]ing
+     * out of a reachable range are recognized as reachable
+     */
+    
     for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
 
 	if ((rangePtr->type == LOOP_EXCEPTION_RANGE) &&
 		PATHS[rangePtr->codeOffset]) {
-	    if (!PATHS[rangePtr->breakOffset]) {
-		MARK(rangePtr->breakOffset);
-	    }
-	    if ((rangePtr->continueOffset >= 0)
-		    && !PATHS[rangePtr->continueOffset]){
+	    MARK(rangePtr->breakOffset);
+	    if (rangePtr->continueOffset >= 0) {
 		MARK(rangePtr->continueOffset);
 	    }
 	}
     }
     MoveUnreachable(envPtr, padPtr);
-    CompactCode(envPtr, padPtr, 0);
 }
 
 /*
@@ -945,7 +946,6 @@ markPath(
  * code to normal code.
  */
 
-
 void
 MoveUnreachable(
     CompileEnv *envPtr,
@@ -971,7 +971,6 @@ MoveUnreachable(
 	TclExpandCodeArray(envPtr);
     }
 
-#if 1
     for (pc = 0; pc < codeSize; pc = nextpc) {
 	nextpc = NEXT_PC(pc);
 	
@@ -988,17 +987,9 @@ MoveUnreachable(
 	INST_AT_PC(curr) = INST_AT_PC(pc);
 	
 	switch (inst) {
-	    case INST_JUMP1:
-	    case INST_JUMP_FALSE1:
-	    case INST_JUMP_TRUE1:
-		/*
-		 * They should be all gone by now! OK not to move this code?
-		 *
-		 * Used to Tcl_Panic, but that is not good if this loaded on
-		 * a standard Tcl that produces lots of 1-jumps.
-		 */
-		break;
-		
+	    /*
+	     * There are no 1-jumps to consider.
+	     */
 
 	    case INST_JUMP4:
 		fixend = 0;
@@ -1077,13 +1068,6 @@ MoveUnreachable(
 
     padPtr->codeSize = envPtr->codeNext - envPtr->codeStart;
 
-#else
-    for (pc = 0; pc < codeSize; pc = nextpc) {
-	nextpc = NEXT_PC(pc);
-	NEW[pc] = pc;
-    }
-#endif
-
     /* Restore all accessible ranges */
 
     imax =  envPtr->exceptArrayNext;
@@ -1108,6 +1092,7 @@ MoveUnreachable(
 	    }
 	}
     }
+    CompactCode(envPtr, padPtr, 0);
 }
 
 int
