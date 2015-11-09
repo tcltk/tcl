@@ -179,7 +179,7 @@ TclOptimizeBytecode(
      * from path computations. */
     /* TODO: there MUST be a more efficient approach than relaxation */
     
-    //Optimize_1(envPtr, padPtr);
+    Optimize_1(envPtr, padPtr);
     
     /* Finally remove all nops and unreachable code, reduce code size */
     CompactCode(envPtr, padPtr, 1);
@@ -994,10 +994,12 @@ MoveUnreachable(
 	curr = (envPtr->codeNext - envPtr->codeStart);
 	
 	inst   = INST_AT_PC(pc);
-	fixend  = (nextpc >= codeSize)? 0 : PATHS[nextpc];
 	NEW[pc] = curr;
 	INST_AT_PC(curr) = INST_AT_PC(pc);
 	
+	/* jump back iff next inst is reachable */
+	fixend  = (nextpc >= codeSize)? 0 : PATHS[nextpc];
+
 	switch (inst) {
 	    /*
 	     * There are no 1-jumps to consider.
