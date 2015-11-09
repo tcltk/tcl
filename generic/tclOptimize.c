@@ -179,7 +179,7 @@ TclOptimizeBytecode(
      * from path computations. */
     /* TODO: there MUST be a more efficient approach than relaxation */
     
-    Optimize_1(envPtr, padPtr);
+    //Optimize_1(envPtr, padPtr);
     
     /* Finally remove all nops and unreachable code, reduce code size */
     CompactCode(envPtr, padPtr, 1);
@@ -212,7 +212,8 @@ Initialize(
 
     /*
      * Make sure that instructions that are only reachable through [break]ing
-     * out of a reachable range are recognized as reachable
+     * out of a reachable range are recognized as reachable. Do not mark catch
+     * targets.
      */
     
     for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
@@ -226,7 +227,23 @@ Initialize(
 	    }
 	}
     }
-    MoveUnreachable(envPtr, padPtr);
+    //MoveUnreachable(envPtr, padPtr);
+
+    /*
+     * Now insure that all break and catch targets are marked as reachable
+     */
+    
+    for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
+	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
+
+	if ((rangePtr->type == LOOP_EXCEPTION_RANGE)
+		&& !PATHS[rangePtr->breakOffset]) {
+	    MARK(rangePtr->breakOffset);
+	} else if ((rangePtr->type == CATCH_EXCEPTION_RANGE)
+		&& !PATHS[rangePtr->catchOffset]) {		
+	    MARK(rangePtr->catchOffset);
+	}
+    }
 }
 
 /*
@@ -640,11 +657,10 @@ CompactCode(
  *	we get at pc, by following through jumps and nops. The results are
  *	cached in the NEXT array.
  *
- *      Side effects: may update both the NEXT and PATHS arrays.
+ *      Side effects: may update the PATHS array.
  *
- *      Remark: both arrays need to be initialized on first call; NEXT to the
- *              identity and PATHS to 0 (as this may call MARK/UNMARK which
- *              require that).
+ *      Remark: PATHS needs to be initialized to 0 before the first call (as
+ *              this may call MARK/UNMARK which requires that).
  * ----------------------------------------------------------------------
  */
 
@@ -1068,31 +1084,22 @@ MoveUnreachable(
 
     padPtr->codeSize = envPtr->codeNext - envPtr->codeStart;
 
-    /* Restore all accessible ranges */
+    /* Update all range targets */
 
     imax =  envPtr->exceptArrayNext;
     for (i = 0 ; i < imax; i++) {
 	rangePtr = &envPtr->exceptArrayPtr[i];
-	if (!PATHS[NEW[rangePtr->codeOffset]]) continue;
-	
 	if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
 	    target = FOLLOW(NEW[rangePtr->catchOffset]);
 	    rangePtr->catchOffset = target;
 	    MARK(target);
 	} else {
 	    rangePtr->breakOffset = FOLLOW(NEW[rangePtr->breakOffset]);
-	    if (!PATHS[rangePtr->breakOffset]) {
-		MARK(rangePtr->breakOffset);
-	    }
 	    if (rangePtr->continueOffset >= 0) {
 		rangePtr->continueOffset = FOLLOW(NEW[rangePtr->continueOffset]);
-		if (!PATHS[rangePtr->continueOffset]){
-		    MARK(rangePtr->continueOffset);
-		}
 	    }
 	}
     }
-    CompactCode(envPtr, padPtr, 0);
 }
 
 int
