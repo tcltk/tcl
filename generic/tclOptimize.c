@@ -211,36 +211,32 @@ Initialize(
     MARK(0);
 
     /*
-     * Make sure that instructions that are only reachable through [break]ing
-     * out of a reachable range are recognized as reachable. Do not mark catch
-     * targets.
+     * Make sure that instructions that are only reachable as loop targets of
+     * reachable ranges are recognized as shared and reachable. Do not yet
+     * mark catch targets. 
      */
     
     for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
-
 	if ((rangePtr->type == LOOP_EXCEPTION_RANGE) &&
 		PATHS[rangePtr->codeOffset]) {
-	    MARK(rangePtr->breakOffset);
-	    if (rangePtr->continueOffset >= 0) {
+	    MARK(rangePtr->breakOffset);	
+	    if (rangePtr->continueOffset != -1) {
 		MARK(rangePtr->continueOffset);
 	    }
 	}
     }
+    
     //MoveUnreachable(envPtr, padPtr);
 
     /*
-     * Now insure that all break and catch targets are marked as reachable
+     * Now insure that all remaining targets are marked as reachable, and also
+     * thet they are properly marked as being multiple targets
      */
     
     for (i=0 ; i<envPtr->exceptArrayNext ; i++) {
 	ExceptionRange *rangePtr = &envPtr->exceptArrayPtr[i];
-
-	if ((rangePtr->type == LOOP_EXCEPTION_RANGE)
-		&& !PATHS[rangePtr->breakOffset]) {
-	    MARK(rangePtr->breakOffset);
-	} else if ((rangePtr->type == CATCH_EXCEPTION_RANGE)
-		&& !PATHS[rangePtr->catchOffset]) {		
+	if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
 	    MARK(rangePtr->catchOffset);
 	}
     }
