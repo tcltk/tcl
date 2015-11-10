@@ -227,7 +227,7 @@ Initialize(
 	}
     }
     
-    //MoveUnreachable(envPtr, padPtr);
+    MoveUnreachable(envPtr, padPtr);
 
     /*
      * Now insure that all remaining targets are marked as reachable, and also
@@ -1024,6 +1024,13 @@ MoveUnreachable(
 		}
 		break;
 		
+	    case INST_DONE:
+	    case INST_TAILCALL:
+	    case INST_CONTINUE:
+	    case INST_BREAK:
+		fixend = 0;
+		break;
+
 	    case INST_RETURN_CODE_BRANCH:
 		/* let's hope there was no 1-jump to OK code! */
 		nextpc += 10;
@@ -1048,7 +1055,7 @@ MoveUnreachable(
 
     /*
      * The code has been moved, jump targets are all absolute. Pass over the
-     * moved code, updating jump targets and setting.
+     * moved code, updating jump targets to the correct (relative) value.
      */
 
     for (pc = codeSize;
@@ -1082,7 +1089,7 @@ MoveUnreachable(
 
     padPtr->codeSize = envPtr->codeNext - envPtr->codeStart;
 
-    /* Update all range targets */
+    /* Update all ranges and targets */
 
     imax =  envPtr->exceptArrayNext;
     for (i = 0 ; i < imax; i++) {
@@ -1097,6 +1104,9 @@ MoveUnreachable(
 		rangePtr->continueOffset = FOLLOW(NEW[rangePtr->continueOffset]);
 	    }
 	}
+	target = rangePtr->codeOffset + rangePtr->numCodeBytes;
+	rangePtr->codeOffset = NEW[rangePtr->codeOffset];
+	rangePtr->numCodeBytes = NEW[target]-rangePtr->codeOffset;
     }
 }
 
