@@ -171,7 +171,7 @@ TclCreateSocketAddress(
     char *native = NULL, portbuf[TCL_INTEGER_SPACE], *portstring;
     const char *family = NULL;
     Tcl_DString ds;
-    int result, i;
+    int result;
 
     if (host != NULL) {
 	native = Tcl_UtfToExternalDString(NULL, host, -1, &ds);
@@ -279,11 +279,6 @@ TclCreateSocketAddress(
 	    *addrlist = v4head;
 	}
     }
-    i = 0;
-    for (p = *addrlist; p != NULL; p = p->ai_next) {
-	i++;
-    }
-
     return 1;
 }
 
