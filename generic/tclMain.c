@@ -59,20 +59,27 @@
  * encoding to UTF-8).
  */
 
-#ifdef UNICODE
+#if defined(UNICODE) && (TCL_UTF_MAX <= 4)
 #   define NewNativeObj Tcl_NewUnicodeObj
-#else /* !UNICODE */
+#else /* !UNICODE || (TCL_UTF_MAX > 4) */
 static inline Tcl_Obj *
 NewNativeObj(
-    char *string,
+    TCHAR *string,
     int length)
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+    if (length > 0) {
+	length *= sizeof (TCHAR);
+    }
+#ifdef _WIN32
+    Tcl_WinTCharToUtf(string, length, &ds);
+#else
+    Tcl_ExternalToUtfDString(NULL, (char *) string, length, &ds);
+#endif
     return TclDStringToObj(&ds);
 }
-#endif /* !UNICODE */
+#endif /* !UNICODE || (TCL_UTF_MAX > 4) */
 
 /*
  * Declarations for various library functions and variables (don't want to

@@ -440,7 +440,29 @@ ToUtf(
 
     start = dst;
     while (*wSrc != '\0') {
+#if TCL_UTF_MAX >= 4
+	Tcl_UniChar ch = *wSrc;
+
+	if ((ch & 0xF800) == 0xD800) {
+	    if (ch & 0x0400) {
+		/* Low surrogate */
+		dst[3] = (char) ((ch | 0x80) & 0xBF);
+		dst[2] |= (char) (((ch >> 6) | 0x80) & 0x8F);
+		dst += 4; 
+	    } else {
+		/* High surrogate */
+		ch += 0x40;
+		dst[2] = (char) (((ch << 4) | 0x80) & 0xB0);
+		dst[1] = (char) (((ch >> 2) | 0x80) & 0xBF);
+		dst[0] = (char) (((ch >> 8) | 0xF0) & 0xF7);
+		/* dst not incremented! */ 
+	    }
+	} else {
+	    dst += Tcl_UniCharToUtf(ch, dst);
+	}
+#else
 	dst += Tcl_UniCharToUtf(*wSrc, dst);
+#endif
 	wSrc++;
     }
     *dst = '\0';

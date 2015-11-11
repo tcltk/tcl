@@ -1449,18 +1449,18 @@ TclpGetUserHome(
     domain = strchr(name, '@');
     if (domain != NULL) {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(domain + 1, -1, &ds);
+	wName = (WCHAR *) Tcl_WinUtfToTChar(domain + 1, -1, &ds);
 	badDomain = NetGetDCName(NULL, wName, (LPBYTE *) wDomainPtr);
 	Tcl_DStringFree(&ds);
 	nameLen = domain - name;
     }
     if (badDomain == 0) {
 	Tcl_DStringInit(&ds);
-	wName = Tcl_UtfToUniCharDString(name, nameLen, &ds);
+	wName = (WCHAR *) Tcl_WinUtfToTChar(name, nameLen, &ds);
 	if (NetUserGetInfo(wDomain, wName, 1, (LPBYTE *) uiPtrPtr) == 0) {
 	    wHomeDir = uiPtr->usri1_home_dir;
 	    if ((wHomeDir != NULL) && (wHomeDir[0] != L'\0')) {
-		Tcl_UniCharToUtfDString(wHomeDir, lstrlenW(wHomeDir),
+		Tcl_WinTCharToUtf((TCHAR *) wHomeDir, lstrlenW(wHomeDir),
 			bufferPtr);
 	    } else {
 		/*
@@ -1472,7 +1472,7 @@ TclpGetUserHome(
 		for (i = 0; i < size; ++i){
 		    if (buf[i] == '\\') buf[i] = '/';
 		}
-		Tcl_UniCharToUtfDString(buf, size-1, bufferPtr);
+		Tcl_WinTCharToUtf(buf, size-1, bufferPtr);
 		Tcl_DStringAppend(bufferPtr, "/", -1);
 		Tcl_DStringAppend(bufferPtr, name, -1);
 	    }
