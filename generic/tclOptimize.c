@@ -23,8 +23,7 @@ typedef struct optPad {
 
 static void markPath(CompileEnv *envPtr, int pc, optPad *padPtr,
 	              int mark);
-static int  effectivePCInternal(CompileEnv *envPtr, int pc,
-	              optPad *padPtr, int start);
+static int  effectivePC(CompileEnv *envPtr, int pc, optPad *padPtr);
 static void ThreadJumps(CompileEnv *envPtr, optPad *padPtr);
 static int  UpdateJump(CompileEnv *envPtr,optPad *padPtr, int pc);
 static int  optimizePush_0(CompileEnv *envPtr,optPad *padPtr, int pc);
@@ -34,6 +33,8 @@ static void CompactCode(CompileEnv *envPtr, optPad *padPtr,
 	              int shrinkInst);
 static void Optimize_0(CompileEnv *envPtr, optPad *padPtr);
 static void Optimize_1(CompileEnv *envPtr, optPad *padPtr);
+
+static void       Initialize(CompileEnv *envPtr, optPad *padPtr);
 
 #define INIT_SIZE				\
     int codeSize = padPtr->codeSize
@@ -107,26 +108,6 @@ static void Optimize_1(CompileEnv *envPtr, optPad *padPtr);
 #define FOLLOW(pc)				\
     effectivePC(envPtr, (pc), padPtr)
 
-static inline int
-effectivePC(
-    CompileEnv *envPtr,
-    int pc,
-    optPad *padPtr)
-{
-    unsigned char inst = INST_AT_PC(pc);
-    
-    if ((inst == INST_NOP)
-	    || (inst == INST_JUMP1)
-	    || (inst == INST_JUMP4)) {
-	/* do update the whole path forward */
-	pc = effectivePCInternal(envPtr, pc, padPtr, pc);
-    }
-    return pc;
-}
-
-
-static void       Initialize(CompileEnv *envPtr, optPad *padPtr);
-
 
 /*
  * ----------------------------------------------------------------------
@@ -165,7 +146,7 @@ TclOptimizeBytecode(
     /* 1. Path-independent opts: push elimination, jump threading, etc. We
      * could advance some jumps (to cond-jump, to done or return) */
 
-    Optimize_0(envPtr, padPtr);
+     Optimize_0(envPtr, padPtr);
     
     /* 2. Initial path marking, move unreachable code to after INST_DONE and
      *    compress */
@@ -197,7 +178,7 @@ Initialize(
     int i;
     
     /*
-     * Initialize NEXT to identity, PATHS to 0.
+     * Initialize PATHS to 0.
      */
 
     for (i=0; i < codeSize; i++) {
@@ -261,7 +242,7 @@ Optimize_0(
     optPad *padPtr)
 {
     int codeSize = padPtr->codeSize;
-    int pc, nextpc;
+    int pc, nextpc, new;
     unsigned char inst;
 
     for (pc = 0; pc < codeSize; pc = nextpc) {
@@ -275,17 +256,15 @@ Optimize_0(
 
 	    case INST_PUSH4:
 		optimizePush_0(envPtr, padPtr, pc);
-
-	    case INST_JUMP1:
-	    case INST_JUMP_TRUE1:
-	    case INST_JUMP_FALSE1:
+		
 	    case INST_JUMP_TRUE4:
 	    case INST_JUMP_FALSE4:
 	    case INST_JUMP4:
-	    case INST_JUMP_TABLE:
-		UPDATE_JUMP(pc);
+		new = FOLLOW(pc);
+		if (new != pc) {
+		    SET_INT4_AT_PC(new-pc, pc+1);
+		}
 		break;
-    
 	}
     }
 }
@@ -645,59 +624,49 @@ CompactCode(
 /*
  * ----------------------------------------------------------------------
  *
- * effectivePC, effectivePCinternal --
+ * effectivePC --
  *
  *	Utility functions. Find the effective newpc that will be executed when
- *	we get at pc, by following through jumps and nops. The results are
- *	cached in the NEXT array.
+ *	we get at pc, by following through jumps and nops.
  *
- *      Side effects: may update the PATHS array.
- *
- *      Remark: PATHS needs to be initialized to 0 before the first call (as
- *              this may call MARK/UNMARK which requires that).
  * ----------------------------------------------------------------------
  */
 
 int
-effectivePCInternal(
+effectivePC(
     CompileEnv *envPtr,
     int pc,
-    optPad *padPtr,
-    int start)
+    optPad *padPtr)
 {
-    int old, new;
     unsigned char inst;
-
-    /* recurse so that the whole path forward is updated and cached */
-
-    inst = INST_AT_PC(pc);
-    switch (inst) {
-	case INST_NOP:
-	    old = pc + 1;
-	    break;
-	    
-	case INST_JUMP1:
-	    old = pc + GET_INT1_AT_PC(pc+1);
-	    break;
-
-	case INST_JUMP4:
-	    old = pc + GET_INT4_AT_PC(pc+1);
-	    break;
-
-	default:
-	    return pc;
-    }
-
-    if (start == old) {
-	/*
-	 * INFINITE LOOP! TODO
-	 * Eventually insert error generating code, possibly after INST_DONE?
-	 */
-	return pc;
-    }
+    int start = pc, new;
     
-    new  = FOLLOW(old);
-    return new;
+    /* recurse so that the whole path forward is updated and cached? */
+    while (1) {
+	inst = INST_AT_PC(pc);
+	switch (inst) {
+	    case INST_NOP:
+		new = pc + 1;
+		break;
+		
+	    case INST_JUMP1:
+		new = pc + GET_INT1_AT_PC(pc+1);
+		break;
+
+	    case INST_JUMP4:
+		new = pc + GET_INT4_AT_PC(pc+1);
+		break;
+
+	    default:
+		return pc;
+	}
+	if (new == start) {
+            /* infinite loop! how do we kill it in <= 5 bytes? */
+	    INST_AT_PC(new) = INST_CONTINUE;
+	    return pc;
+	}
+	pc = new;
+    }
 }
 
 int
@@ -713,7 +682,6 @@ UpdateJump(
     int result = 0;
     
     inst = INST_AT_PC(pc);
-
     switch(inst) {
 	default:
 	    return 0;
@@ -726,7 +694,7 @@ UpdateJump(
 		old = pc + PTR2INT(Tcl_GetHashValue(hPtr));
 		new = FOLLOW(old);
 		if (new != old) {
-		    //REPLACE(old, new);
+		    REPLACE(old, new);
 		    Tcl_SetHashValue(hPtr, INT2PTR(new - pc));
 		    result = 1;
 		}
@@ -737,16 +705,15 @@ UpdateJump(
 	case INST_JUMP_FALSE4:
 	case INST_JUMP4:
 	    old = pc + GET_INT4_AT_PC(pc+1);
+	    new = FOLLOW(old);
+	    if (new != old) {
+		REPLACE(old, new);
+		SET_INT4_AT_PC(new - pc, pc+1);
+		return 1;
+	    }
 	    break;
     }
-
-    new = FOLLOW(old);
-    if (new == old) {
-	return 0;
-    }
-    SET_INT4_AT_PC(new - pc, pc+1);
-    //REPLACE(old, new);
-    return 1;
+    return 0;
 }
 
 void
@@ -873,7 +840,7 @@ markPath(
 	if (PATHS[pc] > 1) {
 	    PATHS[pc]--;
 	    return;
-	} else if (PATHS[pc] <=0) {
+	} else if (PATHS[pc] <= 0) {
 	    PATHS[pc] = 0;
 	    return;
 	}
