@@ -537,8 +537,11 @@ StartChannelThread(
     threadInfoPtr->readyEvent = CreateEvent(NULL, TRUE, TRUE, NULL);
     threadInfoPtr->startEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
     threadInfoPtr->stopEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-    threadInfoPtr->thread = CreateThread(NULL, 256, threadProc, infoPtr, 0,
-	    &id);
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+    threadInfoPtr->thread = (HANDLE) _beginthreadex(NULL, 256, threadProc, infoPtr, 0, &id);
+#else
+    threadInfoPtr->thread = CreateThread(NULL, 256, threadProc, infoPtr, 0, &id);
+#endif
     SetThreadPriority(threadInfoPtr->thread, THREAD_PRIORITY_HIGHEST);
 }
 
@@ -546,40 +549,14 @@ static void
 StopChannelThread(
     ConsoleThreadInfo *threadInfoPtr)
 {
-    DWORD exitCode = 0;
-
-    /*
-     * The thread may already have closed on it's own. Check it's exit
-     * code.
-     */
-
-    GetExitCodeThread(threadInfoPtr->thread, &exitCode);
-    if (exitCode == STILL_ACTIVE) {
-	/*
-	 * Set the stop event so that if the reader thread is blocked in
-	 * ConsoleReaderThread on WaitForMultipleEvents, it will exit cleanly.
-	 */
-
 	SetEvent(threadInfoPtr->stopEvent);
 
 	/*
-	 * Wait at most 20 milliseconds for the reader thread to close.
+	 * Wait for the reader thread to close.
 	 */
 
-	if (WaitForSingleObject(threadInfoPtr->thread, 20) == WAIT_TIMEOUT) {
-	    /*
-	     * Forcibly terminate the background thread as a last resort.
-	     * Note that we need to guard against terminating the thread while
-	     * it is in the middle of Tcl_ThreadAlert because it won't be able
-	     * to release the notifier lock.
-	     */
-
-	    Tcl_MutexLock(&consoleMutex);
-	    /* BUG: this leaks memory. */
-	    TerminateThread(threadInfoPtr->thread, 0);
-	    Tcl_MutexUnlock(&consoleMutex);
+	if (WaitForSingleObject(threadInfoPtr->thread, INFINITE) == WAIT_TIMEOUT) {
 	}
-    }
 
     /*
      * Close all the handles associated with the thread, and set the thread

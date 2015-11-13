@@ -372,10 +372,12 @@ NativeGetTime(
 		InitializeCriticalSection(&timeInfo.cs);
 		timeInfo.readyEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
 		timeInfo.exitEvent = CreateEvent(NULL, FALSE, FALSE, NULL);
-		timeInfo.calibrationThread = CreateThread(NULL, 256,
-			CalibrationThread, (LPVOID) NULL, 0, &id);
-		SetThreadPriority(timeInfo.calibrationThread,
-			THREAD_PRIORITY_HIGHEST);
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+		timeInfo.calibrationThread = (HANDLE) _beginthreadex(NULL, 256, CalibrationThread, NULL, 0, &id);
+#else
+		timeInfo.calibrationThread = CreateThread(NULL, 256, CalibrationThread, NULL, 0, &id);
+#endif
+		SetThreadPriority(timeInfo.calibrationThread, THREAD_PRIORITY_HIGHEST);
 
 		/*
 		 * Wait for the thread just launched to start running, and
