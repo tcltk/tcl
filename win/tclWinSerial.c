@@ -599,7 +599,6 @@ SerialCloseProc(
     int errorCode, result = 0;
     SerialInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    DWORD exitCode;
 
     errorCode = 0;
 
@@ -616,52 +615,23 @@ SerialCloseProc(
 	 *    WaitForSingleObject(serialPtr->evWritable, INFINITE);
 	 */
 
-	/*
-	 * The thread may have already closed on it's own. Check it's exit
-	 * code.
-	 */
-
-	GetExitCodeThread(serialPtr->writeThread, &exitCode);
-
-	if (exitCode == STILL_ACTIVE) {
-	    /*
-	     * Set the stop event so that if the writer thread is blocked in
-	     * SerialWriterThread on WaitForMultipleEvents, it will exit
-	     * cleanly.
-	     */
-
 	    SetEvent(serialPtr->evStopWriter);
 
 	    /*
 	     * Wait at most 20 milliseconds for the writer thread to close.
 	     */
 
-	    if (WaitForSingleObject(serialPtr->writeThread,
-		    20) == WAIT_TIMEOUT) {
-		/*
-		 * Forcibly terminate the background thread as a last resort.
-		 * Note that we need to guard against terminating the thread
-		 * while it is in the middle of Tcl_ThreadAlert because it
-		 * won't be able to release the notifier lock.
-		 */
-
-		Tcl_MutexLock(&serialMutex);
-
-		/* BUG: this leaks memory */
-		TerminateThread(serialPtr->writeThread, 0);
-
-		Tcl_MutexUnlock(&serialMutex);
+	    if (WaitForSingleObject(serialPtr->writeThread, INFINITE) == WAIT_TIMEOUT) {
 	    }
-	}
 
-	CloseHandle(serialPtr->writeThread);
-	CloseHandle(serialPtr->osWrite.hEvent);
-	CloseHandle(serialPtr->evWritable);
-	CloseHandle(serialPtr->evStartWriter);
-	CloseHandle(serialPtr->evStopWriter);
-	serialPtr->writeThread = NULL;
+		CloseHandle(serialPtr->writeThread);
+		CloseHandle(serialPtr->osWrite.hEvent);
+		CloseHandle(serialPtr->evWritable);
+		CloseHandle(serialPtr->evStartWriter);
+		CloseHandle(serialPtr->evStopWriter);
+		serialPtr->writeThread = NULL;
 
-	PurgeComm(serialPtr->handle, PURGE_TXABORT | PURGE_TXCLEAR);
+		PurgeComm(serialPtr->handle, PURGE_TXABORT | PURGE_TXCLEAR);
     }
     serialPtr->validMask &= ~TCL_WRITABLE;
 
@@ -1531,8 +1501,11 @@ TclWinOpenSerialChannel(
 	infoPtr->evWritable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->evStartWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->evStopWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
-	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread,
-		infoPtr, 0, &id);
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+    infoPtr->writeThread = (HANDLE) _beginthreadex(NULL, 256, SerialWriterThread, infoPtr, 0, &id);
+#else
+	infoPtr->writeThread = CreateThread(NULL, 256, SerialWriterThread, infoPtr, 0, &id);
+#endif
     }
 
     /*

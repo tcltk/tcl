@@ -2374,8 +2374,11 @@ InitSockets(void)
     if (tsdPtr->socketListLock == NULL) {
 	goto initFailure;
     }
-    tsdPtr->socketThread = CreateThread(NULL, 256, SocketThread, tsdPtr, 0,
-	    &id);
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+    tsdPtr->socketThread = (HANDLE) _beginthreadex(NULL, 256, SocketThread, tsdPtr, 0, &id);
+#else
+    tsdPtr->socketThread = CreateThread(NULL, 256, SocketThread, tsdPtr, 0, &id);
+#endif
     if (tsdPtr->socketThread == NULL) {
 	goto initFailure;
     }

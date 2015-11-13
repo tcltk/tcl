@@ -1600,8 +1600,11 @@ TclpCreateCommandChannel(
 	infoPtr->readable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->startReader = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->stopReader = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread,
-		infoPtr, 0, &id);
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+    infoPtr->readThread = (HANDLE) _beginthreadex(NULL, 256, PipeReaderThread, infoPtr, 0, &id);
+#else
+	infoPtr->readThread = CreateThread(NULL, 256, PipeReaderThread, infoPtr, 0, &id);
+#endif
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_READABLE;
     } else {
@@ -1615,8 +1618,11 @@ TclpCreateCommandChannel(
 	infoPtr->writable = CreateEvent(NULL, TRUE, TRUE, NULL);
 	infoPtr->startWriter = CreateEvent(NULL, FALSE, FALSE, NULL);
 	infoPtr->stopWriter = CreateEvent(NULL, TRUE, FALSE, NULL);
-	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread,
-		infoPtr, 0, &id);
+#if defined(_MSC_VER) || defined(__MSVCRT__) || defined(__BORLANDC__)
+    infoPtr->writeThread = (HANDLE) _beginthreadex(NULL, 256, PipeWriterThread, infoPtr, 0, &id);
+#else
+	infoPtr->writeThread = CreateThread(NULL, 256, PipeWriterThread, infoPtr, 0, &id);
+#endif
 	SetThreadPriority(infoPtr->readThread, THREAD_PRIORITY_HIGHEST);
 	infoPtr->validMask |= TCL_WRITABLE;
     }
@@ -1804,7 +1810,6 @@ PipeClose2Proc(
     int errorCode, result;
     PipeInfo *infoPtr, **nextPtrPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    DWORD exitCode;
 
     errorCode = 0;
     result = 0;
@@ -1817,49 +1822,15 @@ PipeClose2Proc(
 	 */
 
 	if (pipePtr->readThread) {
-	    /*
-	     * The thread may already have closed on its own. Check its exit
-	     * code.
-	     */
-
-	    GetExitCodeThread(pipePtr->readThread, &exitCode);
-
-	    if (exitCode == STILL_ACTIVE) {
-		/*
-		 * Set the stop event so that if the reader thread is blocked
-		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
-		 * cleanly.
-		 */
 
 		SetEvent(pipePtr->stopReader);
 
 		/*
-		 * Wait at most 20 milliseconds for the reader thread to
+		 * Wait for the reader thread to
 		 * close.
 		 */
 
-		if (WaitForSingleObject(pipePtr->readThread,
-			20) == WAIT_TIMEOUT) {
-		    /*
-		     * The thread must be blocked waiting for the pipe to
-		     * become readable in ReadFile(). There isn't a clean way
-		     * to exit the thread from this condition. We should
-		     * terminate the child process instead to get the reader
-		     * thread to fall out of ReadFile with a FALSE. (below) is
-		     * not the correct way to do this, but will stay here
-		     * until a better solution is found.
-		     *
-		     * Note that we need to guard against terminating the
-		     * thread while it is in the middle of Tcl_ThreadAlert
-		     * because it won't be able to release the notifier lock.
-		     */
-
-		    Tcl_MutexLock(&pipeMutex);
-
-		    /* BUG: this leaks memory */
-		    TerminateThread(pipePtr->readThread, 0);
-		    Tcl_MutexUnlock(&pipeMutex);
-		}
+		if (WaitForSingleObject(pipePtr->readThread, INFINITE) == WAIT_TIMEOUT) {
 	    }
 
 	    CloseHandle(pipePtr->readThread);
@@ -1883,65 +1854,27 @@ PipeClose2Proc(
 	     * nonblocking but blocked during  exit, bail out since the worker
 	     * thread is not interruptible and we want TIP#398-fast-exit.
 	     */
-	    if (TclInExit()
-		&& (pipePtr->flags & PIPE_ASYNC)) {
+	    if (TclInExit()	&& (pipePtr->flags & PIPE_ASYNC)) {
 
 		/* give it a chance to leave honorably */
-		SetEvent(pipePtr->stopWriter);
+			SetEvent(pipePtr->stopWriter);
 
-		if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
-		    return EWOULDBLOCK;
-		}
-
+			if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
+				return EWOULDBLOCK;
+			}
 	    } else {
 
-		WaitForSingleObject(pipePtr->writable, INFINITE);
+			WaitForSingleObject(pipePtr->writable, INFINITE);
 
 	    }
 
-	    /*
-	     * The thread may already have closed on it's own. Check its exit
-	     * code.
-	     */
-
-	    GetExitCodeThread(pipePtr->writeThread, &exitCode);
-
-	    if (exitCode == STILL_ACTIVE) {
-		/*
-		 * Set the stop event so that if the reader thread is blocked
-		 * in PipeReaderThread on WaitForMultipleEvents, it will exit
-		 * cleanly.
-		 */
-
 		SetEvent(pipePtr->stopWriter);
-
 		/*
-		 * Wait at most 20 milliseconds for the reader thread to
+		 * Wait for the writer thread to
 		 * close.
 		 */
 
-		if (WaitForSingleObject(pipePtr->writeThread,
-			20) == WAIT_TIMEOUT) {
-		    /*
-		     * The thread must be blocked waiting for the pipe to
-		     * consume input in WriteFile(). There isn't a clean way
-		     * to exit the thread from this condition. We should
-		     * terminate the child process instead to get the writer
-		     * thread to fall out of WriteFile with a FALSE. (below)
-		     * is not the correct way to do this, but will stay here
-		     * until a better solution is found.
-		     *
-		     * Note that we need to guard against terminating the
-		     * thread while it is in the middle of Tcl_ThreadAlert
-		     * because it won't be able to release the notifier lock.
-		     */
-
-		    Tcl_MutexLock(&pipeMutex);
-
-		    /* BUG: this leaks memory */
-		    TerminateThread(pipePtr->writeThread, 0);
-		    Tcl_MutexUnlock(&pipeMutex);
-		}
+		if (WaitForSingleObject(pipePtr->writeThread, INFINITE) == WAIT_TIMEOUT) {
 	    }
 
 	    CloseHandle(pipePtr->writeThread);
