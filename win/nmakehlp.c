@@ -498,9 +498,10 @@ GetVersionFromFile(
 	    p = strstr(szBuffer, match);
 	    if (p != NULL) {
 		/*
-		 * Skip to first digit.
+		 * Skip to first digit after the match.
 		 */
 
+		p += strlen(match);
 		while (*p && !isdigit(*p)) {
 		    ++p;
 		}
@@ -605,8 +606,8 @@ SubstituteFile(
 	sp = fopen(substitutions, "rt");
 	if (sp != NULL) {
 	    while (fgets(szBuffer, cbBuffer, sp) != NULL) {
-		char *ks, *ke, *vs, *ve;
-		ks = szBuffer;
+		unsigned char *ks, *ke, *vs, *ve;
+		ks = (unsigned char*)szBuffer;
 		while (ks && *ks && isspace(*ks)) ++ks;
 		ke = ks;
 		while (ke && *ke && !isspace(*ke)) ++ke;
@@ -615,7 +616,7 @@ SubstituteFile(
 		ve = vs;
 		while (ve && *ve && !(*ve == '\r' || *ve == '\n')) ++ve;
 		*ke = 0, *ve = 0;
-		list_insert(&substPtr, ks, vs);
+		list_insert(&substPtr, (char*)ks, (char*)vs);
 	    }
 	    fclose(sp);
 	}
@@ -630,11 +631,11 @@ SubstituteFile(
 	    }
 	}
 #endif
-	
+
 	/*
 	 * Run the substitutions over each line of the input
 	 */
-	
+
 	while (fgets(szBuffer, cbBuffer, fp) != NULL) {
 	    list_item_t *p = NULL;
 	    for (p = substPtr; p != NULL; p = p->nextPtr) {
@@ -654,7 +655,7 @@ SubstituteFile(
 	    }
 	    printf(szBuffer);
 	}
-	
+
 	list_free(&substPtr);
     }
     fclose(fp);
