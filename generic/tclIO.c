@@ -6380,7 +6380,7 @@ TranslateInputEOL(
 	break;
     default:
 	/* In other modes, at most 2 src bytes become a dst byte. */
-	if (srcLen > 2 * dstLen) {
+	if (srcLen/2 > dstLen) {
 	    srcLen = 2 * dstLen;
 	}
 	break;
