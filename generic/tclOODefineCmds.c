@@ -887,6 +887,7 @@ TclOODefineObjCmd(
 	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+	/* TODO: overflow? */
 	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
@@ -1001,6 +1002,7 @@ TclOOObjDefObjCmd(
 	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+	/* TODO: overflow? */
 	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
@@ -1115,6 +1117,7 @@ TclOODefineSelfObjCmd(
 	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+	/* TODO: overflow? */
 	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-2, objv+2);
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
