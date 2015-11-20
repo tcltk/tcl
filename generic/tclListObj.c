@@ -854,8 +854,13 @@ Tcl_ListObjReplace(
 	count = numElems - first;
     }
 
+    if (objc > LIST_MAX - (numElems - count)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+	return TCL_ERROR;
+    }
     isShared = (listRepPtr->refCount > 1);
-    numRequired = numElems - count + objc;
+    numRequired = numElems - count + objc; /* Known <= LIST_MAX */
 
     for (i = 0;  i < objc;  i++) {
 	Tcl_IncrRefCount(objv[i]);
@@ -906,6 +911,8 @@ Tcl_ListObjReplace(
 
 	listRepPtr = AttemptNewList(interp, newMax, NULL);
 	if (listRepPtr == NULL) {
+	listRepPtr = AttemptNewList(interp, numRequired, NULL);
+	if (listRepPtr == NULL) {
 	    for (i = 0;  i < objc;  i++) {
 		/* See bug 3598580 */
 #if TCL_MAJOR_VERSION > 8
@@ -915,6 +922,7 @@ Tcl_ListObjReplace(
 #endif
 	    }
 	    return TCL_ERROR;
+	}
 	}
 
 	listPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
