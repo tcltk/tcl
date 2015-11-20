@@ -2390,7 +2390,10 @@ Tcl_LinsertObjCmd(
 
 	Tcl_ListObjAppendElement(NULL, listPtr, objv[3]);
     } else {
-	Tcl_ListObjReplace(NULL, listPtr, index, 0, (objc-3), &(objv[3]));
+	if (TCL_OK != Tcl_ListObjReplace(interp, listPtr, index, 0,
+		(objc-3), &(objv[3]))) {
+	    return TCL_ERROR;
+	}
     }
 
     /*
@@ -2786,7 +2789,10 @@ Tcl_LreplaceObjCmd(
      * optimize this case away.
      */
 
-    Tcl_ListObjReplace(NULL, listPtr, first, numToDelete, objc-4, objv+4);
+    if (TCL_OK != Tcl_ListObjReplace(interp, listPtr, first, numToDelete,
+	    objc-4, objv+4)) {
+	return TCL_ERROR;
+    }
 
     /*
      * Set the interpreter's object result.
