@@ -1441,7 +1441,7 @@ InitArgsAndLocals(
 
     if (localCt) {
 	if (!codePtr->localCachePtr) {
-	    InitLocalCache(procPtr) ;
+	    InitLocalCache(procPtr);
 	}
 	framePtr->localCachePtr = codePtr->localCachePtr;
 	framePtr->localCachePtr->refCount++;
@@ -1697,12 +1697,41 @@ TclNRInterpProc(
 				 * procedure. */
     Tcl_Obj *const objv[])	/* Argument value objects. */
 {
-    int result = TclPushProcCallFrame(clientData, interp, objc, objv,
+    Proc *procPtr = clientData;
+    Interp *iPtr = (Interp *) interp;
+    int result;
+    Tcl_Obj *bodyPtr = procPtr->bodyPtr;
+    
+    /*
+     * Shortcut for empty bodies. Note that this also avoids compiling and
+     * shimmering the empty string, as well as pushing/popping a CallFrame and
+     * invoking TEBC. 
+     */
+
+    if (bodyPtr->bytes && (*bodyPtr->bytes == '\0')) {
+	/* empty body ... */
+	ByteCode *codePtr = (ByteCode *) bodyPtr->internalRep.twoPtrValue.ptr1;
+	if ((bodyPtr->typePtr != &tclByteCodeType) ||
+		!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	    /* ... and not precompiled ... */
+	    if (objc == procPtr->numArgs + 1) {
+		/* ... and correct number of arguments; we will still be
+		 * compiling empty bodies that have default values or args
+		 * for simplicity sake - to avoid having to go through the
+		 * linked list of compiled locals to determine the nature of
+		 * the last formal argument(s). */
+		return TCL_OK;
+	    }
+	}
+    }
+
+    result = TclPushProcCallFrame(procPtr, interp, objc, objv,
 	    /*isLambda*/ 0);
 
     if (result != TCL_OK) {
 	return TCL_ERROR;
     }
+    
     return TclNRInterpProcCore(interp, objv[0], 1, &MakeProcError);
 }
 

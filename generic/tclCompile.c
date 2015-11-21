@@ -1255,8 +1255,14 @@ Tcl_NRSubstObj(
 {
     ByteCode *codePtr = CompileSubstObj(interp, objPtr, flags);
 
-    /* TODO: Confirm we do not need this. */
-    /* Tcl_ResetResult(interp); */
+    /*
+     * Shortcut for empty scripts; avoid computing a string rep
+     */
+
+    if (objPtr->bytes && (*objPtr->bytes == '\0')) {
+	return TCL_OK;
+    }
+
     return TclNRExecuteByteCode(interp, codePtr);
 }
 

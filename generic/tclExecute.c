@@ -2037,6 +2037,15 @@ TclNRExecuteByteCode(
 		* sizeof(void *);
     int numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
 
+    /*
+     * Shortcut for compiled empty scripts
+     */
+
+    if (codePtr->source && (*codePtr->source == '\0')
+	    && !(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
+	return TCL_OK;
+    }
+    
     codePtr->refCount++;
 
     /*

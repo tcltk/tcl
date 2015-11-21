@@ -5971,6 +5971,14 @@ TclNREvalObjEx(
     int result;
 
     /*
+     * Shortcut for empty scripts; avoid computing a string rep
+     */
+
+    if (objPtr->bytes && (*objPtr->bytes == '\0')) {
+	return TCL_OK;
+    }
+
+    /*
      * This function consists of three independent blocks for: direct
      * evaluation of canonical lists, compilation and bytecode execution and
      * finally direct evaluation. Precisely one of these blocks will be run.
