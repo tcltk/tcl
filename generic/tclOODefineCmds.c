@@ -323,7 +323,9 @@ TclOOObjectSetMixins(
     if (numMixins == 0) {
 	if (oPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, oPtr->mixins) {
-		TclOORemoveFromInstances(oPtr, mixinPtr);
+		if (mixinPtr) {
+		    TclOORemoveFromInstances(oPtr, mixinPtr);
+		}
 	    }
 	    ckfree(oPtr->mixins.list);
 	    oPtr->mixins.num = 0;
@@ -332,7 +334,7 @@ TclOOObjectSetMixins(
     } else {
 	if (oPtr->mixins.num != 0) {
 	    FOREACH(mixinPtr, oPtr->mixins) {
-		if (mixinPtr != oPtr->selfCls) {
+		if (mixinPtr && mixinPtr != oPtr->selfCls) {
 		    TclOORemoveFromInstances(oPtr, mixinPtr);
 		}
 	    }
@@ -887,6 +889,7 @@ TclOODefineObjCmd(
 	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+	/* TODO: overflow? */
 	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
@@ -1001,6 +1004,7 @@ TclOOObjDefObjCmd(
 	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+	/* TODO: overflow? */
 	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-3, objv+3);
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
@@ -1115,6 +1119,7 @@ TclOODefineSelfObjCmd(
 	    Tcl_GetCommandFullName(interp, cmd, obj2Ptr);
 	}
 	Tcl_ListObjAppendElement(NULL, objPtr, obj2Ptr);
+	/* TODO: overflow? */
 	Tcl_ListObjReplace(NULL, objPtr, 1, 0, objc-2, objv+2);
 	Tcl_ListObjGetElements(NULL, objPtr, &dummy, &objs);
 
@@ -1210,6 +1215,9 @@ TclOODefineClassObjCmd(
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
 	oPtr->selfCls = clsPtr;
 	TclOOAddToInstances(oPtr, oPtr->selfCls);
+	if (!(clsPtr->thisPtr->flags & OBJECT_DELETED)) {
+	    oPtr->flags &= ~CLASS_GONE;
+	}
 	if (oPtr->classPtr != NULL) {
 	    BumpGlobalEpoch(interp, oPtr->classPtr);
 	} else {
@@ -2506,8 +2514,10 @@ ObjMixinGet(
 
     resultObj = Tcl_NewObj();
     FOREACH(mixinPtr, oPtr->mixins) {
-	Tcl_ListObjAppendElement(NULL, resultObj,
-		TclOOObjectName(interp, mixinPtr->thisPtr));
+	if (mixinPtr) {
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    TclOOObjectName(interp, mixinPtr->thisPtr));
+	}
     }
     Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
