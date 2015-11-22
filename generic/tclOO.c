@@ -951,6 +951,16 @@ ReleaseClassContents(
     }
     if (!IsRootClass(oPtr)) {
 	FOREACH(instancePtr, clsPtr->instances) {
+	    int j;
+	    if (instancePtr->selfCls == clsPtr) {
+		instancePtr->flags |= CLASS_GONE;
+	    }
+	    for(j=0 ; j<instancePtr->mixins.num ; j++) {
+		Class *mixin = instancePtr->mixins.list[j];
+		if (mixin == clsPtr) {
+		    instancePtr->mixins.list[j] = NULL;
+		}
+	    }
 	    if (instancePtr != NULL && !IsRoot(instancePtr)) {
 		AddRef(instancePtr);
 	    }
@@ -1131,12 +1141,14 @@ ObjectNamespaceDeleted(
      * methods on the object.
      */
 
-    if (!IsRootObject(oPtr)) {
+    if (!IsRootObject(oPtr) && !(oPtr->flags & CLASS_GONE)) {
 	TclOORemoveFromInstances(oPtr, oPtr->selfCls);
     }
 
     FOREACH(mixinPtr, oPtr->mixins) {
-	TclOORemoveFromInstances(oPtr, mixinPtr);
+	if (mixinPtr) {
+	    TclOORemoveFromInstances(oPtr, mixinPtr);
+	}
     }
     if (i) {
 	ckfree(oPtr->mixins.list);
@@ -1908,13 +1920,13 @@ Tcl_CopyObjectInstance(
      */
 
     FOREACH(mixinPtr, o2Ptr->mixins) {
-	if (mixinPtr != o2Ptr->selfCls) {
+	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
 	    TclOORemoveFromInstances(o2Ptr, mixinPtr);
 	}
     }
     DUPLICATE(o2Ptr->mixins, oPtr->mixins, Class *);
     FOREACH(mixinPtr, o2Ptr->mixins) {
-	if (mixinPtr != o2Ptr->selfCls) {
+	if (mixinPtr && mixinPtr != o2Ptr->selfCls) {
 	    TclOOAddToInstances(o2Ptr, mixinPtr);
 	}
     }
