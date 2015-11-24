@@ -2,7 +2,7 @@
 #
 #	This file contains the declarations for the functions in 'libtommath'
 #	that are contained within the Tcl library.  This file is used to
-#	generate the 'tclTomMathDecls.h' and 'tclTomMathStub.c' files.
+#	generate the 'tclTomMathDecls.h' and 'tclStubInit.c' files.
 #
 # If you edit this file, advance the revision number (and the epoch
 # if the new stubs are not backward compatible) in tclTomMathDecls.h
