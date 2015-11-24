@@ -906,8 +906,13 @@ Tcl_ListObjReplace(
 	count = numElems - first;
     }
 
+    if (objc > LIST_MAX - (numElems - count)) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"max length of a Tcl list (%d elements) exceeded", LIST_MAX));
+	return TCL_ERROR;
+    }
     isShared = (listRepPtr->refCount > 1);
-    numRequired = numElems - count + objc;
+    numRequired = numElems - count + objc; /* Known <= LIST_MAX */
 
     for (i = 0;  i < objc;  i++) {
 	Tcl_IncrRefCount(objv[i]);

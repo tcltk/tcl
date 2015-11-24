@@ -337,18 +337,6 @@ proc ::tcl::tm::Defaults {} {
 	    }
 	}
     }
-    if {$major == 8} return
-    for {set n 7} {$n >= 0} {incr n -1} {
-	foreach ev [::list \
-			TCL8.${n}_TM_PATH \
-			TCL8_${n}_TM_PATH \
-	    ] {
-	    if {![info exists env($ev)]} continue
-	    foreach p [split $env($ev) $sep] {
-		path add $p
-	    }
-	}
-    }
     return
 }
 
@@ -371,16 +359,6 @@ proc ::tcl::tm::roots {paths} {
 	set p [file join $pa tcl$major]
 	for {set n $minor} {$n >= 0} {incr n -1} {
 	    set px [file join $p ${major}.${n}]
-	    if {![interp issafe]} {set px [file normalize $px]}
-	    path add $px
-	}
-	set px [file join $p site-tcl]
-	if {![interp issafe]} {set px [file normalize $px]}
-	path add $px
-	if {$major == 8} continue
-	set p [file join $pa tcl8]
-	for {set n 7} {$n >= 0} {incr n -1} {
-	    set px [file join $p 8.${n}]
 	    if {![interp issafe]} {set px [file normalize $px]}
 	    path add $px
 	}
