@@ -2,8 +2,8 @@
 #
 #	This file contains the declarations for all supported public
 #	functions that are exported by the Tcl library via the stubs table.
-#	This file is used to generate the tclDecls.h, tclPlatDecls.h,
-#	tclStub.c, and tclPlatStub.c files.
+#	This file is used to generate the tclDecls.h, tclPlatDecls.h
+#	and tclStubInit.c files.
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # Copyright (c) 2001, 2002 by Kevin B. Kenny.  All rights reserved.
