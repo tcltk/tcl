@@ -12,7 +12,7 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
- 
+
 #include "tclInt.h"
 #include "tclParse.h"
 #include <assert.h>
@@ -2494,7 +2494,7 @@ TclParseQuotedString(
  *	flags argument to provide support for the -nobackslashes, -nocommands,
  *	and -novariables options, as represented by the flag values
  *	TCL_SUBST_BACKSLASHES, TCL_SUBST_COMMANDS, TCL_SUBST_VARIABLES.
- *	
+ *
  * Results:
  *	None.
  *

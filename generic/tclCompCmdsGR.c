@@ -145,7 +145,7 @@ TclCompileGlobalCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass throug the 
+	/* TODO: Consider what value can pass throug the
 	 * IndexTailVarIfKnown() screen.  Full CompileWord()
 	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);
@@ -2882,7 +2882,7 @@ TclCompileVariableCmd(
 	    return TCL_ERROR;
 	}
 
-	/* TODO: Consider what value can pass throug the 
+	/* TODO: Consider what value can pass throug the
 	 * IndexTailVarIfKnown() screen.  Full CompileWord()
 	 * likely does not apply here.  Push known value instead. */
 	CompileWord(envPtr, varTokenPtr, interp, i);
