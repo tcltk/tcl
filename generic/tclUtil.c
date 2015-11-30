@@ -1791,7 +1791,12 @@ Tcl_ConcatObj(
 	    TclListObjGetElements(NULL, objPtr, &listc, &listv);
 	    if (listc) {
 		if (resPtr) {
-		    Tcl_ListObjReplace(NULL, resPtr, INT_MAX, 0, listc, listv);
+		    if (TCL_OK != Tcl_ListObjReplace(NULL, resPtr,
+			    INT_MAX, 0, listc, listv)) {
+			/* Abandon ship! */
+			Tcl_DecrRefCount(resPtr);
+			goto slow;
+		    }
 		} else {
 		    resPtr = TclListObjCopy(NULL, objPtr);
 		}
@@ -1808,6 +1813,7 @@ Tcl_ConcatObj(
      * the slow way, using the string representations.
      */
 
+  slow:
     /* First try to pre-allocate the size required */
     for (i = 0;  i < objc;  i++) {
 	element = TclGetStringFromObj(objv[i], &elemLength);
