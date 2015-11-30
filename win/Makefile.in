@@ -400,6 +400,8 @@ winhelp: $(ROOT_DIR)/tools/man2help.tcl $(MAN2TCL)
 	./$(TCLSH) "$(ROOT_DIR_NATIVE)"/tools/man2help.tcl tcl "$(VER)" $(TCL_DOCS)
 	hcw /c /e tcl.hpj
 
+winextensions: ${DDE_DLL_FILE} ${REG_DLL_FILE}
+
 $(MAN2TCL): $(ROOT_DIR)/tools/man2tcl.c
 	$(CC) $(CFLAGS_OPTIMIZE) $(MAN2TCLFLAGS) -o $(MAN2TCL) "$(ROOT_DIR_NATIVE)"/tools/man2tcl.c
 

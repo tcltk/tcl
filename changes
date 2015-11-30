@@ -7967,4 +7967,10 @@ of Tcl_Channel  (porter)
 2015-10-21 (bug)[818a1a][a3c350][d7ea9f][8f2450][1080042] Many fixes and
 improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
+2015-11-10 (bug)[261a8a] Overflow segfault in I/O translation (brooks,porter)
+
+2015-11-20 (bug)[3293874] let lists grow all the way to the limit (porter)
+
+2015-11-20 (bug)[40f628] ListObjReplace callers fail to detect max (porter)
+
 --- Released 8.5.19, December 1, 2015 --- http://core.tcl.tk/tcl/ for details
