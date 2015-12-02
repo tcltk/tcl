@@ -3792,15 +3792,11 @@ echo "${ECHO_T}using shared flags" >&6
 		    ;;
 	    esac
 	    if test ! -d "${PATH64}" ; then
-		{ echo "$as_me:$LINENO: WARNING: Could not find 64-bit $MACHINE SDK to enable 64bit mode" >&5
-echo "$as_me: WARNING: Could not find 64-bit $MACHINE SDK to enable 64bit mode" >&2;}
-		{ echo "$as_me:$LINENO: WARNING: Ensure latest Platform SDK is installed" >&5
-echo "$as_me: WARNING: Ensure latest Platform SDK is installed" >&2;}
-		do64bit="no"
-	    else
-		echo "$as_me:$LINENO: result:    Using 64-bit $MACHINE mode" >&5
-echo "${ECHO_T}   Using 64-bit $MACHINE mode" >&6
+		{ echo "$as_me:$LINENO: WARNING: Could not find 64-bit $MACHINE SDK" >&5
+echo "$as_me: WARNING: Could not find 64-bit $MACHINE SDK" >&2;}
 	    fi
+	    echo "$as_me:$LINENO: result:    Using 64-bit $MACHINE mode" >&5
+echo "${ECHO_T}   Using 64-bit $MACHINE mode" >&6
 	fi
 
 	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib userenv.lib ws2_32.lib"
