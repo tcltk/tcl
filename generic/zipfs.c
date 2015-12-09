@@ -3712,19 +3712,22 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 {
 #ifdef HAVE_ZLIB
     static CONST char findproc[] =
-	"proc ::zipfs::find d {\n"
-	" set ret {}\n"
-	" foreach f [glob -directory $d -tails -nocomplain * .*] {\n"
-	"  if {$f eq \".\" || $f eq \"..\"} {\n"
+	"proc ::zipfs::find dir {\n"
+	" set result {}\n"
+	" if {[catch {glob -directory $dir -tails -nocomplain * .*} list]} {\n"
+	"  return $result\n"
+	" }\n"
+	" foreach file $list {\n"
+	"  if {$file eq \".\" || $file eq \"..\"} {\n"
 	"   continue\n"
 	"  }\n"
-	"  set f [file join $d $f]\n"
-	"  lappend ret $f\n"
-	"  foreach f [::zipfs::find $f] {\n"
-	"   lappend ret $f\n"
+	"  set file [file join $dir $file]\n"
+	"  lappend result $file\n"
+	"  foreach file [::zipfs::find $file] {\n"
+	"   lappend result $file\n"
 	"  }\n"
 	" }\n"
-	" return [lsort $ret]\n"
+	" return [lsort $result]\n"
 	"}\n";
 
 #ifdef USE_TCL_STUBS
