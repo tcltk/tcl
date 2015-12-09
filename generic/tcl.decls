@@ -1894,9 +1894,9 @@ declare 523 {
 declare 524 {
     int Tcl_LimitExceeded(Tcl_Interp *interp)
 }
-declare 525 {
-    void Tcl_LimitSetCommands(Tcl_Interp *interp, int commandLimit)
-}
+#declare 525 {
+#    void Tcl_LimitSetCommands(Tcl_Interp *interp, int commandLimit)
+#}
 declare 526 {
     void Tcl_LimitSetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)
 }
@@ -1915,9 +1915,9 @@ declare 530 {
 declare 531 {
     void Tcl_LimitTypeReset(Tcl_Interp *interp, int type)
 }
-declare 532 {
-    int Tcl_LimitGetCommands(Tcl_Interp *interp)
-}
+#declare 532 {
+#    int Tcl_LimitGetCommands(Tcl_Interp *interp)
+#}
 declare 533 {
     void Tcl_LimitGetTime(Tcl_Interp *interp, Tcl_Time *timeLimitPtr)
 }

@@ -586,7 +586,6 @@ Tcl_CreateInterp(void)
 	iPtr->packagePrefer = PKG_PREFER_LATEST;
     }
 
-    iPtr->cmdCount = 0;
     TclInitLiteralTable(&iPtr->literalTable);
     iPtr->compileEpoch = 0;
     iPtr->compiledProcPtr = NULL;
@@ -838,12 +837,6 @@ Tcl_CreateInterp(void)
 	    Tcl_DisassembleObjCmd, INT2PTR(1), NULL);
     Tcl_CreateObjCommand(interp, "::tcl::unsupported::representation",
 	    Tcl_RepresentationCmd, NULL, NULL);
-
-    /* Adding the bytecode assembler command */
-    cmdPtr = (Command *) Tcl_NRCreateCommand(interp,
-            "::tcl::unsupported::assemble", Tcl_AssembleObjCmd,
-            TclNRAssembleObjCmd, NULL, NULL);
-    cmdPtr->compileProc = &TclCompileAssembleCmd;
 
     Tcl_NRCreateCommand(interp, "::tcl::unsupported::inject", NULL,
 	    NRCoroInjectObjCmd, NULL, NULL);
@@ -4318,7 +4311,6 @@ Dispatch(
     ClientData clientData = data[1];
     int objc = PTR2INT(data[2]);
     Tcl_Obj **objv = data[3];
-    Interp *iPtr = (Interp *) interp;
 
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
@@ -4349,7 +4341,6 @@ Dispatch(
     }
 #endif /* USE_DTRACE */
 
-    iPtr->cmdCount++;
     return objProc(clientData, interp, objc, objv);
 }
 

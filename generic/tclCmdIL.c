@@ -111,8 +111,6 @@ static int		InfoArgsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoBodyCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-static int		InfoCmdCountCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 static int		InfoCommandsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoCompleteCmd(ClientData dummy, Tcl_Interp *interp,
@@ -163,7 +161,6 @@ static Tcl_Obj *	SelectObjFromSublist(Tcl_Obj *firstPtr,
 static const EnsembleImplMap defaultInfoMap[] = {
     {"args",		   InfoArgsCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"body",		   InfoBodyCmd,		    TclCompileBasic1ArgCmd, NULL, NULL, 0},
-    {"cmdcount",	   InfoCmdCountCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
     {"commands",	   InfoCommandsCmd,	    TclCompileInfoCommandsCmd, NULL, NULL, 0},
     {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
@@ -583,45 +580,6 @@ InfoBodyCmd(
     resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
 
     Tcl_SetObjResult(interp, resultPtr);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InfoCmdCountCmd --
- *
- *	Called to implement the "info cmdcount" command that returns the
- *	number of commands that have been executed. Handles the following
- *	syntax:
- *
- *	    info cmdcount
- *
- * Results:
- *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
- *
- * Side effects:
- *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InfoCmdCountCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    Interp *iPtr = (Interp *) interp;
-
-    if (objc != 1) {
-	Tcl_WrongNumArgs(interp, 1, objv, NULL);
-	return TCL_ERROR;
-    }
-
-    Tcl_SetObjResult(interp, Tcl_NewIntObj(iPtr->cmdCount));
     return TCL_OK;
 }
 

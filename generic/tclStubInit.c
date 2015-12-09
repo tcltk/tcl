@@ -1309,14 +1309,14 @@ const TclStubs tclStubs = {
     Tcl_LimitReady, /* 522 */
     Tcl_LimitCheck, /* 523 */
     Tcl_LimitExceeded, /* 524 */
-    Tcl_LimitSetCommands, /* 525 */
+    0, /* 525 */
     Tcl_LimitSetTime, /* 526 */
     Tcl_LimitSetGranularity, /* 527 */
     Tcl_LimitTypeEnabled, /* 528 */
     Tcl_LimitTypeExceeded, /* 529 */
     Tcl_LimitTypeSet, /* 530 */
     Tcl_LimitTypeReset, /* 531 */
-    Tcl_LimitGetCommands, /* 532 */
+    0, /* 532 */
     Tcl_LimitGetTime, /* 533 */
     Tcl_LimitGetGranularity, /* 534 */
     Tcl_SaveInterpState, /* 535 */

@@ -286,29 +286,24 @@ TclDisassembleByteCodeObj(
      */
 
     if (codePtr->numExceptRanges > 0) {
-	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %d, depth %d:\n",
-		codePtr->numExceptRanges, codePtr->maxExceptDepth);
+	Tcl_AppendPrintfToObj(bufferObj, "  Exception ranges %d\n",
+		codePtr->numExceptRanges);
 	for (i = 0;  i < codePtr->numExceptRanges;  i++) {
 	    ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
 	    Tcl_AppendPrintfToObj(bufferObj,
-		    "      %d: level %d, %s, pc %d-%d, ",
-		    i, rangePtr->nestingLevel,
-		    (rangePtr->type==LOOP_EXCEPTION_RANGE ? "loop" : "catch"),
+		    "      %d: %s, pc %d-%d, stkDepth %d, ",
+		    i,
+		    (IS_CATCH_RANGE(rangePtr) ? "catch" : "loop"),
 		    rangePtr->codeOffset,
-		    (rangePtr->codeOffset + rangePtr->numCodeBytes - 1));
-	    switch (rangePtr->type) {
-	    case LOOP_EXCEPTION_RANGE:
-		Tcl_AppendPrintfToObj(bufferObj, "continue %d, break %d\n",
-			rangePtr->continueOffset, rangePtr->breakOffset);
-		break;
-	    case CATCH_EXCEPTION_RANGE:
+		    (rangePtr->codeOffset + rangePtr->numCodeBytes - 1),
+		    rangePtr->stackDepth);
+	    if (IS_CATCH_RANGE(rangePtr)) {
 		Tcl_AppendPrintfToObj(bufferObj, "catch %d\n",
-			rangePtr->catchOffset);
-		break;
-	    default:
-		Tcl_Panic("TclDisassembleByteCodeObj: bad ExceptionRange type %d",
-			rangePtr->type);
+			rangePtr->mainOffset);
+	    } else {
+		Tcl_AppendPrintfToObj(bufferObj, "continue %d, break %d\n",
+			rangePtr->continueOffset, rangePtr->mainOffset);
 	    }
 	}
     }
@@ -502,10 +497,6 @@ FormatInstruction(
 	    break;
 	case OPERAND_UINT4:
 	    opnd = TclGetUInt4AtPtr(pc+numBytes); numBytes += 4;
-	    if (opCode == INST_START_CMD) {
-		sprintf(suffixBuffer+strlen(suffixBuffer),
-			", %u cmds start here", opnd);
-	    }
 	    Tcl_AppendPrintfToObj(bufferObj, "%u ", (unsigned) opnd);
 	    break;
 	case OPERAND_OFFSET1:
@@ -515,11 +506,7 @@ FormatInstruction(
 	    break;
 	case OPERAND_OFFSET4:
 	    opnd = TclGetInt4AtPtr(pc+numBytes); numBytes += 4;
-	    if (opCode == INST_START_CMD) {
-		sprintf(suffixBuffer, "next cmd at pc %u", pcOffset+opnd);
-	    } else {
-		sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
-	    }
+	    sprintf(suffixBuffer, "pc %u", pcOffset+opnd);
 	    Tcl_AppendPrintfToObj(bufferObj, "%+d ", opnd);
 	    break;
 	case OPERAND_LIT1:
@@ -1083,21 +1070,18 @@ DisassembleByteCodeAsDicts(
     for (i=0 ; i<codePtr->numExceptRanges ; i++) {
 	ExceptionRange *rangePtr = &codePtr->exceptArrayPtr[i];
 
-	switch (rangePtr->type) {
-	case LOOP_EXCEPTION_RANGE:
+	if (IS_CATCH_RANGE(rangePtr)) {
 	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
-		    "type %s level %d from %d to %d break %d continue %d",
-		    "loop", rangePtr->nestingLevel, rangePtr->codeOffset,
+		    "type %s from %d to %d catch %d",
+		    "catch", rangePtr->codeOffset,
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
-		    rangePtr->breakOffset, rangePtr->continueOffset));
-	    break;
-	case CATCH_EXCEPTION_RANGE:
+		    rangePtr->mainOffset));
+	} else {
 	    Tcl_ListObjAppendElement(NULL, exn, Tcl_ObjPrintf(
-		    "type %s level %d from %d to %d catch %d",
-		    "catch", rangePtr->nestingLevel, rangePtr->codeOffset,
+		    "type %s from %d to %d break %d continue %d",
+		    "loop", rangePtr->codeOffset,
 		    rangePtr->codeOffset + rangePtr->numCodeBytes - 1,
-		    rangePtr->catchOffset));
-	    break;
+		    rangePtr->mainOffset, rangePtr->continueOffset));
 	}
     }
 
@@ -1172,8 +1156,6 @@ DisassembleByteCodeAsDicts(
 	    Tcl_NewStringObj(codePtr->nsPtr->fullName, -1));
     Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("stackdepth", -1),
 	    Tcl_NewIntObj(codePtr->maxStackDepth));
-    Tcl_DictObjPut(NULL, description, Tcl_NewStringObj("exceptdepth", -1),
-	    Tcl_NewIntObj(codePtr->maxExceptDepth));
     return description;
 }
 

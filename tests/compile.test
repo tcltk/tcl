@@ -750,7 +750,7 @@ test compile-18.19 {disassembler - basics} -setup {
 } -match glob -result *
 # There never was a compile-18.20.
 # The keys of the dictionary produced by [getbytecode] are defined.
-set bytecodekeys {literals variables exception instructions auxiliary commands script namespace stackdepth exceptdepth}
+set bytecodekeys {literals variables exception instructions auxiliary commands script namespace stackdepth}
 test compile-18.21 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode
 } -match glob -result {wrong # args: should be "*"}

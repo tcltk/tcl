@@ -1,0 +1,13 @@
+IMPORTANT MODS AND INCOMPATS
+
+* changes to compiler and engine: old .tbc will not run, except with a
+  "sufficiently clever" tbcload. The compilefr and tbcload will probably
+  need some work to adapt to the changes. This branch completely ignores
+  these issues.
+
+* tclAssembly.c and related are gone; it was an added burden adapting them
+  while modifying the bytecodes and tebc, the decision was taken to remove
+  it and do the work again "at the end"
+
+* INCOMPATIBILITY - no more cmdCount
+  There is no more [info cmdcount], or cmdCount based interpreter limits

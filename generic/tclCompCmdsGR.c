@@ -196,7 +196,7 @@ TclCompileIfCmd(
 				 * determined. */
     Tcl_Token *tokenPtr, *testTokenPtr;
     int jumpIndex = 0;		/* Avoid compiler warning. */
-    int jumpFalseDist, numWords, wordIdx, numBytes, j, code;
+    int numWords, wordIdx, numBytes, j, code;
     const char *word;
     int realCond = 1;		/* Set to 0 for static conditions:
 				 * "if 0 {..}" */
@@ -286,7 +286,7 @@ TclCompileIfCmd(
 		}
 		jumpIndex = jumpFalseFixupArray.next;
 		jumpFalseFixupArray.next++;
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP,
+		TclEmitForwardJump(envPtr, JUMP_FALSE,
 			jumpFalseFixupArray.fixup+jumpIndex);
 	    }
 	    code = TCL_OK;
@@ -333,7 +333,7 @@ TclCompileIfCmd(
 		TclExpandJumpFixupArray(&jumpEndFixupArray);
 	    }
 	    jumpEndFixupArray.next++;
-	    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
+	    TclEmitForwardJump(envPtr, JUMP,
 		    jumpEndFixupArray.fixup+jumpIndex);
 
 	    /*
@@ -345,15 +345,7 @@ TclCompileIfCmd(
 	     */
 
 	    TclAdjustStackDepth(-1, envPtr);
-	    if (TclFixupForwardJumpToHere(envPtr,
-		    jumpFalseFixupArray.fixup+jumpIndex, 120)) {
-		/*
-		 * Adjust the code offset for the proceeding jump to the end
-		 * of the "if" command.
-		 */
-
-		jumpEndFixupArray.fixup[jumpIndex].codeOffset += 3;
-	    }
+	    TclFixupForwardJumpToHere(envPtr, jumpFalseFixupArray.fixup[jumpIndex]);
 	} else if (boolVal) {
 	    /*
 	     * We were processing an "if 1 {...}"; stop compiling scripts.
@@ -428,29 +420,7 @@ TclCompileIfCmd(
 
     for (j = jumpEndFixupArray.next;  j > 0;  j--) {
 	jumpIndex = (j - 1);	/* i.e. process the closest jump first. */
-	if (TclFixupForwardJumpToHere(envPtr,
-		jumpEndFixupArray.fixup+jumpIndex, 127)) {
-	    /*
-	     * Adjust the immediately preceeding "ifFalse" jump. We moved it's
-	     * target (just after this jump) down three bytes.
-	     */
-
-	    unsigned char *ifFalsePc = envPtr->codeStart
-		    + jumpFalseFixupArray.fixup[jumpIndex].codeOffset;
-	    unsigned char opCode = *ifFalsePc;
-
-	    if (opCode == INST_JUMP_FALSE1) {
-		jumpFalseDist = TclGetInt1AtPtr(ifFalsePc + 1);
-		jumpFalseDist += 3;
-		TclStoreInt1AtPtr(jumpFalseDist, (ifFalsePc + 1));
-	    } else if (opCode == INST_JUMP_FALSE4) {
-		jumpFalseDist = TclGetInt4AtPtr(ifFalsePc + 1);
-		jumpFalseDist += 3;
-		TclStoreInt4AtPtr(jumpFalseDist, (ifFalsePc + 1));
-	    } else {
-		Tcl_Panic("TclCompileIfCmd: unexpected opcode \"%d\" updating ifFalse jump", (int) opCode);
-	    }
-	}
+	TclFixupForwardJumpToHere(envPtr, jumpEndFixupArray.fixup[jumpIndex]);
     }
 
     /*
@@ -644,7 +614,7 @@ TclCompileInfoCommandsCmd(
     TclEmitOpcode(	INST_RESOLVE_COMMAND,	envPtr);
     TclEmitOpcode(	INST_DUP,		envPtr);
     TclEmitOpcode(	INST_STR_LEN,		envPtr);
-    TclEmitInstInt1(	INST_JUMP_FALSE1, 7,	envPtr);
+    TclEmitInstInt4(	INST_JUMP_FALSE4, 10,	envPtr);
     TclEmitInstInt4(	INST_LIST, 1,		envPtr);
     return TCL_OK;
 
@@ -1574,18 +1544,18 @@ TclCompileLreplaceCmd(
 	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
 	TclEmitOpcode(		INST_GT,			envPtr);
 	offset = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitInstInt4(	INST_JUMP_TRUE4, 0,		envPtr);
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	offset2 = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
+	TclEmitInstInt4(	INST_JUMP_FALSE4, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
+	TclStoreInt4AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+	TclStoreInt4AtPtr(CurrentOffset(envPtr) - offset2,
 		envPtr->codeStart + offset2 + 1);
 	TclAdjustStackDepth(-1, envPtr);
     }
@@ -1630,18 +1600,18 @@ TclCompileLreplaceCmd(
 	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
 	TclEmitOpcode(		INST_GT,			envPtr);
 	offset = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitInstInt4(	INST_JUMP_TRUE4, 0,		envPtr);
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	offset2 = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitInstInt4(	INST_JUMP_TRUE4, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
 		Tcl_ObjPrintf("-errorcode {TCL OPERATION LREPLACE BADIDX}"));
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset,
+	TclStoreInt4AtPtr(CurrentOffset(envPtr) - offset,
 		envPtr->codeStart + offset + 1);
-	TclStoreInt1AtPtr(CurrentOffset(envPtr) - offset2,
+	TclStoreInt4AtPtr(CurrentOffset(envPtr) - offset2,
 		envPtr->codeStart + offset2 + 1);
 	TclAdjustStackDepth(-1, envPtr);
     }
@@ -1983,7 +1953,7 @@ TclCompileNamespaceQualifiersCmd(
     PushStringLiteral(envPtr, ":");
     TclEmitOpcode(	INST_STR_EQ,			envPtr);
     off = off - CurrentOffset(envPtr);
-    TclEmitInstInt1(	INST_JUMP_TRUE1, off,		envPtr);
+    TclEmitInstInt4(	INST_JUMP_TRUE4, off,		envPtr);
     TclEmitOpcode(	INST_STR_RANGE,			envPtr);
     return TCL_OK;
 }
@@ -1999,7 +1969,7 @@ TclCompileNamespaceTailCmd(
 {
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     DefineLineInformation;	/* TIP #280 */
-    JumpFixup jumpFixup;
+    int jumpFixup;
 
     if (parsePtr->numWords != 2) {
 	return TCL_ERROR;
@@ -2016,10 +1986,10 @@ TclCompileNamespaceTailCmd(
     TclEmitOpcode(	INST_DUP,			envPtr);
     PushStringLiteral(envPtr, "0");
     TclEmitOpcode(	INST_GE,			envPtr);
-    TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpFixup);
+    TclEmitForwardJump(envPtr, JUMP_FALSE, &jumpFixup);
     PushStringLiteral(envPtr, "2");
     TclEmitOpcode(	INST_ADD,			envPtr);
-    TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127);
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
     PushStringLiteral(envPtr, "end");
     TclEmitOpcode(	INST_STR_RANGE,			envPtr);
     return TCL_OK;
@@ -2528,6 +2498,7 @@ TclCompileReturnCmd(
 
 	CompileWord(envPtr, optsTokenPtr, interp, 2);
 	CompileWord(envPtr, msgTokenPtr,  interp, 3);
+	TclEmitInstInt4(INST_REVERSE, 2, envPtr);
 	TclEmitInvoke(envPtr, INST_RETURN_STK);
 	return TCL_OK;
     }
@@ -2607,29 +2578,22 @@ TclCompileReturnCmd(
 	 * We have default return options and we're in a proc ...
 	 */
 
-	int index = envPtr->exceptArrayNext - 1;
-	int enclosingCatch = 0;
+	if (envPtr->exceptArrayNext) {
+	    int last = envPtr->exceptArrayNext -1;
+	    ExceptionRange *rangePtr = TclGetExceptionRange(CurrentOffset(envPtr),
+		    TCL_ERROR, &envPtr->exceptArrayPtr[last],
+		    &envPtr->exceptArrayPtr[0]);
+	    if (!rangePtr) {
+		/*
+		 * ... and there is no enclosing catch. Issue the maximally
+		 * efficient exit instruction.
+		 */
 
-	while (index >= 0) {
-	    ExceptionRange range = envPtr->exceptArrayPtr[index];
-
-	    if ((range.type == CATCH_EXCEPTION_RANGE)
-		    && (range.catchOffset == -1)) {
-		enclosingCatch = 1;
-		break;
+		Tcl_DecrRefCount(returnOpts);
+		TclEmitOpcode(INST_DONE, envPtr);
+		TclAdjustStackDepth(1, envPtr);
+		return TCL_OK;
 	    }
-	    index--;
-	}
-	if (!enclosingCatch) {
-	    /*
-	     * ... and there is no enclosing catch. Issue the maximally
-	     * efficient exit instruction.
-	     */
-
-	    Tcl_DecrRefCount(returnOpts);
-	    TclEmitOpcode(INST_DONE, envPtr);
-	    TclAdjustStackDepth(1, envPtr);
-	    return TCL_OK;
 	}
     }
 
@@ -2674,6 +2638,7 @@ TclCompileReturnCmd(
      * Issue the RETURN itself.
      */
 
+    TclEmitInstInt4(INST_REVERSE, 2, envPtr);
     TclEmitInvoke(envPtr, INST_RETURN_STK);
     return TCL_OK;
 }
@@ -2686,23 +2651,6 @@ CompileReturnInternal(
     int level,
     Tcl_Obj *returnOpts)
 {
-    if (level == 0 && (code == TCL_BREAK || code == TCL_CONTINUE)) {
-	ExceptionRange *rangePtr;
-	ExceptionAux *exceptAux;
-
-	rangePtr = TclGetInnermostExceptionRange(envPtr, code, &exceptAux);
-	if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	    TclCleanupStackForBreakContinue(envPtr, exceptAux);
-	    if (code == TCL_BREAK) {
-		TclAddLoopBreakFixup(envPtr, exceptAux);
-	    } else {
-		TclAddLoopContinueFixup(envPtr, exceptAux);
-	    }
-	    Tcl_DecrRefCount(returnOpts);
-	    return;
-	}
-    }
-
     TclEmitPush(TclAddLiteralObj(envPtr, returnOpts, NULL), envPtr);
     TclEmitInstInt4(op, code, envPtr);
     TclEmitInt4(level, envPtr);

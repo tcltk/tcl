@@ -69,90 +69,53 @@ MODULE_SCOPE const Tcl_ObjType tclLambdaType;
  * ExceptionRange structure describes a range of code (e.g., a loop body), the
  * kind of exceptions (e.g., a break or continue) that might occur, and the PC
  * offsets to jump to if a matching exception does occur. Exception ranges can
- * nest so this structure includes a nesting level that is used at runtime to
- * find the closest exception range surrounding a PC. For example, when a
- * break command is executed, the ExceptionRange structure for the most deeply
- * nested loop, if any, is found and used. These structures are also generated
- * for the "next" subcommands of for loops since a break there terminates the
- * for command. This means a for command actually generates two LoopInfo
- * structures.
+ * nest, so we have to find the closest exception range surrounding a PC. For
+ * example, when a break command is executed, the ExceptionRange structure for
+ * the most deeply nested loop, if any, is found and used.
+ *
+ * The code ASSUMES that nested ranges come after their containing range in
+ * the arrays contained in CompileEnv and Bytecode structures, so this
+ * convention has to be respected by the compiler. The code also assumes that
+ * the range targets are *always* at the same stack depth as the range start.
+ *
+ * These structures are also generated for the "next" subcommands of for loops
+ * since a break there terminates the for command. This means a for command
+ * actually generates two of these structures.
  */
 
-typedef enum {
-    LOOP_EXCEPTION_RANGE,	/* Exception's range is part of a loop. Break
-				 * and continue "exceptions" cause jumps to
-				 * appropriate PC offsets. */
-    CATCH_EXCEPTION_RANGE	/* Exception's range is controlled by a catch
-				 * command. Errors in the range cause a jump
-				 * to a catch PC offset. */
-} ExceptionRangeType;
+/*
+ * Flags indicating the kind of ExceptionRange
+ */
+
+#define LOOP_EXCEPTION_RANGE     0x00
+#define CATCH_EXCEPTION_RANGE    0x01
+#define CATCH_PUSH_RESULT        0x02
+#define CATCH_PUSH_OPTIONS       0x04
+#define CATCH_EXCEPTION_FULL     0x07
+
+#define IS_CATCH_RANGE(rPtr) ((rPtr)->flags != 0)
 
 typedef struct ExceptionRange {
-    ExceptionRangeType type;	/* The kind of ExceptionRange. */
-    int nestingLevel;		/* Static depth of the exception range. Used
-				 * to find the most deeply-nested range
-				 * surrounding a PC at runtime. */
+    int stackDepth;             /* Stack depth at range start and targets */ 
+    int flags;                  /* Flags indicating the kind of ExceptionRange */
     int codeOffset;		/* Offset of the first instruction byte of the
 				 * code range. */
-    int numCodeBytes;		/* Number of bytes in the code range. */
-    int breakOffset;		/* If LOOP_EXCEPTION_RANGE, the target PC
-				 * offset for a break command in the range. */
+    int numCodeBytes;		/* Number of bytes in the code range. This is
+				 * negative while compiling, before the range
+				 * end is registered (used for keeping the
+				 * initial expand depth, as a negative number) */
+    int mainOffset;		/* If a CATCH_EXCEPTION_RANGE, the target PC
+				 * offset for any "exception" in range. If
+				 * LOOP_EXCEPTION_RANGE, the target PC offset
+				 * for a break command in the range. */
     int continueOffset;		/* If LOOP_EXCEPTION_RANGE and not -1, the
 				 * target PC offset for a continue command in
 				 * the code range. Otherwise, ignore this
 				 * range when processing a continue
-				 * command. */
-    int catchOffset;		/* If a CATCH_EXCEPTION_RANGE, the target PC
-				 * offset for any "exception" in range. */
+				 * command. During compilation, it may have
+				 * the value -2 to indicate that it will get
+				 * a proper value later on. */
 } ExceptionRange;
-
-/*
- * Auxiliary data used when issuing (currently just loop) exception ranges,
- * but which is not required during execution.
- */
-
-typedef struct ExceptionAux {
-    int supportsContinue;	/* Whether this exception range will have a
-				 * continueOffset created for it; if it is a
-				 * loop exception range that *doesn't* have
-				 * one (see [for] next-clause) then we must
-				 * not pick up the range when scanning for a
-				 * target to continue to. */
-    int stackDepth;		/* The stack depth at the point where the
-				 * exception range was created. This is used
-				 * to calculate the number of POPs required to
-				 * restore the stack to its prior state. */
-    int expandTarget;		/* The number of expansions expected on the
-				 * auxData stack at the time the loop starts;
-				 * we can't currently discard them except by
-				 * doing INST_INVOKE_EXPANDED; this is a known
-				 * problem. */
-    int expandTargetDepth;	/* The stack depth expected at the outermost
-				 * expansion within the loop. Not meaningful
-				 * if there are no open expansions between the
-				 * looping level and the point of jump
-				 * issue. */
-    int numBreakTargets;	/* The number of [break]s that want to be
-				 * targeted to the place where this loop
-				 * exception will be bound to. */
-    int *breakTargets;		/* The offsets of the INST_JUMP4 instructions
-				 * issued by the [break]s that we must
-				 * update. Note that resizing a jump (via
-				 * TclFixupForwardJump) can cause the contents
-				 * of this array to be updated. When
-				 * numBreakTargets==0, this is NULL. */
-    int allocBreakTargets;	/* The size of the breakTargets array. */
-    int numContinueTargets;	/* The number of [continue]s that want to be
-				 * targeted to the place where this loop
-				 * exception will be bound to. */
-    int *continueTargets;	/* The offsets of the INST_JUMP4 instructions
-				 * issued by the [continue]s that we must
-				 * update. Note that resizing a jump (via
-				 * TclFixupForwardJump) can cause the contents
-				 * of this array to be updated. When
-				 * numContinueTargets==0, this is NULL. */
-    int allocContinueTargets;	/* The size of the continueTargets array. */
-} ExceptionAux;
 
 /*
  * Structure used to map between instruction pc and source locations. It
@@ -297,10 +260,7 @@ typedef struct CompileEnv {
 				 * information provided by ObjInterpProc in
 				 * tclProc.c. */
     int numCommands;		/* Number of commands compiled. */
-    int exceptDepth;		/* Current exception range nesting level; -1
-				 * if not in any range currently. */
-    int maxExceptDepth;		/* Max nesting level of exception ranges; -1
-				 * if no ranges have been compiled. */
+    int expandDepth;		/* Current expansion nesting level. */
     int maxStackDepth;		/* Maximum number of stack elements needed to
 				 * execute the code. Set by compilation
 				 * procedures before returning. */
@@ -333,11 +293,6 @@ typedef struct CompileEnv {
 				 * entry. */
     int mallocedExceptArray;	/* 1 if ExceptionRange array was expanded and
 				 * exceptArrayPtr points in heap, else 0. */
-    ExceptionAux *exceptAuxArrayPtr;
-				/* Array of information used to restore the
-				 * state when processing BREAK/CONTINUE
-				 * exceptions. Must be the same size as the
-				 * exceptArrayPtr. */
     CmdLocation *cmdMapPtr;	/* Points to start of CmdLocation array.
 				 * numCommands is the index of the next entry
 				 * to use; (numCommands-1) is the entry index
@@ -359,9 +314,6 @@ typedef struct CompileEnv {
 				/* Initial storage of LiteralEntry array. */
     ExceptionRange staticExceptArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
 				/* Initial ExceptionRange array storage. */
-    ExceptionAux staticExAuxArraySpace[COMPILEENV_INIT_EXCEPT_RANGES];
-				/* Initial static except auxiliary info array
-				 * storage. */
     CmdLocation staticCmdMapSpace[COMPILEENV_INIT_CMD_MAP_SIZE];
 				/* Initial storage for cmd location map. */
     AuxData staticAuxDataArraySpace[COMPILEENV_INIT_AUX_DATA_SIZE];
@@ -372,16 +324,6 @@ typedef struct CompileEnv {
     int line;			/* First line of the script, based on the
 				 * invoking context, then the line of the
 				 * command currently compiled. */
-    int atCmdStart;		/* Flag to say whether an INST_START_CMD
-				 * should be issued; they should never be
-				 * issued repeatedly, as that is significantly
-				 * inefficient. If set to 2, that instruction
-				 * should not be issued at all (by the generic
-				 * part of the command compiler). */
-    int expandCount;		/* Number of INST_EXPAND_START instructions
-				 * encountered that have not yet been paired
-				 * with a corresponding
-				 * INST_INVOKE_EXPANDED. */
     int *clNext;		/* If not NULL, it refers to the next slot in
 				 * clLoc to check for an invisible
 				 * continuation line. */
@@ -457,8 +399,6 @@ typedef struct ByteCode {
     int numAuxDataItems;	/* Number of AuxData items. */
     int numCmdLocBytes;		/* Number of bytes needed for encoded command
 				 * location information. */
-    int maxExceptDepth;		/* Maximum nesting level of ExceptionRanges;
-				 * -1 if no ranges were compiled. */
     int maxStackDepth;		/* Maximum number of stack elements needed to
 				 * execute the code. */
     unsigned char *codeStart;	/* Points to the first byte of the code. This
@@ -572,257 +512,244 @@ typedef struct ByteCode {
 #define INST_JUMP_FALSE4		39
 
 /* Opcodes 40 to 64 */
-#define INST_LOR			40
-#define INST_LAND			41
-#define INST_BITOR			42
-#define INST_BITXOR			43
-#define INST_BITAND			44
-#define INST_EQ				45
-#define INST_NEQ			46
-#define INST_LT				47
-#define INST_GT				48
-#define INST_LE				49
-#define INST_GE				50
-#define INST_LSHIFT			51
-#define INST_RSHIFT			52
-#define INST_ADD			53
-#define INST_SUB			54
-#define INST_MULT			55
-#define INST_DIV			56
-#define INST_MOD			57
-#define INST_UPLUS			58
-#define INST_UMINUS			59
-#define INST_BITNOT			60
-#define INST_LNOT			61
-#define INST_CALL_BUILTIN_FUNC1		62
-#define INST_CALL_FUNC1			63
-#define INST_TRY_CVT_TO_NUMERIC		64
+#define INST_BITOR			40
+#define INST_BITXOR			41
+#define INST_BITAND			42
+#define INST_EQ				43
+#define INST_NEQ			44
+#define INST_LT				45
+#define INST_GT				46
+#define INST_LE				47
+#define INST_GE				48
+#define INST_LSHIFT			49
+#define INST_RSHIFT			50
+#define INST_ADD			51
+#define INST_SUB			52
+#define INST_MULT			53
+#define INST_DIV			54
+#define INST_MOD			55
+#define INST_UPLUS			56
+#define INST_UMINUS			57
+#define INST_BITNOT			58
+#define INST_LNOT			59
+#define INST_CALL_BUILTIN_FUNC1		60
+#define INST_CALL_FUNC1			61
+#define INST_TRY_CVT_TO_NUMERIC		62
 
 /* Opcodes 65 to 66 */
-#define INST_BREAK			65
-#define INST_CONTINUE			66
-
-/* Opcodes 67 to 68 */
-#define INST_FOREACH_START4		67 /* DEPRECATED */
-#define INST_FOREACH_STEP4		68 /* DEPRECATED */
+#define INST_BREAK			63
+#define INST_CONTINUE			64
 
 /* Opcodes 69 to 72 */
-#define INST_BEGIN_CATCH4		69
-#define INST_END_CATCH			70
-#define INST_PUSH_RESULT		71
-#define INST_PUSH_RETURN_CODE		72
 
 /* Opcodes 73 to 78 */
-#define INST_STR_EQ			73
-#define INST_STR_NEQ			74
-#define INST_STR_CMP			75
-#define INST_STR_LEN			76
-#define INST_STR_INDEX			77
-#define INST_STR_MATCH			78
+#define INST_STR_EQ			65
+#define INST_STR_NEQ			66
+#define INST_STR_CMP			67
+#define INST_STR_LEN			68
+#define INST_STR_INDEX			69
+#define INST_STR_MATCH			70
 
 /* Opcodes 78 to 81 */
-#define INST_LIST			79
-#define INST_LIST_INDEX			80
-#define INST_LIST_LENGTH		81
+#define INST_LIST			71
+#define INST_LIST_INDEX			72
+#define INST_LIST_LENGTH		73
 
 /* Opcodes 82 to 87 */
-#define INST_APPEND_SCALAR1		82
-#define INST_APPEND_SCALAR4		83
-#define INST_APPEND_ARRAY1		84
-#define INST_APPEND_ARRAY4		85
-#define INST_APPEND_ARRAY_STK		86
-#define INST_APPEND_STK			87
+#define INST_APPEND_SCALAR1		74
+#define INST_APPEND_SCALAR4		75
+#define INST_APPEND_ARRAY1		76
+#define INST_APPEND_ARRAY4		77
+#define INST_APPEND_ARRAY_STK		78
+#define INST_APPEND_STK			79
 
 /* Opcodes 88 to 93 */
-#define INST_LAPPEND_SCALAR1		88
-#define INST_LAPPEND_SCALAR4		89
-#define INST_LAPPEND_ARRAY1		90
-#define INST_LAPPEND_ARRAY4		91
-#define INST_LAPPEND_ARRAY_STK		92
-#define INST_LAPPEND_STK		93
+#define INST_LAPPEND_SCALAR1		80
+#define INST_LAPPEND_SCALAR4		81
+#define INST_LAPPEND_ARRAY1		82
+#define INST_LAPPEND_ARRAY4		83
+#define INST_LAPPEND_ARRAY_STK		84
+#define INST_LAPPEND_STK		85
 
 /* TIP #22 - LINDEX operator with flat arg list */
 
-#define INST_LIST_INDEX_MULTI		94
+#define INST_LIST_INDEX_MULTI		86
 
 /*
  * TIP #33 - 'lset' command. Code gen also required a Forth-like
  *	     OVER operation.
  */
 
-#define INST_OVER			95
-#define INST_LSET_LIST			96
-#define INST_LSET_FLAT			97
+#define INST_OVER			87
+#define INST_LSET_LIST			88
+#define INST_LSET_FLAT			89
 
 /* TIP#90 - 'return' command. */
 
-#define INST_RETURN_IMM			98
+#define INST_RETURN_IMM			90
 
 /* TIP#123 - exponentiation operator. */
 
-#define INST_EXPON			99
+#define INST_EXPON			91
 
 /* TIP #157 - {*}... (word expansion) language syntax support. */
 
-#define INST_EXPAND_START		100
-#define INST_EXPAND_STKTOP		101
-#define INST_INVOKE_EXPANDED		102
+#define INST_EXPAND_START		92
+#define INST_EXPAND_STKTOP		93
+#define INST_INVOKE_EXPANDED		94
 
 /*
  * TIP #57 - 'lassign' command. Code generation requires immediate
  *	     LINDEX and LRANGE operators.
  */
 
-#define INST_LIST_INDEX_IMM		103
-#define INST_LIST_RANGE_IMM		104
+#define INST_LIST_INDEX_IMM		95
+#define INST_LIST_RANGE_IMM		96
 
-#define INST_START_CMD			105
+#define INST_LIST_IN			97
+#define INST_LIST_NOT_IN		98
 
-#define INST_LIST_IN			106
-#define INST_LIST_NOT_IN		107
-
-#define INST_PUSH_RETURN_OPTIONS	108
-#define INST_RETURN_STK			109
+#define INST_PUSH_RETURN_OPTIONS	99
+#define INST_RETURN_STK			100
 
 /*
  * Dictionary (TIP#111) related commands.
  */
 
-#define INST_DICT_GET			110
-#define INST_DICT_SET			111
-#define INST_DICT_UNSET			112
-#define INST_DICT_INCR_IMM		113
-#define INST_DICT_APPEND		114
-#define INST_DICT_LAPPEND		115
-#define INST_DICT_FIRST			116
-#define INST_DICT_NEXT			117
-#define INST_DICT_DONE			118
-#define INST_DICT_UPDATE_START		119
-#define INST_DICT_UPDATE_END		120
+#define INST_DICT_GET			101
+#define INST_DICT_SET			102
+#define INST_DICT_UNSET			103
+#define INST_DICT_INCR_IMM		104
+#define INST_DICT_APPEND		105
+#define INST_DICT_LAPPEND		106
+#define INST_DICT_FIRST			107
+#define INST_DICT_NEXT			108
+#define INST_DICT_DONE			109
+#define INST_DICT_UPDATE_START		110
+#define INST_DICT_UPDATE_END		111
 
 /*
  * Instruction to support jumps defined by tables (instead of the classic
  * [switch] technique of chained comparisons).
  */
 
-#define INST_JUMP_TABLE			121
+#define INST_JUMP_TABLE			112
 
 /*
  * Instructions to support compilation of global, variable, upvar and
  * [namespace upvar].
  */
 
-#define INST_UPVAR			122
-#define INST_NSUPVAR			123
-#define INST_VARIABLE			124
+#define INST_UPVAR			113
+#define INST_NSUPVAR			114
+#define INST_VARIABLE			115
 
 /* Instruction to support compiling syntax error to bytecode */
 
-#define INST_SYNTAX			125
+#define INST_SYNTAX			116
 
 /* Instruction to reverse N items on top of stack */
 
-#define INST_REVERSE			126
+#define INST_REVERSE			117
 
 /* regexp instruction */
 
-#define INST_REGEXP			127
+#define INST_REGEXP			118
 
 /* For [info exists] compilation */
-#define INST_EXIST_SCALAR		128
-#define INST_EXIST_ARRAY		129
-#define INST_EXIST_ARRAY_STK		130
-#define INST_EXIST_STK			131
+#define INST_EXIST_SCALAR		119
+#define INST_EXIST_ARRAY		120
+#define INST_EXIST_ARRAY_STK		121
+#define INST_EXIST_STK			122
 
 /* For [subst] compilation */
-#define INST_NOP			132
-#define INST_RETURN_CODE_BRANCH		133
+#define INST_NOP			123
 
 /* For [unset] compilation */
-#define INST_UNSET_SCALAR		134
-#define INST_UNSET_ARRAY		135
-#define INST_UNSET_ARRAY_STK		136
-#define INST_UNSET_STK			137
+#define INST_UNSET_SCALAR		124
+#define INST_UNSET_ARRAY		125
+#define INST_UNSET_ARRAY_STK		126
+#define INST_UNSET_STK			127
 
 /* For [dict with], [dict exists], [dict create] and [dict merge] */
-#define INST_DICT_EXPAND		138
-#define INST_DICT_RECOMBINE_STK		139
-#define INST_DICT_RECOMBINE_IMM		140
-#define INST_DICT_EXISTS		141
-#define INST_DICT_VERIFY		142
+#define INST_DICT_EXPAND		128
+#define INST_DICT_RECOMBINE_STK		129
+#define INST_DICT_RECOMBINE_IMM		130
+#define INST_DICT_EXISTS		131
+#define INST_DICT_VERIFY		132
 
 /* For [string map] and [regsub] compilation */
-#define INST_STR_MAP			143
-#define INST_STR_FIND			144
-#define INST_STR_FIND_LAST		145
-#define INST_STR_RANGE_IMM		146
-#define INST_STR_RANGE			147
+#define INST_STR_MAP			133
+#define INST_STR_FIND			134
+#define INST_STR_FIND_LAST		135
+#define INST_STR_RANGE_IMM		136
+#define INST_STR_RANGE			137
 
 /* For operations to do with coroutines and other NRE-manipulators */
-#define INST_YIELD			148
-#define INST_COROUTINE_NAME		149
-#define INST_TAILCALL			150
+#define INST_YIELD			138
+#define INST_COROUTINE_NAME		139
+#define INST_TAILCALL			140
 
 /* For compilation of basic information operations */
-#define INST_NS_CURRENT			151
-#define INST_INFO_LEVEL_NUM		152
-#define INST_INFO_LEVEL_ARGS		153
-#define INST_RESOLVE_COMMAND		154
+#define INST_NS_CURRENT			141
+#define INST_INFO_LEVEL_NUM		142
+#define INST_INFO_LEVEL_ARGS		143
+#define INST_RESOLVE_COMMAND		144
 
 /* For compilation relating to TclOO */
-#define INST_TCLOO_SELF			155
-#define INST_TCLOO_CLASS		156
-#define INST_TCLOO_NS			157
-#define INST_TCLOO_IS_OBJECT		158
+#define INST_TCLOO_SELF			145
+#define INST_TCLOO_CLASS		146
+#define INST_TCLOO_NS			147
+#define INST_TCLOO_IS_OBJECT		148
 
 /* For compilation of [array] subcommands */
-#define INST_ARRAY_EXISTS_STK		159
-#define INST_ARRAY_EXISTS_IMM		160
-#define INST_ARRAY_MAKE_STK		161
-#define INST_ARRAY_MAKE_IMM		162
+#define INST_ARRAY_EXISTS_STK		149
+#define INST_ARRAY_EXISTS_IMM		150
+#define INST_ARRAY_MAKE_STK		151
+#define INST_ARRAY_MAKE_IMM		152
 
-#define INST_INVOKE_REPLACE		163
+#define INST_INVOKE_REPLACE		153
 
-#define INST_LIST_CONCAT		164
-
-#define INST_EXPAND_DROP		165
+#define INST_LIST_CONCAT		154
 
 /* New foreach implementation */
-#define INST_FOREACH_START              166
-#define INST_FOREACH_STEP               167
-#define INST_FOREACH_END                168
-#define INST_LMAP_COLLECT               169
+#define INST_FOREACH_START              155
+#define INST_FOREACH_STEP               156
+#define INST_FOREACH_END                157
+#define INST_LMAP_COLLECT               158
 
 /* For compilation of [string trim] and related */
-#define INST_STR_TRIM			170
-#define INST_STR_TRIM_LEFT		171
-#define INST_STR_TRIM_RIGHT		172
+#define INST_STR_TRIM			159
+#define INST_STR_TRIM_LEFT		160
+#define INST_STR_TRIM_RIGHT		161
 
-#define INST_CONCAT_STK			173
+#define INST_CONCAT_STK			162
 
-#define INST_STR_UPPER			174
-#define INST_STR_LOWER			175
-#define INST_STR_TITLE			176
-#define INST_STR_REPLACE		177
+#define INST_STR_UPPER			163
+#define INST_STR_LOWER			164
+#define INST_STR_TITLE			165
+#define INST_STR_REPLACE		166
 
-#define INST_ORIGIN_COMMAND		178
+#define INST_ORIGIN_COMMAND		167
 
-#define INST_TCLOO_NEXT			179
-#define INST_TCLOO_NEXT_CLASS		180
+#define INST_TCLOO_NEXT			168
+#define INST_TCLOO_NEXT_CLASS		169
 
-#define INST_YIELD_TO_INVOKE		181
+#define INST_YIELD_TO_INVOKE		170
 
-#define INST_NUM_TYPE			182
-#define INST_TRY_CVT_TO_BOOLEAN		183
-#define INST_STR_CLASS			184
+#define INST_NUM_TYPE			171
+#define INST_TRY_CVT_TO_BOOLEAN		172
+#define INST_STR_CLASS			173
 
-#define INST_LAPPEND_LIST		185
-#define INST_LAPPEND_LIST_ARRAY		186
-#define INST_LAPPEND_LIST_ARRAY_STK	187
-#define INST_LAPPEND_LIST_STK		188
+#define INST_LAPPEND_LIST		174
+#define INST_LAPPEND_LIST_ARRAY		175
+#define INST_LAPPEND_LIST_ARRAY_STK	176
+#define INST_LAPPEND_LIST_STK		177
+
+#define INST_CLEAR_RANGE		178
 
 /* The last opcode */
-#define LAST_INST_OPCODE		188
+#define LAST_INST_OPCODE		178
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -920,38 +847,15 @@ MODULE_SCOPE StringClassDesc const tclStringClassTable[];
  * commands between the jump and the target.
  */
 
-typedef enum {
-    TCL_UNCONDITIONAL_JUMP,
-    TCL_TRUE_JUMP,
-    TCL_FALSE_JUMP
-} TclJumpType;
-
-typedef struct JumpFixup {
-    TclJumpType jumpType;	/* Indicates the kind of jump. */
-    int codeOffset;		/* Offset of the first byte of the one-byte
-				 * forward jump's code. */
-    int cmdIndex;		/* Index of the first command after the one
-				 * for which the jump was emitted. Used to
-				 * update the code offsets for subsequent
-				 * commands if the two-byte jump at jumpPc
-				 * must be replaced with a five-byte one. */
-    int exceptIndex;		/* Index of the first range entry in the
-				 * ExceptionRange array after the current one.
-				 * This field is used to adjust the code
-				 * offsets in subsequent ExceptionRange
-				 * records when a jump is grown from 2 bytes
-				 * to 5 bytes. */
-} JumpFixup;
-
 #define JUMPFIXUP_INIT_ENTRIES	10
 
 typedef struct JumpFixupArray {
-    JumpFixup *fixup;		/* Points to start of jump fixup array. */
+    int *fixup;		        /* Points to start of codeOffset array. */
     int next;			/* Index of next free array entry. */
     int end;			/* Index of last usable entry in array. */
     int mallocedArray;		/* 1 if array was expanded and fixups points
 				 * into the heap, else 0. */
-    JumpFixup staticFixupSpace[JUMPFIXUP_INIT_ENTRIES];
+    int staticCodeOffsets[JUMPFIXUP_INIT_ENTRIES];
 				/* Initial storage for jump fixup array. */
 } JumpFixupArray;
 
@@ -980,23 +884,18 @@ typedef struct ForeachVarList {
  */
 
 typedef struct ForeachInfo {
+    int jumpSize;		/* Size of the jump between the the start of
+				 * the range and the continue target. */
     int numLists;		/* The number of both the variable and value
 				 * lists of the foreach command. */
-    int firstValueTemp;		/* Index of the first temp var in a proc frame
-				 * used to point to a value list. */
-    int loopCtTemp;		/* Index of temp var in a proc frame holding
-				 * the loop's iteration count. Used to
-				 * determine next value list element to assign
-				 * each loop var. */
     ForeachVarList *varLists[1];/* An array of pointers to ForeachVarList
 				 * structures describing each var list. The
 				 * actual size of this field will be large
-				 * enough to numVars indexes. THIS MUST BE THE
-				 * LAST FIELD IN THE STRUCTURE! */
+				 * enough contain to numLists structs. THIS
+				 * MUST BE THE LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
 
 MODULE_SCOPE const AuxDataType tclForeachInfoType;
-MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
 
 #define FOREACHINFO(envPtr, index) \
     ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
@@ -1079,8 +978,6 @@ MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
-MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
-			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, int count,
 			    CompileEnv *envPtr);
@@ -1104,8 +1001,7 @@ MODULE_SCOPE void	TclCompileVarSubst(Tcl_Interp *interp,
 			    Tcl_Token *tokenPtr, CompileEnv *envPtr);
 MODULE_SCOPE int	TclCreateAuxData(ClientData clientData,
 			    const AuxDataType *typePtr, CompileEnv *envPtr);
-MODULE_SCOPE int	TclCreateExceptRange(ExceptionRangeType type,
-			    CompileEnv *envPtr);
+MODULE_SCOPE int	TclCreateExceptRange(int type, CompileEnv *envPtr);
 MODULE_SCOPE ExecEnv *	TclCreateExecEnv(Tcl_Interp *interp, int size);
 MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
 			    int length, unsigned int hash, int *newPtr,
@@ -1114,11 +1010,9 @@ MODULE_SCOPE Tcl_Obj *	TclCreateLiteral(Interp *iPtr, char *bytes,
 MODULE_SCOPE void	TclDeleteExecEnv(ExecEnv *eePtr);
 MODULE_SCOPE void	TclDeleteLiteralTable(Tcl_Interp *interp,
 			    LiteralTable *tablePtr);
-MODULE_SCOPE void	TclEmitForwardJump(CompileEnv *envPtr,
-			    TclJumpType jumpType, JumpFixup *jumpFixupPtr);
 MODULE_SCOPE void	TclEmitInvoke(CompileEnv *envPtr, int opcode, ...);
-MODULE_SCOPE ExceptionRange * TclGetExceptionRangeForPc(unsigned char *pc,
-			    int catchOnly, ByteCode *codePtr);
+MODULE_SCOPE ExceptionRange * TclGetExceptionRange(int pcOffset, int catchOnly,
+	                    ExceptionRange *startPtr, ExceptionRange *endPtr);
 MODULE_SCOPE void	TclExpandJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
@@ -1126,9 +1020,6 @@ MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
 MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
-MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
-			    JumpFixup *jumpFixupPtr, int jumpDist,
-			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
 MODULE_SCOPE void	TclFreeJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
@@ -1139,14 +1030,7 @@ MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
 			    int numBytes, const CmdFrame *invoker, int word);
 MODULE_SCOPE void	TclInitJumpFixupArray(JumpFixupArray *fixupArrayPtr);
 MODULE_SCOPE void	TclInitLiteralTable(LiteralTable *tablePtr);
-MODULE_SCOPE ExceptionRange *TclGetInnermostExceptionRange(CompileEnv *envPtr,
-			    int returnCode, ExceptionAux **auxPtrPtr);
-MODULE_SCOPE void	TclAddLoopBreakFixup(CompileEnv *envPtr,
-			    ExceptionAux *auxPtr);
-MODULE_SCOPE void	TclAddLoopContinueFixup(CompileEnv *envPtr,
-			    ExceptionAux *auxPtr);
-MODULE_SCOPE void	TclFinalizeLoopExceptionRange(CompileEnv *envPtr,
-			    int range);
+
 #ifdef TCL_COMPILE_STATS
 MODULE_SCOPE char *	TclLiteralStats(LiteralTable *tablePtr);
 MODULE_SCOPE int	TclLog2(int value);
@@ -1300,18 +1184,6 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
     } while (0)
 
 /*
- * Macros used to update the flag that indicates if we are at the start of a
- * command, based on whether the opcode is INST_START_COMMAND.
- *
- * void TclUpdateAtCmdStart(unsigned char op, CompileEnv *envPtr);
- */
-
-#define TclUpdateAtCmdStart(op, envPtr) \
-    if ((envPtr)->atCmdStart < 2) {				     \
-	(envPtr)->atCmdStart = ((op) == INST_START_CMD ? 1 : 0);     \
-    }
-
-/*
  * Macro to emit an opcode byte into a CompileEnv's code array. The ANSI C
  * "prototype" for this macro is:
  *
@@ -1324,7 +1196,6 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 	    TclExpandCodeArray(envPtr);				\
 	}							\
 	*(envPtr)->codeNext++ = (unsigned char) (op);		\
-	TclUpdateAtCmdStart(op, envPtr);			\
 	TclUpdateStackReqs(op, 0, envPtr);			\
     } while (0)
 
@@ -1376,7 +1247,6 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 	}								\
 	*(envPtr)->codeNext++ = (unsigned char) (op);			\
 	*(envPtr)->codeNext++ = (unsigned char) ((unsigned int) (i));	\
-	TclUpdateAtCmdStart(op, envPtr);				\
 	TclUpdateStackReqs(op, i, envPtr);				\
     } while (0)
 
@@ -1394,7 +1264,6 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 		(unsigned char) ((unsigned int) (i) >>  8);	\
 	*(envPtr)->codeNext++ =					\
 		(unsigned char) ((unsigned int) (i)      );	\
-	TclUpdateAtCmdStart(op, envPtr);			\
 	TclUpdateStackReqs(op, i, envPtr);			\
     } while (0)
 
@@ -1410,11 +1279,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 #define TclEmitPush(objIndex, envPtr) \
     do {							 \
 	register int objIndexCopy = (objIndex);			 \
-	if (objIndexCopy <= 255) {				 \
-	    TclEmitInstInt1(INST_PUSH1, objIndexCopy, (envPtr)); \
-	} else {						 \
-	    TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr)); \
-	}							 \
+	TclEmitInstInt4(INST_PUSH4, objIndexCopy, (envPtr));	 \
     } while (0)
 
 /*
@@ -1467,10 +1332,30 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
  *				 int threshold);
  */
 
-#define TclFixupForwardJumpToHere(envPtr, fixupPtr, threshold) \
-    TclFixupForwardJump((envPtr), (fixupPtr),				\
-	    (envPtr)->codeNext-(envPtr)->codeStart-(fixupPtr)->codeOffset, \
-	    (threshold))
+#define TclEmitForwardJump(envPtr, type, pcPtr)			\
+    *(pcPtr) = (envPtr)->codeNext - (envPtr)->codeStart;	\
+    TclEmitInstInt4(INST_##type##4, 0, (envPtr))
+
+#define TclEmitForwardJump1(envPtr, type, pcPtr)		\
+    *(pcPtr) = (envPtr)->codeNext - (envPtr)->codeStart;	\
+    TclEmitInstInt1(INST_##type##1, 0, (envPtr))
+
+#define TclFixupForwardJump(envPtr, pc, jumpDist)	\
+    TclStoreInt4AtPtr((jumpDist), (envPtr)->codeStart + (pc) + 1)
+
+#define TclFixupForwardJump1(envPtr, pc, jumpDist)			\
+    if (((jumpDist) > 127) && ((jumpDist) < -127)) {			\
+        Tcl_Panic("TclFixupForwardJump1: bad jump distance %li", jumpDist); \
+    }									\
+    TclStoreInt1AtPtr((jumpDist), (envPtr)->codeStart + (pc) + 1)
+
+#define TclFixupForwardJumpToHere(envPtr, fixup)		\
+    TclFixupForwardJump((envPtr), (fixup),			\
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixup))
+
+#define TclFixupForwardJumpToHere1(envPtr, fixup)			\
+    TclFixupForwardJump1((envPtr), (fixup),				\
+	    (envPtr)->codeNext-(envPtr)->codeStart-(fixup))
 
 /*
  * Macros to get a signed integer (GET_INT{1,2}) or an unsigned int
@@ -1585,28 +1470,42 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
     ((envPtr)->codeNext - (envPtr)->codeStart)
 
 /*
- * Note: the exceptDepth is a bit of a misnomer: TEBC only needs the
- * maximal depth of nested CATCH ranges in order to alloc runtime
- * memory. These macros should compute precisely that? OTOH, the nesting depth
- * of LOOP ranges is an interesting datum for debugging purposes, and that is
- * what we compute now.
- *
  * static int	ExceptionRangeStarts(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeEnds(CompileEnv *envPtr, int index);
  * static void	ExceptionRangeTarget(CompileEnv *envPtr, int index, LABEL);
  */
 
-#define ExceptionRangeStarts(envPtr, index) \
-    (((envPtr)->exceptDepth++),						\
-    ((envPtr)->maxExceptDepth =						\
-	    TclMax((envPtr)->exceptDepth, (envPtr)->maxExceptDepth)),	\
+#define ExceptionRangeStarts(envPtr, index)				\
+    (((envPtr)->exceptArrayPtr[(index)].stackDepth = (envPtr)->currStackDepth), \
+    ((envPtr)->exceptArrayPtr[(index)].numCodeBytes = ~(envPtr)->expandDepth), \
     ((envPtr)->exceptArrayPtr[(index)].codeOffset = CurrentOffset(envPtr)))
-#define ExceptionRangeEnds(envPtr, index) \
-    (((envPtr)->exceptDepth--),						\
+
+#define ExceptionRangeEnds(envPtr, index)				\
     ((envPtr)->exceptArrayPtr[(index)].numCodeBytes =			\
-	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset))
-#define ExceptionRangeTarget(envPtr, index, targetType) \
-    ((envPtr)->exceptArrayPtr[(index)].targetType = CurrentOffset(envPtr))
+	CurrentOffset(envPtr) - (envPtr)->exceptArrayPtr[(index)].codeOffset)
+
+#define CatchTarget(envPtr, index)					\
+    do {								\
+	ExceptionRange *rPtr = &(envPtr)->exceptArrayPtr[(index)];	\
+	(envPtr)->currStackDepth = rPtr->stackDepth + 1 +		\
+	    ((rPtr->flags&CATCH_PUSH_RESULT)? 1 : 0) +			\
+	    ((rPtr->flags&CATCH_PUSH_OPTIONS)? 1 : 0);			\
+	rPtr->mainOffset = CurrentOffset(envPtr);			\
+    } while (0)
+
+#define BreakTarget(envPtr, index)					\
+    do {								\
+	ExceptionRange *rPtr = &(envPtr)->exceptArrayPtr[(index)];	\
+	(envPtr)->currStackDepth = rPtr->stackDepth;			\
+	rPtr->mainOffset = CurrentOffset(envPtr);			\
+    } while (0)
+
+#define ContinueTarget(envPtr, index)					\
+    do {								\
+	ExceptionRange *rPtr = &(envPtr)->exceptArrayPtr[(index)];	\
+	(envPtr)->currStackDepth = rPtr->stackDepth;			\
+	rPtr->continueOffset = CurrentOffset(envPtr);			\
+    } while (0)
 
 /*
  * Check if there is an LVT for compiled locals

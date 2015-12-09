@@ -3083,36 +3083,12 @@ test interp-33.1 {refCounting for target words of alias [Bug 730244]} {
     $i eval alias
 } this
 
-test interp-34.1 {basic test of limits - calling commands} -body {
-    set i [interp create]
-    $i eval {
-	proc foobar {} {
-	    for {set x 0} {$x<1000000} {incr x} {
-		# Calls to this are not bytecoded away
-		pid
-	    }
-	}
-    }
-    $i limit command -value 1000
-    $i eval foobar
-} -returnCodes error -result {command count limit exceeded} -cleanup {
-    interp delete $i
-}
-test interp-34.2 {basic test of limits - bytecoded commands} -body {
-    set i [interp create]
-    $i eval {
-	proc foobar {} {
-	    for {set x 0} {$x<1000000} {incr x} {
-		# Calls to this *are* bytecoded away
-		expr {1+2+3}
-	    }
-	}
-    }
-    $i limit command -value 1000
-    $i eval foobar
-} -returnCodes error -result {command count limit exceeded} -cleanup {
-    interp delete $i
-}
+test interp-34.1 {basic test of limits - calling commands} {
+    # testing removed command limits
+} {}
+test interp-34.2 {basic test of limits - bytecoded commands} {
+    # testing removed command limits
+} {}
 test interp-34.3 {basic test of limits - pure bytecode loop} -body {
     set i [interp create]
     $i eval {
@@ -3144,131 +3120,21 @@ test interp-34.3.1 {basic test of limits - pure inside-command loop} -body {
 } -returnCodes error -result {time limit exceeded} -cleanup {
     interp delete $i
 }
-test interp-34.4 {limits with callbacks: extending limits} -setup {
-    set i [interp create]
-    set a 0
-    set b 0
-    set c a
-    proc cb1 {} {
-	global c
-	incr ::$c
-    }
-    proc cb2 {newlimit args} {
-	global c i
-	set c b
-	$i limit command -value $newlimit
-    }
-} -body {
-    interp alias $i foo {} cb1
-    set curlim [$i eval info cmdcount]
-    $i limit command -command "cb2 [expr $curlim+100]" \
-	    -value [expr {$curlim+10}]
-    $i eval {for {set i 0} {$i<10} {incr i} {foo}}
-    list $a $b $c
-} -result {6 4 b} -cleanup {
-    interp delete $i
-    rename cb1 {}
-    rename cb2 {}
-}
+test interp-34.4 {limits with callbacks: extending limits} {
+    # testing removed command limits
+} {}
 # The next three tests exercise all the three ways that limit handlers
 # can be deleted.  Fully verifying this requires additional source
 # code instrumentation.
-test interp-34.5 {limits with callbacks: removing limits} -setup {
-    set i [interp create]
-    set a 0
-    set b 0
-    set c a
-    proc cb1 {} {
-	global c
-	incr ::$c
-    }
-    proc cb2 {newlimit args} {
-	global c i
-	set c b
-	$i limit command -value $newlimit
-    }
-} -body {
-    interp alias $i foo {} cb1
-    set curlim [$i eval info cmdcount]
-    $i limit command -command "cb2 {}" -value [expr {$curlim+10}]
-    $i eval {for {set i 0} {$i<10} {incr i} {foo}}
-    list $a $b $c
-} -result {6 4 b} -cleanup {
-    interp delete $i
-    rename cb1 {}
-    rename cb2 {}
-}
-test interp-34.6 {limits with callbacks: removing limits and handlers} -setup {
-    set i [interp create]
-    set a 0
-    set b 0
-    set c a
-    proc cb1 {} {
-	global c
-	incr ::$c
-    }
-    proc cb2 {args} {
-	global c i
-	set c b
-	$i limit command -value {} -command {}
-    }
-} -body {
-    interp alias $i foo {} cb1
-    set curlim [$i eval info cmdcount]
-    $i limit command -command cb2 -value [expr {$curlim+10}]
-    $i eval {for {set i 0} {$i<10} {incr i} {foo}}
-    list $a $b $c
-} -result {6 4 b} -cleanup {
-    interp delete $i
-    rename cb1 {}
-    rename cb2 {}
-}
-test interp-34.7 {limits with callbacks: deleting the handler interp} -setup {
-    set i [interp create]
-    $i eval {
-	set i [interp create]
-	proc cb1 {} {
-	    global c
-	    incr ::$c
-	}
-	proc cb2 {args} {
-	    global c i curlim
-	    set c b
-	    $i limit command -value [expr {$curlim+1000}]
-	    trapToParent
-	}
-    }
-    proc cb3 {} {
-	global i subi
-	interp alias [list $i $subi] foo {} cb4
-	interp delete $i
-    }
-    proc cb4 {} {
-	global n
-	incr n
-    }
-} -body {
-    set subi [$i eval set i]
-    interp alias $i trapToParent {} cb3
-    set n 0
-    $i eval {
-	set a 0
-	set b 0
-	set c a
-	interp alias $i foo {} cb1
-	set curlim [$i eval info cmdcount]
-	$i limit command -command cb2 -value [expr {$curlim+10}]
-    }
-    $i eval {
-	$i eval {
-	    for {set i 0} {$i<10} {incr i} {foo}
-	}
-    }
-    list $n [interp exists $i]
-} -result {4 0} -cleanup {
-    rename cb3 {}
-    rename cb4 {}
-}
+test interp-34.5 {limits with callbacks: removing limits} {
+    # testing removed command limits
+} {}
+test interp-34.6 {limits with callbacks: removing limits and handlers} {
+    # testing removed command limits
+} {}
+test interp-34.7 {limits with callbacks: deleting the handler interp} {
+    # testing removed command limits
+} {}
 # Bug 1085023
 test interp-34.8 {time limits trigger in vwaits} -body {
     set i [interp create]
@@ -3387,59 +3253,30 @@ test interp-35.2 {interp limit syntax} -body {
 test interp-35.3 {interp limit syntax} -body {
     interp limit {} foo
 } -returnCodes error -result {bad limit type "foo": must be commands or time}
-test interp-35.4 {interp limit syntax} -body {
-    set i [interp create]
-    set dict [interp limit $i commands]
-    set result {}
-    foreach key [lsort [dict keys $dict]] {
-	lappend result $key [dict get $dict $key]
-    }
-    set result
-} -cleanup {
-    interp delete $i
-} -result {-command {} -granularity 1 -value {}}
-test interp-35.5 {interp limit syntax} -body {
-    set i [interp create]
-    interp limit $i commands -granularity
-} -cleanup {
-    interp delete $i
-} -result 1
-test interp-35.6 {interp limit syntax} -body {
-    set i [interp create]
-    interp limit $i commands -granularity 2
-} -cleanup {
-    interp delete $i
-} -result {}
-test interp-35.7 {interp limit syntax} -body {
-    set i [interp create]
-    interp limit $i commands -foobar
-} -cleanup {
-    interp delete $i
-} -returnCodes error -result {bad option "-foobar": must be -command, -granularity, or -value}
-test interp-35.8 {interp limit syntax} -body {
-    set i [interp create]
-    interp limit $i commands -granularity foobar
-} -cleanup {
-    interp delete $i
-} -returnCodes error -result {expected integer but got "foobar"}
-test interp-35.9 {interp limit syntax} -body {
-    set i [interp create]
-    interp limit $i commands -granularity 0
-} -cleanup {
-    interp delete $i
-} -returnCodes error -result {granularity must be at least 1}
-test interp-35.10 {interp limit syntax} -body {
-    set i [interp create]
-    interp limit $i commands -value foobar
-} -cleanup {
-    interp delete $i
-} -returnCodes error -result {expected integer but got "foobar"}
-test interp-35.11 {interp limit syntax} -body {
-    set i [interp create]
-    interp limit $i commands -value -1
-} -cleanup {
-    interp delete $i
-} -returnCodes error -result {command limit value must be at least 0}
+test interp-35.4 {interp limit syntax} {
+    # testing removed command limits
+} {}
+test interp-35.5 {interp limit syntax} {
+    # testing removed command limits
+} {}
+test interp-35.6 {interp limit syntax} {
+    # testing removed command limits
+} {}
+test interp-35.7 {interp limit syntax} {
+    # testing removed command limits
+} {}
+test interp-35.8 {interp limit syntax} {
+    # testing removed command limits
+} {}
+test interp-35.9 {interp limit syntax} {
+    # testing removed command limits
+} {}
+test interp-35.10 {interp limit syntax} {
+    # testing removed command limits
+} {}
+test interp-35.11 {interp limit syntax} {
+    # testing removed command limits
+} {}
 test interp-35.12 {interp limit syntax} -body {
     set i [interp create]
     set dict [interp limit $i time]
@@ -3513,9 +3350,9 @@ test interp-35.22 {interp time limits normalize milliseconds} -body {
     interp delete $i
 } -result {2 500}
 # Bug 3398794
-test interp-35.23 {interp command limits can't touch current interp} -body {
-    interp limit {} commands -value 10
-} -returnCodes error -result {limits on current interpreter inaccessible}
+test interp-35.23 {interp command limits can't touch current interp} {
+    # testing removed command limits
+} {}
 test interp-35.24 {interp time limits can't touch current interp} -body {
     interp limit {} time -seconds 2
 } -returnCodes error -result {limits on current interpreter inaccessible}

@@ -107,25 +107,25 @@ test info-2.6 {info body option, returning list bodies} {
 	    [foo; string bytelength [info body foo]]
 } {9 9}
 
-proc testinfocmdcount {} {
-    set x [info cmdcount]
-    set y 12345
-    set z [info cm]
-    expr {$z-$x}
-}
-test info-3.1 {info cmdcount compiled} {
-    testinfocmdcount
-} 4
-test info-3.2 {info cmdcount evaled} -body {
-    set x [info cmdcount]
-    set y 12345
-    set z [info cm]
-    expr {$z-$x}
-} -cleanup {unset x y z} -result 4
-test info-3.3 {info cmdcount evaled} -body [info body testinfocmdcount] -cleanup {unset x y z} -result 4
-test info-3.4 {info cmdcount option} -body {
-    info cmdcount 1
-} -returnCodes error -result {wrong # args: should be "info cmdcount"}
+test info-3.1 {info cmdcount compiled} {} {}
+test info-3.2 {info cmdcount evaled} {} {}
+test info-3.3 {info cmdcount evaled} {} {}
+test info-3.4 {info cmdcount option} {} {}
+#  1 Add 15 lines not to disrupt the clumsy tests that depend on the line
+#  2 numbers in this file
+#  3
+#  4
+#  5
+#  6
+#  7
+#  8
+#  9
+# 10
+# 11
+# 12
+# 13
+# 14
+# 15
 
 test info-4.1 {info commands option} -body {
     proc t1 {} {}
@@ -678,16 +678,16 @@ test info-21.1 {miscellaneous error conditions} -returnCodes error -body {
 } -result {wrong # args: should be "info subcommand ?arg ...?"}
 test info-21.2 {miscellaneous error conditions} -returnCodes error -body {
     info gorp
-} -result {unknown or ambiguous subcommand "gorp": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "gorp": must be args, body, class, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.3 {miscellaneous error conditions} -returnCodes error -body {
     info c
-} -result {unknown or ambiguous subcommand "c": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "c": must be args, body, class, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.4 {miscellaneous error conditions} -returnCodes error -body {
     info l
-} -result {unknown or ambiguous subcommand "l": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "l": must be args, body, class, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 test info-21.5 {miscellaneous error conditions} -returnCodes error -body {
     info s
-} -result {unknown or ambiguous subcommand "s": must be args, body, class, cmdcount, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
+} -result {unknown or ambiguous subcommand "s": must be args, body, class, commands, complete, coroutine, default, errorstack, exists, frame, functions, globals, hostname, level, library, loaded, locals, nameofexecutable, object, patchlevel, procs, script, sharedlibextension, tclversion, or vars}
 
 ##
 # ### ### ### ######### ######### #########

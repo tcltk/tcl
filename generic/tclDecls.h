@@ -1516,9 +1516,7 @@ EXTERN int		Tcl_LimitReady(Tcl_Interp *interp);
 EXTERN int		Tcl_LimitCheck(Tcl_Interp *interp);
 /* 524 */
 EXTERN int		Tcl_LimitExceeded(Tcl_Interp *interp);
-/* 525 */
-EXTERN void		Tcl_LimitSetCommands(Tcl_Interp *interp,
-				int commandLimit);
+/* Slot 525 is reserved */
 /* 526 */
 EXTERN void		Tcl_LimitSetTime(Tcl_Interp *interp,
 				Tcl_Time *timeLimitPtr);
@@ -1533,8 +1531,7 @@ EXTERN int		Tcl_LimitTypeExceeded(Tcl_Interp *interp, int type);
 EXTERN void		Tcl_LimitTypeSet(Tcl_Interp *interp, int type);
 /* 531 */
 EXTERN void		Tcl_LimitTypeReset(Tcl_Interp *interp, int type);
-/* 532 */
-EXTERN int		Tcl_LimitGetCommands(Tcl_Interp *interp);
+/* Slot 532 is reserved */
 /* 533 */
 EXTERN void		Tcl_LimitGetTime(Tcl_Interp *interp,
 				Tcl_Time *timeLimitPtr);
@@ -2376,14 +2373,14 @@ typedef struct TclStubs {
     int (*tcl_LimitReady) (Tcl_Interp *interp); /* 522 */
     int (*tcl_LimitCheck) (Tcl_Interp *interp); /* 523 */
     int (*tcl_LimitExceeded) (Tcl_Interp *interp); /* 524 */
-    void (*tcl_LimitSetCommands) (Tcl_Interp *interp, int commandLimit); /* 525 */
+    void (*reserved525)(void);
     void (*tcl_LimitSetTime) (Tcl_Interp *interp, Tcl_Time *timeLimitPtr); /* 526 */
     void (*tcl_LimitSetGranularity) (Tcl_Interp *interp, int type, int granularity); /* 527 */
     int (*tcl_LimitTypeEnabled) (Tcl_Interp *interp, int type); /* 528 */
     int (*tcl_LimitTypeExceeded) (Tcl_Interp *interp, int type); /* 529 */
     void (*tcl_LimitTypeSet) (Tcl_Interp *interp, int type); /* 530 */
     void (*tcl_LimitTypeReset) (Tcl_Interp *interp, int type); /* 531 */
-    int (*tcl_LimitGetCommands) (Tcl_Interp *interp); /* 532 */
+    void (*reserved532)(void);
     void (*tcl_LimitGetTime) (Tcl_Interp *interp, Tcl_Time *timeLimitPtr); /* 533 */
     int (*tcl_LimitGetGranularity) (Tcl_Interp *interp, int type); /* 534 */
     Tcl_InterpState (*tcl_SaveInterpState) (Tcl_Interp *interp, int status); /* 535 */
@@ -3562,8 +3559,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_LimitCheck) /* 523 */
 #define Tcl_LimitExceeded \
 	(tclStubsPtr->tcl_LimitExceeded) /* 524 */
-#define Tcl_LimitSetCommands \
-	(tclStubsPtr->tcl_LimitSetCommands) /* 525 */
+/* Slot 525 is reserved */
 #define Tcl_LimitSetTime \
 	(tclStubsPtr->tcl_LimitSetTime) /* 526 */
 #define Tcl_LimitSetGranularity \
@@ -3576,8 +3572,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_LimitTypeSet) /* 530 */
 #define Tcl_LimitTypeReset \
 	(tclStubsPtr->tcl_LimitTypeReset) /* 531 */
-#define Tcl_LimitGetCommands \
-	(tclStubsPtr->tcl_LimitGetCommands) /* 532 */
+/* Slot 532 is reserved */
 #define Tcl_LimitGetTime \
 	(tclStubsPtr->tcl_LimitGetTime) /* 533 */
 #define Tcl_LimitGetGranularity \

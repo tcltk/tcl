@@ -37,12 +37,6 @@ static void		PrintForeachInfo(ClientData clientData,
 static void		DisassembleForeachInfo(ClientData clientData,
 			    Tcl_Obj *dictObj, ByteCode *codePtr,
 			    unsigned int pcOffset);
-static void		PrintNewForeachInfo(ClientData clientData,
-			    Tcl_Obj *appendObj, ByteCode *codePtr,
-			    unsigned int pcOffset);
-static void		DisassembleNewForeachInfo(ClientData clientData,
-			    Tcl_Obj *dictObj, ByteCode *codePtr,
-			    unsigned int pcOffset);
 static int		CompileEachloopCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    CompileEnv *envPtr, int collect);
@@ -60,14 +54,6 @@ const AuxDataType tclForeachInfoType = {
     FreeForeachInfo,		/* freeProc */
     PrintForeachInfo,		/* printProc */
     DisassembleForeachInfo	/* disassembleProc */
-};
-
-const AuxDataType tclNewForeachInfoType = {
-    "NewForeachInfo",		/* name */
-    DupForeachInfo,		/* dupProc */
-    FreeForeachInfo,		/* freeProc */
-    PrintNewForeachInfo,	/* printProc */
-    DisassembleNewForeachInfo	/* disassembleProc */
 };
 
 const AuxDataType tclDictUpdateInfoType = {
@@ -268,7 +254,7 @@ TclCompileArraySetCmd(
     int isScalar, localIndex, code = TCL_OK;
     int isDataLiteral, isDataValid, isDataEven, len;
     int keyVar, valVar, infoIndex;
-    int fwd, offsetBack, offsetFwd;
+    int offsetBack, offsetFwd;
     Tcl_Obj *literalObj;
     ForeachInfo *infoPtr;
 
@@ -320,20 +306,23 @@ TclCompileArraySetCmd(
      */
 
     if (isDataEven && len == 0) {
+	int jumpEnd, jumpPop;
 	if (localIndex >= 0) {
 	    TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-	    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+	    TclEmitForwardJump(envPtr, JUMP_TRUE, &jumpEnd);
 	    TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
 	} else {
 	    TclEmitOpcode(  INST_DUP,				envPtr);
 	    TclEmitOpcode(  INST_ARRAY_EXISTS_STK,		envPtr);
-	    TclEmitInstInt1(INST_JUMP_TRUE1, 5,			envPtr);
+	    TclEmitForwardJump(envPtr, JUMP_TRUE, &jumpPop);
 	    TclEmitOpcode(  INST_ARRAY_MAKE_STK,		envPtr);
-	    TclEmitInstInt1(INST_JUMP1, 3,			envPtr);
+	    TclEmitForwardJump(envPtr, JUMP, &jumpEnd);
 	    /* Each branch decrements stack depth, but we only take one. */
 	    TclAdjustStackDepth(1, envPtr);
+	    TclFixupForwardJumpToHere(envPtr, jumpPop);
 	    TclEmitOpcode(  INST_POP,				envPtr);
 	}
+	TclFixupForwardJumpToHere(envPtr, jumpEnd);
 	PushStringLiteral(envPtr, "");
 	goto done;
     }
@@ -384,19 +373,17 @@ TclCompileArraySetCmd(
 	TclEmitOpcode(	INST_LIST_LENGTH,			envPtr);
 	PushStringLiteral(envPtr, "1");
 	TclEmitOpcode(	INST_BITAND,				envPtr);
-	offsetFwd = CurrentOffset(envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 0,			envPtr);
+	TclEmitForwardJump(envPtr, JUMP_FALSE, &offsetFwd);
 	PushStringLiteral(envPtr, "list must have an even number of elements");
 	PushStringLiteral(envPtr, "-errorcode {TCL ARGUMENT FORMAT}");
 	TclEmitInstInt4(INST_RETURN_IMM, TCL_ERROR,		envPtr);
 	TclEmitInt4(		0,				envPtr);
 	TclAdjustStackDepth(-1, envPtr);
-	fwd = CurrentOffset(envPtr) - offsetFwd;
-	TclStoreInt1AtPtr(fwd, envPtr->codeStart+offsetFwd+1);
+	TclFixupForwardJumpToHere(envPtr, offsetFwd);
     }
 
     TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-    TclEmitInstInt1(INST_JUMP_TRUE1, 7,			envPtr);
+    TclEmitInstInt4(INST_JUMP_TRUE4, 10,		envPtr);
     TclEmitInstInt4(INST_ARRAY_MAKE_IMM, localIndex,	envPtr);
     TclEmitInstInt4(INST_FOREACH_START, infoIndex,	envPtr);
     offsetBack = CurrentOffset(envPtr);
@@ -404,7 +391,7 @@ TclCompileArraySetCmd(
     Emit14Inst(	INST_LOAD_SCALAR, valVar,		envPtr);
     Emit14Inst(	INST_STORE_ARRAY, localIndex,		envPtr);
     TclEmitOpcode(	INST_POP,			envPtr);
-    infoPtr->loopCtTemp = offsetBack - CurrentOffset(envPtr); /*misuse */
+    infoPtr->jumpSize = offsetBack - CurrentOffset(envPtr);
     TclEmitOpcode( INST_FOREACH_STEP,			envPtr);
     TclEmitOpcode( INST_FOREACH_END,			envPtr);
     TclAdjustStackDepth(-3, envPtr);
@@ -427,6 +414,7 @@ TclCompileArrayUnsetCmd(
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr = TokenAfter(parsePtr->tokenPtr);
     int isScalar, localIndex;
+    int jumpEnd, jumpPop;
 
     if (parsePtr->numWords != 2) {
 	return TclCompileBasic2ArgCmd(interp, parsePtr, cmdPtr, envPtr);
@@ -440,19 +428,21 @@ TclCompileArrayUnsetCmd(
 
     if (localIndex >= 0) {
 	TclEmitInstInt4(INST_ARRAY_EXISTS_IMM, localIndex,	envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 8,			envPtr);
+	TclEmitForwardJump(envPtr, JUMP_FALSE, &jumpEnd);
 	TclEmitInstInt1(INST_UNSET_SCALAR, 1,			envPtr);
 	TclEmitInt4(		localIndex,			envPtr);
     } else {
 	TclEmitOpcode(	INST_DUP,				envPtr);
 	TclEmitOpcode(	INST_ARRAY_EXISTS_STK,			envPtr);
-	TclEmitInstInt1(INST_JUMP_FALSE1, 6,			envPtr);
+	TclEmitForwardJump(envPtr, JUMP_FALSE, &jumpPop);
 	TclEmitInstInt1(INST_UNSET_STK, 1,			envPtr);
-	TclEmitInstInt1(INST_JUMP1, 3,				envPtr);
+	TclEmitForwardJump(envPtr, JUMP, &jumpEnd);
 	/* Each branch decrements stack depth, but we only take one. */
 	TclAdjustStackDepth(1, envPtr);
+	TclFixupForwardJumpToHere(envPtr, jumpPop);
 	TclEmitOpcode(	INST_POP,				envPtr);
     }
+    TclFixupForwardJumpToHere(envPtr, jumpEnd);
     PushStringLiteral(envPtr,	"");
     return TCL_OK;
 }
@@ -480,38 +470,43 @@ TclCompileBreakCmd(
     Tcl_Interp *interp,		/* Used for error reporting. */
     Tcl_Parse *parsePtr,	/* Points to a parse structure for the command
 				 * created by Tcl_ParseCommand. */
-    Command *cmdPtr,		/* Points to defintion of command being
+    Command *cmdPtr,		/* Points to definition of command being
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    int next = envPtr->exceptArrayNext - 1;
+    int i = -1;
+    int savedStackDepth = envPtr->currStackDepth;
     ExceptionRange *rangePtr;
-    ExceptionAux *auxPtr;
-
+    
     if (parsePtr->numWords != 1) {
 	return TCL_ERROR;
     }
 
-    /*
-     * Find the innermost exception range that contains this command.
-     */
-
-    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_BREAK, &auxPtr);
-    if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	/*
-	 * Found the target! No need for a nasty INST_BREAK here.
-	 */
-
-	TclCleanupStackForBreakContinue(envPtr, auxPtr);
-	TclAddLoopBreakFixup(envPtr, auxPtr);
-    } else {
-	/*
-	 * Emit a real break.
-	 */
-
-	TclEmitOpcode(INST_BREAK, envPtr);
+    if (next >= 0) {
+	rangePtr = TclGetExceptionRange(CurrentOffset(envPtr),
+		TCL_BREAK, &envPtr->exceptArrayPtr[next],
+		&envPtr->exceptArrayPtr[0]);
+	if (rangePtr) {
+	    i = rangePtr - envPtr->exceptArrayPtr;
+	    if (!IS_CATCH_RANGE(rangePtr) &&
+		    ((savedStackDepth > rangePtr->stackDepth)
+			    ||(envPtr->expandDepth > ~rangePtr->numCodeBytes))) {
+		/*
+		 * (required so that we can optimize to a jump)
+		 *
+		 * Clear expansions and objs on the stack since this range
+		 * started. 
+		 */
+		
+		TclEmitInstInt4(INST_CLEAR_RANGE,
+			(rangePtr - envPtr->exceptArrayPtr), envPtr);
+	    }
+	}
     }
-    TclAdjustStackDepth(1, envPtr);
-
+    
+    TclEmitInstInt4(INST_BREAK, i, envPtr);
+    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
@@ -542,9 +537,9 @@ TclCompileCatchCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
-    JumpFixup jumpFixup;
+    int jumpFixup;
     Tcl_Token *cmdTokenPtr, *resultNameTokenPtr, *optsNameTokenPtr;
-    int resultIndex, optsIndex, range, dropScript = 0;
+    int resultIndex, optsIndex, range, rangeFlags;
     DefineLineInformation;	/* TIP #280 */
     int depth = TclGetStackDepth(envPtr);
 
@@ -595,108 +590,74 @@ TclCompileCatchCmd(
      * We will compile the catch command. Declare the exception range that it
      * uses.
      *
-     * If the body is a simple word, compile a BEGIN_CATCH instruction,
-     * followed by the instructions to eval the body.
+     * If the body is a simple word, compile the instructions to eval the
+     * body. 
      * Otherwise, compile instructions to substitute the body text before
-     * starting the catch, then BEGIN_CATCH, and then EVAL_STK to evaluate the
-     * substituted body.
+     * starting the catch, then EVAL_STK to evaluate the substituted body.
      * Care has to be taken to make sure that substitution happens outside the
      * catch range so that errors in the substitution are not caught.
-     * [Bug 219184]
-     * The reason for duplicating the script is that EVAL_STK would otherwise
-     * begin by undeflowing the stack below the mark set by BEGIN_CATCH4.
+     * [Bug 219184]. Fix the catch stackDepth to account for EVAL_STK removing
+     * the script from the stack. 
      */
 
-    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
+    rangeFlags = CATCH_EXCEPTION_RANGE
+	| ((resultIndex != -1) ? CATCH_PUSH_RESULT  : 0)
+	| ((optsIndex != -1)   ? CATCH_PUSH_OPTIONS : 0);
+    range = TclCreateExceptRange(rangeFlags, envPtr);
     if (cmdTokenPtr->type == TCL_TOKEN_SIMPLE_WORD) {
-	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
 	BODY(cmdTokenPtr, 1);
     } else {
 	SetLineInformation(1);
 	CompileTokens(envPtr, cmdTokenPtr, interp);
-	TclEmitInstInt4(	INST_BEGIN_CATCH4, range,	envPtr);
 	ExceptionRangeStarts(envPtr, range);
-	TclEmitOpcode(		INST_DUP,			envPtr);
+	envPtr->exceptArrayPtr[range].stackDepth--;
 	TclEmitInvoke(envPtr,	INST_EVAL_STK);
-	/* drop the script */
-	dropScript = 1;
-	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
-	TclEmitOpcode(		INST_POP,			envPtr);
     }
     ExceptionRangeEnds(envPtr, range);
-
+    TclCheckStackDepth(depth+1, envPtr);        
 
     /*
-     * Emit the "no errors" epilogue: push "0" (TCL_OK) as the catch result,
-     * and jump around the "error case" code.
+     * Emit the "no errors" epilogue: last instruction is push "0" (TCL_OK)
+     * as the catch result, and jump to the end. There is some code
+     * duplication in order to allow the optimization of the OK case.
+     *
+     * NOTE: see comments on instruction ordering below!
      */
 
-    TclCheckStackDepth(depth+1, envPtr);
+    if (rangeFlags & CATCH_PUSH_RESULT) {
+	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
+    } 
+    TclEmitOpcode(	INST_POP,			envPtr);
+
+    if (rangeFlags & CATCH_PUSH_OPTIONS) {
+	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
+	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
+	TclEmitOpcode(		INST_POP,			envPtr);
+    }
+    TclCheckStackDepth(depth, envPtr);
+    
     PushStringLiteral(envPtr, "0");
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+    TclEmitForwardJump(envPtr, JUMP, &jumpFixup);
 
     /*
      * Emit the "error case" epilogue. Push the interpreter result and the
-     * return code.
+     * return code. Note that result and return options are automatically
+     * pushed if requested at range creation.
      */
 
-    ExceptionRangeTarget(envPtr, range, catchOffset);
-    TclSetStackDepth(depth + dropScript, envPtr);
-
-    if (dropScript) {
-	TclEmitOpcode(		INST_POP,			envPtr);
-    }
-
-
-    /* Stack at this point is empty */
-    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
-    TclEmitOpcode(		INST_PUSH_RETURN_CODE,		envPtr);
-
-    /* Stack at this point on both branches: result returnCode */
-
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileCatchCmd: bad jump distance %d",
-		(int)(CurrentOffset(envPtr) - jumpFixup.codeOffset));
-    }
-
-    /*
-     * Push the return options if the caller wants them. This needs to happen
-     * before INST_END_CATCH
-     */
-
-    if (optsIndex != -1) {
-	TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
-    }
-
-    /*
-     * End the catch
-     */
-
-    TclEmitOpcode(		INST_END_CATCH,			envPtr);
-
-    /*
-     * Save the result and return options if the caller wants them. This needs
-     * to happen after INST_END_CATCH (compile-3.6/7).
-     */
+    CatchTarget(envPtr, range);
 
     if (optsIndex != -1) {
 	Emit14Inst(		INST_STORE_SCALAR, optsIndex,	envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
     }
-
-    /*
-     * At this point, the top of the stack is inconveniently ordered:
-     *		result returnCode
-     * Reverse the stack to store the result.
-     */
-
-    TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
     if (resultIndex != -1) {
 	Emit14Inst(	INST_STORE_SCALAR, resultIndex,	envPtr);
+	TclEmitOpcode(	INST_POP,			envPtr);
     }
-    TclEmitOpcode(	INST_POP,			envPtr);
 
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
     TclCheckStackDepth(depth+1, envPtr);
     return TCL_OK;
 }
@@ -815,9 +776,11 @@ TclCompileContinueCmd(
 				 * compiled. */
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
+    int next = envPtr->exceptArrayNext - 1;
+    int i = -1;
+    int savedStackDepth = envPtr->currStackDepth;
     ExceptionRange *rangePtr;
-    ExceptionAux *auxPtr;
-
+    
     /*
      * There should be no argument after the "continue".
      */
@@ -826,28 +789,30 @@ TclCompileContinueCmd(
 	return TCL_ERROR;
     }
 
-    /*
-     * See if we can find a valid continueOffset (i.e., not -1) in the
-     * innermost containing exception range.
-     */
-
-    rangePtr = TclGetInnermostExceptionRange(envPtr, TCL_CONTINUE, &auxPtr);
-    if (rangePtr && rangePtr->type == LOOP_EXCEPTION_RANGE) {
-	/*
-	 * Found the target! No need for a nasty INST_CONTINUE here.
-	 */
-
-	TclCleanupStackForBreakContinue(envPtr, auxPtr);
-	TclAddLoopContinueFixup(envPtr, auxPtr);
-    } else {
-	/*
-	 * Emit a real continue.
-	 */
-
-	TclEmitOpcode(INST_CONTINUE, envPtr);
+    if (next >= 0) {
+	rangePtr = TclGetExceptionRange(CurrentOffset(envPtr),
+		TCL_CONTINUE, &envPtr->exceptArrayPtr[next],
+		&envPtr->exceptArrayPtr[0]);
+	if (rangePtr) {
+	    i = rangePtr - envPtr->exceptArrayPtr;
+	    if (!IS_CATCH_RANGE(rangePtr) &&
+		    ((savedStackDepth > rangePtr->stackDepth)
+			    ||(envPtr->expandDepth > ~rangePtr->numCodeBytes))) {
+		/*
+		 * (required so that we can optimize to a jump)
+		 *
+		 * Clear expansions and objs on the stack since this range
+		 * started. 
+		 */
+		
+		TclEmitInstInt4(INST_CLEAR_RANGE,
+			(rangePtr - envPtr->exceptArrayPtr), envPtr);
+	    }
+	}
     }
-    TclAdjustStackDepth(1, envPtr);
 
+    TclEmitInstInt4(INST_CONTINUE, i, envPtr);
+    envPtr->currStackDepth = savedStackDepth + 1;
     return TCL_OK;
 }
 
@@ -1226,7 +1191,7 @@ TclCompileDictMergeCmd(
 {
     DefineLineInformation;	/* TIP #280 */
     Tcl_Token *tokenPtr;
-    int i, workerIndex, infoIndex, outLoop;
+    int i, workerIndex, infoIndex, outLoop, jumpTarget;
 
     /*
      * Deal with some special edge cases. Note that in the case with one
@@ -1273,10 +1238,10 @@ TclCompileDictMergeCmd(
      * For each of the remaining dictionaries...
      */
 
-    outLoop = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(		INST_BEGIN_CATCH4, outLoop,	envPtr);
+    outLoop = TclCreateExceptRange(CATCH_EXCEPTION_FULL, envPtr);
     ExceptionRangeStarts(envPtr, outLoop);
     for (i=2 ; i<parsePtr->numWords ; i++) {
+	int jumpPop;
 	/*
 	 * Get the dictionary, and merge its pairs into the first dict (using
 	 * a small loop).
@@ -1285,21 +1250,23 @@ TclCompileDictMergeCmd(
 	tokenPtr = TokenAfter(tokenPtr);
 	CompileWord(envPtr, tokenPtr, interp, i);
 	TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,	envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 24,		envPtr);
+	TclEmitForwardJump(envPtr, JUMP_TRUE, &jumpPop);
+	jumpTarget = CurrentOffset(envPtr);
 	TclEmitInstInt4(	INST_REVERSE, 2,		envPtr);
 	TclEmitInstInt4(	INST_DICT_SET, 1,		envPtr);
 	TclEmitInt4(			workerIndex,		envPtr);
 	TclAdjustStackDepth(-1, envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	TclEmitInstInt4(	INST_DICT_NEXT, infoIndex,	envPtr);
-	TclEmitInstInt1(	INST_JUMP_FALSE1, -20,		envPtr);
+	jumpTarget -= CurrentOffset(envPtr);
+	TclEmitInstInt4(	INST_JUMP_FALSE4, jumpTarget,	envPtr);
+	TclFixupForwardJumpToHere(envPtr, jumpPop);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	TclEmitOpcode(		INST_POP,			envPtr);
 	TclEmitInstInt1(	INST_UNSET_SCALAR, 0,		envPtr);
 	TclEmitInt4(			infoIndex,		envPtr);
     }
     ExceptionRangeEnds(envPtr, outLoop);
-    TclEmitOpcode(		INST_END_CATCH,			envPtr);
 
     /*
      * Clean up any state left over.
@@ -1308,23 +1275,21 @@ TclCompileDictMergeCmd(
     Emit14Inst(			INST_LOAD_SCALAR, workerIndex,	envPtr);
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			workerIndex,		envPtr);
-    TclEmitInstInt1(		INST_JUMP1, 18,			envPtr);
+    TclEmitForwardJump(envPtr, JUMP, &jumpTarget);
 
     /*
      * If an exception happens when starting to iterate over the second (and
      * subsequent) dicts. This is strictly not necessary, but it is nice.
      */
 
-    TclAdjustStackDepth(-1, envPtr);
-    ExceptionRangeTarget(envPtr, outLoop, catchOffset);
-    TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
-    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
-    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    CatchTarget(envPtr, outLoop);
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			workerIndex,		envPtr);
     TclEmitInstInt1(		INST_UNSET_SCALAR, 0,		envPtr);
     TclEmitInt4(			infoIndex,		envPtr);
+    TclAdjustStackDepth(-1, envPtr);
     TclEmitOpcode(		INST_RETURN_STK,		envPtr);
+    TclFixupForwardJumpToHere(envPtr, jumpTarget);
 
     return TCL_OK;
 }
@@ -1470,13 +1435,11 @@ CompileDictEachCmd(
      * started by Tcl_DictObjFirst above.
      */
 
-    catchRange = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(	INST_BEGIN_CATCH4, catchRange,		envPtr);
+    catchRange = TclCreateExceptRange(CATCH_EXCEPTION_FULL, envPtr);
     ExceptionRangeStarts(envPtr, catchRange);
 
     TclEmitInstInt4(	INST_DICT_FIRST, infoIndex,		envPtr);
-    emptyTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt4(	INST_JUMP_TRUE4, 0,			envPtr);
+    TclEmitForwardJump(envPtr, JUMP_TRUE, &emptyTargetOffset);
 
     /*
      * Inside the iteration, write the loop variables.
@@ -1523,48 +1486,40 @@ CompileDictEachCmd(
      * variables if there is another pair.
      */
 
-    ExceptionRangeTarget(envPtr, loopRange, continueOffset);
+    ContinueTarget(envPtr, loopRange);
     TclEmitInstInt4(	INST_DICT_NEXT, infoIndex,		envPtr);
+
     jumpDisplacement = bodyTargetOffset - CurrentOffset(envPtr);
     TclEmitInstInt4(	INST_JUMP_FALSE4, jumpDisplacement,	envPtr);
-    endTargetOffset = CurrentOffset(envPtr);
-    TclEmitInstInt1(	INST_JUMP1, 0,				envPtr);
+
+    TclEmitForwardJump(envPtr, JUMP, &endTargetOffset);
 
     /*
      * Error handler "finally" clause, which force-terminates the iteration
      * and rethrows the error.
      */
 
-    TclAdjustStackDepth(-1, envPtr);
-    ExceptionRangeTarget(envPtr, catchRange, catchOffset);
-    TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
-    TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
-    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    CatchTarget(envPtr, catchRange);
     TclEmitInstInt1(	INST_UNSET_SCALAR, 0,			envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
     if (collect == TCL_EACH_COLLECT) {
 	TclEmitInstInt1(INST_UNSET_SCALAR, 0,			envPtr);
 	TclEmitInt4(		collectVar,			envPtr);
     }
+    TclAdjustStackDepth(-1, envPtr);
     TclEmitOpcode(	INST_RETURN_STK,			envPtr);
 
     /*
      * Otherwise we're done (the jump after the DICT_FIRST points here) and we
      * need to pop the bogus key/value pair (pushed to keep stack calculations
-     * easy!) Note that we skip the END_CATCH. [Bug 1382528]
+     * easy!)
      */
 
-    jumpDisplacement = CurrentOffset(envPtr) - emptyTargetOffset;
-    TclUpdateInstInt4AtPc(INST_JUMP_TRUE4, jumpDisplacement,
-	    envPtr->codeStart + emptyTargetOffset);
-    jumpDisplacement = CurrentOffset(envPtr) - endTargetOffset;
-    TclUpdateInstInt1AtPc(INST_JUMP1, jumpDisplacement,
-	    envPtr->codeStart + endTargetOffset);
+    TclFixupForwardJumpToHere(envPtr, emptyTargetOffset);
+    TclFixupForwardJumpToHere(envPtr, endTargetOffset);
     TclEmitOpcode(	INST_POP,				envPtr);
     TclEmitOpcode(	INST_POP,				envPtr);
-    ExceptionRangeTarget(envPtr, loopRange, breakOffset);
-    TclFinalizeLoopExceptionRange(envPtr, loopRange);
-    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    BreakTarget(envPtr, loopRange);
 
     /*
      * Final stage of the command (normal case) is that we push an empty
@@ -1597,7 +1552,7 @@ TclCompileDictUpdateCmd(
     int i, dictIndex, numVars, range, infoIndex;
     Tcl_Token **keyTokenPtrs, *dictVarTokenPtr, *bodyTokenPtr, *tokenPtr;
     DictUpdateInfo *duiPtr;
-    JumpFixup jumpFixup;
+    int jumpFixup;
 
     /*
      * There must be at least one argument after the command.
@@ -1678,8 +1633,7 @@ TclCompileDictUpdateCmd(
     TclEmitInstInt4(	INST_DICT_UPDATE_START, dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
 
-    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(	INST_BEGIN_CATCH4, range,		envPtr);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_FULL, envPtr);
 
     ExceptionRangeStarts(envPtr, range);
     BODY(bodyTokenPtr, parsePtr->numWords - 1);
@@ -1690,7 +1644,6 @@ TclCompileDictUpdateCmd(
      * the body evaluation: swap them and finish the update code.
      */
 
-    TclEmitOpcode(	INST_END_CATCH,				envPtr);
     TclEmitInstInt4(	INST_REVERSE, 2,			envPtr);
     TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
@@ -1699,7 +1652,7 @@ TclCompileDictUpdateCmd(
      * Jump around the exceptional termination code.
      */
 
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+    TclEmitForwardJump(envPtr, JUMP, &jumpFixup);
 
     /*
      * Termination code for non-ok returns: stash the result and return
@@ -1707,20 +1660,19 @@ TclCompileDictUpdateCmd(
      * and finally return with the catched return data
      */
 
-    ExceptionRangeTarget(envPtr, range, catchOffset);
-    TclEmitOpcode(	INST_PUSH_RESULT,			envPtr);
-    TclEmitOpcode(	INST_PUSH_RETURN_OPTIONS,		envPtr);
-    TclEmitOpcode(	INST_END_CATCH,				envPtr);
+    CatchTarget(envPtr, range);
+    TclAdjustStackDepth(1, envPtr);
     TclEmitInstInt4(	INST_REVERSE, 3,			envPtr);
-
+    TclEmitOpcode(      INST_POP,                               envPtr);
+    TclEmitInstInt4(	INST_REVERSE, 2,			envPtr);
+    TclEmitInstInt4(	INST_REVERSE, 3,			envPtr);
     TclEmitInstInt4(	INST_DICT_UPDATE_END, dictIndex,	envPtr);
     TclEmitInt4(		infoIndex,			envPtr);
-    TclEmitInvoke(envPtr,INST_RETURN_STK);
+    TclAdjustStackDepth(-1, envPtr);
+    TclEmitInstInt4(	INST_REVERSE, 2,			envPtr);
+    TclEmitInvoke(envPtr, INST_RETURN_STK);
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
-    }
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
     TclStackFree(interp, keyTokenPtrs);
     return TCL_OK;
 
@@ -1848,7 +1800,7 @@ TclCompileDictWithCmd(
     int i, range, varNameTmp = -1, pathTmp = -1, keysTmp, gotPath;
     int dictVar, bodyIsEmpty = 1;
     Tcl_Token *varTokenPtr, *tokenPtr;
-    JumpFixup jumpFixup;
+    int jumpFixup;
     const char *ptr, *end;
 
     /*
@@ -2022,8 +1974,7 @@ TclCompileDictWithCmd(
      * Now the body of the [dict with].
      */
 
-    range = TclCreateExceptRange(CATCH_EXCEPTION_RANGE, envPtr);
-    TclEmitInstInt4(		INST_BEGIN_CATCH4, range,	envPtr);
+    range = TclCreateExceptRange(CATCH_EXCEPTION_FULL, envPtr);
 
     ExceptionRangeStarts(envPtr, range);
     BODY(tokenPtr, parsePtr->numWords - 1);
@@ -2033,7 +1984,6 @@ TclCompileDictWithCmd(
      * Now fold the results back into the dictionary in the OK case.
      */
 
-    TclEmitOpcode(		INST_END_CATCH,			envPtr);
     if (dictVar == -1) {
 	Emit14Inst(		INST_LOAD_SCALAR, varNameTmp,	envPtr);
     }
@@ -2048,17 +1998,13 @@ TclCompileDictWithCmd(
     } else {
 	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
     }
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpFixup);
+    TclEmitForwardJump(envPtr, JUMP, &jumpFixup);
 
     /*
      * Now fold the results back into the dictionary in the exception case.
      */
 
-    TclAdjustStackDepth(-1, envPtr);
-    ExceptionRangeTarget(envPtr, range, catchOffset);
-    TclEmitOpcode(		INST_PUSH_RETURN_OPTIONS,	envPtr);
-    TclEmitOpcode(		INST_PUSH_RESULT,		envPtr);
-    TclEmitOpcode(		INST_END_CATCH,			envPtr);
+    CatchTarget(envPtr, range);
     if (dictVar == -1) {
 	Emit14Inst(		INST_LOAD_SCALAR, varNameTmp,	envPtr);
     }
@@ -2073,16 +2019,14 @@ TclCompileDictWithCmd(
     } else {
 	TclEmitInstInt4(	INST_DICT_RECOMBINE_IMM, dictVar, envPtr);
     }
+    TclAdjustStackDepth(-1, envPtr);
     TclEmitInvoke(envPtr,	INST_RETURN_STK);
 
     /*
      * Prepare for the start of the next command.
      */
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpFixup, 127)) {
-	Tcl_Panic("TclCompileDictCmd(update): bad jump distance %d",
-		(int) (CurrentOffset(envPtr) - jumpFixup.codeOffset));
-    }
+    TclFixupForwardJumpToHere(envPtr, jumpFixup);
     return TCL_OK;
 }
 
@@ -2314,8 +2258,8 @@ TclCompileForCmd(
     CompileEnv *envPtr)		/* Holds resulting instructions. */
 {
     Tcl_Token *startTokenPtr, *testTokenPtr, *nextTokenPtr, *bodyTokenPtr;
-    JumpFixup jumpEvalCondFixup;
-    int bodyCodeOffset, nextCodeOffset, jumpDist;
+    int jumpEvalCondFixup;
+    int bodyCodeOffset, jumpDist;
     int bodyRange, nextRange;
     DefineLineInformation;	/* TIP #280 */
 
@@ -2366,7 +2310,7 @@ TclCompileForCmd(
      *       if (result) goto B
      */
 
-    TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP, &jumpEvalCondFixup);
+    TclEmitForwardJump(envPtr, JUMP, &jumpEvalCondFixup);
 
     /*
      * Compile the loop body.
@@ -2385,8 +2329,9 @@ TclCompileForCmd(
      */
 
     nextRange = TclCreateExceptRange(LOOP_EXCEPTION_RANGE, envPtr);
-    envPtr->exceptAuxArrayPtr[nextRange].supportsContinue = 0;
-    nextCodeOffset = ExceptionRangeStarts(envPtr, nextRange);
+    envPtr->exceptArrayPtr[nextRange].continueOffset = -1;
+    envPtr->exceptArrayPtr[bodyRange].continueOffset =
+	ExceptionRangeStarts(envPtr, nextRange);
     BODY(nextTokenPtr, 3);
     ExceptionRangeEnds(envPtr, nextRange);
     TclEmitOpcode(INST_POP, envPtr);
@@ -2396,35 +2341,16 @@ TclCompileForCmd(
      * terminates the for.
      */
 
-    if (TclFixupForwardJumpToHere(envPtr, &jumpEvalCondFixup, 127)) {
-	bodyCodeOffset += 3;
-	nextCodeOffset += 3;
-    }
+    TclFixupForwardJumpToHere(envPtr, jumpEvalCondFixup);
 
     SetLineInformation(2);
     TclCompileExprWords(interp, testTokenPtr, 1, envPtr);
 
     jumpDist = CurrentOffset(envPtr) - bodyCodeOffset;
-    if (jumpDist > 127) {
-	TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
-    } else {
-	TclEmitInstInt1(INST_JUMP_TRUE1, -jumpDist, envPtr);
-    }
+    TclEmitInstInt4(INST_JUMP_TRUE4, -jumpDist, envPtr);
 
-    /*
-     * Fix the starting points of the exception ranges (may have moved due to
-     * jump type modification) and set where the exceptions target.
-     */
-
-    envPtr->exceptArrayPtr[bodyRange].codeOffset = bodyCodeOffset;
-    envPtr->exceptArrayPtr[bodyRange].continueOffset = nextCodeOffset;
-
-    envPtr->exceptArrayPtr[nextRange].codeOffset = nextCodeOffset;
-
-    ExceptionRangeTarget(envPtr, bodyRange, breakOffset);
-    ExceptionRangeTarget(envPtr, nextRange, breakOffset);
-    TclFinalizeLoopExceptionRange(envPtr, bodyRange);
-    TclFinalizeLoopExceptionRange(envPtr, nextRange);
+    BreakTarget(envPtr, bodyRange);
+    BreakTarget(envPtr, nextRange);
 
     /*
      * The for command's result is an empty string.
@@ -2532,7 +2458,7 @@ CompileEachloopCmd(
 				 * record in the ByteCode. */
 
     Tcl_Token *tokenPtr, *bodyTokenPtr;
-    int jumpBackOffset, infoIndex, range;
+    int infoIndex, range;
     int numWords, numLists, i, j, code = TCL_OK;
     Tcl_Obj *varListObj = NULL;
     DefineLineInformation;	/* TIP #280 */
@@ -2632,7 +2558,7 @@ CompileEachloopCmd(
      * We will compile the foreach command.
      */
 
-    infoIndex = TclCreateAuxData(infoPtr, &tclNewForeachInfoType, envPtr);
+    infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
 
     /*
      * Create the collecting object, unshared.
@@ -2677,21 +2603,19 @@ CompileEachloopCmd(
      * to terminate the loop. Set the loop's break target.
      */
 
-    ExceptionRangeTarget(envPtr, range, continueOffset);
+    ContinueTarget(envPtr, range);
     TclEmitOpcode(INST_FOREACH_STEP, envPtr);
-    ExceptionRangeTarget(envPtr, range, breakOffset);
-    TclFinalizeLoopExceptionRange(envPtr, range);
+    BreakTarget(envPtr, range);
     TclEmitOpcode(INST_FOREACH_END, envPtr);
     TclAdjustStackDepth(-(numLists+2), envPtr);
 
     /*
      * Set the jumpback distance from INST_FOREACH_STEP to the start of the
-     * body's code. Misuse loopCtTemp for storing the jump size.
+     * body's code.
      */
 
-    jumpBackOffset = envPtr->exceptArrayPtr[range].continueOffset -
+    infoPtr->jumpSize = -envPtr->exceptArrayPtr[range].continueOffset +
 	    envPtr->exceptArrayPtr[range].codeOffset;
-    infoPtr->loopCtTemp = -jumpBackOffset;
 
     /*
      * The command's result is an empty string if not collecting. If
@@ -2743,9 +2667,8 @@ DupForeachInfo(
 
     dupPtr = ckalloc(sizeof(ForeachInfo)
 	    + numLists * sizeof(ForeachVarList *));
+    dupPtr->jumpSize = srcPtr->jumpSize;
     dupPtr->numLists = numLists;
-    dupPtr->firstValueTemp = srcPtr->firstValueTemp;
-    dupPtr->loopCtTemp = srcPtr->loopCtTemp;
 
     for (i = 0;  i < numLists;  i++) {
 	srcListPtr = srcPtr->varLists[i];
@@ -2825,48 +2748,8 @@ PrintForeachInfo(
     register ForeachVarList *varsPtr;
     int i, j;
 
-    Tcl_AppendToObj(appendObj, "data=[", -1);
-
-    for (i=0 ; i<infoPtr->numLists ; i++) {
-	if (i) {
-	    Tcl_AppendToObj(appendObj, ", ", -1);
-	}
-	Tcl_AppendPrintfToObj(appendObj, "%%v%u",
-		(unsigned) (infoPtr->firstValueTemp + i));
-    }
-    Tcl_AppendPrintfToObj(appendObj, "], loop=%%v%u",
-	    (unsigned) infoPtr->loopCtTemp);
-    for (i=0 ; i<infoPtr->numLists ; i++) {
-	if (i) {
-	    Tcl_AppendToObj(appendObj, ",", -1);
-	}
-	Tcl_AppendPrintfToObj(appendObj, "\n\t\t it%%v%u\t[",
-		(unsigned) (infoPtr->firstValueTemp + i));
-	varsPtr = infoPtr->varLists[i];
-	for (j=0 ; j<varsPtr->numVars ; j++) {
-	    if (j) {
-		Tcl_AppendToObj(appendObj, ", ", -1);
-	    }
-	    Tcl_AppendPrintfToObj(appendObj, "%%v%u",
-		    (unsigned) varsPtr->varIndexes[j]);
-	}
-	Tcl_AppendToObj(appendObj, "]", -1);
-    }
-}
-
-static void
-PrintNewForeachInfo(
-    ClientData clientData,
-    Tcl_Obj *appendObj,
-    ByteCode *codePtr,
-    unsigned int pcOffset)
-{
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
-    int i, j;
-
-    Tcl_AppendPrintfToObj(appendObj, "jumpOffset=%+d, vars=",
-	    infoPtr->loopCtTemp);
+    Tcl_AppendPrintfToObj(appendObj, "jumpSize=%+d, vars=",
+	    infoPtr->jumpSize);
     for (i=0 ; i<infoPtr->numLists ; i++) {
 	if (i) {
 	    Tcl_AppendToObj(appendObj, ",", -1);
@@ -2897,58 +2780,11 @@ DisassembleForeachInfo(
     Tcl_Obj *objPtr, *innerPtr;
 
     /*
-     * Data stores.
-     */
-
-    objPtr = Tcl_NewObj();
-    for (i=0 ; i<infoPtr->numLists ; i++) {
-	Tcl_ListObjAppendElement(NULL, objPtr,
-		Tcl_NewIntObj(infoPtr->firstValueTemp + i));
-    }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("data", -1), objPtr);
-
-    /*
-     * Loop counter.
-     */
-
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("loop", -1),
-	   Tcl_NewIntObj(infoPtr->loopCtTemp));
-
-    /*
-     * Assignment targets.
-     */
-
-    objPtr = Tcl_NewObj();
-    for (i=0 ; i<infoPtr->numLists ; i++) {
-	innerPtr = Tcl_NewObj();
-	varsPtr = infoPtr->varLists[i];
-	for (j=0 ; j<varsPtr->numVars ; j++) {
-	    Tcl_ListObjAppendElement(NULL, innerPtr,
-		    Tcl_NewIntObj(varsPtr->varIndexes[j]));
-	}
-	Tcl_ListObjAppendElement(NULL, objPtr, innerPtr);
-    }
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("assign", -1), objPtr);
-}
-
-static void
-DisassembleNewForeachInfo(
-    ClientData clientData,
-    Tcl_Obj *dictObj,
-    ByteCode *codePtr,
-    unsigned int pcOffset)
-{
-    register ForeachInfo *infoPtr = clientData;
-    register ForeachVarList *varsPtr;
-    int i, j;
-    Tcl_Obj *objPtr, *innerPtr;
-
-    /*
      * Jump offset.
      */
 
-    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpOffset", -1),
-	   Tcl_NewIntObj(infoPtr->loopCtTemp));
+    Tcl_DictObjPut(NULL, dictObj, Tcl_NewStringObj("jumpSize", -1),
+	   Tcl_NewIntObj(infoPtr->jumpSize));
 
     /*
      * Assignment targets.

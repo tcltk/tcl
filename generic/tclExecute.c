@@ -77,7 +77,7 @@ int tclTraceExec = 0;
  */
 
 static const char *const operatorStrings[] = {
-    "||", "&&", "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
+    "|", "^", "&", "==", "!=", "<", ">", "<=", ">=", "<<", ">>",
     "+", "-", "*", "/", "%", "+", "-", "~", "!"
 };
 
@@ -160,29 +160,39 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
 #define LAST_BUILTIN_FUNC	25
 #endif
 
+#define firstRangePtr							\
+    (codePtr->numExceptRanges? (codePtr->exceptArrayPtr) : NULL)
+#define defaultRangePtr					\
+    (firstRangePtr + codePtr->numExceptRanges - 1)
+
+#define GetExceptRange(result)					\
+    TclGetExceptionRange(CURR_OFFSET, (result),			\
+	(rangePtr ? rangePtr : defaultRangePtr), firstRangePtr)
+
 /*
  * NR_TEBC
  * Helpers for NR - non-recursive calls to TEBC
  * Minimal data required to fully reconstruct the execution state.
  */
 
+typedef struct expandAux {
+    struct expandAux *next;
+    int actualDepth;   /* where the expansion started */
+    int nominalDepth;  /* where we thought it started */
+    int extra;         /* extra elements up to now, all expansions */
+} expandAux;
+
 typedef struct TEBCdata {
-    ByteCode *codePtr;		/* Constant until the BC returns */
-				/* -----------------------------------------*/
-    ptrdiff_t *catchTop;	/* These fields are used on return TO this */
-    Tcl_Obj *auxObjList;	/* this level: they record the state when a */
-    CmdFrame cmdFrame;		/* new codePtr was received for NR */
-                                /* execution. */
-    void *stack[1];		/* Start of the actual combined catch and obj
-				 * stacks; the struct will be expanded as
-				 * necessary */
+    ByteCode *codePtr;
+    CmdFrame cmdFrame;
+    void *stack[1];
 } TEBCdata;
 
 #define TEBC_YIELD() \
     do {						\
 	esPtr->tosPtr = tosPtr;				\
 	TclNRAddCallback(interp, TEBCresume,		\
-		TD, pc, INT2PTR(cleanup), NULL);	\
+		TD, pc, INT2PTR(cleanup), expandList);	\
     } while (0)
 
 #define TEBC_DATA_DIG() \
@@ -190,20 +200,22 @@ typedef struct TEBCdata {
 	tosPtr = esPtr->tosPtr;			\
     } while (0)
 
-#define PUSH_TAUX_OBJ(objPtr) \
+#define PUSH_TAUX(d, n)						\
     do {							\
-	if (auxObjList) {					\
-	    objPtr->length += auxObjList->length;		\
-	}							\
-	objPtr->internalRep.twoPtrValue.ptr1 = auxObjList;	\
-	auxObjList = objPtr;					\
+	expandAux *new;						\
+	TclSmallAllocEx(interp, sizeof(expandAux), new);	\
+	new->actualDepth = (d);					\
+	new->nominalDepth = (n);				\
+	new->extra   = (d) - (n);				\
+	new->next = expandList;					\
+	expandList = new;					\
     } while (0)
 
-#define POP_TAUX_OBJ() \
-    do {							\
-	tmpPtr = auxObjList;					\
-	auxObjList = tmpPtr->internalRep.twoPtrValue.ptr1;	\
-	Tcl_DecrRefCount(tmpPtr);				\
+#define POP_TAUX()				\
+    do {					\
+	expandAux *tmpPtr = expandList;		\
+	expandList = tmpPtr->next;		\
+	TclSmallFreeEx(interp, tmpPtr);		\
     } while (0)
 
 /*
@@ -253,8 +265,9 @@ VarHashCreateVar(
 #ifdef TCL_COMPILE_DEBUG
 #define CHECK_STACK()							\
     do {								\
-	ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH,			\
-		/*checkStack*/ !(starting || auxObjList));		\
+	if (!(starting || expandList)) {				\
+	    ValidatePcAndStackTop(codePtr, pc, CURR_DEPTH);		\
+	}								\
 	starting = 0;							\
     } while (0)
 #else
@@ -383,7 +396,7 @@ VarHashCreateVar(
  */
 
 #define CACHE_STACK_INFO() \
-    checkInterp = 1
+    if (!cmdLoc.numCodeBytes) cmdLoc.numCodeBytes = 0
 
 #define DECACHE_STACK_INFO() \
     esPtr->tosPtr = tosPtr
@@ -417,6 +430,8 @@ VarHashCreateVar(
 #define CURR_DEPTH	((ptrdiff_t) (tosPtr - initTosPtr))
 
 #define STACK_BASE(esPtr) ((esPtr)->stackWords - 1)
+
+#define CURR_OFFSET     (pc - codePtr->codeStart)
 
 /*
  * Macros used to trace instruction execution. The macros TRACE,
@@ -739,8 +754,7 @@ static const char *	GetOpcodeName(const unsigned char *pc);
 static void		PrintByteCodeInfo(ByteCode *codePtr);
 static const char *	StringForResultCode(int result);
 static void		ValidatePcAndStackTop(ByteCode *codePtr,
-			    const unsigned char *pc, int stackTop,
-			    int checkStack);
+			    const unsigned char *pc, int stackTop);
 #endif /* TCL_COMPILE_DEBUG */
 static ByteCode *	CompileExprObj(Tcl_Interp *interp, Tcl_Obj *objPtr);
 static void		DeleteExecStack(ExecStack *esPtr);
@@ -754,11 +768,11 @@ static Tcl_Obj *	ExecuteExtendedBinaryMathOp(Tcl_Interp *interp,
 static Tcl_Obj *	ExecuteExtendedUnaryMathOp(int opcode,
 			    Tcl_Obj *valuePtr);
 static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
-static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
-			    int searchMode, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
 			    ByteCode *codePtr, int *lengthPtr,
 			    const unsigned char **pcBeg, int *cmdIdxPtr);
+static void	        GetISCInfoForPc(const unsigned char *pc,
+			    ByteCode *codePtr,  CmdLocation *cmdLocPtr);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
@@ -2018,8 +2032,7 @@ ArgumentBCEnter(
  *----------------------------------------------------------------------
  */
 #define	bcFramePtr	(&TD->cmdFrame)
-#define	initCatchTop	((ptrdiff_t *) (&TD->stack[-1]))
-#define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
+#define	initTosPtr	((Tcl_Obj **) (&TD->stack[-1]))
 #define esPtr		(iPtr->execEnvPtr->execStackPtr)
 
 int
@@ -2029,9 +2042,7 @@ TclNRExecuteByteCode(
 {
     Interp *iPtr = (Interp *) interp;
     TEBCdata *TD;
-    int size = sizeof(TEBCdata) - 1
-	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth)
-		* sizeof(void *);
+    int size = sizeof(TEBCdata) + sizeof(Tcl_Obj *)*(codePtr->maxStackDepth - 1);
     int numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
 
     codePtr->refCount++;
@@ -2040,20 +2051,16 @@ TclNRExecuteByteCode(
      * Reserve the stack, setup the TEBCdataPtr (TD) and CallFrame
      *
      * The execution uses a unified stack: first a TEBCdata, immediately
-     * above it a CmdFrame, then the catch stack, then the execution stack.
+     * above it a CmdFrame, then the execution stack.
      *
-     * Make sure the catch stack is large enough to hold the maximum number of
-     * catch commands that could ever be executing at the same time (this will
-     * be no more than the exception range array's depth). Make sure the
-     * execution stack is large enough to execute this ByteCode.
+     * Make sure the execution stack is large enough to execute this
+     * ByteCode. 
      */
 
     TD = (TEBCdata *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, 0);
     esPtr->tosPtr = initTosPtr;
 
     TD->codePtr     = codePtr;
-    TD->catchTop    = initCatchTop;
-    TD->auxObjList  = NULL;
 
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
@@ -2082,8 +2089,16 @@ TclNRExecuteByteCode(
      * Push the callback for bytecode execution
      */
 
+#ifdef TCL_COMPILE_DEBUG
+    if (tclTraceExec >= 2) {
+	PrintByteCodeInfo(codePtr);
+	fprintf(stdout, "  Starting stack top=0\n");
+	fflush(stdout);
+    }
+#endif
+
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
-	    /* cleanup */ INT2PTR(0), NULL);
+	    /* cleanup */ INT2PTR(0), /* expandList */ NULL);
     return TCL_OK;
 }
 
@@ -2136,8 +2151,6 @@ TEBCresume(
      */
 
     TEBCdata *TD = data[0];
-#define auxObjList	(TD->auxObjList)
-#define catchTop	(TD->catchTop)
 #define codePtr		(TD->codePtr)
 
     /*
@@ -2157,9 +2170,21 @@ TEBCresume(
 
     int cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
-    int checkInterp;            /* Indicates when a check of interp readyness
-				 * is necessary. Set by CACHE_STACK_INFO() */
-
+    expandAux *expandList = data[3];
+    ExceptionRange *rangePtr = NULL;
+                                /* Points to closest loop or catch exception
+				 * range enclosing the pc. Used by various
+				 * instructions and processCatch to process
+				 * break, continue, and errors. */
+    CmdLocation cmdLoc;            /* Holds data for ISC. CACHE_STACK_INFO()
+				 * indicates when a check of interp readyness 
+				 * is necessary by setting .pcStart to NULL*/
+    int *iCEpochPtr = &iPtr->compileEpoch;
+    int *iREpochPtr = &iPtr->varFramePtr->nsPtr->resolverEpoch;
+    int cCEpoch = codePtr->compileEpoch;
+    int cREpoch = codePtr->nsEpoch;;
+    
+	
     /*
      * Locals - variables that are used within opcodes or bounded sections of
      * the file (jumps between opcodes within a family).
@@ -2179,25 +2204,16 @@ TEBCresume(
     int starting = 1;
     traceInstructions = (tclTraceExec == 3);
 #endif
-
     TEBC_DATA_DIG();
-
-#ifdef TCL_COMPILE_DEBUG
-    if (!pc && (tclTraceExec >= 2)) {
-	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%d\n", (int) CURR_DEPTH);
-	fflush(stdout);
-    }
-#endif
 
     if (!pc) {
 	/* bytecode is starting from scratch */
-	checkInterp = 0;
+	cmdLoc.numCodeBytes = 0;
 	pc = codePtr->codeStart;
 	goto cleanup0;
     } else {
         /* resume from invocation */
-	CACHE_STACK_INFO();
+	cmdLoc.numCodeBytes = -1;
 
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
 	if (bcFramePtr->cmdObj) {
@@ -2375,28 +2391,17 @@ TEBCresume(
 
     TCL_DTRACE_INST_NEXT();
 
+    if (cmdLoc.numCodeBytes) {
+	goto ISC_implementation;
+    }
+    ISC_continue:
+    
     if (inst == INST_LOAD_SCALAR1) {
 	goto instLoadScalar1;
     } else if (inst == INST_PUSH1) {
 	PUSH_OBJECT(codePtr->objArrayPtr[TclGetUInt1AtPtr(pc+1)]);
 	TRACE_WITH_OBJ(("%u => ", TclGetUInt1AtPtr(pc+1)), OBJ_AT_TOS);
 	inst = *(pc += 2);
-	goto peepholeStart;
-    } else if (inst == INST_START_CMD) {
-	/*
-	 * Peephole: do not run INST_START_CMD, just skip it
-	 */
-
-	iPtr->cmdCount += TclGetUInt4AtPtr(pc+5);
-	if (checkInterp) {
-	    checkInterp = 0;
-	    if (((codePtr->compileEpoch != iPtr->compileEpoch) ||
-		 (codePtr->nsEpoch != iPtr->varFramePtr->nsPtr->resolverEpoch)) &&
-		!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
-		goto instStartCmdFailed;
-	    }
-	}
-	inst = *(pc += 9);
 	goto peepholeStart;
     } else if (inst == INST_NOP) {
 #ifndef TCL_COMPILE_DEBUG
@@ -2429,38 +2434,35 @@ TEBCresume(
 	if (*pc == INST_SYNTAX) {
 	    iPtr->flags &= ~ERR_ALREADY_LOGGED;
 	}
-	cleanup = 2;
 	TRACE_APPEND(("\n"));
 	goto processExceptionReturn;
     }
 
     case INST_RETURN_STK:
+	/*
+	 * OBJ_AT_TOS is returnOpts, OBJ_UNDER_TOS is resultObjPtr.
+	 */
+
 	TRACE(("=> "));
-	objResultPtr = POP_OBJECT();
 	result = Tcl_SetReturnOptions(interp, OBJ_AT_TOS);
 	if (result == TCL_OK) {
-	    Tcl_DecrRefCount(OBJ_AT_TOS);
-	    OBJ_AT_TOS = objResultPtr;
 	    TRACE_APPEND(("continuing to next instruction (result=\"%.30s\")\n",
-		    O2S(objResultPtr)));
-	    NEXT_INST_F(1, 0, 0);
-	} else if (result == TCL_ERROR) {
+		    O2S(OBJ_UNDER_TOS)));
+	    NEXT_INST_F(1, 1, 0);
+	} else {
 	    /*
 	     * BEWARE! Must do this in this order, because an error in the
 	     * option dictionary overrides the result (and can be verified by
 	     * test).
 	     */
 
-	    Tcl_SetObjResult(interp, objResultPtr);
-	    Tcl_SetReturnOptions(interp, OBJ_AT_TOS);
-	    Tcl_DecrRefCount(OBJ_AT_TOS);
-	    OBJ_AT_TOS = objResultPtr;
-	} else {
-	    Tcl_DecrRefCount(OBJ_AT_TOS);
-	    OBJ_AT_TOS = objResultPtr;
-	    Tcl_SetObjResult(interp, objResultPtr);
+	    objPtr = POP_OBJECT();
+	    Tcl_SetObjResult(interp, OBJ_AT_TOS);
+	    if (result == TCL_ERROR) {
+		Tcl_SetReturnOptions(interp, objPtr);
+	    }
+	    Tcl_DecrRefCount(objPtr);
 	}
-	cleanup = 1;
 	TRACE_APPEND(("\n"));
 	goto processExceptionReturn;
 
@@ -2615,31 +2617,24 @@ TEBCresume(
 	iPtr->varFramePtr->tailcallPtr = listPtr;
 
 	result = TCL_RETURN;
-	cleanup = opnd;
 	goto processExceptionReturn;
     }
 
     case INST_DONE:
-	if (tosPtr > initTosPtr) {
-	    /*
-	     * Set the interpreter's object result to point to the topmost
-	     * object from the stack, and check for a possible [catch]. The
-	     * stackTop's level and refCount will be handled by "processCatch"
-	     * or "abnormalReturn".
-	     */
+	/*
+	 * Set the interpreter's object result to point to the topmost
+	 * object from the stack.
+	 */
 
-	    Tcl_SetObjResult(interp, OBJ_AT_TOS);
 #ifdef TCL_COMPILE_DEBUG
-	    TRACE_WITH_OBJ(("=> return code=%d, result=", result),
-		    iPtr->objResultPtr);
-	    if (traceInstructions) {
-		fprintf(stdout, "\n");
-	    }
-#endif
-	    goto checkForCatch;
+	TRACE_WITH_OBJ(("=> return code=%d, result=", result),
+		OBJ_AT_TOS);
+	if (traceInstructions) {
+	    fprintf(stdout, "\n");
 	}
-	(void) POP_OBJECT();
-	goto abnormalReturn;
+#endif
+	Tcl_SetObjResult(interp, OBJ_AT_TOS);
+	goto normalReturn;
 
     case INST_PUSH4:
 	objResultPtr = codePtr->objArrayPtr[TclGetUInt4AtPtr(pc+1)];
@@ -2841,41 +2836,13 @@ TEBCresume(
 
     case INST_EXPAND_START:
 	/*
-	 * Push an element to the auxObjList. This records the current
+	 * Push an element to the expandList. This records the current
 	 * stack depth - i.e., the point in the stack where the expanded
 	 * command starts.
-	 *
-	 * Use a Tcl_Obj as linked list element; slight mem waste, but faster
-	 * allocation than ckalloc. This also abuses the Tcl_Obj structure, as
-	 * we do not define a special tclObjType for it. It is not dangerous
-	 * as the obj is never passed anywhere, so that all manipulations are
-	 * performed here and in INST_INVOKE_EXPANDED (in case of an expansion
-	 * error, also in INST_EXPAND_STKTOP).
 	 */
 
-	TclNewObj(objPtr);
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(CURR_DEPTH);
-	objPtr->length = 0;
-	PUSH_TAUX_OBJ(objPtr);
-	TRACE(("=> mark depth as %d\n", (int) CURR_DEPTH));
-	NEXT_INST_F(1, 0, 0);
-
-    case INST_EXPAND_DROP:
-	/*
-	 * Drops an element of the auxObjList, popping stack elements to
-	 * restore the stack to the state before the point where the aux
-	 * element was created.
-	 */
-
-	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH - PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2);
-	POP_TAUX_OBJ();
-#ifdef TCL_COMPILE_DEBUG
-	/* Ugly abuse! */
-	starting = 1;
-#endif
-	TRACE(("=> drop %d items\n", objc));
-	NEXT_INST_V(1, objc, 0);
+	PUSH_TAUX(CURR_DEPTH, TclGetUInt4AtPtr(pc+1));
+	NEXT_INST_F(5, 0, 0);
 
     case INST_EXPAND_STKTOP: {
 	int i;
@@ -2898,15 +2865,17 @@ TEBCresume(
 	/*
 	 * Make sure there is enough room in the stack to expand this list
 	 * *and* process the rest of the command (at least up to the next
-	 * argument expansion or command end). The operand is the current
-	 * stack depth, as seen by the compiler.
+	 * argument expansion or command end).
 	 */
 
-	auxObjList->length += objc - 1;
-	if ((objc > 1) && (auxObjList->length > 0)) {
-	    length = auxObjList->length /* Total expansion room we need */
-		    + codePtr->maxStackDepth /* Beyond the original max */
-		    - CURR_DEPTH;	/* Relative to where we are */
+	if (objc > 1) {
+	    /* We need (objc-1) extra slots additional to what we already
+	     * accounted for; note that previously expanded lists already
+	     * accounted for their own needs */
+	    
+	    length = objc-1 + codePtr->maxStackDepth /*we think we need*/
+		         - expandList->nominalDepth; /*we've got*/
+
 	    DECACHE_STACK_INFO();
 	    moved = GrowEvaluationStack(iPtr->execEnvPtr, length, 1)
 		    - (Tcl_Obj **) TD;
@@ -2919,7 +2888,6 @@ TEBCresume(
 
 		TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
 
-		catchTop += moved;
 		tosPtr += moved;
 	    }
 	}
@@ -2932,10 +2900,11 @@ TEBCresume(
 	for (i = 0; i < objc; i++) {
 	    PUSH_OBJECT(objv[i]);
 	}
-
+	expandList->extra += objc-1;
+	
 	TRACE_APPEND(("OK\n"));
 	Tcl_DecrRefCount(objPtr);
-	NEXT_INST_F(5, 0, 0);
+	NEXT_INST_F(1, 0, 0);
     }
 
     case INST_EXPR_STK: {
@@ -2967,9 +2936,9 @@ TEBCresume(
 	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0, NULL, 0);
 
     case INST_INVOKE_EXPANDED:
-	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH - PTR2INT(auxObjList->internalRep.twoPtrValue.ptr2);
-	POP_TAUX_OBJ();
+	CLANG_ASSERT(expandList);
+	objc = CURR_DEPTH - expandList->actualDepth;
+	POP_TAUX();
 	if (objc) {
 	    pcAdjustment = 1;
 	    goto doInvocation;
@@ -4586,50 +4555,6 @@ TEBCresume(
 	    TRACE_APPEND(("not found in table\n"));
 	    NEXT_INST_F(5, 1, 0);
 	}
-    }
-
-    /*
-     * These two instructions are now redundant: the complete logic of the LOR
-     * and LAND is now handled by the expression compiler.
-     */
-
-    case INST_LOR:
-    case INST_LAND: {
-	/*
-	 * Operands must be boolean or numeric. No int->double conversions are
-	 * performed.
-	 */
-
-	int i1, i2, iResult;
-
-	value2Ptr = OBJ_AT_TOS;
-	valuePtr = OBJ_UNDER_TOS;
-	if (TclGetBooleanFromObj(NULL, valuePtr, &i1) != TCL_OK) {
-	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(valuePtr),
-		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();
-	    goto gotError;
-	}
-
-	if (TclGetBooleanFromObj(NULL, value2Ptr, &i2) != TCL_OK) {
-	    TRACE(("\"%.20s\" => ILLEGAL TYPE %s \n", O2S(value2Ptr),
-		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
-	    DECACHE_STACK_INFO();
-	    IllegalExprOperandType(interp, pc, value2Ptr);
-	    CACHE_STACK_INFO();
-	    goto gotError;
-	}
-
-	if (*pc == INST_LOR) {
-	    iResult = (i1 || i2);
-	} else {
-	    iResult = (i1 && i2);
-	}
-	objResultPtr = TCONST(iResult);
-	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),iResult));
-	NEXT_INST_F(1, 2, 1);
     }
 
     /*
@@ -6859,190 +6784,44 @@ TEBCresume(
 	NEXT_INST_F(1, 0, 1);
 
     case INST_BREAK:
-	/*
-	DECACHE_STACK_INFO();
-	Tcl_ResetResult(interp);
-	CACHE_STACK_INFO();
-	*/
-	result = TCL_BREAK;
-	cleanup = 0;
-	TRACE(("=> BREAK!\n"));
-	goto processExceptionReturn;
-
-    case INST_CONTINUE:
-	/*
-	DECACHE_STACK_INFO();
-	Tcl_ResetResult(interp);
-	CACHE_STACK_INFO();
-	*/
-	result = TCL_CONTINUE;
-	cleanup = 0;
+    case INST_CONTINUE: {
+	int range = TclGetInt4AtPtr(pc+1);
+	result = (*pc == INST_BREAK ? TCL_BREAK : TCL_CONTINUE);
+	if (range == -1) {
+	    TRACE_APPEND(("no encl. loop or catch, returning %s\n",
+			    StringForResultCode(result)));
+	    goto abnormalReturn;
+	}
+	rangePtr = codePtr->exceptArrayPtr + range;
+	rangePtr = GetExceptRange(result);
 	TRACE(("=> CONTINUE!\n"));
 	goto processExceptionReturn;
-
-    {
-	ForeachInfo *infoPtr;
-	Var *iterVarPtr, *listVarPtr;
-	Tcl_Obj *oldValuePtr, *listPtr, **elements;
-	ForeachVarList *varListPtr;
-	int numLists, iterNum, listTmpIndex, listLen, numVars;
-	int varIndex, valIndex, continueLoop, j, iterTmpIndex;
-	long i;
-
-    case INST_FOREACH_START4: /* DEPRECATED */
-	/*
-	 * Initialize the temporary local var that holds the count of the
-	 * number of iterations of the loop body to -1.
-	 */
-
-	opnd = TclGetUInt4AtPtr(pc+1);
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
-	iterTmpIndex = infoPtr->loopCtTemp;
-	iterVarPtr = LOCAL(iterTmpIndex);
-	oldValuePtr = iterVarPtr->value.objPtr;
-
-	if (oldValuePtr == NULL) {
-	    TclNewLongObj(iterVarPtr->value.objPtr, -1);
-	    Tcl_IncrRefCount(iterVarPtr->value.objPtr);
-	} else {
-	    TclSetLongObj(oldValuePtr, -1);
-	}
-	TRACE(("%u => loop iter count temp %d\n", opnd, iterTmpIndex));
-
-#ifndef TCL_COMPILE_DEBUG
-	/*
-	 * Remark that the compiler ALWAYS sets INST_FOREACH_STEP4 immediately
-	 * after INST_FOREACH_START4 - let us just fall through instead of
-	 * jumping back to the top.
-	 */
-
-	pc += 5;
-	TCL_DTRACE_INST_NEXT();
-#else
-	NEXT_INST_F(5, 0, 0);
-#endif
-
-    case INST_FOREACH_STEP4: /* DEPRECATED */
-	/*
-	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
-	 * the next value list element to each loop var.
-	 */
-
-	opnd = TclGetUInt4AtPtr(pc+1);
-	TRACE(("%u => ", opnd));
-	infoPtr = codePtr->auxDataArrayPtr[opnd].clientData;
-	numLists = infoPtr->numLists;
-
-	/*
-	 * Increment the temp holding the loop iteration number.
-	 */
-
-	iterVarPtr = LOCAL(infoPtr->loopCtTemp);
-	valuePtr = iterVarPtr->value.objPtr;
-	iterNum = valuePtr->internalRep.longValue + 1;
-	TclSetLongObj(valuePtr, iterNum);
-
-	/*
-	 * Check whether all value lists are exhausted and we should stop the
-	 * loop.
-	 */
-
-	continueLoop = 0;
-	listTmpIndex = infoPtr->firstValueTemp;
-	for (i = 0;  i < numLists;  i++) {
-	    varListPtr = infoPtr->varLists[i];
-	    numVars = varListPtr->numVars;
-
-	    listVarPtr = LOCAL(listTmpIndex);
-	    listPtr = listVarPtr->value.objPtr;
-	    if (TclListObjLength(interp, listPtr, &listLen) != TCL_OK) {
-		TRACE_APPEND(("ERROR converting list %ld, \"%.30s\": %s\n",
-			i, O2S(listPtr), O2S(Tcl_GetObjResult(interp))));
-		goto gotError;
-	    }
-	    if (listLen > iterNum * numVars) {
-		continueLoop = 1;
-	    }
-	    listTmpIndex++;
-	}
-
-	/*
-	 * If some var in some var list still has a remaining list element
-	 * iterate one more time. Assign to var the next element from its
-	 * value list. We already checked above that each list temp holds a
-	 * valid list object (by calling Tcl_ListObjLength), but cannot rely
-	 * on that check remaining valid: one list could have been shimmered
-	 * as a side effect of setting a traced variable.
-	 */
-
-	if (continueLoop) {
-	    listTmpIndex = infoPtr->firstValueTemp;
-	    for (i = 0;  i < numLists;  i++) {
-		varListPtr = infoPtr->varLists[i];
-		numVars = varListPtr->numVars;
-
-		listVarPtr = LOCAL(listTmpIndex);
-		listPtr = TclListObjCopy(NULL, listVarPtr->value.objPtr);
-		TclListObjGetElements(interp, listPtr, &listLen, &elements);
-
-		valIndex = (iterNum * numVars);
-		for (j = 0;  j < numVars;  j++) {
-		    if (valIndex >= listLen) {
-			TclNewObj(valuePtr);
-		    } else {
-			valuePtr = elements[valIndex];
-		    }
-
-		    varIndex = varListPtr->varIndexes[j];
-		    varPtr = LOCAL(varIndex);
-		    while (TclIsVarLink(varPtr)) {
-			varPtr = varPtr->value.linkPtr;
-		    }
-		    if (TclIsVarDirectWritable(varPtr)) {
-			value2Ptr = varPtr->value.objPtr;
-			if (valuePtr != value2Ptr) {
-			    if (value2Ptr != NULL) {
-				TclDecrRefCount(value2Ptr);
-			    }
-			    varPtr->value.objPtr = valuePtr;
-			    Tcl_IncrRefCount(valuePtr);
-			}
-		    } else {
-			DECACHE_STACK_INFO();
-			if (TclPtrSetVar(interp, varPtr, NULL, NULL, NULL,
-				valuePtr, TCL_LEAVE_ERR_MSG, varIndex)==NULL){
-			    CACHE_STACK_INFO();
-			    TRACE_APPEND((
-				    "ERROR init. index temp %d: %s\n",
-				    varIndex, O2S(Tcl_GetObjResult(interp))));
-			    TclDecrRefCount(listPtr);
-			    goto gotError;
-			}
-			CACHE_STACK_INFO();
-		    }
-		    valIndex++;
-		}
-		TclDecrRefCount(listPtr);
-		listTmpIndex++;
-	    }
-	}
-	TRACE_APPEND(("%d lists, iter %d, %s loop\n",
-		numLists, iterNum, (continueLoop? "continue" : "exit")));
-
-	/*
-	 * Run-time peep-hole optimisation: the compiler ALWAYS follows
-	 * INST_FOREACH_STEP4 with an INST_JUMP_FALSE. We just skip that
-	 * instruction and jump direct from here.
-	 */
-
-	pc += 5;
-	if (*pc == INST_JUMP_FALSE1) {
-	    NEXT_INST_F((continueLoop? 2 : TclGetInt1AtPtr(pc+1)), 0, 0);
-	} else {
-	    NEXT_INST_F((continueLoop? 5 : TclGetInt4AtPtr(pc+1)), 0, 0);
-	}
-
     }
+	
+	case INST_CLEAR_RANGE: {
+	    /*
+	     * Drops elements of the auxObjList and stack elements to
+	     * restore the stack to the state corresponding to the ranges's exception
+	     * targets 
+	     */
+	    
+	    int range = TclGetInt4AtPtr(pc+1);
+	    int limit; 
+	    ExceptionRange *rangePtr = codePtr->exceptArrayPtr + range;
+	    
+	    while (expandList
+		    && (rangePtr->stackDepth <= expandList->nominalDepth)) {
+		POP_TAUX();
+	    }
+	    limit = rangePtr->stackDepth + (expandList? expandList->extra : 0);
+
+	    while (CURR_DEPTH > limit) {
+		valuePtr = POP_OBJECT();
+		TclDecrRefCount(valuePtr);
+	    }
+	}
+	NEXT_INST_F(5, 0, 0);
+	
     {
 	ForeachInfo *infoPtr;
 	Tcl_Obj *listPtr, **elements, *tmpPtr;
@@ -7113,13 +6892,17 @@ TEBCresume(
 	PUSH_OBJECT(tmpPtr); /* infoPtr object */
 	TRACE_APPEND(("jump to loop step\n"));
 
+#ifdef TCL_COMPILE_DEBUG
+	NEXT_INST_F(5- infoPtr->jumpSize, 0, 0);
+#else
 	/*
 	 * Jump directly to the INST_FOREACH_STEP instruction; the C code just
 	 * falls through.
 	 */
 
-	pc += 5 - infoPtr->loopCtTemp;
-
+	pc += 5 - infoPtr->jumpSize;
+#endif
+	
     case INST_FOREACH_STEP:
 	/*
 	 * "Step" a foreach loop (i.e., begin its next iteration) by assigning
@@ -7194,8 +6977,7 @@ TEBCresume(
 		listTmpDepth--;
 	    }
 	    TRACE_APPEND(("jump to loop start\n"));
-	    /* loopCtTemp being 'misused' for storing the jump size */
-	    NEXT_INST_F(infoPtr->loopCtTemp, 0, 0);
+	    NEXT_INST_F(infoPtr->jumpSize, 0, 0);
 	}
 
 	TRACE_APPEND(("loop has no more iterations\n"));
@@ -7237,68 +7019,12 @@ TEBCresume(
 	NEXT_INST_F(1, 1, 0);
     }
 
-    case INST_BEGIN_CATCH4:
-	/*
-	 * Record start of the catch command with exception range index equal
-	 * to the operand. Push the current stack depth onto the special catch
-	 * stack.
-	 */
-
-	*(++catchTop) = CURR_DEPTH;
-	TRACE(("%u => catchTop=%d, stackTop=%d\n",
-		TclGetUInt4AtPtr(pc+1), (int) (catchTop - initCatchTop - 1),
-		(int) CURR_DEPTH));
-	NEXT_INST_F(5, 0, 0);
-
-    case INST_END_CATCH:
-	catchTop--;
-	DECACHE_STACK_INFO();
-	Tcl_ResetResult(interp);
-	CACHE_STACK_INFO();
-	result = TCL_OK;
-	TRACE(("=> catchTop=%d\n", (int) (catchTop - initCatchTop - 1)));
-	NEXT_INST_F(1, 0, 0);
-
-    case INST_PUSH_RESULT:
-	objResultPtr = Tcl_GetObjResult(interp);
-	TRACE_WITH_OBJ(("=> "), objResultPtr);
-
-	/*
-	 * See the comments at INST_INVOKE_STK
-	 */
-
-	TclNewObj(objPtr);
-	Tcl_IncrRefCount(objPtr);
-	iPtr->objResultPtr = objPtr;
-	NEXT_INST_F(1, 0, -1);
-
-    case INST_PUSH_RETURN_CODE:
-	TclNewIntObj(objResultPtr, result);
-	TRACE(("=> %u\n", result));
-	NEXT_INST_F(1, 0, 1);
-
     case INST_PUSH_RETURN_OPTIONS:
 	DECACHE_STACK_INFO();
 	objResultPtr = Tcl_GetReturnOptions(interp, result);
 	CACHE_STACK_INFO();
 	TRACE_WITH_OBJ(("=> "), objResultPtr);
 	NEXT_INST_F(1, 0, 1);
-
-    case INST_RETURN_CODE_BRANCH: {
-	int code;
-
-	if (TclGetIntFromObj(NULL, OBJ_AT_TOS, &code) != TCL_OK) {
-	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS not a return code!");
-	}
-	if (code == TCL_OK) {
-	    Tcl_Panic("INST_RETURN_CODE_BRANCH: TOS is TCL_OK!");
-	}
-	if (code < TCL_ERROR || code > TCL_CONTINUE) {
-	    code = TCL_CONTINUE + 1;
-	}
-	TRACE(("\"%s\" => jump offset %d\n", O2S(OBJ_AT_TOS), 2*code-1));
-	NEXT_INST_F(2*code-1, 1, 0);
-    }
 
     /*
      * -----------------------------------------------------------------
@@ -7914,20 +7640,16 @@ TEBCresume(
      */
 
     {
-	ExceptionRange *rangePtr;
-				/* Points to closest loop or catch exception
-				 * range enclosing the pc. Used by various
-				 * instructions and processCatch to process
-				 * break, continue, and errors. */
 	const char *bytes;
-
+	int limit;
+	
+    processExceptionReturn:
 	/*
 	 * An external evaluation (INST_INVOKE or INST_EVAL) returned
 	 * something different from TCL_OK, or else INST_BREAK or
 	 * INST_CONTINUE were called.
 	 */
 
-    processExceptionReturn:
 #ifdef TCL_COMPILE_DEBUG
 	switch (*pc) {
 	case INST_INVOKE_STK1:
@@ -7951,38 +7673,53 @@ TEBCresume(
 	}
 #endif
 	if ((result == TCL_CONTINUE) || (result == TCL_BREAK)) {
-	    rangePtr = GetExceptRangeForPc(pc, result, codePtr);
-	    if (rangePtr == NULL) {
+	    if (!rangePtr) {
+		rangePtr = GetExceptRange(result);
+	    }
+	    if (!rangePtr) {
 		TRACE_APPEND(("no encl. loop or catch, returning %s\n",
-			StringForResultCode(result)));
+				StringForResultCode(result)));
 		goto abnormalReturn;
 	    }
-	    if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
+	    if (IS_CATCH_RANGE(rangePtr)) {
 		TRACE_APPEND(("%s ...\n", StringForResultCode(result)));
 		goto processCatch;
 	    }
-	    while (cleanup--) {
+
+	    while (expandList
+		    && (rangePtr->stackDepth <= expandList->nominalDepth)) {
+	       POP_TAUX();
+	    }
+	    limit = rangePtr->stackDepth + (expandList? expandList->extra : 0);
+	    while (CURR_DEPTH > limit) {
 		valuePtr = POP_OBJECT();
 		TclDecrRefCount(valuePtr);
 	    }
 	    if (result == TCL_BREAK) {
-		result = TCL_OK;
-		pc = (codePtr->codeStart + rangePtr->breakOffset);
+		pc = (codePtr->codeStart + rangePtr->mainOffset);
 		TRACE_APPEND(("%s, range at %d, new pc %d\n",
 			StringForResultCode(result),
-			rangePtr->codeOffset, rangePtr->breakOffset));
-		NEXT_INST_F(0, 0, 0);
+			rangePtr->codeOffset, rangePtr->mainOffset));
+	    } else {
+		if (rangePtr->continueOffset == -1) {
+		    rangePtr = GetExceptRange(result);
+		}
+		if (!rangePtr) {
+		    TRACE_APPEND(("%s, loop w/o continue, checking for catch\n",
+				    StringForResultCode(result)));
+		    goto checkForCatch;
+		}
+		pc = (codePtr->codeStart + rangePtr->continueOffset);
+		TRACE_APPEND(("%s, range at %d, new pc %d\n",
+				StringForResultCode(result),
+				rangePtr->codeOffset, rangePtr->continueOffset));
 	    }
-	    if (rangePtr->continueOffset == -1) {
-		TRACE_APPEND(("%s, loop w/o continue, checking for catch\n",
-			StringForResultCode(result)));
-		goto checkForCatch;
-	    }
+	restart:
+	    rangePtr = NULL;
+	    DECACHE_STACK_INFO();
+	    Tcl_ResetResult(interp);
+	    CACHE_STACK_INFO();
 	    result = TCL_OK;
-	    pc = (codePtr->codeStart + rangePtr->continueOffset);
-	    TRACE_APPEND(("%s, range at %d, new pc %d\n",
-		    StringForResultCode(result),
-		    rangePtr->codeOffset, rangePtr->continueOffset));
 	    NEXT_INST_F(0, 0, 0);
 	}
 #ifdef TCL_COMPILE_DEBUG
@@ -8056,20 +7793,6 @@ TEBCresume(
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
 
 	/*
-	 * Clear all expansions that may have started after the last
-	 * INST_BEGIN_CATCH.
-	 */
-
-	while (auxObjList) {
-	    if ((catchTop != initCatchTop)
-		    && (*catchTop > (ptrdiff_t)
-			auxObjList->internalRep.twoPtrValue.ptr2)) {
-		break;
-	    }
-	    POP_TAUX_OBJ();
-	}
-
-	/*
 	 * We must not catch if the script in progress has been canceled with
 	 * the TCL_CANCEL_UNWIND flag. Instead, it blows outwards until we
 	 * either hit another interpreter (presumably where the script in
@@ -8103,23 +7826,9 @@ TEBCresume(
 #endif
 	    goto abnormalReturn;
 	}
-	if (catchTop == initCatchTop) {
-#ifdef TCL_COMPILE_DEBUG
-	    if (traceInstructions) {
-		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
-			StringForResultCode(result));
-	    }
-#endif
-	    goto abnormalReturn;
-	}
-	rangePtr = GetExceptRangeForPc(pc, TCL_ERROR, codePtr);
-	if (rangePtr == NULL) {
-	    /*
-	     * This is only possible when compiling a [catch] that sends its
-	     * script to INST_EVAL. Cannot correct the compiler without
-	     * breaking compat with previous .tbc compiled scripts.
-	     */
 
+	rangePtr = GetExceptRange(TCL_ERROR);
+	if (!rangePtr) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... no enclosing catch, returning %s\n",
@@ -8138,20 +7847,39 @@ TEBCresume(
 	 */
 
     processCatch:
-	while (CURR_DEPTH > *catchTop) {
+	/*
+	 * Clear all expansions that may have started after the last
+	 * INST_BEGIN_CATCH.
+	 */
+
+	while (expandList
+		&& (rangePtr->stackDepth <= expandList->nominalDepth)) {
+	    POP_TAUX();
+	}
+
+	limit = rangePtr->stackDepth + (expandList? expandList->extra : 0);
+	while (CURR_DEPTH > limit) {
 	    valuePtr = POP_OBJECT();
 	    TclDecrRefCount(valuePtr);
 	}
 #ifdef TCL_COMPILE_DEBUG
 	if (traceInstructions) {
-	    fprintf(stdout, "  ... found catch at %d, catchTop=%d, "
-		    "unwound to %ld, new pc %u\n",
-		    rangePtr->codeOffset, (int) (catchTop - initCatchTop - 1),
-		    (long) *catchTop, (unsigned) rangePtr->catchOffset);
+	    fprintf(stdout, "  ... found catch at %d, "
+		    "unwound to %d, new pc %u\n",
+		    rangePtr->codeOffset,
+		    rangePtr->stackDepth, (unsigned) rangePtr->mainOffset);
 	}
 #endif
-	pc = (codePtr->codeStart + rangePtr->catchOffset);
-	NEXT_INST_F(0, 0, 0);	/* Restart the execution loop at pc. */
+	PUSH_OBJECT(Tcl_NewIntObj(result));
+	if (rangePtr->flags & CATCH_PUSH_RESULT) {
+	    PUSH_OBJECT(Tcl_GetObjResult(interp));
+	}
+	if (rangePtr->flags & CATCH_PUSH_OPTIONS) {
+	    PUSH_OBJECT(Tcl_GetReturnOptions(interp, result));
+	}
+	pc = (codePtr->codeStart + rangePtr->mainOffset);
+
+	goto restart;
 
 	/*
 	 * end of infinite loop dispatching on instructions.
@@ -8164,6 +7892,7 @@ TEBCresume(
 	 */
 
     abnormalReturn:
+    normalReturn:
 	TCL_DTRACE_INST_LAST();
 
 	/*
@@ -8173,8 +7902,8 @@ TEBCresume(
 	 * markers.
 	 */
 
-	while (auxObjList) {
-	    POP_TAUX_OBJ();
+	while (expandList) {
+	    POP_TAUX();
 	}
 	while (tosPtr > initTosPtr) {
 	    objPtr = POP_OBJECT();
@@ -8199,52 +7928,70 @@ TEBCresume(
     TclStackFree(interp, TD);	/* free my stack */
 
     return result;
+    
 
     /*
-     * INST_START_CMD failure case removed where it doesn't bother that much
-     *
-     * Remark that if the interpreter is marked for deletion its
-     * compileEpoch is modified, so that the epoch check also verifies
-     * that the interp is not deleted. If no outside call has been made
-     * since the last check, it is safe to omit the check.
-
-     * case INST_START_CMD:
+     * ISC - New INST_START_CMD implementation
      */
 
-	instStartCmdFailed:
-	{
-	    const char *bytes;
+    ISC_implementation:
+    if ((cmdLoc.numCodeBytes == -1) && 
+	    (((cCEpoch == *iCEpochPtr) && (cREpoch == *iREpochPtr)) ||
+		    (codePtr->flags & TCL_BYTECODE_PRECOMPILED))) {
+	/*
+	 * Some external call returned, we need to verify that it didn't
+	 * change the interp's readyness. If it didn't, we go on with
+	 * evaluation. If it did, we jump to ISC_failed where a call to
+	 * GetISCInfoForPc computes the data needed to re-compile the next
+	 * command and then arranges for its evaluation.
+	 */
+	
+	cmdLoc.numCodeBytes = 0;
+	goto ISC_continue;
+    }
 
-	    checkInterp = 1;
-	    length = 0;
-
-	    /*
-	     * We used to switch to direct eval; for NRE-awareness we now
-	     * compile and eval the command so that this evaluation does not
-	     * add a new TEBC instance. [Bug 2910748]
-	     */
-
+    /*
+     * Compute the next pc where a command starts; there is no need to
+     * do anything until we hit that one.
+     *
+     * FIXME: We recompute the next start at each new instruction, to make
+     * sure we do not miss the command start even in presence of
+     * jumps. This is probably suboptimal. OTOH, the cost will be paid
+     * only for the 'few' intructions of the commands that were running when
+     * the change was detected, and doesn't have to be recompiled. If the
+     * transitional speed in this last hybrid run is important (the next
+     * run will use a fully recompiled body), more work is needed here.
+     *
+     * We used to switch to direct eval; for NRE-awareness we now
+     * compile and eval the command so that this evaluation does not
+     * add a new TEBC instance. [Bug 2910748]
+     */
+    
+    if (cmdLoc.numCodeBytes) {
+	GetISCInfoForPc(pc, codePtr, &cmdLoc);
+	if (CURR_OFFSET == cmdLoc.codeOffset) {
 	    if (TclInterpReady(interp) == TCL_ERROR) {
 		goto gotError;
 	    }
-
+	    
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL, NULL);
-	    opnd = TclGetUInt4AtPtr(pc+1);
-	    pc += (opnd-1);
-	    assert(bytes);
-	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
+	    PUSH_OBJECT(Tcl_NewStringObj(codePtr->source + cmdLoc.srcOffset, cmdLoc.numSrcBytes));
+	    pc += cmdLoc.numCodeBytes-1;
+	    if (traceInstructions) {
+		TRACE(("[%.15s] => ISC to pc %i\n", codePtr->source + cmdLoc.srcOffset,
+				(int)(pc-codePtr->codeStart)));
+	    }	    
 	    goto instEvalStk;
 	}
+    }
+    goto ISC_continue;
 }
 
 #undef codePtr
 #undef iPtr
 #undef bcFramePtr
-#undef initCatchTop
 #undef initTosPtr
-#undef auxObjList
-#undef catchTop
+#undef expandList
 #undef TCONST
 #undef esPtr
 
@@ -9749,11 +9496,9 @@ ValidatePcAndStackTop(
 				 * stdout. */
     const unsigned char *pc,	/* Points to first byte of a bytecode
 				 * instruction. The program counter. */
-    int stackTop,		/* Current stack top. Must be between
+    int stackTop)		/* Current stack top. Must be between
 				 * stackLowerBound and stackUpperBound
 				 * (inclusive). */
-    int checkStack)		/* 0 if the stack depth check should be
-				 * skipped. */
 {
     int stackUpperBound = codePtr->maxStackDepth;
 				/* Greatest legal value for stackTop. */
@@ -9773,8 +9518,7 @@ ValidatePcAndStackTop(
 		(unsigned) opCode, relativePc);
 	Tcl_Panic("TclNRExecuteByteCode execution failure: bad opcode");
     }
-    if (checkStack &&
-	    ((stackTop < 0) || (stackTop > stackUpperBound))) {
+    if ((stackTop < 0) || (stackTop > stackUpperBound)) {
 	int numChars;
 	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL, NULL);
 
@@ -9831,7 +9575,7 @@ IllegalExprOperandType(
     if (opcode == INST_EXPON) {
 	operator = "**";
     } else if (opcode <= INST_LNOT) {
-	operator = operatorStrings[opcode - INST_LOR];
+	operator = operatorStrings[opcode - INST_BITOR];
     }
 
     if (GetNumberFromObj(NULL, opndPtr, &ptr, &type) != TCL_OK) {
@@ -10101,8 +9845,100 @@ GetSrcInfoForPc(
 
 /*
  *----------------------------------------------------------------------
+ * GetISCInfoForPc --
  *
- * GetExceptRangeForPc --
+ * A close relative of GetSrcInfoForPc, GetISCInfoForPc computes the data
+ * needed for a temporary reversion to running from source - the job
+ * previously handled by INST_START_CMD.
+ *
+ * Given the current pc (and the knowledge that the bytecodes are obsoleted by
+ * an epoch change), this function computes the range of pc that implement the
+ * NEXT command to be run, as well as the source string for that command.
+ */
+
+static void
+GetISCInfoForPc(
+    const unsigned char *pc,	/* The program counter value for which to
+				 * return the closest command's source info.
+				 * This points within a bytecode instruction
+				 * in codePtr's code. */
+    ByteCode *codePtr,		/* The bytecode sequence in which to look up
+				 * the command source for the pc. */
+    CmdLocation *cmdLocPtr)	/* The address of the struct that will hold
+				 * the result. */
+{
+    register int pcOffset = (pc - codePtr->codeStart);
+    int numCmds = codePtr->numCommands;
+    unsigned char *codeDeltaNext, *codeLengthNext;
+    unsigned char *srcDeltaNext, *srcLengthNext;
+    int codeOffset, codeLen, srcOffset, srcLen, delta, i;
+
+    /* The pc must point within the bytecode */
+    assert ((pcOffset >= 0) && (pcOffset < codePtr->numCodeBytes));
+
+    /*
+     * Decode the code and source offset and length for each command. The
+     * next command is the first one whose code starts after pcOffset. In case
+     * of several commands starting at that pc, we want them all; with our
+     * compiler, it is the first one we encounter after pc.
+     */
+
+    codeDeltaNext = codePtr->codeDeltaStart;
+    codeLengthNext = codePtr->codeLengthStart;
+    srcDeltaNext = codePtr->srcDeltaStart;
+    srcLengthNext = codePtr->srcLengthStart;
+    codeOffset = srcOffset = 0;
+    for (i = 0;  i < numCmds;  i++) {
+	if ((unsigned) *codeDeltaNext == (unsigned) 0xFF) {
+	    codeDeltaNext++;
+	    delta = TclGetInt4AtPtr(codeDeltaNext);
+	    codeDeltaNext += 4;
+	} else {
+	    delta = TclGetInt1AtPtr(codeDeltaNext);
+	    codeDeltaNext++;
+	}
+	codeOffset += delta;
+
+	if ((unsigned) *codeLengthNext == (unsigned) 0xFF) {
+	    codeLengthNext++;
+	    codeLen = TclGetInt4AtPtr(codeLengthNext);
+	    codeLengthNext += 4;
+	} else {
+	    codeLen = TclGetInt1AtPtr(codeLengthNext);
+	    codeLengthNext++;
+	}
+
+	if ((unsigned) *srcDeltaNext == (unsigned) 0xFF) {
+	    srcDeltaNext++;
+	    delta = TclGetInt4AtPtr(srcDeltaNext);
+	    srcDeltaNext += 4;
+	} else {
+	    delta = TclGetInt1AtPtr(srcDeltaNext);
+	    srcDeltaNext++;
+	}
+	srcOffset += delta;
+
+	if ((unsigned) *srcLengthNext == (unsigned) 0xFF) {
+	    srcLengthNext++;
+	    srcLen = TclGetInt4AtPtr(srcLengthNext);
+	    srcLengthNext += 4;
+	} else {
+	    srcLen = TclGetInt1AtPtr(srcLengthNext);
+	    srcLengthNext++;
+	}
+
+	if (codePtr->codeStart + codeOffset >= pc) { /* we have found the next command */
+	    break;
+	}
+    }
+
+    *cmdLocPtr = (CmdLocation) {codeOffset, codeLen, srcOffset, srcLen};
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetExceptionRangeForPc --
  *
  *	Given a program counter value, return the closest enclosing
  *	ExceptionRange.
@@ -10124,9 +9960,9 @@ GetSrcInfoForPc(
  *----------------------------------------------------------------------
  */
 
-static ExceptionRange *
-GetExceptRangeForPc(
-    const unsigned char *pc,	/* The program counter value for which to
+ExceptionRange *
+TclGetExceptionRange(
+    int pcOffset,               /* The program counter value for which to
 				 * search for a closest enclosing exception
 				 * range. This points to a bytecode
 				 * instruction in codePtr's code. */
@@ -10136,39 +9972,35 @@ GetExceptRangeForPc(
 				 * closer loop ranges). If TCL_CONTINUE, look
 				 * for loop ranges that define a continue
 				 * point or a catch range. */
-    ByteCode *codePtr)		/* Points to the ByteCode in which to search
-				 * for the enclosing ExceptionRange. */
+    ExceptionRange *startPtr,   /* Starting range for the backwards search. */
+    ExceptionRange *endPtr)     /* Ending range for the backwards search. */
 {
-    ExceptionRange *rangeArrayPtr;
-    int numRanges = codePtr->numExceptRanges;
-    register ExceptionRange *rangePtr;
-    int pcOffset = pc - codePtr->codeStart;
     register int start;
 
-    if (numRanges == 0) {
+    if (endPtr == NULL) {
 	return NULL;
     }
-
+    
     /*
      * This exploits peculiarities of our compiler: nested ranges are always
      * *after* their containing ranges, so that by scanning backwards we are
      * sure that the first matching range is indeed the deepest.
      */
 
-    rangeArrayPtr = codePtr->exceptArrayPtr;
-    rangePtr = rangeArrayPtr + numRanges;
-    while (--rangePtr >= rangeArrayPtr) {
-	start = rangePtr->codeOffset;
-	if ((start <= pcOffset) &&
-		(pcOffset < (start + rangePtr->numCodeBytes))) {
-	    if (rangePtr->type == CATCH_EXCEPTION_RANGE) {
-		return rangePtr;
+    startPtr++;
+    while (--startPtr >= endPtr) {
+	start = startPtr->codeOffset;
+	if ((start <= pcOffset)	&&
+		((pcOffset - start < startPtr->numCodeBytes)
+			|| (startPtr->numCodeBytes < 0))) {
+	    if (IS_CATCH_RANGE(startPtr)) {
+		return startPtr;
 	    }
 	    if (searchMode == TCL_BREAK) {
-		return rangePtr;
+		return startPtr;
 	    }
-	    if (searchMode == TCL_CONTINUE && rangePtr->continueOffset != -1){
-		return rangePtr;
+	    if (searchMode == TCL_CONTINUE && startPtr->continueOffset != -1){
+		return startPtr;
 	    }
 	}
     }

@@ -1876,8 +1876,6 @@ typedef struct Interp {
      * Miscellaneous information:
      */
 
-    int cmdCount;		/* Total number of times a command procedure
-				 * has been called for this interpreter. */
     int evalFlags;		/* Flags to control next call to Tcl_Eval.
 				 * Normally zero, but may be set before
 				 * calling Tcl_Eval. See below for valid
@@ -1963,14 +1961,6 @@ typedef struct Interp {
 	int exceeded;		/* Which limits have been exceeded, described
 				 * as flag values the same as the 'active'
 				 * field. */
-
-	int cmdCount;		/* Limit for how many commands to execute in
-				 * the interpreter. */
-	LimitHandler *cmdHandlers;
-				/* Handlers to execute when the limit is
-				 * reached. */
-	int cmdGranularity;	/* Mod factor used to determine how often to
-				 * evaluate the limit check. */
 
 	Tcl_Time time;		/* Time limit for execution within the
 				 * interpreter. */
@@ -3230,15 +3220,6 @@ MODULE_SCOPE Tcl_Obj *	TclDictWithInit(Tcl_Interp *interp, Tcl_Obj *dictPtr,
 MODULE_SCOPE int	Tcl_DisassembleObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-
-/* Assemble command function */
-MODULE_SCOPE int	Tcl_AssembleObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-MODULE_SCOPE int	TclNRAssembleObjCmd(ClientData clientData,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-
 MODULE_SCOPE int	Tcl_EncodingObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3907,10 +3888,6 @@ MODULE_SCOPE int	TclStreqOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclCompileStreqOpCmd(Tcl_Interp *interp,
-			    Tcl_Parse *parsePtr, Command *cmdPtr,
-			    struct CompileEnv *envPtr);
-
-MODULE_SCOPE int	TclCompileAssembleCmd(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, Command *cmdPtr,
 			    struct CompileEnv *envPtr);
 
@@ -4692,14 +4669,9 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #define TclLimitReady(limit)						\
     (((limit).active == 0) ? 0 :					\
     (++(limit).granularityTicker,					\
-    ((((limit).active & TCL_LIMIT_COMMANDS) &&				\
-	    (((limit).cmdGranularity == 1) ||				\
-	    ((limit).granularityTicker % (limit).cmdGranularity == 0)))	\
-	    ? 1 :							\
     (((limit).active & TCL_LIMIT_TIME) &&				\
 	    (((limit).timeGranularity == 1) ||				\
-	    ((limit).granularityTicker % (limit).timeGranularity == 0)))\
-	    ? 1 : 0)))
+		    ((limit).granularityTicker % (limit).timeGranularity == 0)))))
 
 /*
  * Compile-time assertions: these produce a compile time error if the

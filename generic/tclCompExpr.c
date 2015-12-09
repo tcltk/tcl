@@ -487,11 +487,20 @@ static const unsigned char Lexeme[] = {
  */
 
 typedef struct JumpList {
-    JumpFixup jump;		/* Pass this argument to matching calls of
+    int jump;		        /* Pass this argument to matching calls of
 				 * TclEmitForwardJump() and
 				 * TclFixupForwardJump(). */
     struct JumpList *next;	/* Point to next item on the stack */
 } JumpList;
+
+/*
+ * Macro to convert a jump to a different type
+ */
+
+#define CONVERT_JUMP(which, type)			\
+    TclUpdateInstInt4AtPc(INST_##type##4, 0,		\
+	    envPtr->codeStart + (which))
+ 
 
 /*
  * Declarations for local functions to this file:
@@ -2290,17 +2299,16 @@ CompileExprTree(
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		TclEmitForwardJump(envPtr, TCL_FALSE_JUMP, &jumpPtr->jump);
+		TclEmitForwardJump(envPtr, JUMP_FALSE, &jumpPtr->jump);
 		break;
 	    case COLON:
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		TclEmitForwardJump(envPtr, TCL_UNCONDITIONAL_JUMP,
-			&jumpPtr->jump);
+		TclEmitForwardJump(envPtr, JUMP, &jumpPtr->jump);
 		TclAdjustStackDepth(-1, envPtr);
 		if (convert) {
-		    jumpPtr->jump.jumpType = TCL_TRUE_JUMP;
+		    CONVERT_JUMP(jumpPtr->jump, JUMP_TRUE);
 		}
 		convert = 1;
 		break;
@@ -2309,8 +2317,11 @@ CompileExprTree(
 		newJump = TclStackAlloc(interp, sizeof(JumpList));
 		newJump->next = jumpPtr;
 		jumpPtr = newJump;
-		TclEmitForwardJump(envPtr, (nodePtr->lexeme == AND)
-			?  TCL_FALSE_JUMP : TCL_TRUE_JUMP, &jumpPtr->jump);
+		if (nodePtr->lexeme == AND) {
+		    TclEmitForwardJump(envPtr, JUMP_FALSE, &jumpPtr->jump);
+		} else {
+		    TclEmitForwardJump(envPtr, JUMP_TRUE, &jumpPtr->jump);
+		}
 		break;
 	    }
 	} else {
@@ -2355,19 +2366,19 @@ CompileExprTree(
 		break;
 	    case COLON:
 		CLANG_ASSERT(jumpPtr);
-		if (jumpPtr->jump.jumpType == TCL_TRUE_JUMP) {
-		    jumpPtr->jump.jumpType = TCL_UNCONDITIONAL_JUMP;
+		if (*(envPtr->codeStart + jumpPtr->jump) ==
+			INST_JUMP_TRUE4) {
+		    CONVERT_JUMP(jumpPtr->jump, JUMP);
 		    convert = 1;
 		}
-		target = jumpPtr->jump.codeOffset + 2;
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
-		    target += 3;
-		}
+		target = jumpPtr->jump + 5;
+		TclFixupForwardJumpToHere(envPtr, jumpPtr->jump);
+		
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
 		TclStackFree(interp, freePtr);
-		TclFixupForwardJump(envPtr, &jumpPtr->jump,
-			target - jumpPtr->jump.codeOffset, 127);
+		TclFixupForwardJump(envPtr, jumpPtr->jump,
+			target - jumpPtr->jump);
 
 		freePtr = jumpPtr;
 		jumpPtr = jumpPtr->next;
@@ -2377,21 +2388,19 @@ CompileExprTree(
 	    case OR:
 		CLANG_ASSERT(jumpPtr);
 		pc1 = CurrentOffset(envPtr);
-		TclEmitInstInt1((nodePtr->lexeme == AND) ? INST_JUMP_FALSE1
-			: INST_JUMP_TRUE1, 0, envPtr);
+		TclEmitInstInt4((nodePtr->lexeme == AND) ? INST_JUMP_FALSE4
+			: INST_JUMP_TRUE4, 0, envPtr);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "1" : "0", 1), envPtr);
 		pc2 = CurrentOffset(envPtr);
-		TclEmitInstInt1(INST_JUMP1, 0, envPtr);
+		TclEmitInstInt4(INST_JUMP4, 0, envPtr);
 		TclAdjustStackDepth(-1, envPtr);
-		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc1,
+		TclStoreInt4AtPtr(CurrentOffset(envPtr) - pc1,
 			envPtr->codeStart + pc1 + 1);
-		if (TclFixupForwardJumpToHere(envPtr, &jumpPtr->jump, 127)) {
-		    pc2 += 3;
-		}
+		TclFixupForwardJumpToHere(envPtr, jumpPtr->jump);
 		TclEmitPush(TclRegisterNewLiteral(envPtr,
 			(nodePtr->lexeme == AND) ? "0" : "1", 1), envPtr);
-		TclStoreInt1AtPtr(CurrentOffset(envPtr) - pc2,
+		TclStoreInt4AtPtr(CurrentOffset(envPtr) - pc2,
 			envPtr->codeStart + pc2 + 1);
 		convert = 0;
 		freePtr = jumpPtr;
