@@ -1455,6 +1455,7 @@ typedef struct ExecEnv {
     struct Tcl_Interp *interp;
     struct NRE_callback *callbackPtr;
 				/* Top callback in NRE's stack. */
+    struct NRE_stack *NRStack;
     struct CoroutineData *corPtr;
     int rewind;
 } ExecEnv;
@@ -2108,12 +2109,8 @@ typedef struct Interp {
 				 * and setup. */
 
     struct NRE_callback *deferredCallbacks;
-				/* Callbacks that are set previous to a call
-				 * to some Eval function but that actually
-				 * belong to the command that is about to be
-				 * called - i.e., they should be run *before*
-				 * any tailcall is invoked. */
-
+                                /* First callback deferred for the next
+				 * call to EvalObjv */
     /*
      * TIP #285, Script cancellation support.
      */
@@ -4790,57 +4787,19 @@ void Tcl_Panic(const char *, ...) __attribute__((analyzer_noreturn));
  *----------------------------------------------------------------
  */
 
-#define NRE_USE_SMALL_ALLOC	1  /* Only turn off for debugging purposes. */
 #ifndef NRE_ENABLE_ASSERTS
 #define NRE_ENABLE_ASSERTS	0
 #endif
 
-/*
- * This is the main data struct for representing NR commands. It is designed
- * to fit in sizeof(Tcl_Obj) in order to exploit the fastest memory allocator
- * available.
- */
-
-typedef struct NRE_callback {
-    Tcl_NRPostProc *procPtr;
-    ClientData data[4];
-    struct NRE_callback *nextPtr;
-} NRE_callback;
-
-#define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
-
-/*
- * Inline version of Tcl_NRAddCallback.
- */
-
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3) \
-    do {								\
-	NRE_callback *callbackPtr;					\
-	TCLNR_ALLOC((interp), (callbackPtr));				\
-	callbackPtr->procPtr = (postProcPtr);				\
-	callbackPtr->data[0] = (ClientData)(data0);			\
-	callbackPtr->data[1] = (ClientData)(data1);			\
-	callbackPtr->data[2] = (ClientData)(data2);			\
-	callbackPtr->data[3] = (ClientData)(data3);			\
-	callbackPtr->nextPtr = TOP_CB(interp);				\
-	TOP_CB(interp) = callbackPtr;					\
-    } while (0)
-
-#if NRE_USE_SMALL_ALLOC
-#define TCLNR_ALLOC(interp, ptr) \
-    TclSmallAllocEx(interp, sizeof(NRE_callback), (ptr))
-#define TCLNR_FREE(interp, ptr)  TclSmallFreeEx((interp), (ptr))
-#else
-#define TCLNR_ALLOC(interp, ptr) \
-    (ptr = ((ClientData) ckalloc(sizeof(NRE_callback))))
-#define TCLNR_FREE(interp, ptr)  ckfree((char *) (ptr))
-#endif
-
 #if NRE_ENABLE_ASSERTS
+#include <assert.h>
 #define NRE_ASSERT(expr) assert((expr))
 #else
 #define NRE_ASSERT(expr)
 #endif
+
+void TclNRSetRoot(Tcl_Interp *interp);
+
 
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
@@ -4851,6 +4810,8 @@ typedef struct NRE_callback {
 #define Tcl_AttemptRealloc(ptr, size) TclpRealloc((ptr), (size))
 #define Tcl_Free(ptr)                 TclpFree(ptr)
 #endif
+
+#include "tclNRE.h"
 
 #endif /* _TCLINT */
 
