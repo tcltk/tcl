@@ -3097,7 +3097,7 @@ ExtendStringRepWithUnicode(
      */
 
     int i, origLength, size = 0;
-    char *dst, buf[TCL_UTF_MAX];
+    char *dst;
     String *stringPtr = GET_STRING(objPtr);
 
     if (numChars < 0) {
@@ -3123,7 +3123,7 @@ ExtendStringRepWithUnicode(
     }
 
     for (i = 0; i < numChars && size >= 0; i++) {
-	size += Tcl_UniCharToUtf((int) unicode[i], buf);
+	size += TclUtfCount(unicode[i]);
     }
     if (size < 0) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);

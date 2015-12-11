@@ -647,7 +647,7 @@ proc ::tcl::clock::Initialize {} {
 					# that renders the given format
 }
 ::tcl::clock::Initialize
-
+
 #----------------------------------------------------------------------
 #
 # clock format --
@@ -696,7 +696,7 @@ proc ::tcl::clock::format { args } {
     return [$procName $clockval $timezone]
 
 }
-
+
 #----------------------------------------------------------------------
 #
 # ParseClockFormatFormat --
@@ -735,7 +735,7 @@ proc ::tcl::clock::ParseClockFormatFormat {procName format locale} {
 proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
     set didLocaleEra 0
     set didLocaleNumerals 0
-    set preFormatCode \
+    set prefixCode \
 	[string map [list @GREGORIAN_CHANGE_DATE@ \
 				       [mc GREGORIAN_CHANGE_DATE]] \
 	     {
@@ -744,9 +744,11 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 			       $TZData($timezone) \
 			       @GREGORIAN_CHANGE_DATE@]
 	     }]
+    set preFormatCode {}
     set formatString {}
     set substituents {}
     set state {}
+    set fields {}
 
     set format [LocalizeFormat $locale $format]
 
@@ -772,8 +774,10 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 				 [list @DAYS_OF_WEEK_ABBREV@ \
 				      [list [mc DAYS_OF_WEEK_ABBREV]]] \
 				 { [lindex @DAYS_OF_WEEK_ABBREV@ \
-					[expr {[dict get $date dayOfWeek] \
-						   % 7}]]}]
+					[expr {$dayOfWeek % 7}]]}]
+			dict set fields dayOfWeek {
+			    set dayOfWeek [dict get $date dayOfWeek]
+			}
 		    }
 		    A {			# Day of week, spelt out.
 			append formatString %s
@@ -782,8 +786,10 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 				 [list @DAYS_OF_WEEK_FULL@ \
 				      [list [mc DAYS_OF_WEEK_FULL]]] \
 				 { [lindex @DAYS_OF_WEEK_FULL@ \
-					[expr {[dict get $date dayOfWeek] \
-						   % 7}]]}]
+					[expr {$dayOfWeek % 7}]]}]
+			dict set fields dayOfWeek {
+			    set dayOfWeek [dict get $date dayOfWeek]
+			}
 		    }
 		    b - h {		# Name of month, abbreviated.
 			append formatString %s
@@ -792,7 +798,10 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 				 [list @MONTHS_ABBREV@ \
 				      [list [mc MONTHS_ABBREV]]] \
 				 { [lindex @MONTHS_ABBREV@ \
-					[expr {[dict get $date month]-1}]]}]
+					[expr {$month-1}]]}]
+			dict set fields month {
+			    set month [dict get $date month]
+			}
 		    }
 		    B {			# Name of month, spelt out
 			append formatString %s
@@ -801,20 +810,31 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 				 [list @MONTHS_FULL@ \
 				      [list [mc MONTHS_FULL]]] \
 				 { [lindex @MONTHS_FULL@ \
-					[expr {[dict get $date month]-1}]]}]
+					[expr {$month-1}]]}]
+			dict set fields month {
+			    set month [dict get $date month]
+			}
 		    }
 		    C {			# Century number
 			append formatString %02d
-			append substituents \
-			    { [expr {[dict get $date year] / 100}]}
+			append substituents { [expr {$year / 100}]}
+			dict set fields year {
+			    set year [dict get $date year]
+			}
 		    }
 		    d {			# Day of month, with leading zero
 			append formatString %02d
-			append substituents { [dict get $date dayOfMonth]}
+			append substituents { $dayOfMonth}
+			dict set fields dayOfMonth {
+			    set dayOfMonth [dict get $date dayOfMonth]
+			}
 		    }
 		    e {			# Day of month, without leading zero
 			append formatString %2d
-			append substituents { [dict get $date dayOfMonth]}
+			append substituents { $dayOfMonth}
+			dict set fields dayOfMonth {
+			    set dayOfMonth [dict get $date dayOfMonth]
+			}
 		    }
 		    E {			# Format group in a locale-dependent
 					# alternative era
@@ -840,33 +860,45 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 		    g {			# Two-digit year relative to ISO8601
 					# week number
 			append formatString %02d
-			append substituents \
-			    { [expr { [dict get $date iso8601Year] % 100 }]}
+			append substituents { [expr { $iso8601Year % 100 }]}
+			dict set fields iso8601Year {
+			    set iso8601Year [dict get $date iso8601Year]
+			}
 		    }
 		    G {			# Four-digit year relative to ISO8601
 					# week number
 			append formatString %02d
-			append substituents { [dict get $date iso8601Year]}
+			append substituents { $iso8601Year}
+			dict set fields iso8601Year {
+			    set iso8601Year [dict get $date iso8601Year]
+			}
 		    }
 		    H {			# Hour in the 24-hour day, leading zero
 			append formatString %02d
 			append substituents \
-			    { [expr { [dict get $date localSeconds] \
-					  / 3600 % 24}]}
+			    { [expr { $localSeconds / 3600 % 24}]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    I {			# Hour AM/PM, with leading zero
 			append formatString %02d
 			append substituents \
-			    { [expr { ( ( ( [dict get $date localSeconds] \
-					    % 86400 ) \
+			    { [expr { ( ( ($localSeconds % 86400) \
 					  + 86400 \
 					  - 3600 ) \
 					/ 3600 ) \
 				      % 12 + 1 }] }
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    j {			# Day of year (001-366)
 			append formatString %03d
-			append substituents { [dict get $date dayOfYear]}
+			append substituents { $dayOfYear}
+			dict set fields dayOfYear {
+			    set dayOfYear [dict get $date dayOfYear]
+			}
 		    }
 		    J {			# Julian Day Number
 			append formatString %07ld
@@ -875,37 +907,47 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 		    k {			# Hour (0-23), no leading zero
 			append formatString %2d
 			append substituents \
-			    { [expr { [dict get $date localSeconds]
-				      / 3600
-				      % 24 }]}
+			    { [expr { $localSeconds / 3600 % 24 }]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    l {			# Hour (12-11), no leading zero
 			append formatString %2d
 			append substituents \
-			    { [expr { ( ( ( [dict get $date localSeconds]
-					   % 86400 )
+			    { [expr { ( ( ( $localSeconds % 86400 )
 					 + 86400
 					 - 3600 )
 				       / 3600 )
 				     % 12 + 1 }]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    m {			# Month number, leading zero
 			append formatString %02d
-			append substituents { [dict get $date month]}
+			append substituents { $month}
+			dict set fields month {
+			    set month [dict get $date month]
+			}
 		    }
 		    M {			# Minute of the hour, leading zero
 			append formatString %02d
 			append substituents \
-			    { [expr { [dict get $date localSeconds]
-				      / 60
-				      % 60 }]}
+			    { [expr { $localSeconds / 60 % 60 }]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    n {			# A literal newline
 			append formatString \n
 		    }
 		    N {			# Month number, no leading zero
 			append formatString %2d
-			append substituents { [dict get $date month]}
+			append substituents { $month}
+			dict set fields month {
+			    set month [dict get $date month]
+			}
 		    }
 		    O {			# A format group in the locale's
 					# alternative numerals
@@ -924,9 +966,11 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 			    [list set AM [string toupper [mc AM]]] \n \
 			    [list set PM [string toupper [mc PM]]] \n
 			append substituents \
-			    { [expr {(([dict get $date localSeconds]
-				       % 86400) < 43200) ?
+			    { [expr {(($localSeconds % 86400) < 43200) ?
 				     $AM : $PM}]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    P {			# Localized 'AM' or 'PM' indicator
 			append formatString %s
@@ -934,10 +978,11 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 			    [list set am [mc AM]] \n \
 			    [list set pm [mc PM]] \n
 			append substituents \
-			    { [expr {(([dict get $date localSeconds]
-				       % 86400) < 43200) ?
+			    { [expr {(($localSeconds % 86400) < 43200) ?
 				     $am : $pm}]}
-
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    Q {			# Hi, Jeff!
 			append formatString %s
@@ -945,70 +990,95 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 		    }
 		    s {			# Seconds from the Posix Epoch
 			append formatString %s
-			append substituents { [dict get $date seconds]}
+			append substituents { $seconds}
+			dict set fields seconds {
+			    set seconds [dict get $date seconds]
+			}
 		    }
 		    S {			# Second of the minute, with
 			# leading zero
 			append formatString %02d
-			append substituents \
-			    { [expr { [dict get $date localSeconds]
-				      % 60 }]}
+			append substituents { [expr { $localSeconds % 60 }]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    t {			# A literal tab character
 			append formatString \t
 		    }
 		    u {			# Day of the week (1-Monday, 7-Sunday)
 			append formatString %1d
-			append substituents { [dict get $date dayOfWeek]}
+			append substituents { $dayOfWeek }
+			dict set fields dayOfWeek {
+			    set dayOfWeek [dict get $date dayOfWeek]
+			}
 		    }
 		    U {			# Week of the year (00-53). The
 					# first Sunday of the year is the
 					# first day of week 01
 			append formatString %02d
 			append preFormatCode {
-			    set dow [dict get $date dayOfWeek]
+			    set dow $dayOfWeek
 			    if { $dow == 7 } {
 				set dow 0
 			    }
 			    incr dow
 			    set UweekNumber \
-				[expr { ( [dict get $date dayOfYear]
-					  - $dow + 7 )
-					/ 7 }]
+				[expr { ( $dayOfYear - $dow + 7 ) / 7 }]
 			}
 			append substituents { $UweekNumber}
+			dict set fields dayOfYear {
+			    set dayOfYear [dict get $date dayOfYear]
+			}
+			dict set fields dayOfWeek {
+			    set dayOfWeek [dict get $date dayOfWeek]
+			}
 		    }
 		    V {			# The ISO8601 week number
 			append formatString %02d
-			append substituents { [dict get $date iso8601Week]}
+			append substituents { $iso8601Week}
+			dict set fields iso8601Week {
+			    set iso8601Week [dict get $date iso8601Week]
+			}
 		    }
 		    w {			# Day of the week (0-Sunday,
 					# 6-Saturday)
 			append formatString %1d
 			append substituents \
-			    { [expr { [dict get $date dayOfWeek] % 7 }]}
+			    { [expr { $dayOfWeek % 7 }]}
+			dict set fields dayOfWeek {
+			    set dayOfWeek [dict get $date dayOfWeek]
+			}
 		    }
 		    W {			# Week of the year (00-53). The first
 					# Monday of the year is the first day
 					# of week 01.
 			append preFormatCode {
 			    set WweekNumber \
-				[expr { ( [dict get $date dayOfYear]
-					  - [dict get $date dayOfWeek]
-					  + 7 )
-					/ 7 }]
+				[expr { ($dayOfYear - $dayOfWeek + 7) / 7 }]
 			}
 			append formatString %02d
 			append substituents { $WweekNumber}
+			dict set fields dayOfWeek {
+			    set dayOfWeek [dict get $date dayOfWeek]
+			}
+			dict set fields dayOfMonth {
+			    set dayOfMonth [dict get $date dayOfMonth]
+			}
 		    }
 		    y {			# The two-digit year of the century
 			append formatString %02d
-			append substituents \
-			    { [expr { [dict get $date year] % 100 }]}
+			append substituents { [expr { $year % 100 }]}
+			dict set fields year {
+			    set year [dict get $date year]
+			}
 		    }
 		    Y {			# The four-digit year
 			append formatString %04d
-			append substituents { [dict get $date year]}
+			append substituents { $year}
+			dict set fields year {
+			    set year [dict get $date year]
+			}
 		    }
 		    z {			# The time zone as hours and minutes
 					# east (+) or west (-) of Greenwich
@@ -1018,7 +1088,10 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 		    }
 		    Z {			# The name of the time zone
 			append formatString %s
-			append substituents { [dict get $date tzName]}
+			append substituents { $tzName}
+			dict set fields tzName {
+			    set tzName [dict get $date tzName]
+			}
 		    }
 		    % {			# A literal percent character
 			append formatString %%
@@ -1068,72 +1141,91 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 			# numerals
 			append formatString %s
 			append substituents \
-			    { [lindex $localeNumerals \
-				   [dict get $date dayOfMonth]]}
+			    { [lindex $localeNumerals $dayOfMonth]}
+			dict set fields dayOfMonth {
+			    set dayOfMonth [dict get $date dayOfMonth]
+			}
 		    }
 		    H - k {		# Hour of the day in alternative
 					# numerals
 			append formatString %s
 			append substituents \
 			    { [lindex $localeNumerals \
-				   [expr { [dict get $date localSeconds]
-					   / 3600
-					   % 24 }]]}
+				   [expr { $localSeconds / 3600 % 24 }]]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    I - l {		# Hour (12-11) AM/PM in alternative
 					# numerals
 			append formatString %s
 			append substituents \
 			    { [lindex $localeNumerals \
-				   [expr { ( ( ( [dict get $date localSeconds]
-						 % 86400 )
+				   [expr { ( ( ( $localSeconds % 86400 )
 					       + 86400
 					       - 3600 )
 					     / 3600 )
 					   % 12 + 1 }]]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    m {			# Month number in alternative numerals
 			append formatString %s
 			append substituents \
-			    { [lindex $localeNumerals [dict get $date month]]}
+			    { [lindex $localeNumerals $month]}
+			dict set fields month {
+			    set month [dict get $date month]
+			}
 		    }
 		    M {			# Minute of the hour in alternative
 					# numerals
 			append formatString %s
 			append substituents \
 			    { [lindex $localeNumerals \
-				   [expr { [dict get $date localSeconds]
-					   / 60
-					   % 60 }]]}
+				   [expr { $localSeconds / 60 % 60 }]]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    S {			# Second of the minute in alternative
 					# numerals
 			append formatString %s
 			append substituents \
 			    { [lindex $localeNumerals \
-				   [expr { [dict get $date localSeconds]
-					   % 60 }]]}
+				   [expr { $localSeconds % 60 }]]}
+			dict set fields localSeconds {
+			    set localSeconds [dict get $date localSeconds]
+			}
 		    }
 		    u {			# Day of the week (Monday=1,Sunday=7)
 					# in alternative numerals
 			append formatString %s
 			append substituents \
-			    { [lindex $localeNumerals \
-				   [dict get $date dayOfWeek]]}
+			    { [lindex $localeNumerals $dayOfWeek]}
+			dict set fields dayOfWeek {
+			    set dayOfWeek [dict get $date dayOfWeek]
 			}
+		    }
 		    w {			# Day of the week (Sunday=0,Saturday=6)
 					# in alternative numerals
 			append formatString %s
 			append substituents \
 			    { [lindex $localeNumerals \
-				   [expr { [dict get $date dayOfWeek] % 7 }]]}
+				   [expr { $dayOfWeek % 7 }]]}
+			dict set fields dayOfWeek {
+			    set dayOfWeek [dict get $date dayOfWeek]
+			}
 		    }
 		    y {			# Year of the century in alternative
 					# numerals
 			append formatString %s
 			append substituents \
 			    { [lindex $localeNumerals \
-				   [expr { [dict get $date year] % 100 }]]}
+				   [expr { $year % 100 }]]}
+			dict set fields year {
+			    set year [dict get $date year]
+			}
 		    }
 		    default {	# Unknown format group
 			append formatString %%O $char
@@ -1157,7 +1249,11 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 	}
     }
 
+    set extractCode [join [dict values $fields] ";"]
+
     proc $procName {clockval timezone} "
+	$prefixCode
+	$extractCode
         $preFormatCode
         return \[::format [list $formatString] $substituents\]
     "
@@ -1166,7 +1262,7 @@ proc ::tcl::clock::ParseClockFormatFormat2 {format locale procName} {
 
     return $procName
 }
-
+
 #----------------------------------------------------------------------
 #
 # clock scan --
@@ -1931,7 +2027,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
     # Build the procedure
 
     set procBody {}
-    append procBody "variable ::tcl::clock::TZData" \n
+    append procBody "variable TZData" \n
     append procBody "if \{ !\[ regexp -nocase [list $re] \$string ->"
     for { set i 1 } { $i <= $captureCount } { incr i } {
 	append procBody " " field $i
@@ -1958,7 +2054,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 	    }
 	}
 	append procBody {
-	    ::tcl::clock::SetupTimeZone $timeZone
+	    SetupTimeZone $timeZone
 	}
     }
 
@@ -1991,7 +2087,7 @@ proc ::tcl::clock::ParseClockScanFormat {formatString locale} {
 	# Finally, convert the date to local time
 
 	append procBody {
-	    set date [::tcl::clock::ConvertLocalToUTC $date[set date {}] \
+	    set date [ConvertLocalToUTC $date[set date {}] \
 			  $TZData($timeZone) $changeover]
 	}
     }

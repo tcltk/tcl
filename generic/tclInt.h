@@ -3123,6 +3123,7 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
+MODULE_SCOPE int	TclUtfCount(Tcl_UniChar ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -3136,6 +3137,9 @@ MODULE_SCOPE int	TclpLoadMemory(Tcl_Interp *interp, void *buffer,
 			    Tcl_FSUnloadFileProc **unloadProcPtr, int flags);
 #endif
 MODULE_SCOPE void	TclInitThreadStorage(void);
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+MODULE_SCOPE void	TclpInitThreadAlloc(void);
+#endif
 MODULE_SCOPE void	TclFinalizeThreadDataThread(void);
 MODULE_SCOPE void	TclFinalizeThreadStorage(void);
 #ifdef TCL_WIDE_CLICKS
@@ -4617,7 +4621,13 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 #    ifdef NO_ISNAN
 #	 define TclIsNaN(d)	((d) != (d))
 #    else
-#	 define TclIsNaN(d)	(isnan(d))
+/*
+ * This is called a lot for double-using code and isnan() is a noticable
+ * slowdown, so we stay with the comparison operation here. It should only
+ * make a difference for signalling NaN and those should not happen anyway.
+ */
+#	 define TclIsNaN(d)	((d) != (d))
+/*#	 define TclIsNaN(d)	(isnan(d))*/
 #    endif
 #endif
 
