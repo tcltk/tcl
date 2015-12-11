@@ -38,6 +38,11 @@
 #include "zipfs.h"
 #endif
 
+#ifdef ANDROID
+#undef  ZIPFS_BOOTDIR
+#define ZIPFS_BOOTDIR "/assets"
+#endif
+
 /*
  * The default prompt used when the user has not overridden it.
  */
@@ -325,10 +330,16 @@ Tcl_MainEx(
     int autoRun = 1;
 #ifdef ZIPFS_IN_TCL
     int zipOk = TCL_ERROR;
+#ifndef ANDROID
+    const char *exeName;
+#endif
 #endif
 
     TclpSetInitialEncodings();
     TclpFindExecutable((const char *)argv[0]);
+#ifndef ANDROID
+    exeName = Tcl_GetNameOfExecutable();
+#endif
 
     Tcl_InitMemory(interp);
 
@@ -422,11 +433,15 @@ Tcl_MainEx(
                 zipFile = Tcl_GetNameOfExecutable();
             }
 #else
-            zipFile = Tcl_GetNameOfExecutable();
+            zipFile = exeName;
 #endif
         }
         if (zipFile != NULL) {
+#ifdef ANDROID
             zipOk = Tclzipfs_Mount(interp, zipFile, "", NULL);
+#else
+            zipOk = Tclzipfs_Mount(interp, zipFile, exeName, NULL);
+#endif
             if (!relax && (zipOk != TCL_OK)) {
                 exitCode = 1;
                 goto done;
@@ -437,16 +452,28 @@ Tcl_MainEx(
         Tcl_ResetResult(interp);
     }
     if (zipOk == TCL_OK) {
-        char *tcl_lib = "/assets/tcl" TCL_VERSION;
-        char *tcl_pkg = "/assets";
+#ifdef ZIPFS_BOOTDIR
+        char *tcl_lib = ZIPFS_BOOTDIR "/tcl" TCL_VERSION;
+        char *tcl_pkg = ZIPFS_BOOTDIR;
+#else
+	char *tcl_lib;
+        char *tcl_pkg = (char *) exeName;
+	Tcl_DString dsLib;
 
+	Tcl_DStringInit(&dsLib);
+	Tcl_DStringAppend(&dsLib, exeName, -1);
+	Tcl_DStringAppend(&dsLib, "/tcl" TCL_VERSION, -1);
+	tcl_lib = Tcl_DStringValue(&dsLib);
+#endif
         Tcl_SetVar2(interp, "env", "TCL_LIBRARY", tcl_lib, TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "auto_path", tcl_lib,
                    TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT);
-
+#ifndef ZIPFS_BOOTDIR
+	Tcl_DStringFree(&dsLib);
+#endif
     }
 #endif
     if (zipval != NULL) {
@@ -489,12 +516,25 @@ Tcl_MainEx(
      */
 
     if (zipOk == TCL_OK) {
-        char *tcl_lib = "/assets/tcl" TCL_VERSION;
-        char *tcl_pkg = "/assets";
+#ifdef ZIPFS_BOOTDIR
+        char *tcl_lib = ZIPFS_BOOTDIR "/tcl" TCL_VERSION;
+        char *tcl_pkg = ZIPFS_BOOTDIR;
+#else
+	char *tcl_lib;
+        char *tcl_pkg = (char *) exeName;
+	Tcl_DString dsLib;
 
+	Tcl_DStringInit(&dsLib);
+	Tcl_DStringAppend(&dsLib, exeName, -1);
+	Tcl_DStringAppend(&dsLib, "/tcl" TCL_VERSION, -1);
+	tcl_lib = Tcl_DStringValue(&dsLib);
+#endif
         Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
         Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
+#ifndef ZIPFS_BOOTDIR
+	Tcl_DStringFree(&dsLib);
+#endif
 
         /*
          * We need to re-init encoding (after initializing Tcl),
@@ -511,8 +551,16 @@ Tcl_MainEx(
     if ((zipOk == TCL_OK) && autoRun) {
         char *filename;
         Tcl_Channel chan;
+#ifdef ZIPFS_BOOTDIR
+        filename = ZIPFS_BOOTDIR "/app/main.tcl";
+#else
+	Tcl_DString dsFile;
 
-        filename = "/assets/app/main.tcl";
+	Tcl_DStringInit(&dsFile);
+	Tcl_DStringAppend(&dsFile, exeName, -1);
+	Tcl_DStringAppend(&dsFile, "/app/main.tcl", -1);
+	filename = Tcl_DStringValue(&dsFile);
+#endif
         chan = Tcl_OpenFileChannel(NULL, filename, "r", 0);
         if (chan != (Tcl_Channel) NULL) {
             Tcl_Obj *arg;
@@ -550,6 +598,9 @@ Tcl_MainEx(
             Tcl_SetVar(interp, "argv0", filename, TCL_GLOBAL_ONLY);
             Tcl_SetVar(interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
         }
+#ifndef ANDROID
+	Tcl_DStringFree(&dsFile);
+#endif
     }
 #endif
 

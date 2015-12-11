@@ -108,8 +108,11 @@
  */
 
 #if defined(_WIN32) || defined(_WIN64)
+#define HAS_DRIVES 1
 static CONST char drvletters[] =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+#else
+#define HAS_DRIVES 0
 #endif
 
 /*
@@ -145,6 +148,9 @@ typedef struct ZipFile {
     int nopen;                /* Number of open files on archive */
     struct ZipEntry *entries; /* List of files in archive */
     struct ZipEntry *topents; /* List of top-level dirs in archive */
+#if HAS_DRIVES
+    int mntdrv;	              /* Drive letter of mount point */
+#endif
     int mntptlen;             /* Length of mount point */
     char mntpt[1];            /* Mount point */
 } ZipFile;
@@ -361,37 +367,22 @@ Unlock(void)
 static time_t
 DosTimeDate(int dosDate, int dosTime)
 {
-    time_t now;
-    struct tm *tmp, tm;
+    struct tm tm;
+    time_t ret;
 
-    now = time(NULL);
-#ifdef TCL_THREADS
-#if defined(_WIN32) || defined(_WIN64)
-    /* Win32 uses thread local storage */
-    tmp = localtime(&now);
-    tm = *tmp;
-#else
-#ifdef HAVE_LOCALTIME_R
-    tmp = &tm;
-    localtime_r(&now, tmp);
-#else
-    Tcl_MutexLock(&localtimeMutex);
-    tmp = localtime(&now);
-    tm = *tmp;
-    Tcl_MutexUnlock(&localtimeMutex);
-#endif
-#endif
-#else
-    tmp = localtime(&now);
-    tm = *tmp;
-#endif
+    memset(&tm, 0, sizeof (tm));
     tm.tm_year = (((dosDate & 0xfe00) >> 9) + 80);
     tm.tm_mon = ((dosDate & 0x1e0) >> 5) - 1;
     tm.tm_mday = dosDate & 0x1f;
     tm.tm_hour = (dosTime & 0xf800) >> 11;
     tm.tm_min = (dosTime & 0x7e) >> 5;
     tm.tm_sec = (dosTime & 0x1f) << 1;
-    return mktime(&tm);
+    ret = mktime(&tm);
+    if (ret == (time_t) -1) {
+	/* fallback to 1980-01-01T00:00:00+00:00 (DOS epoch) */
+	ret = (time_t) 315532800;
+    }
+    return ret;
 }
 
 static int
@@ -505,7 +496,7 @@ CanonicalPath(CONST char *root, CONST char *tail, Tcl_DString *dsPtr)
     char *path;
     int i, j, c, isunc = 0;
 
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
     if ((tail[0] != '\0') && (strchr(drvletters, tail[0]) != NULL) &&
 	(tail[1] == ':')) {
 	tail += 2;
@@ -541,7 +532,7 @@ CanonicalPath(CONST char *root, CONST char *tail, Tcl_DString *dsPtr)
     memcpy(path, root, i);
     path[i++] = '/';
     memcpy(path + i, tail, j);
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
     for (i = 0; path[i] != '\0'; i++) {
 	if (path[i] == '\\') {
 	    path[i] = '/';
@@ -607,16 +598,25 @@ CanonicalPath(CONST char *root, CONST char *tail, Tcl_DString *dsPtr)
  */
 
 static char *
-AbsolutePath(CONST char *path, Tcl_DString *dsPtr)
+AbsolutePath(CONST char *path,
+#if HAS_DRIVES
+	     int *drvPtr,
+#endif
+	     Tcl_DString *dsPtr)
 {
     char *result;
 
+#if HAS_DRIVES
+    if (drvPtr != NULL) {
+	*drvPtr = 0;
+    }
+#endif
     if (*path == '~') {
 	Tcl_DStringAppend(dsPtr, path, -1);
 	return Tcl_DStringValue(dsPtr);
     }
     if ((*path != '/')
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
 	&& (*path != '\\') &&
 	(((*path != '\0') && (strchr(drvletters, *path) == NULL)) ||
 	 (path[1] != ':'))
@@ -628,9 +628,15 @@ AbsolutePath(CONST char *path, Tcl_DString *dsPtr)
 	Tcl_DStringInit(&pwd);
 	Tcl_GetCwd(NULL, &pwd);
 	result = Tcl_DStringValue(&pwd);
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
 	if ((result[0] != '\0') && (strchr(drvletters, result[0]) != NULL) &&
 	    (result[1] == ':')) {
+	    if (drvPtr != NULL) {
+		drvPtr[0] = result[0];
+		if ((drvPtr[0] >= 'a') && (drvPtr[0] <= 'z')) {
+		    drvPtr[0] -= 'a' - 'A';
+		}
+	    }
 	    result += 2;
 	}
 #endif
@@ -638,6 +644,17 @@ AbsolutePath(CONST char *path, Tcl_DString *dsPtr)
 	Tcl_DStringFree(&pwd);
     } else {
 	/* absolute path */
+#if HAS_DRIVES
+	if ((path[0] != '\0') && (strchr(drvletters, path[0]) != NULL) &&
+	    (path[1] == ':')) {
+	    if (drvPtr != NULL) {
+		drvPtr[0] = path[0];
+		if ((drvPtr[0] >= 'a') && (drvPtr[0] <= 'z')) {
+		    drvPtr[0] -= 'a' - 'A';
+		}
+	    }
+	}
+#endif
 	result = CanonicalPath("", path, dsPtr);
     }
     return result;
@@ -669,12 +686,24 @@ ZipFSLookup(char *filename)
     Tcl_HashEntry *hPtr;
     ZipEntry *z;
     Tcl_DString ds;
+#if HAS_DRIVES
+    int drive = 0;
+#endif
 
     Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+    realname = AbsolutePath(filename, &drive, &ds);
+#else
     realname = AbsolutePath(filename, &ds);
+#endif
     hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, realname);
     z = hPtr ? (ZipEntry *) Tcl_GetHashValue(hPtr) : NULL;
     Tcl_DStringFree(&ds);
+#if HAS_DRIVES
+    if ((z != NULL) && (drive != z->zipfile->mntdrv)) {
+	z = NULL;
+    }
+#endif
     return z;
 }
 
@@ -706,12 +735,25 @@ ZipFSLookupMount(char *filename)
     ZipFile *zf;
     Tcl_DString ds;
     int match = 0;
+#if HAS_DRIVES
+    int drive = 0;
+#endif
 
     Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+    realname = AbsolutePath(filename, &drive, &ds);
+#else
     realname = AbsolutePath(filename, &ds);
+#endif
     hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
     while (hPtr != NULL) {
 	if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
+#if HAS_DRIVES
+	    if (drive != zf->mntdrv) {
+		hPtr = Tcl_NextHashEntry(&search);
+		continue;
+	    }
+#endif
 	    if (strcmp(zf->mntpt, realname) == 0) {
 		match = 1;
 		break;
@@ -1010,13 +1052,16 @@ int
 Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 	    CONST char *passwd)
 {
-    char *realname;
+    char *realname, *p;
     int i, pwlen, isNew;
     ZipFile *zf, zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
     Tcl_DString ds, fpBuf;
     unsigned char *q;
+#if HAS_DRIVES
+    int drive = 0;
+#endif
 
     ReadLock();
     if (!ZipFS.initialized) {
@@ -1055,10 +1100,20 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 	    return TCL_OK;
 	}
 	Tcl_DStringInit(&ds);
-	hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, AbsolutePath(zipname, &ds));
+#if HAS_DRIVES
+	p = AbsolutePath(zipname, &drive, &ds);
+#else
+	p = AbsolutePath(zipname, &ds);
+#endif
+	hPtr = Tcl_FindHashEntry(&ZipFS.zipHash, p);
 	if (hPtr != NULL) {
 	    if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
-		Tcl_SetObjResult(interp, Tcl_NewStringObj(zf->mntpt, -1));
+#if HAS_DRIVES
+		if (drive == zf->mntdrv)
+#endif
+		{
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(zf->mntpt, -1));
+		}
 	    }
 	}
 	Unlock();
@@ -1081,7 +1136,11 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 	return TCL_ERROR;
     }
     Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+    realname = AbsolutePath(zipname, NULL, &ds);
+#else
     realname = AbsolutePath(zipname, &ds);
+#endif
     WriteLock();
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, realname, &isNew);
     Tcl_DStringSetLength(&ds, 0);
@@ -1096,6 +1155,16 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
 	ZipFSCloseArchive(interp, &zf0);
 	return TCL_ERROR;
     }
+#if HAS_DRIVES
+    if ((mntpt[0] != '\0') && (mntpt[1] == ':') &&
+	(strchr(drvletters, mntpt[0]) != NULL)) {
+	drive = mntpt[0];
+	if ((drive >= 'a') && (drive <= 'z')) {
+	    drive -= 'a' - 'A';
+	}
+	mntpt += 2;
+    }
+#endif
     if (strcmp(mntpt, "/") == 0) {
 	mntpt = "";
     }
@@ -1113,6 +1182,14 @@ Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
     zf->name = Tcl_GetHashKey(&ZipFS.zipHash, hPtr);
     strcpy(zf->mntpt, mntpt);
     zf->mntptlen = strlen(zf->mntpt);
+#if HAS_DRIVES
+    for (p = zf->mntpt; *p != '\0'; p++) {
+	if (*p == '\\') {
+	    *p = '/';
+	}
+    }
+    zf->mntdrv = drive;
+#endif
     zf->entries = NULL;
     zf->topents = NULL;
     zf->nopen = 0;
@@ -1351,9 +1428,16 @@ Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname)
     Tcl_HashEntry *hPtr;
     Tcl_DString ds;
     int ret = TCL_OK, unmounted = 0;
+#if HAS_DRIVES
+    int drive = 0;
+#endif
 
     Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+    realname = AbsolutePath(zipname, &drive, &ds);
+#else
     realname = AbsolutePath(zipname, &ds);
+#endif
     WriteLock();
     if (!ZipFS.initialized) {
 	goto done;
@@ -1364,6 +1448,12 @@ Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname)
 	goto done;
     }
     zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+#if HAS_DRIVES
+    if (drive != zf->mntdrv) {
+	/* don't report error */
+	goto done;
+    }
+#endif
     if (zf->nopen > 0) {
 	if (interp != NULL) {
 	    Tcl_SetObjResult(interp,
@@ -1531,8 +1621,9 @@ ZipFSMkKeyCmd(ClientData clientData, Tcl_Interp *interp,
  */
 
 static int
-ZipAddFile(Tcl_Interp *interp, CONST char *path, Tcl_Channel out,
-	   CONST char *passwd, char *buf, int bufsize, Tcl_HashTable *fileHash)
+ZipAddFile(Tcl_Interp *interp, CONST char *path, CONST char *name,
+	   Tcl_Channel out, CONST char *passwd,
+	   char *buf, int bufsize, Tcl_HashTable *fileHash)
 {
     Tcl_Channel in;
     Tcl_HashEntry *hPtr;
@@ -1544,7 +1635,7 @@ ZipAddFile(Tcl_Interp *interp, CONST char *path, Tcl_Channel out,
     unsigned long keys[3], keys0[3];
     char obuf[4096];
 
-    zpath = path;
+    zpath = name;
     while (zpath != NULL && zpath[0] == '/') {
 	zpath++;
     }
@@ -1859,7 +1950,7 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 		   int isImg, int argc, CONST char **argv)
 {
     Tcl_Channel out;
-    int len = 0, pwlen = 0, i, ret = TCL_ERROR, largc, pos[3];
+    int len = 0, pwlen = 0, slen = 0, i, count, ret = TCL_ERROR, largc, pos[3];
     CONST char **largv;
     Tcl_DString ds;
     ZipEntry *z;
@@ -1868,16 +1959,16 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
     Tcl_HashTable fileHash;
     char pwbuf[264], buf[4096];
 
-    if ((argc < 3) || (argc > (isImg ? 5 : 4))) {
+    if ((argc < 3) || (argc > (isImg ? 6 : 5))) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			 " outfile indir ?password?",
+			 " outfile indir ?strip? ?password?",
 			 isImg ? " ?infile?\"" : "\"", (char *) NULL);
 	return TCL_ERROR;
     }
     pwbuf[0] = 0;
-    if (argc > 3) {
-	pwlen = strlen(argv[3]);
-	if ((pwlen > 255) || (strchr(argv[1], 0xff) != NULL)) {
+    if (argc > 4) {
+	pwlen = strlen(argv[4]);
+	if ((pwlen > 255) || (strchr(argv[4], 0xff) != NULL)) {
 	    Tcl_AppendResult(interp, "illegal password", (char *) NULL);
 	    return TCL_ERROR;
 	}
@@ -1913,17 +2004,17 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
     if (isImg) {
 	ZipFile zf0;
 
-	if (ZipFSOpenArchive(interp, (argc > 4) ? argv[4] :
+	if (ZipFSOpenArchive(interp, (argc > 5) ? argv[5] :
 			     Tcl_GetNameOfExecutable(), 0, &zf0) != TCL_OK) {
 	    Tcl_Close(interp, out);
 	    Tcl_Free((char *) largv);
 	    return TCL_ERROR;
 	}
-	if (pwlen && (argc > 3)) {
+	if (pwlen && (argc > 4)) {
 	    i = 0;
 	    len = pwlen;
 	    while (len > 0) {
-		int ch = argv[3][len - 1];
+		int ch = argv[4][len - 1];
 
 		pwbuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
 		i++;
@@ -1961,17 +2052,41 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
     }
     Tcl_InitHashTable(&fileHash, TCL_STRING_KEYS);
     pos[0] = Tcl_Tell(out);
+    if (argc > 3) {
+	slen = strlen(argv[3]);
+    }
     for (i = 0; i < largc; i++) {
-	if (ZipAddFile(interp, largv[i], out, (pwlen > 0) ? argv[3] : NULL,
-		       buf, sizeof (buf), &fileHash)
+	CONST char *name = largv[i];
+
+	if (slen > 0) {
+	    len = strlen(name);
+	    if ((len <= slen) || (strncmp(argv[3], name, slen) != 0)) {
+		continue;
+	    }
+	    name += slen;
+	}
+	if (ZipAddFile(interp, largv[i], name, out,
+		(pwlen > 0) ? argv[4] : NULL, buf, sizeof (buf), &fileHash)
 	    != TCL_OK) {
 	    goto done;
 	}
     }
     pos[1] = Tcl_Tell(out);
-    hPtr = Tcl_FirstHashEntry(&fileHash, &search);
-    i = 0;
-    while (hPtr != NULL) {
+    count = 0;
+    for (i = 0; i < largc; i++) {
+	CONST char *name = largv[i];
+
+	if (slen > 0) {
+	    len = strlen(name);
+	    if ((len <= slen) || (strncmp(argv[3], name, slen) != 0)) {
+		continue;
+	    }
+	    name += slen;
+	}
+	hPtr = Tcl_FindHashEntry(&fileHash, name);
+	if (hPtr == NULL) {
+	    continue;
+	}
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 	len = strlen(z->name);
 	zip_write_int(buf + ZIP_CENTRAL_SIG_OFFS, ZIP_CENTRAL_HEADER_SIG);
@@ -1997,16 +2112,15 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 	    Tcl_AppendResult(interp, "write error", (char *) NULL);
 	    goto done;
 	}
-	hPtr = Tcl_NextHashEntry(&search);
-	++i;
+	count++;
     }
     Tcl_Flush(out);
     pos[2] = Tcl_Tell(out);
     zip_write_int(buf + ZIP_CENTRAL_END_SIG_OFFS, ZIP_CENTRAL_END_SIG);
     zip_write_short(buf + ZIP_CENTRAL_DISKNO_OFFS, 0);
     zip_write_short(buf + ZIP_CENTRAL_DISKDIR_OFFS, 0);
-    zip_write_short(buf + ZIP_CENTRAL_ENTS_OFFS, i);
-    zip_write_short(buf + ZIP_CENTRAL_TOTALENTS_OFFS, i);
+    zip_write_short(buf + ZIP_CENTRAL_ENTS_OFFS, count);
+    zip_write_short(buf + ZIP_CENTRAL_TOTALENTS_OFFS, count);
     zip_write_int(buf + ZIP_CENTRAL_DIRSIZE_OFFS, pos[2] - pos[1]);
     zip_write_int(buf + ZIP_CENTRAL_DIRSTART_OFFS, pos[1] - pos[0]);
     zip_write_short(buf + ZIP_CENTRAL_COMMENTLEN_OFFS, 0);
@@ -3057,12 +3171,12 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
     Tcl_HashSearch search;
     int scnt, len, l, dirOnly = -1, prefixLen, strip = 0;
     char *pat, *prefix, *path;
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
     char drivePrefix[3];
 #endif
     Tcl_DString ds, dsPref;
 
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
     if ((pattern != NULL) && (pattern[0] != '\0') &&
 	(strchr(drvletters, pattern[0]) != NULL) && (pattern[1] == ':')) {
 	pattern += 2;
@@ -3076,12 +3190,16 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
     prefix = Tcl_GetStringFromObj(pathPtr, &prefixLen);
     Tcl_DStringAppend(&dsPref, prefix, prefixLen);
     prefix = Tcl_DStringValue(&dsPref);
+#if HAS_DRIVES
+    path = AbsolutePath(prefix, NULL, &ds);
+#else
     path = AbsolutePath(prefix, &ds);
+#endif
     len = Tcl_DStringLength(&ds);
     if (strcmp(prefix, path) == 0) {
 	prefix = NULL;
     } else {
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
 	if ((strchr(drvletters, prefix[0]) != NULL) && (prefix[1] == ':')) {
 	    if (strcmp(prefix + 2, path) == 0) {
 		strncpy(drivePrefix, prefix, 3);
@@ -3096,7 +3214,7 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 #endif
     }
     if (prefix != NULL) {
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
 	if (prefix == drivePrefix) {
 	    Tcl_DStringSetLength(&dsPref, 0);
 	    Tcl_DStringAppend(&dsPref, drivePrefix, -1);
@@ -3260,7 +3378,11 @@ Zip_FSNormalizePathProc(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 
     path = Tcl_GetStringFromObj(pathPtr, &len);
     Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+    path = AbsolutePath(path, NULL, &ds);
+#else
     path = AbsolutePath(path, &ds);
+#endif
     nextCheckpoint = Tcl_DStringLength(&ds);
     Tcl_SetStringObj(pathPtr, Tcl_DStringValue(&ds),
 		     Tcl_DStringLength(&ds));
@@ -3294,12 +3416,19 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
     int ret = -1, len;
     char *path;
     Tcl_DString ds;
+#if HAS_DRIVES
+    int drive = 0;
+#endif
 
     path = Tcl_GetStringFromObj(pathPtr, &len);
     Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+    path = AbsolutePath(path, &drive, &ds);
+#else
     path = AbsolutePath(path, &ds);
+#endif
     len = Tcl_DStringLength(&ds);
-#if defined(_WIN32) || defined(_WIN64)
+#if HAS_DRIVES
     if (len && (strchr(drvletters, path[0]) != NULL) && (path[1] == ':')) {
 	path += 2;
 	len -= 2;
@@ -3308,12 +3437,26 @@ Zip_FSPathInFilesystemProc(Tcl_Obj *pathPtr, ClientData *clientDataPtr)
     ReadLock();
     hPtr = Tcl_FindHashEntry(&ZipFS.fileHash, path);
     if (hPtr != NULL) {
+#if HAS_DRIVES
+	ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
+	if (drive == z->zipfile->mntdrv) {
+	    ret = TCL_OK;
+	    goto endloop;
+	}
+#else
 	ret = TCL_OK;
 	goto endloop;
+#endif
     }
     hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
     while (hPtr != NULL) {
 	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+#if HAS_DRIVES
+	if (drive != zf->mntdrv) {
+	    hPtr = Tcl_NextHashEntry(&search);
+	    continue;
+	}
+#endif
 	if (zf->mntptlen == 0) {
 	    ZipEntry *z = zf->topents;
 
@@ -3368,7 +3511,11 @@ Zip_FSListVolumesProc(void)
     hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
     while (hPtr != NULL) {
 	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
+#if HAS_DRIVES
+	vol = Tcl_ObjPrintf("%c:%s", zf->mntdrv, zf->mntpt);
+#else
 	vol = Tcl_NewStringObj(zf->mntpt, zf->mntptlen);
+#endif
 	Tcl_ListObjAppendList(NULL, vols, vol);
 	Tcl_DecrRefCount(vol);
 	hPtr = Tcl_NextHashEntry(&search);
@@ -3402,16 +3549,29 @@ Zip_FSChdirProc(Tcl_Obj *pathPtr)
     Tcl_DString ds;
     ZipEntry *z;
     int ret = TCL_OK;
+#if HAS_DRIVES
+    int drive = 0;
+#endif
 
     path = Tcl_GetStringFromObj(pathPtr, &len);
     Tcl_DStringInit(&ds);
+#if HAS_DRIVES
+    path = AbsolutePath(path, &drive, &ds);
+#else
     path = AbsolutePath(path, &ds);
+#endif
     ReadLock();
     z = ZipFSLookup(path);
     if ((z == NULL) || !z->isdir) {
 	Tcl_SetErrno(ENOENT);
 	ret = -1;
     }
+#if HAS_DRIVES
+    if ((z != NULL) && (drive != z->zipfile->mntdrv)) {
+	Tcl_SetErrno(ENOENT);
+	ret = -1;
+    }
+#endif
     Unlock();
     Tcl_DStringFree(&ds);
     return ret;
