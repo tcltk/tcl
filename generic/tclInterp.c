@@ -3079,7 +3079,9 @@ SlaveInvokeHidden(
     Tcl_AllowExceptions(slaveInterp);
 
     if (namespaceName == NULL) {
-	TclNRSetRoot(slaveInterp);
+	if (interp != slaveInterp) {
+	    TclNRSetRoot(slaveInterp);
+	}
 	Tcl_NRAddCallback(interp, NRPostInvokeHidden, slaveInterp,
 		NULL, NULL, NULL);
 	return TclNRInvoke(NULL, slaveInterp, objc, objv);
