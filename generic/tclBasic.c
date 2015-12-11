@@ -935,7 +935,7 @@ Tcl_CreateInterp(void)
      * Set up other variables such as tcl_version and tcl_library
      */
 
-    Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL "+foo", TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "tcl_patchLevel", TCL_PATCH_LEVEL, TCL_GLOBAL_ONLY);
     Tcl_SetVar(interp, "tcl_version", TCL_VERSION, TCL_GLOBAL_ONLY);
     Tcl_TraceVar2(interp, "tcl_precision", NULL,
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
@@ -958,7 +958,7 @@ Tcl_CreateInterp(void)
      * TIP #268: Full patchlevel instead of just major.minor
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL "+foo", &tclStubs);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));

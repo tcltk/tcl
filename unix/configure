@@ -641,6 +641,7 @@ INSTALL_TZDATA
 TCL_HAS_LONGLONG
 TCL_UNSHARED_LIB_SUFFIX
 TCL_SHARED_LIB_SUFFIX
+TCL_LIB_VERSIONS_OK
 TCL_BUILD_LIB_SPEC
 LD_LIBRARY_PATH_VAR
 TCL_SHARED_BUILD
@@ -2324,7 +2325,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=7
-TCL_PATCH_LEVEL="a0"
+TCL_PATCH_LEVEL="0-alpha.0"
 VERSION=${TCL_MAJOR_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -10253,6 +10254,7 @@ eval "TCL_LIB_FILE=libtcl${LIB_SUFFIX}"
 
 # tclConfig.sh needs a version of the _LIB_SUFFIX that has been eval'ed
 # since on some platforms TCL_LIB_FILE contains shell escapes.
+# (See also: TCL_TRIM_DOTS, which is deprecated).
 
 eval "TCL_LIB_FILE=${TCL_LIB_FILE}"
 
@@ -10412,6 +10414,7 @@ eval "TCL_INCLUDE_SPEC=\"-I${includedir}\""
 #------------------------------------------------------------------------
 
 TCL_SHARED_BUILD=${SHARED_BUILD}
+
 
 
 

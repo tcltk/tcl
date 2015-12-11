@@ -1635,7 +1635,7 @@ CheckRequirement(
     }
 
     buf = strchr(dash+1, '-');
-    if ((buf != NULL) && isdigit(UCHAR(dash[1]))) {
+    if ((buf != NULL) && isdigit(UCHAR(buf[1]))) {
 	/*
 	 * More dashes found after the first. This is wrong.
 	 */
