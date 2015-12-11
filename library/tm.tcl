@@ -316,8 +316,8 @@ proc ::tcl::tm::Defaults {} {
 
     # Note that we're using [::list], not [list] because [list] means
     # something other than [::list] in this namespace.
+    path add [info library]
     roots [::list \
-	    [file dirname [info library]] \
 	    [file join [file dirname [file dirname $exe]] lib] \
 	    ]
 
@@ -325,6 +325,11 @@ proc ::tcl::tm::Defaults {} {
 	set sep ";"
     } else {
 	set sep ":"
+    }
+    if {[info exists env(TCL${major}_TM_PATH)]} {
+	foreach p [split $env(TCL${major}_TM_PATH) $sep] {
+	    path add $p
+	}
     }
     for {set n $minor} {$n >= 0} {incr n -1} {
 	foreach ev [::list \

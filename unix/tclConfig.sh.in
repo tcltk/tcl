@@ -23,6 +23,7 @@ TCL_DEFS='@DEFS@'
 
 # TCL_DBGX used to be used to distinguish debug vs. non-debug builds.
 # This was a righteous pain so the core doesn't do that any more.
+# DEPRECATED, will be removed in Tcl 9!
 TCL_DBGX=
 
 # Default flags used in an optimized and debuggable build, respectively.
@@ -113,7 +114,7 @@ TCL_INCLUDE_SPEC='@TCL_INCLUDE_SPEC@'
 # Indicates whether a version numbers should be used in -l switches
 # ("ok" means it's safe to use switches like -ltcl7.5;  "nodots" means
 # use switches like -ltcl75).  SunOS and FreeBSD require "nodots", for
-# example.
+# example. DEPRECATED, will be removed in Tcl 9!
 TCL_LIB_VERSIONS_OK='@TCL_LIB_VERSIONS_OK@'
 
 # String that can be evaluated to generate the part of a shared library

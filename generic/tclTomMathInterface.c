@@ -41,7 +41,7 @@ TclTommath_Init(
 {
     /* TIP #268: Full patchlevel instead of just major.minor */
 
-    if (Tcl_PkgProvideEx(interp, "tcl::tommath", TCL_PATCH_LEVEL,
+    if (Tcl_PkgProvideEx(interp, "tcl::tommath", TCL_PATCH_LEVEL "+foo",
 	    &tclTomMathStubs) != TCL_OK) {
 	return TCL_ERROR;
     }

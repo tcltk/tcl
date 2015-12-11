@@ -34,7 +34,7 @@ INSTALL_ROOT	=
 # Directory from which applications will reference the library of Tcl scripts
 # (note: you can set the TCL_LIBRARY environment variable at run-time to
 # override this value):
-TCL_LIBRARY	= $(prefix)/lib/tcl$(VERSION)
+TCL_LIBRARY	= $(prefix)/share/tcl$(VER)
 
 # Path to use at runtime to refer to LIB_INSTALL_DIR:
 LIB_RUNTIME_DIR		= $(libdir)
@@ -130,8 +130,7 @@ DLLSUFFIX		= @DLLSUFFIX@
 LIBSUFFIX		= @LIBSUFFIX@
 EXESUFFIX		= @EXESUFFIX@
 
-VER			= @TCL_MAJOR_VERSION@@TCL_MINOR_VERSION@
-DOTVER			= @TCL_MAJOR_VERSION@.@TCL_MINOR_VERSION@
+VER				= @TCL_MAJOR_VERSION@
 DDEVER			= @TCL_DDE_MAJOR_VERSION@@TCL_DDE_MINOR_VERSION@
 DDEDOTVER		= @TCL_DDE_MAJOR_VERSION@.@TCL_DDE_MINOR_VERSION@
 REGVER			= @TCL_REG_MAJOR_VERSION@@TCL_REG_MINOR_VERSION@
@@ -571,7 +570,7 @@ install-binaries: binaries
 		else true; \
 		fi; \
 	    done;
-	@for i in dde${DDEDOTVER} reg${REGDOTVER}; \
+	@for i in tcl8 tcl8/dde${DDEDOTVER} tcl8/reg${REGDOTVER}; \
 	    do \
 	    if [ ! -d $(LIB_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
@@ -595,23 +594,23 @@ install-binaries: binaries
 	    done
 	@if [ -f $(DDE_DLL_FILE) ]; then \
 	    echo Installing $(DDE_DLL_FILE); \
-	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+	    $(COPY) $(DDE_DLL_FILE) $(LIB_INSTALL_DIR)/tcl8/dde${DDEDOTVER}; \
 	    $(COPY) $(ROOT_DIR)/library/dde/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+		$(LIB_INSTALL_DIR)/tcl8/dde${DDEDOTVER}; \
 	    fi
 	@if [ -f $(DDE_LIB_FILE) ]; then \
 	    echo Installing $(DDE_LIB_FILE); \
-	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/dde${DDEDOTVER}; \
+	    $(COPY) $(DDE_LIB_FILE) $(LIB_INSTALL_DIR)/tcl8/dde${DDEDOTVER}; \
 	    fi
 	@if [ -f $(REG_DLL_FILE) ]; then \
 	    echo Installing $(REG_DLL_FILE); \
-	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
+	    $(COPY) $(REG_DLL_FILE) $(LIB_INSTALL_DIR)/tcl8/reg${REGDOTVER}; \
 	    $(COPY) $(ROOT_DIR)/library/reg/pkgIndex.tcl \
-		$(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
+		$(LIB_INSTALL_DIR)/tcl8/reg${REGDOTVER}; \
 	    fi
 	@if [ -f $(REG_LIB_FILE) ]; then \
 	    echo Installing $(REG_LIB_FILE); \
-	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/reg${REGDOTVER}; \
+	    $(COPY) $(REG_LIB_FILE) $(LIB_INSTALL_DIR)/tcl8/reg${REGDOTVER}; \
 	    fi
 
 install-libraries: libraries install-tzdata install-msgs
@@ -624,7 +623,7 @@ install-libraries: libraries install-tzdata install-msgs
 		else true; \
 		fi; \
 	    done;
-	@for i in http1.0 opt0.4 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
+	@for i in http1.0 opt0.4 encoding platform; \
 	    do \
 	    if [ ! -d $(SCRIPT_INSTALL_DIR)/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
@@ -652,20 +651,20 @@ install-libraries: libraries install-tzdata install-msgs
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/http1.0"; \
 	    done;
 	@echo "Installing package http 2.8.9 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.6/http-2.8.9.tm;
+	@$(COPY) $(ROOT_DIR)/library/http/http.tcl $(SCRIPT_INSTALL_DIR)/http-2.8.9.tm;
 	@echo "Installing library opt0.4 directory";
 	@for j in $(ROOT_DIR)/library/opt/*.tcl; \
 	    do \
 	    $(COPY) "$$j" "$(SCRIPT_INSTALL_DIR)/opt0.4"; \
 	    done;
 	@echo "Installing package msgcat 1.6.0 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/msgcat-1.6.0.tm;
+	@$(COPY) $(ROOT_DIR)/library/msgcat/msgcat.tcl $(SCRIPT_INSTALL_DIR)/msgcat-1.6.0.tm;
 	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.5/tcltest-2.3.8.tm;
+	@$(COPY) $(ROOT_DIR)/library/tcltest/tcltest.tcl $(SCRIPT_INSTALL_DIR)/tcltest-2.3.8.tm;
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform-1.0.14.tm;
+	@$(COPY) $(ROOT_DIR)/library/platform/platform.tcl $(SCRIPT_INSTALL_DIR)/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
-	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/../tcl8/8.4/platform/shell-1.1.4.tm;
+	@$(COPY) $(ROOT_DIR)/library/platform/shell.tcl $(SCRIPT_INSTALL_DIR)/platform/shell-1.1.4.tm;
 	@echo "Installing encodings";
 	@for i in $(ROOT_DIR)/library/encoding/*.enc ; do \
 		$(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)/encoding"; \

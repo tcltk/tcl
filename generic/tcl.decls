@@ -254,8 +254,8 @@ declare 66 {
     void Tcl_AddErrorInfo(Tcl_Interp *interp, const char *message)
 }
 declare 67 {
-    void Tcl_AddObjErrorInfo(Tcl_Interp *interp, const char *message,
-	    int length)
+    TCL_DEPRECATED void Tcl_AddObjErrorInfo(Tcl_Interp *interp,
+	    const char *message, int length)
 }
 declare 68 {
     void Tcl_AllowExceptions(Tcl_Interp *interp)
@@ -286,7 +286,7 @@ declare 76 {
     void Tcl_BackgroundError(Tcl_Interp *interp)
 }
 declare 77 {
-    char Tcl_Backslash(const char *src, int *readPtr)
+    TCL_DEPRECATE char Tcl_Backslash(const char *src, int *readPtr)
 }
 declare 78 {
     int Tcl_BadChannelOption(Tcl_Interp *interp, const char *optionName,
@@ -353,8 +353,8 @@ declare 94 {
     Tcl_Interp *Tcl_CreateInterp(void)
 }
 declare 95 {
-    void Tcl_CreateMathFunc(Tcl_Interp *interp, const char *name,
-	    int numArgs, Tcl_ValueType *argTypes,
+    TCL_DEPRECATED void Tcl_CreateMathFunc(Tcl_Interp *interp,
+	    const char *name, int numArgs, Tcl_ValueType *argTypes,
 	    Tcl_MathProc *proc, ClientData clientData)
 }
 declare 96 {
@@ -467,14 +467,14 @@ declare 128 {
     CONST84_RETURN char *Tcl_ErrnoMsg(int err)
 }
 declare 129 {
-    int Tcl_Eval(Tcl_Interp *interp, const char *script)
+    TCL_DEPRECATED int Tcl_Eval(Tcl_Interp *interp, const char *script)
 }
 # This is obsolete, use Tcl_FSEvalFile
 declare 130 {
-    int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
+    TCL_DEPRECATED int Tcl_EvalFile(Tcl_Interp *interp, const char *fileName)
 }
 declare 131 {
-    int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+    TCL_DEPRECATED int Tcl_EvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 132 {
     void Tcl_EventuallyFree(ClientData clientData, Tcl_FreeProc *freeProc)
@@ -626,7 +626,7 @@ declare 174 {
     CONST84_RETURN char *Tcl_GetStringResult(Tcl_Interp *interp)
 }
 declare 175 {
-    CONST84_RETURN char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
+    TCL_DEPRECATED CONST84_RETURN char *Tcl_GetVar(Tcl_Interp *interp, const char *varName,
 	    int flags)
 }
 declare 176 {
@@ -634,10 +634,10 @@ declare 176 {
 	    const char *part2, int flags)
 }
 declare 177 {
-    int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
+    TCL_DEPRECATED int Tcl_GlobalEval(Tcl_Interp *interp, const char *command)
 }
 declare 178 {
-    int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
+    TCL_DEPRECATED int Tcl_GlobalEvalObj(Tcl_Interp *interp, Tcl_Obj *objPtr)
 }
 declare 179 {
     int Tcl_HideCommand(Tcl_Interp *interp, const char *cmdName,
@@ -782,7 +782,7 @@ declare 219 {
 }
 # Obsolete
 declare 220 {
-    int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
+    TCL_DEPRECATED int Tcl_SeekOld(Tcl_Channel chan, int offset, int mode)
 }
 declare 221 {
     int Tcl_ServiceAll(void)
@@ -837,7 +837,7 @@ declare 236 {
     void Tcl_SetStdChannel(Tcl_Channel channel, int type)
 }
 declare 237 {
-    CONST84_RETURN char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
+    TCL_DEPRECATED CONST84_RETURN char *Tcl_SetVar(Tcl_Interp *interp, const char *varName,
 	    const char *newValue, int flags)
 }
 declare 238 {
@@ -870,10 +870,10 @@ declare 245 {
 }
 # Obsolete
 declare 246 {
-    int Tcl_TellOld(Tcl_Channel chan)
+    TCL_DEPRECATED int Tcl_TellOld(Tcl_Channel chan)
 }
 declare 247 {
-    int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
+    TCL_DEPRECATED int Tcl_TraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 248 {
@@ -894,14 +894,14 @@ declare 252 {
     int Tcl_UnregisterChannel(Tcl_Interp *interp, Tcl_Channel chan)
 }
 declare 253 {
-    int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
+    TCL_DEPRECATED int Tcl_UnsetVar(Tcl_Interp *interp, const char *varName, int flags)
 }
 declare 254 {
     int Tcl_UnsetVar2(Tcl_Interp *interp, const char *part1, const char *part2,
 	    int flags)
 }
 declare 255 {
-    void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
+    TCL_DEPRECATED void Tcl_UntraceVar(Tcl_Interp *interp, const char *varName, int flags,
 	    Tcl_VarTraceProc *proc, ClientData clientData)
 }
 declare 256 {
@@ -913,7 +913,7 @@ declare 257 {
     void Tcl_UpdateLinkedVar(Tcl_Interp *interp, const char *varName)
 }
 declare 258 {
-    int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
+    TCL_DEPRECATED int Tcl_UpVar(Tcl_Interp *interp, const char *frameName,
 	    const char *varName, const char *localName, int flags)
 }
 declare 259 {
@@ -921,10 +921,10 @@ declare 259 {
 	    const char *part2, const char *localName, int flags)
 }
 declare 260 {
-    int Tcl_VarEval(Tcl_Interp *interp, ...)
+    TCL_DEPRECATED int Tcl_VarEval(Tcl_Interp *interp, ...)
 }
 declare 261 {
-    ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
+    TCL_DEPRECATED ClientData Tcl_VarTraceInfo(Tcl_Interp *interp, const char *varName,
 	    int flags, Tcl_VarTraceProc *procPtr, ClientData prevClientData)
 }
 declare 262 {
@@ -980,7 +980,7 @@ declare 275 {
     void Tcl_SetErrorCodeVA(Tcl_Interp *interp, va_list argList)
 }
 declare 276 {
-    int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
+    TCL_DEPRECATED int  Tcl_VarEvalVA(Tcl_Interp *interp, va_list argList)
 }
 declare 277 {
     Tcl_Pid Tcl_WaitPid(Tcl_Pid pid, int *statPtr, int options)
@@ -1045,7 +1045,7 @@ declare 289 {
     void Tcl_DeleteThreadExitHandler(Tcl_ExitProc *proc, ClientData clientData)
 }
 declare 290 {
-    void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
+    TCL_DEPRECATED void Tcl_DiscardResult(Tcl_SavedResult *statePtr)
 }
 declare 291 {
     int Tcl_EvalEx(Tcl_Interp *interp, const char *script, int numBytes,
@@ -1128,10 +1128,10 @@ declare 313 {
 	    int appendFlag)
 }
 declare 314 {
-    void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
+    TCL_DEPRECATED void Tcl_RestoreResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
 declare 315 {
-    void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
+    TCL_DEPRECATED void Tcl_SaveResult(Tcl_Interp *interp, Tcl_SavedResult *statePtr)
 }
 declare 316 {
     int Tcl_SetSystemEncoding(Tcl_Interp *interp, const char *name)
@@ -1215,10 +1215,10 @@ declare 340 {
     char *Tcl_GetString(Tcl_Obj *objPtr)
 }
 declare 341 {
-    CONST84_RETURN char *Tcl_GetDefaultEncodingDir(void)
+    TCL_DEPRECATED CONST84_RETURN char *Tcl_GetDefaultEncodingDir(void)
 }
 declare 342 {
-    void Tcl_SetDefaultEncodingDir(const char *path)
+    TCL_DEPRECATED void Tcl_SetDefaultEncodingDir(const char *path)
 }
 declare 343 {
     void Tcl_AlertNotifier(ClientData clientData)
@@ -1267,7 +1267,7 @@ declare 356 {
 	    int flags)
 }
 declare 357 {
-    Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
+    TCL_DEPRECATED Tcl_Obj *Tcl_EvalTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
 	    int count)
 }
 declare 358 {
@@ -1549,12 +1549,12 @@ declare 434 {
 
 # TIP#15 (math function introspection) dkf
 declare 435 {
-    int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
+    TCL_DEPRECATED int Tcl_GetMathFuncInfo(Tcl_Interp *interp, const char *name,
 	    int *numArgsPtr, Tcl_ValueType **argTypesPtr,
 	    Tcl_MathProc **procPtr, ClientData *clientDataPtr)
 }
 declare 436 {
-    Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
+    TCL_DEPRECATED Tcl_Obj *Tcl_ListMathFuncs(Tcl_Interp *interp, const char *pattern)
 }
 
 # TIP#36 (better access to 'subst') dkf

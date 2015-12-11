@@ -23,9 +23,10 @@ TCL_CC='@CC@'
 # -D flags for use with the C compiler.
 TCL_DEFS='@DEFS@'
 
-# If TCL was built with debugging symbols, generated libraries contain
-# this string at the end of the library name (before the extension).
-TCL_DBGX=@TCL_DBGX@
+# TCL_DBGX used to be used to distinguish debug vs. non-debug builds.
+# This was a righteous pain so the core doesn't do that any more.
+# DEPRECATED, will be removed in Tcl 9!
+TCL_DBGX=
 
 # Default flags used in an optimized and debuggable build, respectively.
 TCL_CFLAGS_DEBUG='@CFLAGS_DEBUG@'
@@ -96,7 +97,8 @@ TCL_LD_FLAGS='@LDFLAGS@'
 # run-time dynamic linker where to look for shared libraries such as
 # libtcl.so.  Used when linking applications.  Only works if there
 # is a variable "LIB_RUNTIME_DIR" defined in the Makefile.
-TCL_LD_SEARCH_FLAGS='@TCL_LD_SEARCH_FLAGS@'
+TCL_CC_SEARCH_FLAGS='@CC_SEARCH_FLAGS@'
+TCL_LD_SEARCH_FLAGS='@LD_SEARCH_FLAGS@'
 
 # Additional object files linked with Tcl to provide compatibility
 # with standard facilities from ANSI C or POSIX.
@@ -123,7 +125,7 @@ TCL_INCLUDE_SPEC='@TCL_INCLUDE_SPEC@'
 # Indicates whether a version numbers should be used in -l switches
 # ("ok" means it's safe to use switches like -ltcl7.5;  "nodots" means
 # use switches like -ltcl75).  SunOS and FreeBSD require "nodots", for
-# example.
+# example. DEPRECATED, will be removed in Tcl 9!
 TCL_LIB_VERSIONS_OK='@TCL_LIB_VERSIONS_OK@'
 
 # String that can be evaluated to generate the part of a shared library
@@ -177,4 +179,3 @@ TCL_STUB_LIB_PATH='@TCL_STUB_LIB_PATH@'
 
 # Flag, 1: we built Tcl with threads enabled, 0 we didn't
 TCL_THREADS=@TCL_THREADS@
-

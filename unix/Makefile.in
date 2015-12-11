@@ -627,7 +627,7 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
 	@MAKE_LIB@
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
-	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
+	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.dll"; then \
 	    (cd ${TOP_DIR}/win; ${MAKE} winextensions); \
 	fi
 	rm -f $@
@@ -796,8 +796,8 @@ install-binaries: binaries
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
-	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
-	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
+	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(MAJOR_VERSION)${EXE_SUFFIX}"
+	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(MAJOR_VERSION)${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
 	@echo "Installing tclooConfig.sh to $(CONFIG_INSTALL_DIR)/"
@@ -821,11 +821,19 @@ install-libraries: libraries
 		else true; \
 		fi; \
 	    done;
-	@for i in opt0.4 http1.0 encoding ../tcl8 ../tcl8/8.4  ../tcl8/8.4/platform ../tcl8/8.5 ../tcl8/8.6; \
+	@for i in opt0.4 http1.0 encoding; \
 	    do \
 	    if [ ! -d "$(SCRIPT_INSTALL_DIR)"/$$i ] ; then \
 		echo "Making directory $(SCRIPT_INSTALL_DIR)/$$i"; \
 		$(INSTALL_DATA_DIR) "$(SCRIPT_INSTALL_DIR)"/$$i; \
+		else true; \
+		fi; \
+	    done;
+	@for i in tcl8 tcl8/8.4 tcl8/8.4/platform tcl8/8.5 tcl8/8.6; \
+	    do \
+	    if [ ! -d "$(LIB_INSTALL_DIR)"/$$i ] ; then \
+		echo "Making directory $(LIB_INSTALL_DIR)/$$i"; \
+		$(INSTALL_DATA_DIR) "$(LIB_INSTALL_DIR)"/$$i; \
 		else true; \
 		fi; \
 	    done;
@@ -841,21 +849,21 @@ install-libraries: libraries
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/http1.0; \
 	    done;
 	@echo "Installing package http 2.8.9 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/http-2.8.9.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/http/http.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.6/http-2.8.9.tm;
 	@echo "Installing package opt0.4 files to $(SCRIPT_INSTALL_DIR)/opt0.4/";
 	@for i in $(TOP_DIR)/library/opt/*.tcl ; \
 	    do \
 	    $(INSTALL_DATA) $$i "$(SCRIPT_INSTALL_DIR)"/opt0.4; \
 	    done;
 	@echo "Installing package msgcat 1.6.0 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/msgcat-1.6.0.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/msgcat/msgcat.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.5/msgcat-1.6.0.tm;
 	@echo "Installing package tcltest 2.3.8 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.5/tcltest-2.3.8.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/tcltest/tcltest.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.5/tcltest-2.3.8.tm;
 
 	@echo "Installing package platform 1.0.14 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.14.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.4/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
+	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(LIB_INSTALL_DIR)"/tcl8/8.4/platform/shell-1.1.4.tm;
 
 	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \

@@ -309,18 +309,6 @@ UNCHECKED = 0
 # by accident.
 #----------------------------------------------------------
 
-#----------------------------------------
-# Naming convention:
-#   t = full thread support.
-#   s = static library (as opposed to an
-#	import library)
-#   g = linked to the debug enabled C
-#	run-time.
-#   x = special static build when it
-#	links to the dynamic C run-time.
-#----------------------------------------
-SUFX	    = tsgx
-
 !if $(DEBUG)
 BUILDDIRTOP = Debug
 !else
@@ -334,30 +322,22 @@ BUILDDIRTOP =$(BUILDDIRTOP)_$(MACHINE)
 BUILDDIRTOP =$(BUILDDIRTOP)_VC$(VCVER)
 !endif
 
-!if !$(DEBUG) || $(DEBUG) && $(UNCHECKED)
-SUFX	    = $(SUFX:g=)
-!endif
-
 TMP_DIRFULL = .\$(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
 
 !if !$(STATIC_BUILD)
 TMP_DIRFULL = $(TMP_DIRFULL:Static=)
-SUFX	    = $(SUFX:s=)
 EXT	    = dll
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
-SUFX	    = $(SUFX:x=)
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
 !if !$(MSVCRT)
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
-SUFX	    = $(SUFX:x=)
 !endif
 !endif
 
 !if !$(TCL_THREADS)
 TMP_DIRFULL = $(TMP_DIRFULL:Threaded=)
-SUFX	    = $(SUFX:t=)
 !endif
 
 !ifndef TMP_DIR
@@ -578,28 +558,22 @@ Failed to find tcl.h.  The TCLDIR macro does not appear correct.
 TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
 !if $(TCLINSTALL)
-TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"
-!if !exist($(TCLSH)) && $(TCL_THREADS)
-TCLSH           = "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)t$(SUFX).exe"
-!endif
-TCLSTUBLIB	= "$(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib"
-TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib"
+TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_MAJOR_VERSION).exe"
+TCLSTUBLIB	= "$(_TCLDIR)\lib\tclstub$(TCL_MAJOR_VERSION).lib"
+TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_MAJOR_VERSION).lib"
 TCL_LIBRARY	= $(_TCLDIR)\lib
-TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib"
+TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13.lib"
+TCLDDELIB	= "$(_TCLDIR)\lib\tcldde14.lib"
 COFFBASE	= \must\have\tcl\sources\to\build\this\target
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
 !else
-TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)$(SUFX).exe"
-!if !exist($(TCLSH)) && $(TCL_THREADS)
-TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_VERSION)t$(SUFX).exe"
-!endif
-TCLSTUBLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib"
-TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib"
+TCLSH		= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclsh$(TCL_MAJOR_VERSION).exe"
+TCLSTUBLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_MAJOR_VERSION).lib"
+TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION).lib"
 TCL_LIBRARY	= $(_TCLDIR)\library
-TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib"
+TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13.lib"
+TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14.lib"
 COFFBASE	= "$(_TCLDIR)\win\coffbase.txt"
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
@@ -668,14 +642,14 @@ TK_VERSION	= $(TK_MAJOR_VERSION)$(TK_MINOR_VERSION)
 
 !if "$(PROJECT)" != "tk"
 !if $(TKINSTALL)
-WISH		= "$(_TKDIR)\bin\wish$(TK_VERSION)$(SUFX).exe"
-TKSTUBLIB	= "$(_TKDIR)\lib\tkstub$(TK_VERSION).lib"
-TKIMPLIB	= "$(_TKDIR)\lib\tk$(TK_VERSION)$(SUFX).lib"
+WISH		= "$(_TKDIR)\bin\wish$(TK_MAJOR_VERSION).exe"
+TKSTUBLIB	= "$(_TKDIR)\lib\tkstub$(TK_MAJOR_VERSION).lib"
+TKIMPLIB	= "$(_TKDIR)\lib\tk$(TK_MAJOR_VERSION).lib"
 TK_INCLUDES     = -I"$(_TKDIR)\include"
 !else
-WISH		= "$(_TKDIR)\win\$(BUILDDIRTOP)\wish$(TCL_VERSION)$(SUFX).exe"
-TKSTUBLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tkstub$(TCL_VERSION).lib"
-TKIMPLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tk$(TCL_VERSION)$(SUFX).lib"
+WISH		= "$(_TKDIR)\win\$(BUILDDIRTOP)\wish$(TCL_MAJOR_VERSION).exe"
+TKSTUBLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tkstub$(TCL_MAJOR_VERSION).lib"
+TKIMPLIB	= "$(_TKDIR)\win\$(BUILDDIRTOP)\tk$(TCL_MAJOR_VERSION).lib"
 TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 !endif
 !endif
@@ -688,7 +662,6 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 
 !message *** Intermediate directory will be '$(TMP_DIR)'
 !message *** Output directory will be '$(OUT_DIR)'
-!message *** Suffix for binaries will be '$(SUFX)'
 !message *** Optional defines are '$(OPTDEFINES)'
 !message *** Compiler version $(VCVER). Target machine is $(MACHINE)
 !message *** Host architecture is $(NATIVE_ARCH)

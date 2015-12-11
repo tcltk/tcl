@@ -1090,9 +1090,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
     # is disabled by the user. [Bug 1016796]
     LDFLAGS_ARCH=""
     UNSHARED_LIB_SUFFIX=""
-    TCL_TRIM_DOTS='`echo ${VERSION} | tr -d .`'
     ECHO_VERSION='`echo ${VERSION}`'
-    TCL_LIB_VERSIONS_OK=ok
     CFLAGS_DEBUG=-g
     AS_IF([test "$GCC" = yes], [
 	CFLAGS_OPTIMIZE=-O2
@@ -1490,7 +1488,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		AS_IF([test $doRpath = yes], [
 		    CC_SEARCH_FLAGS='-Wl,-rpath,${LIB_RUNTIME_DIR}'])
 		LD_SEARCH_FLAGS=${CC_SEARCH_FLAGS}
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
+		SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.so.${SHLIB_VERSION}'
 		LDFLAGS="-Wl,-export-dynamic"
 		;;
 	    esac
@@ -1512,8 +1510,7 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		CFLAGS="$CFLAGS -pthread"
 	    ])
 	    # OpenBSD doesn't do version numbers with dots.
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    TCL_LIB_VERSIONS_OK=nodots
+	    UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.a'
 	    ;;
 	NetBSD-*)
 	    # NetBSD has ELF and can use 'cc -shared' to build shared libs
@@ -1553,10 +1550,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    case $system in
 	    FreeBSD-3.*)
 		# Version numbers are dot-stripped by system policy.
-		TCL_TRIM_DOTS=`echo ${VERSION} | tr -d .`
-		UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-		SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so'
-		TCL_LIB_VERSIONS_OK=nodots
+		UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.a'
+		SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.so'
 		;;
 	    esac
 	    ;;
@@ -1825,9 +1820,8 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 	    # requires an extra version number at the end of .so file names.
 	    # So, the library has to have a name like libtcl75.so.1.0
 
-	    SHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.so.${SHLIB_VERSION}'
-	    UNSHARED_LIB_SUFFIX='${TCL_TRIM_DOTS}.a'
-	    TCL_LIB_VERSIONS_OK=nodots
+	    SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.so.${SHLIB_VERSION}'
+	    UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.a'
 	    ;;
 	SunOS-5.[[0-6]])
 	    # Careful to not let 5.10+ fall into this case
@@ -2041,9 +2035,9 @@ dnl # preprocessing tests use only CPPFLAGS.
     ])
 
     AS_IF([test "$SHARED_LIB_SUFFIX" = ""], [
-	SHARED_LIB_SUFFIX='${VERSION}${SHLIB_SUFFIX}'])
+	SHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}${SHLIB_SUFFIX}'])
     AS_IF([test "$UNSHARED_LIB_SUFFIX" = ""], [
-	UNSHARED_LIB_SUFFIX='${VERSION}.a'])
+	UNSHARED_LIB_SUFFIX='${TCL_MAJOR_VERSION}.a'])
     DLL_INSTALL_DIR="\$(LIB_INSTALL_DIR)"
 
     AS_IF([test "${SHARED_BUILD}" = 1 -a "${SHLIB_SUFFIX}" != ""], [

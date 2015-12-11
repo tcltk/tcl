@@ -1278,7 +1278,7 @@ CheckVersionAndConvert(
     int *stable)		/* Flag: Version is (un)stable. */
 {
     const char *p = string;
-    char prevChar;
+    char prevChar = 0;
     int hasunstable = 0;
     /*
      * 4* assuming that each char is a separator (a,b become ' -x ').
@@ -1299,6 +1299,10 @@ CheckVersionAndConvert(
      * (3) s.a.
      * (4) Only one of 'a' or 'b' may occur.
      * (5) Neither 'a', nor 'b' may occur before or after a '.'
+     *
+     * TIP ???, Modified rules
+     * In stead of "a" and "b" in the above rules, the longer
+     * forms "-alpha." and "-beta." are accepted as well
      */
 
     if (!isdigit(UCHAR(*p))) {				/* INTL: digit */
@@ -1307,18 +1311,14 @@ CheckVersionAndConvert(
 
     *ip++ = *p;
 
-    for (prevChar = *p, p++; *p != 0; p++) {
+    for (prevChar = *p, p++; (*p != 0) && (*p != '+'); p++) {
 	if (!isdigit(UCHAR(*p)) &&			/* INTL: digit */
-		((*p!='.' && *p!='a' && *p!='b') ||
-		((hasunstable && (*p=='a' || *p=='b')) ||
+		((*p!='.' && *p!='a' && *p!='b' && *p!='-') ||
+		((hasunstable && (*p=='a' || *p=='b'|| *p=='-')) ||
 		((prevChar=='a' || prevChar=='b' || prevChar=='.')
 			&& (*p=='.')) ||
 		((*p=='a' || *p=='b' || *p=='.') && prevChar=='.')))) {
 	    goto error;
-	}
-
-	if (*p == 'a' || *p == 'b') {
-	    hasunstable = 1;
 	}
 
 	/*
@@ -1327,16 +1327,28 @@ CheckVersionAndConvert(
 	 * for all parts is space.
 	 */
 
-	if (*p == '.') {
+	prevChar = *p;
+	if (*p == '-') {
+	    if (!strncmp(p+1, "alpha.", 6)) {
+		p += 6;
+		prevChar = 'a';
+	    } else if (!strncmp(p+1, "beta.", 5)) {
+		p += 5;
+		prevChar = 'b';
+	    }
+	}
+	if (prevChar == '.') {
 	    *ip++ = ' ';
 	    *ip++ = '0';
 	    *ip++ = ' ';
-	} else if (*p == 'a') {
+	} else if (prevChar == 'a') {
+	    hasunstable = 1;
 	    *ip++ = ' ';
 	    *ip++ = '-';
 	    *ip++ = '2';
 	    *ip++ = ' ';
-	} else if (*p == 'b') {
+	} else if (prevChar == 'b') {
+	    hasunstable = 1;
 	    *ip++ = ' ';
 	    *ip++ = '-';
 	    *ip++ = '1';
@@ -1345,7 +1357,6 @@ CheckVersionAndConvert(
 	    *ip++ = *p;
 	}
 
-	prevChar = *p;
     }
     if (prevChar!='.' && prevChar!='a' && prevChar!='b') {
 	*ip = '\0';
@@ -1612,7 +1623,10 @@ CheckRequirement(
     char *dash = NULL, *buf;
 
     dash = strchr(string, '-');
-    if (dash == NULL) {
+    if ((dash != NULL) && (dash[1]=='a' || dash[1]=='b')) {
+	dash = strchr(dash+1, '-');
+    }
+    if ((dash == NULL) || dash[1]=='a' || dash[1]=='b') {
 	/*
 	 * No dash found, has to be a simple version.
 	 */
@@ -1620,7 +1634,8 @@ CheckRequirement(
 	return CheckVersionAndConvert(interp, string, NULL, NULL);
     }
 
-    if (strchr(dash+1, '-') != NULL) {
+    buf = strchr(dash+1, '-');
+    if ((buf != NULL) && isdigit(UCHAR(dash[1]))) {
 	/*
 	 * More dashes found after the first. This is wrong.
 	 */
@@ -1800,7 +1815,10 @@ RequirementSatisfied(
     char *dash = NULL, *buf, *min, *max;
 
     dash = strchr(req, '-');
-    if (dash == NULL) {
+    if ((dash != NULL) && (dash[1]=='a' || dash[1]=='b')) {
+	dash = strchr(dash+1, '-');
+    }
+    if ((dash == NULL) || dash[1]=='a' || dash[1]=='b') {
 	/*
 	 * No dash found, is a simple version, fallback to regular check. The
 	 * 'CheckVersionAndConvert' cannot fail. We pad the requirement with

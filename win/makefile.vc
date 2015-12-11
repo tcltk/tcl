@@ -188,31 +188,31 @@ PROJECT = tcl
 
 STUBPREFIX      = $(PROJECT)stub
 DOTVERSION      = $(TCL_MAJOR_VERSION).$(TCL_MINOR_VERSION)
-VERSION         = $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
+VERSION         = $(TCL_MAJOR_VERSION)
 
-DDEDOTVERSION = 1.4
+DDEDOTVERSION = 1.5
 DDEVERSION = $(DDEDOTVERSION:.=)
 
-REGDOTVERSION = 1.3
+REGDOTVERSION = 1.4
 REGVERSION = $(REGDOTVERSION:.=)
 
 BINROOT		= $(MAKEDIR)     # originally .
 ROOT		= $(MAKEDIR)\..  # originally ..
 
-TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
-TCLLIBNAME	= $(PROJECT)$(VERSION)$(SUFX).$(EXT)
+TCLIMPLIB	= $(OUT_DIR)\$(PROJECT)$(VERSION).lib
+TCLLIBNAME	= $(PROJECT)$(VERSION).$(EXT)
 TCLLIB		= $(OUT_DIR)\$(TCLLIBNAME)
 
 TCLSTUBLIBNAME	= $(STUBPREFIX)$(VERSION).lib
 TCLSTUBLIB	= $(OUT_DIR)\$(TCLSTUBLIBNAME)
 
-TCLSHNAME	= $(PROJECT)sh$(VERSION)$(SUFX).exe
+TCLSHNAME	= $(PROJECT)sh$(VERSION).exe
 TCLSH		= $(OUT_DIR)\$(TCLSHNAME)
 
-TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION)$(SUFX:t=).$(EXT)
+TCLREGLIBNAME	= $(PROJECT)reg$(REGVERSION).$(EXT)
 TCLREGLIB	= $(OUT_DIR)\$(TCLREGLIBNAME)
 
-TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION)$(SUFX:t=).$(EXT)
+TCLDDELIBNAME	= $(PROJECT)dde$(DDEVERSION).$(EXT)
 TCLDDELIB	= $(OUT_DIR)\$(TCLDDELIBNAME)
 
 TCLTEST		= $(OUT_DIR)\$(PROJECT)test.exe
@@ -231,7 +231,7 @@ TCLSH_NATIVE	= $(TCLSH)
 LIB_INSTALL_DIR		= $(_INSTALLDIR)\lib
 BIN_INSTALL_DIR		= $(_INSTALLDIR)\bin
 DOC_INSTALL_DIR		= $(_INSTALLDIR)\doc
-SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\lib\tcl$(DOTVERSION)
+SCRIPT_INSTALL_DIR	= $(_INSTALLDIR)\share\tcl$(VERSION)
 INCLUDE_INSTALL_DIR	= $(_INSTALLDIR)\include
 
 TCLSHOBJS = \
@@ -860,8 +860,8 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @CFLAGS_OPTIMIZE@    -nologo -c -W3 -YX -Fp$(TMP_DIR)\ -MD
 @LDFLAGS_DEBUG@      -nologo -machine:$(MACHINE) -debug -debugtype:cv
 @LDFLAGS_OPTIMIZE@   -nologo -machine:$(MACHINE) -release -opt:ref -opt:icf,3
-@TCL_DBGX@           $(SUFX)
-@TCL_LIB_FILE@       $(PROJECT)$(VERSION)$(SUFX).lib
+@TCL_DBGX@           
+@TCL_LIB_FILE@       $(PROJECT)$(VERSION).lib
 @TCL_NEEDS_EXP_FILE@
 @LIBS@               $(baselibs)
 @prefix@             $(_INSTALLDIR)
@@ -881,9 +881,8 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @RANLIB@
 @TCL_LIB_FLAG@
 @TCL_BUILD_LIB_SPEC@
-@TCL_LIB_SPEC@       $(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION)$(SUFX).lib
+@TCL_LIB_SPEC@       $(LIB_INSTALL_DIR)\$(PROJECT)$(VERSION).lib
 @TCL_INCLUDE_SPEC@   -I$(INCLUDE_INSTALL_DIR)
-@TCL_LIB_VERSIONS_OK@
 @TCL_SRC_DIR@        $(ROOT)
 @TCL_PACKAGE_PATH@
 @TCL_STUB_LIB_FILE@  $(TCLSTUBLIBNAME)
@@ -893,9 +892,9 @@ $(OUT_DIR)\tclConfig.sh: $(WINDIR)\tclConfig.sh.in
 @TCL_BUILD_STUB_LIB_SPEC@ -L$(OUT_DIR) $(TCLSTUBLIBNAME)
 @TCL_BUILD_STUB_LIB_PATH@ $(TCLSTUBLIB)
 @TCL_STUB_LIB_PATH@  $(LIB_INSTALL_DIR)\$(TCLSTUBLIBNAME)
-@CFG_TCL_EXPORT_FILE_SUFFIX@  $(VERSION)$(SUFX).lib
-@CFG_TCL_SHARED_LIB_SUFFIX@   $(VERSION)$(SUFX).dll
-@CFG_TCL_UNSHARED_LIB_SUFFIX@ $(VERSION)$(SUFX).lib
+@CFG_TCL_EXPORT_FILE_SUFFIX@  $(VERSION).lib
+@CFG_TCL_SHARED_LIB_SUFFIX@   $(VERSION).dll
+@CFG_TCL_UNSHARED_LIB_SUFFIX@ $(VERSION).lib
 !if $(STATIC_BUILD)
 @TCL_SHARED_BUILD@   0
 !else
@@ -1100,16 +1099,6 @@ install-binaries:
 install-libraries: tclConfig install-msgs install-tzdata
 	@if not exist "$(SCRIPT_INSTALL_DIR)$(NULL)" \
 		$(MKDIR) "$(SCRIPT_INSTALL_DIR)"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8$(NULL)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4$(NULL)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform$(NULL)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5$(NULL)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5"
-	@if not exist "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6$(NULL)" \
-		$(MKDIR) "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6"
 	@echo Installing header files
 	@$(CPY) "$(GENERICDIR)\tcl.h"             "$(INCLUDE_INSTALL_DIR)\"
 	@$(CPY) "$(GENERICDIR)\tclDecls.h"        "$(INCLUDE_INSTALL_DIR)\"
@@ -1141,28 +1130,28 @@ install-libraries: tclConfig install-msgs install-tzdata
 	    "$(SCRIPT_INSTALL_DIR)\opt0.4\"
 	@echo Installing package http $(PKG_HTTP_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\http\http.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.6\http-$(PKG_HTTP_VER).tm"
+	    "$(SCRIPT_INSTALL_DIR)\http-$(PKG_HTTP_VER).tm"
 	@echo Installing package msgcat $(PKG_MSGCAT_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\msgcat\msgcat.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\msgcat-$(PKG_MSGCAT_VER).tm"
+	    "$(SCRIPT_INSTALL_DIR)\msgcat-$(PKG_MSGCAT_VER).tm"
 	@echo Installing package tcltest $(PKG_TCLTEST_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\tcltest\tcltest.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.5\tcltest-$(PKG_TCLTEST_VER).tm"
+	    "$(SCRIPT_INSTALL_DIR)\tcltest-$(PKG_TCLTEST_VER).tm"
 	@echo Installing package platform $(PKG_PLATFORM_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\platform.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform-$(PKG_PLATFORM_VER).tm"
+	    "$(SCRIPT_INSTALL_DIR)\platform-$(PKG_PLATFORM_VER).tm"
 	@echo Installing package platform::shell $(PKG_SHELL_VER) as a Tcl Module
 	@$(COPY) "$(ROOT)\library\platform\shell.tcl" \
-	    "$(SCRIPT_INSTALL_DIR)\..\tcl8\8.4\platform\shell-$(PKG_SHELL_VER).tm"
+	    "$(SCRIPT_INSTALL_DIR)\platform\shell-$(PKG_SHELL_VER).tm"
 	@echo Installing $(TCLDDELIBNAME)
 !if $(STATIC_BUILD)
 !if !$(TCL_USE_STATIC_PACKAGES)
 	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\"
 !endif
 !else
-	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+	@$(CPY) "$(TCLDDELIB)" "$(LIB_INSTALL_DIR)\tcl8\dde$(DDEDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\dde\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\dde$(DDEDOTVERSION)\"
+	    "$(LIB_INSTALL_DIR)\tcl8\dde$(DDEDOTVERSION)\"
 !endif
 	@echo Installing $(TCLREGLIBNAME)
 !if $(STATIC_BUILD)
@@ -1170,9 +1159,9 @@ install-libraries: tclConfig install-msgs install-tzdata
 	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\"
 !endif
 !else
-	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+	@$(CPY) "$(TCLREGLIB)" "$(LIB_INSTALL_DIR)\tcl8\reg$(REGDOTVERSION)\"
 	@$(CPY) "$(ROOT)\library\reg\pkgIndex.tcl" \
-	    "$(LIB_INSTALL_DIR)\reg$(REGDOTVERSION)\"
+	    "$(LIB_INSTALL_DIR)\tcl8\reg$(REGDOTVERSION)\"
 !endif
 	@echo Installing encodings
 	@$(CPY) "$(ROOT)\library\encoding\*.enc" \
