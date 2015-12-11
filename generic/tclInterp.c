@@ -3072,10 +3072,11 @@ SlaveInvokeHidden(
     Tcl_AllowExceptions(slaveInterp);
 
     if (namespaceName == NULL) {
-	NRE_callback *rootPtr = TOP_CB(slaveInterp);
-
+	if (interp != slaveInterp) {
+	    TclNRSetRoot(slaveInterp);
+	}
 	Tcl_NRAddCallback(interp, NRPostInvokeHidden, slaveInterp,
-		rootPtr, NULL, NULL);
+		NULL, NULL, NULL);
 	return TclNRInvoke(NULL, slaveInterp, objc, objv);
     } else {
 	Namespace *nsPtr, *dummy1, *dummy2;
@@ -3103,10 +3104,9 @@ NRPostInvokeHidden(
     int result)
 {
     Tcl_Interp *slaveInterp = (Tcl_Interp *)data[0];
-    NRE_callback *rootPtr = (NRE_callback *)data[1];
 
     if (interp != slaveInterp) {
-	result = TclNRRunCallbacks(slaveInterp, result, rootPtr);
+	result = TclNRRunCallbacks(slaveInterp, result);
 	Tcl_TransferResult(slaveInterp, result, interp);
     }
     Tcl_Release(slaveInterp);
