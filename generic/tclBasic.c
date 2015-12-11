@@ -8248,106 +8248,6 @@ TclPushTailcallPoint(
     ((Interp *) interp)->numLevels++;
 }
 
-#if !NRE_STACK_DEBUG
-static int
-NRStackBottom(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr = iPtr->execEnvPtr;
-    NRE_stack *this = eePtr->NRStack;
-    NRE_stack *prev = data[0];
-
-    if (!prev) {
-        /* empty stack, free it */
-        ckfree(this);
-        eePtr->NRStack = NULL;
-        TOP_CB(interp) = NULL;
-        return result;
-    }
-    
-    /*
-     * Go back to the previous stack.
-     */
-
-    eePtr->NRStack = prev;
-    eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
-    
-    /*
-     * Keep this stack in reserve. If this one had a successor, free that one:
-     * we always keep just one in reserve. 
-     */
-    
-    if (this->next) {
-        ckfree (this->next);
-        this->next = NULL;
-    }
-
-    return result;
-}
-
-int level = 0;
-    
-NRE_callback *
-TclNewCallback(
-    Tcl_Interp *interp)
-{
-    Interp *iPtr = (Interp *) interp;
-    ExecEnv *eePtr = iPtr->execEnvPtr;
-    NRE_stack *this = eePtr->NRStack, *orig;
-
-    if (eePtr->callbackPtr &&
-            (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
-        stackReady:
-        return ++eePtr->callbackPtr;
-    }
-
-    if (!eePtr->callbackPtr) {
-        this = NULL;
-    }
-    orig = this;
-    
-    if (this && this->next) {
-        this = this->next;
-    } else {
-        this = (NRE_stack *) ckalloc(sizeof(NRE_stack));
-        this->next = NULL;
-    }
-    eePtr->NRStack = this;
-    eePtr->callbackPtr = &this->items[-1];
-    TclNRAddCallback(interp, NRStackBottom, orig, NULL, NULL, NULL);
-
-    NRE_ASSERT(eePtr->callbackPtr == &this->items[0]);
-
-    goto stackReady;
-}
-
-NRE_callback *
-TclPopCallback(
-    Tcl_Interp *interp)
-{
-    return ((Interp *)interp)->execEnvPtr->callbackPtr--;
-}
-
-NRE_callback *
-TclNextCallback(
-    NRE_callback *cbPtr)
-{
-
-    if (cbPtr->procPtr == NRStackBottom) {
-        NRE_stack *prev = cbPtr->data[0];
-
-        if (!prev) {
-            return NULL;
-        }
-        cbPtr = &prev->items[NRE_STACK_SIZE];
-    }
-    return --cbPtr;
-}
-
-#endif
 
 /*
  *----------------------------------------------------------------------
@@ -9157,8 +9057,114 @@ TclInfoCoroutineCmd(
     }
     return TCL_OK;
 }
-
 #undef iPtr
+
+#if !NRE_STACK_DEBUG
+/*
+ *----------------------------------------------------------------------
+ *
+ * Implementation of the NRE stack as a stack (as opposed to linked list)
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+NRStackBottom(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    NRE_stack *this = eePtr->NRStack;
+    NRE_stack *prev = data[0];
+
+    if (!prev) {
+        /* empty stack, free it */
+        ckfree(this);
+        eePtr->NRStack = NULL;
+        TOP_CB(interp) = NULL;
+        return result;
+    }
+    
+    /*
+     * Go back to the previous stack.
+     */
+
+    eePtr->NRStack = prev;
+    eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
+    
+    /*
+     * Keep this stack in reserve. If this one had a successor, free that one:
+     * we always keep just one in reserve. 
+     */
+    
+    if (this->next) {
+        ckfree (this->next);
+        this->next = NULL;
+    }
+
+    return result;
+}
+
+NRE_callback *
+TclNewCallback(
+    Tcl_Interp *interp)
+{
+    Interp *iPtr = (Interp *) interp;
+    ExecEnv *eePtr = iPtr->execEnvPtr;
+    NRE_stack *this = eePtr->NRStack, *orig;
+
+    if (eePtr->callbackPtr &&
+            (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
+        stackReady:
+        return ++eePtr->callbackPtr;
+    }
+
+    if (!eePtr->callbackPtr) {
+        this = NULL;
+    }
+    orig = this;
+    
+    if (this && this->next) {
+        this = this->next;
+    } else {
+        this = (NRE_stack *) ckalloc(sizeof(NRE_stack));
+        this->next = NULL;
+    }
+    eePtr->NRStack = this;
+    eePtr->callbackPtr = &this->items[-1];
+    TclNRAddCallback(interp, NRStackBottom, orig, NULL, NULL, NULL);
+
+    NRE_ASSERT(eePtr->callbackPtr == &this->items[0]);
+
+    goto stackReady;
+}
+
+NRE_callback *
+TclPopCallback(
+    Tcl_Interp *interp)
+{
+    return ((Interp *)interp)->execEnvPtr->callbackPtr--;
+}
+
+NRE_callback *
+TclNextCallback(
+    NRE_callback *cbPtr)
+{
+
+    if (cbPtr->procPtr == NRStackBottom) {
+        NRE_stack *prev = cbPtr->data[0];
+
+        if (!prev) {
+            return NULL;
+        }
+        cbPtr = &prev->items[NRE_STACK_SIZE];
+    }
+    return --cbPtr;
+}
+
+#endif
 
 /*
  * Local Variables:
