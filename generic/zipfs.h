@@ -44,7 +44,7 @@ extern "C" {
 
 EXTERN int Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname,
 		       CONST char *mntpt, CONST char *passwd);
-EXTERN int Zipfs_Unmount(Tcl_Interp *interp, CONST char *mountname);
+EXTERN int Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname);
 EXTERN int Zipfs_Init(Tcl_Interp *interp);
 EXTERN int Zipfs_SafeInit(Tcl_Interp *interp);
 
