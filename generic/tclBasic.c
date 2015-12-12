@@ -3807,6 +3807,10 @@ TclInterpReady(
 	return TCL_ERROR;
     }
 
+    if (TclLimitExceeded(iPtr->limit)) {
+	return TCL_ERROR;
+    }
+
     /*
      * Check depth of nested calls to Tcl_Eval: if this gets too large, it's
      * probably because of an infinite loop somewhere.
@@ -4177,10 +4181,6 @@ EvalObjvCore(
 
     if (objc == 0) {
 	return TCL_OK;
-    }
-
-    if (TclLimitExceeded(iPtr->limit)) {
-	return TCL_ERROR;
     }
 
     /*
