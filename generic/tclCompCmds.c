@@ -365,7 +365,7 @@ TclCompileArraySetCmd(
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
-    infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
+    infoIndex = TclCreateAuxData(infoPtr, &tclNewForeachInfoType, envPtr);
 
     /*
      * Start issuing instructions to write to the array.
