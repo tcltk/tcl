@@ -1086,6 +1086,7 @@ MODULE_SCOPE int	TclPushProcCallFrame(ClientData clientData,
 			    register Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], int isLambda);
 
+MODULE_SCOPE int        NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
 /*
  *----------------------------------------------------------------
