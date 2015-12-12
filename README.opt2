@@ -21,3 +21,8 @@ IMPORTANT MODS AND INCOMPATS
 * there is a new optimizer that produces better bytecodes, especially in
   the handling of logic and exceptions. The optimizer itself is extremely
   suboptimal, the way it works can definitely be improved.
+
+* INCOMPATIBILITY (?) - NRE stack is a real stack
+  Tcl_NRAddCallback now OVERWRITES the currently executing callback!! Users
+  now have to make sure that they save the received data[] in local vars if
+  they plan to use them after pushing a new callback!

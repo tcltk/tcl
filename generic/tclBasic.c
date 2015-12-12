@@ -159,7 +159,6 @@ static Tcl_NRPostProc	TEOV_NotFoundCallback;
 static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
 static Tcl_NRPostProc	EvalObjvCore;
-static Tcl_NRPostProc	Dispatch;
 
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 static Tcl_NRPostProc NRPostInvoke;
@@ -4299,23 +4298,6 @@ EvalObjvCore(
 		    commandPtr, cmdPtr, objv);
     }
 
-    TclNRAddCallback(interp, Dispatch,
-	    cmdPtr->nreProc ? cmdPtr->nreProc : cmdPtr->objProc,
-	    cmdPtr->objClientData, INT2PTR(objc), objv);
-    return TCL_OK;
-}
-
-static int
-Dispatch(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    Tcl_ObjCmdProc *objProc = data[0];
-    ClientData clientData = data[1];
-    int objc = PTR2INT(data[2]);
-    Tcl_Obj **objv = data[3];
-
 #ifdef USE_DTRACE
     if (TCL_DTRACE_CMD_ARGS_ENABLED()) {
 	const char *a[10];
@@ -4345,7 +4327,11 @@ Dispatch(
     }
 #endif /* USE_DTRACE */
 
-    return objProc(clientData, interp, objc, objv);
+    if (cmdPtr->nreProc) {
+        return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
+    } else {
+        return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
+    }
 }
 
 int
@@ -8081,9 +8067,8 @@ Tcl_NRCallObjProc(
     Tcl_Obj *const objv[])
 {
     TclNRSetRoot(interp);
-    TclNRAddCallback(interp, Dispatch, objProc, clientData,
-	    INT2PTR(objc), objv);
-    return TclNRRunCallbacks(interp, TCL_OK);
+    return TclNRRunCallbacks(interp,
+            (objProc)(clientData, interp, objc, objv));
 }
 
 /*
