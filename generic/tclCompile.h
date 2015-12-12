@@ -532,224 +532,222 @@ typedef struct ByteCode {
 #define INST_UMINUS			57
 #define INST_BITNOT			58
 #define INST_LNOT			59
-#define INST_CALL_BUILTIN_FUNC1		60
-#define INST_CALL_FUNC1			61
-#define INST_TRY_CVT_TO_NUMERIC		62
+#define INST_TRY_CVT_TO_NUMERIC		60
 
 /* Opcodes 65 to 66 */
-#define INST_BREAK			63
-#define INST_CONTINUE			64
+#define INST_BREAK			61
+#define INST_CONTINUE			62
 
 /* Opcodes 69 to 72 */
 
 /* Opcodes 73 to 78 */
-#define INST_STR_EQ			65
-#define INST_STR_NEQ			66
-#define INST_STR_CMP			67
-#define INST_STR_LEN			68
-#define INST_STR_INDEX			69
-#define INST_STR_MATCH			70
+#define INST_STR_EQ			63
+#define INST_STR_NEQ			64
+#define INST_STR_CMP			65
+#define INST_STR_LEN			66
+#define INST_STR_INDEX			67
+#define INST_STR_MATCH			68
 
 /* Opcodes 78 to 81 */
-#define INST_LIST			71
-#define INST_LIST_INDEX			72
-#define INST_LIST_LENGTH		73
+#define INST_LIST			69
+#define INST_LIST_INDEX			70
+#define INST_LIST_LENGTH		71
 
 /* Opcodes 82 to 87 */
-#define INST_APPEND_SCALAR1		74
-#define INST_APPEND_SCALAR4		75
-#define INST_APPEND_ARRAY1		76
-#define INST_APPEND_ARRAY4		77
-#define INST_APPEND_ARRAY_STK		78
-#define INST_APPEND_STK			79
+#define INST_APPEND_SCALAR1		72
+#define INST_APPEND_SCALAR4		73
+#define INST_APPEND_ARRAY1		74
+#define INST_APPEND_ARRAY4		75
+#define INST_APPEND_ARRAY_STK		76
+#define INST_APPEND_STK			77
 
 /* Opcodes 88 to 93 */
-#define INST_LAPPEND_SCALAR1		80
-#define INST_LAPPEND_SCALAR4		81
-#define INST_LAPPEND_ARRAY1		82
-#define INST_LAPPEND_ARRAY4		83
-#define INST_LAPPEND_ARRAY_STK		84
-#define INST_LAPPEND_STK		85
+#define INST_LAPPEND_SCALAR1		78
+#define INST_LAPPEND_SCALAR4		79
+#define INST_LAPPEND_ARRAY1		80
+#define INST_LAPPEND_ARRAY4		81
+#define INST_LAPPEND_ARRAY_STK		82
+#define INST_LAPPEND_STK		83
 
 /* TIP #22 - LINDEX operator with flat arg list */
 
-#define INST_LIST_INDEX_MULTI		86
+#define INST_LIST_INDEX_MULTI		84
 
 /*
  * TIP #33 - 'lset' command. Code gen also required a Forth-like
  *	     OVER operation.
  */
 
-#define INST_OVER			87
-#define INST_LSET_LIST			88
-#define INST_LSET_FLAT			89
+#define INST_OVER			85
+#define INST_LSET_LIST			86
+#define INST_LSET_FLAT			87
 
 /* TIP#90 - 'return' command. */
 
-#define INST_RETURN_IMM			90
+#define INST_RETURN_IMM			88
 
 /* TIP#123 - exponentiation operator. */
 
-#define INST_EXPON			91
+#define INST_EXPON			89
 
 /* TIP #157 - {*}... (word expansion) language syntax support. */
 
-#define INST_EXPAND_START		92
-#define INST_EXPAND_STKTOP		93
-#define INST_INVOKE_EXPANDED		94
+#define INST_EXPAND_START		90
+#define INST_EXPAND_STKTOP		91
+#define INST_INVOKE_EXPANDED		92
 
 /*
  * TIP #57 - 'lassign' command. Code generation requires immediate
  *	     LINDEX and LRANGE operators.
  */
 
-#define INST_LIST_INDEX_IMM		95
-#define INST_LIST_RANGE_IMM		96
+#define INST_LIST_INDEX_IMM		93
+#define INST_LIST_RANGE_IMM		94
 
-#define INST_LIST_IN			97
-#define INST_LIST_NOT_IN		98
+#define INST_LIST_IN			95
+#define INST_LIST_NOT_IN		96
 
-#define INST_PUSH_RETURN_OPTIONS	99
-#define INST_RETURN_STK			100
+#define INST_PUSH_RETURN_OPTIONS	97
+#define INST_RETURN_STK			98
 
 /*
  * Dictionary (TIP#111) related commands.
  */
 
-#define INST_DICT_GET			101
-#define INST_DICT_SET			102
-#define INST_DICT_UNSET			103
-#define INST_DICT_INCR_IMM		104
-#define INST_DICT_APPEND		105
-#define INST_DICT_LAPPEND		106
-#define INST_DICT_FIRST			107
-#define INST_DICT_NEXT			108
-#define INST_DICT_DONE			109
-#define INST_DICT_UPDATE_START		110
-#define INST_DICT_UPDATE_END		111
+#define INST_DICT_GET			99
+#define INST_DICT_SET			100
+#define INST_DICT_UNSET			101
+#define INST_DICT_INCR_IMM		102
+#define INST_DICT_APPEND		103
+#define INST_DICT_LAPPEND		104
+#define INST_DICT_FIRST			105
+#define INST_DICT_NEXT			106
+#define INST_DICT_DONE			107
+#define INST_DICT_UPDATE_START		108
+#define INST_DICT_UPDATE_END		109
 
 /*
  * Instruction to support jumps defined by tables (instead of the classic
  * [switch] technique of chained comparisons).
  */
 
-#define INST_JUMP_TABLE			112
+#define INST_JUMP_TABLE			110
 
 /*
  * Instructions to support compilation of global, variable, upvar and
  * [namespace upvar].
  */
 
-#define INST_UPVAR			113
-#define INST_NSUPVAR			114
-#define INST_VARIABLE			115
+#define INST_UPVAR			111
+#define INST_NSUPVAR			112
+#define INST_VARIABLE			113
 
 /* Instruction to support compiling syntax error to bytecode */
 
-#define INST_SYNTAX			116
+#define INST_SYNTAX			114
 
 /* Instruction to reverse N items on top of stack */
 
-#define INST_REVERSE			117
+#define INST_REVERSE			115
 
 /* regexp instruction */
 
-#define INST_REGEXP			118
+#define INST_REGEXP			116
 
 /* For [info exists] compilation */
-#define INST_EXIST_SCALAR		119
-#define INST_EXIST_ARRAY		120
-#define INST_EXIST_ARRAY_STK		121
-#define INST_EXIST_STK			122
+#define INST_EXIST_SCALAR		117
+#define INST_EXIST_ARRAY		118
+#define INST_EXIST_ARRAY_STK		119
+#define INST_EXIST_STK			120
 
 /* For [subst] compilation */
-#define INST_NOP			123
+#define INST_NOP			121
 
 /* For [unset] compilation */
-#define INST_UNSET_SCALAR		124
-#define INST_UNSET_ARRAY		125
-#define INST_UNSET_ARRAY_STK		126
-#define INST_UNSET_STK			127
+#define INST_UNSET_SCALAR		122
+#define INST_UNSET_ARRAY		123
+#define INST_UNSET_ARRAY_STK		124
+#define INST_UNSET_STK			125
 
 /* For [dict with], [dict exists], [dict create] and [dict merge] */
-#define INST_DICT_EXPAND		128
-#define INST_DICT_RECOMBINE_STK		129
-#define INST_DICT_RECOMBINE_IMM		130
-#define INST_DICT_EXISTS		131
-#define INST_DICT_VERIFY		132
+#define INST_DICT_EXPAND		126
+#define INST_DICT_RECOMBINE_STK		127
+#define INST_DICT_RECOMBINE_IMM		128
+#define INST_DICT_EXISTS		129
+#define INST_DICT_VERIFY		130
 
 /* For [string map] and [regsub] compilation */
-#define INST_STR_MAP			133
-#define INST_STR_FIND			134
-#define INST_STR_FIND_LAST		135
-#define INST_STR_RANGE_IMM		136
-#define INST_STR_RANGE			137
+#define INST_STR_MAP			131
+#define INST_STR_FIND			132
+#define INST_STR_FIND_LAST		133
+#define INST_STR_RANGE_IMM		134
+#define INST_STR_RANGE			135
 
 /* For operations to do with coroutines and other NRE-manipulators */
-#define INST_YIELD			138
-#define INST_COROUTINE_NAME		139
-#define INST_TAILCALL			140
+#define INST_YIELD			136
+#define INST_COROUTINE_NAME		137
+#define INST_TAILCALL			138
 
 /* For compilation of basic information operations */
-#define INST_NS_CURRENT			141
-#define INST_INFO_LEVEL_NUM		142
-#define INST_INFO_LEVEL_ARGS		143
-#define INST_RESOLVE_COMMAND		144
+#define INST_NS_CURRENT			139
+#define INST_INFO_LEVEL_NUM		140
+#define INST_INFO_LEVEL_ARGS		141
+#define INST_RESOLVE_COMMAND		142
 
 /* For compilation relating to TclOO */
-#define INST_TCLOO_SELF			145
-#define INST_TCLOO_CLASS		146
-#define INST_TCLOO_NS			147
-#define INST_TCLOO_IS_OBJECT		148
+#define INST_TCLOO_SELF			143
+#define INST_TCLOO_CLASS		144
+#define INST_TCLOO_NS			145
+#define INST_TCLOO_IS_OBJECT		146
 
 /* For compilation of [array] subcommands */
-#define INST_ARRAY_EXISTS_STK		149
-#define INST_ARRAY_EXISTS_IMM		150
-#define INST_ARRAY_MAKE_STK		151
-#define INST_ARRAY_MAKE_IMM		152
+#define INST_ARRAY_EXISTS_STK		147
+#define INST_ARRAY_EXISTS_IMM		148
+#define INST_ARRAY_MAKE_STK		149
+#define INST_ARRAY_MAKE_IMM		150
 
-#define INST_INVOKE_REPLACE		153
+#define INST_INVOKE_REPLACE		151
 
-#define INST_LIST_CONCAT		154
+#define INST_LIST_CONCAT		152
 
 /* New foreach implementation */
-#define INST_FOREACH_START              155
-#define INST_FOREACH_STEP               156
-#define INST_FOREACH_END                157
-#define INST_LMAP_COLLECT               158
+#define INST_FOREACH_START              153
+#define INST_FOREACH_STEP               154
+#define INST_FOREACH_END                155
+#define INST_LMAP_COLLECT               156
 
 /* For compilation of [string trim] and related */
-#define INST_STR_TRIM			159
-#define INST_STR_TRIM_LEFT		160
-#define INST_STR_TRIM_RIGHT		161
+#define INST_STR_TRIM			157
+#define INST_STR_TRIM_LEFT		158
+#define INST_STR_TRIM_RIGHT		159
 
-#define INST_CONCAT_STK			162
+#define INST_CONCAT_STK			160
 
-#define INST_STR_UPPER			163
-#define INST_STR_LOWER			164
-#define INST_STR_TITLE			165
-#define INST_STR_REPLACE		166
+#define INST_STR_UPPER			161
+#define INST_STR_LOWER			162
+#define INST_STR_TITLE			163
+#define INST_STR_REPLACE		164
 
-#define INST_ORIGIN_COMMAND		167
+#define INST_ORIGIN_COMMAND		165
 
-#define INST_TCLOO_NEXT			168
-#define INST_TCLOO_NEXT_CLASS		169
+#define INST_TCLOO_NEXT			166
+#define INST_TCLOO_NEXT_CLASS		167
 
-#define INST_YIELD_TO_INVOKE		170
+#define INST_YIELD_TO_INVOKE		168
 
-#define INST_NUM_TYPE			171
-#define INST_TRY_CVT_TO_BOOLEAN		172
-#define INST_STR_CLASS			173
+#define INST_NUM_TYPE			169
+#define INST_TRY_CVT_TO_BOOLEAN		170
+#define INST_STR_CLASS			171
 
-#define INST_LAPPEND_LIST		174
-#define INST_LAPPEND_LIST_ARRAY		175
-#define INST_LAPPEND_LIST_ARRAY_STK	176
-#define INST_LAPPEND_LIST_STK		177
+#define INST_LAPPEND_LIST		172
+#define INST_LAPPEND_LIST_ARRAY		173
+#define INST_LAPPEND_LIST_ARRAY_STK	174
+#define INST_LAPPEND_LIST_STK		175
 
-#define INST_CLEAR_RANGE		178
+#define INST_CLEAR_RANGE		176
 
 /* The last opcode */
-#define LAST_INST_OPCODE		178
+#define LAST_INST_OPCODE		176
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
