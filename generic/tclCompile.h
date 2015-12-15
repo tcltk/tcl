@@ -995,12 +995,6 @@ typedef struct ForeachInfo {
 				 * LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
 
-MODULE_SCOPE const AuxDataType tclForeachInfoType;
-MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
-
-#define FOREACHINFO(envPtr, index) \
-    ((ForeachInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
-
 /*
  * Structure used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
@@ -1032,11 +1026,6 @@ typedef struct {
 				 * take account of this. MUST BE LAST FIELD IN
 				 * STRUCTURE. */
 } DictUpdateInfo;
-
-MODULE_SCOPE const AuxDataType tclDictUpdateInfoType;
-
-#define DICTUPDATEINFO(envPtr, index) \
-    ((DictUpdateInfo*)((envPtr)->auxDataArrayPtr[TclGetUInt4AtPtr(index)].clientData))
 
 /*
  * ClientData type used by the math operator commands.

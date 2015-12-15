@@ -4214,39 +4214,6 @@ TclGetInstructionTable(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclGetAuxDataType --
- *
- *	This procedure looks up an Auxdata type by name.
- *
- * Results:
- *	If an AuxData type with name matching "typeName" is found, a pointer
- *	to its AuxDataType structure is returned; otherwise, NULL is returned.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-const AuxDataType *
-TclGetAuxDataType(
-    const char *typeName)	/* Name of AuxData type to look up. */
-{
-    if (!strcmp(typeName, tclForeachInfoType.name)) {
-	return &tclForeachInfoType;
-    } else if (!strcmp(typeName, tclNewForeachInfoType.name)) {
-	return &tclNewForeachInfoType;
-    } else if (!strcmp(typeName, tclDictUpdateInfoType.name)) {
-	return &tclDictUpdateInfoType;
-    } else if (!strcmp(typeName, tclJumptableInfoType.name)) {
-	return &tclJumptableInfoType;
-    }
-    return NULL;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * GetCmdLocEncodingSize --
  *
  *	Computes the total number of bytes needed to encode the command
