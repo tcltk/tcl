@@ -8386,6 +8386,9 @@ TailcallCleanup(
     Tcl_Interp *interp,
     int result)
 {
+    Interp *iPtr = (Interp *) interp;
+
+    iPtr->flags |= ERR_ALREADY_LOGGED;
     Tcl_DecrRefCount((Tcl_Obj *) data[0]);
     return result;
 }
