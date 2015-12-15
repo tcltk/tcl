@@ -679,7 +679,6 @@ static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
-static void		RegisterAuxDataType(const AuxDataType *typePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 static void		StartExpanding(CompileEnv *envPtr);
