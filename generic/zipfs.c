@@ -2065,6 +2065,12 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 	    }
 	    name += slen;
 	}
+	while (name[0] == '/') {
+	    ++name;
+	}
+	if (name[0] == '\0') {
+	    continue;
+	}
 	if (ZipAddFile(interp, largv[i], name, out,
 		(pwlen > 0) ? argv[4] : NULL, buf, sizeof (buf), &fileHash)
 	    != TCL_OK) {
@@ -2082,6 +2088,12 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 		continue;
 	    }
 	    name += slen;
+	}
+	while (name[0] == '/') {
+	    ++name;
+	}
+	if (name[0] == '\0') {
+	    continue;
 	}
 	hPtr = Tcl_FindHashEntry(&fileHash, name);
 	if (hPtr == NULL) {
