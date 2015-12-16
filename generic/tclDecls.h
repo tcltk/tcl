@@ -1136,12 +1136,8 @@ TCLAPI int		Tcl_UniCharNcasecmp(const Tcl_UniChar *ucs,
 /* 420 */
 TCLAPI int		Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 				const Tcl_UniChar *uniPattern, int nocase);
-/* 421 */
-TCLAPI Tcl_HashEntry *	Tcl_FindHashEntry(Tcl_HashTable *tablePtr,
-				const void *key);
-/* 422 */
-TCLAPI Tcl_HashEntry *	Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
-				const void *key, int *newPtr);
+/* Slot 421 is reserved */
+/* Slot 422 is reserved */
 /* 423 */
 TCLAPI void		Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr,
 				int keyType, const Tcl_HashKeyType *typePtr);
@@ -2188,8 +2184,8 @@ typedef struct TclStubs {
     int (*tcl_IsChannelExisting) (const char *channelName); /* 418 */
     int (*tcl_UniCharNcasecmp) (const Tcl_UniChar *ucs, const Tcl_UniChar *uct, size_t numChars); /* 419 */
     int (*tcl_UniCharCaseMatch) (const Tcl_UniChar *uniStr, const Tcl_UniChar *uniPattern, int nocase); /* 420 */
-    Tcl_HashEntry * (*tcl_FindHashEntry) (Tcl_HashTable *tablePtr, const void *key); /* 421 */
-    Tcl_HashEntry * (*tcl_CreateHashEntry) (Tcl_HashTable *tablePtr, const void *key, int *newPtr); /* 422 */
+    void (*reserved421)(void);
+    void (*reserved422)(void);
     void (*tcl_InitCustomHashTable) (Tcl_HashTable *tablePtr, int keyType, const Tcl_HashKeyType *typePtr); /* 423 */
     void (*tcl_InitObjHashTable) (Tcl_HashTable *tablePtr); /* 424 */
     ClientData (*tcl_CommandTraceInfo) (Tcl_Interp *interp, const char *varName, int flags, Tcl_CommandTraceProc *procPtr, ClientData prevClientData); /* 425 */
@@ -3240,10 +3236,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_UniCharNcasecmp) /* 419 */
 #define Tcl_UniCharCaseMatch \
 	(tclStubsPtr->tcl_UniCharCaseMatch) /* 420 */
-#define Tcl_FindHashEntry \
-	(tclStubsPtr->tcl_FindHashEntry) /* 421 */
-#define Tcl_CreateHashEntry \
-	(tclStubsPtr->tcl_CreateHashEntry) /* 422 */
+/* Slot 421 is reserved */
+/* Slot 422 is reserved */
 #define Tcl_InitCustomHashTable \
 	(tclStubsPtr->tcl_InitCustomHashTable) /* 423 */
 #define Tcl_InitObjHashTable \
