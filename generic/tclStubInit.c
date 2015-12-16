@@ -48,12 +48,6 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 
-#ifndef ZIPFS_IN_TCL
-# define Tclzipfs_Init 0
-# define Tclzipfs_Mount 0
-# define Tclzipfs_Unmount 0
-#endif
-
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
 #   define TclSockMinimumBuffersOld 0
