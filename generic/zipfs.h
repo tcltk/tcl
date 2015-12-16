@@ -33,20 +33,11 @@ extern "C" {
 #define Zipfs_SafeInit Tclzipfs_SafeInit
 #endif
 
-#ifndef EXTERN
-#define EXTERN extern
-#endif
-
-#ifdef BUILD_tcl
-#undef  EXTERN
-#define EXTERN
-#endif
-
-EXTERN int Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname,
-		       CONST char *mntpt, CONST char *passwd);
-EXTERN int Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname);
-EXTERN int Zipfs_Init(Tcl_Interp *interp);
-EXTERN int Zipfs_SafeInit(Tcl_Interp *interp);
+DLLEXPORT int Zipfs_Mount(Tcl_Interp *interp, const char *zipname,
+		       const char *mntpt, const char *passwd);
+DLLEXPORT int Zipfs_Unmount(Tcl_Interp *interp, const char *zipname);
+DLLEXPORT int Zipfs_Init(Tcl_Interp *interp);
+DLLEXPORT int Zipfs_SafeInit(Tcl_Interp *interp);
 
 #ifdef __cplusplus
 }
