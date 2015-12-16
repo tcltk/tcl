@@ -13,12 +13,13 @@
 #ifndef _ZIPFS_H
 #define _ZIPFS_H
 
+#include "tcl.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 #ifdef ZIPFS_IN_TK
-#include "tkInt.h"
 #define Zipfs_Mount    Tkzipfs_Mount
 #define Zipfs_Unmount  Tkzipfs_Unmount
 #define Zipfs_Init     Tkzipfs_Init
@@ -26,16 +27,15 @@ extern "C" {
 #endif
 
 #ifdef ZIPFS_IN_TCL
-#include "tclPort.h"
 #define Zipfs_Mount    Tclzipfs_Mount
 #define Zipfs_Unmount  Tclzipfs_Unmount
 #define Zipfs_Init     Tclzipfs_Init
 #define Zipfs_SafeInit Tclzipfs_SafeInit
 #endif
 
-DLLEXPORT int Zipfs_Mount(Tcl_Interp *interp, const char *zipname,
-		       const char *mntpt, const char *passwd);
-DLLEXPORT int Zipfs_Unmount(Tcl_Interp *interp, const char *zipname);
+DLLEXPORT int Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname,
+		       CONST char *mntpt, CONST char *passwd);
+DLLEXPORT int Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname);
 DLLEXPORT int Zipfs_Init(Tcl_Interp *interp);
 DLLEXPORT int Zipfs_SafeInit(Tcl_Interp *interp);
 
