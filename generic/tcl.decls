@@ -1522,13 +1522,13 @@ declare 420 {
     int Tcl_UniCharCaseMatch(const Tcl_UniChar *uniStr,
 	    const Tcl_UniChar *uniPattern, int nocase)
 }
-declare 421 {
-    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
-}
-declare 422 {
-    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
-	    const void *key, int *newPtr)
-}
+#declare 421 {
+#    Tcl_HashEntry *Tcl_FindHashEntry(Tcl_HashTable *tablePtr, const void *key)
+#}
+#declare 422 {
+#    Tcl_HashEntry *Tcl_CreateHashEntry(Tcl_HashTable *tablePtr,
+#	    const void *key, int *newPtr)
+#}
 declare 423 {
     void Tcl_InitCustomHashTable(Tcl_HashTable *tablePtr, int keyType,
 	    const Tcl_HashKeyType *typePtr)
