@@ -562,9 +562,6 @@ static const TclIntStubs tclIntStubs = {
     TclDoubleDigits, /* 249 */
     TclSetSlaveCancelFlags, /* 250 */
     TclRegisterLiteral, /* 251 */
-    Tclzipfs_Init, /* 252 */
-    Tclzipfs_Mount, /* 253 */
-    Tclzipfs_Unmount, /* 254 */
 };
 
 static const TclIntPlatStubs tclIntPlatStubs = {
