@@ -9,6 +9,9 @@
  */
 
 #include "tclInt.h"
+#ifdef ZIPFS_IN_TCL
+#include "zipfs.h"
+#endif
 #include <stddef.h>
 #include <locale.h>
 #ifdef HAVE_LANGINFO

@@ -19,11 +19,19 @@
 extern "C" {
 #endif
 
+#ifndef ZIPFSAPI
+#   define ZIPFSAPI extern
+#endif
+
 #ifdef ZIPFS_IN_TK
 #define Zipfs_Mount    Tkzipfs_Mount
 #define Zipfs_Unmount  Tkzipfs_Unmount
 #define Zipfs_Init     Tkzipfs_Init
 #define Zipfs_SafeInit Tkzipfs_SafeInit
+#ifdef BUILD_tk
+#   undef ZIPFSAPI
+#   define ZIPFSAPI DLLEXPORT
+#endif
 #endif
 
 #ifdef ZIPFS_IN_TCL
@@ -31,13 +39,17 @@ extern "C" {
 #define Zipfs_Unmount  Tclzipfs_Unmount
 #define Zipfs_Init     Tclzipfs_Init
 #define Zipfs_SafeInit Tclzipfs_SafeInit
+#ifdef BUILD_tcl
+#   undef ZIPFSAPI
+#   define ZIPFSAPI DLLEXPORT
+#endif
 #endif
 
-DLLEXPORT int Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname,
+ZIPFSAPI int Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname,
 		       CONST char *mntpt, CONST char *passwd);
-DLLEXPORT int Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname);
-DLLEXPORT int Zipfs_Init(Tcl_Interp *interp);
-DLLEXPORT int Zipfs_SafeInit(Tcl_Interp *interp);
+ZIPFSAPI int Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname);
+ZIPFSAPI int Zipfs_Init(Tcl_Interp *interp);
+ZIPFSAPI int Zipfs_SafeInit(Tcl_Interp *interp);
 
 #ifdef __cplusplus
 }
