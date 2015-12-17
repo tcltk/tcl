@@ -321,14 +321,14 @@ Tcl_MainEx(
 {
     Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
     const char *encodingName = NULL;
-    int code, length, exitCode = 0;
+    int code, exitCode = 0;
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
     InteractiveState is;
+#ifdef ZIPFS_IN_TCL
     const char *zipFile = NULL;
     Tcl_Obj *zipval = NULL;
     int autoRun = 1;
-#ifdef ZIPFS_IN_TCL
     int zipOk = TCL_ERROR;
 #ifndef ANDROID
     const char *exeName;
@@ -337,7 +337,7 @@ Tcl_MainEx(
 
     TclpSetInitialEncodings();
     TclpFindExecutable((const char *)argv[0]);
-#ifndef ANDROID
+#if defined(ZIPFS_IN_TCL) && !defined(ANDROID)
     exeName = Tcl_GetNameOfExecutable();
 #endif
 
@@ -369,8 +369,9 @@ Tcl_MainEx(
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
+#ifdef ZIPFS_IN_TCL
 	} else if (argc > 2) {
-	    length = strlen((char *) argv[1]);
+	    int length = strlen((char *) argv[1]);
 	    if ((length >= 2) &&
 		(0 == _tcsncmp(TEXT("-zip"), argv[1], length))) {
 		argc--;
@@ -387,6 +388,7 @@ Tcl_MainEx(
 		argc--;
 		argv++;
 	    }
+#endif
 	} else if ((argc > 1) && ('-' != argv[1][0])) {
 	    Tcl_SetStartupScript(NewNativeObj(argv[1], -1), NULL);
 	    argc--;
@@ -475,11 +477,11 @@ Tcl_MainEx(
 	Tcl_DStringFree(&dsLib);
 #endif
     }
-#endif
     if (zipval != NULL) {
 	Tcl_DecrRefCount(zipval);
 	zipval = NULL;
     }
+#endif
 	
     /*
      * Invoke application-specific initialization.
