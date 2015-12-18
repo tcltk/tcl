@@ -3,13 +3,11 @@
 *************************************************************************
 
 * remove [info frame] and [info errortsack], as well as all supporting
-  code. These should be recoded using the data that NRE is keeping. nything
-  additional should ALWAYS choose to recompute on demand over precomputing
-  things during normal operation
+  code. These should be recoded using the data that NRE is
+  keeping. Anything additional should ALWAYS choose to recompute on demand
+  over precomputing things during normal operation
 
-* remove interp-result and all supporting code
-
-* remove [case]
+* remove interp->result and all supporting code
 
 * bring up relevant mods (if any) from mig-alloc-reform 
 
@@ -17,5 +15,34 @@
 *************************************************************************
 **** DONE ***************************************************************
 *************************************************************************
+
+* changes to compiler and engine: old .tbc will not run, except with a
+  "sufficiently clever" tbcload. The compiler and tbcload will probably
+  need some work to adapt to the changes. This branch completely ignores
+  these issues.
+
+* tclAssembly.c and related are gone; it was an added burden adapting them
+  while modifying the bytecodes and tebc, the decision was taken to remove
+  it and do the work again "at the end"
+
+* INCOMPATIBILITY - no more cmdCount
+  There is no more [info cmdcount], or cmdCount based interpreter limits
+
+* the compiler was simplified a bit, removing quite a few "premature"
+  optimizations; these are now handled by the optimizer. In particular: all
+  instructions are issued in the 4-byte variant (so that the optimizer can
+  use the extra space), break/continue are not optimized to jumps until
+  later, etc.
+
+* there is a new optimizer that produces better bytecodes, especially in
+  the handling of logic and exceptions. The optimizer itself is extremely
+  suboptimal, the way it works can definitely be improved.
+
+* INCOMPATIBILITY (?) - NRE stack is a real stack
+  Tcl_NRAddCallback now OVERWRITES the currently executing callback!! Users
+  now have to make sure that they save the received data[] in local vars if
+  they plan to use them after pushing a new callback!
+
+* remove [case]
 
 
