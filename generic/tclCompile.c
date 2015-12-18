@@ -17,15 +17,6 @@
 #include <assert.h>
 
 /*
- * Table of all AuxData types.
- */
-
-static Tcl_HashTable auxDataTypeTable;
-static int auxDataTypeTableInitialized; /* 0 means not yet initialized. */
-
-TCL_DECLARE_MUTEX(tableMutex)
-
-/*
  * Variable that controls whether compilation tracing is enabled and, if so,
  * what level of tracing is desired:
  *    0: no compilation tracing
@@ -655,7 +646,6 @@ static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
-static void		RegisterAuxDataType(const AuxDataType *typePtr);
 static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 
@@ -3455,165 +3445,6 @@ const void * /* == InstructionDesc* == */
 TclGetInstructionTable(void)
 {
     return &tclInstructionTable[0];
-}
-
-/*
- *--------------------------------------------------------------
- *
- * RegisterAuxDataType --
- *
- *	This procedure is called to register a new AuxData type in the table
- *	of all AuxData types supported by Tcl.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	The type is registered in the AuxData type table. If there was already
- *	a type with the same name as in typePtr, it is replaced with the new
- *	type.
- *
- *--------------------------------------------------------------
- */
-
-static void
-RegisterAuxDataType(
-    const AuxDataType *typePtr)	/* Information about object type; storage must
-				 * be statically allocated (must live forever;
-				 * will not be deallocated). */
-{
-    register Tcl_HashEntry *hPtr;
-    int isNew;
-
-    Tcl_MutexLock(&tableMutex);
-    if (!auxDataTypeTableInitialized) {
-	TclInitAuxDataTypeTable();
-    }
-
-    /*
-     * If there's already a type with the given name, remove it.
-     */
-
-    hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typePtr->name);
-    if (hPtr != NULL) {
-	Tcl_DeleteHashEntry(hPtr);
-    }
-
-    /*
-     * Now insert the new object type.
-     */
-
-    hPtr = Tcl_CreateHashEntry(&auxDataTypeTable, typePtr->name, &isNew);
-    if (isNew) {
-	Tcl_SetHashValue(hPtr, typePtr);
-    }
-    Tcl_MutexUnlock(&tableMutex);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclGetAuxDataType --
- *
- *	This procedure looks up an Auxdata type by name.
- *
- * Results:
- *	If an AuxData type with name matching "typeName" is found, a pointer
- *	to its AuxDataType structure is returned; otherwise, NULL is returned.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-const AuxDataType *
-TclGetAuxDataType(
-    const char *typeName)	/* Name of AuxData type to look up. */
-{
-    register Tcl_HashEntry *hPtr;
-    const AuxDataType *typePtr = NULL;
-
-    Tcl_MutexLock(&tableMutex);
-    if (!auxDataTypeTableInitialized) {
-	TclInitAuxDataTypeTable();
-    }
-
-    hPtr = Tcl_FindHashEntry(&auxDataTypeTable, typeName);
-    if (hPtr != NULL) {
-	typePtr = Tcl_GetHashValue(hPtr);
-    }
-    Tcl_MutexUnlock(&tableMutex);
-
-    return typePtr;
-}
-
-/*
- *--------------------------------------------------------------
- *
- * TclInitAuxDataTypeTable --
- *
- *	This procedure is invoked to perform once-only initialization of the
- *	AuxData type table. It also registers the AuxData types defined in
- *	this file.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Initializes the table of defined AuxData types "auxDataTypeTable" with
- *	builtin AuxData types defined in this file.
- *
- *--------------------------------------------------------------
- */
-
-void
-TclInitAuxDataTypeTable(void)
-{
-    /*
-     * The table mutex must already be held before this routine is invoked.
-     */
-
-    auxDataTypeTableInitialized = 1;
-    Tcl_InitHashTable(&auxDataTypeTable, TCL_STRING_KEYS);
-
-    /*
-     * There are only four AuxData types at this time, so register them here.
-     */
-
-    RegisterAuxDataType(&tclForeachInfoType);
-    RegisterAuxDataType(&tclJumptableInfoType);
-    RegisterAuxDataType(&tclDictUpdateInfoType);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclFinalizeAuxDataTypeTable --
- *
- *	This procedure is called by Tcl_Finalize after all exit handlers have
- *	been run to free up storage associated with the table of AuxData
- *	types. This procedure is called by TclFinalizeExecution() which is
- *	called by Tcl_Finalize().
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Deletes all entries in the hash table of AuxData types.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclFinalizeAuxDataTypeTable(void)
-{
-    Tcl_MutexLock(&tableMutex);
-    if (auxDataTypeTableInitialized) {
-	Tcl_DeleteHashTable(&auxDataTypeTable);
-	auxDataTypeTableInitialized = 0;
-    }
-    Tcl_MutexUnlock(&tableMutex);
 }
 
 /*
