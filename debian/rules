@@ -18,8 +18,6 @@ else
 CFLAGS=-g -O2 -fno-unit-at-a-time
 endif
 
-CFLAGS+=-DZIPFS_IN_TCL=1
-
 unpatch:
 	dh_testdir
 	quilt pop -a || test $$? = 2
@@ -49,7 +47,8 @@ build-stamp: patch-stamp
 		      --enable-man-symlinks \
 		      --enable-man-compression=gzip \
 		      --enable-threads \
-		      --without-tzdata && \
+		      --without-tzdata \
+		      --with-zipfs && \
 	  touch ../generic/tclStubInit.c && \
 	  $(MAKE)
 # Build the static library.
