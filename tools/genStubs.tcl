@@ -201,6 +201,13 @@ proc genStubs::declare {args} {
 		set stubs($curName,$platform,lastNum) $index
 	    }
 	}
+	if {$platformList eq "deprecated"} {
+	    set stubs($curName,generic,$index) $decl
+	    if {![info exists stubs($curName,generic,lastNum)] \
+		    || ($index > $stubs($curName,generic,lastNum))} {
+		set stubs($curName,$platform,lastNum) $index
+	    }
+	}
     }
     return
 }
@@ -457,10 +464,15 @@ proc genStubs::parseArg {arg} {
 
 proc genStubs::makeDecl {name decl index} {
     variable scspec
+    variable stubs
     lassign $decl rtype fname args
 
     append text "/* $index */\n"
+    if {[info exists stubs($name,deprecated,$index)]} {
+    set line "TCL_DEPRECATED $rtype"
+    } else {
     set line "$scspec $rtype"
+    }
     set count [expr {2 - ([string length $line] / 8)}]
     append line [string range "\t\t\t" 0 $count]
     set pad [expr {24 - [string length $line]}]
@@ -684,7 +696,10 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 	for {set i 0} {$i <= $lastNum} {incr i} {
 	    set slots [array names stubs $name,*,$i]
 	    set emit 0
-	    if {[info exists stubs($name,generic,$i)]} {
+	    if {[info exists stubs($name,deprecated,$i)]} {
+		append text [$slotProc $name $stubs($name,generic,$i) $i]
+		set emit 1
+	    } elseif {[info exists stubs($name,generic,$i)]} {
 		if {[llength $slots] > 1} {
 		    puts stderr "conflicting generic and platform entries:\
 			    $name $i"
