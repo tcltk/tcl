@@ -260,9 +260,9 @@ declare 67 {
 declare 68 {
     void Tcl_AllowExceptions(Tcl_Interp *interp)
 }
-declare 69 {
-    void Tcl_AppendElement(Tcl_Interp *interp, const char *element)
-}
+#declare 69 {
+#    void Tcl_AppendElement(Tcl_Interp *interp, const char *element)
+#}
 declare 70 {
     void Tcl_AppendResult(Tcl_Interp *interp, ...)
 }
@@ -524,9 +524,9 @@ declare 145 {
 declare 146 {
     int Tcl_Flush(Tcl_Channel chan)
 }
-declare 147 {
-    void Tcl_FreeResult(Tcl_Interp *interp)
-}
+#declare 147 {
+#    void Tcl_FreeResult(Tcl_Interp *interp)
+#}
 declare 148 {
     int Tcl_GetAlias(Tcl_Interp *interp, const char *slaveCmd,
 	    Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr,

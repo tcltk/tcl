@@ -845,7 +845,7 @@ const TclStubs tclStubs = {
     Tcl_AddErrorInfo, /* 66 */
     Tcl_AddObjErrorInfo, /* 67 */
     Tcl_AllowExceptions, /* 68 */
-    Tcl_AppendElement, /* 69 */
+    0, /* 69 */
     Tcl_AppendResult, /* 70 */
     Tcl_AsyncCreate, /* 71 */
     Tcl_AsyncDelete, /* 72 */
@@ -923,7 +923,7 @@ const TclStubs tclStubs = {
     Tcl_FindExecutable, /* 144 */
     Tcl_FirstHashEntry, /* 145 */
     Tcl_Flush, /* 146 */
-    Tcl_FreeResult, /* 147 */
+    0, /* 147 */
     Tcl_GetAlias, /* 148 */
     Tcl_GetAliasObj, /* 149 */
     Tcl_GetAssocData, /* 150 */

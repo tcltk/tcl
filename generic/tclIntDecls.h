@@ -1318,7 +1318,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 #undef TclSetStartupScriptPath
 #undef TclBackgroundException
 
-#if defined(USE_TCL_STUBS) && defined(TCL_NO_DEPRECATED)
+#if defined(USE_TCL_STUBS)
 #   undef Tcl_SetStartupScript
 #   define Tcl_SetStartupScript \
 	    (tclStubsPtr->tcl_SetStartupScript) /* 622 */

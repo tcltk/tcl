@@ -511,9 +511,6 @@ Tcl_CreateInterp(void)
     iPtr = ckalloc(sizeof(Interp));
     interp = (Tcl_Interp *) iPtr;
 
-    iPtr->result = iPtr->resultSpace;
-    iPtr->freeProc = NULL;
-    iPtr->errorLine = 0;
     iPtr->objResultPtr = Tcl_NewObj();
     Tcl_IncrRefCount(iPtr->objResultPtr);
     iPtr->handle = TclHandleCreate(iPtr);
@@ -571,10 +568,6 @@ Tcl_CreateInterp(void)
     iPtr->rootFramePtr = NULL;	/* Initialise as soon as :: is available */
     iPtr->lookupNsPtr = NULL;
 
-    iPtr->appendResult = NULL;
-    iPtr->appendAvl = 0;
-    iPtr->appendUsed = 0;
-
     Tcl_InitHashTable(&iPtr->packageTable, TCL_STRING_KEYS);
     iPtr->packageUnknown = NULL;
 
@@ -601,7 +594,6 @@ Tcl_CreateInterp(void)
     iPtr->emptyObjPtr = Tcl_NewObj();
 				/* Another empty object. */
     Tcl_IncrRefCount(iPtr->emptyObjPtr);
-    iPtr->resultSpace[0] = 0;
     iPtr->threadId = Tcl_GetCurrentThread();
 
     /* TIP #378 */
@@ -1498,8 +1490,6 @@ DeleteInterpProc(
      * could have transferred ownership of the result string to Tcl.
      */
 
-    Tcl_FreeResult(interp);
-    iPtr->result = NULL;
     Tcl_DecrRefCount(iPtr->objResultPtr);
     iPtr->objResultPtr = NULL;
     Tcl_DecrRefCount(iPtr->ecVar);
@@ -1520,10 +1510,6 @@ DeleteInterpProc(
     Tcl_DecrRefCount(iPtr->innerContext);
     if (iPtr->returnOpts) {
 	Tcl_DecrRefCount(iPtr->returnOpts);
-    }
-    if (iPtr->appendResult != NULL) {
-	ckfree(iPtr->appendResult);
-	iPtr->appendResult = NULL;
     }
     TclFreePackageInfo(iPtr);
     while (iPtr->tracePtr != NULL) {
@@ -4335,23 +4321,8 @@ TclNRRunCallbacks(
     Tcl_Interp *interp,
     int result) 	/* Callbacks are run until the first NRRoot.*/
 {
-    Interp *iPtr = (Interp *) interp;
     NRE_callback *cbPtr;
     Tcl_NRPostProc *procPtr;
-
-    /*
-     * If the interpreter has a non-empty string result, the result object is
-     * either empty or stale because some function set interp->result
-     * directly. If so, move the string result to the result object, then
-     * reset the string result.
-     *
-     * This only needs to be done for the first item in the list: all other
-     * are for NR function calls, and those are Tcl_Obj based.
-     */
-
-    if (*(iPtr->result) != 0) {
-	(void) Tcl_GetObjResult(interp);
-    }
 
     while (TOP_CB(interp) && (TOP_CB(interp)->procPtr != NRRoot)) {
 	POP_CB(interp, cbPtr);
@@ -6771,19 +6742,7 @@ Tcl_AddObjErrorInfo(
 
     iPtr->flags |= ERR_LEGACY_COPY;
     if (iPtr->errorInfo == NULL) {
-	if (iPtr->result[0] != 0) {
-	    /*
-	     * The interp's string result is set, apparently by some extension
-	     * making a deprecated direct write to it. That extension may
-	     * expect interp->result to continue to be set, so we'll take
-	     * special pains to avoid clearing it, until we drop support for
-	     * interp->result completely.
-	     */
-
-	    iPtr->errorInfo = Tcl_NewStringObj(iPtr->result, -1);
-	} else {
-	    iPtr->errorInfo = iPtr->objResultPtr;
-	}
+        iPtr->errorInfo = iPtr->objResultPtr;
 	Tcl_IncrRefCount(iPtr->errorInfo);
 	if (!iPtr->errorCode) {
 	    Tcl_SetErrorCode(interp, "NONE", NULL);

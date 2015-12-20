@@ -75,6 +75,21 @@ static Tcl_CmdProc TestsetdefencdirCmd;
 static Tcl_FileProc TestFileHandlerProc;
 static void AlarmHandler(int signum);
 
+static void
+Tcl_AppendElement (
+    Tcl_Interp *interp,
+    const char *element)
+{
+    Tcl_Obj *resPtr = Tcl_GetObjResult(interp);
+
+    if (Tcl_IsShared(resPtr)) {
+        resPtr = Tcl_DuplicateObj(resPtr);
+    }
+    
+    (void) Tcl_ListObjAppendElement(interp, resPtr, Tcl_NewStringObj(element, -1));
+    Tcl_SetObjResult(interp, resPtr); 
+}
+
 /*
  *----------------------------------------------------------------------
  *

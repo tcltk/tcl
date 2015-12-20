@@ -7868,10 +7868,12 @@ TEBCresume(
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
 	    PUSH_OBJECT(Tcl_NewStringObj(codePtr->source + cmdLoc.srcOffset, cmdLoc.numSrcBytes));
 	    pc += cmdLoc.numCodeBytes-1;
+#ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		TRACE(("[%.15s] => ISC to pc %i\n", codePtr->source + cmdLoc.srcOffset,
 				(int)(pc-codePtr->codeStart)));
 	    }	    
+#endif
 	    goto instEvalStk;
 	}
     }

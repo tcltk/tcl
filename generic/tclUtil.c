@@ -2884,13 +2884,6 @@ Tcl_DStringResult(
  * Results:
  *	None.
  *
- * Side effects:
- *	The interpreter's string result is cleared, and the previous contents
- *	of dsPtr are freed.
- *
- *	If the string result is empty, the object result is moved to the
- *	string result, then the object result is reset.
- *
  *----------------------------------------------------------------------
  */
 
@@ -2908,7 +2901,7 @@ Tcl_DStringGetResult(
 
     /*
      * Do more efficient transfer when we know the result is a Tcl_Obj. When
-     * there's no st`ring result, we only have to deal with two cases:
+     * there's no string result, we only have to deal with two cases:
      *
      *  1. When the string rep is the empty string, when we don't copy but
      *     instead use the staticSpace in the DString to hold an empty string.
@@ -2921,56 +2914,28 @@ Tcl_DStringGetResult(
      *     string.
      */
 
-    if (!iPtr->result[0] && iPtr->objResultPtr
-	    && !Tcl_IsShared(iPtr->objResultPtr)) {
-	if (iPtr->objResultPtr->bytes == tclEmptyStringRep) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->string[0] = 0;
-	    dsPtr->length = 0;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = Tcl_GetString(iPtr->objResultPtr);
-	    dsPtr->length = iPtr->objResultPtr->length;
-	    dsPtr->spaceAvl = dsPtr->length + 1;
-	    TclFreeIntRep(iPtr->objResultPtr);
-	    iPtr->objResultPtr->bytes = tclEmptyStringRep;
-	    iPtr->objResultPtr->length = 0;
-	}
-	return;
-    }
-
-    /*
-     * If the string result is empty, move the object result to the string
-     * result, then reset the object result.
-     */
-
-    (void) Tcl_GetStringResult(interp);
-
-    dsPtr->length = strlen(iPtr->result);
-    if (iPtr->freeProc != NULL) {
-	if (iPtr->freeProc == TCL_DYNAMIC) {
-	    dsPtr->string = iPtr->result;
-	    dsPtr->spaceAvl = dsPtr->length+1;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
-	    iPtr->freeProc(iPtr->result);
-	}
-	dsPtr->spaceAvl = dsPtr->length+1;
-	iPtr->freeProc = NULL;
+    if (iPtr->objResultPtr->bytes == tclEmptyStringRep) {
+	dsPtr->string = dsPtr->staticSpace;
+	dsPtr->string[0] = 0;
+	dsPtr->length = 0;
+	dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
     } else {
-	if (dsPtr->length < TCL_DSTRING_STATIC_SIZE) {
-	    dsPtr->string = dsPtr->staticSpace;
-	    dsPtr->spaceAvl = TCL_DSTRING_STATIC_SIZE;
-	} else {
-	    dsPtr->string = ckalloc(dsPtr->length+1);
-	    dsPtr->spaceAvl = dsPtr->length + 1;
+	int new = 0;
+	Tcl_Obj *resPtr = iPtr->objResultPtr;
+	if (Tcl_IsShared(resPtr)) {
+	    resPtr = Tcl_DuplicateObj(resPtr);
+	    new = 1;
 	}
-	memcpy(dsPtr->string, iPtr->result, (unsigned) dsPtr->length+1);
+	dsPtr->string = Tcl_GetString(resPtr);
+	dsPtr->length = resPtr->length;
+	dsPtr->spaceAvl = dsPtr->length + 1;
+	TclFreeIntRep(resPtr);
+	resPtr->bytes = tclEmptyStringRep;
+	resPtr->length = 0;
+	if (new) {
+	    Tcl_DecrRefCount(resPtr);
+	}
     }
-
-    iPtr->result = iPtr->resultSpace;
-    iPtr->resultSpace[0] = 0;
 }
 
 /*

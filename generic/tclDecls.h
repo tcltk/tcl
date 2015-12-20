@@ -235,9 +235,7 @@ EXTERN void		Tcl_AddObjErrorInfo(Tcl_Interp *interp,
 				const char *message, int length);
 /* 68 */
 EXTERN void		Tcl_AllowExceptions(Tcl_Interp *interp);
-/* 69 */
-EXTERN void		Tcl_AppendElement(Tcl_Interp *interp,
-				const char *element);
+/* Slot 69 is reserved */
 /* 70 */
 EXTERN void		Tcl_AppendResult(Tcl_Interp *interp, ...);
 /* 71 */
@@ -454,8 +452,7 @@ EXTERN Tcl_HashEntry *	Tcl_FirstHashEntry(Tcl_HashTable *tablePtr,
 				Tcl_HashSearch *searchPtr);
 /* 146 */
 EXTERN int		Tcl_Flush(Tcl_Channel chan);
-/* 147 */
-EXTERN void		Tcl_FreeResult(Tcl_Interp *interp);
+/* Slot 147 is reserved */
 /* 148 */
 EXTERN int		Tcl_GetAlias(Tcl_Interp *interp,
 				const char *slaveCmd,
@@ -1909,7 +1906,7 @@ typedef struct TclStubs {
     void (*tcl_AddErrorInfo) (Tcl_Interp *interp, const char *message); /* 66 */
     void (*tcl_AddObjErrorInfo) (Tcl_Interp *interp, const char *message, int length); /* 67 */
     void (*tcl_AllowExceptions) (Tcl_Interp *interp); /* 68 */
-    void (*tcl_AppendElement) (Tcl_Interp *interp, const char *element); /* 69 */
+    void (*reserved69)(void);
     void (*tcl_AppendResult) (Tcl_Interp *interp, ...); /* 70 */
     Tcl_AsyncHandler (*tcl_AsyncCreate) (Tcl_AsyncProc *proc, ClientData clientData); /* 71 */
     void (*tcl_AsyncDelete) (Tcl_AsyncHandler async); /* 72 */
@@ -1987,7 +1984,7 @@ typedef struct TclStubs {
     void (*tcl_FindExecutable) (const char *argv0); /* 144 */
     Tcl_HashEntry * (*tcl_FirstHashEntry) (Tcl_HashTable *tablePtr, Tcl_HashSearch *searchPtr); /* 145 */
     int (*tcl_Flush) (Tcl_Channel chan); /* 146 */
-    void (*tcl_FreeResult) (Tcl_Interp *interp); /* 147 */
+    void (*reserved147)(void);
     int (*tcl_GetAlias) (Tcl_Interp *interp, const char *slaveCmd, Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, int *argcPtr, CONST84 char ***argvPtr); /* 148 */
     int (*tcl_GetAliasObj) (Tcl_Interp *interp, const char *slaveCmd, Tcl_Interp **targetInterpPtr, CONST84 char **targetCmdPtr, int *objcPtr, Tcl_Obj ***objv); /* 149 */
     ClientData (*tcl_GetAssocData) (Tcl_Interp *interp, const char *name, Tcl_InterpDeleteProc **procPtr); /* 150 */
@@ -2643,8 +2640,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_AddObjErrorInfo) /* 67 */
 #define Tcl_AllowExceptions \
 	(tclStubsPtr->tcl_AllowExceptions) /* 68 */
-#define Tcl_AppendElement \
-	(tclStubsPtr->tcl_AppendElement) /* 69 */
+/* Slot 69 is reserved */
 #define Tcl_AppendResult \
 	(tclStubsPtr->tcl_AppendResult) /* 70 */
 #define Tcl_AsyncCreate \
@@ -2799,8 +2795,7 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FirstHashEntry) /* 145 */
 #define Tcl_Flush \
 	(tclStubsPtr->tcl_Flush) /* 146 */
-#define Tcl_FreeResult \
-	(tclStubsPtr->tcl_FreeResult) /* 147 */
+/* Slot 147 is reserved */
 #define Tcl_GetAlias \
 	(tclStubsPtr->tcl_GetAlias) /* 148 */
 #define Tcl_GetAliasObj \

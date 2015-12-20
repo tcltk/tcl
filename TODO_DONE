@@ -7,8 +7,6 @@
   keeping. Anything additional should ALWAYS choose to recompute on demand
   over precomputing things during normal operation
 
-* remove interp->result and all supporting code
-
 * bring up relevant mods (if any) from mig-alloc-reform 
 
 
@@ -44,5 +42,8 @@
   they plan to use them after pushing a new callback!
 
 * remove [case]
+
+* remove interp->result and all supporting code; remove other deprecated
+  apis 
 
 

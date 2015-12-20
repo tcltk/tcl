@@ -116,13 +116,6 @@ typedef struct TclEncoding {
 } TclEncoding;
 
 /*
- * The counter below is used to determine if the TestsaveresultFree routine
- * was called for a result.
- */
-
-static int freeCount;
-
-/*
  * Boolean flag used by the "testsetmainloop" and "testexitmainloop" commands.
  */
 
@@ -298,12 +291,6 @@ static int		TestlinkCmd(ClientData dummy,
 static int		TestlocaleCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
-static int		TestMathFunc(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_Value *args,
-			    Tcl_Value *resultPtr);
-static int		TestMathFunc2(ClientData clientData,
-			    Tcl_Interp *interp, Tcl_Value *args,
-			    Tcl_Value *resultPtr);
 static int		TestmainthreadCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetmainloopCmd(ClientData dummy,
@@ -331,12 +318,6 @@ static int		TestreturnObjCmd(ClientData dummy,
 			    Tcl_Obj *const objv[]);
 static void		TestregexpXflags(const char *string,
 			    int length, int *cflagsPtr, int *eflagsPtr);
-#ifndef TCL_NO_DEPRECATED
-static int		TestsaveresultCmd(ClientData dummy,
-			    Tcl_Interp *interp, int objc,
-			    Tcl_Obj *const objv[]);
-static void		TestsaveresultFree(char *blockPtr);
-#endif /* TCL_NO_DEPRECATED */
 static int		TestsetassocdataCmd(ClientData dummy,
 			    Tcl_Interp *interp, int argc, const char **argv);
 static int		TestsetCmd(ClientData dummy,
@@ -505,7 +486,22 @@ static const Tcl_Filesystem simpleFilesystem = {
     NULL
 };
 
+static void
+Tcl_AppendElement (
+    Tcl_Interp *interp,
+    const char *element)
+{
+    Tcl_Obj *resPtr = Tcl_GetObjResult(interp);
+
+    if (Tcl_IsShared(resPtr)) {
+        resPtr = Tcl_DuplicateObj(resPtr);
+    }
+    
+    (void) Tcl_ListObjAppendElement(interp, resPtr, Tcl_NewStringObj(element, -1));
+    Tcl_SetObjResult(interp, resPtr); 
+}
 
+
 /*
  *----------------------------------------------------------------------
  *
@@ -529,10 +525,6 @@ int
 Tcltest_Init(
     Tcl_Interp *interp)		/* Interpreter for application. */
 {
-#ifndef TCL_NO_DEPRECATED
-    Tcl_ValueType t3ArgTypes[2];
-#endif /* TCL_NO_DEPRECATED */
-
     Tcl_Obj *listPtr;
     Tcl_Obj **objv;
     int objc, index;
@@ -651,10 +643,6 @@ Tcltest_Init(
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testreturn", TestreturnObjCmd,
 	    NULL, NULL);
-#ifndef TCL_NO_DEPRECATED
-    Tcl_CreateObjCommand(interp, "testsaveresult", TestsaveresultCmd,
-	    NULL, NULL);
-#endif /* TCL_NO_DEPRECATED */
     Tcl_CreateCommand(interp, "testsetassocdata", TestsetassocdataCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testsetnoerr", TestsetCmd,
@@ -676,10 +664,6 @@ Tcltest_Init(
     Tcl_CreateCommand(interp, "testtranslatefilename",
 	    TesttranslatefilenameCmd, NULL, NULL);
     Tcl_CreateCommand(interp, "testupvar", TestupvarCmd, NULL, NULL);
-#ifndef TCL_NO_DEPRECATED
-    Tcl_CreateMathFunc(interp, "T1", 0, NULL, TestMathFunc, (ClientData) 123);
-    Tcl_CreateMathFunc(interp, "T2", 0, NULL, TestMathFunc, (ClientData) 345);
-#endif /* TCL_NO_DEPRECATED */
     Tcl_CreateCommand(interp, "testmainthread", TestmainthreadCmd, NULL,
 	    NULL);
     Tcl_CreateCommand(interp, "testsetmainloop", TestsetmainloopCmd,
@@ -690,13 +674,6 @@ Tcltest_Init(
     Tcl_CreateObjCommand(interp, "testcpuid", TestcpuidCmd,
 	    (ClientData) 0, NULL);
 #endif
-#ifndef TCL_NO_DEPRECATED
-    t3ArgTypes[0] = TCL_EITHER;
-    t3ArgTypes[1] = TCL_EITHER;
-    Tcl_CreateMathFunc(interp, "T3", 2, t3ArgTypes, TestMathFunc2,
-	    NULL);
-#endif /* TCL_NO_DEPRECATED */
-
     Tcl_CreateObjCommand(interp, "testnrelevels", TestNRELevels,
 	    NULL, NULL);
     Tcl_CreateObjCommand(interp, "testinterpresolver", TestInterpResolverCmd,
@@ -3317,144 +3294,6 @@ TestlocaleCmd(
 /*
  *----------------------------------------------------------------------
  *
- * TestMathFunc --
- *
- *	This is a user-defined math procedure to test out math procedures
- *	with no arguments.
- *
- * Results:
- *	A normal Tcl completion code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-static int
-TestMathFunc(
-    ClientData clientData,	/* Integer value to return. */
-    Tcl_Interp *interp,		/* Not used. */
-    Tcl_Value *args,		/* Not used. */
-    Tcl_Value *resultPtr)	/* Where to store result. */
-{
-    resultPtr->type = TCL_INT;
-    resultPtr->intValue = PTR2INT(clientData);
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestMathFunc2 --
- *
- *	This is a user-defined math procedure to test out math procedures
- *	that do have arguments, in this case 2.
- *
- * Results:
- *	A normal Tcl completion code.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-static int
-TestMathFunc2(
-    ClientData clientData,	/* Integer value to return. */
-    Tcl_Interp *interp,		/* Used to report errors. */
-    Tcl_Value *args,		/* Points to an array of two Tcl_Value structs
-				 * for the two arguments. */
-    Tcl_Value *resultPtr)	/* Where to store the result. */
-{
-    int result = TCL_OK;
-
-    /*
-     * Return the maximum of the two arguments with the correct type.
-     */
-
-    if (args[0].type == TCL_INT) {
-	int i0 = args[0].intValue;
-
-	if (args[1].type == TCL_INT) {
-	    int i1 = args[1].intValue;
-
-	    resultPtr->type = TCL_INT;
-	    resultPtr->intValue = ((i0 > i1)? i0 : i1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d0 = i0;
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    Tcl_WideInt w0 = Tcl_LongAsWide(i0);
-	    Tcl_WideInt w1 = args[1].wideValue;
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
-	    result = TCL_ERROR;
-	}
-    } else if (args[0].type == TCL_DOUBLE) {
-	double d0 = args[0].doubleValue;
-
-	if (args[1].type == TCL_INT) {
-	    double d1 = args[1].intValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    double d1 = Tcl_WideAsDouble(args[1].wideValue);
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
-	    result = TCL_ERROR;
-	}
-    } else if (args[0].type == TCL_WIDE_INT) {
-	Tcl_WideInt w0 = args[0].wideValue;
-
-	if (args[1].type == TCL_INT) {
-	    Tcl_WideInt w1 = Tcl_LongAsWide(args[1].intValue);
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else if (args[1].type == TCL_DOUBLE) {
-	    double d0 = Tcl_WideAsDouble(w0);
-	    double d1 = args[1].doubleValue;
-
-	    resultPtr->type = TCL_DOUBLE;
-	    resultPtr->doubleValue = ((d0 > d1)? d0 : d1);
-	} else if (args[1].type == TCL_WIDE_INT) {
-	    Tcl_WideInt w1 = args[1].wideValue;
-
-	    resultPtr->type = TCL_WIDE_INT;
-	    resultPtr->wideValue = ((w0 > w1)? w0 : w1);
-	} else {
-	    Tcl_SetResult(interp, "T3: wrong type for arg 2", TCL_STATIC);
-	    result = TCL_ERROR;
-	}
-    } else {
-	Tcl_SetResult(interp, "T3: wrong type for arg 1", TCL_STATIC);
-	result = TCL_ERROR;
-    }
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * CleanupTestSetassocdataTests --
  *
  *	This function is called when an interpreter is deleted to clean
@@ -5068,141 +4907,6 @@ Testset2Cmd(
     }
 }
 
-#ifndef TCL_NO_DEPRECATED
-/*
- *----------------------------------------------------------------------
- *
- * TestsaveresultCmd --
- *
- *	Implements the "testsaveresult" cmd that is used when testing the
- *	Tcl_SaveResult, Tcl_RestoreResult, and Tcl_DiscardResult interfaces.
- *
- * Results:
- *	A standard Tcl result.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-	/* ARGSUSED */
-static int
-TestsaveresultCmd(
-    ClientData dummy,		/* Not used. */
-    register Tcl_Interp *interp,/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* The argument objects. */
-{
-    Interp* iPtr = (Interp*) interp;
-    int discard, result, index;
-    Tcl_SavedResult state;
-    Tcl_Obj *objPtr;
-    static const char *const optionStrings[] = {
-	"append", "dynamic", "free", "object", "small", NULL
-    };
-    enum options {
-	RESULT_APPEND, RESULT_DYNAMIC, RESULT_FREE, RESULT_OBJECT, RESULT_SMALL
-    };
-
-    /*
-     * Parse arguments
-     */
-
-    if (objc != 4) {
-	Tcl_WrongNumArgs(interp, 1, objv, "type script discard");
-	return TCL_ERROR;
-    }
-    if (Tcl_GetIndexFromObj(interp, objv[1], optionStrings, "option", 0,
-	    &index) != TCL_OK) {
-	return TCL_ERROR;
-    }
-    if (Tcl_GetBooleanFromObj(interp, objv[3], &discard) != TCL_OK) {
-	return TCL_ERROR;
-    }
-
-    objPtr = NULL;		/* Lint. */
-    switch ((enum options) index) {
-    case RESULT_SMALL:
-	Tcl_SetResult(interp, "small result", TCL_VOLATILE);
-	break;
-    case RESULT_APPEND:
-	Tcl_AppendResult(interp, "append result", NULL);
-	break;
-    case RESULT_FREE: {
-	char *buf = ckalloc(200);
-
-	strcpy(buf, "free result");
-	Tcl_SetResult(interp, buf, TCL_DYNAMIC);
-	break;
-    }
-    case RESULT_DYNAMIC:
-	Tcl_SetResult(interp, (char *)"dynamic result", TestsaveresultFree);
-	break;
-    case RESULT_OBJECT:
-	objPtr = Tcl_NewStringObj("object result", -1);
-	Tcl_SetObjResult(interp, objPtr);
-	break;
-    }
-
-    freeCount = 0;
-    Tcl_SaveResult(interp, &state);
-
-    if (((enum options) index) == RESULT_OBJECT) {
-	result = Tcl_EvalObjEx(interp, objv[2], 0);
-    } else {
-	result = Tcl_Eval(interp, Tcl_GetString(objv[2]));
-    }
-
-    if (discard) {
-	Tcl_DiscardResult(&state);
-    } else {
-	Tcl_RestoreResult(interp, &state);
-	result = TCL_OK;
-    }
-
-    switch ((enum options) index) {
-    case RESULT_DYNAMIC: {
-	int present = iPtr->freeProc == TestsaveresultFree;
-	int called = freeCount;
-
-	Tcl_AppendElement(interp, called ? "called" : "notCalled");
-	Tcl_AppendElement(interp, present ? "present" : "missing");
-	break;
-    }
-    case RESULT_OBJECT:
-	Tcl_AppendElement(interp, Tcl_GetObjResult(interp) == objPtr
-		? "same" : "different");
-	break;
-    default:
-	break;
-    }
-    return result;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TestsaveresultFree --
- *
- *	Special purpose freeProc used by TestsaveresultCmd.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Increments the freeCount.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-TestsaveresultFree(
-    char *blockPtr)
-{
-    freeCount++;
-}
-#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
