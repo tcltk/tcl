@@ -2807,7 +2807,7 @@ merror0:
 		    stream.opaque = Z_NULL;
 		    stream.avail_in = z->nbytecompr;
 		    if (z->isenc) {
-			unsigned int j;    
+			unsigned int j;
 			stream.avail_in -= 12;
 			cbuf = (unsigned char *)
 			    Tcl_AttemptAlloc(stream.avail_in);
@@ -3734,7 +3734,6 @@ Zip_FSFilesystemPathTypeProc(Tcl_Obj *pathPtr)
     return Tcl_NewStringObj("zip", -1);
 }
 
-#ifndef ANDROID
 
 /*
  *-------------------------------------------------------------------------
@@ -3762,6 +3761,14 @@ static int
 Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	       Tcl_FSUnloadFileProc **unloadProcPtr, int flags)
 {
+#ifdef ANDROID
+	/*
+	 * Force loadFileProc to native implementation since the
+	 * package manger already extracted the shared libraries
+	 * from the APK at install time.
+	 */
+    return tclNativeFilesystem.loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
+#else
     Tcl_FSLoadFileProc2 *loadFileProc;
     Tcl_Obj *altPath = NULL;
     int ret = -1;
@@ -3813,8 +3820,8 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	Tcl_DecrRefCount(altPath);
     }
     return ret;
-}
 #endif
+}
 
 
 /*
@@ -3852,11 +3859,7 @@ const Tcl_Filesystem zipfsFilesystem = {
     NULL, /* renameFileProc */
     NULL, /* copyDirectoryProc */
     NULL, /* lstatProc */
-#ifdef ANDROID
-    NULL, /* loadFileProc */
-#else
     (Tcl_FSLoadFileProc *) Zip_FSLoadFile,
-#endif
     NULL, /* getCwdProc */
     Zip_FSChdirProc,
 };
@@ -3921,14 +3924,6 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 	Tcl_MutexLock(&ZipFSMutex);
 	Tcl_ConditionWait(&ZipFSCond, &ZipFSMutex, &t);
 	Tcl_MutexUnlock(&ZipFSMutex);
-#endif
-#ifdef ANDROID
-	/*
-	 * Force loadFileProc to native implementation since the
-	 * package manger already extracted the shared libraries
-	 * from the APK at install time.
-	 */ 
-	zipfsFilesystem.loadFileProc = tclNativeFilesystem.loadFileProc;
 #endif
 	Tcl_FSRegister(NULL, &zipfsFilesystem);
 	Tcl_InitHashTable(&ZipFS.fileHash, TCL_STRING_KEYS);
