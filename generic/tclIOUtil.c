@@ -191,9 +191,7 @@ const Tcl_Filesystem tclNativeFilesystem = {
     TclpObjChdir
 };
 
-#ifdef ZIPFS_IN_TCL
 MODULE_SCOPE Tcl_Filesystem zipfsFilesystem;
-#endif
 
 /*
  * Define the tail of the linked list. Note that for unconventional uses of
@@ -1415,7 +1413,6 @@ TclFSNormalizeToUniquePath(
 
     Claim();
     for (fsRecPtr=firstFsRecPtr; fsRecPtr!=NULL; fsRecPtr=fsRecPtr->nextPtr) {
-#ifdef ZIPFS_IN_TCL
 	if (fsRecPtr->fsPtr == &zipfsFilesystem) {
 	    ClientData clientData = NULL;
 	    /*
@@ -1432,7 +1429,6 @@ TclFSNormalizeToUniquePath(
 	    }
 	    continue;
 	}
-#endif
 	if (fsRecPtr->fsPtr != &tclNativeFilesystem) {
 	    continue;
 	}
@@ -1457,11 +1453,9 @@ TclFSNormalizeToUniquePath(
 	if (fsRecPtr->fsPtr == &tclNativeFilesystem) {
 	    continue;
 	}
-#ifdef ZIPFS_IN_TCL
 	if (fsRecPtr->fsPtr == &zipfsFilesystem) {
 	    continue;
 	}
-#endif
 
 	if (fsRecPtr->fsPtr->normalizePathProc != NULL) {
 	    startAt = fsRecPtr->fsPtr->normalizePathProc(interp, pathPtr,

@@ -1031,7 +1031,7 @@ error:
 /*
  *-------------------------------------------------------------------------
  *
- * Zipfs_Mount --
+ * Tclzipfs_Mount --
  *
  *      This procedure is invoked to mount a given ZIP archive file on
  *	a given mountpoint with optional ZIP password.
@@ -1047,7 +1047,7 @@ error:
  */
 
 int
-Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
+Tclzipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	    const char *passwd)
 {
     char *realname, *p;
@@ -1404,7 +1404,7 @@ nextent:
 /*
  *-------------------------------------------------------------------------
  *
- * Zipfs_Unmount --
+ * Tclzipfs_Unmount --
  *
  *      This procedure is invoked to unmount a given ZIP archive.
  *
@@ -1418,7 +1418,7 @@ nextent:
  */
 
 int
-Zipfs_Unmount(Tcl_Interp *interp, const char *zipname)
+Tclzipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
     char *realname;
     ZipFile *zf;
@@ -1509,7 +1509,7 @@ ZipFSMountCmd(ClientData clientData, Tcl_Interp *interp,
 			 " ?zipfile ?mountpoint? ?password???\"", 0);
 	return TCL_ERROR;
     }
-    return Zipfs_Mount(interp, (argc > 1) ? argv[1] : NULL,
+    return Tclzipfs_Mount(interp, (argc > 1) ? argv[1] : NULL,
 		       (argc > 2) ? argv[2] : NULL,
 		       (argc > 3) ? argv[3] : NULL);
 }
@@ -1539,7 +1539,7 @@ ZipFSUnmountCmd(ClientData clientData, Tcl_Interp *interp,
 			 " zipfile\"", (char *) NULL);
 	return TCL_ERROR;
     }
-    return Zipfs_Unmount(interp, argv[1]);
+    return Tclzipfs_Unmount(interp, argv[1]);
 }
 
 /*
@@ -3870,7 +3870,7 @@ const Tcl_Filesystem zipfsFilesystem = {
 /*
  *-------------------------------------------------------------------------
  *
- * Zipfs_doInit --
+ * doInit --
  *
  *	Perform per interpreter initialization of this module.
  *
@@ -3885,7 +3885,7 @@ const Tcl_Filesystem zipfsFilesystem = {
  */
 
 static int
-Zipfs_doInit(Tcl_Interp *interp, int safe)
+doInit(Tcl_Interp *interp, int safe)
 {
 #ifdef HAVE_ZLIB
     static const char findproc[] =
@@ -3929,14 +3929,10 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 	Tcl_InitHashTable(&ZipFS.fileHash, TCL_STRING_KEYS);
 	Tcl_InitHashTable(&ZipFS.zipHash, TCL_STRING_KEYS);
 	ZipFS.initialized = ZipFS.idCount = 1;
-#if defined(ZIPFS_IN_TCL) || defined(ZIPFS_IN_TK)
-	Tcl_StaticPackage(interp, "zipfs", Zipfs_Init, Zipfs_SafeInit);
-#endif
+	Tcl_StaticPackage(interp, "zipfs", Tclzipfs_Init, Tclzipfs_SafeInit);
     }
     Unlock();
-#if !defined(ZIPFS_IN_TCL) && !defined(ZIPFS_IN_TK)
     Tcl_PkgProvide(interp, "zipfs", "1.0");
-#endif
     if (!safe) {
 	Tcl_CreateCommand(interp, "::zipfs::mount", ZipFSMountCmd, 0, 0);
 	Tcl_CreateCommand(interp, "::zipfs::unmount", ZipFSUnmountCmd, 0, 0);
@@ -3964,7 +3960,7 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 /*
  *-------------------------------------------------------------------------
  *
- * Zipfs_Init, Zipfs_SafeInit --
+ * Tclzipfs_Init, Tclzipfs_SafeInit --
  *
  *	These functions are invoked to perform per interpreter initialization
  *	of this module.
@@ -3980,15 +3976,15 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
  */
 
 int
-Zipfs_Init(Tcl_Interp *interp)
+Tclzipfs_Init(Tcl_Interp *interp)
 {
-    return Zipfs_doInit(interp, 0);
+    return doInit(interp, 0);
 }
 
 int
-Zipfs_SafeInit(Tcl_Interp *interp)
+Tclzipfs_SafeInit(Tcl_Interp *interp)
 {
-    return Zipfs_doInit(interp, 1);
+    return doInit(interp, 1);
 }
 
 #ifndef HAVE_ZLIB
@@ -3996,7 +3992,7 @@ Zipfs_SafeInit(Tcl_Interp *interp)
 /*
  *-------------------------------------------------------------------------
  *
- * Zipfs_Mount, Zipfs_Unmount --
+ * Tclzipfs_Mount, Tclzipfs_Unmount --
  *
  *	Dummy version when no ZLIB support available.
  *
@@ -4004,16 +4000,16 @@ Zipfs_SafeInit(Tcl_Interp *interp)
  */
 
 int
-Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
+Tclzipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	    const char *passwd)
 {
-    return Zipfs_doInit(interp, 1);
+    return doInit(interp, 1);
 }
 
 int
-Zipfs_Unmount(Tcl_Interp *interp, const char *zipname)
+Tclzipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
-    return Zipfs_doInit(interp, 1);
+    return doInit(interp, 1);
 }
 
 #endif
