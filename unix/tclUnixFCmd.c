@@ -465,9 +465,6 @@ DoCopyFile(
 				/* Used to determine filetype. */
 {
     Tcl_StatBuf dstStatBuf;
-#ifdef ANDROID
-    int ret;
-#endif
 
     if (S_ISDIR(statBufPtr->st_mode)) {
 	errno = EISDIR;
@@ -523,15 +520,7 @@ DoCopyFile(
 	if (mkfifo(dst, statBufPtr->st_mode) < 0) {	/* INTL: Native. */
 	    return TCL_ERROR;
 	}
-#ifdef ANDROID
-	ret = CopyFileAtts(src, dst, statBufPtr);
-	if (ret != TCL_OK && errno == EPERM) {
-	    ret = TCL_OK;
-	}
-	return ret;
-#else
 	return CopyFileAtts(src, dst, statBufPtr);
-#endif
     default:
 	return TclUnixCopyFile(src, dst, statBufPtr, 0);
     }
@@ -640,11 +629,6 @@ TclUnixCopyFile(
 	return TCL_ERROR;
     }
     if (!dontCopyAtts && CopyFileAtts(src, dst, statBufPtr) == TCL_ERROR) {
-#ifdef ANDROID
-	if (errno == EPERM) {
-	    return TCL_OK;
-	}
-#endif
 	/*
 	 * The copy succeeded, but setting the permissions failed, so be in a
 	 * consistent state, we remove the file that was created by the copy.
@@ -1219,11 +1203,6 @@ TraversalCopy(
 		Tcl_DStringValue(dstPtr), statBufPtr) == TCL_OK) {
 	    return TCL_OK;
 	}
-#ifdef ANDROID
-	if (errno == EPERM) {
-	    return TCL_OK;
-	}
-#endif
 	break;
     }
 

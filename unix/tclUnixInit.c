@@ -583,14 +583,10 @@ TclpInitLibraryPath(
 void
 TclpSetInitialEncodings(void)
 {
-#ifdef ANDROID
-    Tcl_SetSystemEncoding(NULL, "utf-8");
-#else
     Tcl_DString encodingName;
     Tcl_SetSystemEncoding(NULL,
 	    Tcl_GetEncodingNameFromEnvironment(&encodingName));
     Tcl_DStringFree(&encodingName);
-#endif
 }
 
 void
