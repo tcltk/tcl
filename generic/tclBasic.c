@@ -9010,21 +9010,6 @@ NRStackBottom(
     NRE_stack *this = eePtr->NRStack;
     NRE_stack *prev = data[0];
 
-    if (!prev) {
-        /* empty stack, free it */
-        ckfree(this);
-        eePtr->NRStack = NULL;
-        TOP_CB(interp) = NULL;
-        return result;
-    }
-    
-    /*
-     * Go back to the previous stack.
-     */
-
-    eePtr->NRStack = prev;
-    eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
-    
     /*
      * Keep this stack in reserve. If this one had a successor, free that one:
      * we always keep just one in reserve. 
@@ -9034,7 +9019,17 @@ NRStackBottom(
         ckfree (this->next);
         this->next = NULL;
     }
-
+    
+    if (prev) {
+        /* Go back to the previous stack */
+        eePtr->NRStack = prev;
+        eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
+    } else {
+        /* If the stack is empty, free everything */
+        ckfree(this);
+        eePtr->NRStack = NULL;
+        TOP_CB(interp) = NULL;
+    }
     return result;
 }
 
@@ -9048,7 +9043,6 @@ TclNewCallback(
 
     if (eePtr->callbackPtr &&
             (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
-        stackReady:
         return ++eePtr->callbackPtr;
     }
 
@@ -9062,14 +9056,16 @@ TclNewCallback(
     } else {
         this = (NRE_stack *) ckalloc(sizeof(NRE_stack));
         this->next = NULL;
+        if (orig) {
+            orig->next = this;
+        }
     }
     eePtr->NRStack = this;
     eePtr->callbackPtr = &this->items[-1];
     TclNRAddCallback(interp, NRStackBottom, orig, NULL, NULL, NULL);
 
     NRE_ASSERT(eePtr->callbackPtr == &this->items[0]);
-
-    goto stackReady;
+    return ++eePtr->callbackPtr;
 }
 
 NRE_callback *

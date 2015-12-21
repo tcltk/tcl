@@ -335,6 +335,14 @@ Tcl_SetResult(
 {
 
     Tcl_SetObjResult(interp, Tcl_NewStringObj(result, -1));
+
+    if (freeProc) {
+	if (freeProc == TCL_DYNAMIC) {
+	    ckfree(result);
+	} else {
+	    freeProc(result);
+	}
+    }
 }
 
 /*
