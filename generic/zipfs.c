@@ -24,7 +24,7 @@
 #endif
 #include "tclInt.h"
 #include "tclFileSystem.h"
-#include "zipfs.h"
+#include "tclZipfs.h"
 
 #ifdef HAVE_ZLIB
 
@@ -109,7 +109,7 @@
 
 #if defined(_WIN32) || defined(_WIN64)
 #define HAS_DRIVES 1
-static CONST char drvletters[] =
+static const char drvletters[] =
     "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
 #else
 #define HAS_DRIVES 0
@@ -223,7 +223,7 @@ static struct {
  * For password rotation.
  */
 
-static CONST char pwrot[16] = {
+static const char pwrot[16] = {
     0x00, 0x80, 0x40, 0xc0, 0x20, 0xa0, 0x60, 0xe0,
     0x10, 0x90, 0x50, 0xd0, 0x30, 0xb0, 0x70, 0xf0
 };
@@ -232,7 +232,7 @@ static CONST char pwrot[16] = {
  * Table to compute CRC32.
  */
 
-static CONST unsigned int crc32tab[256] = {
+static const unsigned int crc32tab[256] = {
     0x00000000, 0x77073096, 0xee0e612c, 0x990951ba, 0x076dc419,
     0x706af48f, 0xe963a535, 0x9e6495a3, 0x0edb8832, 0x79dcb8a4,
     0xe0d5e91e, 0x97d2d988, 0x09b64c2b, 0x7eb17cbd, 0xe7b82d07,
@@ -458,10 +458,10 @@ ToDosDate(time_t when)
  */
 
 static int
-CountSlashes(CONST char *string)
+CountSlashes(const char *string)
 {
     int count = 0;
-    CONST char *p = string;
+    const char *p = string;
 
     while (*p != '\0') {
 	if (*p == '/') {
@@ -491,7 +491,7 @@ CountSlashes(CONST char *string)
  */
 
 static char *
-CanonicalPath(CONST char *root, CONST char *tail, Tcl_DString *dsPtr)
+CanonicalPath(const char *root, const char *tail, Tcl_DString *dsPtr)
 {
     char *path;
     int i, j, c, isunc = 0;
@@ -598,7 +598,7 @@ CanonicalPath(CONST char *root, CONST char *tail, Tcl_DString *dsPtr)
  */
 
 static char *
-AbsolutePath(CONST char *path,
+AbsolutePath(const char *path,
 #if HAS_DRIVES
 	     int *drvPtr,
 #endif
@@ -832,7 +832,7 @@ ZipFSCloseArchive(Tcl_Interp *interp, ZipFile *zf)
  */
 
 static int
-ZipFSOpenArchive(Tcl_Interp *interp, CONST char *zipname, int needZip,
+ZipFSOpenArchive(Tcl_Interp *interp, const char *zipname, int needZip,
 		 ZipFile *zf)
 {
     int i;
@@ -1049,8 +1049,8 @@ error:
  */
 
 int
-Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
-	    CONST char *passwd)
+Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
+	    const char *passwd)
 {
     char *realname, *p;
     int i, pwlen, isNew;
@@ -1420,7 +1420,7 @@ nextent:
  */
 
 int
-Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname)
+Zipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
     char *realname;
     ZipFile *zf;
@@ -1504,7 +1504,7 @@ done:
 
 static int
 ZipFSMountCmd(ClientData clientData, Tcl_Interp *interp,
-	      int argc, CONST char **argv)
+	      int argc, const char **argv)
 {
     if (argc > 4) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -1534,7 +1534,7 @@ ZipFSMountCmd(ClientData clientData, Tcl_Interp *interp,
 
 static int
 ZipFSUnmountCmd(ClientData clientData, Tcl_Interp *interp,
-		int argc, CONST char **argv)
+		int argc, const char **argv)
 {
     if (argc != 2) {
 	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
@@ -1563,7 +1563,7 @@ ZipFSUnmountCmd(ClientData clientData, Tcl_Interp *interp,
 
 static int
 ZipFSMkKeyCmd(ClientData clientData, Tcl_Interp *interp,
-	      int argc, CONST char **argv)
+	      int argc, const char **argv)
 {
     int len, i = 0;
     char pwbuf[264];
@@ -1621,15 +1621,15 @@ ZipFSMkKeyCmd(ClientData clientData, Tcl_Interp *interp,
  */
 
 static int
-ZipAddFile(Tcl_Interp *interp, CONST char *path, CONST char *name,
-	   Tcl_Channel out, CONST char *passwd,
+ZipAddFile(Tcl_Interp *interp, const char *path, const char *name,
+	   Tcl_Channel out, const char *passwd,
 	   char *buf, int bufsize, Tcl_HashTable *fileHash)
 {
     Tcl_Channel in;
     Tcl_HashEntry *hPtr;
     ZipEntry *z;
     z_stream stream;
-    CONST char *zpath;
+    const char *zpath;
     int nbyte, nbytecompr, len, crc, flush, pos[3], zpathlen, olen;
     int mtime = 0, isNew, align = 0, cmeth;
     unsigned long keys[3], keys0[3];
@@ -1947,11 +1947,11 @@ seekErr:
 
 static int
 ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
-		   int isImg, int argc, CONST char **argv)
+		   int isImg, int argc, const char **argv)
 {
     Tcl_Channel out;
     int len = 0, pwlen = 0, slen = 0, i, count, ret = TCL_ERROR, largc, pos[3];
-    CONST char **largv;
+    const char **largv;
     Tcl_DString ds;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
@@ -2056,7 +2056,7 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 	slen = strlen(argv[3]);
     }
     for (i = 0; i < largc; i++) {
-	CONST char *name = largv[i];
+	const char *name = largv[i];
 
 	if (slen > 0) {
 	    len = strlen(name);
@@ -2080,7 +2080,7 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
     pos[1] = Tcl_Tell(out);
     count = 0;
     for (i = 0; i < largc; i++) {
-	CONST char *name = largv[i];
+	const char *name = largv[i];
 
 	if (slen > 0) {
 	    len = strlen(name);
@@ -2175,7 +2175,7 @@ done:
 
 static int
 ZipFSMkZipCmd(ClientData clientData, Tcl_Interp *interp,
-	      int argc, CONST char **argv)
+	      int argc, const char **argv)
 {
     return ZipFSMkZipOrImgCmd(clientData, interp, 0, argc, argv);
 }
@@ -2199,7 +2199,7 @@ ZipFSMkZipCmd(ClientData clientData, Tcl_Interp *interp,
 
 static int
 ZipFSMkImgCmd(ClientData clientData, Tcl_Interp *interp,
-	      int argc, CONST char **argv)
+	      int argc, const char **argv)
 {
     return ZipFSMkZipOrImgCmd(clientData, interp, 1, argc, argv);
 }
@@ -2224,7 +2224,7 @@ ZipFSMkImgCmd(ClientData clientData, Tcl_Interp *interp,
 
 static int
 ZipFSExistsObjCmd(ClientData clientData, Tcl_Interp *interp,
-		  int objc, Tcl_Obj *CONST objv[])
+		  int objc, Tcl_Obj *const objv[])
 {
     char *filename;
     int exists;
@@ -2262,7 +2262,7 @@ ZipFSExistsObjCmd(ClientData clientData, Tcl_Interp *interp,
 
 static int
 ZipFSInfoObjCmd(ClientData clientData, Tcl_Interp *interp,
-		int objc, Tcl_Obj *CONST objv[])
+		int objc, Tcl_Obj *const objv[])
 {
     char *filename;
     ZipEntry *z;
@@ -2307,7 +2307,7 @@ ZipFSInfoObjCmd(ClientData clientData, Tcl_Interp *interp,
 
 static int
 ZipFSListObjCmd(ClientData clientData, Tcl_Interp *interp,
-		int objc, Tcl_Obj *CONST objv[])
+		int objc, Tcl_Obj *const objv[])
 {
     char *pattern = NULL;
     Tcl_RegExp regexp = NULL;
@@ -2496,7 +2496,7 @@ ZipChannelRead(ClientData instanceData, char *buf, int toRead, int *errloc)
  */
 
 static int
-ZipChannelWrite(ClientData instanceData, CONST char *buf,
+ZipChannelWrite(ClientData instanceData, const char *buf,
 		int toWrite, int *errloc)
 {
     ZipChannel *info = (ZipChannel *) instanceData;
@@ -3176,7 +3176,7 @@ Zip_FSFilesystemSeparatorProc(Tcl_Obj *pathPtr)
 
 static int
 Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
-			   Tcl_Obj *pathPtr, CONST char *pattern,
+			   Tcl_Obj *pathPtr, const char *pattern,
 			   Tcl_GlobTypeData *types)
 {
     Tcl_HashEntry *hPtr;
@@ -3606,10 +3606,10 @@ Zip_FSChdirProc(Tcl_Obj *pathPtr)
  *-------------------------------------------------------------------------
  */
 
-static CONST char *CONST86 *
+static const char *const *
 Zip_FSFileAttrStringsProc(Tcl_Obj *pathPtr, Tcl_Obj** objPtrRef)
 {
-    static CONST char *attrs[] = {
+    static const char *const attrs[] = {
 	"-uncompsize",
 	"-compsize",
 	"-offset",
@@ -3821,7 +3821,9 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
  * Define the ZIP filesystem dispatch table.
  */
 
-Tcl_Filesystem zipfsFilesystem = {
+MODULE_SCOPE const Tcl_Filesystem zipfsFilesystem;
+
+const Tcl_Filesystem zipfsFilesystem = {
     "zipfs",
     sizeof (Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,
@@ -3883,7 +3885,7 @@ static int
 Zipfs_doInit(Tcl_Interp *interp, int safe)
 {
 #ifdef HAVE_ZLIB
-    static CONST char findproc[] =
+    static const char findproc[] =
 	"proc ::zipfs::find dir {\n"
 	" set result {}\n"
 	" if {[catch {glob -directory $dir -tails -nocomplain * .*} list]} {\n"
@@ -4007,14 +4009,14 @@ Zipfs_SafeInit(Tcl_Interp *interp)
  */
 
 int
-Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname, CONST char *mntpt,
-	    CONST char *passwd)
+Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
+	    const char *passwd)
 {
     return Zipfs_doInit(interp, 1);
 }
 
 int
-Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname)
+Zipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
     return Zipfs_doInit(interp, 1);
 }

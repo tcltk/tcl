@@ -45,9 +45,9 @@ extern "C" {
 #endif
 #endif
 
-ZIPFSAPI int Zipfs_Mount(Tcl_Interp *interp, CONST char *zipname,
-		       CONST char *mntpt, CONST char *passwd);
-ZIPFSAPI int Zipfs_Unmount(Tcl_Interp *interp, CONST char *zipname);
+ZIPFSAPI int Zipfs_Mount(Tcl_Interp *interp, const char *zipname,
+		       const char *mntpt, const char *passwd);
+ZIPFSAPI int Zipfs_Unmount(Tcl_Interp *interp, const char *zipname);
 ZIPFSAPI int Zipfs_Init(Tcl_Interp *interp);
 ZIPFSAPI int Zipfs_SafeInit(Tcl_Interp *interp);
 
