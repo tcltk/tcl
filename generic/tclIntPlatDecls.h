@@ -73,8 +73,10 @@ EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
 /* 10 */
 EXTERN Tcl_DirEntry *	TclpReaddir(DIR *dir);
-/* Slot 11 is reserved */
-/* Slot 12 is reserved */
+/* 11 */
+EXTERN struct tm *	TclpLocaltime_unix(const time_t *clock);
+/* 12 */
+EXTERN struct tm *	TclpGmtime_unix(const time_t *clock);
 /* 13 */
 EXTERN char *		TclpInetNtoa(struct in_addr addr);
 /* 14 */
@@ -205,8 +207,10 @@ EXTERN int		TclUnixWaitForFile(int fd, int mask, int timeout);
 EXTERN TclFile		TclpCreateTempFile(const char *contents);
 /* 10 */
 EXTERN Tcl_DirEntry *	TclpReaddir(DIR *dir);
-/* Slot 11 is reserved */
-/* Slot 12 is reserved */
+/* 11 */
+EXTERN struct tm *	TclpLocaltime_unix(const time_t *clock);
+/* 12 */
+EXTERN struct tm *	TclpGmtime_unix(const time_t *clock);
 /* 13 */
 EXTERN char *		TclpInetNtoa(struct in_addr addr);
 /* 14 */
@@ -266,8 +270,8 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
     TclFile (*tclpCreateTempFile) (const char *contents); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) (DIR *dir); /* 10 */
-    void (*reserved11)(void);
-    void (*reserved12)(void);
+    struct tm * (*tclpLocaltime_unix) (const time_t *clock); /* 11 */
+    struct tm * (*tclpGmtime_unix) (const time_t *clock); /* 12 */
     char * (*tclpInetNtoa) (struct in_addr addr); /* 13 */
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
     void (*reserved15)(void);
@@ -332,8 +336,8 @@ typedef struct TclIntPlatStubs {
     int (*tclUnixWaitForFile) (int fd, int mask, int timeout); /* 8 */
     TclFile (*tclpCreateTempFile) (const char *contents); /* 9 */
     Tcl_DirEntry * (*tclpReaddir) (DIR *dir); /* 10 */
-    void (*reserved11)(void);
-    void (*reserved12)(void);
+    struct tm * (*tclpLocaltime_unix) (const time_t *clock); /* 11 */
+    struct tm * (*tclpGmtime_unix) (const time_t *clock); /* 12 */
     char * (*tclpInetNtoa) (struct in_addr addr); /* 13 */
     int (*tclUnixCopyFile) (const char *src, const char *dst, const Tcl_StatBuf *statBufPtr, int dontCopyAtts); /* 14 */
     int (*tclMacOSXGetFileAttribute) (Tcl_Interp *interp, int objIndex, Tcl_Obj *fileName, Tcl_Obj **attributePtrPtr); /* 15 */
@@ -389,8 +393,10 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
 #define TclpReaddir \
 	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
-/* Slot 11 is reserved */
-/* Slot 12 is reserved */
+#define TclpLocaltime_unix \
+	(tclIntPlatStubsPtr->tclpLocaltime_unix) /* 11 */
+#define TclpGmtime_unix \
+	(tclIntPlatStubsPtr->tclpGmtime_unix) /* 12 */
 #define TclpInetNtoa \
 	(tclIntPlatStubsPtr->tclpInetNtoa) /* 13 */
 #define TclUnixCopyFile \
@@ -498,8 +504,10 @@ extern const TclIntPlatStubs *tclIntPlatStubsPtr;
 	(tclIntPlatStubsPtr->tclpCreateTempFile) /* 9 */
 #define TclpReaddir \
 	(tclIntPlatStubsPtr->tclpReaddir) /* 10 */
-/* Slot 11 is reserved */
-/* Slot 12 is reserved */
+#define TclpLocaltime_unix \
+	(tclIntPlatStubsPtr->tclpLocaltime_unix) /* 11 */
+#define TclpGmtime_unix \
+	(tclIntPlatStubsPtr->tclpGmtime_unix) /* 12 */
 #define TclpInetNtoa \
 	(tclIntPlatStubsPtr->tclpInetNtoa) /* 13 */
 #define TclUnixCopyFile \

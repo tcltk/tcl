@@ -288,6 +288,10 @@ static int formatInt(char *buffer, int n){
 #define TclFormatInt (int(*)(char *, long))formatInt
 
 #endif
+
+#else /* UNIX and MAC */
+#   define TclpLocaltime_unix TclpLocaltime
+#   define TclpGmtime_unix TclpGmtime
 #endif
 
 /*
@@ -437,7 +441,7 @@ static const TclIntStubs tclIntStubs = {
     Tcl_RemoveInterpResolvers, /* 130 */
     Tcl_SetNamespaceResolvers, /* 131 */
     TclpHasSockets, /* 132 */
-    0, /* 133 */
+    TclpGetDate, /* 133 */
     0, /* 134 */
     0, /* 135 */
     0, /* 136 */
@@ -486,8 +490,8 @@ static const TclIntStubs tclIntStubs = {
     Tcl_GetStartupScript, /* 179 */
     0, /* 180 */
     0, /* 181 */
-    0, /* 182 */
-    0, /* 183 */
+    TclpLocaltime, /* 182 */
+    TclpGmtime, /* 183 */
     0, /* 184 */
     0, /* 185 */
     0, /* 186 */
@@ -573,8 +577,8 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    0, /* 11 */
-    0, /* 12 */
+    TclpLocaltime_unix, /* 11 */
+    TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
     0, /* 15 */
@@ -639,8 +643,8 @@ static const TclIntPlatStubs tclIntPlatStubs = {
     TclUnixWaitForFile, /* 8 */
     TclpCreateTempFile, /* 9 */
     TclpReaddir, /* 10 */
-    0, /* 11 */
-    0, /* 12 */
+    TclpLocaltime_unix, /* 11 */
+    TclpGmtime_unix, /* 12 */
     TclpInetNtoa, /* 13 */
     TclUnixCopyFile, /* 14 */
     TclMacOSXGetFileAttribute, /* 15 */

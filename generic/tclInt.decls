@@ -532,10 +532,9 @@ declare 131 {
 declare 132 {
     int TclpHasSockets(Tcl_Interp *interp)
 }
-# Removed in androwish
-# declare 133 {
-#    struct tm *TclpGetDate(const time_t *time, int useGMT)
-#}
+declare 133 {
+    struct tm *TclpGetDate(const time_t *time, int useGMT)
+}
 # Removed in 8.5
 #declare 134 {
 #    size_t TclpStrftime(char *s, size_t maxsize, const char *format,
@@ -751,14 +750,12 @@ declare 179 {
 
 # TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
-# Removed in androwish
-#declare 182 {
-#     struct tm *TclpLocaltime(const time_t *clock)
-#}
-# Removed in androwish
-#declare 183 {
-#     struct tm *TclpGmtime(const time_t *clock)
-#}
+declare 182 {
+     struct tm *TclpLocaltime(const time_t *clock)
+}
+declare 183 {
+     struct tm *TclpGmtime(const time_t *clock)
+}
 
 # For the new "Thread Storage" subsystem.
 
@@ -1207,14 +1204,12 @@ declare 10 unix {
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
 # generic Stubs
-# Removed in androwish
-#declare 11 unix {
-#    struct tm *TclpLocaltime_unix(const time_t *clock)
-#}
-# Removed in androwish
-#declare 12 unix {
-#    struct tm *TclpGmtime_unix(const time_t *clock)
-#}
+declare 11 unix {
+    struct tm *TclpLocaltime_unix(const time_t *clock)
+}
+declare 12 unix {
+    struct tm *TclpGmtime_unix(const time_t *clock)
+}
 declare 13 unix {
     char *TclpInetNtoa(struct in_addr addr)
 }
