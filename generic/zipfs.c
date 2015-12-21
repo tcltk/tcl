@@ -2561,19 +2561,19 @@ ZipChannelSeek(ClientData instanceData, long offset, int mode, int *errloc)
 	*errloc = EINVAL;
 	return -1;
     }
-    if (info->iswr) {
-	if (offset > info->nmax) {
-	    *errloc = EINVAL;
-	    return -1;
-	}
-	if (offset > info->nbyte) {
-	    info->nbyte = offset;
-	}
-    } else if (offset > info->nbyte) {
+    if (offset < 0) {
 	*errloc = EINVAL;
 	return -1;
     }
-    if (offset < 0) {
+    if (info->iswr) {
+	if ((unsigned long) offset > info->nmax) {
+	    *errloc = EINVAL;
+	    return -1;
+	}
+	if ((unsigned long) offset > info->nbyte) {
+	    info->nbyte = offset;
+	}
+    } else if ((unsigned long) offset > info->nbyte) {
 	*errloc = EINVAL;
 	return -1;
     }
@@ -2772,12 +2772,12 @@ merror0:
 	    info->nbyte = 0;
 	} else {
 	    if (z->data != NULL) {
-		i = z->nbyte;
-		if (i > info->nmax) {
-		    i = info->nmax;
+		unsigned int j = z->nbyte;
+		if (j > info->nmax) {
+		    j = info->nmax;
 		}
-		memcpy(info->ubuf, z->data, i);
-		info->nbyte = i;
+		memcpy(info->ubuf, z->data, j);
+		info->nbyte = j;
 	    } else {
 		unsigned char *zbuf = z->zipfile->data + z->offset;
 
@@ -2809,15 +2809,16 @@ merror0:
 		    stream.opaque = Z_NULL;
 		    stream.avail_in = z->nbytecompr;
 		    if (z->isenc) {
+			unsigned int j;    
 			stream.avail_in -= 12;
 			cbuf = (unsigned char *)
 			    Tcl_AttemptAlloc(stream.avail_in);
 			if (cbuf == NULL) {
 			    goto merror0;
 			}
-			for (i = 0; i < stream.avail_in; i++) {
-			    ch = info->ubuf[i];
-			    cbuf[i] = zdecode(info->keys, crc32tab, ch);
+			for (j = 0; j < stream.avail_in; j++) {
+			    ch = info->ubuf[j];
+			    cbuf[j] = zdecode(info->keys, crc32tab, ch);
 			}
 			stream.next_in = cbuf;
 		    } else {
