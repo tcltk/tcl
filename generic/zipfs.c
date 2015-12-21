@@ -12,6 +12,7 @@
 #include "tclInt.h"
 #include "tclFileSystem.h"
 #include "zipfs.h"
+
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/mman.h>
 #endif
@@ -2771,6 +2772,7 @@ merror0:
 	} else {
 	    if (z->data != NULL) {
 		unsigned int j = z->nbyte;
+
 		if (j > info->nmax) {
 		    j = info->nmax;
 		}
@@ -2808,6 +2810,7 @@ merror0:
 		    stream.avail_in = z->nbytecompr;
 		    if (z->isenc) {
 			unsigned int j;
+
 			stream.avail_in -= 12;
 			cbuf = (unsigned char *)
 			    Tcl_AttemptAlloc(stream.avail_in);
@@ -3761,14 +3764,20 @@ static int
 Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	       Tcl_FSUnloadFileProc **unloadProcPtr, int flags)
 {
-    Tcl_FSLoadFileProc2 *loadFileProc = (Tcl_FSLoadFileProc2 *) tclNativeFilesystem.loadFileProc;
+    Tcl_FSLoadFileProc2 *loadFileProc;
 #ifdef ANDROID
-	/*
-	 * Force loadFileProc to native implementation since the
-	 * package manger already extracted the shared libraries
-	 * from the APK at install time.
-	 */
-    return loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
+    /*
+     * Force loadFileProc to native implementation since the
+     * package manger already extracted the shared libraries
+     * from the APK at install time.
+     */
+
+    loadFileProc = (Tcl_FSLoadFileProc2 *) tclNativeFilesystem.loadFileProc;
+    if (loadFileProc != NULL) {
+	return loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
+    }
+    Tcl_SetErrno(ENOENT);
+    return -1;
 #else
     Tcl_Obj *altPath = NULL;
     int ret = -1;
@@ -3810,6 +3819,7 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	    Tcl_DecrRefCount(objs[1]);
 	}
     }
+    loadFileProc = (Tcl_FSLoadFileProc2 *) tclNativeFilesystem.loadFileProc;
     if (loadFileProc != NULL) {
 	ret = loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
     } else {
@@ -3869,7 +3879,7 @@ const Tcl_Filesystem zipfsFilesystem = {
 /*
  *-------------------------------------------------------------------------
  *
- * doInit --
+ * Zipfs_doInit --
  *
  *	Perform per interpreter initialization of this module.
  *
@@ -3884,7 +3894,8 @@ const Tcl_Filesystem zipfsFilesystem = {
  */
 
 static int
-doInit(Tcl_Interp *interp, int safe) {
+Zipfs_doInit(Tcl_Interp *interp, int safe)
+{
 #ifdef HAVE_ZLIB
     static const char findproc[] =
 	"proc ::zipfs::find dir {\n"
@@ -3975,13 +3986,13 @@ doInit(Tcl_Interp *interp, int safe) {
 int
 Zipfs_Init(Tcl_Interp *interp)
 {
-    return doInit(interp, 0);
+    return Zipfs_doInit(interp, 0);
 }
 
 int
 Zipfs_SafeInit(Tcl_Interp *interp)
 {
-    return doInit(interp, 1);
+    return Zipfs_doInit(interp, 1);
 }
 
 #ifndef HAVE_ZLIB
@@ -4000,13 +4011,13 @@ int
 Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	    const char *passwd)
 {
-    return doInit(interp, 1);
+    return Zipfs_doInit(interp, 1);
 }
 
 int
 Zipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
-    return doInit(interp, 1);
+    return Zipfs_doInit(interp, 1);
 }
 
 #endif
