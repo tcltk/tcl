@@ -95,7 +95,7 @@ static void		FileThreadActionProc(ClientData instanceData,
 static int		FileTruncateProc(ClientData instanceData,
 			    Tcl_WideInt length);
 static DWORD		FileGetType(HANDLE handle);
-static int		NativeIsComPort(CONST TCHAR *nativeName);
+static int		NativeIsComPort(const TCHAR *nativeName);
 /*
  * This structure describes the channel type structure for file based IO.
  */
