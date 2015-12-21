@@ -3761,15 +3761,15 @@ static int
 Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	       Tcl_FSUnloadFileProc **unloadProcPtr, int flags)
 {
+    Tcl_FSLoadFileProc2 *loadFileProc = (Tcl_FSLoadFileProc2 *) tclNativeFilesystem.loadFileProc;
 #ifdef ANDROID
 	/*
 	 * Force loadFileProc to native implementation since the
 	 * package manger already extracted the shared libraries
 	 * from the APK at install time.
 	 */
-    return tclNativeFilesystem.loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
+    return loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
 #else
-    Tcl_FSLoadFileProc2 *loadFileProc;
     Tcl_Obj *altPath = NULL;
     int ret = -1;
 
@@ -3810,7 +3810,6 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	    Tcl_DecrRefCount(objs[1]);
 	}
     }
-    loadFileProc = (Tcl_FSLoadFileProc2 *) tclNativeFilesystem.loadFileProc;
     if (loadFileProc != NULL) {
 	ret = loadFileProc(interp, path, loadHandle, unloadProcPtr, flags);
     } else {
@@ -3870,7 +3869,7 @@ const Tcl_Filesystem zipfsFilesystem = {
 /*
  *-------------------------------------------------------------------------
  *
- * Zipfs_doInit --
+ * doInit --
  *
  *	Perform per interpreter initialization of this module.
  *
@@ -3885,8 +3884,7 @@ const Tcl_Filesystem zipfsFilesystem = {
  */
 
 static int
-Zipfs_doInit(Tcl_Interp *interp, int safe)
-{
+doInit(Tcl_Interp *interp, int safe) {
 #ifdef HAVE_ZLIB
     static const char findproc[] =
 	"proc ::zipfs::find dir {\n"
@@ -3907,11 +3905,6 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 	" return [lsort $result]\n"
 	"}\n";
 
-#ifdef USE_TCL_STUBS
-    if (Tcl_InitStubs(interp, "8.0", 0) == NULL) {
-	return TCL_ERROR;
-    }
-#endif
     /* one-time initialization */
     WriteLock();
     if (!ZipFS.initialized) {
@@ -3982,13 +3975,13 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 int
 Zipfs_Init(Tcl_Interp *interp)
 {
-    return Zipfs_doInit(interp, 0);
+    return doInit(interp, 0);
 }
 
 int
 Zipfs_SafeInit(Tcl_Interp *interp)
 {
-    return Zipfs_doInit(interp, 1);
+    return doInit(interp, 1);
 }
 
 #ifndef HAVE_ZLIB
@@ -4007,13 +4000,13 @@ int
 Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	    const char *passwd)
 {
-    return Zipfs_doInit(interp, 1);
+    return doInit(interp, 1);
 }
 
 int
 Zipfs_Unmount(Tcl_Interp *interp, const char *zipname)
 {
-    return Zipfs_doInit(interp, 1);
+    return doInit(interp, 1);
 }
 
 #endif
