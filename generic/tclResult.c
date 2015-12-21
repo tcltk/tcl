@@ -339,7 +339,7 @@ Tcl_SetResult(
     if (freeProc) {
 	if (freeProc == TCL_DYNAMIC) {
 	    ckfree(result);
-	} else {
+	} else if ((freeProc != TCL_STATIC) && (freeProc != TCL_VOLATILE)) {
 	    freeProc(result);
 	}
     }
