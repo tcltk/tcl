@@ -853,7 +853,6 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values
   --with-celib=DIR        use Windows/CE support library from DIR
-  --with-zipfs            include ZIP filesystem
 
 Some influential environment variables:
   CC          C compiler command
@@ -4407,24 +4406,6 @@ fi
 cat >>confdefs.h <<\_ACEOF
 #define HAVE_ZLIB 1
 _ACEOF
-
-
-# Check whether --with-zipfs or --without-zipfs was given.
-if test "${with_zipfs+set}" = set; then
-  withval="$with_zipfs"
-  tcl_ok=$withval
-else
-  tcl_ok=no
-fi;
-echo "$as_me:$LINENO: result: $tcl_ok" >&5
-echo "${ECHO_T}$tcl_ok" >&6
-if test $tcl_ok = yes; then
-
-cat >>confdefs.h <<\_ACEOF
-#define ZIPFS_IN_TCL 1
-_ACEOF
-
-fi
 
 
 echo "$as_me:$LINENO: checking for intptr_t" >&5
