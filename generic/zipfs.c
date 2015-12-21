@@ -9,6 +9,9 @@
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  */
 
+#include "tclInt.h"
+#include "tclFileSystem.h"
+#include "tclZipfs.h"
 #if !defined(_WIN32) && !defined(_WIN64)
 #include <sys/mman.h>
 #endif
@@ -18,15 +21,10 @@
 #include <time.h>
 #include <stdlib.h>
 #include <fcntl.h>
+
 #ifdef HAVE_ZLIB
 #include "zlib.h"
 #include "zcrypt.h"
-#endif
-#include "tclInt.h"
-#include "tclFileSystem.h"
-#include "tclZipfs.h"
-
-#ifdef HAVE_ZLIB
 
 /*
  * Various constants and offsets found in ZIP archive files.
@@ -2904,6 +2902,7 @@ cerror0:
 	    z_stream stream;
 	    int err;
 	    unsigned char *ubuf = NULL;
+	    unsigned int j;
 
 	    memset(&stream, 0, sizeof (stream));
 	    stream.zalloc = Z_NULL;
@@ -2917,9 +2916,9 @@ cerror0:
 		    info->ubuf = NULL;
 		    goto merror;
 		}
-		for (i = 0; i < stream.avail_in; i++) {
-		    ch = info->ubuf[i];
-		    ubuf[i] = zdecode(info->keys, crc32tab, ch);
+		for (j = 0; j < stream.avail_in; j++) {
+		    ch = info->ubuf[j];
+		    ubuf[j] = zdecode(info->keys, crc32tab, ch);
 		}
 		stream.next_in = ubuf;
 	    } else {
