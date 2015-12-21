@@ -1,8 +1,7 @@
 /*
- * zipfs.h --
+ * tclZipfs.h --
  *
  *	This header file describes the interface of the ZIPFS filesystem
- *	used in AndroWish.
  *
  * Copyright (c) 2013-2015 Christian Werner <chw@ch-werner.de>
  *

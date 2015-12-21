@@ -192,7 +192,7 @@ const Tcl_Filesystem tclNativeFilesystem = {
 };
 
 #ifdef ZIPFS_IN_TCL
-extern Tcl_Filesystem zipfsFilesystem;
+MODULE_SCOPE Tcl_Filesystem zipfsFilesystem;
 #endif
 
 /*
