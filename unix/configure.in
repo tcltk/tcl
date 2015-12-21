@@ -171,14 +171,6 @@ AS_IF([test $zlib_ok = no], [
   AC_SUBST(ZLIB_INCLUDE,[-I\${ZLIB_DIR}])
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
-AC_ARG_WITH(zipfs,
-    AC_HELP_STRING([--with-zipfs],
-	[include ZIP filesystem]),
-    [tcl_ok=$withval], [tcl_ok=no])
-AC_MSG_RESULT([$tcl_ok])
-if test $tcl_ok = yes; then
-    AC_DEFINE(ZIPFS_IN_TCL, 1, [Include ZIP filesystem?])
-fi
 
 #--------------------------------------------------------------------
 # The statements below define a collection of compile flags.  This

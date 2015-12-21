@@ -24,7 +24,7 @@
 #endif
 #include "tclInt.h"
 #include "tclFileSystem.h"
-#include "zipfs.h"
+#include "tclZipfs.h"
 
 #ifdef HAVE_ZLIB
 
@@ -3821,7 +3821,9 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
  * Define the ZIP filesystem dispatch table.
  */
 
-Tcl_Filesystem zipfsFilesystem = {
+MODULE_SCOPE const Tcl_Filesystem zipfsFilesystem;
+
+const Tcl_Filesystem zipfsFilesystem = {
     "zipfs",
     sizeof (Tcl_Filesystem),
     TCL_FILESYSTEM_VERSION_2,

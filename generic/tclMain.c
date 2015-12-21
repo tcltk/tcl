@@ -34,15 +34,6 @@
 
 #include "tclInt.h"
 
-#ifdef ZIPFS_IN_TCL
-#include "zipfs.h"
-#endif
-
-#ifdef ANDROID
-#undef  ZIPFS_BOOTDIR
-#define ZIPFS_BOOTDIR "/assets"
-#endif
-
 /*
  * The default prompt used when the user has not overridden it.
  */
@@ -60,7 +51,6 @@
 #   define TCHAR char
 #   define TEXT(arg) arg
 #   define _tcscmp strcmp
-#   define _tcsncmp strncmp
 #endif
 
 /*
@@ -325,21 +315,9 @@ Tcl_MainEx(
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
     InteractiveState is;
-#ifdef ZIPFS_IN_TCL
-    const char *zipFile = NULL;
-    Tcl_Obj *zipval = NULL;
-    int autoRun = 1;
-    int zipOk = TCL_ERROR;
-#ifndef ANDROID
-    const char *exeName;
-#endif
-#endif
 
     TclpSetInitialEncodings();
     TclpFindExecutable((const char *)argv[0]);
-#if defined(ZIPFS_IN_TCL) && !defined(ANDROID)
-    exeName = Tcl_GetNameOfExecutable();
-#endif
 
     Tcl_InitMemory(interp);
 
@@ -369,26 +347,6 @@ Tcl_MainEx(
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
-#ifdef ZIPFS_IN_TCL
-	} else if (argc > 2) {
-	    int length = strlen((char *) argv[1]);
-	    if ((length >= 2) &&
-		(0 == _tcsncmp(TEXT("-zip"), argv[1], length))) {
-		argc--;
-		argv++;
-		if ((argc > 1) && (argv[1][0] != (TCHAR) '-')) {
-		    zipval = NewNativeObj(argv[1], -1);
-		    zipFile = Tcl_GetString(zipval);
-		    autoRun = 0;
-		    argc--;
-		    argv++;
-		}
-	    } else if ('-' != argv[1][0]) {
-		Tcl_SetStartupScript(NewNativeObj(argv[1], -1), NULL);
-		argc--;
-		argv++;
-	    }
-#endif
 	} else if ((argc > 1) && ('-' != argv[1][0])) {
 	    Tcl_SetStartupScript(NewNativeObj(argv[1], -1), NULL);
 	    argc--;
@@ -422,67 +380,6 @@ Tcl_MainEx(
     Tcl_SetVar2Ex(interp, "tcl_interactive", NULL,
 	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
-#ifdef ZIPFS_IN_TCL
-    zipOk = Tclzipfs_Init(interp);
-    if (zipOk == TCL_OK) {
-        int relax = 0;
-
-        if (zipFile == NULL) {
-            relax = 1;
-#ifdef ANDROID
-            zipFile = getenv("PACKAGE_CODE_PATH");
-            if (zipFile == NULL) {
-                zipFile = Tcl_GetNameOfExecutable();
-            }
-#else
-            zipFile = exeName;
-#endif
-        }
-        if (zipFile != NULL) {
-#ifdef ANDROID
-            zipOk = Tclzipfs_Mount(interp, zipFile, "", NULL);
-#else
-            zipOk = Tclzipfs_Mount(interp, zipFile, exeName, NULL);
-#endif
-            if (!relax && (zipOk != TCL_OK)) {
-                exitCode = 1;
-                goto done;
-            }
-        } else {
-            zipOk = TCL_ERROR;
-        }
-        Tcl_ResetResult(interp);
-    }
-    if (zipOk == TCL_OK) {
-#ifdef ZIPFS_BOOTDIR
-        char *tcl_lib = ZIPFS_BOOTDIR "/tcl" TCL_VERSION;
-        char *tcl_pkg = ZIPFS_BOOTDIR;
-#else
-	char *tcl_lib;
-        char *tcl_pkg = (char *) exeName;
-	Tcl_DString dsLib;
-
-	Tcl_DStringInit(&dsLib);
-	Tcl_DStringAppend(&dsLib, exeName, -1);
-	Tcl_DStringAppend(&dsLib, "/tcl" TCL_VERSION, -1);
-	tcl_lib = Tcl_DStringValue(&dsLib);
-#endif
-        Tcl_SetVar2(interp, "env", "TCL_LIBRARY", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "auto_path", tcl_lib,
-                   TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT);
-#ifndef ZIPFS_BOOTDIR
-	Tcl_DStringFree(&dsLib);
-#endif
-    }
-    if (zipval != NULL) {
-	Tcl_DecrRefCount(zipval);
-	zipval = NULL;
-    }
-#endif
-	
     /*
      * Invoke application-specific initialization.
      */
@@ -511,100 +408,6 @@ Tcl_MainEx(
 	/* ARGH Munchhausen effect */
 	Tcl_CreateExitHandler(FreeMainInterp, interp);
     }
-
-#ifdef ZIPFS_IN_TCL
-    /*
-     * Setup auto loading info to point to mounted ZIP file.
-     */
-
-    if (zipOk == TCL_OK) {
-#ifdef ZIPFS_BOOTDIR
-        char *tcl_lib = ZIPFS_BOOTDIR "/tcl" TCL_VERSION;
-        char *tcl_pkg = ZIPFS_BOOTDIR;
-#else
-	char *tcl_lib;
-        char *tcl_pkg = (char *) exeName;
-	Tcl_DString dsLib;
-
-	Tcl_DStringInit(&dsLib);
-	Tcl_DStringAppend(&dsLib, exeName, -1);
-	Tcl_DStringAppend(&dsLib, "/tcl" TCL_VERSION, -1);
-	tcl_lib = Tcl_DStringValue(&dsLib);
-#endif
-        Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
-#ifndef ZIPFS_BOOTDIR
-	Tcl_DStringFree(&dsLib);
-#endif
-
-        /*
-         * We need to re-init encoding (after initializing Tcl),
-         * otherwise "encoding system" will return "identity"
-         */
-
-        TclpSetInitialEncodings();
-    }
-
-    /*
-     * Set embedded application startup file, if any.
-     */
-
-    if ((zipOk == TCL_OK) && autoRun) {
-        char *filename;
-        Tcl_Channel chan;
-#ifdef ZIPFS_BOOTDIR
-        filename = ZIPFS_BOOTDIR "/app/main.tcl";
-#else
-	Tcl_DString dsFile;
-
-	Tcl_DStringInit(&dsFile);
-	Tcl_DStringAppend(&dsFile, exeName, -1);
-	Tcl_DStringAppend(&dsFile, "/app/main.tcl", -1);
-	filename = Tcl_DStringValue(&dsFile);
-#endif
-        chan = Tcl_OpenFileChannel(NULL, filename, "r", 0);
-        if (chan != (Tcl_Channel) NULL) {
-            Tcl_Obj *arg;
-
-            Tcl_Close(NULL, chan);
-
-            /*
-             * Push back script file to argv, if any.
-             */
-            if ((arg = Tcl_GetStartupScript(NULL)) != NULL) {
-                Tcl_Obj *v, *no;
-
-                no = Tcl_NewStringObj("argv", 4);
-                v = Tcl_ObjGetVar2(interp, no, NULL, TCL_GLOBAL_ONLY);
-                if (v != NULL) {
-                    Tcl_Obj **objv, *nv;
-                    int objc, i;
-
-                    objc = 0;
-                    Tcl_ListObjGetElements(NULL, v, &objc, &objv);
-                    nv = Tcl_NewListObj(1, &arg);
-                    for (i = 0; i < objc; i++) {
-                        Tcl_ListObjAppendElement(NULL, nv, objv[i]);
-                    }
-                    Tcl_IncrRefCount(nv);
-                    if (Tcl_ObjSetVar2(interp, no, NULL, nv, TCL_GLOBAL_ONLY)
-                        != NULL) {
-                        Tcl_GlobalEval(interp, "incr argc");
-                    } 
-                    Tcl_DecrRefCount(nv);
-                }
-                Tcl_DecrRefCount(no);
-            }
-            Tcl_SetStartupScript(Tcl_NewStringObj(filename, -1), NULL);
-            Tcl_SetVar(interp, "argv0", filename, TCL_GLOBAL_ONLY);
-            Tcl_SetVar(interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
-        }
-#ifndef ANDROID
-	Tcl_DStringFree(&dsFile);
-#endif
-    }
-#endif
 
     /*
      * Invoke the script specified on the command line, if any. Must fetch it
