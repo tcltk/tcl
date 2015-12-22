@@ -58,6 +58,7 @@ static const struct {
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
 			    const char *nsNameStr);
+static void		ClearMixins(Class *clsPtr);
 static void		ClearSuperclasses(Class *clsPtr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr,
@@ -906,6 +907,20 @@ ObjectRenamedTrace(
  */
 
 static void
+ClearMixins(
+    Class *clsPtr)
+{
+    int i;
+    Class *mixinPtr;
+
+    FOREACH(mixinPtr, clsPtr->mixins) {
+	TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
+    }
+    ckfree(clsPtr->mixins.list);
+    clsPtr->mixins.num = 0;
+}
+
+static void
 ClearSuperclasses(
     Class *clsPtr)
 {
@@ -993,6 +1008,9 @@ ReleaseClassContents(
 	if (!Deleted(mixinSubclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp,
 		    mixinSubclassPtr->thisPtr->command);
+	}
+	if (mixinSubclassPtr->mixins.num) {
+	    ClearMixins(mixinSubclassPtr);
 	}
 	DelRef(mixinSubclassPtr->thisPtr);
 	DelRef(mixinSubclassPtr);
@@ -1232,14 +1250,9 @@ ObjectNamespaceDeleted(
 	    ckfree(clsPtr->filters.list);
 	    clsPtr->filters.num = 0;
 	}
-	FOREACH(mixinPtr, clsPtr->mixins) {
-	    if (!Deleted(mixinPtr->thisPtr)) {
-		TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
-	    }
-	}
-	if (i) {
-	    ckfree(clsPtr->mixins.list);
-	    clsPtr->mixins.num = 0;
+
+	if (clsPtr->mixins.num) {
+	    ClearMixins(clsPtr);
 	}
 	if (clsPtr->superclasses.num) {
 	    ClearSuperclasses(clsPtr);
