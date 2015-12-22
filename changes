@@ -7973,4 +7973,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2015-11-20 (bug)[40f628] ListObjReplace callers fail to detect max (porter)
 
---- Released 8.5.19, December 1, 2015 --- http://core.tcl.tk/tcl/ for details
+2015-12-11 (bug)[c9eb6b] tolerate unset ::env(TZ) (gahr, nijtmans)
+
+--- Released 8.5.19, January 31, 2016 --- http://core.tcl.tk/tcl/ for details
