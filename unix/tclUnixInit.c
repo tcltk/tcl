@@ -545,7 +545,7 @@ TclpInitLibraryPath(
 
 	    str = defaultLibraryDir;
 #ifdef ZIPFS_IN_TCL
-	    if (Zipfs_Mount(NULL, NULL, NULL, NULL) == TCL_OK) {
+	    if (Tclzipfs_Mount(NULL, NULL, NULL, NULL) == TCL_OK) {
 		str = "";
 	    }
 #endif

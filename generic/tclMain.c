@@ -423,7 +423,7 @@ Tcl_MainEx(
 	    Tcl_NewIntObj(!path && is.tty), TCL_GLOBAL_ONLY);
 
 #ifdef ZIPFS_IN_TCL
-    zipOk = Zipfs_Init(interp);
+    zipOk = Tclzipfs_Init(interp);
     if (zipOk == TCL_OK) {
         int relax = 0;
 
@@ -440,9 +440,9 @@ Tcl_MainEx(
         }
         if (zipFile != NULL) {
 #ifdef ANDROID
-            zipOk = Zipfs_Mount(interp, zipFile, "", NULL);
+            zipOk = Tclzipfs_Mount(interp, zipFile, "", NULL);
 #else
-            zipOk = Zipfs_Mount(interp, zipFile, exeName, NULL);
+            zipOk = Tclzipfs_Mount(interp, zipFile, exeName, NULL);
 #endif
             if (!relax && (zipOk != TCL_OK)) {
                 exitCode = 1;

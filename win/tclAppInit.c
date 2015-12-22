@@ -175,10 +175,10 @@ Tcl_AppInit(
 	return TCL_ERROR;
     }
     Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
-    if (Zipfs_Init(interp) == TCL_ERROR) {
+    if (Tclzipfs_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-    Tcl_StaticPackage(interp, "zipfs", Zipfs_Init, Zipfs_SafeInit);
+    Tcl_StaticPackage(interp, "zipfs", Tclzipfs_Init, Tclzipfs_SafeInit);
 #endif /* TCL_TEST */
 
     /*
