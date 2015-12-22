@@ -2424,13 +2424,6 @@ const char *		TclTomMathInitializeStubs(Tcl_Interp *interp,
  * TODO - tommath stubs export goes here!
  */
 
-/* Tcl_InitSubsystems, see TIP #414 */
-
-#ifndef USE_TCL_STUBS
-EXTERN const char *	Tcl_InitSubsystems(TCL_NORETURN1
-			    Tcl_PanicProc *panicProc);
-#endif
-
 /*
  * Public functions that are not accessible via the stubs table.
  * Tcl_GetMemoryInfo is needed for AOLserver. [Bug 1868171]
