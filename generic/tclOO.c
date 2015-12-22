@@ -58,6 +58,7 @@ static const struct {
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
 			    const char *nsNameStr);
+static void		ClearSuperclasses(Class *clsPtr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr,
 			    Method **newMPtrPtr);
@@ -905,6 +906,20 @@ ObjectRenamedTrace(
  */
 
 static void
+ClearSuperclasses(
+    Class *clsPtr)
+{
+    int i;
+    Class *superPtr;
+
+    FOREACH(superPtr, clsPtr->superclasses) {
+	TclOORemoveFromSubclasses(clsPtr, superPtr);
+    }
+    ckfree(clsPtr->superclasses.list);
+    clsPtr->superclasses.num = 0;
+}
+
+static void
 ReleaseClassContents(
     Tcl_Interp *interp,		/* The interpreter containing the class. */
     Object *oPtr)		/* The object representing the class. */
@@ -998,6 +1013,9 @@ ReleaseClassContents(
 	}
 	if (!Deleted(subclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
+	}
+	if (subclassPtr->superclasses.num) {
+	    ClearSuperclasses(subclassPtr);
 	}
 	DelRef(subclassPtr->thisPtr);
 	DelRef(subclassPtr);
@@ -1195,7 +1213,6 @@ ObjectNamespaceDeleted(
     }
 
     if (clsPtr != NULL) {
-	Class *superPtr;
 	Tcl_ObjectMetadataType *metadataTypePtr;
 	ClientData value;
 
@@ -1224,14 +1241,8 @@ ObjectNamespaceDeleted(
 	    ckfree(clsPtr->mixins.list);
 	    clsPtr->mixins.num = 0;
 	}
-	FOREACH(superPtr, clsPtr->superclasses) {
-	    if (!Deleted(superPtr->thisPtr)) {
-		TclOORemoveFromSubclasses(clsPtr, superPtr);
-	    }
-	}
-	if (i) {
-	    ckfree(clsPtr->superclasses.list);
-	    clsPtr->superclasses.num = 0;
+	if (clsPtr->superclasses.num) {
+	    ClearSuperclasses(clsPtr);
 	}
 	if (clsPtr->subclasses.list) {
 	    ckfree(clsPtr->subclasses.list);
