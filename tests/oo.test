@@ -3677,6 +3677,12 @@ test oo-35.3 {Bug 593baa032c: superclass list teardown} {
     oo::class create D {superclass B}
     namespace eval [info object namespace D] [list [namespace which B] destroy]
 } {}
+test oo-35.4 {Bug 593baa032c: mixins list teardown} {
+    # Bug makes this crash, especially with mem-debugging on
+    oo::class create B {}
+    oo::class create D {mixin B}
+    namespace eval [info object namespace D] [list [namespace which B] destroy]
+} {}
 
 
 cleanupTests
