@@ -91,15 +91,15 @@
  * Macros to read and write 16 and 32 bit integers from/to ZIP archives.
  */
 
-#define zip_read_int(p)         \
+#define zip_read_int(p)         				\
     ((p)[0] | ((p)[1] << 8) | ((p)[2] << 16) | ((p)[3] << 24))
-#define zip_read_short(p)       \
+#define zip_read_short(p)       				\
     ((p)[0] | ((p)[1] << 8))
 
-#define zip_write_int(p, v)	\
-    (p)[0] = (v) & 0xff; (p)[1] = ((v) >> 8) & 0xff; \
+#define zip_write_int(p, v)					\
+    (p)[0] = (v) & 0xff; (p)[1] = ((v) >> 8) & 0xff;		\
     (p)[2] = ((v) >> 16) & 0xff; (p)[3] = ((v) >> 24) & 0xff;
-#define zip_write_short(p, v)	\
+#define zip_write_short(p, v)					\
     (p)[0] = (v) & 0xff; (p)[1] = ((v) >> 8) & 0xff;
 
 /*
@@ -1488,7 +1488,7 @@ done:
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSMountCmd --
+ * ZipFSMountObjCmd --
  *
  *      This procedure is invoked to process the "zipfs::mount" command.
  *
@@ -1502,23 +1502,23 @@ done:
  */
 
 static int
-ZipFSMountCmd(ClientData clientData, Tcl_Interp *interp,
-	      int argc, const char **argv)
+ZipFSMountObjCmd(ClientData clientData, Tcl_Interp *interp,
+		 int objc, Tcl_Obj *const objv[])
 {
-    if (argc > 4) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			 " ?zipfile ?mountpoint? ?password???\"", 0);
+    if (objc > 4) {
+	Tcl_WrongNumArgs(interp, 1, objv,
+			 "?zipfile mountpoint password?");
 	return TCL_ERROR;
     }
-    return Zipfs_Mount(interp, (argc > 1) ? argv[1] : NULL,
-		       (argc > 2) ? argv[2] : NULL,
-		       (argc > 3) ? argv[3] : NULL);
+    return Zipfs_Mount(interp, (objc > 1) ? Tcl_GetString(objv[1]) : NULL,
+		       (objc > 2) ? Tcl_GetString(objv[2]) : NULL,
+		       (objc > 3) ? Tcl_GetString(objv[3]) : NULL);
 }
 
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSUnmountCmd --
+ * ZipFSUnmountObjCmd --
  *
  *      This procedure is invoked to process the "zipfs::unmount" command.
  *
@@ -1532,21 +1532,20 @@ ZipFSMountCmd(ClientData clientData, Tcl_Interp *interp,
  */
 
 static int
-ZipFSUnmountCmd(ClientData clientData, Tcl_Interp *interp,
-		int argc, const char **argv)
+ZipFSUnmountObjCmd(ClientData clientData, Tcl_Interp *interp,
+		   int objc, Tcl_Obj *const objv[])
 {
-    if (argc != 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			 " zipfile\"", (char *) NULL);
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "zipfile");
 	return TCL_ERROR;
     }
-    return Zipfs_Unmount(interp, argv[1]);
+    return Zipfs_Unmount(interp, Tcl_GetString(objv[1]));
 }
 
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSMountCmd --
+ * ZipFSMkKeyObjCmd --
  *
  *      This procedure is invoked to process the "zipfs::mkkey" command.
  *	It produces a rotated password to be embedded into an image file.
@@ -1561,28 +1560,28 @@ ZipFSUnmountCmd(ClientData clientData, Tcl_Interp *interp,
  */
 
 static int
-ZipFSMkKeyCmd(ClientData clientData, Tcl_Interp *interp,
-	      int argc, const char **argv)
+ZipFSMkKeyObjCmd(ClientData clientData, Tcl_Interp *interp,
+		 int objc, Tcl_Obj *const objv[])
 {
     int len, i = 0;
-    char pwbuf[264];
+    char *pw, pwbuf[264];
 
-    if (argc != 2) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			 " password\"", (char *) NULL);
+    if (objc != 2) {
+	Tcl_WrongNumArgs(interp, 1, objv, "password");
 	return TCL_ERROR;
     }
-    len = strlen(argv[1]);
+    pw = Tcl_GetString(objv[1]);
+    len = strlen(pw);
     if (len == 0) {
 	return TCL_OK;
     }
-    if ((len > 255) || (strchr(argv[1], 0xff) != NULL)) {
+    if ((len > 255) || (strchr(pw, 0xff) != NULL)) {
 	Tcl_SetObjResult(interp,
 			 Tcl_NewStringObj("illegal password", -1));
 	return TCL_ERROR;
     }
     while (len > 0) {
-	int ch = argv[1][len - 1];
+	int ch = pw[len - 1];
 
 	pwbuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
 	i++;
@@ -1928,7 +1927,7 @@ seekErr:
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSMkZipOrImgCmd --
+ * ZipFSMkZipOrImgObjCmd --
  *
  *      This procedure is creates a new ZIP archive file or image file
  *	given output filename, input directory of files to be archived,
@@ -1945,75 +1944,107 @@ seekErr:
  */
 
 static int
-ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
-		   int isImg, int argc, const char **argv)
+ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
+		      int isImg, int isList, int objc, Tcl_Obj *const objv[])
 {
     Tcl_Channel out;
-    int len = 0, pwlen = 0, slen = 0, i, count, ret = TCL_ERROR, largc, pos[3];
-    const char **largv;
-    Tcl_DString ds;
+    int len = 0, pwlen = 0, slen = 0, i, count, ret = TCL_ERROR, lobjc, pos[3];
+    Tcl_Obj **lobjv, *list = NULL;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
     Tcl_HashSearch search;
     Tcl_HashTable fileHash;
-    char pwbuf[264], buf[4096];
+    char *strip = NULL, *pw = NULL, pwbuf[264], buf[4096];
 
-    if ((argc < 3) || (argc > (isImg ? 6 : 5))) {
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-			 " outfile indir ?strip? ?password?",
-			 isImg ? " ?infile?\"" : "\"", (char *) NULL);
-	return TCL_ERROR;
-    }
-    pwbuf[0] = 0;
-    if (argc > 4) {
-	pwlen = strlen(argv[4]);
-	if ((pwlen > 255) || (strchr(argv[4], 0xff) != NULL)) {
-	    Tcl_AppendResult(interp, "illegal password", (char *) NULL);
+    if (isList) {
+	if ((objc < 3) || (objc > (isImg ? 5 : 4))) {
+	    Tcl_WrongNumArgs(interp, 1, objv, isImg ?
+			     "outfile inlist ?password infile?" :
+			     "outfile inlist ?password?");
+	    return TCL_ERROR;
+	}
+    } else {
+	if ((objc < 3) || (objc > (isImg ? 6 : 5))) {
+	    Tcl_WrongNumArgs(interp, 1, objv, isImg ?
+			     "outfile indir ?strip password infile?" :
+			     "outfile indir ?strip password?");
 	    return TCL_ERROR;
 	}
     }
-    Tcl_DStringInit(&ds);
-    Tcl_DStringAppendElement(&ds, "::zipfs::find");
-    Tcl_DStringAppendElement(&ds, argv[2]);
-    if (Tcl_Eval(interp, Tcl_DStringValue(&ds)) != TCL_OK) {
-	Tcl_DStringFree(&ds);
+    pwbuf[0] = 0;
+    if (objc > (isList ? 3 : 4)) {
+	pw = Tcl_GetString(objv[isList ? 3 : 4]);
+	pwlen = strlen(pw);
+	if ((pwlen > 255) || (strchr(pw, 0xff) != NULL)) {
+	    Tcl_SetObjResult(interp,
+			     Tcl_NewStringObj("illegal password", -1));
+	    return TCL_ERROR;
+	}
+    }
+    if (isList) {
+	list = objv[2];
+	Tcl_IncrRefCount(list);
+    } else {
+	Tcl_Obj *cmd[3];
+
+	cmd[1] = Tcl_NewStringObj("::zipfs::find", -1);
+	cmd[2] = objv[2];
+	cmd[0] = Tcl_NewListObj(2, cmd + 1);
+	Tcl_IncrRefCount(cmd[0]);
+	if (Tcl_EvalObjEx(interp, cmd[0], TCL_EVAL_DIRECT) != TCL_OK) {
+	    Tcl_DecrRefCount(cmd[0]);
+	    return TCL_ERROR;
+	}
+	Tcl_DecrRefCount(cmd[0]);
+	list = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(list);
+    }
+    if (Tcl_ListObjGetElements(interp, list, &lobjc, &lobjv) != TCL_OK) {
+	Tcl_DecrRefCount(list);
 	return TCL_ERROR;
     }
-    Tcl_DStringFree(&ds);
-    if (Tcl_SplitList(interp, Tcl_GetStringResult(interp), &largc, &largv)
-	!= TCL_OK) {
+    if (isList && (lobjc % 2)) {
+	Tcl_DecrRefCount(list);
+	Tcl_SetObjResult(interp,
+		Tcl_NewStringObj("need even number of elements", -1));
 	return TCL_ERROR;
     }
-    Tcl_ResetResult(interp);
-    if (largc == 0) {
-	Tcl_Free((char *) largv);
-	Tcl_AppendResult(interp, "empty archive", (char *) NULL);
+    if (lobjc == 0) {
+	Tcl_DecrRefCount(list);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("empty archive", -1));
 	return TCL_ERROR;
     }
-    out = Tcl_OpenFileChannel(interp, argv[1], "w", 0755);
+    out = Tcl_OpenFileChannel(interp, Tcl_GetString(objv[1]), "w", 0755);
     if ((out == NULL) ||
 	(Tcl_SetChannelOption(interp, out, "-translation", "binary")
 	 != TCL_OK) ||
 	(Tcl_SetChannelOption(interp, out, "-encoding", "binary")
 	 != TCL_OK)) {
+	Tcl_DecrRefCount(list);
 	Tcl_Close(interp, out);
-	Tcl_Free((char *) largv);
 	return TCL_ERROR;
     }
     if (isImg) {
 	ZipFile zf0;
+	const char *imgName;
 
-	if (ZipFSOpenArchive(interp, (argc > 5) ? argv[5] :
-			     Tcl_GetNameOfExecutable(), 0, &zf0) != TCL_OK) {
+	if (isList) {
+	    imgName = (objc > 4) ? Tcl_GetString(objv[4]) :
+		Tcl_GetNameOfExecutable();
+	} else {
+	    imgName = (objc > 5) ? Tcl_GetString(objv[5]) :
+		Tcl_GetNameOfExecutable();
+	}
+	if (ZipFSOpenArchive(interp, imgName, 0, &zf0) != TCL_OK) {
+	    Tcl_DecrRefCount(list);
 	    Tcl_Close(interp, out);
-	    Tcl_Free((char *) largv);
 	    return TCL_ERROR;
 	}
-	if (pwlen && (argc > 4)) {
+	if ((pw != NULL) && pwlen) {
 	    i = 0;
 	    len = pwlen;
 	    while (len > 0) {
-		int ch = argv[4][len - 1];
+		int ch = pw[len - 1];
 
 		pwbuf[i] = (ch & 0x0f) | pwrot[(ch >> 4) & 0x0f];
 		i++;
@@ -2029,9 +2060,9 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 	}
 	i = Tcl_Write(out, (char *) zf0.data, zf0.baseoffsp);
 	if (i != zf0.baseoffsp) {
-	    Tcl_AppendResult(interp, "write error", (char *) NULL);
+	    Tcl_DecrRefCount(list);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("write error", -1));
 	    Tcl_Close(interp, out);
-	    Tcl_Free((char *) largv);
 	    ZipFSCloseArchive(interp, &zf0);
 	    return TCL_ERROR;
 	}
@@ -2040,9 +2071,9 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 	if (len > 0) {
 	    i = Tcl_Write(out, pwbuf, len);
 	    if (i != len) {
-		Tcl_AppendResult(interp, "write error", (char *) NULL);
+		Tcl_DecrRefCount(list);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj("write error", -1));
 		Tcl_Close(interp, out);
-		Tcl_Free((char *) largv);
 		return TCL_ERROR;
 	    }
 	}
@@ -2051,18 +2082,25 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
     }
     Tcl_InitHashTable(&fileHash, TCL_STRING_KEYS);
     pos[0] = Tcl_Tell(out);
-    if (argc > 3) {
-	slen = strlen(argv[3]);
+    if (!isList && (objc > 3)) {
+	strip = Tcl_GetString(objv[3]);
+	slen = strlen(strip);
     }
-    for (i = 0; i < largc; i++) {
-	const char *name = largv[i];
+    for (i = 0; i < lobjc; i += (isList ? 2 : 1)) {
+	const char *path, *name;
 
-	if (slen > 0) {
-	    len = strlen(name);
-	    if ((len <= slen) || (strncmp(argv[3], name, slen) != 0)) {
-		continue;
+	path = Tcl_GetString(lobjv[i]);
+	if (isList) {
+	    name = Tcl_GetString(lobjv[i + 1]);
+	} else {
+	    name = path;
+	    if (slen > 0) {
+		len = strlen(name);
+		if ((len <= slen) || (strncmp(strip, name, slen) != 0)) {
+		    continue;
+		}
+		name += slen;
 	    }
-	    name += slen;
 	}
 	while (name[0] == '/') {
 	    ++name;
@@ -2070,23 +2108,28 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 	if (name[0] == '\0') {
 	    continue;
 	}
-	if (ZipAddFile(interp, largv[i], name, out,
-		(pwlen > 0) ? argv[4] : NULL, buf, sizeof (buf), &fileHash)
-	    != TCL_OK) {
+	if (ZipAddFile(interp, path, name, out, pw, buf, sizeof (buf),
+		       &fileHash) != TCL_OK) {
 	    goto done;
 	}
     }
     pos[1] = Tcl_Tell(out);
     count = 0;
-    for (i = 0; i < largc; i++) {
-	const char *name = largv[i];
+    for (i = 0; i < lobjc; i += (isList ? 2 : 1)) {
+	const char *path, *name;
 
-	if (slen > 0) {
-	    len = strlen(name);
-	    if ((len <= slen) || (strncmp(argv[3], name, slen) != 0)) {
-		continue;
+	path = Tcl_GetString(lobjv[i]);
+	if (isList) {
+	    name = Tcl_GetString(lobjv[i + 1]);
+	} else {
+	    name = path;
+	    if (slen > 0) {
+		len = strlen(name);
+		if ((len <= slen) || (strncmp(strip, name, slen) != 0)) {
+		    continue;
+		}
+		name += slen;
 	    }
-	    name += slen;
 	}
 	while (name[0] == '/') {
 	    ++name;
@@ -2117,10 +2160,10 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
 	zip_write_short(buf + ZIP_CENTRAL_IATTR_OFFS, 0);
 	zip_write_int(buf + ZIP_CENTRAL_EATTR_OFFS, 0);
 	zip_write_int(buf + ZIP_CENTRAL_LOCALHDR_OFFS, z->offset - pos[0]);
-	memcpy(buf + ZIP_CENTRAL_HEADER_LEN, z->name, len);
-	len += ZIP_CENTRAL_HEADER_LEN;
-	if (Tcl_Write(out, buf, len) != len) {
-	    Tcl_AppendResult(interp, "write error", (char *) NULL);
+	if ((Tcl_Write(out, buf, ZIP_CENTRAL_HEADER_LEN) !=
+	     ZIP_CENTRAL_HEADER_LEN) ||
+	    (Tcl_Write(out, z->name, len) != len)) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("write error", -1));
 	    goto done;
 	}
 	count++;
@@ -2136,14 +2179,18 @@ ZipFSMkZipOrImgCmd(ClientData clientData, Tcl_Interp *interp,
     zip_write_int(buf + ZIP_CENTRAL_DIRSTART_OFFS, pos[1] - pos[0]);
     zip_write_short(buf + ZIP_CENTRAL_COMMENTLEN_OFFS, 0);
     if (Tcl_Write(out, buf, ZIP_CENTRAL_END_LEN) != ZIP_CENTRAL_END_LEN) {
-	Tcl_AppendResult(interp, "write error", (char *) NULL);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("write error", -1));
 	goto done;
     }
     Tcl_Flush(out);
     ret = TCL_OK;
 done:
-    Tcl_Free((char *) largv);
-    Tcl_Close(interp, out);
+    if (ret == TCL_OK) {
+	ret = Tcl_Close(interp, out);
+    } else {
+	Tcl_Close(interp, out);
+    }
+    Tcl_DecrRefCount(list);
     hPtr = Tcl_FirstHashEntry(&fileHash, &search);
     while (hPtr != NULL) {
 	z = (ZipEntry *) Tcl_GetHashValue(hPtr);
@@ -2158,7 +2205,7 @@ done:
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSMkZipCmd --
+ * ZipFSMkZipObjCmd --
  *
  *      This procedure is invoked to process the "zipfs::mkzip" command.
  *	See description of ZipFSMkZipOrImgCmd().
@@ -2173,16 +2220,23 @@ done:
  */
 
 static int
-ZipFSMkZipCmd(ClientData clientData, Tcl_Interp *interp,
-	      int argc, const char **argv)
+ZipFSMkZipObjCmd(ClientData clientData, Tcl_Interp *interp,
+		 int objc, Tcl_Obj *const objv[])
 {
-    return ZipFSMkZipOrImgCmd(clientData, interp, 0, argc, argv);
+    return ZipFSMkZipOrImgObjCmd(clientData, interp, 0, 0, objc, objv);
+}
+
+static int
+ZipFSLMkZipObjCmd(ClientData clientData, Tcl_Interp *interp,
+		  int objc, Tcl_Obj *const objv[])
+{
+    return ZipFSMkZipOrImgObjCmd(clientData, interp, 0, 1, objc, objv);
 }
 
 /*
  *-------------------------------------------------------------------------
  *
- * ZipFSMkImgCmd --
+ * ZipFSMkImgObjCmd --
  *
  *      This procedure is invoked to process the "zipfs::mkimg" command.
  *	See description of ZipFSMkZipOrImgCmd().
@@ -2197,10 +2251,17 @@ ZipFSMkZipCmd(ClientData clientData, Tcl_Interp *interp,
  */
 
 static int
-ZipFSMkImgCmd(ClientData clientData, Tcl_Interp *interp,
-	      int argc, const char **argv)
+ZipFSMkImgObjCmd(ClientData clientData, Tcl_Interp *interp,
+		 int objc, Tcl_Obj *const objv[])
 {
-    return ZipFSMkZipOrImgCmd(clientData, interp, 1, argc, argv);
+    return ZipFSMkZipOrImgObjCmd(clientData, interp, 1, 0, objc, objv);
+}
+
+static int
+ZipFSLMkImgObjCmd(ClientData clientData, Tcl_Interp *interp,
+		  int objc, Tcl_Obj *const objv[])
+{
+    return ZipFSMkZipOrImgObjCmd(clientData, interp, 1, 1, objc, objv);
 }
 
 /*
@@ -3942,11 +4003,16 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
     Tcl_PkgProvide(interp, "zipfs", "1.0");
 #endif
     if (!safe) {
-	Tcl_CreateCommand(interp, "::zipfs::mount", ZipFSMountCmd, 0, 0);
-	Tcl_CreateCommand(interp, "::zipfs::unmount", ZipFSUnmountCmd, 0, 0);
-	Tcl_CreateCommand(interp, "::zipfs::mkkey", ZipFSMkKeyCmd, 0, 0);
-	Tcl_CreateCommand(interp, "::zipfs::mkimg", ZipFSMkImgCmd, 0, 0);
-	Tcl_CreateCommand(interp, "::zipfs::mkzip", ZipFSMkZipCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::mount", ZipFSMountObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::unmount",
+			     ZipFSUnmountObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::mkkey", ZipFSMkKeyObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::mkimg", ZipFSMkImgObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::mkzip", ZipFSMkZipObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::lmkimg",
+			     ZipFSLMkImgObjCmd, 0, 0);
+	Tcl_CreateObjCommand(interp, "::zipfs::lmkzip",
+			     ZipFSLMkZipObjCmd, 0, 0);
 	Tcl_GlobalEval(interp, findproc);
     }
     Tcl_CreateObjCommand(interp, "::zipfs::exists", ZipFSExistsObjCmd, 0, 0);
