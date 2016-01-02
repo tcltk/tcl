@@ -2081,7 +2081,7 @@ alldist: dist
 # such, this rule is not guaranteed to work well on all systems; it only needs
 # to function on those of the Tcl/Tk maintainers.
 #
-# Also note that the 8.6 tool build requires an installed 8.6 native Tcl
+# Also note that the 8.7 tool build requires an installed 8.7 native Tcl
 # interpreter in order to be able to run.
 #--------------------------------------------------------------------------
 

@@ -4,7 +4,7 @@ if {[catch {package require Tcl 8.6} msg]} {
     puts stderr "ERROR: $msg"
     puts stderr "If running this script from 'make html', set the\
 	NATIVE_TCLSH environment\nvariable to point to an installed\
-	tclsh8.6 (or the equivalent tclsh86.exe\non Windows)."
+	tclsh8 (or the equivalent tclsh8.exe\non Windows)."
     exit 1
 }
 
@@ -22,7 +22,7 @@ if {[catch {package require Tcl 8.6} msg]} {
 # Copyright (c) 1995-1997 Roger E. Critchlow Jr
 # Copyright (c) 2004-2010 Donal K. Fellows
 
-set ::Version "50/8.6"
+set ::Version "50/8"
 set ::CSSFILE "docs.css"
 
 ##

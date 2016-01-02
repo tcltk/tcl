@@ -1,4 +1,4 @@
-Tcl 8.6 for Windows
+Tcl 8.7 for Windows
 
 1. Introduction
 ---------------
@@ -16,7 +16,7 @@ The information in this file is maintained on the web at:
 
 In order to compile Tcl for Windows, you need the following:
 
-	Tcl 8.6 Source Distribution (plus any patches)
+	Tcl 8.7 Source Distribution (plus any patches)
 
 	and
 

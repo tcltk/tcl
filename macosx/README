@@ -113,7 +113,7 @@ The following build configurations are available:
 The Xcode projects refer to the toplevel tcl source directory via the
 TCL_SRCROOT user build setting, by default this is set to the project-relative
 path '../../tcl', if your tcl source directory is named differently, e.g.
-'../../tcl8.6', you need to manually change the TCL_SRCROOT setting by editing
+'../../tcl8.7', you need to manually change the TCL_SRCROOT setting by editing
 your ${USER}.pbxuser file (located inside the Tcl.xcodeproj bundle directory)
 with a text editor.
 
@@ -141,9 +141,9 @@ Detailed Instructions for building with macosx/GNUmakefile
 - Unpack the Tcl source release archive.
 
 - The following instructions assume the Tcl source tree is named "tcl${ver}",
-(where ${ver} is a shell variable containing the Tcl version number e.g. '8.6').
+(where ${ver} is a shell variable containing the Tcl version number e.g. '8').
 Setup this shell variable as follows:
-	ver="8.6"
+	ver="8"
 If you are building from CVS, omit this step (CVS source tree names usually do
 not contain a version number).
 
