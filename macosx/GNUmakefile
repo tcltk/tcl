@@ -92,7 +92,7 @@ PROJECT			:= tcl
 PRODUCT_NAME		:= Tcl
 
 UNIX_DIR		:= ${CURDIR}/../unix
-VERSION			:= $(shell awk -F= '/^TCL_VERSION/ {print $$2; nextfile}' ${UNIX_DIR}/configure.in)
+VERSION			:= $(shell awk -F= '/^TCL_MAJOR_VERSION/ {print $$2; nextfile}' ${UNIX_DIR}/configure.in)
 TCLSH			:= tclsh${VERSION}
 
 BUILD_TARGET		:= all tcltest
