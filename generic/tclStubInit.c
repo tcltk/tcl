@@ -48,6 +48,41 @@
 #undef TclWinGetSockOpt
 #undef TclWinSetSockOpt
 
+#ifdef TCL_NO_DEPRECATED
+# define TclSetStartupScript 0
+# define TclGetStartupScript 0
+# define TclCreateNamespace 0
+# define TclDeleteNamespace 0
+# define TclAppendExportList 0
+# define TclExport 0
+# define TclImport 0
+# define TclForgetImport 0
+# define TclGetCurrentNamespace_ 0
+# define TclGetGlobalNamespace_ 0
+# define TclFindNamespace 0
+# define TclFindCommand 0
+# define TclGetCommandFromObj 0
+# define TclGetCommandFullName 0
+# define TclpGetDate 0
+# define TclpLocaltime 0
+# define TclpGmtime 0
+#else
+# define TclSetStartupScript Tcl_SetStartupScript
+# define TclGetStartupScript Tcl_GetStartupScript
+# define TclCreateNamespace Tcl_CreateNamespace
+# define TclDeleteNamespace Tcl_DeleteNamespace
+# define TclAppendExportList Tcl_AppendExportList
+# define TclExport Tcl_Export
+# define TclImport Tcl_Import
+# define TclForgetImport Tcl_ForgetImport
+# define TclGetCurrentNamespace_ Tcl_GetCurrentNamespace
+# define TclGetGlobalNamespace_ Tcl_GetGlobalNamespace
+# define TclFindNamespace Tcl_FindNamespace
+# define TclFindCommand Tcl_FindCommand
+# define TclGetCommandFromObj Tcl_GetCommandFromObj
+# define TclGetCommandFullName Tcl_GetCommandFullName
+#endif
+
 /* See bug 510001: TclSockMinimumBuffers needs plat imp */
 #ifdef _WIN64
 #   define TclSockMinimumBuffersOld 0
@@ -420,22 +455,22 @@ static const TclIntStubs tclIntStubs = {
     TclUpdateReturnInfo, /* 109 */
     TclSockMinimumBuffers, /* 110 */
     Tcl_AddInterpResolvers, /* 111 */
-    Tcl_AppendExportList, /* 112 */
-    Tcl_CreateNamespace, /* 113 */
-    Tcl_DeleteNamespace, /* 114 */
-    Tcl_Export, /* 115 */
-    Tcl_FindCommand, /* 116 */
-    Tcl_FindNamespace, /* 117 */
+    TclAppendExportList, /* 112 */
+    TclCreateNamespace, /* 113 */
+    TclDeleteNamespace, /* 114 */
+    TclExport, /* 115 */
+    TclFindCommand, /* 116 */
+    TclFindNamespace, /* 117 */
     Tcl_GetInterpResolvers, /* 118 */
     Tcl_GetNamespaceResolvers, /* 119 */
     Tcl_FindNamespaceVar, /* 120 */
-    Tcl_ForgetImport, /* 121 */
-    Tcl_GetCommandFromObj, /* 122 */
-    Tcl_GetCommandFullName, /* 123 */
-    Tcl_GetCurrentNamespace, /* 124 */
-    Tcl_GetGlobalNamespace, /* 125 */
+    TclForgetImport, /* 121 */
+    TclGetCommandFromObj, /* 122 */
+    TclGetCommandFullName, /* 123 */
+    TclGetCurrentNamespace_, /* 124 */
+    TclGetGlobalNamespace_, /* 125 */
     Tcl_GetVariableFullName, /* 126 */
-    Tcl_Import, /* 127 */
+    TclImport, /* 127 */
     Tcl_PopCallFrame, /* 128 */
     Tcl_PushCallFrame, /* 129 */
     Tcl_RemoveInterpResolvers, /* 130 */
@@ -486,8 +521,8 @@ static const TclIntStubs tclIntStubs = {
     TclCallVarTraces, /* 175 */
     TclCleanupVar, /* 176 */
     TclVarErrMsg, /* 177 */
-    Tcl_SetStartupScript, /* 178 */
-    Tcl_GetStartupScript, /* 179 */
+    TclSetStartupScript, /* 178 */
+    TclGetStartupScript, /* 179 */
     0, /* 180 */
     0, /* 181 */
     TclpLocaltime, /* 182 */

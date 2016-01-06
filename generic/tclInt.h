@@ -4842,9 +4842,10 @@ typedef struct NRE_callback {
 #define NRE_ASSERT(expr)
 #endif
 
+#include "tclTomMathDecls.h"
+
 #include "tclIntDecls.h"
 #include "tclIntPlatDecls.h"
-#include "tclTomMathDecls.h"
 
 #if !defined(USE_TCL_STUBS) && !defined(TCL_MEM_DEBUG)
 #define Tcl_AttemptAlloc(size)        TclpAlloc(size)
