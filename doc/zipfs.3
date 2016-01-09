@@ -12,7 +12,7 @@
 Tclzipfs_Init, Tclzipfs_SafeInit, Tclzipfs_Mount, Tclzipfs_Unmount \- handle ZIP files as VFS
 .SH SYNOPSIS
 .nf
-\fB#include <tcl.h>\fR
+\fB#include <zipfs.h>\fR
 .sp
 int
 \fBTclzipfs_Init\fR(\fIinterp\fR)
@@ -38,8 +38,24 @@ Name of a mount point.
 An (optional) password.
 .BE
 .SH DESCRIPTION
+\fBTclzipfs_Init()\fR performs one-time initialization of the file system
+and registers it process wide. Additionally, a package named \fIzipfs\fR
+is provided and supplemental Tcl commands are created in the given
+interpreter \fIinterp\fR.
 .PP
-TODO
+\fBTclzipfs_SafeInit()\fR is the version of \fBTclzipfs_Init()\fR for
+safe interpreters. It exposes only uncritical supplemental Tcl commands
+in the given interpreter \fIinterp\fR.
 .PP
+\fBTclzipfs_Mount()\fR mount the ZIP archive \fIzipname\fR on the mount
+point given in \fImntpt\fR using the optional ZIP password \fIpasswd\fR.
+Errors during that process are reported in the interpreter \fIinterp\fR.
+If \fIzipname\fR is a NULL pointer, information on all currently mounted
+ZIP file systems is written into \fIinterp\fR's result as a sequence of
+mount points and ZIP file names.
+.PP
+\fBTclzipfs_Unmount()\fR undoes the effect of \fBTclzipfs_Mount()\fR,
+i.e. it unmounts the mounted ZIP archive file \fIzipname\fR. Errors are
+reported in the interpreter \fIinterp\fR.
 .SH KEYWORDS
 compress, filesystem, zip
