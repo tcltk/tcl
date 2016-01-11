@@ -1897,13 +1897,16 @@ TclNRExecuteByteCode(
      */
 
     TD = (TEBCdata *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, 0);
-    srcPtr      = Tcl_NewObj();
-    srcPtr->typePtr = &bcSourceType;
-    TclInvalidateStringRep(srcPtr);
-    
+        
     esPtr->tosPtr = initTosPtr;
 
-    TD->codePtr     = codePtr;
+    TD->codePtr = codePtr;
+
+    srcPtr = Tcl_NewObj();
+    TclInvalidateStringRep(srcPtr);
+    Tcl_IncrRefCount(srcPtr);
+    srcPtr->typePtr = &bcSourceType;
+    srcPtr->internalRep.twoPtrValue.ptr2 = codePtr;
 
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.numExecutions++;
@@ -2797,7 +2800,6 @@ TEBCresume(
 	DECACHE_STACK_INFO();
 
 	srcPtr->internalRep.twoPtrValue.ptr1 = (unsigned char *) pc;
-	srcPtr->internalRep.twoPtrValue.ptr2 = codePtr;
 	iPtr->cmdSourcePtr = srcPtr;
 
 	pc += pcAdjustment;
@@ -7678,6 +7680,7 @@ TEBCresume(
 	 */
 	
 	cmdLoc.numCodeBytes = 0;
+	////Tcl_DecrRefCount(srcPtr);
 	goto ISC_continue;
     }
 
@@ -9467,12 +9470,12 @@ GetSrcInfoForPc(
 	*pcBeg = prev;
     }
 
-    if (bestDist == INT_MAX) {
-	return NULL;
-    }
-
     if (lengthPtr != NULL) {
 	*lengthPtr = bestSrcLength;
+    }
+
+    if (bestDist == INT_MAX) {
+	return NULL;
     }
 
     return (codePtr->source + bestSrcOffset);

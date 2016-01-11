@@ -3280,13 +3280,27 @@ GetCommandSource(
     int lookup)
 {
     Tcl_Obj *objPtr = Tcl_NewListObj(objc, objv);
+    NRE_callback *runPtr;
+    Tcl_Obj *cmdSourcePtr;
 
-    if (iPtr->cmdSourcePtr) {
+
+    /* Find the NRCommand in the NRE stack, get the cmdSourcePtr */
+    for (runPtr = TOP_CB(iPtr); runPtr; runPtr = NEXT_CB(runPtr)) {
+        if (((runPtr->procPtr) == NRCommand) && !runPtr->data[1]) {
+            break;
+        }
+    }
+    if (!runPtr) {
+        Tcl_Panic("GetCommandSource cannot find the NRcommand: should not happen!");
+    }
+    cmdSourcePtr = (Tcl_Obj *) (runPtr->data[0]);
+    
+    if (cmdSourcePtr) {
         char *command;
         int len;
-        char *orig = iPtr->cmdSourcePtr->bytes;
+        char *orig = cmdSourcePtr->bytes;
 
-        command = Tcl_GetStringFromObj(iPtr->cmdSourcePtr, &len);
+        command = Tcl_GetStringFromObj(cmdSourcePtr, &len);
         objPtr->bytes = (char *) ckalloc((unsigned) len + 1);
         strcpy(objPtr->bytes, command);
         objPtr->length = len;
@@ -3296,7 +3310,7 @@ GetCommandSource(
          */
 
         if (orig == NULL) {
-            TclInvalidateStringRep(iPtr->cmdSourcePtr);
+            TclInvalidateStringRep(cmdSourcePtr);
         }
         
     }
@@ -4084,6 +4098,9 @@ TclNREvalObjv(
     } else {
 	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
     }
+    if (iPtr->cmdSourcePtr) {
+        iPtr->cmdSourcePtr = NULL;
+    }
 
     iPtr->numLevels++;
     TclNRAddCallback(interp, EvalObjvCore, cmdPtr, INT2PTR(flags),
@@ -4190,8 +4207,6 @@ EvalObjvCore(
 
         Tcl_Obj *commandPtr = GetCommandSource(iPtr, objc, objv, 1);
         
-	Tcl_IncrRefCount(commandPtr);
-
 	if (!enterTracesDone) {
 
 	    int code = TEOV_RunEnterTraces(interp, &cmdPtr, commandPtr,
@@ -4319,10 +4334,10 @@ NRCommand(
     int result)
 {
     Interp *iPtr = (Interp *) interp;
-
+    
     iPtr->numLevels--;
 
-     /*
+    /*
       * If there is a tailcall, schedule it next
       */
 
@@ -5012,24 +5027,23 @@ Tcl_EvalEx(
 	    }
 
 	    /*
-	     * Execute the command and free the objects for its words.
+	     * Execute the command.
 	     */
 
             {
-                Tcl_Obj *srcPtr = Tcl_NewObj();
-
-                srcPtr->bytes = NULL;
-                srcPtr->typePtr = &scriptSourceType;
-                srcPtr->internalRep.twoPtrValue.ptr1 = (char *) script;
-                srcPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(numBytes);
-                iPtr->cmdSourcePtr = srcPtr;
-
+                Tcl_Obj * tmp = Tcl_NewObj();
+                TclInvalidateStringRep(tmp);
+                tmp->typePtr = &scriptSourceType;
+                tmp->internalRep.twoPtrValue.ptr1 = (char *) script;
+                tmp->internalRep.twoPtrValue.ptr2 = INT2PTR(numBytes);
+                iPtr->cmdSourcePtr = tmp;
+            
+                Tcl_IncrRefCount(tmp);
                 code = Tcl_EvalObjv(interp, objectsUsed, objv,
-		    TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME);
-
-                Tcl_DecrRefCount(srcPtr);
+                        TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME);
+                Tcl_DecrRefCount(tmp);
             }
-
+            
 	    if (code != TCL_OK) {
 		goto error;
 	    }
