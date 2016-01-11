@@ -145,7 +145,7 @@ static int		TEOV_RunEnterTraces(Tcl_Interp *interp,
 			    Command **cmdPtrPtr, Tcl_Obj *commandPtr, int objc,
 			    Tcl_Obj *const objv[]);
 static Tcl_Obj *	GetCommandSource(Interp *iPtr, int objc,
-			    Tcl_Obj *const objv[], int lookup);
+			    Tcl_Obj *const objv[]);
 static Tcl_NRPostProc	RewindCoroutineCallback;
 static Tcl_NRPostProc	TailcallCleanup;
 static Tcl_NRPostProc	TEOEx_ByteCodeCallback;
@@ -3276,8 +3276,7 @@ static Tcl_Obj *
 GetCommandSource(
     Interp *iPtr,
     int objc,
-    Tcl_Obj *const objv[],
-    int lookup)
+    Tcl_Obj *const objv[])
 {
     Tcl_Obj *objPtr = Tcl_NewListObj(objc, objv);
     NRE_callback *runPtr;
@@ -3312,7 +3311,6 @@ GetCommandSource(
         if (orig == NULL) {
             TclInvalidateStringRep(cmdSourcePtr);
         }
-        
     }
     Tcl_IncrRefCount(objPtr);
     return objPtr;
@@ -4095,12 +4093,15 @@ TclNREvalObjv(
 
     if (iPtr->deferredCallbacks) {
         iPtr->deferredCallbacks = NULL;
-    } else {
-	TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
-    }
-    if (iPtr->cmdSourcePtr) {
+    } else if (iPtr->cmdSourcePtr) {
+	TclNRAddCallback(interp, NRCommand, iPtr->cmdSourcePtr,
+                NULL, NULL, NULL);
         iPtr->cmdSourcePtr = NULL;
+    } else {
+	TclNRAddCallback(interp, NRCommand, NULL,
+                NULL, NULL, NULL);
     }
+    
 
     iPtr->numLevels++;
     TclNRAddCallback(interp, EvalObjvCore, cmdPtr, INT2PTR(flags),
@@ -4205,7 +4206,7 @@ EvalObjvCore(
     if (enterTracesDone || iPtr->tracePtr
 	    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
 
-        Tcl_Obj *commandPtr = GetCommandSource(iPtr, objc, objv, 1);
+        Tcl_Obj *commandPtr = GetCommandSource(iPtr, objc, objv);
         
 	if (!enterTracesDone) {
 
@@ -5031,7 +5032,7 @@ Tcl_EvalEx(
 	     */
 
             {
-                Tcl_Obj * tmp = Tcl_NewObj();
+                Tcl_Obj *tmp = Tcl_NewObj();
                 TclInvalidateStringRep(tmp);
                 tmp->typePtr = &scriptSourceType;
                 tmp->internalRep.twoPtrValue.ptr1 = (char *) script;

@@ -815,10 +815,16 @@ UpdateStringOfBcSource(
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr2;
 
     bytes = GetSrcInfoForPc(pc, codePtr, &len, NULL);
-    objPtr->bytes = (char *) ckalloc((unsigned) len + 1);
-    memcpy(objPtr->bytes, bytes, len);
-    objPtr->bytes[len] = '\0';
-    objPtr->length = len;
+    if (bytes) {
+	objPtr->bytes = (char *) ckalloc((unsigned) len + 1);
+	memcpy(objPtr->bytes, bytes, len);
+	objPtr->bytes[len] = '\0';
+	objPtr->length = len;
+    } else {
+	/* should not happen ... but it does in test execute-11.2 */
+	objPtr->bytes = tclEmptyStringRep;
+	objPtr->length = 0;	
+    }
 }
 
 /*
@@ -7680,7 +7686,6 @@ TEBCresume(
 	 */
 	
 	cmdLoc.numCodeBytes = 0;
-	////Tcl_DecrRefCount(srcPtr);
 	goto ISC_continue;
     }
 
