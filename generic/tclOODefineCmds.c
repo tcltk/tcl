@@ -839,8 +839,7 @@ TclOODefineObjCmd(
 	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
 
 	Tcl_IncrRefCount(objNameObj);
-	result = TclEvalObjEx(interp, objv[2], 0,
-		((Interp *)interp)->cmdFramePtr, 2);
+	result = Tcl_EvalObjEx(interp, objv[2], 0);
 	if (result == TCL_ERROR) {
 	    GenerateErrorInfo(interp, oPtr, objNameObj, "class");
 	}
@@ -954,8 +953,7 @@ TclOOObjDefObjCmd(
 	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
 
 	Tcl_IncrRefCount(objNameObj);
-	result = TclEvalObjEx(interp, objv[2], 0,
-		((Interp *)interp)->cmdFramePtr, 2);
+	result = Tcl_EvalObjEx(interp, objv[2], 0);
 	if (result == TCL_ERROR) {
 	    GenerateErrorInfo(interp, oPtr, objNameObj, "object");
 	}
@@ -1069,8 +1067,7 @@ TclOODefineSelfObjCmd(
 	Tcl_Obj *objNameObj = TclOOObjectName(interp, oPtr);
 
 	Tcl_IncrRefCount(objNameObj);
-	result = TclEvalObjEx(interp, objv[1], 0,
-		((Interp *)interp)->cmdFramePtr, 2);
+	result = Tcl_EvalObjEx(interp, objv[1], 0);
 	if (result == TCL_ERROR) {
 	    GenerateErrorInfo(interp, oPtr, objNameObj, "class object");
 	}

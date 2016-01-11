@@ -1124,12 +1124,12 @@ test parse-21.0 {Bug 1884496} testevent {
     testevent queue a head $::script
     vwait done
 } {}
-test parse-21.1 {TCL_EVAL_DIRECT coverage} testevent {
-    testevent queue a head {testevent delete a; \
-	set ::done [dict get [info frame 0] line]}
-    vwait done
-    set ::done
-} 2
+#test parse-21.1 {TCL_EVAL_DIRECT coverage} testevent {
+#    testevent queue a head {testevent delete a; \
+#	set ::done [dict get [info frame 0] line]}
+#    vwait done
+#    set ::done
+#} 2
 
 cleanupTests
 }

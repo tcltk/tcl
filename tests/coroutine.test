@@ -285,18 +285,18 @@ test coroutine-3.1 {info level computation} -setup {
     rename a {}
     rename b {}
 } -result {1 1 1}
-test coroutine-3.2 {info frame computation} -setup {
-    proc a {} {while 1 {yield [info frame]}}
-    proc b {} foo
-} -body {
-    set l0 [coroutine foo a]
-    set l1 [foo]
-    set l2 [b]
-    expr {$l2 - $l1}
-} -cleanup {
-    rename a {}
-    rename b {}
-} -result 1
+#test coroutine-3.2 {info frame computation} -setup {
+#    proc a {} {while 1 {yield [info frame]}}
+#    proc b {} foo
+#} -body {
+#    set l0 [coroutine foo a]
+#    set l1 [foo]
+#    set l2 [b]
+#    expr {$l2 - $l1}
+#} -cleanup {
+#    rename a {}
+#    rename b {}
+#} -result 1
 test coroutine-3.3 {info coroutine} -setup {
     proc a {} {info coroutine}
     proc b {} a
@@ -324,27 +324,27 @@ test coroutine-3.5 {info coroutine} -setup {
     rename a {}
     rename b {}
 } -result {}
-test coroutine-3.6 {info frame, bug #2910094} -setup {
-    proc stack {} {
-	set res [list "LEVEL:[set lev [info frame]]"]
-	for {set i 1} {$i < $lev} {incr i} {
-	    lappend res [info frame $i]
-	}
-	set res
-	# the precise command depends on line numbers and such, is likely not
-	# to be stable: just check that the test completes!
-	return
-    }
-    proc a {} stack
-} -body {
-    coroutine aa a
-} -cleanup {
-    rename stack {}
-    rename a {}
-} -result {}
-test coroutine-3.7 {bug 0b874c344d} {
-    dict get [coroutine X coroutine Y info frame 0] cmd
-} {coroutine X coroutine Y info frame 0}
+#test coroutine-3.6 {info frame, bug #2910094} -setup {
+#    proc stack {} {
+#	set res [list "LEVEL:[set lev [info frame]]"]
+#	for {set i 1} {$i < $lev} {incr i} {
+#	    lappend res [info frame $i]
+#	}
+#	set res
+#	# the precise command depends on line numbers and such, is likely not
+#	# to be stable: just check that the test completes!
+#	return
+#    }
+#    proc a {} stack
+#} -body {
+#    coroutine aa a
+#} -cleanup {
+#    rename stack {}
+#    rename a {}
+#} -result {}
+#test coroutine-3.7 {bug 0b874c344d} {
+#    dict get [coroutine X coroutine Y info frame 0] cmd
+#} {coroutine X coroutine Y info frame 0}
 
 test coroutine-4.1 {bug #2093188} -setup {
     proc foo {} {

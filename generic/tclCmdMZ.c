@@ -3539,12 +3539,6 @@ TclNRSwitchObjCmd(
     Tcl_Obj *stringObj, *indexVarObj, *matchVarObj;
     Tcl_Obj *const *savedObjv = objv;
     Tcl_RegExp regExpr = NULL;
-    Interp *iPtr = (Interp *) interp;
-    int pc = 0;
-    int bidx = 0;		/* Index of body argument. */
-    Tcl_Obj *blist = NULL;	/* List obj which is the body */
-    CmdFrame *ctxPtr;		/* Copy of the topmost cmdframe, to allow us
-				 * to mess with the line information */
 
     /*
      * If you add options that make -e and -g not unique prefixes of -exact or
@@ -3668,22 +3662,16 @@ TclNRSwitchObjCmd(
     stringObj = objv[i];
     objc -= i + 1;
     objv += i + 1;
-    bidx = i + 1;		/* First after the match string. */
 
     /*
      * If all of the pattern/command pairs are lumped into a single argument,
      * split them out again.
-     *
-     * TIP #280: Determine the lines the words in the list start at, based on
-     * the same data for the list word itself. The cmdFramePtr line
-     * information is manipulated directly.
      */
 
     splitObjs = 0;
     if (objc == 1) {
 	Tcl_Obj **listv;
 
-	blist = objv[0];
 	if (TclListObjGetElements(interp, objv[0], &objc, &listv) != TCL_OK){
 	    return TCL_ERROR;
 	}
@@ -3911,58 +3899,6 @@ TclNRSwitchObjCmd(
      */
 
   matchFound:
-    ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
-    *ctxPtr = *iPtr->cmdFramePtr;
-
-    if (splitObjs) {
-	/*
-	 * We have to perform the GetSrc and other type dependent handling of
-	 * the frame here because we are munging with the line numbers,
-	 * something the other commands like if, etc. are not doing. Them are
-	 * fine with simply passing the CmdFrame through and having the
-	 * special handling done in 'info frame', or the bc compiler
-	 */
-
-	if (ctxPtr->type == TCL_LOCATION_BC) {
-	    /*
-	     * Type BC => ctxPtr->data.eval.path    is not used.
-	     *		  ctxPtr->data.tebc.codePtr is used instead.
-	     */
-
-	    TclGetSrcInfoForPc(ctxPtr);
-	    pc = 1;
-
-	    /*
-	     * The line information in the cmdFrame is now a copy we do not
-	     * own.
-	     */
-	}
-
-	if (ctxPtr->type == TCL_LOCATION_SOURCE && ctxPtr->line[bidx] >= 0) {
-	    int bline = ctxPtr->line[bidx];
-
-	    ctxPtr->line = ckalloc(objc * sizeof(int));
-	    ctxPtr->nline = objc;
-	    TclListLines(blist, bline, objc, ctxPtr->line, objv);
-	} else {
-	    /*
-	     * This is either a dynamic code word, when all elements are
-	     * relative to themselves, or something else less expected and
-	     * where we have no information. The result is the same in both
-	     * cases; tell the code to come that it doesn't know where it is,
-	     * which triggers reversion to the old behavior.
-	     */
-
-	    int k;
-
-	    ctxPtr->line = ckalloc(objc * sizeof(int));
-	    ctxPtr->nline = objc;
-	    for (k=0; k < objc; k++) {
-		ctxPtr->line[k] = -1;
-	    }
-	}
-    }
-
     for (j = i + 1; ; j += 2) {
 	if (j >= objc) {
 	    /*
@@ -3977,13 +3913,9 @@ TclNRSwitchObjCmd(
 	}
     }
 
-    /*
-     * TIP #280: Make invoking context available to switch branch.
-     */
-
-    Tcl_NRAddCallback(interp, SwitchPostProc, INT2PTR(splitObjs), ctxPtr,
-	    INT2PTR(pc), (ClientData) pattern);
-    return TclNREvalObjEx(interp, objv[j], 0, ctxPtr, splitObjs ? j : bidx+j);
+    Tcl_NRAddCallback(interp, SwitchPostProc, (ClientData) pattern,
+	    NULL, NULL, NULL);
+    return TclNREvalObjEx(interp, objv[j], 0);
 }
 
 static int
@@ -3994,26 +3926,8 @@ SwitchPostProc(
 {
     /* Unpack the preserved data */
 
-    int splitObjs = PTR2INT(data[0]);
-    CmdFrame *ctxPtr = data[1];
-    int pc = PTR2INT(data[2]);
-    const char *pattern = data[3];
+    const char *pattern = data[0];
     int patternLength = strlen(pattern);
-
-    /*
-     * Clean up TIP 280 context information
-     */
-
-    if (splitObjs) {
-	ckfree(ctxPtr->line);
-	if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
-	    /*
-	     * Death of SrcInfo reference.
-	     */
-
-	    Tcl_DecrRefCount(ctxPtr->data.eval.path);
-	}
-    }
 
     /*
      * Generate an error message if necessary.
@@ -4028,7 +3942,6 @@ SwitchPostProc(
 		(overflow ? limit : patternLength), pattern,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
-    TclStackFree(interp, ctxPtr);
     return result;
 }
 
@@ -4357,8 +4270,7 @@ TclNRTryObjCmd(
 
     Tcl_NRAddCallback(interp, TryPostBody, handlersObj, finallyObj,
 	    (ClientData)objv, INT2PTR(objc));
-    return TclNREvalObjEx(interp, bodyObj, 0,
-	    ((Interp *) interp)->cmdFramePtr, 1);
+    return TclNREvalObjEx(interp, bodyObj, 0);
 }
 
 /*
@@ -4573,8 +4485,7 @@ TryPostBody(
 	    Tcl_NRAddCallback(interp, TryPostHandler, objv, options, info[0],
 		    INT2PTR((finallyObj == NULL) ? 0 : objc - 1));
 	    Tcl_DecrRefCount(handlersObj);
-	    return TclNREvalObjEx(interp, handlerBodyObj, 0,
-		    ((Interp *) interp)->cmdFramePtr, 4*i + 5);
+	    return TclNREvalObjEx(interp, handlerBodyObj, 0);
 
 	handlerFailed:
 	    resultObj = Tcl_GetObjResult(interp);
@@ -4600,8 +4511,7 @@ TryPostBody(
     if (finallyObj != NULL) {
 	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
 		NULL);
-	return TclNREvalObjEx(interp, finallyObj, 0,
-		((Interp *) interp)->cmdFramePtr, objc - 1);
+	return TclNREvalObjEx(interp, finallyObj, 0);
     }
 
     /*
@@ -4680,14 +4590,11 @@ TryPostHandler(
      */
 
     if (finallyObj != NULL) {
-	Interp *iPtr = (Interp *) interp;
-
 	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
 		NULL);
 
 	/* The 'finally' script is always the last argument word. */
-	return TclNREvalObjEx(interp, finallyObj, 0, iPtr->cmdFramePtr,
-		finally);
+	return TclNREvalObjEx(interp, finallyObj, 0);
     }
 
     /*
@@ -4848,26 +4755,11 @@ TclListLines(
 				 * derived continuation data */
 {
     const char *listStr = Tcl_GetString(listObj);
-    const char *listHead = listStr;
     int i, length = strlen(listStr);
     const char *element = NULL, *next = NULL;
-    ContLineLoc *clLocPtr = TclContinuationsGet(listObj);
-    int *clNext = (clLocPtr ? &clLocPtr->loc[0] : NULL);
 
     for (i = 0; i < n; i++) {
 	TclFindElement(NULL, listStr, length, &element, &next, NULL, NULL);
-
-	TclAdvanceLines(&line, listStr, element);
-				/* Leading whitespace */
-	TclAdvanceContinuations(&line, &clNext, element - listHead);
-	if (elems && clNext) {
-	    TclContinuationsEnterDerived(elems[i], element-listHead, clNext);
-	}
-	lines[i] = line;
-	length -= (next - listStr);
-	TclAdvanceLines(&line, element, next);
-				/* Element */
-	listStr = next;
 
 	if (*element == 0) {
 	    /* ASSERT i == n */

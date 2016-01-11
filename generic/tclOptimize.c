@@ -122,7 +122,7 @@ TclOptimizeBytecode(
     int codeSize = (envPtr->codeNext - envPtr->codeStart);
     int padSize = sizeof(optPad) + 4*codeSize*sizeof(int);
     optPad *padPtr;
-
+    return;////
     padPtr = (optPad *) Tcl_AttemptAlloc(padSize);
     if (!padPtr) {
 	/* Not enough memory to optimize this code */
@@ -170,7 +170,7 @@ Initialize(
     INIT_PATHS; INIT_SIZE;
     int i, last;
     
-    /*
+    /* 
      * Initialize PATHS to 0.
      */
 
@@ -197,7 +197,11 @@ Initialize(
 	CmdLocation *cmdMapPtr = &envPtr->cmdMapPtr[i];
 	if (cmdMapPtr->codeOffset == last) continue;
 	last = cmdMapPtr->codeOffset;
-	MARK(last + cmdMapPtr->numCodeBytes);
+	if (last + cmdMapPtr->numCodeBytes <= codeSize) {
+	    MARK(last + cmdMapPtr->numCodeBytes);
+	} else {
+	    MARK(codeSize);
+	}
     }
     
     /*
@@ -633,6 +637,10 @@ markPath(
      * Note that each pc will be followed at most once, so that only branch
      * targets have a PATHS count > 1.
      */
+
+    if ((pc < 0) || (pc > padPtr->codeSize)) {
+	Tcl_Panic("ERR in markPath: pc out of range");
+    }
 
     if (mark) {
 	if (PATHS[pc] > 0) {

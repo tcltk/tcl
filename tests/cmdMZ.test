@@ -151,7 +151,7 @@ test cmdMZ-return-2.10 {return option handling} -body {
     list [catch {return -level 0 -code error} -> foo] [dictSort $foo]
 } -match glob -result {1 {-code 1 -errorcode NONE -errorinfo {
     while executing
-"return -level 0 -code error"} -errorline 1 -errorstack * -level 0}}
+"return -level 0 -code error"} -errorline 1 -level 0}}
 test cmdMZ-return-2.11 {return option handling} {
     list [catch {return -level 0 -code break} -> foo] [dictSort $foo]
 } {3 {-code 3 -level 0}}
@@ -187,9 +187,9 @@ test cmdMZ-return-2.17 {return opton handling} {
 } {1 c {a b}}
 test cmdMZ-return-2.18 {return option handling} {
     list [catch {
-	return -code error -errorstack [list CALL a CALL b] yo
-    } -> foo] [dictSort $foo] [info errorstack]
-} {2 {-code 1 -errorcode NONE -errorstack {CALL a CALL b} -level 1} {CALL a CALL b}}
+	return -code error yo
+    } -> foo] [dictSort $foo] 
+} {2 {-code 1 -errorcode NONE -level 1}}
 
 # Check that the result of a [return -options $opts $result] is
 # indistinguishable from that of the originally caught script, no matter what
@@ -208,7 +208,7 @@ foreach {testid script} {
     cmdMZ-return-3.10 {return -code error -errorinfo foo}
     cmdMZ-return-3.11 {return -code error -errorinfo foo -errorcode bar}
     cmdMZ-return-3.12 {return -code error -errorinfo foo -errorcode bar -errorline 10}
-    cmdMZ-return-3.12.1 {return -code error -errorinfo foo -errorcode bar -errorline 10 -errorstack baz}
+    cmdMZ-return-3.12.1 {return -code error -errorinfo foo -errorcode bar -errorline 10}
     cmdMZ-return-3.13 {return -options {x y z 2}}
     cmdMZ-return-3.14 {return -level 3 -code break sdf}
 } {

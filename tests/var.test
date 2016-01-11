@@ -883,17 +883,17 @@ test var-20.10 {[bc1a96407a] array set don't compile bad varname} -body {
     apply {{} {set name foo(bar); array set $name {a 1}}}
 } -returnCodes error -match glob -result *
 
-test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
-    proc linenumber {} {dict get [info frame -1] line}
-} -body {
-    apply {n {
-	set foo bar
-        unset foo {*}{
-        } [return [incr n -[linenumber]]]
-    }} [linenumber]
-} -cleanup {
-    rename linenumber {}
-} -result 1
+#test var-21.0 {PushVarNameWord OBOE in compiled unset} -setup {
+#    proc linenumber {} {dict get [info frame -1] line}
+#} -body {
+#    apply {n {
+#	set foo bar
+#        unset foo {*}{
+#        } [return [incr n -[linenumber]]]
+#    }} [linenumber]
+#} -cleanup {
+#    rename linenumber {}
+#} -result 1
 
 test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
     proc getbytes {} {

@@ -1824,7 +1824,7 @@ Tcl_FSEvalFileEx(
      */
 
     iPtr->evalFlags |= TCL_EVAL_FILE;
-    result = TclEvalEx(interp, string, length, 0, 1, NULL, string);
+    result = Tcl_EvalEx(interp, string, length, 0);
 
     /*
      * Now we have to be careful; the script may have changed the
@@ -1962,7 +1962,7 @@ TclNREvalFile(
     iPtr->evalFlags |= TCL_EVAL_FILE;
     TclNRAddCallback(interp, EvalFileCallback, oldScriptFile, pathPtr, objPtr,
 	    NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, NULL, INT_MIN);
+    return TclNREvalObjEx(interp, objPtr, 0);
 }
 
 static int

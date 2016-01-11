@@ -403,7 +403,6 @@ TclOO_Object_Eval(
     register const int skip = Tcl_ObjectContextSkippedArgs(context);
     CallFrame *framePtr, **framePtrPtr = &framePtr;
     Tcl_Obj *scriptPtr;
-    CmdFrame *invoker;
 
     if (objc-1 < skip) {
 	Tcl_WrongNumArgs(interp, skip, objv, "arg ?arg ...?");
@@ -435,10 +434,8 @@ TclOO_Object_Eval(
 
     if (objc != skip+1) {
 	scriptPtr = Tcl_ConcatObj(objc-skip, objv+skip);
-	invoker = NULL;
     } else {
 	scriptPtr = objv[skip];
-	invoker = ((Interp *) interp)->cmdFramePtr;
     }
 
     /*
@@ -447,7 +444,7 @@ TclOO_Object_Eval(
      */
 
     TclNRAddCallback(interp, FinalizeEval, object, NULL, NULL, NULL);
-    return TclNREvalObjEx(interp, scriptPtr, 0, invoker, skip);
+    return TclNREvalObjEx(interp, scriptPtr, 0);
 }
 
 static int

@@ -2143,10 +2143,6 @@ TclCompileExpr(
 	Tcl_Obj *const *litObjv;
 	Tcl_Obj **funcObjv;
 
-	/* TIP #280 : Track Lines within the expression */
-	TclAdvanceLines(&envPtr->line, script,
-		script + TclParseAllWhiteSpace(script, numBytes));
-
 	TclListObjGetElements(NULL, litList, &objc, (Tcl_Obj ***)&litObjv);
 	TclListObjGetElements(NULL, funcList, &objc, &funcObjv);
 	CompileExprTree(interp, opTree, 0, &litObjv, funcObjv,
@@ -2200,7 +2196,7 @@ ExecConstantExprTree(
 
     TclNRSetRoot(interp);
     envPtr = TclStackAlloc(interp, sizeof(CompileEnv));
-    TclInitCompileEnv(interp, envPtr, NULL, 0, NULL, 0);
+    TclInitCompileEnv(interp, envPtr, NULL, 0);
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
     TclEmitOpcode(INST_DONE, envPtr);
