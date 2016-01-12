@@ -109,7 +109,6 @@ CFLAGS			= @CFLAGS_DEFAULT@ @CFLAGS@
 LDFLAGS_DEBUG		= @LDFLAGS_DEBUG@
 LDFLAGS_OPTIMIZE	= @LDFLAGS_OPTIMIZE@
 LDFLAGS			= @LDFLAGS_DEFAULT@ @LDFLAGS@
-SHARED_BUILD		= @TCL_SHARED_BUILD@
 
 # To disable ANSI-C procedure prototypes reverse the comment characters on the
 # following lines:
@@ -168,8 +167,6 @@ INSTALL_DATA_DIR	= ${INSTALL} -d -m 755
 # Do not use SHELL_ENV for NATIVE_TCLSH unless it is the tclsh being built.
 EXE_SUFFIX		= @EXEEXT@
 TCL_EXE			= tclsh${EXE_SUFFIX}
-BASEKIT_EXE		= basekit${EXE_SUFFIX}
-
 TCLTEST_EXE		= tcltest${EXE_SUFFIX}
 NATIVE_TCLSH		= @TCLSH_PROG@
 
@@ -285,7 +282,7 @@ LIBS		= @TCL_LIBS@
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 ${AC_FLAGS} ${PROTO_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
 
-TCLSH_OBJS = tclAppInit.o tclZipVfs.o tclZipVfsBoot.o
+TCLSH_OBJS = tclAppInit.o
 
 TCLTEST_OBJS = tclTestInit.o tclTest.o tclTestObj.o tclTestProcBodyObj.o \
 	tclThreadTest.o tclUnixTest.o
@@ -311,7 +308,7 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 	tclStrToD.o tclThread.o \
 	tclThreadAlloc.o tclThreadJoin.o tclThreadStorage.o tclStubInit.o \
 	tclTimer.o tclTrace.o tclUtf.o tclUtil.o tclVar.o tclZlib.o \
-	tclTomMathInterface.o
+	tclTomMathInterface.o zipfs.o
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
@@ -376,6 +373,7 @@ GENERIC_HDRS = \
 	$(GENERIC_DIR)/tclInt.h \
 	$(GENERIC_DIR)/tclIntDecls.h \
 	$(GENERIC_DIR)/tclIntPlatDecls.h \
+	$(GENERIC_DIR)/tclZipfs.h \
 	$(GENERIC_DIR)/tclTomMath.h \
 	$(GENERIC_DIR)/tclTomMathDecls.h \
 	$(GENERIC_DIR)/tclOO.h \
@@ -466,7 +464,8 @@ GENERIC_SRCS = \
 	$(GENERIC_DIR)/tclUtil.c \
 	$(GENERIC_DIR)/tclVar.c \
 	$(GENERIC_DIR)/tclAssembly.c \
-	$(GENERIC_DIR)/tclZlib.c
+	$(GENERIC_DIR)/tclZlib.c \
+	$(GENERIC_DIR)/zipfs.c
 
 OO_SRCS = \
 	$(GENERIC_DIR)/tclOO.c \
@@ -617,7 +616,7 @@ SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 
 all: binaries libraries doc packages
 
-binaries: ${LIB_FILE} ${TCL_EXE} ${BASEKIT_EXE}_bare basekit.zip
+binaries: ${LIB_FILE} ${TCL_EXE}
 
 libraries:
 
@@ -631,11 +630,11 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
-	    (cd ${TOP_DIR}/win; ${MAKE} tcldde14.dll tclreg13.dll); \
+	    (cd ${TOP_DIR}/win; ${MAKE} winextensions); \
 	fi
 	rm -f $@
 	@MAKE_STUB_LIB@
-	
+
 # Make target which outputs the list of the .o contained in the Tcl lib useful
 # to build a single big shared library containing Tcl and other extensions.
 # Used for the Tcl Plugin.  -- dl
@@ -650,35 +649,9 @@ ${TCL_EXE}: ${TCLSH_OBJS} ${TCL_LIB_FILE} ${TCL_STUB_LIB_FILE}
 	${CC} ${CFLAGS} ${LDFLAGS} ${TCLSH_OBJS} \
 		@TCL_BUILD_LIB_SPEC@ ${TCL_STUB_LIB_FILE} ${LIBS} @EXTRA_TCLSH_LIBS@ \
 		${CC_SEARCH_FLAGS} -o ${TCL_EXE}
-	
+
 # Must be empty so it doesn't conflict with rule for ${TCL_EXE} above
 ${NATIVE_TCLSH}:
-
-# Rather than force an install, pack the files we need into a
-# file system under our control
-basekit.vfs:
-	@echo "Building VFS File system in basekit.vfs"
-	@$(TCL_EXE) "$(TOP_DIR)/tools/mkVfs.tcl" \
-	    "$(UNIX_DIR)/basekit.vfs/boot/tcl" "$(TOP_DIR)"  unix
-
-basekit.zip: basekit.vfs
-	@$(TCL_EXE) "$(TOP_DIR)/tools/mkzip.tcl" basekit.zip \
-		-directory basekit.vfs
-
-${BASEKIT_EXE}_bare:  ${TCLSH_OBJS} ${OBJS} ${ZLIB_OBJS} basekit.vfs
-	${CC} ${CFLAGS} ${LDFLAGS} \
-		${TCLSH_OBJS} ${OBJS} ${ZLIB_OBJS} \
-		${LIBS} @EXTRA_TCLSH_LIBS@ \
-		${CC_SEARCH_FLAGS} -o ${BASEKIT_EXE}_bare
-
-# Builds an executable directly from the Tcl sources
-${BASEKIT_EXE}: ${BASEKIT_EXE}_bare
-	@echo zipping...
-	@$(TCL_EXE) "$(TOP_DIR)/tools/mkzip.tcl" ${BASEKIT_EXE} \
-		-runtime ${BASEKIT_EXE}_bare \
-		-directory basekit.vfs
-	chmod a+x ${BASEKIT_EXE}	
-
 
 Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 	$(SHELL) config.status
@@ -686,10 +659,8 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 #	$(SHELL) config.status
 
 clean: clean-packages
-	rm -rf basekit.vfs null.zip
 	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
-		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@ \
-		${BASEKIT_EXE} basekit*
+		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@
 	cd dltest ; $(MAKE) clean
 
 distclean: distclean-packages clean
@@ -829,13 +800,6 @@ install-binaries: binaries
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
 	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
 	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
-	@echo "Installing ${BASEKIT_EXE}_bare as $(BIN_INSTALL_DIR)/${BASEKIT_EXE}$(VERSION)${EXE_SUFFIX}"
-	@$(INSTALL_PROGRAM) ${BASEKIT_EXE}_bare "$(BIN_INSTALL_DIR)/${BASEKIT_EXE}$(VERSION)${EXE_SUFFIX}"
-
-	@echo "Installing basekit.zip as $(BIN_INSTALL_DIR)/basekit$(VERSION).zip"
-	@$(INSTALL_PROGRAM) basekit.zip "$(BIN_INSTALL_DIR)/basekit$(VERSION).zip"
-
-
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
 	@echo "Installing tclooConfig.sh to $(CONFIG_INSTALL_DIR)/"
@@ -894,9 +858,6 @@ install-libraries: libraries
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/platform.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform-1.0.14.tm;
 	@echo "Installing package platform::shell 1.1.4 as a Tcl Module";
 	@$(INSTALL_DATA) $(TOP_DIR)/library/platform/shell.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.4/platform/shell-1.1.4.tm;
-
-	@echo "Installing package zvfstools 0.1 as a Tcl Module";
-	@$(INSTALL_DATA) $(TOP_DIR)/library/zvfstools/zvfstools.tcl "$(SCRIPT_INSTALL_DIR)"/../tcl8/8.6/zvfstools-0.1.tm;
 
 	@echo "Installing encoding files to $(SCRIPT_INSTALL_DIR)/encoding/";
 	@for i in $(TOP_DIR)/library/encoding/*.enc ; do \
@@ -993,6 +954,7 @@ install-headers:
 	@for i in $(GENERIC_DIR)/tcl.h $(GENERIC_DIR)/tclDecls.h \
 		$(GENERIC_DIR)/tclOO.h $(GENERIC_DIR)/tclOODecls.h \
 		$(GENERIC_DIR)/tclPlatDecls.h \
+		$(GENERIC_DIR)/tclZipfs.h \
 		$(GENERIC_DIR)/tclTomMath.h \
 		$(GENERIC_DIR)/tclTomMathDecls.h ; \
 	    do \
@@ -1061,11 +1023,7 @@ xtTestInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
 	@if test -f tclAppInit.sav ; then \
 	    mv tclAppInit.sav tclAppInit.o; \
 	fi;
-	
-tclZipShInit.o: $(UNIX_DIR)/tclAppInit.c ${TCL_EXE}
-	$(CC) -c $(APP_CC_SWITCHES) \
-		-DTCL_ZIPVFS $(UNIX_DIR)/tclAppInit.c -o tclZipShInit.o
-	
+
 # Object files used on all Unix systems:
 
 REGHDRS=$(GENERIC_DIR)/regex.h $(GENERIC_DIR)/regguts.h \
@@ -1363,14 +1321,11 @@ tclUtf.o: $(GENERIC_DIR)/tclUtf.c $(GENERIC_DIR)/tclUniData.c
 tclVar.o: $(GENERIC_DIR)/tclVar.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclVar.c
 
-tclZipVfs.o:  $(GENERIC_DIR)/tclZipVfs.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclZipVfs.c
-
-tclZipVfsBoot.o:  $(GENERIC_DIR)/tclZipVfsBoot.c
-	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclZipVfsBoot.c
-
 tclZlib.o: $(GENERIC_DIR)/tclZlib.c
 	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/tclZlib.c
+
+zipfs.o: $(GENERIC_DIR)/zipfs.c
+	$(CC) -c $(CC_SWITCHES) $(ZLIB_INCLUDE) $(GENERIC_DIR)/zipfs.c
 
 tclTest.o: $(GENERIC_DIR)/tclTest.c $(IOHDR) $(TCLREHDRS)
 	$(CC) -c $(APP_CC_SWITCHES) $(GENERIC_DIR)/tclTest.c
@@ -1879,7 +1834,7 @@ gendate:
 #	    -e 's?SCCSID?RCS: @(#) ?' \
 #	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 #	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
-#	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
+#	    -e '/#include <inttypes.h>/d' \
 #           -e '/#define YYNEW/s/malloc/TclDateAlloc/g' \
 #	    -e '/#define YYENLARGE/,/realloc/s/realloc/TclDateRealloc/g' \
 #	    <y.tab.c >$(GENERIC_DIR)/tclDate.c
