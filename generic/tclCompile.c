@@ -1553,7 +1553,8 @@ CompileCmdCompileProc(
     CompileEnv *envPtr)
 {
     int depth = TclGetStackDepth(envPtr);
-
+    int savedNumCommands = envPtr->numCommands;
+    
     if (TCL_OK == TclAttemptCompileProc(interp, parsePtr, 1, cmdPtr, envPtr)) {
 	TclCheckStackDepth(depth+1, envPtr);
 	return TCL_OK;
@@ -1564,6 +1565,7 @@ CompileCmdCompileProc(
      * partial compiles.
      */
 
+    envPtr->numCommands = savedNumCommands;
     return TCL_ERROR;
 }
 
