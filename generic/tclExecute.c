@@ -20,10 +20,7 @@
 #include "tclOOInt.h"
 #include "tommath.h"
 #include <math.h>
-
-#if NRE_ENABLE_ASSERTS
 #include <assert.h>
-#endif
 
 /*
  * Hack to determine whether we may expect IEEE floating point. The hack is
@@ -930,7 +927,6 @@ TclCreateExecEnv(
 
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
-	TclInitAuxDataTypeTable();
 	InitByteCodeExecution(interp);
 	execInitialized = 1;
     }
@@ -1029,7 +1025,6 @@ TclFinalizeExecution(void)
     Tcl_MutexLock(&execMutex);
     execInitialized = 0;
     Tcl_MutexUnlock(&execMutex);
-    TclFinalizeAuxDataTypeTable();
 }
 
 /*
