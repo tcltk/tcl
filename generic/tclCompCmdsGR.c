@@ -334,11 +334,7 @@ TclCompileIfCmd(
 		    jumpEndFixupArray.fixup+jumpIndex);
 
 	    /*
-	     * Fix the target of the jumpFalse after the test. Generate a 4
-	     * byte jump if the distance is > 120 bytes. This is conservative,
-	     * and ensures that we won't have to replace this jump if we later
-	     * also need to replace the proceeding jump to the end of the "if"
-	     * with a 4 byte jump.
+	     * Fix the target of the jumpFalse after the test. 
 	     */
 
 	    TclAdjustStackDepth(-1, envPtr);
