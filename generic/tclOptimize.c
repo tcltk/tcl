@@ -122,7 +122,7 @@ TclOptimizeBytecode(
     int codeSize = (envPtr->codeNext - envPtr->codeStart);
     int padSize = sizeof(optPad) + 4*codeSize*sizeof(int);
     optPad *padPtr;
-    return;////
+
     padPtr = (optPad *) Tcl_AttemptAlloc(padSize);
     if (!padPtr) {
 	/* Not enough memory to optimize this code */
