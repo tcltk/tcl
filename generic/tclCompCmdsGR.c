@@ -2636,7 +2636,8 @@ TclCompileSyntaxError(
     const char *bytes = TclGetStringFromObj(msg, &numBytes);
 
     TclEmitPush(TclRegisterNewLiteral(envPtr, bytes, numBytes), envPtr);
-    CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0, Tcl_NewObj());
+    CompileReturnInternal(envPtr, INST_SYNTAX, TCL_ERROR, 0,
+	    Tcl_GetReturnOptions(interp, TCL_ERROR));
     Tcl_ResetResult(interp);
 }
 
