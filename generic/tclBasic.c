@@ -4206,7 +4206,9 @@ EvalObjvCore(
     if (enterTracesDone || iPtr->tracePtr
 	    || (cmdPtr->flags & CMD_HAS_EXEC_TRACES)) {
 
-        Tcl_Obj *commandPtr = GetCommandSource(iPtr, objc, objv);
+        Tcl_Obj *commandPtr = (flags & TCL_EVAL_SOURCE_IN_FRAME)
+                ? GetCommandSource(iPtr, objc, objv)
+                : Tcl_NewListObj(objc, objv);
         
 	if (!enterTracesDone) {
 
