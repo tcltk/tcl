@@ -197,10 +197,10 @@ Initialize(
 	CmdLocation *cmdMapPtr = &envPtr->cmdMapPtr[i];
 	if (cmdMapPtr->codeOffset == last) continue;
 	last = cmdMapPtr->codeOffset;
-	if (last + cmdMapPtr->numCodeBytes <= codeSize) {
+	if (last + cmdMapPtr->numCodeBytes < codeSize) {
 	    MARK(last + cmdMapPtr->numCodeBytes);
 	} else {
-	    MARK(codeSize);
+	    MARK(codeSize - 1);
 	}
     }
     
@@ -638,10 +638,6 @@ markPath(
      * targets have a PATHS count > 1.
      */
 
-    if ((pc < 0) || (pc > padPtr->codeSize)) {
-	Tcl_Panic("ERR in markPath: pc out of range");
-    }
-
     if (mark) {
 	if (PATHS[pc] > 0) {
 	    PATHS[pc]++;
@@ -659,6 +655,10 @@ markPath(
     
     PUSH(pc);
     while (POP(pc) != -1) {
+	if ((pc < 0) || (pc > padPtr->codeSize)) {
+	    Tcl_Panic("ERR in markPath: pc out of range");
+	}
+
 	inst = INST_AT_PC(pc);
 	nextpc = NEXT_PC(pc);
 	mark = (PATHS[pc] > 0);
