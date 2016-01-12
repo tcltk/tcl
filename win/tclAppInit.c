@@ -25,15 +25,12 @@
 #include <tchar.h>
 
 #ifdef TCL_TEST
+#include "tclZipfs.h"
 extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
-#ifdef TCL_ZIPVFS
-  MODULE_SCOPE int Tcl_Zvfs_Boot(const char *,const char *,const char *);
-  MODULE_SCOPE int Zvfs_Init(Tcl_Interp *);
-  MODULE_SCOPE int Zvfs_SafeInit(Tcl_Interp *);
-#endif /* TCL_ZIPVFS */
+MODULE_SCOPE int Tcl_Zvfs_Boot(const char *,const char *,const char *);
 
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
 extern Tcl_PackageInitProc Registry_Init;
@@ -168,13 +165,10 @@ Tcl_AppInit(
     if ((Tcl_Init)(interp) == TCL_ERROR) {
 	return TCL_ERROR;
     }
-#ifdef TCL_ZIPVFS
-    /* Load the ZipVfs package */
-    Tcl_StaticPackage(interp, "zvfs", Zvfs_Init, Zvfs_SafeInit);
-    if(Zvfs_Init(interp) == TCL_ERROR) {
-      return TCL_ERROR;
+    if(Tcl_StaticPackage(interp, "zipfs", Tclzipfs_Init, Tclzipfs_SafeInit) == TCL_ERROR ) {
+	return TCL_ERROR;
     }
-#endif
+
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
     if (Registry_Init(interp) == TCL_ERROR) {
 	return TCL_ERROR;
@@ -192,6 +186,9 @@ Tcl_AppInit(
 	return TCL_ERROR;
     }
     Tcl_StaticPackage(interp, "Tcltest", Tcltest_Init, Tcltest_SafeInit);
+    if (Tclzipfs_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
 #endif /* TCL_TEST */
 
     /*

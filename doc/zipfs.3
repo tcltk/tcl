@@ -1,0 +1,61 @@
+'\"
+'\" Copyright (c) 2015 Jan Nijtmans <jan.nijtmans@gmail.com>
+'\" Copyright (c) 2015 Christian Werner <chw@ch-werner.de>
+'\"
+'\" See the file "license.terms" for information on usage and redistribution
+'\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
+'\" 
+.TH Tclzipfs 3 8.7 Tcl "Tcl Library Procedures"
+.so man.macros
+.BS
+.SH NAME
+Tclzipfs_Init, Tclzipfs_SafeInit, Tclzipfs_Mount, Tclzipfs_Unmount \- handle ZIP files as VFS
+.SH SYNOPSIS
+.nf
+\fB#include <tclZipfs.h>\fR
+.sp
+int
+\fBTclzipfs_Init\fR(\fIinterp\fR)
+.sp
+int
+\fBTclzipfs_SafeInit\fR(\fIinterp\fR)
+.sp
+int
+\fBTclzipfs_Mount\fR(\fIinterp, zipname, mntpt, passwd\fR)
+.sp
+int
+\fBTclzipfs_Unmount\fR(\fIinterp, zipname\fR)
+.SH ARGUMENTS
+.AS Tcl_Interp **termPtr
+.AP Tcl_Interp *interp in
+Interpreter in which the zip file system is mounted.  The interpreter's result is
+modified to hold the result or error message from the script.
+.AP "const char" *zipname in
+Name of a zipfile.
+.AP "const char" *mntpt in
+Name of a mount point.
+.AP "const char" *passwd in
+An (optional) password.
+.BE
+.SH DESCRIPTION
+\fBTclzipfs_Init()\fR performs one-time initialization of the file system
+and registers it process wide. Additionally, a package named \fIzipfs\fR
+is provided and supplemental Tcl commands are created in the given
+interpreter \fIinterp\fR.
+.PP
+\fBTclzipfs_SafeInit()\fR is the version of \fBTclzipfs_Init()\fR for
+safe interpreters. It exposes only uncritical supplemental Tcl commands
+in the given interpreter \fIinterp\fR.
+.PP
+\fBTclzipfs_Mount()\fR mount the ZIP archive \fIzipname\fR on the mount
+point given in \fImntpt\fR using the optional ZIP password \fIpasswd\fR.
+Errors during that process are reported in the interpreter \fIinterp\fR.
+If \fIzipname\fR is a NULL pointer, information on all currently mounted
+ZIP file systems is written into \fIinterp\fR's result as a sequence of
+mount points and ZIP file names.
+.PP
+\fBTclzipfs_Unmount()\fR undoes the effect of \fBTclzipfs_Mount()\fR,
+i.e. it unmounts the mounted ZIP archive file \fIzipname\fR. Errors are
+reported in the interpreter \fIinterp\fR.
+.SH KEYWORDS
+compress, filesystem, zip
