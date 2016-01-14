@@ -650,16 +650,6 @@ static int		SetByteCodeFromAny(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
 
 /*
- * TIP #280: Helper for building the per-word line information of all compiled
- * commands.
- */
-static void		EnterCmdWordData(ExtCmdLoc *eclPtr, int srcOffset,
-			    Tcl_Token *tokenPtr, const char *cmd, int len,
-			    int numWords, int line, int *clNext, int **lines,
-			    CompileEnv *envPtr);
-static void		ReleaseCmdWordData(ExtCmdLoc *eclPtr);
-
-/*
  * The structure below defines the bytecode Tcl object type by means of
  * procedures that can be invoked by generic object code.
  */
@@ -731,7 +721,6 @@ TclSetByteCodeFromAny(
 				 * in frame. */
     int length, result = TCL_OK;
     const char *stringPtr;
-    ContLineLoc *clLocPtr;
 
 #ifdef TCL_COMPILE_DEBUG
     if (!traceInitialized) {
@@ -751,25 +740,7 @@ TclSetByteCodeFromAny(
      * stored by TclCompEvalObj and ProcCompileProc.
      */
 
-    TclInitCompileEnv(interp, &compEnv, stringPtr, length,
-	    iPtr->invokeCmdFramePtr, iPtr->invokeWord);
-
-    /*
-     * Now we check if we have data about invisible continuation lines for the
-     * script, and make it available to the compile environment, if so.
-     *
-     * It is not clear if the script Tcl_Obj* can be free'd while the compiler
-     * is using it, leading to the release of the associated ContLineLoc
-     * structure as well. To ensure that the latter doesn't happen we set a
-     * lock on it. We release this lock in the function TclFreeCompileEnv(),
-     * found in this file. The "lineCLPtr" hashtable is managed in the file
-     * "tclObj.c".
-     */
-
-    clLocPtr = TclContinuationsGet(objPtr);
-    if (clLocPtr) {
-	compEnv.clNext = &clLocPtr->loc[0];
-    }
+    TclInitCompileEnv(interp, &compEnv, stringPtr, length);
 
     TclCompileScript(interp, stringPtr, length, &compEnv);
 
@@ -1034,24 +1005,6 @@ TclCleanupByteCode(
 	auxDataPtr++;
     }
 
-    /*
-     * TIP #280. Release the location data associated with this byte code
-     * structure, if any. NOTE: The interp we belong to may be gone already,
-     * and the data with it.
-     *
-     * See also tclBasic.c, DeleteInterpProc
-     */
-
-    if (iPtr) {
-	Tcl_HashEntry *hePtr = Tcl_FindHashEntry(iPtr->lineBCPtr,
-		(char *) codePtr);
-
-	if (hePtr) {
-	    ReleaseCmdWordData(Tcl_GetHashValue(hePtr));
-	    Tcl_DeleteHashEntry(hePtr);
-	}
-    }
-
     if (codePtr->localCachePtr && (--codePtr->localCachePtr->refCount == 0)) {
 	TclFreeLocalCache(interp, codePtr->localCachePtr);
     }
@@ -1174,9 +1127,9 @@ CompileSubstObj(
 	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
 
 	/* TODO: Check for more TIP 280 */
-	TclInitCompileEnv(interp, &compEnv, bytes, numBytes, NULL, 0);
+	TclInitCompileEnv(interp, &compEnv, bytes, numBytes);
 
-	TclSubstCompile(interp, bytes, numBytes, flags, 1, &compEnv);
+	TclSubstCompile(interp, bytes, numBytes, flags, &compEnv);
 
 	TclEmitOpcode(INST_DONE, &compEnv);
 	TclInitByteCodeObj(objPtr, &compEnv);
@@ -1231,26 +1184,6 @@ FreeSubstCodeInternalRep(
 	TclCleanupByteCode(codePtr);
     }
 }
-
-static void
-ReleaseCmdWordData(
-    ExtCmdLoc *eclPtr)
-{
-    int i;
-
-    if (eclPtr->type == TCL_LOCATION_SOURCE) {
-	Tcl_DecrRefCount(eclPtr->path);
-    }
-    for (i=0 ; i<eclPtr->nuloc ; i++) {
-	ckfree((char *) eclPtr->loc[i].line);
-    }
-
-    if (eclPtr->loc != NULL) {
-	ckfree((char *) eclPtr->loc);
-    }
-
-    ckfree((char *) eclPtr);
-}
 
 /*
  *----------------------------------------------------------------------
@@ -1276,10 +1209,7 @@ TclInitCompileEnv(
     register CompileEnv *envPtr,/* Points to the CompileEnv structure to
 				 * initialize. */
     const char *stringPtr,	/* The source string to be compiled. */
-    int numBytes,		/* Number of bytes in source string. */
-    const CmdFrame *invoker,	/* Location context invoking the bcc */
-    int word)			/* Index of the word in that context getting
-				 * compiled */
+    int numBytes)		/* Number of bytes in source string. */
 {
     Interp *iPtr = (Interp *) interp;
 
@@ -1314,137 +1244,6 @@ TclInitCompileEnv(
     envPtr->cmdMapPtr = envPtr->staticCmdMapSpace;
     envPtr->cmdMapEnd = COMPILEENV_INIT_CMD_MAP_SIZE;
     envPtr->mallocedCmdMap = 0;
-
-    /*
-     * TIP #280: Set up the extended command location information, based on
-     * the context invoking the byte code compiler. This structure is used to
-     * keep the per-word line information for all compiled commands.
-     *
-     * See also tclBasic.c, TclEvalObjEx, for the equivalent code in the
-     * non-compiling evaluator
-     */
-
-    envPtr->extCmdMapPtr = ckalloc(sizeof(ExtCmdLoc));
-    envPtr->extCmdMapPtr->loc = NULL;
-    envPtr->extCmdMapPtr->nloc = 0;
-    envPtr->extCmdMapPtr->nuloc = 0;
-    envPtr->extCmdMapPtr->path = NULL;
-
-    if (invoker == NULL) {
-	/*
-	 * Initialize the compiler for relative counting in case of a
-	 * dynamic context.
-	 */
-
-	envPtr->line = 1;
-	if (iPtr->evalFlags & TCL_EVAL_FILE) {
-	    iPtr->evalFlags &= ~TCL_EVAL_FILE;
-	    envPtr->extCmdMapPtr->type = TCL_LOCATION_SOURCE;
-
-	    if (iPtr->scriptFile) {
-		/*
-		 * Normalization here, to have the correct pwd. Should have
-		 * negligible impact on performance, as the norm should have
-		 * been done already by the 'source' invoking us, and it
-		 * caches the result.
-		 */
-
-		Tcl_Obj *norm =
-			Tcl_FSGetNormalizedPath(interp, iPtr->scriptFile);
-
-		if (norm == NULL) {
-		    /*
-		     * Error message in the interp result. No place to put it.
-		     * And no place to serve the error itself to either. Fake
-		     * a path, empty string.
-		     */
-
-		    TclNewLiteralStringObj(envPtr->extCmdMapPtr->path, "");
-		} else {
-		    envPtr->extCmdMapPtr->path = norm;
-		}
-	    } else {
-		TclNewLiteralStringObj(envPtr->extCmdMapPtr->path, "");
-	    }
-
-	    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
-	} else {
-	    envPtr->extCmdMapPtr->type =
-		(envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
-	}
-    } else {
-	/*
-	 * Initialize the compiler using the context, making counting absolute
-	 * to that context. Note that the context can be byte code execution.
-	 * In that case we have to fill out the missing pieces (line, path,
-	 * ...) which may make change the type as well.
-	 */
-
-	CmdFrame *ctxPtr = TclStackAlloc(interp, sizeof(CmdFrame));
-	int pc = 0;
-
-	*ctxPtr = *invoker;
-	if (invoker->type == TCL_LOCATION_BC) {
-	    /*
-	     * Note: Type BC => ctx.data.eval.path    is not used.
-	     *			ctx.data.tebc.codePtr is used instead.
-	     */
-
-	    TclGetSrcInfoForPc(ctxPtr);
-	    pc = 1;
-	}
-
-	if ((ctxPtr->nline <= word) || (ctxPtr->line[word] < 0)) {
-	    /*
-	     * Word is not a literal, relative counting.
-	     */
-
-	    envPtr->line = 1;
-	    envPtr->extCmdMapPtr->type =
-		    (envPtr->procPtr ? TCL_LOCATION_PROC : TCL_LOCATION_BC);
-
-	    if (pc && (ctxPtr->type == TCL_LOCATION_SOURCE)) {
-		/*
-		 * The reference made by 'TclGetSrcInfoForPc' is dead.
-		 */
-
-		Tcl_DecrRefCount(ctxPtr->data.eval.path);
-	    }
-	} else {
-	    envPtr->line = ctxPtr->line[word];
-	    envPtr->extCmdMapPtr->type = ctxPtr->type;
-
-	    if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-		envPtr->extCmdMapPtr->path = ctxPtr->data.eval.path;
-
-		if (pc) {
-		    /*
-		     * The reference 'TclGetSrcInfoForPc' made is transfered.
-		     */
-
-		    ctxPtr->data.eval.path = NULL;
-		} else {
-		    /*
-		     * We have a new reference here.
-		     */
-
-		    Tcl_IncrRefCount(envPtr->extCmdMapPtr->path);
-		}
-	    }
-	}
-
-	TclStackFree(interp, ctxPtr);
-    }
-
-    envPtr->extCmdMapPtr->start = envPtr->line;
-
-    /*
-     * Initialize the data about invisible continuation lines as empty, i.e.
-     * not used. The caller (TclSetByteCodeFromAny) will set this up, if such
-     * data is available.
-     */
-
-    envPtr->clNext = NULL;
 
     envPtr->auxDataArrayPtr = envPtr->staticAuxDataArraySpace;
     envPtr->auxDataArrayNext = 0;
@@ -1522,10 +1321,6 @@ TclFreeCompileEnv(
     }
     if (envPtr->mallocedAuxDataArray) {
 	ckfree(envPtr->auxDataArrayPtr);
-    }
-    if (envPtr->extCmdMapPtr) {
-	ReleaseCmdWordData(envPtr->extCmdMapPtr);
-	envPtr->extCmdMapPtr = NULL;
     }
 }
 
@@ -1668,7 +1463,6 @@ TclCompileInvocation(
     CompileEnv *envPtr)
 {
     int wordIdx = 0, depth = TclGetStackDepth(envPtr);
-    DefineLineInformation;
 
     if (cmdObj) {
 	CompileCmdLiteral(interp, cmdObj, envPtr);
@@ -1679,8 +1473,6 @@ TclCompileInvocation(
     for (; wordIdx < numWords; wordIdx++, tokenPtr = TokenAfter(tokenPtr)) {
 	int objIdx;
 
-	SetLineInformation(wordIdx);
-
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    continue;
@@ -1688,10 +1480,6 @@ TclCompileInvocation(
 
 	objIdx = TclRegisterNewLiteral(envPtr,
 		tokenPtr[1].start, tokenPtr[1].size);
-	if (envPtr->clNext) {
-	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
-		    tokenPtr[1].start - envPtr->source, envPtr->clNext);
-	}
 	TclEmitPush(objIdx, envPtr);
     }
 
@@ -1712,7 +1500,6 @@ CompileExpanded(
     CompileEnv *envPtr)
 {
     int wordIdx = 0;
-    DefineLineInformation;
     int depth = TclGetStackDepth(envPtr);
 
     TclEmitInstInt4(INST_EXPAND_START, envPtr->currStackDepth, envPtr);
@@ -1726,8 +1513,6 @@ CompileExpanded(
     for (; wordIdx < numWords; wordIdx++, tokenPtr = TokenAfter(tokenPtr)) {
 	int objIdx;
 
-	SetLineInformation(wordIdx);
-
 	if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) {
 	    CompileTokens(envPtr, tokenPtr, interp);
 	    if (tokenPtr->type == TCL_TOKEN_EXPAND_WORD) {
@@ -1738,10 +1523,6 @@ CompileExpanded(
 
 	objIdx = TclRegisterNewLiteral(envPtr,
 		tokenPtr[1].start, tokenPtr[1].size);
-	if (envPtr->clNext) {
-	    TclContinuationsEnterDerived(TclFetchLiteral(envPtr, objIdx),
-		    tokenPtr[1].start - envPtr->source, envPtr->clNext);
-	}
 	TclEmitPush(objIdx, envPtr);
     }
 
@@ -1771,22 +1552,12 @@ CompileCmdCompileProc(
     Command *cmdPtr,
     CompileEnv *envPtr)
 {
-    DefineLineInformation;
     int depth = TclGetStackDepth(envPtr);
-
+    int savedNumCommands = envPtr->numCommands;
+    
     if (TCL_OK == TclAttemptCompileProc(interp, parsePtr, 1, cmdPtr, envPtr)) {
 	TclCheckStackDepth(depth+1, envPtr);
 	return TCL_OK;
-    }
-
-    /*
-     * Throw out any line information generated by the failed compile attempt.
-     */
-
-    while (mapPtr->nuloc - 1 > eclIndex) {
-	mapPtr->nuloc--;
-	ckfree(mapPtr->loc[mapPtr->nuloc].line);
-	mapPtr->loc[mapPtr->nuloc].line = NULL;
     }
 
     /*
@@ -1794,7 +1565,7 @@ CompileCmdCompileProc(
      * partial compiles.
      */
 
-    envPtr->numCommands = mapPtr->nuloc;
+    envPtr->numCommands = savedNumCommands;
     return TCL_ERROR;
 }
 
@@ -1806,14 +1577,10 @@ CompileCommandTokens(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_Token *tokenPtr = parsePtr->tokenPtr;
-    ExtCmdLoc *eclPtr = envPtr->extCmdMapPtr;
     Tcl_Obj *cmdObj = Tcl_NewObj();
     Command *cmdPtr = NULL;
     int code = TCL_ERROR;
     int cmdKnown, expand = -1;
-    int *wlines, wlineat;
-    int cmdLine = envPtr->line;
-    int *clNext = envPtr->clNext;
     int cmdIdx = envPtr->numCommands;
     int startCodeOffset = envPtr->codeNext - envPtr->codeStart;
     int depth = TclGetStackDepth(envPtr);
@@ -1825,22 +1592,6 @@ CompileCommandTokens(
     envPtr->numCommands++;
     EnterCmdStartData(envPtr, cmdIdx,
 	    parsePtr->commandStart - envPtr->source, startCodeOffset);
-
-    /*
-     * TIP #280. Scan the words and compute the extended location information.
-     * The map first contain full per-word line information for use by the
-     * compiler. This is later replaced by a reduced form which signals
-     * non-literal words, stored in 'wlines'.
-     */
-
-    EnterCmdWordData(eclPtr, parsePtr->commandStart - envPtr->source,
-	    parsePtr->tokenPtr, parsePtr->commandStart,
-	    parsePtr->commandSize, parsePtr->numWords, cmdLine,
-	    clNext, &wlines, envPtr);
-    wlineat = eclPtr->nuloc - 1;
-
-    envPtr->line = eclPtr->loc[wlineat].line[0];
-    envPtr->clNext = eclPtr->loc[wlineat].next[0];
 
     /* Do we know the command word? */
     Tcl_IncrRefCount(cmdObj);
@@ -1895,18 +1646,6 @@ CompileCommandTokens(
 	    parsePtr->term - parsePtr->commandStart,
 	    (envPtr->codeNext-envPtr->codeStart) - startCodeOffset);
     TclEmitOpcode(INST_POP, envPtr);
-
-    /*
-     * TIP #280: Free full form of per-word line data and insert the reduced
-     * form now
-     */
-
-    envPtr->line = cmdLine;
-    envPtr->clNext = clNext;
-    ckfree(eclPtr->loc[wlineat].line);
-    ckfree(eclPtr->loc[wlineat].next);
-    eclPtr->loc[wlineat].line = wlines;
-    eclPtr->loc[wlineat].next = NULL;
 
     TclCheckStackDepth(depth, envPtr);
     return cmdIdx;
@@ -1967,15 +1706,6 @@ TclCompileScript(
 #endif
 
 	/*
-	 * TIP #280: Count newlines before the command start.
-	 * (See test info-30.33).
-	 */
-
-	TclAdvanceLines(&envPtr->line, p, parse.commandStart);
-	TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
-		parse.commandStart - envPtr->source);
-
-	/*
 	 * Advance parser to the next command in the script.
 	 */
 
@@ -2005,13 +1735,6 @@ TclCompileScript(
 
 	lastCmdIdx = CompileCommandTokens(interp, &parse, envPtr);
 
-	/*
-	 * TIP #280: Track lines in the just compiled command.
-	 */
-
-	TclAdvanceLines(&envPtr->line, parse.commandStart, p);
-	TclAdvanceContinuations(&envPtr->line, &envPtr->clNext,
-		p - envPtr->source);
 	Tcl_FreeParse(&parse);
     }
 
@@ -2110,9 +1833,6 @@ TclCompileVarSubst(
      * Emit instructions to load the variable.
      */
 
-    TclAdvanceLines(&envPtr->line, tokenPtr[1].start,
-	    tokenPtr[1].start + tokenPtr[1].size);
-
     if (tokenPtr->numComponents == 1) {
 	if (localVar < 0) {
 	    TclEmitOpcode(INST_LOAD_STK, envPtr);
@@ -2190,8 +1910,6 @@ TclCompileTokens(
 	switch (tokenPtr->type) {
 	case TCL_TOKEN_TEXT:
 	    TclDStringAppendToken(&textBuffer, tokenPtr);
-	    TclAdvanceLines(&envPtr->line, tokenPtr->start,
-		    tokenPtr->start + tokenPtr->size);
 	    break;
 
 	case TCL_TOKEN_BS:
@@ -2243,17 +1961,10 @@ TclCompileTokens(
 		numObjsToConcat++;
 		Tcl_DStringFree(&textBuffer);
 
-		if (numCL) {
-		    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
-			    numCL, clPosition);
-		}
-		numCL = 0;
 	    }
 
-	    envPtr->line += adjust;
 	    TclCompileScript(interp, tokenPtr->start+1,
 		    tokenPtr->size-2, envPtr);
-	    envPtr->line -= adjust;
 	    numObjsToConcat++;
 	    break;
 
@@ -2292,11 +2003,6 @@ TclCompileTokens(
 
 	TclEmitPush(literal, envPtr);
 	numObjsToConcat++;
-	if (numCL) {
-	    TclContinuationsEnter(TclFetchLiteral(envPtr, literal),
-		    numCL, clPosition);
-	}
-	numCL = 0;
     }
 
     /*
@@ -2534,7 +2240,7 @@ TclInitByteCodeObj(
 #endif
     int numLitObjects = envPtr->literalArrayNext;
     Namespace *namespacePtr;
-    int i, isNew;
+    int i;
     Interp *iPtr;
 
     if (envPtr->iPtr == NULL) {
@@ -2669,15 +2375,6 @@ TclInitByteCodeObj(
     TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
     objPtr->typePtr = &tclByteCodeType;
-
-    /*
-     * TIP #280. Associate the extended per-word line information with the
-     * byte code object (internal rep), for use with the bc compiler.
-     */
-
-    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->lineBCPtr, codePtr,
-	    &isNew), envPtr->extCmdMapPtr);
-    envPtr->extCmdMapPtr = NULL;
 
     /* We've used up the CompileEnv.  Mark as uninitialized. */
     envPtr->iPtr = NULL;
@@ -2987,86 +2684,6 @@ EnterCmdExtentData(
     cmdLocPtr = &envPtr->cmdMapPtr[cmdIndex];
     cmdLocPtr->numSrcBytes = numSrcBytes;
     cmdLocPtr->numCodeBytes = numCodeBytes;
-}
-
-/*
- *----------------------------------------------------------------------
- * TIP #280
- *
- * EnterCmdWordData --
- *
- *	Registers the lines for the words of a command. This information is
- *	used at runtime by 'info frame'.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Inserts word location information into the compilation environment
- *	envPtr for the command at index cmdIndex. The compilation
- *	environment's ExtCmdLoc.ECL array is grown if necessary.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-EnterCmdWordData(
-    ExtCmdLoc *eclPtr,		/* Points to the map environment structure in
-				 * which to enter command location
-				 * information. */
-    int srcOffset,		/* Offset of first char of the command. */
-    Tcl_Token *tokenPtr,
-    const char *cmd,
-    int len,
-    int numWords,
-    int line,
-    int *clNext,
-    int **wlines,
-    CompileEnv *envPtr)
-{
-    ECL *ePtr;
-    const char *last;
-    int wordIdx, wordLine, *wwlines, *wordNext;
-
-    if (eclPtr->nuloc >= eclPtr->nloc) {
-	/*
-	 * Expand the ECL array by allocating more storage from the heap. The
-	 * currently allocated ECL entries are stored from eclPtr->loc[0] up
-	 * to eclPtr->loc[eclPtr->nuloc-1] (inclusive).
-	 */
-
-	size_t currElems = eclPtr->nloc;
-	size_t newElems = (currElems ? 2*currElems : 1);
-	size_t newBytes = newElems * sizeof(ECL);
-
-	eclPtr->loc = ckrealloc(eclPtr->loc, newBytes);
-	eclPtr->nloc = newElems;
-    }
-
-    ePtr = &eclPtr->loc[eclPtr->nuloc];
-    ePtr->srcOffset = srcOffset;
-    ePtr->line = ckalloc(numWords * sizeof(int));
-    ePtr->next = ckalloc(numWords * sizeof(int *));
-    ePtr->nline = numWords;
-    wwlines = ckalloc(numWords * sizeof(int));
-
-    last = cmd;
-    wordLine = line;
-    wordNext = clNext;
-    for (wordIdx=0 ; wordIdx<numWords;
-	    wordIdx++, tokenPtr += tokenPtr->numComponents + 1) {
-	TclAdvanceLines(&wordLine, last, tokenPtr->start);
-	TclAdvanceContinuations(&wordLine, &wordNext,
-		tokenPtr->start - envPtr->source);
-	wwlines[wordIdx] =
-		(TclWordKnownAtCompileTime(tokenPtr, NULL) ? wordLine : -1);
-	ePtr->line[wordIdx] = wordLine;
-	ePtr->next[wordIdx] = wordNext;
-	last = tokenPtr->start;
-    }
-
-    *wlines = wwlines;
-    eclPtr->nuloc ++;
 }
 
 /*

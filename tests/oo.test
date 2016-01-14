@@ -2847,45 +2847,45 @@ test oo-21.4 {OO: inheritance ordering} -setup {
     A destroy
 } -result {Emix-filt B-filt D-cfilt B-cfilt Fmix Emix o D B C A}
 
-test oo-22.1 {OO and info frame} -setup {
-    oo::class create c
-    c create i
-} -match glob -body {
-    oo::define c self method frame {} {
-	info frame 0
-    }
-    oo::define c {
-	method frames {} {
-	    info frame 0
-	}
-	method level {} {
-	    info frame
-	}
-    }
-    oo::objdefine i {
-	method frames {} {
-	    list [next] [info frame 0]
-	}
-	method level {} {
-	    expr {[next] - [info frame]}
-	}
-    }
-    list [i level] [i frames] [dict get [c frame] object]
-} -cleanup {
-    c destroy
-} -result {1 {{* cmd {info frame 0} method frames class ::c level 0} {* cmd {info frame 0} method frames object ::i level 0}} ::c}
-test oo-22.2 {OO and info frame: Bug 3001438} -setup {
-    oo::class create c
-} -body {
-    oo::define c method test {{x 1}} {
-	if {$x} {my test 0}
-	lsort {q w e r t y u i o p}; # Overwrite the Tcl stack
-	info frame 0
-    }
-    [c new] test
-} -match glob -cleanup {
-    c destroy
-} -result {* cmd {info frame 0} method test class ::c level 0}
+#test oo-22.1 {OO and info frame} -setup {
+#    oo::class create c
+#    c create i
+#} -match glob -body {
+#    oo::define c self method frame {} {
+#	info frame 0
+#    }
+#    oo::define c {
+#	method frames {} {
+#	    info frame 0
+#	}
+#	method level {} {
+#	    info frame
+#	}
+#    }
+#    oo::objdefine i {
+#	method frames {} {
+#	    list [next] [info frame 0]
+#	}
+#	method level {} {
+#	    expr {[next] - [info frame]}
+#	}
+#    }
+#    list [i level] [i frames] [dict get [c frame] object]
+#} -cleanup {
+#    c destroy
+#} -result {1 {{* cmd {info frame 0} method frames class ::c level 0} {* cmd {info frame 0} method frames object ::i level 0}} ::c}
+#test oo-22.2 {OO and info frame: Bug 3001438} -setup {
+#    oo::class create c
+#} -body {
+#    oo::define c method test {{x 1}} {
+#	if {$x} {my test 0}
+#	lsort {q w e r t y u i o p}; # Overwrite the Tcl stack
+#	info frame 0
+#    }
+#    [c new] test
+#} -match glob -cleanup {
+#    c destroy
+#} -result {* cmd {info frame 0} method test class ::c level 0}
 
 # Prove that the issue in [Bug 1865054] isn't an issue any more
 test oo-23.1 {Self-like derivation; complex case!} -setup {

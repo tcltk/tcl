@@ -1140,181 +1140,6 @@ typedef struct CallFrame {
 				 * TIP#257. */
 
 /*
- * TIP #280
- * The structure below defines a command frame. A command frame provides
- * location information for all commands executing a tcl script (source, eval,
- * uplevel, procedure bodies, ...). The runtime structure essentially contains
- * the stack trace as it would be if the currently executing command were to
- * throw an error.
- *
- * For commands where it makes sense it refers to the associated CallFrame as
- * well.
- *
- * The structures are chained in a single list, with the top of the stack
- * anchored in the Interp structure.
- *
- * Instances can be allocated on the C stack, or the heap, the former making
- * cleanup a bit simpler.
- */
-
-typedef struct CmdFrame {
-    /*
-     * General data. Always available.
-     */
-
-    int type;			/* Values see below. */
-    int level;			/* Number of frames in stack, prevent O(n)
-				 * scan of list. */
-    int *line;			/* Lines the words of the command start on. */
-    int nline;
-    CallFrame *framePtr;	/* Procedure activation record, may be
-				 * NULL. */
-    struct CmdFrame *nextPtr;	/* Link to calling frame. */
-    /*
-     * Data needed for Eval vs TEBC
-     *
-     * EXECUTION CONTEXTS and usage of CmdFrame
-     *
-     * Field	  TEBC		  EvalEx
-     * =======	  ====		  ======
-     * level	  yes		  yes
-     * type	  BC/PREBC	  SRC/EVAL
-     * line0	  yes		  yes
-     * framePtr	  yes		  yes
-     * =======	  ====		  ======
-     *
-     * =======	  ====		  ========= union data
-     * line1	  -		  yes
-     * line3	  -		  yes
-     * path	  -		  yes
-     * -------	  ----		  ------
-     * codePtr	  yes		  -
-     * pc	  yes		  -
-     * =======	  ====		  ======
-     *
-     * =======	  ====		  ========= union cmd
-     * str.cmd	  yes		  yes
-     * str.len	  yes		  yes
-     * -------	  ----		  ------
-     */
-
-    union {
-	struct {
-	    Tcl_Obj *path;	/* Path of the sourced file the command is
-				 * in. */
-	} eval;
-	struct {
-	    const void *codePtr;/* Byte code currently executed... */
-	    const char *pc;	/* ... and instruction pointer. */
-	} tebc;
-    } data;
-    Tcl_Obj *cmdObj;
-    const char *cmd;		/* The executed command, if possible... */
-    int len;			/* ... and its length. */
-    const struct CFWordBC *litarg;
-				/* Link to set of literal arguments which have
-				 * ben pushed on the lineLABCPtr stack by
-				 * TclArgumentBCEnter(). These will be removed
-				 * by TclArgumentBCRelease. */
-} CmdFrame;
-
-typedef struct CFWord {
-    CmdFrame *framePtr;		/* CmdFrame to access. */
-    int word;			/* Index of the word in the command. */
-    int refCount;		/* Number of times the word is on the
-				 * stack. */
-} CFWord;
-
-typedef struct CFWordBC {
-    CmdFrame *framePtr;		/* CmdFrame to access. */
-    int pc;			/* Instruction pointer of a command in
-				 * ExtCmdLoc.loc[.] */
-    int word;			/* Index of word in
-				 * ExtCmdLoc.loc[cmd]->line[.] */
-    struct CFWordBC *prevPtr;	/* Previous entry in stack for same Tcl_Obj. */
-    struct CFWordBC *nextPtr;	/* Next entry for same command call. See
-				 * CmdFrame litarg field for the list start. */
-    Tcl_Obj *obj;		/* Back reference to hashtable key */
-} CFWordBC;
-
-/*
- * Structure to record the locations of invisible continuation lines in
- * literal scripts, as character offset from the beginning of the script. Both
- * compiler and direct evaluator use this information to adjust their line
- * counters when tracking through the script, because when it is invoked the
- * continuation line marker as a whole has been removed already, meaning that
- * the \n which was part of it is gone as well, breaking regular line
- * tracking.
- *
- * These structures are allocated and filled by both the function
- * TclSubstTokens() in the file "tclParse.c" and its caller TclEvalEx() in the
- * file "tclBasic.c", and stored in the thread-global hashtable "lineCLPtr" in
- * file "tclObj.c". They are used by the functions TclSetByteCodeFromAny() and
- * TclCompileScript(), both found in the file "tclCompile.c". Their memory is
- * released by the function TclFreeObj(), in the file "tclObj.c", and also by
- * the function TclThreadFinalizeObjects(), in the same file.
- */
-
-#define CLL_END		(-1)
-
-typedef struct ContLineLoc {
-    int num;			/* Number of entries in loc, not counting the
-				 * final -1 marker entry. */
-    int loc[1];			/* Table of locations, as character offsets.
-				 * The table is allocated as part of the
-				 * structure, extending behind the nominal end
-				 * of the structure. An entry containing the
-				 * value -1 is put after the last location, as
-				 * end-marker/sentinel. */
-} ContLineLoc;
-
-/*
- * The following macros define the allowed values for the type field of the
- * CmdFrame structure above. Some of the values occur only in the extended
- * location data referenced via the 'baseLocPtr'.
- *
- * TCL_LOCATION_EVAL	  : Frame is for a script evaluated by EvalEx.
- * TCL_LOCATION_BC	  : Frame is for bytecode.
- * TCL_LOCATION_PREBC	  : Frame is for precompiled bytecode.
- * TCL_LOCATION_SOURCE	  : Frame is for a script evaluated by EvalEx, from a
- *			    sourced file.
- * TCL_LOCATION_PROC	  : Frame is for bytecode of a procedure.
- *
- * A TCL_LOCATION_BC type in a frame can be overridden by _SOURCE and _PROC
- * types, per the context of the byte code in execution.
- */
-
-#define TCL_LOCATION_EVAL	(0) /* Location in a dynamic eval script. */
-#define TCL_LOCATION_BC		(2) /* Location in byte code. */
-#define TCL_LOCATION_PREBC	(3) /* Location in precompiled byte code, no
-				     * location. */
-#define TCL_LOCATION_SOURCE	(4) /* Location in a file. */
-#define TCL_LOCATION_PROC	(5) /* Location in a dynamic proc. */
-#define TCL_LOCATION_LAST	(6) /* Number of values in the enum. */
-
-/*
- * Structure passed to describe procedure-like "procedures" that are not
- * procedures (e.g. a lambda) so that their details can be reported correctly
- * by [info frame]. Contains a sub-structure for each extra field.
- */
-
-typedef Tcl_Obj * (GetFrameInfoValueProc)(ClientData clientData);
-typedef struct {
-    const char *name;		/* Name of this field. */
-    GetFrameInfoValueProc *proc;	/* Function to generate a Tcl_Obj* from the
-				 * clientData, or just use the clientData
-				 * directly (after casting) if NULL. */
-    ClientData clientData;	/* Context for above function, or Tcl_Obj* if
-				 * proc field is NULL. */
-} ExtraFrameInfoField;
-typedef struct {
-    int length;			/* Length of array. */
-    ExtraFrameInfoField fields[2];
-				/* Really as long as necessary, but this is
-				 * long enough for nearly anything. */
-} ExtraFrameInfo;
-
-/*
  *----------------------------------------------------------------
  * Data structures and procedures related to TclHandles, which are a very
  * lightweight method of preserving enough information to determine if an
@@ -1423,8 +1248,6 @@ typedef struct ExecStack {
 typedef struct CorContext {
     struct CallFrame *framePtr;
     struct CallFrame *varFramePtr;
-    struct CmdFrame *cmdFramePtr;  /* See Interp.cmdFramePtr */
-    Tcl_HashTable *lineLABCPtr;    /* See Interp.lineLABCPtr */
 } CorContext;
 
 typedef struct CoroutineData {
@@ -1992,54 +1815,6 @@ typedef struct Interp {
 				 * code returned by a channel operation. */
 
     /*
-     * Source code origin information (TIP #280).
-     */
-
-    CmdFrame *cmdFramePtr;	/* Points to the command frame containing the
-				 * location information for the current
-				 * command. */
-    const CmdFrame *invokeCmdFramePtr;
-				/* Points to the command frame which is the
-				 * invoking context of the bytecode compiler.
-				 * NULL when the byte code compiler is not
-				 * active. */
-    int invokeWord;		/* Index of the word in the command which
-				 * is getting compiled. */
-    Tcl_HashTable *linePBodyPtr;/* This table remembers for each statically
-				 * defined procedure the location information
-				 * for its body. It is keyed by the address of
-				 * the Proc structure for a procedure. The
-				 * values are "struct CmdFrame*". */
-    Tcl_HashTable *lineBCPtr;	/* This table remembers for each ByteCode
-				 * object the location information for its
-				 * body. It is keyed by the address of the
-				 * Proc structure for a procedure. The values
-				 * are "struct ExtCmdLoc*". (See
-				 * tclCompile.h) */
-    Tcl_HashTable *lineLABCPtr;
-    Tcl_HashTable *lineLAPtr;	/* This table remembers for each argument of a
-				 * command on the execution stack the index of
-				 * the argument in the command, and the
-				 * location data of the command. It is keyed
-				 * by the address of the Tcl_Obj containing
-				 * the argument. The values are "struct
-				 * CFWord*" (See tclBasic.c). This allows
-				 * commands like uplevel, eval, etc. to find
-				 * location information for their arguments,
-				 * if they are a proper literal argument to an
-				 * invoking command. Alt view: An index to the
-				 * CmdFrame stack keyed by command argument
-				 * holders. */
-    ContLineLoc *scriptCLLocPtr;/* This table points to the location data for
-				 * invisible continuation lines in the script,
-				 * if any. This pointer is set by the function
-				 * TclEvalObjEx() in file "tclBasic.c", and
-				 * used by function ...() in the same file.
-				 * It does for the eval/direct path of script
-				 * execution what CompileEnv.clLoc does for
-				 * the bytecode compiler.
-				 */
-    /*
      * TIP #268. The currently active selection mode, i.e. the package require
      * preferences.
      */
@@ -2097,17 +1872,6 @@ typedef struct Interp {
 				 * (asyncCancelMsg not NULL), takes precedence
 				 * over the default error messages returned by
 				 * a script cancellation operation. */
-
-	/*
-	 * TIP #348 IMPLEMENTATION  -  Substituted error stack
-	 */
-    Tcl_Obj *errorStack;	/* [info errorstack] value (as a Tcl_Obj). */
-    Tcl_Obj *upLiteral;		/* "UP" literal for [info errorstack] */
-    Tcl_Obj *callLiteral;	/* "CALL" literal for [info errorstack] */
-    Tcl_Obj *innerLiteral;	/* "INNER" literal for [info errorstack] */
-    Tcl_Obj *innerContext;	/* cached list for fast reallocation */
-    int resetErrorStack;        /* controls cleaning up of ::errorStack */
-
 #ifdef TCL_COMPILE_STATS
     /*
      * Statistical information about the bytecode compiler and interpreter's
@@ -2117,6 +1881,7 @@ typedef struct Interp {
     ByteCodeStats stats;	/* Holds compilation and execution statistics
 				 * for this interpreter. */
 #endif /* TCL_COMPILE_STATS */
+    Tcl_Obj *cmdSourcePtr;      /* Command source obj, used for command traces */
 } Interp;
 
 /*
@@ -2740,24 +2505,6 @@ MODULE_SCOPE void  TclPushTailcallPoint(Tcl_Interp *interp);
 MODULE_SCOPE void  TclMarkTailcall(Tcl_Interp *interp);
 MODULE_SCOPE void  TclSkipTailcall(Tcl_Interp *interp);
 
-/*
- * This structure holds the data for the various iteration callbacks used to
- * NRE the 'for' and 'while' commands. We need a separate structure because we
- * have more than the 4 client data entries we can provide directly thorugh
- * the callback API. It is the 'word' information which puts us over the
- * limit. It is needed because the loop body is argument 4 of 'for' and
- * argument 2 of 'while'. Not providing the correct index confuses the #280
- * code. We TclSmallAlloc/Free this.
- */
-
-typedef struct ForIterData {
-    Tcl_Obj *cond;		/* Loop condition expression. */
-    Tcl_Obj *body;		/* Loop body. */
-    Tcl_Obj *next;		/* Loop step script, NULL for 'while'. */
-    const char *msg;		/* Error message part. */
-    int word;			/* Index of the body script in the command */
-} ForIterData;
-
 /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
  *            and Tcl_FindSymbol. This structure corresponds to an opaque
  *            typedef in tcl.h */
@@ -2813,21 +2560,6 @@ MODULE_SCOPE void	TclAppendBytesToByteArray(Tcl_Obj *objPtr,
 			    const unsigned char *bytes, int len);
 MODULE_SCOPE int	TclNREvalCmd(Tcl_Interp *interp, Tcl_Obj *objPtr,
 			    int flags);
-MODULE_SCOPE void	TclAdvanceContinuations(int *line, int **next,
-			    int loc);
-MODULE_SCOPE void	TclAdvanceLines(int *line, const char *start,
-			    const char *end);
-MODULE_SCOPE void	TclArgumentEnter(Tcl_Interp *interp,
-			    Tcl_Obj *objv[], int objc, CmdFrame *cf);
-MODULE_SCOPE void	TclArgumentRelease(Tcl_Interp *interp,
-			    Tcl_Obj *objv[], int objc);
-MODULE_SCOPE void	TclArgumentBCEnter(Tcl_Interp *interp,
-			    Tcl_Obj *objv[], int objc,
-			    void *codePtr, CmdFrame *cfPtr, int cmd, int pc);
-MODULE_SCOPE void	TclArgumentBCRelease(Tcl_Interp *interp,
-			    CmdFrame *cfPtr);
-MODULE_SCOPE void	TclArgumentGet(Tcl_Interp *interp, Tcl_Obj *obj,
-			    CmdFrame **cfPtrPtr, int *wordPtr);
 MODULE_SCOPE int	TclArraySet(Tcl_Interp *interp,
 			    Tcl_Obj *arrayNameObj, Tcl_Obj *arrayElemObj);
 MODULE_SCOPE double	TclBignumToDouble(const mp_int *bignum);
@@ -2844,13 +2576,6 @@ MODULE_SCOPE int	TclChanCaughtErrorBypass(Tcl_Interp *interp,
 MODULE_SCOPE Tcl_ObjCmdProc TclChannelNamesCmd;
 MODULE_SCOPE int	TclClearRootEnsemble(ClientData data[],
 			    Tcl_Interp *interp, int result);
-MODULE_SCOPE ContLineLoc *TclContinuationsEnter(Tcl_Obj *objPtr, int num,
-			    int *loc);
-MODULE_SCOPE void	TclContinuationsEnterDerived(Tcl_Obj *objPtr,
-			    int start, int *clNext);
-MODULE_SCOPE ContLineLoc *TclContinuationsGet(Tcl_Obj *objPtr);
-MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
-			    Tcl_Obj *originObjPtr);
 MODULE_SCOPE int	TclConvertElement(const char *src, int length,
 			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
@@ -2858,10 +2583,6 @@ MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
 			    int *sizePtr, int *literalPtr);
-/* TIP #280 - Modified token based evulation, with line information. */
-MODULE_SCOPE int	TclEvalEx(Tcl_Interp *interp, const char *script,
-			    int numBytes, int flags, int line,
-			    int *clNextOuter, const char *outerScript);
 MODULE_SCOPE Tcl_ObjCmdProc TclFileAttrsCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileCopyCmd;
 MODULE_SCOPE Tcl_ObjCmdProc TclFileDeleteCmd;
@@ -2921,8 +2642,6 @@ MODULE_SCOPE int	TclGetOpenModeEx(Tcl_Interp *interp,
 			    const char *modeString, int *seekFlagPtr,
 			    int *binaryPtr);
 MODULE_SCOPE Tcl_Obj *	TclGetProcessGlobalValue(ProcessGlobalValue *pgvPtr);
-MODULE_SCOPE Tcl_Obj *	TclGetSourceFromFrame(CmdFrame *cfPtr, int objc,
-			    Tcl_Obj *const objv[]);
 MODULE_SCOPE char *	TclGetStringStorage(Tcl_Obj *objPtr,
 			    unsigned int *sizePtr);
 MODULE_SCOPE int	TclGlob(Tcl_Interp *interp, char *pattern,
@@ -2936,7 +2655,6 @@ MODULE_SCOPE int	TclInfoExistsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclInfoCoroutineCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-MODULE_SCOPE Tcl_Obj *	TclInfoFrame(Tcl_Interp *interp, CmdFrame *framePtr);
 MODULE_SCOPE int	TclInfoGlobalsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 MODULE_SCOPE int	TclInfoLocalsCmd(ClientData dummy, Tcl_Interp *interp,
@@ -2965,9 +2683,6 @@ MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
 MODULE_SCOPE Tcl_Obj *	TclLindexFlat(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    int indexCount, Tcl_Obj *const indexArray[]);
-/* TIP #280 */
-MODULE_SCOPE void	TclListLines(Tcl_Obj *listObj, int line, int n,
-			    int *lines, Tcl_Obj *const *elems);
 MODULE_SCOPE Tcl_Obj *	TclListObjCopy(Tcl_Interp *interp, Tcl_Obj *listPtr);
 MODULE_SCOPE Tcl_Obj *	TclLsetList(Tcl_Interp *interp, Tcl_Obj *listPtr,
 			    Tcl_Obj *indexPtr, Tcl_Obj *valuePtr);
@@ -2981,7 +2696,6 @@ MODULE_SCOPE int	TclMaxListLength(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclMergeReturnOptions(Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[], Tcl_Obj **optionsPtrPtr,
 			    int *codePtr, int *levelPtr);
-MODULE_SCOPE Tcl_Obj *  TclNoErrorStack(Tcl_Interp *interp, Tcl_Obj *options);
 MODULE_SCOPE int	TclNokia770Doubles(void);
 MODULE_SCOPE void	TclNsDecrRefCount(Namespace *nsPtr);
 MODULE_SCOPE void	TclObjVarErrMsg(Tcl_Interp *interp, Tcl_Obj *part1Ptr,
@@ -3089,16 +2803,14 @@ MODULE_SCOPE int	TclStringMatchObj(Tcl_Obj *stringObj,
 			    Tcl_Obj *patternObj, int flags);
 MODULE_SCOPE Tcl_Obj *	TclStringObjReverse(Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclSubstCompile(Tcl_Interp *interp, const char *bytes,
-			    int numBytes, int flags, int line,
-			    struct CompileEnv *envPtr);
+			    int numBytes, int flags, struct CompileEnv *envPtr);
 MODULE_SCOPE int	TclSubstOptions(Tcl_Interp *interp, int numOpts,
 			    Tcl_Obj *const opts[], int *flagPtr);
 MODULE_SCOPE void	TclSubstParse(Tcl_Interp *interp, const char *bytes,
 			    int numBytes, int flags, Tcl_Parse *parsePtr,
 			    Tcl_InterpState *statePtr);
 MODULE_SCOPE int	TclSubstTokens(Tcl_Interp *interp, Tcl_Token *tokenPtr,
-			    int count, int *tokensLeftPtr, int line,
-			    int *clNextOuter, const char *outerScript);
+			    int count, int *tokensLeftPtr);
 MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
@@ -3133,8 +2845,6 @@ MODULE_SCOPE void *	TclpThreadCreateKey(void);
 MODULE_SCOPE void	TclpThreadDeleteKey(void *keyPtr);
 MODULE_SCOPE void	TclpThreadSetMasterTSD(void *tsdKeyPtr, void *ptr);
 MODULE_SCOPE void *	TclpThreadGetMasterTSD(void *tsdKeyPtr);
-
-MODULE_SCOPE void	TclErrorStackResetIf(Tcl_Interp *interp, const char *msg, int length);
 
 /*
  *----------------------------------------------------------------

@@ -170,28 +170,28 @@ test error-4.5 {errorInfo and errorCode variables} {
     list [catch {error msg1 msg2 {}} msg] $msg $::errorInfo $::errorCode
 } {1 msg1 msg2 {}}
 
-test error-4.6 {errorstack via info } -body {
-    proc f x {g $x$x}
-    proc g x {error G:$x}
-    catch {f 12}
-    info errorstack
-} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
-test error-4.7 {errorstack via options dict } -body {
-    proc f x {g $x$x}
-    proc g x {error G:$x}
-    catch {f 12} m d
-    dict get $d -errorstack
-} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
-test error-4.8 {errorstack from exec traces} -body {
-    proc foo args {}
-    proc goo {} foo
-    trace add execution foo enter {error bar;#}
-    catch goo m d
-    dict get $d -errorstack
-} -cleanup {
-    rename goo {}; rename foo {}
-    unset -nocomplain m d
-} -result {INNER {error bar} CALL goo UP 1}
+#test error-4.6 {errorstack via info } -body {
+#    proc f x {g $x$x}
+#    proc g x {error G:$x}
+#    catch {f 12}
+#    info errorstack
+#} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
+#test error-4.7 {errorstack via options dict } -body {
+#    proc f x {g $x$x}
+#    proc g x {error G:$x}
+#    catch {f 12} m d
+#    dict get $d -errorstack
+#} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
+#test error-4.8 {errorstack from exec traces} -body {
+#    proc foo args {}
+#    proc goo {} foo
+#    trace add execution foo enter {error bar;#}
+#    catch goo m d
+#    dict get $d -errorstack
+#} -cleanup {
+#    rename goo {}; rename foo {}
+#    unset -nocomplain m d
+#} -result {INNER {error bar} CALL goo UP 1}
 
 # Errors in error command itself
 
@@ -247,15 +247,15 @@ test error-6.9 {catch must reset error state} {
     catch foo
     list $::errorCode
 } {NONE}
-test error-6.10 {catch must reset errorstack} -body {
-	proc f x {g $x$x}
-	proc g x {error G:$x}
-	catch {f 12}
-	set e1 [info errorstack]
-	catch {f 13}
-	set e2 [info errorstack]
-	list $e1 $e2
-} -match glob -result {{INNER * CALL {g 1212} CALL {f 12} UP 1} {INNER * CALL {g 1313} CALL {f 13} UP 1}}
+#test error-6.10 {catch must reset errorstack} -body {
+#	proc f x {g $x$x}
+#	proc g x {error G:$x}
+#	catch {f 12}
+#	set e1 [info errorstack]
+#	catch {f 13}
+#	set e2 [info errorstack]
+#	list $e1 $e2
+#} -match glob -result {{INNER * CALL {g 1212} CALL {f 12} UP 1} {INNER * CALL {g 1313} CALL {f 13} UP 1}}
 
 test error-7.1 {Bug 1397843} -body {
     variable cmds

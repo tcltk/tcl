@@ -117,12 +117,6 @@ static int		InfoCompleteCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoDefaultCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
-/* TIP #348 - New 'info' subcommand 'errorstack' */
-static int		InfoErrorStackCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
-/* TIP #280 - New 'info' subcommand 'frame' */
-static int		InfoFrameCmd(ClientData dummy, Tcl_Interp *interp,
-			    int objc, Tcl_Obj *const objv[]);
 static int		InfoFunctionsCmd(ClientData dummy, Tcl_Interp *interp,
 			    int objc, Tcl_Obj *const objv[]);
 static int		InfoHostnameCmd(ClientData dummy, Tcl_Interp *interp,
@@ -165,9 +159,7 @@ static const EnsembleImplMap defaultInfoMap[] = {
     {"complete",	   InfoCompleteCmd,	    TclCompileBasic1ArgCmd, NULL, NULL, 0},
     {"coroutine",	   TclInfoCoroutineCmd,     TclCompileInfoCoroutineCmd, NULL, NULL, 0},
     {"default",		   InfoDefaultCmd,	    TclCompileBasic3ArgCmd, NULL, NULL, 0},
-    {"errorstack",	   InfoErrorStackCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"exists",		   TclInfoExistsCmd,	    TclCompileInfoExistsCmd, NULL, NULL, 0},
-    {"frame",		   InfoFrameCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"functions",	   InfoFunctionsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"globals",		   TclInfoGlobalsCmd,	    TclCompileBasic0Or1ArgCmd, NULL, NULL, 0},
     {"hostname",	   InfoHostnameCmd,	    TclCompileBasic0ArgCmd, NULL, NULL, 0},
@@ -251,7 +243,6 @@ IfConditionCallback(
     Tcl_Interp *interp,
     int result)
 {
-    Interp *iPtr = (Interp *) interp;
     int objc = PTR2INT(data[0]);
     Tcl_Obj *const *objv = data[1];
     int i = PTR2INT(data[2]);
@@ -298,8 +289,7 @@ IfConditionCallback(
 		 * TIP #280. Make invoking context available to branch.
 		 */
 
-		return TclNREvalObjEx(interp, objv[thenScriptIndex], 0,
-			iPtr->cmdFramePtr, thenScriptIndex);
+		return TclNREvalObjEx(interp, objv[thenScriptIndex], 0);
 	    }
 	    return TCL_OK;
 	}
@@ -355,10 +345,9 @@ IfConditionCallback(
 	 * TIP #280. Make invoking context available to branch/else.
 	 */
 
-	return TclNREvalObjEx(interp, objv[thenScriptIndex], 0,
-		iPtr->cmdFramePtr, thenScriptIndex);
+	return TclNREvalObjEx(interp, objv[thenScriptIndex], 0);
     }
-    return TclNREvalObjEx(interp, objv[i], 0, iPtr->cmdFramePtr, i);
+    return TclNREvalObjEx(interp, objv[i], 0);
 
   missingScript:
     Tcl_SetObjResult(interp, Tcl_ObjPrintf(
@@ -986,55 +975,6 @@ InfoDefaultCmd(
 /*
  *----------------------------------------------------------------------
  *
- * InfoErrorStackCmd --
- *
- *	Called to implement the "info errorstack" command that returns information
- *	about the last error's call stack. Handles the following syntax:
- *
- *	    info errorstack ?interp?
- *
- * Results:
- *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
- *
- * Side effects:
- *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InfoErrorStackCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    Tcl_Interp *target;
-    Interp *iPtr;
-
-    if ((objc != 1) && (objc != 2)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?interp?");
-	return TCL_ERROR;
-    }
-
-    target = interp;
-    if (objc == 2) {
-	target = Tcl_GetSlave(interp, Tcl_GetString(objv[1]));
-	if (target == NULL) {
-	    return TCL_ERROR;
-	}
-    }
-
-    iPtr = (Interp *) target;
-    Tcl_SetObjResult(interp, iPtr->errorStack);
-
-    return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * TclInfoExistsCmd --
  *
  *	Called to implement the "info exists" command that determines whether
@@ -1073,347 +1013,6 @@ TclInfoExistsCmd(
     Tcl_SetObjResult(interp,
 	    Tcl_NewBooleanObj(varPtr && varPtr->value.objPtr));
     return TCL_OK;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * InfoFrameCmd --
- *	TIP #280
- *
- *	Called to implement the "info frame" command that returns the location
- *	of either the currently executing command, or its caller. Handles the
- *	following syntax:
- *
- *		info frame ?number?
- *
- * Results:
- *	Returns TCL_OK if successful and TCL_ERROR if there is an error.
- *
- * Side effects:
- *	Returns a result in the interpreter's result object. If there is an
- *	error, the result is an error message.
- *
- *----------------------------------------------------------------------
- */
-
-static int
-InfoFrameCmd(
-    ClientData dummy,		/* Not used. */
-    Tcl_Interp *interp,		/* Current interpreter. */
-    int objc,			/* Number of arguments. */
-    Tcl_Obj *const objv[])	/* Argument objects. */
-{
-    Interp *iPtr = (Interp *) interp;
-    int level, code = TCL_OK;
-    CmdFrame *framePtr, **cmdFramePtrPtr = &iPtr->cmdFramePtr;
-    CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
-    int topLevel = 0;
-
-    if (objc > 2) {
-	Tcl_WrongNumArgs(interp, 1, objv, "?number?");
-	return TCL_ERROR;
-    }
-
-    while (corPtr) {
-	while (*cmdFramePtrPtr) {
-	    topLevel++;
-	    cmdFramePtrPtr = &((*cmdFramePtrPtr)->nextPtr);
-	}
-	if (corPtr->caller.cmdFramePtr) {
-	    *cmdFramePtrPtr = corPtr->caller.cmdFramePtr;
-	}
-	corPtr = corPtr->callerEEPtr->corPtr;
-    }
-    topLevel += (*cmdFramePtrPtr)->level;
-
-    if (topLevel != iPtr->cmdFramePtr->level) {
-	framePtr = iPtr->cmdFramePtr;
-	while (framePtr) {
-	    framePtr->level = topLevel--;
-	    framePtr = framePtr->nextPtr;
-	}
-	if (topLevel) {
-	    Tcl_Panic("Broken frame level calculation");
-	}
-	topLevel = iPtr->cmdFramePtr->level;
-    }
-
-    if (objc == 1) {
-	/*
-	 * Just "info frame".
-	 */
-
-	Tcl_SetObjResult(interp, Tcl_NewIntObj(topLevel));
-	goto done;
-    }
-
-    /*
-     * We've got "info frame level" and must parse the level first.
-     */
-
-    if (TclGetIntFromObj(interp, objv[1], &level) != TCL_OK) {
-	code = TCL_ERROR;
-	goto done;
-    }
-
-    if ((level > topLevel) || (level <= - topLevel)) {
-    levelError:
-	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		"bad level \"%s\"", TclGetString(objv[1])));
-	Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_FRAME",
-		TclGetString(objv[1]), NULL);
-	code = TCL_ERROR;
-	goto done;
-    }
-
-    /*
-     * Let us convert to relative so that we know how many levels to go back
-     */
-
-    if (level > 0) {
-	level -= topLevel;
-    }
-
-    framePtr = iPtr->cmdFramePtr;
-    while (++level <= 0) {
-	framePtr = framePtr->nextPtr;
-	if (!framePtr) {
-	    goto levelError;
-	}
-    }
-
-    Tcl_SetObjResult(interp, TclInfoFrame(interp, framePtr));
-
-  done:
-    cmdFramePtrPtr = &iPtr->cmdFramePtr;
-    corPtr = iPtr->execEnvPtr->corPtr;
-    while (corPtr) {
-	CmdFrame *endPtr = corPtr->caller.cmdFramePtr;
-
-	if (endPtr) {
-	    if (*cmdFramePtrPtr == endPtr) {
-		*cmdFramePtrPtr = NULL;
-	    } else {
-		CmdFrame *runPtr = *cmdFramePtrPtr;
-
-		while (runPtr->nextPtr != endPtr) {
-		    runPtr->level -= endPtr->level;
-		    runPtr = runPtr->nextPtr;
-		}
-		runPtr->level = 1;
-		runPtr->nextPtr = NULL;
-	    }
-	    cmdFramePtrPtr = &corPtr->caller.cmdFramePtr;
-	}
-	corPtr = corPtr->callerEEPtr->corPtr;
-    }
-    return code;
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * TclInfoFrame --
- *
- *	Core of InfoFrameCmd, returns TIP280 dict for a given frame.
- *
- * Results:
- *	Returns TIP280 dict.
- *
- * Side effects:
- *	None.
- *
- *----------------------------------------------------------------------
- */
-
-Tcl_Obj *
-TclInfoFrame(
-    Tcl_Interp *interp,		/* Current interpreter. */
-    CmdFrame *framePtr)		/* Frame to get info for. */
-{
-    Interp *iPtr = (Interp *) interp;
-    Tcl_Obj *tmpObj;
-    Tcl_Obj *lv[20];		/* Keep uptodate when more keys are added to
-				 * the dict. */
-    int lc = 0;
-    /*
-     * This array is indexed by the TCL_LOCATION_... values, except
-     * for _LAST.
-     */
-    static const char *const typeString[TCL_LOCATION_LAST] = {
-	"eval", "eval", "eval", "precompiled", "source", "proc"
-    };
-    Proc *procPtr = framePtr->framePtr ? framePtr->framePtr->procPtr : NULL;
-    int needsFree = -1;
-
-    /*
-     * Pull the information and construct the dictionary to return, as list.
-     * Regarding use of the CmdFrame fields see tclInt.h, and its definition.
-     */
-
-#define ADD_PAIR(name, value) \
-	TclNewLiteralStringObj(tmpObj, name); \
-	lv[lc++] = tmpObj; \
-	lv[lc++] = (value)
-
-    switch (framePtr->type) {
-    case TCL_LOCATION_EVAL:
-	/*
-	 * Evaluation, dynamic script. Type, line, cmd, the latter through
-	 * str.
-	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	if (framePtr->line) {
-	    ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
-	} else {
-	    ADD_PAIR("line", Tcl_NewIntObj(1));
-	}
-	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
-	break;
-
-    case TCL_LOCATION_PREBC:
-	/*
-	 * Precompiled. Result contains the type as signal, nothing else.
-	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	break;
-
-    case TCL_LOCATION_BC: {
-	/*
-	 * Execution of bytecode. Talk to the BC engine to fill out the frame.
-	 */
-
-	CmdFrame *fPtr = TclStackAlloc(interp, sizeof(CmdFrame));
-
-	*fPtr = *framePtr;
-
-	/*
-	 * Note:
-	 * Type BC => f.data.eval.path	  is not used.
-	 *	      f.data.tebc.codePtr is used instead.
-	 */
-
-	TclGetSrcInfoForPc(fPtr);
-
-	/*
-	 * Now filled: cmd.str.(cmd,len), line
-	 * Possibly modified: type, path!
-	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[fPtr->type], -1));
-	if (fPtr->line) {
-	    ADD_PAIR("line", Tcl_NewIntObj(fPtr->line[0]));
-	}
-
-	if (fPtr->type == TCL_LOCATION_SOURCE) {
-	    ADD_PAIR("file", fPtr->data.eval.path);
-
-	    /*
-	     * Death of reference by TclGetSrcInfoForPc.
-	     */
-
-	    Tcl_DecrRefCount(fPtr->data.eval.path);
-	}
-
-	ADD_PAIR("cmd", TclGetSourceFromFrame(fPtr, 0, NULL));
-	if (fPtr->cmdObj && framePtr->cmdObj == NULL) {
-	    needsFree = lc - 1;
-	}
-	TclStackFree(interp, fPtr);
-	break;
-    }
-
-    case TCL_LOCATION_SOURCE:
-	/*
-	 * Evaluation of a script file.
-	 */
-
-	ADD_PAIR("type", Tcl_NewStringObj(typeString[framePtr->type], -1));
-	ADD_PAIR("line", Tcl_NewIntObj(framePtr->line[0]));
-	ADD_PAIR("file", framePtr->data.eval.path);
-
-	/*
-	 * Refcount framePtr->data.eval.path goes up when lv is converted into
-	 * the result list object.
-	 */
-
-	ADD_PAIR("cmd", TclGetSourceFromFrame(framePtr, 0, NULL));
-	break;
-
-    case TCL_LOCATION_PROC:
-	Tcl_Panic("TCL_LOCATION_PROC found in standard frame");
-	break;
-    }
-
-    /*
-     * 'proc'. Common to all frame types. Conditional on having an associated
-     * Procedure CallFrame.
-     */
-
-    if (procPtr != NULL) {
-	Tcl_HashEntry *namePtr = procPtr->cmdPtr->hPtr;
-
-	if (namePtr) {
-	    Tcl_Obj *procNameObj;
-
-	    /*
-	     * This is a regular command.
-	     */
-
-	    TclNewObj(procNameObj);
-	    Tcl_GetCommandFullName(interp, (Tcl_Command) procPtr->cmdPtr,
-		    procNameObj);
-	    ADD_PAIR("proc", procNameObj);
-	} else if (procPtr->cmdPtr->clientData) {
-	    ExtraFrameInfo *efiPtr = procPtr->cmdPtr->clientData;
-	    int i;
-
-	    /*
-	     * This is a non-standard command. Luckily, it's told us how to
-	     * render extra information about its frame.
-	     */
-
-	    for (i=0 ; i<efiPtr->length ; i++) {
-		lv[lc++] = Tcl_NewStringObj(efiPtr->fields[i].name, -1);
-		if (efiPtr->fields[i].proc) {
-		    lv[lc++] =
-			efiPtr->fields[i].proc(efiPtr->fields[i].clientData);
-		} else {
-		    lv[lc++] = efiPtr->fields[i].clientData;
-		}
-	    }
-	}
-    }
-
-    /*
-     * 'level'. Common to all frame types. Conditional on having an associated
-     * _visible_ CallFrame.
-     */
-
-    if ((framePtr->framePtr != NULL) && (iPtr->varFramePtr != NULL)) {
-	CallFrame *current = framePtr->framePtr;
-	CallFrame *top = iPtr->varFramePtr;
-	CallFrame *idx;
-
-	for (idx=top ; idx!=NULL ; idx=idx->callerVarPtr) {
-	    if (idx == current) {
-		int c = framePtr->framePtr->level;
-		int t = iPtr->varFramePtr->level;
-
-		ADD_PAIR("level", Tcl_NewIntObj(t - c));
-		break;
-	    }
-	}
-    }
-
-    tmpObj = Tcl_NewListObj(lc, lv);
-    if (needsFree >= 0) {
-	Tcl_DecrRefCount(lv[needsFree]);
-    }
-    return tmpObj;
 }
 
 /*

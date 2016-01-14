@@ -134,14 +134,15 @@ test result-6.3 {Bug 2383005} {
      catch {return -code error -errorcode {{}a} eek} m
      set m
 } {bad -errorcode value: expected a list but got "{}a"}
-test result-6.4 {non-list -errorstack} -body {
-     catch {return -code error -errorstack {{}a} eek} m o
-     list $m [dict get $o -errorcode] [dict get $o -errorstack]
-} -match glob -result {{bad -errorstack value: expected a list but got "{}a"} {TCL RESULT NONLIST_ERRORSTACK} {INNER * UP 1}}
-test result-6.5 {odd-sized-list -errorstack} -body {
-     catch {return -code error -errorstack a eek} m o
-     list $m [dict get $o -errorcode] [dict get $o -errorstack]
-} -match glob -result {{forbidden odd-sized list for -errorstack: "a"} {TCL RESULT ODDSIZEDLIST_ERRORSTACK} {INNER * UP 1}}
+#test result-6.4 {non-list -errorstack} -body {
+#     catch {return -code error -errorstack {{}a} eek} m o
+#     list $m [dict get $o -errorcode] [dict get $o -errorstack]
+#} -match glob -result {{bad -errorstack value: expected a list but got "{}a"} {TCL RESULT NONLIST_ERRORSTACK} {INNER * UP 1}}
+#test result-6.5 {odd-sized-list -errorstack} -body {
+#     catch {return -code error -errorstack a eek} m o
+#     list $m [dict get $o -errorcode] [dict get $o -errorstack]
+#} -match glob -result {{forbidden odd-sized list for -errorstack: "a"} {TCL RESULT ODDSIZEDLIST_ERRORSTACK} {INNER * UP 1}}
+
 # cleanup
 cleanupTests
 return

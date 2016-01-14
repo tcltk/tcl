@@ -94,9 +94,6 @@ typedef struct ProcedureMethod {
     TclOO_PostCallProc *postCallProc;
 				/* Callback to allow for additional cleanup
 				 * after the method executes. */
-    GetFrameInfoValueProc *gfivProc;
-				/* Callback to allow for fine tuning of how
-				 * the method reports itself. */
 } ProcedureMethod;
 
 #define TCLOO_PROCEDURE_METHOD_VERSION 0

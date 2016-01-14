@@ -2820,17 +2820,7 @@ SlaveEval(
     Tcl_AllowExceptions(slaveInterp);
 
     if (objc == 1) {
-	/*
-	 * TIP #280: Make actual argument location available to eval'd script.
-	 */
-
-	Interp *iPtr = (Interp *) interp;
-	CmdFrame *invoker = iPtr->cmdFramePtr;
-	int word = 0;
-
-	TclArgumentGet(interp, objv[0], &invoker, &word);
-
-	result = TclEvalObjEx(slaveInterp, objv[0], 0, invoker, word);
+	result = Tcl_EvalObjEx(slaveInterp, objv[0], 0);
     } else {
 	Tcl_Obj *objPtr = Tcl_ConcatObj(objc, objv);
 	Tcl_IncrRefCount(objPtr);

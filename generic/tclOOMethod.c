@@ -38,7 +38,6 @@ typedef struct {
     ProcErrorProc *errProc;	/* The error handler for the body. */
     Tcl_Obj *nameObj;		/* The "name" of the command. */
     Command cmd;		/* The command structure. Mostly bogus. */
-    ExtraFrameInfo efi;		/* Extra information used for [info frame]. */
     Command *oldCmdPtr;		/* Saved cmdPtr so that we can be safe after a
 				 * recursive call returns. */
     struct PNI pni;		/* Specialist information used in the efi
@@ -88,7 +87,6 @@ static void		ConstructorErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
 static void		DestructorErrorHandler(Tcl_Interp *interp,
 			    Tcl_Obj *procNameObj);
-static Tcl_Obj *	RenderDeclarerName(ClientData clientData);
 static int		InvokeForwardMethod(ClientData clientData,
 			    Tcl_Interp *interp, Tcl_ObjectContext context,
 			    int objc, Tcl_Obj *const *objv);
@@ -458,7 +456,6 @@ TclOOMakeProcInstanceMethod(
 				 * inside the structure indicated by the
 				 * pointer in clientData. */
 {
-    Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
 
     if (TclCreateProc(interp, NULL, TclGetString(nameObj), argsObj, bodyObj,
@@ -467,69 +464,6 @@ TclOOMakeProcInstanceMethod(
     }
     procPtr = *procPtrPtr;
     procPtr->cmdPtr = NULL;
-
-    if (iPtr->cmdFramePtr) {
-	CmdFrame context = *iPtr->cmdFramePtr;
-
-	if (context.type == TCL_LOCATION_BC) {
-	    /*
-	     * Retrieve source information from the bytecode, if possible. If
-	     * the information is retrieved successfully, context.type will be
-	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
-	     */
-
-	    TclGetSrcInfoForPc(&context);
-	} else if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
-	     */
-
-	    Tcl_IncrRefCount(context.data.eval.path);
-	}
-
-	if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * We can account for source location within a proc only if the
-	     * proc body was not created by substitution.
-	     * (FIXME: check that this is sane and correct!)
-	     */
-
-	    if (context.line
-		    && (context.nline >= 4) && (context.line[3] >= 0)) {
-		int isNew;
-		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
-		Tcl_HashEntry *hPtr;
-
-		cfPtr->level = -1;
-		cfPtr->type = context.type;
-		cfPtr->line = ckalloc(sizeof(int));
-		cfPtr->line[0] = context.line[3];
-		cfPtr->nline = 1;
-		cfPtr->framePtr = NULL;
-		cfPtr->nextPtr = NULL;
-
-		cfPtr->data.eval.path = context.data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
-
-		cfPtr->cmd = NULL;
-		cfPtr->len = 0;
-
-		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
-		Tcl_SetHashValue(hPtr, cfPtr);
-	    }
-
-	    /*
-	     * 'context' is going out of scope; account for the reference that
-	     * it's holding to the path name.
-	     */
-
-	    Tcl_DecrRefCount(context.data.eval.path);
-	    context.data.eval.path = NULL;
-	}
-    }
 
     return Tcl_NewInstanceMethod(interp, (Tcl_Object) oPtr, nameObj, flags,
 	    typePtr, clientData);
@@ -571,7 +505,6 @@ TclOOMakeProcMethod(
 				 * inside the structure indicated by the
 				 * pointer in clientData. */
 {
-    Interp *iPtr = (Interp *) interp;
     Proc *procPtr;
 
     if (TclCreateProc(interp, NULL, namePtr, argsObj, bodyObj,
@@ -580,69 +513,6 @@ TclOOMakeProcMethod(
     }
     procPtr = *procPtrPtr;
     procPtr->cmdPtr = NULL;
-
-    if (iPtr->cmdFramePtr) {
-	CmdFrame context = *iPtr->cmdFramePtr;
-
-	if (context.type == TCL_LOCATION_BC) {
-	    /*
-	     * Retrieve source information from the bytecode, if possible. If
-	     * the information is retrieved successfully, context.type will be
-	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
-	     */
-
-	    TclGetSrcInfoForPc(&context);
-	} else if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
-	     */
-
-	    Tcl_IncrRefCount(context.data.eval.path);
-	}
-
-	if (context.type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * We can account for source location within a proc only if the
-	     * proc body was not created by substitution.
-	     * (FIXME: check that this is sane and correct!)
-	     */
-
-	    if (context.line
-		    && (context.nline >= 4) && (context.line[3] >= 0)) {
-		int isNew;
-		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
-		Tcl_HashEntry *hPtr;
-
-		cfPtr->level = -1;
-		cfPtr->type = context.type;
-		cfPtr->line = ckalloc(sizeof(int));
-		cfPtr->line[0] = context.line[3];
-		cfPtr->nline = 1;
-		cfPtr->framePtr = NULL;
-		cfPtr->nextPtr = NULL;
-
-		cfPtr->data.eval.path = context.data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
-
-		cfPtr->cmd = NULL;
-		cfPtr->len = 0;
-
-		hPtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			(char *) procPtr, &isNew);
-		Tcl_SetHashValue(hPtr, cfPtr);
-	    }
-
-	    /*
-	     * 'context' is going out of scope; account for the reference that
-	     * it's holding to the path name.
-	     */
-
-	    Tcl_DecrRefCount(context.data.eval.path);
-	    context.data.eval.path = NULL;
-	}
-    }
 
     return Tcl_NewMethod(interp, (Tcl_Class) clsPtr, nameObj, flags, typePtr,
 	    clientData);
@@ -845,10 +715,8 @@ PushMethodCallFrame(
      * Compile the body. This operation may fail.
      */
 
-    fdPtr->efi.length = 2;
     memset(&fdPtr->cmd, 0, sizeof(Command));
     fdPtr->cmd.nsPtr = nsPtr;
-    fdPtr->cmd.clientData = &fdPtr->efi;
     pmPtr->procPtr->cmdPtr = &fdPtr->cmd;
 
     /*
@@ -882,32 +750,6 @@ PushMethodCallFrame(
     fdPtr->framePtr->objc = objc;
     fdPtr->framePtr->objv = objv;
     fdPtr->framePtr->procPtr = pmPtr->procPtr;
-
-    /*
-     * Finish filling out the extra frame info so that [info frame] works.
-     */
-
-    fdPtr->efi.fields[0].name = "method";
-    fdPtr->efi.fields[0].proc = NULL;
-    fdPtr->efi.fields[0].clientData = fdPtr->nameObj;
-    if (pmPtr->gfivProc != NULL) {
-	fdPtr->efi.fields[1].name = "";
-	fdPtr->efi.fields[1].proc = pmPtr->gfivProc;
-	fdPtr->efi.fields[1].clientData = pmPtr;
-    } else {
-	register Tcl_Method method =
-		Tcl_ObjectContextMethod((Tcl_ObjectContext) contextPtr);
-
-	if (Tcl_MethodDeclarerObject(method) != NULL) {
-	    fdPtr->efi.fields[1].name = "object";
-	} else {
-	    fdPtr->efi.fields[1].name = "class";
-	}
-	fdPtr->efi.fields[1].proc = RenderDeclarerName;
-	fdPtr->efi.fields[1].clientData = &fdPtr->pni;
-	fdPtr->pni.interp = interp;
-	fdPtr->pni.method = method;
-    }
 
     return TCL_OK;
 
@@ -1112,32 +954,6 @@ ProcedureMethodCompiledVarResolver(
     Tcl_IncrRefCount(variableObj);
     *rPtrPtr = &infoPtr->info;
     return TCL_OK;
-}
-
-/*
- * ----------------------------------------------------------------------
- *
- * RenderDeclarerName --
- *
- *	Returns the name of the entity (object or class) which declared a
- *	method. Used for producing information for [info frame] in such a way
- *	that the expensive part of this (generating the object or class name
- *	itself) isn't done until it is needed.
- *
- * ----------------------------------------------------------------------
- */
-
-static Tcl_Obj *
-RenderDeclarerName(
-    ClientData clientData)
-{
-    struct PNI *pni = clientData;
-    Tcl_Object object = Tcl_MethodDeclarerObject(pni->method);
-
-    if (object == NULL) {
-	object = Tcl_GetClassAsObject(Tcl_MethodDeclarerClass(pni->method));
-    }
-    return TclOOObjectName(pni->interp, (Object *) object);
 }
 
 /*

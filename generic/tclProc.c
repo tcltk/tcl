@@ -24,7 +24,6 @@
 typedef struct {
     int isRootEnsemble;
     Command cmd;
-    ExtraFrameInfo efi;
 } ApplyExtraData;
 
 /*
@@ -210,101 +209,6 @@ Tcl_ProcObjCmd(
     procPtr->cmdPtr = (Command *) cmd;
 
     /*
-     * TIP #280: Remember the line the procedure body is starting on. In a
-     * bytecode context we ask the engine to provide us with the necessary
-     * information. This is for the initialization of the byte code compiler
-     * when the body is used for the first time.
-     *
-     * This code is nearly identical to the #280 code in SetLambdaFromAny, see
-     * this file. The differences are the different index of the body in the
-     * line array of the context, and the lambda code requires some special
-     * processing. Find a way to factor the common elements into a single
-     * function.
-     */
-
-    if (iPtr->cmdFramePtr) {
-	CmdFrame *contextPtr = TclStackAlloc(interp, sizeof(CmdFrame));
-
-	*contextPtr = *iPtr->cmdFramePtr;
-	if (contextPtr->type == TCL_LOCATION_BC) {
-	    /*
-	     * Retrieve source information from the bytecode, if possible. If
-	     * the information is retrieved successfully, context.type will be
-	     * TCL_LOCATION_SOURCE and the reference held by
-	     * context.data.eval.path will be counted.
-	     */
-
-	    TclGetSrcInfoForPc(contextPtr);
-	} else if (contextPtr->type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * The copy into 'context' up above has created another reference
-	     * to 'context.data.eval.path'; account for it.
-	     */
-
-	    Tcl_IncrRefCount(contextPtr->data.eval.path);
-	}
-
-	if (contextPtr->type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * We can account for source location within a proc only if the
-	     * proc body was not created by substitution.
-	     */
-
-	    if (contextPtr->line
-		    && (contextPtr->nline >= 4) && (contextPtr->line[3] >= 0)) {
-		int isNew;
-		Tcl_HashEntry *hePtr;
-		CmdFrame *cfPtr = ckalloc(sizeof(CmdFrame));
-
-		cfPtr->level = -1;
-		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
-		cfPtr->line[0] = contextPtr->line[3];
-		cfPtr->nline = 1;
-		cfPtr->framePtr = NULL;
-		cfPtr->nextPtr = NULL;
-
-		cfPtr->data.eval.path = contextPtr->data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
-
-		cfPtr->cmd = NULL;
-		cfPtr->len = 0;
-
-		hePtr = Tcl_CreateHashEntry(iPtr->linePBodyPtr,
-			procPtr, &isNew);
-		if (!isNew) {
-		    /*
-		     * Get the old command frame and release it. See also
-		     * TclProcCleanupProc in this file. Currently it seems as
-		     * if only the procbodytest::proc command of the testsuite
-		     * is able to trigger this situation.
-		     */
-
-		    CmdFrame *cfOldPtr = Tcl_GetHashValue(hePtr);
-
-		    if (cfOldPtr->type == TCL_LOCATION_SOURCE) {
-			Tcl_DecrRefCount(cfOldPtr->data.eval.path);
-			cfOldPtr->data.eval.path = NULL;
-		    }
-		    ckfree(cfOldPtr->line);
-		    cfOldPtr->line = NULL;
-		    ckfree(cfOldPtr);
-		}
-		Tcl_SetHashValue(hePtr, cfPtr);
-	    }
-
-	    /*
-	     * 'contextPtr' is going out of scope; account for the reference
-	     * that it's holding to the path name.
-	     */
-
-	    Tcl_DecrRefCount(contextPtr->data.eval.path);
-	    contextPtr->data.eval.path = NULL;
-	}
-	TclStackFree(interp, contextPtr);
-    }
-
-    /*
      * Optimize for no-op procs: if the body is not precompiled (like a TclPro
      * procbody), and the argument list is just "args" and the body is empty,
      * define a compileProc to compile a no-op.
@@ -438,18 +342,8 @@ TclCreateProc(
 	 */
 
 	if (Tcl_IsShared(bodyPtr)) {
-	    Tcl_Obj *sharedBodyPtr = bodyPtr;
-
 	    bytes = TclGetStringFromObj(bodyPtr, &length);
 	    bodyPtr = Tcl_NewStringObj(bytes, length);
-
-	    /*
-	     * TIP #280.
-	     * Ensure that the continuation line data for the original body is
-	     * not lost and applies to the new body as well.
-	     */
-
-	    TclContinuationsCopy(bodyPtr, sharedBodyPtr);
 	}
 
 	/*
@@ -959,8 +853,6 @@ TclNRUplevelObjCmd(
 {
 
     register Interp *iPtr = (Interp *) interp;
-    CmdFrame *invoker = NULL;
-    int word = 0;
     int result;
     CallFrame *savedVarFramePtr, *framePtr;
     Tcl_Obj *objPtr;
@@ -997,11 +889,6 @@ TclNRUplevelObjCmd(
      */
 
     if (objc == 1) {
-	/*
-	 * TIP #280. Make actual argument location available to eval'd script
-	 */
-
-	TclArgumentGet(interp, objv[0], &invoker, &word);
 	objPtr = objv[0];
 
     } else {
@@ -1016,7 +903,7 @@ TclNRUplevelObjCmd(
 
     TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
 	    NULL);
-    return TclNREvalObjEx(interp, objPtr, 0, invoker, word);
+    return TclNREvalObjEx(interp, objPtr, 0);
 }
 
 /*
@@ -1783,14 +1670,6 @@ TclNRInterpProcCore(
 	TCL_DTRACE_PROC_ARGS(a[0], a[1], a[2], a[3], a[4], a[5], a[6], a[7],
 		a[8], a[9]);
     }
-    if (TCL_DTRACE_PROC_INFO_ENABLED() && iPtr->cmdFramePtr) {
-	Tcl_Obj *info = TclInfoFrame(interp, iPtr->cmdFramePtr);
-	const char *a[6]; int i[2];
-
-	TclDTraceInfo(info, a, i);
-	TCL_DTRACE_PROC_INFO(a[0], a[1], a[2], a[3], i[0], i[1], a[4], a[5]);
-	TclDecrRefCount(info);
-    }
     if (TCL_DTRACE_PROC_ENTRY_ENABLED()) {
 	int l = iPtr->varFramePtr->isProcCallFrame & FRAME_IS_LAMBDA ? 1 : 0;
 
@@ -1988,8 +1867,6 @@ TclProcCompileProc(
     }
 
     if (bodyPtr->typePtr != &tclByteCodeType) {
-	Tcl_HashEntry *hePtr;
-
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile >= 1) {
 	    /*
@@ -2055,21 +1932,7 @@ TclProcCompileProc(
 	(void) TclPushStackFrame(interp, &framePtr, (Tcl_Namespace *) nsPtr,
 		/* isProcCallFrame */ 0);
 
-	/*
-	 * TIP #280: We get the invoking context from the cmdFrame which
-	 * was saved by 'Tcl_ProcObjCmd' (using linePBodyPtr).
-	 */
-
-	hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, (char *) procPtr);
-
-	/*
-	 * Constructed saved frame has body as word 0. See Tcl_ProcObjCmd.
-	 */
-
-	iPtr->invokeWord = 0;
-	iPtr->invokeCmdFramePtr = (hePtr ? Tcl_GetHashValue(hePtr) : NULL);
 	TclSetByteCodeFromAny(interp, bodyPtr, NULL, NULL);
-	iPtr->invokeCmdFramePtr = NULL;
 	TclPopStackFrame(interp);
     } else if (codePtr->nsEpoch != nsPtr->resolverEpoch) {
 	/*
@@ -2174,9 +2037,6 @@ TclProcCleanupProc(
     Tcl_Obj *bodyPtr = procPtr->bodyPtr;
     Tcl_Obj *defPtr;
     Tcl_ResolvedVarInfo *resVarInfo;
-    Tcl_HashEntry *hePtr = NULL;
-    CmdFrame *cfPtr = NULL;
-    Interp *iPtr = procPtr->iPtr;
 
     if (bodyPtr != NULL) {
 	Tcl_DecrRefCount(bodyPtr);
@@ -2201,34 +2061,6 @@ TclProcCleanupProc(
 	localPtr = nextPtr;
     }
     ckfree(procPtr);
-
-    /*
-     * TIP #280: Release the location data associated with this Proc
-     * structure, if any. The interpreter may not exist (For example for
-     * procbody structures created by tbcload.
-     */
-
-    if (iPtr == NULL) {
-	return;
-    }
-
-    hePtr = Tcl_FindHashEntry(iPtr->linePBodyPtr, (char *) procPtr);
-    if (!hePtr) {
-	return;
-    }
-
-    cfPtr = Tcl_GetHashValue(hePtr);
-
-    if (cfPtr) {
-	if (cfPtr->type == TCL_LOCATION_SOURCE) {
-	    Tcl_DecrRefCount(cfPtr->data.eval.path);
-	    cfPtr->data.eval.path = NULL;
-	}
-	ckfree(cfPtr->line);
-	cfPtr->line = NULL;
-	ckfree(cfPtr);
-    }
-    Tcl_DeleteHashEntry(hePtr);
 }
 
 /*
@@ -2454,11 +2286,9 @@ SetLambdaFromAny(
     Tcl_Interp *interp,		/* Used for error reporting if not NULL. */
     register Tcl_Obj *objPtr)	/* The object to convert. */
 {
-    Interp *iPtr = (Interp *) interp;
     const char *name;
     Tcl_Obj *argsPtr, *bodyPtr, *nsObjPtr, **objv;
-    int isNew, objc, result;
-    CmdFrame *cfPtr = NULL;
+    int objc, result;
     Proc *procPtr;
 
     if (interp == NULL) {
@@ -2502,93 +2332,6 @@ SetLambdaFromAny(
      */
 
     procPtr->cmdPtr = NULL;
-
-    /*
-     * TIP #280: Remember the line the apply body is starting on. In a Byte
-     * code context we ask the engine to provide us with the necessary
-     * information. This is for the initialization of the byte code compiler
-     * when the body is used for the first time.
-     *
-     * NOTE: The body is the second word in the 'objPtr'. Its location,
-     * accessible through 'context.line[1]' (see below) is therefore only the
-     * first approximation of the actual line the body is on. We have to use
-     * the string rep of the 'objPtr' to determine the exact line. This is
-     * available already through 'name'. Use 'TclListLines', see 'switch'
-     * (tclCmdMZ.c).
-     *
-     * This code is nearly identical to the #280 code in Tcl_ProcObjCmd, see
-     * this file. The differences are the different index of the body in the
-     * line array of the context, and the special processing mentioned in the
-     * previous paragraph to track into the list. Find a way to factor the
-     * common elements into a single function.
-     */
-
-    if (iPtr->cmdFramePtr) {
-	CmdFrame *contextPtr = TclStackAlloc(interp, sizeof(CmdFrame));
-
-	*contextPtr = *iPtr->cmdFramePtr;
-	if (contextPtr->type == TCL_LOCATION_BC) {
-	    /*
-	     * Retrieve the source context from the bytecode. This call
-	     * accounts for the reference to the source file, if any, held in
-	     * 'context.data.eval.path'.
-	     */
-
-	    TclGetSrcInfoForPc(contextPtr);
-	} else if (contextPtr->type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * We created a new reference to the source file path name when we
-	     * created 'context' above. Account for the reference.
-	     */
-
-	    Tcl_IncrRefCount(contextPtr->data.eval.path);
-
-	}
-
-	if (contextPtr->type == TCL_LOCATION_SOURCE) {
-	    /*
-	     * We can record source location within a lambda only if the body
-	     * was not created by substitution.
-	     */
-
-	    if (contextPtr->line
-		    && (contextPtr->nline >= 2) && (contextPtr->line[1] >= 0)) {
-		int buf[2];
-
-		/*
-		 * Move from approximation (line of list cmd word) to actual
-		 * location (line of 2nd list element).
-		 */
-
-		cfPtr = ckalloc(sizeof(CmdFrame));
-		TclListLines(objPtr, contextPtr->line[1], 2, buf, NULL);
-
-		cfPtr->level = -1;
-		cfPtr->type = contextPtr->type;
-		cfPtr->line = ckalloc(sizeof(int));
-		cfPtr->line[0] = buf[1];
-		cfPtr->nline = 1;
-		cfPtr->framePtr = NULL;
-		cfPtr->nextPtr = NULL;
-
-		cfPtr->data.eval.path = contextPtr->data.eval.path;
-		Tcl_IncrRefCount(cfPtr->data.eval.path);
-
-		cfPtr->cmd = NULL;
-		cfPtr->len = 0;
-	    }
-
-	    /*
-	     * 'contextPtr' is going out of scope. Release the reference that
-	     * it's holding to the source file path
-	     */
-
-	    Tcl_DecrRefCount(contextPtr->data.eval.path);
-	}
-	TclStackFree(interp, contextPtr);
-    }
-    Tcl_SetHashValue(Tcl_CreateHashEntry(iPtr->linePBodyPtr, procPtr,
-	    &isNew), cfPtr);
 
     /*
      * Set the namespace for this lambda: given by objv[2] understood as a
@@ -2727,22 +2470,6 @@ TclNRApplyObjCmd(
     memset(&extraPtr->cmd, 0, sizeof(Command));
     procPtr->cmdPtr = &extraPtr->cmd;
     extraPtr->cmd.nsPtr = (Namespace *) nsPtr;
-
-    /*
-     * TIP#280 (semi-)HACK!
-     *
-     * Using cmd.clientData to tell [info frame] how to render the lambdaPtr.
-     * The InfoFrameCmd will detect this case by testing cmd.hPtr for NULL.
-     * This condition holds here because of the memset() above, and nowhere
-     * else (in the core). Regular commands always have a valid hPtr, and
-     * lambda's never.
-     */
-
-    extraPtr->efi.length = 1;
-    extraPtr->efi.fields[0].name = "lambda";
-    extraPtr->efi.fields[0].proc = NULL;
-    extraPtr->efi.fields[0].clientData = lambdaPtr;
-    extraPtr->cmd.clientData = &extraPtr->efi;
 
     isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
     if (isRootEnsemble) {

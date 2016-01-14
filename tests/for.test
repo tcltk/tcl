@@ -690,7 +690,7 @@ test for-6.9 {Tcl_ForObjCmd: error executing command body} -body {
 } -match glob -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"
-    ("for" body line 1)
+    (loop body line 1)
     invoked from within
 "$z {set i 0} {$i < 5} {incr i} {set}"}
 test for-6.10 {Tcl_ForObjCmd: simple command body} {

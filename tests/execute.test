@@ -972,7 +972,7 @@ test execute-8.5 {Bug 2038069} -setup {
     demo
 } -cleanup {
     rename demo {}
-} -match glob -result {-code 1 -level 0 -errorstack * -errorcode NONE -errorinfo {FOO
+} -match glob -result {-code 1 -level 0 -errorcode NONE -errorinfo {FOO
     while executing
 "error FOO"
     invoked from within
@@ -1057,15 +1057,15 @@ test execute-11.2 {Bug 268b23df11} -setup {
     rename crash {}
     rename zero {}
 } -result 0
-test execute-11.3 {Bug a0ece9d6d4} -setup {
-    proc crash {} {expr {rand()}}
-    trace add execution crash enterstep {apply {args {info frame -2}}}
-} -body {
-    string is double [crash]
-} -cleanup {
-    trace remove execution crash enterstep {apply {args {info frame -2}}}
-    rename crash {}
-} -result 1
+#test execute-11.3 {Bug a0ece9d6d4} -setup {
+#    proc crash {} {expr {rand()}}
+#    trace add execution crash enterstep {apply {args {info frame -2}}}
+#} -body {
+#    string is double [crash]
+#} -cleanup {
+#    trace remove execution crash enterstep {apply {args {info frame -2}}}
+#    rename crash {}
+#} -result 1
 
 # cleanup
 if {[info commands testobj] != {}} {

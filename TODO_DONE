@@ -2,11 +2,6 @@
 **** TODO ***************************************************************
 *************************************************************************
 
-* remove [info frame] and [info errortsack], as well as all supporting
-  code. These should be recoded using the data that NRE is
-  keeping. Anything additional should ALWAYS choose to recompute on demand
-  over precomputing things during normal operation
-
 * bring up relevant mods (if any) from mig-alloc-reform 
 
 
@@ -45,5 +40,10 @@
 
 * remove interp->result and all supporting code; remove other deprecated
   apis 
+
+* remove [info frame] and [info errortsack], as well as all supporting
+  code. These should be recoded using the data that NRE is
+  keeping. Anything additional should ALWAYS choose to recompute on demand
+  over precomputing things during normal operation
 
 
