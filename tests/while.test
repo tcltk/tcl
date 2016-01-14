@@ -393,7 +393,7 @@ test while-4.9 {while (not compiled): error compiling command body} -body {
 } -result {wrong # args: should be "set varName ?newValue?"
     while *ing
 "set"
-    ("while" body line 1)
+    (loop body line 1)
     invoked from within
 "$z {$i < 5} {set}"}
 test while-4.10 {while (not compiled): simple command body} -body {

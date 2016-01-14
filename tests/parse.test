@@ -453,7 +453,7 @@ test parse-9.1 {Tcl_LogCommandInfo, line numbers} testevalex {
 } {1 {can't read "x": no such variable
     while executing
 "set x"
-    ("for" body line 5)
+    (loop body line 5)
     invoked from within
 "for {} 1 {} {
 

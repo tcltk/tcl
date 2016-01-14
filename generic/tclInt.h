@@ -2505,24 +2505,6 @@ MODULE_SCOPE void  TclPushTailcallPoint(Tcl_Interp *interp);
 MODULE_SCOPE void  TclMarkTailcall(Tcl_Interp *interp);
 MODULE_SCOPE void  TclSkipTailcall(Tcl_Interp *interp);
 
-/*
- * This structure holds the data for the various iteration callbacks used to
- * NRE the 'for' and 'while' commands. We need a separate structure because we
- * have more than the 4 client data entries we can provide directly thorugh
- * the callback API. It is the 'word' information which puts us over the
- * limit. It is needed because the loop body is argument 4 of 'for' and
- * argument 2 of 'while'. Not providing the correct index confuses the #280
- * code. We TclSmallAlloc/Free this.////
- */
-
-typedef struct ForIterData {
-    Tcl_Obj *cond;		/* Loop condition expression. */
-    Tcl_Obj *body;		/* Loop body. */
-    Tcl_Obj *next;		/* Loop step script, NULL for 'while'. */
-    const char *msg;		/* Error message part. */
-    int word;			/* Index of the body script in the command */
-} ForIterData;
-
 /* TIP #357 - Structure doing the bookkeeping of handles for Tcl_LoadFile
  *            and Tcl_FindSymbol. This structure corresponds to an opaque
  *            typedef in tcl.h */

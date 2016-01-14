@@ -182,11 +182,6 @@ TclNRCatchObjCmd(
 
     TclNRAddCallback(interp, CatchObjCmdCallback, INT2PTR(objc),
 	    varNamePtr, optionVarNamePtr, NULL);
-
-    /*
-     * TIP #280. Make invoking context available to caught script.
-     */
-
     return TclNREvalObjEx(interp, objv[1], 0);
 }
 
@@ -629,10 +624,6 @@ TclNREvalObjCmd(
     }
 
     if (objc == 2) {
-	/*
-	 * TIP #280. Make argument location available to eval'd script.
-	 */
-
 	objPtr = objv[1];
     } else {
 	/*
@@ -2261,26 +2252,13 @@ TclNRForObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    ForIterData *iterPtr;
-
     if (objc != 5) {
 	Tcl_WrongNumArgs(interp, 1, objv, "start test next command");
 	return TCL_ERROR;
     }
 
-    TclSmallAllocEx(interp, sizeof(ForIterData), iterPtr);
-    iterPtr->cond = objv[2];
-    iterPtr->body = objv[4];
-    iterPtr->next = objv[3];
-    iterPtr->msg  = "\n    (\"for\" body line %d)";
-    iterPtr->word = 4;
-
-    TclNRAddCallback(interp, ForSetupCallback, iterPtr, NULL, NULL, NULL);
-
-    /*
-     * TIP #280. Make invoking context available to initial script.
-     */
-
+    TclNRAddCallback(interp, ForSetupCallback, /*cond*/ objv[2],
+	    /*body*/ objv[4], /*next*/ objv[3], NULL);
     return TclNREvalObjEx(interp, objv[1], 0);
 }
 
@@ -2290,16 +2268,14 @@ ForSetupCallback(
     Tcl_Interp *interp,
     int result)
 {
-    ForIterData *iterPtr = data[0];
-
     if (result != TCL_OK) {
 	if (result == TCL_ERROR) {
 	    Tcl_AddErrorInfo(interp, "\n    (\"for\" initial command)");
 	}
-	TclSmallFreeEx(interp, iterPtr);
 	return result;
     }
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1], data[2],
+	    data[3]);
     return TCL_OK;
 }
 
@@ -2309,7 +2285,6 @@ TclNRForIterCallback(
     Tcl_Interp *interp,
     int result)
 {
-    ForIterData *iterPtr = data[0];
     Tcl_Obj *boolObj;
 
     switch (result) {
@@ -2323,18 +2298,17 @@ TclNRForIterCallback(
 
 	Tcl_ResetResult(interp);
 	TclNewObj(boolObj);
-	TclNRAddCallback(interp, ForCondCallback, iterPtr, boolObj, NULL,
-		NULL);
-	return Tcl_NRExprObj(interp, iterPtr->cond, boolObj);
+	TclNRAddCallback(interp, ForCondCallback, data[0], data[1], data[2],
+		boolObj);
+	return Tcl_NRExprObj(interp, /*cond*/ data[0], boolObj);
     case TCL_BREAK:
 	result = TCL_OK;
 	Tcl_ResetResult(interp);
 	break;
     case TCL_ERROR:
-	Tcl_AppendObjToErrorInfo(interp,
-		Tcl_ObjPrintf(iterPtr->msg, Tcl_GetErrorLine(interp)));
+	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
+		"\n    (loop body line %d)", Tcl_GetErrorLine(interp)));
     }
-    TclSmallFreeEx(interp, iterPtr);
     return result;
 }
 
@@ -2344,33 +2318,28 @@ ForCondCallback(
     Tcl_Interp *interp,
     int result)
 {
-    ForIterData *iterPtr = data[0];
-    Tcl_Obj *boolObj = data[1];
+    Tcl_Obj *boolObj = data[3];
     int value;
 
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(boolObj);
-	TclSmallFreeEx(interp, iterPtr);
 	return result;
     } else if (Tcl_GetBooleanFromObj(interp, boolObj, &value) != TCL_OK) {
 	Tcl_DecrRefCount(boolObj);
-	TclSmallFreeEx(interp, iterPtr);
 	return TCL_ERROR;
     }
     Tcl_DecrRefCount(boolObj);
 
     if (value) {
-	/* TIP #280. */
-	if (iterPtr->next) {
-	    TclNRAddCallback(interp, ForNextCallback, iterPtr, NULL, NULL,
-		    NULL);
+	if (/*next*/ data[2]) {
+	    TclNRAddCallback(interp, ForNextCallback,  data[0], data[1],
+		    data[2], NULL);
 	} else {
-	    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
-		    NULL, NULL);
+	    TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1],
+		    data[2], NULL);
 	}
-	return TclNREvalObjEx(interp, iterPtr->body, 0);
+	return TclNREvalObjEx(interp, /*body*/ data[1], 0);
     }
-    TclSmallFreeEx(interp, iterPtr);
     return result;
 }
 
@@ -2380,21 +2349,16 @@ ForNextCallback(
     Tcl_Interp *interp,
     int result)
 {
-    ForIterData *iterPtr = data[0];
-    Tcl_Obj *next = iterPtr->next;
+    Tcl_Obj *next = /*body*/ data[2];
 
     if ((result == TCL_OK) || (result == TCL_CONTINUE)) {
-	TclNRAddCallback(interp, ForPostNextCallback, iterPtr, NULL, NULL,
-		NULL);
-
-	/*
-	 * TIP #280. Make invoking context available to next script.
-	 */
-
+	TclNRAddCallback(interp, ForPostNextCallback, data[0], data[1],
+		    data[2], NULL);
 	return TclNREvalObjEx(interp, next, 0);
     }
 
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1],
+		    data[2], NULL);
     return result;
 }
 
@@ -2404,16 +2368,14 @@ ForPostNextCallback(
     Tcl_Interp *interp,
     int result)
 {
-    ForIterData *iterPtr = data[0];
-
     if ((result != TCL_BREAK) && (result != TCL_OK)) {
 	if (result == TCL_ERROR) {
 	    Tcl_AddErrorInfo(interp, "\n    (\"for\" loop-end command)");
-	    TclSmallFreeEx(interp, iterPtr);
 	}
 	return result;
     }
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL, NULL, NULL);
+    TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1],
+		    data[2], NULL);
     return result;
 }
 

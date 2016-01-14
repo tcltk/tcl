@@ -4704,8 +4704,6 @@ TclNRWhileObjCmd(
     int objc,			/* Number of arguments. */
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
-    ForIterData *iterPtr;
-
     if (objc != 3) {
 	Tcl_WrongNumArgs(interp, 1, objv, "test command");
 	return TCL_ERROR;
@@ -4714,16 +4712,8 @@ TclNRWhileObjCmd(
     /*
      * We reuse [for]'s callback, passing a NULL for the 'next' script.
      */
-
-    TclSmallAllocEx(interp, sizeof(ForIterData), iterPtr);
-    iterPtr->cond = objv[1];
-    iterPtr->body = objv[2];
-    iterPtr->next = NULL;
-    iterPtr->msg  = "\n    (\"while\" body line %d)";
-    iterPtr->word = 2;
-
-    TclNRAddCallback(interp, TclNRForIterCallback, iterPtr, NULL,
-	    NULL, NULL);
+    TclNRAddCallback(interp, TclNRForIterCallback, /*cond*/ objv[1],
+	    /*body*/ objv[2], /*next*/ NULL, NULL);
     return TCL_OK;
 }
 
