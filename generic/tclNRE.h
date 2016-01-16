@@ -61,8 +61,6 @@ typedef struct NRE_stack {
 	}								\
     } while (0)
 
-#define FREE_CB(interp, cbPtr)
-
 #define NEXT_CB(ptr) TclNextCallback(ptr)
 
 MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);

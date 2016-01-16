@@ -4294,11 +4294,9 @@ TclNRRunCallbacks(
 	POP_CB(interp, cbPtr);
 	procPtr = cbPtr->procPtr;
 	result = procPtr(cbPtr->data, interp, result);
-	FREE_CB(interp, cbPtr);
     }
     if (TOP_CB(interp)) {
 	POP_CB(interp, cbPtr);
-        FREE_CB(interp, cbPtr);
     }
     return result;
 }
