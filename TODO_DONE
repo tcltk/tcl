@@ -2,6 +2,14 @@
 **** TODO ***************************************************************
 *************************************************************************
 
+* NRE mods - reduce trampoline jumps; direct jump on "diving in" and
+  indirect on rewinding. Replace NRRunCallbacks with optimized sibling
+  calls
+
+* improve local var handling in tebc? restrict, etc
+
+* optimize proc setup and teardown - any gains to be had in there?
+
 * bring up relevant mods (if any) from mig-alloc-reform 
 
 
