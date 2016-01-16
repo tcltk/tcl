@@ -3,15 +3,25 @@
  * **********************************************
  */
 
-#define NRE_STACK_DEBUG         0
 #define NRE_STACK_SIZE        100
 
-
 /*
- * This is the main data struct for representing NR commands. It is designed
- * to fit in sizeof(Tcl_Obj) in order to exploit the fastest memory allocator
- * available.
+ * This is the main data struct for representing NR commands. It was
+ * originally designed to fit in sizeof(Tcl_Obj) in order to exploit the
+ * fastest memory allocator available. The current version completely changed
+ * the memory management approach (stack vs linked list), but the struct was
+ * kept as it proved to be a "good" fit.
  */
+
+typedef struct NRE_callback {
+    Tcl_NRPostProc *procPtr;
+    ClientData data[4];
+} NRE_callback;
+
+typedef struct NRE_stack {
+    struct NRE_callback items[NRE_STACK_SIZE];
+    struct NRE_stack *next;
+} NRE_stack;
 
 /*
  * Inline versions of Tcl_NRAddCallback and friends
@@ -34,44 +44,6 @@
 	cbPtr->data[2] = (ClientData)(data2);				\
 	cbPtr->data[3] = (ClientData)(data3);				\
     } while (0)
-
-#if NRE_STACK_DEBUG
-
-typedef struct NRE_callback {
-    Tcl_NRPostProc *procPtr;
-    ClientData data[4];
-    struct NRE_callback *nextPtr;
-} NRE_callback;
-
-#define POP_CB(interp, cbPtr)                      \
-    do {                                           \
-        cbPtr = TOP_CB(interp);                    \
-        TOP_CB(interp) = cbPtr->nextPtr;           \
-    } while (0)
-
-#define ALLOC_CB(interp, cbPtr)			\
-    do {					\
-	cbPtr = ckalloc(sizeof(NRE_callback));	\
-	cbPtr->nextPtr = TOP_CB(interp);	\
-	TOP_CB(interp) = cbPtr;			\
-    } while (0)
-    
-#define FREE_CB(interp, ptr)			\
-    ckfree((char *) (ptr))
-
-#define NEXT_CB(ptr)  (ptr)->nextPtr
-
-#else /* not debugging the NRE stack */
-
-typedef struct NRE_callback {
-    Tcl_NRPostProc *procPtr;
-    ClientData data[4];
-} NRE_callback;
-
-typedef struct NRE_stack {
-    struct NRE_callback items[NRE_STACK_SIZE];
-    struct NRE_stack *next;
-} NRE_stack;
 
 #define POP_CB(interp, cbPtr)			\
     (cbPtr) = TOP_CB(interp)--
@@ -96,5 +68,3 @@ typedef struct NRE_stack {
 MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
 MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);
 MODULE_SCOPE NRE_callback *TclNextCallback(NRE_callback *ptr);
-
-#endif

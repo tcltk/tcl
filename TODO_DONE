@@ -6,11 +6,16 @@
   indirect on rewinding. Replace NRRunCallbacks with optimized sibling
   calls
 
+* review the whole interp/execEnv relationship - who's boss?
+
 * improve local var handling in tebc? restrict, etc
 
 * optimize proc setup and teardown - any gains to be had in there?
 
 * bring up relevant mods (if any) from mig-alloc-reform 
+
+* mod NRE api - nreProc with the same sig as Tcl_NRPostProc (callbacks)?
+  Should be a win on the sibling jumps model
 
 
 *************************************************************************
