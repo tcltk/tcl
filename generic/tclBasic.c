@@ -125,9 +125,7 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRRoot(ClientData data[], Tcl_Interp *interp, int result);
-#if !NRE_STACK_DEBUG
 static Tcl_NRPostProc NRStackBottom;
-#endif
 
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
@@ -4305,13 +4303,9 @@ void
 TclNRSetRoot(
     Tcl_Interp *interp)
 {
-#if NRE_STACK_DEBUG
-    int first = (TOP_CB(interp) == NULL);
-#else
     int first = ((TOP_CB(interp) == NULL) ||
             ((TOP_CB(interp)->procPtr == NRStackBottom) &&
                     (TOP_CB(interp)->data[0] == NULL)));
-#endif
     
     if (!first) {
         TclNRAddCallback(interp, NRRoot, NULL, NULL, NULL, NULL);
@@ -8198,7 +8192,6 @@ TclInfoCoroutineCmd(
 }
 #undef iPtr
 
-#if !NRE_STACK_DEBUG
 /*
  *----------------------------------------------------------------------
  *
@@ -8298,8 +8291,6 @@ TclNextCallback(
     }
     return --cbPtr;
 }
-
-#endif
 
 /*
  * Local Variables:
