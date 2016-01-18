@@ -3748,7 +3748,7 @@ typedef const char *TclDTraceStr;
  */
 
 MODULE_SCOPE Tcl_Obj *	TclThreadAllocObj(void);
-MODULE_SCOPE void	TclThreadFreeObj(Tcl_Obj *);
+MODULE_SCOPE TCL_NOINLINE void	TclThreadFreeObj(Tcl_Obj *);
 MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 MODULE_SCOPE void	TclFreeAllocCache(void *);
 MODULE_SCOPE void *	TclpGetAllocCache(void);
