@@ -124,7 +124,7 @@ static void		MathFuncWrongNumArgs(Tcl_Interp *interp, int expected,
 			    int actual, Tcl_Obj *const *objv);
 static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
-static int NRRoot(ClientData data[], Tcl_Interp *interp, int result);
+static int              NRRoot(ClientData data[], Tcl_Interp *interp, int result);
 static Tcl_NRPostProc NRStackBottom;
 
 static Tcl_ObjCmdProc	OldMathFuncProc;
@@ -4102,6 +4102,8 @@ TclNREvalObjv(
     
 
     iPtr->numLevels++;
+
+    /* Can't use NRE_JUMP, as this function does not have a callback signature */
     TclNRAddCallback(interp, EvalObjvCore, cmdPtr, INT2PTR(flags),
 	    INT2PTR(objc), objv);
     return TCL_OK;
@@ -4318,7 +4320,10 @@ NRRoot(
     Tcl_Interp *interp,
     int result)
 {
-    /* NOT CALLED */
+    /* Reset itself so that NRRunCallbacks can detect it and stop (without
+     * running it again)*/
+
+    TclNRAddCallback(interp, NRRoot, NULL, NULL, NULL, NULL);
     return result;
 }
 
@@ -4355,7 +4360,7 @@ NRCommand(
 	result = Tcl_LimitCheck(interp);
     }
 
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -4429,7 +4434,7 @@ TEOV_RestoreVarFrame(
     int result)
 {
     ((Interp *) interp)->varFramePtr = data[0];
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -4458,7 +4463,7 @@ TEOV_Exception(
      */
 
     TclUnsetCancelFlags(iPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -4487,7 +4492,7 @@ TEOV_Error(
 	Tcl_DecrRefCount(listPtr);
     }
     iPtr->flags &= ~ERR_ALREADY_LOGGED;
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -4613,7 +4618,7 @@ TEOV_NotFoundCallback(
     }
     TclStackFree(interp, objv);
 
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -4714,7 +4719,7 @@ TEOV_RunLeaveTraces(
 	result = traceCode;
     }
     Tcl_DecrRefCount(commandPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 static inline Command *
@@ -5394,7 +5399,7 @@ TEOEx_ByteCodeCallback(
     }
 
     TclDecrRefCount(objPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -5408,7 +5413,7 @@ TEOEx_ListCallback(
 
     TclDecrRefCount(objPtr);
     TclDecrRefCount(listPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -5826,7 +5831,7 @@ NRPostInvoke(
 {
     Interp *iPtr = (Interp *)interp;
     iPtr->numLevels--;
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -7229,7 +7234,7 @@ DTraceCmdReturn(
 
 	TCL_DTRACE_CMD_RESULT(cmdName, result, TclGetString(r), r);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 TCL_DTRACE_DEBUG_LOG()
@@ -7571,7 +7576,7 @@ TclNRTailcallEval(
          */
 
         TailcallCleanup(data, interp, result);
-        return result;
+        NRE_NEXT(result);
     }
 
     /*
@@ -7581,6 +7586,7 @@ TclNRTailcallEval(
     TclMarkTailcall(interp);
     TclNRAddCallback(interp, TailcallCleanup, listPtr, NULL, NULL,NULL);
     iPtr->lookupNsPtr = (Namespace *) nsPtr;
+
     return TclNREvalObjv(interp, objc-1, objv+1, 0, NULL);
 }
 
@@ -7591,7 +7597,7 @@ TailcallCleanup(
     int result)
 {
     Tcl_DecrRefCount((Tcl_Obj *) data[0]);
-    return result;
+    NRE_NEXT(result);
 }
 
 void
@@ -7792,7 +7798,7 @@ NRCoroutineCallerCallback(
 	return RewindCoroutine(corPtr, result);
     }
 
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -7835,7 +7841,7 @@ NRCoroutineExitCallback(
     iPtr->execEnvPtr = corPtr->callerEEPtr;
     iPtr->numLevels++;
 
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -7900,7 +7906,7 @@ TclNRCoroutineActivateCallback(
                     "cannot yield: C stack busy", -1));
             Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "CANT_YIELD",
                     NULL);
-            return TCL_ERROR;
+            NRE_NEXT(TCL_ERROR);
         }
 
         if (type == CORO_ACTIVATE_YIELD) {
@@ -7920,7 +7926,7 @@ TclNRCoroutineActivateCallback(
         iPtr->execEnvPtr = corPtr->callerEEPtr;
     }
 
-    return TCL_OK;
+    NRE_NEXT(TCL_OK);
 }
 
 /*
@@ -8225,13 +8231,14 @@ NRStackBottom(
         /* Go back to the previous stack */
         eePtr->NRStack = prev;
         eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
+        NRE_NEXT(result);
     } else {
         /* If the stack is empty, free everything */
         ckfree(this);
         eePtr->NRStack = NULL;
         TOP_CB(interp) = NULL;
+        return result;
     }
-    return result;
 }
 
 NRE_callback *

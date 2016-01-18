@@ -210,7 +210,7 @@ CatchObjCmdCallback(
     if (objc >= 3) {
 	if (NULL == Tcl_ObjSetVar2(interp, varNamePtr, NULL,
 		Tcl_GetObjResult(interp), TCL_LEAVE_ERR_MSG)) {
-	    return TCL_ERROR;
+	    NRE_NEXT(TCL_ERROR);
 	}
     }
     if (objc == 4) {
@@ -596,7 +596,7 @@ EvalCmdErrMsg(
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (\"eval\" body line %d)", Tcl_GetErrorLine(interp)));
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 int
@@ -759,7 +759,7 @@ ExprCallback(
 	Tcl_SetObjResult(interp, resultPtr);
     }
     Tcl_DecrRefCount(resultPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -2272,11 +2272,10 @@ ForSetupCallback(
 	if (result == TCL_ERROR) {
 	    Tcl_AddErrorInfo(interp, "\n    (\"for\" initial command)");
 	}
-	return result;
+	NRE_NEXT(result);
     }
-    TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1], data[2],
+    NRE_JUMP(interp, TclNRForIterCallback, data[0], data[1], data[2],
 	    data[3]);
-    return TCL_OK;
 }
 
 int
@@ -2309,7 +2308,7 @@ TclNRForIterCallback(
 	Tcl_AppendObjToErrorInfo(interp, Tcl_ObjPrintf(
 		"\n    (loop body line %d)", Tcl_GetErrorLine(interp)));
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -2323,10 +2322,10 @@ ForCondCallback(
 
     if (result != TCL_OK) {
 	Tcl_DecrRefCount(boolObj);
-	return result;
+	NRE_NEXT(result);
     } else if (Tcl_GetBooleanFromObj(interp, boolObj, &value) != TCL_OK) {
 	Tcl_DecrRefCount(boolObj);
-	return TCL_ERROR;
+	NRE_NEXT(TCL_ERROR);
     }
     Tcl_DecrRefCount(boolObj);
 
@@ -2340,7 +2339,7 @@ ForCondCallback(
 	}
 	return TclNREvalObjEx(interp, /*body*/ data[1], 0);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -2359,7 +2358,7 @@ ForNextCallback(
 
     TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1],
 		    data[2], NULL);
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -2372,11 +2371,11 @@ ForPostNextCallback(
 	if (result == TCL_ERROR) {
 	    Tcl_AddErrorInfo(interp, "\n    (\"for\" loop-end command)");
 	}
-	return result;
+	NRE_NEXT(result);
     }
     TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1],
 		    data[2], NULL);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -2629,7 +2628,7 @@ ForeachLoopStep(
 
   done:
     ForeachCleanup(interp, statePtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

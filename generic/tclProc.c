@@ -830,7 +830,7 @@ Uplevel_Callback(
      */
 
     ((Interp *)interp)->varFramePtr = savedVarFramePtr;
-    return result;
+    NRE_NEXT(result);
 }
 
 	/* ARGSUSED */
@@ -1749,7 +1749,7 @@ InterpProcNR2(
     TclStackFree(interp, freePtr->compiledLocals);
 					/* Free compiledLocals. */
     TclStackFree(interp, freePtr);	/* Free CallFrame. */
-    return result;
+    NRE_NEXT(result);
 
     /*
      * Process any non-TCL_OK result code.
@@ -2502,7 +2502,7 @@ ApplyNR2(
     }
 
     TclStackFree(interp, extraPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

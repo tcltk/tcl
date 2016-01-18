@@ -1845,12 +1845,12 @@ FinalizeAlloc(
 	    Tcl_DeleteCommandFromToken(interp, oPtr->command);
 	}
 	DelRef(oPtr);
-	return TCL_ERROR;
+	NRE_NEXT(TCL_ERROR);
     }
     Tcl_RestoreInterpState(interp, state);
     *objectPtr = (Tcl_Object) oPtr;
     DelRef(oPtr);
-    return TCL_OK;
+    NRE_NEXT(TCL_OK);
 }
 
 /*
@@ -2623,7 +2623,7 @@ FinalizeObjectCall(
      */
 
     TclOODeleteContext(data[0]);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -2787,7 +2787,7 @@ FinalizeNext(
 
     contextPtr->index = PTR2INT(data[1]);
     contextPtr->skip = PTR2INT(data[2]);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

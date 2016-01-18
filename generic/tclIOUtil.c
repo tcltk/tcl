@@ -2006,7 +2006,7 @@ EvalFileCallback(
     }
 
     Tcl_DecrRefCount(objPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

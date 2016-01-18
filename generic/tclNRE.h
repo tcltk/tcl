@@ -63,6 +63,13 @@ typedef struct NRE_stack {
 
 #define NEXT_CB(ptr) TclNextCallback(ptr)
 
+#define NRE_NEXT(result)			\
+    return (result)
+
+#define NRE_JUMP(interp,postProcPtr,data0,data1,data2,data3)		\
+    TclNRAddCallback((interp),(postProcPtr),(data0),(data1),(data2),(data3)); \
+    NRE_NEXT(TCL_OK)
+
 MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
 MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);
 MODULE_SCOPE NRE_callback *TclNextCallback(NRE_callback *ptr);

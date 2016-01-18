@@ -59,10 +59,10 @@ FinalizeConstruction(
     Object *oPtr = data[0];
 
     if (result != TCL_OK) {
-	return result;
+	NRE_NEXT(result);
     }
     Tcl_SetObjResult(interp, TclOOObjectName(interp, oPtr));
-    return TCL_OK;
+    NRE_NEXT(TCL_OK);
 }
 
 /*
@@ -134,7 +134,7 @@ DecrRefsPostClassConstructor(
     TclDecrRefCount(invoke[1]);
     TclDecrRefCount(invoke[2]);
     ckfree(invoke);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -376,7 +376,7 @@ AfterNRDestructor(
 	Tcl_DeleteCommandFromToken(interp, contextPtr->oPtr->command);
     }
     TclOODeleteContext(contextPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -473,7 +473,7 @@ FinalizeEval(
      */
 
     TclPopStackFrame(interp);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -921,7 +921,7 @@ NextRestoreFrame(
     if (contextPtr != NULL) {
 	contextPtr->index = PTR2INT(data[2]);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

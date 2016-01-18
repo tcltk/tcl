@@ -1418,7 +1418,7 @@ CopyCallback(
     } else {
 	Tcl_DecrRefCount(resultPtr);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -1476,7 +1476,7 @@ ExprObjCallback(
     } else {
 	Tcl_DiscardInterpState(state);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -2386,9 +2386,14 @@ TEBCresume(
 	pc++;
 	cleanup = 1;
 	TEBC_YIELD();
+#if 0
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
+                INT2PTR(yieldParameter), NULL, NULL);
+       return TCL_OK;
+#else
+       NRE_JUMP(interp, TclNRCoroutineActivateCallback, corPtr,
 		INT2PTR(yieldParameter), NULL, NULL);
-	return TCL_OK;
+#endif
     }
 
     case INST_TAILCALL: {
@@ -7666,7 +7671,7 @@ TEBCresume(
     TclDecrRefCount(srcPtr);    
     TclStackFree(interp, TD);	/* free my stack */
 
-    return result;
+    NRE_NEXT(result);
     
 
     /*
@@ -7760,7 +7765,7 @@ FinalizeOONext(
     contextPtr->index = PTR2INT(data[2]);
     contextPtr->skip = PTR2INT(data[3]);
     contextPtr->oPtr->flags &= ~FILTER_HANDLING;
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -7786,7 +7791,7 @@ FinalizeOONextFilter(
     contextPtr->index = PTR2INT(data[2]);
     contextPtr->skip = PTR2INT(data[3]);
     contextPtr->oPtr->flags |= FILTER_HANDLING;
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
