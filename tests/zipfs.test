@@ -27,7 +27,7 @@ test zipfs-1.2 {zipfs basics} -constraints zipfs -body {
 
 test zipfs-1.3 {zipfs basics} -constraints zipfs -returnCodes error -body {
     ::zipfs::mount a b c d e f
-} -result {wrong # args: should be "::zipfs::mount ?zipfile ?mountpoint? ?password???"}
+} -result {wrong # args: should be "::zipfs::mount ?zipfile? ?mountpoint? ?password?"}
 
 test zipfs-1.4 {zipfs basics} -constraints zipfs -returnCodes error -body {
     ::zipfs::unmount a b c d e f

@@ -1507,7 +1507,7 @@ ZipFSMountObjCmd(ClientData clientData, Tcl_Interp *interp,
 {
     if (objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-			 "?zipfile mountpoint password?");
+			 "?zipfile? ?mountpoint? ?password?");
 	return TCL_ERROR;
     }
     return Zipfs_Mount(interp, (objc > 1) ? Tcl_GetString(objv[1]) : NULL,
@@ -1729,7 +1729,7 @@ wrerr:
 
 	init_keys(passwd, keys, crc32tab);
 	for (i = 0; i < 12 - 2; i++) {
-	    if (Tcl_Eval(interp, "expr int(rand() * 256) % 256") != TCL_OK) {
+	    if (Tcl_EvalEx(interp, "expr int(rand() * 256) % 256", -1, 0) != TCL_OK) {
 		Tcl_AppendResult(interp, "PRNG error", (char *) NULL);
 		Tcl_Close(interp, in);
 		return TCL_ERROR;
@@ -1966,8 +1966,8 @@ ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
     } else {
 	if ((objc < 3) || (objc > (isImg ? 6 : 5))) {
 	    Tcl_WrongNumArgs(interp, 1, objv, isImg ?
-			     "outfile indir ?strip password infile?" :
-			     "outfile indir ?strip password?");
+			     "outfile indir ?strip? ?password? ?infile?" :
+			     "outfile indir ?strip? ?password?");
 	    return TCL_ERROR;
 	}
     }
@@ -4013,7 +4013,7 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 			     ZipFSLMkImgObjCmd, 0, 0);
 	Tcl_CreateObjCommand(interp, "::zipfs::lmkzip",
 			     ZipFSLMkZipObjCmd, 0, 0);
-	Tcl_GlobalEval(interp, findproc);
+	Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
     }
     Tcl_CreateObjCommand(interp, "::zipfs::exists", ZipFSExistsObjCmd, 0, 0);
     Tcl_CreateObjCommand(interp, "::zipfs::info", ZipFSInfoObjCmd, 0, 0);
