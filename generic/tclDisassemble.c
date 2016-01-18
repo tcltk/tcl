@@ -23,6 +23,8 @@
 
 static Tcl_Obj *	DisassembleByteCodeAsDicts(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr);
+static Tcl_Obj *	DisassembleByteCodeObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr);
 static int		FormatInstruction(ByteCode *codePtr,
 			    const unsigned char *pc, Tcl_Obj *bufferObj);
 static void		GetLocationInformation(Tcl_Interp *interp,
@@ -126,7 +128,7 @@ TclPrintByteCodeObj(
     Tcl_Interp *interp,		/* Used only for getting location info. */
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    Tcl_Obj *bufPtr = TclDisassembleByteCodeObj(interp, objPtr);
+    Tcl_Obj *bufPtr = DisassembleByteCodeObj(interp, objPtr);
 
     fprintf(stdout, "\n%s", TclGetString(bufPtr));
     Tcl_DecrRefCount(bufPtr);
@@ -231,7 +233,7 @@ TclPrintSource(
 /*
  *----------------------------------------------------------------------
  *
- * TclDisassembleByteCodeObj --
+ * DisassembleByteCodeObj --
  *
  *	Given an object which is of bytecode type, return a disassembled
  *	version of the bytecode (in a new refcount 0 object). No guarantees
@@ -240,8 +242,8 @@ TclPrintSource(
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
-TclDisassembleByteCodeObj(
+static Tcl_Obj *
+DisassembleByteCodeObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
@@ -368,7 +370,7 @@ TclDisassembleByteCodeObj(
 			rangePtr->catchOffset);
 		break;
 	    default:
-		Tcl_Panic("TclDisassembleByteCodeObj: bad ExceptionRange type %d",
+		Tcl_Panic("DisassembleByteCodeObj: bad ExceptionRange type %d",
 			rangePtr->type);
 	    }
 	}
@@ -1486,7 +1488,7 @@ Tcl_DisassembleObjCmd(
 		DisassembleByteCodeAsDicts(interp, codeObjPtr));
     } else {
 	Tcl_SetObjResult(interp,
-		TclDisassembleByteCodeObj(interp, codeObjPtr));
+		DisassembleByteCodeObj(interp, codeObjPtr));
     }
     return TCL_OK;
 }
