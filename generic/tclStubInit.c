@@ -66,6 +66,18 @@
 # define TclpGetDate 0
 # define TclpLocaltime 0
 # define TclpGmtime 0
+# define Tcl_Eval 0
+# undef Tcl_EvalObj
+# define Tcl_EvalObj 0
+# define Tcl_GlobalEval 0
+# undef Tcl_GlobalEvalObj
+# define Tcl_GlobalEvalObj 0
+# define Tcl_VarEval 0
+# define Tcl_VarEvalVA 0
+# define Tcl_CreateMathFunc 0
+# define Tcl_EvalTokens 0
+# define Tcl_GetMathFuncInfo 0
+# define Tcl_ListMathFuncs 0
 #else
 # define TclSetStartupScript Tcl_SetStartupScript
 # define TclGetStartupScript Tcl_GetStartupScript

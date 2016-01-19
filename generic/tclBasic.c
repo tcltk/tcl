@@ -130,8 +130,10 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
+#ifndef TCL_NO_DEPRECATED
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
+#endif
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
 			    int returnCode);
 static int		RewindCoroutine(CoroutineData *corPtr, int result);
@@ -204,7 +206,7 @@ static const CmdInfo builtInCmds[] = {
     {"append",		Tcl_AppendObjCmd,	TclCompileAppendCmd,	NULL,	CMD_IS_SAFE},
     {"apply",		Tcl_ApplyObjCmd,	NULL,			TclNRApplyObjCmd,	CMD_IS_SAFE},
     {"break",		Tcl_BreakObjCmd,	TclCompileBreakCmd,	NULL,	CMD_IS_SAFE},
-#ifndef EXCLUDE_OBSOLETE_COMMANDS
+#ifndef TCL_NO_DEPRECATED
     {"case",		Tcl_CaseObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
 #endif
     {"catch",		Tcl_CatchObjCmd,	TclCompileCatchCmd,	TclNRCatchObjCmd,	CMD_IS_SAFE},
@@ -3423,6 +3425,7 @@ TclCleanupCommand(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 void
 Tcl_CreateMathFunc(
     Tcl_Interp *interp,		/* Interpreter in which function is to be
@@ -3754,6 +3757,7 @@ Tcl_ListMathFuncs(
 
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -4863,6 +4867,7 @@ Tcl_EvalTokensStandard(
  * in the core any longer. It is only kept for backward compatibility.
  */
 
+#ifndef TCL_NO_DEPRECATED
 Tcl_Obj *
 Tcl_EvalTokens(
     Tcl_Interp *interp,		/* Interpreter in which to lookup variables,
@@ -4883,6 +4888,7 @@ Tcl_EvalTokens(
     Tcl_ResetResult(interp);
     return resPtr;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -5839,6 +5845,7 @@ TclArgumentGet(
  *----------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 #undef Tcl_Eval
 int
 Tcl_Eval(
@@ -5891,6 +5898,7 @@ Tcl_GlobalEvalObj(
 {
     return Tcl_EvalObjEx(interp, objPtr, TCL_EVAL_GLOBAL);
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------
@@ -6818,6 +6826,7 @@ Tcl_AddObjErrorInfo(
  *---------------------------------------------------------------------------
  */
 
+#ifndef TCL_NO_DEPRECATED
 int
 Tcl_VarEvalVA(
     Tcl_Interp *interp,		/* Interpreter in which to evaluate command */
@@ -6842,7 +6851,7 @@ Tcl_VarEvalVA(
 	Tcl_DStringAppend(&buf, string, -1);
     }
 
-    result = Tcl_Eval(interp, Tcl_DStringValue(&buf));
+    result = Tcl_EvalEx(interp, Tcl_DStringValue(&buf), -1, 0);
     Tcl_DStringFree(&buf);
     return result;
 }
@@ -6916,6 +6925,7 @@ Tcl_GlobalEval(
     iPtr->varFramePtr = savedVarFramePtr;
     return result;
 }
+#endif /* TCL_NO_DEPRECATED */
 
 /*
  *----------------------------------------------------------------------

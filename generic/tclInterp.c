@@ -336,7 +336,7 @@ Tcl_Init(
     Tcl_Interp *interp)		/* Interpreter to initialize. */
 {
     if (tclPreInitScript != NULL) {
-	if (Tcl_Eval(interp, tclPreInitScript) == TCL_ERROR) {
+	if (Tcl_EvalEx(interp, tclPreInitScript, -1, 0) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
     }
@@ -382,7 +382,7 @@ Tcl_Init(
      * alternate tclInit command before calling Tcl_Init().
      */
 
-    return Tcl_Eval(interp,
+    return Tcl_EvalEx(interp,
 "if {[namespace which -command tclInit] eq \"\"} {\n"
 "  proc tclInit {} {\n"
 "    global tcl_libPath tcl_library env tclDefaultLibrary\n"
@@ -445,7 +445,7 @@ Tcl_Init(
 "    error $msg\n"
 "  }\n"
 "}\n"
-"tclInit");
+"tclInit", -1, 0);
 }
 
 /*
@@ -3221,8 +3221,8 @@ Tcl_MakeSafe(
 	 * Assume these functions all work. [Bug 2895741]
 	 */
 
-	(void) Tcl_Eval(interp,
-		"namespace eval ::tcl {namespace eval mathfunc {}}");
+	(void) Tcl_EvalEx(interp,
+		"namespace eval ::tcl {namespace eval mathfunc {}}", -1, 0);
 	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::min", master,
 		"::tcl::mathfunc::min", 0, NULL);
 	(void) Tcl_CreateAlias(interp, "::tcl::mathfunc::max", master,
