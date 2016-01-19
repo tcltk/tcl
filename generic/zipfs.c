@@ -699,7 +699,7 @@ ZipFSLookup(char *filename)
     z = hPtr ? (ZipEntry *) Tcl_GetHashValue(hPtr) : NULL;
     Tcl_DStringFree(&ds);
 #if HAS_DRIVES
-    if ((z != NULL) && (drive != z->zipfile->mntdrv)) {
+    if ((z != NULL) && drive && (drive != z->zipfile->mntdrv)) {
 	z = NULL;
     }
 #endif
@@ -748,7 +748,7 @@ ZipFSLookupMount(char *filename)
     while (hPtr != NULL) {
 	if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
 #if HAS_DRIVES
-	    if (drive != zf->mntdrv) {
+	    if (drive && (drive != zf->mntdrv)) {
 		hPtr = Tcl_NextHashEntry(&search);
 		continue;
 	    }
