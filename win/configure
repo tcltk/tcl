@@ -5201,7 +5201,7 @@ case "$TCL_PATCH_LEVEL" in
      *beta*) TCL_RELEASE_LEVEL=1 ;;
      *)   TCL_RELEASE_LEVEL=2 ;;
 esac
-TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.`echo $TCL_PATCH_LEVEL | tr -d 0abehlpt\\\\-.`"
+TCL_WIN_VERSION="$TCL_VERSION.$TCL_RELEASE_LEVEL.0`echo $TCL_PATCH_LEVEL | tr -d 0abehlpt\\\\-.`"
 
 # X86|AMD64|IA64 for manifest
 
