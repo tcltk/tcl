@@ -916,7 +916,7 @@ Tcl_CreateInterp(void)
     TclInitEmbeddedConfigurationInformation(interp);
 
     /*
-     * TIP #XXX: Declare the name of the script engine to be "Tcl".
+     * TIP #440: Declare the name of the script engine to be "Tcl".
      */
 
     Tcl_SetVar2(interp, "tcl_platform", "engine", "Tcl",
