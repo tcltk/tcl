@@ -23,6 +23,7 @@
 #include "tommath.h"
 #include <math.h>
 #include <assert.h>
+#include "tclUuid.h"
 
 #define INTERP_STACK_INITIAL_SIZE 2000
 #define CORO_STACK_INITIAL_SIZE    200
@@ -960,7 +961,7 @@ Tcl_CreateInterp(void)
      * TIP #268: Full patchlevel instead of just major.minor
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL, &tclStubs);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL "+core.tcl.tk." STRINGIFY(TCL_VERSION_UUID), &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
