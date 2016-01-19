@@ -316,7 +316,6 @@ proc ::tcl::tm::Defaults {} {
 
     # Note that we're using [::list], not [list] because [list] means
     # something other than [::list] in this namespace.
-    path add [info library]
     roots [::list \
 	    [file join [file dirname [file dirname $exe]] lib] \
 	    ]
