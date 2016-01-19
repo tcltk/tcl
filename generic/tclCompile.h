@@ -955,12 +955,6 @@ typedef struct ForeachInfo {
 				 * LAST FIELD IN THE STRUCTURE! */
 } ForeachInfo;
 
-MODULE_SCOPE const AuxDataType tclForeachInfoType;
-MODULE_SCOPE const AuxDataType tclNewForeachInfoType;
-
-#define FOREACHINFO(envPtr, index) \
-    ((ForeachInfo*)(TclFetchAuxData(envPtr, TclGetUInt4AtPtr(index))))
-
 /*
  * Structure used to hold information about a switch command that is needed
  * during program execution. These structures are stored in CompileEnv and
@@ -992,11 +986,6 @@ typedef struct {
 				 * take account of this. MUST BE LAST FIELD IN
 				 * STRUCTURE. */
 } DictUpdateInfo;
-
-MODULE_SCOPE const AuxDataType tclDictUpdateInfoType;
-
-#define DICTUPDATEINFO(envPtr, index) \
-    ((DictUpdateInfo*)(TclFetchAuxData(envPtr, TclGetUInt4AtPtr(index))))
 
 /*
  * ClientData type used by the math operator commands.
@@ -1082,14 +1071,12 @@ MODULE_SCOPE int	TclNRExecuteByteCode(Tcl_Interp *interp,
 			    ByteCode *codePtr);
 MODULE_SCOPE ClientData	TclFetchAuxData(CompileEnv *envPtr, int index);
 MODULE_SCOPE Tcl_Obj *	TclFetchLiteral(CompileEnv *envPtr, unsigned int index);
-MODULE_SCOPE void	TclFinalizeAuxDataTypeTable(void);
 MODULE_SCOPE int	TclFindCompiledLocal(const char *name, int nameChars,
 			    int create, CompileEnv *envPtr);
 MODULE_SCOPE int	TclFixupForwardJump(CompileEnv *envPtr,
 			    JumpFixup *jumpFixupPtr, int jumpDist,
 			    int distThreshold);
 MODULE_SCOPE void	TclFreeCompileEnv(CompileEnv *envPtr);
-MODULE_SCOPE void	TclInitAuxDataTypeTable(void);
 MODULE_SCOPE void	TclInitByteCodeObj(Tcl_Obj *objPtr,
 			    CompileEnv *envPtr);
 MODULE_SCOPE void	TclInitCompileEnv(Tcl_Interp *interp,
