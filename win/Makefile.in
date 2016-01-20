@@ -519,6 +519,12 @@ tclPkgConfig.${OBJEXT}: tclPkgConfig.c
 		-DBUILD_tcl \
 		@DEPARG@ $(CC_OBJNAME)
 
+tclBasic.${OBJEXT}: tclBasic.c tclUuid.h
+
+tclUuid.h:	$(TOP_DIR)/manifest.uuid
+	echo "#define TCL_VERSION_UUID \\" >$@
+	cat $(TOP_DIR)/manifest.uuid >>$@
+
 # The following objects are part of the stub library and should not be built
 # as DLL objects but none of the symbols should be exported
 

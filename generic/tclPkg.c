@@ -1307,7 +1307,7 @@ CheckVersionAndConvert(
 
     *ip++ = *p;
 
-    for (prevChar = *p, p++; *p != 0; p++) {
+    for (prevChar = *p, p++; (*p != 0) && (*p != '+'); p++) {
 	if (!isdigit(UCHAR(*p)) &&			/* INTL: digit */
 		((*p!='.' && *p!='a' && *p!='b') ||
 		((hasunstable && (*p=='a' || *p=='b')) ||
