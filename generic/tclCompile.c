@@ -913,13 +913,13 @@ TclCleanupByteCode(
     register ByteCode *codePtr)	/* Points to the ByteCode to free. */
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
-    Interp *iPtr = (Interp *) interp;
     int numLitObjects = codePtr->numLitObjects;
     int numAuxDataItems = codePtr->numAuxDataItems;
     register Tcl_Obj **objArrayPtr, *objPtr;
     register const AuxData *auxDataPtr;
     int i;
 #ifdef TCL_COMPILE_STATS
+#define iPtr ((Interp *) interp)
 
     if (interp != NULL) {
 	ByteCodeStats *statsPtr;
@@ -955,6 +955,7 @@ TclCleanupByteCode(
 	}
 	statsPtr->lifetimeCount[log2]++;
     }
+#undef iPtr
 #endif /* TCL_COMPILE_STATS */
 
     /*

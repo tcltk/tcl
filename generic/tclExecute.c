@@ -9515,14 +9515,10 @@ GetISCInfoForPc(
     CmdLocation *cmdLocPtr)	/* The address of the struct that will hold
 				 * the result. */
 {
-    register int pcOffset = (pc - codePtr->codeStart);
     int numCmds = codePtr->numCommands;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
     int codeOffset, codeLen, srcOffset, srcLen, delta, i;
-
-    /* The pc must point within the bytecode */
-    assert ((pcOffset >= 0) && (pcOffset < codePtr->numCodeBytes));
 
     /*
      * Decode the code and source offset and length for each command. The
