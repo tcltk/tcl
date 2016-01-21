@@ -280,6 +280,8 @@ VarHashCreateVar(
 
 #define CURR_DEPTH	(tosPtr - initTosPtr)
 
+#define STACK_BASE(esPtr) ((esPtr)->stackWords - 1)
+
 /*
  * Macros used to trace instruction execution. The macros TRACE,
  * TRACE_WITH_OBJ, and O2S are only used inside TclExecuteByteCode. O2S is
@@ -722,7 +724,7 @@ TclCreateExecEnv(
     esPtr->nextPtr = NULL;
     esPtr->markerPtr = NULL;
     esPtr->endPtr = &esPtr->stackWords[TCL_STACK_INITIAL_SIZE-1];
-    esPtr->tosPtr = &esPtr->stackWords[-1];
+    esPtr->tosPtr = STACK_BASE(esPtr);
 
     Tcl_MutexLock(&execMutex);
     if (!execInitialized) {
@@ -934,8 +936,8 @@ GrowEvaluationStack(
     if (esPtr->nextPtr) {
 	oldPtr = esPtr;
 	esPtr = oldPtr->nextPtr;
-	currElems = esPtr->endPtr - &esPtr->stackWords[-1];
-	if (esPtr->markerPtr || (esPtr->tosPtr != &esPtr->stackWords[-1])) {
+	currElems = esPtr->endPtr - STACK_BASE(esPtr);
+	if (esPtr->markerPtr || (esPtr->tosPtr != STACK_BASE(esPtr))) {
 	    Tcl_Panic("STACK: Stack after current is in use");
 	}
 	if (esPtr->nextPtr) {
@@ -947,7 +949,7 @@ GrowEvaluationStack(
 	DeleteExecStack(esPtr);
 	esPtr = oldPtr;
     } else {
-	currElems = esPtr->endPtr - &esPtr->stackWords[-1];
+	currElems = esPtr->endPtr - STACK_BASE(esPtr);
     }
 
     /*
@@ -1089,7 +1091,7 @@ TclStackFree(
      * Return to previous stack.
      */
 
-    esPtr->tosPtr = &esPtr->stackWords[-1];
+    esPtr->tosPtr = STACK_BASE(esPtr);
     if (esPtr->prevPtr) {
  	eePtr->execStackPtr = esPtr->prevPtr;
     }
