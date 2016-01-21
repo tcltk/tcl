@@ -237,9 +237,7 @@ Tcl_MacOSXOpenVersionedBundleResources(
 	    }
 
 	    if (openresourcemap) {
-		short refNum;
-
-		refNum = openresourcemap(bundleRef);
+		openresourcemap(bundleRef);
 	    }
 	}
 
