@@ -562,8 +562,9 @@ ClockGetjuliandayfromerayearmonthdayObjCmd (
 	    || TclGetIntFromObj(interp, fieldPtr,
 		&(fields.dayOfMonth)) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
-    if (fieldPtr == NULL)
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
+	if (fieldPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
+	}
 	return TCL_ERROR;
     }
     fields.era = era;
@@ -655,8 +656,9 @@ ClockGetjuliandayfromerayearweekdayObjCmd (
 		 || fieldPtr == NULL
 	    || TclGetIntFromObj(interp, fieldPtr, &(fields.dayOfWeek)) != TCL_OK
 	    || TclGetIntFromObj(interp, objv[2], &changeover) != TCL_OK) {
-    if (fieldPtr == NULL)
-	Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
+	if (fieldPtr == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("expected key(s) not found in dictionary", -1));
+	}
 	return TCL_ERROR;
     }
     fields.era = era;
