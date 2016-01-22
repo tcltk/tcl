@@ -6141,7 +6141,7 @@ Tcl_AddErrorInfo(
 				 * pertains. */
     const char *message)	/* Message to record. */
 {
-    Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj((message), -1));
+    Tcl_AppendObjToErrorInfo((interp), Tcl_NewStringObj(message, -1));
 }
 
 /*
