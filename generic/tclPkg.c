@@ -1300,7 +1300,7 @@ CheckVersionAndConvert(
      * (4) Only one of 'a' or 'b' may occur.
      * (5) Neither 'a', nor 'b' may occur before or after a '.'
      *
-     * TIP ???, Modified rules
+     * TIP 439, Modified rules
      * In stead of "a" and "b" in the above rules, the longer
      * forms "-alpha." and "-beta." are accepted as well
      */

@@ -959,9 +959,11 @@ Tcl_CreateInterp(void)
     /*
      * Register Tcl's version number.
      * TIP #268: Full patchlevel instead of just major.minor
+     * TIP #339: Append build information "+core.<UUID>"
      */
 
-    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL "+core.tcl.tk." STRINGIFY(TCL_VERSION_UUID), &tclStubs);
+    Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL "+core."
+	    STRINGIFY(TCL_VERSION_UUID), &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {
 	Tcl_Panic("%s", Tcl_GetString(Tcl_GetObjResult(interp)));
