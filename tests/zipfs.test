@@ -26,54 +26,54 @@ test zipfs-1.2 {zipfs basics} -constraints zipfs -body {
 } -result {1.0}
 
 test zipfs-1.3 {zipfs basics} -constraints zipfs -returnCodes error -body {
-    ::zipfs::mount a b c d e f
-} -result {wrong # args: should be "::zipfs::mount ?zipfile? ?mountpoint? ?password?"}
+    zipfs mount a b c d e f
+} -result {wrong # args: should be "zipfs mount ?zipfile? ?mountpoint? ?password?"}
 
 test zipfs-1.4 {zipfs basics} -constraints zipfs -returnCodes error -body {
-    ::zipfs::unmount a b c d e f
-} -result {wrong # args: should be "::zipfs::unmount zipfile"}
+    zipfs unmount a b c d e f
+} -result {wrong # args: should be "zipfs unmount zipfile"}
 
 test zipfs-1.5 {zipfs basics} -constraints zipfs -returnCodes error -body {
-    ::zipfs::mkkey a b c d e f
-} -result {wrong # args: should be "::zipfs::mkkey password"}
+    zipfs mkkey a b c d e f
+} -result {wrong # args: should be "zipfs mkkey password"}
 
 test zipfs-1.6 {zipfs basics} -constraints zipfs -returnCodes error -body {
-    ::zipfs::mkimg a b c d e f
-} -result {wrong # args: should be "::zipfs::mkimg outfile indir ?strip? ?password? ?infile?"}
+    zipfs mkimg a b c d e f
+} -result {wrong # args: should be "zipfs mkimg outfile indir ?strip? ?password? ?infile?"}
 
 test zipfs-1.7 {zipfs basics} -constraints zipfs -returnCodes error -body {
-    ::zipfs::mkzip a b c d e f
-} -result {wrong # args: should be "::zipfs::mkzip outfile indir ?strip? ?password?"}
+    zipfs mkzip a b c d e f
+} -result {wrong # args: should be "zipfs mkzip outfile indir ?strip? ?password?"}
 
 test zipfs-1.8 {zipfs basics} -constraints zipfs -returnCodes error -body {
-    ::zipfs::exists a b c d e f
-} -result {wrong # args: should be "::zipfs::exists filename"}
+    zipfs exists a b c d e f
+} -result {wrong # args: should be "zipfs exists filename"}
 
 test zipfs-1.9 {zipfs basics} -constraints zipfs -returnCodes error -body {
-    ::zipfs::info a b c d e f
-} -result {wrong # args: should be "::zipfs::info filename"}
+    zipfs info a b c d e f
+} -result {wrong # args: should be "zipfs info filename"}
 
 test zipfs-1.10 {zipfs basics} -constraints zipfs -returnCodes error -body {
-    ::zipfs::list a b c d e f
-} -result {wrong # args: should be "::zipfs::list ?(-glob|-regexp)? ?pattern?"}
+    zipfs list a b c d e f
+} -result {wrong # args: should be "zipfs list ?(-glob|-regexp)? ?pattern?"}
 
 
 test zipfs-2.1 {zipfs mkzip empty archive} -constraints zipfs -returnCodes error -body {
-    ::zipfs::mkzip abc.zip $tcl_library/xxxx
+    zipfs mkzip abc.zip $tcl_library/xxxx
 } -result {empty archive}
 
 test zipfs-2.2 {zipfs mkzip} -constraints zipfs -body {
     set pwd [pwd]
     cd $tcl_library/encoding
-    ::zipfs::mkzip abc.zip .
-    ::zipfs::mount abc.zip /abc
-    ::zipfs::list -glob /abc/cp850.*
+    zipfs mkzip abc.zip .
+    zipfs mount abc.zip /abc
+    zipfs list -glob /abc/cp850.*
 } -cleanup {
     cd $pwd
 } -result {/abc/cp850.enc}
 
 test zipfs-2.3 {zipfs unmount} -constraints zipfs -body {
-    ::zipfs::info /abc/cp850.enc
+    zipfs info /abc/cp850.enc
 } -result [list $tcl_library/encoding/abc.zip 1090 527 39434]
 
 test zipfs-2.4 {zipfs unmount} -constraints zipfs -body {
@@ -102,8 +102,8 @@ S
 }
 
 test zipfs-2.5 {zipfs exists} -constraints zipfs -body {
-    ::zipfs::unmount abc.zip
-    ::zipfs::exists /abc/cp850.enc
+    zipfs unmount abc.zip
+    zipfs exists /abc/cp850.enc
 } -cleanup {
     file delete abc.zip
 } -result 1

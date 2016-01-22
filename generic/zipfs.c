@@ -3958,6 +3958,27 @@ static int
 Zipfs_doInit(Tcl_Interp *interp, int safe)
 {
 #ifdef HAVE_ZLIB
+    static const EnsembleImplMap initMap[] = {
+	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 0},
+	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 0},
+	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 0},
+	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 0},
+	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 0},
+	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 0},
+	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 0},
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+
+    static const EnsembleImplMap initSafeMap[] = {
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+
     static const char findproc[] =
 	"proc ::zipfs::find dir {\n"
 	" set result {}\n"
@@ -4018,6 +4039,9 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 	Tcl_LinkVar(interp, "::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		    TCL_LINK_INT);
     }
+
+    TclMakeEnsemble(interp, "zipfs", safe ? initSafeMap : initMap);
+
     return TCL_OK;
 #else
     if (interp != NULL) {
