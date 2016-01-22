@@ -3248,6 +3248,7 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
     int scnt, len, l, dirOnly = -1, prefixLen, strip = 0;
     char *pat, *prefix, *path;
 #if HAS_DRIVES
+    int drive = 0;
     char drivePrefix[3];
 #endif
     Tcl_DString ds, dsPref;
@@ -3300,6 +3301,10 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	    prefixLen++;
 	}
 	prefix = Tcl_DStringValue(&dsPref);
+	drive = prefix[0];
+	if ((drive >= 'a') && (drive <= 'z')) {
+	    drive -= 'a' - 'A';
+	}
 #else
 	Tcl_DStringAppend(&dsPref, "/", 1);
 	prefixLen++;
@@ -3317,10 +3322,15 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	if ((pattern == NULL) || (pattern[0] == '\0')) {
 	    pattern = "*";
 	}
-	hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
-	while (hPtr != NULL) {
+	for (hPtr = Tcl_FirstHashEntry(&ZipFS.zipHash, &search);
+	     hPtr != NULL; hPtr = Tcl_NextHashEntry(&search)) {
 	    ZipFile *zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 
+#if HAS_DRIVES
+	    if (drive && (drive != zf->mntdrv)) {
+		continue;
+	    }
+#endif
 	    if (zf->mntptlen == 0) {
 		ZipEntry *z = zf->topents;
 
@@ -3361,7 +3371,6 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 			Tcl_NewStringObj(zf->mntpt, zf->mntptlen));
 		}
 	    }
-	    hPtr = Tcl_NextHashEntry(&search);
 	}
 	goto end;
     }
@@ -3370,6 +3379,11 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	if (hPtr != NULL) {
 	    ZipEntry *z = (ZipEntry *) Tcl_GetHashValue(hPtr);
 
+#if HAS_DRIVES
+	    if (drive && (drive != z->zipfile->mntdrv)) {
+		goto end;
+	    }
+#endif
 	    if ((dirOnly < 0) ||
 		(!dirOnly && !z->isdir) ||
 		(dirOnly && z->isdir)) {
@@ -3407,6 +3421,11 @@ Zip_FSMatchInDirectoryProc(Tcl_Interp* interp, Tcl_Obj *result,
 	    ((dirOnly && !z->isdir) || (!dirOnly && z->isdir))) {
 	    continue;
 	}
+#if HAS_DRIVES
+	if (drive && (drive != z->zipfile->mntdrv)) {
+	    continue;
+	}
+#endif
 	if ((z->depth == scnt) && Tcl_StringCaseMatch(z->name, pat, 0)) {
 	    if (prefix != NULL) {
 		Tcl_DStringAppend(&dsPref, z->name + strip, -1);
@@ -3958,6 +3977,27 @@ static int
 Zipfs_doInit(Tcl_Interp *interp, int safe)
 {
 #ifdef HAVE_ZLIB
+    static const EnsembleImplMap initMap[] = {
+	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 0},
+	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 0},
+	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 0},
+	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 0},
+	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 0},
+	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 0},
+	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 0},
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+
+    static const EnsembleImplMap initSafeMap[] = {
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+
     static const char findproc[] =
 	"proc ::zipfs::find dir {\n"
 	" set result {}\n"
@@ -4022,6 +4062,9 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 	Tcl_LinkVar(interp, "::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		    TCL_LINK_INT);
     }
+
+    TclMakeEnsemble(interp, "zipfs", safe ? initSafeMap : initMap);
+
     return TCL_OK;
 #else
     if (interp != NULL) {
