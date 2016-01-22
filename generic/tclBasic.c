@@ -959,10 +959,37 @@ Tcl_CreateInterp(void)
     /*
      * Register Tcl's version number.
      * TIP #268: Full patchlevel instead of just major.minor
-     * TIP #339: Append build information "+core.<UUID>"
+     * TIP #439: Append build information "+core.(<tag>.)*<UUID>"
      */
 
     Tcl_PkgProvideEx(interp, "Tcl", TCL_PATCH_LEVEL "+core."
+#ifdef TCL_NO_DEPRECATED
+	    "no-deprecate."
+#endif
+#ifndef TCL_THREADS
+	    "no-thread."
+#endif
+#ifndef TCL_CFG_OPTIMIZED
+	    "no-optimize."
+#endif
+#ifndef NDEBUG
+	    "debug."
+#endif
+#ifdef TCL_MEM_DEBUG
+	    "mem-debug."
+#endif
+#ifdef TCL_COMPILE_DEBUG
+	    "compile-debug."
+#endif
+#ifdef TCL_COMPILE_STATS
+	    "compile-stats."
+#endif
+#ifdef TCL_CFG_PROFILED
+	    "profiled."
+#endif
+#ifdef STATIC_BUILD
+	    "static."
+#endif
 	    STRINGIFY(TCL_VERSION_UUID), &tclStubs);
 
     if (TclTommath_Init(interp) != TCL_OK) {

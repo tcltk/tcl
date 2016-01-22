@@ -1074,7 +1074,6 @@ tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR) tclUui
 tclUuid.h: $(TOP_DIR)/manifest.uuid
 	echo "#define TCL_VERSION_UUID \\" >$@
 	cat $(TOP_DIR)/manifest.uuid >>$@
-	echo "\n" >>$@
 
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c
