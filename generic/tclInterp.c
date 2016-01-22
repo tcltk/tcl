@@ -1748,7 +1748,6 @@ AliasObjCmd(
 	cmdv = (Tcl_Obj **) TclStackAlloc(interp, cmdc*(int)sizeof(Tcl_Obj*));
     }
 
-    prefv = &aliasPtr->objPtr;
     memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
     memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
 
