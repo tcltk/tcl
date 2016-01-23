@@ -1068,12 +1068,8 @@ tclAssembly.o: $(GENERIC_DIR)/tclAssembly.c $(COMPILEHDR)
 tclAsync.o: $(GENERIC_DIR)/tclAsync.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclAsync.c
 
-tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR) tclUuid.h
+tclBasic.o: $(GENERIC_DIR)/tclBasic.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBasic.c
-
-tclUuid.h: $(TOP_DIR)/manifest.uuid
-	echo "#define TCL_VERSION_UUID \\" >$@
-	cat $(TOP_DIR)/manifest.uuid >>$@
 
 tclBinary.o: $(GENERIC_DIR)/tclBinary.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclBinary.c

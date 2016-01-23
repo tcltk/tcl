@@ -1311,7 +1311,7 @@ CheckVersionAndConvert(
 
     *ip++ = *p;
 
-    for (prevChar = *p, p++; (*p != 0) && (*p != '+'); p++) {
+    for (prevChar = *p, p++; *p != 0; p++) {
 	if (!isdigit(UCHAR(*p)) &&			/* INTL: digit */
 		((*p!='.' && *p!='a' && *p!='b' && *p!='-') ||
 		((hasunstable && (*p=='a' || *p=='b'|| *p=='-')) ||
