@@ -64,6 +64,10 @@ if {[testConstraint testnrelevels]} {
     namespace import testnre::*
 }
 
+test nre-0.1 {levels while unwinding} {
+    testnreunwind
+} {0 0 0}
+
 test nre-1.1 {self-recursive procs} -setup {
     proc a i [makebody {a $i}]
 } -body {
