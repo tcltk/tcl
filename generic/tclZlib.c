@@ -762,7 +762,7 @@ Tcl_ZlibStreamInit(
      */
 
     if (interp != NULL) {
-	if (Tcl_Eval(interp, "::incr ::tcl::zlib::cmdcounter") != TCL_OK) {
+	if (Tcl_EvalEx(interp, "::incr ::tcl::zlib::cmdcounter", -1, 0) != TCL_OK) {
 	    goto error;
 	}
 	Tcl_DStringInit(&cmdname);
@@ -3816,7 +3816,7 @@ TclZlibInit(
      * commands.
      */
 
-    Tcl_Eval(interp, "namespace eval ::tcl::zlib {variable cmdcounter 0}");
+    Tcl_EvalEx(interp, "namespace eval ::tcl::zlib {variable cmdcounter 0}", -1, 0);
 
     /*
      * Create the public scripted interface to this file's functionality.
