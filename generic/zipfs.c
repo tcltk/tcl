@@ -4020,28 +4020,11 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
     Unlock();
     Tcl_PkgProvide(interp, "zipfs", "1.0");
     if (!safe) {
-	Tcl_CreateObjCommand(interp, "::zipfs::mount", ZipFSMountObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::unmount",
-			     ZipFSUnmountObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkkey", ZipFSMkKeyObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkimg", ZipFSMkImgObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkzip", ZipFSMkZipObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::lmkimg",
-			     ZipFSLMkImgObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::lmkzip",
-			     ZipFSLMkZipObjCmd, 0, 0);
 	Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
-    }
-    Tcl_CreateObjCommand(interp, "::zipfs::exists", ZipFSExistsObjCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::zipfs::info", ZipFSInfoObjCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::zipfs::list", ZipFSListObjCmd, 0, 0);
-    if (!safe) {
 	Tcl_LinkVar(interp, "::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		    TCL_LINK_INT);
     }
-
     TclMakeEnsemble(interp, "zipfs", safe ? initSafeMap : initMap);
-
     return TCL_OK;
 #else
     if (interp != NULL) {
