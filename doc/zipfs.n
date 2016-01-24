@@ -22,7 +22,7 @@ zipfs \- Mount and work with ZIP files within Tcl
 \fB::zipfs::mkimg\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR \fI?infile?\fR
 \fB::zipfs::mkkey\fR \fIpassword\fR
 \fB::zipfs::mkzip\fR \fIoutfile\fR \fIindir\fR \fI?strip?\fR \fI?password?\fR
-\fB::zipfs::mount\fR \fI?zipfile?\fR \fI?mountpoint?\fR \fI?password?\fR
+\fB::zipfs::mount\fR \fI?zipfile\fR \fI?mountpoint?\fR \fI?password?\fR
 \fB::zipfs::unmount\fR \fIzipfile\fR
 .fi
 .BE
@@ -94,7 +94,7 @@ Caution: the choice of the \fIindir\fR parameter
 archive's content. 
 .RE
 .TP
-\fB::zipfs::mount ?\fIzipfile\fR? ?\fImountpoint\fR? ?\fIpassword\fR?
+\fB::zipfs::mount ?\fIzipfile\fR? ?\fImountpoint\fR?
 .
 The \fB::zipfs::mount\fR command mounts a ZIP archive file as a VFS.
 After this command executes, files contained in \fIzipfile\fR
