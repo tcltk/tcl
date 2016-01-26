@@ -516,7 +516,6 @@ TclChanCreateObjCmd(
      * Expect at least one list element. Abbreviations are ok.
      */
 
-    modeObj = objv[MODE];
     if (EncodeEventMask(interp, "mode", objv[MODE], &mode) != TCL_OK) {
 	return TCL_ERROR;
     }
@@ -1109,7 +1108,7 @@ ReflectClose(
 
 	if (rcPtr->interp) {
 	    rcmPtr = GetReflectedChannelMap (rcPtr->interp);
-	    hPtr = Tcl_FindHashEntry (&rcmPtr->map, 
+	    hPtr = Tcl_FindHashEntry (&rcmPtr->map,
 				      Tcl_GetChannelName (rcPtr->chan));
 	    if (hPtr) {
 		Tcl_DeleteHashEntry (hPtr);
@@ -1117,7 +1116,7 @@ ReflectClose(
 	}
 #ifdef TCL_THREADS
         rcmPtr = GetThreadReflectedChannelMap();
-	hPtr = Tcl_FindHashEntry (&rcmPtr->map, 
+	hPtr = Tcl_FindHashEntry (&rcmPtr->map,
 				  Tcl_GetChannelName (rcPtr->chan));
 	if (hPtr) {
 	    Tcl_DeleteHashEntry (hPtr);
@@ -2750,12 +2749,12 @@ ForwardProc(
 	 */
 
 	rcmPtr = GetReflectedChannelMap (interp);
-	hPtr = Tcl_FindHashEntry (&rcmPtr->map, 
+	hPtr = Tcl_FindHashEntry (&rcmPtr->map,
 				  Tcl_GetChannelName (rcPtr->chan));
 	Tcl_DeleteHashEntry (hPtr);
 
         rcmPtr = GetThreadReflectedChannelMap();
-	hPtr = Tcl_FindHashEntry (&rcmPtr->map, 
+	hPtr = Tcl_FindHashEntry (&rcmPtr->map,
 				  Tcl_GetChannelName (rcPtr->chan));
 	Tcl_DeleteHashEntry (hPtr);
 
