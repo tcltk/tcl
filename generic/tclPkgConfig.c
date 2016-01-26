@@ -114,6 +114,8 @@ static Tcl_Config const cfg[] = {
     {"includedir,install",	CFG_INSTALL_INCDIR},
     {"docdir,install",		CFG_INSTALL_DOCDIR},
 
+    {"origin",	            "core"},
+
     /* Last entry, closes the array */
     {NULL, NULL}
 };
