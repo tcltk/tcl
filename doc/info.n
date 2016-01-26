@@ -353,6 +353,11 @@ the global namespace if \fIpattern\fR starts with \fB::\fR) to match
 within; the matching pattern is taken to be the part after the last
 namespace separator.
 .TP
+\fBinfo runtime\fR
+.
+Returns the string "core". It can be used to distingush the Tcl "core"
+runtime from other runtimes like TH1 or Eagle.
+.TP
 \fBinfo script\fR ?\fIfilename\fR?
 .
 If a Tcl script file is currently being evaluated (i.e. there is a
