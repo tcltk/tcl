@@ -8232,7 +8232,7 @@ NRStackBottom(
     if (prev) {
         /* Go back to the previous stack */
         eePtr->NRStack = prev;
-        eePtr->callbackPtr = &prev->items[NRE_STACK_SIZE-1];
+        eePtr->callbackPtr = &prev->items[0];
         NRE_NEXT(result);
     } else {
         /* If the stack is empty, free everything */
@@ -8252,8 +8252,8 @@ TclNewCallback(
     NRE_stack *this = eePtr->NRStack, *orig;
 
     if (eePtr->callbackPtr &&
-            (eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) {
-        return ++eePtr->callbackPtr;
+            (eePtr->callbackPtr > &this->items[0])) {
+        return --eePtr->callbackPtr;
     }
 
     if (!eePtr->callbackPtr) {
@@ -8271,18 +8271,17 @@ TclNewCallback(
         }
     }
     eePtr->NRStack = this;
-    eePtr->callbackPtr = &this->items[-1];
+    eePtr->callbackPtr = &this->items[NRE_STACK_SIZE];
     TclNRAddCallback(interp, NRStackBottom, orig, NULL, NULL, NULL);
 
-    NRE_ASSERT(eePtr->callbackPtr == &this->items[0]);
-    return ++eePtr->callbackPtr;
+    return --eePtr->callbackPtr;
 }
 
 NRE_callback *
 TclPopCallback(
     Tcl_Interp *interp)
 {
-    return ((Interp *)interp)->execEnvPtr->callbackPtr--;
+    return ((Interp *)interp)->execEnvPtr->callbackPtr++;
 }
 
 NRE_callback *
@@ -8296,9 +8295,9 @@ TclNextCallback(
         if (!prev) {
             return NULL;
         }
-        cbPtr = &prev->items[NRE_STACK_SIZE];
+        cbPtr = &prev->items[-1];
     }
-    return --cbPtr;
+    return ++cbPtr;
 }
 
 /*

@@ -46,7 +46,7 @@ typedef struct NRE_stack {
     } while (0)
 
 #define POP_CB(interp, cbPtr)			\
-    (cbPtr) = TOP_CB(interp)--
+    (cbPtr) = TOP_CB(interp)++
 
 #define ALLOC_CB(interp, cbPtr)					\
     do {							\
@@ -54,8 +54,8 @@ typedef struct NRE_stack {
 	NRE_stack *this = eePtr->NRStack;			\
 								\
 	if (eePtr->callbackPtr &&					\
-		(eePtr->callbackPtr < &this->items[NRE_STACK_SIZE-1])) { \
-	    (cbPtr) = ++eePtr->callbackPtr;				\
+		(eePtr->callbackPtr > &this->items[0])) { \
+	    (cbPtr) = --eePtr->callbackPtr;				\
 	} else {							\
 	    (cbPtr) = TclNewCallback(interp);				\
 	}								\
