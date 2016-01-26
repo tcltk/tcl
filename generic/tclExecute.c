@@ -1418,7 +1418,7 @@ CopyCallback(
     } else {
 	Tcl_DecrRefCount(resultPtr);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -1476,7 +1476,7 @@ ExprObjCallback(
     } else {
 	Tcl_DiscardInterpState(state);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -2386,9 +2386,14 @@ TEBCresume(
 	pc++;
 	cleanup = 1;
 	TEBC_YIELD();
+#if 0
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
+                INT2PTR(yieldParameter), NULL, NULL);
+       return TCL_OK;
+#else
+       NRE_JUMP(interp, TclNRCoroutineActivateCallback, corPtr,
 		INT2PTR(yieldParameter), NULL, NULL);
-	return TCL_OK;
+#endif
     }
 
     case INST_TAILCALL: {
@@ -2812,23 +2817,6 @@ TEBCresume(
 	TEBC_YIELD();
 
 	iPtr->numLevels++;
-	if (TCL_OK == TclInterpReady(interp)) {
-	    /*
-	     * If everything is OK, avoid going to TclNREvalObjv and do the
-	     * job directly here.
-	     */
-	
-	    Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-	    if (cmdPtr && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES) && !iPtr->tracePtr ) {
-		iPtr->ensembleRewrite.sourceObjs = NULL;
-		TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
-		if (cmdPtr->nreProc) {
-		    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-		} else {
-		    return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-		}
-	    }
-	}
 	iPtr->numLevels--;
 	return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);
@@ -7666,7 +7654,7 @@ TEBCresume(
     TclDecrRefCount(srcPtr);    
     TclStackFree(interp, TD);	/* free my stack */
 
-    return result;
+    NRE_NEXT(result);
     
 
     /*
@@ -7760,7 +7748,7 @@ FinalizeOONext(
     contextPtr->index = PTR2INT(data[2]);
     contextPtr->skip = PTR2INT(data[3]);
     contextPtr->oPtr->flags &= ~FILTER_HANDLING;
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -7786,7 +7774,7 @@ FinalizeOONextFilter(
     contextPtr->index = PTR2INT(data[2]);
     contextPtr->skip = PTR2INT(data[3]);
     contextPtr->oPtr->flags |= FILTER_HANDLING;
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

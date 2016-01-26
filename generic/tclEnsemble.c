@@ -1971,7 +1971,7 @@ TclClearRootEnsemble(
     int result)
 {
     TclResetRewriteEnsemble(interp, 1);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

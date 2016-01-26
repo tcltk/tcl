@@ -3942,7 +3942,7 @@ SwitchPostProc(
 		(overflow ? limit : patternLength), pattern,
 		(overflow ? "..." : ""), Tcl_GetErrorLine(interp)));
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -4352,7 +4352,7 @@ TryPostBody(
 	if (handlersObj != NULL) {
 	    Tcl_DecrRefCount(handlersObj);
 	}
-	return TCL_ERROR;
+	NRE_NEXT(TCL_ERROR);
     }
 
     /*
@@ -4523,7 +4523,7 @@ TryPostBody(
     Tcl_DecrRefCount(options);
     Tcl_SetObjResult(interp, resultObj);
     Tcl_DecrRefCount(resultObj);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -4565,7 +4565,7 @@ TryPostHandler(
 		TclGetString(cmdObj), TclGetString(handlerKindObj),
 		Tcl_GetErrorLine(interp)));
 	Tcl_DecrRefCount(options);
-	return TCL_ERROR;
+	NRE_NEXT(TCL_ERROR);
     }
 
     /*
@@ -4606,7 +4606,7 @@ TryPostHandler(
     Tcl_DecrRefCount(options);
     Tcl_SetObjResult(interp, resultObj);
     Tcl_DecrRefCount(resultObj);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -4663,7 +4663,7 @@ TryPostFinal(
 	Tcl_SetObjResult(interp, resultObj);
 	Tcl_DecrRefCount(resultObj);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

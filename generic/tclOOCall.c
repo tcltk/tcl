@@ -319,7 +319,7 @@ SetFilterFlags(
     CallContext *contextPtr = data[0];
 
     contextPtr->oPtr->flags |= FILTER_HANDLING;
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -331,7 +331,7 @@ ResetFilterFlags(
     CallContext *contextPtr = data[0];
 
     contextPtr->oPtr->flags &= ~FILTER_HANDLING;
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -346,7 +346,7 @@ FinalizeMethodRefs(
     for (i=0 ; i<contextPtr->callPtr->numChain ; i++) {
 	TclOODelMethodRef(contextPtr->callPtr->chain[i].mPtr);
     }
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

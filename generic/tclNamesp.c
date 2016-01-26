@@ -3366,7 +3366,7 @@ NsEval_Callback(
      */
 
     TclPopStackFrame(interp);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

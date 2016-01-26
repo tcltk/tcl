@@ -394,6 +394,7 @@ static int		TestHashSystemHashCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 
+static TCL_NOINLINE void *NRE_depth(void);
 static int              NREUnwind_callback(ClientData data[], Tcl_Interp *interp,
                             int result);
 static int		TestNREUnwind(ClientData clientData,
@@ -6557,31 +6558,38 @@ TestgetintCmd(
     }
 }
 
+
+static TCL_NOINLINE void *
+NRE_depth(
+    void)
+{
+    int none;
+    return &none;
+}
+
 static int
 NREUnwind_callback(
     ClientData data[],
     Tcl_Interp *interp,
     int result)
 {
-    int none;
-
     if (data[0] == INT2PTR(-1)) {
-        TclNRAddCallback(interp, NREUnwind_callback, &none, INT2PTR(-1),
+        TclNRAddCallback(interp, NREUnwind_callback, NRE_depth(), INT2PTR(-1),
                 INT2PTR(-1), NULL);
     } else if (data[1] == INT2PTR(-1)) {
-        TclNRAddCallback(interp, NREUnwind_callback, data[0], &none,
+        TclNRAddCallback(interp, NREUnwind_callback, data[0], NRE_depth(),
                 INT2PTR(-1), NULL);
     } else if (data[2] == INT2PTR(-1)) {
         TclNRAddCallback(interp, NREUnwind_callback, data[0], data[1],
-                &none, NULL);
+                NRE_depth(), NULL);
     } else {
         Tcl_Obj *idata[3];
         idata[0] = Tcl_NewIntObj((int) (data[1] - data[0]));
         idata[1] = Tcl_NewIntObj((int) (data[2] - data[0]));
-        idata[2] = Tcl_NewIntObj((int) ((void *) &none   - data[0]));
+        idata[2] = Tcl_NewIntObj((int) ((void *) NRE_depth()   - data[0]));
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, idata));
     }
-    return TCL_OK;
+    NRE_NEXT(TCL_OK);
 }
 
 static int

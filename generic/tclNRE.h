@@ -63,6 +63,26 @@ typedef struct NRE_stack {
 
 #define NEXT_CB(ptr) TclNextCallback(ptr)
 
-MODULE_SCOPE NRE_callback *TclNewCallback(Tcl_Interp *interp);
-MODULE_SCOPE NRE_callback *TclPopCallback(Tcl_Interp *interp);
-MODULE_SCOPE NRE_callback *TclNextCallback(NRE_callback *ptr);
+#define NRE_TRAMPOLINE 0
+#if NRE_TRAMPOLINE
+#define NRE_JUMP(interp,postProcPtr,data0,data1,data2,data3)		\
+    TclNRAddCallback((interp),(postProcPtr),(data0),(data1),(data2),(data3)); \
+    NRE_NEXT(TCL_OK)
+#define NRE_NEXT(result)			\
+    return (result)
+#else
+/* no trampoline, optimized sibcalls */
+#define NRE_JUMP(interp,postProcPtr,data0,data1,data2,data3)		\
+    TclNRAddCallback((interp),(postProcPtr),(data0),(data1),(data2),(data3)); \
+    return TCL_OK
+#define NRE_NEXT(result)					\
+    do { /* optimized indirect sibling calls?! */		\
+	NRE_callback *cbPtr;					\
+	POP_CB(interp, cbPtr);					\
+	return (cbPtr->procPtr)(cbPtr->data, interp, result);	\
+    } while (0)
+#endif
+
+MODULE_SCOPE TCL_NOINLINE NRE_callback *TclNewCallback(Tcl_Interp *interp);
+MODULE_SCOPE TCL_NOINLINE NRE_callback *TclPopCallback(Tcl_Interp *interp);
+MODULE_SCOPE TCL_NOINLINE NRE_callback *TclNextCallback(NRE_callback *ptr);

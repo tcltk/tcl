@@ -645,7 +645,7 @@ FinalizePMCall(
 	DeleteProcedureMethodRecord(pmPtr);
     }
     TclStackFree(interp, fdPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 static int
@@ -1288,7 +1288,7 @@ FinalizeForwardCall(
     Tcl_Obj **argObjs = data[0];
 
     TclStackFree(interp, argObjs);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

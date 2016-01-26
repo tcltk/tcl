@@ -3099,7 +3099,7 @@ NRPostInvokeHidden(
 	Tcl_TransferResult(slaveInterp, result, interp);
     }
     Tcl_Release(slaveInterp);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*

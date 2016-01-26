@@ -2522,7 +2522,7 @@ DictForLoopCallback(
     TclDecrRefCount(scriptObj);
     Tcl_DictObjDone(searchPtr);
     TclStackFree(interp, searchPtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -2730,7 +2730,7 @@ DictMapLoopCallback(
     TclDecrRefCount(storagePtr->accumulatorObj);
     Tcl_DictObjDone(&storagePtr->search);
     TclStackFree(interp, storagePtr);
-    return result;
+    NRE_NEXT(result);
 }
 
 /*
@@ -3234,7 +3234,7 @@ FinalizeDictUpdate(
     if (dictPtr == NULL) {
 	TclDecrRefCount(varName);
 	TclDecrRefCount(argsObj);
-	return result;
+	NRE_NEXT(result);
     }
 
     /*
@@ -3246,7 +3246,7 @@ FinalizeDictUpdate(
 	Tcl_DiscardInterpState(state);
 	TclDecrRefCount(varName);
 	TclDecrRefCount(argsObj);
-	return TCL_ERROR;
+	NRE_NEXT(TCL_ERROR);
     }
 
     if (Tcl_IsShared(dictPtr)) {
@@ -3285,7 +3285,7 @@ FinalizeDictUpdate(
 	    TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DiscardInterpState(state);
 	TclDecrRefCount(varName);
-	return TCL_ERROR;
+	NRE_NEXT(TCL_ERROR);
     }
 
     TclDecrRefCount(varName);
@@ -3411,7 +3411,7 @@ FinalizeDictWith(
     }
     if (result != TCL_OK) {
 	Tcl_DiscardInterpState(state);
-	return TCL_ERROR;
+	NRE_NEXT(TCL_ERROR);
     }
     return Tcl_RestoreInterpState(interp, state);
 }
