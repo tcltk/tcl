@@ -2817,23 +2817,6 @@ TEBCresume(
 	TEBC_YIELD();
 
 	iPtr->numLevels++;
-	if (TCL_OK == TclInterpReady(interp)) {
-	    /*
-	     * If everything is OK, avoid going to TclNREvalObjv and do the
-	     * job directly here.
-	     */
-	
-	    Command *cmdPtr = (Command *) Tcl_GetCommandFromObj(interp, objv[0]);
-	    if (cmdPtr && !(cmdPtr->flags & CMD_HAS_EXEC_TRACES) && !iPtr->tracePtr ) {
-		iPtr->ensembleRewrite.sourceObjs = NULL;
-		TclNRAddCallback(interp, NRCommand, NULL, NULL, NULL, NULL);
-		if (cmdPtr->nreProc) {
-		    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-		} else {
-		    return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
-		}
-	    }
-	}
 	iPtr->numLevels--;
 	return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR | TCL_EVAL_SOURCE_IN_FRAME, NULL);

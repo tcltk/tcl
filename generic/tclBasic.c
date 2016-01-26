@@ -4285,17 +4285,19 @@ EvalObjvCore(
 int
 TclNRRunCallbacks(
     Tcl_Interp *interp,
-    int result) 	/* Callbacks are run until the first NRRoot.*/
+    int result)
 {
     NRE_callback *cbPtr;
-    Tcl_NRPostProc *procPtr;
 
-    while (TOP_CB(interp) && (TOP_CB(interp)->procPtr != NRRoot)) {
-	POP_CB(interp, cbPtr);
-	procPtr = cbPtr->procPtr;
-	result = procPtr(cbPtr->data, interp, result);
-    }
+    /* Callbacks are run until the first NRRoot.*/
+
+    do {
+       POP_CB(interp, cbPtr);
+       result = (cbPtr->procPtr)(cbPtr->data, interp, result);
+    } while (TOP_CB(interp) && (TOP_CB(interp)->procPtr != NRRoot));
+
     if (TOP_CB(interp)) {
+        /* pop the remaining NRRoot */
 	POP_CB(interp, cbPtr);
     }
     return result;
