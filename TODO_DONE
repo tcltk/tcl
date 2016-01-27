@@ -63,4 +63,9 @@
   should fail if the compiler is not optimizing the indirect calls between
   NRE_callback to jumps.
 
+* INCOMPATIBILITY ... or at least, no attention paid to windows: we are
+  just assuming that __thread works (and using it in the memory allocator),
+  which is __declspec(thread) on windows, and thread_local in C11.
+  This is done by defining HAVE_FAST_TSD in the defaut build; can remove it
+  later on for the default - handy while developing. FIXME!!
 

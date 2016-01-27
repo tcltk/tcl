@@ -95,8 +95,8 @@ TCL_MODULE_PATH		= @TCL_MODULE_PATH@
 CFLAGS_WARNING		= @CFLAGS_WARNING@
 
 # The default switches for optimization or debugging
-CFLAGS_DEBUG		= @CFLAGS_DEBUG@ @CFLAGS_OPTIMIZE@
-CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@
+CFLAGS_OPTIMIZE		= @CFLAGS_OPTIMIZE@ -DHAVE_FAST_TSD
+CFLAGS_DEBUG		= @CFLAGS_DEBUG@ $(CFLAGS_OPTIMIZE)
 
 # To change the compiler switches, for example to change from optimization to
 # debugging symbols, change the following line:
