@@ -3683,12 +3683,6 @@ typedef const char *TclDTraceStr;
 #  define TclIncrObjsFreed()
 #endif /* TCL_COMPILE_STATS */
 
-#  define TclAllocObjStorage(objPtr)		\
-	TclAllocObjStorageEx(NULL, (objPtr))
-
-#  define TclFreeObjStorage(objPtr)		\
-	TclFreeObjStorageEx(NULL, (objPtr))
-
 #ifndef TCL_MEM_DEBUG
 # define TclNewObj(objPtr) \
     TclIncrObjsAllocated(); \
@@ -3731,10 +3725,10 @@ typedef const char *TclDTraceStr;
  * track memory leaks.
  */
 
-#  define TclAllocObjStorageEx(interp, objPtr) \
+#  define TclAllocObjStorage(objPtr) \
 	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj))
 
-#  define TclFreeObjStorageEx(interp, objPtr) \
+#  define TclFreeObjStorage(objPtr) \
 	ckfree((char *) (objPtr))
 
 #undef USE_THREAD_ALLOC
@@ -3746,7 +3740,7 @@ typedef const char *TclDTraceStr;
  * per-thread caches.
  */
 
-MODULE_SCOPE Tcl_Obj *	TclThreadAllocObj(void);
+MODULE_SCOPE TCL_NOINLINE Tcl_Obj *	TclThreadAllocObj(void);
 MODULE_SCOPE TCL_NOINLINE void	TclThreadFreeObj(Tcl_Obj *);
 MODULE_SCOPE Tcl_Mutex *TclpNewAllocMutex(void);
 MODULE_SCOPE void	TclFreeAllocCache(void *);
@@ -3765,34 +3759,11 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 
 #  define ALLOC_NOBJHIGH 1200
 
-#  define TclAllocObjStorageEx(interp, objPtr)				\
-    do {								\
-	AllocCache *cachePtr;						\
-	if (((interp) == NULL) ||					\
-		((cachePtr = ((Interp *)(interp))->allocCache),		\
-			(cachePtr->numObjects == 0))) {			\
-	    (objPtr) = TclThreadAllocObj();				\
-	} else {							\
-	    (objPtr) = cachePtr->firstObjPtr;				\
-	    cachePtr->firstObjPtr = (objPtr)->internalRep.twoPtrValue.ptr1; \
-	    --cachePtr->numObjects;					\
-	}								\
-    } while (0)
+#  define TclAllocObjStorage(objPtr)					\
+    TclThreadAllocObj()
 
-#  define TclFreeObjStorageEx(interp, objPtr)				\
-    do {								\
-	AllocCache *cachePtr;						\
-	if (((interp) == NULL) ||					\
-		((cachePtr = ((Interp *)(interp))->allocCache),		\
-			((cachePtr->numObjects == 0) ||			\
-			(cachePtr->numObjects >= ALLOC_NOBJHIGH)))) {	\
-	    TclThreadFreeObj(objPtr);					\
-	} else {							\
-	    (objPtr)->internalRep.twoPtrValue.ptr1 = cachePtr->firstObjPtr; \
-	    cachePtr->firstObjPtr = objPtr;				\
-	    ++cachePtr->numObjects;					\
-	}								\
-    } while (0)
+#  define TclFreeObjStorage(objPtr)					\
+    TclThreadFreeObj(objPtr)
 
 #else /* not PURIFY or USE_THREAD_ALLOC */
 
@@ -3808,7 +3779,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 #endif
 
-#  define TclAllocObjStorageEx(interp, objPtr) \
+#  define TclAllocObjStorage(objPtr)					\
     do {								\
 	Tcl_MutexLock(&tclObjMutex);					\
 	if (tclFreeObjList == NULL) {					\
@@ -3820,7 +3791,7 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 	Tcl_MutexUnlock(&tclObjMutex);					\
     } while (0)
 
-#  define TclFreeObjStorageEx(interp, objPtr) \
+#  define TclFreeObjStorage(objPtr)				       \
     do {							       \
 	Tcl_MutexLock(&tclObjMutex);				       \
 	(objPtr)->internalRep.twoPtrValue.ptr1 = (void *) tclFreeObjList; \
@@ -4383,58 +4354,6 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
 
 #define TCL_CT_ASSERT(e) \
     {enum { ct_assert_value = 1/(!!(e)) };}
-
-/*
- *----------------------------------------------------------------
- * Allocator for small structs (<=sizeof(Tcl_Obj)) using the Tcl_Obj pool.
- * Only checked at compile time.
- *
- * ONLY USE FOR CONSTANT nBytes.
- *
- * DO NOT LET THEM CROSS THREAD BOUNDARIES
- *----------------------------------------------------------------
- */
-
-#define TclSmallAlloc(nbytes, memPtr) \
-    TclSmallAllocEx(NULL, (nbytes), (memPtr))
-
-#define TclSmallFree(memPtr) \
-    TclSmallFreeEx(NULL, (memPtr))
-
-#ifndef TCL_MEM_DEBUG
-#define TclSmallAllocEx(interp, nbytes, memPtr) \
-    do {								\
-	Tcl_Obj *objPtr;						\
-	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
-	TclIncrObjsAllocated();						\
-	TclAllocObjStorageEx((interp), (objPtr));			\
-	memPtr = (ClientData) (objPtr);					\
-    } while (0)
-
-#define TclSmallFreeEx(interp, memPtr) \
-    do {								\
-	TclFreeObjStorageEx((interp), (Tcl_Obj *) (memPtr));		\
-	TclIncrObjsFreed();						\
-    } while (0)
-
-#else    /* TCL_MEM_DEBUG */
-#define TclSmallAllocEx(interp, nbytes, memPtr) \
-    do {								\
-	Tcl_Obj *objPtr;						\
-	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
-	TclNewObj(objPtr);						\
-	memPtr = (ClientData) objPtr;					\
-    } while (0)
-
-#define TclSmallFreeEx(interp, memPtr) \
-    do {								\
-	Tcl_Obj *objPtr = (Tcl_Obj *) memPtr;				\
-	objPtr->bytes = NULL;						\
-	objPtr->typePtr = NULL;						\
-	objPtr->refCount = 1;						\
-	TclDecrRefCount(objPtr);					\
-    } while (0)
-#endif   /* TCL_MEM_DEBUG */
 
 /*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>

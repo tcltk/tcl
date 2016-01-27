@@ -538,12 +538,12 @@ TclpRealloc(
  *
  * Note:
  *	If this code is updated, the changes need to be reflected in the macro
- *	TclAllocObjStorageEx() defined in tclInt.h
+ *	TclAllocObjStorage() defined in tclInt.h
  *
  *----------------------------------------------------------------------
  */
 
-Tcl_Obj *
+TCL_NOINLINE Tcl_Obj *
 TclThreadAllocObj(void)
 {
     register Cache *cachePtr;
@@ -611,12 +611,12 @@ TclThreadAllocObj(void)
  *
  * Note:
  *	If this code is updated, the changes need to be reflected in the macro
- *	TclAllocObjStorageEx() defined in tclInt.h
+ *	TclAllocObjStorage() defined in tclInt.h
  *
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NOINLINE void
 TclThreadFreeObj(
     Tcl_Obj *objPtr)
 {

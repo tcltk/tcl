@@ -146,7 +146,9 @@ typedef struct TEBCdata {
 #define PUSH_TAUX(d, n)						\
     do {							\
 	expandAux *new;						\
-	TclSmallAllocEx(interp, sizeof(expandAux), new);	\
+	Tcl_Obj *objPtr;					\
+	TclAllocObjStorage(objPtr);				\
+	new = (expandAux *) objPtr;				\
 	new->actualDepth = (d);					\
 	new->nominalDepth = (n);				\
 	new->extra   = (d) - (n);				\
@@ -158,7 +160,7 @@ typedef struct TEBCdata {
     do {					\
 	expandAux *tmpPtr = expandList;		\
 	expandList = tmpPtr->next;		\
-	TclSmallFreeEx(interp, tmpPtr);		\
+	TclFreeObjStorage((Tcl_Obj *) tmpPtr);	\
     } while (0)
 
 /*
