@@ -3760,7 +3760,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 #  define ALLOC_NOBJHIGH 1200
 
 #  define TclAllocObjStorage(objPtr)					\
-    TclThreadAllocObj()
+    (objPtr) = TclThreadAllocObj()
 
 #  define TclFreeObjStorage(objPtr)					\
     TclThreadFreeObj(objPtr)
