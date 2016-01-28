@@ -79,7 +79,7 @@ typedef struct NRE_stack {
     do { /* optimized indirect sibling calls?! */		\
 	NRE_callback *cbPtr;					\
 	POP_CB(interp, cbPtr);					\
-	return (cbPtr->procPtr)(cbPtr->data, interp, result);	\
+	return (cbPtr->procPtr)(cbPtr->data, interp, (result));	\
     } while (0)
 #endif
 

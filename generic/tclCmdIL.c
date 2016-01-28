@@ -256,7 +256,7 @@ IfConditionCallback(
     }
     if (Tcl_GetBooleanFromObj(interp, boolObj, &value) != TCL_OK) {
 	TclDecrRefCount(boolObj);
-	return TCL_ERROR;
+	NRE_NEXT(TCL_ERROR);
     }
     TclDecrRefCount(boolObj);
 

@@ -226,7 +226,7 @@ CatchObjCmdCallback(
 
     Tcl_ResetResult(interp);
     Tcl_SetObjResult(interp, Tcl_NewIntObj(result));
-    return TCL_OK;
+    NRE_NEXT(TCL_OK);
 }
 
 /*
@@ -2329,17 +2329,18 @@ ForCondCallback(
     }
     Tcl_DecrRefCount(boolObj);
 
-    if (value) {
-	if (/*next*/ data[2]) {
-	    TclNRAddCallback(interp, ForNextCallback,  data[0], data[1],
-		    data[2], NULL);
-	} else {
-	    TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1],
-		    data[2], NULL);
-	}
-	return TclNREvalObjEx(interp, /*body*/ data[1], 0);
+    if (!value) {
+	NRE_NEXT(result);
     }
-    NRE_NEXT(result);
+    
+    if (/*next*/ data[2]) {
+	TclNRAddCallback(interp, ForNextCallback,  data[0], data[1],
+		data[2], NULL);
+    } else {
+	TclNRAddCallback(interp, TclNRForIterCallback, data[0], data[1],
+		data[2], NULL);
+    }
+    return TclNREvalObjEx(interp, /*body*/ data[1], 0);
 }
 
 static int
