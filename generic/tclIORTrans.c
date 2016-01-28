@@ -510,6 +510,7 @@ TclChanPushObjCmd(
 				 * channel. */
     Tcl_Obj *chanObj;		/* Handle of parent channel */
     Tcl_Channel parentChan;	/* Token of parent channel */
+    Tcl_ChannelType *typePtr; /* Driver structure */
     int mode;			/* R/W mode of parent, later the new channel.
 				 * Has to match the abilities of the handler
 				 * commands */
@@ -680,12 +681,40 @@ TclChanPushObjCmd(
     Tcl_ResetResult(interp);
 
     /*
+     * Create a dynamic copy of the driver structure if we have to modify the
+     * set of supported methods. Ie. a transform on a non-seekable channel
+     * must not advertise seek-ability through its own structure.
+     */
+
+    if (((Channel *)rtPtr->parent)->typePtr->seekProc == NULL) {
+	/*
+	 * If seeking is not advertized we do not either.
+	 *
+	 * Note, we do not have to check wideSeekProc.  A base-channel can
+	 * advertize seekProc without wideSeekProc and we can advertize
+	 * wideSeek, having it internall fall back to the regular one.
+	 *
+	 * We clone the channel type, null the associated C functions, and use
+	 * the result as the actual channel type.
+	 */
+
+	typePtr = ckalloc(sizeof(Tcl_ChannelType));
+
+	memcpy(typePtr, &tclRTransformType, sizeof(Tcl_ChannelType));
+
+	typePtr->seekProc = NULL;
+	typePtr->wideSeekProc = NULL;
+    } else {
+	typePtr = (Tcl_ChannelType *) &tclRTransformType;
+    }
+
+    /*
      * Everything is fine now.
      */
 
     rtPtr->methods = methods;
     rtPtr->mode = mode;
-    rtPtr->chan = Tcl_StackChannel(interp, &tclRTransformType, rtPtr, mode,
+    rtPtr->chan = Tcl_StackChannel(interp, typePtr, rtPtr, mode,
 	    rtPtr->parent);
 
     /*
@@ -893,6 +922,7 @@ ReflectClose(
 				/* Map of reflected transforms with handlers
 				 * in this interp. */
     Tcl_HashEntry *hPtr;	/* Entry in the above map */
+    const Tcl_ChannelType *tctPtr;
 
     if (TclInThreadExit()) {
 	/*
@@ -924,6 +954,11 @@ ReflectClose(
 	}
 #endif /* TCL_THREADS */
 
+	tctPtr = ((Channel *)rtPtr->chan)->typePtr;
+	if (tctPtr && tctPtr != &tclRTransformType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rtPtr->chan)->typePtr = NULL;
+	}
 	Tcl_EventuallyFree(rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
 	return EOK;
     }
@@ -931,7 +966,7 @@ ReflectClose(
     /*
      * In the reflected channel implementation a cleaned method mask here
      * implies that the channel creation was aborted, and "finalize" must not
-     * be called. for transformations however we are not going through here on
+     * be called. For transformations however we are not going through here on
      * such an abort, but directly through FreeReflectedTransform. So for us
      * that check is not necessary. We always go through 'finalize'.
      */
@@ -1034,6 +1069,11 @@ ReflectClose(
 #endif /* TCL_THREADS */
     }
 
+    tctPtr = ((Channel *)rtPtr->chan)->typePtr;
+    if (tctPtr && tctPtr != &tclRTransformType) {
+	    ckfree((char *)tctPtr);
+	    ((Channel *)rtPtr->chan)->typePtr = NULL;
+    }
     Tcl_EventuallyFree (rtPtr, (Tcl_FreeProc *) FreeReflectedTransform);
     return errorCodeSet ? errorCode : ((result == TCL_OK) ? EOK : EINVAL);
 }
