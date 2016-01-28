@@ -8,14 +8,16 @@
 
 * optimize proc setup and teardown - any gains to be had in there?
 
-* bring up relevant mods (if any) from mig-alloc-reform 
-
 * mod NRE api - nreProc with the same sig as Tcl_NRPostProc (callbacks)?
   Should be a win on the sibling jumps model: direct jump on 'diving in',
   to complement the indirect jumps on rewinding
 
 * mig-alloc-reform: what can be brought in? At least forget -DPURIFY, make
   it usable from normal builds.
+
+* mod the callback struct: make it have only 3 data fields, 4 in
+  total. This will reduce the size, possible improvements due to cache and 
+  memory alignment issues.
 
 *************************************************************************
 **** DONE ***************************************************************
