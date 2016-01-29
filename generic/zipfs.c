@@ -3854,6 +3854,8 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 
 	objs[1] = TclPathPart(interp, path, TCL_PATH_DIRNAME);
 	if ((objs[1] != NULL) && (Zip_FSAccessProc(objs[1], R_OK) == 0)) {
+	    const char *execName = Tcl_GetNameOfExecutable();
+
 	    /*
 	     * Shared object is not in ZIP but its path prefix is,
 	     * thus try to load from directory where the executable
@@ -3861,8 +3863,23 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	     */
 	    TclDecrRefCount(objs[1]);
 	    objs[1] = TclPathPart(interp, path, TCL_PATH_TAIL);
-	    objs[0] = TclPathPart(interp, TclGetObjNameOfExecutable(),
-				  TCL_PATH_DIRNAME);
+	    /*
+	     * Get directory name of executable manually to deal
+	     * with cases where [file dirname [info nameofexecutable]]
+	     * is equal to [info nameofexecutable] due to VFS effects.
+	     */
+	    if (execName != NULL) {
+		const char *p = strrchr(execName, '/');
+
+		if (p > execName + 1) {
+		    --p;
+		    objs[0] = Tcl_NewStringObj(execName, p - execName);
+		}
+	    }
+	    if (objs[0] == NULL) {
+		objs[0] = TclPathPart(interp, TclGetObjNameOfExecutable(),
+					  TCL_PATH_DIRNAME);
+	    }
 	    if (objs[0] != NULL) {
 		altPath = TclJoinPath(2, objs);
 		if (altPath != NULL) {
@@ -3980,6 +3997,7 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
     };
 
     static const char findproc[] =
+	"namespace eval zipfs {}\n"
 	"proc ::zipfs::find dir {\n"
 	" set result {}\n"
 	" if {[catch {glob -directory $dir -tails -nocomplain * .*} list]} {\n"
@@ -4018,13 +4036,15 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 	Tcl_StaticPackage(interp, "zipfs", Tclzipfs_Init, Tclzipfs_SafeInit);
     }
     Unlock();
-    Tcl_PkgProvide(interp, "zipfs", "1.0");
     if (!safe) {
 	Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
 	Tcl_LinkVar(interp, "::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		    TCL_LINK_INT);
     }
     TclMakeEnsemble(interp, "zipfs", safe ? initSafeMap : initMap);
+
+    Tcl_PkgProvide(interp, "zipfs", "1.0");
+
     return TCL_OK;
 #else
     if (interp != NULL) {
