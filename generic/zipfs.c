@@ -3873,6 +3873,8 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 
 	objs[1] = TclPathPart(interp, path, TCL_PATH_DIRNAME);
 	if ((objs[1] != NULL) && (Zip_FSAccessProc(objs[1], R_OK) == 0)) {
+	    const char *execName = Tcl_GetNameOfExecutable();
+
 	    /*
 	     * Shared object is not in ZIP but its path prefix is,
 	     * thus try to load from directory where the executable
@@ -3880,8 +3882,23 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	     */
 	    TclDecrRefCount(objs[1]);
 	    objs[1] = TclPathPart(interp, path, TCL_PATH_TAIL);
-	    objs[0] = TclPathPart(interp, TclGetObjNameOfExecutable(),
-				  TCL_PATH_DIRNAME);
+	    /*
+	     * Get directory name of executable manually to deal
+	     * with cases where [file dirname [info nameofexecutable]]
+	     * is equal to [info nameofexecutable] due to VFS effects.
+	     */
+	    if (execName != NULL) {
+		const char *p = strrchr(execName, '/');
+
+		if (p > execName + 1) {
+		    --p;
+		    objs[0] = Tcl_NewStringObj(execName, p - execName);
+		}
+	    }
+	    if (objs[0] == NULL) {
+		objs[0] = TclPathPart(interp, TclGetObjNameOfExecutable(),
+					  TCL_PATH_DIRNAME);
+	    }
 	    if (objs[0] != NULL) {
 		altPath = TclJoinPath(2, objs);
 		if (altPath != NULL) {
@@ -4039,9 +4056,6 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 #endif
     }
     Unlock();
-#if !defined(ZIPFS_IN_TCL) && !defined(ZIPFS_IN_TK)
-    Tcl_PkgProvide(interp, "zipfs", "1.0");
-#endif
     if (!safe) {
 	Tcl_CreateObjCommand(interp, "::zipfs::mount", ZipFSMountObjCmd, 0, 0);
 	Tcl_CreateObjCommand(interp, "::zipfs::unmount",
@@ -4064,6 +4078,8 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
     }
 
     TclMakeEnsemble(interp, "zipfs", safe ? initSafeMap : initMap);
+
+    Tcl_PkgProvide(interp, "zipfs", "1.0");
 
     return TCL_OK;
 #else
