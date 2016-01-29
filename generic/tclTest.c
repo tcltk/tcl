@@ -6872,9 +6872,9 @@ NREUnwind_callback(
                 &none, NULL);
     } else {
         Tcl_Obj *idata[3];
-        idata[0] = Tcl_NewIntObj((int) (data[1] - data[0]));
-        idata[1] = Tcl_NewIntObj((int) (data[2] - data[0]));
-        idata[2] = Tcl_NewIntObj((int) ((void *) &none   - data[0]));
+        idata[0] = Tcl_NewIntObj((int) ((char *) data[1] - (char *) data[0]));
+        idata[1] = Tcl_NewIntObj((int) ((char *) data[2] - (char *) data[0]));
+        idata[2] = Tcl_NewIntObj((int) ((char *) &none   - (char *) data[0]));
         Tcl_SetObjResult(interp, Tcl_NewListObj(3, idata));
     }
     return TCL_OK;

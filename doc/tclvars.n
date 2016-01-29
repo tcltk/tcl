@@ -299,6 +299,11 @@ so extension writers can specify which package to load depending on the
 C run-time library that is in use.  This is not an indication that this core
 contains symbols.
 .TP
+\fBengine\fR
+.
+The name of the Tcl language implementation.  When the interpreter is first
+created, this is always set to the string \fBTcl\fR.
+.TP
 \fBmachine\fR
 .
 The instruction set executed by this machine, such as
