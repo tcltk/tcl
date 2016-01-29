@@ -7975,4 +7975,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2015-12-11 (bug)[c9eb6b] tolerate unset ::env(TZ) (gahr, nijtmans)
 
+2016-01-29 (TIP 440) tcl_platform(engine) -- Tcl implementation (mistachkin)
+
 --- Released 8.5.19, January 31, 2016 --- http://core.tcl.tk/tcl/ for details
