@@ -20,6 +20,10 @@ namespace eval ::tcl::test::platform {
 
 testConstraint testCPUID [llength [info commands testcpuid]]
 
+test platform-1.0 {tcl_platform(engine)} {
+  set tcl_platform(engine)
+} {Tcl}
+
 test platform-1.1 {TclpSetVariables: tcl_platform} {
     interp create i
     i eval {catch {unset tcl_platform(debug)}}
@@ -27,7 +31,7 @@ test platform-1.1 {TclpSetVariables: tcl_platform} {
     set result [i eval {lsort [array names tcl_platform]}]
     interp delete i
     set result
-} {byteOrder machine os osVersion platform pointerSize user wordSize}
+} {byteOrder engine machine os osVersion platform pointerSize user wordSize}
 
 # Test assumes twos-complement arithmetic, which is true of virtually
 # everything these days.  Note that this does *not* use wide(), and
