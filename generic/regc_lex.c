@@ -742,7 +742,6 @@ lexescape(
     struct vars *v)
 {
     chr c;
-    int i;
     static const chr alert[] = {
 	CHR('a'), CHR('l'), CHR('e'), CHR('r'), CHR('t')
     };
@@ -819,23 +818,18 @@ lexescape(
 	RETV(PLAIN, CHR('\t'));
 	break;
     case CHR('u'):
-	c = (uchr) lexdigits(v, 16, 1, 4);
+	c = lexdigits(v, 16, 4, 4);
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
 	RETV(PLAIN, c);
 	break;
     case CHR('U'):
-	i = lexdigits(v, 16, 1, 8);
+	c = lexdigits(v, 16, 8, 8);
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
-	if (i > 0xFFFF) {
-	    /* TODO: output a Surrogate pair
-	     */
-	    i = 0xFFFD;
-	}
-	RETV(PLAIN, (uchr) i);
+	RETV(PLAIN, c);
 	break;
     case CHR('v'):
 	RETV(PLAIN, CHR('\v'));
@@ -850,7 +844,7 @@ lexescape(
 	break;
     case CHR('x'):
 	NOTE(REG_UUNPORT);
-	c = (uchr) lexdigits(v, 16, 1, 2);
+	c = lexdigits(v, 16, 1, 255);	/* REs >255 long outside spec */
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
@@ -872,7 +866,7 @@ lexescape(
     case CHR('9'):
 	save = v->now;
 	v->now--;		/* put first digit back */
-	c = (uchr) lexdigits(v, 10, 1, 255);	/* REs >255 long outside spec */
+	c = lexdigits(v, 10, 1, 255);	/* REs >255 long outside spec */
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
 	}
@@ -899,14 +893,9 @@ lexescape(
     case CHR('0'):
 	NOTE(REG_UUNPORT);
 	v->now--;		/* put first digit back */
-	c = (uchr) lexdigits(v, 8, 1, 3);
+	c = lexdigits(v, 8, 1, 3);
 	if (ISERR()) {
 	    FAILW(REG_EESCAPE);
-	}
-	if (c > 0xff) {
-	    /* out of range, so we handled one digit too much */
-	    v->now--;
-	    c >>= 3;
 	}
 	RETV(PLAIN, c);
 	break;
@@ -920,16 +909,16 @@ lexescape(
 
 /*
  - lexdigits - slurp up digits and return chr value
- ^ static int lexdigits(struct vars *, int, int, int);
+ ^ static chr lexdigits(struct vars *, int, int, int);
  */
-static int			/* chr value; errors signalled via ERR */
+static chr			/* chr value; errors signalled via ERR */
 lexdigits(
     struct vars *v,
     int base,
     int minlen,
     int maxlen)
 {
-    int n;
+    uchr n;			/* unsigned to avoid overflow misbehavior */
     int len;
     chr c;
     int d;
@@ -937,10 +926,6 @@ lexdigits(
 
     n = 0;
     for (len = 0; len < maxlen && !ATEOS(); len++) {
-	if (n > 0x10fff) {
-	    /* Stop when continuing would otherwise overflow */
-	    break;
-	}
 	c = *v->now++;
 	switch (c) {
 	case CHR('0'): case CHR('1'): case CHR('2'): case CHR('3'):
@@ -973,7 +958,7 @@ lexdigits(
 	ERR(REG_EESCAPE);
     }
 
-    return n;
+    return (chr)n;
 }
 
 /*

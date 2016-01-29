@@ -79,7 +79,7 @@ static void lexnest(struct vars *, const chr *, const chr *);
 static void lexword(struct vars *);
 static int next(struct vars *);
 static int lexescape(struct vars *);
-static int lexdigits(struct vars *, int, int, int);
+static chr lexdigits(struct vars *, int, int, int);
 static int brenext(struct vars *, pchr);
 static void skip(struct vars *);
 static chr newline(NOPARMS);
