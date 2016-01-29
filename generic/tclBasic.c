@@ -790,6 +790,13 @@ Tcl_CreateInterp(void)
     TclInitEmbeddedConfigurationInformation(interp);
 
     /*
+     * TIP #440: Declare the name of the script engine to be "Tcl".
+     */
+
+    Tcl_SetVar2(interp, "tcl_platform", "engine", "Tcl",
+	    TCL_GLOBAL_ONLY);
+
+    /*
      * Compute the byte order of this machine.
      */
 
