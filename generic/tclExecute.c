@@ -2388,8 +2388,15 @@ TEBCresume(
 	pc++;
 	cleanup = 1;
 	TEBC_YIELD();
+#if 1
+	// FIXME! Why??
+	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
+		INT2PTR(yieldParameter), NULL, NULL);
+	return TCL_OK;
+#else
 	NRE_JUMP(interp, TclNRCoroutineActivateCallback, corPtr,
 		INT2PTR(yieldParameter), NULL, NULL);
+#endif
     }
 
     case INST_TAILCALL: {

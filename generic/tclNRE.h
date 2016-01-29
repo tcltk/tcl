@@ -74,7 +74,7 @@ typedef struct NRE_stack {
 /* no trampoline, optimized sibcalls */
 #define NRE_JUMP(interp,postProcPtr,data0,data1,data2,data3)		\
     TclNRAddCallback((interp),(postProcPtr),(data0),(data1),(data2),(data3)); \
-    return TCL_OK
+    NRE_NEXT(TCL_OK)
 #define NRE_NEXT(result)					\
     do { /* optimized indirect sibling calls?! */		\
 	NRE_callback *cbPtr;					\
