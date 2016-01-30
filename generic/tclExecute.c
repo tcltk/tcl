@@ -127,7 +127,8 @@ typedef struct expandAux {
 
 typedef struct TEBCdata {
     ByteCode *codePtr;
-    Tcl_Obj *srcPtr;    
+    Tcl_Obj *srcPtr;
+    expandAux *expandList;
     void *stack[1];
 } TEBCdata;
 
@@ -135,7 +136,7 @@ typedef struct TEBCdata {
     do {						\
 	esPtr->tosPtr = tosPtr;				\
 	TclNRAddCallback(interp, TEBCresume,		\
-		TD, pc, INT2PTR(cleanup), expandList);	\
+		TD, pc, INT2PTR(cleanup), NULL);	\
     } while (0)
 
 #define TEBC_DATA_DIG() \
@@ -1909,7 +1910,8 @@ TclNRExecuteByteCode(
     esPtr->tosPtr = initTosPtr;
 
     TD->codePtr = codePtr;
-
+    TD->expandList = NULL;
+    
     srcPtr = Tcl_NewObj();
     TclInvalidateStringRep(srcPtr);
     Tcl_IncrRefCount(srcPtr);
@@ -1933,7 +1935,7 @@ TclNRExecuteByteCode(
 #endif
 
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
-	    /* cleanup */ INT2PTR(0), /* expandList */ NULL);
+	    /* cleanup */ INT2PTR(0), NULL);
     return TCL_OK;
 }
 
@@ -1993,6 +1995,7 @@ TEBCresume(
 
     TEBCdata *TD = data[0];
 #define codePtr		(TD->codePtr)
+#define expandList      (TD->expandList)
 
     /*
      * Globals: variables that store state, must remain valid at all times.
@@ -2011,7 +2014,6 @@ TEBCresume(
 
     int cleanup = PTR2INT(data[2]);
     Tcl_Obj *objResultPtr;
-    expandAux *expandList = data[3];
     ExceptionRange *rangePtr = NULL;
                                 /* Points to closest loop or catch exception
 				 * range enclosing the pc. Used by various
