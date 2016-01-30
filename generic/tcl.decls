@@ -2147,8 +2147,7 @@ declare 586 {
 }
 declare 587 {
     void Tcl_NRAddCallback(Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr,
-	    ClientData data0, ClientData data1, ClientData data2,
-	    ClientData data3)
+	    ClientData data0, ClientData data1, ClientData data2)
 }
 # For use by NR extenders, to have a simple way to also provide a (required!)
 # classic objProc

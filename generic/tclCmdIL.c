@@ -216,7 +216,8 @@ TclNRIfObjCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     Tcl_Obj *boolObj;
-
+    ClientData *extra;
+    
     if (objc <= 1) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"wrong # args: no expression after \"%s\" argument",
@@ -231,9 +232,12 @@ TclNRIfObjCmd(
      * to execute if the expression is true.
      */
 
+    NRE_newExtra(extra);
     TclNewObj(boolObj);
+    extra[0] = INT2PTR(1);
+    extra[1] = boolObj;
     Tcl_NRAddCallback(interp, IfConditionCallback, INT2PTR(objc),
-	    (ClientData) objv, INT2PTR(1), boolObj);
+	    (ClientData) objv, extra);
     return Tcl_NRExprObj(interp, objv[1], boolObj);
 }
 
@@ -245,11 +249,13 @@ IfConditionCallback(
 {
     int objc = PTR2INT(data[0]);
     Tcl_Obj *const *objv = data[1];
-    int i = PTR2INT(data[2]);
-    Tcl_Obj *boolObj = data[3];
+    ClientData *extra = data[2];
+    int i = PTR2INT(extra[0]);
+    Tcl_Obj *boolObj = extra[1];
     int value, thenScriptIndex = 0;
     const char *clause;
 
+    NRE_freeExtra(extra);
     if (result != TCL_OK) {
 	TclDecrRefCount(boolObj);
 	NRE_NEXT(result);
@@ -314,9 +320,12 @@ IfConditionCallback(
 	    return TCL_ERROR;
 	}
 	if (!thenScriptIndex) {
+	    NRE_newExtra(extra);
 	    TclNewObj(boolObj);
+	    extra[0] = INT2PTR(i);
+	    extra[1] = boolObj;
 	    Tcl_NRAddCallback(interp, IfConditionCallback, data[0], data[1],
-		    INT2PTR(i), boolObj);
+		    extra);
 	    return Tcl_NRExprObj(interp, objv[i], boolObj);
 	}
     }

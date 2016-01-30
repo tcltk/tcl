@@ -3914,7 +3914,7 @@ TclNRSwitchObjCmd(
     }
 
     Tcl_NRAddCallback(interp, SwitchPostProc, (ClientData) pattern,
-	    NULL, NULL, NULL);
+	    NULL, NULL);
     return TclNREvalObjEx(interp, objv[j], 0);
 }
 
@@ -4136,6 +4136,7 @@ TclNRTryObjCmd(
 {
     Tcl_Obj *bodyObj, *handlersObj, *finallyObj = NULL;
     int i, bodyShared, haveHandlers, dummy, code;
+    ClientData *extra;
     static const char *const handlerNames[] = {
 	"finally", "on", "trap", NULL
     };
@@ -4268,8 +4269,11 @@ TclNRTryObjCmd(
      * Execute the body.
      */
 
-    Tcl_NRAddCallback(interp, TryPostBody, handlersObj, finallyObj,
-	    (ClientData)objv, INT2PTR(objc));
+    NRE_newExtra(extra);
+    extra[0] = (ClientData)objv;
+    extra[1] = INT2PTR(objc);
+    Tcl_NRAddCallback(interp, TryPostBody, handlersObj, finallyObj, extra);
+    
     return TclNREvalObjEx(interp, bodyObj, 0);
 }
 
@@ -4336,9 +4340,11 @@ TryPostBody(
 
     handlersObj = data[0];
     finallyObj = data[1];
-    objv = data[2];
-    objc = PTR2INT(data[3]);
+    ClientData *extra = data[2];
+    objv = extra[0];
+    objc = PTR2INT(extra[1]);
 
+    NRE_freeExtra(extra);
     cmdObj = objv[0];
 
     /*
@@ -4482,8 +4488,11 @@ TryPostBody(
 	     */
 
 	    handlerBodyObj = info[4];
-	    Tcl_NRAddCallback(interp, TryPostHandler, objv, options, info[0],
-		    INT2PTR((finallyObj == NULL) ? 0 : objc - 1));
+
+	    NRE_newExtra(extra);
+	    extra[0] = info[0];
+	    extra[1] = INT2PTR((finallyObj == NULL) ? 0 : objc - 1);
+	    Tcl_NRAddCallback(interp, TryPostHandler, objv, options, extra);
 	    Tcl_DecrRefCount(handlersObj);
 	    return TclNREvalObjEx(interp, handlerBodyObj, 0);
 
@@ -4509,8 +4518,7 @@ TryPostBody(
      */
 
     if (finallyObj != NULL) {
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
-		NULL);
+	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj);
 	return TclNREvalObjEx(interp, finallyObj, 0);
     }
 
@@ -4549,9 +4557,11 @@ TryPostHandler(
 
     objv = data[0];
     options = data[1];
-    handlerKindObj = data[2];
-    finally = PTR2INT(data[3]);
+    ClientData *extra = data[2];
+    handlerKindObj = extra[0];
+    finally = PTR2INT(extra[1]);
 
+    NRE_freeExtra(extra);
     cmdObj = objv[0];
     finallyObj = finally ? objv[finally] : 0;
 
@@ -4590,8 +4600,7 @@ TryPostHandler(
      */
 
     if (finallyObj != NULL) {
-	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj,
-		NULL);
+	Tcl_NRAddCallback(interp, TryPostFinal, resultObj, options, cmdObj);
 
 	/* The 'finally' script is always the last argument word. */
 	return TclNREvalObjEx(interp, finallyObj, 0);
@@ -4713,7 +4722,7 @@ TclNRWhileObjCmd(
      * We reuse [for]'s callback, passing a NULL for the 'next' script.
      */
     TclNRAddCallback(interp, TclNRForIterCallback, /*cond*/ objv[1],
-	    /*body*/ objv[2], /*next*/ NULL, NULL);
+	    /*body*/ objv[2], /*next*/ NULL);
     return TCL_OK;
 }
 

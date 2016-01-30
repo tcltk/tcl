@@ -602,7 +602,7 @@ InvokeProcedureMethod(
      * Now invoke the body of the method.
      */
 
-    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
+    TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr);
     return TclNRInterpProcCore(interp, fdPtr->nameObj,
 	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
 }
@@ -1273,7 +1273,7 @@ InvokeForwardMethod(
     Tcl_ListObjGetElements(NULL, fmPtr->prefixObj, &numPrefixes, &prefixObjs);
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
-    Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL);
     ((Interp *)interp)->lookupNsPtr
 	    = (Namespace *) contextPtr->oPtr->namespacePtr;
     return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);

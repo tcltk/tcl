@@ -136,7 +136,7 @@ typedef struct TEBCdata {
     do {						\
 	esPtr->tosPtr = tosPtr;				\
 	TclNRAddCallback(interp, TEBCresume,		\
-		TD, pc, INT2PTR(cleanup), NULL);	\
+		TD, pc, INT2PTR(cleanup));	\
     } while (0)
 
 #define TEBC_DATA_DIG() \
@@ -1401,7 +1401,7 @@ Tcl_ExprObj(
     TclNRSetRoot(interp);
     TclNewObj(resultPtr);
     Tcl_NRAddCallback(interp, CopyCallback, resultPtrPtr, resultPtr,
-	    NULL, NULL);
+	    NULL);
     Tcl_NRExprObj(interp, objPtr, resultPtr);
     return TclNRRunCallbacks(interp, TCL_OK);
 }
@@ -1460,7 +1460,7 @@ Tcl_NRExprObj(
     codePtr = CompileExprObj(interp, objPtr);
 
     Tcl_NRAddCallback(interp, ExprObjCallback, state, resultPtr,
-	    NULL, NULL);
+	    NULL);
     return TclNRExecuteByteCode(interp, codePtr);
 }
 
@@ -1935,7 +1935,7 @@ TclNRExecuteByteCode(
 #endif
 
     TclNRAddCallback(interp, TEBCresume, TD, /* pc */ NULL,
-	    /* cleanup */ INT2PTR(0), NULL);
+	    /* cleanup */ INT2PTR(0));
     return TCL_OK;
 }
 
@@ -2393,11 +2393,11 @@ TEBCresume(
 #if 1
 	// FIXME! Why??
 	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
-		INT2PTR(yieldParameter), NULL, NULL);
+		INT2PTR(yieldParameter), NULL);
 	return TCL_OK;
 #else
 	NRE_JUMP(interp, TclNRCoroutineActivateCallback, corPtr,
-		INT2PTR(yieldParameter), NULL, NULL);
+		INT2PTR(yieldParameter), NULL);
 #endif
     }
 
@@ -2881,7 +2881,7 @@ TEBCresume(
 	TEBC_YIELD();
 
 	TclMarkTailcall(interp);
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL,NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL,NULL,NULL);
 	return TclNREvalObjEx(interp, objPtr, TCL_EVAL_INVOKE);
 
     /*
@@ -4602,14 +4602,20 @@ TEBCresume(
 
 	TclPushTailcallPoint(interp);
 	oPtr = contextPtr->oPtr;
-	if (oPtr->flags & FILTER_HANDLING) {
-	    TclNRAddCallback(interp, FinalizeOONextFilter,
-		    framePtr, contextPtr, INT2PTR(contextPtr->index),
-		    INT2PTR(contextPtr->skip));
-	} else {
-	    TclNRAddCallback(interp, FinalizeOONext,
-		    framePtr, contextPtr, INT2PTR(contextPtr->index),
-		    INT2PTR(contextPtr->skip));
+	{
+	    ClientData *extra;
+
+	    NRE_newExtra(extra);
+	    extra[0] = INT2PTR(contextPtr->index);
+	    extra[1] = INT2PTR(contextPtr->skip);
+	    
+	    if (oPtr->flags & FILTER_HANDLING) {
+		TclNRAddCallback(interp, FinalizeOONextFilter,
+			framePtr, contextPtr, extra);
+	    } else {
+		TclNRAddCallback(interp, FinalizeOONext,
+			framePtr, contextPtr, extra);
+	    }
 	}
 	contextPtr->skip = skip;
 	contextPtr->index = newDepth;
@@ -7738,7 +7744,8 @@ FinalizeOONext(
 {
     Interp *iPtr = (Interp *) interp;
     CallContext *contextPtr = data[1];
-
+    ClientData *extra = data[2];
+    
     /*
      * Reset the variable lookup frame.
      */
@@ -7750,9 +7757,11 @@ FinalizeOONext(
      * and want to operate in the outer context again.
      */
 
-    contextPtr->index = PTR2INT(data[2]);
-    contextPtr->skip = PTR2INT(data[3]);
+    contextPtr->index = PTR2INT(extra[0]);
+    contextPtr->skip = PTR2INT(extra[1]);
     contextPtr->oPtr->flags &= ~FILTER_HANDLING;
+
+    NRE_freeExtra(extra);
     NRE_NEXT(result);
 }
 
@@ -7764,7 +7773,8 @@ FinalizeOONextFilter(
 {
     Interp *iPtr = (Interp *) interp;
     CallContext *contextPtr = data[1];
-
+    ClientData *extra = data[2];
+    
     /*
      * Reset the variable lookup frame.
      */
@@ -7776,8 +7786,8 @@ FinalizeOONextFilter(
      * and want to operate in the outer context again.
      */
 
-    contextPtr->index = PTR2INT(data[2]);
-    contextPtr->skip = PTR2INT(data[3]);
+    contextPtr->index = PTR2INT(extra[0]);
+    contextPtr->skip = PTR2INT(extra[1]);
     contextPtr->oPtr->flags |= FILTER_HANDLING;
     NRE_NEXT(result);
 }

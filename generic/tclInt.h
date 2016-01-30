@@ -4356,6 +4356,32 @@ MODULE_SCOPE Tcl_PackageInitProc Procbodytest_SafeInit;
     {enum { ct_assert_value = 1/(!!(e)) };}
 
 /*
+ *----------------------------------------------------------------
+ * Allocator for small structs (<=sizeof(Tcl_Obj)) using the Tcl_Obj pool.
+ * Only checked at compile time.
+ *
+ * ONLY USE FOR CONSTANT nBytes.
+ *
+ * DO NOT LET THEM CROSS THREAD BOUNDARIES
+ *----------------------------------------------------------------
+ */
+
+#define TclSmallAlloc(nbytes, memPtr)					\
+    do {								\
+	Tcl_Obj *objPtr;						\
+	TCL_CT_ASSERT((nbytes)<=sizeof(Tcl_Obj));			\
+	TclIncrObjsAllocated();						\
+	TclAllocObjStorage(objPtr);					\
+	memPtr = (ClientData) (objPtr);					\
+    } while (0)
+
+#define TclSmallFree(memPtr)						\
+    do {								\
+	TclFreeObjStorage((Tcl_Obj *) (memPtr));			\
+	TclIncrObjsFreed();						\
+    } while (0)
+
+/*
  * Support for Clang Static Analyzer <http://clang-analyzer.llvm.org>
  */
 

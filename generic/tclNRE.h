@@ -23,26 +23,30 @@ typedef struct NRE_stack {
     struct NRE_stack *next;
 } NRE_stack;
 
+#define NRE_newExtra(ptr)			\
+    TclSmallAlloc(5*sizeof(ClientData), ptr)
+#define NRE_freeExtra(ptr)  TclSmallFree(ptr)
+
 /*
  * Inline versions of Tcl_NRAddCallback and friends
  */
 
 #define TOP_CB(iPtr) (((Interp *)(iPtr))->execEnvPtr->callbackPtr)
 
-#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2,data3)	\
+#define TclNRAddCallback(interp,postProcPtr,data0,data1,data2)	\
     do {								\
 	NRE_callback *cbPtr;						\
 	ALLOC_CB(interp, cbPtr);					\
-	INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3);		\
+	INIT_CB(cbPtr, postProcPtr,data0,data1,data2);		\
     } while (0)
 
-#define INIT_CB(cbPtr, postProcPtr,data0,data1,data2,data3)		\
+#define INIT_CB(cbPtr, postProcPtr,data0,data1,data2)		\
     do {								\
 	cbPtr->procPtr = (postProcPtr);					\
 	cbPtr->data[0] = (ClientData)(data0);				\
 	cbPtr->data[1] = (ClientData)(data1);				\
 	cbPtr->data[2] = (ClientData)(data2);				\
-	cbPtr->data[3] = (ClientData)(data3);				\
+	cbPtr->data[3] = NULL;						\
     } while (0)
 
 #define POP_CB(interp, cbPtr)			\
@@ -65,15 +69,15 @@ typedef struct NRE_stack {
 
 #define NRE_TRAMPOLINE 0
 #if NRE_TRAMPOLINE
-#define NRE_JUMP(interp,postProcPtr,data0,data1,data2,data3)		\
-    TclNRAddCallback((interp),(postProcPtr),(data0),(data1),(data2),(data3)); \
+#define NRE_JUMP(interp,postProcPtr,data0,data1,data2)		\
+    TclNRAddCallback((interp),(postProcPtr),(data0),(data1),(data2)); \
     NRE_NEXT(TCL_OK)
 #define NRE_NEXT(result)			\
     return (result)
 #else
 /* no trampoline, optimized sibcalls */
-#define NRE_JUMP(interp,postProcPtr,data0,data1,data2,data3)		\
-    TclNRAddCallback((interp),(postProcPtr),(data0),(data1),(data2),(data3)); \
+#define NRE_JUMP(interp,postProcPtr,data0,data1,data2)		\
+    TclNRAddCallback((interp),(postProcPtr),(data0),(data1),(data2)); \
     NRE_NEXT(TCL_OK)
 #define NRE_NEXT(result)					\
     do { /* optimized indirect sibling calls?! */		\

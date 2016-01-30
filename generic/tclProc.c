@@ -901,8 +901,7 @@ TclNRUplevelObjCmd(
 	objPtr = Tcl_ConcatObj(objc, objv);
     }
 
-    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL,
-	    NULL);
+    TclNRAddCallback(interp, Uplevel_Callback, savedVarFramePtr, NULL, NULL);
     return TclNREvalObjEx(interp, objPtr, 0);
 }
 
@@ -1695,8 +1694,7 @@ TclNRInterpProcCore(
     procPtr->refCount++;
     codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
-    TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
-	    NULL, NULL);
+    TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc, NULL);
     return TclNRExecuteByteCode(interp, codePtr);
 }
 
@@ -2483,7 +2481,7 @@ TclNRApplyObjCmd(
 
     result = TclPushProcCallFrame(procPtr, interp, objc, objv, 1);
     if (result == TCL_OK) {
-	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL, NULL);
+	TclNRAddCallback(interp, ApplyNR2, extraPtr, NULL, NULL);
 	result = TclNRInterpProcCore(interp, objv[1], 2, &MakeLambdaError);
     }
     return result;
