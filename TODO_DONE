@@ -15,10 +15,6 @@
 * mig-alloc-reform: what can be brought in? At least forget -DPURIFY, make
   it usable from normal builds.
 
-* mod the callback struct: make it have only 3 data fields, 4 in
-  total. This will reduce the size, possible improvements due to cache and 
-  memory alignment issues.
-
 *************************************************************************
 **** DONE ***************************************************************
 *************************************************************************
@@ -71,3 +67,10 @@
   This is done by defining HAVE_FAST_TSD in the defaut build; can remove it
   later on for the default - handy while developing. FIXME!!
 
+* mod the callback struct: make it have only 3 data fields, 4 in
+  total. This will reduce the size, possible improvements due to cache and 
+  memory alignment issues.
+
+* INCOMPATIBILITY ... or at least, no attention paid to windows. We are
+  using __atribute__ to insure good cache alignment of NRE_callback, this
+  is certainly not portable.

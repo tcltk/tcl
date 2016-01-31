@@ -18,10 +18,21 @@ typedef struct NRE_callback {
     ClientData data[3];
 } NRE_callback;
 
+/*
+ * - NOTES ON ALIGNMENT -
+ *
+ * . Cache lines are 64B long; callbacks are 32B on x86_64 and 16B on x32. In 
+ *   order to insure that no callback ever strides cache line boundaries, we
+ *   require the first callback to be aligned to 32b (on x32, 16B would be
+ *   enough).
+ * . we use a gcc'ism to insure alignment, portability not being the priority
+ *   right now.
+ */
+
 typedef struct NRE_stack {
     struct NRE_callback items[NRE_STACK_SIZE];
     struct NRE_stack *next;
-} NRE_stack;
+} NRE_stack  __attribute__ ((aligned (32)));
 
 #define NRE_newExtra(ptr)			\
     TclSmallAlloc(5*sizeof(ClientData), ptr)
