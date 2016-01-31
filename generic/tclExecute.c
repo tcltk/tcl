@@ -7789,6 +7789,7 @@ FinalizeOONextFilter(
     contextPtr->index = PTR2INT(extra[0]);
     contextPtr->skip = PTR2INT(extra[1]);
     contextPtr->oPtr->flags |= FILTER_HANDLING;
+    NRE_freeExtra(extra);
     NRE_NEXT(result);
 }
 
