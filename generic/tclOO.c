@@ -1751,7 +1751,8 @@ TclNRNewObjectInstance(
     CallContext *contextPtr;
     Tcl_InterpState state;
     Object *oPtr;
-
+    ClientData *extra;
+    
     /*
      * Check if we're going to create an object over an existing command;
      * that's not allowed.
@@ -1825,8 +1826,10 @@ TclNRNewObjectInstance(
      */
 
     AddRef(oPtr);
-    TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, state,
-	    objectPtr);
+    NRE_newExtra(extra);
+    extra[0] = state;
+    extra[1] = objectPtr;
+    TclNRAddCallback(interp, FinalizeAlloc, contextPtr, oPtr, extra);
     TclPushTailcallPoint(interp);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
@@ -1839,8 +1842,11 @@ FinalizeAlloc(
 {
     CallContext *contextPtr = data[0];
     Object *oPtr = data[1];
-    Tcl_InterpState state = data[2];
-    Tcl_Object *objectPtr = data[3];
+    ClientData *extra = data[2];
+    Tcl_InterpState state = extra[0];
+    Tcl_Object *objectPtr = extra[1];
+
+    NRE_freeExtra(extra);
 
     /*
      * It's an error if the object was whacked in the constructor. Force this
@@ -2631,7 +2637,7 @@ TclOOObjectCmdCore(
      * for the duration.
      */
 
-    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL,NULL);
+    TclNRAddCallback(interp, FinalizeObjectCall, contextPtr, NULL,NULL);
     return TclOOInvokeContext(contextPtr, interp, objc, objv);
 }
 
@@ -2785,7 +2791,7 @@ TclNRObjectContextInvokeNext(
      */
 
     TclNRAddCallback(interp, FinalizeNext, contextPtr,
-	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip), NULL);
+	    INT2PTR(contextPtr->index), INT2PTR(contextPtr->skip));
     contextPtr->index++;
     contextPtr->skip = skip;
 

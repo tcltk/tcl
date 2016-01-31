@@ -6575,13 +6575,13 @@ NREUnwind_callback(
 {
     if (data[0] == INT2PTR(-1)) {
         TclNRAddCallback(interp, NREUnwind_callback, NRE_depth(), INT2PTR(-1),
-                INT2PTR(-1), NULL);
+                INT2PTR(-1));
     } else if (data[1] == INT2PTR(-1)) {
         TclNRAddCallback(interp, NREUnwind_callback, data[0], NRE_depth(),
-                INT2PTR(-1), NULL);
+                INT2PTR(-1));
     } else if (data[2] == INT2PTR(-1)) {
         TclNRAddCallback(interp, NREUnwind_callback, data[0], data[1],
-                NRE_depth(), NULL);
+                NRE_depth());
     } else {
         Tcl_Obj *idata[3];
         idata[0] = Tcl_NewIntObj((int) (data[1] - data[0]));
@@ -6605,7 +6605,7 @@ TestNREUnwind(
      */
     
     TclNRAddCallback(interp, NREUnwind_callback, INT2PTR(-1), INT2PTR(-1),
-            INT2PTR(-1), NULL);
+            INT2PTR(-1));
     return TCL_OK;
 }
 

@@ -1694,7 +1694,7 @@ EXTERN int		Tcl_NRCmdSwap(Tcl_Interp *interp, Tcl_Command cmd,
 EXTERN void		Tcl_NRAddCallback(Tcl_Interp *interp,
 				Tcl_NRPostProc *postProcPtr,
 				ClientData data0, ClientData data1,
-				ClientData data2, ClientData data3);
+				ClientData data2);
 /* 588 */
 EXTERN int		Tcl_NRCallObjProc(Tcl_Interp *interp,
 				Tcl_ObjCmdProc *objProc,
@@ -2432,7 +2432,7 @@ typedef struct TclStubs {
     int (*tcl_NREvalObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 584 */
     int (*tcl_NREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags); /* 585 */
     int (*tcl_NRCmdSwap) (Tcl_Interp *interp, Tcl_Command cmd, int objc, Tcl_Obj *const objv[], int flags); /* 586 */
-    void (*tcl_NRAddCallback) (Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, ClientData data0, ClientData data1, ClientData data2, ClientData data3); /* 587 */
+    void (*tcl_NRAddCallback) (Tcl_Interp *interp, Tcl_NRPostProc *postProcPtr, ClientData data0, ClientData data1, ClientData data2); /* 587 */
     int (*tcl_NRCallObjProc) (Tcl_Interp *interp, Tcl_ObjCmdProc *objProc, ClientData clientData, int objc, Tcl_Obj *const objv[]); /* 588 */
     unsigned (*tcl_GetFSDeviceFromStat) (const Tcl_StatBuf *statPtr); /* 589 */
     unsigned (*tcl_GetFSInodeFromStat) (const Tcl_StatBuf *statPtr); /* 590 */

@@ -1882,8 +1882,7 @@ NsEnsembleImplementationCmdNR(
 		    2 + ensemblePtr->numParameters;
 	    iPtr->ensembleRewrite.numInsertedObjs =
 		    prefixObjc + ensemblePtr->numParameters;
-	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
-		    NULL);
+	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL);
 	} else {
 	    register int ni = 2 + ensemblePtr->numParameters
 		    - iPtr->ensembleRewrite.numInsertedObjs;

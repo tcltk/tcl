@@ -1841,7 +1841,7 @@ AliasNRCmd(
      */
 
     if (isRootEnsemble) {
-	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL);
     }
     TclSkipTailcall(interp);
     return Tcl_NREvalObj(interp, listPtr, flags);
@@ -3065,7 +3065,7 @@ SlaveInvokeHidden(
 	    TclNRSetRoot(slaveInterp);
 	}
 	Tcl_NRAddCallback(interp, NRPostInvokeHidden, slaveInterp,
-		NULL, NULL, NULL);
+		NULL, NULL);
 	return TclNRInvoke(NULL, slaveInterp, objc, objv);
     } else {
 	Namespace *nsPtr, *dummy1, *dummy2;
