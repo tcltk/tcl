@@ -8245,7 +8245,7 @@ NRStackBottom(
         NRE_NEXT(result);
     } else {
         /* If the stack is empty, free everything */
-        ckfree(this);
+        free(this);
         eePtr->NRStack = NULL;
         TOP_CB(interp) = NULL;
         return result;
@@ -8273,7 +8273,10 @@ TclNewCallback(
     if (this && this->next) {
         this = this->next;
     } else {
-        this = (NRE_stack *) ckalloc(sizeof(NRE_stack));
+        this = (NRE_stack *) malloc(sizeof(NRE_stack));
+        if (!this) {
+            Tcl_Panic("Failure trying to allocate a new callback stacklet");
+        }
         this->next = NULL;
         if (orig) {
             orig->next = this;

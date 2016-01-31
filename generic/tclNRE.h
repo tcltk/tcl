@@ -9,8 +9,9 @@
  * This is the main data struct for representing NR commands. It was
  * originally designed to fit in sizeof(Tcl_Obj) in order to exploit the
  * fastest memory allocator available. The current version completely changed
- * the memory management approach (stack vs linked list), but the struct was
- * kept as it proved to be a "good" fit.
+ * the memory management approach (stack vs linked list), and the struct was
+ * reduced in size to make it cache friendlier (two callbacks fit in one cache
+ * line).
  */
 
 typedef struct NRE_callback {
