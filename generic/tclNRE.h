@@ -15,7 +15,7 @@
 
 typedef struct NRE_callback {
     Tcl_NRPostProc *procPtr;
-    ClientData data[4];
+    ClientData data[3];
 } NRE_callback;
 
 typedef struct NRE_stack {
@@ -46,7 +46,6 @@ typedef struct NRE_stack {
 	cbPtr->data[0] = (ClientData)(data0);				\
 	cbPtr->data[1] = (ClientData)(data1);				\
 	cbPtr->data[2] = (ClientData)(data2);				\
-	cbPtr->data[3] = NULL;						\
     } while (0)
 
 #define POP_CB(interp, cbPtr)			\
