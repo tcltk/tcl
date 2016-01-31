@@ -30,16 +30,16 @@
  * Headers if any.
  */
 
-#include "tclInt.h"
+#include "regex.h"
 
 /*
  * Overrides for regguts.h definitions, if any.
  */
 
 #define	FUNCPTR(name, args)	(*name)args
-#define	MALLOC(n)		ckalloc(n)
+#define	MALLOC(n)		VS(attemptckalloc(n))
 #define	FREE(p)			ckfree(VS(p))
-#define	REALLOC(p,n)		ckrealloc(VS(p),n)
+#define	REALLOC(p,n)		VS(attemptckrealloc(VS(p),n))
 
 /*
  * Do not insert extras between the "begin" and "end" lines - this chunk is
@@ -155,7 +155,9 @@ typedef int celt;		/* Type to hold chr, or NOCELT */
 #endif
 
 /*
- * And pick up the standard header.
+ * Local Variables:
+ * mode: c
+ * c-basic-offset: 4
+ * fill-column: 78
+ * End:
  */
-
-#include "regex.h"

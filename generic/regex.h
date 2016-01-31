@@ -1,5 +1,8 @@
 #ifndef _REGEX_H_
 #define	_REGEX_H_	/* never again */
+
+#include "tclInt.h"
+
 /*
  * regular expressions
  *
