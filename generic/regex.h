@@ -277,7 +277,7 @@ typedef struct {
 #define	REG_INVARG	16	/* invalid argument to regex function */
 #define	REG_MIXED	17	/* character widths of regex and string differ */
 #define	REG_BADOPT	18	/* invalid embedded option */
-#define	REG_ETOOBIG	19	/* regular expression is too complex */
+#define	REG_ETOOBIG	19	/* nfa has too many states */
 #define	REG_ECOLORS	20	/* too many colors */
 /* two specials for debugging and testing */
 #define	REG_ATOI	101	/* convert error-code name to number */
