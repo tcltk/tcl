@@ -8241,7 +8241,7 @@ NRStackBottom(
      */
     
     if (this->next) {
-        ckfree (this->next);
+        free (this->next);
         this->next = NULL;
     }
     
