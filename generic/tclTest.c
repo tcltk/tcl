@@ -6580,7 +6580,7 @@ NREUnwind_callback(
         TclNRAddCallback(interp, NREUnwind_callback, data[0], NRE_depth(),
                 INT2PTR(-1));
     } else if (data[2] == INT2PTR(-1)) {
-        TclNRAddCallback(interp, NREUnwind_callback, data[0], data[1],
+        Tcl_NRAddCallback(interp, NREUnwind_callback, data[0], data[1],
                 NRE_depth());
     } else {
         Tcl_Obj *idata[3];
@@ -6604,7 +6604,7 @@ TestNREUnwind(
      * unwinding of the NRE stack.
      */
     
-    TclNRAddCallback(interp, NREUnwind_callback, INT2PTR(-1), INT2PTR(-1),
+    Tcl_NRAddCallback(interp, NREUnwind_callback, INT2PTR(-1), INT2PTR(-1),
             INT2PTR(-1));
     return TCL_OK;
 }
