@@ -227,7 +227,6 @@ struct vars {
     struct cvec *cv2;		/* utility cvec */
     struct subre *lacons;	/* lookahead-constraint vector */
     int nlacons;		/* size of lacons */
-    size_t spaceused;		/* approx. space used for compilation */
 };
 
 /* parsing macros; most know that `v' is the struct vars pointer */
@@ -339,7 +338,6 @@ compile(
     v->cv2 = NULL;
     v->lacons = NULL;
     v->nlacons = 0;
-    v->spaceused = 0;
     re->re_magic = REMAGIC;
     re->re_info = 0;		/* bits get set during parse */
     re->re_csize = sizeof(chr);

@@ -716,7 +716,7 @@ test regexp-22.4 {Bug 3606139} -setup {
 	[a 668]([a 55])[a 668]([a 55])[a 668]([a 55])[a 511]] {}] a
 } -cleanup {
     rename a {}
-} -returnCodes 1 -match glob -result {couldn't compile regular expression pattern: *}
+} -returnCodes 1 -result {couldn't compile regular expression pattern: nfa has too many states}
 test regexp-22.5 {Bug 3610026} -setup {
     set e {}
     set cp 99

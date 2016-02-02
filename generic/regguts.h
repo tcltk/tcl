@@ -313,6 +313,9 @@ struct nfa {
     struct colormap *cm;	/* the color map */
     color bos[2];		/* colors, if any, assigned to BOS and BOL */
     color eos[2];		/* colors, if any, assigned to EOS and EOL */
+    size_t size;		/* Current NFA size; differs from nstates as
+				 * it also counts the number of states created
+				 * by children of this state. */
     struct vars *v;		/* simplifies compile error reporting */
     struct nfa *parent;		/* parent NFA, if any */
 };
@@ -356,16 +359,11 @@ struct cnfa {
 #define	NULLCNFA(cnfa)	((cnfa).nstates == 0)
 
 /*
- * This symbol limits the transient heap space used by the regex compiler,
- * and thereby also the maximum complexity of NFAs that we'll deal with.
- * Currently we only count NFA states and arcs against this; the other
- * transient data is generally not large enough to notice compared to those.
- * Note that we do not charge anything for the final output data structures
- * (the compacted NFA and the colormap).
+ * Used to limit the maximum NFA size to something sane. [Bug 1810264]
  */
-#ifndef REG_MAX_COMPILE_SPACE
-#define REG_MAX_COMPILE_SPACE  \
-	(100000 * sizeof(struct state) + 100000 * sizeof(struct arcbatch))
+
+#ifndef REG_MAX_STATES
+#   define REG_MAX_STATES	100000
 #endif
 
 /*
