@@ -1164,6 +1164,14 @@ Tcl_ZlibStreamPut(
 	zshPtr->stream.next_in = Tcl_GetByteArrayFromObj(data, &size);
 	zshPtr->stream.avail_in = size;
 
+	/*
+	 * Must not do a zero-length compress. [Bug 25842c161]
+	 */
+
+	if (size == 0) {
+	    return TCL_OK;
+	}
+
 	if (HaveDictToSet(zshPtr)) {
 	    e = SetDeflateDictionary(&zshPtr->stream, zshPtr->compDictObj);
 	    if (e != Z_OK) {
@@ -1186,32 +1194,27 @@ Tcl_ZlibStreamPut(
 	zshPtr->stream.next_out = (Bytef *) dataTmp;
 
 	e = deflate(&zshPtr->stream, flush);
-	if ((e==Z_OK || e==Z_BUF_ERROR) && (zshPtr->stream.avail_out == 0)) {
-	    if (outSize - zshPtr->stream.avail_out > 0) {
-		/*
-		 * Output buffer too small.
-		 */
+	while (e == Z_BUF_ERROR) {
+	    /*
+	     * Output buffer too small to hold the data being generated; so
+	     * put a new buffer into place after saving the old generated
+	     * data to the outData list.
+	     */
 
-		obj = Tcl_NewByteArrayObj((unsigned char *) dataTmp,
-			outSize - zshPtr->stream.avail_out);
+	    obj = Tcl_NewByteArrayObj((unsigned char *) dataTmp, outSize);
+	    Tcl_ListObjAppendElement(NULL, zshPtr->outData, obj);
 
-		/*
-		 * Now append the compressed data to the outData list.
-		 */
-
-		Tcl_ListObjAppendElement(NULL, zshPtr->outData, obj);
-	    }
 	    if (outSize < 0xFFFF) {
 		outSize = 0xFFFF;	/* There may be *lots* of data left to
 					 * output... */
-		ckfree(dataTmp);
-		dataTmp = ckalloc(outSize);
+		dataTmp = ckrealloc(dataTmp, outSize);
 	    }
 	    zshPtr->stream.avail_out = outSize;
 	    zshPtr->stream.next_out = (Bytef *) dataTmp;
 
 	    e = deflate(&zshPtr->stream, flush);
 	}
+
 	if (e != Z_OK && !(flush==Z_FINISH && e==Z_STREAM_END)) {
 	    if (zshPtr->interp) {
 		ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
