@@ -913,6 +913,10 @@ ClearMixins(
     int i;
     Class *mixinPtr;
 
+    if (clsPtr->mixins.num == 0) {
+	return;
+    }
+
     FOREACH(mixinPtr, clsPtr->mixins) {
 	TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
     }
@@ -926,6 +930,10 @@ ClearSuperclasses(
 {
     int i;
     Class *superPtr;
+
+    if (clsPtr->superclasses.num == 0) {
+	return;
+    }
 
     FOREACH(superPtr, clsPtr->superclasses) {
 	TclOORemoveFromSubclasses(clsPtr, superPtr);
@@ -1002,16 +1010,11 @@ ReleaseClassContents(
      */
 
     FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
-	if (mixinSubclassPtr == NULL) {
-	    continue;
-	}
 	if (!Deleted(mixinSubclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp,
 		    mixinSubclassPtr->thisPtr->command);
 	}
-	if (mixinSubclassPtr->mixins.num) {
-	    ClearMixins(mixinSubclassPtr);
-	}
+	ClearMixins(mixinSubclassPtr);
 	DelRef(mixinSubclassPtr->thisPtr);
 	DelRef(mixinSubclassPtr);
     }
@@ -1026,15 +1029,13 @@ ReleaseClassContents(
      */
 
     FOREACH(subclassPtr, clsPtr->subclasses) {
-	if (subclassPtr == NULL || IsRoot(subclassPtr)) {
+	if (IsRoot(subclassPtr)) {
 	    continue;
 	}
 	if (!Deleted(subclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
 	}
-	if (subclassPtr->superclasses.num) {
-	    ClearSuperclasses(subclassPtr);
-	}
+	ClearSuperclasses(subclassPtr);
 	DelRef(subclassPtr->thisPtr);
 	DelRef(subclassPtr);
     }
@@ -1251,12 +1252,10 @@ ObjectNamespaceDeleted(
 	    clsPtr->filters.num = 0;
 	}
 
-	if (clsPtr->mixins.num) {
-	    ClearMixins(clsPtr);
-	}
-	if (clsPtr->superclasses.num) {
-	    ClearSuperclasses(clsPtr);
-	}
+	ClearMixins(clsPtr);
+
+	ClearSuperclasses(clsPtr);
+
 	if (clsPtr->subclasses.list) {
 	    ckfree(clsPtr->subclasses.list);
 	    clsPtr->subclasses.num = 0;
@@ -1398,9 +1397,7 @@ TclOORemoveFromSubclasses(
     return;
 
   removeSubclass:
-    if (Deleted(superPtr->thisPtr)) {
-	superPtr->subclasses.list[i] = NULL;
-    } else {
+    if (!Deleted(superPtr->thisPtr)) {
 	superPtr->subclasses.num--;
 	if (i < superPtr->subclasses.num) {
 	    superPtr->subclasses.list[i] =
@@ -1471,9 +1468,7 @@ TclOORemoveFromMixinSubs(
     return;
 
   removeSubclass:
-    if (Deleted(superPtr->thisPtr)) {
-	superPtr->mixinSubs.list[i] = NULL;
-    } else {
+    if (!Deleted(superPtr->thisPtr)) {
 	superPtr->mixinSubs.num--;
 	if (i < superPtr->mixinSubs.num) {
 	    superPtr->mixinSubs.list[i] =
