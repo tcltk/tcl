@@ -898,10 +898,10 @@ ObjectRenamedTrace(
 /*
  * ----------------------------------------------------------------------
  *
- * ReleaseClassContents --
+ * ClearMixins, ClearSuperclasses --
  *
- *	Tear down the special class data structure, including deleting all
- *	dependent classes and objects.
+ *	Utility functions for correctly clearing the list of mixins or
+ *	superclasses of a class. Will ckfree() the list storage.
  *
  * ----------------------------------------------------------------------
  */
@@ -921,6 +921,7 @@ ClearMixins(
 	TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
     }
     ckfree(clsPtr->mixins.list);
+    clsPtr->mixins.list = NULL;
     clsPtr->mixins.num = 0;
 }
 
@@ -939,8 +940,20 @@ ClearSuperclasses(
 	TclOORemoveFromSubclasses(clsPtr, superPtr);
     }
     ckfree(clsPtr->superclasses.list);
+    clsPtr->superclasses.list = NULL;
     clsPtr->superclasses.num = 0;
 }
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * ReleaseClassContents --
+ *
+ *	Tear down the special class data structure, including deleting all
+ *	dependent classes and objects.
+ *
+ * ----------------------------------------------------------------------
+ */
 
 static void
 ReleaseClassContents(
@@ -1230,6 +1243,10 @@ ObjectNamespaceDeleted(
 	ckfree(oPtr->metadataPtr);
 	oPtr->metadataPtr = NULL;
     }
+
+    /*
+     * If this was a class, there's additional deletion work to do.
+     */
 
     if (clsPtr != NULL) {
 	Tcl_ObjectMetadataType *metadataTypePtr;
