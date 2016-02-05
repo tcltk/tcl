@@ -3109,6 +3109,64 @@ ZlibTransformOutput(
 /*
  *----------------------------------------------------------------------
  *
+ * ZlibTransformFlush --
+ *
+ *	How to perform a flush of a compressing transform.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static int
+ZlibTransformFlush(
+    Tcl_Interp *interp,
+    ZlibChannelData *cd,
+    int flushType)
+{
+    int e, len;
+
+    cd->outStream.avail_in = 0;
+    do {
+	/*
+	 * Get the bytes to go out of the compression engine.
+	 */
+
+	cd->outStream.next_out = (Bytef *) cd->outBuffer;
+	cd->outStream.avail_out = cd->outAllocated;
+
+	e = deflate(&cd->outStream, flushType);
+	if (e != Z_OK && e != Z_BUF_ERROR) {
+	    ConvertError(interp, e, cd->outStream.adler);
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * Write the bytes we've received to the next layer.
+	 */
+
+	len = cd->outStream.next_out - (Bytef *) cd->outBuffer;
+	if (len > 0 && Tcl_WriteRaw(cd->parent, cd->outBuffer, len) < 0) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "problem flushing channel: %s",
+		    Tcl_PosixError(interp)));
+	    return TCL_ERROR;
+	}
+
+	/*
+	 * If we get to this point, either we're in the Z_OK or the
+	 * Z_BUF_ERROR state. In the former case, we're done. In the latter
+	 * case, it's because there's more bytes to go than would fit in the
+	 * buffer we provided, and we need to go round again to get some more.
+	 *
+	 * We also stop the loop if we would have done a zero-length write.
+	 * Those can cause problems at the OS level.
+	 */
+    } while (len > 0 && e == Z_BUF_ERROR);
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * ZlibTransformSetOption --
  *
  *	Writing side of [fconfigure] on our channel.
@@ -3181,32 +3239,7 @@ ZlibTransformSetOption(			/* not used */
 	     * Try to actually do the flush now.
 	     */
 
-	    cd->outStream.avail_in = 0;
-	    while (1) {
-		int e;
-
-		cd->outStream.next_out = (Bytef *) cd->outBuffer;
-		cd->outStream.avail_out = cd->outAllocated;
-
-		e = deflate(&cd->outStream, flushType);
-		if (e == Z_BUF_ERROR) {
-		    break;
-		} else if (e != Z_OK) {
-		    ConvertError(interp, e, cd->outStream.adler);
-		    return TCL_ERROR;
-		} else if (cd->outStream.avail_out == 0) {
-		    break;
-		}
-
-		if (Tcl_WriteRaw(cd->parent, cd->outBuffer,
-			cd->outStream.next_out - (Bytef *) cd->outBuffer)<0) {
-		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-			    "problem flushing channel: %s",
-			    Tcl_PosixError(interp)));
-		    return TCL_ERROR;
-		}
-	    }
-	    return TCL_OK;
+	    return ZlibTransformFlush(interp, cd, flushType);
 	}
     } else {
 	if (optionName && strcmp(optionName, "-limit") == 0) {
