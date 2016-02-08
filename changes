@@ -7977,4 +7977,4 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-01-29 (TIP 440) tcl_platform(engine) -- Tcl implementation (mistachkin)
 
---- Released 8.5.19, January 31, 2016 --- http://core.tcl.tk/tcl/ for details
+--- Released 8.5.19, February 12, 2016 --- http://core.tcl.tk/tcl/ for details
