@@ -132,6 +132,12 @@ test zlib-7.6 {zlib stream} zlib {
     $s close
     lappend result $data
 } {{} 69f34b6a abcdeEDCBA..}
+test zlib-7.7 {zlib stream: Bug 25842c161} -constraints zlib -body {
+    set s [zlib stream deflate]
+    $s put {}
+} -cleanup {
+    catch {$s close}
+} -result ""
 
 test zlib-8.1 {zlib transformation} -constraints zlib -setup {
     set file [makeFile {} test.gz]
