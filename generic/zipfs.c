@@ -699,7 +699,7 @@ ZipFSLookup(char *filename)
     z = hPtr ? (ZipEntry *) Tcl_GetHashValue(hPtr) : NULL;
     Tcl_DStringFree(&ds);
 #if HAS_DRIVES
-    if ((z != NULL) && (drive != z->zipfile->mntdrv)) {
+    if ((z != NULL) && drive && (drive != z->zipfile->mntdrv)) {
 	z = NULL;
     }
 #endif
@@ -748,7 +748,7 @@ ZipFSLookupMount(char *filename)
     while (hPtr != NULL) {
 	if ((zf = (ZipFile *) Tcl_GetHashValue(hPtr)) != NULL) {
 #if HAS_DRIVES
-	    if (drive != zf->mntdrv) {
+	    if (drive && (drive != zf->mntdrv)) {
 		hPtr = Tcl_NextHashEntry(&search);
 		continue;
 	    }
@@ -1507,7 +1507,7 @@ ZipFSMountObjCmd(ClientData clientData, Tcl_Interp *interp,
 {
     if (objc > 4) {
 	Tcl_WrongNumArgs(interp, 1, objv,
-			 "?zipfile mountpoint password?");
+			 "?zipfile? ?mountpoint? ?password?");
 	return TCL_ERROR;
     }
     return Tclzipfs_Mount(interp, (objc > 1) ? Tcl_GetString(objv[1]) : NULL,
@@ -1729,7 +1729,7 @@ wrerr:
 
 	init_keys(passwd, keys, crc32tab);
 	for (i = 0; i < 12 - 2; i++) {
-	    if (Tcl_Eval(interp, "expr int(rand() * 256) % 256") != TCL_OK) {
+	    if (Tcl_EvalEx(interp, "expr int(rand() * 256) % 256", -1, 0) != TCL_OK) {
 		Tcl_AppendResult(interp, "PRNG error", (char *) NULL);
 		Tcl_Close(interp, in);
 		return TCL_ERROR;
@@ -1966,8 +1966,8 @@ ZipFSMkZipOrImgObjCmd(ClientData clientData, Tcl_Interp *interp,
     } else {
 	if ((objc < 3) || (objc > (isImg ? 6 : 5))) {
 	    Tcl_WrongNumArgs(interp, 1, objv, isImg ?
-			     "outfile indir ?strip password infile?" :
-			     "outfile indir ?strip password?");
+			     "outfile indir ?strip? ?password? ?infile?" :
+			     "outfile indir ?strip? ?password?");
 	    return TCL_ERROR;
 	}
     }
@@ -3854,6 +3854,8 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 
 	objs[1] = TclPathPart(interp, path, TCL_PATH_DIRNAME);
 	if ((objs[1] != NULL) && (Zip_FSAccessProc(objs[1], R_OK) == 0)) {
+	    const char *execName = Tcl_GetNameOfExecutable();
+
 	    /*
 	     * Shared object is not in ZIP but its path prefix is,
 	     * thus try to load from directory where the executable
@@ -3861,8 +3863,23 @@ Zip_FSLoadFile(Tcl_Interp *interp, Tcl_Obj *path, Tcl_LoadHandle *loadHandle,
 	     */
 	    TclDecrRefCount(objs[1]);
 	    objs[1] = TclPathPart(interp, path, TCL_PATH_TAIL);
-	    objs[0] = TclPathPart(interp, TclGetObjNameOfExecutable(),
-				  TCL_PATH_DIRNAME);
+	    /*
+	     * Get directory name of executable manually to deal
+	     * with cases where [file dirname [info nameofexecutable]]
+	     * is equal to [info nameofexecutable] due to VFS effects.
+	     */
+	    if (execName != NULL) {
+		const char *p = strrchr(execName, '/');
+
+		if (p > execName + 1) {
+		    --p;
+		    objs[0] = Tcl_NewStringObj(execName, p - execName);
+		}
+	    }
+	    if (objs[0] == NULL) {
+		objs[0] = TclPathPart(interp, TclGetObjNameOfExecutable(),
+					  TCL_PATH_DIRNAME);
+	    }
 	    if (objs[0] != NULL) {
 		altPath = TclJoinPath(2, objs);
 		if (altPath != NULL) {
@@ -3983,7 +4000,29 @@ static int
 Zipfs_doInit(Tcl_Interp *interp, int safe)
 {
 #ifdef HAVE_ZLIB
+    static const EnsembleImplMap initMap[] = {
+	{"mount",	ZipFSMountObjCmd,	NULL, NULL, NULL, 0},
+	{"unmount",	ZipFSUnmountObjCmd,	NULL, NULL, NULL, 0},
+	{"mkkey",	ZipFSMkKeyObjCmd,	NULL, NULL, NULL, 0},
+	{"mkimg",	ZipFSMkImgObjCmd,	NULL, NULL, NULL, 0},
+	{"mkzip",	ZipFSMkZipObjCmd,	NULL, NULL, NULL, 0},
+	{"lmkimg",	ZipFSLMkImgObjCmd,	NULL, NULL, NULL, 0},
+	{"lmkzip",	ZipFSLMkZipObjCmd,	NULL, NULL, NULL, 0},
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+
+    static const EnsembleImplMap initSafeMap[] = {
+	{"exists",	ZipFSExistsObjCmd,	NULL, NULL, NULL, 0},
+	{"info",	ZipFSInfoObjCmd,	NULL, NULL, NULL, 0},
+	{"list",	ZipFSListObjCmd,	NULL, NULL, NULL, 0},
+	{NULL, NULL, NULL, NULL, NULL, 0}
+    };
+
     static const char findproc[] =
+	"namespace eval zipfs {}\n"
 	"proc ::zipfs::find dir {\n"
 	" set result {}\n"
 	" if {[catch {glob -directory $dir -tails -nocomplain * .*} list]} {\n"
@@ -4002,27 +4041,15 @@ Zipfs_doInit(Tcl_Interp *interp, int safe)
 	" return [lsort $result]\n"
 	"}\n";
     Zipfs_one_time_init(interp);
-    Tcl_PkgProvide(interp, "zipfs", "1.0");
     if (!safe) {
-	Tcl_CreateObjCommand(interp, "::zipfs::mount", ZipFSMountObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::unmount",
-			     ZipFSUnmountObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkkey", ZipFSMkKeyObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkimg", ZipFSMkImgObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::mkzip", ZipFSMkZipObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::lmkimg",
-			     ZipFSLMkImgObjCmd, 0, 0);
-	Tcl_CreateObjCommand(interp, "::zipfs::lmkzip",
-			     ZipFSLMkZipObjCmd, 0, 0);
-	Tcl_GlobalEval(interp, findproc);
-    }
-    Tcl_CreateObjCommand(interp, "::zipfs::exists", ZipFSExistsObjCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::zipfs::info", ZipFSInfoObjCmd, 0, 0);
-    Tcl_CreateObjCommand(interp, "::zipfs::list", ZipFSListObjCmd, 0, 0);
-    if (!safe) {
+	Tcl_EvalEx(interp, findproc, -1, TCL_EVAL_GLOBAL);
 	Tcl_LinkVar(interp, "::zipfs::wrmax", (char *) &ZipFS.wrmax,
 		    TCL_LINK_INT);
     }
+    TclMakeEnsemble(interp, "zipfs", safe ? initSafeMap : initMap);
+
+    Tcl_PkgProvide(interp, "zipfs", "1.0");
+
     return TCL_OK;
 #else
     if (interp != NULL) {
