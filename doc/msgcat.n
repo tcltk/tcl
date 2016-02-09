@@ -384,7 +384,7 @@ the package. For example, a short \fBes.msg\fR might contain:
 .PP
 .CS
 namespace eval ::mypackage {
-    \fB::msgcat::mcflset\fR "Free Beer!" "Cerveza Gracias!"
+    \fB::msgcat::mcflset\fR "Free Beer" "Cerveza Gratis"
 }
 .CE
 .SH "RECOMMENDED MESSAGE SETUP FOR PACKAGES"
