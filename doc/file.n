@@ -23,7 +23,7 @@ substitution is done before executing the command (see the manual entry for
 file name.  Any unique abbreviation for \fIoption\fR is acceptable.  The
 valid options are:
 .TP
-\fBfile atime \fIname\fR ?\fBtime\fR?
+\fBfile atime \fIname\fR ?\fItime\fR?
 .
 Returns a decimal string giving the time at which file \fIname\fR was last
 accessed.  If \fItime\fR is specified, it is an access time to set
@@ -34,9 +34,9 @@ generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR
 .TP
-\fBfile attributes \fIname\fR ?\fBoption\fR?
+\fBfile attributes \fIname\fR ?\fIoption\fR?
 .TP
-\fBfile attributes \fIname\fR ?\fBoption value option value...\fR?
+\fBfile attributes \fIname\fR ?\fIoption value option value...\fR?
 .
 This subcommand returns or sets platform specific values associated
 with a file. The first form returns a list of the platform specific
