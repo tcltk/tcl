@@ -23,7 +23,7 @@ substitution is done before executing the command (see the manual entry for
 file name.  Any unique abbreviation for \fIoption\fR is acceptable.  The
 valid options are:
 .TP
-\fBfile atime \fIname\fR ?\fBtime\fR?
+\fBfile atime \fIname\fR ?\fItime\fR?
 .
 Returns a decimal string giving the time at which file \fIname\fR was last
 accessed.  If \fItime\fR is specified, it is an access time to set
@@ -34,9 +34,9 @@ generated.  On Windows, FAT file systems do not support access time.
 .TP
 \fBfile attributes \fIname\fR
 .TP
-\fBfile attributes \fIname\fR ?\fBoption\fR?
+\fBfile attributes \fIname\fR ?\fIoption\fR?
 .TP
-\fBfile attributes \fIname\fR ?\fBoption value option value...\fR?
+\fBfile attributes \fIname\fR ?\fIoption value option value...\fR?
 .
 This subcommand returns or sets platform specific values associated
 with a file. The first form returns a list of the platform specific
@@ -80,7 +80,7 @@ set to the value 0, which results in the resource fork being stripped
 off the file.
 .RE
 .TP
-\fBfile channels ?\fIpattern\fR?
+\fBfile channels\fR ?\fIpattern\fR?
 .
 If \fIpattern\fR is not specified, returns a list of names of all
 registered open channels in this interpreter.  If \fIpattern\fR is
@@ -203,7 +203,7 @@ is always canonical for the current platform: \fB/\fR for Unix and
 Windows.
 .RE
 .TP
-\fBfile link ?\fI\-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
+\fBfile link\fR ?\fI\-linktype\fR? \fIlinkName\fR ?\fItarget\fR?
 .
 If only one argument is given, that argument is assumed to be
 \fIlinkName\fR, and this command returns the value of the link given by
@@ -255,7 +255,7 @@ is for the link rather than the file it refers to.  On systems that
 do not support symbolic links this option behaves exactly the same
 as the \fBstat\fR option.
 .TP
-\fBfile mkdir ?\fIdir\fR ...?
+\fBfile mkdir\fR ?\fIdir\fR ...?
 .
 Creates each directory specified.  For each pathname \fIdir\fR specified,
 this command will create all non-existing parent directories as
