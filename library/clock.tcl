@@ -4449,6 +4449,10 @@ proc ::tcl::clock::AddMonths { months clockval timezone changeover } {
 
 proc ::tcl::clock::AddWeekDays { days clockval timezone changeover } {
 
+    if {$days == 0} {
+        return $clockval
+    }
+
     set day [format $clockval -format %u]
 
     set weeks  [expr {$days / 5}]
