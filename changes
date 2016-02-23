@@ -8621,4 +8621,6 @@ improvements to regexp engine from Postgres (lane,porter,fellows,seltenreich)
 
 2016-02-04 (bug)[3d96b7][593baa][cf74de] crashes in OO teardown (porter,fellows)
 
+2016-02-22 (bug)[9b4702] [info exists env(missing)] kills trace (nijtmans)
+
 --- Released 8.6.5, February 29, 2016 --- http://core.tcl.tk/tcl/ for details
