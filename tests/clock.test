@@ -35237,7 +35237,12 @@ test clock-30.28 {clock add weekdays starting on Sunday} {
     set f1 [clock add $t 1 weekday]
     set x1 [clock format $f1 -format {%Y-%m-%d}]
 } {2013-11-25}
-test clock-30.29 {clock add weekdays systematic} -body {
+test clock-30.29 {clock add 0 weekdays starting on a weekend} {
+    set t [clock scan {2016-02-27}] ;# Saturday
+    set f1 [clock add $t 0 weekdays]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2016-02-27}
+test clock-30.30 {clock add weekdays systematic} -body {
     set n [clock seconds]
     set d [clock format $n -format %u]
     for {set i 1} {$i < 100} {incr i} {
