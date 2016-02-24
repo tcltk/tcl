@@ -35242,17 +35242,30 @@ test clock-30.29 {clock add 0 weekdays starting on a weekend} {
     set f1 [clock add $t 0 weekdays]
     set x1 [clock format $f1 -format {%Y-%m-%d}]
 } {2016-02-27}
-test clock-30.30 {clock add weekdays systematic} -body {
+test clock-30.30 {clock add weekdays and back} -body {
     set n [clock seconds]
-    set d [clock format $n -format %u]
-    for {set i 1} {$i < 100} {incr i} {
-        set res_no   [clock format [clock add $n $i weekdays] -format %u]
-        set exp_mod  [expr {($d+$i)%5}]
-        if {$exp_mod == 0} {
-            set exp_mod 5
-        }
-        if {$res_no != $exp_mod} {
-            return "Got $res_no adding $i to $n, expected: $exp_mod"
+    # we start on each day of the week
+    for {set i 0} {$i < 7} {incr i} {
+        set start  [clock add $n $i days]
+        set startu [clock format $start -format %u]
+        # add 0 - 100 weekdays
+        for {set j 0} {$j < 100} {incr j} {
+            set forth [clock add $start $j weekdays]
+            set back  [clock add $forth -$j weekdays]
+            # If $s was a weekday or $j was 0, $b must be the same day.
+            # Otherwise, $b must be the immediately preceeding Friday
+            set fail 0
+            if {$j == 0 || $startu < 6} {
+                if {$start != $back} { set fail 1}
+            } else {
+                set friday [clock add $start -[expr {$startu % 5}] days]
+                if {$friday != $back} { set fail 1 }
+            }
+            if {$fail} {
+                set sdate [clock format $start -format {%Y-%m-%d}]
+                set bdate [clock format $back  -format {%Y-%m-%d}]
+                return "$sdate + $j - $j := $bdate"
+            }
         }
     }
     return "OK"
