@@ -129,30 +129,30 @@ if 0 {
     }
 }
 
-foreach {af localhost} {
-    inet 127.0.0.1
-    inet6 ::1
-} {
-    # Check if the family is supported and set the constraint accordingly
-    testConstraint supported_$af [expr {![catch {socket -server foo -myaddr $localhost 0} sock]}]
-    catch {close $sock}
-}
-
 set sock [socket -server foo -myaddr localhost 0]
 set sockname [fconfigure $sock -sockname]
 close $sock
-testConstraint localhost_v4 [expr {"127.0.0.1" in $sockname}]
-testConstraint localhost_v6 [expr {"::1" in $sockname}]
-
+foreach {addr name port} $sockname {
+    if {![testConstraint localhost_v4]} {
+        testConstraint localhost_v4 [regexp {^(?:[0-9]{1,3}\.){3}[0-9]{1,3}$} $addr]
+    }
+    if {![testConstraint localhost_v6]} {
+        testConstraint localhost_v6 [expr {"::1" eq $addr}]
+    }
+}
 
 foreach {af localhost} {
     any 127.0.0.1
     inet 127.0.0.1
     inet6 ::1
 } {
+    # Check if the family is supported and set the constraint accordingly
+    testConstraint supported_$af [expr {![catch {socket -server foo -myaddr $localhost 0} sock]}]
     if {![testConstraint supported_$af]} {
         continue
     }
+    set localhost [lindex [fconfigure $sock -sockname] 0]
+    catch {close $sock}
     set ::tcl::unsupported::socketAF $af
 #
 # Check if we're supposed to do tests against the remote server
@@ -999,7 +999,7 @@ test socket_$af-7.2 {testing socket specific options} -setup {
     set p [fconfigure $s -sockname]
     close $s
     list [llength $p] \
-	    [regexp {^(127\.0\.0\.1|0\.0\.0\.0|::1)$} [lindex $p 0]] \
+	    [regexp "^(127\.0\.0\.1|0\.0\.0\.0|::1|$localhost)\$" [lindex $p 0]] \
 	    [expr {[lindex $p 2] == $listen}]
 } -cleanup {
     close $f
