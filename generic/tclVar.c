@@ -697,13 +697,15 @@ TclObjLookupVarEx(
 	/*
 	 * An indexed local variable.
 	 */
+	Tcl_Obj *cachedNamePtr = localName(iPtr->varFramePtr, index);
 
 	part1Ptr->typePtr = &localVarNameType;
-	if (part1Ptr != localName(iPtr->varFramePtr, index)) {
-	    part1Ptr->internalRep.twoPtrValue.ptr1 =
-		    localName(iPtr->varFramePtr, index);
-	    Tcl_IncrRefCount((Tcl_Obj *)
-		    part1Ptr->internalRep.twoPtrValue.ptr1);
+	if (part1Ptr != cachedNamePtr) {
+	    part1Ptr->internalRep.twoPtrValue.ptr1 = cachedNamePtr;
+	    Tcl_IncrRefCount(cachedNamePtr);
+	    if (cachedNamePtr->typePtr != &localVarNameType) {
+	        TclFreeIntRep(cachedNamePtr);
+	    }
 	} else {
 	    part1Ptr->internalRep.twoPtrValue.ptr1 = NULL;
 	}
