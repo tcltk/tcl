@@ -142,7 +142,6 @@ foreach {addr name port} $sockname {
 }
 
 foreach {af localhost} {
-    any 127.0.0.1
     inet 127.0.0.1
     inet6 ::1
 } {
