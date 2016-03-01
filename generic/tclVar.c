@@ -703,7 +703,8 @@ TclObjLookupVarEx(
 	if (part1Ptr != cachedNamePtr) {
 	    part1Ptr->internalRep.twoPtrValue.ptr1 = cachedNamePtr;
 	    Tcl_IncrRefCount(cachedNamePtr);
-	    if (cachedNamePtr->typePtr != &localVarNameType) {
+	    if (cachedNamePtr->typePtr != &localVarNameType
+		    || cachedNamePtr->internalRep.twoPtrValue.ptr1 != NULL) {
 	        TclFreeIntRep(cachedNamePtr);
 	    }
 	} else {
