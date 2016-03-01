@@ -921,6 +921,34 @@ test var-22.0 {leak in array element unset: Bug a3309d01db} -setup {
     rename getbytes {}
     rename doit {}
 } -result 0
+test var-22.1 {leak in localVarName intrep: Bug 80304238ac} -setup {
+    proc getbytes {} {
+	lindex [split [memory info] \n] 3 3
+    }
+    proc doit {} {
+	interp create slave
+	slave eval {
+	    proc doit script {
+		eval $script
+		set foo bar
+	    }
+	    doit {foreach foo baz {}}
+	}
+	interp delete slave
+    }
+} -constraints memory -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	doit
+        set tmp $end
+        set end [getbytes]
+    }
+    set leakedBytes [expr {$end - $tmp}]
+} -cleanup {
+    array unset A
+    rename getbytes {}
+    rename doit {}
+} -result 0
 
 
 catch {namespace delete ns}
