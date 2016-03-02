@@ -157,14 +157,20 @@ fi
 #	Add stuff for zlib
 #------------------------------------------------------------------------
 
-zlib_ok=yes
-AC_CHECK_HEADER([zlib.h],[
-  AC_CHECK_TYPE([gz_header],[],[zlib_ok=no],[#include <zlib.h>])],[
-  zlib_ok=no])
-AS_IF([test $zlib_ok = yes], [
-  AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
+# When not building a shared version, force usage of internal zlib
+if test "$SHARED_BUILD" = "0" ; then
     zlib_ok=no
-  ])])
+else
+    zlib_ok=yes
+    AC_CHECK_HEADER([zlib.h],[
+      AC_CHECK_TYPE([gz_header],[],[zlib_ok=no],[#include <zlib.h>])],[
+      zlib_ok=no])
+    AS_IF([test $zlib_ok = yes], [
+      AC_SEARCH_LIBS([deflateSetHeader],[z],[],[
+        zlib_ok=no
+      ])])
+fi
+
 AS_IF([test $zlib_ok = no], [
   AC_SUBST(ZLIB_OBJS,[\${ZLIB_OBJS}])
   AC_SUBST(ZLIB_SRCS,[\${ZLIB_SRCS}])
