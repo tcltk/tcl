@@ -995,6 +995,7 @@ namespace eval ::msgcat::test {
 	    mcloadedlocales clear
 	} -cleanup {
 	    mcforgetpackage
+	    after cancel set [namespace current]::resultvariable timeout
 	} -body {
 	    mcpackageconfig set loadcmd [namespace code callbackfailproc]
 	    mclocale foo_bar
