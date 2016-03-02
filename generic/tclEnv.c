@@ -553,7 +553,8 @@ TclGetEnv(
  *	array.
  *
  * Results:
- *	Always returns NULL to indicate success.
+ *	Returns NULL to indicate success, or an error-message if the array
+ *	element being handled doesn't exist.
  *
  * Side effects:
  *	Environment variable changes get propagated. If the whole "env" array
@@ -611,8 +612,7 @@ EnvTraceProc(
 	const char *value = TclGetEnv(name2, &valueString);
 
 	if (value == NULL) {
-	    Tcl_UnsetVar2(interp, name1, name2, 0);
-	    return NULL;
+	    return (char *) "no such variable";
 	}
 	Tcl_SetVar2(interp, name1, name2, value, 0);
 	Tcl_DStringFree(&valueString);
