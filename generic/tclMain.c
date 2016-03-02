@@ -69,20 +69,27 @@
  * encoding to UTF-8).
  */
 
-#ifdef UNICODE
+#if defined(UNICODE) && (TCL_UTF_MAX <= 4)
 #   define NewNativeObj Tcl_NewUnicodeObj
-#else /* !UNICODE */
+#else /* !UNICODE || (TCL_UTF_MAX > 4) */
 static inline Tcl_Obj *
 NewNativeObj(
-    char *string,
+    TCHAR *string,
     int length)
 {
     Tcl_DString ds;
 
-    Tcl_ExternalToUtfDString(NULL, string, length, &ds);
+#ifdef UNICODE
+    if (length > 0) {
+	length *= sizeof (TCHAR);
+    }
+    Tcl_WinTCharToUtf(string, length, &ds);
+#else
+    Tcl_ExternalToUtfDString(NULL, (char *) string, length, &ds);
+#endif
     return TclDStringToObj(&ds);
 }
-#endif /* !UNICODE */
+#endif /* !UNICODE || (TCL_UTF_MAX > 4) */
 
 /*
  * Declarations for various library functions and variables (don't want to
@@ -333,6 +340,9 @@ Tcl_MainEx(
 #ifndef ANDROID
     const char *exeName;
 #endif
+#ifndef ZIPFS_BOOTDIR
+    Tcl_Obj *mntpt = NULL;
+#endif
 #endif
 
     TclpSetInitialEncodings();
@@ -425,54 +435,58 @@ Tcl_MainEx(
 #ifdef ZIPFS_IN_TCL
     zipOk = Tclzipfs_Init(interp);
     if (zipOk == TCL_OK) {
-        int relax = 0;
+	int relax = 0;
 
-        if (zipFile == NULL) {
-            relax = 1;
+	if (zipFile == NULL) {
+	    relax = 1;
 #ifdef ANDROID
-            zipFile = getenv("PACKAGE_CODE_PATH");
-            if (zipFile == NULL) {
-                zipFile = Tcl_GetNameOfExecutable();
-            }
+	    zipFile = getenv("PACKAGE_CODE_PATH");
+	    if (zipFile == NULL) {
+		zipFile = Tcl_GetNameOfExecutable();
+	    }
 #else
-            zipFile = exeName;
+	    zipFile = exeName;
 #endif
-        }
-        if (zipFile != NULL) {
+	}
+	if (zipFile != NULL) {
 #ifdef ANDROID
-            zipOk = Tclzipfs_Mount(interp, zipFile, "", NULL);
+	    zipOk = Tclzipfs_Mount(interp, zipFile, "", NULL);
 #else
-            zipOk = Tclzipfs_Mount(interp, zipFile, exeName, NULL);
+	    zipOk = Tclzipfs_Mount(interp, zipFile, exeName, NULL);
 #endif
-            if (!relax && (zipOk != TCL_OK)) {
-                exitCode = 1;
-                goto done;
-            }
-        } else {
-            zipOk = TCL_ERROR;
-        }
-        Tcl_ResetResult(interp);
+	    if (!relax && (zipOk != TCL_OK)) {
+		exitCode = 1;
+		goto done;
+	    }
+	} else {
+	    zipOk = TCL_ERROR;
+	}
+	Tcl_ResetResult(interp);
     }
     if (zipOk == TCL_OK) {
 #ifdef ZIPFS_BOOTDIR
-        char *tcl_lib = ZIPFS_BOOTDIR "/tcl" TCL_VERSION;
-        char *tcl_pkg = ZIPFS_BOOTDIR;
+	char *tcl_lib = ZIPFS_BOOTDIR "/tcl" TCL_VERSION;
+	char *tcl_pkg = ZIPFS_BOOTDIR;
 #else
-	char *tcl_lib;
-        char *tcl_pkg = (char *) exeName;
+	char *tcl_pkg, *tcl_lib;
 	Tcl_DString dsLib;
 
+	/* Use canonicalized mount point. */
+	Tclzipfs_Mount(interp, zipFile, NULL, NULL);
+	mntpt = Tcl_GetObjResult(interp);
+	Tcl_IncrRefCount(mntpt);
+	tcl_pkg = Tcl_GetString(mntpt);
 	Tcl_DStringInit(&dsLib);
-	Tcl_DStringAppend(&dsLib, exeName, -1);
+	Tcl_DStringAppend(&dsLib, tcl_pkg, -1);
 	Tcl_DStringAppend(&dsLib, "/tcl" TCL_VERSION, -1);
 	tcl_lib = Tcl_DStringValue(&dsLib);
 #endif
-        Tcl_SetVar2(interp, "env", "TCL_LIBRARY", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "auto_path", tcl_lib,
-                   TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT);
+	Tcl_SetVar2(interp, "env", "TCL_LIBRARY", tcl_lib, TCL_GLOBAL_ONLY);
+	Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
+	Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
+	Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
+	Tcl_SetVar(interp, "auto_path", tcl_lib,
+		   TCL_GLOBAL_ONLY | TCL_LIST_ELEMENT);
 #ifndef ZIPFS_BOOTDIR
 	Tcl_DStringFree(&dsLib);
 #endif
@@ -519,31 +533,31 @@ Tcl_MainEx(
 
     if (zipOk == TCL_OK) {
 #ifdef ZIPFS_BOOTDIR
-        char *tcl_lib = ZIPFS_BOOTDIR "/tcl" TCL_VERSION;
-        char *tcl_pkg = ZIPFS_BOOTDIR;
+	char *tcl_lib = ZIPFS_BOOTDIR "/tcl" TCL_VERSION;
+	char *tcl_pkg = ZIPFS_BOOTDIR;
 #else
 	char *tcl_lib;
-        char *tcl_pkg = (char *) exeName;
+	char *tcl_pkg = Tcl_GetString(mntpt);
 	Tcl_DString dsLib;
 
 	Tcl_DStringInit(&dsLib);
-	Tcl_DStringAppend(&dsLib, exeName, -1);
+	Tcl_DStringAppend(&dsLib, tcl_pkg, -1);
 	Tcl_DStringAppend(&dsLib, "/tcl" TCL_VERSION, -1);
 	tcl_lib = Tcl_DStringValue(&dsLib);
 #endif
-        Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
-        Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
+	Tcl_SetVar(interp, "tcl_libPath", tcl_lib, TCL_GLOBAL_ONLY);
+	Tcl_SetVar(interp, "tcl_library", tcl_lib, TCL_GLOBAL_ONLY);
+	Tcl_SetVar(interp, "tcl_pkgPath", tcl_pkg, TCL_GLOBAL_ONLY);
 #ifndef ZIPFS_BOOTDIR
 	Tcl_DStringFree(&dsLib);
 #endif
 
-        /*
-         * We need to re-init encoding (after initializing Tcl),
-         * otherwise "encoding system" will return "identity"
-         */
+	/*
+	 * We need to re-init encoding (after initializing Tcl),
+	 * otherwise "encoding system" will return "identity"
+	 */
 
-        TclpSetInitialEncodings();
+	TclpSetInitialEncodings();
     }
 
     /*
@@ -551,55 +565,55 @@ Tcl_MainEx(
      */
 
     if ((zipOk == TCL_OK) && autoRun) {
-        char *filename;
-        Tcl_Channel chan;
+	char *filename;
+	Tcl_Channel chan;
 #ifdef ZIPFS_BOOTDIR
-        filename = ZIPFS_BOOTDIR "/app/main.tcl";
+	filename = ZIPFS_BOOTDIR "/app/main.tcl";
 #else
 	Tcl_DString dsFile;
 
 	Tcl_DStringInit(&dsFile);
-	Tcl_DStringAppend(&dsFile, exeName, -1);
+	Tcl_DStringAppend(&dsFile, Tcl_GetString(mntpt), -1);
 	Tcl_DStringAppend(&dsFile, "/app/main.tcl", -1);
 	filename = Tcl_DStringValue(&dsFile);
 #endif
-        chan = Tcl_OpenFileChannel(NULL, filename, "r", 0);
-        if (chan != (Tcl_Channel) NULL) {
-            Tcl_Obj *arg;
+	chan = Tcl_OpenFileChannel(NULL, filename, "r", 0);
+	if (chan != (Tcl_Channel) NULL) {
+	    Tcl_Obj *arg;
 
-            Tcl_Close(NULL, chan);
+	    Tcl_Close(NULL, chan);
 
-            /*
-             * Push back script file to argv, if any.
-             */
-            if ((arg = Tcl_GetStartupScript(NULL)) != NULL) {
-                Tcl_Obj *v, *no;
+	    /*
+	     * Push back script file to argv, if any.
+	     */
+	    if ((arg = Tcl_GetStartupScript(NULL)) != NULL) {
+		Tcl_Obj *v, *no;
 
-                no = Tcl_NewStringObj("argv", 4);
-                v = Tcl_ObjGetVar2(interp, no, NULL, TCL_GLOBAL_ONLY);
-                if (v != NULL) {
-                    Tcl_Obj **objv, *nv;
-                    int objc, i;
+		no = Tcl_NewStringObj("argv", 4);
+		v = Tcl_ObjGetVar2(interp, no, NULL, TCL_GLOBAL_ONLY);
+		if (v != NULL) {
+		    Tcl_Obj **objv, *nv;
+		    int objc, i;
 
-                    objc = 0;
-                    Tcl_ListObjGetElements(NULL, v, &objc, &objv);
-                    nv = Tcl_NewListObj(1, &arg);
-                    for (i = 0; i < objc; i++) {
-                        Tcl_ListObjAppendElement(NULL, nv, objv[i]);
-                    }
-                    Tcl_IncrRefCount(nv);
-                    if (Tcl_ObjSetVar2(interp, no, NULL, nv, TCL_GLOBAL_ONLY)
-                        != NULL) {
-                        Tcl_GlobalEval(interp, "incr argc");
-                    } 
-                    Tcl_DecrRefCount(nv);
-                }
-                Tcl_DecrRefCount(no);
-            }
-            Tcl_SetStartupScript(Tcl_NewStringObj(filename, -1), NULL);
-            Tcl_SetVar(interp, "argv0", filename, TCL_GLOBAL_ONLY);
-            Tcl_SetVar(interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
-        }
+		    objc = 0;
+		    Tcl_ListObjGetElements(NULL, v, &objc, &objv);
+		    nv = Tcl_NewListObj(1, &arg);
+		    for (i = 0; i < objc; i++) {
+			Tcl_ListObjAppendElement(NULL, nv, objv[i]);
+		    }
+		    Tcl_IncrRefCount(nv);
+		    if (Tcl_ObjSetVar2(interp, no, NULL, nv, TCL_GLOBAL_ONLY)
+			!= NULL) {
+			Tcl_GlobalEval(interp, "incr argc");
+		    } 
+		    Tcl_DecrRefCount(nv);
+		}
+		Tcl_DecrRefCount(no);
+	    }
+	    Tcl_SetStartupScript(Tcl_NewStringObj(filename, -1), NULL);
+	    Tcl_SetVar(interp, "argv0", filename, TCL_GLOBAL_ONLY);
+	    Tcl_SetVar(interp, "tcl_interactive", "0", TCL_GLOBAL_ONLY);
+	}
 #ifndef ANDROID
 	Tcl_DStringFree(&dsFile);
 #endif
@@ -793,6 +807,12 @@ Tcl_MainEx(
     }
 
   done:
+#ifndef ZIPFS_BOOTDIR
+    if (mntpt != NULL) {
+	Tcl_DecrRefCount(mntpt);
+	mntpt = NULL;
+    }
+#endif
     mainLoopProc = TclGetMainLoop();
     if ((exitCode == 0) && mainLoopProc && !Tcl_LimitExceeded(interp)) {
 	/*

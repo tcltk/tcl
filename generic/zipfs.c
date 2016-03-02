@@ -294,6 +294,10 @@ static const unsigned int crc32tab[256] = {
  *	POSIX like rwlock functions to support multiple readers
  *	and single writer on internal structs.
  *
+ *	Limitations:
+ *	- a read lock cannot be promoted to a write lock
+ *	- a write lock may not be nested
+ *
  *-------------------------------------------------------------------------
  */
 
@@ -1056,7 +1060,7 @@ Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
     ZipFile *zf, zf0;
     ZipEntry *z;
     Tcl_HashEntry *hPtr;
-    Tcl_DString ds, fpBuf;
+    Tcl_DString ds, dsm, fpBuf;
     unsigned char *q;
 #if HAS_DRIVES
     int drive = 0;
@@ -1108,11 +1112,21 @@ Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	if (hPtr != NULL) {
 	    if ((zf = Tcl_GetHashValue(hPtr)) != NULL) {
 #if HAS_DRIVES
-		if (drive == zf->mntdrv)
-#endif
-		{
-		    Tcl_SetObjResult(interp, Tcl_NewStringObj(zf->mntpt, -1));
+		if (drive == zf->mntdrv) {
+		    Tcl_Obj *string;
+		    char drvbuf[3];
+
+		    drvbuf[0] = zf->mntdrv;
+		    drvbuf[1] = ':';
+		    drvbuf[2] = '\0';
+		    string = Tcl_NewStringObj(drvbuf, 2);
+		    Tcl_AppendToObj(string, zf->mntpt, zf->mntptlen);
+		    Tcl_SetObjResult(interp, string);
 		}
+#else
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj(zf->mntpt, zf->mntptlen));
+#endif
 	    }
 	}
 	Unlock();
@@ -1140,6 +1154,17 @@ Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 #else
     realname = AbsolutePath(zipname, &ds);
 #endif
+    /*
+     * Mount point can come from Tcl_GetNameOfExecutable()
+     * which sometimes is a relative or otherwise denormalized path.
+     * But an absolute name is needed as mount point here.
+     */
+    Tcl_DStringInit(&dsm);
+#if HAS_DRIVES
+    mntpt = AbsolutePath(mntpt, &drive, &dsm);
+#else
+    mntpt = AbsolutePath(mntpt, &dsm);
+#endif
     WriteLock();
     hPtr = Tcl_CreateHashEntry(&ZipFS.zipHash, realname, &isNew);
     Tcl_DStringSetLength(&ds, 0);
@@ -1151,19 +1176,10 @@ Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	}
 	Unlock();
 	Tcl_DStringFree(&ds);
+	Tcl_DStringFree(&dsm);
 	ZipFSCloseArchive(interp, &zf0);
 	return TCL_ERROR;
     }
-#if HAS_DRIVES
-    if ((mntpt[0] != '\0') && (mntpt[1] == ':') &&
-	(strchr(drvletters, mntpt[0]) != NULL)) {
-	drive = mntpt[0];
-	if ((drive >= 'a') && (drive <= 'z')) {
-	    drive -= 'a' - 'A';
-	}
-	mntpt += 2;
-    }
-#endif
     if (strcmp(mntpt, "/") == 0) {
 	mntpt = "";
     }
@@ -1174,6 +1190,7 @@ Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 	}
 	Unlock();
 	Tcl_DStringFree(&ds);
+	Tcl_DStringFree(&dsm);
 	ZipFSCloseArchive(interp, &zf0);
 	return TCL_ERROR;
     }
@@ -1395,9 +1412,10 @@ Zipfs_Mount(Tcl_Interp *interp, const char *zipname, const char *mntpt,
 nextent:
 	q += pathlen + comlen + extra + ZIP_CENTRAL_HEADER_LEN;
     }
+    Unlock();
     Tcl_DStringFree(&fpBuf);
     Tcl_DStringFree(&ds);
-    Unlock();
+    Tcl_DStringFree(&dsm);
     Tcl_FSMountsChanged(NULL);
     return TCL_OK;
 }
@@ -1818,9 +1836,9 @@ wrerr:
     pos[1] = Tcl_Tell(out);
     if (nbyte - nbytecompr <= 0) {
 	/*
-  	 * Compressed file larger than input,
-  	 * write it again uncompressed.
-  	 */
+	 * Compressed file larger than input,
+	 * write it again uncompressed.
+	 */
 	if ((int) Tcl_Seek(in, 0, SEEK_SET) != 0) {
 	    goto seekErr;
 	}
