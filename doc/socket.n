@@ -98,9 +98,9 @@ asynchronous connection has succeeded or failed. See the \fBvwait\fR
 and the \fBchan\fR commands for more details on the event loop and
 channel events.
 .PP
-The \fBchan configure\fR option \fB-connecting\fR may be used to check if the connect is still running. To verify a successful connect, the option \fB-error\fR may be checked when \fB-connecting\fR returned 0. 
+The \fBchan configure\fR option \fB-connecting\fR may be used to check if the connect is still running. To verify a successful connect, the option \fB-error\fR may be checked when \fB-connecting\fR returned 0.
 .PP
-Operation without the event queue requires at the moment calls to \fBchan configure\fR to advance the internal state machine. 
+Operation without the event queue requires at the moment calls to \fBchan configure\fR to advance the internal state machine.
 .RE
 .SH "SERVER SOCKETS"
 .PP
