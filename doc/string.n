@@ -4,7 +4,7 @@
 .\"
 .\" See the file "license.terms" for information on usage and redistribution
 .\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-.\" 
+.\"
 .TH string n 8.1 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -443,7 +443,7 @@ would refer to the
 in
 .QW abcd ).
 .IP \fIM\fB+\fIN\fR 10
-The char specified at the integral index that is the sum of 
+The char specified at the integral index that is the sum of
 integer values \fIM\fR and \fIN\fR (e.g.,
 .QW \fB1+1\fR
 would refer to the
@@ -451,7 +451,7 @@ would refer to the
 in
 .QW abcd ).
 .IP \fIM\fB\-\fIN\fR 10
-The char specified at the integral index that is the difference of 
+The char specified at the integral index that is the difference of
 integer values \fIM\fR and \fIN\fR (e.g.,
 .QW \fB2\-1\fR
 would refer to the
