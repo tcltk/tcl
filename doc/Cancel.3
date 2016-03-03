@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH Tcl_Cancel 3 8.6 Tcl "Tcl Library Procedures"
 .so man.macros
 .BS
@@ -53,10 +53,10 @@ Any ORed combination of the following values may be used for the
 \fBTCL_CANCEL_UNWIND\fR
 .
 This flag is used by \fBTcl_CancelEval\fR and \fBTcl_Canceled\fR.
-For \fBTcl_CancelEval\fR, if this flag is set, the script in progress 
+For \fBTcl_CancelEval\fR, if this flag is set, the script in progress
 is canceled and the evaluation stack for the interpreter is unwound.
-For \fBTcl_Canceled\fR, if this flag is set, the script in progress 
-is considered to be canceled only if the evaluation stack for the 
+For \fBTcl_Canceled\fR, if this flag is set, the script in progress
+is considered to be canceled only if the evaluation stack for the
 interpreter is being unwound.
 .TP 20
 \fBTCL_LEAVE_ERR_MSG\fR
