@@ -5,7 +5,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH "http" n 2.7 http "Tcl Bundled Packages"
 .so man.macros
 .BS
@@ -60,7 +60,7 @@ a custom \fBsocket\fR command, via \fB::http::register\fR.
 .PP
 The \fB::http::geturl\fR procedure does a HTTP transaction.
 Its \fIoptions \fR determine whether a GET, POST, or HEAD transaction
-is performed.  
+is performed.
 The return value of \fB::http::geturl\fR is a token for the transaction.
 The value is also the name of an array in the ::http namespace
 that contains state information about the transaction.  The elements
@@ -90,7 +90,7 @@ flags and values that define the configuration:
 \fB\-accept\fR \fImimetypes\fR
 .
 The Accept header of the request.  The default is */*, which means that
-all types of documents are accepted.  Otherwise you can supply a 
+all types of documents are accepted.  Otherwise you can supply a
 comma-separated list of mime type patterns that you are
 willing to receive.  For example,
 .QW "image/gif, image/jpeg, text/*" .
@@ -132,7 +132,7 @@ The value of the User-Agent header in the HTTP request.  The default is
 .QW "\fBTcl http client package 2.7\fR" .
 .RE
 .TP
-\fB::http::geturl\fR \fIurl\fR ?\fIoptions\fR? 
+\fB::http::geturl\fR \fIurl\fR ?\fIoptions\fR?
 .
 The \fB::http::geturl\fR command is the main procedure in the package.
 The \fB\-query\fR option causes a POST operation and
@@ -275,7 +275,7 @@ do the formatting.
 \fB\-queryblocksize\fR \fIsize\fR
 .
 The block size used when posting query data to the URL.
-At most 
+At most
 \fIsize\fR
 bytes are written at once.  After each block, a call to the
 \fB\-queryprogress\fR
