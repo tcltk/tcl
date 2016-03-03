@@ -212,7 +212,7 @@ time zone and locale.  The requisite number of days (weeks are converted
 to days by multiplying by seven) is added to the calendar day, and
 the date and time are then converted back to a count of seconds from
 the epoch time.  The \fBweekdays\fR keyword is similar to \fBdays\fR,
-with the only difference that weekends are skipped.
+with the only difference that weekends - Saturdays and Sundays - are skipped.
 .PP
 Adding and subtracting a given number of days across the point that
 the time changes at the start or end of summer time (Daylight Saving Time)
