@@ -6896,7 +6896,7 @@ TestNREUnwind(
      * Insure that callbacks effectively run at the proper level during the
      * unwinding of the NRE stack.
      */
-    
+
     Tcl_NRAddCallback(interp, NREUnwind_callback, INT2PTR(-1), INT2PTR(-1),
             INT2PTR(-1), NULL);
     return TCL_OK;

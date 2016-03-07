@@ -724,7 +724,7 @@ NRInterpCmd(
 	}
 
     endOfForLoop:
-	if ((i + 2) < objc) {
+	if (i < objc - 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
 		    "?-unwind? ?--? ?path? ?result?");
 	    return TCL_ERROR;
