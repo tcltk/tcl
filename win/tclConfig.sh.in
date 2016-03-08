@@ -78,7 +78,7 @@ TCL_SHLIB_LD='@SHLIB_LD@'
 TCL_STLIB_LD='@STLIB_LD@'
 
 # Either '$LIBS' (if dependent libraries should be included when linking
-# shared libraries) or an empty string.  See Tcl's configure.in for more
+# shared libraries) or an empty string.  See Tcl's configure.ac for more
 # explanation.
 TCL_SHLIB_LD_LIBS='@SHLIB_LD_LIBS@'
 
