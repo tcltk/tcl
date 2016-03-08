@@ -4,17 +4,17 @@
 # to configure the system for the local environment.
 
 AC_INIT(../generic/tcl.h)
-AC_PREREQ(2.59)
+AC_PREREQ(2.69)
 
 # The following define is needed when building with Cygwin since newer
 # versions of autoconf incorrectly set SHELL to /bin/bash instead of
 # /bin/sh. The bash shell seems to suffer from some strange failures.
 SHELL=/bin/sh
 
-TCL_VERSION=8.6
+TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".4"
+TCL_MINOR_VERSION=7
+TCL_PATCH_LEVEL="a0"
 VER=$TCL_MAJOR_VERSION$TCL_MINOR_VERSION
 
 TCL_DDE_VERSION=1.4

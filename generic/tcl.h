@@ -38,8 +38,8 @@ extern "C" {
  * update the version numbers:
  *
  * library/init.tcl	(1 LOC patch)
- * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
- * win/configure.in	(as above)
+ * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
+ * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
  * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2, with and without separator)
@@ -54,12 +54,12 @@ extern "C" {
  */
 
 #define TCL_MAJOR_VERSION   8
-#define TCL_MINOR_VERSION   6
-#define TCL_RELEASE_LEVEL   TCL_FINAL_RELEASE
-#define TCL_RELEASE_SERIAL  4
+#define TCL_MINOR_VERSION   7
+#define TCL_RELEASE_LEVEL   TCL_ALPHA_RELEASE
+#define TCL_RELEASE_SERIAL  0
 
-#define TCL_VERSION	    "8.6"
-#define TCL_PATCH_LEVEL	    "8.6.4"
+#define TCL_VERSION	    "8.7"
+#define TCL_PATCH_LEVEL	    "8.7a0"
 
 /*
  *----------------------------------------------------------------------------
