@@ -650,7 +650,7 @@ proc auto_execok name {
 	# exec it unless the case is right, which this corrects.  COMSPEC
 	# may not point to a real file, so do the check.
 	set cmd $env(COMSPEC)
-	if {[file exists $cmd]} {
+	if {[file executable $cmd]} {
 	    set cmd [file attributes $cmd -shortname]
 	}
 	return [set auto_execs($name) [list $cmd /c $name]]
@@ -659,7 +659,7 @@ proc auto_execok name {
     if {[llength [file split $name]] != 1} {
 	foreach ext $execExtensions {
 	    set file ${name}${ext}
-	    if {[file exists $file] && ![file isdirectory $file]} {
+	    if {[file executable $file] && ![file isdirectory $file]} {
 		return [set auto_execs($name) [list $file]]
 	    }
 	}
@@ -692,7 +692,7 @@ proc auto_execok name {
 	    }
 	    set checked($dir) {}
 	    set file [file join $dir ${name}${ext}]
-	    if {[file exists $file] && ![file isdirectory $file]} {
+	    if {[file executable $file] && ![file isdirectory $file]} {
 		return [set auto_execs($name) [list $file]]
 	    }
 	}
