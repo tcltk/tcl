@@ -580,7 +580,7 @@ Tcl_CreateInterp(void)
     iPtr->packageUnknown = NULL;
 
     /* TIP #268 */
-    if (getenv("TCL_PKG_PREFER_LATEST") == NULL) {
+    if ((TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE) && getenv("TCL_PKG_PREFER_LATEST") == NULL) {
 	iPtr->packagePrefer = PKG_PREFER_STABLE;
     } else {
 	iPtr->packagePrefer = PKG_PREFER_LATEST;
