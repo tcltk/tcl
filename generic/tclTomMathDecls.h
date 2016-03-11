@@ -73,6 +73,7 @@
 #define mp_div_d TclBN_mp_div_d
 #define mp_exch TclBN_mp_exch
 #define mp_expt_d TclBN_mp_expt_d
+#define mp_expt_d_ex TclBN_mp_expt_d_ex
 #define mp_grow TclBN_mp_grow
 #define mp_init TclBN_mp_init
 #define mp_init_copy TclBN_mp_init_copy
@@ -287,6 +288,9 @@ EXTERN void		TclBNInitBignumFromWideInt(mp_int *bignum,
 /* 66 */
 EXTERN void		TclBNInitBignumFromWideUInt(mp_int *bignum,
 				Tcl_WideUInt initVal);
+/* 67 */
+EXTERN int		TclBN_mp_expt_d_ex(mp_int *a, mp_digit b, mp_int *c,
+				int fast);
 
 typedef struct TclTomMathStubs {
     int magic;
@@ -359,6 +363,7 @@ typedef struct TclTomMathStubs {
     void (*tclBNInitBignumFromLong) (mp_int *bignum, long initVal); /* 64 */
     void (*tclBNInitBignumFromWideInt) (mp_int *bignum, Tcl_WideInt initVal); /* 65 */
     void (*tclBNInitBignumFromWideUInt) (mp_int *bignum, Tcl_WideUInt initVal); /* 66 */
+    int (*tclBN_mp_expt_d_ex) (mp_int *a, mp_digit b, mp_int *c, int fast); /* 67 */
 } TclTomMathStubs;
 
 extern const TclTomMathStubs *tclTomMathStubsPtr;
@@ -507,6 +512,8 @@ extern const TclTomMathStubs *tclTomMathStubsPtr;
 	(tclTomMathStubsPtr->tclBNInitBignumFromWideInt) /* 65 */
 #define TclBNInitBignumFromWideUInt \
 	(tclTomMathStubsPtr->tclBNInitBignumFromWideUInt) /* 66 */
+#define TclBN_mp_expt_d_ex \
+	(tclTomMathStubsPtr->tclBN_mp_expt_d_ex) /* 67 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
