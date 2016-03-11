@@ -200,7 +200,7 @@ test tm-3.11 {tm: module path management, remove ignores unknown path} -setup {
 proc genpaths {base} {
     # Normalizing picks up drive letters on windows [Bug 1053568]
     set base [file normalize $base]
-    lassign [split [package present Tcl] .] major minor 
+    lassign [split [package present Tcl] .] major minor
     set results {}
     set base8 [file join $base tcl8]
     lappend results [file join $base8 site-tcl]
