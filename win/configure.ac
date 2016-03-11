@@ -4,7 +4,7 @@
 # to configure the system for the local environment.
 
 AC_INIT(../generic/tcl.h)
-AC_PREREQ(2.59)
+AC_PREREQ(2.69)
 
 # The following define is needed when building with Cygwin since newer
 # versions of autoconf incorrectly set SHELL to /bin/bash instead of

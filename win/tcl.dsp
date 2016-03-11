@@ -1420,7 +1420,7 @@ SOURCE=.\configure
 # End Source File
 # Begin Source File
 
-SOURCE=.\configure.in
+SOURCE=.\configure.ac
 # End Source File
 # Begin Source File
 
