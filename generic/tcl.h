@@ -38,8 +38,8 @@ extern "C" {
  * update the version numbers:
  *
  * library/init.tcl	(1 LOC patch)
- * unix/configure.in	(2 LOC Major, 2 LOC minor, 1 LOC patch)
- * win/configure.in	(as above)
+ * unix/configure.ac	(2 LOC Major, 2 LOC minor, 1 LOC patch)
+ * win/configure.ac	(as above)
  * win/tcl.m4		(not patchlevel)
  * win/makefile.bc	(not patchlevel) 2 LOC
  * README		(sections 0 and 2, with and without separator)
