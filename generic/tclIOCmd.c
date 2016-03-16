@@ -1397,7 +1397,7 @@ AcceptCallbackProc(
 
 	Tcl_RegisterChannel(NULL, chan);
 
-	result = Tcl_EvalObjEx(interp, script, TCL_EVAL_DIRECT);
+	result = Tcl_EvalObjEx(interp, script, TCL_EVAL_DIRECT|TCL_EVAL_GLOBAL);
 	Tcl_DecrRefCount(script);
 
 	if (result != TCL_OK) {
