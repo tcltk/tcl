@@ -3036,6 +3036,11 @@ TclAttemptCompileProc(
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
+    int savedAuxDataSize = BA_AuxData_Size(envPtr->auxData);
+    int savedExceptArrayNext = envPtr->exceptArrayNext;
+#ifdef TCL_COMPILE_DEBUG
+    int savedExceptDepth = envPtr->exceptDepth;
+#endif
     DefineLineInformation;
 
     if (cmdPtr->compileProc == NULL) {
@@ -3084,7 +3089,37 @@ TclAttemptCompileProc(
      * we avoid compiling subcommands that recursively call TclCompileScript().
      */
 
+#ifdef TCL_COMPILE_DEBUG
+    if (envPtr->exceptDepth != savedExceptDepth) {
+	Tcl_Panic("ExceptionRange Starts and Ends do not balance");
+    }
+#endif
+
     if (result != TCL_OK) {
+	ExceptionAux *auxPtr = envPtr->exceptAuxArrayPtr;
+
+	for (i = 0; i < savedExceptArrayNext; i++) {
+	    while (auxPtr->numBreakTargets > 0
+		    && auxPtr->breakTargets[auxPtr->numBreakTargets - 1]
+		    >= savedCodeNext) {
+		auxPtr->numBreakTargets--;
+	    }
+	    while (auxPtr->numContinueTargets > 0
+		    && auxPtr->continueTargets[auxPtr->numContinueTargets - 1]
+		    >= savedCodeNext) {
+		auxPtr->numContinueTargets--;
+	    }
+	    auxPtr++;
+	}
+	envPtr->exceptArrayNext = savedExceptArrayNext;
+
+	while (savedAuxDataSize < BA_AuxData_Size(envPtr->auxData)) {
+	    AuxData *auxDataPtr = BA_AuxData_Detach(envPtr->auxData);
+	    if (auxDataPtr->type->freeProc != NULL) {
+		auxDataPtr->type->freeProc(auxDataPtr->clientData);
+	    }
+	}
+
 	envPtr->currStackDepth = savedStackDepth;
 	envPtr->codeNext = envPtr->codeStart + savedCodeNext;
 #ifdef TCL_COMPILE_DEBUG
