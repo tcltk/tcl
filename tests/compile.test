@@ -224,6 +224,17 @@ test compile-5.2 {TclCompileForeachCmd: non-local variables} {
     foreach-test
     set ::foo
 } 3
+test compile-5.3 {TclCompileForeachCmd: [Bug b9b2079e6d]} -setup {
+    proc demo {} {
+	foreach x y {
+	    if 1 break else
+	}
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+} -returnCodes error -result {wrong # args: no script following "else" argument}
 
 test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} -setup {
     catch {unset x}
