@@ -2781,7 +2781,7 @@ TclSubstTokens(
 					 tokenPtr->start - outerScript);
 		theline = line + adjust;
 		code = TclEvalScriptTokens(interp, tokenPtr+1,
-			tokenPtr->numComponents, flags, line,
+			tokenPtr->numComponents, flags, theline,
 			clNextOuter, outerScript);
 
 		TclAdvanceLines(&line, tokenPtr->start+1,
