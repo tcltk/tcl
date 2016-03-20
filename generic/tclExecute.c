@@ -5737,6 +5737,17 @@ TEBCresume(
 	if (length3 - 1 == toIdx - fromIdx) {
 	    unsigned char *bytes1, *bytes2;
 
+	    /*
+	     * Flush the info in the string internal rep that refers to the
+	     * about-to-be-invalidated UTF-8 rep. This sets the 'allocated'
+	     * field of the String structure to 0 to indicate that a new
+	     * buffer needs to be allocated. This assumes that the value is
+	     * already of tclStringTypePtr type, which should be true provided
+	     * we call it after Tcl_GetUnicodeFromObj.
+	     */
+#define MarkStringInternalRepForFlush(objPtr) \
+	(((int *) ((objPtr)->internalRep.twoPtrValue.ptr1))[1] = 0)
+
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_DuplicateObj(valuePtr);
 		if (TclIsPureByteArray(objResultPtr)
@@ -5749,17 +5760,7 @@ TEBCresume(
 		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
 		    memcpy(ustring1 + fromIdx, ustring2,
 			    length3 * sizeof(Tcl_UniChar));
-
-		    /*
-		     * Magic! Flush the info in the string internal rep that
-		     * refers to the about-to-be-invalidated UTF-8 rep. This
-		     * sets the 'allocated' field of the String structure to 0
-		     * to indicate that a new buffer needs to be allocated.
-		     * This is safe; we know we've got a tclStringTypePtr set
-		     * at this point (post Tcl_GetUnicodeFromObj).
-		     */
-
-		    ((int *) objResultPtr->internalRep.twoPtrValue.ptr1)[1] = 0;
+		    MarkStringInternalRepForFlush(objResultPtr);
 		}
 		Tcl_InvalidateStringRep(objResultPtr);
 		TclDecrRefCount(value3Ptr);
@@ -5776,17 +5777,7 @@ TEBCresume(
 		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
 		    memcpy(ustring1 + fromIdx, ustring2,
 			    length3 * sizeof(Tcl_UniChar));
-
-		    /*
-		     * Magic! Flush the info in the string internal rep that
-		     * refers to the about-to-be-invalidated UTF-8 rep. This
-		     * sets the 'allocated' field of the String structure to 0
-		     * to indicate that a new buffer needs to be allocated.
-		     * This is safe; we know we've got a tclStringTypePtr set
-		     * at this point (post Tcl_GetUnicodeFromObj).
-		     */
-
-		    ((int *) objResultPtr->internalRep.twoPtrValue.ptr1)[1] = 0;
+		    MarkStringInternalRepForFlush(valuePtr);
 		}
 		Tcl_InvalidateStringRep(valuePtr);
 		TclDecrRefCount(value3Ptr);
