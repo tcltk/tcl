@@ -2966,10 +2966,12 @@ IndexTailVarIfKnown(
     } else {
 	full = 0;
 	lastTokenPtr = varTokenPtr + n;
-	if (!TclWordKnownAtCompileTime(lastTokenPtr, tailPtr)) {
+
+	if (lastTokenPtr->type != TCL_TOKEN_TEXT) {
 	    Tcl_DecrRefCount(tailPtr);
 	    return -1;
 	}
+	Tcl_SetStringObj(tailPtr, lastTokenPtr->start, lastTokenPtr->size);
     }
 
     tailName = TclGetStringFromObj(tailPtr, &len);
