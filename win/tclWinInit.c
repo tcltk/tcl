@@ -511,7 +511,8 @@ Tcl_GetEncodingNameFromEnvironment(
  *	None.
  *
  * Side effects:
- *	Sets "tcl_platform", and "env(HOME)" Tcl variables.
+ *	Sets "tcl_platform", "env(HOME)", "tcl_wordchars" and "tcl_nonwordchars"
+ *	Tcl variables.
  *
  *----------------------------------------------------------------------
  */
@@ -628,6 +629,14 @@ TclpSetVariables(
      */
 
     Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ";", TCL_GLOBAL_ONLY);
+
+    /*
+     * Define the tcl_wordchars and tcl_nonwordchars regexps
+     * Windows style: any but a unicode space char
+     */
+
+    Tcl_SetVar(interp, "tcl_wordchars", "\\S", TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "tcl_nonwordchars", "\\s", TCL_GLOBAL_ONLY);
 }
 
 /*

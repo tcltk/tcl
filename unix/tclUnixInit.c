@@ -738,8 +738,8 @@ Tcl_GetEncodingNameFromEnvironment(
  *	None.
  *
  * Side effects:
- *	Sets "tclDefaultLibrary", "tcl_pkgPath", and "tcl_platform" Tcl
- *	variables.
+ *	Sets "tclDefaultLibrary", "tcl_pkgPath", "tcl_platform",
+ *	"tcl_wordchars" and "tcl_nonwordchars" Tcl variables.
  *
  *----------------------------------------------------------------------
  */
@@ -973,6 +973,14 @@ TclpSetVariables(
      */
 
     Tcl_SetVar2(interp, "tcl_platform","pathSeparator", ":", TCL_GLOBAL_ONLY);
+
+    /*
+     * Define the tcl_wordchars and tcl_nonwordchars regexps
+     * Motif style: any unicode word char (number, letter, or underscore)
+     */
+
+    Tcl_SetVar(interp, "tcl_wordchars", "\\w", TCL_GLOBAL_ONLY);
+    Tcl_SetVar(interp, "tcl_nonwordchars", "\\W", TCL_GLOBAL_ONLY);
 }
 
 /*

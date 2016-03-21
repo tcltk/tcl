@@ -13,16 +13,6 @@
 # The following variables are used to determine which characters are
 # interpreted as white space.
 
-if {$::tcl_platform(platform) eq "windows"} {
-    # Windows style - any but a unicode space char
-    set ::tcl_wordchars {\S}
-    set ::tcl_nonwordchars {\s}
-} else {
-    # Motif style - any unicode word char (number, letter, or underscore)
-    set ::tcl_wordchars {\w}
-    set ::tcl_nonwordchars {\W}
-}
-
 # Arrange for caches of the real matcher REs to be kept, which enables the REs
 # themselves to be cached for greater performance (and somewhat greater
 # clarity too).
