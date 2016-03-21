@@ -357,6 +357,31 @@ TclpMasterUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
+ * TclpMasterReset
+ *
+ *	This procedure is used to reset a lock that serializes creation and
+ *	finalization of synchronization objects.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Reset the master mutex.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpMasterReset(void)
+{
+#ifdef TCL_THREADS
+    pthread_mutex_init(&masterLock, NULL);
+#endif
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
