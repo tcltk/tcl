@@ -437,7 +437,7 @@ Tcl_FinalizeNotifier(
 		while(triggerPipe != -1) {
 		    pthread_cond_wait(&notifierCV, &notifierMutex);
 		}
-		pthread_mutex_lock(&notifierMutex);
+		pthread_mutex_unlock(&notifierMutex);
 		if (notifierThreadRunning) {
 		    int result = pthread_join((pthread_t) notifierThread, NULL);
 
