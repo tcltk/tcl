@@ -44,13 +44,6 @@ static pthread_mutex_t initLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t allocLock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t *allocLockPtr = &allocLock;
 
-/*
- * These are for the critical sections inside this file.
- */
-
-#define MASTER_LOCK	pthread_mutex_lock(&masterLock)
-#define MASTER_UNLOCK	pthread_mutex_unlock(&masterLock)
-
 #endif /* TCL_THREADS */
 
 /*
@@ -252,7 +245,7 @@ TclpInitLock(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpFinalizeLock
+ * TclFinalizeLock
  *
  *	This procedure is used to destroy all private resources used in this
  *	file.
@@ -421,7 +414,7 @@ Tcl_MutexLock(
     pthread_mutex_t *pmutexPtr;
 
     if (*mutexPtr == NULL) {
-	MASTER_LOCK;
+	pthread_mutex_lock(&masterLock);
 	if (*mutexPtr == NULL) {
 	    /*
 	     * Double inside master lock check to avoid a race condition.
@@ -432,7 +425,7 @@ Tcl_MutexLock(
 	    *mutexPtr = (Tcl_Mutex)pmutexPtr;
 	    TclRememberMutex(mutexPtr);
 	}
-	MASTER_UNLOCK;
+	pthread_mutex_unlock(&masterLock);
     }
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
     pthread_mutex_lock(pmutexPtr);
@@ -529,7 +522,7 @@ Tcl_ConditionWait(
     struct timespec ptime;
 
     if (*condPtr == NULL) {
-	MASTER_LOCK;
+	pthread_mutex_lock(&masterLock);
 
 	/*
 	 * Double check inside mutex to avoid race, then initialize condition
@@ -542,7 +535,7 @@ Tcl_ConditionWait(
 	    *condPtr = (Tcl_Condition) pcondPtr;
 	    TclRememberCondition(condPtr);
 	}
-	MASTER_UNLOCK;
+	pthread_mutex_unlock(&masterLock);
     }
     pmutexPtr = *((pthread_mutex_t **)mutexPtr);
     pcondPtr = *((pthread_cond_t **)condPtr);

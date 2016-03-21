@@ -29,10 +29,7 @@ _CRTIMP unsigned int __cdecl _controlfp (unsigned int unNew, unsigned int unMask
  */
 
 static CRITICAL_SECTION masterLock;
-static int init = 0;
-#define MASTER_LOCK TclpMasterLock()
-#define MASTER_UNLOCK TclpMasterUnlock()
-
+static int initialized = 0;
 
 /*
  * This is the master lock used to serialize initialization and finalization
@@ -360,7 +357,7 @@ Tcl_GetCurrentThread(void)
 void
 TclpInitLock(void)
 {
-    if (!init) {
+    if (!initialized) {
 	/*
 	 * There is a fundamental race here that is solved by creating the
 	 * first Tcl interpreter in a single threaded environment. Once the
@@ -368,7 +365,7 @@ TclpInitLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	init = 1;
+	initialized = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
@@ -422,7 +419,7 @@ TclpInitUnlock(void)
 void
 TclpMasterLock(void)
 {
-    if (!init) {
+    if (!initialized) {
 	/*
 	 * There is a fundamental race here that is solved by creating the
 	 * first Tcl interpreter in a single threaded environment. Once the
@@ -430,7 +427,7 @@ TclpMasterLock(void)
 	 * that create interpreters in parallel.
 	 */
 
-	init = 1;
+	initialized = 1;
 	InitializeCriticalSection(&joinLock);
 	InitializeCriticalSection(&initLock);
 	InitializeCriticalSection(&masterLock);
@@ -497,7 +494,7 @@ Tcl_GetAllocMutex(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpFinalizeLock
+ * TclFinalizeLock
  *
  *	This procedure is used to destroy all private resources used in this
  *	file.
@@ -515,7 +512,7 @@ Tcl_GetAllocMutex(void)
 void
 TclFinalizeLock(void)
 {
-    MASTER_LOCK;
+    TclpMasterLock();
     DeleteCriticalSection(&joinLock);
 
     /*
@@ -523,7 +520,7 @@ TclFinalizeLock(void)
      */
 
     DeleteCriticalSection(&masterLock);
-    init = 0;
+    initialized = 0;
 
 #ifdef TCL_THREADS
     if (allocOnce) {
@@ -570,7 +567,7 @@ Tcl_MutexLock(
     CRITICAL_SECTION *csPtr;
 
     if (*mutexPtr == NULL) {
-	MASTER_LOCK;
+	TclpMasterLock();
 
 	/*
 	 * Double inside master lock check to avoid a race.
@@ -582,7 +579,7 @@ Tcl_MutexLock(
 	    *mutexPtr = (Tcl_Mutex)csPtr;
 	    TclRememberMutex(mutexPtr);
 	}
-	MASTER_UNLOCK;
+	TclpMasterUnlock();
     }
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
     EnterCriticalSection(csPtr);
@@ -684,7 +681,7 @@ Tcl_ConditionWait(
      */
 
     if (tsdPtr->flags == WIN_THREAD_UNINIT) {
-	MASTER_LOCK;
+	TclpMasterLock();
 
 	/*
 	 * Create the per-thread event and queue pointers.
@@ -698,7 +695,7 @@ Tcl_ConditionWait(
 	    tsdPtr->flags = WIN_THREAD_RUNNING;
 	    doExit = 1;
 	}
-	MASTER_UNLOCK;
+	TclpMasterUnlock();
 
 	if (doExit) {
 	    /*
@@ -713,7 +710,7 @@ Tcl_ConditionWait(
     }
 
     if (*condPtr == NULL) {
-	MASTER_LOCK;
+	TclpMasterLock();
 
 	/*
 	 * Initialize the per-condition queue pointers and Mutex.
@@ -727,7 +724,7 @@ Tcl_ConditionWait(
 	    *condPtr = (Tcl_Condition) winCondPtr;
 	    TclRememberCondition(condPtr);
 	}
-	MASTER_UNLOCK;
+	TclpMasterUnlock();
     }
     csPtr = *((CRITICAL_SECTION **)mutexPtr);
     winCondPtr = *((WinCondition **)condPtr);
