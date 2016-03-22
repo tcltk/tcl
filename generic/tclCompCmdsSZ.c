@@ -2034,7 +2034,7 @@ IssueSwitchChainedTests(
     int foundDefault;		/* Flag to indicate whether a "default" clause
 				 * is present. */
     JumpFixup *fixupArray;	/* Array of forward-jump fixup records. */
-    int *fixupTargetArray;	/* Array of places for fixups to point at. */
+    unsigned int *fixupTargetArray; /* Array of places for fixups to point at. */
     int fixupCount;		/* Number of places to fix up. */
     int contFixIndex;		/* Where the first of the jumps due to a group
 				 * of continuation bodies starts, or -1 if
