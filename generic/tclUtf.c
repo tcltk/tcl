@@ -359,11 +359,11 @@ Tcl_UtfToUniChar(
 	    if (byte & 0x100000) {
 		/* out of range, < 0x10000 or > 0x10ffff */
 	    } else if (*chPtr != surrogate) {
-		/* produce high surrogate, but don't advance source pointer */	
+		/* produce high surrogate, but don't advance source pointer */
 		*chPtr = surrogate;
 		return 0;
 	    } else {
-		/* produce low surrogate, and advance source pointer */	
+		/* produce low surrogate, and advance source pointer */
 		*chPtr = (Tcl_UniChar) (0xDC00 | (byte & 0x3FF));
 		return 4;
 	    }
