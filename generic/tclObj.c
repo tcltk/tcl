@@ -1726,6 +1726,30 @@ Tcl_InvalidateStringRep(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_FreeIntRep --
+ *
+ *	This function is called to free an object's internal representation.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls the freeIntRepProc of the current Tcl_ObjType, if any.
+ *	Sets typePtr field to NULL.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_FreeIntRep(
+    Tcl_Obj *objPtr)	/* Object whose internal rep should be freed. */
+{
+    TclFreeIntRep(objPtr);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_NewBooleanObj --
  *
  *	This function is normally called when not debugging: i.e., when
