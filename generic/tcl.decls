@@ -2326,6 +2326,14 @@ declare 630 {
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
+# TIP #445
+
+declare 631 {
+    void Tcl_FreeIntRep(Tcl_Obj *objPtr)
+}
+
+# ----- BASELINE -- FOR -- 8.7.0 ----- #
+
 ##############################################################################
 
 # Define the platform specific public Tcl interface. These functions are only
