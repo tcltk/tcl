@@ -256,20 +256,33 @@ static const chr brbacks[] = {	/* \s within brackets */
     CHR('s'), CHR('p'), CHR('a'), CHR('c'), CHR('e'),
     CHR(':'), CHR(']')
 };
+
+#define PUNCT_CONN \
+	CHR('_'), \
+	0x203f, \
+	0x2040, \
+	0x2054, \
+	0xfe33, \
+	0xfe34, \
+	0xfe4d, \
+	0xfe4e, \
+	0xfe4f, \
+	0xff3f
+
 static const chr backw[] = {	/* \w */
     CHR('['), CHR('['), CHR(':'),
     CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
-    CHR(':'), CHR(']'), CHR('_'), CHR(']')
+    CHR(':'), CHR(']'), PUNCT_CONN, CHR(']')
 };
 static const chr backW[] = {	/* \W */
     CHR('['), CHR('^'), CHR('['), CHR(':'),
     CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
-    CHR(':'), CHR(']'), CHR('_'), CHR(']')
+    CHR(':'), CHR(']'), PUNCT_CONN, CHR(']')
 };
 static const chr brbackw[] = {	/* \w within brackets */
     CHR('['), CHR(':'),
     CHR('a'), CHR('l'), CHR('n'), CHR('u'), CHR('m'),
-    CHR(':'), CHR(']'), CHR('_')
+    CHR(':'), CHR(']'), PUNCT_CONN
 };
 
 /*
