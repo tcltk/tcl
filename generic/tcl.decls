@@ -2327,9 +2327,11 @@ declare 630 {
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
 
 # TIP #445
-
 declare 631 {
     void Tcl_FreeIntRep(Tcl_Obj *objPtr)
+}
+declare 632 {
+    char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes, int numBytes)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
