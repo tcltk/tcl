@@ -17,6 +17,7 @@
 #include "tclInt.h"
 #include "tommath.h"
 #include <math.h>
+#include <assert.h>
 
 /*
  * Table of all object types.
@@ -1694,6 +1695,85 @@ Tcl_GetStringFromObj(
     if (lengthPtr != NULL) {
 	*lengthPtr = objPtr->length;
     }
+    return objPtr->bytes;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_InitStringRep --
+ *
+ *	This function is called in several configurations to provide all
+ *	the tools needed to set an object's string representation. The
+ *	function is determined by the arguments.
+ *	
+ *	(objPtr->bytes != NULL && bytes != NULL) || (numBytes < 0)
+ *	    Invalid call -- panic!
+ *	
+ *	objPtr->bytes == NULL && bytes == NULL && numBytes >= 0
+ *	    Allocation only - allocate space for (numBytes+1) chars.
+ *	    store in objPtr->bytes and return. Also sets
+ *	    objPtr->length to 0 and objPtr->bytes[0] to NUL.
+ *	
+ *	objPtr->bytes == NULL && bytes != NULL && numBytes >= 0
+ *	    Allocate and copy. bytes is assumed to point to chars to
+ *	    copy into the string rep. objPtr->length = numBytes. Allocate
+ *	    array of (numBytes + 1) chars. store in objPtr->bytes. Copy
+ *	    numBytes chars from bytes to objPtr->bytes; Set
+ *	    objPtr->bytes[numBytes] to NUL and return objPtr->bytes.
+ *	    Caller must guarantee there are numBytes chars at bytes to
+ *	    be copied.
+ *
+ *	objPtr->bytes != NULL && bytes == NULL && numBytes >= 0
+ *	    Truncate.  Set objPtr->length to numBytes and
+ *	    objPr->bytes[numBytes] to NUL.  Caller has to guarantee
+ *	    that a prior allocating call allocated enough bytes for
+ *	    this to be valid. Return objPtr->bytes.
+ *
+ *	Caller is expected to ascertain that the bytes copied into
+ *	the string rep make up complete valid UTF-8 characters.
+ *
+ * Results:
+ *	A pointer to the string rep of objPtr.
+ *
+ * Side effects:
+ *	As described above.
+ *
+ *----------------------------------------------------------------------
+ */
+
+char *
+Tcl_InitStringRep(
+    Tcl_Obj *objPtr,	/* Object whose string rep is to be set */
+    const char *bytes,
+    int numBytes)
+{
+    assert(numBytes >= 0);
+
+    assert(objPtr->bytes == NULL || bytes == NULL);
+
+    /* Allocate */
+    if (objPtr->bytes == NULL) {
+	/* Allocate only as empty - extend later if bytes copied */
+	objPtr->length = 0;
+	if (numBytes) {
+	    objPtr->bytes = (char *)ckalloc((unsigned)(numBytes+1));
+	    if (bytes) {
+		/* Copy */
+		memcpy(objPtr->bytes, bytes, (unsigned) numBytes);
+		objPtr->length = numBytes;
+	    }
+	} else {
+	    objPtr->bytes = tclEmptyStringRep;
+	}
+    } else {
+	/* objPtr->bytes != NULL bytes == NULL - Truncate */
+	objPtr->length = numBytes;
+    }
+
+    /* Terminate */
+    objPtr->bytes[objPtr->length] = '\0';
+
     return objPtr->bytes;
 }
 
