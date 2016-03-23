@@ -1818,6 +1818,9 @@ EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
 				Tcl_Obj *compressionDictionaryObj);
 /* 631 */
 EXTERN void		Tcl_FreeIntRep(Tcl_Obj *objPtr);
+/* 632 */
+EXTERN char *		Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
+				int numBytes);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2485,6 +2488,7 @@ typedef struct TclStubs {
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
     void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
     void (*tcl_FreeIntRep) (Tcl_Obj *objPtr); /* 631 */
+    char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, int numBytes); /* 632 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;
@@ -3779,6 +3783,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 #define Tcl_FreeIntRep \
 	(tclStubsPtr->tcl_FreeIntRep) /* 631 */
+#define Tcl_InitStringRep \
+	(tclStubsPtr->tcl_InitStringRep) /* 632 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
