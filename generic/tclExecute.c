@@ -19,6 +19,7 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tommath.h"
+#include "tclStringRep.h"
 #include <math.h>
 #include <assert.h>
 
@@ -5607,14 +5608,13 @@ TEBCresume(
 
 	    /*
 	     * Flush the info in the string internal rep that refers to the
-	     * about-to-be-invalidated UTF-8 rep. This sets the 'allocated'
-	     * field of the String structure to 0 to indicate that a new
-	     * buffer needs to be allocated. This assumes that the value is
+	     * about-to-be-invalidated UTF-8 rep. This indicates that a new
+	     * buffer needs to be allocated, and assumes that the value is
 	     * already of tclStringTypePtr type, which should be true provided
 	     * we call it after Tcl_GetUnicodeFromObj.
 	     */
 #define MarkStringInternalRepForFlush(objPtr) \
-	(((int *) ((objPtr)->internalRep.twoPtrValue.ptr1))[1] = 0)
+	    (GET_STRING(objPtr)->allocated = 0)
 
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_DuplicateObj(valuePtr);
