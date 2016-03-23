@@ -529,7 +529,7 @@ MAC_OSX_SRCS = \
 	$(MAC_OSX_DIR)/tclMacOSXFCmd.c \
 	$(MAC_OSX_DIR)/tclMacOSXNotify.c
 
-DTRACE_HDR = tclDTrace.h
+DTRACE_HDR = @DTRACE_HDR@
 
 DTRACE_SRC = $(GENERIC_DIR)/tclDTrace.d
 
