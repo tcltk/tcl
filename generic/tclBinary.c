@@ -15,6 +15,7 @@
 #include "tommath.h"
 
 #include <math.h>
+#include <assert.h>
 
 /*
  * The following constants are used by GetFormatSpec to indicate various
@@ -195,9 +196,9 @@ const Tcl_ObjType tclByteArrayType = {
  */
 
 typedef struct ByteArray {
-    int used;			/* The number of bytes used in the byte
+    unsigned int used;		/* The number of bytes used in the byte
 				 * array. */
-    int allocated;		/* The amount of space actually allocated
+    unsigned int allocated;	/* The amount of space actually allocated
 				 * minus 1 byte. */
     unsigned char bytes[1];	/* The array of bytes. The actual size of this
 				 * field depends on the 'allocated' field
@@ -410,6 +411,10 @@ Tcl_SetByteArrayLength(
     int length)			/* New length for internal byte array. */
 {
     ByteArray *byteArrayPtr;
+    unsigned newLength;
+
+    assert(length >= 0);
+    newLength = (unsigned int)length;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object", "Tcl_SetByteArrayLength");
@@ -419,13 +424,13 @@ Tcl_SetByteArrayLength(
     }
 
     byteArrayPtr = GET_BYTEARRAY(objPtr);
-    if (length > byteArrayPtr->allocated) {
-	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(length));
-	byteArrayPtr->allocated = length;
+    if (newLength > byteArrayPtr->allocated) {
+	byteArrayPtr = ckrealloc(byteArrayPtr, BYTEARRAY_SIZE(newLength));
+	byteArrayPtr->allocated = newLength;
 	SET_BYTEARRAY(objPtr, byteArrayPtr);
     }
     TclInvalidateStringRep(objPtr);
-    byteArrayPtr->used = length;
+    byteArrayPtr->used = newLength;
     return byteArrayPtr->bytes;
 }
 
@@ -523,7 +528,7 @@ DupByteArrayInternalRep(
     Tcl_Obj *srcPtr,		/* Object with internal rep to copy. */
     Tcl_Obj *copyPtr)		/* Object with internal rep to set. */
 {
-    int length;
+    unsigned int length;
     ByteArray *srcArrayPtr, *copyArrayPtr;
 
     srcArrayPtr = GET_BYTEARRAY(srcPtr);
@@ -565,41 +570,32 @@ UpdateStringOfByteArray(
     Tcl_Obj *objPtr)		/* ByteArray object whose string rep to
 				 * update. */
 {
-    int i, length, size;
-    unsigned char *src;
-    char *dst;
-    ByteArray *byteArrayPtr;
-
-    byteArrayPtr = GET_BYTEARRAY(objPtr);
-    src = byteArrayPtr->bytes;
-    length = byteArrayPtr->used;
+    ByteArray *byteArrayPtr = GET_BYTEARRAY(objPtr);
+    unsigned char *src = byteArrayPtr->bytes;
+    unsigned int i, length = byteArrayPtr->used;
+    unsigned int size = length;
 
     /*
      * How much space will string rep need?
      */
 
-    size = length;
-    for (i = 0; i < length && size >= 0; i++) {
+    for (i = 0; i < length && size <= INT_MAX; i++) {
 	if ((src[i] == 0) || (src[i] > 127)) {
 	    size++;
 	}
     }
-    if (size < 0) {
+    if (size > INT_MAX) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    dst = ckalloc(size + 1);
-    objPtr->bytes = dst;
-    objPtr->length = size;
-
     if (size == length) {
-	memcpy(dst, src, (size_t) size);
-	dst[size] = '\0';
+	(void) Tcl_InitStringRep(objPtr, (char *)src, size);
     } else {
+	char *dst = Tcl_InitStringRep(objPtr, NULL, size);
 	for (i = 0; i < length; i++) {
 	    dst += Tcl_UniCharToUtf(src[i], dst);
 	}
-	*dst = '\0';
+	(void)Tcl_InitStringRep(objPtr, NULL, size);
     }
 }
 
@@ -629,7 +625,7 @@ TclAppendBytesToByteArray(
     int len)
 {
     ByteArray *byteArrayPtr;
-    int needed;
+    unsigned int length, needed;
 
     if (Tcl_IsShared(objPtr)) {
 	Tcl_Panic("%s called with shared object","TclAppendBytesToByteArray");
@@ -642,23 +638,24 @@ TclAppendBytesToByteArray(
 	/* Append zero bytes is a no-op. */
 	return;
     }
+    length = (unsigned int)len;
     if (objPtr->typePtr != &tclByteArrayType) {
 	SetByteArrayFromAny(NULL, objPtr);
     }
     byteArrayPtr = GET_BYTEARRAY(objPtr);
 
-    if (len > INT_MAX - byteArrayPtr->used) {
+    if (length > INT_MAX - byteArrayPtr->used) {
 	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
     }
 
-    needed = byteArrayPtr->used + len;
+    needed = byteArrayPtr->used + length;
     /*
      * If we need to, resize the allocated space in the byte array.
      */
 
     if (needed > byteArrayPtr->allocated) {
 	ByteArray *ptr = NULL;
-	int attempt;
+	unsigned int attempt;
 
 	if (needed <= INT_MAX/2) {
 	    /* Try to allocate double the total space that is needed. */
@@ -668,7 +665,7 @@ TclAppendBytesToByteArray(
 	if (ptr == NULL) {
 	    /* Try to allocate double the increment that is needed (plus). */
 	    unsigned int limit = INT_MAX - needed;
-	    unsigned int extra = len + TCL_MIN_GROWTH;
+	    unsigned int extra = length + TCL_MIN_GROWTH;
 	    int growth = (int) ((extra > limit) ? limit : extra);
 
 	    attempt = needed + growth;
@@ -685,9 +682,9 @@ TclAppendBytesToByteArray(
     }
 
     if (bytes) {
-	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, len);
+	memcpy(byteArrayPtr->bytes + byteArrayPtr->used, bytes, length);
     }
-    byteArrayPtr->used += len;
+    byteArrayPtr->used += length;
     TclInvalidateStringRep(objPtr);
 }
 
