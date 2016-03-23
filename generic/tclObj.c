@@ -1765,6 +1765,7 @@ Tcl_InitStringRep(
 	    }
 	} else {
 	    objPtr->bytes = tclEmptyStringRep;
+	    return NULL;
 	}
     } else {
 	/* objPtr->bytes != NULL bytes == NULL - Truncate */
