@@ -1769,6 +1769,11 @@ Tcl_InitStringRep(
 	}
     } else {
 	/* objPtr->bytes != NULL bytes == NULL - Truncate */
+	assert(numBytes <= objPtr->length);
+	if (objPtr->length > numBytes) {
+	    objPtr->bytes = (char *)ckrealloc(objPtr->bytes,
+		    (unsigned)(numBytes+1));
+	}
 	objPtr->length = numBytes;
     }
 
