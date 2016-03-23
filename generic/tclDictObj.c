@@ -513,8 +513,7 @@ UpdateStringOfDict(
 
     /* Handle empty list case first, simplifies what follows */
     if (numElems == 0) {
-	dictPtr->bytes = tclEmptyStringRep;
-	dictPtr->length = 0;
+	Tcl_InitStringRep(dictPtr, NULL, 0);
 	return;
     }
 
@@ -560,9 +559,7 @@ UpdateStringOfDict(
      * Pass 2: copy into string rep buffer.
      */
 
-    dictPtr->length = bytesNeeded - 1;
-    dictPtr->bytes = ckalloc(bytesNeeded);
-    dst = dictPtr->bytes;
+    dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
@@ -576,7 +573,7 @@ UpdateStringOfDict(
 	dst += TclConvertElement(elem, length, dst, flagPtr[i+1]);
 	*dst++ = ' ';
     }
-    dictPtr->bytes[dictPtr->length] = '\0';
+    (void)Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
 
     if (flagPtr != localFlags) {
 	ckfree(flagPtr);
@@ -675,10 +672,13 @@ SetDictFromAny(
 		TclNewStringObj(keyPtr, elemStart, elemSize);
 	    } else {
 		/* Avoid double copy */
+		char *dst;
+
 		TclNewObj(keyPtr);
-		keyPtr->bytes = ckalloc((unsigned) elemSize + 1);
-		keyPtr->length = TclCopyAndCollapse(elemSize, elemStart,
-			keyPtr->bytes);
+		Tcl_InvalidateStringRep(keyPtr);
+		dst = Tcl_InitStringRep(keyPtr, NULL, elemSize);
+		(void)Tcl_InitStringRep(keyPtr, NULL,
+			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
 
 	    if (TclFindDictElement(interp, nextElem, (limit - nextElem),
@@ -691,10 +691,13 @@ SetDictFromAny(
 		TclNewStringObj(valuePtr, elemStart, elemSize);
 	    } else {
 		/* Avoid double copy */
+		char *dst;
+
 		TclNewObj(valuePtr);
-		valuePtr->bytes = ckalloc((unsigned) elemSize + 1);
-		valuePtr->length = TclCopyAndCollapse(elemSize, elemStart,
-			valuePtr->bytes);
+		Tcl_InvalidateStringRep(valuePtr);
+		dst = Tcl_InitStringRep(valuePtr, NULL, elemSize);
+		(void)Tcl_InitStringRep(valuePtr, NULL,
+			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
 
 	    /* Store key and value in the hash table we're building. */
