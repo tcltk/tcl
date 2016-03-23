@@ -582,7 +582,7 @@ MAC_OSX_SRCS = \
 CYGWIN_SRCS = \
 	$(TOP_DIR)/win/tclWinError.c
 
-DTRACE_HDR = tclDTrace.h
+DTRACE_HDR = @DTRACE_HDR@
 
 DTRACE_SRC = $(GENERIC_DIR)/tclDTrace.d
 
