@@ -2331,7 +2331,8 @@ declare 631 {
     void Tcl_FreeIntRep(Tcl_Obj *objPtr)
 }
 declare 632 {
-    char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes, int numBytes)
+    char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
+	    unsigned int numBytes)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #

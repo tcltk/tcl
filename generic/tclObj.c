@@ -1746,22 +1746,24 @@ char *
 Tcl_InitStringRep(
     Tcl_Obj *objPtr,	/* Object whose string rep is to be set */
     const char *bytes,
-    int numBytes)
+    unsigned int numBytes)
 {
-    assert(numBytes >= 0);
-
     assert(objPtr->bytes == NULL || bytes == NULL);
+
+    if (numBytes > INT_MAX) {
+	Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
+    }
 
     /* Allocate */
     if (objPtr->bytes == NULL) {
 	/* Allocate only as empty - extend later if bytes copied */
 	objPtr->length = 0;
 	if (numBytes) {
-	    objPtr->bytes = (char *)ckalloc((unsigned)(numBytes+1));
+	    objPtr->bytes = (char *)ckalloc(numBytes+1);
 	    if (bytes) {
 		/* Copy */
-		memcpy(objPtr->bytes, bytes, (unsigned) numBytes);
-		objPtr->length = numBytes;
+		memcpy(objPtr->bytes, bytes, numBytes);
+		objPtr->length = (int) numBytes;
 	    }
 	} else {
 	    objPtr->bytes = tclEmptyStringRep;
@@ -1769,12 +1771,11 @@ Tcl_InitStringRep(
 	}
     } else {
 	/* objPtr->bytes != NULL bytes == NULL - Truncate */
-	assert(numBytes <= objPtr->length);
-	if (objPtr->length > numBytes) {
-	    objPtr->bytes = (char *)ckrealloc(objPtr->bytes,
-		    (unsigned)(numBytes+1));
+	assert((int)numBytes <= objPtr->length);
+	if (objPtr->length > (int)numBytes) {
+	    objPtr->bytes = (char *)ckrealloc(objPtr->bytes, numBytes+1);
+	    objPtr->length = (int)numBytes;
 	}
-	objPtr->length = numBytes;
     }
 
     /* Terminate */
