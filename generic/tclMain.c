@@ -807,11 +807,13 @@ Tcl_MainEx(
     }
 
   done:
+#ifdef ZIPFS_IN_TCL
 #ifndef ZIPFS_BOOTDIR
     if (mntpt != NULL) {
 	Tcl_DecrRefCount(mntpt);
 	mntpt = NULL;
     }
+#endif
 #endif
     mainLoopProc = TclGetMainLoop();
     if ((exitCode == 0) && mainLoopProc && !Tcl_LimitExceeded(interp)) {

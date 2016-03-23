@@ -231,7 +231,7 @@ proc pkgtest::runCreatedIndex {rv args} {
 	    set result [list 0 [makePkgList [parseIndex $idxFile]]]
 	} err]} {
 	    set result [list 1 $err]
-	} 
+	}
 	file delete $idxFile
     } else {
 	set result $rv
