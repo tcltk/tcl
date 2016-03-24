@@ -560,7 +560,7 @@ UpdateStringOfDict(
      */
 
     dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
-    TclOOM(dst, bytesNeeded)
+    TclOOM(dst, bytesNeeded);
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
