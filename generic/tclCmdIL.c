@@ -544,9 +544,9 @@ InfoBodyCmd(
     Tcl_Obj *const objv[])	/* Argument objects. */
 {
     register Interp *iPtr = (Interp *) interp;
-    const char *name;
+    const char *name, *bytes;
     Proc *procPtr;
-    Tcl_Obj *bodyPtr, *resultPtr;
+    int numBytes;
 
     if (objc != 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "procname");
@@ -571,18 +571,8 @@ InfoBodyCmd(
      * the object do not invalidate the internal rep.
      */
 
-    bodyPtr = procPtr->bodyPtr;
-    if (bodyPtr->bytes == NULL) {
-	/*
-	 * The string rep might not be valid if the procedure has never been
-	 * run before. [Bug #545644]
-	 */
-
-	TclGetString(bodyPtr);
-    }
-    resultPtr = Tcl_NewStringObj(bodyPtr->bytes, bodyPtr->length);
-
-    Tcl_SetObjResult(interp, resultPtr);
+    bytes = Tcl_GetStringFromObj(procPtr->bodyPtr, &numBytes);
+    Tcl_SetObjResult(interp, Tcl_NewStringObj(bytes, numBytes));
     return TCL_OK;
 }
 
