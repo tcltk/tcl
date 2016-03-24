@@ -1540,9 +1540,7 @@ TclOOGetMethodBody(
     if (mPtr->typePtr == &procMethodType) {
 	ProcedureMethod *pmPtr = mPtr->clientData;
 
-	if (pmPtr->procPtr->bodyPtr->bytes == NULL) {
-	    (void) Tcl_GetString(pmPtr->procPtr->bodyPtr);
-	}
+	(void) TclGetString(pmPtr->procPtr->bodyPtr);
 	return pmPtr->procPtr->bodyPtr;
     }
     return NULL;
