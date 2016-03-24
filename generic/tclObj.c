@@ -1758,7 +1758,10 @@ Tcl_InitStringRep(
 	/* Allocate only as empty - extend later if bytes copied */
 	objPtr->length = 0;
 	if (numBytes) {
-	    objPtr->bytes = (char *)ckalloc(numBytes+1);
+	    objPtr->bytes = attemptckalloc(numBytes + 1);
+	    if (objPtr->bytes == NULL) {
+		return NULL;
+	    }
 	    if (bytes) {
 		/* Copy */
 		memcpy(objPtr->bytes, bytes, numBytes);
@@ -1770,7 +1773,7 @@ Tcl_InitStringRep(
 	}
     } else {
 	/* objPtr->bytes != NULL bytes == NULL - Truncate */
-	objPtr->bytes = (char *)ckrealloc(objPtr->bytes, numBytes+1);
+	objPtr->bytes = ckrealloc(objPtr->bytes, numBytes + 1);
 	objPtr->length = (int)numBytes;
     }
 
