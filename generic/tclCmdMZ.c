@@ -2275,11 +2275,9 @@ StringReptCmd(
     }
     length2 = length1 * count;
 
-    /*
-     * Include space for the NUL.
-     */
-
-    string2 = attemptckalloc((unsigned) length2 + 1);
+    TclNewObj(resultPtr);
+    Tcl_InvalidateStringRep(resultPtr);
+    string2 = Tcl_InitStringRep(resultPtr, NULL, length2);
     if (string2 == NULL) {
 	/*
 	 * Alloc failed. Note that in this case we try to do an error message
@@ -2292,22 +2290,13 @@ StringReptCmd(
 		"string size overflow, out of memory allocating %u bytes",
 		length2 + 1));
 	Tcl_SetErrorCode(interp, "TCL", "MEMORY", NULL);
+	Tcl_DecrRefCount(resultPtr);
 	return TCL_ERROR;
     }
     for (index = 0; index < count; index++) {
 	memcpy(string2 + (length1 * index), string1, (size_t) length1);
     }
-    string2[length2] = '\0';
-
-    /*
-     * We have to directly assign this instead of using Tcl_SetStringObj (and
-     * indirectly TclInitStringRep) because that makes another copy of the
-     * data.
-     */
-
-    TclNewObj(resultPtr);
-    resultPtr->bytes = string2;
-    resultPtr->length = length2;
+    (void) Tcl_InitStringRep(resultPtr, NULL, length2);
     Tcl_SetObjResult(interp, resultPtr);
 
   done:
