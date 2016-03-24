@@ -3653,17 +3653,16 @@ static void
 UpdateStringOfEndOffset(
     register Tcl_Obj *objPtr)
 {
-    char buffer[TCL_INTEGER_SPACE + 5];
-    register int len = 3;
+    char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
+    int len = 3;
 
-    memcpy(buffer, "end", 4);
+    memcpy(dst, "end", len);
     if (objPtr->internalRep.longValue != 0) {
-	buffer[len++] = '-';
-	len += TclFormatInt(buffer+len, -(objPtr->internalRep.longValue));
+	dst[len++] = '-';
+	len += TclFormatInt(dst+len, -(objPtr->internalRep.longValue));
     }
-    objPtr->bytes = ckalloc((unsigned) len+1);
-    memcpy(objPtr->bytes, buffer, (unsigned) len+1);
-    objPtr->length = len;
+
+    (void) Tcl_InitStringRep(objPtr, NULL, len);
 }
 
 /*
