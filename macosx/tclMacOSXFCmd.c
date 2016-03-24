@@ -695,9 +695,11 @@ UpdateStringOfOSType(
     const int size = TCL_UTF_MAX * 4;
     char *dst = Tcl_InitStringRep(objPtr, NULL, size);
     OSType osType = (OSType) objPtr->internalRep.longValue;
-    Tcl_Encoding encoding = Tcl_GetEncoding(NULL, "macRoman");
+    int written = 0;
+    Tcl_Encoding encoding;
     char src[5];
-    int written;
+
+    TclOOM(dst, size);
 
     src[0] = (char) (osType >> 24);
     src[1] = (char) (osType >> 16);
@@ -705,6 +707,7 @@ UpdateStringOfOSType(
     src[3] = (char) (osType);
     src[4] = '\0';
 
+    encoding = Tcl_GetEncoding(NULL, "macRoman");
     Tcl_ExternalToUtf(NULL, encoding, src, -1, /* flags */ 0,
 	    /* statePtr */ NULL, dst, size, /* srcReadPtr */ NULL,
 	    /* dstWrotePtr */ &written, /* dstCharsPtr */ NULL);
