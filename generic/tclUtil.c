@@ -3656,6 +3656,8 @@ UpdateStringOfEndOffset(
     char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
     int len = 3;
 
+    TclOOM(dst, TCL_INTEGER_SPACE + 6);
+
     memcpy(dst, "end", len);
     if (objPtr->internalRep.longValue != 0) {
 	dst[len++] = '-';

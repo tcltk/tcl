@@ -589,9 +589,11 @@ UpdateStringOfByteArray(
     }
 
     if (size == length) {
-	(void) Tcl_InitStringRep(objPtr, (char *)src, size);
+	char *dst = Tcl_InitStringRep(objPtr, (char *)src, size);
+	TclOOM(dst, size);
     } else {
 	char *dst = Tcl_InitStringRep(objPtr, NULL, size);
+	TclOOM(dst, size);
 	for (i = 0; i < length; i++) {
 	    dst += Tcl_UniCharToUtf(src[i], dst);
 	}

@@ -2314,6 +2314,13 @@ typedef struct Interp {
 #define TCL_ALIGN(x) (((int)(x) + 7) & ~7)
 
 /*
+ * A common panic alert when memory allocation fails.
+ */
+
+#define TclOOM(ptr, size) \
+	((size) && ((ptr)||(Tcl_Panic("unable to alloc %u bytes", (size)),1)))
+
+/*
  * The following enum values are used to specify the runtime platform setting
  * of the tclPlatform variable.
  */

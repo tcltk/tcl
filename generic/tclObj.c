@@ -2481,6 +2481,8 @@ UpdateStringOfDouble(
 {
     char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_DOUBLE_SPACE);
 
+    TclOOM(dst, TCL_DOUBLE_SPACE + 1);
+
     Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, dst);
     (void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
 }
@@ -2672,9 +2674,11 @@ static void
 UpdateStringOfInt(
     register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
 {
+    char *dst = Tcl_InitStringRep( objPtr, NULL, TCL_INTEGER_SPACE);
+
+    TclOOM(dst, TCL_INTEGER_SPACE + 1);
     (void) Tcl_InitStringRep(objPtr, NULL,
-	    TclFormatInt(Tcl_InitStringRep( objPtr, NULL, TCL_INTEGER_SPACE),
-		    objPtr->internalRep.longValue));
+	    TclFormatInt(dst, objPtr->internalRep.longValue));
 }
 
 /*
@@ -2964,6 +2968,8 @@ UpdateStringOfWideInt(
     register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
 {
     char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 2);
+
+    TclOOM(dst, TCL_INTEGER_SPACE + 3);
 
     /*
      * Note that sprintf will generate a compiler warning under Mingw claiming
@@ -3366,6 +3372,8 @@ UpdateStringOfBignum(
     }
 
     stringVal = Tcl_InitStringRep(objPtr, NULL, size - 1);
+
+    TclOOM(stringVal, size);
     if (MP_OKAY != mp_toradix_n(&bignumVal, stringVal, 10, size)) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
     }
