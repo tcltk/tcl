@@ -449,15 +449,9 @@ UpdateStringOfIndex(
     Tcl_Obj *objPtr)
 {
     IndexRep *indexRep = objPtr->internalRep.twoPtrValue.ptr1;
-    register char *buf;
-    register unsigned len;
     register const char *indexStr = EXPAND_OF(indexRep);
 
-    len = strlen(indexStr);
-    buf = ckalloc(len + 1);
-    memcpy(buf, indexStr, len+1);
-    objPtr->bytes = buf;
-    objPtr->length = len;
+    Tcl_InitStringRep(objPtr, indexStr, strlen(indexStr));
 }
 
 /*
