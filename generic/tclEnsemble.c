@@ -2703,9 +2703,10 @@ StringOfEnsembleCmdRep(
     Tcl_Obj *objPtr)
 {
     EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
+    unsigned int size = strlen(ensembleCmd->fullSubcmdName);
+    char *dst = Tcl_InitStringRep(objPtr, ensembleCmd->fullSubcmdName, size);
 
-    Tcl_InitStringRep(objPtr, ensembleCmd->fullSubcmdName,
-	    strlen(ensembleCmd->fullSubcmdName));
+    TclOOM(dst, size);
 }
 
 /*

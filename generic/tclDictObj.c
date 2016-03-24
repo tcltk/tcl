@@ -560,6 +560,7 @@ UpdateStringOfDict(
      */
 
     dst = Tcl_InitStringRep(dictPtr, NULL, bytesNeeded - 1);
+    TclOOM(dst, bytesNeeded)
     for (i=0,cPtr=dict->entryChainHead; i<numElems; i+=2,cPtr=cPtr->nextPtr) {
 	flagPtr[i] |= ( i ? TCL_DONT_QUOTE_HASH : 0 );
 	keyPtr = Tcl_GetHashKey(&dict->table, &cPtr->entry);
@@ -677,6 +678,7 @@ SetDictFromAny(
 		TclNewObj(keyPtr);
 		Tcl_InvalidateStringRep(keyPtr);
 		dst = Tcl_InitStringRep(keyPtr, NULL, elemSize);
+		TclOOM(dst, elemSize); /* Consider error */
 		(void)Tcl_InitStringRep(keyPtr, NULL,
 			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
@@ -696,6 +698,7 @@ SetDictFromAny(
 		TclNewObj(valuePtr);
 		Tcl_InvalidateStringRep(valuePtr);
 		dst = Tcl_InitStringRep(valuePtr, NULL, elemSize);
+		TclOOM(dst, elemSize); /* Consider error */
 		(void)Tcl_InitStringRep(valuePtr, NULL,
 			TclCopyAndCollapse(elemSize, elemStart, dst));
 	    }
