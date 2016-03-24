@@ -1062,9 +1062,8 @@ TclDbInitNewObj(
 				 * debugging. */
 {
     objPtr->refCount = 0;
-    objPtr->bytes = tclEmptyStringRep;
-    objPtr->length = 0;
     objPtr->typePtr = NULL;
+    TclInitStringRep(objPtr, NULL, 0);
 
 #ifdef TCL_THREADS
     /*
@@ -1917,6 +1916,7 @@ Tcl_DbNewBooleanObj(
     register Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
+    /* Optimized TclInvalidateStringRep() */
     objPtr->bytes = NULL;
 
     objPtr->internalRep.longValue = (boolValue? 1 : 0);
@@ -2309,6 +2309,7 @@ Tcl_DbNewDoubleObj(
     register Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
+    /* Optimized TclInvalidateStringRep() */
     objPtr->bytes = NULL;
 
     objPtr->internalRep.doubleValue = dblValue;
@@ -2475,15 +2476,10 @@ static void
 UpdateStringOfDouble(
     register Tcl_Obj *objPtr)	/* Double obj with string rep to update. */
 {
-    char buffer[TCL_DOUBLE_SPACE];
-    register int len;
+    char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_DOUBLE_SPACE);
 
-    Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, buffer);
-    len = strlen(buffer);
-
-    objPtr->bytes = ckalloc(len + 1);
-    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
-    objPtr->length = len;
+    Tcl_PrintDouble(NULL, objPtr->internalRep.doubleValue, dst);
+    (void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
 }
 
 /*
@@ -2673,14 +2669,9 @@ static void
 UpdateStringOfInt(
     register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
 {
-    char buffer[TCL_INTEGER_SPACE];
-    register int len;
-
-    len = TclFormatInt(buffer, objPtr->internalRep.longValue);
-
-    objPtr->bytes = ckalloc(len + 1);
-    memcpy(objPtr->bytes, buffer, (unsigned) len + 1);
-    objPtr->length = len;
+    (void) Tcl_InitStringRep(objPtr, NULL,
+	    TclFormatInt(Tcl_InitStringRep( objPtr, NULL, TCL_INTEGER_SPACE),
+		    objPtr->internalRep.longValue));
 }
 
 /*
@@ -2784,6 +2775,7 @@ Tcl_DbNewLongObj(
     register Tcl_Obj *objPtr;
 
     TclDbNewObj(objPtr, file, line);
+    /* Optimized TclInvalidateStringRep */
     objPtr->bytes = NULL;
 
     objPtr->internalRep.longValue = longValue;
@@ -2968,9 +2960,7 @@ static void
 UpdateStringOfWideInt(
     register Tcl_Obj *objPtr)	/* Int object whose string rep to update. */
 {
-    char buffer[TCL_INTEGER_SPACE+2];
-    register unsigned len;
-    register Tcl_WideInt wideVal = objPtr->internalRep.wideValue;
+    char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 2);
 
     /*
      * Note that sprintf will generate a compiler warning under Mingw claiming
@@ -2979,11 +2969,9 @@ UpdateStringOfWideInt(
      * value.
      */
 
-    sprintf(buffer, "%" TCL_LL_MODIFIER "d", wideVal);
-    len = strlen(buffer);
-    objPtr->bytes = ckalloc(len + 1);
-    memcpy(objPtr->bytes, buffer, len + 1);
-    objPtr->length = len;
+    sprintf(dst, "%" TCL_LL_MODIFIER "d", objPtr->internalRep.wideValue);
+
+    (void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
 }
 #endif /* !TCL_WIDE_INT_IS_LONG */
 
@@ -3353,12 +3341,10 @@ UpdateStringOfBignum(
 {
     mp_int bignumVal;
     int size;
-    int status;
     char *stringVal;
 
     UNPACK_BIGNUM(objPtr, bignumVal);
-    status = mp_radix_size(&bignumVal, 10, &size);
-    if (status != MP_OKAY) {
+    if (MP_OKAY != mp_radix_size(&bignumVal, 10, &size)) {
 	Tcl_Panic("radix size failure in UpdateStringOfBignum");
     }
     if (size == 3) {
@@ -3375,13 +3361,12 @@ UpdateStringOfBignum(
 
 	Tcl_Panic("UpdateStringOfBignum: string length limit exceeded");
     }
-    stringVal = ckalloc(size);
-    status = mp_toradix_n(&bignumVal, stringVal, 10, size);
-    if (status != MP_OKAY) {
+
+    stringVal = Tcl_InitStringRep(objPtr, NULL, size - 1);
+    if (MP_OKAY != mp_toradix_n(&bignumVal, stringVal, 10, size)) {
 	Tcl_Panic("conversion failure in UpdateStringOfBignum");
     }
-    objPtr->bytes = stringVal;
-    objPtr->length = size - 1;	/* size includes a trailing NUL byte. */
+    (void) Tcl_InitStringRep(objPtr, NULL, size - 1);
 }
 
 /*
@@ -3501,9 +3486,15 @@ GetBignumFromObj(
 		mp_init_copy(bignumValue, &temp);
 	    } else {
 		UNPACK_BIGNUM(objPtr, *bignumValue);
+		/* Optimized TclFreeIntRep */
 		objPtr->internalRep.twoPtrValue.ptr1 = NULL;
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
+		/*
+		 * TODO: If objPtr has a string rep, this leaves
+		 * it undisturbed.  Not clear that's proper. Pure
+		 * bignum values are converted to empty string.
+		 */
 		if (objPtr->bytes == NULL) {
 		    TclInitStringRep(objPtr, NULL, 0);
 		}
