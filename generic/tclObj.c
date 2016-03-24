@@ -3505,7 +3505,7 @@ GetBignumFromObj(
 		objPtr->internalRep.twoPtrValue.ptr2 = NULL;
 		objPtr->typePtr = NULL;
 		if (objPtr->bytes == NULL) {
-		    TclInitStringRep(objPtr, tclEmptyStringRep, 0);
+		    TclInitStringRep(objPtr, NULL, 0);
 		}
 	    }
 	    return TCL_OK;
