@@ -1043,6 +1043,9 @@ TclInitSubsystems(void)
 #if USE_TCLALLOC
 	    TclInitAlloc();		/* Process wide mutex init */
 #endif
+#if defined(TCL_THREADS) && defined(USE_THREAD_ALLOC)
+	    TclpInitThreadAlloc();
+#endif
 #ifdef TCL_MEM_DEBUG
 	    TclInitDbCkalloc();		/* Process wide mutex init */
 #endif
