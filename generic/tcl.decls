@@ -2334,6 +2334,14 @@ declare 632 {
     char *Tcl_InitStringRep(Tcl_Obj *objPtr, const char *bytes,
 	    unsigned int numBytes)
 }
+declare 633 {
+    const Tcl_ObjIntRep *Tcl_FetchIntRep(Tcl_Obj *objPtr,
+	    const Tcl_ObjType *typePtr)
+}
+declare 634 {
+    void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
+	    Tcl_ObjIntRep *irPtr)
+}
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
 
