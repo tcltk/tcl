@@ -1812,6 +1812,77 @@ Tcl_InvalidateStringRep(
 /*
  *----------------------------------------------------------------------
  *
+ * Tcl_StoreIntRep --
+ *
+ *	This function is called to set the object's internal
+ *	representation to match a particular type.
+ *
+ *	It is the caller's responsibility to guarantee that
+ *	the value of the submitted IntRep is in agreement with
+ *	the value of any existing string rep.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Calls the freeIntRepProc of the current Tcl_ObjType, if any.
+ *	Sets the internalRep and typePtr fields to the submitted values.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+Tcl_StoreIntRep(
+    Tcl_Obj *objPtr,		/* Object whose internal rep should be set. */
+    const Tcl_ObjType *typePtr,	/* New type for the object */
+    Tcl_ObjIntRep *irPtr)	/* New IntRep for the object */
+{
+    /* Clear out any existing IntRep ( "shimmer" ) */
+    TclFreeIntRep(objPtr);
+
+    /* Copy the new IntRep into place */
+    objPtr->internalRep = *irPtr;
+
+    /* Set the type to match */
+    objPtr->typePtr = typePtr;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * Tcl_FetchIntRep --
+ *
+ *	This function is called to retrieve the object's internal
+ *	representation matching a requested type, if any.
+ *
+ * Results:
+ *	A read-only pointer to the associated Tcl_ObjIntRep, or
+ *	NULL if no such internal representation exists.
+ *
+ * Side effects:
+ *	Calls the freeIntRepProc of the current Tcl_ObjType, if any.
+ *	Sets the internalRep and typePtr fields to the submitted values.
+ *
+ *----------------------------------------------------------------------
+ */
+
+const Tcl_ObjIntRep *
+Tcl_FetchIntRep(
+    Tcl_Obj *objPtr,		/* Object to fetch from. */
+    const Tcl_ObjType *typePtr)	/* Requested type */
+{
+    /* If objPtr type doesn't match request, nothing can be fetched */
+    if (objPtr->typePtr != typePtr) {
+	return NULL;
+    }
+
+    /* Type match! objPtr IntRep is the one sought. */
+    return &(objPtr->internalRep);
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * Tcl_FreeIntRep --
  *
  *	This function is called to free an object's internal representation.
