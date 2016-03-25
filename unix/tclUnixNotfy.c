@@ -152,6 +152,7 @@ static int triggerPipe = -1;
  * The notifierMutex locks access to all of the global notifier state.
  */
 
+pthread_mutex_t notifierInitMutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t notifierMutex     = PTHREAD_MUTEX_INITIALIZER;
 /*
  * The following static indicates if the notifier thread is running.
@@ -280,7 +281,7 @@ static void
 StartNotifierThread(const char *proc)
 {
     if (!notifierThreadRunning) {
-	TclpMasterLock();
+	pthread_mutex_lock(&notifierInitMutex);
 	if (!notifierThreadRunning) {
 	    if (TclpThreadCreate(&notifierThread, NotifierThreadProc, NULL,
 		    TCL_THREAD_STACK_DEFAULT, TCL_THREAD_JOINABLE) != TCL_OK) {
@@ -299,7 +300,7 @@ StartNotifierThread(const char *proc)
 
 	    notifierThreadRunning = 1;
 	}
-	TclpMasterUnlock();
+	pthread_mutex_unlock(&notifierInitMutex);
     }
 }
 #endif /* TCL_THREADS */
@@ -361,7 +362,7 @@ Tcl_InitNotifier(void)
 	    tsdPtr->waitCVinitialized = 1;
 	}
 
-	TclpMasterLock();
+	pthread_mutex_lock(&notifierInitMutex);
 #if defined(HAVE_PTHREAD_ATFORK)
 	/*
 	 * Install pthread_atfork handlers to clean up the notifier in the
@@ -380,7 +381,7 @@ Tcl_InitNotifier(void)
 
 	notifierCount++;
 
-	TclpMasterUnlock();
+	pthread_mutex_unlock(&notifierInitMutex);
 
 #endif /* TCL_THREADS */
 	return tsdPtr;
@@ -416,7 +417,7 @@ Tcl_FinalizeNotifier(
 #ifdef TCL_THREADS
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-	TclpMasterLock();
+	pthread_mutex_lock(&notifierInitMutex);
 	notifierCount--;
 
 	/*
@@ -461,7 +462,7 @@ Tcl_FinalizeNotifier(
 #endif /* __CYGWIN__ */
 	tsdPtr->waitCVinitialized = 0;
 
-	TclpMasterUnlock();
+	pthread_mutex_unlock(&notifierInitMutex);
 #endif /* TCL_THREADS */
     }
 }
@@ -1367,7 +1368,7 @@ static void
 AtForkPrepare(void)
 {
 #if RESET_ATFORK_MUTEX == 0
-    TclpMasterLock();
+    pthread_mutex_lock(&notifierInitMutex);
 #endif
 }
 
@@ -1391,7 +1392,7 @@ static void
 AtForkParent(void)
 {
 #if RESET_ATFORK_MUTEX == 0
-    TclpMasterUnlock();
+    pthread_mutex_unlock(&notifierInitMutex);
 #endif
 }
 
@@ -1418,9 +1419,9 @@ AtForkChild(void)
 	pthread_cond_destroy(&notifierCV);
     }
 #if RESET_ATFORK_MUTEX == 0
-    TclpMasterUnlock();
+    pthread_mutex_unlock(&notifierInitMutex);
 #else
-    TclpMasterReset();
+    pthread_mutex_init(&notifierInitMutex, NULL);
     pthread_mutex_init(&notifierMutex, NULL);
 #endif
     pthread_cond_init(&notifierCV, NULL);

@@ -357,31 +357,6 @@ TclpMasterUnlock(void)
 /*
  *----------------------------------------------------------------------
  *
- * TclpMasterReset
- *
- *	This procedure is used to reset a lock that serializes creation and
- *	finalization of synchronization objects.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Reset the master mutex.
- *
- *----------------------------------------------------------------------
- */
-
-void
-TclpMasterReset(void)
-{
-#ifdef TCL_THREADS
-    pthread_mutex_init(&masterLock, NULL);
-#endif
-}
-
-/*
- *----------------------------------------------------------------------
- *
  * Tcl_GetAllocMutex
  *
  *	This procedure returns a pointer to a statically initialized mutex for
@@ -698,7 +673,6 @@ TclpInetNtoa(
  */
 
 #ifdef USE_THREAD_ALLOC
-static volatile int initialized = 0;
 static pthread_key_t key;
 
 typedef struct allocMutex {
@@ -745,29 +719,23 @@ TclpFreeAllocCache(
 
 	TclFreeAllocCache(ptr);
 	pthread_setspecific(key, NULL);
-
-    } else if (initialized) {
-	/*
-	 * Called by us in TclFinalizeThreadAlloc() during the library
-	 * finalization initiated from Tcl_Finalize()
-	 */
-
+	
+    } else {
 	pthread_key_delete(key);
-	initialized = 0;
     }
+}
+
+void
+TclpInitThreadAlloc(void)
+{
+    pthread_mutex_lock(allocLockPtr);
+    pthread_key_create(&key, TclpFreeAllocCache);
+    pthread_mutex_unlock(allocLockPtr);   
 }
 
 void *
 TclpGetAllocCache(void)
 {
-    if (!initialized) {
-	pthread_mutex_lock(allocLockPtr);
-	if (!initialized) {
-	    pthread_key_create(&key, TclpFreeAllocCache);
-	    initialized = 1;
-	}
-	pthread_mutex_unlock(allocLockPtr);
-    }
     return pthread_getspecific(key);
 }
 
