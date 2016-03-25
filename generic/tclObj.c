@@ -1835,7 +1835,7 @@ void
 Tcl_StoreIntRep(
     Tcl_Obj *objPtr,		/* Object whose internal rep should be set. */
     const Tcl_ObjType *typePtr,	/* New type for the object */
-    Tcl_ObjIntRep *irPtr)	/* New IntRep for the object */
+    const Tcl_ObjIntRep *irPtr)	/* New IntRep for the object */
 {
     /* Clear out any existing IntRep ( "shimmer" ) */
     TclFreeIntRep(objPtr);
