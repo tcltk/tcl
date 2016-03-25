@@ -1840,11 +1840,14 @@ Tcl_StoreIntRep(
     /* Clear out any existing IntRep ( "shimmer" ) */
     TclFreeIntRep(objPtr);
 
-    /* Copy the new IntRep into place */
-    objPtr->internalRep = *irPtr;
+    /* When irPtr == NULL, just leave objPtr with no IntRep for typePtr */
+    if (irPtr) {
+	/* Copy the new IntRep into place */
+	objPtr->internalRep = *irPtr;
 
-    /* Set the type to match */
-    objPtr->typePtr = typePtr;
+	/* Set the type to match */
+	objPtr->typePtr = typePtr;
+    }
 }
 
 /*
