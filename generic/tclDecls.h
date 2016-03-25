@@ -1827,7 +1827,7 @@ EXTERN const Tcl_ObjIntRep * Tcl_FetchIntRep(Tcl_Obj *objPtr,
 /* 634 */
 EXTERN void		Tcl_StoreIntRep(Tcl_Obj *objPtr,
 				const Tcl_ObjType *typePtr,
-				Tcl_ObjIntRep *irPtr);
+				const Tcl_ObjIntRep *irPtr);
 
 typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
@@ -2497,7 +2497,7 @@ typedef struct TclStubs {
     void (*tcl_FreeIntRep) (Tcl_Obj *objPtr); /* 631 */
     char * (*tcl_InitStringRep) (Tcl_Obj *objPtr, const char *bytes, unsigned int numBytes); /* 632 */
     const Tcl_ObjIntRep * (*tcl_FetchIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr); /* 633 */
-    void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, Tcl_ObjIntRep *irPtr); /* 634 */
+    void (*tcl_StoreIntRep) (Tcl_Obj *objPtr, const Tcl_ObjType *typePtr, const Tcl_ObjIntRep *irPtr); /* 634 */
 } TclStubs;
 
 extern const TclStubs *tclStubsPtr;

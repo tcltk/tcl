@@ -2340,7 +2340,7 @@ declare 633 {
 }
 declare 634 {
     void Tcl_StoreIntRep(Tcl_Obj *objPtr, const Tcl_ObjType *typePtr,
-	    Tcl_ObjIntRep *irPtr)
+	    const Tcl_ObjIntRep *irPtr)
 }
 
 # ----- BASELINE -- FOR -- 8.7.0 ----- #
