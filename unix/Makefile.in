@@ -655,7 +655,7 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 #	$(SHELL) config.status
 
 clean: clean-packages
-	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
+	rm -rf *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@
 	cd dltest ; $(MAKE) clean
 
