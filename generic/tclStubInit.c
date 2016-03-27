@@ -1417,6 +1417,8 @@ const TclStubs tclStubs = {
     Tcl_ZlibStreamSetCompressionDictionary, /* 630 */
     Tcl_FreeIntRep, /* 631 */
     Tcl_InitStringRep, /* 632 */
+    Tcl_FetchIntRep, /* 633 */
+    Tcl_StoreIntRep, /* 634 */
 };
 
 /* !END!: Do not edit above this line. */
