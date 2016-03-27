@@ -1567,12 +1567,12 @@ StringIsCmd(
 	break;
     case STR_IS_DOUBLE: {
 	/* TODO */
-	if ((objPtr->typePtr == &tclDoubleType) ||
-		(objPtr->typePtr == &tclIntType) ||
+	if (Tcl_FetchIntRep(objPtr, &tclDoubleType) ||
+		Tcl_FetchIntRep(objPtr, &tclIntType) ||
 #ifndef TCL_WIDE_INT_IS_LONG
-		(objPtr->typePtr == &tclWideIntType) ||
+		Tcl_FetchIntRep(objPtr, &tclWideIntType) ||
 #endif
-		(objPtr->typePtr == &tclBignumType)) {
+		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1605,11 +1605,11 @@ StringIsCmd(
 	}
 	goto failedIntParse;
     case STR_IS_ENTIER:
-	if ((objPtr->typePtr == &tclIntType) ||
+	if (Tcl_FetchIntRep(objPtr, &tclIntType) ||
 #ifndef TCL_WIDE_INT_IS_LONG
-		(objPtr->typePtr == &tclWideIntType) ||
+		Tcl_FetchIntRep(objPtr, &tclWideIntType) ||
 #endif
-		(objPtr->typePtr == &tclBignumType)) {
+		Tcl_FetchIntRep(objPtr, &tclBignumType)) {
 	    break;
 	}
 	string1 = TclGetStringFromObj(objPtr, &length1);
@@ -1880,7 +1880,7 @@ StringMapCmd(
      * inconsistencies (see test string-10.20 for illustration why!)
      */
 
-    if (objv[objc-2]->typePtr == &tclDictType && objv[objc-2]->bytes == NULL){
+    if (Tcl_FetchIntRep(objv[objc-2], &tclDictType) && objv[objc-2]->bytes == NULL){
 	int i, done;
 	Tcl_DictSearch search;
 
@@ -2621,8 +2621,8 @@ StringEqualCmd(
 	string1 = (char *) Tcl_GetByteArrayFromObj(objv[0], &length1);
 	string2 = (char *) Tcl_GetByteArrayFromObj(objv[1], &length2);
 	strCmpFn = (strCmpFn_t) memcmp;
-    } else if ((objv[0]->typePtr == &tclStringType)
-	    && (objv[1]->typePtr == &tclStringType)) {
+    } else if (Tcl_FetchIntRep(objv[0], &tclStringType)
+	    && Tcl_FetchIntRep(objv[1], &tclStringType)) {
 	/*
 	 * Do a unicode-specific comparison if both of the args are of String
 	 * type. In benchmark testing this proved the most efficient check
@@ -2771,8 +2771,8 @@ StringCmpCmd(
 	string1 = (char *) Tcl_GetByteArrayFromObj(objv[0], &length1);
 	string2 = (char *) Tcl_GetByteArrayFromObj(objv[1], &length2);
 	strCmpFn = (strCmpFn_t) memcmp;
-    } else if ((objv[0]->typePtr == &tclStringType)
-	    && (objv[1]->typePtr == &tclStringType)) {
+    } else if (Tcl_FetchIntRep(objv[0], &tclStringType)
+	    && Tcl_FetchIntRep(objv[1], &tclStringType)) {
 	/*
 	 * Do a unicode-specific comparison if both of the args are of String
 	 * type. In benchmark testing this proved the most efficient check
