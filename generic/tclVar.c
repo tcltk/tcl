@@ -206,7 +206,9 @@ static Tcl_UpdateStringProc	PanicOnUpdateVarName;
 
 static Tcl_FreeInternalRepProc	FreeParsedVarName;
 static Tcl_DupInternalRepProc	DupParsedVarName;
+#if 0
 static Tcl_UpdateStringProc	UpdateParsedVarName;
+#endif
 
 static Tcl_UpdateStringProc	PanicOnUpdateVarName;
 static Tcl_SetFromAnyProc	PanicOnSetVarName;
@@ -237,7 +239,13 @@ static const Tcl_ObjType localVarNameType = {
 
 static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
-    FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, PanicOnSetVarName
+    FreeParsedVarName, DupParsedVarName, 
+#if 0
+UpdateParsedVarName,
+#else
+PanicOnUpdateVarName,
+#endif
+ PanicOnSetVarName
 };
 
 /*
@@ -536,7 +544,9 @@ TclObjLookupVarEx(
     const char *errMsg = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
+#if 0
     char *newPart2 = NULL;
+#endif
     *arrayPtrPtr = NULL;
 
     if (typePtr == &localVarNameType) {
@@ -583,9 +593,13 @@ TclObjLookupVarEx(
 		}
 		return NULL;
 	    }
+#if 0
 	    part2 = newPart2 = part1Ptr->internalRep.twoPtrValue.ptr2;
 	    if (newPart2) {
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
+#else
+	    if ((part2Ptr = part1Ptr->internalRep.twoPtrValue.ptr2)) {
+#endif
 		if (createPart2) {
 		    Tcl_IncrRefCount(part2Ptr);
 		}
@@ -629,11 +643,15 @@ TclObjLookupVarEx(
 		len2 = len1 - i - 2;
 		len1 = i;
 
+#if 0
 		newPart2 = ckalloc(len2 + 1);
 		memcpy(newPart2, part2, (unsigned) len2);
 		*(newPart2+len2) = '\0';
 		part2 = newPart2;
 		part2Ptr = Tcl_NewStringObj(newPart2, -1);
+#else
+		part2Ptr = Tcl_NewStringObj(part2, len2);
+#endif
 		if (createPart2) {
 		    Tcl_IncrRefCount(part2Ptr);
 		}
@@ -658,7 +676,12 @@ TclObjLookupVarEx(
 		Tcl_IncrRefCount(part1Ptr);
 
 		objPtr->internalRep.twoPtrValue.ptr1 = part1Ptr;
+#if 0
 		objPtr->internalRep.twoPtrValue.ptr2 = (void *) part2;
+#else
+		Tcl_IncrRefCount(part2Ptr);
+		objPtr->internalRep.twoPtrValue.ptr2 = part2Ptr;
+#endif
 
 		typePtr = part1Ptr->typePtr;
 		part1 = TclGetString(part1Ptr);
@@ -683,9 +706,11 @@ TclObjLookupVarEx(
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 		    TclGetString(part1Ptr), NULL);
 	}
+#if 0
 	if (newPart2) {
 	    Tcl_DecrRefCount(part2Ptr);
 	}
+#endif
 	return NULL;
     }
 
@@ -734,9 +759,11 @@ TclObjLookupVarEx(
 	*arrayPtrPtr = varPtr;
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr, flags, msg,
 		createPart1, createPart2, varPtr, -1);
+#if 0
 	if (newPart2) {
 	    Tcl_DecrRefCount(part2Ptr);
 	}
+#endif
     }
     return varPtr;
 }
@@ -5592,11 +5619,11 @@ FreeParsedVarName(
     Tcl_Obj *objPtr)
 {
     register Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    register char *elem = objPtr->internalRep.twoPtrValue.ptr2;
+    register Tcl_Obj *elem = objPtr->internalRep.twoPtrValue.ptr2;
 
     if (arrayPtr != NULL) {
 	TclDecrRefCount(arrayPtr);
-	ckfree(elem);
+	TclDecrRefCount(elem);
     }
     objPtr->typePtr = NULL;
 }
@@ -5607,17 +5634,11 @@ DupParsedVarName(
     Tcl_Obj *dupPtr)
 {
     register Tcl_Obj *arrayPtr = srcPtr->internalRep.twoPtrValue.ptr1;
-    register char *elem = srcPtr->internalRep.twoPtrValue.ptr2;
-    char *elemCopy;
-    unsigned elemLen;
+    register Tcl_Obj *elem = srcPtr->internalRep.twoPtrValue.ptr2;
 
     if (arrayPtr != NULL) {
 	Tcl_IncrRefCount(arrayPtr);
-	elemLen = strlen(elem);
-	elemCopy = ckalloc(elemLen + 1);
-	memcpy(elemCopy, elem, elemLen);
-	*(elemCopy + elemLen) = '\0';
-	elem = elemCopy;
+	Tcl_IncrRefCount(elem);
     }
 
     dupPtr->internalRep.twoPtrValue.ptr1 = arrayPtr;
@@ -5625,6 +5646,7 @@ DupParsedVarName(
     dupPtr->typePtr = &tclParsedVarNameType;
 }
 
+#if 0
 static void
 UpdateParsedVarName(
     Tcl_Obj *objPtr)
@@ -5659,6 +5681,7 @@ UpdateParsedVarName(
     *p++ = ')';
     *p = '\0';
 }
+#endif
 
 /*
  *----------------------------------------------------------------------
