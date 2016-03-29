@@ -618,7 +618,7 @@ SetDictFromAny(
      * the conversion from lists to dictionaries.
      */
 
-    if (objPtr->typePtr == &tclListType) {
+    if (Tcl_FetchIntRep(objPtr, &tclListType)) {
 	int objc, i;
 	Tcl_Obj **objv;
 

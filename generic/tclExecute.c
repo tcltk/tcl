@@ -5043,7 +5043,7 @@ TEBCresume(
 	 */
 
 	if ((TclListObjGetElements(interp, valuePtr, &objc, &objv) == TCL_OK)
-		&& (value2Ptr->typePtr != &tclListType)
+		&& (NULL == Tcl_FetchIntRep(value2Ptr, &tclListType))
 		&& (TclGetIntForIndexM(NULL , value2Ptr, objc-1,
 			&index) == TCL_OK)) {
 	    TclDecrRefCount(value2Ptr);
