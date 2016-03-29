@@ -50,7 +50,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static int notifierCount = 0;
-static const TCHAR classname[] = TEXT("TclNotifier");
+static const TCHAR className[] = TEXT("TclNotifier");
 TCL_DECLARE_MUTEX(notifierMutex)
 
 /*
@@ -98,7 +98,7 @@ Tcl_InitNotifier(void)
 	    class.hInstance = TclWinGetTclInstance();
 	    class.hbrBackground = NULL;
 	    class.lpszMenuName = NULL;
-	    class.lpszClassName = classname;
+	    class.lpszClassName = className;
 	    class.lpfnWndProc = NotifierProc;
 	    class.hIcon = NULL;
 	    class.hCursor = NULL;
@@ -186,7 +186,7 @@ Tcl_FinalizeNotifier(
 	Tcl_MutexLock(&notifierMutex);
 	notifierCount--;
 	if (notifierCount == 0) {
-	    UnregisterClass(classname, TclWinGetTclInstance());
+	    UnregisterClass(className, TclWinGetTclInstance());
 	}
 	Tcl_MutexUnlock(&notifierMutex);
     }
@@ -350,7 +350,7 @@ Tcl_ServiceModeHook(
 	 */
 
 	if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
-	    tsdPtr->hwnd = CreateWindow(classname, classname,
+	    tsdPtr->hwnd = CreateWindow(className, className,
 		    WS_TILED, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(),
 		    NULL);
 
