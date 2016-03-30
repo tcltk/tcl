@@ -445,6 +445,12 @@ Tcl_WaitForEvent(
 	 */
 
 	if (timePtr) {
+#if (_WIN32_WINNT < 0x0600) && defined(WIN32_USE_TICKCOUNT)
+	    timeout = timePtr->sec * 1000 + timePtr->usec / 1000;
+	    if (timeout == INFINITE) {
+		timeout--;
+	    }
+#else
 	    /*
 	     * TIP #233 (Virtualized Time). Convert virtual domain delay to
 	     * real-time.
@@ -460,6 +466,7 @@ Tcl_WaitForEvent(
 	    }
 
 	    timeout = myTime.sec * 1000 + myTime.usec / 1000;
+#endif
 	} else {
 	    timeout = INFINITE;
 	}
@@ -548,6 +555,46 @@ void
 Tcl_Sleep(
     int ms)			/* Number of milliseconds to sleep. */
 {
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+    ULONGLONG now;		/* Current wall clock time. */
+    ULONGLONG desired;		/* Desired wakeup time. */
+    ULONGLONG sleepTime;
+
+    now = GetTickCount64();
+#else
+    DWORD now;			/* Current wall clock time. */
+    DWORD desired;		/* Desired wakeup time. */
+    DWORD sleepTime;
+
+    now = GetTickCount();
+#endif
+
+    if (ms < 0) {
+	ms = 0;
+#if (_WIN32_WINNT < 0x0600)
+    } else if (ms > 0x7FFFFFFF) {
+	ms = 0x7FFFFFFF;
+#endif
+    }
+    desired = now + ms;
+    sleepTime = ms;
+    for (;;) {
+	SleepEx(sleepTime, TRUE);
+#if (_WIN32_WINNT >= 0x0600)
+	now = GetTickCount64();
+	if (now - desired >= 0) {
+	    break;
+	}
+#else
+	now = GetTickCount();
+	if ((long) now - (long) desired >= 0) {
+	    break;
+	}
+#endif
+	sleepTime = desired - now;
+    }
+#else
     /*
      * Simply calling 'Sleep' for the requisite number of milliseconds can
      * make the process appear to wake up early because it isn't synchronized
@@ -597,6 +644,7 @@ Tcl_Sleep(
 	tclScaleTimeProcPtr(&vdelay, tclTimeClientData);
 	sleepTime = vdelay.sec * 1000 + vdelay.usec / 1000;
     }
+#endif
 }
 
 /*

@@ -640,6 +640,25 @@ extern char **		environ;
 
 /*
  *---------------------------------------------------------------------------
+ * Use clock_gettime() only if _POSIX_MONOTONIC_CLOCK present.
+ *---------------------------------------------------------------------------
+ */
+
+#if defined(HAVE_CLOCK_GETTIME) && !defined(_POSIX_MONOTONIC_CLOCK)
+#   undef HAVE_CLOCK_GETTIME
+#endif
+
+#ifdef TCL_THREADS
+#   ifndef HAVE_CLOCK_GETTIME
+#	undef HAVE_PTHREAD_CONDATTR_SETCLOCK
+#   endif
+#   ifndef HAVE_PTHREAD_CONDATTR_SETCLOCK
+#	undef HAVE_CLOCK_GETTIME
+#   endif
+#endif
+
+/*
+ *---------------------------------------------------------------------------
  * The following macros and declarations represent the interface between
  * generic and unix-specific parts of Tcl. Some of the macros may override
  * functions declared in tclInt.h.

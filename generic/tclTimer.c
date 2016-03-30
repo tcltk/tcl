@@ -259,7 +259,33 @@ Tcl_CreateTimerHandler(
      * Compute when the event should fire.
      */
 
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+    ULONGLONG ticks = GetTickCount64();
+
+    time.sec = (long) ((ticks+milliseconds)/1000);
+    time.usec = (long) (((ticks+milliseconds)%1000)*1000);
+#else
+    if (milliseconds > 0x7FFFFFFF) {
+	milliseconds = 0x7FFFFFFF;
+    } else if (milliseconds < 0) {
+	milliseconds = 0;
+    }
+    time.sec = milliseconds + GetTickCount();
+    time.usec = 0;
+#endif
+#else
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec ts;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	clock_gettime(CLOCK_REALTIME, &ts);
+    }
+    time.sec = ts.tv_sec;
+    time.usec = ts.tv_nsec / 1000;
+#else
     Tcl_GetTime(&time);
+#endif
     time.sec += milliseconds/1000;
     time.usec += (milliseconds%1000)*1000;
     if (time.usec >= 1000000) {
@@ -316,9 +342,15 @@ TclCreateAbsoluteTimerHandler(
 
     for (tPtr2 = tsdPtr->firstTimerHandlerPtr, prevPtr = NULL; tPtr2 != NULL;
 	    prevPtr = tPtr2, tPtr2 = tPtr2->nextPtr) {
+#if (_WIN32_WINNT < 0x0600) && defined(WIN32_USE_TICKCOUNT)
+	if (timerHandlerPtr->time.sec - tPtr2->time.sec < 0) {
+	    break;
+	}
+#else
 	if (TCL_TIME_BEFORE(timerHandlerPtr->time, tPtr2->time)) {
 	    break;
 	}
+#endif
     }
     timerHandlerPtr->nextPtr = tPtr2;
     if (prevPtr == NULL) {
@@ -417,7 +449,46 @@ TimerSetupProc(
 	 * Compute the timeout for the next timer on the list.
 	 */
 
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+	ULONGLONG ticks = GetTickCount64();
+
+	blockTime.sec = (long)
+	    ((ULONGLONG) tsdPtr->firstTimerHandlerPtr->time.sec -
+		(ticks / 1000));
+	blockTime.usec = (long)
+	    ((ULONGLONG) tsdPtr->firstTimerHandlerPtr->time.usec -
+		(ticks % 1000) * 1000);
+	if (blockTime.usec < 0) {
+	    blockTime.sec -= 1;
+	    blockTime.usec += 1000000;
+	}
+	if (blockTime.sec < 0) {
+	    blockTime.sec = 0;
+	    blockTime.usec = 0;
+	}
+#else
+	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - GetTickCount();
+	if (blockTime.sec <= 0) {
+	    blockTime.sec = 0;
+	    blockTime.usec = 0;
+	} else {
+	    blockTime.usec = (blockTime.sec % 1000) * 1000;
+	    blockTime.sec /= 1000;
+	}
+#endif
+#else
+#ifdef HAVE_CLOCK_GETTIME
+	struct timespec ts;
+
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	    clock_gettime(CLOCK_REALTIME, &ts);
+	}
+	blockTime.sec = ts.tv_sec;
+	blockTime.usec = ts.tv_nsec / 1000;
+#else
 	Tcl_GetTime(&blockTime);
+#endif
 	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
 	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
 		blockTime.usec;
@@ -429,6 +500,7 @@ TimerSetupProc(
 	    blockTime.sec = 0;
 	    blockTime.usec = 0;
 	}
+#endif
     } else {
 	return;
     }
@@ -468,7 +540,46 @@ TimerCheckProc(
 	 * Compute the timeout for the next timer on the list.
 	 */
 
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+	ULONGLONG ticks = GetTickCount64();
+
+	blockTime.sec = (long)
+	    ((ULONGLONG) tsdPtr->firstTimerHandlerPtr->time.sec -
+		(ticks / 1000));
+	blockTime.usec = (long)
+	    ((ULONGLONG) tsdPtr->firstTimerHandlerPtr->time.usec -
+		(ticks % 1000) * 1000);
+	if (blockTime.usec < 0) {
+	    blockTime.sec -= 1;
+	    blockTime.usec += 1000000;
+	}
+	if (blockTime.sec < 0) {
+	    blockTime.sec = 0;
+	    blockTime.usec = 0;
+	}
+#else
+	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - GetTickCount();
+	if (blockTime.sec <= 0) {
+	    blockTime.sec = 0;
+	    blockTime.usec = 0;
+	} else {
+	    blockTime.usec = (blockTime.sec % 1000) * 1000;
+	    blockTime.sec /= 1000;
+	}
+#endif
+#else
+#ifdef HAVE_CLOCK_GETTIME
+	struct timespec ts;
+
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	    clock_gettime(CLOCK_REALTIME, &ts);
+	}
+	blockTime.sec = ts.tv_sec;
+	blockTime.usec = ts.tv_nsec / 1000;
+#else
 	Tcl_GetTime(&blockTime);
+#endif
 	blockTime.sec = tsdPtr->firstTimerHandlerPtr->time.sec - blockTime.sec;
 	blockTime.usec = tsdPtr->firstTimerHandlerPtr->time.usec -
 		blockTime.usec;
@@ -480,6 +591,7 @@ TimerCheckProc(
 	    blockTime.sec = 0;
 	    blockTime.usec = 0;
 	}
+#endif
 
 	/*
 	 * If the first timer has expired, stick an event on the queue.
@@ -526,6 +638,12 @@ TimerHandlerEventProc(
     Tcl_Time time;
     int currentTimerId;
     ThreadSpecificData *tsdPtr = InitTimer();
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec ts;
+#endif
+#if (_WIN32_WINNT >= 0x0600) && defined(WIN32_USE_TICKCOUNT)
+    ULONGLONG ticks;
+#endif
 
     /*
      * Do nothing if timers aren't enabled. This leaves the event on the
@@ -564,7 +682,26 @@ TimerHandlerEventProc(
 
     tsdPtr->timerPending = 0;
     currentTimerId = tsdPtr->lastTimerId;
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+    ticks = GetTickCount64();
+    time.sec = ticks / 1000;
+    time.usec = (ticks % 1000) * 1000;
+#else
+    time.sec = GetTickCount();
+    time.usec = 0;
+#endif
+#else
+#ifdef HAVE_CLOCK_GETTIME
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	clock_gettime(CLOCK_REALTIME, &ts);
+    }
+    time.sec = ts.tv_sec;
+    time.usec = ts.tv_nsec / 1000;
+#else
     Tcl_GetTime(&time);
+#endif
+#endif
     while (1) {
 	nextPtrPtr = &tsdPtr->firstTimerHandlerPtr;
 	timerHandlerPtr = tsdPtr->firstTimerHandlerPtr;
@@ -572,10 +709,16 @@ TimerHandlerEventProc(
 	    break;
 	}
 
+#if (_WIN32_WINNT < 0x0600) && defined(WIN32_USE_TICKCOUNT)
+	if (time.sec - timerHandlerPtr->time.sec < 0) {
+	    break;
+	}
+#else
 	if (TCL_TIME_BEFORE(time, timerHandlerPtr->time)) {
 	    break;
 	}
 
+#endif
 	/*
 	 * Bail out if the next timer is of a newer generation.
 	 */
@@ -845,6 +988,13 @@ Tcl_AfterObjCmd(
 
     switch (index) {
     case -1: {
+#ifdef HAVE_CLOCK_GETTIME
+	struct timespec ts;
+#endif
+#if (_WIN32_WINNT >= 0x0600) && defined(WIN32_USE_TICKCOUNT)
+	ULONGLONG ticks;
+#endif
+
 	if (ms < 0) {
 	    ms = 0;
 	}
@@ -872,13 +1022,43 @@ Tcl_AfterObjCmd(
 
 	afterPtr->id = tsdPtr->afterId;
 	tsdPtr->afterId += 1;
++#ifdef WIN32_USE_TICKCOUNT
++#if (_WIN32_WINNT >= 0x0600)
++	ticks = GetTickCount64();
++	wakeup.sec = ticks / 1000;
++	wakeup.usec = (ticks % 1000) * 1000;
++	wakeup.sec += (long)(ms / 1000);
++	wakeup.usec += ((long)(ms % 1000)) * 1000;
++	if (wakeup.usec > 1000000) {
++	    wakeup.sec++;
++	    wakeup.usec -= 1000000;
++	}
+#else
+	if (ms > 0x7FFFFFFF) {
+	    ms = 0x7FFFFFFF;
+	} else if (ms < 0) {
+	    ms = 0;
+	}
+	wakeup.sec = ms + GetTickCount();
+	wakeup.usec = 0;
+#endif
+#else
+#ifdef HAVE_CLOCK_GETTIME
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	    clock_gettime(CLOCK_REALTIME, &ts);
+	}
+	wakeup.sec = ts.tv_sec;
+	wakeup.usec = ts.tv_nsec / 1000;
+#else
 	Tcl_GetTime(&wakeup);
+#endif
 	wakeup.sec += (long)(ms / 1000);
 	wakeup.usec += ((long)(ms % 1000)) * 1000;
 	if (wakeup.usec > 1000000) {
 	    wakeup.sec++;
 	    wakeup.usec -= 1000000;
 	}
+#endif
 	afterPtr->token = TclCreateAbsoluteTimerHandler(&wakeup,
 		AfterProc, afterPtr);
 	afterPtr->nextPtr = assocPtr->firstAfterPtr;
@@ -1012,12 +1192,15 @@ AfterDelay(
     Tcl_Interp *interp,
     Tcl_WideInt ms)
 {
-    Interp *iPtr = (Interp *) interp;
-
     Tcl_Time endTime, now;
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+    Interp *iPtr = (Interp *) interp;
+    ULONGLONG ticks = GetTickCount64();
     Tcl_WideInt diff;
 
-    Tcl_GetTime(&now);
+    now.sec = ticks/1000;
+    now.usec = (ticks%1000)*1000;
     endTime = now;
     endTime.sec += (long)(ms/1000);
     endTime.usec += ((int)(ms%1000))*1000;
@@ -1025,6 +1208,41 @@ AfterDelay(
 	endTime.sec++;
 	endTime.usec -= 1000000;
     }
+#else
+    int diff;
+
+    now.sec = GetTickCount();
+    now.usec = 0;
+    if (ms > 0x7FFFFFFF) {
+	ms = 0x7FFFFFFF;
+    } else if (ms < 0) {
+	ms = 0;
+    }
+    endTime.sec = now.sec + ms;
+    endTime.usec = 0;
+#endif
+#else
+    Interp *iPtr = (Interp *) interp;
+    Tcl_WideInt diff;
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec ts;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	clock_gettime(CLOCK_REALTIME, &ts);
+    }
+    now.sec = ts.tv_sec;
+    now.usec = ts.tv_nsec/1000;
+#else
+    Tcl_GetTime(&now);
+#endif
+    endTime = now;
+    endTime.sec += (long)(ms/1000);
+    endTime.usec += ((int)(ms%1000))*1000;
+    if (endTime.usec >= 1000000) {
+	endTime.sec++;
+	endTime.usec -= 1000000;
+    }
+#endif
 
     do {
 	if (Tcl_AsyncReady()) {
@@ -1035,6 +1253,15 @@ AfterDelay(
 	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
 	    return TCL_ERROR;
 	}
+#if (_WIN32_WINNT < 0x0600) && defined(WIN32_USE_TICKCOUNT)
+	diff = endTime.sec - now.sec;
+	if (diff > 0) {
+	    Tcl_Sleep((long) diff);
+	} else {
+	    break;
+	}
+	now.sec = GetTickCount();
+#else
 	if (iPtr->limit.timeEvent != NULL
 		&& TCL_TIME_BEFORE(iPtr->limit.time, now)) {
 	    iPtr->limit.granularityTicker = 0;
@@ -1083,8 +1310,28 @@ AfterDelay(
 		return TCL_ERROR;
 	    }
 	}
+#if (_WIN32_WINNT >= 0x0600) && defined(WIN32_USE_TICKCOUNT)
+	ticks = GetTickCount64();
+	now.sec = ticks / 1000;
+	now.usec = (ticks % 1000) * 1000;
+#else
+#ifdef HAVE_CLOCK_GETTIME
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	    clock_gettime(CLOCK_REALTIME, &ts);
+	}
+	now.sec = ts.tv_sec;
+	now.usec = ts.tv_nsec / 1000;
+#else
         Tcl_GetTime(&now);
-    } while (TCL_TIME_BEFORE(now, endTime));
+#endif
+#endif
+#endif
+    }
+#if (_WIN32_WINNT < 0x0600) && defined(WIN32_USE_TICKCOUNT)
+    while (now.sec - endTime.sec < 0);
+#else
+    while (TCL_TIME_BEFORE(now, endTime));
+#endif
     return TCL_OK;
 }
 

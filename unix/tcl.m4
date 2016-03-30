@@ -678,7 +678,7 @@ AC_DEFUN([SC_ENABLE_THREADS], [
 
 	ac_saved_libs=$LIBS
 	LIBS="$LIBS $THREADS_LIBS"
-	AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork)
+	AC_CHECK_FUNCS(pthread_attr_setstacksize pthread_atfork pthread_condattr_setclock)
 	LIBS=$ac_saved_libs
     else
 	TCL_THREADS=0
@@ -2539,6 +2539,8 @@ AC_DEFUN([SC_TCL_LINK_LIBS], [
     fi
     AC_CHECK_FUNC(gethostbyname, , [AC_CHECK_LIB(nsl, gethostbyname,
 	    [LIBS="$LIBS -lnsl"])])
+    AC_CHECK_LIB(rt, clock_gettime, [LIBS="$LIBS -lrt"])
+    AC_CHECK_FUNCS(clock_gettime clock_nanosleep)
 ])
 
 #--------------------------------------------------------------------

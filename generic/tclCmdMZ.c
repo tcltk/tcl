@@ -4124,10 +4124,23 @@ Tcl_TimeObjCmd(
     register int i, result;
     int count;
     double totalMicroSec;
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+    ULONGLONG start, stop;
+#else
+    DWORD start, stop;
+#endif
+#else
+#ifdef HAVE_CLOCK_GETTIME
+    int monoClock = 1;
+    struct timespec start, stop;
+#else
 #ifndef TCL_WIDE_CLICKS
     Tcl_Time start, stop;
 #else
     Tcl_WideInt start, stop;
+#endif
+#endif
 #endif
 
     if (objc == 2) {
@@ -4144,10 +4157,25 @@ Tcl_TimeObjCmd(
 
     objPtr = objv[1];
     i = count;
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+    start = GetTickCount64();
+#else
+    start = GetTickCount();
+#endif
+#else
+#ifdef HAVE_CLOCK_GETTIME
+    if (clock_gettime(CLOCK_MONOTONIC, &start) == -1) {
+	clock_gettime(CLOCK_REALTIME, &start);
+	monoClock = 0;
+    }
+#else
 #ifndef TCL_WIDE_CLICKS
     Tcl_GetTime(&start);
 #else
     start = TclpGetWideClicks();
+#endif
+#endif
 #endif
     while (i-- > 0) {
 	result = Tcl_EvalObjEx(interp, objPtr, 0);
@@ -4155,6 +4183,19 @@ Tcl_TimeObjCmd(
 	    return result;
 	}
     }
+#ifdef WIN32_USE_TICKCOUNT
+#if (_WIN32_WINNT >= 0x0600)
+    stop = GetTickCount64();
+#else
+    stop = GetTickCount();
+#endif
+    totalMicroSec = (stop - start) * 1000.0;
+#else
+#ifdef HAVE_CLOCK_GETTIME
+    clock_gettime(monoClock ? CLOCK_MONOTONIC : CLOCK_REALTIME, &stop);
+    totalMicroSec = ((double) (stop.tv_sec - start.tv_sec)) * 1.0e6
+	    + (stop.tv_nsec - start.tv_nsec) / 1000.0;
+#else
 #ifndef TCL_WIDE_CLICKS
     Tcl_GetTime(&stop);
     totalMicroSec = ((double) (stop.sec - start.sec)) * 1.0e6
@@ -4162,6 +4203,8 @@ Tcl_TimeObjCmd(
 #else
     stop = TclpGetWideClicks();
     totalMicroSec = ((double) TclpWideClicksToNanoseconds(stop - start))/1.0e3;
+#endif
+#endif
 #endif
 
     if (count <= 1) {

@@ -1763,12 +1763,16 @@ TclUnixWaitForFile(
 				 * at all, and a value of -1 means wait
 				 * forever. */
 {
-    Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
+    Tcl_Time abortTime = {0, 0}, now = { 0, 0 }; /* silence gcc 4 warning */
     struct timeval blockTime, *timeoutPtr;
     int numFound, result = 0;
     fd_set readableMask;
     fd_set writableMask;
     fd_set exceptionMask;
+#ifdef HAVE_CLOCK_GETTIME
+    int monoClock = 1;
+    struct timespec ts;
+#endif
 
 #ifndef _DARWIN_C_SOURCE
     /*
@@ -1787,7 +1791,16 @@ TclUnixWaitForFile(
      */
 
     if (timeout > 0) {
+#ifdef HAVE_CLOCK_GETTIME
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	    clock_gettime(CLOCK_REALTIME, &ts);
+	    monoClock = 0;
+	}
+	now.sec = ts.tv_sec;
+	now.usec = ts.tv_nsec / 1000;
+#else
 	Tcl_GetTime(&now);
+#endif
 	abortTime.sec = now.sec + timeout/1000;
 	abortTime.usec = now.usec + (timeout%1000)*1000;
 	if (abortTime.usec >= 1000000) {
@@ -1876,7 +1889,13 @@ TclUnixWaitForFile(
 	 * The select returned early, so we need to recompute the timeout.
 	 */
 
+#ifdef HAVE_CLOCK_GETTIME
+	clock_gettime(monoClock ? CLOCK_MONOTONIC : CLOCK_REALTIME, &ts);
+	now.sec = ts.tv_sec;
+	now.usec = ts.tv_nsec / 1000;
+#else
 	Tcl_GetTime(&now);
+#endif
 	if ((abortTime.sec < now.sec)
 		|| (abortTime.sec==now.sec && abortTime.usec<=now.usec)) {
 	    break;

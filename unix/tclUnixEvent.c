@@ -42,7 +42,19 @@ Tcl_Sleep(
      * time really has elapsed.  If it's too early, go back to sleep again.
      */
 
+#ifdef HAVE_CLOCK_GETTIME
+    int monoClock = 1;
+    struct timespec ts;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	clock_gettime(CLOCK_REALTIME, &ts);
+	monoClock = 0;
+    }
+    before.sec = ts.tv_sec;
+    before.usec = ts.tv_nsec / 1000;
+#else
     Tcl_GetTime(&before);
+#endif
     after = before;
     after.sec += ms/1000;
     after.usec += (ms%1000)*1000;
@@ -81,7 +93,13 @@ Tcl_Sleep(
 	}
 	(void) select(0, (SELECT_MASK *) 0, (SELECT_MASK *) 0,
 		(SELECT_MASK *) 0, &delay);
+#ifdef HAVE_CLOCK_GETTIME
+	clock_gettime(monoClock ? CLOCK_MONOTONIC : CLOCK_REALTIME, &ts);
+	before.sec = ts.tv_sec;
+	before.usec = ts.tv_nsec / 1000;
+#else
 	Tcl_GetTime(&before);
+#endif
     }
 }
 

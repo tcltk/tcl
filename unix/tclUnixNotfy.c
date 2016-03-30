@@ -100,6 +100,9 @@ typedef struct ThreadSpecificData {
     pthread_cond_t waitCV;	/* Any other thread alerts a notifier that an
 				 * event is ready to be processed by signaling
 				 * this condition variable. */
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+    int monoClock;		/* When true use CLOCK_MONOTONIC */
+#endif
 #endif /* __CYGWIN__ */
     int waitCVinitialized;	/* Variable to flag initialization of the structure */
     int eventReady;		/* True if an event is ready to be processed.
@@ -353,7 +356,24 @@ Tcl_InitNotifier(void)
 	    tsdPtr->event = CreateEventW(NULL, 1 /* manual */,
 		    0 /* !signaled */, NULL);
 #else
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+	    pthread_condattr_t attr;
+
+	    pthread_condattr_init(&attr);
+	    tsdPtr->monoClock =
+		    pthread_condattr_setclock(&attr, CLOCK_MONOTONIC) == 0;
+	    if (tsdPtr->monoClock) {
+		if (pthread_cond_init(&tsdPtr->waitCV, &attr)) {
+		    tsdPtr->monoClock = 0;
+		    pthread_cond_init(&tsdPtr->waitCV, NULL);
+		}
+	    } else {
+		pthread_cond_init(&tsdPtr->waitCV, NULL);
+	    }
+	    pthread_condattr_destroy(&attr);
+#else
 	    pthread_cond_init(&tsdPtr->waitCV, NULL);
+#endif
 #endif /* __CYGWIN__ */
 	    tsdPtr->waitCVinitialized = 1;
 	}
@@ -995,16 +1015,29 @@ Tcl_WaitForEvent(
 	    }
 #else
 	    if (timePtr != NULL) {
-	       Tcl_Time now;
-	       struct timespec ptime;
+		struct timespec ptime;
 
-	       Tcl_GetTime(&now);
-	       ptime.tv_sec = timePtr->sec + now.sec + (timePtr->usec + now.usec) / 1000000;
-	       ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+#if defined(HAVE_CLOCK_GETTIME) && defined(HAVE_PTHREAD_CONDATTR_SETCLOCK)
+		if (tsdPtr->monoClock) {
+		    clock_gettime(CLOCK_MONOTONIC, &ptime);
+		} else {
+		    clock_gettime(CLOCK_REALTIME, &ptime);
+		}
+		ptime.tv_sec += timePtr->sec +
+		    (timePtr->usec * 1000 + ptime.tv_nsec) / 1000000000;
+		ptime.tv_nsec = (timePtr->usec * 1000 + ptime.tv_nsec) %
+		    1000000000;
+#else
+		Tcl_Time now;
 
-	       pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
+		Tcl_GetTime(&now);
+		ptime.tv_sec = timePtr->sec + now.sec +
+		    (timePtr->usec + now.usec) / 1000000;
+		ptime.tv_nsec = 1000 * ((timePtr->usec + now.usec) % 1000000);
+#endif
+		pthread_cond_timedwait(&tsdPtr->waitCV, &notifierMutex, &ptime);
 	    } else {
-	       pthread_cond_wait(&tsdPtr->waitCV, &notifierMutex);
+		pthread_cond_wait(&tsdPtr->waitCV, &notifierMutex);
 	    }
 #endif /* __CYGWIN__ */
 	}

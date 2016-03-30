@@ -3416,8 +3416,24 @@ Tcl_LimitCheck(
 	    ((iPtr->limit.timeGranularity == 1) ||
 		(ticker % iPtr->limit.timeGranularity == 0))) {
 	Tcl_Time now;
+#if (_WIN32_WINNT >= 0x0600) && defined(WIN32_USE_TICKCOUNT)
+	ULONGLONG ticks = GetTickCount64();
 
+	now.sec = ticks / 1000;
+	now.usec = (ticks % 1000) * 1000;
+#else
+#ifdef HAVE_CLOCK_GETTIME
+	struct timespec ts;
+
+	if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	    clock_gettime(CLOCK_REALTIME, &ts);
+	}
+	now.sec = ts.tv_sec;
+	now.usec = ts.tv_nsec * 1000;
+#else
 	Tcl_GetTime(&now);
+#endif
+#endif
 	if (iPtr->limit.time.sec < now.sec ||
 		(iPtr->limit.time.sec == now.sec &&
 		iPtr->limit.time.usec < now.usec)) {
@@ -3858,6 +3874,12 @@ Tcl_LimitTypeSet(
     int type)
 {
     Interp *iPtr = (Interp *) interp;
+#if (_WIN32_WINNT < 0x0600) && defined(WIN32_USE_TICKCOUNT)
+    if (type == TCL_LIMIT_TIME) {
+	/* not implemented for _WIN32 */
+	return;
+    }
+#endif
 
     iPtr->limit.active |= type;
 }
@@ -4382,12 +4404,16 @@ InheritLimitsFromMaster(
 	slavePtr->limit.cmdCount = 0;
 	slavePtr->limit.cmdGranularity = masterPtr->limit.cmdGranularity;
     }
+#if (_WIN32_WINNT < 0x0600) && defined(WIN32_USE_TICKCOUNT)
+    /* not implemented for _WIN32 */
+#else
     if (masterPtr->limit.active & TCL_LIMIT_TIME) {
 	slavePtr->limit.active |= TCL_LIMIT_TIME;
 	memcpy(&slavePtr->limit.time, &masterPtr->limit.time,
 		sizeof(Tcl_Time));
 	slavePtr->limit.timeGranularity = masterPtr->limit.timeGranularity;
     }
+#endif
 }
 
 /*

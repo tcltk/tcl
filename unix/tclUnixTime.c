@@ -105,6 +105,14 @@ TclpGetClicks(void)
 {
     unsigned long now;
 
+#ifdef HAVE_CLOCK_GETTIME
+    struct timespec ts;
+
+    if (clock_gettime(CLOCK_MONOTONIC, &ts) == -1) {
+	clock_gettime(CLOCK_REALTIME, &ts);
+    }
+    now = ts.tv_sec * 1000000 + ts.tv_nsec / 1000;
+#else
 #ifdef NO_GETTOD
     if (tclGetTimeProcPtr != NativeGetTime) {
 	Tcl_Time time;
@@ -124,6 +132,7 @@ TclpGetClicks(void)
 
     tclGetTimeProcPtr(&time, tclTimeClientData);
     now = time.sec*1000000 + time.usec;
+#endif
 #endif
 
     return now;
@@ -376,9 +385,11 @@ Tcl_SetTimeProc(
     Tcl_ScaleTimeProc *scaleProc,
     ClientData clientData)
 {
+#ifndef HAVE_CLOCK_GETTIME
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
     tclTimeClientData = clientData;
+#endif
 }
 
 /*

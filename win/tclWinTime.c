@@ -113,7 +113,7 @@ static TimeInfo timeInfo = {
  * Declarations for functions defined later in this file.
  */
 
-static struct tm *	ComputeGMT(const time_t *tp);
+#ifndef WIN32_USE_TICKCOUNT
 static void		StopCalibration(ClientData clientData);
 static DWORD WINAPI	CalibrationThread(LPVOID arg);
 static void 		UpdateTimeEachSecond(void);
@@ -121,6 +121,7 @@ static void		ResetCounterSamples(Tcl_WideUInt fileTime,
 			    Tcl_WideInt perfCounter, Tcl_WideInt perfFreq);
 static Tcl_WideInt	AccumulateSample(Tcl_WideInt perfCounter,
 			    Tcl_WideUInt fileTime);
+#endif
 static void		NativeScaleTime(Tcl_Time* timebuf,
 			    ClientData clientData);
 static void		NativeGetTime(Tcl_Time* timebuf,
@@ -294,6 +295,9 @@ NativeGetTime(
     if (!timeInfo.initialized) {
 	TclpInitLock();
 	if (!timeInfo.initialized) {
+#ifdef WIN32_USE_TICKCOUNT
+	    timeInfo.perfCounterAvailable = 0;
+#else
 	    timeInfo.perfCounterAvailable =
 		    QueryPerformanceFrequency(&timeInfo.nominalFreq);
 
@@ -387,6 +391,7 @@ NativeGetTime(
 		CloseHandle(timeInfo.readyEvent);
 		Tcl_CreateExitHandler(StopCalibration, NULL);
 	    }
+#endif /* !WIN32_USE_TICKCOUNT */
 	    timeInfo.initialized = TRUE;
 	}
 	TclpInitUnlock();
@@ -452,6 +457,7 @@ NativeGetTime(
     }
 }
 
+#ifndef WIN32_USE_TICKCOUNT
 /*
  *----------------------------------------------------------------------
  *
@@ -485,6 +491,7 @@ StopCalibration(
     CloseHandle(timeInfo.exitEvent);
     CloseHandle(timeInfo.calibrationThread);
 }
+#endif /* !WIN32_USE_TICKCOUNT */
 
 /*
  *----------------------------------------------------------------------
@@ -707,6 +714,7 @@ ComputeGMT(
     return tmPtr;
 }
 
+#ifndef WIN32_USE_TICKCOUNT
 /*
  *----------------------------------------------------------------------
  *
@@ -1033,6 +1041,7 @@ AccumulateSample(
 	return estFreq;
     }
 }
+#endif /* !WIN32_USE_TICKCOUNT */
 
 /*
  *----------------------------------------------------------------------
@@ -1118,9 +1127,11 @@ Tcl_SetTimeProc(
     Tcl_ScaleTimeProc *scaleProc,
     ClientData clientData)
 {
+#if !defined(WIN32_USE_TICKCOUNT) || (_WIN32_WINNT >= 0x0600)
     tclGetTimeProcPtr = getProc;
     tclScaleTimeProcPtr = scaleProc;
     tclTimeClientData = clientData;
+#endif
 }
 
 /*
