@@ -401,14 +401,15 @@ LinkTraceProc(
 	if (Tcl_GetDoubleFromObj(NULL, valueObj, &linkPtr->lastValue.d)
 		!= TCL_OK) {
 #ifdef ACCEPT_NAN
-	    if (valueObj->typePtr != &tclDoubleType) {
+	    Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(valueObj, &tclDoubleType);
+	    if (irPtr == NULL) {
 #endif
 		Tcl_ObjSetVar2(interp, linkPtr->varName, NULL,
 			ObjValue(linkPtr), TCL_GLOBAL_ONLY);
 		return (char *) "variable must have real value";
 #ifdef ACCEPT_NAN
 	    }
-	    linkPtr->lastValue.d = valueObj->internalRep.doubleValue;
+	    linkPtr->lastValue.d = irPtr->doubleValue;
 #endif
 	}
 	LinkedVar(double) = linkPtr->lastValue.d;
