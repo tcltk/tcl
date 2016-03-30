@@ -50,7 +50,7 @@ static Tcl_ThreadDataKey dataKey;
  */
 
 static int notifierCount = 0;
-static const TCHAR classname[] = TEXT("TclNotifier");
+static const TCHAR className[] = TEXT("TclNotifier");
 static int initialized = 0;
 static CRITICAL_SECTION notifierMutex;
 
@@ -106,7 +106,7 @@ Tcl_InitNotifier(void)
 	    class.hInstance = TclWinGetTclInstance();
 	    class.hbrBackground = NULL;
 	    class.lpszMenuName = NULL;
-	    class.lpszClassName = classname;
+	    class.lpszClassName = className;
 	    class.lpfnWndProc = NotifierProc;
 	    class.hIcon = NULL;
 	    class.hCursor = NULL;
@@ -195,7 +195,7 @@ Tcl_FinalizeNotifier(
 	if (notifierCount) {
 	    notifierCount--;
 	    if (notifierCount == 0) {
-		UnregisterClass(classname, TclWinGetTclInstance());
+		UnregisterClass(className, TclWinGetTclInstance());
 	    }
 	}
 	LeaveCriticalSection(&notifierMutex);
@@ -360,7 +360,7 @@ Tcl_ServiceModeHook(
 	 */
 
 	if (mode == TCL_SERVICE_ALL && !tsdPtr->hwnd) {
-	    tsdPtr->hwnd = CreateWindow(classname, classname,
+	    tsdPtr->hwnd = CreateWindow(className, className,
 		    WS_TILED, 0, 0, 0, 0, NULL, NULL, TclWinGetTclInstance(),
 		    NULL);
 
