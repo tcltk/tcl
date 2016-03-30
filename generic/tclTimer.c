@@ -789,7 +789,7 @@ Tcl_AfterObjCmd(
     AfterInfo *afterPtr;
     AfterAssocData *assocPtr;
     int length;
-    int index;
+    int index = -1;
     static const char *const afterSubCmds[] = {
 	"cancel", "idle", "info", NULL
     };
@@ -818,15 +818,9 @@ Tcl_AfterObjCmd(
      * First lets see if the command was passed a number as the first argument.
      */
 
-    if (objv[1]->typePtr == &tclIntType
-#ifndef TCL_WIDE_INT_IS_LONG
-	    || objv[1]->typePtr == &tclWideIntType
-#endif
-	    || objv[1]->typePtr == &tclBignumType
-	    || (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0,
-		    &index) != TCL_OK)) {
-	index = -1;
-	if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
+    if (Tcl_GetWideIntFromObj(NULL, objv[1], &ms) != TCL_OK) {
+	if (Tcl_GetIndexFromObj(NULL, objv[1], afterSubCmds, "", 0, &index)
+		!= TCL_OK) {
             const char *arg = Tcl_GetString(objv[1]);
 
 	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
