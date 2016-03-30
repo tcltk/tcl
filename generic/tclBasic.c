@@ -3513,9 +3513,14 @@ OldMathFuncProc(
 	valuePtr = objv[j];
 	result = Tcl_GetDoubleFromObj(NULL, valuePtr, &d);
 #ifdef ACCEPT_NAN
-	if ((result != TCL_OK) && (valuePtr->typePtr == &tclDoubleType)) {
-	    d = valuePtr->internalRep.doubleValue;
-	    result = TCL_OK;
+	if (result != TCL_OK) {
+	    const Tcl_ObjIntRep *irPtr
+		    = Tcl_FetchIntRep(valuePtr, &tclDoubleType);
+
+	    if (irPtr) {
+		d = irPtr->doubleValue;
+		result = TCL_OK;
+	    }
 	}
 #endif
 	if (result != TCL_OK) {
@@ -7061,9 +7066,13 @@ ExprCeilFunc(
     }
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
-    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
-	Tcl_SetObjResult(interp, objv[1]);
-	return TCL_OK;
+    if (code != TCL_OK) {
+	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+
+	if (irPtr) {
+	    Tcl_SetObjResult(interp, objv[1]);
+	    return TCL_OK;
+	}
     }
 #endif
     if (code != TCL_OK) {
@@ -7097,9 +7106,13 @@ ExprFloorFunc(
     }
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
-    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
-	Tcl_SetObjResult(interp, objv[1]);
-	return TCL_OK;
+    if (code != TCL_OK) {
+	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+
+	if (irPtr) {
+	    Tcl_SetObjResult(interp, objv[1]);
+	    return TCL_OK;
+	}
     }
 #endif
     if (code != TCL_OK) {
@@ -7233,9 +7246,13 @@ ExprSqrtFunc(
     }
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
-    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
-	Tcl_SetObjResult(interp, objv[1]);
-	return TCL_OK;
+    if (code != TCL_OK) {
+	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+
+	if (irPtr) {
+	    Tcl_SetObjResult(interp, objv[1]);
+	    return TCL_OK;
+	}
     }
 #endif
     if (code != TCL_OK) {
@@ -7276,10 +7293,14 @@ ExprUnaryFunc(
     }
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d);
 #ifdef ACCEPT_NAN
-    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
-	d = objv[1]->internalRep.doubleValue;
-	Tcl_ResetResult(interp);
-	code = TCL_OK;
+    if (code != TCL_OK) {
+	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+
+	if (irPtr) {
+	    d = irPtr->doubleValue;
+	    Tcl_ResetResult(interp);
+	    code = TCL_OK;
+	}
     }
 #endif
     if (code != TCL_OK) {
@@ -7336,10 +7357,14 @@ ExprBinaryFunc(
     }
     code = Tcl_GetDoubleFromObj(interp, objv[1], &d1);
 #ifdef ACCEPT_NAN
-    if ((code != TCL_OK) && (objv[1]->typePtr == &tclDoubleType)) {
-	d1 = objv[1]->internalRep.doubleValue;
-	Tcl_ResetResult(interp);
-	code = TCL_OK;
+    if (code != TCL_OK) {
+	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+
+	if (irPtr) {
+	    d1 = irPtr->doubleValue;
+	    Tcl_ResetResult(interp);
+	    code = TCL_OK;
+	}
     }
 #endif
     if (code != TCL_OK) {
@@ -7347,10 +7372,14 @@ ExprBinaryFunc(
     }
     code = Tcl_GetDoubleFromObj(interp, objv[2], &d2);
 #ifdef ACCEPT_NAN
-    if ((code != TCL_OK) && (objv[2]->typePtr == &tclDoubleType)) {
-	d2 = objv[2]->internalRep.doubleValue;
-	Tcl_ResetResult(interp);
-	code = TCL_OK;
+    if (code != TCL_OK) {
+	const Tcl_ObjIntRep *irPtr = Tcl_FetchIntRep(objv[1], &tclDoubleType);
+
+	if (irPtr) {
+	    d2 = irPtr->doubleValue;
+	    Tcl_ResetResult(interp);
+	    code = TCL_OK;
+	}
     }
 #endif
     if (code != TCL_OK) {
@@ -7506,7 +7535,7 @@ ExprDoubleFunc(
     }
     if (Tcl_GetDoubleFromObj(interp, objv[1], &dResult) != TCL_OK) {
 #ifdef ACCEPT_NAN
-	if (objv[1]->typePtr == &tclDoubleType) {
+	if (Tcl_FetchIntRep(objv[1], &tclDoubleType)) {
 	    Tcl_SetObjResult(interp, objv[1]);
 	    return TCL_OK;
 	}
