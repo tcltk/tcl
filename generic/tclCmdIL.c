@@ -2755,7 +2755,7 @@ Tcl_LreplaceObjCmd(
      * (to allow for replacing the last elem).
      */
 
-    if ((first >= listLen) && (listLen > 0)) {
+    if ((first > listLen) && (listLen > 0)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
 		"list doesn't contain element %s", TclGetString(objv[2])));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LREPLACE", "BADIDX",
