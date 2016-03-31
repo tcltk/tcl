@@ -142,6 +142,15 @@ AS_IF([test "$tcl_ok" = "yes"], [
 ])
 AC_DEFINE(HAVE_ZLIB, 1, [Is there an installed zlib?])
 
+AC_ARG_WITH(tickcount,
+    AC_HELP_STRING([--with-tickcount],
+	[use GetTickCount for timers, turns off interp time limits]),
+    [tcl_ok=$withval], [tcl_ok=no])
+AC_MSG_RESULT([$tcl_ok])
+if test $tcl_ok = yes; then
+    AC_DEFINE(WIN32_USE_TICKCOUNT, 1, [Use GetTickCount for timers?])
+fi
+
 AC_CHECK_TYPE([intptr_t], [
     AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
     AC_CACHE_CHECK([for pointer-size signed integer type], tcl_cv_intptr_t, [
