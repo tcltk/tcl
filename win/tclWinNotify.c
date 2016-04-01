@@ -51,7 +51,8 @@ static Tcl_ThreadDataKey dataKey;
 
 static int notifierCount = 0;
 static const TCHAR className[] = TEXT("TclNotifier");
-TCL_DECLARE_MUTEX(notifierMutex)
+static int initialized = 0;
+static CRITICAL_SECTION notifierMutex;
 
 /*
  * Static routines defined in this file.
@@ -85,12 +86,19 @@ Tcl_InitNotifier(void)
 	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 	WNDCLASS class;
 
+	TclpMasterLock();
+	if (!initialized) {
+	    initialized = 1;
+	    InitializeCriticalSection(&notifierMutex);
+	}
+	TclpMasterUnlock();
+
 	/*
 	 * Register Notifier window class if this is the first thread to use
 	 * this module.
 	 */
 
-	Tcl_MutexLock(&notifierMutex);
+	EnterCriticalSection(&notifierMutex);
 	if (notifierCount == 0) {
 	    class.style = 0;
 	    class.cbClsExtra = 0;
@@ -108,7 +116,7 @@ Tcl_InitNotifier(void)
 	    }
 	}
 	notifierCount++;
-	Tcl_MutexUnlock(&notifierMutex);
+	LeaveCriticalSection(&notifierMutex);
 
 	tsdPtr->pending = 0;
 	tsdPtr->timerActive = 0;
@@ -183,12 +191,14 @@ Tcl_FinalizeNotifier(
 	 * notifier window class.
 	 */
 
-	Tcl_MutexLock(&notifierMutex);
-	notifierCount--;
-	if (notifierCount == 0) {
-	    UnregisterClass(className, TclWinGetTclInstance());
+	EnterCriticalSection(&notifierMutex);
+	if (notifierCount) {
+	    notifierCount--;
+	    if (notifierCount == 0) {
+		UnregisterClass(className, TclWinGetTclInstance());
+	    }
 	}
-	Tcl_MutexUnlock(&notifierMutex);
+	LeaveCriticalSection(&notifierMutex);
     }
 }
 
