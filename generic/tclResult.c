@@ -446,7 +446,7 @@ Tcl_AppendElement(
 
     if (Tcl_IsShared(iPtr->objResultPtr)) {
 	Tcl_SetObjResult(interp, Tcl_DuplicateObj(iPtr->objResultPtr));
-    } 
+    }
     bytes = Tcl_GetStringFromObj(iPtr->objResultPtr, &length);
     if (TclNeedSpace(bytes, bytes+length)) {
 	Tcl_AppendToObj(iPtr->objResultPtr, " ", 1);

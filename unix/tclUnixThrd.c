@@ -663,7 +663,7 @@ TclpInitAllocCache(void)
 {
     pthread_mutex_lock(allocLockPtr);
     pthread_key_create(&key, TclpFreeAllocCache);
-    pthread_mutex_unlock(allocLockPtr);   
+    pthread_mutex_unlock(allocLockPtr);
 }
 
 void
@@ -677,7 +677,7 @@ TclpFreeAllocCache(
 
 	TclFreeAllocCache(ptr);
 	pthread_setspecific(key, NULL);
-	
+
     } else {
 	pthread_key_delete(key);
     }

@@ -972,11 +972,11 @@ TclpInitAllocCache(void)
      * We need to make sure that TclpFreeAllocCache is called on each
      * thread that calls this, but only on threads that call this.
      */
-    
+
     tlsKey = TlsAlloc();
     if (tlsKey == TLS_OUT_OF_INDEXES) {
 	Tcl_Panic("could not allocate thread local storage");
-    }    
+    }
 }
 
 void *
