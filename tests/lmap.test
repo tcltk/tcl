@@ -220,10 +220,10 @@ test lmap-4.14 {lmap errors} -returnCodes error -body {
 } -result {list element in braces followed by "3" instead of space}
 unset -nocomplain a
 test lmap-4.15 {lmap errors} {
-    apply {{} { 
+    apply {{} {
 	set a(0) 44
-	list [catch {lmap a {1 2 3} {}} msg o] $msg $::errorInfo 
-    }} 
+	list [catch {lmap a {1 2 3} {}} msg o] $msg $::errorInfo
+    }}
 } {1 {can't set "a": variable is array} {can't set "a": variable is array
     while executing
 "lmap a {1 2 3} {}"}}
