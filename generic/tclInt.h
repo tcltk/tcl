@@ -2944,6 +2944,8 @@ MODULE_SCOPE int	TclGetChannelFromObj(Tcl_Interp *interp,
 			    int *modePtr, int flags);
 MODULE_SCOPE int TclGetCompletionCodeFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *value, int *code);
+MODULE_SCOPE Proc *	TclGetLambdaFromObj(Tcl_Interp *interp,
+			    Tcl_Obj *objPtr, Tcl_Obj **nsObjPtrPtr);
 MODULE_SCOPE int	TclGetNumberFromObj(Tcl_Interp *interp,
 			    Tcl_Obj *objPtr, ClientData *clientDataPtr,
 			    int *typePtr);
