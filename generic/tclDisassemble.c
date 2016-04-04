@@ -39,13 +39,28 @@ static void		UpdateStringOfInstName(Tcl_Obj *objPtr);
  * reporting of inner contexts in errorstack without string allocation.
  */
 
-static const Tcl_ObjType tclInstNameType = {
+static const Tcl_ObjType instNameType = {
     "instname",			/* name */
     NULL,			/* freeIntRepProc */
     NULL,			/* dupIntRepProc */
     UpdateStringOfInstName,	/* updateStringProc */
     NULL,			/* setFromAnyProc */
 };
+
+#define InstNameSetIntRep(objPtr, inst)				\
+    do {							\
+	Tcl_ObjIntRep ir;					\
+	ir.longValue = (inst);					\
+	Tcl_StoreIntRep((objPtr), &instNameType, &ir);		\
+    } while (0)
+
+#define InstNameGetIntRep(objPtr, inst)				\
+    do {							\
+	const Tcl_ObjIntRep *irPtr;				\
+	irPtr = Tcl_FetchIntRep((objPtr), &instNameType);	\
+	assert(irPtr != NULL);					\
+	(inst) = irPtr->longValue;				\
+    } while (0)
 
 /*
  * How to get the bytecode out of a Tcl_Obj.
@@ -802,10 +817,10 @@ TclNewInstNameObj(
 {
     Tcl_Obj *objPtr = Tcl_NewObj();
 
-    objPtr->typePtr = &tclInstNameType;
-    objPtr->internalRep.longValue = (long) inst;
     /* Optimized Tcl_InvalidateStringRep */
     objPtr->bytes = NULL;
+
+    InstNameSetIntRep(objPtr, (long) inst);
 
     return objPtr;
 }
@@ -824,16 +839,18 @@ static void
 UpdateStringOfInstName(
     Tcl_Obj *objPtr)
 {
-    int inst = objPtr->internalRep.longValue;
+    int inst;
     char *dst;
 
+    InstNameGetIntRep(objPtr, inst);
+
     if ((inst < 0) || (inst > LAST_INST_OPCODE)) {
-	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 4);
-	TclOOM(dst, TCL_INTEGER_SPACE + 4);
+	dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
+	TclOOM(dst, TCL_INTEGER_SPACE + 5);
         sprintf(dst, "inst_%d", inst);
 	(void) Tcl_InitStringRep(objPtr, NULL, strlen(dst));
     } else {
-	const char *s = tclInstructionTable[objPtr->internalRep.longValue].name;
+	const char *s = tclInstructionTable[inst].name;
 	int len = strlen(s);
 	dst = Tcl_InitStringRep(objPtr, s, len);
 	TclOOM(dst, len);
