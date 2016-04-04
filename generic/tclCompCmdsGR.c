@@ -1488,8 +1488,18 @@ TclCompileLreplaceCmd(
 	return TCL_ERROR;
     }
 
-    if(idx2 != INDEX_END && idx2 >= 0 && idx2 < idx1) {
-	idx2 = idx1-1;
+    /*
+     * Compilation fails when one index is end-based but the other isn't.
+     * Fixing this will require more bytecodes, but this is a workaround for
+     * now. [Bug 47ac84309b]
+     */
+
+    if ((idx1 <= INDEX_END) != (idx2 <= INDEX_END)) {
+	return TCL_ERROR;
+    }
+
+    if (idx2 != INDEX_END && idx2 >= 0 && idx2 < idx1) {
+	idx2 = idx1 - 1;
     }
 
     /*
@@ -2966,10 +2976,12 @@ IndexTailVarIfKnown(
     } else {
 	full = 0;
 	lastTokenPtr = varTokenPtr + n;
-	if (!TclWordKnownAtCompileTime(lastTokenPtr, tailPtr)) {
+
+	if (lastTokenPtr->type != TCL_TOKEN_TEXT) {
 	    Tcl_DecrRefCount(tailPtr);
 	    return -1;
 	}
+	Tcl_SetStringObj(tailPtr, lastTokenPtr->start, lastTokenPtr->size);
     }
 
     tailName = TclGetStringFromObj(tailPtr, &len);
