@@ -218,10 +218,6 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
  *			  or NULL if it is this same obj
  *   twoPtrValue.ptr2: index into locals table
  *
- * nsVarName - INTERNALREP DEFINITION:
- *   twoPtrValue.ptr1:	pointer to the namespace containing the reference
- *   twoPtrValue.ptr2:	pointer to the corresponding Var
- *
  * parsedVarName - INTERNALREP DEFINITION:
  *   twoPtrValue.ptr1:	pointer to the array name Tcl_Obj, or NULL if it is a
  *			scalar variable
@@ -234,7 +230,7 @@ static const Tcl_ObjType localVarNameType = {
     FreeLocalVarName, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
 
-static const Tcl_ObjType tclParsedVarNameType = {
+static const Tcl_ObjType parsedVarNameType = {
     "parsedVarName",
     FreeParsedVarName, DupParsedVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
@@ -442,7 +438,7 @@ TclLookupVar(
  * Side effects:
  *	New hashtable entries may be created if createPart1 or createPart2
  *	are 1. The object part1Ptr is converted to one of localVarNameType,
- *	tclNsVarNameType or tclParsedVarNameType and caches as much of the
+ *	tclNsVarNameType or parsedVarNameType and caches as much of the
  *	lookup as it can.
  *	When createPart1 is 1, callers must IncrRefCount part1Ptr if they
  *	plan to DecrRefCount it.
@@ -562,11 +558,11 @@ TclObjLookupVarEx(
     }
 
     /*
-     * If part1Ptr is a tclParsedVarNameType, separate it into the pre-parsed
+     * If part1Ptr is a parsedVarNameType, separate it into the pre-parsed
      * parts.
      */
 
-    if (typePtr == &tclParsedVarNameType) {
+    if (typePtr == &parsedVarNameType) {
 	if (part1Ptr->internalRep.twoPtrValue.ptr1 != NULL) {
 	    if (part2Ptr != NULL) {
 		/*
@@ -632,12 +628,12 @@ TclObjLookupVarEx(
 
 		/*
 		 * Free the internal rep of the original part1Ptr, now renamed
-		 * objPtr, and set it to tclParsedVarNameType.
+		 * objPtr, and set it to parsedVarNameType.
 		 */
 
 		objPtr = part1Ptr;
 		TclFreeIntRep(objPtr);
-		objPtr->typePtr = &tclParsedVarNameType;
+		objPtr->typePtr = &parsedVarNameType;
 
 		/*
 		 * Define a new string object to hold the new part1Ptr, i.e.,
@@ -706,7 +702,7 @@ TclObjLookupVarEx(
 	 * At least mark part1Ptr as already parsed.
 	 */
 
-	part1Ptr->typePtr = &tclParsedVarNameType;
+	part1Ptr->typePtr = &parsedVarNameType;
 	part1Ptr->internalRep.twoPtrValue.ptr1 = NULL;
 	part1Ptr->internalRep.twoPtrValue.ptr2 = NULL;
     }
@@ -5603,7 +5599,7 @@ DupParsedVarName(
 
     dupPtr->internalRep.twoPtrValue.ptr1 = arrayPtr;
     dupPtr->internalRep.twoPtrValue.ptr2 = elem;
-    dupPtr->typePtr = &tclParsedVarNameType;
+    dupPtr->typePtr = &parsedVarNameType;
 }
 
 /*
