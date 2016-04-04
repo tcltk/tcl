@@ -3,8 +3,8 @@ dnl	This file is an input file used by the GNU "autoconf" program to
 dnl	generate the file "configure", which is run during Tcl installation
 dnl	to configure the system for the local environment.
 
-AC_INIT([tcl],[8.6])
-AC_PREREQ(2.59)
+AC_INIT([tcl],[8.7])
+AC_PREREQ(2.69)
 
 dnl This is only used when included from macosx/configure.ac
 m4_ifdef([SC_USE_CONFIG_HEADERS], [
@@ -22,10 +22,10 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
     #endif /* _TCLCONFIG */])
 ])
 
-TCL_VERSION=8.6
+TCL_VERSION=8.7
 TCL_MAJOR_VERSION=8
-TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".5"
+TCL_MINOR_VERSION=7
+TCL_PATCH_LEVEL="a0"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}

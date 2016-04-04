@@ -19,6 +19,7 @@
 #include "tclCompile.h"
 #include "tclOOInt.h"
 #include "tommath.h"
+#include "tclStringRep.h"
 #include <math.h>
 #include <assert.h>
 
@@ -34,14 +35,14 @@
 #endif
 
 /*
- * A mask (should be 2**n-1) that is used to work out when the bytecode engine
- * should call Tcl_AsyncReady() to see whether there is a signal that needs
- * handling.
+ * A counter that is used to work out when the bytecode engine should call
+ * Tcl_AsyncReady() to see whether there is a signal that needs handling, and
+ * other expensive periodic operations.
  */
 
-#ifndef ASYNC_CHECK_COUNT_MASK
-#   define ASYNC_CHECK_COUNT_MASK	63
-#endif /* !ASYNC_CHECK_COUNT_MASK */
+#ifndef ASYNC_CHECK_COUNT
+#   define ASYNC_CHECK_COUNT	64
+#endif /* !ASYNC_CHECK_COUNT */
 
 /*
  * Boolean flag indicating whether the Tcl bytecode interpreter has been
@@ -2114,7 +2115,8 @@ TEBCresume(
      * sporadically: no special need for speed.
      */
 
-    int instructionCount = 0;	/* Counter that is used to work out when to
+    int instructionCount = ASYNC_CHECK_COUNT;
+				/* Counter that is used to work out when to
 				 * call Tcl_AsyncReady() */
     const char *curInstName;
 #ifdef TCL_COMPILE_DEBUG
@@ -2313,10 +2315,11 @@ TEBCresume(
 
     /*
      * Check for asynchronous handlers [Bug 746722]; we do the check every
-     * ASYNC_CHECK_COUNT_MASK instruction, of the form (2**n-1).
+     * ASYNC_CHECK_COUNT instructions.
      */
 
-    if ((instructionCount++ & ASYNC_CHECK_COUNT_MASK) == 0) {
+    if (!(--instructionCount)) {
+	instructionCount = ASYNC_CHECK_COUNT;
 	DECACHE_STACK_INFO();
 	if (TclAsyncReady(iPtr)) {
 	    result = Tcl_AsyncInvoke(interp, result);
@@ -5737,6 +5740,16 @@ TEBCresume(
 	if (length3 - 1 == toIdx - fromIdx) {
 	    unsigned char *bytes1, *bytes2;
 
+	    /*
+	     * Flush the info in the string internal rep that refers to the
+	     * about-to-be-invalidated UTF-8 rep. This indicates that a new
+	     * buffer needs to be allocated, and assumes that the value is
+	     * already of tclStringTypePtr type, which should be true provided
+	     * we call it after Tcl_GetUnicodeFromObj.
+	     */
+#define MarkStringInternalRepForFlush(objPtr) \
+	    (GET_STRING(objPtr)->allocated = 0)
+
 	    if (Tcl_IsShared(valuePtr)) {
 		objResultPtr = Tcl_DuplicateObj(valuePtr);
 		if (TclIsPureByteArray(objResultPtr)
@@ -5749,17 +5762,7 @@ TEBCresume(
 		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
 		    memcpy(ustring1 + fromIdx, ustring2,
 			    length3 * sizeof(Tcl_UniChar));
-
-		    /*
-		     * Magic! Flush the info in the string internal rep that
-		     * refers to the about-to-be-invalidated UTF-8 rep. This
-		     * sets the 'allocated' field of the String structure to 0
-		     * to indicate that a new buffer needs to be allocated.
-		     * This is safe; we know we've got a tclStringTypePtr set
-		     * at this point (post Tcl_GetUnicodeFromObj).
-		     */
-
-		    ((int *) objResultPtr->internalRep.twoPtrValue.ptr1)[1] = 0;
+		    MarkStringInternalRepForFlush(objResultPtr);
 		}
 		Tcl_InvalidateStringRep(objResultPtr);
 		TclDecrRefCount(value3Ptr);
@@ -5776,17 +5779,7 @@ TEBCresume(
 		    ustring2 = Tcl_GetUnicodeFromObj(value3Ptr, NULL);
 		    memcpy(ustring1 + fromIdx, ustring2,
 			    length3 * sizeof(Tcl_UniChar));
-
-		    /*
-		     * Magic! Flush the info in the string internal rep that
-		     * refers to the about-to-be-invalidated UTF-8 rep. This
-		     * sets the 'allocated' field of the String structure to 0
-		     * to indicate that a new buffer needs to be allocated.
-		     * This is safe; we know we've got a tclStringTypePtr set
-		     * at this point (post Tcl_GetUnicodeFromObj).
-		     */
-
-		    ((int *) objResultPtr->internalRep.twoPtrValue.ptr1)[1] = 0;
+		    MarkStringInternalRepForFlush(valuePtr);
 		}
 		Tcl_InvalidateStringRep(valuePtr);
 		TclDecrRefCount(value3Ptr);
