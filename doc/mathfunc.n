@@ -106,7 +106,7 @@ of which work solely with floating-point numbers unless otherwise noted:
 In addition to these predefined functions, applications may
 define additional functions by using \fBproc\fR (or any other method,
 such as \fBinterp alias\fR or \fBTcl_CreateObjCommand\fR) to define
-new commands in the \fBtcl::mathfunc\fR namespace.  
+new commands in the \fBtcl::mathfunc\fR namespace.
 .SS "DETAILED DEFINITIONS"
 .TP
 \fBabs \fIarg\fR

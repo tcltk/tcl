@@ -1194,11 +1194,12 @@ Tcl_ZlibStreamPut(
 	zshPtr->stream.next_out = (Bytef *) dataTmp;
 
 	e = deflate(&zshPtr->stream, flush);
-	while (e == Z_BUF_ERROR) {
+	while (e == Z_BUF_ERROR || (flush == Z_FINISH && e == Z_OK)) {
 	    /*
-	     * Output buffer too small to hold the data being generated; so
-	     * put a new buffer into place after saving the old generated
-	     * data to the outData list.
+	     * Output buffer too small to hold the data being generated or we
+	     * are doing the end-of-stream flush (which can spit out masses of
+	     * data). This means we need to put a new buffer into place after
+	     * saving the old generated data to the outData list.
 	     */
 
 	    obj = Tcl_NewByteArrayObj((unsigned char *) dataTmp, outSize);

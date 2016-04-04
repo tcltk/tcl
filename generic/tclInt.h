@@ -4147,6 +4147,7 @@ MODULE_SCOPE void	TclFreeAllocCache(void *);
 MODULE_SCOPE void *	TclpGetAllocCache(void);
 MODULE_SCOPE void	TclpSetAllocCache(void *);
 MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
+MODULE_SCOPE void	TclpInitAllocCache(void);
 MODULE_SCOPE void	TclpFreeAllocCache(void *);
 
 /*
