@@ -98,7 +98,12 @@ test lreplace-1.26 {lreplace command} {
         [set foo [lreplace $foo end end]] \
         [set foo [lreplace $foo end end]]
 } {a {} {}}
-
+test lreplace-1.27 {lreplace command} {
+    lreplace x 1 1
+} x
+test lreplace-1.28 {lreplace command} {
+    lreplace x 1 1 y
+} {x y}
 
 test lreplace-2.1 {lreplace errors} {
     list [catch lreplace msg] $msg
@@ -119,8 +124,8 @@ test lreplace-2.6 {lreplace errors} {
     list [catch {lreplace x 3 2} msg] $msg
 } {1 {list doesn't contain element 3}}
 test lreplace-2.7 {lreplace errors} {
-    list [catch {lreplace x 1 1} msg] $msg
-} {1 {list doesn't contain element 1}}
+    list [catch {lreplace x 2 2} msg] $msg
+} {1 {list doesn't contain element 2}}
 
 test lreplace-3.1 {lreplace won't modify shared argument objects} {
     proc p {} {
@@ -181,6 +186,12 @@ test lreplace-4.11 {lreplace end index first} {
 test lreplace-4.12 {lreplace end index first} {
     lreplace {0 1 2 3 4} end-2 2 a b c
 } {0 1 a b c 3 4}
+test lreplace-4.13 {lreplace empty list} {
+    lreplace {} 1 1 1
+} 1
+test lreplace-4.14 {lreplace empty list} {
+    lreplace {} 2 2 2
+} 2
 
 test lreplace-5.1 {compiled lreplace: Bug 47ac84309b} {
     apply {x {
@@ -192,6 +203,32 @@ test lreplace-5.2 {compiled lreplace: Bug 47ac84309b} {
 	lreplace $x end 0 A
     }} {a b c}
 } {a b A c}
+
+# Testing for compiled behaviour. Far too many variations to check with
+# spelt-out tests. Note that this *just* checks whether the compiled version
+# and the interpreted version are the same, not whether the interpreted
+# version is correct.
+apply {{} {
+    set lss     {{} {a} {a b c} {a b c d}}
+    set ins     {{} A {A B}}
+    set idxs    {-2 -1 0 1 2 3 end-3 end-2 end-1 end end+1 end+2}
+    set lreplace lreplace
+
+    foreach ls $lss {
+	foreach a $idxs {
+	    foreach b $idxs {
+		foreach i $ins {
+		    set expected [list [catch {$lreplace $ls $a $b {*}$i} m] $m]
+		    set tester [list lreplace $ls $a $b {*}$i]
+		    set script [list catch $tester m]
+		    set script "list \[$script\] \$m"
+		    test lreplace-6.[incr n] {lreplace battery} \
+			[list apply [list {} $script]] $expected
+		}
+	    }
+	}
+    }
+}}
 
 # cleanup
 catch {unset foo}
