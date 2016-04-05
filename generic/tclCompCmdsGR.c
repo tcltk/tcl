@@ -1481,6 +1481,15 @@ TclCompileLreplaceCmd(
     }
 
     /*
+     * idx1, idx2 are now in canonical form:
+     *
+     *  - integer:	[0,len+1]
+     *  - end index:    INDEX_END
+     *  - -ive offset:  INDEX_END-[len-1,0]
+     *  - +ive offset:  INDEX_END+1
+     */
+
+    /*
      * Compilation fails when one index is end-based but the other isn't.
      * Fixing this will require more bytecodes, but this is a workaround for
      * now. [Bug 47ac84309b]
@@ -1513,6 +1522,9 @@ TclCompileLreplaceCmd(
 	    idx1 = 0;
 	    goto dropEnd;
 	} else {
+	    if (idx2 < idx1) {
+		idx2 = idx1 - 1;
+	    }
 	    if (idx1 > 0) {
 		tmpObj = Tcl_NewIntObj(idx1);
 		Tcl_IncrRefCount(tmpObj);
@@ -1540,9 +1552,7 @@ TclCompileLreplaceCmd(
 	idx1 = 0;
 	goto replaceTail;
     } else {
-	if (idx1 > 0 && idx2 > 0 && idx2 < idx1) {
-	    idx2 = idx1 - 1;
-	} else if (idx1 < 0 && idx2 < 0 && idx2 < idx1) {
+	if (idx2 < idx1) {
 	    idx2 = idx1 - 1;
 	}
 	if (idx1 > 0) {
@@ -1558,7 +1568,7 @@ TclCompileLreplaceCmd(
      * operate on.
      */
 
-  dropAll:
+  dropAll:			/* This just ensures the arg is a list. */
     TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
     TclEmitOpcode(		INST_POP,			envPtr);
     PushStringLiteral(envPtr,	"");
@@ -1571,12 +1581,21 @@ TclCompileLreplaceCmd(
 
   dropRange:
     if (tmpObj != NULL) {
+	/*
+	 * Emit bytecode to check the list length.
+	 */
+
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
-	TclEmitOpcode(		INST_GT,			envPtr);
+	TclEmitOpcode(		INST_GE,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+
+	/*
+	 * Emit an error if we've been given an empty list.
+	 */
+
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	offset2 = CurrentOffset(envPtr);
@@ -1627,16 +1646,30 @@ TclCompileLreplaceCmd(
 
   replaceRange:
     if (tmpObj != NULL) {
+	/*
+	 * Emit bytecode to check the list length.
+	 */
+
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
+
+	/*
+	 * Check the list length vs idx1.
+	 */
+
 	TclEmitPush(TclAddLiteralObj(envPtr, tmpObj, NULL),	envPtr);
-	TclEmitOpcode(		INST_GT,			envPtr);
+	TclEmitOpcode(		INST_GE,			envPtr);
 	offset = CurrentOffset(envPtr);
 	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+
+	/*
+	 * Emit an error if we've been given an empty list.
+	 */
+
 	TclEmitOpcode(		INST_DUP,			envPtr);
 	TclEmitOpcode(		INST_LIST_LENGTH,		envPtr);
 	offset2 = CurrentOffset(envPtr);
-	TclEmitInstInt1(	INST_JUMP_TRUE1, 0,		envPtr);
+	TclEmitInstInt1(	INST_JUMP_FALSE1, 0,		envPtr);
 	TclEmitPush(TclAddLiteralObj(envPtr, Tcl_ObjPrintf(
 		"list doesn't contain element %d", idx1), NULL), envPtr);
 	CompileReturnInternal(envPtr, INST_RETURN_IMM, TCL_ERROR, 0,
