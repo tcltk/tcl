@@ -69,6 +69,22 @@ const Tcl_ObjType tclProcBodyType = {
 				 * should panic instead. */
 };
 
+#define ProcSetIntRep(objPtr, procPtr)					\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	(procPtr)->refCount++;						\
+	ir.twoPtrValue.ptr1 = (procPtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), &tclProcBodyType, &ir);		\
+    } while (0)
+
+#define ProcGetIntRep(objPtr, procPtr)					\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), &tclProcBodyType);		\
+	(procPtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
+
 /*
  * The [upvar]/[uplevel] level reference type. Uses the twoPtrValue field,
  * encoding the type of level reference in ptr and the actual parsed out
@@ -339,7 +355,7 @@ Tcl_ProcObjCmd(
      *	   of all procs whose argument list is just _args_
      */
 
-    if (objv[3]->typePtr == &tclProcBodyType) {
+    if (Tcl_FetchIntRep(objv[3], &tclProcBodyType)) {
 	goto done;
     }
 
@@ -416,14 +432,15 @@ TclCreateProc(
     Interp *iPtr = (Interp *) interp;
     const char **argArray = NULL;
 
-    register Proc *procPtr;
+    register Proc *procPtr = NULL;
     int i, length, result, numArgs;
     const char *args, *bytes, *p;
     register CompiledLocal *localPtr = NULL;
     Tcl_Obj *defPtr;
     int precompiled = 0;
 
-    if (bodyPtr->typePtr == &tclProcBodyType) {
+    ProcGetIntRep(bodyPtr, procPtr);
+    if (procPtr != NULL) {
 	/*
 	 * Because the body is a TclProProcBody, the actual body is already
 	 * compiled, and it is not shared with anyone else, so it's OK not to
@@ -436,7 +453,6 @@ TclCreateProc(
 	 * will be holding a reference to it.
 	 */
 
-	procPtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 	procPtr->iPtr = iPtr;
 	procPtr->refCount++;
 	precompiled = 1;
@@ -2355,10 +2371,7 @@ TclNewProcBodyObj(
 
     TclNewObj(objPtr);
     if (objPtr) {
-	objPtr->typePtr = &tclProcBodyType;
-	objPtr->internalRep.twoPtrValue.ptr1 = procPtr;
-
-	procPtr->refCount++;
+	ProcSetIntRep(objPtr, procPtr);
     }
 
     return objPtr;
@@ -2388,9 +2401,7 @@ ProcBodyDup(
 {
     Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
 
-    dupPtr->typePtr = &tclProcBodyType;
-    dupPtr->internalRep.twoPtrValue.ptr1 = procPtr;
-    procPtr->refCount++;
+    ProcSetIntRep(dupPtr, procPtr);
 }
 
 /*
