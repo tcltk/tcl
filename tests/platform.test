@@ -23,6 +23,10 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testCPUID [llength [info commands testcpuid]]
 
+test platform-1.0 {tcl_platform(engine)} {
+  set tcl_platform(engine)
+} {Tcl}
+
 test platform-1.1 {TclpSetVariables: tcl_platform} {
     interp create i
     i eval {catch {unset tcl_platform(debug)}}
@@ -30,7 +34,7 @@ test platform-1.1 {TclpSetVariables: tcl_platform} {
     set result [i eval {lsort [array names tcl_platform]}]
     interp delete i
     set result
-} {byteOrder machine os osVersion pathSeparator platform pointerSize user wordSize}
+} {byteOrder engine machine os osVersion pathSeparator platform pointerSize user wordSize}
 
 # Test assumes twos-complement arithmetic, which is true of virtually
 # everything these days.  Note that this does *not* use wide(), and
@@ -47,12 +51,12 @@ test platform-2.1 {tcl_platform(wordSize) indicates size of native word} {
 
 test platform-3.1 {CPU ID on Windows/UNIX} \
     -constraints testCPUID \
-    -body {		
+    -body {
 	set cpudata [testcpuid 0]
 	binary format iii \
 	    [lindex $cpudata 1] \
 	    [lindex $cpudata 3] \
-	    [lindex $cpudata 2] 
+	    [lindex $cpudata 2]
     } \
     -match regexp \
     -result {^(?:AuthenticAMD|CentaurHauls|CyrixInstead|GenuineIntel)$}

@@ -723,7 +723,7 @@ NRInterpCmd(
 	}
 
     endOfForLoop:
-	if ((i + 2) < objc) {
+	if (i < objc - 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv,
 		    "?-unwind? ?--? ?path? ?result?");
 	    return TCL_ERROR;
@@ -1882,7 +1882,6 @@ AliasObjCmd(
 	cmdv = TclStackAlloc(interp, cmdc * sizeof(Tcl_Obj *));
     }
 
-    prefv = &aliasPtr->objPtr;
     memcpy(cmdv, prefv, (size_t) (prefc * sizeof(Tcl_Obj *)));
     memcpy(cmdv+prefc, objv+1, (size_t) ((objc-1) * sizeof(Tcl_Obj *)));
 

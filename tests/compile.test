@@ -122,7 +122,7 @@ test compile-3.4 {TclCompileCatchCmd: bcc'ed [return] is caught} {
     proc foo {} {
 	set fail [catch {
 	    return 1
-	}] ; # {}	
+	}] ; # {}
 	return 2
     }
     foo
@@ -132,8 +132,8 @@ test compile-3.5 {TclCompileCatchCmd: recover from error, [Bug 705406]} {
 	catch {
 	    if {[a]} {
 		if b {}
-	    }   
-	}   
+	    }
+	}
     }
     list [catch foo msg] $msg
 } {0 1}
@@ -224,6 +224,17 @@ test compile-5.2 {TclCompileForeachCmd: non-local variables} {
     foreach-test
     set ::foo
 } 3
+test compile-5.3 {TclCompileForeachCmd: [Bug b9b2079e6d]} -setup {
+    proc demo {} {
+	foreach x y {
+	    if 1 break else
+	}
+    }
+} -body {
+    demo
+} -cleanup {
+    rename demo {}
+} -returnCodes error -result {wrong # args: no script following "else" argument}
 
 test compile-6.1 {TclCompileSetCmd: global scalar names with ::s} -setup {
     catch {unset x}
@@ -333,13 +344,13 @@ test compile-11.9 {Tcl_Append*: ensure Tcl_ResetResult is used properly} -body {
     list [catch {p} msg] $msg
 } -returnCodes error -result {unmatched open brace in list}
 
-# 
+#
 # Special section for tests of tclLiteral.c
 # The following tests check for incorrect memory handling in
 # TclReleaseLiteral. They are only effective when tcl is compiled with
 # TCL_MEM_DEBUG
 #
-# Special test for leak on interp delete [Bug 467523]. 
+# Special test for leak on interp delete [Bug 467523].
 test compile-12.1 {testing literal leak on interp delete} -setup {
     proc getbytes {} {
 	set lines [split [memory info] "\n"]
@@ -348,10 +359,10 @@ test compile-12.1 {testing literal leak on interp delete} -setup {
 } -constraints memory -body {
     set end [getbytes]
     for {set i 0} {$i < 5} {incr i} {
-	interp create foo 
-	foo eval { 
+	interp create foo
+	foo eval {
 	    namespace eval bar {}
-	} 
+	}
 	interp delete foo
 	set tmp $end
 	set end [getbytes]
@@ -372,7 +383,7 @@ test compile-12.2 {testing error on literal deletion} -constraints {memory exec}
 	}
 	puts 0
     } source.file]
-    exec [interpreter] $sourceFile 
+    exec [interpreter] $sourceFile
 } -cleanup {
     catch {removeFile $sourceFile}
 } -result 0
@@ -465,7 +476,7 @@ test compile-14.1 {testing errors in element name; segfault?} {} {
 test compile-14.2 {testing element name "$"} -body {
     unset -nocomplain a
     set a() 1
-    set a(1) 2 
+    set a(1) 2
     set a($) 3
     list [set a()] [set a(1)] [set a($)] [unset a() a(1); lindex [array names a] 0]
 } -cleanup {unset a} -result [list 1 2 3 {$}]
@@ -765,7 +776,7 @@ test compile-18.24 {disassembler - basics} -returnCodes error -body {
 } -result "can't interpret \"\{\" as a lambda expression"
 test compile-18.25 {disassembler - basics} -body {
     dict keys [tcl::unsupported::getbytecode lambda {{} {}}]
-} -result $bytecodekeys
+} -result "$bytecodekeys initiallinenumber sourcefile"
 test compile-18.26 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode proc
 } -match glob -result {wrong # args: should be "* proc procName"}
@@ -778,7 +789,43 @@ test compile-18.28 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode proc chewonthis]
 } -cleanup {
     rename chewonthis {}
+} -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.28.1 {disassembler - tricky bit} -setup {
+    eval [list proc chewonthis {} {}]
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename chewonthis {}
 } -result $bytecodekeys
+test compile-18.28.2 {disassembler - tricky bit} -setup {
+    eval {proc chewonthis {} {}}
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename chewonthis {}
+} -result "$bytecodekeys initiallinenumber sourcefile"
+test compile-18.28.3 {disassembler - tricky bit} -setup {
+    proc Proc {n a b} {
+	proc $n $a $b
+    }
+    Proc chewonthis {} {}
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename Proc {}
+    rename chewonthis {}
+} -result $bytecodekeys
+test compile-18.28.4 {disassembler - tricky bit} -setup {
+    proc Proc {n a b} {
+	tailcall proc $n $a $b
+    }
+    Proc chewonthis {} {}
+} -body {
+    dict keys [tcl::unsupported::getbytecode proc chewonthis]
+} -cleanup {
+    rename Proc {}
+    rename chewonthis {}
+} -result "$bytecodekeys initiallinenumber sourcefile"
 test compile-18.29 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode script
 } -match glob -result {wrong # args: should be "* script script"}
@@ -807,7 +854,7 @@ test compile-18.35 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode method foo bar]
 } -cleanup {
     foo destroy
-} -result $bytecodekeys
+} -result "$bytecodekeys initiallinenumber sourcefile"
 test compile-18.36 {disassembler - basics} -returnCodes error -body {
     tcl::unsupported::getbytecode objmethod
 } -match glob -result {wrong # args: should be "* objmethod objectName methodName"}
@@ -824,7 +871,7 @@ test compile-18.39 {disassembler - basics} -setup {
     dict keys [tcl::unsupported::getbytecode objmethod foo bar]
 } -cleanup {
     foo destroy
-} -result $bytecodekeys
+} -result "$bytecodekeys initiallinenumber sourcefile"
 
 test compile-19.0 {Bug 3614102: reset stack housekeeping} -body {
     # This will panic in a --enable-symbols=compile build, unless bug is fixed.

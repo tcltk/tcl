@@ -58,6 +58,8 @@ static const struct {
 static Class *		AllocClass(Tcl_Interp *interp, Object *useThisObj);
 static Object *		AllocObject(Tcl_Interp *interp, const char *nameStr,
 			    const char *nsNameStr);
+static void		ClearMixins(Class *clsPtr);
+static void		ClearSuperclasses(Class *clsPtr);
 static int		CloneClassMethod(Tcl_Interp *interp, Class *clsPtr,
 			    Method *mPtr, Tcl_Obj *namePtr,
 			    Method **newMPtrPtr);
@@ -896,6 +898,55 @@ ObjectRenamedTrace(
 /*
  * ----------------------------------------------------------------------
  *
+ * ClearMixins, ClearSuperclasses --
+ *
+ *	Utility functions for correctly clearing the list of mixins or
+ *	superclasses of a class. Will ckfree() the list storage.
+ *
+ * ----------------------------------------------------------------------
+ */
+
+static void
+ClearMixins(
+    Class *clsPtr)
+{
+    int i;
+    Class *mixinPtr;
+
+    if (clsPtr->mixins.num == 0) {
+	return;
+    }
+
+    FOREACH(mixinPtr, clsPtr->mixins) {
+	TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
+    }
+    ckfree(clsPtr->mixins.list);
+    clsPtr->mixins.list = NULL;
+    clsPtr->mixins.num = 0;
+}
+
+static void
+ClearSuperclasses(
+    Class *clsPtr)
+{
+    int i;
+    Class *superPtr;
+
+    if (clsPtr->superclasses.num == 0) {
+	return;
+    }
+
+    FOREACH(superPtr, clsPtr->superclasses) {
+	TclOORemoveFromSubclasses(clsPtr, superPtr);
+    }
+    ckfree(clsPtr->superclasses.list);
+    clsPtr->superclasses.list = NULL;
+    clsPtr->superclasses.num = 0;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
  * ReleaseClassContents --
  *
  *	Tear down the special class data structure, including deleting all
@@ -972,13 +1023,11 @@ ReleaseClassContents(
      */
 
     FOREACH(mixinSubclassPtr, clsPtr->mixinSubs) {
-	if (mixinSubclassPtr == NULL) {
-	    continue;
-	}
 	if (!Deleted(mixinSubclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp,
 		    mixinSubclassPtr->thisPtr->command);
 	}
+	ClearMixins(mixinSubclassPtr);
 	DelRef(mixinSubclassPtr->thisPtr);
 	DelRef(mixinSubclassPtr);
     }
@@ -993,12 +1042,13 @@ ReleaseClassContents(
      */
 
     FOREACH(subclassPtr, clsPtr->subclasses) {
-	if (subclassPtr == NULL || IsRoot(subclassPtr)) {
+	if (IsRoot(subclassPtr)) {
 	    continue;
 	}
 	if (!Deleted(subclassPtr->thisPtr)) {
 	    Tcl_DeleteCommandFromToken(interp, subclassPtr->thisPtr->command);
 	}
+	ClearSuperclasses(subclassPtr);
 	DelRef(subclassPtr->thisPtr);
 	DelRef(subclassPtr);
     }
@@ -1194,8 +1244,11 @@ ObjectNamespaceDeleted(
 	oPtr->metadataPtr = NULL;
     }
 
+    /*
+     * If this was a class, there's additional deletion work to do.
+     */
+
     if (clsPtr != NULL) {
-	Class *superPtr;
 	Tcl_ObjectMetadataType *metadataTypePtr;
 	ClientData value;
 
@@ -1215,24 +1268,11 @@ ObjectNamespaceDeleted(
 	    ckfree(clsPtr->filters.list);
 	    clsPtr->filters.num = 0;
 	}
-	FOREACH(mixinPtr, clsPtr->mixins) {
-	    if (!Deleted(mixinPtr->thisPtr)) {
-		TclOORemoveFromMixinSubs(clsPtr, mixinPtr);
-	    }
-	}
-	if (i) {
-	    ckfree(clsPtr->mixins.list);
-	    clsPtr->mixins.num = 0;
-	}
-	FOREACH(superPtr, clsPtr->superclasses) {
-	    if (!Deleted(superPtr->thisPtr)) {
-		TclOORemoveFromSubclasses(clsPtr, superPtr);
-	    }
-	}
-	if (i) {
-	    ckfree(clsPtr->superclasses.list);
-	    clsPtr->superclasses.num = 0;
-	}
+
+	ClearMixins(clsPtr);
+
+	ClearSuperclasses(clsPtr);
+
 	if (clsPtr->subclasses.list) {
 	    ckfree(clsPtr->subclasses.list);
 	    clsPtr->subclasses.num = 0;
@@ -1374,9 +1414,7 @@ TclOORemoveFromSubclasses(
     return;
 
   removeSubclass:
-    if (Deleted(superPtr->thisPtr)) {
-	superPtr->subclasses.list[i] = NULL;
-    } else {
+    if (!Deleted(superPtr->thisPtr)) {
 	superPtr->subclasses.num--;
 	if (i < superPtr->subclasses.num) {
 	    superPtr->subclasses.list[i] =
@@ -1447,9 +1485,7 @@ TclOORemoveFromMixinSubs(
     return;
 
   removeSubclass:
-    if (Deleted(superPtr->thisPtr)) {
-	superPtr->mixinSubs.list[i] = NULL;
-    } else {
+    if (!Deleted(superPtr->thisPtr)) {
 	superPtr->mixinSubs.num--;
 	if (i < superPtr->mixinSubs.num) {
 	    superPtr->mixinSubs.list[i] =

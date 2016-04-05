@@ -51,7 +51,7 @@ namespace eval ::msgcat::test {
     variable body
     variable result
     variable setVars
-    foreach setVars [PowerSet $envVars] { 
+    foreach setVars [PowerSet $envVars] {
 	set result [string tolower [lindex $setVars 0]]
 	if {[string length $result] == 0} {
 	    if {[info exists ::tcl::mac::locale]} {
@@ -93,7 +93,7 @@ namespace eval ::msgcat::test {
 	incr count
     }
     unset -nocomplain result
-    
+
     # Could add tests of initialization from Windows registry here.
     # Use a fake registry package.
 
@@ -293,11 +293,11 @@ namespace eval ::msgcat::test {
     variable count 2
     variable result
     array set result {
-	foo,ov0 ov0_ROOT foo,ov1 ov1_foo foo,ov2 ov2_foo 
+	foo,ov0 ov0_ROOT foo,ov1 ov1_foo foo,ov2 ov2_foo
         foo,ov3 ov3_foo foo,ov4 ov4
-	foo_BAR,ov0 ov0_ROOT foo_BAR,ov1 ov1_foo foo_BAR,ov2 ov2_foo_BAR 
-        foo_BAR,ov3 ov3_foo_BAR	foo_BAR,ov4 ov4 
-        foo_BAR_baz,ov0 ov0_ROOT foo_BAR_baz,ov1 ov1_foo 
+	foo_BAR,ov0 ov0_ROOT foo_BAR,ov1 ov1_foo foo_BAR,ov2 ov2_foo_BAR
+        foo_BAR,ov3 ov3_foo_BAR	foo_BAR,ov4 ov4
+        foo_BAR_baz,ov0 ov0_ROOT foo_BAR_baz,ov1 ov1_foo
         foo_BAR_baz,ov2 ov2_foo_BAR
 	foo_BAR_baz,ov3 ov3_foo_BAR_baz foo_BAR_baz,ov4 ov4
     }
@@ -416,12 +416,12 @@ namespace eval ::msgcat::test {
 	    variable locale [mclocale]
 	    ::msgcat::mclocale ""
 	    ::msgcat::mcloadedlocales clear
-	    ::msgcat::mcpackageconfig unset mcfolder 
+	    ::msgcat::mcpackageconfig unset mcfolder
 	    mclocale $loc
 	} -cleanup {
 	    mclocale $locale
 	    ::msgcat::mcloadedlocales clear
-	    ::msgcat::mcpackageconfig unset mcfolder 
+	    ::msgcat::mcpackageconfig unset mcfolder
 	} -body {
 	    mcload $msgdir
 	} -result [expr { $count+1 }]
@@ -436,7 +436,7 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    mclocale $locale
 	    mcloadedlocales clear
-	    mcpackageconfig unset mcfolder 
+	    mcpackageconfig unset mcfolder
 	} -body {
 	    mcload $msgdir
 	} -result 3
@@ -447,7 +447,7 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    mclocale $locale
 	    mcloadedlocales clear
-	    mcpackageconfig unset mcfolder 
+	    mcpackageconfig unset mcfolder
 	} -body {
 	    mcload $msgdir
 	} -result 1
@@ -516,7 +516,7 @@ namespace eval ::msgcat::test {
 	} -cleanup {
 	    mclocale $locale
 	    mcloadedlocales clear
-	    mcpackageconfig unset mcfolder 
+	    mcpackageconfig unset mcfolder
 	} -body {
 	    mclocale foo
 	    mcpackageconfig set mcfolder $msgdir
@@ -535,7 +535,7 @@ namespace eval ::msgcat::test {
     # Tests msgcat-6.*: [mcset], [mc] namespace inheritance
 #
 # Test mcset and mc, ensuring that resolution for messages
-# proceeds from the current ns to its parent and so on to the 
+# proceeds from the current ns to its parent and so on to the
 # global ns.
 #
 # Do this for the 12 permutations of
@@ -579,7 +579,7 @@ namespace eval ::msgcat::test {
 			    ::msgcat::mcset foo ov3 "ov3_foo_bar_baz"
 			}
 		    }
-		    
+
 		}
 		variable locale [mclocale]
 		mclocale foo
@@ -688,12 +688,12 @@ namespace eval ::msgcat::test {
 	    mcexists
 	} -returnCodes 1\
 	-result {wrong # args: should be "mcexists ?-exactnamespace? ?-exactlocale? src"}
-    
+
 	test msgcat-9.2 {mcexists unknown option} -body {
-	    mcexists -unknown src 
+	    mcexists -unknown src
 	} -returnCodes 1\
 	-result {unknown option "-unknown"}
-    
+
 	test msgcat-9.3 {mcexists} -setup {
 	    mcforgetpackage
 	    variable locale [mclocale]
@@ -715,7 +715,7 @@ namespace eval ::msgcat::test {
 	} -body {
 	    list [mcexists k1] [mcexists -exactlocale k1]
 	} -result {1 0}
-    
+
 	test msgcat-9.5 {mcexists parent namespace} -setup {
 	    mcforgetpackage
 	    variable locale [mclocale]
@@ -729,19 +729,19 @@ namespace eval ::msgcat::test {
 			[::msgcat::mcexists -exactnamespace k1]
 	    }
 	} -result {1 0}
-    
+
     # Tests msgcat-10.*: [mcloadedlocales]
 
 	test msgcat-10.1 {mcloadedlocales no arg} -body {
 	    mcloadedlocales
 	} -returnCodes 1\
 	-result {wrong # args: should be "mcloadedlocales subcommand"}
-    
+
 	test msgcat-10.2 {mcloadedlocales wrong subcommand} -body {
 	    mcloadedlocales junk
 	} -returnCodes 1\
 	-result {unknown subcommand "junk": must be clear, or loaded}
-    
+
 	test msgcat-10.3 {mcloadedlocales loaded} -setup {
 	    mcforgetpackage
 	    variable locale [mclocale]
@@ -754,7 +754,7 @@ namespace eval ::msgcat::test {
 	    # The result is position independent so sort
 	    set resultlist [lsort [mcloadedlocales loaded]]
 	} -result {{} foo foo_bar}
-    
+
 	test msgcat-10.4 {mcloadedlocales clear} -setup {
 	    mcforgetpackage
 	    variable locale [mclocale]
@@ -960,9 +960,9 @@ namespace eval ::msgcat::test {
 	} -result {0 0 1 0}
 
     # option mcfolder is already tested with 5.11
-    
+
     # Tests msgcat-14.*: callbacks: loadcmd, changecmd, unknowncmd
-    
+
     # This routine is used as bgerror and by direct callback invocation
     proc callbackproc args {
 	variable resultvariable
@@ -973,7 +973,7 @@ namespace eval ::msgcat::test {
     }
     set bgerrorsaved [interp bgerror {}]
     interp bgerror {} [namespace code callbackproc]
-    
+
 	test msgcat-14.1 {invokation loadcmd} -setup {
 	    mcforgetpackage
     	    mclocale $locale
@@ -995,6 +995,7 @@ namespace eval ::msgcat::test {
 	    mcloadedlocales clear
 	} -cleanup {
 	    mcforgetpackage
+	    after cancel set [namespace current]::resultvariable timeout
 	} -body {
 	    mcpackageconfig set loadcmd [namespace code callbackfailproc]
 	    mclocale foo_bar

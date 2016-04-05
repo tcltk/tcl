@@ -3,7 +3,7 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
+'\"
 .TH package n 7.5 Tcl "Tcl Built-In Commands"
 .so man.macros
 .BS
@@ -95,7 +95,7 @@ provided by a previous \fBpackage provide\fR command.
 If the \fIversion\fR argument is omitted, then the command
 returns the version number that is currently provided, or an
 empty string if no \fBpackage provide\fR command has been
-invoked for \fIpackage\fR in this interpreter.  
+invoked for \fIpackage\fR in this interpreter.
 .TP
 \fBpackage require \fR\fIpackage \fR?\fIrequirement...\fR?
 .
@@ -283,8 +283,8 @@ error.
 .PP
 When an interpreter is created, its initial selection mode value is set to
 .QW stable
-unless the environment variable \fBTCL_PKG_PREFER_LATEST\fR
-is set.  If that environment variable is defined (with any value) then
+unless the environment variable \fBTCL_PKG_PREFER_LATEST\fR is set
+(to any value) or the Tcl package itself is unstable. Otherwise
 the initial (and permanent) selection mode value is set to
 .QW latest .
 .RE
