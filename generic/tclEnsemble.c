@@ -2706,6 +2706,8 @@ StringOfEnsembleCmdRep(
     unsigned int size = strlen(ensembleCmd->fullSubcmdName);
     char *dst = Tcl_InitStringRep(objPtr, ensembleCmd->fullSubcmdName, size);
 
+fprintf(stdout, "COVERED\n"); fflush(stdout);
+
     TclOOM(dst, size);
 }
 
