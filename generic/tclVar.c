@@ -206,7 +206,6 @@ static Tcl_UpdateStringProc	PanicOnUpdateVarName;
 
 static Tcl_FreeInternalRepProc	FreeParsedVarName;
 static Tcl_DupInternalRepProc	DupParsedVarName;
-static Tcl_UpdateStringProc	UpdateParsedVarName;
 
 static Tcl_UpdateStringProc	PanicOnUpdateVarName;
 static Tcl_SetFromAnyProc	PanicOnSetVarName;
@@ -237,7 +236,7 @@ static const Tcl_ObjType localVarNameType = {
 
 static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
-    FreeParsedVarName, DupParsedVarName, UpdateParsedVarName, PanicOnSetVarName
+    FreeParsedVarName, DupParsedVarName, PanicOnUpdateVarName, PanicOnSetVarName
 };
 
 /*
@@ -536,7 +535,6 @@ TclObjLookupVarEx(
     const char *errMsg = NULL;
     CallFrame *varFramePtr = iPtr->varFramePtr;
     const char *part2 = part2Ptr? TclGetString(part2Ptr):NULL;
-    char *newPart2 = NULL;
     *arrayPtrPtr = NULL;
 
     if (typePtr == &localVarNameType) {
@@ -583,9 +581,7 @@ TclObjLookupVarEx(
 		}
 		return NULL;
 	    }
-	    part2 = newPart2 = part1Ptr->internalRep.twoPtrValue.ptr2;
-	    if (newPart2) {
-		part2Ptr = Tcl_NewStringObj(newPart2, -1);
+	    if ((part2Ptr = part1Ptr->internalRep.twoPtrValue.ptr2)) {
 		if (createPart2) {
 		    Tcl_IncrRefCount(part2Ptr);
 		}
@@ -629,11 +625,7 @@ TclObjLookupVarEx(
 		len2 = len1 - i - 2;
 		len1 = i;
 
-		newPart2 = ckalloc(len2 + 1);
-		memcpy(newPart2, part2, (unsigned) len2);
-		*(newPart2+len2) = '\0';
-		part2 = newPart2;
-		part2Ptr = Tcl_NewStringObj(newPart2, -1);
+		part2Ptr = Tcl_NewStringObj(part2, len2);
 		if (createPart2) {
 		    Tcl_IncrRefCount(part2Ptr);
 		}
@@ -658,7 +650,8 @@ TclObjLookupVarEx(
 		Tcl_IncrRefCount(part1Ptr);
 
 		objPtr->internalRep.twoPtrValue.ptr1 = part1Ptr;
-		objPtr->internalRep.twoPtrValue.ptr2 = (void *) part2;
+		Tcl_IncrRefCount(part2Ptr);
+		objPtr->internalRep.twoPtrValue.ptr2 = part2Ptr;
 
 		typePtr = part1Ptr->typePtr;
 		part1 = TclGetString(part1Ptr);
@@ -682,9 +675,6 @@ TclObjLookupVarEx(
 	    TclObjVarErrMsg(interp, part1Ptr, part2Ptr, msg, errMsg, -1);
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "VARNAME",
 		    TclGetString(part1Ptr), NULL);
-	}
-	if (newPart2) {
-	    Tcl_DecrRefCount(part2Ptr);
 	}
 	return NULL;
     }
@@ -734,9 +724,6 @@ TclObjLookupVarEx(
 	*arrayPtrPtr = varPtr;
 	varPtr = TclLookupArrayElement(interp, part1Ptr, part2Ptr, flags, msg,
 		createPart1, createPart2, varPtr, -1);
-	if (newPart2) {
-	    Tcl_DecrRefCount(part2Ptr);
-	}
     }
     return varPtr;
 }
@@ -5393,11 +5380,11 @@ FreeParsedVarName(
     Tcl_Obj *objPtr)
 {
     register Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    register char *elem = objPtr->internalRep.twoPtrValue.ptr2;
+    register Tcl_Obj *elem = objPtr->internalRep.twoPtrValue.ptr2;
 
     if (arrayPtr != NULL) {
 	TclDecrRefCount(arrayPtr);
-	ckfree(elem);
+	TclDecrRefCount(elem);
     }
     objPtr->typePtr = NULL;
 }
@@ -5408,57 +5395,16 @@ DupParsedVarName(
     Tcl_Obj *dupPtr)
 {
     register Tcl_Obj *arrayPtr = srcPtr->internalRep.twoPtrValue.ptr1;
-    register char *elem = srcPtr->internalRep.twoPtrValue.ptr2;
-    char *elemCopy;
-    unsigned elemLen;
+    register Tcl_Obj *elem = srcPtr->internalRep.twoPtrValue.ptr2;
 
     if (arrayPtr != NULL) {
 	Tcl_IncrRefCount(arrayPtr);
-	elemLen = strlen(elem);
-	elemCopy = ckalloc(elemLen + 1);
-	memcpy(elemCopy, elem, elemLen);
-	*(elemCopy + elemLen) = '\0';
-	elem = elemCopy;
+	Tcl_IncrRefCount(elem);
     }
 
     dupPtr->internalRep.twoPtrValue.ptr1 = arrayPtr;
     dupPtr->internalRep.twoPtrValue.ptr2 = elem;
     dupPtr->typePtr = &tclParsedVarNameType;
-}
-
-static void
-UpdateParsedVarName(
-    Tcl_Obj *objPtr)
-{
-    Tcl_Obj *arrayPtr = objPtr->internalRep.twoPtrValue.ptr1;
-    char *part2 = objPtr->internalRep.twoPtrValue.ptr2;
-    const char *part1;
-    char *p;
-    int len1, len2, totalLen;
-
-    if (arrayPtr == NULL) {
-	/*
-	 * This is a parsed scalar name: what is it doing here?
-	 */
-
-	Tcl_Panic("scalar parsedVarName without a string rep");
-    }
-
-    part1 = TclGetStringFromObj(arrayPtr, &len1);
-    len2 = strlen(part2);
-
-    totalLen = len1 + len2 + 2;
-    p = ckalloc(totalLen + 1);
-    objPtr->bytes = p;
-    objPtr->length = totalLen;
-
-    memcpy(p, part1, (unsigned) len1);
-    p += len1;
-    *p++ = '(';
-    memcpy(p, part2, (unsigned) len2);
-    p += len2;
-    *p++ = ')';
-    *p = '\0';
 }
 
 /*
