@@ -15,6 +15,7 @@
 #endif
 #include "tclInt.h"
 #include "tclOOInt.h"
+#include <assert.h>
 
 /*
  * Structure containing a CallContext and any other values needed only during
@@ -92,6 +93,7 @@ static const Tcl_ObjType methodNameType = {
     NULL,
     NULL
 };
+
 
 /*
  * ----------------------------------------------------------------------
@@ -181,10 +183,11 @@ StashCallChain(
     Tcl_Obj *objPtr,
     CallChain *callPtr)
 {
+    Tcl_ObjIntRep ir;
+
     callPtr->refCount++;
-    TclFreeIntRep(objPtr);
-    objPtr->typePtr = &methodNameType;
-    objPtr->internalRep.twoPtrValue.ptr1 = callPtr;
+    ir.twoPtrValue.ptr1 = callPtr;
+    Tcl_StoreIntRep(objPtr, &methodNameType, &ir);
 }
 
 void
@@ -211,21 +214,16 @@ DupMethodNameRep(
     Tcl_Obj *srcPtr,
     Tcl_Obj *dstPtr)
 {
-    register CallChain *callPtr = srcPtr->internalRep.twoPtrValue.ptr1;
-
-    dstPtr->typePtr = &methodNameType;
-    dstPtr->internalRep.twoPtrValue.ptr1 = callPtr;
-    callPtr->refCount++;
+    StashCallChain(dstPtr,
+	    Tcl_FetchIntRep(srcPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 static void
 FreeMethodNameRep(
     Tcl_Obj *objPtr)
 {
-    register CallChain *callPtr = objPtr->internalRep.twoPtrValue.ptr1;
-
-    TclOODeleteChain(callPtr);
-    objPtr->typePtr = NULL;
+    TclOODeleteChain(
+	    Tcl_FetchIntRep(objPtr, &methodNameType)->twoPtrValue.ptr1);
 }
 
 /*
@@ -962,15 +960,16 @@ TclOOGetCallContext(
 	 * the object, and in the class).
 	 */
 
+	const Tcl_ObjIntRep *irPtr;
 	const int reuseMask = ((flags & PUBLIC_METHOD) ? ~0 : ~PUBLIC_METHOD);
 
-	if (cacheInThisObj->typePtr == &methodNameType) {
-	    callPtr = cacheInThisObj->internalRep.twoPtrValue.ptr1;
+	if ((irPtr = Tcl_FetchIntRep(cacheInThisObj, &methodNameType))) {
+	    callPtr = irPtr->twoPtrValue.ptr1;
 	    if (IsStillValid(callPtr, oPtr, flags, reuseMask)) {
 		callPtr->refCount++;
 		goto returnContext;
 	    }
-	    FreeMethodNameRep(cacheInThisObj);
+	    Tcl_FreeIntRep(cacheInThisObj);
 	}
 
 	if (oPtr->flags & USE_CLASS_CACHE) {
