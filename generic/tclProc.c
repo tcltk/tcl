@@ -841,6 +841,7 @@ TclObjGetFrame(
 {
     register Interp *iPtr = (Interp *) interp;
     int curLevel, level, result;
+    const Tcl_ObjIntRep *irPtr;
     const char *name = NULL;
 
     /*
@@ -861,16 +862,17 @@ TclObjGetFrame(
 	    && (level >= 0)) {
 	level = curLevel - level;
 	result = 1;
-    } else if (objPtr->typePtr == &levelReferenceType) {
-	level = (int) objPtr->internalRep.longValue;
+    } else if ((irPtr = Tcl_FetchIntRep(objPtr, &levelReferenceType))) {
+	level = irPtr->longValue;
 	result = 1;
     } else {
 	name = TclGetString(objPtr);
 	if (name[0] == '#') {
 	    if (TCL_OK == Tcl_GetInt(NULL, name+1, &level) && level >= 0) {
-		TclFreeIntRep(objPtr);
-		objPtr->typePtr = &levelReferenceType;
-		objPtr->internalRep.longValue = level;
+		Tcl_ObjIntRep ir;
+
+		ir.longValue = level;
+		Tcl_StoreIntRep(objPtr, &levelReferenceType, &ir);
 		result = 1;
 	    } else {
 		result = -1;
