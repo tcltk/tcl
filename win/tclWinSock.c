@@ -2061,7 +2061,6 @@ Tcl_OpenTcpServer(
     char channelName[SOCK_CHAN_LENGTH];
     u_long flag = 1;		/* Indicates nonblocking mode. */
     const char *errorMsg = NULL;
-    ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
     if (TclpHasSockets(interp) != TCL_OK) {
 	return NULL;
@@ -2177,6 +2176,7 @@ error:
     }
 
     if (statePtr != NULL) {
+	ThreadSpecificData *tsdPtr = TclThreadDataKeyGet(&dataKey);
 
 	statePtr->acceptProc = acceptProc;
 	statePtr->acceptProcData = acceptProcData;

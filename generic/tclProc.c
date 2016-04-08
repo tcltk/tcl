@@ -69,9 +69,8 @@ const Tcl_ObjType tclProcBodyType = {
 };
 
 /*
- * The [upvar]/[uplevel] level reference type. Uses the twoPtrValue field,
- * encoding the type of level reference in ptr and the actual parsed out
- * offset in ptr2.
+ * The [upvar]/[uplevel] level reference type. Uses the longValue field
+ * to remember the integer value of a parsed #<integer> format.
  *
  * Uses the default behaviour throughout, and never disposes of the string
  * rep; it's just a cache type.
@@ -785,7 +784,7 @@ TclGetFrame(
  * Results:
  *	The return value is -1 if an error occurred in finding the frame (in
  *	this case an error message is left in the interp's result). 1 is
- *	returned if objPtr was either a number or a number preceded by "#" and
+ *	returned if objPtr was either an int or an int preceded by "#" and
  *	it specified a valid frame. 0 is returned if objPtr isn't one of the
  *	two things above (in this case, the lookup acts as if objPtr were
  *	"1"). The variable pointed to by framePtrPtr is filled in with the
@@ -807,7 +806,6 @@ TclObjGetFrame(
 {
     register Interp *iPtr = (Interp *) interp;
     int curLevel, level, result;
-    CallFrame *framePtr;
     const char *name = NULL;
 
     /*
@@ -829,7 +827,7 @@ TclObjGetFrame(
 	level = curLevel - level;
 	result = 1;
     } else if (objPtr->typePtr == &levelReferenceType) {
-	level = PTR2INT(objPtr->internalRep.twoPtrValue.ptr1);
+	level = (int) objPtr->internalRep.longValue;
 	result = 1;
     } else {
 	name = TclGetString(objPtr);
@@ -837,7 +835,7 @@ TclObjGetFrame(
 	    if (TCL_OK == Tcl_GetInt(NULL, name+1, &level) && level >= 0) {
 		TclFreeIntRep(objPtr);
 		objPtr->typePtr = &levelReferenceType;
-		objPtr->internalRep.twoPtrValue.ptr1 = INT2PTR(level);
+		objPtr->internalRep.longValue = level;
 		result = 1;
 	    } else {
 		result = -1;
@@ -857,6 +855,7 @@ TclObjGetFrame(
     }
     if (result != -1) {
 	if (level >= 0) {
+	    CallFrame *framePtr;
 	    for (framePtr = iPtr->varFramePtr; framePtr != NULL;
 		    framePtr = framePtr->callerVarPtr) {
 		if (framePtr->level == level) {
