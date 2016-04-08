@@ -657,7 +657,7 @@ Makefile: $(UNIX_DIR)/Makefile.in $(DLTEST_DIR)/Makefile.in
 #	$(SHELL) config.status
 
 clean: clean-packages
-	rm -f *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
+	rm -rf *.a *.o libtcl* core errs *~ \#* TAGS *.E a.out \
 		errors ${TCL_EXE} ${TCLTEST_EXE} lib.exp Tcl @DTRACE_HDR@
 	cd dltest ; $(MAKE) clean
 
@@ -1596,7 +1596,7 @@ tclWinError.o: $(TOP_DIR)/win/tclWinError.c
 
 # DTrace support
 
-$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS): @DTRACE_HDR@
+$(TCL_OBJS) $(STUB_LIB_OBJS) $(TCLSH_OBJS) $(TCLTEST_OBJS) $(XTTEST_OBJS) $(TOMMATH_OBJS): @DTRACE_HDR@
 
 $(DTRACE_HDR): $(DTRACE_SRC)
 	$(DTRACE) -h $(DTRACE_SWITCHES) -o $@ -s $(DTRACE_SRC)

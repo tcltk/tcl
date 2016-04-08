@@ -259,15 +259,15 @@ static const chr brbacks[] = {	/* \s within brackets */
 
 #define PUNCT_CONN \
 	CHR('_'), \
-	0x203f, \
-	0x2040, \
-	0x2054, \
-	0xfe33, \
-	0xfe34, \
-	0xfe4d, \
-	0xfe4e, \
-	0xfe4f, \
-	0xff3f
+	0x203f /* UNDERTIE */, \
+	0x2040 /* CHARACTER TIE */,\
+	0x2054 /* INVERTED UNDERTIE */,\
+	0xfe33 /* PRESENTATION FORM FOR VERTICAL LOW LINE */, \
+	0xfe34 /* PRESENTATION FORM FOR VERTICAL WAVY LOW LINE */, \
+	0xfe4d /* DASHED LOW LINE */, \
+	0xfe4e /* CENTRELINE LOW LINE */, \
+	0xfe4f /* WAVY LOW LINE */, \
+	0xff3f /* FULLWIDTH LOW LINE */
 
 static const chr backw[] = {	/* \w */
     CHR('['), CHR('['), CHR(':'),
