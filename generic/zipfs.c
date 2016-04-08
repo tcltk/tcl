@@ -3625,15 +3625,20 @@ Zip_FSListVolumesProc(void)
     while (hPtr != NULL) {
 	zf = (ZipFile *) Tcl_GetHashValue(hPtr);
 #if HAS_DRIVES
-	vol = Tcl_ObjPrintf("%c:%s", zf->mntdrv, zf->mntpt);
+	vol = Tcl_ObjPrintf("%c:%s", zf->mntdrv,
+			    zf->mntpt[0] ? zf->mntpt : "/");
 #else
-	vol = Tcl_NewStringObj(zf->mntpt, zf->mntptlen);
+	if (zf->mntpt[0]) {
+	    vol = Tcl_NewStringObj(zf->mntpt, zf->mntptlen);
+	} else {
+	    vol = Tcl_NewStringObj("/", 1);
+	}
 #endif
-	Tcl_ListObjAppendList(NULL, vols, vol);
-	Tcl_DecrRefCount(vol);
+	Tcl_ListObjAppendElement(NULL, vols, vol);
 	hPtr = Tcl_NextHashEntry(&search);
     }
     Unlock();
+    Tcl_IncrRefCount(vols);
     return vols;
 }
 
