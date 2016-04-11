@@ -108,9 +108,8 @@ static void		ClearHash(Tcl_HashTable *tablePtr);
 static void		FreeProcessGlobalValue(ClientData clientData);
 static void		FreeThreadHash(ClientData clientData);
 static Tcl_HashTable *	GetThreadHash(Tcl_ThreadDataKey *keyPtr);
-static int		SetEndOffsetFromAny(Tcl_Interp *interp,
-			    Tcl_Obj *objPtr);
-static void		UpdateStringOfEndOffset(Tcl_Obj *objPtr);
+static int		GetEndOffsetFromObj(Tcl_Obj *objPtr, int endValue,
+			    int *indexPtr);
 static int		FindElement(Tcl_Interp *interp, const char *string,
 			    int stringLength, const char *typeStr,
 			    const char *typeCode, const char **elementPtr,
@@ -123,12 +122,12 @@ static int		FindElement(Tcl_Interp *interp, const char *string,
  * integer, so no memory management is required for it.
  */
 
-const Tcl_ObjType tclEndOffsetType = {
+static const Tcl_ObjType endOffsetType = {
     "end-offset",			/* name */
     NULL,				/* freeIntRepProc */
     NULL,				/* dupIntRepProc */
-    UpdateStringOfEndOffset,		/* updateStringProc */
-    SetEndOffsetFromAny
+    NULL,				/* updateStringProc */
+    NULL
 };
 
 /*
@@ -3560,13 +3559,7 @@ TclGetIntForIndex(
 	return TCL_OK;
     }
 
-    if (SetEndOffsetFromAny(NULL, objPtr) == TCL_OK) {
-	/*
-	 * If the object is already an offset from the end of the list, or can
-	 * be converted to one, use it.
-	 */
-
-	*indexPtr = endValue + objPtr->internalRep.longValue;
+    if (GetEndOffsetFromObj(objPtr, endValue, indexPtr) == TCL_OK) {
 	return TCL_OK;
     }
 
@@ -3632,135 +3625,53 @@ TclGetIntForIndex(
 /*
  *----------------------------------------------------------------------
  *
- * UpdateStringOfEndOffset --
- *
- *	Update the string rep of a Tcl object holding an "end-offset"
- *	expression.
- *
- * Results:
- *	None.
- *
- * Side effects:
- *	Stores a valid string in the object's string rep.
- *
- * This function does NOT free any earlier string rep. If it is called on an
- * object that already has a valid string rep, it will leak memory.
- *
- *----------------------------------------------------------------------
- */
-
-static void
-UpdateStringOfEndOffset(
-    register Tcl_Obj *objPtr)
-{
-    char *dst = Tcl_InitStringRep(objPtr, NULL, TCL_INTEGER_SPACE + 5);
-    int len = 3;
-
-    TclOOM(dst, TCL_INTEGER_SPACE + 6);
-
-    memcpy(dst, "end", len);
-    if (objPtr->internalRep.longValue != 0) {
-	dst[len++] = '-';
-	len += TclFormatInt(dst+len, -(objPtr->internalRep.longValue));
-    }
-
-    (void) Tcl_InitStringRep(objPtr, NULL, len);
-}
-
-/*
- *----------------------------------------------------------------------
- *
- * SetEndOffsetFromAny --
+ * GetEndOffsetFromObj --
  *
  *	Look for a string of the form "end[+-]offset" and convert it to an
  *	internal representation holding the offset.
  *
  * Results:
- *	Returns TCL_OK if ok, TCL_ERROR if the string was badly formed.
+ *	Tcl return code.
  *
  * Side effects:
- *	If interp is not NULL, stores an error message in the interpreter
- *	result.
+ *	May store a Tcl_ObjType.
  *
  *----------------------------------------------------------------------
  */
 
 static int
-SetEndOffsetFromAny(
-    Tcl_Interp *interp,		/* Tcl interpreter or NULL */
-    Tcl_Obj *objPtr)		/* Pointer to the object to parse */
+GetEndOffsetFromObj(
+    Tcl_Obj *objPtr,		/* Pointer to the object to parse */
+    int endValue,		/* The value to be stored at "indexPtr" if
+				 * "objPtr" holds "end". */
+    int *indexPtr)		/* Location filled in with an integer
+				 * representing an index. */
 {
-    int offset;			/* Offset in the "end-offset" expression */
-    register const char *bytes;	/* String rep of the object */
-    int length;			/* Length of the object's string rep */
+    const Tcl_ObjIntRep *irPtr;
 
-    /*
-     * If it's already the right type, we're fine.
-     */
+    while (NULL == (irPtr = Tcl_FetchIntRep(objPtr, &endOffsetType))) {
+	Tcl_ObjIntRep ir;
+	int length, offset = 0;
+	const char *bytes = TclGetStringFromObj(objPtr, &length);
 
-    if (objPtr->typePtr == &tclEndOffsetType) {
-	return TCL_OK;
-    }
-
-    /*
-     * Check for a string rep of the right form.
-     */
-
-    bytes = TclGetStringFromObj(objPtr, &length);
-    if ((*bytes != 'e') || (strncmp(bytes, "end",
-	    (size_t)((length > 3) ? 3 : length)) != 0)) {
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad index \"%s\": must be end?[+-]integer?", bytes));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
-	}
-	return TCL_ERROR;
-    }
-
-    /*
-     * Convert the string rep.
-     */
-
-    if (length <= 3) {
-	offset = 0;
-    } else if ((length > 4) && ((bytes[3] == '-') || (bytes[3] == '+'))) {
-	/*
-	 * This is our limited string expression evaluator. Pass everything
-	 * after "end-" to Tcl_GetInt, then reverse for offset.
-	 */
-
-	if (TclIsSpaceProc(bytes[4])) {
-	    goto badIndexFormat;
-	}
-	if (Tcl_GetInt(interp, bytes+4, &offset) != TCL_OK) {
+	if ((length == 4) || (*bytes != 'e') || (strncmp(bytes, "end",
+		(size_t)((length > 3) ? 3 : length)) != 0)) {
 	    return TCL_ERROR;
 	}
-	if (bytes[3] == '-') {
-	    offset = -offset;
+	if (length > 4) {
+	    if (((bytes[3] != '-') && (bytes[3] != '+')) 
+		    || (TclIsSpaceProc(bytes[4]))
+		    || (TCL_OK != Tcl_GetInt(NULL, bytes+4, &offset))) {
+		return TCL_ERROR;
+	    }
+	    if (bytes[3] == '-') {
+		offset = -offset;
+	    }
 	}
-    } else {
-	/*
-	 * Conversion failed. Report the error.
-	 */
-
-    badIndexFormat:
-	if (interp != NULL) {
-	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
-		    "bad index \"%s\": must be end?[+-]integer?", bytes));
-	    Tcl_SetErrorCode(interp, "TCL", "VALUE", "INDEX", NULL);
-	}
-	return TCL_ERROR;
+	ir.longValue = offset;
+	Tcl_StoreIntRep(objPtr, &endOffsetType, &ir);
     }
-
-    /*
-     * The conversion succeeded. Free the old internal rep and set the new
-     * one.
-     */
-
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.longValue = offset;
-    objPtr->typePtr = &tclEndOffsetType;
-
+    *indexPtr = endValue + irPtr->longValue;
     return TCL_OK;
 }
 
