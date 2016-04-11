@@ -202,13 +202,9 @@ MODULE_SCOPE Var *	TclLookupSimpleVar(Tcl_Interp *interp,
 
 static Tcl_DupInternalRepProc	DupLocalVarName;
 static Tcl_FreeInternalRepProc	FreeLocalVarName;
-static Tcl_UpdateStringProc	PanicOnUpdateVarName;
 
 static Tcl_FreeInternalRepProc	FreeParsedVarName;
 static Tcl_DupInternalRepProc	DupParsedVarName;
-
-static Tcl_UpdateStringProc	PanicOnUpdateVarName;
-static Tcl_SetFromAnyProc	PanicOnSetVarName;
 
 /*
  * Types of Tcl_Objs used to cache variable lookups.
@@ -231,12 +227,12 @@ static Tcl_SetFromAnyProc	PanicOnSetVarName;
 
 static const Tcl_ObjType localVarNameType = {
     "localVarName",
-    FreeLocalVarName, DupLocalVarName, PanicOnUpdateVarName, PanicOnSetVarName
+    FreeLocalVarName, DupLocalVarName, NULL, NULL
 };
 
 static const Tcl_ObjType tclParsedVarNameType = {
     "parsedVarName",
-    FreeParsedVarName, DupParsedVarName, PanicOnUpdateVarName, PanicOnSetVarName
+    FreeParsedVarName, DupParsedVarName, NULL, NULL
 };
 
 /*
@@ -5503,28 +5499,6 @@ TclObjVarErrMsg(
  *
  *----------------------------------------------------------------------
  */
-
-/*
- * Panic functions that should never be called in normal operation.
- */
-
-static void
-PanicOnUpdateVarName(
-    Tcl_Obj *objPtr)
-{
-    Tcl_Panic("%s of type %s should not be called", "updateStringProc",
-	    objPtr->typePtr->name);
-}
-
-static int
-PanicOnSetVarName(
-    Tcl_Interp *interp,
-    Tcl_Obj *objPtr)
-{
-    Tcl_Panic("%s of type %s should not be called", "setFromAnyProc",
-	    objPtr->typePtr->name);
-    return TCL_ERROR;
-}
 
 /*
  * localVarName -
