@@ -4589,7 +4589,7 @@ TclEvalScriptTokens(
     lineSpace = linesStack =
 	    TclStackAlloc(interp, objLength * sizeof(int));
     while (numCommands-- && (code == TCL_OK)) {
-	int objc, expandRequested = 0;
+	unsigned int objc, expandRequested = 0;
         unsigned int objectsNeeded = 0;
         unsigned int numWords = tokenPtr->numComponents;
 	Tcl_Obj **objv;
@@ -4775,8 +4775,8 @@ TclEvalScriptTokens(
 	}
 
         error:
-	while (--objc >= 0) {
-	    Tcl_DecrRefCount(objv[objc]);
+	while (objc > 0) {
+	    Tcl_DecrRefCount(objv[--objc]);
 	}
 	cmdString = commandTokenPtr->start;
 	cmdSize = commandTokenPtr->size;
