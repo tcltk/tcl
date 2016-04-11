@@ -31,7 +31,6 @@ test obj-1.1 {Tcl_AppendAllObjTypes, and InitTypeTable, Tcl_RegisterObjType} tes
 	bytecode
 	cmdName
 	dict
-	end-offset
 	regexp
 	string
     } {
@@ -52,15 +51,6 @@ test obj-2.2 {Tcl_GetObjType and Tcl_ConvertToType} testobj {
     lappend result [testobj type 1]
     lappend result [testobj refcount 1]
 } {{} 12 12 bytearray 3}
-
-test obj-3.1 {Tcl_ConvertToType error} testobj {
-    list [testdoubleobj set 1 12.34] \
-	[catch {testobj convert 1 end-offset} msg] \
-	 $msg
-} {12.34 1 {bad index "12.34": must be end?[+-]integer?}}
-test obj-3.2 {Tcl_ConvertToType error, "empty string" object} testobj {
-    list [testobj newobj 1] [catch {testobj convert 1 end-offset} msg] $msg
-} {{} 1 {bad index "": must be end?[+-]integer?}}
 
 test obj-4.1 {Tcl_NewObj and AllocateFreeObjects} testobj {
     set result ""
@@ -550,44 +540,6 @@ test obj-30.1 {Ref counting and object deletion, simple types} testobj {
     lappend result [testobj refcount 1]
     lappend result [testobj refcount 2]
 } {{} 1024 1024 int 4 4 0 int 3 2}
-
-
-test obj-31.1 {regenerate string rep of "end"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end
-test obj-31.2 {regenerate string rep of "end-1"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end-0x1
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end-1
-test obj-31.3 {regenerate string rep of "end--1"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end--0x1
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end--1
-test obj-31.4 {regenerate string rep of "end-bigInteger"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end-0x7fffffff
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end-2147483647
-test obj-31.5 {regenerate string rep of "end--bigInteger"} testobj {
-    testobj freeallvars
-    teststringobj set 1 end--0x7fffffff
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end--2147483647
-test obj-31.6 {regenerate string rep of "end--bigInteger"} {testobj longIs32bit} {
-    testobj freeallvars
-    teststringobj set 1 end--0x80000000
-    testobj convert 1 end-offset
-    testobj invalidateStringRep 1
-} end--2147483648
 
 test obj-32.1 {freeing very large object trees} {
     set x {}
