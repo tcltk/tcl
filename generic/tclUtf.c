@@ -84,11 +84,6 @@ static const unsigned char totalBytes[256] = {
     1,1,1,1
 #endif
 };
-
-/*
- * Functions used only in this module.
- */
-
 
 /*
  *---------------------------------------------------------------------------
@@ -106,9 +101,9 @@ static const unsigned char totalBytes[256] = {
  *---------------------------------------------------------------------------
  */
 
-INLINE int
+int
 TclUtfCount(
-    Tcl_UniChar ch)		/* The Tcl_UniChar whose size is returned. */
+    int ch)			/* The Tcl_UniChar whose size is returned. */
 {
     if ((ch > 0) && (ch < UNICODE_SELF)) {
 	return 1;
@@ -142,7 +137,7 @@ TclUtfCount(
  *---------------------------------------------------------------------------
  */
 
-INLINE int
+int
 Tcl_UniCharToUtf(
     int ch,			/* The Tcl_UniChar to be stored in the
 				 * buffer. */
