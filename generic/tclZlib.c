@@ -1189,33 +1189,40 @@ Tcl_ZlibStreamPut(
 	 */
 
 	outSize = deflateBound(&zshPtr->stream, zshPtr->stream.avail_in)+100;
+	if (outSize < 4096) {
+	    outSize = 4096;
+	}
 	zshPtr->stream.avail_out = outSize;
 	dataTmp = ckalloc(zshPtr->stream.avail_out);
 	zshPtr->stream.next_out = (Bytef *) dataTmp;
 
 	e = deflate(&zshPtr->stream, flush);
-	while (e == Z_BUF_ERROR || (flush == Z_FINISH && e == Z_OK)) {
-	    /*
-	     * Output buffer too small to hold the data being generated or we
-	     * are doing the end-of-stream flush (which can spit out masses of
-	     * data). This means we need to put a new buffer into place after
-	     * saving the old generated data to the outData list.
-	     */
+	if ((e==Z_OK || e==Z_BUF_ERROR) && (zshPtr->stream.avail_out == 0)) {
+	    if (outSize - zshPtr->stream.avail_out > 0) {
+		/*
+		 * Output buffer too small.
+		 */
 
-	    obj = Tcl_NewByteArrayObj((unsigned char *) dataTmp, outSize);
-	    Tcl_ListObjAppendElement(NULL, zshPtr->outData, obj);
+		obj = Tcl_NewByteArrayObj((unsigned char *) dataTmp,
+			outSize - zshPtr->stream.avail_out);
 
+		/*
+		 * Now append the compressed data to the outData list.
+		 */
+
+		Tcl_ListObjAppendElement(NULL, zshPtr->outData, obj);
+	    }
 	    if (outSize < 0xFFFF) {
 		outSize = 0xFFFF;	/* There may be *lots* of data left to
 					 * output... */
-		dataTmp = ckrealloc(dataTmp, outSize);
+		ckfree(dataTmp);
+		dataTmp = ckalloc(outSize);
 	    }
 	    zshPtr->stream.avail_out = outSize;
 	    zshPtr->stream.next_out = (Bytef *) dataTmp;
 
 	    e = deflate(&zshPtr->stream, flush);
 	}
-
 	if (e != Z_OK && !(flush==Z_FINISH && e==Z_STREAM_END)) {
 	    if (zshPtr->interp) {
 		ConvertError(zshPtr->interp, e, zshPtr->stream.adler);
