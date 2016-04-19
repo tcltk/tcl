@@ -11,6 +11,7 @@
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
  * Copyright (c) 2008 by Miguel Sofer. All rights reserved.
+ * Copyright (c) 2007 BitMover, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -47,6 +48,9 @@
 #include "../compat/string.h"
 #else
 #include <string.h>
+#endif
+#ifdef HAVE_STRINGS_H
+#include <strings.h>
 #endif
 #ifdef STDC_HEADERS
 #include <stddef.h>
@@ -2252,6 +2256,7 @@ typedef struct Interp {
  *			script in progress has been canceled thereby allowing
  *			the evaluation stack for the interp to be fully
  *			unwound.
+ * INTERP_PCRE		Non-zero means use PCRE engine by default for REs
  *
  * WARNING: For the sake of some extensions that have made use of former
  * internal values, do not re-use the flag values 2 (formerly ERR_IN_PROGRESS)
@@ -2264,6 +2269,7 @@ typedef struct Interp {
 #define DONT_COMPILE_CMDS_INLINE	  0x20
 #define RAND_SEED_INITIALIZED		  0x40
 #define SAFE_INTERP			  0x80
+#define INTERP_PCRE			 0x100
 #define INTERP_TRACE_IN_PROGRESS	 0x200
 #define INTERP_ALTERNATE_WRONG_ARGS	 0x400
 #define ERR_LEGACY_COPY			 0x800
@@ -2484,7 +2490,7 @@ typedef struct List {
  *
  * DICT_PATH_UPDATE indicates that we are going to be doing an update at the
  * tip of the path, so duplication of shared objects should be done along the
- * way.
+ * way. 
  *
  * DICT_PATH_EXISTS indicates that we are performing an existance test and a
  * lookup failure should therefore not be an error. If (and only if) this flag
@@ -2883,6 +2889,7 @@ MODULE_SCOPE void	TclContinuationsCopy(Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclConvertElement(const char *src, int length,
 			    char *dst, int flags);
 MODULE_SCOPE void	TclDeleteNamespaceVars(Namespace *nsPtr);
+MODULE_SCOPE void	TclDuplicateListRep(Tcl_Obj *objPtr);
 MODULE_SCOPE int	TclFindDictElement(Tcl_Interp *interp,
 			    const char *dict, int dictLength,
 			    const char **elementPtr, const char **nextPtr,
@@ -2989,6 +2996,9 @@ MODULE_SCOPE int	TclIsSpaceProc(char byte);
 MODULE_SCOPE int	TclIsBareword(char byte);
 MODULE_SCOPE Tcl_Obj *	TclJoinPath(int elements, Tcl_Obj * const objv[]);
 MODULE_SCOPE int	TclJoinThread(Tcl_ThreadId id, int *result);
+MODULE_SCOPE void	TclLInitCompiler(Tcl_Interp *interp);
+MODULE_SCOPE void	TclLCleanupCompiler(ClientData clientData,
+			    Tcl_Interp *interp);
 MODULE_SCOPE void	TclLimitRemoveAllHandlers(Tcl_Interp *interp);
 MODULE_SCOPE Tcl_Obj *	TclLindexList(Tcl_Interp *interp,
 			    Tcl_Obj *listPtr, Tcl_Obj *argPtr);
@@ -3269,6 +3279,9 @@ MODULE_SCOPE int	Tcl_FconfigureObjCmd(
 MODULE_SCOPE int	Tcl_FcopyObjCmd(ClientData dummy,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_FGetlineObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitFileCmd(Tcl_Interp *interp);
 MODULE_SCOPE int	TclMakeFileCommandSafe(Tcl_Interp *interp);
 MODULE_SCOPE int	Tcl_FileEventObjCmd(ClientData clientData,
@@ -3284,6 +3297,12 @@ MODULE_SCOPE int	Tcl_ForeachObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_FormatObjCmd(ClientData dummy,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_GetOptObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_GetOptResetObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_GetsObjCmd(ClientData clientData,
@@ -3311,7 +3330,22 @@ MODULE_SCOPE int	Tcl_JoinObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_LappendObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LAngleReadObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LassignObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LDefined(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LGetNextLine(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LGetNextLineInit(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LGetDirX(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LindexObjCmd(ClientData clientData,
@@ -3335,6 +3369,12 @@ MODULE_SCOPE int	Tcl_LoadObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_LrangeObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LReadCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LRefCnt(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LrepeatObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -3351,6 +3391,9 @@ MODULE_SCOPE int	Tcl_LsetObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_LsortObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LWriteCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE Tcl_Command TclInitNamespaceCmd(Tcl_Interp *interp);
@@ -3398,6 +3441,9 @@ MODULE_SCOPE int	Tcl_SeekObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_SetObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_ShSplitObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
 MODULE_SCOPE int	Tcl_SplitObjCmd(ClientData clientData,
@@ -3454,6 +3500,16 @@ MODULE_SCOPE int	Tcl_VwaitObjCmd(ClientData clientData,
 MODULE_SCOPE int	Tcl_WhileObjCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_LHtmlObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+MODULE_SCOPE int	Tcl_PtrObjCmd(ClientData clientData,
+			    Tcl_Interp *interp, int objc,
+			    Tcl_Obj *const objv[]);
+
 
 /*
  *----------------------------------------------------------------
@@ -3959,6 +4015,17 @@ MODULE_SCOPE int	TclObjCallVarTraces(Interp *iPtr, Var *arrayPtr,
 			    int flags, int leaveErrMsg, int index);
 
 /*
+ * The variant RE engines
+ */
+
+MODULE_SCOPE int	TclRegexpClassic(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[], Tcl_RegExp regExpr,
+			    int all, int indices, int doinline, int offset);
+MODULE_SCOPE int	TclRegexpPCRE(Tcl_Interp *interp, int objc,
+			    Tcl_Obj *CONST objv[], Tcl_RegExp regExpr,
+			    int all, int indices, int doinline, int offset);
+
+/*
  * So tclObj.c and tclDictObj.c can share these implementations.
  */
 
@@ -4064,7 +4131,8 @@ typedef const char *TclDTraceStr;
  */
 
 #  define TclAllocObjStorageEx(interp, objPtr) \
-	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj))
+	(objPtr) = (Tcl_Obj *) ckalloc(sizeof(Tcl_Obj)); \
+	(objPtr)->undef = 0
 
 #  define TclFreeObjStorageEx(interp, objPtr) \
 	ckfree((char *) (objPtr))
@@ -4109,6 +4177,7 @@ MODULE_SCOPE void	TclpFreeAllocCache(void *);
 	    cachePtr->firstObjPtr = (objPtr)->internalRep.twoPtrValue.ptr1; \
 	    --cachePtr->numObjects;					\
 	}								\
+	(objPtr)->undef = 0;						\
     } while (0)
 
 #  define TclFreeObjStorageEx(interp, objPtr)				\
@@ -4150,6 +4219,7 @@ MODULE_SCOPE Tcl_Mutex	tclObjMutex;
 	tclFreeObjList = (Tcl_Obj *)					\
 		tclFreeObjList->internalRep.twoPtrValue.ptr1;		\
 	Tcl_MutexUnlock(&tclObjMutex);					\
+	(objPtr)->undef = 0;						\
     } while (0)
 
 #  define TclFreeObjStorageEx(interp, objPtr) \

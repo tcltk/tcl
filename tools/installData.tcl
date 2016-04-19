@@ -27,7 +27,8 @@ proc copyDir {d1 d2} {
 
     foreach ftail [glob -directory $d1 -nocomplain -tails *] {
 	set f [file join $d1 $ftail]
-	if {[file isdirectory $f] && [string compare CVS $ftail]} {
+	if {[file isdirectory $f] && [string compare CVS $ftail] &&
+	    [string compare SCCS $ftail]} {
 	    copyDir $f [file join $d2 $ftail]
 	} elseif {[file isfile $f]} {
 	    file copy -force $f [file join $d2 $ftail]

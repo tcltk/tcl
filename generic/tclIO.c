@@ -15,6 +15,9 @@
 #include "tclInt.h"
 #include "tclIO.h"
 #include <assert.h>
+#ifndef MIN
+#	define MIN(x,y) ((x)<(y)?(x):(y))
+#endif
 
 /*
  * For each channel handler registered in a call to Tcl_CreateChannelHandler,
@@ -4168,6 +4171,48 @@ WillRead(
 }
 
 /*
+ *---------------------------------------------------------------------------
+ *
+ * Tcl_WriteObjN --
+ *
+ *	Same as Tcl_WriteObj but takes the number of bytes to write.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+Tcl_WriteObjN(
+    Tcl_Channel chan,		/* The channel to buffer output for. */
+    Tcl_Obj *objPtr,		/* The object to write. */
+    int numBytes)		/* The number of bytes to write. */
+{
+    /*
+     * Always use the topmost channel of the stack
+     */
+
+    Channel *chanPtr;
+    ChannelState *statePtr;	/* State info for channel */
+    const char *src;
+    int srcLen;
+
+    statePtr = ((Channel *) chan)->state;
+    chanPtr = statePtr->topChanPtr;
+
+    if (CheckChannelErrors(statePtr, TCL_WRITABLE) != 0) {
+	return -1;
+    }
+    if (statePtr->encoding == NULL) {
+	src = (char *) Tcl_GetByteArrayFromObj(objPtr, &srcLen);
+	numBytes = MIN(numBytes, srcLen);
+	return WriteBytes(chanPtr, src, numBytes);
+    } else {
+	src = TclGetStringFromObj(objPtr, &srcLen);
+	numBytes = MIN(numBytes, srcLen);
+	return WriteChars(chanPtr, src, numBytes);
+    }
+}
+
+/*
  *----------------------------------------------------------------------
  *
  * Write --
@@ -7777,6 +7822,16 @@ Tcl_GetChannelOption(
 	    return TCL_OK;
 	}
     }
+    if (len == 0 || HaveOpt(2, "-epipe")) {
+	if (len == 0) {
+	    Tcl_DStringAppendElement(dsPtr, "-epipe");
+	}
+	Tcl_DStringAppendElement(dsPtr,
+		(flags & CHANNEL_EXIT_ON_EPIPE) ? "exit" : "error");
+	if (len > 0) {
+	    return TCL_OK;
+	}
+    }
     if (len == 0 || HaveOpt(1, "-translation")) {
 	if (len == 0) {
 	    Tcl_DStringAppendElement(dsPtr, "-translation");
@@ -8030,6 +8085,29 @@ Tcl_SetChannelOption(
 	ResetFlag(statePtr, CHANNEL_EOF|CHANNEL_STICKY_EOF|CHANNEL_BLOCKED);
 	statePtr->inputEncodingFlags &= ~TCL_ENCODING_END;
 	return TCL_OK;
+    } else if (HaveOpt(2, "-epipe")) {
+	if (Tcl_SplitList(interp, newValue, &argc, &argv) == TCL_ERROR) {
+	    return TCL_ERROR;
+	}
+	if (argc == 1) {
+	    len = strlen(newValue);
+	    if (strncmp(newValue, "exit", len) == 0) {
+		SetFlag(statePtr, CHANNEL_EXIT_ON_EPIPE);
+		ckfree((char *) argv);
+		return TCL_OK;
+	    } else if (strncmp(newValue, "error", len) == 0) {
+		ResetFlag(statePtr, CHANNEL_EXIT_ON_EPIPE);
+		ckfree((char *) argv);
+		return TCL_OK;
+	    }
+	}
+	if (interp) {
+	    Tcl_AppendResult(interp,
+		"bad value for -epipe: must be one of exit or error",
+		NULL);
+	}
+	ckfree((char *) argv);
+	return TCL_ERROR;
     } else if (HaveOpt(1, "-translation")) {
 	const char *readMode, *writeMode;
 

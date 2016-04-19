@@ -13,6 +13,7 @@
  * Copyright (c) 1991-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 2001-2004 Vincent Darley.
+ * Copyright (c) 2007 BitMover, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -23,6 +24,7 @@
 #   include "tclWinInt.h"
 #endif
 #include "tclFileSystem.h"
+#include "Lcompile.h"
 
 #ifdef TCL_TEMPLOAD_NO_UNLINK
 #ifndef NO_FSTATFS
@@ -80,6 +82,8 @@ static void		FsAddMountsToGlobResult(Tcl_Obj *resultPtr,
 			    Tcl_Obj *pathPtr, const char *pattern,
 			    Tcl_GlobTypeData *types);
 static void		FsUpdateCwd(Tcl_Obj *cwdObj, ClientData clientData);
+static Tcl_Obj *	FsMaybeWrapInLLang(Tcl_Interp *interp,
+			    Tcl_Obj *fileContents, const char *path);
 static void		FsRecacheFilesystemList(void);
 static void		Claim(void);
 static void		Disclaim(void);
@@ -1817,15 +1821,14 @@ Tcl_FSEvalFileEx(
     oldScriptFile = iPtr->scriptFile;
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
+
+    objPtr = FsMaybeWrapInLLang(interp, objPtr, Tcl_GetString(pathPtr));
+
     string = Tcl_GetStringFromObj(objPtr, &length);
-
-    /*
-     * TIP #280 Force the evaluator to open a frame for a sourced file.
-     */
-
+    /* TIP #280 Force the evaluator to open a frame for a sourced
+     * file. */
     iPtr->evalFlags |= TCL_EVAL_FILE;
     result = TclEvalEx(interp, string, length, 0, 1, NULL, string);
-
     /*
      * Now we have to be careful; the script may have changed the
      * iPtr->scriptFile value, so we must reset it without assuming it still
@@ -1955,6 +1958,8 @@ TclNREvalFile(
     iPtr->scriptFile = pathPtr;
     Tcl_IncrRefCount(iPtr->scriptFile);
 
+    objPtr = FsMaybeWrapInLLang(interp, objPtr, Tcl_GetString(pathPtr));
+
     /*
      * TIP #280: Force the evaluator to open a frame for a sourced file.
      */
@@ -1975,7 +1980,6 @@ EvalFileCallback(
     Tcl_Obj *oldScriptFile = data[0];
     Tcl_Obj *pathPtr = data[1];
     Tcl_Obj *objPtr = data[2];
-
     /*
      * Now we have to be careful; the script may have changed the
      * iPtr->scriptFile value, so we must reset it without assuming it still
@@ -2007,6 +2011,47 @@ EvalFileCallback(
 
     Tcl_DecrRefCount(objPtr);
     return result;
+}
+
+/*
+ * Handle L and html/L code.
+ *
+ * If the path ends in .l, precede the file contents with #lang L.
+ * If the path ends in .lhtml, with #lang Lhtml.
+ *
+ * Return a Tcl_Obj containing the potentially wrapped string.
+ */
+static Tcl_Obj *
+FsMaybeWrapInLLang(
+    Tcl_Interp *interp,
+    Tcl_Obj *fileContents,
+    const char *path)
+{
+    int flen;
+    int plen = strlen(path);
+    char *s = Tcl_GetStringFromObj(fileContents, &flen);
+    char *append = "";
+    Tcl_Obj *newContents;
+
+    /* Append a newline if not already there. */
+    if (flen && (s[flen-1] != '\n')) append = "\n";
+
+    if (((plen >= 2) && (path[plen-2] == '.') && (path[plen-1] == 'l')) ||
+	(L && L->global->forceL)) {
+	newContents = Tcl_ObjPrintf("#lang L --lineadj=-1\n%s%s#lang tcl",
+				    s, append);
+	Tcl_DecrRefCount(fileContents);
+	Tcl_IncrRefCount(newContents);
+	fileContents = newContents;
+	if (L) L->global->forceL = 0;
+    } else if ((plen >= 6) && !strcmp(path+plen-6, ".lhtml")) {
+	newContents = Tcl_ObjPrintf("#lang Lhtml --lineadj=-1\n%s%s#lang tcl",
+				    s, append);
+	Tcl_DecrRefCount(fileContents);
+	Tcl_IncrRefCount(newContents);
+	fileContents = newContents;
+    }
+    return fileContents;
 }
 
 /*

@@ -21,6 +21,7 @@ catch [list package require -exact Tcltest [info patchlevel]]
 
 ::tcltest::testConstraint testregexp [llength [info commands testregexp]]
 ::tcltest::testConstraint localeRegexp 0
+::tcltest::testConstraint classicre [string equal [interp regexp {}] classic]
 
 # This file uses some custom procedures, defined below, for regexp regression
 # testing.  The name of the procedure indicates the general nature of the
@@ -180,7 +181,7 @@ namespace eval RETest {
     # Share the generation of the list of test constraints so it is
     # done the same on all routes.
     proc TestConstraints {flags} {
-	set constraints [list testregexp]
+	set constraints [list testregexp classicre]
 
 	variable regBug
 	if {$regBug} {

@@ -1,0 +1,56 @@
+langbench is a simplistic set of microbenchmarks designed to see how
+well a scripting language performs at basic operations.  The intent is to
+have a set of tests that encourage each language team to optimize their
+language in a way that would benefit the widest possible set of users.
+The version number of this test suite will be 1.0 when there is widespread
+agreement that these are the "right" set of benchmarks, much like lmbench
+was the "right" set of benchmarks for operating systems.
+
+We (BitKeeper Inc) are using it to benchmark our scripting language, you can
+use it for whatever you like.
+
+You may use for langbench any purpose provided that if you use the
+"langbench" name you report all results for all languages like so:
+
+langbench version 0.5 results:
+lang    cat     grep    hash    loop    proc    sort    split
+pl      0.85    0.85    1.38    0.24    0.68    4.72    5.13    
+py      0.81    2.97    1.03    0.34    0.40    4.37    1.56    
+rb      1.81    1.68    4.18    0.53    1.04    8.00    3.66    
+tcl     2.02    1.45    2.44    0.13    0.72    7.48    3.93    
+l       2.02    1.48    2.43    0.12    0.73    8.11    3.94    
+
+langbench version 0.6 results (faster cpu accounts for some diffs):
+lang    cat     grep    hash    loop    proc    fib     sort    wc
+pl      0.37    0.34    0.62    0.11    0.38    4.35    2.02    1.03    
+py      0.38    1.99    0.46    0.18    0.21    1.08    1.83    0.48    
+rb      0.84    0.81    1.98    0.31    0.59    2.95    3.33    2.33    
+tcl     0.75    2.64    1.09    0.07    0.89    2.65    3.46    0.90    
+l       0.71    2.03    1.14    0.07    0.29    2.49    3.88    1.54    
+
+with the exception that you may leave off the L language until it is
+widely distributed (defined as apt-get install l just works or is 
+included with the tcl package).
+
+Note that for the cat, grep, hash, loop, proc, sort benchmarks the number
+printed is the microseconds for the implied operation, i.e., for cat,
+it is usecs/line, for sort it is the usecs/line to sort and print each
+line, etc.
+
+Test descriptions:
+	cat	copy stdin to stdout
+	grep	match a regular expression against stdin, print each match
+	hash	use each line of stdin as a hash key, value is 1.
+	loop	measure the cost of a loop
+	proc	measure procedure call cost
+	sort	sorts stdin to stdout
+	split	[Not used because the semantics are different across langs]
+
+Input data is a million lines of code generated like this:
+
+	for i in 1 2 3 4 5 6 7 8 9 0
+	do	cat tcl/generic/*.[ch]
+	done | head -1000000 > DATA
+
+This file and tests are at http://www.bitkeeper.com/lm/langbench.shar
+

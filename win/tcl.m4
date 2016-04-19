@@ -339,6 +339,134 @@ AC_DEFUN([SC_LOAD_TKCONFIG], [
 ])
 
 #------------------------------------------------------------------------
+# SC_WITH_PCRE --
+#
+#	Finds the PCRE header and library files for use with Tcl
+#
+# Arguments:
+#	none
+#	
+# Results:
+#
+#	Adds the following arguments to configure:
+#		--with-pcre=/path/to/pcre
+#
+#	Sets the following vars:
+#		PCRE_DIR
+#------------------------------------------------------------------------
+
+AC_DEFUN([SC_WITH_PCRE], [
+    AC_ARG_WITH(pcre,
+	AC_HELP_STRING([--with-pcre],
+	    [directory containing pcre headers and libraries]),
+	[with_pcre=${withval}])
+    AC_MSG_CHECKING([for PCRE configuration])
+
+    AC_CACHE_VAL(ac_cv_c_pcre,[
+	    PCRE_CONFIG="pcre-config"
+	    # First check to see if --with-pcre was specified.
+	    if test x"${with_pcre}" != x ; then
+		if test -f "${with_pcre}/include/pcre.h" -a \
+			\( -f "${with_pcre}/lib/libpcre.so" -o \
+			  -f "${with_pcre}/lib/libpcre.a" \); then
+		    ac_cv_c_pcre=`(cd ${with_pcre}; pwd)`
+		    PCRE_INCLUDE="-I${ac_cv_c_pcre}/include"
+		    PCRE_LIBS="-L${ac_cv_c_pcre}/lib -lpcre"
+		    PCRE_CONFIG="${ac_cv_c_pcre}/bin/pcre-config"
+		else
+		    AC_MSG_ERROR([${with_pcre} directory doesn't contain pcre header and/or library])
+		fi
+	    fi
+
+	    if test x"${ac_cv_c_pcre}" = x ; then
+		# Try pcre-config if it exists
+		ac_cv_c_pcre=`${PCRE_CONFIG} --prefix 2>/dev/null`
+		if test "$?" -eq 0; then
+		    PCRE_INCLUDE=`${PCRE_CONFIG} --cflags 2>/dev/null`
+		    PCRE_LIBS=`${PCRE_CONFIG} --libs 2>/dev/null`
+		fi
+	    fi
+
+	    # check in a few common install locations
+	    if test x"${ac_cv_c_pcre}" = x ; then
+		for i in \
+			`ls -d ${exec_prefix} 2>/dev/null` \
+			`ls -d ${prefix} 2>/dev/null` \
+			`ls -d /usr/local 2>/dev/null` \
+			`ls -d /usr/contrib 2>/dev/null` \
+			`ls -d /usr 2>/dev/null` \
+			; do
+		    if test -f "${i}/include/pcre.h" -a \
+			\( -f "${i}/lib/libpcre.so" -o \
+			   -f "${i}/lib/libpcre.a" \); then
+			ac_cv_c_pcre=`(cd $i; pwd)`
+			PCRE_INCLUDE="-I${ac_cv_c_pcre}/include"
+			PCRE_LIBS="-L${ac_cv_c_pcre}/lib -lpcre"
+			break
+		    fi
+		done
+	    fi
+	])
+
+    if test x"${ac_cv_c_pcre}" = x ; then
+	AC_MSG_ERROR([Can't find PCRE configuration])
+    else
+	AC_MSG_RESULT([found PCRE configuration at ${ac_cv_c_pcre}])
+    fi
+    AC_SUBST([PCRE_INCLUDE])
+    AC_SUBST([PCRE_LIBS])
+])
+
+#------------------------------------------------------------------------
+# SC_ENABLE_PCRE --
+#
+#	Allows the use of PCRE in Tcl as default
+#
+# Arguments:
+#	none
+#	
+# Results:
+#	Adds the following arguments to configure:
+#		--enable-pcre=yes|no|default
+#
+#------------------------------------------------------------------------
+
+AC_DEFUN([SC_ENABLE_PCRE], [
+    AC_REQUIRE([SC_WITH_PCRE])
+    AC_MSG_CHECKING([whether to enable pcre in Tcl])
+    AC_ARG_ENABLE(pcre,
+	AC_HELP_STRING([--enable-pcre],
+	    [whether to enable pcre (default: off)]),
+	[enable_pcre=$enableval], [enable_pcre=no])
+
+    if test "${enable_pcre+set}" = set; then
+	enableval="$enable_pcre"
+	enable_pcre=$enableval
+    else
+	enable_pcre=yes
+    fi
+
+    if test x"${ac_cv_c_pcre}" = x -a x"${PCRE_INCLUDE}" = x -a x"${PCRE_LIBS}" = x ; then
+	AC_MSG_RESULT([pcre configuration not found])
+    else
+	if test "$enable_pcre" = "default" ; then
+	    AC_MSG_RESULT([pcre default])
+	    AC_DEFINE(USE_DEFAULT_PCRE, 1, [Use PCRE as default RE?])
+	    AC_DEFINE(HAVE_PCRE, 1, [Do we enable PCRE interfaces?])
+	    AC_DEFINE(PCRE_STATIC, 1, [Statically compile PCRE])
+	elif test "$enable_pcre" = "yes" ; then
+	    AC_MSG_RESULT([pcre enabled])
+	    AC_DEFINE(HAVE_PCRE, 1, [Do we enable PCRE interfaces?])
+	    AC_DEFINE(PCRE_STATIC, 1, [Statically compile PCRE])
+	else
+	    PCRE_INCLUDE=
+	    PCRE_LIBS=
+	    AC_MSG_RESULT([no pcre])
+	fi
+    fi
+])
+
+#------------------------------------------------------------------------
 # SC_ENABLE_SHARED --
 #
 #	Allows the building of shared libraries
@@ -1299,4 +1427,14 @@ print("manifest needed")
     AC_MSG_RESULT([$result])
     AC_SUBST(VC_MANIFEST_EMBED_DLL)
     AC_SUBST(VC_MANIFEST_EMBED_EXE)
+])
+
+AC_DEFUN([AC_PROG_BISON],[
+	AC_CHECK_PROGS(BISON,[bison],no)
+	export BISON;
+	if test $BISON = "no" ;
+	then
+		AC_MSG_ERROR([Unable to find bison]);
+	fi
+	AC_SUBST(BISON)
 ])

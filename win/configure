@@ -309,7 +309,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP AR ac_ct_AR RANLIB ac_ct_RANLIB RC ac_ct_RC SET_MAKE TCL_THREADS CYGPATH CELIB_DIR DL_LIBS CFLAGS_DEBUG CFLAGS_OPTIMIZE CFLAGS_WARNING ZLIB_DLL_FILE ZLIB_LIBS ZLIB_OBJS CFLAGS_DEFAULT LDFLAGS_DEFAULT VC_MANIFEST_EMBED_DLL VC_MANIFEST_EMBED_EXE TCL_WIN_VERSION MACHINE TCL_VERSION TCL_MAJOR_VERSION TCL_MINOR_VERSION TCL_PATCH_LEVEL PKG_CFG_ARGS TCL_EXE TCL_LIB_FILE TCL_LIB_FLAG TCL_STATIC_LIB_FILE TCL_STATIC_LIB_FLAG TCL_IMPORT_LIB_FILE TCL_IMPORT_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_STUB_LIB_PATH TCL_INCLUDE_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_PATH TCL_DLL_FILE TCL_SRC_DIR TCL_BIN_DIR TCL_DBGX CFG_TCL_SHARED_LIB_SUFFIX CFG_TCL_UNSHARED_LIB_SUFFIX CFG_TCL_EXPORT_FILE_SUFFIX EXTRA_CFLAGS DEPARG CC_OBJNAME CC_EXENAME LDFLAGS_DEBUG LDFLAGS_OPTIMIZE LDFLAGS_CONSOLE LDFLAGS_WINDOW STLIB_LD SHLIB_LD SHLIB_LD_LIBS SHLIB_CFLAGS SHLIB_SUFFIX TCL_SHARED_BUILD LIBS_GUI DLLSUFFIX LIBPREFIX LIBSUFFIX EXESUFFIX LIBRARIES MAKE_LIB MAKE_STUB_LIB POST_MAKE_LIB MAKE_DLL MAKE_EXE TCL_BUILD_LIB_SPEC TCL_LD_SEARCH_FLAGS TCL_NEEDS_EXP_FILE TCL_BUILD_EXP_FILE TCL_EXP_FILE TCL_LIB_VERSIONS_OK TCL_PACKAGE_PATH TCL_DDE_VERSION TCL_DDE_MAJOR_VERSION TCL_DDE_MINOR_VERSION TCL_REG_VERSION TCL_REG_MAJOR_VERSION TCL_REG_MINOR_VERSION RC_OUT RC_TYPE RC_INCLUDE RC_DEFINE RC_DEFINES RES LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CC CFLAGS LDFLAGS CPPFLAGS ac_ct_CC EXEEXT OBJEXT CPP EGREP BISON AR ac_ct_AR RANLIB ac_ct_RANLIB RC ac_ct_RC SET_MAKE TCL_THREADS CYGPATH CELIB_DIR DL_LIBS CFLAGS_DEBUG CFLAGS_OPTIMIZE CFLAGS_WARNING ZLIB_DLL_FILE ZLIB_LIBS ZLIB_OBJS PCRE_INCLUDE PCRE_LIBS CFLAGS_DEFAULT LDFLAGS_DEFAULT VC_MANIFEST_EMBED_DLL VC_MANIFEST_EMBED_EXE TCL_WIN_VERSION MACHINE TCL_VERSION TCL_MAJOR_VERSION TCL_MINOR_VERSION TCL_PATCH_LEVEL PKG_CFG_ARGS TCL_EXE TCL_LIB_FILE TCL_LIB_FLAG TCL_STATIC_LIB_FILE TCL_STATIC_LIB_FLAG TCL_IMPORT_LIB_FILE TCL_IMPORT_LIB_FLAG TCL_LIB_SPEC TCL_STUB_LIB_FILE TCL_STUB_LIB_FLAG TCL_STUB_LIB_SPEC TCL_STUB_LIB_PATH TCL_INCLUDE_SPEC TCL_BUILD_STUB_LIB_SPEC TCL_BUILD_STUB_LIB_PATH TCL_DLL_FILE TCL_SRC_DIR TCL_BIN_DIR TCL_DBGX CFG_TCL_SHARED_LIB_SUFFIX CFG_TCL_UNSHARED_LIB_SUFFIX CFG_TCL_EXPORT_FILE_SUFFIX EXTRA_CFLAGS DEPARG CC_OBJNAME CC_EXENAME LDFLAGS_DEBUG LDFLAGS_OPTIMIZE LDFLAGS_CONSOLE LDFLAGS_WINDOW STLIB_LD SHLIB_LD SHLIB_LD_LIBS SHLIB_CFLAGS SHLIB_SUFFIX TCL_SHARED_BUILD LIBS_GUI DLLSUFFIX LIBPREFIX LIBSUFFIX EXESUFFIX LIBRARIES MAKE_LIB MAKE_STUB_LIB POST_MAKE_LIB MAKE_DLL MAKE_EXE TCL_BUILD_LIB_SPEC TCL_LD_SEARCH_FLAGS TCL_NEEDS_EXP_FILE TCL_BUILD_EXP_FILE TCL_EXP_FILE TCL_LIB_VERSIONS_OK TCL_PACKAGE_PATH TCL_DDE_VERSION TCL_DDE_MAJOR_VERSION TCL_DDE_MINOR_VERSION TCL_REG_VERSION TCL_REG_MAJOR_VERSION TCL_REG_MINOR_VERSION RC_OUT RC_TYPE RC_INCLUDE RC_DEFINE RC_DEFINES RES LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -844,6 +844,7 @@ Optional Features:
   --enable-shared         build and link with shared libraries (default: on)
   --enable-64bit          enable 64bit support (where applicable)
   --enable-wince          enable Win/CE support (where applicable)
+  --enable-pcre           whether to enable pcre (default: off)
   --enable-symbols        build with debugging symbols (default: off)
   --enable-embedded-manifest
                           embed manifest if possible (default: yes)
@@ -853,6 +854,7 @@ Optional Packages:
   --without-PACKAGE       do not use PACKAGE (same as --with-PACKAGE=no)
   --with-encoding         encoding for configuration values
   --with-celib=DIR        use Windows/CE support library from DIR
+  --with-pcre             directory containing pcre headers and libraries
 
 Some influential environment variables:
   CC          C compiler command
@@ -2771,6 +2773,57 @@ cat >>confdefs.h <<\_ACEOF
 _ACEOF
 
 fi
+
+
+	for ac_prog in bison
+do
+  # Extract the first word of "$ac_prog", so it can be a program name with args.
+set dummy $ac_prog; ac_word=$2
+echo "$as_me:$LINENO: checking for $ac_word" >&5
+echo $ECHO_N "checking for $ac_word... $ECHO_C" >&6
+if test "${ac_cv_prog_BISON+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+  if test -n "$BISON"; then
+  ac_cv_prog_BISON="$BISON" # Let the user override the test.
+else
+as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+  for ac_exec_ext in '' $ac_executable_extensions; do
+  if $as_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_prog_BISON="$ac_prog"
+    echo "$as_me:$LINENO: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+done
+
+fi
+fi
+BISON=$ac_cv_prog_BISON
+if test -n "$BISON"; then
+  echo "$as_me:$LINENO: result: $BISON" >&5
+echo "${ECHO_T}$BISON" >&6
+else
+  echo "$as_me:$LINENO: result: no" >&5
+echo "${ECHO_T}no" >&6
+fi
+
+  test -n "$BISON" && break
+done
+test -n "$BISON" || BISON="no"
+
+	export BISON;
+	if test $BISON = "no" ;
+	then
+		{ { echo "$as_me:$LINENO: error: Unable to find bison" >&5
+echo "$as_me: error: Unable to find bison" >&2;}
+   { (exit 1); exit 1; }; };
+	fi
+
 
 
 if test -n "$ac_tool_prefix"; then
@@ -4972,6 +5025,147 @@ _ACEOF
 
 fi
 
+#------------------------------------------------------------------------------
+#       Check if we want to use pcre
+#------------------------------------------------------------------------------
+
+
+
+# Check whether --with-pcre or --without-pcre was given.
+if test "${with_pcre+set}" = set; then
+  withval="$with_pcre"
+  with_pcre=${withval}
+fi;
+    echo "$as_me:$LINENO: checking for PCRE configuration" >&5
+echo $ECHO_N "checking for PCRE configuration... $ECHO_C" >&6
+
+    if test "${ac_cv_c_pcre+set}" = set; then
+  echo $ECHO_N "(cached) $ECHO_C" >&6
+else
+
+	    PCRE_CONFIG="pcre-config"
+	    # First check to see if --with-pcre was specified.
+	    if test x"${with_pcre}" != x ; then
+		if test -f "${with_pcre}/include/pcre.h" -a \
+			\( -f "${with_pcre}/lib/libpcre.so" -o \
+			  -f "${with_pcre}/lib/libpcre.a" \); then
+		    ac_cv_c_pcre=`(cd ${with_pcre}; pwd)`
+		    PCRE_INCLUDE="-I${ac_cv_c_pcre}/include"
+		    PCRE_LIBS="-L${ac_cv_c_pcre}/lib -lpcre"
+		    PCRE_CONFIG="${ac_cv_c_pcre}/bin/pcre-config"
+		else
+		    { { echo "$as_me:$LINENO: error: ${with_pcre} directory doesn't contain pcre header and/or library" >&5
+echo "$as_me: error: ${with_pcre} directory doesn't contain pcre header and/or library" >&2;}
+   { (exit 1); exit 1; }; }
+		fi
+	    fi
+
+	    if test x"${ac_cv_c_pcre}" = x ; then
+		# Try pcre-config if it exists
+		ac_cv_c_pcre=`${PCRE_CONFIG} --prefix 2>/dev/null`
+		if test "$?" -eq 0; then
+		    PCRE_INCLUDE=`${PCRE_CONFIG} --cflags 2>/dev/null`
+		    PCRE_LIBS=`${PCRE_CONFIG} --libs 2>/dev/null`
+		fi
+	    fi
+
+	    # check in a few common install locations
+	    if test x"${ac_cv_c_pcre}" = x ; then
+		for i in \
+			`ls -d ${exec_prefix} 2>/dev/null` \
+			`ls -d ${prefix} 2>/dev/null` \
+			`ls -d /usr/local 2>/dev/null` \
+			`ls -d /usr/contrib 2>/dev/null` \
+			`ls -d /usr 2>/dev/null` \
+			; do
+		    if test -f "${i}/include/pcre.h" -a \
+			\( -f "${i}/lib/libpcre.so" -o \
+			   -f "${i}/lib/libpcre.a" \); then
+			ac_cv_c_pcre=`(cd $i; pwd)`
+			PCRE_INCLUDE="-I${ac_cv_c_pcre}/include"
+			PCRE_LIBS="-L${ac_cv_c_pcre}/lib -lpcre"
+			break
+		    fi
+		done
+	    fi
+
+fi
+
+
+    if test x"${ac_cv_c_pcre}" = x ; then
+	{ { echo "$as_me:$LINENO: error: Can't find PCRE configuration" >&5
+echo "$as_me: error: Can't find PCRE configuration" >&2;}
+   { (exit 1); exit 1; }; }
+    else
+	echo "$as_me:$LINENO: result: found PCRE configuration at ${ac_cv_c_pcre}" >&5
+echo "${ECHO_T}found PCRE configuration at ${ac_cv_c_pcre}" >&6
+    fi
+
+
+
+
+
+    echo "$as_me:$LINENO: checking whether to enable pcre in Tcl" >&5
+echo $ECHO_N "checking whether to enable pcre in Tcl... $ECHO_C" >&6
+    # Check whether --enable-pcre or --disable-pcre was given.
+if test "${enable_pcre+set}" = set; then
+  enableval="$enable_pcre"
+  enable_pcre=$enableval
+else
+  enable_pcre=no
+fi;
+
+    if test "${enable_pcre+set}" = set; then
+	enableval="$enable_pcre"
+	enable_pcre=$enableval
+    else
+	enable_pcre=yes
+    fi
+
+    if test x"${ac_cv_c_pcre}" = x -a x"${PCRE_INCLUDE}" = x -a x"${PCRE_LIBS}" = x ; then
+	echo "$as_me:$LINENO: result: pcre configuration not found" >&5
+echo "${ECHO_T}pcre configuration not found" >&6
+    else
+	if test "$enable_pcre" = "default" ; then
+	    echo "$as_me:$LINENO: result: pcre default" >&5
+echo "${ECHO_T}pcre default" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define USE_DEFAULT_PCRE 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PCRE 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define PCRE_STATIC 1
+_ACEOF
+
+	elif test "$enable_pcre" = "yes" ; then
+	    echo "$as_me:$LINENO: result: pcre enabled" >&5
+echo "${ECHO_T}pcre enabled" >&6
+
+cat >>confdefs.h <<\_ACEOF
+#define HAVE_PCRE 1
+_ACEOF
+
+
+cat >>confdefs.h <<\_ACEOF
+#define PCRE_STATIC 1
+_ACEOF
+
+	else
+	    PCRE_INCLUDE=
+	    PCRE_LIBS=
+	    echo "$as_me:$LINENO: result: no pcre" >&5
+echo "${ECHO_T}no pcre" >&6
+	fi
+    fi
+
+
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols
 # option.  This macro depends on C flags, and should be called
@@ -5124,19 +5318,19 @@ TCL_SHARED_LIB_SUFFIX="\${NODOT_VERSION}${DLLSUFFIX}"
 TCL_UNSHARED_LIB_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 TCL_EXPORT_FILE_SUFFIX="\${NODOT_VERSION}${LIBSUFFIX}"
 
-eval "TCL_SRC_DIR=\"`cd $srcdir/..; pwd`\""
+eval "TCL_SRC_DIR=\"`cd $srcdir/..; $CYGPATH $(pwd)`\""
 
 eval "TCL_DLL_FILE=tcl${VER}${DLLSUFFIX}"
 
 eval "TCL_STUB_LIB_FILE=\"${LIBPREFIX}tclstub${VER}${LIBSUFFIX}\""
 eval "TCL_STUB_LIB_FLAG=\"-ltclstub${VER}${LIBFLAGSUFFIX}\""
-eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`pwd` ${TCL_STUB_LIB_FLAG}\""
+eval "TCL_BUILD_STUB_LIB_SPEC=\"-L`$CYGPATH $(pwd)` ${TCL_STUB_LIB_FLAG}\""
 eval "TCL_STUB_LIB_SPEC=\"-L${libdir} ${TCL_STUB_LIB_FLAG}\""
-eval "TCL_BUILD_STUB_LIB_PATH=\"`pwd`/${TCL_STUB_LIB_FILE}\""
+eval "TCL_BUILD_STUB_LIB_PATH=\"`$CYGPATH $(pwd)`/${TCL_STUB_LIB_FILE}\""
 eval "TCL_STUB_LIB_PATH=\"${libdir}/${TCL_STUB_LIB_FILE}\""
 
 eval "TCL_LIB_FILE=\"${LIBPREFIX}tcl${VER}${LIBSUFFIX}\""
-eval "TCL_BUILD_LIB_SPEC=\"-L`pwd` -ltcl${VER}${FLAGSUFFIX}\""
+eval "TCL_BUILD_LIB_SPEC=\"-L`$CYGPATH $(pwd)` -ltcl${VER}${FLAGSUFFIX}\""
 eval "TCL_LIB_SPEC=\"-L${libdir} -ltcl${VER}${FLAGSUFFIX}\""
 
 # Install time header dir can be set via --includedir
@@ -5938,6 +6132,7 @@ s,@EXEEXT@,$EXEEXT,;t t
 s,@OBJEXT@,$OBJEXT,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
+s,@BISON@,$BISON,;t t
 s,@AR@,$AR,;t t
 s,@ac_ct_AR@,$ac_ct_AR,;t t
 s,@RANLIB@,$RANLIB,;t t
@@ -5955,6 +6150,8 @@ s,@CFLAGS_WARNING@,$CFLAGS_WARNING,;t t
 s,@ZLIB_DLL_FILE@,$ZLIB_DLL_FILE,;t t
 s,@ZLIB_LIBS@,$ZLIB_LIBS,;t t
 s,@ZLIB_OBJS@,$ZLIB_OBJS,;t t
+s,@PCRE_INCLUDE@,$PCRE_INCLUDE,;t t
+s,@PCRE_LIBS@,$PCRE_LIBS,;t t
 s,@CFLAGS_DEFAULT@,$CFLAGS_DEFAULT,;t t
 s,@LDFLAGS_DEFAULT@,$LDFLAGS_DEFAULT,;t t
 s,@VC_MANIFEST_EMBED_DLL@,$VC_MANIFEST_EMBED_DLL,;t t

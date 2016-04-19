@@ -288,6 +288,35 @@ TclCreateSocketAddress(
 }
 
 /*
+ * Work around an omission in earlier versions of MinGW.
+ */
+#ifdef __MINGW32__
+char* WSAAPI
+gai_strerrorA(int ecode)
+{
+	static char message[1024+1];
+	DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM
+		      | FORMAT_MESSAGE_IGNORE_INSERTS
+		      | FORMAT_MESSAGE_MAX_WIDTH_MASK;
+	DWORD dwLanguageId = MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT);
+	FormatMessageA(dwFlags, NULL, ecode, dwLanguageId, (LPSTR)message, 1024, NULL);
+	return message;
+}
+
+WCHAR* WSAAPI
+gai_strerrorW(int ecode)
+{
+	static WCHAR message[1024+1];
+	DWORD dwFlags = FORMAT_MESSAGE_FROM_SYSTEM
+		      | FORMAT_MESSAGE_IGNORE_INSERTS
+		      | FORMAT_MESSAGE_MAX_WIDTH_MASK;
+	DWORD dwLanguageId = MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT);
+	FormatMessageW(dwFlags, NULL, ecode, dwLanguageId, (LPWSTR)message, 1024, NULL);
+	return message;
+}
+#endif
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

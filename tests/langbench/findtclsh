@@ -1,0 +1,35 @@
+#!/bin/sh
+
+test X$TCLSH = X || {
+	echo $TCLSH
+	exit 0
+}
+
+# If langbench is in the bk source tree, tcl is at ../gui/tcltk/tcl
+test -d ../gui/tcltk/tcl/generic && {
+	if [ -d C:/ ]
+	then	echo ../gui/tcltk/tcl/win/tclsh85.exe
+	else	echo ../gui/tcltk/tcl/unix/tclsh
+	fi
+	exit 0
+}
+
+# If langbench is in the tcl source tree, it is likely at tests/langbench
+# or tests.
+test -d ../tests -a -d ../generic && {
+	if [ -d C:/ ]
+	then	echo ../win/tclsh85.exe
+	else	echo ../unix/tclsh
+	fi
+	exit 0
+}
+test -d ../../tests -a -d ../../generic && {
+	if [ -d C:/ ]
+	then	echo ../../win/tclsh85.exe
+	else	echo ../../unix/tclsh
+	fi
+	exit 0
+}
+
+echo "Can't find tclsh, set a path to one with TCLSH" 1>&2
+exit 1

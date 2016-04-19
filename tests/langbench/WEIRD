@@ -1,0 +1,9 @@
+If the regexp is ^$ then the python code gets one more match than the others.
+
+python's split gets the word count wrong:
+
+	wc -w:	 3647213 
+	perl:	 3647213
+	ruby:	 3647213
+	tcl:	 3647213
+	python:	 3647250

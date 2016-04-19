@@ -548,10 +548,11 @@ proc http::geturl {url args} {
     # If a timeout is specified we set up the after event and arrange for an
     # asynchronous socket connection.
 
-    set sockopts [list -async]
+    set sockopts [list]
     if {$state(-timeout) > 0} {
 	set state(after) [after $state(-timeout) \
 		[list http::reset $token timeout]]
+	lappend sockopts -async
     }
 
     # If we are using the proxy, we must pass in the full URL that includes

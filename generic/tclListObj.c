@@ -577,6 +577,7 @@ Tcl_ListObjAppendElement(
 
 	if (listPtr->bytes == tclEmptyStringRep) {
 	    Tcl_SetListObj(listPtr, 1, &objPtr);
+	    listPtr->undef = 0;
 	    return TCL_OK;
 	}
 	result = SetListFromAny(interp, listPtr);
@@ -691,6 +692,7 @@ Tcl_ListObjAppendElement(
     *(&listRepPtr->elements + listRepPtr->elemCount) = objPtr;
     Tcl_IncrRefCount(objPtr);
     listRepPtr->elemCount++;
+    listPtr->undef = 0;
 
     /*
      * Invalidate any old string representation since the list's internal
@@ -865,6 +867,7 @@ Tcl_ListObjReplace(
     if (listPtr->typePtr != &tclListType) {
 	if (listPtr->bytes == tclEmptyStringRep) {
 	    if (!objc) {
+		listPtr->undef = 0;
 		return TCL_OK;
 	    }
 	    Tcl_SetListObj(listPtr, objc, NULL);
@@ -1058,6 +1061,7 @@ Tcl_ListObjReplace(
      */
 
     TclInvalidateStringRep(listPtr);
+    listPtr->undef = 0;
     return TCL_OK;
 }
 
@@ -1996,6 +2000,48 @@ UpdateStringOfList(
 
     if (flagPtr != localFlags) {
 	ckfree(flagPtr);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclDuplicateListRep --
+ *
+ *	Create an unshared copy of a list's internal representation.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	The object's internal representation is changed to point to
+ *	a newly allocated copy of its old representation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclDuplicateListRep(Tcl_Obj *objPtr)
+{
+    int i, numElems;
+    List *listRepPtr, *oldListRepPtr;
+    Tcl_Obj **elemPtrs, **oldElems;
+
+    listRepPtr = (List *)objPtr->internalRep.twoPtrValue.ptr1;
+    if (listRepPtr->refCount > 1) {
+	oldListRepPtr = listRepPtr;
+	numElems = listRepPtr->elemCount;
+	listRepPtr = NewListIntRep(listRepPtr->maxElemCount, NULL, 1);
+	oldElems = &oldListRepPtr->elements;
+	elemPtrs = &listRepPtr->elements;
+	for (i=0; i<numElems; i++) {
+	    elemPtrs[i] = oldElems[i];
+	    Tcl_IncrRefCount(elemPtrs[i]);
+	}
+	listRepPtr->elemCount = numElems;
+	listRepPtr->refCount++;
+	oldListRepPtr->refCount--;
+	objPtr->internalRep.twoPtrValue.ptr1 = (void *) listRepPtr;
     }
 }
 

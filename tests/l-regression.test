@@ -1,0 +1,381 @@
+# Test to make sure that bugs don't creep back into L
+# Copyright (c) 2007 BitMover, Inc.
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+}
+
+# This causes L to keep running L code even after a compile error.
+set ::env(_L_TEST) 1
+
+# This tells L to run in a backwards compatibility mode for
+# the old eq/ne/le/lt/ge/gt string-comparison operators.
+set ::env(_L_ALLOW_EQ_OPS) 1
+
+test empty-1.0 {empty code blocks} -body {
+#lang L --line=1
+void empty_1_0() {
+} 
+#lang tcl
+empty_1_0
+} 
+
+test empty-1.1 {empty code blocks with some control flow} -body {
+#lang L --line=1
+void empty_1_1() {
+        /* note that none of these conditions is true, 
+           so no code is executed */
+        unless(1) {
+                puts("1 broken");
+        } else if (0) {
+                puts("1.1 broken");
+        } else unless(1) {
+                puts("1 working");
+        }
+} 
+#lang tcl
+empty_1_1
+} 
+
+test values-1.0 {the values of struct increment and assignment} -body {
+#lang L --line=1
+struct values_1_0 {
+  int clicks;
+  string value;
+};
+
+void values_1_0() {
+  struct values_1_0 main_entry;
+  puts(main_entry.clicks = 0);
+  puts(++main_entry.clicks);
+}
+#lang tcl
+values_1_0
+} -output "0\n1\n"
+
+
+test multi-dimensional-1.0 {move[state][read_symbol] was being evaluated as
+move[state][state[read_symbol]][read_symbol], or thereabouts, because the AST
+was built in an ambiguous way.} -body {
+#lang L --line=1
+string dump_tape(int tape[]);
+void turing(int step, int state, int tape[], int pos) {
+    int write_symbol[5][2], move[5][2], new_state[5][2], read_symbol;
+
+    write_symbol[0][1] = 0;  move[0][1] = 1;  new_state[0][1] = 1;
+    write_symbol[1][1] = 1;  move[1][1] = 1;  new_state[1][1] = 1;
+    write_symbol[1][0] = 0;  move[1][0] = 1;  new_state[1][0] = 2;
+    write_symbol[2][0] = 1;  move[2][0] = 0;  new_state[2][0] = 3;
+    write_symbol[2][1] = 1;  move[2][1] = 1;  new_state[2][1] = 2;
+    write_symbol[3][1] = 1;  move[3][1] = 0;  new_state[3][1] = 3;
+    write_symbol[3][0] = 0;  move[3][0] = 0;  new_state[3][0] = 4;
+    write_symbol[4][1] = 1;  move[4][1] = 0;  new_state[4][1] = 4;
+    write_symbol[4][0] = 1;  move[4][0] = 1;  new_state[4][0] = 0;
+
+    read_symbol = tape[pos];
+    puts(append("", "  ", step, "\ts", state + 1, "\t", dump_tape(tape)));
+
+    // state 0 and symbol 0 means to halt
+    if (read_symbol + state) {
+        tape[pos] = write_symbol[state][read_symbol];
+        if (move[state][read_symbol]) {
+            pos++;
+        } else {
+            pos--;
+        }
+        turing(step + 1, new_state[state][read_symbol], tape, pos);
+    } else {
+        puts("-- halt --");
+    }
+}
+
+/* dump the tape to a string */
+string
+dump_tape(int tape[]) {
+    return format("%d %d %d %d %d",
+                  tape[0],  tape[1], tape[2], tape[3], tape[4]);
+}
+
+void multi_dimensional_1_0() {
+    int tape[5];
+
+    tape[0] = 1; tape[1] = 1; tape[2] = 0; tape[3] = 0; tape[4] = 0;
+    puts("Step\tState\tTape");
+    puts("- - - - - - - - - -");
+    turing(1, 0, tape, 0);
+}
+#lang tcl
+multi_dimensional_1_0
+} -output {Step	State	Tape
+- - - - - - - - - -
+  1	s1	1 1 0 0 0
+  2	s2	0 1 0 0 0
+  3	s2	0 1 0 0 0
+  4	s3	0 1 0 0 0
+  5	s4	0 1 0 1 0
+  6	s5	0 1 0 1 0
+  7	s5	0 1 0 1 0
+  8	s1	1 1 0 1 0
+  9	s2	1 0 0 1 0
+  10	s3	1 0 0 1 0
+  11	s3	1 0 0 1 0
+  12	s4	1 0 0 1 1
+  13	s4	1 0 0 1 1
+  14	s5	1 0 0 1 1
+  15	s1	1 1 0 1 1
+-- halt --
+}
+
+test initializers-1.0 {initialize a whole array at once} -body {
+#lang L --line=1
+void initializers_1_1() {
+  string foo[] = initializers_1_1_returnarray();
+
+  printf("foo[0] is %s\n", foo[0]);
+  printf("foo[1] is %s\n", foo[1]);
+}
+
+poly initializers_1_1_returnarray() {
+  return "foo bar";
+}
+#lang tcl
+initializers_1_1
+} -output "foo\[0\] is foo\nfoo\[1\] is bar\n"
+
+test cast-1.0 {don't segfault when casting to a string} -body {
+#lang L --line=1
+void cast_1_0() {
+	puts((string)"asdf");
+}
+#lang tcl
+cast_1_0
+} -output "asdf\n"
+
+
+test typecheck-1.0 {typechecker segfaults on unop check that must be queued} -body {
+#lang L --line=1
+int typecheck_1_0_bar() {
+	return 22;
+}
+string typecheck_1_0_foo(string foo) {
+	return foo;
+}
+void typecheck_1_0() {
+	// note the -
+	typecheck_1_0_foo(-typecheck_1_0_bar());
+}
+#lang tcl
+typecheck_1_0
+} -returnCodes {error} -match glob -result \
+    "*:9: L Error: parameter 1 has incompatible type\n"
+
+test decl-1.0 {don't drop array dimensions from typedef when declaring multiple variables} -body {
+#lang L --line=1
+typedef int atype[2];
+void decl_1_0() {
+	atype foo[3], bar;
+	foo[2][1] = 0;
+	bar[1] = 0;
+	puts(foo);
+	puts(bar);
+}
+#lang tcl
+decl_1_0
+} -output "{} {} {{} 0}\n{} 0\n"
+
+test if-1.0 {jump target is wrong when else block gets too big} -body {
+#lang L --line=1 -nowarn
+void if_1_0() {
+	string w = ".asdf";
+	string btm = "${w}.btm", e = "${w}.e";
+	if (0) {
+		puts("wicky wicky2");
+		wm("withdraw", btm);
+	} else {
+		string width, h, h1, x, y;
+		puts("wicky wicky3");
+		width = winfo("width", e);
+		h = winfo("reqheight", w);
+		h1 = winfo("reqheight", btm);
+		x = winfo("rootx", w);
+		y = winfo("rooty", w);
+		/* XXX, wtf? */
+		puts(width);
+		puts(h1);
+		puts(x);
+	}
+}
+
+string winfo(string a, string b) {return "42";}
+#lang tcl
+if_1_0
+} -output {wicky wicky3
+42
+42
+42
+}
+
+test scope-1.0 {if a global is first used as a reference, it gets erroneously created twice} -body {
+#lang L --line=1
+string avar = "foo";
+void frob(string &str) {
+	str = "bar";
+}
+void scope_1_0() {
+	frob(&avar);
+	puts(avar);
+}
+#lang tcl
+scope_1_0
+} -output "bar\n";
+
+test scope-1.1 {a block introduces a new scope} -body {
+#lang L --line=1
+void scope_1_1() {
+	{
+		int a;
+		a = 5;
+	}
+	puts(a);
+}
+#lang tcl
+scope_1_1
+} -returnCodes {error} -match glob -result "*:6: L Error: undeclared variable: a\n"
+
+test regexp-1.0 {regexps might start with a dash, so call regex/regsub with -- before the regexp} -body {
+#lang L --line=1
+void regexp_1_0() {
+	string v = "a-b-c";
+	v =~ s/-/\&ndash;/g;
+	puts(v);
+}
+#lang tcl
+regexp_1_0
+} -output "a&ndash;b&ndash;c\n"
+
+test errors-1.0 {don't run L code if there were compilation errors} -body {
+#lang L --line=1
+void errors_1_0() {
+	int argc;
+	// we want "this is text" to _not_ print
+	puts("this is text");
+	puts(argc[1]);
+}
+errors_1_0();
+#lang tcl
+} -returnCodes {error} -match glob -result "*:5: L Error: not an array*\n" \
+-output {}
+
+test break-1.0 {breaks break when loop jump instructions grow because the loop body is big} -body {
+#lang L --line=1
+void break_1_0() {
+        int     i;
+
+	for (i = 0; i<10; i++) {
+		printf("${i}");
+		printf("${i}");
+		printf("${i}");
+		printf("${i}");
+		printf("${i}");
+		break;
+	}
+}
+break_1_0();
+#lang tcl
+} -output {00000}
+
+test typedef-1.0 {L redeclaring types is allowed for same types} -body {
+#lang L --line=1
+typedef string typedef_1_0_FOO;
+typedef string typedef_1_0_FOO;
+#lang tcl
+} -output ""
+
+test typedef-1.1 {L redefining types is not allowed} -body {
+#lang L --line=1
+typedef string typedef_1_1_BAR;
+typedef int typedef_1_1_BAR;
+#lang tcl
+} -returnCodes {error} -match glob -result \
+	"*:2: L Error: Cannot redefine type typedef_1_1_BAR*"
+
+test crash-1.1 {crashing in some interim versions} -body {
+#lang L --line=1
+struct c11xy { int x,y; };
+void
+crash_1_1()
+{
+    struct c11xy xys[2];
+    xys[0].x = 1;
+    printf("%s", xys);
+}
+crash_1_1();
+} -output "1"
+
+
+test pattern-1.2 {L widget pattern functions} -body {
+#lang L --line=1
+void pattern_1_2_foo(...args)
+{
+	puts(args);
+}
+
+void pattern_1_2()
+{
+	widget w = "pattern_1_2_foo";
+	Text_insert(w, "end", "FOO");
+}
+pattern_1_2();
+#lang tcl
+} -output "insert end FOO\n"
+
+test empty-stmt {empty stmt crashed in parser} -body {
+#lang L --line=1
+void empty_stmt()
+{
+	printf("Should be OK now.\n");;  // Note the two semicolons.
+}
+#lang tcl
+empty_stmt
+} -output "Should be OK now.\n"
+
+test struct-typedef-1.1 {check struct typedef bug} -body {
+#lang L --line=1
+typedef struct {
+	int x;
+	int y;
+} foo_st_11;
+
+foo_st_11 bars_st_11{string};
+
+void a_st_11(foo_st_11 f)
+{
+	bars_st_11{"FOO"} = f;
+	puts("X = ${f.x}");
+}
+
+void struct_typedef_1_1()
+{
+	foo_st_11 f = {66,63};
+	a_st_11(f);
+	puts(bars_st_11);
+}
+#lang tcl
+struct_typedef_1_1
+} -output "X = 66\nFOO {66 63}\n"
+
+test list-1 {check list creation bug} -body {
+#lang L --line=1
+void list_1()
+{
+	/* This used to trip an assert. */
+	{undeclared_variable};
+}
+list_1();
+} -returnCodes {error} -match regexp -result {.*4: L Error: undeclared variable.*
+}
+
+# cleanup
+::tcltest::cleanupTests
+return

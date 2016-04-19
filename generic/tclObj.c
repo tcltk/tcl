@@ -1064,6 +1064,7 @@ TclDbInitNewObj(
     objPtr->bytes = tclEmptyStringRep;
     objPtr->length = 0;
     objPtr->typePtr = NULL;
+    objPtr->undef = 0;
 
 #ifdef TCL_THREADS
     /*
@@ -1576,6 +1577,7 @@ TclObjBeingDeleted(
 		(dupPtr)->typePtr = typePtr;				\
 	    }								\
 	}								\
+	(dupPtr)->undef = (objPtr)->undef;				\
     }
 
 Tcl_Obj *
@@ -1886,6 +1888,10 @@ Tcl_GetBooleanFromObj(
     register Tcl_Obj *objPtr,	/* The object from which to get boolean. */
     register int *boolPtr)	/* Place to store resulting boolean. */
 {
+    if (objPtr->undef) {
+	*boolPtr = 0;
+	return TCL_OK;
+    }
     do {
 	if (objPtr->typePtr == &tclIntType) {
 	    *boolPtr = (objPtr->internalRep.longValue != 0);

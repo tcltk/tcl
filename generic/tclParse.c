@@ -8,6 +8,7 @@
  * Copyright (c) 1997 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 Ajuba Solutions.
  * Contributions from Don Porter, NIST, 2002. (not subject to US copyright)
+ * Copyright (c) 2007 BitMover, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -16,6 +17,7 @@
 #include "tclInt.h"
 #include "tclParse.h"
 #include <assert.h>
+#include "Last.h"
 
 /*
  * The following table provides parsing information about each possible 8-bit
@@ -160,6 +162,8 @@ const char tclCharTypeTable[] = {
  * Prototypes for local functions defined in this file:
  */
 
+static int		ParseLang(Tcl_Interp *interp, const char *src,
+			    int numBytes, Tcl_Parse *parsePtr, int *scanned);
 static inline int	CommandComplete(const char *script, int numBytes);
 static int		ParseComment(const char *src, int numBytes,
 			    Tcl_Parse *parsePtr);
@@ -167,6 +171,105 @@ static int		ParseTokens(const char *src, int numBytes, int mask,
 			    int flags, Tcl_Parse *parsePtr);
 static int		ParseWhiteSpace(const char *src, int numBytes,
 			    int *incompletePtr, char *typePtr);
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ParseLang --
+ *	Scans up to numBytes bytes starting at src, consuming a Tcl lang
+ *	directive.
+ *
+ * Results:
+ *	Records in parsePtr information about the parse. Returns either
+ *	TCL_BREAK, meaning the parsing should continue, TCL_OK meaning
+ *	a Language directive was succesfully consumed, or TCL_ERROR meaning
+ *	the lang directive was incomplete (missing end #lang or missing EOF)
+ *	or there was some kind of an error
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+static int
+ParseLang(
+    Tcl_Interp *interp,		/* Tcl interpreter */
+    CONST char *src,		/* First character to parse. */
+    register int numBytes,	/* Max number of bytes to scan. */
+    Tcl_Parse *parsePtr,	/* Information about parse in progress.
+				 * Updated if parsing indicates an incomplete
+				 * command. */
+    int *scanned)		/* How many bytes we used */
+{
+    register CONST char *p = src;
+    char *eol, *end;
+    Tcl_Token *tokenPtr;
+    Tcl_Parse optsParse;
+    int wordIdx;
+    char *message = "malformed pragma";
+
+    p += 5;
+    eol = strchr(p, '\n') + 1;
+    /* in case there's no \n, use the end of the string instead */
+    if (eol == (char *)1) {
+        eol = (char *)src + numBytes;
+    }
+    if (Tcl_ParseCommand(interp, p, eol - p, 0, &optsParse) != TCL_OK) {
+	goto error;
+    }
+    if (optsParse.numWords < 1) goto error;
+    tokenPtr = optsParse.tokenPtr;
+    if (tokenPtr->type != TCL_TOKEN_SIMPLE_WORD) goto error;
+    tokenPtr++;
+    if (!strncasecmp("tcl", tokenPtr->start, tokenPtr->size)) {
+	/* treat #lang tcl as a comment */
+	if (!parsePtr->commentStart) {
+	    parsePtr->commentStart = src;
+	}
+	parsePtr->commentSize = eol - src;
+	parsePtr->commandStart = NULL;
+	parsePtr->commandSize = 0;
+	*scanned = eol - src;
+	return TCL_BREAK;
+    }
+    if (!strncmp("L", tokenPtr->start, tokenPtr->size) ||
+	!strncmp("Lhtml", tokenPtr->start, tokenPtr->size)) {
+	/* it's L code, so do the parse again, but side-effect the parsePtr
+	 * this time */
+	Tcl_ParseCommand(interp, p, eol - p, 0, parsePtr);
+	/* now tack on one more word for the L code */
+	/* XXX strstr is not safe -- it expects a NULL on the end. */
+	end = strstr(eol, "\n#lang");
+	if (!end) {
+	    end = (char *)src + numBytes - 1;
+	}
+	TclGrowParseTokenArray(parsePtr, 2);
+	wordIdx = parsePtr->numTokens;
+	tokenPtr = &parsePtr->tokenPtr[wordIdx];
+	tokenPtr->type = TCL_TOKEN_SIMPLE_WORD;
+	tokenPtr->start = eol;
+	tokenPtr->size = end - tokenPtr->start + 1;
+	tokenPtr->numComponents = 1;
+	parsePtr->numTokens++;
+	parsePtr->numWords++;
+
+	tokenPtr = &parsePtr->tokenPtr[wordIdx+1];
+	*tokenPtr = parsePtr->tokenPtr[wordIdx];
+	tokenPtr->type = TCL_TOKEN_TEXT;
+	tokenPtr->numComponents = 0;
+	parsePtr->numTokens++;
+	parsePtr->commandSize = end - p;
+	return TCL_OK;
+    }
+ error:
+    parsePtr->commandStart = src;
+    parsePtr->commandSize = eol - src;
+    if (interp) {
+	Tcl_SetResult(interp, message, TCL_STATIC);
+    }
+    Tcl_FreeParse(parsePtr);
+    return TCL_ERROR;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -282,14 +385,28 @@ Tcl_ParseCommand(
      * Parse any leading space and comments before the first word of the
      * command.
      */
-
-    scanned = ParseComment(start, numBytes, parsePtr);
-    src = (start + scanned);
+    src = start;
+comments:
+    scanned = ParseComment(src, numBytes, parsePtr);
+    src += scanned;
     numBytes -= scanned;
     if (numBytes == 0) {
 	if (nested) {
 	    parsePtr->incomplete = nested;
 	}
+    }
+
+    /*
+     * Check for lang
+     */
+
+    if (strncmp(src, "#lang", 5) == 0) {
+	int rc = ParseLang(interp, src, numBytes, parsePtr, &scanned);
+	if (rc != TCL_BREAK) return rc;
+	src += scanned;
+	numBytes -= scanned;
+	if (numBytes > 0)
+	    goto comments;
     }
 
     /*
@@ -1033,7 +1150,7 @@ ParseComment(
 	    numBytes -= scanned;
 	} while (numBytes && (*p == '\n') && (p++,numBytes--));
 
-	if ((numBytes == 0) || (*p != '#')) {
+	if ((numBytes == 0) || (*p != '#') || (strncmp(p, "#lang", 5) == 0)) {
 	    break;
 	}
 	if (parsePtr->commentStart == NULL) {

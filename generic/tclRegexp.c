@@ -75,6 +75,12 @@ typedef struct ThreadSpecificData {
     struct TclRegexp *regexps[NUM_REGEXPS];
 				/* Compiled forms of above strings. Also
 				 * malloc-ed, or NULL if not in use yet. */
+#ifdef HAVE_PCRE
+    Tcl_RegExpIndices *matches;	/* To support PCRE in Tcl_RegExpGetInfo, we
+				 * need a classic info matches area to store
+				 * data in. */
+    int matchelems;		/* length of matches */
+#endif
 } ThreadSpecificData;
 
 static Tcl_ThreadDataKey dataKey;
@@ -253,8 +259,21 @@ Tcl_RegExpRange(
 	} else {
 	    string = regexpPtr->string;
 	}
-	*startPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_so);
-	*endPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_eo);
+	if (regexpPtr->flags & TCL_REG_PCRE) {
+#ifdef HAVE_PCRE
+	    /* XXX We could check for tclByteArrayType objPtr */
+	    int last = regexpPtr->details.rm_extend.rm_so; /* last offset */
+	    *startPtr = Tcl_UtfAtIndex(string,
+		    regexpPtr->matches[index].rm_so - last);
+	    *endPtr = Tcl_UtfAtIndex(string,
+		    regexpPtr->matches[index].rm_eo - last);
+#else
+	    Tcl_Panic("Cannot get info for PCRE match");
+#endif
+	} else {
+	    *startPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_so);
+	    *endPtr = Tcl_UtfAtIndex(string, regexpPtr->matches[index].rm_eo);
+	}
     }
 }
 
@@ -432,9 +451,9 @@ Tcl_RegExpExecObj(
     int flags)			/* Regular expression execution flags. */
 {
     TclRegexp *regexpPtr = (TclRegexp *) re;
-    Tcl_UniChar *udata;
-    int length;
+    int i, length;
     int reflags = regexpPtr->flags;
+    /* We could allow TCL_REG_PCRE to accept glob-fallback as well */
 #define TCL_REG_GLOBOK_FLAGS \
 	(TCL_REG_ADVANCED | TCL_REG_NOSUB | TCL_REG_NOCASE)
 
@@ -464,15 +483,109 @@ Tcl_RegExpExecObj(
     regexpPtr->string = NULL;
     regexpPtr->objPtr = textObj;
 
-    udata = Tcl_GetUnicodeFromObj(textObj, &length);
+    if (reflags & TCL_REG_PCRE) {
+#ifdef HAVE_PCRE
+	const char *matchstr;
+	int match, pcreeflags, nm = (regexpPtr->re.re_nsub + 1) * 3;
+	int byteOffset, wlen;
+	unsigned long pcreopts;
 
-    if (offset > length) {
-	offset = length;
+	if (!(flags & TCL_REG_BYTEOFFSET)) {
+	    wlen = Tcl_GetCharLength(textObj);
+	}
+	if (textObj->typePtr == &tclByteArrayType) {
+	    matchstr = (const char*)Tcl_GetByteArrayFromObj(textObj, &length);
+	} else {
+	    matchstr = (const char*)Tcl_GetStringFromObj(textObj, &length);
+	}
+
+	pcreeflags = 0;
+	if (flags & TCL_REG_NOTBOL) {
+	    pcreeflags |= PCRE_NOTBOL;
+	}
+	pcre_fullinfo(regexpPtr->pcre, NULL, PCRE_INFO_OPTIONS, &pcreopts);
+
+	if (!(flags & TCL_REG_BYTEOFFSET)) {
+	    /* To handle UTF8, convert offset from a char index to a byte offset. */
+	    if (offset > wlen) {
+		offset = wlen;
+	    }
+	    byteOffset = Tcl_UtfAtIndex(matchstr, offset) - matchstr;
+	    if (byteOffset > length) {
+		byteOffset = length;
+	    }
+	} else {
+	    if (offset > length) {
+		offset = length;
+	    }
+	    byteOffset = offset;
+	}
+
+	match = pcre_exec(regexpPtr->pcre, regexpPtr->study,
+		matchstr, length, byteOffset, pcreeflags,
+		(int *) regexpPtr->matches, nm);
+
+	if (!(flags & TCL_REG_BYTEOFFSET)) {
+	    /*
+	     * For UTF8, we need the matches array as char offsets, but pcre
+	     * returns byte offsets.  Do the conversion.
+	     * This could be sped up for lots of matches.
+	     */
+	    for (i = 0; i < 2*match; ++i) {
+		int *p = &((int *)regexpPtr->matches)[i];
+		*p = Tcl_NumUtfChars(matchstr, *p);
+	    }
+	}
+
+	/*
+	 * Store last offset to support Tcl_RegExpGetInfo translation.
+	 */
+	if (match == PCRE_ERROR_NOMATCH) {
+	    regexpPtr->details.rm_extend.rm_so = -1;
+	} else {
+	    regexpPtr->details.rm_extend.rm_so = offset;
+	}
+
+	/*
+	 * Check for errors.
+	 */
+
+	if (match == PCRE_ERROR_NOMATCH) {
+	    return 0;
+	} else if (match == 0) {
+	    if (interp != NULL) {
+		Tcl_AppendResult(interp,
+			"pcre_exec had insufficient capture space", NULL);
+	    }
+	    return -1;
+	} else if (match < -1) {
+	    if (interp != NULL) {
+		char buf[32 + TCL_INTEGER_SPACE];
+		sprintf(buf, "pcre_exec returned error code %d", match);
+		Tcl_AppendResult(interp, buf, NULL);
+	    }
+	    return -1;
+	}
+	return 1;
+#else
+	if (interp != NULL) {
+	    Tcl_AppendResult(interp, "PCRE not available", NULL);
+	}
+	return -1;
+#endif
+    } else {
+	Tcl_UniChar *udata;
+
+	udata = Tcl_GetUnicodeFromObj(textObj, &length);
+
+	if (offset > length) {
+	    offset = length;
+	}
+	udata += offset;
+	length -= offset;
+
+	return RegExpExecUniChar(interp, re, udata, length, nmatches, flags);
     }
-    udata += offset;
-    length -= offset;
-
-    return RegExpExecUniChar(interp, re, udata, length, nmatches, flags);
 }
 
 /*
@@ -535,7 +648,32 @@ Tcl_RegExpGetInfo(
     TclRegexp *regexpPtr = (TclRegexp *) regexp;
 
     infoPtr->nsubs = regexpPtr->re.re_nsub;
-    infoPtr->matches = (Tcl_RegExpIndices *) regexpPtr->matches;
+    if (regexpPtr->flags & TCL_REG_PCRE) {
+#ifdef HAVE_PCRE
+	ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+	int i, last, *matches = (int *) regexpPtr->matches;
+
+	/*
+	 * This works both to initialize and extend matches as necessary
+	 */
+	if (tsdPtr->matchelems <= infoPtr->nsubs) {
+	    tsdPtr->matchelems = infoPtr->nsubs + 1;
+	    tsdPtr->matches = (Tcl_RegExpIndices *)
+		ckrealloc((char *) tsdPtr->matches,
+			sizeof(Tcl_RegExpIndices) * tsdPtr->matchelems);
+	}
+	last = regexpPtr->details.rm_extend.rm_so; /* last offset */
+	for (i = 0; i <= infoPtr->nsubs; i++) {
+	    tsdPtr->matches[i].start = matches[i*2] - last;
+	    tsdPtr->matches[i].end = matches[i*2+1] - last;
+	}
+	infoPtr->matches = tsdPtr->matches;
+#else
+	Tcl_Panic("Cannot get info for PCRE match");
+#endif
+    } else {
+	infoPtr->matches = (Tcl_RegExpIndices *) regexpPtr->matches;
+    }
     infoPtr->extendStart = regexpPtr->details.rm_extend.rm_so;
 }
 
@@ -580,6 +718,10 @@ Tcl_GetRegExpFromObj(
 
     regexpPtr = objPtr->internalRep.twoPtrValue.ptr1;
 
+    /* XXX Need to have case where -type classic isn't ignored in regexp/sub */
+    if ((interp != NULL) && (((Interp *)interp)->flags & INTERP_PCRE)) {
+	flags |= TCL_REG_PCRE;
+    }
     if ((objPtr->typePtr != &tclRegexpType) || (regexpPtr->flags != flags)) {
 	pattern = TclGetStringFromObj(objPtr, &length);
 
@@ -906,38 +1048,126 @@ CompileRegexp(
      */
 
     regexpPtr = ckalloc(sizeof(TclRegexp));
-    regexpPtr->objPtr = NULL;
-    regexpPtr->string = NULL;
+    memset(regexpPtr, 0, sizeof(TclRegexp));
+
+    regexpPtr->flags = flags;
     regexpPtr->details.rm_extend.rm_so = -1;
     regexpPtr->details.rm_extend.rm_eo = -1;
 
-    /*
-     * Get the up-to-date string representation and map to unicode.
-     */
+    if (flags & TCL_REG_PCRE) {
+#ifdef HAVE_PCRE
+	pcre *pcre;
+	char *p, *cstring = (char *) string;
+	const char *errstr;
+	int erroffset, rc, nsubs, pcrecflags;
 
-    Tcl_DStringInit(&stringBuf);
-    uniString = Tcl_UtfToUniCharDString(string, length, &stringBuf);
-    numChars = Tcl_DStringLength(&stringBuf) / sizeof(Tcl_UniChar);
-
-    /*
-     * Compile the string and check for errors.
-     */
-
-    regexpPtr->flags = flags;
-    status = TclReComp(&regexpPtr->re, uniString, (size_t) numChars, flags);
-    Tcl_DStringFree(&stringBuf);
-
-    if (status != REG_OKAY) {
 	/*
-	 * Clean up and report errors in the interpreter, if possible.
+	 * Convert from Tcl classic to PCRE cflags
 	 */
 
-	ckfree(regexpPtr);
-	if (interp) {
-	    TclRegError(interp,
-		    "couldn't compile regular expression pattern: ", status);
+	/* XXX Should enable PCRE_UTF8 selectively on non-ByteArray Tcl_Obj */
+	pcrecflags = PCRE_NO_UTF8_CHECK | PCRE_DOLLAR_ENDONLY | PCRE_DOTALL;
+	for (i = 0, p = cstring; i < length; i++) {
+	    if (UCHAR(*p++) > 0x80) {
+		pcrecflags |= PCRE_UTF8;
+		break;
+	    }
 	}
+	if (flags & TCL_REG_NOCASE) {
+	    pcrecflags |= PCRE_CASELESS;
+	}
+	if (flags & TCL_REG_EXPANDED) {
+	    pcrecflags |= PCRE_EXTENDED;
+	}
+	/* TCL_REG_NLSTOP|TCL_REG_NLANCH == TCL_REG_NEWLINE */
+	if (flags & TCL_REG_NLSTOP) {
+	    pcrecflags &= ~(PCRE_DOTALL);
+	}
+	if (flags & TCL_REG_NLANCH) {
+	    pcrecflags |= PCRE_MULTILINE;
+	    pcrecflags &= ~(PCRE_DOLLAR_ENDONLY);
+	}
+
+	if (cstring[length] != 0) {
+	    cstring = (char *) ckalloc(length + 1);
+	    memcpy(cstring, string, length);
+	    cstring[length] = 0;
+	}
+	pcre = pcre_compile(cstring, pcrecflags, &errstr, &erroffset, NULL);
+	regexpPtr->pcre = pcre;
+	if (cstring != (char *) string) {
+	    ckfree(cstring);
+	}
+
+	if (pcre == NULL) {
+	    ckfree((char *)regexpPtr);
+	    Tcl_AppendResult(interp,
+		    "couldn't compile pcre pattern: ", errstr, NULL);
+	    return NULL;
+	}
+
+	regexpPtr->study = pcre_study(pcre, 0, &errstr);
+	if (errstr != NULL) {
+	    pcre_free(pcre);
+	    ckfree((char *)regexpPtr);
+	    Tcl_AppendResult(interp,
+		    "error studying pcre pattern: ", errstr, NULL);
+	    return NULL;
+	}
+
+	/*
+	 * Allocate enough space for all of the subexpressions, plus one extra
+	 * for the entire pattern.
+	 */
+
+	rc = pcre_fullinfo(pcre, NULL, PCRE_INFO_CAPTURECOUNT, &nsubs);
+	if (rc == 0) {
+	    regexpPtr->re.re_nsub = nsubs;
+	    regexpPtr->matches = (regmatch_t *)
+		ckalloc(sizeof(int) * (nsubs+1)*3);
+	}
+#else
+	Tcl_AppendResult(interp,
+		"couldn't compile pcre pattern: pcre unavailabe", NULL);
 	return NULL;
+#endif
+    } else {
+	/*
+	 * Get the up-to-date string representation and map to unicode.
+	 */
+
+	Tcl_DStringInit(&stringBuf);
+	uniString = Tcl_UtfToUniCharDString(string, length, &stringBuf);
+	numChars = Tcl_DStringLength(&stringBuf) / sizeof(Tcl_UniChar);
+
+	/*
+	 * Compile the string and check for errors.
+	 */
+
+	status = TclReComp(&regexpPtr->re, uniString, (size_t) numChars, flags);
+	Tcl_DStringFree(&stringBuf);
+
+	if (status != REG_OKAY) {
+	    /*
+	     * Clean up and report errors in the interpreter, if possible.
+	     */
+
+	    ckfree((char *)regexpPtr);
+	    if (interp) {
+		TclRegError(interp,
+			"couldn't compile regular expression pattern: ",
+			status);
+	    }
+	    return NULL;
+	}
+
+	/*
+	 * Allocate enough space for all of the subexpressions, plus one extra
+	 * for the entire pattern.
+	 */
+
+	regexpPtr->matches = (regmatch_t *) ckalloc(
+	    sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
     }
 
     /*
@@ -953,14 +1183,6 @@ CompileRegexp(
     } else {
 	regexpPtr->globObjPtr = NULL;
     }
-
-    /*
-     * Allocate enough space for all of the subexpressions, plus one extra for
-     * the entire pattern.
-     */
-
-    regexpPtr->matches =
-	    ckalloc(sizeof(regmatch_t) * (regexpPtr->re.re_nsub + 1));
 
     /*
      * Initialize the refcount to one initially, since it is in the cache.
@@ -1014,6 +1236,14 @@ static void
 FreeRegexp(
     TclRegexp *regexpPtr)	/* Compiled regular expression to free. */
 {
+#ifdef HAVE_PCRE
+    if (regexpPtr->flags & TCL_REG_PCRE) {
+	pcre_free(regexpPtr->pcre);
+	if (regexpPtr->study) {
+	    pcre_free(regexpPtr->study);
+	}
+    } else
+#endif
     TclReFree(&regexpPtr->re);
     if (regexpPtr->globObjPtr) {
 	TclDecrRefCount(regexpPtr->globObjPtr);
@@ -1057,12 +1287,459 @@ FinalizeRegexp(
 	tsdPtr->patterns[i] = NULL;
     }
 
+#ifdef HAVE_PCRE
+    if (tsdPtr->matches != NULL) {
+	ckfree((char *) tsdPtr->matches);
+    }
+#endif
     /*
      * We may find ourselves reinitialized if another finalization routine
      * invokes regexps.
      */
 
     tsdPtr->initialized = 0;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRegexpClassic --
+ *
+ *	This procedure processes a classic "regexp".
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclRegexpClassic(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument objects. */
+    Tcl_RegExp regExpr,
+    int all,
+    int indices,
+    int doinline,
+    int offset)
+{
+    int i, match, numMatchesSaved, matchLength;
+    int eflags, stringLength;
+    Tcl_Obj *objPtr, *resultPtr = NULL;
+    Tcl_RegExpInfo info;
+
+    objPtr = objv[1];
+    stringLength = Tcl_GetCharLength(objPtr);
+
+    objc -= 2;
+    objv += 2;
+
+    if (doinline) {
+	/*
+	 * Save all the subexpressions, as we will return them as a list
+	 */
+
+	numMatchesSaved = -1;
+    } else {
+	/*
+	 * Save only enough subexpressions for matches we want to keep, expect
+	 * in the case of -all, where we need to keep at least one to know
+	 * where to move the offset.
+	 */
+
+	numMatchesSaved = (objc == 0) ? all : objc;
+    }
+
+    /*
+     * The following loop is to handle multiple matches within the same source
+     * string; each iteration handles one match. If "-all" hasn't been
+     * specified then the loop body only gets executed once. We terminate the
+     * loop when the starting offset is past the end of the string.
+     */
+
+    while (1) {
+	/*
+	 * Pass either 0 or TCL_REG_NOTBOL in the eflags. Passing
+	 * TCL_REG_NOTBOL indicates that the character at offset should not be
+	 * considered the start of the line. If for example the pattern {^} is
+	 * passed and -start is positive, then the pattern will not match the
+	 * start of the string unless the previous character is a newline.
+	 */
+
+	if (offset == 0) {
+	    eflags = 0;
+	} else if (offset > stringLength) {
+	    eflags = TCL_REG_NOTBOL;
+	} else if (Tcl_GetUniChar(objPtr, offset-1) == (Tcl_UniChar)'\n') {
+	    eflags = 0;
+	} else {
+	    eflags = TCL_REG_NOTBOL;
+	}
+
+	match = Tcl_RegExpExecObj(interp, regExpr, objPtr, offset,
+		numMatchesSaved, eflags);
+	if (match < 0) {
+	    return TCL_ERROR;
+	}
+
+	if (match == 0) {
+	    /*
+	     * We want to set the value of the intepreter result only when
+	     * this is the first time through the loop.
+	     */
+
+	    if (all <= 1) {
+		/*
+		 * If inlining, the interpreter's object result remains an
+		 * empty list, otherwise set it to an integer object w/ value
+		 * 0.
+		 */
+
+		if (!doinline) {
+		    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+		}
+		return TCL_OK;
+	    }
+	    break;
+	}
+
+	/*
+	 * If additional variable names have been specified, return index
+	 * information in those variables.
+	 */
+
+	Tcl_RegExpGetInfo(regExpr, &info);
+	if (doinline) {
+	    /*
+	     * It's the number of substitutions, plus one for the matchVar at
+	     * index 0
+	     */
+
+	    objc = info.nsubs + 1;
+	    if (all <= 1) {
+		resultPtr = Tcl_NewObj();
+	    }
+	}
+	for (i = 0; i < objc; i++) {
+	    Tcl_Obj *newPtr;
+
+	    if (indices) {
+		int start, end;
+		Tcl_Obj *objs[2];
+
+		/*
+		 * Only adjust the match area if there was a match for that
+		 * area. (Scriptics Bug 4391/SF Bug #219232)
+		 */
+
+		if (i <= info.nsubs && info.matches[i].start >= 0) {
+		    start = offset + info.matches[i].start;
+		    end = offset + info.matches[i].end;
+
+		    /*
+		     * Adjust index so it refers to the last character in the
+		     * match instead of the first character after the match.
+		     */
+
+		    if (end >= offset) {
+			end--;
+		    }
+		} else {
+		    start = -1;
+		    end = -1;
+		}
+
+		objs[0] = Tcl_NewLongObj(start);
+		objs[1] = Tcl_NewLongObj(end);
+
+		newPtr = Tcl_NewListObj(2, objs);
+	    } else {
+		if (i <= info.nsubs) {
+		    newPtr = Tcl_GetRange(objPtr,
+			    offset + info.matches[i].start,
+			    offset + info.matches[i].end - 1);
+		} else {
+		    newPtr = Tcl_NewObj();
+		}
+	    }
+	    if (doinline) {
+		if (Tcl_ListObjAppendElement(interp, resultPtr, newPtr)
+			!= TCL_OK) {
+		    Tcl_DecrRefCount(newPtr);
+		    Tcl_DecrRefCount(resultPtr);
+		    return TCL_ERROR;
+		}
+	    } else {
+		if (Tcl_ObjSetVar2(interp, objv[i], NULL, newPtr,
+			TCL_LEAVE_ERR_MSG) == NULL) {
+		    return TCL_ERROR;
+		}
+	    }
+	}
+
+	if (all == 0) {
+	    break;
+	}
+
+	/*
+	 * Adjust the offset to the character just after the last one in the
+	 * matchVar and increment all to count how many times we are making a
+	 * match. We always increment the offset by at least one to prevent
+	 * endless looping (as in the case: regexp -all {a*} a). Otherwise,
+	 * when we match the NULL string at the end of the input string, we
+	 * will loop indefinately (because the length of the match is 0, so
+	 * offset never changes).
+	 */
+
+	matchLength = (info.matches[0].end - info.matches[0].start);
+
+	offset += info.matches[0].end;
+
+	/*
+	 * A match of length zero could happen for {^} {$} or {.*} and in
+	 * these cases we always want to bump the index up one.
+	 */
+
+	if (matchLength == 0) {
+	    offset++;
+	}
+	offset += info.matches[0].end;
+	all++;
+	eflags |= TCL_REG_NOTBOL;
+	if (offset >= stringLength) {
+	    break;
+	}
+    }
+
+    /*
+     * Set the interpreter's object result to an integer object with value 1
+     * if -all wasn't specified, otherwise it's all-1 (the number of times
+     * through the while - 1).
+     */
+
+    if (doinline) {
+	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(all ? all-1 : 1));
+    }
+    return TCL_OK;
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclRegexpPCRE --
+ *
+ *	This procedure processes a PCRE "regexp".
+ *
+ * Results:
+ *	A standard Tcl result.
+ *
+ * Side effects:
+ *	See the user documentation.
+ *
+ *----------------------------------------------------------------------
+ */
+
+int
+TclRegexpPCRE(
+    Tcl_Interp *interp,		/* Current interpreter. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *CONST objv[],	/* Argument objects. */
+    Tcl_RegExp regExpr,
+    int all,
+    int indices,
+    int doinline,
+    int offset)
+{
+#ifdef HAVE_PCRE
+    int i, match, eflags, stringLength, matchelems, *matches;
+    Tcl_Obj *objPtr, *resultPtr = NULL;
+    const char *matchstr;
+    pcre *re;
+    pcre_extra *study;
+    TclRegexp *regexpPtr = (TclRegexp *) regExpr;
+
+    objPtr = objv[1];
+    if (objPtr->typePtr == &tclByteArrayType) {
+	matchstr = (const char*)Tcl_GetByteArrayFromObj(objPtr, &stringLength);
+    } else {
+	matchstr = (const char*)Tcl_GetStringFromObj(objPtr, &stringLength);
+    }
+
+    eflags = PCRE_NO_UTF8_CHECK;
+    if (offset > 0) {
+	/*
+	 * Translate offset into correct placement for utf-8 chars.
+	 * Add flag if using offset (string is part of a larger string), so
+	 * that "^" won't match.
+	 */
+
+	if (objPtr->typePtr != &tclByteArrayType) {
+	    /* XXX: probably needs length restriction */
+	    offset = Tcl_UtfAtIndex(matchstr, offset) - matchstr;
+	}
+	eflags |= PCRE_NOTBOL;
+    }
+
+    objc -= 2;
+    objv += 2;
+
+    /*
+     * The following loop is to handle multiple matches within the same source
+     * string; each iteration handles one match. If "-all" hasn't been
+     * specified then the loop body only gets executed once. We terminate the
+     * loop when the starting offset is past the end of the string.
+     */
+
+    re = regexpPtr->pcre;
+    study = regexpPtr->study;
+    matches = (int *) regexpPtr->matches;
+    matchelems = (int) (regexpPtr->re.re_nsub + 1) * 3;
+    while (1) {
+	match = pcre_exec(re, study, matchstr, stringLength,
+		offset, eflags, matches, matchelems);
+
+	if (match < -1) {
+	    char buf[32 + TCL_INTEGER_SPACE];
+	    sprintf(buf, "pcre_exec returned error code %d", match);
+	    Tcl_AppendResult(interp, buf, NULL);
+	    return TCL_ERROR;
+	}
+
+	if (match == 0) {
+	    Tcl_AppendResult(interp,
+		    "pcre_exec had insufficient capture space", NULL);
+	    return TCL_ERROR;
+	}
+
+	if (match == PCRE_ERROR_NOMATCH) {
+	    /*
+	     * We want to set the value of the intepreter result only when
+	     * this is the first time through the loop.
+	     */
+
+	    if (all <= 1) {
+		/*
+		 * If inlining, the interpreter's object result remains an
+		 * empty list, otherwise set it to an integer object w/ value
+		 * 0.
+		 */
+
+		if (!doinline) {
+		    Tcl_SetObjResult(interp, Tcl_NewIntObj(0));
+		}
+		return TCL_OK;
+	    }
+	    break;
+	}
+
+	/*
+	 * If additional variable names have been specified, return index
+	 * information in those variables.
+	 */
+
+	if (doinline) {
+	    /*
+	     * It's the number of substitutions, plus one for the matchVar at
+	     * index 0
+	     */
+
+	    objc = match;
+	    if (all <= 1) {
+		resultPtr = Tcl_NewObj();
+	    }
+	}
+	for (i = 0; i < objc; i++) {
+	    Tcl_Obj *newPtr;
+	    int start, end;
+
+	    if (i < match) {
+		start = matches[i*2];
+		end = matches[i*2 + 1];
+	    } else {
+		start = -1;
+		end = -1;
+	    }
+	    if (indices) {
+		Tcl_Obj *objs[2];
+
+		objs[0] = Tcl_NewLongObj(start);
+		objs[1] = Tcl_NewLongObj((end < 0) ? end : end - 1);
+
+		newPtr = Tcl_NewListObj(2, objs);
+	    } else {
+		if (i < match) {
+		    newPtr = Tcl_NewStringObj(matchstr + start, end - start);
+		} else {
+		    newPtr = Tcl_NewObj();
+		}
+	    }
+	    if (doinline) {
+		if (Tcl_ListObjAppendElement(interp, resultPtr, newPtr)
+			!= TCL_OK) {
+		    Tcl_DecrRefCount(newPtr);
+		    Tcl_DecrRefCount(resultPtr);
+		    return TCL_ERROR;
+		}
+	    } else {
+		Tcl_Obj *valuePtr;
+		valuePtr = Tcl_ObjSetVar2(interp, objv[i], NULL, newPtr, 0);
+		if (valuePtr == NULL) {
+		    Tcl_AppendResult(interp, "couldn't set variable \"",
+			    TclGetString(objv[i]), "\"", NULL);
+		    return TCL_ERROR;
+		}
+	    }
+	}
+
+	if (all == 0) {
+	    break;
+	}
+
+	/*
+	 * Adjust the offset to the character just after the last one in the
+	 * matchVar and increment all to count how many times we are making a
+	 * match. We always increment the offset by at least one to prevent
+	 * endless looping (as in the case: regexp -all {a*} a). Otherwise,
+	 * when we match the NULL string at the end of the input string, we
+	 * will loop indefinately (because the length of the match is 0, so
+	 * offset never changes).
+	 * matches[1] is the match end point of the full RE match.
+	 */
+
+	if (matches[0] == matches[1]) {
+	    offset++;
+	} else {
+	    offset = matches[1];
+	}
+	all++;
+	eflags |= PCRE_NOTBOL;
+	if (offset >= stringLength) {
+	    break;
+	}
+    }
+
+    /*
+     * Set the interpreter's object result to an integer object with value 1
+     * if -all wasn't specified, otherwise it's all-1 (the number of times
+     * through the while - 1).
+     */
+
+    if (doinline) {
+	Tcl_SetObjResult(interp, resultPtr);
+    } else {
+	Tcl_SetObjResult(interp, Tcl_NewIntObj(all ? all-1 : 1));
+    }
+    return TCL_OK;
+#else /* !HAVE_PCRE */
+    Tcl_AppendResult(interp, "PCRE not available", NULL);
+    return TCL_ERROR;
+#endif
 }
 
 /*

@@ -489,6 +489,7 @@ TclInterpInit(
 
     Tcl_NRCreateCommand(interp, "interp", Tcl_InterpObjCmd, NRInterpCmd,
 	    NULL, NULL);
+    TclLInitCompiler(interp);
 
     Tcl_CallWhenDeleted(interp, InterpInfoDeleteProc, NULL);
     return TCL_OK;
@@ -615,7 +616,8 @@ NRInterpCmd(
 	"eval",		"exists",	"expose",
 	"hide",		"hidden",	"issafe",
 	"invokehidden",	"limit",	"marktrusted",	"recursionlimit",
-	"slaves",	"share",	"target",	"transfer",
+	"regexp",	"slaves",	"share",	"target",
+	"transfer",
 	NULL
     };
     enum option {
@@ -624,7 +626,8 @@ NRInterpCmd(
 	OPT_EVAL,	OPT_EXISTS,	OPT_EXPOSE,
 	OPT_HIDE,	OPT_HIDDEN,	OPT_ISSAFE,
 	OPT_INVOKEHID,	OPT_LIMIT,	OPT_MARKTRUSTED,OPT_RECLIMIT,
-	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,	OPT_TRANSFER
+	OPT_REGEXP,	OPT_SLAVES,	OPT_SHARE,	OPT_TARGET,
+	OPT_TRANSFER
     };
 
     if (objc < 2) {
@@ -1032,6 +1035,41 @@ NRInterpCmd(
 		    Tcl_NewStringObj(string, -1));
 	}
 	Tcl_SetObjResult(interp, resultPtr);
+	return TCL_OK;
+    }
+    case OPT_REGEXP: {
+	int re_type;
+	Interp *slaveInterp;
+	static CONST char *re_type_opts[] = {
+	    "classic",	"pcre",	NULL
+	};
+	enum re_type_opts {
+	    RETYPE_CLASSIC,	RETYPE_PCRE,
+	};
+	if (objc != 3 && objc != 4) {
+	    Tcl_WrongNumArgs(interp, 2, objv, "path ?type?");
+	    return TCL_ERROR;
+	}
+	slaveInterp = (Interp *) GetInterp(interp, objv[2]);
+	if (slaveInterp == NULL) {
+	    return TCL_ERROR;
+	}
+	if (objc == 4) {
+	    if (Tcl_GetIndexFromObj(interp, objv[3], re_type_opts, "type",
+			    0, &re_type) != TCL_OK) {
+		return TCL_ERROR;
+	    }
+	    if ((enum re_type_opts) re_type == RETYPE_PCRE) {
+		slaveInterp->flags |= INTERP_PCRE;
+	    } else {
+		slaveInterp->flags &= ~(INTERP_PCRE);
+	    }
+	}
+	if (slaveInterp->flags & INTERP_PCRE) {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("pcre", -1));
+	} else {
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("classic", -1));
+	}
 	return TCL_OK;
     }
     case OPT_TRANSFER:

@@ -12,6 +12,7 @@
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
  * Copyright (c) 2006-2008 by Joe Mistachkin.  All rights reserved.
  * Copyright (c) 2008 Miguel Sofer <msofer@users.sourceforge.net>
+ * Copyright (c) 2007 BitMover, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -262,6 +263,23 @@ static const CmdInfo builtInCmds[] = {
     {"yieldto",		NULL,			TclCompileYieldToCmd,	TclNRYieldToObjCmd,	CMD_IS_SAFE},
 
     /*
+     * L Commands
+     */
+
+    {"L",		Tcl_LObjCmd,		NULL,		NULL, 1},
+    {"shsplit",		Tcl_ShSplitObjCmd,	NULL,		NULL, 1},
+    {"fgetline",	Tcl_FGetlineObjCmd,	NULL,		NULL, 1},
+    {"angle_read_",	Tcl_LAngleReadObjCmd,	NULL,		NULL, 1},
+    {"Lread_",		Tcl_LReadCmd,		NULL,		NULL, 1},
+    {"Lwrite_",		Tcl_LWriteCmd,		NULL,		NULL, 1},
+    {"Lrefcnt",		Tcl_LRefCnt,		NULL,		NULL, 1},
+    {"defined",		Tcl_LDefined,		NULL,		NULL, 1},
+    {"Lhtml",		Tcl_LHtmlObjCmd,	NULL,		NULL, 1},
+    {"LgetNextLine_",	Tcl_LGetNextLine,	NULL,		NULL, 1},
+    {"LgetNextLineInit_",	Tcl_LGetNextLineInit,	NULL,		NULL, 1},
+    {"getdirx",         Tcl_LGetDirX,	        NULL,		NULL, 1},
+
+    /*
      * Commands in the OS-interface. Note that many of these are unsafe.
      */
 
@@ -277,6 +295,8 @@ static const CmdInfo builtInCmds[] = {
     {"fcopy",		Tcl_FcopyObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"fileevent",	Tcl_FileEventObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
     {"flush",		Tcl_FlushObjCmd,	NULL,			NULL,	CMD_IS_SAFE},
+    {"getopt",		Tcl_GetOptObjCmd,	NULL,			NULL,	0},
+    {"getoptReset",	Tcl_GetOptResetObjCmd,	NULL,			NULL,	0},
     {"gets",		Tcl_GetsObjCmd,		NULL,			NULL,	CMD_IS_SAFE},
     {"glob",		Tcl_GlobObjCmd,		NULL,			NULL,	0},
     {"load",		Tcl_LoadObjCmd,		NULL,			NULL,	0},
@@ -597,6 +617,13 @@ Tcl_CreateInterp(void)
     iPtr->evalFlags = 0;
     iPtr->scriptFile = NULL;
     iPtr->flags = 0;
+#ifdef HAVE_PCRE
+#ifdef USE_DEFAULT_PCRE
+    if (getenv("TCL_REGEXP_CLASSIC") == NULL) { iPtr->flags |= INTERP_PCRE; }
+#else
+    if (getenv("TCL_REGEXP_PCRE") != NULL) { iPtr->flags |= INTERP_PCRE; }
+#endif
+#endif
     iPtr->tracePtr = NULL;
     iPtr->tracesForbiddingInline = 0;
     iPtr->activeCmdTracePtr = NULL;
@@ -5180,6 +5207,23 @@ TclEvalEx(
 		if (wordCLNext) {
 		    TclContinuationsEnterDerived(objv[objectsUsed],
 			    wordStart - outerScript, wordCLNext);
+		}
+
+		/*
+		 * If this is the L command and we just processed the first
+		 * command word (i.e., the "L"), inject an argument --line=%d
+		 * before the next command word.  This communicates the source
+		 * line # to the L compiler.
+		 */
+		if (!objectsUsed &&
+		    (!strncmp("L", tokenPtr->start, tokenPtr->size) ||
+		     !strncmp("Lhtml", tokenPtr->start, tokenPtr->size))) {
+		    ++numWords;
+		    ++objectsUsed;
+		    ++objectsNeeded;
+		    objv[objectsUsed] = Tcl_ObjPrintf("--line=%d", lines[0]+1);
+		    Tcl_IncrRefCount(objv[objectsUsed]);
+		    expand[objectsUsed] = 0;
 		}
 	    } /* for loop */
 	    iPtr->cmdFramePtr = eeFramePtr;

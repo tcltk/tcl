@@ -151,7 +151,7 @@ ZLIB_DLL_FILE		= zlib1.dll
 SHARED_LIBRARIES 	= $(TCL_DLL_FILE) @ZLIB_DLL_FILE@
 STATIC_LIBRARIES	= $(TCL_LIB_FILE)
 
-TCLSH			= tclsh$(VER)${EXESUFFIX}
+TCLSH			= tclsh${EXESUFFIX}
 CAT32			= cat32$(EXEEXT)
 MAN2TCL			= man2tcl$(EXEEXT)
 
@@ -171,7 +171,7 @@ VPATH = $(GENERIC_DIR):$(TOMMATH_DIR):$(WIN_DIR):$(COMPAT_DIR):$(ZLIB_DIR)
 
 AR		= @AR@
 RANLIB		= @RANLIB@
-CC		= @CC@
+CC		= $(if $(Q), @echo CC $(notdir $<) ; @CC@, @CC@)
 RC		= @RC@
 RES		= @RES@
 AC_FLAGS	= @EXTRA_CFLAGS@ @DEFS@
@@ -188,7 +188,7 @@ SHLIB_LD	= @SHLIB_LD@
 SHLIB_LD_LIBS	= @SHLIB_LD_LIBS@
 SHLIB_CFLAGS	= @SHLIB_CFLAGS@
 SHLIB_SUFFIX	= @SHLIB_SUFFIX@
-LIBS		= @LIBS@ $(shell $(CYGPATH) '@ZLIB_LIBS@')
+LIBS		= @LIBS@ @PCRE_LIBS@ @ZLIB_LIBS@
 
 RMDIR		= rm -rf
 MKDIR		= mkdir -p
@@ -199,7 +199,7 @@ COPY		= cp
 CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${TCL_SHLIB_CFLAGS} \
 -I"${ZLIB_DIR_NATIVE}" -I"${GENERIC_DIR_NATIVE}" -DTCL_TOMMATH \
 -DMP_PREC=4 -I"${TOMMATH_DIR_NATIVE}" -I"${WIN_DIR_NATIVE}" \
-${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
+@PCRE_INCLUDE@ ${AC_FLAGS} ${COMPILE_DEBUG_FLAGS} ${NO_DEPRECATED_FLAGS}
 
 CC_OBJNAME = @CC_OBJNAME@
 CC_EXENAME = @CC_EXENAME@
@@ -304,6 +304,13 @@ GENERIC_OBJS = \
 	tclVar.$(OBJEXT) \
 	tclZlib.$(OBJEXT)
 
+L_OBJS	= Lscanner-pregen.$(OBJEXT) \
+	Lgrammar-pregen.$(OBJEXT) \
+	Lcompile.$(OBJEXT) \
+	Last.$(OBJEXT) \
+	Ltypecheck.$(OBJEXT) \
+	Lgetopt.$(OBJEXT)
+
 TOMMATH_OBJS = \
 	bncore.${OBJEXT} \
 	bn_reverse.${OBJEXT} \
@@ -371,6 +378,18 @@ TOMMATH_OBJS = \
 	bn_s_mp_sub.${OBJEXT}
 
 
+L_HDRS	= \
+	$(GENERIC_DIR)/Lcompile.h \
+	$(GENERIC_DIR)/Lgrammar.h \
+	$(GENERIC_DIR)/Last.h
+
+L_SRCS	= \
+	$(GENERIC_DIR)/Lscanner.l \
+	$(GENERIC_DIR)/Lgrammar.y \
+	$(GENERIC_DIR)/Lcompile.c \
+	$(GENERIC_DIR)/Last.c \
+	$(GENERIC_DIR)/Lgetopt.c
+
 WIN_OBJS = \
 	tclWin32Dll.$(OBJEXT) \
 	tclWinChan.$(OBJEXT) \
@@ -411,7 +430,7 @@ ZLIB_OBJS = \
 	uncompr.$(OBJEXT) \
 	zutil.$(OBJEXT)
 
-TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@
+TCL_OBJS = ${GENERIC_OBJS} $(TOMMATH_OBJS) ${WIN_OBJS} @ZLIB_OBJS@ $(L_OBJS)
 
 TCL_DOCS = "$(ROOT_DIR_NATIVE)"/doc/*.[13n]
 
@@ -529,6 +548,27 @@ tclTomMathStubLib.${OBJEXT}: tclTomMathStubLib.c
 tclOOStubLib.${OBJEXT}: tclOOStubLib.c
 	$(CC) -c $(CC_SWITCHES) -DSTATIC_BUILD @DEPARG@ $(CC_OBJNAME)
 
+Lscanner.c: $(GENERIC_DIR)/Lscanner.l $(L_HDRS) $(GENERIC_DIR)/Lgrammar.c
+	flex -PL_ -o$@ $(GENERIC_DIR)/Lscanner.l
+
+Lscanner-pregen.$(OBJEXT): $(GENERIC_DIR)/Lscanner-pregen.c $(L_HDRS)
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl @DEPARG@ $(GENERIC_DIR)/Lscanner-pregen.c
+
+Lgrammar.c: $(GENERIC_DIR)/Lgrammar.y $(L_HDRS)
+	@BISON@ -pL_ -d -o$@ $(GENERIC_DIR)/Lgrammar.y
+
+Lgrammar-pregen.$(OBJEXT): $(GENERIC_DIR)/Lgrammar-pregen.c Lcompile.$(OBJEXT) $(L_HDRS)
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl @DEPARG@ $(GENERIC_DIR)/Lgrammar-pregen.c
+
+Lcompile.$(OBJEXT): $(GENERIC_DIR)/Lcompile.c $(L_HDRS)
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl @DEPARG@ $(GENERIC_DIR)/Lcompile.c
+
+Lgetopt.$(OBJEXT): $(GENERIC_DIR)/Lgetopt.c $(L_HDRS)
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl @DEPARG@ $(GENERIC_DIR)/Lgetopt.c
+
+Last.$(OBJEXT): $(GENERIC_DIR)/Last.c $(L_HDRS) 
+	$(CC) -c $(CC_SWITCHES) -DBUILD_tcl @DEPARG@ $(GENERIC_DIR)/Last.c
+
 # Implicit rule for all object files that will end up in the Tcl library
 
 %.${OBJEXT}: %.c
@@ -544,7 +584,7 @@ tclOOStubLib.${OBJEXT}: tclOOStubLib.c
 # the .c file.
 
 gendate:
-	bison --output-file=$(GENERIC_DIR)/tclDate.c \
+	@BISON@ --output-file=$(GENERIC_DIR)/tclDate.c \
 	--name-prefix=TclDate \
 	--no-lines \
 	$(GENERIC_DIR)/tclGetDate.y
@@ -640,7 +680,7 @@ install-libraries: libraries install-tzdata install-msgs
 	    $(COPY) "$$i" "$(INCLUDE_INSTALL_DIR)"; \
 	    done;
 	@echo "Installing library files to $(SCRIPT_INSTALL_DIR)";
-	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex; \
+	@for i in $(ROOT_DIR)/library/*.tcl $(ROOT_DIR)/library/tclIndex ; \
 	    do \
 	    $(COPY) "$$i" "$(SCRIPT_INSTALL_DIR)"; \
 	    done;
@@ -712,6 +752,9 @@ test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
 	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
 	package ifneeded registry 1.3.1 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
+
+l-test l-tests test-l test-L:
+	TCLTEST_SHELL_OPTIONS='-encoding utf-8' $(MAKE) test TESTFLAGS+="-file l-*.test"
 
 # Useful target to launch a built tclsh with the proper path,...
 runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
@@ -864,6 +907,7 @@ html-tcl: $(TCLSH)
 
 html-tk: $(TCLSH)
 	$(MAKE) shell SCRIPT="$(TOOL_DIR)/tcltk-man2html.tcl --htmldir=$(HTML_INSTALL_DIR) --srcdir=$(ROOT_DIR)/.. $(BUILD_HTML_FLAGS) --tk"
+FORCE:
 
 #
 # The list of all the targets that do not correspond to real files. This stops

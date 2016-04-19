@@ -93,6 +93,10 @@ typedef DWORD_PTR * PDWORD_PTR;
 #include <signal.h>
 #include <limits.h>
 
+#ifdef __MINGW32__
+#include <stdint.h>
+#endif
+
 #ifndef __GNUC__
 #    define strncasecmp _strnicmp
 #    define strcasecmp _stricmp
@@ -530,7 +534,6 @@ typedef DWORD_PTR * PDWORD_PTR;
 
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
-
 
 /*
  * The following macros have trivial definitions, allowing generic code to

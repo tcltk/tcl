@@ -16,6 +16,10 @@
 
 #include "regex.h"
 
+#ifdef HAVE_PCRE
+#include <pcre.h>
+#endif
+
 /*
  * The TclRegexp structure encapsulates a compiled regex_t, the flags that
  * were used to compile it, and an array of pointers that are used to indicate
@@ -28,6 +32,10 @@ typedef struct TclRegexp {
     int flags;			/* Regexp compile flags. */
     regex_t re;			/* Compiled re, includes number of
 				 * subexpressions. */
+#ifdef HAVE_PCRE
+    pcre *pcre;			/* PCRE compile re */
+    pcre_extra *study;		/* study of PCRE */
+#endif
     const char *string;		/* Last string passed to Tcl_RegExpExec. */
     Tcl_Obj *objPtr;		/* Last object passed to Tcl_RegExpExecObj. */
     Tcl_Obj *globObjPtr;	/* Glob pattern rep of RE or NULL if none. */

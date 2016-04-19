@@ -1,0 +1,26 @@
+These are the langbench results from the source base as of early Nov-2007.
+
+lang    cat     grep    hash    loop    proc    fib     sort    wc      
+tcl     2.10    4.10    1.51    0.06    1.27    3.76    5.40    0.97    
+l       2.10    4.21    1.48    0.08    0.51    3.92    5.76    coredump :(
+
+vs now, late Jan-2008
+
+lang    cat     grep    hash    loop    proc    fib     sort    wc      
+tcl     0.81    0.97    1.13    0.05    0.98    3.45    2.85    1.21    
+l       0.82    0.97    1.14    0.05    0.45    3.36    3.11    1.93    
+
+Factor better:
+lang    cat     grep    hash    loop    proc    fib     sort    wc      
+tcl	2.6x	4.2x	1.3x	wash	1.3x	wash	1.9x	.8x (whoops)
+l	2.6x	4.2x	1.3x	wash	wash	1.2x	1.9x	NA
+
+And other languages for comparison:
+lang    cat     grep    hash    loop    proc    fib     sort    wc      
+pl      0.36    0.36    0.61    0.07    0.40    3.68    2.15    1.00    
+py      0.46    1.50    0.48    0.15    0.23    1.27    2.26    0.49    
+rb      0.82    0.73    1.64    0.29    1.13    4.06    4.29    3.09    
+
+Amount slower than perl:
+lang    cat     grep    hash    loop    proc    fib     sort    wc      
+tcl/l	2.3x	2.7x	1.9x	faster	wash	faster	1.4x	1.2x

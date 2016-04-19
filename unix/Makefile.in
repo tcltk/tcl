@@ -241,7 +241,7 @@ TCL_BUILDTIME_LIBRARY	= @TCL_SRC_DIR@/library
 ZLIB_DIR		= ${COMPAT_DIR}/zlib
 ZLIB_INCLUDE		= @ZLIB_INCLUDE@
 
-CC			= @CC@
+CC			= $(if $(Q), @echo CC $(notdir $<) ; @CC@, @CC@)
 #CC			= purify -best-effort @CC@ -DPURIFY
 
 # Flags to be passed to installManPage to control how the manpages should be
@@ -271,13 +271,14 @@ VALGRINDARGS		= --tool=memcheck --num-callers=8 --leak-resolution=high --leak-ch
 
 STUB_CC_SWITCHES = ${CFLAGS} ${CFLAGS_WARNING} ${SHLIB_CFLAGS} \
 -I"${BUILD_DIR}" -I${UNIX_DIR} -I${GENERIC_DIR} -I${TOMMATH_DIR} \
-${AC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
-
+${AC_FLAGS} ${PROTO_FLAGS} ${ENV_FLAGS} @PCRE_INCLUDE@ \
+${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
 CC_SWITCHES = $(STUB_CC_SWITCHES) ${NO_DEPRECATED_FLAGS}
 
 APP_CC_SWITCHES = $(CC_SWITCHES) @EXTRA_APP_CC_SWITCHES@
 
-LIBS		= @TCL_LIBS@
+LIBS		= @PCRE_LIBS@ @TCL_LIBS@
+
 
 DEPEND_SWITCHES	= ${CFLAGS} -I${UNIX_DIR} -I${GENERIC_DIR} \
 ${AC_FLAGS} ${PROTO_FLAGS} ${EXTRA_CFLAGS} @EXTRA_CC_SWITCHES@
@@ -312,6 +313,9 @@ GENERIC_OBJS = regcomp.o regexec.o regfree.o regerror.o tclAlloc.o \
 
 OO_OBJS = tclOO.o tclOOBasic.o tclOOCall.o tclOODefineCmds.o tclOOInfo.o \
 	tclOOMethod.o tclOOStubInit.o
+
+L_OBJS = Lscanner-pregen.o Lgrammar-pregen.o Lcompile.o Last.o \
+	Ltypecheck.o Lgetopt.o
 
 TOMMATH_OBJS = bncore.o bn_reverse.o bn_fast_s_mp_mul_digs.o \
 	bn_fast_s_mp_sqr.o bn_mp_add.o bn_mp_and.o \
@@ -359,7 +363,7 @@ ZLIB_OBJS = Zadler32.o Zcompress.o Zcrc32.o Zdeflate.o Zinfback.o \
 TCL_OBJS = ${GENERIC_OBJS} ${UNIX_OBJS} ${NOTIFY_OBJS} ${COMPAT_OBJS} \
 	${OO_OBJS} @DL_OBJS@ @PLAT_OBJS@
 
-OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@
+OBJS = ${TCL_OBJS} ${TOMMATH_OBJS} @DTRACE_OBJ@ @ZLIB_OBJS@ ${L_OBJS}
 
 TCL_DECLS = \
 	$(GENERIC_DIR)/tcl.decls \
@@ -473,6 +477,19 @@ OO_SRCS = \
 	$(GENERIC_DIR)/tclOOInfo.c \
 	$(GENERIC_DIR)/tclOOMethod.c \
 	$(GENERIC_DIR)/tclOOStubInit.c
+
+L_HDRS = \
+	$(GENERIC_DIR)/Lcompile.h \
+	$(GENERIC_DIR)/Lgrammar.h \
+	$(GENERIC_DIR)/Last.h
+
+L_SRCS = \
+	$(GENERIC_DIR)/Lscanner.l \
+	$(GENERIC_DIR)/Lgrammar.y \
+	$(GENERIC_DIR)/Lcompile.c \
+	$(GENERIC_DIR)/Ltypecheck.c \
+	$(GENERIC_DIR)/Last.c \
+	$(GENERIC_DIR)/Lgetopt.c
 
 STUB_SRCS = \
 	$(GENERIC_DIR)/tclStubLib.c \
@@ -606,7 +623,7 @@ ZLIB_SRCS = \
 # things like "make depend".
 
 SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
-	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@
+	$(OO_SRCS) $(STUB_SRCS) @PLAT_SRCS@ @ZLIB_SRCS@ ${L_SRCS}
 
 #--------------------------------------------------------------------------
 # Start of rules
@@ -614,7 +631,7 @@ SRCS = $(GENERIC_SRCS) $(TOMMATH_SRCS) $(UNIX_SRCS) $(NOTIFY_SRCS) \
 
 all: binaries libraries doc packages
 
-binaries: ${LIB_FILE} ${TCL_EXE}
+binaries: ${LIB_FILE} ${TCL_EXE} ${TCLTEST_EXE}
 
 libraries:
 
@@ -711,6 +728,9 @@ tcltest-real:
 
 test: test-tcl test-packages
 
+l-test l-tests test-l test-L:
+	TCLTEST_SHELL_OPTIONS='-encoding utf-8' $(MAKE) test TESTFLAGS+="-file l-*.test"
+
 test-tcl: ${TCLTEST_EXE}
 	$(SHELL_ENV) ./${TCLTEST_EXE} $(TOP_DIR)/tests/all.tcl $(TESTFLAGS)
 
@@ -796,8 +816,8 @@ install-binaries: binaries
 	@echo "Installing $(LIB_FILE) to $(DLL_INSTALL_DIR)/"
 	@@INSTALL_LIB@
 	@chmod 555 "$(DLL_INSTALL_DIR)/$(LIB_FILE)"
-	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
-	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh$(VERSION)${EXE_SUFFIX}"
+	@echo "Installing ${TCL_EXE} as $(BIN_INSTALL_DIR)/tclsh${EXE_SUFFIX}"
+	@$(INSTALL_PROGRAM) ${TCL_EXE} "$(BIN_INSTALL_DIR)/tclsh${EXE_SUFFIX}"
 	@echo "Installing tclConfig.sh to $(CONFIG_INSTALL_DIR)/"
 	@$(INSTALL_DATA) tclConfig.sh "$(CONFIG_INSTALL_DIR)/tclConfig.sh"
 	@echo "Installing tclooConfig.sh to $(CONFIG_INSTALL_DIR)/"
@@ -1120,7 +1140,7 @@ tclEnv.o: $(GENERIC_DIR)/tclEnv.c
 tclEvent.o: $(GENERIC_DIR)/tclEvent.c
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclEvent.c
 
-tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR)
+tclExecute.o: $(GENERIC_DIR)/tclExecute.c $(COMPILEHDR) $(MATHHDRS) $(NREHDR) $(L_HDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclExecute.c
 
 tclFCmd.o: $(GENERIC_DIR)/tclFCmd.c
@@ -1350,6 +1370,33 @@ tclThreadTest.o: $(GENERIC_DIR)/tclThreadTest.c
 
 tclTomMathInterface.o: $(GENERIC_DIR)/tclTomMathInterface.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/tclTomMathInterface.c
+
+
+Lscanner.c: $(GENERIC_DIR)/Lscanner.l $(L_HDRS) $(GENERIC_DIR)/Lgrammar.c
+	flex -PL_ -o$@ $(GENERIC_DIR)/Lscanner.l
+
+Lscanner-pregen.o: $(L_HDRS) $(GENERIC_DIR)/Lscanner-pregen.c
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/Lscanner-pregen.c
+
+Lgrammar.c: $(GENERIC_DIR)/Lgrammar.y $(L_HDRS)
+	@BISON@ -pL_ -d -o$@ $(GENERIC_DIR)/Lgrammar.y
+
+Lgrammar-pregen.o: $(GENERIC_DIR)/Lgrammar-pregen.c Lcompile.o $(L_HDRS)
+	$(CC) -c $(CC_SWITCHES) -fno-strict-aliasing $(GENERIC_DIR)/Lgrammar-pregen.c || \
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/Lgrammar-pregen.c
+
+Lcompile.o: $(GENERIC_DIR)/Lcompile.c $(L_HDRS)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/Lcompile.c
+
+Ltypecheck.o: $(GENERIC_DIR)/Ltypecheck.c $(L_HDRS)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/Ltypecheck.c
+
+Lgetopt.o: $(GENERIC_DIR)/Lgetopt.c $(L_HDRS)
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/Lgetopt.c
+
+Last.o: $(GENERIC_DIR)/Last.c $(L_HDRS) 
+	$(CC) -c $(CC_SWITCHES) $(GENERIC_DIR)/Last.c
+
 
 bncore.o: $(TOMMATH_DIR)/bncore.c $(MATHHDRS)
 	$(CC) -c $(CC_SWITCHES) $(TOMMATH_DIR)/bncore.c
@@ -2113,5 +2160,4 @@ BUILD_HTML = \
 .PHONY: packages configure-packages test-packages clean-packages
 .PHONY: dist-packages distclean-packages install-packages
 
-#--------------------------------------------------------------------------
 # DO NOT DELETE THIS LINE -- make depend depends on it.

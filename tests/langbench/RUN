@@ -1,0 +1,58 @@
+test X$LANGBENCH = X && {
+	LANGBENCH=.
+	test -d langbench && LANGBENCH=langbench
+}
+test X$TCLSH = X && {
+	test -x gui/bin/tclsh && TCLSH=gui/bin/tclsh
+	test -x ../gui/bin/tclsh && TCLSH=../gui/bin/tclsh
+}
+test X$TCLSH = X && {
+	echo Please set TCLSH
+	exit 1
+}
+test X$PERL = X && PERL=perl
+test X$PYTHON = X && PYTHON=python
+test X$RUBY = X && RUBY=ruby
+test "X$LANGS" = X && LANGS="pl py rb tcl l"
+test "X$TESTS" = X && TESTS="cat grep hash loop proc fib sort wc"
+export TCL_REGEXP_PCRE=1
+echo "langbench version 0.6 results:"
+echo -n "lang	"
+for i in $TESTS
+do	echo -n "$i	"
+done
+echo ""
+for lang in $LANGS
+do	
+	case $lang in
+	    pl) CMD=$PERL;;
+	    py) CMD=$PYTHON;;
+	    rb) CMD=$RUBY;;
+	    tcl|l) CMD=$TCLSH;;
+	esac
+	N=1
+	test X$RUNS = X || N=$RUNS
+	while (($N > 0)) 
+	do
+		printf "%-8s" $lang
+		for test in $TESTS
+		do	
+			DATA=DATA
+			test $test = wc && DATA=SMALL
+			export LANG_TEST=$test
+			for run in 1 2 3
+			do	time $CMD $LANGBENCH/${test}.${lang} $DATA > /dev/null
+			done 2>&1 |
+			perl -e '$min = 1000000;
+			while (<>) {
+				if (/real.*0m(.*)s/) {
+					$min = $1 if $1 < $min;
+				}
+			}
+			printf "%-8.2f", $min;'
+		done
+		printf "\n"
+		N=`expr $N - 1`
+	done
+done 
+exit 0

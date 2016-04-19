@@ -86,6 +86,7 @@ fi
 AC_PROG_CC
 AC_C_INLINE
 
+AC_PROG_BISON
 #--------------------------------------------------------------------
 # Supply substitutes for missing POSIX header files.  Special notes:
 #	- stdlib.h doesn't define strtol, strtoul, or
@@ -136,6 +137,7 @@ SC_TCL_CFG_ENCODING
 #--------------------------------------------------------------------
 
 SC_TCL_LINK_LIBS
+AC_SEARCH_LIBS(inet_aton, resolv)
 
 # Add the threads support libraries
 LIBS="$LIBS$THREADS_LIBS"
@@ -307,6 +309,12 @@ fi
 
 SC_TIME_HANDLER
 
+#------------------------------------------------------------------------------
+#       Check if we want to use pcre
+#------------------------------------------------------------------------------
+
+SC_ENABLE_PCRE
+
 #--------------------------------------------------------------------
 #	Some systems (e.g., IRIX 4.0.5) lack some fields in struct stat. But
 #	we might be able to use fstatfs instead. Some systems (OpenBSD?) also
@@ -399,6 +407,19 @@ if test $tcl_cv_type_socklen_t = no; then
     AC_DEFINE(socklen_t, int, [Define as int if socklen_t is not available])
 fi
 
+# check for SHUT_RD and SHUT_WR being enums vs defines
+AC_CACHE_CHECK([for SHUT_RD/SHUT_WR], tcl_cv_type_shutrd, [
+    AC_TRY_COMPILE([
+        #include <sys/socket.h>
+    ],[
+        int foo = SHUT_RD;
+	int bar = SHUT_WR;
+    ],[tcl_cv_type_shutrd=yes],[tcl_cv_type_shutrd=no])])
+if test $tcl_cv_type_shutrd = no; then
+    AC_DEFINE(SHUT_RD, 0, [SHUT_RD not found, define as 0])
+    AC_DEFINE(SHUT_WR, 1, [SHUT_WR not found, define as 1])
+fi
+
 AC_CHECK_TYPE([intptr_t], [
     AC_DEFINE([HAVE_INTPTR_T], 1, [Do we have the intptr_t type?])], [
     AC_CACHE_CHECK([for pointer-size signed integer type], tcl_cv_intptr_t, [
@@ -439,6 +460,8 @@ AC_CHECK_TYPE([uintptr_t], [
 #--------------------------------------------------------------------
 
 AC_CHECK_FUNC(opendir, , [AC_DEFINE(USE_DIRENT2_H, 1, [May we include <dirent2.h>?])])
+
+AC_STRUCT_DIRENT_D_TYPE
 
 #--------------------------------------------------------------------
 #	The check below checks whether <sys/wait.h> defines the type
@@ -572,6 +595,14 @@ isnan(0.0);			/* Generates an error if isnan is missing */
 ], tcl_cv_isnan=yes, tcl_cv_isnan=no)])
 if test $tcl_cv_isnan = no; then
     AC_DEFINE(NO_ISNAN, 1, [Do we have a usable 'isnan'?])
+fi
+
+#--------------------------------------------------------------------
+# Work around apparent fork() problem on netbsd 4.
+#--------------------------------------------------------------------
+
+if test "`uname -s`" = "NetBSD" ; then
+    AC_DEFINE(USE_VFORK, 1, [Should we use vfork() instead of fork()?])
 fi
 
 #--------------------------------------------------------------------

@@ -1,0 +1,3441 @@
+=head1 NAME
+
+L
+
+=head1 SYNOPSIS
+
+L [options] script.l [args]
+
+=head1 DESCRIPTION
+
+L is a little interpreted language that draws heavily from C and Perl.
+From C, L gets C syntax, simple types (int, float, string), and
+complex types (arrays, structs).
+From Perl, L gets associative arrays and regular expressions (PCRE).
+And from neither, L gets its own simplistic form of classes.
+
+L stands for "little" as in little language.  The idea was to distill
+the useful parts of other languages and combine them into a scripting
+language, with type checking, classes (not full-blown OO but useful none
+the less), and direct access to a cross-platform graphical toolkit.
+
+L provides a set of built-in functions, drawn from Perl and the 
+standard C library.
+
+L is built on top of the Tcl/TK system.  The L compiler generates Tcl
+byte codes and uses the Tcl calling convention.  This means that L and
+Tcl code may be intermixed.  More importantly, it means that
+L may use all of the TK widgets.  The net result is a type-checked
+scripting language which may be used for cross-platform GUIs.
+
+L is open source under the same license as Tcl/TK (BSD like).
+
+=head1 RUNNING L PROGRAMS
+
+You can run an L program from the command line.
+
+    L [options] progname.l [args]
+
+Alternatively, put this as the first line of your script, but make
+sure your script is executable (C<chmod 755 script.l> under Unix).
+
+    #!/path/to/L [options]
+
+Options:
+
+=over 4
+
+=item B<--fnhook=myhook>
+
+When function tracing is enabled, use C<myhook> as the trace hook.
+
+=item B<--fntrace=on | entry | exit | off>
+
+Enable function tracing on both function entry and exit, entry only,
+exit only, or disable tracing altogether.
+
+=item B<--norun>
+
+Compile only (do not run).  This is useful to check for compilation
+errors.
+
+=item B<--nowarn>
+
+Disable compiler warnings.  This is useful when you know you have
+unused variables or other warnings that you don't want to be
+bothered with.
+
+=item B<--poly>
+
+Treat all types as C<poly>.  This effectively disables type checking.
+
+=item B<--trace-depth=n>
+
+When function tracing is enabled, trace only to a maximum call depth of n.
+
+=item B<--trace-file=colon-separated list of glob | /regexpr/>
+
+Enable tracing of all functions in the given files, specified either
+as globs or regular expressions.  A leading + before a glob or regexp
+means to add to what is otherwise being traced and a leading - means
+to remove.
+No leading + or - means to trace exactly what is specified.
+
+=item B<--trace-funcs=colon-separated list of glob | /regexpr/>
+
+Like --trace-file but specifies functions.
+
+=item B<--trace-out=filename | host:port>
+
+Send default trace output to a file or a TCP socket.
+
+=item B<--warn-undefined-fns>
+
+Just before main() is called, warn if any functions referenced by
+L code are undefined.
+You can combine this with --norun to do this check even when no
+code is run.
+
+=item B<--version>
+
+Print the L build version and immediately exit.
+
+=back
+
+Any of the command-line options also can be specified in a #pragma
+inside the program.
+
+The optional [args] is a white-space separated list of arguments that
+are passed to the script's main() function as an argument count (argc)
+and an array of strings (argv).
+
+=head1 SYNTAX
+
+An L script or program consists of one or more statements.  These may
+be executable statements, variable or type declarations, or function
+or class declarations.  Statements outside of functions are said
+to be at the C<top level> and are executed in the order they appear,
+although you can use a C<return> statement to bail out.
+There is no need to have a C<main()> function, but if one is
+present, it is executed after all of the top-level statements
+(even if you did a C<return> from the top level).
+
+    puts("This is printed first.");
+    void main()
+    {
+        puts("This is printed last.");
+    }
+    puts("This is printed second.");
+
+L statements end in a semi-colon.
+
+    printf("Hello, world\n");
+
+Both C style and hash style comments are allowed, but the hash-style
+comments are only for the first line and must start on column 1.
+
+    # This is a comment
+    	// So is this
+    /* And this too */
+    	# But this is an error (does not start on column 1)
+
+Whitespace usually is irrelevant.
+
+    printf(
+        "Hello, world\n")
+        ;
+
+... except inside quoted strings:
+
+    # this would print with a linebreak in the middle
+    print "Hello\
+    world";
+
+and around the string-concatenation operator " . " so it can
+be distinguished from the struct-member selection operator ".".
+
+Double quotes or single quotes may be used around literal strings:
+
+    puts("Hello, world");
+    puts('Hello, world');
+
+However, only double quotes "interpolate" variables and handle
+character escapes such as for newlines (C<\n>):
+
+    printf("Hello, ${name}\n");     // works fine
+    printf('Hello, ${name}\n');     // prints ${name}\n literally
+
+Inside single quotes, you can still escape a line break, the
+single quote character (C<\'>), and the escape character (C<\\>).
+
+If you put a line break in the middle of a string but forget to escape
+it, L will complain.
+
+Adjacent string constants are automatically concatenated, like in C.
+
+    printf("This " "prints "
+           "the concatenation "
+           "of ""all"" strings\n");
+
+prints "This prints the concatenation of all strings".
+
+L requires that they be the same "type", all interpolated ("") or
+all not interpolated ('') but the dot operator comes the rescue
+in this contrived example:
+
+    'Hi there. ${USER} is ' . "${USER} today";
+
+=head1 HTML WITH EMBEDDED L
+
+For building web-based applications, L has a mode where the input
+can be HTML with embedded L code (which we call C<Lhtml>).
+This works in a way similar to PHP.
+To invoke this mode, the input file must end in .lhtml:
+
+    L [options] home.lhtml
+
+All text in home.lhtml is passed through to stdout except
+that anything between <? and ?> is taken to be one or more
+L statements that are replaced by whatever that L code outputs,
+and anything between <?= and ?> is taken to be a single L
+expression that is replaced by its value.
+All L code is compiled at the global scope, so you can include L
+variable declarations early in the Lhtml document and reference them
+later.
+
+Here's an example that iterates over an array of key/value pairs
+and formats them into a rudimentary table:
+
+    <? key_value_pair row, rows[]; ?>
+    <html>
+    <body>
+    <p>This is a table of data</p>
+
+    <table>
+    <? rows = get_data();
+       foreach (row in rows) { ?>
+         <tr>
+	     <td><?= row.key ?></td>
+	     <td><?= row.value ?></td>
+         </tr>
+    <? } ?>
+    </table>
+
+    </body>
+    </html>
+
+=head1 NAME SCOPING
+
+Variables must be declared before use, or a compile-time error
+will result.  However, functions need not be declared before use
+although it is good practice to do so.
+
+Declarations at the top-level code exist at the C<global> scope and
+are visible across all scripts executed by a single run of L.  You can
+qualify a global declaration with C<private> to restrict it to the
+current file only; this is similar to a C<static> in C, except that
+private globals are not allowed to shadow public globals.  Names
+declared in a function, or in a block within a function, are C<local>
+and are scoped to the block in which they are declared.
+
+Functions and global variables share the same namespace, so a
+variable and function cannot have identical names.  Struct tags
+have their own namespace, and type names have theirs.
+
+Inside a function, two locals cannot share the same name, even if they
+are in parallel scopes.  This is different than C where this is
+allowed.  But a local can share the same name as a global, in which
+case the local is said to C<shadow> the global.
+
+Names declared inside of a class can be either local or global
+depending on how they are qualified.  Classes are discussed later.
+
+=head1 VARIABLES AND TYPES
+
+L is a strongly typed language with both scalar and complex types.
+All variables are typed and must be declared before use.
+
+The scalar types are int, float, and string.  The complex types are
+array, hash, struct, and list.  L also supports function pointers,
+classes, and a special type called C<poly> which matches any type and
+normally is used to disable type checking.  Finally, L has the concept
+of an C<undefined> value which a variable of any type can possess.
+These all are discussed next.
+
+Strong typing means that you can assign something of one type only to
+something else of a compatible type.  Normally, to be compatible the
+types must be structurally the same, but there are exceptions such as
+an int being compatible with float and a list sometimes being
+compatible with an array or struct.  These special cases are discussed
+further below.
+
+An L variable is written as an identifier without any special prefix
+characters like in Perl.  Variables begin with a letter and can
+contains letters, numerals, and underscores, but they B<cannot> begin
+with an underscore (_).  This is because the L compiler reserves names
+starting with _ for internal use.
+
+A variable declaration includes the
+type, the variable name, and optionally an initial value which can
+be any L expression:
+
+    int i = 3*2;
+
+    printf("i = %d\n", i);  // prints i = 6
+
+If an initial value is omitted, the variable starts out with the
+undefined value C<undef>, discussed more below.
+
+=over 4
+
+=item Scalars
+
+A scalar represents a single value that is a string, integer, or
+floating-point number.
+Strings are wide char (unicode),
+integers are arbitrarily large,
+and floats are like C's double.
+
+Examples:
+
+    string animal = "camel";
+    int answer = 42;
+    float pi = 3.14159;
+
+When one of these types is expected, supplying another one usually is
+an error, except that an int always can be used as a float.  You can
+override this behavior with a type cast, discussed below.
+
+Hex and octal integer constants are specified like this:
+
+    int space = 0x20;
+    int escape = 0o33;
+
+Integer constants can be arbitrarily large; they are not limited
+by the machine's word size.
+
+Strings have a special feature where they can be indexed like arrays,
+to get a character or range of characters, or to change a character
+(but you cannot change a range of characters):
+
+    string s1, s2;
+
+    s1 = "hello";
+    s2 = s1[1];     // s2 gets "e"
+    s2 = s1[1..3];  // s2 gets "ell"
+    s1[1] = "x";    // changes s1 to "hxllo"
+    s1[END+1] = "there";    // changes s1 to "hxllothere"
+
+The pre-defined identifier C<END> is the index of the last character,
+or is -1 if the string is empty.  You always can write to one past the end
+of a string to append to it, but writing beyond END+1 is an error.
+
+You delete a character within a string by indexing the string and
+setting it to "" (the empty string), or by using the C<undef()> built-in:
+
+    s[3] = "";    // deletes fourth character of s
+    undef(s[3]);  // also deletes fourth character
+
+=item Undef
+
+Sometimes you want to signify that a variable has no legal value, such
+as when returning an error from a function.  L has a read-only pre-defined
+constant called C<undef> which you can assign to anything.
+
+    int_var = undef;
+    array_var = undef;
+
+This is different than the C<undef()> built-in I<function> which
+deletes array, hash, or string elements and which is described
+later.
+
+When used in comparisons, a variable that is undefined is never seen
+as true, or as equal to anything defined, so you can easily check for
+error conditions:
+
+    unless (f = fopen("file", "r")) {
+        die("fopen");
+    }
+    while (s = <f>) {
+        printf("%s\n", s);
+    }
+
+And for the cases where it matters, you can test whether something is
+undefined with the built-in function C<defined()>:
+
+    ret = myfunc();
+    unless (defined(ret)) die("error");
+    if (ret != 0) {
+        printf("myfunc returned %d\n", ret);
+    } else {
+        printf("no data from myfunc\n");
+    }
+
+L itself sometimes uses undef to tell you that no value is available.
+One case is when you assign to an array element that is more than one
+past the end of an array.  L auto-extends the array and sets the
+unassigned elements to undef.
+
+Undefinedness is an attribute of a
+variable; undefined does not have a value.  It may be anything since
+the underlying Tcl system "shimmers" variables.  If a variable can be
+undefined, don't rely on its value until you've checked it first with
+C<defined(var)>.
+
+=item Arrays
+
+An array holds a list of values, all of the same type:
+
+    string animals[] = { "camel", "llama", "owl" };
+    int numbers[] = { 23, 42, 69 };
+
+You do not specify a size when declaring an array, because
+arrays grow dynamically.
+
+Arrays are zero-indexed.  Here's how you get at elements in an array:
+
+    puts(animals[0]);              // prints "camel"
+    puts(animals[1]);              // prints "llama"
+
+The pre-defined identifier C<END> is the index of the last element
+of an array, or is -1 if the array is empty.
+
+    puts(animals[END]);       // last element, prints "owl"
+
+END is valid only inside of an array subscript.
+
+If you need the length of an array, use a built-in function:
+
+    num_elems = length(animals);   // will get 3
+
+If the array is empty, length() returns 0.
+
+To get multiple values from an array, you use what's called an array
+C<slice> which is a sub-array of the array being sliced.
+Slices are for reading values only, you cannot write to a slice.
+
+    animals[0..1];            // gives { "camel", "llama" }
+    animals[1..END];          // gives all except the first element
+
+In this last example where END is used, you must be careful, because if
+the array is empty, END will be -1, and an array slice where the
+second index is less than the first causes a run-time error.
+
+You can add and remove from an array with C<push> and C<pop>,
+C<unshift> and C<shift>, and C<insert>.
+The C<push> and C<pop> functions add and remove from the end:
+
+    string birds[], next;
+
+    push(&birds, "robin");
+    push(&birds, "dove", "cardinal", "bluejay");
+    next = pop(&birds);   // next gets "bluejay"
+    // birds is now { "robin", "dove", "cardinal" }
+
+The & means that birds is passed by reference, because it will
+be changed.  This is discussed more later.
+
+Another way to append:
+
+    birds[END+1] = "towhee";
+
+The C<unshift> and C<shift> functions are similar but they add
+and remove from the beginning of the array.
+
+You can insert anywhere in an array with C<insert>:
+
+    insert(&birds, 2, "crow");  // insert crow before birds[2]
+    insert(&birds, 3, "hawk", "eagle");
+
+In these examples we inserted one or more single elements but
+whereever you can put an element you also can splice in a list:
+
+    string new_birds[] = { "chickadee", "turkey" };
+    push(&birds, new_birds);  // appends chickadee and turkey
+
+The variable is not required; the constant could have been passed instead.
+There is an ambiguity, resolved by the type of the first argument, as to
+whether it is two strings being pushed as two new entries in the array, or if
+it is a single item being pushed.  You have to know the type of the 
+first argument to know which is which.
+
+You can remove from anywhere in an array with C<undef>:
+
+    string dev_team[] = { "larry", "curly", "mo" };
+    undef(dev_team[0]);  // delete "larry" from dev_team
+
+When you delete an element, all subsequent elements slide down
+by one index.  Note that undef() works only on a variable; it
+cannot remove an element from a function return value, for example.
+
+You also can directly assign to any array index even if the array
+hasn't yet grown up to that index.  If you assign more than one past
+the current end, the unassigned elements are assigned undef:
+
+    string colors[] = { "blue, "red" };
+    colors[3] = "green";   // colors[2] gets undef and colors[3] gets "green"
+
+You can read from any non-negative array index as well.  You will simply
+get undef if the element doesn't exist.  Reading from a negative index
+causes a run-time error.
+
+An array can hold elements of any type, including other arrays.
+Although L does not have true multi-dimensional arrays, arrays of
+arrays give you basically the same thing:
+
+    int matrix[][] = {
+        { 1, 2, 3 },
+        { 4, 5, 6 },
+        { 7, 8, 9 }
+    };
+
+When declaring an array, it is legal to put the brackets after the
+type instead of the name.  This is useful in function prototypes that
+omit the parameter name, and is required if a function returns an
+array.  This example illustrates both cases:
+
+    int[] mysort(int[]);
+
+=item Hashes
+
+A hash holds a set of key/value pairs:
+
+    int grades{string} = { "Tom"=>85, "Rose"=>90 };
+
+When you declare a hash, you specify both the key type (within the {})
+and the value type.  The keys must be of scalar type but the values can
+be of any type, allowing you to create hashes of arrays or other hashes.
+
+To get at a hash element, you index the hash with the key:
+
+    grades{"Rose"};           // gives 90
+
+If the given key does not exist in the hash, you get back undef.
+Using undef as a key causes a run-time error.
+
+You get a list of all the keys in a hash with the C<keys()> built-in,
+which returns an array:
+
+    string students[] = keys(grades);
+
+Because hashes have no particular internal order, the order in which
+the keys ("Tom" and "Rose") appear is undefined.  However, you can
+obtain a sorted array of keys like this:
+
+    string students[] = sort(keys(grades));
+
+The C<length> built-in works on hashes too and returns the number of
+key/value pairs.
+
+You remove an element from a hash with C<undef>:
+
+    undef(grades{"Tom"});  // removes "Tom" from the hash
+
+It is not an error to remove something that's not in the hash.  Note
+that undef() works only on a variable; it cannot remove an element
+from a function return value, for example.
+
+When declaring a hash, it is legal to put the braces after the base
+type instead of the name.  This is useful in function prototypes that
+omit the parameter name, and is required is a function returns a
+hash.  This example illustrates both cases:
+
+    int{string} adjust_grades(int{string});
+
+=item Structs
+
+L structs are much like structs in C.  They contain a fixed number
+of named things of various types:
+
+    struct my_struct {
+        int    i;
+        int    j;
+        string s;
+    };
+    struct my_struct st = { 1, 2, "hello" };
+
+You index a struct with the "." operator except when it is a
+call-by-reference parameter and then you use "->":
+
+    void foo(struct my_struct &byref) {
+        puts(byref->s);  // prints hello
+    }
+    puts(st.i);    // prints 1
+    puts(st.j);    // prints 2
+    puts(st.s);    // prints hello
+    foo(&st);      // pass st by reference
+
+It is an error to use "." when "->" is required and vice-versa.  Be
+careful to not put any whitespace around the "." or else you will get
+the string concatenation operator and not struct-member selection.
+
+Structs can be named like C<my_struct> above or they can be anonymous:
+
+    struct {
+        int    i;
+        int    j;
+    } var1;
+
+Struct names have their own namespace, so they will never clash with
+function, variable, or type names.
+
+=item Lists
+
+In the examples above, we have been initializing arrays, hashes, and
+structs by putting values inside of {}:
+
+    string nums[] = { "one", "two", "three" };
+
+In L, the C<{}> is an operator that creates a C<list> and can be used
+anywhere an expression is valid.  The array could instead be
+initialized like this:
+
+    string nums[];
+    nums = { "one", "two", "three" };
+
+We said before that you can assign a value to something only if it has
+a compatible type.  Lists are special in that they can be compatible
+with arrays, hashes, and structs.  A list where all the elements are
+of the same type, say T, is compatible with an array of things of
+type T.  The example above illustrates this.
+
+A list also is compatible with a struct if the list elements agree
+in type and number with the struct.  The assignment of the variable
+C<st> above illustrates this.
+
+A list is compatible with a hash if it has a sequence of key/value
+pairs and they are all compatible with the key/value types of
+the hash:
+
+    int myhash{string} = { "one"=>1, "two"=>2, "three"=>3 };
+
+Lists are very useful at times because you can use them to build up
+larger complex structures.  To concatenate two arrays, you could do
+this:
+
+    { (expand)array1, (expand)array2 };
+
+The (expand) operator takes an array (or struct or list) and moves its
+elements out a level as if they were between the { and } separated by
+commas.  This is discussed more later.
+
+=item Poly
+
+Sometimes you don't want L to do type checking.
+In this case, you use the C<poly> type, which is compatible with
+any type.  Poly effectively disables type checking, allowing you
+to use or assign values without regard to their types.  Obviously,
+care must be taken when using poly.
+
+The B<-poly> option to L causes all variables to be treated as if they
+were of type poly, regardless of how they are declared.
+
+=item Type Casts
+
+Something of one type can be converted into something of another
+type with a type cast like in C:
+
+    string_var = (string)13;
+
+If the thing being cast cannot be converted to the requested type, the
+result of the cast is C<undef>.
+
+=item Typedefs
+
+You can declare a type name to be a short hand for another type, as
+you would in C:
+
+    typedef int index_t;
+    typedef string table_t{index_t};
+
+And then use the short-hand as you would any other type name:
+
+    table_t my_table;
+    my_table{3} = "value";
+
+You can typedef a function pointer too.  This declares compar_t
+as type function that takes two ints and returns an int:
+
+    typedef int compar_t(int a, int b);
+
+Type names belong to their own namespace, so you can define a typedef
+with the same name as a variable, function, or struct name without
+ambiguity.
+
+=back
+
+=head1 INTERPOLATION
+
+Expressions can be interpolated into double-quoted strings, which
+means that within a string you can write an expression and at run-time
+its value will be inserted.  For example, this interpolates two
+variables:
+
+    int    a = 12;
+    string b = "hello";
+
+    /* This will print "A is 12 and b is hello". */
+
+    printf("A is ${a} and b is ${b}\n");
+
+Everything inside the ${} is evaluated like any other L expression, so
+it is not limited to just variables:
+
+    printf("The time is ${`date`}\n");
+
+=head1 FUNCTIONS
+
+L's functions are much like functions in C.  Like variable names,
+function names B<cannot> begin with an underscore (_).
+
+Each function must be declared with a return type and a
+formal-parameter list:
+
+    int sum(int a, int b)
+    {
+        return (a + b);
+    }
+
+C<void> is a legal return type for a function that returns no value.
+Functions cannot be nested.
+
+Function prototypes are allowed, where all but the function body is
+declared.  In a prototype, you can omit any parameter names or use
+C<void> for an empty parameter list:
+
+    void no_op1(void);
+    void no_op2();
+    int sum(int, int);
+
+Unlike Perl, when calling a function you must use parentheses around
+the arguments:
+
+    sum(a, b);
+
+L does a special kind of call called a C<pattern function> call
+when the function name is capitalized and contains an underscore;
+these are useful for calling Tcl commands and are described later.
+Normal function names should avoid being both capitalized and
+with an underscore.
+
+Parameters are passed by value by default.  To pass by reference,
+you use a C<&> in the declaration and in the function call:
+
+    void inc(int &arg)
+    {
+        ++arg;
+    }
+
+    inc(&x);  // inc() can change x
+
+The C<&> only tells L to pass by reference.  It is not a pointer.
+You use a reference to give the called function the ability to change
+the caller's variable.
+
+Only variables can be passed by reference, not elements of arrays,
+hashes, or structs.  This is one significant difference from C.
+Passing an array, hash, or struct element with C<&> uses C<copy in/out>,
+not a true reference.  The element value is copied
+into a temp variable and the temp is passed by reference.  Then when
+the function returns, any changes to the temp are copied back into the
+array, hash, or struct element.  In most cases this behaves like
+call-by-reference and you don't need to worry about it.
+But if you access the passed element during the function call,
+by referencing it directly instead of through the formal parameter,
+then you must be careful:
+
+    string array[] = { "one", "two" };
+    void fn(string &var, string val)
+    {
+        var = val;
+	array[0] = "this gets overwritten by the copy-out";
+    }
+    void main()
+    {
+        fn(&array[0], "new");
+	puts(array[0]);  // will print "new"
+    }
+
+Instead of passing a reference, you can pass C<undef> like you would a
+NULL pointer in C.
+You test for this with the C<defined()> operator:
+
+    void inc(int &arg)
+    {
+        if (defined(&arg)) ++arg;
+    }
+
+    inc(undef);   // does nothing
+    inc(&x);      // increments x
+
+If you pass C<undef> as a reference and then attempt to access
+the parameter, a run-time error results similar to derefencing
+a NULL pointer in C.
+
+When accessing a struct argument inside a function, if the struct was
+passed by reference, the "->" operator must be used instead of ".".
+This makes it clear to the reader that the struct variable is passed
+by reference; it is intended to allude to a C pointer even though L
+does not have pointers.
+
+Functions can take a variable number of arguments, like printf does.
+In the function declaration, you use the qualifier "..." in front
+of the last formal parameter name and omit its type:
+
+    void dump(...args)
+    {
+        string s;
+        foreach(s in args) puts(s);
+    }
+    dump("just one");
+    dump("but two", "or three", "or more is OK");
+
+Inside the function, C<args> has type array of poly, allowing any
+number of parameters of any type to be passed.
+
+=head2 The main() Function
+
+If main() is present, it is called after all of the top-level statements
+have executed.  The main() function may defined in any of the following
+ways:
+
+   void|int main() {}
+   void|int main(string argv[]) {}
+   void|int main(int argc, string argv[]) {}
+   void|int main(int argc, string argv[], string env{string}) {}
+
+The C<argv> array is populated from the script name and any arguments
+that appear after the name on the L command line.
+In this example, argc is 4 and argv[] contains "script.l", "arg1",
+"arg2", and "arg3":
+
+   L script.l arg1 arg2 arg3
+
+The C<env> hash is populated with the environment variables present
+when L is invoked.  Although you can change this hash, writes to it
+are not reflected back into the environment.  To do that use the
+C<putenv> library function.
+
+Only a C<main> written in L is automatically called.
+You can write a C<main> in Tcl but L will not call it automatically.
+
+If C<main> is declared to have return type C<int> and it returns
+a non-zero value, L will exit with an exit status equal to
+the return value.
+
+=head2 Function Pointers
+
+Function pointers are supported, but only as arguments -- you cannot
+otherwise assign a function pointer to a variable.  It is common to
+first typedef the function-pointer type; here is one for a function
+that compares two strings:
+
+    typedef int str_compar_t(string a, string b);
+
+You can then pass such a compare function as follows:
+
+    string    a[];
+
+    bubble_sort(a, &unary_compar);
+
+Where the sort function looks like this:
+
+    string[] bubble_sort(string a[], str_compar_t &compar)
+    {
+        do {
+            ...
+            if (compar(a[i], a[i+1] > 0) { ... }
+            ...
+        } ...
+    }
+
+And the compare function looks like this:
+
+    int unary_compar(string a, string b)
+    {
+	int	al = length(a);
+	int	bl = length(b);
+
+	if (al < bl) {
+		return -1;
+	} else if (al > bl) {
+		return 1;
+	} else {
+		return 0;
+	}
+    }
+
+=head1 CONTROL TRANSFER STATEMENTS
+
+L has most of the usual conditional and looping constructs.
+
+A variable of any type will evaluate to false if it is undefined.
+An int or a float with a value of 0 is also false.
+All other values are true.
+
+    int undefined = undef;
+    int zero = 0;
+    int one = 1;
+
+    if (undefined)          // false
+    if (zero)               // false
+    if (one)                // true
+    if (defined(zero))      // true
+
+See the list of operators in the next section for information on
+comparison and logic operators, which are commonly used in conditional
+statements.
+
+=over 2
+
+=item if
+
+The C<if> statement comes in the traditional form:
+
+    if ( condition ) {
+        ...
+    } else if ( other condition ) {
+        ...
+    } else {
+        ...
+    }
+
+And there's a negated version of it provided as a more readable
+version of C<if (!I<condition>)>.
+
+    unless ( condition ) {
+        ...
+    }
+
+=item while
+
+    while ( condition ) {
+        ...
+    }
+
+    do {
+        ...
+    } while ( condition )
+
+=item for
+
+    for (i = 0; i < max; ++i) {
+        ...
+    }
+
+=item foreach
+
+The C<foreach> statement lets you iterate through the elements of an
+array:
+
+    string element;
+    string myarray[];
+
+    foreach (element in myarray) {
+        printf("This element is %s\n", element);
+    }
+
+... of a hash:
+
+    string key;
+    int value;
+    int myhash{string};
+
+    foreach (key=>value in myhash) {
+        printf("Key %s has value %d\n", key, value);
+    }
+
+... or of a string:
+
+    string char;
+
+    foreach (char in mystring) {
+        printf("This char is %s\n", char);
+    }
+
+... or through the lines in a string:
+
+    int i = 0;
+    string s, lines;
+
+    foreach (s in <lines>) {
+        puts("line #${++i}: ${s}");
+    }
+
+Inside the loop, the index variable(s) (C<element>, C<key>, C<val>, and
+C<char> above) get I<copies> of the iterated elements, so
+if you assign to them, the thing you're iterating over does not change.
+
+If you want to stride through more than one array element, character,
+or line in each iteration, just use a list of value variables instead of one:
+
+    foreach (e1,e2,e3 in myarray) {
+        printf("Next three are %s:%s:%s\n", e1, e2, e3);
+    }
+
+If there isn't a multiple of three things to iterate through, the
+stragglers get undef on the last iteration.  Strides
+work only for arrays and strings, not hashes.
+
+After completing the loop and falling through, all loop counters
+become undefined (they get the C<undef> value).  If the loop
+is prematurely ended with a C<break> or by jumping out of the
+loop with a C<goto>, the loop counters keep their values.
+
+=item switch
+
+The C<switch> statement is like C's except that regular expressions
+can be used as case expressions:
+
+    switch (string_var) {
+        case /[0-9]+/:
+            puts("numeric");
+            break;
+        case /[a-zA-Z][0-9a-zA-Z]*/:
+            puts("alphanumeric");
+            break;
+        default:
+            puts("neither");
+            break;
+    }
+
+The default case is optional.  The expression being switched on
+must be of type integer, string or poly.
+
+In addition to checking the value of the switch expression,
+you can test whether it is undefined.
+This is useful when switching on a function return value
+which could be C<undef> to signal an error condition.
+
+    switch (myfunc(arg)) {
+        case /OK/:
+            puts("all is A-OK");
+            break;
+        case undef:
+            puts("error");
+            break;
+        default:
+            puts("unknown return value");
+            break;
+    }
+
+To avoid confusion, the alternate regular-expression-delimiter syntax
+is restricted:
+
+    switch (str) {
+        case m|x*y|:    // "|" and most other punctuation as the delim -- ok
+			// except ( and : -- error
+			// and any alphabetic character -- error
+            break;
+        case m:         // is the variable m (not a regexp) -- ok
+	    break;
+        case mvar:      // and variables starting with "m" -- ok
+	    break;
+    }
+
+=item break and continue
+
+L has C<break> and C<continue> statements that behave like C's.
+They work in all L loops including C<foreach> loops, and C<break> works
+in C<switch> case bodies.
+
+=item goto
+
+The C<goto> statement unconditionally transfers control to a label in
+the same function, or to a label at the global scope if the goto is at
+the global scope.  You cannot use a goto to transfer in to or out of
+a function.  Labels have their own namespace so they will not clash
+with variable, function, or type names.
+
+    /* A goto at the global scope. */
+    goto L1;
+    puts("this is not executed");
+L1: puts("but this is");
+
+    void foo()
+    {
+        goto L2;
+        puts("this is not executed");
+L2:     puts("but this is");
+    }
+
+Some caveats: do not jump into a foreach loop or a run-time error may
+result due to bypassing the loop set-up.  Do not bypass a variable
+declaration or else the variable will be inaccessible.
+
+=back
+
+=head1 INCLUDES
+
+L has an C<#include> statement like the one in the C pre-processor.
+A #include can appear anywhere a statement can appear as long as it begins
+in the first column and is contained entirely on one line:
+
+    #include <types.l>
+    #include "myglobals.l"
+    void main()
+    {
+        ...
+    }
+
+Unless given an absolute path, when the file name is in angle brackets
+(like <types.l>), L searches these paths, where BIN is where the
+running tclsh exists:
+
+    $BIN/include
+    /usr/local/include/L
+    /usr/include/L
+
+When the file name is in quotes (like "myglobals.l"), L searches only
+the directory containing the script that did the #include.
+
+L also remembers which files have been included and will not include a file
+more than once, allowing you to have #include files that include each
+other.
+
+=head1 HERE DOCUMENTS
+
+Sometimes you need to assign a multi-line string to a variable.
+C<Here documents> help with that:
+
+    string s = <<END
+    This is the first line in s.
+    This is the second.
+    And the last.
+    END;
+
+Everything in the line starting after the initial <<END delimiter and
+before the final END delimiter gets put into the variable C<s>.  You
+can use any identifier you want as the delimiter, it doesn't have
+to be END.
+A semicolon after the END is optional.
+
+The text inside the here document undergoes interpolation and escape
+processing.
+If you don't want that, put the initial delimiter inside of single
+quotes:
+
+    string s = <<'END'
+    None of this text is interpolated.
+    So this ${xyz} appears literally as '${xyz}'.
+    And so does \ and ' and " and anything else.
+    END;
+
+To help readability, you can indent your here document but have
+the indenting white space ignored.
+Put the initial delimiter on the next line and then
+whatever whitespace you put before it gets ignored:
+
+    string s =
+        <<END
+        This is the first line in s and gets no leading white space.
+         This line ends up with a single leading space.
+          And this ends up with two.
+        END;
+
+Exceptions to the indentation rule: 
+a blank line is processed as if it is indented,
+and the end delimiter can have any amount of leading white space
+so that you can indent it differently.
+
+=head1 WORKING WITH TCL/TK
+
+L is built on top of Tcl: L functions are compiled down to Tcl procs,
+L local variables are just Tcl variables local to the proc, and L global
+variables are Tcl globals.
+Although L is designed to hide its Tcl underpinnings, sometimes it is
+useful for L and Tcl to cooperate.
+
+=head2 Mixing L and Tcl Code
+
+When you invoke L with a script whose name ends in C<.l>, the script
+must contain only L code.
+If you run a C<.tcl> script, you can mix L and Tcl:
+
+    puts "This is Tcl code"
+    #lang L
+    printf("This is L code\n");
+    #lang tcl
+    puts "Back to Tcl code"
+
+You also can run L code from within Tcl by passing the L code to the
+Tcl command named C<L>:
+
+    puts "Tcl code again"
+    L { printf("Called from the L Tcl command.\n"); }
+
+=head2 Calling Tcl from L
+
+You call a Tcl proc from L like you would an L function:
+
+    string s = "hello world";
+    puts(s);
+
+In this example, C<puts> is the Tcl command that outputs its argument
+to the C<stdout> channel.
+
+If you want argument type checking, you can provide a prototype for the Tcl
+functions you call.  Otherwise, no type checking is performed.
+
+In Tcl, options usually are passed as strings like "-option1" or "-option2".
+L has a feature to pass these options more pleasantly:
+
+    func(option1:);            // passes "-option1"
+    func(option2: value, arg); // passes "-option2", value, arg
+
+Without this, you would have to say:
+
+    func("-option1");
+    func("-option2", value, arg);
+
+A similar feature is for passing sub-commands to Tcl commands:
+
+    String_length("xyzzy");   // like Tcl's [string length xyzzy]
+    String_isSpace(s);        // like Tcl's [string is space $s]
+
+Whenever the function name is capitalized and contains an underscore,
+the sequence of capitalized names after the underscore are converted
+to (lower case) arguments (although capitalizing the
+first name after the underscore is optional).
+This is called a C<pattern function> call.
+
+A pattern-function call often is used to call a Tcl proc, but you
+can call an L function just as easily, and L has a special case
+when the function is named like C<Myfunc_*>:
+
+    void Myfunc_*(...args)
+    {
+        poly p;
+
+        printf("Myfunc_%s called with:\n", $1);
+        foreach (p in args) printf("%s\n", p);
+    }
+    void main()
+    {
+        Myfunc_cmd1(1);
+        Myfunc_cmd2(3,4,5);
+    }
+
+If C<Myfunc_*> is declared, then any call like C<Myfunc_x> becomes a
+call to C<Myfunc_*> where the string C<x> is put into the local
+variable C<$1> inside C<Myfunc_*>.  The remaining parameters are
+handled normally.
+This gives you a way to handle a collection of sub-commands without
+having to declare each as a separate L function.
+Note that this use of C<$1> clashes with regular expression captures
+(described later), so if you use both, you should save off C<$1>
+before using any such regular expressions.
+
+If you need to execute arbitrary Tcl code rather than just call a proc,
+you pass it to Tcl's C<eval> command:
+
+    eval("puts {you guessed it, Tcl code again}");
+
+=head2 Calling L from Tcl
+
+L functions are easily called from Tcl, because an L function
+C<foo> compiles down to a Tcl proc named C<foo> in the global
+namespace.
+Let's say this is run from a script named C<script.tcl>:
+
+    #lang L
+    int avg(...args)
+    {
+        int i, sum=0;
+        unless (length(args)) return (0);
+        foreach (i in args) sum += i;
+        return (sum/length(args));
+    }
+    #lang tcl
+    set x [avg 4 5 6]
+    puts "The average is $x"
+
+The L code defines a proc named C<avg> which the Tcl code then calls.
+
+An exception is that C<private> L functions are not callable from Tcl.
+
+=head2 Variables
+
+Because L variables are just Tcl variables, you can access L variables
+from Tcl code.  Here is an example from the L library:
+
+    int size(string path)
+    {
+        int sz;
+
+        if (catch("set sz [file size $path]")) {
+            return (-1);
+        } else {
+            return (sz);
+        }
+    }
+
+In this Tcl code, C<$path> refers to the L formal parameter C<path>,
+and the L local C<sz> is set to the file size.  This example also
+illustrates how you can use Tcl's exception-handling facility
+to catch an exception raised within some Tcl code.
+
+An exception is that private L global names are mangled (to
+make them unique per-file).
+You can pass the mangled name to Tcl code with the C<&> operator.
+Here we are passing the name of the private function C<mycallback> to
+register a Tcl fileevent "readable" handler:
+
+    private void mycallback(FILE f) { ... }
+
+    fileevent(f, "readable", {&mycallback, f});
+
+=head2 Complex variables
+
+Passing scalar variables works because they have the same representation
+in L and in Tcl.
+
+Passing complex variables is trickier and is not supported, but if you
+want to try here is what you need to know.  This is subject to change.
+An L array is a Tcl list.
+An L struct is a Tcl list with the first struct member as the first
+list element and so on.
+An L hash table is a Tcl dict.
+If an L variable is deeply nested, so is the Tcl variable.
+
+So long as you understand that and do the appropriate thing in both
+languages, passing complex variables usually is possible.
+
+=head2 Namespaces
+
+You can access Tcl procs and variables in namespaces other than
+the global namespace by qualifying the name:
+
+    extern string ::mynamespace::myvar;
+
+    /* Print a bytecode disassembly of the proc "foo". */
+    puts(::tcl::unsupported::disassemble("proc", "foo"));
+
+    /* Print a variable in another namespace. */
+    puts(::mynamespace::myvar);
+
+=head2 Calling Tk
+
+To help call Tk widgets, L has a C<widget> type that is used with the
+pattern function calls described above.  A widget value behaves like
+a string except in a pattern function call where it is the name
+of the widget to call:
+
+    widget w = Text_new();
+    Text_insert(w, "end", "hi!");   // like Tcl's $w insert end hi!
+
+Another feature is useful for calling Tk widgets that take the I<name>
+of a variable whose value is updated when the user changes a widget
+field.  You can use an L variable like this:
+
+    string msg;
+    ttk::label(".foo", textvariable: &msg);
+
+The ampersand (&) in front of C<msg> alludes to a C pointer but it
+really passes just the name of the variable.  L does this when the
+option name ends in "variable", as "textvariable" does in the example
+above (yes, this is a hack).
+
+You can do this with globals, class variables, or class instance
+variables, and only with a variable and not an array, structure, or
+hash element.
+
+=head1 OPERATORS
+
+=over 4
+
+=item Arithmetic
+
+    +   addition
+    -   subtraction
+    *   multiplication
+    /   division
+    %   remainder
+
+=item Numeric and String comparison
+
+    ==  equality
+    !=  inequality
+    <   less than
+    >   greater than
+    <=  less than or equal
+    >=  greater than or equal
+
+=item String comparison
+
+    =~  regexp match or substitute
+    !~  negated regexp match
+
+=item Comparison of composite types (array, hash, struct)
+
+    eq(a,b)
+
+=item Bit operations
+
+    &   bit and
+    |   bit or
+    ^   bit exclusive or
+    ~   bit complement
+    <<  left shift
+    >>  right shift
+
+=item Boolean logic
+
+    &&  and
+    ||  or
+    !   not
+
+=item Conditional
+
+    ?:  ternary conditional (as in C)
+
+=item Indexing
+
+    []  array index
+    {}  hash index
+    .   struct index (no whitespace around the dot)
+    ->  struct index (call-by-reference parameters dereference)
+    ->  class and instance variable access (object dereference)
+
+=item Miscellaneous
+
+    =   assignment
+    ,   statement sequence
+    .   string concatenation (must have whitespace around the dot)
+    ``  command expansion
+
+=item Assignment
+
+    +=, -=, *=, /=, %=, &=, |=, ^=, <<=, >>=, .=
+
+=item Operator precedence (highest to lowest) and associativity
+
+    `` (non assoc)
+    [] {} . (struct index) -> ++ -- (left)
+    unary + unary - ! ~ & (right)
+    * / % (left)
+    + - . (string concatenation) (left)
+    << >> (left)
+    < <= > >= (left)
+    == != =~ !~ (left)
+    & (left)
+    ^ (left)
+    | (left)
+    && (left)
+    || (left)
+    ?: (right)
+    = += -= *= /= %= &= |= ^= <<= >>= .= (right)
+    , (left)
+
+=back
+
+=head1 PRE-DEFINED IDENTIFIERS
+
+=over 4
+
+=item __FILE__
+
+A string containing the name of the current source file, or "<stdin>"
+if the script is read from stdin instead of from a file.
+Read only.
+
+=item __LINE__
+
+An int containing the current line number within the script.
+Read only.
+
+=item __FUNC__
+
+A string containing the name of the enclosing function.
+At the top level, this will contain a unique name created internally
+by the compiler to uniquely identify the current file's top-level
+code.
+Read only.
+
+=item END
+
+An int containing the index of the last character of a non-empty
+string or the last element of a non-empty array.  If the array or
+string is empty, END is -1.  Valid only inside of a string or array
+subscript.  Read only.
+
+=item stdio_status
+
+A struct of type STATUS (see system()) containing status of the
+last system(), `command`, successful waitpid(), or failed spawn().
+
+=item undef
+
+A poly containing the undef value, where defined(undef) is false.
+Assigning this to something makes it undefined.
+However, undef is not guaranteed to have any particular value, so applications
+should not rely on the value.  Read only.
+
+=back
+
+=head1 RESERVED WORDS
+
+The following identifiers are reserved.  They cannot be used for
+variable, function, or type names:
+
+    break
+    case
+    class
+    constructor
+    continue
+    default
+    defined
+    destructor
+    do
+    else
+    expand
+    extern
+    float
+    for
+    foreach
+    goto
+    if
+    instance
+    int
+    poly
+    private
+    public
+    return
+    string
+    struct
+    switch
+    typedef
+    undef
+    unless
+    void
+    while
+    widget
+
+=head1 BUILT-IN AND LIBRARY FUNCTIONS
+
+L has several built-in functions and a set of library functions
+modeled after the standard C library and Perl.
+
+=over 4
+
+=proto string <>
+
+=proto string <FILE f>
+
+Get the next line from a FILE handle and return it, or return undef
+for EOF or errors.  Trailing newlines are removed.  If a file handle
+is specified, it is not closed by this function.
+
+The form without a file handle
+
+    while (buf = <>) {
+        ...
+    }
+
+means
+
+    unless (argv[1]) {
+        while (buf = <stdin>) {
+            ...
+        }
+    } else for (i = 1; argv[i]; i++) {
+        unless (f = open(argv[i], "r")) {
+            perror(argv[i]);
+            continue;
+        }
+        while (buf = <f>) {
+            ...
+        }
+    }
+
+A trivial cat implementation:
+
+    void
+    main(int ac, string argv[])
+    {
+        string  buf;
+
+        while (buf = <>) print(buf);
+    }
+
+=item `command`
+
+Execute the command (the string enclosed within back-ticks) and
+substitute its stdout as the value of the expression.
+Any output to stderr is passed through to the calling application's
+stderr and is not considered an error.
+The command is executed using the Tcl C<exec> command which
+understands I/O re-direction and pipes, except that the command undergoes
+bash-style quoting instead of Tcl quoting.
+The command string is interpolated.
+Backslash escapes $, `, and \, \<newline> is ignored, but otherwise
+backslash is literally interpreted.
+An embedded newline is an error.
+If the command cannot be run, undef is returned.
+The global variable C<stdio_status> (see system()) contains the
+command's exit status.
+
+=proto int abs(int val)
+
+=proto float abs(float val)
+
+Return the absolute value of the argument.
+
+=proto void assert(int condition)
+
+Print an error and exit with status 1 if C<condition> is false.
+The filename, line number, and text of the condition are printed.
+
+=proto string basename(string path)
+
+Return the file portion of a path name.
+
+=proto string caller(int frame)
+
+Return the name of a calling function, or the caller's caller, etc.
+To get the caller, use a frame of 0, to get the caller's caller, use
+1, etc.
+
+=proto int chdir(string dir)
+
+Change directory to dir.
+Return 0 on success, -1 on error.
+
+=proto int chmod(string path, string permissions)
+
+Not available on Windows.
+Change the mode of the file or directory named by path.  Permissions
+can be the octal code that chmod(1) uses, or symbolic attributes that
+chmod(1) uses of the form [ugo]?[[+-=][rwxst],[...]], where multiple
+symbolic attributes can be separated by commas (example: u+s,go-rw add
+sticky bit for user, remove read and write permissions for group and
+other).  A simplified ls-style string, of the form rwxrwxrwx (must be 9
+characters), is also supported (example: rwxr-xr-t is equivalent to
+01755).
+Return 0 on success, -1 on error.
+
+=proto int chown(string owner, string group, string path)
+
+Not available on Windows.
+Change the file ownership of the file or directory names by path.  If
+either owner or group is an empty string, the attribute will not be
+modified.
+Return 0 on success, -1 on error.
+
+=proto int cpus()
+
+Return the number of processors (if known).  Defaults to 1.
+
+=proto void die(string fmt, ...args)
+
+Output a printf-like message to stderr and exit 1.
+If fmt does not end with a newline, append
+" in <filename> at line <linenum>.\n"
+
+=proto string dirname(string path)
+
+Return the directory portion of a pathname.
+
+=proto int eq(compositeType a, compositeType b)
+
+Compare two arrays, hashes, structs, or lists for equality.
+The two arguments are compared recursively element by element.
+
+=proto int exists(string path)
+
+Return 1 if the given path exists or 0 if it does not exist.
+
+=proto int fclose(FILE f)
+
+Close an open FILE handle.
+Return 0 on success, -1 on error.
+
+=proto FILE fopen(string path, string mode)
+
+Open a file.  The C<mode> string indicates how the file will be accessed.
+
+=over 4
+
+=item "r"
+
+Open the file for reading only; the file must already exist. This is
+the default value if access is not specified.
+
+=item "r+"
+
+Open the file for both reading and writing; the file must already exist.
+
+=item "w"
+
+Open the file for writing only. Truncate it if it exists. If it
+doesn't exist, create a new file.
+
+=item "w+"
+
+Open the file for reading and writing. Truncate it if it exists. If it
+doesn't exist, create a new file.
+
+=item "a"
+
+Open the file for writing only. The file must already exist, and the
+file is positioned so that new data is appended to the file.
+
+=item "a+"
+
+Open the file for reading and writing. If the file doesn't exist,
+create a new empty file. Set the initial access position to the end of
+the file.
+
+=item "v"
+
+This mode can be added to any of the above and causes open errors to
+be written to stderr.
+
+=back
+
+Return a FILE handle on success and undef on error.
+
+=proto int fprintf(FILE f, string fmt, ...args)
+
+Format and print a string to the given FILE handle.  The FILE handles
+C<stdin>, C<stdout>, and C<stderr> are pre-defined.
+
+Return 0 on success, -1 on error.
+
+=proto int Fprintf(string filename, string fmt, ...args)
+
+Like fprintf but write to the given file name.  The file is
+overwritten if it already exists.  Return 0 on success, -1 on error.
+
+=proto string ftype(string path)
+
+Return the type of file at the given path. Type can be C<directory>, C<file>,
+C<character>, C<block>, C<fifo>, C<symlink> or C<socket>.
+Return undef on error.
+
+=proto string[] getdir(string dir)
+
+=proto string[] getdir(string dir, string pattern)
+
+Return the files in the given directory, as a sorted string array.
+Optionally filter the list by C<pattern> which is a glob and may
+contain the following special characters:
+
+=proto dirent[] getdirx(string dir)
+
+Return the files in the given directory as an array of structs, with
+the directories sort and coming first in the array followed by
+the sorted file names.
+Return undef on error.
+The C<dirent> struct is defined as follows:
+
+=over 4
+
+    typedef struct dirent {
+	string	name;
+	string	type;    // "file", "directory", "other"
+	int	hidden;
+    } dirent;
+
+=back
+
+=over 4 
+
+=item ?
+
+Matches any single character.
+
+=item *
+
+Matches any sequence of zero or more characters.
+
+=item [chars]
+
+Matches any single character in chars. If chars contains a sequence of
+the form a-b then any character between a and b (inclusive) will
+match.
+
+=item \x
+
+Matches the character x.
+=item {a,b,...}
+
+Matches any of the strings a, b, etc.
+
+=back
+
+If the first character in a pattern is ``~'' then it refers to the
+home directory for the user whose name follows the ``~''. If the ``~''
+is followed immediately by ``/'' then the value of the HOME
+environment variable is used.
+
+=proto string getenv(string varname)
+
+Return the value of an environment variable if it exists and is of
+non-zero length, or return undef if it has zero length or does not
+exist.
+This allows you to say putenv("VAR=") and have getenv("VAR") return
+undef.
+
+=proto string getopt(string av[], string opts, string longopts[])
+
+Parse command-line arguments.
+This version recognizes the following types of short and long options
+in the av array:
+
+    -    (leaves it and returns)
+    --   end of options
+    -a
+    -abcd
+    -r <arg>
+    -r<arg>
+    -abcr <arg>
+    -abcr<arg>
+    -r<arg> -R<arg>, etc.
+    --long
+    --long:<arg>
+    --long=<arg>
+    --long <arg>
+
+Short options are all specified in a single C<opts> string as follows:
+
+    d		boolean option		-d
+    d:		required arg		-dARG or -d ARG
+    d;		required arg no space   -dARG
+    d|		optional arg no space	-dARG or -d
+
+Long options are specified in the C<longopts> array (one option
+per element) as follows:
+
+    long	boolean option		--long
+    long:	required arg		--long=ARG or --long ARG
+    long;	required arg no space   --long=ARG
+    long|	optional arg no space	--long=ARG or --long
+
+The function returns the name of the next recognized option or
+undef if no more options exist.
+The global variable C<optind> is set to the next av[] index to
+process.
+If the option has no arg, C<optarg> is set to C<undef>.
+
+If an unrecognized option is seen, the empty string ("") is returned
+and the global variable C<optopt> is set to the name of the
+offending option (unless the option is a long option).
+
+This example shows a typical usage of both short and long options.
+
+    int     debug_level, verbose;
+    string  c, lopts[] = { "verbose" };
+
+    while (c = getopt(av, "d|v", lopts)) {
+        switch (c) {
+            case "d":
+                if (optarg) debug_level = (int)optarg;
+                break;
+            case "v":
+            case "verbose":
+                verbose = 1;
+                break;
+            default:
+                die("unrecognized option ${optopt}");
+        }
+    }
+
+=proto int getpid()
+
+Return the caller's process id.
+
+=proto void here()
+
+Output a message like "myfunc() in script.l:86" to stderr which
+contains the file name, line number, and currently executing function
+name.
+Typically used for debugging.
+
+=proto void insert(type &array[], int index, type element1 | type elements1[], ...)
+
+Insert one or more elements into C<array> before the element specified
+by C<index>.
+If C<index> is 0, the elements are inserted at the beginning of the
+array; this is what C<unshift()> does.
+If C<index> is -1 or larger than or equal to the number of elements in
+the array, the elements are inserted at the end; this is what C<push> does.
+You can insert single elements or arrays of elements.
+
+=proto int isalpha(string s)
+
+Return 1 if the given string contains only alphabetic characters, else
+return 0.
+An empty string also returns 0.
+
+=proto int isalnum(string s)
+
+Return 1 if the given string contains only alphabetic or digit characters, else
+return 0.
+An empty string also returns 0.
+
+=proto int isdigit(string s)
+
+Return 1 if the given string contains only digit characters, else
+return 0.
+An empty string also returns 0.
+
+=proto int isdir(string path)
+
+Return 1 if the given path exists and is a directory, else return 0.
+
+=proto int islink(string path)
+
+Return 1 if the given path exists and is a link, else return 0.
+
+=proto int islower(string s)
+
+Return 1 if the given string contains only lower-case alphabetic characters, else
+return 0.
+An empty string also returns 0.
+
+=proto int isreg(string path)
+
+Return 1 if the given path exists and is a regular file, else return 0.
+
+=proto int isspace(string buf)
+
+Return 1 if all characters in the argument are space characters, else
+return 0.
+An empty string also returns 0.
+
+=proto int isupper(string s)
+
+Return 1 if the given string contains only upper-case alphabetic characters, else
+return 0.
+An empty string also returns 0.
+
+=proto int iswordchar(string s)
+
+Return 1 if the given string contains only alphanumeric or connector
+punctuation characters (such as underscore), else return 0.
+An empty string also returns 0.
+
+=proto string join(string sep, type array[])
+
+Convert an array into a string by joining all of its elements by
+inserting sep between each pair.
+
+=proto keyType[] keys(valType hash{keyType})
+
+Return an array containing the keys of a given hash.  Note that the
+return type depends on the argument type.
+
+=proto string lc(string s)
+
+Return a copy of the string that is in all lower case.
+
+=proto int length(string s)
+
+Return the number of characters in the given string.
+Returns 0 if the argument is C<undef>.
+
+=proto int length(type array[])
+
+Return the number of elements in the given array.
+Returns 0 if the argument is C<undef>.
+
+	for (i = 0; i < length(array); i++)
+
+=proto int length(valType hash{keyType})
+
+Return the number of key/value pairs in the given hash.
+Returns 0 if the argument is C<undef>.
+
+=proto int link(string sourcePath, string targetPath)
+
+Create a hard link from sourcePath to targetPath.
+Return 0 on success, -1 on error.
+
+=proto int lstat(string path, struct stat &buf)
+
+Call lstat(2) on C<path> and place the information in C<buf>.
+Return 0 on success, -1 on error.
+The C<struct stat> type is defined as follows:
+
+=over 4
+
+    struct stat {
+	int	st_dev;
+	int	st_ino;
+	int	st_mode;
+	int	st_nlink;
+	int	st_uid;
+	int	st_gid;
+	int	st_size;
+	int	st_atime;
+	int	st_mtime;
+	int	st_ctime;
+	string	st_type;
+    };
+
+=back
+
+where C<st_type> is a string giving the type of file name, which will
+be one of file, directory, characterSpecial, blockSpecial, fifo, link,
+or socket.
+
+=proto int|float max(int|float, int|float)
+
+=proto int|float min(int|float, int|float)
+
+Return the maximum or minimum of two numbers.  The return type is
+float if either of the arguments is a float, otherwise the return type
+is int.
+
+=proto int milli()
+
+Return the number of milliseconds since the currently executing
+script started.
+
+=proto void milli_reset()
+
+Reset the internal state for milli() to begin counting from 0 again.
+
+=proto int mkdir(string path)
+
+Create a directory at the given path.  This creates all non-existing
+parent directories.  The directories are created with mode 0775
+(rwxrwxr-x).
+Return 0 on success, -1 on error.
+
+=proto int mtime(string path)
+
+Return the modified time of path, or 0 to indicate error.
+
+=proto string normalize(string path)
+
+Return a normalized version of path. The pathname will be an absolute
+path with all "../" and "./" removed.
+
+=proto int ord(string c)
+
+Return the numeric value of the encoding (ASCII, Unicode) of the first character
+of C<c>, or -1 on error or if C<c> is the empty string.
+
+=proto int pclose(FILE f)
+
+=proto int pclose(FILE f, STATUS &s)
+
+Close an open pipe created by popen().
+Return 0 on success, -1 on error.
+See system() for details of the STATUS struct.
+
+=proto void perror()
+
+=proto void perror(string message)
+
+Print the error message corresponding to the last error from
+various L library calls.
+If C<message> is not undef, it is prepended to the error string
+with a ": ".
+
+=proto type pop(type &array[])
+
+Remove an element from the end of C<array>.
+Return undef if the array is already empty.
+
+=proto FILE popen(string cmd | argv[], string mode)
+
+=proto FILE popen(string cmd | argv[], string mode, void &stderr_callback(string cmd, FILE f))
+
+Open a file handle to a process running the command specified in 
+C<argv[]> or C<cmd>.  In the C<cmd> case, the command is split into
+arguments respecting Bourne shell style quoting.
+The returned FILE handle may be
+used to write to the command's input pipe or read from its output
+pipe, depending on the value of C<mode>.  If write-only access is used
+("w"), then standard output for the pipeline is directed to the
+current standard output unless overridden by the command.  If
+read-only access is used ("r"), standard input for the pipeline is
+taken from the current standard input unless overridden by the
+command.
+
+The optional third argument is a callback function that is
+invoked by Tcl's event loop when the command's stderr pipe has data
+available to be read.
+The second argument of the callback is a non-blocking FILE for the
+read end of this pipe.
+Care must be taken to ensure that the event loop is run often enough
+for the callback to reap data from the pipe often enough to avoid deadlock.
+In console apps, this may mean calling Tcl's C<update()> function.
+The pclose() function also invokes the callback, so it is guaranteed to
+be called at least once.
+
+If the third argument to C<popen> is C<undef>, the command's stderr
+output is ignored.  Otherwise, unless re-directed by the command, any
+stderr output is passed through to the calling script's stderr and is
+not considered an error.
+
+If Tk is being used, there is a default callback that pops up a window
+with any output the command writes to stderr.
+
+Return the FILE handle on success, or undef on error.
+
+=proto int printf(string fmt, ...args)
+
+Format arguments and print to stdout, as in printf(3).
+Return 0 on success, -1 on error.
+
+=proto void push(type &array[], type element1 | type elements1[], ...)
+
+Push one or more elements onto the end of C<array>.
+You can insert single elements or arrays of elements.
+
+=proto string putenv(string var_fmt, ...args)
+
+Set an environment variable, overwriting any pre-existing value,
+using printf-like arguments:
+
+	putenv("VAR=val");
+	putenv("MYPID=%d", getpid());
+
+Return the new value or undef if var_fmt contains no "=".
+
+=proto int read(FILE f, string &buffer)
+
+=proto int read(FILE f, string &buffer, int numBytes)
+
+Read at most numBytes from the given FILE handle into the buffer, or
+read the entire file if numBytes == -1 or is omitted.  Return the number of
+bytes read, -1 on error or EOF.
+
+=proto int rename(string oldpath, string newpath)
+
+Rename a file.
+Return 0 on success, -1 on error.
+
+=proto string require(string packageName)
+=proto string require(string packageName, string version)
+
+Find and load the given Tcl package packageName.  Return the version
+string of the package loaded on success, and undef on error.
+The second form is used when only when the given version is acceptable.
+
+=proto int rmdir(string dir)
+
+Delete the given directory.
+Return 0 on success, -1 on error.
+
+=proto type shift(type &array[])
+
+Remove and return the element at the beginning of C<array>.
+Return undef if the array is already empty.
+
+=proto int size(string path)
+
+Return the size, in bytes, of the named file path, or -1 on error.
+
+=proto void sleep(float seconds)
+
+Sleep for C<seconds> seconds.  Note that C<seconds> can be fractional to 
+get sub-second sleeps.
+
+=proto type[] sort(type[] array)
+
+=proto type[] sort([decreasing: | increasing:], type[] array)
+
+=proto type[] sort([integer: | real: | ascii:], type[] array)
+
+=proto type[] sort(command: &compar, type[] array)
+
+Sort the array C<array> and return a new array of sorted elements.
+The first variation sorts the elements into ascending order, and does
+an integer, real, or ascii sort based on the type of C<array>.  The
+second two variations show optional arguments that can be passed to
+change this behavior.  The last variation shows how a custom compare
+function can be specified.  The function must take two array elements
+of type T as arguments and return -1 if the first comes before the
+second in the sort order, +1 if the first comes after the second, and
+0 if the two are equal.
+
+=proto int spawn(string cmd)
+
+=proto int spawn(string cmd, STATUS &s)
+
+=proto int spawn(string argv[])
+
+=proto int spawn(string argv[], STATUS &s)
+
+=proto int spawn(cmd | argv[], FILE in, FILE out, FILE err)
+
+=proto int spawn(cmd | argv[], FILE in, FILE out, FILE err, STATUS &s)
+
+=proto int spawn(cmd | argv[], string in, FILE out, FILE err)
+
+=proto int spawn(cmd | argv[], string in, FILE out, FILE err, STATUS &s)
+
+=proto int spawn(cmd | argv[], string[] in, FILE out, FILE err)
+
+=proto int spawn(cmd | argv[], string[] in, FILE out, FILE err, STATUS &s)
+
+=proto int spawn(cmd | argv[], "input", "${outf}", "errors")
+
+=proto int spawn(cmd | argv[], "input", "${outf}", "errors", STATUS &s)
+
+Execute a command in background.  All forms return either a process id or
+undef to indicate an error.
+In the error case the STATUS argument is set, otherwise it remains untouched
+and the status can be reaped by waitpid().
+
+See the system() function for information about the arguments.
+
+See the waitpid() function for information about waiting on the child.
+
+=proto string[] split(string s)
+
+=proto string[] split(/regexp/, string s)
+
+=proto string[] split(/regexp/, string s, int limit)
+
+Split a string into substrings.
+In the first variation, the string is split on whitespace, and any
+leading or trailing white space does not produce a null field in the result.
+This is useful when you just want to get at the things delimited
+by the white space:
+
+    split("a b c");    // returns {"a", "b", "c"}
+    split(" x y z ");  // returns {"x", "y", "z"}
+
+In the second variation, the string is split using a regular expression
+as the delimiter:
+
+    split(/,/, "we,are,commas");  // returns {"we", "are", "commas"}
+    split(/xxx/, "AxxxBxxxC");    // returns {"A", "B", "C"}
+    split(/[;,]/, "1;10,20");     // returns {"1", "10", "20"}
+
+When a delimiter is used, split returns a null first field if the
+string begins with the delimiter, but if the string ends with the
+delimiter no trailing null field is returned.  This provides
+compatibility with Perl's split:
+
+    split(/xx/, "xxAxxBxxCxx");  // returns {"", "A", "B", "C"}
+
+You can avoid the leading null fields in the result if you put a
+C<t> after the regular expression (to tell it to "trim" the result):
+
+    split(/xx/t, "xxAxxBxxCxx");  // returns {"A", "B", "C"}
+
+If a C<limit> argument is given, at most C<limit> substrings are returned
+(limit <= 0 means no limit):
+
+    split(/ /, "a b c d e f", 3);  // returns {"a", "b", "c d e f"}
+
+To allow splitting on variables or function calls that start with
+C<m>, the alternate regular-expression-delimiter syntax
+is restricted:
+
+    split(m|/|, pathname);  // "|" and most other punctuation -- ok
+			    // but ( and ) as delimiters -- error
+    split(m);               // splits the variable "m" -- ok
+    split(m(arg));          // splits the result of m(arg) -- ok
+
+Regular expressions, and the strings to split,
+both can contain unicode characters or binary data as well as ASCII:
+
+    split(/\0/, string_with_nulls);  // split on null
+    split(/ש/, "זו השפה שלנו");      // unicode regexp and string
+
+=proto string sprintf(string fmt, ...args)
+
+Format arguments and return a formatted string like sprintf(3).
+Return undef on error.
+
+=proto int stat(string path, struct stat &buf)
+
+Call stat(2) on C<path> and place the information in C<buf>.
+Return 0 on success, -1 on error.
+See the lstat() command for the definition of C<struct stat>.
+
+=proto int strchr(string s, string c)
+
+Return the first index of c into s, or -1 if c is not found.
+
+=proto int strlen(string s)
+
+Return the string length.
+
+=proto int strrchr(string s, string c)
+
+Return the last index of c into s, or -1 if c is not found.
+
+=proto int symlink(string sourcePath, string targetPath)
+
+Create a symbolic link from sourcePath to targetPath.
+Return 0 on success, -1 on failure.
+
+=proto int system(string cmd)
+
+=proto int system(string cmd, STATUS &s)
+
+=proto int system(string argv[])
+
+=proto int system(string argv[], STATUS &s)
+
+=proto int system(cmd | argv[], string in, string &out, string &err)
+
+=proto int system(cmd | argv[], string in, string &out, string &err, STATUS &s)
+
+=proto int system(cmd | argv[], string[] in, string[] &out, string[] &err)
+
+=proto int system(cmd | argv[], string[] in, string[] &out, string[] &err, STATUS &s)
+
+=proto int system(cmd | argv[], FILE in, FILE out, FILE err);
+
+=proto int system(cmd | argv[], FILE in, FILE out, FILE err, STATUS &s);
+
+=proto int system(cmd | argv[], "input", "${outf}", "errors")
+
+=proto int system(cmd | argv[], "input", "${outf}", "errors", STATUS &s)
+
+Execute a command and wait for it to finish (see C<spawn()> for the
+async version).
+The command is executed using Tcl's C<exec> command, except that
+the single-command-string form requires bash-style quoting, not Tcl quoting,
+and the argv[] form must not be quoted at all.
+
+If the number of arguments is one or two, then the existing stdin,
+stdout, stderr channels are used.
+
+If the number of arguments is four or five, then the second, third,
+and fourth arguments specify stdin, stdout, stderr, respectively.
+Each can be a string variable or string array
+(a reference is required for stdout and stderr),
+a FILE variable which must be an open file handle, or
+a string literal which is interpreted as a file path name.
+If you want to specify a file name from a variable, use the string
+literal "${filename}".
+It is an error to both re-direct input/output in the command string
+and to specify the corresponding input/output argument; in such a
+case, the command is not run and C<undef> is returned.
+
+If stdout or stderr are sent to strings or string arrays and no output
+is produced, then C<out> or C<err> are C<undef> upon return.
+
+The optional last argument is a reference to the following structure:
+
+    typedef struct {
+	string	argv[];	// args passed in
+	string	path;	// if defined, this is the path to the exe
+			// if undef, the executable was not found
+	int	exit;	// if defined, the process exited with this value
+	int	signal;	// if defined, the signal that killed the process
+    } STATUS;
+
+The global variable C<stdio_status> is also set.
+If the the command is a pipeline and a process in that pipeline fails,
+the returned status is for the first process that failed.
+
+If there is an error executing the command, or if the process
+is killed by a signal, undef is returned;
+otherwise, the return value is the
+process exit status (for a pipeline, the status of the first process
+that exited with error).
+
+Examples:
+
+    // No futzing with input/output, uses stdin/out/err.
+    ret = system(cmd);
+
+    // Same thing but no quoting issues, like execve(2).
+    ret = system(argv);
+
+    // Get detailed status.
+    unless (defined(ret = system(cmd, &status))) {
+    	unless (defined(status.path)) {
+    		warn("%s not found or bad perm\n", status.path);
+    	}
+    	if (defined(status.signal)) {
+    		warn("%s killed with %d\n", status.argv[0], status.signal);
+    	}
+    }
+
+    // Taking input and sending output to string arrays.
+    // The in_vec elements should not contain newlines and
+    // the out/err_vec elements will not contain newlines.
+    string in_vec[], out_vec[], err_vec[];
+    ret = system(cmd, in_vec, &out_vec, &err_vec);
+
+    // Taking input and sending output to files.
+    string outf = sprintf("/tmp/out%d", getpid());
+    ret = system(cmd, "/etc/passwd", "${outf}", "/tmp/errors");
+
+    // Using open file handles.
+    FILE in = popen("/some/producer/process", "r");
+    FILE out = popen("/some/consumer/process", "w");
+    FILE err = popen("cat > /dev/tty", "w");
+    ret = system(argv, buf, in, out, err, &status);
+    // error handling here
+    pclose(in, &status);
+    // error handling here
+    ...
+
+    // Mixing and matching.
+    ret = system(argv, buf, &out, "/tmp/errors", &status);
+
+=proto string trim(string s)
+
+Return a copy of the string that has been trimmed of any leading and
+trailing whitespace (spaces, tabs, newlines, and carriage returns).
+
+=proto string typeof(<variable>)
+
+Return the simple type name of the given variable.
+This is one of "int", "string", "poly", "widget", "array",
+"hash", or "struct";
+or if the variable's type is a typedef, the typedef name;
+or if the variable has a class type, the class name;
+of if the variable is really a function name, "function".
+
+=proto string uc(string s)
+
+Return a copy of the string that is in all upper case.
+
+=proto void undef(<array>[index])
+
+=proto void undef(<string>[index])
+
+=proto void undef(<hash>{index})
+
+=proto void undef(<variable>)
+
+In the first three forms, remove an array, string, or hash element
+from the specified variable.
+In the last form, sets the variable to undef.
+When setting a hash or array to undef, all of its old elements are
+freed (unless they were shared with some other variable).
+
+=proto int unlink(string path)
+
+Delete the named file.
+Return 0 on success, -1 on failure.
+
+=proto void unshift(type &array[], type element1 | type elements1[], ...)
+
+Add one or more elements onto the beginning of C<array>.
+You can insert single elements or arrays of elements.
+
+=proto int waitpid(int pid, STATUS &status, int nohang)
+
+Given a pid returned by spawn(), wait for it, and place the exit information
+in the (optional) STATUS struct.
+If C<pid> is -1, return any process that has exited or return -1 if
+no more child processes exist;
+otherwise return C<pid> or -1 on error.
+If C<nohang> is non-zero, returns -1 if the process does not exist or other
+error, returns 0 if the process exists and has not exited, and
+returns C<pid> and updates C<status> if the process has exited.
+
+=proto int wait(STATUS &status)
+
+Same as C<waitpid(-1, &status, 0)>.
+
+=proto void warn(string fmt, ...args)
+
+Output a printf-like message to stderr.
+If fmt does not end with a newline, append
+" in <filename> at line <linenum>.\n"
+
+=proto int write(FILE f, string buffer, int numBytes)
+
+Write at most numBytes to the given FILE handle from the buffer.
+Return the number of bytes written, or -1 on error.
+
+=back
+
+=head1 MANIPULATING COMPLEX STRUCTURES
+
+L has built-in operators for turning complex data structures into
+something else: (expand), and (tcl).
+
+(expand) takes an array of things and pushes them all onto the
+run-time stack to call a function that expects such a list.
+It is identical to Tcl's {*}:
+
+    void foo(string a, string b, string c);
+
+    string v[] = { "one", "two", "three" };
+
+    foo((expand)v);	// passes three string arguments to foo
+
+It expands only one level, so if the array contains three hashes
+instead of three strings, (expand)v passes three hashes to foo.
+(expand) works with structs too.
+
+If you have this structure:
+
+    struct {
+        int   i[];
+        int   h{string};
+    } foo = {
+        { 0, 1, 2, 3, },
+        { "big" => 100, "medium" => 50, "small" => 10 }
+    };
+
+And you use (expand) when passing these as arguments:
+
+    func((expand)foo);
+
+you need a function definition like this:
+
+    void func(int nums[], int sizes{string})
+    {
+    }
+
+There is no way to recursively expand at this time.
+
+(tcl) is used to pass a single string to a Tcl proc for processing.
+It puts in the Tcl quotes.  So
+
+    (tcl)foo
+
+is
+
+    0 1 2 3 { big 100 medium 50 small 10 }
+
+Another example:
+
+    string v[] = { "a b c", "d", "e" };
+    string arg = (tcl)v;     // arg is "{a b c} d e"
+
+Sometimes you need to assign a group of variables all at once.
+You can do this by assigning a list of values to a list of variables:
+
+    {a, b, c} = {1, 2, 3};
+
+This is more than a short-cut for the three individual assignments.
+The entire right-hand side gets evaluated first, then the assignment
+occurs, so you can use this to swap the value of two variables:
+
+    {a, b} = {b, a};
+
+If you want to ignore one of the elements in the right-hand list, you
+can put C<undef> in the corresponding element of left-hand list
+instead of having to use a dummy variable:
+
+    {a, undef, b} = {1, 2, 3};  // a gets 1, b gets 3
+
+If the right-hand side list isn't as long as the left-hand list,
+the stragglers get C<undef>:
+
+    {a, b, c} = {1, 2};  // a gets 1, b gets 2, c gets undef
+
+These composite assignments also work with arrays or structs
+on the right-hand side:
+
+    int dev, inode;
+    struct stat st;
+
+    lstat(file, &st);
+    {dev, inode} = st;  // pull out first two fields of the stat struct
+
+    {first, second} = split(line);  // get first two words in line
+
+=head1 REGULAR EXPRESSIONS
+
+L's regular expression support is based on the PCRE (Perl Compatible
+Regular Expressions) library L<http://www.pcre.org>.  The basics are
+documented here but for more extensive documentation please see
+L<http://www.pcre.org/pcre.txt>.
+
+=over 4
+
+=item Simple matching
+
+    if (s =~ /foo/) { ... }  // true if s contains "foo"
+    if (s !~ /foo/) { ... }  // false if s contains "foo"
+
+The C<//> matching operator must be used in conjunction with C<=~> and
+C<!~> to tell L what variable to look at.
+
+If your regular expression contains forward slashes, you must
+escape them with a backslash, or you can use an alternate
+syntax where almost any punctuation becomes the delimiter:
+
+    if (s =~ m|/path/to/foo|) { ... }
+    if (s =~ m#/path/to/foo#) { ... }
+    if (s =~ m{/path/to/foo}) { ... }
+
+In the last case, note that the end delimiter } is different
+than the start delimiter { and you must escape all
+uses of either delimiter inside the regular expression.
+
+=item Simple substitution
+
+    x =~ s/foo/bar/;         // replaces foo with bar in x
+    x =~ s/foo/bar/g;        // replaces ALL INSTANCES of foo with bar in x
+    x =~ s/foo/bar/i;        // does a case-insensitive search
+
+This form also has an alternate syntax:
+
+    x =~ s{foo}{bar};
+    x =~ s{foo}/bar/;
+
+=item More complex regular expressions
+
+    .                   a single character
+    \s                  a whitespace character (space, tab, newline, ...)
+    \S                  non-whitespace character
+    \d                  a digit (0-9)
+    \D                  a non-digit
+    \w                  a word character (a-z, A-Z, 0-9, _)
+    \W                  a non-word character
+    [aeiou]             matches a single character in the given set
+    [^aeiou]            matches a single character outside the given set
+    (foo|bar|baz)       matches any of the alternatives specified
+
+    ^                   start of string
+    $                   end of string
+
+Quantifiers can be used to specify how many of the previous thing you
+want to match on, where "thing" means either a literal character, one
+of the meta characters listed above, or a group of characters or
+meta characters in parentheses.
+
+    *                   zero or more of the previous thing
+    +                   one or more of the previous thing
+    ?                   zero or one of the previous thing
+    {3}                 matches exactly 3 of the previous thing
+    {3,6}               matches between 3 and 6 of the previous thing
+    {3,}                matches 3 or more of the previous thing
+
+Some brief examples:
+
+    /^\d+/              string starts with one or more digits
+    /^$/                nothing in the string (start and end are adjacent)
+    /(\d\s){3}/         a three digits, each followed by a whitespace
+                        character (eg "3 4 5 ")
+    /(a.)+/             matches a string in which every odd-numbered letter
+                        is a (eg "abacadaf")
+
+    // This loop reads from stdin, and prints non-blank lines.
+    string buf;
+    while (buf = <stdin>) {
+        unless (buf =~ /^$/) puts(buf);
+    }
+
+=item Unicode
+
+Both regular expressions and the strings they are matched against
+can contain unicode characters or binary data.
+This example looks for a null byte in a string:
+
+    if (s =~ /\0/) puts("has a null");
+
+=item Parentheses for capturing
+
+As well as grouping, parentheses serve a second purpose.  They can be
+used to capture the results of parts of the regexp match for later use.
+The results end up in C<$1>, C<$2> and so on, and these capture
+variables are available in the substitution part of the operator
+as well as afterward.
+You can use up to nine captures ($1 - $9).
+
+    // Break an e-mail address into parts.
+    if (email =~ /([^@]+)@(.+)/) {
+        printf("Username is %s\n", $1);
+        printf("Hostname is %s\n", $2);
+    }
+
+    // Use $1,$2 in the substitution to swap two words.
+    str =~ s/(\w+) (\w+)/$2 $1/;
+
+Capturing has a limitation.  If you have more than one regexp with
+captures in an expression, the last one evaluated sets C<$1>, C<$2>,
+etc.
+
+    // This loses email1's captures.
+    if ((email1 =~ /([^@]+)@(.+)/) && (email2 =~ /([^@]+)@(.+)/)) {
+        printf("Username is %s\n", $1);
+        printf("Hostname is %s\n", $2);
+    }
+
+In situations like this, care must be taken because the evaluation
+order of sub-expressions generally is undefined.  But this example is
+an exception because the && operator always evaluates its operands in
+order.
+
+=back
+
+=head1 CLASSES
+
+L has a C<class> abstraction for encapsulating data and
+functions that operate on that data.  L classes are simpler than
+full-blown object-oriented programming (there is no inheritance), but
+they get you most of the way there.
+
+You declare a class like this:
+
+    class myclass
+    {
+        ....
+    }
+
+The name C<myclass> becomes a global type name, allowing you to
+declare an C<object> of C<myclass>:
+
+    myclass obj;
+
+You can declare both variables and functions inside the class.  These
+all must be declared inside one class declaration at the global scope.
+You cannot have one class declaration that has some of the
+declarations and another with the rest, and you cannot nest classes
+inside of functions or other classes.
+
+Inside the class, you can have C<class variables> and
+C<instance variables>.  Class variables are associated with the class
+and not the individual objects that you allocate, so there is only one
+copy of each.  Instance variables get attached to each object.
+
+    class myclass
+    {
+        /* Class variables. */
+        public string pub_var;
+        private int num = 0;
+
+        /* Instance variables. */
+        instance {
+            public string inst_var;
+            private int n;
+        }
+        ...
+    }
+
+All declarations (except the constructors and destructors) must be
+qualified with either C<public> or C<private> to say whether the name
+is visible at the global scope or only inside the class.
+
+A class can have one or more constructors and destructors but they are optional.
+Inside a constructor, the variable C<self> is automatically declared
+as the object being constructed.  A constructor should return
+C<self>, although it also could return C<undef> to signal an error.
+A destructor must be declared with C<self> as the first parameter.
+
+    constructor myclass_new()
+    {
+        n = num++;
+        return (self);
+    }
+    destructor myclass_delete(myclass self) {}
+
+If omitted, L creates a default constructor or destructor named
+C<classname_new> and C<classname_delete>.  Although not shown in this
+example, you can declare them with any number of parameters, just like
+regular functions.
+
+A C<public> class member function is visible at the global scope, so
+its name must not clash with any other global function or variable.  A
+private member function is local to the class.
+
+The first parameter to each public function must be C<self>, the
+object being operated on.  Private functions do not explicitly include
+C<self> in the parameter list because it is implicitly passed by the
+compiler.
+
+    private void bump_num()
+    {
+        ++n;
+    }
+    public int myclass_getnum(myclass self)
+    {
+        bump_num();
+        return (n);
+    }
+
+To create an object, you must call a constructor, because just
+declaring the variable does not allocate anything:
+
+    myclass obj;
+
+    obj = myclass_new();
+
+To operate on an object, you call one of its public member functions,
+passing the object as the first argument:
+
+    int n = myclass_getnum(obj);
+
+L allows you to directly access public class and instance variables
+from outside the class.  To get a class variable, you dereference the
+class name (you must use ->):
+
+    string s = myclass->pub_var;
+
+To get a public instance variable, you dereference the object whose
+data you want to access:
+
+    string s = obj->inst_var;
+
+Once you free an object
+
+    myclass_delete(obj);
+
+you must be careful to not use C<obj> again unless you assign a
+new object to it, or else a run-time error will result.
+
+=head1 DEBUGGING
+
+=head2 Function Tracing
+
+L function tracing is controlled with #pragma statements, _attribute
+clauses in function declarations, command-line options,
+environment variables, and a run-time API.
+When a function is marked for tracing,
+by default its entry and exit are traced to stderr,
+but you can use your own custom hooks
+to do anything you want.
+
+A #pragma takes a comma-separated list of attribute assignments:
+
+    #pragma fntrace=on
+    string myfunc(int arg)
+    {
+        return("return value");
+    }
+    void main()
+    {
+        myfunc(123);
+    }
+
+When this program runs, traces go to stderr with a millisecond
+timestamp, the function name, parameter values, and return value:
+
+    1: enter main
+    1: enter myfunc: '123'
+    2: exit myfunc: '123' ret 'return value'
+    3: exit main
+
+The allowable tracing attributes are as follows.
+
+=over 4
+
+=item B<fntrace=on | entry | exit | off>
+
+Enable tracing on both function entry and exit, entry only, exit only,
+or disable tracing altogether.
+
+=item B<trace_depth=n>
+
+Trace only to a maximum call depth of n.
+
+=item B<fnhook=myhook>
+
+Use myhook as the trace hook (see below).
+
+=back
+
+A #pragma stays in effect until overridden by another #pragma or by
+an _attribute clause in a function declaration which provides
+per-function tracing control:
+
+    void myfunc2(int arg) _attribute (fntrace=off)  // don't trace this one
+    {
+    }
+
+Tracing also can be controlled with command-line options:
+
+=over 4
+
+=item B<--fntrace = <on | entry | exit | off>>
+
+Enable tracing of all functions on both function entry and exit, entry
+only, exit only, or disable all tracing.
+This overrides any #pragma or _attribute clauses in the program.
+
+=item B<--trace-out=stdin | stderr | filename | host:port>
+
+Send default trace output to stdin, stderr, a file, or a TCP socket.
+
+=item B<--trace-files=colon-separated list of glob | /regexp/>
+
+Enable tracing of all functions in the given files, specified
+either as globs or regular expressions.
+A + before a glob or regexp enables tracing, a - disables, and no
++ or - is like having a +, except that
+the leading one is special: if omitted,
+it means trace exactly what is specified,
+overriding any #pragmas or _attribute clauses in the code,
+by first removing all traces and then processing the file list.
+
+=item B<--trace-funcs=colon-separated list of glob | /regexp/>
+
+Like trace-files but specifies functions.
+
+=item B<--fnhook=myhook>
+
+Use C<myhook> as the trace hook, overriding any #pragmas in the program.
+
+=item B<--trace-script=script.l | <L code>>
+
+Get the trace hook from a file, or use the given L code (see below).
+
+=back
+
+Some examples:
+
+    # Trace all functions
+    $ L --fntrace=on myscript.l
+
+    # Trace only foo
+    $ L --trace-funcs=foo myscript.l
+
+    # Trace foo in addition to what the source marks for tracing
+    $ L --trace-funcs=+foo myscript.l
+
+    # Trace all functions except foo
+    $ L --trace-funcs=*:-foo myscript.l
+    # This does it too
+    $ L --fntrace=on --trace-funcs=-foo myscript.l
+
+Environment variables also can control tracing and take precedence
+over the other ways above:
+
+    L_TRACE_ALL=on | entry | exit | off
+    L_TRACE_OUT=stdin | stderr | filename | host:port
+    L_TRACE_FILES=colon-separated list of glob | /regexp/
+    L_TRACE_FUNCS=colon-separated list of glob | /regexp/
+    L_TRACE_DEPTH=n
+    L_TRACE_HOOK=myhook
+    L_TRACE_SCRIPT=script.l | <L code>
+
+Things in L_TRACE_FUNCS are applied after things in L_TRACE_FILES.
+As with the command-line options, they also can begin with + or - to
+add or subtract from what is specified elsewhere.
+
+As a short-cut,
+
+    L_TRACE=stdin | stderr | filename | host:port
+
+traces all functions and sets the trace output location.
+
+More examples:
+
+    # Trace all files except foo.l
+    L_TRACE_FILE=*:-foo.l L myscript.l
+
+    # Trace main() and buggy() in addition to whatever is marked
+    # for tracing with #pragmas or _attribute clauses in the code.
+    L_TRACE_FUNCS=+main:buggy L myscript.l
+
+    # Trace *only* main() and buggy().
+    L_TRACE_FUNCS=main:buggy L myscript.l
+
+There also is a run-time API that takes a hash of named arguments
+analogous to those above:
+
+    Ltrace({ "fntrace" => "on",
+             "fnhook_out" => "myhook",
+             "trace_depth" => 3,
+             "trace_out" => "tracing.out",
+             "trace_files" => "foo.l",
+             "trace_funcs" => "+main:buggy" });
+
+To use your own tracing function, specify C<fnhook> in any of the
+above ways.
+Your hook is called on function entry and exit instead of
+the default hook.
+Its prototype must look like this:
+
+    void myhook(int pre, poly argv[], poly ret);
+
+where pre is 1 when your hook is called upon function entry and 0 when
+called upon exit, argv contains the function's arguments
+(argv[0] is the function name; argv[1] is the first
+parameter), and ret is the return value (exit hook only; it is undef
+for entry).
+
+If you use your own hook and then want to go back to the default,
+set C<fnhook=def>.
+
+To avoid infinite recursion, during the call of a hook, further calls
+into the hook are disabled.  Also, functions defined as hooks, and the
+L library functions, are not traced.
+
+The trace-script attribute is a useful way to provide your own hook:
+
+    L_TRACE_SCRIPT=my-trace-hook.l  // filename must end in .l
+    L_TRACE_SCRIPT=<L code>
+
+In the latter case, the L code gets wrapped in a function like this:
+
+    void L_fn_hook(int pre, poly av[], poly ret)
+    {
+        ...code from L_TRACE_SCRIPT...
+    }
+
+and C<L_fn_hook> is used as the default trace hook.
+
+As one example of where this is useful: say you are trying to find
+whether the function C<foo> is ever called with the first argument of 123,
+and if so, to print all the arguments:
+
+    L_TRACE_FUNCS=foo L_TRACE_SCRIPT='if (av[0]==123) puts(av)' L myscript.l
+
+=head1 EXAMPLE CODE
+
+=head2 shapes.l
+
+This is something we hand to our customers to see what "shape"
+their source trees have.  
+
+    #!/usr/bin/bk tclsh
+    /*
+     * Determine the files/size of each directory under a bk repository.
+     * Optionally transform the directory names to obscure their structure.
+     *
+     * The idea is that you can run this script like this:
+     *
+     *   bk tclsh shapes.l <path_to_root_of_repo>
+     *
+     * and get a list of directories with their sizes and number of files in
+     * each of them. Save the output, then run it again with -o:
+     *
+     *   bk tclsh shapes.l -o <path_to_root_of_repo>
+     *
+     * and send the output to BitMover.
+     *
+     * The names of all the directories will be rot13'd and sorted (since
+     * sort is a destructive transform, it makes it harder to reverse the
+     * rot13). This is a weak form of obfuscation, but it lets BitMover
+     * work with the directory structure without inadvertedly learning
+     * about the client's projects.
+     *
+     * The line numbers at the beginning is so that we can talk about a certain
+     * directory by number without BitMover knowing the name of the directory.
+     *
+     *	ob@dirac.bitmover.com|src/contrib/shapes.l|20100723224240|23777
+     *
+     */
+
+    string	obscure(string s);	// pathname to no-IP-leak pathname
+    string	pp(float n);		// pretty print a number, like df -h
+    string	rot13(string str);	// if you don't know, you don't know
+
+    int
+    main(int ac, string[] av)
+    {
+	    int		size, files, maxlen, n;
+	    int		do_obscure = 0;
+	    string	fn, root, dir, d, ob;
+	    FILE	f;
+	    struct	stat sb;
+	    struct	dirstats {
+		int	files;
+		int	size;
+		int	total_files;
+		int	total_size;
+	    } dirs{string};
+
+	    dir = ".";
+	    if (ac == 3) {
+		    if (av[1] == "-o") {
+			    do_obscure = 1;
+		    } else {
+			    fprintf(stderr, "usage: %s [-o] [<dir>]\n", av[0]);
+			    exit(1);
+		    }
+		    dir = av[2];
+	    } else if (ac == 2) {
+		    if (av[1] == "-o") {
+			    do_obscure = 1;
+			    dir = ".";
+		    } else {
+			    dir = av[1];
+		    }
+	    } else if (ac > 3) {
+		    fprintf(stderr, "usage: %s [-o] [<dir>]\n", av[0]);
+		    exit(1);
+	    }
+	    if (chdir(dir)) {
+		    fprintf(stderr, "Could not chdir to %s\n", dir);
+		    exit(1);
+	    }
+	    root = `bk root`;
+	    if (root == "") {
+		    fprintf(stderr, "Must be run in a BitKeeper repository\n");
+		    exit(1);
+	    }
+	    if (chdir(root)) {
+		    fprintf(stderr, "Could not chdir to %s\n", root);
+		    exit(1);
+	    }
+
+	    size = 0;
+	    files = 0;
+	    f = popen("bk sfiles", "r");
+	    while (defined(fn = <f>)) {
+		    dir = dirname(fn);
+		    if (dir == "SCCS") {
+			    dir = ".";
+		    } else {
+			     // remove SCCS and obscure
+			    dir = dirname(dir);
+		    }
+		    unless (defined(dirs{dir})) dirs{dir} = {0, 0, 0, 0};
+		    if (maxlen < length(dir)) maxlen = length(dir);
+		    dirs{dir}.files++;
+		    files++;
+		    if (lstat(fn, &sb)) {
+			    fprintf(stderr, "Could not stat %s\n", fn);
+			    continue;
+		    }
+		    dirs{dir}.size += sb.st_size;
+		    size += sb.st_size;
+		    // add our size/file count to each parent dir
+		    for (d = dirname(dir); d != "."; d = dirname(d)) {
+			    unless (defined(dirs{d})) dirs{d} = {0,0,0,0};
+			    dirs{d}.total_size += sb.st_size;
+			    dirs{d}.total_files++;
+		    }
+		    dirs{"."}.total_size += sb.st_size;
+		    dirs{"."}.total_files++;
+	    }
+	    close(f);
+	    // now print it
+	    printf("  N   | %-*s | FILES | SIZE    | T_FILES | T_SIZE \n",
+		maxlen, "DIRS");
+	    n = 1;
+	    foreach (dir in sort(keys(dirs))) {
+		    ob = dir;
+		    if (do_obscure) {
+			    ob = obscure(dir);
+		    }
+		    if (dirs{dir}.total_files > 0) {
+			    printf("%5d | %-*s | %5d | %7s | %7s | %7s\n",
+				n, maxlen,
+				ob, dirs{dir}.files, pp(dirs{dir}.size),
+				dirs{dir}.total_files, pp(dirs{dir}.total_size));
+		    } else {
+			    printf("%5d | %-*s | %5d | %7s | %7s | %7s\n",
+				n, maxlen,
+				ob, dirs{dir}.files, pp(dirs{dir}.size),
+				"","");
+		    }
+		    n++;
+	    }
+	    printf("TOTAL: %u files, %s\n",
+		dirs{"."}.total_files, pp(dirs{"."}.total_size));
+	    return (0);
+    }
+
+    /* Pretty print a number */
+    string
+    pp(float n)
+    {
+	    int		i;
+	    float	num = (float)n;
+	    string	sizes[] = {"b", "K", "M", "G", "T"};
+
+	    for (i = 0; i < 5; i++) {
+		    if (num < 1024.0) return (sprintf("%3.2f%s", num, sizes[i]));
+		    num /= 1024.0;
+	    }
+    }
+
+    /* Table for rot13 function below */
+    string rot13_table{string} = {
+	    "A" => "N", "B" => "O", "C" => "P", "D" => "Q", "E" => "R", "F" => "S",
+	    "G" => "T", "H" => "U", "I" => "V", "J" => "W", "K" => "X", "L" => "Y",
+	    "M" => "Z", "N" => "A", "O" => "B", "P" => "C", "Q" => "D", "R" => "E",
+	    "S" => "F", "T" => "G", "U" => "H", "V" => "I", "W" => "J", "X" => "K",
+	    "Y" => "L", "Z" => "M",	"a" => "n", "b" => "o", "c" => "p", "d" => "q",
+	    "e" => "r", "f" => "s", "g" => "t", "h" => "u", "i" => "v", "j" => "w",
+	    "k" => "x", "l" => "y", "m" => "z", "n" => "a", "o" => "b", "p" => "c",
+	    "q" => "d", "r" => "e", "s" => "f", "t" => "g", "u" => "h", "v" => "i",
+	    "w" => "j", "x" => "k", "y" => "l", "z" => "m",
+    };
+
+    /* rot13 a string */
+    string
+    rot13(string str)
+    {
+	    int		i;
+	    string	ret = "";
+
+	    for (i = 0; i < length(str); i++) {
+		    ret .= rot13_table{str[i]};
+	    }
+	    return (ret);
+    }
+
+    /*
+     * Print an obscured version of the string
+     * rot13 + sort
+     */
+    string
+    obscure(string s)
+    {
+	    string	p;
+	    string[]	ret;
+	    string[]	sp = split(s, "/");
+
+	    foreach (p in sp) {
+		    push(&ret, rot13(join("", lsort(split(p, "")))));
+	    }
+	    return (join("/", ret));
+    }
+
+=head2 pod2html.l
+
+This is an L implementation of pod2html.  Pretty stripped down but slightly
+prettier than the Perl pod2html.
+
+    int
+    main(int ac, string av[])
+    {
+	    FILE	f;
+	    int		i, ul;
+	    int		space = 0, dd = 0, p = 0, pre = 0, table = 0;
+	    string	head, buf, tmp, title, trim, all[];
+
+	    // lint
+	    if (0) ac++;
+
+	    /*
+	     * -t<title> or --title=<title>
+	     */
+	    for (i = 1; defined(av[i]) && (av[i] =~ /^-/); i++) {
+		    if (av[i] == "--") {
+			    i++;
+			    break;
+		    }
+		    if ((av[i] =~ /--title=(.*)/) || (av[i] =~ /-t(.*)/)) {
+			    title = $1;
+		    } else {
+			    die("usage: ${av[0]} [--title=whatever]");
+		    }
+	    }
+	    if (!defined(av[i]) ||
+		defined(av[i+1]) || !defined(f = fopen(av[i], "r"))) {
+		    die("usage: ${av[0]} filename");
+	    }
+	    unless (defined(title)) title = av[i];
+
+	    header(title);
+
+	    /*
+	     * Load up the whole file in all[] and spit out the index.
+	     */
+	    puts("<ul>");
+	    ul = 1;
+	    while (defined(buf = <f>)) {
+		    push(&all, buf);
+		    if (buf =~ /^=head(\d+)\s+(.*)/) {
+			    i = (int)$1;
+			    while (ul > i) {
+				    puts("</ul>");
+				    ul--;
+			    }
+			    while (i > ul) {
+				    puts("<ul>");
+				    ul++;
+			    }
+			    tmp = $2;
+			    tmp =~ s/\s+/_/g;
+			    buf =~ s/^=head(\d+)\s+//;
+			    puts("<li><a href=\"#${tmp}\">${buf}</a></li>");
+		    }
+	    }
+	    while (ul--) puts("</ul>");
+	    fclose(f);
+
+	    /*
+	     * Now walk all[] and process the markup.  We currently handle:
+	     * =head%d title
+	     * =over
+	     * =item name
+	     * =proto return_type func(args)
+	     * =back
+	     * <blank line>
+	     * B<bold this>
+	     * C<some code>
+	     * I<italics>
+	     */
+	    for (i = 0; i <= length(all); i++) {
+		    buf = inline(all[i]);
+		    if (buf =~ /^=head(\d+)\s+(.*)/) {
+			    if ((int)$1 == 1) puts("<HR>");
+			    tmp = $2;
+			    tmp =~ s/\s+/_/g;
+			    printf("<H%d><a name=\"%s\">%s</a></H%d>\n",
+				$1, tmp, $2, $1);
+		    } else if (buf =~ /^=over/) {
+			    puts("<dl>");
+		    } else if (buf =~ /^=item\s+(.*)/) {
+			    if (dd) {
+				    puts("</dd>");
+				    dd--;
+			    }
+			    puts("<dt><strong>${$1}</strong></dt><dd>");
+			    dd++;
+		    } else if (buf =~ /^=proto\s+([^ \t]+)\s+(.*)/) {
+			    if (dd) {
+				    puts("</dd>");
+				    dd--;
+			    }
+			    puts("<dt><b>${$1} ${$2}</b></dt><dd>");
+			    dd++;
+		    } else if (buf =~ /=table/) {
+		    } else if (buf =~ /^=back/) {
+			    if (dd) {
+				    puts("</dd>");
+				    dd--;
+			    }
+			    puts("</dl>");
+		    } else if (buf =~ /^\s*$/) {
+			    if (p) {
+				    puts("</p>");
+				    p = 0;
+			    }
+			    if (pre) {
+				    /*
+				     * If we see a blank line in a preformatted
+				     * block, we don't want to stop the pre
+				     * unless the next line is not indented.
+				     * So peek ahead.
+				     */
+				    if (defined(buf = all[i+1]) && (buf =~ /^\s/)) {
+					    puts("");
+					    continue;
+				    }
+				    puts("</pre>");
+				    pre = 0;
+				    trim = undef;
+			    }
+			    space = 1;
+		    } else {
+			    if (space) {
+				    if (buf =~ /^(\s+)[^ \t]+/) {
+					    trim = $1;
+					    puts("<pre>");
+					    pre = 1;
+				    } else {
+					    puts("<p>");
+					    p = 1;
+				    }
+				    space = 0;
+			    }
+			    if (defined(trim)) buf =~ s/^${trim}//;
+			    puts(buf);
+		    }
+	    }
+	    puts("</body></html>");
+	    return (0);
+    }
+
+    /*
+     * header and style sheet
+     */
+    void
+    header(string title)
+    {
+	    string	head = <<EOF
+    <html>
+    <head>
+    <title>${title}</title>
+    <style>
+    pre {
+	    background: #eeeedd;
+	    border-width: 1px;
+	    border-style: solid solid solid solid;
+	    border-color: #ccc;
+	    padding: 5px 5px 5px 5px;
+	    font-family: monospace;
+	    font-weight: bolder;
+    }
+    body {
+	    padding-left: 10px;
+    }
+    dt {
+	    font-size: large;
+    }
+    </style>
+    </head>
+    <body>
+    EOF
+	    puts(head);
+	    puts("<h1>${title}</h1>");
+    }
+
+    /*
+     * Process B<bold>, C<code>, I<italic>, F<italic>, L<link>, S<non-breaking>.
+     * This will handle nested stuff like C<if (!I<condition>)>
+     * but dies if there are nested ones of the same type.
+     */
+    string
+    inline(string buf)
+    {
+	    string	c, prev, result, link, stack[];
+	    int		B = 0, C = 0, I = 0, L = 0, S = 0;
+
+	    foreach (c in buf) {
+		    if ((c == "<") && defined(prev)) {
+			    if (prev == "B") {
+				    if (B++) die("Nested B<> unsupported: ${buf}");
+				    result[END] = "";
+				    result .= "<B>";
+				    push(&stack, "B");
+			    } else if (prev == "C") {
+				    if (C++) die("Nested C<> unsupported: ${buf}");
+				    result[END] = "";
+				    result .= "<CODE>";
+				    push(&stack, "CODE");
+			    } else if (prev == "I" || prev == "F") {
+				    if (I++) die("Nested I<> unsupported: ${buf}");
+				    result[END] = "";
+				    result .= "<I>";
+				    push(&stack, "I");
+			    } else if (prev == "L") {
+				    if (L++) die("Nested L<> unsupported: ${buf}");
+				    result[END] = "";
+				    result .= "<a href=\"";
+				    link = "";
+				    push(&stack, "L");
+			    } else if (prev == "S") {
+				    if (S++) die("Nested S<> unsupported: ${buf}");
+				    result[END] = "";
+				    push(&stack, "S");
+			    } else {
+				    result .= "&lt;";
+				    prev = c;
+			    }
+		    } else if ((c == ">") && length(stack)) {
+			    c = pop(&stack);
+			    if (c == "B") {
+				    B--;
+			    } else if (c == "CODE") {
+				    C--;
+			    } else if (c == "I") {
+				    I--;
+			    } else if (c == "L") {
+				    L--;
+				    result .= "\">${link}</a>";
+				    c = undef;
+			    } else {
+				    S--;
+				    c = undef;
+			    }
+			    if (defined(c)) {
+				    result .= "</" . c . ">";
+			    }
+			    prev = undef;
+		    } else {
+			    if (S && isspace(c)) {
+				    result .= "&nbsp;";
+			    } else if (c == "<") {
+				    result .= "&lt;";
+			    } else if (c == ">") {
+				    result .= "&gt;";
+			    } else {
+				    result .= c;
+			    }
+			    if (L) link .= c;
+			    prev = c;
+		    }
+	    }
+	    return (result);
+    }

@@ -1,0 +1,165 @@
+[Fri Sep 22 16:07:30 PDT 2006]
+
+The problem is pass by reference vs value.  There isn't a nice way to do it
+like C so we're inventing a different way, trying to keep it readable.
+
+proc tcl_ref {setme} {
+	upvar $setme ptr
+	set ptr "some string"
+}
+
+/*
+ * how this works is that the compiler sees the &setme and generates code like:
+ * upvar ${&setme} setme
+ */
+void
+L_ref(string &setme)
+{
+	setme = "some string";
+}
+
+It does mean that if I want to call gets() from L I need to do
+
+	while (gets(fd, &buf) > 0) {
+		...
+	}
+
+which isn't very C like.  That's OK, L isn't C because strings are first
+class in L and they aren't in C.  Oscar wacked that into my head.  Slowly.
+
+The next issue is compound types like arrays / hashes.  I want those to be
+implicit references, like C.  So no &my_array in args, it's just my_array.
+
+/*
+ * as above, the compiler sees foo[] and subs in &foo as the parameter
+ * and does the upvar ${&foo} foo
+ */
+void
+L_array_ref(int foo[])
+{
+	foo[3] = 3;
+}
+
+/*
+ * as above, the compiler sees foo{} and does the code like
+ * upvar $foo 0foo
+ *
+ * Note also the new full specified syntax for a hash declaration.
+ * The following are the same thing and for 1.0 we implement the 
+ * first one only.  But the second form allows us to have var/poly/int
+ * etc. as keys or indices.  The syntax is "value" varname{"key"} where
+ * value is the type of the value and key is the type of the key.  Nifty.
+ * hash	foo{};
+ * string foo{string};
+ *
+ * For 1.0 this is just
+ * L_hash_ref(hash foo)
+ * and I do want to insist on the {} in declarations (args and formal) because
+ * it gets people used to the foo{"string"} syntax.
+ */
+void
+L_hash_ref(string foo{string})
+{
+	int	mine{};
+
+	foo{"some key"} = "some value";
+}
+
+A calling wrinkle.
+
+When calling an L function/tcl proc which expects a reference, i.e.,
+func(string &buf) or proc foo {bufname} { upvar $bufname buf ... },
+from an L context, there is a question as to whether or not the 
+L variable needs a leading &.  And the answer is: depends on what you
+want.  All the leading ampersand does is to push the name of the 
+variable on the stack instead of the value of the variable (w/ all
+the COW semantics).  So consider this
+
+void
+stomp(string &buf)
+{
+	buf = "stomped";
+}
+
+void
+L_caller()
+{
+	string	foo = "bar";
+	string	fooname = "foo";
+
+	if (what_I_would_expect) {
+		stomp(&foo);	// foo will get "stomped"
+	} else {
+		stomp(fooname);	// foo will get "stomped" this way too
+	}
+}
+
+The stomp(fooname) could work but we should disallow it in L 1.0 - we
+can allow it in the future.  Tim points out that we can throw a syntax
+error for L calling L and the type mismatch but not for L calling tcl,
+i.e., calling gets, unless we have some sort of extern int gets(FILE fd,
+string &buf) that we use to load the function signature table (what is
+that called?)
+
+Tcl calling L
+
+Suppose we had an L procedure that implemented puts, maybe it's written
+in C, but it would be declared like
+
+void
+L_puts(string stuff_to_print[])
+{
+	print it
+}
+
+If we are in tcl and we do
+
+	set stuff [list a b c]
+
+and we want to print it it would look like
+
+	puts $stuff
+
+but if we're calling L that won't work, it should be an arg miss match because
+
+	L_puts $stuff
+
+is like calling
+
+	L_puts("a", "b", "c")
+
+and L_puts wants a single arg.  
+
+We get around this by noting that L implements pass by reference by passing
+by name and doing an upvar so the calling syntax is:
+
+	L_puts stuff
+
+Kind of annoying but that's a ramification of the impedance mismatch between
+L and tcl.  If you want to make breakfast you have to break some eggs.
+
+============================================================================
+
+Structs
+
+	struct foo {
+		int	a;	/* I am A */
+		string	b;	/* oh, love those strings */
+	}
+
+results in the creation of a list in ::L like
+
+	# Note the offset into the list is the index into the struct "list"
+	set ::L::{struct foo} [list \
+	    [list int a {I am A}] \
+	    [list string b {oh, love those strings}] \
+	    ]
+
+and now I can pass a struct to tcl just like an other COW thingy and I
+can make a little struct command that gets me fields, sets them, does
+introspection, etc.
+
+And the cool thing is L can do the introspection which means I can write
+my little preferences struct and call some wacky code that takes the
+struct and con's up the code to make a preference dialogue.
+

@@ -11,6 +11,7 @@
  * Copyright (c) 1988-1994 The Regents of the University of California.
  * Copyright (c) 1994-1997 Sun Microsystems, Inc.
  * Copyright (c) 2000 Ajuba Solutions.
+ * Copyright (c) 2007 BitMover, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -32,6 +33,7 @@
 #   endif
 #endif
 
+#include "Lcompile.h"
 #include "tclInt.h"
 
 /*
@@ -309,9 +311,11 @@ Tcl_MainEx(
 				 * but before starting to execute commands. */
     Tcl_Interp *interp)
 {
-    Tcl_Obj *path, *resultPtr, *argvPtr, *appName;
+    Tcl_Obj *path, *resultPtr, *argvPtr, *appName, *LObj;
+    int commandLen;
+    char *commandStr;
     const char *encodingName = NULL;
-    int code, exitCode = 0;
+    int code, exitCode = 0, isL = 0;
     Tcl_MainLoopProc *mainLoopProc;
     Tcl_Channel chan;
     InteractiveState is;
@@ -333,11 +337,17 @@ Tcl_MainEx(
 
     if (NULL == Tcl_GetStartupScript(NULL)) {
 	/*
-	 * Check whether first 3 args (argv[1] - argv[3]) look like
+	 * Check whether initial args (argv[1] and beyond) look like
 	 *  -encoding ENCODING FILENAME
 	 * or like
-	 *  FILENAME
+	 *  [-opt1] [-opt2] ... [-optn] FILENAME
 	 */
+
+	/* Create argv list obj for L. */
+	L->global->tclsh_argc = 1;
+	L->global->tclsh_argv = Tcl_NewObj();
+	Tcl_ListObjAppendElement(NULL, L->global->tclsh_argv,
+				 NewNativeObj(argv[0], -1));
 
 	if ((argc > 3) && (0 == _tcscmp(TEXT("-encoding"), argv[1]))
 		&& ('-' != argv[3][0])) {
@@ -347,10 +357,21 @@ Tcl_MainEx(
 	    Tcl_DecrRefCount(value);
 	    argc -= 3;
 	    argv += 3;
-	} else if ((argc > 1) && ('-' != argv[1][0])) {
-	    Tcl_SetStartupScript(NewNativeObj(argv[1], -1), NULL);
-	    argc--;
-	    argv++;
+	} else if (argc > 1) {
+	    /* Pass over all options to look for a file name. */
+	    int i;
+	    Tcl_Obj *argObj;
+	    for (i = 1; i < argc; ++i) {
+		argObj = NewNativeObj(argv[i], -1);
+		Tcl_ListObjAppendElement(NULL, L->global->tclsh_argv, argObj);
+		++L->global->tclsh_argc;
+		if ('-' != argv[i][0]) {
+		    Tcl_SetStartupScript(argObj, NULL);
+		    argc -= i;
+		    argv += i;
+		    break;
+		}
+	    }
 	}
     }
 
@@ -365,12 +386,15 @@ Tcl_MainEx(
     argv++;
 
     Tcl_SetVar2Ex(interp, "argc", NULL, Tcl_NewIntObj(argc), TCL_GLOBAL_ONLY);
+    L->global->script_argc = argc;
 
     argvPtr = Tcl_NewListObj(0, NULL);
     while (argc--) {
 	Tcl_ListObjAppendElement(NULL, argvPtr, NewNativeObj(*argv++, -1));
     }
     Tcl_SetVar2Ex(interp, "argv", NULL, argvPtr, TCL_GLOBAL_ONLY);
+    L->global->script_argv = argvPtr;
+    Tcl_IncrRefCount(argvPtr);
 
     /*
      * Set the "tcl_interactive" variable.
@@ -416,6 +440,31 @@ Tcl_MainEx(
 
     path = Tcl_GetStartupScript(&encodingName);
     if (path != NULL) {
+	int argc, i;
+	char *av0path;
+	Tcl_Obj **argvObjs, *pathObj;
+
+	/*
+	 * Set L->global->forceL if argv[0] is "L", or "-L" or "--L" was given
+	 * as a cmd-line option.  This causes Tcl_FSEvalFileEx() to wrap the
+	 * input file in a #lang L regardless of its extension.
+	 */
+	if (L->global->tclsh_argv) {
+	    Tcl_ListObjGetElements(interp, L->global->tclsh_argv, &argc,
+				   &argvObjs);
+	    pathObj = Tcl_FSGetNormalizedPath(interp, argvObjs[0]);
+	    av0path = Tcl_GetString(pathObj);
+	    if (av0path) {
+		L->global->forceL = (!strcmp(av0path+strlen(av0path)-2, "/L"));
+	    }
+	    for (i = 1; i < argc; ++i) {
+		if (!strcmp(Tcl_GetString(argvObjs[i]), "--L") ||
+		    !strcmp(Tcl_GetString(argvObjs[i]), "-L")) {
+		    L->global->forceL = 1;
+		}
+	    }
+	}
+
 	Tcl_ResetResult(interp);
 	code = Tcl_FSEvalFileEx(interp, path, encodingName);
 	if (code != TCL_OK) {
@@ -462,6 +511,7 @@ Tcl_MainEx(
      * Get a new value for tty if anyone writes to ::tcl_interactive
      */
 
+    Tcl_LinkVar(interp, "L", (char *) &isL, TCL_LINK_BOOLEAN);
     Tcl_LinkVar(interp, "tcl_interactive", (char *) &is.tty, TCL_LINK_BOOLEAN);
     is.input = Tcl_GetStdChannel(TCL_STDIN);
     while ((is.input != NULL) && !Tcl_InterpDeleted(interp)) {
@@ -509,6 +559,17 @@ Tcl_MainEx(
 	    }
 
 	    /*
+	     * Check for the #lang comments and sub them out for
+	     * meaningful commands.
+	     */
+	    commandStr = Tcl_GetStringFromObj(is.commandPtr, &commandLen);
+	    if (!isL && strncasecmp(commandStr, "#lang l", 7) == 0) {
+		Tcl_SetStringObj(is.commandPtr, "set ::L 1", -1);
+	    } else if (isL && strncasecmp(commandStr, "#lang tcl", 9) == 0) {
+		Tcl_SetStringObj(is.commandPtr, "set('::L',0);", -1);
+	    }
+
+	    /*
 	     * Add the newline removed by Tcl_GetsObj back to the string. Have
 	     * to add it back before testing completeness, because it can make
 	     * a difference. [Bug 1775878]
@@ -526,6 +587,18 @@ Tcl_MainEx(
 	    }
 
 	    is.prompt = PROMPT_START;
+
+	    if (isL) {
+	    	LObj = Tcl_NewStringObj("L {", -1);
+		Tcl_AppendObjToObj(LObj, is.commandPtr);
+		if (commandStr[commandLen-1] != ';') {
+		    Tcl_AppendToObj(LObj, ";", -1);
+		}
+		Tcl_AppendToObj(LObj, "}\n", -1);
+		Tcl_DecrRefCount(is.commandPtr);
+		is.commandPtr = LObj;
+		Tcl_IncrRefCount(is.commandPtr);
+	    }
 
 	    /*
 	     * The final newline is syntactically redundant, and causes some

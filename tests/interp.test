@@ -32,7 +32,7 @@ test interp-1.1 {options for interp command} -returnCodes error -body {
 } -result {wrong # args: should be "interp cmd ?arg ...?"}
 test interp-1.2 {options for interp command} -returnCodes error -body {
     interp frobox
-} -result {bad option "frobox": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
+} -result {bad option "frobox": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, regexp, slaves, share, target, or transfer}
 test interp-1.3 {options for interp command} {
     interp delete
 } ""
@@ -50,13 +50,13 @@ test interp-1.6 {options for interp command} -returnCodes error -body {
 } -result {wrong # args: should be "interp slaves ?path?"}
 test interp-1.7 {options for interp command} -returnCodes error -body {
     interp hello
-} -result {bad option "hello": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
+} -result {bad option "hello": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, regexp, slaves, share, target, or transfer}
 test interp-1.8 {options for interp command} -returnCodes error -body {
     interp -froboz
-} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer}
+} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, regexp, slaves, share, target, or transfer}
 test interp-1.9 {options for interp command} -returnCodes error -body {
     interp -froboz -safe
-} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, slaves, share, target, or transfer} 
+} -result {bad option "-froboz": must be alias, aliases, bgerror, cancel, create, debug, delete, eval, exists, expose, hide, hidden, issafe, invokehidden, limit, marktrusted, recursionlimit, regexp, slaves, share, target, or transfer} 
 test interp-1.10 {options for interp command} -returnCodes error -body {
     interp target
 } -result {wrong # args: should be "interp target path alias"}
@@ -3576,6 +3576,31 @@ test interp-36.7 {SlaveBgerror sets error handler of slave [1999035]} -setup {
     unset -nocomplain result
     interp delete slave
 } -result foo
+test interp-37.1 {interp regexp} {
+    list [catch {interp regexp} msg] $msg
+} {1 {wrong # args: should be "interp regexp path ?type?"}}
+test interp-37.2 {interp regexp} {
+    list [catch {interp regexp {} invalid} msg] $msg
+} {1 {bad type "invalid": must be classic or pcre}}
+test interp-37.3 {interp regexp} {
+    list [catch {interp regexp {} classic bogus} msg] $msg
+} {1 {wrong # args: should be "interp regexp path ?type?"}}
+test interp-37.4 {interp regexp} -setup {
+    unset -nocomplain ::env(TCL_REGEXP_PCRE)
+    interp create slave
+} -body {
+    slave eval {interp regexp {}}
+} -cleanup {
+    interp delete slave
+} -result {classic}
+test interp-37.5 {interp regexp} -setup {
+    unset -nocomplain ::env(TCL_REGEXP_PCRE)
+    interp create slave
+} -body {
+    slave eval {interp regexp {} pcre}
+} -cleanup {
+    interp delete slave
+} -result {pcre}
 
 test interp-37.1 {safe interps and min() and max(): Bug 2895741} -setup {
     catch {interp delete a}

@@ -794,7 +794,6 @@ PrintSourceToObj(
 {
     register const char *p;
     register int i = 0, len;
-    Tcl_UniChar ch = 0;
 
     if (stringPtr == NULL) {
 	Tcl_AppendToObj(appendObj, "\"\"", -1);
@@ -803,64 +802,37 @@ PrintSourceToObj(
 
     Tcl_AppendToObj(appendObj, "\"", -1);
     p = stringPtr;
-    for (;  (*p != '\0') && (i < maxChars);  p+=len) {
+    for (;  (*p != '\0') && (i < maxChars);  ++i, p+=len) {
+	Tcl_UniChar ch;
 
 	len = TclUtfToUniChar(p, &ch);
 	switch (ch) {
 	case '"':
 	    Tcl_AppendToObj(appendObj, "\\\"", -1);
-	    i += 2;
 	    continue;
 	case '\f':
 	    Tcl_AppendToObj(appendObj, "\\f", -1);
-	    i += 2;
 	    continue;
 	case '\n':
 	    Tcl_AppendToObj(appendObj, "\\n", -1);
-	    i += 2;
 	    continue;
 	case '\r':
 	    Tcl_AppendToObj(appendObj, "\\r", -1);
-	    i += 2;
 	    continue;
 	case '\t':
 	    Tcl_AppendToObj(appendObj, "\\t", -1);
-	    i += 2;
 	    continue;
 	case '\v':
 	    Tcl_AppendToObj(appendObj, "\\v", -1);
-	    i += 2;
 	    continue;
 	default:
-#if TCL_UTF_MAX > 4
-	    if (ch > 0xffff) {
-		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", ch);
-		i += 10;
-	    } else
-#elif TCL_UTF_MAX > 3
-	    /* If len == 0, this means we have a char > 0xffff, resulting in
-	     * TclUtfToUniChar producing a surrogate pair. We want to output
-	     * this pair as a single Unicode character.
-	     */
-	    if (len == 0) {
-		int upper = ((ch & 0x3ff) + 1) << 10;
-		len = TclUtfToUniChar(p, &ch);
-		Tcl_AppendPrintfToObj(appendObj, "\\U%08x", upper + (ch & 0x3ff));
-		i += 10;
-	    } else
-#endif
 	    if (ch < 0x20 || ch >= 0x7f) {
 		Tcl_AppendPrintfToObj(appendObj, "\\u%04x", ch);
-		i += 6;
 	    } else {
 		Tcl_AppendPrintfToObj(appendObj, "%c", ch);
-		i++;
 	    }
 	    continue;
 	}
-    }
-    if (*p != '\0') {
-	Tcl_AppendToObj(appendObj, "...", -1);
     }
     Tcl_AppendToObj(appendObj, "\"", -1);
 }
@@ -1395,13 +1367,6 @@ Tcl_DisassembleObjCmd(
      * Do the actual disassembly.
      */
 
-    if (BYTECODE(codeObjPtr)->flags & TCL_BYTECODE_PRECOMPILED) {
-	Tcl_SetObjResult(interp, Tcl_NewStringObj(
-		"may not disassemble prebuilt bytecode", -1));
-	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
-		"BYTECODE", NULL);
-	return TCL_ERROR;
-    }
     if (PTR2INT(clientData)) {
 	Tcl_SetObjResult(interp, DisassembleByteCodeAsDicts(codeObjPtr));
     } else {

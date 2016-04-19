@@ -5,6 +5,7 @@
  * Copyright (c) 1998-2000 by Scriptics Corporation.
  * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
  * Copyright (c) 2007 Daniel A. Steffen <das@users.sourceforge.net>
+ * Copyright (c) 2007 BitMover, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -821,8 +822,25 @@ typedef struct ByteCode {
 #define INST_LAPPEND_LIST_ARRAY_STK	187
 #define INST_LAPPEND_LIST_STK		188
 
+/* L stuff */
+#define INST_ROT			189
+#define INST_L_INDEX			190
+#define INST_L_DEEP_WRITE		191
+#define INST_L_SPLIT			192
+#define INST_L_DEFINED			193
+#define INST_L_PUSH_LIST_SIZE		194
+#define INST_L_PUSH_STR_SIZE		195
+#define INST_L_READ_SIZE		196
+#define INST_L_POP_SIZE			197
+#define INST_L_PUSH_UNDEF		198
+#define INST_EXPAND_ROT			199
+#define INST_L_LINDEX_STK		200
+#define INST_L_LIST_INSERT		201
+#define INST_UNSET_LOCAL		202
+#define INST_DIFFERENT_OBJ		203
+
 /* The last opcode */
-#define LAST_INST_OPCODE		188
+#define LAST_INST_OPCODE		203
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying

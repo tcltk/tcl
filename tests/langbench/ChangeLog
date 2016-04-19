@@ -1,0 +1,10 @@
+0.6
+	- Make the grep expr be [^A-Za-z]fopen\(.*\) since that is not
+	  trivially optimized.
+	- Add fibonacci benchmark.
+	- Make the procedure calls take more arguments.
+	- add a findtclsh so that if you run this in a tcl source tree
+	  under tests/langbench it just works.
+	- Allow setting of each language with RUBY=/build/ruby/ruby
+	  (for testing new versions like the ruby with a byte code
+	  compiler).

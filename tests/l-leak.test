@@ -1,0 +1,686 @@
+# Test the L language.
+# Copyright (c) 2007 BitMover, Inc.
+
+#
+# Tests in this file look for leaks in L core; they are only functional in
+# builds with -DTCL_MEM_DEBUG (--enable-symbols=mem or all)
+#
+
+
+if {[lsearch [namespace children] ::tcltest] == -1} {
+    package require tcltest 2
+    namespace import -force ::tcltest::*
+    testConstraint exec [llength [info commands exec]]
+}
+
+set haveMem [llength [info commands memory]]
+testConstraint memory $haveMem
+
+#lang L
+int getbytes()
+{
+	return ((int)(split(split(/\n/, Memory_info())[3])[3]));
+}
+#lang tcl
+
+# This causes L to keep running L code even after a compile error.
+set ::env(_L_TEST) 1
+
+# This tells L to run in a backwards compatibility mode for
+# the old eq/ne/le/lt/ge/gt string-comparison operators.
+set ::env(_L_ALLOW_EQ_OPS) 1
+
+test leak-1.1 {leaks in a simple L-loop} -body {
+#lang L --line=1
+    void leak_1_1() {
+	int tmp, end, i, j;
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j=i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_1_1();
+} -constraints memory -output "0 4\n"
+
+test leak-1.2 {leaks in L-func called in a loop} -body {
+#lang L --line=1
+    int leak_1_2_foo (int v) {
+	int k;
+	k = v;
+	return k;
+    }
+    void leak_1_2() {
+	int tmp, end, i, j;
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j=leak_1_2_foo(i);
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_1_2();
+} -constraints memory -output "0 4\n"
+
+test leak-1.3 {leaks in L-func called in a tcl-loop} -body {
+#lang L --line=1
+    int leak_1_3_foo (int v) {
+	int k;
+	k = v;
+	return k;
+    }
+#lang tcl
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	set j [leak_1_3_foo $i]
+	set tmp $end
+	set end [getbytes]
+    }
+    puts [list [expr {$end - $tmp}] $j]
+} -constraints memory -output "0 4\n"
+
+test leak-2.0 {leaks in array reading} -body {
+#lang L --line=1
+    void leak_2_0() {
+	int tmp, end, i, j[2], k, l;
+	j[0]=1;
+	j[1]=2;
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    k = j[0];
+	    l = j[1];
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(end-tmp);
+    }
+    leak_2_0();
+} -constraints memory -output "0\n"
+
+test leak-2.1 {leaks in array initializers} -body {
+#lang L --line=1
+    void leak_2_1() {
+	int tmp, end, i, k[2];
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    int j[2];
+	    k = j;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(end-tmp);
+    }
+    leak_2_1();
+} -constraints memory -output "0\n"
+
+test leak-2.2.0 {leaks in arrays} -body {
+#lang L --line=1
+    void leak_2_2_0() {
+	int tmp, end, i, j[2] = {0,0};
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j[0]=i;
+	    j[1]=2*j[0]+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_2_2_0();
+} -constraints memory -output "0 {4 12}\n"
+
+test leak-2.2.1 {leaks in arrays} -body {
+#lang L --line=1
+    void leak_2_2_1() {
+	int tmp, end, i, k[2], j[2];
+	j=k;
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j[0]=i;
+	    j[1]=2*j[0]+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_2_2_1();
+} -constraints memory -output "0 {4 12}\n"
+
+test leak-2.3 {leaks in arrays} -body {
+#lang L --line=1
+    int leak_2_3_foo (int v) {
+	int k[2];
+	k[0] = v;
+	k[1] = 2*k[0]+v;
+	return k[1];
+    }
+    void leak_2_3() {
+	int tmp, end, i, j;
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j=leak_2_3_foo(i);
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_2_3();
+} -constraints memory -output "0 12\n"
+
+test leak-2.4 {leaks in arrays} -body {
+#lang L --line=1
+    void leak_2_4() {
+	int tmp, end, i, j[2][2];
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j[0][0]=i;
+	    j[0][1]=2*j[0][0]+i;
+	    j[1][0]=j[0][0]+j[0][1];
+	    j[1][1]=2*j[1][0]+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_2_4();
+} -constraints memory -output "0 {{4 12} {16 36}}\n"
+
+test leak-2.5 {leaks in arrays} -body {
+#lang L --line=1
+    void leak_2_5() {
+	int tmp, end, i, t, j[2][2][2];
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    for (t=0; t < 2; t++) {
+		j[0][i%2][t]=i+t;
+		j[1][i%2][t]=i*i+t;
+	    }
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_2_5();
+} -constraints memory -output "0 {{{4 5} {3 4}} {{16 17} {9 10}}}\n"
+
+test leak-3.0 {leaks in hash initializers} -body {
+#lang L --line=1
+    void leak_3_0() {
+	int tmp, end, i;
+	hash k = {"1" => "foo"};
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    hash j = {"1" => "moo"};
+	    k = j;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, k));
+    }
+    leak_3_0();
+} -constraints memory -output "0 {1 moo}\n"
+
+test leak-3.1.0 {leaks in hashes} -body {
+#lang L --line=1
+    void leak_3_1_0() {
+	int tmp, end, i;
+	hash j;
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j{"0"}=i;
+	    j{"1"}=2*(int)j{"0"}+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j{"1"}));
+    }
+    leak_3_1_0();
+} -constraints memory -output "0 12\n"
+
+test leak-3.1.1 {leaks in hashes} -body {
+#lang L --line=1
+    void leak_3_1_1() {
+	int tmp, end, i;
+	hash j = {"u" => 0};
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j{"0"}=i;
+	    j{"1"}=2*(int)j{"0"}+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j{"1"}));
+    }
+    leak_3_1_1();
+} -constraints memory -output "0 12\n"
+
+test leak-3.1.2 {leaks in hashes} -body {
+#lang L --line=1
+    void leak_3_1_2() {
+	int tmp, end, i;
+	hash j, k = {"u" => 0};
+
+	j = k;
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j{"0"}=i;
+	    j{"1"}=2*(int)j{"0"}+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j{"1"}));
+    }
+    leak_3_1_2();
+} -constraints memory -output "0 12\n"
+
+test leak-3.2.0 {leaks in hashes} -body {
+#lang L --line=1
+    hash leak_3_2_0_foo (int v) {
+	hash k;
+	k{"0"} = v;
+	k{"1"} = 2*(int)k{"0"}+v;
+	return k;
+    }
+    void leak_3_2_0() {
+	int tmp, end, i;
+	hash j;
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j=leak_3_2_0_foo(i);
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j{"1"}));
+    }
+    leak_3_2_0();
+} -constraints memory -output "0 12\n"
+
+test leak-3.2.1 {leaks in hashes} -body {
+#lang L --line=1
+    hash leak_3_2_1_foo (int v) {
+	hash k = {"a" => "b"};
+	k{"0"} = v;
+	k{"1"} = 2*(int)k{"0"}+v;
+	return k;
+    }
+    void leak_3_2_1() {
+	int tmp, end, i;
+	hash j;
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j=leak_3_2_1_foo(i);
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j{"1"}));
+    }
+    leak_3_2_1();
+} -constraints memory -output "0 12\n"
+
+test leak-3.3 {leaks in nested hashes} -body {
+#lang L --line=1
+    void leak_3_3() {
+	int tmp, end, i;
+	int j{string}{string};
+
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j{"0"}{"0"}=i;
+	    j{"0"}{"1"}=2*(int)j{"0"}{"0"}+i;
+	    j{"1"}{"0"}=2*i + 1 + (int)j{"0"}{"1"};
+	    j{"1"}{"1"}=2*(int)j{"1"}{"0"}+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j{"1"}{"1"}));
+    }
+    leak_3_3();
+} -constraints memory -output "0 46\n"
+
+test leak-4.1 {leaks in structs} -body {
+#lang L --line=1
+    struct leak_4_1_js {int x, y;};
+    void leak_4_1() {
+	int tmp, end, i;
+	struct leak_4_1_js j;
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j.x=i;
+	    j.y=2*j.x+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_4_1();
+} -constraints memory -output "0 {4 12}\n"
+
+test leak-4.2 {leaks in structs} -body {
+#lang L --line=1
+    struct leak_4_2_js {int x, y[2];};
+    void leak_4_2() {
+	int tmp, end, i;
+	struct leak_4_2_js j;
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j.x=i;
+	    j.y[0]=2*j.x+i;
+	    j.y[1]=2*j.y[0]+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_4_2();
+} -constraints memory -output "0 {4 {12 28}}\n"
+
+test leak-4.3 {leaks in structs} -body {
+#lang L --line=1
+    struct leak_4_3_js {int x, y;};
+    void leak_4_3() {
+	int tmp, end, i;
+	struct leak_4_3_js j[2];
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j[0].x=i;
+	    j[0].y=2*j[0].x+i;
+	    j[1].x=j[0].x+j[0].y;
+	    j[1].y=2*j[1].x+i;
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_4_3();
+} -constraints memory -output "0 {{4 12} {16 36}}\n"
+
+test leak-5.1 {leaks in deep diving} -body {
+#lang L --line=1
+    struct leak_5_1_js {string h{string}; poly a[2];};
+    struct leak_5_1_js leak_5_1_j[2];
+    string leak_5_1_h{string};
+    void leak_5_1() {
+	int tmp, end, i;
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    leak_5_1_j[0].h{"foo"}= leak_5_1_j[1].a[1];
+	    leak_5_1_j[1].h{"foo"}= "moo";
+	    leak_5_1_j[0].a[0]=leak_5_1_j[1].h;
+	    leak_5_1_j[0].a[1]=leak_5_1_j[0].h{"foo"};
+	    leak_5_1_j[1].a[0]=leak_5_1_j[0].h{"foo"};
+	    leak_5_1_j[1].a[1]=leak_5_1_j[1].a[0];
+	    tmp=end;
+	    end = getbytes();
+	}
+	leak_5_1_h = (hash)leak_5_1_j[0].a[0];
+	puts(list(end-tmp, leak_5_1_h{"foo"}, leak_5_1_j[1].h{"foo"}));
+    }
+    leak_5_1();
+} -constraints memory -output "0 moo moo\n"
+
+test leak-5.2 {leaks in deep diving} -body {
+#lang L --line=1
+    void leak_5_2() {
+	int tmp, end, i, j;
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j = {1,2,3}[1];
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_5_2();
+} -constraints memory -output "0 2\n"
+
+test leak-5.3 {leaks in deep diving} -body {
+#lang L --line=1
+    void leak_5_3() {
+	int tmp, end, i, j;
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j = {{1,2},{3,4},{4,5}}[1][0];
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_5_3();
+} -constraints memory -output "0 3\n"
+
+test leak-5.4 {leaks in deep diving} -body {
+#lang L --line=1
+    void leak_5_4() {
+	int tmp, end, i, j;
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    j = { {{1,2},{3,4}}, {{4,5},{5,6}}, {{7,8},{9,10}} }[1][1][0];
+	    { {0,0} }[END][0];
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, j));
+    }
+    leak_5_4();
+} -constraints memory -output "0 5\n"
+
+test leak-5.5 {leaks in deep diving} -body {
+#lang L --line=1
+void leak_5_5()
+{
+	int	n = 1000;
+	int	i, start, end, types{string}[];
+
+	/*
+	 * Push onto a hash element that's an array element while
+	 * check memory usage. Allow 1 kB/element. Any more than that
+	 * must be a memory leak.
+	 */
+	start = getbytes();
+	for (i = 0; i < n; ++i) {
+		push(&types{"foo"}, i);
+	}
+	end = getbytes();
+	if ((end - start) > (1000*n)) {
+		puts("took ${(end-start)/n} bytes per elt");
+	}
+}
+leak_5_5();
+} -constraints memory -output {}
+
+test leak-6.1 {leaks in string indexing} -body {
+#lang L --line=1
+    void leak_6_1() {
+	int	end, i, tmp;
+	string	a[], s1, s2;
+
+	a[0] = "zero";
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    s1 = a[0];
+	    s2 = {"zero"}[0];
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, s1, s2));
+    }
+    leak_6_1();
+} -constraints memory -output "0 zero zero\n"
+
+test leak-6.2 {leaks in string indexing} -body {
+#lang L --line=1
+    void leak_6_2() {
+	int	end, i, tmp;
+	string	a[][], s1, s2;
+
+	a[0][0] = "zero";
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    s1 = a[0][0];
+	    s2 = { {"zero"} }[0][0];
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, s1, s2));
+    }
+    leak_6_2();
+} -constraints memory -output "0 zero zero\n"
+
+test leak-6.3 {leaks in string indexing} -body {
+#lang L --line=1
+    void leak_6_3() {
+	int	end, i, tmp;
+	string	a[][][], s1, s2;
+
+	a[0][0][0] = "zero";
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    s1 = a[0][0][0];
+	    s2 = { { {"zero"} } }[0][0][0];
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(list(end-tmp, s1, s2));
+    }
+    leak_6_3();
+} -constraints memory -output "0 zero zero\n"
+
+test leak-6.4 {leaks in string indexing} -body {
+#lang L --line=1
+    void leak_6_4() {
+	int	end, i, tmp;
+	string	s;
+
+	s = "abcd";
+	end = getbytes();
+	for(i=0; i<5;i++) {
+	    s[0] = "w";
+	    s[1] = "x";
+	    s[2] = "y";
+	    s[3] = "z";
+	    s[0] = "123";
+	    s[1] = "456";
+	    s[2] = "789";
+	    s[3] = "0yz";
+	    s[0] = "";
+	    s[1] = "";
+	    s[2] = "";
+	    s[3] = "";
+	    s[4] = "";
+	    s[5] = "";
+	    s[0] = "";
+	    s[0] = "";
+	    tmp=end;
+	    end = getbytes();
+	}
+	puts(end-tmp);
+    }
+    leak_6_4();
+} -constraints memory -output "0\n"
+
+test leak-7.1 {leaks in classes} -body {
+#lang L --line=1
+class leak_7_1
+{
+	public	int v1;
+	instance {
+		 public	int v2;
+	}
+	constructor leak_7_1_init() {}
+	destructor leak_7_1_free(leak_7_1 self) {}
+}
+void leak_7_1_main()
+{
+	int		end, i, tmp;
+	leak_7_1	o;
+
+	end = getbytes();
+	for (i = 0; i < 5; ++i) {
+		o = leak_7_1_init();
+		leak_7_1_free(o);
+		tmp = end;
+		end = getbytes();
+	}
+	puts(end - tmp);
+}
+leak_7_1_main();
+} -constraints memory -output "0\n"
+
+test leak-8.1 {leaks with undef() on hashes} -body {
+#lang L --line=1
+void leak_8_1_main()
+{
+	int		end, i, tmp;
+
+	end = getbytes();
+	for (i = 0; i < 5; ++i) {
+		string	h{string} = { "1"=>"1", "2"=>"2", "3"=>"3", "4"=>"4" };
+		undef(h{"1"});
+		undef(h{"2"});
+		undef(h{"3"});
+		undef(h{"4"});
+		tmp = end;
+		end = getbytes();
+	}
+	puts(end - tmp);
+}
+leak_8_1_main();
+} -constraints memory -output "0\n"
+
+test leak-8.2 {leaks with undef() on arrays} -body {
+#lang L --line=1
+void leak_8_2_main()
+{
+	int		end, i, tmp;
+
+	end = getbytes();
+	for (i = 0; i < 5; ++i) {
+		int	a[] = { 1, 2, 3, 4 };
+		undef(a[0]);
+		undef(a[0]);
+		undef(a[0]);
+		undef(a[0]);
+		tmp = end;
+		end = getbytes();
+	}
+	puts(end - tmp);
+}
+leak_8_2_main();
+} -constraints memory -output "0\n"
+
+# Disable the leak-9 test for now. L leaks memory when freeing
+# a Tcl interp. Usually, L code is run all within one interp so
+# this usually isn't a big deal. Some day we'll come back to this.
+::tcltest::cleanupTests
+return
+
+test leak-9 {per-interp L state leak} -body {
+    set end [getbytes]
+    for {set i 0} {$i < 5} {incr i} {
+	interp create slave
+	slave eval expr 1+2+3+4+5+6+7+8+9+10+11+12+13
+	interp delete slave
+	set tmp $end
+	set end [getbytes]
+    }
+    puts [expr {$end - $tmp}]
+} -constraints memory -output "0\n"
+
+# cleanup
+::tcltest::cleanupTests
+return

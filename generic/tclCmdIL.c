@@ -12,6 +12,7 @@
  * Copyright (c) 1998-1999 by Scriptics Corporation.
  * Copyright (c) 2001 by Kevin B. Kenny. All rights reserved.
  * Copyright (c) 2005 Donal K. Fellows.
+ * Copyright (c) 2007 BitMover, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.

@@ -1,0 +1,56 @@
+%A Brian W. Kernighan
+%A Lorinda L. Cherry
+%T A System for Typesetting Mathematics
+%J J. Comm. ACM
+%V 18
+%N 3
+%D March 1978
+%P 151-157
+%K eqn
+
+%A Fred Brooks
+%T The Mythical Man Month
+%D 1975
+%K mythical man month
+
+%A The Tcler's Wiki
+%T shimmering
+%J http://wiki.tcl.tk/3033
+%D Dec 2005
+%K shimmering
+
+%A The Tcler's Wiki
+%T use_ref
+%J http://wiki.tcl.tk/15120
+%D Dec 2005
+%K pass by reference
+
+%A Michael Hind 
+%T Pointer Analysis: Haven't We Solved This Problem Yet?" 
+%D 2001
+%K aliasing1
+
+%A Steven S. Muchnick 
+%T Advanced Compiler Design and Implementation
+%D 1997
+%I Morgan Kaufmann
+%K optimization
+
+%A Brian W. Kernighan
+%A Dennis M. Ritchie
+%I Prentice-Hall, Inc.
+%T The C Programming Language
+%D 1978
+%K C
+
+%T Pointer-Induced Aliasing: A Clarification
+%A Thomas J. Marlowe
+%A Jong-Deok Choi
+%A William G. Landi
+%A Michael G. Burke
+%A Barbara G. Ryder
+%A Paul Carini
+%J ACM SIGPLAN Notices
+%D September 1993
+%N Volume 28, No. 9
+%K aliasing2

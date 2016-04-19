@@ -60,6 +60,7 @@ fi
 AC_PROG_CC
 AC_C_INLINE
 AC_HEADER_STDC
+AC_PROG_BISON
 
 AC_CHECK_TOOL(AR, ar)
 AC_CHECK_TOOL(RANLIB, ranlib)
@@ -259,6 +260,12 @@ if test "$tcl_cv_findex_enums" = "no"; then
     AC_DEFINE(HAVE_NO_FINDEX_ENUMS, 1,
             [Defined when enums are missing from winbase.h])
 fi
+
+#------------------------------------------------------------------------------
+#       Check if we want to use pcre
+#------------------------------------------------------------------------------
+
+SC_ENABLE_PCRE
 
 #--------------------------------------------------------------------
 # Set the default compiler switches based on the --enable-symbols

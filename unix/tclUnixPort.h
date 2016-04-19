@@ -443,6 +443,15 @@ extern int	gettimeofday(struct timeval *tp,
 
 /*
  *---------------------------------------------------------------------------
+ * Make sure that _SC_GETGR_R_SIZE_MAX is defined.
+ *---------------------------------------------------------------------------
+ */
+#if !defined(_SC_GETGR_R_SIZE_MAX)
+#define _SC_GETGR_R_SIZE_MAX 1024
+#endif
+
+/*
+ *---------------------------------------------------------------------------
  * The following macro defines the type of the mask arguments to select:
  *---------------------------------------------------------------------------
  */

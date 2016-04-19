@@ -7,6 +7,7 @@
 # Copyright (c) 1994-1996 Sun Microsystems, Inc.
 # Copyright (c) 1998-1999 Scriptics Corporation.
 # Copyright (c) 2004 by Kevin B. Kenny.  All rights reserved.
+# Copyright (c) 2007 BitMover, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -816,3 +817,5 @@ proc tcl::CopyDirectory {action src dest} {
     }
     return
 }
+
+source [file join $::tcl_library libl.tcl]

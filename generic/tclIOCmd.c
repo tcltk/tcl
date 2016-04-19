@@ -10,6 +10,7 @@
  */
 
 #include "tclInt.h"
+#include "tclIO.h"
 
 /*
  * Callback structure for accept callback in a TCP server.
@@ -203,6 +204,11 @@ Tcl_PutsObjCmd(
      */
 
   error:
+    if ((chan == Tcl_GetStdChannel(TCL_STDOUT)) &&
+	(((Channel *)chan)->state->flags & CHANNEL_EXIT_ON_EPIPE)) {
+	Tcl_Exit(0);
+	/*NOTREACHED*/
+    }
     if (!TclChanCaughtErrorBypass(interp, chan)) {
 	Tcl_SetObjResult(interp, Tcl_ObjPrintf("error writing \"%s\": %s",
 		TclGetString(chanObjPtr), Tcl_PosixError(interp)));

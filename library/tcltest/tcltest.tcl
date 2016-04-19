@@ -661,7 +661,8 @@ namespace eval tcltest {
     } AcceptPattern matchFiles
 
     # By default, skip files that appear to be SCCS lock files.
-    Option -notfile l.*.test {
+    # XXX - busted.
+    Option -notfile SCCS/l.*.test {
 	Skip all test files that match the glob pattern given.
     } AcceptPattern skipFiles
 
@@ -888,8 +889,8 @@ proc tcltest::DebugPArray {level arrayvar} {
 # defined in ::tcltest.  NOTE: Ought to construct with [info args] and
 # [info default], but can't be bothered now.  If [parray] changes, then
 # this will need changing too.
-auto_load ::parray
-proc tcltest::parray {a {pattern *}} [info body ::parray]
+#auto_load ::parray
+#proc tcltest::parray {a {pattern *}} [info body ::parray]
 
 # tcltest::DebugDo --
 #
@@ -2694,6 +2695,7 @@ proc tcltest::GetMatchingDirectories {rootdir} {
 #
 # Arguments:
 #	shell being tested
+#	arguments to pass to shell
 #
 # Results:
 #	None.
@@ -2701,7 +2703,7 @@ proc tcltest::GetMatchingDirectories {rootdir} {
 # Side effects:
 #	None.
 
-proc tcltest::runAllTests { {shell ""} } {
+proc tcltest::runAllTests { {shell ""} {shellArgs ""} } {
     variable testSingleFile
     variable numTestFiles
     variable numTests
@@ -2754,6 +2756,7 @@ proc tcltest::runAllTests { {shell ""} } {
 
     set timeCmd {clock format [clock seconds]}
     puts [outputChannel] "Tests began at [eval $timeCmd]"
+    set exit_status 0
 
     # Run each of the specified tests
     foreach file [lsort [GetMatchingFiles]] {
@@ -2778,7 +2781,7 @@ proc tcltest::runAllTests { {shell ""} } {
 		}
 		lappend childargv $opt $value
 	    }
-	    set cmd [linsert $childargv 0 | $shell $file]
+	    set cmd [linsert $childargv 0 | $shell {*}$shellArgs $file]
 	    if {[catch {
 		incr numTestFiles
 		set pipeFd [open $cmd "r"]
@@ -2796,6 +2799,7 @@ proc tcltest::runAllTests { {shell ""} } {
 			}
 			if {$Failed > 0} {
 			    lappend failFiles $testFile
+			    set exit_status 1
 			}
 		    } elseif {[regexp [join {
 			    {^Number of tests skipped }
@@ -2823,6 +2827,7 @@ proc tcltest::runAllTests { {shell ""} } {
     puts [outputChannel] "\nTests ended at [eval $timeCmd]"
     cleanupTests 1
     if {[info exists testFileFailures]} {
+	set exit_status 1
 	puts [outputChannel] "\nTest files exiting with errors:  \n"
 	foreach file $testFileFailures {
 	    puts [outputChannel] "  [file tail $file]\n"
@@ -2842,7 +2847,7 @@ proc tcltest::runAllTests { {shell ""} } {
 	puts [outputChannel] ""
 	puts [outputChannel] [string repeat ~ 44]
     }
-    return
+    return $exit_status
 }
 
 #####################################################################

@@ -9,6 +9,7 @@
  * Copyright (c) 1994-1998 Sun Microsystems, Inc.
  * Copyright (c) 1998-2000 by Scriptics Corporation.
  * Copyright (c) 2002 by Kevin B. Kenny.  All rights reserved.
+ * Copyright (c) 2007 BitMover, Inc.
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
@@ -611,6 +612,10 @@ typedef void (Tcl_ThreadCreateProc) (ClientData clientData);
 #define	TCL_REG_NEWLINE		000300  /* Newlines are line terminators. */
 #define	TCL_REG_CANMATCH	001000  /* Report details on partial/limited
 					 * matches. */
+#define TCL_REG_BYTEOFFSET	002000	/* Use byte offsets instead of
+					   character offsets. */
+#define	TCL_REG_PCRE	0x08000000	/* Make sure it doesn't conflict with
+					 * existing TCL_REG_* or PCRE_* bits */
 
 /*
  * Flags values passed to Tcl_RegExpExecObj.
@@ -807,7 +812,16 @@ typedef struct Tcl_ObjType {
  */
 
 typedef struct Tcl_Obj {
-    int refCount;		/* When 0 the object will be freed. */
+#ifndef TCL_MEM_DEBUG
+    unsigned int undef:1;	/* Used by L to mark an object as having
+				 * the undef value.  Steal a bit from
+				 * refCount to avoid increasing the
+				 * Tcl_Obj memory footprint. */
+    int refCount:31;		/* When 0 the object will be freed. */
+#else
+    int refCount;
+    int undef;
+#endif
     char *bytes;		/* This points to the first byte of the
 				 * object's string representation. The array
 				 * must be followed by a null byte (i.e., at
@@ -1997,6 +2011,9 @@ typedef struct Tcl_Token {
  *				literal character prefix "{*}". This word is
  *				marked to be expanded - that is, broken into
  *				words after substitution is complete.
+ * TCL_TOKEN_PRAGMA      -	This token handles pragma directives that might
+ *				switch the parser used. Currently only the L
+ *				language is supported.                        
  */
 
 #define TCL_TOKEN_WORD		1
@@ -2008,6 +2025,7 @@ typedef struct Tcl_Token {
 #define TCL_TOKEN_SUB_EXPR	64
 #define TCL_TOKEN_OPERATOR	128
 #define TCL_TOKEN_EXPAND_WORD	256
+#define	TCL_TOKEN_PRAGMA	512
 
 /*
  * Parsing error types. On any parsing error, one of these values will be

@@ -326,17 +326,17 @@ test regexpComp-6.3 {regexp errors} {
     evalInProc {
 	list [catch {regexp -gorp a} msg] $msg
     }
-} {1 {bad option "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
-test regexpComp-6.4 {regexp errors} {
+} {1 {bad option "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, -type, or --}}
+test regexpComp-6.4 {regexp errors} -body {
     evalInProc {
 	list [catch {regexp a( b} msg] $msg
     }
-} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
-test regexpComp-6.5 {regexp errors} {
+} -match glob -result {1 {couldn't compile*}}
+test regexpComp-6.5 {regexp errors} -body {
     evalInProc {
-	list [catch {regexp a( b} msg] $msg
+	list [catch {regexp a) b} msg] $msg
     }
-} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+} -match glob -result {1 {couldn't compile*}}
 test regexpComp-6.6 {regexp errors} {
     evalInProc {
 	list [catch {regexp a a f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1 f1} msg] $msg
@@ -587,12 +587,12 @@ test regexpComp-11.5 {regsub errors} {
     evalInProc {
 	list [catch {regsub -gorp a b c} msg] $msg
     }
-} {1 {bad option "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
-test regexpComp-11.6 {regsub errors} {
+} {1 {bad option "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, -type, or --}}
+test regexpComp-11.6 {regsub errors} -body {
     evalInProc {
 	list [catch {regsub -nocase a( b c d} msg] $msg
     }
-} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+} -match glob -result {1 {couldn't compile*}}
 test regexpComp-11.7 {regsub errors} {
     evalInProc {
 	unset -nocomplain f1
@@ -965,12 +965,12 @@ test regexpComp-24.8 {regexp command compiling tests} {
 	regexp -- $re dogfod
     }
 } 0
-test regexpComp-24.9 {regexp command compiling tests} {
+test regexpComp-24.9 {regexp command compiling tests} -body {
     evalInProc {
 	set re "("
 	list [catch {regexp -- $re dogfod} msg] $msg
     }
-} {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
+} -match glob -result {1 {couldn't compile*}}
 test regexpComp-24.10 {regexp command compiling tests} {
     # Bug 1902436 - last * escaped
     evalInProc {

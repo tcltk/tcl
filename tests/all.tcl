@@ -18,5 +18,9 @@ configure {*}$argv -testdir [file dir [info script]]
 if {[singleProcess]} {
     interp debug {} -frame 1
 }
-runAllTests
+if {[info exists ::env(TCLTEST_SHELL_OPTIONS)]} {
+    exit [runAllTests [interpreter] $::env(TCLTEST_SHELL_OPTIONS)]
+} else {
+    exit [runAllTests]
+}
 proc exit args {}

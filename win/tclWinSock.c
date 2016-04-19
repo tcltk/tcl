@@ -54,6 +54,12 @@
 #   pragma comment (lib, "ws2_32")
 #endif
 
+#ifdef __MINGW32__
+/* For compiling under earlier versions of mingw which omitted this. */
+const struct in6_addr in6addr_any = {{ IN6ADDR_ANY_INIT }};
+const struct in6_addr in6addr_loopback = {{ IN6ADDR_LOOPBACK_INIT }};
+#endif
+
 /*
  * Support for control over sockets' KEEPALIVE and NODELAY behavior is
  * currently disabled.
