@@ -872,8 +872,8 @@ harness are doing.
 .
 Sets the type of output verbosity desired to \fIlevel\fR,
 a list of zero or more of the elements \fBbody\fR, \fBpass\fR,
-\fBskip\fR, \fBstart\fR, \fBerror\fR and \fBline\fR.  Default value
-is
+\fBskip\fR, \fBstart\fR, \fBerror\fR, \fBline\fR, \fBmsec\fR and \fBusec\fR.
+Default value is
 .QW "\fBbody error\fR" .
 Levels are defined as:
 .RS
@@ -890,6 +890,10 @@ Print errorInfo and errorCode, if they exist, when a test return code
 does not match its expected return code
 .IP "line (\fBl\fR)"
 Print source file line information of failed tests
+.IP "msec (\fBm\fR)"
+Print each test's execution time in milliseconds
+.IP "usec (\fBu\fR)"
+Print each test's execution time in microseconds
 .PP
 The single letter abbreviations noted above are also recognized
 so that
