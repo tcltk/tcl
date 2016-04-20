@@ -954,12 +954,9 @@ AC_DEFUN([SC_CONFIG_CFLAGS], [
 		    ;;
 	    esac
 	    if test ! -d "${PATH64}" ; then
-		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK to enable 64bit mode])
-		AC_MSG_WARN([Ensure latest Platform SDK is installed])
-		do64bit="no"
-	    else
-		AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
+		AC_MSG_WARN([Could not find 64-bit $MACHINE SDK])
 	    fi
+	    AC_MSG_RESULT([   Using 64-bit $MACHINE mode])
 	fi
 
 	LIBS="netapi32.lib kernel32.lib user32.lib advapi32.lib userenv.lib ws2_32.lib"

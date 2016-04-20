@@ -36931,10 +36931,36 @@ test clock-67.2 {Bug d19a30db57} -body {
     # error, not segfault
     tcl::clock::GetJulianDayFromEraYearMonthDay {} 2361222
 } -returnCodes error -match glob -result *
+
 test clock-67.3 {Bug d19a30db57} -body {
     # error, not segfault
     tcl::clock::GetJulianDayFromEraYearWeekDay {} 2361222
 } -returnCodes error -match glob -result *
+
+test clock-67.4 {Change format %x output on global locale change [Bug 4a0c163d24]} -setup {
+    package require msgcat
+    set current [msgcat::mclocale]
+} -body {
+    msgcat::mclocale de_de
+    set res [regexp {^\d{2}\.\d{2}\.\d{4}$} [clock format 1 -locale current -format %x]]
+    msgcat::mclocale en_uk
+    lappend res [regexp {^\d{2}/\d{2}/\d{4}$} [clock format 1 -locale current -format %x]]
+} -cleanup {
+    msgcat::mclocale $current
+} -result {1 1}
+
+test clock-67.5 {Change scan %x output on global locale change [Bug 4a0c163d24]} -setup {
+    package require msgcat
+    set current [msgcat::mclocale]
+} -body {
+    msgcat::mclocale de_de
+    set res [clock scan "01.01.1970" -locale current -format %x]
+    msgcat::mclocale en_uk
+    # This will fail without the bug fix, as still de_de is active
+    expr {$res == [clock scan "01/01/1970" -locale current -format %x]}
+} -cleanup {
+    msgcat::mclocale $current
+} -result {1}
 
 # cleanup
 

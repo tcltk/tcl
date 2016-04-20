@@ -4536,7 +4536,7 @@ compile_foreachArray(ForEach *loop)
 		varlist->varIndexes[i] = s->idx;
 	}
 	info->varLists[0] = varlist;
-	infoIndex = TclCreateAuxData(info, &tclForeachInfoType,
+	infoIndex = TclCreateAuxData(info, TclGetAuxDataType("ForeachInfo"),
 				     L->frame->envPtr);
 
 	/* The values to iterate through are already on the stack (the

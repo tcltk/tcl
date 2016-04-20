@@ -769,7 +769,6 @@ enable_load
 enable_symbols
 with_pcre
 enable_pcre
-enable_usleep
 enable_langinfo
 enable_dll_unloading
 with_tzdata
@@ -1411,8 +1410,6 @@ Optional Features:
                           on)
   --enable-symbols        build with debugging symbols (default: off)
   --enable-pcre           whether to enable pcre (default: off)
-  --enable-usleep         use usleep if possible to sleep, otherwise use
-                          Tcl_Sleep (default: on)
   --enable-langinfo       use nl_langinfo if possible to determine encoding at
                           startup, otherwise use old heuristic (default: on)
   --enable-dll-unloading  enable the 'unload' command (default: on)
@@ -2335,7 +2332,7 @@ ac_compiler_gnu=$ac_cv_c_compiler_gnu
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".4"
+TCL_PATCH_LEVEL=".5"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -6794,7 +6791,7 @@ fi
         MAKE_LIB='${SHLIB_LD} -o $@ ${OBJS} ${SHLIB_LD_LIBS} ${TCL_SHLIB_LD_EXTRAS} ${TK_SHLIB_LD_EXTRAS} ${LD_SEARCH_FLAGS}'
         if test "${SHLIB_SUFFIX}" = ".dll"; then :
 
-            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)"'
+            INSTALL_LIB='$(INSTALL_LIBRARY) $(LIB_FILE) "$(BIN_INSTALL_DIR)/$(LIB_FILE)";if test -f $(LIB_FILE).a; then $(INSTALL_DATA) $(LIB_FILE).a "$(LIB_INSTALL_DIR)"; fi;'
             DLL_INSTALL_DIR="\$(BIN_INSTALL_DIR)"
 
 else
@@ -10077,69 +10074,6 @@ if test $tcl_cv_putenv_copy = yes; then
 $as_echo "#define HAVE_PUTENV_THAT_COPIES 1" >>confdefs.h
 
 fi
-
-#--------------------------------------------------------------------
-# Check for support of usleep function
-#--------------------------------------------------------------------
-
-
-    # Check whether --enable-usleep was given.
-if test "${enable_usleep+set}" = set; then :
-  enableval=$enable_usleep; usleep_ok=$enableval
-else
-  usleep_ok=yes
-fi
-
-
-    HAVE_USLEEP=0
-    if test "$usleep_ok" = "yes"; then
-	ac_fn_c_check_header_mongrel "$LINENO" "unistd.h" "ac_cv_header_unistd_h" "$ac_includes_default"
-if test "x$ac_cv_header_unistd_h" = xyes; then :
-  usleep_ok=yes
-else
-  usleep_ok=no
-fi
-
-
-    fi
-    { $as_echo "$as_me:${as_lineno-$LINENO}: checking whether to use usleep" >&5
-$as_echo_n "checking whether to use usleep... " >&6; }
-    if test "$usleep_ok" = "yes"; then
-	if ${tcl_cv_usleep_h+:} false; then :
-  $as_echo_n "(cached) " >&6
-else
-
-	    cat confdefs.h - <<_ACEOF >conftest.$ac_ext
-/* end confdefs.h.  */
-#include <unistd.h>
-int
-main ()
-{
-usleep(0);
-  ;
-  return 0;
-}
-_ACEOF
-if ac_fn_c_try_compile "$LINENO"; then :
-  tcl_cv_usleep_h=yes
-else
-  tcl_cv_usleep_h=no
-fi
-rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
-fi
-
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $tcl_cv_usleep_h" >&5
-$as_echo "$tcl_cv_usleep_h" >&6; }
-	if test $tcl_cv_usleep_h = yes; then
-
-$as_echo "#define HAVE_USLEEP 1" >>confdefs.h
-
-	fi
-    else
-	{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $usleep_ok" >&5
-$as_echo "$usleep_ok" >&6; }
-    fi
-
 
 #--------------------------------------------------------------------
 # Check for support of nl_langinfo function

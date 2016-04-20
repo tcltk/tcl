@@ -1,9 +1,8 @@
 # tclTomMath.decls --
 #
-#	This file contains the declarations for the functions in
-#	'libtommath' that are contained within the Tcl library.
-#	This file is used to generate the 'tclTomMathDecls.h' and
-#	'tclTomMathStub.c' files.
+#	This file contains the declarations for the functions in 'libtommath'
+#	that are contained within the Tcl library.  This file is used to
+#	generate the 'tclTomMathDecls.h' and 'tclStubInit.c' files.
 #
 # If you edit this file, advance the revision number (and the epoch
 # if the new stubs are not backward compatible) in tclTomMathDecls.h
@@ -221,3 +220,19 @@ declare 62 {
 declare 63 {
     int TclBN_mp_cnt_lsb(const mp_int *a)
 }
+
+# Formerly internal API to allow initialisation of bignums without knowing the
+# typedefs of how a bignum works internally.
+declare 64 {
+    void TclBNInitBignumFromLong(mp_int *bignum, long initVal)
+}
+declare 65 {
+    void TclBNInitBignumFromWideInt(mp_int *bignum, Tcl_WideInt initVal)
+}
+declare 66 {
+    void TclBNInitBignumFromWideUInt(mp_int *bignum, Tcl_WideUInt initVal)
+}
+
+# Local Variables:
+# mode: tcl
+# End:

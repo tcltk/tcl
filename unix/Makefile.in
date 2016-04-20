@@ -645,7 +645,7 @@ ${LIB_FILE}: ${STUB_LIB_FILE} ${OBJS}
 
 ${STUB_LIB_FILE}: ${STUB_LIB_OBJS}
 	@if test "x${LIB_FILE}" = "xlibtcl${MAJOR_VERSION}.${MINOR_VERSION}.dll"; then \
-	    (cd ${TOP_DIR}/win; ${MAKE} tcldde14.dll tclreg13.dll); \
+	    (cd ${TOP_DIR}/win; ${MAKE} winextensions); \
 	fi
 	rm -f $@
 	@MAKE_STUB_LIB@
@@ -1875,7 +1875,7 @@ gendate:
 #	    -e 's?SCCSID?RCS: @(#) ?' \
 #	    -e '/#ifdef __STDC__/,/#endif/d' -e '/TclDateerrlab:/d' \
 #	    -e '/TclDatenewstate:/d' -e '/#pragma/d' \
-#	    -e '/#include <inttypes.h>/d' -e 's/const /CONST /g' \
+#	    -e '/#include <inttypes.h>/d' \
 #           -e '/#define YYNEW/s/malloc/TclDateAlloc/g' \
 #	    -e '/#define YYENLARGE/,/realloc/s/realloc/TclDateRealloc/g' \
 #	    <y.tab.c >$(GENERIC_DIR)/tclDate.c

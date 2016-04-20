@@ -293,7 +293,7 @@ newarc(
 	    }
 	}
     }
-  
+
     /* no dup, so create the arc */
     createarc(nfa, t, co, from, to);
 }
@@ -657,7 +657,7 @@ sortins_cmp(
     }
     return 0;
 }
- 
+
 /*
  * sortouts - sort the out arcs of a state by to/color/type
  */
@@ -2020,7 +2020,7 @@ fixempties(
 		    arcarray[arccount++] = a;
 		}
 	    }
-  
+
   	    /* Reset the tmp fields as we walk back */
   	    nexts = s2->tmp;
   	    s2->tmp = NULL;
@@ -2042,7 +2042,7 @@ fixempties(
 	}
 	inarcsorig[s->no] = a;
     }
-  
+
     FREE(arcarray);
     FREE(inarcsorig);
 
@@ -2193,7 +2193,7 @@ fixconstraintloops(
  	    dropstate(nfa, s);
 	}
     }
- 
+
     /* Nothing to do if no remaining constraint arcs */
     if (NISERR() || !hasconstraints) {
 	return;
@@ -2909,7 +2909,7 @@ carc_cmp(
 {
     const struct carc *aa = (const struct carc *) a;
     const struct carc *bb = (const struct carc *) b;
-  
+
     if (aa->co < bb->co) {
 	return -1;
     }

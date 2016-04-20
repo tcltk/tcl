@@ -25,7 +25,7 @@ m4_ifdef([SC_USE_CONFIG_HEADERS], [
 TCL_VERSION=8.6
 TCL_MAJOR_VERSION=8
 TCL_MINOR_VERSION=6
-TCL_PATCH_LEVEL=".4"
+TCL_PATCH_LEVEL=".5"
 VERSION=${TCL_VERSION}
 
 EXTRA_INSTALL_BINARIES=${EXTRA_INSTALL_BINARIES:-"@:"}
@@ -566,12 +566,6 @@ if test $tcl_cv_putenv_copy = yes; then
     AC_DEFINE(HAVE_PUTENV_THAT_COPIES, 1,
 	[Does putenv() copy strings or incorporate them by reference?])
 fi
-
-#--------------------------------------------------------------------
-# Check for support of usleep function
-#--------------------------------------------------------------------
-
-SC_ENABLE_USLEEP
 
 #--------------------------------------------------------------------
 # Check for support of nl_langinfo function

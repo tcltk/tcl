@@ -55,7 +55,7 @@ static int		CompileDictEachCmd(Tcl_Interp *interp,
  * The structures below define the AuxData types defined in this file.
  */
 
-const AuxDataType tclForeachInfoType = {
+static const AuxDataType foreachInfoType = {
     "ForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo,		/* freeProc */
@@ -63,7 +63,7 @@ const AuxDataType tclForeachInfoType = {
     DisassembleForeachInfo	/* disassembleProc */
 };
 
-const AuxDataType tclNewForeachInfoType = {
+static const AuxDataType newForeachInfoType = {
     "NewForeachInfo",		/* name */
     DupForeachInfo,		/* dupProc */
     FreeForeachInfo,		/* freeProc */
@@ -71,13 +71,46 @@ const AuxDataType tclNewForeachInfoType = {
     DisassembleNewForeachInfo	/* disassembleProc */
 };
 
-const AuxDataType tclDictUpdateInfoType = {
+static const AuxDataType dictUpdateInfoType = {
     "DictUpdateInfo",		/* name */
     DupDictUpdateInfo,		/* dupProc */
     FreeDictUpdateInfo,		/* freeProc */
     PrintDictUpdateInfo,	/* printProc */
     DisassembleDictUpdateInfo	/* disassembleProc */
 };
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * TclGetAuxDataType --
+ *
+ *	This procedure looks up an Auxdata type by name.
+ *
+ * Results:
+ *	If an AuxData type with name matching "typeName" is found, a pointer
+ *	to its AuxDataType structure is returned; otherwise, NULL is returned.
+ *
+ * Side effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+const AuxDataType *
+TclGetAuxDataType(
+    const char *typeName)	/* Name of AuxData type to look up. */
+{
+    if (!strcmp(typeName, foreachInfoType.name)) {
+	return &foreachInfoType;
+    } else if (!strcmp(typeName, newForeachInfoType.name)) {
+	return &newForeachInfoType;
+    } else if (!strcmp(typeName, dictUpdateInfoType.name)) {
+	return &dictUpdateInfoType;
+    } else if (!strcmp(typeName, tclJumptableInfoType.name)) {
+	return &tclJumptableInfoType;
+    }
+    return NULL;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -366,7 +399,7 @@ TclCompileArraySetCmd(
     infoPtr->varLists[0]->numVars = 2;
     infoPtr->varLists[0]->varIndexes[0] = keyVar;
     infoPtr->varLists[0]->varIndexes[1] = valVar;
-    infoIndex = TclCreateAuxData(infoPtr, &tclForeachInfoType, envPtr);
+    infoIndex = TclCreateAuxData(infoPtr, &newForeachInfoType, envPtr);
 
     /*
      * Start issuing instructions to write to the array.
@@ -1670,7 +1703,7 @@ TclCompileDictUpdateCmd(
      * can't be snagged by literal sharing and forced to shimmer dangerously.
      */
 
-    infoIndex = TclCreateAuxData(duiPtr, &tclDictUpdateInfoType, envPtr);
+    infoIndex = TclCreateAuxData(duiPtr, &dictUpdateInfoType, envPtr);
 
     for (i=0 ; i<numVars ; i++) {
 	CompileWord(envPtr, keyTokenPtrs[i], interp, 2*i+2);
@@ -2633,7 +2666,7 @@ CompileEachloopCmd(
      * We will compile the foreach command.
      */
 
-    infoIndex = TclCreateAuxData(infoPtr, &tclNewForeachInfoType, envPtr);
+    infoIndex = TclCreateAuxData(infoPtr, &newForeachInfoType, envPtr);
 
     /*
      * Create the collecting object, unshared.
