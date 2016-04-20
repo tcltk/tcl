@@ -611,16 +611,27 @@ namespace eval tcltest {
 
     proc AcceptVerbose { level } {
 	set level [AcceptList $level]
+	set levelMap {
+	    l list
+	    p pass
+	    b body 
+	    s skip
+	    t start
+	    e error
+	    l line
+	    m msec
+	    u usec
+	}
+	set levelRegexp "^([join [dict values $levelMap] |])\$"
 	if {[llength $level] == 1} {
-	    if {![regexp {^(pass|body|skip|start|error|line)$} $level]} {
+	    if {![regexp $levelRegexp $level]} {
 		# translate single characters abbreviations to expanded list
-		set level [string map {p pass b body s skip t start e error l line} \
-			[split $level {}]]
+		set level [string map $levelMap [split $level {}]]
 	    }
 	}
 	set valid [list]
 	foreach v $level {
-	    if {[regexp {^(pass|body|skip|start|error|line)$} $v]} {
+	    if {[regexp $levelRegexp $v]} {
 		lappend valid $v
 	    }
 	}
@@ -1972,6 +1983,14 @@ proc tcltest::test {name description args} {
     # Only run the test body if the setup was successful
     if {!$setupFailure} {
 
+	# Register startup time
+	if {[IsVerbose msec]} {
+	    set msStart [clock milliseconds]
+	}
+	if {[IsVerbose usec]} {
+	    set usStart [clock microseconds]
+	}
+
 	# Verbose notification of $body start
 	if {[IsVerbose start]} {
 	    puts [outputChannel] "---- $name start"
@@ -2074,6 +2093,15 @@ proc tcltest::test {name description args} {
 		}
 	    }
 	}
+    }
+
+    if {[IsVerbose msec]} {
+	set elapsed [expr {[clock milliseconds] - $msStart}]
+	puts [outputChannel] "++++ $name took $elapsed ms"
+    }
+    if {[IsVerbose usec]} {
+	set elapsed [expr {[clock microseconds] - $usStart}]
+	puts [outputChannel] "++++ $name took $elapsed μs"
     }
 
     # if we didn't experience any failures, then we passed
