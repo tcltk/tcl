@@ -1067,7 +1067,6 @@ MODULE_SCOPE ByteCode *	TclCompileObj(Tcl_Interp *interp, Tcl_Obj *objPtr,
 MODULE_SCOPE int	TclAttemptCompileProc(Tcl_Interp *interp,
 			    Tcl_Parse *parsePtr, int depth, Command *cmdPtr,
 			    CompileEnv *envPtr);
-MODULE_SCOPE void	TclCleanupByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclCleanupStackForBreakContinue(CompileEnv *envPtr,
 			    ExceptionAux *auxPtr);
 MODULE_SCOPE void	TclCompileCmdWord(Tcl_Interp *interp,
@@ -1157,6 +1156,8 @@ MODULE_SCOPE void	TclPushVarName(Tcl_Interp *interp,
 			    Tcl_Token *varTokenPtr, CompileEnv *envPtr,
 			    int flags, int *localIndexPtr,
 			    int *isScalarPtr);
+MODULE_SCOPE void	TclPreserveByteCode(ByteCode *codePtr);
+MODULE_SCOPE void	TclReleaseByteCode(ByteCode *codePtr);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
 MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp,
 			    const char *name, Namespace *nsPtr);
