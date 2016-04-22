@@ -514,6 +514,13 @@ typedef struct ByteCode {
 				 * created. */
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
+
+#define ByteCodeGetIntRep(objPtr, typePtr, codePtr)			\
+    do {								\
+	const Tcl_ObjIntRep *irPtr;					\
+	irPtr = Tcl_FetchIntRep((objPtr), (typePtr));			\
+	(codePtr) = irPtr ? irPtr->twoPtrValue.ptr1 : NULL;		\
+    } while (0)
 
 /*
  * Opcodes for the Tcl bytecode instructions. These must correspond to the
