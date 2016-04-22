@@ -32,6 +32,7 @@
 #include "tclInt.h"
 #include "tclCompile.h"
 #include "tclOOInt.h"
+#include <assert.h>
 
 /*
  * Structure that represents a range of instructions in the bytecode.
@@ -4311,7 +4312,7 @@ static void
 FreeAssembleCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = NULL;
+    ByteCode *codePtr;
 
     ByteCodeGetIntRep(objPtr, &assembleCodeType, codePtr);
     assert(codePtr != NULL);
