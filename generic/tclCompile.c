@@ -679,6 +679,7 @@ InstructionDesc const tclInstructionTable[] = {
  * Prototypes for procedures defined later in this file:
  */
 
+static void		CleanupByteCode(ByteCode *codePtr);
 static void		CompileScriptTokens(Tcl_Interp *interp,
 			    Tcl_Token *tokens, Tcl_Token *lastTokenPtr,
 			    CompileEnv *envPtr);
@@ -986,16 +987,13 @@ FreeByteCodeInternalRep(
 {
     register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    objPtr->typePtr = NULL;
-    if (codePtr->refCount-- <= 1) {
-	TclCleanupByteCode(codePtr);
-    }
+    TclReleaseByteCode(codePtr);
 }
 
 /*
  *----------------------------------------------------------------------
  *
- * TclCleanupByteCode --
+ * TclReleaseByteCode --
  *
  *	This procedure does all the real work of freeing up a bytecode
  *	object's ByteCode structure. It's called only when the structure's
@@ -1012,7 +1010,26 @@ FreeByteCodeInternalRep(
  */
 
 void
-TclCleanupByteCode(
+TclPreserveByteCode(
+    register ByteCode *codePtr)	
+{
+    codePtr->refCount++;
+}
+
+void
+TclReleaseByteCode(
+    register ByteCode *codePtr)
+{
+    if (--codePtr->refCount) {
+	return;
+    }
+
+    /* Just dropped to refcount==0.  Clean up. */
+    CleanupByteCode(codePtr);
+}
+
+static void
+CleanupByteCode(
     register ByteCode *codePtr)	/* Points to the ByteCode to free. */
 {
     Tcl_Interp *interp = (Tcl_Interp *) *codePtr->interpHandle;
@@ -1287,8 +1304,6 @@ Tcl_NRSubstObj(
  *
  * Results:
  *	A (ByteCode *) is returned pointing to the resulting ByteCode.
- *	The caller must manage its refCount and arrange for a call to
- *	TclCleanupByteCode() when the last reference disappears.
  *
  * Side effects:
  *	The Tcl_ObjType of objPtr is changed to the "substcode" type, and the
@@ -1319,7 +1334,7 @@ CompileSubstObj(
 		|| (codePtr->nsEpoch != nsPtr->resolverEpoch)
 		|| (codePtr->localCachePtr !=
 		iPtr->varFramePtr->localCachePtr)) {
-	    FreeSubstCodeInternalRep(objPtr);
+	    TclFreeIntRep(objPtr);
 	}
     }
     if (objPtr->typePtr != &substCodeType) {
@@ -1380,10 +1395,7 @@ FreeSubstCodeInternalRep(
 {
     register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    objPtr->typePtr = NULL;
-    if (codePtr->refCount-- <= 1) {
-	TclCleanupByteCode(codePtr);
-    }
+    TclReleaseByteCode(codePtr);
 }
 
 static void
@@ -2810,7 +2822,8 @@ TclInitByteCodeObj(
     codePtr->compileEpoch = iPtr->compileEpoch;
     codePtr->nsPtr = namespacePtr;
     codePtr->nsEpoch = namespacePtr->resolverEpoch;
-    codePtr->refCount = 1;
+    codePtr->refCount = 0;
+    TclPreserveByteCode(codePtr);
     if (namespacePtr->compiledVarResProc || iPtr->resolverPtr) {
 	codePtr->flags = TCL_BYTECODE_RESOLVE_VARS;
     } else {
