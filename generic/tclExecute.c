@@ -1527,19 +1527,23 @@ CompileExprObj(
      * Get the expression ByteCode from the object. If it exists, make sure it
      * is valid in the current context.
      */
-    if (objPtr->typePtr == &exprCodeType) {
+
+    ByteCodeGetIntRep(objPtr, &exprCodeType, codePtr);
+    
+    if (codePtr != NULL) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)
 		|| (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)) {
 	    TclFreeIntRep(objPtr);
+	    codePtr = NULL;
 	}
     }
-    if (objPtr->typePtr != &exprCodeType) {
+
+    if (codePtr == NULL) {
 	/*
 	 * TIP #280: No invoker (yet) - Expression compilation.
 	 */
