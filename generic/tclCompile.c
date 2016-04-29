@@ -868,7 +868,7 @@ TclSetByteCodeFromAny(
 #endif /*TCL_COMPILE_DEBUG*/
 
     if (result == TCL_OK) {
-	TclInitByteCodeObj(objPtr, &compEnv);
+	(void) TclInitByteCodeObj(objPtr, &tclByteCodeType, &compEnv);
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile >= 2) {
 	    TclPrintByteCodeObj(interp, objPtr);
@@ -1322,11 +1322,9 @@ CompileSubstObj(
 	TclSubstCompile(interp, bytes, numBytes, flags, 1, &compEnv);
 
 	TclEmitOpcode(INST_DONE, &compEnv);
-	TclInitByteCodeObj(objPtr, &compEnv);
-	objPtr->typePtr = &substCodeType;
+	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
 	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(flags);
 	if (iPtr->varFramePtr->localCachePtr) {
@@ -2879,11 +2877,12 @@ TclInitByteCode(
     return codePtr;
 }
 
-void
+ByteCode *
 TclInitByteCodeObj(
     Tcl_Obj *objPtr,		/* Points object that should be initialized,
 				 * and whose string rep contains the source
 				 * code. */
+    const Tcl_ObjType *typePtr,
     register CompileEnv *envPtr)/* Points to the CompileEnv structure from
 				 * which to create a ByteCode structure. */
 {
@@ -2900,7 +2899,8 @@ TclInitByteCodeObj(
 
     TclFreeIntRep(objPtr);
     objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
-    objPtr->typePtr = &tclByteCodeType;
+    objPtr->typePtr = typePtr;
+    return codePtr;
 }
 
 /*
