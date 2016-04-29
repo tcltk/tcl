@@ -677,6 +677,7 @@ static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
+static void		PreventCycle(Tcl_Obj *objPtr, CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
@@ -2741,7 +2742,7 @@ PreventCycle(
     }
 }
 
-static ByteCode *
+ByteCode *
 TclInitByteCode(
     register CompileEnv *envPtr)/* Points to the CompileEnv structure from
 				 * which to create a ByteCode structure. */
