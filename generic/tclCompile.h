@@ -515,6 +515,16 @@ typedef struct ByteCode {
 #endif /* TCL_COMPILE_STATS */
 } ByteCode;
 
+#define ByteCodeSetIntRep(objPtr, typePtr, codePtr)			\
+    do {								\
+	Tcl_ObjIntRep ir;						\
+	ir.twoPtrValue.ptr1 = (codePtr);				\
+	ir.twoPtrValue.ptr2 = NULL;					\
+	Tcl_StoreIntRep((objPtr), (typePtr), &ir);			\
+    } while (0)
+
+
+
 #define ByteCodeGetIntRep(objPtr, typePtr, codePtr)			\
     do {								\
 	const Tcl_ObjIntRep *irPtr;					\
