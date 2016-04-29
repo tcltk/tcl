@@ -1300,7 +1300,7 @@ CompileSubstObj(
     Interp *iPtr = (Interp *) interp;
     ByteCode *codePtr = NULL;
 
-    ByteCodeGetIntRep(objPtr, &subsCodeType, codePtr);
+    ByteCodeGetIntRep(objPtr, &substCodeType, codePtr);
 
     if (codePtr != NULL) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
