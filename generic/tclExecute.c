@@ -1565,10 +1565,8 @@ CompileExprObj(
 	 */
 
 	TclEmitOpcode(INST_DONE, &compEnv);
-	TclInitByteCodeObj(objPtr, &compEnv);
-	objPtr->typePtr = &exprCodeType;
+	codePtr = TclInitByteCodeObj(objPtr, &exprCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
