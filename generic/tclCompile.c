@@ -2735,6 +2735,29 @@ TclInitByteCodeObj(
 
     iPtr = envPtr->iPtr;
 
+    for (i = 0;  i < numLitObjects;  i++) {
+	if (objPtr == TclFetchLiteral(envPtr, i)) {
+	    /*
+	     * Prevent circular reference where the bytecode intrep of
+	     * a value contains a literal which is that same value.
+	     * If this is allowed to happen, refcount decrements may not
+	     * reach zero, and memory may leak.  Bugs 467523, 3357771
+	     *
+	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
+	     * on the string value, and do not call Tcl_DuplicateObj() so we
+             * can be sure we do not have any lingering cycles hiding in
+	     * the intrep.
+	     */
+	    int numBytes;
+	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+	    Tcl_Obj *copyPtr = Tcl_NewStringObj(bytes, numBytes);
+
+	    Tcl_IncrRefCount(copyPtr);
+	    TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
+
+	    envPtr->literalArrayPtr[i].objPtr = copyPtr;
+	}
+    }
     codeBytes = envPtr->codeNext - envPtr->codeStart;
     objArrayBytes = envPtr->literalArrayNext * sizeof(Tcl_Obj *);
     exceptArrayBytes = envPtr->exceptArrayNext * sizeof(ExceptionRange);
@@ -2791,29 +2814,7 @@ TclInitByteCodeObj(
     p += TCL_ALIGN(codeBytes);		/* align object array */
     codePtr->objArrayPtr = (Tcl_Obj **) p;
     for (i = 0;  i < numLitObjects;  i++) {
-	Tcl_Obj *fetched = TclFetchLiteral(envPtr, i);
-
-	if (objPtr == fetched) {
-	    /*
-	     * Prevent circular reference where the bytecode intrep of
-	     * a value contains a literal which is that same value.
-	     * If this is allowed to happen, refcount decrements may not
-	     * reach zero, and memory may leak.  Bugs 467523, 3357771
-	     *
-	     * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
-	     * on the string value, and do not call Tcl_DuplicateObj() so we
-             * can be sure we do not have any lingering cycles hiding in
-	     * the intrep.
-	     */
-	    int numBytes;
-	    const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
-
-	    codePtr->objArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
-	    Tcl_IncrRefCount(codePtr->objArrayPtr[i]);
-	    TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
-	} else {
-	    codePtr->objArrayPtr[i] = fetched;
-	}
+	codePtr->objArrayPtr[i] = TclFetchLiteral(envPtr, i);
     }
 
     p += TCL_ALIGN(objArrayBytes);	/* align exception range array */
