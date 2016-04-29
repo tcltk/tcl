@@ -967,7 +967,10 @@ static void
 FreeByteCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
+
+    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+    assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);
 }
@@ -1297,10 +1300,11 @@ CompileSubstObj(
     Interp *iPtr = (Interp *) interp;
     ByteCode *codePtr = NULL;
 
-    if (objPtr->typePtr == &substCodeType) {
+    ByteCodeGetIntRep(objPtr, &subsCodeType, codePtr);
+
+    if (codePtr != NULL) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	if (flags != PTR2INT(objPtr->internalRep.twoPtrValue.ptr2)
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
@@ -1309,9 +1313,10 @@ CompileSubstObj(
 		|| (codePtr->localCachePtr !=
 		iPtr->varFramePtr->localCachePtr)) {
 	    TclFreeIntRep(objPtr);
+	    codePtr = NULL;
 	}
     }
-    if (objPtr->typePtr != &substCodeType) {
+    if (codePtr == NULL) {
 	CompileEnv compEnv;
 	int numBytes;
 	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
@@ -1325,7 +1330,6 @@ CompileSubstObj(
 	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
-	objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
 	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(flags);
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
@@ -1365,7 +1369,10 @@ static void
 FreeSubstCodeInternalRep(
     register Tcl_Obj *objPtr)	/* Object whose internal rep to free. */
 {
-    register ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
+    register ByteCode *codePtr;
+
+    ByteCodeGetIntRep(objPtr, &substCodeType, codePtr);
+    assert(codePtr != NULL);
 
     TclReleaseByteCode(codePtr);
 }
@@ -2897,9 +2904,7 @@ TclInitByteCodeObj(
      * by making its internal rep point to the just compiled ByteCode.
      */
 
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
-    objPtr->typePtr = typePtr;
+    ByteCodeSetIntRep(objPtr, typePtr, codePtr);
     return codePtr;
 }
 
