@@ -1196,10 +1196,10 @@ TclInitCompiledLocals(
     ByteCode *codePtr;
 
     bodyPtr = framePtr->procPtr->bodyPtr;
-    if (bodyPtr->typePtr != &tclByteCodeType) {
+    ByteCodeGetIntRep(bodyPtr, &tclByteCodeType, codePtr);
+    if (codePtr == NULL) {
 	Tcl_Panic("body object for proc attached to frame is not a byte code type");
     }
-    codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
 
     if (framePtr->numCompiledLocals) {
 	if (!codePtr->localCachePtr) {
@@ -1362,7 +1362,7 @@ InitLocalCache(
     Proc *procPtr)
 {
     Interp *iPtr = procPtr->iPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
     int localCt = procPtr->numCompiledLocals;
     int numArgs = procPtr->numArgs, i = 0;
 
@@ -1371,6 +1371,8 @@ InitLocalCache(
     LocalCache *localCachePtr;
     CompiledLocal *localPtr;
     int new;
+
+    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * Cache the names and initial values of local variables; store the
@@ -1439,10 +1441,12 @@ InitArgsAndLocals(
 {
     CallFrame *framePtr = ((Interp *)interp)->varFramePtr;
     register Proc *procPtr = framePtr->procPtr;
-    ByteCode *codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
     register Var *varPtr, *defPtr;
     int localCt = procPtr->numCompiledLocals, numArgs, argCt, i, imax;
     Tcl_Obj *const *argObjs;
+
+    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * Make sure that the local cache of variable names and initial values has
@@ -1614,7 +1618,8 @@ TclPushProcCallFrame(
      * local variables are found while compiling.
      */
 
-    if (procPtr->bodyPtr->typePtr == &tclByteCodeType) {
+    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
+    if (codePtr != NULL) {
 	Interp *iPtr = (Interp *) interp;
 
 	/*
@@ -1626,7 +1631,6 @@ TclPushProcCallFrame(
 	 * commands and/or resolver changes are considered).
 	 */
 
-	codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1824,7 +1828,7 @@ TclNRInterpProcCore(
      */
 
     procPtr->refCount++;
-    codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
+    ByteCodeGetIntRep(procPtr->bodyPtr, &tclByteCodeType, codePtr);
 
     TclNRAddCallback(interp, InterpProcNR2, procNameObj, errorProc,
 	    NULL, NULL);
@@ -1958,7 +1962,9 @@ TclProcCompileProc(
 {
     Interp *iPtr = (Interp *) interp;
     Tcl_CallFrame *framePtr;
-    ByteCode *codePtr = bodyPtr->internalRep.twoPtrValue.ptr1;
+    ByteCode *codePtr;
+
+    ByteCodeGetIntRep(bodyPtr, &tclByteCodeType, codePtr);
 
     /*
      * If necessary, compile the procedure's body. The compiler will allocate
@@ -1974,7 +1980,7 @@ TclProcCompileProc(
      * are not recompiled, even if things have changed.
      */
 
-    if (bodyPtr->typePtr == &tclByteCodeType) {
+    if (codePtr != NULL) {
 	if (((Interp *) *codePtr->interpHandle == iPtr)
 		&& (codePtr->compileEpoch == iPtr->compileEpoch)
 		&& (codePtr->nsPtr == nsPtr)
@@ -1994,10 +2000,11 @@ TclProcCompileProc(
 	    codePtr->nsPtr = nsPtr;
 	} else {
 	    TclFreeIntRep(bodyPtr);
+	    codePtr = NULL;
 	}
     }
 
-    if (bodyPtr->typePtr != &tclByteCodeType) {
+    if (codePtr == NULL) {
 	Tcl_HashEntry *hePtr;
 
 #ifdef TCL_COMPILE_DEBUG
@@ -2374,7 +2381,8 @@ ProcBodyDup(
     Tcl_Obj *srcPtr,		/* Object to copy. */
     Tcl_Obj *dupPtr)		/* Target object for the duplication. */
 {
-    Proc *procPtr = srcPtr->internalRep.twoPtrValue.ptr1;
+    Proc *procPtr;
+    ProcGetIntRep(srcPtr, procPtr);
 
     ProcSetIntRep(dupPtr, procPtr);
 }
@@ -2402,7 +2410,9 @@ static void
 ProcBodyFree(
     Tcl_Obj *objPtr)		/* The object to clean up. */
 {
-    Proc *procPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    Proc *procPtr;
+
+    ProcGetIntRep(objPtr, procPtr);
 
     if (procPtr->refCount-- <= 1) {
 	TclProcCleanupProc(procPtr);
