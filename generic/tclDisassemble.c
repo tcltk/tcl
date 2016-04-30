@@ -62,12 +62,6 @@ static const Tcl_ObjType instNameType = {
 	(inst) = irPtr->longValue;				\
     } while (0)
 
-/*
- * How to get the bytecode out of a Tcl_Obj.
- */
-
-#define BYTECODE(objPtr)					\
-    ((ByteCode *) (objPtr)->internalRep.twoPtrValue.ptr1)
 
 /*
  *----------------------------------------------------------------------
@@ -262,14 +256,18 @@ DisassembleByteCodeObj(
     Tcl_Interp *interp,
     Tcl_Obj *objPtr)		/* The bytecode object to disassemble. */
 {
-    ByteCode *codePtr = BYTECODE(objPtr);
+    ByteCode *codePtr;
     unsigned char *codeStart, *codeLimit, *pc;
     unsigned char *codeDeltaNext, *codeLengthNext;
     unsigned char *srcDeltaNext, *srcLengthNext;
     int codeOffset, codeLen, srcOffset, srcLen, numCmds, delta, i, line;
-    Interp *iPtr = (Interp *) *codePtr->interpHandle;
+    Interp *iPtr;
     Tcl_Obj *bufferObj, *fileObj;
     char ptrBuf1[20], ptrBuf2[20];
+
+    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
+
+    iPtr = (Interp *) *codePtr->interpHandle;
 
     TclNewObj(bufferObj);
     if (codePtr->refCount <= 0) {
@@ -966,12 +964,14 @@ DisassembleByteCodeAsDicts(
 				 * procedure, if one exists. */
     Tcl_Obj *objPtr)		/* The bytecode-holding value to take apart */
 {
-    ByteCode *codePtr = BYTECODE(objPtr);
+    ByteCode *codePtr;
     Tcl_Obj *description, *literals, *variables, *instructions, *inst;
     Tcl_Obj *aux, *exn, *commands, *file;
     unsigned char *pc, *opnd, *codeOffPtr, *codeLenPtr, *srcOffPtr, *srcLenPtr;
     int codeOffset, codeLength, sourceOffset, sourceLength;
     int i, val, line;
+
+    ByteCodeGetIntRep(objPtr, &tclByteCodeType, codePtr);
 
     /*
      * Get the literals from the bytecode.
@@ -1308,6 +1308,7 @@ Tcl_DisassembleObjCmd(
     Proc *procPtr = NULL;
     Tcl_HashEntry *hPtr;
     Object *oPtr;
+    ByteCode *codePtr;
 
     if (objc < 2) {
 	Tcl_WrongNumArgs(interp, 1, objv, "type ...");
@@ -1387,8 +1388,9 @@ Tcl_DisassembleObjCmd(
 	    Tcl_WrongNumArgs(interp, 2, objv, "script");
 	    return TCL_ERROR;
 	}
-	if ((objv[2]->typePtr != &tclByteCodeType)
-		&& (TclSetByteCodeFromAny(interp, objv[2], NULL, NULL) != TCL_OK)) {
+
+	if ((NULL == Tcl_FetchIntRep(objv[2], &tclByteCodeType)) && (TCL_OK
+		!= TclSetByteCodeFromAny(interp, objv[2], NULL, NULL))) {
 	    return TCL_ERROR;
 	}
 	codeObjPtr = objv[2];
@@ -1458,7 +1460,7 @@ Tcl_DisassembleObjCmd(
 		    "METHODTYPE", NULL);
 	    return TCL_ERROR;
 	}
-	if (procPtr->bodyPtr->typePtr != &tclByteCodeType) {
+	if (NULL == Tcl_FetchIntRep(procPtr->bodyPtr, &tclByteCodeType)) {
 	    Command cmd;
 
 	    /*
@@ -1486,7 +1488,9 @@ Tcl_DisassembleObjCmd(
      * Do the actual disassembly.
      */
 
-    if (BYTECODE(codeObjPtr)->flags & TCL_BYTECODE_PRECOMPILED) {
+    ByteCodeGetIntRep(codeObjPtr, &tclByteCodeType, codePtr);
+
+    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"may not disassemble prebuilt bytecode", -1));
 	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "DISASSEMBLE",
