@@ -1984,11 +1984,8 @@ proc tcltest::test {name description args} {
     if {!$setupFailure} {
 
 	# Register startup time
-	if {[IsVerbose msec]} {
-	    set msStart [clock milliseconds]
-	}
-	if {[IsVerbose usec]} {
-	    set usStart [clock microseconds]
+	if {[IsVerbose msec] || [IsVerbose usec]} {
+	    set timeStart [clock microseconds]
 	}
 
 	# Verbose notification of $body start
@@ -2095,13 +2092,14 @@ proc tcltest::test {name description args} {
 	}
     }
 
-    if {[IsVerbose msec]} {
-	set elapsed [expr {[clock milliseconds] - $msStart}]
-	puts [outputChannel] "++++ $name took $elapsed ms"
-    }
-    if {[IsVerbose usec]} {
-	set elapsed [expr {[clock microseconds] - $usStart}]
-	puts [outputChannel] "++++ $name took $elapsed μs"
+    if {[IsVerbose msec] || [IsVerbose usec]} {
+	set t [expr {[clock microseconds] - $timeStart}]
+	if {[IsVerbose usec]} {
+	    puts [outputChannel] "++++ $name took $t μs"
+	}
+	if {[IsVerbose msec]} {
+	    puts [outputChannel] "++++ $name took [expr {round($t/1000.)}] ms"
+	}
     }
 
     # if we didn't experience any failures, then we passed
