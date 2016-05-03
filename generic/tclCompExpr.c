@@ -2181,7 +2181,6 @@ ExecConstantExprTree(
     CompileEnv *envPtr;
     ByteCode *byteCodePtr;
     int code;
-    Tcl_Obj *byteCodeObj = Tcl_NewObj();
     NRE_callback *rootPtr = TOP_CB(interp);
 
     /*
@@ -2195,14 +2194,12 @@ ExecConstantExprTree(
     CompileExprTree(interp, nodes, index, litObjvPtr, NULL, NULL, envPtr,
 	    0 /* optimize */);
     TclEmitOpcode(INST_DONE, envPtr);
-    Tcl_IncrRefCount(byteCodeObj);
-    TclInitByteCodeObj(byteCodeObj, envPtr);
+    byteCodePtr = TclInitByteCode(envPtr);
     TclFreeCompileEnv(envPtr);
     TclStackFree(interp, envPtr);
-    byteCodePtr = byteCodeObj->internalRep.twoPtrValue.ptr1;
     TclNRExecuteByteCode(interp, byteCodePtr);
     code = TclNRRunCallbacks(interp, TCL_OK, rootPtr);
-    Tcl_DecrRefCount(byteCodeObj);
+    TclReleaseByteCode(byteCodePtr);
     return code;
 }
 
