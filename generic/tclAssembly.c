@@ -866,7 +866,7 @@ CompileAssembleObj(
 	 * Not valid, so free it and regenerate.
 	 */
 
-	FreeAssembleCodeInternalRep(objPtr);
+	TclFreeIntRep(objPtr);
     }
 
     /*
@@ -891,15 +891,13 @@ CompileAssembleObj(
      */
 
     TclEmitOpcode(INST_DONE, &compEnv);
-    TclInitByteCodeObj(objPtr, &compEnv);
-    objPtr->typePtr = &assembleCodeType;
+    codePtr = TclInitByteCodeObj(objPtr, &assembleCodeType, &compEnv);
     TclFreeCompileEnv(&compEnv);
 
     /*
      * Record the local variable context to which the bytecode pertains
      */
 
-    codePtr = objPtr->internalRep.twoPtrValue.ptr1;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
@@ -4313,11 +4311,7 @@ FreeAssembleCodeInternalRep(
 {
     ByteCode *codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 
-    codePtr->refCount--;
-    if (codePtr->refCount <= 0) {
-	TclCleanupByteCode(codePtr);
-    }
-    objPtr->typePtr = NULL;
+    TclReleaseByteCode(codePtr);
 }
 
 /*
