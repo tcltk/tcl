@@ -696,6 +696,7 @@ static void		FreeSubstCodeInternalRep(Tcl_Obj *objPtr);
 static int		GetCmdLocEncodingSize(CompileEnv *envPtr);
 static int		IsCompactibleCompileEnv(Tcl_Interp *interp,
 			    CompileEnv *envPtr);
+static void		PreventCycle(Tcl_Obj *objPtr, CompileEnv *envPtr);
 #ifdef TCL_COMPILE_STATS
 static void		RecordByteCodeStats(ByteCode *codePtr);
 #endif /* TCL_COMPILE_STATS */
@@ -886,7 +887,7 @@ TclSetByteCodeFromAny(
 #endif /*TCL_COMPILE_DEBUG*/
 
     if (result == TCL_OK) {
-	TclInitByteCodeObj(objPtr, &compEnv);
+	(void) TclInitByteCodeObj(objPtr, &tclByteCodeType, &compEnv);
 #ifdef TCL_COMPILE_DEBUG
 	if (tclTraceCompile >= 2) {
 	    TclPrintByteCodeObj(interp, objPtr);
@@ -1348,11 +1349,9 @@ CompileSubstObj(
 	TclSubstCompile(interp, bytes, numBytes, flags, 1, &compEnv);
 
 	TclEmitOpcode(INST_DONE, &compEnv);
-	TclInitByteCodeObj(objPtr, &compEnv);
-	objPtr->typePtr = &substCodeType;
+	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
-	codePtr = objPtr->internalRep.twoPtrValue.ptr1;
 	objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
 	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(flags);
 	if (iPtr->varFramePtr->localCachePtr) {
@@ -2767,11 +2766,35 @@ TclCompileNoOp(
  *----------------------------------------------------------------------
  */
 
-void
-TclInitByteCodeObj(
-    Tcl_Obj *objPtr,		/* Points object that should be initialized,
-				 * and whose string rep contains the source
-				 * code. */
+static void
+PreventCycle(
+    Tcl_Obj *objPtr,
+    CompileEnv *envPtr)
+{
+    Tcl_HashEntry *hePtr = Tcl_FindHashEntry(&envPtr->litMap, objPtr);
+    if (hePtr) {
+	/*
+	 * Prevent circular reference where the bytecode intrep of
+	 * a value contains a literal which is that same value.
+	 * If this is allowed to happen, refcount decrements may not
+	 * reach zero, and memory may leak.  Bugs 467523, 3357771
+	 *
+	 * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
+	 * on the string value, and do not call Tcl_DuplicateObj() so we
+         * can be sure we do not have any lingering cycles hiding in
+	 * the intrep.
+	 */
+	int numBytes, i = PTR2INT(Tcl_GetHashValue(hePtr));
+	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
+
+	envPtr->literalArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
+	Tcl_IncrRefCount(envPtr->literalArrayPtr[i]);
+	TclReleaseLiteral((Tcl_Interp *)envPtr->iPtr, objPtr);
+    }
+}
+
+ByteCode *
+TclInitByteCode(
     register CompileEnv *envPtr)/* Points to the CompileEnv structure from
 				 * which to create a ByteCode structure. */
 {
@@ -2786,7 +2809,6 @@ TclInitByteCodeObj(
     Namespace *namespacePtr;
     int isNew;
     Interp *iPtr;
-    Tcl_HashEntry *hePtr = NULL;
 
     if (envPtr->iPtr == NULL) {
 	Tcl_Panic("TclInitByteCodeObj() called on uninitialized CompileEnv");
@@ -2846,28 +2868,6 @@ TclInitByteCodeObj(
     memcpy(p, envPtr->codeStart, (size_t) codeBytes);
     p += TCL_ALIGN(codeBytes);		/* align object array */
 
-    hePtr = Tcl_FindHashEntry(&envPtr->litMap, objPtr);
-    if (hePtr) {
-	/*
-	 * Prevent circular reference where the bytecode intrep of
-	 * a value contains a literal which is that same value.
-	 * If this is allowed to happen, refcount decrements may not
-	 * reach zero, and memory may leak.  Bugs 467523, 3357771
-	 *
-	 * NOTE:  [Bugs 3392070, 3389764] We make a copy based completely
-	 * on the string value, and do not call Tcl_DuplicateObj() so we
-         * can be sure we do not have any lingering cycles hiding in
-	 * the intrep.
-	 */
-
-	int numBytes, i = PTR2INT(Tcl_GetHashValue(hePtr));
-	const char *bytes = Tcl_GetStringFromObj(objPtr, &numBytes);
-
-	envPtr->literalArrayPtr[i] = Tcl_NewStringObj(bytes, numBytes);
-	Tcl_IncrRefCount(envPtr->literalArrayPtr[i]);
-	TclReleaseLiteral((Tcl_Interp *)iPtr, objPtr);
-    }
-
     if (envPtr->mallocedLiteralArray) {
 	codePtr->objArrayPtr = envPtr->literalArrayPtr;
 	codePtr->flags |= TCL_BYTECODE_FREE_LITERALS;
@@ -2912,15 +2912,6 @@ TclInitByteCodeObj(
 #endif /* TCL_COMPILE_STATS */
 
     /*
-     * Free the old internal rep then convert the object to a bytecode object
-     * by making its internal rep point to the just compiled ByteCode.
-     */
-
-    TclFreeIntRep(objPtr);
-    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
-    objPtr->typePtr = &tclByteCodeType;
-
-    /*
      * TIP #280. Associate the extended per-word line information with the
      * byte code object (internal rep), for use with the bc compiler.
      */
@@ -2933,6 +2924,33 @@ TclInitByteCodeObj(
     envPtr->iPtr = NULL;
 
     codePtr->localCachePtr = NULL;
+    return codePtr;
+}
+
+ByteCode *
+TclInitByteCodeObj(
+    Tcl_Obj *objPtr,		/* Points object that should be initialized,
+				 * and whose string rep contains the source
+				 * code. */
+    const Tcl_ObjType *typePtr,
+    register CompileEnv *envPtr)/* Points to the CompileEnv structure from
+				 * which to create a ByteCode structure. */
+{
+    ByteCode *codePtr;
+
+    PreventCycle(objPtr, envPtr);
+
+    codePtr = TclInitByteCode(envPtr);
+
+    /*
+     * Free the old internal rep then convert the object to a bytecode object
+     * by making its internal rep point to the just compiled ByteCode.
+     */
+
+    TclFreeIntRep(objPtr);
+    objPtr->internalRep.twoPtrValue.ptr1 = codePtr;
+    objPtr->typePtr = typePtr;
+    return codePtr;
 }
 
 /*
