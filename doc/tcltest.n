@@ -895,6 +895,12 @@ Print each test's execution time in milliseconds
 .IP "usec (\fBu\fR)"
 Print each test's execution time in microseconds
 .PP
+Note that the \fBmsec\fR and \fBusec\fR verbosity levels are provided as
+indicative measures only. They do not tackle the problem of repeatibility which
+should be considered in performance tests or benchmarks. To use these verbosity
+levels to thoroughly track performance degradations, consider wrapping your
+test bodies with \fBtime\fR commands.
+.PP
 The single letter abbreviations noted above are also recognized
 so that
 .QW "\fBconfigure \-verbose pt\fR"
