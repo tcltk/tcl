@@ -3984,6 +3984,9 @@ UnstackExpiredCatches(
 
     while (catchDepth > bbPtr->catchDepth) {
 	--catchDepth;
+	if (catches[catchDepth] == NULL) {
+	    continue;
+	}
 	range = envPtr->exceptArrayPtr + catchIndices[catchDepth];
 	range->numCodeBytes = bbPtr->startOffset - range->codeOffset;
 	catches[catchDepth] = NULL;
