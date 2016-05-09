@@ -1393,9 +1393,10 @@ BroadcastValue(
     DWORD_PTR sendResult;
     int timeout = 3000;
     size_t len;
-    int unilen;
     const char *str;
     Tcl_Obj *objPtr;
+    WCHAR *wstr;
+    Tcl_DString ds;
 
     if (objc == 3) {
 	str = Tcl_GetString(objv[1]);
@@ -1408,9 +1409,11 @@ BroadcastValue(
 	}
     }
 
-    str = (char*)Tcl_GetUnicodeFromObj(objv[0], &unilen);
-    if (unilen == 0) {
-	str = NULL;
+    str = Tcl_GetString(objv[0]);
+    len = objv[0]->length;
+    wstr = (WCHAR *) Tcl_WinUtfToTChar(str, len, &ds);
+    if (Tcl_DStringLength(&ds) == 0) {
+	wstr = NULL;
     }
 
     /*
@@ -1418,7 +1421,8 @@ BroadcastValue(
      */
 
     result = SendMessageTimeout(HWND_BROADCAST, WM_SETTINGCHANGE,
-	    (WPARAM) 0, (LPARAM) str, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
+	    (WPARAM) 0, (LPARAM) wstr, SMTO_ABORTIFHUNG, (UINT) timeout, &sendResult);
+    Tcl_DStringFree(&ds);
 
     objPtr = Tcl_NewObj();
     Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) result));
