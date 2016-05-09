@@ -1168,6 +1168,7 @@ TclFinalizeLoad(void)
 	ckfree(pkgPtr->packageName);
 	ckfree(pkgPtr);
     }
+    TclpFinalizeLoad();
 }
 
 /*

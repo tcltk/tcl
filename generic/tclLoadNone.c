@@ -121,6 +121,28 @@ TclpLoadMemory(
 #endif /* TCL_LOAD_FROM_MEMORY */
 
 /*
+ *----------------------------------------------------------------------
+ *
+ * TclpFinalizeLoad --
+ *
+ *	On process termination, cleanup and finally remove the
+ *	directory used for temporary copies of DLLs.
+ *
+ * Results:
+ *	None.
+ *
+ * Side-effects:
+ *	None.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpFinalizeLoad(void)
+{
+}
+
+/*
  * Local Variables:
  * mode: c
  * c-basic-offset: 4

@@ -21,6 +21,7 @@
 
 static WCHAR *dllDirectoryName = NULL;
 static Tcl_Mutex dllDirectoryNameMutex;
+static Tcl_HashTable tempDllTable;
 
 /*
  * Static functions defined within this file.
@@ -148,6 +149,22 @@ TclpDlopen(
     handlePtr->unloadFileProcPtr = &UnloadFile;
     *loadHandle = handlePtr;
     *unloadProcPtr = &UnloadFile;
+
+    /*
+     * Remember handle for process termination cleanup handler
+     * if the DLL is a copy in temporary directory.
+     */
+
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    if (dllDirectoryName != NULL) {
+	int dummy, len = wcslen(dllDirectoryName);
+
+	if ((len > 0) && (_wcsnicmp(nativeName, dllDirectoryName, len) == 0)) {
+	    Tcl_CreateHashEntry(&tempDllTable, (ClientData) handlePtr, &dummy);
+	}
+    }
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
+
     return TCL_OK;
 }
 
@@ -225,9 +242,27 @@ UnloadFile(
 				 * that represents the loaded file. */
 {
     HINSTANCE hInstance = (HINSTANCE) loadHandle->clientData;
+    BOOL success, keep = 0;
 
-    FreeLibrary(hInstance);
-    ckfree(loadHandle);
+    success = FreeLibrary(hInstance);
+    Tcl_MutexLock(&dllDirectoryNameMutex);
+    if (dllDirectoryName != NULL) {
+	Tcl_HashEntry *hPtr =
+	    Tcl_FindHashEntry(&tempDllTable, (ClientData) loadHandle);
+
+	if (hPtr != NULL) {
+	    if (success) {
+		Tcl_DeleteHashEntry(hPtr);
+	    } else {
+		/* FreeLibrary() will be retried in TclpFinalizeLoad() later */
+		keep = 1;
+	    }
+	}
+    }
+    Tcl_MutexUnlock(&dllDirectoryNameMutex);
+    if (!keep) {
+	ckfree(loadHandle);
+    }
 }
 
 /*
@@ -317,6 +352,95 @@ TclpTempFileNameForLibrary(
 /*
  *----------------------------------------------------------------------
  *
+ * TclpFinalizeLoad --
+ *
+ *	On process termination, cleanup and finally remove the
+ *	directory used for temporary copies of DLLs.
+ *
+ * Results:
+ *	None.
+ *
+ * Side-effects:
+ *	Delete files in temp directory.
+ *	Remove temp directory.
+ *
+ *----------------------------------------------------------------------
+ */
+
+void
+TclpFinalizeLoad(void)
+{
+    WCHAR *dllDir = NULL;
+    int dllDirLen;
+    Tcl_DString ds;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashSearch search;
+    HANDLE handle;
+    WIN32_FIND_DATAW data;
+
+    if (!TclFullFinalizationRequested()) {
+	Tcl_MutexLock(&dllDirectoryNameMutex);
+    }
+    if (dllDirectoryName != NULL) {
+	dllDir = dllDirectoryName;
+	dllDirectoryName = NULL;
+    }
+    if (dllDir != NULL) {
+
+	/*
+	 * Try unloading left-over DLLs.
+	 */
+
+	hPtr = Tcl_FirstHashEntry(&tempDllTable, &search);
+	while (hPtr != NULL) {
+	    Tcl_LoadHandle loadHandle =
+		(Tcl_LoadHandle) Tcl_GetHashKey(&tempDllTable, hPtr);
+
+	    Tcl_DeleteHashEntry(hPtr);
+	    hPtr = Tcl_NextHashEntry(&search);
+
+	    /*
+	     * Same cleanup steps as in UnloadFile(), but dangerous anyway.
+	     */
+
+	    FreeLibrary((HINSTANCE) loadHandle->clientData);
+	    ckfree(loadHandle);
+	}
+	Tcl_DeleteHashTable(&tempDllTable);
+
+	/*
+	 * Delete temporary copies of DLLs, then the temporary directory.
+	 */
+
+	Tcl_DStringInit(&ds);
+	dllDirLen = wcslen(dllDir) * sizeof (WCHAR);
+	Tcl_DStringAppend(&ds, (char *) dllDir, dllDirLen);
+	Tcl_DStringAppend(&ds, (char *) L"\\*.dll\0",
+		wcslen(L"\\*.dll\0") * sizeof (WCHAR));
+	dllDirLen += sizeof (WCHAR);	/* include trailing backslash */
+	handle = FindFirstFileW((WCHAR *) Tcl_DStringValue(&ds), &data);
+	if (handle != INVALID_HANDLE_VALUE) {
+	    do {
+		Tcl_DStringSetLength(&ds, dllDirLen);
+		Tcl_DStringAppend(&ds, (char *) data.cFileName,
+			wcslen(data.cFileName) * sizeof (WCHAR));
+		Tcl_DStringAppend(&ds, (char *) L"\0", sizeof (WCHAR));
+		DeleteFileW((WCHAR *) Tcl_DStringValue(&ds));
+	    } while (FindNextFileW(handle, &data) == TRUE);
+	    FindClose(handle);
+	}
+	Tcl_DStringFree(&ds);
+	RemoveDirectoryW(dllDir);
+	ckfree(dllDir);
+    }
+    if (!TclFullFinalizationRequested()) {
+	Tcl_MutexUnlock(&dllDirectoryNameMutex);
+    }
+}
+
+/*
+ *----------------------------------------------------------------------
+ *
  * InitDLLDirectoryName --
  *
  *	Helper for TclpTempFileNameForLibrary; builds a temporary directory
@@ -390,6 +514,7 @@ InitDLLDirectoryName(void)
   copyToGlobalBuffer:
     dllDirectoryName = ckalloc((nameLen+1) * sizeof(WCHAR));
     wcscpy(dllDirectoryName, name);
+    Tcl_InitHashTable(&tempDllTable, TCL_ONE_WORD_KEYS);
     return TCL_OK;
 }
 

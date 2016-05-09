@@ -985,6 +985,13 @@ Tcl_Exit(
 	     */
 
 	    FinalizeThread(/* quick */ 1);
+
+#ifdef _WIN32
+	    /*
+	     * Try at least to cleanup temporary DLLs when using VFSes.
+	     */
+	    TclFinalizeLoad();
+#endif
 	}
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
