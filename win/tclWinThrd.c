@@ -119,7 +119,6 @@ typedef struct WinCondition {
  */
 
 #ifdef USE_THREAD_ALLOC
-static int once;
 static DWORD tlsKey;
 
 typedef struct allocMutex {
@@ -968,24 +967,24 @@ TclpFreeAllocMutex(
     free(lockPtr);
 }
 
+void
+TclpInitAllocCache(void)
+{
+    /*
+     * We need to make sure that TclpFreeAllocCache is called on each
+     * thread that calls this, but only on threads that call this.
+     */
+
+    tlsKey = TlsAlloc();
+    if (tlsKey == TLS_OUT_OF_INDEXES) {
+	Tcl_Panic("could not allocate thread local storage");
+    }
+}
+
 void *
 TclpGetAllocCache(void)
 {
     void *result;
-
-    if (!once) {
-	/*
-	 * We need to make sure that TclpFreeAllocCache is called on each
-	 * thread that calls this, but only on threads that call this.
-	 */
-
-	tlsKey = TlsAlloc();
-	once = 1;
-	if (tlsKey == TLS_OUT_OF_INDEXES) {
-	    Tcl_Panic("could not allocate thread local storage");
-	}
-    }
-
     result = TlsGetValue(tlsKey);
     if ((result == NULL) && (GetLastError() != NO_ERROR)) {
 	Tcl_Panic("TlsGetValue failed from TclpGetAllocCache");
@@ -1021,7 +1020,7 @@ TclpFreeAllocCache(
 	if (!success) {
 	    Tcl_Panic("TlsSetValue failed from TclpFreeAllocCache");
 	}
-    } else if (once) {
+    } else {
 	/*
 	 * Called by us in TclFinalizeThreadAlloc() during the library
 	 * finalization initiated from Tcl_Finalize()
@@ -1031,9 +1030,7 @@ TclpFreeAllocCache(
 	if (!success) {
 	    Tcl_Panic("TlsFree failed from TclpFreeAllocCache");
 	}
-	once = 0; /* reset for next time. */
     }
-
 }
 #endif /* USE_THREAD_ALLOC */
 
