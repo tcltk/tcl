@@ -3133,6 +3133,7 @@ MODULE_SCOPE int	TclTrimLeft(const char *bytes, int numBytes,
 MODULE_SCOPE int	TclTrimRight(const char *bytes, int numBytes,
 			    const char *trim, int numTrim);
 MODULE_SCOPE int	TclUtfCasecmp(const char *cs, const char *ct);
+MODULE_SCOPE int	TclUtfCount(int ch);
 MODULE_SCOPE Tcl_Obj *	TclpNativeToNormalized(ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclpFilesystemPathType(Tcl_Obj *pathPtr);
 MODULE_SCOPE int	TclpDlopen(Tcl_Interp *interp, Tcl_Obj *pathPtr,
@@ -4084,6 +4085,7 @@ MODULE_SCOPE void	TclFreeAllocCache(void *);
 MODULE_SCOPE void *	TclpGetAllocCache(void);
 MODULE_SCOPE void	TclpSetAllocCache(void *);
 MODULE_SCOPE void	TclpFreeAllocMutex(Tcl_Mutex *mutex);
+MODULE_SCOPE void	TclpInitAllocCache(void);
 MODULE_SCOPE void	TclpFreeAllocCache(void *);
 
 /*

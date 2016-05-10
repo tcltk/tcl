@@ -34992,6 +34992,10 @@ test clock-29.1800 {time parsing} {
 } 86399
 # END testcases29
 
+
+# BEGIN testcases30
+
+# Test [clock add]
 test clock-30.1 {clock add years} {
     set t [clock scan 2000-01-01 -format %Y-%m-%d -timezone :UTC]
     set f [clock add $t 1 year -timezone :UTC]
@@ -35218,6 +35222,57 @@ test clock-30.25 {clock add seconds at DST conversion} {
     set x1 [clock format $f1 -format {%Y-%m-%d %H:%M:%S %z} \
 		-timezone EST05:00EDT04:00,M4.1.0/02:00,M10.5.0/02:00]
 } {2004-10-31 01:00:00 -0500}
+test clock-30.26 {clock add weekdays} {
+    set t [clock scan {2013-11-20}] ;# Wednesday
+    set f1 [clock add $t 3 weekdays]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2013-11-25}
+test clock-30.27 {clock add weekdays starting on Saturday} {
+    set t [clock scan {2013-11-23}] ;# Saturday
+    set f1 [clock add $t 1 weekday]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2013-11-25}
+test clock-30.28 {clock add weekdays starting on Sunday} {
+    set t [clock scan {2013-11-24}] ;# Sunday
+    set f1 [clock add $t 1 weekday]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2013-11-25}
+test clock-30.29 {clock add 0 weekdays starting on a weekend} {
+    set t [clock scan {2016-02-27}] ;# Saturday
+    set f1 [clock add $t 0 weekdays]
+    set x1 [clock format $f1 -format {%Y-%m-%d}]
+} {2016-02-27}
+test clock-30.30 {clock add weekdays and back} -body {
+    set n [clock seconds]
+    # we start on each day of the week
+    for {set i 0} {$i < 7} {incr i} {
+        set start  [clock add $n $i days]
+        set startu [clock format $start -format %u]
+        # add 0 - 100 weekdays
+        for {set j 0} {$j < 100} {incr j} {
+            set forth [clock add $start $j weekdays]
+            set back  [clock add $forth -$j weekdays]
+            # If $s was a weekday or $j was 0, $b must be the same day.
+            # Otherwise, $b must be the immediately preceeding Friday
+            set fail 0
+            if {$j == 0 || $startu < 6} {
+                if {$start != $back} { set fail 1}
+            } else {
+                set friday [clock add $start -[expr {$startu % 5}] days]
+                if {$friday != $back} { set fail 1 }
+            }
+            if {$fail} {
+                set sdate [clock format $start -format {%Y-%m-%d}]
+                set bdate [clock format $back  -format {%Y-%m-%d}]
+                return "$sdate + $j - $j := $bdate"
+            }
+        }
+    }
+    return "OK"
+} -result {OK}
+
+# END testcases30
+
 
 test clock-31.1 {system locale} \
     -constraints win \
