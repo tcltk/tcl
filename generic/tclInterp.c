@@ -1814,7 +1814,7 @@ AliasNRCmd(
     cmdc = prefc + objc - 1;
 
     listPtr = Tcl_NewListObj(cmdc, NULL);
-    listRep = listPtr->internalRep.twoPtrValue.ptr1;
+    listRep = ListRepPtr(listPtr);
     listRep->elemCount = cmdc;
     cmdv = &listRep->elements;
 

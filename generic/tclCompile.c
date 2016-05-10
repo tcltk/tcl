@@ -720,13 +720,14 @@ static const Tcl_ObjType substCodeType = {
     NULL,			/* updateStringProc */
     NULL,			/* setFromAnyProc */
 };
+#define SubstFlags(objPtr) (objPtr)->internalRep.twoPtrValue.ptr2
 
 /*
  * Helper macros.
  */
 
 #define TclIncrUInt4AtPtr(ptr, delta) \
-    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr));
+    TclStoreInt4AtPtr(TclGetUInt4AtPtr(ptr)+(delta), (ptr))
 
 /*
  *----------------------------------------------------------------------
@@ -1305,7 +1306,7 @@ CompileSubstObj(
     if (codePtr != NULL) {
 	Namespace *nsPtr = iPtr->varFramePtr->nsPtr;
 
-	if (flags != PTR2INT(objPtr->internalRep.twoPtrValue.ptr2)
+	if (flags != PTR2INT(SubstFlags(objPtr))
 		|| ((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != nsPtr)
@@ -1330,7 +1331,7 @@ CompileSubstObj(
 	codePtr = TclInitByteCodeObj(objPtr, &substCodeType, &compEnv);
 	TclFreeCompileEnv(&compEnv);
 
-	objPtr->internalRep.twoPtrValue.ptr2 = INT2PTR(flags);
+	SubstFlags(objPtr) = INT2PTR(flags);
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
