@@ -395,8 +395,6 @@ struct NamespacePathEntry {
  */
 
 typedef struct {
-    Namespace *nsPtr;		/* The namespace backing the ensemble which
-				 * this is a subcommand of. */
     int epoch;			/* Used to confirm when the data in this
 				 * really structure matches up with the
 				 * ensemble. */
