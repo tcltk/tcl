@@ -30,8 +30,7 @@ static int		NsEnsembleStringOrder(const void *strPtr1,
 			    const void *strPtr2);
 static void		DeleteEnsembleConfig(ClientData clientData);
 static void		MakeCachedEnsembleCommand(Tcl_Obj *objPtr,
-			    EnsembleConfig *ensemblePtr,
-			    const char *subcmdName, Tcl_Obj *prefixObjPtr);
+			    EnsembleConfig *ensemblePtr, Tcl_HashEntry *hPtr);
 static void		FreeEnsembleCmdRep(Tcl_Obj *objPtr);
 static void		DupEnsembleCmdRep(Tcl_Obj *objPtr, Tcl_Obj *copyPtr);
 static void		CompileToInvokedCommand(Tcl_Interp *interp,
@@ -1708,7 +1707,7 @@ NsEnsembleImplementationCmdNR(
 
 	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == ensemblePtr->token) {
-		prefixObj = ensembleCmd->realPrefixObj;
+		prefixObj = Tcl_GetHashValue(ensembleCmd->hPtr);
 		Tcl_IncrRefCount(prefixObj);
 		goto runResultingSubcommand;
 	    }
@@ -1726,16 +1725,13 @@ NsEnsembleImplementationCmdNR(
     hPtr = Tcl_FindHashEntry(&ensemblePtr->subcommandTable,
 	    TclGetString(objv[1 + ensemblePtr->numParameters]));
     if (hPtr != NULL) {
-	char *fullName = Tcl_GetHashKey(&ensemblePtr->subcommandTable, hPtr);
-
-	prefixObj = Tcl_GetHashValue(hPtr);
 
 	/*
 	 * Cache for later in the subcommand object.
 	 */
 
 	MakeCachedEnsembleCommand(objv[1 + ensemblePtr->numParameters],
-		ensemblePtr, fullName, prefixObj);
+		ensemblePtr, hPtr);
     } else if (!(ensemblePtr->flags & TCL_ENSEMBLE_PREFIX)) {
 	/*
 	 * Could not map, no prefixing, go to unknown/error handling.
@@ -1797,16 +1793,16 @@ NsEnsembleImplementationCmdNR(
 	    Tcl_Panic("full name %s not found in supposedly synchronized hash",
 		    fullName);
 	}
-	prefixObj = Tcl_GetHashValue(hPtr);
 
 	/*
 	 * Cache for later in the subcommand object.
 	 */
 
 	MakeCachedEnsembleCommand(objv[1 + ensemblePtr->numParameters],
-		ensemblePtr, fullName, prefixObj);
+		ensemblePtr, hPtr);
     }
 
+    prefixObj = Tcl_GetHashValue(hPtr);
     Tcl_IncrRefCount(prefixObj);
   runResultingSubcommand:
 
@@ -2216,16 +2212,12 @@ static void
 MakeCachedEnsembleCommand(
     Tcl_Obj *objPtr,
     EnsembleConfig *ensemblePtr,
-    const char *subcommandName,
-    Tcl_Obj *prefixObjPtr)
+    Tcl_HashEntry *hPtr)
 {
     register EnsembleCmdRep *ensembleCmd;
-    int length;
 
     if (objPtr->typePtr == &tclEnsembleCmdType) {
 	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
-	Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
-	ckfree(ensembleCmd->fullSubcmdName);
     } else {
 	/*
 	 * Kill the old internal rep, and replace it with a brand new one of
@@ -2244,11 +2236,8 @@ MakeCachedEnsembleCommand(
 
     ensembleCmd->epoch = ensemblePtr->epoch;
     ensembleCmd->token = ensemblePtr->token;
-    ensembleCmd->realPrefixObj = prefixObjPtr;
-    length = strlen(subcommandName)+1;
-    ensembleCmd->fullSubcmdName = ckalloc(length);
-    memcpy(ensembleCmd->fullSubcmdName, subcommandName, (unsigned) length);
-    Tcl_IncrRefCount(ensembleCmd->realPrefixObj);
+    ensembleCmd->tablePtr = &ensemblePtr->subcommandTable;
+    ensembleCmd->hPtr = hPtr;
 }
 
 /*
@@ -2629,8 +2618,6 @@ FreeEnsembleCmdRep(
 {
     EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
 
-    Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
-    ckfree(ensembleCmd->fullSubcmdName);
     ckfree(ensembleCmd);
     objPtr->typePtr = NULL;
 }
@@ -2660,17 +2647,13 @@ DupEnsembleCmdRep(
 {
     EnsembleCmdRep *ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
     EnsembleCmdRep *ensembleCopy = ckalloc(sizeof(EnsembleCmdRep));
-    int length = strlen(ensembleCmd->fullSubcmdName);
 
     copyPtr->typePtr = &tclEnsembleCmdType;
     copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
-    ensembleCopy->realPrefixObj = ensembleCmd->realPrefixObj;
-    Tcl_IncrRefCount(ensembleCopy->realPrefixObj);
-    ensembleCopy->fullSubcmdName = ckalloc(length + 1);
-    memcpy(ensembleCopy->fullSubcmdName, ensembleCmd->fullSubcmdName,
-	    (unsigned) length+1);
+    ensembleCopy->tablePtr = ensembleCmd->tablePtr;
+    ensembleCopy->hPtr = ensembleCmd->hPtr;
 }
 
 /*
