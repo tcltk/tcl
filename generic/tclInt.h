@@ -400,11 +400,9 @@ typedef struct {
 				 * ensemble. */
     Tcl_Command token;		/* Reference to the comamnd for which this
 				 * structure is a cache of the resolution. */
-    char *fullSubcmdName;	/* The full (local) name of the subcommand,
-				 * allocated with ckalloc(). */
-    Tcl_Obj *realPrefixObj;	/* Object containing the prefix words of the
-				 * command that implements this ensemble
-				 * subcommand. */
+    Tcl_HashTable *tablePtr;	/* The subcommand hash table. */
+    Tcl_HashEntry *hPtr;	/* Direct link to entry in the subcommand
+				 * hash table. */
 } EnsembleCmdRep;
 
 /*
