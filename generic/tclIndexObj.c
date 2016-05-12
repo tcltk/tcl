@@ -961,7 +961,7 @@ Tcl_WrongNumArgs(
 		register EnsembleCmdRep *ecrPtr =
 			origObjv[i]->internalRep.twoPtrValue.ptr1;
 
-		elementStr = ecrPtr->fullSubcmdName;
+		elementStr = Tcl_GetHashKey(ecrPtr->tablePtr, ecrPtr->hPtr);
 		elemLen = strlen(elementStr);
 	    } else {
 		elementStr = TclGetStringFromObj(origObjv[i], &elemLen);
@@ -1014,8 +1014,10 @@ Tcl_WrongNumArgs(
 	} else if (objv[i]->typePtr == &tclEnsembleCmdType) {
 	    register EnsembleCmdRep *ecrPtr =
 		    objv[i]->internalRep.twoPtrValue.ptr1;
+	    const char *fullSubcmdName
+		    = Tcl_GetHashKey(ecrPtr->tablePtr, ecrPtr->hPtr);
 
-	    Tcl_AppendStringsToObj(objPtr, ecrPtr->fullSubcmdName, NULL);
+	    Tcl_AppendStringsToObj(objPtr, fullSubcmdName, NULL);
 	} else {
 	    /*
 	     * Quote the argument if it contains spaces (Bug 942757).
