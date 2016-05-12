@@ -1707,8 +1707,7 @@ NsEnsembleImplementationCmdNR(
 	    EnsembleCmdRep *ensembleCmd = objv[1+ensemblePtr->numParameters]
 		    ->internalRep.twoPtrValue.ptr1;
 
-	    if (ensembleCmd->nsPtr == ensemblePtr->nsPtr &&
-		    ensembleCmd->epoch == ensemblePtr->epoch &&
+	    if (ensembleCmd->epoch == ensemblePtr->epoch &&
 		    ensembleCmd->token == ensemblePtr->token) {
 		prefixObj = ensembleCmd->realPrefixObj;
 		Tcl_IncrRefCount(prefixObj);
@@ -2227,7 +2226,6 @@ MakeCachedEnsembleCommand(
     if (objPtr->typePtr == &tclEnsembleCmdType) {
 	ensembleCmd = objPtr->internalRep.twoPtrValue.ptr1;
 	Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
-	TclNsDecrRefCount(ensembleCmd->nsPtr);
 	ckfree(ensembleCmd->fullSubcmdName);
     } else {
 	/*
@@ -2245,10 +2243,8 @@ MakeCachedEnsembleCommand(
      * Populate the internal rep.
      */
 
-    ensembleCmd->nsPtr = ensemblePtr->nsPtr;
     ensembleCmd->epoch = ensemblePtr->epoch;
     ensembleCmd->token = ensemblePtr->token;
-    ensemblePtr->nsPtr->refCount++;
     ensembleCmd->realPrefixObj = prefixObjPtr;
     length = strlen(subcommandName)+1;
     ensembleCmd->fullSubcmdName = ckalloc(length);
@@ -2636,7 +2632,6 @@ FreeEnsembleCmdRep(
 
     Tcl_DecrRefCount(ensembleCmd->realPrefixObj);
     ckfree(ensembleCmd->fullSubcmdName);
-    TclNsDecrRefCount(ensembleCmd->nsPtr);
     ckfree(ensembleCmd);
     objPtr->typePtr = NULL;
 }
@@ -2670,10 +2665,8 @@ DupEnsembleCmdRep(
 
     copyPtr->typePtr = &tclEnsembleCmdType;
     copyPtr->internalRep.twoPtrValue.ptr1 = ensembleCopy;
-    ensembleCopy->nsPtr = ensembleCmd->nsPtr;
     ensembleCopy->epoch = ensembleCmd->epoch;
     ensembleCopy->token = ensembleCmd->token;
-    ensembleCopy->nsPtr->refCount++;
     ensembleCopy->realPrefixObj = ensembleCmd->realPrefixObj;
     Tcl_IncrRefCount(ensembleCopy->realPrefixObj);
     ensembleCopy->fullSubcmdName = ckalloc(length + 1);
