@@ -3279,6 +3279,91 @@ test assemble-51.4 {memory leak testing} memory {
 	}
     }
 } 0
+
+test assemble-52.1 {Bug 3154ea2759} {
+    proc __BEGIN {} {
+	::tcl::unsupported::assemble {
+	    beginCatch @badLabel
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel
+	    label @badLabel
+	    push 1; # should be pushReturnCode
+	    label @okLabel
+	    endCatch
+	    pop
+
+	    beginCatch @badLabel2
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel2
+	    label @badLabel2
+	    push 1; # should be pushReturnCode
+	    label @okLabel2
+	    endCatch
+	    pop
+
+	    beginCatch @badLabel3
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel3
+	    label @badLabel3
+	    push 1; # should be pushReturnCode
+	    label @okLabel3
+	    endCatch
+	    pop
+
+	    beginCatch @badLabel4
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel4
+	    label @badLabel4
+	    push 1; # should be pushReturnCode
+	    label @okLabel4
+	    endCatch
+	    pop
+
+	    beginCatch @badLabel5
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel5
+	    label @badLabel5
+	    push 1; # should be pushReturnCode
+	    label @okLabel5
+	    endCatch
+	    pop
+
+	    beginCatch @badLabel6
+	    push error
+	    push testing
+	    invokeStk 2
+	    pop
+	    push 0
+	    jump @okLabel6
+	    label @badLabel6
+	    push 1; # should be pushReturnCode
+	    label @okLabel6
+	    endCatch
+	    pop
+	}
+    }
+    __BEGIN
+} {};				# must not crash
 
 rename fillTables {}
 rename assemble {}

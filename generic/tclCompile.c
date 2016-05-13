@@ -1012,7 +1012,7 @@ FreeByteCodeInternalRep(
 
 void
 TclPreserveByteCode(
-    register ByteCode *codePtr)	
+    register ByteCode *codePtr)
 {
     codePtr->refCount++;
 }

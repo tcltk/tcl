@@ -709,14 +709,14 @@ test-tcl: binaries $(TCLSH) $(CAT32) $(TEST_DLL_FILE)
 	./$(TCLSH) "$(ROOT_DIR_NATIVE)/tests/all.tcl" $(TESTFLAGS) \
 	-load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
 	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.3.1 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
+	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" | ./$(CAT32)
 
 # Useful target to launch a built tclsh with the proper path,...
 runtest: binaries $(TCLSH) $(TEST_DLL_FILE)
 	@TCL_LIBRARY="$(LIBRARY_DIR)"; export TCL_LIBRARY; \
 	./$(TCLSH) $(TESTFLAGS) -load "package ifneeded Tcltest ${VERSION}@TCL_PATCH_LEVEL@ [list load [file normalize ${TEST_DLL_FILE}] Tcltest]; \
 	package ifneeded dde 1.4.0 [list load [file normalize ${DDE_DLL_FILE}] dde]; \
-	package ifneeded registry 1.3.1 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
+	package ifneeded registry 1.3.2 [list load [file normalize ${REG_DLL_FILE}] registry]" $(SCRIPT)
 
 # This target can be used to run tclsh from the build directory via
 # `make shell SCRIPT=foo.tcl`
