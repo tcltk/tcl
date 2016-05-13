@@ -3036,7 +3036,7 @@ TclAttemptCompileProc(
     Tcl_Token *saveTokenPtr = parsePtr->tokenPtr;
     int savedStackDepth = envPtr->currStackDepth;
     unsigned savedCodeNext = envPtr->codeNext - envPtr->codeStart;
-    int savedAuxDataSize = BA_AuxData_Size(envPtr->auxData);
+    size_t savedAuxDataSize = BA_AuxData_Size(envPtr->auxData);
     int savedExceptArrayNext = envPtr->exceptArrayNext;
 #ifdef TCL_COMPILE_DEBUG
     int savedExceptDepth = envPtr->exceptDepth;
