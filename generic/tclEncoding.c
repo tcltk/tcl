@@ -367,6 +367,7 @@ DupEncodingIntRep(
     Tcl_Obj *dupPtr)
 {
     dupPtr->internalRep.twoPtrValue.ptr1 = Tcl_GetEncoding(NULL, srcPtr->bytes);
+    dupPtr->typePtr = &encodingType;
 }
 
 /*

@@ -163,7 +163,7 @@ Registry_Init(
     cmd = Tcl_CreateObjCommand(interp, "registry", RegistryObjCmd,
 	    interp, DeleteCmd);
     Tcl_SetAssocData(interp, REGISTRY_ASSOC_KEY, NULL, cmd);
-    return Tcl_PkgProvide(interp, "registry", "1.3.1");
+    return Tcl_PkgProvide(interp, "registry", "1.3.2");
 }
 
 /*
@@ -1332,7 +1332,7 @@ SetValue(
 	data = (char *) Tcl_WinUtfToTChar(data, length, &buf);
 
 	/*
-	 * Include the null in the length, padding if needed for Unicode.
+	 * Include the null in the length, padding if needed for WCHAR.
 	 */
 
 	Tcl_DStringSetLength(&buf, Tcl_DStringLength(&buf)+1);
@@ -1425,8 +1425,8 @@ BroadcastValue(
     Tcl_DStringFree(&ds);
 
     objPtr = Tcl_NewObj();
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) result));
-    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewLongObj((long) sendResult));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) result));
+    Tcl_ListObjAppendElement(NULL, objPtr, Tcl_NewWideIntObj((Tcl_WideInt) sendResult));
     Tcl_SetObjResult(interp, objPtr);
 
     return TCL_OK;
