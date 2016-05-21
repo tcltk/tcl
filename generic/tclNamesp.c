@@ -1127,17 +1127,21 @@ TclTeardownNamespace(
 
     while (nsPtr->cmdTable.numEntries > 0) {
 	int length = nsPtr->cmdTable.numEntries;
-	Tcl_Command *cmds = TclStackAlloc((Tcl_Interp *) iPtr,
-		sizeof(Tcl_Command) * length);
+	Command **cmds = TclStackAlloc((Tcl_Interp *) iPtr,
+		sizeof(Command *) * length);
 
 	i = 0;
 	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
 		entryPtr != NULL;
 		entryPtr = Tcl_NextHashEntry(&search)) {
-	    cmds[i++] = Tcl_GetHashValue(entryPtr);
+	    cmds[i] = Tcl_GetHashValue(entryPtr);
+	    cmds[i]->refCount++;
+	    i++;
 	}
 	for (i = 0 ; i < length ; i++) {
-	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr, cmds[i]);
+	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
+		    (Tcl_Command) cmds[i]);
+	    TclCleanupCommandMacro(cmds[i]);
 	}
 	TclStackFree((Tcl_Interp *) iPtr, cmds);
     }
@@ -1188,42 +1192,50 @@ TclTeardownNamespace(
      * quadratic problems of just using Tcl_FirstHashEntry over and over, [Bug
      * f97d4ee020]) we copy to a temporary array and then delete all those
      * namespaces.
+     *
+     * Important: leave the hash table itself still live.
      */
 
 #ifndef BREAK_NAMESPACE_COMPAT
     while (nsPtr->childTable.numEntries > 0) {
 	int length = nsPtr->childTable.numEntries;
-	Tcl_Namespace **nss = TclStackAlloc((Tcl_Interp *) iPtr,
-		sizeof(Tcl_Namespace *) * length);
+	Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+		sizeof(Namespace *) * length);
 
 	i = 0;
 	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
 		entryPtr != NULL;
 		entryPtr = Tcl_NextHashEntry(&search)) {
-	    nss[i++] = Tcl_GetHashValue(entryPtr);
+	    children[i] = Tcl_GetHashValue(entryPtr);
+	    children[i]->refCount++;
+	    i++;
 	}
 	for (i = 0 ; i < length ; i++) {
-	    Tcl_DeleteNamespace(nss[i]);
+	    Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
+	    TclNsDecrRefCount(children[i]);
 	}
-	TclStackFree((Tcl_Interp *) iPtr, nss);
+	TclStackFree((Tcl_Interp *) iPtr, children);
     }
 #else
     if (nsPtr->childTablePtr != NULL) {
 	while (nsPtr->childTablePtr->numEntries > 0) {
 	    int length = nsPtr->childTablePtr->numEntries;
-	    Tcl_Namespace **nss = TclStackAlloc((Tcl_Interp *) iPtr,
-		    sizeof(Tcl_Namespace *) * length);
+	    Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+		    sizeof(Namespace *) * length);
 
 	    i = 0;
 	    for (entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
 		    entryPtr != NULL;
 		    entryPtr = Tcl_NextHashEntry(&search)) {
-		nss[i++] = Tcl_GetHashValue(entryPtr);
+		children[i] = Tcl_GetHashValue(entryPtr);
+		children[i]->refCount++;
+		i++;
 	    }
 	    for (i = 0 ; i < length ; i++) {
-		Tcl_DeleteNamespace(nss[i]);
+		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
+		TclNsDecrRefCount(children[i]);
 	    }
-	    TclStackFree((Tcl_Interp *) iPtr, nss);
+	    TclStackFree((Tcl_Interp *) iPtr, children);
 	}
     }
 #endif
