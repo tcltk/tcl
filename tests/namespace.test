@@ -2972,6 +2972,26 @@ test namespace-56.2 {bug f97d4ee020: mutually-entangled deletion} {
     }
     namespace delete ::testing
 } {}
+test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	variable gone {}
+	oo::class create CB {
+	    variable cmd
+	    constructor other {set cmd $other}
+	    destructor {rename $cmd {}; lappend ::testing::gone $cmd}
+	}
+	namespace eval abc {
+	    ::testing::CB create def ::testing::abc::ghi
+	    ::testing::CB create ghi ::testing::abc::def
+	}
+	namespace delete abc
+	try {
+	    return [lsort $gone]
+	} finally {
+	    namespace delete ::testing
+	}
+    }
+} {::testing::abc::def ::testing::abc::ghi}
 
 # cleanup
 catch {rename cmd1 {}}
