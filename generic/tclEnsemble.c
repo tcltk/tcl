@@ -1876,6 +1876,15 @@ NsEnsembleImplementationCmdNR(
 	 * count both as inserted and removed arguments.
 	 */
 
+#if 1
+	if (TclInitRewriteEnsemble(interp, 2 + ensemblePtr->numParameters,
+		prefixObjc + ensemblePtr->numParameters, objv)) {
+	    TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL,
+		    NULL);
+	}
+
+#else
+
 	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
 	    iPtr->ensembleRewrite.sourceObjs = objv;
 	    iPtr->ensembleRewrite.numRemovedObjs =
@@ -1890,12 +1899,15 @@ NsEnsembleImplementationCmdNR(
 				/* Position in objv of new front of insertion
 				 * relative to old one. */
 	    if (ni > 0) {
+//fprintf(stdout, "COVER\n"); fflush(stdout);
 		iPtr->ensembleRewrite.numRemovedObjs += ni;
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-1;
 	    } else {
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-2;
 	    }
 	}
+
+#endif
 
 	/*
 	 * Hand off to the target command.
@@ -2005,15 +2017,20 @@ TclInitRewriteEnsemble(
     int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
 
     if (isRootEnsemble) {
+//fprintf(stdout, "SET-SOURCE: '%s'\n", Tcl_GetString(objv[0])); fflush(stdout);
 	iPtr->ensembleRewrite.sourceObjs = objv;
 	iPtr->ensembleRewrite.numRemovedObjs = numRemoved;
 	iPtr->ensembleRewrite.numInsertedObjs = numInserted;
     } else {
 	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
 
+//fprintf(stdout, "Pre-SOURCE: '%s'\n",
+//Tcl_GetString(iPtr->ensembleRewrite.sourceObjs[0])); fflush(stdout);
+
 	if (numIns < numRemoved) {
+//fprintf(stdout, "COVER2\n"); fflush(stdout);
 	    iPtr->ensembleRewrite.numRemovedObjs += numRemoved - numIns;
-	    iPtr->ensembleRewrite.numInsertedObjs += numInserted - 1;
+	    iPtr->ensembleRewrite.numInsertedObjs = numInserted;
 	} else {
 	    iPtr->ensembleRewrite.numInsertedObjs += numInserted - numRemoved;
 	}
