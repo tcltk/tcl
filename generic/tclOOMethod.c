@@ -732,6 +732,7 @@ InvokeProcedureMethod(
      * Now invoke the body of the method.
      */
 
+//fprintf(stdout, "eh? %p\n", ((Interp *)interp)->ensembleRewrite.sourceObjs); fflush(stdout);
     TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
     return TclNRInterpProcCore(interp, fdPtr->nameObj,
 	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
