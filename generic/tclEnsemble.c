@@ -12,6 +12,7 @@
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "assert.h"
 
 /*
  * Declarations for functions local to this file:
@@ -1891,6 +1892,12 @@ NsEnsembleImplementationCmdNR(
 				 * relative to old one. */
 	    if (ni > 0) {
 		iPtr->ensembleRewrite.numRemovedObjs += ni;
+fprintf(stdout, "%d == %d\n",
+iPtr->ensembleRewrite.numInsertedObjs - 1,
+ensemblePtr->numParameters);
+fflush(stdout);
+assert(iPtr->ensembleRewrite.numInsertedObjs - 1 == ensemblePtr->numParameters);
+
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-1;
 	    } else {
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-2;
