@@ -3362,6 +3362,7 @@ NRNamespaceEvalCmd(
 		- iPtr->ensembleRewrite.numInsertedObjs;
 	framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
     }
+    TclResetRewriteEnsemble(interp, 1);
 
     if (objc == 3) {
 	/*
