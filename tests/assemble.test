@@ -3281,7 +3281,9 @@ test assemble-51.4 {memory leak testing} memory {
 } 0
 
 test assemble-52.1 {Bug 3154ea2759} {
-    proc __BEGIN {} {
+    apply {{} {
+	# Needs six exception ranges to force the range allocations to use the
+	# malloced store.
 	::tcl::unsupported::assemble {
 	    beginCatch @badLabel
 	    push error
@@ -3291,7 +3293,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    push 0
 	    jump @okLabel
 	    label @badLabel
-	    push 1; # should be pushReturnCode
+	    push 1;		# should be pushReturnCode
 	    label @okLabel
 	    endCatch
 	    pop
@@ -3304,7 +3306,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    push 0
 	    jump @okLabel2
 	    label @badLabel2
-	    push 1; # should be pushReturnCode
+	    push 1;		# should be pushReturnCode
 	    label @okLabel2
 	    endCatch
 	    pop
@@ -3317,7 +3319,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    push 0
 	    jump @okLabel3
 	    label @badLabel3
-	    push 1; # should be pushReturnCode
+	    push 1;		# should be pushReturnCode
 	    label @okLabel3
 	    endCatch
 	    pop
@@ -3330,7 +3332,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    push 0
 	    jump @okLabel4
 	    label @badLabel4
-	    push 1; # should be pushReturnCode
+	    push 1;		# should be pushReturnCode
 	    label @okLabel4
 	    endCatch
 	    pop
@@ -3343,7 +3345,7 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    push 0
 	    jump @okLabel5
 	    label @badLabel5
-	    push 1; # should be pushReturnCode
+	    push 1;		# should be pushReturnCode
 	    label @okLabel5
 	    endCatch
 	    pop
@@ -3356,13 +3358,12 @@ test assemble-52.1 {Bug 3154ea2759} {
 	    push 0
 	    jump @okLabel6
 	    label @badLabel6
-	    push 1; # should be pushReturnCode
+	    push 1;		# should be pushReturnCode
 	    label @okLabel6
 	    endCatch
 	    pop
 	}
-    }
-    __BEGIN
+    }}
 } {};				# must not crash
 
 rename fillTables {}
