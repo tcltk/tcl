@@ -1901,7 +1901,8 @@ NsEnsembleImplementationCmdNR(
 	    if (ni > 0) {
 //fprintf(stdout, "COVER\n"); fflush(stdout);
 		iPtr->ensembleRewrite.numRemovedObjs += ni;
-		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-1;
+		iPtr->ensembleRewrite.numInsertedObjs
+			= prefixObjc + ensemblePtr->numParameters;
 	    } else {
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-2;
 	    }
