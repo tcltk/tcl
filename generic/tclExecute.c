@@ -3172,9 +3172,11 @@ TEBCresume(
 	if (iPtr->flags & INTERP_DEBUG_FRAME) {
 	    ArgumentBCEnter(interp, codePtr, TD, pc, objc, objv);
 	}
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = opnd;
-	iPtr->ensembleRewrite.numInsertedObjs = 1;
+
+	if (!TclInitRewriteEnsemble(interp, opnd, 1, objv)) {
+//fprintf(stdout, "INVOKE: '%s'\n", Tcl_GetString(objPtr)); fflush(stdout);
+	    Tcl_Panic("INST_INVOKE_REPLACE is not ensemble root");
+	}
 	DECACHE_STACK_INFO();
 	pc += 6;
 	TEBC_YIELD();
