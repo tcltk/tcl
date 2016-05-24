@@ -1891,8 +1891,8 @@ NsEnsembleImplementationCmdNR(
 				 * relative to old one. */
 	    if (ni > 0) {
 		iPtr->ensembleRewrite.numRemovedObjs += ni;
-		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-1;
-//		iPtr->ensembleRewrite.numInsertedObjs = prefixObjc + ensemblePtr->numParameters;
+		iPtr->ensembleRewrite.numInsertedObjs
+			= prefixObjc + ensemblePtr->numParameters;
 	    } else {
 		iPtr->ensembleRewrite.numInsertedObjs += prefixObjc-2;
 	    }
