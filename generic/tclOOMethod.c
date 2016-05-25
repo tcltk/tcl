@@ -732,7 +732,6 @@ InvokeProcedureMethod(
      * Now invoke the body of the method.
      */
 
-//fprintf(stdout, "eh? %p\n", ((Interp *)interp)->ensembleRewrite.sourceObjs); fflush(stdout);
     TclNRAddCallback(interp, FinalizePMCall, pmPtr, context, fdPtr, NULL);
     return TclNRInterpProcCore(interp, fdPtr->nameObj,
 	    Tcl_ObjectContextSkippedArgs(context), fdPtr->errProc);
@@ -1595,12 +1594,9 @@ InitEnsembleRewrite(
     int *lengthPtr)		/* Where to write the resulting length of the
 				 * array of rewritten arguments. */
 {
-    Interp *iPtr = (Interp *) interp;
-    int isRootEnsemble = (iPtr->ensembleRewrite.sourceObjs == NULL);
-    Tcl_Obj **argObjs;
     unsigned len = rewriteLength + objc - toRewrite;
+    Tcl_Obj **argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
 
-    argObjs = TclStackAlloc(interp, sizeof(Tcl_Obj *) * len);
     memcpy(argObjs, rewriteObjs, rewriteLength * sizeof(Tcl_Obj *));
     memcpy(argObjs + rewriteLength, objv + toRewrite,
 	    sizeof(Tcl_Obj *) * (objc - toRewrite));
@@ -1614,22 +1610,9 @@ InitEnsembleRewrite(
      * (and unavoidably).
      */
 
-    if (isRootEnsemble) {
-	iPtr->ensembleRewrite.sourceObjs = objv;
-	iPtr->ensembleRewrite.numRemovedObjs = toRewrite;
-	iPtr->ensembleRewrite.numInsertedObjs = rewriteLength;
-    } else {
-	int numIns = iPtr->ensembleRewrite.numInsertedObjs;
-
-	if (numIns < toRewrite) {
-	    iPtr->ensembleRewrite.numRemovedObjs += toRewrite - numIns;
-	    iPtr->ensembleRewrite.numInsertedObjs += rewriteLength - 1;
-	} else {
-	    iPtr->ensembleRewrite.numInsertedObjs +=
-		    rewriteLength - toRewrite;
-	}
+    if (TclInitRewriteEnsemble(interp, toRewrite, rewriteLength, objv)) {
+	TclNRAddCallback(interp, TclClearRootEnsemble, NULL, NULL, NULL, NULL);
     }
-
     *lengthPtr = len;
     return argObjs;
 }
