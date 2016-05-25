@@ -847,7 +847,6 @@ TclOODefineObjCmd(
 	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
 	Tcl_Command cmd;
 	int dummy;
 
@@ -861,18 +860,7 @@ TclOODefineObjCmd(
 	 * the moment. Ugly!
 	 */
 
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 3;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 3) {
-		iPtr->ensembleRewrite.numRemovedObjs += 3 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 2;
-	    }
-	}
+	TclInitRewriteEnsemble(interp, 3, 1, objv);
 
 	/*
 	 * Build the list of arguments using a Tcl_Obj as a workspace. See
@@ -962,7 +950,6 @@ TclOOObjDefObjCmd(
 	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
 	Tcl_Command cmd;
 	int dummy;
 
@@ -976,18 +963,7 @@ TclOOObjDefObjCmd(
 	 * the moment. Ugly!
 	 */
 
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 3;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 3) {
-		iPtr->ensembleRewrite.numRemovedObjs += 3 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 2;
-	    }
-	}
+	TclInitRewriteEnsemble(interp, 3, 1, objv);
 
 	/*
 	 * Build the list of arguments using a Tcl_Obj as a workspace. See
@@ -1077,7 +1053,6 @@ TclOODefineSelfObjCmd(
 	TclDecrRefCount(objNameObj);
     } else {
 	Tcl_Obj *objPtr, *obj2Ptr, **objs;
-	Interp *iPtr = (Interp *) interp;
 	Tcl_Command cmd;
 	int dummy;
 
@@ -1091,18 +1066,7 @@ TclOODefineSelfObjCmd(
 	 * the moment. Ugly!
 	 */
 
-	if (iPtr->ensembleRewrite.sourceObjs == NULL) {
-	    iPtr->ensembleRewrite.sourceObjs = objv;
-	    iPtr->ensembleRewrite.numRemovedObjs = 2;
-	    iPtr->ensembleRewrite.numInsertedObjs = 1;
-	} else {
-	    int ni = iPtr->ensembleRewrite.numInsertedObjs;
-	    if (ni < 2) {
-		iPtr->ensembleRewrite.numRemovedObjs += 2 - ni;
-	    } else {
-		iPtr->ensembleRewrite.numInsertedObjs -= 1;
-	    }
-	}
+	TclInitRewriteEnsemble(interp, 2, 1, objv);
 
 	/*
 	 * Build the list of arguments using a Tcl_Obj as a workspace. See
