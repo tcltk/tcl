@@ -1785,8 +1785,6 @@ TclNRInterpProcCore(
      * Invoke the commands in the procedure's body.
      */
 
-    TclResetRewriteEnsemble(interp, 1);
-
     procPtr->refCount++;
     codePtr = procPtr->bodyPtr->internalRep.twoPtrValue.ptr1;
 
