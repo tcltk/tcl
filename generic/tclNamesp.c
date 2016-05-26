@@ -3362,7 +3362,6 @@ NRNamespaceEvalCmd(
 		- iPtr->ensembleRewrite.numInsertedObjs;
 	framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
     }
-    TclResetRewriteEnsemble(interp, 1);
 
     if (objc == 3) {
 	/*
@@ -3803,7 +3802,6 @@ NRNamespaceInscopeCmd(
 		- iPtr->ensembleRewrite.numInsertedObjs;
 	framePtr->objv = iPtr->ensembleRewrite.sourceObjs;
     }
-    TclResetRewriteEnsemble(interp, 1);
 
     /*
      * Execute the command. If there is just one argument, just treat it as a
