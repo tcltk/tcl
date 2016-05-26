@@ -14,6 +14,12 @@
 #include "tclInt.h"	/* Internal definitions for Tcl. */
 #include "tclIO.h"	/* To get Channel type declaration. */
 
+#undef USE_POLL_FOR_SINGLE_FD_WAIT
+#ifdef HAVE_POLL_H
+#   include <poll.h>
+#   define USE_POLL_FOR_SINGLE_FD_WAIT
+#endif
+
 #undef SUPPORTS_TTY
 #if defined(HAVE_TERMIOS_H)
 #   define SUPPORTS_TTY 1
@@ -1764,8 +1770,82 @@ TclUnixWaitForFile(
 				 * forever. */
 {
     Tcl_Time abortTime = {0, 0}, now; /* silence gcc 4 warning */
-    struct timeval blockTime, *timeoutPtr;
     int numFound, result = 0;
+#ifdef USE_POLL_FOR_SINGLE_FD_WAIT
+    struct pollfd pfd;
+    int timeRemaining;
+
+    pfd.fd = fd;
+    pfd.events = 0;
+    if (mask & TCL_READABLE) {
+	pfd.events |= POLLIN;
+    }
+    if (mask & TCL_WRITABLE) {
+	pfd.events |= POLLOUT;
+    }
+
+    /*
+     * Compute how much time remaining. With a positive timeout, we need to
+     * also track when we want to finish by as an absolute timestamp because
+     * otherwise we can't restart the system call correctly.
+     */
+
+    timeRemaining = timeout;
+    if (timeout > 0) {
+	Tcl_GetTime(&now);
+	abortTime.sec = now.sec + timeout/1000;
+	abortTime.usec = now.usec + (timeout%1000)*1000;
+	if (abortTime.usec >= 1000000) {
+	    abortTime.usec -= 1000000;
+	    abortTime.sec += 1;
+	}
+    }
+
+    /*
+     * Loop to allow restarting poll().
+     */
+
+    do {
+	pfd.revents = 0;
+	numFound = poll(&pfd, 1, timeRemaining);
+	if (result > 0) {
+	    if (pfd.revents & POLLIN) {
+		SET_BITS(result, TCL_READABLE);
+	    }
+	    if (pfd.revents & POLLOUT) {
+		SET_BITS(result, TCL_WRITABLE);
+	    }
+	    if (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)) {
+		SET_BITS(result, TCL_EXCEPTION);
+	    }
+	} else if (result < 0) {
+	    int e = errno;
+
+	    /*
+	     * Some errors just mean that we should restart the call. Model
+	     * the rest as exception cases.
+	     */
+
+	    if (e != EINTR || e != EAGAIN || e != ENOMEM) {
+		SET_BITS(result, TCL_EXCEPTION);
+	    }
+	}
+
+	if (timeout > 0) {
+	    Tcl_GetTime(&now);
+	    timeRemaining = 1000 * (abortTime.sec - now.sec)
+		    + (abortTime.usec - now.usec) / 1000;
+	}
+    } while ((result & mask) == 0 && (timeout < 0 || timeRemaining > 0));
+
+    /*
+     * Only return bits that the caller asked for.
+     */
+
+    return result & mask;
+
+#else /* !USE_POLL_FOR_SINGLE_FD_WAIT */
+    struct timeval blockTime, *timeoutPtr;
     fd_set readableMask;
     fd_set writableMask;
     fd_set exceptionMask;
@@ -1883,6 +1963,7 @@ TclUnixWaitForFile(
 	}
     }
     return result;
+#endif /* USE_POLL_FOR_SINGLE_FD_WAIT */
 }
 #endif /* HAVE_COREFOUNDATION */
 

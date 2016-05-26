@@ -301,6 +301,13 @@ if test $tcl_ok = no; then
     AC_DEFINE(NO_FD_SET, 1, [Do we have fd_set?])
 fi
 
+AC_CACHE_CHECK([for struct pollfd in poll.h], tcl_cv_type_struct_pollfd, [
+    AC_TRY_COMPILE([#include <poll.h>],[struct pollfd fds[1];],
+	tcl_cv_type_struct_pollfd=yes, tcl_cv_type_struct_pollfd=no)])
+if test $tcl_cv_type_struct_pollfd = yes; then
+    AC_DEFINE(HAVE_POLL_H, 1, [Can we use <poll.h>?])
+fi
+
 #------------------------------------------------------------------------------
 #       Find out all about time handling differences.
 #------------------------------------------------------------------------------
