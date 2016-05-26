@@ -1458,6 +1458,11 @@ InvokeForwardMethod(
     argObjs = InitEnsembleRewrite(interp, objc, objv, skip,
 	    numPrefixes, prefixObjs, &len);
     Tcl_NRAddCallback(interp, FinalizeForwardCall, argObjs, NULL, NULL, NULL);
+    /*
+     * NOTE: The combination of direct set of iPtr->lookupNsPtr and the use
+     * of the TCL_EVAL_NOERR flag results in an evaluation configuration
+     * very much like TCL_EVAL_INVOKE.
+     */
     ((Interp *)interp)->lookupNsPtr
 	    = (Namespace *) contextPtr->oPtr->namespacePtr;
     return TclNREvalObjv(interp, len, argObjs, TCL_EVAL_NOERR, NULL);
