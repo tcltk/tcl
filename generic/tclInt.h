@@ -49,7 +49,9 @@
 #else
 #include <string.h>
 #endif
-#ifdef STDC_HEADERS
+#if defined(_WIN32)
+#include <crtdefs.h>
+#elif defined(STDC_HEADERS)
 #include <stddef.h>
 #else
 typedef int ptrdiff_t;
