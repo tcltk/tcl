@@ -2953,6 +2953,45 @@ test namespace-54.1 {leak on namespace deletion} -constraints {memory} \
 test namespace-55.1 {compiled ensembles inside compiled ensembles: Bug 6d2f249a01} {
     info class [format %s constructor] oo::object
 } ""
+
+test namespace-56.1 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	proc abc {} {}
+	proc def {} {}
+	trace add command abc delete "rename ::testing::def {}; #"
+	trace add command def delete "rename ::testing::abc {}; #"
+    }
+    namespace delete ::testing
+} {}
+test namespace-56.2 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	namespace eval abc {proc xyz {} {}}
+	namespace eval def {proc xyz {} {}}
+	trace add command abc::xyz delete "namespace delete ::testing::def {}; #"
+	trace add command def::xyz delete "namespace delete ::testing::abc {}; #"
+    }
+    namespace delete ::testing
+} {}
+test namespace-56.3 {bug f97d4ee020: mutually-entangled deletion} {
+    namespace eval ::testing {
+	variable gone {}
+	oo::class create CB {
+	    variable cmd
+	    constructor other {set cmd $other}
+	    destructor {rename $cmd {}; lappend ::testing::gone $cmd}
+	}
+	namespace eval abc {
+	    ::testing::CB create def ::testing::abc::ghi
+	    ::testing::CB create ghi ::testing::abc::def
+	}
+	namespace delete abc
+	try {
+	    return [lsort $gone]
+	} finally {
+	    namespace delete ::testing
+	}
+    }
+} {::testing::abc::def ::testing::abc::ghi}
 
 # cleanup
 catch {rename cmd1 {}}
