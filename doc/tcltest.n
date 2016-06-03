@@ -872,8 +872,8 @@ harness are doing.
 .
 Sets the type of output verbosity desired to \fIlevel\fR,
 a list of zero or more of the elements \fBbody\fR, \fBpass\fR,
-\fBskip\fR, \fBstart\fR, \fBerror\fR and \fBline\fR.  Default value
-is
+\fBskip\fR, \fBstart\fR, \fBerror\fR, \fBline\fR, \fBmsec\fR and \fBusec\fR.
+Default value is
 .QW "\fBbody error\fR" .
 Levels are defined as:
 .RS
@@ -890,6 +890,16 @@ Print errorInfo and errorCode, if they exist, when a test return code
 does not match its expected return code
 .IP "line (\fBl\fR)"
 Print source file line information of failed tests
+.IP "msec (\fBm\fR)"
+Print each test's execution time in milliseconds
+.IP "usec (\fBu\fR)"
+Print each test's execution time in microseconds
+.PP
+Note that the \fBmsec\fR and \fBusec\fR verbosity levels are provided as
+indicative measures only. They do not tackle the problem of repeatibility which
+should be considered in performance tests or benchmarks. To use these verbosity
+levels to thoroughly track performance degradations, consider wrapping your
+test bodies with \fBtime\fR commands.
 .PP
 The single letter abbreviations noted above are also recognized
 so that
