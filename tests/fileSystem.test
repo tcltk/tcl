@@ -146,7 +146,7 @@ test filesystem-1.10 {link normalisation: double link} -constraints {
 	[file normalize [file join dir2.link inside.file foo]]
 } -cleanup {
     file delete dir2.link
-} -result ok 
+} -result ok
 makeDirectory dir2.file
 test filesystem-1.11 {link normalisation: double link, back in tree} {unix hasLinks} {
     file link dir2.link dir.link
@@ -874,7 +874,7 @@ test filesystem-9.5 {path objects and file tail and object rep} -setup {
     }
     return $res
 } -cleanup {
-    file delete -force dgp 
+    file delete -force dgp
     cd $origdir
 } -result {test test}
 test filesystem-9.6 {path objects and file tail and object rep} win {
