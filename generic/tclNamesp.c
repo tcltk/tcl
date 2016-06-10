@@ -1105,8 +1105,6 @@ TclTeardownNamespace(
     Interp *iPtr = (Interp *) nsPtr->interp;
     register Tcl_HashEntry *entryPtr;
     Tcl_HashSearch search;
-    Tcl_Namespace *childNsPtr;
-    Tcl_Command cmd;
     int i;
 
     /*
@@ -1121,16 +1119,31 @@ TclTeardownNamespace(
     /*
      * Delete all commands in this namespace. Be careful when traversing the
      * hash table: when each command is deleted, it removes itself from the
-     * command table.
-     *
-     * Don't optimize to Tcl_NextHashEntry() because of traces.
+     * command table. Because of traces (and the desire to avoid the quadratic
+     * problems of just using Tcl_FirstHashEntry over and over, [Bug
+     * f97d4ee020]) we copy to a temporary array and then delete all those
+     * commands.
      */
 
-    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
-	    entryPtr != NULL;
-	    entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search)) {
-	cmd = Tcl_GetHashValue(entryPtr);
-	Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr, cmd);
+    while (nsPtr->cmdTable.numEntries > 0) {
+	int length = nsPtr->cmdTable.numEntries;
+	Command **cmds = TclStackAlloc((Tcl_Interp *) iPtr,
+		sizeof(Command *) * length);
+
+	i = 0;
+	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->cmdTable, &search);
+		entryPtr != NULL;
+		entryPtr = Tcl_NextHashEntry(&search)) {
+	    cmds[i] = Tcl_GetHashValue(entryPtr);
+	    cmds[i]->refCount++;
+	    i++;
+	}
+	for (i = 0 ; i < length ; i++) {
+	    Tcl_DeleteCommandFromToken((Tcl_Interp *) iPtr,
+		    (Tcl_Command) cmds[i]);
+	    TclCleanupCommandMacro(cmds[i]);
+	}
+	TclStackFree((Tcl_Interp *) iPtr, cmds);
     }
     Tcl_DeleteHashTable(&nsPtr->cmdTable);
     Tcl_InitHashTable(&nsPtr->cmdTable, TCL_STRING_KEYS);
@@ -1175,25 +1188,54 @@ TclTeardownNamespace(
      *
      * BE CAREFUL: When each child is deleted, it will divorce itself from its
      * parent. You can't traverse a hash table properly if its elements are
-     * being deleted. We use only the Tcl_FirstHashEntry function to be safe.
+     * being deleted.  Because of traces (and the desire to avoid the
+     * quadratic problems of just using Tcl_FirstHashEntry over and over, [Bug
+     * f97d4ee020]) we copy to a temporary array and then delete all those
+     * namespaces.
      *
-     * Don't optimize to Tcl_NextHashEntry() because of traces.
+     * Important: leave the hash table itself still live.
      */
 
 #ifndef BREAK_NAMESPACE_COMPAT
-    for (entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
-	    entryPtr != NULL;
-	    entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search)) {
-	childNsPtr = Tcl_GetHashValue(entryPtr);
-	Tcl_DeleteNamespace(childNsPtr);
+    while (nsPtr->childTable.numEntries > 0) {
+	int length = nsPtr->childTable.numEntries;
+	Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+		sizeof(Namespace *) * length);
+
+	i = 0;
+	for (entryPtr = Tcl_FirstHashEntry(&nsPtr->childTable, &search);
+		entryPtr != NULL;
+		entryPtr = Tcl_NextHashEntry(&search)) {
+	    children[i] = Tcl_GetHashValue(entryPtr);
+	    children[i]->refCount++;
+	    i++;
+	}
+	for (i = 0 ; i < length ; i++) {
+	    Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
+	    TclNsDecrRefCount(children[i]);
+	}
+	TclStackFree((Tcl_Interp *) iPtr, children);
     }
 #else
     if (nsPtr->childTablePtr != NULL) {
-	for (entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
-		entryPtr != NULL;
-		entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr,&search)) {
-	    childNsPtr = Tcl_GetHashValue(entryPtr);
-	    Tcl_DeleteNamespace(childNsPtr);
+	while (nsPtr->childTablePtr->numEntries > 0) {
+	    int length = nsPtr->childTablePtr->numEntries;
+	    Namespace **children = TclStackAlloc((Tcl_Interp *) iPtr,
+		    sizeof(Namespace *) * length);
+
+	    i = 0;
+	    for (entryPtr = Tcl_FirstHashEntry(nsPtr->childTablePtr, &search);
+		    entryPtr != NULL;
+		    entryPtr = Tcl_NextHashEntry(&search)) {
+		children[i] = Tcl_GetHashValue(entryPtr);
+		children[i]->refCount++;
+		i++;
+	    }
+	    for (i = 0 ; i < length ; i++) {
+		Tcl_DeleteNamespace((Tcl_Namespace *) children[i]);
+		TclNsDecrRefCount(children[i]);
+	    }
+	    TclStackFree((Tcl_Interp *) iPtr, children);
 	}
     }
 #endif
