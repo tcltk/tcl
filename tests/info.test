@@ -2099,7 +2099,7 @@ proc foo::bar {} {
     foreach {*}{
 	x y
 	{set res [info frame 0]}
-    } 
+    }
     return $res
 }
 test info-33.13 {{*}, literal, simple, bytecompiled} -body {
@@ -2114,7 +2114,7 @@ proc foo::bar {} {
     if {*}{
 	{[return [info frame 0]]}
 	{}
-    } 
+    }
 }
 test info-33.14 {{*}, literal, simple, bytecompiled} -body {
     reduce [foo::bar]
@@ -2128,7 +2128,7 @@ proc foo::bar {} {
     if 0 {*}{
 	{} else
 	{return [info frame 0]}
-    } 
+    }
 }
 test info-33.15 {{*}, literal, simple, bytecompiled} -body {
     reduce [foo::bar]
@@ -2229,7 +2229,7 @@ namespace eval foo {}
 proc foo::bar {} {
     try {*}{
 	{set res [info frame 0]}
-    } 
+    }
     return $res
 }
 test info-33.23 {{*}, literal, simple, bytecompiled} -body {

@@ -66,7 +66,7 @@ test coroutine-1.3 {yield returns new arg} -setup {
 	    incr i
 	}
     }
-    coroutine foo ::apply [list {{start 2} {stop 10}} $body] 
+    coroutine foo ::apply [list {{start 2} {stop 10}} $body]
     set res {}
 } -body {
     for {set k 1} {$k < 4} {incr k} {
@@ -476,7 +476,7 @@ test coroutine-5.1 {right numLevels on coro return} -constraints {testnrelevels}
 	expr {[lindex [testnrelevels] 1] - 1}
     }
     proc relativeLevel base {
-	# remove the level for this proc's call	
+	# remove the level for this proc's call
 	expr {[getNumLevel] - $base - 1}
     }
     proc foo {} {
@@ -517,7 +517,7 @@ test coroutine-5.2 {right numLevels within coro} -constraints {testnrelevels} \
 	expr {[lindex [testnrelevels] 1] - 1}
     }
     proc relativeLevel base {
-	# remove the level for this proc's call	
+	# remove the level for this proc's call
 	expr {[getNumLevel] - $base - 1}
     }
     proc foo base {
@@ -588,7 +588,7 @@ test coroutine-7.2 {multi-argument yielding with yieldto} -body {
     coroutine a corobody
     coroutine b corobody
     list [a x] [a y z] [a \{p] [a \{q r] [a] [a] [rename a {}] \
-	[b ok] [rename b {}] 
+	[b ok] [rename b {}]
 } -cleanup {
     rename corobody {}
 } -result {x {y z 2} \{p {\{q r 2} {} 0 {} ok {}}

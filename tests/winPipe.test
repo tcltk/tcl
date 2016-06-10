@@ -34,14 +34,14 @@ testConstraint testexcept   [llength [info commands testexcept]]
 
 set big bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb\n
 append big $big
-append big $big	
+append big $big
 append big $big
 append big $big
 append big $big
 append big $big
 
 set path(little) [makeFile {} little]
-set f [open $path(little) w] 
+set f [open $path(little) w]
 puts -nonewline $f "little"
 close $f
 
