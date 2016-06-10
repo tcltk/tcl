@@ -2602,8 +2602,12 @@ EnterCmdWordData(
         TclAdvanceLines         (&wordLine, last, tokenPtr->start);
 	TclAdvanceContinuations (&wordLine, &wordNext,
 				 tokenPtr->start - envPtr->source);
+#if 0
 	wwlines[wordIdx] =
 		(TclWordKnownAtCompileTime(tokenPtr, NULL) ? wordLine : -1);
+#else
+	wwlines[wordIdx] = wordLine;
+#endif
 	ePtr->line[wordIdx] = wordLine;
 	ePtr->next[wordIdx] = wordNext;
 	last = tokenPtr->start;
