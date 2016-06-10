@@ -580,11 +580,12 @@ Tcl_CreateInterp(void)
     iPtr->packageUnknown = NULL;
 
     /* TIP #268 */
+#if (TCL_RELEASE_LEVEL == TCL_FINAL_RELEASE)
     if (getenv("TCL_PKG_PREFER_LATEST") == NULL) {
 	iPtr->packagePrefer = PKG_PREFER_STABLE;
-    } else {
+    } else
+#endif
 	iPtr->packagePrefer = PKG_PREFER_LATEST;
-    }
 
     iPtr->cmdCount = 0;
     TclInitLiteralTable(&iPtr->literalTable);
