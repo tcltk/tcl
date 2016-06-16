@@ -512,7 +512,7 @@ TclFSGetPathType(
 
     if (PATHFLAGS(pathPtr) == 0) {
 	/* The path is not absolute... */
-#ifdef __WIN32__
+#ifdef _WIN32
 	/* ... on Windows we must make another call to determine whether
 	 * it's relative or volumerelative [Bug 2571597]. */
 	return TclGetPathType(pathPtr, filesystemPtrPtr, driveNameLengthPtr,
@@ -1956,7 +1956,7 @@ Tcl_FSGetNormalizedPath(
 		/*
 		 * We have a refCount on the cwd.
 		 */
-#ifdef __WIN32__
+#ifdef _WIN32
 	    } else if (type == TCL_PATH_VOLUME_RELATIVE) {
 		/*
 		 * Only Windows has volume-relative paths.
@@ -1969,7 +1969,7 @@ Tcl_FSGetNormalizedPath(
 		    return NULL;
 		}
 		pureNormalized = 0;
-#endif /* __WIN32__ */
+#endif /* _WIN32 */
 	    }
 	}
 
@@ -2437,19 +2437,13 @@ SetFsPathFromAny(
 		}
 		TclDecrRefCount(parts);
 	    } else {
-		/*
-		 * Simple case. "rest" is relative path. Just join it. The
-		 * "rest" object will be freed when Tcl_FSJoinToPath returns
-		 * (unless something else claims a refCount on it).
-		 */
+		Tcl_Obj *pair[2];
 
-		Tcl_Obj *joined;
-		Tcl_Obj *rest = Tcl_NewStringObj(name+split+1, -1);
-
-		Tcl_IncrRefCount(transPtr);
-		joined = Tcl_FSJoinToPath(transPtr, 1, &rest);
-		TclDecrRefCount(transPtr);
-		transPtr = joined;
+		pair[0] = transPtr;
+		pair[1] = Tcl_NewStringObj(name+split+1, -1);
+		transPtr = TclJoinPath(2, pair);
+		Tcl_DecrRefCount(pair[0]);
+		Tcl_DecrRefCount(pair[1]);
 	    }
 	}
     } else {

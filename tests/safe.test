@@ -174,7 +174,7 @@ test safe-6.3 {test safe interpreters knowledge of the world} {
     }
     set r [lsearch -all -inline -not -exact $r "threaded"]
     lsort $r
-} {byteOrder pathSeparator platform pointerSize wordSize}
+} {byteOrder engine pathSeparator platform pointerSize wordSize}
 
 # More test should be added to check that hostname, nameofexecutable, aren't
 # leaking infos, but they still do...

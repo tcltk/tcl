@@ -79,7 +79,7 @@ Use the Makefile "install" target to install Tcl.  It will install it
 according to the prefix options you provided in the correct directory
 structure.
 
-Note that in order to run tclsh85.exe, you must ensure that tcl85.dll is
+Note that in order to run tclsh86.exe, you must ensure that tcl86.dll is
 on your path, in the system directory, or in the directory containing
 tclsh86.exe.
 
