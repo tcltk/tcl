@@ -9,14 +9,15 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: winFile.test,v 1.22 2008/10/23 12:18:47 das Exp $
 
 if {[catch {package require tcltest 2.0.2}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.0.2 required."
     return
 }
 namespace import -force ::tcltest::*
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testvolumetype [llength [info commands testvolumetype]]
 testConstraint notNTFS 0

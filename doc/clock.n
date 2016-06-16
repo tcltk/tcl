@@ -42,12 +42,12 @@ is system-dependent but should be the highest resolution clock available
 on the system such as a CPU cycle counter.  See \fBHIGH RESOLUTION TIMERS\fR for a full description.
 .RS
 .PP
-If the \fI\-option\fR argument is \fI\-milliseconds\fR, then the command
+If the \fI\-option\fR argument is \fB\-milliseconds\fR, then the command
 is synonymous with \fBclock milliseconds\fR (see below).  This
 usage is obsolete, and \fBclock milliseconds\fR is to be
 considered the preferred way of obtaining a count of milliseconds.
 .PP
-If the \fI\-option\fR argument is \fI\-microseconds\fR, then the command
+If the \fI\-option\fR argument is \fB\-microseconds\fR, then the command
 is synonymous with \fBclock microseconds\fR (see below).  This
 usage is obsolete, and \fBclock microseconds\fR is to be
 considered the preferred way of obtaining a count of microseconds.
@@ -116,7 +116,7 @@ On \fBclock format\fR, the default format is
 %a %b %d %H:%M:%S %z %Y
 .CE
 .PP
-On \fBclock scan\fR, the lack of a \fI\-format\fR option indicates that a
+On \fBclock scan\fR, the lack of a \fB\-format\fR option indicates that a
 .QW "free format scan"
 is requested; see \fBFREE FORM SCAN\fR for a description of what happens.
 .RE
@@ -904,7 +904,7 @@ or
 Note that only these three formats are accepted.
 The command does \fInot\fR accept the full range of point-in-time
 specifications specified in ISO8601.  Other formats can be recognized by
-giving an explicit \fI\-format\fR option to the \fBclock scan\fR command.
+giving an explicit \fB\-format\fR option to the \fBclock scan\fR command.
 .TP
 \fIrelative time\fR
 A specification relative to the current time.  The format is \fBnumber

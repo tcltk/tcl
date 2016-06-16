@@ -12,15 +12,12 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: tclInt.decls,v 1.149 2010/09/27 19:42:38 msofer Exp $
 
 library tcl
 
 # Define the unsupported generic interfaces.
 
 interface tclInt
-scspec EXTERN
 
 # Declare each of the functions in the unsupported internal Tcl
 # interface.  These interfaces are allowed to changed between versions.
@@ -83,7 +80,7 @@ declare 12 {
 #	    Tcl_DString *headPtr, char *tail, Tcl_GlobTypeData *types)
 #}
 declare 14 {
-    void TclDumpMemoryInfo(FILE *outFile)
+    int TclDumpMemoryInfo(ClientData clientData, int flags)
 }
 # Removed in 8.1:
 #  declare 15 {
@@ -116,10 +113,10 @@ declare 22 {
 declare 23 {
     Proc *TclFindProc(Interp *iPtr, const char *procName)
 }
-# Replaced with macro (see tclInt.h) in Tcl 8.5
-#declare 24 {
-#    int TclFormatInt(char *buffer, long n)
-#}
+# Replaced with macro (see tclInt.h) in Tcl 8.5.0, restored in 8.5.10
+declare 24 {
+    int TclFormatInt(char *buffer, long n)
+}
 declare 25 {
     void TclFreePackageInfo(Interp *iPtr)
 }
@@ -191,7 +188,7 @@ declare 42 {
 }
 # Removed in Tcl 8.5a2
 #declare 43 {
-#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, const char **argv,
+#    int TclGlobalInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
 #	    int flags)
 #}
 declare 44 {
@@ -226,7 +223,7 @@ declare 51 {
 }
 # Removed in Tcl 8.5a2
 #declare 52 {
-#    int TclInvoke(Tcl_Interp *interp, int argc, const char **argv,
+#    int TclInvoke(Tcl_Interp *interp, int argc, CONST84 char **argv,
 #	    int flags)
 #}
 declare 53 {
@@ -322,9 +319,10 @@ declare 76 {
 declare 77 {
     void TclpGetTime(Tcl_Time *time)
 }
-declare 78 {
-    int TclpGetTimeZone(unsigned long time)
-}
+# Removed in 8.6:
+#declare 78 {
+#    int TclpGetTimeZone(unsigned long time)
+#}
 # Replaced by Tcl_FSListVolumes in 8.4:
 #declare 79 {
 #    int TclpListVolumes(Tcl_Interp *interp)
@@ -423,7 +421,7 @@ declare 103 {
 	    int *portPtr)
 }
 declare 104 {
-    int TclSockMinimumBuffers(int sock, int size)
+    int TclSockMinimumBuffersOld(int sock, int size)
 }
 # Replaced by Tcl_FSStat in 8.4:
 #declare 105 {
@@ -440,6 +438,9 @@ declare 108 {
 }
 declare 109 {
     int TclUpdateReturnInfo(Interp *iPtr)
+}
+declare 110 {
+    int TclSockMinimumBuffers(void *sock, int size)
 }
 # Removed in 8.1:
 #  declare 110 {
@@ -691,12 +692,12 @@ declare 169 {
 }
 declare 170 {
     int TclCheckInterpTraces(Tcl_Interp *interp, const char *command,
-            int numChars, Command *cmdPtr, int result, int traceFlags,
+	    int numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 171 {
     int TclCheckExecutionTraces(Tcl_Interp *interp, const char *command,
-            int numChars, Command *cmdPtr, int result, int traceFlags,
+	    int numChars, Command *cmdPtr, int result, int traceFlags,
 	    int objc, Tcl_Obj *const objv[])
 }
 declare 172 {
@@ -748,7 +749,7 @@ declare 177 {
 #	    const char *file, int line)
 #}
 
-# TclpGmtime and TclpLocaltime promoted to the interface from unix
+# TclpGmtime and TclpLocaltime promoted to the generic interface from unix
 
 declare 182 {
      struct tm *TclpLocaltime(const time_t *clock)
@@ -961,7 +962,7 @@ declare 239 {
 }
 declare 240 {
     int TclNRRunCallbacks(Tcl_Interp *interp, int result,
-	      struct TEOV_callback *rootPtr)
+	      struct NRE_callback *rootPtr)
 }
 declare 241 {
     int TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr, int flags,
@@ -996,6 +997,15 @@ declare 248 {
     int TclCopyChannel(Tcl_Interp *interp, Tcl_Channel inChan,
 	    Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr)
 }
+
+declare 249 {
+    char *TclDoubleDigits(double dv, int ndigits, int flags,
+			  int *decpt, int *signum, char **endPtr)
+}
+# TIP #285: Script cancellation support.
+declare 250 {
+    void TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags, int force)
+}
 
 ##############################################################################
 
@@ -1008,38 +1018,46 @@ interface tclIntPlat
 # Windows specific functions
 
 declare 0 win {
-    void TclWinConvertError(unsigned long errCode)
+    void TclWinConvertError(DWORD errCode)
 }
 declare 1 win {
-    void TclWinConvertWSAError(unsigned long errCode)
+    void TclWinConvertWSAError(DWORD errCode)
 }
 declare 2 win {
     struct servent *TclWinGetServByName(const char *nm,
 	    const char *proto)
 }
 declare 3 win {
-    int TclWinGetSockOpt(int s, int level, int optname,
-	    char FAR *optval, int FAR *optlen)
+    int TclWinGetSockOpt(SOCKET s, int level, int optname,
+	    char *optval, int *optlen)
 }
 declare 4 win {
     HINSTANCE TclWinGetTclInstance(void)
+}
+# new for 8.4.20+/8.5.12+ Cygwin only
+declare 5 win {
+    int TclUnixWaitForFile(int fd, int mask, int timeout)
 }
 # Removed in 8.1:
 #  declare 5 win {
 #      HINSTANCE TclWinLoadLibrary(char *name)
 #  }
 declare 6 win {
-    u_short TclWinNToHS(u_short ns)
+    unsigned short TclWinNToHS(unsigned short ns)
 }
 declare 7 win {
-    int TclWinSetSockOpt(int s, int level, int optname,
-	    const char FAR *optval, int optlen)
+    int TclWinSetSockOpt(SOCKET s, int level, int optname,
+	    const char *optval, int optlen)
 }
 declare 8 win {
-    unsigned long TclpGetPid(Tcl_Pid pid)
+    int TclpGetPid(Tcl_Pid pid)
 }
 declare 9 win {
     int TclWinGetPlatformId(void)
+}
+# new for 8.4.20+/8.5.12+ Cygwin only
+declare 10 win {
+    Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
 # Removed in 8.3.1 (for Win32s only)
 #declare 10 win {
@@ -1062,9 +1080,13 @@ declare 14 win {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
 declare 15 win {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc, const char **argv,
-	    TclFile inputFile, TclFile outputFile, TclFile errorFile,
-	    Tcl_Pid *pidPtr)
+    int TclpCreateProcess(Tcl_Interp *interp, int argc,
+	    const char **argv, TclFile inputFile, TclFile outputFile,
+	    TclFile errorFile, Tcl_Pid *pidPtr)
+}
+# new for 8.4.20+/8.5.12+ Cygwin only
+declare 16 win {
+    int TclpIsAtty(int fd)
 }
 # Signature changed in 8.1:
 #  declare 16 win {
@@ -1073,6 +1095,11 @@ declare 15 win {
 #  declare 17 win {
 #      char *TclpGetTZName(void)
 #  }
+# new for 8.5.12+ Cygwin only
+declare 17 win {
+    int TclUnixCopyFile(const char *src, const char *dst,
+	    const Tcl_StatBuf *statBufPtr, int dontCopyAtts)
+}
 declare 18 win {
     TclFile TclpMakeFile(Tcl_Channel channel, int direction)
 }
@@ -1080,9 +1107,12 @@ declare 19 win {
     TclFile TclpOpenFile(const char *fname, int mode)
 }
 declare 20 win {
-    void TclWinAddProcess(void *hProcess, unsigned long id)
+    void TclWinAddProcess(HANDLE hProcess, DWORD id)
 }
-
+# new for 8.4.20+/8.5.12+
+declare 21 win {
+    char *TclpInetNtoa(struct in_addr addr)
+}
 # removed permanently for 8.4
 #declare 21 win {
 #    void TclpAsyncMark(Tcl_AsyncHandler async)
@@ -1092,13 +1122,14 @@ declare 20 win {
 declare 22 win {
     TclFile TclpCreateTempFile(const char *contents)
 }
-declare 23 win {
-    char *TclpGetTZName(int isdst)
-}
+# Removed in 8.6:
+#declare 23 win {
+#    char *TclpGetTZName(int isdst)
+#}
 declare 24 win {
     char *TclWinNoBackslash(char *path)
 }
-# replaced by TclGetPlatform
+# replaced by generic TclGetPlatform
 #declare 25 win {
 #    TclPlatformType *TclWinGetPlatform(void)
 #}
@@ -1116,9 +1147,6 @@ declare 27 win {
 
 declare 28 win {
     void TclWinResetInterfaces(void)
-}
-declare 29 win {
-    int TclWinCPUID(unsigned int index, unsigned int *regs)
 }
 
 ################################
@@ -1140,9 +1168,9 @@ declare 3 unix {
     int TclpCreatePipe(TclFile *readPipe, TclFile *writePipe)
 }
 declare 4 unix {
-    int TclpCreateProcess(Tcl_Interp *interp, int argc, const char **argv,
-	    TclFile inputFile, TclFile outputFile, TclFile errorFile,
-	    Tcl_Pid *pidPtr)
+    int TclpCreateProcess(Tcl_Interp *interp, int argc,
+	    const char **argv, TclFile inputFile, TclFile outputFile,
+	    TclFile errorFile, Tcl_Pid *pidPtr)
 }
 # Signature changed in 8.1:
 #  declare 5 unix {
@@ -1170,7 +1198,7 @@ declare 10 unix {
     Tcl_DirEntry *TclpReaddir(DIR *dir)
 }
 # Slots 11 and 12 are forwarders for functions that were promoted to
-# Stubs
+# generic Stubs
 declare 11 unix {
     struct tm *TclpLocaltime_unix(const time_t *clock)
 }
@@ -1211,6 +1239,16 @@ declare 18 macosx {
 declare 19 macosx {
     void TclMacOSXNotifierAddRunLoopMode(const void *runLoopMode)
 }
+
+declare 29 {win unix} {
+    int TclWinCPUID(unsigned int index, unsigned int *regs)
+}
+# Added in 8.6; core of TclpOpenTemporaryFile
+declare 30 {win unix} {
+    int TclUnixOpenTemporaryFile(Tcl_Obj *dirObj, Tcl_Obj *basenameObj,
+	    Tcl_Obj *extensionObj, Tcl_Obj *resultingNameObj)
+}
+
 
 
 # Local Variables:

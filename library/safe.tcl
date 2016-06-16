@@ -11,8 +11,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: safe.tcl,v 1.41 2010/09/02 18:31:00 andreas_kupries Exp $
 
 #
 # The implementation is based on namespaces. These naming conventions are
@@ -467,8 +465,19 @@ proc ::safe::InterpInit {
     # This alias lets the slave have access to a subset of the 'file'
     # command functionality.
 
-    AliasSubset $slave file \
-	file  dir.* join root.* ext.* tail path.* split
+    ::interp expose $slave file
+    foreach subcommand {dirname extension rootname tail} {
+	::interp alias $slave ::tcl::file::$subcommand {} \
+	    ::safe::AliasFileSubcommand $slave $subcommand
+    }
+    foreach subcommand {
+	atime attributes copy delete executable exists isdirectory isfile
+	link lstat mtime mkdir nativename normalize owned readable readlink
+	rename size stat tempfile type volumes writable
+    } {
+	::interp alias $slave ::tcl::file::$subcommand {} \
+	    ::safe::BadSubcommand $slave file $subcommand
+    }
 
     # Subcommands of info
     foreach {subcommand alias} {
@@ -485,24 +494,25 @@ proc ::safe::InterpInit {
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library init.tcl]
-    }} msg]} {
+    }} msg opt]} {
 	Log $slave "can't source init.tcl ($msg)"
-	return -code error "can't source init.tcl into slave $slave ($msg)"
+	return -options $opt "can't source init.tcl into slave $slave ($msg)"
     }
 
     if {[catch {::interp eval $slave {
 	source [file join $tcl_library tm.tcl]
-    }} msg]} {
+    }} msg opt]} {
 	Log $slave "can't source tm.tcl ($msg)"
-	return -code error "can't source tm.tcl into slave $slave ($msg)"
+	return -options $opt "can't source tm.tcl into slave $slave ($msg)"
     }
 
     # Sync the paths used to search for Tcl modules. This can be done only
     # now, after tm.tcl was loaded.
     namespace upvar ::safe S$slave state
-    ::interp eval $slave [list \
-	      ::tcl::tm::add {*}$state(tm_path_slave)]
-
+    if {[llength $state(tm_path_slave)] > 0} {
+	::interp eval $slave [list \
+		::tcl::tm::add {*}[lreverse $state(tm_path_slave)]]
+    }
     return $slave
 }
 
@@ -666,6 +676,17 @@ proc ::safe::CheckFileName {slave file} {
     }
 }
 
+# AliasFileSubcommand handles selected subcommands of [file] in safe
+# interpreters that are *almost* safe. In particular, it just acts to
+# prevent discovery of what home directories exist.
+
+proc ::safe::AliasFileSubcommand {slave subcommand name} {
+    if {[string match ~* $name]} {
+	set name ./$name
+    }
+    tailcall ::interp invokehidden $slave tcl:file:$subcommand $name
+}
+
 # AliasGlob is the target of the "glob" alias in safe interpreters.
 
 proc ::safe::AliasGlob {slave args} {
@@ -681,9 +702,9 @@ proc ::safe::AliasGlob {slave args} {
     }
 
     if {$::tcl_platform(platform) eq "windows"} {
-	set dirPartRE {^(.*)[\\/]}
+	set dirPartRE {^(.*)[\\/]([^\\/]*)$}
     } else {
-	set dirPartRE {^(.*)/}
+	set dirPartRE {^(.*)/([^/]*)$}
     }
 
     set dir        {}
@@ -736,9 +757,7 @@ proc ::safe::AliasGlob {slave args} {
 	    DirInAccessPath $slave $dir
 	} on error msg {
 	    Log $slave $msg
-	    if {$got(-nocomplain)} {
-		return
-	    }
+	    if {$got(-nocomplain)} return
 	    return -code error "permission denied"
 	}
 	lappend cmd -directory $dir
@@ -751,20 +770,33 @@ proc ::safe::AliasGlob {slave args} {
 
     # Process remaining pattern arguments
     set firstPattern [llength $cmd]
-    while {$at < [llength $args]} {
-	set opt [lindex $args $at]
-	incr at
-	if {[regexp $dirPartRE $opt -> thedir]} {
-	    try {
-		set thedir [file join $virtualdir $thedir]
-		DirInAccessPath $slave [TranslatePath $slave $thedir]
-	    } on error msg {
-		Log $slave $msg
-		if {$got(-nocomplain)} {
-		    continue
+    foreach opt [lrange $args $at end] {
+	if {![regexp $dirPartRE $opt -> thedir thefile]} {
+	    set thedir .
+	} elseif {[string match ~* $thedir]} {
+	    set thedir ./$thedir
+	}
+	if {$thedir eq "*" &&
+		($thefile eq "pkgIndex.tcl" || $thefile eq "*.tm")} {
+	    set mapped 0
+	    foreach d [glob -directory [TranslatePath $slave $virtualdir] \
+			   -types d -tails *] {
+		catch {
+		    DirInAccessPath $slave \
+			[TranslatePath $slave [file join $virtualdir $d]]
+		    lappend cmd [file join $d $thefile]
+		    set mapped 1
 		}
-		return -code error "permission denied"
 	    }
+	    if {$mapped} continue
+	}
+	try {
+	    DirInAccessPath $slave [TranslatePath $slave \
+		    [file join $virtualdir $thedir]]
+	} on error msg {
+	    Log $slave $msg
+	    if {$got(-nocomplain)} continue
+	    return -code error "permission denied"
 	}
 	lappend cmd $opt
     }
@@ -781,7 +813,7 @@ proc ::safe::AliasGlob {slave args} {
 	return -code error "script error"
     }
 
-    Log $slave "GLOB @ $entries" NOTICE
+    Log $slave "GLOB < $entries" NOTICE
 
     # Translate path back to what the slave should see.
     set res {}
@@ -793,7 +825,7 @@ proc ::safe::AliasGlob {slave args} {
 	lappend res $p
     }
 
-    Log $slave "GLOB @ $res" NOTICE
+    Log $slave "GLOB > $res" NOTICE
     return $res
 }
 
@@ -850,6 +882,7 @@ proc ::safe::AliasSource {slave args} {
     # because we want to control [info script] in the slave so information
     # doesn't leak so much. [Bug 2913625]
     set old [::interp eval $slave {info script}]
+    set replacementMsg "script error"
     set code [catch {
 	set f [open $realfile]
 	fconfigure $f -eofchar \032
@@ -859,14 +892,17 @@ proc ::safe::AliasSource {slave args} {
 	set contents [read $f]
 	close $f
 	::interp eval $slave [list info script $file]
-	::interp eval $slave $contents
     } msg opt]
+    if {$code == 0} {
+	set code [catch {::interp eval $slave $contents} msg opt]
+	set replacementMsg $msg
+    }
     catch {interp eval $slave [list info script $old]}
     # Note that all non-errors are fine result codes from [source], so we must
     # take a little care to do it properly. [Bug 2923613]
     if {$code == 1} {
 	Log $slave $msg
-	return -code error "script error"
+	return -code error $replacementMsg
     }
     return -code $code -options $opt $msg
 }
@@ -982,58 +1018,33 @@ proc ::safe::DirInAccessPath {slave dir} {
     }
 }
 
-# This procedure enables access from a safe interpreter to only a subset
-# of the subcommands of a command:
+# This procedure is used to report an attempt to use an unsafe member of an
+# ensemble command.
 
-proc ::safe::Subset {slave command okpat args} {
-    set subcommand [lindex $args 0]
-    if {[regexp $okpat $subcommand]} {
-	return [$command {*}$args]
-    }
+proc ::safe::BadSubcommand {slave command subcommand args} {
     set msg "not allowed to invoke subcommand $subcommand of $command"
     Log $slave $msg
-    return -code error $msg
-}
-
-# This procedure installs an alias in a slave that invokes "safesubset" in
-# the master to execute allowed subcommands. It precomputes the pattern of
-# allowed subcommands; you can use wildcards in the pattern if you wish to
-# allow subcommand abbreviation.
-#
-# Syntax is: AliasSubset slave alias target subcommand1 subcommand2...
-
-proc ::safe::AliasSubset {slave alias target args} {
-    set pat "^([join $args |])\$"
-    ::interp alias $slave $alias {}\
-	[namespace current]::Subset $slave $target $pat
+    return -code error -errorcode {TCL SAFE SUBCOMMAND} $msg
 }
 
 # AliasEncoding is the target of the "encoding" alias in safe interpreters.
 
 proc ::safe::AliasEncoding {slave option args} {
-    # Careful; do not want empty option to get through to the [string equal]
-    if {[regexp {^(name.*|convert.*|)$} $option]} {
-	return [::interp invokehidden $slave encoding $option {*}$args]
-    }
-
-    if {[string equal -length [string length $option] $option "system"]} {
-	if {![llength $args]} {
-	    # passed all the tests , lets source it:
-	    try {
-		return [::interp invokehidden $slave encoding system]
-	    } on error msg {
-		Log $slave $msg
-		return -code error "script error"
-	    }
+    # Note that [encoding dirs] is not supported in safe slaves at all
+    set subcommands {convertfrom convertto names system}
+    try {
+	set option [tcl::prefix match -error [list -level 1 -errorcode \
+		[list TCL LOOKUP INDEX option $option]] $subcommands $option]
+	# Special case: [encoding system] ok, but [encoding system foo] not
+	if {$option eq "system" && [llength $args]} {
+	    return -code error -errorcode {TCL WRONGARGS} \
+		"wrong # args: should be \"encoding system\""
 	}
-	set msg "wrong # args: should be \"encoding system\""
-	set code {TCL WRONGARGS}
-    } else {
-	set msg "bad option \"$option\": must be convertfrom, convertto, names, or system"
-	set code [list TCL LOOKUP INDEX option $option]
+    } on error {msg options} {
+	Log $slave $msg
+	return -options $options $msg
     }
-    Log $slave $msg
-    return -code error -errorcode $code $msg
+    tailcall ::interp invokehidden $slave encoding $option {*}$args
 }
 
 # Various minor hiding of platform features. [Bug 2913625]

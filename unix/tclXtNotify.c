@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclXtNotify.c,v 1.12 2010/06/14 12:58:12 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -18,9 +16,6 @@
 #include <X11/Intrinsic.h>
 #include "tclInt.h"
 
-#ifndef CONST86
-#   define CONST86
-#endif
 /*
  * This structure is used to keep track of the notifier info for a a
  * registered file.
@@ -87,10 +82,10 @@ static void		FileProc(ClientData clientData, int *source,
 static void		NotifierExitHandler(ClientData clientData);
 static void		TimerProc(ClientData clientData, XtIntervalId *id);
 static void		CreateFileHandler(int fd, int mask,
-				Tcl_FileProc * proc, ClientData clientData);
+			    Tcl_FileProc *proc, ClientData clientData);
 static void		DeleteFileHandler(int fd);
-static void		SetTimer(CONST86 Tcl_Time * timePtr);
-static int		WaitForEvent(CONST86 Tcl_Time * timePtr);
+static void		SetTimer(const Tcl_Time * timePtr);
+static int		WaitForEvent(const Tcl_Time * timePtr);
 
 /*
  * Functions defined in this file for use by users of the Xt Notifier:
@@ -267,7 +262,7 @@ NotifierExitHandler(
 
 static void
 SetTimer(
-    CONST86 Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
+    const Tcl_Time *timePtr)		/* Timeout value, may be NULL. */
 {
     long timeout;
 
@@ -360,7 +355,7 @@ CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = (FileHandler*) ckalloc(sizeof(FileHandler));
+	filePtr = ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->read = 0;
 	filePtr->write = 0;
@@ -471,7 +466,7 @@ DeleteFileHandler(
     if (filePtr->mask & TCL_EXCEPTION) {
 	XtRemoveInput(filePtr->except);
     }
-    ckfree((char *) filePtr);
+    ckfree(filePtr);
 }
 
 /*
@@ -526,7 +521,7 @@ FileProc(
      */
 
     filePtr->readyMask |= mask;
-    fileEvPtr = (FileHandlerEvent *) ckalloc(sizeof(FileHandlerEvent));
+    fileEvPtr = ckalloc(sizeof(FileHandlerEvent));
     fileEvPtr->header.proc = FileHandlerEventProc;
     fileEvPtr->fd = filePtr->fd;
     Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
@@ -631,7 +626,7 @@ FileHandlerEventProc(
 
 static int
 WaitForEvent(
-    CONST86 Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
+    const Tcl_Time *timePtr)		/* Maximum block time, or NULL. */
 {
     int timeout;
 

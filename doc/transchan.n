@@ -4,7 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: transchan.n,v 1.2 2008/10/07 15:00:10 dkf Exp $
 .so man.macros
 .TH transchan n 8.6 Tcl "Tcl Built-In Commands"
 .BS
@@ -55,7 +54,7 @@ if the interpreter is deleted.
 This mandatory subcommand is called first, and then never again (for the given
 \fIhandle\fR). Its responsibility is to initialize all parts of the
 transformation at the Tcl level. The \fImode\fR is a list containing any of
-\fBread\fR and \fBwrite\fR.
+\fBread \fRand \fBwrite\fR.
 .RS
 .TP
 \fBwrite\fR
@@ -74,7 +73,7 @@ as error thrown by \fBchan push\fR.
 .SS "READ-RELATED SUBCOMMANDS"
 .PP
 These subcommands are used for handling transformations applied to readable
-channels; though strictly \fBread\fR is optional, it must be supported if any
+channels; though strictly \fBread \fRis optional, it must be supported if any
 of the others is or the channel will be made non-readable.
 .TP
 \fIcmdPrefix \fBdrain \fIhandle\fR

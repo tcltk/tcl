@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclHistory.c,v 1.14 2009/12/29 16:58:41 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -140,7 +138,7 @@ Tcl_RecordAndEvalObj(
      */
 
     if (histObjsPtr == NULL) {
-	histObjsPtr = (HistoryObjs *) ckalloc(sizeof(HistoryObjs));
+	histObjsPtr = ckalloc(sizeof(HistoryObjs));
 	TclNewLiteralStringObj(histObjsPtr->historyObj, "::history");
 	TclNewLiteralStringObj(histObjsPtr->addObj, "add");
 	Tcl_IncrRefCount(histObjsPtr->historyObj);
@@ -220,7 +218,7 @@ DeleteHistoryObjs(
 
     TclDecrRefCount(histObjsPtr->historyObj);
     TclDecrRefCount(histObjsPtr->addObj);
-    ckfree((char *) histObjsPtr);
+    ckfree(histObjsPtr);
 }
 
 /*

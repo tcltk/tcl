@@ -7,13 +7,14 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: parseExpr.test,v 1.29 2007/12/13 15:26:07 dgp Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 # Note that the Tcl expression parser (tclCompExpr.c) does not check
 # the semantic validity of the expressions it parses. It does not check,
@@ -998,6 +999,72 @@ test parseExpr-21.63 {error message} -body {
     expr "123456789012345678901234567890*\[\{abcdefghijklmnopqrstuvwxyz]"
 } -returnCodes error -result "missing close-brace
 in expression \"...12345678901234567890*\[\{abcdefghijklmnopqrstuv...\""
+
+test parseExpr-22.1 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser 2a() 1
+} -result {- {} 0 subexpr 2 1 text 2 0 {}}
+test parseExpr-22.2 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser nana() 3
+} -result {- {} 0 subexpr nan 1 text nan 0 {}}
+test parseExpr-22.3 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser 2a() -1
+} -result {- {} 0 subexpr 2a() 1 operator 2a 0 {}}
+test parseExpr-22.4 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser nana() -1
+} -result {- {} 0 subexpr nana() 1 operator nana 0 {}}
+test parseExpr-22.5 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser nan9() -1
+} -result {- {} 0 subexpr nan9() 1 operator nan9 0 {}}
+test parseExpr-22.6 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser 2_() -1
+} -result {- {} 0 subexpr 2_() 1 operator 2_ 0 {}}
+test parseExpr-22.7 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser nan_() -1
+} -result {- {} 0 subexpr nan_() 1 operator nan_ 0 {}}
+test parseExpr-22.8 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser nan!() -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR MISSING}
+test parseExpr-22.9 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser 1e3_() -1
+} -result {- {} 0 subexpr 1e3_() 1 operator 1e3_ 0 {}}
+test parseExpr-22.10 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 1.3_() -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADCHAR}
+test parseExpr-22.11 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 1e-3_() -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADCHAR}
+test parseExpr-22.12 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser naneq() -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR EMPTY}
+test parseExpr-22.13 {Bug 3401704} -constraints testexprparser -body {
+    testexprparser naner() -1
+} -result {- {} 0 subexpr naner() 1 operator naner 0 {}}
+
+test parseExpr-22.14 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 08 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER OCTAL}
+test parseExpr-22.15 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 0o8 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER OCTAL}
+test parseExpr-22.16 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 0o08 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER OCTAL}
+test parseExpr-22.17 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 0b2 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER BINARY}
+test parseExpr-22.18 {Bug 3401704} -constraints testexprparser -body {
+    catch {testexprparser 0b02 -1} m o
+    dict get $o -errorcode
+} -result {TCL PARSE EXPR BADNUMBER BINARY}
+
 
 # cleanup
 ::tcltest::cleanupTests

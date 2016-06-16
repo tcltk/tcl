@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: binary.test,v 1.41 2010/09/15 22:12:00 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
@@ -2383,6 +2381,23 @@ test binary-63.4 {NaN} ieeeFloatingPoint {
     format 0x%016lx [expr {$w & 0xfff3ffffffffffff}]
 } 0x7ff3123456789abc
 
+# Make sure TclParseNumber() rejects invalid nan-hex formats [Bug 3402540]
+test binary-63.5 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan(
+} -returnCodes error -match glob -result {expected floating-point number*}
+test binary-63.6 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan()
+} -returnCodes error -match glob -result {expected floating-point number*}
+test binary-63.7 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan(g)
+} -returnCodes error -match glob -result {expected floating-point number*}
+test binary-63.8 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan(1,2)
+} -returnCodes error -match glob -result {expected floating-point number*}
+test binary-63.9 {NaN} -constraints ieeeFloatingPoint -body {
+    binary format q Nan(1234567890abcd)
+} -returnCodes error -match glob -result {expected floating-point number*}
+
 test binary-64.1 {NaN} -constraints ieeeFloatingPoint -body {
     binary scan [binary format w 0x7ff8000000000000] q d
     set d
@@ -2627,6 +2642,27 @@ test binary-73.23 {binary decode base64} -body {
 test binary-73.24 {binary decode base64} -body {
     string length [binary decode base64 " "]
 } -result 0
+test binary-73.25 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WA==\n]]] $r
+} -result {1 X}
+test binary-73.26 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WFk=\n]]] $r
+} -result {2 XY}
+test binary-73.27 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WFla\n]]] $r
+} -result {3 XYZ}
+test binary-73.28 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WA==\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.29 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WFk=\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.30 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 -strict WFla\n]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
+test binary-73.31 {binary decode base64} -body {
+    list [string length [set r [binary decode base64 WA==WFla]]] $r
+} -returnCodes error -match glob -result {invalid base64 character *}
 
 test binary-74.1 {binary encode uuencode} -body {
     binary encode uuencode

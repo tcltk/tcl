@@ -18,8 +18,6 @@
 #
 # Copyright (c) 1998-1999 by Scriptics Corporation.
 # All rights reserved.
-#
-# RCS: @(#) $Id: checkLibraryDoc.tcl,v 1.8 2010/07/01 21:28:15 nijtmans Exp $
 
 
 lappend auto_path "c:/program\ files/tclpro1.2/win32-ix86/bin"

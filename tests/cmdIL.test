@@ -7,13 +7,14 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: cmdIL.test,v 1.43 2009/12/22 19:49:29 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 # Used for constraining memory leak tests
 testConstraint memory [llength [info commands memory]]
@@ -458,6 +459,9 @@ test cmdIL-5.5 {lsort with list style index and sharing} -body {
 } -result 0 -cleanup {
     rename test_lsort ""
 }
+test cmdIL-5.6 {lsort with multiple list-style index options} {
+    lsort -index {1 2 3} -index 0 {{a b} {c d} {b e}}
+} {{a b} {b e} {c d}}
 
 # Compiled version
 test cmdIL-6.1 {lassign command syntax} -returnCodes error -body {
@@ -712,6 +716,16 @@ test cmdIL-7.8 {lreverse command - shared intrep [Bug 1675044]} -setup {
     unset -nocomplain x y
     rename K {}
 } -result 1
+
+# This belongs in info test, but adding tests there breaks tests
+# that compute source file line numbers.
+test info-20.6 {Bug 3587651} -setup {
+    namespace eval my {namespace eval tcl {namespace eval mathfunc {
+        proc demo x {return 42}
+    }}}} -body {    namespace eval my {expr {"demo" in [info functions]}}} -cleanup {
+    namespace delete my
+} -result 1
+
 
 # cleanup
 ::tcltest::cleanupTests

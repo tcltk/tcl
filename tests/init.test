@@ -9,11 +9,9 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: init.test,v 1.22 2010/04/05 19:44:45 ferrieux Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
-    package require tcltest 2
+if {"::tcltest" ni [namespace children]} {
+    package require tcltest 2.3.4
     namespace import -force ::tcltest::*
 }
 
@@ -52,28 +50,28 @@ test init-1.8 {auto_qualify - multiple colons 2} {
 # places where auto_loading occur (before loading the indexes files and after)
 
 set testInterp [interp create]
-interp eval $testInterp [list set argv $argv]
-interp eval $testInterp [list package require tcltest]
-interp eval $testInterp [list namespace import -force ::tcltest::*]
-
+tcltest::loadIntoSlaveInterpreter $testInterp {*}$argv
 interp eval $testInterp {
+    namespace import -force ::tcltest::*
+    customMatch pairwise {apply {{mode pair} {
+	if {[llength $pair] != 2} {error "need a pair of values to check"}
+	string $mode [lindex $pair 0] [lindex $pair 1]
+    }}}
 
-auto_reset
-catch {rename parray {}}
+    auto_reset
+    catch {rename parray {}}
 
-test init-2.0 {load parray - stage 1} {
-    set ret [catch {parray} error]
+test init-2.0 {load parray - stage 1} -body {
+    parray
+} -returnCodes error -cleanup {
     rename parray {}  ;# remove it, for the next test - that should not fail.
-    list $ret $error
-} {1 {wrong # args: should be "parray a ?pattern?"}}
-test init-2.1 {load parray - stage 2} {
-    set ret [catch {parray} error]
-    list $ret $error
-} {1 {wrong # args: should be "parray a ?pattern?"}}
+} -result {wrong # args: should be "parray a ?pattern?"}
+test init-2.1 {load parray - stage 2} -body {
+    parray
+} -returnCodes error -result {wrong # args: should be "parray a ?pattern?"}
 auto_reset
 catch {rename ::safe::setLogCmd {}}
-#unset auto_index(::safe::setLogCmd)
-#unset auto_oldpath
+#unset -nocomplain auto_index(::safe::setLogCmd) auto_oldpath
 test init-2.2 {load ::safe::setLogCmd - stage 1} {
     ::safe::setLogCmd
     rename ::safe::setLogCmd {}  ;# should not fail
@@ -107,30 +105,30 @@ test init-2.8 {load tcl::HistAdd} -setup {
     catch {rename ::tcl::HistAdd {}}
 } -body {
     # 3 ':' on purpose
-    list [catch {tcl:::HistAdd} error] $error
-} -cleanup {
+    tcl:::HistAdd
+} -returnCodes error -cleanup {
     rename ::tcl::HistAdd {}
-} -result {1 {wrong # args: should be "tcl:::HistAdd event ?exec?"}}
-
+} -result {wrong # args: should be "tcl:::HistAdd event ?exec?"}
+
 test init-3.0 {random stuff in the auto_index, should still work} {
     set auto_index(foo:::bar::blah) {
         namespace eval foo {namespace eval bar {proc blah {} {return 1}}}
     }
     foo:::bar::blah
 } 1
-
+
 # Tests that compare the error stack trace generated when autoloading with
 # that generated when no autoloading is necessary.  Ideally they should be the
 # same.
 
 set count 0
 foreach arg [subst -nocommands -novariables {
-		c
-                {argument
+    c
+    {argument
                 which spans
                 multiple lines}
-                {argument which is all on one line but which is of such great length that the Tcl C library will truncate it when appending it onto the global error stack}
-                {argument which spans multiple lines
+    {argument which is all on one line but which is of such great length that the Tcl C library will truncate it when appending it onto the global error stack}
+    {argument which spans multiple lines
                 and is long enough to be truncated and
 "               <- includes a false lead in the prune point search
                 and must be longer still to force truncation}
@@ -139,37 +137,37 @@ foreach arg [subst -nocommands -novariables {
 		error stack cannot be uniquely determined.
 		foo bar foo
 "}
-                {contrived example: rare circumstance 
+    {contrived example: rare circumstance 
 		where the point at which to prune the
 		error stack cannot be uniquely determined.
 		foo bar
 "}
-		{argument that contains non-ASCII character, \u20ac, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
-	}] {
+    {argument that contains non-ASCII character, \u20ac, and which is of such great length that it will be longer than 150 bytes so it will be truncated by the Tcl C library}
+	}] {    ;# emacs needs -> "
 
-    test init-4.$count.0 {::errorInfo produced by [unknown]} {
+    test init-4.$count.0 {::errorInfo produced by [unknown]} -setup {
 	auto_reset
+    } -body {
 	catch {parray a b $arg}
 	set first $::errorInfo
 	catch {parray a b $arg}
-	set second $::errorInfo
-	string equal $first $second
-    } 1
-    test init-4.$count.1 {::errorInfo produced by [unknown]} {
+	list $first $::errorInfo
+    } -match pairwise -result equal
+    test init-4.$count.1 {::errorInfo produced by [unknown]} -setup {
 	auto_reset
+    } -body {
 	namespace eval junk [list array set $arg [list 1 2 3 4]]
 	trace variable ::junk::$arg r \
 		"[list error [subst {Variable \"$arg\" is write-only}]] ;# "
 	catch {parray ::junk::$arg}
 	set first $::errorInfo
 	catch {parray ::junk::$arg}
-	set second $::errorInfo
-	string equal $first $second
-    } 1
+	list $first $::errorInfo
+    } -match pairwise -result equal
 
     incr count
 }
-
+
 test init-5.0 {return options passed through ::unknown} -setup {
     catch {rename xxx {}}
     set ::auto_index(::xxx) {proc ::xxx {} {

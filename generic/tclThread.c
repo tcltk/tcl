@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclThread.c,v 1.25 2009/03/16 00:43:09 mistachkin Exp $
  */
 
 #include "tclInt.h"
@@ -85,16 +83,17 @@ Tcl_GetThreadData(
     /*
      * Initialize the key for this thread.
      */
+
     result = TclThreadStorageKeyGet(keyPtr);
 
     if (result == NULL) {
-	result = ckalloc((size_t)size);
+	result = ckalloc(size);
 	memset(result, 0, (size_t) size);
 	TclThreadStorageKeySet(keyPtr, result);
     }
 #else /* TCL_THREADS */
     if (*keyPtr == NULL) {
-	result = ckalloc((size_t)size);
+	result = ckalloc(size);
 	memset(result, 0, (size_t)size);
 	*keyPtr = result;
 	RememberSyncObject(keyPtr, &keyRecord);
@@ -180,14 +179,14 @@ RememberSyncObject(
 
     if (recPtr->num >= recPtr->max) {
 	recPtr->max += 8;
-	newList = (void **) ckalloc(recPtr->max * sizeof(void *));
+	newList = ckalloc(recPtr->max * sizeof(void *));
 	for (i=0,j=0 ; i<recPtr->num ; i++) {
 	    if (recPtr->list[i] != NULL) {
 		newList[j++] = recPtr->list[i];
 	    }
 	}
 	if (recPtr->list != NULL) {
-	    ckfree((char *) recPtr->list);
+	    ckfree(recPtr->list);
 	}
 	recPtr->list = newList;
 	recPtr->num = j;
@@ -399,7 +398,7 @@ TclFinalizeSynchronization(void)
 	    blockPtr = *keyPtr;
 	    ckfree(blockPtr);
 	}
-	ckfree((char *) keyRecord.list);
+	ckfree(keyRecord.list);
 	keyRecord.list = NULL;
     }
     keyRecord.max = 0;
@@ -419,7 +418,7 @@ TclFinalizeSynchronization(void)
 	}
     }
     if (mutexRecord.list != NULL) {
-	ckfree((char *) mutexRecord.list);
+	ckfree(mutexRecord.list);
 	mutexRecord.list = NULL;
     }
     mutexRecord.max = 0;
@@ -432,7 +431,7 @@ TclFinalizeSynchronization(void)
 	}
     }
     if (condRecord.list != NULL) {
-	ckfree((char *) condRecord.list);
+	ckfree(condRecord.list);
 	condRecord.list = NULL;
     }
     condRecord.max = 0;

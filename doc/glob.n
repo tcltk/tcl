@@ -4,9 +4,6 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\"
-'\" RCS: @(#) $Id: glob.n,v 1.26 2010/09/02 19:50:55 andreas_kupries Exp $
-'\"
 .so man.macros
 .TH glob n 8.3 Tcl "Tcl Built-In Commands"
 .BS
@@ -233,9 +230,9 @@ and will not be
 interpreted as a wildcard character. One solution to this problem is
 to use the Unix style forward slash as a path separator. Windows style
 paths can be converted to Unix style paths with the command
-.QW "\fBfile join $path\fR"
+.QW "\fBfile join\fR \fB$path\fR"
 or
-.QW "\fBfile normalize $path\fR" .
+.QW "\fBfile normalize\fR \fB$path\fR" .
 .SH EXAMPLES
 .PP
 Find all the Tcl files in the current directory:

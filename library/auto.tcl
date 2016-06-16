@@ -3,8 +3,6 @@
 # utility procs formerly in init.tcl dealing with auto execution of commands
 # and can be auto loaded themselves.
 #
-# RCS: @(#) $Id: auto.tcl,v 1.33 2010/06/14 13:48:25 nijtmans Exp $
-#
 # Copyright (c) 1991-1993 The Regents of the University of California.
 # Copyright (c) 1994-1998 Sun Microsystems, Inc.
 #
@@ -306,7 +304,14 @@ namespace eval auto_mkindex_parser {
 	    $parser hide namespace
 	    $parser hide eval
 	    $parser hide puts
-	    $parser invokehidden namespace delete ::
+	    foreach ns [$parser invokehidden namespace children ::] {
+		# MUST NOT DELETE "::tcl" OR BAD THINGS HAPPEN!
+		if {$ns eq "::tcl"} continue
+		$parser invokehidden namespace delete $ns
+	    }
+	    foreach cmd [$parser invokehidden info commands ::*] {
+		$parser invokehidden rename $cmd {}
+	    }
 	    $parser invokehidden proc unknown {args} {}
 
 	    # We'll need access to the "namespace" command within the

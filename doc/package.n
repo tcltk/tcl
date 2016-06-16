@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: package.n,v 1.25 2010/03/31 20:55:52 dkf Exp $
-'\" 
 .so man.macros
 .TH package n 7.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -14,7 +12,7 @@
 package \- Facilities for package loading and version control
 .SH SYNOPSIS
 .nf
-\fBpackage forget ?\fIpackage package ...\fR?
+\fBpackage forget\fR ?\fIpackage package ...\fR?
 \fBpackage ifneeded \fIpackage version\fR ?\fIscript\fR?
 \fBpackage names\fR
 \fBpackage present \fIpackage \fR?\fIrequirement...\fR?
@@ -45,7 +43,7 @@ primarily by system scripts that maintain the package database.
 The behavior of the \fBpackage\fR command is determined by its first argument.
 The following forms are permitted:
 .TP
-\fBpackage forget ?\fIpackage package ...\fR?
+\fBpackage forget\fR ?\fIpackage package ...\fR?
 .
 Removes all information about each specified package from this interpreter,
 including information provided by both \fBpackage ifneeded\fR and
@@ -177,7 +175,7 @@ If \fIcommand\fR is specified as an empty string, then the current
 .
 Compares the two version numbers given by \fIversion1\fR and \fIversion2\fR.
 Returns -1 if \fIversion1\fR is an earlier version than \fIversion2\fR,
-0 if they are equal, and 1 if \fIversion1\fR is later than \fBversion2\fR.
+0 if they are equal, and 1 if \fIversion1\fR is later than \fIversion2\fR.
 .TP
 \fBpackage versions \fIpackage\fR
 .

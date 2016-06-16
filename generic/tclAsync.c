@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclAsync.c,v 1.19 2009/11/18 21:59:51 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -120,7 +118,7 @@ Tcl_AsyncCreate(
     AsyncHandler *asyncPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    asyncPtr = (AsyncHandler *) ckalloc(sizeof(AsyncHandler));
+    asyncPtr = ckalloc(sizeof(AsyncHandler));
     asyncPtr->ready = 0;
     asyncPtr->nextPtr = NULL;
     asyncPtr->proc = proc;
@@ -312,7 +310,7 @@ Tcl_AsyncDelete(
 	}
     }
     Tcl_MutexUnlock(&tsdPtr->asyncMutex);
-    ckfree((char *) asyncPtr);
+    ckfree(asyncPtr);
 }
 
 /*

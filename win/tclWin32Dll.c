@@ -9,25 +9,12 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWin32Dll.c,v 1.68 2010/09/14 08:53:49 nijtmans Exp $
  */
 
 #include "tclWinInt.h"
-
-/*
- * The following data structures are used when loading the thunking library
- * for execing child processes under Win32s.
- */
-
-typedef DWORD (WINAPI UT32PROC)(LPVOID lpBuff, DWORD dwUserDefined,
-	LPVOID *lpTranslationList);
-
-typedef BOOL (WINAPI UTREGISTER)(HANDLE hModule, LPCSTR SixteenBitDLL,
-	LPCSTR InitName, LPCSTR ProcName, UT32PROC **ThirtyTwoBitThunk,
-	FARPROC UT32Callback, LPVOID Buff);
-
-typedef void (WINAPI UTUNREGISTER)(HANDLE hModule);
+#if defined(HAVE_INTRIN_H)
+#   include <intrin.h>
+#endif
 
 /*
  * The following variables keep track of information about this DLL on a
@@ -66,72 +53,6 @@ typedef struct EXCEPTION_REGISTRATION {
 static Tcl_Encoding winTCharEncoding = NULL;
 
 /*
- * The following function table is used to dispatch to wide-character
- * versions of the operating system calls.
- */
-
-static const TclWinProcs winProcs = {
-    1,
-    (BOOL (WINAPI *)(const TCHAR *, LPDCB)) BuildCommDCB,
-    (TCHAR *(WINAPI *)(TCHAR *)) CharLower,
-    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *, BOOL)) CopyFile,
-    (BOOL (WINAPI *)(const TCHAR *, LPSECURITY_ATTRIBUTES)) CreateDirectory,
-    (HANDLE (WINAPI *)(const TCHAR *, DWORD, DWORD, SECURITY_ATTRIBUTES *,
-	    DWORD, DWORD, HANDLE)) CreateFile,
-    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, LPSECURITY_ATTRIBUTES,
-	    LPSECURITY_ATTRIBUTES, BOOL, DWORD, LPVOID, const TCHAR *,
-	    LPSTARTUPINFO, LPPROCESS_INFORMATION)) CreateProcess,
-    (BOOL (WINAPI *)(const TCHAR *)) DeleteFile,
-    (HANDLE (WINAPI *)(const TCHAR *, WIN32_FIND_DATAT *)) FindFirstFile,
-    (BOOL (WINAPI *)(HANDLE, WIN32_FIND_DATAT *)) FindNextFile,
-    (BOOL (WINAPI *)(TCHAR *, LPDWORD)) GetComputerName,
-    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetCurrentDirectory,
-    (DWORD (WINAPI *)(const TCHAR *)) GetFileAttributes,
-    (DWORD (WINAPI *)(const TCHAR *, DWORD nBufferLength, TCHAR *,
-	    TCHAR **)) GetFullPathName,
-    (DWORD (WINAPI *)(const TCHAR *, TCHAR *, DWORD)) GetShortPathName,
-    (UINT (WINAPI *)(const TCHAR *, const TCHAR *, UINT uUnique,
-	    TCHAR *)) GetTempFileName,
-    (DWORD (WINAPI *)(DWORD, TCHAR *)) GetTempPath,
-    (BOOL (WINAPI *)(const TCHAR *, TCHAR *, DWORD, LPDWORD, LPDWORD, LPDWORD,
-	    TCHAR *, DWORD)) GetVolumeInformation,
-    (HINSTANCE (WINAPI *)(const TCHAR *, HANDLE, DWORD)) LoadLibraryEx,
-    (BOOL (WINAPI *)(const TCHAR *, const TCHAR *)) MoveFile,
-    (BOOL (WINAPI *)(const TCHAR *)) RemoveDirectory,
-    (DWORD (WINAPI *)(const TCHAR *, const TCHAR *, const TCHAR *, DWORD,
-	    TCHAR *, TCHAR **)) SearchPath,
-    (BOOL (WINAPI *)(const TCHAR *)) SetCurrentDirectory,
-    (BOOL (WINAPI *)(const TCHAR *, DWORD)) SetFileAttributes,
-    (BOOL (WINAPI *)(const TCHAR *, GET_FILEEX_INFO_LEVELS,
-	    LPVOID)) GetFileAttributesEx,
-    (BOOL (WINAPI *)(const TCHAR *, const TCHAR*,
-	    LPSECURITY_ATTRIBUTES)) CreateHardLink,
-    (HANDLE (WINAPI *)(const TCHAR*, UINT, LPVOID, UINT,
-	    LPVOID, DWORD)) FindFirstFileEx,
-    (BOOL (WINAPI *)(const TCHAR*, TCHAR*,
-	    DWORD)) GetVolumeNameForVolumeMountPoint,
-    (DWORD (WINAPI *)(const TCHAR*, TCHAR*,
-	    DWORD)) GetLongPathName,
-    /* Security SDK */
-    (BOOL (WINAPI *)(LPCTSTR, SECURITY_INFORMATION,
-	    PSECURITY_DESCRIPTOR, DWORD, LPDWORD)) GetFileSecurity,
-    (BOOL (WINAPI *) (SECURITY_IMPERSONATION_LEVEL)) ImpersonateSelf,
-    (BOOL (WINAPI *) (HANDLE, DWORD, BOOL, PHANDLE)) OpenThreadToken,
-    (BOOL (WINAPI *) (void)) RevertToSelf,
-    (void (WINAPI *) (PDWORD, PGENERIC_MAPPING)) MapGenericMask,
-    (BOOL (WINAPI *)(PSECURITY_DESCRIPTOR, HANDLE, DWORD,
-	    PGENERIC_MAPPING, PPRIVILEGE_SET, LPDWORD, LPDWORD, LPBOOL)) AccessCheck,
-    /* ReadConsole and WriteConsole */
-    (BOOL (WINAPI *)(HANDLE, LPVOID, DWORD, LPDWORD, LPVOID)) ReadConsole,
-    (BOOL (WINAPI *)(HANDLE, const void*, DWORD, LPDWORD, LPVOID)) WriteConsole,
-    (BOOL (WINAPI *)(LPTSTR, LPDWORD)) GetUserName,
-    (const TCHAR *(*)(const char *, int, Tcl_DString *)) Tcl_WinUtfToTChar,
-    (const char *(*)(const TCHAR *, int, Tcl_DString *)) Tcl_WinTCharToUtf
-};
-
-const TclWinProcs *const tclWinProcs = &winProcs;
-
-/*
  * The following declaration is for the VC++ DLL entry point.
  */
 
@@ -146,7 +67,7 @@ BOOL APIENTRY		DllMain(HINSTANCE hInst, DWORD reason,
 
 typedef struct MountPointMap {
     const TCHAR *volumeName;	/* Native wide string volume name. */
-    char driveLetter;		/* Drive letter corresponding to the volume
+    TCHAR driveLetter;		/* Drive letter corresponding to the volume
 				 * name. */
     struct MountPointMap *nextPtr;
 				/* Pointer to next structure in list, or
@@ -429,8 +350,8 @@ TclWinEncodingsCleanup(void)
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
 	dlIter2 = dlIter->nextPtr;
-	ckfree((char *) dlIter->volumeName);
-	ckfree((char *) dlIter);
+	ckfree(dlIter->volumeName);
+	ckfree(dlIter);
 	dlIter = dlIter2;
     }
     Tcl_MutexUnlock(&mountPointMap);
@@ -486,11 +407,11 @@ TclWinResetInterfaces(void)
 
 char
 TclWinDriveLetterForVolMountPoint(
-    const WCHAR *mountPoint)
+    const TCHAR *mountPoint)
 {
     MountPointMap *dlIter, *dlPtr2;
-    WCHAR Target[55];		/* Target of mount at mount point */
-    WCHAR drive[4] = { L'A', L':', L'\\', L'\0' };
+    TCHAR Target[55];		/* Target of mount at mount point */
+    TCHAR drive[4] = TEXT("A:\\");
 
     /*
      * Detect the volume mounted there. Unfortunately, there is no simple way
@@ -501,14 +422,14 @@ TclWinDriveLetterForVolMountPoint(
     Tcl_MutexLock(&mountPointMap);
     dlIter = driveLetterLookup;
     while (dlIter != NULL) {
-	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    /*
 	     * We need to check whether this information is still valid, since
 	     * either the user or various programs could have adjusted the
 	     * mount points on the fly.
 	     */
 
-	    drive[0] = L'A' + (dlIter->driveLetter - 'A');
+	    drive[0] = (TCHAR) dlIter->driveLetter;
 
 	    /*
 	     * Try to read the volume mount point and see where it points.
@@ -516,13 +437,13 @@ TclWinDriveLetterForVolMountPoint(
 
 	    if (GetVolumeNameForVolumeMountPoint(drive,
 		    Target, 55) != 0) {
-		if (wcscmp(dlIter->volumeName, Target) == 0) {
+		if (_tcscmp(dlIter->volumeName, Target) == 0) {
 		    /*
 		     * Nothing has changed.
 		     */
 
 		    Tcl_MutexUnlock(&mountPointMap);
-		    return dlIter->driveLetter;
+		    return (char) dlIter->driveLetter;
 		}
 	    }
 
@@ -549,8 +470,8 @@ TclWinDriveLetterForVolMountPoint(
 	     * Now dlPtr2 points to the structure to free.
 	     */
 
-	    ckfree((char *) dlPtr2->volumeName);
-	    ckfree((char *) dlPtr2);
+	    ckfree(dlPtr2->volumeName);
+	    ckfree(dlPtr2);
 
 	    /*
 	     * Restart the loop - we could try to be clever and continue half
@@ -579,15 +500,15 @@ TclWinDriveLetterForVolMountPoint(
 
 	    for (dlIter = driveLetterLookup; dlIter != NULL;
 		    dlIter = dlIter->nextPtr) {
-		if (wcscmp(dlIter->volumeName, Target) == 0) {
+		if (_tcscmp(dlIter->volumeName, Target) == 0) {
 		    alreadyStored = 1;
 		    break;
 		}
 	    }
 	    if (!alreadyStored) {
-		dlPtr2 = (MountPointMap *) ckalloc(sizeof(MountPointMap));
+		dlPtr2 = ckalloc(sizeof(MountPointMap));
 		dlPtr2->volumeName = TclNativeDupInternalRep(Target);
-		dlPtr2->driveLetter = 'A' + (drive[0] - L'A');
+		dlPtr2->driveLetter = (char) drive[0];
 		dlPtr2->nextPtr = driveLetterLookup;
 		driveLetterLookup = dlPtr2;
 	    }
@@ -600,9 +521,9 @@ TclWinDriveLetterForVolMountPoint(
 
     for (dlIter = driveLetterLookup; dlIter != NULL;
 	    dlIter = dlIter->nextPtr) {
-	if (wcscmp(dlIter->volumeName, mountPoint) == 0) {
+	if (_tcscmp(dlIter->volumeName, mountPoint) == 0) {
 	    Tcl_MutexUnlock(&mountPointMap);
-	    return dlIter->driveLetter;
+	    return (char) dlIter->driveLetter;
 	}
     }
 
@@ -611,7 +532,7 @@ TclWinDriveLetterForVolMountPoint(
      * that fact and store '-1' so we don't have to look it up each time.
      */
 
-    dlPtr2 = (MountPointMap *) ckalloc(sizeof(MountPointMap));
+    dlPtr2 = ckalloc(sizeof(MountPointMap));
     dlPtr2->volumeName = TclNativeDupInternalRep((ClientData) mountPoint);
     dlPtr2->driveLetter = -1;
     dlPtr2->nextPtr = driveLetterLookup;
@@ -718,12 +639,47 @@ TclWinCPUID(
     unsigned int index,		/* Which CPUID value to retrieve. */
     unsigned int *regsPtr)	/* Registers after the CPUID. */
 {
-#ifdef HAVE_NO_SEH
-    EXCEPTION_REGISTRATION registration;
-#endif
     int status = TCL_ERROR;
 
-#if defined(__GNUC__) && !defined(_WIN64)
+#if defined(HAVE_INTRIN_H) && defined(_WIN64)
+
+    __cpuid(regsPtr, index);
+    status = TCL_OK;
+
+#elif defined(__GNUC__)
+#   if defined(_WIN64)
+    /*
+     * Execute the CPUID instruction with the given index, and store results
+     * off 'regPtr'.
+     */
+
+    __asm__ __volatile__(
+	/*
+	 * Do the CPUID instruction, and save the results in the 'regsPtr'
+	 * area.
+	 */
+
+	"movl	%[rptr],	%%edi"		"\n\t"
+	"movl	%[index],	%%eax"		"\n\t"
+	"cpuid"					"\n\t"
+	"movl	%%eax,		0x0(%%edi)"	"\n\t"
+	"movl	%%ebx,		0x4(%%edi)"	"\n\t"
+	"movl	%%ecx,		0x8(%%edi)"	"\n\t"
+	"movl	%%edx,		0xc(%%edi)"	"\n\t"
+
+	:
+	/* No outputs */
+	:
+	[index]		"m"	(index),
+	[rptr]		"m"	(regsPtr)
+	:
+	"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory");
+    status = TCL_OK;
+
+#   else
+
+    EXCEPTION_REGISTRATION registration;
+
     /*
      * Execute the CPUID instruction with the given index, and store results
      * off 'regPtr'.
@@ -805,7 +761,14 @@ TclWinCPUID(
 	"%eax", "%ebx", "%ecx", "%edx", "%esi", "%edi", "memory");
     status = registration.status;
 
-#elif defined(_MSC_VER) && !defined(_WIN64)
+#   endif /* !_WIN64 */
+#elif defined(_MSC_VER)
+#   if defined(_WIN64)
+
+    __cpuid(regsPtr, index);
+    status = TCL_OK;
+
+#   else
     /*
      * Define a structure in the stack frame to hold the registers.
      */
@@ -852,6 +815,7 @@ TclWinCPUID(
 	/* do nothing */
     }
 
+#   endif
 #else
     /*
      * Don't know how to do assembly code for this compiler and/or

@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclResolve.c,v 1.12 2010/01/29 16:17:20 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -67,6 +65,7 @@ Tcl_AddInterpResolvers(
 {
     Interp *iPtr = (Interp *) interp;
     ResolverScheme *resPtr;
+    unsigned len;
 
     /*
      * Since we're adding a new name resolution scheme, we must force all code
@@ -102,9 +101,10 @@ Tcl_AddInterpResolvers(
      * list, so that it overrides existing schemes.
      */
 
-    resPtr = (ResolverScheme *) ckalloc(sizeof(ResolverScheme));
-    resPtr->name = (char *) ckalloc((unsigned)(strlen(name) + 1));
-    strcpy(resPtr->name, name);
+    resPtr = ckalloc(sizeof(ResolverScheme));
+    len = strlen(name) + 1;
+    resPtr->name = ckalloc(len);
+    memcpy(resPtr->name, name, len);
     resPtr->cmdResProc = cmdProc;
     resPtr->varResProc = varProc;
     resPtr->compiledVarResProc = compiledVarProc;
@@ -226,7 +226,7 @@ Tcl_RemoveInterpResolvers(
 
 	*prevPtrPtr = resPtr->nextPtr;
 	ckfree(resPtr->name);
-	ckfree((char *) resPtr);
+	ckfree(resPtr);
 
 	return 1;
     }

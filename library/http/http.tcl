@@ -7,13 +7,11 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: http.tcl,v 1.79 2009/11/18 21:45:38 nijtmans Exp $
 
 package require Tcl 8.6
 # Keep this in sync with pkgIndex.tcl and with the install directories in
 # Makefiles
-package provide http 2.8.2
+package provide http 2.8.5
 
 namespace eval http {
     # Allow resourcing to not clobber existing data
@@ -45,11 +43,11 @@ namespace eval http {
 	for {set i 0} {$i <= 256} {incr i} {
 	    set c [format %c $i]
 	    if {![string match {[-._~a-zA-Z0-9]} $c]} {
-		set map($c) %[format %.2x $i]
+		set map($c) %[format %.2X $i]
 	    }
 	}
 	# These are handled specially
-	set map(\n) %0d%0a
+	set map(\n) %0D%0A
 	variable formMap [array get map]
 
 	# Create a map for HTTP/1.1 open sockets
@@ -207,15 +205,13 @@ proc http::Finish {token {errormsg ""} {skipCB 0}} {
     if {[info exists state(after)]} {
 	after cancel $state(after)
     }
-    if {[info exists state(-command)] && !$skipCB} {
-	if {[catch {eval $state(-command) {$token}} err]} {
-	    if {$errormsg eq ""} {
-		set state(error) [list $err $errorInfo $errorCode]
-		set state(status) error
-	    }
+    if {[info exists state(-command)] && !$skipCB
+	    && ![info exists state(done-command-cb)]} {
+	set state(done-command-cb) yes
+	if {[catch {eval $state(-command) {$token}} err] && $errormsg eq ""} {
+	    set state(error) [list $err $errorInfo $errorCode]
+	    set state(status) error
 	}
-	# Command callback may already have unset our state
-	unset -nocomplain state(-command)
     }
 }
 
@@ -421,7 +417,6 @@ proc http::geturl {url args} {
     # Note that the RE actually combines the user and password parts, as
     # recommended in RFC 3986. Indeed, that RFC states that putting passwords
     # in URLs is a Really Bad Idea, something with which I would agree utterly.
-    # Also note that we do not currently support IPv6 addresses.
     #
     # From a validation perspective, we need to ensure that the parts of the
     # URL that are going to the server are correctly encoded.  This is only
@@ -436,7 +431,10 @@ proc http::geturl {url args} {
 		    [^@/\#?]+		# <userinfo part of authority>
 		) @
 	    )?
-	    ( [^/:\#?]+ )		# <host part of authority>
+	    (				# <host part of authority>
+		[^/:\#?]+ |		# host name or IPv4 address
+		\[ [^/\#?]+ \]		# IPv6 address in square brackets
+	    )
 	    (?: : (\d+) )?		# <port part of authority>
 	)?
 	( / [^\#]*)?			# <path> (including query)
@@ -450,6 +448,7 @@ proc http::geturl {url args} {
 	return -code error "Unsupported URL: $url"
     }
     # Phase two: validate
+    set host [string trim $host {[]}]; # strip square brackets from IPv6 address
     if {$host eq ""} {
 	# Caller has to provide a host name; we do not have a "default host"
 	# that would enable us to handle relative URLs.
@@ -686,12 +685,16 @@ proc http::geturl {url args} {
 	    puts $sock "Proxy-Connection: Keep-Alive"
         }
         set accept_encoding_seen 0
+	set content_type_seen 0
 	foreach {key value} $state(-headers) {
 	    if {[string equal -nocase $key "host"]} {
 		continue
 	    }
 	    if {[string equal -nocase $key "accept-encoding"]} {
 		set accept_encoding_seen 1
+	    }
+	    if {[string equal -nocase $key "content-type"]} {
+		set content_type_seen 1
 	    }
 	    set value [string map [list \n "" \r ""] $value]
 	    set key [string trim $key]
@@ -735,7 +738,9 @@ proc http::geturl {url args} {
 	# response.
 
 	if {$isQuery || $isQueryChannel} {
-	    puts $sock "Content-Type: $state(-type)"
+	    if {!$content_type_seen} {
+		puts $sock "Content-Type: $state(-type)"
+	    }
 	    if {!$contDone} {
 		puts $sock "Content-Length: $state(querylength)"
 	    }
@@ -863,12 +868,12 @@ proc http::cleanup {token} {
 proc http::Connect {token} {
     variable $token
     upvar 0 $token state
-    global errorInfo errorCode
+    set err "due to unexpected EOF"
     if {
 	[eof $state(sock)] ||
-	[string length [fconfigure $state(sock) -error]]
+	[set err [fconfigure $state(sock) -error]] ne ""
     } {
-	Finish $token "connect failed [fconfigure $state(sock) -error]" 1
+	Finish $token "connect failed $err" 1
     } else {
 	set state(status) connect
 	fileevent $state(sock) writable {}

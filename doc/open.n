@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: open.n,v 1.36 2008/10/17 10:22:25 dkf Exp $
-'\" 
 .so man.macros
 .TH open n 8.3 Tcl "Tcl Built-In Commands"
 .BS
@@ -69,8 +67,8 @@ Set the initial access position  to the end of the file.
 .PP
 All of the legal \fIaccess\fR values above may have the character
 \fBb\fR added as the second or third character in the value to
-indicate that the opened channel should be configured with the
-\fB\-translation binary\fR option, making the channel suitable for 
+indicate that the opened channel should be configured as if with the
+\fBfconfigure\fR \fB\-translation binary\fR option, making the channel suitable for 
 reading or writing of binary data.
 .PP
 In the second form, \fIaccess\fR consists of a list of any of the
@@ -133,7 +131,7 @@ conjunction with the process's file mode creation mask.
 .SH "COMMAND PIPELINES"
 .PP
 If the first character of \fIfileName\fR is
-.QW |
+.QW \fB|\fR
 then the
 remaining characters of \fIfileName\fR are treated as a list of arguments
 that describe a command pipeline to invoke, in the same style as the
@@ -141,10 +139,12 @@ arguments for \fBexec\fR.
 In this case, the channel identifier returned by \fBopen\fR may be used
 to write to the command's input pipe or read from its output pipe,
 depending on the value of \fIaccess\fR.
-If write-only access is used (e.g. \fIaccess\fR is \fBw\fR), then
-standard output for the pipeline is directed to the current standard
+If write-only access is used (e.g. \fIaccess\fR is
+.QW \fBw\fR ),
+then standard output for the pipeline is directed to the current standard
 output unless overridden by the command.
-If read-only access is used (e.g. \fIaccess\fR is \fBr\fR),
+If read-only access is used (e.g. \fIaccess\fR is
+.QW \fBr\fR ),
 standard input for the pipeline is taken from the current standard
 input unless overridden by the command.
 The id of the spawned process is accessible through the \fBpid\fR
@@ -273,7 +273,7 @@ in the second form both input and output buffers are defined.
 (Windows only). This option is query only.
 In case of a serial communication error, \fBread\fR or \fBputs\fR
 returns a general Tcl file I/O error.
-\fBfconfigure -lasterror\fR can be called to get a list of error details.
+\fBfconfigure\fR \fB\-lasterror\fR can be called to get a list of error details.
 See below for an explanation of the various error codes.
 .SH "SERIAL PORT SIGNALS"
 .PP
@@ -285,29 +285,29 @@ lines and handshaking. Here we are using the terms \fIworkstation\fR for
 your computer and \fImodem\fR for the external device, because some signal
 names (DCD, RI) come from modems. Of course your external device may use
 these signal lines for other purposes.
-.IP \fBTXD(output)\fR
+.IP \fBTXD\fR(output)
 \fBTransmitted Data:\fR Outgoing serial data.
-.IP \fBRXD(input)\fR
+.IP \fBRXD\fR(input)
 \fBReceived Data:\fRIncoming serial data.
-.IP \fBRTS(output)\fR
+.IP \fBRTS\fR(output)
 \fBRequest To Send:\fR This hardware handshake line informs the modem that
 your workstation is ready to receive data. Your workstation may
 automatically reset this signal to indicate that the input buffer is full.
-.IP \fBCTS(input)\fR
+.IP \fBCTS\fR(input)
 \fBClear To Send:\fR The complement to RTS. Indicates that the modem is
 ready to receive data.
-.IP \fBDTR(output)\fR
+.IP \fBDTR\fR(output)
 \fBData Terminal Ready:\fR This signal tells the modem that the workstation
 is ready to establish a link. DTR is often enabled automatically whenever a
 serial port is opened.
-.IP \fBDSR(input)\fR
+.IP \fBDSR\fR(input)
 \fBData Set Ready:\fR The complement to DTR. Tells the workstation that the
 modem is ready to establish a link.
-.IP \fBDCD(input)\fR
+.IP \fBDCD\fR(input)
 \fBData Carrier Detect:\fR This line becomes active when a modem detects a
 .QW Carrier
 signal.
-.IP \fBRI(input)\fR
+.IP \fBRI\fR(input)
 \fBRing Indicator:\fR Goes active when the modem detects an incoming call.
 .IP \fBBREAK\fR
 A BREAK condition is not a hardware signal line, but a logical zero on the
@@ -323,13 +323,13 @@ event polling in background. The external device may have been switched
 off, the data lines may be noisy, system buffers may overrun or your mode
 settings may be wrong.  That is why a reliable software should always
 \fBcatch\fR serial read operations.  In cases of an error Tcl returns a
-general file I/O error.  Then \fBfconfigure -lasterror\fR may help to
+general file I/O error.  Then \fBfconfigure\fR \fB\-lasterror\fR may help to
 locate the problem.  The following error codes may be returned.
 .TP 10
 \fBRXOVER\fR
 .
 Windows input buffer overrun. The data comes faster than your scripts reads
-it or your system is overloaded. Use \fBfconfigure -sysbuffer\fR to avoid a
+it or your system is overloaded. Use \fBfconfigure\fR \fB\-sysbuffer\fR to avoid a
 temporary bottleneck and/or make your script faster.
 .TP 10
 \fBTXFULL\fR
@@ -347,13 +347,13 @@ and/or setup a lower(1) interrupt threshold value.
 \fBRXPARITY\fR
 .
 A parity error has been detected by your UART.
-Wrong parity settings with \fBfconfigure -mode\fR or a noisy data line (RXD)
+Wrong parity settings with \fBfconfigure\fR \fB\-mode\fR or a noisy data line (RXD)
 may cause this error.
 .TP 10
 \fBFRAME\fR
 .
 A stop-bit error has been detected by your UART.
-Wrong mode settings with \fBfconfigure -mode\fR or a noisy data line (RXD)
+Wrong mode settings with \fBfconfigure\fR \fB\-mode\fR or a noisy data line (RXD)
 may cause this error.
 .TP 10
 \fBBREAK\fR
@@ -460,3 +460,6 @@ puts(n), exec(n), pid(n), fopen(3)
 .SH KEYWORDS
 access mode, append, create, file, non-blocking, open, permissions,
 pipeline, process, serial
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

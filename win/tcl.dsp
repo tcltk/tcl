@@ -1560,10 +1560,6 @@ SOURCE=.\tclWinThrd.c
 # End Source File
 # Begin Source File
 
-SOURCE=.\tclWinThrd.h
-# End Source File
-# Begin Source File
-
 SOURCE=.\tclWinTime.c
 # End Source File
 # End Group

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclDTrace.d,v 1.4 2008/10/10 04:09:27 das Exp $
  */
 
 typedef struct Tcl_Obj Tcl_Obj;
@@ -27,7 +25,7 @@ provider tcl {
      *		arg1: number of arguments		(int)
      *		arg2: array of proc argument objects	(Tcl_Obj**)
      */
-    probe proc__entry(TclDTraceStr name, int objc, Tcl_Obj **objv);
+    probe proc__entry(TclDTraceStr name, int objc, struct Tcl_Obj **objv);
     /*
      *	tcl*:::proc-return probe
      *	    triggered immediately after proc bytecode execution
@@ -44,7 +42,7 @@ provider tcl {
      *		arg3: proc result object		(Tcl_Obj*)
      */
     probe proc__result(TclDTraceStr name, int code, TclDTraceStr result,
-	    Tcl_Obj *resultobj);
+	    struct Tcl_Obj *resultobj);
     /*
      *	tcl*:::proc-args probe
      *	    triggered before proc-entry probe, gives access to string
@@ -81,7 +79,7 @@ provider tcl {
      *		arg1: number of arguments		(int)
      *		arg2: array of command argument objects	(Tcl_Obj**)
      */
-    probe cmd__entry(TclDTraceStr name, int objc, Tcl_Obj **objv);
+    probe cmd__entry(TclDTraceStr name, int objc, struct Tcl_Obj **objv);
     /*
      *	tcl*:::cmd-return probe
      *	    triggered immediately after commmand execution
@@ -98,7 +96,7 @@ provider tcl {
      *		arg3: command result object		(Tcl_Obj*)
      */
     probe cmd__result(TclDTraceStr name, int code, TclDTraceStr result,
-	    Tcl_Obj *resultobj);
+	    struct Tcl_Obj *resultobj);
     /*
      *	tcl*:::cmd-args probe
      *	    triggered before cmd-entry probe, gives access to string
@@ -135,7 +133,7 @@ provider tcl {
      *		arg1: depth of stack			(int)
      *		arg2: top of stack			(Tcl_Obj**)
      */
-    probe inst__start(TclDTraceStr name, int depth, Tcl_Obj **stack);
+    probe inst__start(TclDTraceStr name, int depth, struct Tcl_Obj **stack);
     /*
      *	tcl*:::inst-done probe
      *	    triggered immediately after execution of a bytecode
@@ -143,7 +141,7 @@ provider tcl {
      *		arg1: depth of stack			(int)
      *		arg2: top of stack			(Tcl_Obj**)
      */
-    probe inst__done(TclDTraceStr name, int depth, Tcl_Obj **stack);
+    probe inst__done(TclDTraceStr name, int depth, struct Tcl_Obj **stack);
 
     /***************************** obj probes ******************************/
     /*
@@ -151,13 +149,13 @@ provider tcl {
      *	    triggered immediately after a new Tcl_Obj has been created
      *		arg0: object created			(Tcl_Obj*)
      */
-    probe obj__create(Tcl_Obj* obj);
+    probe obj__create(struct Tcl_Obj* obj);
     /*
      *	tcl*:::obj-free probe
      *	    triggered immediately before a Tcl_Obj is freed
      *		arg0: object to be freed		(Tcl_Obj*)
      */
-    probe obj__free(Tcl_Obj* obj);
+    probe obj__free(struct Tcl_Obj* obj);
 
     /***************************** tcl probes ******************************/
     /*

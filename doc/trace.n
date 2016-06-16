@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: trace.n,v 1.27 2008/10/17 10:22:25 dkf Exp $
-'\" 
 .so man.macros
 .TH trace n "8.4" Tcl "Tcl Built-In Commands"
 .BS
@@ -145,7 +143,7 @@ error will occur.
 For \fBleave\fR and \fBleavestep\fR operations:
 .PP
 .CS
-\fIcommand command-string code result op\fR
+\fIcommandPrefix command-string code result op\fR
 .CE
 .PP
 \fICommand-string\fR gives the complete current command being

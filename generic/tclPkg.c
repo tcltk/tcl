@@ -10,8 +10,6 @@
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
  *
- * RCS: @(#) $Id: tclPkg.c,v 1.44 2010/08/31 20:48:17 nijtmans Exp $
- *
  * TIP #268.
  * Heavily rewritten to handle the extend version numbers, and extended
  * package requirements.
@@ -156,8 +154,10 @@ Tcl_PkgProvideEx(
 	}
 	return TCL_OK;
     }
-    Tcl_AppendResult(interp, "conflicting versions provided for package \"",
-	    name, "\": ", pkgPtr->version, ", then ", version, NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "conflicting versions provided for package \"%s\": %s, then %s",
+	    name, pkgPtr->version, version));
+    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT", NULL);
     return TCL_ERROR;
 }
 
@@ -285,9 +285,10 @@ Tcl_PkgRequireEx(
 	 */
 
 	tclEmptyStringRep = &tclEmptyString;
-	Tcl_AppendResult(interp, "Cannot load package \"", name,
-		"\" in standalone executable: This package is not "
-		"compiled with stub support", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"Cannot load package \"%s\" in standalone executable:"
+		" This package is not compiled with stub support", name));
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNSTUBBED", NULL);
 	return NULL;
     }
 
@@ -355,6 +356,10 @@ PkgRequireCore(
     char *script, *pkgVersionI;
     Tcl_DString command;
 
+    if (TCL_OK != CheckAllRequirements(interp, reqc, reqv)) {
+	return NULL;
+    }
+
     /*
      * It can take up to three passes to find the package: one pass to run the
      * "package unknown" script, one to run the "package ifneeded" script for
@@ -374,10 +379,12 @@ PkgRequireCore(
 	 */
 
 	if (pkgPtr->clientData != NULL) {
-	    Tcl_AppendResult(interp, "circular package dependency: "
-		    "attempt to provide ", name, " ",
-		    (char *) pkgPtr->clientData, " requires ", name, NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "circular package dependency:"
+		    " attempt to provide %s %s requires %s", 
+		    name, (char *) pkgPtr->clientData, name));
 	    AddRequirementsToResult(interp, reqc, reqv);
+	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "CIRCULARITY", NULL);
 	    return NULL;
 	}
 
@@ -424,7 +431,9 @@ PkgRequireCore(
 		}
 	    }
 
-	    /* We have found a version which is better than our max. */
+	    /*
+	     * We have found a version which is better than our max.
+	     */
 
 	    if (reqc > 0) {
 		/* Check satisfaction of requirements. */
@@ -491,10 +500,12 @@ PkgRequireCore(
 		Tcl_ResetResult(interp);
 		if (pkgPtr->version == NULL) {
 		    code = TCL_ERROR;
-		    Tcl_AppendResult(interp, "attempt to provide package ",
-			    name, " ", versionToProvide,
-			    " failed: no version of package ", name,
-			    " provided", NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "attempt to provide package %s %s failed:"
+			    " no version of package %s provided",
+			    name, versionToProvide, name));
+		    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNPROVIDED",
+			    NULL);
 		} else {
 		    char *pvi, *vi;
 
@@ -512,21 +523,24 @@ PkgRequireCore(
 			ckfree(vi);
 			if (res != 0) {
 			    code = TCL_ERROR;
-			    Tcl_AppendResult(interp,
-				    "attempt to provide package ", name, " ",
-				    versionToProvide, " failed: package ",
-				    name, " ", pkgPtr->version,
-				    " provided instead", NULL);
+			    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+				    "attempt to provide package %s %s failed:"
+				    " package %s %s provided instead",
+				    name, versionToProvide,
+				    name, pkgPtr->version));
+			    Tcl_SetErrorCode(interp, "TCL", "PACKAGE",
+				    "WRONGPROVIDE", NULL);
 			}
 		    }
 		}
 	    } else if (code != TCL_ERROR) {
 		Tcl_Obj *codePtr = Tcl_NewIntObj(code);
 
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "attempt to provide package ", name,
-			" ", versionToProvide, " failed: bad return code: ",
-			TclGetString(codePtr), NULL);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"attempt to provide package %s %s failed:"
+			" bad return code: %s",
+			name, versionToProvide, TclGetString(codePtr)));
+		Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", NULL);
 		TclDecrRefCount(codePtr);
 		code = TCL_ERROR;
 	    }
@@ -583,11 +597,9 @@ PkgRequireCore(
 	    Tcl_DStringFree(&command);
 
 	    if ((code != TCL_OK) && (code != TCL_ERROR)) {
-		Tcl_Obj *codePtr = Tcl_NewIntObj(code);
-		Tcl_ResetResult(interp);
-		Tcl_AppendResult(interp, "bad return code: ",
-			TclGetString(codePtr), NULL);
-		Tcl_DecrRefCount(codePtr);
+		Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			"bad return code: %d", code));
+		Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "BADRESULT", NULL);
 		code = TCL_ERROR;
 	    }
 	    if (code == TCL_ERROR) {
@@ -600,7 +612,9 @@ PkgRequireCore(
     }
 
     if (pkgPtr->version == NULL) {
-	Tcl_AppendResult(interp, "can't find package ", name, NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't find package %s", name));
+	Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "UNFOUND", NULL);
 	AddRequirementsToResult(interp, reqc, reqv);
 	return NULL;
     }
@@ -610,27 +624,29 @@ PkgRequireCore(
      * provided version meets the current requirements.
      */
 
-    if (reqc == 0) {
-	satisfies = 1;
-    } else {
+    if (reqc != 0) {
 	CheckVersionAndConvert(interp, pkgPtr->version, &pkgVersionI, NULL);
 	satisfies = SomeRequirementSatisfied(pkgVersionI, reqc, reqv);
 
 	ckfree(pkgVersionI);
-    }
 
-    if (satisfies) {
-	if (clientDataPtr) {
-		const void **ptr = (const void **) clientDataPtr;
-	    *ptr = pkgPtr->clientData;
+	if (!satisfies) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "version conflict for package \"%s\": have %s, need",
+		    name, pkgPtr->version));
+	    Tcl_SetErrorCode(interp, "TCL", "PACKAGE", "VERSIONCONFLICT",
+		    NULL);
+	    AddRequirementsToResult(interp, reqc, reqv);
+	    return NULL;
 	}
-	return pkgPtr->version;
     }
 
-    Tcl_AppendResult(interp, "version conflict for package \"", name,
-	    "\": have ", pkgPtr->version, ", need", NULL);
-    AddRequirementsToResult(interp, reqc, reqv);
-    return NULL;
+    if (clientDataPtr) {
+	const void **ptr = (const void **) clientDataPtr;
+
+	*ptr = pkgPtr->clientData;
+    }
+    return pkgPtr->version;
 }
 
 /*
@@ -709,10 +725,11 @@ Tcl_PkgPresentEx(
     }
 
     if (version != NULL) {
-	Tcl_AppendResult(interp, "package ", name, " ", version,
-		" is not present", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"package %s %s is not present", name, version));
     } else {
-	Tcl_AppendResult(interp, "package ", name, " is not present", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"package %s is not present", name));
     }
     Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "PACKAGE", name, NULL);
     return NULL;
@@ -793,9 +810,9 @@ Tcl_PackageObjCmd(
 		pkgPtr->availPtr = availPtr->nextPtr;
 		Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
-		ckfree((char *) availPtr);
+		ckfree(availPtr);
 	    }
-	    ckfree((char *) pkgPtr);
+	    ckfree(pkgPtr);
 	}
 	break;
     }
@@ -838,7 +855,8 @@ Tcl_PackageObjCmd(
 	    if (res == 0){
 		if (objc == 4) {
 		    ckfree(argv3i);
-		    Tcl_SetResult(interp, availPtr->script, TCL_VOLATILE);
+		    Tcl_SetObjResult(interp,
+			    Tcl_NewStringObj(availPtr->script, -1));
 		    return TCL_OK;
 		}
 		Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
@@ -851,7 +869,7 @@ Tcl_PackageObjCmd(
 	    return TCL_OK;
 	}
 	if (availPtr == NULL) {
-	    availPtr = (PkgAvail *) ckalloc(sizeof(PkgAvail));
+	    availPtr = ckalloc(sizeof(PkgAvail));
 	    DupBlock(availPtr->version, argv3, (unsigned) length + 1);
 
 	    if (prevPtr == NULL) {
@@ -870,18 +888,25 @@ Tcl_PackageObjCmd(
 	if (objc != 2) {
 	    Tcl_WrongNumArgs(interp, 2, objv, NULL);
 	    return TCL_ERROR;
-	}
-	tablePtr = &iPtr->packageTable;
-	for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
-		hPtr = Tcl_NextHashEntry(&search)) {
-	    pkgPtr = Tcl_GetHashValue(hPtr);
-	    if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
-		Tcl_AppendElement(interp, Tcl_GetHashKey(tablePtr, hPtr));
+	} else {
+	    Tcl_Obj *resultObj;
+
+	    resultObj = Tcl_NewObj();
+	    tablePtr = &iPtr->packageTable;
+	    for (hPtr = Tcl_FirstHashEntry(tablePtr, &search); hPtr != NULL;
+		    hPtr = Tcl_NextHashEntry(&search)) {
+		pkgPtr = Tcl_GetHashValue(hPtr);
+		if ((pkgPtr->version != NULL) || (pkgPtr->availPtr != NULL)) {
+		    Tcl_ListObjAppendElement(NULL,resultObj, Tcl_NewStringObj(
+			    Tcl_GetHashKey(tablePtr, hPtr), -1));
+		}
 	    }
+	    Tcl_SetObjResult(interp, resultObj);
 	}
 	break;
     case PKG_PRESENT: {
 	const char *name;
+
 	if (objc < 3) {
 	    goto require;
 	}
@@ -936,7 +961,8 @@ Tcl_PackageObjCmd(
 	    if (hPtr != NULL) {
 		pkgPtr = Tcl_GetHashValue(hPtr);
 		if (pkgPtr->version != NULL) {
-		    Tcl_SetResult(interp, pkgPtr->version, TCL_VOLATILE);
+		    Tcl_SetObjResult(interp,
+			    Tcl_NewStringObj(pkgPtr->version, -1));
 		}
 	    }
 	    return TCL_OK;
@@ -998,7 +1024,8 @@ Tcl_PackageObjCmd(
 
 	if (objc == 2) {
 	    if (iPtr->packageUnknown != NULL) {
-		Tcl_SetResult(interp, iPtr->packageUnknown, TCL_VOLATILE);
+		Tcl_SetObjResult(interp,
+			Tcl_NewStringObj(iPtr->packageUnknown, -1));
 	    }
 	} else if (objc == 3) {
 	    if (iPtr->packageUnknown != NULL) {
@@ -1086,23 +1113,27 @@ Tcl_PackageObjCmd(
 	if (objc != 3) {
 	    Tcl_WrongNumArgs(interp, 2, objv, "package");
 	    return TCL_ERROR;
-	}
-	argv2 = TclGetString(objv[2]);
-	hPtr = Tcl_FindHashEntry(&iPtr->packageTable, argv2);
-	if (hPtr != NULL) {
-	    pkgPtr = Tcl_GetHashValue(hPtr);
-	    for (availPtr = pkgPtr->availPtr; availPtr != NULL;
-		    availPtr = availPtr->nextPtr) {
-		Tcl_AppendElement(interp, availPtr->version);
+	} else {
+	    Tcl_Obj *resultObj = Tcl_NewObj();
+
+	    argv2 = TclGetString(objv[2]);
+	    hPtr = Tcl_FindHashEntry(&iPtr->packageTable, argv2);
+	    if (hPtr != NULL) {
+		pkgPtr = Tcl_GetHashValue(hPtr);
+		for (availPtr = pkgPtr->availPtr; availPtr != NULL;
+			availPtr = availPtr->nextPtr) {
+		    Tcl_ListObjAppendElement(NULL, resultObj,
+			    Tcl_NewStringObj(availPtr->version, -1));
+		}
 	    }
+	    Tcl_SetObjResult(interp, resultObj);
 	}
 	break;
     case PKG_VSATISFIES: {
 	char *argv2i = NULL;
 
 	if (objc < 4) {
-	    Tcl_WrongNumArgs(interp, 2, objv,
-		    "version ?requirement ...?");
+	    Tcl_WrongNumArgs(interp, 2, objv, "version ?requirement ...?");
 	    return TCL_ERROR;
 	}
 
@@ -1156,7 +1187,7 @@ FindPackage(
 
     hPtr = Tcl_CreateHashEntry(&iPtr->packageTable, name, &isNew);
     if (isNew) {
-	pkgPtr = (Package *) ckalloc(sizeof(Package));
+	pkgPtr = ckalloc(sizeof(Package));
 	pkgPtr->version = NULL;
 	pkgPtr->availPtr = NULL;
 	pkgPtr->clientData = NULL;
@@ -1204,9 +1235,9 @@ TclFreePackageInfo(
 	    pkgPtr->availPtr = availPtr->nextPtr;
 	    Tcl_EventuallyFree(availPtr->version, TCL_DYNAMIC);
 	    Tcl_EventuallyFree(availPtr->script, TCL_DYNAMIC);
-	    ckfree((char *) availPtr);
+	    ckfree(availPtr);
 	}
-	ckfree((char *) pkgPtr);
+	ckfree(pkgPtr);
     }
     Tcl_DeleteHashTable(&iPtr->packageTable);
     if (iPtr->packageUnknown != NULL) {
@@ -1328,8 +1359,9 @@ CheckVersionAndConvert(
 
   error:
     ckfree(ibuf);
-    Tcl_AppendResult(interp, "expected version number but got \"", string,
-	    "\"", NULL);
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "expected version number but got \"%s\"", string));
+    Tcl_SetErrorCode(interp, "TCL", "VALUE", "VERSION", NULL);
     return TCL_ERROR;
 }
 
@@ -1590,8 +1622,9 @@ CheckRequirement(
 	 * More dashes found after the first. This is wrong.
 	 */
 
-	Tcl_AppendResult(interp, "expected versionMin-versionMax but got \"",
-		string, "\"", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"expected versionMin-versionMax but got \"%s\"", string));
+	Tcl_SetErrorCode(interp, "TCL", "VALUE", "VERSIONRANGE", NULL);
 	return TCL_ERROR;
     }
 
@@ -1642,19 +1675,17 @@ AddRequirementsToResult(
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    if (reqc > 0) {
-	int i;
+    Tcl_Obj *result = Tcl_GetObjResult(interp);
+    int i, length;
 
-	for (i = 0; i < reqc; i++) {
-	    int length;
-	    const char *v = Tcl_GetStringFromObj(reqv[i], &length);
+    for (i = 0; i < reqc; i++) {
+	const char *v = Tcl_GetStringFromObj(reqv[i], &length);
 
-	    if ((length & 0x1) && (v[length/2] == '-')
-		    && (strncmp(v, v+((length+1)/2), length/2) == 0)) {
-		Tcl_AppendResult(interp, " exactly ", v+((length+1)/2), NULL);
-	    } else {
-		Tcl_AppendResult(interp, " ", v, NULL);
-	    }
+	if ((length & 0x1) && (v[length/2] == '-')
+		&& (strncmp(v, v+((length+1)/2), length/2) == 0)) {
+	    Tcl_AppendPrintfToObj(result, " exactly %s", v+((length+1)/2));
+	} else {
+	    Tcl_AppendPrintfToObj(result, " %s", v);
 	}
     }
 }
@@ -1683,15 +1714,15 @@ AddRequirementsToDString(
     Tcl_Obj *const reqv[])	/* 0 means to use the latest version
 				 * available. */
 {
-    if (reqc > 0) {
-	int i;
+    int i;
 
+    if (reqc > 0) {
 	for (i = 0; i < reqc; i++) {
-	    Tcl_DStringAppend(dsPtr, " ", 1);
-	    Tcl_DStringAppend(dsPtr, TclGetString(reqv[i]), -1);
+	    TclDStringAppendLiteral(dsPtr, " ");
+	    TclDStringAppendObj(dsPtr, reqv[i]);
 	}
     } else {
-	Tcl_DStringAppend(dsPtr, " 0-", -1);
+	TclDStringAppendLiteral(dsPtr, " 0-");
     }
 }
 

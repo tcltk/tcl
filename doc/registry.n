@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: registry.n,v 1.23 2010/03/31 22:12:26 dkf Exp $
-'\" 
 .so man.macros
 .TH registry n 1.1 registry "Tcl Bundled Packages"
 .BS
@@ -105,7 +103,7 @@ data, see \fBSUPPORTED TYPES\fR, below.
 If \fIpattern\fR is not specified, returns a list of names of all the
 subkeys of \fIkeyName\fR.  If \fIpattern\fR is specified, only those
 names matching \fIpattern\fR are returned.  Matching is determined
-using the same rules as for \fBstring\fR \fBmatch\fR.  If the
+using the same rules as for \fBstring match\fR.  If the
 specified \fIkeyName\fR does not exist, then an error is generated.
 .TP
 \fBregistry set \fIkeyName\fR ?\fIvalueName data \fR?\fItype\fR??
@@ -129,7 +127,7 @@ Returns the type of the value \fIvalueName\fR in the key
 If \fIpattern\fR is not specified, returns a list of names of all the
 values of \fIkeyName\fR.  If \fIpattern\fR is specified, only those
 names matching \fIpattern\fR are returned.  Matching is determined
-using the same rules as for \fBstring\fR \fBmatch\fR.
+using the same rules as for \fBstring match\fR.
 .SH "SUPPORTED TYPES"
 Each value under a key in the registry contains some data of a
 particular type in a type-specific representation.  The \fBregistry\fR

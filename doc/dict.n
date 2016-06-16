@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: dict.n,v 1.24 2010/08/29 15:37:42 dkf Exp $
-'\"
 .so man.macros
 .TH dict n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -69,7 +67,7 @@ dictionary, and a condition of \fBTCL_CONTINUE\fR is equivalent to a false
 result. The key/value pairs are tested in the order in which the keys
 were inserted into the dictionary.
 .TP
-\fBdict filter \fIdictionaryValue \fBvalue \fIglobPattern\fR
+\fBdict filter \fIdictionaryValue \fBvalue \fR?\fIglobPattern ...\fR?
 .VS 8.6
 The value rule only matches those key/value pairs whose values match any
 of the given patterns (in the style of \fBstring match\fR.)
@@ -148,6 +146,31 @@ the resulting dictionary value back to that variable. Non-existent
 keys are treated as if they map to an empty list, and it is legal for
 there to be no items to append to the list. It is an error for the
 value that the key maps to to not be representable as a list.
+.TP
+\fBdict map \fR{\fIkeyVar valueVar\fR} \fIdictionaryValue body\fR
+.
+This command applies a transformation to each element of a dictionary,
+returning a new dictionary. It takes three arguments: the first is a
+two-element list of variable names (for the key and value respectively of each
+mapping in the dictionary), the second the dictionary value to iterate across,
+and the third a script to be evaluated for each mapping with the key and value
+variables set appropriately (in the manner of \fBlmap\fR). In an iteration
+where the evaluated script completes normally (\fBTCL_OK\fR, as opposed to an
+\fBerror\fR, etc.) the result of the script is put into an accumulator
+dictionary using the key that is the current contents of the \fIkeyVar\fR
+variable at that point. The result of the \fBdict map\fR command is the
+accumulator dictionary after all keys have been iterated over.
+.RS
+.PP
+If the evaluation of the body for any particular step generates a \fBbreak\fR,
+no further pairs from the dictionary will be iterated over and the \fBdict
+map\fR command will terminate successfully immediately. If the evaluation of
+the body for a particular step generates a \fBcontinue\fR result, the current
+iteration is aborted and the accumulator dictionary is not modified. The order
+of iteration is the natural order of the dictionary (typically the order in
+which the keys were added to the dictionary; the order is the same as that
+used in \fBdict for\fR).
+.RE
 .TP
 \fBdict merge \fR?\fIdictionaryValue ...\fR?
 .
@@ -253,6 +276,15 @@ exist after the command finishes (unless explicitly \fBunset\fR).
 Note that the mapping of values to variables does not use
 traces; changes to the \fIdictionaryVariable\fR's contents only happen
 when \fIbody\fR terminates.
+.PP
+If the \fIdictionaryVariable\fR contains a value that is not a dictionary at
+the point when the \fIbody\fR terminates (which can easily happen if the name
+is the same as any of the keys in dictionary) then an error occurs at that
+point. This command is thus not recommended for use when the keys in the
+dictionary are expected to clash with the \fIdictionaryVariable\fR name
+itself. Where the contained key does map to a dictionary, the net effect is to
+combine that inner dictionary into the outer dictionary; see the
+\fBEXAMPLES\fR below for an illustration of this.
 .RE
 .SH "DICTIONARY VALUES"
 .PP
@@ -390,10 +422,20 @@ sumDictionary myDict
 puts "dictionary is now \\"$myDict\\""
 #    prints: \fIdictionary is now "a {total 6} b {total 15}"\fR
 .CE
+.PP
+When \fBdict with\fR is used with a key that clashes with the name of the
+dictionary variable:
+.PP
+.CS
+set foo {foo {a b} bar 2 baz 3}
+\fBdict with\fR foo {}
+puts $foo
+#    prints: \fIa b foo {a b} bar 2 baz 3\fR
+.CE
 .SH "SEE ALSO"
-append(n), array(n), foreach(n), incr(n), list(n), lappend(n), set(n)
+append(n), array(n), foreach(n), mapeach(n), incr(n), list(n), lappend(n), set(n)
 .SH KEYWORDS
-dictionary, create, update, lookup, iterate, filter
+dictionary, create, update, lookup, iterate, filter, map
 '\" Local Variables:
 '\" mode: nroff
 '\" End:

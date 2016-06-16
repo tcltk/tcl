@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: error.n,v 1.14 2010/01/13 12:08:30 dkf Exp $
-'\" 
 .so man.macros
 .TH error n "" Tcl "Tcl Built-In Commands"
 .BS
@@ -41,19 +39,19 @@ to return a stack trace reflecting the original point of occurrence
 of the error:
 .PP
 .CS
-\fBcatch {...} errMsg
+catch {...} errMsg
 set savedInfo $::errorInfo
 \&...
-error $errMsg $savedInfo\fR
+\fBerror\fR $errMsg $savedInfo
 .CE
 .PP
 When working with Tcl 8.5 or later, the following code
 should be used instead:
 .PP
 .CS
-\fBcatch {...} errMsg options
+catch {...} errMsg options
 \&...
-return -options $options $errMsg\fR
+return -options $options $errMsg
 .CE
 .PP
 If the \fIcode\fR argument is present, then its value is stored
@@ -75,3 +73,6 @@ if {1+2 != 3} {
 catch(n), return(n)
 .SH KEYWORDS
 error, exception
+'\" Local Variables:
+'\" mode: nroff
+'\" End:

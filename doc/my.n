@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: my.n,v 1.3 2009/11/02 10:03:12 dkf Exp $
-'\"
 .so man.macros
 .TH my n 0.1 TclOO "TclOO Commands"
 .BS
@@ -33,7 +31,7 @@ Each object has its own \fBmy\fR command, contained in its instance namespace.
 .SH EXAMPLES
 .PP
 This example shows basic use of \fBmy\fR to use the \fBvariables\fR method of
-the \fBoo::object\fR class, which is not publically visible by default:
+the \fBoo::object\fR class, which is not publicly visible by default:
 .PP
 .CS
 oo::class create c {

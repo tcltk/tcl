@@ -1,5 +1,4 @@
 # tcl pkg-config source file
-# $Id: tcl.pc.in,v 1.1 2009/03/14 17:20:24 dkf Exp $
 
 prefix=@prefix@
 exec_prefix=@exec_prefix@

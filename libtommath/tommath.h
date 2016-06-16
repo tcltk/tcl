@@ -577,9 +577,3 @@ extern const char *mp_s_rmap;
 #endif
 
 #endif
-
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/tommath.h,v $ */
-/* Based on Tom's version 1.8 */
-/* $Revision: 1.6 $ */
-/* $Date: 2010/05/03 14:36:40 $ */

@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id$
-'\" 
 .so man.macros
 .TH Tcl_GetTime 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -92,21 +90,19 @@ typedef void \fBTcl_ScaleTimeProc\fR(
 .CE
 .PP
 The \fItimebuf\fR fields contain the time to manipulate, and the
-\fIclientData\fR fields contain a pointer supplied at the time the
-handler functions were registered.
+\fIclientData\fR fields contain a pointer supplied at the time the handler
+functions were registered.
 .PP
-Any handler pair specified has to return data which is consistent
-between them. In other words, setting one handler of the pair to
-something assuming a 10-times slowdown, and the other handler of the
-pair to something assuming a two-times slowdown is wrong and not
-allowed.
+Any handler pair specified has to return data which is consistent between
+them. In other words, setting one handler of the pair to something assuming a
+10-times slowdown, and the other handler of the pair to something assuming a
+two-times slowdown is wrong and not allowed.
 .PP
-The set handler functions are allowed to run the delivered time
-backwards, however this should be avoided. We have to allow it as the
-native time can run backwards as the user can fiddle with the system
-time one way or other. Note that the insertion of the hooks will not
-change the behaviour of the Tcl core with regard to this situation,
-i.e. the existing behaviour is retained.
+The set handler functions are allowed to run the delivered time backwards,
+however this should be avoided. We have to allow it as the native time can run
+backwards as the user can fiddle with the system time one way or other. Note
+that the insertion of the hooks will not change the behavior of the Tcl core
+with regard to this situation, i.e. the existing behavior is retained.
 .SH "SEE ALSO"
 clock(n)
 .SH KEYWORDS

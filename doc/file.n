@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: file.n,v 1.60 2010/09/18 23:14:19 dkf Exp $
-'\" 
 .so man.macros
 .TH file n 8.3 Tcl "Tcl Built-In Commands"
 .BS
@@ -106,7 +104,7 @@ within a single filesystem, \fIfile copy\fR will copy soft links (i.e.
 the links themselves are copied, not the things they point to).  Trying
 to overwrite a non-empty directory, overwrite a directory with a file,
 or overwrite a file with a directory will all result in errors even if
-\fI\-force\fR was specified.  Arguments are processed in the order
+\fB\-force\fR was specified.  Arguments are processed in the order
 specified, halting at the first error, if any.  A \fB\-\|\-\fR marks
 the end of switches; the argument following the \fB\-\|\-\fR will be
 treated as a \fIsource\fR even if it starts with a \fB\-\fR.
@@ -140,7 +138,7 @@ returned.  For example,
 .RS
 .PP
 .CS
-\fBfile dirname c:/\fR
+\fBfile dirname\fR c:/
 .CE
 .PP
 returns \fBc:/\fR. 
@@ -149,13 +147,13 @@ Note that tilde substitution will only be
 performed if it is necessary to complete the command. For example,
 .PP
 .CS
-\fBfile dirname ~/src/foo.c\fR
+\fBfile dirname\fR ~/src/foo.c
 .CE
 .PP
 returns \fB~/src\fR, whereas
 .PP
 .CS
-\fBfile dirname ~\fR
+\fBfile dirname\fR ~
 .CE
 .PP
 returns \fB/home\fR (or something similar).
@@ -195,7 +193,7 @@ proceed from the current argument.  For example,
 .RS
 .PP
 .CS
-\fBfile join a b /foo bar\fR
+\fBfile join\fR a b /foo bar
 .CE
 .PP
 returns \fB/foo/bar\fR.
@@ -229,9 +227,9 @@ If the user wishes to make a link of a specific type only, (and signal an
 error if for some reason that is not possible), then the optional
 \fI\-linktype\fR argument should be given.  Accepted values for
 \fI\-linktype\fR are
-.QW \-symbolic
+.QW \fB\-symbolic\fR
 and
-.QW \-hard .
+.QW \fB\-hard\fR .
 .PP
 On Unix, symbolic links can be made to relative paths, and those paths
 must be relative to the actual \fIlinkName\fR's location (not to the
@@ -377,12 +375,12 @@ generated.
 Returns a list whose elements are the path components in \fIname\fR.  The
 first element of the list will have the same path type as \fIname\fR.
 All other elements will be relative.  Path separators will be discarded
-unless they are needed ensure that an element is unambiguously relative.
+unless they are needed to ensure that an element is unambiguously relative.
 For example, under Unix
 .RS
 .PP
 .CS
-file split /foo/~bar/baz
+\fBfile split\fR /foo/~bar/baz
 .CE
 .PP
 returns

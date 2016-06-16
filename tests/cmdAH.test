@@ -9,13 +9,14 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: cmdAH.test,v 1.68 2010/02/05 14:33:09 dkf Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2.1
     namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 testConstraint testchmod       [llength [info commands testchmod]]
 testConstraint testsetplatform [llength [info commands testsetplatform]]
@@ -69,6 +70,12 @@ test cmdAH-1.2 {Tcl_CatchObjCmd, errors} {
 test cmdAH-1.3 {Tcl_CatchObjCmd, errors} -returnCodes error -body {
     catch foo bar baz spaz
 } -result {wrong # args: should be "catch script ?resultVarName? ?optionVarName?"}
+test cmdAH-1.4 {Bug 3595576} {
+    catch {catch {} -> noSuchNs::var}
+} 1
+test cmdAH-1.5 {Bug 3595576} {
+    catch {catch error -> noSuchNs::var}
+} 1
 
 test cmdAH-2.1 {Tcl_CdObjCmd} -returnCodes error -body {
     cd foo bar
@@ -218,10 +225,10 @@ test cmdAH-4.13 {Tcl_EncodingObjCmd} -setup {
 
 test cmdAH-5.1 {Tcl_FileObjCmd} -returnCodes error -body {
     file
-} -result {wrong # args: should be "file option ?arg ...?"}
+} -result {wrong # args: should be "file subcommand ?arg ...?"}
 test cmdAH-5.2 {Tcl_FileObjCmd} -returnCodes error -body {
     file x
-} -result {bad option "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "x": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
 test cmdAH-5.3 {Tcl_FileObjCmd} -returnCodes error -body {
     file exists
 } -result {wrong # args: should be "file exists name"}
@@ -236,14 +243,15 @@ test cmdAH-6.1 {Tcl_FileObjCmd: volumes} -returnCodes error -body {
 test cmdAH-6.2 {Tcl_FileObjCmd: volumes} -body {
     lindex [file volumes] 0
 } -match glob -result ?*
-test cmdAH-6.3 {Tcl_FileObjCmd: volumes} {unix} {
+test cmdAH-6.3 {Tcl_FileObjCmd: volumes} -constraints unix -body {
     set volumeList [file volumes]
-    catch [list glob -nocomplain [lindex $volumeList 0]*]
-} {0}
-test cmdAH-6.4 {Tcl_FileObjCmd: volumes} win {
+    glob -nocomplain [lindex $volumeList 0]*
+} -match glob -result *
+test cmdAH-6.4 {Tcl_FileObjCmd: volumes} -constraints win -body {
     set volumeList [string tolower [file volumes]]
-    list [catch {lsearch $volumeList "c:/"} element] [expr $element != -1] [catch {list glob -nocomplain [lindex $volumeList $element]*}]
-} {0 1 0}
+    set element [lsearch -exact $volumeList "c:/"]
+    list [expr {$element>-1}] [glob -nocomplain [lindex $volumeList $element]*]
+} -match glob -result {1 *}
 
 # attributes
 test cmdAH-7.1 {Tcl_FileObjCmd - file attrs} -setup {
@@ -251,11 +259,11 @@ test cmdAH-7.1 {Tcl_FileObjCmd - file attrs} -setup {
     catch {file delete -force $foofile}
 } -body {
     close [open $foofile w]
-    catch {file attributes $foofile}
+    file attributes $foofile
 } -cleanup {
     # We used [makeFile] so we undo with [removeFile]
     removeFile $foofile
-} -result {0}
+} -match glob -result *
 
 # dirname
 test cmdAH-8.1 {Tcl_FileObjCmd: dirname} -returnCodes error -body {
@@ -497,33 +505,36 @@ test cmdAH-9.26 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform windows
     file tail {//foo/bar}
 } {}
-test cmdAH-9.42 {Tcl_FileObjCmd: tail} testsetplatform {
+test cmdAH-9.42 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
     global env
     set temp $env(HOME)
+} -body {
     set env(HOME) "/home/test"
     testsetplatform unix
-    set result [file tail ~]
+    file tail ~
+} -cleanup {
     set env(HOME) $temp
-    set result
-} test
-test cmdAH-9.43 {Tcl_FileObjCmd: tail} testsetplatform {
+} -result test
+test cmdAH-9.43 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
     global env
     set temp $env(HOME)
+} -body {
     set env(HOME) "~"
     testsetplatform unix
-    set result [file tail ~]
+    file tail ~
+} -cleanup {
     set env(HOME) $temp
-    set result
-} {}
-test cmdAH-9.44 {Tcl_FileObjCmd: tail} testsetplatform {
+} -result {}
+test cmdAH-9.44 {Tcl_FileObjCmd: tail} -constraints testsetplatform -setup {
     global env
     set temp $env(HOME)
+} -body {
     set env(HOME) "/home/test"
     testsetplatform windows
-    set result [file tail ~]
+    file tail ~
+} -cleanup {
     set env(HOME) $temp
-    set result
-} test
+} -result test
 test cmdAH-9.46 {Tcl_FileObjCmd: tail} testsetplatform {
     testsetplatform unix
     file tail {f.oo\bar/baz.bat}
@@ -923,10 +934,10 @@ test cmdAH-19.7 {Tcl_FileObjCmd: nativename} -body {
 test cmdAH-19.9 {Tcl_FileObjCmd: ~ : exists} {
     file exists ~nOsUcHuSeR
 } 0
-test cmdAH-19.10 {Tcl_FileObjCmd: ~ : nativename} {
-    # should probably be 0 in fact...
-    catch {file nativename ~nOsUcHuSeR}
-} 1
+test cmdAH-19.10 {Tcl_FileObjCmd: ~ : nativename} -body {
+    # should probably be a non-error in fact...
+    file nativename ~nOsUcHuSeR
+} -returnCodes error -match glob -result *
 # The test below has to be done in /tmp rather than the current directory in
 # order to guarantee (?) a local file system: some NFS file systems won't do
 # the stuff below correctly.
@@ -963,7 +974,7 @@ test cmdAH-20.1 {Tcl_FileObjCmd: atime} -returnCodes error -body {
     file atime a b c
 } -result {wrong # args: should be "file atime name ?time?"}
 test cmdAH-20.2 {Tcl_FileObjCmd: atime} -setup {
-    catch {unset stat}
+    unset -nocomplain stat
 } -body {
     file stat $gorpfile stat
     list [expr {[file mtime $gorpfile] == $stat(mtime)}] \
@@ -1031,13 +1042,13 @@ test cmdAH-23.2 {Tcl_FileObjCmd: lstat} -returnCodes error -body {
     file lstat a b c
 } -result {wrong # args: should be "file lstat name varName"}
 test cmdAH-23.3 {Tcl_FileObjCmd: lstat} -setup {
-    catch {unset stat}
+    unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
     file lstat $linkfile stat
     lsort [array names stat]
 } -result {atime ctime dev gid ino mode mtime nlink size type uid}
 test cmdAH-23.4 {Tcl_FileObjCmd: lstat} -setup {
-    catch {unset stat}
+    unset -nocomplain stat
 } -constraints {unix nonPortable} -body {
     file lstat $linkfile stat
     list $stat(nlink) [expr $stat(mode)&0777] $stat(type)
@@ -1047,12 +1058,12 @@ test cmdAH-23.5 {Tcl_FileObjCmd: lstat errors} {nonPortable} {
 	$errorCode
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 test cmdAH-23.6 {Tcl_FileObjCmd: lstat errors} -setup {
-    catch {unset x}
+    unset -nocomplain x
 } -body {
     set x 44
     list [catch {file lstat $gorpfile x} msg] $msg $errorCode
 } -result {1 {can't set "x(dev)": variable isn't array} {TCL LOOKUP VARNAME x}}
-catch {unset stat}
+unset -nocomplain stat
 # mkdir
 set dirA [file join [temporaryDirectory] a]
 set dirB [file join [temporaryDirectory] a]
@@ -1128,7 +1139,7 @@ test cmdAH-24.2 {Tcl_FileObjCmd: mtime} -setup {
     }
 } -result {1}
 test cmdAH-24.3 {Tcl_FileObjCmd: mtime} -setup {
-    catch {unset stat}
+    unset -nocomplain stat
 } -body {
     file stat $gorpfile stat
     list [expr {[file mtime $gorpfile] == $stat(mtime)}] \
@@ -1294,7 +1305,7 @@ test cmdAH-28.2 {Tcl_FileObjCmd: stat} -returnCodes error -body {
     file stat _bogus_ a b
 } -result {wrong # args: should be "file stat name varName"}
 test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
-    catch {unset stat}
+    unset -nocomplain stat
     set stat(blocks) [set stat(blksize) {}]
 } -body {
     file stat $gorpfile stat
@@ -1302,13 +1313,13 @@ test cmdAH-28.3 {Tcl_FileObjCmd: stat} -setup {
     lsort [array names stat]
 } -result {atime ctime dev gid ino mode mtime nlink size type uid}
 test cmdAH-28.4 {Tcl_FileObjCmd: stat} -setup {
-    catch {unset stat}
+    unset -nocomplain stat
 } -body {
     file stat $gorpfile stat
     list $stat(nlink) $stat(size) $stat(type)
 } -result {1 12 file}
 test cmdAH-28.5 {Tcl_FileObjCmd: stat} -constraints {unix} -setup {
-    catch {unset stat}
+    unset -nocomplain stat
 } -body {
     file stat $gorpfile stat
     expr {$stat(mode) & 0o777}
@@ -1317,7 +1328,7 @@ test cmdAH-28.6 {Tcl_FileObjCmd: stat} {
     list [catch {file stat _bogus_ stat} msg] [string tolower $msg] $errorCode
 } {1 {could not read "_bogus_": no such file or directory} {POSIX ENOENT {no such file or directory}}}
 test cmdAH-28.7 {Tcl_FileObjCmd: stat} -setup {
-    catch {unset x}
+    unset -nocomplain x
 } -returnCodes error -body {
     set x 44
     file stat $gorpfile x
@@ -1371,7 +1382,7 @@ test cmdAH-28.12 {Tcl_FileObjCmd: stat} -setup {
 } -cleanup {
     removeFile $filename
 } -result 1
-catch {unset stat}
+unset -nocomplain stat
 
 # type
 test cmdAH-29.1 {Tcl_FileObjCmd: type} -returnCodes error -body {
@@ -1415,25 +1426,25 @@ test cmdAH-29.5 {Tcl_FileObjCmd: type} {
 # Error conditions
 test cmdAH-30.1 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file gorp x
-} -result {bad option "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mtime, mkdir, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
+} -result {unknown or ambiguous subcommand "gorp": must be atime, attributes, channels, copy, delete, dirname, executable, exists, extension, isdirectory, isfile, join, link, lstat, mkdir, mtime, nativename, normalize, owned, pathtype, readable, readlink, rename, rootname, separator, size, split, stat, system, tail, tempfile, type, volumes, or writable}
 test cmdAH-30.2 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file ex x
-} -match glob -result {ambiguous option "ex": must be *}
+} -match glob -result {unknown or ambiguous subcommand "ex": must be *}
 test cmdAH-30.3 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file is x
-} -match glob -result {ambiguous option "is": must be *}
+} -match glob -result {unknown or ambiguous subcommand "is": must be *}
 test cmdAH-30.4 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file z x
-} -match glob -result {bad option "z": must be *}
+} -match glob -result {unknown or ambiguous subcommand "z": must be *}
 test cmdAH-30.5 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file read x
-} -match glob -result {ambiguous option "read": must be *}
+} -match glob -result {unknown or ambiguous subcommand "read": must be *}
 test cmdAH-30.6 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file s x
-} -match glob -result {ambiguous option "s": must be *}
+} -match glob -result {unknown or ambiguous subcommand "s": must be *}
 test cmdAH-30.7 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file t x
-} -match glob -result {ambiguous option "t": must be *}
+} -match glob -result {unknown or ambiguous subcommand "t": must be *}
 test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
     file dirname ~woohgy
 } -result {user "woohgy" doesn't exist}
@@ -1445,7 +1456,7 @@ test cmdAH-30.8 {Tcl_FileObjCmd: error conditions} -returnCodes error -body {
 interp create simpleInterp
 interp create -safe safeInterp
 interp create
-safeInterp expose file file
+catch {safeInterp expose file file}
 
 test cmdAH-31.1 {Tcl_FileObjCmd: channels, too many args} -body {
     file channels a b
@@ -1513,7 +1524,7 @@ test cmdAH-32.2 {file tempfile - returns a read/write channel} -body {
     catch {close $f}
 } -result ok
 test cmdAH-32.3 {file tempfile - makes filenames} -setup {
-    catch {unset name}
+    unset -nocomplain name
 } -body {
     set result [info exists name]
     set f [file tempfile name]
@@ -1556,7 +1567,7 @@ interp delete simpleInterp
 
 # cleanup
 catch {testsetplatform $platform}
-catch {unset platform}
+unset -nocomplain platform
 
 # Tcl_ForObjCmd is tested in for.test
 

@@ -20,7 +20,7 @@ static const int lnz[16] = {
 };
 
 /* Counts the number of lsbs which are zero before the first zero bit */
-int mp_cnt_lsb(mp_int *a)
+int mp_cnt_lsb(const mp_int *a)
 {
    int x;
    mp_digit q, qq;
@@ -47,7 +47,3 @@ int mp_cnt_lsb(mp_int *a)
 }
 
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_cnt_lsb.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:11 $ */

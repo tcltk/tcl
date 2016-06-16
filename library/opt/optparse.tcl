@@ -7,8 +7,6 @@
 #	of Tcl.  It is NOT supported and you should not rely
 #	on it.  If your code does rely on this package you
 #	may directly incorporate this code into your application.
-#
-# RCS: @(#) $Id: optparse.tcl,v 1.13 2010/05/27 09:18:12 nijtmans Exp $
 
 package require Tcl 8.2
 # When this version number changes, update the pkgIndex.tcl file

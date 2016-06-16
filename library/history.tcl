@@ -2,8 +2,6 @@
 #
 # Implementation of the history command.
 #
-# RCS: @(#) $Id: history.tcl,v 1.11 2010/06/14 13:48:25 nijtmans Exp $
-#
 # Copyright (c) 1997 Sun Microsystems, Inc.
 #
 # See the file "license.terms" for information on usage and redistribution of
@@ -55,7 +53,7 @@ proc ::history {args} {
     }
 
     # Tricky stuff needed to make stack and errors come out right!
-    tailcall apply {args {tailcall history {*}$args} ::tcl} {*}$args
+    tailcall apply {arglist {tailcall history {*}$arglist} ::tcl} $args
 }
 
 # tcl::HistAdd --

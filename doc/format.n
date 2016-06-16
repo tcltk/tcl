@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: format.n,v 1.24 2010/01/20 13:42:17 dkf Exp $
-'\" 
 .so man.macros
 .TH format n 8.1 Tcl "Tcl Built-In Commands"
 .BS
@@ -143,7 +141,8 @@ function of the \fBexpr\fR command (at least a 64-bit range).
 If neither \fBh\fR nor \fBl\fR are present, the integer value is
 truncated to the same range as that produced by the \fBint()\fR
 function of the \fBexpr\fR command (at least a 32-bit range, but
-determined by the value of \fBtcl_platform(wordSize)\fR).
+determined by the value of the \fBwordSize\fR element of the
+\fBtcl_platform\fR array).
 .SS "MANDATORY CONVERSION TYPE"
 .PP
 The last thing in a conversion specifier is an alphabetic character

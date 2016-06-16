@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclIntDecls.h,v 1.143 2010/09/27 19:42:38 msofer Exp $
  */
 
 #ifndef _TCLINTDECLS
@@ -92,7 +90,7 @@ EXTERN void		TclDeleteVars(Interp *iPtr,
 				TclVarHashTable *tablePtr);
 /* Slot 13 is reserved */
 /* 14 */
-EXTERN void		TclDumpMemoryInfo(FILE *outFile);
+EXTERN int		TclDumpMemoryInfo(ClientData clientData, int flags);
 /* Slot 15 is reserved */
 /* 16 */
 EXTERN void		TclExprFloatError(Tcl_Interp *interp, double value);
@@ -109,7 +107,8 @@ EXTERN int		TclFindElement(Tcl_Interp *interp,
 				int *bracePtr);
 /* 23 */
 EXTERN Proc *		TclFindProc(Interp *iPtr, const char *procName);
-/* Slot 24 is reserved */
+/* 24 */
+EXTERN int		TclFormatInt(char *buffer, long n);
 /* 25 */
 EXTERN void		TclFreePackageInfo(Interp *iPtr);
 /* Slot 26 is reserved */
@@ -215,8 +214,7 @@ EXTERN unsigned long	TclpGetClicks(void);
 EXTERN unsigned long	TclpGetSeconds(void);
 /* 77 */
 EXTERN void		TclpGetTime(Tcl_Time *time);
-/* 78 */
-EXTERN int		TclpGetTimeZone(unsigned long time);
+/* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 /* 81 */
@@ -264,7 +262,7 @@ EXTERN void		TclSetupEnv(Tcl_Interp *interp);
 EXTERN int		TclSockGetPort(Tcl_Interp *interp, const char *str,
 				const char *proto, int *portPtr);
 /* 104 */
-EXTERN int		TclSockMinimumBuffers(int sock, int size);
+EXTERN int		TclSockMinimumBuffersOld(int sock, int size);
 /* Slot 105 is reserved */
 /* Slot 106 is reserved */
 /* Slot 107 is reserved */
@@ -272,7 +270,8 @@ EXTERN int		TclSockMinimumBuffers(int sock, int size);
 EXTERN void		TclTeardownNamespace(Namespace *nsPtr);
 /* 109 */
 EXTERN int		TclUpdateReturnInfo(Interp *iPtr);
-/* Slot 110 is reserved */
+/* 110 */
+EXTERN int		TclSockMinimumBuffers(void *sock, int size);
 /* 111 */
 EXTERN void		Tcl_AddInterpResolvers(Tcl_Interp *interp,
 				const char *name,
@@ -571,7 +570,7 @@ EXTERN int		TclNRInterpProcCore(Tcl_Interp *interp,
 				ProcErrorProc *errorProc);
 /* 240 */
 EXTERN int		TclNRRunCallbacks(Tcl_Interp *interp, int result,
-				struct TEOV_callback *rootPtr);
+				struct NRE_callback *rootPtr);
 /* 241 */
 EXTERN int		TclNREvalObjEx(Tcl_Interp *interp, Tcl_Obj *objPtr,
 				int flags, const CmdFrame *invoker, int word);
@@ -596,10 +595,16 @@ EXTERN void		TclResetRewriteEnsemble(Tcl_Interp *interp,
 EXTERN int		TclCopyChannel(Tcl_Interp *interp,
 				Tcl_Channel inChan, Tcl_Channel outChan,
 				Tcl_WideInt toRead, Tcl_Obj *cmdPtr);
+/* 249 */
+EXTERN char *		TclDoubleDigits(double dv, int ndigits, int flags,
+				int *decpt, int *signum, char **endPtr);
+/* 250 */
+EXTERN void		TclSetSlaveCancelFlags(Tcl_Interp *interp, int flags,
+				int force);
 
 typedef struct TclIntStubs {
     int magic;
-    const struct TclIntStubHooks *hooks;
+    void *hooks;
 
     void (*reserved0)(void);
     void (*reserved1)(void);
@@ -615,7 +620,7 @@ typedef struct TclIntStubs {
     void (*tclDeleteCompiledLocalVars) (Interp *iPtr, CallFrame *framePtr); /* 11 */
     void (*tclDeleteVars) (Interp *iPtr, TclVarHashTable *tablePtr); /* 12 */
     void (*reserved13)(void);
-    void (*tclDumpMemoryInfo) (FILE *outFile); /* 14 */
+    int (*tclDumpMemoryInfo) (ClientData clientData, int flags); /* 14 */
     void (*reserved15)(void);
     void (*tclExprFloatError) (Tcl_Interp *interp, double value); /* 16 */
     void (*reserved17)(void);
@@ -625,7 +630,7 @@ typedef struct TclIntStubs {
     void (*reserved21)(void);
     int (*tclFindElement) (Tcl_Interp *interp, const char *listStr, int listLength, const char **elementPtr, const char **nextPtr, int *sizePtr, int *bracePtr); /* 22 */
     Proc * (*tclFindProc) (Interp *iPtr, const char *procName); /* 23 */
-    void (*reserved24)(void);
+    int (*tclFormatInt) (char *buffer, long n); /* 24 */
     void (*tclFreePackageInfo) (Interp *iPtr); /* 25 */
     void (*reserved26)(void);
     void (*reserved27)(void);
@@ -679,7 +684,7 @@ typedef struct TclIntStubs {
     unsigned long (*tclpGetClicks) (void); /* 75 */
     unsigned long (*tclpGetSeconds) (void); /* 76 */
     void (*tclpGetTime) (Tcl_Time *time); /* 77 */
-    int (*tclpGetTimeZone) (unsigned long time); /* 78 */
+    void (*reserved78)(void);
     void (*reserved79)(void);
     void (*reserved80)(void);
     char * (*tclpRealloc) (char *ptr, unsigned int size); /* 81 */
@@ -705,13 +710,13 @@ typedef struct TclIntStubs {
     CONST86 char * (*tclSetPreInitScript) (const char *string); /* 101 */
     void (*tclSetupEnv) (Tcl_Interp *interp); /* 102 */
     int (*tclSockGetPort) (Tcl_Interp *interp, const char *str, const char *proto, int *portPtr); /* 103 */
-    int (*tclSockMinimumBuffers) (int sock, int size); /* 104 */
+    int (*tclSockMinimumBuffersOld) (int sock, int size); /* 104 */
     void (*reserved105)(void);
     void (*reserved106)(void);
     void (*reserved107)(void);
     void (*tclTeardownNamespace) (Namespace *nsPtr); /* 108 */
     int (*tclUpdateReturnInfo) (Interp *iPtr); /* 109 */
-    void (*reserved110)(void);
+    int (*tclSockMinimumBuffers) (void *sock, int size); /* 110 */
     void (*tcl_AddInterpResolvers) (Tcl_Interp *interp, const char *name, Tcl_ResolveCmdProc *cmdProc, Tcl_ResolveVarProc *varProc, Tcl_ResolveCompiledVarProc *compiledVarProc); /* 111 */
     int (*tcl_AppendExportList) (Tcl_Interp *interp, Tcl_Namespace *nsPtr, Tcl_Obj *objPtr); /* 112 */
     Tcl_Namespace * (*tcl_CreateNamespace) (Tcl_Interp *interp, const char *name, ClientData clientData, Tcl_NamespaceDeleteProc *deleteProc); /* 113 */
@@ -841,7 +846,7 @@ typedef struct TclIntStubs {
     int (*tclResetCancellation) (Tcl_Interp *interp, int force); /* 237 */
     int (*tclNRInterpProc) (ClientData clientData, Tcl_Interp *interp, int objc, Tcl_Obj *const objv[]); /* 238 */
     int (*tclNRInterpProcCore) (Tcl_Interp *interp, Tcl_Obj *procNameObj, int skip, ProcErrorProc *errorProc); /* 239 */
-    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct TEOV_callback *rootPtr); /* 240 */
+    int (*tclNRRunCallbacks) (Tcl_Interp *interp, int result, struct NRE_callback *rootPtr); /* 240 */
     int (*tclNREvalObjEx) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags, const CmdFrame *invoker, int word); /* 241 */
     int (*tclNREvalObjv) (Tcl_Interp *interp, int objc, Tcl_Obj *const objv[], int flags, Command *cmdPtr); /* 242 */
     void (*tclDbDumpActiveObjects) (FILE *outFile); /* 243 */
@@ -850,6 +855,8 @@ typedef struct TclIntStubs {
     int (*tclInitRewriteEnsemble) (Tcl_Interp *interp, int numRemoved, int numInserted, Tcl_Obj *const *objv); /* 246 */
     void (*tclResetRewriteEnsemble) (Tcl_Interp *interp, int isRootEnsemble); /* 247 */
     int (*tclCopyChannel) (Tcl_Interp *interp, Tcl_Channel inChan, Tcl_Channel outChan, Tcl_WideInt toRead, Tcl_Obj *cmdPtr); /* 248 */
+    char * (*tclDoubleDigits) (double dv, int ndigits, int flags, int *decpt, int *signum, char **endPtr); /* 249 */
+    void (*tclSetSlaveCancelFlags) (Tcl_Interp *interp, int flags, int force); /* 250 */
 } TclIntStubs;
 
 #ifdef __cplusplus
@@ -903,7 +910,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclFindElement) /* 22 */
 #define TclFindProc \
 	(tclIntStubsPtr->tclFindProc) /* 23 */
-/* Slot 24 is reserved */
+#define TclFormatInt \
+	(tclIntStubsPtr->tclFormatInt) /* 24 */
 #define TclFreePackageInfo \
 	(tclIntStubsPtr->tclFreePackageInfo) /* 25 */
 /* Slot 26 is reserved */
@@ -987,8 +995,7 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclpGetSeconds) /* 76 */
 #define TclpGetTime \
 	(tclIntStubsPtr->tclpGetTime) /* 77 */
-#define TclpGetTimeZone \
-	(tclIntStubsPtr->tclpGetTimeZone) /* 78 */
+/* Slot 78 is reserved */
 /* Slot 79 is reserved */
 /* Slot 80 is reserved */
 #define TclpRealloc \
@@ -1026,8 +1033,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclSetupEnv) /* 102 */
 #define TclSockGetPort \
 	(tclIntStubsPtr->tclSockGetPort) /* 103 */
-#define TclSockMinimumBuffers \
-	(tclIntStubsPtr->tclSockMinimumBuffers) /* 104 */
+#define TclSockMinimumBuffersOld \
+	(tclIntStubsPtr->tclSockMinimumBuffersOld) /* 104 */
 /* Slot 105 is reserved */
 /* Slot 106 is reserved */
 /* Slot 107 is reserved */
@@ -1035,7 +1042,8 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclTeardownNamespace) /* 108 */
 #define TclUpdateReturnInfo \
 	(tclIntStubsPtr->tclUpdateReturnInfo) /* 109 */
-/* Slot 110 is reserved */
+#define TclSockMinimumBuffers \
+	(tclIntStubsPtr->tclSockMinimumBuffers) /* 110 */
 #define Tcl_AddInterpResolvers \
 	(tclIntStubsPtr->tcl_AddInterpResolvers) /* 111 */
 #define Tcl_AppendExportList \
@@ -1269,6 +1277,10 @@ extern const TclIntStubs *tclIntStubsPtr;
 	(tclIntStubsPtr->tclResetRewriteEnsemble) /* 247 */
 #define TclCopyChannel \
 	(tclIntStubsPtr->tclCopyChannel) /* 248 */
+#define TclDoubleDigits \
+	(tclIntStubsPtr->tclDoubleDigits) /* 249 */
+#define TclSetSlaveCancelFlags \
+	(tclIntStubsPtr->tclSetSlaveCancelFlags) /* 250 */
 
 #endif /* defined(USE_TCL_STUBS) */
 

@@ -10,8 +10,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: cmdMZ.test,v 1.30 2010/04/05 19:44:45 ferrieux Exp $
 
 if {[catch {package require tcltest 2.1}]} {
     puts stderr "Skipping tests in [info script]. tcltest 2.1 required."
@@ -38,7 +36,7 @@ namespace eval ::tcl::test::cmdMZ {
 	return 1
     }
     customMatch listGlob [namespace which ListGlobMatch]
-
+
 # Tcl_PwdObjCmd
 
 test cmdMZ-1.1 {Tcl_PwdObjCmd} -returnCodes error -body {
@@ -166,35 +164,31 @@ test cmdMZ-return-2.13 {return option handling} -body {
 test cmdMZ-return-2.14 {return option handling} -body {
     return -level 0 -code error -options {-code foo -options {-code break}}
 } -returnCodes break -result {}
-test cmdMZ-return-2.15 {return opton handling} -setup {
-    proc p {} {
-	return -code error -errorcode {a b} c
-    }
-} -body {
-    list [catch p result] $result $::errorCode
-} -cleanup {
-    rename p {}
-} -result {1 c {a b}}
-test cmdMZ-return-2.16 {return opton handling} -setup {
-    proc p {} {
-	return -code error -errorcode [list a b] c
-    }
-} -body {
-    list [catch p result] $result $::errorCode
-} -cleanup {
-    rename p {}
-} -result {1 c {a b}}
-test cmdMZ-return-2.17 {return opton handling} -setup {
-    proc p {} {
-	return -code error -errorcode a\ b c
-    }
-} -body {
-    list [catch p result] $result $::errorCode
-} -cleanup {
-    rename p {}
-} -result {1 c {a b}}
+test cmdMZ-return-2.15 {return opton handling} {
+    list [catch {
+	apply {{} {
+	    return -code error -errorcode {a b} c
+	}}
+    } result] $result $::errorCode
+} {1 c {a b}}
+test cmdMZ-return-2.16 {return opton handling} {
+    list [catch {
+	apply {{} {
+	    return -code error -errorcode [list a b] c
+	}}
+    } result] $result $::errorCode
+} {1 c {a b}}
+test cmdMZ-return-2.17 {return opton handling} {
+    list [catch {
+	apply {{} {
+	    return -code error -errorcode a\ b c
+	}}
+    } result] $result $::errorCode
+} {1 c {a b}}
 test cmdMZ-return-2.18 {return option handling} {
-    list [catch {return -code error -errorstack [list CALL a CALL b] yo} -> foo] [dictSort $foo] [info errorstack]
+    list [catch {
+	return -code error -errorstack [list CALL a CALL b] yo
+    } -> foo] [dictSort $foo] [info errorstack]
 } {2 {-code 1 -errorcode NONE -errorstack {CALL a CALL b} -level 1} {CALL a CALL b}}
 
 # Check that the result of a [return -options $opts $result] is
@@ -349,7 +343,7 @@ test cmdMZ-5.7 {Tcl_TimeObjCmd: errors generate right trace} {
 "time {error foo}"}}
 
 # The tests for Tcl_WhileObjCmd are in while.test
-
+
 # cleanup
 cleanupTests
 }

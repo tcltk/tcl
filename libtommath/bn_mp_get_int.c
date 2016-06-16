@@ -39,7 +39,3 @@ unsigned long mp_get_int(mp_int * a)
   return res & 0xFFFFFFFFUL;
 }
 #endif
-
-/* $Source: /root/tcl/repos-to-convert/tcl/libtommath/bn_mp_get_int.c,v $ */
-/* $Revision: 1.1.1.3 $ */
-/* $Date: 2006/12/01 00:08:11 $ */

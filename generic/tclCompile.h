@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclCompile.h,v 1.127 2010/09/27 19:42:38 msofer Exp $
  */
 
 #ifndef _TCLCOMPILATION
@@ -678,8 +676,43 @@ typedef struct ByteCode {
 #define INST_UNSET_ARRAY_STK		136
 #define INST_UNSET_STK			137
 
+/* For [dict with], [dict exists], [dict create] and [dict merge] */
+#define INST_DICT_EXPAND		138
+#define INST_DICT_RECOMBINE_STK		139
+#define INST_DICT_RECOMBINE_IMM		140
+#define INST_DICT_EXISTS		141
+#define INST_DICT_VERIFY		142
+
+/* For [string map] and [regsub] compilation */
+#define INST_STR_MAP			143
+#define INST_STR_FIND			144
+#define INST_STR_FIND_LAST		145
+#define INST_STR_RANGE_IMM		146
+#define INST_STR_RANGE			147
+
+/* For operations to do with coroutines and other NRE-manipulators */
+#define INST_YIELD			148
+#define INST_COROUTINE_NAME		149
+#define INST_TAILCALL			150
+
+/* For compilation of basic information operations */
+#define INST_NS_CURRENT			151
+#define INST_INFO_LEVEL_NUM		152
+#define INST_INFO_LEVEL_ARGS		153
+#define INST_RESOLVE_COMMAND		154
+#define INST_TCLOO_SELF			155
+#define INST_TCLOO_CLASS		156
+#define INST_TCLOO_NS			157
+#define INST_TCLOO_IS_OBJECT		158
+
+/* For compilation of [array] subcommands */
+#define INST_ARRAY_EXISTS_STK		159
+#define INST_ARRAY_EXISTS_IMM		160
+#define INST_ARRAY_MAKE_STK		161
+#define INST_ARRAY_MAKE_IMM		162
+
 /* The last opcode */
-#define LAST_INST_OPCODE		137
+#define LAST_INST_OPCODE		162
 
 /*
  * Table describing the Tcl bytecode instructions: their name (for displaying
@@ -863,8 +896,7 @@ typedef struct {
  *----------------------------------------------------------------
  */
 
-MODULE_SCOPE Tcl_NRPostProc	NRCommand;
-MODULE_SCOPE Tcl_ObjCmdProc	NRInterpCoroutine;
+MODULE_SCOPE Tcl_ObjCmdProc	TclNRInterpCoroutine;
 
 /*
  *----------------------------------------------------------------
@@ -957,6 +989,8 @@ MODULE_SCOPE void	TclRegisterAuxDataType(const AuxDataType *typePtr);
 MODULE_SCOPE int	TclRegisterLiteral(CompileEnv *envPtr,
 			    char *bytes, int length, int flags);
 MODULE_SCOPE void	TclReleaseLiteral(Tcl_Interp *interp, Tcl_Obj *objPtr);
+MODULE_SCOPE void	TclInvalidateCmdLiteral(Tcl_Interp *interp, 
+			    const char *name, Namespace *nsPtr);
 MODULE_SCOPE int	TclSingleOpCmd(ClientData clientData,
 			    Tcl_Interp *interp, int objc,
 			    Tcl_Obj *const objv[]);
@@ -975,6 +1009,14 @@ MODULE_SCOPE void	TclVerifyLocalLiteralTable(CompileEnv *envPtr);
 #endif
 MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 			    Tcl_Obj *valuePtr);
+MODULE_SCOPE void	TclLogCommandInfo(Tcl_Interp *interp,
+					  const char *script,
+					  const char *command, int length,
+					  const unsigned char *pc, Tcl_Obj **tosPtr); 
+MODULE_SCOPE Tcl_Obj	*TclGetInnerContext(Tcl_Interp *interp,
+					    const unsigned char *pc, Tcl_Obj **tosPtr);
+MODULE_SCOPE Tcl_Obj	*TclNewInstNameObj(unsigned char inst);
+
 
 /*
  *----------------------------------------------------------------
@@ -1350,6 +1392,16 @@ MODULE_SCOPE int	TclWordKnownAtCompileTime(Tcl_Token *tokenPtr,
 
 #define EnvHasLVT(envPtr) \
     (envPtr->procPtr || envPtr->iPtr->varFramePtr->localCachePtr)
+
+/*
+ * Macros for making it easier to deal with tokens and DStrings.
+ */
+
+#define TclDStringAppendToken(dsPtr, tokenPtr) \
+    Tcl_DStringAppend((dsPtr), (tokenPtr)->start, (tokenPtr)->size)
+#define TclRegisterDStringLiteral(envPtr, dsPtr) \
+    TclRegisterLiteral(envPtr, Tcl_DStringValue(dsPtr), \
+	    Tcl_DStringLength(dsPtr), /*flags*/ 0)
 
 /*
  * DTrace probe macros (NOPs if DTrace support is not enabled).

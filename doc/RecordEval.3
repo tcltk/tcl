@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: RecordEval.3,v 1.10 2007/12/13 15:22:31 dgp Exp $
-'\" 
 .so man.macros
 .TH Tcl_RecordAndEval 3 7.4 Tcl "Tcl Library Procedures"
 .BS
@@ -46,9 +44,9 @@ If the \fIflags\fR argument contains the \fBTCL_NO_EVAL\fR bit then
 the command is recorded without being evaluated.
 .PP
 Note that \fBTcl_RecordAndEval\fR has been largely replaced by the
-object-based procedure \fBTcl_RecordAndEvalObj\fR.
-That object-based procedure records and optionally executes
-a command held in a Tcl object instead of a string.
+value-based procedure \fBTcl_RecordAndEvalObj\fR.
+That value-based procedure records and optionally executes
+a command held in a Tcl value instead of a string.
 
 .SH "SEE ALSO"
 Tcl_RecordAndEvalObj

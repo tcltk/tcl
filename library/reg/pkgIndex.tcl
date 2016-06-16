@@ -1,9 +1,9 @@
-if {![package vsatisfies [package provide Tcl] 8]} {return}
-if {[string compare $::tcl_platform(platform) windows]} {return}
-if {[info exists ::tcl_platform(debug)]} {
-    package ifneeded registry 1.3 \
+if {([info commands ::tcl::pkgconfig] eq "")
+	|| ([info sharedlibextension] ne ".dll")} return
+if {[::tcl::pkgconfig get debug]} {
+    package ifneeded registry 1.3.0 \
             [list load [file join $dir tclreg13g.dll] registry]
 } else {
-    package ifneeded registry 1.3 \
+    package ifneeded registry 1.3.0 \
             [list load [file join $dir tclreg13.dll] registry]
 }

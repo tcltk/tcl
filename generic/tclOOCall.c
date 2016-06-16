@@ -4,12 +4,10 @@
  *	This file contains the method call chain management code for the
  *	object-system core.
  *
- * Copyright (c) 2005-2008 by Donal K. Fellows
+ * Copyright (c) 2005-2012 by Donal K. Fellows
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclOOCall.c,v 1.15 2009/09/30 03:11:26 dgp Exp $
  */
 
 #ifdef HAVE_CONFIG_H
@@ -39,7 +37,7 @@ struct ChainBuilder {
 #define DEFINITE_PROTECTED 0x100000
 #define DEFINITE_PUBLIC    0x200000
 #define KNOWN_STATE	   (DEFINITE_PROTECTED | DEFINITE_PUBLIC)
-#define SPECIAL		   (CONSTRUCTOR | DESTRUCTOR)
+#define SPECIAL		   (CONSTRUCTOR | DESTRUCTOR | FORCE_UNKNOWN)
 
 /*
  * Function declarations for things defined in this file.
@@ -103,8 +101,13 @@ void
 TclOODeleteContext(
     CallContext *contextPtr)
 {
+    register Object *oPtr = contextPtr->oPtr;
+
     TclOODeleteChain(contextPtr->callPtr);
-    TclStackFree(contextPtr->oPtr->fPtr->interp, contextPtr);
+    if (oPtr != NULL) {
+	TclStackFree(oPtr->fPtr->interp, contextPtr);
+	DelRef(oPtr);
+    }
 }
 
 /*
@@ -130,7 +133,7 @@ TclOODeleteChainCache(
 	}
     }
     Tcl_DeleteHashTable(tablePtr);
-    ckfree((char *) tablePtr);
+    ckfree(tablePtr);
 }
 
 /*
@@ -151,9 +154,9 @@ TclOODeleteChain(
 	return;
     }
     if (callPtr->chain != callPtr->staticChain) {
-	ckfree((char *) callPtr->chain);
+	ckfree(callPtr->chain);
     }
-    ckfree((char *) callPtr);
+    ckfree(callPtr);
 }
 
 /*
@@ -450,7 +453,7 @@ TclOOGetSortedMethodList(
 	 * heavily sorted when it is long enough to matter.
 	 */
 
-	strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
+	strings = ckalloc(sizeof(char *) * names.numEntries);
 	FOREACH_HASH(namePtr, isWanted, &names) {
 	    if (!(flags & PUBLIC_METHOD) || (PTR2INT(isWanted) & IN_LIST)) {
 		if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
@@ -471,7 +474,7 @@ TclOOGetSortedMethodList(
 	    }
 	    *stringsPtr = strings;
 	} else {
-	    ckfree((char *) strings);
+	    ckfree(strings);
 	}
     }
 
@@ -517,7 +520,7 @@ TclOOGetSortedClassMethodList(
 	 * heavily sorted when it is long enough to matter.
 	 */
 
-	strings = (const char **) ckalloc(sizeof(char *) * names.numEntries);
+	strings = ckalloc(sizeof(char *) * names.numEntries);
 	FOREACH_HASH(namePtr, isWanted, &names) {
 	    if (!(flags & PUBLIC_METHOD) || (PTR2INT(isWanted) & IN_LIST)) {
 		if (PTR2INT(isWanted) & NO_IMPLEMENTATION) {
@@ -538,7 +541,7 @@ TclOOGetSortedClassMethodList(
 	    }
 	    *stringsPtr = strings;
 	} else {
-	    ckfree((char *) strings);
+	    ckfree(strings);
 	}
     }
 
@@ -800,12 +803,12 @@ AddMethodToCallChain(
      */
 
     if (callPtr->numChain == CALL_CHAIN_STATIC_SIZE) {
-	callPtr->chain = (struct MInvoke *)
-		ckalloc(sizeof(struct MInvoke)*(callPtr->numChain+1));
+	callPtr->chain =
+		ckalloc(sizeof(struct MInvoke) * (callPtr->numChain+1));
 	memcpy(callPtr->chain, callPtr->staticChain,
 		sizeof(struct MInvoke) * callPtr->numChain);
     } else if (callPtr->numChain > CALL_CHAIN_STATIC_SIZE) {
-	callPtr->chain = (struct MInvoke *) ckrealloc((char *) callPtr->chain,
+	callPtr->chain = ckrealloc(callPtr->chain,
 		sizeof(struct MInvoke) * (callPtr->numChain + 1));
     }
     callPtr->chain[i].mPtr = mPtr;
@@ -986,12 +989,28 @@ TclOOGetCallContext(
 	doFilters = 1;
     }
 
-    callPtr = (CallChain *) ckalloc(sizeof(CallChain));
+    callPtr = ckalloc(sizeof(CallChain));
     InitCallChain(callPtr, oPtr, flags);
 
     cb.callChainPtr = callPtr;
     cb.filterLength = 0;
     cb.oPtr = oPtr;
+
+    /*
+     * If we're working with a forced use of unknown, do that now.
+     */
+
+    if (flags & FORCE_UNKNOWN) {
+	AddSimpleChainToCallContext(oPtr, oPtr->fPtr->unknownMethodNameObj,
+		&cb, NULL, 0, NULL);
+	callPtr->flags |= OO_UNKNOWN_METHOD;
+	callPtr->epoch = -1;
+	if (callPtr->numChain == 0) {
+	    TclOODeleteChain(callPtr);
+	    return NULL;
+	}
+	goto returnContext;
+    }
 
     /*
      * Add all defined filters (if any, and if we're going to be processing
@@ -1051,7 +1070,7 @@ TclOOGetCallContext(
 	if (hPtr == NULL) {
 	    if (oPtr->flags & USE_CLASS_CACHE) {
 		if (oPtr->selfCls->classChainCache == NULL) {
-		    oPtr->selfCls->classChainCache = (Tcl_HashTable *)
+		    oPtr->selfCls->classChainCache =
 			    ckalloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->selfCls->classChainCache);
@@ -1060,8 +1079,7 @@ TclOOGetCallContext(
 			(char *) methodNameObj, &i);
 	    } else {
 		if (oPtr->chainCache == NULL) {
-		    oPtr->chainCache = (Tcl_HashTable *)
-			    ckalloc(sizeof(Tcl_HashTable));
+		    oPtr->chainCache = ckalloc(sizeof(Tcl_HashTable));
 
 		    Tcl_InitObjHashTable(oPtr->chainCache);
 		}
@@ -1089,10 +1107,140 @@ TclOOGetCallContext(
   returnContext:
     contextPtr = TclStackAlloc(oPtr->fPtr->interp, sizeof(CallContext));
     contextPtr->oPtr = oPtr;
+    AddRef(oPtr);
     contextPtr->callPtr = callPtr;
     contextPtr->skip = 2;
     contextPtr->index = 0;
     return contextPtr;
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOOGetStereotypeCallChain --
+ *
+ *	Construct a call-chain for a method that would be used by a
+ *	stereotypical instance of the given class (i.e., where the object has
+ *	no definitions special to itself).
+ *
+ * ----------------------------------------------------------------------
+ */
+
+CallChain *
+TclOOGetStereotypeCallChain(
+    Class *clsPtr,		/* The object to get the context for. */
+    Tcl_Obj *methodNameObj,	/* The name of the method to get the context
+				 * for. NULL when getting a constructor or
+				 * destructor chain. */
+    int flags)			/* What sort of context are we looking for.
+				 * Only the bits PUBLIC_METHOD, CONSTRUCTOR,
+				 * PRIVATE_METHOD, DESTRUCTOR and
+				 * FILTER_HANDLING are useful. */
+{
+    CallChain *callPtr;
+    struct ChainBuilder cb;
+    int i, count;
+    Foundation *fPtr = clsPtr->thisPtr->fPtr;
+    Tcl_HashEntry *hPtr;
+    Tcl_HashTable doneFilters;
+    Object obj;
+
+    /*
+     * Synthesize a temporary stereotypical object so that we can use existing
+     * machinery to produce the stereotypical call chain.
+     */
+
+    memset(&obj, 0, sizeof(Object));
+    obj.fPtr = fPtr;
+    obj.selfCls = clsPtr;
+    obj.refCount = 1;
+    obj.flags = USE_CLASS_CACHE;
+
+    /*
+     * Check if we can get the chain out of the Tcl_Obj method name or out of
+     * the cache. This is made a bit more complex by the fact that there are
+     * multiple different layers of cache (in the Tcl_Obj, in the object, and
+     * in the class).
+     */
+
+    if (clsPtr->classChainCache != NULL) {
+	hPtr = Tcl_FindHashEntry(clsPtr->classChainCache,
+		(char *) methodNameObj);
+	if (hPtr != NULL && Tcl_GetHashValue(hPtr) != NULL) {
+	    const int reuseMask =
+		    ((flags & PUBLIC_METHOD) ? ~0 : ~PUBLIC_METHOD);
+
+	    callPtr = Tcl_GetHashValue(hPtr);
+	    if (IsStillValid(callPtr, &obj, flags, reuseMask)) {
+		callPtr->refCount++;
+		return callPtr;
+	    }
+	    Tcl_SetHashValue(hPtr, NULL);
+	    TclOODeleteChain(callPtr);
+	}
+    } else {
+	hPtr = NULL;
+    }
+
+    callPtr = ckalloc(sizeof(CallChain));
+    memset(callPtr, 0, sizeof(CallChain));
+    callPtr->flags = flags & (PUBLIC_METHOD|PRIVATE_METHOD|FILTER_HANDLING);
+    callPtr->epoch = fPtr->epoch;
+    callPtr->objectCreationEpoch = fPtr->tsdPtr->nsCount;
+    callPtr->objectEpoch = clsPtr->thisPtr->epoch;
+    callPtr->refCount = 1;
+    callPtr->chain = callPtr->staticChain;
+
+    cb.callChainPtr = callPtr;
+    cb.filterLength = 0;
+    cb.oPtr = &obj;
+
+    /*
+     * Add all defined filters (if any, and if we're going to be processing
+     * them; they're not processed for constructors, destructors or when we're
+     * in the middle of processing a filter).
+     */
+
+    Tcl_InitObjHashTable(&doneFilters);
+    AddClassFiltersToCallContext(&obj, clsPtr, &cb, &doneFilters);
+    Tcl_DeleteHashTable(&doneFilters);
+    count = cb.filterLength = callPtr->numChain;
+
+    /*
+     * Add the actual method implementations.
+     */
+
+    AddSimpleChainToCallContext(&obj, methodNameObj, &cb, NULL, flags, NULL);
+
+    /*
+     * Check to see if the method has no implementation. If so, we probably
+     * need to add in a call to the unknown method. Otherwise, set up the
+     * cacheing of the method implementation (if relevant).
+     */
+
+    if (count == callPtr->numChain) {
+	AddSimpleChainToCallContext(&obj, fPtr->unknownMethodNameObj, &cb,
+		NULL, 0, NULL);
+	callPtr->flags |= OO_UNKNOWN_METHOD;
+	callPtr->epoch = -1;
+	if (count == callPtr->numChain) {
+	    TclOODeleteChain(callPtr);
+	    return NULL;
+	}
+    } else {
+	if (hPtr == NULL) {
+	    if (clsPtr->classChainCache == NULL) {
+		clsPtr->classChainCache = ckalloc(sizeof(Tcl_HashTable));
+		Tcl_InitObjHashTable(clsPtr->classChainCache);
+	    }
+	    hPtr = Tcl_CreateHashEntry(clsPtr->classChainCache,
+		    (char *) methodNameObj, &i);
+	}
+	callPtr->refCount++;
+	Tcl_SetHashValue(hPtr, callPtr);
+	StashCallChain(methodNameObj, callPtr);
+    }
+    return callPtr;
 }
 
 /*
@@ -1252,6 +1400,91 @@ AddSimpleClassChainToCallContext(
     case 0:
 	return;
     }
+}
+
+/*
+ * ----------------------------------------------------------------------
+ *
+ * TclOORenderCallChain --
+ *
+ *	Create a description of a call chain. Used in [info object call],
+ *	[info class call], and [self call].
+ *
+ * ----------------------------------------------------------------------
+ */
+
+Tcl_Obj *
+TclOORenderCallChain(
+    Tcl_Interp *interp,
+    CallChain *callPtr)
+{
+    Tcl_Obj *filterLiteral, *methodLiteral, *objectLiteral;
+    Tcl_Obj *resultObj, *descObjs[4], **objv;
+    Foundation *fPtr = TclOOGetFoundation(interp);
+    int i;
+
+    /*
+     * Allocate the literals (potentially) used in our description.
+     */
+
+    filterLiteral = Tcl_NewStringObj("filter", -1);
+    Tcl_IncrRefCount(filterLiteral);
+    methodLiteral = Tcl_NewStringObj("method", -1);
+    Tcl_IncrRefCount(methodLiteral);
+    objectLiteral = Tcl_NewStringObj("object", -1);
+    Tcl_IncrRefCount(objectLiteral);
+
+    /*
+     * Do the actual construction of the descriptions. They consist of a list
+     * of triples that describe the details of how a method is understood. For
+     * each triple, the first word is the type of invokation ("method" is
+     * normal, "unknown" is special because it adds the method name as an
+     * extra argument when handled by some method types, and "filter" is
+     * special because it's a filter method). The second word is the name of
+     * the method in question (which differs for "unknown" and "filter" types)
+     * and the third word is the full name of the class that declares the
+     * method (or "object" if it is declared on the instance).
+     */
+
+    objv = TclStackAlloc(interp, callPtr->numChain * sizeof(Tcl_Obj *));
+    for (i=0 ; i<callPtr->numChain ; i++) {
+	struct MInvoke *miPtr = &callPtr->chain[i];
+
+	descObjs[0] = miPtr->isFilter
+		? filterLiteral
+		: callPtr->flags & OO_UNKNOWN_METHOD
+			? fPtr->unknownMethodNameObj
+			: methodLiteral;
+	descObjs[1] = callPtr->flags & CONSTRUCTOR
+		? fPtr->constructorName
+		: callPtr->flags & DESTRUCTOR
+			? fPtr->destructorName
+			: miPtr->mPtr->namePtr;
+	descObjs[2] = miPtr->mPtr->declaringClassPtr
+		? Tcl_GetObjectName(interp,
+			(Tcl_Object) miPtr->mPtr->declaringClassPtr->thisPtr)
+		: objectLiteral;
+	descObjs[3] = Tcl_NewStringObj(miPtr->mPtr->typePtr->name, -1);
+
+	objv[i] = Tcl_NewListObj(4, descObjs);
+    }
+
+    /*
+     * Drop the local references to the literals; if they're actually used,
+     * they'll live on the description itself.
+     */
+
+    Tcl_DecrRefCount(filterLiteral);
+    Tcl_DecrRefCount(methodLiteral);
+    Tcl_DecrRefCount(objectLiteral);
+
+    /*
+     * Finish building the description and return it.
+     */
+
+    resultObj = Tcl_NewListObj(callPtr->numChain, objv);
+    TclStackFree(interp, objv);
+    return resultObj;
 }
 
 /*

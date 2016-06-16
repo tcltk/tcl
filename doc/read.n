@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: read.n,v 1.16 2008/10/17 10:22:25 dkf Exp $
-'\" 
 .so man.macros
 .TH read n 8.1 Tcl "Tcl Built-In Commands"
 .BS
@@ -56,7 +54,7 @@ which \fBfconfigure\fR will alter input.
 '\" Note:  this advice actually applies to many versions of Tcl
 .PP
 For most applications a channel connected to a serial port should be
-configured to be nonblocking: \fBfconfigure \fIchannelId \fB\-blocking
+configured to be nonblocking: \fBfconfigure\fI channelId \fB\-blocking
 \fI0\fR.  Then \fBread\fR behaves much like described above.  Care
 must be taken when using \fBread\fR on blocking serial ports:
 .TP
@@ -68,7 +66,7 @@ from the serial port.
 \fBread \fIchannelId\fR 
 .
 In this form \fBread\fR blocks until the reception of the end-of-file
-character, see \fBfconfigure -eofchar\fR. If there no end-of-file
+character, see \fBfconfigure\fR \fB\-eofchar\fR. If there no end-of-file
 character has been configured for the channel, then \fBread\fR will
 block forever.
 .SH "EXAMPLE"
@@ -86,3 +84,6 @@ set lines [split $data \en]
 file(n), eof(n), fblocked(n), fconfigure(n), Tcl_StandardChannels(3)
 .SH KEYWORDS
 blocking, channel, end of line, end of file, nonblocking, read, translation, encoding
+'\"Local Variables:
+'\"mode: nroff
+'\"End:

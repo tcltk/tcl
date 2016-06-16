@@ -19,6 +19,17 @@ namespace eval ::tcl::test::fileSystem {
 	file delete -force [file join dir.dir linkinside.file]
     }
 
+testConstraint loaddll 0
+catch {
+    ::tcltest::loadTestedCommands
+    package require -exact Tcltest [info patchlevel]
+    set ::ddever [package require dde]
+    set ::ddelib [lindex [package ifneeded dde $::ddever] 1]
+    set ::regver  [package require registry]
+    set ::reglib [lindex [package ifneeded registry $::regver] 1]
+    testConstraint loaddll 1
+}
+
 # Test for commands defined in Tcltest executable
 testConstraint testfilesystem  	    [llength [info commands ::testfilesystem]]
 testConstraint testsetplatform 	    [llength [info commands ::testsetplatform]]
@@ -31,44 +42,39 @@ makeDirectory [file join dir.dir dirinside.dir]
 makeFile "test file in directory" [file join dir.dir inside.file]
 
 testConstraint unusedDrive 0
-set drive {}
-if {[testConstraint win]} {
-    set vols [string map [list :/ {}] [file volumes]]
-    for {set i 0} {$i < 26} {incr i} {
-	set drive [format %c [expr {$i + 65}]]
-	if {[lsearch -exact $vols $drive] == -1} {
-	    testConstraint unusedDrive 1
-	    break
+testConstraint moreThanOneDrive 0
+apply {{} {
+    # The variables 'drive' and 'drives' will be used below.
+    variable drive {} drives {}
+    if {[testConstraint win]} {
+	set vols [string map [list :/ {}] [file volumes]]
+	for {set i 0} {$i < 26} {incr i} {
+	    set drive [format %c [expr {$i + 65}]]
+	    if {$drive ni $vols} {
+		testConstraint unusedDrive 1
+		break
+	    }
+	}
+
+	set dir [pwd]
+	try {
+	    foreach vol [file volumes] {
+		if {![catch {cd $vol}]} {
+		    lappend drives $vol
+		}
+	    }
+	    testConstraint moreThanOneDrive [llength $drives]
+	} finally {
+	    cd $dir
 	}
     }
-    unset i vols
-    # The variable 'drive' will be used below
-}
-
-testConstraint moreThanOneDrive 0
-set drives [list]
-if {[testConstraint win]} {
-    set dir [pwd]
-    foreach vol [file volumes] {
-        if {![catch {cd $vol}]} {
-            lappend drives $vol
-        }
-    }
-    if {[llength $drives] > 1} {
-        testConstraint moreThanOneDrive 1
-    }
-    # The variable 'drives' will be used below
-    unset vol
-    cd $dir
-    unset dir
-}
+} ::tcl::test::fileSystem}
 
 proc testPathEqual {one two} {
     if {$one eq $two} {
-	return 1
-    } else {
-	return "not equal: $one $two"
+	return "ok"
     }
+    return "not equal: $one $two"
 }
 
 testConstraint hasLinks [expr {![catch {
@@ -100,19 +106,19 @@ test filesystem-1.1 {link normalisation} {hasLinks} {
 test filesystem-1.2 {link normalisation} {hasLinks unix} {
     testPathEqual [file normalize [file join gorp.file foo]] \
 	[file normalize [file join link.file foo]]
-} {1}
+} ok
 test filesystem-1.3 {link normalisation} {hasLinks} {
     testPathEqual [file normalize [file join dir.dir foo]] \
 	[file normalize [file join dir.link foo]]
-} {1}
+} ok
 test filesystem-1.4 {link normalisation} {hasLinks} {
     testPathEqual [file normalize [file join dir.dir inside.file]] \
 	[file normalize [file join dir.link inside.file]]
-} {1}
+} ok
 test filesystem-1.5 {link normalisation} {hasLinks} {
     testPathEqual [file normalize [file join dir.dir linkinside.file]] \
 	[file normalize [file join dir.dir linkinside.file]]
-} {1}
+} ok
 test filesystem-1.6 {link normalisation} {hasLinks} {
     string equal [file normalize [file join dir.dir linkinside.file]] \
 	[file normalize [file join dir.link inside.file]]
@@ -120,28 +126,29 @@ test filesystem-1.6 {link normalisation} {hasLinks} {
 test filesystem-1.7 {link normalisation} {hasLinks unix} {
     testPathEqual [file normalize [file join dir.link linkinside.file foo]] \
 	[file normalize [file join dir.dir inside.file foo]]
-} {1}
+} ok
 test filesystem-1.8 {link normalisation} {hasLinks} {
     string equal [file normalize [file join dir.dir linkinside.filefoo]] \
 	[file normalize [file join dir.link inside.filefoo]]
 } {0}
-test filesystem-1.9 {link normalisation} {unix hasLinks} {
+test filesystem-1.9 {link normalisation} -setup {
     file delete -force dir.link
+} -constraints {unix hasLinks} -body {
     file link dir.link [file nativename dir.dir]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
 	[file normalize [file join dir.link inside.file foo]]
-} {1}
+} -result ok
 test filesystem-1.10 {link normalisation: double link} {unix hasLinks} {
     file link dir2.link dir.link
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
 	[file normalize [file join dir2.link inside.file foo]]
-} {1}
+} ok
 makeDirectory dir2.file
 test filesystem-1.11 {link normalisation: double link, back in tree} {unix hasLinks} {
     file link [file join dir2.file dir2.link] [file join .. dir2.link]
     testPathEqual [file normalize [file join dir.dir linkinside.file foo]] \
 	[file normalize [file join dir2.file dir2.link inside.file foo]]
-} {1}
+} ok
 test filesystem-1.12 {file new native path} {} {
     for {set i 0} {$i < 10} {incr i} {
 	foreach f [lsort [glob -nocomplain -type l *]] {
@@ -198,39 +205,35 @@ test filesystem-1.25 {file normalisation} {win unusedDrive} {
 test filesystem-1.25.1 {file normalisation} {win unusedDrive} {
     file normalize ${drive}:/./.././..\\..\\a\\bb
 } "${drive}:/a/bb"
-test filesystem-1.26 {link normalisation: link and ..} {hasLinks} {
+test filesystem-1.26 {link normalisation: link and ..} -setup {
     file delete -force dir2.link
+} -constraints {hasLinks} -body {
     set dir [file join dir2 foo bar]
     file mkdir $dir
     file link dir2.link [file join dir2 foo bar]
-    set res [list [file normalize [file join dir2 foo x]] \
-	    [file normalize [file join dir2.link .. x]]]
-    testPathEqual [lindex $res 0] [lindex $res 1]
-} 1
+    testPathEqual [file normalize [file join dir2 foo x]] \
+	    [file normalize [file join dir2.link .. x]]
+} -result ok
 test filesystem-1.27 {file normalisation: up and down with ..} {
     set dir [file join dir2 foo bar]
     file mkdir $dir
     set dir2 [file join dir2 .. dir2 foo .. foo bar]
-    set res [list [file normalize $dir] [file normalize $dir2]]
-    set res2 [list [file exists $dir] [file exists $dir2]]
-    if {![string equal [lindex $res 0] [lindex $res 1]]} {
-	set res "exists: $res2, $res not equal"
-    } else {
-	set res "ok: $res2"
-    }
-} {ok: 1 1}
-test filesystem-1.28 {link normalisation: link with .. and ..} {hasLinks} {
+    list [testPathEqual [file normalize $dir] [file normalize $dir2]] \
+	[file exists $dir] [file exists $dir2]
+} {ok 1 1}
+test filesystem-1.28 {link normalisation: link with .. and ..} -setup {
     file delete -force dir2.link
+} -constraints {hasLinks} -body {
     set dir [file join dir2 foo bar]
     file mkdir $dir
     set to [file join dir2 .. dir2 foo .. foo bar]
     file link dir2.link $to
-    set res [list [file normalize [file join dir2 foo x]] \
-	    [file normalize [file join dir2.link .. x]]]
-    testPathEqual [lindex $res 0] [lindex $res 1]
-} 1
-test filesystem-1.29 {link normalisation: link with ..} {hasLinks} {
+    testPathEqual [file normalize [file join dir2 foo x]] \
+	    [file normalize [file join dir2.link .. x]]
+} -result ok
+test filesystem-1.29 {link normalisation: link with ..} -setup {
     file delete -force dir2.link
+} -constraints {hasLinks} -body {
     set dir [file join dir2 foo bar]
     file mkdir $dir
     set to [file join dir2 .. dir2 foo .. foo bar]
@@ -240,11 +243,11 @@ test filesystem-1.29 {link normalisation: link with ..} {hasLinks} {
 	return "$res must not contain '..'"
     }
     return "ok"
-} {ok}
+} -result {ok}
 test filesystem-1.29.1 {link normalisation with two consecutive links} {hasLinks} {
     testPathEqual [file normalize [file join dir.link dirinside.link abc]] \
 	[file normalize [file join dir.dir dirinside.dir abc]]
-} {1}
+} ok
 file delete -force dir2.file
 file delete -force dir2.link
 file delete -force link.file dir.link
@@ -277,208 +280,96 @@ test filesystem-1.33 {link normalisation: link near filesystem root} {testsetpla
 if {[testConstraint testsetplatform]} {
     testsetplatform $platform
 }
-test filesystem-1.34 {file normalisation with '/./'} {
-    set res [file normalize /foo/bar/anc/./.tml]
-    if {[string first "/./" $res] != -1} {
-	set res "normalization of /foo/bar/anc/./.tml is: $res"
-    } else {
-	set res "ok"
-    }
-    set res
-} {ok}
-test filesystem-1.35 {file normalisation with '/./'} {
-    set res [file normalize /ffo/bar/anc/./foo/.tml]
-    if {[string first "/./" $res] != -1 || ([regsub -all "foo" $res "" reg] == 2)} {
-	set res "normalization of /ffo/bar/anc/./foo/.tml is: $res"
-    } else {
-	set res "ok"
-    }
-    set res
-} {ok}
-test filesystem-1.36 {file normalisation with '/./'} {
-    set res [file normalize /foo/bar/anc/././asdasd/.tml]
-    if {[string first "/./" $res] != -1 || ([regsub -all "asdasd" $res "" reg] == 2) } {
-	set res "normalization of /foo/bar/anc/././asdasd/.tml is: $res"
-    } else {
-	set res "ok"
-    }
-    set res
-} {ok}
-test filesystem-1.37 {file normalisation with '/./'} {
+test filesystem-1.34 {file normalisation with '/./'} -body {
+    file normalize /foo/bar/anc/./.tml
+} -match regexp -result {^(?:(?!/\./).)*$}
+test filesystem-1.35a {file normalisation with '/./'} -body {
+    file normalize /ffo/bar/anc/./foo/.tml
+} -match regexp -result {^(?:(?!/\./).)*$}
+test filesystem-1.35b {file normalisation with '/./'} {
+    llength [regexp -all foo [file normalize /ffo/bar/anc/./foo/.tml]]
+} 1
+test filesystem-1.36a {file normalisation with '/./'} -body {
+    file normalize /foo/bar/anc/././asdasd/.tml
+} -match regexp -result {^(?:(?!/\./).)*$}
+test filesystem-1.36b {file normalisation with '/./'} {
+    llength [regexp -all asdasd [file normalize /foo/bar/anc/././asdasd/.tml]]
+} 1
+test filesystem-1.37 {file normalisation with '/./'} -body {
     set fname "/abc/./def/./ghi/./asda/.././.././asd/x/../../../../....."
-    set res [file norm $fname]
-    if {[string first "//" $res] != -1} {
-	set res "normalization of $fname is: $res"
-    } else {
-	set res "ok"
-    }
-    set res
-} {ok}
-test filesystem-1.38 {file normalisation with volume relative} \
-  {win moreThanOneDrive} {
-    set path "[string range [lindex $drives 0] 0 1]foo"
+    file norm $fname
+} -match regexp -result {^(?:[^/]|/(?:[^/]|$))+$}
+test filesystem-1.38 {file normalisation with volume relative} -setup {
     set dir [pwd]
+} -constraints {win moreThanOneDrive} -body {
+    set path "[string range [lindex $drives 0] 0 1]foo"
     cd [lindex $drives 1]
-    set res [file norm $path]
+    file norm $path
+} -cleanup {
     cd $dir
-    set res
-} "[lindex $drives 0]foo"
-test filesystem-1.39 {file normalisation with volume relative} {win} {
-    set drv C:/
-    set dir [lindex [glob -type d -dir $drv *] 0]
+} -result "[lindex $drives 0]foo"
+test filesystem-1.39 {file normalisation with volume relative} -setup {
     set old [pwd]
-    cd $dir
-    set res [file norm [string range $drv 0 1]]
+} -constraints {win} -body {
+    set drv C:/
+    cd [lindex [glob -type d -dir $drv *] 0]
+    file norm [string range $drv 0 1]
+} -cleanup {
     cd $old
-    if {[string index $res end] eq "/"} {
-        set res "Bad normalized path: $res"
-    } else {
-        set res "ok"
-    }
-} {ok}
+} -match regexp -result {.*[^/]}
 test filesystem-1.40 {file normalisation with repeated separators} {
-    set a [file norm foo////bar]
-    set b [file norm foo/bar]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm foo////bar] [file norm foo/bar]
+} ok
 test filesystem-1.41 {file normalisation with repeated separators} {win} {
-    set a [file norm foo\\\\\\bar]
-    set b [file norm foo/bar]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm foo\\\\\\bar] [file norm foo/bar]
+} ok
 test filesystem-1.42 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /xxx/..]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /xxx/..] [file norm /]
+} ok
 test filesystem-1.42.1 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /xxx/../]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /xxx/../] [file norm /]
+} ok
 test filesystem-1.43 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /xxx/foo/../..]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /xxx/foo/../..] [file norm /]
+} ok
 test filesystem-1.43.1 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /xxx/foo/../../]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /xxx/foo/../../] [file norm /]
+} ok
 test filesystem-1.44 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /xxx/foo/../../bar]
-    set b [file norm /bar]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /xxx/foo/../../bar] [file norm /bar]
+} ok
 test filesystem-1.45 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /xxx/../../bar]
-    set b [file norm /bar]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /xxx/../../bar] [file norm /bar]
+} ok
 test filesystem-1.46 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /xxx/../bar]
-    set b [file norm /bar]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /xxx/../bar] [file norm /bar]
+} ok
 test filesystem-1.47 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /..]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /..] [file norm /]
+} ok
 test filesystem-1.48 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /../]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /../] [file norm /]
+} ok
 test filesystem-1.49 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /.]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /.] [file norm /]
+} ok
 test filesystem-1.50 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /./]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /./] [file norm /]
+} ok
 test filesystem-1.51 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /../..]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /../..] [file norm /]
+} ok
 test filesystem-1.51.1 {file normalisation .. beyond root (Bug 1379287)} {
-    set a [file norm /../../]
-    set b [file norm /]
-    if {![string equal $a $b]} {
-        set res "Paths should be equal: $a , $b"
-    } else {
-        set res "ok"
-    }
-} {ok}
+    testPathEqual [file norm /../../] [file norm /]
+} ok
 
 test filesystem-2.0 {new native path} {unix} {
    foreach f [lsort [glob -nocomplain /usr/bin/c*]] {
        catch {file readlink $f}
    }
    # If we reach here we've succeeded. We used to crash above.
-   expr 1
-} {1}
+   return ok
+} ok
 
 # Make sure the testfilesystem hasn't been registered.
 if {[testConstraint testfilesystem]} {
@@ -511,28 +402,28 @@ test filesystem-4.0 {testfilesystem} -constraints testfilesystem -body {
     set filesystemReport {}
     file exists foo
     testfilesystem 0
-    set filesystemReport
+    return $filesystemReport
 } -match glob -result {*{access foo}}
 test filesystem-4.1 {testfilesystem} -constraints testfilesystem -body {
     testfilesystem 1
     set filesystemReport {}
     catch {file stat foo bar}
     testfilesystem 0
-    set filesystemReport
+    return $filesystemReport
 } -match glob -result {*{stat foo}}
 test filesystem-4.2 {testfilesystem} -constraints testfilesystem -body {
     testfilesystem 1
     set filesystemReport {}
     catch {file lstat foo bar}
     testfilesystem 0
-    set filesystemReport
+    return $filesystemReport
 } -match glob -result {*{lstat foo}}
 test filesystem-4.3 {testfilesystem} -constraints testfilesystem -body {
     testfilesystem 1
     set filesystemReport {}
     catch {glob *}
     testfilesystem 0
-    set filesystemReport
+    return $filesystemReport
 } -match glob -result {*{matchindirectory *}*}
 
 test filesystem-5.1 {cache and ~} -constraints testfilesystem -setup {
@@ -593,21 +484,21 @@ test filesystem-6.22 {empty file name} {file pathtype ""} relative
 test filesystem-6.23 {empty file name} {file readable ""} 0
 test filesystem-6.24 {empty file name} -returnCodes error -body {
     file readlink ""
-} -result {could not readlink "": no such file or directory}
+} -result {could not read link "": no such file or directory}
 test filesystem-6.25 {empty file name} -returnCodes error -body {
     file rename "" ""
 } -result {error renaming "": no such file or directory}
 test filesystem-6.26 {empty file name} {file rootname ""} {}
 test filesystem-6.27 {empty file name} -returnCodes error -body {
     file separator ""
-} -result {Unrecognised path}
+} -result {unrecognised path}
 test filesystem-6.28 {empty file name} -returnCodes error -body {
     file size ""
 } -result {could not read "": no such file or directory}
 test filesystem-6.29 {empty file name} {file split ""} {}
 test filesystem-6.30 {empty file name} -returnCodes error -body {
     file system ""
-} -result {Unrecognised path}
+} -result {unrecognised path}
 test filesystem-6.31 {empty file name} {file tail ""} {}
 test filesystem-6.32 {empty file name} -returnCodes error -body {
     file type ""
@@ -621,13 +512,12 @@ if {[testConstraint testfilesystem]} {
 
 test filesystem-7.1.1 {load from vfs} -setup {
     set dir [pwd]
-} -constraints {win testsimplefilesystem} -body {
+} -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname [info nameof]]
-    set dde [lindex [glob *dde*[info sharedlib]] 0]
+    cd [file dirname $::ddelib]
     testsimplefilesystem 1
     # This loads dde via a complex copy-to-temp operation
-    load simplefs:/$dde dde
+    load simplefs:/[file tail $::ddelib] dde
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
@@ -636,14 +526,13 @@ test filesystem-7.1.1 {load from vfs} -setup {
 } -result ok
 test filesystem-7.1.2 {load from vfs, and then unload again} -setup {
     set dir [pwd]
-} -constraints {win testsimplefilesystem} -body {
+} -constraints {win testsimplefilesystem loaddll} -body {
     # This may cause a crash on exit
-    cd [file dirname [info nameof]]
-    set reg [lindex [glob tclreg*[info sharedlib]] 0]
+    cd [file dirname $::reglib]
     testsimplefilesystem 1
     # This loads reg via a complex copy-to-temp operation
-    load simplefs:/$reg Registry
-    unload simplefs:/$reg
+    load simplefs:/[file tail $::reglib] Registry
+    unload simplefs:/[file tail $::reglib]
     testsimplefilesystem 0
     return ok
     # The real result of this test is what happens when Tcl exits.
@@ -1040,8 +929,12 @@ test filesystem-9.9 {path objects and glob and file tail and tilde} -setup {
 
 # ----------------------------------------------------------------------
 
+test filesystem-10.1 {Bug 3414754} {
+    string match */ [file join [pwd] foo/]
+} 0
+
 cleanupTests
-unset -nocomplain drive
+unset -nocomplain drive drives
 }
 namespace delete ::tcl::test::fileSystem
 return

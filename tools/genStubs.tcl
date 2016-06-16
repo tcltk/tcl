@@ -9,8 +9,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: genStubs.tcl,v 1.44 2010/09/15 07:33:56 nijtmans Exp $
 
 package require Tcl 8.4
 
@@ -281,18 +279,26 @@ proc genStubs::rewriteFile {file text} {
 # Results:
 #	Returns the original text inside an appropriate #ifdef.
 
-proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
+proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
     set text ""
     switch $plat {
 	win {
-	    append text "#ifdef __WIN32__ /* WIN */\n${iftxt}"
+	    append text "#if defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " || defined(__CYGWIN__)"
+	    }
+	    append text " /* WIN */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* WIN */\n${eltxt}"
 	    }
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(__WIN32__) && !defined(MAC_OSX_TCL)\
+	    append text "#if !defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " && !defined(__CYGWIN__)"
+	    }
+	    append text " && !defined(MAC_OSX_TCL)\
 		    /* UNIX */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* UNIX */\n${eltxt}"
@@ -314,7 +320,11 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}}} {
 	    append text "#endif /* AQUA */\n"
 	}
 	x11 {
-	    append text "#if !(defined(__WIN32__) || defined(MAC_OSX_TK))\
+	    append text "#if !(defined(__WIN32__)"
+	    if {$withCygwin} {
+		append text " || defined(__CYGWIN__)"
+	    }
+	    append text " || defined(MAC_OSX_TK))\
 		    /* X11 */\n${iftxt}"
 	    if {$eltxt ne ""} {
 		append text "#else /* X11 */\n${eltxt}"
@@ -491,6 +501,9 @@ proc genStubs::makeDecl {name decl index} {
 		set sep ", "
 	    }
 	    append line ", ...)"
+	    if {[lindex $args end] eq "{const char *} format"} {
+		append line " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+	    }
 	}
 	default {
 	    set sep "("
@@ -567,8 +580,8 @@ proc genStubs::makeSlot {name decl index} {
 	append text $rtype " *" $lfname "; /* $index */\n"
 	return $text
     }
-    if {[string range $rtype end-7 end] eq "CALLBACK"} {
-	append text [string trim [string range $rtype 0 end-8]] " (CALLBACK *" $lfname ") "
+    if {[string range $rtype end-8 end] eq "__stdcall"} {
+	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
@@ -588,6 +601,9 @@ proc genStubs::makeSlot {name decl index} {
 		set sep ", "
 	    }
 	    append text ", ...)"
+	    if {[lindex $args end] eq "{const char *} format"} {
+		append text " TCL_FORMAT_PRINTF(" [expr [llength $args] - 1] ", " [llength $args] ")"
+	    }
 	}
 	default {
 	    set sep "("
@@ -795,7 +811,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    eval {append temp} $skipString
 		}
 	    }
-	    append text [addPlatformGuard $plat $temp]
+	    append text [addPlatformGuard $plat $temp {} true]
 	}
 	## win ##
 	if {$block(win)} {
@@ -809,10 +825,10 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    eval {append temp} $skipString
 		}
 	    }
-	    append text [addPlatformGuard $plat $temp]
+	    append text [addPlatformGuard $plat $temp {} true]
 	}
 	## macosx ##
-	if {$block(macosx) && !$block(aqua) && !$block(x11)} {
+	if {($block(unix) || $block(macosx)) && !$block(aqua) && !$block(x11)} {
 	    set temp {}
 	    set lastNum -1
 	    foreach plat {unix macosx} {
@@ -881,7 +897,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 			} else {
 			    eval {set etxt} $skipString
 			    append temp [addPlatformGuard $plat [$slotProc \
-				    $name $stubs($name,$plat,$i) $i] $etxt]
+				    $name $stubs($name,$plat,$i) $i] $etxt true]
 			}
 			set emit 1
 			break
@@ -891,7 +907,7 @@ proc genStubs::forAllStubs {name slotProc onAll textVar
 		    eval {append temp} $skipString
 		}
 	    }
-	    append text [addPlatformGuard x11 $temp]
+	    append text [addPlatformGuard x11 $temp {} true]
 	}
     }
 }
@@ -970,7 +986,7 @@ proc genStubs::emitHeader {name} {
     emitDeclarations $name text
 
     if {[info exists hooks($name)]} {
-	append text "\ntypedef struct ${capName}StubHooks {\n"
+	append text "\ntypedef struct {\n"
 	foreach hook $hooks($name) {
 	    set capHook [string toupper [string index $hook 0]]
 	    append capHook [string range $hook 1 end]
@@ -984,7 +1000,11 @@ proc genStubs::emitHeader {name} {
 	append text "    int epoch;\n"
 	append text "    int revision;\n"
     }
-    append text "    const struct ${capName}StubHooks *hooks;\n\n"
+    if {[info exists hooks($name)]} {
+	append text "    const ${capName}StubHooks *hooks;\n\n"
+    } else {
+	append text "    void *hooks;\n\n"
+    }
 
     emitSlots $name text
 

@@ -10,17 +10,15 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: append.test,v 1.12 2010/09/01 20:35:33 andreas_kupries Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
-catch {unset x}
-
+unset -nocomplain x
+
 test append-1.1 {append command} {
-    catch {unset x}
+    unset -nocomplain x
     list [append x 1 2 abc "long string"] $x
 } {{12abclong string} {12abclong string}}
 test append-1.2 {append command} {
@@ -52,12 +50,12 @@ test append-3.2 {append errors} -returnCodes error -body {
     append x(0) 44
 } -result {can't set "x(0)": variable isn't array}
 test append-3.3 {append errors} -returnCodes error -body {
-    catch {unset x}
+    unset -nocomplain x
     append x
 } -result {can't read "x": no such variable}
 
 test append-4.1 {lappend command} {
-    catch {unset x}
+    unset -nocomplain x
     list [lappend x 1 2 abc "long string"] $x
 } {{1 2 abc {long string}} {1 2 abc {long string}}}
 test append-4.2 {lappend command} {
@@ -128,19 +126,19 @@ test append-4.16 {lappend command} {
     lappend x abc
 } "x abc"
 test append-4.17 {lappend command} {
-    catch {unset x}
+    unset -nocomplain x
     lappend x
 } {}
 test append-4.18 {lappend command} {
-    catch {unset x}
+    unset -nocomplain x
     lappend x {}
 } {{}}
 test append-4.19 {lappend command} {
-    catch {unset x}
+    unset -nocomplain x
     lappend x(0)
 } {}
 test append-4.20 {lappend command} {
-    catch {unset x}
+    unset -nocomplain x
     lappend x(0) abc
 } {abc}
 unset -nocomplain x
@@ -154,7 +152,7 @@ test append-4.22 {lappend command} -returnCodes error -body {
 } -result {unmatched open quote in list}
 
 test append-5.1 {long lappends} -setup {
-    catch {unset x}
+    unset -nocomplain x
     proc check {var size} {
 	set l [llength $var]
 	if {$l != $size} {
@@ -188,7 +186,7 @@ test append-6.2 {lappend errors} -returnCodes error -body {
 
 test append-7.1 {lappend-created var and error in trace on that var} -setup {
     catch {rename foo ""}
-    catch {unset x}
+    unset -nocomplain x
 } -body {
     trace variable x w foo
     proc foo {} {global x; unset x}
@@ -200,8 +198,8 @@ test append-7.1 {lappend-created var and error in trace on that var} -setup {
     list [info exists x] [catch {set x} msg] $msg
 } -result {0 1 {can't read "x": no such variable}}
 test append-7.2 {lappend var triggers read trace} -setup {
-    catch {unset myvar}
-    catch {unset ::result}
+    unset -nocomplain myvar
+    unset -nocomplain ::result
 } -body {
     trace variable myvar r foo
     proc foo {args} {append ::result $args}
@@ -209,8 +207,8 @@ test append-7.2 {lappend var triggers read trace} -setup {
     return $::result
 } -result {myvar {} r}
 test append-7.3 {lappend var triggers read trace, array var} -setup {
-    catch {unset myvar}
-    catch {unset ::result}
+    unset -nocomplain myvar
+    unset -nocomplain ::result
 } -body {
     # The behavior of read triggers on lappend changed in 8.0 to not trigger
     # them, and was changed back in 8.4.
@@ -220,8 +218,8 @@ test append-7.3 {lappend var triggers read trace, array var} -setup {
     return $::result
 } -result {myvar b r}
 test append-7.4 {lappend var triggers read trace, array var exists} -setup {
-    catch {unset myvar}
-    catch {unset ::result}
+    unset -nocomplain myvar
+    unset -nocomplain ::result
 } -body {
     set myvar(0) 1
     trace variable myvar r foo
@@ -230,8 +228,8 @@ test append-7.4 {lappend var triggers read trace, array var exists} -setup {
     return $::result
 } -result {myvar b r}
 test append-7.5 {append var does not trigger read trace} -setup {
-    catch {unset myvar}
-    catch {unset ::result}
+    unset -nocomplain myvar
+    unset -nocomplain ::result
 } -body {
     trace variable myvar r foo
     proc foo {args} {append ::result $args}
@@ -239,15 +237,16 @@ test append-7.5 {append var does not trigger read trace} -setup {
     info exists ::result
 } -result {0}
 
+# THERE ARE NO append-8.* TESTS
 
+# New tests for bug 3057639 to show off the more consistent behaviour of
+# lappend in both direct-eval and bytecompiled code paths (see appendComp.test
+# for the compiled variants). lappend now behaves like append. 9.0/1 lappend -
+# 9.2/3 append
 
-# New tests for bug 3057639 to show off the more consistent behaviour
-# of lappend in both direct-eval and bytecompiled code paths (see
-# appendComp.test for the compiled variants). lappend now behaves like
-# append. 9.0/1 lappend - 9.2/3 append
-
-test append-9.0 {bug 3057639, lappend direct eval, read trace on non-existing array variable element} {
-    catch {unset myvar}
+test append-9.0 {bug 3057639, lappend direct eval, read trace on non-existing array variable element} -setup {
+    unset -nocomplain myvar
+} -body {
     array set myvar {}
     proc nonull {var key val} {
 	upvar 1 $var lvar
@@ -259,17 +258,19 @@ test append-9.0 {bug 3057639, lappend direct eval, read trace on non-existing ar
     list [catch {
 	lappend myvar(key) "new value"
     } msg] $msg
-} {0 {{new value}}}
-
-test append-9.1 {bug 3057639, lappend direct eval, read trace on non-existing env element} {
-    catch {unset ::env(__DUMMY__)}
+} -result {0 {{new value}}}
+test append-9.1 {bug 3057639, lappend direct eval, read trace on non-existing env element} -setup {
+    unset -nocomplain ::env(__DUMMY__)
+} -body {
     list [catch {
 	lappend ::env(__DUMMY__) "new value"
     } msg] $msg
-} {0 {{new value}}}
-
-test append-9.2 {bug 3057639, append direct eval, read trace on non-existing array variable element} {
-    catch {unset myvar}
+} -cleanup {
+    unset -nocomplain ::env(__DUMMY__)
+} -result {0 {{new value}}}
+test append-9.2 {bug 3057639, append direct eval, read trace on non-existing array variable element} -setup {
+    unset -nocomplain myvar
+} -body {
     array set myvar {}
     proc nonull {var key val} {
 	upvar 1 $var lvar
@@ -281,19 +282,25 @@ test append-9.2 {bug 3057639, append direct eval, read trace on non-existing arr
     list [catch {
 	append myvar(key) "new value"
     } msg] $msg
-} {0 {new value}}
-
-test append-9.3 {bug 3057639, append direct eval, read trace on non-existing env element} {
-    catch {unset ::env(__DUMMY__)}
+} -result {0 {new value}}
+test append-9.3 {bug 3057639, append direct eval, read trace on non-existing env element} -setup {
+    unset -nocomplain ::env(__DUMMY__)
+} -body {
     list [catch {
 	append ::env(__DUMMY__) "new value"
     } msg] $msg
-} {0 {new value}}
-
-
-catch {unset i x result y}
+} -cleanup {
+    unset -nocomplain ::env(__DUMMY__)
+} -result {0 {new value}}
+
+unset -nocomplain i x result y
 catch {rename foo ""}
 
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# fill-column: 78
+# End:

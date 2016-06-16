@@ -10,10 +10,10 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclAppInit.c,v 1.24 2010/09/23 21:40:46 nijtmans Exp $
  */
 
+#undef BUILD_tcl
+#undef STATIC_BUILD
 #include "tcl.h"
 
 #ifdef TCL_TEST
@@ -35,7 +35,11 @@ extern int		Tclxttest_Init(Tcl_Interp *interp);
 #ifndef TCL_LOCAL_APPINIT
 #define TCL_LOCAL_APPINIT Tcl_AppInit
 #endif
-extern int TCL_LOCAL_APPINIT(Tcl_Interp *interp);
+#ifndef MODULE_SCOPE
+#   define MODULE_SCOPE extern
+#endif
+MODULE_SCOPE int TCL_LOCAL_APPINIT(Tcl_Interp *);
+MODULE_SCOPE int main(int, char **);
 
 /*
  * The following #if block allows you to change how Tcl finds the startup

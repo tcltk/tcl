@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: http.n,v 1.40 2010/07/25 16:08:13 dkf Exp $
-'\" 
 .so man.macros
 .TH "http" n 2.7 http "Tcl Bundled Packages"
 .BS
@@ -18,9 +16,9 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 \fBpackage require http ?2.7?\fR
 .\" See Also -useragent option documentation in body!
 .sp
-\fB::http::config ?\fI-option value\fR ...?
+\fB::http::config ?\fI\-option value\fR ...?
 .sp
-\fB::http::geturl \fIurl\fR ?\fI-option value\fR ...?
+\fB::http::geturl \fIurl\fR ?\fI\-option value\fR ...?
 .sp
 \fB::http::formatQuery\fR \fIkey value\fR ?\fIkey value\fR ...?
 .sp
@@ -51,7 +49,8 @@ http \- Client-side implementation of the HTTP/1.1 protocol
 .SH DESCRIPTION
 .PP
 The \fBhttp\fR package provides the client side of the HTTP/1.1
-protocol.  The package implements the GET, POST, and HEAD operations
+protocol, as defined in RFC 2616.
+The package implements the GET, POST, and HEAD operations
 of HTTP/1.1.  It allows configuration of a proxy host to get through
 firewalls.  The package is compatible with the \fBSafesock\fR security
 policy, so it can be used by untrusted applets to do URL fetching from
