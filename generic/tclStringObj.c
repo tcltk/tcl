@@ -36,6 +36,7 @@
 
 #include "tclInt.h"
 #include "tommath.h"
+#include "tclStringRep.h"
 
 /*
  * Set COMPAT to 1 to restore the shimmering patterns to those of Tcl 8.5.
@@ -89,60 +90,6 @@ const Tcl_ObjType tclStringType = {
     UpdateStringOfString,	/* updateStringProc */
     SetStringFromAny		/* setFromAnyProc */
 };
-
-/*
- * The following structure is the internal rep for a String object. It keeps
- * track of how much memory has been used and how much has been allocated for
- * the Unicode and UTF string to enable growing and shrinking of the UTF and
- * Unicode reps of the String object with fewer mallocs. To optimize string
- * length and indexing operations, this structure also stores the number of
- * characters (same of UTF and Unicode!) once that value has been computed.
- *
- * Under normal configurations, what Tcl calls "Unicode" is actually UTF-16
- * restricted to the Basic Multilingual Plane (i.e. U+00000 to U+0FFFF). This
- * can be officially modified by altering the definition of Tcl_UniChar in
- * tcl.h, but do not do that unless you are sure what you're doing!
- */
-
-typedef struct String {
-    int numChars;		/* The number of chars in the string. -1 means
-				 * this value has not been calculated. >= 0
-				 * means that there is a valid Unicode rep, or
-				 * that the number of UTF bytes == the number
-				 * of chars. */
-    int allocated;		/* The amount of space actually allocated for
-				 * the UTF string (minus 1 byte for the
-				 * termination char). */
-    int maxChars;		/* Max number of chars that can fit in the
-				 * space allocated for the unicode array. */
-    int hasUnicode;		/* Boolean determining whether the string has
-				 * a Unicode representation. */
-    Tcl_UniChar unicode[1];	/* The array of Unicode chars. The actual size
-				 * of this field depends on the 'maxChars'
-				 * field above. */
-} String;
-
-#define STRING_MAXCHARS \
-	(int)(((size_t)UINT_MAX - sizeof(String))/sizeof(Tcl_UniChar))
-#define STRING_SIZE(numChars) \
-	(sizeof(String) + ((numChars) * sizeof(Tcl_UniChar)))
-#define stringCheckLimits(numChars) \
-    if ((numChars) < 0 || (numChars) > STRING_MAXCHARS) { \
-	Tcl_Panic("max length for a Tcl unicode value (%d chars) exceeded", \
-		STRING_MAXCHARS); \
-    }
-#define stringAttemptAlloc(numChars) \
-	(String *) attemptckalloc((unsigned) STRING_SIZE(numChars) )
-#define stringAlloc(numChars) \
-	(String *) ckalloc((unsigned) STRING_SIZE(numChars) )
-#define stringRealloc(ptr, numChars) \
-    (String *) ckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
-#define stringAttemptRealloc(ptr, numChars) \
-    (String *) attemptckrealloc((ptr), (unsigned) STRING_SIZE(numChars) )
-#define GET_STRING(objPtr) \
-	((String *) (objPtr)->internalRep.twoPtrValue.ptr1)
-#define SET_STRING(objPtr, stringPtr) \
-	((objPtr)->internalRep.twoPtrValue.ptr1 = (void *) (stringPtr))
 
 /*
  * TCL STRING GROWTH ALGORITHM
@@ -188,7 +135,7 @@ GrowStringBuffer(
     int flag)
 {
     /*
-     * Pre-conditions: 
+     * Pre-conditions:
      *	objPtr->typePtr == &tclStringType
      *	needed > stringPtr->allocated
      *	flag || objPtr->bytes != NULL
@@ -238,7 +185,7 @@ GrowUnicodeBuffer(
     int needed)
 {
     /*
-     * Pre-conditions: 
+     * Pre-conditions:
      *	objPtr->typePtr == &tclStringType
      *	needed > stringPtr->maxChars
      *	needed < STRING_MAXCHARS
@@ -1123,7 +1070,8 @@ Tcl_AppendLimitedToObj(
 	if (ellipsis == NULL) {
 	    ellipsis = "...";
 	}
-	toCopy = Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
+	toCopy = (bytes == NULL) ? limit
+		: Tcl_UtfPrev(bytes+limit+1-strlen(ellipsis), bytes) - bytes;
     }
 
     /*
@@ -1281,23 +1229,43 @@ Tcl_AppendObjToObj(
 
     if ((TclIsPureByteArray(objPtr) || objPtr->bytes == tclEmptyStringRep)
 	    && TclIsPureByteArray(appendObjPtr)) {
-	unsigned char *bytesSrc;
-	int lengthSrc, lengthTotal;
 
 	/*
-	 * We do not assume that objPtr and appendObjPtr must be distinct!
-	 * This makes this code a bit more complex than it otherwise would be,
-	 * but in turn makes it much safer.
+	 * You might expect the code here to be
+	 *
+	 *  bytes = Tcl_GetByteArrayFromObj(appendObjPtr, &length);
+	 *  TclAppendBytesToByteArray(objPtr, bytes, length);
+	 *
+	 * and essentially all of the time that would be fine.  However,
+	 * it would run into trouble in the case where objPtr and
+	 * appendObjPtr point to the same thing.  That may never be a
+	 * good idea.  It seems to violate Copy On Write, and we don't
+	 * have any tests for the situation, since making any Tcl commands
+	 * that call Tcl_AppendObjToObj() do that appears impossible
+	 * (They honor Copy On Write!).  For the sake of extensions that
+	 * go off into that realm, though, here's a more complex approach
+	 * that can handle all the cases.
 	 */
+
+	/* Get lengths */
+	int lengthSrc;
 
 	(void) Tcl_GetByteArrayFromObj(objPtr, &length);
 	(void) Tcl_GetByteArrayFromObj(appendObjPtr, &lengthSrc);
-	lengthTotal = length + lengthSrc;
-	if (((length > lengthSrc) ? length : lengthSrc) > lengthTotal) {
-	    Tcl_Panic("max size for a Tcl value (%d bytes) exceeded", INT_MAX);
-	}
-	bytesSrc = Tcl_GetByteArrayFromObj(appendObjPtr, NULL);
-	TclAppendBytesToByteArray(objPtr, bytesSrc, lengthSrc);
+
+	/* Grow buffer enough for the append */
+	TclAppendBytesToByteArray(objPtr, NULL, lengthSrc);
+
+	/* Reset objPtr back to the original value */
+	Tcl_SetByteArrayLength(objPtr, length);
+
+	/*
+	 * Now do the append knowing that buffer growth cannot cause
+	 * any trouble.
+	 */
+
+	TclAppendBytesToByteArray(objPtr,
+		Tcl_GetByteArrayFromObj(appendObjPtr, NULL), lengthSrc);
 	return;
     }
 
@@ -1313,7 +1281,7 @@ Tcl_AppendObjToObj(
      * appendObjPtr and append it.
      */
 
-    if (stringPtr->hasUnicode 
+    if (stringPtr->hasUnicode
 #if COMPAT
 		&& stringPtr->numChars > 0
 #endif
@@ -1415,7 +1383,7 @@ AppendUnicodeToUnicodeRep(
 	 * the reallocs below.
 	 */
 
-	if (unicode >= stringPtr->unicode
+	if (unicode && unicode >= stringPtr->unicode
 		&& unicode <= stringPtr->unicode + stringPtr->maxChars) {
 	    offset = unicode - stringPtr->unicode;
 	}
@@ -1437,8 +1405,10 @@ AppendUnicodeToUnicodeRep(
      * trailing null.
      */
 
-    memmove(stringPtr->unicode + stringPtr->numChars, unicode,
-	    appendNumChars * sizeof(Tcl_UniChar));
+    if (unicode) {
+	memmove(stringPtr->unicode + stringPtr->numChars, unicode,
+		appendNumChars * sizeof(Tcl_UniChar));
+    }
     stringPtr->unicode[numChars] = 0;
     stringPtr->numChars = numChars;
     stringPtr->allocated = 0;
@@ -1577,7 +1547,7 @@ AppendUtfToUtfRep(
 	 * the reallocs below.
 	 */
 
-	if (bytes >= objPtr->bytes
+	if (bytes && bytes >= objPtr->bytes
 		&& bytes <= objPtr->bytes + objPtr->length) {
 	    offset = bytes - objPtr->bytes;
 	}
@@ -1605,7 +1575,9 @@ AppendUtfToUtfRep(
     stringPtr->numChars = -1;
     stringPtr->hasUnicode = 0;
 
-    memmove(objPtr->bytes + oldLength, bytes, numBytes);
+    if (bytes) {
+	memmove(objPtr->bytes + oldLength, bytes, numBytes);
+    }
     objPtr->bytes[newLength] = 0;
     objPtr->length = newLength;
 }
@@ -2289,7 +2261,7 @@ Tcl_AppendFormatToObj(
 		p += sprintf(p, "%d", width);
 		if (width > length) {
 		    length = width;
-		} 
+		}
 	    }
 	    if (gotPrecision) {
 		*p++ = '.';
@@ -2638,6 +2610,38 @@ Tcl_ObjPrintf(
 /*
  *---------------------------------------------------------------------------
  *
+ * TclGetStringStorage --
+ *
+ *	Returns the string storage space of a Tcl_Obj.
+ *
+ * Results:
+ *	The pointer value objPtr->bytes is returned and the number of bytes
+ *	allocated there is written to *sizePtr (if known).
+ *
+ * Side effects:
+ *	May set objPtr->bytes.
+ *
+ *---------------------------------------------------------------------------
+ */
+
+char *
+TclGetStringStorage(
+    Tcl_Obj *objPtr,
+    unsigned int *sizePtr)
+{
+    String *stringPtr;
+
+    if (objPtr->typePtr != &tclStringType || objPtr->bytes == NULL) {
+	return TclGetStringFromObj(objPtr, (int *)sizePtr);
+    }
+
+    stringPtr = GET_STRING(objPtr);
+    *sizePtr = stringPtr->allocated;
+    return objPtr->bytes;
+}
+/*
+ *---------------------------------------------------------------------------
+ *
  * TclStringObjReverse --
  *
  *	Implements the [string reverse] operation.
@@ -2821,14 +2825,18 @@ ExtendUnicodeRepWithString(
     }
     needed = numOrigChars + numAppendChars;
     stringCheckLimits(needed);
-	
+
     if (needed > stringPtr->maxChars) {
 	GrowUnicodeBuffer(objPtr, needed);
 	stringPtr = GET_STRING(objPtr);
     }
 
     stringPtr->hasUnicode = 1;
-    stringPtr->numChars = needed;
+    if (bytes) {
+	stringPtr->numChars = needed;
+    } else {
+	numAppendChars = 0;
+    }
     for (dst=stringPtr->unicode + numOrigChars; numAppendChars-- > 0; dst++) {
 	bytes += TclUtfToUniChar(bytes, dst);
     }
@@ -3035,7 +3043,7 @@ ExtendStringRepWithUnicode(
      * Pre-condition: this is the "string" Tcl_ObjType.
      */
 
-    int i, origLength, size = 0;	
+    int i, origLength, size = 0;
     char *dst, buf[TCL_UTF_MAX];
     String *stringPtr = GET_STRING(objPtr);
 
@@ -3051,12 +3059,12 @@ ExtendStringRepWithUnicode(
 	objPtr->length = 0;
     }
     size = origLength = objPtr->length;
-    
+
     /*
      * Quick cheap check in case we have more than enough room.
      */
 
-    if (numChars <= (INT_MAX - size)/TCL_UTF_MAX 
+    if (numChars <= (INT_MAX - size)/TCL_UTF_MAX
 	    && stringPtr->allocated >= size + numChars * TCL_UTF_MAX) {
 	goto copyBytes;
     }

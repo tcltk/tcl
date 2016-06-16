@@ -128,7 +128,7 @@ proc checkcontent {file matchString} {
 }
 
 proc openup {path} {
-    testchmod 777 $path
+    testchmod 0o777 $path
     if {[file isdirectory $path]} {
 	catch {
 	    foreach p [glob -directory $path *] {
@@ -362,10 +362,10 @@ test fCmd-4.11 {TclFileMakeDirsCmd: doesn't exist: errno != ENOENT} -setup {
     cleanup
 } -constraints {unix notRoot testchmod} -returnCodes error -body {
     file mkdir td1/td2/td3
-    testchmod 000 td1/td2
+    testchmod 0 td1/td2
     file mkdir td1/td2/td3/td4
 } -cleanup {
-    testchmod 755 td1/td2
+    testchmod 0o755 td1/td2
     cleanup
 } -result {can't create directory "td1/td2/td3": permission denied}
 test fCmd-4.13 {TclFileMakeDirsCmd: doesn't exist: errno == ENOENT} -setup {
@@ -505,18 +505,12 @@ test fCmd-6.6 {CopyRenameOneFile: errno != ENOENT} -setup {
     cleanup
 } -constraints {unix notRoot testchmod} -body {
     file mkdir td1
-    testchmod 000 td1
+    testchmod 0 td1
     createfile tf1
     file rename tf1 td1
 } -returnCodes error -cleanup {
-    testchmod 755 td1
+    testchmod 0o755 td1
 } -result {error renaming "tf1" to "td1/tf1": permission denied}
-test fCmd-6.7 {CopyRenameOneFile: errno != ENOENT} -setup {
-    cleanup
-} -constraints {win 95} -returnCodes error -body {
-    createfile tf1
-    file rename tf1 $long
-} -result [subst {error renaming "tf1" to "$long": file name too long}]
 test fCmd-6.9 {CopyRenameOneFile: errno == ENOENT} -setup {
     cleanup
 } -constraints {unix notRoot} -body {
@@ -791,7 +785,7 @@ test fCmd-9.3 {file rename: comprehensive: file to new name} -setup {
 } -constraints {notRoot testchmod} -body {
     createfile tf1
     createfile tf2
-    testchmod 444 tf2
+    testchmod 0o444 tf2
     file rename tf1 tf3
     file rename tf2 tf4
     list [lsort [glob tf*]] [file writable tf3] [file writable tf4]
@@ -800,7 +794,7 @@ test fCmd-9.4.a {file rename: comprehensive: dir to new name} -setup {
     cleanup
 } -constraints {win win2000orXP testchmod} -body {
     file mkdir td1 td2
-    testchmod 555 td2
+    testchmod 0o555 td2
     file rename td1 td3
     file rename td2 td4
     list [lsort [glob td*]] [file writable td3] [file writable td4]
@@ -811,7 +805,7 @@ test fCmd-9.4.b {file rename: comprehensive: dir to new name} -setup {
     cleanup
 } -constraints {unix notRoot testchmod notDarwin9} -body {
     file mkdir td1 td2
-    testchmod 555 td2
+    testchmod 0o555 td2
     file rename td1 td3
     file rename td2 td4
     list [lsort [glob td*]] [file writable td3] [file writable td4]
@@ -823,7 +817,7 @@ test fCmd-9.5 {file rename: comprehensive: file to self} -setup {
 } -constraints {notRoot testchmod} -body {
     createfile tf1 tf1
     createfile tf2 tf2
-    testchmod 444 tf2
+    testchmod 0o444 tf2
     file rename -force tf1 tf1
     file rename -force tf2 tf2
     list [contents tf1] [contents tf2] [file writable tf1] [file writable tf2]
@@ -833,7 +827,7 @@ test fCmd-9.6.a {file rename: comprehensive: dir to self} -setup {
 } -constraints {win win2000orXP testchmod} -body {
     file mkdir td1
     file mkdir td2
-    testchmod 555 td2
+    testchmod 0o555 td2
     file rename -force td1 .
     file rename -force td2 .
     list [lsort [glob td*]] [file writable td1] [file writable td2]
@@ -843,7 +837,7 @@ test fCmd-9.6.b {file rename: comprehensive: dir to self} -setup {
 } -constraints {unix notRoot testchmod} -body {
     file mkdir td1
     file mkdir td2
-    testchmod 555 td2
+    testchmod 0o555 td2
     file rename -force td1 .
     file rename -force td2 .
     list [lsort [glob td*]] [file writable td1] [file writable td2]
@@ -861,10 +855,10 @@ test fCmd-9.7 {file rename: comprehensive: file to existing file} -setup {
     createfile tfd2
     createfile tfd3
     createfile tfd4
-    testchmod 444 tfs3
-    testchmod 444 tfs4
-    testchmod 444 tfd2
-    testchmod 444 tfd4
+    testchmod 0o444 tfs3
+    testchmod 0o444 tfs4
+    testchmod 0o444 tfd2
+    testchmod 0o444 tfd4
     set msg [list [catch {file rename tf1 tf2} msg] $msg]
     file rename -force tfs1 tfd1
     file rename -force tfs2 tfd2
@@ -888,11 +882,11 @@ test fCmd-9.8 {file rename: comprehensive: dir to empty dir} -setup {
     file mkdir [file join tdd3 tds3]
     file mkdir [file join tdd4 tds4]
     if {![testConstraint unix]} {
-	testchmod 555 tds3
-	testchmod 555 tds4
+	testchmod 0o555 tds3
+	testchmod 0o555 tds4
     }
-    testchmod 555 [file join tdd2 tds2]
-    testchmod 555 [file join tdd4 tds4]
+    testchmod 0o555 [file join tdd2 tds2]
+    testchmod 0o555 [file join tdd4 tds4]
     set msg [list [catch {file rename td1 td2} msg] $msg]
     file rename -force tds1 tdd1
     file rename -force tds2 tdd2
@@ -917,7 +911,7 @@ test fCmd-9.9 {file rename: comprehensive: dir to non-empty dir} -setup {
     file mkdir [file join tdd1 tds1 xxx]
     file mkdir [file join tdd2 tds2 xxx]
     if {!([testConstraint unix] || [testConstraint winVista])} {
-	testchmod 555 tds2
+	testchmod 0o555 tds2
     }
     set a1 [list [catch {file rename -force tds1 tdd1} msg] $msg]
     set a2 [list [catch {file rename -force tds2 tdd2} msg] $msg]
@@ -935,7 +929,7 @@ test fCmd-9.10 {file rename: comprehensive: file to new name and dir} -setup {
     createfile tf1
     createfile tf2
     file mkdir td1
-    testchmod 444 tf2
+    testchmod 0o444 tf2
     file rename tf1 [file join td1 tf3]
     file rename tf2 [file join td1 tf4]
     list [catch {glob tf*}] [lsort [glob -directory td1 t*]] \
@@ -948,7 +942,7 @@ test fCmd-9.11 {file rename: comprehensive: dir to new name and dir} -setup {
     file mkdir td2
     file mkdir td3
     if {!([testConstraint unix] || [testConstraint winVista])} {
-	testchmod 555 td2
+	testchmod 0o555 td2
     }
     file rename td1 [file join td3 td3]
     file rename td2 [file join td3 td4]
@@ -964,13 +958,13 @@ test fCmd-9.12 {file rename: comprehensive: target exists} -setup {
     cleanup
 } -constraints {notRoot testchmod notNetworkFilesystem} -body {
     file mkdir [file join td1 td2] [file join td2 td1]
-    testchmod 555 [file join td2 td1]
+    testchmod 0o555 [file join td2 td1]
     file mkdir [file join td3 td4] [file join td4 td3]
     file rename -force td3 td4
     list [file exists td3] [file exists [file join td4 td3 td4]] \
 	[catch {file rename td1 td2} msg] $msg
 } -cleanup {
-    testchmod 755 [file join td2 td1]
+    testchmod 0o755 [file join td2 td1]
 } -result [subst {0 1 1 {error renaming "td1" to "[file join td2 td1]": file already exists}}]
 # Test can hit EEXIST or EBUSY, depending on underlying filesystem
 test fCmd-9.13 {file rename: comprehensive: can't overwrite target} -setup {
@@ -1041,7 +1035,7 @@ test fCmd-10.2 {file copy: comprehensive: file to new name} -setup {
 } -constraints {notRoot testchmod} -body {
     createfile tf1 tf1
     createfile tf2 tf2
-    testchmod 444 tf2
+    testchmod 0o444 tf2
     file copy tf1 tf3
     file copy tf2 tf4
     list [lsort [glob tf*]] [contents tf3] [contents tf4] [file writable tf3] [file writable tf4]
@@ -1051,14 +1045,14 @@ test fCmd-10.3 {file copy: comprehensive: dir to new name} -setup {
 } -constraints {unix notRoot testchmod} -body {
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
-    testchmod 555 td2
+    testchmod 0o555 td2
     file copy td1 td3
     file copy td2 td4
     list [lsort [glob td*]] [glob -directory td3 t*] \
 	    [glob -directory td4 t*] [file writable td3] [file writable td4]
 } -cleanup {
-    testchmod 755 td2
-    testchmod 755 td4
+    testchmod 0o755 td2
+    testchmod 0o755 td4
 } -result [list {td1 td2 td3 td4} [file join td3 tdx] [file join td4 tdy] 1 0]
 test fCmd-10.3.1 {file copy: comprehensive: dir to new name} -setup {
     cleanup
@@ -1066,14 +1060,14 @@ test fCmd-10.3.1 {file copy: comprehensive: dir to new name} -setup {
     # On Windows with ACLs, copying a directory is defined like this
     file mkdir [file join td1 tdx]
     file mkdir [file join td2 tdy]
-    testchmod 555 td2
+    testchmod 0o555 td2
     file copy td1 td3
     file copy td2 td4
     list [lsort [glob td*]] [glob -directory td3 t*] \
 	    [glob -directory td4 t*] [file writable td3] [file writable td4]
 } -cleanup {
-    testchmod 755 td2
-    testchmod 755 td4
+    testchmod 0o755 td2
+    testchmod 0o755 td4
 } -result [list {td1 td2 td3 td4} [file join td3 tdx] [file join td4 tdy] 1 1]
 test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     cleanup
@@ -1088,10 +1082,10 @@ test fCmd-10.4 {file copy: comprehensive: file to existing file} -setup {
     createfile tfd2
     createfile tfd3
     createfile tfd4
-    testchmod 444 tfs3
-    testchmod 444 tfs4
-    testchmod 444 tfd2
-    testchmod 444 tfd4
+    testchmod 0o444 tfs3
+    testchmod 0o444 tfs4
+    testchmod 0o444 tfd2
+    testchmod 0o444 tfd4
     set msg [list [catch {file copy tf1 tf2} msg] $msg]
     file copy -force tfs1 tfd1
     file copy -force tfs2 tfd2
@@ -1112,10 +1106,10 @@ test fCmd-10.5 {file copy: comprehensive: dir to empty dir} -setup {
     file mkdir [file join tdd2 tds2]
     file mkdir [file join tdd3 tds3]
     file mkdir [file join tdd4 tds4]
-    testchmod 555 tds3
-    testchmod 555 tds4
-    testchmod 555 [file join tdd2 tds2]
-    testchmod 555 [file join tdd4 tds4]
+    testchmod 0o555 tds3
+    testchmod 0o555 tds4
+    testchmod 0o555 [file join tdd2 tds2]
+    testchmod 0o555 [file join tdd4 tds4]
     set a1 [list [catch {file copy td1 td2} msg] $msg]
     set a2 [list [catch {file copy -force tds1 tdd1} msg] $msg]
     set a3 [catch {file copy -force tds2 tdd2}]
@@ -1130,7 +1124,7 @@ test fCmd-10.6 {file copy: comprehensive: dir to non-empty dir} -setup {
     file mkdir tds2
     file mkdir [file join tdd1 tds1 xxx]
     file mkdir [file join tdd2 tds2 xxx]
-    testchmod 555 tds2
+    testchmod 0o555 tds2
     set a1 [list [catch {file copy -force tds1 tdd1} msg] $msg]
     set a2 [list [catch {file copy -force tds2 tdd2} msg] $msg]
     list [lsort [glob td*]] $a1 $a2 [file writable tds1] [file writable tds2]
@@ -1141,7 +1135,7 @@ test fCmd-10.7 {file rename: comprehensive: file to new name and dir} -setup {
     createfile tf1
     createfile tf2
     file mkdir td1
-    testchmod 444 tf2
+    testchmod 0o444 tf2
     file copy tf1 [file join td1 tf3]
     file copy tf2 [file join td1 tf4]
     list [lsort [glob tf*]] [lsort [glob -directory td1 t*]] \
@@ -1153,7 +1147,7 @@ test fCmd-10.8 {file rename: comprehensive: dir to new name and dir} -setup {
     file mkdir td1
     file mkdir td2
     file mkdir td3
-    testchmod 555 td2
+    testchmod 0o555 td2
     file copy td1 [file join td3 td3]
     file copy td2 [file join td3 td4]
     list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
@@ -1166,7 +1160,7 @@ test fCmd-10.8.1 {file rename: comprehensive: dir to new name and dir} -setup {
     file mkdir td1
     file mkdir td2
     file mkdir td3
-    testchmod 555 td2
+    testchmod 0o555 td2
     file copy td1 [file join td3 td3]
     file copy td2 [file join td3 td4]
     list [lsort [glob td*]] [lsort [glob -directory td3 t*]] \
@@ -2330,10 +2324,10 @@ test fCmd-28.2 {file link} -returnCodes error -body {
 } -result {wrong # args: should be "file link ?-linktype? linkname ?target?"}
 test fCmd-28.3 {file link} -returnCodes error -body {
     file link abc b c
-} -result {bad switch "abc": must be -symbolic or -hard}
+} -result {bad option "abc": must be -symbolic or -hard}
 test fCmd-28.4 {file link} -returnCodes error -body {
     file link -abc b c
-} -result {bad switch "-abc": must be -symbolic or -hard}
+} -result {bad option "-abc": must be -symbolic or -hard}
 cd [workingDirectory]
 makeDirectory abc.dir
 makeDirectory abc2.dir

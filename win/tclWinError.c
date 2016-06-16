@@ -292,7 +292,7 @@ static const unsigned char errorTable[] = {
  */
 
 static const unsigned char wsaErrorTable[] = {
-    EAGAIN,		/* WSAEWOULDBLOCK */
+    EWOULDBLOCK,	/* WSAEWOULDBLOCK */
     EINPROGRESS,	/* WSAEINPROGRESS */
     EALREADY,		/* WSAEALREADY */
     ENOTSOCK,		/* WSAENOTSOCK */
@@ -381,7 +381,7 @@ TclWinConvertError(
  *----------------------------------------------------------------------
  */
 
-void
+TCL_NORETURN void
 tclWinDebugPanic(
     const char *format, ...)
 {

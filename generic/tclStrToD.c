@@ -1548,7 +1548,7 @@ MakeLowPrecisionDouble(
      * Test for the easy cases.
      */
 
-    if (numSigDigs <= DBL_DIG) {
+    if (numSigDigs <= QUICK_MAX) {
 	if (exponent >= 0) {
 	    if (exponent <= mmaxpow) {
 		/*
@@ -1561,7 +1561,7 @@ MakeLowPrecisionDouble(
 			((Tcl_WideInt)significand * pow10vals[exponent]);
 		goto returnValue;
 	    } else {
-		int diff = DBL_DIG - numSigDigs;
+		int diff = QUICK_MAX - numSigDigs;
 
 		if (exponent-diff <= mmaxpow) {
 		    /*
@@ -1798,6 +1798,12 @@ RefineApproximation(
     double quot;		/* Correction term. */
     double minincr;		/* Lower bound on the absolute value of the
 				 * correction term. */
+    int roundToEven = 0;	/* Flag == TRUE if we need to invoke
+				 * "round to even" functionality */
+    double rteSignificand;	/* Significand of the round-to-even result */
+    int rteExponent;		/* Exponent of the round-to-even result */
+    Tcl_WideInt rteSigWide;	/* Wide integer version of the significand
+				 * for testing evenness */
     int i;
 
     /*
@@ -1893,15 +1899,33 @@ RefineApproximation(
 	mp_div_2d(&twoMv, -multiplier, &twoMv, NULL);
     }
 
-    /*
-     * If the result is less than unity, the error is less than 1/2 unit in
-     * the last place, so there's no correction to make.
-     */
-
-    if (mp_cmp_mag(&twoMd, &twoMv) == MP_LT) {
+    switch (mp_cmp_mag(&twoMd, &twoMv)) {
+    case MP_LT:
+	/*
+	 * If the result is less than unity, the error is less than 1/2 unit in
+	 * the last place, so there's no correction to make.
+	 */
 	mp_clear(&twoMd);
 	mp_clear(&twoMv);
 	return approxResult;
+    case MP_EQ:
+	/*
+	 * If the result is exactly unity, we need to round to even.
+	 */
+	roundToEven = 1;
+	break;
+    case MP_GT:
+	break;
+    }
+
+    if (roundToEven) {
+	rteSignificand = frexp(approxResult, &rteExponent);
+	rteSigWide = (Tcl_WideInt) ldexp(rteSignificand, FP_PRECISION);
+	if ((rteSigWide & 1) == 0) {
+	    mp_clear(&twoMd);
+	    mp_clear(&twoMv);
+	    return approxResult;
+	}
     }
 
     /*
@@ -4025,7 +4049,7 @@ StrictBignumConversion(
  *		choosing the one that is closest to the given number (and
  *		resolving ties with 'round to even').  It is allowed to return
  *		fewer than 'ndigits' if the number converts exactly; if the
- *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it 
+ *		TCL_DD_E_FORMAT|TCL_DD_SHORTEN_FLAG is supplied instead, it
  *		also returns fewer digits if the shorter string will still
  *		reconvert without loss to the given input number. In any case,
  *		strings of trailing zeroes are suppressed.
@@ -4559,7 +4583,7 @@ TclBignumToDouble(
 
 
     /*
-     * We need a 'mantBits'-bit significand.  Determine what shift will 
+     * We need a 'mantBits'-bit significand.  Determine what shift will
      * give us that.
      */
 
@@ -4574,7 +4598,7 @@ TclBignumToDouble(
     }
     shift = mantBits - bits;
 
-    /* 
+    /*
      * If shift > 0, shift the significand left by the requisite number of
      * bits.  If shift == 0, the significand is already exactly 'mantBits'
      * in length.  If shift < 0, we will need to shift the significand right

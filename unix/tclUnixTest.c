@@ -63,7 +63,7 @@ static const char *gotsig = "0";
  */
 
 static Tcl_CmdProc TestalarmCmd;
-static Tcl_CmdProc TestchmodCmd;
+static Tcl_ObjCmdProc TestchmodCmd;
 static Tcl_CmdProc TestfilehandlerCmd;
 static Tcl_CmdProc TestfilewaitCmd;
 static Tcl_CmdProc TestfindexecutableCmd;
@@ -96,7 +96,7 @@ int
 TclplatformtestInit(
     Tcl_Interp *interp)		/* Interpreter to add commands to. */
 {
-    Tcl_CreateCommand(interp, "testchmod", TestchmodCmd,
+    Tcl_CreateObjCommand(interp, "testchmod", TestchmodCmd,
 	    NULL, NULL);
     Tcl_CreateCommand(interp, "testfilehandler", TestfilehandlerCmd,
 	    NULL, NULL);
@@ -566,12 +566,11 @@ TestforkObjCmd(
                 "Cannot fork", NULL);
         return TCL_ERROR;
     }
-#if !defined(HAVE_PTHREAD_ATFORK) || defined(MAC_OSX_TCL)
-    /* Only needed when pthread_atfork is not present or on OSX. */
+    /* Only needed when pthread_atfork is not present,
+     * should not hurt otherwise. */
     if (pid==0) {
 	Tcl_InitNotifier();
     }
-#endif
     Tcl_SetObjResult(interp, Tcl_NewIntObj(pid));
     return TCL_OK;
 }
@@ -741,29 +740,25 @@ static int
 TestchmodCmd(
     ClientData dummy,			/* Not used. */
     Tcl_Interp *interp,			/* Current interpreter. */
-    int argc,				/* Number of arguments. */
-    const char **argv)			/* Argument strings. */
+    int objc,			/* Number of arguments. */
+    Tcl_Obj *const *objv)		/* Argument strings. */
 {
     int i, mode;
-    char *rest;
 
-    if (argc < 2) {
-    usage:
-	Tcl_AppendResult(interp, "wrong # args: should be \"", argv[0],
-		" mode file ?file ...?", NULL);
+    if (objc < 2) {
+    Tcl_WrongNumArgs(interp, 1, objv, "mode file ?file ...?");
 	return TCL_ERROR;
     }
 
-    mode = (int) strtol(argv[1], &rest, 8);
-    if ((rest == argv[1]) || (*rest != '\0')) {
-	goto usage;
+    if (Tcl_GetIntFromObj(interp, objv[1], &mode) != TCL_OK) {
+	return TCL_ERROR;
     }
 
-    for (i = 2; i < argc; i++) {
+    for (i = 2; i < objc; i++) {
 	Tcl_DString buffer;
 	const char *translated;
 
-	translated = Tcl_TranslateFileName(interp, argv[i], &buffer);
+	translated = Tcl_TranslateFileName(interp, Tcl_GetString(objv[i]), &buffer);
 	if (translated == NULL) {
 	    return TCL_ERROR;
 	}
