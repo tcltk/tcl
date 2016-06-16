@@ -133,7 +133,6 @@ static Tcl_NRPostProc	NRCoroutineCallerCallback;
 static Tcl_NRPostProc	NRCoroutineExitCallback;
 static int NRCommand(ClientData data[], Tcl_Interp *interp, int result);
 
-static Tcl_NRPostProc	NRRunObjProc;
 static Tcl_ObjCmdProc	OldMathFuncProc;
 static void		OldMathFuncDeleteProc(ClientData clientData);
 static void		ProcessUnexpectedResult(Tcl_Interp *interp,
@@ -158,6 +157,7 @@ static Tcl_NRPostProc	TEOV_Exception;
 static Tcl_NRPostProc	TEOV_NotFoundCallback;
 static Tcl_NRPostProc	TEOV_RestoreVarFrame;
 static Tcl_NRPostProc	TEOV_RunLeaveTraces;
+static Tcl_NRPostProc	Dispatch;
 
 static Tcl_ObjCmdProc NRCoroInjectObjCmd;
 
@@ -4232,15 +4232,22 @@ TclNREvalObjv(
     *cmdPtrPtr = cmdPtr;
     cmdPtr->refCount++;
 
-    /*
-     * Find the objProc to call: nreProc if available, objProc otherwise. Push
-     * a callback to do the actual running.
-     */
+    TclNRAddCallback(interp, Dispatch, cmdPtr, INT2PTR(objc), objv, NULL);
+    return TCL_OK;
+}
+
+static int
+Dispatch(
+    ClientData data[],
+    Tcl_Interp *interp,
+    int result)
+{
+    Command *cmdPtr = data[0];
+    int objc = PTR2INT(data[1]);
+    Tcl_Obj **objv = data[2];
 
     if (cmdPtr->nreProc) {
-        TclNRAddCallback(interp, NRRunObjProc, cmdPtr,
-                INT2PTR(objc), (ClientData) objv, NULL);
-        return TCL_OK;
+	return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
     } else {
 	return cmdPtr->objProc(cmdPtr->objClientData, interp, objc, objv);
     }
@@ -4322,22 +4329,6 @@ NRCommand(
 
     return result;
 }
-
-static int
-NRRunObjProc(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    /* OPT: do not call? */
-
-    Command* cmdPtr = data[0];
-    int objc = PTR2INT(data[1]);
-    Tcl_Obj **objv = data[2];
-
-    return cmdPtr->nreProc(cmdPtr->objClientData, interp, objc, objv);
-}
-
 
 /*
  *----------------------------------------------------------------------
