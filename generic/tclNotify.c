@@ -813,11 +813,7 @@ Tcl_SetMaxBlockTime(
      */
 
     if (!tsdPtr->inTraversal) {
-	if (tsdPtr->blockTimeSet) {
-	    Tcl_SetTimer(&tsdPtr->blockTime);
-	} else {
-	    Tcl_SetTimer(NULL);
-	}
+	Tcl_SetTimer(&tsdPtr->blockTime);
     }
 }
 

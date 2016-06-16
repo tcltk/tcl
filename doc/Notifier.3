@@ -4,9 +4,9 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\" 
-.so man.macros
+'\"
 .TH Notifier 3 8.1 Tcl "Tcl Library Procedures"
+.so man.macros
 .BS
 .SH NAME
 Tcl_CreateEventSource, Tcl_DeleteEventSource, Tcl_SetMaxBlockTime, Tcl_QueueEvent, Tcl_ThreadQueueEvent, Tcl_ThreadAlert, Tcl_GetCurrentThread, Tcl_DeleteEvents, Tcl_InitNotifier, Tcl_FinalizeNotifier, Tcl_WaitForEvent, Tcl_AlertNotifier, Tcl_SetTimer, Tcl_ServiceAll, Tcl_ServiceEvent, Tcl_GetServiceMode, Tcl_SetServiceMode, Tcl_ServiceModeHook, Tcl_SetNotifier \- the event queue and notifier interfaces
@@ -143,7 +143,7 @@ servicing at a future time.  Threaded applications work in a
 similar manner, except that there is a separate event queue for
 each thread containing a Tcl interpreter.
 \fBTcl_QueueEvent\fR is used (primarily
-by event sources) to add events to the event queue and 
+by event sources) to add events to the event queue and
 \fBTcl_DeleteEvents\fR is used to remove events from the queue without
 processing them.  In a threaded application, \fBTcl_QueueEvent\fR adds
 an event to the current thread's queue, and \fBTcl_ThreadQueueEvent\fR

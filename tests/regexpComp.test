@@ -316,17 +316,17 @@ test regexpComp-6.1 {regexp errors} {
     evalInProc {
 	list [catch {regexp a} msg] $msg
     }
-} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar ...?"}}
+} {1 {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"}}
 test regexpComp-6.2 {regexp errors} {
     evalInProc {
 	list [catch {regexp -nocase a} msg] $msg
     }
-} {1 {wrong # args: should be "regexp ?-switch ...? exp string ?matchVar? ?subMatchVar ...?"}}
+} {1 {wrong # args: should be "regexp ?-option ...? exp string ?matchVar? ?subMatchVar ...?"}}
 test regexpComp-6.3 {regexp errors} {
     evalInProc {
 	list [catch {regexp -gorp a} msg] $msg
     }
-} {1 {bad switch "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
+} {1 {bad option "-gorp": must be -all, -about, -indices, -inline, -expanded, -line, -linestop, -lineanchor, -nocase, -start, or --}}
 test regexpComp-6.4 {regexp errors} {
     evalInProc {
 	list [catch {regexp a( b} msg] $msg
@@ -526,6 +526,11 @@ test regexpComp-9.6 {-all option to regsub} {
 	list [regsub -all ^ xxx 123 foo] $foo
     }
 } {1 123xxx}
+test regexpComp-9.7 {Bug 84af1192f5: -all option to regsub} {
+    evalInProc {
+	regsub -all {\(.*} 123(qwe) ""
+    }
+} 123
 
 test regexpComp-10.1 {expanded syntax in regsub} {
     evalInProc {
@@ -562,27 +567,27 @@ test regexpComp-11.1 {regsub errors} {
     evalInProc {
 	list [catch {regsub a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexpComp-11.2 {regsub errors} {
     evalInProc {
 	list [catch {regsub -nocase a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexpComp-11.3 {regsub errors} {
     evalInProc {
 	list [catch {regsub -nocase -all a b} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexpComp-11.4 {regsub errors} {
     evalInProc {
 	list [catch {regsub a b c d e f} msg] $msg
     }
-} {1 {wrong # args: should be "regsub ?-switch ...? exp string subSpec ?varName?"}}
+} {1 {wrong # args: should be "regsub ?-option ...? exp string subSpec ?varName?"}}
 test regexpComp-11.5 {regsub errors} {
     evalInProc {
 	list [catch {regsub -gorp a b c} msg] $msg
     }
-} {1 {bad switch "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
+} {1 {bad option "-gorp": must be -all, -nocase, -expanded, -line, -linestop, -lineanchor, -start, or --}}
 test regexpComp-11.6 {regsub errors} {
     evalInProc {
 	list [catch {regsub -nocase a( b c d} msg] $msg

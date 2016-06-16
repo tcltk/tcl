@@ -100,7 +100,7 @@ INSTALL_TARGET		:= install
 
 export CPPROG		:= cp -p
 
-INSTALL_TARGETS		= install-binaries install-libraries
+INSTALL_TARGETS		= install-binaries install-headers install-libraries
 ifeq (${EMBEDDED_BUILD},)
 INSTALL_TARGETS		+= install-private-headers
 endif

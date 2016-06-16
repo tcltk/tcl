@@ -33,7 +33,7 @@ MODULE_SCOPE void	TclFSSetPathDetails(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem *fsPtr, ClientData clientData);
 MODULE_SCOPE Tcl_Obj *	TclFSNormalizeAbsolutePath(Tcl_Interp *interp,
 			    Tcl_Obj *pathPtr);
-MODULE_SCOPE int	TclFSEpoch(void);
+MODULE_SCOPE size_t	TclFSEpoch(void);
 
 /*
  * Private shared variables for use by tclIOUtil.c and tclPathObj.c
@@ -55,7 +55,7 @@ MODULE_SCOPE Tcl_PathType TclFSNonnativePathType(const char *pathPtr,
 MODULE_SCOPE Tcl_PathType TclGetPathType(Tcl_Obj *pathPtr,
 			    const Tcl_Filesystem **filesystemPtrPtr,
 			    int *driveNameLengthPtr, Tcl_Obj **driveNameRef);
-MODULE_SCOPE int	TclFSEpochOk(int filesystemEpoch);
+MODULE_SCOPE int	TclFSEpochOk(size_t filesystemEpoch);
 MODULE_SCOPE int	TclFSCwdIsNative(void);
 MODULE_SCOPE Tcl_Obj *	TclWinVolumeRelativeNormalize(Tcl_Interp *interp,
 			    const char *path, Tcl_Obj **useThisCwdPtr);

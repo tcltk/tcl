@@ -10,8 +10,6 @@
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 
-package require Tcl 8.4
-
 namespace eval genStubs {
     # libraryName --
     #
@@ -283,7 +281,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
     set text ""
     switch $plat {
 	win {
-	    append text "#if defined(__WIN32__)"
+	    append text "#if defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
@@ -294,7 +292,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* WIN */\n"
 	}
 	unix {
-	    append text "#if !defined(__WIN32__)"
+	    append text "#if !defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " && !defined(__CYGWIN__)"
 	    }
@@ -320,7 +318,7 @@ proc genStubs::addPlatformGuard {plat iftxt {eltxt {}} {withCygwin 0}} {
 	    append text "#endif /* AQUA */\n"
 	}
 	x11 {
-	    append text "#if !(defined(__WIN32__)"
+	    append text "#if !(defined(_WIN32)"
 	    if {$withCygwin} {
 		append text " || defined(__CYGWIN__)"
 	    }
@@ -582,6 +580,8 @@ proc genStubs::makeSlot {name decl index} {
     }
     if {[string range $rtype end-8 end] eq "__stdcall"} {
 	append text [string trim [string range $rtype 0 end-9]] " (__stdcall *" $lfname ") "
+    } elseif {[string range $rtype 0 11] eq "TCL_NORETURN"} {
+	append text "TCL_NORETURN1 " [string trim [string range $rtype 12 end]] " (*" $lfname ") "
     } else {
 	append text $rtype " (*" $lfname ") "
     }
@@ -983,6 +983,8 @@ proc genStubs::emitHeader {name} {
 	append text "#define ${CAPName}_STUBS_REVISION $revision\n"
     }
 
+    append text "\n#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
+
     emitDeclarations $name text
 
     if {[info exists hooks($name)]} {
@@ -1010,8 +1012,7 @@ proc genStubs::emitHeader {name} {
 
     append text "} ${capName}Stubs;\n\n"
 
-    append text "#ifdef __cplusplus\nextern \"C\" {\n#endif\n"
-    append text "extern const ${capName}Stubs *${name}StubsPtr;\n"
+    append text "extern const ${capName}Stubs *${name}StubsPtr;\n\n"
     append text "#ifdef __cplusplus\n}\n#endif\n"
 
     emitMacros $name text

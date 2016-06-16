@@ -50,7 +50,7 @@ TCL_DECLARE_MUTEX(pipeMutex)
  * used in a pipeline.
  */
 
-typedef struct WinFile {
+typedef struct {
     int type;			/* One of the file types defined above. */
     HANDLE handle;		/* Open file handle. */
 } WinFile;
@@ -80,6 +80,12 @@ static ProcInfo *procList;
 
 #define PIPE_EOF	(1<<2)	/* Pipe has reached EOF. */
 #define PIPE_EXTRABYTE	(1<<3)	/* The reader thread has consumed one byte. */
+
+/*
+ * TODO: It appears the whole EXTRABYTE machinery is in place to support
+ * outdated Win 95 systems.  If this can be confirmed, much code can be
+ * deleted.
+ */
 
 /*
  * This structure describes per-instance data for a pipe based channel.
@@ -142,7 +148,7 @@ typedef struct PipeInfo {
 				 * synchronized with the readable object. */
 } PipeInfo;
 
-typedef struct ThreadSpecificData {
+typedef struct {
     /*
      * The following pointer refers to the head of the list of pipes that are
      * being watched for file events.
@@ -158,7 +164,7 @@ static Tcl_ThreadDataKey dataKey;
  * events are generated.
  */
 
-typedef struct PipeEvent {
+typedef struct {
     Tcl_Event header;		/* Information that is standard for all
 				 * events. */
     PipeInfo *infoPtr;		/* Pointer to pipe info structure. Note that
@@ -1884,7 +1890,7 @@ PipeClose2Proc(
 		SetEvent(pipePtr->stopWriter);
 
 		if (WaitForSingleObject(pipePtr->writable, 0) == WAIT_TIMEOUT) {
-		    return EAGAIN;
+		    return EWOULDBLOCK;
 		}
 
 	    } else {
@@ -2161,7 +2167,7 @@ PipeOutputProc(
 	 * the channel is in non-blocking mode.
 	 */
 
-	errno = EAGAIN;
+	errno = EWOULDBLOCK;
 	goto error;
     }
 
@@ -2647,7 +2653,7 @@ Tcl_PidObjCmd(
     if (objc == 1) {
 	Tcl_SetObjResult(interp, Tcl_NewWideIntObj((unsigned) getpid()));
     } else {
-	chan = Tcl_GetChannel(interp, Tcl_GetStringFromObj(objv[1], NULL),
+	chan = Tcl_GetChannel(interp, Tcl_GetString(objv[1]),
 		NULL);
 	if (chan == (Tcl_Channel) NULL) {
 	    return TCL_ERROR;
@@ -2712,7 +2718,7 @@ WaitForRead(
 	     * is in non-blocking mode.
 	     */
 
-	    errno = EAGAIN;
+	    errno = EWOULDBLOCK;
 	    return -1;
 	}
 
@@ -3100,9 +3106,9 @@ TclpOpenTemporaryFile(
     }
     namePtr += length * sizeof(TCHAR);
     if (basenameObj) {
-	const char *string = Tcl_GetStringFromObj(basenameObj, &length);
+	const char *string = Tcl_GetString(basenameObj);
 
-	Tcl_WinUtfToTChar(string, length, &buf);
+	Tcl_WinUtfToTChar(string, basenameObj->length, &buf);
 	memcpy(namePtr, Tcl_DStringValue(&buf), Tcl_DStringLength(&buf));
 	namePtr += Tcl_DStringLength(&buf);
 	Tcl_DStringFree(&buf);
