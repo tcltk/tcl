@@ -72,8 +72,8 @@ initially set to \fBline\fR, and \fBstderr\fR is set to \fBnone\fR.
 .
 \fINewvalue\fR must be an integer; its value is used to set the size of
 buffers, in bytes, subsequently allocated for this channel to store input
-or output. \fINewvalue\fR must be between ten and one million, allowing
-buffers of ten to one million bytes in size.
+or output. \fINewvalue\fR must be between one and one million, allowing
+buffers of one to one million bytes in size.
 .TP
 \fB\-encoding\fR \fIname\fR
 .

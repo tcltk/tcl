@@ -155,8 +155,8 @@ typedef struct StringTraceData {
 
 #define FOREACH_VAR_TRACE(interp, name, clientData) \
     (clientData) = NULL; \
-    while (((clientData) = Tcl_VarTraceInfo((interp), (name), 0, \
-	    TraceVarProc, (clientData))) != NULL)
+    while (((clientData) = Tcl_VarTraceInfo2((interp), (name), NULL, \
+	    0, TraceVarProc, (clientData))) != NULL)
 
 #define FOREACH_COMMAND_TRACE(interp, name, clientData) \
     (clientData) = NULL; \
@@ -1322,7 +1322,7 @@ TraceCommandProc(
 		Tcl_DStringLength(&cmd), 0);
 	if (code != TCL_OK) {
 	    /* We ignore errors in these traced commands */
-	    /*** QUESTION: Use Tcl_BackgroundError(interp); instead? ***/
+	    /*** QUESTION: Use Tcl_BackgroundException(interp, code); instead? ***/
 	}
 	Tcl_DStringFree(&cmd);
     }
@@ -1485,7 +1485,11 @@ TclCheckExecutionTraces(
     }
     iPtr->activeCmdTracePtr = active.nextPtr;
     if (state) {
-	Tcl_RestoreInterpState(interp, state);
+	if (traceCode == TCL_OK) {
+	    (void) Tcl_RestoreInterpState(interp, state);
+	} else {
+	    Tcl_DiscardInterpState(state);
+	}
     }
 
     return traceCode;
@@ -2811,6 +2815,7 @@ DisposeTraceResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_UntraceVar
 void
 Tcl_UntraceVar(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
@@ -2979,6 +2984,7 @@ Tcl_UntraceVar2(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_VarTraceInfo
 ClientData
 Tcl_VarTraceInfo(
     Tcl_Interp *interp,		/* Interpreter containing variable. */
@@ -3087,6 +3093,7 @@ Tcl_VarTraceInfo2(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_TraceVar
 int
 Tcl_TraceVar(
     Tcl_Interp *interp,		/* Interpreter in which variable is to be

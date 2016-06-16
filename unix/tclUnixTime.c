@@ -503,7 +503,7 @@ SetTZIfNecessary(void)
 	if (lastTZ == NULL) {
 	    Tcl_CreateExitHandler(CleanupMemory, NULL);
 	} else {
-	    Tcl_Free(lastTZ);
+	    ckfree(lastTZ);
 	}
 	lastTZ = ckalloc(strlen(newTZ) + 1);
 	strcpy(lastTZ, newTZ);

@@ -175,8 +175,7 @@ test assemble-4.1 {syntax error} {
     -match glob
     -result {1 {extra characters after close-brace} {extra characters after close-brace
     while executing
-"{}extra
-	    "
+"{}e"
     ("assemble" body, line 2)*}}
 }
 test assemble-4.2 {null command} {

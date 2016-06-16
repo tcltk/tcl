@@ -230,6 +230,7 @@ Tcl_DiscardInterpState(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SaveResult
 void
 Tcl_SaveResult(
     Tcl_Interp *interp,		/* Interpreter to save. */
@@ -304,6 +305,7 @@ Tcl_SaveResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_RestoreResult
 void
 Tcl_RestoreResult(
     Tcl_Interp *interp,		/* Interpreter being restored. */
@@ -372,6 +374,7 @@ Tcl_RestoreResult(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_DiscardResult
 void
 Tcl_DiscardResult(
     Tcl_SavedResult *statePtr)	/* State returned by Tcl_SaveResult. */
@@ -1109,6 +1112,7 @@ Tcl_SetObjErrorCode(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_GetErrorLine
 int
 Tcl_GetErrorLine(
     Tcl_Interp *interp)
@@ -1126,6 +1130,7 @@ Tcl_GetErrorLine(
  *----------------------------------------------------------------------
  */
 
+#undef Tcl_SetErrorLine
 void
 Tcl_SetErrorLine(
     Tcl_Interp *interp,
@@ -1587,7 +1592,7 @@ Tcl_GetReturnOptions(
     }
 
     if (result == TCL_ERROR) {
-	Tcl_AddObjErrorInfo(interp, "", -1);
+	Tcl_AddErrorInfo(interp, "");
         Tcl_DictObjPut(NULL, options, keys[KEY_ERRORSTACK], iPtr->errorStack);
     }
     if (iPtr->errorCode) {

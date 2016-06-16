@@ -262,13 +262,17 @@ If set to any value, then \fBunknown\fR will not attempt to auto-load
 any commands.
 .TP
 \fBauto_path\fR
+.
 If set, then it must contain a valid Tcl list giving directories to
-search during auto-load operations.
+search during auto-load operations (including for package index
+files when using the default \fBpackage unknown\fR handler).
 This variable is initialized during startup to contain, in order:
 the directories listed in the \fBTCLLIBPATH\fR environment variable,
-the directory named by the \fBtcl_library\fR variable,
+the directory named by the \fBtcl_library\fR global variable,
 the parent directory of \fBtcl_library\fR,
 the directories listed in the \fBtcl_pkgPath\fR variable.
+Additional locations to look for files and package indices should
+normally be added to this variable using \fBlappend\fR.
 .TP
 \fBenv(TCL_LIBRARY)\fR
 If set, then it specifies the location of the directory containing
@@ -306,7 +310,7 @@ considered to be a word character.  On Windows platforms, words are
 comprised of any character that is not a space, tab, or newline.  Under
 Unix, words are comprised of numbers, letters or underscores.
 .SH "SEE ALSO"
-info(n), re_syntax(n), tclvars(n)
+env(n), info(n), re_syntax(n)
 .SH KEYWORDS
 auto-exec, auto-load, library, unknown, word, whitespace 
 '\"Local Variables:

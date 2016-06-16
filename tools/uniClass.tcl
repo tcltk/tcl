@@ -72,7 +72,7 @@ proc genTable {type} {
 	    if {$i == ($last + 1)} {
 		set last $i
 	    } else {
-		if {$first > 0} {
+		if {$first >= 0} {
 		    emitRange $first $last
 		}
 		set first $i

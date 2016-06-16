@@ -80,13 +80,16 @@ A channel is considered to be writable if at least one byte of data
 can be written to the underlying file or device without blocking,
 or if an error condition is present on the underlying file or device.
 .PP
-Event-driven I/O works best for channels that have been
-placed into nonblocking mode with the \fBfconfigure\fR command.
-In blocking mode, a \fBputs\fR command may block if you give it
-more data than the underlying file or device can accept, and a
-\fBgets\fR or \fBread\fR command will block if you attempt to read
-more data than is ready;  no events will be processed while the
-commands block.
+Event-driven I/O works best for channels that have been placed into
+nonblocking mode with the \fBfconfigure\fR command.  In blocking mode,
+a \fBputs\fR command may block if you give it more data than the
+underlying file or device can accept, and a \fBgets\fR or \fBread\fR
+command will block if you attempt to read more data than is ready; a
+readable underlying file or device may not even guarantee that a
+blocking [read 1] will succeed (counter-examples being multi-byte
+encodings, compression or encryption transforms ). In all such cases,
+no events will be processed while the commands block.
+.PP
 In nonblocking mode \fBputs\fR, \fBread\fR, and \fBgets\fR never block.
 See the documentation for the individual commands for information
 on how they handle blocking and nonblocking channels.

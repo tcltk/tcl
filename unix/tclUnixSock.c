@@ -1131,7 +1131,7 @@ Tcl_OpenTcpClient(
 {
     TcpState *state;
     const char *errorMsg = NULL;
-    struct addrinfo *addrlist = NULL, *myaddrlist = NULL;
+    void *addrlist = NULL, *myaddrlist = NULL;
     char channelName[SOCK_CHAN_LENGTH];
 
     /*
@@ -1202,7 +1202,7 @@ Tcl_Channel
 Tcl_MakeTcpClientChannel(
     ClientData sock)		/* The socket to wrap up into a channel. */
 {
-    return TclpMakeTcpClientChannelMode(sock, (TCL_READABLE | TCL_WRITABLE));
+    return (Tcl_Channel) TclpMakeTcpClientChannelMode(sock, (TCL_READABLE | TCL_WRITABLE));
 }
 
 /*
@@ -1222,9 +1222,9 @@ Tcl_MakeTcpClientChannel(
  *----------------------------------------------------------------------
  */
 
-Tcl_Channel
+void *
 TclpMakeTcpClientChannelMode(
-    ClientData sock,		/* The socket to wrap up into a channel. */
+    void *sock,		/* The socket to wrap up into a channel. */
     int mode)			/* ORed combination of TCL_READABLE and
 				 * TCL_WRITABLE to indicate file mode. */
 {
@@ -1276,7 +1276,8 @@ Tcl_OpenTcpServer(
     ClientData acceptProcData)	/* Data for the callback. */
 {
     int status = 0, sock = -1, reuseaddr = 1, chosenport = 0;
-    struct addrinfo *addrlist = NULL, *addrPtr;	/* socket address */
+    void *addrlist = NULL;
+    struct addrinfo *addrPtr;	/* socket address */
     TcpState *statePtr = NULL;
     char channelName[SOCK_CHAN_LENGTH];
     const char *errorMsg = NULL;
