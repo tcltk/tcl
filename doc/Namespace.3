@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: Namespace.3,v 1.11 2008/10/17 10:22:25 dkf Exp $
-'\" 
 '\" Note that some of these functions do not seem to belong, but they
 '\" were all introduced with the same TIP (#139)
 '\" 
@@ -69,7 +67,7 @@ if no such callback is to be performed.
 The namespace to be manipulated, or NULL (for other than
 \fBTcl_DeleteNamespace\fR) to manipulate the current namespace.
 .AP Tcl_Obj *objPtr out
-A reference to an unshared object to which the function output will be
+A reference to an unshared value to which the function output will be
 written.
 .AP "const char" *pattern in
 The glob-style pattern (see \fBTcl_StringMatch\fR) that describes the
@@ -162,6 +160,6 @@ for the namespace, or NULL if none is set.
 the namespace. If \fIhandlerPtr\fR is NULL, then the handler is reset to
 its default.
 .SH "SEE ALSO"
-Tcl_CreateCommand(3), Tcl_ListObjAppendElements(3), Tcl_SetVar(3)
+Tcl_CreateCommand(3), Tcl_ListObjAppendList(3), Tcl_SetVar(3)
 .SH KEYWORDS
 namespace, command

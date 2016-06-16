@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: throw.n,v 1.1 2008/12/16 21:29:10 dkf Exp $
-'\" 
 .so man.macros
 .TH throw n 8.6 Tcl "Tcl Built-In Commands"
 .BS
@@ -42,7 +40,7 @@ The following produces an error that is identical to that produced by
 \fBthrow\fR {ARITH DIVZERO {divide by zero}} {divide by zero}
 .CE
 .SH "SEE ALSO"
-catch(n), error(n), return(n), try(n)
+catch(n), error(n), return(n), tclvars(n), try(n)
 .SH "KEYWORDS"
 error, exception
 '\" Local Variables:

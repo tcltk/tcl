@@ -4,8 +4,6 @@
 '\"
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-'\"
-'\" RCS: @(#) $Id: CrtChannel.3,v 1.46 2010/01/14 11:47:07 dkf Exp $
 .so man.macros
 .TH Tcl_CreateChannel 3 8.4 Tcl "Tcl Library Procedures"
 .BS
@@ -213,7 +211,7 @@ call to \fBTcl_GetStdChannel\fR or a call to \fBTcl_SetStdChannel\fR
 closing this standard channel will cause the next call to
 \fBTcl_CreateChannel\fR to make the new channel the new standard
 channel too. See \fBTcl_StandardChannels\fR for a general treatise
-about standard channels and the behaviour of the Tcl library with
+about standard channels and the behavior of the Tcl library with
 regard to them.
 .PP
 \fBTcl_GetChannelInstanceData\fR returns the instance data associated with
@@ -848,7 +846,7 @@ the generic options error message string.
 .PP
 It always returns \fBTCL_ERROR\fR
 .PP
-An error message is generated in \fIinterp\fR's result object to
+An error message is generated in \fIinterp\fR's result value to
 indicate that a command was invoked with a bad option.
 The message has the form
 .CS

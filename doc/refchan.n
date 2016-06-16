@@ -4,7 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: refchan.n,v 1.20 2010/03/09 21:15:19 andreas_kupries Exp $
 .so man.macros
 .TH refchan n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -18,10 +17,10 @@ refchan \- command handler API of reflected channels
 .PP
 The Tcl-level handler for a reflected channel has to be a command with
 subcommands (termed an \fIensemble\fR, as it is a command such as that
-created by \fBnamespace ensemble create\fR, though the implementation
+created by \fBnamespace ensemble\fR \fBcreate\fR, though the implementation
 of handlers for reflected channel \fIis not\fR tied to \fBnamespace
-ensemble\fRs in any way; see \fBEXAMPLE\fR below for how to build a
-\fBclass\fR that supports the API). Note that \fIcmdPrefix\fR is whatever was
+ensemble\fRs in any way; see \fBEXAMPLE\fR below for how to build an
+\fBoo::class\fR that supports the API). Note that \fIcmdPrefix\fR is whatever was
 specified in the call to \fBchan create\fR, and may consist of
 multiple arguments; this will be expanded to multiple words in place
 of the prefix.

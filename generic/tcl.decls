@@ -11,8 +11,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: tcl.decls,v 1.181 2010/09/15 07:33:54 nijtmans Exp $
 
 library tcl
 
@@ -62,7 +60,7 @@ declare 8 {
 }
 
 # Tcl_CreateFileHandler and Tcl_DeleteFileHandler are only available on unix,
-# but they are part of the old interface, so we include them here for
+# but they are part of the old generic interface, so we include them here for
 # compatibility reasons.
 
 declare 9 unix {
@@ -598,7 +596,7 @@ declare 166 {
 }
 
 # Tcl_GetOpenFile is only available on unix, but it is a part of the old
-# interface, so we inlcude it here for compatibility reasons.
+# generic interface, so we inlcude it here for compatibility reasons.
 
 declare 167 unix {
     int Tcl_GetOpenFile(Tcl_Interp *interp, const char *chanID, int forWriting,
@@ -777,10 +775,10 @@ declare 217 {
     void Tcl_ResetResult(Tcl_Interp *interp)
 }
 declare 218 {
-    int Tcl_ScanElement(const char *str, int *flagPtr)
+    int Tcl_ScanElement(const char *src, int *flagPtr)
 }
 declare 219 {
-    int Tcl_ScanCountedElement(const char *str, int length, int *flagPtr)
+    int Tcl_ScanCountedElement(const char *src, int length, int *flagPtr)
 }
 # Obsolete
 declare 220 {
@@ -2313,11 +2311,17 @@ declare 627 {
 		     Tcl_LoadHandle *handlePtr)
 }
 declare 628 {
-    void* Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
+    void *Tcl_FindSymbol(Tcl_Interp *interp, Tcl_LoadHandle handle,
 			 const char *symbol)
 }
 declare 629 {
     int Tcl_FSUnloadFile(Tcl_Interp *interp, Tcl_LoadHandle handlePtr)
+}
+
+# TIP #400
+declare 630 {
+    void Tcl_ZlibStreamSetCompressionDictionary(Tcl_ZlibStream zhandle,
+	    Tcl_Obj *compressionDictionaryObj)
 }
 
 # ----- BASELINE -- FOR -- 8.6.0 ----- #
@@ -2365,6 +2369,14 @@ declare 1 macosx {
 
 export {
     void Tcl_Main(int argc, char **argv, Tcl_AppInitProc *appInitProc)
+}
+export {
+    const char *Tcl_InitStubs(Tcl_Interp *interp, const char *version,
+	int exact)
+}
+export {
+    const char *TclTomMathInitializeStubs(Tcl_Interp* interp,
+	const char* version, int epoch, int revision)
 }
 export {
     const char *Tcl_PkgInitStubsCheck(Tcl_Interp *interp, const char *version,

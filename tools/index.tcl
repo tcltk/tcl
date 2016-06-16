@@ -8,9 +8,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: index.tcl,v 1.6 2010/07/01 21:28:15 nijtmans Exp $
-#
 
 # Global variables used by these scripts:
 #

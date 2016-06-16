@@ -7,8 +7,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsearch.n,v 1.37 2008/10/17 10:22:25 dkf Exp $
-'\" 
 .so man.macros
 .TH lsearch n 8.6 Tcl "Tcl Built-In Commands"
 .BS
@@ -163,7 +161,7 @@ If this option is given, the index result from this command (or every
 index result when \fB\-all\fR is also specified) will be a complete
 path (suitable for use with \fBlindex\fR or \fBlset\fR) within the
 overall list to the term found.  This option has no effect unless the
-\fI\-index\fR is also specified, and is just a convenience short-cut.
+\fB\-index\fR is also specified, and is just a convenience short-cut.
 .SH EXAMPLES
 .PP
 Basic searching:

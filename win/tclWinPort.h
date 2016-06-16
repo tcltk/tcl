@@ -9,12 +9,15 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclWinPort.h,v 1.61 2010/09/14 08:53:49 nijtmans Exp $
  */
 
 #ifndef _TCLWINPORT
 #define _TCLWINPORT
+
+#if !defined(_WIN64) && defined(BUILD_tcl)
+/* See [Bug 3354324]: file mtime sets wrong time */
+#   define _USE_32BIT_TIME_T
+#endif
 
 /*
  * We must specify the lower version we intend to support.
@@ -23,21 +26,31 @@
  */
 
 #ifndef WINVER
-#   define WINVER 0x0500
+#   define WINVER 0x0501
 #endif
 #ifndef _WIN32_WINNT
-#   define _WIN32_WINNT 0x0500
+#   define _WIN32_WINNT 0x0501
 #endif
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #undef WIN32_LEAN_AND_MEAN
 
+/* Compatibility to older visual studio / windows platform SDK */
+#if !defined(MAXULONG_PTR)
+typedef DWORD DWORD_PTR;
+typedef DWORD_PTR * PDWORD_PTR;
+#endif
+
 /*
  * Ask for the winsock function typedefs, also.
  */
 #define INCL_WINSOCK_API_TYPEDEFS   1
 #include <winsock2.h>
+#include <ws2tcpip.h>
+#ifdef HAVE_WSPIAPI_H
+#   include <wspiapi.h>
+#endif
 
 #ifdef CHECK_UNICODE_CALLS
 #   define _UNICODE
@@ -57,6 +70,10 @@
     typedef _TCHAR TCHAR;
 #   define _TCHAR_DEFINED
 #endif
+#if defined(_MSC_VER) && defined(__STDC__)
+    /* VS2005 SP1 misses this. See [Bug #3110161] */
+    typedef _TCHAR TCHAR;
+#endif
 
 /*
  *---------------------------------------------------------------------------
@@ -75,18 +92,11 @@
 #include <signal.h>
 #include <limits.h>
 
-#ifdef __CYGWIN__
-#   include <unistd.h>
-#   ifndef _wcsicmp
-#	define _wcsicmp wcscasecmp
-#   endif
-#else
-#   ifndef strncasecmp
-#	define strncasecmp strnicmp
-#   endif
-#   ifndef strcasecmp
-#	define strcasecmp stricmp
-#   endif
+#ifndef strncasecmp
+#   define strncasecmp strnicmp
+#endif
+#ifndef strcasecmp
+#   define strcasecmp stricmp
 #endif
 
 /*
@@ -220,7 +230,7 @@
 #   define EOVERFLOW	132	/* File too big */
 #endif
 #ifndef EOWNERDEAD
-#   define EOWNERDEAD	133	/* File too big */
+#   define EOWNERDEAD	133	/* Owner dead */
 #endif
 #ifndef EPROTO
 #   define EPROTO	134	/* Protocol error */
@@ -245,20 +255,28 @@
 #endif
 
 
-#undef ESOCKTNOSUPPORT
-#define ESOCKTNOSUPPORT WSAESOCKTNOSUPPORT	/* Socket type not supported */
-#undef ESHUTDOWN
-#define ESHUTDOWN	WSAESHUTDOWN	/* Can't send after socket shutdown */
-#undef ETOOMANYREFS
-#define ETOOMANYREFS	WSAETOOMANYREFS	/* Too many references: can't splice */
-#undef EHOSTDOWN
-#define EHOSTDOWN	WSAEHOSTDOWN	/* Host is down */
-#undef EUSERS
-#define EUSERS	WSAEUSERS	/* Too many users (for UFS) */
-#undef EDQUOT
-#define EDQUOT	WSAEDQUOT	/* Disc quota exceeded */
-#undef ESTALE
-#define ESTALE	WSAESTALE	/* Stale NFS file handle */
+/* Visual Studio doesn't have these, so just choose some high numbers */
+#ifndef ESOCKTNOSUPPORT
+#   define ESOCKTNOSUPPORT 240	/* Socket type not supported */
+#endif
+#ifndef ESHUTDOWN
+#   define ESHUTDOWN	241	/* Can't send after socket shutdown */
+#endif
+#ifndef ETOOMANYREFS
+#   define ETOOMANYREFS	242	/* Too many references: can't splice */
+#endif
+#ifndef EHOSTDOWN
+#   define EHOSTDOWN	243	/* Host is down */
+#endif
+#ifndef EUSERS
+#   define EUSERS	244	/* Too many users (for UFS) */
+#endif
+#ifndef EDQUOT
+#   define EDQUOT	245	/* Disc quota exceeded */
+#endif
+#ifndef ESTALE
+#   define ESTALE	246	/* Stale NFS file handle */
+#endif
 
 /*
  * Signals not known to the standard ANSI signal.h.  These are used
@@ -420,7 +438,9 @@
 
 #if defined(_MSC_VER) || defined(__MINGW32__)
 #   define environ _environ
-#   define hypot _hypot
+#   if defined(_MSC_VER) && (_MSC_VER < 1600)
+#	define hypot _hypot
+#   endif
 #   define exception _exception
 #   undef EDEADLOCK
 #   if defined(__MINGW32__) && !defined(__MSVCRT__)
@@ -438,11 +458,6 @@
 #endif /* __BORLANDC__ */
 
 #ifdef __WATCOMC__
-    /*
-     * OpenWatcom uses a wine derived winsock2.h that is missing the
-     * LPFN_* typedefs.
-     */
-#   define HAVE_NO_LPFN_DECLS
 #   if !defined(__CHAR_SIGNED__)
 #	error "You must use the -j switch to ensure char is signed."
 #   endif
@@ -499,7 +514,7 @@
 /*
  * Older version of Mingw are known to lack a MWMO_ALERTABLE define.
  */
-#if defined(HAVE_NO_MWMO_ALERTABLE)
+#if !defined(MWMO_ALERTABLE)
 #   define MWMO_ALERTABLE 2
 #endif
 
@@ -508,18 +523,12 @@
  * use by tclAlloc.c.
  */
 
-#ifdef __CYGWIN__
-#   define TclpSysAlloc(size, isBin)	malloc((size))
-#   define TclpSysFree(ptr)		free((ptr))
-#   define TclpSysRealloc(ptr, size)	realloc((ptr), (size))
-#else
-#   define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
+#define TclpSysAlloc(size, isBin)	((void*)HeapAlloc(GetProcessHeap(), \
 					    (DWORD)0, (DWORD)size))
-#   define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
+#define TclpSysFree(ptr)		(HeapFree(GetProcessHeap(), \
 					    (DWORD)0, (HGLOBAL)ptr))
-#   define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
+#define TclpSysRealloc(ptr, size)	((void*)HeapReAlloc(GetProcessHeap(), \
 					    (DWORD)0, (LPVOID)ptr, (DWORD)size))
-#endif
 
 /*
  * The following defines map from standard socket names to our internal
@@ -529,7 +538,6 @@
 
 #define getservbyname	TclWinGetServByName
 #define getsockopt	TclWinGetSockOpt
-#define ntohs		TclWinNToHS
 #define setsockopt	TclWinSetSockOpt
 /* This type is not defined in the Windows headers */
 #define socklen_t       int
@@ -552,5 +560,9 @@
 #ifndef INVALID_SET_FILE_POINTER
 #define INVALID_SET_FILE_POINTER 0xFFFFFFFF
 #endif /* INVALID_SET_FILE_POINTER */
+
+#ifndef LABEL_SECURITY_INFORMATION
+#   define LABEL_SECURITY_INFORMATION (0x00000010L)
+#endif
 
 #endif /* _TCLWINPORT */

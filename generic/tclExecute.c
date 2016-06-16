@@ -13,12 +13,11 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclExecute.c,v 1.499 2010/09/27 19:42:38 msofer Exp $
  */
 
 #include "tclInt.h"
 #include "tclCompile.h"
+#include "tclOOInt.h"
 #include "tommath.h"
 #include <math.h>
 
@@ -54,6 +53,8 @@
 
 static int execInitialized = 0;
 TCL_DECLARE_MUTEX(execMutex)
+
+static int cachedInExit = 0;
 
 #ifdef TCL_COMPILE_DEBUG
 /*
@@ -170,42 +171,46 @@ static BuiltinFunc const tclBuiltinFuncTable[] = {
  * Minimal data required to fully reconstruct the execution state.
  */
 
-typedef struct BottomData {
+typedef struct TEBCdata {
     ByteCode *codePtr;		/* Constant until the BC returns */
 				/* -----------------------------------------*/
-    struct BottomData *expanded;/* NULL if unchanged, pointer to the succesor
-				 * if it was expanded */
     const unsigned char *pc;	/* These fields are used on return TO this */
     ptrdiff_t *catchTop;	/* this level: they record the state when a */
     int cleanup;		/* new codePtr was received for NR */
     Tcl_Obj *auxObjList;	/* execution. */
     int checkInterp;
-} BottomData;
+    CmdFrame cmdFrame;
+    void *stack[1];		/* Start of the actual combined catch and obj
+				 * stacks; the struct will be expanded as
+				 * necessary */
+} TEBCdata;
 
-#define NR_YIELD(invoke)				\
-    esPtr->tosPtr = tosPtr;				\
-    BP->pc = pc;					\
-    BP->cleanup = cleanup;				\
-    TclNRAddCallback(interp, TEBCresume, BP,	\
-	    INT2PTR(invoke), NULL, NULL)
-    
-#define NR_DATA_DIG()				\
-    pc = BP->pc;				\
-    cleanup = BP->cleanup;			\
-    tosPtr = esPtr->tosPtr
-    
+#define TEBC_YIELD() \
+    do {								\
+	esPtr->tosPtr = tosPtr;						\
+	TD->pc = pc;							\
+	TD->cleanup = cleanup;						\
+	TclNRAddCallback(interp, TEBCresume, TD, INT2PTR(1), NULL, NULL); \
+    } while (0)
+
+#define TEBC_DATA_DIG() \
+    do {					\
+	pc = TD->pc;				\
+	cleanup = TD->cleanup;			\
+	tosPtr = esPtr->tosPtr;			\
+    } while (0)
 
 #define PUSH_TAUX_OBJ(objPtr) \
     do {							\
-	objPtr->internalRep.twoPtrValue.ptr2 = auxObjList;	\
+	objPtr->internalRep.ptrAndLongRep.ptr = auxObjList;	\
 	auxObjList = objPtr;					\
     } while (0)
 
 #define POP_TAUX_OBJ() \
-    do {								\
-	tmpPtr = auxObjList;						\
-	auxObjList = (Tcl_Obj *) tmpPtr->internalRep.twoPtrValue.ptr2;	\
-	Tcl_DecrRefCount(tmpPtr);					\
+    do {							\
+	tmpPtr = auxObjList;					\
+	auxObjList = tmpPtr->internalRep.ptrAndLongRep.ptr;	\
+	Tcl_DecrRefCount(tmpPtr);				\
     } while (0)
 
 /*
@@ -335,7 +340,7 @@ VarHashCreateVar(
 
 #define OBJ_AT_DEPTH(n)	*(tosPtr-(n))
 
-#define CURR_DEPTH	(tosPtr - initTosPtr)
+#define CURR_DEPTH	((ptrdiff_t) (tosPtr - initTosPtr))
 
 /*
  * Macros used to trace instruction execution. The macros TRACE,
@@ -345,7 +350,7 @@ VarHashCreateVar(
 
 #ifdef TCL_COMPILE_DEBUG
 #   define TRACE(a) \
-    while (traceInstructions) {				\
+    while (traceInstructions) {					\
 	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
 		(unsigned) (pc - codePtr->codeStart),		\
@@ -354,12 +359,12 @@ VarHashCreateVar(
 	break;							\
     }
 #   define TRACE_APPEND(a) \
-    while (traceInstructions) {	\
+    while (traceInstructions) {		\
 	printf a;			\
 	break;				\
     }
 #   define TRACE_WITH_OBJ(a, objPtr) \
-    while (traceInstructions) {				\
+    while (traceInstructions) {					\
 	fprintf(stdout, "%2d: %2d (%u) %s ", iPtr->numLevels,	\
 		(int) CURR_DEPTH,				\
 		(unsigned) (pc - codePtr->codeStart),		\
@@ -385,13 +390,13 @@ VarHashCreateVar(
 #define TCL_DTRACE_INST_NEXT() \
     do {								\
 	if (TCL_DTRACE_INST_DONE_ENABLED()) {				\
-	    if (curInstName) {					\
-		TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH, \
+	    if (curInstName) {						\
+		TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH,	\
 			tosPtr);					\
 	    }								\
 	    curInstName = tclInstructionTable[*pc].name;		\
 	    if (TCL_DTRACE_INST_START_ENABLED()) {			\
-		TCL_DTRACE_INST_START(curInstName, (int) CURR_DEPTH, \
+		TCL_DTRACE_INST_START(curInstName, (int) CURR_DEPTH,	\
 			tosPtr);					\
 	    }								\
 	} else if (TCL_DTRACE_INST_START_ENABLED()) {			\
@@ -401,7 +406,7 @@ VarHashCreateVar(
     } while (0)
 #define TCL_DTRACE_INST_LAST() \
     do {								\
-	if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {	\
+	if (TCL_DTRACE_INST_DONE_ENABLED() && curInstName) {		\
 	    TCL_DTRACE_INST_DONE(curInstName, (int) CURR_DEPTH, tosPtr);\
 	}								\
     } while (0)
@@ -513,16 +518,6 @@ VarHashCreateVar(
 #else
 #define IsErroringNaNType(type)		0
 #endif
-
-/*
- * Custom object type only used in this file; values of its type should never
- * be seen by user scripts.
- */
-
-static const Tcl_ObjType dictIteratorType = {
-    "dictIterator",
-    NULL, NULL, NULL, NULL
-};
 
 /*
  * Auxiliary tables used to compute powers of small integers.
@@ -707,13 +702,15 @@ static void		FreeExprCodeInternalRep(Tcl_Obj *objPtr);
 static ExceptionRange *	GetExceptRangeForPc(const unsigned char *pc,
 			    int catchOnly, ByteCode *codePtr);
 static const char *	GetSrcInfoForPc(const unsigned char *pc,
-			    ByteCode *codePtr, int *lengthPtr);
+			    ByteCode *codePtr, int *lengthPtr,
+			    const unsigned char **pcBeg);
 static Tcl_Obj **	GrowEvaluationStack(ExecEnv *eePtr, int growth,
 			    int move);
 static void		IllegalExprOperandType(Tcl_Interp *interp,
 			    const unsigned char *pc, Tcl_Obj *opndPtr);
 static void		InitByteCodeExecution(Tcl_Interp *interp);
 static inline int	OFFSET(void *ptr);
+static void		ReleaseDictIterator(Tcl_Obj *objPtr);
 /* Useful elsewhere, make available in tclInt.h or stubs? */
 static Tcl_Obj **	StackAllocWords(Tcl_Interp *interp, int numWords);
 static Tcl_Obj **	StackReallocWords(Tcl_Interp *interp, int numWords);
@@ -721,7 +718,6 @@ static Tcl_NRPostProc	CopyCallback;
 static Tcl_NRPostProc	ExprObjCallback;
 
 static Tcl_NRPostProc   TEBCresume;
-static Tcl_NRPostProc   TEBCreturn;
 
 /*
  * The structure below defines a bytecode Tcl object type to hold the
@@ -735,6 +731,56 @@ static const Tcl_ObjType exprCodeType = {
     NULL,			/* updateStringProc */
     NULL			/* setFromAnyProc */
 };
+
+/*
+ * Custom object type only used in this file; values of its type should never
+ * be seen by user scripts.
+ */
+
+static const Tcl_ObjType dictIteratorType = {
+    "dictIterator",
+    ReleaseDictIterator,
+    NULL, NULL, NULL
+};
+
+/*
+ *----------------------------------------------------------------------
+ *
+ * ReleaseDictIterator --
+ *
+ *	This takes apart a dictionary iterator that is stored in the given Tcl
+ *	object.
+ *
+ * Results:
+ *	None.
+ *
+ * Side effects:
+ *	Deallocates memory, marks the object as being untyped.
+ *
+ *----------------------------------------------------------------------
+ */
+
+static void
+ReleaseDictIterator(
+    Tcl_Obj *objPtr)
+{
+    Tcl_DictSearch *searchPtr;
+    Tcl_Obj *dictPtr;
+
+    /*
+     * First kill the search, and then release the reference to the dictionary
+     * that we were holding.
+     */
+
+    searchPtr = objPtr->internalRep.twoPtrValue.ptr1;
+    Tcl_DictObjDone(searchPtr);
+    ckfree(searchPtr);
+
+    dictPtr = objPtr->internalRep.twoPtrValue.ptr2;
+    TclDecrRefCount(dictPtr);
+
+    objPtr->typePtr = NULL;
+}
 
 /*
  *----------------------------------------------------------------------
@@ -803,8 +849,8 @@ TclCreateExecEnv(
     int size)			/* The initial stack size, in number of words
 				 * [sizeof(Tcl_Obj*)] */
 {
-    ExecEnv *eePtr = (ExecEnv *) ckalloc(sizeof(ExecEnv));
-    ExecStack *esPtr = (ExecStack *) ckalloc(sizeof(ExecStack)
+    ExecEnv *eePtr = ckalloc(sizeof(ExecEnv));
+    ExecStack *esPtr = ckalloc(sizeof(ExecStack)
 	    + (size_t) (size-1) * sizeof(Tcl_Obj *));
 
     eePtr->execStackPtr = esPtr;
@@ -855,7 +901,7 @@ static void
 DeleteExecStack(
     ExecStack *esPtr)
 {
-    if (esPtr->markerPtr) {
+    if (esPtr->markerPtr && !cachedInExit) {
 	Tcl_Panic("freeing an execStack which is still in use");
     }
 
@@ -865,7 +911,7 @@ DeleteExecStack(
     if (esPtr->nextPtr) {
 	esPtr->nextPtr->prevPtr = esPtr->prevPtr;
     }
-    ckfree((char *) esPtr);
+    ckfree(esPtr);
 }
 
 void
@@ -873,6 +919,8 @@ TclDeleteExecEnv(
     ExecEnv *eePtr)		/* Execution environment to free. */
 {
     ExecStack *esPtr = eePtr->execStackPtr, *tmpPtr;
+
+	cachedInExit = TclInExit();
 
     /*
      * Delete all stacks in this exec env.
@@ -889,13 +937,13 @@ TclDeleteExecEnv(
 
     TclDecrRefCount(eePtr->constants[0]);
     TclDecrRefCount(eePtr->constants[1]);
-    if (eePtr->callbackPtr) {
+    if (eePtr->callbackPtr && !cachedInExit) {
 	Tcl_Panic("Deleting execEnv with pending TEOV callbacks!");
     }
-    if (eePtr->corPtr) {
+    if (eePtr->corPtr && !cachedInExit) {
 	Tcl_Panic("Deleting execEnv with existing coroutine");
     }
-    ckfree((char *) eePtr);
+    ckfree(eePtr);
 }
 
 /*
@@ -1020,14 +1068,14 @@ GrowEvaluationStack(
 
     /*
      * Reset move to hold the number of words to be moved to new stack (if
-     * any) and growth to hold the complete stack requirements: add the marker
-     * and maximal possible offset.
+     * any) and growth to hold the complete stack requirements: add one for
+     * the marker, (WALLOCALIGN-1) for the maximal possible offset.
      */
 
     if (move) {
 	moveWords = esPtr->tosPtr - MEMSTART(markerPtr) + 1;
     }
-    needed = growth + moveWords + WALLOCALIGN - 1;
+    needed = growth + moveWords + WALLOCALIGN;
 
     /*
      * Check if there is enough room in the next stack (if there is one, it
@@ -1065,7 +1113,7 @@ GrowEvaluationStack(
     newBytes = sizeof(ExecStack) + (newElems-1) * sizeof(Tcl_Obj *);
 
     oldPtr = esPtr;
-    esPtr = (ExecStack *) ckalloc(newBytes);
+    esPtr = ckalloc(newBytes);
 
     oldPtr->nextPtr = esPtr;
     esPtr->prevPtr = oldPtr;
@@ -1191,18 +1239,27 @@ TclStackFree(
     }
 
     /*
-     * Return to previous stack.
+     * Return to previous active stack. Note that repeated expansions or
+     * reallocs could have generated several unused intervening stacks: free
+     * them too.
      */
 
+    while (esPtr->nextPtr) {
+	esPtr = esPtr->nextPtr;
+    }
     esPtr->tosPtr = &esPtr->stackWords[-1];
+    while (esPtr->prevPtr) {
+	ExecStack *tmpPtr = esPtr->prevPtr;
+	if (tmpPtr->tosPtr == &tmpPtr->stackWords[-1]) {
+	    DeleteExecStack(tmpPtr);
+	} else {
+	    break;
+	}
+    }
     if (esPtr->prevPtr) {
 	eePtr->execStackPtr = esPtr->prevPtr;
-    }
-    if (esPtr->nextPtr) {
-	if (!esPtr->prevPtr) {
-	    eePtr->execStackPtr = esPtr->nextPtr;
-	}
-	DeleteExecStack(esPtr);
+    } else {
+	eePtr->execStackPtr = esPtr;
     }
 }
 
@@ -1281,7 +1338,7 @@ Tcl_ExprObj(
     Tcl_Obj **resultPtrPtr)	/* Where the Tcl_Obj* that is the expression
 				 * result is stored if no errors occur. */
 {
-    TEOV_callback *rootPtr = TOP_CB(interp);
+    NRE_callback *rootPtr = TOP_CB(interp);
     Tcl_Obj *resultPtr;
 
     TclNewObj(resultPtr);
@@ -1365,7 +1422,6 @@ ExprObjCallback(
 
     if (result == TCL_OK) {
 	TclSetDuplicateObj(resultPtr, Tcl_GetObjResult(interp));
-	Tcl_IncrRefCount(resultPtr);
 	Tcl_SetObjResult(interp, saveObjPtr);
     }
     TclDecrRefCount(saveObjPtr);
@@ -1411,7 +1467,7 @@ CompileExprObj(
     if (objPtr->typePtr == &exprCodeType) {
 	Namespace *namespacePtr = iPtr->varFramePtr->nsPtr;
 
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
@@ -1451,7 +1507,7 @@ CompileExprObj(
 	TclInitByteCodeObj(objPtr, &compEnv);
 	objPtr->typePtr = &exprCodeType;
 	TclFreeCompileEnv(&compEnv);
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.otherValuePtr;
 	if (iPtr->varFramePtr->localCachePtr) {
 	    codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	    codePtr->localCachePtr->refCount++;
@@ -1523,14 +1579,14 @@ static void
 FreeExprCodeInternalRep(
     Tcl_Obj *objPtr)
 {
-    ByteCode *codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+    ByteCode *codePtr = objPtr->internalRep.otherValuePtr;
 
+    objPtr->typePtr = NULL;
+    objPtr->internalRep.otherValuePtr = NULL;
     codePtr->refCount--;
     if (codePtr->refCount <= 0) {
 	TclCleanupByteCode(codePtr);
     }
-    objPtr->typePtr = NULL;
-    objPtr->internalRep.otherValuePtr = NULL;
 }
 
 /*
@@ -1538,13 +1594,13 @@ FreeExprCodeInternalRep(
  *
  * TclCompileObj --
  *
- *	This procedure compiles the script contained in a Tcl_Obj
+ *	This procedure compiles the script contained in a Tcl_Obj.
  *
  * Results:
  *	A pointer to the corresponding ByteCode, never NULL.
  *
  * Side effects:
- *	The object is shimmered to bytecode type
+ *	The object is shimmered to bytecode type.
  *
  *----------------------------------------------------------------------
  */
@@ -1584,30 +1640,29 @@ TclCompileObj(
 	 * here.
 	 */
 
-	codePtr = (ByteCode *) objPtr->internalRep.otherValuePtr;
+	codePtr = objPtr->internalRep.otherValuePtr;
 	if (((Interp *) *codePtr->interpHandle != iPtr)
 		|| (codePtr->compileEpoch != iPtr->compileEpoch)
 		|| (codePtr->nsPtr != namespacePtr)
 		|| (codePtr->nsEpoch != namespacePtr->resolverEpoch)) {
-	    if (codePtr->flags & TCL_BYTECODE_PRECOMPILED) {
-		if ((Interp *) *codePtr->interpHandle != iPtr) {
-		    Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
-		}
-		codePtr->compileEpoch = iPtr->compileEpoch;
-	    } else {
+	    if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED)) {
 		goto recompileObj;
 	    }
+	    if ((Interp *) *codePtr->interpHandle != iPtr) {
+		Tcl_Panic("Tcl_EvalObj: compiled script jumped interps");
+	    }
+	    codePtr->compileEpoch = iPtr->compileEpoch;
 	}
 
-	if (codePtr->procPtr == NULL) {
-	    /*
-	     * Check that any compiled locals do refer to the current proc
-	     * environment! If not, recompile.
-	     */
+	/*
+	 * Check that any compiled locals do refer to the current proc
+	 * environment! If not, recompile.
+	 */
 
-	    if (codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr) {
-		goto recompileObj;
-	    }
+	if (!(codePtr->flags & TCL_BYTECODE_PRECOMPILED) &&
+		(codePtr->procPtr == NULL) &&
+		(codePtr->localCachePtr != iPtr->varFramePtr->localCachePtr)){
+	    goto recompileObj;
 	}
 
 	/*
@@ -1639,70 +1694,64 @@ TclCompileObj(
 	 *     information.
 	 */
 
-	{
+	if (invoker == NULL) {
+	    return codePtr;
+	} else {
 	    Tcl_HashEntry *hePtr =
 		    Tcl_FindHashEntry(iPtr->lineBCPtr, codePtr);
+	    ExtCmdLoc *eclPtr;
+	    CmdFrame *ctxCopyPtr;
+	    int redo;
 
-	    if (hePtr) {
-		ExtCmdLoc *eclPtr = Tcl_GetHashValue(hePtr);
-		int redo = 0;
+	    if (!hePtr) {
+		return codePtr;
+	    }
 
-		if (invoker) {
-		    CmdFrame *ctxPtr = TclStackAlloc(interp,sizeof(CmdFrame));
-		    *ctxPtr = *invoker;
+	    eclPtr = Tcl_GetHashValue(hePtr);
+	    redo = 0;
+	    ctxCopyPtr = TclStackAlloc(interp, sizeof(CmdFrame));
+	    *ctxCopyPtr = *invoker;
 
-		    if (invoker->type == TCL_LOCATION_BC) {
-			/*
-			 * Note: Type BC => ctx.data.eval.path    is not used.
-			 *		    ctx.data.tebc.codePtr used instead
-			 */
+	    if (invoker->type == TCL_LOCATION_BC) {
+		/*
+		 * Note: Type BC => ctx.data.eval.path    is not used.
+		 *		    ctx.data.tebc.codePtr used instead
+		 */
 
-			TclGetSrcInfoForPc(ctxPtr);
-			if (ctxPtr->type == TCL_LOCATION_SOURCE) {
-			    /*
-			     * The reference made by 'TclGetSrcInfoForPc' is
-			     * dead.
-			     */
+		TclGetSrcInfoForPc(ctxCopyPtr);
+		if (ctxCopyPtr->type == TCL_LOCATION_SOURCE) {
+		    /*
+		     * The reference made by 'TclGetSrcInfoForPc' is dead.
+		     */
 
-			    Tcl_DecrRefCount(ctxPtr->data.eval.path);
-			    ctxPtr->data.eval.path = NULL;
-			}
-		    }
-
-		    if (word < ctxPtr->nline) {
-			/*
-			 * Note: We do not care if the line[word] is -1. This
-			 * is a difference and requires a recompile (location
-			 * changed from absolute to relative, literal is used
-			 * fixed and through variable)
-			 *
-			 * Example:
-			 * test info-32.0 using literal of info-24.8
-			 *     (dict with ... vs           set body ...).
-			 */
-
-			redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
-				    && (eclPtr->start != ctxPtr->line[word]))
-				|| ((eclPtr->type == TCL_LOCATION_BC)
-				    && (ctxPtr->type == TCL_LOCATION_SOURCE));
-		    }
-
-		    TclStackFree(interp, ctxPtr);
-		}
-
-		if (redo) {
-		    goto recompileObj;
+		    Tcl_DecrRefCount(ctxCopyPtr->data.eval.path);
+		    ctxCopyPtr->data.eval.path = NULL;
 		}
 	    }
+
+	    if (word < ctxCopyPtr->nline) {
+		/*
+		 * Note: We do not care if the line[word] is -1. This is a
+		 * difference and requires a recompile (location changed from
+		 * absolute to relative, literal is used fixed and through
+		 * variable)
+		 *
+		 * Example:
+		 * test info-32.0 using literal of info-24.8
+		 *     (dict with ... vs           set body ...).
+		 */
+
+		redo = ((eclPtr->type == TCL_LOCATION_SOURCE)
+			    && (eclPtr->start != ctxCopyPtr->line[word]))
+			|| ((eclPtr->type == TCL_LOCATION_BC)
+			    && (ctxCopyPtr->type == TCL_LOCATION_SOURCE));
+	    }
+
+	    TclStackFree(interp, ctxCopyPtr);
+	    if (!redo) {
+		return codePtr;
+	    }
 	}
-
-	/*
-	 * Increment the code's ref count while it is being executed. If
-	 * afterwards no references to it remain, free the code.
-	 */
-
-    runCompiledObj:
-	return codePtr;
     }
 
   recompileObj:
@@ -1717,14 +1766,14 @@ TclCompileObj(
 
     iPtr->invokeCmdFramePtr = invoker;
     iPtr->invokeWord = word;
-    tclByteCodeType.setFromAnyProc(interp, objPtr);
+    TclSetByteCodeFromAny(interp, objPtr, NULL, NULL);
     iPtr->invokeCmdFramePtr = NULL;
     codePtr = objPtr->internalRep.otherValuePtr;
     if (iPtr->varFramePtr->localCachePtr) {
 	codePtr->localCachePtr = iPtr->varFramePtr->localCachePtr;
 	codePtr->localCachePtr->refCount++;
     }
-    goto runCompiledObj;
+    return codePtr;
 }
 
 /*
@@ -1871,10 +1920,10 @@ TclIncrObj(
  *
  *----------------------------------------------------------------------
  */
-#define	bcFramePtr	((CmdFrame *) (BP + 1))
-#define	initCatchTop	(((ptrdiff_t *) (bcFramePtr + 1)) - 1)
+#define	bcFramePtr	(&TD->cmdFrame)
+#define	initCatchTop	((ptrdiff_t *) (&TD->stack[-1]))
 #define	initTosPtr	((Tcl_Obj **) (initCatchTop+codePtr->maxExceptDepth))
-#define esPtr           (iPtr->execEnvPtr->execStackPtr)
+#define esPtr		(iPtr->execEnvPtr->execStackPtr)
 
 int
 TclNRExecuteByteCode(
@@ -1882,18 +1931,22 @@ TclNRExecuteByteCode(
     ByteCode *codePtr)		/* The bytecode sequence to interpret. */
 {
     Interp *iPtr = (Interp *) interp;
-    BottomData *BP;
-    
+    TEBCdata *TD;
+    int size = sizeof(TEBCdata) - 1
+	    + (codePtr->maxStackDepth + codePtr->maxExceptDepth)
+		* sizeof(void *);
+    int numWords = (size + sizeof(Tcl_Obj *) - 1) / sizeof(Tcl_Obj *);
+
     if (iPtr->execEnvPtr->rewind) {
 	return TCL_ERROR;
     }
-    
+
     codePtr->refCount++;
 
     /*
-     * Reserve the stack, setup the BottomPtr and CallFrame
+     * Reserve the stack, setup the TEBCdataPtr (TD) and CallFrame
      *
-     * The execution uses a unified stack: first a BottomData, immediately
+     * The execution uses a unified stack: first a TEBCdata, immediately
      * above it a CmdFrame, then the catch stack, then the execution stack.
      *
      * Make sure the catch stack is large enough to hold the maximum number of
@@ -1902,22 +1955,19 @@ TclNRExecuteByteCode(
      * execution stack is large enough to execute this ByteCode.
      */
 
-    BP = (BottomData *) GrowEvaluationStack(iPtr->execEnvPtr,
-	    sizeof(BottomData) + codePtr->maxExceptDepth + sizeof(CmdFrame)
-	    + codePtr->maxStackDepth, 0);
+    TD = (TEBCdata *) GrowEvaluationStack(iPtr->execEnvPtr, numWords, 0);
     esPtr->tosPtr = initTosPtr;
-    
-    BP->codePtr     = codePtr;
-    BP->expanded    = NULL;
-    BP->pc          = codePtr->codeStart;
-    BP->catchTop    = initCatchTop;
-    BP->cleanup     = 0;
-    BP->auxObjList  = NULL;
-    BP->checkInterp = 0;
-    
+
+    TD->codePtr     = codePtr;
+    TD->pc	    = codePtr->codeStart;
+    TD->catchTop    = initCatchTop;
+    TD->cleanup     = 0;
+    TD->auxObjList  = NULL;
+    TD->checkInterp = 0;
+
     /*
      * TIP #280: Initialize the frame. Do not push it yet: it will be pushed
-     * every time that we call out from this BP, popped when we return to it.
+     * every time that we call out from this TD, popped when we return to it.
      */
 
     bcFramePtr->type = ((codePtr->flags & TCL_BYTECODE_PRECOMPILED)
@@ -1934,50 +1984,17 @@ TclNRExecuteByteCode(
     bcFramePtr->cmd.str.cmd = NULL;
     bcFramePtr->cmd.str.len = 0;
 
-#ifdef TCL_COMPILE_DEBUG
-    if (tclTraceExec >= 2) {
-	PrintByteCodeInfo(codePtr);
-	fprintf(stdout, "  Starting stack top=%d\n", (int) CURR_DEPTH);
-	fflush(stdout);
-    }
-#endif
-
 #ifdef TCL_COMPILE_STATS
     iPtr->stats.numExecutions++;
 #endif
 
     /*
-     * Push the callbacks for
-     *  - exception handling and cleanup
-     *  - bytecode execution
+     * Push the callback for bytecode execution
      */
-    
-    TclNRAddCallback(interp, TEBCreturn, BP, NULL,
+
+    TclNRAddCallback(interp, TEBCresume, TD, /*resume*/ INT2PTR(0),
 	    NULL, NULL);
-    TclNRAddCallback(interp, TEBCresume, BP,
-	    /*resume*/ INT2PTR(0), NULL, NULL);
-    
     return TCL_OK;
-}
-
-static int
-TEBCreturn(
-    ClientData data[],
-    Tcl_Interp *interp,
-    int result)
-{
-    BottomData *BP = data[0];
-    ByteCode *codePtr = BP->codePtr;
-
-    if (--codePtr->refCount <= 0) {
-	TclCleanupByteCode(codePtr);
-    }
-    while (BP->expanded) {
-	BP = BP->expanded;
-    }
-    TclStackFree(interp, BP);	/* free my stack */
-
-    return result;
 }
 
 static int
@@ -2003,7 +2020,6 @@ TEBCresume(
     /*
      * Bottom of allocated stack holds the NR data
      */
-    /* NR_TEBC */
 
     /*
      * Constants: variables that do not change during the execution, used
@@ -2017,33 +2033,33 @@ TEBCresume(
     int traceInstructions;	/* Whether we are doing instruction-level
 				 * tracing or not. */
 #endif
-#define LOCAL(i)	(&iPtr->varFramePtr->compiledLocals[(i)])
-#define TCONST(i)	(iPtr->execEnvPtr->constants[(i)])
+
+    Var *compiledLocals = iPtr->varFramePtr->compiledLocals;
+    Tcl_Obj **constants = &iPtr->execEnvPtr->constants[0];
+
+#define LOCAL(i)	(&compiledLocals[(i)])
+#define TCONST(i)	(constants[(i)])
 
     /*
      * These macros are just meant to save some global variables that are not
      * used too frequently
      */
 
-    BottomData *BP = data[0];
-#define auxObjList	(BP->auxObjList)
-#define catchTop	(BP->catchTop)
-#define codePtr         (BP->codePtr)
-#define checkInterp	(BP->checkInterp)
-                        /* Indicates when a check of interp readyness
-			 * is necessary. Set by CACHE_STACK_INFO() */
+    TEBCdata *TD = data[0];
+#define auxObjList	(TD->auxObjList)
+#define catchTop	(TD->catchTop)
+#define codePtr		(TD->codePtr)
+#define checkInterp	(TD->checkInterp)
+			/* Indicates when a check of interp readyness is
+			 * necessary. Set by CACHE_STACK_INFO() */
 
     /*
      * Globals: variables that store state, must remain valid at all times.
      */
 
-    Tcl_Obj **tosPtr;	      /* Cached pointer to top of evaluation
-			       * stack. */
-    const unsigned char *pc;  /* The current program counter. */
-
-#ifdef TCL_COMPILE_DEBUG
-    traceInstructions = (tclTraceExec == 3);
-#endif
+    Tcl_Obj **tosPtr;		/* Cached pointer to top of evaluation
+				 * stack. */
+    const unsigned char *pc;	/* The current program counter. */
 
     /*
      * Transfer variables - needed only between opcodes, but not while
@@ -2061,23 +2077,36 @@ TEBCresume(
 
     Tcl_Obj *objPtr, *valuePtr, *value2Ptr, *part1Ptr, *part2Ptr, *tmpPtr;
     Tcl_Obj **objv;
-    int opnd, objc, length, pcAdjustment;
+    int objc = 0;
+    int opnd, length, pcAdjustment;
     Var *varPtr, *arrayPtr;
 #ifdef TCL_COMPILE_DEBUG
     char cmdNameBuf[21];
 #endif
 
-    NR_DATA_DIG();
+#ifdef TCL_COMPILE_DEBUG
+    traceInstructions = (tclTraceExec == 3);
+#endif
+
+    TEBC_DATA_DIG();
+
+#ifdef TCL_COMPILE_DEBUG
+    if (!data[1] && (tclTraceExec >= 2)) {
+	PrintByteCodeInfo(codePtr);
+	fprintf(stdout, "  Starting stack top=%d\n", (int) CURR_DEPTH);
+	fflush(stdout);
+    }
+#endif
 
     if (data[1] /* resume from invocation */) {
 	if (iPtr->execEnvPtr->rewind) {
 	    result = TCL_ERROR;
 	}
 	NRE_ASSERT(iPtr->cmdFramePtr == bcFramePtr);
-	NRE_ASSERT(TOP_CB(interp)->procPtr == TEBCreturn);
 	iPtr->cmdFramePtr = bcFramePtr->nextPtr;
-	TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
-	
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCRelease((Tcl_Interp *) iPtr, bcFramePtr);
+	}
 	if (codePtr->flags & TCL_BYTECODE_RECOMPILE) {
 	    iPtr->flags |= ERR_ALREADY_LOGGED;
 	    codePtr->flags &= ~TCL_BYTECODE_RECOMPILE;
@@ -2091,39 +2120,37 @@ TEBCresume(
 	    }
 #endif
 	    /*
-	     * Push the call's object result and continue execution with
-	     * the next instruction.
+	     * Push the call's object result and continue execution with the
+	     * next instruction.
 	     */
-	    
+
 	    TRACE_WITH_OBJ(("%u => ... after \"%.20s\": TCL_OK, result=",
-			    objc, cmdNameBuf), Tcl_GetObjResult(interp));
-	    
+		    objc, cmdNameBuf), Tcl_GetObjResult(interp));
+
 	    objResultPtr = Tcl_GetObjResult(interp);
-	    
+
 	    /*
 	     * Reset the interp's result to avoid possible duplications of
-	     * large objects [Bug 781585]. We do not call Tcl_ResetResult
-	     * to avoid any side effects caused by the resetting of
-	     * errorInfo and errorCode [Bug 804681], which are not needed
-	     * here. We chose instead to manipulate the interp's object
-	     * result directly. 
+	     * large objects [Bug 781585]. We do not call Tcl_ResetResult to
+	     * avoid any side effects caused by the resetting of errorInfo and
+	     * errorCode [Bug 804681], which are not needed here. We chose
+	     * instead to manipulate the interp's object result directly.
 	     *
-	     * Note that the result object is now in objResultPtr, it
-	     * keeps the refCount it had in its role of
-	     * iPtr->objResultPtr. 
+	     * Note that the result object is now in objResultPtr, it keeps
+	     * the refCount it had in its role of iPtr->objResultPtr.
 	     */
-	    
+
 	    TclNewObj(objPtr);
 	    Tcl_IncrRefCount(objPtr);
 	    iPtr->objResultPtr = objPtr;
-	    NEXT_INST_V(0, cleanup, -1);		
+	    NEXT_INST_V(0, cleanup, -1);
 	}
-	
+
 	/*
 	 * Result not TCL_OK: fall through
 	 */
     }
-    
+
     if (iPtr->execEnvPtr->rewind) {
 	result = TCL_ERROR;
 	goto abnormalReturn;
@@ -2232,9 +2259,11 @@ TEBCresume(
 	    }
 	}
 
-	if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
-	    CACHE_STACK_INFO();
-	    goto gotError;
+	if (TclCanceled(iPtr)) {
+	    if (Tcl_Canceled(interp, TCL_LEAVE_ERR_MSG) == TCL_ERROR) {
+		CACHE_STACK_INFO();
+		goto gotError;
+	    }
 	}
 
 	if (TclLimitReady(iPtr->limit)) {
@@ -2302,6 +2331,101 @@ TEBCresume(
 	Tcl_SetObjResult(interp, objResultPtr);
 	cleanup = 1;
 	goto processExceptionReturn;
+
+    case INST_YIELD: {
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+
+	TRACE(("%.30s => ", O2S(OBJ_AT_TOS)));
+	if (!corPtr) {
+	    TRACE_APPEND(("ERROR: yield outside coroutine\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "yield can only be called in a coroutine", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "COROUTINE", "ILLEGAL_YIELD",
+		    NULL);
+	    goto gotError;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	TRACE_WITH_OBJ(("yield, result="), iPtr->objResultPtr);
+	if (traceInstructions) {
+	    fprintf(stdout, "\n");
+	}
+#endif
+	/* TIP #280: Record the last piece of info needed by
+	 * 'TclGetSrcInfoForPc', and push the frame.
+	 */
+	
+	bcFramePtr->data.tebc.pc = (char *) pc;
+	iPtr->cmdFramePtr = bcFramePtr;
+
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	}
+
+	pc++;
+	cleanup = 1;
+	TEBC_YIELD();
+	
+	Tcl_SetObjResult(interp, OBJ_AT_TOS);
+	TclNRAddCallback(interp, TclNRCoroutineActivateCallback, corPtr,
+		INT2PTR(0), NULL, NULL);
+
+	return TCL_OK;
+    }
+
+    case INST_TAILCALL: {
+	Tcl_Obj *listPtr, *nsObjPtr;
+        NRE_callback *tailcallPtr;
+
+	opnd = TclGetUInt1AtPtr(pc+1);
+
+	if (!(iPtr->varFramePtr->isProcCallFrame & 1)) {
+	    TRACE(("%d => ERROR: tailcall in non-proc context\n", opnd));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "tailcall can only be called from a proc or lambda", -1));
+	    Tcl_SetErrorCode(interp, "TCL", "TAILCALL", "ILLEGAL", NULL);
+	    goto gotError;
+	}
+
+#ifdef TCL_COMPILE_DEBUG
+	{
+	    register int i;
+
+	    TRACE(("%d [", opnd));
+	    for (i=opnd-1 ; i>=0 ; i--) {
+		TRACE_APPEND(("\"%.30s\"", O2S(OBJ_AT_DEPTH(i))));
+		if (i > 0) {
+		    TRACE_APPEND((" "));
+		}
+	    }
+	    TRACE_APPEND(("] => RETURN..."));
+	}
+#endif
+
+	/*
+	 * Push the evaluation of the called command into the NR callback
+	 * stack.
+	 */
+
+	listPtr = Tcl_NewListObj(opnd, &OBJ_AT_DEPTH(opnd-1));
+	nsObjPtr = Tcl_NewStringObj(iPtr->varFramePtr->nsPtr->fullName, -1);
+	Tcl_IncrRefCount(listPtr);
+	Tcl_IncrRefCount(nsObjPtr);
+	TclNRAddCallback(interp, TclNRTailcallEval, listPtr, nsObjPtr,
+		NULL, NULL);
+
+	/*
+	 * Unstitch ourselves and do a [return].
+	 */
+
+	tailcallPtr = TOP_CB(interp);
+	TOP_CB(interp) = tailcallPtr->nextPtr;
+	iPtr->varFramePtr->tailcallPtr = tailcallPtr;
+	result = TCL_RETURN;
+	cleanup = opnd;
+	goto processExceptionReturn;
+    }
 
     case INST_DONE:
 	if (tosPtr > initTosPtr) {
@@ -2403,7 +2527,7 @@ TEBCresume(
 	    }
 
 	    codePtr->flags |= TCL_BYTECODE_RECOMPILE;
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length, NULL);
 	    opnd = TclGetUInt4AtPtr(pc+1);
 	    pc += (opnd-1);
 	    PUSH_OBJECT(Tcl_NewStringObj(bytes, length));
@@ -2523,7 +2647,6 @@ TEBCresume(
 #if !TCL_COMPILE_DEBUG
 	    if (bytes != tclEmptyStringRep && !Tcl_IsShared(objResultPtr)) {
 		TclFreeIntRep(objResultPtr);
-		objResultPtr->typePtr = NULL;
 		objResultPtr->bytes = ckrealloc(bytes, length+appendLen+1);
 		objResultPtr->length = length + appendLen;
 		p = TclGetString(objResultPtr) + length;
@@ -2531,7 +2654,7 @@ TEBCresume(
 	    } else
 #endif
 	    {
-		p = (char *) ckalloc((unsigned) (length + appendLen + 1));
+		p = ckalloc(length + appendLen + 1);
 		TclNewObj(objResultPtr);
 		objResultPtr->bytes = p;
 		objResultPtr->length = length + appendLen;
@@ -2605,7 +2728,7 @@ TEBCresume(
 	 */
 
 	TclNewObj(objPtr);
-	objPtr->internalRep.twoPtrValue.ptr1 = (void *) CURR_DEPTH;
+	objPtr->internalRep.ptrAndLongRep.value = CURR_DEPTH;
 	PUSH_TAUX_OBJ(objPtr);
 	NEXT_INST_F(1, 0, 0);
 
@@ -2637,17 +2760,16 @@ TEBCresume(
 	length = objc + (codePtr->maxStackDepth - TclGetInt4AtPtr(pc+1));
 	DECACHE_STACK_INFO();
 	moved = GrowEvaluationStack(iPtr->execEnvPtr, length, 1)
-		- (Tcl_Obj **) BP;
+		- (Tcl_Obj **) TD;
 	if (moved) {
 	    /*
 	     * Change the global data to point to the new stack: move the
-	     * bottomPtr, recompute the position of every other
+	     * TEBCdataPtr TD, recompute the position of every other
 	     * stack-allocated parameter, update the stack pointers.
 	     */
 
 	    esPtr = iPtr->execEnvPtr->execStackPtr;
-	    BP->expanded = (BottomData *) (((Tcl_Obj **)BP) + moved);
-	    BP = BP->expanded;
+	    TD = (TEBCdata *) (((Tcl_Obj **)TD) + moved);
 
 	    catchTop += moved;
 	    tosPtr += moved;
@@ -2676,7 +2798,7 @@ TEBCresume(
 	CACHE_STACK_INFO();
 	cleanup = 1;
 	pc++;
-	NR_YIELD(1);
+	TEBC_YIELD();
 	return TclNRExecuteByteCode(interp, newCodePtr);
     }
 
@@ -2691,13 +2813,12 @@ TEBCresume(
 
 	cleanup = 1;
 	pc += 1;
-	NR_YIELD(1);
+	TEBC_YIELD();
 	return TclNREvalObjEx(interp, OBJ_AT_TOS, 0, NULL, 0);
 
     case INST_INVOKE_EXPANDED:
 	CLANG_ASSERT(auxObjList);
-	objc = CURR_DEPTH
-		- (ptrdiff_t) auxObjList->internalRep.twoPtrValue.ptr1;
+	objc = CURR_DEPTH - auxObjList->internalRep.ptrAndLongRep.value;
 	POP_TAUX_OBJ();
 	if (objc) {
 	    pcAdjustment = 1;
@@ -2754,13 +2875,15 @@ TEBCresume(
 	bcFramePtr->data.tebc.pc = (char *) pc;
 	iPtr->cmdFramePtr = bcFramePtr;
 
-	TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
-		codePtr, bcFramePtr, pc - codePtr->codeStart);
+	if (iPtr->flags & INTERP_DEBUG_FRAME) {
+	    TclArgumentBCEnter((Tcl_Interp *) iPtr, objv, objc,
+		    codePtr, bcFramePtr, pc - codePtr->codeStart);
+	}
 
 	DECACHE_STACK_INFO();
 
 	pc += pcAdjustment;
-	NR_YIELD(1);
+	TEBC_YIELD();
 	return TclNREvalObjv(interp, objc, objv,
 		TCL_EVAL_NOERR, NULL);
 
@@ -3730,10 +3853,131 @@ TEBCresume(
 	CACHE_STACK_INFO();
 	TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
 	goto gotError;
+
+	/*
+	 * This is really an unset operation these days. Do not issue.
+	 */
+
+    case INST_DICT_DONE:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	TRACE(("%u\n", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	if (TclIsVarDirectUnsettable(varPtr) && !TclIsVarInHash(varPtr)) {
+	    if (!TclIsVarUndefined(varPtr)) {
+		TclDecrRefCount(varPtr->value.objPtr);
+	    }
+	    varPtr->value.objPtr = NULL;
+	} else {
+	    DECACHE_STACK_INFO();
+	    TclPtrUnsetVar(interp, varPtr, NULL, NULL, NULL, 0, opnd);
+	    CACHE_STACK_INFO();
+	}
+	NEXT_INST_F(5, 0, 0);
     }
 
     /*
      *	   End of INST_UNSET instructions.
+     * -----------------------------------------------------------------
+     *	   Start of INST_ARRAY instructions.
+     */
+
+    case INST_ARRAY_EXISTS_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	cleanup = 0;
+	part1Ptr = NULL;
+	arrayPtr = NULL;
+	TRACE(("%u => ", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	goto doArrayExists;
+    case INST_ARRAY_EXISTS_STK:
+	opnd = -1;
+	pcAdjustment = 1;
+	cleanup = 1;
+	part1Ptr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, 0, NULL,
+		/*createPart1*/0, /*createPart2*/0, &arrayPtr);
+    doArrayExists:
+	if (varPtr && (varPtr->flags & VAR_TRACED_ARRAY)
+		&& (TclIsVarArray(varPtr) || TclIsVarUndefined(varPtr))) {
+	    DECACHE_STACK_INFO();
+	    result = TclObjCallVarTraces(iPtr, arrayPtr, varPtr, part1Ptr,
+		    NULL, (TCL_LEAVE_ERR_MSG|TCL_NAMESPACE_ONLY|
+		    TCL_GLOBAL_ONLY|TCL_TRACE_ARRAY), 1, opnd);
+	    CACHE_STACK_INFO();
+	    if (result == TCL_ERROR) {
+		TRACE_APPEND(("ERROR: %.30s\n",
+			O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	}
+	if (varPtr && TclIsVarArray(varPtr) && !TclIsVarUndefined(varPtr)) {
+	    objResultPtr = TCONST(1);
+	} else {
+	    objResultPtr = TCONST(0);
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_V(pcAdjustment, cleanup, 1);
+
+    case INST_ARRAY_MAKE_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	pcAdjustment = 5;
+	cleanup = 0;
+	part1Ptr = NULL;
+	arrayPtr = NULL;
+	TRACE(("%u => ", opnd));
+	varPtr = LOCAL(opnd);
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	goto doArrayMake;
+    case INST_ARRAY_MAKE_STK:
+	opnd = -1;
+	pcAdjustment = 1;
+	cleanup = 1;
+	part1Ptr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" => ", O2S(part1Ptr)));
+	varPtr = TclObjLookupVarEx(interp, part1Ptr, NULL, TCL_LEAVE_ERR_MSG,
+		"set", /*createPart1*/1, /*createPart2*/0, &arrayPtr);
+	if (varPtr == NULL) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+    doArrayMake:
+	if (varPtr && !TclIsVarArray(varPtr)) {
+	    if (TclIsVarArrayElement(varPtr) || !TclIsVarUndefined(varPtr)) {
+		/*
+		 * Either an array element, or a scalar: lose!
+		 */
+
+		TclObjVarErrMsg(interp, part1Ptr, NULL, "array set",
+			"variable isn't array", opnd);
+		Tcl_SetErrorCode(interp, "TCL", "WRITE", "ARRAY", NULL);
+		TRACE_APPEND(("ERROR: bad array ref: %.30s\n",
+			O2S(Tcl_GetObjResult(interp))));
+		goto gotError;
+	    }
+	    TclSetVarArray(varPtr);
+	    varPtr->value.tablePtr = ckalloc(sizeof(TclVarHashTable));
+	    TclInitVarHashTable(varPtr->value.tablePtr,
+		    TclGetVarNsPtr(varPtr));
+#ifdef TCL_COMPILE_DEBUG
+	    TRACE_APPEND(("done\n"));
+	} else {
+	    TRACE_APPEND(("nothing to do\n"));
+#endif
+	}
+	NEXT_INST_V(pcAdjustment, cleanup, 0);
+
+    /*
+     *	   End of INST_ARRAY instructions.
      * -----------------------------------------------------------------
      *	   Start of variable linking instructions.
      */
@@ -3970,7 +4214,7 @@ TEBCresume(
 		    (valuePtr->typePtr? valuePtr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, valuePtr);
-	    CACHE_STACK_INFO();	    
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -3979,7 +4223,7 @@ TEBCresume(
 		    (value2Ptr->typePtr? value2Ptr->typePtr->name : "null")));
 	    DECACHE_STACK_INFO();
 	    IllegalExprOperandType(interp, pc, value2Ptr);
-	    CACHE_STACK_INFO();	    
+	    CACHE_STACK_INFO();
 	    goto gotError;
 	}
 
@@ -3991,6 +4235,136 @@ TEBCresume(
 	objResultPtr = TCONST(iResult);
 	TRACE(("%.20s %.20s => %d\n", O2S(valuePtr),O2S(value2Ptr),iResult));
 	NEXT_INST_F(1, 2, 1);
+    }
+
+    /*
+     * -----------------------------------------------------------------
+     *	   Start of general introspector instructions.
+     */
+
+    case INST_NS_CURRENT: {
+	Namespace *currNsPtr = (Namespace *) TclGetCurrentNamespace(interp);
+
+	if (currNsPtr == (Namespace *) TclGetGlobalNamespace(interp)) {
+	    TclNewLiteralStringObj(objResultPtr, "::");
+	} else {
+	    TclNewStringObj(objResultPtr, currNsPtr->fullName,
+		    strlen(currNsPtr->fullName));
+	}
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    }
+    case INST_COROUTINE_NAME: {
+	CoroutineData *corPtr = iPtr->execEnvPtr->corPtr;
+
+	TclNewObj(objResultPtr);
+	if (corPtr && !(corPtr->cmdPtr->flags & CMD_IS_DELETED)) {
+	    Tcl_GetCommandFullName(interp, (Tcl_Command) corPtr->cmdPtr,
+		    objResultPtr);
+	}
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    }
+    case INST_INFO_LEVEL_NUM:
+	TclNewIntObj(objResultPtr, iPtr->varFramePtr->level);
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    case INST_INFO_LEVEL_ARGS: {
+	int level;
+	register CallFrame *framePtr = iPtr->varFramePtr;
+	register CallFrame *rootFramePtr = iPtr->rootFramePtr;
+
+	valuePtr = OBJ_AT_TOS;
+	if (TclGetIntFromObj(interp, valuePtr, &level) != TCL_OK) {
+	    TRACE_WITH_OBJ(("%.30s => ERROR: ", O2S(valuePtr)),
+		    Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	TRACE(("%d => ", level));
+	if (level <= 0) {
+	    level += framePtr->level;
+	}
+	for (; (framePtr->level!=level) && (framePtr!=rootFramePtr) ;
+		framePtr = framePtr->callerVarPtr) {
+	    /* Empty loop body */
+	}
+	if (framePtr == rootFramePtr) {
+	    Tcl_AppendResult(interp, "bad level \"", TclGetString(valuePtr),
+		    "\"", NULL);
+	    TRACE_APPEND(("ERROR: bad level\n"));
+	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "STACK_LEVEL",
+		    TclGetString(valuePtr), NULL);
+	    goto gotError;
+	}
+	objResultPtr = Tcl_NewListObj(framePtr->objc, framePtr->objv);
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(1, 1, 1);
+    }
+    case INST_RESOLVE_COMMAND: {
+	Tcl_Command cmd = Tcl_GetCommandFromObj(interp, OBJ_AT_TOS);
+
+	TclNewObj(objResultPtr);
+	if (cmd != NULL) {
+	    Tcl_GetCommandFullName(interp, cmd, objResultPtr);
+	}
+	TRACE_WITH_OBJ(("\"%.20s\" => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+    }
+    case INST_TCLOO_SELF: {
+	CallFrame *framePtr = iPtr->varFramePtr;
+	CallContext *contextPtr;
+
+	if (framePtr == NULL ||
+		!(framePtr->isProcCallFrame & FRAME_IS_METHOD)) {
+	    TRACE(("=> ERROR: no TclOO call context\n"));
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "self may only be called from inside a method",
+		    -1));
+	    Tcl_SetErrorCode(interp, "TCL", "OO", "CONTEXT_REQUIRED", NULL);
+	    goto gotError;
+	}
+	contextPtr = framePtr->clientData;
+
+	/*
+	 * Call out to get the name; it's expensive to compute but cached.
+	 */
+
+	objResultPtr = TclOOObjectName(interp, contextPtr->oPtr);
+	TRACE_WITH_OBJ(("=> "), objResultPtr);
+	NEXT_INST_F(1, 0, 1);
+    }
+    {
+	Object *oPtr;
+
+    case INST_TCLOO_IS_OBJECT:
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
+	objResultPtr = TCONST(oPtr != NULL ? 1 : 0);
+	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+    case INST_TCLOO_CLASS:
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
+	if (oPtr == NULL) {
+	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
+	    goto gotError;
+	}
+	objResultPtr = TclOOObjectName(interp, oPtr->selfCls->thisPtr);
+	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
+    case INST_TCLOO_NS:
+	oPtr = (Object *) Tcl_GetObjectFromObj(interp, OBJ_AT_TOS);
+	if (oPtr == NULL) {
+	    TRACE(("%.30s => ERROR: not object\n", O2S(OBJ_AT_TOS)));
+	    goto gotError;
+	}
+
+	/*
+	 * TclOO objects *never* have the global namespace as their NS.
+	 */
+
+	TclNewStringObj(objResultPtr, oPtr->namespacePtr->fullName,
+		strlen(oPtr->namespacePtr->fullName));
+	TRACE_WITH_OBJ(("%.30s => ", O2S(OBJ_AT_TOS)), objResultPtr);
+	NEXT_INST_F(1, 1, 1);
     }
 
     /*
@@ -4260,11 +4634,32 @@ TEBCresume(
 	 */
 
 	if (fromIdx<=toIdx && fromIdx<objc && toIdx>=0) {
-	    if (fromIdx<0) {
+	    if (fromIdx < 0) {
 		fromIdx = 0;
 	    }
 	    if (toIdx >= objc) {
 		toIdx = objc-1;
+	    }
+	    if (fromIdx == 0 && toIdx != objc-1 && !Tcl_IsShared(valuePtr)) {
+		/*
+		 * BEWARE! This is looking inside the implementation of the
+		 * list type.
+		 */
+
+		List *listPtr = valuePtr->internalRep.twoPtrValue.ptr1;
+
+		if (listPtr->refCount == 1) {
+		    TRACE(("\"%.30s\" %d %d => ", O2S(valuePtr),
+			    TclGetInt4AtPtr(pc+1), TclGetInt4AtPtr(pc+5)));
+		    for (index=toIdx+1 ; index<objc-1 ; index++) {
+			TclDecrRefCount(objv[index]);
+		    }
+		    listPtr->elemCount = toIdx+1;
+		    listPtr->canonicalFlag = 1;
+		    TclInvalidateStringRep(valuePtr);
+		    TRACE_APPEND(("%.30s\n", O2S(valuePtr)));
+		    NEXT_INST_F(9, 0, 0);
+		}
 	    }
 	    objResultPtr = Tcl_NewListObj(toIdx-fromIdx+1, objv+fromIdx);
 	} else {
@@ -4359,6 +4754,7 @@ TEBCresume(
 	     * strings.  We can use memcmp in all (n)eq cases because we
 	     * don't need to worry about lexical LE/BE variance.
 	     */
+
 	    typedef int (*memCmpFn_t)(const void*, const void*, size_t);
 	    memCmpFn_t memCmpFn;
 	    int checkEq = ((*pc == INST_EQ) || (*pc == INST_NEQ)
@@ -4370,7 +4766,7 @@ TEBCresume(
 		s2 = (char *) Tcl_GetByteArrayFromObj(value2Ptr, &s2len);
 		memCmpFn = memcmp;
 	    } else if (((valuePtr->typePtr == &tclStringType)
-			    && (value2Ptr->typePtr == &tclStringType))) {
+		    && (value2Ptr->typePtr == &tclStringType))) {
 		/*
 		 * Do a unicode-specific comparison if both of the args are of
 		 * String type. If the char length == byte length, we can do a
@@ -4519,6 +4915,176 @@ TEBCresume(
 	TRACE(("%.20s %.20s => %s\n", O2S(valuePtr), O2S(value2Ptr),
 		O2S(objResultPtr)));
 	NEXT_INST_F(1, 2, 1);
+
+    case INST_STR_RANGE:
+	TRACE(("\"%.20s\" %s %s =>",
+		O2S(OBJ_AT_DEPTH(2)), O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS)));
+	length = Tcl_GetCharLength(OBJ_AT_DEPTH(2)) - 1;
+	if (TclGetIntForIndexM(interp, OBJ_UNDER_TOS, length,
+		    &fromIdx) != TCL_OK
+	    || TclGetIntForIndexM(interp, OBJ_AT_TOS, length,
+		    &toIdx) != TCL_OK) {
+	    goto gotError;
+	}
+
+	if (fromIdx < 0) {
+	    fromIdx = 0;
+	}
+	if (toIdx >= length) {
+	    toIdx = length;
+	}
+	if (toIdx >= fromIdx) {
+	    objResultPtr = Tcl_GetRange(OBJ_AT_DEPTH(2), fromIdx, toIdx);
+	} else {
+	    TclNewObj(objResultPtr);
+	}
+	TRACE_APPEND(("\"%.30s\"\n", O2S(objResultPtr)));
+	NEXT_INST_V(1, 3, 1);
+
+    case INST_STR_RANGE_IMM:
+	valuePtr = OBJ_AT_TOS;
+	fromIdx = TclGetInt4AtPtr(pc+1);
+	toIdx = TclGetInt4AtPtr(pc+5);
+	length = Tcl_GetCharLength(valuePtr);
+	TRACE(("\"%.20s\" %d %d => ", O2S(valuePtr), fromIdx, toIdx));
+
+	/*
+	 * Adjust indices for end-based indexing.
+	 */
+
+	if (fromIdx < -1) {
+	    fromIdx += 1 + length;
+	    if (fromIdx < 0) {
+		fromIdx = 0;
+	    }
+	} else if (fromIdx >= length) {
+	    fromIdx = length;
+	}
+	if (toIdx < -1) {
+	    toIdx += 1 + length;
+	} else if (toIdx >= length) {
+	    toIdx = length - 1;
+	}
+
+	/*
+	 * Check if we can do a sane substring.
+	 */
+
+	if (fromIdx <= toIdx) {
+	    objResultPtr = Tcl_GetRange(valuePtr, fromIdx, toIdx);
+	} else {
+	    TclNewObj(objResultPtr);
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(9, 1, 1);
+
+    {
+	Tcl_UniChar *ustring1, *ustring2, *ustring3, *end, *p;
+	int length3;
+	Tcl_Obj *value3Ptr;
+
+    case INST_STR_MAP:
+	valuePtr = OBJ_AT_TOS;		/* "Main" string. */
+	value3Ptr = OBJ_UNDER_TOS;	/* "Target" string. */
+	value2Ptr = OBJ_AT_DEPTH(2);	/* "Source" string. */
+	if (value3Ptr == value2Ptr) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	} else if (valuePtr == value2Ptr) {
+	    objResultPtr = value3Ptr;
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring1 = Tcl_GetUnicodeFromObj(valuePtr, &length);
+	if (length == 0) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring2 = Tcl_GetUnicodeFromObj(value2Ptr, &length2);
+	if (length2 > length || length2 == 0) {
+	    objResultPtr = valuePtr;
+	    NEXT_INST_V(1, 3, 1);
+	} else if (length2 == length) {
+	    if (memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length)) {
+		objResultPtr = valuePtr;
+	    } else {
+		objResultPtr = value3Ptr;
+	    }
+	    NEXT_INST_V(1, 3, 1);
+	}
+	ustring3 = Tcl_GetUnicodeFromObj(value3Ptr, &length3);
+
+	objResultPtr = Tcl_NewUnicodeObj(ustring1, 0);
+	p = ustring1;
+	end = ustring1 + length;
+	for (; ustring1 < end; ustring1++) {
+	    if ((*ustring1 == *ustring2) && (length2==1 ||
+		    memcmp(ustring1, ustring2, sizeof(Tcl_UniChar) * length2)
+			    == 0)) {
+		if (p != ustring1) {
+		    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1-p);
+		    p = ustring1 + length2;
+		} else {
+		    p += length2;
+		}
+		ustring1 = p - 1;
+
+		Tcl_AppendUnicodeToObj(objResultPtr, ustring3, length3);
+	    }
+	}
+	if (p != ustring1) {
+	    /*
+	     * Put the rest of the unmapped chars onto result.
+	     */
+
+	    Tcl_AppendUnicodeToObj(objResultPtr, p, ustring1 - p);
+	}
+	TRACE_WITH_OBJ(("%.20s %.20s %.20s => ",
+		O2S(value2Ptr), O2S(value3Ptr), O2S(valuePtr)), objResultPtr);
+	NEXT_INST_V(1, 3, 1);
+
+    case INST_STR_FIND:
+	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
+	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
+
+	match = -1;
+	if (length2 > 0 && length2 <= length) {
+	    end = ustring1 + length - length2 + 1;
+	    for (p=ustring1 ; p<end ; p++) {
+		if ((*p == *ustring2) &&
+			memcmp(ustring2,p,sizeof(Tcl_UniChar)*length2) == 0) {
+		    match = p - ustring1;
+		    break;
+		}
+	    }
+	}
+
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
+
+	TclNewIntObj(objResultPtr, match);
+	NEXT_INST_F(1, 2, 1);
+
+    case INST_STR_FIND_LAST:
+	ustring1 = Tcl_GetUnicodeFromObj(OBJ_AT_TOS, &length);	/* Haystack */
+	ustring2 = Tcl_GetUnicodeFromObj(OBJ_UNDER_TOS, &length2);/* Needle */
+
+	match = -1;
+	if (length2 > 0 && length2 <= length) {
+	    for (p=ustring1+length-length2 ; p>=ustring1 ; p--) {
+		if ((*p == *ustring2) &&
+			memcmp(ustring2,p,sizeof(Tcl_UniChar)*length2) == 0) {
+		    match = p - ustring1;
+		    break;
+		}
+	    }
+	}
+
+	TRACE(("%.20s %.20s => %d\n",
+		O2S(OBJ_UNDER_TOS), O2S(OBJ_AT_TOS), match));
+
+	TclNewIntObj(objResultPtr, match);
+	NEXT_INST_F(1, 2, 1);
+    }
 
     case INST_STR_MATCH:
 	nocase = TclGetInt1AtPtr(pc+1);
@@ -4824,8 +5390,8 @@ TEBCresume(
 
 	    case INST_RSHIFT:
 		if (l2 < 0) {
-		    Tcl_SetResult(interp, "negative shift argument",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "negative shift argument", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -4872,8 +5438,8 @@ TEBCresume(
 
 	    case INST_LSHIFT:
 		if (l2 < 0) {
-		    Tcl_SetResult(interp, "negative shift argument",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "negative shift argument", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
@@ -4895,9 +5461,8 @@ TEBCresume(
 		     * good place to draw the line.
 		     */
 
-		    Tcl_SetResult(interp,
-			    "integer value too large to represent",
-			    TCL_STATIC);
+		    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			    "integer value too large to represent", -1));
 #if 0
 		    DECACHE_STACK_INFO();
 		    Tcl_SetErrorCode(interp, "ARITH", "IOVERFLOW",
@@ -5165,7 +5730,7 @@ TEBCresume(
 	NEXT_INST_F(1, 1, 1);
     }
 
-   case INST_BITNOT:
+    case INST_BITNOT:
 	valuePtr = OBJ_AT_TOS;
 	if ((GetNumberFromObj(NULL, valuePtr, &ptr1, &type1) != TCL_OK)
 		|| (type1==TCL_NUMBER_NAN) || (type1==TCL_NUMBER_DOUBLE)) {
@@ -5572,46 +6137,78 @@ TEBCresume(
 
     {
 	int opnd2, allocateDict, done, i, allocdict;
-	Tcl_Obj *dictPtr, *statePtr, *keyPtr;
+	Tcl_Obj *dictPtr, *statePtr, *keyPtr, *listPtr, *varNamePtr, *keysPtr;
 	Tcl_Obj *emptyPtr, **keyPtrPtr;
 	Tcl_DictSearch *searchPtr;
 	DictUpdateInfo *duiPtr;
 
+    case INST_DICT_VERIFY:
+	dictPtr = OBJ_AT_TOS;
+	TRACE(("=> "));
+	if (Tcl_DictObjSize(interp, dictPtr, &done) != TCL_OK) {
+	    TRACE_APPEND(("ERROR verifying dictionary nature of \"%s\": %s\n",
+		    O2S(OBJ_AT_DEPTH(opnd)), O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+	TRACE_APPEND(("OK\n"));
+	NEXT_INST_F(1, 1, 0);
+
     case INST_DICT_GET:
+    case INST_DICT_EXISTS: {
+	register Tcl_Interp *interp2 = interp;
+
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	dictPtr = OBJ_AT_DEPTH(opnd);
+	if (*pc == INST_DICT_EXISTS) {
+	    interp2 = NULL;
+	}
 	if (opnd > 1) {
-	    dictPtr = TclTraceDictPath(interp, dictPtr, opnd-1,
+	    dictPtr = TclTraceDictPath(interp2, dictPtr, opnd-1,
 		    &OBJ_AT_DEPTH(opnd-1), DICT_PATH_READ);
 	    if (dictPtr == NULL) {
+		if (*pc == INST_DICT_EXISTS) {
+		    goto dictNotExists;
+		}
 		TRACE_WITH_OBJ((
-			"%u => ERROR tracing dictionary path into \"%s\": ",
-			opnd, O2S(OBJ_AT_DEPTH(opnd))),
+			"ERROR tracing dictionary path into \"%s\": ",
+			O2S(OBJ_AT_DEPTH(opnd))),
 			Tcl_GetObjResult(interp));
 		goto gotError;
 	    }
 	}
-	if (Tcl_DictObjGet(interp, dictPtr, OBJ_AT_TOS,
+	if (Tcl_DictObjGet(interp2, dictPtr, OBJ_AT_TOS,
 		&objResultPtr) == TCL_OK) {
+	    if (*pc == INST_DICT_EXISTS) {
+		objResultPtr = TCONST(objResultPtr ? 1 : 0);
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_V(5, opnd+1, 1);
+	    }
 	    if (objResultPtr) {
 		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
 		NEXT_INST_V(5, opnd+1, 1);
 	    }
 	    DECACHE_STACK_INFO();
-	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "key \"", TclGetString(OBJ_AT_TOS),
-		    "\" not known in dictionary", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "key \"%s\" not known in dictionary",
+		    TclGetString(OBJ_AT_TOS)));
 	    Tcl_SetErrorCode(interp, "TCL", "LOOKUP", "DICT",
 		    TclGetString(OBJ_AT_TOS), NULL);
 	    CACHE_STACK_INFO();
 	    TRACE_WITH_OBJ(("%u => ERROR ", opnd), Tcl_GetObjResult(interp));
 	} else {
+	    if (*pc == INST_DICT_EXISTS) {
+	    dictNotExists:
+		objResultPtr = TCONST(0);
+		TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+		NEXT_INST_V(5, opnd+1, 1);
+	    }
 	    TRACE_WITH_OBJ((
 		    "%u => ERROR reading leaf dictionary key \"%s\": ",
 		    opnd, O2S(dictPtr)), Tcl_GetObjResult(interp));
 	}
 	goto gotError;
+    }
 
     case INST_DICT_SET:
     case INST_DICT_UNSET:
@@ -5665,7 +6262,7 @@ TEBCresume(
 		}
 		result = TclIncrObj(interp, valuePtr, value2Ptr);
 		if (result == TCL_OK) {
-		    Tcl_InvalidateStringRep(dictPtr);
+		    TclInvalidateStringRep(dictPtr);
 		}
 		TclDecrRefCount(value2Ptr);
 	    }
@@ -5769,6 +6366,16 @@ TEBCresume(
 		Tcl_DictObjPut(NULL, dictPtr, OBJ_UNDER_TOS, valuePtr);
 	    } else {
 		Tcl_AppendObjToObj(valuePtr, OBJ_AT_TOS);
+
+		/*
+		 * Must invalidate the string representation of dictionary
+		 * here because we have directly updated the internal
+		 * representation; if we don't, callers could see the wrong
+		 * string rep despite the internal version of the dictionary
+		 * having the correct value. [Bug 3079830]
+		 */
+
+		TclInvalidateStringRep(dictPtr);
 	    }
 	    break;
 	case INST_DICT_LAPPEND:
@@ -5799,6 +6406,16 @@ TEBCresume(
 		    }
 		    goto gotError;
 		}
+
+		/*
+		 * Must invalidate the string representation of dictionary
+		 * here because we have directly updated the internal
+		 * representation; if we don't, callers could see the wrong
+		 * string rep despite the internal version of the dictionary
+		 * having the correct value. [Bug 3079830]
+		 */
+
+		TclInvalidateStringRep(dictPtr);
 	    }
 	    break;
 	default:
@@ -5840,10 +6457,10 @@ TEBCresume(
 	opnd = TclGetUInt4AtPtr(pc+1);
 	TRACE(("%u => ", opnd));
 	dictPtr = POP_OBJECT();
-	searchPtr = (Tcl_DictSearch *) ckalloc(sizeof(Tcl_DictSearch));
+	searchPtr = ckalloc(sizeof(Tcl_DictSearch));
 	if (Tcl_DictObjFirst(interp, dictPtr, searchPtr, &keyPtr,
 		&valuePtr, &done) != TCL_OK) {
-	    ckfree((char *) searchPtr);
+	    ckfree(searchPtr);
 	    goto gotError;
 	}
 	TclNewObj(statePtr);
@@ -5909,39 +6526,6 @@ TEBCresume(
 	objResultPtr = TCONST(done);
 	/* TODO: consider opt like INST_FOREACH_STEP4 */
 	NEXT_INST_F(5, 0, 1);
-
-    case INST_DICT_DONE:
-	opnd = TclGetUInt4AtPtr(pc+1);
-	TRACE(("%u => ", opnd));
-	statePtr = (*LOCAL(opnd)).value.objPtr;
-	if (statePtr == NULL) {
-	    Tcl_Panic("mis-issued dictDone!");
-	}
-
-	if (statePtr->typePtr == &dictIteratorType) {
-	    /*
-	     * First kill the search, and then release the reference to the
-	     * dictionary that we were holding.
-	     */
-
-	    searchPtr = statePtr->internalRep.twoPtrValue.ptr1;
-	    Tcl_DictObjDone(searchPtr);
-	    ckfree((char *) searchPtr);
-
-	    dictPtr = statePtr->internalRep.twoPtrValue.ptr2;
-	    TclDecrRefCount(dictPtr);
-
-	    /*
-	     * Set the internal variable to an empty object to signify that we
-	     * don't hold an iterator.
-	     */
-
-	    TclDecrRefCount(statePtr);
-	    TclNewObj(emptyPtr);
-	    (*LOCAL(opnd)).value.objPtr = emptyPtr;
-	    Tcl_IncrRefCount(emptyPtr);
-	}
-	NEXT_INST_F(5, 0, 0);
 
     case INST_DICT_UPDATE_START:
 	opnd = TclGetUInt4AtPtr(pc+1);
@@ -6022,6 +6606,9 @@ TEBCresume(
 	if (allocdict) {
 	    dictPtr = Tcl_DuplicateObj(dictPtr);
 	}
+	if (length > 0) {
+	    TclInvalidateStringRep(dictPtr);
+	}
 	for (i=0 ; i<length ; i++) {
 	    Var *var2Ptr = LOCAL(duiPtr->varIndices[i]);
 
@@ -6062,6 +6649,78 @@ TEBCresume(
 	    }
 	}
 	NEXT_INST_F(9, 1, 0);
+
+    case INST_DICT_EXPAND:
+	dictPtr = OBJ_UNDER_TOS;
+	listPtr = OBJ_AT_TOS;
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    TRACE_WITH_OBJ(("%.30s %.30s => ERROR: ",
+		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	objResultPtr = TclDictWithInit(interp, dictPtr, objc, objv);
+	if (objResultPtr == NULL) {
+	    TRACE_WITH_OBJ(("%.30s %.30s => ERROR: ",
+		    O2S(dictPtr), O2S(listPtr)), Tcl_GetObjResult(interp));
+	    goto gotError;
+	}
+	TRACE_APPEND(("%.30s\n", O2S(objResultPtr)));
+	NEXT_INST_F(1, 2, 1);
+
+    case INST_DICT_RECOMBINE_STK:
+	keysPtr = POP_OBJECT();
+	varNamePtr = OBJ_UNDER_TOS;
+	listPtr = OBJ_AT_TOS;
+	TRACE(("\"%.30s\" \"%.30s\" \"%.30s\" => ",
+		O2S(varNamePtr), O2S(valuePtr), O2S(keysPtr)));
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    TclDecrRefCount(keysPtr);
+	    goto gotError;
+	}
+	varPtr = TclObjLookupVarEx(interp, varNamePtr, NULL,
+		TCL_LEAVE_ERR_MSG, "set", 1, 1, &arrayPtr);
+	if (varPtr == NULL) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    TclDecrRefCount(keysPtr);
+	    goto gotError;
+	}
+	DECACHE_STACK_INFO();
+	result = TclDictWithFinish(interp, varPtr,arrayPtr,varNamePtr,NULL,-1,
+		objc, objv, keysPtr);
+	CACHE_STACK_INFO();
+	TclDecrRefCount(keysPtr);
+	if (result != TCL_OK) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+	TRACE_APPEND(("OK\n"));
+	NEXT_INST_F(1, 2, 0);
+
+    case INST_DICT_RECOMBINE_IMM:
+	opnd = TclGetUInt4AtPtr(pc+1);
+	listPtr = OBJ_UNDER_TOS;
+	keysPtr = OBJ_AT_TOS;
+	varPtr = LOCAL(opnd);
+	TRACE(("%u <- \"%.30s\" \"%.30s\" => ", opnd, O2S(valuePtr),
+		O2S(keysPtr)));
+	if (TclListObjGetElements(interp, listPtr, &objc, &objv) != TCL_OK) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+	while (TclIsVarLink(varPtr)) {
+	    varPtr = varPtr->value.linkPtr;
+	}
+	DECACHE_STACK_INFO();
+	result = TclDictWithFinish(interp, varPtr, NULL, NULL, NULL, opnd,
+		objc, objv, keysPtr);
+	CACHE_STACK_INFO();
+	if (result != TCL_OK) {
+	    TRACE_APPEND(("ERROR: %.30s\n", O2S(Tcl_GetObjResult(interp))));
+	    goto gotError;
+	}
+	TRACE_APPEND(("OK\n"));
+	NEXT_INST_F(5, 2, 0);
     }
 
     /*
@@ -6169,10 +6828,10 @@ TEBCresume(
 	 */
 
     divideByZero:
-	DECACHE_STACK_INFO();	
-	Tcl_SetResult(interp, "divide by zero", TCL_STATIC);
+	DECACHE_STACK_INFO();
+	Tcl_SetObjResult(interp, Tcl_NewStringObj("divide by zero", -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DIVZERO", "divide by zero", NULL);
-	CACHE_STACK_INFO();	
+	CACHE_STACK_INFO();
 	goto gotError;
 
 	/*
@@ -6181,9 +6840,9 @@ TEBCresume(
 	 */
 
     exponOfZero:
-	DECACHE_STACK_INFO();	
-	Tcl_SetResult(interp, "exponentiation of zero by negative power",
-		TCL_STATIC);
+	DECACHE_STACK_INFO();
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"exponentiation of zero by negative power", -1));
 	Tcl_SetErrorCode(interp, "ARITH", "DOMAIN",
 		"exponentiation of zero by negative power", NULL);
 	CACHE_STACK_INFO();
@@ -6209,9 +6868,12 @@ TEBCresume(
 	    goto abnormalReturn;
 	}
 	if ((result == TCL_ERROR) && !(iPtr->flags & ERR_ALREADY_LOGGED)) {
-	    bytes = GetSrcInfoForPc(pc, codePtr, &length);
+	    const unsigned char *pcBeg;
+
+	    bytes = GetSrcInfoForPc(pc, codePtr, &length, &pcBeg);
 	    DECACHE_STACK_INFO();
-	    Tcl_LogCommandInfo(interp, codePtr->source, bytes, bytes ? length : 0);
+	    TclLogCommandInfo(interp, codePtr->source, bytes,
+		    bytes ? length : 0, pcBeg, tosPtr);
 	    CACHE_STACK_INFO();
 	}
 	iPtr->flags &= ~ERR_ALREADY_LOGGED;
@@ -6222,8 +6884,9 @@ TEBCresume(
 	 */
 
 	while (auxObjList) {
-	    if ((catchTop != initCatchTop) && (*catchTop >
-		    (ptrdiff_t) auxObjList->internalRep.twoPtrValue.ptr1)) {
+	    if ((catchTop != initCatchTop)
+		    && (*catchTop > (ptrdiff_t)
+			auxObjList->internalRep.ptrAndLongRep.value)) {
 		break;
 	    }
 	    POP_TAUX_OBJ();
@@ -6238,7 +6901,7 @@ TEBCresume(
 	 * already be set prior to vectoring down to this point in the code.
 	 */
 
-	if (Tcl_Canceled(interp, 0) == TCL_ERROR) {
+	if (TclCanceled(iPtr) && (Tcl_Canceled(interp, 0) == TCL_ERROR)) {
 #ifdef TCL_COMPILE_DEBUG
 	    if (traceInstructions) {
 		fprintf(stdout, "   ... cancel with unwind, returning %s\n",
@@ -6352,15 +7015,15 @@ TEBCresume(
 	CLANG_ASSERT(bcFramePtr);
     }
 
-    /*
-     * Store the previous bottomPtr for returning to it, then free all
-     * resources used by this bytecode and process callbacks until you return
-     * to the previous bytecode (if any).
-     */
-
     iPtr->cmdFramePtr = bcFramePtr->nextPtr;
+    if (--codePtr->refCount <= 0) {
+	TclCleanupByteCode(codePtr);
+    }
+    TclStackFree(interp, TD);	/* free my stack */
+
     return result;
 }
+
 #undef codePtr
 #undef iPtr
 #undef bcFramePtr
@@ -6555,7 +7218,8 @@ ExecuteExtendedBinaryMathOp(
 	    invalid = 0;
 	}
 	if (invalid) {
-	    Tcl_SetResult(interp, "negative shift argument", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "negative shift argument", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -6585,8 +7249,8 @@ ExecuteExtendedBinaryMathOp(
 		 * place to draw the line.
 		 */
 
-		Tcl_SetResult(interp, "integer value too large to represent",
-			TCL_STATIC);
+		Tcl_SetObjResult(interp, Tcl_NewStringObj(
+			"integer value too large to represent", -1));
 		return GENERAL_ARITHMETIC_ERROR;
 	    }
 	    shift = (int)(*((const long *)ptr2));
@@ -6987,7 +7651,8 @@ ExecuteExtendedBinaryMathOp(
 	 */
 
 	if (type2 != TCL_NUMBER_LONG) {
-	    Tcl_SetResult(interp, "exponent too large", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 
@@ -7225,7 +7890,8 @@ ExecuteExtendedBinaryMathOp(
 	Tcl_TakeBignumFromObj(NULL, value2Ptr, &big2);
 	if (big2.used > 1) {
 	    mp_clear(&big2);
-	    Tcl_SetResult(interp, "exponent too large", TCL_STATIC);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		    "exponent too large", -1));
 	    return GENERAL_ARITHMETIC_ERROR;
 	}
 	Tcl_TakeBignumFromObj(NULL, valuePtr, &big1);
@@ -7844,7 +8510,7 @@ ValidatePcAndStackTop(
     if (checkStack &&
 	    ((stackTop < stackLowerBound) || (stackTop > stackUpperBound))) {
 	int numChars;
-	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars);
+	const char *cmd = GetSrcInfoForPc(pc, codePtr, &numChars, NULL);
 
 	fprintf(stderr, "\nBad stack top %d at pc %u in TclNRExecuteByteCode (min %i, max %i)",
 		stackTop, relativePc, stackLowerBound, stackUpperBound);
@@ -7958,7 +8624,7 @@ TclGetSrcInfoForCmd(
     ByteCode *codePtr = (ByteCode *) cfPtr->data.tebc.codePtr;
 
     return GetSrcInfoForPc((unsigned char *) cfPtr->data.tebc.pc,
-	    codePtr, lenPtr);
+	    codePtr, lenPtr, NULL);
 }
 
 void
@@ -7970,7 +8636,7 @@ TclGetSrcInfoForPc(
     if (cfPtr->cmd.str.cmd == NULL) {
 	cfPtr->cmd.str.cmd = GetSrcInfoForPc(
 		(unsigned char *) cfPtr->data.tebc.pc, codePtr,
-		&cfPtr->cmd.str.len);
+		&cfPtr->cmd.str.len, NULL);
     }
 
     if (cfPtr->cmd.str.cmd != NULL) {
@@ -8021,15 +8687,18 @@ TclGetSrcInfoForPc(
 
 static const char *
 GetSrcInfoForPc(
-    const unsigned char *pc, /* The program counter value for which to
+    const unsigned char *pc,	/* The program counter value for which to
 				 * return the closest command's source info.
-				 * This points to a bytecode instruction in
-				 * codePtr's code. */
+				 * This points within a bytecode instruction
+				 * in codePtr's code. */
     ByteCode *codePtr,		/* The bytecode sequence in which to look up
 				 * the command source for the pc. */
-    int *lengthPtr)		/* If non-NULL, the location where the length
+    int *lengthPtr,		/* If non-NULL, the location where the length
 				 * of the command's source should be stored.
 				 * If NULL, no length is stored. */
+    const unsigned char **pcBeg)/* If non-NULL, the bytecode location
+				 * where the current instruction starts.
+				 * If NULL; no pointer is stored. */
 {
     register int pcOffset = (pc - codePtr->codeStart);
     int numCmds = codePtr->numCommands;
@@ -8041,6 +8710,7 @@ GetSrcInfoForPc(
     int bestSrcLength = -1;	/* Initialized to avoid compiler warning. */
 
     if ((pcOffset < 0) || (pcOffset >= codePtr->numCodeBytes)) {
+	if (pcBeg != NULL) *pcBeg = NULL;
 	return NULL;
     }
 
@@ -8109,6 +8779,23 @@ GetSrcInfoForPc(
 	}
     }
 
+    if (pcBeg != NULL) {
+	const unsigned char *curr, *prev;
+
+	/*
+	 * Walk from beginning of command or BC to pc, by complete
+	 * instructions. Stop when crossing pc; keep previous.
+	 */
+
+	curr = ((bestDist == INT_MAX) ? codePtr->codeStart : pc - bestDist);
+	prev = curr;
+	while (curr <= pc) {
+	    prev = curr;
+	    curr += tclInstructionTable[*curr].numBytes;
+	}
+	*pcBeg = prev;
+    }
+
     if (bestDist == INT_MAX) {
 	return NULL;
     }
@@ -8116,6 +8803,7 @@ GetSrcInfoForPc(
     if (lengthPtr != NULL) {
 	*lengthPtr = bestSrcLength;
     }
+
     return (codePtr->source + bestSrcOffset);
 }
 
@@ -8338,8 +9026,12 @@ EvalStatsCmd(
     int decadeHigh, minSizeDecade, maxSizeDecade, length, i;
     char *litTableStats;
     LiteralEntry *entryPtr;
+    Tcl_Obj *objPtr;
 
 #define Percent(a,b) ((a) * 100.0 / (b))
+
+    objPtr = Tcl_NewObj();
+    Tcl_IncrRefCount(objPtr);
 
     numInstructions = 0.0;
     for (i = 0;  i < 256;  i++) {
@@ -8371,65 +9063,65 @@ EvalStatsCmd(
      * Summary statistics, total and current source and ByteCode sizes.
      */
 
-    fprintf(stdout, "\n----------------------------------------------------------------\n");
-    fprintf(stdout,
-	    "Compilation and execution statistics for interpreter 0x%p\n",
-	    iPtr);
+    Tcl_AppendPrintfToObj(objPtr, "\n----------------------------------------------------------------\n");
+    Tcl_AppendPrintfToObj(objPtr,
+	    "Compilation and execution statistics for interpreter %#lx\n",
+	    (long int)iPtr);
 
-    fprintf(stdout, "\nNumber ByteCodes executed\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nNumber ByteCodes executed\t%ld\n",
 	    statsPtr->numExecutions);
-    fprintf(stdout, "Number ByteCodes compiled\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "Number ByteCodes compiled\t%ld\n",
 	    statsPtr->numCompilations);
-    fprintf(stdout, "  Mean executions/compile\t%.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean executions/compile\t%.1f\n",
 	    statsPtr->numExecutions / (float)statsPtr->numCompilations);
 
-    fprintf(stdout, "\nInstructions executed\t\t%.0f\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nInstructions executed\t\t%.0f\n",
 	    numInstructions);
-    fprintf(stdout, "  Mean inst/compile\t\t%.0f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean inst/compile\t\t%.0f\n",
 	    numInstructions / statsPtr->numCompilations);
-    fprintf(stdout, "  Mean inst/execution\t\t%.0f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean inst/execution\t\t%.0f\n",
 	    numInstructions / statsPtr->numExecutions);
 
-    fprintf(stdout, "\nTotal ByteCodes\t\t\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nTotal ByteCodes\t\t\t%ld\n",
 	    statsPtr->numCompilations);
-    fprintf(stdout, "  Source bytes\t\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Source bytes\t\t\t%.6g\n",
 	    statsPtr->totalSrcBytes);
-    fprintf(stdout, "  Code bytes\t\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Code bytes\t\t\t%.6g\n",
 	    totalCodeBytes);
-    fprintf(stdout, "    ByteCode bytes\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    ByteCode bytes\t\t%.6g\n",
 	    statsPtr->totalByteCodeBytes);
-    fprintf(stdout, "    Literal bytes\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    Literal bytes\t\t%.6g\n",
 	    totalLiteralBytes);
-    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(LiteralEntry)),
 	    (unsigned long) (statsPtr->numLiteralsCreated * sizeof(Tcl_Obj)),
 	    statsPtr->totalLitStringBytes);
-    fprintf(stdout, "  Mean code/compile\t\t%.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean code/compile\t\t%.1f\n",
 	    totalCodeBytes / statsPtr->numCompilations);
-    fprintf(stdout, "  Mean code/source\t\t%.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean code/source\t\t%.1f\n",
 	    totalCodeBytes / statsPtr->totalSrcBytes);
 
-    fprintf(stdout, "\nCurrent (active) ByteCodes\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nCurrent (active) ByteCodes\t%ld\n",
 	    numCurrentByteCodes);
-    fprintf(stdout, "  Source bytes\t\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Source bytes\t\t\t%.6g\n",
 	    statsPtr->currentSrcBytes);
-    fprintf(stdout, "  Code bytes\t\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Code bytes\t\t\t%.6g\n",
 	    currentCodeBytes);
-    fprintf(stdout, "    ByteCode bytes\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    ByteCode bytes\t\t%.6g\n",
 	    statsPtr->currentByteCodeBytes);
-    fprintf(stdout, "    Literal bytes\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    Literal bytes\t\t%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
 	    statsPtr->currentLitStringBytes);
-    fprintf(stdout, "  Mean code/source\t\t%.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean code/source\t\t%.1f\n",
 	    currentCodeBytes / statsPtr->currentSrcBytes);
-    fprintf(stdout, "  Code + source bytes\t\t%.6g (%0.1f mean code/src)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Code + source bytes\t\t%.6g (%0.1f mean code/src)\n",
 	    (currentCodeBytes + statsPtr->currentSrcBytes),
 	    (currentCodeBytes / statsPtr->currentSrcBytes) + 1.0);
 
@@ -8441,18 +9133,18 @@ EvalStatsCmd(
      */
 
     numSharedMultX = 0;
-    fprintf(stdout, "\nTcl_IsShared object check (all objects):\n");
-    fprintf(stdout, "  Object had refcount <=1 (not shared)\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nTcl_IsShared object check (all objects):\n");
+    Tcl_AppendPrintfToObj(objPtr, "  Object had refcount <=1 (not shared)\t%ld\n",
 	    tclObjsShared[1]);
     for (i = 2;  i < TCL_MAX_SHARED_OBJ_STATS;  i++) {
-	fprintf(stdout, "  refcount ==%d\t\t%ld\n",
+	Tcl_AppendPrintfToObj(objPtr, "  refcount ==%d\t\t%ld\n",
 		i, tclObjsShared[i]);
 	numSharedMultX += tclObjsShared[i];
     }
-    fprintf(stdout, "  refcount >=%d\t\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "  refcount >=%d\t\t%ld\n",
 	    i, tclObjsShared[0]);
     numSharedMultX += tclObjsShared[0];
-    fprintf(stdout, "  Total shared objects\t\t\t%d\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Total shared objects\t\t\t%d\n",
 	    numSharedMultX);
 
     /*
@@ -8489,48 +9181,48 @@ EvalStatsCmd(
     sharingBytesSaved = (objBytesIfUnshared + strBytesIfUnshared)
 	    - currentLiteralBytes;
 
-    fprintf(stdout, "\nTotal objects (all interps)\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nTotal objects (all interps)\t%ld\n",
 	    tclObjsAlloced);
-    fprintf(stdout, "Current objects\t\t\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "Current objects\t\t\t%ld\n",
 	    (tclObjsAlloced - tclObjsFreed));
-    fprintf(stdout, "Total literal objects\t\t%ld\n",
+    Tcl_AppendPrintfToObj(objPtr, "Total literal objects\t\t%ld\n",
 	    statsPtr->numLiteralsCreated);
 
-    fprintf(stdout, "\nCurrent literal objects\t\t%d (%0.1f%% of current objects)\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal objects\t\t%d (%0.1f%% of current objects)\n",
 	    globalTablePtr->numEntries,
 	    Percent(globalTablePtr->numEntries, tclObjsAlloced-tclObjsFreed));
-    fprintf(stdout, "  ByteCode literals\t\t%ld (%0.1f%% of current literals)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  ByteCode literals\t\t%ld (%0.1f%% of current literals)\n",
 	    numByteCodeLits,
 	    Percent(numByteCodeLits, globalTablePtr->numEntries));
-    fprintf(stdout, "  Literals reused > 1x\t\t%d\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Literals reused > 1x\t\t%d\n",
 	    numSharedMultX);
-    fprintf(stdout, "  Mean reference count\t\t%.2f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean reference count\t\t%.2f\n",
 	    ((double) refCountSum) / globalTablePtr->numEntries);
-    fprintf(stdout, "  Mean len, str reused >1x \t%.2f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean len, str reused >1x \t%.2f\n",
 	    (numSharedMultX ? strBytesSharedMultX/numSharedMultX : 0.0));
-    fprintf(stdout, "  Mean len, str used 1x\t\t%.2f\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Mean len, str used 1x\t\t%.2f\n",
 	    (numSharedOnce ? strBytesSharedOnce/numSharedOnce : 0.0));
-    fprintf(stdout, "  Total sharing savings\t\t%.6g (%0.1f%% of bytes if no sharing)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Total sharing savings\t\t%.6g (%0.1f%% of bytes if no sharing)\n",
 	    sharingBytesSaved,
 	    Percent(sharingBytesSaved, objBytesIfUnshared+strBytesIfUnshared));
-    fprintf(stdout, "    Bytes with sharing\t\t%.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    Bytes with sharing\t\t%.6g\n",
 	    currentLiteralBytes);
-    fprintf(stdout, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "      table %lu + bkts %lu + entries %lu + objects %lu + strings %.6g\n",
 	    (unsigned long) sizeof(LiteralTable),
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(Tcl_Obj)),
 	    statsPtr->currentLitStringBytes);
-    fprintf(stdout, "    Bytes if no sharing\t\t%.6g = objects %.6g + strings %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "    Bytes if no sharing\t\t%.6g = objects %.6g + strings %.6g\n",
 	    (objBytesIfUnshared + strBytesIfUnshared),
 	    objBytesIfUnshared, strBytesIfUnshared);
-    fprintf(stdout, "  String sharing savings \t%.6g = unshared %.6g - shared %.6g\n",
+    Tcl_AppendPrintfToObj(objPtr, "  String sharing savings \t%.6g = unshared %.6g - shared %.6g\n",
 	    (strBytesIfUnshared - statsPtr->currentLitStringBytes),
 	    strBytesIfUnshared, statsPtr->currentLitStringBytes);
-    fprintf(stdout, "  Literal mgmt overhead\t\t%ld (%0.1f%% of bytes with sharing)\n",
+    Tcl_AppendPrintfToObj(objPtr, "  Literal mgmt overhead\t\t%ld (%0.1f%% of bytes with sharing)\n",
 	    literalMgmtBytes,
 	    Percent(literalMgmtBytes, currentLiteralBytes));
-    fprintf(stdout, "    table %lu + buckets %lu + entries %lu\n",
+    Tcl_AppendPrintfToObj(objPtr, "    table %lu + buckets %lu + entries %lu\n",
 	    (unsigned long) sizeof(LiteralTable),
 	    (unsigned long) (iPtr->literalTable.numBuckets * sizeof(LiteralEntry *)),
 	    (unsigned long) (iPtr->literalTable.numEntries * sizeof(LiteralEntry)));
@@ -8539,33 +9231,33 @@ EvalStatsCmd(
      * Breakdown of current ByteCode space requirements.
      */
 
-    fprintf(stdout, "\nBreakdown of current ByteCode requirements:\n");
-    fprintf(stdout, "                         Bytes      Pct of    Avg per\n");
-    fprintf(stdout, "                                     total    ByteCode\n");
-    fprintf(stdout, "Total             %12.6g     100.00%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nBreakdown of current ByteCode requirements:\n");
+    Tcl_AppendPrintfToObj(objPtr, "                         Bytes      Pct of    Avg per\n");
+    Tcl_AppendPrintfToObj(objPtr, "                                     total    ByteCode\n");
+    Tcl_AppendPrintfToObj(objPtr, "Total             %12.6g     100.00%%   %8.1f\n",
 	    statsPtr->currentByteCodeBytes,
 	    statsPtr->currentByteCodeBytes / numCurrentByteCodes);
-    fprintf(stdout, "Header            %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Header            %12.6g   %8.1f%%   %8.1f\n",
 	    currentHeaderBytes,
 	    Percent(currentHeaderBytes, statsPtr->currentByteCodeBytes),
 	    currentHeaderBytes / numCurrentByteCodes);
-    fprintf(stdout, "Instructions      %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Instructions      %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentInstBytes,
 	    Percent(statsPtr->currentInstBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentInstBytes / numCurrentByteCodes);
-    fprintf(stdout, "Literal ptr array %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Literal ptr array %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentLitBytes,
 	    Percent(statsPtr->currentLitBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentLitBytes / numCurrentByteCodes);
-    fprintf(stdout, "Exception table   %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Exception table   %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentExceptBytes,
 	    Percent(statsPtr->currentExceptBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentExceptBytes / numCurrentByteCodes);
-    fprintf(stdout, "Auxiliary data    %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Auxiliary data    %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentAuxBytes,
 	    Percent(statsPtr->currentAuxBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentAuxBytes / numCurrentByteCodes);
-    fprintf(stdout, "Command map       %12.6g   %8.1f%%   %8.1f\n",
+    Tcl_AppendPrintfToObj(objPtr, "Command map       %12.6g   %8.1f%%   %8.1f\n",
 	    statsPtr->currentCmdMapBytes,
 	    Percent(statsPtr->currentCmdMapBytes,statsPtr->currentByteCodeBytes),
 	    statsPtr->currentCmdMapBytes / numCurrentByteCodes);
@@ -8574,8 +9266,8 @@ EvalStatsCmd(
      * Detailed literal statistics.
      */
 
-    fprintf(stdout, "\nLiteral string sizes:\n");
-    fprintf(stdout, "\t Up to length\t\tPercentage\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nLiteral string sizes:\n");
+    Tcl_AppendPrintfToObj(objPtr, "\t Up to length\t\tPercentage\n");
     maxSizeDecade = 0;
     for (i = 31;  i >= 0;  i--) {
 	if (statsPtr->literalCount[i] > 0) {
@@ -8587,21 +9279,21 @@ EvalStatsCmd(
     for (i = 0;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->literalCount[i];
-	fprintf(stdout, "\t%10d\t\t%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "\t%10d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numLiteralsCreated));
     }
 
     litTableStats = TclLiteralStats(globalTablePtr);
-    fprintf(stdout, "\nCurrent literal table statistics:\n%s\n",
+    Tcl_AppendPrintfToObj(objPtr, "\nCurrent literal table statistics:\n%s\n",
 	    litTableStats);
-    ckfree((char *) litTableStats);
+    ckfree(litTableStats);
 
     /*
      * Source and ByteCode size distributions.
      */
 
-    fprintf(stdout, "\nSource sizes:\n");
-    fprintf(stdout, "\t Up to size\t\tPercentage\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nSource sizes:\n");
+    Tcl_AppendPrintfToObj(objPtr, "\t Up to size\t\tPercentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->srcCount[i] > 0) {
@@ -8619,12 +9311,12 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->srcCount[i];
-	fprintf(stdout, "\t%10d\t\t%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "\t%10d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
 
-    fprintf(stdout, "\nByteCode sizes:\n");
-    fprintf(stdout, "\t Up to size\t\tPercentage\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nByteCode sizes:\n");
+    Tcl_AppendPrintfToObj(objPtr, "\t Up to size\t\tPercentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->byteCodeCount[i] > 0) {
@@ -8642,12 +9334,12 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->byteCodeCount[i];
-	fprintf(stdout, "\t%10d\t\t%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "\t%10d\t\t%8.0f%%\n",
 		decadeHigh, Percent(sum, statsPtr->numCompilations));
     }
 
-    fprintf(stdout, "\nByteCode longevity (excludes Current ByteCodes):\n");
-    fprintf(stdout, "\t       Up to ms\t\tPercentage\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nByteCode longevity (excludes Current ByteCodes):\n");
+    Tcl_AppendPrintfToObj(objPtr, "\t       Up to ms\t\tPercentage\n");
     minSizeDecade = maxSizeDecade = 0;
     for (i = 0;  i < 31;  i++) {
 	if (statsPtr->lifetimeCount[i] > 0) {
@@ -8665,7 +9357,7 @@ EvalStatsCmd(
     for (i = minSizeDecade;  i <= maxSizeDecade;  i++) {
 	decadeHigh = (1 << (i+1)) - 1;
 	sum += statsPtr->lifetimeCount[i];
-	fprintf(stdout, "\t%12.3f\t\t%8.0f%%\n",
+	Tcl_AppendPrintfToObj(objPtr, "\t%12.3f\t\t%8.0f%%\n",
 		decadeHigh/1000.0, Percent(sum, statsPtr->numByteCodesFreed));
     }
 
@@ -8673,28 +9365,46 @@ EvalStatsCmd(
      * Instruction counts.
      */
 
-    fprintf(stdout, "\nInstruction counts:\n");
+    Tcl_AppendPrintfToObj(objPtr, "\nInstruction counts:\n");
     for (i = 0;  i <= LAST_INST_OPCODE;  i++) {
-	if (statsPtr->instructionCount[i] == 0) {
-	    fprintf(stdout, "%20s %8ld %6.1f%%\n",
-		    tclInstructionTable[i].name,
-		    statsPtr->instructionCount[i],
+	Tcl_AppendPrintfToObj(objPtr, "%20s %8ld ",
+		tclInstructionTable[i].name, statsPtr->instructionCount[i]);
+	if (statsPtr->instructionCount[i]) {
+	    Tcl_AppendPrintfToObj(objPtr, "%6.1f%%\n",
 		    Percent(statsPtr->instructionCount[i], numInstructions));
-	}
-    }
-
-    fprintf(stdout, "\nInstructions NEVER executed:\n");
-    for (i = 0;  i <= LAST_INST_OPCODE;  i++) {
-	if (statsPtr->instructionCount[i] == 0) {
-	    fprintf(stdout, "%20s\n", tclInstructionTable[i].name);
+	} else {
+	    Tcl_AppendPrintfToObj(objPtr, "0\n");
 	}
     }
 
 #ifdef TCL_MEM_DEBUG
-    fprintf(stdout, "\nHeap Statistics:\n");
-    TclDumpMemoryInfo(stdout);
+    Tcl_AppendPrintfToObj(objPtr, "\nHeap Statistics:\n");
+    TclDumpMemoryInfo((ClientData) objPtr, 1);
 #endif
-    fprintf(stdout, "\n----------------------------------------------------------------\n");
+    Tcl_AppendPrintfToObj(objPtr, "\n----------------------------------------------------------------\n");
+
+    if (objc == 1) {
+	Tcl_SetObjResult(interp, objPtr);
+    } else {
+	Tcl_Channel outChan;
+	char *str = Tcl_GetStringFromObj(objv[1], &length);
+
+	if (length) {
+	    if (strcmp(str, "stdout") == 0) {
+		outChan = Tcl_GetStdChannel(TCL_STDOUT);
+	    } else if (strcmp(str, "stderr") == 0) {
+		outChan = Tcl_GetStdChannel(TCL_STDERR);
+	    } else {
+		outChan = Tcl_OpenFileChannel(NULL, str, "w", 0664);
+	    }
+	} else {
+	    outChan = Tcl_GetStdChannel(TCL_STDOUT);
+	}
+	if (outChan != NULL) {
+	    Tcl_WriteObj(outChan, objPtr);
+	}
+    }
+    Tcl_DecrRefCount(objPtr);
     return TCL_OK;
 }
 #endif /* TCL_COMPILE_STATS */

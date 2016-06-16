@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclPosixStr.c,v 1.17 2010/06/28 08:50:12 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -37,7 +35,7 @@ const char *
 Tcl_ErrnoId(void)
 {
     switch (errno) {
-#ifdef E2BIG
+#if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
     case E2BIG: return "E2BIG";
 #endif
 #ifdef EACCES
@@ -205,7 +203,7 @@ Tcl_ErrnoId(void)
 #ifdef ELIBEXEC
     case ELIBEXEC: return "ELIBEXEC";
 #endif
-#ifdef ELIBMAX
+#if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
     case ELIBMAX: return "ELIBMAX";
 #endif
 #ifdef ELIBSCN
@@ -496,7 +494,7 @@ Tcl_ErrnoMsg(
      int err)			/* Error number (such as in errno variable). */
 {
     switch (err) {
-#ifdef E2BIG
+#if defined(E2BIG) && (!defined(EOVERFLOW) || (E2BIG != EOVERFLOW))
     case E2BIG: return "argument list too long";
 #endif
 #ifdef EACCES
@@ -664,7 +662,7 @@ Tcl_ErrnoMsg(
 #ifdef ELIBEXEC
     case ELIBEXEC: return "cannot exec a shared library directly";
 #endif
-#ifdef ELIBMAX
+#if defined(ELIBMAX) && (!defined(ECANCELED) || (ELIBMAX != ECANCELED))
     case ELIBMAX: return
 	    "attempting to link in more shared libraries than system limit";
 #endif

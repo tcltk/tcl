@@ -6,8 +6,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: chan.test,v 1.16 2008/12/18 01:14:17 ferrieux Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -63,7 +61,7 @@ test chan-4.5 {chan command: check valid inValue, invalid outValue} -body {
 } -returnCodes error -match glob -result {bad value for -eofchar:*}
 test chan-4.6 {chan command: check no inValue, valid outValue} -body {
     chan configure stdout -eofchar [list {} \x27]
-} -returnCodes ok -result {}
+} -returnCodes ok -result {} -cleanup {chan configure stdout -eofchar [list {} {}]}
 
 test chan-5.1 {chan command: copy subcommand} -body {
     chan copy foo

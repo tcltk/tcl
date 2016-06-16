@@ -104,6 +104,7 @@
 		F96D48ED08F272C3004A47F5 /* bn_mp_clear_multi.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D426F08F272B3004A47F5 /* bn_mp_clear_multi.c */; };
 		F96D48EE08F272C3004A47F5 /* bn_mp_cmp.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427008F272B3004A47F5 /* bn_mp_cmp.c */; };
 		F96D48F008F272C3004A47F5 /* bn_mp_cmp_mag.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427208F272B3004A47F5 /* bn_mp_cmp_mag.c */; };
+		F96D48F208F272C3004A47F5 /* bn_mp_cnt_lsb.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427408F272B3004A47F5 /* bn_mp_cnt_lsb.c */; };
 		F96D48F208F272C3004A47F5 /* bn_mp_copy.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427408F272B3004A47F5 /* bn_mp_copy.c */; };
 		F96D48F308F272C3004A47F5 /* bn_mp_count_bits.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427508F272B3004A47F5 /* bn_mp_count_bits.c */; };
 		F96D48F408F272C3004A47F5 /* bn_mp_div.c in Sources */ = {isa = PBXBuildFile; fileRef = F96D427608F272B3004A47F5 /* bn_mp_div.c */; };
@@ -786,7 +787,6 @@
 		F96D443208F272B8004A47F5 /* README */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = README; sourceTree = "<group>"; };
 		F96D443308F272B8004A47F5 /* regexpTestLib.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = regexpTestLib.tcl; sourceTree = "<group>"; };
 		F96D443508F272B8004A47F5 /* tcl.hpj.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.hpj.in; sourceTree = "<group>"; };
-		F96D443608F272B8004A47F5 /* tcl.wse.in */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; path = tcl.wse.in; sourceTree = "<group>"; };
 		F96D443908F272B9004A47F5 /* tcltk-man2html.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = "tcltk-man2html.tcl"; sourceTree = "<group>"; };
 		F96D443A08F272B9004A47F5 /* tclZIC.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = tclZIC.tcl; sourceTree = "<group>"; };
 		F96D443B08F272B9004A47F5 /* uniClass.tcl */ = {isa = PBXFileReference; explicitFileType = text.script; fileEncoding = 4; path = uniClass.tcl; sourceTree = "<group>"; };
@@ -829,7 +829,6 @@
 		F96D446708F272B9004A47F5 /* tclUnixSock.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixSock.c; sourceTree = "<group>"; };
 		F96D446808F272B9004A47F5 /* tclUnixTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixTest.c; sourceTree = "<group>"; };
 		F96D446908F272B9004A47F5 /* tclUnixThrd.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixThrd.c; sourceTree = "<group>"; };
-		F96D446A08F272B9004A47F5 /* tclUnixThrd.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; path = tclUnixThrd.h; sourceTree = "<group>"; };
 		F96D446B08F272B9004A47F5 /* tclUnixTime.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclUnixTime.c; sourceTree = "<group>"; };
 		F96D446C08F272B9004A47F5 /* tclXtNotify.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclXtNotify.c; sourceTree = "<group>"; };
 		F96D446D08F272B9004A47F5 /* tclXtTest.c */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.c; path = tclXtTest.c; sourceTree = "<group>"; };
@@ -921,7 +920,7 @@
 				F966C06F08F281DC005CB29B /* Frameworks */,
 				1AB674ADFE9D54B511CA2CBB /* Products */,
 			);
-			comments = "Copyright (c) 2004-2009 Daniel A. Steffen <das@users.sourceforge.net>\nCopyright 2008-2009, Apple Inc.\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\nRCS: @(#) $Id: project.pbxproj,v 1.14 2009/06/26 18:14:25 das Exp $\n";
+			comments = "Copyright (c) 2004-2009 Daniel A. Steffen <das@users.sourceforge.net>\nCopyright 2008-2009, Apple Inc.\n\nSee the file \"license.terms\" for information on usage and redistribution of\nthis file, and for a DISCLAIMER OF ALL WARRANTIES.\n\n";
 			name = Tcl;
 			path = .;
 			sourceTree = SOURCE_ROOT;
@@ -1686,7 +1685,6 @@
 				F96D443208F272B8004A47F5 /* README */,
 				F96D443308F272B8004A47F5 /* regexpTestLib.tcl */,
 				F96D443508F272B8004A47F5 /* tcl.hpj.in */,
-				F96D443608F272B8004A47F5 /* tcl.wse.in */,
 				F96D443908F272B9004A47F5 /* tcltk-man2html.tcl */,
 				F96D443A08F272B9004A47F5 /* tclZIC.tcl */,
 				F92D7F100DE777240033A13A /* tsdPerf.tcl */,
@@ -1732,7 +1730,6 @@
 				F96D446708F272B9004A47F5 /* tclUnixSock.c */,
 				F96D446808F272B9004A47F5 /* tclUnixTest.c */,
 				F96D446908F272B9004A47F5 /* tclUnixThrd.c */,
-				F96D446A08F272B9004A47F5 /* tclUnixThrd.h */,
 				F96D446B08F272B9004A47F5 /* tclUnixTime.c */,
 				F96D446C08F272B9004A47F5 /* tclXtNotify.c */,
 				F96D446D08F272B9004A47F5 /* tclXtTest.c */,
@@ -2070,6 +2067,7 @@
 				F96D48EE08F272C3004A47F5 /* bn_mp_cmp.c in Sources */,
 				F9E61D28090A481F002B3151 /* bn_mp_cmp_d.c in Sources */,
 				F96D48F008F272C3004A47F5 /* bn_mp_cmp_mag.c in Sources */,
+				F96D48F208F272C3004A47F5 /* bn_mp_cnt_lsb.c in Sources */,
 				F96D48F208F272C3004A47F5 /* bn_mp_copy.c in Sources */,
 				F96D48F308F272C3004A47F5 /* bn_mp_count_bits.c in Sources */,
 				F96D48F408F272C3004A47F5 /* bn_mp_div.c in Sources */,

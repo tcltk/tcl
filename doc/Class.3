@@ -4,14 +4,12 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: Class.3,v 1.6 2010/06/16 14:49:51 nijtmans Exp $
-'\"
 .so man.macros
 .TH Tcl_Class 3 0.1 TclOO "TclOO Library Functions"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-Tcl_ClassGetMetadata, Tcl_ClassSetMetadata, Tcl_CopyObjectInstance, Tcl_GetClassAsObject, Tcl_GetObjectAsClass, Tcl_GetObjectCommand, Tcl_GetObjectNamespace, Tcl_NewObjectInstance, Tcl_ObjectDeleted, Tcl_ObjectGetMetadata, Tcl_ObjectGetMethodNameMapper, Tcl_ObjectSetMetadata, Tcl_ObjectSetMethodNameMapper \- manipulate objects and classes
+Tcl_ClassGetMetadata, Tcl_ClassSetMetadata, Tcl_CopyObjectInstance, Tcl_GetClassAsObject, Tcl_GetObjectAsClass, Tcl_GetObjectCommand, Tcl_GetObjectFromObj, Tcl_GetObjectName, Tcl_GetObjectNamespace, Tcl_NewObjectInstance, Tcl_ObjectDeleted, Tcl_ObjectGetMetadata, Tcl_ObjectGetMethodNameMapper, Tcl_ObjectSetMetadata, Tcl_ObjectSetMethodNameMapper \- manipulate objects and classes
 .SH SYNOPSIS
 .nf
 \fB#include <tclOO.h>\fR
@@ -127,7 +125,7 @@ any constructors.
 Every object and every class may have arbitrary amounts of metadata attached
 to it, which the object or class attaches no meaning to beyond what is
 described in a Tcl_ObjectMetadataType structure instance. Metadata to be
-attached is described by the the type of the metadata (given in the
+attached is described by the type of the metadata (given in the
 \fImetaTypePtr\fR argument) and an arbitrary pointer (the \fImetadata\fR
 argument) that are given to \fBTcl_ObjectSetMetadata\fR and
 \fBTcl_ClassSetMetadata\fR, and a particular piece of metadata can be

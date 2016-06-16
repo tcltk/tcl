@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclThreadTest.c,v 1.35 2009/11/23 20:17:36 nijtmans Exp $
  */
 
 #ifndef USE_TCL_STUBS
@@ -48,7 +46,7 @@ static Tcl_ThreadDataKey dataKey;
  * protected by threadMutex.
  */
 
-static ThreadSpecificData *threadList;
+static ThreadSpecificData *threadList = NULL;
 
 /*
  * The following bit-values are legal for the "flags" field of the
@@ -168,7 +166,7 @@ TclThread_Init(
      */
 
     Tcl_MutexLock(&threadMutex);
-    if ((long) mainThreadId == 0) {
+    if (mainThreadId == 0) {
 	mainThreadId = Tcl_GetCurrentThread();
     }
     Tcl_MutexUnlock(&threadMutex);
@@ -275,7 +273,7 @@ ThreadObjCmd(
 	} else {
 	    result = NULL;
 	}
-	return ThreadCancel(interp, (Tcl_ThreadId) id, result, flags);
+	return ThreadCancel(interp, (Tcl_ThreadId) (size_t) id, result, flags);
     }
     case THREAD_CREATE: {
 	const char *script;
@@ -339,11 +337,11 @@ ThreadObjCmd(
 	     */
 
 	    if (objc == 2) {
-		idObj = Tcl_NewLongObj((long) Tcl_GetCurrentThread());
+		idObj = Tcl_NewLongObj((long)(size_t)Tcl_GetCurrentThread());
 	    } else if (objc == 3
 		    && strcmp("-main", Tcl_GetString(objv[2])) == 0) {
 		Tcl_MutexLock(&threadMutex);
-		idObj = Tcl_NewLongObj((long) mainThreadId);
+		idObj = Tcl_NewLongObj((long)(size_t)mainThreadId);
 		Tcl_MutexUnlock(&threadMutex);
 	    } else {
 		Tcl_WrongNumArgs(interp, 2, objv, NULL);
@@ -368,13 +366,13 @@ ThreadObjCmd(
 	    return TCL_ERROR;
 	}
 
-	result = Tcl_JoinThread((Tcl_ThreadId) id, &status);
+	result = Tcl_JoinThread((Tcl_ThreadId)(size_t)id, &status);
 	if (result == TCL_OK) {
 	    Tcl_SetIntObj(Tcl_GetObjResult(interp), status);
 	} else {
 	    char buf[20];
 
-	    sprintf(buf, "%ld", id);
+	    TclFormatInt(buf, id);
 	    Tcl_AppendResult(interp, "cannot join thread ", buf, NULL);
 	}
 	return result;
@@ -410,7 +408,7 @@ ThreadObjCmd(
 	}
 	arg++;
 	script = Tcl_GetString(objv[arg]);
-	return ThreadSend(interp, (Tcl_ThreadId) id, script, wait);
+	return ThreadSend(interp, (Tcl_ThreadId)(size_t)id, script, wait);
     }
     case THREAD_EVENT: {
 	if (objc > 2) {
@@ -438,7 +436,7 @@ ThreadObjCmd(
 	    ckfree(errorProcString);
 	}
 	proc = Tcl_GetString(objv[2]);
-	errorProcString = ckalloc(strlen(proc)+1);
+	errorProcString = ckalloc(strlen(proc) + 1);
 	strcpy(errorProcString, proc);
 	Tcl_MutexUnlock(&threadMutex);
 	return TCL_OK;
@@ -515,7 +513,7 @@ ThreadCreate(
 	    TCL_THREAD_STACK_DEFAULT, joinable) != TCL_OK) {
 	Tcl_MutexUnlock(&threadMutex);
 	Tcl_AppendResult(interp, "can't create a new thread", NULL);
-	ckfree((char *) ctrl.script);
+	ckfree(ctrl.script);
 	return TCL_ERROR;
     }
 
@@ -526,7 +524,7 @@ ThreadCreate(
     Tcl_ConditionWait(&ctrl.condWait, &threadMutex, NULL);
     Tcl_MutexUnlock(&threadMutex);
     Tcl_ConditionFinalize(&ctrl.condWait);
-    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)id));
+    Tcl_SetObjResult(interp, Tcl_NewLongObj((long)(size_t)id));
     return TCL_OK;
 }
 
@@ -599,7 +597,7 @@ NewTestThread(
      * eval'ing, for the case that we exit during evaluation
      */
 
-    threadEvalScript = ckalloc(strlen(ctrlPtr->script)+1);
+    threadEvalScript = ckalloc(strlen(ctrlPtr->script) + 1);
     strcpy(threadEvalScript, ctrlPtr->script);
 
     Tcl_CreateThreadExitHandler(ThreadExitProc, threadEvalScript);
@@ -625,9 +623,9 @@ NewTestThread(
      * Clean up.
      */
 
-    ListRemove(tsdPtr);
-    Tcl_Release(tsdPtr->interp);
     Tcl_DeleteInterp(tsdPtr->interp);
+    Tcl_Release(tsdPtr->interp);
+    ListRemove(tsdPtr);
     Tcl_ExitThread(result);
 
     TCL_THREAD_CREATE_RETURN;
@@ -658,7 +656,7 @@ ThreadErrorProc(
     char *script;
     char buf[TCL_DOUBLE_SPACE+1];
 
-    sprintf(buf, "%ld", (long) Tcl_GetCurrentThread());
+    TclFormatInt(buf, (size_t) Tcl_GetCurrentThread());
 
     errorInfo = Tcl_GetVar(interp, "errorInfo", TCL_GLOBAL_ONLY);
     if (errorProcString == NULL) {
@@ -746,6 +744,7 @@ ListRemove(
 	tsdPtr->nextPtr->prevPtr = tsdPtr->prevPtr;
     }
     tsdPtr->nextPtr = tsdPtr->prevPtr = 0;
+    tsdPtr->interp = NULL;
     Tcl_MutexUnlock(&threadMutex);
 }
 
@@ -775,7 +774,7 @@ ThreadList(
     Tcl_MutexLock(&threadMutex);
     for (tsdPtr = threadList ; tsdPtr ; tsdPtr = tsdPtr->nextPtr) {
 	Tcl_ListObjAppendElement(interp, listPtr,
-		Tcl_NewLongObj((long) tsdPtr->threadId));
+		Tcl_NewLongObj((long)(size_t)tsdPtr->threadId));
     }
     Tcl_MutexUnlock(&threadMutex);
     Tcl_SetObjResult(interp, listPtr);
@@ -843,13 +842,13 @@ ThreadSend(
      * Create the event for its event queue.
      */
 
-    threadEventPtr = (ThreadEvent *) ckalloc(sizeof(ThreadEvent));
+    threadEventPtr = ckalloc(sizeof(ThreadEvent));
     threadEventPtr->script = ckalloc(strlen(script) + 1);
     strcpy(threadEventPtr->script, script);
     if (!wait) {
 	resultPtr = threadEventPtr->resultPtr = NULL;
     } else {
-	resultPtr = (ThreadEventResult *) ckalloc(sizeof(ThreadEventResult));
+	resultPtr = ckalloc(sizeof(ThreadEventResult));
 	threadEventPtr->resultPtr = resultPtr;
 
 	/*
@@ -932,7 +931,7 @@ ThreadSend(
     Tcl_ConditionFinalize(&resultPtr->done);
     code = resultPtr->code;
 
-    ckfree((char *) resultPtr);
+    ckfree(resultPtr);
 
     return code;
 }
@@ -989,7 +988,8 @@ ThreadCancel(
 
     Tcl_MutexUnlock(&threadMutex);
     Tcl_ResetResult(interp);
-    return Tcl_CancelEval(tsdPtr->interp, Tcl_NewStringObj(result, -1), 0, flags);
+    return Tcl_CancelEval(tsdPtr->interp,
+    	(result != NULL) ? Tcl_NewStringObj(result, -1) : NULL, 0, flags);
 }
 
 /*
@@ -1085,7 +1085,7 @@ ThreadFreeProc(
     ClientData clientData)
 {
     if (clientData) {
-	ckfree((char *) clientData);
+	ckfree(clientData);
     }
 }
 
@@ -1113,7 +1113,7 @@ ThreadDeleteEvent(
     ClientData clientData)	/* dummy */
 {
     if (eventPtr->proc == ThreadEventProc) {
-	ckfree((char *) ((ThreadEvent *) eventPtr)->script);
+	ckfree(((ThreadEvent *) eventPtr)->script);
 	return 1;
     }
 
@@ -1150,6 +1150,11 @@ ThreadExitProc(
     char *threadEvalScript = clientData;
     ThreadEventResult *resultPtr, *nextPtr;
     Tcl_ThreadId self = Tcl_GetCurrentThread();
+    ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
+    if (tsdPtr->interp != NULL) {
+	ListRemove(tsdPtr);
+    }
 
     Tcl_MutexLock(&threadMutex);
 
@@ -1177,7 +1182,7 @@ ThreadExitProc(
 	    }
 	    resultPtr->nextPtr = resultPtr->prevPtr = 0;
 	    resultPtr->eventPtr->resultPtr = NULL;
-	    ckfree((char *) resultPtr);
+	    ckfree(resultPtr);
 	} else if (resultPtr->dstThreadId == self) {
 	    /*
 	     * Dang. The target is going away. Unblock the caller. The result

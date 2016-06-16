@@ -8,8 +8,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: tcltest.n,v 1.59 2010/01/14 11:47:09 dkf Exp $
-'\" 
 .so man.macros
 .TH "tcltest" n 2.3 tcltest "Tcl Bundled Packages"
 .BS
@@ -34,7 +32,7 @@ tcltest \- Test harness support code and utilities
 
 \fBtcltest::configure\fR
 \fBtcltest::configure \fI\-option\fR
-\fBtcltest::configure \fI\-option value\fR ?\fI-option value ...\fR?
+\fBtcltest::configure \fI\-option value\fR ?\fI\-option value ...\fR?
 \fBtcltest::customMatch \fImode command\fR
 \fBtcltest::testConstraint \fIconstraint\fR ?\fIvalue\fR?
 \fBtcltest::outputChannel \fR?\fIchannelID\fR?
@@ -92,7 +90,7 @@ of how to use the commands of \fBtcltest\fR to produce test suites
 for your Tcl-enabled code.
 .SH COMMANDS
 .TP
-\fBtest\fR \fIname description\fR ?\fI-option value ...\fR?
+\fBtest\fR \fIname description\fR ?\fI\-option value ...\fR?
 .
 Defines and possibly runs a test with the name \fIname\fR and
 description \fIdescription\fR.  The name and description of a test

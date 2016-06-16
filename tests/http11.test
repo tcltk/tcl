@@ -62,7 +62,7 @@ proc meta {tok {key ""}} {
 
 proc check_crc {tok args} {
     set crc [meta $tok x-crc32]
-    if {[llength $args]} {set data [lindex $args 0]} else {set data [http::data $tok]}
+    set data [expr {[llength $args] ? [lindex $args 0] : [http::data $tok]}]
     set chk [format %x [zlib crc32 $data]]
     if {$crc ne $chk} {
         return  "crc32 mismatch: $crc ne $chk"

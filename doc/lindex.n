@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lindex.n,v 1.21 2008/10/17 10:22:25 dkf Exp $
-'\" 
 .so man.macros
 .TH lindex n 8.4 Tcl "Tcl Built-In Commands"
 .BS
@@ -28,13 +26,13 @@ Tcl list and presented as a single argument.
 If no indices are presented, the command takes the form:
 .PP
 .CS
-lindex list
+\fBlindex \fIlist\fR
 .CE
 .PP
 or
 .PP
 .CS
-lindex list {}
+\fBlindex \fIlist\fR {}
 .CE
 .PP
 In this case, the return value of \fBlindex\fR is simply the value of the
@@ -59,19 +57,19 @@ used in turn to select an element from the previous indexing operation,
 allowing the script to select elements from sublists.  The command,
 .PP
 .CS
-lindex $a 1 2 3
+\fBlindex\fR $a 1 2 3
 .CE
 .PP
 or
 .PP
 .CS
-lindex $a {1 2 3}
+\fBlindex\fR $a {1 2 3}
 .CE
 .PP
 is synonymous with
 .PP
 .CS
-lindex [lindex [lindex $a 1] 2] 3
+\fBlindex\fR [\fBlindex\fR [\fBlindex\fR $a 1] 2] 3
 .CE
 .SH EXAMPLES
 .PP

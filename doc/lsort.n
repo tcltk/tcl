@@ -7,8 +7,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lsort.n,v 1.34 2010/01/20 13:42:17 dkf Exp $
-'\" 
 .so man.macros
 .TH lsort n 8.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -81,7 +79,7 @@ the values themselves.
 \fB\-index\0\fIindexList\fR
 .
 If this option is specified, each of the elements of \fIlist\fR must
-itself be a proper Tcl sublist (unless \fB-stride\fR is used).
+itself be a proper Tcl sublist (unless \fB\-stride\fR is used).
 Instead of sorting based on whole sublists, \fBlsort\fR will extract
 the \fIindexList\fR'th element from each sublist (as if the overall
 element and the \fIindexList\fR were passed to \fBlindex\fR) and sort
@@ -90,7 +88,7 @@ For example,
 .RS
 .PP
 .CS
-lsort -integer -index 1 \e
+\fBlsort\fR -integer -index 1 \e
       {{First 24} {Second 18} {Third 30}}
 .CE
 .PP
@@ -100,7 +98,7 @@ returns \fB{Second 18} {First 24} {Third 30}\fR,
 '\" This example is from the test suite!
 '\"
 .CS
-lsort -index end-1 \e
+\fBlsort\fR -index end-1 \e
         {{a 1 e i} {b 2 3 f g} {c 4 5 6 d h}}
 .CE
 .PP
@@ -108,7 +106,7 @@ returns \fB{c 4 5 6 d h} {a 1 e i} {b 2 3 f g}\fR,
 and
 .PP
 .CS
-lsort -index {0 1} {
+\fBlsort\fR -index {0 1} {
     {{b i g} 12345}
     {{d e m o} 34512}
     {{c o d e} 54321}
@@ -137,7 +135,7 @@ in turn must be at least 2.
 For example,
 .PP
 .CS
-lsort \-stride 2 {carrot 10 apple 50 banana 25}
+\fBlsort\fR \-stride 2 {carrot 10 apple 50 banana 25}
 .CE
 .PP
 returns
@@ -145,7 +143,7 @@ returns
 and
 .PP
 .CS
-lsort \-stride 2 \-index 1 \-integer {carrot 10 apple 50 banana 25}
+\fBlsort\fR \-stride 2 \-index 1 \-integer {carrot 10 apple 50 banana 25}
 .CE
 .PP
 returns
@@ -163,7 +161,7 @@ effect if combined with the \fB\-dictionary\fR, \fB\-integer\fR, or
 If this option is specified, then only the last set of duplicate
 elements found in the list will be retained.  Note that duplicates are
 determined relative to the comparison used in the sort.  Thus if 
-\fI\-index 0\fR is used, \fB{1 a}\fR and \fB{1 b}\fR would be
+\fB\-index 0\fR is used, \fB{1 a}\fR and \fB{1 b}\fR would be
 considered duplicates and only the second element, \fB{1 b}\fR, would
 be retained.
 .SH "NOTES"

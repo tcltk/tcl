@@ -13,8 +13,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclNotify.c,v 1.31 2010/02/24 10:45:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -183,7 +181,7 @@ TclFinalizeNotifier(void)
     for (evPtr = tsdPtr->firstEventPtr; evPtr != NULL; ) {
 	hold = evPtr;
 	evPtr = evPtr->nextPtr;
-	ckfree((char *) hold);
+	ckfree(hold);
     }
     tsdPtr->firstEventPtr = NULL;
     tsdPtr->lastEventPtr = NULL;
@@ -278,7 +276,7 @@ Tcl_CreateEventSource(
 				 * checkProc. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
-    EventSource *sourcePtr = (EventSource *) ckalloc(sizeof(EventSource));
+    EventSource *sourcePtr = ckalloc(sizeof(EventSource));
 
     sourcePtr->setupProc = setupProc;
     sourcePtr->checkProc = checkProc;
@@ -332,7 +330,7 @@ Tcl_DeleteEventSource(
 	} else {
 	    prevPtr->nextPtr = sourcePtr->nextPtr;
 	}
-	ckfree((char *) sourcePtr);
+	ckfree(sourcePtr);
 	return;
     }
 }
@@ -364,6 +362,7 @@ Tcl_QueueEvent(
 				 * TCL_QUEUE_MARK. */
 {
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
+
     QueueEvent(tsdPtr, evPtr, position);
 }
 
@@ -413,7 +412,7 @@ Tcl_ThreadQueueEvent(
     if (tsdPtr) {
 	QueueEvent(tsdPtr, evPtr, position);
     } else {
-	ckfree((char *) evPtr);
+	ckfree(evPtr);
     }
     Tcl_MutexUnlock(&listLock);
 }
@@ -564,7 +563,7 @@ Tcl_DeleteEvents(
 
 	    hold = evPtr;
 	    evPtr = evPtr->nextPtr;
-	    ckfree((char *) hold);
+	    ckfree(hold);
 	} else {
 	    /*
 	     * Event is to be retained.
@@ -703,7 +702,7 @@ Tcl_ServiceEvent(
 		}
 	    }
 	    if (evPtr) {
-		ckfree((char *) evPtr);
+		ckfree(evPtr);
 	    }
 	    Tcl_MutexUnlock(&(tsdPtr->queueMutex));
 	    return 1;

@@ -8,8 +8,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLoad.c,v 1.26 2010/05/19 08:23:09 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -133,9 +131,35 @@ Tcl_LoadObjCmd(
     const char *p, *fullFileName, *packageName;
     Tcl_LoadHandle loadHandle;
     Tcl_UniChar ch;
+    unsigned len;
+    int index, flags = 0;
+    Tcl_Obj *const *savedobjv = objv;
+    static const char *const options[] = {
+	"-global",		"-lazy",		"--",	NULL
+    };
+    enum options {
+	LOAD_GLOBAL,	LOAD_LAZY,	LOAD_LAST
+    };
 
+    while (objc > 2) {
+	if (TclGetString(objv[1])[0] != '-') {
+	    break;
+	}
+	if (Tcl_GetIndexFromObj(interp, objv[1], options, "option", 0,
+		&index) != TCL_OK) {
+	    return TCL_ERROR;
+	}
+	++objv; --objc;
+	if (LOAD_GLOBAL == (enum options) index) {
+	    flags |= TCL_LOAD_GLOBAL;
+	} else if (LOAD_LAZY == (enum options) index) {
+	    flags |= TCL_LOAD_LAZY;
+	} else {
+		break;
+	}
+    }
     if ((objc < 2) || (objc > 4)) {
-	Tcl_WrongNumArgs(interp, 1, objv, "fileName ?packageName? ?interp?");
+	Tcl_WrongNumArgs(interp, 1, savedobjv, "?-global? ?-lazy? ?--? fileName ?packageName? ?interp?");
 	return TCL_ERROR;
     }
     if (Tcl_FSConvertToPathType(interp, objv[1]) != TCL_OK) {
@@ -158,9 +182,10 @@ Tcl_LoadObjCmd(
 	}
     }
     if ((fullFileName[0] == 0) && (packageName == NULL)) {
-	Tcl_SetResult(interp,
-		"must specify either file name or package name",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must specify either file name or package name", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOLIBRARY",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -197,9 +222,9 @@ Tcl_LoadObjCmd(
 	if (packageName == NULL) {
 	    namesMatch = 0;
 	} else {
-	    Tcl_DStringSetLength(&pkgName, 0);
+	    TclDStringClear(&pkgName);
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
-	    Tcl_DStringSetLength(&tmp, 0);
+	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
 	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
 	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
@@ -210,7 +235,7 @@ Tcl_LoadObjCmd(
 		namesMatch = 0;
 	    }
 	}
-	Tcl_DStringSetLength(&pkgName, 0);
+	TclDStringClear(&pkgName);
 
 	filesMatch = (strcmp(pkgPtr->fileName, fullFileName) == 0);
 	if (filesMatch && (namesMatch || (packageName == NULL))) {
@@ -224,9 +249,11 @@ Tcl_LoadObjCmd(
 	     * Can't have two different packages loaded from the same file.
 	     */
 
-	    Tcl_AppendResult(interp, "file \"", fullFileName,
-		    "\" is already loaded for package \"",
-		    pkgPtr->packageName, "\"", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "file \"%s\" is already loaded for package \"%s\"",
+		    fullFileName, pkgPtr->packageName));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
+		    "SPLITPERSONALITY", NULL);
 	    code = TCL_ERROR;
 	    Tcl_MutexUnlock(&packageMutex);
 	    goto done;
@@ -260,8 +287,10 @@ Tcl_LoadObjCmd(
 	 */
 
 	if (fullFileName[0] == 0) {
-	    Tcl_AppendResult(interp, "package \"", packageName,
-		    "\" isn't loaded statically", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "package \"%s\" isn't loaded statically", packageName));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "NOTSTATIC",
+		    NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -281,8 +310,7 @@ Tcl_LoadObjCmd(
 
 	    retc = TclGuessPackageName(fullFileName, &pkgName);
 	    if (!retc) {
-		Tcl_Obj *splitPtr;
-		Tcl_Obj *pkgGuessPtr;
+		Tcl_Obj *splitPtr, *pkgGuessPtr;
 		int pElements;
 		const char *pkgGuess;
 
@@ -301,6 +329,12 @@ Tcl_LoadObjCmd(
 			&& (pkgGuess[2] == 'b')) {
 		    pkgGuess += 3;
 		}
+#ifdef __CYGWIN__
+		if ((pkgGuess[0] == 'c') && (pkgGuess[1] == 'y')
+			&& (pkgGuess[2] == 'g')) {
+		    pkgGuess += 3;
+		}
+#endif /* __CYGWIN__ */
 		for (p = pkgGuess; *p != 0; p += offset) {
 		    offset = Tcl_UtfToUniChar(p, &ch);
 		    if ((ch > 0x100)
@@ -311,13 +345,15 @@ Tcl_LoadObjCmd(
 		}
 		if (p == pkgGuess) {
 		    Tcl_DecrRefCount(splitPtr);
-		    Tcl_AppendResult(interp,
-			    "couldn't figure out package name for ",
-			    fullFileName, NULL);
+		    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+			    "couldn't figure out package name for %s",
+			    fullFileName));
+		    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD",
+			    "WHATPACKAGE", NULL);
 		    code = TCL_ERROR;
 		    goto done;
 		}
-		Tcl_DStringAppend(&pkgName, pkgGuess, (p - pkgGuess));
+		Tcl_DStringAppend(&pkgName, pkgGuess, p - pkgGuess);
 		Tcl_DecrRefCount(splitPtr);
 	    }
 	}
@@ -336,14 +372,14 @@ Tcl_LoadObjCmd(
 	 * package name.
 	 */
 
-	Tcl_DStringAppend(&initName, Tcl_DStringValue(&pkgName), -1);
-	Tcl_DStringAppend(&initName, "_Init", 5);
-	Tcl_DStringAppend(&safeInitName, Tcl_DStringValue(&pkgName), -1);
-	Tcl_DStringAppend(&safeInitName, "_SafeInit", 9);
-	Tcl_DStringAppend(&unloadName, Tcl_DStringValue(&pkgName), -1);
-	Tcl_DStringAppend(&unloadName, "_Unload", 7);
-	Tcl_DStringAppend(&safeUnloadName, Tcl_DStringValue(&pkgName), -1);
-	Tcl_DStringAppend(&safeUnloadName, "_SafeUnload", 11);
+	TclDStringAppendDString(&initName, &pkgName);
+	TclDStringAppendLiteral(&initName, "_Init");
+	TclDStringAppendDString(&safeInitName, &pkgName);
+	TclDStringAppendLiteral(&safeInitName, "_SafeInit");
+	TclDStringAppendDString(&unloadName, &pkgName);
+	TclDStringAppendLiteral(&unloadName, "_Unload");
+	TclDStringAppendDString(&safeUnloadName, &pkgName);
+	TclDStringAppendLiteral(&safeUnloadName, "_SafeUnload");
 
 	/*
 	 * Call platform-specific code to load the package and find the two
@@ -354,7 +390,8 @@ Tcl_LoadObjCmd(
 	symbols[1] = NULL;
 
 	Tcl_MutexLock(&packageMutex);
-	code = Tcl_LoadFile(interp, objv[1], symbols, 0, &initProc, &loadHandle);
+	code = Tcl_LoadFile(interp, objv[1], symbols, flags, &initProc,
+		&loadHandle);
 	Tcl_MutexUnlock(&packageMutex);
 	if (code != TCL_OK) {
 	    goto done;
@@ -364,22 +401,24 @@ Tcl_LoadObjCmd(
 	 * Create a new record to describe this package.
 	 */
 
-	pkgPtr = (LoadedPackage *) ckalloc(sizeof(LoadedPackage));
-	pkgPtr->fileName	   =
-		ckalloc((unsigned) (strlen(fullFileName) + 1));
-	strcpy(pkgPtr->fileName, fullFileName);
-	pkgPtr->packageName	   =
-		ckalloc((unsigned) (Tcl_DStringLength(&pkgName) + 1));
-	strcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName));
+	pkgPtr = ckalloc(sizeof(LoadedPackage));
+	len = strlen(fullFileName) + 1;
+	pkgPtr->fileName	   = ckalloc(len);
+	memcpy(pkgPtr->fileName, fullFileName, len);
+	len = (unsigned) Tcl_DStringLength(&pkgName) + 1;
+	pkgPtr->packageName	   = ckalloc(len);
+	memcpy(pkgPtr->packageName, Tcl_DStringValue(&pkgName), len);
 	pkgPtr->loadHandle	   = loadHandle;
 	pkgPtr->initProc	   = initProc;
-	pkgPtr->safeInitProc	   = (Tcl_PackageInitProc*)
-	    Tcl_FindSymbol(interp, loadHandle, Tcl_DStringValue(&safeInitName));
-	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc*)
-	    Tcl_FindSymbol(interp, loadHandle, Tcl_DStringValue(&unloadName));
-	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *) 
-	    Tcl_FindSymbol(interp, loadHandle,
-			   Tcl_DStringValue(&safeUnloadName));
+	pkgPtr->safeInitProc	   = (Tcl_PackageInitProc *)
+		Tcl_FindSymbol(interp, loadHandle,
+			Tcl_DStringValue(&safeInitName));
+	pkgPtr->unloadProc	   = (Tcl_PackageUnloadProc *)
+		Tcl_FindSymbol(interp, loadHandle,
+			Tcl_DStringValue(&unloadName));
+	pkgPtr->safeUnloadProc	   = (Tcl_PackageUnloadProc *)
+		Tcl_FindSymbol(interp, loadHandle,
+			Tcl_DStringValue(&safeUnloadName));
 	pkgPtr->interpRefCount	   = 0;
 	pkgPtr->safeInterpRefCount = 0;
 
@@ -387,10 +426,12 @@ Tcl_LoadObjCmd(
 	pkgPtr->nextPtr		   = firstPackagePtr;
 	firstPackagePtr		   = pkgPtr;
 	Tcl_MutexUnlock(&packageMutex);
+
 	/*
-	 * The Tcl_FindSymbol calls may have left a spurious error message
-	 * in the interpreter result.
+	 * The Tcl_FindSymbol calls may have left a spurious error message in
+	 * the interpreter result.
 	 */
+
 	Tcl_ResetResult(interp);
     }
 
@@ -400,50 +441,64 @@ Tcl_LoadObjCmd(
      */
 
     if (Tcl_IsSafe(target)) {
-	if (pkgPtr->safeInitProc != NULL) {
-	    code = pkgPtr->safeInitProc(target);
-	} else {
-	    Tcl_AppendResult(interp,
-		    "can't use package in a safe interpreter: no ",
-		    pkgPtr->packageName, "_SafeInit procedure", NULL);
+	if (pkgPtr->safeInitProc == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't use package in a safe interpreter: no"
+		    " %s_SafeInit procedure", pkgPtr->packageName));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "UNSAFE",
+		    NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
+	code = pkgPtr->safeInitProc(target);
     } else {
+	if (pkgPtr->initProc == NULL) {
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "can't attach package to interpreter: no %s_Init procedure",
+		    pkgPtr->packageName));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "LOAD", "ENTRYPOINT",
+		    NULL);
+	    code = TCL_ERROR;
+	    goto done;
+	}
 	code = pkgPtr->initProc(target);
+    }
+
+    /*
+     * Test for whether the initialization failed. If so, transfer the error
+     * from the target interpreter to the originating one.
+     */
+
+    if (code != TCL_OK) {
+	Tcl_TransferResult(target, code, interp);
+	goto done;
     }
 
     /*
      * Record the fact that the package has been loaded in the target
      * interpreter.
+     *
+     * Update the proper reference count.
      */
 
-    if (code == TCL_OK) {
-	/*
-	 * Update the proper reference count.
-	 */
-
-	Tcl_MutexLock(&packageMutex);
-	if (Tcl_IsSafe(target)) {
-	    pkgPtr->safeInterpRefCount++;
-	} else {
-	    pkgPtr->interpRefCount++;
-	}
-	Tcl_MutexUnlock(&packageMutex);
-
-	/*
-	 * Refetch ipFirstPtr: loading the package may have introduced
-	 * additional static packages at the head of the linked list!
-	 */
-
-	ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-	ipPtr = (InterpPackage *) ckalloc(sizeof(InterpPackage));
-	ipPtr->pkgPtr = pkgPtr;
-	ipPtr->nextPtr = ipFirstPtr;
-	Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
+    Tcl_MutexLock(&packageMutex);
+    if (Tcl_IsSafe(target)) {
+	pkgPtr->safeInterpRefCount++;
     } else {
-	Tcl_TransferResult(target, code, interp);
+	pkgPtr->interpRefCount++;
     }
+    Tcl_MutexUnlock(&packageMutex);
+
+    /*
+     * Refetch ipFirstPtr: loading the package may have introduced additional
+     * static packages at the head of the linked list!
+     */
+
+    ipFirstPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
+    ipPtr = ckalloc(sizeof(InterpPackage));
+    ipPtr->pkgPtr = pkgPtr;
+    ipPtr->nextPtr = ipFirstPtr;
+    Tcl_SetAssocData(target, "tclLoad", LoadCleanupProc, ipPtr);
 
   done:
     Tcl_DStringFree(&pkgName);
@@ -550,9 +605,10 @@ Tcl_UnloadObjCmd(
 	}
     }
     if ((fullFileName[0] == 0) && (packageName == NULL)) {
-	Tcl_SetResult(interp,
-		"must specify either file name or package name",
-		TCL_STATIC);
+	Tcl_SetObjResult(interp, Tcl_NewStringObj(
+		"must specify either file name or package name", -1));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NOLIBRARY",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -590,9 +646,9 @@ Tcl_UnloadObjCmd(
 	if (packageName == NULL) {
 	    namesMatch = 0;
 	} else {
-	    Tcl_DStringSetLength(&pkgName, 0);
+	    TclDStringClear(&pkgName);
 	    Tcl_DStringAppend(&pkgName, packageName, -1);
-	    Tcl_DStringSetLength(&tmp, 0);
+	    TclDStringClear(&tmp);
 	    Tcl_DStringAppend(&tmp, pkgPtr->packageName, -1);
 	    Tcl_UtfToLower(Tcl_DStringValue(&pkgName));
 	    Tcl_UtfToLower(Tcl_DStringValue(&tmp));
@@ -603,7 +659,7 @@ Tcl_UnloadObjCmd(
 		namesMatch = 0;
 	    }
 	}
-	Tcl_DStringSetLength(&pkgName, 0);
+	TclDStringClear(&pkgName);
 
 	filesMatch = (strcmp(pkgPtr->fileName, fullFileName) == 0);
 	if (filesMatch && (namesMatch || (packageName == NULL))) {
@@ -622,8 +678,11 @@ Tcl_UnloadObjCmd(
 	 * It's an error to try unload a static package.
 	 */
 
-	Tcl_AppendResult(interp, "package \"", packageName,
-		"\" is loaded statically and cannot be unloaded", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"package \"%s\" is loaded statically and cannot be unloaded",
+		packageName));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "STATIC",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -632,8 +691,10 @@ Tcl_UnloadObjCmd(
 	 * The DLL pointed by the provided filename has never been loaded.
 	 */
 
-	Tcl_AppendResult(interp, "file \"", fullFileName,
-		"\" has never been loaded", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"file \"%s\" has never been loaded", fullFileName));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -659,8 +720,11 @@ Tcl_UnloadObjCmd(
 	 * The package has not been loaded in this interpreter.
 	 */
 
-	Tcl_AppendResult(interp, "file \"", fullFileName,
-		"\" has never been loaded in this interpreter", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"file \"%s\" has never been loaded in this interpreter",
+		fullFileName));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "NEVERLOADED",
+		NULL);
 	code = TCL_ERROR;
 	goto done;
     }
@@ -673,16 +737,22 @@ Tcl_UnloadObjCmd(
 
     if (Tcl_IsSafe(target)) {
 	if (pkgPtr->safeUnloadProc == NULL) {
-	    Tcl_AppendResult(interp, "file \"", fullFileName,
-		    "\" cannot be unloaded under a safe interpreter", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "file \"%s\" cannot be unloaded under a safe interpreter",
+		    fullFileName));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
+		    NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
 	unloadProc = pkgPtr->safeUnloadProc;
     } else {
 	if (pkgPtr->unloadProc == NULL) {
-	    Tcl_AppendResult(interp, "file \"", fullFileName,
-		    "\" cannot be unloaded under a trusted interpreter", NULL);
+	    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		    "file \"%s\" cannot be unloaded under a trusted interpreter",
+		    fullFileName));
+	    Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "CANNOT",
+		    NULL);
 	    code = TCL_ERROR;
 	    goto done;
 	}
@@ -769,8 +839,7 @@ Tcl_UnloadObjCmd(
 	 */
 
 	if (pkgPtr->fileName[0] != '\0') {
-
-		Tcl_MutexLock(&packageMutex);
+	    Tcl_MutexLock(&packageMutex);
 	    if (Tcl_FSUnloadFile(interp, pkgPtr->loadHandle) == TCL_OK) {
 		/*
 		 * Remove this library from the loaded library cache.
@@ -812,16 +881,19 @@ Tcl_UnloadObjCmd(
 			ipFirstPtr);
 		ckfree(defaultPtr->fileName);
 		ckfree(defaultPtr->packageName);
-		ckfree((char *) defaultPtr);
-		ckfree((char *) ipPtr);
+		ckfree(defaultPtr);
+		ckfree(ipPtr);
 		Tcl_MutexUnlock(&packageMutex);
 	    } else {
 		code = TCL_ERROR;
 	    }
 	}
 #else
-	Tcl_AppendResult(interp, "file \"", fullFileName,
-		"\" cannot be unloaded: unloading disabled", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"file \"%s\" cannot be unloaded: unloading disabled",
+		fullFileName));
+	Tcl_SetErrorCode(interp, "TCL", "OPERATION", "UNLOAD", "DISABLED",
+		NULL);
 	code = TCL_ERROR;
 #endif
     }
@@ -829,39 +901,9 @@ Tcl_UnloadObjCmd(
   done:
     Tcl_DStringFree(&pkgName);
     Tcl_DStringFree(&tmp);
-    if (!complain && code!=TCL_OK) {
+    if (!complain && (code != TCL_OK)) {
 	code = TCL_OK;
 	Tcl_ResetResult(interp);
-    }
-    if (code == TCL_OK) {
-#if 0
-	/*
-	 * Result of [unload] was not documented in TIP#100, so force to be
-	 * the empty string by commenting this out. DKF.
-	 */
-
-	Tcl_Obj *resultObjPtr, *objPtr[2];
-
-	/*
-	 * Our result is the two reference counts.
-	 */
-
-	TclNewIntObj(objPtr[0], trustedRefCount);
-	TclNewIntObj(objPtr[1], safeRefCount);
-	if (objPtr[0] == NULL || objPtr[1] == NULL) {
-	    if (objPtr[0]) {
-		Tcl_DecrRefCount(objPtr[0]);
-	    }
-	    if (objPtr[1]) {
-		Tcl_DecrRefCount(objPtr[1]);
-	    }
-	} else {
-	    TclNewListObj(resultObjPtr, 2, objPtr);
-	    if (resultObjPtr != NULL) {
-		Tcl_SetObjResult(interp, resultObjPtr);
-	    }
-	}
-#endif
     }
     return code;
 }
@@ -927,10 +969,10 @@ Tcl_StaticPackage(
      */
 
     if (pkgPtr == NULL) {
-	pkgPtr = (LoadedPackage *) ckalloc(sizeof(LoadedPackage));
-	pkgPtr->fileName	= ckalloc((unsigned) 1);
+	pkgPtr = ckalloc(sizeof(LoadedPackage));
+	pkgPtr->fileName	= ckalloc(1);
 	pkgPtr->fileName[0]	= 0;
-	pkgPtr->packageName	= ckalloc((unsigned) (strlen(pkgName) + 1));
+	pkgPtr->packageName	= ckalloc(strlen(pkgName) + 1);
 	strcpy(pkgPtr->packageName, pkgName);
 	pkgPtr->loadHandle	= NULL;
 	pkgPtr->initProc	= initProc;
@@ -960,7 +1002,7 @@ Tcl_StaticPackage(
 	 * loaded.
 	 */
 
-	ipPtr = (InterpPackage *) ckalloc(sizeof(InterpPackage));
+	ipPtr = ckalloc(sizeof(InterpPackage));
 	ipPtr->pkgPtr = pkgPtr;
 	ipPtr->nextPtr = ipFirstPtr;
 	Tcl_SetAssocData(interp, "tclLoad", LoadCleanupProc, ipPtr);
@@ -997,28 +1039,27 @@ TclGetLoadedPackages(
 				 * otherwise, just return info about this
 				 * interpreter. */
 {
-    /* TODO: Use Tcl_Obj APIs to generate this info for cleanliness. */
     Tcl_Interp *target;
     LoadedPackage *pkgPtr;
     InterpPackage *ipPtr;
-    const char *prefix;
+    Tcl_Obj *resultObj, *pkgDesc[2];
 
     if (targetName == NULL) {
 	/*
 	 * Return information about all of the available packages.
 	 */
 
-	prefix = "{";
+	resultObj = Tcl_NewObj();
 	Tcl_MutexLock(&packageMutex);
 	for (pkgPtr = firstPackagePtr; pkgPtr != NULL;
 		pkgPtr = pkgPtr->nextPtr) {
-	    Tcl_AppendResult(interp, prefix, NULL);
-	    Tcl_AppendElement(interp, pkgPtr->fileName);
-	    Tcl_AppendElement(interp, pkgPtr->packageName);
-	    Tcl_AppendResult(interp, "}", NULL);
-	    prefix = " {";
+	    pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
+	    pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
+	    Tcl_ListObjAppendElement(NULL, resultObj,
+		    Tcl_NewListObj(2, pkgDesc));
 	}
 	Tcl_MutexUnlock(&packageMutex);
+	Tcl_SetObjResult(interp, resultObj);
 	return TCL_OK;
     }
 
@@ -1032,15 +1073,14 @@ TclGetLoadedPackages(
 	return TCL_ERROR;
     }
     ipPtr = Tcl_GetAssocData(target, "tclLoad", NULL);
-    prefix = "{";
+    resultObj = Tcl_NewObj();
     for (; ipPtr != NULL; ipPtr = ipPtr->nextPtr) {
 	pkgPtr = ipPtr->pkgPtr;
-	Tcl_AppendResult(interp, prefix, NULL);
-	Tcl_AppendElement(interp, pkgPtr->fileName);
-	Tcl_AppendElement(interp, pkgPtr->packageName);
-	Tcl_AppendResult(interp, "}", NULL);
-	prefix = " {";
+	pkgDesc[0] = Tcl_NewStringObj(pkgPtr->fileName, -1);
+	pkgDesc[1] = Tcl_NewStringObj(pkgPtr->packageName, -1);
+	Tcl_ListObjAppendElement(NULL, resultObj, Tcl_NewListObj(2, pkgDesc));
     }
+    Tcl_SetObjResult(interp, resultObj);
     return TCL_OK;
 }
 
@@ -1073,7 +1113,7 @@ LoadCleanupProc(
     ipPtr = clientData;
     while (ipPtr != NULL) {
 	nextPtr = ipPtr->nextPtr;
-	ckfree((char *) ipPtr);
+	ckfree(ipPtr);
 	ipPtr = nextPtr;
     }
 }
@@ -1126,7 +1166,7 @@ TclFinalizeLoad(void)
 
 	ckfree(pkgPtr->fileName);
 	ckfree(pkgPtr->packageName);
-	ckfree((char *) pkgPtr);
+	ckfree(pkgPtr);
     }
 }
 

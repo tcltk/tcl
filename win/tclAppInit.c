@@ -11,15 +11,7 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclAppInit.c,v 1.33 2010/09/23 21:40:45 nijtmans Exp $
  */
-
-/* TODO: This file does not compile in UNICODE mode.
- * See [Freq 2965056]: Windows build with -DUNICODE
- */
-#undef UNICODE
-#undef _UNICODE
 
 #include "tcl.h"
 #define WIN32_LEAN_AND_MEAN
@@ -34,9 +26,15 @@ extern Tcl_PackageInitProc Tcltest_Init;
 extern Tcl_PackageInitProc Tcltest_SafeInit;
 #endif /* TCL_TEST */
 
-#if defined(__GNUC__)
+#if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
+extern Tcl_PackageInitProc Registry_Init;
+extern Tcl_PackageInitProc Dde_Init;
+extern Tcl_PackageInitProc Dde_SafeInit;
+#endif
+
+#ifdef TCL_BROKEN_MAINARGS
 static void setargv(int *argcPtr, TCHAR ***argvPtr);
-#endif /* __GNUC__ */
+#endif
 
 /*
  * The following #if block allows you to change the AppInit function by using
@@ -76,11 +74,20 @@ extern int TCL_LOCAL_MAIN_HOOK(int *argc, TCHAR ***argv);
  *----------------------------------------------------------------------
  */
 
+#ifdef TCL_BROKEN_MAINARGS
+int
+main(
+    int argc,
+    char *dummy[])
+{
+    TCHAR **argv;
+#else
 int
 _tmain(
     int argc,
     TCHAR *argv[])
 {
+#endif
     TCHAR *p;
 
     /*
@@ -90,11 +97,11 @@ _tmain(
 
     setlocale(LC_ALL, "C");
 
+#ifdef TCL_BROKEN_MAINARGS
     /*
      * Get our args from the c-runtime. Ignore lpszCmdLine.
      */
 
-#if defined(__GNUC__)
     setargv(&argc, &argv);
 #endif
 
@@ -102,9 +109,9 @@ _tmain(
      * Forward slashes substituted for backslashes.
      */
 
-    for (p = argv[0]; *p != TEXT('\0'); p++) {
-	if (*p == TEXT('\\')) {
-	    *p = TEXT('/');
+    for (p = argv[0]; *p != '\0'; p++) {
+	if (*p == '\\') {
+	    *p = '/';
 	}
     }
 
@@ -144,21 +151,15 @@ Tcl_AppInit(
     }
 
 #if defined(STATIC_BUILD) && TCL_USE_STATIC_PACKAGES
-    {
-	extern Tcl_PackageInitProc Registry_Init;
-	extern Tcl_PackageInitProc Dde_Init;
-	extern Tcl_PackageInitProc Dde_SafeInit;
+    if (Registry_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
 
-	if (Registry_Init(interp) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	Tcl_StaticPackage(interp, "registry", Registry_Init, NULL);
-
-	if (Dde_Init(interp) == TCL_ERROR) {
-	    return TCL_ERROR;
-	}
-	Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
-   }
+    if (Dde_Init(interp) == TCL_ERROR) {
+	return TCL_ERROR;
+    }
+    Tcl_StaticPackage(interp, "dde", Dde_Init, Dde_SafeInit);
 #endif
 
 #ifdef TCL_TEST
@@ -223,7 +224,7 @@ Tcl_AppInit(
  *--------------------------------------------------------------------------
  */
 
-#if defined(__GNUC__)
+#ifdef TCL_BROKEN_MAINARGS
 static void
 setargv(
     int *argcPtr,		/* Filled with number of argument strings. */
@@ -241,30 +242,35 @@ setargv(
      */
 
     size = 2;
-    for (p = cmdLine; *p != TEXT('\0'); p++) {
-	if ((*p == TEXT(' ')) || (*p == TEXT('\t'))) {	/* INTL: ISO space. */
+    for (p = cmdLine; *p != '\0'; p++) {
+	if ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
 	    size++;
-	    while ((*p == TEXT(' ')) || (*p == TEXT('\t'))) { /* INTL: ISO space. */
+	    while ((*p == ' ') || (*p == '\t')) { /* INTL: ISO space. */
 		p++;
 	    }
-	    if (*p == TEXT('\0')) {
+	    if (*p == '\0') {
 		break;
 	    }
 	}
     }
-    argSpace = (TCHAR *) ckalloc(
-	    (unsigned) (size * sizeof(TCHAR *) + (_tcslen(cmdLine) * sizeof(TCHAR)) + 1));
+
+    /* Make sure we don't call ckalloc through the (not yet initialized) stub table */
+    #undef Tcl_Alloc
+    #undef Tcl_DbCkalloc
+
+    argSpace = ckalloc(size * sizeof(char *)
+	    + (_tcslen(cmdLine) * sizeof(TCHAR)) + sizeof(TCHAR));
     argv = (TCHAR **) argSpace;
-    argSpace += size * sizeof(TCHAR *);
+    argSpace += size * (sizeof(char *)/sizeof(TCHAR));
     size--;
 
     p = cmdLine;
     for (argc = 0; argc < size; argc++) {
 	argv[argc] = arg = argSpace;
-	while ((*p == TEXT(' ')) || (*p == TEXT('\t'))) {	/* INTL: ISO space. */
+	while ((*p == ' ') || (*p == '\t')) {	/* INTL: ISO space. */
 	    p++;
 	}
-	if (*p == TEXT('\0')) {
+	if (*p == '\0') {
 	    break;
 	}
 
@@ -272,14 +278,14 @@ setargv(
 	slashes = 0;
 	while (1) {
 	    copy = 1;
-	    while (*p == TEXT('\\')) {
+	    while (*p == '\\') {
 		slashes++;
 		p++;
 	    }
-	    if (*p == TEXT('"')) {
+	    if (*p == '"') {
 		if ((slashes & 1) == 0) {
 		    copy = 0;
-		    if ((inquote) && (p[1] == TEXT('"'))) {
+		    if ((inquote) && (p[1] == '"')) {
 			p++;
 			copy = 1;
 		    } else {
@@ -290,13 +296,13 @@ setargv(
 	    }
 
 	    while (slashes) {
-		*arg = TEXT('\\');
+		*arg = '\\';
 		arg++;
 		slashes--;
 	    }
 
-	    if ((*p == TEXT('\0')) || (!inquote &&
-		    ((*p == TEXT(' ')) || (*p == TEXT('\t'))))) {	/* INTL: ISO space. */
+	    if ((*p == '\0') || (!inquote &&
+		    ((*p == ' ') || (*p == '\t')))) {	/* INTL: ISO space. */
 		break;
 	    }
 	    if (copy != 0) {
@@ -305,7 +311,7 @@ setargv(
 	    }
 	    p++;
 	}
-	*arg = TEXT('\0');
+	*arg = '\0';
 	argSpace = arg + 1;
     }
     argv[argc] = NULL;
@@ -313,7 +319,7 @@ setargv(
     *argcPtr = argc;
     *argvPtr = argv;
 }
-#endif /* __GNUC__ */
+#endif /* TCL_BROKEN_MAINARGS */
 
 /*
  * Local Variables:

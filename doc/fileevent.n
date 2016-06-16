@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: fileevent.n,v 1.15 2008/10/15 10:43:37 dkf Exp $
-'\" 
 .so man.macros
 .TH fileevent n 7.5 Tcl "Tcl Built-In Commands"
 .BS
@@ -125,7 +123,7 @@ proc GetData {chan} {
 }
 
 fconfigure $chan -blocking 0 -encoding binary
-fileevent $chan readable [list GetData $chan]
+\fBfileevent\fR $chan readable [list GetData $chan]
 .CE
 .PP
 The next example demonstrates use of \fBgets\fR to read line-oriented
@@ -142,7 +140,7 @@ proc GetData {chan} {
 }
 
 fconfigure $chan -blocking 0 -buffering line -translation crlf
-fileevent $chan readable [list GetData $chan]
+\fBfileevent\fR $chan readable [list GetData $chan]
 .CE
 .SH CREDITS
 .PP

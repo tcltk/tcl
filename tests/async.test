@@ -10,18 +10,17 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: async.test,v 1.10 2010/03/24 10:35:21 dkf Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
 
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 testConstraint testasync [llength [info commands testasync]]
-testConstraint threaded [expr {
-    [info exists ::tcl_platform(threaded)] && $::tcl_platform(threaded)
-}]
+testConstraint threaded [::tcl::pkgconfig get threaded]
 
 proc async1 {result code} {
     global aresult acode
@@ -198,7 +197,7 @@ test async-4.3 {async interrupting loop-less bytecode sequence} -constraints {
 	set aresult {Async event not delivered}
 	testasync marklater $handle
 	set i 0
-    } [string repeat {;incr i;} 1500000] {
+    } "[string repeat {;incr i;} 1500000]after 10;" {
 	return $aresult
     }]] $hm
 } -result {test pattern} -cleanup {

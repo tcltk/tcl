@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclEvent.c,v 1.94 2010/09/23 18:08:35 dgp Exp $
  */
 
 #include "tclInt.h"
@@ -121,7 +119,6 @@ static char *		VwaitVarProc(ClientData clientData,
 			    Tcl_Interp *interp, const char *name1,
 			    const char *name2, int flags);
 static void		InvokeExitHandlers(void);
-
 
 /*
  *----------------------------------------------------------------------
@@ -162,7 +159,7 @@ Tcl_BackgroundException(
 	return;
     }
 
-    errPtr = (BgError *) ckalloc(sizeof(BgError));
+    errPtr = ckalloc(sizeof(BgError));
     errPtr->errorMsg = Tcl_GetObjResult(interp);
     Tcl_IncrRefCount(errPtr->errorMsg);
     errPtr->returnOpts = Tcl_GetReturnOptions(interp, code);
@@ -229,7 +226,7 @@ HandleBgErrors(
 	errPtr = assocPtr->firstBgPtr;
 
 	Tcl_ListObjGetElements(NULL, copyObj, &prefixObjc, &prefixObjv);
-	tempObjv = (Tcl_Obj **) ckalloc((prefixObjc+2) * sizeof(Tcl_Obj *));
+	tempObjv = ckalloc((prefixObjc+2) * sizeof(Tcl_Obj *));
 	memcpy(tempObjv, prefixObjv, prefixObjc*sizeof(Tcl_Obj *));
 	tempObjv[prefixObjc] = errPtr->errorMsg;
 	tempObjv[prefixObjc+1] = errPtr->returnOpts;
@@ -244,8 +241,8 @@ HandleBgErrors(
 	Tcl_DecrRefCount(errPtr->errorMsg);
 	Tcl_DecrRefCount(errPtr->returnOpts);
 	assocPtr->firstBgPtr = errPtr->nextPtr;
-	ckfree((char *) errPtr);
-	ckfree((char *) tempObjv);
+	ckfree(errPtr);
+	ckfree(tempObjv);
 
 	if (code == TCL_BREAK) {
 	    /*
@@ -258,7 +255,7 @@ HandleBgErrors(
 		assocPtr->firstBgPtr = errPtr->nextPtr;
 		Tcl_DecrRefCount(errPtr->errorMsg);
 		Tcl_DecrRefCount(errPtr->returnOpts);
-		ckfree((char *) errPtr);
+		ckfree(errPtr);
 	    }
 	} else if ((code == TCL_ERROR) && !Tcl_IsSafe(interp)) {
 	    Tcl_Channel errChannel = Tcl_GetStdChannel(TCL_STDERR);
@@ -336,6 +333,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-level\"", -1));
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &level) == TCL_ERROR) {
@@ -348,6 +346,7 @@ TclDefaultBgErrorHandlerObjCmd(
     if (valuePtr == NULL) {
 	Tcl_SetObjResult(interp, Tcl_NewStringObj(
 		"missing return option \"-code\"", -1));
+	Tcl_SetErrorCode(interp, "TCL", "ARGUMENT", "MISSING", NULL);
 	return TCL_ERROR;
     }
     if (Tcl_GetIntFromObj(interp, valuePtr, &code) == TCL_ERROR) {
@@ -525,7 +524,7 @@ TclSetBgErrorHandler(
 	 * First access: initialize.
 	 */
 
-	assocPtr = (ErrAssocData *) ckalloc(sizeof(ErrAssocData));
+	assocPtr = ckalloc(sizeof(ErrAssocData));
 	assocPtr->interp = interp;
 	assocPtr->cmdPrefix = NULL;
 	assocPtr->firstBgPtr = NULL;
@@ -604,7 +603,7 @@ BgErrorDeleteProc(
 	assocPtr->firstBgPtr = errPtr->nextPtr;
 	Tcl_DecrRefCount(errPtr->errorMsg);
 	Tcl_DecrRefCount(errPtr->returnOpts);
-	ckfree((char *) errPtr);
+	ckfree(errPtr);
     }
     Tcl_CancelIdleCall(HandleBgErrors, assocPtr);
     Tcl_DecrRefCount(assocPtr->cmdPrefix);
@@ -634,7 +633,7 @@ Tcl_CreateExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
     ClientData clientData)	/* Arbitrary value to pass to proc. */
 {
-    ExitHandler *exitPtr = (ExitHandler *) ckalloc(sizeof(ExitHandler));
+    ExitHandler *exitPtr = ckalloc(sizeof(ExitHandler));
 
     exitPtr->proc = proc;
     exitPtr->clientData = clientData;
@@ -667,7 +666,7 @@ TclCreateLateExitHandler(
     Tcl_ExitProc *proc,		/* Function to invoke. */
     ClientData clientData)	/* Arbitrary value to pass to proc. */
 {
-    ExitHandler *exitPtr = (ExitHandler *) ckalloc(sizeof(ExitHandler));
+    ExitHandler *exitPtr = ckalloc(sizeof(ExitHandler));
 
     exitPtr->proc = proc;
     exitPtr->clientData = clientData;
@@ -712,7 +711,7 @@ Tcl_DeleteExitHandler(
 	    } else {
 		prevPtr->nextPtr = exitPtr->nextPtr;
 	    }
-	    ckfree((char *) exitPtr);
+	    ckfree(exitPtr);
 	    break;
 	}
     }
@@ -755,7 +754,7 @@ TclDeleteLateExitHandler(
 	    } else {
 		prevPtr->nextPtr = exitPtr->nextPtr;
 	    }
-	    ckfree((char *) exitPtr);
+	    ckfree(exitPtr);
 	    break;
 	}
     }
@@ -789,7 +788,7 @@ Tcl_CreateThreadExitHandler(
     ExitHandler *exitPtr;
     ThreadSpecificData *tsdPtr = TCL_TSD_INIT(&dataKey);
 
-    exitPtr = (ExitHandler *) ckalloc(sizeof(ExitHandler));
+    exitPtr = ckalloc(sizeof(ExitHandler));
     exitPtr->proc = proc;
     exitPtr->clientData = clientData;
     exitPtr->nextPtr = tsdPtr->firstExitPtr;
@@ -831,7 +830,7 @@ Tcl_DeleteThreadExitHandler(
 	    } else {
 		prevPtr->nextPtr = exitPtr->nextPtr;
 	    }
-	    ckfree((char *) exitPtr);
+	    ckfree(exitPtr);
 	    return;
 	}
     }
@@ -908,8 +907,8 @@ InvokeExitHandlers(void)
 
 	firstExitPtr = exitPtr->nextPtr;
 	Tcl_MutexUnlock(&exitMutex);
-	(*exitPtr->proc)(exitPtr->clientData);
-	ckfree((char *) exitPtr);
+	exitPtr->proc(exitPtr->clientData);
+	ckfree(exitPtr);
 	Tcl_MutexLock(&exitMutex);
     }
     firstExitPtr = NULL;
@@ -954,27 +953,38 @@ Tcl_Exit(
 	currentAppExitPtr(INT2PTR(status));
 	Tcl_Panic("AppExitProc returned unexpectedly");
     } else {
-	/*
-	 * Use default handling.
-	 */
 
-	InvokeExitHandlers();
+	if (TclFullFinalizationRequested()) {
 
-	/*
-	 * Ensure the thread-specific data is initialised as it is used in
-	 * Tcl_FinalizeThread()
-	 */
-	
-	(void) TCL_TSD_INIT(&dataKey);
-	
-	/*
-	 * Now finalize the calling thread only (others are not safely
-	 * reachable).  Among other things, this triggers a flush of the
-	 * Tcl_Channels that may have data enqueued.
-	 */
-	
-	Tcl_FinalizeThread();
-	
+	    /*
+	     * Thorough finalization for Valgrind et al.
+	     */
+
+	    Tcl_Finalize();
+
+	} else {
+
+	    /*
+	     * Fast and deterministic exit (default behavior)
+	     */
+	    
+	    InvokeExitHandlers();
+	    
+	    /*
+	     * Ensure the thread-specific data is initialised as it is used in
+	     * Tcl_FinalizeThread()
+	     */
+	    
+	    (void) TCL_TSD_INIT(&dataKey);
+	    
+	    /*
+	     * Now finalize the calling thread only (others are not safely
+	     * reachable).  Among other things, this triggers a flush of the
+	     * Tcl_Channels that may have data enqueued.
+	     */
+	    
+	    Tcl_FinalizeThread();
+	}
 	TclpExit(status);
 	Tcl_Panic("OS exit failed!");
     }
@@ -1124,7 +1134,7 @@ Tcl_Finalize(void)
 	firstLateExitPtr = exitPtr->nextPtr;
 	Tcl_MutexUnlock(&exitMutex);
 	exitPtr->proc(exitPtr->clientData);
-	ckfree((char *) exitPtr);
+	ckfree(exitPtr);
 	Tcl_MutexLock(&exitMutex);
     }
     firstLateExitPtr = NULL;
@@ -1289,7 +1299,7 @@ Tcl_FinalizeThread(void)
 
 	    tsdPtr->firstExitPtr = exitPtr->nextPtr;
 	    exitPtr->proc(exitPtr->clientData);
-	    ckfree((char *) exitPtr);
+	    ckfree(exitPtr);
 	}
 	TclFinalizeIOSubsystem();
 	TclFinalizeNotifier();
@@ -1406,7 +1416,7 @@ Tcl_VwaitObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "limit exceeded", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
 	    break;
 	}
     }
@@ -1416,8 +1426,9 @@ Tcl_VwaitObjCmd(
 
     if (!foundEvent) {
 	Tcl_ResetResult(interp);
-	Tcl_AppendResult(interp, "can't wait for variable \"", nameString,
-		"\": would wait forever", NULL);
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"can't wait for variable \"%s\": would wait forever",
+		nameString));
 	Tcl_SetErrorCode(interp, "TCL", "EVENT", "NO_SOURCES", NULL);
 	return TCL_ERROR;
     }
@@ -1487,7 +1498,7 @@ Tcl_UpdateObjCmd(
     int optionIndex;
     int flags = 0;		/* Initialized to avoid compiler warning. */
     static const char *const updateOptions[] = {"idletasks", NULL};
-    enum updateOptions {REGEXP_IDLETASKS};
+    enum updateOptions {OPT_IDLETASKS};
 
     if (objc == 1) {
 	flags = TCL_ALL_EVENTS|TCL_DONT_WAIT;
@@ -1497,7 +1508,7 @@ Tcl_UpdateObjCmd(
 	    return TCL_ERROR;
 	}
 	switch ((enum updateOptions) optionIndex) {
-	case REGEXP_IDLETASKS:
+	case OPT_IDLETASKS:
 	    flags = TCL_WINDOW_EVENTS|TCL_IDLE_EVENTS|TCL_DONT_WAIT;
 	    break;
 	default:
@@ -1514,7 +1525,7 @@ Tcl_UpdateObjCmd(
 	}
 	if (Tcl_LimitExceeded(interp)) {
 	    Tcl_ResetResult(interp);
-	    Tcl_AppendResult(interp, "limit exceeded", NULL);
+	    Tcl_SetObjResult(interp, Tcl_NewStringObj("limit exceeded", -1));
 	    return TCL_ERROR;
 	}
     }
@@ -1555,7 +1566,7 @@ NewThreadProc(
 
     threadProc = cdPtr->proc;
     threadClientData = cdPtr->clientData;
-    ckfree((char *) clientData);	/* Allocated in Tcl_CreateThread() */
+    ckfree(clientData);		/* Allocated in Tcl_CreateThread() */
 
     threadProc(threadClientData);
 
@@ -1592,15 +1603,14 @@ Tcl_CreateThread(
 				 * thread. */
 {
 #ifdef TCL_THREADS
-    ThreadClientData *cdPtr = (ThreadClientData *)
-	    ckalloc(sizeof(ThreadClientData));
+    ThreadClientData *cdPtr = ckalloc(sizeof(ThreadClientData));
     int result;
 
     cdPtr->proc = proc;
     cdPtr->clientData = clientData;
     result = TclpThreadCreate(idPtr, NewThreadProc, cdPtr, stackSize, flags);
     if (result != TCL_OK) {
-	ckfree((char *) cdPtr);
+	ckfree(cdPtr);
     }
     return result;
 #else

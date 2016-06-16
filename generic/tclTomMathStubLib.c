@@ -9,8 +9,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclTomMathStubLib.c,v 1.3 2010/08/31 20:48:17 nijtmans Exp $
  */
 
 /*
@@ -75,10 +73,10 @@ TclTomMathInitializeStubs(
 	tclTomMathStubsPtr = stubsPtr;
 	return actualVersion;
     }
-    Tcl_ResetResult(interp);
-    Tcl_AppendResult(interp, "error loading ", packageName,
-	    " (requested version ", version, ", actual version ",
-	    actualVersion, "): ", errMsg, NULL);
+
+    Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+	    "error loading %s (requested version %s, actual version %s): %s",
+	    packageName, version, actualVersion, errMsg));
     return NULL;
 }
 

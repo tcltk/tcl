@@ -10,15 +10,13 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: regexp.test,v 1.36 2010/02/21 18:55:41 mdejong Exp $
 
-if {[lsearch [namespace children] ::tcltest] == -1} {
+if {"::tcltest" ni [namespace children]} {
     package require tcltest 2
     namespace import -force ::tcltest::*
 }
 
-catch {unset foo}
+unset -nocomplain foo
 
 testConstraint exec [llength [info commands exec]]
 
@@ -198,7 +196,7 @@ set x $x$x$x$x$x$x$x$x$x$x$x$x
 test regexp-4.4 {case conversion in regexp} {
     list [regexp -nocase $x $x foo] $foo
 } "1 $x"
-catch {unset x}
+unset -nocomplain x
 
 test regexp-5.1 {exercise cache of compiled expressions} {
     regexp .*a b
@@ -262,11 +260,12 @@ test regexp-6.6 {regexp errors} {
 test regexp-6.7 {regexp errors} {
     list [catch {regexp (x)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.) xyzzy} msg] $msg
 } {0 0}
-test regexp-6.8 {regexp errors} {
-    catch {unset f1}
+test regexp-6.8 {regexp errors} -setup {
+    unset -nocomplain f1
+} -body {
     set f1 44
-    list [catch {regexp abc abc f1(f2)} msg] $msg
-} {1 {couldn't set variable "f1(f2)"}}
+    regexp abc abc f1(f2)
+} -returnCodes error -result {can't set "f1(f2)": variable isn't array}
 test regexp-6.9 {regexp errors, -start bad int check} {
     list [catch {regexp -start bogus {^$} {}} msg] $msg
 } {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
@@ -458,11 +457,12 @@ test regexp-11.5 {regsub errors} {
 test regexp-11.6 {regsub errors} {
     list [catch {regsub -nocase a( b c d} msg] $msg
 } {1 {couldn't compile regular expression pattern: parentheses () not balanced}}
-test regexp-11.7 {regsub errors} {
-    catch {unset f1}
+test regexp-11.7 {regsub errors} -setup {
+    unset -nocomplain f1
+} -body {
     set f1 44
-    list [catch {regsub -nocase aaa aaa xxx f1(f2)} msg] $msg
-} {1 {couldn't set variable "f1(f2)"}}
+    regsub -nocase aaa aaa xxx f1(f2)
+} -returnCodes error -result {can't set "f1(f2)": variable isn't array}
 test regexp-11.8 {regsub errors, -start bad int check} {
     list [catch {regsub -start bogus pattern string rep var} msg] $msg
 } {1 {bad index "bogus": must be integer?[+-]integer? or end?[+-]integer?}}
@@ -529,23 +529,23 @@ test regexp-14.3 {CompileRegexp: regexp cache, empty regexp and empty cache} -co
 } -result 1
 
 test regexp-15.1 {regexp -start} {
-    catch {unset x}
+    unset -nocomplain x
     list [regexp -start -10 {\d} 1abc2de3 x] $x
 } {1 1}
 test regexp-15.2 {regexp -start} {
-    catch {unset x}
+    unset -nocomplain x
     list [regexp -start 2 {\d} 1abc2de3 x] $x
 } {1 2}
 test regexp-15.3 {regexp -start} {
-    catch {unset x}
+    unset -nocomplain x
     list [regexp -start 4 {\d} 1abc2de3 x] $x
 } {1 2}
 test regexp-15.4 {regexp -start} {
-    catch {unset x}
+    unset -nocomplain x
     list [regexp -start 5 {\d} 1abc2de3 x] $x
 } {1 3}
 test regexp-15.5 {regexp -start, over end of string} {
-    catch {unset x}
+    unset -nocomplain x
     list [regexp -start [string length 1abc2de3] {\d} 1abc2de3 x] [info exists x]
 } {0 0}
 test regexp-15.6 {regexp -start, loss of ^$ behavior} {
@@ -558,11 +558,11 @@ test regexp-15.8 {regexp -start, double option} {
     regexp -start 0 -start 2 a abc
 } 0
 test regexp-15.9 {regexp -start, end relative index} {
-    catch {unset x}
+    unset -nocomplain x
     list [regexp -start end {\d} 1abc2de3 x] [info exists x]
 } {0 0}
 test regexp-15.10 {regexp -start, end relative index} {
-    catch {unset x}
+    unset -nocomplain x
     list [regexp -start end-1 {\d} 1abc2de3 x] [info exists x] $x
 } {1 1 3}
 test regexp-15.11 {regexp -start, over end of string} {
@@ -571,15 +571,15 @@ test regexp-15.11 {regexp -start, over end of string} {
 } {1 {}}
 
 test regexp-16.1 {regsub -start} {
-    catch {unset x}
+    unset -nocomplain x
     list [regsub -all -start 2 {\d} a1b2c3d4e5 {/&} x] $x
 } {4 a1b/2c/3d/4e/5}
 test regexp-16.2 {regsub -start} {
-    catch {unset x}
+    unset -nocomplain x
     list [regsub -all -start -25 {z} hello {/&} x] $x
 } {0 hello}
 test regexp-16.3 {regsub -start} {
-    catch {unset x}
+    unset -nocomplain x
     list [regsub -all -start 3 {z} hello {/&} x] $x
 } {0 hello}
 test regexp-16.4 {regsub -start, \A behavior} {
@@ -1067,3 +1067,6 @@ test regexp-26.13 {regexp without -line option} {
 ::tcltest::cleanupTests
 return
 
+# Local Variables:
+# mode: tcl
+# End:

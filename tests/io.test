@@ -12,13 +12,15 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: io.test,v 1.96 2010/02/07 08:03:11 dkf Exp $
 
 if {[catch {package require tcltest 2}]} {
     puts stderr "Skipping tests in [info script].  tcltest 2 required."
     return
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
+
 namespace eval ::tcl::test::io {
     namespace import ::tcltest::*
 
@@ -39,7 +41,7 @@ testConstraint fcopy            [llength [info commands fcopy]]
 testConstraint testfevent       [llength [info commands testfevent]]
 testConstraint testchannelevent [llength [info commands testchannelevent]]
 testConstraint testmainthread   [llength [info commands testmainthread]]
-testConstraint testthread       [llength [info commands testthread]]
+testConstraint thread [expr {0 == [catch {package require Thread 2.7-}]}]
 
 # You need a *very* special environment to do some tests.  In
 # particular, many file systems do not support large-files...
@@ -2088,6 +2090,8 @@ set path(pipe)   [makeFile {} pipe]
 set path(output) [makeFile {} output]
 test io-27.6 {FlushChannel, async flushing, async close} \
 	{stdio asyncPipeClose openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2647,6 +2651,8 @@ test io-29.30 {Tcl_WriteChars, crlf mode} {
     file size $path(test1)
 } 25
 test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2688,6 +2694,8 @@ test io-29.31 {Tcl_WriteChars, background flush} {stdio openpipe} {
 } ok
 test io-29.32 {Tcl_WriteChars, background flush to slow reader} \
 	{stdio asyncPipeClose openpipe} {
+    # This test may fail on old Unix systems (seen on IRIX64 6.5) with
+    # obsolete gettimeofday() calls.  See Tcl Bugs 3530533, 1942197.
     file delete $path(pipe)
     file delete $path(output)
     set f [open $path(pipe) w]
@@ -2738,6 +2746,26 @@ test io-29.33 {Tcl_Flush, implicit flush on exit} {exec} {
     close $f
     set r
 } "hello\nbye\nstrange\n"
+set path(script2) [makeFile {} script2]
+test io-29.33b {TIP#398, no implicit flush of nonblocking on exit} {exec} {
+    set f [open $path(script) w]
+    puts $f {
+		fconfigure stdout -blocking 0
+		puts -nonewline stdout [string repeat A 655360]
+		flush stdout
+	}
+    close $f
+    set f [open $path(script2) w]
+    puts $f {after 2000}
+    close $f
+	set t1 [clock milliseconds]
+	set ff [open "|[list [interpreter] $path(script2)]" w]
+	catch {unset ::env(TCL_FLUSH_NONBLOCKING_ON_EXIT)}
+	exec [interpreter] $path(script) >@ $ff
+	set t2 [clock milliseconds]
+	close $ff
+	expr {($t2-$t1)/2000 ? $t2-$t1 : 0}
+} 0
 test io-29.34 {Tcl_Close, async flush on close, using sockets} {socket tempNotMac fileevent} {
     variable c 0
     variable x running
@@ -3858,7 +3886,7 @@ test io-32.3 {Tcl_Read, negative byte count} {
     set l [list [catch {read $f -1} msg] $msg]
     close $f
     set l
-} {1 {bad argument "-1": should be "nonewline"}}
+} {1 {expected non-negative integer but got "-1"}}
 test io-32.4 {Tcl_Read, positive byte count} {
     set f [open $path(longfile) r]
     set x [read $f 1024]
@@ -5207,16 +5235,16 @@ test io-40.1 {POSIX open access modes: RDWR} {
 } {zzy abzzy}
 test io-40.2 {POSIX open access modes: CREAT} {unix} {
     file delete $path(test3)
-    set f [open $path(test3) {WRONLY CREAT} 0600]
+    set f [open $path(test3) {WRONLY CREAT} 0o600]
     file stat $path(test3) stats
-    set x [format "0%o" [expr $stats(mode)&0o777]]
+    set x [format "0o%o" [expr $stats(mode)&0o777]]
     puts $f "line 1"
     close $f
     set f [open $path(test3) r]
     lappend x [gets $f]
     close $f
     set x
-} {0600 {line 1}}
+} {0o600 {line 1}}
 test io-40.3 {POSIX open access modes: CREAT} {unix umask} {
     # This test only works if your umask is 2, like ouster's.
     file delete $path(test3)
@@ -7007,6 +7035,44 @@ test io-53.8a {CopyData: async callback and error handling, Bug 1932639, at eof}
     removeFile foo
     removeFile bar
 } -result {1 sync/OK {CMD 0}}
+test io-53.8b {CopyData: async callback and -size 0} -setup {
+    # copy progress callback. errors out intentionally
+    proc ::cmd args {
+	lappend ::RES "CMD $args"
+	set ::forever has-been-reached
+	return
+    }
+    # Files we use for our channels
+    set foo [makeFile ashgdfashdgfasdhgfasdhgf foo]
+    set bar [makeFile {} bar]
+    # Channels to copy between
+    set f [open $foo r] ; fconfigure $f -translation binary
+    set g [open $bar w] ; fconfigure $g -translation binary -buffering none
+} -constraints {stdio openpipe fcopy} -body {
+	set ::RES {}
+    # Run the copy. Should not invoke -command now.
+    fcopy $f $g -size 0 -command ::cmd
+    # Check that -command was not called synchronously
+    lappend ::RES [expr {([llength $::RES] > 1) ? "sync/FAIL" : "sync/OK"}]
+    # Now let the async part happen. Should capture the eof in cmd
+    # If not break the event loop via timer.
+    set token [after 1000 {
+	lappend ::RES {cmd/FAIL timeout}
+	set ::forever has-been-reached
+    }]
+    vwait ::forever
+    catch {after cancel $token}
+    # Report
+    set ::RES
+} -cleanup {
+    close $f
+    close $g
+    catch {unset ::RES}
+    catch {unset ::forever}
+    rename ::cmd {}
+    removeFile foo
+    removeFile bar
+} -result {sync/OK {CMD 0}}
 test io-53.9 {CopyData: -size and event interaction, Bug 780533} -setup {
     set out [makeFile {} out]
     set err [makeFile {} err]
@@ -7399,7 +7465,7 @@ test io-59.1 {Thread reference of channels} {testmainthread testchannel} {
     # More complicated tests (like that the reference changes as a
     # channel is moved from thread to thread) can be done only in the
     # extension which fully implements the moving of channels between
-    # threads, i.e. 'Threads'. Or we have to extend [testthread] as well.
+    # threads, i.e. 'Threads'.
 
     set f [open $path(longfile) r]
     set result [testchannel mthread $f]
@@ -7491,25 +7557,7 @@ test io-70.0 {Cutting & Splicing channels} {testchannel} {
 } {0 1 0}
 
 
-# Duplicate of code in "thread.test". Find a better way of doing this
-# without duplication. Maybe placement into a proc which transforms to
-# nop after the first call, and placement of its defintion in a
-# central location.
-
-if {[testConstraint testthread]} {
-    testthread errorproc ThreadError
-
-    proc ThreadError {id info} {
-	global threadError
-	set threadError $info
-    }
-
-    proc ThreadNullError {id info} {
-	# ignore
-    }
-}
-
-test io-70.1 {Transfer channel} {testchannel testthread} {
+test io-70.1 {Transfer channel} {testchannel thread} {
     set f [makeFile {... dummy ...} cutsplice]
     set c [open $f r]
 
@@ -7518,16 +7566,17 @@ test io-70.1 {Transfer channel} {testchannel testthread} {
     testchannel cut $c
     lappend res [catch {seek $c 0 start}]
 
-    set tid [testthread create]
-    testthread send $tid [list set c $c]
-    lappend res [testthread send $tid {
+    set tid [thread::create -preserved]
+    thread::send $tid [list set c $c]
+    thread::send $tid {load {} Tcltest}
+    lappend res [thread::send $tid {
 	testchannel splice $c
 	set res [catch {seek $c 0 start}]
 	close $c
 	set res
     }]
 
-    tcltest::threadReap
+    thread::release $tid
     removeFile cutsplice
 
     set res
@@ -7742,7 +7791,7 @@ test io-73.2 {channel Tcl_Obj SetChannelFromAny, bug 2407783} -setup {
 # ### ### ### ######### ######### #########
 
 # cleanup
-foreach file [list fooBar longfile script output test1 pipe my_script \
+foreach file [list fooBar longfile script script2 output test1 pipe my_script \
 	test2 test3 cat stdout kyrillic.txt utf8-fcopy.txt utf8-rp.txt] {
     removeFile $file
 }

@@ -7,8 +7,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution
  * of this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclDecls.h,v 1.187 2010/09/23 21:40:46 nijtmans Exp $
  */
 
 #ifndef _TCLDECLS
@@ -46,7 +44,7 @@ EXTERN CONST84_RETURN char * Tcl_PkgRequireEx(Tcl_Interp *interp,
 				const char *name, const char *version,
 				int exact, void *clientDataPtr);
 /* 2 */
-EXTERN void		Tcl_Panic(const char *format, ...);
+EXTERN void		Tcl_Panic(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 3 */
 EXTERN char *		Tcl_Alloc(unsigned int size);
 /* 4 */
@@ -653,9 +651,9 @@ EXTERN void		Tcl_Release(ClientData clientData);
 /* 217 */
 EXTERN void		Tcl_ResetResult(Tcl_Interp *interp);
 /* 218 */
-EXTERN int		Tcl_ScanElement(const char *str, int *flagPtr);
+EXTERN int		Tcl_ScanElement(const char *src, int *flagPtr);
 /* 219 */
-EXTERN int		Tcl_ScanCountedElement(const char *str, int length,
+EXTERN int		Tcl_ScanCountedElement(const char *src, int length,
 				int *flagPtr);
 /* 220 */
 EXTERN int		Tcl_SeekOld(Tcl_Channel chan, int offset, int mode);
@@ -1664,10 +1662,10 @@ EXTERN int		Tcl_AppendFormatToObj(Tcl_Interp *interp,
 				Tcl_Obj *objPtr, const char *format,
 				int objc, Tcl_Obj *const objv[]);
 /* 578 */
-EXTERN Tcl_Obj *	Tcl_ObjPrintf(const char *format, ...);
+EXTERN Tcl_Obj *	Tcl_ObjPrintf(const char *format, ...) TCL_FORMAT_PRINTF(1, 2);
 /* 579 */
 EXTERN void		Tcl_AppendPrintfToObj(Tcl_Obj *objPtr,
-				const char *format, ...);
+				const char *format, ...) TCL_FORMAT_PRINTF(2, 3);
 /* 580 */
 EXTERN int		Tcl_CancelEval(Tcl_Interp *interp,
 				Tcl_Obj *resultObjPtr, ClientData clientData,
@@ -1804,13 +1802,17 @@ EXTERN int		Tcl_LoadFile(Tcl_Interp *interp, Tcl_Obj *pathPtr,
 				const char *const symv[], int flags,
 				void *procPtrs, Tcl_LoadHandle *handlePtr);
 /* 628 */
-EXTERN void*		Tcl_FindSymbol(Tcl_Interp *interp,
+EXTERN void *		Tcl_FindSymbol(Tcl_Interp *interp,
 				Tcl_LoadHandle handle, const char *symbol);
 /* 629 */
 EXTERN int		Tcl_FSUnloadFile(Tcl_Interp *interp,
 				Tcl_LoadHandle handlePtr);
+/* 630 */
+EXTERN void		Tcl_ZlibStreamSetCompressionDictionary(
+				Tcl_ZlibStream zhandle,
+				Tcl_Obj *compressionDictionaryObj);
 
-typedef struct TclStubHooks {
+typedef struct {
     const struct TclPlatStubs *tclPlatStubs;
     const struct TclIntStubs *tclIntStubs;
     const struct TclIntPlatStubs *tclIntPlatStubs;
@@ -1818,11 +1820,11 @@ typedef struct TclStubHooks {
 
 typedef struct TclStubs {
     int magic;
-    const struct TclStubHooks *hooks;
+    const TclStubHooks *hooks;
 
     int (*tcl_PkgProvideEx) (Tcl_Interp *interp, const char *name, const char *version, const void *clientData); /* 0 */
     CONST84_RETURN char * (*tcl_PkgRequireEx) (Tcl_Interp *interp, const char *name, const char *version, int exact, void *clientDataPtr); /* 1 */
-    void (*tcl_Panic) (const char *format, ...); /* 2 */
+    void (*tcl_Panic) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 2 */
     char * (*tcl_Alloc) (unsigned int size); /* 3 */
     void (*tcl_Free) (char *ptr); /* 4 */
     char * (*tcl_Realloc) (char *ptr, unsigned int size); /* 5 */
@@ -1832,7 +1834,7 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_CreateFileHandler) (int fd, int mask, Tcl_FileProc *proc, ClientData clientData); /* 9 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     void (*reserved9)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -1841,7 +1843,7 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     void (*tcl_DeleteFileHandler) (int fd); /* 10 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     void (*reserved10)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -2006,7 +2008,7 @@ typedef struct TclStubs {
 #if !defined(__WIN32__) && !defined(MAC_OSX_TCL) /* UNIX */
     int (*tcl_GetOpenFile) (Tcl_Interp *interp, const char *chanID, int forWriting, int checkUsage, ClientData *filePtr); /* 167 */
 #endif /* UNIX */
-#ifdef __WIN32__ /* WIN */
+#if defined(__WIN32__) /* WIN */
     void (*reserved167)(void);
 #endif /* WIN */
 #ifdef MAC_OSX_TCL /* MACOSX */
@@ -2062,8 +2064,8 @@ typedef struct TclStubs {
     void (*tcl_RegExpRange) (Tcl_RegExp regexp, int index, CONST84 char **startPtr, CONST84 char **endPtr); /* 215 */
     void (*tcl_Release) (ClientData clientData); /* 216 */
     void (*tcl_ResetResult) (Tcl_Interp *interp); /* 217 */
-    int (*tcl_ScanElement) (const char *str, int *flagPtr); /* 218 */
-    int (*tcl_ScanCountedElement) (const char *str, int length, int *flagPtr); /* 219 */
+    int (*tcl_ScanElement) (const char *src, int *flagPtr); /* 218 */
+    int (*tcl_ScanCountedElement) (const char *src, int length, int *flagPtr); /* 219 */
     int (*tcl_SeekOld) (Tcl_Channel chan, int offset, int mode); /* 220 */
     int (*tcl_ServiceAll) (void); /* 221 */
     int (*tcl_ServiceEvent) (int flags); /* 222 */
@@ -2422,8 +2424,8 @@ typedef struct TclStubs {
     void (*tcl_AppendLimitedToObj) (Tcl_Obj *objPtr, const char *bytes, int length, int limit, const char *ellipsis); /* 575 */
     Tcl_Obj * (*tcl_Format) (Tcl_Interp *interp, const char *format, int objc, Tcl_Obj *const objv[]); /* 576 */
     int (*tcl_AppendFormatToObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, const char *format, int objc, Tcl_Obj *const objv[]); /* 577 */
-    Tcl_Obj * (*tcl_ObjPrintf) (const char *format, ...); /* 578 */
-    void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, const char *format, ...); /* 579 */
+    Tcl_Obj * (*tcl_ObjPrintf) (const char *format, ...) TCL_FORMAT_PRINTF(1, 2); /* 578 */
+    void (*tcl_AppendPrintfToObj) (Tcl_Obj *objPtr, const char *format, ...) TCL_FORMAT_PRINTF(2, 3); /* 579 */
     int (*tcl_CancelEval) (Tcl_Interp *interp, Tcl_Obj *resultObjPtr, ClientData clientData, int flags); /* 580 */
     int (*tcl_Canceled) (Tcl_Interp *interp, int flags); /* 581 */
     int (*tcl_CreatePipe) (Tcl_Interp *interp, Tcl_Channel *rchan, Tcl_Channel *wchan, int flags); /* 582 */
@@ -2472,8 +2474,9 @@ typedef struct TclStubs {
     int (*tcl_NRExprObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, Tcl_Obj *resultPtr); /* 625 */
     int (*tcl_NRSubstObj) (Tcl_Interp *interp, Tcl_Obj *objPtr, int flags); /* 626 */
     int (*tcl_LoadFile) (Tcl_Interp *interp, Tcl_Obj *pathPtr, const char *const symv[], int flags, void *procPtrs, Tcl_LoadHandle *handlePtr); /* 627 */
-    void* (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
+    void * (*tcl_FindSymbol) (Tcl_Interp *interp, Tcl_LoadHandle handle, const char *symbol); /* 628 */
     int (*tcl_FSUnloadFile) (Tcl_Interp *interp, Tcl_LoadHandle handlePtr); /* 629 */
+    void (*tcl_ZlibStreamSetCompressionDictionary) (Tcl_ZlibStream zhandle, Tcl_Obj *compressionDictionaryObj); /* 630 */
 } TclStubs;
 
 #ifdef __cplusplus
@@ -3766,6 +3769,8 @@ extern const TclStubs *tclStubsPtr;
 	(tclStubsPtr->tcl_FindSymbol) /* 628 */
 #define Tcl_FSUnloadFile \
 	(tclStubsPtr->tcl_FSUnloadFile) /* 629 */
+#define Tcl_ZlibStreamSetCompressionDictionary \
+	(tclStubsPtr->tcl_ZlibStreamSetCompressionDictionary) /* 630 */
 
 #endif /* defined(USE_TCL_STUBS) */
 
@@ -3787,8 +3792,12 @@ extern const TclStubs *tclStubsPtr;
 #   define Tcl_SetVar(interp, varName, newValue, flags) \
 	    (tclStubsPtr->tcl_SetVar(interp, varName, newValue, flags))
 #endif
+
 #if defined(_WIN32) && defined(UNICODE)
 #   define Tcl_FindExecutable(arg) ((Tcl_FindExecutable)((const char *)(arg)))
+#   define Tcl_MainEx Tcl_MainExW
+    EXTERN void Tcl_MainExW(int argc, wchar_t **argv,
+	    Tcl_AppInitProc *appInitProc, Tcl_Interp *interp);
 #endif
 
 #undef TCL_STORAGE_CLASS

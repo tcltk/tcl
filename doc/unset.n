@@ -6,8 +6,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: unset.n,v 1.15 2010/04/18 11:51:43 dkf Exp $
-'\" 
 .so man.macros
 .TH unset n 8.4 Tcl "Tcl Built-In Commands"
 .BS
@@ -15,7 +13,7 @@
 .SH NAME
 unset \- Delete variables
 .SH SYNOPSIS
-\fBunset \fR?\fI\-nocomplain\fR? ?\fI\-\-\fR? ?\fIname name name ...\fR?
+\fBunset \fR?\fB\-nocomplain\fR? ?\fB\-\-\fR? ?\fIname name name ...\fR?
 .BE
 .SH DESCRIPTION
 .PP
@@ -27,9 +25,9 @@ element is removed without affecting the rest of the array.
 If a \fIname\fR consists of an array name with no parenthesized
 index, then the entire array is deleted.
 The \fBunset\fR command returns an empty string as result.
-If \fI\-nocomplain\fR is specified as the first argument, any possible
+If \fB\-nocomplain\fR is specified as the first argument, any possible
 errors are suppressed.  The option may not be abbreviated, in order to
-disambiguate it from possible variable names.  The option \fI\-\-\fR
+disambiguate it from possible variable names.  The option \fB\-\-\fR
 indicates the end of the options, and should be used if you wish to
 remove a variable with the same name as any of the options.
 If an error occurs during variable deletion, any variables after the named one

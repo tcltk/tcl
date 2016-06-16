@@ -1,6 +1,4 @@
 /*
- * $Id: tclOOStubInit.c,v 1.12 2010/08/21 16:30:26 nijtmans Exp $
- *
  * This file is (mostly) automatically generated from tclOO.decls.
  * It is compiled and linked in with the tclOO package proper.
  */

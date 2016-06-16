@@ -4,8 +4,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: lset.n,v 1.20 2009/10/21 15:13:15 dkf Exp $
-'\" 
 .so man.macros
 .TH lset n 8.4 Tcl "Tcl Built-In Commands"
 .BS
@@ -28,13 +26,13 @@ Finally, it accepts a new value for an element of \fIvarName\fR.
 If no indices are presented, the command takes the form:
 .PP
 .CS
-lset varName newValue
+\fBlset\fR varName newValue
 .CE
 .PP
 or
 .PP
 .CS
-lset varName {} newValue
+\fBlset\fR varName {} newValue
 .CE
 .PP
 In this case, \fInewValue\fR replaces the old value of the variable
@@ -70,13 +68,13 @@ allowing the script to alter elements in sublists (or append elements
 to sublists).  The command,
 .PP
 .CS
-lset a 1 2 newValue
+\fBlset\fR a 1 2 newValue
 .CE
 .PP
 or
 .PP
 .CS
-lset a {1 2} newValue
+\fBlset\fR a {1 2} newValue
 .CE
 .PP
 replaces element 2 of sublist 1 with \fInewValue\fR.

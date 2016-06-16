@@ -4,19 +4,18 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\"
-'\" RCS: @(#) $Id: next.n,v 1.3 2008/10/17 10:22:25 dkf Exp $
-'\"
 .so man.macros
 .TH next n 0.1 TclOO "TclOO Commands"
 .BS
 '\" Note:  do not modify the .SH NAME line immediately below!
 .SH NAME
-next \- invoke superclass method implementations
+next, nextto \- invoke superclass method implementations
 .SH SYNOPSIS
 .nf
 package require TclOO
 
 \fBnext\fR ?\fIarg ...\fR?
+\fBnextto\fI class\fR ?\fIarg ...\fR?
 .fi
 .BE
 
@@ -32,6 +31,13 @@ of the next method in the method chain; if there are no further methods in the
 method chain, the result of \fBnext\fR will be an error. The arguments,
 \fIarg\fR, to \fBnext\fR are the arguments to pass to the next method in the
 chain.
+.PP
+The \fBnextto\fR command is the same as the \fBnext\fR command, except that it
+takes an additional \fIclass\fR argument that identifies a class whose
+implementation of the current method chain (see \fBinfo object\fR \fBcall\fR) should
+be used; the method implementation selected will be the one provided by the
+given class, and it must refer to an existing non-filter invocation that lies
+further along the chain than the current implementation.
 .SH "THE METHOD CHAIN"
 .PP
 When a method of an object is invoked, things happen in several stages:
@@ -76,7 +82,7 @@ resulting list of implementations as possible.
 .PP
 When an object has a list of filter names set upon it, or is an instance of a
 class (or has mixed in a class) that has a list of filter names set upon it,
-before every invokation of any method the filters are processed. Filter
+before every invocation of any method the filters are processed. Filter
 implementations are found in class traversal order, as are the lists of filter
 names (each of which is traversed in natural list order). Explicitly invoking
 a method used as a filter will cause that method to be invoked twice, once as
@@ -87,7 +93,7 @@ forward to the proper implementation of the method (which it does by invoking
 the \fBnext\fR command as filters are inserted into the front of the method
 call chain) and is responsible for returning the result of \fBnext\fR.
 .PP
-Filters are not invoked when processing an invokation of the \fBunknown\fR
+Filters are not invoked when processing an invocation of the \fBunknown\fR
 method because of a failure to locate a method implementation, or when
 invoking either constructors or destructors.
 .SH EXAMPLES
@@ -129,7 +135,7 @@ in the superclass, args = pureSynthesis
 after chaining from subclass
 before chaining from subclass, args = 
 in the superclass, args = a b
-in the superclassm args = pureSynthesis
+in the superclass, args = pureSynthesis
 after chaining from subclass
 .CE
 .PP
@@ -159,7 +165,7 @@ oo::class create cache {
     method flushCache {} {
         my variable ValueCache
         unset ValueCache
-        \fI# Skip the cacheing\fR
+        \fI# Skip the caching\fR
         return -level 2 ""
     }
 }

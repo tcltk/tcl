@@ -8,10 +8,7 @@
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 #
 # Copyright (c) 2001-2003 David Gravereaux.
-# Copyright (c) 2003-2007 Patrick Thoyts
-#
-#------------------------------------------------------------------------------
-# RCS: @(#) $Id: rules.vc,v 1.44 2010/08/31 20:48:17 nijtmans Exp $
+# Copyright (c) 2003-2008 Patrick Thoyts
 #------------------------------------------------------------------------------
 
 !ifndef _RULES_VC
@@ -28,18 +25,6 @@ _INSTALLDIR	= C:\Program Files\Tcl
 !else
 ### Fix the path separators.
 _INSTALLDIR	= $(INSTALLDIR:/=\)
-!endif
-
-!ifndef MACHINE
-!if "$(CPU)" == "" || "$(CPU)" == "i386"
-MACHINE		= IX86
-!else
-MACHINE         = $(CPU)
-!endif
-!endif
-
-!ifndef CFG_ENCODING
-CFG_ENCODING	= \"cp1252\"
 !endif
 
 #----------------------------------------------------------
@@ -66,6 +51,50 @@ NULL    = \NUL # Used in testing directory existence
 ERRNULL = >NUL # Win9x shell cannot redirect stderr
 !endif
 MKDIR   = mkdir
+
+#------------------------------------------------------------------------------
+# Determine the host and target architectures and compiler version.
+#------------------------------------------------------------------------------
+
+_HASH=^#
+_VC_MANIFEST_EMBED_EXE=
+_VC_MANIFEST_EMBED_DLL=
+VCVER=0
+!if ![echo VCVERSION=_MSC_VER > vercl.x] \
+    && ![echo $(_HASH)if defined(_M_IX86) >> vercl.x] \
+    && ![echo ARCH=IX86 >> vercl.x] \
+    && ![echo $(_HASH)elif defined(_M_AMD64) >> vercl.x] \
+    && ![echo ARCH=AMD64 >> vercl.x] \
+    && ![echo $(_HASH)endif >> vercl.x] \
+    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
+!include vercl.i
+!if ![echo VCVER= ^\> vercl.vc] \
+    && ![set /a $(VCVERSION) / 100 - 6 >> vercl.vc]
+!include vercl.vc
+!endif
+!endif
+!if ![del $(ERRNUL) /q/f vercl.x vercl.i vercl.vc]
+!endif
+
+!if ![reg query HKLM\Hardware\Description\System\CentralProcessor\0 /v Identifier | findstr /i x86]
+NATIVE_ARCH=IX86
+!else
+NATIVE_ARCH=AMD64
+!endif
+
+# Since MSVC8 we must deal with manifest resources.
+!if $(VCVERSION) >= 1400
+_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
+_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
+!endif
+
+!ifndef MACHINE
+MACHINE=$(ARCH)
+!endif
+
+!ifndef CFG_ENCODING
+CFG_ENCODING	= \"cp1252\"
+!endif
 
 !message ===============================================================================
 
@@ -179,34 +208,6 @@ LINKERFLAGS     =-ltcg
 !endif
 
 #----------------------------------------------------------
-# MSVC8 (ships with Visual Studio 2005) generates a manifest
-# file that we should link into the binaries. This is how.
-#----------------------------------------------------------
-
-_VC_MANIFEST_EMBED_EXE=
-_VC_MANIFEST_EMBED_DLL=
-VCVER=0
-!if ![echo VCVERSION=_MSC_VER > vercl.x] \
-    && ![cl -nologo -TC -P vercl.x $(ERRNULL)]
-!include vercl.i
-!if $(VCVERSION) >= 1500
-VCVER=9
-!elseif $(VCVERSION) >= 1400
-VCVER=8
-!elseif $(VCVERSION) >= 1300
-VCVER=7
-!elseif $(VCVERSION) >= 1200
-VCVER=6
-!endif
-!endif
-
-# Since MSVC8 we must deal with manifest resources.
-!if $(VCVERSION) >= 1400
-_VC_MANIFEST_EMBED_EXE=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;1
-_VC_MANIFEST_EMBED_DLL=if exist $@.manifest mt -nologo -manifest $@.manifest -outputresource:$@;2
-!endif
-
-#----------------------------------------------------------
 # Decode the options requested.
 #----------------------------------------------------------
 
@@ -217,7 +218,7 @@ DEBUG		= 0
 SYMBOLS		= 0
 PROFILE		= 0
 PGO		= 0
-MSVCRT		= 0
+MSVCRT		= 1
 LOIMPACT	= 0
 TCL_USE_STATIC_PACKAGES	= 0
 USE_THREAD_ALLOC = 1
@@ -233,18 +234,23 @@ STATIC_BUILD	= 0
 !message *** Doing msvcrt
 MSVCRT		= 1
 !else
+!if !$(STATIC_BUILD)
+MSVCRT		= 1
+!else
 MSVCRT		= 0
 !endif
-!if [nmakehlp -f $(OPTS) "staticpkg"]
+!endif
+!if [nmakehlp -f $(OPTS) "staticpkg"] && $(STATIC_BUILD)
 !message *** Doing staticpkg
 TCL_USE_STATIC_PACKAGES	= 1
 !else
 TCL_USE_STATIC_PACKAGES	= 0
 !endif
 !if [nmakehlp -f $(OPTS) "nothreads"]
+!message *** Compile explicitly for non-threaded tcl
 TCL_THREADS	= 0
+USE_THREAD_ALLOC= 0
 !else
-!message *** Doing threads
 TCL_THREADS	= 1
 USE_THREAD_ALLOC= 1
 !endif
@@ -286,7 +292,7 @@ LOIMPACT	= 0
 USE_THREAD_ALLOC = 1
 !endif
 !if [nmakehlp -f $(OPTS) "tclalloc"]
-!message *** Doing thrdalloc
+!message *** Doing tclalloc
 USE_THREAD_ALLOC = 0
 !endif
 !if [nmakehlp -f $(OPTS) "unchecked"]
@@ -296,15 +302,6 @@ UNCHECKED = 1
 UNCHECKED = 0
 !endif
 !endif
-
-
-!if !$(STATIC_BUILD)
-# Make sure we don't build overly fat DLLs.
-MSVCRT		= 1
-# We shouldn't statically put the extensions inside the shell when dynamic.
-TCL_USE_STATIC_PACKAGES = 0
-!endif
-
 
 #----------------------------------------------------------
 # Figure-out how to name our intermediate and output directories.
@@ -347,10 +344,8 @@ TMP_DIRFULL = .\$(BUILDDIRTOP)\$(PROJECT)_ThreadedDynamicStaticX
 TMP_DIRFULL = $(TMP_DIRFULL:Static=)
 SUFX	    = $(SUFX:s=)
 EXT	    = dll
-!if $(MSVCRT)
 TMP_DIRFULL = $(TMP_DIRFULL:X=)
 SUFX	    = $(SUFX:x=)
-!endif
 !else
 TMP_DIRFULL = $(TMP_DIRFULL:Dynamic=)
 EXT	    = lib
@@ -472,10 +467,11 @@ OPTDEFINES	= $(OPTDEFINES) -DSTATIC_BUILD
 OPTDEFINES	= $(OPTDEFINES) -DTCL_NO_DEPRECATED
 !endif
 
-!if $(DEBUG)
-OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DEBUG
-!elseif $(OPTIMIZING)
+!if !$(DEBUG)
+OPTDEFINES	= $(OPTDEFINES) -DNDEBUG
+!if $(OPTIMIZING)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_OPTIMIZED
+!endif
 !endif
 !if $(PROFILE)
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
@@ -483,7 +479,9 @@ OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_PROFILED
 !if "$(MACHINE)" == "IA64" || "$(MACHINE)" == "AMD64"
 OPTDEFINES	= $(OPTDEFINES) -DTCL_CFG_DO64BIT
 !endif
-
+!if $(VCVERSION) < 1300
+OPTDEFINES	= $(OPTDEFINES) -DNO_STRTOI64
+!endif
 
 #----------------------------------------------------------
 # Locate the Tcl headers to build against
@@ -579,12 +577,6 @@ Failed to find tcl.h.  The TCLDIR macro does not appear correct.
 
 TCL_VERSION	= $(TCL_MAJOR_VERSION)$(TCL_MINOR_VERSION)
 
-!if $(TCL_VERSION) < 81
-TCL_DOES_STUBS	= 0
-!else
-TCL_DOES_STUBS	= 1
-!endif
-
 !if $(TCLINSTALL)
 TCLSH		= "$(_TCLDIR)\bin\tclsh$(TCL_VERSION)$(SUFX).exe"
 !if !exist($(TCLSH)) && $(TCL_THREADS)
@@ -594,7 +586,7 @@ TCLSTUBLIB	= "$(_TCLDIR)\lib\tclstub$(TCL_VERSION).lib"
 TCLIMPLIB	= "$(_TCLDIR)\lib\tcl$(TCL_VERSION)$(SUFX).lib"
 TCL_LIBRARY	= $(_TCLDIR)\lib
 TCLREGLIB	= "$(_TCLDIR)\lib\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\lib\tcldde13$(SUFX:t=).lib"
+TCLDDELIB	= "$(_TCLDIR)\lib\tcldde14$(SUFX:t=).lib"
 COFFBASE	= \must\have\tcl\sources\to\build\this\target
 TCLTOOLSDIR	= \must\have\tcl\sources\to\build\this\target
 TCL_INCLUDES    = -I"$(_TCLDIR)\include"
@@ -607,7 +599,7 @@ TCLSTUBLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclstub$(TCL_VERSION).lib"
 TCLIMPLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcl$(TCL_VERSION)$(SUFX).lib"
 TCL_LIBRARY	= $(_TCLDIR)\library
 TCLREGLIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tclreg13$(SUFX:t=).lib"
-TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde13$(SUFX:t=).lib"
+TCLDDELIB	= "$(_TCLDIR)\win\$(BUILDDIRTOP)\tcldde14$(SUFX:t=).lib"
 COFFBASE	= "$(_TCLDIR)\win\coffbase.txt"
 TCLTOOLSDIR	= $(_TCLDIR)\tools
 TCL_INCLUDES	= -I"$(_TCLDIR)\generic" -I"$(_TCLDIR)\win"
@@ -699,6 +691,7 @@ TK_INCLUDES     = -I"$(_TKDIR)\generic" -I"$(_TKDIR)\win" -I"$(_TKDIR)\xlib"
 !message *** Suffix for binaries will be '$(SUFX)'
 !message *** Optional defines are '$(OPTDEFINES)'
 !message *** Compiler version $(VCVER). Target machine is $(MACHINE)
+!message *** Host architecture is $(NATIVE_ARCH)
 !message *** Compiler options '$(COMPILERFLAGS) $(OPTIMIZATIONS) $(DEBUGFLAGS) $(WARNINGS)'
 !message *** Link options '$(LINKERFLAGS)'
 

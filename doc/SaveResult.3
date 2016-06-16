@@ -5,8 +5,6 @@
 '\" See the file "license.terms" for information on usage and redistribution
 '\" of this file, and for a DISCLAIMER OF ALL WARRANTIES.
 '\" 
-'\" RCS: @(#) $Id: SaveResult.3,v 1.10 2008/06/29 22:28:24 dkf Exp $
-'\" 
 .so man.macros
 .TH Tcl_SaveResult 3 8.1 Tcl "Tcl Library Procedures"
 .BS
@@ -98,12 +96,12 @@ or \fBTcl_DiscardInterpState\fR to avoid a memory leak.  Once
 the \fBTcl_InterpState\fR token is passed to one of them, the
 token is no longer valid and should not be used anymore.
 .PP
-\fBTcl_SaveResult\fR moves the string and object results
+\fBTcl_SaveResult\fR moves the string and value results
 of \fIinterp\fR into the location specified by \fIstatePtr\fR.
 \fBTcl_SaveResult\fR clears the result for \fIinterp\fR and
 leaves the result in its normal empty initialized state.
 .PP
-\fBTcl_RestoreResult\fR moves the string and object results from
+\fBTcl_RestoreResult\fR moves the string and value results from
 \fIstatePtr\fR back into \fIinterp\fR.  Any result or error that was
 already in the interpreter will be cleared.  The \fIstatePtr\fR is left
 in an uninitialized state and cannot be used until another call to

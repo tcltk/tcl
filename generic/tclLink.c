@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclLink.c,v 1.26 2008/10/28 23:29:54 nijtmans Exp $
  */
 
 #include "tclInt.h"
@@ -114,7 +112,15 @@ Tcl_LinkVar(
     Link *linkPtr;
     int code;
 
-    linkPtr = (Link *) ckalloc(sizeof(Link));
+    linkPtr = (Link *) Tcl_VarTraceInfo(interp, varName, TCL_GLOBAL_ONLY,
+	    LinkTraceProc, (ClientData) NULL);
+    if (linkPtr != NULL) {
+	Tcl_SetObjResult(interp, Tcl_ObjPrintf(
+		"variable '%s' is already linked", varName));
+	return TCL_ERROR;
+    }
+
+    linkPtr = ckalloc(sizeof(Link));
     linkPtr->interp = interp;
     linkPtr->varName = Tcl_NewStringObj(varName, -1);
     Tcl_IncrRefCount(linkPtr->varName);
@@ -129,14 +135,14 @@ Tcl_LinkVar(
     if (Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, objPtr,
 	    TCL_GLOBAL_ONLY|TCL_LEAVE_ERR_MSG) == NULL) {
 	Tcl_DecrRefCount(linkPtr->varName);
-	ckfree((char *) linkPtr);
+	ckfree(linkPtr);
 	return TCL_ERROR;
     }
     code = Tcl_TraceVar(interp, varName, TCL_GLOBAL_ONLY|TCL_TRACE_READS
 	    |TCL_TRACE_WRITES|TCL_TRACE_UNSETS, LinkTraceProc, linkPtr);
     if (code != TCL_OK) {
 	Tcl_DecrRefCount(linkPtr->varName);
-	ckfree((char *) linkPtr);
+	ckfree(linkPtr);
     }
     return code;
 }
@@ -174,7 +180,7 @@ Tcl_UnlinkVar(
 	    TCL_GLOBAL_ONLY|TCL_TRACE_READS|TCL_TRACE_WRITES|TCL_TRACE_UNSETS,
 	    LinkTraceProc, linkPtr);
     Tcl_DecrRefCount(linkPtr->varName);
-    ckfree((char *) linkPtr);
+    ckfree(linkPtr);
 }
 
 /*
@@ -268,7 +274,7 @@ LinkTraceProc(
     if (flags & TCL_TRACE_UNSETS) {
 	if (Tcl_InterpDeleted(interp)) {
 	    Tcl_DecrRefCount(linkPtr->varName);
-	    ckfree((char *) linkPtr);
+	    ckfree(linkPtr);
 	} else if (flags & TCL_TRACE_DESTROYED) {
 	    Tcl_ObjSetVar2(interp, linkPtr->varName, NULL, ObjValue(linkPtr),
 		    TCL_GLOBAL_ONLY);

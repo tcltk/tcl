@@ -11,13 +11,14 @@
 #
 # See the file "license.terms" for information on usage and redistribution
 # of this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: string.test,v 1.78 2010/03/01 23:25:43 ferrieux Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest
     namespace import -force ::tcltest::*
 }
+
+::tcltest::loadTestedCommands
+catch [list package require -exact Tcltest [info patchlevel]]
 
 # Some tests require the testobj command
 
@@ -314,10 +315,10 @@ test string-6.4 {string is, too many args} {
 } {1 {wrong # args: should be "string is class ?-strict? ?-failindex var? str"}}
 test string-6.5 {string is, class check} {
     list [catch {string is bogus str} msg] $msg
-} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {bad class "bogus": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.6 {string is, ambiguous class} {
     list [catch {string is al str} msg] $msg
-} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
+} {1 {ambiguous class "al": must be alnum, alpha, ascii, control, boolean, digit, double, entier, false, graph, integer, list, lower, print, punct, space, true, upper, wideinteger, wordchar, or xdigit}}
 test string-6.7 {string is alpha, all ok} {
     string is alpha -strict -failindex var abc
 } 1
@@ -594,7 +595,7 @@ test string-6.90 {string is integer, bad integers} {
     foreach num $numbers {
 	lappend result [string is int -strict $num]
     }
-    set result
+    return $result
 } {1 1 0 0 0 1 0 0}
 test string-6.91 {string is double, bad doubles} {
     set result ""
@@ -602,20 +603,20 @@ test string-6.91 {string is double, bad doubles} {
     foreach num $numbers {
 	lappend result [string is double -strict $num]
     }
-    set result
+    return $result
 } {1 1 0 0 0 1 0 0}
-test string-6.92 {string is double, 32-bit overflow} {
+test string-6.92 {string is integer, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
     list [string is integer -failindex var $x] $var
 } {0 -1}
-test string-6.93 {string is double, 32-bit overflow} {
+test string-6.93 {string is integer, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
     append x ""
     list [string is integer -failindex var $x] $var
 } {0 -1}
-test string-6.94 {string is double, 32-bit overflow} {
+test string-6.94 {string is integer, 32-bit overflow} {
     # Bug 718878
     set x 0x100000000
     list [string is integer -failindex var [expr {$x}]] $var
@@ -666,7 +667,7 @@ test string-6.107 {string is integer, bad integers} {
     foreach num $numbers {
 	lappend result [string is wideinteger -strict $num]
     }
-    set result
+    return $result
 } {1 1 0 0 0 1 0 0}
 test string-6.108 {string is double, Bug 1382287} {
     set x 2turtledoves
@@ -676,6 +677,78 @@ test string-6.108 {string is double, Bug 1382287} {
 test string-6.109 {string is double, Bug 1360532} {
     string is double 1\u00a0
 } 0
+test string-6.110 {string is entier, true} {
+    string is entier +1234567890
+} 1
+test string-6.111 {string is entier, true on type} {
+    string is entier [expr wide(50.0)]
+} 1
+test string-6.112 {string is entier, true} {
+    string is entier [list -10]
+} 1
+test string-6.113 {string is entier, true as hex} {
+    string is entier 0xabcdef
+} 1
+test string-6.114 {string is entier, true as octal} {
+    string is entier 0123456
+} 1
+test string-6.115 {string is entier, true with whitespace} {
+    string is entier "  \n1234\v"
+} 1
+test string-6.116 {string is entier, false} {
+    list [string is entier -fail var 123abc] $var
+} {0 3}
+test string-6.117 {string is entier, false} {
+    list [string is entier -fail var 123123123123123123123123123123123123123123123123123123123123123123123123123123123123abc] $var
+} {0 84}
+test string-6.118 {string is entier, false} {
+    list [string is entier -fail var [expr double(1)]] $var
+} {0 1}
+test string-6.119 {string is entier, false} {
+    list [string is entier -fail var "    "] $var
+} {0 0}
+test string-6.120 {string is entier, false on bad octal} {
+    list [string is entier -fail var 0o36963] $var
+} {0 4}
+test string-6.121.1 {string is entier, false on bad octal} {
+    list [string is entier -fail var 0o36963] $var
+} {0 4}
+test string-6.122 {string is entier, false on bad hex} {
+    list [string is entier -fail var 0X345XYZ] $var
+} {0 5}
+test string-6.123 {string is entier, bad integers} {
+    # SF bug #634856
+    set result ""
+    set numbers [list 1 +1 ++1 +-1 -+1 -1 --1 "- +1"]
+    foreach num $numbers {
+	lappend result [string is entier -strict $num]
+    }
+    return $result
+} {1 1 0 0 0 1 0 0}
+test string-6.124 {string is entier, true} {
+    string is entier +1234567890123456789012345678901234567890
+} 1
+test string-6.125 {string is entier, true} {
+    string is entier [list -10000000000000000000000000000000000000000000000000000000000000000000000000000000000000]
+} 1
+test string-6.126 {string is entier, true as hex} {
+    string is entier 0xabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdefabcdef
+} 1
+test string-6.127 {string is entier, true as octal} {
+    string is entier 0123456112341234561234565623456123456123456123456123456123456123456123456123456123456
+} 1
+test string-6.128 {string is entier, true with whitespace} {
+    string is entier "  \n12340000000000000000000000000000000000000000000000000000000000000000000000000000000000000\v"
+} 1
+test string-6.129 {string is entier, false on bad octal} {
+    list [string is entier -fail var 0o1234561123412345612345656234561234561234561234561234561234561234561234561234561234536963] $var
+} {0 87}
+test string-6.130.1 {string is entier, false on bad octal} {
+    list [string is entier -fail var 0o1234561123412345612345656234561234561234561234561234561234561234561234561234561234536963] $var
+} {0 87}
+test string-6.131 {string is entier, false on bad hex} {
+    list [string is entier -fail var 0X12345611234123456123456562345612345612345612345612345612345612345612345612345612345345XYZ] $var
+} {0 88}
 
 catch {rename largest_int {}}
 
@@ -1411,8 +1484,8 @@ test string-18.11 {string trim, unicode} {
     string trim "\xe7\xe8 AB\xe7C \xe8\xe7" \xe7\xe8
 } " AB\xe7C "
 test string-18.12 {string trim, unicode default} {
-    string trim ABC\u1361\u1680\u3000
-} ABC
+    string trim \ufeff\x00\u0085\u00a0\u1680\u180eABC\u1361\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u202f\u205f\u3000
+} ABC\u1361
 
 test string-19.1 {string trimleft} {
     list [catch {string trimleft} msg] $msg
@@ -1421,8 +1494,8 @@ test string-19.2 {string trimleft} {
     string trimleft "    XYZ      "
 } {XYZ      }
 test string-19.3 {string trimleft, unicode default} {
-    string trimleft \u1361\u1680\u3000ABC
-} ABC
+    string trimleft \ufeff\u0085\u00a0\x00\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u202f\u205f\u3000\u1361ABC
+} \u1361ABC
 
 test string-20.1 {string trimright errors} {
     list [catch {string trimright} msg] $msg
@@ -1440,8 +1513,8 @@ test string-20.5 {string trimright} {
     string trimright ""
 } {}
 test string-20.6 {string trimright, unicode default} {
-    string trimright ABC\u1361\u1680\u3000
-} ABC
+    string trimright ABC\u1361\u0085\x00\u00a0\u1680\u180e\u2000\u2001\u2002\u2003\u2004\u2005\u2006\u2007\u2008\u2009\u200a\u200b\u2028\u2029\u202f\u205f\u3000
+} ABC\u1361
 
 test string-21.1 {string wordend} {
     list [catch {string wordend a} msg] $msg
@@ -1620,6 +1693,22 @@ test string-24.11 {string reverse command - corner case} {
     set y \udead
     string reverse $x$y
 } \udead\ubeef
+test string-24.12 {string reverse command - corner case} {
+    set x \ubeef
+    set y \udead
+    string is ascii [string reverse $x$y]
+} 0
+test string-24.13 {string reverse command - pure Unicode string} {
+    string reverse [string range \ubeef\udead\ubeef\udead\ubeef\udead 1 5]
+} \udead\ubeef\udead\ubeef\udead
+test string-24.14 {string reverse command - pure bytearray} {
+    binary scan [string reverse [binary format H* 010203]] H* x
+    set x
+} 030201
+test string-24.15 {string reverse command - pure bytearray} {
+    binary scan [tcl::string::reverse [binary format H* 010203]] H* x
+    set x
+} 030201
 
 test string-25.1 {string is list} {
     string is list {a b c}
@@ -1687,10 +1776,10 @@ test string-26.3.1 {tcl::prefix, bad args} -body {
 } -returnCodes 1 -result {error options must have an even number of elements}
 test string-26.3.2 {tcl::prefix, bad args} -body {
     tcl::prefix match -error str1 str2
-} -returnCodes 1 -result {missing error options}
+} -returnCodes 1 -result {missing value for -error}
 test string-26.4 {tcl::prefix, bad args} -body {
     tcl::prefix match -message str1 str2
-} -returnCodes 1 -result {missing message}
+} -returnCodes 1 -result {missing value for -message}
 test string-26.5 {tcl::prefix} {
     tcl::prefix match {apa bepa cepa depa} cepa
 } cepa

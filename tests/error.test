@@ -10,8 +10,6 @@
 #
 # See the file "license.terms" for information on usage and redistribution of
 # this file, and for a DISCLAIMER OF ALL WARRANTIES.
-#
-# RCS: @(#) $Id: error.test,v 1.33 2010/06/02 23:36:26 ferrieux Exp $
 
 if {[lsearch [namespace children] ::tcltest] == -1} {
     package require tcltest 2
@@ -140,7 +138,7 @@ test error-3.3 {errors in catch command} {
     catch {unset a}
     set a(0) 22
     list [catch {catch {format 44} a} msg] $msg
-} {1 {couldn't save command result in variable}}
+} {1 {can't set "a": variable is array}}
 catch {unset a}
 
 # More tests related to errorInfo and errorCode
@@ -174,13 +172,13 @@ test error-4.6 {errorstack via info } -body {
     proc g x {error G:$x}
     catch {f 12}
     info errorstack
-} -match glob -result {CALL {g 1212} CALL {f 12} UP 1}
+} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
 test error-4.7 {errorstack via options dict } -body {
     proc f x {g $x$x}
     proc g x {error G:$x}
     catch {f 12} m d
     dict get $d -errorstack
-} -match glob -result {CALL {g 1212} CALL {f 12} UP 1}
+} -match glob -result {INNER * CALL {g 1212} CALL {f 12} UP 1}
 
 # Errors in error command itself
 
@@ -244,7 +242,7 @@ test error-6.10 {catch must reset errorstack} -body {
 	catch {f 13}
 	set e2 [info errorstack]
 	list $e1 $e2
-} -match glob -result {{CALL {g 1212} CALL {f 12} UP 1} {CALL {g 1313} CALL {f 13} UP 1}}
+} -match glob -result {{INNER * CALL {g 1212} CALL {f 12} UP 1} {INNER * CALL {g 1313} CALL {f 13} UP 1}}
 
 test error-7.1 {Bug 1397843} -body {
     variable cmds
@@ -419,7 +417,7 @@ test error-12.4 {try with result/opts variable assignment in on handler} {
 } {bar,FOO}
 test error-12.5 {try with result/opts variable assignment in on handler, vars remain in scope} {
     try { throw FOO bar } on error {res opts} { list d e f }
-    set r "$res,[dict get $opts -errorcode]"  
+    set r "$res,[dict get $opts -errorcode]"
 } {bar,FOO}
 test error-12.6 {try result is propagated if no matching handler} {
     try { list a b c } on error {} { list d e f }
@@ -461,7 +459,7 @@ test error-13.8 {try with multiple handlers and finally (ok)} {
     try list on error {} {} trap {} {} {} finally {}
 } {}
 test error-13.9 {last handler body can't be a fallthrough #1} -body {
-    try list on error {} {} on break {} - 
+    try list on error {} {} on break {} -
 } -returnCodes error -result {last non-finally clause must not have a body of "-"}
 test error-13.10 {last handler body can't be a fallthrough #2} -body {
     try list on error {} {} on break {} - finally { list d e f }
@@ -473,7 +471,7 @@ test error-14.1 {try with multiple handlers (only one matches) #1} {
     try { throw FOO bar } on ok {} { list a b c } trap FOO {} { list d e f }
 } {d e f}
 test error-14.2 {try with multiple handlers (only one matches) #2} {
-    try { throw FOO bar } trap FOO {} { list d e f } on ok {} { list a b c } 
+    try { throw FOO bar } trap FOO {} { list d e f } on ok {} { list a b c }
 } {d e f}
 test error-14.3 {try with multiple handlers (only one matches) #3} {
     try {
@@ -484,7 +482,7 @@ test error-14.3 {try with multiple handlers (only one matches) #3} {
 	list d e f
     } on ok {} {
 	list a b c
-    } 
+    }
 } {d e f}
 test error-14.4 {try with multiple matching handlers (only the first in left-to-right order runs) #1} {
     try { throw FOO bar } on error {} { list a b c } trap FOO {} { list d e f }
@@ -595,16 +593,16 @@ test error-16.6 {try with variable assignment and propagation #1} {
     catch {
 	try { throw FOO bar } trap FOO {em} { throw BAR baz }
     }
-    set em  
+    set em
 } {bar}
 test error-16.7 {try with variable assignment and propagation #2} {
     catch {
 	try { throw FOO bar } trap FOO {em opts} { throw BAR baz }
     }
-    list $em [dict get $opts -errorcode]  
+    list $em [dict get $opts -errorcode]
 } {bar FOO}
 test error-16.8 {exception chaining (try=ok, handler=error)} {
-    #FIXME is the intent of this test correct?  
+    #FIXME is the intent of this test correct?
     catch {
 	try { list a b c } on ok {em opts} { throw BAR baz }
     } tryem tryopts
@@ -688,7 +686,7 @@ test error-17.11 {successful finally doesn't affect variable assignment or propa
     catch {
 	try { throw FOO bar } trap FOO {em opts} { throw BAR baz } finally { list d e f }
     }
-    list $em [dict get $opts -errorcode]  
+    list $em [dict get $opts -errorcode]
 } {bar FOO}
 
 # try tests - propagation (exceptions in finally, exception chaining)
@@ -709,11 +707,11 @@ test error-18.5 {exception in finally doesn't affect variable assignment} {
     catch {
 	try { throw FOO bar } trap FOO {em opts} { throw BAR baz } finally { throw BAZ zing }
     }
-    list $em [dict get $opts -errorcode]  
+    list $em [dict get $opts -errorcode]
 } {bar FOO}
 test error-18.6 {exception chaining in finally (try=ok)} {
     catch {
-	list a b c 
+	list a b c
     } em expopts
     catch {
 	try { list a b c } finally { throw BAR foo }
@@ -784,14 +782,14 @@ test error-19.1 {try with fallthrough body #1} {
 } {1}
 test error-19.2 {try with fallthrough body #2} {
     set RES {}
-    try { 
-	throw FOO bar 
+    try {
+	throw FOO bar
     } trap BAR {} {
     } trap FOO {} - trap {} {} {
 	set RES foo
     } on error {} {
 	set RES err
-    }  
+    }
     set RES
 } {foo}
 test error-19.3 {try with cascade fallthrough} {
@@ -807,22 +805,22 @@ test error-19.4 {multiple unrelated fallthroughs #1} {
     set RES {}
     try {
 	throw FOO bar
-    } trap FOO {} - trap BAR {} { 
+    } trap FOO {} - trap BAR {} {
 	set RES foo
     } trap {} {} - on error {} {
 	set RES err
-    } 
+    }
     set RES
 } {foo}
 test error-19.5 {multiple unrelated fallthroughs #2} {
     set RES {}
     try {
 	throw BAZ zing
-    } trap FOO {} - trap BAR {} { 
+    } trap FOO {} - trap BAR {} {
 	set RES foo
     } trap {} {} - on error {} {
 	set RES err
-    } 
+    }
     set RES
 } {err}
 proc addmsg msg {
@@ -912,6 +910,72 @@ test error-19.10 {compiled try with chained clauses} -setup {
 } -cleanup {
     unset RES
 } -result {handler {ok good finally}}
+test error-19.11 {compiled try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    try {
+		addmsg body
+		return a
+	    } on return {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+test error-19.12 {interpreted try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {try {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    $try {
+		addmsg body
+		return a
+	    } on return {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error} try
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
+test error-19.13 {compiled try and errors on variable write} -setup {
+    set RES {}
+} -body {
+    apply {{} {
+	array set foo {bar boo}
+	set bar unset
+	catch {
+	    try {
+		addmsg body
+		return a
+	    } on return {bar foo} - on error {bar foo} {
+		addmsg handler
+		return b
+	    } finally {
+		addmsg finally,$bar
+	    }
+	} msg
+	addmsg $msg
+    } ::tcl::test::error}
+} -cleanup {
+    unset RES
+} -result {body finally,a {can't set "foo": variable is array}}
 rename addmsg {}
 
 # FIXME test what vars get set on fallthough ... what is the correct behavior?
@@ -990,7 +1054,7 @@ namespace delete ::tcl::test::error
 # cleanup
 catch {rename p ""}
 ::tcltest::cleanupTests
-return 
+return
 
 # Local Variables:
 # mode: tcl

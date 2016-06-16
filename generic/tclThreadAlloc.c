@@ -10,8 +10,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclThreadAlloc.c,v 1.32 2010/03/05 14:34:04 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -147,6 +145,26 @@ static Tcl_Mutex *objLockPtr;
 static Cache sharedCache;
 static Cache *sharedPtr = &sharedCache;
 static Cache *firstCachePtr = &sharedCache;
+
+#if defined(HAVE_FAST_TSD)
+static __thread Cache *tcachePtr;
+
+# define GETCACHE(cachePtr)			\
+    do {					\
+	if (!tcachePtr) {			\
+	    tcachePtr = GetCache();		\
+	}					\
+	(cachePtr) = tcachePtr;			\
+    } while (0)
+#else
+# define GETCACHE(cachePtr)			\
+    do {					\
+	(cachePtr) = TclpGetAllocCache();	\
+	if ((cachePtr) == NULL) {		\
+	    (cachePtr) = GetCache();		\
+	}					\
+    } while (0)
+#endif
 
 /*
  *----------------------------------------------------------------------
@@ -310,10 +328,7 @@ TclpAlloc(
     }
 #endif
 
-    cachePtr = TclpGetAllocCache();
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * Increment the requested size to include room for the Block structure.
@@ -380,10 +395,7 @@ TclpFree(
 	return;
     }
 
-    cachePtr = TclpGetAllocCache();
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * Get the block back from the user pointer and call system free directly
@@ -455,10 +467,7 @@ TclpRealloc(
     }
 #endif
 
-    cachePtr = TclpGetAllocCache();
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * If the block is not a system block and fits in place, simply return the
@@ -532,12 +541,10 @@ TclpRealloc(
 Tcl_Obj *
 TclThreadAllocObj(void)
 {
-    register Cache *cachePtr = TclpGetAllocCache();
+    register Cache *cachePtr;
     register Tcl_Obj *objPtr;
 
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * Get this thread's obj list structure and move or allocate new objs if
@@ -606,11 +613,9 @@ void
 TclThreadFreeObj(
     Tcl_Obj *objPtr)
 {
-    Cache *cachePtr = TclpGetAllocCache();
+    Cache *cachePtr;
 
-    if (cachePtr == NULL) {
-	cachePtr = GetCache();
-    }
+    GETCACHE(cachePtr);
 
     /*
      * Get this thread's list and push on the free Tcl_Obj.
@@ -807,15 +812,7 @@ LockBucket(
     Cache *cachePtr,
     int bucket)
 {
-#if 0
-    if (Tcl_MutexTryLock(bucketInfo[bucket].lockPtr) != TCL_OK) {
-	Tcl_MutexLock(bucketInfo[bucket].lockPtr);
-	cachePtr->buckets[bucket].numWaits++;
-	sharedPtr->buckets[bucket].numWaits++;
-    }
-#else
     Tcl_MutexLock(bucketInfo[bucket].lockPtr);
-#endif
     cachePtr->buckets[bucket].numLocks++;
     sharedPtr->buckets[bucket].numLocks++;
 }

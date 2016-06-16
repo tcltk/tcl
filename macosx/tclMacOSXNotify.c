@@ -11,8 +11,6 @@
  *
  * See the file "license.terms" for information on usage and redistribution of
  * this file, and for a DISCLAIMER OF ALL WARRANTIES.
- *
- * RCS: @(#) $Id: tclMacOSXNotify.c,v 1.29 2010/03/25 14:02:12 dkf Exp $
  */
 
 #include "tclInt.h"
@@ -969,7 +967,7 @@ Tcl_CreateFileHandler(
 	}
     }
     if (filePtr == NULL) {
-	filePtr = (FileHandler *) ckalloc(sizeof(FileHandler));
+	filePtr = ckalloc(sizeof(FileHandler));
 	filePtr->fd = fd;
 	filePtr->readyMask = 0;
 	filePtr->nextPtr = tsdPtr->firstFileHandlerPtr;
@@ -1097,7 +1095,7 @@ Tcl_DeleteFileHandler(
     } else {
 	prevPtr->nextPtr = filePtr->nextPtr;
     }
-    ckfree((char *) filePtr);
+    ckfree(filePtr);
 }
 
 /*
@@ -1352,8 +1350,8 @@ QueueFileEvents(
 	 */
 
 	if (filePtr->readyMask == 0) {
-	    FileHandlerEvent *fileEvPtr = (FileHandlerEvent *)
-		    ckalloc(sizeof(FileHandlerEvent));
+	    FileHandlerEvent *fileEvPtr = ckalloc(sizeof(FileHandlerEvent));
+
 	    fileEvPtr->header.proc = FileHandlerEventProc;
 	    fileEvPtr->fd = filePtr->fd;
 	    Tcl_QueueEvent((Tcl_Event *) fileEvPtr, TCL_QUEUE_TAIL);
