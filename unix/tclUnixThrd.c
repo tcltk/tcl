@@ -659,6 +659,7 @@ TclpReaddir(
     return TclOSreaddir(dir);
 }
 
+#undef TclpInetNtoa
 char *
 TclpInetNtoa(
     struct in_addr addr)

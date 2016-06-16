@@ -23,22 +23,8 @@ const TclPlatStubs *tclPlatStubsPtr = NULL;
 const TclIntStubs *tclIntStubsPtr = NULL;
 const TclIntPlatStubs *tclIntPlatStubsPtr = NULL;
 
-static const TclStubs *
-HasStubSupport(
-    Tcl_Interp *interp)
-{
-    Interp *iPtr = (Interp *) interp;
-
-    if (iPtr->stubTable && (iPtr->stubTable->magic == TCL_STUB_MAGIC)) {
-	return iPtr->stubTable;
-    }
-    iPtr->result = (char *) "interpreter uses an incompatible stubs mechanism";
-    iPtr->freeProc = TCL_STATIC;
-    return NULL;
-}
-
 /*
- * Use our own isdigit to avoid linking to libc on windows
+ * Use our own isDigit to avoid linking to libc on windows
  */
 
 static int isDigit(const int c)
@@ -70,9 +56,10 @@ Tcl_InitStubs(
     const char *version,
     int exact)
 {
+    Interp *iPtr = (Interp *) interp;
     const char *actualVersion = NULL;
     ClientData pkgData = NULL;
-    const TclStubs *stubsPtr;
+    const TclStubs *stubsPtr = iPtr->stubTable;
 
     /*
      * We can't optimize this check by caching tclStubsPtr because that
@@ -80,8 +67,9 @@ Tcl_InitStubs(
      * times. [Bug 615304]
      */
 
-    stubsPtr = HasStubSupport(interp);
-    if (!stubsPtr) {
+    if (!stubsPtr || (stubsPtr->magic != TCL_STUB_MAGIC)) {
+	iPtr->result = "interpreter uses an incompatible stubs mechanism";
+	iPtr->freeProc = TCL_STATIC;
 	return NULL;
     }
 

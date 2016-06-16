@@ -163,6 +163,7 @@ you'll see a much more substantial printout for each error. See the README
 file in the "tests" directory for more information on the test suite. Note:
 don't run the tests as superuser: this will cause several of them to fail. If
 a test is failing consistently, please send us a bug report with as much
-detail as you can manage. Please use the online database at
-	http://tcl.sourceforge.net/
+detail as you can manage to our tracker:
+
+	http://core.tcl.tk/tcl/reportlist
 

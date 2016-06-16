@@ -408,13 +408,15 @@ test string-6.35 {string is double, false} {
 test string-6.36 {string is double, false} {
     list [string is double -fail var "\n"] $var
 } {0 0}
-test string-6.37 {string is double, false on int overflow} {
+test string-6.37 {string is double, false on int overflow} -setup {
+    set var priorValue
+} -body {
     # Make it the largest int recognizable, with one more digit for overflow
     # Since bignums arrived in Tcl 8.5, the sense of this test changed.
     # Now integer values that exceed native limits become bignums, and
     # bignums can convert to doubles without error.
     list [string is double -fail var [largest_int]0] $var
-} {1 0}
+} -result {1 priorValue}
 # string-6.38 removed, underflow on input is no longer an error.
 test string-6.39 {string is double, false} {
     # This test is non-portable because IRIX thinks 

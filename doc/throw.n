@@ -40,7 +40,7 @@ The following produces an error that is identical to that produced by
 \fBthrow\fR {ARITH DIVZERO {divide by zero}} {divide by zero}
 .CE
 .SH "SEE ALSO"
-catch(n), error(n), return(n), tclvars(n), try(n)
+catch(n), error(n), errorCode(n), errorInfo(n), return(n), try(n)
 .SH "KEYWORDS"
 error, exception
 '\" Local Variables:

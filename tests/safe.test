@@ -425,6 +425,19 @@ test safe-10.1 {testing statics loading} -constraints TcltestPackage -setup {
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
+test safe-10.1.1 {testing statics loading} -constraints TcltestPackage -setup {
+    set i [safe::interpCreate]
+} -body {
+    catch {interp eval $i {load {} Safepkg1}} m o
+    dict get $o -errorinfo
+} -returnCodes ok -cleanup {
+    unset -nocomplain m o
+    safe::interpDelete $i
+} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
+    invoked from within
+"load {} Safepkg1"
+    invoked from within
+"interp eval $i {load {} Safepkg1}"}
 test safe-10.2 {testing statics loading / -nostatics} -constraints TcltestPackage -body {
     set i [safe::interpCreate -nostatics]
     interp eval $i {load {} Safepkg1}
@@ -444,6 +457,18 @@ test safe-10.4 {testing nested statics loading / -nestedloadok} -constraints Tcl
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure}
+test safe-10.4.1 {testing nested statics loading / -nestedloadok} -constraints TcltestPackage -body {
+    set i [safe::interpCreate -nestedloadok]
+    catch {interp eval $i {interp create x; load {} Safepkg1 x}} m o
+    dict get $o -errorinfo
+} -returnCodes ok -cleanup {
+    unset -nocomplain m o
+    safe::interpDelete $i
+} -result {can't use package in a safe interpreter: no Safepkg1_SafeInit procedure
+    invoked from within
+"load {} Safepkg1 x"
+    invoked from within
+"interp eval $i {interp create x; load {} Safepkg1 x}"}
 
 test safe-11.1 {testing safe encoding} -setup {
     set i [safe::interpCreate]
@@ -501,6 +526,23 @@ test safe-11.7 {testing safe encoding} -setup {
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {wrong # args: should be "encoding convertfrom ?encoding? data"}
+test safe-11.7.1 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    catch {interp eval $i encoding convertfrom} m o
+    dict get $o -errorinfo
+} -returnCodes ok -cleanup {
+    unset -nocomplain m o
+    safe::interpDelete $i
+} -result {wrong # args: should be "encoding convertfrom ?encoding? data"
+    while executing
+"encoding convertfrom"
+    invoked from within
+"::interp invokehidden interp1 encoding convertfrom"
+    invoked from within
+"encoding convertfrom"
+    invoked from within
+"interp eval $i encoding convertfrom"}
 test safe-11.8 {testing safe encoding} -setup {
     set i [safe::interpCreate]
 } -body {
@@ -508,6 +550,23 @@ test safe-11.8 {testing safe encoding} -setup {
 } -returnCodes error -cleanup {
     safe::interpDelete $i
 } -result {wrong # args: should be "encoding convertto ?encoding? data"}
+test safe-11.8.1 {testing safe encoding} -setup {
+    set i [safe::interpCreate]
+} -body {
+    catch {interp eval $i encoding convertto} m o
+    dict get $o -errorinfo
+} -returnCodes ok -cleanup {
+    unset -nocomplain m o
+    safe::interpDelete $i
+} -result {wrong # args: should be "encoding convertto ?encoding? data"
+    while executing
+"encoding convertto"
+    invoked from within
+"::interp invokehidden interp1 encoding convertto"
+    invoked from within
+"encoding convertto"
+    invoked from within
+"interp eval $i encoding convertto"}
 
 test safe-12.1 {glob is restricted [Bug 2906841]} -setup {
     set i [safe::interpCreate]
@@ -715,8 +774,29 @@ test safe-15.1 {safe file ensemble does not surprise code} -setup {
     lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
     lappend result [catch {interp eval $i {file isdirectory .}} msg] $msg
 } -cleanup {
+    unset -nocomplain msg
     interp delete $i
 } -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {not allowed to invoke subcommand isdirectory of file}}
+test safe-15.1.1 {safe file ensemble does not surprise code} -setup {
+    set i [interp create -safe]
+} -body {
+    set result [expr {"file" in [interp hidden $i]}]
+    lappend result [interp eval $i {tcl::file::split a/b/c}]
+    lappend result [catch {interp eval $i {tcl::file::isdirectory .}}]
+    lappend result [interp invokehidden $i file split a/b/c]
+    lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
+    lappend result [catch {interp invokehidden $i file isdirectory .}]
+    interp expose $i file
+    lappend result [catch {interp eval $i {file split a/b/c}} msg] $msg
+    lappend result [catch {interp eval $i {file isdirectory .}} msg o] [dict get $o -errorinfo]
+} -cleanup {
+    unset -nocomplain msg o
+    interp delete $i
+} -result {1 {a b c} 1 {a b c} 1 {invalid command name "file"} 1 0 {a b c} 1 {not allowed to invoke subcommand isdirectory of file
+    while executing
+"file isdirectory ."
+    invoked from within
+"interp eval $i {file isdirectory .}"}}
 
 ### ~ should have no special meaning in paths in safe interpreters
 test safe-16.1 {Bug 3529949: defang ~ in paths} -setup {

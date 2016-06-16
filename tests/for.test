@@ -14,6 +14,12 @@ if {[lsearch [namespace children] ::tcltest] == -1} {
     namespace import -force ::tcltest::*
 }
 
+# Used for constraining memory leak tests
+testConstraint memory [llength [info commands memory]]
+if {[testConstraint memory]} {
+    proc meminfo {} {lindex [split [memory info] "\n"] 3 3}
+}
+
 # Basic "for" operation.
 
 test for-1.1 {TclCompileForCmd: missing initial command} {
@@ -345,7 +351,6 @@ proc formatMail {} {
         64 {        UNIX (Solaris 2.* and SunOS, other systems soon to follow). Easy to install} \
         65 {     binary packages are now for sale at the Sun Labs Tcl/Tk Shop. Check it out!} \
     }
-
     set result ""
     set NL "
 "
@@ -365,7 +370,6 @@ proc formatMail {} {
     } else {
 	set break 1
     }
-
     set xmailer 0
     set inheaders 1
     set last [array size lines]
@@ -386,9 +390,7 @@ proc formatMail {} {
 	    set limit 55
 	} else {
 	    set limit 55
-
 	    # Decide whether or not to break the body line
-
 	    if {$plen > 0} {
 		if {[string first {> } $line] == 0} {
 		    # This is quoted text from previous message, don't reformat
@@ -431,7 +433,7 @@ proc formatMail {} {
 	set climit [expr $limit-1]
 	set cutoff 50
 	set continuation 0
-	
+
 	while {[string length $line] > $limit} {
 	    for {set c [expr $limit-1]} {$c >= $cutoff} {incr c -1} {
 		set char [string index $line $c]
@@ -824,7 +826,127 @@ test for-6.18 {Tcl_ForObjCmd: for command result} {
     1 {invoked "continue" outside of a loop} \
     ]
 
-
+test for-7.1 {Bug 3614226: ensure that break cleans up the stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [break] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.2 {Bug 3614226: ensure that continue cleans up the stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {$x < 5} {incr x} {
+		list a b c [continue] d e f
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.3 {Bug 3614226: ensure that break cleans up the expansion stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[break] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.4 {Bug 3614226: ensure that continue cleans up the expansion stack} memory {
+    apply {{} {
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts {*}[puts a b c {*}[continue] d e f]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.5 {Bug 3614226: ensure that break cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[break] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.6 {Bug 3614226: ensure that continue cleans up the combination of main and expansion stack} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[continue] d e f]]
+	    }
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.7 {Bug 3614226: ensure that break only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[break] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+test for-7.8 {Bug 3614226: ensure that continue only cleans up the right amount} memory {
+    apply {{} {
+	set l [lrepeat 50 p q r]
+	# Can't use [memtest]; must be careful when we change stack frames
+	set end [meminfo]
+	for {set i 0} {$i < 5} {incr i} {
+	    unset -nocomplain {*}[for {set x 0} {[incr x]<50} {} {
+		puts [puts {*}$l {*}[puts a b c {*}$l {*}[continue] d e f]]
+	    }]
+	    set tmp $end
+	    set end [meminfo]
+	}
+	expr {$end - $tmp}
+    }}
+} 0
+
 # cleanup
 ::tcltest::cleanupTests
 return
+
+# Local Variables:
+# mode: tcl
+# End:

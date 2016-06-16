@@ -237,7 +237,7 @@ Tcl_NewListObj(
      * Now create the object.
      */
 
-    Tcl_InvalidateStringRep(listPtr);
+    TclInvalidateStringRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
     return listPtr;
 }
@@ -302,7 +302,7 @@ Tcl_DbNewListObj(
      * Now create the object.
      */
 
-    Tcl_InvalidateStringRep(listPtr);
+    TclInvalidateStringRep(listPtr);
     ListSetIntRep(listPtr, listRepPtr);
 
     return listPtr;
@@ -362,7 +362,7 @@ Tcl_SetListObj(
      */
 
     TclFreeIntRep(objPtr);
-    Tcl_InvalidateStringRep(objPtr);
+    TclInvalidateStringRep(objPtr);
 
     /*
      * Set the object's type to "list" and initialize the internal rep.
@@ -697,7 +697,7 @@ Tcl_ListObjAppendElement(
      * representation has changed.
      */
 
-    Tcl_InvalidateStringRep(listPtr);
+    TclInvalidateStringRep(listPtr);
     return TCL_OK;
 }
 
@@ -909,6 +909,10 @@ Tcl_ListObjReplace(
     isShared = (listRepPtr->refCount > 1);
     numRequired = numElems - count + objc;
 
+    for (i = 0;  i < objc;  i++) {
+	Tcl_IncrRefCount(objv[i]);
+    }
+
     if ((numRequired <= listRepPtr->maxElemCount) && !isShared) {
 	int shift;
 
@@ -963,6 +967,14 @@ Tcl_ListObjReplace(
 	    if (listRepPtr == NULL) {
 		listRepPtr = AttemptNewList(interp, numRequired, NULL);
 		if (listRepPtr == NULL) {
+		    for (i = 0;  i < objc;  i++) {
+			/* See bug 3598580 */
+#if TCL_MAJOR_VERSION > 8
+			Tcl_DecrRefCount(objv[i]);
+#else
+			objv[i]->refCount--;
+#endif
+		    }
 		    return TCL_ERROR;
 		}
 	    }
@@ -1027,14 +1039,11 @@ Tcl_ListObjReplace(
     }
 
     /*
-     * Insert the new elements into elemPtrs before "first". We don't do a
-     * memcpy here because we must increment the reference counts for the
-     * added elements, so we must explicitly loop anyway.
+     * Insert the new elements into elemPtrs before "first".
      */
 
     for (i=0,j=first ; i<objc ; i++,j++) {
 	elemPtrs[j] = objv[i];
-	Tcl_IncrRefCount(objv[i]);
     }
 
     /*
@@ -1048,7 +1057,7 @@ Tcl_ListObjReplace(
      * reflects the list's internal representation.
      */
 
-    Tcl_InvalidateStringRep(listPtr);
+    TclInvalidateStringRep(listPtr);
     return TCL_OK;
 }
 
@@ -1514,7 +1523,7 @@ TclLsetFlat(
 	     * containing lists.
 	     */
 
-	    Tcl_InvalidateStringRep(objPtr);
+	    TclInvalidateStringRep(objPtr);
 	}
 
 	/*
@@ -1550,7 +1559,7 @@ TclLsetFlat(
     } else {
 	TclListObjSetElement(NULL, subListPtr, index, valuePtr);
     }
-    Tcl_InvalidateStringRep(subListPtr);
+    TclInvalidateStringRep(subListPtr);
     Tcl_IncrRefCount(retValuePtr);
     return retValuePtr;
 }
@@ -1727,8 +1736,6 @@ FreeListInternalRep(
 	ckfree(listRepPtr);
     }
 
-    listPtr->internalRep.twoPtrValue.ptr1 = NULL;
-    listPtr->internalRep.twoPtrValue.ptr2 = NULL;
     listPtr->typePtr = NULL;
 }
 

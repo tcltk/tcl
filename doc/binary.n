@@ -884,7 +884,7 @@ close $f
 puts [\fBbinary encode\fR base64 \-maxlen 64 $data]
 .CE
 .SH "SEE ALSO"
-format(n), scan(n), tclvars(n)
+format(n), scan(n), tcl_platform(n)
 .SH KEYWORDS
 binary, format, scan
 '\" Local Variables:
